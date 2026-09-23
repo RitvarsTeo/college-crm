@@ -1,0 +1,95 @@
+{
+  "_note": "Deterministic demo inbound. No provider is contacted. Times are relative to 'now' so the ageing rule always has something to show. Written 23.09.2026 for the V1 visual review.",
+  "items": [
+    {
+      "channel": "instagram",
+      "handle": "@ahmed.muhamed",
+      "name": "Ahmed Muhamed",
+      "threadKey": "ig:17841400000001",
+      "externalId": "ig_msg_0001",
+      "hoursAgo": 38,
+      "body": "Hi"
+    },
+    {
+      "channel": "instagram",
+      "handle": "@liene.k",
+      "name": "Liene Kalniņa",
+      "threadKey": "ig:17841400000002",
+      "externalId": "ig_msg_0002",
+      "hoursAgo": 30,
+      "body": "Hi, I'm interested in studying Navigation. I finished secondary school and want to start next year. Can you tell me the price?"
+    },
+    {
+      "channel": "facebook",
+      "handle": "fb:1099",
+      "name": "Mārtiņš Ozols",
+      "threadKey": "fb:1099",
+      "externalId": "fb_msg_0003",
+      "hoursAgo": 27,
+      "body": "Hi, I'm interested in studying Navigation. Can you give me more information?"
+    },
+    {
+      "channel": "whatsapp",
+      "name": "Raivis Bresis",
+      "phone": "+37128662447",
+      "threadKey": "wa:37128662447",
+      "externalId": "wa_msg_0004",
+      "hoursAgo": 26,
+      "body": "Labdien! Vai vēl var pieteikties navigācijas programmā šoruden? Mans e-pasts raivis.bresis@inbox.lv"
+    },
+    {
+      "channel": "instagram",
+      "handle": "@sportsfan_lv",
+      "name": "Toms B",
+      "threadKey": "ig:17841400000005",
+      "externalId": "ig_msg_0005",
+      "hoursAgo": 25,
+      "body": "nice photo 🔥"
+    },
+    {
+      "channel": "linkedin",
+      "handle": "in/anna-berzina",
+      "name": "Anna Bērziņa",
+      "threadKey": "li:anna-berzina",
+      "externalId": "li_msg_0006",
+      "hoursAgo": 22,
+      "body": "Good afternoon, I am looking at marine engineering. Which documents do I need to apply?"
+    },
+    {
+      "channel": "instagram",
+      "handle": "@promo.agency",
+      "name": "Promo Agency",
+      "threadKey": "ig:17841400000007",
+      "externalId": "ig_msg_0007",
+      "hoursAgo": 20,
+      "body": "Hello, we offer social media promotion services, 5000 followers guaranteed"
+    },
+    {
+      "channel": "whatsapp",
+      "name": "Emīls Baltputnis",
+      "phone": "+37120423829",
+      "threadKey": "wa:37120423829",
+      "externalId": "wa_msg_0008",
+      "hoursAgo": 5,
+      "body": "Hello! I want to apply for the wind turbine programme, I finished high school this year. When is the deadline?"
+    },
+    {
+      "channel": "facebook",
+      "handle": "fb:2044",
+      "name": "Kristaps Ozoliņš",
+      "threadKey": "fb:2044",
+      "externalId": "fb_msg_0009",
+      "hoursAgo": 3,
+      "body": "Hi, is the course still open?"
+    },
+    {
+      "channel": "instagram",
+      "handle": "@darja.s",
+      "name": "Darja S",
+      "threadKey": "ig:17841400000010",
+      "externalId": "ig_msg_0010",
+      "hoursAgo": 1,
+      "body": "hello"
+    }
+  ]
+}

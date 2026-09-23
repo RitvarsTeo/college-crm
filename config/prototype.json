@@ -1,0 +1,837 @@
+{
+  "title": "Novikontas College CRM",
+  "version": "V1 virtual prototype",
+  "provisional": {
+    "stages": "The pipeline stages below are a working guess for testing the screens. They are NOT agreed business requirements until Admissions validates them.",
+    "documents": "The document checklist is taken from what the current admissions file tracks. Which of these the CRM should own, and which only mirror another system, is not decided.",
+    "owners": "Admissions is the only owner of a person. Marketing brings leads in and that shows in the source and campaign, not in ownership."
+  },
+  "stages": [
+    {
+      "id": "New",
+      "label": "New",
+      "colour": "#415c8f"
+    },
+    {
+      "id": "Contacted",
+      "label": "Contacted",
+      "colour": "#53a7db"
+    },
+    {
+      "id": "Follow-up",
+      "label": "Follow-up",
+      "colour": "#0a7d3c"
+    },
+    {
+      "id": "Application",
+      "label": "Application",
+      "colour": "#b06f00"
+    },
+    {
+      "id": "Contract",
+      "label": "Contract",
+      "colour": "#7a3cb0"
+    },
+    {
+      "id": "Admitted",
+      "label": "Admitted",
+      "colour": "#0a2463"
+    },
+    {
+      "id": "Not proceeding",
+      "label": "Not proceeding",
+      "colour": "#8b5b5b"
+    }
+  ],
+  "programmes": [
+    "NAV",
+    "ENG",
+    "MT OS",
+    "MT MR",
+    "MT MTM",
+    "MT WTT"
+  ],
+  "studyForms": [
+    "Full time",
+    "Part time"
+  ],
+  "education": [
+    "Secondary school",
+    "Maritime school",
+    "LJA",
+    "LJK",
+    "Other"
+  ],
+  "owners": [
+    "Admissions",
+    "Student Coordinator",
+    "Marketing",
+    "Other"
+  ],
+  "channels": {
+    "website": "Website",
+    "google_form": "Google Form",
+    "email": "Email",
+    "phone": "Phone",
+    "klatiene": "Walk-in",
+    "event": "Open Day",
+    "instagram": "Instagram",
+    "facebook": "Facebook",
+    "whatsapp": "WhatsApp",
+    "mailchimp": "Mailchimp",
+    "agent": "Agent",
+    "linkedin": "LinkedIn",
+    "tiktok": "TikTok"
+  },
+  "quickAddDefaults": {
+    "source_channel": "klatiene",
+    "owner": "Admissions",
+    "status": "New",
+    "nextAction": "Call and establish interest",
+    "nextActionDays": 1
+  },
+  "requiredOnQuickAdd": [
+    "name"
+  ],
+  "callOutcomes": [
+    "Answered",
+    "No answer",
+    "Asked us to call back",
+    "Not relevant"
+  ],
+  "realData": {
+    "include": "current-cycle",
+    "_options": [
+      "current-cycle",
+      "open-only",
+      "all",
+      "sample"
+    ],
+    "year": 2026,
+    "maxAdmitted": 25,
+    "sampleSize": 40,
+    "_note": "current-cycle = open leads whose first contact is in `year`, plus the most recent `maxAdmitted` admitted students so the end of the journey is visible. Not proceeding and older years are left in the file and not loaded."
+  },
+  "startWith": "empty",
+  "_startWith": "empty | real | synthetic. Empty is the demo: the table holds nobody until a channel test writes somebody into it.",
+  "nextActions": [
+    {
+      "group": "Conversation and information",
+      "items": [
+        {
+          "id": "call_interest",
+          "label": "Call and establish interest",
+          "days": 1,
+          "drives": "visit",
+          "advancesTo": "Contacted"
+        },
+        {
+          "id": "send_programme",
+          "label": "Send the programme description",
+          "days": 1,
+          "drives": "application",
+          "advancesTo": "Contacted"
+        },
+        {
+          "id": "send_terms",
+          "label": "Send the admission terms and the price",
+          "days": 1,
+          "drives": "payment",
+          "advancesTo": "Contacted"
+        },
+        {
+          "id": "consultation",
+          "label": "Consultation about the programme",
+          "days": 3,
+          "drives": "visit",
+          "advancesTo": "Follow-up"
+        },
+        {
+          "id": "answer_question",
+          "label": "Answer the question",
+          "days": 1,
+          "drives": "info",
+          "advancesTo": "Contacted"
+        }
+      ]
+    },
+    {
+      "group": "Visit on site",
+      "items": [
+        {
+          "id": "invite_visit",
+          "label": "Invite to a visit on site",
+          "days": 2,
+          "drives": "visit",
+          "advancesTo": "Follow-up"
+        },
+        {
+          "id": "confirm_visit",
+          "label": "Confirm the visit time",
+          "days": 1,
+          "drives": "visit",
+          "advancesTo": "Follow-up"
+        },
+        {
+          "id": "visit_followup",
+          "label": "Follow up after the visit",
+          "days": 2,
+          "drives": "application",
+          "advancesTo": "Follow-up"
+        },
+        {
+          "id": "reoffer_visit",
+          "label": "Offer a new visit time",
+          "days": 3,
+          "drives": "visit",
+          "advancesTo": "Follow-up"
+        }
+      ]
+    },
+    {
+      "group": "Application and documents",
+      "items": [
+        {
+          "id": "apply_sis",
+          "label": "Send the SIS application link",
+          "days": 1,
+          "drives": "application",
+          "advancesTo": "Application"
+        },
+        {
+          "id": "chase_sis",
+          "label": "Remind them to apply in SIS",
+          "days": 3,
+          "drives": "application",
+          "advancesTo": "Application"
+        },
+        {
+          "id": "collect_docs",
+          "label": "Submit documents (passport, education, photo)",
+          "days": 5,
+          "drives": "application",
+          "advancesTo": "Application"
+        },
+        {
+          "id": "medical",
+          "label": "Medical certificate",
+          "days": 7,
+          "drives": "application",
+          "advancesTo": "Application"
+        },
+        {
+          "id": "check_docs",
+          "label": "Check the submitted documents",
+          "days": 2,
+          "drives": "payment",
+          "advancesTo": "Application"
+        }
+      ]
+    },
+    {
+      "group": "Contract and payment",
+      "items": [
+        {
+          "id": "prepare_contract",
+          "label": "Prepare the study contract",
+          "days": 2,
+          "drives": "payment",
+          "advancesTo": "Contract"
+        },
+        {
+          "id": "sign_contract",
+          "label": "Sign the contract",
+          "days": 3,
+          "drives": "payment",
+          "advancesTo": "Contract"
+        },
+        {
+          "id": "send_invoice",
+          "label": "Send the invoice",
+          "days": 1,
+          "drives": "payment",
+          "advancesTo": "Contract"
+        },
+        {
+          "id": "chase_payment",
+          "label": "Chase the payment",
+          "days": 5,
+          "drives": "payment",
+          "advancesTo": "Contract"
+        },
+        {
+          "id": "confirm_payment",
+          "label": "Confirm the payment",
+          "days": 2,
+          "drives": "payment",
+          "advancesTo": "Admitted"
+        }
+      ]
+    }
+  ],
+  "nextActionRequired": true,
+  "_nextActions": "Next action is mandatory everywhere. Every option drives towards one of: a visit on site, an application in SIS with documents, or payment. Provisional wording until Admissions confirms it.",
+  "stageOrder": [
+    "New",
+    "Contacted",
+    "Follow-up",
+    "Application",
+    "Contract",
+    "Admitted"
+  ],
+  "statusFollowsEvents": true,
+  "_statusFollowsEvents": "Completing a step moves the person to the stage that step belongs to, forwards only, and the move is written on the timeline. Not proceeding is never automatic: somebody has to decide that.",
+  "_owners": "Locked principle 23.09.2026: ownership follows the CURRENT STAGE of the person. It is not permanently assigned to one person. The stage list and the stage-to-owner map are NOT decided, so the prototype still lets a user set the owner by hand.",
+  "_ownerPeople": {
+    "Admissions": "Ieva",
+    "Student Coordinator": "Laura",
+    "Other": "Tetiana",
+    "_note": "Who holds each role, said 23.09.2026. The interface shows the ROLE - \"Admissions\" - and never the person. None of the three is an admin."
+  },
+  "admins": [
+    "Aigars",
+    "Ritvars",
+    "Marina"
+  ],
+  "_admins": "Locked 23.09.2026. Admins see the whole history. None of the four CRM users is an admin. Admin is not ownership of a person.",
+  "historyHonesty": "There is no login in this prototype. Who you are is a setting in the sidebar, not a check. The admin rule is shown so it can be judged, not enforced - that waits for authentication.",
+  "editPolicy": {
+    "decided": "2026-09-23",
+    "editable": [
+      "name",
+      "email",
+      "phone",
+      "programme",
+      "study_form",
+      "education",
+      "owner",
+      "notes"
+    ],
+    "locked": [
+      "source_channel",
+      "source_campaign",
+      "source_detail",
+      "created_at"
+    ],
+    "_note": "Everything about the person as they are now may be corrected. Where they came from and when we first heard from them are historical facts and stay locked. Every change is written to the history: field, old value, new value, who, when."
+  },
+  "users": [
+    {
+      "name": "Ieva",
+      "role": "Admissions",
+      "title": "Admissions"
+    },
+    {
+      "name": "Laura",
+      "role": "Student Coordinator",
+      "title": "Student Coordinator"
+    },
+    {
+      "name": "Tetiana",
+      "role": "Marketing",
+      "title": "Head of Marketing"
+    },
+    {
+      "name": "Maris Cirulis",
+      "role": "Other",
+      "title": "Director of Education"
+    },
+    {
+      "name": "Arina",
+      "role": "Other",
+      "title": "Internship Coordinator"
+    }
+  ],
+  "_users": "Locked 23.09.2026. Arina was added when the phone menu was mapped: she answers button 3 with Tetiana. No email addresses yet and no authentication - identity is a setting until a login exists. A role is NOT a person.",
+  "ownershipFollowsStage": false,
+  "_ownershipFollowsStage": "Set to true once the stage list and the stage-to-owner map exist. While it is false the owner is set by hand and the screens say so.",
+  "noteTypes": [
+    {
+      "id": "call",
+      "label": "Call note"
+    },
+    {
+      "id": "visit",
+      "label": "On-site visit note"
+    },
+    {
+      "id": "admissions",
+      "label": "Admissions note"
+    },
+    {
+      "id": "stage",
+      "label": "Stage note"
+    },
+    {
+      "id": "other",
+      "label": "Other note"
+    }
+  ],
+  "_noteTypes": "Locked 23.09.2026: a note carries a type so it can be read and reported on, and it stays in the same single history as everything else. No separate note screens.",
+  "closedReasons": [
+    "No response",
+    "Chose another institution",
+    "Changed study plans",
+    "Not eligible",
+    "Financial reasons",
+    "Timing / postponed",
+    "Programme not suitable",
+    "Requirements not met",
+    "Duplicate",
+    "Other"
+  ],
+  "closedReasonNeedsNote": [
+    "Other"
+  ],
+  "_closedReasons": "Provisional until Admissions validates the list. \"Not proceeding\" cannot be set without a reason, and \"Other\" cannot be set without an explanation.",
+  "lifecycle": {
+    "samePersonThroughout": true,
+    "handoverStage": "Admitted",
+    "_note": "Locked 23.09.2026: one person record from lead to admitted student. Becoming an applicant or being admitted NEVER creates a second record, because conversion has to stay measurable on the same row. At Admitted the person is handed over to the SIS. The CRM does recruitment and admissions; it does not become the student information system."
+  },
+  "duplicateRule": {
+    "blockOnMatch": true,
+    "matchOn": [
+      "email",
+      "phone",
+      "name"
+    ],
+    "_note": "Locked 23.09.2026: a duplicate is never created silently. A match on email, on the last 8 digits of the phone, or on the exact full name stops the save and shows the existing record. The operator either opens that record, or states in as many words that this is a different person."
+  },
+  "searchFields": [
+    "id",
+    "name",
+    "email",
+    "phone",
+    "programme",
+    "study_form",
+    "education",
+    "source_channel",
+    "source_campaign",
+    "source_detail",
+    "student_no",
+    "notes"
+  ],
+  "_searchFields": "Locked 23.09.2026: the operator finds a person by whatever detail they remember. The source channel matches on its plain name too, so \"Instagram\" finds an Instagram lead without anybody knowing the internal channel id.",
+  "todayGroups": [
+    {
+      "id": "new_leads",
+      "label": "New leads",
+      "what": "Arrived and nobody has spoken to them yet"
+    },
+    {
+      "id": "follow_ups",
+      "label": "Follow-ups",
+      "what": "A next step that is due today or is already late"
+    },
+    {
+      "id": "replies",
+      "label": "Replies",
+      "what": "They wrote to us and we have not answered"
+    },
+    {
+      "id": "attention",
+      "label": "Other attention",
+      "what": "Active people with no next step at all"
+    }
+  ],
+  "_todayGroups": "Locked 23.09.2026: the order is the user's choice and is remembered. Re-ordering NEVER hides a group - an empty group still shows, saying it is clear. Each group shows done/total for the day so a cleared queue reads as cleared.",
+  "coreMetrics": [
+    "New leads this month",
+    "Admissions this month",
+    "Conversion %"
+  ],
+  "_coreMetrics": "Locked 23.09.2026 as the starting three. The admissions reporting dimensions (applications, admitted, stage, programme, study form, education background, nationality, intake channel, admission duration) are REQUIREMENTS TO INVESTIGATE, not an approved dashboard. Nationality is not in the prototype schema at all.",
+  "qualification": {
+    "levels": [
+      {
+        "id": "unclear",
+        "label": "Not clear yet",
+        "what": "Somebody wrote to us and we cannot tell yet whether they want to study.",
+        "owner": "Marketing",
+        "isLead": false
+      },
+      {
+        "id": "lead",
+        "label": "Lead",
+        "what": "They told us what they want to study. This is Admissions work.",
+        "owner": "Admissions",
+        "isLead": true
+      }
+    ],
+    "default": "unclear",
+    "warmToHotThreshold": {
+      "status": "PROVISIONAL - NOT a final business rule",
+      "leadWhen": {
+        "requireAll": [
+          "programme"
+        ]
+      },
+      "signals": [
+        "programme",
+        "study_intent",
+        "start",
+        "education",
+        "question",
+        "contact"
+      ],
+      "_note": "A named programme of interest makes it a lead. Everything else is \"not clear yet\". Configurable: change leadWhen and the machine changes with it. The machine still only SUGGESTS - a person confirms the interest, and confirming it is what routes it."
+    },
+    "_warmToHotThreshold": "PROVISIONAL. The ROUTING is what matters and it is settled: confirmed interest -> Admissions, everything else -> Marketing.",
+    "_note": "Simplified 23.09.2026 after the first visual review. Raw / Warm / Hot read as jargon on screen and told nobody anything. There are two states: we cannot tell yet (Marketing), or they said what they want to study (Admissions). The ladder is still separate from the pipeline stage list.",
+    "criticalFields": [
+      "interest"
+    ],
+    "completionFields": [
+      "interest",
+      "start",
+      "education",
+      "question",
+      "email",
+      "phone"
+    ],
+    "_criticalFields": "Only the programme of interest is critical. Everything else may be missing at HOT and is shown as \"missing information\" for a human to complete. Incompleteness never blocks promotion."
+  },
+  "notifications": {
+    "unclear": {
+      "notify": [
+        "Marketing"
+      ],
+      "visibleTo": [
+        "Marketing"
+      ],
+      "_note": "Tetiana sees a queue. Admissions is never interrupted by it."
+    },
+    "lead": {
+      "notify": [
+        "Admissions"
+      ],
+      "visibleTo": [
+        "Marketing",
+        "Admissions"
+      ],
+      "_note": "This is the one that means something."
+    },
+    "ageingDays": 1,
+    "_ageingDays": "An untouched contact surfaces the next day at 09:00."
+  },
+  "fieldProvenance": {
+    "levels": [
+      {
+        "id": "typed",
+        "what": "the person typed it into our own form",
+        "reportable": true
+      },
+      {
+        "id": "provider",
+        "what": "the provider supplied it",
+        "reportable": true
+      },
+      {
+        "id": "extracted",
+        "what": "a machine read it out of a message and nobody has confirmed it",
+        "reportable": false
+      },
+      {
+        "id": "confirmed",
+        "what": "a named operator looked at the extraction and agreed",
+        "reportable": true
+      },
+      {
+        "id": "operator",
+        "what": "a named operator typed it themselves",
+        "reportable": true
+      }
+    ],
+    "_note": "An extracted value is a SUGGESTION until a human confirms it. It is shown differently on screen and is excluded from every count and report. Without this rule \"the machine must not invent facts\" is a wish; with it an unconfirmed guess cannot become a statistic."
+  },
+  "inboundStorage": {
+    "store": [
+      "identity",
+      "source_channel",
+      "timestamp",
+      "thread_key",
+      "qualification",
+      "extracted_fields",
+      "operator_notes",
+      "processed_by",
+      "next_action",
+      "owner",
+      "audit"
+    ],
+    "storeMessageBodies": false,
+    "_storeMessageBodies": "Decided 23.09.2026: V1 does NOT store full Instagram, Facebook, WhatsApp or Gmail conversation bodies. The cost is that an extraction error becomes uncheckable - we keep our reading of the message but not the message. Whether to keep a body UNTIL the qualification decision and delete it after is an open question in docs/INBOUND_ARCHITECTURE.md section 9.",
+    "bodyLifecycle": {
+      "steps": [
+        "received",
+        "available for qualification",
+        "structured data extracted and confirmed",
+        "body deleted",
+        "structured record retained"
+      ],
+      "deleteOn": [
+        "qualified",
+        "archived"
+      ],
+      "_note": "DECIDED 23.09.2026. The body exists only while somebody is qualifying the item. The moment the item is qualified or archived the body is deleted and only the structured record survives. A test asserts the body is gone and the extracted fields are not."
+    }
+  },
+  "browserExtension": {
+    "requiredForV1": false,
+    "_note": "Demoted 23.09.2026. Marketing works on a phone across four apps, so a desktop browser extension does not fit how the work happens. It stays on the shelf as a fallback only if a provider approval is refused outright. The product is not designed around it."
+  },
+  "unresearchedChannels": [
+    {
+      "id": "linkedin",
+      "label": "LinkedIn",
+      "usedBy": "Marketing only",
+      "research": "NONE. Deliberately kept out of config/providers.json so it cannot look investigated."
+    },
+    {
+      "id": "tiktok",
+      "label": "TikTok",
+      "usedBy": "Marketing only",
+      "research": "NONE. Named 23.09.2026, nothing checked. Kept out of config/providers.json."
+    }
+  ],
+  "stageRoles": {
+    "first": "New",
+    "application": "Application",
+    "admitted": "Admitted",
+    "closed": "Not proceeding"
+  },
+  "terminalStages": [
+    "Admitted",
+    "Not proceeding"
+  ],
+  "_stageRoles": "The stage VOCABULARY is provisional and will be replaced. The code never writes a stage name; it asks for the stage that plays a role (admitted, closed, ...). Changing config.stages and these four pointers changes the whole product, with no architectural rework. A test fails if a stage role points at a stage that does not exist.",
+  "ageing": {
+    "rule": "next calendar day at 09:00",
+    "hour": 9,
+    "timezone": "Europe/Riga",
+    "appliesTo": [
+      "raw"
+    ],
+    "_note": "DECIDED 23.09.2026. An untouched raw contact surfaces the NEXT DAY at 09:00 local. Inbound Monday 21:30 surfaces Tuesday 09:00. Deterministic, computed once on arrival and stored on the row, so it can be tested without waiting for a clock."
+  },
+  "intake": {
+    "states": [
+      "new",
+      "qualified",
+      "archived"
+    ],
+    "archiveReasons": [
+      "Spam",
+      "Not a prospective student",
+      "Supplier or vendor",
+      "Internal",
+      "Already handled",
+      "Other"
+    ],
+    "archiveReasonNeedsNote": [
+      "Other"
+    ],
+    "_note": "Every inbound item lands here first. Nothing becomes a lead on its own. Archiving keeps the row forever, searchable, with the reason and who did it."
+  },
+  "routing": {
+    "unclear": "Marketing",
+    "lead": "Admissions",
+    "rule": "a confirmed interest routes to Admissions; everything else stays with Marketing",
+    "_note": "Decided 23.09.2026 at the visual review. Marketing is NOT a second admissions desk: Tetiana answers one question, \"is this a real prospective student or not\". The moment somebody has told us what they want to study, it is Admissions work - including a question about documents or price, which is exactly what Admissions answers."
+  },
+  "channelAccess": {
+    "byPerson": {
+      "Tetiana": [
+        "facebook",
+        "instagram",
+        "linkedin",
+        "tiktok",
+        "mailchimp",
+        "email",
+        "phone",
+        "klatiene",
+        "website",
+        "google_form",
+        "event",
+        "agent"
+      ],
+      "Ieva": [
+        "facebook",
+        "instagram",
+        "whatsapp",
+        "email",
+        "phone",
+        "klatiene",
+        "website",
+        "google_form",
+        "event",
+        "agent"
+      ],
+      "Laura": [
+        "facebook",
+        "instagram",
+        "whatsapp",
+        "email",
+        "phone",
+        "klatiene"
+      ],
+      "Marina": [
+        "facebook",
+        "instagram",
+        "whatsapp",
+        "email",
+        "phone"
+      ],
+      "Arina": [
+        "phone",
+        "email"
+      ],
+      "Maris Cirulis": [
+        "email",
+        "phone"
+      ]
+    },
+    "_note": "Corrected 23.09.2026 to the real matrix. It is PER PERSON because no role-shaped model can express it: WhatsApp is Ieva, Laura and Marina but NOT Tetiana. Facebook and Instagram are worked through the shared Meta Business Suite. LinkedIn and TikTok are Tetiana alone, so she is the access bridge for those two and only those two. CHANNEL ACCESS IS NOT CRM OWNERSHIP: ownership follows the work.",
+    "_roleAccessIsDerived": "A role can reach a channel when at least one person holding that role can. Never write a role list by hand - it would drift from the people."
+  },
+  "handoverRule": {
+    "reachableFields": [
+      "email",
+      "phone"
+    ],
+    "requireReachableForHot": false,
+    "onGap": "flag and require a next action",
+    "gapAction": "Ask Marketing for an email or phone, or have Marketing relay the reply",
+    "_note": "A lead on a channel its owner cannot open is a crack. Instagram, Facebook and WhatsApp are shared, so they are usually fine. LinkedIn and TikTok are Tetiana only, so a lead from there needs an email or a phone, or Marketing has to relay. It never blocks the promotion - blocking would lose the lead."
+  },
+  "intakeFilter": {
+    "dropBeforeQueue": true,
+    "spamWords": [
+      "followers",
+      "promotion services",
+      "seo services",
+      "crypto",
+      "investment offer",
+      "guaranteed",
+      "boost your",
+      "digital marketing agency",
+      "backlinks",
+      "casino"
+    ],
+    "_note": "Obvious junk never enters the working queue. It is filtered on arrival, kept in the database and findable, but nobody has to archive it by hand. A message from a real person that simply says \"Hi\" is NOT junk and does still enter the queue - see the open question in docs/BACKLOG.md."
+  },
+  "ui": {
+    "tabs": [
+      {
+        "id": "today",
+        "label": "Today",
+        "icon": "today",
+        "group": "work"
+      },
+      {
+        "id": "car",
+        "label": "CAR",
+        "icon": "car",
+        "group": "work",
+        "hint": "Channel Automation Results - everything the channels brought in"
+      },
+      {
+        "id": "people",
+        "label": "People",
+        "icon": "people",
+        "group": "work"
+      },
+      {
+        "id": "followup",
+        "label": "Follow-ups",
+        "icon": "clock",
+        "group": "work"
+      },
+      {
+        "id": "reports",
+        "label": "Reports",
+        "icon": "chart",
+        "group": "work"
+      }
+    ],
+    "devTabs": [
+      {
+        "id": "integrations",
+        "label": "Channels",
+        "icon": "plug"
+      },
+      {
+        "id": "history",
+        "label": "History",
+        "icon": "history"
+      },
+      {
+        "id": "privacy",
+        "label": "Privacy",
+        "icon": "shield"
+      }
+    ],
+    "devLabel": "DEV CONTROL",
+    "_note": "Cut at the first visual review. Funnel, Reports and Metrics were three screens answering one question, so they are one screen called Reports. Intake became CAR. The demo shelf is DEV CONTROL and nothing in it is part of the daily job."
+  },
+  "exportFormats": [
+    "csv",
+    "xlsx",
+    "pdf",
+    "gsheet"
+  ],
+  "channelSources": {
+    "facebook": {
+      "source": "Meta Business Suite",
+      "shared": true,
+      "verified": true
+    },
+    "instagram": {
+      "source": "Meta Business Suite",
+      "shared": true,
+      "verified": true
+    },
+    "whatsapp": {
+      "source": "UNVERIFIED",
+      "shared": true,
+      "verified": false,
+      "_note": "Access is shared, but whether WhatsApp is actually connected to Meta Business Suite in the Novikontas setup has NOT been verified. Do not claim it is part of the Meta integration until somebody checks."
+    },
+    "linkedin": {
+      "source": "Tetiana's own access",
+      "shared": false,
+      "verified": true
+    },
+    "tiktok": {
+      "source": "Tetiana's own access",
+      "shared": false,
+      "verified": true
+    },
+    "_note": "The CRM does not model individuals operating a social account. Facebook and Instagram arrive through one shared operational inbox, Meta Business Suite. The channel records stay SEPARATE for reporting, because \"where did this person come from\" is still Facebook or Instagram. LinkedIn and TikTok have no shared inbox, so Tetiana is the access bridge for those two and only those two."
+  },
+  "phoneMenu": {
+    "1": {
+      "role": "Admissions",
+      "queue": "1001*Q-ADMISSION",
+      "handledBy": [
+        "Ieva"
+      ]
+    },
+    "2": {
+      "role": "Student Coordinator",
+      "queue": "1001*Q-COORDINATORS",
+      "handledBy": [
+        "Laura"
+      ]
+    },
+    "3": {
+      "role": "Other",
+      "queue": "1001*Q-OTHER",
+      "handledBy": [
+        "Tetiana",
+        "Arina"
+      ]
+    },
+    "_note": "The caller presses 1, 2 or 3 and the PBX puts them on the matching queue. Those three queue names are exactly what lib/pbx.js keeps and everything else it drops, so the menu and the logger are one fact in one place."
+  }
+}

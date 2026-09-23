@@ -1,0 +1,1168 @@
+{
+  "note": "Every user-facing string in one place, Latvian and English. The interface renders Latvian; the English version is produced by swapping these pairs at render time. Technical traces inside the integration console (step details, raw provider payloads, the research panel) stay in English on purpose, because they quote provider documentation and field names.",
+  "default": "lv",
+  "pairs": [
+    [
+      "Šodien",
+      "Today"
+    ],
+    [
+      "Cilvēki",
+      "People"
+    ],
+    [
+      "Sekošana",
+      "Follow-up list"
+    ],
+    [
+      "Kanāli",
+      "Channels"
+    ],
+    [
+      "Atskaites",
+      "Reports"
+    ],
+    [
+      "Integrācijas",
+      "Integrations"
+    ],
+    [
+      "Notikumu žurnāls",
+      "Event log"
+    ],
+    [
+      "Metrika",
+      "Metrics"
+    ],
+    [
+      "Privātums",
+      "Privacy"
+    ],
+    [
+      "Ikdienas darbs",
+      "Daily work"
+    ],
+    [
+      "Demonstrācijai",
+      "For the demo"
+    ],
+    [
+      "+ Pievienot personu",
+      "+ Add person"
+    ],
+    [
+      "Palaist visu kanālu demo",
+      "Run the full channel demo"
+    ],
+    [
+      "Notīrīt datubāzi",
+      "Clear the database"
+    ],
+    [
+      "Datubāzē ielikt",
+      "Load into the database"
+    ],
+    [
+      "Tukšu",
+      "Empty"
+    ],
+    [
+      "Īstos datus no tabulas",
+      "Real people from the sheet"
+    ],
+    [
+      "Sintētiskos",
+      "Synthetic"
+    ],
+    [
+      "TUKŠA DATUBĀZE",
+      "EMPTY DATABASE"
+    ],
+    [
+      "ĪSTI DATI",
+      "REAL DATA"
+    ],
+    [
+      "SINTĒTISKI DATI",
+      "SYNTHETIC DATA"
+    ],
+    [
+      "Noformejums",
+      "Theme"
+    ],
+    [
+      "prototips ar sintētiskiem datiem",
+      "prototype with synthetic data"
+    ],
+    [
+      "Jauns",
+      "New"
+    ],
+    [
+      "Sazināts",
+      "Contacted"
+    ],
+    [
+      "Sekošanā",
+      "Follow-up"
+    ],
+    [
+      "Pieteikums",
+      "Application"
+    ],
+    [
+      "Līgums",
+      "Contract"
+    ],
+    [
+      "Uzņemts",
+      "Admitted"
+    ],
+    [
+      "Neturpina",
+      "Not proceeding"
+    ],
+    [
+      "Mājaslapa",
+      "Website"
+    ],
+    [
+      "Google forma",
+      "Google Form"
+    ],
+    [
+      "E-pasts",
+      "Email"
+    ],
+    [
+      "Telefons",
+      "Phone"
+    ],
+    [
+      "Klātiene",
+      "Walk-in"
+    ],
+    [
+      "Atvērtā diena",
+      "Open Day"
+    ],
+    [
+      "Aģents",
+      "Agent"
+    ],
+    [
+      "Kam jāsazinās",
+      "Who needs a call"
+    ],
+    [
+      "Kam jāsazinās un kad",
+      "Who needs action and when"
+    ],
+    [
+      "Pēdējās aktivitātes",
+      "Recent activity"
+    ],
+    [
+      "Piltuve",
+      "Pipeline"
+    ],
+    [
+      "Piltuve pa statusiem",
+      "Pipeline by stage"
+    ],
+    [
+      "jauni šodien",
+      "new today"
+    ],
+    [
+      "jauni 7 dienās",
+      "new in 7 days"
+    ],
+    [
+      "kavētas darbības",
+      "overdue actions"
+    ],
+    [
+      "darbības šodien",
+      "actions today"
+    ],
+    [
+      "bez nākamā soļa",
+      "without a next step"
+    ],
+    [
+      "uzņemti 30 dienās",
+      "admitted in 30 days"
+    ],
+    [
+      "cilvēki sistēmā",
+      "people in the system"
+    ],
+    [
+      "atvērtas darbības",
+      "open actions"
+    ],
+    [
+      "kavētas",
+      "overdue"
+    ],
+    [
+      "uzņemti",
+      "admitted"
+    ],
+    [
+      "Nekas nav jādara šodien.",
+      "Nothing to do today."
+    ],
+    [
+      "Visas darbības",
+      "All actions"
+    ],
+    [
+      "Persona",
+      "Person"
+    ],
+    [
+      "Darbība",
+      "Action"
+    ],
+    [
+      "Termiņš",
+      "Due"
+    ],
+    [
+      "Atbildīgais",
+      "Owner"
+    ],
+    [
+      "Programma",
+      "Programme"
+    ],
+    [
+      "Programmas",
+      "Programmes"
+    ],
+    [
+      "Avots",
+      "Source"
+    ],
+    [
+      "Statuss",
+      "Status"
+    ],
+    [
+      "Pēdējais kontakts",
+      "Last contact"
+    ],
+    [
+      "Nākamais solis",
+      "Next step"
+    ],
+    [
+      "Nākamais solis (obligāts)",
+      "Next step (required)"
+    ],
+    [
+      "Nākamais solis ir obligāts.",
+      "The next step is required."
+    ],
+    [
+      "Nav ieplānots nākamais solis.",
+      "No next step is scheduled."
+    ],
+    [
+      "Pievienot darbību",
+      "Add an action"
+    ],
+    [
+      "Atzīmēt",
+      "Complete"
+    ],
+    [
+      "Atzīmēt izdarītu",
+      "Mark as done"
+    ],
+    [
+      "Pārcelt",
+      "Reschedule"
+    ],
+    [
+      "Pārcelt darbību",
+      "Reschedule the action"
+    ],
+    [
+      "Jauns datums",
+      "New date"
+    ],
+    [
+      "Kad",
+      "When"
+    ],
+    [
+      "Pēc cik dienām",
+      "In how many days"
+    ],
+    [
+      "Iznākums",
+      "Outcome"
+    ],
+    [
+      "Piezīme",
+      "Note"
+    ],
+    [
+      "Pierakstīt zvanu",
+      "Log a call"
+    ],
+    [
+      "Notikumi un saziņa",
+      "Events and conversation"
+    ],
+    [
+      "Ieraksts",
+      "Record"
+    ],
+    [
+      "Dokumenti",
+      "Documents"
+    ],
+    [
+      "Pasākumi",
+      "Events"
+    ],
+    [
+      "Integrācijas notikumi",
+      "Integration events"
+    ],
+    [
+      "Pirmais kontakts",
+      "First contact"
+    ],
+    [
+      "Izglītība",
+      "Education"
+    ],
+    [
+      "Vārds",
+      "Name"
+    ],
+    [
+      "Vārds, uzvārds *",
+      "Full name *"
+    ],
+    [
+      "Meklēt vārdu, e-pastu, telefonu",
+      "Search name, email, phone"
+    ],
+    [
+      "visi",
+      "all"
+    ],
+    [
+      "termiņš: visi",
+      "due: all"
+    ],
+    [
+      "kavēti",
+      "overdue"
+    ],
+    [
+      "Notīrīt filtrus",
+      "Clear the filters"
+    ],
+    [
+      "Notīrīt",
+      "Clear"
+    ],
+    [
+      "Neviens ieraksts neatbilst filtriem.",
+      "No record matches the filters."
+    ],
+    [
+      "ieraksti",
+      "records"
+    ],
+    [
+      "nav",
+      "none"
+    ],
+    [
+      "vēl nav",
+      "not yet"
+    ],
+    [
+      "Saglabāt",
+      "Save"
+    ],
+    [
+      "Atcelt",
+      "Cancel"
+    ],
+    [
+      "Aizvērt",
+      "Close"
+    ],
+    [
+      "Iespējams dublikāts:",
+      "Possible duplicate:"
+    ],
+    [
+      "Pievienot personu",
+      "Add person"
+    ],
+    [
+      "Ielādē...",
+      "Loading..."
+    ],
+    [
+      "Neizdevās:",
+      "Failed:"
+    ],
+    [
+      "Kavēti",
+      "Overdue"
+    ],
+    [
+      "Nedēļa",
+      "This week"
+    ],
+    [
+      "Visi atvērtie",
+      "All open"
+    ],
+    [
+      "Nekas nav gaidīšanā šajā skatā.",
+      "Nothing is waiting in this view."
+    ],
+    [
+      "Pārskats",
+      "Overview"
+    ],
+    [
+      "Atvērtās dienas",
+      "Open days"
+    ],
+    [
+      "No kurienes cilvēki nāk un kas ir ienācis",
+      "Where people come from and what has arrived"
+    ],
+    [
+      "Cilvēki pa kanāliem",
+      "People by channel"
+    ],
+    [
+      "Ienākošie notikumi",
+      "Incoming events"
+    ],
+    [
+      "Notikums",
+      "Event"
+    ],
+    [
+      "Laiks",
+      "Time"
+    ],
+    [
+      "Ieradās",
+      "Attended"
+    ],
+    [
+      "ieradās",
+      "attended"
+    ],
+    [
+      "neieradās",
+      "did not attend"
+    ],
+    [
+      "nav atzīmēts",
+      "not marked"
+    ],
+    [
+      "Vēl neviens nav pieteicies.",
+      "Nobody has booked yet."
+    ],
+    [
+      "Atvērtā diena ir viens no kanāliem: dalībnieks nonāk tajā pašā sistēmā",
+      "An open day is one of the channels: a visitor lands in the same system"
+    ],
+    [
+      "Tikai tas, ko dati patiešām atbild",
+      "Only what the data can actually answer"
+    ],
+    [
+      "Avoti un konversija",
+      "Sources and conversion"
+    ],
+    [
+      "Avoti, kampaņas un uzņemšana",
+      "Sources, campaigns and admissions"
+    ],
+    [
+      "Laiks līdz līgumam (mediāna)",
+      "Time to contract (median)"
+    ],
+    [
+      "Grupa",
+      "Group"
+    ],
+    [
+      "Dienas",
+      "Days"
+    ],
+    [
+      "Metrika un atribūcija",
+      "Metrics and attribution"
+    ],
+    [
+      "Ko zina CRM un ko zina ārējās platformas",
+      "What the CRM knows and what the platforms know"
+    ],
+    [
+      "CRM zina",
+      "The CRM knows"
+    ],
+    [
+      "Platforma zina",
+      "The platform knows"
+    ],
+    [
+      "Ceļš atpakaļ uz platformu",
+      "The path back to the platform"
+    ],
+    [
+      "Katram kanālam ir fiktīvs konts. Poga izpilda reālu lokālu integrāciju. Neviena ražošanas sistēma netiek aiztikta.",
+      "Every channel has a fictional account. A button runs a real local integration. No production system is touched."
+    ],
+    [
+      "Sūtīt testa notikumu",
+      "Send a test event"
+    ],
+    [
+      "Kļūdu un drošības gadījumi",
+      "Error and security cases"
+    ],
+    [
+      "Atbilde uz āru",
+      "Outbound reply"
+    ],
+    [
+      "(vispirms palaid ienākošo testu)",
+      "(run an inbound test first)"
+    ],
+    [
+      "Šim kanālam nav izejošās saziņas.",
+      "This channel has no outbound."
+    ],
+    [
+      "Nospied testa pogu un skaties, kas notiek.",
+      "Press a test button and watch what happens."
+    ],
+    [
+      "Rezultāts",
+      "Result"
+    ],
+    [
+      "Ceļš cauri sistēmai",
+      "The path through the system"
+    ],
+    [
+      "Lauku kartējums",
+      "Field mapping"
+    ],
+    [
+      "No piegādātāja",
+      "From the provider"
+    ],
+    [
+      "CRM lauks",
+      "CRM field"
+    ],
+    [
+      "Vērtība",
+      "Value"
+    ],
+    [
+      "Identitāte",
+      "Identity"
+    ],
+    [
+      "Meklēts",
+      "Looked for"
+    ],
+    [
+      "Atrasts",
+      "Found"
+    ],
+    [
+      "Noteikums",
+      "Rule"
+    ],
+    [
+      "nekas",
+      "nothing"
+    ],
+    [
+      "Neapstrādātā ziņa no piegādātāja",
+      "Raw provider message"
+    ],
+    [
+      "Izejošā ziņa",
+      "Outbound message"
+    ],
+    [
+      "Piegādātāja atbilde (simulēta)",
+      "Provider response (simulated)"
+    ],
+    [
+      "Izpēte: ko šis kanāls tiešām var",
+      "Research: what this channel can really do"
+    ],
+    [
+      "Iespēja",
+      "Capability"
+    ],
+    [
+      "Ko varam saņemt",
+      "What we can receive"
+    ],
+    [
+      "Ko varam sūtīt",
+      "What we can send"
+    ],
+    [
+      "Autentifikācija",
+      "Authentication"
+    ],
+    [
+      "Ierobežojumi",
+      "Limitations"
+    ],
+    [
+      "Apstiprinājums",
+      "Approval"
+    ],
+    [
+      "Izmaksas / plāns",
+      "Cost / plan"
+    ],
+    [
+      "Kas ir simulēts",
+      "What is simulated"
+    ],
+    [
+      "Kas vajadzīgs, lai ieslēgtu",
+      "What it takes to switch on"
+    ],
+    [
+      "Oficiālā dokumentācija",
+      "Official documentation"
+    ],
+    [
+      "Piegādātājs",
+      "Provider"
+    ],
+    [
+      "Integrācijas veids",
+      "Integration type"
+    ],
+    [
+      "Galapunkts",
+      "Endpoint"
+    ],
+    [
+      "Verifikācija",
+      "Verification"
+    ],
+    [
+      "Pēdējais notikums",
+      "Last event"
+    ],
+    [
+      "Notikumu skaits",
+      "Event count"
+    ],
+    [
+      "Mehānismi",
+      "Mechanisms"
+    ],
+    [
+      "Konfigurācija:",
+      "Configuration:"
+    ],
+    [
+      "Ārējais id",
+      "External id"
+    ],
+    [
+      "Transports",
+      "Transport"
+    ],
+    [
+      "Virziens",
+      "Direction"
+    ],
+    [
+      "Ceļš",
+      "Path"
+    ],
+    [
+      "Katrs tests, ienākošais un izejošais, ar pilnu pierakstu",
+      "Every test, inbound and outbound, with the full record"
+    ],
+    [
+      "Vēl nav neviena testa. Ej uz Integrācijas un nospied pogu.",
+      "No test yet. Go to Integrations and press a button."
+    ],
+    [
+      "Atvērt notikumu žurnālu",
+      "Open the event log"
+    ],
+    [
+      "Kanāli pārbaudīti",
+      "Channels tested"
+    ],
+    [
+      "Izveidoti cilvēki",
+      "People created"
+    ],
+    [
+      "Sakrita ar esošu personu",
+      "Matched an existing person"
+    ],
+    [
+      "Dublikāti ignorēti",
+      "Duplicates ignored"
+    ],
+    [
+      "Nodoti pārbaudei",
+      "Sent for review"
+    ],
+    [
+      "Noraidīti vai nepieejami",
+      "Rejected or unavailable"
+    ],
+    [
+      "Izejošie notikumi",
+      "Outbound events"
+    ],
+    [
+      "Ražošanas sistēmas aiztiktas",
+      "Production systems touched"
+    ],
+    [
+      "Katrs kanāls izpildīts ar savu fiktīvo kontu. Neviena ražošanas sistēma netika aiztikta.",
+      "Every channel ran with its own fictional account. No production system was touched."
+    ],
+    [
+      "Visu kanālu demo",
+      "Full channel demo"
+    ],
+    [
+      "Dati un piekrišana",
+      "Data and consent"
+    ],
+    [
+      "Piekrišanas stāvoklis prototipā",
+      "Consent state in the prototype"
+    ],
+    [
+      "Nolūki un pamats",
+      "Purposes and basis"
+    ],
+    [
+      "Nolūks",
+      "Purpose"
+    ],
+    [
+      "Iespējamais pamats",
+      "Possible basis"
+    ],
+    [
+      "Pamats",
+      "Basis"
+    ],
+    [
+      "Stāvoklis",
+      "State"
+    ],
+    [
+      "Trīs dažādas lietas",
+      "Three different things"
+    ],
+    [
+      "TEHNISKA PRASĪBA",
+      "TECHNICAL REQUIREMENT"
+    ],
+    [
+      "PIEGĀDĀTĀJA POLITIKA",
+      "PROVIDER POLICY"
+    ],
+    [
+      "JURIDISKS APSVĒRUMS",
+      "LEGAL CONSIDERATION"
+    ],
+    [
+      "Pēdējie piekrišanas ieraksti",
+      "Recent consent records"
+    ],
+    [
+      "Vēl nav ierakstu.",
+      "No records yet."
+    ],
+    [
+      "Vēl nav ierakstu. Palaid kādu integrācijas testu.",
+      "No records yet. Run an integration test."
+    ],
+    [
+      "Piezvanīt un noskaidrot interesi",
+      "Call and establish interest"
+    ],
+    [
+      "Nosūtīt programmas aprakstu",
+      "Send the programme description"
+    ],
+    [
+      "Nosūtīt uzņemšanas noteikumus un cenu",
+      "Send the admission terms and the price"
+    ],
+    [
+      "Konsultācija par programmu",
+      "Consultation about the programme"
+    ],
+    [
+      "Atbildēt uz jautājumu",
+      "Answer the question"
+    ],
+    [
+      "Uzaicināt uz vizīti klātienē",
+      "Invite to a visit on site"
+    ],
+    [
+      "Apstiprināt vizītes laiku",
+      "Confirm the visit time"
+    ],
+    [
+      "Follow-up pēc vizītes",
+      "Follow up after the visit"
+    ],
+    [
+      "Piedāvāt jaunu vizītes laiku",
+      "Offer a new visit time"
+    ],
+    [
+      "Nosūtīt SIS pieteikuma saiti",
+      "Send the SIS application link"
+    ],
+    [
+      "Atgādināt pieteikties SIS",
+      "Remind them to apply in SIS"
+    ],
+    [
+      "Iesniegt dokumentus (pase, izglītība, foto)",
+      "Submit documents (passport, education, photo)"
+    ],
+    [
+      "Medicīnas izziņa",
+      "Medical certificate"
+    ],
+    [
+      "Pārbaudīt iesniegtos dokumentus",
+      "Check the submitted documents"
+    ],
+    [
+      "Sagatavot studiju līgumu",
+      "Prepare the study contract"
+    ],
+    [
+      "Parakstīt līgumu",
+      "Sign the contract"
+    ],
+    [
+      "Nosūtīt rēķinu",
+      "Send the invoice"
+    ],
+    [
+      "Atgādināt par apmaksu",
+      "Chase the payment"
+    ],
+    [
+      "Apstiprināt apmaksu",
+      "Confirm the payment"
+    ],
+    [
+      "Saruna un informācija",
+      "Conversation and information"
+    ],
+    [
+      "Vizīte klātienē",
+      "Visit on site"
+    ],
+    [
+      "Pieteikums un dokumenti",
+      "Application and documents"
+    ],
+    [
+      "Līgums un apmaksa",
+      "Contract and payment"
+    ],
+    [
+      "ved uz vizīti",
+      "drives towards a visit"
+    ],
+    [
+      "ved uz pieteikumu un dokumentiem",
+      "drives towards the application and documents"
+    ],
+    [
+      "ved uz apmaksu",
+      "drives towards payment"
+    ],
+    [
+      "informācija",
+      "information"
+    ],
+    [
+      "Atbildēja",
+      "Answered"
+    ],
+    [
+      "Neatbildēja",
+      "No answer"
+    ],
+    [
+      "Lūdza atzvanīt",
+      "Asked us to call back"
+    ],
+    [
+      "Nav aktuāli",
+      "Not relevant"
+    ],
+    [
+      "Pilna laika",
+      "Full time"
+    ],
+    [
+      "Nepilna laika",
+      "Part time"
+    ],
+    [
+      "Vidusskola",
+      "Secondary school"
+    ],
+    [
+      "Jūrskola",
+      "Maritime school"
+    ],
+    [
+      "Cita",
+      "Other"
+    ],
+    [
+      "Kanāls",
+      "Channel"
+    ],
+    [
+      "Ziņa",
+      "Message"
+    ],
+    [
+      "Zvans: atbildēja",
+      "Call: answered"
+    ],
+    [
+      "Zvans: neatbildēja",
+      "Call: no answer"
+    ],
+    [
+      "Ienāca reģistratūrā",
+      "Walked into reception"
+    ],
+    [
+      "Aizpildīja pieteikuma formu mājaslapā",
+      "Filled in the form on the website"
+    ],
+    [
+      "Aizpildīja reklāmas formu",
+      "Filled in the ad form"
+    ],
+    [
+      "Vai var mainīt programmu?",
+      "Can I change the programme?"
+    ],
+    [
+      "Kad jāiesniedz dokumenti?",
+      "When are the documents due?"
+    ],
+    [
+      "Ienākošais zvans",
+      "Incoming call"
+    ],
+    [
+      "Zvanīja un jautāja par programmu",
+      "Called and asked about the programme"
+    ],
+    [
+      "WhatsApp ziņa",
+      "WhatsApp message"
+    ],
+    [
+      "Labdien, interesē NAV programma",
+      "Hello, I am interested in the NAV programme"
+    ],
+    [
+      "Instagram ziņa",
+      "Instagram message"
+    ],
+    [
+      "Jautājums par studijām",
+      "A question about studying"
+    ],
+    [
+      "Labdien! Vai vēl var pieteikties?",
+      "Hello! Can I still apply?"
+    ],
+    [
+      "Atvērto durvju diena",
+      "Open doors day"
+    ],
+    [
+      "Pieteicās vizītei",
+      "Booked a visit"
+    ],
+    [
+      "Noskaidrot lēmumu",
+      "Establish the decision"
+    ],
+    [
+      "Sagatavot līgumu",
+      "Prepare the contract"
+    ],
+    [
+      "Pārbaudīt dokumentus",
+      "Check the documents"
+    ],
+    [
+      "Sazināties (no tabulas)",
+      "Get in touch (from the sheet)"
+    ],
+    [
+      "Klātiene (walk-in)",
+      "Walk-in"
+    ],
+    [
+      "Prototipa dati ir sintētiski, bet veidoti pēc reālajām 2025. gada proporcijām.",
+      "The prototype's data is synthetic, but shaped by the real 2025 proportions."
+    ],
+    [
+      "Prototips neko nekur nesūta. Šī ir izpēte par to, kas būtu jāuzbūvē, ja gribam, lai platforma uzzinātu par uzņemšanu.",
+      "The prototype sends nothing anywhere. This is research into what would have to be built if we want the platform to learn about an admission."
+    ],
+    [
+      "Pasākuma plūsma prototipā: pieteikšanās → persona → apmeklējums → follow-up. Atzīmējot \"ieradās\", automātiski rodas follow-up darbība pēc 2 dienām. Tas ir priekšlikums, nevis apstiprināta procedūra.",
+      "The event flow in the prototype: booking → person → attendance → follow-up. Marking \"attended\" creates a follow-up action 2 days later. This is a proposal, not an approved procedure."
+    ],
+    [
+      "Kas ir tehniska prasība, kas ir piegādātāja politika un kas ir juridisks apsvērums. Tas nav juridisks padoms.",
+      "What is a technical requirement, what is provider policy and what is a legal consideration. This is not legal advice."
+    ],
+    [
+      "GDPR nav vienādojums ar piekrišanu. Pamats ir atkarīgs no nolūka, un šis prototips to neizvēlas jūsu vietā. Kur pamats ir piekrišana, tai jābūt brīvi dotai, konkrētai, informētai un nepārprotamai, un to jāvar atsaukt tikpat viegli, cik dot.",
+      "GDPR does not equal consent. The basis depends on the purpose, and this prototype does not choose it for you. Where the basis is consent, it must be freely given, specific, informed and unambiguous, and as easy to withdraw as it was to give."
+    ],
+    [
+      "Meta webhook paraksts, Gmail watch atjaunošana reizi 7 dienās, Mailchimp GET pārbaude. Bez tā integrācija nestrādā.",
+      "The Meta webhook signature, renewing the Gmail watch every 7 days, the Mailchimp GET check. Without them the integration does not work."
+    ],
+    [
+      "Meta App Review pieprasa publisku privātuma politiku un dzēšanas ceļu. Google consent mode EEZ trafikam gaida ad_user_data un ad_personalization signālus. Mailchimp webhooks prasa Standard vai Premium plānu.",
+      "Meta App Review requires a public privacy policy and a deletion path. Google consent mode expects the ad_user_data and ad_personalization signals for EEA traffic. Mailchimp webhooks require a Standard or Premium plan."
+    ],
+    [
+      "Datu minimizēšana, nolūka ierobežojums, caurskatāmība, pamats, atsaukšana, glabāšanas termiņš, dzēšana, piekļuve un labošana, audita pēdas, apstrādātāji, starptautiskas nodošanas, drošība. Tie jāizlemj kopā ar to, kurš atbild par datiem.",
+      "Data minimisation, purpose limitation, transparency, the basis, withdrawal, the retention period, deletion, access and correction, audit trails, processors, international transfers, security. They have to be decided with whoever answers for the data."
+    ],
+    [
+      "Prototipā šie notikumi ir sintētiski. Reālie kanāli ir aprakstīti un pārbaudīti atsevišķi (channel-spike), bet vēl nav pieslēgti.",
+      "In the prototype these events are synthetic. The real channels are documented and tested separately (channel-spike), but are not connected yet."
+    ],
+    [
+      "Uzņemšana",
+      "Admission"
+    ],
+    [
+      "Studentu koordinators",
+      "Student Coordinator"
+    ],
+    [
+      "Cits",
+      "Other"
+    ]
+  ],
+  "patterns": [
+    {
+      "lv": "^\\(kavējas (\\d+) d\\.\\)$",
+      "en": "($1 d. overdue)"
+    },
+    {
+      "lv": "^\\(pēc (\\d+) d\\.\\)$",
+      "en": "(in $1 d.)"
+    },
+    {
+      "lv": "^\\(šodien\\)$",
+      "en": "(today)"
+    },
+    {
+      "lv": "^(\\d+) ieraksti$",
+      "en": "$1 records"
+    },
+    {
+      "lv": "^Saziņa \\((\\d+)\\)$",
+      "en": "Conversation ($1)"
+    },
+    {
+      "lv": "^(\\d+) cilvēki · (\\d+) ar kampaņu · (\\d+) uzņemti$",
+      "en": "$1 people · $2 with campaign · $3 admitted"
+    },
+    {
+      "lv": "^(\\d+) · uzņemti (\\d+)$",
+      "en": "$1 · admitted $2"
+    },
+    {
+      "lv": "^(\\d+) → (\\d+) uzņemti$",
+      "en": "$1 → $2 admitted"
+    },
+    {
+      "lv": "^pieteikušies (\\d+) · ieradās (\\d+) · pieteikumi (\\d+)$",
+      "en": "booked $1 · attended $2 · applications $3"
+    },
+    {
+      "lv": "^Atzīmēt: (.+)$",
+      "en": "Complete: $1"
+    },
+    {
+      "lv": "^ĪSTI DATI - (\\d+) cilvēki$",
+      "en": "REAL DATA - $1 people"
+    },
+    {
+      "lv": "^SINTĒTISKI DATI - (\\d+) cilvēki$",
+      "en": "SYNTHETIC DATA - $1 people"
+    },
+    {
+      "lv": "^Kavēti \\((\\d+)\\)$",
+      "en": "Overdue ($1)"
+    },
+    {
+      "lv": "^Šodien \\((\\d+)\\)$",
+      "en": "Today ($1)"
+    },
+    {
+      "lv": "^Cilvēki \\((\\d+)\\)$",
+      "en": "People ($1)"
+    },
+    {
+      "lv": "^Nākamais solis: (.+)$",
+      "en": "Next step: $1"
+    }
+  ]
+}

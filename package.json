@@ -1,0 +1,6 @@
+{
+  "name": "college-crm-prototype",
+  "private": true,
+  "type": "module",
+  "scripts": { "start": "node src/server.js" }
+}

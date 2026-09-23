@@ -1,0 +1,904 @@
+{
+  "version": 1,
+  "updated": "2026-09-22",
+  "honesty": {
+    "SIMULATED": "A fictional provider account inside this prototype, behaving according to researched real-world rules. Nothing leaves this machine.",
+    "PROVIDER-TESTED": "We connected to the provider's own sandbox or test environment and really sent or received something. Nothing is at this level yet.",
+    "LIVE": "A real account is connected. Nothing is at this level yet."
+  },
+  "channels": [
+    {
+      "id": "website_form",
+      "name": "Website application form",
+      "account": {
+        "label": "Novikontas College Website - SIMULATED",
+        "provider": "self-hosted",
+        "identifiers": {
+          "form": "college-application",
+          "origin": "https://novikontas.org (simulated)"
+        }
+      },
+      "connection": {
+        "type": "HTTP POST to our own endpoint",
+        "endpoint": "/api/sim/website_form",
+        "auth": "optional shared secret",
+        "webhook": "n/a",
+        "verification": "none required"
+      },
+      "status": {
+        "simulated": true,
+        "providerTested": false,
+        "live": false
+      },
+      "outbound": {
+        "supported": true,
+        "label": "Send confirmation email",
+        "note": "In production this is an ordinary transactional email, not a provider API."
+      },
+      "scenarios": [
+        {
+          "id": "new",
+          "label": "Submit test application",
+          "kind": "inbound"
+        },
+        {
+          "id": "known_email",
+          "label": "Same email as an existing person",
+          "kind": "inbound"
+        },
+        {
+          "id": "known_phone",
+          "label": "Same phone, different email",
+          "kind": "inbound"
+        },
+        {
+          "id": "missing",
+          "label": "Missing required field",
+          "kind": "error"
+        },
+        {
+          "id": "conflict",
+          "label": "Conflicting identity",
+          "kind": "error"
+        },
+        {
+          "id": "no_consent",
+          "label": "Submitted without marketing consent",
+          "kind": "inbound"
+        }
+      ],
+      "research": {
+        "capability": "A form on our own page posting to our own endpoint. No provider sits in the middle.",
+        "sources": [],
+        "canReceive": "Every field we put on the form, plus utm_source, utm_medium, utm_campaign and gclid carried in the link, plus the consent checkboxes.",
+        "canSend": "A confirmation email to the applicant, through whatever mail service we choose.",
+        "auth": "None needed to receive; a shared secret if we want to lock the endpoint. HTTPS and ordinary abuse protection.",
+        "limitations": "Nothing technical. The limit is that somebody has to point the website button at it.",
+        "approval": "None.",
+        "cost": "None.",
+        "privacy": "This is where consent is actually collected, so the wording and the checkboxes are the lawful basis for anything later. Consent state, purpose, timestamp and source are all recorded on the person.",
+        "status2026": "Available immediately.",
+        "simulated": "The submission, the utm capture, the consent fields and the confirmation email.",
+        "toGoLive": "Publish the page, point the website at it, keep the utm parameters on every advert link."
+      }
+    },
+    {
+      "id": "google_form",
+      "name": "Google Form",
+      "account": {
+        "label": "Novikontas Admissions Form - SIMULATED GOOGLE ACCOUNT",
+        "provider": "Google Workspace",
+        "identifiers": {
+          "formId": "1FAIpQLSe-SIMULATED",
+          "owner": "edu@novikontas.org (simulated)",
+          "pubsubTopic": "projects/novikontas-crm-sim/topics/forms-sim"
+        }
+      },
+      "connection": {
+        "type": "Two architectures, switchable below",
+        "endpoint": "/api/sim/google_form",
+        "auth": "Apps Script: our shared secret. Forms API: OAuth service account.",
+        "webhook": "watch expires after 7 days, renewable",
+        "verification": "none from Google on the Apps Script path"
+      },
+      "modes": [
+        {
+          "id": "apps_script",
+          "label": "Apps Script installable form-submit trigger",
+          "detail": "The trigger fires on submit and posts e.namedValues straight to us. The answers arrive WITH the notification."
+        },
+        {
+          "id": "forms_api",
+          "label": "Forms API watch to Cloud Pub/Sub",
+          "detail": "The watch notifies that responses changed and carries the form id and event type. It does NOT carry the answers: we then call forms.responses.list to fetch them. The watch lasts a week and must be renewed."
+        }
+      ],
+      "status": {
+        "simulated": true,
+        "providerTested": false,
+        "live": false
+      },
+      "outbound": {
+        "supported": false,
+        "label": null,
+        "note": "A form is not a messaging channel. A reply goes by email."
+      },
+      "scenarios": [
+        {
+          "id": "apps_script",
+          "label": "Test submission (Apps Script trigger)",
+          "kind": "inbound"
+        },
+        {
+          "id": "forms_api",
+          "label": "Test submission (Forms API watch and fetch)",
+          "kind": "inbound"
+        },
+        {
+          "id": "bad_secret",
+          "label": "Post with the wrong shared secret",
+          "kind": "error"
+        },
+        {
+          "id": "watch_expired",
+          "label": "Watch expired, notification never arrives",
+          "kind": "error"
+        }
+      ],
+      "config": {
+        "collectEmail": "Verified",
+        "collectEmailOptions": [
+          "Verified",
+          "Responder input",
+          "Do not collect"
+        ],
+        "note": "Verified forces the responder to sign in to a Google account. Observed on the live form on 21.09.2026. Changing it does not change the integration, only the field key."
+      },
+      "research": {
+        "capability": "Two genuinely different mechanisms, and they are not interchangeable.",
+        "sources": [
+          "https://developers.google.com/apps-script/guides/triggers/installable",
+          "https://developers.google.com/workspace/forms/api/guides/push-notifications",
+          "https://developers.google.com/workspace/forms/api/reference/rest/v1beta/forms.watches"
+        ],
+        "canReceive": "Apps Script: every question and answer, the response id and the timestamp, in the notification itself. Forms API: a notification carrying the form id and event type only, then the answers on a second call.",
+        "canSend": "Nothing. Forms are one way.",
+        "auth": "Apps Script: the script runs as the form owner and authorises once; the only proof the post is ours is a secret we invent. Forms API: OAuth, and the watch belongs to a Cloud project.",
+        "limitations": "Apps Script has no retry: if our endpoint is down the submission is lost, though the responses remain in the form for a backfill. A Forms API watch lasts a week and must be renewed before it expires.",
+        "approval": "None for a script bound to one form.",
+        "cost": "None beyond the existing Workspace.",
+        "privacy": "The Verified email setting forces a Google sign-in, which is a conversion problem rather than a privacy one. Consent wording has to live in the form itself.",
+        "status2026": "Both available. Forms API push notifications are v1beta.",
+        "simulated": "Both paths, including the second fetch on the Forms API path and an expired watch.",
+        "toGoLive": "Apps Script: paste the function, add the installable trigger, authorise once as the form owner, set the secret. Forms API: a Cloud project, a Pub/Sub topic, a service account and a renewal job."
+      }
+    },
+    {
+      "id": "gmail",
+      "name": "Email to edu@novikontas.org",
+      "account": {
+        "label": "edu@novikontas.org - SIMULATED GOOGLE WORKSPACE ACCOUNT",
+        "provider": "Google Workspace",
+        "identifiers": {
+          "mailbox": "edu@novikontas.org (simulated)",
+          "pubsubTopic": "projects/novikontas-crm-sim/topics/gmail-sim",
+          "historyId": "1229969"
+        }
+      },
+      "connection": {
+        "type": "Gmail API, push or polling",
+        "endpoint": "/api/sim/gmail",
+        "auth": "service account with domain-wide delegation, scope gmail.readonly",
+        "webhook": "users.watch expires after 7 days, renew daily",
+        "verification": "Workspace admin authorises the client id"
+      },
+      "modes": [
+        {
+          "id": "push",
+          "label": "PUSH: users.watch to Cloud Pub/Sub",
+          "detail": "The push says the mailbox changed and carries the address and a historyId. We then call users.history.list to learn what changed, and users.messages.get to read it."
+        },
+        {
+          "id": "polling",
+          "label": "POLLING: history.list every 60 seconds",
+          "detail": "No Pub/Sub and no Cloud topic. Slower by up to a minute, one moving part fewer."
+        }
+      ],
+      "status": {
+        "simulated": true,
+        "providerTested": false,
+        "live": false
+      },
+      "outbound": {
+        "supported": true,
+        "label": "Send test email from the CRM",
+        "note": "Sending needs a send scope, which is a separate authorisation from reading."
+      },
+      "scenarios": [
+        {
+          "id": "booking_push",
+          "label": "Receive test email (push)",
+          "kind": "inbound"
+        },
+        {
+          "id": "booking_poll",
+          "label": "Receive test email (polling)",
+          "kind": "inbound"
+        },
+        {
+          "id": "human",
+          "label": "Receive a human enquiry",
+          "kind": "inbound"
+        },
+        {
+          "id": "duplicate",
+          "label": "Same message delivered twice",
+          "kind": "error"
+        },
+        {
+          "id": "watch_expired",
+          "label": "Watch expired 8 days ago",
+          "kind": "error"
+        }
+      ],
+      "research": {
+        "capability": "Read one mailbox and turn each new message into a CRM event.",
+        "sources": [
+          "https://developers.google.com/workspace/gmail/api/guides/push"
+        ],
+        "canReceive": "The full message: id, thread, headers, plain text body, labels.",
+        "canSend": "A reply from the CRM, if a send scope is granted as well.",
+        "auth": "A service account with domain-wide delegation, impersonating the mailbox, authorised by the Workspace admin.",
+        "limitations": "A watch expires after 7 days and Google recommends renewing daily. If the renewal is missed the notifications stop silently, so the app must alert on the age of the last watch. The push carries no message content.",
+        "approval": "No app review. An internal Workspace authorisation.",
+        "cost": "Included in Workspace.",
+        "privacy": "Reading a mailbox means processing everything in it, so the scope is read-only, one mailbox, and the CRM stores only what belongs to an admissions enquiry.",
+        "status2026": "Stable and available.",
+        "simulated": "Both modes, the second history fetch on the push path, a duplicate delivery and an expired watch.",
+        "toGoLive": "Cloud project, service account, domain-wide delegation, admin authorisation. Start with polling."
+      },
+      "alternativeApproach": {
+        "name": "Human reads, extension writes",
+        "said": "23.09.2026, in the meeting",
+        "what": "Nobody parses the mailbox automatically. A person reads the email as they do today, decides what is worth keeping, and pushes it into the CRM with a browser EXTENSION button inside Gmail.",
+        "whyItMatters": "It removes the whole automatic-extraction problem: no Gmail watch to renew every 7 days, no guessing which message is a lead, no wrong field mapping. The judgement stays with the person who already reads the mail.",
+        "whatItCosts": "Somebody still has to read every email, so the work is not removed, only the retyping. The extension has to be built and installed in each browser, and it is a second piece of software to keep working.",
+        "status": "IDEA - not designed, not built, not costed"
+      }
+    },
+    {
+      "id": "mailchimp",
+      "name": "Mailchimp campaigns",
+      "account": {
+        "label": "Novikontas Admissions - SIMULATED MAILCHIMP AUDIENCE",
+        "provider": "Mailchimp",
+        "identifiers": {
+          "audienceId": "a6b5da1054-SIM",
+          "dc": "us21-sim",
+          "plan": "UNKNOWN - webhooks need Standard or Premium"
+        }
+      },
+      "connection": {
+        "type": "Audience webhook",
+        "endpoint": "/api/sim/mailchimp",
+        "auth": "unguessable URL; Mailchimp does not sign its webhooks",
+        "webhook": "GET on the URL must answer 200 before it can be saved",
+        "verification": "the secret in the path"
+      },
+      "status": {
+        "simulated": true,
+        "providerTested": false,
+        "live": false
+      },
+      "outbound": {
+        "supported": true,
+        "label": "Push tag to Mailchimp",
+        "note": "Writing back is the Marketing API, not the webhook."
+      },
+      "scenarios": [
+        {
+          "id": "subscribe",
+          "label": "Simulate subscribe",
+          "kind": "inbound"
+        },
+        {
+          "id": "unsubscribe",
+          "label": "Simulate unsubscribe",
+          "kind": "inbound"
+        },
+        {
+          "id": "profile",
+          "label": "Simulate profile update",
+          "kind": "inbound"
+        },
+        {
+          "id": "cleaned",
+          "label": "Simulate cleaned address",
+          "kind": "inbound"
+        },
+        {
+          "id": "upemail",
+          "label": "Simulate email change",
+          "kind": "inbound"
+        },
+        {
+          "id": "unknown",
+          "label": "Event about an unknown address",
+          "kind": "inbound"
+        },
+        {
+          "id": "bad_secret",
+          "label": "Post to the wrong secret URL",
+          "kind": "error"
+        }
+      ],
+      "research": {
+        "capability": "Audience events pushed to us as they happen.",
+        "sources": [
+          "https://mailchimp.com/developer/marketing/guides/sync-audience-data-webhooks/",
+          "https://mailchimp.com/help/about-webhooks/"
+        ],
+        "canReceive": "subscribe, unsubscribe, profile update, cleaned address, email change and campaign sending events, as url-encoded form data.",
+        "canSend": "Tags, merge fields and audience membership, through the Marketing API.",
+        "auth": "None. Mailchimp does not sign its webhooks, so the documented control is a URL nobody can guess.",
+        "limitations": "Delivery order is not guaranteed, so state must never be inferred from arrival order. Webhooks need a Standard or Premium plan: on Free or Essentials the step can be configured but not enabled. Which plan Novikontas is on is UNKNOWN and has to be checked.",
+        "approval": "None.",
+        "cost": "Included if the plan is Standard or Premium.",
+        "privacy": "An unsubscribe is a withdrawal of marketing consent and must be honoured immediately, which is why it writes to the consent panel and not just the timeline.",
+        "status2026": "Stable and available.",
+        "simulated": "All five event types, an event about an unknown address, and a post to the wrong secret.",
+        "toGoLive": "Confirm the plan, generate the secret URL, paste it into the audience webhook settings."
+      }
+    },
+    {
+      "id": "facebook",
+      "name": "Facebook page",
+      "account": {
+        "label": "Novikontas Maritime - SIMULATED FACEBOOK PAGE",
+        "provider": "Meta",
+        "identifiers": {
+          "business": "Novikontas Admissions - SIMULATED META BUSINESS",
+          "app": "Novikontas CRM Integration - SIMULATED (app id 000000000000000)",
+          "pageId": "102938-SIM",
+          "webhook": "https://crm.local/webhooks/meta",
+          "verifyToken": "sim-verify-token",
+          "appSecret": "sim-app-secret",
+          "review": "not submitted"
+        }
+      },
+      "connection": {
+        "type": "Meta webhook",
+        "endpoint": "/api/sim/facebook",
+        "auth": "X-Hub-Signature-256, HMAC-SHA256 of the raw body with the app secret",
+        "webhook": "subscribed fields: leadgen, messages, messaging_postbacks",
+        "verification": "GET with hub.mode, hub.verify_token and hub.challenge"
+      },
+      "status": {
+        "simulated": true,
+        "providerTested": false,
+        "live": false
+      },
+      "outbound": {
+        "supported": true,
+        "label": "Send test page reply",
+        "note": "Replying to a message needs the messaging permission with Advanced Access, which needs App Review."
+      },
+      "scenarios": [
+        {
+          "id": "lead",
+          "label": "Send Facebook lead",
+          "kind": "inbound"
+        },
+        {
+          "id": "message",
+          "label": "Send Facebook message",
+          "kind": "inbound"
+        },
+        {
+          "id": "verify",
+          "label": "Webhook verification handshake",
+          "kind": "check"
+        },
+        {
+          "id": "bad_token",
+          "label": "Wrong verification token",
+          "kind": "error"
+        },
+        {
+          "id": "unsigned",
+          "label": "Unsigned request",
+          "kind": "error"
+        },
+        {
+          "id": "bad_signature",
+          "label": "Invalid signature",
+          "kind": "error"
+        },
+        {
+          "id": "duplicate",
+          "label": "Duplicate Meta delivery",
+          "kind": "error"
+        },
+        {
+          "id": "malformed",
+          "label": "Malformed payload",
+          "kind": "error"
+        }
+      ],
+      "research": {
+        "capability": "Lead ad submissions and page messages, both on one webhook.",
+        "sources": [
+          "https://developers.facebook.com/documentation/business-messaging/messenger-platform/webhooks"
+        ],
+        "canReceive": "A lead ad gives the leadgen id, the ad and form id and the fields the form collected, including email and phone. A message gives the sender id, message id, timestamp and text, and no contact details.",
+        "canSend": "A reply inside the messaging window, once the messaging permission is approved.",
+        "auth": "App secret HMAC on every delivery, and a verify token during setup. A page access token to subscribe the page and read lead data.",
+        "limitations": "Messaging needs Advanced Access through App Review, on a verified business portfolio, and review runs in weeks. Lead ads do not need the messaging permissions, so lead forms can go live long before messages.",
+        "approval": "App Review required for messaging. Business verification required for Advanced Access.",
+        "cost": "No charge for the API itself.",
+        "privacy": "A lead form collects personal data under Meta's own terms as well as ours, and the consent state travels with the lead rather than being assumed.",
+        "status2026": "Available. Review is stricter than it was and expects a public privacy policy, a deletion route and a human escalation path.",
+        "simulated": "Verification, signature checking, a lead, a message, duplicates, and four failure modes.",
+        "toGoLive": "Confirm who owns the page and the business portfolio, create the app, subscribe the page, start review for messaging."
+      }
+    },
+    {
+      "id": "instagram",
+      "name": "Instagram direct messages",
+      "account": {
+        "label": "@novikontas.admissions - SIMULATED PROFESSIONAL ACCOUNT",
+        "provider": "Meta",
+        "identifiers": {
+          "igAccountId": "17841400000-SIM",
+          "linkedPage": "Novikontas Maritime - SIMULATED",
+          "app": "Novikontas CRM Integration - SIMULATED",
+          "webhook": "https://crm.local/webhooks/meta",
+          "review": "not submitted"
+        }
+      },
+      "connection": {
+        "type": "Meta webhook, object instagram",
+        "endpoint": "/api/sim/instagram",
+        "auth": "X-Hub-Signature-256",
+        "webhook": "subscribed field: messages",
+        "verification": "the same handshake as Facebook"
+      },
+      "status": {
+        "simulated": true,
+        "providerTested": false,
+        "live": false
+      },
+      "outbound": {
+        "supported": true,
+        "label": "Send test Instagram reply",
+        "note": "Needs the Instagram messaging permission with Advanced Access."
+      },
+      "scenarios": [
+        {
+          "id": "message",
+          "label": "Send Instagram message",
+          "kind": "inbound"
+        },
+        {
+          "id": "message_with_email",
+          "label": "Message that contains an email address",
+          "kind": "inbound"
+        },
+        {
+          "id": "duplicate",
+          "label": "Duplicate delivery",
+          "kind": "error"
+        },
+        {
+          "id": "bad_signature",
+          "label": "Invalid signature",
+          "kind": "error"
+        }
+      ],
+      "research": {
+        "capability": "Direct messages to a professional account, delivered on the same Meta webhook.",
+        "sources": [
+          "https://developers.facebook.com/docs/instagram-platform/webhooks"
+        ],
+        "canReceive": "Sender id, message id, timestamp and text. No email and no phone, which is exactly why the review queue exists.",
+        "canSend": "A reply inside the messaging window, once approved.",
+        "auth": "Same app secret HMAC.",
+        "limitations": "The account must be a professional (business or creator) account linked to the app. Messaging needs Advanced Access through App Review.",
+        "approval": "App Review required.",
+        "cost": "No charge for the API itself.",
+        "privacy": "A direct message carries no identifier we can lawfully match on, so the person is not created until somebody gives an email or a phone number.",
+        "status2026": "Available, review cycles measured in weeks.",
+        "simulated": "A plain message, a message that happens to contain an email, duplicates and a bad signature.",
+        "toGoLive": "Confirm the account is professional, link it to the app, request the permission, pass review."
+      }
+    },
+    {
+      "id": "whatsapp",
+      "name": "WhatsApp",
+      "account": {
+        "label": "Novikontas Admissions WhatsApp - SIMULATED BUSINESS ACCOUNT",
+        "provider": "WhatsApp Business Platform (Cloud API)",
+        "identifiers": {
+          "waba": "102290129340398-SIM",
+          "phoneNumberId": "106540352242922-SIM",
+          "displayNumber": "+371 20000000 (simulated)",
+          "app": "Novikontas CRM Integration - SIMULATED",
+          "webhook": "https://crm.local/webhooks/meta"
+        }
+      },
+      "connection": {
+        "type": "Meta webhook, field messages",
+        "endpoint": "/api/sim/whatsapp",
+        "auth": "X-Hub-Signature-256",
+        "webhook": "subscribed field: messages",
+        "verification": "the same handshake"
+      },
+      "status": {
+        "simulated": true,
+        "providerTested": false,
+        "live": false
+      },
+      "outbound": {
+        "supported": true,
+        "label": "Send test reply",
+        "note": "Free inside the 24 hour customer service window; outside it an approved template is required and is charged."
+      },
+      "scenarios": [
+        {
+          "id": "inbound",
+          "label": "Send inbound WhatsApp",
+          "kind": "inbound"
+        },
+        {
+          "id": "inbound_local",
+          "label": "Inbound from the local 8 digit number",
+          "kind": "inbound"
+        },
+        {
+          "id": "unknown",
+          "label": "Message from an unknown number",
+          "kind": "inbound"
+        },
+        {
+          "id": "duplicate",
+          "label": "Duplicate delivery",
+          "kind": "error"
+        },
+        {
+          "id": "bad_signature",
+          "label": "Invalid signature",
+          "kind": "error"
+        }
+      ],
+      "research": {
+        "capability": "Two way messaging on a dedicated business number.",
+        "sources": [
+          "https://developers.facebook.com/documentation/business-messaging/whatsapp/get-started",
+          "https://developers.facebook.com/documentation/business-messaging/whatsapp/business-phone-numbers/registration"
+        ],
+        "canReceive": "The sender's phone number in international format, the message id, timestamp, type and text, and the sender's WhatsApp profile name.",
+        "canSend": "A free-form reply inside the 24 hour window; an approved template outside it.",
+        "auth": "App secret HMAC on the webhook, an access token to send.",
+        "limitations": "The number must not be active on the ordinary WhatsApp consumer or Business app. Business verification unlocks higher messaging limits. Any inbound message opens a 24 hour customer service window and a further inbound message resets it.",
+        "approval": "Business verification and a display name review.",
+        "cost": "Per-message billing since 1 July 2025. Inbound is free, replies inside the window are free, template messages outside the window are charged per message at a rate set by the recipient's country. The exact Latvian rate is UNKNOWN here and must be read from Meta's current rate card rather than guessed.",
+        "privacy": "A phone number is personal data and the conversation is stored on the person, so retention and deletion apply to it like anything else.",
+        "status2026": "Available.",
+        "simulated": "Inbound in two number formats, an unknown sender, duplicates, a bad signature, the 24 hour window and a template requirement on outbound.",
+        "toGoLive": "Find a spare number, register it, verify the business, set the webhook."
+      }
+    },
+    {
+      "id": "agent",
+      "name": "Agent and referral",
+      "account": {
+        "label": "Indian Partner - SIMULATED AGENT ACCOUNT",
+        "provider": "self-hosted",
+        "identifiers": {
+          "agent": "india-partner-1",
+          "token": "tok_india_partner_1",
+          "link": "https://crm.local/agent?token=tok_india_partner_1"
+        }
+      },
+      "connection": {
+        "type": "Tokenised link",
+        "endpoint": "/api/sim/agent",
+        "auth": "per-agent token, revocable",
+        "webhook": "n/a",
+        "verification": "the token must exist and be enabled"
+      },
+      "status": {
+        "simulated": true,
+        "providerTested": false,
+        "live": false
+      },
+      "outbound": {
+        "supported": true,
+        "label": "Send status back to the agent",
+        "note": "In production this would be an email or a shared status page."
+      },
+      "scenarios": [
+        {
+          "id": "lead",
+          "label": "Agent sends lead",
+          "kind": "inbound"
+        },
+        {
+          "id": "duplicate",
+          "label": "Agent sends the same candidate twice",
+          "kind": "error"
+        },
+        {
+          "id": "unknown_token",
+          "label": "Unknown agent token",
+          "kind": "error"
+        },
+        {
+          "id": "spoof",
+          "label": "Agent types a different agent name in the form",
+          "kind": "error"
+        }
+      ],
+      "research": {
+        "capability": "A private link per agent. The token decides the source, not anything the agent types.",
+        "sources": [],
+        "canReceive": "Whatever the agent submits: name, email, phone, programme, country, passport number.",
+        "canSend": "A status update back to the agent.",
+        "auth": "A token per agent, revocable by disabling it.",
+        "limitations": "None technical. The agent has to agree to use the link.",
+        "approval": "None.",
+        "cost": "None.",
+        "privacy": "The agent is a third party sending us other people's data, so the arrangement needs a written basis and the candidate has to be told where their data came from.",
+        "status2026": "Available immediately.",
+        "simulated": "A lead, a duplicate, an unknown token and an attempt to spoof the agent name.",
+        "toGoLive": "Agree the link with the partner and issue the token."
+      }
+    },
+    {
+      "id": "open_day",
+      "name": "Open day",
+      "account": {
+        "label": "Novikontas Open Day - SIMULATED EVENT SYSTEM",
+        "provider": "self-hosted (the Piemēri Profesiju pattern)",
+        "identifiers": {
+          "event": "Piemēri profesiju",
+          "place": "Duntes iela 17A"
+        }
+      },
+      "connection": {
+        "type": "Booking posts to the CRM",
+        "endpoint": "/api/sim/open_day",
+        "auth": "shared secret",
+        "webhook": "n/a",
+        "verification": "none"
+      },
+      "status": {
+        "simulated": true,
+        "providerTested": false,
+        "live": false
+      },
+      "outbound": {
+        "supported": true,
+        "label": "Send booking confirmation",
+        "note": "The live booking app already sends one of these."
+      },
+      "scenarios": [
+        {
+          "id": "book",
+          "label": "Book test visitor",
+          "kind": "inbound"
+        },
+        {
+          "id": "attended",
+          "label": "Mark attended",
+          "kind": "action"
+        },
+        {
+          "id": "no_show",
+          "label": "Mark no show",
+          "kind": "action"
+        },
+        {
+          "id": "duplicate",
+          "label": "Same visitor books twice",
+          "kind": "error"
+        }
+      ],
+      "research": {
+        "capability": "Event registration becoming a CRM person, with attendance and follow-up.",
+        "sources": [],
+        "canReceive": "Name, email, phone, chosen professions, date and slot, consent.",
+        "canSend": "A confirmation with a calendar entry.",
+        "auth": "A shared secret between the booking app and the CRM.",
+        "limitations": "None technical.",
+        "approval": "None.",
+        "cost": "None.",
+        "privacy": "The booking is the consent moment for an event, which is not the same purpose as marketing.",
+        "status2026": "Available immediately; the real booking app already exists.",
+        "simulated": "Booking, attendance, no show, duplicate booking, and the follow-up rule that attendance triggers.",
+        "toGoLive": "Point the existing booking app at the CRM endpoint."
+      }
+    },
+    {
+      "id": "klatiene",
+      "name": "Walk-in at reception",
+      "account": {
+        "label": "CRM Manual Quick Add - no provider account",
+        "provider": "none",
+        "identifiers": {}
+      },
+      "connection": {
+        "type": "Manual entry by staff",
+        "endpoint": "/api/sim/klatiene",
+        "auth": "the logged-in member of staff",
+        "webhook": "n/a",
+        "verification": "n/a"
+      },
+      "status": {
+        "simulated": true,
+        "providerTested": false,
+        "live": false
+      },
+      "outbound": {
+        "supported": false,
+        "label": null,
+        "note": "Nothing to send back to: there is no provider."
+      },
+      "scenarios": [
+        {
+          "id": "walk_in",
+          "label": "Add walk-in",
+          "kind": "action"
+        },
+        {
+          "id": "duplicate",
+          "label": "Walk-in who already exists",
+          "kind": "action"
+        },
+        {
+          "id": "qr",
+          "label": "QR self-registration (a different channel)",
+          "kind": "inbound"
+        }
+      ],
+      "research": {
+        "capability": "There is no inbound event. A person walks in and a member of staff records it.",
+        "sources": [],
+        "canReceive": "Whatever the member of staff types.",
+        "canSend": "Nothing.",
+        "auth": "The member of staff is the author, and the record says who they were.",
+        "limitations": "It is manual by definition, and that is a decision rather than a gap.",
+        "approval": "None.",
+        "cost": "None.",
+        "privacy": "The person is in front of you, so the consent conversation happens in person and has to be recorded by hand.",
+        "status2026": "Available immediately.",
+        "simulated": "The quick add, the duplicate check, and separately a QR self-registration, which IS a digital inbound channel and is not the same thing.",
+        "toGoLive": "Nothing to connect."
+      }
+    },
+    {
+      "id": "phone",
+      "name": "Phone calls",
+      "account": {
+        "label": "Novikontas Reception - SIMULATED TELEPHONY",
+        "provider": "UNKNOWN - nobody has confirmed what answers +371 23111114",
+        "identifiers": {
+          "number": "+371 23111114",
+          "system": "UNKNOWN"
+        }
+      },
+      "connection": {
+        "type": "Manual log in V1",
+        "endpoint": "/api/sim/phone",
+        "auth": "the logged-in member of staff",
+        "webhook": "not available until a provider is confirmed",
+        "verification": "n/a"
+      },
+      "modes": [
+        {
+          "id": "manual",
+          "label": "MANUAL LOG (V1)",
+          "detail": "One tap: outcome plus the next action date."
+        },
+        {
+          "id": "telephony_api",
+          "label": "TELEPHONY API / WEBHOOK - NOT AVAILABLE, NOT CONNECTED UNTIL PROVIDER CONFIRMED",
+          "detail": "What an automatic call event would look like if the phone system had an interface."
+        }
+      ],
+      "status": {
+        "simulated": true,
+        "providerTested": false,
+        "live": false
+      },
+      "outbound": {
+        "supported": false,
+        "label": null,
+        "note": "A CRM cannot place a call without a telephony provider."
+      },
+      "scenarios": [
+        {
+          "id": "log",
+          "label": "Log call",
+          "kind": "action"
+        },
+        {
+          "id": "no_answer",
+          "label": "Log no answer and reschedule",
+          "kind": "action"
+        },
+        {
+          "id": "future_event",
+          "label": "Simulated telephony webhook (not available)",
+          "kind": "inbound"
+        }
+      ],
+      "research": {
+        "capability": "A mobile or a plain desk line emits no event any software can subscribe to.",
+        "sources": [
+          "https://zadarma.com/en/support/instructions/crm-zadarma/"
+        ],
+        "canReceive": "Nothing today. With a VoIP platform: call start, answer, end, missed, with the number and the timestamp.",
+        "canSend": "Nothing today.",
+        "auth": "Depends entirely on the provider.",
+        "limitations": "What answers the college number is UNKNOWN and has to be established before anything can be designed. Zadarma publishes call webhooks aimed at CRM integration; 3CX has no native webhook API and needs a third-party plugin.",
+        "approval": "None, but a purchase decision.",
+        "cost": "A VoIP plan if automated later.",
+        "privacy": "Call recording, if it ever appears, is a separate and much heavier question than call logging.",
+        "status2026": "Manual logging available now. Automation blocked on an unanswered question.",
+        "simulated": "The manual log, and a clearly labelled preview of what an automatic call event would look like.",
+        "toGoLive": "Answer one question: what receives +371 23111114 today."
+      },
+      "providerName": "TeleGroup",
+      "providerNote": "Novikontas telephony is TeleGroup (said 23.09.2026). A call carries two things we can use: the CALLER ID, and the MENU CHOICE the caller presses (1-3). After the call TeleGroup sends a NOTIFICATION to the app. That is what Ritvars stated in the meeting; the mechanism, the payload, the authentication and the price have not been checked with TeleGroup yet, so they stay UNKNOWN. V1 still records the call by hand.",
+      "knownSignals": [
+        {
+          "signal": "caller id",
+          "status": "stated by Ritvars 23.09.2026",
+          "delivery": "notification to the app after the call (stated 23.09.2026, mechanism not verified)"
+        },
+        {
+          "signal": "IVR menu choice 1-3",
+          "status": "stated by Ritvars 23.09.2026",
+          "delivery": "notification to the app after the call (stated 23.09.2026, mechanism not verified)"
+        }
+      ]
+    }
+  ],
+  "consentPurposes": [
+    {
+      "id": "admissions",
+      "label": "Admissions correspondence",
+      "basisOptions": [
+        "contract or pre-contract steps",
+        "legitimate interests",
+        "consent"
+      ],
+      "note": "Answering somebody who asked about studying is not usually a consent case. The basis has to be chosen deliberately, and this prototype does not choose it for you."
+    },
+    {
+      "id": "marketing",
+      "label": "Marketing email and campaigns",
+      "basisOptions": [
+        "consent"
+      ],
+      "note": "Marketing to a prospect is the clearest consent case, and consent must be as easy to withdraw as to give."
+    },
+    {
+      "id": "analytics",
+      "label": "Website analytics",
+      "basisOptions": [
+        "consent"
+      ],
+      "note": "Cookie and similar storage consent, separate from the CRM record."
+    },
+    {
+      "id": "advertising",
+      "label": "Advertising and measurement signals to Google or Meta",
+      "basisOptions": [
+        "consent"
+      ],
+      "note": "Provider policy as well as law: Google's consent mode expects ad_user_data and ad_personalization signals for EEA traffic."
+    }
+  ]
+}

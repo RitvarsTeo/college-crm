@@ -1,0 +1,1734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Novikontas College CRM - prototype</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Spectral:wght@400;500;600&display=swap">
+<style>
+/* ---------------------------------------------------------------------------
+   Palette taken from the reference: the Client Hub preview artifact.
+   Light is the authored identity; dark is its own theme, not an inversion.
+   Amber means a human has to act. Petrol means data, state and structure.
+   Only values live here. No structure, no class names and no screens changed.
+   --------------------------------------------------------------------------- */
+:root {
+  --paper:#F7F6F3; --surface:#FCFBF9; --ink:#111C21;
+  --t2:rgba(17,28,33,.78); --t3:rgba(17,28,33,.62); --t4:rgba(17,28,33,.48);
+  --rule:rgba(17,28,33,.16); --rule2:rgba(17,28,33,.10);
+  --pet:#1F7688; --petink:#155C6B; --amb:#D98A1E; --ambink:#8A5410;
+  --lift:0 1px 2px rgba(17,28,33,.07), 0 6px 14px -8px rgba(17,28,33,.12);
+  --lift-hover:0 1px 2px rgba(17,28,33,.10), 0 10px 22px -10px rgba(17,28,33,.20);
+  --serif:'Spectral', Georgia, serif;
+  --sans:'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* the names the rest of the stylesheet already uses, re-pointed */
+  --navy:var(--ink); --navy-soft:var(--petink); --muted:var(--t3);
+  --line:var(--rule); --bg:var(--paper); --card:var(--surface);
+  --brand-blue:var(--pet);
+  --late:var(--ambink); --late-bg:rgba(217,138,30,.14);
+  --ok:var(--petink); --ok-bg:rgba(31,118,136,.11);
+  --warn:var(--ambink); --warn-bg:rgba(217,138,30,.14);
+  --radius:10px; --shadow:var(--lift);
+  --shell:#F1EFE9; --shell-ink:var(--ink); --shell-line:var(--rule2);
+  --surface-2:#EFEDE7; --field:#FFFFFF;
+  --on-navy:#FCFBF9; --btn-bg:#111C21; --btn-ink:#FCFBF9;
+  --control-line:rgba(17,28,33,.30); --focus:var(--petink); --accent-ink:var(--petink);
+  --dur-quick:120ms; --dur-tap:80ms; --ease-standard:cubic-bezier(.2,.7,.2,1);
+}
+/* Dark is authored, not inverted: petrol ground, amber as light. */
+:root[data-theme="dark"] {
+  --paper:#05070A; --surface:rgba(255,255,255,.055); --ink:#EFEBE3;
+  --t2:rgba(239,235,227,.84); --t3:rgba(239,235,227,.72); --t4:rgba(239,235,227,.52);
+  --rule:rgba(239,235,227,.16); --rule2:rgba(239,235,227,.10);
+  --pet:#5FC4D8; --petink:#A9E2ED; --amb:#E3A63F; --ambink:#E9B361;
+  --lift:0 1px 2px rgba(0,0,0,.4), 0 10px 22px -12px rgba(0,0,0,.7);
+  --lift-hover:0 1px 2px rgba(0,0,0,.5), 0 14px 28px -12px rgba(0,0,0,.8);
+  --navy:#0B2C38; --navy-soft:var(--petink); --muted:var(--t3);
+  --line:var(--rule); --bg:var(--paper); --card:rgba(255,255,255,.055);
+  --brand-blue:var(--pet);
+  --late:var(--ambink); --late-bg:rgba(227,166,63,.18);
+  --ok:var(--petink); --ok-bg:rgba(95,196,216,.16);
+  --warn:var(--ambink); --warn-bg:rgba(227,166,63,.18);
+  --shadow:var(--lift);
+  --shell:#0A161C; --shell-ink:var(--ink); --shell-line:var(--rule2);
+  --surface-2:rgba(255,255,255,.08); --field:rgba(255,255,255,.06);
+  --on-navy:#EFEBE3; --btn-bg:#0B2C38; --btn-ink:#EFEBE3;
+  --control-line:rgba(239,235,227,.34); --focus:var(--pet); --accent-ink:var(--petink);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--sans);
+     background:var(--bg);color:var(--ink);font-size:15px;line-height:1.5}
+a{color:var(--navy-soft)}
+button{font:inherit;cursor:pointer}
+.shell{display:grid;grid-template-columns:238px 1fr;min-height:100vh}
+
+/* Navigation: tinted ground, muted labels, the active item marked by an edge
+   rather than a filled pill. */
+nav{background:var(--shell);color:var(--shell-ink);padding:18px 0;display:flex;flex-direction:column;
+    border-right:1px solid var(--shell-line)}
+nav .brand{padding:0 20px 18px;font-weight:700;font-size:16px;line-height:1.25;color:var(--shell-ink)}
+nav .brand span{display:block;font-size:10px;font-weight:600;color:var(--petink);letter-spacing:1.4px;
+    text-transform:uppercase;margin-top:5px}
+nav a.item{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 20px;
+    color:var(--t2);text-decoration:none;font-size:14px;border-left:3px solid transparent;
+    transition:background-color var(--dur-quick) var(--ease-standard),color var(--dur-quick) var(--ease-standard)}
+nav a.item:hover{color:var(--ink);background:rgba(17,28,33,.05)}
+nav a.item.on{color:var(--ink);border-left-color:var(--amb);background:rgba(217,138,30,.10);font-weight:600}
+nav .dataset{margin-top:8px;font-size:9.5px;letter-spacing:.6px;text-transform:uppercase;
+  padding:3px 8px;border-radius:4px;display:inline-block;line-height:1.35;white-space:normal}
+nav .dataset.real{background:rgba(217,138,30,.16);color:var(--ambink);border:1px solid rgba(217,138,30,.45)}
+nav .dataset.empty{background:var(--surface-2);color:var(--t3);border:1px dashed var(--rule)}
+nav .dataset.synthetic{background:var(--surface-2);color:var(--t3);border:1px solid var(--rule2)}
+nav .navgroup{padding:4px 20px 6px;font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--t4);
+  display:flex;align-items:center;gap:8px}
+nav .navgroup.demo{color:var(--t3)}
+nav .navgroup .pill{font-size:9px;padding:1px 7px}
+nav .navsplit{margin:14px 20px 10px;border-top:1px solid var(--rule)}
+nav a.item.demo{font-size:13.5px;color:var(--t3)}
+nav a.item.demo.on{color:var(--ink)}
+nav .add{margin:16px 20px 0}
+nav .themes{margin-top:auto;padding:16px 20px 0;border-top:1px solid var(--shell-line)}
+nav .themes label{color:var(--t3);font-size:10px;letter-spacing:1.2px;text-transform:uppercase;margin:0 0 6px}
+nav .themes select{background:var(--field);color:var(--ink);border:1px solid var(--control-line)}
+main{padding:22px 26px 60px;max-width:1320px}
+h1{font-family:var(--serif);font-weight:500;font-size:27px;letter-spacing:-.01em;margin:0 0 2px;color:var(--ink)}
+.sub{color:var(--muted);font-size:13px;margin:0 0 18px}
+
+/* A container is a signal, not a layout device. */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);
+      padding:18px;margin-bottom:18px}
+.card h3{font-family:var(--serif);font-weight:500;margin:0 0 10px;font-size:18px;color:var(--ink)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(172px,1fr));gap:12px;margin-bottom:18px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow)}
+.stat b{display:block;font-family:var(--serif);font-size:30px;font-weight:500;line-height:1.2;color:var(--ink);font-variant-numeric:tabular-nums}
+.stat span{color:var(--muted);font-size:12px}
+.stat.alarm b{color:var(--ambink)}
+
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:11px 10px;border-bottom:1px solid var(--rule2);vertical-align:top}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--t3);font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:1px solid var(--rule)}
+td{font-size:13.5px}
+tr.row{cursor:pointer}
+tr.row:hover td{background:rgba(31,118,136,.06)}
+tr.row:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:500;white-space:nowrap;border:1px solid transparent}
+.pill.late{background:var(--late-bg);color:var(--late);border-color:rgba(217,138,30,.45)}
+.pill.ok{background:var(--ok-bg);color:var(--ok);border-color:rgba(31,118,136,.45)}
+.pill.warn{background:var(--warn-bg);color:var(--warn);border-color:rgba(217,138,30,.45)}
+.pill.calm{background:var(--surface-2);color:var(--t2);border-color:var(--rule2)}
+.pill.accent{background:var(--ok-bg);color:var(--petink);border-color:rgba(31,118,136,.45)}
+
+.due{font-weight:600;font-variant-numeric:tabular-nums}
+.due.over{color:var(--ambink)}.due.today{color:var(--ambink)}
+
+.btn{background:var(--btn-bg);color:var(--btn-ink);border:0;border-left:3px solid var(--amb);border-radius:8px;padding:9px 15px 9px 13px;font-weight:500;
+   box-shadow:var(--shadow);
+   transition:transform var(--dur-tap) var(--ease-standard),box-shadow var(--dur-quick) var(--ease-standard)}
+.btn:hover{box-shadow:var(--lift-hover)}
+.btn:active{transform:translateY(1px)}
+.btn.ghost{background:var(--card);color:var(--petink);border:1px solid var(--rule);border-left:1px solid var(--rule);padding:9px 15px}
+.btn.sm{padding:5px 10px;font-size:12px}
+.btn:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible,a:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+
+input,select,textarea{font:inherit;padding:8px 10px;border:1px solid var(--control-line);border-radius:8px;
+   background:var(--field);color:var(--ink);width:100%}
+label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px}
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.filters input,.filters select{width:auto;min-width:140px}
+
+.grid2{display:grid;grid-template-columns:1.4fr 1fr;gap:18px}
+.kv{display:grid;grid-template-columns:132px 1fr;gap:6px 12px;font-size:13.5px}
+.kv div:nth-child(odd){color:var(--muted)}
+
+.tl{border-left:1px solid var(--line);padding-left:14px;margin-left:4px}
+.tl .ev{position:relative;padding:0 0 14px}
+.tl .ev:before{content:'';position:absolute;left:-16px;top:6px;width:3px;height:13px;background:var(--pet)}
+.tl .ev.note:before{background:var(--muted)}
+.tl .ev.status:before{background:var(--navy-soft)}
+.tl .ev.call:before{background:var(--amb)}
+.tl .when{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+
+.modal{position:fixed;inset:0;background:rgba(1,17,17,.5);display:flex;align-items:flex-start;justify-content:center;padding:60px 16px;z-index:20}
+.modal .box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 22px;width:100%;max-width:560px;
+   max-height:80vh;overflow:auto;box-shadow:var(--shadow)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.warn-box{background:var(--warn-bg);border:1px solid var(--warn);color:var(--warn);border-radius:8px;padding:10px 12px;font-size:13px;margin-top:10px}
+.todayhead{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;
+  flex-wrap:wrap;margin-bottom:16px}
+.tilelink{font-size:13px;text-decoration:none;color:var(--t3)}
+.tilelink:hover{color:var(--ink)}
+.exports{display:flex;gap:6px;flex-wrap:wrap}
+
+/* Today: one queue at a time */
+.swipe{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.dot{display:flex;align-items:center;gap:7px;background:none;border:1px solid var(--rule);
+  border-radius:20px;padding:5px 13px;font:inherit;font-size:12.5px;color:var(--t3);cursor:pointer}
+.dot:hover{border-color:var(--rule2);color:var(--ink)}
+.dot.on{border-color:var(--ink);color:var(--ink);font-weight:600}
+.dot b{font-size:11px;background:var(--surface-2);border-radius:10px;padding:1px 7px}
+.deck{padding-top:14px}
+.deckhead{display:grid;grid-template-columns:36px 1fr 36px;align-items:center;gap:10px;margin-bottom:6px}
+.deckhead .counter{text-align:center;font-size:12px;color:var(--t4);letter-spacing:.4px}
+.deckhead .nav:disabled{opacity:.3;cursor:default}
+.one{padding:22px 4px 20px;cursor:pointer;border-radius:6px}
+.one:hover{background:var(--surface-2)}
+.one h2{margin:0;font-size:24px;font-weight:600;letter-spacing:-.2px}
+.one .oneline{margin:6px 0 0;font-size:15px}
+.one .onemeta{margin:4px 0 0;font-size:12.5px;color:var(--t3)}
+.oneact{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+  border-top:1px solid var(--rule);padding-top:14px}
+.tick-big{font-size:30px;color:var(--ok,#0a7d3c);margin-bottom:8px}
+.deckhead .nav{background:none;border:1px solid var(--rule);border-radius:50%;width:32px;height:32px;
+  font-size:19px;line-height:1;color:var(--t3);cursor:pointer}
+.deckhead .nav:hover{border-color:var(--rule2);color:var(--ink)}
+.deckfoot{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:13px}
+.done{padding:26px 0;text-align:center;color:var(--t3);font-size:14px}
+
+/* CAR */
+.cartable td{vertical-align:top}
+.sub2{font-size:11.5px;color:var(--t4);margin-top:2px}
+.sub2.late{color:var(--late,#b4483c);font-weight:600}
+tr.aged td:first-child{box-shadow:inset 3px 0 0 var(--amb,#d98a1e)}
+.fv{display:inline-block;font-size:12.5px}
+.fv.extracted{border-bottom:1px dotted var(--rule2);color:var(--t3)}
+.fv.confirmed,.fv.provider,.fv.operator,.fv.typed{color:var(--ink)}
+.act{white-space:nowrap}
+.tick{display:flex;gap:9px;align-items:flex-start;font-size:13px;padding:5px 0;cursor:pointer}
+.tick input{width:auto;margin-top:2px}
+.footnote{font-size:11.5px;color:var(--t4);margin-top:12px;cursor:help;
+  border-bottom:1px dotted var(--rule2);display:inline-block;padding-bottom:1px}
+
+/* Reports */
+.frow{display:grid;grid-template-columns:200px 1fr 46px;gap:12px;align-items:center;
+  padding:5px 0;text-decoration:none;color:inherit;border-radius:4px}
+.frow:hover{background:var(--surface-2)}
+.frow .flabel{font-size:13px}
+.frow b{font-size:14px;text-align:right}
+
+nav a.item{gap:10px}
+.ico{width:17px;height:17px;flex:0 0 17px;opacity:.75}
+nav a.item.on .ico{opacity:1}
+nav a.item span:first-of-type{flex:1}
+.waiting{margin-top:8px}
+.wrow{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:4px 0;
+  font-size:12px;color:var(--t3);text-decoration:none}
+.wrow:hover{color:var(--ink)}
+.wrow b{font-size:12.5px}
+.wrow b.late{color:var(--late,#b4483c)}
+.wrow.big{font-size:13px;color:var(--ink)}
+.whint{font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--t4);margin-top:4px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:18px}
+.tile{display:block;text-decoration:none;color:inherit;background:var(--surface);border:1px solid var(--rule);
+  border-radius:8px;padding:14px 16px;transition:border-color .12s,transform .12s}
+.tile:hover{border-color:var(--rule2);transform:translateY(-1px)}
+.tile b{display:block;font-size:26px;line-height:1.1;font-weight:600}
+.tile span{display:block;font-size:12px;color:var(--t3);margin-top:3px}
+.tile.alarm b{color:var(--late,#b4483c)}
+.msg{margin-top:10px;padding:10px 12px;background:var(--surface-2);border-left:3px solid var(--rule2);
+  border-radius:4px;font-size:13.5px;white-space:pre-wrap}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chipf{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;padding:3px 8px;border-radius:12px;
+  background:var(--surface-2)}
+.chipf i{font-style:normal;opacity:.6;font-size:10px;text-transform:uppercase;letter-spacing:.4px}
+.card.aged{border-left:3px solid var(--amb,#d98a1e)}
+.diff{margin-top:4px;font-size:12px}
+.diff .was{text-decoration:line-through;color:var(--t3)}
+.diff .now{font-weight:600}
+.prov{background:var(--surface-2);border-left:3px solid var(--pet);border-radius:0 8px 8px 0;padding:9px 12px;font-size:12.5px;color:var(--muted);margin-bottom:14px}
+.empty{color:var(--muted);padding:26px 2px;text-align:center}
+.bar{height:10px;background:var(--surface-2);border-radius:6px;overflow:hidden}
+.bar i{display:block;height:10px;background:var(--pet)}
+.tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.tabs button{background:var(--surface);color:var(--accent-ink);border:1px solid var(--line);border-radius:8px;padding:7px 13px}
+.tabs button.on{background:var(--btn-bg);color:var(--btn-ink);border-color:var(--btn-bg)}
+.err{background:rgba(165,52,43,.10);border:1px solid rgba(165,52,43,.45);color:#8E2E26;border-radius:8px;padding:10px 12px;margin-bottom:12px}
+.simwrap{display:grid;grid-template-columns:240px 1fr;gap:16px}
+.simlist{display:flex;flex-direction:column;gap:6px}
+.simitem{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 12px;border-radius:8px;
+  background:var(--card);border:1px solid var(--line);text-decoration:none;color:var(--ink);font-size:13.5px}
+.simitem.on{border-color:var(--accent-ink);box-shadow:var(--lift-hover)}
+.flow{display:flex;flex-direction:column}
+.fstep{position:relative;padding:8px 0 8px 22px;border-left:2px solid var(--rule);font-size:13.5px}
+.fstep:before{content:'';position:absolute;left:-5px;top:14px;width:8px;height:8px;border-radius:50%;background:var(--pet)}
+.fstep.bad{border-left-color:var(--amb)}
+.fstep.bad:before{background:var(--amb)}
+.fstep b{display:inline-block;min-width:130px;text-transform:uppercase;font-size:11px;letter-spacing:.5px;color:var(--muted)}
+pre{background:var(--surface-2);border-radius:8px;padding:10px;overflow:auto;font-size:12px;max-height:320px;white-space:pre-wrap}
+code{font-size:12.5px}
+.trace{border-left:3px solid var(--brand-blue);padding-left:10px;margin:4px 0;font-size:13.5px}
+.trace.bad{border-left-color:var(--late)}
+@media(max-width:900px){.simwrap{grid-template-columns:1fr}}
+@media (prefers-reduced-motion: reduce){*{transition:none !important;animation:none !important}}
+@media(max-width:900px){.shell{grid-template-columns:1fr}.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <nav>
+    <div class="brand">Novikontas<br>College CRM<span id="ver">virtual prototype</span></div>
+    <div class="navgroup">Daily work</div>
+    <a class="item" href="#/today" data-icon="today"><span>Today</span><span class="pill late" id="navOverdue" style="display:none"></span></a>
+    <a class="item" href="#/car" data-icon="car" title="Channel Automation Results: everything the channels brought in"><span>CAR</span><span class="pill warn" id="navIntake" style="display:none"></span></a>
+    <a class="item" href="#/people" data-icon="people"><span>People</span></a>
+    <a class="item" href="#/followup" data-icon="clock"><span>Follow-ups</span></a>
+    <a class="item" href="#/reports" data-icon="chart"><span>Reports</span></a>
+    <div class="add"><button class="btn" style="width:100%" onclick="openAdd()">+ Add person</button></div>
+
+    <div class="navsplit"></div>
+    <div class="themes" style="border-top:none;padding-top:0">
+      <label for="actor">Acting as <span class="pill warn" style="font-size:8.5px">NO LOGIN</span></label>
+      <select id="actor" onchange="setActor(this.value)"></select>
+      <div id="waiting" class="waiting"></div>
+    </div>
+
+    <div class="navsplit"></div>
+    <div class="navgroup demo">DEV CONTROL</div>
+    <a class="item demo" href="#/integrations" data-icon="plug"><span>Channels</span></a>
+    <a class="item demo" href="#/history" data-icon="history"><span>History</span></a>
+    <a class="item demo" href="#/privacy" data-icon="shield"><span>Privacy</span></a>
+    <div class="add" style="margin-top:8px"><button class="btn ghost" style="width:100%" onclick="loadScenario()">Load demo data</button></div>
+    <div class="add" style="margin-top:6px"><button class="btn ghost" style="width:100%" onclick="resetDb()">Clear everything</button></div>
+    <div class="themes" style="border-top:none;padding-top:0;margin-top:10px"><label for="theme">Theme</label>
+      <select id="theme" onchange="setTheme(this.value)">
+        <option value="light">Light</option><option value="dark">Dark</option>
+      </select></div>
+  </nav>
+  <main id="view"><div class="empty">Loading...</div></main>
+</div>
+<div id="modal"></div>
+
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+
+// One small line drawing per tab. Plain shapes, no brand, no decoration.
+const svg = (d) => `<svg class="ico" viewBox="0 0 20 20" fill="none" stroke="currentColor"
+  stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+const ICON = {
+  today: svg('<rect x="3" y="4.5" width="14" height="12" rx="2"/><path d="M3 8h14M7 3v3M13 3v3"/>'),
+  car: svg('<path d="M3 12.5h14M4.5 12.5V10l1.8-3.2a1.5 1.5 0 0 1 1.3-.8h4.8a1.5 1.5 0 0 1 1.3.8L15.5 10v2.5"/><circle cx="6.5" cy="13.9" r="1.3"/><circle cx="13.5" cy="13.9" r="1.3"/>'),
+  people: svg('<circle cx="7.5" cy="7" r="2.6"/><path d="M3 16c0-2.5 2-4.2 4.5-4.2S12 13.5 12 16"/><path d="M13.6 6.6a2.4 2.4 0 0 1 0 4.6M15 15.8c0-1.6-.6-2.8-1.5-3.6"/>'),
+  clock: svg('<circle cx="10" cy="10" r="7"/><path d="M10 6v4.3l2.8 1.7"/>'),
+  chart: svg('<path d="M3.5 16.5h13"/><rect x="5" y="9" width="2.6" height="5.5" rx=".6"/><rect x="8.9" y="5.5" width="2.6" height="9" rx=".6"/><rect x="12.8" y="11" width="2.6" height="3.5" rx=".6"/>'),
+  plug: svg('<path d="M7 3v4M13 3v4"/><path d="M5 7h10v3a5 5 0 0 1-10 0z"/><path d="M10 15v2.5"/>'),
+  history: svg('<path d="M3.5 10a6.5 6.5 0 1 0 2-4.7"/><path d="M3 4.5V8h3.5"/><path d="M10 6.5V10l2.5 1.5"/>'),
+  shield: svg('<path d="M10 3l5.5 2.2v4.3c0 3.2-2.2 6-5.5 7-3.3-1-5.5-3.8-5.5-7V5.2z"/><path d="M7.8 10l1.6 1.6 3-3.2"/>'),
+};
+function drawIcons() {
+  document.querySelectorAll('nav a.item[data-icon]').forEach(a => {
+    if (a.querySelector('svg')) return;
+    a.insertAdjacentHTML('afterbegin', ICON[a.dataset.icon] || '');
+  });
+}
+
+// Notifications. Not a bell that pings: a short line saying what is waiting for
+// whoever you are, and for an admin, what is waiting for everybody.
+async function drawWaiting() {
+  const box = document.querySelector('#waiting');
+  if (!box) return;
+  try {
+    const w = await api('/api/waiting?as=' + encodeURIComponent(ACTOR));
+    if (w.isAdmin) {
+      box.innerHTML = w.byRole.map(r => `<a href="${r.role === 'Marketing' ? '#/car' : '#/today'}"
+        class="wrow"><span>${esc(r.role)}</span><b class="${r.overdue || r.aged ? 'late' : ''}">${r.total}</b></a>`).join('')
+        + '<div class="whint">waiting, per role</div>';
+    } else if (w.mine.total) {
+      box.innerHTML = `<a href="${w.mine.intake ? '#/car' : '#/today'}" class="wrow big">
+        <span>waiting for you</span><b class="${w.mine.overdue || w.mine.aged ? 'late' : ''}">${w.mine.total}</b></a>`;
+    } else {
+      box.innerHTML = '<div class="whint">nothing waiting for you</div>';
+    }
+  } catch { box.innerHTML = ''; }
+}
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+// Times are stored as UTC instants and shown where the college actually is, so
+// the 09:00 ageing rule reads as 09:00 on the screen and not as 06:00.
+const TZ = 'Europe/Riga';
+const fmtDate = (s) => {
+  if (!s) return '';
+  try { return new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(s)); }
+  catch { return String(s).slice(0, 10); }
+};
+const fmtDateTime = (s) => {
+  if (!s) return '';
+  try {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit',
+      day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(s)).replace(',', '');
+  } catch { return String(s).slice(0, 16).replace('T', ' '); }
+};
+const todayStr = () => new Date().toISOString().slice(0, 10);
+let CFG = {}, STATE = { q: '', status: '', programme: '', owner: '', source: '', due: '', sort: 'created_at', dir: 'desc', fuTab: 'overdue' };
+
+// DEV CONTROL state. Lost when the CAR screen was rebuilt, which broke the
+// Channels screen with "SIM is not defined" - caught by the final visual walk.
+let SIM = null, SIMSEL = null, LASTRUN = {};
+async function loadSim() { SIM = await api('/api/sim/providers'); }
+
+const api = async (path, opts) => {
+  const r = await fetch(path, opts);
+  if (!r.ok) { const e = await r.json().catch(() => ({ error: r.statusText })); throw new Error(e.error || 'request failed'); }
+  return r.json();
+};
+const post = (path, data) => api(path, { method: 'POST',
+  headers: { 'content-type': 'application/json', 'x-acting-as': ACTOR },
+  body: JSON.stringify({ by: ACTOR, ...(data || {}) }) });
+
+const STAGE_PILL = { 'New': 'accent', 'Contacted': 'accent', 'Follow-up': 'warn', 'Application': 'warn',
+  'Contract': 'ok', 'Admitted': 'ok', 'Not proceeding': 'calm' };
+const stageChip = (s) => `<span class="pill ${STAGE_PILL[s] || 'calm'}">${esc(s)}</span>`;
+function setTheme(t) { document.documentElement.setAttribute('data-theme', t); try { localStorage.setItem('crmTheme', t); } catch {} }
+const channelLabel = (c) => (CFG.channels && CFG.channels[c]) || c || '-';
+
+// -------------------------------------------------------------- acting as --
+// There is no authentication. This is a setting, and every screen that depends
+// on it says so out loud rather than looking like a permission check.
+let ACTOR = 'Admissions';
+const isAdmin = () => (CFG.admins || []).includes(ACTOR);
+function setActor(who) {
+  ACTOR = who;
+  try { localStorage.setItem('crmActor', who); } catch {}
+  const sel = document.querySelector('#actor');
+  if (sel) sel.value = who;
+  route();
+}
+function drawActorPicker() {
+  const sel = document.querySelector('#actor');
+  if (!sel) return;
+  // A ROLE is not a PERSON. You act as a person; a record is owned by a role.
+  const users = (CFG.users || []).map(u =>
+    `<option value="${esc(u.name)}">${esc(u.name)} - ${esc(u.title || u.role)}</option>`).join('');
+  const admins = (CFG.admins || []).map(a => `<option value="${esc(a)}">${esc(a)} - admin</option>`).join('');
+  sel.innerHTML = `<optgroup label="CRM users">${users}</optgroup><optgroup label="Admins">${admins}</optgroup>`;
+  sel.value = ACTOR;
+}
+const myRole = () => ((CFG.users || []).find(u => u.name === ACTOR) || {}).role || null;
+const withActor = (data) => ({ ...(data || {}), by: ACTOR });
+const dueClass = (d) => {
+  if (!d) return '';
+  const day = todayStr();
+  return d.slice(0, 10) < day ? 'over' : d.slice(0, 10) === day ? 'today' : '';
+};
+const dueText = (d) => {
+  if (!d) return '<span class="pill calm">none</span>';
+  const diff = Math.round((Date.parse(d.slice(0,10)) - Date.parse(todayStr())) / 86400000);
+  const label = diff === 0 ? 'today' : diff < 0 ? `${-diff} d. overdue` : `in ${diff} d.`;
+  return `<span class="due ${dueClass(d)}">${fmtDate(d)} <span style="font-weight:400">(${label})</span></span>`;
+};
+
+
+// ---------------------------------------------------------------- routing --
+async function route() {
+  const hash = location.hash || '#/today';
+  drawIcons();
+  document.querySelectorAll('nav a.item').forEach(a => a.classList.toggle('on', a.getAttribute('href') === hash.split('/').slice(0,2).join('/')));
+  const [, page, arg] = hash.split('/');
+  try {
+    if (page === 'people') await viewPeople();
+    else if (page === 'car' || page === 'inbox') await viewInbox();
+    else if (page === 'funnel' || page === 'metrics') await viewReports();
+    else if (page === 'history') await viewHistory();
+    else if (page === 'person') await viewPerson(arg);
+    else if (page === 'followup') await viewFollowup();
+    else if (page === 'intake') await viewIntake(arg);
+    else if (page === 'opendays') { INTAKE_TAB = 'opendays'; await viewIntake('opendays'); }
+    else if (page === 'integrations') await viewIntegrations(arg);
+    else if (page === 'inspector') await viewInspector(arg);
+    else if (page === 'metrics') await viewMetrics();
+    else if (page === 'privacy') await viewPrivacy();
+    else if (page === 'reports') await viewReports();
+    else await viewToday();
+  } catch (e) {
+    $('#view').innerHTML = `<div class="err">Failed to load: ${esc(e.message)}</div>`;
+  }
+  refreshBadge();
+}
+async function refreshBadge() {
+  try {
+    const s = await api('/api/summary');
+    const el = $('#navOverdue');
+    if (s.overdue.length) { el.textContent = s.overdue.length; el.style.display = ''; } else el.style.display = 'none';
+  } catch {}
+  try {
+    const i = await api('/api/intake');
+    const el = $('#navIntake');
+    // The count is a nudge, and a nudge belongs to whoever owns the queue.
+    // Ieva can still open CAR and look - nothing is hidden - but the intake is
+    // Marketing's work and must not sit in her sidebar asking to be done.
+    const ownsIntake = myRole() === (CFG.routing || {}).unclear || (CFG.admins || []).includes(ACTOR);
+    if (i.counts.new && ownsIntake) {
+      el.textContent = i.counts.new;
+      el.className = 'pill ' + (i.counts.aged ? 'late' : 'warn');
+      el.title = i.counts.aged ? `${i.counts.aged} waiting since yesterday` : 'waiting to be looked at';
+      el.style.display = '';
+    } else el.style.display = 'none';
+  } catch {}
+  drawWaiting();
+}
+
+// ------------------------------------------------------------------ today --
+// ------------------------------------------------------------- the database --
+// Empty, real or synthetic, switched as often as a demo needs.
+// Next action is never a free text box and never optional: it comes from the
+// list, and every option drives towards a visit, an application or payment.
+function nextActionOptions(selectedLabel) {
+  const groups = CFG.nextActions || [];
+  const opts = groups.map(g => `<optgroup label="${esc(g.group)}">` +
+    g.items.map(i => `<option value="${esc(i.label)}" data-days="${i.days}" data-drives="${esc(i.drives)}"
+      ${i.label === selectedLabel ? 'selected' : ''}>${esc(i.label)}</option>`).join('') + '</optgroup>').join('');
+  return opts;
+}
+function daysForAction(label) {
+  for (const g of (CFG.nextActions || [])) for (const i of g.items) if (i.label === label) return i.days;
+  return 2;
+}
+function drivesFor(label) {
+  for (const g of (CFG.nextActions || [])) for (const i of g.items) if (i.label === label) return i.drives;
+  return null;
+}
+const DRIVES_LABEL = { visit: 'drives towards a visit', application: 'drives towards the application and documents', payment: 'drives towards payment', info: 'information' };
+function onNextActionChange(selId, dateId, hintId) {
+  const sel = document.querySelector('#' + selId);
+  const label = sel.value;
+  const d = new Date(Date.now() + daysForAction(label) * 86400000);
+  const date = document.querySelector('#' + dateId);
+  if (date) date.value = d.toISOString().slice(0, 10);
+  const hint = document.querySelector('#' + hintId);
+  if (hint) hint.textContent = DRIVES_LABEL[drivesFor(label)] || '';
+}
+
+function drawDatasetBadge(ds) {
+  const brand = document.querySelector('nav .brand');
+  if (!brand) return;
+  const old = brand.querySelector('.dataset');
+  if (old) old.remove();
+  const badge = document.createElement('div');
+  const kind = (ds && ds.dataset) || 'empty';
+  badge.className = 'dataset ' + kind;
+  badge.textContent = kind === 'real' ? 'REAL DATA - ' + ds.people + ' people'
+    : kind === 'synthetic' ? 'SYNTHETIC DATA - ' + ds.people + ' people'
+    : kind === 'demo' ? 'V1 DEMO DATA - ' + ds.people + ' people'
+    : 'EMPTY DATABASE';
+  badge.title = (ds && ds.selection) || '';
+  brand.appendChild(badge);
+  const sel = document.querySelector('#dataset');
+  if (sel && ['empty', 'real', 'synthetic'].includes(kind)) sel.value = kind;
+}
+
+async function setDataset(kind) {
+  const r = await post('/api/dataset', { kind });
+  if (r.error) return alert(r.error);
+  CFG.dataset = r.dataset; LASTRUN = {}; SIM = null;
+  drawDatasetBadge(r.dataset);
+  route();
+}
+
+async function resetDb() {
+  const r = await post('/api/reset', {});
+  CFG.dataset = r.dataset; LASTRUN = {}; SIM = null;
+  drawDatasetBadge(r.dataset);
+  route();
+}
+
+// Today is a work queue, not a dashboard. You pick which queue you are working,
+// then you go through it ONE PERSON AT A TIME. Next, previous, swipe, act.
+// Nothing else is on the screen, because everything else is somewhere else.
+let TODAY_ORDER = null;
+let TODAY_AT = 0;      // which queue
+let TODAY_ITEM = 0;    // which person inside it
+
+function todayOrder(serverOrder) {
+  if (TODAY_ORDER) return TODAY_ORDER;
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem('crmTodayOrder') || 'null'); } catch {}
+  const ok = Array.isArray(saved) && saved.length === serverOrder.length
+    && serverOrder.every(id => saved.includes(id));
+  TODAY_ORDER = ok ? saved : serverOrder.slice();
+  return TODAY_ORDER;
+}
+
+function todayPickQueue(i) {
+  TODAY_AT = i; TODAY_ITEM = 0;
+  try { localStorage.setItem('crmTodayQueue', String(i)); } catch {}
+  viewToday();
+}
+function todayStep(delta, count) {
+  if (!count) return;
+  TODAY_ITEM = (TODAY_ITEM + delta + count) % count;
+  viewToday();
+}
+
+// What this one person needs, said in one line, with one button that does it.
+function todayCard(g, item) {
+  if (g.id === 'follow_ups') {
+    return {
+      name: item.name,
+      line: item.label,
+      meta: dueText(item.due_at),
+      open: `#/person/${item.person_id}`,
+      action: `<button class="btn" onclick="event.stopPropagation();openComplete(${item.id},'${esc(item.label)}')">Mark done</button>`,
+    };
+  }
+  if (g.id === 'replies') {
+    return {
+      name: item.name,
+      line: esc(String(item.subject || 'They wrote to us')),
+      meta: `${channelLabel(item.channel || item.source_channel)} &middot; ${fmtDateTime(item.occurred_at)}`,
+      open: `#/person/${item.id}`,
+      action: `<button class="btn" onclick="event.stopPropagation();openNote('${item.id}','note')">Write what happened</button>`,
+    };
+  }
+  if (g.id === 'new_leads') {
+    return {
+      name: item.name,
+      line: item.programme ? `Wants ${esc(item.programme)}` : 'Has not said what they want yet',
+      meta: `${channelLabel(item.source_channel)} &middot; arrived ${fmtDate(item.created_at)}`,
+      open: `#/person/${item.id}`,
+      action: `<button class="btn" onclick="event.stopPropagation();openNote('${item.id}','call')">Log a call</button>`,
+    };
+  }
+  return {
+    name: item.name,
+    line: 'Nobody has planned the next step',
+    meta: `${esc(item.status || '')} &middot; ${channelLabel(item.source_channel)}`,
+    open: `#/person/${item.id}`,
+    action: `<button class="btn" onclick="event.stopPropagation();openNewTask('${item.id}')">Plan the next step</button>`,
+  };
+}
+
+async function viewToday() {
+  const t = await api('/api/today');
+  const order = todayOrder(t.order);
+  const byId = Object.fromEntries(t.groups.map(g => [g.id, g]));
+  const groups = order.map(id => byId[id]).filter(Boolean);
+
+  if (TODAY_AT === 0) {
+    try { const saved = Number(localStorage.getItem('crmTodayQueue')); if (saved >= 0 && saved < groups.length) TODAY_AT = saved; } catch {}
+  }
+  if (TODAY_AT >= groups.length) TODAY_AT = 0;
+  const g = groups[TODAY_AT];
+  const items = g.rows;
+  if (TODAY_ITEM >= items.length) TODAY_ITEM = 0;
+
+  const picker = groups.map((x, i) => `<button class="dot ${i === TODAY_AT ? 'on' : ''}"
+    onclick="todayPickQueue(${i})"><span>${esc(x.label)}</span>${x.open ? `<b>${x.open}</b>` : ''}</button>`).join('');
+
+  let body;
+  if (!items.length) {
+    body = `<div class="card deck"><div class="done">
+      <div class="tick-big">&#10003;</div>
+      ${g.done ? `All ${g.total} done today.` : 'Nothing waiting here.'}
+      <div class="sub" style="margin-top:6px">${esc(t.descriptions[g.id] || '')}</div>
+    </div></div>`;
+  } else {
+    const item = items[TODAY_ITEM];
+    const c = todayCard(g, item);
+    body = `<div class="card deck" id="deck">
+      <div class="deckhead">
+        <button class="nav" onclick="todayStep(-1,${items.length})" title="previous" ${items.length < 2 ? 'disabled' : ''}>&#8249;</button>
+        <div class="counter">${TODAY_ITEM + 1} of ${items.length}</div>
+        <button class="nav" onclick="todayStep(1,${items.length})" title="next" ${items.length < 2 ? 'disabled' : ''}>&#8250;</button>
+      </div>
+      <div class="one" onclick="location.hash='${c.open}'">
+        <h2>${esc(c.name)}</h2>
+        <p class="oneline">${c.line}</p>
+        <p class="onemeta">${c.meta}</p>
+      </div>
+      <div class="oneact">
+        ${c.action}
+        <a class="tilelink" href="${c.open}">Open the record &rarr;</a>
+      </div>
+    </div>`;
+  }
+
+  $('#view').innerHTML = `
+  <div class="todayhead">
+    <div><h1 style="margin:0">Today</h1>
+      <p class="sub" style="margin:2px 0 0">${esc(ACTOR)}${myRole() ? ' &middot; ' + esc(myRole()) : ''}</p></div>
+  </div>
+  <div class="swipe">${picker}</div>
+  ${body}`;
+
+  const deck = document.querySelector('#deck');
+  if (deck && items.length > 1) {
+    let x0 = null;
+    deck.addEventListener('touchstart', (e) => { x0 = e.changedTouches[0].clientX; }, { passive: true });
+    deck.addEventListener('touchend', (e) => {
+      if (x0 === null) return;
+      const dx = e.changedTouches[0].clientX - x0;
+      if (Math.abs(dx) > 50) todayStep(dx < 0 ? 1 : -1, items.length);
+      x0 = null;
+    }, { passive: true });
+  }
+}
+
+function funnelHtml(byStage) {
+  const map = Object.fromEntries(byStage.map(r => [r.status, r.n]));
+  const max = Math.max(1, ...byStage.map(r => r.n));
+  return (CFG.stages || []).map(st => {
+    const n = map[st.id] || 0;
+    return `<div style="display:grid;grid-template-columns:150px 1fr 40px;gap:10px;align-items:center;margin-bottom:6px">
+      <div style="font-size:13px">${esc(st.label)}</div>
+      <div class="bar"><i style="width:${Math.round(n / max * 100)}%;background:${st.colour}"></i></div>
+      <div style="font-size:13px;text-align:right">${n}</div></div>`;
+  }).join('');
+}
+
+// ----------------------------------------------------------------- people --
+async function viewPeople() {
+  const qs = new URLSearchParams({ q: STATE.q, status: STATE.status, programme: STATE.programme, owner: STATE.owner,
+    source_channel: STATE.source, due: STATE.due, sort: STATE.sort, dir: STATE.dir });
+  const data = await api('/api/people?' + qs);
+  const opt = (arr, cur) => ['<option value="">all</option>'].concat(arr.map(v => `<option ${v === cur ? 'selected' : ''}>${esc(v)}</option>`)).join('');
+  const th = (key, label) => `<th onclick="sortBy('${key}')">${label}${STATE.sort === key ? (STATE.dir === 'asc' ? ' ▲' : ' ▼') : ''}</th>`;
+  $('#view').innerHTML = `
+  <h1>People</h1><p class="sub">${data.count} records</p>
+  <div class="filters">
+    <input id="fq" placeholder="Search name, email, phone, programme, source, id" value="${esc(STATE.q)}" style="min-width:300px">
+    <select id="fstatus">${opt((CFG.stages || []).map(s => s.id), STATE.status)}</select>
+    <select id="fprog">${opt(CFG.programmes || [], STATE.programme)}</select>
+    <select id="fsource">${opt(Object.keys(CFG.channels || {}), STATE.source)}</select>
+    <select id="fdue"><option value="">due: all</option><option value="overdue" ${STATE.due==='overdue'?'selected':''}>overdue</option><option value="none" ${STATE.due==='none'?'selected':''}>without a next step</option></select>
+    <button class="btn ghost" onclick="clearFilters()">Clear</button>
+  </div>
+  <div class="card">
+  ${data.rows.length ? `<table><thead><tr>${th('name','Name')}${th('programme','Programme')}${th('source_channel','Source')}${th('status','Status')}${th('owner','Owner')}${th('last_contact_at','Last contact')}<th>Next step</th></tr></thead>
+  <tbody>${data.rows.map(r => `<tr class="row" tabindex="0" onclick="location.hash='#/person/${r.id}'">
+    <td><b>${esc(r.name)}</b><div style="color:var(--steel);font-size:12px">${esc(r.email || '')}</div></td>
+    <td>${esc(r.programme || '')}<div style="color:var(--steel);font-size:12px">${esc(r.education || '')}</div></td>
+    <td>${esc(channelLabel(r.source_channel))}<div style="color:var(--steel);font-size:12px">${esc(r.source_campaign || '')}</div></td>
+    <td>${stageChip(r.status)}</td><td>${esc(r.owner || '')}</td><td>${fmtDate(r.last_contact_at)}</td>
+    <td>${r.next_action ? esc(r.next_action) + '<br>' + dueText(r.next_action_at) : '<span class="pill calm">none</span>'}</td></tr>`).join('')}</tbody></table>`
+  : '<div class="empty">No record matches the filters. <a href="#" onclick="clearFilters();return false">Clear the filters</a></div>'}
+  </div>`;
+  $('#fq').oninput = debounce(e => { STATE.q = e.target.value; viewPeople(); }, 250);
+}
+function sortBy(k) { if (STATE.sort === k) STATE.dir = STATE.dir === 'asc' ? 'desc' : 'asc'; else { STATE.sort = k; STATE.dir = 'asc'; } viewPeople(); }
+function clearFilters() { Object.assign(STATE, { q: '', status: '', programme: '', owner: '', source: '', due: '' }); viewPeople(); }
+function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
+
+// ----------------------------------------------------------------- person --
+async function viewPerson(id) {
+  const p = await api('/api/people/' + id);
+  const openTask = p.tasks.find(t => !t.done_at);
+  const docs = p.documents.length ? p.documents.map(d => `<span class="chip" style="background:${d.state === 'received' ? '#0a7d3c' : d.state === 'expired' ? '#b06f00' : '#8b5b5b'}">${esc(d.name)}</span>`).join(' ') : '<span class="empty">no document record</span>';
+  $('#view').innerHTML = `
+  <p class="sub"><a href="#/people">&larr; People</a></p>
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+    <div>
+      <h1 style="margin-bottom:4px">${esc(p.name)} ${stageChip(p.status)}</h1>
+      <p class="sub">${esc(p.email || '')} ${p.phone ? '&middot; ' + esc(p.phone) : ''}</p>
+    </div>
+    <button class="btn sm ghost" onclick="openEdit('${p.id}')">Edit record</button>
+  </div>
+  <div class="grid2">
+    <div>
+      <div class="card">
+        <h3 style="margin:0 0 10px">Next step</h3>
+        ${openTask ? `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+          <div><b>${esc(openTask.label)}</b><div>${dueText(openTask.due_at)} &middot; ${esc(openTask.owner || '')}</div></div>
+          <div style="display:flex;gap:6px">
+            <button class="btn sm" onclick="openComplete(${openTask.id},'${esc(openTask.label)}')">Mark as done</button>
+            <button class="btn sm ghost" onclick="openReschedule(${openTask.id})">Reschedule</button>
+          </div></div>`
+        : `<div class="empty">No next step is scheduled.</div>
+           <button class="btn sm ghost" onclick="openNewTask('${p.id}')">Add an action</button>`}
+      </div>
+      <div class="card">
+        <h3 style="margin:0 0 10px">Events and conversation</h3>
+        <div style="display:flex;gap:6px;margin-bottom:12px">
+          <button class="btn sm ghost" onclick="openNote('${p.id}','call')">Log a call</button>
+          <button class="btn sm ghost" onclick="openNote('${p.id}','note')">Add a note</button>
+        </div>
+        ${p.hiddenCorrections ? `<div class="prov" style="margin-bottom:10px">${p.hiddenCorrections}
+          correction${p.hiddenCorrections === 1 ? '' : 's'} made by a colleague ${p.hiddenCorrections === 1 ? 'is' : 'are'}
+          not shown. Corrections are private to whoever made them; admins see all of them.</div>` : ''}
+        <div class="tl">${p.timeline.map(e => `<div class="ev ${esc(e.kind)}">
+          <div class="when">${fmtDateTime(e.occurred_at)} &middot; ${originChip(e.origin)} &middot; ${esc(channelLabel(e.channel) || e.kind)}${e.actor ? ' &middot; ' + esc(e.actor) : ''}</div>
+          <div><b>${esc(e.subject || '')}</b></div>${e.body && !e.field ? `<div>${esc(e.body)}</div>` : ''}
+          ${e.field ? `<div class="diff"><span class="was">${esc(e.old_value ?? '(empty)')}</span> &rarr; <span class="now">${esc(e.new_value ?? '(empty)')}</span></div>` : ''}</div>`).join('') || '<div class="empty">no events</div>'}</div>
+      </div>
+    </div>
+    <div>
+      ${p.qualification ? `<div class="card">
+        <h3 style="margin:0 0 8px">Qualification ${qualChip(p.qualification)}</h3>
+        <div class="kv"><div>Routed to</div><div><b>${esc(p.routedTo || '')}</b></div>
+          <div>Arrived on</div><div>${esc(channelLabel(p.first_channel || p.source_channel))}</div></div>
+        ${p.handoverGap ? `<div class="warn-box" style="margin-top:10px">
+          <b>Handover gap.</b> ${esc(p.handoverGap.problem)}<br>${esc(p.handoverGap.action)}</div>` : ''}
+        ${p.sis_handoff_at ? `<div class="prov" style="margin-top:10px">Handed to the SIS on
+          ${fmtDate(p.sis_handoff_at)}. The CRM journey ends here.</div>`
+          : p.status === 'Admitted' ? `<button class="btn sm ghost" style="margin-top:10px"
+            onclick="doSisHandoff('${p.id}')">Hand over to SIS</button>` : ''}
+      </div>` : ''}
+      ${(p.fields || []).length ? `<div class="card">
+        <h3 style="margin:0 0 8px">What we know</h3>
+        <div class="chips">${p.fields.map(fieldChip).join('')}</div>
+        ${(p.missingInfo || []).length ? `<div style="margin-top:10px;font-size:13px"><b>Still to find out:</b>
+          <span style="color:var(--steel)">${p.missingInfo.map(esc).join(', ')}</span></div>` : ''}
+        <div class="prov" style="margin-top:10px">A dashed chip is a machine suggestion nobody confirmed.
+          It is not counted anywhere.</div>
+      </div>` : ''}
+      <div class="card">
+        <h3 style="margin:0 0 10px">Record</h3>
+        <div class="kv">
+          <div>Programme</div><div>${esc(p.programme || '-')} ${esc(p.study_form || '')}</div>
+          <div>Education</div><div>${esc(p.education || '-')}</div>
+          <div>Source</div><div>${esc(channelLabel(p.source_channel))}${p.source_campaign ? ' / ' + esc(p.source_campaign) : ''}<div style="color:var(--steel);font-size:12px">${esc(p.source_detail || '')}</div></div>
+          <div>First contact</div><div>${fmtDate(p.created_at)}</div>
+          <div>Last contact</div><div>${fmtDate(p.last_contact_at) || '-'}</div>
+          <div>Owner</div><div>${esc(p.owner || '-')}</div>
+          ${p.contract_at ? `<div>Contract</div><div>${fmtDate(p.contract_at)}</div>` : ''}
+          ${p.admitted_at ? `<div>Admitted</div><div>${fmtDate(p.admitted_at)}<div style="color:var(--steel);font-size:12px">${esc(p.student_no || '')}</div></div>` : ''}
+        </div>
+      </div>
+      <div class="card">
+        <h3 style="margin:0 0 10px">Status</h3>
+        <select id="stg" onchange="changeStatus('${p.id}', this.value)">
+          ${(CFG.stages || []).map(s => `<option ${s.id === p.status ? 'selected' : ''}>${esc(s.id)}</option>`).join('')}
+        </select>
+        <div class="prov" style="margin-top:10px">The status follows the events by itself: when a step is done, the person moves to the stage that step belongs to. Forwards, never back. It can be overwritten by hand here.<br><br>${esc(CFG.provisional?.stages || '')}</div>
+      </div>
+      <div class="card">
+        <h3 style="margin:0 0 10px">Documents</h3>${docs}
+        <div class="prov" style="margin-top:10px">${esc(CFG.provisional?.documents || '')}</div>
+      </div>
+      ${(p.simEvents || []).length ? `<div class="card"><h3 style="margin:0 0 10px">Integration events</h3>
+        ${p.simEvents.map(e => `<div class="trace ${e.status === 'ok' ? '' : 'bad'}">
+          <a href="#/inspector/${e.id}">${esc(e.channel)} &middot; ${esc(e.scenario)}</a>
+          <span class="muted"> ${esc(e.direction)} &middot; ${esc(e.decision)}</span></div>`).join('')}</div>` : ''}
+      ${p.registrations.length ? `<div class="card"><h3 style="margin:0 0 10px">Events</h3>
+        ${p.registrations.map(r => `<div>${esc(r.title)} ${fmtDate(r.held_on)} ${r.slot || ''} -
+          ${r.attended === 1 ? '<b>attended</b>' : r.attended === 0 ? 'did not attend' : 'not marked'}</div>`).join('')}</div>` : ''}
+    </div>
+  </div>`;
+}
+
+function latestConsents(rows) {
+  const seen = new Map();
+  for (const r of rows) if (!seen.has(r.purpose)) seen.set(r.purpose, r);  // rows arrive newest first
+  return [...seen.values()];
+}
+
+async function doSisHandoff(id) {
+  try { await post(`/api/people/${id}/sis`, {}); viewPerson(id); }
+  catch (e) { alert(e.message); }
+}
+
+async function changeStatus(id, status) {
+  if (status === 'Not proceeding') return openCloseReason(id);
+  await post(`/api/people/${id}/status`, { status });
+  viewPerson(id);
+}
+
+// Decision 8: nobody is closed without a reason, and "Other" is not a reason.
+function openCloseReason(id) {
+  const reasons = CFG.closedReasons || [];
+  modal('Stop working with this person', `
+    <label>Reason</label>
+    <select id="clReason" onchange="onCloseReason()">${reasons.map(r => `<option>${esc(r)}</option>`).join('')}</select>
+    <label id="clNoteLabel" style="margin-top:10px">Explanation</label>
+    <textarea id="clNote" rows="2" placeholder="What actually happened"></textarea>
+    <div id="clErr"></div>
+    <div style="margin-top:14px;display:flex;gap:8px"><button class="btn" onclick="doClose('${id}')">Save</button>
+      <button class="btn ghost" onclick="closeModal();viewPerson('${id}')">Cancel</button></div>
+    <div class="prov" style="margin-top:12px">These reasons are provisional until Admissions validates
+      them. The status only ever stops here by somebody deciding it - it never happens automatically.</div>`);
+  onCloseReason();
+}
+function onCloseReason() {
+  const needs = (CFG.closedReasonNeedsNote || []).includes(document.querySelector('#clReason').value);
+  const label = document.querySelector('#clNoteLabel');
+  if (label) label.textContent = needs ? 'Explanation (required)' : 'Explanation';
+}
+async function doClose(id) {
+  try {
+    await post(`/api/people/${id}/status`, { status: 'Not proceeding',
+      reason: $('#clReason').value, note: $('#clNote').value });
+    closeModal(); viewPerson(id);
+  } catch (e) { $('#clErr').innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+}
+
+// ---------------------------------------------------------------------- CAR --
+// Channel Automation Results. Everything the channels brought in, as a table,
+// because a stack of cards was unreadable. Obvious junk never gets here.
+const QUAL_PILL = { unclear: 'calm', lead: 'ok' };
+const qualChip = (q) => `<span class="pill ${QUAL_PILL[q] || 'calm'}">${esc(qualLabel(q))}</span>`;
+const EXPORT_LABEL = { csv: 'CSV', xlsx: 'Excel', pdf: 'PDF', gsheet: 'Google Sheets' };
+const qualLabel = (q) => ((CFG.qualification?.levels || []).find(l => l.id === q) || {}).label || q || '-';
+
+const PROV_TITLE = {
+  extracted: 'Read from the message. Nobody has confirmed it, so it is not counted anywhere.',
+  provider: 'Supplied by the channel itself.',
+  confirmed: 'A person checked this and agreed.',
+  operator: 'Typed by a person.',
+  typed: 'The person typed it themselves.',
+};
+const fieldCell = (f) => `<span class="fv ${esc(f.provenance)}" title="${esc(PROV_TITLE[f.provenance] || '')}">
+  ${esc(f.value)}</span>`;
+
+let INBOX_STATE = 'new';
+function setInboxState(v) { INBOX_STATE = v; viewInbox(); }
+
+async function viewInbox() {
+  const d = await api('/api/intake?state=' + INBOX_STATE);
+  const tab = (v, label, n) => `<button class="btn sm ${INBOX_STATE === v ? '' : 'ghost'}"
+    onclick="setInboxState('${v}')">${label}${n ? ' ' + n : ''}</button>`;
+  const val = (r, field) => {
+    const f = r.fields.find(x => x.field === field);
+    return f ? fieldCell(f) : '<span class="muted">-</span>';
+  };
+
+  const row = (r) => `<tr class="row ${r.aged ? 'aged' : ''}">
+    <td><b>${esc(r.contact_name || r.contact_handle || 'Unknown')}</b>
+      <div class="sub2">${esc(r.contact_handle || r.contact_phone || r.contact_email || '')}</div></td>
+    <td>${esc(channelLabel(r.channel))}</td>
+    <td title="${esc(r.suggestion_why || '')}">${val(r, 'interest')}</td>
+    <td>${val(r, 'education')}</td>
+    <td>${val(r, 'question')}</td>
+    <td>${fmtDateTime(r.received_at)}
+      ${r.aged ? '<div class="sub2 late" title="waiting since 09:00 yesterday">late</div>' : ''}</td>
+    ${INBOX_STATE === 'new' ? `<td class="act">
+      <button class="btn sm" onclick="openQualify(${r.id})">Look at it</button></td>`
+    : INBOX_STATE === 'qualified' ? `<td>${qualChip(r.qualification)}
+      ${r.person_id ? `<a href="#/person/${esc(r.person_id)}">open</a>` : ''}
+      <div class="sub2">${esc(r.processed_by || '')}</div></td>`
+    : `<td>${esc(r.archive_reason || '')}<div class="sub2">${esc(r.processed_by || '')}</div></td>`}
+  </tr>`;
+
+  $('#view').innerHTML = `
+  <div class="todayhead">
+    <div><h1 style="margin:0">CAR</h1>
+      <p class="sub" style="margin:2px 0 0" title="Marketing looks at these. Nothing reaches Admissions on its own.">Channel Automation Results</p></div>
+    <a class="tilelink" href="#/reports">See the numbers &rarr;</a>
+  </div>
+
+  <div class="filters">
+    ${tab('new', 'To look at', d.counts.new)}
+    ${tab('qualified', 'Done', d.counts.qualified)}
+    ${tab('archived', 'Not relevant', d.counts.archived)}
+    ${d.counts.filtered ? tab('filtered', 'Junk filtered out', d.counts.filtered) : ''}
+  </div>
+
+  <div class="card">
+  ${d.rows.length ? `<table class="cartable"><thead><tr>
+      <th>Who</th><th>Where from</th><th>Wants to study</th><th>Education</th><th>Asked about</th>
+      <th>Arrived</th><th></th></tr></thead>
+    <tbody>${d.rows.map(row).join('')}</tbody></table>`
+  : `<div class="empty">${INBOX_STATE === 'new' ? 'Nothing waiting. This queue is clear.' : 'Nothing here.'}
+     ${d.counts.new + d.counts.qualified === 0 ? '<a href="#" onclick="loadScenario();return false">Load the demo data</a>' : ''}</div>`}
+  </div>
+
+  <p class="footnote" title="A dotted value was read from the message and nobody has confirmed it, so it is not counted anywhere. Obvious sales pitches never reach this list.">
+    What the machine read is a suggestion until somebody agrees with it.</p>`;
+}
+
+async function loadIntakeDemo() { await post('/api/intake/demo', {}); route(); }
+
+async function loadScenario() {
+  const r = await post('/api/demo/scenario', {});
+  CFG.dataset = { dataset: 'demo', people: r.people };
+  LASTRUN = {}; SIM = null;
+  drawDatasetBadge(CFG.dataset);
+  location.hash = '#/car';
+  route();
+}
+
+async function openQualify(id) {
+  const d = await api('/api/intake?state=new');
+  const item = d.rows.find(r => r.id === id);
+  if (!item) return;
+  const extracted = item.fields.filter(f => f.provenance === 'extracted');
+  modal(item.contact_name || item.contact_handle || 'This contact', `
+    <div class="sub" style="margin:0 0 10px">${esc(channelLabel(item.channel))} &middot; ${fmtDateTime(item.received_at)}</div>
+    ${item.body ? `<div class="msg">${esc(item.body)}</div>` : ''}
+    ${extracted.length ? `<label style="margin-top:12px">Tick what is right</label>
+      ${extracted.map(f => `<label class="tick">
+        <input type="checkbox" class="qConfirm" value="${esc(f.field)}" checked>
+        <span><b>${esc(f.field === 'interest' ? 'wants to study' : f.field)}</b> ${esc(f.value)}</span></label>`).join('')}`
+      : '<div class="prov" style="margin-top:12px">Nothing about studying was mentioned.</div>'}
+    <label style="margin-top:12px">Note</label>
+    <textarea id="qNote" rows="2" placeholder="What did they actually want"></textarea>
+    <div id="qRoute" class="prov" style="margin-top:10px"></div>
+    <div id="qErr"></div>
+    <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" onclick="doQualify(${id})">Save</button>
+      <button class="btn ghost" onclick="openArchive(${id})">Not relevant</button>
+      <button class="btn ghost" onclick="closeModal()">Cancel</button>
+    </div>`);
+  updateRoutePreview();
+  document.querySelectorAll('.qConfirm').forEach(c => c.addEventListener('change', updateRoutePreview));
+}
+
+// The routing rule, shown as it will actually apply. Confirming an interest is
+// what sends it to Admissions, so the operator sees that before they save.
+function updateRoutePreview() {
+  const box = document.querySelector('#qRoute');
+  if (!box) return;
+  const hasInterest = [...document.querySelectorAll('.qConfirm:checked')].some(c => c.value === 'interest');
+  const level = hasInterest ? 'lead' : 'unclear';
+  const owner = (CFG.routing || {})[level];
+  box.innerHTML = hasInterest
+    ? `They told us what they want to study, so this goes to <b>${esc(owner)}</b>.`
+    : `Nobody can tell what they want yet, so this stays with <b>${esc(owner)}</b>.`;
+}
+
+async function doQualify(id) {
+  const confirmFields = [...document.querySelectorAll('.qConfirm:checked')].map(c => c.value);
+  const qualification = confirmFields.includes('interest') ? 'lead' : 'unclear';
+  try {
+    const r = await post(`/api/intake/${id}/qualify`, {
+      qualification, createPerson: true,
+      note: document.querySelector('#qNote').value, confirmFields,
+    });
+    closeModal();
+    if (r.handoverGap) alert(`${r.handoverGap.problem}\n\n${r.handoverGap.action}`);
+    viewInbox();
+  } catch (e) { $('#qErr').innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+}
+
+async function openArchive(id) {
+  const d = await api('/api/intake?state=new');
+  modal('Not relevant', `
+    <label>Why</label>
+    <select id="aReason">${(d.archiveReasons || []).map(r => `<option>${esc(r)}</option>`).join('')}</select>
+    <label style="margin-top:10px">Note</label>
+    <textarea id="aNote" rows="2"></textarea>
+    <div id="arErr"></div>
+    <div style="margin-top:14px;display:flex;gap:8px">
+      <button class="btn" onclick="doArchive(${id})">Save</button>
+      <button class="btn ghost" onclick="closeModal()">Cancel</button></div>
+    <p class="footnote" title="The contact stays in the CRM and can still be found by name.">Nothing is deleted.</p>`);
+}
+
+async function doArchive(id) {
+  try {
+    await post(`/api/intake/${id}/archive`, {
+      reason: document.querySelector('#aReason').value,
+      note: document.querySelector('#aNote').value,
+    });
+    closeModal(); viewInbox();
+  } catch (e) { $('#arErr').innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+}
+
+// --------------------------------------------------------------- followup --
+async function viewFollowup() {
+  const rows = await api('/api/tasks?scope=' + STATE.fuTab);
+  const counts = await api('/api/summary');
+  const tab = (k, label, n) => `<button class="${STATE.fuTab === k ? 'on' : ''}" onclick="STATE.fuTab='${k}';viewFollowup()">${label}${n !== undefined ? ' (' + n + ')' : ''}</button>`;
+  $('#view').innerHTML = `
+  <h1>Follow-up list</h1><p class="sub">Who needs action and when</p>
+  <div class="tabs">${tab('overdue', 'Overdue', counts.overdue.length)}${tab('today', 'Today', counts.today.length)}${tab('week', 'This week')}${tab('open', 'All open')}</div>
+  <div class="card">
+  ${rows.length ? `<table><thead><tr><th>Person</th><th>Programme</th><th>Action</th><th>Due</th><th>Owner</th><th></th></tr></thead>
+    <tbody>${rows.map(t => `<tr class="row" tabindex="0" onclick="location.hash='#/person/${t.person_id}'">
+      <td><b>${esc(t.name)}</b><div style="color:var(--steel);font-size:12px">${esc(t.phone || '')}</div></td>
+      <td>${esc(t.programme || '')}<div>${stageChip(t.status)}</div></td>
+      <td>${esc(t.label)}</td><td>${dueText(t.due_at)}</td><td>${esc(t.owner || '')}</td>
+      <td onclick="event.stopPropagation()" style="white-space:nowrap">
+        <button class="btn sm" onclick="openComplete(${t.id},'${esc(t.label)}')">Complete</button>
+        <button class="btn sm ghost" onclick="openReschedule(${t.id})">Reschedule</button></td></tr>`).join('')}</tbody></table>`
+  : '<div class="empty">Nothing is waiting in this view.</div>'}
+  </div>`;
+}
+
+// ----------------------------------------------------------------- intake --
+let INTAKE_TAB = 'overview';
+async function viewIntake(arg) {
+  if (arg === 'opendays' || arg === 'overview') INTAKE_TAB = arg;
+  if (INTAKE_TAB === 'opendays') return viewOpenDaysInsideChannels();
+  const d = await api('/api/intake');
+  const max = Math.max(1, ...d.byChannel.map(c => c.n));
+  $('#view').innerHTML = `
+  <h1>Channels</h1><p class="sub">Where people come from and what has arrived</p>
+  ${intakeTabs()}
+  <div class="card">
+    <h3 style="margin:0 0 10px">People by channel</h3>
+    ${d.byChannel.map(c => `<div style="display:grid;grid-template-columns:150px 1fr 110px;gap:10px;align-items:center;margin-bottom:6px">
+      <div style="font-size:13px">${esc(channelLabel(c.channel))}</div>
+      <div class="bar"><i style="width:${Math.round(c.n / max * 100)}%"></i></div>
+      <div style="font-size:13px;text-align:right">${c.n} &middot; admitted ${c.admitted}</div></div>`).join('')}
+  </div>
+  <div class="card">
+    <h3 style="margin:0 0 10px">Incoming events</h3>
+    <table><thead><tr><th>Time</th><th>Channel</th><th>Person</th><th>Event</th><th>Status</th></tr></thead>
+    <tbody>${d.rows.map(r => `<tr class="row" tabindex="0" onclick="location.hash='#/person/${r.person_id}'">
+      <td>${fmtDateTime(r.occurred_at)}</td><td>${esc(channelLabel(r.channel))}</td>
+      <td>${esc(r.name)}</td><td>${esc(r.subject || '')}<div style="color:var(--steel);font-size:12px">${esc((r.body || '').slice(0, 70))}</div></td>
+      <td>${stageChip(r.status)}</td></tr>`).join('')}</tbody></table>
+  </div>
+  <div class="prov">In the prototype these events are synthetic. The real channels are documented and tested separately (channel-spike), but are not connected yet.</div>`;
+}
+
+// ----------------------------------------------------------------- events --
+function intakeTabs() {
+  const tab = (id, label) => `<button class="${INTAKE_TAB === id ? 'on' : ''}" onclick="location.hash='#/intake/${id}'">${label}</button>`;
+  return `<div class="tabs">${tab('overview', 'Overview')}${tab('opendays', 'Open days')}</div>`;
+}
+
+async function viewOpenDaysInsideChannels() {
+  const days = await api('/api/opendays');
+  $('#view').innerHTML = `<h1>Channels</h1><p class="sub">An open day is one of the channels: a visitor lands in the same system</p>
+  ${intakeTabs()}
+  ${days.map(d => `<div class="card">
+    <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px">
+      <div><h3 style="margin:0">${esc(d.title)}</h3><div class="sub">${fmtDate(d.held_on)} &middot; ${esc(d.place || '')}</div></div>
+      <div style="text-align:right;font-size:13px">booked ${d.registrations.length} &middot; attended ${d.came} &middot; applications ${d.applied}</div>
+    </div>
+    ${d.registrations.length ? `<table><thead><tr><th>Time</th><th>Person</th><th>Programme</th><th>Status</th><th>Attended</th></tr></thead>
+      <tbody>${d.registrations.map(r => `<tr class="row" tabindex="0" onclick="location.hash='#/person/${r.person_id}'">
+        <td>${esc(r.slot || '')}</td><td>${esc(r.name)}</td><td>${esc(r.programme || '')}</td><td>${stageChip(r.status)}</td>
+        <td onclick="event.stopPropagation()">
+          <button class="sm ${r.attended === 1 ? '' : 'ghost'}" onclick="setAttendance(${r.id}, true)">attended</button>
+          <button class="sm ${r.attended === 0 ? '' : 'ghost'}" onclick="setAttendance(${r.id}, false)">did not attend</button>
+        </td></tr>`).join('')}</tbody></table>`
+    : '<div class="empty">Nobody has booked yet.</div>'}
+  </div>`).join('')}
+  <div class="prov">The event flow in the prototype: booking &rarr; person &rarr; attendance &rarr; follow-up. Marking "attended" creates a follow-up action 2 days later. This is a proposal, not an approved procedure.</div>`;
+}
+async function setAttendance(id, attended) { await post(`/api/registrations/${id}/attendance`, { attended }); viewOpenDaysInsideChannels(); }
+
+// ---------------------------------------------------------------- reports --
+// One screen answers "how are we doing". Funnel, Reports and Metrics were three
+// screens for one question, so they are one screen now.
+async function viewReports() {
+  const [f, m] = await Promise.all([api('/api/funnel'), api('/api/metrics/core')]);
+  const max = Math.max(1, ...f.steps.map(x => x.count));
+  const bar = (x) => `<a class="frow" href="${x.go || '#/people'}">
+    <span class="flabel">${esc(x.step)}</span>
+    <span class="bar"><i style="width:${Math.round(x.count / max * 100)}%"></i></span>
+    <b>${x.count}</b></a>`;
+
+  $('#view').innerHTML = `
+  <div class="todayhead">
+    <div><h1 style="margin:0">Reports</h1>
+      <p class="sub" style="margin:2px 0 0" title="Every number is a count of records that exist. Nothing is estimated.">How are we doing</p></div>
+    <div class="exports">
+      ${(CFG.exportFormats || []).map(fmt => `<a class="btn sm ghost" href="/api/export/funnel.${fmt}"
+        title="Download the whole report">${esc(EXPORT_LABEL[fmt] || fmt)}</a>`).join('')}
+    </div>
+  </div>
+
+  <div class="tiles">
+    <a class="tile" href="#/people"><b>${m.newLeadsThisMonth}</b><span>new people this month</span></a>
+    <a class="tile" href="#/people"><b>${m.admissionsThisMonth}</b><span>admitted this month</span></a>
+    <a class="tile ${f.agedInbound ? 'alarm' : ''}" href="#/car"><b>${f.agedInbound}</b><span>waiting since yesterday</span></a>
+    <a class="tile ${f.overdueActions ? 'alarm' : ''}" href="#/followup"><b>${f.overdueActions}</b><span>overdue</span></a>
+    <a class="tile ${f.noNextAction ? 'alarm' : ''}" href="#/people?due=none"><b>${f.noNextAction}</b><span>no next step</span></a>
+  </div>
+
+  <div class="card">
+    <h3 style="margin:0 0 12px">From first message to admitted</h3>
+    ${f.steps.map(bar).join('')}
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h3 style="margin:0 0 10px">Where people stop</h3>
+      ${f.byStage.some(x => x.people) ? `<table><thead><tr><th>Stage</th><th>People</th><th title="Nobody has planned the next step for them">No next step</th></tr></thead>
+        <tbody>${f.byStage.filter(x => x.people || x.stuck).map(x => `<tr class="row" onclick="location.hash='#/people?status=${encodeURIComponent(x.stage)}'">
+          <td>${esc(x.stage)}</td><td>${x.people}</td>
+          <td>${x.stuck ? `<span class="pill late">${x.stuck}</span>` : '0'}</td></tr>`).join('')}</tbody></table>`
+        : '<div class="empty">Nobody in the pipeline yet.</div>'}
+    </div>
+    <div class="card">
+      <h3 style="margin:0 0 10px">Where they come from</h3>
+      ${f.byChannel.length ? `<table><thead><tr><th>Channel</th><th>Contacts</th><th>Became a lead</th><th>Waiting</th></tr></thead>
+        <tbody>${f.byChannel.map(c => `<tr class="row" onclick="location.hash='#/people?q=${encodeURIComponent(channelLabel(c.channel))}'">
+          <td>${esc(channelLabel(c.channel))}</td><td>${c.contacts}</td><td>${c.leads}</td>
+          <td>${c.waiting ? `<span class="pill warn">${c.waiting}</span>` : '0'}</td></tr>`).join('')}</tbody></table>`
+        : '<div class="empty">No inbound yet.</div>'}
+    </div>
+  </div>
+
+  ${f.dropOut.length ? `<div class="card">
+    <h3 style="margin:0 0 10px">Why people left</h3>
+    <table><tbody>${f.dropOut.map(r => `<tr><td>${esc(r.reason)}</td><td style="text-align:right">${r.n}</td></tr>`).join('')}</tbody></table>
+  </div>` : ''}
+
+  <p class="footnote" title="${esc(m.caution)}">${esc(m.conversionOf)}. ${f.filtered ? f.filtered + ' obvious sales pitches were filtered out before anybody saw them.' : ''}</p>`;
+}
+
+async function viewIntegrations(arg) {
+  if (!SIM) await loadSim();
+  if (arg) SIMSEL = arg;
+  if (!SIMSEL) SIMSEL = SIM.channels[0].id;
+  const c = SIM.channels.find(x => x.id === SIMSEL) || SIM.channels[0];
+  const run = LASTRUN[c.id];
+  const list = SIM.channels.map(x => `<a href="#/integrations/${x.id}" class="simitem ${x.id === c.id ? 'on' : ''}">
+      <span>${esc(x.name)}</span>
+      <span class="pill ${x.status.live ? 'ok' : 'accent'}">${x.status.live ? 'LIVE' : 'SIM'}</span></a>`).join('');
+
+  const byKind = (k) => (c.scenarios || []).filter(s => s.kind === k);
+  const btns = (arr, cls) => arr.map(s => `<button class="btn sm ${cls}" onclick="runSim('${c.id}','${s.id}')">${esc(s.label)}</button>`).join(' ');
+
+  $('#view').innerHTML = `
+  <h1>Channels</h1>
+  <p class="sub">Every channel has a fictional account. A button runs a real local integration. No production system is touched.</p>
+  <div class="prov"><b>SIMULATED</b> ${esc(SIM.honesty.SIMULATED)}<br>
+    <b>PROVIDER-TESTED</b> ${esc(SIM.honesty['PROVIDER-TESTED'])}<br>
+    <b>LIVE</b> ${esc(SIM.honesty.LIVE)}</div>
+  <div class="simwrap">
+    <div class="simlist">${list}</div>
+    <div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+          <div><h3 style="margin:0">${esc(c.name)}</h3>
+            <div class="muted" style="font-size:13px">${esc(c.account.label)}</div></div>
+          <span class="pill ${c.status.live ? 'ok' : 'accent'}">${esc(c.statusLabel)}</span>
+        </div>
+        <div class="kv" style="margin-top:12px">
+          <div>Provider</div><div>${esc(c.account.provider)}</div>
+          <div>Integration type</div><div>${esc(c.connection.type)}</div>
+          <div>Endpoint</div><div><code>${esc(c.connection.endpoint)}</code></div>
+          <div>Authentication</div><div>${esc(c.connection.auth)}</div>
+          <div>Webhook / watch</div><div>${esc(c.connection.webhook)}</div>
+          <div>Verification</div><div>${esc(c.connection.verification)}</div>
+          ${Object.entries(c.account.identifiers || {}).map(([k, v]) => `<div>${esc(k)}</div><div><code>${esc(v)}</code></div>`).join('')}
+          <div>Last event</div><div>${c.lastEvent ? esc(c.lastEvent.at.slice(0, 16).replace('T', ' ')) + ' &middot; ' + esc(c.lastEvent.scenario) + ' &middot; ' + esc(c.lastEvent.decision) : '<span class="muted">not yet</span>'}</div>
+          <div>Event count</div><div>${c.eventCount}</div>
+        </div>
+        ${c.modes ? `<h3 style="margin-top:16px">Mechanisms</h3>${c.modes.map(m => `<div class="prov"><b>${esc(m.label)}</b><br>${esc(m.detail)}</div>`).join('')}` : ''}
+        ${c.config ? `<div class="warn-box"><b>Configuration:</b> collect email = ${esc(c.config.collectEmail)}. ${esc(c.config.note)}</div>` : ''}
+      </div>
+
+      <div class="card">
+        <h3>Send a test event</h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">${btns(byKind('inbound'), '')}${btns(byKind('action'), '')}</div>
+        ${byKind('check').length ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">${btns(byKind('check'), 'ghost')}</div>` : ''}
+        ${byKind('error').length ? `<div class="muted" style="font-size:12px;margin-bottom:6px">Error and security cases</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">${btns(byKind('error'), 'ghost')}</div>` : ''}
+        ${c.outbound && c.outbound.supported ? `<div style="margin-top:14px;border-top:1px solid var(--line);padding-top:12px">
+          <h3 style="margin:0 0 6px">Outbound reply</h3>
+          <div class="muted" style="font-size:13px;margin-bottom:8px">${esc(c.outbound.note)}</div>
+          <button class="btn sm" onclick="runOut('${c.id}')">${esc(c.outbound.label)}</button>
+          ${run && run.personId ? `<span class="muted" style="font-size:12px"> uz ${esc(run.personId)}</span>` : '<span class="muted" style="font-size:12px"> (run an inbound test first)</span>'}
+        </div>` : `<div class="muted" style="margin-top:12px;font-size:13px">This channel has no outbound.</div>`}
+      </div>
+
+      ${run ? runCard(run) : '<div class="card"><div class="empty">Press a test button and watch what happens.</div></div>'}
+
+      <div class="card">
+        <h3>Research: what this channel can really do</h3>
+        <div class="kv">
+          ${Object.entries({ 'Capability': c.research.capability, 'What we can receive': c.research.canReceive, 'What we can send': c.research.canSend,
+            'Authentication': c.research.auth, 'Limitations': c.research.limitations, 'Approval': c.research.approval,
+            'Cost / plan': c.research.cost, 'Privacy': c.research.privacy, 'Status 2026': c.research.status2026,
+            'What is simulated': c.research.simulated, 'What it takes to switch on': c.research.toGoLive })
+            .map(([k, v]) => `<div>${esc(k)}</div><div>${esc(v)}</div>`).join('')}
+        </div>
+        ${(c.research.sources || []).length ? `<h3 style="margin-top:12px">Official documentation</h3>
+          <ul>${c.research.sources.map(u => `<li><a href="${esc(u)}" target="_blank">${esc(u)}</a></li>`).join('')}</ul>` : ''}
+      </div>
+    </div>
+  </div>`;
+}
+
+function flowHtml(steps) {
+  return `<div class="flow">${(steps || []).map(s => `<div class="fstep ${s.ok === false ? 'bad' : ''}">
+    <b>${esc(s.step)}</b><span>${esc(s.detail)}</span></div>`).join('')}</div>`;
+}
+
+function runCard(r) {
+  const dec = r.decision || '';
+  const cls = dec === 'created' || dec.startsWith('matched') || dec === 'sent' ? 'ok'
+    : dec === 'review' ? 'warn' : r.status === 'ok' ? 'accent' : 'late';
+  return `<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+      <h3 style="margin:0">Result</h3>
+      <span class="pill ${cls}">${esc(dec)}</span>
+    </div>
+    <h3 style="margin-top:12px">The path through the system</h3>
+    ${flowHtml(r.steps)}
+    ${r.personId ? `<div style="margin-top:10px"><a href="#/person/${esc(r.personId)}">Open person ${esc(r.personId)}</a></div>` : ''}
+    ${r.crmResult && r.crmResult.note ? `<div class="prov" style="margin-top:10px">${esc(r.crmResult.note)}</div>` : ''}
+    ${r.mapping && r.mapping.length ? `<h3 style="margin-top:14px">Field mapping</h3>
+      <table><thead><tr><th>From the provider</th><th></th><th>CRM field</th><th>Value</th></tr></thead><tbody>
+      ${r.mapping.map(m => `<tr><td><code>${esc(m.from)}</code></td><td>&rarr;</td><td><code>${esc(m.to)}</code></td><td>${esc(m.value)}</td></tr>`).join('')}
+      </tbody></table>` : ''}
+    ${r.identity ? `<h3 style="margin-top:14px">Identity</h3>
+      <div class="kv"><div>Looked for</div><div>${esc(JSON.stringify(r.identity.looked))}</div>
+      <div>Found</div><div>${r.identity.hits && r.identity.hits.length ? r.identity.hits.map(h => esc(h.key + ' -> ' + h.id)).join(', ') : 'nothing'}</div>
+      <div>Rule</div><div>${esc(r.identity.rule)}</div></div>` : ''}
+    <h3 style="margin-top:14px">Raw provider message</h3>
+    <pre>${esc(JSON.stringify(r.raw, null, 2))}</pre>
+    ${r.signature ? `<div class="muted" style="font-size:12px">X-Hub-Signature-256: <code>${esc(r.signature)}</code></div>` : ''}
+    ${r.outbound ? `<h3 style="margin-top:14px">Outbound message</h3><pre>${esc(JSON.stringify(r.outbound, null, 2))}</pre>` : ''}
+    ${r.providerResult ? `<h3 style="margin-top:14px">Provider response (simulated)</h3><pre>${esc(JSON.stringify(r.providerResult, null, 2))}</pre>` : ''}
+  </div>`;
+}
+
+async function runSim(channelId, scenario) {
+  try {
+    const r = await post('/api/sim/' + channelId + '/run', { scenario });
+    LASTRUN[channelId] = r;
+    SIM = null; SIMSEL = channelId;
+    await viewIntegrations(channelId);
+  } catch (e) { alert('Failed: ' + e.message); }
+}
+
+async function runOut(channelId) {
+  const last = LASTRUN[channelId];
+  if (!last || !last.personId) return alert('Run an inbound test first, so there is something to reply to.');
+  try {
+    const r = await post('/api/sim/' + channelId + '/outbound', { personId: last.personId });
+    LASTRUN[channelId] = Object.assign({}, r, { personId: last.personId });
+    SIM = null;
+    await viewIntegrations(channelId);
+  } catch (e) { alert('Failed: ' + e.message); }
+}
+
+async function runDemo() {
+  const d = await post('/api/sim/demo', {});
+  const t = d.tally;
+  modal('Full channel demo', `
+    <p class="muted">Every channel ran with its own fictional account. No production system was touched.</p>
+    <table><tbody>
+      <tr><td>Channels tested</td><td><b>${t.channelsTested}</b></td></tr>
+      <tr><td>Incoming events</td><td>${t.inbound}</td></tr>
+      <tr><td>People created</td><td>${t.created}</td></tr>
+      <tr><td>Matched an existing person</td><td>${t.matched}</td></tr>
+      <tr><td>Duplicates ignored</td><td>${t.duplicates}</td></tr>
+      <tr><td>Sent for review</td><td>${t.review}</td></tr>
+      <tr><td>Rejected or unavailable</td><td>${t.rejected}</td></tr>
+      <tr><td>Outbound events</td><td>${t.outboundEvents}</td></tr>
+      <tr><td><b>Production systems touched</b></td><td><b>${t.productionSystemsTouched}</b></td></tr>
+    </tbody></table>
+    <div style="margin-top:12px">${d.results.map(r => `<div class="trace ${r.status === 'ok' ? '' : 'bad'}">
+      <b>${esc(r.channel)}</b> <span class="muted">${esc(r.scenario || '')}</span> - ${esc(r.decision)}
+      ${r.personId ? ` <a href="#/person/${esc(r.personId)}" onclick="closeModal()">${esc(r.personId)}</a>` : ''}</div>`).join('')}</div>
+    <div style="margin-top:14px"><button class="btn" onclick="closeModal();location.hash='#/inspector'">Open the event log</button></div>`);
+  SIM = null;
+}
+
+// ============================================================== inspector ==
+async function viewInspector(arg) {
+  const rows = await api('/api/sim/events');
+  let detail = '';
+  if (arg) {
+    const e = await api('/api/sim/events/' + arg);
+    detail = `<div class="card">
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <h3 style="margin:0">${esc(e.channel)} &middot; ${esc(e.scenario)}</h3>
+        <span class="pill ${e.status === 'ok' ? 'ok' : 'late'}">${esc(e.decision)}</span>
+      </div>
+      <div class="kv" style="margin-top:10px">
+        <div>Time</div><div>${esc(e.at)}</div>
+        <div>Provider</div><div>${esc(e.provider)} &middot; ${esc(e.account)}</div>
+        <div>Transport</div><div>${esc(e.transport || '')}</div>
+        <div>Direction</div><div>${esc(e.direction)}</div>
+        <div>External id</div><div><code>${esc(e.external_id || '')}</code></div>
+        <div>Person</div><div>${e.person ? `<a href="#/person/${esc(e.person.id)}">${esc(e.person.name)}</a>` : '<span class="muted">none</span>'}</div>
+      </div>
+      <h3 style="margin-top:14px">Path</h3>${flowHtml(e.steps)}
+      <h3 style="margin-top:14px">RAW - the provider message</h3><pre>${esc(JSON.stringify(e.raw, null, 2))}</pre>
+      <h3>NORMALIZED - our internal event</h3><pre>${esc(JSON.stringify(e.normalized, null, 2))}</pre>
+      <h3>IDENTITY</h3><pre>${esc(JSON.stringify(e.identity, null, 2))}</pre>
+      <h3>MAPPING</h3><pre>${esc(JSON.stringify(e.mapping, null, 2))}</pre>
+      <h3>DECISION</h3><pre>${esc(e.decision)} (${esc(e.status)})</pre>
+      <h3>CRM RESULT</h3><pre>${esc(JSON.stringify(e.crm_result, null, 2))}</pre>
+      ${e.outbound ? `<h3>OUTBOUND</h3><pre>${esc(JSON.stringify(e.outbound, null, 2))}</pre>` : ''}
+      ${e.provider_result ? `<h3>PROVIDER RESULT</h3><pre>${esc(JSON.stringify(e.provider_result, null, 2))}</pre>` : ''}
+      <h3>AUDIT</h3><pre>${esc(JSON.stringify(e.audit, null, 2))}</pre>
+    </div>`;
+  }
+  $('#view').innerHTML = `
+  <h1>Event log</h1><p class="sub">Every test, inbound and outbound, with the full record</p>
+  ${detail}
+  <div class="card">
+  ${rows.length ? `<table><thead><tr><th>Time</th><th>Channel</th><th>Provider</th><th>Event</th><th>Direction</th><th>Identity</th><th>Result</th><th>Status</th></tr></thead>
+    <tbody>${rows.map(r => `<tr class="row" tabindex="0" onclick="location.hash='#/inspector/${r.id}'">
+      <td>${esc(r.at.slice(0, 16).replace('T', ' '))}</td><td>${esc(r.channel)}</td><td>${esc(r.provider)}</td>
+      <td>${esc(r.scenario)}</td><td>${esc(r.direction)}</td>
+      <td>${r.person_name ? esc(r.person_name) : '<span class="muted">-</span>'}</td>
+      <td>${esc(r.decision)}</td>
+      <td><span class="pill ${r.status === 'ok' ? 'ok' : r.status === 'refused' ? 'warn' : 'late'}">${esc(r.status)}</span></td></tr>`).join('')}</tbody></table>`
+  : '<div class="empty">No test yet. Go to Integrations and press a button.</div>'}
+  </div>`;
+}
+
+// ================================================================ metrics ==
+async function viewMetrics() {
+  const m = await api('/api/metrics');
+  const max = Math.max(1, ...m.bySource.map(x => x.n));
+  $('#view').innerHTML = `
+  <h1>Metrics and attribution</h1><p class="sub">What the CRM knows and what the platforms know</p>
+  <div class="grid2">
+    <div class="card"><h3>The CRM knows</h3><ul>${m.crmKnows.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>
+    <div class="card"><h3>The platform knows</h3><ul>${m.platformKnows.map(x => `<li>${esc(x)}</li>`).join('')}</ul>
+      <div class="prov">${esc(m.returnPath.note)}</div></div>
+  </div>
+  <div class="card">
+    <h3>Sources, campaigns and admissions</h3>
+    ${m.bySource.map(s => `<div style="display:grid;grid-template-columns:140px 1fr 200px;gap:10px;align-items:center;margin-bottom:6px">
+      <div style="font-size:13px">${esc(s.channel)}</div><div class="bar"><i style="width:${Math.round(s.n / max * 100)}%"></i></div>
+      <div style="font-size:13px;text-align:right">${s.n} people &middot; ${s.withCampaign} with campaign &middot; ${s.admitted} admitted</div></div>`).join('')}
+  </div>
+  <div class="card">
+    <h3>The path back to the platform</h3>
+    <div class="kv">
+      <div>Google</div><div>${esc(m.returnPath.google)}</div>
+      <div>Meta</div><div>${esc(m.returnPath.meta)}</div>
+      <div>Mailchimp</div><div>${esc(m.returnPath.mailchimp)}</div>
+    </div>
+    <div class="warn-box">The prototype sends nothing anywhere. This is research into what would have to be built if we want the platform to learn about an admission.</div>
+  </div>`;
+}
+
+// ================================================================ privacy ==
+async function viewPrivacy() {
+  const d = await api('/api/consent');
+  const byPurpose = {};
+  for (const r of d.summary) { (byPurpose[r.purpose] = byPurpose[r.purpose] || []).push(r); }
+  $('#view').innerHTML = `
+  <h1>Data and consent</h1><p class="sub">What is a technical requirement, what is provider policy and what is a legal consideration. This is not legal advice.</p>
+  <div class="card">
+    <h3>Consent state in the prototype</h3>
+    ${Object.keys(byPurpose).length ? Object.entries(byPurpose).map(([purpose, rows]) => `<div style="margin-bottom:8px">
+      <b>${esc(purpose)}</b>: ${rows.map(r => esc(r.state) + ' ' + r.n).join(' &middot; ')}</div>`).join('')
+      : '<div class="empty">No records yet. Run an integration test.</div>'}
+  </div>
+  <div class="card">
+    <h3>Purposes and basis</h3>
+    <table><thead><tr><th>Purpose</th><th>Possible basis</th><th>Note</th></tr></thead><tbody>
+    ${d.purposes.map(p => `<tr><td>${esc(p.label)}</td><td>${esc(p.basisOptions.join(', '))}</td><td>${esc(p.note)}</td></tr>`).join('')}
+    </tbody></table>
+    <div class="prov">GDPR does not equal consent. The basis depends on the purpose, and this prototype does not choose it for you. Where the basis is consent, it must be freely given, specific, informed and unambiguous, and as easy to withdraw as it was to give.</div>
+  </div>
+  <div class="card">
+    <h3>Three different things</h3>
+    <div class="kv">
+      <div>TECHNICAL REQUIREMENT</div><div>The Meta webhook signature, renewing the Gmail watch every 7 days, the Mailchimp GET check. Without them the integration does not work.</div>
+      <div>PROVIDER POLICY</div><div>Meta App Review requires a public privacy policy and a deletion path. Google consent mode expects the ad_user_data and ad_personalization signals for EEA traffic. Mailchimp webhooks require a Standard or Premium plan.</div>
+      <div>LEGAL CONSIDERATION</div><div>Data minimisation, purpose limitation, transparency, the basis, withdrawal, the retention period, deletion, access and correction, audit trails, processors, international transfers, security. They have to be decided with whoever answers for the data.</div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Recent consent records</h3>
+    ${d.recent.length ? `<table><thead><tr><th>Time</th><th>Person</th><th>Purpose</th><th>State</th><th>Basis</th><th>Source</th></tr></thead>
+      <tbody>${d.recent.map(r => `<tr><td>${esc(r.recorded_at.slice(0, 16).replace('T', ' '))}</td><td>${esc(r.name)}</td>
+      <td>${esc(r.purpose)}</td><td><span class="pill ${r.state === 'given' ? 'ok' : r.state === 'withdrawn' ? 'late' : 'calm'}">${esc(r.state)}</span></td>
+      <td>${esc(r.basis || '')}</td><td>${esc(r.source || '')}</td></tr>`).join('')}</tbody></table>`
+      : '<div class="empty">No records yet.</div>'}
+  </div>`;
+}
+
+// ----------------------------------------------------------------- modals --
+function closeModal() { $('#modal').innerHTML = ''; }
+function modal(title, inner) {
+  $('#modal').innerHTML = `<div class="modal" onclick="if(event.target===this)closeModal()"><div class="box">
+    <div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">${esc(title)}</h3>
+    <button class="btn sm ghost" onclick="closeModal()">Close</button></div>${inner}</div></div>`;
+}
+
+// ----------------------------------------------------------- edit a person --
+// Backlog 9. The locked fields are shown, greyed, with the reason - so the rule
+// is visible on the screen instead of living only in the server.
+const EDIT_FIELDS = [
+  ['name', 'Full name', 'text'],
+  ['email', 'Email', 'text'],
+  ['phone', 'Phone', 'text'],
+  ['programme', 'Programme', 'programme'],
+  ['study_form', 'Study form', 'studyForm'],
+  ['education', 'Education', 'education'],
+  ['owner', 'Owner', 'owner'],
+  ['notes', 'Notes', 'textarea'],
+];
+
+function selectFor(kind, value) {
+  const list = kind === 'programme' ? (CFG.programmes || [])
+    : kind === 'studyForm' ? (CFG.studyForms || [])
+    : kind === 'education' ? (CFG.education || [])
+    : (CFG.owners || []);
+  return ['<option value="">-</option>'].concat(list.map(v =>
+    `<option ${String(value || '') === v ? 'selected' : ''}>${esc(v)}</option>`)).join('');
+}
+
+async function openEdit(id) {
+  const p = await api('/api/people/' + id);
+  const policy = await api('/api/people/fields');
+  const row = ([key, label, kind]) => {
+    const v = p[key] == null ? '' : String(p[key]);
+    const input = kind === 'textarea'
+      ? `<textarea id="e_${key}" rows="2">${esc(v)}</textarea>`
+      : kind === 'text'
+        ? `<input id="e_${key}" value="${esc(v)}">`
+        : `<select id="e_${key}">${selectFor(kind, v)}</select>`;
+    return `<div><label>${esc(label)}</label>${input}</div>`;
+  };
+  const locked = Object.entries(policy.immutable).filter(([k]) =>
+    ['source_channel', 'source_campaign', 'created_at'].includes(k));
+  modal('Edit record', `
+    <div class="grid2">${EDIT_FIELDS.map(row).join('')}</div>
+    <div class="prov" style="margin-top:12px"><b>Locked, and not editable here:</b><br>
+      ${locked.map(([k, why]) => `${esc(k)} - ${esc(why)}`).join('<br>')}<br>
+      Owner decision of 23.09.2026. Every change below is written to the history with the old
+      value, the new value and who made it.</div>
+    <div id="eErr" class="err" style="display:none;margin-top:10px"></div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn" onclick="saveEdit('${p.id}')">Save</button>
+      <button class="btn ghost" onclick="closeModal()">Cancel</button>
+    </div>
+    <div class="prov" style="margin-top:10px">Saving as <b>${esc(ACTOR)}</b>. There is no login, so this is
+      the name the history will carry, not a verified identity.</div>`);
+}
+
+async function saveEdit(id) {
+  const patch = {};
+  for (const [key] of EDIT_FIELDS) {
+    const el = document.querySelector('#e_' + key);
+    if (el) patch[key] = el.value;
+  }
+  try {
+    const r = await post(`/api/people/${id}/edit`, patch);
+    closeModal();
+    if (!r.changes.length) return viewPerson(id);
+    viewPerson(id);
+  } catch (err) {
+    const box = $('#eErr');
+    if (box) { box.style.display = ''; box.textContent = err.message; }
+  }
+}
+
+// --------------------------------------------------------------- history --
+// Backlog 10, 11, 12: one log, automatic and manual side by side, admins only.
+const originChip = (o) => o === 'automatic'
+  ? '<span class="pill calm">automatic</span>'
+  : '<span class="pill accent">manual</span>';
+
+let HISTORY_FILTER = '';
+function setHistoryFilter(v) { HISTORY_FILTER = v; viewHistory(); }
+
+async function viewHistory() {
+  let data;
+  try {
+    data = await api('/api/history?as=' + encodeURIComponent(ACTOR)
+      + (HISTORY_FILTER ? '&origin=' + HISTORY_FILTER : ''));
+  } catch (err) {
+    return renderHistoryRefusal(err.message);
+  }
+  const mine = !data.isAdmin;
+  const line = (r, mine) => `<tr class="row" ${r.personId ? `tabindex="0" onclick="location.hash='#/person/${r.personId}'"` : ''}>
+    <td>${esc(String(r.at).slice(0, 16).replace('T', ' '))}</td>
+    <td>${originChip(r.origin)}</td>
+    <td>${esc(r.kind)}</td>
+    <td>${r.personName ? esc(r.personName) : '<span class="muted">-</span>'}</td>
+    <td><b>${esc(r.subject || '')}</b>${r.body && !r.field ? `<div style="color:var(--steel);font-size:12px">${esc(r.body)}</div>` : ''}
+      ${r.field ? `<div class="diff"><span class="was">${esc(r.oldValue ?? '(empty)')}</span> &rarr; <span class="now">${esc(r.newValue ?? '(empty)')}</span></div>` : ''}</td>
+    ${mine ? '' : `<td>${esc(r.actor || '-')}</td>`}</tr>`;
+  const tab = (v, label) => `<button class="btn sm ${HISTORY_FILTER === v ? '' : 'ghost'}" onclick="setHistoryFilter('${v}')">${label}</button>`;
+  $('#view').innerHTML = `
+  <h1>${mine ? 'My history' : 'History'}</h1>
+  <p class="sub">${mine
+    ? 'What you have done. One list, in the order it happened.'
+    : 'One log. What the system did and what somebody did by hand, in the same list.'}</p>
+  <p class="footnote" title="${esc([data.scopeNote, data.roleWarning, data.honesty].filter(Boolean).join(' '))}">
+    ${mine ? 'Only your own actions are listed.' : 'Everything, because you are an admin.'}
+    There is no login yet.</p>
+  <div class="filters">${mine ? '' : tab('', 'Everything') + ' ' + tab('manual', 'Manual only') + ' ' + tab('automatic', 'Automatic only')}
+    <span class="muted" style="align-self:center">${data.count} entries</span></div>
+  <div class="card">
+  ${data.rows.length ? `<table><thead><tr><th>Time</th><th>Origin</th><th>Kind</th><th>Person</th><th>What happened</th>${mine ? '' : '<th>By</th>'}</tr></thead>
+    <tbody>${data.rows.map((r) => line(r, mine)).join('')}</tbody></table>`
+  : `<div class="empty">${mine
+      ? 'You have not done anything yet. Add somebody, log a call, or correct a record.'
+      : 'Nothing has happened yet. Add somebody, or run the channel demo.'}</div>`}
+  </div>`;
+}
+
+function renderHistoryRefusal(message) {
+  $('#view').innerHTML = `
+  <h1>History</h1>
+  <p class="sub">One log. What the system did and what somebody did by hand, in the same list.</p>
+  <div class="card">
+    <h3 style="margin:0 0 8px">${esc(message)}</h3>
+    <p>You are acting as <b>${esc(ACTOR)}</b>. The admins are
+      <b>${esc((CFG.admins || []).join(', '))}</b>. Nobody in the admissions roles is an admin.</p>
+    <div class="prov"><b>This is not security.</b> ${esc(CFG.historyHonesty || '')}
+      The rule is shown here so it can be judged before authentication is built.</div>
+    <div class="prov" style="margin-top:10px"><b>Still open:</b> does an ordinary user see no history at all,
+      or only their own actions? Nobody has decided, so the prototype shows nothing.</div>
+  </div>`;
+}
+
+function openAdd() {
+  const d = CFG.quickAddDefaults || {};
+  ADD_CONFIRMED_NEW = false;
+  modal('Add person', `
+    <div class="row2">
+      <div><label>Full name *</label><input id="aName" oninput="checkDup()"></div>
+      <div><label>Phone</label><input id="aPhone" oninput="checkDup()"></div>
+    </div>
+    <div class="row2">
+      <div><label>Email</label><input id="aEmail" oninput="checkDup()"></div>
+      <div><label>Programme</label><select id="aProg"><option value=""></option>${(CFG.programmes||[]).map(p=>`<option>${esc(p)}</option>`).join('')}</select></div>
+    </div>
+    <div class="row2">
+      <div><label>Source</label><select id="aSource">${Object.entries(CFG.channels||{}).map(([k,v])=>`<option value="${esc(k)}" ${k===d.source_channel?'selected':''}>${esc(v)}</option>`).join('')}</select></div>
+      <div><label>Owner (a role, not a person)</label><select id="aOwner">${(CFG.owners||[]).map(o=>`<option ${o===d.owner?'selected':''}>${esc(o)}</option>`).join('')}</select></div>
+    </div>
+    <div class="row2">
+      <div><label>Next step (required)</label>
+        <select id="aNext" onchange="document.querySelector('#aDays').value = daysForAction(this.value)">${nextActionOptions(d.nextAction)}</select></div>
+      <div><label>In how many days</label><input id="aDays" type="number" value="${d.nextActionDays ?? 1}"></div>
+    </div>
+    <label>Note</label><textarea id="aNote" rows="2"></textarea>
+    <div id="dup"></div>
+    <div id="addErr"></div>
+    <div style="margin-top:14px;display:flex;gap:8px"><button class="btn" onclick="saveAdd()">Save</button>
+      <button class="btn ghost" onclick="closeModal()">Cancel</button></div>
+    <div class="prov" style="margin-top:12px">For a walk-in the source defaults to Walk-in, because no digital event arrives - a member of staff types it in.</div>`);
+}
+async function checkDup() {
+  ADD_CONFIRMED_NEW = false;
+  const q = new URLSearchParams({ name: $('#aName').value, email: $('#aEmail').value, phone: $('#aPhone').value });
+  const r = await api('/api/people/check?' + q);
+  if (!r.matches.length) { $('#dup').innerHTML = ''; return; }
+  showDuplicateBlock({ error: 'This person may already be in the CRM.', matches: r.matches });
+}
+let ADD_CONFIRMED_NEW = false;
+async function saveAdd() {
+  const payload = {
+    name: $('#aName').value.trim(), email: $('#aEmail').value.trim(), phone: $('#aPhone').value.trim(),
+    programme: $('#aProg').value, source_channel: $('#aSource').value, owner: $('#aOwner').value,
+    nextAction: $('#aNext').value, nextActionDays: Number($('#aDays').value), notes: $('#aNote').value,
+    confirmedNotDuplicate: ADD_CONFIRMED_NEW,
+  };
+  const r = await fetch('/api/people', { method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-acting-as': ACTOR },
+    body: JSON.stringify({ by: ACTOR, ...payload }) });
+  const data = await r.json().catch(() => ({ error: r.statusText }));
+  if (r.status === 409) return showDuplicateBlock(data);
+  if (!r.ok) return void ($('#addErr').innerHTML = `<div class="err">${esc(data.error || 'failed')}</div>`);
+  ADD_CONFIRMED_NEW = false;
+  closeModal(); location.hash = '#/person/' + data.id;
+}
+
+// Decision 9: the save stops. The operator opens the existing record, or says in
+// as many words that this is somebody else.
+function showDuplicateBlock(data) {
+  $('#dup').innerHTML = `<div class="warn-box">
+    <b>${esc(data.error)}</b>
+    <div style="margin-top:8px">${(data.matches || []).map(m => `
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;padding:4px 0">
+        <div><b>${esc(m.name)}</b> <span class="muted">${esc(m.email || '')} ${esc(m.phone || '')}</span>
+          <div style="font-size:12px;color:var(--steel)">same ${esc((m.matchedOn || []).join(' and '))} &middot;
+            added ${esc(String(m.created_at).slice(0, 10))} &middot; ${esc(m.status)}</div></div>
+        <button class="btn sm ghost" onclick="closeModal();location.hash='#/person/${esc(m.id)}'">Open</button>
+      </div>`).join('')}</div>
+    <div style="margin-top:10px"><label style="display:flex;gap:8px;align-items:center;font-size:13px">
+      <input type="checkbox" id="dupOk" onchange="ADD_CONFIRMED_NEW = this.checked" style="width:auto">
+      This is a different person, not the record above</label></div>
+  </div>`;
+  $('#addErr').innerHTML = '';
+}
+
+function openComplete(taskId, label) {
+  modal('Complete: ' + label, `
+    <label>Outcome</label>
+    <select id="cOut">${(CFG.callOutcomes || ['Done']).map(o => `<option>${esc(o)}</option>`).join('')}</select>
+    <label>Note</label><textarea id="cNote" rows="2"></textarea>
+    <div class="row2">
+      <div><label>Next step (required)</label>
+        <select id="cNext" onchange="onNextActionChange('cNext','cDate','cHint')">${nextActionOptions()}</select>
+        <div class="muted" id="cHint" style="font-size:12px;margin-top:4px"></div></div>
+      <div><label>When</label><input id="cDate" type="date" value="${todayStr()}"></div>
+    </div>
+    <div class="prov" style="margin-top:10px">Every person always keeps a next step. It leads either to a visit on site, or to an application in SIS with documents, and on to payment.</div>
+    <div id="cErr"></div>
+    <div style="margin-top:14px;display:flex;gap:8px"><button class="btn" onclick="doComplete(${taskId})">Save</button>
+    <button class="btn ghost" onclick="closeModal()">Cancel</button></div>`);
+  onNextActionChange('cNext', 'cDate', 'cHint');
+}
+async function doComplete(id) {
+  const nextLabel = $('#cNext').value;
+  if (!nextLabel) { $('#cErr').innerHTML = '<div class="err">The next step is required.</div>'; return; }
+  try {
+    await post(`/api/tasks/${id}/complete`, { outcome: $('#cOut').value, note: $('#cNote').value,
+      nextLabel, nextDate: $('#cDate').value });
+    closeModal(); route();
+  } catch (e) { $('#cErr').innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+}
+function openReschedule(id) {
+  modal('Reschedule the action', `<label>New date</label><input id="rDate" type="date" value="${todayStr()}">
+    <div style="margin-top:14px;display:flex;gap:8px"><button class="btn" onclick="doReschedule(${id})">Reschedule</button>
+    <button class="btn ghost" onclick="closeModal()">Cancel</button></div>`);
+}
+async function doReschedule(id) { await post(`/api/tasks/${id}/reschedule`, { due: $('#rDate').value }); closeModal(); route(); }
+
+function openNewTask(personId) {
+  modal('Add an action', `<label>Next step</label>
+    <select id="tLabel" onchange="onNextActionChange('tLabel','tDate','tHint')">${nextActionOptions()}</select>
+    <div class="muted" id="tHint" style="font-size:12px;margin-top:4px"></div>
+    <label>Due</label><input id="tDate" type="date" value="${todayStr()}">
+    <div style="margin-top:14px;display:flex;gap:8px"><button class="btn" onclick="doNewTask('${personId}')">Save</button>
+    <button class="btn ghost" onclick="closeModal()">Cancel</button></div>`);
+}
+async function doNewTask(personId) {
+  await post(`/api/people/${personId}/task`, { label: $('#tLabel').value, due: $('#tDate').value });
+  closeModal(); viewPerson(personId);
+}
+
+// A note carries a type so it can be read and reported on, and it stays in the
+// same single history as everything else. No separate note screens.
+function openNote(personId, kind) {
+  const types = CFG.noteTypes || [{ id: 'other', label: 'Note' }];
+  const preset = kind === 'call' ? 'call' : 'other';
+  modal(kind === 'call' ? 'Log a call' : 'Add a note', `
+    <div class="row2">
+      <div><label>Type</label><select id="nType" onchange="onNoteType()">
+        ${types.map(t => `<option value="${esc(t.id)}" ${t.id === preset ? 'selected' : ''}>${esc(t.label)}</option>`).join('')}
+      </select></div>
+      <div id="nOutcomeBox"><label>Outcome</label><select id="nOutcome">
+        ${(CFG.callOutcomes || []).map(o => `<option>${esc(o)}</option>`).join('')}</select></div>
+    </div>
+    <label>What happened</label><textarea id="nBody" rows="3" placeholder="What did they want, what was discussed, what happens next"></textarea>
+    <div style="margin-top:14px;display:flex;gap:8px"><button class="btn" onclick="doNote('${personId}')">Save</button>
+    <button class="btn ghost" onclick="closeModal()">Cancel</button></div>
+    <div class="prov" style="margin-top:12px">Saved as <b>${esc(ACTOR)}</b>. Every note type lands in the
+      same history for this person - the type is a label, not a separate place.</div>`);
+  onNoteType();
+}
+function onNoteType() {
+  const t = document.querySelector('#nType');
+  const box = document.querySelector('#nOutcomeBox');
+  if (t && box) box.style.display = t.value === 'call' ? '' : 'none';
+}
+async function doNote(personId) {
+  const type = $('#nType').value;
+  const types = CFG.noteTypes || [];
+  const label = (types.find(t => t.id === type) || {}).label || 'Note';
+  const subject = type === 'call' ? `Call: ${$('#nOutcome').value}` : label;
+  await post(`/api/people/${personId}/note`, { kind: type === 'call' ? 'call' : 'note',
+    noteType: type, subject, body: $('#nBody').value });
+  closeModal(); viewPerson(personId);
+}
+
+// ------------------------------------------------------------------ boot --
+(async () => {
+  CFG = await api('/api/config');
+  $('#ver').textContent = CFG.version || 'prototype';
+  drawDatasetBadge(CFG.dataset || {});
+  document.addEventListener('keydown', (e) => {
+    // a clickable row is a control, so it answers Enter and Space
+    const el = document.activeElement;
+    if ((e.key === 'Enter' || e.key === ' ') && el && el.classList && el.classList.contains('row')) {
+      e.preventDefault(); el.click();
+    }
+  });
+  let saved = 'light';
+  try { saved = localStorage.getItem('crmTheme') || 'light'; } catch {}
+  if (!['light', 'dark'].includes(saved)) saved = 'light';
+  setTheme(saved);
+  const themeSel = document.querySelector('#theme');
+  if (themeSel) themeSel.value = saved;
+  try { ACTOR = localStorage.getItem('crmActor') || ''; } catch {}
+  const known = (CFG.users || []).map(u => u.name).concat(CFG.admins || []);
+  if (!known.includes(ACTOR)) ACTOR = known[0] || '';
+  drawActorPicker();
+  window.addEventListener('hashchange', route);
+  await route();
+})();
+</script>
+</body>
+</html>

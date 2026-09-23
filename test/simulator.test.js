@@ -1,0 +1,413 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { openDb } from '../src/db.js';
+import { seed } from '../src/seed.js';
+import { PROVIDERS, runScenario, runOutbound, runFullDemo, listEvents, getEvent, channel, normPhone } from '../src/simulator.js';
+
+function fresh() {
+  const db = openDb();
+  seed(db, { people: 40 });
+  return db;
+}
+const stepNames = (r) => r.steps.map((s) => s.step);
+
+// ------------------------------------------------------------- the config --
+test('every channel has a fictional account, a connection and a research panel', () => {
+  assert.equal(PROVIDERS.channels.length, 11);
+  for (const c of PROVIDERS.channels) {
+    assert.ok(c.account?.label, c.id + ' has an account label');
+    assert.match(c.account.label, /SIMULATED|no provider account/, c.id + ' says it is simulated');
+    assert.ok(c.connection?.type, c.id + ' has a connection type');
+    assert.ok(c.scenarios?.length, c.id + ' has test scenarios');
+    for (const key of ['capability', 'canReceive', 'canSend', 'auth', 'limitations', 'approval', 'cost', 'privacy', 'status2026', 'simulated', 'toGoLive']) {
+      assert.ok(c.research?.[key], `${c.id} research is missing ${key}`);
+    }
+    assert.equal(c.status.live, false, c.id + ' must not claim to be live');
+    assert.equal(c.status.providerTested, false, c.id + ' must not claim a provider test');
+    assert.equal(c.status.simulated, true);
+  }
+});
+
+// --------------------------------------------------------- every scenario --
+test('every scenario of every channel runs and records an inspector entry', () => {
+  const db = fresh();
+  let count = 0;
+  for (const c of PROVIDERS.channels) {
+    for (const s of c.scenarios) {
+      const r = runScenario(db, c.id, s.id);
+      count++;
+      assert.ok(r.id, `${c.id}/${s.id} was recorded`);
+      assert.ok(r.decision, `${c.id}/${s.id} reached a decision`);
+      assert.ok(['ok', 'refused', 'error'].includes(r.status), `${c.id}/${s.id} status`);
+      assert.ok(r.steps.length >= 2, `${c.id}/${s.id} shows its steps`);
+      const stored = getEvent(db, r.id);
+      assert.equal(stored.channel, c.id);
+      assert.ok(stored.audit.simulated === true, 'the audit says it was simulated');
+    }
+  }
+  assert.equal(listEvents(db).length, count);
+  assert.ok(count >= 45, 'there are at least 45 test buttons, got ' + count);
+});
+
+// ------------------------------------------------------------ the website --
+test('website form: a new applicant is created with consent and attribution', () => {
+  const db = fresh();
+  const r = runScenario(db, 'website_form', 'new');
+  assert.equal(r.decision, 'created');
+  const p = db.prepare('SELECT * FROM people WHERE id = ?').get(r.personId);
+  assert.equal(p.source_channel, 'instagram');
+  assert.equal(p.source_campaign, 'nav-2026-09');
+  assert.equal(p.source_detail, 'paid');
+  const consents = db.prepare('SELECT * FROM consents WHERE person_id = ?').all(r.personId);
+  assert.ok(consents.find((c) => c.purpose === 'marketing' && c.state === 'given'));
+});
+
+test('website form: an existing email matches instead of creating a twin', () => {
+  const db = fresh();
+  const before = db.prepare('SELECT COUNT(*) n FROM people').get().n;
+  const r = runScenario(db, 'website_form', 'known_email');
+  assert.equal(r.decision, 'matched-email');
+  assert.equal(db.prepare('SELECT COUNT(*) n FROM people').get().n, before);
+});
+
+test('website form: an existing phone matches even in a different format', () => {
+  const db = fresh();
+  const r = runScenario(db, 'website_form', 'known_phone');
+  assert.equal(r.decision, 'matched-phone');
+});
+
+test('website form: a missing required field is refused, nothing half written', () => {
+  const db = fresh();
+  const before = db.prepare('SELECT COUNT(*) n FROM people').get().n;
+  const r = runScenario(db, 'website_form', 'missing');
+  assert.equal(r.decision, 'rejected');
+  assert.equal(r.status, 'refused');
+  assert.equal(db.prepare('SELECT COUNT(*) n FROM people').get().n, before);
+});
+
+test('website form: conflicting identity goes to review and merges nothing', () => {
+  const db = fresh();
+  const before = db.prepare('SELECT COUNT(*) n FROM people').get().n;
+  const r = runScenario(db, 'website_form', 'conflict');
+  assert.equal(r.decision, 'review');
+  assert.equal(db.prepare('SELECT COUNT(*) n FROM people').get().n, before);
+  assert.ok(r.steps.find((s) => s.step === 'identity' && s.ok === false));
+});
+
+test('website form: no marketing consent is recorded as not given', () => {
+  const db = fresh();
+  const r = runScenario(db, 'website_form', 'no_consent');
+  const c = db.prepare("SELECT * FROM consents WHERE person_id = ? AND purpose = 'marketing'").get(r.personId);
+  assert.equal(c.state, 'not given');
+});
+
+// -------------------------------------------------------- the google form --
+test('google form: the Apps Script path carries the answers with the notification', () => {
+  const db = fresh();
+  const r = runScenario(db, 'google_form', 'apps_script');
+  assert.equal(r.decision, 'created');
+  assert.ok(!stepNames(r).includes('fetch'), 'no second call is needed on this path');
+  assert.ok(r.mapping.find((m) => m.to === 'person.email'));
+});
+
+test('google form: the Forms API path notifies first and fetches the answers separately', () => {
+  const db = fresh();
+  const r = runScenario(db, 'google_form', 'forms_api');
+  assert.equal(r.decision, 'created');
+  assert.ok(stepNames(r).includes('fetch'), 'the second call is shown');
+  assert.equal(r.raw._notification.eventType, 'RESPONSES');
+  assert.ok(!r.raw.namedValues, 'the notification really does not carry the answers');
+});
+
+test('google form: a wrong shared secret is refused before anything is written', () => {
+  const db = fresh();
+  const before = db.prepare('SELECT COUNT(*) n FROM people').get().n;
+  const r = runScenario(db, 'google_form', 'bad_secret');
+  assert.equal(r.status, 'refused');
+  assert.equal(db.prepare('SELECT COUNT(*) n FROM people').get().n, before);
+});
+
+test('google form: an expired watch is a silence, not an error', () => {
+  const db = fresh();
+  const r = runScenario(db, 'google_form', 'watch_expired');
+  assert.equal(r.decision, 'nothing arrived');
+  assert.match(r.steps.at(-1).detail, /silent/i);
+});
+
+// -------------------------------------------------------------- the email --
+test('gmail push: the notification says the mailbox changed, then we fetch the message', () => {
+  const db = fresh();
+  const r = runScenario(db, 'gmail', 'booking_push');
+  assert.ok(stepNames(r).includes('push'));
+  assert.equal(r.decision, 'created');
+  assert.equal(r.normalized.source.channel, 'event', 'our own booking notification is an event, not an email');
+});
+
+test('gmail polling: the same message with no Pub/Sub', () => {
+  const db = fresh();
+  const r = runScenario(db, 'gmail', 'booking_poll');
+  assert.ok(!stepNames(r).includes('push'));
+  assert.equal(r.decision, 'created');
+});
+
+test('gmail: a human enquiry is read from the From header and the body', () => {
+  const db = fresh();
+  const r = runScenario(db, 'gmail', 'human');
+  assert.equal(r.normalized.source.channel, 'email');
+  assert.equal(r.normalized.person.phone, '+37126123456');
+});
+
+test('gmail: an expired watch loses messages silently', () => {
+  const db = fresh();
+  const r = runScenario(db, 'gmail', 'watch_expired');
+  assert.equal(r.status, 'refused');
+  assert.match(JSON.stringify(r.steps), /expired/i);
+});
+
+// ---------------------------------------------------------- the campaigns --
+test('mailchimp: an unsubscribe does not rewrite where the person came from', () => {
+  const db = fresh();
+  const created = runScenario(db, 'website_form', 'new');
+  const before = db.prepare('SELECT source_channel, source_campaign FROM people WHERE id = ?').get(created.personId);
+  // aim the unsubscribe at that person
+  const person = db.prepare('SELECT * FROM people WHERE id = ?').get(created.personId);
+  db.prepare('UPDATE people SET created_at = ? WHERE id = ?').run(new Date().toISOString(), person.id);
+  const r = runScenario(db, 'mailchimp', 'unsubscribe');
+  const after = db.prepare('SELECT source_channel, source_campaign FROM people WHERE id = ?').get(r.personId);
+  assert.ok(String(r.decision).startsWith('matched'), 'it landed on a person, got ' + r.decision);
+  const src = db.prepare('SELECT source_channel FROM people WHERE id = ?').get(r.personId);
+  assert.notEqual(src.source_channel, 'mailchimp', 'mailchimp never becomes the source');
+  const c = db.prepare("SELECT * FROM consents WHERE person_id = ? AND purpose='marketing' ORDER BY id DESC").get(r.personId);
+  assert.equal(c.state, 'withdrawn');
+  assert.ok(before.source_channel);
+  assert.ok(after.source_channel);
+});
+
+test('mailchimp: every event type runs and lands on the timeline', () => {
+  const db = fresh();
+  for (const s of ['subscribe', 'profile', 'cleaned', 'upemail']) {
+    const r = runScenario(db, 'mailchimp', s);
+    assert.equal(r.status, 'ok', s);
+  }
+});
+
+test('mailchimp: the wrong secret in the URL is refused', () => {
+  const db = fresh();
+  const r = runScenario(db, 'mailchimp', 'bad_secret');
+  assert.equal(r.status, 'refused');
+});
+
+// --------------------------------------------------------------- the meta --
+test('meta: the verification handshake echoes the challenge and writes no person', () => {
+  const db = fresh();
+  const before = db.prepare('SELECT COUNT(*) n FROM people').get().n;
+  const r = runScenario(db, 'facebook', 'verify');
+  assert.equal(r.decision, 'verified');
+  assert.equal(db.prepare('SELECT COUNT(*) n FROM people').get().n, before);
+});
+
+test('meta: a wrong verify token is refused', () => {
+  const db = fresh();
+  const r = runScenario(db, 'facebook', 'bad_token');
+  assert.equal(r.status, 'refused');
+});
+
+test('meta: unsigned and wrongly signed deliveries are both refused', () => {
+  const db = fresh();
+  for (const s of ['unsigned', 'bad_signature']) {
+    const r = runScenario(db, 'facebook', s);
+    assert.equal(r.status, 'refused', s);
+    assert.ok(r.steps.find((x) => x.step === 'authentication' && x.ok === false));
+  }
+});
+
+test('meta: a malformed payload is dropped rather than half written', () => {
+  const db = fresh();
+  const r = runScenario(db, 'facebook', 'malformed');
+  assert.equal(r.status, 'error');
+});
+
+test('facebook lead: creates a person and keeps the ad as the campaign', () => {
+  const db = fresh();
+  const r = runScenario(db, 'facebook', 'lead');
+  assert.equal(r.decision, 'created');
+  const p = db.prepare('SELECT * FROM people WHERE id = ?').get(r.personId);
+  assert.equal(p.source_channel, 'facebook');
+  assert.equal(p.source_campaign, '120210-SIM');
+});
+
+test('facebook duplicate delivery produces one timeline entry', () => {
+  const db = fresh();
+  const first = runScenario(db, 'facebook', 'duplicate');
+  const second = runScenario(db, 'facebook', 'duplicate');
+  assert.equal(second.decision, 'duplicate-ignored');
+  assert.equal(second.personId, first.personId);
+  const n = db.prepare("SELECT COUNT(*) n FROM events WHERE person_id = ? AND channel = 'facebook'").get(first.personId).n;
+  assert.equal(n, 1);
+});
+
+test('instagram: a message with no email and no phone goes to review, never a half person', () => {
+  const db = fresh();
+  const before = db.prepare('SELECT COUNT(*) n FROM people').get().n;
+  const r = runScenario(db, 'instagram', 'message');
+  assert.equal(r.decision, 'review');
+  assert.equal(db.prepare('SELECT COUNT(*) n FROM people').get().n, before);
+});
+
+test('instagram: a message that contains an email does create a person', () => {
+  const db = fresh();
+  const r = runScenario(db, 'instagram', 'message_with_email');
+  assert.equal(r.decision, 'created');
+  assert.ok(r.normalized.person.email);
+});
+
+// ----------------------------------------------------------- the whatsapp --
+test('whatsapp: the local 8 digit number and the international form are one person', () => {
+  const db = fresh();
+  const r = runScenario(db, 'whatsapp', 'inbound_local');
+  assert.equal(r.decision, 'matched-phone');
+  assert.equal(normPhone('22193374'), normPhone('37122193374'));
+});
+
+test('whatsapp: an unknown number creates a person and opens a 24 hour window', () => {
+  const db = fresh();
+  const r = runScenario(db, 'whatsapp', 'unknown');
+  assert.equal(r.decision, 'created');
+  assert.ok(r.normalized.window.closesAt > r.normalized.window.opensAt);
+});
+
+test('whatsapp: a reply inside the window is free, outside it needs a template and is refused here', () => {
+  const db = fresh();
+  const inbound = runScenario(db, 'whatsapp', 'unknown');
+  const reply = runOutbound(db, 'whatsapp', inbound.personId);
+  assert.equal(reply.status, 'ok');
+  assert.match(JSON.stringify(reply.providerResult), /free/);
+
+  // a person with no inbound whatsapp at all is outside the window
+  const other = db.prepare("SELECT id FROM people WHERE id != ? LIMIT 1").get(inbound.personId);
+  const refused = runOutbound(db, 'whatsapp', other.id);
+  assert.equal(refused.status, 'refused');
+  assert.equal(refused.providerResult.error.code, 131047);
+  const sent = db.prepare("SELECT COUNT(*) n FROM events WHERE person_id = ? AND direction = 'out'").get(other.id).n;
+  assert.equal(sent, 0, 'nothing is recorded as sent when the provider refuses');
+});
+
+// -------------------------------------------------------------- the agent --
+test('agent: the token decides the source, not anything the agent types', () => {
+  const db = fresh();
+  const r = runScenario(db, 'agent', 'spoof');
+  assert.equal(r.decision, 'created');
+  const p = db.prepare('SELECT * FROM people WHERE id = ?').get(r.personId);
+  assert.equal(p.source_channel, 'agent');
+  assert.equal(p.source_campaign, 'india-partner-1', 'the typed "website" was ignored');
+});
+
+test('agent: an unknown token is refused', () => {
+  const db = fresh();
+  const before = db.prepare('SELECT COUNT(*) n FROM people').get().n;
+  const r = runScenario(db, 'agent', 'unknown_token');
+  assert.equal(r.status, 'refused');
+  assert.equal(db.prepare('SELECT COUNT(*) n FROM people').get().n, before);
+});
+
+test('agent: the same candidate twice is one person and one event', () => {
+  const db = fresh();
+  const a = runScenario(db, 'agent', 'duplicate');
+  const b = runScenario(db, 'agent', 'duplicate');
+  assert.equal(b.decision, 'duplicate-ignored');
+  assert.equal(b.personId, a.personId);
+});
+
+// ----------------------------------------------------------- the open day --
+test('open day: a booking becomes a person and a registration', () => {
+  const db = fresh();
+  const r = runScenario(db, 'open_day', 'book');
+  assert.equal(r.decision, 'created');
+  const regs = db.prepare('SELECT * FROM registrations WHERE person_id = ?').all(r.personId);
+  assert.equal(regs.length, 1);
+});
+
+// ------------------------------------------------------- klatiene and phone -
+test('klatiene: a walk-in is manual, carries who typed it, and is not an integration', () => {
+  const db = fresh();
+  const r = runScenario(db, 'klatiene', 'walk_in');
+  assert.equal(r.decision, 'created');
+  const p = db.prepare('SELECT * FROM people WHERE id = ?').get(r.personId);
+  assert.equal(p.source_channel, 'klatiene');
+  assert.match(p.source_detail, /^entered by /, 'the walk-in records who typed it');
+  assert.equal(channel('klatiene').account.provider, 'none');
+});
+
+test('klatiene: the QR path is a different channel and does arrive digitally', () => {
+  const db = fresh();
+  const r = runScenario(db, 'klatiene', 'qr');
+  assert.equal(r.decision, 'created');
+  const p = db.prepare('SELECT * FROM people WHERE id = ?').get(r.personId);
+  assert.equal(p.source_channel, 'qr');
+});
+
+test('phone: a logged call attaches to the person and sets the next action', () => {
+  const db = fresh();
+  const r = runScenario(db, 'phone', 'log');
+  assert.ok(String(r.decision).startsWith('matched'));
+  const t = db.prepare('SELECT * FROM tasks WHERE person_id = ? ORDER BY id DESC').get(r.personId);
+  assert.ok(t);
+});
+
+test('phone: the telephony webhook is shown but refuses to pretend it exists', () => {
+  const db = fresh();
+  const r = runScenario(db, 'phone', 'future_event');
+  assert.equal(r.decision, 'not available');
+  assert.match(r.crmResult.note, /NOT AVAILABLE/);
+});
+
+// ---------------------------------------------------------- the round trip --
+test('the full demo covers every channel and reports an honest tally', () => {
+  const db = fresh();
+  const { results, outbound, tally } = runFullDemo(db);
+  assert.equal(tally.channelsTested, 11);
+  assert.equal(results.length, 11);
+  assert.equal(tally.productionSystemsTouched, 0);
+  assert.ok(tally.created > 0);
+  assert.ok(tally.review >= 1, 'the instagram message goes to review');
+  assert.ok(outbound.length >= 3, 'outbound ran where the channel supports it');
+  for (const r of results) assert.ok(r.steps.length, r.channel + ' has steps');
+});
+
+test('the inspector keeps every section of every event', () => {
+  const db = fresh();
+  const r = runScenario(db, 'facebook', 'lead');
+  const e = getEvent(db, r.id);
+  for (const key of ['raw', 'normalized', 'mapping', 'identity', 'steps', 'crm_result', 'audit']) {
+    assert.ok(e[key], 'inspector is missing ' + key);
+  }
+  assert.equal(e.person.id, r.personId);
+});
+
+// ------------------------------------------------- the empty-database demo --
+// The prototype starts empty on purpose: a channel test has to be the thing that
+// writes the first person. Every button must survive being the first one pressed.
+test('every scenario survives being the first thing pressed on an empty database', () => {
+  const failures = [];
+  for (const c of PROVIDERS.channels) {
+    for (const s of c.scenarios) {
+      const db = openDb();                    // no seed: nobody in the table
+      try {
+        const r = runScenario(db, c.id, s.id);
+        if (!r.decision) failures.push(`${c.id}/${s.id}: no decision`);
+      } catch (err) {
+        failures.push(`${c.id}/${s.id}: ${err.message}`);
+      }
+    }
+  }
+  assert.deepEqual(failures, [], 'scenarios that throw on an empty database');
+});
+
+test('the full demo runs on an empty database and writes people into it', () => {
+  const db = openDb();
+  assert.equal(db.prepare('SELECT COUNT(*) n FROM people').get().n, 0);
+  const { tally } = runFullDemo(db);
+  assert.equal(tally.channelsTested, 11);
+  assert.ok(tally.created > 0, 'the demo creates people from nothing');
+  assert.equal(db.prepare('SELECT COUNT(*) n FROM people').get().n, tally.created);
+});

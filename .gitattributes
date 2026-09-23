@@ -1,0 +1,5 @@
+# Keep LF. A previous Novikontas app had index.html silently converted to CRLF
+# on a branch switch, which broke a byte-exact test. Not repeating that.
+* text=auto eol=lf
+*.png binary
+*.xlsx binary

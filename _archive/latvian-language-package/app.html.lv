@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Novikontas College CRM - prototype</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Spectral:wght@400;500;600&display=swap">
+<style>
+/* ---------------------------------------------------------------------------
+   Palette taken from the reference: the Client Hub preview artifact.
+   Light is the authored identity; dark is its own theme, not an inversion.
+   Amber means a human has to act. Petrol means data, state and structure.
+   Only values live here. No structure, no class names and no screens changed.
+   --------------------------------------------------------------------------- */
+:root {
+  --paper:#F7F6F3; --surface:#FCFBF9; --ink:#111C21;
+  --t2:rgba(17,28,33,.78); --t3:rgba(17,28,33,.62); --t4:rgba(17,28,33,.48);
+  --rule:rgba(17,28,33,.16); --rule2:rgba(17,28,33,.10);
+  --pet:#1F7688; --petink:#155C6B; --amb:#D98A1E; --ambink:#8A5410;
+  --lift:0 1px 2px rgba(17,28,33,.07), 0 6px 14px -8px rgba(17,28,33,.12);
+  --lift-hover:0 1px 2px rgba(17,28,33,.10), 0 10px 22px -10px rgba(17,28,33,.20);
+  --serif:'Spectral', Georgia, serif;
+  --sans:'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* the names the rest of the stylesheet already uses, re-pointed */
+  --navy:var(--ink); --navy-soft:var(--petink); --muted:var(--t3);
+  --line:var(--rule); --bg:var(--paper); --card:var(--surface);
+  --brand-blue:var(--pet);
+  --late:var(--ambink); --late-bg:rgba(217,138,30,.14);
+  --ok:var(--petink); --ok-bg:rgba(31,118,136,.11);
+  --warn:var(--ambink); --warn-bg:rgba(217,138,30,.14);
+  --radius:10px; --shadow:var(--lift);
+  --shell:#F1EFE9; --shell-ink:var(--ink); --shell-line:var(--rule2);
+  --surface-2:#EFEDE7; --field:#FFFFFF;
+  --on-navy:#FCFBF9; --btn-bg:#111C21; --btn-ink:#FCFBF9;
+  --control-line:rgba(17,28,33,.30); --focus:var(--petink); --accent-ink:var(--petink);
+  --dur-quick:120ms; --dur-tap:80ms; --ease-standard:cubic-bezier(.2,.7,.2,1);
+}
+/* Dark is authored, not inverted: petrol ground, amber as light. */
+:root[data-theme="dark"] {
+  --paper:#05070A; --surface:rgba(255,255,255,.055); --ink:#EFEBE3;
+  --t2:rgba(239,235,227,.84); --t3:rgba(239,235,227,.72); --t4:rgba(239,235,227,.52);
+  --rule:rgba(239,235,227,.16); --rule2:rgba(239,235,227,.10);
+  --pet:#5FC4D8; --petink:#A9E2ED; --amb:#E3A63F; --ambink:#E9B361;
+  --lift:0 1px 2px rgba(0,0,0,.4), 0 10px 22px -12px rgba(0,0,0,.7);
+  --lift-hover:0 1px 2px rgba(0,0,0,.5), 0 14px 28px -12px rgba(0,0,0,.8);
+  --navy:#0B2C38; --navy-soft:var(--petink); --muted:var(--t3);
+  --line:var(--rule); --bg:var(--paper); --card:rgba(255,255,255,.055);
+  --brand-blue:var(--pet);
+  --late:var(--ambink); --late-bg:rgba(227,166,63,.18);
+  --ok:var(--petink); --ok-bg:rgba(95,196,216,.16);
+  --warn:var(--ambink); --warn-bg:rgba(227,166,63,.18);
+  --shadow:var(--lift);
+  --shell:#0A161C; --shell-ink:var(--ink); --shell-line:var(--rule2);
+  --surface-2:rgba(255,255,255,.08); --field:rgba(255,255,255,.06);
+  --on-navy:#EFEBE3; --btn-bg:#0B2C38; --btn-ink:#EFEBE3;
+  --control-line:rgba(239,235,227,.34); --focus:var(--pet); --accent-ink:var(--petink);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--sans);
+     background:var(--bg);color:var(--ink);font-size:15px;line-height:1.5}
+a{color:var(--navy-soft)}
+button{font:inherit;cursor:pointer}
+.shell{display:grid;grid-template-columns:238px 1fr;min-height:100vh}
+
+/* Navigation: tinted ground, muted labels, the active item marked by an edge
+   rather than a filled pill. */
+nav{background:var(--shell);color:var(--shell-ink);padding:18px 0;display:flex;flex-direction:column;
+    border-right:1px solid var(--shell-line)}
+nav .brand{padding:0 20px 18px;font-weight:700;font-size:16px;line-height:1.25;color:var(--shell-ink)}
+nav .brand span{display:block;font-size:10px;font-weight:600;color:var(--petink);letter-spacing:1.4px;
+    text-transform:uppercase;margin-top:5px}
+nav a.item{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 20px;
+    color:var(--t2);text-decoration:none;font-size:14px;border-left:3px solid transparent;
+    transition:background-color var(--dur-quick) var(--ease-standard),color var(--dur-quick) var(--ease-standard)}
+nav a.item:hover{color:var(--ink);background:rgba(17,28,33,.05)}
+nav a.item.on{color:var(--ink);border-left-color:var(--amb);background:rgba(217,138,30,.10);font-weight:600}
+nav .dataset{margin-top:8px;font-size:9.5px;letter-spacing:.6px;text-transform:uppercase;
+  padding:3px 8px;border-radius:4px;display:inline-block;line-height:1.35;white-space:normal}
+nav .dataset.real{background:rgba(217,138,30,.16);color:var(--ambink);border:1px solid rgba(217,138,30,.45)}
+nav .dataset.empty{background:var(--surface-2);color:var(--t3);border:1px dashed var(--rule)}
+nav .dataset.synthetic{background:var(--surface-2);color:var(--t3);border:1px solid var(--rule2)}
+nav .navgroup{padding:4px 20px 6px;font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--t4);
+  display:flex;align-items:center;gap:8px}
+nav .navgroup.demo{color:var(--t3)}
+nav .navgroup .pill{font-size:9px;padding:1px 7px}
+nav .navsplit{margin:14px 20px 10px;border-top:1px solid var(--rule)}
+nav a.item.demo{font-size:13.5px;color:var(--t3)}
+nav a.item.demo.on{color:var(--ink)}
+nav .add{margin:16px 20px 0}
+nav .themes{margin-top:auto;padding:16px 20px 0;border-top:1px solid var(--shell-line)}
+nav .themes label{color:var(--t3);font-size:10px;letter-spacing:1.2px;text-transform:uppercase;margin:0 0 6px}
+nav .themes select{background:var(--field);color:var(--ink);border:1px solid var(--control-line)}
+main{padding:22px 26px 60px;max-width:1320px}
+h1{font-family:var(--serif);font-weight:500;font-size:27px;letter-spacing:-.01em;margin:0 0 2px;color:var(--ink)}
+.sub{color:var(--muted);font-size:13px;margin:0 0 18px}
+
+/* A container is a signal, not a layout device. */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);
+      padding:18px;margin-bottom:18px}
+.card h3{font-family:var(--serif);font-weight:500;margin:0 0 10px;font-size:18px;color:var(--ink)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(172px,1fr));gap:12px;margin-bottom:18px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow)}
+.stat b{display:block;font-family:var(--serif);font-size:30px;font-weight:500;line-height:1.2;color:var(--ink);font-variant-numeric:tabular-nums}
+.stat span{color:var(--muted);font-size:12px}
+.stat.alarm b{color:var(--ambink)}
+
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:11px 10px;border-bottom:1px solid var(--rule2);vertical-align:top}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--t3);font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:1px solid var(--rule)}
+td{font-size:13.5px}
+tr.row{cursor:pointer}
+tr.row:hover td{background:rgba(31,118,136,.06)}
+tr.row:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:500;white-space:nowrap;border:1px solid transparent}
+.pill.late{background:var(--late-bg);color:var(--late);border-color:rgba(217,138,30,.45)}
+.pill.ok{background:var(--ok-bg);color:var(--ok);border-color:rgba(31,118,136,.45)}
+.pill.warn{background:var(--warn-bg);color:var(--warn);border-color:rgba(217,138,30,.45)}
+.pill.calm{background:var(--surface-2);color:var(--t2);border-color:var(--rule2)}
+.pill.accent{background:var(--ok-bg);color:var(--petink);border-color:rgba(31,118,136,.45)}
+
+.due{font-weight:600;font-variant-numeric:tabular-nums}
+.due.over{color:var(--ambink)}.due.today{color:var(--ambink)}
+
+.btn{background:var(--btn-bg);color:var(--btn-ink);border:0;border-left:3px solid var(--amb);border-radius:8px;padding:9px 15px 9px 13px;font-weight:500;
+   transition:transform var(--dur-tap) var(--ease-standard),box-shadow var(--dur-quick) var(--ease-standard)}
+.btn:hover{box-shadow:var(--lift-hover)}
+.btn:active{transform:translateY(1px)}
+.btn.ghost{background:transparent;color:var(--petink);border:1px solid var(--rule);border-left:1px solid var(--rule);padding:9px 15px}
+.btn.sm{padding:5px 10px;font-size:12px}
+.btn:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible,a:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+
+input,select,textarea{font:inherit;padding:8px 10px;border:1px solid var(--control-line);border-radius:8px;
+   background:var(--field);color:var(--ink);width:100%}
+label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px}
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.filters input,.filters select{width:auto;min-width:140px}
+
+.grid2{display:grid;grid-template-columns:1.4fr 1fr;gap:18px}
+.kv{display:grid;grid-template-columns:132px 1fr;gap:6px 12px;font-size:13.5px}
+.kv div:nth-child(odd){color:var(--muted)}
+
+.tl{border-left:1px solid var(--line);padding-left:14px;margin-left:4px}
+.tl .ev{position:relative;padding:0 0 14px}
+.tl .ev:before{content:'';position:absolute;left:-16px;top:6px;width:3px;height:13px;background:var(--pet)}
+.tl .ev.note:before{background:var(--muted)}
+.tl .ev.status:before{background:var(--navy-soft)}
+.tl .ev.call:before{background:var(--amb)}
+.tl .when{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+
+.modal{position:fixed;inset:0;background:rgba(1,17,17,.5);display:flex;align-items:flex-start;justify-content:center;padding:60px 16px;z-index:20}
+.modal .box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 22px;width:100%;max-width:560px;
+   max-height:80vh;overflow:auto;box-shadow:var(--shadow)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.warn-box{background:var(--warn-bg);border:1px solid var(--warn);color:var(--warn);border-radius:8px;padding:10px 12px;font-size:13px;margin-top:10px}
+.prov{background:var(--surface-2);border-left:3px solid var(--pet);border-radius:0 8px 8px 0;padding:9px 12px;font-size:12.5px;color:var(--muted);margin-bottom:14px}
+.empty{color:var(--muted);padding:26px 2px;text-align:center}
+.bar{height:10px;background:var(--surface-2);border-radius:6px;overflow:hidden}
+.bar i{display:block;height:10px;background:var(--pet)}
+.tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.tabs button{background:var(--surface);color:var(--accent-ink);border:1px solid var(--line);border-radius:8px;padding:7px 13px}
+.tabs button.on{background:var(--btn-bg);color:var(--btn-ink);border-color:var(--btn-bg)}
+.err{background:rgba(165,52,43,.10);border:1px solid rgba(165,52,43,.45);color:#8E2E26;border-radius:8px;padding:10px 12px;margin-bottom:12px}
+.simwrap{display:grid;grid-template-columns:240px 1fr;gap:16px}
+.simlist{display:flex;flex-direction:column;gap:6px}
+.simitem{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 12px;border-radius:8px;
+  background:var(--card);border:1px solid var(--line);text-decoration:none;color:var(--ink);font-size:13.5px}
+.simitem.on{border-color:var(--accent-ink);box-shadow:var(--lift-hover)}
+.flow{display:flex;flex-direction:column}
+.fstep{position:relative;padding:8px 0 8px 22px;border-left:2px solid var(--rule);font-size:13.5px}
+.fstep:before{content:'';position:absolute;left:-5px;top:14px;width:8px;height:8px;border-radius:50%;background:var(--pet)}
+.fstep.bad{border-left-color:var(--amb)}
+.fstep.bad:before{background:var(--amb)}
+.fstep b{display:inline-block;min-width:130px;text-transform:uppercase;font-size:11px;letter-spacing:.5px;color:var(--muted)}
+pre{background:var(--surface-2);border-radius:8px;padding:10px;overflow:auto;font-size:12px;max-height:320px;white-space:pre-wrap}
+code{font-size:12.5px}
+.trace{border-left:3px solid var(--brand-blue);padding-left:10px;margin:4px 0;font-size:13.5px}
+.trace.bad{border-left-color:var(--late)}
+@media(max-width:900px){.simwrap{grid-template-columns:1fr}}
+@media (prefers-reduced-motion: reduce){*{transition:none !important;animation:none !important}}
+@media(max-width:900px){.shell{grid-template-columns:1fr}.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <nav>
+    <div class="brand">Novikontas<br>College CRM<span id="ver">virtual prototype</span></div>
+    <div class="navgroup">Ikdienas darbs</div>
+    <a class="item" href="#/today">Šodien <span class="pill late" id="navOverdue" style="display:none"></span></a>
+    <a class="item" href="#/people">Cilvēki</a>
+    <a class="item" href="#/followup">Sekošana</a>
+    <a class="item" href="#/intake">Kanāli</a>
+    <a class="item" href="#/reports">Atskaites</a>
+    <div class="add"><button class="btn" style="width:100%" onclick="openAdd()">+ Pievienot personu</button></div>
+
+    <div class="navsplit"></div>
+    <div class="navgroup demo">Demonstrācijai <span class="pill accent">SIM</span></div>
+    <a class="item demo" href="#/integrations">Integrācijas</a>
+    <a class="item demo" href="#/inspector">Notikumu žurnāls</a>
+    <a class="item demo" href="#/metrics">Metrika</a>
+    <a class="item demo" href="#/privacy">Privātums</a>
+    <div class="add" style="margin-top:8px"><button class="btn ghost" style="width:100%" onclick="runDemo()">Palaist visu kanālu demo</button></div>
+    <div class="add" style="margin-top:6px"><button class="btn ghost" style="width:100%" onclick="resetDb()">Notīrīt datubāzi</button></div>
+    <div class="themes" style="margin-top:10px;border-top:none;padding-top:0">
+      <label for="dataset">Datubāzē ielikt</label>
+      <select id="dataset" onchange="setDataset(this.value)">
+        <option value="empty">Tukšu</option>
+        <option value="real">Īstos datus no tabulas</option>
+        <option value="synthetic">Sintētiskos</option>
+      </select>
+    </div>
+    <div class="themes"><label for="lang">Valoda / Language</label>
+      <select id="lang" onchange="setLang(this.value)">
+        <option value="lv">Latviešu</option><option value="en">English</option>
+      </select></div>
+    <div class="themes" style="border-top:none;padding-top:0"><label for="theme">Noformejums</label>
+      <select id="theme" onchange="setTheme(this.value)">
+        <option value="light">Light</option><option value="dark">Dark</option>
+      </select></div>
+  </nav>
+  <main id="view"><div class="empty">Ielādē...</div></main>
+</div>
+<div id="modal"></div>
+
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmtDate = (s) => s ? String(s).slice(0, 10) : '';
+const fmtDateTime = (s) => s ? String(s).slice(0, 16).replace('T', ' ') : '';
+const todayStr = () => new Date().toISOString().slice(0, 10);
+let CFG = {}, STATE = { q: '', status: '', programme: '', owner: '', source: '', due: '', sort: 'created_at', dir: 'desc', fuTab: 'overdue' };
+
+const api = async (path, opts) => {
+  const r = await fetch(path, opts);
+  if (!r.ok) { const e = await r.json().catch(() => ({ error: r.statusText })); throw new Error(e.error || 'request failed'); }
+  return r.json();
+};
+const post = (path, data) => api(path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(data || {}) });
+
+const STAGE_PILL = { 'New': 'accent', 'Contacted': 'accent', 'Follow-up': 'warn', 'Application': 'warn',
+  'Contract': 'ok', 'Admitted': 'ok', 'Not proceeding': 'calm' };
+const stageChip = (s) => `<span class="pill ${STAGE_PILL[s] || 'calm'}">${esc(s)}</span>`;
+function setTheme(t) { document.documentElement.setAttribute('data-theme', t); try { localStorage.setItem('crmTheme', t); } catch {} }
+const channelLabel = (c) => (CFG.channels && CFG.channels[c]) || c || '-';
+const dueClass = (d) => {
+  if (!d) return '';
+  const day = todayStr();
+  return d.slice(0, 10) < day ? 'over' : d.slice(0, 10) === day ? 'today' : '';
+};
+const dueText = (d) => {
+  if (!d) return '<span class="pill calm">nav</span>';
+  const diff = Math.round((Date.parse(d.slice(0,10)) - Date.parse(todayStr())) / 86400000);
+  const label = diff === 0 ? 'šodien' : diff < 0 ? `kavējas ${-diff} d.` : `pēc ${diff} d.`;
+  return `<span class="due ${dueClass(d)}">${fmtDate(d)} <span style="font-weight:400">(${label})</span></span>`;
+};
+
+
+// ------------------------------------------------------------- language --
+// The interface is authored in Latvian. English is the same interface with the
+// words swapped from config/i18n.json: text nodes, placeholders, titles and
+// option labels. A string the dictionary does not know stays as it was written,
+// which is why an untranslated word is visible rather than silently dropped.
+let LANG = 'lv', I18N = { pairs: [], patterns: [] }, DICT = new Map(), PATT = [];
+
+function buildDict() {
+  DICT = new Map(); PATT = [];
+  for (const [lv, en] of (I18N.pairs || [])) {
+    if (lv === en) continue;
+    if (LANG === 'en') DICT.set(lv, en);
+    else if (!DICT.has(en)) DICT.set(en, lv);   // first wins: two Latvian words can share one English word
+  }
+  if (LANG === 'en') for (const r of (I18N.patterns || [])) {
+    try { PATT.push([new RegExp(r.lv), r.en]); } catch {}
+  }
+}
+
+function tr(text) {
+  if (!text) return text;
+  const raw = String(text);
+  const t = raw.trim();
+  if (!t) return raw;
+  const hit = DICT.get(t);
+  if (hit !== undefined) return raw.replace(t, hit);
+  for (const [re, out] of PATT) {
+    if (re.test(t)) return raw.replace(t, t.replace(re, out));
+  }
+  // the views compose lines out of parts, so translate the parts
+  if (t.includes(' · ')) {
+    const parts = t.split(' · ');
+    const done = parts.map(x => tr(x));
+    if (done.some((x, i) => x !== parts[i])) return raw.replace(t, done.join(' · '));
+  }
+  const dash = t.match(/^([-–—•]\s+)(.+)$/);
+  if (dash) {
+    const rest = tr(dash[2]);
+    if (rest !== dash[2]) return raw.replace(t, dash[1] + rest);
+  }
+  return raw;
+}
+
+let TRANSLATING = false;
+function applyLang(root) {
+  if (TRANSLATING) return;
+  TRANSLATING = true;
+  try {
+    const scope = root || document.body;
+    const walker = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT);
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    for (const n of nodes) {
+      if (n.parentNode && n.parentNode.closest && n.parentNode.closest('.raw, pre, code')) continue;
+      const out = tr(n.nodeValue);
+      if (out !== n.nodeValue) n.nodeValue = out;
+    }
+    scope.querySelectorAll('[placeholder]').forEach(el => { el.placeholder = tr(el.placeholder); });
+    scope.querySelectorAll('[title]').forEach(el => { el.title = tr(el.title); });
+    scope.querySelectorAll('option').forEach(el => { const o = tr(el.textContent); if (o !== el.textContent) el.textContent = o; });
+  } finally { TRANSLATING = false; }
+}
+
+async function setLang(code) {
+  LANG = (code === 'en') ? 'en' : 'lv';
+  try { localStorage.setItem('crmLang', LANG); } catch {}
+  const sel = document.querySelector('#lang');
+  if (sel) sel.value = LANG;
+  document.documentElement.lang = LANG;
+  buildDict();
+  await route();
+  applyLang(document.body);
+}
+
+// Views replace innerHTML directly all over the app, so the swap watches the
+// document instead of being called from thirty places and missing one.
+function watchLang() {
+  const obs = new MutationObserver(() => {
+    if (!TRANSLATING) applyLang(document.body);
+  });
+  obs.observe(document.body, { childList: true, subtree: true, characterData: true });
+}
+
+// ---------------------------------------------------------------- routing --
+async function route() {
+  const hash = location.hash || '#/today';
+  document.querySelectorAll('nav a.item').forEach(a => a.classList.toggle('on', a.getAttribute('href') === hash.split('/').slice(0,2).join('/')));
+  const [, page, arg] = hash.split('/');
+  try {
+    if (page === 'people') await viewPeople();
+    else if (page === 'person') await viewPerson(arg);
+    else if (page === 'followup') await viewFollowup();
+    else if (page === 'intake') await viewIntake(arg);
+    else if (page === 'opendays') { INTAKE_TAB = 'opendays'; await viewIntake('opendays'); }
+    else if (page === 'integrations') await viewIntegrations(arg);
+    else if (page === 'inspector') await viewInspector(arg);
+    else if (page === 'metrics') await viewMetrics();
+    else if (page === 'privacy') await viewPrivacy();
+    else if (page === 'reports') await viewReports();
+    else await viewToday();
+  } catch (e) {
+    $('#view').innerHTML = `<div class="err">Neizdevās ielādēt: ${esc(e.message)}</div>`;
+  }
+  refreshBadge();
+}
+async function refreshBadge() {
+  try {
+    const s = await api('/api/summary');
+    const el = $('#navOverdue');
+    if (s.overdue.length) { el.textContent = s.overdue.length; el.style.display = ''; } else el.style.display = 'none';
+  } catch {}
+}
+
+// ------------------------------------------------------------------ today --
+// ------------------------------------------------------------- the database --
+// Empty, real or synthetic, switched as often as a demo needs.
+// Next action is never a free text box and never optional: it comes from the
+// list, and every option drives towards a visit, an application or payment.
+function nextActionOptions(selectedLabel) {
+  const groups = CFG.nextActions || [];
+  const opts = groups.map(g => `<optgroup label="${esc(g.group)}">` +
+    g.items.map(i => `<option value="${esc(i.label)}" data-days="${i.days}" data-drives="${esc(i.drives)}"
+      ${i.label === selectedLabel ? 'selected' : ''}>${esc(i.label)}</option>`).join('') + '</optgroup>').join('');
+  return opts;
+}
+function daysForAction(label) {
+  for (const g of (CFG.nextActions || [])) for (const i of g.items) if (i.label === label) return i.days;
+  return 2;
+}
+function drivesFor(label) {
+  for (const g of (CFG.nextActions || [])) for (const i of g.items) if (i.label === label) return i.drives;
+  return null;
+}
+const DRIVES_LABEL = { visit: 'ved uz vizīti', application: 'ved uz pieteikumu un dokumentiem', payment: 'ved uz apmaksu', info: 'informācija' };
+function onNextActionChange(selId, dateId, hintId) {
+  const sel = document.querySelector('#' + selId);
+  const label = sel.value;
+  const d = new Date(Date.now() + daysForAction(label) * 86400000);
+  const date = document.querySelector('#' + dateId);
+  if (date) date.value = d.toISOString().slice(0, 10);
+  const hint = document.querySelector('#' + hintId);
+  if (hint) hint.textContent = DRIVES_LABEL[drivesFor(label)] || '';
+}
+
+function drawDatasetBadge(ds) {
+  const brand = document.querySelector('nav .brand');
+  if (!brand) return;
+  const old = brand.querySelector('.dataset');
+  if (old) old.remove();
+  const badge = document.createElement('div');
+  const kind = (ds && ds.dataset) || 'empty';
+  badge.className = 'dataset ' + kind;
+  badge.textContent = kind === 'real' ? 'ĪSTI DATI - ' + ds.people + ' cilvēki'
+    : kind === 'synthetic' ? 'SINTĒTISKI DATI - ' + ds.people + ' cilvēki'
+    : 'TUKŠA DATUBĀZE';
+  badge.title = (ds && ds.selection) || '';
+  brand.appendChild(badge);
+  const sel = document.querySelector('#dataset');
+  if (sel) sel.value = kind;
+}
+
+async function setDataset(kind) {
+  const r = await post('/api/dataset', { kind });
+  if (r.error) return alert(r.error);
+  CFG.dataset = r.dataset; LASTRUN = {}; SIM = null;
+  drawDatasetBadge(r.dataset);
+  route();
+}
+
+async function resetDb() {
+  const r = await post('/api/reset', {});
+  CFG.dataset = r.dataset; LASTRUN = {}; SIM = null;
+  drawDatasetBadge(r.dataset);
+  route();
+}
+
+async function viewToday() {
+  const s = await api('/api/summary');
+  const taskRow = (t) => `<tr class="row" tabindex="0" onclick="location.hash='#/person/${t.person_id}'">
+    <td><b>${esc(t.name)}</b><div style="color:var(--steel);font-size:12px">${esc(t.programme || '')} ${stageChip(t.status)}</div></td>
+    <td>${esc(t.label)}</td><td>${dueText(t.due_at)}</td><td>${esc(t.owner || '')}</td>
+    <td onclick="event.stopPropagation()"><button class="btn sm ghost" onclick="openComplete(${t.id},'${esc(t.label)}')">Atzīmēt</button></td></tr>`;
+  $('#view').innerHTML = `
+  <h1>Šodien</h1><p class="sub">${new Date().toLocaleDateString('lv-LV')} &middot; prototips ar sintētiskiem datiem</p>
+  <div class="cards">
+    <div class="stat"><b>${s.newLeadsToday}</b><span>jauni šodien</span></div>
+    <div class="stat"><b>${s.newLeads7}</b><span>jauni 7 dienās</span></div>
+    <div class="stat ${s.overdue.length ? 'alarm' : ''}"><b>${s.overdue.length}</b><span>kavētas darbības</span></div>
+    <div class="stat"><b>${s.today.length}</b><span>darbības šodien</span></div>
+    <div class="stat ${s.noNextAction ? 'alarm' : ''}"><b>${s.noNextAction}</b><span>bez nākamā soļa</span></div>
+    <div class="stat"><b>${s.admitted30}</b><span>uzņemti 30 dienās</span></div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <h3 style="margin:0 0 8px">Kam jāsazinās</h3>
+      ${(s.overdue.length + s.today.length) ? `<table><thead><tr><th>Persona</th><th>Darbība</th><th>Termiņš</th><th>Atbildīgais</th><th></th></tr></thead>
+        <tbody>${[...s.overdue, ...s.today].slice(0, 12).map(taskRow).join('')}</tbody></table>
+        ${s.overdue.length + s.today.length > 12 ? `<p style="margin-top:10px"><a href="#/followup">Visas darbības</a></p>` : ''}`
+        : '<div class="empty">Nekas nav jādara šodien.</div>'}
+    </div>
+    <div class="card">
+      <h3 style="margin:0 0 8px">Pēdējās aktivitātes</h3>
+      <div class="tl">${s.recent.map(e => `<div class="ev ${esc(e.kind)}">
+        <div class="when">${fmtDateTime(e.occurred_at)} &middot; ${esc(channelLabel(e.channel) || e.kind)}</div>
+        <div><a href="#/person/${e.person_id}">${esc(e.name)}</a> - ${esc(e.subject || '')}</div></div>`).join('')}</div>
+    </div>
+  </div>
+  <div class="card">
+    <h3 style="margin:0 0 10px">Piltuve</h3>
+    ${funnelHtml(s.byStage)}
+    <div class="prov" style="margin:12px 0 0">${esc(CFG.provisional?.stages || '')}</div>
+  </div>`;
+}
+
+function funnelHtml(byStage) {
+  const map = Object.fromEntries(byStage.map(r => [r.status, r.n]));
+  const max = Math.max(1, ...byStage.map(r => r.n));
+  return (CFG.stages || []).map(st => {
+    const n = map[st.id] || 0;
+    return `<div style="display:grid;grid-template-columns:150px 1fr 40px;gap:10px;align-items:center;margin-bottom:6px">
+      <div style="font-size:13px">${esc(st.label)}</div>
+      <div class="bar"><i style="width:${Math.round(n / max * 100)}%;background:${st.colour}"></i></div>
+      <div style="font-size:13px;text-align:right">${n}</div></div>`;
+  }).join('');
+}
+
+// ----------------------------------------------------------------- people --
+async function viewPeople() {
+  const qs = new URLSearchParams({ q: STATE.q, status: STATE.status, programme: STATE.programme, owner: STATE.owner,
+    source_channel: STATE.source, due: STATE.due, sort: STATE.sort, dir: STATE.dir });
+  const data = await api('/api/people?' + qs);
+  const opt = (arr, cur) => ['<option value="">visi</option>'].concat(arr.map(v => `<option ${v === cur ? 'selected' : ''}>${esc(v)}</option>`)).join('');
+  const th = (key, label) => `<th onclick="sortBy('${key}')">${label}${STATE.sort === key ? (STATE.dir === 'asc' ? ' ▲' : ' ▼') : ''}</th>`;
+  $('#view').innerHTML = `
+  <h1>Cilvēki</h1><p class="sub">${data.count} ieraksti</p>
+  <div class="filters">
+    <input id="fq" placeholder="Meklēt vārdu, e-pastu, telefonu" value="${esc(STATE.q)}" style="min-width:260px">
+    <select id="fstatus">${opt((CFG.stages || []).map(s => s.id), STATE.status)}</select>
+    <select id="fprog">${opt(CFG.programmes || [], STATE.programme)}</select>
+    <select id="fsource">${opt(Object.keys(CFG.channels || {}), STATE.source)}</select>
+    <select id="fdue"><option value="">termiņš: visi</option><option value="overdue" ${STATE.due==='overdue'?'selected':''}>kavēti</option><option value="none" ${STATE.due==='none'?'selected':''}>bez nākamā soļa</option></select>
+    <button class="btn ghost" onclick="clearFilters()">Notīrīt</button>
+  </div>
+  <div class="card">
+  ${data.rows.length ? `<table><thead><tr>${th('name','Vārds')}${th('programme','Programma')}${th('source_channel','Avots')}${th('status','Statuss')}${th('owner','Atbildīgais')}${th('last_contact_at','Pēdējais kontakts')}<th>Nākamais solis</th></tr></thead>
+  <tbody>${data.rows.map(r => `<tr class="row" tabindex="0" onclick="location.hash='#/person/${r.id}'">
+    <td><b>${esc(r.name)}</b><div style="color:var(--steel);font-size:12px">${esc(r.email || '')}</div></td>
+    <td>${esc(r.programme || '')}<div style="color:var(--steel);font-size:12px">${esc(r.education || '')}</div></td>
+    <td>${esc(channelLabel(r.source_channel))}<div style="color:var(--steel);font-size:12px">${esc(r.source_campaign || '')}</div></td>
+    <td>${stageChip(r.status)}</td><td>${esc(r.owner || '')}</td><td>${fmtDate(r.last_contact_at)}</td>
+    <td>${r.next_action ? esc(r.next_action) + '<br>' + dueText(r.next_action_at) : '<span class="pill calm">nav</span>'}</td></tr>`).join('')}</tbody></table>`
+  : '<div class="empty">Neviens ieraksts neatbilst filtriem. <a href="#" onclick="clearFilters();return false">Notīrīt filtrus</a></div>'}
+  </div>`;
+  $('#fq').oninput = debounce(e => { STATE.q = e.target.value; viewPeople(); }, 250);
+}
+function sortBy(k) { if (STATE.sort === k) STATE.dir = STATE.dir === 'asc' ? 'desc' : 'asc'; else { STATE.sort = k; STATE.dir = 'asc'; } viewPeople(); }
+function clearFilters() { Object.assign(STATE, { q: '', status: '', programme: '', owner: '', source: '', due: '' }); viewPeople(); }
+function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
+
+// ----------------------------------------------------------------- person --
+async function viewPerson(id) {
+  const p = await api('/api/people/' + id);
+  const openTask = p.tasks.find(t => !t.done_at);
+  const docs = p.documents.length ? p.documents.map(d => `<span class="chip" style="background:${d.state === 'received' ? '#0a7d3c' : d.state === 'expired' ? '#b06f00' : '#8b5b5b'}">${esc(d.name)}</span>`).join(' ') : '<span class="empty">nav dokumentu ieraksta</span>';
+  $('#view').innerHTML = `
+  <p class="sub"><a href="#/people">&larr; Cilvēki</a></p>
+  <h1>${esc(p.name)} ${stageChip(p.status)}</h1>
+  <p class="sub">${esc(p.email || '')} ${p.phone ? '&middot; ' + esc(p.phone) : ''}</p>
+  <div class="grid2">
+    <div>
+      <div class="card">
+        <h3 style="margin:0 0 10px">Nākamais solis</h3>
+        ${openTask ? `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+          <div><b>${esc(openTask.label)}</b><div>${dueText(openTask.due_at)} &middot; ${esc(openTask.owner || '')}</div></div>
+          <div style="display:flex;gap:6px">
+            <button class="btn sm" onclick="openComplete(${openTask.id},'${esc(openTask.label)}')">Atzīmēt izdarītu</button>
+            <button class="btn sm ghost" onclick="openReschedule(${openTask.id})">Pārcelt</button>
+          </div></div>`
+        : `<div class="empty">Nav ieplānots nākamais solis.</div>
+           <button class="btn sm ghost" onclick="openNewTask('${p.id}')">Pievienot darbību</button>`}
+      </div>
+      <div class="card">
+        <h3 style="margin:0 0 10px">Notikumi un saziņa</h3>
+        <div style="display:flex;gap:6px;margin-bottom:12px">
+          <button class="btn sm ghost" onclick="openNote('${p.id}','call')">Pierakstīt zvanu</button>
+          <button class="btn sm ghost" onclick="openNote('${p.id}','note')">Piezīme</button>
+        </div>
+        <div class="tl">${p.timeline.map(e => `<div class="ev ${esc(e.kind)}">
+          <div class="when">${fmtDateTime(e.occurred_at)} &middot; ${esc(channelLabel(e.channel) || e.kind)}${e.actor ? ' &middot; ' + esc(e.actor) : ''}</div>
+          <div><b>${esc(e.subject || '')}</b></div>${e.body ? `<div>${esc(e.body)}</div>` : ''}</div>`).join('') || '<div class="empty">nav notikumu</div>'}</div>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <h3 style="margin:0 0 10px">Ieraksts</h3>
+        <div class="kv">
+          <div>Programma</div><div>${esc(p.programme || '-')} ${esc(p.study_form || '')}</div>
+          <div>Izglītība</div><div>${esc(p.education || '-')}</div>
+          <div>Avots</div><div>${esc(channelLabel(p.source_channel))}${p.source_campaign ? ' / ' + esc(p.source_campaign) : ''}<div style="color:var(--steel);font-size:12px">${esc(p.source_detail || '')}</div></div>
+          <div>Pirmais kontakts</div><div>${fmtDate(p.created_at)}</div>
+          <div>Pēdējais kontakts</div><div>${fmtDate(p.last_contact_at) || '-'}</div>
+          <div>Atbildīgais</div><div>${esc(p.owner || '-')}</div>
+          ${p.contract_at ? `<div>Līgums</div><div>${fmtDate(p.contract_at)}</div>` : ''}
+          ${p.admitted_at ? `<div>Uzņemts</div><div>${fmtDate(p.admitted_at)}<div style="color:var(--steel);font-size:12px">${esc(p.student_no || '')}</div></div>` : ''}
+        </div>
+      </div>
+      <div class="card">
+        <h3 style="margin:0 0 10px">Statuss</h3>
+        <select id="stg" onchange="changeStatus('${p.id}', this.value)">
+          ${(CFG.stages || []).map(s => `<option ${s.id === p.status ? 'selected' : ''}>${esc(s.id)}</option>`).join('')}
+        </select>
+        <div class="prov" style="margin-top:10px">Statuss seko notikumiem pats: kad kāds solis ir izdarīts, cilvēks pāriet uz to posmu, kuram tas solis pieder. Uz priekšu, nekad atpakaļ. Šeit to var pārrakstīt ar roku.<br><br>${esc(CFG.provisional?.stages || '')}</div>
+      </div>
+      <div class="card">
+        <h3 style="margin:0 0 10px">Dokumenti</h3>${docs}
+        <div class="prov" style="margin-top:10px">${esc(CFG.provisional?.documents || '')}</div>
+      </div>
+      ${(p.simEvents || []).length ? `<div class="card"><h3 style="margin:0 0 10px">Integrācijas notikumi</h3>
+        ${p.simEvents.map(e => `<div class="trace ${e.status === 'ok' ? '' : 'bad'}">
+          <a href="#/inspector/${e.id}">${esc(e.channel)} &middot; ${esc(e.scenario)}</a>
+          <span class="muted"> ${esc(e.direction)} &middot; ${esc(e.decision)}</span></div>`).join('')}</div>` : ''}
+      ${p.registrations.length ? `<div class="card"><h3 style="margin:0 0 10px">Pasākumi</h3>
+        ${p.registrations.map(r => `<div>${esc(r.title)} ${fmtDate(r.held_on)} ${r.slot || ''} -
+          ${r.attended === 1 ? '<b>ieradās</b>' : r.attended === 0 ? 'neieradās' : 'nav atzīmēts'}</div>`).join('')}</div>` : ''}
+    </div>
+  </div>`;
+}
+
+function latestConsents(rows) {
+  const seen = new Map();
+  for (const r of rows) if (!seen.has(r.purpose)) seen.set(r.purpose, r);  // rows arrive newest first
+  return [...seen.values()];
+}
+
+async function changeStatus(id, status) {
+  await post(`/api/people/${id}/status`, { status });
+  viewPerson(id);
+}
+
+// --------------------------------------------------------------- followup --
+async function viewFollowup() {
+  const rows = await api('/api/tasks?scope=' + STATE.fuTab);
+  const counts = await api('/api/summary');
+  const tab = (k, label, n) => `<button class="${STATE.fuTab === k ? 'on' : ''}" onclick="STATE.fuTab='${k}';viewFollowup()">${label}${n !== undefined ? ' (' + n + ')' : ''}</button>`;
+  $('#view').innerHTML = `
+  <h1>Sekošana</h1><p class="sub">Kam jāsazinās un kad</p>
+  <div class="tabs">${tab('overdue', 'Kavēti', counts.overdue.length)}${tab('today', 'Šodien', counts.today.length)}${tab('week', 'Nedēļa')}${tab('open', 'Visi atvērtie')}</div>
+  <div class="card">
+  ${rows.length ? `<table><thead><tr><th>Persona</th><th>Programma</th><th>Darbība</th><th>Termiņš</th><th>Atbildīgais</th><th></th></tr></thead>
+    <tbody>${rows.map(t => `<tr class="row" tabindex="0" onclick="location.hash='#/person/${t.person_id}'">
+      <td><b>${esc(t.name)}</b><div style="color:var(--steel);font-size:12px">${esc(t.phone || '')}</div></td>
+      <td>${esc(t.programme || '')}<div>${stageChip(t.status)}</div></td>
+      <td>${esc(t.label)}</td><td>${dueText(t.due_at)}</td><td>${esc(t.owner || '')}</td>
+      <td onclick="event.stopPropagation()" style="white-space:nowrap">
+        <button class="btn sm" onclick="openComplete(${t.id},'${esc(t.label)}')">Atzīmēt</button>
+        <button class="btn sm ghost" onclick="openReschedule(${t.id})">Pārcelt</button></td></tr>`).join('')}</tbody></table>`
+  : '<div class="empty">Nekas nav gaidīšanā šajā skatā.</div>'}
+  </div>`;
+}
+
+// ----------------------------------------------------------------- intake --
+let INTAKE_TAB = 'overview';
+async function viewIntake(arg) {
+  if (arg === 'opendays' || arg === 'overview') INTAKE_TAB = arg;
+  if (INTAKE_TAB === 'opendays') return viewOpenDaysInsideChannels();
+  const d = await api('/api/intake');
+  const max = Math.max(1, ...d.byChannel.map(c => c.n));
+  $('#view').innerHTML = `
+  <h1>Kanāli</h1><p class="sub">No kurienes cilvēki nāk un kas ir ienācis</p>
+  ${intakeTabs()}
+  <div class="card">
+    <h3 style="margin:0 0 10px">Cilvēki pa kanāliem</h3>
+    ${d.byChannel.map(c => `<div style="display:grid;grid-template-columns:150px 1fr 110px;gap:10px;align-items:center;margin-bottom:6px">
+      <div style="font-size:13px">${esc(channelLabel(c.channel))}</div>
+      <div class="bar"><i style="width:${Math.round(c.n / max * 100)}%"></i></div>
+      <div style="font-size:13px;text-align:right">${c.n} &middot; uzņemti ${c.admitted}</div></div>`).join('')}
+  </div>
+  <div class="card">
+    <h3 style="margin:0 0 10px">Ienākošie notikumi</h3>
+    <table><thead><tr><th>Laiks</th><th>Kanāls</th><th>Persona</th><th>Notikums</th><th>Statuss</th></tr></thead>
+    <tbody>${d.rows.map(r => `<tr class="row" tabindex="0" onclick="location.hash='#/person/${r.person_id}'">
+      <td>${fmtDateTime(r.occurred_at)}</td><td>${esc(channelLabel(r.channel))}</td>
+      <td>${esc(r.name)}</td><td>${esc(r.subject || '')}<div style="color:var(--steel);font-size:12px">${esc((r.body || '').slice(0, 70))}</div></td>
+      <td>${stageChip(r.status)}</td></tr>`).join('')}</tbody></table>
+  </div>
+  <div class="prov">Prototipā šie notikumi ir sintētiski. Reālie kanāli ir aprakstīti un pārbaudīti atsevišķi (channel-spike), bet vēl nav pieslēgti.</div>`;
+}
+
+// ----------------------------------------------------------------- events --
+function intakeTabs() {
+  const tab = (id, label) => `<button class="${INTAKE_TAB === id ? 'on' : ''}" onclick="location.hash='#/intake/${id}'">${label}</button>`;
+  return `<div class="tabs">${tab('overview', 'Pārskats')}${tab('opendays', 'Atvērtās dienas')}</div>`;
+}
+
+async function viewOpenDaysInsideChannels() {
+  const days = await api('/api/opendays');
+  $('#view').innerHTML = `<h1>Kanāli</h1><p class="sub">Atvērtā diena ir viens no kanāliem: dalībnieks nonāk tajā pašā sistēmā</p>
+  ${intakeTabs()}
+  ${days.map(d => `<div class="card">
+    <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px">
+      <div><h3 style="margin:0">${esc(d.title)}</h3><div class="sub">${fmtDate(d.held_on)} &middot; ${esc(d.place || '')}</div></div>
+      <div style="text-align:right;font-size:13px">pieteikušies ${d.registrations.length} &middot; ieradās ${d.came} &middot; pieteikumi ${d.applied}</div>
+    </div>
+    ${d.registrations.length ? `<table><thead><tr><th>Laiks</th><th>Persona</th><th>Programma</th><th>Statuss</th><th>Ieradās</th></tr></thead>
+      <tbody>${d.registrations.map(r => `<tr class="row" tabindex="0" onclick="location.hash='#/person/${r.person_id}'">
+        <td>${esc(r.slot || '')}</td><td>${esc(r.name)}</td><td>${esc(r.programme || '')}</td><td>${stageChip(r.status)}</td>
+        <td onclick="event.stopPropagation()">
+          <button class="sm ${r.attended === 1 ? '' : 'ghost'}" onclick="setAttendance(${r.id}, true)">ieradās</button>
+          <button class="sm ${r.attended === 0 ? '' : 'ghost'}" onclick="setAttendance(${r.id}, false)">neieradās</button>
+        </td></tr>`).join('')}</tbody></table>`
+    : '<div class="empty">Vēl neviens nav pieteicies.</div>'}
+  </div>`).join('')}
+  <div class="prov">Pasākuma plūsma prototipā: pieteikšanās &rarr; persona &rarr; apmeklējums &rarr; follow-up. Atzīmējot "ieradās", automātiski rodas follow-up darbība pēc 2 dienām. Tas ir priekšlikums, nevis apstiprināta procedūra.</div>`;
+}
+async function setAttendance(id, attended) { await post(`/api/registrations/${id}/attendance`, { attended }); viewOpenDaysInsideChannels(); }
+
+// ---------------------------------------------------------------- reports --
+async function viewReports() {
+  const r = await api('/api/reports');
+  const maxSrc = Math.max(1, ...r.bySource.map(s => s.n));
+  $('#view').innerHTML = `
+  <h1>Atskaites</h1><p class="sub">Tikai tas, ko dati patiešām atbild</p>
+  <div class="cards">
+    <div class="stat"><b>${r.total}</b><span>cilvēki sistēmā</span></div>
+    <div class="stat"><b>${r.byStage.find(s => s.status === 'Admitted')?.n || 0}</b><span>uzņemti</span></div>
+    <div class="stat"><b>${r.openTasks}</b><span>atvērtas darbības</span></div>
+    <div class="stat ${r.overdueTasks ? 'alarm' : ''}"><b>${r.overdueTasks}</b><span>kavētas</span></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3 style="margin:0 0 10px">Piltuve pa statusiem</h3>${funnelHtml(r.byStage)}</div>
+    <div class="card"><h3 style="margin:0 0 10px">Avoti un konversija</h3>
+      ${r.bySource.map(s => `<div style="display:grid;grid-template-columns:130px 1fr 120px;gap:10px;align-items:center;margin-bottom:6px">
+        <div style="font-size:13px">${esc(channelLabel(s.channel))}</div><div class="bar"><i style="width:${Math.round(s.n / maxSrc * 100)}%"></i></div>
+        <div style="font-size:13px;text-align:right">${s.n} &rarr; ${s.admitted} uzņemti</div></div>`).join('')}
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3 style="margin:0 0 10px">Laiks līdz līgumam (mediāna)</h3>
+      <table><thead><tr><th>Grupa</th><th>Cilvēki</th><th>Dienas</th></tr></thead><tbody>
+      ${r.timeToContract.map(t => `<tr><td>${esc(t.group)}</td><td>${t.n}</td><td>${t.median ?? '-'}</td></tr>`).join('')}</tbody></table>
+      <div class="prov" style="margin-top:10px">Prototipa dati ir sintētiski, bet veidoti pēc reālajām 2025. gada proporcijām.</div>
+    </div>
+    <div class="card"><h3 style="margin:0 0 10px">Programmas</h3>
+      <table><tbody>${r.byProgramme.map(x => `<tr><td>${esc(x.programme || '-')}</td><td style="text-align:right">${x.n}</td></tr>`).join('')}</tbody></table>
+    </div>
+  </div>`;
+}
+
+
+// ============================================================ integrations ==
+let SIM = null, SIMSEL = null, LASTRUN = {};
+
+async function loadSim() { SIM = await api('/api/sim/providers'); }
+
+async function viewIntegrations(arg) {
+  if (!SIM) await loadSim();
+  if (arg) SIMSEL = arg;
+  if (!SIMSEL) SIMSEL = SIM.channels[0].id;
+  const c = SIM.channels.find(x => x.id === SIMSEL) || SIM.channels[0];
+  const run = LASTRUN[c.id];
+  const list = SIM.channels.map(x => `<a href="#/integrations/${x.id}" class="simitem ${x.id === c.id ? 'on' : ''}">
+      <span>${esc(x.name)}</span>
+      <span class="pill ${x.status.live ? 'ok' : 'accent'}">${x.status.live ? 'LIVE' : 'SIM'}</span></a>`).join('');
+
+  const byKind = (k) => (c.scenarios || []).filter(s => s.kind === k);
+  const btns = (arr, cls) => arr.map(s => `<button class="btn sm ${cls}" onclick="runSim('${c.id}','${s.id}')">${esc(s.label)}</button>`).join(' ');
+
+  $('#view').innerHTML = `
+  <h1>Integrācijas</h1>
+  <p class="sub">Katram kanālam ir fiktīvs konts. Poga izpilda reālu lokālu integrāciju. Neviena ražošanas sistēma netiek aiztikta.</p>
+  <div class="prov"><b>SIMULATED</b> ${esc(SIM.honesty.SIMULATED)}<br>
+    <b>PROVIDER-TESTED</b> ${esc(SIM.honesty['PROVIDER-TESTED'])}<br>
+    <b>LIVE</b> ${esc(SIM.honesty.LIVE)}</div>
+  <div class="simwrap">
+    <div class="simlist">${list}</div>
+    <div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+          <div><h3 style="margin:0">${esc(c.name)}</h3>
+            <div class="muted" style="font-size:13px">${esc(c.account.label)}</div></div>
+          <span class="pill ${c.status.live ? 'ok' : 'accent'}">${esc(c.statusLabel)}</span>
+        </div>
+        <div class="kv" style="margin-top:12px">
+          <div>Piegādātājs</div><div>${esc(c.account.provider)}</div>
+          <div>Integrācijas veids</div><div>${esc(c.connection.type)}</div>
+          <div>Galapunkts</div><div><code>${esc(c.connection.endpoint)}</code></div>
+          <div>Autentifikācija</div><div>${esc(c.connection.auth)}</div>
+          <div>Webhook / watch</div><div>${esc(c.connection.webhook)}</div>
+          <div>Verifikācija</div><div>${esc(c.connection.verification)}</div>
+          ${Object.entries(c.account.identifiers || {}).map(([k, v]) => `<div>${esc(k)}</div><div><code>${esc(v)}</code></div>`).join('')}
+          <div>Pēdējais notikums</div><div>${c.lastEvent ? esc(c.lastEvent.at.slice(0, 16).replace('T', ' ')) + ' &middot; ' + esc(c.lastEvent.scenario) + ' &middot; ' + esc(c.lastEvent.decision) : '<span class="muted">vēl nav</span>'}</div>
+          <div>Notikumu skaits</div><div>${c.eventCount}</div>
+        </div>
+        ${c.modes ? `<h3 style="margin-top:16px">Mehānismi</h3>${c.modes.map(m => `<div class="prov"><b>${esc(m.label)}</b><br>${esc(m.detail)}</div>`).join('')}` : ''}
+        ${c.config ? `<div class="warn-box"><b>Konfigurācija:</b> collect email = ${esc(c.config.collectEmail)}. ${esc(c.config.note)}</div>` : ''}
+      </div>
+
+      <div class="card">
+        <h3>Sūtīt testa notikumu</h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">${btns(byKind('inbound'), '')}${btns(byKind('action'), '')}</div>
+        ${byKind('check').length ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">${btns(byKind('check'), 'ghost')}</div>` : ''}
+        ${byKind('error').length ? `<div class="muted" style="font-size:12px;margin-bottom:6px">Kļūdu un drošības gadījumi</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">${btns(byKind('error'), 'ghost')}</div>` : ''}
+        ${c.outbound && c.outbound.supported ? `<div style="margin-top:14px;border-top:1px solid var(--line);padding-top:12px">
+          <h3 style="margin:0 0 6px">Atbilde uz āru</h3>
+          <div class="muted" style="font-size:13px;margin-bottom:8px">${esc(c.outbound.note)}</div>
+          <button class="btn sm" onclick="runOut('${c.id}')">${esc(c.outbound.label)}</button>
+          ${run && run.personId ? `<span class="muted" style="font-size:12px"> uz ${esc(run.personId)}</span>` : '<span class="muted" style="font-size:12px"> (vispirms palaid ienākošo testu)</span>'}
+        </div>` : `<div class="muted" style="margin-top:12px;font-size:13px">Šim kanālam nav izejošās saziņas.</div>`}
+      </div>
+
+      ${run ? runCard(run) : '<div class="card"><div class="empty">Nospied testa pogu un skaties, kas notiek.</div></div>'}
+
+      <div class="card">
+        <h3>Izpēte: ko šis kanāls tiešām var</h3>
+        <div class="kv">
+          ${Object.entries({ 'Iespēja': c.research.capability, 'Ko varam saņemt': c.research.canReceive, 'Ko varam sūtīt': c.research.canSend,
+            'Autentifikācija': c.research.auth, 'Ierobežojumi': c.research.limitations, 'Apstiprinājums': c.research.approval,
+            'Izmaksas / plāns': c.research.cost, 'Privātums': c.research.privacy, 'Statuss 2026': c.research.status2026,
+            'Kas ir simulēts': c.research.simulated, 'Kas vajadzīgs, lai ieslēgtu': c.research.toGoLive })
+            .map(([k, v]) => `<div>${esc(k)}</div><div>${esc(v)}</div>`).join('')}
+        </div>
+        ${(c.research.sources || []).length ? `<h3 style="margin-top:12px">Oficiālā dokumentācija</h3>
+          <ul>${c.research.sources.map(u => `<li><a href="${esc(u)}" target="_blank">${esc(u)}</a></li>`).join('')}</ul>` : ''}
+      </div>
+    </div>
+  </div>`;
+}
+
+function flowHtml(steps) {
+  return `<div class="flow">${(steps || []).map(s => `<div class="fstep ${s.ok === false ? 'bad' : ''}">
+    <b>${esc(s.step)}</b><span>${esc(s.detail)}</span></div>`).join('')}</div>`;
+}
+
+function runCard(r) {
+  const dec = r.decision || '';
+  const cls = dec === 'created' || dec.startsWith('matched') || dec === 'sent' ? 'ok'
+    : dec === 'review' ? 'warn' : r.status === 'ok' ? 'accent' : 'late';
+  return `<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+      <h3 style="margin:0">Rezultāts</h3>
+      <span class="pill ${cls}">${esc(dec)}</span>
+    </div>
+    <h3 style="margin-top:12px">Ceļš cauri sistēmai</h3>
+    ${flowHtml(r.steps)}
+    ${r.personId ? `<div style="margin-top:10px"><a href="#/person/${esc(r.personId)}">Atvērt personu ${esc(r.personId)}</a></div>` : ''}
+    ${r.crmResult && r.crmResult.note ? `<div class="prov" style="margin-top:10px">${esc(r.crmResult.note)}</div>` : ''}
+    ${r.mapping && r.mapping.length ? `<h3 style="margin-top:14px">Lauku kartējums</h3>
+      <table><thead><tr><th>No piegādātāja</th><th></th><th>CRM lauks</th><th>Vērtība</th></tr></thead><tbody>
+      ${r.mapping.map(m => `<tr><td><code>${esc(m.from)}</code></td><td>&rarr;</td><td><code>${esc(m.to)}</code></td><td>${esc(m.value)}</td></tr>`).join('')}
+      </tbody></table>` : ''}
+    ${r.identity ? `<h3 style="margin-top:14px">Identitāte</h3>
+      <div class="kv"><div>Meklēts</div><div>${esc(JSON.stringify(r.identity.looked))}</div>
+      <div>Atrasts</div><div>${r.identity.hits && r.identity.hits.length ? r.identity.hits.map(h => esc(h.key + ' -> ' + h.id)).join(', ') : 'nekas'}</div>
+      <div>Noteikums</div><div>${esc(r.identity.rule)}</div></div>` : ''}
+    <h3 style="margin-top:14px">Neapstrādātā ziņa no piegādātāja</h3>
+    <pre>${esc(JSON.stringify(r.raw, null, 2))}</pre>
+    ${r.signature ? `<div class="muted" style="font-size:12px">X-Hub-Signature-256: <code>${esc(r.signature)}</code></div>` : ''}
+    ${r.outbound ? `<h3 style="margin-top:14px">Izejošā ziņa</h3><pre>${esc(JSON.stringify(r.outbound, null, 2))}</pre>` : ''}
+    ${r.providerResult ? `<h3 style="margin-top:14px">Piegādātāja atbilde (simulēta)</h3><pre>${esc(JSON.stringify(r.providerResult, null, 2))}</pre>` : ''}
+  </div>`;
+}
+
+async function runSim(channelId, scenario) {
+  try {
+    const r = await post('/api/sim/' + channelId + '/run', { scenario });
+    LASTRUN[channelId] = r;
+    SIM = null; SIMSEL = channelId;
+    await viewIntegrations(channelId);
+  } catch (e) { alert('Neizdevās: ' + e.message); }
+}
+
+async function runOut(channelId) {
+  const last = LASTRUN[channelId];
+  if (!last || !last.personId) return alert('Vispirms palaid ienākošo testu, lai būtu kam atbildēt.');
+  try {
+    const r = await post('/api/sim/' + channelId + '/outbound', { personId: last.personId });
+    LASTRUN[channelId] = Object.assign({}, r, { personId: last.personId });
+    SIM = null;
+    await viewIntegrations(channelId);
+  } catch (e) { alert('Neizdevās: ' + e.message); }
+}
+
+async function runDemo() {
+  const d = await post('/api/sim/demo', {});
+  const t = d.tally;
+  modal('Visu kanālu demo', `
+    <p class="muted">Katrs kanāls izpildīts ar savu fiktīvo kontu. Neviena ražošanas sistēma netika aiztikta.</p>
+    <table><tbody>
+      <tr><td>Kanāli pārbaudīti</td><td><b>${t.channelsTested}</b></td></tr>
+      <tr><td>Ienākošie notikumi</td><td>${t.inbound}</td></tr>
+      <tr><td>Izveidoti cilvēki</td><td>${t.created}</td></tr>
+      <tr><td>Sakrita ar esošu personu</td><td>${t.matched}</td></tr>
+      <tr><td>Dublikāti ignorēti</td><td>${t.duplicates}</td></tr>
+      <tr><td>Nodoti pārbaudei</td><td>${t.review}</td></tr>
+      <tr><td>Noraidīti vai nepieejami</td><td>${t.rejected}</td></tr>
+      <tr><td>Izejošie notikumi</td><td>${t.outboundEvents}</td></tr>
+      <tr><td><b>Ražošanas sistēmas aiztiktas</b></td><td><b>${t.productionSystemsTouched}</b></td></tr>
+    </tbody></table>
+    <div style="margin-top:12px">${d.results.map(r => `<div class="trace ${r.status === 'ok' ? '' : 'bad'}">
+      <b>${esc(r.channel)}</b> <span class="muted">${esc(r.scenario || '')}</span> - ${esc(r.decision)}
+      ${r.personId ? ` <a href="#/person/${esc(r.personId)}" onclick="closeModal()">${esc(r.personId)}</a>` : ''}</div>`).join('')}</div>
+    <div style="margin-top:14px"><button class="btn" onclick="closeModal();location.hash='#/inspector'">Atvērt notikumu žurnālu</button></div>`);
+  SIM = null;
+}
+
+// ============================================================== inspector ==
+async function viewInspector(arg) {
+  const rows = await api('/api/sim/events');
+  let detail = '';
+  if (arg) {
+    const e = await api('/api/sim/events/' + arg);
+    detail = `<div class="card">
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <h3 style="margin:0">${esc(e.channel)} &middot; ${esc(e.scenario)}</h3>
+        <span class="pill ${e.status === 'ok' ? 'ok' : 'late'}">${esc(e.decision)}</span>
+      </div>
+      <div class="kv" style="margin-top:10px">
+        <div>Laiks</div><div>${esc(e.at)}</div>
+        <div>Piegādātājs</div><div>${esc(e.provider)} &middot; ${esc(e.account)}</div>
+        <div>Transports</div><div>${esc(e.transport || '')}</div>
+        <div>Virziens</div><div>${esc(e.direction)}</div>
+        <div>Ārējais id</div><div><code>${esc(e.external_id || '')}</code></div>
+        <div>Persona</div><div>${e.person ? `<a href="#/person/${esc(e.person.id)}">${esc(e.person.name)}</a>` : '<span class="muted">nav</span>'}</div>
+      </div>
+      <h3 style="margin-top:14px">Ceļš</h3>${flowHtml(e.steps)}
+      <h3 style="margin-top:14px">RAW - piegādātāja ziņa</h3><pre>${esc(JSON.stringify(e.raw, null, 2))}</pre>
+      <h3>NORMALIZED - mūsu iekšējais notikums</h3><pre>${esc(JSON.stringify(e.normalized, null, 2))}</pre>
+      <h3>IDENTITY</h3><pre>${esc(JSON.stringify(e.identity, null, 2))}</pre>
+      <h3>MAPPING</h3><pre>${esc(JSON.stringify(e.mapping, null, 2))}</pre>
+      <h3>DECISION</h3><pre>${esc(e.decision)} (${esc(e.status)})</pre>
+      <h3>CRM RESULT</h3><pre>${esc(JSON.stringify(e.crm_result, null, 2))}</pre>
+      ${e.outbound ? `<h3>OUTBOUND</h3><pre>${esc(JSON.stringify(e.outbound, null, 2))}</pre>` : ''}
+      ${e.provider_result ? `<h3>PROVIDER RESULT</h3><pre>${esc(JSON.stringify(e.provider_result, null, 2))}</pre>` : ''}
+      <h3>AUDIT</h3><pre>${esc(JSON.stringify(e.audit, null, 2))}</pre>
+    </div>`;
+  }
+  $('#view').innerHTML = `
+  <h1>Notikumu žurnāls</h1><p class="sub">Katrs tests, ienākošais un izejošais, ar pilnu pierakstu</p>
+  ${detail}
+  <div class="card">
+  ${rows.length ? `<table><thead><tr><th>Laiks</th><th>Kanāls</th><th>Piegādātājs</th><th>Notikums</th><th>Virziens</th><th>Identitāte</th><th>Rezultāts</th><th>Statuss</th></tr></thead>
+    <tbody>${rows.map(r => `<tr class="row" tabindex="0" onclick="location.hash='#/inspector/${r.id}'">
+      <td>${esc(r.at.slice(0, 16).replace('T', ' '))}</td><td>${esc(r.channel)}</td><td>${esc(r.provider)}</td>
+      <td>${esc(r.scenario)}</td><td>${esc(r.direction)}</td>
+      <td>${r.person_name ? esc(r.person_name) : '<span class="muted">-</span>'}</td>
+      <td>${esc(r.decision)}</td>
+      <td><span class="pill ${r.status === 'ok' ? 'ok' : r.status === 'refused' ? 'warn' : 'late'}">${esc(r.status)}</span></td></tr>`).join('')}</tbody></table>`
+  : '<div class="empty">Vēl nav neviena testa. Ej uz Integrācijas un nospied pogu.</div>'}
+  </div>`;
+}
+
+// ================================================================ metrics ==
+async function viewMetrics() {
+  const m = await api('/api/metrics');
+  const max = Math.max(1, ...m.bySource.map(x => x.n));
+  $('#view').innerHTML = `
+  <h1>Metrika un atribūcija</h1><p class="sub">Ko zina CRM un ko zina ārējās platformas</p>
+  <div class="grid2">
+    <div class="card"><h3>CRM zina</h3><ul>${m.crmKnows.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>
+    <div class="card"><h3>Platforma zina</h3><ul>${m.platformKnows.map(x => `<li>${esc(x)}</li>`).join('')}</ul>
+      <div class="prov">${esc(m.returnPath.note)}</div></div>
+  </div>
+  <div class="card">
+    <h3>Avoti, kampaņas un uzņemšana</h3>
+    ${m.bySource.map(s => `<div style="display:grid;grid-template-columns:140px 1fr 200px;gap:10px;align-items:center;margin-bottom:6px">
+      <div style="font-size:13px">${esc(s.channel)}</div><div class="bar"><i style="width:${Math.round(s.n / max * 100)}%"></i></div>
+      <div style="font-size:13px;text-align:right">${s.n} cilvēki &middot; ${s.withCampaign} ar kampaņu &middot; ${s.admitted} uzņemti</div></div>`).join('')}
+  </div>
+  <div class="card">
+    <h3>Ceļš atpakaļ uz platformu</h3>
+    <div class="kv">
+      <div>Google</div><div>${esc(m.returnPath.google)}</div>
+      <div>Meta</div><div>${esc(m.returnPath.meta)}</div>
+      <div>Mailchimp</div><div>${esc(m.returnPath.mailchimp)}</div>
+    </div>
+    <div class="warn-box">Prototips neko nekur nesūta. Šī ir izpēte par to, kas būtu jāuzbūvē, ja gribam, lai platforma uzzinātu par uzņemšanu.</div>
+  </div>`;
+}
+
+// ================================================================ privacy ==
+async function viewPrivacy() {
+  const d = await api('/api/consent');
+  const byPurpose = {};
+  for (const r of d.summary) { (byPurpose[r.purpose] = byPurpose[r.purpose] || []).push(r); }
+  $('#view').innerHTML = `
+  <h1>Dati un piekrišana</h1><p class="sub">Kas ir tehniska prasība, kas ir piegādātāja politika un kas ir juridisks apsvērums. Tas nav juridisks padoms.</p>
+  <div class="card">
+    <h3>Piekrišanas stāvoklis prototipā</h3>
+    ${Object.keys(byPurpose).length ? Object.entries(byPurpose).map(([purpose, rows]) => `<div style="margin-bottom:8px">
+      <b>${esc(purpose)}</b>: ${rows.map(r => esc(r.state) + ' ' + r.n).join(' &middot; ')}</div>`).join('')
+      : '<div class="empty">Vēl nav ierakstu. Palaid kādu integrācijas testu.</div>'}
+  </div>
+  <div class="card">
+    <h3>Nolūki un pamats</h3>
+    <table><thead><tr><th>Nolūks</th><th>Iespējamais pamats</th><th>Piezīme</th></tr></thead><tbody>
+    ${d.purposes.map(p => `<tr><td>${esc(p.label)}</td><td>${esc(p.basisOptions.join(', '))}</td><td>${esc(p.note)}</td></tr>`).join('')}
+    </tbody></table>
+    <div class="prov">GDPR nav vienādojums ar piekrišanu. Pamats ir atkarīgs no nolūka, un šis prototips to neizvēlas jūsu vietā. Kur pamats ir piekrišana, tai jābūt brīvi dotai, konkrētai, informētai un nepārprotamai, un to jāvar atsaukt tikpat viegli, cik dot.</div>
+  </div>
+  <div class="card">
+    <h3>Trīs dažādas lietas</h3>
+    <div class="kv">
+      <div>TEHNISKA PRASĪBA</div><div>Meta webhook paraksts, Gmail watch atjaunošana reizi 7 dienās, Mailchimp GET pārbaude. Bez tā integrācija nestrādā.</div>
+      <div>PIEGĀDĀTĀJA POLITIKA</div><div>Meta App Review pieprasa publisku privātuma politiku un dzēšanas ceļu. Google consent mode EEZ trafikam gaida ad_user_data un ad_personalization signālus. Mailchimp webhooks prasa Standard vai Premium plānu.</div>
+      <div>JURIDISKS APSVĒRUMS</div><div>Datu minimizēšana, nolūka ierobežojums, caurskatāmība, pamats, atsaukšana, glabāšanas termiņš, dzēšana, piekļuve un labošana, audita pēdas, apstrādātāji, starptautiskas nodošanas, drošība. Tie jāizlemj kopā ar to, kurš atbild par datiem.</div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Pēdējie piekrišanas ieraksti</h3>
+    ${d.recent.length ? `<table><thead><tr><th>Laiks</th><th>Persona</th><th>Nolūks</th><th>Stāvoklis</th><th>Pamats</th><th>Avots</th></tr></thead>
+      <tbody>${d.recent.map(r => `<tr><td>${esc(r.recorded_at.slice(0, 16).replace('T', ' '))}</td><td>${esc(r.name)}</td>
+      <td>${esc(r.purpose)}</td><td><span class="pill ${r.state === 'given' ? 'ok' : r.state === 'withdrawn' ? 'late' : 'calm'}">${esc(r.state)}</span></td>
+      <td>${esc(r.basis || '')}</td><td>${esc(r.source || '')}</td></tr>`).join('')}</tbody></table>`
+      : '<div class="empty">Vēl nav ierakstu.</div>'}
+  </div>`;
+}
+
+// ----------------------------------------------------------------- modals --
+function closeModal() { $('#modal').innerHTML = ''; }
+function modal(title, inner) {
+  $('#modal').innerHTML = `<div class="modal" onclick="if(event.target===this)closeModal()"><div class="box">
+    <div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">${esc(title)}</h3>
+    <button class="btn sm ghost" onclick="closeModal()">Aizvērt</button></div>${inner}</div></div>`;
+}
+
+function openAdd() {
+  const d = CFG.quickAddDefaults || {};
+  modal('Pievienot personu', `
+    <div class="row2">
+      <div><label>Vārds, uzvārds *</label><input id="aName" oninput="checkDup()"></div>
+      <div><label>Telefons</label><input id="aPhone" oninput="checkDup()"></div>
+    </div>
+    <div class="row2">
+      <div><label>E-pasts</label><input id="aEmail" oninput="checkDup()"></div>
+      <div><label>Programma</label><select id="aProg"><option value=""></option>${(CFG.programmes||[]).map(p=>`<option>${esc(p)}</option>`).join('')}</select></div>
+    </div>
+    <div class="row2">
+      <div><label>Avots</label><select id="aSource">${Object.entries(CFG.channels||{}).map(([k,v])=>`<option value="${esc(k)}" ${k===d.source_channel?'selected':''}>${esc(v)}</option>`).join('')}</select></div>
+      <div><label>Atbildīgais</label><select id="aOwner">${(CFG.owners||[]).map(o=>`<option ${o===d.owner?'selected':''}>${esc(o)}</option>`).join('')}</select></div>
+    </div>
+    <div class="row2">
+      <div><label>Nākamais solis (obligāts)</label>
+        <select id="aNext" onchange="document.querySelector('#aDays').value = daysForAction(this.value)">${nextActionOptions(d.nextAction)}</select></div>
+      <div><label>Pēc cik dienām</label><input id="aDays" type="number" value="${d.nextActionDays ?? 1}"></div>
+    </div>
+    <label>Piezīme</label><textarea id="aNote" rows="2"></textarea>
+    <div id="dup"></div>
+    <div id="addErr"></div>
+    <div style="margin-top:14px;display:flex;gap:8px"><button class="btn" onclick="saveAdd()">Saglabāt</button>
+      <button class="btn ghost" onclick="closeModal()">Atcelt</button></div>
+    <div class="prov" style="margin-top:12px">Klātienei avots pēc noklusējuma ir Klātiene, jo neviens digitāls notikums neienāk - to ievada darbinieks.</div>`);
+}
+async function checkDup() {
+  const q = new URLSearchParams({ name: $('#aName').value, email: $('#aEmail').value, phone: $('#aPhone').value });
+  const r = await api('/api/people/check?' + q);
+  $('#dup').innerHTML = r.matches.length
+    ? `<div class="warn-box"><b>Iespējams dublikāts:</b> ${r.matches.map(m => `<a href="#/person/${m.id}" onclick="closeModal()">${esc(m.name)}</a> (${esc(m.email || m.phone || '')})`).join(', ')}</div>`
+    : '';
+}
+async function saveAdd() {
+  try {
+    const { id } = await post('/api/people', {
+      name: $('#aName').value.trim(), email: $('#aEmail').value.trim(), phone: $('#aPhone').value.trim(),
+      programme: $('#aProg').value, source_channel: $('#aSource').value, owner: $('#aOwner').value,
+      nextAction: $('#aNext').value, nextActionDays: Number($('#aDays').value), notes: $('#aNote').value, by: $('#aOwner').value,
+    });
+    closeModal(); location.hash = '#/person/' + id;
+  } catch (e) { $('#addErr').innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+}
+
+function openComplete(taskId, label) {
+  modal('Atzīmēt: ' + label, `
+    <label>Iznākums</label>
+    <select id="cOut">${(CFG.callOutcomes || ['Izdarīts']).map(o => `<option>${esc(o)}</option>`).join('')}</select>
+    <label>Piezīme</label><textarea id="cNote" rows="2"></textarea>
+    <div class="row2">
+      <div><label>Nākamais solis (obligāts)</label>
+        <select id="cNext" onchange="onNextActionChange('cNext','cDate','cHint')">${nextActionOptions()}</select>
+        <div class="muted" id="cHint" style="font-size:12px;margin-top:4px"></div></div>
+      <div><label>Kad</label><input id="cDate" type="date" value="${todayStr()}"></div>
+    </div>
+    <div class="prov" style="margin-top:10px">Katram cilvēkam vienmēr paliek nākamais solis. Tas ved vai nu uz vizīti klātienē, vai uz pieteikumu SIS ar dokumentiem, un tālāk uz apmaksu.</div>
+    <div id="cErr"></div>
+    <div style="margin-top:14px;display:flex;gap:8px"><button class="btn" onclick="doComplete(${taskId})">Saglabāt</button>
+    <button class="btn ghost" onclick="closeModal()">Atcelt</button></div>`);
+  onNextActionChange('cNext', 'cDate', 'cHint');
+}
+async function doComplete(id) {
+  const nextLabel = $('#cNext').value;
+  if (!nextLabel) { $('#cErr').innerHTML = '<div class="err">Nākamais solis ir obligāts.</div>'; return; }
+  try {
+    await post(`/api/tasks/${id}/complete`, { outcome: $('#cOut').value, note: $('#cNote').value,
+      nextLabel, nextDate: $('#cDate').value });
+    closeModal(); route();
+  } catch (e) { $('#cErr').innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+}
+function openReschedule(id) {
+  modal('Pārcelt darbību', `<label>Jauns datums</label><input id="rDate" type="date" value="${todayStr()}">
+    <div style="margin-top:14px;display:flex;gap:8px"><button class="btn" onclick="doReschedule(${id})">Pārcelt</button>
+    <button class="btn ghost" onclick="closeModal()">Atcelt</button></div>`);
+}
+async function doReschedule(id) { await post(`/api/tasks/${id}/reschedule`, { due: $('#rDate').value }); closeModal(); route(); }
+
+function openNewTask(personId) {
+  modal('Pievienot darbību', `<label>Nākamais solis</label>
+    <select id="tLabel" onchange="onNextActionChange('tLabel','tDate','tHint')">${nextActionOptions()}</select>
+    <div class="muted" id="tHint" style="font-size:12px;margin-top:4px"></div>
+    <label>Termiņš</label><input id="tDate" type="date" value="${todayStr()}">
+    <div style="margin-top:14px;display:flex;gap:8px"><button class="btn" onclick="doNewTask('${personId}')">Saglabāt</button>
+    <button class="btn ghost" onclick="closeModal()">Atcelt</button></div>`);
+}
+async function doNewTask(personId) {
+  await post(`/api/people/${personId}/task`, { label: $('#tLabel').value, due: $('#tDate').value });
+  closeModal(); viewPerson(personId);
+}
+
+function openNote(personId, kind) {
+  modal(kind === 'call' ? 'Pierakstīt zvanu' : 'Piezīme', `
+    ${kind === 'call' ? `<label>Iznākums</label><select id="nSubject">${(CFG.callOutcomes||[]).map(o=>`<option>Zvans: ${esc(o)}</option>`).join('')}</select>`
+      : `<label>Virsraksts</label><input id="nSubject" value="Piezīme">`}
+    <label>Teksts</label><textarea id="nBody" rows="3"></textarea>
+    <div style="margin-top:14px;display:flex;gap:8px"><button class="btn" onclick="doNote('${personId}','${kind}')">Saglabāt</button>
+    <button class="btn ghost" onclick="closeModal()">Atcelt</button></div>`);
+}
+async function doNote(personId, kind) {
+  const el = $('#nSubject');
+  await post(`/api/people/${personId}/note`, { kind, subject: el.value, body: $('#nBody').value });
+  closeModal(); viewPerson(personId);
+}
+
+// ------------------------------------------------------------------ boot --
+(async () => {
+  CFG = await api('/api/config');
+  $('#ver').textContent = CFG.version || 'prototype';
+  drawDatasetBadge(CFG.dataset || {});
+  document.addEventListener('keydown', (e) => {
+    // a clickable row is a control, so it answers Enter and Space
+    const el = document.activeElement;
+    if ((e.key === 'Enter' || e.key === ' ') && el && el.classList && el.classList.contains('row')) {
+      e.preventDefault(); el.click();
+    }
+  });
+  let saved = 'light';
+  try { saved = localStorage.getItem('crmTheme') || 'light'; } catch {}
+  if (!['light', 'dark'].includes(saved)) saved = 'light';
+  setTheme(saved);
+  const themeSel = document.querySelector('#theme');
+  if (themeSel) themeSel.value = saved;
+  try { I18N = await api('/api/i18n'); } catch {}
+  let savedLang = 'lv';
+  try { savedLang = localStorage.getItem('crmLang') || I18N.default || 'lv'; } catch {}
+  LANG = (savedLang === 'en') ? 'en' : 'lv';
+  document.documentElement.lang = LANG;
+  const langSel = document.querySelector('#lang');
+  if (langSel) langSel.value = LANG;
+  buildDict();
+  watchLang();
+  window.addEventListener('hashchange', route);
+  await route();
+  applyLang(document.body);
+})();
+</script>
+</body>
+</html>

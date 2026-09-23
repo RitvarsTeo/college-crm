@@ -1,0 +1,14 @@
+# Real people. The admissions export never leaves this machine.
+data/
+
+# Runtime noise
+server.log
+
+# Secrets. Only .env.example is committed, and it holds empty placeholders.
+.env
+.env.local
+.env.*.local
+
+# Editor / tooling
+.claude/
+node_modules/
