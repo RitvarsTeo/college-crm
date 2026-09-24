@@ -24,7 +24,9 @@ def load(name):
 ch = load('channels.json')
 cfg = load('prototype.json')
 CH = ch['channels']
-OPEN = [(k, v) for k, v in cfg['openQuestions'].items() if not k.startswith('_')]
+ALL_OPEN = [(k, v) for k, v in cfg['openQuestions'].items() if not k.startswith('_')]
+OPEN = [(k, v) for k, v in ALL_OPEN if not v.get('parked')]
+PARKED = [(k, v) for k, v in ALL_OPEN if v.get('parked')]
 SETTLED = {k: v for k, v in cfg['settled'].items() if not k.startswith('_')}
 
 # --- the guard -------------------------------------------------------------
@@ -33,7 +35,7 @@ SETTLED = {k: v for k, v in cfg['settled'].items() if not k.startswith('_')}
 STOP = ['rotate', 'rotated', 'must be changed', 'no longer safe', 'exposed in a chat',
         'which menu button', 'which button the caller', 'is our instagram a professional',
         'professional account?', 'who owns our facebook page', 'deadline for applications']
-for key, q in OPEN:
+for key, q in ALL_OPEN:
     low = (q['ask'] + ' ' + q['why']).lower()
     for phrase in STOP:
         if phrase in low:
@@ -113,6 +115,46 @@ w('')
 w('`%s`' % ', '.join(cfg['intakeFilter']['spamWords']))
 w('')
 w('- [ ] Ask Tetiana what rubbish actually arrives, and add those words. Configuration, not code.')
+w('')
+w('---')
+w('')
+
+# ------------------------------------------------- Aigars's braindump ------
+w("# PART 0b - Aigars's notes, point by point")
+w('')
+w('Everything he wrote down after the first real test. Verified in the code, not from memory.')
+w('')
+w('| What he asked for | State |')
+w('|---|---|')
+for req, state in [
+    ('Today should be a **table**, not cards one at a time',
+     '**DONE** - Today renders as a table and that is the default view.'),
+    ('**Delete Junk** from the Channel Automation Results screen',
+     '**DONE** - the status is gone. Obvious junk is filtered on arrival, stored and findable, '
+     'and never reaches the working queue, so nobody archives it by hand.'),
+    ('Fix the error when opening a person from CAR',
+     '**DONE** - `fieldChip` was called but never defined, so the page crashed for everyone '
+     'qualified through CAR with a confirmed field. That was 4 of the 5 "open" links. A test now '
+     'walks the person page and fails on an undefined call.'),
+    ('CAR should **feed the pipeline**',
+     '**DONE** - qualifying in CAR creates the person, sets the owner and opens the Admissions '
+     'record. It cannot be saved without a next action.'),
+    ('**People**: filters and quick edit',
+     '**DONE** - the People screen filters and edits in place.'),
+    ('**Delete the Documents card**',
+     '**DONE** - removed. A documents question routes to Admissions, not Marketing.'),
+    ('The whole line should open the person, not a separate button',
+     '**DONE** - the row is the link. The extra button is gone.'),
+    ('A **suggested next move** that shows first but can be overridden',
+     '**DONE** - the suggestion is pre-selected and anything else can be chosen.'),
+    ('**PBX**',
+     'Built and tested locally. **NOT connected and NOT deployed.** It needs an API token from '
+     'TeleGroup and the three prerequisites in Part 3.'),
+]:
+    w('| %s | %s |' % (req, state))
+w('')
+w('**Still open from his notes:** the final pipeline stage names are deliberately NOT locked. '
+  'The current stages are working names and changing them is a configuration line.')
 w('')
 w('---')
 w('')

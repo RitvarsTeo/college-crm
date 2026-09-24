@@ -401,13 +401,30 @@ test('the open-questions list holds only things nobody has answered', () => {
     }
   }
 
-  // every genuinely blocked channel must trace to a question on this list,
-  // otherwise "waiting on somebody" has no owner
-  const blocked = new Set(items.flatMap(([, q]) => q.blocks));
-  for (const id of ['whatsapp', 'mailchimp', 'gmail', 'phone']) {
-    assert.ok(blocked.has(id), id + ' is blocked but no open question owns it');
+  // Every channel the register says is blocked must trace to a question on this
+  // list, otherwise "waiting on somebody" has no owner and nobody chases it.
+  // Read from channels.json, never a hand-written list, so closing a blocker
+  // closes the question with it.
+  const owned = new Set(items.flatMap(([, q]) => q.blocks));
+  const CH = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'channels.json'), 'utf8')).channels;
+  for (const [id, c] of Object.entries(CH)) {
+    if (!c.externalBlocker) continue;
+    // 'work' blockers are ours to do; only a 'question' needs somebody to answer
+    assert.ok(['question', 'work'].includes(c.blockerKind),
+      id + ' is blocked but does not say whether that is a question or work');
+    if (c.blockerKind !== 'question') continue;
+    assert.ok(owned.has(id), id + ' is blocked but no open question owns it');
   }
-  assert.equal(settledText.length, 5);
+  // and the reverse: a question may not claim to block a channel that is ready
+  for (const [key, q] of items) {
+    for (const cid of q.blocks) {
+      assert.ok(CH[cid].externalBlocker,
+        key + ' claims to block ' + cid + ', but that channel is ready');
+      assert.equal(CH[cid].blockerKind, 'question',
+        key + ' claims to block ' + cid + ', but that channel is waiting on work, not an answer');
+    }
+  }
+  assert.ok(settledText.length >= 5);
 });
 
 test('the Desktop guide generator refuses to reopen a settled question', () => {

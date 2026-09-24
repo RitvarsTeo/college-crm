@@ -948,7 +948,15 @@
       "decidedOn": "24.09.2026",
       "doNotReopen": true
     },
-    "_what": "Questions Ritvars has ANSWERED. Anything with doNotReopen must never appear again as an open question, a blocker, or a checkbox in any document or report. A test fails if it does. This exists because open questions were being regenerated from notes written BEFORE the answers arrived, so his answers existed and the summaries did not read them."
+    "_what": "Questions Ritvars has ANSWERED. Anything with doNotReopen must never appear again as an open question, a blocker, or a checkbox in any document or report. A test fails if it does. This exists because open questions were being regenerated from notes written BEFORE the answers arrived, so his answers existed and the summaries did not read them.",
+    "mailchimpWebhooksAvailable": {
+      "question": "Does the Novikontas Mailchimp plan include webhooks?",
+      "answer": "YES. Checked against the live account on 24.09.2026: the webhooks endpoint for the Novikontas audience returns 200 and zero webhooks are configured, so we simply add one.",
+      "decidedBy": "Checked directly against the Mailchimp API",
+      "decidedOn": "24.09.2026",
+      "doNotReopen": true,
+      "note": "Account \"Novikontas\", monthly plan, 2,827 subscribers. Audience c6ab4facba, 2,779 members."
+    }
   },
   "openQuestions": {
     "_what": "The ONLY things nobody at Novikontas has answered yet. Everything else is in `settled`. The Desktop guide and every readiness document are generated from THIS list, so a question that has been answered cannot come back.",
@@ -962,22 +970,12 @@
       ],
       "status": "Ritvars has to check."
     },
-    "mailchimpWebhooks": {
-      "ask": "Does our Mailchimp plan include webhooks?",
-      "why": "Without them Mailchimp activity cannot reach the CRM automatically.",
-      "who": "Tetiana, by logging in and looking at the audience settings",
-      "blocks": [
-        "mailchimp"
-      ],
-      "status": "Not checked yet."
-    },
     "workspaceAdmin": {
       "ask": "Who is our Google Workspace administrator, and when can they spend twenty minutes on it?",
-      "why": "Only an administrator can let a service account read edu@novikontas.org. Not Ieva, not Tetiana.",
+      "why": "Only an administrator can let a service account read edu@novikontas.org. Not Ieva, not Tetiana. The Google Form does NOT need them - it needs whoever created the form to run a short script, which is work, not a question.",
       "who": "Inside Novikontas",
       "blocks": [
-        "gmail",
-        "google_form"
+        "gmail"
       ],
       "status": "Not identified yet."
     },
@@ -996,6 +994,28 @@
       "who": "Tetiana",
       "blocks": [],
       "status": "Not asked yet."
+    },
+    "linkedinTiktokPossible": {
+      "ask": "Does LinkedIn or TikTok let a business receive its messages through an API at all?",
+      "why": "Nobody has established this. Both are Tetiana-only today and stay manual either way, so this is PARKED on purpose - it is recorded so it is not mistaken for finished work, not so somebody chases it.",
+      "who": "Nobody. Parked by decision.",
+      "blocks": [
+        "linkedin",
+        "tiktok"
+      ],
+      "status": "Parked. Do not spend time on it.",
+      "parked": true
     }
+  },
+  "mailchimp": {
+    "account": "Novikontas",
+    "plan": "monthly",
+    "audienceId": "c6ab4facba",
+    "audienceName": "Novikontas",
+    "datacenter": "us15",
+    "webhooksAvailable": true,
+    "webhooksConfigured": 0,
+    "checkedOn": "24.09.2026",
+    "_note": "Read from the live Mailchimp API. The API key lives in the Grand Opening hub .env.local and is never copied into this project. A Mailchimp event is ACTIVITY ABOUT SOMEBODY, not automatically a new person - a newsletter subscriber is not a lead."
   }
 }

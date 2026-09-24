@@ -70,7 +70,8 @@
       "howWeTest": "Simulate from DEV CONTROL using the documented Apps Script payload.",
       "howWeGoLive": "Deploy, install the script, submit one real test response, check CAR, switch to live.",
       "howWeDisable": "Remove the trigger at Google, or set the mode to off here.",
-      "_note": "A second architecture exists - the Forms API with a Cloud project and Pub/Sub. It is heavier and needs a Cloud project. The Apps Script route is what this contract assumes. EXTERNAL CONFIRMATION REQUIRED on which one Novikontas wants."
+      "_note": "A second architecture exists - the Forms API with a Cloud project and Pub/Sub. It is heavier and needs a Cloud project. The Apps Script route is what this contract assumes. EXTERNAL CONFIRMATION REQUIRED on which one Novikontas wants.",
+      "blockerKind": "work"
     },
     "gmail": {
       "label": "Email",
@@ -104,7 +105,8 @@
       "howWeTest": "Simulate from DEV CONTROL with a Gmail-shaped message fixture.",
       "howWeGoLive": "Deploy, add the key, poll once by hand, check CAR, then enable the schedule.",
       "howWeDisable": "Disable the schedule. The key can also be revoked at Google.",
-      "bodyRetention": "The message body is held only until somebody qualifies or archives the item, then deleted. What survives is the structured record. Decided 23.09.2026."
+      "bodyRetention": "The message body is held only until somebody qualifies or archives the item, then deleted. What survives is the structured record. Decided 23.09.2026.",
+      "blockerKind": "question"
     },
     "facebook": {
       "label": "Facebook",
@@ -140,7 +142,8 @@
       "howWeTest": "Simulate from DEV CONTROL with a Meta-shaped webhook body, signed with a test secret.",
       "howWeGoLive": "Deploy, set the callback URL and verify token at Meta, pass the handshake, send one real message, switch to live.",
       "howWeDisable": "Unsubscribe the page at Meta, or set the mode to off here.",
-      "operationalNote": "Facebook and Instagram are worked through the shared Meta Business Suite inbox. The channel is Facebook; who owns the person in the CRM is decided after qualification and is not the same question."
+      "operationalNote": "Facebook and Instagram are worked through the shared Meta Business Suite inbox. The channel is Facebook; who owns the person in the CRM is decided after qualification and is not the same question.",
+      "blockerKind": "work"
     },
     "messenger": {
       "label": "Messenger",
@@ -176,7 +179,8 @@
       "howWeTest": "Simulate from DEV CONTROL with a Meta-shaped webhook body, signed with a test secret.",
       "howWeGoLive": "Deploy, set the callback URL and verify token at Meta, pass the handshake, send one real message, switch to live.",
       "howWeDisable": "Unsubscribe the page at Meta, or set the mode to off here.",
-      "operationalNote": "Messenger shares the Meta Business Suite connection with Facebook and Instagram. It stays a separate channel for reporting, filtering, source and history, because a combined \"Meta\" number would hide where people actually came from."
+      "operationalNote": "Messenger shares the Meta Business Suite connection with Facebook and Instagram. It stays a separate channel for reporting, filtering, source and history, because a combined \"Meta\" number would hide where people actually came from.",
+      "blockerKind": "work"
     },
     "instagram": {
       "label": "Instagram",
@@ -211,7 +215,8 @@
       "howWeTest": "Simulate from DEV CONTROL.",
       "howWeGoLive": "As Facebook.",
       "howWeDisable": "As Facebook.",
-      "operationalNote": "Same shared Meta Business Suite inbox as Facebook."
+      "operationalNote": "Same shared Meta Business Suite inbox as Facebook.",
+      "blockerKind": "work"
     },
     "whatsapp": {
       "label": "WhatsApp",
@@ -247,7 +252,8 @@
       "howWeTest": "Simulate from DEV CONTROL.",
       "howWeGoLive": "Deploy, register the number, set the webhook, send one real message, switch to live.",
       "howWeDisable": "Remove the webhook at Meta, or set the mode to off here.",
-      "operationalNote": "WhatsApp being part of the same Meta Business Suite inbox as Facebook and Instagram is NOT VERIFIED. Do not claim it. Access today: Ieva, Laura, Marina. Not Tetiana. Access is not ownership."
+      "operationalNote": "WhatsApp being part of the same Meta Business Suite inbox as Facebook and Instagram is NOT VERIFIED. Do not claim it. Access today: Ieva, Laura, Marina. Not Tetiana. Access is not ownership.",
+      "blockerKind": "question"
     },
     "mailchimp": {
       "label": "Mailchimp",
@@ -260,8 +266,8 @@
       "timestampSource": "fired_at",
       "dedupKey": "channel + type + email + fired_at",
       "rateLimit": "Not a concern for inbound events.",
-      "readiness": "waiting_for_external_access",
-      "externalBlocker": "EXTERNAL CONFIRMATION REQUIRED: whether the current Mailchimp plan includes webhooks.",
+      "readiness": "ready_for_configuration",
+      "externalBlocker": null,
       "weControl": [
         "the endpoint",
         "the secret in the path",
@@ -274,7 +280,7 @@
       "credentialsNeeded": [
         "a secret we generate and put in the callback URL"
       ],
-      "externalActionRequired": "Confirm the plan, then paste the URL into the audience webhook settings.",
+      "externalActionRequired": "Somebody with Mailchimp access pastes our address into the Novikontas audience (c6ab4facba) under webhooks. Nothing has to be bought or asked for - checked 24.09.2026.",
       "howWeTest": "Simulate from DEV CONTROL.",
       "howWeGoLive": "Deploy, paste the URL, trigger one subscribe, check it lands, switch to live.",
       "howWeDisable": "Delete the webhook in Mailchimp.",
@@ -350,7 +356,8 @@
         "1001*Q-OTHER"
       ],
       "_note": "V1 logs calls by hand and says so on screen. The logger is built and tested locally and has never called the real API. The queue field gives us the button; that question is settled.",
-      "_answered": "ANSWERED 24.09.2026, and it was in the brief all along. The event carries a `queue` field, and the queue IS the button: 1001*Q-ADMISSION is button 1, 1001*Q-COORDINATORS is button 2, 1001*Q-OTHER is button 3. config/prototype.json -> phoneMenu has mapped it since 23.09.2026. It was listed as an open question by mistake and Ritvars had to point that out."
+      "_answered": "ANSWERED 24.09.2026, and it was in the brief all along. The event carries a `queue` field, and the queue IS the button: 1001*Q-ADMISSION is button 1, 1001*Q-COORDINATORS is button 2, 1001*Q-OTHER is button 3. config/prototype.json -> phoneMenu has mapped it since 23.09.2026. It was listed as an open question by mistake and Ritvars had to point that out.",
+      "blockerKind": "question"
     },
     "agent": {
       "label": "Agent or partner",
@@ -435,7 +442,8 @@
       "howWeTest": "Simulate from DEV CONTROL through the same normalised path.",
       "howWeGoLive": "Not possible today. Manual entry only.",
       "howWeDisable": "Not applicable.",
-      "operationalNote": "Access today: Tetiana only. A LinkedIn contact often carries no email and no phone, so the handover gap to Admissions is real and the screen says so."
+      "operationalNote": "Access today: Tetiana only. A LinkedIn contact often carries no email and no phone, so the handover gap to Admissions is real and the screen says so.",
+      "blockerKind": "question"
     },
     "tiktok": {
       "label": "TikTok",
@@ -463,7 +471,8 @@
       "howWeTest": "Simulate from DEV CONTROL through the same normalised path.",
       "howWeGoLive": "Not possible today. Manual entry only.",
       "howWeDisable": "Not applicable.",
-      "operationalNote": "Access today: Tetiana only. Same handover gap as LinkedIn."
+      "operationalNote": "Access today: Tetiana only. Same handover gap as LinkedIn.",
+      "blockerKind": "question"
     }
   },
   "_meta": "Facebook, Instagram, Messenger and WhatsApp are reached through ONE Meta Business Suite connection. That is an integration detail. Each remains a SEPARATE channel in the CRM for reporting, filtering, source and history: there is deliberately no combined \"Meta\" number, because it would hide where people actually came from. WhatsApp being inside the same shared inbox is NOT VERIFIED and must not be claimed.",
@@ -472,5 +481,6 @@
     "instagram",
     "messenger",
     "whatsapp"
-  ]
+  ],
+  "_blockerKind": "question = somebody outside has to answer and the answer may be no. work = the steps are known and nobody has done them yet. A \"question\" blocker must have an owner in prototype.json -> openQuestions, or nobody chases it. A test enforces that."
 }

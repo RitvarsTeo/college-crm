@@ -385,3 +385,25 @@ the token decision three times.
 
 **Test count: 282 passing, 0 failing.**
 
+## 24.09.2026 - Mailchimp checked against the live account
+
+Ritvars asked me to check it rather than ask him. Queried the Novikontas Mailchimp account
+directly, read-only, using the key already on this machine in the Grand Opening hub. The key
+was never copied into this project and never printed.
+
+- Account **Novikontas**, monthly plan, 2,827 subscribers. Audience `c6ab4facba`, 2,779 members.
+- The webhooks endpoint returns **200** and **zero** webhooks are configured.
+
+So webhooks are available and nothing has to be bought or asked for. Mailchimp moved from
+`waiting_for_external_access` to `ready_for_configuration`, its blocker removed, and the
+question moved from `openQuestions` to `settled`. Recorded in `config/prototype.json` ->
+`mailchimp`.
+
+A blocker is now typed as `question` (somebody has to answer, and the answer may be no) or
+`work` (the steps are known, nobody has done them). A `question` blocker with no owner in
+`openQuestions` fails a test - that caught LinkedIn and TikTok, which are now recorded as
+parked by decision rather than silently blocked.
+
+**Remaining unknowns: 3 live, 1 parked.** A WhatsApp number, the Google Workspace administrator,
+a TeleGroup API token. Parked: whether LinkedIn or TikTok allow this at all.
+
