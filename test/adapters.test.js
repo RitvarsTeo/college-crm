@@ -60,8 +60,16 @@ test('nothing invents a provider capability', () => {
     assert.match(d.externalBlocker, /EXTERNAL CONFIRMATION REQUIRED/);
     assert.equal(d.webhookPath, null, id + ' must not claim a webhook it cannot receive');
   }
-  // and WhatsApp must not be claimed as part of the shared Meta inbox
-  assert.match(channelDef('whatsapp').operationalNote, /NOT VERIFIED/);
+  // WhatsApp's place in the shared Meta inbox was unverified and is now settled:
+  // Ritvars confirmed on 24.09.2026 that all the Meta channels are Business Suite.
+  // The rule is unchanged - the note must state which it is, never leave it open -
+  // so the assertion moved from "say it is unverified" to "say it is settled".
+  const note = channelDef('whatsapp').operationalNote;
+  assert.match(note, /settled 24\.09\.2026/, 'the note must say when it was settled');
+  assert.ok(!/NOT VERIFIED/.test(note), 'it is verified now, so do not still say otherwise');
+  const CONFIG = JSON.parse(fs.readFileSync(
+    path.join(ROOT, 'config', 'prototype.json'), 'utf8'));
+  assert.equal(CONFIG.settled.metaAccessConfirmed.doNotReopen, true);
 });
 
 test('every fixture maps into the one contract', () => {

@@ -46,6 +46,18 @@ for key, q in ALL_OPEN:
 OUT = os.path.join(os.path.expanduser('~'), 'Desktop',
                    'Academy CRM - Connecting the channels.md')
 
+DONE_LIST = [
+    'PBX button mapping 1 / 2 / 3',
+    'PBX API endpoint and queue mapping known',
+    'PBX token - keep as it is, do not reopen',
+    'Meta access - %s' % ', '.join(cfg['metaBusinessSuite']['access']),
+    'Instagram Professional and the Meta Business setup',
+    'Mailchimp account checked - webhooks available',
+    'WhatsApp number confirmed: %s' % cfg['whatsapp']['number'],
+    'Phone 1 / 2 / 3 routing confirmed by %s' % cfg['whatsapp']['confirmedBy'],
+    'Inbox filter and qualification logic built and tested',
+]
+
 L = []
 w = L.append
 today = datetime.date.today().strftime('%d.%m.%Y')
@@ -63,6 +75,19 @@ w('')
 w('**One person stays one person.** The CRM keeps whichever channel they arrived on.')
 w('**Channel access is not ownership.** The moment there is real study interest the owner is '
   '**%s**.' % cfg['admissionsOwnerPerson'])
+w('')
+w('---')
+w('')
+
+# ------------------------------------------------- what is already closed --
+w('# What is already settled. Nobody asks these again.')
+w('')
+for line in DONE_LIST:
+    w('- **DONE** %s' % line)
+w('')
+w('**The only human information still missing is the Google Workspace administrator.** '
+  'Everything else on the list below is either known, technically actionable, or waiting on a '
+  'provider - not on another question to you.')
 w('')
 w('---')
 w('')
@@ -192,7 +217,7 @@ w('---')
 w('')
 
 # ------------------------------------------------------------ settled -----
-w('# PART 2 - Already decided. Nobody asks these again.')
+w('# PART 2 - The same decisions in full, with who decided and when')
 w('')
 w('| Question | Answer | Decided |')
 w('|---|---|---|')
@@ -236,56 +261,55 @@ w('---')
 w('')
 
 # --------------------------------------------------------------- part 4 ----
-w('# PART 4 - Channel by channel')
+# The connection task list. Order and steps are Ritvars's, held in
+# config/channels.json, so his list and this document cannot drift apart.
+w('# PART 4 - Still to connect')
+w('')
+w('Fourteen channels, in the order the work happens. Each one is done when every box under it '
+  'is ticked and it passes the seven checks in Part 5.')
 w('')
 
-EASY = ['website', 'open_day', 'agent', 'in_person']
-BLOCKED = ['google_form', 'gmail', 'facebook', 'instagram', 'messenger', 'whatsapp',
-           'mailchimp', 'phone']
-UNKNOWN = ['linkedin', 'tiktok']
-DONE_STEPS = {
-    'website': ['Find who maintains the Novikontas website',
-                'Tell me which page the enquiry form is on, and which fields it collects',
-                'I give you a web address and a password to paste into the form settings',
-                'Keep the tracking tags on advert links, or the report cannot tell an Instagram '
-                'advert from somebody who found us themselves'],
-    'open_day': ['Tell me which tool takes Open Day bookings today',
-                 'Ask whoever set it up whether it can send a booking to a web address',
-                 'I give you the address and password to paste in'],
-    'agent': ['Pick ONE agent to start with',
-              'Agree what they send: name, email, phone, programme',
-              'I give you a private link for that agent only'],
-    'in_person': [],
-    'google_form': ['Find who owns the form, which is whoever created it',
-                    'Book 15 minutes with them at a computer',
-                    'They open the response spreadsheet, paste in a short script I give them, '
-                    'and approve one permission box'],
-    'gmail': ['Find the Google Workspace administrator',
-              'Create a project at `console.cloud.google.com`',
-              'Create a **service account** in it and download the key file',
-              'The administrator goes to `admin.google.com` and lets that service account read '
-              '`edu@novikontas.org`'],
-    'mailchimp': ['Tetiana logs in and confirms the plan allows webhooks',
-                  'I give you a web address',
-                  'Paste it into the audience settings under webhooks'],
-    'phone': ['Ask TeleGroup for an API token, using the message in Part 1',
-              'Paste it into the server setting `PBX_API_TOKEN`. Never into a document or a chat'],
+ORDER = ch['connectOrder']
+NOTES = {
+    'whatsapp': ['The number is settled. What is left is the Meta build. All four Meta channels '
+                 'share **one** app and the same two settings, `META_APP_SECRET` and '
+                 '`META_VERIFY_TOKEN` - do it once, get four channels. Meta reviews the app '
+                 'before real messages arrive, which takes weeks and they can refuse.',
+                 '**Send me the App ID and App Secret by password manager. Never by chat.**'],
+    'gmail':    ['Only an administrator can authorise this. Not Ieva, not Tetiana. '
+                 '**Send me the key file by password manager or in person, never by chat or '
+                 'email.**'],
+    'open_day': ['A booking starts with **Tetiana**. The moment it is real study interest the '
+                 'owner is **%s**.' % cfg['admissionsOwnerPerson']],
+    'agent':    ['The agent is a **source**, never the owner.'],
+    'website':  ['Keep the tracking tags on advert links, or the report cannot tell an Instagram '
+                 'advert from somebody who found us themselves.'],
+    'phone':    ['Routing is confirmed and needs no further discussion:'],
+    'mailchimp':['A Mailchimp event is **activity about somebody**, not automatically a new '
+                 'person. A newsletter subscriber is not a lead.'],
+    'linkedin': ['If it is not supported, that is the answer and it stays manual. Only **Tetiana** '
+                 'can open it; she puts the person in by hand and **%s** works the case. If Ieva '
+                 'needs the original conversation she has to ask Tetiana.'
+                 % cfg['admissionsOwnerPerson']],
+    'tiktok':   ['Same as LinkedIn. Do not spend time on it until somebody establishes whether it '
+                 'is possible at all.'],
 }
-META = ['facebook', 'instagram', 'messenger', 'whatsapp']
-n = 0
 
-
-def block(cid):
-    global n
-    n += 1
+for i, cid in enumerate(ORDER, 1):
     c = CH[cid]
-    w('## %d. %s' % (n, c['label']))
+    w('## %d. %s' % (i, c['label']))
     w('')
-    ready = c['readiness']
-    if ready in ('ready_for_configuration', 'manual_only'):
-        w('**Nobody outside Novikontas needed.**')
+    if c['readiness'] == 'manual_only':
+        w('**Nothing to connect.**')
+    elif c.get('externalBlocker') and c.get('blockerKind') == 'question':
+        w('**Waiting on an answer:** %s' % c['externalBlocker'])
     elif c.get('externalBlocker'):
-        w('**Waiting on:** %s' % c['externalBlocker'])
+        w('**Nobody to ask. This is work:** %s' % c['externalBlocker'])
+    else:
+        w('**Ready to configure. Nobody outside Novikontas needed.**')
+    w('')
+    for step in c['connectSteps']:
+        w('- [ ] %s' % step)
     w('')
     w('| | |')
     w('|---|---|')
@@ -296,75 +320,10 @@ def block(cid):
     w('| Turn it on with | `CHANNEL_MODE_%s=live` |' % cid.upper())
     w('| Turn it off with | %s |' % c['howWeDisable'])
     w('')
-    for step in DONE_STEPS.get(cid, []):
-        w('- [ ] %s' % step)
-    if DONE_STEPS.get(cid):
-        w('')
-    for key, label in (('identityNote', 'On identity'), ('operationalNote', 'Operationally'),
-                       ('bodyRetention', 'On the message body')):
-        if c.get(key):
-            w('**%s:** %s' % (label, c[key]))
-            w('')
-
-
-w('## The four that need nobody outside')
-w('')
-for cid in EASY:
-    block(cid)
-    if cid == 'open_day':
-        w('A booking starts with **Tetiana**. Once it is real study interest the owner is **%s**.'
-          % cfg['admissionsOwnerPerson'])
-        w('')
-    if cid == 'agent':
-        w('The agent is a **source**, never the owner.')
-        w('')
-    if cid == 'in_person':
-        w('Nothing to connect. Use **+ Add person**, source **In person**. It runs the same '
-          'duplicate check as every automated channel.')
-        w('')
-
-w('---')
-w('')
-w('## The ones waiting on somebody outside')
-w('')
-for cid in BLOCKED:
-    block(cid)
-    if cid == 'gmail':
-        w('Only an administrator can do the last step. Not Ieva, not Tetiana.')
-        w('')
-        w('**Send me the key file by password manager or in person. Never by chat or email.**')
-        w('')
-        w('Who can open that mailbox today: %s.'
-          % ', '.join(p for p, cs in cfg['channelAccess']['byPerson'].items() if 'email' in cs))
-        w('')
-    if cid == 'whatsapp':
-        w('**These four share ONE connection at Meta.** Do it once, get four channels. Meta has to ')
-        w('review and approve the app before real messages reach us, which takes weeks and they can ')
-        w('refuse. They stay four separate sources in reports, because a combined "Meta" number ')
-        w('would hide where people actually came from.')
-        w('')
-        w('- [ ] At `developers.facebook.com`, create an app for Novikontas')
-        w('- [ ] Copy the **App ID** and **App Secret** from the app settings')
-        w('- [ ] Connect the Facebook Page to the app')
-        w('- [ ] Request permission to receive messages and **submit for review**')
-        w('- [ ] For WhatsApp only: register **%s** (the Higher Education number, confirmed '
-          'by %s on %s) against the WhatsApp Business Account, and verify the business'
-          % (cfg['whatsapp']['number'], cfg['whatsapp']['confirmedBy'],
-             cfg['whatsapp']['confirmedOn']))
-        w('')
-        w('**Send me the App ID and App Secret by password manager. Never by chat.**')
-        w('')
-        w('Access is already confirmed: %s. Arina has none.'
-          % ', '.join(cfg['metaBusinessSuite']['access']))
-        w('')
-    if cid == 'mailchimp':
-        w('A Mailchimp event is **activity about somebody**, not automatically a new person. A ')
-        w('newsletter subscriber is not a lead.')
+    for line in NOTES.get(cid, []):
+        w(line)
         w('')
     if cid == 'phone':
-        w('**The menu button is already solved.** The event carries a `queue` and the queue is the ')
-        w('button. The only thing missing is the token.')
-        w('')
         w('| Caller presses | Queue | Goes to |')
         w('|---|---|---|')
         menu = cfg['phoneMenu']
@@ -373,20 +332,12 @@ for cid in BLOCKED:
             w('| %s | `%s` | %s, **%s** |' % (k, m['queue'], m['role'],
                                               ' and '.join(m['handledBy'])))
         w('')
+    for key, label in (('identityNote', 'On identity'), ('operationalNote', 'Operationally'),
+                       ('bodyRetention', 'On the message body')):
+        if c.get(key):
+            w('**%s:** %s' % (label, c[key]))
+            w('')
 
-w('---')
-w('')
-w('## The two we are not sure are possible')
-w('')
-for cid in UNKNOWN:
-    block(cid)
-w('**Do not spend time on these.** Nobody has established whether either allows it at all. Today, ')
-w('and possibly permanently: only **Tetiana** can open them. She reads the message and puts the ')
-w('person into the CRM by hand, and **%s** then works the case as normal. If she needs the original '
-  'conversation she has to ask Tetiana.' % cfg['admissionsOwnerPerson'])
-w('')
-w('That is how the office works, not something the software can fix.')
-w('')
 w('---')
 w('')
 
@@ -418,14 +369,13 @@ w('')
 w('**Then send me:**')
 w('')
 for i, line in enumerate([
+        '**Who the Google Workspace administrator is** - the only thing still unknown',
+        'The TeleGroup API token, by password manager',
+        'Meta App ID and Secret, by password manager',
         'Who maintains the website',
         'Which tool takes Open Day bookings',
         'Which agent to start with',
         'Who owns the Google Form',
-        'Who the Google Workspace administrator is',
-        'Meta App ID and Secret, by password manager',
-        'The TeleGroup API token, by password manager',
-        'Whether Mailchimp\'s plan allows webhooks',
         'What rubbish actually arrives, from Tetiana, for the spam list'], 1):
     w('%d. %s' % (i, line))
 w('')
@@ -434,4 +384,4 @@ w('**Never send a password, token or key by chat or email.** Password manager, o
 io.open(OUT, 'w', encoding='utf-8', newline='\n').write('\n'.join(L) + '\n')
 print('written:', OUT)
 print('size:', os.path.getsize(OUT), 'bytes')
-print('open questions:', len(OPEN), ' settled:', len(SETTLED))
+print('open questions:', len(OPEN), ' settled:', len(SETTLED), ' channels:', len(ORDER))

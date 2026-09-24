@@ -424,3 +424,27 @@ an API token from TeleGroup.
 **Remaining unknowns: 3 live, 1 parked.** The Google Workspace administrator, a TeleGroup API
 token, and the spam word list from Tetiana. Parked: whether LinkedIn or TikTok allow this at all.
 
+## 24.09.2026 - the guide is now Ritvars's connection task list
+
+He gave the list he actually wants to work from: a settled/done block at the top, then
+fourteen channels in HIS order with per-channel steps. Both the order and the steps now live
+in `config/channels.json` as `connectOrder` and `connectSteps`, and the Desktop guide renders
+them, so his list and the generated document cannot drift apart.
+
+Order: WhatsApp, Facebook, Instagram, Messenger, Gmail, Website, Google Form, Open Day, Agent,
+Phone, Mailchimp, LinkedIn, TikTok, In person.
+
+Each channel now states which of three it is, rather than a flat "blocked":
+
+- **Ready to configure** - nobody outside needed
+- **Waiting on an answer** - a `question` blocker, and it must have an owner in `openQuestions`
+- **Nobody to ask, this is work** - the steps are known and nobody has done them
+
+WhatsApp's `operationalNote` claimed its place in the shared Meta Business Suite was NOT
+VERIFIED. Ritvars settled that, so the note and the test that guarded it were both corrected.
+The rule did not change - the note must say which it is and never leave it hanging - only the
+answer did.
+
+**One human unknown remains: the Google Workspace administrator.** Everything else is either
+known, technically actionable, or waiting on a provider.
+
