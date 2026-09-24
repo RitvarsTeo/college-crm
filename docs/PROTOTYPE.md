@@ -1,4 +1,7 @@
-# College CRM V1 - virtual prototype
+# Academy CRM - V1 virtual prototype
+
+*Renamed 24.09.2026 from "College CRM". The header carries the official Novikontas Academy
+logo file, dark navy on the light theme and white on the dark one.*
 
 A clickable prototype of what the CRM could be, so it can be argued with before anything is built.
 It is not production software: no authentication, no real integrations, no migrations, no deployment,
@@ -13,8 +16,8 @@ writes the first person into it. Three controls sit with the demonstration tools
 - **Clear the database** - back to empty. Press it as often as the demo needs.
 - **Load into the database** - empty, the real people exported from the admissions sheet, or synthetic.
 
-The badge under the product name always says which of the three is on screen, so real applicants can
-never be mistaken for invented ones.
+A badge in the DEV CONTROL group always says which of the three is on screen, so real applicants can
+never be mistaken for invented ones. (It sat under the product name until 24.09.2026.)
 
 **Real data** lives in `data/real_people.json`, which is git-ignored and never leaves this machine.
 It is built by `import_sheet.py` from the ADMISSIONS DATABASE export. The default selection is this
@@ -30,8 +33,18 @@ cd "Desktop\WF\Local Repo\Projects\College CRM\crm-prototype"
 npm start
 ```
 
-Then open `http://localhost:8800`. No dependencies, no install, Node 24 built-ins only. The data
-lives in memory and is rebuilt on every start, so anything you click is safe and a restart resets it.
+Then open `http://localhost:8800`. No dependencies, no install, Node 24 built-ins only.
+
+**Corrected 24.09.2026, twice.** The data used to live in memory and be rebuilt on every start. It
+is now a file at `data/crm.db` (git-ignored) and it **survives a restart** - verified by seeding a
+row, restarting the server and reading it back. The first attempt did NOT work: boot still called
+`loadDataset(...)`, which clears every table, so the file was wiped on every start and only the
+feedback table survived. That is fixed and an existing database is now left alone at boot.
+`DATASET=empty|real|synthetic` still forces a load and therefore still clears. The change was made
+because the old behaviour caused a real bug - a restart emptied the database while a
+tester's open browser tab carried on showing rows that no longer existed, and every link in that
+stale page then failed. "Clear everything" in DEV CONTROL is now the way back to empty, not a
+restart. Set `CRM_DB=:memory:` for the old behaviour; the tests still run that way.
 
 ## Design
 

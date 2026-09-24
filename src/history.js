@@ -13,7 +13,7 @@ export const AUTOMATIC = 'automatic';
 // first heard from them. Those two are historical fact, not current state, and a
 // later touch must never be able to rewrite them.
 export const EDITABLE_FIELDS = [
-  'name', 'email', 'phone', 'programme', 'study_form', 'education', 'owner', 'notes',
+  'name', 'email', 'phone', 'programme', 'study_form', 'education', 'nationality', 'owner', 'notes',
 ];
 
 // Named so a refusal can say WHY, not just no.
@@ -32,7 +32,8 @@ export const IMMUTABLE_FIELDS = {
 
 export const FIELD_LABELS = {
   name: 'Name', email: 'Email', phone: 'Phone', programme: 'Programme',
-  study_form: 'Study form', education: 'Education', owner: 'Owner', notes: 'Notes',
+  study_form: 'Study form', education: 'Education', nationality: 'Nationality',
+  owner: 'Owner', notes: 'Notes',
 };
 
 export function logEvent(db, e) {

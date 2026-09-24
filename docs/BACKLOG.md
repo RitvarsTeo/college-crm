@@ -1,4 +1,9 @@
-# College CRM - backlog
+# Academy CRM - backlog
+
+*Named "College CRM" until 24.09.2026. The product is **Academy CRM** (formally Novikontas
+Academy CRM). The folder, the package name and the GitHub repository are still spelled
+`college-crm`: those are identifiers other things point at, and renaming them is a separate
+decision for Ritvars.*
 
 Nothing is deleted here. A line changes status, it does not disappear.
 
@@ -6,8 +11,124 @@ Nothing is deleted here. A line changes status, it does not disappear.
 `BUILT` - it exists in the prototype · `LIVE` - verified running in production (nothing is LIVE:
 this is a local prototype) · `UNKNOWN` - named but not checked with the provider.
 
-**PIN: COLLEGE CRM V1 - VALIDATE THE WORKFLOW WITH IEVA.** This is a prototype for testing the
-real Admissions workflow on screen. It is not the product.
+## Pin
+
+**PIN: ACADEMY CRM - V1 VIRTUAL PROTOTYPE. NOT RELEASED, NOT DEPLOYED, NOT CONNECTED.**
+
+- **Version:** V1
+- **State:** in development, unreleased
+- **Scope lock state:** NOT LOCKED - changing daily on owner feedback, and Ieva has not yet
+  validated the workflow
+- **Release line:** `master`
+- **Blockers:** the pipeline stage names (row 46), Ieva's real process after "To look at" (row 50),
+  follow-up outcomes (row 51), the external channel for feedback notification (open question 13),
+  and every EXTERNAL BLOCKER in [CHANNEL_READINESS.md](CHANNEL_READINESS.md). Deployment is blocked
+  by everything under "What is NOT done".
+- **Next:** Ieva validates the workflow. Nothing is committed, pushed or deployed until Ritvars says so.
+
+State as at 24.09.2026, from the repository and Git, not from memory of a conversation:
+
+| Delivery state | Answer | Evidence |
+|---|---|---|
+| Implemented | Yes, in the working tree | `git status --porcelain`: **7 modified, 5 untracked**, all uncommitted |
+| Tested | Yes, locally | `node --test test/*.test.js` -> **274 pass, 0 fail**, run 24.09.2026 |
+| Committed | **No** for today's work | only `afea424` is committed; everything from 24.09 is uncommitted |
+| Merged | **Not applicable so far** | `git log --merges` is empty. No merge has ever happened in this repository. |
+| Deployed | **No** | nothing is deployed to anywhere, by anybody. No Supabase project, no Vercel project. |
+| Verified | **Locally only** | behaviour observed in a local browser at `http://localhost:8800`. Nothing has been verified in a deployed environment, because there is no deployed environment. |
+| Released | **No** | no tag exists (`git tag` is empty) and there is no release record |
+
+**Scope of V1, and whether it is locked.** V1 is a clickable prototype for arguing with the
+Admissions workflow on screen, not production software. The scope is **NOT locked**: it is being
+changed daily by owner feedback, and 24.09 alone added the pipeline board and the feedback widget.
+Treat every row below as provisional until Ieva has validated the workflow.
+
+**Current blockers.** The pipeline stage names are not agreed (row 46). Deployment is blocked by
+everything in "What is NOT done". There is no authentication, so every admin-only screen is a
+workflow rule and not a security boundary.
+
+**Next planned version: UNKNOWN.** No V2 has been defined by the owner, and this file does not
+invent one.
+
+## Project control map
+
+Where each concept lives in this project, so a session does not have to rediscover it. There is no
+`CLAUDE.md` in this repository, so the map lives here.
+
+| Concept | Home |
+|---|---|
+| Pin | this file, the **Pin** section above |
+| Scope, and whether locked | this file, the **Pin** section above |
+| Remaining work | this file: open rows below, plus **Open questions for Ritvars** and **What is NOT done** |
+| Backlog | this file. Numeric `#` IDs, statuses `SAID` / `DECIDED` / `BUILT` / `LIVE` / `UNKNOWN` |
+| Owner decisions and blockers | [DECISIONS.md](DECISIONS.md) - locked decisions with the test behind each, and the blocking table at its end. Plus **Open questions for Ritvars** here. |
+| Release record | this file, the **Release record** section below. There was none before 24.09.2026. |
+| Handoff | this file, the **Handoff** section below. There was none in the repository before 24.09.2026; it lived only in assistant memory, which no other account can read. |
+
+Status words in this project do not mean what a generic checklist might assume:
+
+- `BUILT` means it exists in the prototype. **It does not mean deployed, and it does not mean
+  verified anywhere but a local browser.**
+- `LIVE` means verified running in production. **Nothing in this project is LIVE, and nothing can
+  be until something is deployed.**
+- `DECIDED` means the owner decided it. It says nothing about whether it is built.
+
+## Release record
+
+**Nothing has ever been released.** No tag exists. No environment has received this code.
+
+| Version | Released | Tag | Deployed to | Verified |
+|---|---|---|---|---|
+| V1 | No | none | nowhere | local browser only |
+
+The only published artefact is the GitHub repository `RitvarsTeo/college-crm` (private), which
+holds exactly one commit, `afea424`. **A commit on GitHub is not a deployment and not a release.**
+
+## Handoff
+
+Written 24.09.2026. A fresh session on any account should be able to work from this alone.
+
+- **Branch:** `master`. Local `master` is at `afea424` with today's work uncommitted on top.
+- **Remote:** `origin` -> `https://github.com/RitvarsTeo/college-crm.git` (private, owner
+  `RitvarsTeo`, collaborator `NovikontasAcademy` with write access). `origin/master` = `afea424`.
+- **Other branch:** `deployment-audit` at `7438633` exists **locally only**. It holds a deployment
+  audit that was deliberately not published. Do not delete it without asking.
+- **Uncommitted work (24.09.2026),** exactly as `git status --porcelain` reports it:
+  modified `docs/BACKLOG.md`, `docs/PROTOTYPE.md`, `src/app.html`, `src/db.js`, `src/intake.js`,
+  `src/server.js`, `test/intake.test.js`; untracked `sql/002_feedback.sql`, `src/assets/`,
+  `src/feedback.js`, `test/feedback.test.js`, `test/workflow.test.js`. See rows 40 to 56.
+- **Tests:** `node --test test/*.test.js` -> 274 pass, 0 fail.
+- **Run it:** `npm start`, then `http://localhost:8800`.
+- **Database:** `data/crm.db`, git-ignored. It **survives a restart** - verified by seeding a row,
+  restarting and reading it back, after row 58 fixed a boot-time wipe that made an earlier claim of
+  this wrong. `CRM_DB=:memory:` restores throwaway behaviour; the tests use it. `DATASET=empty|real|synthetic`
+  forces a load at boot and therefore CLEARS what is there.
+- **Open owner decisions:** the stage names (row 46), the real process after "To look at" (row 50),
+  follow-up outcomes (row 51), and everything in [DECISIONS.md](DECISIONS.md)'s blocking table.
+- **Exact next action:** Ieva validates the workflow. Nothing should be committed, pushed or
+  deployed before Ritvars says so.
+- **UNKNOWN:** whether V1 is ever meant to be deployed, and to what. No environment has been chosen.
+
+### Git workflow: proposed, not established
+
+This repository has **one commit and no merge commits**, so it has no established branch or PR
+convention to follow. Rather than inventing one, here is the proposal for Ritvars to confirm or
+reject:
+
+- work on a feature branch per bounded change, named `feature/<row-id>-short-name` or
+  `fix/<row-id>-short-name`, branched from `master`;
+- open a pull request against `master` stating purpose, behaviour, evidence, what is unverified and
+  the rollback, and merge it there;
+- keep `master` as the release line, and tag only a commit that has actually been deployed and
+  verified - which, today, means no tags at all.
+
+**Nothing above has been done and nothing will be pushed without his go-ahead.** Today's work is
+still uncommitted on `master` at his instruction.
+
+
+**To connect a real channel, start at [CONNECTING_CHANNELS.md](CONNECTING_CHANNELS.md).** It is the
+walk-through: the exact endpoint, the exact secret name, and the exact person outside this
+repository who has to act first, in the order the work should be done.
 
 The locked decisions live in [DECISIONS.md](DECISIONS.md), each with the test that keeps it honest.
 The inbound design is in [INBOUND_ARCHITECTURE.md](INBOUND_ARCHITECTURE.md) and is **awaiting
@@ -55,8 +176,8 @@ approval - nothing is connected**. The questions for each provider are in
 | 33 | **No conversation bodies in V1.** | **DECIDED 23.09.2026** | Identity, source, timestamp, thread key, qualification, extracted fields, notes, who processed it, next action, owner, audit. **The cost is recorded:** an extraction error becomes uncheckable, and the earlier claim that the queue "preserves full message context" is withdrawn in the architecture document rather than left standing. |
 | 34 | **Browser extension demoted.** | **DECIDED 23.09.2026** | Not a V1 component. Marketing works on a phone. Fallback only if a provider approval is refused outright. |
 | 35 | **LinkedIn is a real channel with zero research.** | **UNKNOWN, recorded as unknown** | Kept OUT of the researched provider config on purpose, with a test enforcing it, so it cannot look investigated. Questions written. |
-| 36 | **PBX incoming-call logger.** | **BUILT 23.09.2026, NOT DEPLOYED, NOTHING CONNECTED** | Vercel Cron every 5 min asks the tg.lv PBX for the last 15 min, keeps incoming calls on the three college queues, upserts on `uniqueid`. Europe/Riga handled explicitly with no hardcoded offset and both DST transitions tested. The token lives only in `process.env.PBX_API_TOKEN`, is never logged, and **must be rotated** before go-live. `sql/001` is written and NOT applied. See [PBX_CALL_LOGGER.md](PBX_CALL_LOGGER.md). |
-| 37 | **Vercel plan for the 5-minute cron.** | **UNCHECKED, blocking** | A 5-minute cron needs Pro. On Hobby it silently becomes daily and a 15-minute window would then miss almost every call. Nobody has confirmed which plan the College CRM project is on. |
+| 36 | **PBX incoming-call logger.** | **BUILT 23.09.2026, NOT DEPLOYED, NOTHING CONNECTED** | Vercel Cron every 5 min asks the tg.lv PBX for the last 15 min, keeps incoming calls on the three college queues, upserts on `uniqueid`. Europe/Riga handled explicitly with no hardcoded offset and both DST transitions tested. The token lives only in `process.env.PBX_API_TOKEN`, is never logged, and is never logged. `sql/001` is written and NOT applied. See [PBX_CALL_LOGGER.md](PBX_CALL_LOGGER.md). |
+| 37 | **Vercel plan for the 5-minute cron.** | **UNCHECKED, blocking** | A 5-minute cron needs Pro. On Hobby it silently becomes daily and a 15-minute window would then miss almost every call. Nobody has confirmed which plan the Academy CRM project is on. |
 | 38 | **Call-record retention.** | **NOT DECIDED** | The table holds caller numbers. No purge job exists, because how long a call may be kept is a privacy decision and a default would be an invented policy. |
 
 ## Prototype state
@@ -98,6 +219,115 @@ written by anybody who owns that text.
 The research prose on the Integrations / Metrics / Privacy screens stays English because it quotes
 provider documentation.
 
+---
+
+## From Aigars's first real test, 24.09.2026
+
+He ran the prototype and wrote a braindump (`Crm braindump.docx`, six screenshots). This is what he
+said, what was decided, and what was built the same day. Ritvars confirmed each decision before it
+was built.
+
+| # | What | Status | Notes |
+|---|---|---|---|
+| 40 | **CAR: clicking "open" threw an error.** | **BUG, FIXED** | Reproduced: the page said `Failed to load: not found`. The cause was not the link. The database lived in memory, so every restart emptied it while the open browser tab carried on showing rows that no longer existed. Two fixes: the database is now a **file** (`data/crm.db`, gitignored), and a missing record now says *"Not here any more"* with why, instead of the word "failed". |
+| 41 | **People: the four filters did nothing at all.** | **BUG, FIXED** | Aigars drew a question mark over each one. They were unlabelled - and also had no change handler, so none of them had ever filtered anything. They now carry the name of what they filter (Search, Stage, Programme, Owner, Came from, Next step) and all of them work. |
+| 42 | **Today: a table, not one card at a time.** | **DECIDED 24.09.2026, BUILT** | "Šeit vajadzētu tabulas view lai ir overview." The table is the default. The one-at-a-time card view is kept behind a **Table / One at a time** switch, because it is the better shape on a phone. This reverses the 23.09 instruction that Today must show one person at a time; both owners have now said table. The choice is remembered per browser. |
+| 43 | **CAR: two tabs too many.** | **DECIDED 24.09.2026, BUILT** | The **Junk** tab is gone. Machine-filtered sales pitches and items a person marked *Not relevant* are now one list, hidden by default behind **Show not relevant**. Underneath they stay two states (`filtered` and `archived`) because the funnel counts real contacts and a sales pitch was never one. |
+| 44 | **CAR: an operator could not say what somebody wanted.** | **BUG, FIXED - this was the real complaint** | Aigars wrote a note saying the person wanted the engineer programme, pressed Save, and the person landed in *Done* marked "Not clear yet". The dialog only offered tick boxes for what the **machine** had extracted, and a message saying "hello" gives the machine nothing to extract. So there was no way to record what he already knew, the item could only be filed as unclear, and the person came to rest with nobody owning them. The dialog now asks **"What do they want to study?"** with the programme list, pre-filled from the message when the machine did read one. Saying a programme makes it a lead, routes it to Admissions and puts the person on the pipeline. The value is stored with provenance `operator` - a person said it, not a machine. Stating an interest and filing it as unclear is now **refused**, not quietly accepted. |
+| 45 | **A qualified lead must reach a pipeline.** | **DECIDED 24.09.2026, BUILT** | New **Pipeline** screen: a horizontal board, one column per configured stage, counts per column, people as compact cards showing programme, education, channel, owner and next step. Cards are **dragged between columns and that is a real stage change**: it saves the same way the person page does, so it lands in the history with who moved it, from which stage to which. Dropping somebody into *Not proceeding* still asks for a reason first and changes nothing until it is given. |
+| 46 | **The pipeline stage names are not agreed.** | **OPEN - for Ieva** | The board reads `config/prototype.json` → `stages` and there is no stage list in the code. Renaming, reordering, adding or removing a column is a config edit. The screen says on it that the columns are provisional. **This is the first thing to walk through with Ieva.** |
+| 47 | **People: edit without opening the profile.** | **DECIDED 24.09.2026, BUILT** | Every row has an **Edit** button that opens the eight editable fields plus a note box inline, under the row. It saves through the same route the person page uses, so the same field policy applies and the same history entries are written. |
+| 48 | **The Documents card is removed.** | **DECIDED 24.09.2026, BUILT** | Aigars crossed it out: documents are collected in the admissions portal, not here. A half-mirrored checklist only invites somebody to trust the wrong copy. |
+| 49 | **In-app feedback, like the one in Suggest.** | **DECIDED 24.09.2026, BUILT** | A floating **HELP** pill on every screen opens *Send feedback*: an idea or something broken, a message, and an optional screenshot that can be **pasted with Ctrl+V** straight after a Win+Shift+S capture. It records the screen it was sent from. Admins get a **Feedback** inbox with the screenshot inline, a link back to the screen, and *Mark handled*. Built from Aigars's own brief (`feedback-widget-brief.md`). |
+| 50 | **The pipeline after "To look at" needs Ieva's real process.** | **OPEN - for Ieva** | Aigars: "šeit ir jāparunā ar Ievu, kāds šobrīd reali ir tas process". He named *contacted once*, *waiting for reply* as examples. Nothing has been invented: the board uses the stages that were already configured. |
+| 51 | **Follow-up outcomes and next steps need Ieva.** | **OPEN - for Ieva** | Aigars had nothing to add himself and asked for Ieva to go through the lists and comment. |
+| 52 | **Does every message reach the CRM, or does a human filter first?** | **OPEN - Aigars's question** | Today: obvious sales pitches are dropped on arrival by a word filter and everything else reaches *To look at*, where a person decides. That is the design, but Aigars did not find it obvious from the screens, which is itself worth fixing. |
+
+| 53 | **Renamed to Novikontas Academy CRM, with the official logo.** | **DECIDED 24.09.2026, BUILT** | The header carries the **authorised logo file**, not a redrawn one, and there are two of them: `NoAca_logo_darkhor.svg` on the light shell and `NoAca_logo_whitehor.svg` on the dark one. Neither is recoloured by hand, which the brandbook forbids. Under it, one line only: `CRM - V1 virtual prototype`. The **"V1 DEMO DATA - 12 people" badge is gone from the header** and now sits in DEV CONTROL, next to the buttons that change the dataset. |
+| 54 | **The logo is the way Home.** | **DECIDED 24.09.2026, BUILT** | Clicking it goes to Today from anywhere. |
+| 55 | **The pipeline fills the page.** | **BUG, FIXED** | The board ran off the right-hand edge behind a scrollbar and the last column was clipped. The cause was the page itself stretching: `main` is a grid item, and a grid item defaults to `min-width:auto`, so wide content widens the column instead of scrolling inside it. With `min-width:0` the board's own scrolling works, and the stage columns now share the width so all seven are on screen at once. |
+| 56 | **Dark mode: the dropdown lists were unreadable.** | **BUG, FIXED** | The list a `<select>` drops open is drawn by the browser, not by the stylesheet, so it stayed white while the options inherited light text - "Light" was white on white. `color-scheme` now tells the browser which theme it is drawing, and the options carry an opaque `--menu` colour. It had to be a new token: `--surface` is a 5.5% translucent overlay in this dark theme, and a browser-drawn menu has nothing of ours behind it. |
+
+| 57 | **Black logo on the light theme.** | **OWNER OVERRIDE 24.09.2026, BUILT** | The dark theme uses the authorised `NoAca_logo_whitehor.svg` unchanged. The light theme does **not** use an authorised file: `src/assets/NoAca_logo_blackhor.svg` is the official `NoAca_logo_darkhor.svg` with its fill changed from Novikontas navy `#022367` to Pitch Black `#011111`. Exactly one line differs and the geometry is untouched, which was verified by diffing the two files. **The Novikontas brandbook lists recolouring among its nine don'ts and no official black variant exists anywhere on this machine.** Ritvars was told that and decided to use black anyway for this prototype. The file carries the same warning in its own header. If an official black asset ever appears, replace this file and delete it. |
+
+| 58 | **The file database was still being wiped on every restart.** | **BUG, FIXED - my own regression** | Row 40 made the database a file so a restart would stop emptying it under a tester. It did not work, and I reported that it did. `src/server.js` ran `loadDataset(...)` at boot, and `loadDataset` clears every table first. That cost nothing while the database was in memory - a new process was empty anyway - but against a file it destroyed everything on every start. Only `feedback` survived, because `clearAll()` does not touch it, and that is what made it look like persistence was working. Boot now leaves an existing database alone and only applies the configured starting dataset to a new, empty one; `DATASET=...` still forces a load, which is what the tests use. **Proved by seeding a row, restarting, and reading it back.** |
+| 59 | **One admin seat in the demo.** | **DECIDED 24.09.2026, BUILT** | The picker listed Aigars, Ritvars and Marina. It now offers one **Admin**. There are still three real admins and `config/prototype.json` → `_admins` names them; two tests assert that the note keeps naming all three, so the fact cannot be dropped quietly. The reason is honesty: without a login, three named admins in a dropdown was fiction - anybody could pick any of them. One seat says what is true, which is that admin is a level of access and not yet a person. |
+| 60 | **Follow-ups and Replies merged into "Waiting on us".** | **DECIDED 24.09.2026, BUILT** | They were two tabs answering the same question, *who needs me today?*, and they differed only by **who started it**: Follow-ups were open tasks due or late (we planned them), Replies were people whose last event is inbound with nothing sent back (they wrote). Worse, somebody with both appeared **twice**. Now one queue, de-duplicated by person, oldest first. Each row carries a small marker - `we planned this`, `they wrote`, or `they also wrote` - and keeps its own action, because a planned step is marked done and a message is answered. Today is three tabs, not four. |
+
+| 61 | **A person's timeline was a raw data dump.** | **BUG, FIXED** | A website application read `submission_id: web-so1np9hp submitted_at: 2026-09-24T10:12:51.730Z name: ... utm_source: instagram utm_medium: paid ...`, and its heading was in Latvian. Ieva reads this between phone calls. It now says: *Wants to study NAV, full time. Reach them on +371 26 411 900 or the email. Agreed to be contacted about applying and about news and offers. Found us through a paid Instagram ad (campaign nav-2026-09).* **The full payload is not lost** - it is kept in `sim_events` and shown on the Channels and Inspector screens, where somebody is deliberately looking at the plumbing. Same treatment for the Google form and the Mailchimp events. |
+| 62 | **The timeline named the wrong channel.** | **BUG, FIXED** | A website form carrying `utm_source=instagram` was listed as an **Instagram** message, because the event took its channel from the traffic source. It now shows the channel the message ARRIVED on; where the traffic came from is a separate fact and is in the sentence and on the person record. That exposed three simulator channels with no plain name - `website_form`, `gmail`, `open_day` - which are now aliases of Website, Email and Open Day. A test fails if any simulator channel has no plain name, and I proved it fails by deleting one. |
+| 63 | **Latvian on English-only screens.** | **BUG, FIXED** | Three headings were Latvian (`Pieteikuma forma`, `QR pieteikums`, `Google formas pieteikums`), and a website fixture wrote the study form as `Pilna laika` into a person record whose configured vocabulary is Full time / Part time. All English now. **What deliberately stays Latvian:** the raw Google Form field names, the raw notification email, and profession names like *Kuģu kapteinis*. Those are what genuinely arrives from Latvian systems and from real people; changing them would be inventing data. A real sender's email subject also keeps their own words - only our own system-generated notification says it in English. |
+| 64 | **Today showed everybody's work under one person's name.** | **BUG, FIXED** | The sidebar said *waiting for you 4* and Today said *Waiting on us 6*, which is what Ritvars spotted. They were measuring different things: the sidebar is filtered to your role, Today was not filtered at all. Today now shows the acting person's role by default, with a **role / Everyone** switch beside the Table switch. |
+| 65 | **The sidebar folded two different numbers into one.** | **BUG, FIXED** | *waiting for you* was live-leads-you-own plus overdue steps. The lead part only ever grows, so the number never emptied and never matched Today. It is now two lines: **needs you today** (messages to look at and late next steps - the same things Today asks for) and **leads you own** (how many people are in your pipeline, which is not a to-do). |
+| 66 | **Feedback is for Aigars and Ritvars only.** | **DECIDED 24.09.2026, BUILT** | Not derived from the admin list: **Marina is an admin and must not see the feedback inbox.** `config/prototype.json` → `feedbackReaders` is its own list, every feedback route checks it, and the screen hides the inbox from anybody else. Proved by sabotage twice: adding Marina to the readers turns 3 tests red, and putting the routes back on `isAdmin` turns 4 red. Note the honest limit: with no login this checks the **name that is selected**, not who selected it. |
+| 67 | **Being told when feedback arrives.** | **BUILT 24.09.2026, in-app only** | **This app has no email mechanism of any kind** - nothing here can send mail, and nothing is deployed to send it from. So the notification is in the app: a count beside the Feedback link, visible only to the two readers, that clears as items are handled. **An external channel is still an open decision** - see the question below. |
+
+| 68 | **The person page crashed for everybody CAR produced.** | **BUG, FIXED** | `fieldChip` was called on the person page and defined nowhere. It broke **4 of 12** demo people - exactly those qualified through CAR with a confirmed field - and therefore **4 of the 5 open links in CAR Done**. Present since the V1 commit `afea424`. My earlier "open is fixed" report was half right: the stale-database cause was real and fixed, this second cause was never found. Now 0 of 12 crash. A test walks the person page and fails if it calls anything undefined; proved by deleting `fieldChip` again. |
+| 69 | **Qualifying from CAR created duplicates in silence.** | **BUG, FIXED** | `config.duplicateRule.blockOnMatch` has been `true` since 23.09 and was applied on the manual Add person screen ONLY. `qualify()` never asked. That is how two Emīls Baltputnis records with the same phone got in. The matcher now lives in `src/identity.js` and every path uses it. Qualifying a known contact is refused and the screen **names who it already has**, offering three ways out: *This is them*, *Open*, or *No, this is a different person*. Phone matching normalises `+37120423829`, `37120423829` and `20423829` to one person. |
+| 70 | **Qualifying created leads with nobody scheduled to act.** | **BUG, FIXED** | `config.nextActionRequired` has been `true` since 23.09 and was enforced when COMPLETING a task, never when creating a lead. Three demo leads sat on the pipeline with zero tasks. The dialog now asks **What happens next?** and the save is refused without it. The due date comes from the configured action's `days`, never from a number in the code. A later message about somebody who already has a step does not stack a second one. **People with no next step: 3 before, 0 now.** |
+| 71 | **The demo walk-through reported work it had not done.** | **BUG, FIXED** | Found while fixing 70. The script pushed whatever `qualify()` returned into an array and reported its length as a success count. When the new gates started refusing every step it still announced `qualified: 5` with **nothing qualified** and quietly lost five people. It now reads the return value and fails loudly. A test asserts the number reported equals the number that happened. |
+| 72 | **One inbound contract, and an adapter for all thirteen channels.** | **BUILT 24.09.2026** | `src/inbound.js` defines the normalised event; `src/adapters.js` maps every provider shape into it; `config/channels.json` is the register. The path is always `provider event -> adapter -> normalised event -> filter -> CAR -> human -> person`, with **no shortcut into CAR anywhere**, so what is tested locally is the path a real provider will take. The provider payload is kept raw and never becomes the CRM's data model. |
+| 73 | **A generic inbound endpoint with real security interfaces.** | **BUILT 24.09.2026** | `POST /api/inbound/<channel>`. Meta signatures are verified with a real HMAC over the raw bytes; shared secrets are compared in constant time; Mailchimp's URL secret **says in its own result that it is the weak option**, because Mailchimp does not sign. A missing secret is an honest failure, never a silent pass. LinkedIn and TikTok report `unconfirmed` rather than pretending. Idempotency is by `(channel, external id)`: a provider retry is stored once. An event with no id to deduplicate on is refused rather than guessed at. |
+| 74 | **Connections screen and inbound diagnostics.** | **BUILT 24.09.2026** | **Connections** shows every channel with its status, mechanism, event count, whether credentials are present, whether a webhook is verified, and what it is blocked on. **No secret value ever reaches the screen** - only present or absent, and a test asserts the value cannot leak. **What arrived** shows where each inbound event ended up and every delivery attempt including refused ones. Today: 3 ready for configuration, 9 waiting on somebody outside, 13 with an adapter, **0 connected**. |
+| 75 | **Every channel can be simulated through the real path.** | **BUILT 24.09.2026** | Provider-shaped fixtures in `src/fixtures.js`, used by **both** the simulator and the test suite so what is demonstrated cannot drift from what is verified. All 13 simulate end to end over HTTP and every one terminates in a valid state. |
+| 76 | **Channel readiness documentation.** | **BUILT 24.09.2026** | [CHANNEL_READINESS.md](CHANNEL_READINESS.md), generated from the config by `scripts/gen_readiness.py` so the document cannot drift from the register. Per channel: what we control, what the provider controls, credentials, who outside must act, how we test, how we go live, how we turn it off. Unknowns are marked **EXTERNAL CONFIRMATION REQUIRED**, never guessed. |
+
+| 77 | **The navigation is the product now.** | **DECIDED 24.09.2026, BUILT** | Six items and nothing technical: **Today, Inbox, Admissions, Follow-ups, People, Reports**. CAR is gone as a word - it is the **Inbox**. Pipeline is gone - it is **Admissions**. Channels, Connections, What arrived, History and Privacy left the main product entirely. Old links still resolve (`#/car`, `#/pipeline`) so a bookmark or a link in a feedback report does not break. |
+| 78 | **The Console is our control room; the CRM is their product.** | **DECIDED 24.09.2026, BUILT** | There is no demo mode inside the CRM any more: no simulator buttons, no demo banners, no dataset switch. All of it moved to `#/console`, which carries Send an event, Demo data, Connections, What arrived, Channel research, Full history and Privacy. **A Console event travels the real path** - payload, adapter, filter, Inbox - so what it demonstrates is the product and not a picture of it. Verified: a Messenger documents-question landed in the Inbox, a pitch was filtered, and an existing-person scenario matched a real imported person by phone. |
+| 79 | **Messenger is its own channel; Meta is one connection.** | **DECIDED 24.09.2026, BUILT** | Facebook, Instagram, Messenger and WhatsApp share ONE Meta Business Suite connection. That is an integration detail. Each stays a **separate source** in the CRM for reporting, filtering and history, and a test fails if a combined "Meta" figure ever appears - it would hide where people actually came from. 14 channels now. |
+| 80 | **Klātiene is In person.** | **BUILT 24.09.2026** | The channel id is `in_person` and the label is *In person*. The old id survives only as an alias so the 19 imported people who arrived that way still read correctly, and a test fails if any Latvian reaches a channel name on screen. |
+| 81 | **Admissions ownership is always Ieva.** | **LOCKED 24.09.2026** | A confirmed Admissions case is owned by **Admissions**, and Ieva holds that role, whatever channel it arrived on. A test walks **all 14 channels** and asserts it. Channel access is a separate question: Tetiana is the only person who can open LinkedIn, and a LinkedIn lead is still Ieva's case. Arina has no social access at all and is phone button 3 backup only. |
+| 82 | **Reports is a KPI meeting tool.** | **BUILT 24.09.2026** | Pick a period (this month, last month, this year, everything, or any two dates). Eight headline figures, a twelve-month trend of arrivals against admissions, per-programme leads and admissions, and breakdowns by source, programme, study form, education and stage, plus why people did not proceed. CSV download. **Every number is a count of rows**, and conversion names its population out loud because admitted-this-month counts a different one. |
+| 83 | **What Reports cannot measure is listed, not left blank.** | **BUILT 24.09.2026** | Nationality (no field anywhere, and the export has none), HE applications (nothing marks one), maritime school graduates (partial - derived from an education field that is mostly empty), admission duration (partial - only exists for admitted people). Each says why and what would fix it. A blank column reads as zero; a named gap does not. |
+| 84 | **The real database runs the whole product.** | **BUILT 24.09.2026** | `data/real_people.json` holds the full ADMISSIONS DATABASE export - **470 people**, git-ignored, never leaves the machine. The default selection is 116: the 91 open leads first contacted in 2026 plus the 25 most recently admitted. Verified working through People, Inbox, Admissions, Follow-ups and Reports. **Reports on real data:** 116 leads, 29 applications, 25 admitted, 21.6% conversion, 43-day median to admission, and the real programme split. |
+| 85 | **The real data exposes a real problem, and the CRM shows it.** | **FINDING 24.09.2026** | **57 of the 91 active people carry no next step at all.** That is not a defect in the CRM; it is what the current spreadsheet actually contains. It is exactly the thing this product exists to prevent, and Reports puts it on the front page as a number that should be zero. Worth showing Ieva. |
+
+| 86 | **The Console is a different address, not a hidden tab.** | **DECIDED 24.09.2026, BUILT** | The CRM is `http://127.0.0.1:8800/` and the Console is `http://127.0.0.1:8800/console`. Separate page, separate stylesheet, deliberately dark so the two can never be mistaken for one another. **The CRM carries no link and no route to it** and a test asserts both, along with the absence of demo wording. The technical screens - channel research, the event inspector, raw intake, privacy notes - are no longer routed from the product at all. |
+| 87 | **Two databases, and the real one is always restorable.** | **BUILT 24.09.2026** | A clean snapshot is written **from the source file at the moment the real database is loaded**, never rebuilt afterwards from a database somebody has been testing in. Restoring wipes every table and replays it row for row, then **checksums the result and reports whether it matched**. Verified live: 116 people, switch to demo, send events, restore, `verified: true`, 116 people again. Feedback is deliberately outside the snapshot, so bug reports survive a restore. |
+| 88 | **Destroying data takes a deliberate act.** | **BUILT 24.09.2026** | Switching to demo, restoring real data and emptying all return **HTTP 428** without an explicit confirmation, so a typo in a fetch cannot replace the database. The Console shows the current state in red for REAL and green for DEMO, with the people count and the snapshot age, and asks again in a dialog before acting. |
+| 89 | **A calm demo environment, built the real way.** | **BUILT 24.09.2026** | 12 people, one per channel, spread across New, Contacted, Application, Contract and Admitted; 6 items waiting in the Inbox including a known person writing again and an unknown phone caller; 2 sales pitches filtered; 2 marked not relevant with a recorded reason; 1 overdue follow-up. **Every demo person arrived through the Inbox** - a test asserts there are no direct inserts - and nobody is left without a next step. |
+| 90 | **A snapshot path that a test could not redirect.** | **BUG, FIXED - caught by its own test** | `SNAPSHOT_FILE` was a module constant, resolved at import. A test that set `CRM_SNAPSHOT` could not move it, so the first run of the snapshot test **wrote 25 fake people straight over the real snapshot** - precisely the accident the file exists to prevent. The path is resolved at call time now, and the test asserts it is writing somewhere harmless before it writes anything. |
+| 91 | **Desktop QA.** | **DONE 24.09.2026** | All six screens measured at 1440x900: no page overflow, no main overflow, sidebar at its full 238px, desktop layout active on every one. The Follow-ups heading was saying "Follow-up list" while its tab said "Follow-ups"; they match now. |
+| 92 | **A Meta message carries a name only when Meta sends one.** | **FIXED 24.09.2026** | The demo showed `@darja.s` as somebody's name. The adapter now reads `sender.name` when the payload has it and **still never invents one**, because a real Instagram DM often carries only a handle until the person says who they are. Separately, the Mailchimp fixture's own hardcoded name was overriding the person's, which put two different demo people into the CRM as "Marta Liepa". |
+
+| 93 | **"Cannot measure" was mostly wrong. Three of the four were just missing a box.** | **CORRECTED 24.09.2026** | Ritvars asked whether nationality would not simply be collected by hand, and he was right. The report was presenting a **data-entry gap as a limit of the software**, which is a different job needing different work. Rewritten into three honest kinds: *needs typing in*, *needs a decision*, and *by definition*. Only **HE applications** genuinely needs a decision - nothing anywhere says what separates one, and no amount of typing fixes that. |
+| 94 | **Nationality is a real field now.** | **BUILT 24.09.2026** | It was never unmeasurable; there was simply nowhere to type it. It is on the person record, editable on the person page and in the People quick edit, a People filter, searchable, and its own Reports breakdown. **Never derived** - not from a name, not from a phone prefix - and a test asserts it starts empty and only changes when somebody types it, with the change in the history. |
+| 95 | **Maritime school graduates is a real number, not a gap.** | **CORRECTED 24.09.2026** | Education has been filled in by hand for years: **179 of 470 real records have it**, including 41 maritime. The count works today. What is thin is the coverage, so the report shows the number **and** how complete it is, instead of withholding it. `config.maritimeEducations` names which values count (Maritime school, LJA, LJK) and says Ieva confirms the list. |
+| 96 | **The export sheet spoke two languages.** | **FIXED 24.09.2026** | The same school was typed as *Vidusskola* and *Secondary* over several years, and as *Jūrskola* and *Maritime school*. They are mapped on import, so a report can count them, and **the source export is never edited**. |
+| 97 | **The download is a choice, not a dump.** | **BUILT 24.09.2026** | Ritvars: "the CSV has to be able to filtrate what exactly the person wants". **Export CSV** opens nine plain checkboxes - Summary, Monthly trend, Programme breakdown, Study form, Source / channel, Stage, Education, Lost reasons, People list - with the first three on. The chosen period travels with the file. A test proves what was not ticked does not appear, and that no label grows past a checkbox. My first version had eleven items with a sentence of explanation under each; Ritvars called it overengineered and he was right. |
+| 98 | **A file database never gained a new column.** | **BUG, FIXED** | `CREATE TABLE IF NOT EXISTS` creates nothing for a table that already exists, so adding `nationality` left every existing `data/crm.db` on the old shape and Reports died with *no such column*. There is a small migration on open now that adds missing columns without touching the rows. Found by opening the demo database straight after adding the field. |
+| 99 | **The Meta sentence left the Reports page.** | **DONE 24.09.2026** | "Facebook, Instagram, Messenger and WhatsApp share one connection but are never added together" explained our plumbing on a page about their numbers. The rule still holds and is still tested; it is simply not something Ieva needs to read. |
+
+| 100 | **A how-to for connecting the channels.** | **WRITTEN 24.09.2026** | [CONNECTING_CHANNELS.md](CONNECTING_CHANNELS.md). Not a generic checklist: every endpoint, secret name and channel mode in it was checked against `config/channels.json`, so it cannot describe something that does not exist. Ordered by what is actually possible - the three channels needing nobody outside first, then the four long poles that are questions for people rather than code. |
+
+| 101 | **The dialog asked about a conversation that had not happened.** | **FIXED 24.09.2026** | The note box said *"Anything worth knowing about this conversation"* while somebody was reading a message that had just arrived. Ritvars: "there hasn't been a conversation yet." It now says **"Anything you know that the message does not say"**, which is what the box is actually for at that moment, and the label admits it is optional. |
+| 102 | **Four sentences still said "pipeline" after the tab was renamed.** | **FIXED 24.09.2026** | Found in the same screenshot. *"onto the pipeline at New"*, *"Nobody stays on the pipeline"*, *"how many people are in your pipeline"*, and the provisional note on the person page. All say **Admissions** now, the sidebar link points at `#/admissions`, and `viewPipeline` was renamed `viewAdmissions` so the code speaks the product's language too. The route alias stays, so an old link still works. **A test now fails if "pipeline" or "CAR" reaches the interface again**, checking the config's own on-screen text as well. |
+| 103 | **And then the rename made it stutter.** | **FIXED 24.09.2026** | With the board renamed, *"goes to Admissions and into Admissions at New"* said the same word twice for two different things. The owner and the stage were two words before and are one now, so the sentence is written properly: *"this becomes an Admissions case starting at New"*, with the owner on the line below where it belongs. |
+
+| 104 | **The explanation box in the qualify dialog is gone.** | **DECIDED 24.09.2026** | It restated the answers back at somebody who had just typed them: they pick a programme, they pick a next step, and a grey panel then tells them they picked a programme and a next step. The dialog asks its two questions plainly and the required hint already says why a next step is needed. Removed, along with the function behind it. Saving is unchanged and still verified. |
+| 105 | **Two hints assumed a conversation that had not happened.** | **FIXED 24.09.2026** | Both sat in a dialog somebody opens while reading a message that has just arrived. *"Anything worth knowing about this conversation"* became **"Anything you know that the message does not say"**, and *"If you know from the conversation, say so here"* became **"If you already know, say so here."** |
+
+### Also changed while fixing the above
+
+- **The database is a file now.** `data/crm.db`, gitignored, override with `CRM_DB`. Tests still run
+  in memory. A restart no longer empties the prototype under a tester's open tab.
+- **The app page is never cached** (`cache-control: no-store`). A tester was holding a cached copy and
+  would have kept reporting bugs that were already fixed.
+- **Every request says who is asking.** The actor header used to be sent on writes only, so an
+  admin-only screen could be refused for the wrong reason.
+- **A slow request shows a thin bar** at the top of the window. A request that answers straight away
+  shows nothing, so nothing flickers.
+- The person page no longer prints a stray separator when somebody has no email.
+
+### What is NOT done
+
+- **Nothing is deployed.** No Supabase, no Vercel, no production anything. `sql/002_feedback.sql` is
+  written but **NOT APPLIED**.
+- **The PBX call logger is built and tested locally and is NOT connected.** No credentials are
+  configured, the migration is not applied, and the cron is not enabled.
+- There is still **no login**. "Acting as" is a dropdown. The admin-only screens are a workflow rule,
+  not a security boundary, and they say so on screen.
+
 ## Open questions for Ritvars
 
 **Answered since this list was written** (kept so the record shows they were closed, not dropped):
@@ -130,3 +360,28 @@ provider documentation.
 11. Should the research text on the demo screens stay as provider quotation, or be rewritten?
 12. What should the CRM actually say to an applicant, and at which step? English is decided; the
     wording is still placeholder.
+13. **How should Aigars and Ritvars be told that feedback has arrived, outside the app?** There is
+    **no email mechanism in this project at all** - nothing can send mail and nothing is deployed.
+    The in-app count works today. An external channel needs a decision and then real work:
+    email would need a sending route (a transactional provider or the Gmail API) and somewhere
+    deployed to send from; WhatsApp or Telegram would need an account and an integration. Until
+    that is decided, feedback is only visible to somebody who opens the app.
+
+## 24.09.2026 - settled decisions can no longer be reopened
+
+| # | What | Status |
+|---|---|---|
+| | `config/prototype.json` -> `settled`: five decisions Ritvars made, each with the question, the answer, who decided and when, and `doNotReopen: true`. | LIVE |
+| | `config/prototype.json` -> `openQuestions`: the ONLY five things genuinely unanswered. Every question list is generated from this and nothing else. | LIVE |
+| | `scripts/make_desktop_guide.py` rewritten. It reads both registers, refuses to build if a settled phrase appears in the open list, and regenerates the Desktop file from config so it cannot drift. Sabotage-proved: adding a settled question exits 1. | LIVE |
+| | Three tests in `test/regressions.test.js` fail if a settled item reappears as a question, blocker or checkbox in `config/channels.json` or any `docs/*.md`. Sabotage-proved: 1 failing. | LIVE |
+| | Every token-rotation line removed from `config/channels.json`, `docs/BACKLOG.md`, `docs/PBX_CALL_LOGGER.md`, `docs/CONNECTING_CHANNELS.md`, `docs/CHANNEL_READINESS.md` and the Desktop file. The token is not being changed. | LIVE |
+| | Instagram `externalBlocker` no longer claims the Professional-account check is outstanding. It is in Business Suite, so it is already Professional. | LIVE |
+| | Phone `externalBlocker` no longer claims the menu button is unknown. The event carries `queue` and the queue is the button. | LIVE |
+
+**Cause:** open-question lists were rebuilt from `externalBlocker` notes written before his
+answers arrived, so his answers existed and the summaries did not read them. He had to repeat
+the token decision three times.
+
+**Test count: 282 passing, 0 failing.**
+

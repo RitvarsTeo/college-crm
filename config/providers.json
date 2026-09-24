@@ -11,7 +11,7 @@
       "id": "website_form",
       "name": "Website application form",
       "account": {
-        "label": "Novikontas College Website - SIMULATED",
+        "label": "Novikontas Academy Website (simulated)",
         "provider": "self-hosted",
         "identifiers": {
           "form": "college-application",
@@ -86,7 +86,7 @@
       "id": "google_form",
       "name": "Google Form",
       "account": {
-        "label": "Novikontas Admissions Form - SIMULATED GOOGLE ACCOUNT",
+        "label": "Novikontas Admissions Form (simulated)",
         "provider": "Google Workspace",
         "identifiers": {
           "formId": "1FAIpQLSe-SIMULATED",
@@ -177,7 +177,7 @@
       "id": "gmail",
       "name": "Email to edu@novikontas.org",
       "account": {
-        "label": "edu@novikontas.org - SIMULATED GOOGLE WORKSPACE ACCOUNT",
+        "label": "edu@novikontas.org (simulated)",
         "provider": "Google Workspace",
         "identifiers": {
           "mailbox": "edu@novikontas.org (simulated)",
@@ -270,7 +270,7 @@
       "id": "mailchimp",
       "name": "Mailchimp campaigns",
       "account": {
-        "label": "Novikontas Admissions - SIMULATED MAILCHIMP AUDIENCE",
+        "label": "Novikontas Admissions (simulated)",
         "provider": "Mailchimp",
         "identifiers": {
           "audienceId": "a6b5da1054-SIM",
@@ -354,7 +354,7 @@
       "id": "facebook",
       "name": "Facebook page",
       "account": {
-        "label": "Novikontas Maritime - SIMULATED FACEBOOK PAGE",
+        "label": "Novikontas Maritime (simulated)",
         "provider": "Meta",
         "identifiers": {
           "business": "Novikontas Admissions - SIMULATED META BUSINESS",
@@ -446,7 +446,7 @@
       "id": "instagram",
       "name": "Instagram direct messages",
       "account": {
-        "label": "@novikontas.admissions - SIMULATED PROFESSIONAL ACCOUNT",
+        "label": "@novikontas.admissions (simulated)",
         "provider": "Meta",
         "identifiers": {
           "igAccountId": "17841400000-SIM",
@@ -516,7 +516,7 @@
       "id": "whatsapp",
       "name": "WhatsApp",
       "account": {
-        "label": "Novikontas Admissions WhatsApp - SIMULATED BUSINESS ACCOUNT",
+        "label": "Novikontas Admissions WhatsApp (simulated)",
         "provider": "WhatsApp Business Platform (Cloud API)",
         "identifiers": {
           "waba": "102290129340398-SIM",
@@ -592,7 +592,7 @@
       "id": "agent",
       "name": "Agent and referral",
       "account": {
-        "label": "Indian Partner - SIMULATED AGENT ACCOUNT",
+        "label": "Indian Partner (simulated)",
         "provider": "self-hosted",
         "identifiers": {
           "agent": "india-partner-1",
@@ -658,7 +658,7 @@
       "id": "open_day",
       "name": "Open day",
       "account": {
-        "label": "Novikontas Open Day - SIMULATED EVENT SYSTEM",
+        "label": "Novikontas Open Day (simulated)",
         "provider": "self-hosted (the Piemēri Profesiju pattern)",
         "identifiers": {
           "event": "Piemēri profesiju",
@@ -780,7 +780,7 @@
       "id": "phone",
       "name": "Phone calls",
       "account": {
-        "label": "Novikontas Reception - SIMULATED TELEPHONY",
+        "label": "Novikontas Reception (simulated)",
         "provider": "UNKNOWN - nobody has confirmed what answers +371 23111114",
         "identifiers": {
           "number": "+371 23111114",

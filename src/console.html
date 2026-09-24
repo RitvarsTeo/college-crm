@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Academy CRM - Console</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Spectral:wght@400;500;600&display=swap">
+<style>
+/* The control room. Deliberately does NOT look like the CRM: if these two ever
+   look alike, somebody will run a demo reset thinking they are in the product. */
+:root{
+  --paper:#0E1116; --panel:#161B22; --panel2:#1C232C; --ink:#E6EDF3;
+  --t2:rgba(230,237,243,.78); --t3:rgba(230,237,243,.58); --t4:rgba(230,237,243,.40);
+  --rule:rgba(230,237,243,.14); --rule2:rgba(230,237,243,.08);
+  --pet:#4FB3C8; --amb:#E3A63F; --red:#E5534B; --green:#3FB950;
+  --sans:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --serif:'Spectral',Georgia,serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding:22px 24px 80px}
+header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;
+  padding-bottom:16px;border-bottom:1px solid var(--rule);margin-bottom:20px}
+h1{font-family:var(--serif);font-weight:500;font-size:26px;margin:0}
+.sub{color:var(--t3);font-size:13px;margin:3px 0 0}
+a{color:var(--pet)}
+.card{background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:16px 18px;margin-bottom:16px}
+.card h2{font-family:var(--serif);font-weight:500;font-size:17px;margin:0 0 4px}
+.card p.hint{color:var(--t3);font-size:12.5px;margin:0 0 12px}
+button{font-family:var(--sans);cursor:pointer}
+.btn{background:var(--pet);color:#06232B;border:0;border-radius:7px;padding:9px 15px;font-weight:600;font-size:13px}
+.btn:hover{filter:brightness(1.08)}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--rule)}
+.btn.ghost:hover{border-color:var(--t3)}
+.btn.danger{background:var(--red);color:#fff}
+.btn.warn{background:var(--amb);color:#2A1C00}
+.btn.sm{padding:6px 11px;font-size:12px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.pick{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.pick .lab{font-size:10.5px;letter-spacing:.6px;text-transform:uppercase;color:var(--t4);width:58px;flex:0 0 58px}
+.chip{background:var(--panel2);color:var(--t2);border:1px solid var(--rule);border-radius:7px;
+  padding:6px 11px;font-size:12.5px}
+.chip:hover{border-color:var(--t3);color:var(--ink)}
+.chip.on{background:var(--pet);color:#06232B;border-color:var(--pet);font-weight:600}
+input,select,textarea{font:inherit;background:var(--panel2);color:var(--ink);border:1px solid var(--rule);
+  border-radius:7px;padding:8px 10px;width:100%}
+label.f{display:block;font-size:10.5px;letter-spacing:.6px;text-transform:uppercase;color:var(--t4);margin:12px 0 4px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.mode{display:flex;align-items:center;gap:12px;border-radius:10px;padding:14px 18px;border:2px solid}
+.mode.real{background:rgba(229,83,75,.12);border-color:var(--red)}
+.mode.demo{background:rgba(63,185,80,.10);border-color:var(--green)}
+.mode.empty{background:var(--panel2);border-color:var(--rule)}
+.mode b{font-size:19px;font-family:var(--serif);font-weight:500;letter-spacing:.3px}
+.mode .why{font-size:12.5px;color:var(--t2)}
+.dot{width:11px;height:11px;border-radius:50%;flex:0 0 11px}
+.mode.real .dot{background:var(--red)}
+.mode.demo .dot{background:var(--green)}
+.mode.empty .dot{background:var(--t4)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-size:10.5px;letter-spacing:.6px;text-transform:uppercase;color:var(--t4);
+  padding:7px 8px;border-bottom:1px solid var(--rule)}
+td{padding:8px;border-bottom:1px solid var(--rule2);vertical-align:top}
+.out{margin-top:12px;background:var(--panel2);border-left:3px solid var(--pet);border-radius:0 7px 7px 0;
+  padding:11px 13px;font-size:13px}
+.out.bad{border-left-color:var(--red)}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;color:var(--t3)}
+.warnbox{background:rgba(227,166,63,.12);border:1px solid var(--amb);border-radius:8px;padding:11px 13px;
+  font-size:13px;margin-top:12px}
+.grid2{display:grid;grid-template-columns:1.25fr 1fr;gap:16px}
+@media(max-width:920px){.grid2,.row2{grid-template-columns:1fr}}
+.tag{font-size:10.5px;letter-spacing:.5px;text-transform:uppercase;color:var(--t4);
+  border:1px solid var(--rule);border-radius:10px;padding:1px 7px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Console</h1>
+      <p class="sub">Our control room. The CRM knows nothing about this page.</p>
+    </div>
+    <a class="btn ghost" href="/" target="_blank">Open the CRM &rarr;</a>
+  </header>
+
+  <div id="mode"></div>
+
+  <div class="grid2">
+    <div>
+      <div class="card">
+        <h2>Send something into the CRM</h2>
+        <p class="hint">It goes the whole way: the provider's own payload shape, the adapter, the spam
+          filter, identity matching, and then the Inbox. Nothing is written straight into a table.</p>
+        <div id="send"></div>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <h2>The database</h2>
+        <p class="hint">Real is the imported Novikontas admissions database. Demo is a small
+          constructed environment to play in. Switching either way replaces everything.</p>
+        <div id="data"></div>
+      </div>
+      <div class="card">
+        <h2>Connections</h2>
+        <p class="hint">What would still have to happen before a channel could be switched on.</p>
+        <div id="conns"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>What has arrived</h2>
+    <p class="hint">Every inbound event and where it ended up, including the ones that were refused.</p>
+    <div id="arrived"></div>
+  </div>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const api = async (path, opts) => {
+  const r = await fetch(path, opts);
+  const j = await r.json().catch(() => ({ error: r.statusText }));
+  if (!r.ok) { const e = new Error(j.error || 'request failed'); e.detail = j; throw e; }
+  return j;
+};
+const post = (path, data) => api(path, { method: 'POST',
+  headers: { 'content-type': 'application/json', 'x-acting-as': 'Ritvars' },
+  body: JSON.stringify({ by: 'Ritvars', ...(data || {}) }) });
+const fmt = (s) => { if (!s) return ''; try {
+  return new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Riga', year: 'numeric', month: '2-digit',
+    day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(s)).replace(',', '');
+} catch { return s; } };
+
+let PICK = { channel: 'instagram', scenario: 'study_enquiry', person: 'new', message: '' };
+let CAT = null;
+
+// -------------------------------------------------------------- the mode --
+async function drawMode() {
+  const st = await api('/api/console/state');
+  const m = st.mode === 'real' ? 'real' : st.mode === 'demo' ? 'demo' : 'empty';
+  const snap = st.snapshot;
+  $('#mode').innerHTML = `
+    <div class="mode ${m}">
+      <span class="dot"></span>
+      <div style="flex:1">
+        <b>${m === 'real' ? 'REAL DATABASE' : m === 'demo' ? 'DEMO DATABASE' : 'EMPTY DATABASE'}</b>
+        <div class="why">
+          ${m === 'real'
+            ? 'This is the imported Novikontas admissions data. Be careful.'
+            : m === 'demo'
+            ? 'A constructed environment. Nothing here is a real applicant, so play freely.'
+            : 'Nothing is loaded.'}
+          &nbsp;<span class="tag">${st.people} people</span>
+          ${snap ? `<span class="tag">snapshot ${snap.people} people, ${fmt(snap.takenAt)}</span>`
+                 : '<span class="tag">no real snapshot yet</span>'}
+        </div>
+      </div>
+    </div>`;
+  return st;
+}
+
+// ------------------------------------------------------------ sending in --
+async function drawSend() {
+  CAT = CAT || await api('/api/console/scenarios');
+  const chan = (id) => `<button class="chip ${PICK.channel === id ? 'on' : ''}"
+    onclick="pick('channel','${esc(id)}')">${esc(CAT.channelLabels[id] || id)}</button>`;
+  const meta = CAT.channels.filter(c => CAT.metaGroup.includes(c));
+  const rest = CAT.channels.filter(c => !CAT.metaGroup.includes(c));
+  const scens = CAT.scenarios.filter(s => !s.channels || s.channels.includes(PICK.channel));
+  const cur = scens.find(s => s.id === PICK.scenario) || scens[0];
+  if (cur && cur.id !== PICK.scenario) PICK.scenario = cur.id;
+
+  $('#send').innerHTML = `
+    <div class="pick"><span class="lab">Meta</span>${meta.map(chan).join('')}</div>
+    <div class="pick"><span class="lab">Other</span>${rest.map(chan).join('')}</div>
+
+    <label class="f">What kind of thing is it?</label>
+    <div class="pick">${scens.map(s => `<button class="chip ${PICK.scenario === s.id ? 'on' : ''}"
+      onclick="pick('scenario','${esc(s.id)}')" title="${esc(s.what)}">${esc(s.label)}</button>`).join('')}</div>
+
+    <div class="row2">
+      <div>
+        <label class="f">Who is writing?</label>
+        <select onchange="pick('person', this.value)">
+          <option value="new" ${PICK.person === 'new' ? 'selected' : ''}>Somebody new</option>
+          <option value="existing" ${PICK.person === 'existing' ? 'selected' : ''}>Somebody we already have</option>
+        </select>
+      </div>
+      <div>
+        <label class="f">Message (optional)</label>
+        <input id="msg" placeholder="${esc(cur ? cur.what : '')}" value="${esc(PICK.message)}"
+          oninput="PICK.message = this.value">
+      </div>
+    </div>
+
+    ${cur ? `<div class="out"><b>${esc(CAT.channelLabels[PICK.channel] || PICK.channel)} &middot; ${esc(cur.label)}</b><br>
+      ${esc(cur.what)}<br><span class="mono">Expected: ${esc(cur.expect)}</span></div>` : ''}
+
+    <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <button class="btn" onclick="send()">Send it</button>
+      <label style="display:flex;gap:6px;align-items:center;font-size:12.5px;color:var(--t3)">
+        <input type="checkbox" id="same" style="width:auto"> send the same event again (a provider retry)
+      </label>
+    </div>
+    <div id="sendOut"></div>`;
+}
+
+function pick(key, value) { PICK[key] = value; drawSend(); }
+
+async function send() {
+  const out = $('#sendOut');
+  out.innerHTML = '<div class="out">Sending...</div>';
+  try {
+    const r = await post('/api/console/send', {
+      channel: PICK.channel, scenario: PICK.scenario,
+      person: PICK.person, message: PICK.message || null,
+      sameId: Boolean($('#same') && $('#same').checked),
+    });
+    out.innerHTML = `<div class="out"><b>${esc(r.outcome)}</b><br>${esc(r.explain)}<br>
+      <span class="mono">${esc(r.channel)} &middot; ${esc(r.externalEventId)}</span><br>
+      <div style="margin-top:9px;display:flex;gap:8px;flex-wrap:wrap">
+        <a class="btn sm" href="/#/inbox" target="_blank">Open the Inbox</a>
+        <button class="btn sm ghost" onclick="drawArrived()">Refresh what arrived</button>
+      </div></div>`;
+    drawArrived();
+  } catch (e) {
+    out.innerHTML = `<div class="out bad">${esc(e.message)}</div>`;
+  }
+}
+
+// -------------------------------------------------------- the two databases --
+async function drawData() {
+  const st = await api('/api/console/state');
+  const snap = st.snapshot;
+  $('#data').innerHTML = `
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn ${st.isDemo ? 'ghost' : ''}" onclick="switchMode('demo')">Switch to DEMO</button>
+      <button class="btn ${st.isReal ? 'ghost' : 'warn'}" onclick="switchMode('real')">Restore REAL data</button>
+      <button class="btn ghost" onclick="switchMode('empty')">Empty it</button>
+    </div>
+    ${snap
+      ? `<div class="out" style="margin-top:12px">A clean snapshot of the real database exists:
+          <b>${snap.people} people</b>, taken ${fmt(snap.takenAt)}.<br>
+          <span class="mono">checksum ${esc(snap.checksum)}</span><br>
+          Restoring replays it row for row and checks the checksum afterwards.</div>`
+      : `<div class="warnbox" style="margin-top:12px"><b>No real snapshot yet.</b>
+          Load the real database once and a clean snapshot is taken from the source file
+          automatically. Until then there is nothing to restore to.</div>`}
+    <div id="dataOut"></div>`;
+}
+
+async function switchMode(mode) {
+  const st = await api('/api/console/state');
+  const what = mode === 'demo'
+    ? 'Switch to the DEMO database?\n\nEverything currently in the database is replaced.'
+    : mode === 'real'
+    ? 'Restore the REAL database?\n\nEverything currently in the database is replaced by the clean snapshot.'
+    : 'Empty the database?\n\nEverything currently in it is deleted.';
+  const extra = st.isReal && mode !== 'real'
+    ? '\n\nYou are currently on the REAL database.'
+    : '';
+  if (!confirm(what + extra)) return;
+
+  const out = $('#dataOut');
+  out.innerHTML = '<div class="out">Working...</div>';
+  try {
+    const r = await post('/api/console/mode', { mode, confirm: 'yes' });
+    const detail = r.restored
+      ? `Restored ${r.restored.counts.people} people. Checksum ${r.restored.verified ? 'matches' : 'DOES NOT MATCH'}.`
+      : r.built
+      ? `Built: ${r.built.people} people, ${r.built.inbox} waiting in the Inbox, ${r.built.filtered} filtered, ${r.built.notRelevant} not relevant, ${r.built.overdue} overdue.`
+      : `${r.people} people.`;
+    out.innerHTML = `<div class="out ${r.restored && !r.restored.verified ? 'bad' : ''}">
+      <b>Now on the ${r.mode.toUpperCase()} database.</b><br>${esc(detail)}</div>`;
+    drawMode(); drawArrived();
+  } catch (e) {
+    out.innerHTML = `<div class="out bad">${esc(e.message)}</div>`;
+  }
+}
+
+// ------------------------------------------------------------ connections --
+async function drawConns() {
+  const d = await api('/api/connections');
+  const ready = d.channels.filter(c => c.state === 'READY FOR CONFIGURATION').length;
+  const waiting = d.channels.filter(c => c.state === 'WAITING FOR EXTERNAL ACCESS').length;
+  $('#conns').innerHTML = `
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px">
+      <div><b style="font-size:22px">${ready}</b> <span class="mono">ready to configure</span></div>
+      <div><b style="font-size:22px">${waiting}</b> <span class="mono">waiting on somebody</span></div>
+      <div><b style="font-size:22px">0</b> <span class="mono">connected</span></div>
+    </div>
+    <table><thead><tr><th>Channel</th><th>State</th><th>Blocked on</th></tr></thead><tbody>
+    ${d.channels.map(c => `<tr>
+      <td>${esc(c.label)}</td>
+      <td class="mono">${esc(c.state)}</td>
+      <td class="mono">${esc((c.externalBlocker || '-').slice(0, 64))}${(c.externalBlocker || '').length > 64 ? '...' : ''}</td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+// -------------------------------------------------------------- diagnostics --
+async function drawArrived() {
+  const d = await api('/api/inbound/events');
+  $('#arrived').innerHTML = d.rows.length
+    ? `<table><thead><tr><th>Channel</th><th>Provider id</th><th>Arrived</th><th>Where it went</th><th>Person</th></tr></thead>
+      <tbody>${d.rows.slice(0, 30).map(r => `<tr>
+        <td>${esc(r.channel)}</td>
+        <td class="mono">${esc(String(r.externalId || '').slice(0, 24))}</td>
+        <td class="mono">${fmt(r.receivedAt)}</td>
+        <td>${esc(r.outcome)}</td>
+        <td>${r.matchedPerson ? esc(r.matchedPerson.name) : '<span class="mono">nobody yet</span>'}</td>
+      </tr>`).join('')}</tbody></table>`
+    : '<p class="hint">Nothing has arrived yet.</p>';
+}
+
+(async () => {
+  await drawMode();
+  await drawSend();
+  await drawData();
+  await drawConns();
+  await drawArrived();
+})();
+</script>
+</body>
+</html>

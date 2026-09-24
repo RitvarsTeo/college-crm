@@ -13,6 +13,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { extractFrom, looksLikeJunk } from './extract.js';
 import { logEvent, MANUAL, AUTOMATIC } from './history.js';
+import { duplicateCheck } from './identity.js';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const CFG = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'prototype.json'), 'utf8'));
@@ -141,10 +142,18 @@ export function receive(db, item) {
 }
 
 // ------------------------------------------------------------ what is here --
+// 'notrelevant' is one screen over two stored states. A sales pitch the machine
+// dropped and a message a person marked as not relevant are the same thing to
+// whoever is looking; they stay apart in the database because the funnel counts
+// real contacts and a sales pitch was never one.
+const STATE_SETS = { notrelevant: ['archived', 'filtered'] };
+
 export function listInbound(db, { state = 'new', now = nowIso() } = {}) {
+  const wanted = STATE_SETS[state] || (state ? [state] : []);
+  const where = wanted.length ? `WHERE i.state IN (${wanted.map(() => '?').join(',')})` : '';
   const rows = db.prepare(`SELECT i.*, pe.name AS person_name FROM inbound i
     LEFT JOIN people pe ON pe.id = i.person_id
-    ${state ? 'WHERE i.state = ?' : ''} ORDER BY i.received_at DESC`).all(...(state ? [state] : []));
+    ${where} ORDER BY i.received_at DESC`).all(...wanted);
   for (const r of rows) {
     r.fields = db.prepare('SELECT * FROM field_values WHERE inbound_id = ? ORDER BY id').all(r.id);
     r.missing = missingFor(r.fields);
@@ -195,13 +204,67 @@ export function waitingByRole(db, now = nowIso()) {
 // ------------------------------------------------------ the human decision --
 // This is the only way an inbound item becomes a lead, and the only place the
 // body is deleted.
-export function qualify(db, id, { qualification, personId, createPerson, by, note, confirmFields = [] }) {
+
+// How many days an action is given comes from config.nextActions, so changing the
+// pace of the process is a config edit and not a code change.
+export function defaultDueFor(label, from = nowIso()) {
+  const groups = CFG.nextActions || [];
+  for (const g of groups) {
+    for (const it of (g.items || [])) {
+      if (it.label === label || it.id === label) {
+        return new Date(Date.parse(from) + (it.days || 1) * 86400000).toISOString();
+      }
+    }
+  }
+  return new Date(Date.parse(from) + 86400000).toISOString();
+}
+
+export function qualify(db, id, { qualification, personId, createPerson, by, note,
+  confirmFields = [], stated = {}, nextAction, nextActionDue, differentPerson = false }) {
   const item = db.prepare('SELECT * FROM inbound WHERE id = ?').get(id);
   if (!item) return { error: 'not found' };
   if (item.state !== 'new') return { error: 'this item has already been dealt with' };
   const levels = CFG.qualification.levels.map((l) => l.id);
   if (!levels.includes(qualification)) return { error: 'unknown qualification: ' + qualification };
   if (!by) return { error: 'who is qualifying this?' };
+  // Somebody who names the programme HAS said what they want. Letting that be
+  // filed as 'nobody can tell yet' is how a person lands in Done and stops.
+  if (String(stated.interest || '').trim() && qualification !== 'lead') {
+    return { error: 'an interest was stated, so this is a lead' };
+  }
+
+  // The request has to make sense before the business gates are worth applying,
+  // otherwise a malformed call is reported as a missing next step.
+  if (!personId && !createPerson) return { error: 'link this to a person, or create one' };
+
+  // Gate 1: a next step. config.nextActionRequired has been true since 23.09.2026
+  // and this path never honoured it, so three demo leads reached the pipeline with
+  // nobody scheduled to do anything. An active person always carries a next action,
+  // an owner and a due date.
+  // The rule is that a person ENDS UP with a next step, not that every message
+  // adds one. A later message about somebody who already has an open task must
+  // not stack a second one, or a chatty applicant collects a pile of duplicates.
+  if (CFG.nextActionRequired && !String(nextAction || '').trim()) {
+    const alreadyHasOne = personId
+      ? db.prepare('SELECT COUNT(*) n FROM tasks WHERE person_id = ? AND done_at IS NULL').get(personId).n > 0
+      : false;
+    if (!alreadyHasOne) {
+      return { error: 'a next step is required: every person we keep working with has one',
+        nextActions: CFG.nextActions };
+    }
+  }
+
+  // Gate 2: duplicates. config.duplicateRule.blockOnMatch has also been true since
+  // 23.09.2026, and was applied only on the manual Add person screen. Qualifying
+  // from a channel therefore created twins in silence.
+  if (!personId && createPerson && !differentPerson) {
+    const dup = duplicateCheck(db, {
+      email: item.contact_email, phone: item.contact_phone, name: item.contact_name });
+    if (dup.blocked) {
+      return { error: 'this looks like somebody we already have', duplicate: true,
+        matches: dup.matches, strong: dup.strong.length > 0 };
+    }
+  }
 
   const at = nowIso();
   let pid = personId || null;
@@ -247,6 +310,20 @@ export function qualify(db, id, { qualification, personId, createPerson, by, not
     if (provenance === 'confirmed' || provenance === 'provider') applyToPerson(db, pid, f.field, f.value);
   }
 
+  // What a person read off the conversation and typed in themselves. The machine
+  // finds nothing in 'hello', so without this an operator could know exactly what
+  // was wanted and still have nowhere to put it.
+  for (const [field, raw] of Object.entries(stated || {})) {
+    const value = String(raw ?? '').trim();
+    if (!value) continue;
+    db.prepare(`INSERT INTO field_values
+      (person_id, inbound_id, field, value, provenance, recorded_at, recorded_by, confirmed_at, confirmed_by)
+      VALUES (?,?,?,?,'operator',?,?,?,?)`).run(pid, id, field, value, at, by, at, by);
+    // A person saying it outranks a machine guessing it, so this one overwrites,
+    // and the change is written into the history like any other edit.
+    applyToPerson(db, pid, field, value, { by, at, force: true });
+  }
+
   db.prepare(`UPDATE inbound SET state = 'qualified', qualification = ?, person_id = ?,
     processed_by = ?, processed_at = ?, body = NULL, body_deleted_at = ? WHERE id = ?`)
     .run(qualification, pid, by, at, at, id);
@@ -254,6 +331,15 @@ export function qualify(db, id, { qualification, personId, createPerson, by, not
   logEvent(db, { personId: pid, kind: 'note', channel: item.channel, direction: 'in', at,
     origin: MANUAL, actor: by, subject: `Qualified from ${item.channel} as ${qualification}`,
     body: note || item.suggestion_why });
+
+  // The next step, with an owner and a due date, so nobody can come to rest here.
+  if (String(nextAction || '').trim()) {
+    const due = nextActionDue || defaultDueFor(nextAction, at);
+    db.prepare('INSERT INTO tasks (person_id,label,due_at,owner,created_at) VALUES (?,?,?,?,?)')
+      .run(pid, String(nextAction).trim(), due, ownerFor(qualification), at);
+    logEvent(db, { personId: pid, kind: 'task', direction: 'note', at, origin: MANUAL, actor: by,
+      subject: `Next step: ${nextAction}`, body: `due ${due.slice(0, 10)}, ${ownerFor(qualification)}` });
+  }
 
   const person = db.prepare('SELECT * FROM people WHERE id = ?').get(pid);
   const gap = qualification === 'lead'
@@ -269,14 +355,22 @@ export function qualify(db, id, { qualification, personId, createPerson, by, not
 }
 
 // Only a fact may overwrite the person record. A suggestion never does.
-function applyToPerson(db, personId, field, value) {
+function applyToPerson(db, personId, field, value, opts = {}) {
   const map = { interest: 'programme', education: 'education', email: 'email', phone: 'phone' };
   const column = map[field];
   if (!column) return;
-  // never overwrite something already there: first touch wins, as everywhere else
   const cur = db.prepare(`SELECT ${column} v FROM people WHERE id = ?`).get(personId);
-  if (cur && (cur.v === null || cur.v === '')) {
-    db.prepare(`UPDATE people SET ${column} = ? WHERE id = ?`).run(value, personId);
+  if (!cur) return;
+  const empty = cur.v === null || cur.v === '';
+  // never overwrite something already there: first touch wins, as everywhere else.
+  // The one exception is a value a PERSON stated, which outranks a machine guess.
+  if (!empty && !opts.force) return;
+  if (!empty && cur.v === value) return;
+  db.prepare(`UPDATE people SET ${column} = ? WHERE id = ?`).run(value, personId);
+  if (!empty && opts.by) {
+    logEvent(db, { personId, kind: 'edit', direction: 'note', at: opts.at || nowIso(),
+      origin: MANUAL, actor: opts.by, subject: `${column} set while qualifying`,
+      field: column, oldValue: cur.v, newValue: value });
   }
 }
 

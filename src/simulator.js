@@ -110,7 +110,7 @@ const BUILDERS = {
       email: 'kristaps.ozolins.' + rid().slice(0, 4) + '@inbox.lv',
       phone: '+371 26 411 900',
       programme: 'NAV',
-      study_form: 'Pilna laika',
+      study_form: 'Full time',
       consent_admissions: true,
       consent_marketing: true,
       ...utm('instagram', 'paid', 'nav-2026-09'),
@@ -322,6 +322,37 @@ const BUILDERS = {
 // ------------------------------------------------------------- normalisation -
 // Provider payload -> our internal event, with the field mapping recorded so the
 // console can show provider field -> CRM field.
+// What a person reads on a person's page. The full payload is NOT thrown away -
+// it is kept in sim_events and shown on the Channels and Inspector screens, where
+// somebody is deliberately looking at the plumbing. On a person's record it
+// belongs in plain words, because Ieva reads it between phone calls.
+const SOURCE_NAME = { instagram: 'Instagram', facebook: 'Facebook', google: 'Google',
+  linkedin: 'LinkedIn', tiktok: 'TikTok', email: 'email', newsletter: 'the newsletter' };
+
+function plainSubmission({ programme, studyForm, phone, email, consent, utm }) {
+  const lines = [];
+  lines.push(programme
+    ? `Wants to study ${programme}${studyForm ? ', ' + String(studyForm).toLowerCase() : ''}.`
+    : 'Did not say what they want to study.');
+  const reach = [phone, email].filter(Boolean).join(' or ');
+  if (reach) lines.push(`Reach them on ${reach}.`);
+  if (consent) {
+    const yes = [];
+    if (consent.admissions) yes.push('about applying');
+    if (consent.marketing) yes.push('about news and offers');
+    lines.push(yes.length
+      ? `Agreed to be contacted ${yes.join(' and ')}.`
+      : 'Did not agree to be contacted. Ask before writing to them.');
+  }
+  if (utm && (utm.source || utm.campaign)) {
+    const paid = utm.medium && /paid|cpc|ppc/i.test(utm.medium);
+    const where = SOURCE_NAME[String(utm.source || '').toLowerCase()] || utm.source || 'a link';
+    lines.push(`Found us through ${paid ? 'a paid ' + where + ' ad' : where}`
+      + (utm.campaign ? ` (campaign ${utm.campaign}).` : '.'));
+  }
+  return lines.join('\n');
+}
+
 function normalise(channelId, built, scenario) {
   const map = [];
   const take = (from, to, value) => { if (value !== undefined && value !== null && value !== '') map.push({ from, to, value }); return value; };
@@ -339,8 +370,15 @@ function normalise(channelId, built, scenario) {
     ev.source.detail = take('utm_medium', 'source.detail', raw.utm_medium);
     ev.meta = { programme: take('programme', 'person.programme', raw.programme), gclid: raw.gclid || null };
     ev.consent = { admissions: raw.consent_admissions === true, marketing: raw.consent_marketing === true };
-    ev.subject = scenario === 'qr' ? 'QR pieteikums' : 'Pieteikuma forma';
-    ev.body = Object.entries(raw).filter(([k]) => !k.startsWith('_')).map(([k, v]) => `${k}: ${v}`).join('\n');
+    ev.subject = scenario === 'qr' ? 'Applied by scanning a QR code'
+      : 'Applied through the website';
+    ev.body = plainSubmission({
+      programme: raw.programme, studyForm: raw.study_form,
+      phone: ev.person.phone, email: ev.person.email,
+      consent: { admissions: raw.consent_admissions === true,
+        marketing: raw.consent_marketing === true },
+      utm: { source: raw.utm_source, medium: raw.utm_medium, campaign: raw.utm_campaign },
+    });
   } else if (channelId === 'google_form') {
     const answers = built.fetch ? built.fetch.result.answers : raw.namedValues;
     const responseId = built.fetch ? built.fetch.result.responseId : raw.responseId;
@@ -353,8 +391,11 @@ function normalise(channelId, built, scenario) {
     ev.source.channel = 'website'; ev.source.detail = 'google-form';
     ev.consent = { admissions: true, marketing: first('Piekrītu saņemt informāciju par studijām') === 'Jā' };
     map.push({ from: 'Piekrītu saņemt informāciju par studijām', to: 'consent.marketing', value: String(ev.consent.marketing) });
-    ev.subject = 'Google formas pieteikums';
-    ev.body = Object.entries(answers || {}).map(([k, v]) => `${k}: ${Array.isArray(v) ? v[0] : v}`).join('\n');
+    ev.subject = 'Applied through the Google form';
+    ev.body = plainSubmission({
+      programme: ev.meta.programme, phone: ev.person.phone,
+      email: ev.person.email, consent: ev.consent,
+    });
   } else if (channelId === 'gmail') {
     const body = raw.plaintextBody || '';
     const fields = {};
@@ -374,7 +415,12 @@ function normalise(channelId, built, scenario) {
       normPhone(fields['tālrunis'] || (/(?:\+\d[\d\s().-]{6,}\d|\b[2-9]\d{7}\b)/.exec(body) || [])[0]));
     ev.source.channel = isNotification ? 'event' : 'email';
     ev.source.campaign = isNotification ? 'piemeri-profesiju' : null;
-    ev.subject = take('subject', 'event.subject', raw.subject);
+    // A real email keeps its own subject, whatever language the sender used - that
+    // is their words. Our own booking notification does not: it is the system
+    // talking, so it says what happened in the interface language.
+    ev.subject = isNotification
+      ? 'Booked a visit through the website'
+      : take('subject', 'event.subject', raw.subject);
     ev.body = isNotification ? `Booked a visit. Profession: ${fields['profesija'] || '-'}, ${fields['datums'] || ''} ${fields['laiks'] || ''}` : body;
     ev.consent = { admissions: true };
   } else if (channelId === 'mailchimp') {
@@ -385,7 +431,9 @@ function normalise(channelId, built, scenario) {
     ev.person.name = take('data[merges][FNAME] + [LNAME]', 'person.name',
       [raw['data[merges][FNAME]'], raw['data[merges][LNAME]']].filter(Boolean).join(' ') || null);
     ev.source.campaign = take('data[list_id]', 'source.campaign (only if new)', raw['data[list_id]']);
-    ev.subject = 'Mailchimp: ' + raw.type;
+    ev.subject = { subscribe: 'Signed up for the newsletter', unsubscribe: 'Unsubscribed',
+      profile: 'Updated their details', cleaned: 'Their email address stopped working',
+      upemail: 'Changed their email address' }[raw.type] || 'Newsletter';
     ev.body = { subscribe: 'Subscribed to the newsletter', unsubscribe: 'Unsubscribed from the newsletter', profile: 'Updated the profile',
       cleaned: 'Address bounced (' + (raw['data[reason]'] || '') + ')', upemail: 'Changed the email to ' + (raw['data[new_email]'] || '') }[raw.type] || raw.type;
     ev.consentChange = raw.type === 'unsubscribe' ? { marketing: 'withdrawn' } : raw.type === 'subscribe' ? { marketing: 'given' } : null;
@@ -625,7 +673,9 @@ function writeToCrm(db, { channelId, ev, personId, decision, scenarioId, account
   logEvent(db, {
     personId,
     kind: byHand ? (channelId === 'phone' ? 'call' : 'note') : 'channel',
-    channel: ev.source.channel || channelId,
+    // the channel it ARRIVED on, not where the traffic came from. A website form
+    // with utm_source=instagram used to read as an Instagram message.
+    channel: channelId,
     direction: byHand ? 'note' : 'in',
     at: ev.occurredAt || now,
     subject: ev.subject, body: ev.body,

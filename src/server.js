@@ -8,6 +8,15 @@ import { hasRealData, loadReal } from './real.js';
 import { PROVIDERS, runScenario, runOutbound, runFullDemo, listEvents, getEvent, consentFor, consentSummary, DEMO_SEQUENCE } from './simulator.js';
 import { logEvent, applyEdit, readHistory, MANUAL, AUTOMATIC, EDITABLE_FIELDS, IMMUTABLE_FIELDS, FIELD_LABELS } from './history.js';
 import { receive, listInbound, qualify, archive, funnel, agedCount, handoffToSis, ownerFor, notifiedFor, handoverGap, canReach, surfaceAt, waitingFor, waitingByRole } from './intake.js';
+import { readScreenshot, readKind, readBody, readPath, saveFeedback, listFeedback, getScreenshot, setHandled, BadScreenshot } from './feedback.js';
+import { findMatches as matchPeople, duplicateCheck } from './identity.js';
+import { adapt, toIntake, hasAdapter, adapterIds } from './adapters.js';
+import { fixtureFor } from './fixtures.js';
+import { buildPayload, scenariosFor, allScenarios, CHANNEL_LABELS, META_GROUP } from './scenarios.js';
+import { report as buildReport, reportRows, periodOf, EXPORT_SECTIONS, DEFAULT_SECTIONS } from './reports.js';
+import * as snapshot from './snapshot.js';
+import { buildDemo } from './demo.js';
+import { verifyRequest, channelDef, channelIds, allChannelStatus, BadInbound } from './inbound.js';
 
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -15,8 +24,32 @@ const PORT = Number(process.env.PORT || 8800);
 const CONFIG = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'prototype.json'), 'utf8'));
 const FIXTURES = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'inbound_fixtures.json'), 'utf8'));
 
-const db = openDb();
+// The prototype now keeps its database in a file. It used to live in memory, and
+// a restart silently emptied it while the open browser tab carried on showing
+// rows that no longer existed - every link in that stale page then failed.
+const DB_FILE = process.env.CRM_DB || path.join(ROOT, 'data', 'crm.db');
+if (DB_FILE !== ':memory:') fs.mkdirSync(path.dirname(DB_FILE), { recursive: true });
+const db = openDb(DB_FILE);
+
+// REAL or DEMO, and it is never guessed. The mode is written next to the database
+// and read back, so the Console can say which one is on screen without inferring
+// it from what happens to be in the tables.
+const MODE_FILE = DB_FILE === ':memory:' ? null : DB_FILE + '.mode';
+let MODE = 'empty';
+try { if (MODE_FILE && fs.existsSync(MODE_FILE)) MODE = fs.readFileSync(MODE_FILE, 'utf8').trim(); } catch {}
+function setMode(m) {
+  MODE = m;
+  try { if (MODE_FILE) fs.writeFileSync(MODE_FILE, m); } catch {}
+}
+const modeState = () => ({
+  mode: MODE,
+  isReal: MODE === 'real',
+  isDemo: MODE === 'demo',
+  people: db.prepare('SELECT COUNT(*) n FROM people').get().n,
+  snapshot: snapshot.info(),
+});
 let DATASET = { dataset: 'empty', people: 0, selection: 'an empty table' };
+
 
 function clearAll() {
   db.exec(`DELETE FROM events; DELETE FROM tasks; DELETE FROM documents;
@@ -29,8 +62,14 @@ function clearAll() {
 function loadDataset(kind) {
   clearAll();
   if (kind === 'real') {
-    if (!hasRealData()) throw new Error('data/real_people.json nav atrodams');
+    if (!hasRealData()) throw new Error('data/real_people.json is missing');
     DATASET = loadReal(db, CONFIG.realData);
+    setMode('real');
+    // The clean snapshot is written HERE, straight after loading from the source
+    // file, and never later. Once somebody has been testing in demo mode the live
+    // tables are no longer evidence of what the real data looked like.
+    snapshot.write(db, { source: DATASET.source || 'data/real_people.json',
+      selection: DATASET.selection || null });
   } else if (kind === 'synthetic') {
     DATASET = { dataset: 'synthetic', ...seed(db), selection: 'invented records shaped by the real proportions' };
   } else {
@@ -39,13 +78,63 @@ function loadDataset(kind) {
   return DATASET;
 }
 
-loadDataset(process.env.DATASET || CONFIG.startWith || 'empty');
+// Boot, and the reason this is not simply loadDataset(...).
+//
+// loadDataset clears every table first. That cost nothing while the database
+// lived in memory, because a fresh process started empty anyway. Now that it is
+// a FILE, running it at boot destroyed everything a tester had entered, on every
+// restart - the exact fault the file was meant to fix. So: an existing database
+// is left alone, and the configured starting dataset is only applied to a new
+// and empty one. DATASET=... still forces a load, which is what the tests use.
+{
+  const forced = process.env.DATASET;
+  const kept = db.prepare('SELECT COUNT(*) n FROM people').get().n;
+  if (forced) {
+    loadDataset(forced);
+  } else if (kept) {
+    DATASET = { dataset: 'kept', people: kept,
+      selection: 'what was in the database when the server last stopped' };
+  } else {
+    loadDataset(CONFIG.startWith || 'empty');
+  }
+}
 console.log(`prototype started ${DATASET.dataset.toUpperCase()}: ${DATASET.people} people`
   + (hasRealData() ? ' | real data available on demand' : ' | no real data file'));
 
 const json = (res, status, obj) => { res.writeHead(status, { 'content-type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(obj)); };
-const body = (req) => new Promise((r) => { let b = ''; req.on('data', (c) => (b += c)); req.on('end', () => r(b ? JSON.parse(b) : {})); });
+const body = (req, maxBytes = 512 * 1024) => new Promise((resolve, reject) => {
+  let b = '', n = 0;
+  req.on('data', (c) => {
+    n += c.length;
+    if (n > maxBytes) { reject(new BadScreenshot('That message is too big to send.')); req.destroy(); return; }
+    b += c;
+  });
+  req.on('end', () => { try { resolve(b ? JSON.parse(b) : {}); } catch { reject(new BadScreenshot('That message could not be read.')); } });
+  req.on('error', reject);
+});
 const nowIso = () => new Date().toISOString();
+// Signatures are computed over the EXACT bytes a provider sent, so the body has
+// to be read as text before anything parses it.
+const rawText = (req, maxBytes = 512 * 1024) => new Promise((resolve, reject) => {
+  let b = '', n = 0;
+  req.on('data', (c) => {
+    n += c.length;
+    if (n > maxBytes) { reject(new BadScreenshot('that payload is too big')); req.destroy(); return; }
+    b += c;
+  });
+  req.on('end', () => resolve(b));
+  req.on('error', reject);
+});
+
+// Every delivery attempt, accepted or not. Memory only, and deliberately small:
+// this is a diagnostic tail, not an audit log, and it holds no payload and no
+// secret.
+const INBOUND_LOG = [];
+function recordInbound(channel, externalId, outcome, how) {
+  INBOUND_LOG.push({ at: nowIso(), channel, externalId, outcome, verified: how });
+  if (INBOUND_LOG.length > 500) INBOUND_LOG.splice(0, INBOUND_LOG.length - 500);
+}
+
 const dayStart = () => new Date(new Date().toISOString().slice(0, 10) + 'T00:00:00.000Z').toISOString();
 const dayEnd = () => new Date(Date.parse(dayStart()) + 86400000).toISOString();
 const newId = () => 'p' + Math.random().toString(36).slice(2, 7);
@@ -59,6 +148,11 @@ const ADMINS = CONFIG.admins || [];
 const USERS = CONFIG.users || [];
 const USER_NAMES = USERS.map((u) => u.name);
 const isAdmin = (who) => ADMINS.includes(String(who || ''));
+// Reading the feedback inbox is NOT the same as being an admin, and is not
+// derived from it. Marina is an admin and must not see it, so this is its own
+// list. Without a login it can only check the name that was selected.
+const FEEDBACK_READERS = CONFIG.feedbackReaders || [];
+const canReadFeedback = (who) => FEEDBACK_READERS.includes(String(who || ''));
 const isKnownPerson = (who) => USER_NAMES.includes(String(who || '')) || isAdmin(who);
 const roleOf = (who) => (USERS.find((u) => u.name === who) || {}).role || null;
 // 'unknown user' rather than a quiet default: an entry nobody can be traced to
@@ -115,20 +209,10 @@ function advanceStatus(personId, actionLabel, now) {
 
 // One matcher, used by the live check in the form AND by the save that refuses.
 // Two different rules would mean the warning and the block could disagree.
-function findMatches({ email, phone, name }) {
-  const e = String(email || '').trim().toLowerCase();
-  const ph = String(phone || '').replace(/[^\d+]/g, '');
-  const n = String(name || '').trim().toLowerCase();
-  return db.prepare('SELECT id, name, email, phone, status, source_channel, created_at FROM people').all()
-    .filter((r) => (e && String(r.email || '').toLowerCase() === e)
-      || (ph.length > 5 && String(r.phone || '').replace(/[^\d+]/g, '').endsWith(ph.slice(-8)))
-      || (n && String(r.name || '').toLowerCase() === n))
-    .map((r) => ({ ...r, matchedOn: [
-      e && String(r.email || '').toLowerCase() === e ? 'email' : null,
-      ph.length > 5 && String(r.phone || '').replace(/[^\d+]/g, '').endsWith(ph.slice(-8)) ? 'phone' : null,
-      n && String(r.name || '').toLowerCase() === n ? 'name' : null,
-    ].filter(Boolean) }));
-}
+// One matcher, in src/identity.js, used by every path that can create a person.
+// It used to live here, which meant only the manual Add person screen ever asked
+// the question.
+const findMatches = (contact) => matchPeople(db, contact);
 
 // A real, minimal PDF. Not a library, and not a text file with a .pdf name.
 function simplePdf(title, lines) {
@@ -159,7 +243,8 @@ function simplePdf(title, lines) {
 }
 
 function channelLabel(id) {
-  return (CONFIG.channels && CONFIG.channels[id]) || id || 'unknown';
+  return (CONFIG.channels && CONFIG.channels[id])
+    || (CONFIG.channelAliases && CONFIG.channelAliases[id]) || id || 'unknown';
 }
 
 function personRow(id, viewer) {
@@ -195,10 +280,31 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
   const p = url.pathname;
   try {
+    // Our control room, at its own address. It is deliberately NOT a route inside
+    // the CRM: the CRM is the product and carries no way into this.
+    if (req.method === 'GET' && (p === '/console' || p === '/console/')) {
+      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' });
+      return res.end(fs.readFileSync(path.join(ROOT, 'src', 'console.html')));
+    }
+
     if (req.method === 'GET' && (p === '/' || p === '/index.html')) {
-      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+      // never cached: the whole app is this one file, and a tester holding a cached
+      // copy would keep reporting bugs that were fixed hours ago
+      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' });
       return res.end(fs.readFileSync(path.join(ROOT, 'src', 'app.html')));
     }
+    // The brand assets. Only the two authorised logo files, served by an exact
+    // name match: no path is ever built out of what the request asked for.
+    if (req.method === 'GET' && p.startsWith('/assets/')) {
+      const ALLOWED = { 'NoAca_logo_darkhor.svg': 1, 'NoAca_logo_whitehor.svg': 1,
+        'NoAca_logo_blackhor.svg': 1 };
+      const name = p.slice('/assets/'.length);
+      if (!ALLOWED[name]) return json(res, 404, { error: 'not found' });
+      res.writeHead(200, { 'content-type': 'image/svg+xml; charset=utf-8',
+        'cache-control': 'public, max-age=3600' });
+      return res.end(fs.readFileSync(path.join(ROOT, 'src', 'assets', name)));
+    }
+
     if (req.method === 'GET' && p === '/api/config') return json(res, 200, { ...CONFIG, dataset: DATASET });
 
     // --------------------------------------------------------- the database -
@@ -283,13 +389,20 @@ const server = http.createServer(async (req, res) => {
       const from = dayStart();
       const to = dayEnd();
       const withTask = (rows) => rows;
+      // Today says whose day it is at the top, so it has to BE that person's day.
+      // It used to show the whole team's work under a heading naming one person,
+      // which is why the sidebar said 4 and this screen said 6. ?scope=all opts
+      // back out. An admin holds no role, so an admin sees everything.
+      const meRole = roleOf(viewerOf(req, url));
+      const everyone = url.searchParams.get('scope') === 'all' || !meRole;
+      const mine = (rows, key = 'owner') => everyone ? rows : rows.filter((r) => r[key] === meRole);
 
       // NEW LEADS - arrived and nobody has spoken to them yet.
       const newLeadsAll = db.prepare(`SELECT pe.* FROM people pe
         WHERE pe.created_at >= ? AND pe.status NOT IN ('Admitted','Not proceeding')`).all(from);
       const spokenTo = (id) => db.prepare(`SELECT COUNT(*) n FROM events
         WHERE person_id = ? AND origin = 'manual' AND kind IN ('call','note','task','status')`).get(id).n > 0;
-      const newLeads = newLeadsAll.filter((r) => !spokenTo(r.id));
+      const newLeads = mine(newLeadsAll.filter((r) => !spokenTo(r.id)));
       const newLeadsDone = newLeadsAll.length - newLeads.length;
 
       // FOLLOW-UPS - a next step due today or already late, plus the ones closed today.
@@ -297,6 +410,7 @@ const server = http.createServer(async (req, res) => {
         JOIN people pe ON pe.id = t.person_id
         WHERE t.done_at IS NULL AND t.due_at < ? ORDER BY t.due_at ASC`).all(to);
       const doneFollow = db.prepare(`SELECT COUNT(*) n FROM tasks WHERE done_at >= ? AND done_at < ?`).get(from, to).n;
+      const openFollowMine = mine(openFollow);
 
       // REPLIES - they wrote to us and nothing has gone back since.
       const replies = db.prepare(`SELECT pe.id, pe.name, pe.programme, pe.status, pe.source_channel,
@@ -315,6 +429,30 @@ const server = http.createServer(async (req, res) => {
         WHERE pe.status NOT IN ('Admitted','Not proceeding')
           AND NOT EXISTS (SELECT 1 FROM tasks t WHERE t.person_id = pe.id AND t.done_at IS NULL)
         ORDER BY pe.created_at DESC`).all();
+      const attentionMine = mine(attention);
+
+      // WAITING ON US - one queue, however it started. Follow-ups and Replies were
+      // two tabs answering the same question, "who needs me today?", and a person
+      // who had both a due step AND an unanswered message appeared twice. Merged
+      // 24.09.2026. Each row still says WHY it is here, because the two need a
+      // different action: a planned step is marked done, a message is answered.
+      const waiting = new Map();
+      for (const t of openFollowMine) {
+        waiting.set(t.person_id, { person_id: t.person_id, id: t.person_id, name: t.name,
+          programme: t.programme, status: t.status, why: 'step',
+          taskId: t.id, label: t.label, due_at: t.due_at });
+      }
+      for (const r of mine(replies)) {
+        const already = waiting.get(r.id);
+        const reply = { subject: r.subject, channel: r.channel, occurred_at: r.occurred_at,
+          source_channel: r.source_channel };
+        if (already) Object.assign(already, reply, { why: 'both' });
+        else waiting.set(r.id, { person_id: r.id, id: r.id, name: r.name, programme: r.programme,
+          status: r.status, why: 'reply', ...reply });
+      }
+      // the oldest thing waiting comes first, whichever kind it is
+      const waitingRows = [...waiting.values()].sort((a, b) =>
+        String(a.due_at || a.occurred_at || '').localeCompare(String(b.due_at || b.occurred_at || '')));
 
       const group = (id, label, open, done) => ({
         id, label,
@@ -327,12 +465,13 @@ const server = http.createServer(async (req, res) => {
       return json(res, 200, {
         groups: [
           group('new_leads', 'New leads', newLeads, newLeadsDone),
-          group('follow_ups', 'Follow-ups', withTask(openFollow), doneFollow),
-          group('replies', 'Replies', replies, answeredToday),
-          group('attention', 'Other attention', attention, 0),
+          group('waiting', 'Waiting on us', waitingRows, doneFollow + answeredToday),
+          group('attention', 'Other attention', attentionMine, 0),
         ],
         order: CONFIG.todayGroups.map((g) => g.id),
         descriptions: Object.fromEntries(CONFIG.todayGroups.map((g) => [g.id, g.what])),
+        scope: everyone ? 'all' : 'mine',
+        role: meRole,
       });
     }
 
@@ -396,7 +535,7 @@ const server = http.createServer(async (req, res) => {
         rows = rows.filter((r) => fields.some((f) => String(r[f] ?? '').toLowerCase().includes(q))
           || channelLabel(r.source_channel).toLowerCase().includes(q));
       }
-      for (const key of ['status', 'programme', 'owner', 'source_channel']) {
+      for (const key of ['status', 'programme', 'owner', 'source_channel', 'nationality']) {
         const v = f(key);
         if (v) rows = rows.filter((r) => String(r[key]) === v);
       }
@@ -559,21 +698,38 @@ const server = http.createServer(async (req, res) => {
       }
       const script = [
         { extId: 'ig_msg_0002', as: 'lead', by: 'Tetiana', confirm: ['interest', 'start', 'education', 'question'],
+          next: 'Send the admission terms and the price',
           note: 'Wants Navigation, finished secondary school, asking about the price' },
         { extId: 'fb_msg_0003', as: 'lead', by: 'Tetiana', confirm: ['interest'],
+          next: 'Send the programme description',
           note: 'Asked for programme information' },
         { extId: 'wa_msg_0008', as: 'lead', by: 'Tetiana', confirm: ['interest', 'education', 'question', 'phone'],
-          note: 'Wind turbine programme, finished school, asking about the deadline' },
+          next: 'Call and establish interest',
+          note: 'Wind turbine programme, finished school, asking when they could start' },
         { extId: 'li_msg_0006', as: 'lead', by: 'Tetiana', confirm: ['interest'],
+          next: 'Answer the question',
           note: 'Marine engineering, asked which documents are needed' },
         { extId: 'fb_msg_0009', as: 'unclear', by: 'Tetiana', confirm: [],
+          next: 'Call and establish interest',
           note: 'Asked if the course is open but did not say which one' },
       ];
       const out = [];
+      const refused = [];
       for (const step of script) {
         const row = db.prepare('SELECT id FROM inbound WHERE external_id = ?').get(step.extId);
-        if (row) out.push(qualify(db, row.id, { qualification: step.as, createPerson: true,
-          by: step.by, note: step.note, confirmFields: step.confirm }));
+        if (!row) continue;
+        // These are demo people who genuinely are different people, so the walk-through
+        // says so rather than tripping the duplicate rule it is meant to demonstrate.
+        const r = qualify(db, row.id, { qualification: step.as, createPerson: true,
+          by: step.by, note: step.note, confirmFields: step.confirm,
+          nextAction: step.next, differentPerson: true });
+        // The return value is READ. This loop used to push whatever came back and
+        // report its length as a success count, so when the gates started refusing
+        // every step the demo still announced 'qualified: 5' with nothing qualified.
+        if (r && r.ok) out.push(r); else refused.push({ extId: step.extId, error: r && r.error });
+      }
+      if (refused.length) {
+        return json(res, 500, { error: 'the demo walk-through could not complete', refused });
       }
       for (const [extId, reason] of [['ig_msg_0005', 'Not a prospective student']]) {
         const row = db.prepare('SELECT id FROM inbound WHERE external_id = ?').get(extId);
@@ -674,7 +830,7 @@ const server = http.createServer(async (req, res) => {
         // "Google Sheets" in a local prototype is the same file it would import.
         res.writeHead(200, {
           'content-type': 'text/csv; charset=utf-8',
-          'content-disposition': `attachment; filename="college-crm-report-${stamp}.csv"`,
+          'content-disposition': `attachment; filename="academy-crm-report-${stamp}.csv"`,
         });
         return res.end('\uFEFF' + csv);
       }
@@ -684,7 +840,7 @@ const server = http.createServer(async (req, res) => {
         // is rather than pretending to be something it is not.
         res.writeHead(200, {
           'content-type': 'application/vnd.ms-excel; charset=utf-8',
-          'content-disposition': `attachment; filename="college-crm-report-${stamp}.xls"`,
+          'content-disposition': `attachment; filename="academy-crm-report-${stamp}.xls"`,
         });
         return res.end('\uFEFF' + rows.map((r) => r.join('\t')).join('\r\n'));
       }
@@ -692,8 +848,8 @@ const server = http.createServer(async (req, res) => {
       const lines = rows.map((r) => `${r[0]} | ${r[1]} | ${r[2]}`);
       return res.writeHead(200, {
         'content-type': 'application/pdf',
-        'content-disposition': `attachment; filename="college-crm-report-${stamp}.pdf"`,
-      }), res.end(simplePdf(`College CRM report ${stamp}`, lines));
+        'content-disposition': `attachment; filename="academy-crm-report-${stamp}.pdf"`,
+      }), res.end(simplePdf(`Academy CRM report ${stamp}`, lines));
     }
 
     if (req.method === 'GET' && p === '/api/funnel') {
@@ -863,10 +1019,321 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
+    // ------------------------------------------------------ inbound channels -
+    //
+    // One endpoint shape for every channel that can send us something:
+    //
+    //   POST /api/inbound/<channel>
+    //
+    // verify -> adapt -> normalised event -> the same queue a simulated event
+    // uses. There is no shortcut into CAR anywhere, so what is tested locally is
+    // the path a real provider will take.
+    //
+    // NOTHING here is live. A channel only accepts a payload when its mode is
+    // 'test' or 'live', and no mode is set in this repository.
+    if (req.method === 'POST' && /^\/api\/inbound\/[a-z_]+$/.test(p)) {
+      const channel = p.split('/')[3];
+      const def = channelDef(channel);
+      if (!def || !hasAdapter(channel)) return json(res, 404, { error: 'no adapter for ' + channel });
+
+      const mode = String(process.env['CHANNEL_MODE_' + channel.toUpperCase()] || 'off').toLowerCase();
+      const simulated = req.headers['x-crm-simulated'] === '1';
+      if (mode === 'off' && !simulated) {
+        return json(res, 409, { error: `the ${channel} channel is off`,
+          how: 'set CHANNEL_MODE_' + channel.toUpperCase() + ' to test or live, or send a simulated event' });
+      }
+
+      const rawBody = await rawText(req, 3 * 1024 * 1024);
+      // A simulated event is never signature-checked, and says so in the record.
+      const check = simulated
+        ? { ok: true, how: 'simulated locally, not signature checked' }
+        : verifyRequest(channel, req, { secret: def.secretEnv ? process.env[def.secretEnv] : null, rawBody, url });
+      if (!check.ok) {
+        recordInbound(channel, null, 'refused', check.how);
+        return json(res, 401, { error: 'this event was not accepted', why: check.how,
+          missingSecret: Boolean(check.missingSecret) });
+      }
+
+      let payload;
+      try { payload = rawBody ? JSON.parse(rawBody) : {}; }
+      catch { return json(res, 400, { error: 'the payload is not readable JSON' }); }
+
+      try {
+        const ev = adapt(channel, payload);
+        // Idempotency: receive() returns {duplicate:true} when it has already
+        // seen this channel + external id. A provider retry is normal.
+        const r = receive(db, toIntake(ev));
+        recordInbound(channel, ev.externalEventId, r.duplicate ? 'duplicate' : r.filtered ? 'filtered' : 'queued', check.how);
+        return json(res, 200, { ok: true, channel, externalEventId: ev.externalEventId,
+          outcome: r.duplicate ? 'already had it' : r.filtered ? 'filtered out before the queue' : 'waiting to be looked at',
+          inboundId: r.id, verified: check.how });
+      } catch (err) {
+        recordInbound(channel, null, 'error', err.message);
+        if (err instanceof BadInbound) return json(res, 400, { error: err.message, detail: err.detail });
+        throw err;
+      }
+    }
+
+    // A local test event. It goes through the SAME adapter, the same filter and
+    // the same queue a real provider event will, so what is tested here is the
+    // real path and not a shortcut into CAR.
+    if (req.method === 'POST' && /^\/api\/inbound\/[a-z_]+\/simulate$/.test(p)) {
+      const channel = p.split('/')[3];
+      if (!hasAdapter(channel)) return json(res, 404, { error: 'no adapter for ' + channel });
+      const b = await body(req);
+      const raw = b.payload || fixtureFor(channel, { sameId: b.sameId === true });
+      if (!raw) return json(res, 404, { error: 'no fixture for ' + channel });
+      try {
+        const ev = adapt(channel, raw);
+        const r = receive(db, toIntake(ev));
+        recordInbound(channel, ev.externalEventId,
+          r.duplicate ? 'duplicate' : r.filtered ? 'filtered' : 'queued', 'simulated locally');
+        return json(res, 200, { ok: true, channel, externalEventId: ev.externalEventId,
+          outcome: r.duplicate ? 'already had it' : r.filtered ? 'filtered out before the queue'
+            : 'waiting to be looked at',
+          inboundId: r.id, verified: 'simulated locally, not signature checked' });
+      } catch (err) {
+        recordInbound(channel, null, 'error', err.message);
+        if (err instanceof BadInbound) return json(res, 400, { error: err.message, detail: err.detail });
+        throw err;
+      }
+    }
+
+    // The KPI report. One period, chosen by whoever is running the meeting.
+    if (req.method === 'GET' && p === '/api/report') {
+      return json(res, 200, buildReport(db, {
+        from: url.searchParams.get('from'), to: url.searchParams.get('to') }));
+    }
+
+    if (req.method === 'GET' && p === '/api/report/sections') {
+      return json(res, 200, { sections: EXPORT_SECTIONS, defaults: DEFAULT_SECTIONS });
+    }
+
+    if (req.method === 'GET' && p === '/api/report.csv') {
+      const picked = (url.searchParams.get('sections') || '').split(',').filter(Boolean);
+      const rows = reportRows(db, { from: url.searchParams.get('from'),
+        to: url.searchParams.get('to'), sections: picked });
+      const csv = rows.map((r) => (r || []).map((c) =>
+        `"${String(c === undefined || c === null ? '' : c).replace(/"/g, '""')}"`).join(',')).join('\r\n');
+      const stamp = new Date().toISOString().slice(0, 10);
+      res.writeHead(200, { 'content-type': 'text/csv; charset=utf-8',
+        'content-disposition': `attachment; filename="academy-crm-kpi-${stamp}.csv"` });
+      return res.end('\ufeff' + csv);
+    }
+
+    // ------------------------------------------------- real and demo state -
+    if (req.method === 'GET' && p === '/api/console/state') {
+      return json(res, 200, { ...modeState(), dataset: DATASET, realAvailable: hasRealData() });
+    }
+
+    // Switching to demo, resetting demo, and restoring real data are all
+    // destructive, so each one requires the caller to say what it is doing.
+    // A typo in a fetch must not be able to wipe the real database.
+    if (req.method === 'POST' && p === '/api/console/mode') {
+      const b = await body(req);
+      const want = String(b.mode || '');
+      if (b.confirm !== 'yes') {
+        return json(res, 428, { error: 'this replaces everything in the database',
+          needsConfirm: true, mode: want, currently: modeState() });
+      }
+
+      if (want === 'demo') {
+        // never overwrite the real snapshot on the way in
+        clearAll();
+        const info = buildDemo(db, CONFIG);
+        setMode('demo');
+        DATASET = { dataset: 'demo', people: info.total,
+          selection: 'a deliberately small demo environment, built through the real inbound path' };
+        return json(res, 200, { ok: true, ...modeState(), built: info });
+      }
+
+      if (want === 'real') {
+        if (!snapshot.exists()) {
+          if (!hasRealData()) return json(res, 409, { error: 'there is no real data on this machine' });
+          const info = loadDataset('real');
+          return json(res, 200, { ok: true, ...modeState(), loaded: info, from: 'source file' });
+        }
+        const r = snapshot.restore(db);
+        if (r.error) return json(res, 500, { error: r.error });
+        setMode('real');
+        DATASET = { dataset: 'real', people: r.counts.people,
+          selection: 'restored from the clean snapshot taken when the real database was loaded' };
+        return json(res, 200, { ok: true, ...modeState(), restored: r, from: 'snapshot' });
+      }
+
+      if (want === 'empty') {
+        clearAll();
+        setMode('empty');
+        DATASET = { dataset: 'empty', people: 0, selection: 'an empty database' };
+        return json(res, 200, { ok: true, ...modeState() });
+      }
+
+      return json(res, 400, { error: 'mode must be real, demo or empty' });
+    }
+
+    // ---------------------------------------------------------- the console -
+    // Our control room. Everything here drives the REAL path: a payload is built
+    // in the provider's shape, handed to the adapter, filtered, and lands in the
+    // Inbox. Nothing writes to a table directly, because a demo that fakes the
+    // end state proves nothing about the product.
+    if (req.method === 'GET' && p === '/api/console/scenarios') {
+      return json(res, 200, {
+        channels: channelIds(),
+        channelLabels: CHANNEL_LABELS,
+        metaGroup: META_GROUP,
+        scenarios: allScenarios(),
+      });
+    }
+
+    if (req.method === 'POST' && p === '/api/console/send') {
+      const b = await body(req);
+      const channel = String(b.channel || '');
+      const scenario = String(b.scenario || 'study_enquiry');
+      if (!hasAdapter(channel)) return json(res, 400, { error: 'unknown channel: ' + channel });
+
+      // an existing-person scenario borrows a real person's details, so the
+      // duplicate check fires for a genuine reason rather than a rigged one
+      let existing = null;
+      if (b.person === 'existing' || scenario === 'existing_person' || scenario === 'duplicate_attempt') {
+        existing = db.prepare(`SELECT name, email, phone FROM people
+          WHERE (email IS NOT NULL OR phone IS NOT NULL) ORDER BY created_at DESC LIMIT 1`).get() || null;
+        if (!existing) return json(res, 409, {
+          error: 'there is nobody in the database yet, so there is nobody to match against',
+          how: 'load some demo data first' });
+      }
+
+      const payload = buildPayload(channel, scenario, { sameId: b.sameId === true, existing,
+        message: typeof b.message === 'string' && b.message.trim() ? b.message.trim() : null });
+      try {
+        const ev = adapt(channel, payload);
+        const r = receive(db, toIntake(ev));
+        recordInbound(channel, ev.externalEventId,
+          r.duplicate ? 'duplicate' : r.filtered ? 'filtered' : 'queued', 'console');
+        const outcome = r.duplicate ? 'The same event again - stored once'
+          : r.filtered ? 'Filtered before the Inbox'
+          : 'Waiting in the Inbox';
+        const explain = r.duplicate
+          ? 'A provider retry. It matched on the channel and the provider id, so nothing was written twice.'
+          : r.filtered
+          ? 'A commercial pitch. It is stored and findable, and it is kept out of the funnel, so nobody has to archive it by hand.'
+          : existing
+          ? `It came in as ${existing.name}, who is already in the database. Qualifying it will offer that person rather than making a second one.`
+          : 'Open the Inbox and decide what it is. Nothing becomes an applicant on its own.';
+        return json(res, 200, { ok: true, channel: CHANNEL_LABELS[channel] || channel,
+          externalEventId: ev.externalEventId, inboundId: r.id, outcome, explain,
+          personId: null, filtered: Boolean(r.filtered), duplicate: Boolean(r.duplicate) });
+      } catch (err) {
+        recordInbound(channel, null, 'error', err.message);
+        if (err instanceof BadInbound) return json(res, 400, { error: err.message, detail: err.detail });
+        throw err;
+      }
+    }
+
+    // The connection register: what is ready, what is waiting, and on whom.
+    if (req.method === 'GET' && p === '/api/connections') {
+      const counts = {};
+      for (const id of channelIds()) {
+        const row = db.prepare(`SELECT COUNT(*) n, MAX(received_at) last FROM inbound WHERE channel = ?`).get(id);
+        const ok = db.prepare(`SELECT MAX(received_at) last FROM inbound WHERE channel = ? AND state != 'filtered'`).get(id);
+        counts[id] = { events: row.n, lastEventAt: row.last, lastSuccessAt: ok.last };
+      }
+      return json(res, 200, {
+        channels: allChannelStatus(process.env, counts),
+        adapters: adapterIds(),
+        note: 'No secret value is ever returned by this endpoint, only whether one is present.',
+      });
+    }
+
+    // What happened to each thing that arrived. The diagnostic view that matters
+    // once real channels start flowing.
+    if (req.method === 'GET' && p === '/api/inbound/events') {
+      const rows = db.prepare(`SELECT i.id, i.channel, i.external_id, i.received_at, i.state,
+          i.qualification, i.person_id, i.archive_reason, i.processed_by, i.processed_at,
+          pe.name AS person_name
+        FROM inbound i LEFT JOIN people pe ON pe.id = i.person_id
+        ORDER BY i.received_at DESC LIMIT 200`).all();
+      return json(res, 200, {
+        rows: rows.map((r) => ({
+          id: r.id, channel: r.channel, externalId: r.external_id, receivedAt: r.received_at,
+          // the journey, in the words the screens use
+          filtered: r.state === 'filtered',
+          inCar: r.state === 'new',
+          qualified: r.state === 'qualified',
+          archived: r.state === 'archived',
+          matchedPerson: r.person_id ? { id: r.person_id, name: r.person_name } : null,
+          becameLead: r.qualification === 'lead',
+          outcome: r.state === 'filtered' ? 'filtered before the queue'
+            : r.state === 'new' ? 'waiting in CAR'
+            : r.state === 'qualified' ? (r.qualification === 'lead' ? 'became a lead' : 'kept, still unclear')
+            : 'marked not relevant',
+          by: r.processed_by, at: r.processed_at,
+        })),
+        deliveries: INBOUND_LOG.slice(-200).reverse(),
+      });
+    }
+
+    // ------------------------------------------------------------- feedback -
+    // Anybody using the app can report a bug or an idea from the screen they are
+    // on. Reading it back is admin-only. NOTE: there is no login yet, so 'admin'
+    // here means the name in the actor picker. It is a workflow rule, not a
+    // security boundary, and it becomes one only when authentication exists.
+    if (req.method === 'POST' && p === '/api/feedback') {
+      const b = await body(req, 3 * 1024 * 1024);
+      const saved = saveFeedback(db, {
+        kind: readKind(b.kind),
+        body: readBody(b.body),
+        path: readPath(b.path),
+        screenshot: readScreenshot(b.screenshot),
+        by: actorOf(req, b),
+        at: nowIso(),
+      });
+      return json(res, 200, { ok: true, ...saved });
+    }
+
+    // The notification. Nothing in this app can send an email, so being told
+    // happens inside the app: a count of what has not been handled yet.
+    if (req.method === 'GET' && p === '/api/feedback/waiting') {
+      const who = viewerOf(req, url);
+      if (!canReadFeedback(who)) return json(res, 200, { open: 0, mayRead: false });
+      return json(res, 200, { mayRead: true,
+        open: db.prepare('SELECT COUNT(*) n FROM feedback WHERE handled_at IS NULL').get().n,
+        readers: FEEDBACK_READERS });
+    }
+
+    if (req.method === 'GET' && p === '/api/admin/feedback') {
+      if (!canReadFeedback(viewerOf(req, url)))
+        return json(res, 403, { error: `the feedback inbox is for ${FEEDBACK_READERS.join(' and ')} only` });
+      return json(res, 200, { rows: listFeedback(db) });
+    }
+
+    if (req.method === 'GET' && /^\/api\/admin\/feedback\/\d+\/screenshot$/.test(p)) {
+      if (!canReadFeedback(viewerOf(req, url)))
+        return json(res, 403, { error: `the feedback inbox is for ${FEEDBACK_READERS.join(' and ')} only` });
+      const shot = getScreenshot(db, Number(p.split('/')[4]));
+      if (!shot) return json(res, 404, { error: 'not found' });
+      // The stored type is the sniffed one. nosniff stops a browser second-guessing it.
+      res.writeHead(200, {
+        'content-type': shot.mime_type,
+        'x-content-type-options': 'nosniff',
+        'content-disposition': 'inline',
+        'cache-control': 'private, max-age=300',
+      });
+      return res.end(Buffer.from(shot.data));
+    }
+
+    if (req.method === 'PATCH' && /^\/api\/admin\/feedback\/\d+$/.test(p)) {
+      if (!canReadFeedback(viewerOf(req, url)))
+        return json(res, 403, { error: `the feedback inbox is for ${FEEDBACK_READERS.join(' and ')} only` });
+      const b = await body(req);
+      const r = setHandled(db, Number(p.split('/')[4]), Boolean(b.handled), actorOf(req, b), nowIso());
+      return r.error ? json(res, 404, r) : json(res, 200, r);
+    }
+
     return json(res, 404, { error: 'not found' });
   } catch (err) {
+    if (err instanceof BadScreenshot) return json(res, 400, { error: err.message });
     return json(res, 500, { error: err.message });
   }
 });
 
-server.listen(PORT, () => console.log(`College CRM prototype on http://localhost:${PORT}`));
+server.listen(PORT, () => console.log(`Academy CRM prototype on http://localhost:${PORT}`));

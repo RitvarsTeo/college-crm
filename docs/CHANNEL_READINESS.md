@@ -1,0 +1,508 @@
+# Channel readiness
+
+**Generated from `config/channels.json` by `scripts/gen_readiness.py`. Do not hand-edit:**
+change the config and regenerate, or the register and this document drift apart.
+
+Nothing in this repository is connected to anything. No channel has credentials, no webhook has
+been registered with any provider, and nothing is deployed. What exists is the adapter, the
+contract, the security interface and the tests. Switching a channel on later should be:
+
+1. configure credentials,
+2. configure the webhook or endpoint at the provider,
+3. verify,
+4. switch the channel from test to live.
+
+It should not require redesigning the CRM. That is the whole purpose of this file.
+
+## Where every channel stands
+
+| Channel | Readiness | How it arrives | Blocked on |
+|---|---|---|---|
+| **Website form** | READY FOR CONFIGURATION | inbound webhook | nothing - our side is finished |
+| **Google Form** | WAITING FOR EXTERNAL ACCESS | inbound webhook | Somebody who owns the form must paste the script, add the installable trigger and authorise it once. |
+| **Email** | WAITING FOR EXTERNAL ACCESS | inbound poll | A Google Cloud project, a service account, and a Workspace ADMIN granting domain-wide delegation for edu@novikontas.org. |
+| **Facebook** | WAITING FOR EXTERNAL ACCESS | inbound webhook | A Meta app, page access from the business portfolio, and APP REVIEW for messaging permissions. Review takes weeks and can be refused. |
+| **Messenger** | WAITING FOR EXTERNAL ACCESS | inbound webhook | A Meta app, page access from the business portfolio, and APP REVIEW for messaging permissions. Review takes weeks and can be refused. |
+| **Instagram** | WAITING FOR EXTERNAL ACCESS | inbound webhook | The account must be a professional account linked to the app, and the messaging permission must pass App Review. |
+| **WhatsApp** | WAITING FOR EXTERNAL ACCESS | inbound webhook | A phone number that is not already on consumer WhatsApp, and business verification. |
+| **Mailchimp** | WAITING FOR EXTERNAL ACCESS | inbound webhook | EXTERNAL CONFIRMATION REQUIRED: whether the current Mailchimp plan includes webhooks. |
+| **Open Day** | READY FOR CONFIGURATION | inbound webhook | nothing - our side is finished |
+| **Phone** | WAITING FOR EXTERNAL ACCESS | inbound poll | An API token from TeleGroup, and the three deployment prerequisites. |
+| **Agent or partner** | READY FOR CONFIGURATION | inbound webhook | nothing - our side is finished |
+| **In person** | MANUAL ONLY, BY DESIGN | manual | nothing - our side is finished |
+| **LinkedIn** | CAPABILITY UNCONFIRMED | manual | EXTERNAL CONFIRMATION REQUIRED: whether LinkedIn offers any inbound messaging integration for a page like ours at all. Nothing has been confirmed. Do not promise it. |
+| **TikTok** | CAPABILITY UNCONFIRMED | manual | EXTERNAL CONFIRMATION REQUIRED: whether TikTok offers any inbound messaging integration. Nothing has been confirmed. Do not invent one. |
+
+## What Novikontas has to do, by channel
+
+These are the actions nobody in this repository can perform.
+
+- **Website form** - Whoever maintains the website points the form at the endpoint and sets the same secret.
+- **Google Form** - The form owner runs the script once and approves the permission prompt.
+- **Email** - The Google Workspace administrator authorises domain-wide delegation. This is not something a normal user can do.
+- **Facebook** - Confirm WHO owns the page and the business portfolio, create the app, subscribe the page, pass App Review.
+- **Messenger** - Confirm WHO owns the page and the business portfolio, create the app, subscribe the page, pass App Review.
+- **Instagram** - Confirm the account is professional, link it to the app, request the permission, pass review.
+- **WhatsApp** - Find a spare number, register it, verify the business.
+- **Mailchimp** - Confirm the plan, then paste the URL into the audience webhook settings.
+- **Open Day** - Point the existing booking tool at the endpoint.
+- **Phone** - Ask TeleGroup for an API token for the calls endpoint.
+- **Agent or partner** - Agree the format with each partner and issue their token.
+- **LinkedIn** - Somebody has to establish what, if anything, LinkedIn permits.
+- **TikTok** - Somebody has to establish what, if anything, TikTok permits.
+
+---
+
+## Website form
+
+| | |
+|---|---|
+| Readiness | **READY FOR CONFIGURATION** |
+| Mechanism | We publish an endpoint. The website posts to it. |
+| Direction | inbound webhook |
+| Security | shared secret header |
+| Endpoint | `/api/inbound/website` |
+| External id | submission_id supplied by the form |
+| Timestamp | submitted_at supplied by the form |
+| Deduplicated on | channel + external_event_id |
+| Rate limits | Ours to set. A public form needs a spam control in front of it. |
+
+**What we control:** the endpoint; the field names; the secret; the spam rule
+
+**What the provider controls:** nothing - this is our own website
+
+**Credentials required:** WEBSITE_FORM_SECRET, generated by us
+
+**Somebody outside has to:** Whoever maintains the website points the form at the endpoint and sets the same secret.
+
+**How we test:** Simulate from DEV CONTROL, or post a fixture to the endpoint with the test secret.
+
+**How we go live:** Deploy, set the secret both sides, send one real submission, check it appears in CAR, switch mode to live.
+
+**How we turn it off:** Set the channel mode to off. The endpoint then refuses and says so.
+
+
+## Google Form
+
+| | |
+|---|---|
+| Readiness | **WAITING FOR EXTERNAL ACCESS** |
+| Mechanism | Apps Script on the response sheet posts to our endpoint on submit. |
+| Direction | inbound webhook |
+| Security | shared secret header |
+| Endpoint | `/api/inbound/google_form` |
+| External id | responseId from the form response |
+| Timestamp | the response timestamp |
+| Deduplicated on | channel + responseId |
+| Rate limits | Apps Script quotas apply to the sender, not to us. |
+
+**What we control:** the endpoint; the payload contract; the secret
+
+**What the provider controls:** the trigger; the authorisation; the field names on the form
+
+**Credentials required:** GOOGLE_FORM_SECRET, generated by us and pasted into the script
+
+**EXTERNAL BLOCKER:** Somebody who owns the form must paste the script, add the installable trigger and authorise it once.
+
+**Somebody outside has to:** The form owner runs the script once and approves the permission prompt.
+
+**How we test:** Simulate from DEV CONTROL using the documented Apps Script payload.
+
+**How we go live:** Deploy, install the script, submit one real test response, check CAR, switch to live.
+
+**How we turn it off:** Remove the trigger at Google, or set the mode to off here.
+
+**Note:** A second architecture exists - the Forms API with a Cloud project and Pub/Sub. It is heavier and needs a Cloud project. The Apps Script route is what this contract assumes. EXTERNAL CONFIRMATION REQUIRED on which one Novikontas wants.
+
+
+## Email
+
+| | |
+|---|---|
+| Readiness | **WAITING FOR EXTERNAL ACCESS** |
+| Mechanism | We poll the Gmail API for new messages. Push over Pub/Sub is possible later. |
+| Direction | inbound poll |
+| Security | service account with domain delegation |
+| Endpoint | `/api/cron/gmail-poll` |
+| External id | the Gmail message id |
+| Timestamp | the message Date header |
+| Deduplicated on | channel + gmail message id |
+| Rate limits | Gmail API quota per user. Polling every few minutes is well inside it. |
+
+**What we control:** the polling schedule; what we extract; what we keep
+
+**What the provider controls:** the mailbox; the delegation; the quota
+
+**Credentials required:** a service account key; the delegated user address
+
+**EXTERNAL BLOCKER:** A Google Cloud project, a service account, and a Workspace ADMIN granting domain-wide delegation for edu@novikontas.org.
+
+**Somebody outside has to:** The Google Workspace administrator authorises domain-wide delegation. This is not something a normal user can do.
+
+**How we test:** Simulate from DEV CONTROL with a Gmail-shaped message fixture.
+
+**How we go live:** Deploy, add the key, poll once by hand, check CAR, then enable the schedule.
+
+**How we turn it off:** Disable the schedule. The key can also be revoked at Google.
+
+**On the message body:** The message body is held only until somebody qualifies or archives the item, then deleted. What survives is the structured record. Decided 23.09.2026.
+
+
+## Facebook
+
+| | |
+|---|---|
+| Readiness | **WAITING FOR EXTERNAL ACCESS** |
+| Mechanism | Meta sends a webhook to us when a message or lead arrives. |
+| Direction | inbound webhook |
+| Security | meta app secret signature |
+| Endpoint | `/api/inbound/facebook` |
+| External id | the message id, or leadgen_id for a lead form |
+| Timestamp | the event timestamp, seconds since epoch |
+| Deduplicated on | channel + provider event id |
+| Rate limits | Meta rate limits apply to our calls back to them, not to their webhook. |
+
+**What we control:** the endpoint; signature verification; normalisation
+
+**What the provider controls:** the app; the permissions; the review; the page access
+
+**Credentials required:** app secret; verify token; a page access token
+
+**EXTERNAL BLOCKER:** A Meta app, page access from the business portfolio, and APP REVIEW for messaging permissions. Review takes weeks and can be refused.
+
+**Somebody outside has to:** Confirm WHO owns the page and the business portfolio, create the app, subscribe the page, pass App Review.
+
+**How we test:** Simulate from DEV CONTROL with a Meta-shaped webhook body, signed with a test secret.
+
+**How we go live:** Deploy, set the callback URL and verify token at Meta, pass the handshake, send one real message, switch to live.
+
+**How we turn it off:** Unsubscribe the page at Meta, or set the mode to off here.
+
+**Operationally:** Facebook and Instagram are worked through the shared Meta Business Suite inbox. The channel is Facebook; who owns the person in the CRM is decided after qualification and is not the same question.
+
+
+## Messenger
+
+| | |
+|---|---|
+| Readiness | **WAITING FOR EXTERNAL ACCESS** |
+| Mechanism | Meta webhook. The same connection as Facebook; the originating channel is recorded separately. |
+| Direction | inbound webhook |
+| Security | meta app secret signature |
+| Endpoint | `/api/inbound/messenger` |
+| External id | the message id, or leadgen_id for a lead form |
+| Timestamp | the event timestamp, seconds since epoch |
+| Deduplicated on | channel + provider event id |
+| Rate limits | Meta rate limits apply to our calls back to them, not to their webhook. |
+
+**What we control:** the endpoint; signature verification; normalisation
+
+**What the provider controls:** the app; the permissions; the review; the page access
+
+**Credentials required:** app secret; verify token; a page access token
+
+**EXTERNAL BLOCKER:** A Meta app, page access from the business portfolio, and APP REVIEW for messaging permissions. Review takes weeks and can be refused.
+
+**Somebody outside has to:** Confirm WHO owns the page and the business portfolio, create the app, subscribe the page, pass App Review.
+
+**How we test:** Simulate from DEV CONTROL with a Meta-shaped webhook body, signed with a test secret.
+
+**How we go live:** Deploy, set the callback URL and verify token at Meta, pass the handshake, send one real message, switch to live.
+
+**How we turn it off:** Unsubscribe the page at Meta, or set the mode to off here.
+
+**Operationally:** Messenger shares the Meta Business Suite connection with Facebook and Instagram. It stays a separate channel for reporting, filtering, source and history, because a combined "Meta" number would hide where people actually came from.
+
+
+## Instagram
+
+| | |
+|---|---|
+| Readiness | **WAITING FOR EXTERNAL ACCESS** |
+| Mechanism | Meta webhook, object instagram. |
+| Direction | inbound webhook |
+| Security | meta app secret signature |
+| Endpoint | `/api/inbound/instagram` |
+| External id | the message id |
+| Timestamp | the event timestamp, milliseconds since epoch |
+| Deduplicated on | channel + provider event id |
+| Rate limits | As Facebook. |
+
+**What we control:** the endpoint; signature verification; normalisation
+
+**What the provider controls:** the account type; the permission; the review
+
+**Credentials required:** app secret; verify token; a page or IG access token
+
+**EXTERNAL BLOCKER:** The account must be a professional account linked to the app, and the messaging permission must pass App Review.
+
+**Somebody outside has to:** Confirm the account is professional, link it to the app, request the permission, pass review.
+
+**How we test:** Simulate from DEV CONTROL.
+
+**How we go live:** As Facebook.
+
+**How we turn it off:** As Facebook.
+
+**Operationally:** Same shared Meta Business Suite inbox as Facebook.
+
+
+## WhatsApp
+
+| | |
+|---|---|
+| Readiness | **WAITING FOR EXTERNAL ACCESS** |
+| Mechanism | WhatsApp Business Platform webhook, field messages. |
+| Direction | inbound webhook |
+| Security | meta app secret signature |
+| Endpoint | `/api/inbound/whatsapp` |
+| External id | the WhatsApp message id |
+| Timestamp | the message timestamp, seconds since epoch |
+| Deduplicated on | channel + message id |
+| Rate limits | Messaging limits apply to what we SEND, not to what arrives. |
+
+**What we control:** the endpoint; signature verification; normalisation
+
+**What the provider controls:** the number; the verification; the messaging window rules
+
+**Credentials required:** app secret; verify token; a phone number id; an access token
+
+**EXTERNAL BLOCKER:** A phone number that is not already on consumer WhatsApp, and business verification.
+
+**Somebody outside has to:** Find a spare number, register it, verify the business.
+
+**How we test:** Simulate from DEV CONTROL.
+
+**How we go live:** Deploy, register the number, set the webhook, send one real message, switch to live.
+
+**How we turn it off:** Remove the webhook at Meta, or set the mode to off here.
+
+**Operationally:** WhatsApp being part of the same Meta Business Suite inbox as Facebook and Instagram is NOT VERIFIED. Do not claim it. Access today: Ieva, Laura, Marina. Not Tetiana. Access is not ownership.
+
+
+## Mailchimp
+
+| | |
+|---|---|
+| Readiness | **WAITING FOR EXTERNAL ACCESS** |
+| Mechanism | Audience webhook for subscribe, unsubscribe, profile and cleaned events. |
+| Direction | inbound webhook |
+| Security | secret in url |
+| Endpoint | `/api/inbound/mailchimp` |
+| External id | type + email + fired_at, because Mailchimp sends no event id |
+| Timestamp | fired_at |
+| Deduplicated on | channel + type + email + fired_at |
+| Rate limits | Not a concern for inbound events. |
+
+**What we control:** the endpoint; the secret in the path; normalisation
+
+**What the provider controls:** the plan; the audience settings
+
+**Credentials required:** a secret we generate and put in the callback URL
+
+**EXTERNAL BLOCKER:** EXTERNAL CONFIRMATION REQUIRED: whether the current Mailchimp plan includes webhooks.
+
+**Somebody outside has to:** Confirm the plan, then paste the URL into the audience webhook settings.
+
+**How we test:** Simulate from DEV CONTROL.
+
+**How we go live:** Deploy, paste the URL, trigger one subscribe, check it lands, switch to live.
+
+**How we turn it off:** Delete the webhook in Mailchimp.
+
+**On identity:** A Mailchimp event is ACTIVITY about somebody, not automatically a new person. It matches on the member id or the email. A newsletter subscriber is not a lead.
+
+
+## Open Day
+
+| | |
+|---|---|
+| Readiness | **READY FOR CONFIGURATION** |
+| Mechanism | The existing booking tool posts a registration to our endpoint. |
+| Direction | inbound webhook |
+| Security | shared secret header |
+| Endpoint | `/api/inbound/open_day` |
+| External id | the booking reference |
+| Timestamp | the booking time |
+| Deduplicated on | channel + booking reference |
+| Rate limits | Not a concern. |
+
+**What we control:** the endpoint; the registration model; attendance
+
+**What the provider controls:** the booking tool
+
+**Credentials required:** OPEN_DAY_SECRET
+
+**Somebody outside has to:** Point the existing booking tool at the endpoint.
+
+**How we test:** Simulate from DEV CONTROL.
+
+**How we go live:** Deploy, point the tool at it, make one real booking, switch to live.
+
+**How we turn it off:** Set the mode to off.
+
+**On identity:** A registration attaches to an existing person when one matches, and never creates a second record for somebody we already hold. Attendance is a separate fact recorded later.
+
+**Known gap:** Attendance is not yet linked back to the person record. The model is prepared; no attendance data is invented.
+
+
+## Phone
+
+| | |
+|---|---|
+| Readiness | **WAITING FOR EXTERNAL ACCESS** |
+| Mechanism | We poll the TeleGroup PBX for recent calls. |
+| Direction | inbound poll |
+| Security | token in query |
+| Endpoint | `/api/cron/pbx-calls` |
+| External id | uniqueid |
+| Timestamp | created_at, read as Europe/Riga |
+| Deduplicated on | uniqueid |
+| Rate limits | UNKNOWN. Must be asked. |
+
+**What we control:** the polling window; timezone handling; the queue filter; retention
+
+**What the provider controls:** the API; the fields; the token; whether the button is included
+
+**Credentials required:** PBX_API_TOKEN, server side only, never in the client
+
+**EXTERNAL BLOCKER:** An API token from TeleGroup, and the three deployment prerequisites.
+
+**Somebody outside has to:** Ask TeleGroup for an API token for the calls endpoint.
+
+**How we test:** A local mock of the PBX list endpoint plus fixtures. The real API is never called in development.
+
+**How we go live:** Deploy, set the token, apply sql/001, poll once by hand, check the rows, then enable the schedule.
+
+**How we turn it off:** Disable the schedule.
+
+**Note:** V1 logs calls by hand and says so on screen. The logger is built and tested locally and has never called the real API. The queue field gives us the button; that question is settled.
+
+
+## Agent or partner
+
+| | |
+|---|---|
+| Readiness | **READY FOR CONFIGURATION** |
+| Mechanism | A tokenised link the partner submits through, or a spreadsheet import. |
+| Direction | inbound webhook |
+| Security | per partner token |
+| Endpoint | `/api/inbound/agent` |
+| External id | the partner's own reference |
+| Timestamp | the submission time |
+| Deduplicated on | channel + partner id + partner reference |
+| Rate limits | Ours to set per partner. |
+
+**What we control:** the endpoint; the token per partner; the field contract
+
+**What the provider controls:** nothing standard - every agent is different
+
+**Credentials required:** one token per partner, issued by us
+
+**Somebody outside has to:** Agree the format with each partner and issue their token.
+
+**How we test:** Simulate from DEV CONTROL.
+
+**How we go live:** Issue a token to one partner, take one real referral, switch to live.
+
+**How we turn it off:** Revoke the token.
+
+**On identity:** The agent is a SOURCE and an attribution. It is never automatically the CRM owner.
+
+**Note:** No public agent API exists to integrate with. This is a contract we define, not one we discover.
+
+
+## In person
+
+| | |
+|---|---|
+| Readiness | **MANUAL ONLY, BY DESIGN** |
+| Mechanism | A member of staff types it in at the desk. |
+| Direction | manual |
+| Security | none needed |
+| Endpoint | not applicable |
+| External id | generated by us at entry |
+| Timestamp | when it was typed |
+| Deduplicated on | channel + generated id |
+| Rate limits | Not applicable. |
+
+**What we control:** everything
+
+**What the provider controls:** nothing
+
+**Credentials required:** none
+
+**How we test:** Add a person from the app.
+
+**How we go live:** Already usable.
+
+**How we turn it off:** Not applicable.
+
+**On identity:** Manual entry runs the SAME duplicate check as every automated channel. It is not a way around the rule.
+
+
+## LinkedIn
+
+| | |
+|---|---|
+| Readiness | **CAPABILITY UNCONFIRMED** |
+| Mechanism | UNKNOWN. No inbound message API is known to be available to us. |
+| Direction | manual |
+| Security | unknown |
+| Endpoint | not applicable |
+| External id | entered by the person copying it in |
+| Timestamp | entered by the person copying it in |
+| Deduplicated on | channel + generated id |
+| Rate limits | Not applicable while manual. |
+
+**What we control:** the normalised shape, so that IF a mechanism appears it maps in without redesign
+
+**What the provider controls:** everything else
+
+**Credentials required:** unknown
+
+**EXTERNAL BLOCKER:** EXTERNAL CONFIRMATION REQUIRED: whether LinkedIn offers any inbound messaging integration for a page like ours at all. Nothing has been confirmed. Do not promise it.
+
+**Somebody outside has to:** Somebody has to establish what, if anything, LinkedIn permits.
+
+**How we test:** Simulate from DEV CONTROL through the same normalised path.
+
+**How we go live:** Not possible today. Manual entry only.
+
+**How we turn it off:** Not applicable.
+
+**Operationally:** Access today: Tetiana only. A LinkedIn contact often carries no email and no phone, so the handover gap to Admissions is real and the screen says so.
+
+
+## TikTok
+
+| | |
+|---|---|
+| Readiness | **CAPABILITY UNCONFIRMED** |
+| Mechanism | UNKNOWN. No inbound message API is known to be available to us. |
+| Direction | manual |
+| Security | unknown |
+| Endpoint | not applicable |
+| External id | entered by the person copying it in |
+| Timestamp | entered by the person copying it in |
+| Deduplicated on | channel + generated id |
+| Rate limits | Not applicable while manual. |
+
+**What we control:** the normalised shape only
+
+**What the provider controls:** everything else
+
+**Credentials required:** unknown
+
+**EXTERNAL BLOCKER:** EXTERNAL CONFIRMATION REQUIRED: whether TikTok offers any inbound messaging integration. Nothing has been confirmed. Do not invent one.
+
+**Somebody outside has to:** Somebody has to establish what, if anything, TikTok permits.
+
+**How we test:** Simulate from DEV CONTROL through the same normalised path.
+
+**How we go live:** Not possible today. Manual entry only.
+
+**How we turn it off:** Not applicable.
+
+**Operationally:** Access today: Tetiana only. Same handover gap as LinkedIn.
+

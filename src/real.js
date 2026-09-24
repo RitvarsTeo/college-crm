@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 export const DATA_FILE = path.join(ROOT, 'data', 'real_people.json');
+const CFG = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'prototype.json'), 'utf8'));
 
 export function hasRealData() {
   return fs.existsSync(DATA_FILE);
@@ -42,6 +43,17 @@ export function selectPeople(all, sel = {}) {
   };
 }
 
+// The export was written before the channel was renamed. The source file is left
+// exactly as exported; the old id is mapped on the way in.
+const CHANNEL_RENAMES = { klatiene: 'in_person' };
+const chan = (v) => CHANNEL_RENAMES[v] || v || 'unknown';
+
+// The same school was typed as Vidusskola and as Secondary over several years, in
+// two languages. Mapped here, on the way in, so a report can count them. The
+// source export is never edited.
+const EDU_ALIAS = CFG.educationAliases || {};
+const edu = (v) => (v == null || v === '') ? null : (EDU_ALIAS[String(v).trim()] || String(v).trim());
+
 export function loadReal(db, selection = {}) {
   const raw = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
   const { chosen, reason } = selectPeople(raw.people, selection);
@@ -61,8 +73,8 @@ export function loadReal(db, selection = {}) {
     const id = 'r' + String(i + 1).padStart(4, '0');
     const created = p.created_at || now;
     insPerson.run(id, p.name, p.email || null, p.phone || null, p.programme || null,
-      p.study_form || null, p.education || null, p.status, 'Admissions',
-      p.source_channel || 'unknown', p.source_campaign || null, p.source_detail || null,
+      p.study_form || null, edu(p.education), p.status, 'Admissions',
+      chan(p.source_channel), p.source_campaign || null, p.source_detail || null,
       created, null, null, p.admitted_at || null, p.student_no || null,
       // the sheet's own wording is kept so the mapping stays reversible
       [p.originalStatus ? 'Sheet status: ' + p.originalStatus : null,
@@ -70,7 +82,7 @@ export function loadReal(db, selection = {}) {
        p.notes || null].filter(Boolean).join(' | ') || null);
     n++;
 
-    insEvent.run(id, 'channel', p.source_channel || 'unknown', 'in', created,
+    insEvent.run(id, 'channel', chan(p.source_channel), 'in', created,
       'First contact', p.notes || '', 'ADMISSIONS DATABASE', 'automatic');
     if (p.admitted_at) {
       insEvent.run(id, 'status', null, 'note', p.admitted_at, 'Admitted',

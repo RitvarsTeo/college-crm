@@ -12,3 +12,4 @@ server.log
 # Editor / tooling
 .claude/
 node_modules/
+data/real_snapshot.json

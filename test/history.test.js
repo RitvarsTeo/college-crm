@@ -82,8 +82,12 @@ test('an editable field really is editable, and every one of them', () => {
   withPerson(db);
   const values = {
     name: 'Anna Ozola', email: 'a.ozola@example.lv', phone: '29333444', programme: 'ENG',
-    study_form: 'Part time', education: 'Maritime school', owner: 'Student Coordinator', notes: 'called the parents',
+    study_form: 'Part time', education: 'Maritime school', nationality: 'Latvia',
+    owner: 'Student Coordinator', notes: 'called the parents',
   };
+  // every editable field is covered here on purpose: this test is what catches a
+  // field being added to the policy and never wired to the record
+  assert.deepEqual(Object.keys(values).sort(), [...EDITABLE_FIELDS].sort());
   const r = applyEdit(db, 'p1', values, 'Admissions', new Date().toISOString());
   assert.equal(r.changes.length, EDITABLE_FIELDS.length);
   const after = db.prepare('SELECT * FROM people WHERE id = ?').get('p1');

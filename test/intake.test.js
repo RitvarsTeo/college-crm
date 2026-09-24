@@ -145,7 +145,7 @@ test('what is waiting is counted per role, and an admin sees every role', () => 
   const db = openDb();
   const r = receive(db, { channel: 'instagram', body: HI, name: 'Somebody', externalId: 'w1' });
   const r2 = receive(db, { channel: 'instagram', body: FULL, name: 'Lead', externalId: 'w2' });
-  qualify(db, r2.id, { qualification: 'lead', createPerson: true, by: 'Tetiana', confirmFields: ['interest'] });
+  qualify(db, r2.id, { qualification: 'lead', createPerson: true, by: 'Tetiana', confirmFields: ['interest'], nextAction: 'Call and establish interest' });
 
   const marketing = waitingFor(db, 'Marketing');
   const admissions = waitingFor(db, 'Admissions');
@@ -249,7 +249,7 @@ test('the same lead with a phone has no gap, because Admissions can ring them', 
 test('a gap does not block promotion, it flags it', () => {
   const db = openDb();
   const r = receive(db, { channel: 'linkedin', body: FULL, name: 'Ahmed Muhamed', externalId: 'x1' });
-  const q = qualify(db, r.id, { qualification: 'lead', createPerson: true, by: 'Tetiana',
+  const q = qualify(db, r.id, { qualification: 'lead', createPerson: true, by: 'Tetiana', nextAction: 'Call and establish interest',
     confirmFields: ['interest', 'start', 'education', 'question'] });
   assert.equal(q.ok, true, 'the lead is NOT lost');
   assert.equal(q.qualification, 'lead');
@@ -286,8 +286,8 @@ test('qualifying needs a person, a level and a name to put on it', () => {
 test('an item cannot be dealt with twice', () => {
   const db = openDb();
   const r = receive(db, { channel: 'instagram', body: HI, externalId: 'z2' });
-  qualify(db, r.id, { qualification: 'unclear', createPerson: true, by: 'Tetiana' });
-  assert.match(qualify(db, r.id, { qualification: 'lead', createPerson: true, by: 'Tetiana' }).error, /already/);
+  qualify(db, r.id, { qualification: 'unclear', createPerson: true, by: 'Tetiana', nextAction: 'Send the programme description' });
+  assert.match(qualify(db, r.id, { qualification: 'lead', createPerson: true, by: 'Tetiana', nextAction: 'Call and establish interest' }).error, /already/);
   assert.match(archive(db, r.id, { reason: 'Spam', by: 'Tetiana' }).error, /already/);
 });
 
@@ -298,7 +298,7 @@ test('the body is deleted on qualification and the structured record survives', 
   const r = receive(db, { channel: 'instagram', body: FULL, name: 'Liene', externalId: 'b1' });
   assert.ok(db.prepare('SELECT body FROM inbound WHERE id = ?').get(r.id).body, 'it is there while qualifying');
 
-  qualify(db, r.id, { qualification: 'lead', createPerson: true, by: 'Tetiana',
+  qualify(db, r.id, { qualification: 'lead', createPerson: true, by: 'Tetiana', nextAction: 'Call and establish interest',
     confirmFields: ['interest', 'education'] });
 
   const row = db.prepare('SELECT * FROM inbound WHERE id = ?').get(r.id);
@@ -332,7 +332,7 @@ test('archiving needs a reason, and "Other" needs an explanation', () => {
 test('only a confirmed field becomes real CRM data', () => {
   const db = openDb();
   const r = receive(db, { channel: 'instagram', body: FULL, name: 'Liene', externalId: 'c1' });
-  const q = qualify(db, r.id, { qualification: 'lead', createPerson: true, by: 'Tetiana',
+  const q = qualify(db, r.id, { qualification: 'lead', createPerson: true, by: 'Tetiana', nextAction: 'Call and establish interest',
     confirmFields: ['interest'] });          // education deliberately NOT confirmed
 
   const fields = db.prepare('SELECT * FROM field_values WHERE person_id = ?').all(q.personId);
@@ -355,7 +355,7 @@ test('inbound -> intake -> lead -> application -> admitted -> SIS, on one record
     externalId: 'j1' });
 
   // marketing qualifies it warm first
-  const warm = qualify(db, r.id, { qualification: 'unclear', createPerson: true, by: 'Tetiana',
+  const warm = qualify(db, r.id, { qualification: 'unclear', createPerson: true, by: 'Tetiana', nextAction: 'Call and establish interest',
     confirmFields: [] });
   assert.equal(warm.owner, 'Marketing', 'nobody could tell yet, so it stays with Marketing');
   const id = warm.personId;
@@ -388,7 +388,7 @@ test('inbound -> intake -> lead -> application -> admitted -> SIS, on one record
 test('a person is only handed to the SIS once, and only when admitted', () => {
   const db = openDb();
   const r = receive(db, { channel: 'instagram', body: FULL, externalId: 'k1' });
-  const q = qualify(db, r.id, { qualification: 'lead', createPerson: true, by: 'Tetiana' });
+  const q = qualify(db, r.id, { qualification: 'lead', createPerson: true, by: 'Tetiana', nextAction: 'Call and establish interest' });
   assert.match(handoffToSis(db, q.personId, 'Ieva').error, /only an Admitted person/);
   db.prepare('UPDATE people SET status = ? WHERE id = ?').run(CONFIG.stageRoles.admitted, q.personId);
   assert.equal(handoffToSis(db, q.personId, 'Ieva').ok, true);
@@ -403,8 +403,8 @@ test('the funnel counts rows that exist, from raw contact to SIS', () => {
     receive(db, { channel: 'instagram', body, name: 'P' + i, externalId: 'f' + i });
   }
   const rows = db.prepare('SELECT id FROM inbound ORDER BY id').all();
-  qualify(db, rows[1].id, { qualification: 'lead', createPerson: true, by: 'Tetiana', confirmFields: ['interest'] });
-  qualify(db, rows[2].id, { qualification: 'lead', createPerson: true, by: 'Tetiana', confirmFields: ['interest'] });
+  qualify(db, rows[1].id, { qualification: 'lead', createPerson: true, by: 'Tetiana', confirmFields: ['interest'], nextAction: 'Call and establish interest' });
+  qualify(db, rows[2].id, { qualification: 'lead', createPerson: true, by: 'Tetiana', confirmFields: ['interest'], nextAction: 'Call and establish interest' });
   archive(db, rows[3].id, { reason: 'Spam', by: 'Tetiana' });
 
   const f = funnel(db);
@@ -421,8 +421,8 @@ test('the funnel says where people are stuck and which channel they came from', 
   receive(db, { channel: 'instagram', body: FULL, externalId: 'g1' });
   receive(db, { channel: 'linkedin', body: PARTIAL, externalId: 'g2' });
   const rows = db.prepare('SELECT id FROM inbound ORDER BY id').all();
-  qualify(db, rows[0].id, { qualification: 'lead', createPerson: true, by: 'Tetiana' });
-  qualify(db, rows[1].id, { qualification: 'unclear', createPerson: true, by: 'Tetiana' });
+  qualify(db, rows[0].id, { qualification: 'lead', createPerson: true, by: 'Tetiana', nextAction: 'Call and establish interest' });
+  qualify(db, rows[1].id, { qualification: 'unclear', createPerson: true, by: 'Tetiana', nextAction: 'Send the programme description' });
 
   const f = funnel(db);
   assert.equal(f.byChannel.length, 2);
@@ -447,7 +447,7 @@ test('every funnel number is a count, never a rate or an estimate', () => {
 test('qualifying writes to the one history, with the person who did it', () => {
   const db = openDb();
   const r = receive(db, { channel: 'instagram', body: FULL, name: 'Liene', externalId: 'h1' });
-  const q = qualify(db, r.id, { qualification: 'lead', createPerson: true, by: 'Tetiana',
+  const q = qualify(db, r.id, { qualification: 'lead', createPerson: true, by: 'Tetiana', nextAction: 'Call and establish interest',
     note: 'wants NAV next year' });
   const events = db.prepare('SELECT * FROM events WHERE person_id = ? ORDER BY id').all(q.personId);
   assert.ok(events.length >= 2);
@@ -504,4 +504,75 @@ test('the channels stay separate rows for reporting, whatever the shared source'
   const names = f.byChannel.map((c) => c.channel).sort();
   assert.deepEqual(names, ['facebook', 'instagram'],
     'one shared inbox must not collapse two sources into one row');
+});
+
+// ------------------------------------------- what a person says, not the machine --
+// Reported 24.09.2026 after the first real test: a message saying only "hello"
+// produced nothing for the machine to read, so there was no box to tick, the item
+// could only be filed as 'nobody can tell yet', and the person came to rest in
+// Done. The operator knew perfectly well what was wanted and had nowhere to put it.
+
+test('an operator can state an interest the machine never found, and it reaches the person', () => {
+  const db = openDb();
+  const { id } = receive(db, { channel: 'instagram', name: 'Darja S', body: HI });
+  const before = db.prepare('SELECT * FROM field_values WHERE inbound_id = ?').all(id);
+  assert.equal(before.filter((f) => f.field === 'interest').length, 0,
+    'the machine must have found no interest, or this test proves nothing');
+
+  const r = qualify(db, id, { qualification: 'lead', createPerson: true, by: 'Ieva', nextAction: 'Call and establish interest',
+    note: 'said on the phone they want the engineer programme', stated: { interest: 'ENG' } });
+  assert.equal(r.ok, true);
+
+  const person = db.prepare('SELECT * FROM people WHERE id = ?').get(r.personId);
+  assert.equal(person.programme, 'ENG');
+  assert.equal(person.qualification, 'lead');
+  assert.equal(person.owner, CONFIG.routing.lead);
+  assert.equal(person.status, CONFIG.stageRoles.first, 'a lead starts on the pipeline');
+
+  const stored = db.prepare("SELECT * FROM field_values WHERE person_id = ? AND field = 'interest'").get(r.personId);
+  assert.equal(stored.provenance, 'operator', 'a person typed it, so it is not a machine suggestion');
+  assert.equal(stored.confirmed_by, 'Ieva');
+});
+
+test('stating an interest and filing it as unclear is refused, not quietly accepted', () => {
+  const db = openDb();
+  const { id } = receive(db, { channel: 'instagram', name: 'Darja S', body: HI });
+  const r = qualify(db, id, { qualification: 'unclear', createPerson: true, by: 'Ieva', nextAction: 'Call and establish interest',
+    stated: { interest: 'NAV' } });
+  assert.match(r.error, /lead/);
+  assert.equal(db.prepare('SELECT state FROM inbound WHERE id = ?').get(id).state, 'new',
+    'a refused qualification must leave the item where it was');
+});
+
+test('a value a person states outranks the machine guess, and the change is in the history', () => {
+  const db = openDb();
+  const { id } = receive(db, { channel: 'instagram', name: 'Raivis', body: FULL });
+  const read = db.prepare("SELECT value FROM field_values WHERE inbound_id = ? AND field = 'interest'").get(id);
+  assert.ok(read, 'the machine should have read an interest out of this message');
+
+  // the operator confirms what was read, then corrects it: they had the conversation
+  const r = qualify(db, id, { qualification: 'lead', createPerson: true, by: 'Ieva', nextAction: 'Call and establish interest',
+    confirmFields: ['interest'], stated: { interest: 'MT WTT' } });
+  assert.equal(db.prepare('SELECT programme FROM people WHERE id = ?').get(r.personId).programme, 'MT WTT');
+
+  const edit = db.prepare(`SELECT * FROM events WHERE person_id = ? AND field = 'programme'`).get(r.personId);
+  assert.ok(edit, 'overwriting a machine value has to be visible in the history');
+  assert.equal(edit.old_value, read.value);
+  assert.equal(edit.new_value, 'MT WTT');
+  assert.equal(edit.actor, 'Ieva');
+});
+
+test('the not-relevant screen is one list over two stored states', () => {
+  const db = openDb();
+  // a sales pitch the machine drops, and a real message a person marks as not relevant
+  const junk = receive(db, { channel: 'instagram', name: 'Seller', body: 'Hello, we offer social media promotion services, 5000 followers guaranteed' });
+  const real = receive(db, { channel: 'instagram', name: 'Somebody', body: HI });
+  archive(db, real.id, { reason: CONFIG.intake.archiveReasons[0], by: 'Tetiana' });
+
+  assert.equal(db.prepare('SELECT state FROM inbound WHERE id = ?').get(junk.id).state, 'filtered');
+  const shown = listInbound(db, { state: 'notrelevant' }).map((r) => r.id).sort();
+  assert.deepEqual(shown, [junk.id, real.id].sort(), 'one screen shows both');
+  // and they stay apart underneath, because the funnel counts real contacts only
+  assert.equal(listInbound(db, { state: 'archived' }).length, 1);
+  assert.equal(listInbound(db, { state: 'filtered' }).length, 1);
 });

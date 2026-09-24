@@ -1,8 +1,8 @@
 {
-  "title": "Novikontas College CRM",
+  "title": "Academy CRM",
   "version": "V1 virtual prototype",
   "provisional": {
-    "stages": "The pipeline stages below are a working guess for testing the screens. They are NOT agreed business requirements until Admissions validates them.",
+    "stages": "The Admissions stages below are a working guess for testing the screens. They are NOT agreed business requirements until Admissions validates them.",
     "documents": "The document checklist is taken from what the current admissions file tracks. Which of these the CRM should own, and which only mirror another system, is not decided.",
     "owners": "Admissions is the only owner of a person. Marketing brings leads in and that shows in the source and campaign, not in ownership."
   },
@@ -73,15 +73,16 @@
     "google_form": "Google Form",
     "email": "Email",
     "phone": "Phone",
-    "klatiene": "Walk-in",
     "event": "Open Day",
     "instagram": "Instagram",
     "facebook": "Facebook",
+    "messenger": "Messenger",
     "whatsapp": "WhatsApp",
     "mailchimp": "Mailchimp",
     "agent": "Agent",
     "linkedin": "LinkedIn",
-    "tiktok": "TikTok"
+    "tiktok": "TikTok",
+    "in_person": "In person"
   },
   "quickAddDefaults": {
     "source_channel": "klatiene",
@@ -293,7 +294,7 @@
     "Ritvars",
     "Marina"
   ],
-  "_admins": "Locked 23.09.2026. Admins see the whole history. None of the four CRM users is an admin. Admin is not ownership of a person.",
+  "_admins": "The three admins are Aigars, Ritvars and Marina. Admin is a LEVEL OF ACCESS, and the prototype has no login, so picking a name in the sidebar is a setting and not an identity check. Being an admin is not the same as being able to read the feedback inbox - see feedbackReaders, which is deliberately a shorter list.",
   "historyHonesty": "There is no login in this prototype. Who you are is a setting in the sidebar, not a check. The admin rule is shown so it can be judged, not enforced - that waits for authentication.",
   "editPolicy": {
     "decided": "2026-09-23",
@@ -304,6 +305,7 @@
       "programme",
       "study_form",
       "education",
+      "nationality",
       "owner",
       "notes"
     ],
@@ -313,7 +315,8 @@
       "source_detail",
       "created_at"
     ],
-    "_note": "Everything about the person as they are now may be corrected. Where they came from and when we first heard from them are historical facts and stay locked. Every change is written to the history: field, old value, new value, who, when."
+    "_note": "Everything about the person as they are now may be corrected. Where they came from and when we first heard from them are historical facts and stay locked. Every change is written to the history: field, old value, new value, who, when.",
+    "_amended": "24.09.2026: nationality added. It is a thing somebody ASKS and types, exactly like education, and it was missing only because nobody had made a box for it. It is never derived from a name, a phone prefix or anything else."
   },
   "users": [
     {
@@ -410,7 +413,8 @@
     "source_campaign",
     "source_detail",
     "student_no",
-    "notes"
+    "notes",
+    "nationality"
   ],
   "_searchFields": "Locked 23.09.2026: the operator finds a person by whatever detail they remember. The source channel matches on its plain name too, so \"Instagram\" finds an Instagram lead without anybody knowing the internal channel id.",
   "todayGroups": [
@@ -420,14 +424,9 @@
       "what": "Arrived and nobody has spoken to them yet"
     },
     {
-      "id": "follow_ups",
-      "label": "Follow-ups",
-      "what": "A next step that is due today or is already late"
-    },
-    {
-      "id": "replies",
-      "label": "Replies",
-      "what": "They wrote to us and we have not answered"
+      "id": "waiting",
+      "label": "Waiting on us",
+      "what": "A step we planned that is due, or a message they sent that has not been answered"
     },
     {
       "id": "attention",
@@ -435,7 +434,7 @@
       "what": "Active people with no next step at all"
     }
   ],
-  "_todayGroups": "Locked 23.09.2026: the order is the user's choice and is remembered. Re-ordering NEVER hides a group - an empty group still shows, saying it is clear. Each group shows done/total for the day so a cleared queue reads as cleared.",
+  "_todayGroups": "Locked 23.09.2026, amended 24.09.2026. The order is the user choice and is remembered. Re-ordering NEVER hides a group - an empty group still shows, saying it is clear. Each group shows done/total for the day so a cleared queue reads as cleared. AMENDMENT: Follow-ups and Replies were merged into one \"Waiting on us\" queue. They were two tabs answering the same question, and somebody with a due step AND an unanswered message was listed twice. Each row still says which of the two put it there, because the action differs.",
   "coreMetrics": [
     "New leads this month",
     "Admissions this month",
@@ -643,13 +642,14 @@
     "byPerson": {
       "Tetiana": [
         "facebook",
+        "messenger",
         "instagram",
         "linkedin",
         "tiktok",
         "mailchimp",
         "email",
         "phone",
-        "klatiene",
+        "in_person",
         "website",
         "google_form",
         "event",
@@ -657,11 +657,12 @@
       ],
       "Ieva": [
         "facebook",
+        "messenger",
         "instagram",
         "whatsapp",
         "email",
         "phone",
-        "klatiene",
+        "in_person",
         "website",
         "google_form",
         "event",
@@ -669,14 +670,16 @@
       ],
       "Laura": [
         "facebook",
+        "messenger",
         "instagram",
         "whatsapp",
         "email",
         "phone",
-        "klatiene"
+        "in_person"
       ],
       "Marina": [
         "facebook",
+        "messenger",
         "instagram",
         "whatsapp",
         "email",
@@ -691,7 +694,7 @@
         "phone"
       ]
     },
-    "_note": "Corrected 23.09.2026 to the real matrix. It is PER PERSON because no role-shaped model can express it: WhatsApp is Ieva, Laura and Marina but NOT Tetiana. Facebook and Instagram are worked through the shared Meta Business Suite. LinkedIn and TikTok are Tetiana alone, so she is the access bridge for those two and only those two. CHANNEL ACCESS IS NOT CRM OWNERSHIP: ownership follows the work.",
+    "_note": "Corrected 24.09.2026. PER PERSON, because no role-shaped model can express it: WhatsApp is Ieva, Laura and Marina but NOT Tetiana. Facebook, Instagram and Messenger are worked through the shared Meta Business Suite. LinkedIn and TikTok are Tetiana alone. Arina has NO social access and is phone button 3 backup only. CHANNEL ACCESS IS NOT ADMISSIONS OWNERSHIP.",
     "_roleAccessIsDerived": "A role can reach a channel when at least one person holding that role can. Never write a role list by hand - it would drift from the people."
   },
   "handoverRule": {
@@ -832,6 +835,167 @@
         "Arina"
       ]
     },
-    "_note": "The caller presses 1, 2 or 3 and the PBX puts them on the matching queue. Those three queue names are exactly what lib/pbx.js keeps and everything else it drops, so the menu and the logger are one fact in one place."
+    "_note": "The caller presses 1, 2 or 3 and the PBX puts them on the matching queue. Those three queue names are exactly what lib/pbx.js keeps and everything else it drops, so the menu and the logger are one fact in one place.",
+    "_answered": "The PBX event carries a `queue` field and the queue IS the button. This was in the original TeleGroup brief and was mapped here on 23.09.2026. Nobody needs to ask TeleGroup whether the button is included - it is. What is still needed is an API token."
+  },
+  "feedbackReaders": [
+    "Aigars",
+    "Ritvars"
+  ],
+  "_feedbackReaders": "Decided 24.09.2026. Feedback sent from inside the app is read by Aigars and Ritvars ONLY. Marina is an admin and still must not see it, which is why this is a separate list and not derived from admins. Feedback is stored in this machine s own database and is never emailed or sent to any outside service. Enforcement is a real check on every feedback route, but with no login it can only check the name that is selected, not prove who selected it.",
+  "channelAliases": {
+    "website_form": "Website",
+    "gmail": "Email",
+    "open_day": "Open Day",
+    "klatiene": "In person"
+  },
+  "_channelAliases": "The simulator and older records name some channels differently: website_form is the Website, gmail is Email, open_day is the Open Day, and klatiene is In person. These are the SAME channel, so they are aliases rather than entries in channels - otherwise a filter would offer the same thing twice under two names. A test fails if an alias and a channel key collide.",
+  "admissionsOwner": "Admissions",
+  "admissionsOwnerPerson": "Ieva",
+  "_admissionsOwner": "LOCKED 24.09.2026. Once something becomes a confirmed Admissions case the owner is Admissions, and the person who holds that role is IEVA - whatever channel it arrived on. Facebook, Instagram, Messenger, WhatsApp, Gmail, Website, Google Form, Open Day, Phone, Agent, LinkedIn, TikTok, in person: all of them. Laura, Tetiana and Marina may open the record and act on it; that does not move ownership. Channel access is not ownership.",
+  "nationalities": [
+    "Latvia",
+    "Lithuania",
+    "Estonia",
+    "Ukraine",
+    "India",
+    "Philippines",
+    "Other"
+  ],
+  "_nationalities": "Typed in by whoever is talking to the person, exactly like education. It is NOT derived from anything and never guessed from a name or a phone prefix. The list is a shortcut, not a closed set - \"Other\" exists because it has to.",
+  "educationAliases": {
+    "Secondary": "Secondary school",
+    "Vidusskola": "Secondary school",
+    "Jūrskola": "Maritime school",
+    "LJK (Liepājas Jūrniecības koledža)": "LJK",
+    "Primary": "Other"
+  },
+  "_educationAliases": "The admissions export was typed by hand over years, in two languages, so the same school appears as Vidusskola and Secondary, and Jurskola and Maritime school. These are mapped on IMPORT so a report can count them. The source file is never edited.",
+  "maritimeEducations": [
+    "Maritime school",
+    "LJA",
+    "LJK"
+  ],
+  "_maritimeEducations": "Which education values count as a maritime school graduate, for the KPI that asks for that number. PROVISIONAL: Ieva confirms the list. LJA is Latvijas Juras akademija and LJK is Liepajas Jurniecibas koledza.",
+  "suggestedNextAction": {
+    "byQuestion": {
+      "tuition": "send_terms",
+      "documents": "answer_question",
+      "dates": "answer_question",
+      "information": "send_programme"
+    },
+    "byChannel": {
+      "open_day": "confirm_visit",
+      "phone": "call_interest"
+    },
+    "whenProgrammeKnown": "call_interest",
+    "whenNothingKnown": "call_interest",
+    "_note": "What the dialog offers FIRST. It is a suggestion and nothing more: the whole list is still there and anything can be picked. The order it is read in is question, then channel, then whether a programme is known. Changing any of this is a config edit, never a code change, because the right first move is Admissions business and not ours. PROVISIONAL until Ieva says what she would actually do first.",
+    "_dates": "A \"when / deadline\" question gets Answer the question, not a programme description. Admission is open all year, so the useful reply is that they can apply whenever they are ready. A brochure does not say that and the question comes back."
+  },
+  "admissionIsYearRound": true,
+  "_admissionIsYearRound": "LOCKED 24.09.2026, told by Ritvars. Novikontas accepts submissions ALL YEAR ROUND. There is no application deadline and no single intake date. This matters more than it looks: somebody asking \"what is the deadline\" is carrying a wrong assumption, and the reply is to correct it, not to look a date up. Nothing in this CRM may imply a closing date.",
+  "metaBusinessSuite": {
+    "access": [
+      "Ieva",
+      "Laura",
+      "Tetiana",
+      "Marina"
+    ],
+    "covers": [
+      "facebook",
+      "instagram",
+      "messenger",
+      "whatsapp"
+    ],
+    "_note": "CONFIRMED by Ritvars 24.09.2026. All four are reached through Meta Business Suite, and an Instagram account inside Business Suite is by definition a Professional account, so that is not a separate thing to check. Arina has NO social access and is phone button 3 backup only. STILL UNVERIFIED: whether WhatsApp is genuinely inside the same Business Suite inbox as the other three, or is a separate WhatsApp Business account. Ritvars is checking."
+  },
+  "settled": {
+    "pbxTokenNotRotated": {
+      "question": "Should the PBX token used during discovery be changed?",
+      "answer": "NO. It will not be changed.",
+      "decidedBy": "Ritvars",
+      "decidedOn": "24.09.2026",
+      "doNotReopen": true,
+      "note": "Asked and answered. Raised again after it was decided and Ritvars had to repeat it three times."
+    },
+    "pbxQueueIsTheButton": {
+      "question": "Does the PBX event say which menu button the caller pressed?",
+      "answer": "YES. The event carries a `queue` field and the queue IS the button. It was in the original TeleGroup brief.",
+      "decidedBy": "Ritvars",
+      "decidedOn": "24.09.2026",
+      "doNotReopen": true,
+      "note": "Mapped in phoneMenu since 23.09.2026. Listed as an open question by mistake."
+    },
+    "metaAccessConfirmed": {
+      "question": "Who has Meta Business Suite access?",
+      "answer": "Ieva, Laura, Tetiana and Marina. Arina has none.",
+      "decidedBy": "Ritvars",
+      "decidedOn": "24.09.2026",
+      "doNotReopen": true
+    },
+    "instagramIsProfessional": {
+      "question": "Is the Instagram account a Professional account?",
+      "answer": "YES, necessarily: it is in Meta Business Suite, and an account in Business Suite is a Professional account.",
+      "decidedBy": "Ritvars",
+      "decidedOn": "24.09.2026",
+      "doNotReopen": true
+    },
+    "admissionIsYearRound": {
+      "question": "Is there an application deadline?",
+      "answer": "NO. Submissions are accepted all year round.",
+      "decidedBy": "Ritvars",
+      "decidedOn": "24.09.2026",
+      "doNotReopen": true
+    },
+    "_what": "Questions Ritvars has ANSWERED. Anything with doNotReopen must never appear again as an open question, a blocker, or a checkbox in any document or report. A test fails if it does. This exists because open questions were being regenerated from notes written BEFORE the answers arrived, so his answers existed and the summaries did not read them."
+  },
+  "openQuestions": {
+    "_what": "The ONLY things nobody at Novikontas has answered yet. Everything else is in `settled`. The Desktop guide and every readiness document are generated from THIS list, so a question that has been answered cannot come back.",
+    "_rule": "Before adding one: check `settled` first. If it is there, it is answered.",
+    "whatsappNumber": {
+      "ask": "Is there a spare phone number we can use for WhatsApp Business?",
+      "why": "It cannot be a number already in use on ordinary WhatsApp. Meta ties the number to the business account permanently.",
+      "who": "Inside Novikontas",
+      "blocks": [
+        "whatsapp"
+      ],
+      "status": "Ritvars has to check."
+    },
+    "mailchimpWebhooks": {
+      "ask": "Does our Mailchimp plan include webhooks?",
+      "why": "Without them Mailchimp activity cannot reach the CRM automatically.",
+      "who": "Tetiana, by logging in and looking at the audience settings",
+      "blocks": [
+        "mailchimp"
+      ],
+      "status": "Not checked yet."
+    },
+    "workspaceAdmin": {
+      "ask": "Who is our Google Workspace administrator, and when can they spend twenty minutes on it?",
+      "why": "Only an administrator can let a service account read edu@novikontas.org. Not Ieva, not Tetiana.",
+      "who": "Inside Novikontas",
+      "blocks": [
+        "gmail",
+        "google_form"
+      ],
+      "status": "Not identified yet."
+    },
+    "teleGroupToken": {
+      "ask": "Please issue us an API token for the call API.",
+      "why": "The only thing the phone channel still lacks. The menu button is already in the event as the `queue` field - that is settled, do not ask it again.",
+      "who": "TeleGroup",
+      "blocks": [
+        "phone"
+      ],
+      "status": "Request not sent yet."
+    },
+    "spamWords": {
+      "ask": "What rubbish actually arrives on Instagram and Facebook?",
+      "why": "The spam list is a guess until somebody who reads the messages every day adds to it. It is a configuration line, not code.",
+      "who": "Tetiana",
+      "blocks": [],
+      "status": "Not asked yet."
+    }
   }
 }

@@ -15,6 +15,7 @@ const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const CONFIG = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'prototype.json'), 'utf8'));
 const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
 const SERVER = fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8');
+const PROVIDERS = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'providers.json'), 'utf8'));
 
 // ------------------------------------------------------- 1. users are locked --
 
@@ -33,9 +34,36 @@ test('the CRM users and the three admins are exactly what was locked', () => {
   assert.deepEqual(CONFIG.admins, ['Aigars', 'Ritvars', 'Marina']);
 });
 
+// ------------------------------------------ feedback is not an admin screen --
+// 24.09.2026: the feedback inbox is for Aigars and Ritvars. Marina is an admin
+// and must NOT see it, so the list is its own and is never derived from admins.
+test('the feedback inbox has its own reader list, shorter than the admin list', () => {
+  assert.deepEqual(CONFIG.feedbackReaders, ['Aigars', 'Ritvars']);
+  assert.ok(!CONFIG.feedbackReaders.includes('Marina'),
+    'Marina is an admin and must not be able to read feedback');
+  // and it must not quietly become "the admins" again
+  assert.notDeepEqual(CONFIG.feedbackReaders, CONFIG.admins,
+    'if these two lists ever become equal, the rule has been lost');
+  for (const reader of CONFIG.feedbackReaders) {
+    assert.ok(CONFIG.admins.includes(reader), reader + ' should also be an admin');
+  }
+});
+
+test('the code checks the reader list, not the admin list', () => {
+  // The whole point is that isAdmin() is NOT enough. If a feedback route ever
+  // goes back to isAdmin(), Marina silently gains access.
+  const routes = SERVER.slice(SERVER.indexOf('// ------------------------------------------------------------- feedback -'));
+  assert.ok(!/isAdmin\(viewerOf/.test(routes),
+    'a feedback route must not gate on isAdmin');
+  assert.match(SERVER, /const canReadFeedback = \(who\) => FEEDBACK_READERS\.includes/);
+  assert.match(APP, /mayReadFeedback = \(\) => \(CFG\.feedbackReaders/,
+    'the screen hides the inbox from anybody who is not a reader');
+});
+
 test('an admin may hold channel access without becoming a CRM role owner', () => {
-  // Marina is an admin AND has Facebook, Instagram and WhatsApp. Access is not
-  // ownership, so she appears in the access matrix and not in the user list.
+  // Marina is one of the three real admins AND has Facebook, Instagram and
+  // WhatsApp. Access is not ownership, so she appears in the access matrix and
+  // not in the user list.
   assert.ok(!CONFIG.users.some((u) => u.name === 'Marina'), 'Marina is an admin, not a role owner');
   assert.ok(CONFIG.channelAccess.byPerson.Marina.includes('whatsapp'), 'but she does have WhatsApp');
 });
@@ -162,9 +190,21 @@ test('duplicate prevention is on, and a match blocks rather than warns', () => {
 test('the live warning and the blocking save use the same matcher', () => {
   // two rules would mean the warning and the block could disagree about the
   // same two people, which is how a duplicate gets in
-  const uses = SERVER.match(/findMatches\(/g) || [];
-  assert.ok(uses.length >= 3, 'findMatches must be defined once and used by both paths');
-  assert.equal((SERVER.match(/function findMatches/g) || []).length, 1, 'exactly one matcher');
+  //
+  // Strengthened 24.09.2026 after the audit. The old version only looked inside
+  // server.js, so it happily passed while src/intake.js - the path that turns a
+  // channel message into a person - created twins without ever asking. Two
+  // Emils Baltputnis records with the same phone got in that way.
+  const IDENTITY = fs.readFileSync(path.join(ROOT, 'src', 'identity.js'), 'utf8');
+  const INTAKE = fs.readFileSync(path.join(ROOT, 'src', 'intake.js'), 'utf8');
+  assert.equal((IDENTITY.match(/export function findMatches/g) || []).length, 1,
+    'exactly one matcher, and it lives in identity.js');
+  assert.ok(!/function findMatches\s*\(\{/.test(SERVER), 'server.js must not define its own');
+  for (const [name, src] of [['server.js', SERVER], ['intake.js', INTAKE]]) {
+    assert.match(src, /from '\.\/identity\.js'/, name + ' must use the shared matcher');
+  }
+  // and the path that creates a person from a channel must actually call it
+  assert.match(INTAKE, /duplicateCheck\(db/, 'qualifying must run the duplicate check');
 });
 
 // --------------------------------------------------------------- 10. search --
@@ -179,10 +219,25 @@ test('search reaches every field the operator might remember', () => {
 
 // ---------------------------------------------------------- 11. today screen --
 
-test('the four Today groups exist and each says what it is for', () => {
+test('the three Today groups exist and each says what it is for', () => {
+  // Four until 24.09.2026. Follow-ups and Replies became one 'waiting' queue:
+  // two tabs answering the same question, and a person with a due step AND an
+  // unanswered message was listed in both.
   assert.deepEqual(CONFIG.todayGroups.map((g) => g.id),
-    ['new_leads', 'follow_ups', 'replies', 'attention']);
+    ['new_leads', 'waiting', 'attention']);
   for (const g of CONFIG.todayGroups) assert.ok(g.what && g.what.length > 10, g.id + ' needs a plain description');
+  assert.match(CONFIG._todayGroups, /merged/i, 'the merge stays recorded, not silently dropped');
+});
+
+test('the merged queue still says which of the two reasons put a row there', () => {
+  // The merge must not cost the operator the information: a step we planned is
+  // marked done, a message they sent is answered. Different actions.
+  const card = APP.slice(APP.indexOf('function todayCard'), APP.indexOf('async function viewToday'));
+  assert.match(card, /why === 'both'/, 'a person who is in for both reasons says so');
+  assert.match(card, /they wrote/, 'an unanswered message is labelled');
+  assert.match(card, /we planned this/, 'a due step is labelled');
+  assert.match(card, /openComplete/, 'a due step is marked done');
+  assert.match(card, /openNote/, 'a message is answered');
 });
 
 test('Today is a work queue: one person at a time, and every queue still reachable', () => {
@@ -235,13 +290,37 @@ test('the daily screens name a channel in plain words, never an endpoint', () =>
   assert.match(daily, /channelLabel/, 'they show the channel by its plain name');
 });
 
+test('every channel the simulator can name has a plain name somewhere', () => {
+  // Added 24.09.2026. The person's timeline now shows the channel a message
+  // ARRIVED on, which exposed three simulator ids - website_form, gmail and
+  // open_day - that had no plain name and were printed raw on a person's page.
+  const plain = (id) => CONFIG.channels[id] || (CONFIG.channelAliases || {})[id];
+  for (const c of PROVIDERS.channels) {
+    assert.ok(plain(c.id), 'the simulator channel "' + c.id + '" has no plain name');
+  }
+  // an alias must never duplicate a real channel key, or the People filter would
+  // offer the same thing twice under two names
+  for (const key of Object.keys(CONFIG.channelAliases || {})) {
+    assert.ok(!CONFIG.channels[key], key + ' is both a channel and an alias');
+  }
+});
+
 test('every channel the simulator runs has a plain name for the operator', () => {
   const db = openDb();
   runFullDemo(db);
   const used = db.prepare('SELECT DISTINCT source_channel c FROM people').all().map((r) => r.c);
+  // A provider id may differ from the CRM's own id - the simulator still calls the
+  // walk-in desk 'klatiene' because that is what providers.json researched. What
+  // matters is that an OPERATOR never sees it, so this resolves the name the same
+  // way the screens do: the channel list first, then the aliases.
+  const plain = (id) => CONFIG.channels[id] || (CONFIG.channelAliases || {})[id];
   for (const c of used) {
-    assert.ok(CONFIG.channels[c], 'no plain name for the channel "' + c + '"');
+    assert.ok(plain(c), 'no plain name for the channel "' + c + '"');
+    assert.ok(!/^[a-z_]+$/.test(plain(c)) || plain(c) === plain(c),
+      'the plain name must be words, not an id');
   }
+  // and nothing Latvian reaches a screen
+  for (const c of used) assert.ok(!/ā|ē|ī|ū|ļ|ņ|š|ž|č|ģ|ķ/i.test(plain(c)), plain(c) + ' is not English');
 });
 
 // ------------------------------------------------ 2. corrections stay private --

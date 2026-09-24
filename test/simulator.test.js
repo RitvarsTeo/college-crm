@@ -16,7 +16,9 @@ test('every channel has a fictional account, a connection and a research panel',
   assert.equal(PROVIDERS.channels.length, 11);
   for (const c of PROVIDERS.channels) {
     assert.ok(c.account?.label, c.id + ' has an account label');
-    assert.match(c.account.label, /SIMULATED|no provider account/, c.id + ' says it is simulated');
+    // case-insensitive since 24.09.2026: the labels appear as the actor on a
+    // person's timeline, so they say '(simulated)' rather than shouting it.
+    assert.match(c.account.label, /simulated|no provider account/i, c.id + ' says it is simulated');
     assert.ok(c.connection?.type, c.id + ' has a connection type');
     assert.ok(c.scenarios?.length, c.id + ' has test scenarios');
     for (const key of ['capability', 'canReceive', 'canSend', 'auth', 'limitations', 'approval', 'cost', 'privacy', 'status2026', 'simulated', 'toGoLive']) {

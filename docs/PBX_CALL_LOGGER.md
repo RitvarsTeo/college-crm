@@ -63,7 +63,6 @@ the clock first read it rather than inventing one.
 - The poller hands back a `safeUrl` which is the only version anything is allowed to print.
 - A missing token fails with `Missing required environment variable PBX_API_TOKEN` and nothing else.
 
-**The token used during discovery was exposed in a chat and must be rotated before go-live.**
 
 ## Environment variables still to configure
 
@@ -72,7 +71,7 @@ None are set. All four are needed before anything runs.
 | Variable | Notes |
 |---|---|
 | `PBX_API_TOKEN` | A **fresh** token from whoever manages the tg.lv PBX. Not the discovery one. |
-| `SUPABASE_URL` | The College CRM Supabase project. |
+| `SUPABASE_URL` | The Academy CRM Supabase project. |
 | `SUPABASE_SERVICE_KEY` | The org convention, used by the other hubs. `SUPABASE_SERVICE_ROLE_KEY` is accepted as an alias so the brief's name also works. Server-side only. |
 | `CRON_SECRET` | Guards the public route. Vercel sends it automatically on a scheduled run. |
 

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Novikontas College CRM - prototype</title>
+<title>Academy CRM - prototype</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Spectral:wght@400;500;600&display=swap">
 <style>
 /* ---------------------------------------------------------------------------
@@ -35,6 +35,8 @@
   --on-navy:#FCFBF9; --btn-bg:#111C21; --btn-ink:#FCFBF9;
   --control-line:rgba(17,28,33,.30); --focus:var(--petink); --accent-ink:var(--petink);
   --dur-quick:120ms; --dur-tap:80ms; --ease-standard:cubic-bezier(.2,.7,.2,1);
+  --menu:#FFFFFF;          /* opaque: a browser-drawn menu cannot use a translucent overlay */
+  color-scheme:light;
 }
 /* Dark is authored, not inverted: petrol ground, amber as light. */
 :root[data-theme="dark"] {
@@ -55,6 +57,10 @@
   --surface-2:rgba(255,255,255,.08); --field:rgba(255,255,255,.06);
   --on-navy:#EFEBE3; --btn-bg:#0B2C38; --btn-ink:#EFEBE3;
   --control-line:rgba(239,235,227,.34); --focus:var(--pet); --accent-ink:var(--petink);
+  --menu:#0F1E26;          /* opaque on purpose: --surface here is a 5.5% overlay */
+  /* The list a select drops down is drawn by the browser, not by this file. Without
+     this it stays white, and in dark mode 'Light' was white text on white. */
+  color-scheme:dark;
 }
 *{box-sizing:border-box}
 body{margin:0;font-family:var(--sans);
@@ -67,15 +73,23 @@ button{font:inherit;cursor:pointer}
    rather than a filled pill. */
 nav{background:var(--shell);color:var(--shell-ink);padding:18px 0;display:flex;flex-direction:column;
     border-right:1px solid var(--shell-line)}
-nav .brand{padding:0 20px 18px;font-weight:700;font-size:16px;line-height:1.25;color:var(--shell-ink)}
-nav .brand span{display:block;font-size:10px;font-weight:600;color:var(--petink);letter-spacing:1.4px;
+nav .brand{display:block;padding:2px 20px 18px;text-decoration:none;color:var(--shell-ink)}
+nav .brand .logo{display:block;width:100%;max-width:158px;height:auto}
+/* White on the dark shell is the authorised file. Black on the light shell is NOT:
+   it is the official file recoloured to Pitch Black on Ritvars's decision of
+   24.09.2026, against the brandbook. See src/assets/NoAca_logo_blackhor.svg. */
+nav .brand .logo.dark{display:none}
+:root[data-theme="dark"] nav .brand .logo.light{display:none}
+:root[data-theme="dark"] nav .brand .logo.dark{display:block}
+nav .brand span{display:block;margin-top:7px;font-size:10px;font-weight:600;color:var(--petink);letter-spacing:1.4px;
     text-transform:uppercase;margin-top:5px}
 nav a.item{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 20px;
     color:var(--t2);text-decoration:none;font-size:14px;border-left:3px solid transparent;
     transition:background-color var(--dur-quick) var(--ease-standard),color var(--dur-quick) var(--ease-standard)}
 nav a.item:hover{color:var(--ink);background:rgba(17,28,33,.05)}
 nav a.item.on{color:var(--ink);border-left-color:var(--amb);background:rgba(217,138,30,.10);font-weight:600}
-nav .dataset{margin-top:8px;font-size:9.5px;letter-spacing:.6px;text-transform:uppercase;
+nav .dsbox{padding:0 20px}
+nav .dataset{margin-top:2px;font-size:9.5px;letter-spacing:.6px;text-transform:uppercase;
   padding:3px 8px;border-radius:4px;display:inline-block;line-height:1.35;white-space:normal}
 nav .dataset.real{background:rgba(217,138,30,.16);color:var(--ambink);border:1px solid rgba(217,138,30,.45)}
 nav .dataset.empty{background:var(--surface-2);color:var(--t3);border:1px dashed var(--rule)}
@@ -91,7 +105,7 @@ nav .add{margin:16px 20px 0}
 nav .themes{margin-top:auto;padding:16px 20px 0;border-top:1px solid var(--shell-line)}
 nav .themes label{color:var(--t3);font-size:10px;letter-spacing:1.2px;text-transform:uppercase;margin:0 0 6px}
 nav .themes select{background:var(--field);color:var(--ink);border:1px solid var(--control-line)}
-main{padding:22px 26px 60px;max-width:1320px}
+main{padding:22px 26px 60px;max-width:1320px;min-width:0}
 h1{font-family:var(--serif);font-weight:500;font-size:27px;letter-spacing:-.01em;margin:0 0 2px;color:var(--ink)}
 .sub{color:var(--muted);font-size:13px;margin:0 0 18px}
 
@@ -132,6 +146,7 @@ tr.row:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
 .btn.sm{padding:5px 10px;font-size:12px}
 .btn:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible,a:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 
+option,optgroup{background:var(--menu);color:var(--ink)}
 input,select,textarea{font:inherit;padding:8px 10px;border:1px solid var(--control-line);border-radius:8px;
    background:var(--field);color:var(--ink);width:100%}
 label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px}
@@ -149,11 +164,14 @@ label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px}
 .tl .ev.status:before{background:var(--navy-soft)}
 .tl .ev.call:before{background:var(--amb)}
 .tl .when{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+.tl .ev .said{white-space:pre-line;margin-top:2px}
 
 .modal{position:fixed;inset:0;background:rgba(1,17,17,.5);display:flex;align-items:flex-start;justify-content:center;padding:60px 16px;z-index:20}
 .modal .box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 22px;width:100%;max-width:560px;
    max-height:80vh;overflow:auto;box-shadow:var(--shadow)}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.dupe{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;
+  border:1px solid var(--rule);border-radius:8px;padding:9px 11px;margin-top:8px;background:var(--surface)}
 .warn-box{background:var(--warn-bg);border:1px solid var(--warn);color:var(--warn);border-radius:8px;padding:10px 12px;font-size:13px;margin-top:10px}
 .todayhead{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;
   flex-wrap:wrap;margin-bottom:16px}
@@ -188,8 +206,12 @@ label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px}
 
 /* CAR */
 .cartable td{vertical-align:top}
+tr.row.clicky{cursor:pointer}
+tr.row.clicky:hover{background:var(--surface-2)}
 .sub2{font-size:11.5px;color:var(--t4);margin-top:2px}
 .sub2.late{color:var(--late,#b4483c);font-weight:600}
+.why{display:inline-block;margin-left:6px;font-size:10.5px;letter-spacing:.3px;text-transform:uppercase;
+  color:var(--t4);border:1px solid var(--rule2);border-radius:10px;padding:1px 7px;white-space:nowrap;cursor:help}
 tr.aged td:first-child{box-shadow:inset 3px 0 0 var(--amb,#d98a1e)}
 .fv{display:inline-block;font-size:12.5px}
 .fv.extracted{border-bottom:1px dotted var(--rule2);color:var(--t3)}
@@ -209,6 +231,8 @@ tr.aged td:first-child{box-shadow:inset 3px 0 0 var(--amb,#d98a1e)}
 
 nav a.item{gap:10px}
 .ico{width:17px;height:17px;flex:0 0 17px;opacity:.75}
+nav a.item.quiet{opacity:.62;font-size:13px}
+nav a.item.quiet:hover{opacity:1}
 nav a.item.on .ico{opacity:1}
 nav a.item span:first-of-type{flex:1}
 .waiting{margin-top:8px}
@@ -262,18 +286,131 @@ code{font-size:12.5px}
 @media(max-width:900px){.simwrap{grid-template-columns:1fr}}
 @media (prefers-reduced-motion: reduce){*{transition:none !important;animation:none !important}}
 @media(max-width:900px){.shell{grid-template-columns:1fr}.grid2{grid-template-columns:1fr}}
+/* --- the feedback widget ------------------------------------------------- */
+.helpbtn{position:fixed;right:18px;bottom:18px;z-index:30;background:var(--btn-bg);color:var(--btn-ink);
+  border:0;border-left:3px solid var(--amb);border-radius:99px;padding:10px 18px 10px 16px;font-weight:600;
+  font-size:12.5px;letter-spacing:.6px;cursor:pointer;box-shadow:var(--lift);font-family:var(--sans)}
+.helpbtn:hover{box-shadow:var(--lift-hover)}
+.helppanel{position:fixed;right:18px;bottom:64px;z-index:31;width:340px;max-width:calc(100vw - 36px);
+  background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--lift-hover);
+  padding:14px 16px 16px}
+.helppanel h4{margin:0 0 10px;font-family:var(--serif);font-weight:500;font-size:16px}
+.helpitem{display:block;width:100%;text-align:left;background:none;border:0;border-radius:8px;padding:9px 10px;
+  font-size:13.5px;color:var(--ink);cursor:pointer;font-family:var(--sans)}
+.helpitem:hover{background:var(--surface-2)}
+.helpitem span{display:block;font-size:11.5px;color:var(--t3);margin-top:1px}
+.kindtoggle{display:flex;gap:6px;margin-bottom:10px}
+.kindtoggle button{flex:1;background:var(--surface);color:var(--accent-ink);border:1px solid var(--line);
+  border-radius:8px;padding:7px 10px;font-size:12.5px;cursor:pointer;font-family:var(--sans)}
+.kindtoggle button.on{background:var(--btn-bg);color:var(--btn-ink);border-color:var(--btn-bg)}
+.shotrow{display:flex;gap:10px;align-items:center;margin-top:10px}
+.shotrow img{width:56px;height:40px;object-fit:cover;border-radius:6px;border:1px solid var(--line)}
+.shothint{font-size:11.5px;color:var(--t4);margin-top:5px}
+.goeshint{font-size:11px;color:var(--t4);margin-top:10px;line-height:1.35}
+.shotmeta{font-size:12px;color:var(--t3);flex:1}
+.xbtn{background:none;border:1px solid var(--rule);border-radius:6px;color:var(--t3);cursor:pointer;
+  width:26px;height:26px;line-height:1;font-size:14px;font-family:var(--sans)}
+.sendrow{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:12px}
+.pathstamp{font-size:11px;color:var(--t4);font-variant-numeric:tabular-nums;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.fbthanks{text-align:center;padding:22px 0;color:var(--t2);font-size:14px}
+.fbrow{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:10px;background:var(--card)}
+.fbrow.handled{opacity:.5}
+.fbrow .fbmeta{font-size:11.5px;color:var(--t4);margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.fbrow .fbbody{white-space:pre-wrap;font-size:14px;margin-top:6px}
+.fbrow img.shot{max-width:180px;max-height:120px;border-radius:8px;border:1px solid var(--line);
+  margin-top:10px;cursor:zoom-in;display:block}
+.lightbox{position:fixed;inset:0;background:rgba(1,17,17,.82);z-index:40;display:flex;align-items:center;
+  justify-content:center;padding:24px;cursor:zoom-out}
+.lightbox img{max-width:100%;max-height:100%;border-radius:8px}
+@media(max-width:560px){.helppanel{right:10px;left:10px;width:auto}}
+
+/* --- the view switch, the pipeline board and quick edit ------------------- */
+.viewswitch{display:flex;gap:4px}
+.viewswitch button{background:var(--surface);color:var(--accent-ink);border:1px solid var(--line);
+  border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:var(--sans)}
+.viewswitch button.on{background:var(--btn-bg);color:var(--btn-ink);border-color:var(--btn-bg)}
+
+.board{display:flex;gap:10px;overflow-x:auto;padding-bottom:14px;align-items:flex-start}
+/* Every stage shares the width, so the whole pipeline is on screen at once.
+   A narrow window falls back to scrolling rather than to unreadable columns. */
+.pcol{flex:1 1 0;min-width:118px;background:var(--surface-2);border:1px solid var(--rule2);
+  border-radius:10px;padding:9px;min-height:120px}
+.pcol.over{border-color:var(--pet);box-shadow:0 0 0 2px rgba(31,118,136,.18)}
+.pcolhead{display:flex;align-items:center;gap:7px;margin-bottom:9px;padding:0 2px}
+.pdot{width:9px;height:9px;border-radius:2px;flex:0 0 9px}
+.pcolname{font-size:10.5px;letter-spacing:.5px;text-transform:uppercase;color:var(--t3);font-weight:600;
+  flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pcount{font-size:11px;background:var(--card);border:1px solid var(--rule2);border-radius:10px;
+  padding:1px 7px;color:var(--t3);font-variant-numeric:tabular-nums}
+.pcolbody{display:flex;flex-direction:column;gap:8px;min-height:40px}
+.pcard{background:var(--card);border:1px solid var(--rule);border-radius:8px;padding:8px 9px;
+  cursor:grab;box-shadow:var(--lift)}
+.pcard:hover{box-shadow:var(--lift-hover)}
+.pcard.dragging{opacity:.4}
+.pname{font-weight:600;font-size:13px;line-height:1.25;overflow-wrap:anywhere}
+.pmeta{font-size:11px;color:var(--t3);margin-top:3px;text-transform:uppercase;letter-spacing:.3px}
+.powner{font-size:11.5px;color:var(--petink);margin-top:4px}
+.pnext{font-size:11.5px;color:var(--t2);margin-top:5px;background:var(--surface-2);border-radius:5px;
+  padding:3px 6px}
+.pnext.none{color:var(--t4);background:none;padding-left:0}
+.pempty{font-size:11.5px;color:var(--t4);text-align:center;padding:14px 0}
+
+.qe{background:var(--surface-2)}
+.qe td{padding:12px 14px}
+.qegrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.qegrid label{display:block;font-size:11px;letter-spacing:.4px;text-transform:uppercase;color:var(--t4);margin-bottom:3px}
+.qeact{display:flex;gap:8px;margin-top:12px;align-items:center;flex-wrap:wrap}
+.flab{display:flex;flex-direction:column;gap:3px}
+.flab span{font-size:10.5px;letter-spacing:.4px;text-transform:uppercase;color:var(--t4);min-height:13px}
+
+/* A request that answers instantly shows nothing. One that does not gets a thin
+   line at the top, so a slow screen never looks like a broken one. */
+.loading{position:fixed;top:0;left:0;height:2px;width:100%;background:var(--amb);z-index:50;
+  transform-origin:left;animation:loadbar 1.2s ease-out infinite}
+@keyframes loadbar{0%{transform:scaleX(0);opacity:1}70%{transform:scaleX(.9)}100%{transform:scaleX(1);opacity:.3}}
+
+.ok-tick{color:var(--petink);font-weight:600}
+.no-tick{color:var(--t4)}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;color:var(--t3)}
+.blocker{max-width:260px}
+.warnmark{color:var(--ambink);cursor:help}
+
+.chanrow{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.chanlabel{font-size:10.5px;letter-spacing:.5px;text-transform:uppercase;color:var(--t4);width:48px;flex:0 0 48px}
+.chanbtn{background:var(--surface);color:var(--accent-ink);border:1px solid var(--line);border-radius:8px;
+  padding:6px 11px;font-size:12.5px;cursor:pointer;font-family:var(--sans)}
+.chanbtn:hover{border-color:var(--rule2)}
+.chanbtn.on{background:var(--btn-bg);color:var(--btn-ink);border-color:var(--btn-bg)}
+
+.brow{display:grid;grid-template-columns:132px 1fr 42px;gap:9px;align-items:center;margin-bottom:5px}
+.blabel{font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bnum{font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums}
+.trend{display:flex;gap:5px;align-items:flex-end;height:140px;margin-top:8px}
+.tcol{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%}
+.tcol .tbars{flex:1;display:flex;gap:2px;align-items:flex-end;width:100%;justify-content:center}
+.tcol i{display:block;width:44%;border-radius:2px 2px 0 0;min-height:2px}
+.tcol span{font-size:10px;color:var(--t4)}
+i.tin{background:var(--pet)}
+i.tad{background:var(--amb)}
+i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align:middle}
+
 </style>
 </head>
 <body>
 <div class="shell">
   <nav>
-    <div class="brand">Novikontas<br>College CRM<span id="ver">virtual prototype</span></div>
-    <div class="navgroup">Daily work</div>
+    <a class="brand" href="#/today" title="Home">
+      <img class="logo light" src="/assets/NoAca_logo_blackhor.svg" alt="Novikontas Academy" width="1500" height="569">
+      <img class="logo dark" src="/assets/NoAca_logo_whitehor.svg" alt="Novikontas Academy" width="1500" height="569">
+      <span id="ver">CRM</span>
+    </a>
     <a class="item" href="#/today" data-icon="today"><span>Today</span><span class="pill late" id="navOverdue" style="display:none"></span></a>
-    <a class="item" href="#/car" data-icon="car" title="Channel Automation Results: everything the channels brought in"><span>CAR</span><span class="pill warn" id="navIntake" style="display:none"></span></a>
-    <a class="item" href="#/people" data-icon="people"><span>People</span></a>
-    <a class="item" href="#/followup" data-icon="clock"><span>Follow-ups</span></a>
-    <a class="item" href="#/reports" data-icon="chart"><span>Reports</span></a>
+    <a class="item" href="#/inbox" data-icon="inbox" title="Things that have come in and need a person to look at them"><span>Inbox</span><span class="pill warn" id="navIntake" style="display:none"></span></a>
+    <a class="item" href="#/admissions" data-icon="board" title="Where each applicant is in the journey"><span>Admissions</span></a>
+    <a class="item" href="#/followup" data-icon="clock" title="What has to happen, and when"><span>Follow-ups</span></a>
+    <a class="item" href="#/people" data-icon="people" title="Everybody we hold"><span>People</span></a>
+    <a class="item" href="#/reports" data-icon="chart" title="Numbers for a KPI meeting"><span>Reports</span></a>
     <div class="add"><button class="btn" style="width:100%" onclick="openAdd()">+ Add person</button></div>
 
     <div class="navsplit"></div>
@@ -284,12 +421,7 @@ code{font-size:12.5px}
     </div>
 
     <div class="navsplit"></div>
-    <div class="navgroup demo">DEV CONTROL</div>
-    <a class="item demo" href="#/integrations" data-icon="plug"><span>Channels</span></a>
-    <a class="item demo" href="#/history" data-icon="history"><span>History</span></a>
-    <a class="item demo" href="#/privacy" data-icon="shield"><span>Privacy</span></a>
-    <div class="add" style="margin-top:8px"><button class="btn ghost" style="width:100%" onclick="loadScenario()">Load demo data</button></div>
-    <div class="add" style="margin-top:6px"><button class="btn ghost" style="width:100%" onclick="resetDb()">Clear everything</button></div>
+    <a class="item quiet" href="#/feedback" data-icon="chat" id="navFeedbackLink"><span>Feedback</span><span class="pill warn" id="navFeedback" style="display:none"></span></a>
     <div class="themes" style="border-top:none;padding-top:0;margin-top:10px"><label for="theme">Theme</label>
       <select id="theme" onchange="setTheme(this.value)">
         <option value="light">Light</option><option value="dark">Dark</option>
@@ -297,6 +429,7 @@ code{font-size:12.5px}
   </nav>
   <main id="view"><div class="empty">Loading...</div></main>
 </div>
+<button class="helpbtn" id="helpBtn" onclick="fbToggle()" title="Report a bug or an idea">HELP</button>
 <div id="modal"></div>
 
 <script>
@@ -307,13 +440,15 @@ const svg = (d) => `<svg class="ico" viewBox="0 0 20 20" fill="none" stroke="cur
   stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
 const ICON = {
   today: svg('<rect x="3" y="4.5" width="14" height="12" rx="2"/><path d="M3 8h14M7 3v3M13 3v3"/>'),
-  car: svg('<path d="M3 12.5h14M4.5 12.5V10l1.8-3.2a1.5 1.5 0 0 1 1.3-.8h4.8a1.5 1.5 0 0 1 1.3.8L15.5 10v2.5"/><circle cx="6.5" cy="13.9" r="1.3"/><circle cx="13.5" cy="13.9" r="1.3"/>'),
+  inbox: svg('<path d="M3 11.5h4l1.2 2h3.6l1.2-2h4"/><path d="M4.6 4.5h10.8l1.6 7v4a1.5 1.5 0 0 1-1.5 1.5H4.5A1.5 1.5 0 0 1 3 15.5v-4z"/>'),
   people: svg('<circle cx="7.5" cy="7" r="2.6"/><path d="M3 16c0-2.5 2-4.2 4.5-4.2S12 13.5 12 16"/><path d="M13.6 6.6a2.4 2.4 0 0 1 0 4.6M15 15.8c0-1.6-.6-2.8-1.5-3.6"/>'),
   clock: svg('<circle cx="10" cy="10" r="7"/><path d="M10 6v4.3l2.8 1.7"/>'),
   chart: svg('<path d="M3.5 16.5h13"/><rect x="5" y="9" width="2.6" height="5.5" rx=".6"/><rect x="8.9" y="5.5" width="2.6" height="9" rx=".6"/><rect x="12.8" y="11" width="2.6" height="3.5" rx=".6"/>'),
   plug: svg('<path d="M7 3v4M13 3v4"/><path d="M5 7h10v3a5 5 0 0 1-10 0z"/><path d="M10 15v2.5"/>'),
   history: svg('<path d="M3.5 10a6.5 6.5 0 1 0 2-4.7"/><path d="M3 4.5V8h3.5"/><path d="M10 6.5V10l2.5 1.5"/>'),
   shield: svg('<path d="M10 3l5.5 2.2v4.3c0 3.2-2.2 6-5.5 7-3.3-1-5.5-3.8-5.5-7V5.2z"/><path d="M7.8 10l1.6 1.6 3-3.2"/>'),
+  board: svg('<rect x="3" y="4" width="3.6" height="12" rx="1"/><rect x="8.2" y="4" width="3.6" height="8" rx="1"/><rect x="13.4" y="4" width="3.6" height="10" rx="1"/>'),
+  chat: svg('<path d="M3.5 5.5a1.5 1.5 0 0 1 1.5-1.5h10a1.5 1.5 0 0 1 1.5 1.5v6a1.5 1.5 0 0 1-1.5 1.5H8l-3.5 3v-3H5a1.5 1.5 0 0 1-1.5-1.5z"/>'),
 };
 function drawIcons() {
   document.querySelectorAll('nav a.item[data-icon]').forEach(a => {
@@ -324,6 +459,27 @@ function drawIcons() {
 
 // Notifications. Not a bell that pings: a short line saying what is waiting for
 // whoever you are, and for an admin, what is waiting for everybody.
+// Feedback arrives while somebody is working. Nothing in this app can send an
+// email, so being told happens here: a count beside the Feedback link that only
+// the two readers ever see, and clicking it opens the inbox.
+async function drawFeedbackBadge() {
+  const link = document.querySelector('#navFeedbackLink');
+  const badge = document.querySelector('#navFeedback');
+  if (!link || !badge) return;
+  if (!mayReadFeedback()) { link.style.display = 'none'; return; }
+  link.style.display = '';
+  try {
+    const r = await api('/api/feedback/waiting');
+    if (r.open) {
+      badge.textContent = r.open;
+      badge.title = r.open + (r.open === 1 ? ' piece' : ' pieces') + ' of feedback nobody has handled yet';
+      badge.style.display = '';
+    } else {
+      badge.style.display = 'none';
+    }
+  } catch { badge.style.display = 'none'; }
+}
+
 async function drawWaiting() {
   const box = document.querySelector('#waiting');
   if (!box) return;
@@ -334,8 +490,19 @@ async function drawWaiting() {
         class="wrow"><span>${esc(r.role)}</span><b class="${r.overdue || r.aged ? 'late' : ''}">${r.total}</b></a>`).join('')
         + '<div class="whint">waiting, per role</div>';
     } else if (w.mine.total) {
-      box.innerHTML = `<a href="${w.mine.intake ? '#/car' : '#/today'}" class="wrow big">
-        <span>waiting for you</span><b class="${w.mine.overdue || w.mine.aged ? 'late' : ''}">${w.mine.total}</b></a>`;
+      // One number used to cover two different things: items that need an action
+      // today, and how many live leads this role owns. The second only ever grows,
+      // so folding them together made the sidebar disagree with Today for no
+      // reason a reader could see. They are now two lines, each saying what it is.
+      const needs = w.mine.intake + w.mine.overdue;
+      box.innerHTML =
+        `<a href="${w.mine.intake ? '#/car' : '#/today'}" class="wrow big"
+            title="Messages to look at, and next steps that are late. These are the things Today asks you to do.">
+          <span>needs you today</span>
+          <b class="${w.mine.overdue || w.mine.aged ? 'late' : ''}">${needs}</b></a>`
+        + (w.mine.leads ? `<a href="#/admissions" class="wrow"
+            title="Live leads this role owns. Not a to-do list - it is how many people are in Admissions.">
+          <span>leads you own</span><b>${w.mine.leads}</b></a>` : '');
     } else {
       box.innerHTML = '<div class="whint">nothing waiting for you</div>';
     }
@@ -358,17 +525,51 @@ const fmtDateTime = (s) => {
   } catch { return String(s).slice(0, 16).replace('T', ' '); }
 };
 const todayStr = () => new Date().toISOString().slice(0, 10);
-let CFG = {}, STATE = { q: '', status: '', programme: '', owner: '', source: '', due: '', sort: 'created_at', dir: 'desc', fuTab: 'overdue' };
+let CFG = {}, STATE = { q: '', status: '', programme: '', owner: '', source: '', nationality: '', due: '', sort: 'created_at', dir: 'desc', fuTab: 'overdue' };
 
-// DEV CONTROL state. Lost when the CAR screen was rebuilt, which broke the
+// Channel simulator state, used by the research screen. Lost when the Inbox was
+// rebuilt, which broke the
 // Channels screen with "SIM is not defined" - caught by the final visual walk.
 let SIM = null, SIMSEL = null, LASTRUN = {};
 async function loadSim() { SIM = await api('/api/sim/providers'); }
 
+let BUSY = 0, BUSY_TIMER = null;
+function busy(delta) {
+  BUSY = Math.max(0, BUSY + delta);
+  if (BUSY && !BUSY_TIMER) {
+    // nothing is shown for a request that answers straight away
+    BUSY_TIMER = setTimeout(() => {
+      if (!BUSY) return;
+      if (!document.querySelector('#loadbar')) {
+        const el = document.createElement('div');
+        el.id = 'loadbar'; el.className = 'loading';
+        document.body.appendChild(el);
+      }
+    }, 200);
+  }
+  if (!BUSY) {
+    clearTimeout(BUSY_TIMER); BUSY_TIMER = null;
+    const el = document.querySelector('#loadbar');
+    if (el) el.remove();
+  }
+}
+
 const api = async (path, opts) => {
-  const r = await fetch(path, opts);
-  if (!r.ok) { const e = await r.json().catch(() => ({ error: r.statusText })); throw new Error(e.error || 'request failed'); }
-  return r.json();
+  // every request says who is asking, so an admin-only screen does not have to
+  // remember to add it to the query string and quietly get refused
+  const o = { ...(opts || {}) };
+  o.headers = { ...(o.headers || {}), 'x-acting-as': ACTOR };
+  busy(1);
+  try {
+    const r = await fetch(path, o);
+    if (!r.ok) {
+      const e = await r.json().catch(() => ({ error: r.statusText }));
+      const err = new Error(e.error || 'request failed');
+      err.detail = e;          // the duplicate list, the reasons, whatever was refused with
+      throw err;
+    }
+    return await r.json();
+  } finally { busy(-1); }
 };
 const post = (path, data) => api(path, { method: 'POST',
   headers: { 'content-type': 'application/json', 'x-acting-as': ACTOR },
@@ -378,13 +579,16 @@ const STAGE_PILL = { 'New': 'accent', 'Contacted': 'accent', 'Follow-up': 'warn'
   'Contract': 'ok', 'Admitted': 'ok', 'Not proceeding': 'calm' };
 const stageChip = (s) => `<span class="pill ${STAGE_PILL[s] || 'calm'}">${esc(s)}</span>`;
 function setTheme(t) { document.documentElement.setAttribute('data-theme', t); try { localStorage.setItem('crmTheme', t); } catch {} }
-const channelLabel = (c) => (CFG.channels && CFG.channels[c]) || c || '-';
+const channelLabel = (c) => (CFG.channels && CFG.channels[c])
+  || (CFG.channelAliases && CFG.channelAliases[c]) || c || '-';
 
 // -------------------------------------------------------------- acting as --
 // There is no authentication. This is a setting, and every screen that depends
 // on it says so out loud rather than looking like a permission check.
 let ACTOR = 'Admissions';
 const isAdmin = () => (CFG.admins || []).includes(ACTOR);
+// Not derived from isAdmin on purpose: Marina is an admin and must not see feedback.
+const mayReadFeedback = () => (CFG.feedbackReaders || []).includes(ACTOR);
 function setActor(who) {
   ACTOR = who;
   try { localStorage.setItem('crmActor', who); } catch {}
@@ -421,27 +625,46 @@ const dueText = (d) => {
 async function route() {
   const hash = location.hash || '#/today';
   drawIcons();
-  document.querySelectorAll('nav a.item').forEach(a => a.classList.toggle('on', a.getAttribute('href') === hash.split('/').slice(0,2).join('/')));
+  const here = hash.split('/').slice(0, 2).join('/');
+  // Only the two renames. The technical screens are not in the navigation at all,
+  // so nothing needs to light up for them.
+  const ALIAS = { '#/car': '#/inbox', '#/pipeline': '#/admissions' };
+  const lit = ALIAS[here] || here;
+  document.querySelectorAll('nav a.item').forEach(a => a.classList.toggle('on', a.getAttribute('href') === lit));
   const [, page, arg] = hash.split('/');
+  fbClose();                       // the help panel never survives a move to another screen
   try {
-    if (page === 'people') await viewPeople();
-    else if (page === 'car' || page === 'inbox') await viewInbox();
+    // The names people use. The old ones still resolve so a link in a note,
+    // a feedback report or somebody's bookmark does not break.
+    // The Console is a separate page at /console and is deliberately unreachable
+    // from here. The CRM is the product; it carries no way into our tooling.
+    if (page === 'admissions' || page === 'pipeline') await viewAdmissions();
+    else if (page === 'feedback') await viewFeedback();
+    else if (page === 'people') await viewPeople();
+    else if (page === 'inbox' || page === 'car') await viewInbox();
     else if (page === 'funnel' || page === 'metrics') await viewReports();
     else if (page === 'history') await viewHistory();
     else if (page === 'person') await viewPerson(arg);
     else if (page === 'followup') await viewFollowup();
-    else if (page === 'intake') await viewIntake(arg);
-    else if (page === 'opendays') { INTAKE_TAB = 'opendays'; await viewIntake('opendays'); }
-    else if (page === 'integrations') await viewIntegrations(arg);
-    else if (page === 'inspector') await viewInspector(arg);
-    else if (page === 'metrics') await viewMetrics();
+    // Channel research, the event inspector, the raw intake screens and the privacy
+    // notes are OUR tooling. They are not routed here at all: the product has no
+    // path to them, by design. They live with the Console.
+    else if (page === 'metrics') await viewReports();
     else if (page === 'privacy') await viewPrivacy();
     else if (page === 'reports') await viewReports();
     else await viewToday();
   } catch (e) {
-    $('#view').innerHTML = `<div class="err">Failed to load: ${esc(e.message)}</div>`;
+    // 'not found' usually means the page in front of somebody is older than the
+    // database behind it. Saying so is more use than the word 'failed'.
+    $('#view').innerHTML = e.message === 'not found'
+      ? `<h1>Not here any more</h1>
+         <div class="prov">This record is not in the database any more. This page may have been
+         open since before the data changed. Going back to Today will reload it.</div>
+         <button class="btn" onclick="location.hash='#/today'">Back to Today</button>`
+      : `<div class="err">Failed to load: ${esc(e.message)}</div>`;
   }
   refreshBadge();
+  drawFeedbackBadge();
 }
 async function refreshBadge() {
   try {
@@ -471,6 +694,34 @@ async function refreshBadge() {
 // Empty, real or synthetic, switched as often as a demo needs.
 // Next action is never a free text box and never optional: it comes from the
 // list, and every option drives towards a visit, an application or payment.
+
+// What to put at the top of the list. It is a SUGGESTION: the whole grouped list
+// stays underneath and anything can be picked. The rules live in config, because
+// the right first move is Admissions business and not a decision for this file.
+function suggestNextAction(item, interest) {
+  const rules = CFG.suggestedNextAction || {};
+  const idOf = (id) => {
+    for (const g of (CFG.nextActions || [])) for (const i of g.items) if (i.id === id) return i.label;
+    return null;
+  };
+  const question = (item.fields || []).find(f => f.field === 'question');
+  const byQ = question && (rules.byQuestion || {})[String(question.value)];
+  if (byQ) return { label: idOf(byQ), why: `they asked about ${question.value}` };
+  const byC = (rules.byChannel || {})[item.channel];
+  if (byC) return { label: idOf(byC), why: `it came in by ${channelLabel(item.channel)}` };
+  if (interest) return { label: idOf(rules.whenProgrammeKnown), why: 'we know what they want to study' };
+  return { label: idOf(rules.whenNothingKnown), why: 'nobody can tell what they want yet' };
+}
+
+// The suggestion sits at the top, already chosen, above the full list.
+function nextActionOptionsWithSuggestion(suggested) {
+  const rest = nextActionOptions(null);
+  if (!suggested || !suggested.label) return rest;
+  return `<optgroup label="Suggested">
+      <option value="${esc(suggested.label)}" selected>${esc(suggested.label)}</option>
+    </optgroup>` + rest;
+}
+
 function nextActionOptions(selectedLabel) {
   const groups = CFG.nextActions || [];
   const opts = groups.map(g => `<optgroup label="${esc(g.group)}">` +
@@ -497,23 +748,10 @@ function onNextActionChange(selId, dateId, hintId) {
   if (hint) hint.textContent = DRIVES_LABEL[drivesFor(label)] || '';
 }
 
-function drawDatasetBadge(ds) {
-  const brand = document.querySelector('nav .brand');
-  if (!brand) return;
-  const old = brand.querySelector('.dataset');
-  if (old) old.remove();
-  const badge = document.createElement('div');
-  const kind = (ds && ds.dataset) || 'empty';
-  badge.className = 'dataset ' + kind;
-  badge.textContent = kind === 'real' ? 'REAL DATA - ' + ds.people + ' people'
-    : kind === 'synthetic' ? 'SYNTHETIC DATA - ' + ds.people + ' people'
-    : kind === 'demo' ? 'V1 DEMO DATA - ' + ds.people + ' people'
-    : 'EMPTY DATABASE';
-  badge.title = (ds && ds.selection) || '';
-  brand.appendChild(badge);
-  const sel = document.querySelector('#dataset');
-  if (sel && ['empty', 'real', 'synthetic'].includes(kind)) sel.value = kind;
-}
+// The CRM shows no dataset badge: which database is loaded is our concern and is
+// shown in the Console. Kept as a no-op so the places that used to refresh it do
+// not have to know it went away.
+function drawDatasetBadge() {}
 
 async function setDataset(kind) {
   const r = await post('/api/dataset', { kind });
@@ -560,22 +798,25 @@ function todayStep(delta, count) {
 
 // What this one person needs, said in one line, with one button that does it.
 function todayCard(g, item) {
-  if (g.id === 'follow_ups') {
+  // One queue, two reasons for being in it. The row says which, because a step we
+  // planned is marked done and a message they sent is answered.
+  if (g.id === 'waiting') {
+    const wrote = item.why === 'reply' || item.why === 'both';
+    const planned = item.why === 'step' || item.why === 'both';
+    const tag = (text, title) => `<span class="why" title="${esc(title)}">${esc(text)}</span>`;
     return {
       name: item.name,
-      line: item.label,
-      meta: dueText(item.due_at),
+      line: (planned ? esc(item.label) : esc(String(item.subject || 'They wrote to us')))
+        + ' ' + (item.why === 'both'
+          ? tag('they also wrote', 'A step is due AND they have written since. Both are waiting on us.')
+          : wrote ? tag('they wrote', 'They sent this and nothing has gone back yet.')
+          : tag('we planned this', 'A next step somebody planned, now due.')),
+      meta: planned ? dueText(item.due_at)
+        : `${channelLabel(item.channel || item.source_channel)} &middot; ${fmtDateTime(item.occurred_at)}`,
       open: `#/person/${item.person_id}`,
-      action: `<button class="btn" onclick="event.stopPropagation();openComplete(${item.id},'${esc(item.label)}')">Mark done</button>`,
-    };
-  }
-  if (g.id === 'replies') {
-    return {
-      name: item.name,
-      line: esc(String(item.subject || 'They wrote to us')),
-      meta: `${channelLabel(item.channel || item.source_channel)} &middot; ${fmtDateTime(item.occurred_at)}`,
-      open: `#/person/${item.id}`,
-      action: `<button class="btn" onclick="event.stopPropagation();openNote('${item.id}','note')">Write what happened</button>`,
+      action: planned
+        ? `<button class="btn" onclick="event.stopPropagation();openComplete(${item.taskId},'${esc(item.label)}')">Mark done</button>`
+        : `<button class="btn" onclick="event.stopPropagation();openNote('${item.person_id}','note')">Write what happened</button>`,
     };
   }
   if (g.id === 'new_leads') {
@@ -596,8 +837,31 @@ function todayCard(g, item) {
   };
 }
 
+// Today has two views of the same queue. The table is the one people work in,
+// because a manager wants the overview and not a card at a time; the card view
+// is kept because it is the better shape on a phone and some people prefer it.
+let TODAY_VIEW = 'table';
+try { TODAY_VIEW = localStorage.getItem('crmTodayView') || 'table'; } catch {}
+function setTodayView(v) {
+  TODAY_VIEW = v;
+  try { localStorage.setItem('crmTodayView', v); } catch {}
+  viewToday();
+}
+
+// Whose day is this? Today names one person at the top, so by default it shows
+// that person's work. It used to show everybody's under that heading, which is
+// why the sidebar said one number and this screen said a bigger one.
+let TODAY_SCOPE = 'mine';
+try { TODAY_SCOPE = localStorage.getItem('crmTodayScope') || 'mine'; } catch {}
+function setTodayScope(v) {
+  TODAY_SCOPE = v;
+  try { localStorage.setItem('crmTodayScope', v); } catch {}
+  TODAY_ITEM = 0;
+  viewToday();
+}
+
 async function viewToday() {
-  const t = await api('/api/today');
+  const t = await api('/api/today' + (TODAY_SCOPE === 'all' ? '?scope=all' : ''));
   const order = todayOrder(t.order);
   const byId = Object.fromEntries(t.groups.map(g => [g.id, g]));
   const groups = order.map(id => byId[id]).filter(Boolean);
@@ -613,13 +877,26 @@ async function viewToday() {
   const picker = groups.map((x, i) => `<button class="dot ${i === TODAY_AT ? 'on' : ''}"
     onclick="todayPickQueue(${i})"><span>${esc(x.label)}</span>${x.open ? `<b>${x.open}</b>` : ''}</button>`).join('');
 
-  let body;
-  if (!items.length) {
-    body = `<div class="card deck"><div class="done">
+  const empty = `<div class="card deck"><div class="done">
       <div class="tick-big">&#10003;</div>
       ${g.done ? `All ${g.total} done today.` : 'Nothing waiting here.'}
       <div class="sub" style="margin-top:6px">${esc(t.descriptions[g.id] || '')}</div>
     </div></div>`;
+
+  let body;
+  if (!items.length) {
+    body = empty;
+  } else if (TODAY_VIEW === 'table') {
+    body = `<div class="card"><table class="cartable"><thead><tr>
+        <th>Who</th><th>What they need</th><th>When</th><th></th></tr></thead>
+      <tbody>${items.map((item) => {
+        const c = todayCard(g, item);
+        return `<tr class="row" tabindex="0" onclick="location.hash='${c.open}'">
+          <td><b>${esc(c.name)}</b></td>
+          <td>${c.line}</td>
+          <td>${c.meta}</td>
+          <td class="act">${c.action}</td></tr>`;
+      }).join('')}</tbody></table></div>`;
   } else {
     const item = items[TODAY_ITEM];
     const c = todayCard(g, item);
@@ -644,7 +921,18 @@ async function viewToday() {
   $('#view').innerHTML = `
   <div class="todayhead">
     <div><h1 style="margin:0">Today</h1>
-      <p class="sub" style="margin:2px 0 0">${esc(ACTOR)}${myRole() ? ' &middot; ' + esc(myRole()) : ''}</p></div>
+      <p class="sub" style="margin:2px 0 0">${esc(ACTOR)}${myRole() ? ' &middot; ' + esc(myRole()) : ''}${
+        t.scope === 'all' && t.role ? ' &middot; showing everyone' : ''}</p></div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      ${t.role ? `<div class="viewswitch" title="Today names one person at the top, so by default it shows that person's work. The sidebar count is for the same role.">
+        <button class="${TODAY_SCOPE === 'mine' ? 'on' : ''}" onclick="setTodayScope('mine')">${esc(t.role)}</button>
+        <button class="${TODAY_SCOPE === 'all' ? 'on' : ''}" onclick="setTodayScope('all')">Everyone</button>
+      </div>` : ''}
+      <div class="viewswitch">
+        <button class="${TODAY_VIEW === 'table' ? 'on' : ''}" onclick="setTodayView('table')">Table</button>
+        <button class="${TODAY_VIEW === 'card' ? 'on' : ''}" onclick="setTodayView('card')">One at a time</button>
+      </div>
+    </div>
   </div>
   <div class="swipe">${picker}</div>
   ${body}`;
@@ -675,49 +963,112 @@ function funnelHtml(byStage) {
 }
 
 // ----------------------------------------------------------------- people --
+// Every filter carries the name of what it filters. They used to be four boxes
+// all saying 'all', and none of them was wired to anything at all.
+let QUICK_EDIT = null;        // the id of the row opened for editing, if any
+
 async function viewPeople() {
   const qs = new URLSearchParams({ q: STATE.q, status: STATE.status, programme: STATE.programme, owner: STATE.owner,
-    source_channel: STATE.source, due: STATE.due, sort: STATE.sort, dir: STATE.dir });
+    source_channel: STATE.source, nationality: STATE.nationality, due: STATE.due, sort: STATE.sort, dir: STATE.dir });
   const data = await api('/api/people?' + qs);
   const opt = (arr, cur) => ['<option value="">all</option>'].concat(arr.map(v => `<option ${v === cur ? 'selected' : ''}>${esc(v)}</option>`)).join('');
   const th = (key, label) => `<th onclick="sortBy('${key}')">${label}${STATE.sort === key ? (STATE.dir === 'asc' ? ' ▲' : ' ▼') : ''}</th>`;
+  const field = (label, inner) => `<div class="flab"><span>${esc(label)}</span>${inner}</div>`;
+
+  const quickRow = (r) => `<tr class="qe"><td colspan="8">
+    <div class="qegrid">${EDIT_FIELDS.map(([key, label, kind]) => {
+      const v = r[key] == null ? '' : String(r[key]);
+      const input = kind === 'textarea' ? `<textarea id="q_${key}" rows="2">${esc(v)}</textarea>`
+        : kind === 'text' ? `<input id="q_${key}" value="${esc(v)}">`
+        : `<select id="q_${key}">${selectFor(kind, v)}</select>`;
+      return `<div><label>${esc(label)}</label>${input}</div>`;
+    }).join('')}</div>
+    <div style="margin-top:10px"><label style="font-size:11px;letter-spacing:.4px;text-transform:uppercase;color:var(--t4)">Add a note (optional)</label>
+      <textarea id="q_note" rows="2" placeholder="What happened, in one line"></textarea></div>
+    <div id="qeErr"></div>
+    <div class="qeact">
+      <button class="btn sm" onclick="event.stopPropagation();quickSave('${esc(r.id)}')">Save</button>
+      <button class="btn sm ghost" onclick="event.stopPropagation();setQuickEdit(null)">Cancel</button>
+      <a class="tilelink" href="#/person/${esc(r.id)}">Open the full record &rarr;</a>
+      <span class="sub2" style="margin-left:auto">Saved as ${esc(ACTOR)}. Every change is written to the history.</span>
+    </div></td></tr>`;
+
   $('#view').innerHTML = `
-  <h1>People</h1><p class="sub">${data.count} records</p>
+  <div class="todayhead">
+    <div><h1 style="margin:0">People</h1><p class="sub" style="margin:2px 0 0">${data.count} records</p></div>
+    <a class="tilelink" href="#/admissions">Open Admissions &rarr;</a>
+  </div>
   <div class="filters">
-    <input id="fq" placeholder="Search name, email, phone, programme, source, id" value="${esc(STATE.q)}" style="min-width:300px">
-    <select id="fstatus">${opt((CFG.stages || []).map(s => s.id), STATE.status)}</select>
-    <select id="fprog">${opt(CFG.programmes || [], STATE.programme)}</select>
-    <select id="fsource">${opt(Object.keys(CFG.channels || {}), STATE.source)}</select>
-    <select id="fdue"><option value="">due: all</option><option value="overdue" ${STATE.due==='overdue'?'selected':''}>overdue</option><option value="none" ${STATE.due==='none'?'selected':''}>without a next step</option></select>
-    <button class="btn ghost" onclick="clearFilters()">Clear</button>
+    ${field('Search', `<input id="fq" placeholder="name, email, phone, programme, source, id" value="${esc(STATE.q)}" style="min-width:290px">`)}
+    ${field('Stage', `<select id="fstatus" onchange="setFilter('status', this.value)">${opt((CFG.stages || []).map(s => s.id), STATE.status)}</select>`)}
+    ${field('Programme', `<select id="fprog" onchange="setFilter('programme', this.value)">${opt(CFG.programmes || [], STATE.programme)}</select>`)}
+    ${field('Nationality', `<select id="fnat" onchange="setFilter('nationality', this.value)">${opt(CFG.nationalities || [], STATE.nationality)}</select>`)}
+    ${field('Owner', `<select id="fowner" onchange="setFilter('owner', this.value)">${opt(CFG.owners || [], STATE.owner)}</select>`)}
+    ${field('Came from', `<select id="fsource" onchange="setFilter('source', this.value)">${
+      ['<option value="">all</option>'].concat(Object.keys(CFG.channels || {}).map(v =>
+        `<option value="${esc(v)}" ${v === STATE.source ? 'selected' : ''}>${esc(channelLabel(v))}</option>`)).join('')}</select>`)}
+    ${field('Next step', `<select id="fdue" onchange="setFilter('due', this.value)">
+      <option value="">all</option>
+      <option value="overdue" ${STATE.due === 'overdue' ? 'selected' : ''}>overdue</option>
+      <option value="none" ${STATE.due === 'none' ? 'selected' : ''}>without a next step</option></select>`)}
+    <div class="flab"><span></span><button class="btn ghost" onclick="clearFilters()">Clear</button></div>
   </div>
   <div class="card">
-  ${data.rows.length ? `<table><thead><tr>${th('name','Name')}${th('programme','Programme')}${th('source_channel','Source')}${th('status','Status')}${th('owner','Owner')}${th('last_contact_at','Last contact')}<th>Next step</th></tr></thead>
+  ${data.rows.length ? `<table><thead><tr>${th('name','Name')}${th('programme','Programme')}${th('source_channel','Source')}${th('status','Status')}${th('owner','Owner')}${th('last_contact_at','Last contact')}<th>Next step</th><th></th></tr></thead>
   <tbody>${data.rows.map(r => `<tr class="row" tabindex="0" onclick="location.hash='#/person/${r.id}'">
-    <td><b>${esc(r.name)}</b><div style="color:var(--steel);font-size:12px">${esc(r.email || '')}</div></td>
-    <td>${esc(r.programme || '')}<div style="color:var(--steel);font-size:12px">${esc(r.education || '')}</div></td>
-    <td>${esc(channelLabel(r.source_channel))}<div style="color:var(--steel);font-size:12px">${esc(r.source_campaign || '')}</div></td>
+    <td><b>${esc(r.name)}</b><div class="sub2">${esc(r.email || '')}</div></td>
+    <td>${esc(r.programme || '')}<div class="sub2">${esc(r.education || '')}</div></td>
+    <td>${esc(channelLabel(r.source_channel))}<div class="sub2">${esc(r.source_campaign || '')}</div></td>
     <td>${stageChip(r.status)}</td><td>${esc(r.owner || '')}</td><td>${fmtDate(r.last_contact_at)}</td>
-    <td>${r.next_action ? esc(r.next_action) + '<br>' + dueText(r.next_action_at) : '<span class="pill calm">none</span>'}</td></tr>`).join('')}</tbody></table>`
+    <td>${r.next_action ? esc(r.next_action) + '<br>' + dueText(r.next_action_at) : '<span class="pill calm">none</span>'}</td>
+    <td class="act"><button class="btn sm ghost" title="change what we know without leaving this list"
+      onclick="event.stopPropagation();setQuickEdit('${esc(r.id)}')">Edit</button></td></tr>
+    ${QUICK_EDIT === r.id ? quickRow(r) : ''}`).join('')}</tbody></table>`
   : '<div class="empty">No record matches the filters. <a href="#" onclick="clearFilters();return false">Clear the filters</a></div>'}
   </div>`;
   $('#fq').oninput = debounce(e => { STATE.q = e.target.value; viewPeople(); }, 250);
 }
+
+function setFilter(key, value) { STATE[key] = value; QUICK_EDIT = null; viewPeople(); }
+function setQuickEdit(id) { QUICK_EDIT = QUICK_EDIT === id ? null : id; viewPeople(); }
+
+// Saved exactly as the person page saves it, so the same field policy applies and
+// the same history entries are written. Only the screen is different.
+async function quickSave(id) {
+  const patch = {};
+  for (const [key] of EDIT_FIELDS) {
+    const el = document.querySelector('#q_' + key);
+    if (el) patch[key] = el.value;
+  }
+  const note = (document.querySelector('#q_note') || {}).value || '';
+  try {
+    await post(`/api/people/${id}/edit`, patch);
+    if (note.trim()) await post(`/api/people/${id}/note`, { kind: 'note', body: note.trim() });
+    QUICK_EDIT = null;
+    viewPeople();
+  } catch (err) {
+    const box = document.querySelector('#qeErr');
+    if (box) box.innerHTML = `<div class="err" style="margin-top:10px">${esc(err.message)}</div>`;
+  }
+}
+
 function sortBy(k) { if (STATE.sort === k) STATE.dir = STATE.dir === 'asc' ? 'desc' : 'asc'; else { STATE.sort = k; STATE.dir = 'asc'; } viewPeople(); }
-function clearFilters() { Object.assign(STATE, { q: '', status: '', programme: '', owner: '', source: '', due: '' }); viewPeople(); }
+function clearFilters() { Object.assign(STATE, { q: '', status: '', programme: '', owner: '', source: '', nationality: '', due: '' }); QUICK_EDIT = null; viewPeople(); }
 function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
 
 // ----------------------------------------------------------------- person --
 async function viewPerson(id) {
   const p = await api('/api/people/' + id);
   const openTask = p.tasks.find(t => !t.done_at);
-  const docs = p.documents.length ? p.documents.map(d => `<span class="chip" style="background:${d.state === 'received' ? '#0a7d3c' : d.state === 'expired' ? '#b06f00' : '#8b5b5b'}">${esc(d.name)}</span>`).join(' ') : '<span class="empty">no document record</span>';
+  // The Documents card was removed on 24.09.2026: documents are collected in the
+  // admissions portal, not here, and a half-mirrored checklist only invites
+  // somebody to trust the wrong copy.
   $('#view').innerHTML = `
   <p class="sub"><a href="#/people">&larr; People</a></p>
   <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
     <div>
       <h1 style="margin-bottom:4px">${esc(p.name)} ${stageChip(p.status)}</h1>
-      <p class="sub">${esc(p.email || '')} ${p.phone ? '&middot; ' + esc(p.phone) : ''}</p>
+      <p class="sub">${[p.email, p.phone].filter(Boolean).map(esc).join(' &middot; ') || 'no email or phone recorded'}</p>
     </div>
     <button class="btn sm ghost" onclick="openEdit('${p.id}')">Edit record</button>
   </div>
@@ -745,7 +1096,7 @@ async function viewPerson(id) {
           not shown. Corrections are private to whoever made them; admins see all of them.</div>` : ''}
         <div class="tl">${p.timeline.map(e => `<div class="ev ${esc(e.kind)}">
           <div class="when">${fmtDateTime(e.occurred_at)} &middot; ${originChip(e.origin)} &middot; ${esc(channelLabel(e.channel) || e.kind)}${e.actor ? ' &middot; ' + esc(e.actor) : ''}</div>
-          <div><b>${esc(e.subject || '')}</b></div>${e.body && !e.field ? `<div>${esc(e.body)}</div>` : ''}
+          <div><b>${esc(e.subject || '')}</b></div>${e.body && !e.field ? `<div class="said">${esc(e.body)}</div>` : ''}
           ${e.field ? `<div class="diff"><span class="was">${esc(e.old_value ?? '(empty)')}</span> &rarr; <span class="now">${esc(e.new_value ?? '(empty)')}</span></div>` : ''}</div>`).join('') || '<div class="empty">no events</div>'}</div>
       </div>
     </div>
@@ -788,10 +1139,6 @@ async function viewPerson(id) {
           ${(CFG.stages || []).map(s => `<option ${s.id === p.status ? 'selected' : ''}>${esc(s.id)}</option>`).join('')}
         </select>
         <div class="prov" style="margin-top:10px">The status follows the events by itself: when a step is done, the person moves to the stage that step belongs to. Forwards, never back. It can be overwritten by hand here.<br><br>${esc(CFG.provisional?.stages || '')}</div>
-      </div>
-      <div class="card">
-        <h3 style="margin:0 0 10px">Documents</h3>${docs}
-        <div class="prov" style="margin-top:10px">${esc(CFG.provisional?.documents || '')}</div>
       </div>
       ${(p.simEvents || []).length ? `<div class="card"><h3 style="margin:0 0 10px">Integration events</h3>
         ${p.simEvents.map(e => `<div class="trace ${e.status === 'ok' ? '' : 'bad'}">
@@ -864,11 +1211,29 @@ const PROV_TITLE = {
   operator: 'Typed by a person.',
   typed: 'The person typed it themselves.',
 };
+// The "What we know" card on a person's page. This was CALLED but never defined,
+// so every person qualified through CAR with a confirmed field crashed the page
+// with "fieldChip is not defined" - 4 of 12 in the demo, and 4 of 5 of the open
+// links in CAR Done. Present since the V1 commit and found by the 24.09 audit.
+const FIELD_LABEL = { interest: 'wants to study', education: 'education', question: 'asked about',
+  email: 'email', phone: 'phone', start: 'wants to start' };
+const fieldChip = (f) => `<span class="chipf ${esc(f.provenance)}"
+  title="${esc(PROV_TITLE[f.provenance] || '')}"><i>${esc(FIELD_LABEL[f.field] || f.field)}</i>
+  ${esc(f.value)}</span>`;
+
 const fieldCell = (f) => `<span class="fv ${esc(f.provenance)}" title="${esc(PROV_TITLE[f.provenance] || '')}">
   ${esc(f.value)}</span>`;
 
 let INBOX_STATE = 'new';
+let SHOW_IRRELEVANT = false;
+try { SHOW_IRRELEVANT = localStorage.getItem('crmShowIrrelevant') === '1'; } catch {}
 function setInboxState(v) { INBOX_STATE = v; viewInbox(); }
+function setShowIrrelevant(on) {
+  SHOW_IRRELEVANT = on;
+  try { localStorage.setItem('crmShowIrrelevant', on ? '1' : '0'); } catch {}
+  if (!on && INBOX_STATE === 'notrelevant') INBOX_STATE = 'new';
+  viewInbox();
+}
 
 async function viewInbox() {
   const d = await api('/api/intake?state=' + INBOX_STATE);
@@ -879,7 +1244,17 @@ async function viewInbox() {
     return f ? fieldCell(f) : '<span class="muted">-</span>';
   };
 
-  const row = (r) => `<tr class="row ${r.aged ? 'aged' : ''}">
+  // The whole row opens it. A single small button at the far right made people aim
+  // for a target the width of two words, when the obvious thing to click is the
+  // person's name.
+  const opens = (r) => INBOX_STATE === 'new' ? `openQualify(${r.id})`
+    : r.person_id ? `location.hash='#/person/${esc(r.person_id)}'`
+    : '';
+  const row = (r) => {
+    const go = opens(r);
+    return `<tr class="row ${r.aged ? 'aged' : ''} ${go ? 'clicky' : ''}"
+      ${go ? `tabindex="0" onclick="${go}" title="${INBOX_STATE === 'new'
+        ? 'Open it and decide what it is' : 'Open this person'}"` : ''}>
     <td><b>${esc(r.contact_name || r.contact_handle || 'Unknown')}</b>
       <div class="sub2">${esc(r.contact_handle || r.contact_phone || r.contact_email || '')}</div></td>
     <td>${esc(channelLabel(r.channel))}</td>
@@ -888,26 +1263,30 @@ async function viewInbox() {
     <td>${val(r, 'question')}</td>
     <td>${fmtDateTime(r.received_at)}
       ${r.aged ? '<div class="sub2 late" title="waiting since 09:00 yesterday">late</div>' : ''}</td>
-    ${INBOX_STATE === 'new' ? `<td class="act">
-      <button class="btn sm" onclick="openQualify(${r.id})">Look at it</button></td>`
-    : INBOX_STATE === 'qualified' ? `<td>${qualChip(r.qualification)}
-      ${r.person_id ? `<a href="#/person/${esc(r.person_id)}">open</a>` : ''}
+    ${INBOX_STATE === 'new' ? '<td></td>'
+    : INBOX_STATE === 'qualified' ? `<td class="act">${qualChip(r.qualification)}
       <div class="sub2">${esc(r.processed_by || '')}</div></td>`
     : `<td>${esc(r.archive_reason || '')}<div class="sub2">${esc(r.processed_by || '')}</div></td>`}
   </tr>`;
+  };
+
+  const irrelevant = (d.counts.archived || 0) + (d.counts.filtered || 0);
 
   $('#view').innerHTML = `
   <div class="todayhead">
-    <div><h1 style="margin:0">CAR</h1>
-      <p class="sub" style="margin:2px 0 0" title="Marketing looks at these. Nothing reaches Admissions on its own.">Channel Automation Results</p></div>
-    <a class="tilelink" href="#/reports">See the numbers &rarr;</a>
+    <div><h1 style="margin:0">Inbox</h1>
+      <p class="sub" style="margin:2px 0 0">Things that have come in. Nothing becomes an applicant on its own.</p></div>
+    <a class="tilelink" href="#/admissions">Go to Admissions &rarr;</a>
   </div>
 
   <div class="filters">
     ${tab('new', 'To look at', d.counts.new)}
     ${tab('qualified', 'Done', d.counts.qualified)}
-    ${tab('archived', 'Not relevant', d.counts.archived)}
-    ${d.counts.filtered ? tab('filtered', 'Junk filtered out', d.counts.filtered) : ''}
+    ${SHOW_IRRELEVANT ? tab('notrelevant', 'Not relevant', irrelevant) : ''}
+    <button class="btn sm ghost" style="margin-left:auto"
+      onclick="setShowIrrelevant(${SHOW_IRRELEVANT ? 'false' : 'true'})"
+      title="Sales pitches and anything somebody marked as not relevant. Hidden by default, because nobody works from that list.">
+      ${SHOW_IRRELEVANT ? 'Hide not relevant' : `Show not relevant${irrelevant ? ' (' + irrelevant + ')' : ''}`}</button>
   </div>
 
   <div class="card">
@@ -916,10 +1295,10 @@ async function viewInbox() {
       <th>Arrived</th><th></th></tr></thead>
     <tbody>${d.rows.map(row).join('')}</tbody></table>`
   : `<div class="empty">${INBOX_STATE === 'new' ? 'Nothing waiting. This queue is clear.' : 'Nothing here.'}
-     ${d.counts.new + d.counts.qualified === 0 ? '<a href="#" onclick="loadScenario();return false">Load the demo data</a>' : ''}</div>`}
+     </div>`}
   </div>
 
-  <p class="footnote" title="A dotted value was read from the message and nobody has confirmed it, so it is not counted anywhere. Obvious sales pitches never reach this list.">
+  <p class="footnote" title="A dotted value was read from the message and nobody has confirmed it, so it is not counted anywhere.">
     What the machine read is a suggestion until somebody agrees with it.</p>`;
 }
 
@@ -930,7 +1309,7 @@ async function loadScenario() {
   CFG.dataset = { dataset: 'demo', people: r.people };
   LASTRUN = {}; SIM = null;
   drawDatasetBadge(CFG.dataset);
-  location.hash = '#/car';
+  location.hash = '#/inbox';
   route();
 }
 
@@ -939,52 +1318,92 @@ async function openQualify(id) {
   const item = d.rows.find(r => r.id === id);
   if (!item) return;
   const extracted = item.fields.filter(f => f.provenance === 'extracted');
+  const readInterest = (extracted.find(f => f.field === 'interest') || {}).value || '';
+  const others = extracted.filter(f => f.field !== 'interest');
+  const progs = (CFG.programmes || []);
+  const suggested = suggestNextAction(item, readInterest);
   modal(item.contact_name || item.contact_handle || 'This contact', `
     <div class="sub" style="margin:0 0 10px">${esc(channelLabel(item.channel))} &middot; ${fmtDateTime(item.received_at)}</div>
     ${item.body ? `<div class="msg">${esc(item.body)}</div>` : ''}
-    ${extracted.length ? `<label style="margin-top:12px">Tick what is right</label>
-      ${extracted.map(f => `<label class="tick">
+
+    <label style="margin-top:12px">What do they want to study?</label>
+    <select id="qInterest">
+      <option value="">they have not said yet</option>
+      ${progs.map(pr => `<option ${pr === readInterest ? 'selected' : ''}>${esc(pr)}</option>`).join('')}
+    </select>
+    <div class="shothint">${readInterest
+      ? 'Read from the message. Leave it if it is right, change it if it is not.'
+      : 'The message did not say. If you already know, say so here.'}</div>
+
+    ${others.length ? `<label style="margin-top:12px">Tick what else is right</label>
+      ${others.map(f => `<label class="tick">
         <input type="checkbox" class="qConfirm" value="${esc(f.field)}" checked>
-        <span><b>${esc(f.field === 'interest' ? 'wants to study' : f.field)}</b> ${esc(f.value)}</span></label>`).join('')}`
-      : '<div class="prov" style="margin-top:12px">Nothing about studying was mentioned.</div>'}
-    <label style="margin-top:12px">Note</label>
-    <textarea id="qNote" rows="2" placeholder="What did they actually want"></textarea>
-    <div id="qRoute" class="prov" style="margin-top:10px"></div>
+        <span><b>${esc(f.field)}</b> ${esc(f.value)}</span></label>`).join('')}` : ''}
+
+    <label style="margin-top:12px">What happens next?</label>
+    <select id="qNext">
+      ${nextActionOptionsWithSuggestion(suggested)}
+    </select>
+    <div class="shothint">${suggested.label
+      ? `Suggested because ${esc(suggested.why)}. Change it to anything else.`
+      : 'Required. Nobody sits in Admissions without somebody scheduled to act.'}</div>
+
+    <label style="margin-top:12px">Note (optional)</label>
+    <textarea id="qNote" rows="2"
+      placeholder="Anything you know that the message does not say"></textarea>
     <div id="qErr"></div>
     <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn" onclick="doQualify(${id})">Save</button>
       <button class="btn ghost" onclick="openArchive(${id})">Not relevant</button>
       <button class="btn ghost" onclick="closeModal()">Cancel</button>
     </div>`);
-  updateRoutePreview();
-  document.querySelectorAll('.qConfirm').forEach(c => c.addEventListener('change', updateRoutePreview));
 }
 
-// The routing rule, shown as it will actually apply. Confirming an interest is
-// what sends it to Admissions, so the operator sees that before they save.
-function updateRoutePreview() {
-  const box = document.querySelector('#qRoute');
-  if (!box) return;
-  const hasInterest = [...document.querySelectorAll('.qConfirm:checked')].some(c => c.value === 'interest');
-  const level = hasInterest ? 'lead' : 'unclear';
-  const owner = (CFG.routing || {})[level];
-  box.innerHTML = hasInterest
-    ? `They told us what they want to study, so this goes to <b>${esc(owner)}</b>.`
-    : `Nobody can tell what they want yet, so this stays with <b>${esc(owner)}</b>.`;
-}
-
-async function doQualify(id) {
+async function doQualify(id, opts = {}) {
   const confirmFields = [...document.querySelectorAll('.qConfirm:checked')].map(c => c.value);
-  const qualification = confirmFields.includes('interest') ? 'lead' : 'unclear';
+  const interest = (document.querySelector('#qInterest') || {}).value || '';
+  const nextAction = (document.querySelector('#qNext') || {}).value || '';
+  const qualification = interest ? 'lead' : 'unclear';
+  const note = (document.querySelector('#qNote') || {}).value || '';
+  const body = { qualification, createPerson: true, note, confirmFields, nextAction,
+    stated: interest ? { interest } : {}, ...opts };
   try {
-    const r = await post(`/api/intake/${id}/qualify`, {
-      qualification, createPerson: true,
-      note: document.querySelector('#qNote').value, confirmFields,
-    });
+    const r = await post(`/api/intake/${id}/qualify`, body);
     closeModal();
     if (r.handoverGap) alert(`${r.handoverGap.problem}\n\n${r.handoverGap.action}`);
     viewInbox();
-  } catch (e) { $('#qErr').innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+  } catch (e) {
+    // a refused save keeps everything typed, and a duplicate answers with names
+    if (e.detail && e.detail.duplicate) return showDuplicate(id, e.detail, { interest, nextAction, note, confirmFields });
+    $('#qErr').innerHTML = `<div class="err">${esc(e.message)}</div>`;
+  }
+}
+
+// The duplicate rule, made understandable. It refuses and then shows WHO it
+// thinks this already is, so the operator either opens that person, attaches the
+// message to them, or says outright that it is somebody else.
+function showDuplicate(id, detail, kept) {
+  const row = (m) => `<div class="dupe">
+    <div><b>${esc(m.name)}</b>
+      <div class="sub2">${[m.email, m.phone].filter(Boolean).map(esc).join(' &middot; ') || 'no email or phone'}</div>
+      <div class="sub2">${esc(m.status || '')}${m.owner ? ' &middot; ' + esc(m.owner) : ''}
+        &middot; matched on ${m.matchedOn.map(esc).join(' and ')}</div></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="btn sm" onclick="doQualify(${id}, { personId: '${esc(m.id)}', createPerson: false })">
+        This is them</button>
+      <a class="btn sm ghost" href="#/person/${esc(m.id)}" onclick="closeModal()">Open</a>
+    </div></div>`;
+  $('#qErr').innerHTML = `
+    <div class="warn-box" style="margin-top:12px">
+      <b>${detail.strong ? 'We already have this person.' : 'This may be somebody we already have.'}</b>
+      ${detail.strong ? 'The email or phone number is the same.' : 'Only the name matches, so it could be two different people.'}
+      Nothing has been saved.
+    </div>
+    ${detail.matches.map(row).join('')}
+    <div style="margin-top:10px">
+      <button class="btn sm ghost" onclick="doQualify(${id}, { differentPerson: true })">
+        No, this is a different person</button>
+    </div>`;
 }
 
 async function openArchive(id) {
@@ -1017,7 +1436,7 @@ async function viewFollowup() {
   const counts = await api('/api/summary');
   const tab = (k, label, n) => `<button class="${STATE.fuTab === k ? 'on' : ''}" onclick="STATE.fuTab='${k}';viewFollowup()">${label}${n !== undefined ? ' (' + n + ')' : ''}</button>`;
   $('#view').innerHTML = `
-  <h1>Follow-up list</h1><p class="sub">Who needs action and when</p>
+  <h1>Follow-ups</h1><p class="sub">What has to happen, and when</p>
   <div class="tabs">${tab('overdue', 'Overdue', counts.overdue.length)}${tab('today', 'Today', counts.today.length)}${tab('week', 'This week')}${tab('open', 'All open')}</div>
   <div class="card">
   ${rows.length ? `<table><thead><tr><th>Person</th><th>Programme</th><th>Action</th><th>Due</th><th>Owner</th><th></th></tr></thead>
@@ -1091,62 +1510,176 @@ async function setAttendance(id, attended) { await post(`/api/registrations/${id
 // ---------------------------------------------------------------- reports --
 // One screen answers "how are we doing". Funnel, Reports and Metrics were three
 // screens for one question, so they are one screen now.
+// ----------------------------------------------------------------- reports --
+// Built for one job: the girls have a KPI meeting, they open this, they pick the
+// period, and they can read the numbers out without rebuilding them from a
+// spreadsheet first. Every figure is a count of rows, and what the CRM cannot
+// honestly measure yet is listed rather than left as a suspicious blank.
+
+let RPT = { from: '', to: '' };
+let RPT_PICK = null;
+
+// The report on screen is fixed. The download is not: somebody preparing for a
+// KPI meeting wants the two or three things that meeting is about, not everything
+// the CRM knows.
+async function openExport() {
+  const d = await api('/api/report/sections');
+  if (!RPT_PICK) RPT_PICK = new Set(d.defaults);
+  const row = (x) => `<label class="tick">
+    <input type="checkbox" class="xsec" value="${esc(x.id)}" ${RPT_PICK.has(x.id) ? 'checked' : ''}>
+    <span>${esc(x.label)}</span></label>`;
+  modal('Export CSV', `
+    <p class="sub" style="margin:0 0 10px">${esc(RPT.from || 'From the start')} to ${esc(RPT.to || 'today')}</p>
+    ${d.sections.map(row).join('')}
+    <div style="margin-top:14px;display:flex;gap:8px">
+      <button class="btn" onclick="doExport()">Download</button>
+      <button class="btn ghost" onclick="closeModal()">Cancel</button>
+    </div>`);
+}
+
+function doExport() {
+  const picked = [...document.querySelectorAll('.xsec:checked')].map(c => c.value);
+  if (!picked.length) return;
+  RPT_PICK = new Set(picked);
+  const qs = new URLSearchParams();
+  if (RPT.from) qs.set('from', RPT.from);
+  if (RPT.to) qs.set('to', RPT.to);
+  qs.set('sections', picked.join(','));
+  closeModal();
+  window.location.href = '/api/report.csv?' + qs;
+}
+
+function monthStartISO(d = new Date()) {
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)).toISOString().slice(0, 10);
+}
+function setPeriod(from, to) { RPT = { from, to }; viewReports(); }
+function setPeriodPreset(which) {
+  const now = new Date();
+  if (which === 'month') return setPeriod(monthStartISO(now), '');
+  if (which === 'last') {
+    const s = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+    const e = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 0));
+    return setPeriod(s.toISOString().slice(0, 10), e.toISOString().slice(0, 10));
+  }
+  if (which === 'year') return setPeriod(now.getUTCFullYear() + '-01-01', '');
+  return setPeriod('', '');
+}
+
 async function viewReports() {
-  const [f, m] = await Promise.all([api('/api/funnel'), api('/api/metrics/core')]);
-  const max = Math.max(1, ...f.steps.map(x => x.count));
-  const bar = (x) => `<a class="frow" href="${x.go || '#/people'}">
-    <span class="flabel">${esc(x.step)}</span>
-    <span class="bar"><i style="width:${Math.round(x.count / max * 100)}%"></i></span>
-    <b>${x.count}</b></a>`;
+  const qs = new URLSearchParams();
+  if (RPT.from) qs.set('from', RPT.from);
+  if (RPT.to) qs.set('to', RPT.to);
+  const r = await api('/api/report' + (qs.toString() ? '?' + qs : ''));
+  const s = r.summary;
+
+  const tile = (n, label, hint, alarm) => `<div class="tile ${alarm ? 'alarm' : ''}" title="${esc(hint)}">
+    <b>${n === null || n === undefined ? '-' : n}</b><span>${esc(label)}</span></div>`;
+
+  const bars = (list, total) => list.length ? list.map(b => `
+    <div class="brow">
+      <div class="blabel" title="${esc(b.value)}">${esc(b.value)}</div>
+      <div class="bar"><i style="width:${total ? Math.round(b.count / total * 100) : 0}%"></i></div>
+      <div class="bnum">${b.count}</div>
+    </div>`).join('') : '<div class="empty">nothing in this period</div>';
+
+  const sum = (list) => list.reduce((a, b) => a + b.count, 0);
+  const maxTrend = Math.max(1, ...r.trend.map(m => Math.max(m.newLeads, m.admitted)));
 
   $('#view').innerHTML = `
   <div class="todayhead">
     <div><h1 style="margin:0">Reports</h1>
-      <p class="sub" style="margin:2px 0 0" title="Every number is a count of records that exist. Nothing is estimated.">How are we doing</p></div>
+      <p class="sub" style="margin:2px 0 0">${esc(r.period.label)}</p></div>
     <div class="exports">
-      ${(CFG.exportFormats || []).map(fmt => `<a class="btn sm ghost" href="/api/export/funnel.${fmt}"
-        title="Download the whole report">${esc(EXPORT_LABEL[fmt] || fmt)}</a>`).join('')}
+      <button class="btn sm ghost" onclick="openExport()">Export CSV</button>
     </div>
+  </div>
+
+  <div class="filters">
+    <div class="viewswitch">
+      <button onclick="setPeriodPreset('month')">This month</button>
+      <button onclick="setPeriodPreset('last')">Last month</button>
+      <button onclick="setPeriodPreset('year')">This year</button>
+      <button onclick="setPeriodPreset('all')">Everything</button>
+    </div>
+    <div class="flab"><span>From</span><input type="date" id="rFrom" value="${esc(RPT.from)}"
+      onchange="setPeriod(this.value, RPT.to)"></div>
+    <div class="flab"><span>To</span><input type="date" id="rTo" value="${esc(RPT.to)}"
+      onchange="setPeriod(RPT.from, this.value)"></div>
   </div>
 
   <div class="tiles">
-    <a class="tile" href="#/people"><b>${m.newLeadsThisMonth}</b><span>new people this month</span></a>
-    <a class="tile" href="#/people"><b>${m.admissionsThisMonth}</b><span>admitted this month</span></a>
-    <a class="tile ${f.agedInbound ? 'alarm' : ''}" href="#/car"><b>${f.agedInbound}</b><span>waiting since yesterday</span></a>
-    <a class="tile ${f.overdueActions ? 'alarm' : ''}" href="#/followup"><b>${f.overdueActions}</b><span>overdue</span></a>
-    <a class="tile ${f.noNextAction ? 'alarm' : ''}" href="#/people?due=none"><b>${f.noNextAction}</b><span>no next step</span></a>
+    ${tile(s.newLeads, 'new leads', 'People whose first contact falls in this period.')}
+    ${tile(s.applications, 'applications', 'Arrived in this period and reached Application or beyond.')}
+    ${tile(s.admitted, 'admitted', 'Admitted during this period, whenever they first arrived.')}
+    ${tile(s.conversionPct === null ? '-' : s.conversionPct + '%', 'conversion', s.conversionOf)}
+    ${tile(s.activeApplicants, 'active now', 'Not admitted and not closed. Not limited to the period.')}
+    ${tile(s.overdue, 'overdue', 'Open next steps past their due date.', s.overdue > 0)}
+    ${tile(s.noNextAction, 'no next step', 'Active people with nothing scheduled. This should be zero.', s.noNextAction > 0)}
+    ${tile(s.medianDaysToAdmission, 'days to admit', 'Median first contact to admitted, for people admitted in this period.')}
+    ${tile(s.maritimeGraduates, 'maritime school',
+      `Counted from the education field. It is filled in for ${r.coverage.education.filled} of ${r.coverage.education.of} people who arrived in this period, so the real number is at least this.`)}
   </div>
-
-  <div class="card">
-    <h3 style="margin:0 0 12px">From first message to admitted</h3>
-    ${f.steps.map(bar).join('')}
-  </div>
+  <p class="sub" style="margin:-8px 0 16px">Education is recorded for
+    <b>${r.coverage.education.filled} of ${r.coverage.education.of}</b> and nationality for
+    <b>${r.coverage.nationality.filled} of ${r.coverage.nationality.of}</b> of the people who arrived
+    in this period. Both are typed in by hand, so a low number here means a habit, not a limitation.</p>
 
   <div class="grid2">
     <div class="card">
-      <h3 style="margin:0 0 10px">Where people stop</h3>
-      ${f.byStage.some(x => x.people) ? `<table><thead><tr><th>Stage</th><th>People</th><th title="Nobody has planned the next step for them">No next step</th></tr></thead>
-        <tbody>${f.byStage.filter(x => x.people || x.stuck).map(x => `<tr class="row" onclick="location.hash='#/people?status=${encodeURIComponent(x.stage)}'">
-          <td>${esc(x.stage)}</td><td>${x.people}</td>
-          <td>${x.stuck ? `<span class="pill late">${x.stuck}</span>` : '0'}</td></tr>`).join('')}</tbody></table>`
-        : '<div class="empty">Nobody in the pipeline yet.</div>'}
+      <h3 style="margin:0 0 4px">Twelve months</h3>
+      <p class="sub">Arrivals against admissions. Counts, not rates.</p>
+      <div class="trend">
+        ${r.trend.map(m => `<div class="tcol" title="${esc(m.month)}: ${m.newLeads} in, ${m.admitted} admitted">
+          <div class="tbars">
+            <i class="tin" style="height:${Math.round(m.newLeads / maxTrend * 100)}%"></i>
+            <i class="tad" style="height:${Math.round(m.admitted / maxTrend * 100)}%"></i>
+          </div>
+          <span>${esc(m.month.slice(5))}</span></div>`).join('')}
+      </div>
+      <p class="sub2" style="margin-top:8px"><i class="key tin"></i> arrived &nbsp; <i class="key tad"></i> admitted</p>
     </div>
+
     <div class="card">
-      <h3 style="margin:0 0 10px">Where they come from</h3>
-      ${f.byChannel.length ? `<table><thead><tr><th>Channel</th><th>Contacts</th><th>Became a lead</th><th>Waiting</th></tr></thead>
-        <tbody>${f.byChannel.map(c => `<tr class="row" onclick="location.hash='#/people?q=${encodeURIComponent(channelLabel(c.channel))}'">
-          <td>${esc(channelLabel(c.channel))}</td><td>${c.contacts}</td><td>${c.leads}</td>
-          <td>${c.waiting ? `<span class="pill warn">${c.waiting}</span>` : '0'}</td></tr>`).join('')}</tbody></table>`
-        : '<div class="empty">No inbound yet.</div>'}
+      <h3 style="margin:0 0 4px">By programme</h3>
+      <p class="sub">The programmes the KPI sheet already reports on.</p>
+      <table class="cartable"><thead><tr><th>Programme</th><th>New leads</th><th>Admitted</th></tr></thead>
+      <tbody>${r.programmes.map(x => `<tr class="row"><td><b>${esc(x.programme)}</b></td>
+        <td>${x.newLeads}</td><td>${x.admitted}</td></tr>`).join('')}</tbody></table>
     </div>
   </div>
 
-  ${f.dropOut.length ? `<div class="card">
-    <h3 style="margin:0 0 10px">Why people left</h3>
-    <table><tbody>${f.dropOut.map(r => `<tr><td>${esc(r.reason)}</td><td style="text-align:right">${r.n}</td></tr>`).join('')}</tbody></table>
-  </div>` : ''}
+  <div class="grid2">
+    ${[['source', 'Where they came from', ''],
+       ['programme', 'Programme', ''],
+       ['studyForm', 'Study form', ''],
+       ['education', 'Education', ''],
+       ['nationality', 'Nationality', ''],
+       ['stage', 'Stage right now', 'Everybody, not only this period.']]
+      .map(([key, title, hint]) => `<div class="card">
+        <h3 style="margin:0 0 4px">${esc(title)}</h3>
+        ${hint ? `<p class="sub">${esc(hint)}</p>` : ''}
+        ${bars(r.breakdowns[key], sum(r.breakdowns[key]))}
+      </div>`).join('')}
 
-  <p class="footnote" title="${esc(m.caution)}">${esc(m.conversionOf)}. ${f.filtered ? f.filtered + ' obvious sales pitches were filtered out before anybody saw them.' : ''}</p>`;
+    <div class="card">
+      <h3 style="margin:0 0 4px">Why people did not proceed</h3>
+      <p class="sub">All time. A reason is required before anybody is closed.</p>
+      ${bars(r.lostReasons, sum(r.lostReasons))}
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin:0 0 4px">What is still thin, and why</h3>
+    <p class="sub">Mostly these are not limits of the software. They are boxes nobody has filled in
+      yet, which is a different job from deciding what a number means.</p>
+    <table class="cartable"><thead><tr><th>Metric</th><th>Kind</th><th>Where it stands</th><th>What would fix it</th></tr></thead>
+      <tbody>${r.notMeasured.map(n => `<tr class="row">
+        <td><b>${esc(n.metric)}</b></td>
+        <td><span class="pill ${n.kind === 'needs a decision' ? 'warn' : 'calm'}">${esc(n.kind)}</span></td>
+        <td>${esc(n.why)}</td><td>${esc(n.toFix)}</td></tr>`).join('')}</tbody></table>
+  </div>
+
+  <p class="footnote" title="${esc(r.honesty.join(' '))}">${esc(r.honesty[0])}</p>`;
 }
 
 async function viewIntegrations(arg) {
@@ -1431,6 +1964,7 @@ const EDIT_FIELDS = [
   ['programme', 'Programme', 'programme'],
   ['study_form', 'Study form', 'studyForm'],
   ['education', 'Education', 'education'],
+  ['nationality', 'Nationality', 'nationality'],
   ['owner', 'Owner', 'owner'],
   ['notes', 'Notes', 'textarea'],
 ];
@@ -1439,6 +1973,7 @@ function selectFor(kind, value) {
   const list = kind === 'programme' ? (CFG.programmes || [])
     : kind === 'studyForm' ? (CFG.studyForms || [])
     : kind === 'education' ? (CFG.education || [])
+    : kind === 'nationality' ? (CFG.nationalities || [])
     : (CFG.owners || []);
   return ['<option value="">-</option>'].concat(list.map(v =>
     `<option ${String(value || '') === v ? 'selected' : ''}>${esc(v)}</option>`)).join('');
@@ -1705,9 +2240,376 @@ async function doNote(personId) {
 }
 
 // ------------------------------------------------------------------ boot --
+// ------------------------------------------------------------- pipeline -----
+// The board CAR feeds into. Columns are the configured stages and nothing here
+// invents a new one: the stage vocabulary is still provisional until Admissions
+// has walked their real process, so this reads config and never a literal list.
+//
+// A drop is a real stage change. It is saved the same way the person page saves
+// one, so it lands in the history with who moved it and where from.
+
+let DRAG_ID = null;
+
+async function viewAdmissions() {
+  const data = await api('/api/people?' + new URLSearchParams({ sort: 'last_contact_at', dir: 'desc' }));
+  const stages = (CFG.stages || []);
+  const byStage = {};
+  for (const st of stages) byStage[st.id] = [];
+  for (const r of data.rows) (byStage[r.status] ||= []).push(r);
+
+  const card = (r) => `<div class="pcard" draggable="true" data-id="${esc(r.id)}"
+      ondragstart="pDragStart(event,'${esc(r.id)}')" ondragend="pDragEnd(event)"
+      onclick="location.hash='#/person/${esc(r.id)}'">
+    <div class="pname">${esc(r.name)}</div>
+    <div class="pmeta">${[r.programme, r.education, channelLabel(r.source_channel)]
+      .filter(Boolean).map(esc).join(' &middot; ') || 'nothing recorded yet'}</div>
+    ${r.owner ? `<div class="powner">${esc(r.owner)}</div>` : ''}
+    ${r.next_action ? `<div class="pnext">${esc(r.next_action)} &middot; ${dueText(r.next_action_at)}</div>`
+      : '<div class="pnext none">no next step</div>'}
+  </div>`;
+
+  const column = (st) => {
+    const rows = byStage[st.id] || [];
+    return `<div class="pcol" data-stage="${esc(st.id)}"
+        ondragover="pDragOver(event)" ondragleave="pDragLeave(event)" ondrop="pDrop(event,'${esc(st.id)}')">
+      <div class="pcolhead">
+        <span class="pdot" style="background:${esc(st.colour)}"></span>
+        <span class="pcolname" title="${esc(st.label)}">${esc(st.label)}</span>
+        <span class="pcount">${rows.length}</span>
+      </div>
+      <div class="pcolbody">${rows.map(card).join('') || '<div class="pempty">empty</div>'}</div>
+    </div>`;
+  };
+
+  $('#view').innerHTML = `
+  <div class="todayhead">
+    <div><h1 style="margin:0">Admissions</h1>
+      <p class="sub" style="margin:2px 0 0">${data.count} people in the journey. Drag somebody into the next stage.</p></div>
+    <a class="tilelink" href="#/inbox">Back to Inbox &rarr;</a>
+  </div>
+  <div class="board">${stages.map(column).join('')}</div>
+  <p class="footnote" title="The columns come from the configuration, not from the code.">
+    These stage names are a first draft. Admissions has not yet walked through their real process,
+    so treat the columns as a first draft, not as the agreed journey.</p>`;
+}
+
+function pDragStart(e, id) {
+  DRAG_ID = id;
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', id);
+  e.target.classList.add('dragging');
+}
+function pDragEnd(e) { e.target.classList.remove('dragging'); DRAG_ID = null; }
+function pDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('over'); }
+function pDragLeave(e) { e.currentTarget.classList.remove('over'); }
+
+async function pDrop(e, stage) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('over');
+  const id = DRAG_ID || e.dataTransfer.getData('text/plain');
+  if (!id) return;
+  const row = e.currentTarget.querySelector(`[data-id="${CSS.escape(id)}"]`);
+  if (row) return;                       // dropped back where it came from
+  // Stopping work on somebody still needs a reason. The board does not get to
+  // skip that just because the move was a drag.
+  if (stage === (CFG.stageRoles || {}).closed) {
+    DRAG_ID = null;
+    return openCloseReason(id);
+  }
+  try {
+    await post(`/api/people/${id}/status`, { status: stage });
+  } catch (err) {
+    alert(err.message);
+  }
+  DRAG_ID = null;
+  viewAdmissions();
+}
+
+// ------------------------------------------------------------ feedback ------
+// Anybody testing the app can say what is broken or what would help, from the
+// screen they are standing on, without leaving it. The screenshot is shrunk and
+// re-encoded here as a courtesy to the network; the server trusts none of it.
+
+const FB_MAX_EDGE = 1600;
+const FB_TARGET_BYTES = 1200000;
+// tried in order until the result fits
+const FB_LADDER = [[1600, 0.85], [1600, 0.7], [1200, 0.7], [1000, 0.6]];
+
+let FB = { open: false, view: 'menu', kind: 'BUG', shot: null, busy: false };
+
+function fbSupportsWebp() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 1;
+  // asking for webp on a browser that has none quietly hands back a PNG, so the
+  // answer has to be read off the result rather than trusted
+  return c.toDataURL('image/webp').startsWith('data:image/webp');
+}
+
+function fbClose() {
+  FB.open = false; FB.view = 'menu'; FB.shot = null; FB.busy = false;
+  const el = document.querySelector('#helpPanel');
+  if (el) el.remove();
+}
+
+function fbToggle() {
+  if (FB.open) return fbClose();
+  FB.open = true; FB.view = 'menu'; FB.shot = null;   // always reopens on the menu
+  fbDraw();
+}
+
+function fbDraw() {
+  let el = document.querySelector('#helpPanel');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'helpPanel';
+    el.className = 'helppanel';
+    document.body.appendChild(el);
+  }
+  el.innerHTML = FB.view === 'menu' ? fbMenuHtml() : fbFormHtml();
+  if (FB.view === 'form') {
+    const ta = el.querySelector('#fbText');
+    if (ta) { ta.focus(); ta.oninput = fbSync; }
+    fbSync();
+  }
+}
+
+function fbMenuHtml() {
+  return `<h4>Help</h4>
+    <button class="helpitem" onclick="fbOpenForm()">Send feedback
+      <span>Something broken, or an idea. Read by ${esc(fbReaders())}.</span></button>
+    ${mayReadFeedback() ? `<button class="helpitem" onclick="fbClose();location.hash='#/feedback'">Feedback inbox
+      <span>Everything everybody has sent.</span></button>` : ''}`;
+}
+
+function fbOpenForm() { FB.view = 'form'; fbDraw(); }
+function fbSetKind(k) { FB.kind = k; fbDraw(); }
+
+function fbFormHtml() {
+  const placeholder = FB.kind === 'BUG'
+    ? 'What did you expect, and what happened instead?'
+    : 'What would make this easier to use?';
+  const text = FB.text || '';
+  return `<h4>Send feedback</h4>
+    <div class="kindtoggle">
+      <button class="${FB.kind === 'IDEA' ? 'on' : ''}" onclick="fbSetKind('IDEA')">An idea</button>
+      <button class="${FB.kind === 'BUG' ? 'on' : ''}" onclick="fbSetKind('BUG')">Something broken</button>
+    </div>
+    <textarea id="fbText" rows="4" maxlength="2000" placeholder="${esc(placeholder)}">${esc(text)}</textarea>
+    <div id="fbShot">${fbShotHtml()}</div>
+    <div id="fbErr"></div>
+    <div class="goeshint">Goes to ${esc(fbReaders())}. It stays on this machine and is never emailed.</div>
+    <div class="sendrow">
+      <div class="pathstamp" title="the screen this will be filed against">${esc(fbPath())}</div>
+      <div style="display:flex;gap:6px">
+        <button class="btn sm ghost" onclick="fbClose()">Cancel</button>
+        <button class="btn sm" id="fbSend" onclick="fbSend()" disabled>Send</button>
+      </div>
+    </div>`;
+}
+
+function fbShotHtml() {
+  if (FB.busy) return '<div class="shothint">Preparing the screenshot...</div>';
+  if (!FB.shot) {
+    return `<button class="btn sm ghost" onclick="document.querySelector('#fbFile').click()">Attach a screenshot</button>
+      <input type="file" id="fbFile" accept="image/png,image/jpeg,image/webp" style="display:none"
+        onchange="fbPick(this.files[0]); this.value='';">
+      <div class="shothint">Optional. Or press Ctrl+V to paste one.</div>`;
+  }
+  const kb = Math.round(FB.shot.bytes / 1024);
+  return `<div class="shotrow">
+      <img src="${FB.shot.url}" alt="">
+      <div class="shotmeta">${FB.shot.w} by ${FB.shot.h}, ${kb} KB</div>
+      <button class="xbtn" title="remove" onclick="fbRemoveShot()">&times;</button>
+    </div>`;
+}
+
+function fbRemoveShot() { FB.shot = null; fbRedrawShot(); }
+
+// Only this part of the panel is redrawn, so a half-written message is never lost.
+function fbRedrawShot() {
+  const box = document.querySelector('#fbShot');
+  if (box) box.innerHTML = fbShotHtml();
+  fbSync();
+}
+
+function fbSync() {
+  const ta = document.querySelector('#fbText');
+  if (ta) FB.text = ta.value;
+  const send = document.querySelector('#fbSend');
+  if (send) send.disabled = FB.busy || FB.sending || (FB.text || '').trim().length < 4;
+}
+
+const fbPath = () => location.hash || '#/today';
+// Named, not implied. Somebody about to report a problem should know who reads it.
+const fbReaders = () => {
+  const who = CFG.feedbackReaders || [];
+  if (!who.length) return 'the people building this';
+  return who.length === 1 ? who[0] : who.slice(0, -1).join(', ') + ' and ' + who[who.length - 1];
+};
+
+async function fbPick(file) {
+  if (!file) return;
+  const err = document.querySelector('#fbErr');
+  if (err) err.innerHTML = '';
+  if (!file.type || !file.type.startsWith('image/')) {
+    return fbShotError('That file is not an image.');
+  }
+  FB.busy = true; fbRedrawShot();
+  try {
+    FB.shot = await fbShrink(file);
+  } catch (e) {
+    FB.shot = null;
+    FB.busy = false;
+    return fbShotError(e.message);
+  }
+  FB.busy = false;
+  fbRedrawShot();
+}
+
+// The typed message is never touched by an image failure.
+function fbShotError(message) {
+  FB.busy = false;
+  fbRedrawShot();
+  const err = document.querySelector('#fbErr');
+  if (err) err.innerHTML = `<div class="err" style="margin:10px 0 0">${esc(message)}</div>`;
+}
+
+function fbLoadImage(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('That image could not be opened.')); };
+    img.src = url;
+  });
+}
+
+async function fbShrink(file) {
+  const img = await fbLoadImage(file);
+  // WebP if the browser really makes WebP, JPEG otherwise. Never PNG: a screenshot
+  // of a whole page as PNG is several megabytes for no gain.
+  const type = fbSupportsWebp() ? 'image/webp' : 'image/jpeg';
+  for (const [edge, quality] of FB_LADDER) {
+    const scale = Math.min(1, edge / Math.max(img.width, img.height));
+    const w = Math.max(1, Math.round(img.width * scale));
+    const h = Math.max(1, Math.round(img.height * scale));
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const ctx = c.getContext('2d');
+    // a transparent PNG would come out black without this
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, w, h);
+    ctx.drawImage(img, 0, 0, w, h);
+    // re-encoding through a canvas drops EXIF, so GPS and camera data never travel
+    const url = c.toDataURL(type, quality);
+    const bytes = Math.round((url.length - url.indexOf(',') - 1) * 3 / 4);
+    if (bytes <= FB_TARGET_BYTES) return { url, bytes, w, h };
+  }
+  throw new Error('That image is too detailed, crop it to the part that matters and try again.');
+}
+
+async function fbSend() {
+  fbSync();
+  if (FB.sending) return;
+  FB.sending = true;
+  const send = document.querySelector('#fbSend');
+  if (send) send.disabled = true;
+  try {
+    await post('/api/feedback', {
+      kind: FB.kind, body: FB.text, path: fbPath(),
+      screenshot: FB.shot ? FB.shot.url : null,
+    });
+    FB.sending = false;
+    const el = document.querySelector('#helpPanel');
+    if (el) el.innerHTML = '<div class="fbthanks"><div class="tick-big">&#10003;</div>Thank you.</div>';
+    FB.text = '';
+    drawFeedbackBadge();          // the count moves the moment something is sent
+    setTimeout(fbClose, 1600);
+  } catch (e) {
+    FB.sending = false;
+    const err = document.querySelector('#fbErr');
+    if (err) err.innerHTML = `<div class="err" style="margin:10px 0 0">${esc(e.message)}</div>`;
+    fbSync();
+  }
+}
+
+// Paste is listened for on the document, because the focus sits inside the panel
+// rather than on the textarea when somebody hits Ctrl+V straight after a capture.
+document.addEventListener('paste', (e) => {
+  if (!FB.open || FB.view !== 'form') return;
+  const items = [...((e.clipboardData && e.clipboardData.items) || [])];
+  const item = items.find(i => i.kind === 'file' && String(i.type).startsWith('image/'));
+  if (!item) return;
+  e.preventDefault();
+  fbPick(item.getAsFile());
+});
+
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && FB.open) fbClose(); });
+// mousedown, not click: a click that starts inside the panel and ends outside
+// must not count as leaving it
+document.addEventListener('mousedown', (e) => {
+  if (!FB.open) return;
+  if (e.target.closest('#helpPanel') || e.target.closest('#helpBtn')) return;
+  fbClose();
+});
+
+// ------------------------------------------------------- the feedback inbox --
+async function viewFeedback() {
+  if (!mayReadFeedback()) {
+    $('#view').innerHTML = `<h1>Feedback</h1>
+      <div class="prov">This inbox is read by <b>${esc(fbReaders())}</b> and by nobody else.
+      You are acting as <b>${esc(ACTOR)}</b>, so it is not shown. Being an admin is not enough:
+      feedback has its own shorter list.</div>`;
+    return;
+  }
+  const d = await api('/api/admin/feedback');
+  const open = d.rows.filter(r => !r.handledAt).length;
+  const row = (r) => `<div class="fbrow ${r.handledAt ? 'handled' : ''}">
+    <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
+      <div><span class="pill ${r.kind === 'BUG' ? 'warn' : 'calm'}">${r.kind === 'BUG' ? 'Something broken' : 'An idea'}</span></div>
+      <button class="btn sm ghost" onclick="fbHandle(${r.id}, ${r.handledAt ? 'false' : 'true'})">
+        ${r.handledAt ? 'Reopen' : 'Mark handled'}</button>
+    </div>
+    <div class="fbbody">${esc(r.body)}</div>
+    ${r.screenshot ? `<img class="shot" src="/api/admin/feedback/${r.id}/screenshot?as=${encodeURIComponent(ACTOR)}"
+      alt="screenshot" onclick="fbZoom(${r.id})">` : ''}
+    <div class="fbmeta">
+      <span>${esc(r.author || 'unknown')}</span>
+      <span>${fmtDateTime(r.createdAt)}</span>
+      ${r.path ? `<a href="${esc(r.path)}">${esc(r.path)}</a>` : '<span>no page recorded</span>'}
+      ${r.handledAt ? `<span>handled ${fmtDateTime(r.handledAt)}</span>` : ''}
+    </div>
+  </div>`;
+  $('#view').innerHTML = `
+  <div class="todayhead"><div><h1 style="margin:0">Feedback</h1>
+    <p class="sub" style="margin:2px 0 0">${open} open, ${d.rows.length} in total &middot;
+      for ${esc(fbReaders())}</p></div></div>
+  <div class="prov">Everything here was typed by somebody using the app. It is stored in this
+    machine's own database and has never been sent anywhere. There is no login yet, so this screen
+    is restricted to the Admin seat rather than to those two people by name.</div>
+  ${d.rows.length ? d.rows.map(row).join('') : '<div class="card"><div class="empty">Nothing has been sent yet.</div></div>'}`;
+}
+
+async function fbHandle(id, handled) {
+  await api(`/api/admin/feedback/${id}?as=${encodeURIComponent(ACTOR)}`, {
+    method: 'PATCH', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ handled, by: ACTOR }),
+  });
+  viewFeedback();
+  drawFeedbackBadge();
+}
+
+function fbZoom(id) {
+  const box = document.createElement('div');
+  box.className = 'lightbox';
+  box.innerHTML = `<img src="/api/admin/feedback/${id}/screenshot?as=${encodeURIComponent(ACTOR)}" alt="">`;
+  box.onclick = () => box.remove();
+  document.body.appendChild(box);
+}
+
 (async () => {
   CFG = await api('/api/config');
-  $('#ver').textContent = CFG.version || 'prototype';
+  $('#ver').innerHTML = 'CRM &middot; ' + (CFG.version || 'prototype');
   drawDatasetBadge(CFG.dataset || {});
   document.addEventListener('keydown', (e) => {
     // a clickable row is a control, so it answers Enter and Space

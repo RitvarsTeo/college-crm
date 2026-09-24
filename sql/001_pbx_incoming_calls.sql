@@ -73,7 +73,7 @@ revoke all on public.pbx_incoming_calls from anon, authenticated;
 
 -- ------------------------------------------------------------ HOW TO APPLY --
 -- 1. Read this file. It grants nothing to anon or authenticated on purpose.
--- 2. Apply it to the College CRM Supabase project (SQL editor, or the Supabase
+-- 2. Apply it to the Academy CRM Supabase project (SQL editor, or the Supabase
 --    MCP apply_migration with the name `001_pbx_incoming_calls`).
 -- 3. Confirm: select relrowsecurity from pg_class where relname = 'pbx_incoming_calls';
 --    It must come back true.

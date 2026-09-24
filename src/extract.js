@@ -52,7 +52,10 @@ const EDUCATION_WORDS = [
 const QUESTION_WORDS = {
   tuition: ['price', 'cost', 'how much', 'tuition', 'fee', 'cena', 'maksā'],
   documents: ['document', 'papers', 'certificate', 'dokument'],
-  dates: ['deadline', 'when does', 'when do', 'termiņ'],
+  // Admission is open all year, so there IS no deadline. Somebody asking about
+  // one has the wrong idea, and the reply corrects it. The words stay because
+  // people really do ask that; what changes is what we suggest doing about it.
+  dates: ['deadline', 'when does', 'when do', 'when can i start', 'termiņ'],
   information: ['more information', 'more info', 'tell me', 'can you tell', 'informācij', 'info'],
 };
 
