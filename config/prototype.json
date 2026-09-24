@@ -956,20 +956,27 @@
       "decidedOn": "24.09.2026",
       "doNotReopen": true,
       "note": "Account \"Novikontas\", monthly plan, 2,827 subscribers. Audience c6ab4facba, 2,779 members."
+    },
+    "whatsappNumber": {
+      "question": "Which phone number do we use for WhatsApp Business?",
+      "answer": "+371 23111114 - the Higher Education number.",
+      "decidedBy": "Marina",
+      "decidedOn": "24.09.2026",
+      "doNotReopen": true,
+      "note": "This removes the INPUT blocker only. The Meta side still has to be built: WABA, register the number, app, webhook. That is work, not a question."
+    },
+    "phoneButtonsConfirmed": {
+      "question": "Is the 1 / 2 / 3 button routing on the phone line correct?",
+      "answer": "YES. Confirmed as the existing live setup.",
+      "decidedBy": "Marina",
+      "decidedOn": "24.09.2026",
+      "doNotReopen": true,
+      "note": "Together with pbxQueueIsTheButton this closes the phone routing entirely. The PBX API already exposes the queue, and the queue is the button."
     }
   },
   "openQuestions": {
     "_what": "The ONLY things nobody at Novikontas has answered yet. Everything else is in `settled`. The Desktop guide and every readiness document are generated from THIS list, so a question that has been answered cannot come back.",
     "_rule": "Before adding one: check `settled` first. If it is there, it is answered.",
-    "whatsappNumber": {
-      "ask": "Is there a spare phone number we can use for WhatsApp Business?",
-      "why": "It cannot be a number already in use on ordinary WhatsApp. Meta ties the number to the business account permanently.",
-      "who": "Inside Novikontas",
-      "blocks": [
-        "whatsapp"
-      ],
-      "status": "Ritvars has to check."
-    },
     "workspaceAdmin": {
       "ask": "Who is our Google Workspace administrator, and when can they spend twenty minutes on it?",
       "why": "Only an administrator can let a service account read edu@novikontas.org. Not Ieva, not Tetiana. The Google Form does NOT need them - it needs whoever created the form to run a short script, which is work, not a question.",
@@ -1017,5 +1024,12 @@
     "webhooksConfigured": 0,
     "checkedOn": "24.09.2026",
     "_note": "Read from the live Mailchimp API. The API key lives in the Grand Opening hub .env.local and is never copied into this project. A Mailchimp event is ACTIVITY ABOUT SOMEBODY, not automatically a new person - a newsletter subscriber is not a lead."
+  },
+  "whatsapp": {
+    "number": "+371 23111114",
+    "numberBelongsTo": "Higher Education",
+    "confirmedBy": "Marina",
+    "confirmedOn": "24.09.2026",
+    "_note": "The number is settled. What remains is the Meta build: WhatsApp Business Account, register this number against it, connect the app, point the webhook at us. None of that is a question for anybody at Novikontas."
   }
 }

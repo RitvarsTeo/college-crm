@@ -231,7 +231,7 @@
       "dedupKey": "channel + message id",
       "rateLimit": "Messaging limits apply to what we SEND, not to what arrives.",
       "readiness": "waiting_for_external_access",
-      "externalBlocker": "A phone number that is not already on consumer WhatsApp, and business verification.",
+      "externalBlocker": "The Meta build: a WhatsApp Business Account, +371 23111114 registered against it, the app connected and business verification. The NUMBER is settled - Marina confirmed it on 24.09.2026 - so this is work, not a question.",
       "weControl": [
         "the endpoint",
         "signature verification",
@@ -248,12 +248,12 @@
         "a phone number id",
         "an access token"
       ],
-      "externalActionRequired": "Find a spare number, register it, verify the business.",
+      "externalActionRequired": "Register +371 23111114 as the WhatsApp Business number and complete business verification at Meta. Nobody at Novikontas has to be asked anything first.",
       "howWeTest": "Simulate from DEV CONTROL.",
       "howWeGoLive": "Deploy, register the number, set the webhook, send one real message, switch to live.",
       "howWeDisable": "Remove the webhook at Meta, or set the mode to off here.",
       "operationalNote": "WhatsApp being part of the same Meta Business Suite inbox as Facebook and Instagram is NOT VERIFIED. Do not claim it. Access today: Ieva, Laura, Marina. Not Tetiana. Access is not ownership.",
-      "blockerKind": "question"
+      "blockerKind": "work"
     },
     "mailchimp": {
       "label": "Mailchimp",

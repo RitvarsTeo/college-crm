@@ -347,7 +347,10 @@ for cid in BLOCKED:
         w('- [ ] Copy the **App ID** and **App Secret** from the app settings')
         w('- [ ] Connect the Facebook Page to the app')
         w('- [ ] Request permission to receive messages and **submit for review**')
-        w('- [ ] For WhatsApp only: register a spare number and verify the business')
+        w('- [ ] For WhatsApp only: register **%s** (the Higher Education number, confirmed '
+          'by %s on %s) against the WhatsApp Business Account, and verify the business'
+          % (cfg['whatsapp']['number'], cfg['whatsapp']['confirmedBy'],
+             cfg['whatsapp']['confirmedOn']))
         w('')
         w('**Send me the App ID and App Secret by password manager. Never by chat.**')
         w('')

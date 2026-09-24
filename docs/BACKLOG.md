@@ -407,3 +407,20 @@ parked by decision rather than silently blocked.
 **Remaining unknowns: 3 live, 1 parked.** A WhatsApp number, the Google Workspace administrator,
 a TeleGroup API token. Parked: whether LinkedIn or TikTok allow this at all.
 
+## 24.09.2026 - Marina closed WhatsApp and the phone buttons
+
+- **WhatsApp number: +371 23111114**, the Higher Education number. Confirmed by Marina.
+- **Phone buttons 1 / 2 / 3 confirmed** as the existing live routing.
+
+Both are now in `settled` with `doNotReopen`. WhatsApp moved from a `question` blocker to a
+`work` blocker: the number was the input we lacked, and what remains is the Meta build - a
+WhatsApp Business Account, the number registered against it, the app connected, the webhook
+pointed at us, business verification. None of that is a question for anybody at Novikontas.
+
+Together with `pbxQueueIsTheButton`, the phone routing is closed entirely. The PBX API already
+exposes the queue and the queue IS the button. The phone channel now waits on one thing only:
+an API token from TeleGroup.
+
+**Remaining unknowns: 3 live, 1 parked.** The Google Workspace administrator, a TeleGroup API
+token, and the spam word list from Tetiana. Parked: whether LinkedIn or TikTok allow this at all.
+
