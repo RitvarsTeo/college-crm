@@ -448,3 +448,51 @@ answer did.
 **One human unknown remains: the Google Workspace administrator.** Everything else is either
 known, technically actionable, or waiting on a provider.
 
+## 24.09.2026 - four faults that only a real provider shape would have found
+
+Every one of these passed 282 tests. All four were proved against the running
+server BEFORE being fixed, and each fix was then proved by breaking it again.
+
+| # | What | Consequence |
+|---|---|---|
+| 1 | No GET handshake route. `GET /api/inbound/facebook?hub.challenge=...` answered **404**. | Meta could never have been connected. It never gets as far as a message: it will not save a subscription whose challenge is not echoed back. |
+| 2 | Every body went through `JSON.parse`. Mailchimp only ever posts `application/x-www-form-urlencoded`. | A real Mailchimp webhook answered **400 "the payload is not readable JSON"**. |
+| 3 | The website adapter read consent as `raw.consent_admissions === true`. An HTML checkbox arrives as the STRING `"true"`. | A real form with **both consent boxes ticked recorded consent as NOT GIVEN**. Consent is a legal record. |
+| 4 | `config/channels.json` declared `/api/cron/gmail-poll` and nothing implemented it. | The register read as ready for a route that did not exist. |
+
+What they share: all four passed when driven by JSON fixtures we wrote
+ourselves, and none survived the shape a provider actually sends.
+
+**Built**
+
+- `handshake()` in `src/inbound.js` - Meta's verify token compared in constant
+  time and the exact challenge echoed as plain text; Mailchimp's URL check
+  answered. Wrong token 403, missing token 503, and the real token is never
+  echoed back in an error.
+- `parseInboundBody()` - form-encoded (including Mailchimp's `data[email]`
+  bracket notation and repeated keys), JSON, an undeclared content type, and the
+  Gmail Pub/Sub envelope unwrapped from base64.
+- `truthy()` in `src/adapters.js` - a ticked box in any of true/on/yes/1/Jā;
+  anything not clearly yes, including an absent box, is NOT consent.
+- `channel_handshake` table, so `webhookVerified` reports a handshake that
+  really happened instead of a hardcoded `false`.
+- `lib/gmail.js` and `api/cron/gmail-poll.js` - the whole Gmail path that does
+  not need the administrator: the JWT assertion with `sub=edu@novikontas.org`,
+  read-only scope, the poll window, header and multipart flattening, watch
+  expiry, and `unauthorized_client` reported as *the administrator has not
+  allowed this* rather than as 401. It refuses before making a request when
+  there are no credentials, so a call that was never made is never reported as
+  "nothing to do".
+- `META_VERIFY_TOKEN` added to `.env.example` and to the register.
+
+**One regression I caused and caught:** the handshake pattern `[a-z_]+` also
+matched `GET /api/inbound/events`, and the observability view went blank. Three
+existing tests failed, which is what they are for.
+
+**Tests: 326 passing** (282 + 26 connection + 18 gmail). One of the new tests
+walks every `pollPath` in the register and fails if the file does not exist, so
+fault 4 cannot recur.
+
+Nothing is enabled. Every channel is still off, no secret is set, and no
+provider has been contacted.
+

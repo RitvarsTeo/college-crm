@@ -185,6 +185,13 @@ CREATE TABLE IF NOT EXISTS feedback_screenshots (
   CHECK (size_bytes = length(data) AND size_bytes > 0),
   CHECK (mime_type IN ('image/png', 'image/jpeg', 'image/webp'))
 );
+
+CREATE TABLE IF NOT EXISTS channel_handshake (
+  channel TEXT PRIMARY KEY,          -- one per channel: the latest answer wins
+  verified_at TEXT NOT NULL,         -- when the provider last checked we were here
+  how TEXT NOT NULL,                 -- which mechanism answered, never a secret
+  remote TEXT                        -- what the provider said about itself
+);
 `;
 
 // A test opens this in memory. The server opens a file, because a prototype that

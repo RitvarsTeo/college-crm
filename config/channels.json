@@ -98,7 +98,7 @@
       "dedupKey": "channel + gmail message id",
       "rateLimit": "Gmail API quota per user. Polling every few minutes is well inside it.",
       "readiness": "waiting_for_external_access",
-      "externalBlocker": "A Google Cloud project, a service account, and a Workspace ADMIN granting domain-wide delegation for edu@novikontas.org.",
+      "externalBlocker": "Domain-wide delegation for the service account, which only the Google Workspace administrator can grant. Everything on our side is built: the poll route, the JWT assertion with sub=edu@novikontas.org, read-only scope, message flattening and watch expiry.",
       "weControl": [
         "the polling schedule",
         "what we extract",
@@ -168,7 +168,9 @@
         "Configure webhook and API permissions",
         "Test a Facebook message and a lead",
         "Test identity resolution into the Inbox"
-      ]
+      ],
+      "handshakeEnv": "META_VERIFY_TOKEN",
+      "handshake": "GET the webhook path with hub.mode, hub.verify_token and hub.challenge. We echo the challenge as plain text or Meta will not save the subscription."
     },
     "messenger": {
       "label": "Messenger",
@@ -210,7 +212,9 @@
         "Connect Messenger through the same Meta setup",
         "Configure the webhook",
         "Test an inbound Messenger message into the Inbox"
-      ]
+      ],
+      "handshakeEnv": "META_VERIFY_TOKEN",
+      "handshake": "GET the webhook path with hub.mode, hub.verify_token and hub.challenge. We echo the challenge as plain text or Meta will not save the subscription."
     },
     "instagram": {
       "label": "Instagram",
@@ -252,7 +256,9 @@
         "Configure webhook and API permissions",
         "Test an Instagram message",
         "Test identity resolution into the Inbox"
-      ]
+      ],
+      "handshakeEnv": "META_VERIFY_TOKEN",
+      "handshake": "GET the webhook path with hub.mode, hub.verify_token and hub.challenge. We echo the challenge as plain text or Meta will not save the subscription."
     },
     "whatsapp": {
       "label": "WhatsApp",
@@ -298,7 +304,9 @@
         "Test that an existing person is matched, not duplicated",
         "Test an unknown number",
         "Test Inbox filtering and routing"
-      ]
+      ],
+      "handshakeEnv": "META_VERIFY_TOKEN",
+      "handshake": "GET the webhook path with hub.mode, hub.verify_token and hub.challenge. We echo the challenge as plain text or Meta will not save the subscription."
     },
     "mailchimp": {
       "label": "Mailchimp",
@@ -335,7 +343,8 @@
         "Connect the account to the CRM",
         "Map the relevant events",
         "Test through to the Inbox and the Person"
-      ]
+      ],
+      "handshake": "GET the webhook path. Mailchimp checks the URL answers before it will save it, and sends no challenge."
     },
     "open_day": {
       "label": "Open Day",

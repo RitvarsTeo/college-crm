@@ -16,7 +16,8 @@ import { buildPayload, scenariosFor, allScenarios, CHANNEL_LABELS, META_GROUP } 
 import { report as buildReport, reportRows, periodOf, EXPORT_SECTIONS, DEFAULT_SECTIONS } from './reports.js';
 import * as snapshot from './snapshot.js';
 import { buildDemo } from './demo.js';
-import { verifyRequest, channelDef, channelIds, allChannelStatus, BadInbound } from './inbound.js';
+import { verifyRequest, channelDef, channelIds, allChannelStatus, BadInbound,
+         parseInboundBody, handshake } from './inbound.js';
 
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -1031,6 +1032,32 @@ const server = http.createServer(async (req, res) => {
     //
     // NOTHING here is live. A channel only accepts a payload when its mode is
     // 'test' or 'live', and no mode is set in this repository.
+    // The handshake. A provider asks whether we are really here BEFORE it ever
+    // sends a message, and will not save the subscription until we answer
+    // correctly. Meta wants its exact hub.challenge back as plain text;
+    // Mailchimp just wants the GET to succeed. This route did not exist until
+    // 24.09.2026, which made connecting Facebook impossible - it never got as
+    // far as a message.
+    // `events` is a route, not a channel, so the pattern alone is not enough:
+    // it swallowed GET /api/inbound/events and the observability view went blank.
+    if (req.method === 'GET' && /^\/api\/inbound\/[a-z_]+$/.test(p)
+        && channelDef(p.split('/')[3])) {
+      const channel = p.split('/')[3];
+      const h = handshake(channel, url, process.env);
+      if (h.ok) {
+        db.prepare(`INSERT INTO channel_handshake (channel, verified_at, how, remote)
+                    VALUES (?, ?, ?, ?)
+                    ON CONFLICT(channel) DO UPDATE SET verified_at = excluded.verified_at,
+                      how = excluded.how, remote = excluded.remote`)
+          .run(channel, new Date().toISOString(), h.how,
+               String(req.headers['user-agent'] || '').slice(0, 200) || null);
+        res.writeHead(h.status, { 'Content-Type': h.contentType || 'text/plain' });
+        return res.end(h.body == null ? '' : String(h.body));
+      }
+      return json(res, h.status, { error: 'the handshake was not accepted', why: h.how,
+        missingSecret: Boolean(h.missingSecret) });
+    }
+
     if (req.method === 'POST' && /^\/api\/inbound\/[a-z_]+$/.test(p)) {
       const channel = p.split('/')[3];
       const def = channelDef(channel);
@@ -1054,9 +1081,14 @@ const server = http.createServer(async (req, res) => {
           missingSecret: Boolean(check.missingSecret) });
       }
 
-      let payload;
-      try { payload = rawBody ? JSON.parse(rawBody) : {}; }
-      catch { return json(res, 400, { error: 'the payload is not readable JSON' }); }
+      // Not every provider sends JSON. Mailchimp only ever sends form-encoded,
+      // and Gmail arrives inside a Pub/Sub envelope.
+      const read = parseInboundBody(channel, req.headers['content-type'], rawBody);
+      if (!read.ok) {
+        recordInbound(channel, null, 'error', read.how);
+        return json(res, 400, { error: read.how });
+      }
+      const payload = read.payload;
 
       try {
         const ev = adapt(channel, payload);
@@ -1066,7 +1098,7 @@ const server = http.createServer(async (req, res) => {
         recordInbound(channel, ev.externalEventId, r.duplicate ? 'duplicate' : r.filtered ? 'filtered' : 'queued', check.how);
         return json(res, 200, { ok: true, channel, externalEventId: ev.externalEventId,
           outcome: r.duplicate ? 'already had it' : r.filtered ? 'filtered out before the queue' : 'waiting to be looked at',
-          inboundId: r.id, verified: check.how });
+          inboundId: r.id, verified: check.how, read: read.as });
       } catch (err) {
         recordInbound(channel, null, 'error', err.message);
         if (err instanceof BadInbound) return json(res, 400, { error: err.message, detail: err.detail });
@@ -1235,7 +1267,9 @@ const server = http.createServer(async (req, res) => {
       for (const id of channelIds()) {
         const row = db.prepare(`SELECT COUNT(*) n, MAX(received_at) last FROM inbound WHERE channel = ?`).get(id);
         const ok = db.prepare(`SELECT MAX(received_at) last FROM inbound WHERE channel = ? AND state != 'filtered'`).get(id);
-        counts[id] = { events: row.n, lastEventAt: row.last, lastSuccessAt: ok.last };
+        const hs = db.prepare('SELECT verified_at, how FROM channel_handshake WHERE channel = ?').get(id);
+        counts[id] = { events: row.n, lastEventAt: row.last, lastSuccessAt: ok.last,
+          handshakeAt: hs ? hs.verified_at : null, handshakeHow: hs ? hs.how : null };
       }
       return json(res, 200, {
         channels: allChannelStatus(process.env, counts),

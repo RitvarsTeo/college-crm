@@ -136,6 +136,133 @@ export function verifyRequest(channel, req, { secret, rawBody, url } = {}) {
   return fn(req, secret, rawBody, url);
 }
 
+// -------------------------------------------------------- reading the body --
+//
+// A provider sends what a provider sends, and only one of ours sends JSON by
+// choice. Mailchimp posts application/x-www-form-urlencoded and nothing else;
+// an HTML form posts the same. Gmail arrives wrapped in a Pub/Sub envelope with
+// the real payload base64 inside it.
+//
+// This was JSON.parse for every channel, so a real Mailchimp webhook answered
+// 400 "the payload is not readable JSON" - proved against the running server on
+// 24.09.2026 before this was written.
+
+// Mailchimp writes nested fields as data[email], and a repeated key as
+// data[merges][INTERESTS][]. Rebuilt into the object the adapter expects.
+function expand(target, key, value) {
+  const path = [];
+  const head = key.indexOf('[');
+  if (head === -1) { path.push(key); }
+  else {
+    path.push(key.slice(0, head));
+    for (const m of key.slice(head).matchAll(/\[([^\]]*)\]/g)) path.push(m[1]);
+  }
+  let node = target;
+  for (let i = 0; i < path.length - 1; i += 1) {
+    const k = path[i];
+    if (typeof node[k] !== 'object' || node[k] === null) node[k] = {};
+    node = node[k];
+  }
+  const last = path[path.length - 1];
+  if (last === '') {                    // data[x][] - an array
+    const owner = path[path.length - 2];
+    void owner;
+    if (!Array.isArray(node.__list)) node.__list = [];
+    node.__list.push(value);
+    return;
+  }
+  // a key sent twice becomes a list rather than the last value silently winning
+  if (Object.prototype.hasOwnProperty.call(node, last)) {
+    node[last] = Array.isArray(node[last]) ? node[last].concat(value) : [node[last], value];
+  } else {
+    node[last] = value;
+  }
+}
+
+export function parseFormEncoded(text) {
+  const out = {};
+  for (const [k, v] of new URLSearchParams(text || '')) expand(out, k, v);
+  return out;
+}
+
+// Gmail push does not carry the message. It carries a Pub/Sub envelope saying
+// the mailbox changed, and the real content is base64 in message.data.
+export function unwrapPubSub(obj) {
+  const data = obj && obj.message && obj.message.data;
+  if (typeof data !== 'string') return null;
+  let text;
+  try { text = Buffer.from(data, 'base64').toString('utf8'); } catch { return null; }
+  try { return { ...JSON.parse(text), _pubsubMessageId: obj.message.messageId || null }; }
+  catch { return null; }
+}
+
+export function parseInboundBody(channel, contentType, rawBody) {
+  const type = String(contentType || '').split(';')[0].trim().toLowerCase();
+  const text = rawBody == null ? '' : String(rawBody);
+
+  if (type === 'application/x-www-form-urlencoded') {
+    return { ok: true, payload: parseFormEncoded(text), as: 'form-encoded' };
+  }
+  if (!text) return { ok: true, payload: {}, as: 'empty' };
+
+  let obj;
+  try { obj = JSON.parse(text); }
+  catch {
+    // A provider that declares nothing and sends key=value is still readable,
+    // and refusing it would be refusing a real event over a missing header.
+    if (text.includes('=') && !text.trimStart().startsWith('{')) {
+      return { ok: true, payload: parseFormEncoded(text), as: 'form-encoded, undeclared' };
+    }
+    return { ok: false, how: 'the payload is not readable JSON or form data' };
+  }
+  if (channel === 'gmail') {
+    const inner = unwrapPubSub(obj);
+    if (inner) return { ok: true, payload: inner, as: 'Pub/Sub envelope, unwrapped' };
+  }
+  return { ok: true, payload: obj, as: 'JSON' };
+}
+
+// ------------------------------------------------------------- handshakes --
+//
+// Before a provider ever sends a message it asks whether we are really there.
+// Meta GETs the webhook with hub.challenge and will not save the subscription
+// until the exact challenge comes back as plain text. Without this, connecting
+// Facebook is impossible - it never gets as far as a message. It returned 404
+// until 24.09.2026, proved against the running server.
+
+export const META_CHANNELS = ['facebook', 'instagram', 'messenger', 'whatsapp'];
+
+export function handshake(channel, url, env = process.env) {
+  const def = channelDef(channel);
+  if (!def) return { ok: false, status: 404, how: 'unknown channel' };
+
+  if (META_CHANNELS.includes(channel)) {
+    const mode = url.searchParams.get('hub.mode');
+    const token = url.searchParams.get('hub.verify_token');
+    const challenge = url.searchParams.get('hub.challenge');
+    const want = env.META_VERIFY_TOKEN;
+    if (!want) return { ok: false, status: 503, how: 'META_VERIFY_TOKEN is not set', missingSecret: true };
+    if (mode !== 'subscribe') return { ok: false, status: 400, how: 'hub.mode was not subscribe' };
+    if (!challenge) return { ok: false, status: 400, how: 'no hub.challenge to echo' };
+    // constant time, and a wrong token must not be distinguishable by timing
+    const a = Buffer.from(String(token || ''));
+    const b = Buffer.from(String(want));
+    const match = a.length === b.length && crypto.timingSafeEqual(a, b);
+    if (!match) return { ok: false, status: 403, how: 'the verify token did not match' };
+    return { ok: true, status: 200, body: challenge, contentType: 'text/plain',
+      how: 'Meta verify token matched, challenge echoed' };
+  }
+
+  // Mailchimp GETs the URL when somebody adds it in the audience settings, and
+  // refuses to save it unless that GET succeeds. It sends no challenge.
+  if (channel === 'mailchimp') {
+    return { ok: true, status: 200, body: 'ok', contentType: 'text/plain',
+      how: 'Mailchimp URL check answered' };
+  }
+
+  return { ok: false, status: 405, how: 'this channel does not use a GET handshake' };
+}
+
 // --------------------------------------------------------------- readiness --
 //
 // What is actually true about a channel right now, computed rather than claimed.
@@ -165,7 +292,11 @@ export function channelStatus(channel, env = process.env, counts = {}) {
     mode, state,
     credentialsPresent,
     secretsNeeded: needs,                       // names only, never values
-    webhookVerified: false,                     // only a real handshake can set this
+    // Only a real handshake sets this. The caller passes what the database
+    // recorded when the provider last checked we were here; nothing infers it.
+    webhookVerified: Boolean(counts.handshakeAt),
+    webhookVerifiedAt: counts.handshakeAt || null,
+    webhookVerifiedHow: counts.handshakeHow || null,
     readyForTest: def.direction !== 'manual' && def.readiness !== 'capability_unconfirmed',
     externalBlocker: def.externalBlocker || null,
     externalActionRequired: def.externalActionRequired || null,

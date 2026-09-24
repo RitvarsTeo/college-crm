@@ -19,6 +19,24 @@ const iso = (v) => {
 const str = (v) => (v === undefined || v === null || v === '' ? null : String(v));
 const now = () => new Date().toISOString();
 
+// A ticked HTML checkbox arrives as the STRING "true", or "on", or whatever the
+// form author chose. `=== true` recorded a real form's ticked consent boxes as
+// consent NOT GIVEN - proved against the running server on 24.09.2026. Consent
+// is a legal record, so it is read deliberately here rather than guessed.
+//
+// An unticked checkbox is not sent at all, so absence must stay false, and an
+// explicit "false"/"off"/"no"/"0" must stay false too.
+const YES = new Set(['true', 'on', 'yes', 'y', '1', 'jā', 'ja']);
+const NO = new Set(['false', 'off', 'no', 'n', '0', '', 'nē', 'ne']);
+export function truthy(v) {
+  if (v === true) return true;
+  if (v === false || v === undefined || v === null) return false;
+  const t = String(v).trim().toLowerCase();
+  if (YES.has(t)) return true;
+  if (NO.has(t)) return false;
+  return false;                       // anything unrecognised is NOT consent
+}
+
 // A provider that sends no usable id gives us nothing to deduplicate on, and a
 // retry would become a second message. Refusing is safer than guessing.
 function need(id, channel, what) {
@@ -39,7 +57,7 @@ export const ADAPTERS = {
     extracted: { programme: str(raw.programme), study_form: str(raw.study_form) },
     attribution: { utm_source: str(raw.utm_source), utm_medium: str(raw.utm_medium),
       utm_campaign: str(raw.utm_campaign), gclid: str(raw.gclid) },
-    consent: { admissions: raw.consent_admissions === true, marketing: raw.consent_marketing === true },
+    consent: { admissions: truthy(raw.consent_admissions), marketing: truthy(raw.consent_marketing) },
     raw,
   }),
 
@@ -59,7 +77,7 @@ export const ADAPTERS = {
       senderPhone: pick('Tālrunis', 'phone', 'Phone'),
       extracted: { programme: pick('Programma', 'programme'), study_form: pick('Studiju forma', 'study_form') },
       consent: { admissions: true,
-        marketing: ['Jā', 'Yes', 'true'].includes(String(pick('Piekrītu saņemt informāciju par studijām') || '')) },
+        marketing: truthy(pick('Piekrītu saņemt informāciju par studijām')) },
       raw: { ...raw, _formId: str(raw.formId) },
     });
   },

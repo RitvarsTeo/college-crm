@@ -316,7 +316,13 @@ for i, cid in enumerate(ORDER, 1):
     w('| How it arrives | %s |' % c['mechanism'])
     path = c.get('webhookPath') or c.get('pollPath')
     w('| Address | %s |' % ('`' + path + '`' if path else 'not applicable'))
-    w('| Setting to create | %s |' % ('`' + c['secretEnv'] + '`' if c.get('secretEnv') else 'none'))
+    secrets = [c['secretEnv']] if c.get('secretEnv') else []
+    if c.get('handshakeEnv') and c['handshakeEnv'] not in secrets:
+        secrets.append(c['handshakeEnv'])
+    w('| Settings to create | %s |'
+      % (', '.join('`' + x + '`' for x in secrets) if secrets else 'none'))
+    if c.get('handshake'):
+        w('| Before any message | %s |' % c['handshake'])
     w('| Turn it on with | `CHANNEL_MODE_%s=live` |' % cid.upper())
     w('| Turn it off with | %s |' % c['howWeDisable'])
     w('')
