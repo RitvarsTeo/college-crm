@@ -838,14 +838,30 @@ const server = http.createServer(async (req, res) => {
       const id = Number(p.split('/')[3]);
       const b = await body(req);
       const r = qualify(db, id, { ...b, by: actorOf(req, b) });
-      return r.error ? json(res, 400, r) : json(res, 200, r);
+      if (r.error) return json(res, 400, r);
+      // Aigars's complaint was "I do two steps and nothing happens": the row
+      // vanished and nothing said where the person went. The answer to that is
+      // not another screen, it is telling the caller the outcome, so the Inbox
+      // can say it. Additive only - intake.qualify() is untouched.
+      if (r.personId) {
+        const person = db.prepare(`SELECT id, name, status, owner, programme FROM people WHERE id = ?`).get(r.personId);
+        const task = db.prepare(`SELECT label, due_at FROM tasks
+          WHERE person_id = ? AND done_at IS NULL ORDER BY due_at LIMIT 1`).get(r.personId);
+        r.landed = person ? { ...person, next: task ? task.label : null,
+          dueAt: task ? task.due_at : null } : null;
+      }
+      return json(res, 200, r);
     }
 
     if (req.method === 'POST' && /^\/api\/intake\/\d+\/archive$/.test(p)) {
       const id = Number(p.split('/')[3]);
       const b = await body(req);
       const r = archive(db, id, { ...b, by: actorOf(req, b) });
-      return r.error ? json(res, 400, r) : json(res, 200, r);
+      if (r.error) return json(res, 400, r);
+      const row = db.prepare('SELECT contact_name, contact_handle FROM inbound WHERE id = ?').get(id);
+      r.landed = { archived: true, who: row ? (row.contact_name || row.contact_handle || 'it') : 'it',
+        reason: b.reason || null };
+      return json(res, 200, r);
     }
 
     // Notifications, in the only shape that works without a login: what is

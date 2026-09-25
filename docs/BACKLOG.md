@@ -644,3 +644,47 @@ ChatGPT's summary says the suite is **282 tests**; it is **343**. It also lists
 "Aigars' current UI changes" as done. Rows 106 to 108 are his clearest request
 and they are not done, which is why the Inbox still has three tabs.
 
+## 25.09.2026 - group A and B built
+
+### Two corrections to yesterday's plan, found by inspecting instead of trusting it
+
+- **Row 110 was already done.** `src/app.html` has had
+  `const ALIAS = { '#/car': '#/inbox', '#/pipeline': '#/admissions' }` and a router that
+  accepts both names. I raised it from grepping route strings without reading the router.
+  **Status corrected to BUILT**, nothing changed.
+- **Follow-ups was never broken.** The route is `#/followup`, singular. My earlier note said
+  navigation "could fall back to Today"; I had typed `#/followups`. Verified working with a row
+  in it. **No fix needed and none made.**
+
+### What changed
+
+| # | What | Status |
+|---|---|---|
+| 106 | The Inbox has **one** queue. The Done tab, the Not relevant tab and the show/hide control are gone, with `INBOX_STATE` and `SHOW_IRRELEVANT` deleted. | **BUILT** |
+| 107 | Qualifying now **reports where the person went**. `POST /api/intake/:id/qualify` returns `landed` (id, name, stage, programme, next action, due date) and the Inbox shows it as a one-line receipt: *"Raivis Bresis is now in Admissions - New - NAV. Next: Reply by 2026-09-26. Open"*. It clears on the next visit, because it is a receipt and not a place. | **BUILT** |
+| 108 | Not touched. Renaming "unclear" is Ieva's wording to choose, and inventing it would be deciding her business language for her. **Still OPEN, for Ieva.** | **SAID** |
+| 109 | Not yet asserted as a rule. The receipt makes the landing visible, which is most of the value, but the invariant itself is not tested. | **SAID** |
+| 110 | Already done before today. | **BUILT** |
+| 111 | Admissions cards are **name, programme, next step + date**. Education and channel dropped; owner shows only when it is not the usual Admissions, which removed it from 10 of 12 cards. | **BUILT** |
+| 112 | People shows **search, stage, next step** and a **More filters** control. Programme, nationality, owner and came-from fold away. A hidden filter that is actually set forces the panel open, so a filter can never be filtering while invisible. | **BUILT** |
+| 113 | Today lost the duplicated `Ieva - Admissions` line, which the sidebar already shows, and the Table / One-at-a-time pair became one toggle. | **BUILT** |
+| 114 | The explanatory paragraphs are gone from Today, Inbox and Admissions. **Three were kept on purpose**: the Reports honesty note, the History "there is no login yet" warning, and "Nothing is deleted" on the archive dialog. Each informs the decision being made on that screen, which is the test that was applied - not whether prose exists. | **BUILT** |
+| 115 | The count lives in the heading: `Inbox · 2`, `People · 12`, `Admissions · 12`, `Today · 4`. | **BUILT** |
+| 116 | The Inbox row already opens the qualify dialog, which is its editing surface. No second editing workflow was added, deliberately. | **BUILT** |
+
+### Where archived items went
+
+Removing the Not relevant board means an archived item has no board in the CRM. It is **not
+deleted**: `state=notrelevant` still returns it through the API, a test asserts that, and the
+Console can read it. If Ieva ever needs to un-archive something from the screen, that is a new
+row, not a silent re-addition of the board Aigars asked to remove.
+
+### Verified
+
+346 tests pass. Manually in a browser against demo data: the Inbox shows one queue with no tabs;
+qualifying Raivis Bresis hit the duplicate guard, "This is them" completed it, the receipt
+appeared, the queue went 3 to 2 and the heading followed; the receipt was gone on return;
+Admissions cards read name, programme, next step; People went from six open dropdowns to two;
+a hidden filter set to NAV refused to collapse and filtered 12 people to 5; Follow-ups renders
+its own screen at `#/followup`.
+

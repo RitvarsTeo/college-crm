@@ -205,3 +205,92 @@ test('the demo walk-through really qualifies what it claims to qualify', async (
     'nobody in the demo is left with nothing scheduled');
   assert.ok(people.count > 0);
 });
+
+// ----------------------------------------------------- where did they GO? --
+//
+// Aigars's report was "sanāk es izdaru 2 soļus bet nekas nenotiek" - I do two
+// steps and nothing happens. The row vanished from the Inbox and nothing said
+// where the person went, so it read as a dead end. The Inbox now has ONE queue
+// and qualifying returns what happened, which the screen shows as a receipt.
+//
+// That receipt is the replacement for the Done board, so it has to carry
+// everything the board used to: who, where they went, and what happens next.
+
+test('qualifying says where the person went, what they want and what is next', async (t) => {
+  const { child, port } = await startServer();
+  t.after(() => child.kill());
+  const base = `http://127.0.0.1:${port}`;
+
+  await send(base, '/api/intake/receive', 'machine', {
+    channel: 'website', externalId: 'landed_1', name: 'Anete Liepa',
+    email: 'anete.liepa@inbox.lv', phone: '+37126554400',
+    body: 'I would like to study navigation, when can I apply?' });
+
+  const queue = await get(base, '/api/intake?state=new', 'Ieva');
+  const id = queue.rows[0].id;
+
+  const r = await send(base, `/api/intake/${id}/qualify`, 'Ieva', {
+    qualification: 'lead', createPerson: true, differentPerson: true,
+    confirmFields: ['interest'], stated: { interest: 'NAV' },
+    nextAction: 'Call and establish interest' });
+
+  assert.equal(r.ok, true);
+  assert.ok(r.landed, 'the answer must say where they landed, or the Inbox cannot show it');
+  assert.equal(r.landed.name, 'Anete Liepa');
+  assert.equal(r.landed.id, r.personId);
+  assert.ok(r.landed.status, 'which stage they are in now');
+  assert.equal(r.landed.programme, 'NAV', 'what they want');
+  assert.equal(r.landed.next, 'Call and establish interest', 'what happens next');
+  assert.ok(r.landed.dueAt, 'and when');
+
+  // and the queue is now empty, because there is no second board to sit on
+  const after = await get(base, '/api/intake?state=new', 'Ieva');
+  assert.equal(after.rows.length, 0);
+
+  // the person really is in Admissions, not only in the message
+  const people = await get(base, '/api/people', 'Ieva');
+  assert.equal(people.count, 1);
+  assert.equal(people.rows[0].name, 'Anete Liepa');
+  assert.ok(people.rows[0].next_action, 'with the next step attached to them');
+});
+
+test('marking not relevant also says what happened', async (t) => {
+  const { child, port } = await startServer();
+  t.after(() => child.kill());
+  const base = `http://127.0.0.1:${port}`;
+
+  await send(base, '/api/intake/receive', 'machine', {
+    channel: 'instagram', externalId: 'landed_2', name: 'Promo Agency',
+    body: 'partnership opportunity for your school' });
+  const id = (await get(base, '/api/intake?state=new', 'Tetiana')).rows[0].id;
+
+  const r = await send(base, `/api/intake/${id}/archive`, 'Tetiana',
+    { reason: 'Not a prospective student' });
+  assert.equal(r.ok, true);
+  assert.ok(r.landed, 'the screen has to be able to say what it just did');
+  assert.equal(r.landed.archived, true);
+  assert.equal(r.landed.who, 'Promo Agency');
+  assert.equal(r.landed.reason, 'Not a prospective student');
+
+  // it leaves the work queue, and it is NOT deleted
+  assert.equal((await get(base, '/api/intake?state=new', 'Tetiana')).rows.length, 0);
+  const gone = await get(base, '/api/intake?state=notrelevant', 'Tetiana');
+  assert.equal(gone.rows.length, 1, 'archived is out of the way, never destroyed');
+  assert.equal(gone.rows[0].contact_name, 'Promo Agency');
+});
+
+test('the Inbox has exactly one work queue on screen', () => {
+  // The screen is one file, so this reads it. Three boards - To look at, Done,
+  // Not relevant - were the fault Aigars reported; only the first is a queue.
+  const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
+  const view = app.slice(app.indexOf('async function viewInbox()'),
+    app.indexOf('async function loadIntakeDemo()'));
+
+  assert.ok(view.includes("api('/api/intake?state=new')"),
+    'it reads the one queue directly, with no state to switch');
+  for (const gone of ['INBOX_STATE', 'SHOW_IRRELEVANT', 'setInboxState', "'Done'",
+    'Show not relevant']) {
+    assert.ok(!view.includes(gone), 'the Inbox still carries ' + gone);
+  }
+  assert.ok(view.includes('LAST_RESULT'), 'and it shows what just happened instead');
+});

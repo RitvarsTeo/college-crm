@@ -219,6 +219,10 @@ tr.aged td:first-child{box-shadow:inset 3px 0 0 var(--amb,#d98a1e)}
 .act{white-space:nowrap}
 .tick{display:flex;gap:9px;align-items:flex-start;font-size:13px;padding:5px 0;cursor:pointer}
 .tick input{width:auto;margin-top:2px}
+.done-strip{margin:0 0 12px;padding:10px 14px;border:1px solid var(--line);border-left:3px solid var(--line);
+  border-radius:0 8px 8px 0;background:var(--card);font-size:13.5px}
+.done-strip.ok{border-left-color:var(--ok,#2f855a)}
+.done-strip a{margin-left:8px}
 .footnote{font-size:11.5px;color:var(--t4);margin-top:12px;cursor:help;
   border-bottom:1px dotted var(--rule2);display:inline-block;padding-bottom:1px}
 
@@ -525,6 +529,17 @@ const fmtDateTime = (s) => {
   } catch { return String(s).slice(0, 16).replace('T', ' '); }
 };
 const todayStr = () => new Date().toISOString().slice(0, 10);
+// The four rarely-used filters fold away. Six dropdowns open at once made
+// People read as another dashboard; Aigars asked for it to be the database.
+// They open automatically whenever one of them is actually set, so a filter can
+// never be hiding while it is still filtering.
+let MORE_FILTERS = false;
+const EXTRA_FILTERS = ['programme', 'nationality', 'owner', 'source'];
+const extraFilterCount = () => EXTRA_FILTERS.filter(k => STATE[k]).length;
+const anyFilter = () => Boolean(STATE.q || STATE.status || STATE.due || extraFilterCount());
+function setMoreFilters(on) { MORE_FILTERS = on; viewPeople(); }
+function setFilterOpenIfHidden() { if (extraFilterCount()) MORE_FILTERS = true; }
+
 let CFG = {}, STATE = { q: '', status: '', programme: '', owner: '', source: '', nationality: '', due: '', sort: 'created_at', dir: 'desc', fuTab: 'overdue' };
 
 // Channel simulator state, used by the research screen. Lost when the Inbox was
@@ -920,18 +935,14 @@ async function viewToday() {
 
   $('#view').innerHTML = `
   <div class="todayhead">
-    <div><h1 style="margin:0">Today</h1>
-      <p class="sub" style="margin:2px 0 0">${esc(ACTOR)}${myRole() ? ' &middot; ' + esc(myRole()) : ''}${
-        t.scope === 'all' && t.role ? ' &middot; showing everyone' : ''}</p></div>
+    <div><h1 style="margin:0">Today${items.length ? ' &middot; ' + items.length : ''}</h1></div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-      ${t.role ? `<div class="viewswitch" title="Today names one person at the top, so by default it shows that person's work. The sidebar count is for the same role.">
+      ${t.role ? `<div class="viewswitch" title="Whose work to show. The sidebar count follows the same choice.">
         <button class="${TODAY_SCOPE === 'mine' ? 'on' : ''}" onclick="setTodayScope('mine')">${esc(t.role)}</button>
         <button class="${TODAY_SCOPE === 'all' ? 'on' : ''}" onclick="setTodayScope('all')">Everyone</button>
       </div>` : ''}
-      <div class="viewswitch">
-        <button class="${TODAY_VIEW === 'table' ? 'on' : ''}" onclick="setTodayView('table')">Table</button>
-        <button class="${TODAY_VIEW === 'card' ? 'on' : ''}" onclick="setTodayView('card')">One at a time</button>
-      </div>
+      <button class="btn sm ghost" onclick="setTodayView('${TODAY_VIEW === 'table' ? 'card' : 'table'}')"
+        title="Switch how this list is laid out">${TODAY_VIEW === 'table' ? 'One at a time' : 'Table'}</button>
     </div>
   </div>
   <div class="swipe">${picker}</div>
@@ -968,6 +979,7 @@ function funnelHtml(byStage) {
 let QUICK_EDIT = null;        // the id of the row opened for editing, if any
 
 async function viewPeople() {
+  setFilterOpenIfHidden();          // a filter that is set is never hidden
   const qs = new URLSearchParams({ q: STATE.q, status: STATE.status, programme: STATE.programme, owner: STATE.owner,
     source_channel: STATE.source, nationality: STATE.nationality, due: STATE.due, sort: STATE.sort, dir: STATE.dir });
   const data = await api('/api/people?' + qs);
@@ -995,24 +1007,28 @@ async function viewPeople() {
 
   $('#view').innerHTML = `
   <div class="todayhead">
-    <div><h1 style="margin:0">People</h1><p class="sub" style="margin:2px 0 0">${data.count} records</p></div>
+    <div><h1 style="margin:0">People &middot; ${data.count}</h1></div>
     <a class="tilelink" href="#/admissions">Open Admissions &rarr;</a>
   </div>
   <div class="filters">
     ${field('Search', `<input id="fq" placeholder="name, email, phone, programme, source, id" value="${esc(STATE.q)}" style="min-width:290px">`)}
     ${field('Stage', `<select id="fstatus" onchange="setFilter('status', this.value)">${opt((CFG.stages || []).map(s => s.id), STATE.status)}</select>`)}
+    ${field('Next step', `<select id="fdue" onchange="setFilter('due', this.value)">
+      <option value="">all</option>
+      <option value="overdue" ${STATE.due === 'overdue' ? 'selected' : ''}>overdue</option>
+      <option value="none" ${STATE.due === 'none' ? 'selected' : ''}>without a next step</option></select>`)}
+    <div class="flab"><span></span><button class="btn ghost" onclick="setMoreFilters(${MORE_FILTERS ? 'false' : 'true'})">${
+      MORE_FILTERS ? 'Fewer filters' : 'More filters' + (extraFilterCount() ? ' (' + extraFilterCount() + ')' : '')}</button></div>
+    ${anyFilter() ? `<div class="flab"><span></span><button class="btn ghost" onclick="clearFilters()">Clear</button></div>` : ''}
+  </div>
+  ${MORE_FILTERS ? `<div class="filters">
     ${field('Programme', `<select id="fprog" onchange="setFilter('programme', this.value)">${opt(CFG.programmes || [], STATE.programme)}</select>`)}
     ${field('Nationality', `<select id="fnat" onchange="setFilter('nationality', this.value)">${opt(CFG.nationalities || [], STATE.nationality)}</select>`)}
     ${field('Owner', `<select id="fowner" onchange="setFilter('owner', this.value)">${opt(CFG.owners || [], STATE.owner)}</select>`)}
     ${field('Came from', `<select id="fsource" onchange="setFilter('source', this.value)">${
       ['<option value="">all</option>'].concat(Object.keys(CFG.channels || {}).map(v =>
         `<option value="${esc(v)}" ${v === STATE.source ? 'selected' : ''}>${esc(channelLabel(v))}</option>`)).join('')}</select>`)}
-    ${field('Next step', `<select id="fdue" onchange="setFilter('due', this.value)">
-      <option value="">all</option>
-      <option value="overdue" ${STATE.due === 'overdue' ? 'selected' : ''}>overdue</option>
-      <option value="none" ${STATE.due === 'none' ? 'selected' : ''}>without a next step</option></select>`)}
-    <div class="flab"><span></span><button class="btn ghost" onclick="clearFilters()">Clear</button></div>
-  </div>
+  </div>` : ''}
   <div class="card">
   ${data.rows.length ? `<table><thead><tr>${th('name','Name')}${th('programme','Programme')}${th('source_channel','Source')}${th('status','Status')}${th('owner','Owner')}${th('last_contact_at','Last contact')}<th>Next step</th><th></th></tr></thead>
   <tbody>${data.rows.map(r => `<tr class="row" tabindex="0" onclick="location.hash='#/person/${r.id}'">
@@ -1053,7 +1069,7 @@ async function quickSave(id) {
 }
 
 function sortBy(k) { if (STATE.sort === k) STATE.dir = STATE.dir === 'asc' ? 'desc' : 'asc'; else { STATE.sort = k; STATE.dir = 'asc'; } viewPeople(); }
-function clearFilters() { Object.assign(STATE, { q: '', status: '', programme: '', owner: '', source: '', nationality: '', due: '' }); QUICK_EDIT = null; viewPeople(); }
+function clearFilters() { Object.assign(STATE, { q: '', status: '', programme: '', owner: '', source: '', nationality: '', due: '' }); QUICK_EDIT = null; MORE_FILTERS = false; viewPeople(); }
 function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
 
 // ----------------------------------------------------------------- person --
@@ -1224,21 +1240,22 @@ const fieldChip = (f) => `<span class="chipf ${esc(f.provenance)}"
 const fieldCell = (f) => `<span class="fv ${esc(f.provenance)}" title="${esc(PROV_TITLE[f.provenance] || '')}">
   ${esc(f.value)}</span>`;
 
-let INBOX_STATE = 'new';
-let SHOW_IRRELEVANT = false;
-try { SHOW_IRRELEVANT = localStorage.getItem('crmShowIrrelevant') === '1'; } catch {}
-function setInboxState(v) { INBOX_STATE = v; viewInbox(); }
-function setShowIrrelevant(on) {
-  SHOW_IRRELEVANT = on;
-  try { localStorage.setItem('crmShowIrrelevant', on ? '1' : '0'); } catch {}
-  if (!on && INBOX_STATE === 'notrelevant') INBOX_STATE = 'new';
-  viewInbox();
-}
+// ONE work queue. Aigars: "Butiba CAR sadala ir jabut tikai To look at" - the
+// Inbox is leads to be processed and nothing else. There were three boards here
+// (To look at, Done, Not relevant) and "Done" was a second place a person could
+// sit and be forgotten, which is the fault he actually reported: "sanak es
+// izdaru 2 solus bet nekas nenotiek".
+//
+// Nothing is lost by removing them. A qualified person is in Admissions and in
+// People, where the work continues. An archived item stays in the database and
+// is readable from the Console, which is our tooling and not the product.
+// What replaces the Done board is LAST_RESULT below: after qualifying, the Inbox
+// says where the person went and what happens next, instead of the row silently
+// disappearing.
+let LAST_RESULT = null;
 
 async function viewInbox() {
-  const d = await api('/api/intake?state=' + INBOX_STATE);
-  const tab = (v, label, n) => `<button class="btn sm ${INBOX_STATE === v ? '' : 'ghost'}"
-    onclick="setInboxState('${v}')">${label}${n ? ' ' + n : ''}</button>`;
+  const d = await api('/api/intake?state=new');
   const val = (r, field) => {
     const f = r.fields.find(x => x.field === field);
     return f ? fieldCell(f) : '<span class="muted">-</span>';
@@ -1247,59 +1264,50 @@ async function viewInbox() {
   // The whole row opens it. A single small button at the far right made people aim
   // for a target the width of two words, when the obvious thing to click is the
   // person's name.
-  const opens = (r) => INBOX_STATE === 'new' ? `openQualify(${r.id})`
-    : r.person_id ? `location.hash='#/person/${esc(r.person_id)}'`
-    : '';
-  const row = (r) => {
-    const go = opens(r);
-    return `<tr class="row ${r.aged ? 'aged' : ''} ${go ? 'clicky' : ''}"
-      ${go ? `tabindex="0" onclick="${go}" title="${INBOX_STATE === 'new'
-        ? 'Open it and decide what it is' : 'Open this person'}"` : ''}>
+  const row = (r) => `<tr class="row ${r.aged ? 'aged' : ''} clicky" tabindex="0"
+      onclick="openQualify(${r.id})" title="Open it and decide what it is">
     <td><b>${esc(r.contact_name || r.contact_handle || 'Unknown')}</b>
       <div class="sub2">${esc(r.contact_handle || r.contact_phone || r.contact_email || '')}</div></td>
     <td>${esc(channelLabel(r.channel))}</td>
     <td title="${esc(r.suggestion_why || '')}">${val(r, 'interest')}</td>
-    <td>${val(r, 'education')}</td>
     <td>${val(r, 'question')}</td>
     <td>${fmtDateTime(r.received_at)}
       ${r.aged ? '<div class="sub2 late" title="waiting since 09:00 yesterday">late</div>' : ''}</td>
-    ${INBOX_STATE === 'new' ? '<td></td>'
-    : INBOX_STATE === 'qualified' ? `<td class="act">${qualChip(r.qualification)}
-      <div class="sub2">${esc(r.processed_by || '')}</div></td>`
-    : `<td>${esc(r.archive_reason || '')}<div class="sub2">${esc(r.processed_by || '')}</div></td>`}
   </tr>`;
-  };
 
-  const irrelevant = (d.counts.archived || 0) + (d.counts.filtered || 0);
+  // What used to be the Done board. It answers the three things Aigars could not
+  // see - where they went, what they want, what happens next - and then clears,
+  // because it is a receipt and not a place.
+  const banner = () => {
+    const L = LAST_RESULT; LAST_RESULT = null;
+    if (!L) return '';
+    if (L.archived) {
+      return `<div class="done-strip">Marked not relevant: <b>${esc(L.who)}</b>${
+        L.reason ? ' &middot; ' + esc(L.reason) : ''}</div>`;
+    }
+    const due = L.dueAt ? fmtDate(L.dueAt) : null;
+    return `<div class="done-strip ok">
+      <b>${esc(L.name)}</b> is now in Admissions${L.status ? ' &middot; ' + esc(L.status) : ''}${
+        L.programme ? ' &middot; ' + esc(L.programme) : ''}.
+      ${L.next ? `Next: ${esc(L.next)}${due ? ' by ' + due : ''}.` : ''}
+      <a href="#/person/${esc(L.id)}">Open</a></div>`;
+  };
 
   $('#view').innerHTML = `
   <div class="todayhead">
-    <div><h1 style="margin:0">Inbox</h1>
-      <p class="sub" style="margin:2px 0 0">Things that have come in. Nothing becomes an applicant on its own.</p></div>
+    <div><h1 style="margin:0">Inbox${d.rows.length ? ' &middot; ' + d.rows.length : ''}</h1></div>
     <a class="tilelink" href="#/admissions">Go to Admissions &rarr;</a>
   </div>
 
-  <div class="filters">
-    ${tab('new', 'To look at', d.counts.new)}
-    ${tab('qualified', 'Done', d.counts.qualified)}
-    ${SHOW_IRRELEVANT ? tab('notrelevant', 'Not relevant', irrelevant) : ''}
-    <button class="btn sm ghost" style="margin-left:auto"
-      onclick="setShowIrrelevant(${SHOW_IRRELEVANT ? 'false' : 'true'})"
-      title="Sales pitches and anything somebody marked as not relevant. Hidden by default, because nobody works from that list.">
-      ${SHOW_IRRELEVANT ? 'Hide not relevant' : `Show not relevant${irrelevant ? ' (' + irrelevant + ')' : ''}`}</button>
-  </div>
+  ${banner()}
 
   <div class="card">
   ${d.rows.length ? `<table class="cartable"><thead><tr>
-      <th>Who</th><th>Where from</th><th>Wants to study</th><th>Education</th><th>Asked about</th>
-      <th>Arrived</th><th></th></tr></thead>
+      <th>Who</th><th>Where from</th><th>Wants to study</th><th>Asked about</th>
+      <th>Arrived</th></tr></thead>
     <tbody>${d.rows.map(row).join('')}</tbody></table>`
-  : `<div class="empty">${INBOX_STATE === 'new' ? 'Nothing waiting. This queue is clear.' : 'Nothing here.'}
-     </div>`}
-  </div>
-
-  <p class="footnote" title="A dotted value was read from the message and nobody has confirmed it, so it is not counted anywhere.">
-    What the machine read is a suggestion until somebody agrees with it.</p>`;
+  : '<div class="empty">Nothing waiting. This queue is clear.</div>'}
+  </div>`;
 }
 
 async function loadIntakeDemo() { await post('/api/intake/demo', {}); route(); }
@@ -1371,6 +1379,7 @@ async function doQualify(id, opts = {}) {
     const r = await post(`/api/intake/${id}/qualify`, body);
     closeModal();
     if (r.handoverGap) alert(`${r.handoverGap.problem}\n\n${r.handoverGap.action}`);
+    LAST_RESULT = r.landed || null;      // the Inbox shows where they went
     viewInbox();
   } catch (e) {
     // a refused save keeps everything typed, and a duplicate answers with names
@@ -1422,10 +1431,11 @@ async function openArchive(id) {
 
 async function doArchive(id) {
   try {
-    await post(`/api/intake/${id}/archive`, {
+    const r = await post(`/api/intake/${id}/archive`, {
       reason: document.querySelector('#aReason').value,
       note: document.querySelector('#aNote').value,
     });
+    LAST_RESULT = r.landed || null;
     closeModal(); viewInbox();
   } catch (e) { $('#arErr').innerHTML = `<div class="err">${esc(e.message)}</div>`; }
 }
@@ -2261,11 +2271,10 @@ async function viewAdmissions() {
       ondragstart="pDragStart(event,'${esc(r.id)}')" ondragend="pDragEnd(event)"
       onclick="location.hash='#/person/${esc(r.id)}'">
     <div class="pname">${esc(r.name)}</div>
-    <div class="pmeta">${[r.programme, r.education, channelLabel(r.source_channel)]
-      .filter(Boolean).map(esc).join(' &middot; ') || 'nothing recorded yet'}</div>
-    ${r.owner ? `<div class="powner">${esc(r.owner)}</div>` : ''}
+    ${r.programme ? `<div class="pmeta">${esc(r.programme)}</div>` : ''}
     ${r.next_action ? `<div class="pnext">${esc(r.next_action)} &middot; ${dueText(r.next_action_at)}</div>`
       : '<div class="pnext none">no next step</div>'}
+    ${r.owner && r.owner !== CFG.admissionsOwner ? `<div class="powner">${esc(r.owner)}</div>` : ''}
   </div>`;
 
   const column = (st) => {
@@ -2283,14 +2292,10 @@ async function viewAdmissions() {
 
   $('#view').innerHTML = `
   <div class="todayhead">
-    <div><h1 style="margin:0">Admissions</h1>
-      <p class="sub" style="margin:2px 0 0">${data.count} people in the journey. Drag somebody into the next stage.</p></div>
+    <div><h1 style="margin:0">Admissions &middot; ${data.count}</h1></div>
     <a class="tilelink" href="#/inbox">Back to Inbox &rarr;</a>
   </div>
-  <div class="board">${stages.map(column).join('')}</div>
-  <p class="footnote" title="The columns come from the configuration, not from the code.">
-    These stage names are a first draft. Admissions has not yet walked through their real process,
-    so treat the columns as a first draft, not as the agreed journey.</p>`;
+  <div class="board">${stages.map(column).join('')}</div>`;
 }
 
 function pDragStart(e, id) {
