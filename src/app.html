@@ -289,7 +289,40 @@ code{font-size:12.5px}
 .trace.bad{border-left-color:var(--late)}
 @media(max-width:900px){.simwrap{grid-template-columns:1fr}}
 @media (prefers-reduced-motion: reduce){*{transition:none !important;animation:none !important}}
-@media(max-width:900px){.shell{grid-template-columns:1fr}.grid2{grid-template-columns:1fr}}
+@media(max-width:900px){.grid2{grid-template-columns:1fr}
+  /* THE ROOT CAUSE. .shell keeps min-height:100vh, so with one column the grid
+     has two auto rows and stretches them to fill the viewport - the navigation
+     row was being handed half the screen whatever it contained. grid-template-rows
+     pins the bar to its content and gives the rest to the work. */
+  .shell{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+  /* Below 900px the shell drops to one column and the sidebar lands ON TOP of the
+     work. As a vertical column it stood 675px tall, so at 880x800 the navigation
+     filled 87% of the first screen and Ieva would have seen nothing but the menu.
+     Measured, not guessed. It becomes a top bar instead: same links, same order,
+     laid across rather than down. Desktop is untouched - every rule here is
+     inside this query. */
+  nav{flex-direction:row;flex-wrap:wrap;align-items:center;gap:2px;padding:8px 12px;
+      border-right:none;border-bottom:1px solid var(--shell-line);position:sticky;top:0;z-index:20}
+  nav .brand{padding:0 10px 0 2px;flex:0 0 auto}
+  nav .brand .logo{max-width:104px}
+  nav .brand span{display:none}          /* the "CRM" strapline is desktop chrome */
+  nav a.item{padding:7px 10px;border-left:0;border-bottom:3px solid transparent;font-size:13.5px}
+  nav a.item.on{border-left-color:transparent;border-bottom-color:var(--amb)}
+  nav .navsplit{display:none}
+  nav .add{margin:0 0 0 auto;order:2}
+  nav .add .btn{width:auto!important;padding:7px 12px;font-size:13.5px}
+  /* Acting-as and Theme are settings, not navigation. They keep working, side by
+     side, and stop consuming a block each. */
+  nav .themes{margin:0;padding:0;border-top:none;order:3;display:flex;align-items:center;gap:6px}
+  nav .themes label{margin:0;white-space:nowrap}
+  nav .themes select{max-width:150px}
+  /* The sidebar's "needs you today / leads you own" summary is 417x54px and was
+     the single tallest thing in the bar. It is a sidebar affordance, and both of
+     its numbers are already on the Today screen itself, so it stands down here
+     rather than pushing the work off the first screen. Nothing is lost. */
+  nav .themes .waiting{display:none}
+  nav a.item.quiet{order:3}
+}
 /* --- the feedback widget ------------------------------------------------- */
 .helpbtn{position:fixed;right:18px;bottom:18px;z-index:30;background:var(--btn-bg);color:var(--btn-ink);
   border:0;border-left:3px solid var(--amb);border-radius:99px;padding:10px 18px 10px 16px;font-weight:600;
@@ -681,11 +714,21 @@ async function route() {
   refreshBadge();
   drawFeedbackBadge();
 }
+// The overdue count, held in one place.
+//
+// The sidebar badge showed `s.overdue.length` while the Today heading showed the
+// rows in whichever tab happened to be selected. So the screen said "Today 1" in
+// the sidebar and "Today - 5" in the heading at the same moment, and the heading
+// changed meaning every time somebody clicked a tab. Two numbers, both unlabelled,
+// neither the same thing. Both now read this.
+let OVERDUE = 0;
+
 async function refreshBadge() {
   try {
     const s = await api('/api/summary');
+    OVERDUE = s.overdue.length;
     const el = $('#navOverdue');
-    if (s.overdue.length) { el.textContent = s.overdue.length; el.style.display = ''; } else el.style.display = 'none';
+    if (OVERDUE) { el.textContent = OVERDUE; el.style.display = ''; } else el.style.display = 'none';
   } catch {}
   try {
     const i = await api('/api/intake');
@@ -877,6 +920,7 @@ function setTodayScope(v) {
 
 async function viewToday() {
   const t = await api('/api/today' + (TODAY_SCOPE === 'all' ? '?scope=all' : ''));
+  await refreshBadge();          // so the heading and the sidebar cannot disagree
   const order = todayOrder(t.order);
   const byId = Object.fromEntries(t.groups.map(g => [g.id, g]));
   const groups = order.map(id => byId[id]).filter(Boolean);
@@ -935,7 +979,7 @@ async function viewToday() {
 
   $('#view').innerHTML = `
   <div class="todayhead">
-    <div><h1 style="margin:0">Today${items.length ? ' &middot; ' + items.length : ''}</h1></div>
+    <div><h1 style="margin:0">Today${OVERDUE ? ` &middot; ${OVERDUE} overdue` : ''}</h1></div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
       ${t.role ? `<div class="viewswitch" title="Whose work to show. The sidebar count follows the same choice.">
         <button class="${TODAY_SCOPE === 'mine' ? 'on' : ''}" onclick="setTodayScope('mine')">${esc(t.role)}</button>
