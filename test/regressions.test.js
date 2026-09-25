@@ -320,14 +320,54 @@ test('nothing Ritvars has settled can come back as an open question', () => {
   assert.match(token.answer, /NO\./);
   assert.equal(token.doNotReopen, true);
 
-  // and no document may ask for it again
+  // And no document may ask any of them again.
+  //
+  // This guard checked only the TOKEN wording, and on 25.09.2026 the backlog's
+  // open-questions list was still asking whether the TeleGroup event says which
+  // button was pressed - the exact question `pbxQueueIsTheButton` settles. A
+  // guard that covers one settled item and not the rest is not a guard, so the
+  // phrases below cover every settled decision, and a live question may not
+  // carry any of them.
+  const REOPENS = {
+    pbxTokenNotRotated: ['must be rotated', 'must be changed', 'exposed in a chat', 'no longer safe'],
+    pbxQueueIsTheButton: ['does a post-call notification exist', 'which menu button',
+      'which button the caller'],
+    phoneButtonsConfirmed: ['are the buttons confirmed'],
+    instagramIsProfessional: ['is our instagram a professional', 'is the instagram account a professional'],
+    metaAccessConfirmed: ['who owns our facebook page', 'who has meta business suite access'],
+    whatsappNumber: ['is there a spare phone number', 'which number do we use for whatsapp'],
+    mailchimpWebhooksAvailable: ['does our mailchimp plan include webhooks',
+      'does the mailchimp plan include webhooks'],
+    admissionIsYearRound: ['deadline for applications', 'what is the application deadline'],
+  };
+  // Every settled decision must be covered, or a new one silently gains no guard.
+  for (const [key] of closed) {
+    assert.ok(REOPENS[key], key + ' is settled but no phrase guards it from being re-asked');
+  }
+
   const docs = ['BACKLOG.md', 'CHANNEL_READINESS.md', 'CONNECTING_CHANNELS.md', 'PBX_CALL_LOGGER.md'];
   for (const name of docs) {
     const file = path.join(ROOT, 'docs', name);
     if (!fs.existsSync(file)) continue;
-    const text = fs.readFileSync(file, 'utf8');
-    for (const phrase of ['must be rotated', 'must be changed', 'exposed in a chat', 'no longer safe']) {
-      assert.ok(!text.includes(phrase), `docs/${name} reopens the token question: "${phrase}"`);
+    // A struck-through line that records the answer is the record working, not
+    // a reopening, so only LIVE text counts.
+    const live = fs.readFileSync(file, 'utf8').split('\n')
+      .filter((l) => !l.includes('~~') && !/ANSWERED|SETTLED|do not ask again/i.test(l))
+      .join('\n').toLowerCase();
+    for (const [key, phrases] of Object.entries(REOPENS)) {
+      for (const phrase of phrases) {
+        assert.ok(!live.includes(phrase),
+          `docs/${name} reopens ${key}: "${phrase}"`);
+      }
+    }
+  }
+
+  // and the live open-questions list may not ask a settled thing either
+  const openText = Object.values(CONFIG.openQuestions)
+    .filter((q) => q && q.ask).map((q) => q.ask.toLowerCase()).join(' | ');
+  for (const [key, phrases] of Object.entries(REOPENS)) {
+    for (const phrase of phrases) {
+      assert.ok(!openText.includes(phrase), `openQuestions reopens ${key}: "${phrase}"`);
     }
   }
 

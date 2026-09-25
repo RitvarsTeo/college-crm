@@ -16,39 +16,39 @@ this is a local prototype) · `UNKNOWN` - named but not checked with the provide
 **PIN: ACADEMY CRM - V1 VIRTUAL PROTOTYPE. NOT RELEASED, NOT DEPLOYED, NOT CONNECTED.**
 
 - **Version:** V1
-- **State:** in development, unreleased
-- **Scope lock state:** NOT LOCKED - changing daily on owner feedback, and Ieva has not yet
-  validated the workflow
-- **Release line:** `master`
-- **Blockers:** the pipeline stage names (row 46), Ieva's real process after "To look at" (row 50),
-  follow-up outcomes (row 51), the external channel for feedback notification (open question 13),
-  and every EXTERNAL BLOCKER in [CHANNEL_READINESS.md](CHANNEL_READINESS.md). Deployment is blocked
-  by everything under "What is NOT done".
-- **Next:** Ieva validates the workflow. Nothing is committed, pushed or deployed until Ritvars says so.
+- **Scope: NOT LOCKED.** A clickable prototype for arguing with the Admissions workflow on screen,
+  plus every channel adapter prepared but switched off and no provider contacted. It is changed
+  daily by owner feedback and Ieva has not yet validated the workflow, so treat every row below as
+  provisional until she has.
+- **State:** implemented and tested locally; committed and pushed to `v1-test` for Aigars to test.
+  Not deployed anywhere, so not verified anywhere but a local browser.
+- **Release line / deployed:** `master` at `afea424`, unchanged and never deployed. It is the
+  release line. `v1-test` at `b4d7ba3` is the **testing branch** Aigars works from, and it is meant
+  to reach `master` through a pull request once Ieva has validated the workflow. That answer
+  reached this file relayed rather than directly, so question 14 stays open until Ritvars confirms
+  it himself. Nothing has been merged, deployed or tagged either way.
+- **Next:** Ieva validates the workflow (rows 46, 50, 51). Next version: **UNKNOWN** - no V2 has
+  been defined by the owner and this file does not invent one.
+- **Blockers:** rows 46, 50, 51 (all for Ieva); open questions 1 to 6 and 9 to 14; the Google
+  Workspace administrator; and every remaining item under "What is NOT done". Deployment is blocked
+  by all of it. There is still no authentication, so every admin-only screen is a workflow rule and
+  not a security boundary.
 
-State as at 24.09.2026, from the repository and Git, not from memory of a conversation:
+State as at 25.09.2026, read from Git and a test run, not from memory of a conversation:
 
 | Delivery state | Answer | Evidence |
 |---|---|---|
-| Implemented | Yes, in the working tree | `git status --porcelain`: **7 modified, 5 untracked**, all uncommitted |
-| Tested | Yes, locally | `node --test test/*.test.js` -> **274 pass, 0 fail**, run 24.09.2026 |
-| Committed | **No** for today's work | only `afea424` is committed; everything from 24.09 is uncommitted |
-| Merged | **Not applicable so far** | `git log --merges` is empty. No merge has ever happened in this repository. |
-| Deployed | **No** | nothing is deployed to anywhere, by anybody. No Supabase project, no Vercel project. |
-| Verified | **Locally only** | behaviour observed in a local browser at `http://localhost:8800`. Nothing has been verified in a deployed environment, because there is no deployed environment. |
-| Released | **No** | no tag exists (`git tag` is empty) and there is no release record |
+| Implemented | Yes | `git status --porcelain` is **empty**: the working tree is clean |
+| Tested | Yes, locally | `node --test test/*.test.js` -> **326 pass, 0 fail**, run 25.09.2026 |
+| Committed | **Yes** | `v1-test` = `b4d7ba3`. Five commits on top of `afea424` |
+| Pushed | **Yes** | `origin/v1-test` = `b4d7ba3`, byte-identical to local. `origin/master` = `afea424`, untouched |
+| Merged | **No** | nothing has been merged into `master`, by design. `git log --merges` is still empty |
+| Deployed | **No** | no environment has ever received this code. No Supabase project, no Vercel project |
+| Verified | **Locally only** | observed in a local browser. There is no deployed environment to verify in |
+| Released | **No** | `git tag` is empty and there is no release record |
 
-**Scope of V1, and whether it is locked.** V1 is a clickable prototype for arguing with the
-Admissions workflow on screen, not production software. The scope is **NOT locked**: it is being
-changed daily by owner feedback, and 24.09 alone added the pipeline board and the feedback widget.
-Treat every row below as provisional until Ieva has validated the workflow.
-
-**Current blockers.** The pipeline stage names are not agreed (row 46). Deployment is blocked by
-everything in "What is NOT done". There is no authentication, so every admin-only screen is a
-workflow rule and not a security boundary.
-
-**Next planned version: UNKNOWN.** No V2 has been defined by the owner, and this file does not
-invent one.
+**A commit on GitHub is not a deployment and not a release.** `v1-test` existing on GitHub means
+Aigars can fetch and run it. It means nothing about deployed, verified or released.
 
 ## Project control map
 
@@ -81,23 +81,26 @@ Status words in this project do not mean what a generic checklist might assume:
 |---|---|---|---|---|
 | V1 | No | none | nowhere | local browser only |
 
-The only published artefact is the GitHub repository `RitvarsTeo/college-crm` (private), which
-holds exactly one commit, `afea424`. **A commit on GitHub is not a deployment and not a release.**
+The published artefact is the GitHub repository `RitvarsTeo/college-crm` (private). It now holds
+two branches: `master` at `afea424`, untouched, and `v1-test` at `b4d7ba3`, which is what Aigars
+tests. **A commit on GitHub is not a deployment and not a release.**
 
 ## Handoff
 
 Written 24.09.2026. A fresh session on any account should be able to work from this alone.
 
-- **Branch:** `master`. Local `master` is at `afea424` with today's work uncommitted on top.
+- **Branch:** `v1-test` at `b4d7ba3`. One worktree, no others (`git worktree list`). The working
+  tree is **clean**.
 - **Remote:** `origin` -> `https://github.com/RitvarsTeo/college-crm.git` (private, owner
-  `RitvarsTeo`, collaborator `NovikontasAcademy` with write access). `origin/master` = `afea424`.
+  `RitvarsTeo`, collaborator `NovikontasAcademy` with write access). `origin/v1-test` = `b4d7ba3`,
+  `origin/master` = `afea424` and **must stay there** - nothing is pushed or merged to `master`.
 - **Other branch:** `deployment-audit` at `7438633` exists **locally only**. It holds a deployment
   audit that was deliberately not published. Do not delete it without asking.
-- **Uncommitted work (24.09.2026),** exactly as `git status --porcelain` reports it:
-  modified `docs/BACKLOG.md`, `docs/PROTOTYPE.md`, `src/app.html`, `src/db.js`, `src/intake.js`,
-  `src/server.js`, `test/intake.test.js`; untracked `sql/002_feedback.sql`, `src/assets/`,
-  `src/feedback.js`, `test/feedback.test.js`, `test/workflow.test.js`. See rows 40 to 56.
-- **Tests:** `node --test test/*.test.js` -> 274 pass, 0 fail.
+- **What is on `v1-test`,** five commits on top of `afea424`: the 14 channel adapters and the
+  locked navigation (`45afc38`), the Mailchimp check and typed blockers (`9638051`), Marina's
+  WhatsApp and phone confirmations (`7305310`), the guide rebuilt as the connection task list
+  (`690f1f5`), and four faults found by testing against real provider shapes (`b4d7ba3`).
+- **Tests:** `node --test test/*.test.js` -> **326 pass, 0 fail**, run 25.09.2026.
 - **Run it:** `npm start`, then `http://localhost:8800`.
 - **Database:** `data/crm.db`, git-ignored. It **survives a restart** - verified by seeding a row,
   restarting and reading it back, after row 58 fixed a boot-time wipe that made an earlier claim of
@@ -105,8 +108,8 @@ Written 24.09.2026. A fresh session on any account should be able to work from t
   forces a load at boot and therefore CLEARS what is there.
 - **Open owner decisions:** the stage names (row 46), the real process after "To look at" (row 50),
   follow-up outcomes (row 51), and everything in [DECISIONS.md](DECISIONS.md)'s blocking table.
-- **Exact next action:** Ieva validates the workflow. Nothing should be committed, pushed or
-  deployed before Ritvars says so.
+- **Exact next action:** Ieva validates the workflow (rows 46, 50, 51). Committing and pushing to
+  `v1-test` is authorised; `master` is not, and nothing is deployed anywhere.
 - **UNKNOWN:** whether V1 is ever meant to be deployed, and to what. No environment has been chosen.
 
 ### Git workflow: proposed, not established
@@ -122,8 +125,10 @@ reject:
 - keep `master` as the release line, and tag only a commit that has actually been deployed and
   verified - which, today, means no tags at all.
 
-**Nothing above has been done and nothing will be pushed without his go-ahead.** Today's work is
-still uncommitted on `master` at his instruction.
+**Superseded 24.09.2026.** Ritvars established the convention himself: `v1-test` is the testing
+branch for Aigars, work is committed and pushed there directly, and `master` is never pushed to or
+modified. No pull request has been opened and no branch has been merged. Whether `v1-test` later
+becomes the release line, or merges into `master`, is open question 14.
 
 
 **To connect a real channel, start at [CONNECTING_CHANNELS.md](CONNECTING_CHANNELS.md).** It is the
@@ -352,8 +357,13 @@ was built.
 5. **How many days** before an untouched raw contact is surfaced as ageing?
 6. **Is a next action assigned to a role or to a person?** The "Owner: Ieva" example says person; the
    record's owner is a role. Two fields, one exists.
-7. **TeleGroup:** does a post-call notification exist, and what does it carry? Until then the phone
-   is manual.
+7. ~~**TeleGroup:** does a post-call notification exist, and what does it carry?~~ **ANSWERED
+   24.09.2026 - do not ask again.** The event carries a `queue`, and the queue IS the button. It was
+   in the original TeleGroup brief and has been mapped in `config/prototype.json` -> `phoneMenu`
+   since 23.09.2026. Marina confirmed the 1/2/3 routing on 24.09.2026. Recorded in
+   `config/prototype.json` -> `settled` as `pbxQueueIsTheButton` and `phoneButtonsConfirmed`, both
+   `doNotReopen`. The phone channel waits on **one** thing: an API token from TeleGroup. The token
+   itself is **not** being changed - that is settled too.
 8. **LinkedIn:** is any inbound integration possible at all? Nothing is known.
 9. **Retention:** how long do we keep archived intake items and extracted data?
 10. **Merging** two records that turn out to be one human. Needed, not designed.
@@ -366,6 +376,23 @@ was built.
     email would need a sending route (a transactional provider or the Gmail API) and somewhere
     deployed to send from; WhatsApp or Telegram would need an account and an integration. Until
     that is decided, feedback is only visible to somebody who opens the app.
+
+14. **Is `v1-test` the release line, or a testing branch off `master`?** Today `master` sits
+    untouched at `afea424` and all the work and all of Aigars's testing are on `v1-test`. The two
+    readings lead somewhere different later: if `v1-test` is the release line, `master` is dead
+    weight and should be retired; if it is a testing branch, the work has to merge back and
+    `master` stays the thing that gets deployed and tagged. Nothing needs deciding to keep working,
+    but "released" cannot be defined until it is. **Recommendation:** keep `master` as the release
+    line and merge `v1-test` into it once Ieva has validated the workflow, because a release line
+    that has never received a merge is easier to protect than one that is also the working branch.
+    **Cost of waiting:** none today; it blocks only the first real release.
+
+    **ANSWERED 25.09.2026, relayed - awaiting Ritvars's direct confirmation.** The answer came
+    through another assistant session rather than from him in this one: *"v1-test is a testing
+    branch; master stays the release line. When Ieva has validated the workflow, v1-test joins
+    master through a pull request."* It matches the recommendation above and nothing has been done
+    that depends on it. It is recorded here rather than acted on, and it is marked relayed because
+    a decision in this file has to say where it came from. One word from him closes it.
 
 ## 24.09.2026 - settled decisions can no longer be reopened
 

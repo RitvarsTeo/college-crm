@@ -237,11 +237,13 @@ Mailchimp is Tetiana's channel. A confirmed study lead from it is Ieva's.
 | Mechanism | **We poll them.** The PBX never calls us. |
 | Poll path | `/api/cron/pbx-calls` |
 | Secret | `PBX_API_TOKEN`, **server side only** |
-| **Blocked on** | **TeleGroup answering one question.** |
+| **Blocked on** | **An API token from TeleGroup.** Nothing else. |
 
-**The question that decides everything:** does the post-call event include **which menu button the
-caller pressed**? Without it a call cannot be routed to the right department, and the whole design
-of this channel changes.
+**SETTLED 24.09.2026 - do not ask again.** The post-call event carries a `queue`, and the queue IS
+the button. It was in the original TeleGroup brief, it has been mapped in `config/prototype.json`
+-> `phoneMenu` since 23.09.2026, and Marina confirmed the 1/2/3 routing. Routing is closed; the
+only outstanding item on this channel is the access token. The token in use is **not** being
+changed.
 
 - [ ] Send TeleGroup the questions in [PROVIDER_QUESTIONS.md](PROVIDER_QUESTIONS.md)
 - [ ] Confirm the button or queue is in the data
