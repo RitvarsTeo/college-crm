@@ -1074,3 +1074,207 @@ The kit also carries a **four-role** model, owner / admin / editor / viewer. Aca
 | G3 | `v1-test` is meant to reach `master` through a pull request once Ieva has validated the workflow. That answer reached this file relayed rather than directly, so it stays open until Ritvars confirms it himself | **SAID** |
 
 480 tests.
+
+---
+
+## DEPLOYMENT BLOCKER: do not enable CRM_AUTH=1 on Render yet
+
+**Recorded 25.09.2026 after live verification. Nothing here is implemented, and nothing about the
+Render service was changed.**
+
+### The blocker, in one sentence
+
+The authentication implementation is complete and tested in the committed code, but switching
+`CRM_AUTH=1` on the current Render Free deployment **would lock everybody out of the testing copy**,
+because that deployment has no sign-in accounts and no way to keep any.
+
+### 1. Auth implementation
+
+| | |
+|---|---|
+| The code | **BUILT**, committed as `86446bb` on `v1-test` |
+| Test suite | **480 passing, 0 failing** |
+| Admin and user authorization | **Tested.** Admin reaches the Channels routes, a normal user gets 403, an unauthenticated caller gets 401 |
+| Google callback and allowlist, application side | **Tested**, against an RSA key pair minted inside the test process |
+| Real Google OAuth | **NOT CONFIGURED.** See section 5 |
+
+### 2. Render deployment
+
+- The test copy **must remain usable with the existing shared-password gate**, exactly as it is now.
+- **Do not enable `CRM_AUTH=1`.**
+- Do not set or invent passwords.
+- Do not create Google credentials.
+- Do not change the Render configuration.
+
+### 3. Root cause
+
+Four facts, each verified rather than reasoned:
+
+1. `render.yaml` sets `CRM_DB=/tmp/crm.db`. Free has no disk, so that file is **ephemeral** and is
+   gone on every restart, redeploy and wake from idle sleep.
+2. `crm_users` is written **only** by `scripts/manage_users.mjs`. Neither `buildCommand`
+   (`npm install`) nor `startCommand` (`npm start`) calls it.
+3. A fresh container therefore has **zero** sign-in accounts. Reproduced locally with Render's exact
+   configuration: `crm_users rows: 0 | with a password: 0`, while the demo data self-seeded to 12
+   people - so the service looks healthy and a deploy looks successful.
+4. Accounts created by hand on the running container **would not survive** the next restart.
+
+What a person would actually hit, walked end to end against Render's configuration locally:
+
+| Step | Result |
+|---|---|
+| Shared password door | passes, `crm_access` cookie issued |
+| The app page inside it | served, 195,944 bytes, login form present |
+| `ritvars.vilcins` signs in | `That email and password do not match an account.` |
+| `aigars.kluga` signs in | the same |
+| `edu` signs in | the same |
+
+The login screen renders correctly and nobody can get past it. Aigars and Ieva would lose the
+testing copy.
+
+### 4. DECISION NEEDED
+
+**The owner must choose how authentication accounts are provisioned for the V1 test deployment
+before `CRM_AUTH` can safely be enabled.** Three directions, recorded without a recommendation and
+**none of them implemented**:
+
+| | Direction |
+|---|---|
+| **A** | Deterministic test-account provisioning at startup, so a fresh container always comes up with the accounts it needs |
+| **B** | Google OAuth provisioning and authentication, so identity does not depend on anything stored in the container |
+| **C** | Continue using the shared-password gate until the deployment architecture is decided |
+
+This is a deployment architecture decision and it belongs to Ritvars. It also overlaps the durable
+storage question already recorded in this file at C3.
+
+### 5. Google
+
+| Variable | Status |
+|---|---|
+| `GOOGLE_CLIENT_ID` | **not configured** |
+| `GOOGLE_CLIENT_SECRET` | **not configured** |
+| `GOOGLE_REDIRECT_URI` | **not configured** |
+
+**Real Google SSO is not live.** With these unset the button is not drawn at all and
+`/api/auth/google/start` answers `503 google_not_configured`. The passing callback tests prove our
+own code against a locally minted key pair; they prove nothing about Google, and nothing in this
+file should be read as saying otherwise.
+
+### 6. Verification status
+
+Kept separate on purpose, because three of these are commonly conflated.
+
+| What | Status | How |
+|---|---|---|
+| Local and committed auth code | **VERIFIED** | 480 tests, plus the live door-by-door walk above |
+| Render service health | **VERIFIED** | `GET /healthz` -> `200 {"ok":true,"people":12}` |
+| Which commit is live on Render | **NOT VERIFIED** | No Render CLI, API key or dashboard tooling in the session. Every externally reachable endpoint is byte-identical between `16d82f0` and `86446bb`, because the new API door only activates when `CRM_AUTH=1` and the shared gate answers before any new route. There is no external signal. It needs the Render dashboard |
+| Individual authentication on Render | **NOT ENABLED** | `CRM_AUTH` is not set there, deliberately |
+| Google SSO | **NOT CONFIGURED** | Section 5 |
+
+### 7. Account semantics
+
+| Address | Who | Role | Channels |
+|---|---|---|---|
+| `ritvars.vilcins@novikontas.org` | Ritvars | admin | yes |
+| `aigars.kluga@novikontas.org` | Aigars | admin | yes |
+| `edu@novikontas.org` | **the shared Admissions account Ieva and Laura both work from** | user | **no, 403** |
+
+`edu@` is **not an individual person** and must never be written up as one. It is the Admissions
+account the two of them share, recorded with `sharedBy: ["Ieva", "Laura"]`, and signing in with it is
+a normal, intended way for either of them to use the CRM. It stays `user`: **Channels is admin-only
+for everybody**, and admissions work needs no channel configuration, so this is the same rule every
+admissions seat is under rather than a restriction aimed at them. It **must not** receive Channels
+admin access.
+
+### UPDATE 25.09.2026 (later): the code side is solved, the host side is not
+
+**The historical explanation above is left exactly as it was.** It is the record of a fault that was
+caught before it reached anybody, and the reasoning is still the reason this mechanism exists.
+
+**Status: RESOLVED IN CODE. NOT YET READY ON RENDER.** Both halves matter and they are not the same
+thing.
+
+#### What is solved
+
+`src/bootstrap.js` provisions the accounts at boot, so an ephemeral database is no longer a lockout.
+
+| Property | How it behaves |
+|---|---|
+| Runs | At every startup, after the database and the demo data, before the server listens |
+| Creates | **Only** the addresses in `config/prototype.json` -> `accounts`. Never invents one |
+| Idempotent | Proved over five consecutive runs: 3 created once, then 0 created, 3 kept, no duplicates |
+| Existing accounts | **Never touched.** Not the role, not the password, not the active flag. A bootstrap that corrected a role on every restart would quietly undo an administrator |
+| Passwords | Read from the host environment, by the variable named in each account's `passwordEnv`. Never generated, never printed, never written down |
+| Half-made accounts | **Impossible.** An account that cannot be given a password is not created at all, because an account with no password is the lockout wearing a different hat |
+| With sign-in off | Does nothing and demands nothing, so a laptop still works with none of these set |
+
+The three-way rule on the provisioning variables, which is the part worth understanding:
+
+- **none set** - this copy provisions accounts some other way. Bootstrap stays out of it and the
+  server starts. If that leaves nobody able to sign in, it prints a loud WARNING naming the
+  variables, because a login screen nobody can pass looks healthy from outside.
+- **some set** - somebody meant to use it and got it wrong. **Refuses to start** and names what is
+  missing. Half a set is the confusing case: two people sign in and the third is told their password
+  is wrong, which reads as their mistake rather than a deployment one.
+- **all set** - creates whatever is missing, leaves everything else alone.
+
+The first version of this refused whenever the variables were absent, which broke eleven existing
+tests by refusing to start servers that were provisioned another way. That was caught by the full
+suite, not by the focused one - the focused run was green.
+
+#### Proved locally, against Render's exact configuration
+
+A fresh database with `CRM_PUBLIC=1`, `CRM_DB` in a temporary directory, `CRM_AUTH=1` and the three
+provisioning variables:
+
+```
+accounts: 3 created, 0 already there
+crm_users = 3
+```
+
+| Account | Role | Signs in | Channels |
+|---|---|---|---|
+| `ritvars.vilcins@novikontas.org` | admin | yes | **200** |
+| `aigars.kluga@novikontas.org` | admin | yes | **200** |
+| `edu@novikontas.org` - Admissions, shared by Ieva and Laura | user | yes | **403** |
+| an unlisted `@novikontas.org` address | - | **refused** | - |
+
+Restarted twice on the same database: `0 created, 3 already there`, still exactly 3 rows. No password
+value appeared in any boot log, in any refusal, or in anything the module returns - asserted by test,
+not by reading.
+
+#### What is NOT solved, and blocks turning this on
+
+`render.yaml` now declares `CRM_AUTH=1` and four variables as `sync: false` - **names only, no
+values, nothing secret in source control**. Those four values have to be set **in the Render
+dashboard**, and nobody in a Claude session can do it:
+
+| Variable | Purpose |
+|---|---|
+| `CRM_SESSION_SECRET` | signs the session cookies, at least 24 characters |
+| `CRM_RITVARS_PASSWORD` | Ritvars |
+| `CRM_AIGARS_PASSWORD` | Aigars |
+| `CRM_ADMISSIONS_PASSWORD` | the shared Admissions account |
+
+**Until all four are set, the deployment will refuse to start** - deliberately, and far better than
+booting into a lockout. Render keeps the last healthy deploy serving when a new one fails its health
+check, which should mean the current copy stays up meanwhile; that is Render's documented behaviour
+and it has **not** been verified here.
+
+**Passwords are Ritvars's to choose and set.** None was generated, suggested or recorded by anyone
+else, and none belongs in this file.
+
+#### Still true, and not changed by any of this
+
+- **Google OAuth is not configured.** `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and
+  `GOOGLE_REDIRECT_URI` are unset, no client exists, and live Google SSO does not work. The password
+  path is what makes the V1 testing copy usable, and that was the point of doing it this way.
+- **`edu@novikontas.org` is the shared Admissions account Ieva and Laura both work from**, role
+  `user`, 403 from Channels. Not an individual, and not a lesser account: Channels is admin-only for
+  everybody.
+- The `/tmp` database still loses everything else on restart, including whatever a tester entered.
+  That is the accepted trade recorded at C3, and account provisioning does not change it.
+
+507 tests.
+

@@ -49,5 +49,33 @@ services:
         value: /tmp/crm.db
       - key: CRM_ACCESS_PASSWORD
         sync: false          # set in the Render dashboard. Never written down here.
+
+      # --- sign-in -------------------------------------------------------
+      # The shared password above is the DOOR on a published address. This is
+      # who you are once you are through it, and the two are not the same thing.
+      - key: CRM_AUTH
+        value: "1"
+      # Signs the session cookies. At least 24 characters. The server refuses to
+      # start without it rather than signing with something guessable.
+      - key: CRM_SESSION_SECRET
+        sync: false
+
+      # The accounts, recreated on every restart because CRM_DB above is /tmp and
+      # does not survive one. src/bootstrap.js reads these at boot, creates only
+      # the addresses written down in config/prototype.json, and NEVER touches an
+      # account that already exists.
+      #
+      # ONLY THE NAMES ARE HERE. Every value is set in the Render dashboard, is
+      # never logged, never rendered and never committed. If any one of them is
+      # missing or too short the service REFUSES TO START and names the variable
+      # - which is the point. Booting happily into a login screen that nobody can
+      # get past looks healthy from outside and locks the testers out.
+      - key: CRM_RITVARS_PASSWORD
+        sync: false
+      - key: CRM_AIGARS_PASSWORD
+        sync: false
+      - key: CRM_ADMISSIONS_PASSWORD
+        sync: false
+
       - key: NODE_VERSION
         value: "24"          # node:sqlite needs a recent Node

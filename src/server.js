@@ -22,6 +22,7 @@ import { verifyRequest, channelDef, channelIds, allChannelStatus, BadInbound,
          parseInboundBody, handshake } from './inbound.js';
 import * as auth from './auth.js';
 import * as google from './google.js';
+import { bootstrapIfAuthOn } from './bootstrap.js';
 import * as channeladmin from './channeladmin.js';
 
 
@@ -262,6 +263,28 @@ const PUBLIC = gate.isPublic();
     loadDataset(CONFIG.startWith || 'empty');
   }
 }
+// THE ACCOUNTS, AFTER THE DATA AND BEFORE THE DOOR OPENS.
+//
+// The order matters and it is: database exists -> demo data -> accounts ->
+// listen. On Render the database is /tmp and is recreated on every restart, so
+// this is the only thing standing between CRM_AUTH=1 and a login screen in
+// front of an empty crm_users table.
+//
+// With sign-in off it does nothing, which is what keeps a laptop working with
+// none of these variables set.
+{
+  const r = bootstrapIfAuthOn(db, { accounts: CONFIG.accounts, env: process.env, authOn: AUTH_ON });
+  if (!r.ok) { console.error(String.fromCharCode(10) + 'REFUSING TO START. ' + r.why); process.exit(1); }
+  // Not a refusal: the copy may provision its accounts some other way. But a
+  // login screen nobody can pass looks healthy from outside, so it is said out loud.
+  if (r.warn) console.error(String.fromCharCode(10) + 'WARNING: ' + r.warn + String.fromCharCode(10));
+  // Addresses and counts only. Never a password, never a hash, never a variable value.
+  if (r.ran) {
+    console.log(`accounts: ${r.created.length} created, ${r.kept.length} already there`
+      + (r.created.length ? ` | new: ${r.created.join(', ')}` : ''));
+  }
+}
+
 console.log(`prototype started ${DATASET.dataset.toUpperCase()}: ${DATASET.people} people`
   + (hasRealData() ? ' | real data available on demand' : ' | no real data file'));
 

@@ -345,17 +345,19 @@
       "title": "Internship Coordinator"
     }
   ],
-  "_accountsNote": "Real sign-in addresses. NOTHING here is guessed: manage_users.mjs used to build first.last@novikontas.org from a display name and produced ritvars@ for a person whose address is ritvars.vilcins@. A name is not an address. Anybody missing from this list has no address recorded yet and gets no account.",
+  "_accountsNote": "Real sign-in addresses. NOTHING here is guessed: manage_users.mjs used to build first.last@novikontas.org from a display name and produced ritvars@ for a person whose address is ritvars.vilcins@. A name is not an address. Anybody missing from this list has no address recorded yet and gets no account. Each account names the environment variable its password comes from, in passwordEnv - the same shape channels.json uses for secretEnv. The NAME lives here; the VALUE lives only in the host environment and is never written down, logged or committed. The name says WHO, not what role they hold, so a role change never makes the variable lie.",
   "accounts": [
     {
       "email": "ritvars.vilcins@novikontas.org",
       "name": "Ritvars",
-      "role": "admin"
+      "role": "admin",
+      "passwordEnv": "CRM_RITVARS_PASSWORD"
     },
     {
       "email": "aigars.kluga@novikontas.org",
       "name": "Aigars",
-      "role": "admin"
+      "role": "admin",
+      "passwordEnv": "CRM_AIGARS_PASSWORD"
     },
     {
       "email": "edu@novikontas.org",
@@ -366,7 +368,8 @@
       "sharedBy": [
         "Ieva",
         "Laura"
-      ]
+      ],
+      "passwordEnv": "CRM_ADMISSIONS_PASSWORD"
     }
   ],
   "_users": "Locked 23.09.2026. Arina was added when the phone menu was mapped: she answers button 3 with Tetiana. No email addresses yet and no authentication - identity is a setting until a login exists. A role is NOT a person.",
