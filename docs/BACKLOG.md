@@ -725,3 +725,62 @@ guard behaving correctly, and it is why these rows now record the answer instead
 
 346 tests.
 
+## 25.09.2026 - the testing copy goes on Render Free, with the reset accepted
+
+**Owner decision.** No paid service and no payment card. Render Free, ephemeral SQLite, demo data
+rebuilt automatically. Ritvars explicitly accepted that anything a tester types disappears on a
+restart, redeploy or 15 minutes of idle sleep, because this phase validates the workflow and the
+screens rather than keeping records.
+
+**Also decided, and NOT being done now:** no SQLite to PostgreSQL port, no Supabase project of
+ours, and Aigars's Supabase project is not being used. The port remains the right destination and
+the wrong week for it.
+
+**Why the port is days rather than hours** - measured on 25.09.2026, and larger than the 23.09
+audit said:
+
+| | |
+|---|---|
+| Tables | 13 |
+| Database call sites | 200 |
+| Functions touching the database | 77 |
+| Of those already `async` | **0** |
+| `await` on any database call | **none** |
+
+`node:sqlite` is synchronous. Every PostgreSQL driver is not. So the cost is not translating SQL -
+that part is small, with 9 `AUTOINCREMENT` columns, 20 `_at TEXT` columns that should be
+`timestamptz`, one `ON CONFLICT` and no SQLite-only functions - it is that 200 call sites gain
+`await`, 77 functions become `async`, and the change then cascades to every caller. A forgotten
+`await` returns a Promise that behaves like a truthy object instead of failing, which is where the
+bugs would come from.
+
+**Aigars's Supabase project was never inspected.** The Supabase access here is authenticated as
+Ritvars and sees one organisation, `RitvarsTeo`, with three projects. Aigars's is not reachable, so
+nothing was reported about what it holds. Recorded rather than guessed.
+
+**The changes, which are two files:**
+
+- `render.yaml`: `plan: starter` to `plan: free`, the `disk:` block deleted because Render Free
+  cannot have one, and `CRM_DB` moved to `/tmp/crm.db`. That last one matters: `data/` is
+  gitignored and `openDb()` does not create directories, so the default path would fail on a fresh
+  container's first boot.
+- `src/gate.js`: the login page now reads **"Demo data only - changes reset when the demo
+  restarts."**
+
+**Unchanged on purpose:** the shared-password gate, the refusal to start without a password, the
+refusal to start with real applicant data, the route gating that keeps `/api/inbound/events` closed,
+and the automatic demo seed.
+
+**Verified, not assumed.** Booted against genuinely empty storage: 12 demo people appeared by
+themselves. Signed in as Ieva, added a person, reached 13; booted again on a fresh path and the
+person was gone while the demo rebuilt to 12. The first attempt at that test was wrong - the delete
+failed because the file was still locked, so the app reopened the old database and reported the
+person had survived. Redone on a clean path.
+
+Render's own documentation confirms the terms: free web services cannot have a persistent disk,
+files without one are "lost every time the service redeploys or restarts", sleep is 15 minutes,
+wake is about a minute, and the allowance is 750 instance hours a month. **Whether Render asks for
+a card at signup is NOT verified** - their docs imply it does not, and if it does, stop.
+
+346 tests.
+

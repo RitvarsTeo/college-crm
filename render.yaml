@@ -1,10 +1,23 @@
 # The shared testing copy, for Aigars and Ieva.
 #
-# Render runs a normal long-lived Node process with a real disk attached, which
-# is why this is the host and Vercel is not: the CRM keeps its 14 tables in a
-# SQLite FILE, and Vercel has no disk that survives between requests. Moving to
-# Vercel means porting ~113 SQL statements to Postgres first - see
-# docs/PRODUCTION_MIGRATION.md. That is the eventual home, not today's.
+# Render Free, on purpose and with the consequence accepted by Ritvars on
+# 25.09.2026: this phase is for validating the workflow and the screens, not for
+# keeping records.
+#
+# FREE MEANS NO DISK. Render's own documentation: free web services cannot have a
+# persistent disk, and without one "any changes you make to a service's local
+# files are lost every time the service redeploys or restarts". The service also
+# sleeps after 15 minutes with no traffic and takes about a minute to wake.
+#
+# So anything a tester types is gone on the next restart, redeploy or sleep. That
+# is survivable only because the app rebuilds its own demo on an empty database -
+# verified 25.09.2026 by booting against genuinely empty storage and watching 12
+# people appear. The login page says so plainly, so nobody is surprised.
+#
+# The proper answer is PostgreSQL, and it is deliberately NOT being done now: the
+# data layer is synchronous in 77 functions across 200 call sites, which is days
+# of work, and it should happen after Ieva has validated the workflow rather than
+# before. See docs/PRODUCTION_MIGRATION.md.
 #
 # DEMO DATA ONLY. This copy has one shared password, not sign-in, so the server
 # refuses to start if CRM_ACCESS_PASSWORD is missing and refuses outright to load
@@ -17,21 +30,23 @@ services:
   - type: web
     name: academy-crm-test
     runtime: node
-    plan: starter            # starter, not free: free has no disk, so the database would vanish
+    plan: free               # no card, no disk, and no persistent storage
     region: frankfurt        # closest to Riga
     branch: v1-test          # the testing branch. master is the release line and is not deployed.
     buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /healthz
-    disk:
-      name: crm-data
-      mountPath: /var/data
-      sizeGB: 1
+    # No disk block. Free cannot have one, and asking for it makes the deploy fail
+    # rather than quietly cost money.
     envVars:
       - key: CRM_PUBLIC
         value: "1"           # turns the door on, and turns real data off
       - key: CRM_DB
-        value: /var/data/crm.db   # on the disk, so testers' work survives a restart
+        # /tmp, because it is the one path that always exists and is writable on a
+        # fresh container. The repository's own data/ is gitignored and openDb does
+        # not create directories, so the default path would fail on first boot.
+        # This file does not survive a restart, which is the accepted trade.
+        value: /tmp/crm.db
       - key: CRM_ACCESS_PASSWORD
         sync: false          # set in the Render dashboard. Never written down here.
       - key: NODE_VERSION

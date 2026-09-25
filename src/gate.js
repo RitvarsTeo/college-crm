@@ -152,5 +152,6 @@ export const LOGIN_PAGE = (message = '') => `<!doctype html>
   <input id="p" name="password" type="password" autocomplete="current-password" autofocus required>
   <button type="submit">Open</button>
   ${message ? `<p class="err">${message}</p>` : ''}
-  <p class="note">This copy holds <strong>demo data only</strong>. No real applicant is in it.</p>
+  <p class="note"><strong>Demo data only</strong> - changes reset when the demo restarts.
+    No real applicant is in it.</p>
 </form></body></html>`;
