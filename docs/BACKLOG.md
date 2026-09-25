@@ -573,3 +573,74 @@ not for how code is committed.
 **343 tests pass.** Verified end to end in a browser: the door appears, the
 password opens the CRM, and the demo data is there.
 
+## 25.09.2026 - the plan to finish V1
+
+Written from Aigars's braindump re-read today, from ChatGPT's summary, and from
+opening every screen of the running app rather than from memory. Three things
+Ritvars asked for: the channel automation carried through, a workflow that makes
+sense, and a UI nobody can usefully polish further.
+
+**The order matters.** A is the workflow fault Aigars actually reported and it
+changes what the screens are FOR, so it comes before B. C is weeks of external
+waiting, so it starts in parallel but finishes last. The Ieva test sits between
+A+B and C, and is the real gate.
+
+### A. The workflow Aigars reported, and it is still broken
+
+His words: *"sanāk es izdaru 2 soļus bet nekas nenotiek"* - I do two steps and
+nothing happens. And: *"Būtībā CAR sadaļā ir jābūt tikai To look at manā
+uztverē"* - the Inbox should have only To look at.
+
+The Inbox today still shows **three** tabs: To look at 6, Done 12, Show not
+relevant (4). That is the fault, not a cosmetic one: "Done" is a second place a
+person can sit and be forgotten, which is exactly what he described.
+
+| # | What | Status | Notes |
+|---|---|---|---|
+| 106 | **Inbox has ONE list: To look at.** Delete the Done tab and the not-relevant tab from the Inbox. | **SAID** | Qualified means gone from here and visible in Admissions. Not relevant means archived and findable from People or search, not a board. Aigars asked for this directly and it was not done. |
+| 107 | **Qualify is one action, not two.** Confirming what somebody wants puts them in Admissions with an owner and a next step, in one save, and the screen moves on. | **SAID** | Partly built - qualify() already creates the person and the task. What is missing is that the Inbox still leaves them visible in Done, so it reads as unfinished. |
+| 108 | **"Unclear" needs a plain name and a plain next step.** Aigars wrote a note that somebody wanted the engineer programme and the person appeared in Done as "not clear yet", and he could not tell what it meant or what to do. | **SAID** | Either it means "we asked, waiting for their answer" - which is a next step with a due date - or it should not be an outcome at all. Decide with Ieva. |
+| 109 | **Nobody can be left nowhere.** Every person in the system is either in a stage with a next step, or archived with a reason. | **SAID** | Assert it in a test, the way the no-next-action rule already is. |
+| 110 | **Two route names for the same screen.** `#/car` and `#/inbox` both exist, and so do `#/admissions` and `#/pipeline`. | **SAID** | One name per screen. Old names redirect, so a bookmark still works. |
+
+### B. Take the TMI off the boards
+
+Counted on the running app today, not guessed.
+
+| # | What | Status | Notes |
+|---|---|---|---|
+| 111 | **Admissions cards carry four lines each.** Programme, education, channel, owner, next action, date. Owner reads "Admissions" on 10 of 12, so it is noise on every card. | **SAID** | A card needs the name, what they want, and the next step with its date. Education and channel belong on the person, not the board. Owner appears only when it is NOT the usual one. |
+| 112 | **People has six filter dropdowns open at once** above the table, and the table then repeats programme+education stacked in one column and owner in another. | **SAID** | Search plus the two filters people actually use, with the rest behind "More filters". Aigars asked for the filters to say what they filter - that part is done. |
+| 113 | **Today has seven controls for a screen showing one item**: Admissions/Everyone, Table/One at a time, and three tabs. | **SAID** | Keep the table default (Aigars's decision, row 40) and the three tabs. The Admissions/Everyone and Table/One-at-a-time toggles go into a single small control, or away. |
+| 114 | **Delete the explanatory paragraphs from every board.** "Nothing becomes an applicant on its own", "What the machine read is a suggestion until somebody agrees with it", "These stage names are a first draft". | **SAID** | Each was written to defend a design decision to Ritvars. A person using the CRM daily does not need to be told. The stage-names caveat moves to where stages are edited. |
+| 115 | **One number per screen, in the heading.** "12 people in the journey", "12 records", "6 to look at". Not repeated in tabs, cards and footers. | **SAID** | |
+| 116 | **Quick edit everywhere Aigars asked for it.** He wants to add a note or fix a field without opening the person page. | **BUILT** | Done in People. Check it exists on the Inbox row and the Admissions card too, since those are where somebody is actually working. |
+
+### C. The channel automation, carried through
+
+Adapters, filter, identity matching, duplicate protection and the handshake are
+built and tested for all 14. What is missing is real credentials and, for Meta,
+their review. Nothing here is code we can finish alone.
+
+| # | What | Status | Notes |
+|---|---|---|---|
+| 117 | **Deploy the shared testing copy** so there is an address for a provider to call at all. | **BUILT** | `render.yaml`, row above. Needs Ritvars to create the Render account and set the password. |
+| 118 | **Website, Google Form, Open Day, Agent, In person.** Nobody outside Novikontas is needed. | **SAID** | The four quickest. Each needs the owner of that form or tool to paste an address and a secret. |
+| 119 | **Meta: one app, four channels** - WhatsApp (+371 23111114), Facebook, Instagram, Messenger. | **SAID** | App Review takes weeks and can be refused, so start it first even though it finishes last. |
+| 120 | **Gmail** - everything on our side is built. Only the Workspace administrator's authorisation is missing. | **SAID** | The single remaining human unknown. |
+| 121 | **Phone/PBX** - routing is settled, the poller is written. Only an API token from TeleGroup is missing. | **SAID** | The token in use is not being changed. |
+| 122 | **Mailchimp** - webhooks confirmed available on the live account. | **SAID** | Paste one address into the audience settings. |
+| 123 | **Each channel passes the same seven checks** before it is called connected. | **BUILT** | The checks exist as tests. What is missing is running them against the real provider. |
+
+### The gate, and it is not code
+
+| # | What | Status | Notes |
+|---|---|---|---|
+| 124 | **Ieva walks the whole thing**: TODAY, INBOX, ADMISSIONS, FOLLOW-UPS, PEOPLE, REPORTS, and says whether her eyes tell her what to do next. | **SAID** | Rows 46, 50 and 51 - the stage names, the real process after To look at, and the follow-up outcomes - can only be answered here. Do A and B first so she is reacting to the intended design, not to clutter. |
+
+### Correcting the record
+
+ChatGPT's summary says the suite is **282 tests**; it is **343**. It also lists
+"Aigars' current UI changes" as done. Rows 106 to 108 are his clearest request
+and they are not done, which is why the Inbox still has three tabs.
+
