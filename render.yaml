@@ -1,0 +1,38 @@
+# The shared testing copy, for Aigars and Ieva.
+#
+# Render runs a normal long-lived Node process with a real disk attached, which
+# is why this is the host and Vercel is not: the CRM keeps its 14 tables in a
+# SQLite FILE, and Vercel has no disk that survives between requests. Moving to
+# Vercel means porting ~113 SQL statements to Postgres first - see
+# docs/PRODUCTION_MIGRATION.md. That is the eventual home, not today's.
+#
+# DEMO DATA ONLY. This copy has one shared password, not sign-in, so the server
+# refuses to start if CRM_ACCESS_PASSWORD is missing and refuses outright to load
+# the real admissions export. Both refusals are tested in test/gate.test.js.
+#
+# Nothing secret is in this file. CRM_ACCESS_PASSWORD is marked sync:false, which
+# means Render asks for it in the dashboard and never stores it in the repository.
+
+services:
+  - type: web
+    name: academy-crm-test
+    runtime: node
+    plan: starter            # starter, not free: free has no disk, so the database would vanish
+    region: frankfurt        # closest to Riga
+    branch: v1-test          # the testing branch. master is the release line and is not deployed.
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /healthz
+    disk:
+      name: crm-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: CRM_PUBLIC
+        value: "1"           # turns the door on, and turns real data off
+      - key: CRM_DB
+        value: /var/data/crm.db   # on the disk, so testers' work survives a restart
+      - key: CRM_ACCESS_PASSWORD
+        sync: false          # set in the Render dashboard. Never written down here.
+      - key: NODE_VERSION
+        value: "24"          # node:sqlite needs a recent Node

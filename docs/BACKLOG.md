@@ -523,3 +523,53 @@ fault 4 cannot recur.
 Nothing is enabled. Every channel is still off, no secret is set, and no
 provider has been contacted.
 
+## 25.09.2026 - a shared testing copy, so Aigars and Ieva can actually use it
+
+Ritvars needs Aigars testing and Ieva reviewing the workflow, on a real address,
+today. Two things stood between that and a public URL, and neither was optional.
+
+**1. There is no sign-in.** `src/server.js` reads an `x-acting-as` header and
+believes it. Searching that file for password, session, oauth, jwt or bcrypt
+returns **zero** hits. Anybody with the address is anybody they type, including
+Marina, who can read the whole history log.
+
+**2. The database is a file.** 14 tables in SQLite. Vercel has no disk that
+survives, so on Vercel the data would vanish between clicks.
+
+**What was built instead of solving both today.** `src/gate.js`: one shared
+password in front of the whole copy, and it is deliberately NOT called
+authentication. Inside, identity is still a dropdown.
+
+- The server **refuses to start** if `CRM_PUBLIC` is on and `CRM_ACCESS_PASSWORD`
+  is missing or under 12 characters. A copy on the internet with no door is
+  worse than no copy, and a warning in a log nobody reads is not a door.
+- The server **refuses to start** with `DATASET=real` on a shared copy, and
+  `loadDataset('real')` throws there too. **This is the control that makes the
+  address safe to hand out**, not the password: the copy holds demo data only.
+- The ticket is signed with a key derived from the password, so the password
+  never reaches the browser and changing it invalidates every ticket. Expiry is
+  checked after the signature, so an old ticket and a forged one look identical.
+- A provider webhook stays reachable, because a signature is stronger than a
+  password a human types.
+
+**A leak my own test caught before it shipped.** Allowing `/api/inbound/*` by
+prefix also published `/api/inbound/events` - the observability view, with sender
+names and message bodies in it. Now only a path matching a real channel in the
+register is open. Same trap as the Meta handshake route, which matched the same
+path for the same reason. Prefix matching on a route namespace has now caused
+two faults; match the whole path against the register.
+
+`render.yaml` deploys `v1-test` to Render on the starter plan with a 1 GB disk,
+health check at `/healthz`, and the password marked `sync: false` so it is set in
+the dashboard and never written down in the repository.
+
+**Not Vercel, and not yet Supabase.** Supabase is the database, not where code
+runs, so "deploy to Supabase" is not a thing that can be done. Moving to
+Vercel plus Supabase means porting ~113 SQL statements to Postgres and building
+sign-in from nothing - `docs/PRODUCTION_MIGRATION.md`, written 23.09. Whose
+Supabase account it eventually is matters for **who owns the applicant data**,
+not for how code is committed.
+
+**343 tests pass.** Verified end to end in a browser: the door appears, the
+password opens the CRM, and the demo data is there.
+

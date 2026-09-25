@@ -16,12 +16,17 @@ import { buildPayload, scenariosFor, allScenarios, CHANNEL_LABELS, META_GROUP } 
 import { report as buildReport, reportRows, periodOf, EXPORT_SECTIONS, DEFAULT_SECTIONS } from './reports.js';
 import * as snapshot from './snapshot.js';
 import { buildDemo } from './demo.js';
+import * as gate from './gate.js';
 import { verifyRequest, channelDef, channelIds, allChannelStatus, BadInbound,
          parseInboundBody, handshake } from './inbound.js';
 
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const PORT = Number(process.env.PORT || 8800);
+// A Secure cookie is never sent over plain http, so testing the door on
+// localhost needs it off. Every real host serves https, so this stays unset
+// there and the cookie is Secure.
+const DEV_INSECURE_COOKIE = String(process.env.CRM_INSECURE_COOKIE || '') === '1';
 const CONFIG = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'prototype.json'), 'utf8'));
 const FIXTURES = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'inbound_fixtures.json'), 'utf8'));
 
@@ -63,6 +68,9 @@ function clearAll() {
 function loadDataset(kind) {
   clearAll();
   if (kind === 'real') {
+    // Belt and braces: the boot check above catches the flag, this catches every
+    // other route into the loader, including the Console.
+    if (gate.isPublic()) throw new Error('this is a shared copy: demo data only');
     if (!hasRealData()) throw new Error('data/real_people.json is missing');
     DATASET = loadReal(db, CONFIG.realData);
     setMode('real');
@@ -87,11 +95,32 @@ function loadDataset(kind) {
 // restart - the exact fault the file was meant to fix. So: an existing database
 // is left alone, and the configured starting dataset is only applied to a new
 // and empty one. DATASET=... still forces a load, which is what the tests use.
+const PUBLIC = gate.isPublic();
+{
+  // A copy on the internet with no door is worse than no copy at all, so this
+  // refuses to start rather than starting open.
+  const ready = gate.requireConfigured();
+  if (!ready.ok) { console.error('REFUSING TO START: ' + ready.why); process.exit(1); }
+}
+
 {
   const forced = process.env.DATASET;
+  // DEMO DATA ONLY on a shared copy. There is no real sign-in yet, so anybody
+  // with the address is anybody they type. Refusing here is the control that
+  // makes the address safe to hand out.
+  if (PUBLIC && forced === 'real') {
+    console.error('REFUSING TO START: DATASET=real with CRM_PUBLIC on. This copy has a shared '
+      + 'password, not sign-in, so it may hold demo data only.');
+    process.exit(1);
+  }
   const kept = db.prepare('SELECT COUNT(*) n FROM people').get().n;
   if (forced) {
     loadDataset(forced);
+  } else if (PUBLIC && !kept) {
+    // First boot on a fresh host: give the testers something to look at.
+    const info = buildDemo(db, CONFIG);
+    DATASET = { dataset: 'demo', people: info.total,
+      selection: 'the built-in demo, created through the real inbound path' };
   } else if (kept) {
     DATASET = { dataset: 'kept', people: kept,
       selection: 'what was in the database when the server last stopped' };
@@ -281,6 +310,41 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
   const p = url.pathname;
   try {
+    // ------------------------------------------------------------- the door --
+    // On a shared copy every page is behind one password. This is not sign-in:
+    // inside, identity is still a dropdown. See src/gate.js.
+    if (PUBLIC) {
+      if (req.method === 'POST' && p === '/access') {
+        const raw = await rawText(req, 4096);
+        const given = new URLSearchParams(raw).get('password') || '';
+        if (!gate.passwordMatches(given, process.env.CRM_ACCESS_PASSWORD)) {
+          // Deliberately slow, so guessing costs something.
+          await new Promise((r) => setTimeout(r, 400));
+          res.writeHead(401, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' });
+          return res.end(gate.LOGIN_PAGE('That password is not right.'));
+        }
+        const ticket = gate.mint(process.env.CRM_ACCESS_PASSWORD);
+        res.writeHead(303, { location: '/', 'cache-control': 'no-store',
+          'set-cookie': gate.cookieHeader(ticket, { secure: !DEV_INSECURE_COOKIE }) });
+        return res.end();
+      }
+
+      if (!gate.allows(p)) {
+        const ticket = gate.readCookie(req.headers.cookie);
+        const check = gate.verifyTicket(ticket, process.env.CRM_ACCESS_PASSWORD);
+        if (!check.ok) {
+          // An API call gets JSON so the screen can react; a page gets the door.
+          if (p.startsWith('/api/')) return json(res, 401, { error: 'not signed in', how: 'open / and enter the password' });
+          res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' });
+          return res.end(gate.LOGIN_PAGE());
+        }
+      }
+    }
+
+    if (req.method === 'GET' && p === '/healthz') {
+      return json(res, 200, { ok: true, people: db.prepare('SELECT COUNT(*) n FROM people').get().n });
+    }
+
     // Our control room, at its own address. It is deliberately NOT a route inside
     // the CRM: the CRM is the product and carries no way into this.
     if (req.method === 'GET' && (p === '/console' || p === '/console/')) {
