@@ -908,7 +908,8 @@
       "messenger",
       "whatsapp"
     ],
-    "_note": "CONFIRMED by Ritvars 24.09.2026. All four are reached through Meta Business Suite, and an Instagram account inside Business Suite is by definition a Professional account, so that is not a separate thing to check. Arina has NO social access and is phone button 3 backup only. STILL UNVERIFIED: whether WhatsApp is genuinely inside the same Business Suite inbox as the other three, or is a separate WhatsApp Business account. Ritvars is checking."
+    "_note": "CONFIRMED by Ritvars 24.09.2026: all four channels are reached through Meta Business Suite, and an Instagram account inside Business Suite is by definition a Professional account, so that is not a separate thing to check. Arina has NO social access and is phone button 3 backup only. Tetiana administers the Suite (25.09.2026).",
+    "administeredBy": "Tetiana"
   },
   "settled": {
     "pbxTokenNotRotated": {
@@ -972,29 +973,35 @@
       "decidedOn": "24.09.2026",
       "doNotReopen": true,
       "note": "Together with pbxQueueIsTheButton this closes the phone routing entirely. The PBX API already exposes the queue, and the queue is the button."
+    },
+    "workspaceAdmin": {
+      "question": "Who is the Google Workspace administrator?",
+      "answer": "Marina.",
+      "decidedBy": "Ritvars",
+      "decidedOn": "25.09.2026",
+      "doNotReopen": true,
+      "note": "She is the only person who can grant the service account domain-wide delegation to read edu@novikontas.org. Everything on our side of Gmail is already built."
+    },
+    "teleGroupTokenHeld": {
+      "question": "Do we have a TeleGroup API token?",
+      "answer": "YES. Ritvars has it.",
+      "decidedBy": "Ritvars",
+      "decidedOn": "25.09.2026",
+      "doNotReopen": true,
+      "note": "The VALUE is not recorded here and must never be. It goes straight into the server setting PBX_API_TOKEN on the host, and belongs in Bitwarden. It is not the discovery token and it is not being changed either - see pbxTokenNotRotated."
+    },
+    "metaAdministeredByTetiana": {
+      "question": "Who administers the Meta Business Suite?",
+      "answer": "Tetiana.",
+      "decidedBy": "Ritvars",
+      "decidedOn": "25.09.2026",
+      "doNotReopen": true,
+      "note": "Access is Ieva, Laura, Tetiana and Marina; Tetiana is the one who holds it. She is who creates the app at developers.facebook.com and submits it for App Review."
     }
   },
   "openQuestions": {
     "_what": "The ONLY things nobody at Novikontas has answered yet. Everything else is in `settled`. The Desktop guide and every readiness document are generated from THIS list, so a question that has been answered cannot come back.",
     "_rule": "Before adding one: check `settled` first. If it is there, it is answered.",
-    "workspaceAdmin": {
-      "ask": "Who is our Google Workspace administrator, and when can they spend twenty minutes on it?",
-      "why": "Only an administrator can let a service account read edu@novikontas.org. Not Ieva, not Tetiana. The Google Form does NOT need them - it needs whoever created the form to run a short script, which is work, not a question.",
-      "who": "Inside Novikontas",
-      "blocks": [
-        "gmail"
-      ],
-      "status": "Not identified yet."
-    },
-    "teleGroupToken": {
-      "ask": "Please issue us an API token for the call API.",
-      "why": "The only thing the phone channel still lacks. The menu button is already in the event as the `queue` field - that is settled, do not ask it again.",
-      "who": "TeleGroup",
-      "blocks": [
-        "phone"
-      ],
-      "status": "Request not sent yet."
-    },
     "spamWords": {
       "ask": "What rubbish actually arrives on Instagram and Facebook?",
       "why": "The spam list is a guess until somebody who reads the messages every day adds to it. It is a configuration line, not code.",
@@ -1031,5 +1038,11 @@
     "confirmedBy": "Marina",
     "confirmedOn": "24.09.2026",
     "_note": "The number is settled. What remains is the Meta build: WhatsApp Business Account, register this number against it, connect the app, point the webhook at us. None of that is a question for anybody at Novikontas."
+  },
+  "gmail": {
+    "mailbox": "edu@novikontas.org",
+    "workspaceAdmin": "Marina",
+    "confirmedOn": "25.09.2026",
+    "_note": "Only Marina can grant domain-wide delegation. Our side is built: the poll route, the JWT assertion with sub=edu@novikontas.org, read-only scope, multipart flattening and watch expiry. What is left is twenty minutes of her time and the key file, which comes by password manager or in person and never by chat or email."
   }
 }

@@ -56,6 +56,9 @@ DONE_LIST = [
     'WhatsApp number confirmed: %s' % cfg['whatsapp']['number'],
     'Phone 1 / 2 / 3 routing confirmed by %s' % cfg['whatsapp']['confirmedBy'],
     'Inbox filter and qualification logic built and tested',
+    'Google Workspace administrator: %s' % cfg['gmail']['workspaceAdmin'],
+    'TeleGroup API token - Ritvars holds it',
+    'Meta Business Suite is administered by %s' % cfg['metaBusinessSuite']['administeredBy'],
 ]
 
 L = []
@@ -85,9 +88,17 @@ w('')
 for line in DONE_LIST:
     w('- **DONE** %s' % line)
 w('')
-w('**The only human information still missing is the Google Workspace administrator.** '
-  'Everything else on the list below is either known, technically actionable, or waiting on a '
-  'provider - not on another question to you.')
+# Written from the open list, so it cannot claim a blocker that has been answered.
+blocking = [q for _, q in OPEN if q['blocks']]
+if not blocking:
+    w('**Nothing is waiting on an answer from anybody any more.** Every channel below is now '
+      'either configuration we do, or a provider we are waiting on - not another question to you. '
+      'The last three closed on 25.09.2026: Marina is the Google Workspace administrator, Ritvars '
+      'holds the TeleGroup token, and Tetiana administers the Meta Business Suite.')
+else:
+    names = ', '.join(q['ask'].rstrip('?') for _, q in OPEN if q['blocks'])
+    w('**Still waiting on an answer:** %s. Everything else below is either configuration we do '
+      'or a provider we are waiting on.' % names)
 w('')
 w('---')
 w('')

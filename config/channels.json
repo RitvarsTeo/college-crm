@@ -98,7 +98,7 @@
       "dedupKey": "channel + gmail message id",
       "rateLimit": "Gmail API quota per user. Polling every few minutes is well inside it.",
       "readiness": "waiting_for_external_access",
-      "externalBlocker": "Domain-wide delegation for the service account, which only the Google Workspace administrator can grant. Everything on our side is built: the poll route, the JWT assertion with sub=edu@novikontas.org, read-only scope, message flattening and watch expiry.",
+      "externalBlocker": "Twenty minutes of Marina's time. She is the Google Workspace administrator and only she can grant the service account domain-wide delegation. Everything on our side is built.",
       "weControl": [
         "the polling schedule",
         "what we extract",
@@ -113,12 +113,12 @@
         "a service account key",
         "the delegated user address"
       ],
-      "externalActionRequired": "The Google Workspace administrator authorises domain-wide delegation. This is not something a normal user can do.",
+      "externalActionRequired": "Marina grants domain-wide delegation to the service account at admin.google.com, and the key file comes back by password manager or in person.",
       "howWeTest": "Simulate from DEV CONTROL with a Gmail-shaped message fixture.",
       "howWeGoLive": "Deploy, add the key, poll once by hand, check CAR, then enable the schedule.",
       "howWeDisable": "Disable the schedule. The key can also be revoked at Google.",
       "bodyRetention": "The message body is held only until somebody qualifies or archives the item, then deleted. What survives is the structured record. Decided 23.09.2026.",
-      "blockerKind": "question",
+      "blockerKind": "work",
       "connectSteps": [
         "**Identify the Google Workspace administrator** - the one thing still unknown",
         "Get authorisation for the Gmail integration",
@@ -170,7 +170,8 @@
         "Test identity resolution into the Inbox"
       ],
       "handshakeEnv": "META_VERIFY_TOKEN",
-      "handshake": "GET the webhook path with hub.mode, hub.verify_token and hub.challenge. We echo the challenge as plain text or Meta will not save the subscription."
+      "handshake": "GET the webhook path with hub.mode, hub.verify_token and hub.challenge. We echo the challenge as plain text or Meta will not save the subscription.",
+      "administeredBy": "Tetiana"
     },
     "messenger": {
       "label": "Messenger",
@@ -214,7 +215,8 @@
         "Test an inbound Messenger message into the Inbox"
       ],
       "handshakeEnv": "META_VERIFY_TOKEN",
-      "handshake": "GET the webhook path with hub.mode, hub.verify_token and hub.challenge. We echo the challenge as plain text or Meta will not save the subscription."
+      "handshake": "GET the webhook path with hub.mode, hub.verify_token and hub.challenge. We echo the challenge as plain text or Meta will not save the subscription.",
+      "administeredBy": "Tetiana"
     },
     "instagram": {
       "label": "Instagram",
@@ -258,7 +260,8 @@
         "Test identity resolution into the Inbox"
       ],
       "handshakeEnv": "META_VERIFY_TOKEN",
-      "handshake": "GET the webhook path with hub.mode, hub.verify_token and hub.challenge. We echo the challenge as plain text or Meta will not save the subscription."
+      "handshake": "GET the webhook path with hub.mode, hub.verify_token and hub.challenge. We echo the challenge as plain text or Meta will not save the subscription.",
+      "administeredBy": "Tetiana"
     },
     "whatsapp": {
       "label": "WhatsApp",
@@ -306,7 +309,8 @@
         "Test Inbox filtering and routing"
       ],
       "handshakeEnv": "META_VERIFY_TOKEN",
-      "handshake": "GET the webhook path with hub.mode, hub.verify_token and hub.challenge. We echo the challenge as plain text or Meta will not save the subscription."
+      "handshake": "GET the webhook path with hub.mode, hub.verify_token and hub.challenge. We echo the challenge as plain text or Meta will not save the subscription.",
+      "administeredBy": "Tetiana"
     },
     "mailchimp": {
       "label": "Mailchimp",
@@ -396,7 +400,7 @@
       "dedupKey": "uniqueid",
       "rateLimit": "UNKNOWN. Must be asked.",
       "readiness": "waiting_for_external_access",
-      "externalBlocker": "An API token from TeleGroup, and the three deployment prerequisites.",
+      "externalBlocker": "Nothing from TeleGroup. Ritvars holds the API token; it goes into PBX_API_TOKEN on the host, then the channel needs the three deployment prerequisites.",
       "weControl": [
         "the polling window",
         "timezone handling",
@@ -412,7 +416,7 @@
       "credentialsNeeded": [
         "PBX_API_TOKEN, server side only, never in the client"
       ],
-      "externalActionRequired": "Ask TeleGroup for an API token for the calls endpoint.",
+      "externalActionRequired": "None. Nobody outside Novikontas is waiting on anything.",
       "howWeTest": "A local mock of the PBX list endpoint plus fixtures. The real API is never called in development.",
       "howWeGoLive": "Deploy, set the token, apply sql/001, poll once by hand, check the rows, then enable the schedule.",
       "howWeDisable": "Disable the schedule.",
@@ -423,9 +427,10 @@
       ],
       "_note": "V1 logs calls by hand and says so on screen. The logger is built and tested locally and has never called the real API. The queue field gives us the button; that question is settled.",
       "_answered": "ANSWERED 24.09.2026, and it was in the brief all along. The event carries a `queue` field, and the queue IS the button: 1001*Q-ADMISSION is button 1, 1001*Q-COORDINATORS is button 2, 1001*Q-OTHER is button 3. config/prototype.json -> phoneMenu has mapped it since 23.09.2026. It was listed as an open question by mistake and Ritvars had to point that out.",
-      "blockerKind": "question",
+      "blockerKind": "work",
       "connectSteps": [
-        "Connect the production PBX polling or cron",
+        "Paste the token Ritvars holds into the server setting `PBX_API_TOKEN`. Never into a document, a chat or this repository",
+        "Connect the production PBX polling schedule",
         "Use the existing confirmed button and queue mapping",
         "Store calls in the CRM",
         "Match the caller to a Person",

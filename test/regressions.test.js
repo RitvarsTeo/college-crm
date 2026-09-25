@@ -339,6 +339,11 @@ test('nothing Ritvars has settled can come back as an open question', () => {
     mailchimpWebhooksAvailable: ['does our mailchimp plan include webhooks',
       'does the mailchimp plan include webhooks'],
     admissionIsYearRound: ['deadline for applications', 'what is the application deadline'],
+    workspaceAdmin: ['who is our google workspace administrator', 'who is the google workspace administrator',
+      'who is the workspace admin'],
+    teleGroupTokenHeld: ['please issue us an api token', 'do we have a telegroup token',
+      'ask telegroup for an api token'],
+    metaAdministeredByTetiana: ['who administers the meta business suite', 'who holds the business suite'],
   };
   // Every settled decision must be covered, or a new one silently gains no guard.
   for (const [key] of closed) {

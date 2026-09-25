@@ -20,14 +20,14 @@ It should not require redesigning the CRM. That is the whole purpose of this fil
 |---|---|---|---|
 | **Website form** | READY FOR CONFIGURATION | inbound webhook | nothing - our side is finished |
 | **Google Form** | WAITING FOR EXTERNAL ACCESS | inbound webhook | Somebody who owns the form must paste the script, add the installable trigger and authorise it once. |
-| **Email** | WAITING FOR EXTERNAL ACCESS | inbound poll | A Google Cloud project, a service account, and a Workspace ADMIN granting domain-wide delegation for edu@novikontas.org. |
+| **Email** | WAITING FOR EXTERNAL ACCESS | inbound poll | Twenty minutes of Marina's time. She is the Google Workspace administrator and only she can grant the service account domain-wide delegation. Everything on our side is built. |
 | **Facebook** | WAITING FOR EXTERNAL ACCESS | inbound webhook | A Meta app, page access from the business portfolio, and APP REVIEW for messaging permissions. Review takes weeks and can be refused. |
 | **Messenger** | WAITING FOR EXTERNAL ACCESS | inbound webhook | A Meta app, page access from the business portfolio, and APP REVIEW for messaging permissions. Review takes weeks and can be refused. |
-| **Instagram** | WAITING FOR EXTERNAL ACCESS | inbound webhook | The account must be a professional account linked to the app, and the messaging permission must pass App Review. |
-| **WhatsApp** | WAITING FOR EXTERNAL ACCESS | inbound webhook | A phone number that is not already on consumer WhatsApp, and business verification. |
-| **Mailchimp** | WAITING FOR EXTERNAL ACCESS | inbound webhook | EXTERNAL CONFIRMATION REQUIRED: whether the current Mailchimp plan includes webhooks. |
+| **Instagram** | WAITING FOR EXTERNAL ACCESS | inbound webhook | APP REVIEW for messaging permissions. The account is already Professional - it is in Meta Business Suite - so that part is settled and is not a blocker. |
+| **WhatsApp** | WAITING FOR EXTERNAL ACCESS | inbound webhook | The Meta build: a WhatsApp Business Account, +371 23111114 registered against it, the app connected and business verification. The NUMBER is settled - Marina confirmed it on 24.09.2026 - so this is work, not a question. |
+| **Mailchimp** | READY FOR CONFIGURATION | inbound webhook | nothing - our side is finished |
 | **Open Day** | READY FOR CONFIGURATION | inbound webhook | nothing - our side is finished |
-| **Phone** | WAITING FOR EXTERNAL ACCESS | inbound poll | An API token from TeleGroup, and the three deployment prerequisites. |
+| **Phone** | WAITING FOR EXTERNAL ACCESS | inbound poll | Nothing from TeleGroup. Ritvars holds the API token; it goes into PBX_API_TOKEN on the host, then the channel needs the three deployment prerequisites. |
 | **Agent or partner** | READY FOR CONFIGURATION | inbound webhook | nothing - our side is finished |
 | **In person** | MANUAL ONLY, BY DESIGN | manual | nothing - our side is finished |
 | **LinkedIn** | CAPABILITY UNCONFIRMED | manual | EXTERNAL CONFIRMATION REQUIRED: whether LinkedIn offers any inbound messaging integration for a page like ours at all. Nothing has been confirmed. Do not promise it. |
@@ -39,14 +39,14 @@ These are the actions nobody in this repository can perform.
 
 - **Website form** - Whoever maintains the website points the form at the endpoint and sets the same secret.
 - **Google Form** - The form owner runs the script once and approves the permission prompt.
-- **Email** - The Google Workspace administrator authorises domain-wide delegation. This is not something a normal user can do.
+- **Email** - Marina grants domain-wide delegation to the service account at admin.google.com, and the key file comes back by password manager or in person.
 - **Facebook** - Confirm WHO owns the page and the business portfolio, create the app, subscribe the page, pass App Review.
 - **Messenger** - Confirm WHO owns the page and the business portfolio, create the app, subscribe the page, pass App Review.
 - **Instagram** - Confirm the account is professional, link it to the app, request the permission, pass review.
-- **WhatsApp** - Find a spare number, register it, verify the business.
-- **Mailchimp** - Confirm the plan, then paste the URL into the audience webhook settings.
+- **WhatsApp** - Register +371 23111114 as the WhatsApp Business number and complete business verification at Meta. Nobody at Novikontas has to be asked anything first.
+- **Mailchimp** - Somebody with Mailchimp access pastes our address into the Novikontas audience (c6ab4facba) under webhooks. Nothing has to be bought or asked for - checked 24.09.2026.
 - **Open Day** - Point the existing booking tool at the endpoint.
-- **Phone** - Ask TeleGroup for an API token for the calls endpoint.
+- **Phone** - None. Nobody outside Novikontas is waiting on anything.
 - **Agent or partner** - Agree the format with each partner and issue their token.
 - **LinkedIn** - Somebody has to establish what, if anything, LinkedIn permits.
 - **TikTok** - Somebody has to establish what, if anything, TikTok permits.
@@ -135,9 +135,9 @@ These are the actions nobody in this repository can perform.
 
 **Credentials required:** a service account key; the delegated user address
 
-**EXTERNAL BLOCKER:** A Google Cloud project, a service account, and a Workspace ADMIN granting domain-wide delegation for edu@novikontas.org.
+**EXTERNAL BLOCKER:** Twenty minutes of Marina's time. She is the Google Workspace administrator and only she can grant the service account domain-wide delegation. Everything on our side is built.
 
-**Somebody outside has to:** The Google Workspace administrator authorises domain-wide delegation. This is not something a normal user can do.
+**Somebody outside has to:** Marina grants domain-wide delegation to the service account at admin.google.com, and the key file comes back by password manager or in person.
 
 **How we test:** Simulate from DEV CONTROL with a Gmail-shaped message fixture.
 
@@ -234,7 +234,7 @@ These are the actions nobody in this repository can perform.
 
 **Credentials required:** app secret; verify token; a page or IG access token
 
-**EXTERNAL BLOCKER:** The account must be a professional account linked to the app, and the messaging permission must pass App Review.
+**EXTERNAL BLOCKER:** APP REVIEW for messaging permissions. The account is already Professional - it is in Meta Business Suite - so that part is settled and is not a blocker.
 
 **Somebody outside has to:** Confirm the account is professional, link it to the app, request the permission, pass review.
 
@@ -267,9 +267,9 @@ These are the actions nobody in this repository can perform.
 
 **Credentials required:** app secret; verify token; a phone number id; an access token
 
-**EXTERNAL BLOCKER:** A phone number that is not already on consumer WhatsApp, and business verification.
+**EXTERNAL BLOCKER:** The Meta build: a WhatsApp Business Account, +371 23111114 registered against it, the app connected and business verification. The NUMBER is settled - Marina confirmed it on 24.09.2026 - so this is work, not a question.
 
-**Somebody outside has to:** Find a spare number, register it, verify the business.
+**Somebody outside has to:** Register +371 23111114 as the WhatsApp Business number and complete business verification at Meta. Nobody at Novikontas has to be asked anything first.
 
 **How we test:** Simulate from DEV CONTROL.
 
@@ -277,14 +277,14 @@ These are the actions nobody in this repository can perform.
 
 **How we turn it off:** Remove the webhook at Meta, or set the mode to off here.
 
-**Operationally:** WhatsApp being part of the same Meta Business Suite inbox as Facebook and Instagram is NOT VERIFIED. Do not claim it. Access today: Ieva, Laura, Marina. Not Tetiana. Access is not ownership.
+**Operationally:** WhatsApp sits in the same Meta Business Suite as Facebook and Instagram - settled 24.09.2026. Access today: Ieva, Laura, Marina. Not Tetiana. Access is not ownership: a confirmed study lead belongs to Ieva whatever channel it arrived on.
 
 
 ## Mailchimp
 
 | | |
 |---|---|
-| Readiness | **WAITING FOR EXTERNAL ACCESS** |
+| Readiness | **READY FOR CONFIGURATION** |
 | Mechanism | Audience webhook for subscribe, unsubscribe, profile and cleaned events. |
 | Direction | inbound webhook |
 | Security | secret in url |
@@ -300,9 +300,7 @@ These are the actions nobody in this repository can perform.
 
 **Credentials required:** a secret we generate and put in the callback URL
 
-**EXTERNAL BLOCKER:** EXTERNAL CONFIRMATION REQUIRED: whether the current Mailchimp plan includes webhooks.
-
-**Somebody outside has to:** Confirm the plan, then paste the URL into the audience webhook settings.
+**Somebody outside has to:** Somebody with Mailchimp access pastes our address into the Novikontas audience (c6ab4facba) under webhooks. Nothing has to be bought or asked for - checked 24.09.2026.
 
 **How we test:** Simulate from DEV CONTROL.
 
@@ -366,9 +364,9 @@ These are the actions nobody in this repository can perform.
 
 **Credentials required:** PBX_API_TOKEN, server side only, never in the client
 
-**EXTERNAL BLOCKER:** An API token from TeleGroup, and the three deployment prerequisites.
+**EXTERNAL BLOCKER:** Nothing from TeleGroup. Ritvars holds the API token; it goes into PBX_API_TOKEN on the host, then the channel needs the three deployment prerequisites.
 
-**Somebody outside has to:** Ask TeleGroup for an API token for the calls endpoint.
+**Somebody outside has to:** None. Nobody outside Novikontas is waiting on anything.
 
 **How we test:** A local mock of the PBX list endpoint plus fixtures. The real API is never called in development.
 

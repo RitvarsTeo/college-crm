@@ -472,8 +472,9 @@ VERIFIED. Ritvars settled that, so the note and the test that guarded it were bo
 The rule did not change - the note must say which it is and never leave it hanging - only the
 answer did.
 
-**One human unknown remains: the Google Workspace administrator.** Everything else is either
-known, technically actionable, or waiting on a provider.
+**One human unknown remained at the time of writing: the Google Workspace administrator.**
+**SUPERSEDED 25.09.2026** - it is Marina, and there are now none. See the entry at the end of
+this file.
 
 ## 24.09.2026 - four faults that only a real provider shape would have found
 
@@ -627,8 +628,8 @@ their review. Nothing here is code we can finish alone.
 | 117 | **Deploy the shared testing copy** so there is an address for a provider to call at all. | **BUILT** | `render.yaml`, row above. Needs Ritvars to create the Render account and set the password. |
 | 118 | **Website, Google Form, Open Day, Agent, In person.** Nobody outside Novikontas is needed. | **SAID** | The four quickest. Each needs the owner of that form or tool to paste an address and a secret. |
 | 119 | **Meta: one app, four channels** - WhatsApp (+371 23111114), Facebook, Instagram, Messenger. | **SAID** | App Review takes weeks and can be refused, so start it first even though it finishes last. |
-| 120 | **Gmail** - everything on our side is built. Only the Workspace administrator's authorisation is missing. | **SAID** | The single remaining human unknown. |
-| 121 | **Phone/PBX** - routing is settled, the poller is written. Only an API token from TeleGroup is missing. | **SAID** | The token in use is not being changed. |
+| 120 | **Gmail** - everything on our side is built. | **SAID** | UPDATED 25.09.2026: the administrator is **Marina**. Not a question any more; it is twenty minutes of her time at admin.google.com, and the key file back by password manager. |
+| 121 | **Phone/PBX** - routing is settled, the poller is written. | **SAID** | UPDATED 25.09.2026: **Ritvars holds the token.** Nothing is owed by TeleGroup. It goes into `PBX_API_TOKEN` on the host and nowhere else. The discovery token is still not being changed. |
 | 122 | **Mailchimp** - webhooks confirmed available on the live account. | **SAID** | Paste one address into the audience settings. |
 | 123 | **Each channel passes the same seven checks** before it is called connected. | **BUILT** | The checks exist as tests. What is missing is running them against the real provider. |
 
@@ -687,4 +688,40 @@ appeared, the queue went 3 to 2 and the heading followed; the receipt was gone o
 Admissions cards read name, programme, next step; People went from six open dropdowns to two;
 a hidden filter set to NAV refused to collapse and filtered 12 people to 5; Follow-ups renders
 its own screen at `#/followup`.
+
+## 25.09.2026 - the last three human unknowns closed
+
+Ritvars answered all three in one line: **Marina is the Google Workspace administrator, he holds
+the TeleGroup API token, and Tetiana administers the Meta Business Suite.**
+
+| Was | Now | Effect |
+|---|---|---|
+| Gmail was blocked on an unnamed administrator | **Marina** - ANSWERED 25.09.2026, recorded in `config/prototype.json` -> `gmail` | Gmail moved from a `question` blocker to a `work` blocker. Everything on our side was already built, so what is left is twenty minutes of her time and the key file. |
+| Phone was blocked on a token from TeleGroup | **Ritvars holds it** - ANSWERED 25.09.2026 | Nothing is owed by TeleGroup. The phone channel is now ours to configure. |
+| Meta - access known, holder unnamed | **Tetiana** - ANSWERED 25.09.2026 | She is who creates the app at `developers.facebook.com` and submits for App Review. Recorded on all four Meta channels. |
+
+**The token value is not in this repository and must never be.** Only the fact that it exists and
+where it goes: `PBX_API_TOKEN`, set on the host, kept in Bitwarden. This is a different token from
+the discovery one, which is also not being changed - see `pbxTokenNotRotated`.
+
+**`openQuestions` is down to one live item**: the spam word list, from Tetiana, which blocks no
+channel. Plus LinkedIn/TikTok, parked by decision.
+
+The Desktop guide's headline said "the only human information still missing is the Google
+Workspace administrator". That sentence was hardcoded, so it could not notice being answered.
+It is now generated from the open list and reads what is actually true.
+
+**A stale note corrected while in there.** `metaBusinessSuite._note` still said "STILL UNVERIFIED:
+whether WhatsApp is genuinely inside the same Business Suite inbox... Ritvars is checking", which
+he had already answered on 24.09 ("yes, all the meta is, because is business suite"). It
+contradicted the channel note I had already corrected. Same failure mode as rows 106 to 108: the
+answer existed and the note did not read it.
+
+The settled guard caught two of these itself: it refused to pass until every new decision had a
+phrase protecting it from being re-asked, and then found `docs/CHANNEL_READINESS.md` still
+requesting the token from TeleGroup. It then caught this very entry twice, because writing about
+a closed question in the words of the question is indistinguishable from re-asking it. That is the
+guard behaving correctly, and it is why these rows now record the answer instead of the question.
+
+346 tests.
 
