@@ -153,7 +153,7 @@ approval - nothing is connected**. The questions for each provider are in
 | 5 | A call gives us the menu choice the caller presses (1-3) | SAID | Not verified with TeleGroup. |
 | 6 | After the call, TeleGroup sends a notification to the app | **OPEN - external question** | Nobody has asked TeleGroup: *does the phone system provide a post-call notification, and what does it contain?* Until that is answered the phone stays **manual in V1** and the prototype does not claim automatic phone integration. |
 | 7 | Email: a human reads it, the valuable part is pushed in by a browser EXTENSION | SAID (idea) | Recorded on the gmail channel as `alternativeApproach`. Not designed, not built, not costed. |
-| 8 | Cost limits table | DELIVERED | `C:\Users\ritvarsv\Desktop\College_CRM_Cost_Limits.xlsx`, 12 rows, exactly as supplied. |
+| 8 | Cost limits table | DELIVERED | `C:\Users\ritvarsv\Desktop\WF\Local Repo\Projects\College CRM\College_CRM_Cost_Limits.xlsx` (moved off the Desktop 25.09.2026), 12 rows, exactly as supplied. |
 | 9 | **Edit a person.** | **DECIDED 23.09.2026, BUILT** | Editable: name, email, phone, programme, study form, education, owner, notes. **Locked: source channel, source campaign, source detail, first-contact date** - historical facts, not current state. A locked field is refused **by name and with a reason**, and a refused edit writes nothing at all, not even the legal half of it. Policy lives in `config/prototype.json` → `editPolicy` and in `src/history.js`. |
 | 10 | **Manual tracking goes in the same log.** | BUILT | One table, one screen. Every entry carries `origin`: `manual` or `automatic`. Adding somebody by hand, logging a call, marking open-day attendance, changing a status by hand, editing - all `manual`. Integration inbound and outbound, and the automatic stage move - all `automatic`. `logEvent()` **throws** if a write does not say which, so it cannot be forgotten in one place and remembered in twenty. |
 | 11 | **Edits go in the same log.** | BUILT | One entry per field that really changed: field, old value, new value, who, when. Two fields changed at once are two entries, not one lump. Setting a field to the value it already has writes nothing. |
@@ -784,3 +784,293 @@ a card at signup is NOT verified** - their docs imply it does not, and if it doe
 
 346 tests.
 
+## 25.09.2026 - a person against every channel
+
+Ritvars named who physically has to act, per channel. Recorded in
+`config/channels.json` as `ownerPerson` and `ownerAction`, and rendered in the
+Desktop guide as a line on each channel. **A name here is a person, not a team,
+because "somebody at marketing" never does anything.**
+
+| Channel | Who |
+|---|---|
+| WhatsApp, Facebook, Instagram, Messenger | **Tetiana** - the Meta app and App Review for all four |
+| Gmail | **Marina** - Workspace administrator approval |
+| Website form | **Oksana** - a new name to this register |
+| Open Day | **Aigars** - the booking tool's webhook |
+| Phone, Mailchimp | **Ritvars** - configuration on our side |
+| Google Form | **nobody named yet** |
+| Agent or partner | **nobody named yet** |
+| LinkedIn, TikTok, In person | manual, no integration |
+
+**Two channels moved backwards, correctly.** Google Form and Agent were both
+marked `ready_for_configuration`. Naming everybody else exposed that these two
+have no person at all, so they are now `waiting_for_external_access` with a
+`question` blocker and an entry in `openQuestions`.
+
+The settled guard caught this itself: it refused to pass while a question
+claimed to block a channel typed as `work`. Google Form was `work` on the
+assumption somebody known would run the Apps Script, and nobody is known.
+
+**Open questions: 4.** The spam word list from Tetiana, who owns the Google Form,
+which agent we start with, and LinkedIn/TikTok which stays parked.
+
+346 tests.
+
+
+---
+
+## 25.09.2026 - sign-in, and an admin Channels panel
+
+**BUILT, not deployed, not connected.** 423 tests, 0 failing. Nothing committed.
+
+### Sign-in
+
+The identity was `x-acting-as`: a header the browser set and the server believed. Every history
+entry, every admin screen and every "who did this" was therefore self-declared.
+
+Adapted from the Talent Acquisition hub's `lib/_auth.js`, which was itself lifted from the Client
+Hub and has been running since August 2026. Reused rather than rewritten on purpose.
+
+| | |
+|---|---|
+| `src/auth.js` | scrypt hashes with a version field, HMAC-signed sessions, decoy hash on a missing account |
+| `crm_users` | id, email, display_name, password_hash, role, active, session_version, last_login_at |
+| `scripts/manage_users.mjs` | the only way an account is made. `seed`, `add`, `password`, `role`, `disable`, `signout`, `secret` |
+| Two roles | `admin` (Aigars, Ritvars, Marina) and `user` (Ieva, Laura, Tetiana, Maris, Arina) |
+| `CRM_AUTH=1` | switches it on. **Off by default**, so the 346 tests that send the header still pass unchanged |
+
+**With sign-in on, the header is IGNORED, not preferred.** There is a test that asserts exactly
+that, because a fallback would have made the login walk-aroundable.
+
+**The role is re-read from the database on every request**, never taken from the cookie. Taking away
+somebody's admin rights is in force on their next click, not when their cookie expires.
+
+### The Channels panel - `#/channels`, admins only
+
+Four states, and the distinction between two of them is the whole point.
+
+| | |
+|---|---|
+| `NOT CONFIGURED` | a setting it needs is missing |
+| `CONFIGURED` | the settings exist, and **nothing has proved the path works** |
+| `CONNECTED` | **the provider itself has reached us** |
+| `ERROR` | it was checked and the check failed |
+
+**ON/OFF is a separate axis.** Everything is OFF. Nothing here connected anything.
+
+**A passing check does NOT make a channel CONNECTED.** Our check runs against our own code in our
+own process, so passing it proves our side works and says nothing about whether Meta has been
+pointed at us. The panel says so in those words on every channel.
+
+**No secret value is ever shown or sent.** The NAME of each setting is, plus the word OK or MISSING.
+Three tests grep for the values: one on the module's output, one on the check result, one on the
+HTTP response the browser actually receives.
+
+### What the checks actually do
+
+Nothing goes out to a provider, nothing is written to the Inbox, nothing is sent to anybody.
+
+| Kind | Channels | What it does |
+|---|---|---|
+| `handshake` | the four Meta channels, Mailchimp | runs the provider verification exchange in process: the right token must be accepted, a wrong one must be refused, the challenge must come back exactly |
+| `simulated` | every webhook channel | pushes a provider-shaped payload through the real verify, parse and adapt path, signed with the real secret, and asserts a tampered payload is refused |
+| `config` | Phone, Email | settings present and the poll route wired. **TeleGroup and Google are deliberately not called** |
+| `none` | In person, LinkedIn, TikTok | nothing can be checked without a person. Reported as SKIPPED, never as a pass |
+
+A Meta channel runs **both** the handshake and the message path, because they are different
+failures: the handshake is what lets Meta save the subscription, the signature is what lets a
+message through afterwards.
+
+### Two faults this found in existing code
+
+- **`inbound` had no provenance.** The demo builder and the simulator write through the same table a
+  real provider writes to, so counting those rows would have shown every channel on the testing copy
+  as CONNECTED, to Aigars, on day one. Added `inbound.source` - `provider` | `simulated` | `demo` |
+  `manual` - and only `provider` counts as evidence.
+- **A port already in use was swallowed.** `server.listen` had no error handler, so a stale server
+  answered for a new one. It now exits, and the boot line prints the port it really got.
+
+### What is NOT covered by a test
+
+The frontend. Both faults found while building it - the server answering `auth` while the page read
+`on`, and the hash listener never being registered after a sign-in - were found by looking at the
+screen, not by a test. A source-text assertion would not have caught either.
+
+**Open questions: still 4.** Nothing here answered or reopened one.
+
+423 tests.
+
+---
+
+## 25.09.2026 (later) - Google sign-in, the API door, and a QA pass
+
+**478 tests, 0 failing. Nothing committed. Nothing deployed. No provider contacted.**
+
+### Where sign-in actually stands
+
+| | Status |
+|---|---|
+| Password sign-in | **BUILT and working.** scrypt hashes, signed sessions, throttled guessing |
+| Google sign-in | **BUILT. NOT LIVE, and not provider-verified.** See below |
+| `x-acting-as` header | **Ignored entirely** when `CRM_AUTH=1` |
+| The API before sign-in | **Closed.** See "the door that was missing" |
+
+**GOOGLE IS NOT CONNECTED TO ANYTHING.** The flow is implemented and tested against a key pair
+generated inside the test process - the tests prove our code, not Google. No OAuth client exists for
+the Academy CRM, no redirect URI is registered, and `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and
+`GOOGLE_REDIRECT_URI` are unset everywhere. With them unset the button is not drawn at all and
+`/api/auth/google/start` answers `503 google_not_configured`. **A passing callback test is not a
+working Google sign-in**, and nothing here should be read as saying otherwise.
+
+### The accounts, and only these
+
+| Address | Name | Role | Channels |
+|---|---|---|---|
+| `ritvars.vilcins@novikontas.org` | Ritvars | admin | yes |
+| `aigars.kluga@novikontas.org` | Aigars | admin | yes |
+| `edu@novikontas.org` | Admissions | user | no, 403 |
+
+**`edu@` is the shared Admissions account that Ieva and Laura both work from.** It is recorded with
+`sharedBy: ["Ieva", "Laura"]`, and signing in with it is a normal, intended way for either of them to
+use the CRM. It is `user` because **Channels is admin-only for everybody** and admissions work needs
+no channel configuration - the same rule every admissions seat is under, not a restriction aimed at
+them. The one thing it does carry is that an entry made from it reads "Admissions" rather than the
+individual, so where the history has to name a person, that person signs in as themselves.
+
+Marina, Tetiana, Maris Cirulis and Arina have **no address recorded**, so they have no account, and
+`seed` names them on every run rather than inventing one.
+
+**Addresses are never derived from names.** `seed` used to build `first.last@novikontas.org` from a
+display name and produced `ritvars@` for somebody who is `ritvars.vilcins@`. With Google that is not
+cosmetic: the allowlist matches on the address, so the guessed row refuses the real person and lets
+nobody in. It no longer guesses, and a test asserts the configured address is not what a name would
+produce.
+
+### The door that was missing
+
+**With `CRM_AUTH=1` and nobody signed in, the data API answered anyway.** `GET /api/people`,
+`/api/tasks`, `/api/reports` and `/api/config` all returned 200, and `/api/whoami` reported the
+caller as **"Ieva"** because the route fell back to the first name in the config when nobody was
+identified. The login screen refused to draw the CRM, but the screen was never the boundary.
+
+Closed. Every `/api/` path now answers `401 not signed in` unless a session proves otherwise, with
+the same allow-list shape `src/gate.js` already uses for the shared door - including its recorded
+trap that a prefix match on `/api/inbound/` also opens `/api/inbound/events`, which carries sender
+names and message bodies. Only a path naming a **real channel** stays open, plus `/api/auth/` and
+`/api/cron/`, because a provider proves itself with a signature and has no cookie.
+
+Verified by hand as well as by test: the Meta handshake still answers and echoes its challenge, a
+wrong verify token is still refused by the handshake rather than by the door, and a signed website
+webhook still queues an event - all with no session at all.
+
+### Smaller fixes in the same pass
+
+- **`/assets/na_pattern_tile.png` 404'd on every page load.** The sign-in card's mask references it
+  and the asset had not been carried over. Copied in; the assets allow-list is now name to
+  content-type so a new kind of file cannot be served with the wrong one.
+- **The shell fetched `/api/config` before asking who you are**, so 34KB of configuration reached an
+  unauthenticated browser before the login screen appeared. Auth now runs first.
+- **A poll channel's check said "a poll route is declared" and stopped there.** Declared only means
+  the register names a path. It now also checks a handler file exists, because the poll routes are
+  Vercel functions under `api/` and not routes in `src/server.js`.
+- **`currentUser()` ran a fresh query per caller**, up to three or four times per request. Cached
+  per request.
+- `.env.example` had none of the sign-in or Google variables. All present now, by name only.
+
+### Still needing a human
+
+- **An OAuth client for the Academy CRM**, and its redirect URI registered at Google Cloud Console
+  BEFORE the values are set here. Google compares `redirect_uri` character for character and refuses
+  on its own error page, before any of our code runs, so a wrong value leaves nothing on our side to
+  debug. Owner decision: reuse the Talent Acquisition client or create a separate one.
+- **Whether `edu@novikontas.org` can complete an OAuth sign-in at all.** Shared mailboxes sometimes
+  cannot. Only matters if Google is preferred over a password for that account.
+- **Passwords**, if Google is not used. Not settable by anyone but Ritvars.
+- Addresses for Marina, Tetiana, Maris Cirulis and Arina, if they are to have accounts.
+
+478 tests.
+
+---
+
+## EVERYTHING NOT DONE, as of 25.09.2026
+
+Written at Ritvars's instruction at the end of the autonomous QA run. **Nothing below is a
+recommendation to act now.** It is the honest list of what is open, so that nothing is carried only
+in somebody's head or in a chat window.
+
+Statuses as used everywhere in this file: `SAID` nobody checked it - `DECIDED` the owner decided it -
+`BUILT` it exists in the prototype - `LIVE` verified running in production - `UNKNOWN` named but not
+checked. **Nothing in this whole project is LIVE.**
+
+### A. Blocked on somebody outside this repository
+
+| # | What | Status | Whose |
+|---|---|---|---|
+| A1 | **An OAuth client for the Academy CRM.** Reuse the Talent Acquisition client or create a separate one. The redirect URI must be registered at Google Cloud Console **before** the values are set here: Google compares it character for character and refuses on its own error page, before any of our code runs, so a wrong value leaves nothing on our side to debug | **NOT DECIDED** | Ritvars decides, then it is registered |
+| A2 | Whether `edu@novikontas.org` can complete an OAuth sign-in at all. Shared mailboxes sometimes cannot. Only matters if Google is preferred over a password for that account | **UNKNOWN** | Marina, Workspace admin |
+| A3 | Passwords for the three accounts, if Google is not used. Not settable by anyone but Ritvars, and never through a Claude session | **SAID** | Ritvars |
+| A4 | Email addresses for Marina, Tetiana, Maris Cirulis and Arina, if they are to have accounts at all. `seed` names them on every run rather than inventing one | **UNKNOWN** | Ritvars |
+| A5 | The 14 channels. Every external blocker is already recorded per channel in `config/channels.json` as `ownerPerson` and `ownerAction`: Tetiana holds the Meta build for four channels, Marina the Gmail delegation, Oksana the website form, Aigars the Open Day webhook, Ritvars the PBX token and Mailchimp | **SAID** | named per channel |
+| A6 | The four open questions in `config/prototype.json` under `openQuestions`: the spam word list from Tetiana, who owns the Google Form, which agent to start with, and whether LinkedIn or TikTok are possible at all | **UNKNOWN** | named per question |
+
+### B. Product and workflow decisions nobody has taken
+
+All of `docs/WORKFLOW_MODEL.md` is specification. **None of it is implemented**, and it carries
+**16 open decisions**. The ones that change the shape of everything else:
+
+| # | What | Status |
+|---|---|---|
+| B1 | **Where outstanding requirements come from** - automatically from the stage, by hand, or hybrid. Decision 13. The OpenEduCat appendix added a fourth and simplest answer: that there are no requirements at all, only stages and planned actions | **NOT DECIDED** |
+| B2 | Whether admission contains a **decision step**. Our stages run Application straight into Contract, so there is nowhere a person is "with us" rather than waiting on them, and the silence clock would chase somebody whose file is on our own desk | **NOT DECIDED** |
+| B3 | The other 14 decisions in `WORKFLOW_MODEL.md`: silence thresholds, what restarts the clock, one clock or two, pausing somebody deliberately, terminal stages, the documents boundary, and whether Admissions needs a stage-level "where is this stuck" view | **NOT DECIDED** |
+| B4 | **Ieva has not validated the workflow at all.** Every row in this file about how work flows is provisional until she has | **SAID** |
+
+### C. Architecture, parked with a recommendation
+
+| # | What | Status |
+|---|---|---|
+| C1 | `docs/PLATFORM_FEASIBILITY.md` recommends **Path C**: keep our CRM, move to Postgres when that happens, and take authentication from something proven rather than inventing it. The authentication half is now done, from the proven source. The rest is untouched | **NOT DECIDED** |
+| C2 | **The thirty-minute test that could end the platform debate**: show Ieva the Atomic CRM public demo. If it reads as a sales tool, Path B is over regardless of the engineering. Nobody has done it | **SAID** |
+| C3 | **Durable storage.** The testing copy is SQLite on Render Free and tester changes disappear on restart, which the owner explicitly accepted. A Postgres port is roughly 200 call sites across 77 synchronous functions | **NOT DECIDED** |
+| C4 | Aigars already has a paid Supabase project. It has not been used, and a new one must not be created | **SAID** |
+
+### D. Known, and deliberately not fixed
+
+| # | What | Why it was left |
+|---|---|---|
+| D1 | **The frontend has no automated test coverage at all.** Every UI fault found on 25.09.2026 was found by looking at the screen: the `auth`/`on` field mismatch, the unregistered hash listener, the dropped `google` field, the missing `.hidden` class, the Sign in button falling outside its mask window, and `type="email"` refusing a bare name. A source-text assertion would have caught none of them | A real gap. Closing it means choosing a browser test runner, which is a tooling decision |
+| D2 | Below 360px the login's Sign in button is narrower than the fixed 304px hole the card mask punches, so a thin sliver shows around its edge | It is the sign-in kit's own behaviour, and the instruction was not to redesign the login |
+| D3 | `/api/cron/pbx-calls` and `/api/cron/gmail-poll` exist as Vercel functions under `api/`, **not** as routes in `src/server.js`, so the local prototype answers 404 on them. The channel check now confirms a handler file exists, which is the honest half of the question | A deployment-shape fact rather than a bug. Making the local server serve them is a real change |
+| D4 | Several screens fetch `/api/summary`, `/api/intake` and `/api/waiting` two or three times per navigation | Pre-existing, route-level, and outside a small safe cleanup |
+| D5 | Signing out clears the cookie but does not revoke the session server-side, so a captured cookie stays valid until it expires. `session_version` exists to invalidate every session for one person at once | The same model the Talent Acquisition hub has run since August 2026. Changing it is a design decision |
+| D6 | `src/app.html` carries CRLF line endings and git warns on every diff | Converting it has broken a sibling project's test suite before |
+
+### E. Not adopted from the sign-in kit
+
+The login screen is the kit's. Four things it offers were **not** taken, because Academy CRM's
+sign-in is single-step and adopting them would change behaviour rather than appearance:
+
+- the remembered-account chip
+- the two-step reveal, where the password field appears only after the email
+- the "signing you in" pending card shown while a session is resolving
+- the forced first-password-change flow, and the 10,000-word password blocklist
+
+The kit also carries a **four-role** model, owner / admin / editor / viewer. Academy CRM has two,
+`admin` and `user`, and that stays until somebody decides otherwise.
+
+### F. Parked mid-flight
+
+| # | What | Where it stopped |
+|---|---|---|
+| F1 | **The contrast audit.** `check_contrast_real.mjs` from the component library was copied in and adapted to this project's sign-in selectors, theme switch and screen list, then **removed again** when Ritvars said to stop until the login was right. Nothing of it remains in the tree. The adaptation is small and known: three selectors, the theme call, and the `SURFACES` list | Removed, to be redone |
+| F2 | A wider accessibility pass: focus order, landmarks, alt text, keyboard reachability. The contrast tool covers WCAG 1.4.3 on text only and nothing else | Never started |
+
+### G. Release
+
+| # | What | Status |
+|---|---|---|
+| G1 | **Nothing from 25.09.2026 is committed.** 11 modified files and 10 untracked, on `v1-test` at `16d82f0`. `master` is untouched at `afea424` | **NOT APPLIED** |
+| G2 | Nothing is deployed. The Render testing copy is still running older code, so none of the sign-in work is in front of Aigars or Ieva | **NOT APPLIED** |
+| G3 | `v1-test` is meant to reach `master` through a pull request once Ieva has validated the workflow. That answer reached this file relayed rather than directly, so it stays open until Ritvars confirms it himself | **SAID** |
+
+480 tests.

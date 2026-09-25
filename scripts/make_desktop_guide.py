@@ -43,7 +43,7 @@ for key, q in ALL_OPEN:
                 'REFUSED: openQuestions.%s reopens something already settled: "%s".\n'
                 'Read config/prototype.json -> settled before adding a question.' % (key, phrase))
 
-OUT = os.path.join(os.path.expanduser('~'), 'Desktop',
+OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
                    'Academy CRM - Connecting the channels.md')
 
 DONE_LIST = [
@@ -319,6 +319,14 @@ for i, cid in enumerate(ORDER, 1):
     else:
         w('**Ready to configure. Nobody outside Novikontas needed.**')
     w('')
+    # Who physically has to act. Told by Ritvars on 25.09.2026; a name here is a
+    # person, not a team, because "somebody at marketing" never does anything.
+    if c.get('ownerPerson'):
+        w('**Who does it: %s.** %s' % (c['ownerPerson'], c.get('ownerAction') or ''))
+        w('')
+    elif c.get('ownerAction') and c['readiness'] != 'manual_only':
+        w('**Who does it: nobody named yet.** %s' % c['ownerAction'])
+        w('')
     for step in c['connectSteps']:
         w('- [ ] %s' % step)
     w('')

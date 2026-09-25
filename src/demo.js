@@ -91,7 +91,9 @@ function send(db, { channel, scenario, name, phone, email, handle, at }) {
   const ev = adapt(channel, payload);
   if (handle) ev.senderHandle = handle;
   if (at) ev.receivedAt = at;
-  return receive(db, toIntake(ev));
+  // Marked 'demo' so the admin Channels panel can never read a demo build as
+  // evidence that a real provider reached us.
+  return receive(db, { ...toIntake(ev), source: 'demo' });
 }
 
 export function buildDemo(db, CFG) {

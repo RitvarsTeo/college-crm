@@ -127,6 +127,302 @@ tr.row{cursor:pointer}
 tr.row:hover td{background:rgba(31,118,136,.06)}
 tr.row:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
 
+/* A disabled button looked identical to a live one, so the Switch ON control
+   read as available while the footnote underneath said it was not. */
+.btn[disabled]{opacity:.45;cursor:not-allowed;border-left-color:var(--rule2)}
+/* The channel table is wide by nature - seven columns of fact. It scrolls
+   INSIDE its own box rather than dragging the whole page sideways. */
+.tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tablewrap>table{min-width:760px}
+.signedin{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px}
+/* .hidden was a GLOBAL utility in the Talent Acquisition index.html and is not
+   part of the stylesheet that was lifted out of it. Without it the kit markup
+   still carries class="hidden" and nothing hides: the empty error box rendered
+   as a red bar under Password on a screen with no error on it.
+
+   Scoped to #login-view so it cannot reach anything else in this application. */
+#login-view .hidden{display:none !important}
+
+/* ===================================================================
+   THE SIGN-IN SCREEN, taken whole from Ritvars's merged sign-in kit:
+   Desktop/WF/Local Repo/Dev kits to share/Component library/
+     1 Sign-in, merged (Client Hub + Talent Acquisition)/login-view.html
+
+   NOT REDRAWN. What was here before was a plain centred form I wrote,
+   and it was wrong: he had already designed this screen and said the UI
+   stays the one the Talent Acquisition app has.
+
+   It keeps its OWN palette in every scheme, declared on #login-view
+   where no :root[data-theme] rule can reach it. That is deliberate and
+   the kit's comments say why: a sign-in screen is the one page somebody
+   sees before any preference of theirs has loaded.
+   =================================================================== */
+#login-view{--gate-sky-top:#17456e;--gate-sky-mid:#0f2f4f;--gate-sky-deep:#08182e;
+    --gate-scrim:rgba(4,14,28,.40);--gate-calm:rgba(6,18,36,.10);
+    /* THE GATE HAS ITS OWN PALETTE AND KEEPS IT IN EVERY SCHEME. It is a white
+       card on a sea, designed as one thing, and it reads correctly against all
+       three. Pointing --gate-field at --surface pulled the fields dark in Mix
+       and Oceanic while the card stayed white - dark boxes on white, with an
+       unreadable account chip. A sign-in screen is also the one page somebody
+       sees before any preference of theirs has loaded. */
+    --gate-field:#ffffff;
+    --gate-surface:#fbfcfd;--gate-ink:#0f1b35;--gate-muted:#3a5877;--gate-line:#c2d3de;
+    /* THE EDGE OF A CONTROL IS NOT A DECORATIVE HAIRLINE, and WCAG 1.4.11 asks 3:1
+       of the first and nothing of the second. --gate-line is #c2d3de, which is
+       1.54:1 on the white card - fine for the divider inside the account chip,
+       too faint for the boundary of a box somebody has to find and type into. The
+       application draws the same distinction with --line and --control-line, and
+       this is the same value it uses. */
+    --gate-control-line:#7d8ca6;
+    /* THE REST OF THE PALETTE, COMPLETED 2 September 2026. The paragraph above was
+       written after --gate-field was pointed at --surface and pulled the input
+       boxes dark; the same mistake was still sitting in four other rules, and one
+       of them was visible from the street:
+         the Google button painted --surface, which is #0C1A3B in Oceanic, and kept
+         its dark #1f1f1f label - measured at 1.04:1, an invisible button;
+         the account chip's initials were written in --surface on brand Navy;
+         the Sign in label was written in --surface, so its colour flipped with a
+         preference chosen inside an app the visitor has not signed into yet;
+         the error box took --late-bg and --late, which change in Oceanic.
+       Every colour the gate uses is now declared HERE, on #login-view, where no
+       :root[data-theme] block can reach it. scripts/test_contrast.mjs enforces
+       that: it refuses any app token referenced inside a gate rule. */
+    --gate-google-face:#ffffff;        /* Google's brand terms: the light button is white */
+    --gate-google-face-hover:#f7f8f8;
+    --gate-google-ink:#1f1f1f;         /* and its label is this, also from the brand terms */
+    --gate-google-line:#dadce0;
+    --gate-primary-ink:#ffffff;        /* the Sign in label, on the dark glass button */
+    --gate-on-navy:#ffffff;            /* anything written on top of --brand-navy */
+    --gate-err-bg:#fdecea;--gate-err-ink:#8c1d18;
+    --brand-navy:#0a2463;position:fixed;inset:0;z-index:100;display:grid;place-items:center;
+    padding:40px 20px;overflow:hidden;font-family:'Raleway','Segoe UI',Roboto,-apple-system,Helvetica,Arial,sans-serif;
+    background:radial-gradient(120% 80% at 50% 0%,var(--gate-sky-top) 0%,rgba(23,69,110,0) 60%),
+      linear-gradient(180deg,var(--gate-sky-mid) 0%,var(--gate-sky-mid) 45%,var(--gate-sky-deep) 100%)}
+  #login-view::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+    backdrop-filter:blur(9px);background:var(--gate-calm)}
+  #login-view .sea{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0}
+  #login-view .sea-scrim{position:absolute;inset:0;z-index:1;pointer-events:none;
+    background:radial-gradient(72% 58% at 50% 44%,rgba(4,14,28,.06) 0%,var(--gate-scrim) 60%,rgba(4,14,28,.70) 100%),
+      linear-gradient(180deg,rgba(6,18,36,.38) 0%,rgba(6,18,36,0) 24%,rgba(6,18,36,0) 68%,rgba(6,18,36,.46) 100%)}
+  #login-view .gate-inner{position:relative;z-index:2;width:100%;max-width:360px;display:flex;flex-direction:column;align-items:center}
+  #login-view .brand{width:236px;margin-bottom:40px}
+  #login-view .brand img{display:block;width:100%;height:auto}
+  .gate-card{position:relative;background:transparent;width:100%;max-width:360px;padding:30px 28px 26px;border-radius:10px;color:var(--gate-ink)}
+  .gate-card::before{content:"";position:absolute;z-index:-2;inset:-24px;border-radius:16px;
+    background:rgba(255,255,255,.18);backdrop-filter:blur(15px) saturate(108%);
+    border:1px solid rgba(255,255,255,.22);box-shadow:0 18px 50px rgba(3,12,26,.30);
+    -webkit-mask-image:linear-gradient(#000,#000),url('/assets/na_pattern_tile.png');
+    mask-image:linear-gradient(#000,#000),url('/assets/na_pattern_tile.png');
+    -webkit-mask-mode:alpha,luminance;mask-mode:alpha,luminance;
+    -webkit-mask-repeat:repeat,repeat;mask-repeat:repeat,repeat;
+    -webkit-mask-size:auto,210px auto;mask-size:auto,210px auto;
+    -webkit-mask-position:0 0,50% -40px;mask-position:0 0,50% -40px;
+    -webkit-mask-composite:source-out;mask-composite:subtract}
+  .gate-card::after{content:"";position:absolute;z-index:-1;inset:0;background:var(--gate-surface);border-radius:10px;
+    box-shadow:0 10px 30px rgba(3,12,26,.34),0 2px 6px rgba(3,12,26,.22);
+    -webkit-mask-image:linear-gradient(#000,#000),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 304 48'%3E%3Crect width='304' height='48' rx='11' fill='%23fff'/%3E%3C/svg%3E");
+    mask-image:linear-gradient(#000,#000),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 304 48'%3E%3Crect width='304' height='48' rx='11' fill='%23fff'/%3E%3C/svg%3E");
+    -webkit-mask-repeat:no-repeat,no-repeat;mask-repeat:no-repeat,no-repeat;
+    -webkit-mask-size:auto,304px 48px;mask-size:auto,304px 48px;
+    -webkit-mask-position:0 0,center bottom 26px;mask-position:0 0,center bottom 26px;
+    -webkit-mask-composite:source-out;mask-composite:subtract}
+  .gate-card h1{font-size:19px;font-weight:700;margin:0 0 4px;color:var(--gate-ink)}
+  .gate-card .sub{color:var(--gate-muted);font-size:12.5px;margin:0 0 9px}
+  /* GOOGLE SIGN-IN AND THE OR DIVIDER. Identical to the Client Hub's, so the two
+     internal products open the same way - which is the same reason this whole gate
+     was reused from it. It replaced a small text link reading "Use Novikontas
+     Google", which read as a footnote next to the product's primary action.
+
+     White with a hairline border, which is what Google's brand terms require of a
+     light sign-in button, and it is why it is not painted in brand Navy: the Navy
+     button below is this product's primary action and the two must read as
+     different things. Sign in stays the primary. */
+  .gate-card .google-btn{display:flex;align-items:center;justify-content:center;gap:10px;
+    width:100%;height:48px;padding:0 16px;box-sizing:border-box;
+    background:var(--gate-google-face);color:var(--gate-google-ink);
+    border:1px solid var(--gate-google-line);border-radius:11px;
+    font-size:14px;font-weight:600;letter-spacing:.01em;text-decoration:none;
+    box-shadow:0 1px 2px rgba(3,12,26,.10);
+    transition:background .15s ease, box-shadow .15s ease, border-color .15s ease}
+  .gate-card .google-btn:hover{background:var(--gate-google-face-hover);border-color:#c9ccd1;box-shadow:0 2px 6px rgba(3,12,26,.14)}
+  .gate-card .google-btn:focus-visible{outline:0;border-color:var(--brand-navy);box-shadow:0 0 0 3px rgba(10,36,99,.20)}
+  /* 18px is the size Google's brand terms specify beside 14px text. */
+  .gate-card .google-btn .g{width:18px;height:18px;flex:0 0 18px;display:block}
+  /* THE REMEMBERED ACCOUNT CHIP. A row: the account itself takes the space, the
+     forget button is a fixed square at the end, and the whole row is one visual
+     object with a single border so it reads as one chip rather than two controls. */
+  .gate-card .known-row{display:flex;align-items:stretch;width:100%;
+    border:1px solid var(--gate-control-line);border-radius:11px;background:var(--gate-field);
+    overflow:hidden;transition:border-color .15s ease, box-shadow .15s ease}
+  .gate-card .known-row:hover{border-color:var(--brand-navy);box-shadow:0 2px 8px rgba(10,36,99,.10)}
+  .gate-card .known{display:flex;align-items:center;gap:11px;flex:1 1 auto;min-width:0;
+    padding:11px 12px;background:none;border:0;text-align:left;cursor:pointer}
+  /* Initials, not a photo. The Hub never asked Google for a profile picture - the
+     scope is openid and email only - so there is no avatar to show and inventing
+     one would mean requesting a personal field for decoration. */
+  .gate-card .avatar{flex:0 0 34px;width:34px;height:34px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--brand-navy);color:var(--gate-on-navy);font-size:12.5px;font-weight:700;letter-spacing:.04em}
+  .gate-card .who{display:flex;flex-direction:column;min-width:0;line-height:1.3}
+  .gate-card .known-name{font-size:13.5px;font-weight:650;color:var(--gate-ink);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  /* The address can be longer than the card. Ellipsis rather than wrap, so the chip
+     stays one line high whoever is signed in. */
+  .gate-card .known-email{font-size:11.5px;color:var(--gate-muted);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  /* 44px, NOT 40. Measured at 375 on 14 September 2026: this was the one
+     control on the sign-in page under the touch floor, and it is the one that
+     FORGETS a saved account - a mis-tap on a 40px target next to a 244px one
+     signs somebody out of their own convenience. Its height was already 56 from
+     the row; only the width was short. */
+  .gate-card .known-x{flex:0 0 44px;background:none;border:0;border-left:1px solid var(--gate-line);
+    color:var(--gate-muted);font-size:19px;line-height:1;cursor:pointer;
+    transition:background .15s ease, color .15s ease}
+  .gate-card .known-x:hover{background:rgba(165,52,43,.08);color:#a5342b}
+  .gate-card .known:focus-visible,.gate-card .known-x:focus-visible{
+    outline:0;box-shadow:inset 0 0 0 2px var(--brand-navy)}
+
+  /* One flex row, so the two halves of the rule are always equal whatever the card
+     width - at 360px and at 326px on a phone. */
+  .gate-card .or-divider{display:flex;align-items:center;gap:10px;margin:18px 0;
+    color:rgba(58,88,119,.95);font-size:11px;font-weight:700;letter-spacing:.10em}
+  .gate-card .or-divider::before,.gate-card .or-divider::after{
+    content:"";flex:1 1 auto;height:1px;background:rgba(15,27,53,.16)}
+  .gate-card .field{margin-bottom:16px}
+  .gate-card .field label{display:block;font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;margin-bottom:6px;color:var(--gate-muted)}
+  .gate-card .field input{padding:11px 12px;color:var(--gate-ink);background:var(--gate-field);border:1px solid var(--gate-control-line);border-radius:11px;width:100%;box-shadow:inset 0 1px 2px rgba(10,36,99,.06)}
+  .gate-card .field input:focus{outline:0;border-color:var(--brand-navy);box-shadow:0 0 0 3px rgba(10,36,99,.14)}
+  .gate-card .email-field{display:flex;flex-wrap:wrap;align-items:stretch}
+  .gate-card .email-field>label{flex:0 0 100%}
+  /* flex-basis 0, not auto, and BOTH halves are load-bearing.
+     width:auto is needed because the rule above sets .field input to width:100%,
+     and the input has to give up that 100% before flex can share the row at all.
+     But auto was still not enough: flex-basis:auto then falls back to the input's
+     own intrinsic width, which is its default twenty characters - 183px measured -
+     and 183 plus the 118px suffix overflows the 304px card, so the suffix wrapped
+     onto its own line. Observed in a browser on 31 August 2026, on both the old
+     and the neutral address.
+     Basis 0 makes the input take the space that is left instead of asking for a
+     size of its own, so the pair cannot wrap whatever the card width. The Client
+     Hub's copy of this gate carries the width:auto half only and happens to fit;
+     it is one font metric away from the same bug. */
+  .gate-card .email-field>input{width:auto;flex:1 1 0;min-width:0;border-top-right-radius:0;border-bottom-right-radius:0;border-right:0}
+  .gate-card .email-field::after{content:"@novikontas.org";display:flex;align-items:center;white-space:nowrap;padding:0 11px;
+    font-size:13px;color:var(--gate-muted);background:#e4e9f0;border:1px solid var(--gate-control-line);border-left:0;border-radius:0 6px 6px 0}
+  /* Password sign-in is intentionally progressive: identifying the account is
+     the first action, and the password field only enters the composition while
+     that route is being used. This keeps the SSO choice prominent without
+     making the password path feel like a second-class flow. */
+  /* Collapsed, not removed. The input stays in the DOM and stays enabled so a
+     password manager can fill it; pointer-events keeps a zero-height field from
+     swallowing a click meant for something else, and tabindex -1 (set in JS)
+     keeps it out of the tab order while it is collapsed. */
+  .gate-card .password-field{display:grid;grid-template-rows:0fr;opacity:0;margin:0;overflow:hidden;
+    pointer-events:none;
+    transition:grid-template-rows .18s ease,opacity .15s ease,margin .18s ease}
+  .gate-card .password-field.is-revealed{pointer-events:auto}
+  .gate-card .password-field .password-content{min-height:0;overflow:hidden}
+  .gate-card .password-field.is-revealed{grid-template-rows:1fr;opacity:1;margin-bottom:16px}
+  .gate-card .primary{position:relative;overflow:hidden;isolation:isolate;width:100%;height:48px;padding:13px 16px;
+    background:rgba(6,18,36,.18);backdrop-filter:blur(3px) saturate(125%);border:1px solid rgba(255,255,255,.44);
+    border-top-color:rgba(255,255,255,.62);border-radius:11px;color:var(--gate-primary-ink);font-weight:700;letter-spacing:.02em;
+    text-shadow:0 1px 3px rgba(3,12,26,.62);box-shadow:0 6px 18px rgba(3,12,26,.26),inset 0 1px 0 rgba(255,255,255,.34)}
+  .gate-card .primary::before{content:"";position:absolute;left:0;right:0;top:0;height:52%;z-index:-1;
+    background:linear-gradient(180deg,rgba(255,255,255,.26) 0%,rgba(255,255,255,.07) 60%,rgba(255,255,255,0) 100%)}
+  .gate-card .primary:hover{background:rgba(6,18,36,.30);box-shadow:0 8px 22px rgba(3,12,26,.32),inset 0 1px 0 rgba(255,255,255,.44)}
+  /* The gate's own error colours. The shared .err rule below uses --late-bg and
+     --late, which are repainted by Oceanic; this card is not. */
+  .gate-card .err{margin:0 0 16px;overflow-wrap:anywhere;
+    background:var(--gate-err-bg);color:var(--gate-err-ink)}
+  /* THE SECOND SHELL IS GONE, AND THAT IS THE FIX RATHER THAN A TIDY-UP.
+     Setting a first password and changing a forced one used to render a plain
+     380px card on the app surface: no sea, no logo, different width, different
+     radius, different type scale, different button. Three ways into this product
+     that looked like three products.
+     There is now ONE shell - #login-view, its canvas and its logo - and three
+     inner panels that share .gate-card. Parity is not maintained here, it is
+     structural: the panels cannot have different dimensions or a different
+     background because they are the same element in the same place. */
+  /* The waiting panel. See #auth-pending in the markup: it is what the shell
+     shows while a session is being resolved, so the sign-in FORM is never
+     painted over a session that is about to succeed. */
+  .gate-card .gate-note{color:var(--gate-muted);font-size:12.5px;line-height:1.55;margin:2px 0 16px}
+  /* ══ THE POST-LOGIN WAIT ══
+     Owner, 10 September 2026, on what was wrong with it: "wrong/inconsistent
+     font, bad spacing, unbalanced loading composition, blue translucent window,
+     app text shines through underneath, looks like residue."
+     Every one of those was the same cause. This panel was a `.gate-card`, and a
+     `.gate-card::before` is deliberately GLASS - `rgba(255,255,255,.18)` with a
+     15px backdrop blur - which is right for a sign-in form floating over the sea
+     and wrong for a full-bleed waiting state: at 18% white over a dark sky it
+     reads as a blue-tinted window with whatever is behind it showing through.
+     So the loading state keeps the shell, the logo and the geometry, and takes
+     an OPAQUE ground of its own. `backdrop-filter:none` matters as much as the
+     colour: a blur with nothing translucent above it still samples the layer
+     underneath on some engines.
+     TYPE, ON PURPOSE. The organisation in Raleway at label size, the product in
+     Spectral at display size, the sentence in Raleway at reading size - three
+     roles, three treatments, rather than one font at one weight for all of it.
+     NO PERCENTAGE AND NO ARTIFICIAL DELAY. The three dots are the only motion
+     and they already stop under `prefers-reduced-motion`. A progress bar here
+     would be a linear bar that means loading, which this product reserves for
+     exactly that - but it would have to invent a number to fill, and the wait is
+     one request whose duration nobody knows. */
+  #auth-pending.gate-loading{max-width:400px;padding:40px 34px 34px;text-align:center}
+  #auth-pending.gate-loading::before{background:var(--gate-surface);
+       backdrop-filter:none;-webkit-backdrop-filter:none;
+       border:1px solid var(--gate-line);box-shadow:0 22px 60px rgba(3,12,26,.34)}
+  #auth-pending .gl-org{margin:0 0 14px;font-size:10.5px;letter-spacing:.19em;
+       text-transform:uppercase;color:var(--gate-muted);font-weight:600}
+  /* The stack is LITERAL, not `var(--serif)`. That token is declared under
+     `[data-ui="next"]`, and the gate is the one surface that has to render
+     identically with the flag off - a var that fails to resolve makes the
+     whole declaration invalid and the heading silently falls back to Raleway,
+     which is the inconsistent font the owner was looking at. */
+  #auth-pending#auth-pending h1{margin:0 0 10px;
+       font-family:'Spectral',Constantia,Georgia,'Times New Roman',serif;
+       font-weight:400;font-size:31px;line-height:1.16;letter-spacing:-.015em;
+       color:var(--gate-ink)}
+  #auth-pending .sub{margin:0 0 22px;font-size:14.5px;line-height:1.5;color:var(--gate-muted)}
+  /* THE MARK. Sized in the markup as well as here, so the card does not jump
+     while the SVG is still being fetched. */
+  #auth-pending .gl-mark{display:block;margin:0 auto 20px;width:196px;height:auto;opacity:.92}
+  #auth-pending .gate-wait{display:flex;justify-content:center;padding:8px 0 2px}
+  /* A RING THAT IS LEGIBLE WITHOUT THE ANIMATION, ported from the Client Hub
+     with its reasoning intact: a headless or hidden browser never fires the
+     frames, and a spinner that is invisible when still reads as a broken
+     screen. Colour carries it; motion only adds to it. This product has already
+     been bitten by exactly that - the Browser pane runs hidden, rAF does not
+     fire, and anything starting from opacity 0 stays there. */
+  #auth-pending .gate-spin{width:22px;height:22px;border-radius:50%;
+    border:2px solid var(--gate-line);border-top-color:var(--gate-ink);
+    animation:gatespin .9s linear infinite}
+  @keyframes gatespin{to{transform:rotate(360deg)}}
+  @media(prefers-reduced-motion:reduce){
+    #auth-pending .gate-spin{animation:none;border-top-color:var(--gate-ink)}}
+  .err{background:var(--late-bg);color:var(--late);border-radius:8px;padding:9px 11px;font-size:13.5px;margin-top:12px}
+  @supports not ((mask-composite:subtract) or (-webkit-mask-composite:source-out)){
+    .gate-card::before,.gate-card::after{-webkit-mask-image:none;mask-image:none}
+    .gate-card .primary{background:linear-gradient(180deg,rgba(26,60,140,.97),rgba(7,24,66,.99));backdrop-filter:none}}
+  @media(max-width:430px){#login-view{padding:32px 16px}#login-view .brand{width:190px;margin-bottom:32px}
+    .gate-card{max-width:326px;padding:26px 20px 22px}.gate-card::before{inset:-14px;border-radius:13px;-webkit-mask-size:auto,150px auto;mask-size:auto,150px auto}
+    #login-form::after{-webkit-mask-size:auto,286px 48px;mask-size:auto,286px 48px;-webkit-mask-position:0 0,center bottom 22px;mask-position:0 0,center bottom 22px}}
+  @media(prefers-reduced-motion:reduce){#login-view::after{backdrop-filter:blur(9px)}#login-view .sea{filter:saturate(.94)}}
+.login h1{margin:0 0 4px}
+.login label{display:block;font-size:12px;color:var(--t2);margin:12px 0 4px}
+.login input{width:100%;padding:10px 12px;border:1px solid var(--rule);border-radius:8px;
+  background:var(--surface);color:var(--t1);font:inherit}
+.login input:focus-visible{outline:2px solid var(--pet);outline-offset:1px}
+.chstate{font-weight:600;font-size:11px;letter-spacing:.04em}
+.chstate.s-notconfigured{color:var(--t2)}
+.chstate.s-configured{color:var(--late)}
+.chstate.s-connected{color:var(--ok)}
+.chstate.s-error{color:var(--bad,#b3261e)}
+.setting{display:inline-block;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;
+  padding:1px 6px;border-radius:4px;border:1px solid var(--rule2);margin:2px 4px 2px 0;white-space:nowrap}
+.setting.miss{border-color:rgba(179,38,30,.5)}
+.steps{margin:6px 0 0;padding:0;list-style:none;font-size:12px}
+.steps li{padding:2px 0;color:var(--t2)}
 .pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:500;white-space:nowrap;border:1px solid transparent}
 .pill.late{background:var(--late-bg);color:var(--late);border-color:rgba(217,138,30,.45)}
 .pill.ok{background:var(--ok-bg);color:var(--ok);border-color:rgba(31,118,136,.45)}
@@ -219,6 +515,10 @@ tr.aged td:first-child{box-shadow:inset 3px 0 0 var(--amb,#d98a1e)}
 .act{white-space:nowrap}
 .tick{display:flex;gap:9px;align-items:flex-start;font-size:13px;padding:5px 0;cursor:pointer}
 .tick input{width:auto;margin-top:2px}
+/* The emoji on a Today tab. A colour emoji is an image in the font and cannot be
+   given a colour, but it can have its colour taken away, which keeps the familiar
+   face and stops it shouting on an otherwise monochrome screen. */
+.tabmark{filter:grayscale(1);opacity:.75;font-size:12px;line-height:1}
 .done-strip{margin:0 0 12px;padding:10px 14px;border:1px solid var(--line);border-left:3px solid var(--line);
   border-radius:0 8px 8px 0;background:var(--card);font-size:13.5px}
 .done-strip.ok{border-left-color:var(--ok,#2f855a)}
@@ -451,11 +751,20 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
     <div class="add"><button class="btn" style="width:100%" onclick="openAdd()">+ Add person</button></div>
 
     <div class="navsplit"></div>
-    <div class="themes" style="border-top:none;padding-top:0">
+    <div class="themes" style="border-top:none;padding-top:0" id="actorBlock">
       <label for="actor">Acting as <span class="pill warn" style="font-size:8.5px">NO LOGIN</span></label>
       <select id="actor" onchange="setActor(this.value)"></select>
       <div id="waiting" class="waiting"></div>
     </div>
+    <!-- Shown INSTEAD of the dropdown once somebody has really signed in. The two
+         are never on screen together: who you are is either proved or chosen. -->
+    <div class="themes" style="border-top:none;padding-top:0;display:none" id="whoBlock">
+      <label>Signed in</label>
+      <div class="signedin"><b id="whoName"></b><span class="pill calm" id="whoRole"></span></div>
+      <button class="btn ghost" style="width:100%;margin-top:6px" onclick="signOut()">Sign out</button>
+      <div id="waiting2" class="waiting"></div>
+    </div>
+    <a class="item quiet" href="#/channels" data-icon="link" id="navChannels" style="display:none"><span>Channels</span><span class="pill warn" id="navChannelsBad" style="display:none"></span></a>
 
     <div class="navsplit"></div>
     <a class="item quiet" href="#/feedback" data-icon="chat" id="navFeedbackLink"><span>Feedback</span><span class="pill warn" id="navFeedback" style="display:none"></span></a>
@@ -610,6 +919,9 @@ const api = async (path, opts) => {
   busy(1);
   try {
     const r = await fetch(path, o);
+    // A signed-in session that has expired, or been invalidated because somebody
+    // was disabled, must put the login back rather than show a broken screen.
+    if (r.status === 401 && AUTH.on) { drawLogin('Your session has ended. Sign in again.'); throw new Error('signed out'); }
     if (!r.ok) {
       const e = await r.json().catch(() => ({ error: r.statusText }));
       const err = new Error(e.error || 'request failed');
@@ -634,7 +946,10 @@ const channelLabel = (c) => (CFG.channels && CFG.channels[c])
 // There is no authentication. This is a setting, and every screen that depends
 // on it says so out loud rather than looking like a permission check.
 let ACTOR = 'Admissions';
-const isAdmin = () => (CFG.admins || []).includes(ACTOR);
+// What the SERVER says about who we are. Nothing here is trusted by the server;
+// it only decides what is worth putting on screen. Every refusal is the server's.
+let AUTH = { on: false, user: null };
+const isAdmin = () => (AUTH.on ? (AUTH.user || {}).role === 'admin' : (CFG.admins || []).includes(ACTOR));
 // Not derived from isAdmin on purpose: Marina is an admin and must not see feedback.
 const mayReadFeedback = () => (CFG.feedbackReaders || []).includes(ACTOR);
 function setActor(who) {
@@ -644,6 +959,259 @@ function setActor(who) {
   if (sel) sel.value = who;
   route();
 }
+// ------------------------------------------------------------------ sign-in --
+
+// The animated sea, exactly as the kit wrote it, wrapped in a function so it runs
+// when the gate is drawn rather than at load. NOTE: in a hidden browser pane rAF
+// never fires, so the canvas simply stays on the gradient underneath - which is
+// why the card is legible without it.
+const LOGIN_SEA = () => {
+  // The Client Hub sea, reused without retuning its wave parameters or colours.
+  // It draws on a small canvas and lets CSS upscale it, keeping the login light.
+  (() => {
+    const cv = document.getElementById('login-sea');
+    if (!cv?.getContext) return;
+    const ctx = cv.getContext('2d', { alpha: false });
+    if (!ctx) return;
+  
+    const TAU = Math.PI * 2;
+    const OCT = [
+      { ax: .9, ay: 3.3, amp: .46, spd: .24, sl: .05 },
+      { ax: -2.2, ay: 6.9, amp: .40, spd: .46, sl: .28 },
+      { ax: 4.1, ay: 12.7, amp: .33, spd: .76, sl: .85 },
+      { ax: -7.3, ay: 22.3, amp: .23, spd: 1.14, sl: 1.20 },
+      { ax: 12.9, ay: 37.1, amp: .14, spd: 1.63, sl: 1 },
+      { ax: 19.7, ay: 8.3, amp: .11, spd: .62, sl: .30 },
+    ];
+    const AMPSUM = 1.42, REF = 1 / 420;
+    let W = 0, H = 0, img, buf, quality = 1, raf = 0, last = 0, acc = 0, time = 0, cost = 0, samples = 0;
+    const sA = [], cA = [], sB = [], cB = [];
+    let vigX, vigY;
+    const motion = matchMedia?.('(prefers-reduced-motion: reduce)');
+  
+    function allocate() {
+      const vw = cv.clientWidth || 1, vh = cv.clientHeight || 1;
+      const budget = (vw < 700 ? 105000 : 155000) * quality;
+      W = Math.max(150, Math.round(Math.sqrt(budget * vw / vh)));
+      H = Math.max(130, Math.round(budget / W));
+      cv.width = W; cv.height = H; img = ctx.createImageData(W, H); buf = img.data;
+      OCT.forEach((_, k) => { sA[k] = new Float32Array(W); cA[k] = new Float32Array(W); sB[k] = new Float32Array(H); cB[k] = new Float32Array(H); });
+      vigX = new Float32Array(W); vigY = new Float32Array(H);
+      for (let x = 0; x < W; x++) { const u = x / W - .5; vigX[x] = u * u * 1.35; }
+      for (let y = 0; y < H; y++) { const v = y / H - .5; vigY[y] = v * v * .95; }
+    }
+  
+    function render(t) {
+      OCT.forEach((o, k) => {
+        const ph = o.spd * t, kx = TAU * o.ax, ky = TAU * o.ay;
+        for (let x = 0; x < W; x++) { const a = kx * x * REF + ph; sA[k][x] = Math.sin(a); cA[k][x] = Math.cos(a); }
+        for (let y = 0; y < H; y++) { const b = ky * y * REF; sB[k][y] = Math.sin(b); cB[k][y] = Math.cos(b); }
+      });
+      let i = 0;
+      for (let y = 0; y < H; y++) {
+        const depth = .88 + .18 * y / H;
+        for (let x = 0; x < W; x++) {
+          const w = OCT.map((_, k) => sA[k][x] * cB[k][y] + cA[k][x] * sB[k][y]);
+          const env = .52 + .48 * (w[0] * .5 + .5);
+          const h = OCT[0].amp*w[0] + OCT[1].amp*w[1] + env*(OCT[2].amp*w[2] + OCT[3].amp*w[3] + OCT[4].amp*w[4] + OCT[5].amp*w[5]);
+          let g = 0;
+          OCT.forEach((o, k) => { const slope = cA[k][x]*cB[k][y] - sA[k][x]*sB[k][y]; g += o.amp*o.ay*o.sl*slope*(k < 2 ? 1 : env); });
+          let p = h / AMPSUM * .5 + .5, q = p*p*(3-2*p); q = q*q*(3-2*q); p = p*.45 + q*.55;
+          let r, green, blue;
+          if (p < .52) { const f=p/.52; r=9+21*f; green=34+61*f; blue=68+82*f; }
+          else { const f=(p-.52)/.48; r=30+102*f; green=95+108*f; blue=150+88*f; }
+          if (p > .88) { let f=(p-.88)/.12; f=f*f*.9; r+=(243-r)*f; green+=(251-green)*f; blue+=(255-blue)*f; }
+          let sparkle=g*.05; if (sparkle > 0) { sparkle=Math.min(1,sparkle); sparkle=sparkle*sparkle*sparkle*104; r+=sparkle; green+=sparkle*1.02; blue+=sparkle*.92; }
+          const shade=depth*(1-(vigX[x]+vigY[y])*.58);
+          buf[i]=Math.max(0,Math.min(255,r*shade)); buf[i+1]=Math.max(0,Math.min(255,green*shade)); buf[i+2]=Math.max(0,Math.min(255,blue*shade)); buf[i+3]=255; i+=4;
+        }
+      }
+      ctx.putImageData(img,0,0);
+    }
+  
+    function loop(now) {
+      raf=requestAnimationFrame(loop); if (!last) { last=now; return; }
+      let dt=Math.min(200,now-last); last=now; acc+=dt; if (acc < 33) return; acc=0; time+=dt/1000;
+      const start=performance.now(); render(time); const spent=performance.now()-start;
+      samples++; if (samples > 15) { cost+=spent; if (samples === 55) { if (cost/40 > 11 && quality > .55) { quality=.55; allocate(); } cost=0; samples=0; } }
+    }
+    function apply() {
+      cancelAnimationFrame(raf);
+      if (!cv.clientWidth || !cv.clientHeight) return;
+      allocate();
+      if (motion?.matches || document.hidden) render(6.2); else { last=0; acc=0; raf=requestAnimationFrame(loop); }
+    }
+    let resizeTimer;
+    addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(apply,180)});
+    document.addEventListener('visibilitychange',apply);
+    motion?.addEventListener?.('change',apply);
+    window.loginSeaApply=apply;
+    apply();
+  })();
+  
+};
+
+// Google's own mark, as their brand terms require on a Google sign-in button.
+const GOOGLE_MARK = `<svg class="g" viewBox="0 0 18 18" aria-hidden="true" focusable="false">
+        <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.91c1.7-1.57 2.69-3.88 2.69-6.62z"/>
+        <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.91-2.26c-.81.54-1.84.86-3.05.86-2.35 0-4.34-1.58-5.05-3.71H.96v2.33A9 9 0 0 0 9 18z"/>
+        <path fill="#FBBC05" d="M3.95 10.71a5.4 5.4 0 0 1 0-3.42V4.96H.96a9 9 0 0 0 0 8.08l2.99-2.33z"/>
+        <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.46 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.96l2.99 2.33C4.66 5.16 6.65 3.58 9 3.58z"/>
+        </svg>`;
+
+/**
+ * What the browser was told on the way back from Google, and it is deliberately
+ * almost nothing: ?auth=google means a sign-in happened, ?error=not_authorised
+ * means one did not. ONE sentence covers every cause - no account, wrong domain,
+ * disabled, a bad token - because telling somebody which one they tripped is
+ * telling them how to try again differently.
+ *
+ * Both are stripped from the address bar immediately, so a reload does not
+ * re-show a message about something that already finished.
+ */
+function readReturnFromGoogle() {
+  const q = new URLSearchParams(location.search);
+  const error = q.get('error');
+  const ok = q.get('auth') === 'google';
+  if (error || ok) {
+    history.replaceState(null, '', location.pathname + location.hash);
+  }
+  return { refused: error === 'not_authorised', signedIn: ok };
+}
+
+async function loadAuth() {
+  // The server answers { auth, user }. This reads it into { on, user } - and the
+  // two names not matching is exactly how the login screen silently never appeared
+  // the first time this was opened, with CRM_AUTH=1 and the dropdown still there.
+  try {
+    const d = await (await fetch('/api/auth/me')).json();
+    // The WHOLE answer is kept, with `on` added as an alias for `auth`. Listing
+    // the fields by hand dropped one twice: first `auth` itself, so the login
+    // never appeared, then `google`, so the button never appeared although the
+    // server said it was configured. Nothing is transcribed field by field now.
+    AUTH = { ...d, on: Boolean(d.auth), user: d.user || null };
+  } catch { AUTH = { on: false, user: null }; }
+  if (AUTH.user) ACTOR = AUTH.user.name;
+  const picker = $('#actorBlock');
+  const who = $('#whoBlock');
+  if (AUTH.on && AUTH.user) {
+    if (picker) picker.style.display = 'none';
+    if (who) {
+      who.style.display = '';
+      $('#whoName').textContent = AUTH.user.name;
+      $('#whoRole').textContent = AUTH.user.role;
+    }
+  } else if (picker) {
+    picker.style.display = '';
+    if (who) who.style.display = 'none';
+  }
+  const link = $('#navChannels');
+  if (link) link.style.display = isAdmin() ? '' : 'none';
+  return AUTH;
+}
+
+function drawLogin(message) {
+  document.querySelector('.shell').style.display = 'none';
+  let box = $('#loginScreen');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'loginScreen';
+    document.body.appendChild(box);
+  }
+  // The help button belongs to the application, not to the door.
+  const help = $('#helpBtn'); if (help) help.style.display = 'none';
+
+  // Google first: for anybody with a Workspace account it is one click and no
+  // password to remember. The password form stays below as the route that always
+  // works. Hidden entirely when Google is not configured, because a button in
+  // front of a flow that cannot run fails on Google's own error page.
+  const googleBlock = AUTH.google ? `
+      <a class="google-btn" href="/api/auth/google/start">
+        ${GOOGLE_MARK}
+        <span>Continue with Google</span>
+      </a>
+      <div class="or-divider" aria-hidden="true"><span>OR</span></div>` : '';
+
+  box.innerHTML = `<div id="login-view">
+    <canvas class="sea" id="login-sea" aria-hidden="true"></canvas>
+    <div class="sea-scrim" aria-hidden="true"></div>
+    <div class="gate-inner">
+      <div class="brand"><img src="/assets/NoAca_logo_whitehor.svg" alt="Novikontas Academy"></div>
+      <form id="loginForm" class="gate-card" autocomplete="off" onsubmit="return doLogin(event)">
+        <!-- Just CRM. The mark above the card already says NOVIKONTAS ACADEMY,
+             so "Academy CRM" here said Academy twice on one screen. -->
+        <h1>CRM</h1>
+        <p class="sub">Sign in to continue</p>
+        ${googleBlock}
+        <div class="field email-field">
+          <label for="liEmail">Email</label>
+          <!-- NO type="email" ON PURPOSE, exactly as the kit has it. The field
+               carries an @novikontas.org suffix, so what somebody types is their
+               NAME. type="email" made the browser refuse "ritvars" as invalid and
+               Sign in did nothing, which is the same fault the kit records against
+               a required control it had collapsed. canonicalEmail() on the server
+               completes a bare name to the company domain. -->
+          <input id="liEmail" name="email" autocomplete="username" inputmode="email" required>
+        </div>
+        <div class="field">
+          <label for="liPass">Password</label>
+          <input id="liPass" name="password" type="password" autocomplete="current-password" required>
+        </div>
+        <div id="loginErr" class="err${message ? '' : ' hidden'}" role="alert">${esc(message || '')}</div>
+        <!-- THE BUTTON MUST BE LAST, and this is not a style preference.
+             .gate-card::after punches a 304x48 rounded hole through the card
+             surface at "center bottom 26px" via mask-composite: subtract, so the
+             primary button is a WINDOW THROUGH THE CARD ONTO THE SEA. Anything
+             placed after it takes the hole instead: the note sat in the window and
+             the button sat on solid card, pale, with white text on it.
+             The "forgotten your password" note that used to be here is gone - the
+             kit does not have one on this card either. -->
+        <button class="primary" type="submit" id="liGo">Sign in</button>
+      </form>
+    </div>
+  </div>`;
+  startLoginSea();
+  $('#liEmail').focus();
+}
+
+// The sea behind the card, from the kit's assets/login-sea.js. It is inlined
+// rather than served because this application is one file, and it is started
+// only when the gate is drawn - there is no canvas to paint at any other time.
+function startLoginSea() {
+  try { LOGIN_SEA(); } catch { /* the card is legible on the gradient without it */ }
+}
+
+async function doLogin(ev) {
+  ev.preventDefault();
+  const btn = $('#liGo');
+  const err = $('#loginErr');
+  btn.disabled = true; btn.textContent = 'Signing in...';
+  try {
+    const r = await fetch('/api/auth/login', { method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email: $('#liEmail').value, password: $('#liPass').value }) });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      err.textContent = data.error || 'That did not work.';
+      err.classList.remove('hidden');
+      $('#liPass').value = '';
+      $('#liPass').focus();
+      return false;
+    }
+    $('#loginScreen').remove();
+    document.querySelector('.shell').style.display = '';
+    const help = $('#helpBtn'); if (help) help.style.display = '';
+    await loadAuth();
+    await route();
+  } finally { btn.disabled = false; btn.textContent = 'Sign in'; }
+  return false;
+}
+
+async function signOut() {
+  await fetch('/api/auth/logout', { method: 'POST' });
+  location.reload();
+}
+
 function drawActorPicker() {
   const sel = document.querySelector('#actor');
   if (!sel) return;
@@ -698,6 +1266,7 @@ async function route() {
     // notes are OUR tooling. They are not routed here at all: the product has no
     // path to them, by design. They live with the Console.
     else if (page === 'metrics') await viewReports();
+    else if (page === 'channels') await viewChannels(arg);
     else if (page === 'privacy') await viewPrivacy();
     else if (page === 'reports') await viewReports();
     else await viewToday();
@@ -934,7 +1503,9 @@ async function viewToday() {
   if (TODAY_ITEM >= items.length) TODAY_ITEM = 0;
 
   const picker = groups.map((x, i) => `<button class="dot ${i === TODAY_AT ? 'on' : ''}"
-    onclick="todayPickQueue(${i})"><span>${esc(x.label)}</span>${x.open ? `<b>${x.open}</b>` : ''}</button>`).join('');
+    onclick="todayPickQueue(${i})"><span>${esc(x.label)}</span>${
+      (t.marks || {})[x.id] ? `<span class="tabmark">${esc(t.marks[x.id])}</span>` : ''
+    }${x.open ? `<b>${x.open}</b>` : ''}</button>`).join('');
 
   const empty = `<div class="card deck"><div class="done">
       <div class="tick-big">&#10003;</div>
@@ -1963,6 +2534,174 @@ async function viewMetrics() {
 }
 
 // ================================================================ privacy ==
+// ------------------------------------------------------------ admin: channels --
+//
+// Four questions and nothing else: what channels exist, what is missing, what is
+// working, what is broken.
+//
+// Everything on this screen comes from the server. Nothing is computed here, and
+// in particular NOTHING here decides that a channel is connected - that word is
+// the server's to use, and it uses it only when a provider has really arrived.
+//
+// No secret value is ever on this screen. The NAME of a setting is, and the word
+// OK or MISSING. There is a test that greps the module's payload for the values,
+// and another that greps the response the browser actually receives.
+
+const CH_ORDER = ['ERROR', 'NOT CONFIGURED', 'CONFIGURED', 'CONNECTED'];
+const chClass = (state) => 's-' + String(state).toLowerCase().replace(/[^a-z]/g, '');
+
+function chSettings(list) {
+  if (!list || !list.length) return '<span class="prov">Nothing to set up.</span>';
+  return list.map(x => `<span class="setting ${x.present ? '' : 'miss'}">${esc(x.name)} ${x.present ? 'OK' : 'MISSING'}</span>`).join('');
+}
+
+const chStep = (st) => `<li>${st.ok ? '<span class="ok-tick">OK</span>' : '<span class="no-tick">FAILED</span>'}
+  ${esc(st.name)} <span class="prov">${esc(st.note || '')}</span></li>`;
+
+async function viewChannels(which) {
+  if (!isAdmin()) {
+    $('#view').innerHTML = `<h1>Channels</h1>
+      <div class="prov">This screen is for admins. It is not hidden from you by this page alone -
+      the server refuses the request as well.</div>`;
+    return;
+  }
+  if (which) return viewChannel(which);
+
+  const d = await api('/api/admin/channels');
+  const rows = [...d.channels].sort((a, b) =>
+    CH_ORDER.indexOf(a.state) - CH_ORDER.indexOf(b.state) || a.label.localeCompare(b.label));
+
+  const counts = {};
+  for (const c of d.channels) counts[c.state] = (counts[c.state] || 0) + 1;
+  const live = d.channels.filter(c => c.live).length;
+
+  $('#view').innerHTML = `
+    <h1>Channels</h1>
+    <div class="prov">${esc(d.honesty)}</div>
+
+    <div class="chips" style="margin:10px 0 4px">
+      ${CH_ORDER.map(st => `<span class="pill calm"><b class="chstate ${chClass(st)}">${st}</b> ${counts[st] || 0}</span>`).join(' ')}
+      <span class="pill ${live ? 'ok' : 'calm'}">${live} switched ON</span>
+    </div>
+    <div class="footnote" style="margin-bottom:14px">${esc(d.onOffIsSeparate)}</div>
+
+    <div class="tablewrap"><table class="cartable">
+      <thead><tr>
+        <th>Channel</th><th>State</th><th>On</th><th>Settings</th>
+        <th>Endpoint</th><th>Last check</th><th>Provider last reached us</th>
+      </tr></thead>
+      <tbody>
+      ${rows.map(c => `
+        <tr style="cursor:pointer" onclick="location.hash='#/channels/${esc(c.channel)}'">
+          <td><b>${esc(c.label)}</b><div class="footnote">${esc(c.summary)}</div></td>
+          <td><span class="chstate ${chClass(c.state)}">${esc(c.state)}</span></td>
+          <td>${c.live ? '<span class="pill ok">ON</span>' : '<span class="pill calm">off</span>'}</td>
+          <td>${chSettings(c.settings)}</td>
+          <td><span class="mono">${esc(c.endpoint || '-')}</span></td>
+          <td>${c.lastCheckAt
+              ? `${c.lastCheckOk ? '<span class="pill ok">passed</span>' : '<span class="pill warn">FAILED</span>'}
+                 <div class="footnote">${fmtDate(c.lastCheckAt)}${c.checkStale ? ' - stale' : ''}</div>`
+              : '<span class="prov">never</span>'}</td>
+          <td>${c.providerHandshakeAt
+              ? `<span class="pill ok">yes</span><div class="footnote">${fmtDate(c.providerHandshakeAt)}</div>`
+              : '<span class="prov">never</span>'}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>
+
+    <h2 style="margin-top:22px">What the four words mean</h2>
+    <table class="cartable"><tbody>
+      ${Object.entries(d.statesMean).map(([k, v]) =>
+        `<tr><td style="width:170px"><span class="chstate ${chClass(k)}">${esc(k)}</span></td>
+         <td>${esc(v)}</td></tr>`).join('')}
+    </tbody></table>`;
+}
+
+async function viewChannel(id) {
+  const c = await api('/api/admin/channels/' + encodeURIComponent(id));
+  const canSwitchOn = c.allSettingsPresent && (!c.canTest || c.lastCheckOk === true);
+
+  $('#view').innerHTML = `
+    <a class="btn ghost" href="#/channels">&larr; All channels</a>
+    <h1 style="margin-top:12px">${esc(c.label)}
+      <span class="chstate ${chClass(c.state)}" style="font-size:13px">${esc(c.state)}</span>
+      ${c.live ? '<span class="pill ok">ON</span>' : '<span class="pill calm">off</span>'}</h1>
+    <div class="prov">${esc(c.summary)}</div>
+
+    <h2>How it works</h2>
+    <div class="kv"><div>Mechanism</div><div>${esc(c.mechanism || '-')}</div></div>
+    <div class="kv"><div>CRM endpoint</div><div class="mono">${esc(c.endpoint || 'none')}</div></div>
+    <div class="kv"><div>Settings it needs</div><div>${chSettings(c.settings)}</div></div>
+    <div class="kv"><div>Waiting on</div><div>${c.externalBlocker
+      ? `${esc(c.ownerPerson || 'nobody named')} - ${esc(c.ownerAction || '')}
+         <div class="footnote">${esc(c.externalBlocker)}</div>`
+      : 'nothing'}</div></div>
+
+    <h2>Checking it</h2>
+    ${c.canTest ? `
+      <div class="prov">${esc(c.testWhat)}</div>
+      <div class="footnote" style="margin:6px 0">
+        <b>A pass proves:</b> ${esc(c.testProves || '-')}<br>
+        <b>A pass does NOT prove:</b> ${esc(c.testDoesNotProve || '-')}</div>
+      <button class="btn" id="chCheck" onclick="runChannelCheck('${esc(c.channel)}')">Run the check</button>
+      <div id="chResult" style="margin-top:10px"></div>`
+      : '<div class="prov">There is nothing here that can be checked automatically.</div>'}
+
+    <h2>Switching it ${c.live ? 'off' : 'on'}</h2>
+    <div class="prov">${c.live
+      ? 'This channel is accepting real events. Switching it off stops that immediately.'
+      : 'It is off. It accepts nothing from a provider until it is switched on, and it cannot be '
+        + 'switched on until its settings are there and a check has passed.'}</div>
+    <div style="margin-top:8px">
+      ${c.live
+        ? `<button class="btn ghost" onclick="setChannelMode('${esc(c.channel)}','off')">Switch OFF</button>`
+        : `<button class="btn" ${canSwitchOn ? '' : 'disabled'}
+             onclick="setChannelMode('${esc(c.channel)}','live')">Switch ON</button>
+           ${canSwitchOn ? ''
+             : '<div class="footnote">Not available: the settings are incomplete, or no check has passed yet.</div>'}`}
+      <div id="chMode" style="margin-top:8px"></div>
+    </div>
+
+    ${(c.checks && c.checks.length) ? `<h2>Every check that has been run</h2>
+      <table class="cartable">
+        <thead><tr><th>When</th><th>Result</th><th>Kind</th><th>What it found</th><th>By</th></tr></thead>
+        <tbody>${c.checks.map(x => `<tr>
+          <td>${fmtDate(x.at)}</td>
+          <td>${x.ok ? '<span class="pill ok">passed</span>' : '<span class="pill warn">FAILED</span>'}</td>
+          <td>${esc(x.kind)}</td><td class="footnote">${esc(x.detail || '')}</td><td>${esc(x.by || '')}</td>
+        </tr>`).join('')}</tbody></table>` : ''}
+
+    ${(c.connectSteps || []).length ? `<h2>What connecting it involves</h2>
+      <ol class="steps">${c.connectSteps.map(x => `<li>${esc(x)}</li>`).join('')}</ol>` : ''}`;
+}
+
+async function runChannelCheck(id) {
+  const btn = $('#chCheck');
+  const out = $('#chResult');
+  btn.disabled = true; btn.textContent = 'Checking...';
+  try {
+    const r = await post('/api/admin/channels/' + encodeURIComponent(id) + '/check');
+    if (r.skipped) { out.innerHTML = `<div class="prov">${esc(r.why)}</div>`; return; }
+    out.innerHTML = `
+      <span class="${r.ok ? 'pill ok' : 'pill warn'}">${r.ok ? 'Every step passed' : 'It failed'}</span>
+      <ul class="steps">${(r.steps || []).map(chStep).join('')}</ul>
+      ${r.ok ? `<div class="footnote" style="margin-top:6px">This proves ${esc(r.proves || '')}.
+        It does NOT prove ${esc(r.doesNotProve || '')}.</div>` : ''}`;
+  } catch (e) {
+    out.innerHTML = `<div class="err">${esc(e.message)}</div>`;
+  } finally { btn.disabled = false; btn.textContent = 'Run the check'; }
+}
+
+async function setChannelMode(id, mode) {
+  const out = $('#chMode');
+  if (mode !== 'off' && !confirm(
+      'Switch ' + id + ' ON?\n\nIt will start accepting real events from the provider.')) return;
+  try {
+    await post('/api/admin/channels/' + encodeURIComponent(id) + '/mode', { mode });
+    await viewChannel(id);
+  } catch (e) { out.innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+}
+
 async function viewPrivacy() {
   const d = await api('/api/consent');
   const byPurpose = {};
@@ -2657,6 +3396,26 @@ function fbZoom(id) {
 }
 
 (async () => {
+  // WHO ARE YOU, BEFORE ANYTHING ELSE IS FETCHED.
+  //
+  // This used to load /api/config first and ask afterwards. The comment below
+  // said the CRM "is not drawn at all" for somebody not signed in, and that was
+  // not true: 34KB of configuration - every colleague's name, every settled
+  // decision, every channel blocker - had already been pulled into the page
+  // before the login screen appeared. The order is the whole control.
+  const back = readReturnFromGoogle();
+  await loadAuth();
+  // Registered BEFORE the login check. Returning early here left no hashchange
+  // listener at all, so after signing in every link in the navigation changed the
+  // address bar and nothing on screen moved.
+  window.addEventListener('hashchange', route);
+  if (AUTH.on && !AUTH.user) {
+    drawLogin(back.refused
+      ? 'That Google account cannot sign in to the Academy CRM. Ask an admin to set an account up for you.'
+      : '');
+    return;
+  }
+
   CFG = await api('/api/config');
   $('#ver').innerHTML = 'CRM &middot; ' + (CFG.version || 'prototype');
   drawDatasetBadge(CFG.dataset || {});
@@ -2676,8 +3435,11 @@ function fbZoom(id) {
   try { ACTOR = localStorage.getItem('crmActor') || ''; } catch {}
   const known = (CFG.users || []).map(u => u.name).concat(CFG.admins || []);
   if (!known.includes(ACTOR)) ACTOR = known[0] || '';
+  // With sign-in ON, loadAuth already set ACTOR from the proved identity, and the
+  // dropdown above is not on screen. This line only matters on a copy with
+  // sign-in off, where who you are is still a setting.
+  if (AUTH.user) ACTOR = AUTH.user.name;
   drawActorPicker();
-  window.addEventListener('hashchange', route);
   await route();
 })();
 </script>

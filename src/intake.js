@@ -118,13 +118,17 @@ export function receive(db, item) {
   // Obvious junk is stored, so nothing disappears, but it never reaches the
   // queue and never costs anybody a second. Decided at the visual review.
   const state = read.junk ? 'filtered' : 'new';
+  // `source` records HOW this arrived. It defaults to null rather than to
+  // 'provider': a row may only claim a real provider sent it when the caller
+  // knows that for a fact, because the admin Channels panel treats that word as
+  // proof a channel is connected.
   const info = db.prepare(`INSERT INTO inbound
     (channel, thread_key, external_id, received_at, surface_at, contact_name, contact_handle,
-     contact_email, contact_phone, body, suggested, suggestion_why, state)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(
+     contact_email, contact_phone, body, suggested, suggestion_why, state, source)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(
     item.channel, item.threadKey || null, item.externalId || null, at, surfaceAt(at),
     item.name || null, item.handle || null, item.email || null, item.phone || null,
-    item.body || null, read.suggested, read.why, state);
+    item.body || null, read.suggested, read.why, state, item.source || null);
   const id = Number(info.lastInsertRowid);
   if (read.junk) {
     db.prepare(`UPDATE inbound SET archive_reason = 'Filtered automatically',

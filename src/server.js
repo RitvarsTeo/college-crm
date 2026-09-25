@@ -1,4 +1,5 @@
 import http from 'node:http';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -19,6 +20,9 @@ import { buildDemo } from './demo.js';
 import * as gate from './gate.js';
 import { verifyRequest, channelDef, channelIds, allChannelStatus, BadInbound,
          parseInboundBody, handshake } from './inbound.js';
+import * as auth from './auth.js';
+import * as google from './google.js';
+import * as channeladmin from './channeladmin.js';
 
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -36,6 +40,136 @@ const FIXTURES = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'inbound_f
 const DB_FILE = process.env.CRM_DB || path.join(ROOT, 'data', 'crm.db');
 if (DB_FILE !== ':memory:') fs.mkdirSync(path.dirname(DB_FILE), { recursive: true });
 const db = openDb(DB_FILE);
+
+// ------------------------------------------------------------------ sign-in --
+//
+// CRM_AUTH=1 turns real sign-in on. It is off by default, which keeps the whole
+// existing test suite - which sends x-acting-as - working unchanged, and keeps a
+// local copy openable without seeding an account first.
+//
+// When it is ON, x-acting-as is IGNORED. Not preferred, not fallen back to:
+// ignored. A header the browser sets is not an identity, and leaving it as a
+// fallback would mean the login could simply be walked around.
+const AUTH_ON = auth.authOn();
+{
+  const cfg = auth.requireConfigured();
+  if (!cfg.ok) { console.error('REFUSING TO START. ' + cfg.why); process.exit(1); }
+}
+
+// Channel modes are stored so a switch survives a restart, and are loaded INTO
+// process.env, which is where every existing reader already looks. No adapter and
+// no inbound route had to change.
+for (const row of db.prepare('SELECT channel, mode FROM channel_mode').all()) {
+  process.env['CHANNEL_MODE_' + String(row.channel).toUpperCase()] = row.mode;
+}
+
+/**
+ * Who is making this request, proved. Returns null when sign-in is off, or when
+ * the cookie is missing, forged, expired, or belongs to somebody who has since
+ * been disabled or had their sessions invalidated.
+ *
+ * The ROLE is re-read from the database every request and never taken from the
+ * cookie, so removing somebody's admin rights takes effect immediately instead of
+ * when their cookie happens to expire. Lifted from the Talent Acquisition hub.
+ */
+function currentUser(req) {
+  if (!AUTH_ON) return null;
+  // Once per request. actorOf, viewerOf, adminOf and the gate below all ask, and
+  // each ask was a fresh SELECT against crm_users.
+  if (req.__user !== undefined) return req.__user;
+  req.__user = resolveUser(req);
+  return req.__user;
+}
+
+function resolveUser(req) {
+  const token = auth.readCookie(req.headers.cookie);
+  const session = auth.readSession(token, process.env.CRM_SESSION_SECRET);
+  if (!session) return null;
+  const row = db.prepare(`SELECT id, email, display_name, role, active, session_version
+                          FROM crm_users WHERE email = ?`).get(session.email);
+  if (!row || Number(row.active) !== 1) return null;
+  if (Number(row.session_version) !== Number(session.sessionVersion)) return null;
+  return { id: row.id, email: row.email, name: row.display_name || row.email, role: row.role };
+}
+
+// ------------------------------------------------------------ Google sign-in --
+//
+// Adapted from the merged sign-in kit, whose Google files are byte-identical to
+// the Talent Acquisition hub's and have been signing people in since September
+// 2026. See src/google.js for the verifier and the allowlist.
+//
+// THE RULE: an account is never created by signing in. A verified
+// novikontas.org address with no crm_users row is refused. Without that,
+// everybody in the Workspace becomes an Academy CRM user, and the applicants
+// Ieva holds are in this database.
+
+const FLOW_COOKIE = 'crm_oauth';
+const FLOW_MINUTES = 10;
+
+function signFlow(payload, secret) {
+  const body = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const mac = crypto.createHmac('sha256', secret).update(body).digest('base64url');
+  return `${body}.${mac}`;
+}
+
+function readFlow(token, secret) {
+  if (typeof token !== 'string' || !token.includes('.') || !secret) return null;
+  const [body, mac] = token.split('.');
+  const expected = crypto.createHmac('sha256', secret).update(body).digest('base64url');
+  const a = Buffer.from(mac);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
+  try {
+    const parsed = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
+    if (!(Number(parsed.exp) > Date.now())) return null;
+    return parsed;
+  } catch { return null; }
+}
+
+const flowCookie = (value, minutes) =>
+  `${FLOW_COOKIE}=${encodeURIComponent(value)}; Path=/api/auth/google; HttpOnly`
+  + `; SameSite=Lax${DEV_INSECURE_COOKIE ? '' : '; Secure'}; Max-Age=${minutes * 60}`;
+
+/** Never blocks a sign-in decision. A bounded code and an email, nothing else. */
+function logAttempt(email, method, outcome) {
+  try {
+    db.prepare('INSERT INTO crm_login_attempt (at, email, method, outcome) VALUES (?,?,?,?)')
+      .run(nowIso(), email || null, method, outcome);
+  } catch { /* the audit write is not worth failing a sign-in over */ }
+}
+
+/**
+ * The only API paths that work before somebody has signed in.
+ *
+ * Everything a provider calls stays open: a webhook proves itself with a
+ * signature or a shared secret, and a cron route with CRON_SECRET, both of which
+ * are stronger than a browser session and neither of which has one.
+ */
+function openBeforeSignIn(pathname) {
+  if (pathname.startsWith('/api/auth/')) return true;        // you need it to sign in
+  if (pathname.startsWith('/api/cron/')) return true;        // CRON_SECRET is its auth
+  // A REAL CHANNEL only. Never a prefix match - see the comment at the door.
+  const inbound = /^\/api\/inbound\/([a-z_]+)$/.exec(pathname);
+  if (inbound && channelDef(inbound[1])) return true;
+  return false;
+}
+
+// Guessing at a password should cost something. Per email, in memory, and it is
+// deliberately not per IP as well: everybody here shares one office address.
+const LOGIN_TRIES = new Map();
+const LOGIN_MAX = 8;
+const LOGIN_WINDOW_MS = 10 * 60 * 1000;
+function loginBlocked(email) {
+  const rec = LOGIN_TRIES.get(email);
+  if (!rec) return false;
+  if (Date.now() > rec.until) { LOGIN_TRIES.delete(email); return false; }
+  return rec.n >= LOGIN_MAX;
+}
+function loginFailed(email) {
+  const rec = LOGIN_TRIES.get(email);
+  if (!rec || Date.now() > rec.until) LOGIN_TRIES.set(email, { n: 1, until: Date.now() + LOGIN_WINDOW_MS });
+  else rec.n += 1;
+}
 
 // REAL or DEMO, and it is never guessed. The mode is written next to the database
 // and read back, so the Console can say which one is on screen without inferring
@@ -187,8 +321,38 @@ const isKnownPerson = (who) => USER_NAMES.includes(String(who || '')) || isAdmin
 const roleOf = (who) => (USERS.find((u) => u.name === who) || {}).role || null;
 // 'unknown user' rather than a quiet default: an entry nobody can be traced to
 // should look wrong on the screen, not look like Ieva did it.
-const actorOf = (req, b) => String((b && b.by) || req.headers['x-acting-as'] || 'unknown user');
-const viewerOf = (req, url) => String(url.searchParams.get('as') || req.headers['x-acting-as'] || '');
+// When sign-in is on, a signed session is the ONLY answer. The header and the
+// ?as= query string are not consulted at all, so a history entry saying "Ieva"
+// means Ieva proved she was Ieva.
+const actorOf = (req, b) => {
+  const me = currentUser(req);
+  if (me) return me.name;
+  if (AUTH_ON) return 'unknown user';
+  return String((b && b.by) || req.headers['x-acting-as'] || 'unknown user');
+};
+const viewerOf = (req, url) => {
+  const me = currentUser(req);
+  if (me) return me.name;
+  if (AUTH_ON) return '';
+  return String(url.searchParams.get('as') || req.headers['x-acting-as'] || '');
+};
+
+// The admin boundary for the Channels panel.
+//
+// With sign-in ON this is a real check: a role read from the database this
+// request. With sign-in OFF it falls back to the old name list, which is the
+// existing, weak, self-declared model - unchanged, and not made to look stronger
+// than it is. The panel says which of the two is in force.
+function adminOf(req) {
+  const me = currentUser(req);
+  if (me) return auth.canSeeChannels(me.role) ? me : null;
+  if (AUTH_ON) return null;
+  const who = String(req.headers['x-acting-as'] || '');
+  return isAdmin(who) ? { id: null, email: null, name: who, role: 'admin' } : null;
+}
+const refuseNotAdmin = (res) => json(res, 403, {
+  error: 'Channels is for admins only.',
+  how: AUTH_ON ? 'Sign in with an admin account.' : 'Select an admin in "Acting as".' });
 
 // Decision 2, locked 23.09.2026. Two different things live on a person's timeline:
 //   - the person's own activity: calls, notes, messages, visits, status moves.
@@ -302,6 +466,33 @@ function personRow(id, viewer) {
   return p;
 }
 
+// The newest check per channel, as one query rather than fourteen.
+function latestChecks() {
+  const rows = db.prepare(`SELECT c.channel, c.at, c.ok, c.kind, c.detail, c.by FROM channel_check c
+     JOIN (SELECT channel, MAX(id) id FROM channel_check GROUP BY channel) m ON m.id = c.id`).all();
+  return Object.fromEntries(rows.map((r) => [r.channel, r]));
+}
+
+// When a PROVIDER last verified the URL against us. This is the only evidence
+// that makes a channel CONNECTED, so it is read from the table the inbound GET
+// route writes - never from anything our own check does.
+function handshakeRows() {
+  const rows = db.prepare('SELECT channel, verified_at, how FROM channel_handshake').all();
+  return Object.fromEntries(rows.map((r) => [r.channel, r]));
+}
+
+function channelCounts() {
+  const out = {};
+  // ONLY rows a real provider posted. The demo builder and the simulator write
+  // through this same table deliberately, so counting everything here would make
+  // every channel on the demo copy read as CONNECTED.
+  for (const r of db.prepare(`SELECT channel, COUNT(*) n, MAX(received_at) last FROM inbound
+                              WHERE source = 'provider' GROUP BY channel`).all()) {
+    out[r.channel] = { events: r.n, lastEventAt: r.last, lastSuccessAt: r.last };
+  }
+  return out;
+}
+
 function openTask(id) {
   return db.prepare('SELECT * FROM tasks WHERE person_id = ? AND done_at IS NULL ORDER BY due_at ASC').get(id);
 }
@@ -341,9 +532,319 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
+    // ---------------------------------------------- the sign-in door, over the API --
+    //
+    // WITHOUT THIS THE LOGIN IS DECORATIVE. The screen refuses to draw the CRM
+    // for somebody not signed in, but the screen is not the boundary: with
+    // CRM_AUTH on and no session at all, GET /api/people answered 200 with the
+    // rows in it, and /api/whoami reported the caller as "Ieva" because the route
+    // fell back to the first name in the config when nobody was identified.
+    //
+    // Same shape as gate.allows() in src/gate.js, and deliberately so - including
+    // the trap that file records: a PREFIX match on /api/inbound/ also opens
+    // /api/inbound/events, which is the observability view and carries sender
+    // names and message bodies. Only a path that names a REAL CHANNEL is open.
+    if (AUTH_ON && p.startsWith('/api/') && !openBeforeSignIn(p) && !currentUser(req)) {
+      return json(res, 401, { error: 'not signed in', how: 'Open / and sign in.' });
+    }
+
     if (req.method === 'GET' && p === '/healthz') {
       return json(res, 200, { ok: true, people: db.prepare('SELECT COUNT(*) n FROM people').get().n });
     }
+
+    // ------------------------------------------------------------- sign-in --
+    //
+    // Three routes and nothing else. No registration, no password reset by email,
+    // no "remember me": an account is created by scripts/manage_users.mjs, by
+    // somebody with access to the server.
+
+    if (req.method === 'GET' && p === '/api/auth/me') {
+      const me = currentUser(req);
+      const g = google.googleConfigured(process.env);
+      return json(res, 200, {
+        auth: AUTH_ON,
+        user: me ? { name: me.name, email: me.email, role: me.role } : null,
+        // Whether the BUTTON should exist at all. A button in front of a flow
+        // that is not configured fails on Google's own error page, before any
+        // code here runs, so nothing on our side could ever explain it.
+        google: AUTH_ON && g.ok,
+        googleMissing: g.ok ? [] : g.missing,      // NAMES only, never values
+        googleDomain: google.HOSTED_DOMAIN,
+        // The panel prints this rather than assuming. With sign-in off, "admin"
+        // is a name in a dropdown and the screen has to say so.
+        identityIsProved: AUTH_ON,
+        honesty: !AUTH_ON
+          ? 'Sign-in is OFF on this copy. Who you are is a setting, not a check. Set CRM_AUTH=1 and CRM_SESSION_SECRET to turn it on.'
+          : me
+          ? 'You are signed in. Who you are is proved by a signed session cookie, and the role is re-read from the database on every request.'
+          : 'Sign-in is on. Nobody is signed in on this browser.',
+      });
+    }
+
+    if (req.method === 'POST' && p === '/api/auth/login') {
+      if (!AUTH_ON) return json(res, 400, { error: 'Sign-in is not switched on for this copy.' });
+      const b = await body(req);
+      const email = auth.canonicalEmail(b && b.email);
+      // Deliberately slow on every answer, right or wrong, so the timing of a
+      // reply says nothing about whether the account exists.
+      await new Promise((r) => setTimeout(r, 250));
+      if (loginBlocked(email)) {
+        return json(res, 429, { error: 'Too many attempts. Wait ten minutes.' });
+      }
+      const result = await auth.authenticate({ email, password: b && b.password },
+        (e) => db.prepare(`SELECT id, email, display_name, password_hash, role, active, session_version
+                           FROM crm_users WHERE email = ?`).get(e));
+      if (!result.ok) {
+        loginFailed(email);
+        logAttempt(email, 'password', 'refused_' + (result.reason || 'invalid_credentials'));
+        return json(res, 401, { error: 'That email and password do not match an account.' });
+      }
+      LOGIN_TRIES.delete(email);
+      logAttempt(email, 'password', 'success');
+      db.prepare('UPDATE crm_users SET last_login_at = ? WHERE id = ?').run(nowIso(), result.user.id);
+      const token = auth.issueSession(result.user, process.env.CRM_SESSION_SECRET);
+      res.writeHead(200, { 'content-type': 'application/json; charset=utf-8',
+        'cache-control': 'no-store',
+        'set-cookie': auth.cookieHeader(token, { secure: !DEV_INSECURE_COOKIE }) });
+      return res.end(JSON.stringify({ ok: true,
+        user: { name: result.user.name, email: result.user.email, role: result.user.role } }));
+    }
+
+    // GET /api/auth/google/start - begin the authorization code flow.
+    //
+    // Mints a state and a nonce into a short-lived signed cookie. Both come back
+    // in the callback and both are checked there: state proves the callback
+    // belongs to a flow THIS browser started, nonce ties the ID token to it.
+    if (req.method === 'GET' && p === '/api/auth/google/start') {
+      if (!AUTH_ON) return json(res, 400, { error: 'Sign-in is not switched on for this copy.' });
+      const cfg = google.googleConfigured(process.env);
+      if (!cfg.ok) {
+        // NAMES only. Never a value, and never a pretence that it works.
+        return json(res, 503, { error: 'google_not_configured',
+          message: 'Google sign-in is not configured on this copy.',
+          missing: cfg.missing });
+      }
+      const state = crypto.randomBytes(24).toString('base64url');
+      const nonce = crypto.randomBytes(24).toString('base64url');
+      const flow = signFlow({ state, nonce, exp: Date.now() + FLOW_MINUTES * 60 * 1000 },
+        process.env.CRM_SESSION_SECRET);
+
+      const to = new URL(google.GOOGLE_AUTH_URL);
+      to.searchParams.set('client_id', process.env.GOOGLE_CLIENT_ID);
+      to.searchParams.set('redirect_uri', process.env.GOOGLE_REDIRECT_URI);
+      to.searchParams.set('response_type', 'code');
+      to.searchParams.set('scope', 'openid email profile');
+      to.searchParams.set('state', state);
+      to.searchParams.set('nonce', nonce);
+      // A HINT only: it filters the account chooser to the Workspace. A user can
+      // edit it out of the URL. The check that matters is hd on the VERIFIED
+      // token, in the callback below.
+      to.searchParams.set('hd', google.HOSTED_DOMAIN);
+      to.searchParams.set('prompt', 'select_account');
+
+      res.writeHead(302, { location: to.toString(), 'cache-control': 'no-store',
+        'set-cookie': flowCookie(flow, FLOW_MINUTES) });
+      return res.end();
+    }
+
+    // GET /api/auth/google/callback - finish it.
+    //
+    // Every refusal sends the SAME sentence to the same place. The reason is
+    // recorded as a bounded code so an administrator can tell them apart; the
+    // person refused learns only that they are not authorised.
+    if (req.method === 'GET' && p === '/api/auth/google/callback') {
+      const refuse = () => {
+        res.writeHead(303, { location: '/?error=not_authorised', 'cache-control': 'no-store',
+          'set-cookie': flowCookie('', 0) });
+        return res.end();
+      };
+      if (!AUTH_ON) return json(res, 400, { error: 'Sign-in is not switched on for this copy.' });
+      const cfg = google.googleConfigured(process.env);
+      if (!cfg.ok) return json(res, 503, { error: 'google_not_configured', missing: cfg.missing });
+
+      const flow = readFlow(auth.readCookie(req.headers.cookie, FLOW_COOKIE),
+        process.env.CRM_SESSION_SECRET);
+      const code = url.searchParams.get('code');
+      const state = url.searchParams.get('state');
+      if (!flow || !state || state !== flow.state || !code) {
+        logAttempt(null, 'google', google.REASON.TOKEN);
+        return refuse();
+      }
+
+      let tokens;
+      try {
+        const body = new URLSearchParams({
+          code,
+          client_id: process.env.GOOGLE_CLIENT_ID,
+          client_secret: process.env.GOOGLE_CLIENT_SECRET,
+          redirect_uri: process.env.GOOGLE_REDIRECT_URI,
+          grant_type: 'authorization_code',
+        });
+        const r = await fetch(google.tokenUrl(), { method: 'POST',
+          headers: { 'content-type': 'application/x-www-form-urlencoded' }, body });
+        // The body is deliberately NOT read on failure: it can echo the request,
+        // and the request carries the client secret.
+        if (!r.ok) throw new Error('token endpoint ' + r.status);
+        tokens = await r.json();
+      } catch {
+        logAttempt(null, 'google', google.REASON.TOKEN);
+        return refuse();
+      }
+
+      const verified = await google.verifyIdToken(tokens.id_token, {
+        clientId: process.env.GOOGLE_CLIENT_ID,
+        nonce: flow.nonce,
+        hostedDomain: google.HOSTED_DOMAIN,
+        jwks: await google.getGoogleJwks(),
+      });
+      if (!verified.ok) {
+        logAttempt(null, 'google', google.VERIFIER_REASON[verified.reason] || google.REASON.TOKEN);
+        return refuse();
+      }
+
+      // Normalised the same way every other path normalises it, so a case
+      // variant resolves to the one existing account rather than missing it.
+      const email = auth.canonicalEmail(verified.email);
+      const row = db.prepare(`SELECT id, email, display_name, role, active, session_version
+                              FROM crm_users WHERE email = ?`).get(email);
+
+      // THE ALLOWLIST. A verified company identity is not sufficient by itself.
+      const decision = google.decideAccountAccess(row);
+      if (!decision.ok) {
+        logAttempt(email, 'google', decision.reason);
+        return refuse();
+      }
+      if (!auth.ROLES.includes(row.role)) {
+        logAttempt(email, 'google', google.REASON.INACTIVE);
+        return refuse();
+      }
+
+      const token = auth.issueSession({
+        id: row.id, email: row.email, name: row.display_name, role: row.role,
+        sessionVersion: Number(row.session_version ?? 0),
+        authMethod: 'google',          // read from crm_users, never from Google
+        authAt: Date.now(),
+      }, process.env.CRM_SESSION_SECRET);
+
+      db.prepare('UPDATE crm_users SET last_login_at = ? WHERE id = ?').run(nowIso(), row.id);
+      logAttempt(email, 'google', 'success_google');
+      // A sign-in by any route clears the password throttle for that address.
+      LOGIN_TRIES.delete(email);
+
+      res.writeHead(303, { location: '/?auth=google', 'cache-control': 'no-store',
+        'set-cookie': [auth.cookieHeader(token, { secure: !DEV_INSECURE_COOKIE }),
+          flowCookie('', 0)] });
+      return res.end();
+    }
+
+    if (req.method === 'POST' && p === '/api/auth/logout') {
+      res.writeHead(200, { 'content-type': 'application/json; charset=utf-8',
+        'cache-control': 'no-store',
+        'set-cookie': auth.clearCookie({ secure: !DEV_INSECURE_COOKIE }) });
+      return res.end(JSON.stringify({ ok: true }));
+    }
+
+    // ------------------------------------------------------- admin: channels --
+    //
+    // Admin only, every route, checked on the server. What is shown is the NAME
+    // of each setting and whether it is present. A value is never read out, and
+    // assertNoSecretValues re-checks the whole payload before it is sent.
+
+    if (p === '/api/admin/channels' || p.startsWith('/api/admin/channels/')) {
+      const me = adminOf(req);
+      if (!me) return refuseNotAdmin(res);
+      const parts = p.split('/').filter(Boolean);           // api admin channels [id] [action]
+      const id = parts[3] || null;
+      const action = parts[4] || null;
+
+      if (req.method === 'GET' && !id) {
+        const payload = {
+          identityIsProved: AUTH_ON,
+          honesty: AUTH_ON
+            ? 'Admin is a role read from the database on every request.'
+            : 'Sign-in is OFF on this copy, so "admin" here is a name selected in a dropdown, not a proved identity.',
+          states: channeladmin.STATES,
+          statesMean: {
+            'NOT CONFIGURED': 'a setting it needs is missing',
+            'CONFIGURED': 'the settings exist, and nothing has yet proved the path works',
+            'CONNECTED': 'the provider itself has reached us',
+            'ERROR': 'it was checked and the check failed',
+          },
+          onOffIsSeparate: 'Whether a channel is switched ON is a different question from whether it works. Everything is OFF until an admin turns it on.',
+          channels: channeladmin.allStatuses({
+            env: process.env, checks: latestChecks(), handshakes: handshakeRows(),
+            countsByChannel: channelCounts() }),
+        };
+        channeladmin.assertNoSecretValues(payload, process.env);
+        return json(res, 200, payload);
+      }
+
+      if (id && !channelDef(id)) return json(res, 404, { error: 'no such channel: ' + id });
+
+      if (req.method === 'GET' && id && !action) {
+        const def = channelDef(id);
+        const payload = {
+          ...channeladmin.statusOf(id, { env: process.env, lastCheck: latestChecks()[id] || null,
+            handshakeAt: (handshakeRows()[id] || {}).verified_at || null,
+            handshakeHow: (handshakeRows()[id] || {}).how || null,
+            counts: channelCounts()[id] || {} }),
+          connectSteps: def.connectSteps || [],
+          howWeGoLive: def.howWeGoLive || null,
+          howWeDisable: def.howWeDisable || null,
+          checks: db.prepare(`SELECT at, ok, kind, detail, by FROM channel_check
+                              WHERE channel = ? ORDER BY id DESC LIMIT 10`).all(id),
+        };
+        channeladmin.assertNoSecretValues(payload, process.env);
+        return json(res, 200, payload);
+      }
+
+      // Run the check. Nothing goes out to a provider and nothing is stored in
+      // the Inbox; see checkPlanFor in src/channeladmin.js for what each kind
+      // of check does and, just as importantly, what it does not prove.
+      if (req.method === 'POST' && id && action === 'check') {
+        if (!auth.canTestChannels(me.role)) return refuseNotAdmin(res);
+        const r = channeladmin.runCheck(id, { env: process.env });
+        if (r.skipped) {
+          return json(res, 200, { ok: null, skipped: true, why: r.detail });
+        }
+        db.prepare('INSERT INTO channel_check (channel, at, ok, kind, detail, by) VALUES (?,?,?,?,?,?)')
+          .run(id, nowIso(), r.ok ? 1 : 0, r.kind, String(r.detail || '').slice(0, 500), me.name);
+        const payload = { ...r, channel: id, at: nowIso(), by: me.name };
+        channeladmin.assertNoSecretValues(payload, process.env);
+        return json(res, 200, payload);
+      }
+
+      // Switch a channel ON or OFF. Never automatic, and it refuses unless the
+      // settings are there and a check has actually passed - so "enable" cannot
+      // be the thing that discovers the channel is broken.
+      if (req.method === 'POST' && id && action === 'mode') {
+        if (!auth.canEnableChannel(me.role)) return refuseNotAdmin(res);
+        const b = await body(req);
+        const want = String((b && b.mode) || '').toLowerCase();
+        if (!['off', 'test', 'live'].includes(want)) {
+          return json(res, 400, { error: 'mode must be off, test or live' });
+        }
+        if (want !== 'off') {
+          const st = channeladmin.statusOf(id, { env: process.env,
+            lastCheck: latestChecks()[id] || null });
+          if (!st.allSettingsPresent) {
+            return json(res, 409, { error: `Cannot switch ${id} on: ${st.missingSettings.join(', ')} not set.` });
+          }
+          if (st.canTest && st.lastCheckOk !== true) {
+            return json(res, 409, { error: 'Cannot switch it on until a check has passed. Run the check first.' });
+          }
+        }
+        db.prepare(`INSERT INTO channel_mode (channel, mode, changed_at, changed_by) VALUES (?,?,?,?)
+                    ON CONFLICT(channel) DO UPDATE SET mode = excluded.mode,
+                      changed_at = excluded.changed_at, changed_by = excluded.changed_by`)
+          .run(id, want, nowIso(), me.name);
+        process.env['CHANNEL_MODE_' + id.toUpperCase()] = want;
+        return json(res, 200, { ok: true, channel: id, mode: want, live: want === 'live', by: me.name });
+      }
+
+      return json(res, 404, { error: 'no such admin route' });
+    }
+
 
     // Our control room, at its own address. It is deliberately NOT a route inside
     // the CRM: the CRM is the product and carries no way into this.
@@ -361,12 +862,20 @@ const server = http.createServer(async (req, res) => {
     // The brand assets. Only the two authorised logo files, served by an exact
     // name match: no path is ever built out of what the request asked for.
     if (req.method === 'GET' && p.startsWith('/assets/')) {
-      const ALLOWED = { 'NoAca_logo_darkhor.svg': 1, 'NoAca_logo_whitehor.svg': 1,
-        'NoAca_logo_blackhor.svg': 1 };
+      // Name -> content type, so the list stays an exact-match allow-list and a
+      // new kind of asset cannot be served with the wrong type by accident.
+      // na_pattern_tile.png arrived with the sign-in screen: its card mask
+      // references it, and without it every page load logged a 404.
+      const ALLOWED = {
+        'NoAca_logo_darkhor.svg': 'image/svg+xml; charset=utf-8',
+        'NoAca_logo_whitehor.svg': 'image/svg+xml; charset=utf-8',
+        'NoAca_logo_blackhor.svg': 'image/svg+xml; charset=utf-8',
+        'na_pattern_tile.png': 'image/png',
+      };
       const name = p.slice('/assets/'.length);
-      if (!ALLOWED[name]) return json(res, 404, { error: 'not found' });
-      res.writeHead(200, { 'content-type': 'image/svg+xml; charset=utf-8',
-        'cache-control': 'public, max-age=3600' });
+      const type = ALLOWED[name];
+      if (!type) return json(res, 404, { error: 'not found' });
+      res.writeHead(200, { 'content-type': type, 'cache-control': 'public, max-age=3600' });
       return res.end(fs.readFileSync(path.join(ROOT, 'src', 'assets', name)));
     }
 
@@ -527,12 +1036,20 @@ const server = http.createServer(async (req, res) => {
         rows: open.slice(0, 25),
       });
 
+      // The labels come from config/prototype.json -> todayGroups, not from
+      // strings here. They were in BOTH places, so renaming a tab in the config
+      // changed nothing on screen and the two could drift apart silently. One
+      // source now; the config is it.
+      const groupDef = (id) => CONFIG.todayGroups.find((g) => g.id === id) || {};
+      const groupLabel = (id) => groupDef(id).label || id;
+
       return json(res, 200, {
         groups: [
-          group('new_leads', 'New leads', newLeads, newLeadsDone),
-          group('waiting', 'Waiting on us', waitingRows, doneFollow + answeredToday),
-          group('attention', 'Other attention', attentionMine, 0),
+          group('new_leads', groupLabel('new_leads'), newLeads, newLeadsDone),
+          group('waiting', groupLabel('waiting'), waitingRows, doneFollow + answeredToday),
+          group('attention', groupLabel('attention'), attentionMine, 0),
         ],
+        marks: Object.fromEntries(CONFIG.todayGroups.filter((g) => g.mark).map((g) => [g.id, g.mark])),
         order: CONFIG.todayGroups.map((g) => g.id),
         descriptions: Object.fromEntries(CONFIG.todayGroups.map((g) => [g.id, g.what])),
         scope: everyone ? 'all' : 'mine',
@@ -745,7 +1262,7 @@ const server = http.createServer(async (req, res) => {
       const now = Date.now();
       let added = 0;
       for (const f of FIXTURES.items) {
-        const r = receive(db, { ...f, receivedAt: new Date(now - f.hoursAgo * 3600000).toISOString() });
+        const r = receive(db, { ...f, source: 'demo', receivedAt: new Date(now - f.hoursAgo * 3600000).toISOString() });
         if (!r.duplicate) added++;
       }
       return json(res, 200, { ok: true, added, total: db.prepare('SELECT COUNT(*) n FROM inbound').get().n });
@@ -759,7 +1276,7 @@ const server = http.createServer(async (req, res) => {
       runFullDemo(db);                                   // the older channel walk-through
       const now = Date.now();
       for (const f of FIXTURES.items) {
-        receive(db, { ...f, receivedAt: new Date(now - f.hoursAgo * 3600000).toISOString() });
+        receive(db, { ...f, source: 'demo', receivedAt: new Date(now - f.hoursAgo * 3600000).toISOString() });
       }
       const script = [
         { extId: 'ig_msg_0002', as: 'lead', by: 'Tetiana', confirm: ['interest', 'start', 'education', 'question'],
@@ -831,7 +1348,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'POST' && p === '/api/intake/receive') {
       const b = await body(req);
       if (!b.channel) return json(res, 400, { error: 'channel is required' });
-      return json(res, 200, receive(db, b));
+      return json(res, 200, receive(db, { ...b, source: b.source || 'manual' }));
     }
 
     if (req.method === 'POST' && /^\/api\/intake\/\d+\/qualify$/.test(p)) {
@@ -947,7 +1464,10 @@ const server = http.createServer(async (req, res) => {
     // ----------------------------------------------------------- history ---
     // Backlog 10, 11, 12: one log, both origins, admins only.
     if (req.method === 'GET' && p === '/api/whoami') {
-      const who = viewerOf(req, url) || (USER_NAMES[0] || '');
+      // NEVER fall back to the first name in the config. With sign-in on and
+      // nobody signed in, this route reported the caller as "Ieva" - an identity
+      // nobody had proved, on the one route whose whole job is to say who you are.
+      const who = AUTH_ON ? (currentUser(req) || {}).name || '' : (viewerOf(req, url) || USER_NAMES[0] || '');
       return json(res, 200, {
         actor: who, role: roleOf(who), isAdmin: isAdmin(who), known: isKnownPerson(who),
         users: USERS, admins: ADMINS, roles: CONFIG.owners || [],
@@ -1174,7 +1694,7 @@ const server = http.createServer(async (req, res) => {
         const ev = adapt(channel, payload);
         // Idempotency: receive() returns {duplicate:true} when it has already
         // seen this channel + external id. A provider retry is normal.
-        const r = receive(db, toIntake(ev));
+        const r = receive(db, { ...toIntake(ev), source: simulated ? 'simulated' : 'provider' });
         recordInbound(channel, ev.externalEventId, r.duplicate ? 'duplicate' : r.filtered ? 'filtered' : 'queued', check.how);
         return json(res, 200, { ok: true, channel, externalEventId: ev.externalEventId,
           outcome: r.duplicate ? 'already had it' : r.filtered ? 'filtered out before the queue' : 'waiting to be looked at',
@@ -1197,7 +1717,7 @@ const server = http.createServer(async (req, res) => {
       if (!raw) return json(res, 404, { error: 'no fixture for ' + channel });
       try {
         const ev = adapt(channel, raw);
-        const r = receive(db, toIntake(ev));
+        const r = receive(db, { ...toIntake(ev), source: 'simulated' });
         recordInbound(channel, ev.externalEventId,
           r.duplicate ? 'duplicate' : r.filtered ? 'filtered' : 'queued', 'simulated locally');
         return json(res, 200, { ok: true, channel, externalEventId: ev.externalEventId,
@@ -1450,4 +1970,12 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, () => console.log(`Academy CRM prototype on http://localhost:${PORT}`));
+// The port is read back from the socket rather than echoed from PORT, because
+// PORT=0 means "pick one" and echoing 0 tells nobody anything.
+server.on('error', (err) => {
+  // A port already in use used to be swallowed, and a stale server then answered
+  // for the new one - a whole suite passed against code that had never loaded.
+  console.error('REFUSING TO START. ' + err.message);
+  process.exit(1);
+});
+server.listen(PORT, () => console.log(`Academy CRM prototype on http://localhost:${server.address().port}`));

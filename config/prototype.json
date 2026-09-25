@@ -345,6 +345,30 @@
       "title": "Internship Coordinator"
     }
   ],
+  "_accountsNote": "Real sign-in addresses. NOTHING here is guessed: manage_users.mjs used to build first.last@novikontas.org from a display name and produced ritvars@ for a person whose address is ritvars.vilcins@. A name is not an address. Anybody missing from this list has no address recorded yet and gets no account.",
+  "accounts": [
+    {
+      "email": "ritvars.vilcins@novikontas.org",
+      "name": "Ritvars",
+      "role": "admin"
+    },
+    {
+      "email": "aigars.kluga@novikontas.org",
+      "name": "Aigars",
+      "role": "admin"
+    },
+    {
+      "email": "edu@novikontas.org",
+      "name": "Admissions",
+      "role": "user",
+      "shared": true,
+      "_note": "THE SHARED ADMISSIONS ACCOUNT. Ieva and Laura both work from it - it is the Admissions mailbox and the Gmail channel inbox, and signing in with it is a normal, intended way for either of them to use the CRM. It is role user because Admissions work needs no channel configuration, which is the same rule every other admissions person is under; it is not a lesser account. What it does carry is that an entry made from it reads \"Admissions\" rather than \"Ieva\" or \"Laura\", so where the history has to name the individual, that person signs in as themselves.",
+      "sharedBy": [
+        "Ieva",
+        "Laura"
+      ]
+    }
+  ],
   "_users": "Locked 23.09.2026. Arina was added when the phone menu was mapped: she answers button 3 with Tetiana. No email addresses yet and no authentication - identity is a setting until a login exists. A role is NOT a person.",
   "ownershipFollowsStage": false,
   "_ownershipFollowsStage": "Set to true once the stage list and the stage-to-owner map exist. While it is false the owner is set by hand and the screens say so.",
@@ -430,11 +454,12 @@
     },
     {
       "id": "attention",
-      "label": "Other attention",
-      "what": "Active people with no next step at all"
+      "label": "Without Next Action",
+      "what": "Active people with no next step at all",
+      "mark": "😨"
     }
   ],
-  "_todayGroups": "Locked 23.09.2026, amended 24.09.2026. The order is the user choice and is remembered. Re-ordering NEVER hides a group - an empty group still shows, saying it is clear. Each group shows done/total for the day so a cleared queue reads as cleared. AMENDMENT: Follow-ups and Replies were merged into one \"Waiting on us\" queue. They were two tabs answering the same question, and somebody with a due step AND an unanswered message was listed twice. Each row still says which of the two put it there, because the action differs.",
+  "_todayGroups": "Locked 23.09.2026, amended 24.09.2026. The order is the user choice and is remembered. Re-ordering NEVER hides a group - an empty group still shows, saying it is clear. Each group shows done/total for the day so a cleared queue reads as cleared. AMENDMENT: Follow-ups and Replies were merged into one \"Waiting on us\" queue. They were two tabs answering the same question, and somebody with a due step AND an unanswered message was listed twice. Each row still says which of the two put it there, because the action differs. RENAMED 25.09.2026: \"Other attention\" said nothing. It is the people who are active with NO next step, so nothing will ever surface them again - the tab that stops somebody being quietly forgotten. Named \"Without Next Action\" by Ritvars, with a monochrome warning glyph rather than a colour emoji.",
   "coreMetrics": [
     "New leads this month",
     "Admissions this month",
@@ -1019,6 +1044,24 @@
       ],
       "status": "Parked. Do not spend time on it.",
       "parked": true
+    },
+    "googleFormOwner": {
+      "ask": "Who created the Google Form, and so owns its response sheet?",
+      "why": "Only the form owner can paste the Apps Script onto the response sheet and approve the one permission box. Fifteen minutes of their time at a computer.",
+      "who": "Inside Novikontas",
+      "blocks": [
+        "google_form"
+      ],
+      "status": "Not named yet. Every other channel now has a person against it."
+    },
+    "agentPartnerOwner": {
+      "ask": "Which agent do we start with, and who at their end sets up the link?",
+      "why": "The agent channel needs one partner to begin with and a token issued for them alone. The agent is a SOURCE, never the owner of the person.",
+      "who": "Inside Novikontas, then the partner",
+      "blocks": [
+        "agent"
+      ],
+      "status": "Not named yet."
     }
   },
   "mailchimp": {

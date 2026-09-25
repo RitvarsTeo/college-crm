@@ -44,7 +44,9 @@
         "Test a new person",
         "Test an existing person",
         "Test filtering and routing"
-      ]
+      ],
+      "ownerPerson": "Oksana",
+      "ownerAction": "Paste the address and secret into the website form"
     },
     "google_form": {
       "label": "Google Form",
@@ -58,7 +60,7 @@
       "dedupKey": "channel + responseId",
       "rateLimit": "Apps Script quotas apply to the sender, not to us.",
       "readiness": "waiting_for_external_access",
-      "externalBlocker": "Somebody who owns the form must paste the script, add the installable trigger and authorise it once.",
+      "externalBlocker": "Nobody has named who created the form. Only its owner can paste the Apps Script onto the response sheet and approve the permission box.",
       "weControl": [
         "the endpoint",
         "the payload contract",
@@ -77,13 +79,15 @@
       "howWeGoLive": "Deploy, install the script, submit one real test response, check CAR, switch to live.",
       "howWeDisable": "Remove the trigger at Google, or set the mode to off here.",
       "_note": "A second architecture exists - the Forms API with a Cloud project and Pub/Sub. It is heavier and needs a Cloud project. The Apps Script route is what this contract assumes. EXTERNAL CONFIRMATION REQUIRED on which one Novikontas wants.",
-      "blockerKind": "work",
+      "blockerKind": "question",
       "connectSteps": [
         "Connect the actual form submission to the CRM",
         "Configure the Apps Script integration",
         "Test a new and an existing person",
         "Test Inbox routing"
-      ]
+      ],
+      "ownerPerson": null,
+      "ownerAction": "Whoever owns the form runs the Apps Script step"
     },
     "gmail": {
       "label": "Email",
@@ -125,7 +129,9 @@
         "Configure OAuth and the API access",
         "Connect Ieva, Laura and Marina",
         "Test an inbound email into the Inbox"
-      ]
+      ],
+      "ownerPerson": "Marina",
+      "ownerAction": "Google Workspace administrator approval"
     },
     "facebook": {
       "label": "Facebook",
@@ -171,7 +177,9 @@
       ],
       "handshakeEnv": "META_VERIFY_TOKEN",
       "handshake": "GET the webhook path with hub.mode, hub.verify_token and hub.challenge. We echo the challenge as plain text or Meta will not save the subscription.",
-      "administeredBy": "Tetiana"
+      "administeredBy": "Tetiana",
+      "ownerPerson": "Tetiana",
+      "ownerAction": "Meta app plus Page setup, then App Review"
     },
     "messenger": {
       "label": "Messenger",
@@ -216,7 +224,9 @@
       ],
       "handshakeEnv": "META_VERIFY_TOKEN",
       "handshake": "GET the webhook path with hub.mode, hub.verify_token and hub.challenge. We echo the challenge as plain text or Meta will not save the subscription.",
-      "administeredBy": "Tetiana"
+      "administeredBy": "Tetiana",
+      "ownerPerson": "Tetiana",
+      "ownerAction": "Meta app plus Messenger setup, then App Review"
     },
     "instagram": {
       "label": "Instagram",
@@ -261,7 +271,9 @@
       ],
       "handshakeEnv": "META_VERIFY_TOKEN",
       "handshake": "GET the webhook path with hub.mode, hub.verify_token and hub.challenge. We echo the challenge as plain text or Meta will not save the subscription.",
-      "administeredBy": "Tetiana"
+      "administeredBy": "Tetiana",
+      "ownerPerson": "Tetiana",
+      "ownerAction": "Meta app plus Instagram setup, then App Review"
     },
     "whatsapp": {
       "label": "WhatsApp",
@@ -310,7 +322,9 @@
       ],
       "handshakeEnv": "META_VERIFY_TOKEN",
       "handshake": "GET the webhook path with hub.mode, hub.verify_token and hub.challenge. We echo the challenge as plain text or Meta will not save the subscription.",
-      "administeredBy": "Tetiana"
+      "administeredBy": "Tetiana",
+      "ownerPerson": "Tetiana",
+      "ownerAction": "Meta app plus WhatsApp setup, then App Review"
     },
     "mailchimp": {
       "label": "Mailchimp",
@@ -348,7 +362,9 @@
         "Map the relevant events",
         "Test through to the Inbox and the Person"
       ],
-      "handshake": "GET the webhook path. Mailchimp checks the URL answers before it will save it, and sends no challenge."
+      "handshake": "GET the webhook path. Mailchimp checks the URL answers before it will save it, and sends no challenge.",
+      "ownerPerson": "Ritvars",
+      "ownerAction": "Paste the address into the audience webhook settings"
     },
     "open_day": {
       "label": "Open Day",
@@ -385,7 +401,9 @@
         "Booking -> Person",
         "Attendance -> follow-up",
         "Study interest -> Ieva"
-      ]
+      ],
+      "ownerPerson": "Aigars",
+      "ownerAction": "Paste the webhook into the Open Day booking tool"
     },
     "phone": {
       "label": "Phone",
@@ -436,7 +454,9 @@
         "Match the caller to a Person",
         "Unknown caller -> Inbox",
         "Test buttons 1, 2 and 3"
-      ]
+      ],
+      "ownerPerson": "Ritvars",
+      "ownerAction": "Put the token he holds into PBX_API_TOKEN, then configure the poll"
     },
     "agent": {
       "label": "Agent or partner",
@@ -449,8 +469,8 @@
       "timestampSource": "the submission time",
       "dedupKey": "channel + partner id + partner reference",
       "rateLimit": "Ours to set per partner.",
-      "readiness": "ready_for_configuration",
-      "externalBlocker": null,
+      "readiness": "waiting_for_external_access",
+      "externalBlocker": "Nobody has named which agent we start with, or who at their end would set up the link.",
       "weControl": [
         "the endpoint",
         "the token per partner",
@@ -472,7 +492,10 @@
         "Connect the agent referral form to the CRM",
         "Validate the agent token",
         "Test a new and a duplicate submission"
-      ]
+      ],
+      "ownerPerson": null,
+      "ownerAction": "Whoever owns the partner system sets up the webhook",
+      "blockerKind": "question"
     },
     "in_person": {
       "label": "In person",
@@ -501,7 +524,9 @@
       "identityNote": "Manual entry runs the SAME duplicate check as every automated channel. It is not a way around the rule.",
       "connectSteps": [
         "No external integration needed. Final acceptance test in the CRM."
-      ]
+      ],
+      "ownerPerson": null,
+      "ownerAction": "Nothing to do. Already working"
     },
     "linkedin": {
       "label": "LinkedIn",
@@ -535,7 +560,9 @@
         "Verify whether an API integration is possible at all",
         "If it is supported, connect it",
         "If it is not, Tetiana remains the manual bridge"
-      ]
+      ],
+      "ownerPerson": null,
+      "ownerAction": "No integration. Tetiana enters the person by hand"
     },
     "tiktok": {
       "label": "TikTok",
@@ -569,7 +596,9 @@
         "Verify whether an API integration is possible at all",
         "If it is supported, connect it",
         "If it is not, Tetiana remains the manual bridge"
-      ]
+      ],
+      "ownerPerson": null,
+      "ownerAction": "No integration. Tetiana enters the person by hand"
     }
   },
   "_meta": "Facebook, Instagram, Messenger and WhatsApp are reached through ONE Meta Business Suite connection. That is an integration detail. Each remains a SEPARATE channel in the CRM for reporting, filtering, source and history: there is deliberately no combined \"Meta\" number, because it would hide where people actually came from. WhatsApp being inside the same shared inbox is NOT VERIFIED and must not be claimed.",
@@ -596,5 +625,6 @@
     "tiktok",
     "in_person"
   ],
-  "_connectOrder": "The order Ritvars set on 24.09.2026. Both the Desktop guide and docs/CHANNEL_READINESS.md render in this order, so his list and the generated documents cannot drift apart."
+  "_connectOrder": "The order Ritvars set on 24.09.2026. Both the Desktop guide and docs/CHANNEL_READINESS.md render in this order, so his list and the generated documents cannot drift apart.",
+  "_ownerPerson": "Who physically has to act for each channel, told by Ritvars on 25.09.2026. null means nobody is named yet. This is NOT who owns the CRM record - a confirmed study lead always belongs to Admissions, which is Ieva, whatever channel it arrived on."
 }

@@ -132,7 +132,13 @@ CREATE TABLE IF NOT EXISTS inbound (
   archive_reason TEXT,
   archive_note TEXT,
   processed_by TEXT,
-  processed_at TEXT
+  processed_at TEXT,
+  -- HOW this arrived. 'provider' means a real provider posted it to the real
+  -- endpoint, and it is the ONLY value the admin Channels panel accepts as
+  -- evidence that a channel is connected. The demo builder and the simulator
+  -- write through this same table on purpose, so without this column every
+  -- channel on the demo copy would read as CONNECTED.
+  source TEXT                    -- provider | simulated | demo | manual | null
 );
 
 -- One row per field, with where the value came from. An 'extracted' value is a
@@ -192,6 +198,58 @@ CREATE TABLE IF NOT EXISTS channel_handshake (
   how TEXT NOT NULL,                 -- which mechanism answered, never a secret
   remote TEXT                        -- what the provider said about itself
 );
+
+-- Sign-in accounts. Written only by scripts/manage_users.mjs. A plain password is
+-- never stored, printed or logged. Mirrors hub_users in the Talent Acquisition
+-- hub, minus the columns two roles do not need.
+CREATE TABLE IF NOT EXISTS crm_users (
+  id TEXT PRIMARY KEY,
+  email TEXT NOT NULL UNIQUE,
+  display_name TEXT,
+  password_hash TEXT,              -- null until a password is set
+  role TEXT NOT NULL DEFAULT 'user',
+  active INTEGER NOT NULL DEFAULT 1,
+  session_version INTEGER NOT NULL DEFAULT 0,
+  last_login_at TEXT,
+  created_at TEXT NOT NULL,
+  CHECK (role IN ('admin', 'user'))
+);
+
+-- What a channel check actually found, so "last test" and "last error" on the
+-- admin panel are a record of something that happened rather than a guess. One
+-- row per check; the newest per channel is what the panel shows.
+CREATE TABLE IF NOT EXISTS channel_check (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  channel TEXT NOT NULL,
+  at TEXT NOT NULL,
+  ok INTEGER NOT NULL,
+  kind TEXT NOT NULL,              -- what was checked: config | handshake | reachable | simulated
+  detail TEXT,                     -- never a secret VALUE, only what happened
+  by TEXT
+);
+
+-- Every sign-in decision, so an administrator can tell refusals apart while the
+-- person refused sees one sentence. The outcome is a BOUNDED CODE, never free
+-- text, and no token, no Google profile field and no password ever reaches here.
+CREATE TABLE IF NOT EXISTS crm_login_attempt (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  at TEXT NOT NULL,
+  email TEXT,                      -- null when we never got as far as knowing one
+  method TEXT NOT NULL,            -- password | google
+  outcome TEXT NOT NULL
+);
+
+-- Whether a channel is switched ON, kept across restarts. Every existing reader
+-- asks process.env.CHANNEL_MODE_<CHANNEL>, and that does not change: the rows here
+-- are loaded INTO process.env at boot, so no adapter and no inbound route had to
+-- be touched. Nothing here is a secret; it is the word off, test or live.
+CREATE TABLE IF NOT EXISTS channel_mode (
+  channel TEXT PRIMARY KEY,
+  mode TEXT NOT NULL,
+  changed_at TEXT NOT NULL,
+  changed_by TEXT,
+  CHECK (mode IN ('off', 'test', 'live'))
+);
 `;
 
 // A test opens this in memory. The server opens a file, because a prototype that
@@ -203,6 +261,7 @@ CREATE TABLE IF NOT EXISTS channel_handshake (
 // that column fails. Adding a column is safe and keeps the rows.
 const ADDED_COLUMNS = [
   ['people', 'nationality', 'TEXT'],
+  ['inbound', 'source', 'TEXT'],
 ];
 
 function migrate(db) {

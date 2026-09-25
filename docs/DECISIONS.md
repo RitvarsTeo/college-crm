@@ -207,3 +207,57 @@ Model B (an intake queue) is the spine. Model A only labels and ranks inside it.
 | 15 | **Who qualifies when Tetiana is away?** A ladder with one person on the middle rung has a single point of failure. | the whole Marketing gate |
 | 16 | How many **days before an untouched raw contact** is surfaced? | the ageing list |
 | 17 | **LinkedIn**: is any inbound integration possible at all? | the LinkedIn channel |
+
+---
+
+## 25.09.2026
+
+### The canonical work model
+
+**Set by Ritvars, 25.09.2026, as the base the CRM is built on.** Not yet implemented, deliberately.
+Ieva validates it against her real work before any code moves.
+
+```
+                    APPLICANT
+                        |
+          +-------------+-------------+
+          |                           |
+     APPLICANT STATE            OUTSTANDING
+                                REQUIREMENTS
+          |                           |
+          +-------------+-------------+
+                        |
+                 context / reason
+                        |
+                        v
+               ADMISSIONS ACTION
+                        |
+             +----------+----------+
+             |                     |
+       HUMAN PLANNED        SYSTEM SURFACED
+                            via ageing / silence
+             |                     |
+             +----------+----------+
+                        v
+                      TODAY
+                        |
+                        v
+                  ACTION BY US
+```
+
+| | The rule |
+|---|---|
+| **1. State is not work** | What is happening with the applicant, and what we await from them, is **state**. What we must do is an **action**. This is the distinction everything else rests on. |
+| **2. Today is an action queue** | Not "every applicant with something unfinished". Only "every applicant where we must act now". |
+| **3. Several things may be outstanding at once** | Reality must not be forced into one `nextAction` field. Medical certificate, contract and payment can all be open together. That is one state, not three tasks. |
+| **4. An action is its own object, and carries its reason** | `Follow up with applicant`, owner Admissions, due today - and inside it, **why**: certificate outstanding, contract awaiting signature, payment outstanding. "Next action: follow up payment" loses the rest of the situation. |
+| **5. Silence is a trigger, not a task** | Last meaningful event -> working days of silence -> allowed silence exceeded -> the case becomes actionable. Silence alone is never a task. This removes the need to invent a chase date per applicant. |
+| **6. Human planning stays** | Ageing must never stop Ieva saying "contact this one on Friday". System-surfaced and human-planned actions land in the **same** Today queue. |
+| **7. Documents stay out** | Aigars: the CRM is not a document upload system; documents go through the admission portal. The CRM may one day know outstanding/received as a signal. It never becomes a second portal, and document administration is never put on Ieva. |
+| **8. Contract and payment are states too** | An applicant who has just received the contract does not generate "chase contract". Only when follow-up is genuinely needed does Today get an action, with the state shown on the record. |
+| **9. Today must not become notification soup** | One applicant with three outstanding items and a silence breach produces **one** action, `Follow up with applicant`, with context inside. Never three. This is what protects Ieva from task fatigue. |
+
+**Status:** agreed as the working base. `waitingOn` and the chase-date work specified earlier the
+same day are **not** implemented and are superseded by this. Nothing is built until Ieva has
+confirmed it matches her work.
+
