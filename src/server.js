@@ -200,8 +200,21 @@ function clearAll() {
 }
 
 // empty | real | synthetic. Pressed as often as the demo needs.
+const DATASETS = ['empty', 'demo', 'synthetic', 'real'];
+
 function loadDataset(kind) {
+  // VALIDATED BEFORE ANYTHING IS CLEARED.
+  //
+  // clearAll() used to be the first line, so a name this function did not
+  // recognise emptied every table and only then fell through to "empty" and
+  // answered ok. POST /api/dataset hands it whatever the caller typed, which
+  // made a typo a silent way to wipe the database.
+  const want = kind == null || kind === '' ? 'empty' : String(kind);
+  if (!DATASETS.includes(want)) {
+    throw new Error('unknown dataset "' + want + '". Use ' + DATASETS.join(', ') + '.');
+  }
   clearAll();
+  kind = want;
   if (kind === 'real') {
     // Belt and braces: the boot check above catches the flag, this catches every
     // other route into the loader, including the Console.
@@ -216,8 +229,24 @@ function loadDataset(kind) {
       selection: DATASET.selection || null });
   } else if (kind === 'synthetic') {
     DATASET = { dataset: 'synthetic', ...seed(db), selection: 'invented records shaped by the real proportions' };
-  } else {
+  } else if (kind === 'demo') {
+    // THIS BRANCH WAS MISSING, and 'demo' is a first-class dataset everywhere
+    // else: .env.example lists it, the Console offers it, and the boot path
+    // builds it for a fresh shared copy. Here it fell through to the `else` and
+    // produced an EMPTY database while answering ok - a silent wrong result.
+    // It also made one channels test assert that a demo build is not mistaken
+    // for a real connection while there was no demo build to mistake.
+    const info = buildDemo(db, CONFIG);
+    setMode('demo');
+    DATASET = { dataset: 'demo', people: info.total,
+      selection: 'the built-in demo, created through the real inbound path' };
+  } else if (kind === 'empty' || kind == null || kind === '') {
     DATASET = { dataset: 'empty', people: 0, selection: 'an empty table, until a channel writes something into it' };
+  } else {
+    // Unreachable: the name is checked against DATASETS above, before anything
+    // is cleared. Kept so that adding a name to that list without adding a
+    // branch for it fails loudly instead of quietly emptying the database.
+    throw new Error('dataset "' + kind + '" is listed but has no branch.');
   }
   return DATASET;
 }
@@ -250,7 +279,10 @@ const PUBLIC = gate.isPublic();
   }
   const kept = db.prepare('SELECT COUNT(*) n FROM people').get().n;
   if (forced) {
-    loadDataset(forced);
+    // A typo in DATASET used to empty the database and start anyway. Now it is a
+    // refusal, and it names what the valid values are.
+    try { loadDataset(forced); }
+    catch (err) { console.error('REFUSING TO START: ' + err.message); process.exit(1); }
   } else if (PUBLIC && !kept) {
     // First boot on a fresh host: give the testers something to look at.
     const info = buildDemo(db, CONFIG);

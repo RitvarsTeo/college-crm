@@ -241,3 +241,64 @@ test('the words on screen are the words in the navigation', async (t) => {
     assert.ok(!/pipeline/i.test(String(text)), `config.provisional.${key} still says pipeline`);
   }
 });
+
+// ---------------------------------------------------------- choosing a dataset --
+//
+// loadDataset() had no `demo` branch, so `demo` fell through to the else and
+// produced an EMPTY database while reporting success. Three consequences, all
+// found together on 26.09.2026:
+//   - .env.example documented a value that did nothing
+//   - one channels test asserted that a demo build is not mistaken for a real
+//     provider connection, while there was no demo build to mistake
+//   - POST /api/dataset takes the name from the caller, so a typo emptied every
+//     table and answered 200 ok
+//
+// The first fix still cleared the database before complaining. Validation now
+// happens BEFORE anything is cleared, which is the whole point.
+
+test('DATASET=demo actually builds the demo', async (t) => {
+  const { child, port } = await startServer({ DATASET: 'demo' });
+  t.after(() => child.kill());
+  const h = await fetch(`http://127.0.0.1:${port}/healthz`).then((r) => r.json());
+  assert.ok(h.people > 0, 'DATASET=demo produced an empty database');
+});
+
+test('every dataset the documentation offers actually works', async (t) => {
+  // .env.example lists these. A name that is documented and does nothing is
+  // worse than one that is not documented at all.
+  for (const kind of ['empty', 'demo', 'synthetic']) {
+    const { child, port } = await startServer({ DATASET: kind });
+    t.after(() => child.kill());
+    const st = await fetch(`http://127.0.0.1:${port}/api/console/state`).then((r) => r.json());
+    assert.equal(st.mode === 'real', false, `${kind} must not load real data`);
+    const h = await fetch(`http://127.0.0.1:${port}/healthz`).then((r) => r.json());
+    if (kind !== 'empty') assert.ok(h.people > 0, `${kind} produced nothing`);
+  }
+});
+
+test('an unknown DATASET refuses to start rather than starting empty', async () => {
+  await assert.rejects(() => startServer({ DATASET: 'noSuchThing' }), (err) => {
+    assert.match(err.message, /unknown dataset/);
+    return true;
+  });
+});
+
+test('A TYPO OVER HTTP MUST NOT EMPTY THE DATABASE', async (t) => {
+  // The destructive one. POST /api/dataset passes whatever the caller typed
+  // straight into loadDataset, and clearAll() used to run first.
+  const { child, port } = await startServer({ DATASET: 'synthetic' });
+  t.after(() => child.kill());
+  const base = `http://127.0.0.1:${port}`;
+  const count = async () => (await fetch(`${base}/healthz`).then((r) => r.json())).people;
+
+  const before = await count();
+  assert.ok(before > 0, 'nothing to lose means nothing is proved');
+
+  const r = await fetch(`${base}/api/dataset`, { method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-acting-as': 'Ritvars' },
+    body: JSON.stringify({ kind: 'definitely-not-a-dataset' }) });
+  assert.equal(r.status, 400);
+  assert.match((await r.json()).error, /unknown dataset/);
+
+  assert.equal(await count(), before, 'THE DATABASE WAS EMPTIED BY A NAME THAT WAS REFUSED');
+});

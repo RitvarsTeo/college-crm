@@ -1278,3 +1278,255 @@ else, and none belongs in this file.
 
 507 tests.
 
+
+---
+
+## 26.09.2026 - autonomous queue run
+
+Safe, already-decided engineering only. No product decision was taken, no Render configuration was
+touched, no Google credential was created, no password was invented.
+
+### Faults found and fixed
+
+#### 1. `DATASET=demo` silently produced an empty database - **FIXED**
+
+`loadDataset()` handled `real` and `synthetic`, and everything else fell through to an `else` that
+emptied every table and reported success. `demo` is a first-class dataset everywhere else -
+`.env.example` lists it, the Console offers it, the boot path builds it for a fresh shared copy - so
+it silently did nothing.
+
+Three consequences, all real:
+
+- a documented value that did nothing
+- `POST /api/dataset` passes the caller's own text straight in, so **a typo emptied the database and
+  answered `200 ok`**
+- one channels test asserted that a demo build is not mistaken for a real provider connection
+  **while there was no demo build to mistake**. It passed in 0.6s against nothing; it now takes 7.7s
+  and means something
+
+**The first fix was itself wrong** and worth recording: it added the branch and threw on an unknown
+name, but `clearAll()` was still the first line, so a refused name still wiped the database before
+complaining. Validation now happens **before** anything is cleared. Proved: 64 people, `POST` a
+typo, `400`, still 64 people.
+
+Four tests added in `test/modes.test.js`, including the destructive one.
+
+#### 2. The Admissions board rendered nothing after a form sign-in - **FIXED**
+
+`CFG` had **0 keys** after signing in through the login form. The board builds its columns from
+`CFG.stages`, so it drew a heading reading "Admissions - 12" above an empty board. Today rendered
+almost nothing for the same reason.
+
+**Introduced on 25.09.2026 by me**, moving the `/api/config` fetch below the login early-return so
+that configuration no longer reached an unauthenticated browser. That was right; what was missed is
+that `doLogin()` then called `route()` directly and never fetched it. The post-sign-in path is now a
+shared `startShell()` that both the first load and a successful sign-in run.
+
+**It healed on the next reload, which is exactly why a manual pass missed it.** Found by the
+contrast tool's "suspiciously few elements" guard, not by looking at the screen. Measured before and
+after: 0 keys / 0 columns / 0 cards / 35 characters, then 88 / 7 / 12 / 1572.
+
+#### 3. The ERROR state failed AA in the dark theme - **FIXED**
+
+`.chstate.s-error` was written as `var(--bad,#b3261e)` and `--bad` was declared in **neither**
+palette, so the hardcoded fallback was always what rendered. It measures **2.64:1** on the dark card
+against a 4.5:1 requirement. `--bad` is now declared in both palettes - the light value unchanged at
+6.05:1, the dark one at 8.83:1 - and the fallback is gone. Re-measured: dark went from 2 below AA to
+**0**.
+
+Mine, from 25.09.2026, and the same shape as the `--amber` fault already recorded in this project.
+
+### The contrast audit - F1, now DONE
+
+`scripts/check_contrast.mjs`, adapted from the component library. Only the four things its README
+names as the host project's were changed: the sign-in selectors, the theme switch, the screen list
+and the output path. **The measurement region is byte-identical to the kit's**, checked with a diff,
+and the kit's own 16 colour-maths tests pass.
+
+It drives headless Chrome, signs in as a real account, walks 8 screens in both themes, and refuses
+to report at all if it did not sign in.
+
+| | Light | Dark |
+|---|---|---|
+| Measured | 563 | 563 |
+| Below AA | **58** | **0** |
+| Unmeasurable | 0 | 0 |
+
+**The 58 light-theme failures are NOT fixed, deliberately.** Every one is the same core token:
+`--t4: rgba(17,28,33,.48)`, which is 3.09:1 on paper and 3.12:1 on a card, against 4.5:1 for text
+under 18pt. It is used app-wide for secondary text - `.sub2`, `.footnote`, table headers, report
+figures - across six screens. Changing it is a visual-design change to the whole application, and
+the palette is Ritvars's. **DECISION NEEDED.**
+
+Two limits of the run, said rather than hidden: it measures only the **default tab** of a screen, so
+Today's other two tabs were never walked; and Today legitimately measured 9 elements because the
+demo has nothing outstanding, which was checked rather than assumed.
+
+### Security sweep - no bypass found
+
+Every route was enumerated and checked against the sign-in door.
+
+- 43 literal `/api/` routes: **5 open** (exactly `/api/auth/*`), 38 gated
+- 18 regex routes checked individually. `/api/inbound/events` gated, `/api/inbound/<channel>/simulate`
+  gated, an unknown channel name gated, the 14 real channels open
+- Provider access intact: the Meta handshake answers and a wrong verify token is refused by the
+  handshake rather than by the door
+- **No HTTP route writes a role or a password.** The only writes to `crm_users` from a request are
+  `last_login_at`
+- No secret shape anywhere in the diff or the untracked files
+
+### New finding, NOT fixed
+
+**Feedback access is authorised by display name, and display names are not unique.**
+`canReadFeedback()` matches `crm_users.display_name` against `config.feedbackReaders`
+(`["Aigars","Ritvars"]`), but only `email` carries a UNIQUE constraint. Two accounts with the same
+display name both pass. Proved: a second row with `display_name` "Ritvars" inserts without
+complaint.
+
+Not exploitable by a non-admin - only `manage_users.mjs` creates accounts - so it is a footgun for
+an administrator rather than an escalation path. **Not fixed because the fix changes who may read
+feedback, which is not an engineering decision.** **DECISION NEEDED.**
+
+### Statuses
+
+| Item | Was | Now |
+|---|---|---|
+| G1 nothing committed | NOT APPLIED | **DONE.** `86446bb` and `b8919c1` pushed to `v1-test` |
+| G2 nothing deployed | NOT APPLIED | **BLOCKED.** `b8919c1` deployment FAILED; cause diagnosed and recorded above |
+| F1 contrast audit | Removed, to be redone | **DONE.** Tool in `scripts/check_contrast.mjs`, run, findings above |
+| D1 no frontend test coverage | A real gap | **STILL OPEN**, and this run is the evidence for why: two of the three faults above were frontend, and neither was findable by the 511 tests. Closing it still needs a browser-runner decision |
+
+---
+
+## LOGIN DECISION SHEET - V1 test deployment
+
+**Written 26.09.2026 as analysis, not as a proposal. Nothing here was implemented, no option is
+recommended, and the options are deliberately not ranked.** The decision is Ritvars's.
+
+### A. Where things actually stand
+
+| Piece | State | Evidence |
+|---|---|---|
+| Password sign-in | **BUILT, tested** | scrypt hashes, HMAC-signed sessions, throttled guessing, `src/auth.js` |
+| Two roles, admin and user | **BUILT, tested** | Role read from the database on every request, never from the cookie |
+| The API door | **BUILT, tested** | Every `/api/` path answers 401 without a session, except `/api/auth/`, `/api/cron/` and the 14 real channel endpoints |
+| Google OAuth, application side | **BUILT, tested** | Token verification, nonce, hosted-domain check, allowlist. Tested against a key pair minted inside the test process |
+| Google OAuth, provider side | **DOES NOT EXIST** | No client, no redirect URI, three variables unset. Live Google SSO does not work |
+| Account provisioning | **BUILT, tested** | `src/bootstrap.js`, idempotent, creates only the three configured addresses, never touches an existing account |
+| Shared-password gate | **BUILT, running live** | `src/gate.js`, `CRM_PUBLIC=1`, one password for the whole copy. This is what protects the address today |
+| `CRM_AUTH` | Declared `value: "1"` in `render.yaml` | Literal blueprint values apply automatically |
+| `CRM_SESSION_SECRET` | `sync: false` | Must be set in the dashboard. The server refuses to start without it when auth is on |
+| Database persistence | **EPHEMERAL** | `CRM_DB=/tmp/crm.db` on Render Free. Gone on restart, redeploy and wake from idle sleep |
+
+**The account persistence problem, precisely.** `crm_users` lives in that ephemeral file, so accounts
+created by hand vanish. `src/bootstrap.js` is the answer to exactly that: it recreates them from
+configuration at every boot. What it needs is the passwords, and those come from the environment.
+
+**Environment variables are NOT ephemeral.** Only the disk is. The shared door's
+`CRM_ACCESS_PASSWORD` has been `sync: false` and surviving restarts on this service for days, which
+is this project's own evidence that dashboard-set variables persist across restarts and redeploys.
+That is the fact that makes option 1 a one-time setup rather than a chore after every sleep.
+
+### B. The options
+
+Four, each genuinely supported by what exists today. **No ranking. No recommendation.**
+
+---
+
+#### Option 1 - Password sign-in with provisioning at startup
+
+*This is what is already built and pushed. It is listed as an option, not as a fait accompli: it is
+not switched on and can be left off.*
+
+| | |
+|---|---|
+| **What changes** | `CRM_AUTH=1`; four values set once in the Render dashboard. Each person signs in as themselves |
+| **What stays** | Everything else. The shared gate can stay or go, independently |
+| **Security** | Individual identity, so the history names a person who proved who they were. Passwords are scrypt-hashed; sessions are HMAC-signed and carry the role inside the signature |
+| **Persistence** | Solved. Accounts are recreated from configuration at every boot; the environment holds the passwords and survives restarts |
+| **Render Free** | Works as it is. No disk, no paid plan, no extra service |
+| **Ritvars must configure** | Four values in the dashboard, once: the session secret and three passwords. Nothing after that |
+| **Can Aigars and Ieva test it?** | Yes, once they are told their passwords - and if the shared gate stays on, they need that one too, so two passwords each |
+| **After restart / sleep / redeploy** | Accounts reappear automatically. Everything a tester *entered* is still lost, because the database is still `/tmp` - that is unchanged and separate |
+| **Complexity** | Already written. 27 tests |
+| **Risks** | If any of the four values is missing the service refuses to start. That is deliberate, and it is exactly what the failed deploy of `b8919c1` was |
+| **Coexists with the shared gate?** | Yes. Both can run; the gate answers first |
+
+---
+
+#### Option 2 - Google sign-in
+
+| | |
+|---|---|
+| **What changes** | An OAuth client is created and its redirect URI registered; three variables set. People sign in with their Novikontas Google account |
+| **What stays** | The allowlist, the roles, the API door, the account list. Google proves identity; `crm_users` still decides what anybody may do |
+| **Security** | Arguably the strongest: no password for this app exists to leak, and Workspace policy applies. The hosted-domain check on the verified token is what keeps every other Google account out |
+| **Persistence** | Accounts still have to exist in `crm_users`, because signing in never creates one. So this does **not** remove the provisioning question - it removes only the password half |
+| **Render Free** | Fine. No extra service |
+| **Ritvars must configure** | An OAuth client, the redirect URI registered at Google **before** the values are set, and three variables. Plus a decision: reuse the Talent Acquisition client or make a separate one |
+| **Can Aigars and Ieva test it?** | Yes, and with no password to be told - provided `edu@novikontas.org` can complete an OAuth sign-in at all, which is unknown and is Marina's to answer |
+| **After restart / sleep / redeploy** | Same as option 1: the accounts still need provisioning, so it pairs with the bootstrap rather than replacing it |
+| **Complexity** | Code is done. The work is entirely in Google Cloud Console |
+| **Risks** | The redirect URI is compared character for character and fails on Google's own error page, leaving nothing on our side to debug. A shared mailbox may not be able to sign in |
+| **Coexists with the shared gate?** | Yes |
+
+---
+
+#### Option 3 - Keep the shared password only
+
+| | |
+|---|---|
+| **What changes** | Nothing. `CRM_AUTH` stays off |
+| **What stays** | Everything, including the current live behaviour |
+| **Security** | One password for everybody. No individual identity, so the history cannot name who did what - `x-acting-as` is a dropdown, not a check. Acceptable precisely because the copy holds demo data only, which the code enforces by refusing `DATASET=real` while `CRM_PUBLIC` is on |
+| **Persistence** | No accounts to persist, so the problem does not arise |
+| **Render Free** | Already working |
+| **Ritvars must configure** | Nothing |
+| **Can Aigars and Ieva test it?** | Yes, and this is the only option where they can test it right now, today, with what they already have |
+| **After restart / sleep / redeploy** | Unaffected |
+| **Complexity** | None |
+| **Risks** | The sign-in work stays unexercised by real testers, so faults in it are found later rather than sooner. And "who did this" stays unanswerable |
+| **Coexists with the shared gate?** | It *is* the shared gate |
+
+---
+
+#### Option 4 - Durable storage, then provision once
+
+| | |
+|---|---|
+| **What changes** | The database stops being `/tmp`: a Render paid disk, or an external Postgres. Accounts are then created once and stay |
+| **What stays** | All the auth code, unchanged. The bootstrap becomes unnecessary rather than wrong |
+| **Security** | Same as whichever sign-in method is chosen. Orthogonal |
+| **Persistence** | Solves the whole class: accounts **and** everything a tester enters survive |
+| **Render Free** | **Does not fit.** Free has no disk. This needs a paid plan or an external database, and paying was ruled out on 25.09.2026 |
+| **Ritvars must configure** | A paid plan, or Aigars's existing Supabase project - and then the Postgres port, roughly 200 call sites across 77 synchronous functions |
+| **Can Aigars and Ieva test it?** | Yes, and it is the only option where their test data survives the night |
+| **After restart / sleep / redeploy** | Everything survives |
+| **Complexity** | By far the largest. This is backlog item C3 and it is a real project |
+| **Risks** | Cost, or a database migration nobody has scheduled |
+| **Coexists with the shared gate?** | Yes |
+
+---
+
+### C. Can the test deployment be self-sufficient?
+
+**Yes, for accounts, and it already is - given a one-time setup.** Verified locally against Render's
+exact configuration: a fresh empty database plus the four environment values produces
+`accounts: 3 created`, all three sign in with the right roles, and a restart on the same database
+produces `0 created, 3 already there`. Because Render's environment variables persist and only the
+disk does not, that setup is done once rather than after every sleep.
+
+**No, for everything else.** Applicant records, tasks and notes a tester enters still live in
+`/tmp/crm.db` and still disappear. Nothing short of option 4 changes that, and the owner already
+accepted it on 25.09.2026.
+
+**What was deliberately not built:** nothing that stores a password anywhere but the host
+environment - no seeded default password, no generated-and-printed password, no password in a file,
+a fixture, a log or this document. Those would each make the copy "self-sufficient" by making it
+unsafe.
+
+### D. Google stays separate
+
+The application-side code exists and is tested. The provider configuration does not exist. **Live
+Google SSO does not work**, no credentials were created, and nothing in this sheet should be read as
+saying otherwise. Option 2 is what it would take, not a description of something that runs.

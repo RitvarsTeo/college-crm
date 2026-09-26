@@ -29,6 +29,11 @@
   --late:var(--ambink); --late-bg:rgba(217,138,30,.14);
   --ok:var(--petink); --ok-bg:rgba(31,118,136,.11);
   --warn:var(--ambink); --warn-bg:rgba(217,138,30,.14);
+  /* The ERROR ink, declared in BOTH palettes. It was written as
+     var(--bad,#b3261e) on one rule and --bad existed in neither palette, so the
+     hardcoded fallback was always what rendered - and it measures 2.64:1 on the
+     dark card, well under AA. 6.05:1 here, so the light value is unchanged. */
+  --bad:#b3261e;
   --radius:10px; --shadow:var(--lift);
   --shell:#F1EFE9; --shell-ink:var(--ink); --shell-line:var(--rule2);
   --surface-2:#EFEDE7; --field:#FFFFFF;
@@ -52,6 +57,9 @@
   --late:var(--ambink); --late-bg:rgba(227,166,63,.18);
   --ok:var(--petink); --ok-bg:rgba(95,196,216,.16);
   --warn:var(--ambink); --warn-bg:rgba(227,166,63,.18);
+  /* The dark half of --bad. The light red is unreadable on this ground; this
+     measures 8.83:1 on the page and 7.56:1 on a card. */
+  --bad:#FF8A80;
   --shadow:var(--lift);
   --shell:#0A161C; --shell-ink:var(--ink); --shell-line:var(--rule2);
   --surface-2:rgba(255,255,255,.08); --field:rgba(255,255,255,.06);
@@ -417,7 +425,7 @@ tr.row:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
 .chstate.s-notconfigured{color:var(--t2)}
 .chstate.s-configured{color:var(--late)}
 .chstate.s-connected{color:var(--ok)}
-.chstate.s-error{color:var(--bad,#b3261e)}
+.chstate.s-error{color:var(--bad)}
 .setting{display:inline-block;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;
   padding:1px 6px;border-radius:4px;border:1px solid var(--rule2);margin:2px 4px 2px 0;white-space:nowrap}
 .setting.miss{border-color:rgba(179,38,30,.5)}
@@ -1202,7 +1210,9 @@ async function doLogin(ev) {
     document.querySelector('.shell').style.display = '';
     const help = $('#helpBtn'); if (help) help.style.display = '';
     await loadAuth();
-    await route();
+    // startShell, NOT route. route() alone leaves CFG empty, which is what made
+    // the Admissions board render a heading above nothing after a form sign-in.
+    await startShell();
   } finally { btn.disabled = false; btn.textContent = 'Sign in'; }
   return false;
 }
@@ -3409,16 +3419,6 @@ function fbZoom(id) {
   // listener at all, so after signing in every link in the navigation changed the
   // address bar and nothing on screen moved.
   window.addEventListener('hashchange', route);
-  if (AUTH.on && !AUTH.user) {
-    drawLogin(back.refused
-      ? 'That Google account cannot sign in to the Academy CRM. Ask an admin to set an account up for you.'
-      : '');
-    return;
-  }
-
-  CFG = await api('/api/config');
-  $('#ver').innerHTML = 'CRM &middot; ' + (CFG.version || 'prototype');
-  drawDatasetBadge(CFG.dataset || {});
   document.addEventListener('keydown', (e) => {
     // a clickable row is a control, so it answers Enter and Space
     const el = document.activeElement;
@@ -3426,6 +3426,31 @@ function fbZoom(id) {
       e.preventDefault(); el.click();
     }
   });
+  if (AUTH.on && !AUTH.user) {
+    drawLogin(back.refused
+      ? 'That Google account cannot sign in to the Academy CRM. Ask an admin to set an account up for you.'
+      : '');
+    return;
+  }
+  await startShell();
+})();
+
+/**
+ * Everything the shell needs once somebody is known.
+ *
+ * CALLED FROM BOTH THE FIRST LOAD AND A SUCCESSFUL SIGN-IN, and that is the
+ * whole point. Signing in used to call route() straight after loadAuth(), while
+ * the configuration fetch sat in the boot block below the early return - so
+ * after signing in through the form, CFG was an empty object. The Admissions
+ * board builds its columns from CFG.stages, so it rendered a heading saying
+ * "Admissions - 12" above an empty board. Today rendered almost nothing.
+ *
+ * It healed on the next reload, which is exactly why it survived a manual pass.
+ */
+async function startShell() {
+  CFG = await api('/api/config');
+  $('#ver').innerHTML = 'CRM &middot; ' + (CFG.version || 'prototype');
+  drawDatasetBadge(CFG.dataset || {});
   let saved = 'light';
   try { saved = localStorage.getItem('crmTheme') || 'light'; } catch {}
   if (!['light', 'dark'].includes(saved)) saved = 'light';
@@ -3441,7 +3466,7 @@ function fbZoom(id) {
   if (AUTH.user) ACTOR = AUTH.user.name;
   drawActorPicker();
   await route();
-})();
+}
 </script>
 </body>
 </html>
