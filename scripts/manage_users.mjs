@@ -69,11 +69,11 @@ async function main() {
   }
 
   fs.mkdirSync(path.dirname(DB_FILE), { recursive: true });
-  const db = openDb(DB_FILE);
-  const find = (email) => db.prepare('SELECT * FROM crm_users WHERE email = ?').get(canonicalEmail(email));
+  const db = await openDb(DB_FILE);
+  const find = async (email) => await db.prepare('SELECT * FROM crm_users WHERE email = ?').get(canonicalEmail(email));
 
   if (!cmd || cmd === 'list') {
-    const rows = db.prepare(`SELECT email, display_name, role, active, last_login_at,
+    const rows = await db.prepare(`SELECT email, display_name, role, active, last_login_at,
       CASE WHEN password_hash IS NULL THEN 0 ELSE 1 END AS has_password
       FROM crm_users ORDER BY role, email`).all();
     if (!rows.length) return console.log('No accounts yet. Run: node scripts/manage_users.mjs seed');
@@ -105,8 +105,8 @@ async function main() {
       const email = canonicalEmail(w.email);
       if (!email.includes('@')) die(`"${w.email}" is not an address.`);
       if (!ROLES.includes(w.role)) die(`${email}: role must be one of ${ROLES.join(', ')}`);
-      if (find(email)) { console.log(`exists  ${email}`); continue; }
-      db.prepare(`INSERT INTO crm_users (id, email, display_name, password_hash, role, active,
+      if (await find(email)) { console.log(`exists  ${email}`); continue; }
+      await db.prepare(`INSERT INTO crm_users (id, email, display_name, password_hash, role, active,
         session_version, created_at) VALUES (?,?,?,NULL,?,1,0,?)`)
         .run(newId(), email, w.name, w.role, nowIso());
       made += 1;
@@ -132,10 +132,10 @@ async function main() {
   if (cmd === 'add') {
     const email = canonicalEmail(args[0] || '');
     if (!email) die('usage: add <email> [--name "Full Name"] [--role admin|user]');
-    if (find(email)) die(`${email} already exists.`);
+    if (await find(email)) die(`${email} already exists.`);
     const role = flag(args, 'role') || 'user';
     if (!ROLES.includes(role)) die(`role must be one of ${ROLES.join(', ')}`);
-    db.prepare(`INSERT INTO crm_users (id, email, display_name, password_hash, role, active,
+    await db.prepare(`INSERT INTO crm_users (id, email, display_name, password_hash, role, active,
       session_version, created_at) VALUES (?,?,?,NULL,?,1,0,?)`)
       .run(newId(), email, flag(args, 'name') || email.split('@')[0], role, nowIso());
     console.log(`created ${email} as ${role}. It cannot sign in until you run:`);
@@ -144,7 +144,7 @@ async function main() {
   }
 
   if (cmd === 'password') {
-    const row = find(args[0] || '');
+    const row = await find(args[0] || '');
     if (!row) die(`no account for ${args[0]}. Run list to see them.`);
     console.log(`Setting the password for ${row.email} (${row.display_name || 'no name'}).`);
     console.log(`At least ${MIN_PASSWORD} characters. It is not shown as you type and is never stored in plain.`);
@@ -153,7 +153,7 @@ async function main() {
     if (problem) die(`Refused: the password must be ${problem}.`);
     const again = await askHidden('Again: ');
     if (first !== again) die('Refused: the two did not match.');
-    db.prepare('UPDATE crm_users SET password_hash = ?, session_version = session_version + 1 WHERE id = ?')
+    await db.prepare('UPDATE crm_users SET password_hash = ?, session_version = session_version + 1 WHERE id = ?')
       .run(hashPassword(first), row.id);
     // session_version moved, so any cookie issued before now stops working.
     console.log(`Done. ${row.email} can sign in, and any existing session of theirs is now invalid.`);
@@ -161,11 +161,11 @@ async function main() {
   }
 
   if (cmd === 'role') {
-    const row = find(args[0] || '');
+    const row = await find(args[0] || '');
     if (!row) die(`no account for ${args[0]}`);
     const role = args[1];
     if (!ROLES.includes(role)) die(`role must be one of ${ROLES.join(', ')}`);
-    db.prepare('UPDATE crm_users SET role = ? WHERE id = ?').run(role, row.id);
+    await db.prepare('UPDATE crm_users SET role = ? WHERE id = ?').run(role, row.id);
     // No session bump needed: the role is re-read from this table on every
     // request, so the change is in force for their next click.
     console.log(`${row.email} is now ${role}. It takes effect on their next request, not on their next sign-in.`);
@@ -173,19 +173,19 @@ async function main() {
   }
 
   if (cmd === 'disable' || cmd === 'enable') {
-    const row = find(args[0] || '');
+    const row = await find(args[0] || '');
     if (!row) die(`no account for ${args[0]}`);
     const on = cmd === 'enable' ? 1 : 0;
-    db.prepare('UPDATE crm_users SET active = ?, session_version = session_version + 1 WHERE id = ?')
+    await db.prepare('UPDATE crm_users SET active = ?, session_version = session_version + 1 WHERE id = ?')
       .run(on, row.id);
     console.log(`${row.email} is now ${on ? 'active' : 'disabled'}, and signed out everywhere.`);
     return;
   }
 
   if (cmd === 'signout') {
-    const row = find(args[0] || '');
+    const row = await find(args[0] || '');
     if (!row) die(`no account for ${args[0]}`);
-    db.prepare('UPDATE crm_users SET session_version = session_version + 1 WHERE id = ?').run(row.id);
+    await db.prepare('UPDATE crm_users SET session_version = session_version + 1 WHERE id = ?').run(row.id);
     console.log(`${row.email} is signed out everywhere. Their password is unchanged.`);
     return;
   }

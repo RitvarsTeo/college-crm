@@ -40,7 +40,7 @@ const FIXTURES = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'inbound_f
 // rows that no longer existed - every link in that stale page then failed.
 const DB_FILE = process.env.CRM_DB || path.join(ROOT, 'data', 'crm.db');
 if (DB_FILE !== ':memory:') fs.mkdirSync(path.dirname(DB_FILE), { recursive: true });
-const db = openDb(DB_FILE);
+const db = await openDb(DB_FILE);
 
 // ------------------------------------------------------------------ sign-in --
 //
@@ -60,7 +60,7 @@ const AUTH_ON = auth.authOn();
 // Channel modes are stored so a switch survives a restart, and are loaded INTO
 // process.env, which is where every existing reader already looks. No adapter and
 // no inbound route had to change.
-for (const row of db.prepare('SELECT channel, mode FROM channel_mode').all()) {
+for (const row of await db.prepare('SELECT channel, mode FROM channel_mode').all()) {
   process.env['CHANNEL_MODE_' + String(row.channel).toUpperCase()] = row.mode;
 }
 
@@ -73,20 +73,20 @@ for (const row of db.prepare('SELECT channel, mode FROM channel_mode').all()) {
  * cookie, so removing somebody's admin rights takes effect immediately instead of
  * when their cookie happens to expire. Lifted from the Talent Acquisition hub.
  */
-function currentUser(req) {
+async function currentUser(req) {
   if (!AUTH_ON) return null;
   // Once per request. actorOf, viewerOf, adminOf and the gate below all ask, and
   // each ask was a fresh SELECT against crm_users.
   if (req.__user !== undefined) return req.__user;
-  req.__user = resolveUser(req);
+  req.__user = await resolveUser(req);
   return req.__user;
 }
 
-function resolveUser(req) {
+async function resolveUser(req) {
   const token = auth.readCookie(req.headers.cookie);
   const session = auth.readSession(token, process.env.CRM_SESSION_SECRET);
   if (!session) return null;
-  const row = db.prepare(`SELECT id, email, display_name, role, active, session_version
+  const row = await db.prepare(`SELECT id, email, display_name, role, active, session_version
                           FROM crm_users WHERE email = ?`).get(session.email);
   if (!row || Number(row.active) !== 1) return null;
   if (Number(row.session_version) !== Number(session.sessionVersion)) return null;
@@ -132,9 +132,9 @@ const flowCookie = (value, minutes) =>
   + `; SameSite=Lax${DEV_INSECURE_COOKIE ? '' : '; Secure'}; Max-Age=${minutes * 60}`;
 
 /** Never blocks a sign-in decision. A bounded code and an email, nothing else. */
-function logAttempt(email, method, outcome) {
+async function logAttempt(email, method, outcome) {
   try {
-    db.prepare('INSERT INTO crm_login_attempt (at, email, method, outcome) VALUES (?,?,?,?)')
+    await db.prepare('INSERT INTO crm_login_attempt (at, email, method, outcome) VALUES (?,?,?,?)')
       .run(nowIso(), email || null, method, outcome);
   } catch { /* the audit write is not worth failing a sign-in over */ }
 }
@@ -182,18 +182,18 @@ function setMode(m) {
   MODE = m;
   try { if (MODE_FILE) fs.writeFileSync(MODE_FILE, m); } catch {}
 }
-const modeState = () => ({
+const modeState = async () => ({
   mode: MODE,
   isReal: MODE === 'real',
   isDemo: MODE === 'demo',
-  people: db.prepare('SELECT COUNT(*) n FROM people').get().n,
+  people: (await db.prepare('SELECT COUNT(*) n FROM people').get()).n,
   snapshot: snapshot.info(),
 });
 let DATASET = { dataset: 'empty', people: 0, selection: 'an empty table' };
 
 
-function clearAll() {
-  db.exec(`DELETE FROM events; DELETE FROM tasks; DELETE FROM documents;
+async function clearAll() {
+  await db.exec(`DELETE FROM events; DELETE FROM tasks; DELETE FROM documents;
            DELETE FROM registrations; DELETE FROM open_days; DELETE FROM consents;
            DELETE FROM sim_events; DELETE FROM field_values; DELETE FROM inbound;
            DELETE FROM people;`);
@@ -202,7 +202,7 @@ function clearAll() {
 // empty | real | synthetic. Pressed as often as the demo needs.
 const DATASETS = ['empty', 'demo', 'synthetic', 'real'];
 
-function loadDataset(kind) {
+async function loadDataset(kind) {
   // VALIDATED BEFORE ANYTHING IS CLEARED.
   //
   // clearAll() used to be the first line, so a name this function did not
@@ -213,22 +213,22 @@ function loadDataset(kind) {
   if (!DATASETS.includes(want)) {
     throw new Error('unknown dataset "' + want + '". Use ' + DATASETS.join(', ') + '.');
   }
-  clearAll();
+  await clearAll();
   kind = want;
   if (kind === 'real') {
     // Belt and braces: the boot check above catches the flag, this catches every
     // other route into the loader, including the Console.
     if (gate.isPublic()) throw new Error('this is a shared copy: demo data only');
     if (!hasRealData()) throw new Error('data/real_people.json is missing');
-    DATASET = loadReal(db, CONFIG.realData);
+    DATASET = await loadReal(db, CONFIG.realData);
     setMode('real');
     // The clean snapshot is written HERE, straight after loading from the source
     // file, and never later. Once somebody has been testing in demo mode the live
     // tables are no longer evidence of what the real data looked like.
-    snapshot.write(db, { source: DATASET.source || 'data/real_people.json',
+    await snapshot.write(db, { source: DATASET.source || 'data/real_people.json',
       selection: DATASET.selection || null });
   } else if (kind === 'synthetic') {
-    DATASET = { dataset: 'synthetic', ...seed(db), selection: 'invented records shaped by the real proportions' };
+    DATASET = { dataset: 'synthetic', ...(await seed(db)), selection: 'invented records shaped by the real proportions' };
   } else if (kind === 'demo') {
     // THIS BRANCH WAS MISSING, and 'demo' is a first-class dataset everywhere
     // else: .env.example lists it, the Console offers it, and the boot path
@@ -236,7 +236,7 @@ function loadDataset(kind) {
     // produced an EMPTY database while answering ok - a silent wrong result.
     // It also made one channels test assert that a demo build is not mistaken
     // for a real connection while there was no demo build to mistake.
-    const info = buildDemo(db, CONFIG);
+    const info = await buildDemo(db, CONFIG);
     setMode('demo');
     DATASET = { dataset: 'demo', people: info.total,
       selection: 'the built-in demo, created through the real inbound path' };
@@ -251,7 +251,7 @@ function loadDataset(kind) {
   return DATASET;
 }
 
-// Boot, and the reason this is not simply loadDataset(...).
+// Boot, and the reason this is not simply await loadDataset(...).
 //
 // loadDataset clears every table first. That cost nothing while the database
 // lived in memory, because a fresh process started empty anyway. Now that it is
@@ -277,22 +277,22 @@ const PUBLIC = gate.isPublic();
       + 'password, not sign-in, so it may hold demo data only.');
     process.exit(1);
   }
-  const kept = db.prepare('SELECT COUNT(*) n FROM people').get().n;
+  const kept = (await db.prepare('SELECT COUNT(*) n FROM people').get()).n;
   if (forced) {
     // A typo in DATASET used to empty the database and start anyway. Now it is a
     // refusal, and it names what the valid values are.
-    try { loadDataset(forced); }
+    try { await loadDataset(forced); }
     catch (err) { console.error('REFUSING TO START: ' + err.message); process.exit(1); }
   } else if (PUBLIC && !kept) {
     // First boot on a fresh host: give the testers something to look at.
-    const info = buildDemo(db, CONFIG);
+    const info = await buildDemo(db, CONFIG);
     DATASET = { dataset: 'demo', people: info.total,
       selection: 'the built-in demo, created through the real inbound path' };
   } else if (kept) {
     DATASET = { dataset: 'kept', people: kept,
       selection: 'what was in the database when the server last stopped' };
   } else {
-    loadDataset(CONFIG.startWith || 'empty');
+    await loadDataset(CONFIG.startWith || 'empty');
   }
 }
 // THE ACCOUNTS, AFTER THE DATA AND BEFORE THE DOOR OPENS.
@@ -305,7 +305,7 @@ const PUBLIC = gate.isPublic();
 // With sign-in off it does nothing, which is what keeps a laptop working with
 // none of these variables set.
 {
-  const r = bootstrapIfAuthOn(db, { accounts: CONFIG.accounts, env: process.env, authOn: AUTH_ON });
+  const r = await bootstrapIfAuthOn(db, { accounts: CONFIG.accounts, env: process.env, authOn: AUTH_ON });
   if (!r.ok) { console.error(String.fromCharCode(10) + 'REFUSING TO START. ' + r.why); process.exit(1); }
   // Not a refusal: the copy may provision its accounts some other way. But a
   // login screen nobody can pass looks healthy from outside, so it is said out loud.
@@ -379,14 +379,14 @@ const roleOf = (who) => (USERS.find((u) => u.name === who) || {}).role || null;
 // When sign-in is on, a signed session is the ONLY answer. The header and the
 // ?as= query string are not consulted at all, so a history entry saying "Ieva"
 // means Ieva proved she was Ieva.
-const actorOf = (req, b) => {
-  const me = currentUser(req);
+const actorOf = async (req, b) => {
+  const me = await currentUser(req);
   if (me) return me.name;
   if (AUTH_ON) return 'unknown user';
   return String((b && b.by) || req.headers['x-acting-as'] || 'unknown user');
 };
-const viewerOf = (req, url) => {
-  const me = currentUser(req);
+const viewerOf = async (req, url) => {
+  const me = await currentUser(req);
   if (me) return me.name;
   if (AUTH_ON) return '';
   return String(url.searchParams.get('as') || req.headers['x-acting-as'] || '');
@@ -398,8 +398,8 @@ const viewerOf = (req, url) => {
 // request. With sign-in OFF it falls back to the old name list, which is the
 // existing, weak, self-declared model - unchanged, and not made to look stronger
 // than it is. The panel says which of the two is in force.
-function adminOf(req) {
-  const me = currentUser(req);
+async function adminOf(req) {
+  const me = await currentUser(req);
   if (me) return auth.canSeeChannels(me.role) ? me : null;
   if (AUTH_ON) return null;
   const who = String(req.headers['x-acting-as'] || '');
@@ -431,25 +431,25 @@ function stageOf(label) {
   }
   return null;
 }
-function advanceStatus(personId, actionLabel, now) {
+async function advanceStatus(personId, actionLabel, now) {
   if (!CONFIG.statusFollowsEvents) return null;
   const target = stageOf(actionLabel);
   if (!target) return null;
-  const person = db.prepare('SELECT status FROM people WHERE id = ?').get(personId);
+  const person = await db.prepare('SELECT status FROM people WHERE id = ?').get(personId);
   if (!person) return null;
   const order = STAGE_ORDER();
   const from = order.indexOf(person.status);
   const to = order.indexOf(target);
   // never move backwards, and never touch a person somebody has closed
   if (person.status === 'Not proceeding' || to < 0 || (from >= 0 && to <= from)) return null;
-  db.prepare('UPDATE people SET status = ? WHERE id = ?').run(target, personId);
+  await db.prepare('UPDATE people SET status = ? WHERE id = ?').run(target, personId);
   if (target === 'Admitted') {
-    db.prepare("UPDATE people SET admitted_at = COALESCE(admitted_at, ?) WHERE id = ?").run(now, personId);
+    await db.prepare("UPDATE people SET admitted_at = COALESCE(admitted_at, ?) WHERE id = ?").run(now, personId);
   }
   if (target === 'Contract') {
-    db.prepare("UPDATE people SET contract_at = COALESCE(contract_at, ?) WHERE id = ?").run(now, personId);
+    await db.prepare("UPDATE people SET contract_at = COALESCE(contract_at, ?) WHERE id = ?").run(now, personId);
   }
-  logEvent(db, { personId, kind: 'status', direction: 'note', at: now, origin: AUTOMATIC, actor: 'CRM',
+  await logEvent(db, { personId, kind: 'status', direction: 'note', at: now, origin: AUTOMATIC, actor: 'CRM',
     subject: `Status: ${person.status} -> ${target}`,
     body: `automatically, because this was done: ${actionLabel}`,
     field: 'status', oldValue: person.status, newValue: target });
@@ -461,7 +461,7 @@ function advanceStatus(personId, actionLabel, now) {
 // One matcher, in src/identity.js, used by every path that can create a person.
 // It used to live here, which meant only the manual Add person screen ever asked
 // the question.
-const findMatches = (contact) => matchPeople(db, contact);
+const findMatches = async (contact) => await matchPeople(db, contact);
 
 // A real, minimal PDF. Not a library, and not a text file with a .pdf name.
 function simplePdf(title, lines) {
@@ -496,34 +496,34 @@ function channelLabel(id) {
     || (CONFIG.channelAliases && CONFIG.channelAliases[id]) || id || 'unknown';
 }
 
-function personRow(id, viewer) {
-  const p = db.prepare('SELECT * FROM people WHERE id = ?').get(id);
+async function personRow(id, viewer) {
+  const p = await db.prepare('SELECT * FROM people WHERE id = ?').get(id);
   if (!p) return null;
-  const all = db.prepare('SELECT * FROM events WHERE person_id = ? ORDER BY occurred_at DESC, id DESC').all(id);
+  const all = await db.prepare('SELECT * FROM events WHERE person_id = ? ORDER BY occurred_at DESC, id DESC').all(id);
   p.timeline = visibleTimeline(all, viewer);
   p.hiddenCorrections = all.length - p.timeline.length;
   p.viewer = viewer || null;
   p.viewerIsAdmin = isAdmin(viewer);
-  p.tasks = db.prepare('SELECT * FROM tasks WHERE person_id = ? ORDER BY due_at ASC').all(id);
-  p.documents = db.prepare('SELECT * FROM documents WHERE person_id = ?').all(id);
-  p.registrations = db.prepare(`SELECT r.*, o.title, o.held_on FROM registrations r JOIN open_days o ON o.id = r.open_day_id WHERE r.person_id = ?`).all(id);
-  p.consents = consentFor(db, id);
+  p.tasks = await db.prepare('SELECT * FROM tasks WHERE person_id = ? ORDER BY due_at ASC').all(id);
+  p.documents = await db.prepare('SELECT * FROM documents WHERE person_id = ?').all(id);
+  p.registrations = await db.prepare(`SELECT r.*, o.title, o.held_on FROM registrations r JOIN open_days o ON o.id = r.open_day_id WHERE r.person_id = ?`).all(id);
+  p.consents = await consentFor(db, id);
   // structured fields with where they came from. A suggestion is never a fact.
-  p.fields = db.prepare('SELECT * FROM field_values WHERE person_id = ? ORDER BY id').all(id);
+  p.fields = await db.prepare('SELECT * FROM field_values WHERE person_id = ? ORDER BY id').all(id);
   const known = new Set(p.fields.filter((f) => f.value).map((f) => f.field));
   p.missingInfo = (CONFIG.qualification.completionFields || []).filter((f) => !known.has(f));
   p.routedTo = ownerFor(p.qualification || 'raw');
   p.handoverGap = p.qualification === 'hot'
-    ? handoverGap({ role: p.routedTo, channel: p.first_channel || p.source_channel,
+    ? await handoverGap({ role: p.routedTo, channel: p.first_channel || p.source_channel,
       email: p.email, phone: p.phone })
     : null;
-  p.simEvents = db.prepare('SELECT id, at, channel, scenario, direction, decision, status FROM sim_events WHERE person_id = ? ORDER BY id DESC').all(id);
+  p.simEvents = await db.prepare('SELECT id, at, channel, scenario, direction, decision, status FROM sim_events WHERE person_id = ? ORDER BY id DESC').all(id);
   return p;
 }
 
 // The newest check per channel, as one query rather than fourteen.
-function latestChecks() {
-  const rows = db.prepare(`SELECT c.channel, c.at, c.ok, c.kind, c.detail, c.by FROM channel_check c
+async function latestChecks() {
+  const rows = await db.prepare(`SELECT c.channel, c.at, c.ok, c.kind, c.detail, c.by FROM channel_check c
      JOIN (SELECT channel, MAX(id) id FROM channel_check GROUP BY channel) m ON m.id = c.id`).all();
   return Object.fromEntries(rows.map((r) => [r.channel, r]));
 }
@@ -531,25 +531,25 @@ function latestChecks() {
 // When a PROVIDER last verified the URL against us. This is the only evidence
 // that makes a channel CONNECTED, so it is read from the table the inbound GET
 // route writes - never from anything our own check does.
-function handshakeRows() {
-  const rows = db.prepare('SELECT channel, verified_at, how FROM channel_handshake').all();
+async function handshakeRows() {
+  const rows = await db.prepare('SELECT channel, verified_at, how FROM channel_handshake').all();
   return Object.fromEntries(rows.map((r) => [r.channel, r]));
 }
 
-function channelCounts() {
+async function channelCounts() {
   const out = {};
   // ONLY rows a real provider posted. The demo builder and the simulator write
   // through this same table deliberately, so counting everything here would make
   // every channel on the demo copy read as CONNECTED.
-  for (const r of db.prepare(`SELECT channel, COUNT(*) n, MAX(received_at) last FROM inbound
+  for (const r of await db.prepare(`SELECT channel, COUNT(*) n, MAX(received_at) last FROM inbound
                               WHERE source = 'provider' GROUP BY channel`).all()) {
     out[r.channel] = { events: r.n, lastEventAt: r.last, lastSuccessAt: r.last };
   }
   return out;
 }
 
-function openTask(id) {
-  return db.prepare('SELECT * FROM tasks WHERE person_id = ? AND done_at IS NULL ORDER BY due_at ASC').get(id);
+async function openTask(id) {
+  return await db.prepare('SELECT * FROM tasks WHERE person_id = ? AND done_at IS NULL ORDER BY due_at ASC').get(id);
 }
 
 const server = http.createServer(async (req, res) => {
@@ -599,12 +599,12 @@ const server = http.createServer(async (req, res) => {
     // the trap that file records: a PREFIX match on /api/inbound/ also opens
     // /api/inbound/events, which is the observability view and carries sender
     // names and message bodies. Only a path that names a REAL CHANNEL is open.
-    if (AUTH_ON && p.startsWith('/api/') && !openBeforeSignIn(p) && !currentUser(req)) {
+    if (AUTH_ON && p.startsWith('/api/') && !openBeforeSignIn(p) && !(await currentUser(req))) {
       return json(res, 401, { error: 'not signed in', how: 'Open / and sign in.' });
     }
 
     if (req.method === 'GET' && p === '/healthz') {
-      return json(res, 200, { ok: true, people: db.prepare('SELECT COUNT(*) n FROM people').get().n });
+      return json(res, 200, { ok: true, people: (await db.prepare('SELECT COUNT(*) n FROM people').get()).n });
     }
 
     // ------------------------------------------------------------- sign-in --
@@ -614,7 +614,7 @@ const server = http.createServer(async (req, res) => {
     // somebody with access to the server.
 
     if (req.method === 'GET' && p === '/api/auth/me') {
-      const me = currentUser(req);
+      const me = await currentUser(req);
       const g = google.googleConfigured(process.env);
       return json(res, 200, {
         auth: AUTH_ON,
@@ -647,16 +647,16 @@ const server = http.createServer(async (req, res) => {
         return json(res, 429, { error: 'Too many attempts. Wait ten minutes.' });
       }
       const result = await auth.authenticate({ email, password: b && b.password },
-        (e) => db.prepare(`SELECT id, email, display_name, password_hash, role, active, session_version
+        async (e) => await db.prepare(`SELECT id, email, display_name, password_hash, role, active, session_version
                            FROM crm_users WHERE email = ?`).get(e));
       if (!result.ok) {
         loginFailed(email);
-        logAttempt(email, 'password', 'refused_' + (result.reason || 'invalid_credentials'));
+        await logAttempt(email, 'password', 'refused_' + (result.reason || 'invalid_credentials'));
         return json(res, 401, { error: 'That email and password do not match an account.' });
       }
       LOGIN_TRIES.delete(email);
-      logAttempt(email, 'password', 'success');
-      db.prepare('UPDATE crm_users SET last_login_at = ? WHERE id = ?').run(nowIso(), result.user.id);
+      await logAttempt(email, 'password', 'success');
+      await db.prepare('UPDATE crm_users SET last_login_at = ? WHERE id = ?').run(nowIso(), result.user.id);
       const token = auth.issueSession(result.user, process.env.CRM_SESSION_SECRET);
       res.writeHead(200, { 'content-type': 'application/json; charset=utf-8',
         'cache-control': 'no-store',
@@ -722,7 +722,7 @@ const server = http.createServer(async (req, res) => {
       const code = url.searchParams.get('code');
       const state = url.searchParams.get('state');
       if (!flow || !state || state !== flow.state || !code) {
-        logAttempt(null, 'google', google.REASON.TOKEN);
+        await logAttempt(null, 'google', google.REASON.TOKEN);
         return refuse();
       }
 
@@ -742,7 +742,7 @@ const server = http.createServer(async (req, res) => {
         if (!r.ok) throw new Error('token endpoint ' + r.status);
         tokens = await r.json();
       } catch {
-        logAttempt(null, 'google', google.REASON.TOKEN);
+        await logAttempt(null, 'google', google.REASON.TOKEN);
         return refuse();
       }
 
@@ -753,24 +753,24 @@ const server = http.createServer(async (req, res) => {
         jwks: await google.getGoogleJwks(),
       });
       if (!verified.ok) {
-        logAttempt(null, 'google', google.VERIFIER_REASON[verified.reason] || google.REASON.TOKEN);
+        await logAttempt(null, 'google', google.VERIFIER_REASON[verified.reason] || google.REASON.TOKEN);
         return refuse();
       }
 
       // Normalised the same way every other path normalises it, so a case
       // variant resolves to the one existing account rather than missing it.
       const email = auth.canonicalEmail(verified.email);
-      const row = db.prepare(`SELECT id, email, display_name, role, active, session_version
+      const row = await db.prepare(`SELECT id, email, display_name, role, active, session_version
                               FROM crm_users WHERE email = ?`).get(email);
 
       // THE ALLOWLIST. A verified company identity is not sufficient by itself.
       const decision = google.decideAccountAccess(row);
       if (!decision.ok) {
-        logAttempt(email, 'google', decision.reason);
+        await logAttempt(email, 'google', decision.reason);
         return refuse();
       }
       if (!auth.ROLES.includes(row.role)) {
-        logAttempt(email, 'google', google.REASON.INACTIVE);
+        await logAttempt(email, 'google', google.REASON.INACTIVE);
         return refuse();
       }
 
@@ -781,8 +781,8 @@ const server = http.createServer(async (req, res) => {
         authAt: Date.now(),
       }, process.env.CRM_SESSION_SECRET);
 
-      db.prepare('UPDATE crm_users SET last_login_at = ? WHERE id = ?').run(nowIso(), row.id);
-      logAttempt(email, 'google', 'success_google');
+      await db.prepare('UPDATE crm_users SET last_login_at = ? WHERE id = ?').run(nowIso(), row.id);
+      await logAttempt(email, 'google', 'success_google');
       // A sign-in by any route clears the password throttle for that address.
       LOGIN_TRIES.delete(email);
 
@@ -806,7 +806,7 @@ const server = http.createServer(async (req, res) => {
     // assertNoSecretValues re-checks the whole payload before it is sent.
 
     if (p === '/api/admin/channels' || p.startsWith('/api/admin/channels/')) {
-      const me = adminOf(req);
+      const me = await adminOf(req);
       if (!me) return refuseNotAdmin(res);
       const parts = p.split('/').filter(Boolean);           // api admin channels [id] [action]
       const id = parts[3] || null;
@@ -827,8 +827,8 @@ const server = http.createServer(async (req, res) => {
           },
           onOffIsSeparate: 'Whether a channel is switched ON is a different question from whether it works. Everything is OFF until an admin turns it on.',
           channels: channeladmin.allStatuses({
-            env: process.env, checks: latestChecks(), handshakes: handshakeRows(),
-            countsByChannel: channelCounts() }),
+            env: process.env, checks: await latestChecks(), handshakes: await handshakeRows(),
+            countsByChannel: await channelCounts() }),
         };
         channeladmin.assertNoSecretValues(payload, process.env);
         return json(res, 200, payload);
@@ -839,14 +839,14 @@ const server = http.createServer(async (req, res) => {
       if (req.method === 'GET' && id && !action) {
         const def = channelDef(id);
         const payload = {
-          ...channeladmin.statusOf(id, { env: process.env, lastCheck: latestChecks()[id] || null,
-            handshakeAt: (handshakeRows()[id] || {}).verified_at || null,
-            handshakeHow: (handshakeRows()[id] || {}).how || null,
-            counts: channelCounts()[id] || {} }),
+          ...channeladmin.statusOf(id, { env: process.env, lastCheck: (await latestChecks())[id] || null,
+            handshakeAt: ((await handshakeRows())[id] || {}).verified_at || null,
+            handshakeHow: ((await handshakeRows())[id] || {}).how || null,
+            counts: (await channelCounts())[id] || {} }),
           connectSteps: def.connectSteps || [],
           howWeGoLive: def.howWeGoLive || null,
           howWeDisable: def.howWeDisable || null,
-          checks: db.prepare(`SELECT at, ok, kind, detail, by FROM channel_check
+          checks: await db.prepare(`SELECT at, ok, kind, detail, by FROM channel_check
                               WHERE channel = ? ORDER BY id DESC LIMIT 10`).all(id),
         };
         channeladmin.assertNoSecretValues(payload, process.env);
@@ -862,7 +862,7 @@ const server = http.createServer(async (req, res) => {
         if (r.skipped) {
           return json(res, 200, { ok: null, skipped: true, why: r.detail });
         }
-        db.prepare('INSERT INTO channel_check (channel, at, ok, kind, detail, by) VALUES (?,?,?,?,?,?)')
+        await db.prepare('INSERT INTO channel_check (channel, at, ok, kind, detail, by) VALUES (?,?,?,?,?,?)')
           .run(id, nowIso(), r.ok ? 1 : 0, r.kind, String(r.detail || '').slice(0, 500), me.name);
         const payload = { ...r, channel: id, at: nowIso(), by: me.name };
         channeladmin.assertNoSecretValues(payload, process.env);
@@ -881,7 +881,7 @@ const server = http.createServer(async (req, res) => {
         }
         if (want !== 'off') {
           const st = channeladmin.statusOf(id, { env: process.env,
-            lastCheck: latestChecks()[id] || null });
+            lastCheck: (await latestChecks())[id] || null });
           if (!st.allSettingsPresent) {
             return json(res, 409, { error: `Cannot switch ${id} on: ${st.missingSettings.join(', ')} not set.` });
           }
@@ -889,7 +889,7 @@ const server = http.createServer(async (req, res) => {
             return json(res, 409, { error: 'Cannot switch it on until a check has passed. Run the check first.' });
           }
         }
-        db.prepare(`INSERT INTO channel_mode (channel, mode, changed_at, changed_by) VALUES (?,?,?,?)
+        await db.prepare(`INSERT INTO channel_mode (channel, mode, changed_at, changed_by) VALUES (?,?,?,?)
                     ON CONFLICT(channel) DO UPDATE SET mode = excluded.mode,
                       changed_at = excluded.changed_at, changed_by = excluded.changed_by`)
           .run(id, want, nowIso(), me.name);
@@ -940,14 +940,14 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'POST' && p === '/api/dataset') {
       const b = await body(req);
       try {
-        const info = loadDataset(b.kind);
+        const info = await loadDataset(b.kind);
         ACTIVITY.length = 0;
         return json(res, 200, { ok: true, dataset: info, realAvailable: hasRealData() });
       } catch (err) { return json(res, 400, { error: err.message }); }
     }
 
     if (req.method === 'POST' && p === '/api/reset') {
-      const info = loadDataset('empty');
+      const info = await loadDataset('empty');
       ACTIVITY.length = 0;
       return json(res, 200, { ok: true, dataset: info });
     }
@@ -955,50 +955,53 @@ const server = http.createServer(async (req, res) => {
 
     // ------------------------------------------------- integration simulator -
     if (req.method === 'GET' && p === '/api/sim/providers') {
-      const channels = PROVIDERS.channels.map((c) => {
-        const last = db.prepare('SELECT at, scenario, decision, status FROM sim_events WHERE channel = ? ORDER BY id DESC LIMIT 1').get(c.id);
-        const count = db.prepare('SELECT COUNT(*) n FROM sim_events WHERE channel = ?').get(c.id).n;
+      // Promise.all, not just async: .map with an async callback returns an
+      // array of PROMISES and nothing would throw - the screen would simply show
+      // unresolved objects.
+      const channels = await Promise.all(PROVIDERS.channels.map(async (c) => {
+        const last = await db.prepare('SELECT at, scenario, decision, status FROM sim_events WHERE channel = ? ORDER BY id DESC LIMIT 1').get(c.id);
+        const count = (await db.prepare('SELECT COUNT(*) n FROM sim_events WHERE channel = ?').get(c.id)).n;
         return { ...c, lastEvent: last || null, eventCount: count,
           statusLabel: c.status.live ? 'LIVE' : c.status.providerTested ? 'PROVIDER-TESTED' : 'CONNECTED - SIMULATED ACCOUNT' };
-      });
+      }));
       return json(res, 200, { honesty: PROVIDERS.honesty, consentPurposes: PROVIDERS.consentPurposes, channels, demoSequence: DEMO_SEQUENCE });
     }
 
     if (req.method === 'POST' && /^\/api\/sim\/[^/]+\/run$/.test(p)) {
       const id = p.split('/')[3];
       const b = await body(req);
-      return json(res, 200, runScenario(db, id, b.scenario));
+      return json(res, 200, await runScenario(db, id, b.scenario));
     }
 
     if (req.method === 'POST' && /^\/api\/sim\/[^/]+\/outbound$/.test(p)) {
       const id = p.split('/')[3];
       const b = await body(req);
-      return json(res, 200, runOutbound(db, id, b.personId, b.text));
+      return json(res, 200, await runOutbound(db, id, b.personId, b.text));
     }
 
     if (req.method === 'POST' && p === '/api/sim/demo') {
-      return json(res, 200, runFullDemo(db));
+      return json(res, 200, await runFullDemo(db));
     }
 
     if (req.method === 'GET' && p === '/api/sim/events') {
-      return json(res, 200, listEvents(db));
+      return json(res, 200, await listEvents(db));
     }
 
     if (req.method === 'GET' && /^\/api\/sim\/events\/\d+$/.test(p)) {
-      const ev = getEvent(db, Number(p.split('/')[4]));
+      const ev = await getEvent(db, Number(p.split('/')[4]));
       return ev ? json(res, 200, ev) : json(res, 404, { error: 'not found' });
     }
 
     if (req.method === 'GET' && p === '/api/consent') {
-      return json(res, 200, { summary: consentSummary(db), purposes: PROVIDERS.consentPurposes,
-        recent: db.prepare(`SELECT c.*, pe.name FROM consents c JOIN people pe ON pe.id = c.person_id ORDER BY c.id DESC LIMIT 40`).all() });
+      return json(res, 200, { summary: await consentSummary(db), purposes: PROVIDERS.consentPurposes,
+        recent: await db.prepare(`SELECT c.*, pe.name FROM consents c JOIN people pe ON pe.id = c.person_id ORDER BY c.id DESC LIMIT 40`).all() });
     }
 
     if (req.method === 'GET' && p === '/api/metrics') {
-      const bySource = db.prepare(`SELECT source_channel channel, COUNT(*) n,
+      const bySource = await db.prepare(`SELECT source_channel channel, COUNT(*) n,
         SUM(CASE WHEN status='Admitted' THEN 1 ELSE 0 END) admitted,
         SUM(CASE WHEN source_campaign IS NOT NULL THEN 1 ELSE 0 END) withCampaign FROM people GROUP BY source_channel ORDER BY n DESC`).all();
-      const simEvents = db.prepare('SELECT channel, direction, COUNT(*) n FROM sim_events GROUP BY channel, direction').all();
+      const simEvents = await db.prepare('SELECT channel, direction, COUNT(*) n FROM sim_events GROUP BY channel, direction').all();
       return json(res, 200, { bySource, simEvents,
         crmKnows: ['lead created', 'source and campaign', 'contact details', 'every message', 'follow-up and outcome', 'application', 'contract', 'admission'],
         platformKnows: ['ad impression and click', 'form or message interaction', 'delivery and engagement', 'platform-side conversion signal only if we send it back'],
@@ -1022,39 +1025,43 @@ const server = http.createServer(async (req, res) => {
       // It used to show the whole team's work under a heading naming one person,
       // which is why the sidebar said 4 and this screen said 6. ?scope=all opts
       // back out. An admin holds no role, so an admin sees everything.
-      const meRole = roleOf(viewerOf(req, url));
+      const meRole = roleOf(await viewerOf(req, url));
       const everyone = url.searchParams.get('scope') === 'all' || !meRole;
       const mine = (rows, key = 'owner') => everyone ? rows : rows.filter((r) => r[key] === meRole);
 
       // NEW LEADS - arrived and nobody has spoken to them yet.
-      const newLeadsAll = db.prepare(`SELECT pe.* FROM people pe
+      const newLeadsAll = await db.prepare(`SELECT pe.* FROM people pe
         WHERE pe.created_at >= ? AND pe.status NOT IN ('Admitted','Not proceeding')`).all(from);
-      const spokenTo = (id) => db.prepare(`SELECT COUNT(*) n FROM events
-        WHERE person_id = ? AND origin = 'manual' AND kind IN ('call','note','task','status')`).get(id).n > 0;
-      const newLeads = mine(newLeadsAll.filter((r) => !spokenTo(r.id)));
+      const spokenTo = async (id) => (await db.prepare(`SELECT COUNT(*) n FROM events
+        WHERE person_id = ? AND origin = 'manual' AND kind IN ('call','note','task','status')`).get(id)).n > 0;
+      // RESOLVED FIRST, then filtered by index. `.filter` with an async predicate
+      // keeps every row, because a Promise is always truthy - New leads would
+      // have been silently empty.
+      const hasBeenSpokenTo = await Promise.all(newLeadsAll.map((r) => spokenTo(r.id)));
+      const newLeads = mine(newLeadsAll.filter((r, i) => !hasBeenSpokenTo[i]));
       const newLeadsDone = newLeadsAll.length - newLeads.length;
 
       // FOLLOW-UPS - a next step due today or already late, plus the ones closed today.
-      const openFollow = db.prepare(`SELECT t.*, pe.name, pe.programme, pe.status FROM tasks t
+      const openFollow = await db.prepare(`SELECT t.*, pe.name, pe.programme, pe.status FROM tasks t
         JOIN people pe ON pe.id = t.person_id
         WHERE t.done_at IS NULL AND t.due_at < ? ORDER BY t.due_at ASC`).all(to);
-      const doneFollow = db.prepare(`SELECT COUNT(*) n FROM tasks WHERE done_at >= ? AND done_at < ?`).get(from, to).n;
+      const doneFollow = (await db.prepare(`SELECT COUNT(*) n FROM tasks WHERE done_at >= ? AND done_at < ?`).get(from, to)).n;
       const openFollowMine = mine(openFollow);
 
       // REPLIES - they wrote to us and nothing has gone back since.
-      const replies = db.prepare(`SELECT pe.id, pe.name, pe.programme, pe.status, pe.source_channel,
+      const replies = await db.prepare(`SELECT pe.id, pe.name, pe.programme, pe.status, pe.source_channel,
           e.subject, e.body, e.occurred_at, e.channel
         FROM events e JOIN people pe ON pe.id = e.person_id
         WHERE e.direction = 'in'
           AND e.occurred_at = (SELECT MAX(e2.occurred_at) FROM events e2 WHERE e2.person_id = pe.id)
           AND pe.status NOT IN ('Admitted','Not proceeding')
         ORDER BY e.occurred_at DESC`).all();
-      const answeredToday = db.prepare(`SELECT COUNT(*) n FROM events
+      const answeredToday = (await db.prepare(`SELECT COUNT(*) n FROM events
         WHERE occurred_at >= ? AND occurred_at < ? AND (direction = 'out' OR (origin = 'manual' AND kind IN ('call','note')))`)
-        .get(from, to).n;
+        .get(from, to)).n;
 
       // OTHER ATTENTION - active, and no next step at all. This is the crack people fall through.
-      const attention = db.prepare(`SELECT pe.* FROM people pe
+      const attention = await db.prepare(`SELECT pe.* FROM people pe
         WHERE pe.status NOT IN ('Admitted','Not proceeding')
           AND NOT EXISTS (SELECT 1 FROM tasks t WHERE t.person_id = pe.id AND t.done_at IS NULL)
         ORDER BY pe.created_at DESC`).all();
@@ -1115,12 +1122,12 @@ const server = http.createServer(async (req, res) => {
     // Decision 12: the three the management asked for, and nothing invented.
     if (req.method === 'GET' && p === '/api/metrics/core') {
       const monthStart = new Date().toISOString().slice(0, 8) + '01T00:00:00.000Z';
-      const newLeads = db.prepare('SELECT COUNT(*) n FROM people WHERE created_at >= ?').get(monthStart).n;
-      const admitted = db.prepare('SELECT COUNT(*) n FROM people WHERE admitted_at >= ?').get(monthStart).n;
+      const newLeads = (await db.prepare('SELECT COUNT(*) n FROM people WHERE created_at >= ?').get(monthStart)).n;
+      const admitted = (await db.prepare('SELECT COUNT(*) n FROM people WHERE admitted_at >= ?').get(monthStart)).n;
       // Conversion of THIS month's arrivals, which is not the same as admissions
       // this month - somebody admitted today may have arrived in March.
-      const cohort = db.prepare('SELECT COUNT(*) n FROM people WHERE created_at >= ?').get(monthStart).n;
-      const cohortAdmitted = db.prepare("SELECT COUNT(*) n FROM people WHERE created_at >= ? AND status = 'Admitted'").get(monthStart).n;
+      const cohort = (await db.prepare('SELECT COUNT(*) n FROM people WHERE created_at >= ?').get(monthStart)).n;
+      const cohortAdmitted = (await db.prepare("SELECT COUNT(*) n FROM people WHERE created_at >= ? AND status = 'Admitted'").get(monthStart)).n;
       return json(res, 200, {
         month: monthStart.slice(0, 7),
         newLeadsThisMonth: newLeads,
@@ -1132,25 +1139,25 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === 'GET' && p === '/api/summary') {
-      const q = (sql, ...a) => db.prepare(sql).get(...a);
+      const q = async (sql, ...a) => await db.prepare(sql).get(...a);
       const since7 = new Date(Date.now() - 7 * 86400000).toISOString();
       const since30 = new Date(Date.now() - 30 * 86400000).toISOString();
-      const overdue = db.prepare(`SELECT t.*, pe.name, pe.programme, pe.status FROM tasks t JOIN people pe ON pe.id = t.person_id
+      const overdue = await db.prepare(`SELECT t.*, pe.name, pe.programme, pe.status FROM tasks t JOIN people pe ON pe.id = t.person_id
         WHERE t.done_at IS NULL AND t.due_at < ? ORDER BY t.due_at ASC`).all(dayStart());
-      const today = db.prepare(`SELECT t.*, pe.name, pe.programme, pe.status FROM tasks t JOIN people pe ON pe.id = t.person_id
+      const today = await db.prepare(`SELECT t.*, pe.name, pe.programme, pe.status FROM tasks t JOIN people pe ON pe.id = t.person_id
         WHERE t.done_at IS NULL AND t.due_at >= ? AND t.due_at < ? ORDER BY t.due_at ASC`).all(dayStart(), dayEnd());
       return json(res, 200, {
-        newLeads7: q('SELECT COUNT(*) n FROM people WHERE created_at >= ?', since7).n,
-        newLeadsToday: q('SELECT COUNT(*) n FROM people WHERE created_at >= ?', dayStart()).n,
-        openPeople: q("SELECT COUNT(*) n FROM people WHERE status NOT IN ('Admitted','Not proceeding')").n,
-        noNextAction: q(`SELECT COUNT(*) n FROM people pe WHERE pe.status NOT IN ('Admitted','Not proceeding')
-          AND NOT EXISTS (SELECT 1 FROM tasks t WHERE t.person_id = pe.id AND t.done_at IS NULL)`).n,
-        admitted30: q('SELECT COUNT(*) n FROM people WHERE admitted_at >= ?', since30).n,
-        admittedTotal: q('SELECT COUNT(*) n FROM people WHERE status = ?', 'Admitted').n,
+        newLeads7: (await q('SELECT COUNT(*) n FROM people WHERE created_at >= ?', since7)).n,
+        newLeadsToday: (await q('SELECT COUNT(*) n FROM people WHERE created_at >= ?', dayStart())).n,
+        openPeople: (await q("SELECT COUNT(*) n FROM people WHERE status NOT IN ('Admitted','Not proceeding')")).n,
+        noNextAction: (await q(`SELECT COUNT(*) n FROM people pe WHERE pe.status NOT IN ('Admitted','Not proceeding')
+          AND NOT EXISTS (SELECT 1 FROM tasks t WHERE t.person_id = pe.id AND t.done_at IS NULL)`)).n,
+        admitted30: (await q('SELECT COUNT(*) n FROM people WHERE admitted_at >= ?', since30)).n,
+        admittedTotal: (await q('SELECT COUNT(*) n FROM people WHERE status = ?', 'Admitted')).n,
         overdue, today,
-        recent: db.prepare(`SELECT e.*, pe.name FROM events e JOIN people pe ON pe.id = e.person_id
+        recent: await db.prepare(`SELECT e.*, pe.name FROM events e JOIN people pe ON pe.id = e.person_id
           ORDER BY e.occurred_at DESC LIMIT 12`).all(),
-        byStage: db.prepare('SELECT status, COUNT(*) n FROM people GROUP BY status').all(),
+        byStage: await db.prepare('SELECT status, COUNT(*) n FROM people GROUP BY status').all(),
       });
     }
 
@@ -1162,7 +1169,7 @@ const server = http.createServer(async (req, res) => {
       const dir = (url.searchParams.get('dir') || 'desc').toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
       const allowed = ['name', 'programme', 'status', 'owner', 'source_channel', 'created_at', 'last_contact_at'];
       const orderBy = allowed.includes(sort) ? sort : 'created_at';
-      let rows = db.prepare(`SELECT pe.*, (SELECT label FROM tasks t WHERE t.person_id = pe.id AND t.done_at IS NULL ORDER BY due_at LIMIT 1) AS next_action,
+      let rows = await db.prepare(`SELECT pe.*, (SELECT label FROM tasks t WHERE t.person_id = pe.id AND t.done_at IS NULL ORDER BY due_at LIMIT 1) AS next_action,
         (SELECT due_at FROM tasks t WHERE t.person_id = pe.id AND t.done_at IS NULL ORDER BY due_at LIMIT 1) AS next_action_at
         FROM people pe ORDER BY ${orderBy} ${dir}`).all();
       // Decision 10: findable by whatever the operator remembers, including the
@@ -1189,7 +1196,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === 'GET' && p === '/api/people/check') {
-      return json(res, 200, { matches: findMatches({
+      return json(res, 200, { matches: await findMatches({
         email: url.searchParams.get('email'),
         phone: url.searchParams.get('phone'),
         name: url.searchParams.get('name'),
@@ -1197,7 +1204,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === 'GET' && /^\/api\/people\/[^/]+$/.test(p)) {
-      const person = personRow(p.split('/')[3], viewerOf(req, url));
+      const person = await personRow(p.split('/')[3], await viewerOf(req, url));
       return person ? json(res, 200, person) : json(res, 404, { error: 'not found' });
     }
 
@@ -1208,7 +1215,7 @@ const server = http.createServer(async (req, res) => {
       // stops, the existing record is shown, and only an explicit statement that
       // this is somebody else gets past it.
       if (CONFIG.duplicateRule?.blockOnMatch && !b.confirmedNotDuplicate) {
-        const hits = findMatches({ email: b.email, phone: b.phone, name: b.name });
+        const hits = await findMatches({ email: b.email, phone: b.phone, name: b.name });
         if (hits.length) {
           return json(res, 409, {
             error: 'This person may already be in the CRM.',
@@ -1220,18 +1227,18 @@ const server = http.createServer(async (req, res) => {
       const id = newId();
       const d = CONFIG.quickAddDefaults;
       const now = nowIso();
-      db.prepare(`INSERT INTO people (id,name,email,phone,programme,study_form,education,status,owner,source_channel,source_campaign,source_detail,created_at,last_contact_at,notes)
+      await db.prepare(`INSERT INTO people (id,name,email,phone,programme,study_form,education,status,owner,source_channel,source_campaign,source_detail,created_at,last_contact_at,notes)
         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(
         id, b.name, b.email || null, b.phone || null, b.programme || null, b.study_form || null, b.education || null,
         b.status || d.status, b.owner || d.owner, b.source_channel || d.source_channel, b.source_campaign || null,
         b.source_detail || ('entered by ' + (b.by || d.owner)), now, now, b.notes || null);
-      logEvent(db, { personId: id, kind: 'create', channel: b.source_channel || d.source_channel, direction: 'note',
-        at: now, origin: MANUAL, actor: actorOf(req, b), subject: 'Added manually',
+      await logEvent(db, { personId: id, kind: 'create', channel: b.source_channel || d.source_channel, direction: 'note',
+        at: now, origin: MANUAL, actor: await actorOf(req, b), subject: 'Added manually',
         body: b.notes || `entered on the ${channelLabel(b.source_channel || d.source_channel)} channel` });
       const label = b.nextAction || d.nextAction;
       if (label) {
         const due = new Date(Date.now() + (Number(b.nextActionDays ?? d.nextActionDays) || 0) * 86400000).toISOString();
-        db.prepare('INSERT INTO tasks (person_id,label,due_at,owner,created_at) VALUES (?,?,?,?,?)').run(id, label, due, b.owner || d.owner, now);
+        await db.prepare('INSERT INTO tasks (person_id,label,due_at,owner,created_at) VALUES (?,?,?,?,?)').run(id, label, due, b.owner || d.owner, now);
       }
       return json(res, 200, { id });
     }
@@ -1243,16 +1250,16 @@ const server = http.createServer(async (req, res) => {
       const b = await body(req);
       const patch = { ...b };
       delete patch.by;
-      const r = applyEdit(db, id, patch, actorOf(req, b), nowIso());
+      const r = await applyEdit(db, id, patch, await actorOf(req, b), nowIso());
       if (r.error === 'not found') return json(res, 404, { error: 'not found' });
       if (r.error) return json(res, 400, r);
-      return json(res, 200, { ok: true, changes: r.changes, person: personRow(id, actorOf(req, b)) });
+      return json(res, 200, { ok: true, changes: r.changes, person: await personRow(id, await actorOf(req, b)) });
     }
 
     if (req.method === 'POST' && /^\/api\/people\/[^/]+\/status$/.test(p)) {
       const id = p.split('/')[3];
       const b = await body(req);
-      const before = db.prepare('SELECT status FROM people WHERE id = ?').get(id);
+      const before = await db.prepare('SELECT status FROM people WHERE id = ?').get(id);
       if (!before) return json(res, 404, { error: 'not found' });
       // Decision 8: a person is never closed without a reason, and "Other" is not
       // a reason on its own.
@@ -1266,29 +1273,29 @@ const server = http.createServer(async (req, res) => {
         }
       }
       const now = nowIso();
-      db.prepare('UPDATE people SET status = ? WHERE id = ?').run(b.status, id);
-      if (b.status === 'Contract') db.prepare('UPDATE people SET contract_at = ? WHERE id = ? AND contract_at IS NULL').run(now, id);
-      if (b.status === 'Admitted') db.prepare('UPDATE people SET admitted_at = ?, student_no = COALESCE(student_no, ?) WHERE id = ?')
+      await db.prepare('UPDATE people SET status = ? WHERE id = ?').run(b.status, id);
+      if (b.status === 'Contract') await db.prepare('UPDATE people SET contract_at = ? WHERE id = ? AND contract_at IS NULL').run(now, id);
+      if (b.status === 'Admitted') await db.prepare('UPDATE people SET admitted_at = ?, student_no = COALESCE(student_no, ?) WHERE id = ?')
         .run(now, '3-5-IM/2026/' + Math.floor(10 + Math.random() * 89), id);
-      logEvent(db, { personId: id, kind: 'status', direction: 'note', at: now, origin: MANUAL,
-        actor: actorOf(req, b),
+      await logEvent(db, { personId: id, kind: 'status', direction: 'note', at: now, origin: MANUAL,
+        actor: await actorOf(req, b),
         subject: `Status: ${before.status} -> ${b.status}` + (b.reason ? ` (${b.reason})` : ''),
         body: b.note || (b.reason ? '' : 'changed by hand'),
         field: 'status', oldValue: before.status, newValue: b.status });
-      if (b.reason) db.prepare('UPDATE people SET closed_reason = ?, closed_note = ? WHERE id = ?')
+      if (b.reason) await db.prepare('UPDATE people SET closed_reason = ?, closed_note = ? WHERE id = ?')
         .run(b.reason, b.note || null, id);
-      return json(res, 200, personRow(id, actorOf(req, b)));
+      return json(res, 200, await personRow(id, await actorOf(req, b)));
     }
 
     if (req.method === 'POST' && /^\/api\/people\/[^/]+\/note$/.test(p)) {
       const id = p.split('/')[3];
       const b = await body(req);
       const now = nowIso();
-      logEvent(db, { personId: id, kind: b.kind || 'note', channel: b.kind === 'call' ? 'phone' : null,
-        direction: 'note', at: now, origin: MANUAL, actor: actorOf(req, b),
+      await logEvent(db, { personId: id, kind: b.kind || 'note', channel: b.kind === 'call' ? 'phone' : null,
+        direction: 'note', at: now, origin: MANUAL, actor: await actorOf(req, b),
         subject: b.subject || 'Note', body: b.body || '' });
-      db.prepare('UPDATE people SET last_contact_at = ? WHERE id = ?').run(now, id);
-      return json(res, 200, personRow(id, actorOf(req, b)));
+      await db.prepare('UPDATE people SET last_contact_at = ? WHERE id = ?').run(now, id);
+      return json(res, 200, await personRow(id, await actorOf(req, b)));
     }
 
     // ------------------------------------------------------------ intake ---
@@ -1296,15 +1303,15 @@ const server = http.createServer(async (req, res) => {
     // pushed in from a fixture file so the flow can be walked through on screen.
     if (req.method === 'GET' && p === '/api/intake') {
       const state = url.searchParams.get('state') || 'new';
-      const rows = listInbound(db, { state });
+      const rows = await listInbound(db, { state });
       return json(res, 200, {
         rows, state,
         counts: {
-          new: db.prepare("SELECT COUNT(*) n FROM inbound WHERE state = 'new'").get().n,
-          qualified: db.prepare("SELECT COUNT(*) n FROM inbound WHERE state = 'qualified'").get().n,
-          archived: db.prepare("SELECT COUNT(*) n FROM inbound WHERE state = 'archived'").get().n,
-          filtered: db.prepare("SELECT COUNT(*) n FROM inbound WHERE state = 'filtered'").get().n,
-          aged: agedCount(db),
+          new: (await db.prepare("SELECT COUNT(*) n FROM inbound WHERE state = 'new'").get()).n,
+          qualified: (await db.prepare("SELECT COUNT(*) n FROM inbound WHERE state = 'qualified'").get()).n,
+          archived: (await db.prepare("SELECT COUNT(*) n FROM inbound WHERE state = 'archived'").get()).n,
+          filtered: (await db.prepare("SELECT COUNT(*) n FROM inbound WHERE state = 'filtered'").get()).n,
+          aged: await agedCount(db),
         },
         levels: CONFIG.qualification.levels,
         routing: CONFIG.routing,
@@ -1317,21 +1324,21 @@ const server = http.createServer(async (req, res) => {
       const now = Date.now();
       let added = 0;
       for (const f of FIXTURES.items) {
-        const r = receive(db, { ...f, source: 'demo', receivedAt: new Date(now - f.hoursAgo * 3600000).toISOString() });
+        const r = await receive(db, { ...f, source: 'demo', receivedAt: new Date(now - f.hoursAgo * 3600000).toISOString() });
         if (!r.duplicate) added++;
       }
-      return json(res, 200, { ok: true, added, total: db.prepare('SELECT COUNT(*) n FROM inbound').get().n });
+      return json(res, 200, { ok: true, added, total: (await db.prepare('SELECT COUNT(*) n FROM inbound').get()).n });
     }
 
     // One button that builds the whole V1 story, deterministically, so a review
     // always sees the same screens. No provider is contacted.
     if (req.method === 'POST' && p === '/api/demo/scenario') {
-      loadDataset('empty');
+      await loadDataset('empty');
       ACTIVITY.length = 0;
-      runFullDemo(db);                                   // the older channel walk-through
+      await runFullDemo(db);                                   // the older channel walk-through
       const now = Date.now();
       for (const f of FIXTURES.items) {
-        receive(db, { ...f, source: 'demo', receivedAt: new Date(now - f.hoursAgo * 3600000).toISOString() });
+        await receive(db, { ...f, source: 'demo', receivedAt: new Date(now - f.hoursAgo * 3600000).toISOString() });
       }
       const script = [
         { extId: 'ig_msg_0002', as: 'lead', by: 'Tetiana', confirm: ['interest', 'start', 'education', 'question'],
@@ -1353,11 +1360,11 @@ const server = http.createServer(async (req, res) => {
       const out = [];
       const refused = [];
       for (const step of script) {
-        const row = db.prepare('SELECT id FROM inbound WHERE external_id = ?').get(step.extId);
+        const row = await db.prepare('SELECT id FROM inbound WHERE external_id = ?').get(step.extId);
         if (!row) continue;
         // These are demo people who genuinely are different people, so the walk-through
         // says so rather than tripping the duplicate rule it is meant to demonstrate.
-        const r = qualify(db, row.id, { qualification: step.as, createPerson: true,
+        const r = await qualify(db, row.id, { qualification: step.as, createPerson: true,
           by: step.by, note: step.note, confirmFields: step.confirm,
           nextAction: step.next, differentPerson: true });
         // The return value is READ. This loop used to push whatever came back and
@@ -1369,55 +1376,55 @@ const server = http.createServer(async (req, res) => {
         return json(res, 500, { error: 'the demo walk-through could not complete', refused });
       }
       for (const [extId, reason] of [['ig_msg_0005', 'Not a prospective student']]) {
-        const row = db.prepare('SELECT id FROM inbound WHERE external_id = ?').get(extId);
-        if (row) archive(db, row.id, { reason, by: 'Tetiana' });
+        const row = await db.prepare('SELECT id FROM inbound WHERE external_id = ?').get(extId);
+        if (row) await archive(db, row.id, { reason, by: 'Tetiana' });
       }
       // one person carried the whole way, so the funnel has an end as well as a start
-      const hot = db.prepare("SELECT id FROM people WHERE qualification = 'lead' ORDER BY id LIMIT 1").get();
+      const hot = await db.prepare("SELECT id FROM people WHERE qualification = 'lead' ORDER BY id LIMIT 1").get();
       if (hot) {
         for (const st of [CONFIG.stageRoles.application, 'Contract', CONFIG.stageRoles.admitted]) {
-          const before = db.prepare('SELECT status FROM people WHERE id = ?').get(hot.id).status;
-          db.prepare('UPDATE people SET status = ? WHERE id = ?').run(st, hot.id);
-          logEvent(db, { personId: hot.id, kind: 'status', direction: 'note', at: nowIso(),
+          const before = (await db.prepare('SELECT status FROM people WHERE id = ?').get(hot.id)).status;
+          await db.prepare('UPDATE people SET status = ? WHERE id = ?').run(st, hot.id);
+          await logEvent(db, { personId: hot.id, kind: 'status', direction: 'note', at: nowIso(),
             origin: MANUAL, actor: 'Ieva', subject: `Status: ${before} -> ${st}`,
             body: 'moved by Admissions', field: 'status', oldValue: before, newValue: st });
         }
-        db.prepare('UPDATE people SET admitted_at = ? WHERE id = ?').run(nowIso(), hot.id);
-        db.prepare('INSERT INTO tasks (person_id,label,due_at,owner,created_at) VALUES (?,?,?,?,?)')
+        await db.prepare('UPDATE people SET admitted_at = ? WHERE id = ?').run(nowIso(), hot.id);
+        await db.prepare('INSERT INTO tasks (person_id,label,due_at,owner,created_at) VALUES (?,?,?,?,?)')
           .run(hot.id, 'Collect the medical certificate',
             new Date(Date.now() - 2 * 86400000).toISOString(), 'Admissions', nowIso());
       }
-      const warm = db.prepare("SELECT id FROM people WHERE qualification = 'unclear' ORDER BY id LIMIT 1").get();
-      if (warm) db.prepare('INSERT INTO tasks (person_id,label,due_at,owner,created_at) VALUES (?,?,?,?,?)')
+      const warm = await db.prepare("SELECT id FROM people WHERE qualification = 'unclear' ORDER BY id LIMIT 1").get();
+      if (warm) await db.prepare('INSERT INTO tasks (person_id,label,due_at,owner,created_at) VALUES (?,?,?,?,?)')
         .run(warm.id, 'Send the programme description', new Date(Date.now() + 86400000).toISOString(),
           'Marketing', nowIso());
       // so the badge still tells the truth after a reload
-      DATASET = { dataset: 'demo', people: db.prepare('SELECT COUNT(*) n FROM people').get().n,
+      DATASET = { dataset: 'demo', people: (await db.prepare('SELECT COUNT(*) n FROM people').get()).n,
         selection: 'the deterministic V1 walk-through: channels, intake, qualification, one admission' };
       return json(res, 200, { ok: true,
         people: DATASET.people,
-        inbound: db.prepare('SELECT COUNT(*) n FROM inbound').get().n,
+        inbound: (await db.prepare('SELECT COUNT(*) n FROM inbound').get()).n,
         qualified: out.length });
     }
 
     if (req.method === 'POST' && p === '/api/intake/receive') {
       const b = await body(req);
       if (!b.channel) return json(res, 400, { error: 'channel is required' });
-      return json(res, 200, receive(db, { ...b, source: b.source || 'manual' }));
+      return json(res, 200, await receive(db, { ...b, source: b.source || 'manual' }));
     }
 
     if (req.method === 'POST' && /^\/api\/intake\/\d+\/qualify$/.test(p)) {
       const id = Number(p.split('/')[3]);
       const b = await body(req);
-      const r = qualify(db, id, { ...b, by: actorOf(req, b) });
+      const r = await qualify(db, id, { ...b, by: await actorOf(req, b) });
       if (r.error) return json(res, 400, r);
       // Aigars's complaint was "I do two steps and nothing happens": the row
       // vanished and nothing said where the person went. The answer to that is
       // not another screen, it is telling the caller the outcome, so the Inbox
       // can say it. Additive only - intake.qualify() is untouched.
       if (r.personId) {
-        const person = db.prepare(`SELECT id, name, status, owner, programme FROM people WHERE id = ?`).get(r.personId);
-        const task = db.prepare(`SELECT label, due_at FROM tasks
+        const person = await db.prepare(`SELECT id, name, status, owner, programme FROM people WHERE id = ?`).get(r.personId);
+        const task = await db.prepare(`SELECT label, due_at FROM tasks
           WHERE person_id = ? AND done_at IS NULL ORDER BY due_at LIMIT 1`).get(r.personId);
         r.landed = person ? { ...person, next: task ? task.label : null,
           dueAt: task ? task.due_at : null } : null;
@@ -1428,9 +1435,9 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'POST' && /^\/api\/intake\/\d+\/archive$/.test(p)) {
       const id = Number(p.split('/')[3]);
       const b = await body(req);
-      const r = archive(db, id, { ...b, by: actorOf(req, b) });
+      const r = await archive(db, id, { ...b, by: await actorOf(req, b) });
       if (r.error) return json(res, 400, r);
-      const row = db.prepare('SELECT contact_name, contact_handle FROM inbound WHERE id = ?').get(id);
+      const row = await db.prepare('SELECT contact_name, contact_handle FROM inbound WHERE id = ?').get(id);
       r.landed = { archived: true, who: row ? (row.contact_name || row.contact_handle || 'it') : 'it',
         reason: b.reason || null };
       return json(res, 200, r);
@@ -1440,15 +1447,15 @@ const server = http.createServer(async (req, res) => {
     // waiting for the person you are acting as. An admin is not notified - they
     // are shown who has what waiting, which is the question they actually ask.
     if (req.method === 'GET' && p === '/api/waiting') {
-      const who = viewerOf(req, url);
+      const who = await viewerOf(req, url);
       const role = roleOf(who);
       if (isAdmin(who)) {
-        return json(res, 200, { actor: who, isAdmin: true, byRole: waitingByRole(db),
+        return json(res, 200, { actor: who, isAdmin: true, byRole: await waitingByRole(db),
           note: 'An admin sees every queue. Nothing is addressed to them personally.' });
       }
       return json(res, 200, {
         actor: who, isAdmin: false, role,
-        mine: role ? waitingFor(db, role) : { role: null, intake: 0, leads: 0, overdue: 0, aged: 0, total: 0 },
+        mine: role ? await waitingFor(db, role) : { role: null, intake: 0, leads: 0, overdue: 0, aged: 0, total: 0 },
         note: 'You are shown what is routed to your role. A contact nobody can read yet never reaches Admissions.',
       });
     }
@@ -1458,7 +1465,7 @@ const server = http.createServer(async (req, res) => {
     // comes from the funnel the screen shows.
     if (req.method === 'GET' && /^\/api\/export\/funnel\.(csv|xlsx|pdf|gsheet)$/.test(p)) {
       const fmt = p.split('.').pop();
-      const f = funnel(db);
+      const f = await funnel(db);
       const rows = [
         ['Section', 'Item', 'Count'],
         ...f.steps.map((x) => ['Funnel', x.step, x.count]),
@@ -1506,13 +1513,13 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === 'GET' && p === '/api/funnel') {
-      return json(res, 200, funnel(db));
+      return json(res, 200, await funnel(db));
     }
 
     if (req.method === 'POST' && /^\/api\/people\/[^/]+\/sis$/.test(p)) {
       const id = p.split('/')[3];
       const b = await body(req);
-      const r = handoffToSis(db, id, actorOf(req, b));
+      const r = await handoffToSis(db, id, await actorOf(req, b));
       return r.error ? json(res, 400, r) : json(res, 200, r);
     }
 
@@ -1522,7 +1529,7 @@ const server = http.createServer(async (req, res) => {
       // NEVER fall back to the first name in the config. With sign-in on and
       // nobody signed in, this route reported the caller as "Ieva" - an identity
       // nobody had proved, on the one route whose whole job is to say who you are.
-      const who = AUTH_ON ? (currentUser(req) || {}).name || '' : (viewerOf(req, url) || USER_NAMES[0] || '');
+      const who = AUTH_ON ? ((await currentUser(req)) || {}).name || '' : (await viewerOf(req, url) || USER_NAMES[0] || '');
       return json(res, 200, {
         actor: who, role: roleOf(who), isAdmin: isAdmin(who), known: isKnownPerson(who),
         users: USERS, admins: ADMINS, roles: CONFIG.owners || [],
@@ -1551,13 +1558,13 @@ const server = http.createServer(async (req, res) => {
           : 'Identity is a setting, not a login: this shows everything recorded under the name "' + who + '". Nothing stops somebody else picking that name in the sidebar.',
         admins: ADMINS,
         honesty: CONFIG.historyHonesty || '',
-        ...readHistory(db, {
+        ...(await readHistory(db, {
           origin: url.searchParams.get('origin') || '',
           kind: url.searchParams.get('kind') || '',
           personId: url.searchParams.get('personId') || '',
           actor: scope,
           limit: Number(url.searchParams.get('limit') || 200),
-        }),
+        })),
       });
     }
 
@@ -1570,40 +1577,40 @@ const server = http.createServer(async (req, res) => {
       if (scope === 'today') { sql += ' AND t.due_at >= ? AND t.due_at < ?'; args.push(dayStart(), dayEnd()); }
       if (scope === 'week') { sql += ' AND t.due_at < ?'; args.push(new Date(Date.now() + 7 * 86400000).toISOString()); }
       sql += ' ORDER BY t.due_at ASC';
-      return json(res, 200, db.prepare(sql).all(...args));
+      return json(res, 200, await db.prepare(sql).all(...args));
     }
 
     if (req.method === 'POST' && /^\/api\/tasks\/\d+\/complete$/.test(p)) {
       const id = Number(p.split('/')[3]);
       const b = await body(req);
-      const t = db.prepare('SELECT * FROM tasks WHERE id = ?').get(id);
+      const t = await db.prepare('SELECT * FROM tasks WHERE id = ?').get(id);
       if (!t) return json(res, 404, { error: 'not found' });
       // A person is never left without a next step: closing one requires the next.
-      const person = db.prepare('SELECT status FROM people WHERE id = ?').get(t.person_id);
+      const person = await db.prepare('SELECT status FROM people WHERE id = ?').get(t.person_id);
       const closed = ['Admitted', 'Not proceeding'].includes(person && person.status);
       if (CONFIG.nextActionRequired && !closed && !b.nextLabel) {
         return json(res, 400, { error: 'The next step is required: every open person must keep one.' });
       }
       const now = nowIso();
-      db.prepare('UPDATE tasks SET done_at = ?, outcome = ? WHERE id = ?').run(now, b.outcome || 'Done', id);
-      logEvent(db, { personId: t.person_id, kind: 'task', channel: 'phone', direction: 'note', at: now,
-        origin: MANUAL, actor: actorOf(req, b) || t.owner,
+      await db.prepare('UPDATE tasks SET done_at = ?, outcome = ? WHERE id = ?').run(now, b.outcome || 'Done', id);
+      await logEvent(db, { personId: t.person_id, kind: 'task', channel: 'phone', direction: 'note', at: now,
+        origin: MANUAL, actor: await actorOf(req, b) || t.owner,
         subject: `${t.label}: ${b.outcome || 'done'}`, body: b.note || '' });
-      db.prepare('UPDATE people SET last_contact_at = ? WHERE id = ?').run(now, t.person_id);
+      await db.prepare('UPDATE people SET last_contact_at = ? WHERE id = ?').run(now, t.person_id);
       // the step that was just completed decides the stage
-      const moved = advanceStatus(t.person_id, t.label, now);
+      const moved = await advanceStatus(t.person_id, t.label, now);
       if (b.nextLabel) {
         const due = b.nextDate ? new Date(b.nextDate + 'T09:00:00.000Z').toISOString() : new Date(Date.now() + 3 * 86400000).toISOString();
-        db.prepare('INSERT INTO tasks (person_id,label,due_at,owner,created_at) VALUES (?,?,?,?,?)').run(t.person_id, b.nextLabel, due, t.owner, now);
+        await db.prepare('INSERT INTO tasks (person_id,label,due_at,owner,created_at) VALUES (?,?,?,?,?)').run(t.person_id, b.nextLabel, due, t.owner, now);
       }
-      return json(res, 200, { ok: true, moved, person: personRow(t.person_id, actorOf(req, b)) });
+      return json(res, 200, { ok: true, moved, person: await personRow(t.person_id, await actorOf(req, b)) });
     }
 
     if (req.method === 'POST' && /^\/api\/tasks\/\d+\/reschedule$/.test(p)) {
       const id = Number(p.split('/')[3]);
       const b = await body(req);
       const due = b.due ? new Date(b.due + 'T09:00:00.000Z').toISOString() : new Date(Date.now() + 86400000).toISOString();
-      db.prepare('UPDATE tasks SET due_at = ? WHERE id = ?').run(due, id);
+      await db.prepare('UPDATE tasks SET due_at = ? WHERE id = ?').run(due, id);
       return json(res, 200, { ok: true });
     }
 
@@ -1611,25 +1618,25 @@ const server = http.createServer(async (req, res) => {
       const id = p.split('/')[3];
       const b = await body(req);
       const due = b.due ? new Date(b.due + 'T09:00:00.000Z').toISOString() : new Date(Date.now() + 86400000).toISOString();
-      db.prepare('INSERT INTO tasks (person_id,label,due_at,owner,created_at) VALUES (?,?,?,?,?)')
+      await db.prepare('INSERT INTO tasks (person_id,label,due_at,owner,created_at) VALUES (?,?,?,?,?)')
         .run(id, b.label || 'Get in touch', due, b.owner || 'Admissions', nowIso());
-      return json(res, 200, personRow(id, actorOf(req, b)));
+      return json(res, 200, await personRow(id, await actorOf(req, b)));
     }
 
     // ------------------------------------------------------------ intake ---
     if (req.method === 'GET' && p === '/api/intake') {
-      const rows = db.prepare(`SELECT e.*, pe.name, pe.status, pe.source_channel AS person_source FROM events e JOIN people pe ON pe.id = e.person_id
+      const rows = await db.prepare(`SELECT e.*, pe.name, pe.status, pe.source_channel AS person_source FROM events e JOIN people pe ON pe.id = e.person_id
         WHERE e.kind = 'channel' ORDER BY e.occurred_at DESC LIMIT 60`).all();
-      const byChannel = db.prepare(`SELECT source_channel channel, COUNT(*) n,
+      const byChannel = await db.prepare(`SELECT source_channel channel, COUNT(*) n,
         SUM(CASE WHEN status = 'Admitted' THEN 1 ELSE 0 END) admitted FROM people GROUP BY source_channel ORDER BY n DESC`).all();
       return json(res, 200, { rows, byChannel });
     }
 
     // ---------------------------------------------------------- open days --
     if (req.method === 'GET' && p === '/api/opendays') {
-      const days = db.prepare('SELECT * FROM open_days ORDER BY held_on DESC').all();
+      const days = await db.prepare('SELECT * FROM open_days ORDER BY held_on DESC').all();
       for (const d of days) {
-        d.registrations = db.prepare(`SELECT r.*, pe.name, pe.status, pe.programme FROM registrations r JOIN people pe ON pe.id = r.person_id
+        d.registrations = await db.prepare(`SELECT r.*, pe.name, pe.status, pe.programme FROM registrations r JOIN people pe ON pe.id = r.person_id
           WHERE r.open_day_id = ? ORDER BY r.slot`).all(d.id);
         d.came = d.registrations.filter((r) => r.attended === 1).length;
         d.applied = d.registrations.filter((r) => ['Application', 'Contract', 'Admitted'].includes(r.status)).length;
@@ -1640,25 +1647,25 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'POST' && /^\/api\/registrations\/\d+\/attendance$/.test(p)) {
       const id = Number(p.split('/')[3]);
       const b = await body(req);
-      db.prepare('UPDATE registrations SET attended = ? WHERE id = ?').run(b.attended ? 1 : 0, id);
-      const r = db.prepare('SELECT * FROM registrations WHERE id = ?').get(id);
+      await db.prepare('UPDATE registrations SET attended = ? WHERE id = ?').run(b.attended ? 1 : 0, id);
+      const r = await db.prepare('SELECT * FROM registrations WHERE id = ?').get(id);
       const now = nowIso();
-      logEvent(db, { personId: r.person_id, kind: 'note', channel: 'event', direction: 'note', at: now,
-        origin: MANUAL, actor: actorOf(req, b),
+      await logEvent(db, { personId: r.person_id, kind: 'note', channel: 'event', direction: 'note', at: now,
+        origin: MANUAL, actor: await actorOf(req, b),
         subject: b.attended ? 'Attended the visit' : 'Did not attend',
         body: 'marked by hand on the open day list' });
-      if (b.attended) db.prepare('INSERT INTO tasks (person_id,label,due_at,owner,created_at) VALUES (?,?,?,?,?)')
+      if (b.attended) await db.prepare('INSERT INTO tasks (person_id,label,due_at,owner,created_at) VALUES (?,?,?,?,?)')
         .run(r.person_id, 'Follow up after the visit', new Date(Date.now() + 2 * 86400000).toISOString(), 'Admissions', now);
       return json(res, 200, { ok: true });
     }
 
     // ----------------------------------------------------------- reports ---
     if (req.method === 'GET' && p === '/api/reports') {
-      const byStage = db.prepare('SELECT status, COUNT(*) n FROM people GROUP BY status').all();
-      const bySource = db.prepare(`SELECT source_channel channel, COUNT(*) n,
+      const byStage = await db.prepare('SELECT status, COUNT(*) n FROM people GROUP BY status').all();
+      const bySource = await db.prepare(`SELECT source_channel channel, COUNT(*) n,
         SUM(CASE WHEN status='Admitted' THEN 1 ELSE 0 END) admitted FROM people GROUP BY source_channel ORDER BY n DESC`).all();
-      const byProgramme = db.prepare('SELECT programme, COUNT(*) n FROM people GROUP BY programme ORDER BY n DESC').all();
-      const durations = db.prepare(`SELECT education, programme, created_at, contract_at FROM people WHERE contract_at IS NOT NULL`).all()
+      const byProgramme = await db.prepare('SELECT programme, COUNT(*) n FROM people GROUP BY programme ORDER BY n DESC').all();
+      const durations = (await db.prepare(`SELECT education, programme, created_at, contract_at FROM people WHERE contract_at IS NOT NULL`).all())
         .map((r) => ({ ...r, days: Math.round((Date.parse(r.contract_at) - Date.parse(r.created_at)) / 86400000) }));
       const med = (arr) => { if (!arr.length) return null; const s = [...arr].sort((a, b) => a - b); return s[Math.floor(s.length / 2)]; };
       const groups = {};
@@ -1668,9 +1675,9 @@ const server = http.createServer(async (req, res) => {
       }
       return json(res, 200, {
         byStage, bySource, byProgramme,
-        total: db.prepare('SELECT COUNT(*) n FROM people').get().n,
-        openTasks: db.prepare('SELECT COUNT(*) n FROM tasks WHERE done_at IS NULL').get().n,
-        overdueTasks: db.prepare('SELECT COUNT(*) n FROM tasks WHERE done_at IS NULL AND due_at < ?').get(dayStart()).n,
+        total: (await db.prepare('SELECT COUNT(*) n FROM people').get()).n,
+        openTasks: (await db.prepare('SELECT COUNT(*) n FROM tasks WHERE done_at IS NULL').get()).n,
+        overdueTasks: (await db.prepare('SELECT COUNT(*) n FROM tasks WHERE done_at IS NULL AND due_at < ?').get(dayStart())).n,
         timeToContract: Object.entries(groups).map(([k, v]) => ({ group: k, n: v.length, median: med(v) })).sort((a, b) => b.n - a.n),
       });
     }
@@ -1700,7 +1707,7 @@ const server = http.createServer(async (req, res) => {
       const channel = p.split('/')[3];
       const h = handshake(channel, url, process.env);
       if (h.ok) {
-        db.prepare(`INSERT INTO channel_handshake (channel, verified_at, how, remote)
+        await db.prepare(`INSERT INTO channel_handshake (channel, verified_at, how, remote)
                     VALUES (?, ?, ?, ?)
                     ON CONFLICT(channel) DO UPDATE SET verified_at = excluded.verified_at,
                       how = excluded.how, remote = excluded.remote`)
@@ -1747,9 +1754,9 @@ const server = http.createServer(async (req, res) => {
 
       try {
         const ev = adapt(channel, payload);
-        // Idempotency: receive() returns {duplicate:true} when it has already
+        // Idempotency: await receive() returns {duplicate:true} when it has already
         // seen this channel + external id. A provider retry is normal.
-        const r = receive(db, { ...toIntake(ev), source: simulated ? 'simulated' : 'provider' });
+        const r = await receive(db, { ...toIntake(ev), source: simulated ? 'simulated' : 'provider' });
         recordInbound(channel, ev.externalEventId, r.duplicate ? 'duplicate' : r.filtered ? 'filtered' : 'queued', check.how);
         return json(res, 200, { ok: true, channel, externalEventId: ev.externalEventId,
           outcome: r.duplicate ? 'already had it' : r.filtered ? 'filtered out before the queue' : 'waiting to be looked at',
@@ -1772,7 +1779,7 @@ const server = http.createServer(async (req, res) => {
       if (!raw) return json(res, 404, { error: 'no fixture for ' + channel });
       try {
         const ev = adapt(channel, raw);
-        const r = receive(db, { ...toIntake(ev), source: 'simulated' });
+        const r = await receive(db, { ...toIntake(ev), source: 'simulated' });
         recordInbound(channel, ev.externalEventId,
           r.duplicate ? 'duplicate' : r.filtered ? 'filtered' : 'queued', 'simulated locally');
         return json(res, 200, { ok: true, channel, externalEventId: ev.externalEventId,
@@ -1788,7 +1795,7 @@ const server = http.createServer(async (req, res) => {
 
     // The KPI report. One period, chosen by whoever is running the meeting.
     if (req.method === 'GET' && p === '/api/report') {
-      return json(res, 200, buildReport(db, {
+      return json(res, 200, await buildReport(db, {
         from: url.searchParams.get('from'), to: url.searchParams.get('to') }));
     }
 
@@ -1798,7 +1805,7 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === 'GET' && p === '/api/report.csv') {
       const picked = (url.searchParams.get('sections') || '').split(',').filter(Boolean);
-      const rows = reportRows(db, { from: url.searchParams.get('from'),
+      const rows = await reportRows(db, { from: url.searchParams.get('from'),
         to: url.searchParams.get('to'), sections: picked });
       const csv = rows.map((r) => (r || []).map((c) =>
         `"${String(c === undefined || c === null ? '' : c).replace(/"/g, '""')}"`).join(',')).join('\r\n');
@@ -1810,7 +1817,7 @@ const server = http.createServer(async (req, res) => {
 
     // ------------------------------------------------- real and demo state -
     if (req.method === 'GET' && p === '/api/console/state') {
-      return json(res, 200, { ...modeState(), dataset: DATASET, realAvailable: hasRealData() });
+      return json(res, 200, { ...(await modeState()), dataset: DATASET, realAvailable: hasRealData() });
     }
 
     // Switching to demo, resetting demo, and restoring real data are all
@@ -1821,38 +1828,38 @@ const server = http.createServer(async (req, res) => {
       const want = String(b.mode || '');
       if (b.confirm !== 'yes') {
         return json(res, 428, { error: 'this replaces everything in the database',
-          needsConfirm: true, mode: want, currently: modeState() });
+          needsConfirm: true, mode: want, currently: await modeState() });
       }
 
       if (want === 'demo') {
         // never overwrite the real snapshot on the way in
-        clearAll();
-        const info = buildDemo(db, CONFIG);
+        await clearAll();
+        const info = await buildDemo(db, CONFIG);
         setMode('demo');
         DATASET = { dataset: 'demo', people: info.total,
           selection: 'a deliberately small demo environment, built through the real inbound path' };
-        return json(res, 200, { ok: true, ...modeState(), built: info });
+        return json(res, 200, { ok: true, ...(await modeState()), built: info });
       }
 
       if (want === 'real') {
         if (!snapshot.exists()) {
           if (!hasRealData()) return json(res, 409, { error: 'there is no real data on this machine' });
-          const info = loadDataset('real');
-          return json(res, 200, { ok: true, ...modeState(), loaded: info, from: 'source file' });
+          const info = await loadDataset('real');
+          return json(res, 200, { ok: true, ...(await modeState()), loaded: info, from: 'source file' });
         }
-        const r = snapshot.restore(db);
+        const r = await snapshot.restore(db);
         if (r.error) return json(res, 500, { error: r.error });
         setMode('real');
         DATASET = { dataset: 'real', people: r.counts.people,
           selection: 'restored from the clean snapshot taken when the real database was loaded' };
-        return json(res, 200, { ok: true, ...modeState(), restored: r, from: 'snapshot' });
+        return json(res, 200, { ok: true, ...(await modeState()), restored: r, from: 'snapshot' });
       }
 
       if (want === 'empty') {
-        clearAll();
+        await clearAll();
         setMode('empty');
         DATASET = { dataset: 'empty', people: 0, selection: 'an empty database' };
-        return json(res, 200, { ok: true, ...modeState() });
+        return json(res, 200, { ok: true, ...(await modeState()) });
       }
 
       return json(res, 400, { error: 'mode must be real, demo or empty' });
@@ -1882,7 +1889,7 @@ const server = http.createServer(async (req, res) => {
       // duplicate check fires for a genuine reason rather than a rigged one
       let existing = null;
       if (b.person === 'existing' || scenario === 'existing_person' || scenario === 'duplicate_attempt') {
-        existing = db.prepare(`SELECT name, email, phone FROM people
+        existing = await db.prepare(`SELECT name, email, phone FROM people
           WHERE (email IS NOT NULL OR phone IS NOT NULL) ORDER BY created_at DESC LIMIT 1`).get() || null;
         if (!existing) return json(res, 409, {
           error: 'there is nobody in the database yet, so there is nobody to match against',
@@ -1893,7 +1900,7 @@ const server = http.createServer(async (req, res) => {
         message: typeof b.message === 'string' && b.message.trim() ? b.message.trim() : null });
       try {
         const ev = adapt(channel, payload);
-        const r = receive(db, toIntake(ev));
+        const r = await receive(db, toIntake(ev));
         recordInbound(channel, ev.externalEventId,
           r.duplicate ? 'duplicate' : r.filtered ? 'filtered' : 'queued', 'console');
         const outcome = r.duplicate ? 'The same event again - stored once'
@@ -1920,9 +1927,9 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && p === '/api/connections') {
       const counts = {};
       for (const id of channelIds()) {
-        const row = db.prepare(`SELECT COUNT(*) n, MAX(received_at) last FROM inbound WHERE channel = ?`).get(id);
-        const ok = db.prepare(`SELECT MAX(received_at) last FROM inbound WHERE channel = ? AND state != 'filtered'`).get(id);
-        const hs = db.prepare('SELECT verified_at, how FROM channel_handshake WHERE channel = ?').get(id);
+        const row = await db.prepare(`SELECT COUNT(*) n, MAX(received_at) last FROM inbound WHERE channel = ?`).get(id);
+        const ok = await db.prepare(`SELECT MAX(received_at) last FROM inbound WHERE channel = ? AND state != 'filtered'`).get(id);
+        const hs = await db.prepare('SELECT verified_at, how FROM channel_handshake WHERE channel = ?').get(id);
         counts[id] = { events: row.n, lastEventAt: row.last, lastSuccessAt: ok.last,
           handshakeAt: hs ? hs.verified_at : null, handshakeHow: hs ? hs.how : null };
       }
@@ -1936,7 +1943,7 @@ const server = http.createServer(async (req, res) => {
     // What happened to each thing that arrived. The diagnostic view that matters
     // once real channels start flowing.
     if (req.method === 'GET' && p === '/api/inbound/events') {
-      const rows = db.prepare(`SELECT i.id, i.channel, i.external_id, i.received_at, i.state,
+      const rows = await db.prepare(`SELECT i.id, i.channel, i.external_id, i.received_at, i.state,
           i.qualification, i.person_id, i.archive_reason, i.processed_by, i.processed_at,
           pe.name AS person_name
         FROM inbound i LEFT JOIN people pe ON pe.id = i.person_id
@@ -1968,12 +1975,12 @@ const server = http.createServer(async (req, res) => {
     // security boundary, and it becomes one only when authentication exists.
     if (req.method === 'POST' && p === '/api/feedback') {
       const b = await body(req, 3 * 1024 * 1024);
-      const saved = saveFeedback(db, {
+      const saved = await saveFeedback(db, {
         kind: readKind(b.kind),
         body: readBody(b.body),
         path: readPath(b.path),
         screenshot: readScreenshot(b.screenshot),
-        by: actorOf(req, b),
+        by: await actorOf(req, b),
         at: nowIso(),
       });
       return json(res, 200, { ok: true, ...saved });
@@ -1982,23 +1989,23 @@ const server = http.createServer(async (req, res) => {
     // The notification. Nothing in this app can send an email, so being told
     // happens inside the app: a count of what has not been handled yet.
     if (req.method === 'GET' && p === '/api/feedback/waiting') {
-      const who = viewerOf(req, url);
+      const who = await viewerOf(req, url);
       if (!canReadFeedback(who)) return json(res, 200, { open: 0, mayRead: false });
       return json(res, 200, { mayRead: true,
-        open: db.prepare('SELECT COUNT(*) n FROM feedback WHERE handled_at IS NULL').get().n,
+        open: (await db.prepare('SELECT COUNT(*) n FROM feedback WHERE handled_at IS NULL').get()).n,
         readers: FEEDBACK_READERS });
     }
 
     if (req.method === 'GET' && p === '/api/admin/feedback') {
-      if (!canReadFeedback(viewerOf(req, url)))
+      if (!canReadFeedback(await viewerOf(req, url)))
         return json(res, 403, { error: `the feedback inbox is for ${FEEDBACK_READERS.join(' and ')} only` });
-      return json(res, 200, { rows: listFeedback(db) });
+      return json(res, 200, { rows: await listFeedback(db) });
     }
 
     if (req.method === 'GET' && /^\/api\/admin\/feedback\/\d+\/screenshot$/.test(p)) {
-      if (!canReadFeedback(viewerOf(req, url)))
+      if (!canReadFeedback(await viewerOf(req, url)))
         return json(res, 403, { error: `the feedback inbox is for ${FEEDBACK_READERS.join(' and ')} only` });
-      const shot = getScreenshot(db, Number(p.split('/')[4]));
+      const shot = await getScreenshot(db, Number(p.split('/')[4]));
       if (!shot) return json(res, 404, { error: 'not found' });
       // The stored type is the sniffed one. nosniff stops a browser second-guessing it.
       res.writeHead(200, {
@@ -2011,10 +2018,10 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === 'PATCH' && /^\/api\/admin\/feedback\/\d+$/.test(p)) {
-      if (!canReadFeedback(viewerOf(req, url)))
+      if (!canReadFeedback(await viewerOf(req, url)))
         return json(res, 403, { error: `the feedback inbox is for ${FEEDBACK_READERS.join(' and ')} only` });
       const b = await body(req);
-      const r = setHandled(db, Number(p.split('/')[4]), Boolean(b.handled), actorOf(req, b), nowIso());
+      const r = await setHandled(db, Number(p.split('/')[4]), Boolean(b.handled), await actorOf(req, b), nowIso());
       return r.error ? json(res, 404, r) : json(res, 200, r);
     }
 

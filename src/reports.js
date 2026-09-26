@@ -24,34 +24,34 @@ export function periodOf(from, to) {
     label: `${start.toISOString().slice(0, 10)} to ${new Date(Date.parse(end) - 86400000).toISOString().slice(0, 10)}` };
 }
 
-const count = (db, sql, ...args) => db.prepare(sql).get(...args).n;
+const count = async (db, sql, ...args) => (await db.prepare(sql).get(...args)).n;
 
 // A breakdown is always a count per value, plus an explicit "not recorded" row,
 // because a blank in a report reads as zero when it really means unknown.
-function breakdown(db, column, { from, to, where = '', args = [] } = {}) {
-  const rows = db.prepare(`SELECT COALESCE(NULLIF(TRIM(${column}), ''), '(not recorded)') k,
+async function breakdown(db, column, { from, to, where = '', args = [] } = {}) {
+  const rows = await db.prepare(`SELECT COALESCE(NULLIF(TRIM(${column}), ''), '(not recorded)') k,
       COUNT(*) n FROM people
     WHERE created_at >= ? AND created_at < ? ${where}
     GROUP BY k ORDER BY n DESC`).all(from, to, ...args);
   return rows.map((r) => ({ value: r.k, count: r.n }));
 }
 
-export function report(db, { from, to } = {}) {
+export async function report(db, { from, to } = {}) {
   const p = periodOf(from, to);
   const A = [p.from, p.to];
 
-  const newLeads = count(db, 'SELECT COUNT(*) n FROM people WHERE created_at >= ? AND created_at < ?', ...A);
-  const applications = count(db, `SELECT COUNT(*) n FROM people
+  const newLeads = await count(db, 'SELECT COUNT(*) n FROM people WHERE created_at >= ? AND created_at < ?', ...A);
+  const applications = await count(db, `SELECT COUNT(*) n FROM people
     WHERE created_at >= ? AND created_at < ? AND status IN ('Application','Contract','Admitted')`, ...A);
-  const admitted = count(db, 'SELECT COUNT(*) n FROM people WHERE admitted_at >= ? AND admitted_at < ?', ...A);
-  const admittedFromPeriod = count(db, `SELECT COUNT(*) n FROM people
+  const admitted = await count(db, 'SELECT COUNT(*) n FROM people WHERE admitted_at >= ? AND admitted_at < ?', ...A);
+  const admittedFromPeriod = await count(db, `SELECT COUNT(*) n FROM people
     WHERE created_at >= ? AND created_at < ? AND admitted_at IS NOT NULL`, ...A);
 
-  const activeApplicants = count(db, `SELECT COUNT(*) n FROM people
+  const activeApplicants = await count(db, `SELECT COUNT(*) n FROM people
     WHERE status NOT IN ('Admitted','Not proceeding')`);
-  const overdue = count(db, `SELECT COUNT(*) n FROM tasks
+  const overdue = await count(db, `SELECT COUNT(*) n FROM tasks
     WHERE done_at IS NULL AND due_at < ?`, new Date().toISOString());
-  const noNextAction = count(db, `SELECT COUNT(*) n FROM people pe
+  const noNextAction = await count(db, `SELECT COUNT(*) n FROM people pe
     WHERE pe.status NOT IN ('Admitted','Not proceeding')
       AND NOT EXISTS (SELECT 1 FROM tasks t WHERE t.person_id = pe.id AND t.done_at IS NULL)`);
 
@@ -60,8 +60,8 @@ export function report(db, { from, to } = {}) {
   const conversion = newLeads ? Math.round((admittedFromPeriod / newLeads) * 1000) / 10 : null;
 
   // How long admission actually took, as a median of real durations.
-  const durations = db.prepare(`SELECT created_at, admitted_at FROM people
-    WHERE admitted_at IS NOT NULL AND admitted_at >= ? AND admitted_at < ?`).all(...A)
+  const durations = (await db.prepare(`SELECT created_at, admitted_at FROM people
+    WHERE admitted_at IS NOT NULL AND admitted_at >= ? AND admitted_at < ?`).all(...A))
     .map((r) => Math.round((Date.parse(r.admitted_at) - Date.parse(r.created_at)) / 86400000))
     .filter((d) => Number.isFinite(d) && d >= 0)
     .sort((a, b) => a - b);
@@ -75,37 +75,40 @@ export function report(db, { from, to } = {}) {
     const m1 = new Date(Date.UTC(m0.getUTCFullYear(), m0.getUTCMonth() + 1, 1));
     months.push({
       month: m0.toISOString().slice(0, 7),
-      newLeads: count(db, 'SELECT COUNT(*) n FROM people WHERE created_at >= ? AND created_at < ?',
+      newLeads: await count(db, 'SELECT COUNT(*) n FROM people WHERE created_at >= ? AND created_at < ?',
         m0.toISOString(), m1.toISOString()),
-      admitted: count(db, 'SELECT COUNT(*) n FROM people WHERE admitted_at >= ? AND admitted_at < ?',
+      admitted: await count(db, 'SELECT COUNT(*) n FROM people WHERE admitted_at >= ? AND admitted_at < ?',
         m0.toISOString(), m1.toISOString()),
     });
   }
 
   // Programme numbers the existing KPI sheet already reports on.
-  const programmes = (CFG.programmes || []).map((code) => ({
+  // Promise.all, not just async: .map with an async callback returns an array of
+  // PROMISES, and nothing here would have thrown - the report would simply have
+  // carried unresolved objects.
+  const programmes = await Promise.all((CFG.programmes || []).map(async (code) => ({
     programme: code,
-    newLeads: count(db, `SELECT COUNT(*) n FROM people
+    newLeads: await count(db, `SELECT COUNT(*) n FROM people
       WHERE created_at >= ? AND created_at < ? AND programme = ?`, ...A, code),
-    admitted: count(db, `SELECT COUNT(*) n FROM people
+    admitted: await count(db, `SELECT COUNT(*) n FROM people
       WHERE admitted_at >= ? AND admitted_at < ? AND programme = ?`, ...A, code),
-  }));
+  })));
 
   // Maritime school graduates. This is a real count, not a gap: the education field
   // has been filled in by hand for years. What is thin is the COVERAGE, and that is
   // reported next to the number instead of the number being withheld.
   const maritimeList = CFG.maritimeEducations || [];
-  const maritime = maritimeList.length ? count(db, `SELECT COUNT(*) n FROM people
+  const maritime = maritimeList.length ? await count(db, `SELECT COUNT(*) n FROM people
     WHERE created_at >= ? AND created_at < ?
       AND education IN (${maritimeList.map(() => '?').join(',')})`, ...A, ...maritimeList) : 0;
-  const withEducation = count(db, `SELECT COUNT(*) n FROM people
+  const withEducation = await count(db, `SELECT COUNT(*) n FROM people
     WHERE created_at >= ? AND created_at < ? AND education IS NOT NULL AND TRIM(education) != ''`, ...A);
-  const withNationality = count(db, `SELECT COUNT(*) n FROM people
+  const withNationality = await count(db, `SELECT COUNT(*) n FROM people
     WHERE created_at >= ? AND created_at < ? AND nationality IS NOT NULL AND TRIM(nationality) != ''`, ...A);
 
-  const lost = db.prepare(`SELECT COALESCE(NULLIF(TRIM(closed_reason), ''), '(no reason recorded)') k,
+  const lost = (await db.prepare(`SELECT COALESCE(NULLIF(TRIM(closed_reason), ''), '(no reason recorded)') k,
       COUNT(*) n FROM people
-    WHERE status = 'Not proceeding' GROUP BY k ORDER BY n DESC`).all()
+    WHERE status = 'Not proceeding' GROUP BY k ORDER BY n DESC`).all())
     .map((r) => ({ value: r.k, count: r.n }));
 
   return {
@@ -121,12 +124,12 @@ export function report(db, { from, to } = {}) {
     trend: months,
     programmes,
     breakdowns: {
-      programme: breakdown(db, 'programme', { ...p }),
-      studyForm: breakdown(db, 'study_form', { ...p }),
-      education: breakdown(db, 'education', { ...p }),
-      source: breakdown(db, 'source_channel', { ...p }),
-      nationality: breakdown(db, 'nationality', { ...p }),
-      stage: db.prepare(`SELECT status k, COUNT(*) n FROM people GROUP BY k ORDER BY n DESC`).all()
+      programme: await breakdown(db, 'programme', { ...p }),
+      studyForm: await breakdown(db, 'study_form', { ...p }),
+      education: await breakdown(db, 'education', { ...p }),
+      source: await breakdown(db, 'source_channel', { ...p }),
+      nationality: await breakdown(db, 'nationality', { ...p }),
+      stage: (await db.prepare(`SELECT status k, COUNT(*) n FROM people GROUP BY k ORDER BY n DESC`).all())
         .map((r) => ({ value: r.k, count: r.n })),
     },
     lostReasons: lost,
@@ -139,7 +142,7 @@ export function report(db, { from, to } = {}) {
       education: { filled: withEducation, of: newLeads },
       nationality: { filled: withNationality, of: newLeads },
     },
-    notMeasured: notMeasured(db, p),
+    notMeasured: await notMeasured(db, p),
     honesty: [
       'Every figure is a count of rows in this database over the chosen period. Nothing is estimated.',
       'Conversion follows the people who ARRIVED in the period. Somebody admitted this month may have arrived last year, so "admitted" and "conversion" deliberately count different populations.',
@@ -150,24 +153,24 @@ export function report(db, { from, to } = {}) {
 
 // Things the existing KPI reporting asks for that this CRM cannot yet derive.
 // Structured so they can be filled the moment the source or the definition exists.
-function notMeasured(db, p) {
+async function notMeasured(db, p) {
   const out = [];
   const A = [p.from, p.to];
-  const has = (col) => db.prepare(
-    `SELECT COUNT(*) n FROM pragma_table_info('people') WHERE name = ?`).get(col).n > 0;
+  const has = async (col) => (await db.prepare(
+    `SELECT COUNT(*) n FROM pragma_table_info('people') WHERE name = ?`).get(col)).n > 0;
 
   // The distinction that matters. Most of what a report "cannot say" is not a
   // limit of the software at all - it is a field nobody has filled in yet. Those
   // two things need completely different work, so they are never listed together.
-  const cover = (col) => {
-    const filled = db.prepare(`SELECT COUNT(*) n FROM people
-      WHERE created_at >= ? AND created_at < ? AND ${col} IS NOT NULL AND TRIM(${col}) != ''`).get(...A).n;
-    const total = db.prepare('SELECT COUNT(*) n FROM people WHERE created_at >= ? AND created_at < ?').get(...A).n;
+  const cover = async (col) => {
+    const filled = (await db.prepare(`SELECT COUNT(*) n FROM people
+      WHERE created_at >= ? AND created_at < ? AND ${col} IS NOT NULL AND TRIM(${col}) != ''`).get(...A)).n;
+    const total = (await db.prepare('SELECT COUNT(*) n FROM people WHERE created_at >= ? AND created_at < ?').get(...A)).n;
     return { filled, total };
   };
 
-  if (has('nationality')) {
-    const c = cover('nationality');
+  if (await has('nationality')) {
+    const c = await cover('nationality');
     if (c.filled < c.total) {
       out.push({ metric: 'Nationality', kind: 'needs typing in',
         why: `There is a Nationality box on every person and it is filled in for ${c.filled} of ${c.total} in this period. It is asked and typed, never derived.`,
@@ -180,7 +183,7 @@ function notMeasured(db, p) {
       toFix: 'Add one. It is typed in by hand, like education.' });
   }
 
-  const ed = cover('education');
+  const ed = await cover('education');
   if (ed.filled < ed.total) {
     out.push({ metric: 'Maritime school graduates', kind: 'needs typing in',
       why: `Counted from the education field, which is filled in for ${ed.filled} of ${ed.total} in this period. The number below is real; it is the coverage that is thin.`,
@@ -220,10 +223,10 @@ export const DEFAULT_SECTIONS = ['summary', 'trend', 'programmes'];
 // One flat table, for a CSV or a spreadsheet. `want` is the list of sections
 // somebody ticked; leaving it out gives the sensible default rather than
 // everything, because an export nobody can read is not a report.
-export function reportRows(db, opts = {}) {
+export async function reportRows(db, opts = {}) {
   const want = new Set(
     Array.isArray(opts.sections) && opts.sections.length ? opts.sections : DEFAULT_SECTIONS);
-  const r = report(db, opts);
+  const r = await report(db, opts);
   const rows = [];
   const blank = () => rows.push([]);
   const head = (t) => rows.push([t]);
@@ -283,7 +286,7 @@ export function reportRows(db, opts = {}) {
     head('The people behind the numbers');
     rows.push(['Name', 'Programme', 'Study form', 'Education', 'Nationality', 'Source',
       'Stage', 'Owner', 'First contact', 'Admitted', 'Next step', 'Due']);
-    const people = db.prepare(`SELECT pe.*,
+    const people = await db.prepare(`SELECT pe.*,
         (SELECT t.label FROM tasks t WHERE t.person_id = pe.id AND t.done_at IS NULL
           ORDER BY t.due_at LIMIT 1) next_label,
         (SELECT t.due_at FROM tasks t WHERE t.person_id = pe.id AND t.done_at IS NULL

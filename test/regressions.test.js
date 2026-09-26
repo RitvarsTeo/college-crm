@@ -25,7 +25,7 @@ const STEP = 'Call and establish interest';
 // confirmed field - and so 4 of the 5 'open' links in CAR Done. Present since the
 // V1 commit and invisible because the rows clicked during testing had no fields.
 
-test('every function the person page calls is actually defined', () => {
+test('every function the person page calls is actually defined', async () => {
   const view = APP.slice(APP.indexOf('async function viewPerson'), APP.indexOf('function latestConsents'));
   const called = new Set([...view.matchAll(/\$\{[^}]*?\b([a-z][A-Za-z0-9_]*)\s*\(/g)].map((m) => m[1]));
   // .map(fieldChip) style references are calls too, and are what broke
@@ -39,7 +39,7 @@ test('every function the person page calls is actually defined', () => {
   assert.deepEqual(missing, [], 'the person page calls something that does not exist: ' + missing.join(', '));
 });
 
-test('fieldChip exists, because the What we know card maps over it', () => {
+test('fieldChip exists, because the What we know card maps over it', async () => {
   assert.match(APP, /const fieldChip = /, 'defined');
   assert.match(APP, /p\.fields\.map\(fieldChip\)/, 'and still used by the card that needed it');
 });
@@ -49,71 +49,71 @@ test('fieldChip exists, because the What we know card maps over it', () => {
 // on the manual Add person screen only. Qualifying from a channel created twins.
 // The demo held two Emils Baltputnis records sharing +371 20423829.
 
-test('qualifying refuses to create somebody we already hold, and says who', () => {
-  const db = openDb();
-  const a = receive(db, { channel: 'event', name: 'Emīls Baltputnis', phone: '+371 20 423 829',
+test('qualifying refuses to create somebody we already hold, and says who', async () => {
+  const db = await openDb();
+  const a = await receive(db, { channel: 'event', name: 'Emīls Baltputnis', phone: '+371 20 423 829',
     body: FULL, externalId: 'dup_a' });
-  const first = qualify(db, a.id, { qualification: 'lead', createPerson: true, by: 'Ieva',
+  const first = await qualify(db, a.id, { qualification: 'lead', createPerson: true, by: 'Ieva',
     confirmFields: ['interest'], nextAction: STEP });
   assert.equal(first.ok, true);
 
   // the same human writes from a different channel, the number written differently
-  const b = receive(db, { channel: 'whatsapp', name: 'Emils Baltputnis', phone: '37120423829',
+  const b = await receive(db, { channel: 'whatsapp', name: 'Emils Baltputnis', phone: '37120423829',
     body: FULL, externalId: 'dup_b' });
-  const second = qualify(db, b.id, { qualification: 'lead', createPerson: true, by: 'Ieva',
+  const second = await qualify(db, b.id, { qualification: 'lead', createPerson: true, by: 'Ieva',
     confirmFields: ['interest'], nextAction: STEP });
 
   assert.equal(second.duplicate, true, 'it must not go through');
   assert.equal(second.strong, true, 'a phone match is a strong one');
   assert.equal(second.matches[0].id, first.personId, 'and it names the person we already have');
-  assert.equal(db.prepare('SELECT COUNT(*) n FROM people').get().n, 1, 'still one person');
-  assert.equal(db.prepare('SELECT state FROM inbound WHERE id = ?').get(b.id).state, 'new',
+  assert.equal((await db.prepare('SELECT COUNT(*) n FROM people').get()).n, 1, 'still one person');
+  assert.equal((await db.prepare('SELECT state FROM inbound WHERE id = ?').get(b.id)).state, 'new',
     'and the item stays in the queue rather than being consumed');
 });
 
-test('the operator can still say it is a different person, explicitly', () => {
-  const db = openDb();
-  const a = receive(db, { channel: 'event', name: 'Jānis Bērziņš', body: FULL, externalId: 'n_a' });
-  qualify(db, a.id, { qualification: 'lead', createPerson: true, by: 'Ieva',
+test('the operator can still say it is a different person, explicitly', async () => {
+  const db = await openDb();
+  const a = await receive(db, { channel: 'event', name: 'Jānis Bērziņš', body: FULL, externalId: 'n_a' });
+  await qualify(db, a.id, { qualification: 'lead', createPerson: true, by: 'Ieva',
     confirmFields: ['interest'], nextAction: STEP });
-  const b = receive(db, { channel: 'instagram', name: 'Jānis Bērziņš', body: FULL, externalId: 'n_b' });
+  const b = await receive(db, { channel: 'instagram', name: 'Jānis Bērziņš', body: FULL, externalId: 'n_b' });
 
-  assert.equal(qualify(db, b.id, { qualification: 'lead', createPerson: true, by: 'Ieva',
-    nextAction: STEP }).duplicate, true, 'a shared name still stops it');
-  const forced = qualify(db, b.id, { qualification: 'lead', createPerson: true, by: 'Ieva',
+  assert.equal((await qualify(db, b.id, { qualification: 'lead', createPerson: true, by: 'Ieva',
+    nextAction: STEP })).duplicate, true, 'a shared name still stops it');
+  const forced = await qualify(db, b.id, { qualification: 'lead', createPerson: true, by: 'Ieva',
     confirmFields: ['interest'], nextAction: STEP, differentPerson: true });
   assert.equal(forced.ok, true, 'but saying so in as many words gets through');
-  assert.equal(db.prepare('SELECT COUNT(*) n FROM people').get().n, 2);
+  assert.equal((await db.prepare('SELECT COUNT(*) n FROM people').get()).n, 2);
 });
 
-test('linking to the existing person is the other way through, and keeps one record', () => {
-  const db = openDb();
-  const a = receive(db, { channel: 'event', name: 'Anna Liepa', phone: '+37129000111',
+test('linking to the existing person is the other way through, and keeps one record', async () => {
+  const db = await openDb();
+  const a = await receive(db, { channel: 'event', name: 'Anna Liepa', phone: '+37129000111',
     body: HI, externalId: 'l_a' });
-  const first = qualify(db, a.id, { qualification: 'unclear', createPerson: true, by: 'Tetiana',
+  const first = await qualify(db, a.id, { qualification: 'unclear', createPerson: true, by: 'Tetiana',
     nextAction: 'Send the programme description' });
-  const b = receive(db, { channel: 'whatsapp', name: 'Anna Liepa', phone: '+37129000111',
+  const b = await receive(db, { channel: 'whatsapp', name: 'Anna Liepa', phone: '+37129000111',
     body: FULL, externalId: 'l_b' });
-  const linked = qualify(db, b.id, { qualification: 'lead', personId: first.personId,
+  const linked = await qualify(db, b.id, { qualification: 'lead', personId: first.personId,
     by: 'Ieva', confirmFields: ['interest'] });
   assert.equal(linked.ok, true);
   assert.equal(linked.personId, first.personId);
-  assert.equal(db.prepare('SELECT COUNT(*) n FROM people').get().n, 1);
+  assert.equal((await db.prepare('SELECT COUNT(*) n FROM people').get()).n, 1);
 });
 
-test('one matcher answers for every path, and a phone written three ways is one person', () => {
-  const db = openDb();
-  db.prepare(`INSERT INTO people (id,name,email,phone,status,created_at)
+test('one matcher answers for every path, and a phone written three ways is one person', async () => {
+  const db = await openDb();
+  await db.prepare(`INSERT INTO people (id,name,email,phone,status,created_at)
     VALUES ('px','Emīls Baltputnis','e@x.lv','+371 20 423 829','New','2026-09-24T09:00:00.000Z')`).run();
   for (const written of ['+37120423829', '37120423829', '20423829', '+371 20 423 829']) {
-    assert.equal(findMatches(db, { phone: written }).length, 1, written + ' must find the same person');
+    assert.equal((await findMatches(db, { phone: written })).length, 1, written + ' must find the same person');
   }
-  assert.equal(findMatches(db, { email: 'E@X.LV' }).length, 1, 'email ignores case');
-  assert.equal(findMatches(db, { name: 'emīls baltputnis' }).length, 1, 'name ignores case');
-  assert.equal(findMatches(db, { phone: '+37129999999' }).length, 0, 'and a different number is nobody');
-  assert.equal(isStrong(findMatches(db, { phone: '20423829' })[0]), true);
-  assert.equal(isStrong(findMatches(db, { name: 'Emīls Baltputnis' })[0]), false, 'a name alone is weak');
-  assert.equal(duplicateCheck(db, { phone: '20423829' }, { exclude: 'px' }).blocked, false,
+  assert.equal((await findMatches(db, { email: 'E@X.LV' })).length, 1, 'email ignores case');
+  assert.equal((await findMatches(db, { name: 'emīls baltputnis' })).length, 1, 'name ignores case');
+  assert.equal((await findMatches(db, { phone: '+37129999999' })).length, 0, 'and a different number is nobody');
+  assert.equal(isStrong((await findMatches(db, { phone: '20423829' }))[0]), true);
+  assert.equal(isStrong((await findMatches(db, { name: 'Emīls Baltputnis' }))[0]), false, 'a name alone is weak');
+  assert.equal((await duplicateCheck(db, { phone: '20423829' }, { exclude: 'px' })).blocked, false,
     'a person never blocks against themselves');
 });
 
@@ -122,61 +122,61 @@ test('one matcher answers for every path, and a phone written three ways is one 
 // enforced it; creating a lead from a channel did not, so three demo leads sat on
 // the pipeline with nobody scheduled to do anything about them.
 
-test('a lead cannot reach the pipeline without a next step, an owner and a due date', () => {
-  const db = openDb();
-  const r = receive(db, { channel: 'instagram', name: 'Nobody Assigned', body: FULL, externalId: 'ns1' });
+test('a lead cannot reach the pipeline without a next step, an owner and a due date', async () => {
+  const db = await openDb();
+  const r = await receive(db, { channel: 'instagram', name: 'Nobody Assigned', body: FULL, externalId: 'ns1' });
 
-  const refused = qualify(db, r.id, { qualification: 'lead', createPerson: true, by: 'Ieva',
+  const refused = await qualify(db, r.id, { qualification: 'lead', createPerson: true, by: 'Ieva',
     confirmFields: ['interest'] });
   assert.match(refused.error, /next step is required/i);
   assert.ok(refused.nextActions, 'and it offers the configured list to choose from');
-  assert.equal(db.prepare('SELECT COUNT(*) n FROM people').get().n, 0, 'nothing was half written');
+  assert.equal((await db.prepare('SELECT COUNT(*) n FROM people').get()).n, 0, 'nothing was half written');
 
-  const ok = qualify(db, r.id, { qualification: 'lead', createPerson: true, by: 'Ieva',
+  const ok = await qualify(db, r.id, { qualification: 'lead', createPerson: true, by: 'Ieva',
     confirmFields: ['interest'], nextAction: STEP });
-  const task = db.prepare('SELECT * FROM tasks WHERE person_id = ?').get(ok.personId);
+  const task = await db.prepare('SELECT * FROM tasks WHERE person_id = ?').get(ok.personId);
   assert.equal(task.label, STEP);
   assert.equal(task.owner, CONFIG.routing.lead, 'owned by the role it was routed to');
   assert.ok(task.due_at > '2026', 'with a real due date');
   assert.equal(task.done_at, null);
 });
 
-test('the due date comes from the configured action, not from a number in the code', () => {
-  const db = openDb();
+test('the due date comes from the configured action, not from a number in the code', async () => {
+  const db = await openDb();
   const cfgDays = CONFIG.nextActions.flatMap((g) => g.items).find((i) => i.label === 'Consultation about the programme').days;
-  const r = receive(db, { channel: 'instagram', name: 'Due Date', body: FULL, externalId: 'dd1' });
+  const r = await receive(db, { channel: 'instagram', name: 'Due Date', body: FULL, externalId: 'dd1' });
   const at = Date.now();
-  const ok = qualify(db, r.id, { qualification: 'lead', createPerson: true, by: 'Ieva',
+  const ok = await qualify(db, r.id, { qualification: 'lead', createPerson: true, by: 'Ieva',
     confirmFields: ['interest'], nextAction: 'Consultation about the programme' });
-  const task = db.prepare('SELECT * FROM tasks WHERE person_id = ?').get(ok.personId);
+  const task = await db.prepare('SELECT * FROM tasks WHERE person_id = ?').get(ok.personId);
   const days = Math.round((Date.parse(task.due_at) - at) / 86400000);
   assert.equal(days, cfgDays, 'the configured number of days, whatever it is set to');
 });
 
-test('a later message about somebody who already has a step does not stack another', () => {
-  const db = openDb();
-  const a = receive(db, { channel: 'instagram', name: 'Chatty Person', body: HI, externalId: 'c1' });
-  const first = qualify(db, a.id, { qualification: 'unclear', createPerson: true, by: 'Tetiana',
+test('a later message about somebody who already has a step does not stack another', async () => {
+  const db = await openDb();
+  const a = await receive(db, { channel: 'instagram', name: 'Chatty Person', body: HI, externalId: 'c1' });
+  const first = await qualify(db, a.id, { qualification: 'unclear', createPerson: true, by: 'Tetiana',
     nextAction: 'Send the programme description' });
-  const b = receive(db, { channel: 'instagram', name: 'Chatty Person', body: FULL, externalId: 'c2' });
-  const second = qualify(db, b.id, { qualification: 'lead', personId: first.personId, by: 'Ieva',
+  const b = await receive(db, { channel: 'instagram', name: 'Chatty Person', body: FULL, externalId: 'c2' });
+  const second = await qualify(db, b.id, { qualification: 'lead', personId: first.personId, by: 'Ieva',
     confirmFields: ['interest'] });
   assert.equal(second.ok, true, 'no next step needed: they already have one');
-  assert.equal(db.prepare('SELECT COUNT(*) n FROM tasks WHERE person_id = ?').get(first.personId).n, 1,
+  assert.equal((await db.prepare('SELECT COUNT(*) n FROM tasks WHERE person_id = ?').get(first.personId)).n, 1,
     'and the pile does not grow');
 });
 
-test('nobody active is left without a next step by the qualify path', () => {
-  const db = openDb();
+test('nobody active is left without a next step by the qualify path', async () => {
+  const db = await openDb();
   for (const [i, body] of [FULL, HI, FULL].entries()) {
-    const r = receive(db, { channel: 'instagram', name: 'Person ' + i, body, externalId: 'z' + i });
-    qualify(db, r.id, { qualification: body === FULL ? 'lead' : 'unclear', createPerson: true,
+    const r = await receive(db, { channel: 'instagram', name: 'Person ' + i, body, externalId: 'z' + i });
+    await qualify(db, r.id, { qualification: body === FULL ? 'lead' : 'unclear', createPerson: true,
       by: 'Ieva', confirmFields: body === FULL ? ['interest'] : [],
       nextAction: STEP, differentPerson: true });
   }
-  const stranded = db.prepare(`SELECT COUNT(*) n FROM people pe
+  const stranded = (await db.prepare(`SELECT COUNT(*) n FROM people pe
     WHERE pe.status NOT IN ('Admitted','Not proceeding')
-      AND NOT EXISTS (SELECT 1 FROM tasks t WHERE t.person_id = pe.id AND t.done_at IS NULL)`).get().n;
+      AND NOT EXISTS (SELECT 1 FROM tasks t WHERE t.person_id = pe.id AND t.done_at IS NULL)`).get()).n;
   assert.equal(stranded, 0, 'this is the number Aigars asked about: people living in Done forever');
 });
 
@@ -185,16 +185,16 @@ test('nobody active is left without a next step by the qualify path', () => {
 // Admissions, and Ieva holds that role - whatever channel it arrived on. Channel
 // access is a different question and must never move ownership.
 
-test('a confirmed lead is owned by Admissions no matter which channel it came from', () => {
+test('a confirmed lead is owned by Admissions no matter which channel it came from', async () => {
   for (const channel of ['instagram','facebook','messenger','whatsapp','website','google_form','gmail','mailchimp','open_day','phone','agent','linkedin','tiktok','in_person']) {
-    const db = openDb();
-    const r = receive(db, { channel, name: 'Somebody ' + channel, body: FULL, externalId: 'own-' + channel });
-    const q = qualify(db, r.id, { qualification: 'lead', createPerson: true, by: 'Tetiana',
+    const db = await openDb();
+    const r = await receive(db, { channel, name: 'Somebody ' + channel, body: FULL, externalId: 'own-' + channel });
+    const q = await qualify(db, r.id, { qualification: 'lead', createPerson: true, by: 'Tetiana',
       confirmFields: ['interest'], nextAction: STEP });
     assert.equal(q.ok, true, channel + ': ' + q.error);
     assert.equal(q.owner, CONFIG.admissionsOwner,
       channel + ' must route a confirmed lead to Admissions');
-    assert.equal(db.prepare('SELECT owner FROM people WHERE id = ?').get(q.personId).owner,
+    assert.equal((await db.prepare('SELECT owner FROM people WHERE id = ?').get(q.personId)).owner,
       CONFIG.admissionsOwner, channel + ': the person record must say so too');
   }
   // and the role is held by Ieva, recorded rather than implied
@@ -202,12 +202,12 @@ test('a confirmed lead is owned by Admissions no matter which channel it came fr
   assert.match(CONFIG._admissionsOwner, /whatever channel/i);
 });
 
-test('who can open a channel never decides who owns the case', () => {
+test('who can open a channel never decides who owns the case', async () => {
   // Tetiana is the only person with LinkedIn access, and a LinkedIn lead is still
   // Admissions work. That distinction is the whole point.
-  const db = openDb();
-  const r = receive(db, { channel: 'linkedin', name: 'From LinkedIn', body: FULL, externalId: 'li-own' });
-  const q = qualify(db, r.id, { qualification: 'lead', createPerson: true, by: 'Tetiana',
+  const db = await openDb();
+  const r = await receive(db, { channel: 'linkedin', name: 'From LinkedIn', body: FULL, externalId: 'li-own' });
+  const q = await qualify(db, r.id, { qualification: 'lead', createPerson: true, by: 'Tetiana',
     confirmFields: ['interest'], nextAction: STEP });
   assert.equal(q.owner, 'Admissions', 'Tetiana qualified it; Admissions owns it');
   const access = CONFIG.channelAccess.byPerson;
@@ -218,16 +218,16 @@ test('who can open a channel never decides who owns the case', () => {
     'Arina is phone button 3 backup only');
 });
 
-test('a database file that already exists gains new columns', () => {
+test('a database file that already exists gains new columns', async () => {
   // CREATE TABLE IF NOT EXISTS does nothing for a table that is already there, so
   // a column added later never appeared in an existing file and every query for it
   // failed with "no such column". Found by opening the demo database after adding
   // nationality.
-  const db = openDb();
-  const cols = db.prepare("SELECT name FROM pragma_table_info('people')").all().map((r) => r.name);
+  const db = await openDb();
+  const cols = (await db.prepare("SELECT name FROM pragma_table_info('people')").all()).map((r) => r.name);
   assert.ok(cols.includes('nationality'), 'nationality must exist on a fresh database');
   // and opening it again must not fail or duplicate the column
-  const again = db.prepare("SELECT COUNT(*) n FROM pragma_table_info('people') WHERE name = 'nationality'").get().n;
+  const again = (await db.prepare("SELECT COUNT(*) n FROM pragma_table_info('people') WHERE name = 'nationality'").get()).n;
   assert.equal(again, 1);
 });
 
@@ -235,7 +235,7 @@ test('a database file that already exists gains new columns', () => {
 // The dialog offers a first move rather than whatever happened to be top of the
 // list. It is a suggestion and nothing more: the whole list is still there.
 
-test('the suggestion rules are data, so Admissions can change them without code', () => {
+test('the suggestion rules are data, so Admissions can change them without code', async () => {
   const rules = CONFIG.suggestedNextAction;
   assert.ok(rules, 'there must be rules to read');
   const ids = new Set(CONFIG.nextActions.flatMap((g) => g.items).map((i) => i.id));
@@ -264,7 +264,7 @@ test('the suggestion rules are data, so Admissions can change them without code'
   }
 });
 
-test('the suggestion is offered first and is still only a suggestion', () => {
+test('the suggestion is offered first and is still only a suggestion', async () => {
   const view = APP.slice(APP.indexOf('function suggestNextAction'), APP.indexOf('async function openQualify'));
   assert.match(view, /byQuestion/, 'it reads the rules rather than hardcoding one');
   assert.match(view, /optgroup label="Suggested"/, 'and puts it at the top under its own heading');
@@ -276,7 +276,7 @@ test('the suggestion is offered first and is still only a suggestion', () => {
   assert.match(dialog, /Change it to anything else/);
 });
 
-test('nothing implies an application deadline, because there is not one', () => {
+test('nothing implies an application deadline, because there is not one', async () => {
   // Locked 24.09.2026: Novikontas accepts submissions ALL YEAR ROUND. Somebody
   // asking "what is the deadline" is carrying a wrong assumption, so the reply
   // corrects it. Sending a programme description does not, and the question
@@ -304,7 +304,7 @@ test('nothing implies an application deadline, because there is not one', () => 
 // existed; the summaries did not read them. config.settled is the one place that
 // records a decision, and this test makes reopening one fail.
 
-test('nothing Ritvars has settled can come back as an open question', () => {
+test('nothing Ritvars has settled can come back as an open question', async () => {
   const settled = CONFIG.settled;
   assert.ok(settled, 'there must be a record of what is already decided');
 
@@ -384,7 +384,7 @@ test('nothing Ritvars has settled can come back as an open question', () => {
   }
 });
 
-test('the PBX button question is answered, and the answer was always in the brief', () => {
+test('the PBX button question is answered, and the answer was always in the brief', async () => {
   // The event carries a `queue`, and the queue IS the button. It was in the
   // original TeleGroup brief and mapped in phoneMenu on 23.09.2026, and it was
   // still being listed as an open question a day later.
@@ -403,7 +403,7 @@ test('the PBX button question is answered, and the answer was always in the brie
     'the phone channel still says it is blocked on the button question: ' + blocker);
 });
 
-test('Meta access is recorded, so nobody is asked for it again', () => {
+test('Meta access is recorded, so nobody is asked for it again', async () => {
   assert.equal(CONFIG.settled.metaAccessConfirmed.doNotReopen, true);
   assert.deepEqual(CONFIG.metaBusinessSuite.access, ['Ieva', 'Laura', 'Tetiana', 'Marina']);
   const acc = CONFIG.channelAccess.byPerson;
@@ -418,7 +418,7 @@ test('Meta access is recorded, so nobody is asked for it again', () => {
   assert.equal(CONFIG.settled.instagramIsProfessional.doNotReopen, true);
 });
 
-test('the open-questions list holds only things nobody has answered', () => {
+test('the open-questions list holds only things nobody has answered', async () => {
   const open = CONFIG.openQuestions;
   assert.ok(open, 'the real unknowns must be recorded in one place');
   const items = Object.entries(open).filter(([k]) => !k.startsWith('_'));
@@ -472,7 +472,7 @@ test('the open-questions list holds only things nobody has answered', () => {
   assert.ok(settledText.length >= 5);
 });
 
-test('the Desktop guide generator refuses to reopen a settled question', () => {
+test('the Desktop guide generator refuses to reopen a settled question', async () => {
   // Sabotage: the guard is only worth having if it actually stops the build.
   const script = fs.readFileSync(path.join(ROOT, 'scripts', 'make_desktop_guide.py'), 'utf8');
   assert.match(script, /REFUSED: openQuestions/,

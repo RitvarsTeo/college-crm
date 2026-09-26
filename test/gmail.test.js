@@ -32,20 +32,20 @@ const env = (extra = {}) => ({ GMAIL_SERVICE_ACCOUNT_JSON: JSON.stringify(KEY), 
 
 // ----------------------------------------------------------- credentials --
 
-test('with no key we say who we are waiting for, not just "failed"', () => {
+test('with no key we say who we are waiting for, not just "failed"', async () => {
   const c = credentials({});
   assert.equal(c.ok, false);
   assert.equal(c.missingSecret, true);
   assert.match(c.waitingOn, /Workspace administrator/);
 });
 
-test('a broken or half-filled key is refused clearly', () => {
+test('a broken or half-filled key is refused clearly', async () => {
   assert.match(credentials({ GMAIL_SERVICE_ACCOUNT_JSON: 'not json' }).why, /not readable JSON/);
   assert.match(credentials({ GMAIL_SERVICE_ACCOUNT_JSON: '{"client_email":"a@b"}' }).why,
     /no private_key/);
 });
 
-test('the key itself is never handed back to a caller', () => {
+test('the key itself is never handed back to a caller', async () => {
   const state = ready(env());
   assert.equal(state.ok, true);
   const text = JSON.stringify(state);
@@ -53,14 +53,14 @@ test('the key itself is never handed back to a caller', () => {
   assert.ok(!text.includes(KEY.private_key));
 });
 
-test('we ask for read only, because asking for less is approved faster', () => {
+test('we ask for read only, because asking for less is approved faster', async () => {
   assert.deepEqual(SCOPES, ['https://www.googleapis.com/auth/gmail.readonly']);
   assert.equal(ready(env()).permission, 'read only');
 });
 
 // ------------------------------------------------------------------ auth --
 
-test('the assertion asks to read the MAILBOX, not the service account itself', () => {
+test('the assertion asks to read the MAILBOX, not the service account itself', async () => {
   const jwt = buildAssertion(KEY, { now: new Date('2026-09-24T10:00:00Z') });
   const [, claimPart, sigPart] = jwt.split('.');
   const claim = JSON.parse(Buffer.from(claimPart, 'base64url').toString('utf8'));
@@ -73,7 +73,7 @@ test('the assertion asks to read the MAILBOX, not the service account itself', (
   assert.ok(sigPart.length > 100, 'and it is really signed');
 });
 
-test('the signature verifies against the public key', () => {
+test('the signature verifies against the public key', async () => {
   const jwt = buildAssertion(KEY);
   const [h, c, s] = jwt.split('.');
   const ok = crypto.createVerify('RSA-SHA256').update(h + '.' + c)
@@ -101,7 +101,7 @@ test('with no credentials, NO request is made at all', async () => {
 
 // --------------------------------------------------------------- reading --
 
-test('the poll window looks further back than the interval, so a late run leaves no gap', () => {
+test('the poll window looks further back than the interval, so a late run leaves no gap', async () => {
   const now = new Date('2026-09-24T12:00:00Z');
   const q = pollQuery({ now, minutes: 15 });
   const after = Number(/after:(\d+)/.exec(q)[1]);
@@ -126,7 +126,7 @@ const MESSAGE = {
   },
 };
 
-test('a Gmail-shaped message becomes the flat shape the adapter expects', () => {
+test('a Gmail-shaped message becomes the flat shape the adapter expects', async () => {
   const flat = toAdapterShape(MESSAGE);
   assert.equal(flat.id, '19943aa1f2');
   assert.equal(flat.sender, 'Līga Ozola <liga.ozola@inbox.lv>');
@@ -142,7 +142,7 @@ test('a Gmail-shaped message becomes the flat shape the adapter expects', () => 
   assert.equal(ev.channel, 'gmail');
 });
 
-test('a nested multipart message still gives up its plain text', () => {
+test('a nested multipart message still gives up its plain text', async () => {
   const nested = { id: 'n1', payload: { mimeType: 'multipart/mixed', parts: [
     { mimeType: 'multipart/alternative', parts: [
       { mimeType: 'text/plain', body: { data: Buffer.from('deep inside').toString('base64url') } },
@@ -151,14 +151,14 @@ test('a nested multipart message still gives up its plain text', () => {
   assert.equal(plainTextOf(nested), 'deep inside');
 });
 
-test('an HTML-only message says it has no plain text rather than inventing some', () => {
+test('an HTML-only message says it has no plain text rather than inventing some', async () => {
   const htmlOnly = { id: 'h1', payload: { parts: [
     { mimeType: 'text/html', body: { data: Buffer.from('<b>hello</b>').toString('base64url') } },
   ] } };
   assert.equal(plainTextOf(htmlOnly), null, 'stripping tags badly is worse than saying none');
 });
 
-test('headers are found whatever case the sender used', () => {
+test('headers are found whatever case the sender used', async () => {
   assert.equal(headerOf(MESSAGE, 'from'), 'Līga Ozola <liga.ozola@inbox.lv>');
   assert.equal(headerOf(MESSAGE, 'SUBJECT'), 'Jautājums par studijām');
   assert.equal(headerOf(MESSAGE, 'Reply-To'), null);
@@ -166,7 +166,7 @@ test('headers are found whatever case the sender used', () => {
 
 // ---------------------------------------------------------------- expiry --
 
-test('a watch expires after seven days, silently, so we compute it', () => {
+test('a watch expires after seven days, silently, so we compute it', async () => {
   const now = new Date('2026-09-24T10:00:00Z');
   const alive = watchState({ expiration: now.getTime() + 5 * 86400000, now });
   assert.equal(alive.watching, true);
@@ -222,7 +222,7 @@ test('a real poll fetches each message and reports an unread page rather than lo
 
 // ------------------------------------------------- the register must not lie --
 
-test('every path the channel register declares exists on disk', () => {
+test('every path the channel register declares exists on disk', async () => {
   // The register named /api/cron/gmail-poll and nothing implemented it. A
   // promised endpoint that was never built is worse than an absent one, because
   // the register reads as ready.

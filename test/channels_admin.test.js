@@ -43,7 +43,7 @@ const FAKE = {
 
 // ===================================================================== states
 
-test('every channel reports one of the four states and nothing else', () => {
+test('every channel reports one of the four states and nothing else', async () => {
   for (const s of allStatuses({ env: {} })) {
     assert.ok(STATES.includes(s.state), `${s.channel} reported "${s.state}"`);
   }
@@ -52,12 +52,12 @@ test('every channel reports one of the four states and nothing else', () => {
   }
 });
 
-test('a channel with its secret missing is NOT CONFIGURED', () => {
+test('a channel with its secret missing is NOT CONFIGURED', async () => {
   assert.equal(statusOf('website', { env: {} }).state, 'NOT CONFIGURED');
   assert.deepEqual(statusOf('website', { env: {} }).missingSettings, ['WEBSITE_FORM_SECRET']);
 });
 
-test('SETTING THE SECRET DOES NOT MAKE IT CONNECTED', () => {
+test('SETTING THE SECRET DOES NOT MAKE IT CONNECTED', async () => {
   // The single most important assertion in this file. Somebody typing a secret
   // into Render proves that somebody typed a secret into Render. It does not
   // prove Meta has ever heard of us, and a panel that claimed otherwise would
@@ -68,7 +68,7 @@ test('SETTING THE SECRET DOES NOT MAKE IT CONNECTED', () => {
   assert.match(s.summary, /never checked/);
 });
 
-test('OUR OWN CHECK PASSING DOES NOT MAKE IT CONNECTED EITHER', () => {
+test('OUR OWN CHECK PASSING DOES NOT MAKE IT CONNECTED EITHER', async () => {
   // The second trap. Our check runs against our own code in our own process.
   // Passing it proves our side works. It says nothing about whether the provider
   // has been pointed at us, and the wording has to reflect that.
@@ -79,7 +79,7 @@ test('OUR OWN CHECK PASSING DOES NOT MAKE IT CONNECTED EITHER', () => {
   assert.match(s.summary, /never reached us/);
 });
 
-test('only the PROVIDER reaching us makes it CONNECTED', () => {
+test('only the PROVIDER reaching us makes it CONNECTED', async () => {
   const s = statusOf('whatsapp', { env: FAKE, handshakeAt: '2026-09-25T09:00:00.000Z',
     handshakeHow: 'Meta verify token matched, challenge echoed' });
   assert.equal(s.state, 'CONNECTED');
@@ -87,7 +87,7 @@ test('only the PROVIDER reaching us makes it CONNECTED', () => {
   assert.match(s.summary, /switched OFF/);
 });
 
-test('a failed check is an ERROR, and the error is readable', () => {
+test('a failed check is an ERROR, and the error is readable', async () => {
   const s = statusOf('website', { env: FAKE,
     lastCheck: { at: new Date().toISOString(), ok: 0, kind: 'simulated',
       detail: 'a tampered payload is refused: signature matched' } });
@@ -95,7 +95,7 @@ test('a failed check is an ERROR, and the error is readable', () => {
   assert.match(s.lastError, /tampered/);
 });
 
-test('a secret removed after a good check drops it back to NOT CONFIGURED', () => {
+test('a secret removed after a good check drops it back to NOT CONFIGURED', async () => {
   // Order matters here. If the passed check were read first, deleting the secret
   // would leave a channel reading CONNECTED with nothing behind it.
   const s = statusOf('website', { env: {}, handshakeAt: '2026-09-25T09:00:00.000Z',
@@ -103,7 +103,7 @@ test('a secret removed after a good check drops it back to NOT CONFIGURED', () =
   assert.equal(s.state, 'NOT CONFIGURED');
 });
 
-test('ON and OFF is a separate axis from working or not', () => {
+test('ON and OFF is a separate axis from working or not', async () => {
   const off = statusOf('website', { env: FAKE });
   const on = statusOf('website', { env: { ...FAKE, CHANNEL_MODE_WEBSITE: 'live' } });
   assert.equal(off.live, false);
@@ -111,21 +111,21 @@ test('ON and OFF is a separate axis from working or not', () => {
   assert.equal(off.state, on.state, 'switching it on must not change what we KNOW about it');
 });
 
-test('everything is OFF unless something explicitly turned it on', () => {
+test('everything is OFF unless something explicitly turned it on', async () => {
   for (const s of allStatuses({ env: FAKE })) {
     assert.equal(s.live, false, `${s.channel} must not be live by default`);
     assert.equal(modeOf(s.channel, FAKE), 'off');
   }
 });
 
-test('a channel a person types in is not reported as something to go and fix', () => {
+test('a channel a person types in is not reported as something to go and fix', async () => {
   const s = statusOf('in_person', { env: {} });
   assert.equal(s.state, 'CONFIGURED');
   assert.equal(s.canTest, false);
   assert.match(s.summary, /Nothing to configure/);
 });
 
-test('a channel nobody knows is possible says exactly that', () => {
+test('a channel nobody knows is possible says exactly that', async () => {
   for (const id of ['linkedin', 'tiktok']) {
     const s = statusOf(id, { env: {} });
     assert.equal(s.state, 'NOT CONFIGURED');
@@ -133,7 +133,7 @@ test('a channel nobody knows is possible says exactly that', () => {
   }
 });
 
-test('a check that passed long ago is flagged stale without changing the state', () => {
+test('a check that passed long ago is flagged stale without changing the state', async () => {
   const old = new Date(Date.now() - 90 * 86400000).toISOString();
   const s = statusOf('website', { env: FAKE,
     lastCheck: { at: old, ok: 1, kind: 'simulated', detail: 'fine' } });
@@ -144,7 +144,7 @@ test('a check that passed long ago is flagged stale without changing the state',
 
 // ============================================================= secret safety
 
-test('the panel carries the NAME of every setting and the VALUE of none', () => {
+test('the panel carries the NAME of every setting and the VALUE of none', async () => {
   const payload = allStatuses({ env: FAKE });
   const text = JSON.stringify(payload);
   for (const [name, value] of Object.entries(FAKE)) {
@@ -154,7 +154,7 @@ test('the panel carries the NAME of every setting and the VALUE of none', () => 
   assert.equal(text.includes('FAKE-'), false, 'no fake secret value may appear anywhere');
 });
 
-test('a check result carries no secret value either', () => {
+test('a check result carries no secret value either', async () => {
   for (const id of channelIds()) {
     const r = runCheck(id, { env: FAKE });
     const text = JSON.stringify(r);
@@ -164,7 +164,7 @@ test('a check result carries no secret value either', () => {
   }
 });
 
-test('the backstop catches a leak that everything else missed', () => {
+test('the backstop catches a leak that everything else missed', async () => {
   // Proved by breaking it: a payload that really does contain a secret must be
   // refused. Without this test the backstop could be a no-op and look fine.
   assert.equal(assertNoSecretValues({ safe: 'nothing here' }, FAKE), true);
@@ -174,7 +174,7 @@ test('the backstop catches a leak that everything else missed', () => {
     /PBX_API_TOKEN/);
 });
 
-test('every setting the register names is reported, and nothing is invented', () => {
+test('every setting the register names is reported, and nothing is invented', async () => {
   for (const id of channelIds()) {
     const def = channelDef(id);
     const names = requiredSettings(id);
@@ -186,7 +186,7 @@ test('every setting the register names is reported, and nothing is invented', ()
 
 // ================================================================== checking
 
-test('a check says what it proves AND what it does not', () => {
+test('a check says what it proves AND what it does not', async () => {
   // The line between an honest check and a fake one. Every passing check has to
   // carry its own limit, or somebody reads a green tick as "WhatsApp is live".
   for (const id of channelIds()) {
@@ -200,7 +200,7 @@ test('a check says what it proves AND what it does not', () => {
   }
 });
 
-test('a check cannot pass when the settings it needs are missing', () => {
+test('a check cannot pass when the settings it needs are missing', async () => {
   for (const id of channelIds()) {
     if (checkPlanFor(id).kind === 'none') continue;
     const r = runCheck(id, { env: {} });
@@ -208,7 +208,7 @@ test('a check cannot pass when the settings it needs are missing', () => {
   }
 });
 
-test('a check never passes on no evidence at all', () => {
+test('a check never passes on no evidence at all', async () => {
   // A check that ran against nothing reports no problems. Every passing result
   // must carry more than the one step that only says the settings exist.
   for (const id of channelIds()) {
@@ -219,7 +219,7 @@ test('a check never passes on no evidence at all', () => {
   }
 });
 
-test('a channel that cannot be checked is SKIPPED, not passed', () => {
+test('a channel that cannot be checked is SKIPPED, not passed', async () => {
   // Not ok:true. A manual channel reporting a passing check would be a green
   // tick for something nobody ran.
   for (const id of ['in_person', 'linkedin', 'tiktok']) {
@@ -229,7 +229,7 @@ test('a channel that cannot be checked is SKIPPED, not passed', () => {
   }
 });
 
-test('every webhook check refuses a tampered payload, and is asserted to', () => {
+test('every webhook check refuses a tampered payload, and is asserted to', async () => {
   // The negative probe. A verification that accepted everything would pass the
   // positive half of every check in this file.
   for (const id of channelIds()) {
@@ -242,7 +242,7 @@ test('every webhook check refuses a tampered payload, and is asserted to', () =>
   }
 });
 
-test('every handshake check refuses a wrong token, and is asserted to', () => {
+test('every handshake check refuses a wrong token, and is asserted to', async () => {
   for (const id of ['facebook', 'messenger', 'instagram', 'whatsapp']) {
     const names = runCheck(id, { env: FAKE }).steps.map((s) => s.name);
     assert.ok(names.includes('a wrong token is refused'), `${id} never checks a wrong token`);
@@ -250,7 +250,7 @@ test('every handshake check refuses a wrong token, and is asserted to', () => {
   }
 });
 
-test('a Meta channel checks the handshake AND the message path, not one of them', () => {
+test('a Meta channel checks the handshake AND the message path, not one of them', async () => {
   // They are different failures. The handshake is what lets Meta save the
   // subscription; the signature is what lets a message through afterwards.
   const names = runCheck('whatsapp', { env: FAKE }).steps.map((s) => s.name);
@@ -259,7 +259,7 @@ test('a Meta channel checks the handshake AND the message path, not one of them'
   assert.ok(names.includes('the adapter produces a normalised event'));
 });
 
-test('a poll channel is checked WITHOUT calling the provider', () => {
+test('a poll channel is checked WITHOUT calling the provider', async () => {
   // The rule: no button in an admin panel reaches out to TeleGroup or Google on
   // its own. So the check is honest about being a configuration check only.
   for (const id of ['phone', 'gmail']) {
@@ -270,31 +270,31 @@ test('a poll channel is checked WITHOUT calling the provider', () => {
   }
 });
 
-test('a check stores nothing and sends nothing', () => {
+test('a check stores nothing and sends nothing', async () => {
   // Proved by counting rows before and after. A check that quietly wrote an
   // Inbox item would put a fake applicant in front of Ieva.
-  const db = openDb(':memory:');
-  const before = db.prepare('SELECT COUNT(*) n FROM inbound').get().n;
+  const db = await openDb(':memory:');
+  const before = (await db.prepare('SELECT COUNT(*) n FROM inbound').get()).n;
   for (const id of channelIds()) runCheck(id, { env: FAKE });
-  assert.equal(db.prepare('SELECT COUNT(*) n FROM inbound').get().n, before);
+  assert.equal((await db.prepare('SELECT COUNT(*) n FROM inbound').get()).n, before);
 });
 
-test('a broken register does not crash the panel', () => {
+test('a broken register does not crash the panel', async () => {
   assert.equal(statusOf('not_a_channel', { env: FAKE }), null);
   assert.equal(runCheck('not_a_channel', { env: FAKE }).ok, false);
 });
 
 // ============================================== against a real server process
 
-function seededDb(dir) {
+async function seededDb(dir) {
   const file = path.join(dir, 'crm.db');
-  const db = openDb(file);
-  const add = (email, name, role, password) => db.prepare(`INSERT INTO crm_users
+  const db = await openDb(file);
+  const add = async (email, name, role, password) => await db.prepare(`INSERT INTO crm_users
     (id, email, display_name, password_hash, role, active, session_version, created_at)
     VALUES (?,?,?,?,?,1,0,?)`).run('u' + crypto.randomBytes(4).toString('hex'), email, name,
     hashPassword(password, { ...SCRYPT, N: 1024 }), role, new Date().toISOString());
-  add('admin@novikontas.org', 'An Admin', 'admin', 'a-long-enough-admin-password');
-  add('user@novikontas.org', 'A User', 'user', 'a-long-enough-user-password');
+  await add('admin@novikontas.org', 'An Admin', 'admin', 'a-long-enough-admin-password');
+  await add('user@novikontas.org', 'A User', 'user', 'a-long-enough-user-password');
   return file;
 }
 
@@ -345,9 +345,9 @@ async function signedIn(port, email, password) {
   return { cookie: r.cookie };
 }
 
-function withServer(extraEnv = {}) {
+async function withServer(extraEnv = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'crm-admin-'));
-  const file = seededDb(dir);
+  const file = await seededDb(dir);
   return startServer({ CRM_DB: file, CRM_AUTH: '1', CRM_SESSION_SECRET: SECRET,
     ...FAKE, ...extraEnv }).then((s) => ({ ...s, dir }));
 }
@@ -454,7 +454,7 @@ test('nothing is live until somebody makes it live', async (t) => {
 
 test('a switch survives a restart, because it is stored and not just remembered', async (t) => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'crm-admin-'));
-  const file = seededDb(dir);
+  const file = await seededDb(dir);
   const running = [];
   // One cleanup, registered once, that cannot throw. Deleting the directory
   // before the servers were killed left a server alive and hung the whole runner.
@@ -514,7 +514,7 @@ test('an unknown channel is a 404, not a crash or an empty panel', async (t) => 
   assert.equal(r.status, 404);
 });
 
-test('a poll channel check confirms a HANDLER exists, not just a declaration', () => {
+test('a poll channel check confirms a HANDLER exists, not just a declaration', async () => {
   // "Declared" only means the register names a path, and the register is a
   // document. The poll routes are Vercel functions under api/, not routes in
   // src/server.js, so a check that stopped at the declaration would show a green
@@ -527,7 +527,7 @@ test('a poll channel check confirms a HANDLER exists, not just a declaration', (
   }
 });
 
-test('the handler check names a real file that is really there', () => {
+test('the handler check names a real file that is really there', async () => {
   // Driven, not assumed: the note is the path it looked at, and that path must
   // resolve from the repository root.
   const step = runCheck('phone', { env: FAKE }).steps

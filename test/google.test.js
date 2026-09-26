@@ -67,8 +67,8 @@ function mintToken(over = {}, { key = privateKey, header = {} } = {}) {
   return `${signing}.${sig}`;
 }
 
-const verify = (token, opts = {}) =>
-  verifyIdToken(token, { clientId: CLIENT_ID, nonce: 'the-nonce', jwks: JWKS, ...opts });
+const verify = async (token, opts = {}) =>
+  await verifyIdToken(token, { clientId: CLIENT_ID, nonce: 'the-nonce', jwks: JWKS, ...opts });
 
 // ================================================================= the verifier
 
@@ -178,19 +178,19 @@ test('A VERIFIED NOVIKONTAS ADDRESS WITH NO ACCOUNT IS REFUSED', async () => {
   assert.equal(d.reason, REASON.NO_ACCOUNT);
 });
 
-test('a disabled account is refused even though Google was happy', () => {
+test('a disabled account is refused even though Google was happy', async () => {
   assert.equal(decideAccountAccess({ active: 0 }).reason, REASON.INACTIVE);
   assert.equal(decideAccountAccess({ active: false }).reason, REASON.INACTIVE);
   assert.equal(decideAccountAccess({ active: 1 }).ok, true);
 });
 
-test('the allowlist never returns a role and never proposes creating anything', () => {
+test('the allowlist never returns a role and never proposes creating anything', async () => {
   const d = decideAccountAccess({ active: 1, role: 'admin' });
   assert.deepEqual(Object.keys(d), ['ok']);
   assert.equal(d.role, undefined);
 });
 
-test('every refusal reason is a bounded code, never free text', () => {
+test('every refusal reason is a bounded code, never free text', async () => {
   const allowed = new Set(Object.values(REASON));
   for (const code of Object.values(VERIFIER_REASON)) assert.ok(allowed.has(code), code);
   for (const code of Object.values(REASON)) assert.match(code, /^refused_google_[a-z_]+$/);
@@ -198,7 +198,7 @@ test('every refusal reason is a bounded code, never free text', () => {
 
 // ================================================================== the session
 
-test('a Google session says so, inside the signature', () => {
+test('a Google session says so, inside the signature', async () => {
   const t = issueSession({ id: 'u1', email: 'ritvars@novikontas.org', name: 'Ritvars',
     role: 'admin', sessionVersion: 0, authMethod: 'google' }, SECRET);
   const s = readSession(t, SECRET);
@@ -206,7 +206,7 @@ test('a Google session says so, inside the signature', () => {
   assert.ok(s.authAt > 0);
 });
 
-test('EDITING a session to claim it was Google is refused', () => {
+test('EDITING a session to claim it was Google is refused', async () => {
   // authMethod is a claim about strength of proof. If the browser could assert
   // it, it would be worth nothing.
   const t = issueSession({ email: 'ieva@novikontas.org', role: 'user' }, SECRET);
@@ -217,7 +217,7 @@ test('EDITING a session to claim it was Google is refused', () => {
   assert.equal(readSession(`${tag}.${b64(body)}.${sig}`, SECRET), null);
 });
 
-test('a session from before this field existed still signs its holder in', () => {
+test('a session from before this field existed still signs its holder in', async () => {
   // Read as the WEAKER method rather than rejected, so adding the field did not
   // sign everybody out.
   const t = issueSession({ email: 'ieva@novikontas.org', role: 'user' }, SECRET);
@@ -230,7 +230,7 @@ test('a session from before this field existed still signs its holder in', () =>
   assert.equal(s.authMethod, 'password');
 });
 
-test('an unknown auth method cannot be issued', () => {
+test('an unknown auth method cannot be issued', async () => {
   assert.deepEqual(AUTH_METHODS, ['password', 'google']);
   assert.throws(() => issueSession({ email: 'x@novikontas.org', role: 'user',
     authMethod: 'magic-link' }, SECRET), /Unknown auth method/);
@@ -238,7 +238,7 @@ test('an unknown auth method cannot be issued', () => {
 
 // =============================================================== configuration
 
-test('Google is reported as not configured when anything is missing', () => {
+test('Google is reported as not configured when anything is missing', async () => {
   assert.deepEqual(GOOGLE_ENV, ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'GOOGLE_REDIRECT_URI']);
   assert.equal(googleConfigured({}).ok, false);
   assert.deepEqual(googleConfigured({}).missing, GOOGLE_ENV);
@@ -249,7 +249,7 @@ test('Google is reported as not configured when anything is missing', () => {
     GOOGLE_REDIRECT_URI: 'c' }).ok, true);
 });
 
-test('THE TEST SEAMS CANNOT POINT AT ANOTHER MACHINE', () => {
+test('THE TEST SEAMS CANNOT POINT AT ANOTHER MACHINE', async () => {
   // They exist so the callback route can be proved offline. If one could point
   // anywhere, an environment variable would send a real authorization code and a
   // real client secret to somebody else's server.
@@ -290,17 +290,17 @@ function startFakeGoogle() {
     resolve({ server, port: server.address().port, state })));
 }
 
-function seededDb(dir) {
+async function seededDb(dir) {
   const file = path.join(dir, 'crm.db');
-  const db = openDb(file);
-  const add = (email, name, role, active = 1) => db.prepare(`INSERT INTO crm_users
+  const db = await openDb(file);
+  const add = async (email, name, role, active = 1) => await db.prepare(`INSERT INTO crm_users
     (id, email, display_name, password_hash, role, active, session_version, created_at)
     VALUES (?,?,?,?,?,?,0,?)`).run('u' + crypto.randomBytes(4).toString('hex'), email, name,
     hashPassword('a-long-enough-password-here', { ...SCRYPT, N: 1024 }), role, active,
     new Date().toISOString());
-  add('ritvars@novikontas.org', 'Ritvars', 'admin');
-  add('ieva@novikontas.org', 'Ieva', 'user');
-  add('gone@novikontas.org', 'Left The Company', 'user', 0);
+  await add('ritvars@novikontas.org', 'Ritvars', 'admin');
+  await add('ieva@novikontas.org', 'Ieva', 'user');
+  await add('gone@novikontas.org', 'Left The Company', 'user', 0);
   return file;
 }
 
@@ -358,7 +358,7 @@ const cookieValue = (list, name) => {
 async function rig(t, extraEnv = {}) {
   const fake = await startFakeGoogle();
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'crm-google-'));
-  const file = seededDb(dir);
+  const file = await seededDb(dir);
   const s = await startServer({
     CRM_DB: file, CRM_AUTH: '1', CRM_SESSION_SECRET: SECRET,
     GOOGLE_CLIENT_ID: CLIENT_ID, GOOGLE_CLIENT_SECRET: CLIENT_SECRET,
@@ -559,7 +559,7 @@ test('Google failing at the token endpoint is a refusal, not a crash', async (t)
 
 test('every sign-in decision is written to the log, with a bounded code', async (t) => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'crm-google-'));
-  const file = seededDb(dir);
+  const file = await seededDb(dir);
   const fake = await startFakeGoogle();
   const s = await startServer({ CRM_DB: file, CRM_AUTH: '1', CRM_SESSION_SECRET: SECRET,
     GOOGLE_CLIENT_ID: CLIENT_ID, GOOGLE_CLIENT_SECRET: CLIENT_SECRET,
@@ -584,8 +584,8 @@ test('every sign-in decision is written to the log, with a bounded code', async 
 
   s.child.kill();
   await new Promise((r) => setTimeout(r, 300));
-  const db = openDb(file);
-  const rows = db.prepare('SELECT email, method, outcome FROM crm_login_attempt ORDER BY id').all();
+  const db = await openDb(file);
+  const rows = await db.prepare('SELECT email, method, outcome FROM crm_login_attempt ORDER BY id').all();
   assert.ok(rows.some((r) => r.outcome === 'success_google' && r.email === 'ritvars@novikontas.org'));
   assert.ok(rows.some((r) => r.outcome === REASON.NO_ACCOUNT && r.email === 'nobody@novikontas.org'));
   // NOTHING sensitive may reach this table.
@@ -598,7 +598,7 @@ test('every sign-in decision is written to the log, with a bounded code', async 
 
 test('WITH NO CREDENTIALS, THE BUTTON IS NOT OFFERED AND NOTHING PRETENDS', async (t) => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'crm-google-'));
-  const file = seededDb(dir);
+  const file = await seededDb(dir);
   const s = await startServer({ CRM_DB: file, CRM_AUTH: '1', CRM_SESSION_SECRET: SECRET });
   t.after(() => {
     try { s.child.kill(); } catch {}
@@ -617,7 +617,7 @@ test('WITH NO CREDENTIALS, THE BUTTON IS NOT OFFERED AND NOTHING PRETENDS', asyn
 
 test('the names of the settings are given and no value ever is', async (t) => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'crm-google-'));
-  const file = seededDb(dir);
+  const file = await seededDb(dir);
   const s = await startServer({ CRM_DB: file, CRM_AUTH: '1', CRM_SESSION_SECRET: SECRET,
     GOOGLE_CLIENT_ID: CLIENT_ID, GOOGLE_CLIENT_SECRET: CLIENT_SECRET,
     GOOGLE_REDIRECT_URI: 'http://127.0.0.1/api/auth/google/callback' });
@@ -635,7 +635,7 @@ test('the names of the settings are given and no value ever is', async (t) => {
 
 test('Google sign-in is refused outright when sign-in itself is off', async (t) => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'crm-google-'));
-  const file = seededDb(dir);
+  const file = await seededDb(dir);
   const s = await startServer({ CRM_DB: file,
     GOOGLE_CLIENT_ID: CLIENT_ID, GOOGLE_CLIENT_SECRET: CLIENT_SECRET,
     GOOGLE_REDIRECT_URI: 'http://127.0.0.1/api/auth/google/callback' });

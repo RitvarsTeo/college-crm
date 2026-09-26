@@ -26,14 +26,14 @@ const CHANNELS = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'channels.
 
 // ------------------------------------------------------------- the contract --
 
-test('every channel in the register has an adapter, and every adapter has a register entry', () => {
+test('every channel in the register has an adapter, and every adapter has a register entry', async () => {
   const inRegister = channelIds().sort();
   const built = adapterIds().sort();
   assert.deepEqual(built, inRegister,
     'a channel without an adapter cannot receive; an adapter without a register entry has no status');
 });
 
-test('all fourteen channels are covered, and each one is honest about its mechanism', () => {
+test('all fourteen channels are covered, and each one is honest about its mechanism', async () => {
   // 14 since 24.09.2026: Messenger became its own channel, sharing the Meta
   // connection with Facebook but staying separate for reporting.
   assert.equal(channelIds().length, 14);
@@ -50,7 +50,7 @@ test('all fourteen channels are covered, and each one is honest about its mechan
   }
 });
 
-test('nothing invents a provider capability', () => {
+test('nothing invents a provider capability', async () => {
   // LinkedIn and TikTok have no confirmed inbound mechanism. If somebody later
   // writes one in without evidence, this fails.
   for (const id of ['linkedin', 'tiktok']) {
@@ -72,7 +72,7 @@ test('nothing invents a provider capability', () => {
   assert.equal(CONFIG.settled.metaAccessConfirmed.doNotReopen, true);
 });
 
-test('every fixture maps into the one contract', () => {
+test('every fixture maps into the one contract', async () => {
   for (const [channel, raw] of Object.entries(FIXTURES)) {
     const ev = adapt(channel, raw);
     const check = validateInbound(ev);
@@ -85,7 +85,7 @@ test('every fixture maps into the one contract', () => {
   }
 });
 
-test('an event with no id to deduplicate on is refused, not guessed at', () => {
+test('an event with no id to deduplicate on is refused, not guessed at', async () => {
   for (const [channel, raw] of Object.entries(FIXTURES)) {
     const def = channelDef(channel);
     const stripped = JSON.parse(JSON.stringify(raw));
@@ -102,7 +102,7 @@ test('an event with no id to deduplicate on is refused, not guessed at', () => {
   }
 });
 
-test('a malformed payload is refused on every channel', () => {
+test('a malformed payload is refused on every channel', async () => {
   for (const channel of channelIds()) {
     assert.throws(() => adapt(channel, null), BadInbound, channel + ' must refuse null');
     assert.throws(() => adapt(channel, 'not an object'), BadInbound, channel + ' must refuse a string');
@@ -110,7 +110,7 @@ test('a malformed payload is refused on every channel', () => {
   assert.throws(() => adapt('myspace', {}), BadInbound, 'an unknown channel is refused');
 });
 
-test('the provider payload never becomes the CRM data model', () => {
+test('the provider payload never becomes the CRM data model', async () => {
   const ev = adapt('website', FIXTURES.website);
   // utm lives in attribution, not as a top level CRM field
   assert.equal(ev.attribution.utm_source, 'instagram');
@@ -123,45 +123,45 @@ test('the provider payload never becomes the CRM data model', () => {
 
 // ------------------------------------------------------------ the journey --
 
-test('every channel reaches a valid end state, and none disappears', () => {
+test('every channel reaches a valid end state, and none disappears', async () => {
   const VALID = new Set(['filtered', 'new', 'qualified', 'archived']);
   for (const [channel, raw] of Object.entries(FIXTURES)) {
-    const db = openDb();
+    const db = await openDb();
     const ev = adapt(channel, raw);
-    const r = receive(db, toIntake(ev));
-    const row = db.prepare('SELECT * FROM inbound WHERE id = ?').get(r.id);
+    const r = await receive(db, toIntake(ev));
+    const row = await db.prepare('SELECT * FROM inbound WHERE id = ?').get(r.id);
     assert.ok(row, channel + ' must be stored, never dropped on the floor');
     assert.ok(VALID.has(row.state), `${channel} ended in ${row.state}`);
     assert.equal(row.external_id, ev.externalEventId, channel + ' keeps the id it deduplicates on');
   }
 });
 
-test('the same provider event delivered twice is stored once', () => {
+test('the same provider event delivered twice is stored once', async () => {
   for (const [channel, raw] of Object.entries(FIXTURES)) {
-    const db = openDb();
+    const db = await openDb();
     const ev = adapt(channel, raw);
-    const first = receive(db, toIntake(ev));
-    const again = receive(db, toIntake(adapt(channel, raw)));
+    const first = await receive(db, toIntake(ev));
+    const again = await receive(db, toIntake(adapt(channel, raw)));
     assert.equal(again.duplicate, true, channel + ' must recognise a retry');
     assert.equal(again.id, first.id, channel + ' must point at the same row');
-    assert.equal(db.prepare('SELECT COUNT(*) n FROM inbound').get().n, 1, channel + ' stored twice');
+    assert.equal((await db.prepare('SELECT COUNT(*) n FROM inbound').get()).n, 1, channel + ' stored twice');
   }
 });
 
-test('a sales pitch is filtered on whichever channel it arrives on', () => {
-  const db = openDb();
+test('a sales pitch is filtered on whichever channel it arrives on', async () => {
+  const db = await openDb();
   const ev = adapt('instagram', { object: 'instagram', entry: [{ id: 'ig-1', messaging: [{
     sender: { id: 'spam-1' }, timestamp: 1758708060000,
     message: { mid: 'spam-msg', text: 'Hello, we offer social media promotion services, 5000 followers guaranteed' } }] }] });
-  const r = receive(db, toIntake(ev));
+  const r = await receive(db, toIntake(ev));
   assert.equal(r.filtered, true);
-  assert.equal(listInbound(db, { state: 'new' }).length, 0, 'it never costs anybody a second');
-  assert.equal(db.prepare('SELECT COUNT(*) n FROM inbound').get().n, 1, 'but it IS still stored');
+  assert.equal((await listInbound(db, { state: 'new' })).length, 0, 'it never costs anybody a second');
+  assert.equal((await db.prepare('SELECT COUNT(*) n FROM inbound').get()).n, 1, 'but it IS still stored');
 });
 
 // --------------------------------------------------------------- security --
 
-test('a signed channel refuses a bad signature and says a secret is missing', () => {
+test('a signed channel refuses a bad signature and says a secret is missing', async () => {
   const body = JSON.stringify(FIXTURES.instagram);
   const secret = 'test-app-secret';
   const good = 'sha256=' + crypto.createHmac('sha256', secret).update(body).digest('hex');
@@ -176,20 +176,20 @@ test('a signed channel refuses a bad signature and says a secret is missing', ()
   assert.equal(none.missingSecret, true);
 });
 
-test('a shared-secret channel compares the whole secret', () => {
+test('a shared-secret channel compares the whole secret', async () => {
   assert.equal(verifyRequest('website', { headers: { 'x-crm-secret': 'right' } }, { secret: 'right' }).ok, true);
   assert.equal(verifyRequest('website', { headers: { 'x-crm-secret': 'wrong' } }, { secret: 'right' }).ok, false);
   assert.equal(verifyRequest('website', { headers: { 'x-crm-secret': 'ri' } }, { secret: 'right' }).ok, false,
     'a prefix is not a match');
 });
 
-test('a channel with no confirmed mechanism cannot be verified, and says so', () => {
+test('a channel with no confirmed mechanism cannot be verified, and says so', async () => {
   const r = verifyRequest('linkedin', { headers: {} }, {});
   assert.equal(r.ok, false);
   assert.equal(r.unconfirmed, true);
 });
 
-test('Mailchimp says out loud that its url secret is the weak option', () => {
+test('Mailchimp says out loud that its url secret is the weak option', async () => {
   const url = new URL('http://x/api/inbound/mailchimp?s=abc');
   const r = verifyRequest('mailchimp', { headers: {} }, { secret: 'abc', url });
   assert.equal(r.ok, true);
@@ -198,7 +198,7 @@ test('Mailchimp says out loud that its url secret is the weak option', () => {
 
 // -------------------------------------------------------------- readiness --
 
-test('status is computed, never claimed, and no secret value is exposed', () => {
+test('status is computed, never claimed, and no secret value is exposed', async () => {
   const off = channelStatus('website', {});
   assert.equal(off.mode, 'off');
   assert.equal(off.credentialsPresent, false);
@@ -217,7 +217,7 @@ test('status is computed, never claimed, and no secret value is exposed', () => 
   assert.equal(channelStatus('in_person', {}).state, 'MANUAL ONLY');
 });
 
-test('nothing is connected in this repository', () => {
+test('nothing is connected in this repository', async () => {
   // the whole point: a checkout of this code activates nothing
   for (const c of channelIds()) {
     const st = channelStatus(c, {});
@@ -354,7 +354,7 @@ test('simulating the same event twice is recognised as a retry', async (t) => {
   assert.equal(a.inboundId, b.inboundId);
 });
 
-test('Meta is one connection but four separate reporting channels', () => {
+test('Meta is one connection but four separate reporting channels', async () => {
   // The integration groups them; the CRM must NOT. A combined "Meta" number
   // would hide whether people came from Instagram or from WhatsApp.
   assert.deepEqual(CHANNELS.metaGroup, ['facebook', 'instagram', 'messenger', 'whatsapp']);
@@ -371,7 +371,7 @@ test('Meta is one connection but four separate reporting channels', () => {
   }
 });
 
-test('no Latvian channel id survives in the interface', () => {
+test('no Latvian channel id survives in the interface', async () => {
   assert.ok(!channelIds().includes('klatiene'), 'klatiene is now in_person');
   assert.equal(channelDef('in_person').label, 'In person');
 });

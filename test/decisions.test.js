@@ -19,7 +19,7 @@ const PROVIDERS = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'provider
 
 // ------------------------------------------------------- 1. users are locked --
 
-test('the CRM users and the three admins are exactly what was locked', () => {
+test('the CRM users and the three admins are exactly what was locked', async () => {
   // Arina joined 23.09.2026 when the phone menu was mapped: she answers button 3.
   assert.deepEqual(CONFIG.users.map((u) => u.name),
     ['Ieva', 'Laura', 'Tetiana', 'Maris Cirulis', 'Arina']);
@@ -37,7 +37,7 @@ test('the CRM users and the three admins are exactly what was locked', () => {
 // ------------------------------------------ feedback is not an admin screen --
 // 24.09.2026: the feedback inbox is for Aigars and Ritvars. Marina is an admin
 // and must NOT see it, so the list is its own and is never derived from admins.
-test('the feedback inbox has its own reader list, shorter than the admin list', () => {
+test('the feedback inbox has its own reader list, shorter than the admin list', async () => {
   assert.deepEqual(CONFIG.feedbackReaders, ['Aigars', 'Ritvars']);
   assert.ok(!CONFIG.feedbackReaders.includes('Marina'),
     'Marina is an admin and must not be able to read feedback');
@@ -49,7 +49,7 @@ test('the feedback inbox has its own reader list, shorter than the admin list', 
   }
 });
 
-test('the code checks the reader list, not the admin list', () => {
+test('the code checks the reader list, not the admin list', async () => {
   // The whole point is that isAdmin() is NOT enough. If a feedback route ever
   // goes back to isAdmin(), Marina silently gains access.
   const routes = SERVER.slice(SERVER.indexOf('// ------------------------------------------------------------- feedback -'));
@@ -60,7 +60,7 @@ test('the code checks the reader list, not the admin list', () => {
     'the screen hides the inbox from anybody who is not a reader');
 });
 
-test('an admin may hold channel access without becoming a CRM role owner', () => {
+test('an admin may hold channel access without becoming a CRM role owner', async () => {
   // Marina is one of the three real admins AND has Facebook, Instagram and
   // WhatsApp. Access is not ownership, so she appears in the access matrix and
   // not in the user list.
@@ -68,14 +68,14 @@ test('an admin may hold channel access without becoming a CRM role owner', () =>
   assert.ok(CONFIG.channelAccess.byPerson.Marina.includes('whatsapp'), 'but she does have WhatsApp');
 });
 
-test('no CRM user is an admin and no admin is a CRM user', () => {
+test('no CRM user is an admin and no admin is a CRM user', async () => {
   for (const u of CONFIG.users) assert.ok(!CONFIG.admins.includes(u.name), u.name + ' must not be an admin');
   for (const a of CONFIG.admins) {
     assert.ok(!CONFIG.users.some((u) => u.name === a), a + ' is an admin, not one of the four users');
   }
 });
 
-test('a role is not a person: the owner list holds roles, the user list holds people', () => {
+test('a role is not a person: the owner list holds roles, the user list holds people', async () => {
   for (const role of CONFIG.owners) {
     assert.ok(!CONFIG.users.some((u) => u.name === role), role + ' is a role and must not also be a name');
   }
@@ -85,7 +85,7 @@ test('a role is not a person: the owner list holds roles, the user list holds pe
   }
 });
 
-test('nobody has been asked for an email address yet', () => {
+test('nobody has been asked for an email address yet', async () => {
   for (const u of CONFIG.users) {
     assert.ok(!('email' in u), u.name + ' must not carry an email until authentication is designed');
   }
@@ -93,36 +93,36 @@ test('nobody has been asked for an email address yet', () => {
 
 // --------------------------------------------- 3. one person, whole lifecycle --
 
-test('the lifecycle is one record from lead to admitted, handed over at Admitted', () => {
+test('the lifecycle is one record from lead to admitted, handed over at Admitted', async () => {
   assert.equal(CONFIG.lifecycle.samePersonThroughout, true);
   assert.equal(CONFIG.lifecycle.handoverStage, 'Admitted');
   assert.match(CONFIG.lifecycle._note, /does not become the student information system/i);
 });
 
-test('moving a person all the way to Admitted never creates a second record', () => {
-  const db = openDb();
-  const r = runScenario(db, 'website_form', 'new_lead');
-  const before = db.prepare('SELECT COUNT(*) n FROM people').get().n;
-  const arrivedOn = db.prepare('SELECT source_channel, created_at FROM people WHERE id = ?').get(r.personId);
+test('moving a person all the way to Admitted never creates a second record', async () => {
+  const db = await openDb();
+  const r = await runScenario(db, 'website_form', 'new_lead');
+  const before = (await db.prepare('SELECT COUNT(*) n FROM people').get()).n;
+  const arrivedOn = await db.prepare('SELECT source_channel, created_at FROM people WHERE id = ?').get(r.personId);
   const stages = ['Contacted', 'Follow-up', 'Application', 'Contract', 'Admitted'];
   for (const st of stages) {
-    db.prepare('UPDATE people SET status = ? WHERE id = ?').run(st, r.personId);
-    logEvent(db, { personId: r.personId, kind: 'status', at: new Date().toISOString(),
+    await db.prepare('UPDATE people SET status = ? WHERE id = ?').run(st, r.personId);
+    await logEvent(db, { personId: r.personId, kind: 'status', at: new Date().toISOString(),
       origin: MANUAL, actor: 'Ieva', subject: 'Status -> ' + st, field: 'status', newValue: st });
   }
-  assert.equal(db.prepare('SELECT COUNT(*) n FROM people').get().n, before, 'still one row');
-  const p = db.prepare('SELECT * FROM people WHERE id = ?').get(r.personId);
+  assert.equal((await db.prepare('SELECT COUNT(*) n FROM people').get()).n, before, 'still one row');
+  const p = await db.prepare('SELECT * FROM people WHERE id = ?').get(r.personId);
   assert.equal(p.status, 'Admitted');
   assert.equal(p.source_channel, arrivedOn.source_channel,
     'the source it arrived on is untouched by the whole journey');
   assert.equal(p.created_at, arrivedOn.created_at, 'and so is the first contact date');
-  assert.equal(db.prepare("SELECT COUNT(*) n FROM events WHERE person_id = ?").get(r.personId).n >= 6, true,
+  assert.equal((await db.prepare("SELECT COUNT(*) n FROM events WHERE person_id = ?").get(r.personId)).n >= 6, true,
     'the whole story stays attached to that row');
 });
 
 // ------------------------------------------------------------ 4. ownership ---
 
-test('ownership follows the stage as a principle, and the map is honestly not built yet', () => {
+test('ownership follows the stage as a principle, and the map is honestly not built yet', async () => {
   assert.equal(CONFIG.ownershipFollowsStage, false, 'it must not claim to be automatic yet');
   assert.match(CONFIG._owners, /NOT decided/);
   assert.ok(CONFIG.owners.includes('Marketing'), 'marketing owns some stages, so it is an owner role');
@@ -130,7 +130,7 @@ test('ownership follows the stage as a principle, and the map is honestly not bu
 
 // ----------------------------------------------------------- 7. note types ---
 
-test('a note carries a type, and the types are the ones asked for', () => {
+test('a note carries a type, and the types are the ones asked for', async () => {
   const labels = CONFIG.noteTypes.map((t) => t.label);
   for (const want of ['Call note', 'On-site visit note', 'Admissions note', 'Stage note']) {
     assert.ok(labels.includes(want), 'missing note type: ' + want);
@@ -138,23 +138,23 @@ test('a note carries a type, and the types are the ones asked for', () => {
   assert.ok(labels.some((l) => /other/i.test(l)), 'there must be an "other" type');
 });
 
-test('a typed note is still in the one history, not in a silo', () => {
-  const db = openDb();
-  runScenario(db, 'website_form', 'new_lead');
-  const id = db.prepare('SELECT id FROM people LIMIT 1').get().id;
-  logEvent(db, { personId: id, kind: 'note', at: new Date().toISOString(), origin: MANUAL,
+test('a typed note is still in the one history, not in a silo', async () => {
+  const db = await openDb();
+  await runScenario(db, 'website_form', 'new_lead');
+  const id = (await db.prepare('SELECT id FROM people LIMIT 1').get()).id;
+  await logEvent(db, { personId: id, kind: 'note', at: new Date().toISOString(), origin: MANUAL,
     actor: 'Ieva', subject: 'On-site visit note', body: 'came in with a parent' });
-  const rows = db.prepare('SELECT * FROM events WHERE person_id = ? ORDER BY id').all(id);
+  const rows = await db.prepare('SELECT * FROM events WHERE person_id = ? ORDER BY id').all(id);
   assert.ok(rows.some((r) => r.subject === 'On-site visit note'));
   assert.ok(rows.some((r) => r.kind === 'channel'), 'and the channel event is in the same table');
   // there is exactly one table events can live in
-  const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '%note%'").all();
+  const tables = await db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '%note%'").all();
   assert.equal(tables.length, 0, 'no separate notes table may exist');
 });
 
 // -------------------------------------------------------- 8. closed reasons --
 
-test('the closed reasons are the agreed list, with no redundant pair', () => {
+test('the closed reasons are the agreed list, with no redundant pair', async () => {
   for (const want of ['No response', 'Chose another institution', 'Changed study plans', 'Not eligible',
     'Financial reasons', 'Timing / postponed', 'Programme not suitable', 'Requirements not met',
     'Duplicate', 'Other']) {
@@ -164,22 +164,22 @@ test('the closed reasons are the agreed list, with no redundant pair', () => {
   assert.deepEqual(CONFIG.closedReasonNeedsNote, ['Other'], '"Other" needs an explanation');
 });
 
-test('the server refuses to close somebody without a reason, and "Other" without a note', () => {
+test('the server refuses to close somebody without a reason, and "Other" without a note', async () => {
   assert.match(SERVER, /A reason is required to stop working with somebody/);
   assert.match(SERVER, /needs an explanation/);
   assert.match(SERVER, /closedReasonNeedsNote/);
 });
 
-test('the record has somewhere to keep the reason', () => {
-  const db = openDb();
-  const cols = db.prepare('PRAGMA table_info(people)').all().map((c) => c.name);
+test('the record has somewhere to keep the reason', async () => {
+  const db = await openDb();
+  const cols = (await db.prepare('PRAGMA table_info(people)').all()).map((c) => c.name);
   assert.ok(cols.includes('closed_reason'));
   assert.ok(cols.includes('closed_note'));
 });
 
 // ------------------------------------------------------------ 9. duplicates --
 
-test('duplicate prevention is on, and a match blocks rather than warns', () => {
+test('duplicate prevention is on, and a match blocks rather than warns', async () => {
   assert.equal(CONFIG.duplicateRule.blockOnMatch, true);
   assert.deepEqual(CONFIG.duplicateRule.matchOn, ['email', 'phone', 'name']);
   assert.match(SERVER, /This person may already be in the CRM/);
@@ -187,7 +187,7 @@ test('duplicate prevention is on, and a match blocks rather than warns', () => {
   assert.match(SERVER, /409/, 'a blocked save must be a refusal, not a silent success');
 });
 
-test('the live warning and the blocking save use the same matcher', () => {
+test('the live warning and the blocking save use the same matcher', async () => {
   // two rules would mean the warning and the block could disagree about the
   // same two people, which is how a duplicate gets in
   //
@@ -197,7 +197,7 @@ test('the live warning and the blocking save use the same matcher', () => {
   // Emils Baltputnis records with the same phone got in that way.
   const IDENTITY = fs.readFileSync(path.join(ROOT, 'src', 'identity.js'), 'utf8');
   const INTAKE = fs.readFileSync(path.join(ROOT, 'src', 'intake.js'), 'utf8');
-  assert.equal((IDENTITY.match(/export function findMatches/g) || []).length, 1,
+  assert.equal((IDENTITY.match(/export async function findMatches/g) || []).length, 1,
     'exactly one matcher, and it lives in identity.js');
   assert.ok(!/function findMatches\s*\(\{/.test(SERVER), 'server.js must not define its own');
   for (const [name, src] of [['server.js', SERVER], ['intake.js', INTAKE]]) {
@@ -209,7 +209,7 @@ test('the live warning and the blocking save use the same matcher', () => {
 
 // --------------------------------------------------------------- 10. search --
 
-test('search reaches every field the operator might remember', () => {
+test('search reaches every field the operator might remember', async () => {
   for (const f of ['id', 'name', 'email', 'phone', 'programme', 'source_channel', 'student_no']) {
     assert.ok(CONFIG.searchFields.includes(f), 'search must cover ' + f);
   }
@@ -219,7 +219,7 @@ test('search reaches every field the operator might remember', () => {
 
 // ---------------------------------------------------------- 11. today screen --
 
-test('the three Today groups exist and each says what it is for', () => {
+test('the three Today groups exist and each says what it is for', async () => {
   // Four until 24.09.2026. Follow-ups and Replies became one 'waiting' queue:
   // two tabs answering the same question, and a person with a due step AND an
   // unanswered message was listed in both.
@@ -229,7 +229,7 @@ test('the three Today groups exist and each says what it is for', () => {
   assert.match(CONFIG._todayGroups, /merged/i, 'the merge stays recorded, not silently dropped');
 });
 
-test('the merged queue still says which of the two reasons put a row there', () => {
+test('the merged queue still says which of the two reasons put a row there', async () => {
   // The merge must not cost the operator the information: a step we planned is
   // marked done, a message they sent is answered. Different actions.
   const card = APP.slice(APP.indexOf('function todayCard'), APP.indexOf('async function viewToday'));
@@ -240,7 +240,7 @@ test('the merged queue still says which of the two reasons put a row there', () 
   assert.match(card, /openNote/, 'a message is answered');
 });
 
-test('Today is a work queue: one person at a time, and every queue still reachable', () => {
+test('Today is a work queue: one person at a time, and every queue still reachable', async () => {
   assert.match(APP, /Today is a work queue, not a dashboard/);
   assert.match(APP, /order\.map\(id => byId\[id\]\)/, 'every group the server returned is kept');
   assert.match(APP, /todayPickQueue/, 'any queue can be jumped to directly');
@@ -249,21 +249,21 @@ test('Today is a work queue: one person at a time, and every queue still reachab
   assert.match(APP, /items\[TODAY_ITEM\]/, 'exactly one item is rendered');
 });
 
-test('Today shows no wall of metrics', () => {
+test('Today shows no wall of metrics', async () => {
   const today = APP.slice(APP.indexOf('async function viewToday'), APP.indexOf('function funnelHtml'));
   assert.ok(!today.includes('class="tiles"'), 'Today must not carry the reports tiles');
   assert.ok(!today.includes('conversionPct'), 'a conversion figure belongs in Reports');
   assert.ok(!today.includes('/api/metrics/core'), 'Today does not fetch metrics at all');
 });
 
-test('a cleared queue reads as cleared, not as an empty box', () => {
+test('a cleared queue reads as cleared, not as an empty box', async () => {
   assert.match(APP, /Nothing waiting here|All \$\{g\.total\} done today/);
   assert.match(APP, /tick-big/, 'and it looks finished rather than broken');
 });
 
 // ------------------------------------------------------------- 12. metrics ---
 
-test('the three core metrics exist, and the conversion caveat is stated', () => {
+test('the three core metrics exist, and the conversion caveat is stated', async () => {
   assert.deepEqual(CONFIG.coreMetrics, ['New leads this month', 'Admissions this month', 'Conversion %']);
   assert.match(SERVER, /newLeadsThisMonth/);
   assert.match(SERVER, /admissionsThisMonth/);
@@ -272,7 +272,7 @@ test('the three core metrics exist, and the conversion caveat is stated', () => 
     'admissions-this-month and conversion-this-month are different populations and must say so');
 });
 
-test('the reporting dimensions are marked as things to investigate, not a dashboard', () => {
+test('the reporting dimensions are marked as things to investigate, not a dashboard', async () => {
   assert.match(CONFIG._coreMetrics, /REQUIREMENTS TO INVESTIGATE/);
   assert.match(CONFIG._coreMetrics, /Nationality is not in the prototype schema/i,
     'a dimension we cannot report on must be named, not quietly skipped');
@@ -280,7 +280,7 @@ test('the reporting dimensions are marked as things to investigate, not a dashbo
 
 // ------------------------------------------------------- 13. channels, plain --
 
-test('the daily screens name a channel in plain words, never an endpoint', () => {
+test('the daily screens name a channel in plain words, never an endpoint', async () => {
   const daily = APP.slice(APP.indexOf('async function viewToday'), APP.indexOf('async function viewIntegrations'));
   void daily;
   for (const jargon of ['webhook', 'oauth', 'Pub/Sub', 'endpoint', 'API key']) {
@@ -290,7 +290,7 @@ test('the daily screens name a channel in plain words, never an endpoint', () =>
   assert.match(daily, /channelLabel/, 'they show the channel by its plain name');
 });
 
-test('every channel the simulator can name has a plain name somewhere', () => {
+test('every channel the simulator can name has a plain name somewhere', async () => {
   // Added 24.09.2026. The person's timeline now shows the channel a message
   // ARRIVED on, which exposed three simulator ids - website_form, gmail and
   // open_day - that had no plain name and were printed raw on a person's page.
@@ -305,10 +305,10 @@ test('every channel the simulator can name has a plain name somewhere', () => {
   }
 });
 
-test('every channel the simulator runs has a plain name for the operator', () => {
-  const db = openDb();
-  runFullDemo(db);
-  const used = db.prepare('SELECT DISTINCT source_channel c FROM people').all().map((r) => r.c);
+test('every channel the simulator runs has a plain name for the operator', async () => {
+  const db = await openDb();
+  await runFullDemo(db);
+  const used = (await db.prepare('SELECT DISTINCT source_channel c FROM people').all()).map((r) => r.c);
   // A provider id may differ from the CRM's own id - the simulator still calls the
   // walk-in desk 'klatiene' because that is what providers.json researched. What
   // matters is that an OPERATOR never sees it, so this resolves the name the same
@@ -325,15 +325,15 @@ test('every channel the simulator runs has a plain name for the operator', () =>
 
 // ------------------------------------------------ 2. corrections stay private --
 
-test('a colleague\'s correction is not on the person page, but their activity is', () => {
-  const db = openDb();
-  const r = runScenario(db, 'website_form', 'new_lead');
+test('a colleague\'s correction is not on the person page, but their activity is', async () => {
+  const db = await openDb();
+  const r = await runScenario(db, 'website_form', 'new_lead');
   const at = new Date().toISOString();
-  logEvent(db, { personId: r.personId, kind: 'call', at, origin: MANUAL, actor: 'Laura',
+  await logEvent(db, { personId: r.personId, kind: 'call', at, origin: MANUAL, actor: 'Laura',
     subject: 'Call: answered', body: 'she rang them' });
-  applyEdit(db, r.personId, { programme: 'ENG' }, 'Laura', at);
+  await applyEdit(db, r.personId, { programme: 'ENG' }, 'Laura', at);
 
-  const all = db.prepare('SELECT * FROM events WHERE person_id = ?').all(r.personId);
+  const all = await db.prepare('SELECT * FROM events WHERE person_id = ?').all(r.personId);
   // the rule the server applies, asserted on the same shape it applies it to
   const forIeva = all.filter((e) => e.kind !== 'edit' || e.actor === 'Ieva');
   assert.ok(forIeva.some((e) => e.subject === 'Call: answered'),
@@ -343,7 +343,7 @@ test('a colleague\'s correction is not on the person page, but their activity is
   assert.ok(all.some((e) => e.kind === 'edit'), 'an admin sees it, so it is there to be seen');
 });
 
-test('the person page counts what it is hiding rather than pretending nothing happened', () => {
+test('the person page counts what it is hiding rather than pretending nothing happened', async () => {
   assert.match(SERVER, /hiddenCorrections/);
   assert.match(APP, /not shown\. Corrections are private to whoever made them/);
 });

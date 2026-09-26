@@ -24,7 +24,7 @@ export const normName = (v) => String(v || '').trim().toLowerCase();
 // +37120423829, 37120423829 and 20423829 by three different systems.
 const PHONE_TAIL = 8;
 
-export function findMatches(db, { email, phone, name }, { exclude } = {}) {
+export async function findMatches(db, { email, phone, name }, { exclude } = {}) {
   const e = normEmail(email);
   const ph = normPhone(phone);
   const n = normName(name);
@@ -34,8 +34,8 @@ export function findMatches(db, { email, phone, name }, { exclude } = {}) {
   const hitPhone = (r) => ph.length > 5 && normPhone(r.phone).endsWith(ph.slice(-PHONE_TAIL));
   const hitName = (r) => Boolean(n) && normName(r.name) === n;
 
-  return db.prepare(`SELECT id, name, email, phone, status, owner, source_channel, created_at
-    FROM people`).all()
+  return (await db.prepare(`SELECT id, name, email, phone, status, owner, source_channel, created_at
+    FROM people`).all())
     .filter((r) => r.id !== exclude && (hitEmail(r) || hitPhone(r) || hitName(r)))
     .map((r) => ({
       ...r,
@@ -55,8 +55,8 @@ const strength = (m) =>
 // thing. An email or a phone is strong enough to stop a save on its own.
 export const isStrong = (m) => m.matchedOn.some((k) => k === 'email' || k === 'phone');
 
-export function duplicateCheck(db, contact, opts = {}) {
+export async function duplicateCheck(db, contact, opts = {}) {
   if (!CFG.duplicateRule || CFG.duplicateRule.blockOnMatch !== true) return { blocked: false, matches: [] };
-  const matches = findMatches(db, contact, opts);
+  const matches = await findMatches(db, contact, opts);
   return { blocked: matches.length > 0, matches, strong: matches.filter(isStrong) };
 }

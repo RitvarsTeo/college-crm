@@ -49,19 +49,19 @@ export function normPhone(v) {
 }
 const EMAIL_RE = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/;
 
-function findPerson(db, { email, phone, handle }) {
+async function findPerson(db, { email, phone, handle }) {
   const hits = [];
   if (email) {
-    const r = db.prepare('SELECT id FROM people WHERE lower(email) = ?').get(email);
+    const r = await db.prepare('SELECT id FROM people WHERE lower(email) = ?').get(email);
     if (r) hits.push({ key: 'email', value: email, id: r.id });
   }
   if (phone) {
-    const rows = db.prepare('SELECT id, phone FROM people WHERE phone IS NOT NULL').all();
+    const rows = await db.prepare('SELECT id, phone FROM people WHERE phone IS NOT NULL').all();
     const r = rows.find((x) => normPhone(x.phone) === phone);
     if (r) hits.push({ key: 'phone', value: phone, id: r.id });
   }
   if (handle) {
-    const r = db.prepare("SELECT id FROM people WHERE notes LIKE ?").get('%' + handle + '%');
+    const r = await db.prepare("SELECT id FROM people WHERE notes LIKE ?").get('%' + handle + '%');
     if (r) hits.push({ key: 'handle', value: handle, id: r.id });
   }
   return hits;
@@ -77,8 +77,8 @@ function utm(source, medium, campaign, gclid) {
   return o;
 }
 
-function existingPerson(db, which = 'any') {
-  const rows = db.prepare("SELECT * FROM people WHERE email IS NOT NULL AND phone IS NOT NULL ORDER BY created_at DESC LIMIT 40").all();
+async function existingPerson(db, which = 'any') {
+  const rows = await db.prepare("SELECT * FROM people WHERE email IS NOT NULL AND phone IS NOT NULL ORDER BY created_at DESC LIMIT 40").all();
   if (!rows.length) return null;
   return rows[which === 'any' ? 0 : Math.min(which, rows.length - 1)];
 }
@@ -87,8 +87,8 @@ function existingPerson(db, which = 'any') {
 // somebody who already exists has to invent one rather than fall over. Anything
 // invented this way is flagged, and the console says it out loud.
 let INVENTED = false;
-function someone(db, which = 'any') {
-  const real = existingPerson(db, which);
+async function someone(db, which = 'any') {
+  const real = await existingPerson(db, which);
   if (real) return real;
   INVENTED = true;
   const n = ['Ilze Ozola', 'Kārlis Ziediņš', 'Rūdolfs Krastiņš'][which === 'any' ? 0 : Math.min(which, 2)];
@@ -102,7 +102,7 @@ function someone(db, which = 'any') {
 
 // Each builder returns { raw, transport, auth, meta }
 const BUILDERS = {
-  website_form(db, scenario) {
+  async website_form(db, scenario) {
     const base = {
       submission_id: 'web-' + rid(),
       submitted_at: nowIso(),
@@ -116,23 +116,23 @@ const BUILDERS = {
       ...utm('instagram', 'paid', 'nav-2026-09'),
     };
     if (scenario === 'known_email') {
-      const p = someone(db);
+      const p = await someone(db);
       Object.assign(base, { name: p.name, email: p.email, phone: '+371 20 000 111' });
     }
     if (scenario === 'known_phone') {
-      const p = someone(db, 1);
+      const p = await someone(db, 1);
       Object.assign(base, { name: p.name, email: 'another.address.' + rid().slice(0, 4) + '@example.lv', phone: p.phone });
     }
     if (scenario === 'missing') { delete base.email; base.name = 'Bez E-pasta'; }
     if (scenario === 'conflict') {
-      const a = someone(db, 0), b = someone(db, 2);
+      const a = await someone(db, 0), b = await someone(db, 2);
       Object.assign(base, { name: 'Konflikta Gadījums', email: a.email, phone: b.phone });
     }
     if (scenario === 'no_consent') { base.consent_marketing = false; base.name = 'Bez Piekrišanas'; }
     return { raw: base, transport: 'HTTPS POST from the form', auth: { type: 'none required', ok: true } };
   },
 
-  google_form(db, scenario) {
+  async google_form(db, scenario) {
     const answers = {
       'Vārds uzvārds': ['Elza Zariņa'],
       'E-pasta adrese': ['elza.zarina.' + rid().slice(0, 4) + '@gmail.com'],
@@ -165,7 +165,7 @@ const BUILDERS = {
       transport: 'Apps Script installable onFormSubmit trigger', auth: { type: 'shared secret', ok: true } };
   },
 
-  gmail(db, scenario) {
+  async gmail(db, scenario) {
     const msgId = '1a' + rid();
     const booking = {
       id: msgId, threadId: msgId, date: nowIso(), sender: 'edu@novikontas.org',
@@ -191,8 +191,8 @@ const BUILDERS = {
       push: mode === 'push' ? { emailAddress: 'edu@novikontas.org', historyId: String(1229969 + Math.floor(Math.random() * 500)) } : null };
   },
 
-  mailchimp(db, scenario) {
-    const p = someone(db);
+  async mailchimp(db, scenario) {
+    const p = await someone(db);
     const email = scenario === 'unknown' ? 'never.seen.' + rid().slice(0, 4) + '@example.lv' : p.email;
     const type = { subscribe: 'subscribe', unsubscribe: 'unsubscribe', profile: 'profile', cleaned: 'cleaned', upemail: 'upemail', unknown: 'subscribe', bad_secret: 'unsubscribe' }[scenario] || 'subscribe';
     const raw = {
@@ -209,7 +209,7 @@ const BUILDERS = {
       secret: scenario === 'bad_secret' ? 'wrong-secret' : MAILCHIMP_SECRET };
   },
 
-  facebook(db, scenario) {
+  async facebook(db, scenario) {
     const now = Math.floor(Date.now() / 1000);
     if (scenario === 'verify') {
       return { raw: { 'hub.mode': 'subscribe', 'hub.verify_token': VERIFY_TOKEN, 'hub.challenge': String(100000 + Math.floor(Math.random() * 899999)) },
@@ -239,7 +239,7 @@ const BUILDERS = {
       signature: scenario === 'unsigned' ? null : scenario === 'bad_signature' ? 'sha256=' + 'a'.repeat(64) : null };
   },
 
-  instagram(db, scenario) {
+  async instagram(db, scenario) {
     const text = scenario === 'message_with_email'
       ? 'Sveiki! Mans e-pasts ir liene.kalnina.' + rid().slice(0, 4) + '@gmail.com, atsūtiet info par NAV'
       : 'Sveiki! Vai vēl var pieteikties uz NAV programmu?';
@@ -251,11 +251,11 @@ const BUILDERS = {
       signature: scenario === 'bad_signature' ? 'sha256=' + 'b'.repeat(64) : null };
   },
 
-  whatsapp(db, scenario) {
+  async whatsapp(db, scenario) {
     let from = '37122193374';
-    if (scenario === 'inbound_local') { const p = someone(db); from = String(p.phone || '+37126411900').replace(/\D/g, ''); }
+    if (scenario === 'inbound_local') { const p = await someone(db); from = String(p.phone || '+37126411900').replace(/\D/g, ''); }
     if (scenario === 'unknown') from = '37129998877';
-    if (scenario === 'inbound') { const p = someone(db); from = String(p.phone || '+37126411900').replace(/\D/g, ''); }
+    if (scenario === 'inbound') { const p = await someone(db); from = String(p.phone || '+37126411900').replace(/\D/g, ''); }
     const wamid = scenario === 'duplicate' ? 'wamid.FIXED001' : 'wamid.' + rid();
     const raw = { object: 'whatsapp_business_account', entry: [{ id: '102290129340398-SIM', changes: [{ field: 'messages', value: {
       messaging_product: 'whatsapp',
@@ -268,7 +268,7 @@ const BUILDERS = {
       signature: scenario === 'bad_signature' ? 'sha256=' + 'c'.repeat(64) : null };
   },
 
-  agent(db, scenario) {
+  async agent(db, scenario) {
     const token = scenario === 'unknown_token' ? 'tok_not_ours' : 'tok_india_partner_1';
     const raw = {
       token,
@@ -281,7 +281,7 @@ const BUILDERS = {
       auth: { type: 'per-agent token', ok: scenario !== 'unknown_token', reason: scenario === 'unknown_token' ? 'the token is not one of ours' : null } };
   },
 
-  open_day(db, scenario) {
+  async open_day(db, scenario) {
     const raw = {
       booking_id: scenario === 'duplicate' ? 'od-fixed-001' : 'od-' + rid(),
       name: 'Emīls Baltputnis', email: 'emils.baltputnis.' + (scenario === 'duplicate' ? 'fixed' : rid().slice(0, 4)) + '@gmail.com',
@@ -292,20 +292,20 @@ const BUILDERS = {
     return { raw, transport: 'POST from the booking app', auth: { type: 'shared secret', ok: true } };
   },
 
-  klatiene(db, scenario) {
+  async klatiene(db, scenario) {
     if (scenario === 'qr') {
       return { raw: { submission_id: 'qr-' + rid(), name: 'Rihards Sīlis', email: 'rihards.silis.' + rid().slice(0, 4) + '@inbox.lv',
         phone: '25443322', ...utm('qr', 'reception', 'open-day-qr'), consent_admissions: true, submitted_at: nowIso() },
         transport: 'QR to a web form: this IS a digital inbound channel', auth: { type: 'none required', ok: true } };
     }
-    const p = scenario === 'duplicate' ? existingPerson(db) : null;
+    const p = scenario === 'duplicate' ? await existingPerson(db) : null;
     return { raw: { name: p ? p.name : 'Gatis Purmalis', email: p ? p.email : '', phone: p ? p.phone : '26551234',
       note: 'Walked into reception, asked about NAV part time', by: (CRMCFG.users && CRMCFG.users[0] && CRMCFG.users[0].name) || 'unknown user', at: nowIso(), consent_admissions: true },
       transport: 'Typed into the CRM by a member of staff', auth: { type: 'the logged-in member of staff', ok: true } };
   },
 
-  phone(db, scenario) {
-    const p = someone(db);
+  async phone(db, scenario) {
+    const p = await someone(db);
     if (scenario === 'future_event') {
       return { raw: { event: 'call.ended', direction: 'inbound', from: p.phone, to: '+37123111114',
         started_at: nowIso(), duration_seconds: 96, disposition: 'answered', recording_url: null },
@@ -516,7 +516,7 @@ function normalise(channelId, built, scenario) {
 }
 
 // ------------------------------------------------------------------ the run --
-export function runScenario(db, channelId, scenarioId) {
+export async function runScenario(db, channelId, scenarioId) {
   const ch = channel(channelId);
   if (!ch) throw new Error('unknown channel ' + channelId);
   const scenario = (ch.scenarios || []).find((s) => s.id === scenarioId) || { id: scenarioId, label: scenarioId, kind: 'inbound' };
@@ -525,7 +525,7 @@ export function runScenario(db, channelId, scenarioId) {
   const step = (name, detail, ok = true) => { steps.push({ step: name, detail, ok }); };
 
   INVENTED = false;
-  const built = BUILDERS[channelId](db, scenarioId);
+  const built = await BUILDERS[channelId](db, scenarioId);
   if (INVENTED) {
     step('empty table', 'this scenario needs somebody who already exists, and the table was empty, so the other party was invented for the test', true);
   }
@@ -595,7 +595,7 @@ export function runScenario(db, channelId, scenarioId) {
   step('mapping', `${map.length} fields mapped`);
 
   // 4. idempotency
-  const dup = db.prepare('SELECT id, person_id FROM sim_events WHERE external_id = ? AND status = ?').get(ev.externalId, 'ok');
+  const dup = await db.prepare('SELECT id, person_id FROM sim_events WHERE external_id = ? AND status = ?').get(ev.externalId, 'ok');
   if (dup) {
     step('idempotency', `external id ${ev.externalId} already on the timeline, nothing written`, true);
     return record(db, { ch, scenario, at, steps, built, ev, map, decision: 'duplicate-ignored', status: 'ok', personId: dup.person_id,
@@ -610,7 +610,7 @@ export function runScenario(db, channelId, scenarioId) {
   }
 
   // 6. identity
-  const hits = findPerson(db, ev.person);
+  const hits = await findPerson(db, ev.person);
   const distinct = [...new Set(hits.map((h) => h.id))];
   const identity = { looked: ev.person, hits, rule: 'email, then phone, then handle. A name never creates a match.' };
   if (distinct.length > 1) {
@@ -634,7 +634,7 @@ export function runScenario(db, channelId, scenarioId) {
   }
 
   // 7. write to the CRM
-  const crmResult = writeToCrm(db, { channelId, ev, personId, decision, scenarioId, account: ch.account.label, typedBy: built.raw && built.raw.by });
+  const crmResult = await writeToCrm(db, { channelId, ev, personId, decision, scenarioId, account: ch.account.label, typedBy: built.raw && built.raw.by });
   personId = crmResult.personId;
   step('crm', crmResult.summary);
   if (crmResult.sourceNote) step('attribution', crmResult.sourceNote);
@@ -647,12 +647,12 @@ export function runScenario(db, channelId, scenarioId) {
 // A channel event is automatic unless a named member of staff typed it in. The
 // walk-in desk and the phone log carry 'by', so they are manual actions in the
 // same history as the rest - decided 23.09.2026.
-function writeToCrm(db, { channelId, ev, personId, decision, scenarioId, account, typedBy }) {
+async function writeToCrm(db, { channelId, ev, personId, decision, scenarioId, account, typedBy }) {
   const now = nowIso();
   const out = {};
   if (!personId) {
     personId = newId();
-    db.prepare(`INSERT INTO people (id,name,email,phone,programme,status,owner,source_channel,source_campaign,source_detail,created_at,last_contact_at,notes)
+    await db.prepare(`INSERT INTO people (id,name,email,phone,programme,status,owner,source_channel,source_campaign,source_detail,created_at,last_contact_at,notes)
       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(
       personId, ev.person.name || 'Unknown', ev.person.email || null, ev.person.phone || null,
       ev.meta?.programme || null, 'New', CRMCFG.quickAddDefaults.owner,
@@ -661,16 +661,16 @@ function writeToCrm(db, { channelId, ev, personId, decision, scenarioId, account
     out.created = true;
     out.sourceNote = `source stamped ${ev.source.channel || channelId}${ev.source.campaign ? ' / ' + ev.source.campaign : ''} and locked`;
   } else {
-    const before = db.prepare('SELECT source_channel, source_campaign, email, phone FROM people WHERE id = ?').get(personId);
+    const before = await db.prepare('SELECT source_channel, source_campaign, email, phone FROM people WHERE id = ?').get(personId);
     // first touch wins: a later event never rewrites where the person came from
     out.sourceNote = `first touch stays ${before.source_channel}${before.source_campaign ? ' / ' + before.source_campaign : ''}; this event is recorded as a later touch`;
-    if (!before.email && ev.person.email) db.prepare('UPDATE people SET email = ? WHERE id = ?').run(ev.person.email, personId);
-    if (!before.phone && ev.person.phone) db.prepare('UPDATE people SET phone = ? WHERE id = ?').run(ev.person.phone, personId);
-    db.prepare('UPDATE people SET last_contact_at = ? WHERE id = ?').run(now, personId);
+    if (!before.email && ev.person.email) await db.prepare('UPDATE people SET email = ? WHERE id = ?').run(ev.person.email, personId);
+    if (!before.phone && ev.person.phone) await db.prepare('UPDATE people SET phone = ? WHERE id = ?').run(ev.person.phone, personId);
+    await db.prepare('UPDATE people SET last_contact_at = ? WHERE id = ?').run(now, personId);
   }
 
   const byHand = Boolean(typedBy);
-  logEvent(db, {
+  await logEvent(db, {
     personId,
     kind: byHand ? (channelId === 'phone' ? 'call' : 'note') : 'channel',
     // the channel it ARRIVED on, not where the traffic came from. A website form
@@ -686,13 +686,13 @@ function writeToCrm(db, { channelId, ev, personId, decision, scenarioId, account
   // consent, recorded rather than assumed
   const notes = [];
   for (const [purpose, given] of Object.entries(ev.consent || {})) {
-    db.prepare('INSERT INTO consents (person_id,purpose,state,basis,source,recorded_at,note) VALUES (?,?,?,?,?,?,?)')
+    await db.prepare('INSERT INTO consents (person_id,purpose,state,basis,source,recorded_at,note) VALUES (?,?,?,?,?,?,?)')
       .run(personId, purpose, given ? 'given' : 'not given', purpose === 'marketing' ? 'consent' : 'to be decided', channelId, now, null);
     notes.push(`${purpose}=${given ? 'given' : 'not given'}`);
   }
   if (ev.consentChange) {
     for (const [purpose, state] of Object.entries(ev.consentChange)) {
-      db.prepare('INSERT INTO consents (person_id,purpose,state,basis,source,recorded_at,note) VALUES (?,?,?,?,?,?,?)')
+      await db.prepare('INSERT INTO consents (person_id,purpose,state,basis,source,recorded_at,note) VALUES (?,?,?,?,?,?,?)')
         .run(personId, purpose, state, 'consent', channelId, now, 'from a provider event');
       notes.push(`${purpose}=${state}`);
     }
@@ -706,27 +706,27 @@ function writeToCrm(db, { channelId, ev, personId, decision, scenarioId, account
   if (label) {
     const days = ev.nextAction?.days ?? 1;
     const due = new Date(Date.now() + days * 86400000).toISOString();
-    db.prepare('INSERT INTO tasks (person_id,label,due_at,owner,created_at) VALUES (?,?,?,?,?)')
+    await db.prepare('INSERT INTO tasks (person_id,label,due_at,owner,created_at) VALUES (?,?,?,?,?)')
       .run(personId, label, due, CRMCFG.quickAddDefaults.owner, now);
     out.taskNote = `${label}, due ${due.slice(0, 10)}`;
   }
 
   if (ev.booking) {
-    const od = db.prepare('SELECT id FROM open_days ORDER BY held_on DESC LIMIT 1').get();
-    if (od) db.prepare('INSERT INTO registrations (open_day_id,person_id,slot,attended,professions) VALUES (?,?,?,?,?)')
+    const od = await db.prepare('SELECT id FROM open_days ORDER BY held_on DESC LIMIT 1').get();
+    if (od) await db.prepare('INSERT INTO registrations (open_day_id,person_id,slot,attended,professions) VALUES (?,?,?,?,?)')
       .run(od.id, personId, ev.booking.time, null, ev.source.detail || null);
     out.bookingNote = 'registration added to the open day';
   }
 
-  const person = db.prepare('SELECT * FROM people WHERE id = ?').get(personId);
+  const person = await db.prepare('SELECT * FROM people WHERE id = ?').get(personId);
   out.personId = personId;
   out.person = person;
   out.summary = `${decision === 'created' ? 'created' : 'updated'} ${person.name} (${personId}), timeline entry added`;
   return out;
 }
 
-function record(db, { ch, scenario, at, steps, built, ev, map, identity, decision, status, personId, crmResult, outbound, providerResult }) {
-  const info = db.prepare(`INSERT INTO sim_events (at,channel,provider,account,scenario,direction,transport,external_id,person_id,
+async function record(db, { ch, scenario, at, steps, built, ev, map, identity, decision, status, personId, crmResult, outbound, providerResult }) {
+  const info = await db.prepare(`INSERT INTO sim_events (at,channel,provider,account,scenario,direction,transport,external_id,person_id,
     decision,status,raw,normalized,mapping,identity,steps,crm_result,outbound,provider_result,audit)
     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(
     at, ch.id, ch.account.provider, ch.account.label, scenario.id,
@@ -737,7 +737,7 @@ function record(db, { ch, scenario, at, steps, built, ev, map, identity, decisio
     JSON.stringify(outbound ?? null), JSON.stringify(providerResult ?? null),
     JSON.stringify({ by: 'simulator test button', account: ch.account.label, simulated: true }));
   const id = Number(info.lastInsertRowid);
-  db.prepare('UPDATE sim_events SET id = id WHERE id = ?').run(id);
+  await db.prepare('UPDATE sim_events SET id = id WHERE id = ?').run(id);
   return { id, channel: ch.id, scenario: scenario.id, decision, status, personId: personId || null,
     steps, raw: built?.raw ?? null, normalized: ev ?? null, mapping: map ?? null, identity: identity ?? null,
     crmResult: crmResult ?? null, outbound: outbound ?? null, providerResult: providerResult ?? null,
@@ -745,10 +745,10 @@ function record(db, { ch, scenario, at, steps, built, ev, map, identity, decisio
 }
 
 // ---------------------------------------------------------------- outbound --
-export function runOutbound(db, channelId, personId, text) {
+export async function runOutbound(db, channelId, personId, text) {
   const ch = channel(channelId);
   if (!ch?.outbound?.supported) throw new Error('this channel has no outbound');
-  const person = db.prepare('SELECT * FROM people WHERE id = ?').get(personId);
+  const person = await db.prepare('SELECT * FROM people WHERE id = ?').get(personId);
   if (!person) throw new Error('person not found');
   const steps = [];
   const at = nowIso();
@@ -760,7 +760,7 @@ export function runOutbound(db, channelId, personId, text) {
   let ok = true;
 
   if (channelId === 'whatsapp') {
-    const last = db.prepare("SELECT occurred_at FROM events WHERE person_id = ? AND channel = 'whatsapp' ORDER BY occurred_at DESC LIMIT 1").get(personId);
+    const last = await db.prepare("SELECT occurred_at FROM events WHERE person_id = ? AND channel = 'whatsapp' ORDER BY occurred_at DESC LIMIT 1").get(personId);
     const hours = last ? (Date.now() - Date.parse(last.occurred_at)) / 3600000 : 999;
     const inWindow = hours <= 24;
     step('24 hour window', inWindow
@@ -786,7 +786,7 @@ export function runOutbound(db, channelId, personId, text) {
   }
 
   if (ok) {
-    logEvent(db, { personId, kind: 'channel', channel: channelId, direction: 'out', at,
+    await logEvent(db, { personId, kind: 'channel', channel: channelId, direction: 'out', at,
       subject: ch.outbound.label, body, actor: 'CRM (simulated)', origin: AUTOMATIC });
     step('timeline', 'the outbound message is recorded on the person');
   } else {
@@ -822,10 +822,10 @@ export const DEMO_SEQUENCE = [
   ['open_day', 'book'], ['klatiene', 'walk_in'], ['phone', 'log'],
 ];
 
-export function runFullDemo(db) {
+export async function runFullDemo(db) {
   const results = [];
   for (const [ch, sc] of DEMO_SEQUENCE) {
-    try { results.push(runScenario(db, ch, sc)); }
+    try { results.push(await runScenario(db, ch, sc)); }
     catch (err) { results.push({ channel: ch, scenario: sc, status: 'error', decision: 'error', error: err.message, steps: [] }); }
   }
   // outbound where the channel supports it and we have a person
@@ -835,7 +835,7 @@ export function runFullDemo(db) {
     if (!c?.outbound?.supported) continue;
     const last = results.find((r) => r.channel === ch && r.personId);
     if (!last) continue;
-    try { outbound.push(runOutbound(db, ch, last.personId)); } catch { /* skip */ }
+    try { outbound.push(await runOutbound(db, ch, last.personId)); } catch { /* skip */ }
   }
   const tally = {
     channelsTested: new Set(results.map((r) => r.channel)).size,
@@ -853,23 +853,23 @@ export function runFullDemo(db) {
 }
 
 // ---------------------------------------------------------------- readers ---
-export function listEvents(db, limit = 200) {
-  return db.prepare(`SELECT s.id, s.at, s.channel, s.provider, s.account, s.scenario, s.direction, s.transport,
+export async function listEvents(db, limit = 200) {
+  return await db.prepare(`SELECT s.id, s.at, s.channel, s.provider, s.account, s.scenario, s.direction, s.transport,
     s.external_id, s.person_id, s.decision, s.status, p.name AS person_name
     FROM sim_events s LEFT JOIN people p ON p.id = s.person_id ORDER BY s.id DESC LIMIT ?`).all(limit);
 }
-export function getEvent(db, id) {
-  const r = db.prepare('SELECT * FROM sim_events WHERE id = ?').get(id);
+export async function getEvent(db, id) {
+  const r = await db.prepare('SELECT * FROM sim_events WHERE id = ?').get(id);
   if (!r) return null;
   for (const k of ['raw', 'normalized', 'mapping', 'identity', 'steps', 'crm_result', 'outbound', 'provider_result', 'audit']) {
     try { r[k] = JSON.parse(r[k]); } catch { /* leave as is */ }
   }
-  if (r.person_id) r.person = db.prepare('SELECT id,name,email,phone,status,source_channel,source_campaign,source_detail FROM people WHERE id = ?').get(r.person_id);
+  if (r.person_id) r.person = await db.prepare('SELECT id,name,email,phone,status,source_channel,source_campaign,source_detail FROM people WHERE id = ?').get(r.person_id);
   return r;
 }
-export function consentFor(db, personId) {
-  return db.prepare('SELECT * FROM consents WHERE person_id = ? ORDER BY id DESC').all(personId);
+export async function consentFor(db, personId) {
+  return await db.prepare('SELECT * FROM consents WHERE person_id = ? ORDER BY id DESC').all(personId);
 }
-export function consentSummary(db) {
-  return db.prepare(`SELECT purpose, state, COUNT(*) n FROM consents GROUP BY purpose, state ORDER BY purpose`).all();
+export async function consentSummary(db) {
+  return await db.prepare(`SELECT purpose, state, COUNT(*) n FROM consents GROUP BY purpose, state ORDER BY purpose`).all();
 }

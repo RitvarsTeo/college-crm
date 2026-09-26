@@ -28,10 +28,10 @@ export const TABLES = ['people', 'events', 'tasks', 'documents', 'open_days', 'r
 const checksum = (payload) =>
   crypto.createHash('sha256').update(JSON.stringify(payload)).digest('hex').slice(0, 16);
 
-export function dump(db) {
+export async function dump(db) {
   const tables = {};
   for (const t of TABLES) {
-    tables[t] = db.prepare(`SELECT * FROM ${t}`).all().map((row) => {
+    tables[t] = (await db.prepare(`SELECT * FROM ${t}`).all()).map((row) => {
       // a BLOB comes back as a typed array and does not survive JSON, so it is
       // stored as base64 with a marker rather than silently becoming an object
       const out = {};
@@ -44,8 +44,8 @@ export function dump(db) {
   return tables;
 }
 
-export function write(db, meta = {}) {
-  const tables = dump(db);
+export async function write(db, meta = {}) {
+  const tables = await dump(db);
   const payload = { tables, counts: Object.fromEntries(TABLES.map((t) => [t, tables[t].length])) };
   const snap = {
     takenAt: new Date().toISOString(),
@@ -76,15 +76,15 @@ export function info() {
 
 // Wipe and replay. Returns what was restored and whether it matches the checksum
 // the snapshot was written with.
-export function restore(db) {
+export async function restore(db) {
   if (!exists()) return { error: 'there is no real-data snapshot to restore' };
   const snap = JSON.parse(fs.readFileSync(snapshotFile(), 'utf8'));
   const tables = snap.tables || {};
 
-  db.exec('BEGIN');
+  await db.exec('BEGIN');
   try {
     // children first, so a foreign key never blocks the wipe
-    for (const t of [...TABLES].reverse()) db.exec(`DELETE FROM ${t}`);
+    for (const t of [...TABLES].reverse()) await db.exec(`DELETE FROM ${t}`);
     for (const t of TABLES) {
       const rows = tables[t] || [];
       if (!rows.length) continue;
@@ -92,20 +92,20 @@ export function restore(db) {
       const stmt = db.prepare(
         `INSERT INTO ${t} (${cols.join(',')}) VALUES (${cols.map(() => '?').join(',')})`);
       for (const r of rows) {
-        stmt.run(...cols.map((c) => {
+        await stmt.run(...cols.map((c) => {
           const v = r[c];
           return (v && typeof v === 'object' && v._b64) ? Buffer.from(v._b64, 'base64') : v;
         }));
       }
     }
-    db.exec('COMMIT');
+    await db.exec('COMMIT');
   } catch (err) {
-    db.exec('ROLLBACK');
+    await db.exec('ROLLBACK');
     return { error: 'the restore failed and nothing was changed: ' + err.message };
   }
 
   // Proof, not assumption: read the database back and checksum it the same way.
-  const after = dump(db);
+  const after = await dump(db);
   const payload = { tables: after, counts: Object.fromEntries(TABLES.map((t) => [t, after[t].length])) };
   const now = checksum(payload);
   return {

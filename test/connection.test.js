@@ -35,7 +35,7 @@ const CONFIG = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'prototype.j
 
 // ------------------------------------------------------------- handshakes --
 
-test('Meta echoes its challenge back, or nothing is ever connected', () => {
+test('Meta echoes its challenge back, or nothing is ever connected', async () => {
   const env = { META_VERIFY_TOKEN: 'a-token-we-chose' };
   const url = new URL('https://x/api/inbound/facebook?hub.mode=subscribe'
     + '&hub.verify_token=a-token-we-chose&hub.challenge=1580227279');
@@ -46,7 +46,7 @@ test('Meta echoes its challenge back, or nothing is ever connected', () => {
   assert.equal(h.contentType, 'text/plain', 'Meta wants plain text, not JSON');
 });
 
-test('a wrong verify token is refused, and says nothing useful to whoever guessed', () => {
+test('a wrong verify token is refused, and says nothing useful to whoever guessed', async () => {
   const env = { META_VERIFY_TOKEN: 'a-token-we-chose' };
   const url = new URL('https://x/api/inbound/facebook?hub.mode=subscribe'
     + '&hub.verify_token=not-it&hub.challenge=1580227279');
@@ -56,7 +56,7 @@ test('a wrong verify token is refused, and says nothing useful to whoever guesse
   assert.ok(!String(h.how).includes('a-token-we-chose'), 'the real token must never be echoed back');
 });
 
-test('with no verify token set we say so, rather than letting anybody subscribe', () => {
+test('with no verify token set we say so, rather than letting anybody subscribe', async () => {
   const url = new URL('https://x/api/inbound/facebook?hub.mode=subscribe'
     + '&hub.verify_token=anything&hub.challenge=1');
   const h = handshake('facebook', url, {});
@@ -65,7 +65,7 @@ test('with no verify token set we say so, rather than letting anybody subscribe'
   assert.equal(h.status, 503, 'not configured is not the same as refused');
 });
 
-test('all four Meta channels share the one handshake', () => {
+test('all four Meta channels share the one handshake', async () => {
   const env = { META_VERIFY_TOKEN: 'tok' };
   for (const c of ['facebook', 'instagram', 'messenger', 'whatsapp']) {
     const url = new URL(`https://x/api/inbound/${c}?hub.mode=subscribe&hub.verify_token=tok&hub.challenge=42`);
@@ -73,20 +73,20 @@ test('all four Meta channels share the one handshake', () => {
   }
 });
 
-test('Mailchimp checks the URL works before it will save it', () => {
+test('Mailchimp checks the URL works before it will save it', async () => {
   const h = handshake('mailchimp', new URL('https://x/api/inbound/mailchimp'), {});
   assert.equal(h.ok, true);
   assert.equal(h.status, 200, 'Mailchimp refuses to save a webhook whose GET fails');
 });
 
-test('a channel with no handshake says so plainly', () => {
+test('a channel with no handshake says so plainly', async () => {
   assert.equal(handshake('website', new URL('https://x/api/inbound/website'), {}).status, 405);
   assert.equal(handshake('nonsense', new URL('https://x/a'), {}).status, 404);
 });
 
 // ------------------------------------------------------- reading the body --
 
-test('a real Mailchimp webhook is form-encoded, and is read', () => {
+test('a real Mailchimp webhook is form-encoded, and is read', async () => {
   const body = 'type=unsubscribe&fired_at=2026-09-24+10%3A00%3A00'
     + '&data%5Bemail%5D=liga%40inbox.lv&data%5Bid%5D=8a25ff1d98&data%5Blist_id%5D=c6ab4facba';
   const r = parseInboundBody('mailchimp', 'application/x-www-form-urlencoded', body);
@@ -98,13 +98,13 @@ test('a real Mailchimp webhook is form-encoded, and is read', () => {
     'and it is our audience, the one checked against the live account');
 });
 
-test('the same body as JSON still works, so nothing regressed', () => {
+test('the same body as JSON still works, so nothing regressed', async () => {
   const r = parseInboundBody('mailchimp', 'application/json', '{"type":"subscribe"}');
   assert.equal(r.payload.type, 'subscribe');
   assert.equal(r.as, 'JSON');
 });
 
-test('a provider that declares no content type but sends key=value is still read', () => {
+test('a provider that declares no content type but sends key=value is still read', async () => {
   // Refusing a real event over a missing header would be our fault, not theirs.
   const r = parseInboundBody('website', undefined, 'submission_id=abc&name=Liga');
   assert.equal(r.ok, true);
@@ -112,18 +112,18 @@ test('a provider that declares no content type but sends key=value is still read
   assert.match(r.as, /undeclared/);
 });
 
-test('something genuinely unreadable is refused, not guessed at', () => {
+test('something genuinely unreadable is refused, not guessed at', async () => {
   const r = parseInboundBody('website', 'application/json', '<html>oops</html>');
   assert.equal(r.ok, false);
   assert.match(r.how, /not readable/);
 });
 
-test('a repeated form key does not silently lose the first value', () => {
+test('a repeated form key does not silently lose the first value', async () => {
   const out = parseFormEncoded('tag=one&tag=two');
   assert.deepEqual(out.tag, ['one', 'two']);
 });
 
-test('Gmail arrives wrapped in a Pub/Sub envelope, and is unwrapped', () => {
+test('Gmail arrives wrapped in a Pub/Sub envelope, and is unwrapped', async () => {
   const inner = { id: 'msg-1', sender: 'Liga <liga@inbox.lv>', subject: 'Par studijām' };
   const envelope = { message: { data: Buffer.from(JSON.stringify(inner)).toString('base64'),
     messageId: 'ps-99' }, subscription: 'projects/x/subscriptions/y' };
@@ -135,26 +135,26 @@ test('Gmail arrives wrapped in a Pub/Sub envelope, and is unwrapped', () => {
   assert.equal(parseInboundBody('gmail', 'application/json', '{"id":"m2"}').payload.id, 'm2');
 });
 
-test('a malformed envelope is not mistaken for a message', () => {
+test('a malformed envelope is not mistaken for a message', async () => {
   assert.equal(unwrapPubSub({ message: { data: 'not base64 json' } }), null);
   assert.equal(unwrapPubSub({}), null);
 });
 
 // ----------------------------------------------------------------- consent --
 
-test('a ticked HTML checkbox is consent, whatever word the form uses for yes', () => {
+test('a ticked HTML checkbox is consent, whatever word the form uses for yes', async () => {
   for (const v of [true, 'true', 'on', 'yes', 'y', '1', 'Jā', 'JA']) {
     assert.equal(truthy(v), true, JSON.stringify(v) + ' is a ticked box');
   }
 });
 
-test('anything that is not clearly yes is NOT consent', () => {
+test('anything that is not clearly yes is NOT consent', async () => {
   for (const v of [false, 'false', 'off', 'no', '0', '', undefined, null, 'maybe', 'later']) {
     assert.equal(truthy(v), false, JSON.stringify(v) + ' must never be read as consent');
   }
 });
 
-test('a real form submission records the consent it was actually given', () => {
+test('a real form submission records the consent it was actually given', async () => {
   // The bug: === true on a form-encoded "true" recorded BOTH boxes as not given.
   const ticked = adapt('website', { submission_id: 'f1', email: 'a@b.lv',
     consent_admissions: 'true', consent_marketing: 'true' });
@@ -180,140 +180,140 @@ test('a real form submission records the consent it was actually given', () => {
 const OWNER = CONFIG.admissionsOwner;              // 'Admissions'
 const ADMISSIONS = CONFIG.admissionsOwnerPerson;   // 'Ieva'
 
-function fresh() {
-  const db = openDb(':memory:');
+async function fresh() {
+  const db = await openDb(':memory:');
   return db;
 }
 
-function arrive(db, channel, raw) {
-  return receive(db, toIntake(adapt(channel, raw)));
+async function arrive(db, channel, raw) {
+  return await receive(db, toIntake(adapt(channel, raw)));
 }
 
-test('a clear study enquiry reaches Admissions with an owner and a next action', () => {
-  const db = fresh();
-  const r = arrive(db, 'website', { submission_id: 'w-1', name: 'Anete Liepa',
+test('a clear study enquiry reaches Admissions with an owner and a next action', async () => {
+  const db = await fresh();
+  const r = await arrive(db, 'website', { submission_id: 'w-1', name: 'Anete Liepa',
     email: 'anete.liepa@inbox.lv', phone: '+37126554400', programme: 'NAV',
     message: 'I would like to study navigation. When can I apply?',
     consent_admissions: 'true' });
   assert.notEqual(r.filtered, true, 'a real enquiry is not spam');
   assert.ok(r.id, 'it waits in the Inbox for a person');
 
-  const q = qualify(db, r.id, { qualification: 'lead', createPerson: true, by: ADMISSIONS,
+  const q = await qualify(db, r.id, { qualification: 'lead', createPerson: true, by: ADMISSIONS,
     confirmFields: ['interest'], stated: { interest: 'NAV' },
     nextAction: 'Call and establish interest', differentPerson: true });
   assert.equal(q.ok, true);
 
-  const person = db.prepare('SELECT * FROM people WHERE id = ?').get(q.personId);
+  const person = await db.prepare('SELECT * FROM people WHERE id = ?').get(q.personId);
   assert.equal(person.name, 'Anete Liepa');
   assert.equal(person.source_channel, 'website', 'the channel it arrived on is kept');
   assert.equal(person.first_channel, 'website', 'and the first one is kept separately');
 
-  const task = db.prepare('SELECT * FROM tasks WHERE person_id = ? AND done_at IS NULL').get(q.personId);
+  const task = await db.prepare('SELECT * FROM tasks WHERE person_id = ? AND done_at IS NULL').get(q.personId);
   assert.ok(task, 'nobody reaches Admissions without a next action');
   assert.ok(task.due_at, 'and it has a due date');
 });
 
-test('a sales pitch never reaches the working Inbox', () => {
-  const db = fresh();
-  const r = arrive(db, 'instagram', { object: 'instagram', entry: [{ id: 'ig', messaging: [{
+test('a sales pitch never reaches the working Inbox', async () => {
+  const db = await fresh();
+  const r = await arrive(db, 'instagram', { object: 'instagram', entry: [{ id: 'ig', messaging: [{
     sender: { id: 'spammer' }, timestamp: 1758708060000,
     message: { mid: 'sp-1', text: 'we offer seo services and 5000 followers guaranteed' } }] }] });
   assert.equal(r.filtered, true, 'obvious rubbish is stopped before the queue');
-  const stored = db.prepare("SELECT COUNT(*) n FROM inbound WHERE state = 'filtered'").get().n;
+  const stored = (await db.prepare("SELECT COUNT(*) n FROM inbound WHERE state = 'filtered'").get()).n;
   assert.equal(stored, 1, 'but it is still stored and findable, not thrown away');
 });
 
-test('a plain "Hi" is NOT spam and waits for a person to judge it', () => {
-  const db = fresh();
-  const r = arrive(db, 'whatsapp', { object: 'whatsapp_business_account', entry: [{ id: 'wa',
+test('a plain "Hi" is NOT spam and waits for a person to judge it', async () => {
+  const db = await fresh();
+  const r = await arrive(db, 'whatsapp', { object: 'whatsapp_business_account', entry: [{ id: 'wa',
     changes: [{ field: 'messages', value: { metadata: { display_phone_number: '37123111114' },
       contacts: [{ profile: { name: 'Jānis' }, wa_id: '37129001122' }],
       messages: [{ id: 'wamid.hi1', from: '37129001122', timestamp: '1758708060',
         type: 'text', text: { body: 'Hi' } }] } }] }] });
   assert.notEqual(r.filtered, true, 'a real person saying Hi is not rubbish');
-  const row = db.prepare('SELECT state FROM inbound WHERE id = ?').get(r.id);
+  const row = await db.prepare('SELECT state FROM inbound WHERE id = ?').get(r.id);
   assert.equal(row.state, 'new', 'it waits in the Inbox');
 });
 
-test('a documents question is Admissions work, not Marketing, on any channel', () => {
+test('a documents question is Admissions work, not Marketing, on any channel', async () => {
   for (const channel of ['instagram', 'facebook']) {
-    const db = fresh();
-    const r = arrive(db, channel, { object: channel, entry: [{ id: 'p', messaging: [{
+    const db = await fresh();
+    const r = await arrive(db, channel, { object: channel, entry: [{ id: 'p', messaging: [{
       sender: { id: 'u1' }, timestamp: 1758708060000,
       message: { mid: 'dq-' + channel, text: 'Which documents do I need to submit for admission?' } }] }] });
-    const q = qualify(db, r.id, { qualification: 'lead', createPerson: true, by: ADMISSIONS,
+    const q = await qualify(db, r.id, { qualification: 'lead', createPerson: true, by: ADMISSIONS,
       confirmFields: ['question'], nextAction: 'Answer the question', differentPerson: true });
     assert.equal(q.ok, true, channel + ': a documents question must be answerable');
-    const person = db.prepare('SELECT owner FROM people WHERE id = ?').get(q.personId);
+    const person = await db.prepare('SELECT owner FROM people WHERE id = ?').get(q.personId);
     assert.equal(person.owner, OWNER, channel + ': it belongs to Admissions');
   }
 });
 
-test('somebody we already have is matched, not duplicated, across channels', () => {
-  const db = fresh();
-  const first = arrive(db, 'website', { submission_id: 'w-9', name: 'Emīls Baltputnis',
+test('somebody we already have is matched, not duplicated, across channels', async () => {
+  const db = await fresh();
+  const first = await arrive(db, 'website', { submission_id: 'w-9', name: 'Emīls Baltputnis',
     email: 'emils.baltputnis@gmail.com', phone: '+37120423829', message: 'Interested in MT' });
-  const q = qualify(db, first.id, { qualification: 'lead', createPerson: true, by: ADMISSIONS,
+  const q = await qualify(db, first.id, { qualification: 'lead', createPerson: true, by: ADMISSIONS,
     nextAction: 'Call and establish interest', differentPerson: true });
   assert.equal(q.ok, true);
 
   // the same human, a different channel, and the phone written a different way
-  const again = arrive(db, 'whatsapp', { object: 'whatsapp_business_account', entry: [{ id: 'wa',
+  const again = await arrive(db, 'whatsapp', { object: 'whatsapp_business_account', entry: [{ id: 'wa',
     changes: [{ field: 'messages', value: { metadata: { display_phone_number: '37123111114' },
       contacts: [{ profile: { name: 'Emils' }, wa_id: '37120423829' }],
       messages: [{ id: 'wamid.again', from: '37120423829', timestamp: '1758709000',
         type: 'text', text: { body: 'Any news?' } }] } }] }] });
 
-  const second = qualify(db, again.id, { qualification: 'lead', createPerson: true, by: ADMISSIONS,
+  const second = await qualify(db, again.id, { qualification: 'lead', createPerson: true, by: ADMISSIONS,
     nextAction: 'Call back' });
   assert.notEqual(second.ok, true, 'it must refuse rather than quietly make a twin');
   assert.equal(second.duplicate, true, 'and it must say so');
   assert.equal(second.matches[0].name, 'Emīls Baltputnis', 'naming who we already have');
   assert.deepEqual(second.matches[0].matchedOn, ['phone'],
     'matched on the last 8 digits, so +371 and 371 and bare are one person');
-  assert.equal(db.prepare('SELECT COUNT(*) n FROM people').get().n, 1);
+  assert.equal((await db.prepare('SELECT COUNT(*) n FROM people').get()).n, 1);
 });
 
-test('an unknown sender with no email or phone is still handled, and the gap is visible', () => {
-  const db = fresh();
-  const r = arrive(db, 'instagram', { object: 'instagram', entry: [{ id: 'ig', messaging: [{
+test('an unknown sender with no email or phone is still handled, and the gap is visible', async () => {
+  const db = await fresh();
+  const r = await arrive(db, 'instagram', { object: 'instagram', entry: [{ id: 'ig', messaging: [{
     sender: { id: 'anon-1' }, timestamp: 1758708060000,
     message: { mid: 'an-1', text: 'Do you have evening study?' } }] }] });
   assert.ok(r.id);
-  const q = qualify(db, r.id, { qualification: 'lead', createPerson: true, by: ADMISSIONS,
+  const q = await qualify(db, r.id, { qualification: 'lead', createPerson: true, by: ADMISSIONS,
     nextAction: 'Ask for an email or a phone number', differentPerson: true });
   assert.equal(q.ok, true);
-  const person = db.prepare('SELECT email, phone FROM people WHERE id = ?').get(q.personId);
+  const person = await db.prepare('SELECT email, phone FROM people WHERE id = ?').get(q.personId);
   assert.equal(person.email, null);
   assert.equal(person.phone, null);
-  const task = db.prepare('SELECT label, owner, due_at FROM tasks WHERE person_id = ?').get(q.personId);
+  const task = await db.prepare('SELECT label, owner, due_at FROM tasks WHERE person_id = ?').get(q.personId);
   assert.ok(task, 'a person we cannot reach still gets a next action, or they are lost');
   assert.match(task.label, /email or a phone/);
   assert.ok(task.due_at, 'with a due date, so it surfaces in Follow-ups');
 });
 
-test('a provider retrying the same event stores it once', () => {
-  const db = fresh();
+test('a provider retrying the same event stores it once', async () => {
+  const db = await fresh();
   const raw = { submission_id: 'retry-1', name: 'Kārlis Ozols', email: 'karlis@inbox.lv' };
-  const a = arrive(db, 'website', raw);
-  const b = arrive(db, 'website', raw);
-  const c = arrive(db, 'website', raw);
+  const a = await arrive(db, 'website', raw);
+  const b = await arrive(db, 'website', raw);
+  const c = await arrive(db, 'website', raw);
   assert.ok(a.id);
   assert.equal(b.duplicate, true, 'providers retry; that is normal, not an error');
   assert.equal(c.duplicate, true);
-  assert.equal(db.prepare('SELECT COUNT(*) n FROM inbound').get().n, 1);
+  assert.equal((await db.prepare('SELECT COUNT(*) n FROM inbound').get()).n, 1);
 });
 
-test('the message body is used to qualify and then not kept', () => {
-  const db = fresh();
-  const r = arrive(db, 'gmail', { id: 'gm-1', sender: 'Liga <liga@inbox.lv>',
+test('the message body is used to qualify and then not kept', async () => {
+  const db = await fresh();
+  const r = await arrive(db, 'gmail', { id: 'gm-1', sender: 'Liga <liga@inbox.lv>',
     subject: 'Par studijām', plaintextBody: 'Sveiki, es vēlos studēt navigāciju.' });
-  const before = db.prepare('SELECT body FROM inbound WHERE id = ?').get(r.id);
+  const before = await db.prepare('SELECT body FROM inbound WHERE id = ?').get(r.id);
   assert.ok(before.body, 'it is there while somebody needs to read it');
 
-  qualify(db, r.id, { qualification: 'lead', createPerson: true, by: ADMISSIONS,
+  await qualify(db, r.id, { qualification: 'lead', createPerson: true, by: ADMISSIONS,
     nextAction: 'Send the programme description', differentPerson: true });
-  const after = db.prepare('SELECT body FROM inbound WHERE id = ?').get(r.id);
+  const after = await db.prepare('SELECT body FROM inbound WHERE id = ?').get(r.id);
   assert.equal(after.body, null, 'and gone once it has been turned into a record');
 });
 

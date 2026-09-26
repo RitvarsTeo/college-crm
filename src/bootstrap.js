@@ -74,7 +74,7 @@ export function checkAccountConfig(accounts, env) {
  * hash, and no environment value is in the return value, which is what makes it
  * safe for the caller to print.
  */
-export function bootstrapAccounts(db, { accounts = [], env = process.env, now = new Date() } = {}) {
+export async function bootstrapAccounts(db, { accounts = [], env = process.env, now = new Date() } = {}) {
   const created = [];
   const kept = [];
   const skipped = [];
@@ -89,13 +89,13 @@ export function bootstrapAccounts(db, { accounts = [], env = process.env, now = 
     if (!email.includes('@') || !ROLES.includes(a.role)) { skipped.push(email || String(a.email)); continue; }
 
     // ALREADY THERE: leave it completely alone, whatever its role now is.
-    if (find.get(email)) { kept.push(email); continue; }
+    if (await find.get(email)) { kept.push(email); continue; }
 
     const supplied = a.passwordEnv ? env[a.passwordEnv] : null;
     // No password means no account. Never a half-made one.
     if (!supplied || passwordProblem(supplied, { email, name: a.name })) { skipped.push(email); continue; }
 
-    insert.run(newId(), email, a.name || email.split('@')[0],
+    await insert.run(newId(), email, a.name || email.split('@')[0],
       hashPassword(supplied), a.role, now.toISOString());
     created.push(email);
   }
@@ -120,7 +120,7 @@ function newId() {
  * that boots happily into a login screen nobody can pass looks healthy from
  * outside, and that is the failure this whole file exists to make impossible.
  */
-export function bootstrapIfAuthOn(db, { accounts = [], env = process.env, authOn = false } = {}) {
+export async function bootstrapIfAuthOn(db, { accounts = [], env = process.env, authOn = false } = {}) {
   if (!authOn) return { ok: true, ran: false, why: 'sign-in is off' };
 
   // IS THIS DEPLOYMENT USING BOOTSTRAP AT ALL?
@@ -139,7 +139,7 @@ export function bootstrapIfAuthOn(db, { accounts = [], env = process.env, authOn
   const supplied = names.filter((n) => env[n]);
 
   if (supplied.length === 0) {
-    const usable = countUsableAccounts(db);
+    const usable = await countUsableAccounts(db);
     return { ok: true, ran: false, created: [], kept: [], skipped: [],
       warn: usable === 0
         ? 'CRM_AUTH is on and this database holds no account anybody can sign in with. '
@@ -166,7 +166,7 @@ export function bootstrapIfAuthOn(db, { accounts = [], env = process.env, authOn
          + '\nSet those variables on the host. Their VALUES belong nowhere else.' };
   }
 
-  const r = bootstrapAccounts(db, { accounts, env });
+  const r = await bootstrapAccounts(db, { accounts, env });
   if (r.skipped.length) {
     return { ok: false, ran: true,
       why: 'Some accounts could not be created: ' + r.skipped.join(', ') };
@@ -176,9 +176,9 @@ export function bootstrapIfAuthOn(db, { accounts = [], env = process.env, authOn
 
 /** How many accounts could actually sign in right now. An account with no
  *  password cannot, so it does not count. */
-export function countUsableAccounts(db) {
+export async function countUsableAccounts(db) {
   try {
-    return db.prepare('SELECT COUNT(*) n FROM crm_users WHERE password_hash IS NOT NULL AND active = 1')
-      .get().n;
+    return (await db.prepare('SELECT COUNT(*) n FROM crm_users WHERE password_hash IS NOT NULL AND active = 1')
+      .get()).n;
   } catch { return 0; }
 }

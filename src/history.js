@@ -36,10 +36,10 @@ export const FIELD_LABELS = {
   owner: 'Owner', notes: 'Notes',
 };
 
-export function logEvent(db, e) {
+export async function logEvent(db, e) {
   if (!e.origin) throw new Error('logEvent: origin is required (manual or automatic)');
   if (![MANUAL, AUTOMATIC].includes(e.origin)) throw new Error('logEvent: unknown origin ' + e.origin);
-  db.prepare(`INSERT INTO events
+  await db.prepare(`INSERT INTO events
     (person_id,kind,channel,direction,occurred_at,subject,body,actor,origin,field,old_value,new_value)
     VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`).run(
     e.personId, e.kind, e.channel ?? null, e.direction ?? 'note', e.at,
@@ -50,8 +50,8 @@ export function logEvent(db, e) {
 // Applies an edit and writes one history entry per field that really changed.
 // Returns { changes: [...] } or { error, field, reason } - it never half-applies:
 // an attempt to touch a locked field is refused before anything is written.
-export function applyEdit(db, personId, patch, actor, at) {
-  const person = db.prepare('SELECT * FROM people WHERE id = ?').get(personId);
+export async function applyEdit(db, personId, patch, actor, at) {
+  const person = await db.prepare('SELECT * FROM people WHERE id = ?').get(personId);
   if (!person) return { error: 'not found' };
 
   for (const key of Object.keys(patch)) {
@@ -80,8 +80,8 @@ export function applyEdit(db, personId, patch, actor, at) {
   }
 
   for (const c of changes) {
-    db.prepare(`UPDATE people SET ${c.field} = ? WHERE id = ?`).run(c.to, personId);
-    logEvent(db, {
+    await db.prepare(`UPDATE people SET ${c.field} = ? WHERE id = ?`).run(c.to, personId);
+    await logEvent(db, {
       personId, kind: 'edit', direction: 'note', at, actor, origin: MANUAL,
       subject: `${FIELD_LABELS[c.field] || c.field} changed`,
       body: `${c.from ?? '(empty)'} -> ${c.to ?? '(empty)'}`,
@@ -94,10 +94,10 @@ export function applyEdit(db, personId, patch, actor, at) {
 // The one log the screen reads: person events and integration events merged and
 // sorted together, because a reader should not have to know which table a line
 // came from to understand what happened.
-export function readHistory(db, { origin = '', kind = '', personId = '', actor = '', limit = 200 } = {}) {
+export async function readHistory(db, { origin = '', kind = '', personId = '', actor = '', limit = 200 } = {}) {
   const rows = [];
 
-  for (const e of db.prepare(`SELECT ev.*, pe.name AS person_name FROM events ev
+  for (const e of await db.prepare(`SELECT ev.*, pe.name AS person_name FROM events ev
       LEFT JOIN people pe ON pe.id = ev.person_id ORDER BY ev.occurred_at DESC, ev.id DESC`).all()) {
     rows.push({
       at: e.occurred_at, origin: e.origin, kind: e.kind, channel: e.channel,
@@ -108,7 +108,7 @@ export function readHistory(db, { origin = '', kind = '', personId = '', actor =
     });
   }
 
-  for (const s of db.prepare(`SELECT se.*, pe.name AS person_name FROM sim_events se
+  for (const s of await db.prepare(`SELECT se.*, pe.name AS person_name FROM sim_events se
       LEFT JOIN people pe ON pe.id = se.person_id ORDER BY se.id DESC`).all()) {
     rows.push({
       at: s.at, origin: AUTOMATIC, kind: 'integration', channel: s.channel,

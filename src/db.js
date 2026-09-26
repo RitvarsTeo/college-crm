@@ -264,18 +264,72 @@ const ADDED_COLUMNS = [
   ['inbound', 'source', 'TEXT'],
 ];
 
-function migrate(db) {
+// ---------------------------------------------------------- the async layer --
+//
+// WHY THIS EXISTS. `node:sqlite` is synchronous and every PostgreSQL client is
+// not, so the barrier to Postgres was never the SQL - that is almost entirely
+// portable - it was 364 call sites expecting a row back from a function call
+// rather than from a promise.
+//
+// This layer makes the database asynchronous WHILE SQLITE IS STILL UNDERNEATH,
+// so the test suite proves the conversion on its own, before anything about the
+// storage changes. See docs/PHASE1_ASYNC.md.
+//
+// THE SHAPE IS CHOSEN FOR TWO THINGS AT ONCE: the smallest possible diff at each
+// call site, and a clean mapping onto `pg` afterwards.
+//
+//   await db.prepare(SQL).get(a, b)    ->  pool.query(sql, params) -> rows[0]
+//   await db.prepare(SQL).all(a)       ->  pool.query(sql, params) -> rows
+//   await db.prepare(SQL).run(a)       ->  pool.query(sql, params) -> { changes }
+//
+// `prepare()` stays synchronous and only captures the SQL. Only get/all/run
+// await, so a call site changes by exactly one word.
+
+class Statement {
+  constructor(raw, sql) {
+    this.raw = raw;
+    this.sql = sql;
+    this.stmt = null;             // prepared once, on first use, then reused
+  }
+
+  compiled() {
+    if (!this.stmt) this.stmt = this.raw.prepare(this.sql);
+    return this.stmt;
+  }
+
+  // These are async because the interface must be, not because SQLite is. Under
+  // SQLite the work is done by the time the promise is returned.
+  async get(...params) { return this.compiled().get(...params); }
+  async all(...params) { return this.compiled().all(...params); }
+  async run(...params) { return this.compiled().run(...params); }
+}
+
+class Db {
+  constructor(raw) { this.raw = raw; }
+
+  /** Synchronous on purpose: it captures SQL and compiles nothing yet. */
+  prepare(sql) { return new Statement(this.raw, sql); }
+
+  async exec(sql) { return this.raw.exec(sql); }
+  async close() { return this.raw.close(); }
+}
+
+async function migrate(db) {
   for (const [table, column, type] of ADDED_COLUMNS) {
-    const has = db.prepare(`SELECT COUNT(*) n FROM pragma_table_info(?) WHERE name = ?`)
-      .get(table, column).n > 0;
-    if (!has) db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
+    const row = await db.prepare(`SELECT COUNT(*) n FROM pragma_table_info(?) WHERE name = ?`)
+      .get(table, column);
+    if (!(row.n > 0)) await db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
   }
 }
 
-export function openDb(file = ':memory:') {
-  const db = new DatabaseSync(file);
-  db.exec('PRAGMA foreign_keys = ON');
-  db.exec(SCHEMA);
-  migrate(db);
+/**
+ * ASYNC, because creating the schema is a query and under Postgres it cannot be
+ * anything else. Every caller awaits it.
+ */
+export async function openDb(file = ':memory:') {
+  const db = new Db(new DatabaseSync(file));
+  await db.exec('PRAGMA foreign_keys = ON');
+  await db.exec(SCHEMA);
+  await migrate(db);
   return db;
 }

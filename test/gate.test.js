@@ -22,18 +22,18 @@ const PASSWORD = 'a-long-enough-test-password';
 
 // ------------------------------------------------------- refusing to start --
 
-test('a shared copy with no password refuses to start', () => {
+test('a shared copy with no password refuses to start', async () => {
   const r = requireConfigured({ CRM_PUBLIC: '1' });
   assert.equal(r.ok, false);
   assert.match(r.why, /Refusing to start/);
 });
 
-test('a short password refuses to start too', () => {
+test('a short password refuses to start too', async () => {
   assert.equal(requireConfigured({ CRM_PUBLIC: '1', CRM_ACCESS_PASSWORD: 'abc' }).ok, false);
   assert.equal(requireConfigured({ CRM_PUBLIC: '1', CRM_ACCESS_PASSWORD: PASSWORD }).ok, true);
 });
 
-test('on a laptop there is no door and none is demanded', () => {
+test('on a laptop there is no door and none is demanded', async () => {
   assert.equal(isPublic({}), false);
   assert.equal(requireConfigured({}).ok, true);
   assert.equal(requireConfigured({}).gate, false);
@@ -42,20 +42,20 @@ test('on a laptop there is no door and none is demanded', () => {
 
 // ------------------------------------------------------------- the ticket --
 
-test('a ticket minted with the password verifies, and one minted with another does not', () => {
+test('a ticket minted with the password verifies, and one minted with another does not', async () => {
   const t = mint(PASSWORD);
   assert.equal(verifyTicket(t, PASSWORD).ok, true);
   assert.equal(verifyTicket(t, 'a-different-long-password').ok, false);
 });
 
-test('changing the password invalidates every ticket already issued', () => {
+test('changing the password invalidates every ticket already issued', async () => {
   // The signing key is derived from the password, so this is automatic rather
   // than something somebody has to remember to do.
   const t = mint(PASSWORD);
   assert.equal(verifyTicket(t, PASSWORD + '-changed').ok, false);
 });
 
-test('a forged or edited ticket is refused', () => {
+test('a forged or edited ticket is refused', async () => {
   const t = mint(PASSWORD);
   const [v, exp, sig] = t.split('.');
   assert.equal(verifyTicket(`${v}.${exp}.${sig.slice(0, -2)}xx`, PASSWORD).ok, false);
@@ -66,7 +66,7 @@ test('a forged or edited ticket is refused', () => {
   assert.equal(verifyTicket(null, PASSWORD).ok, false);
 });
 
-test('an expired ticket is refused, and looks the same as a forged one', () => {
+test('an expired ticket is refused, and looks the same as a forged one', async () => {
   const now = Date.now();
   const t = mint(PASSWORD, { now: now - (DAYS + 1) * 86400000 });
   const r = verifyTicket(t, PASSWORD, { now });
@@ -77,7 +77,7 @@ test('an expired ticket is refused, and looks the same as a forged one', () => {
   assert.equal(verifyTicket(t, 'wrong-long-password', { now }).why, 'signature did not match');
 });
 
-test('a ticket lasts 30 days, so a tester is not asked again every morning', () => {
+test('a ticket lasts 30 days, so a tester is not asked again every morning', async () => {
   const now = Date.now();
   const r = verifyTicket(mint(PASSWORD, { now }), PASSWORD, { now: now + 29 * 86400000 });
   assert.equal(r.ok, true);
@@ -85,7 +85,7 @@ test('a ticket lasts 30 days, so a tester is not asked again every morning', () 
 
 // ------------------------------------------------------------ the password --
 
-test('the password comparison does not reveal the length', () => {
+test('the password comparison does not reveal the length', async () => {
   assert.equal(passwordMatches(PASSWORD, PASSWORD), true);
   assert.equal(passwordMatches('x', PASSWORD), false, 'a short guess must not throw');
   assert.equal(passwordMatches(PASSWORD + 'x', PASSWORD), false);
@@ -93,7 +93,7 @@ test('the password comparison does not reveal the length', () => {
   assert.equal(passwordMatches(undefined, PASSWORD), false);
 });
 
-test('the password never appears in the page or the cookie', () => {
+test('the password never appears in the page or the cookie', async () => {
   const page = LOGIN_PAGE('That password is not right.');
   assert.ok(!page.includes(PASSWORD));
   const ticket = mint(PASSWORD);
@@ -103,7 +103,7 @@ test('the password never appears in the page or the cookie', () => {
 
 // ------------------------------------------------------------- the cookie --
 
-test('the cookie is HttpOnly and Secure, so a script cannot read it', () => {
+test('the cookie is HttpOnly and Secure, so a script cannot read it', async () => {
   const h = cookieHeader(mint(PASSWORD));
   assert.match(h, /HttpOnly/);
   assert.match(h, /Secure/);
@@ -113,7 +113,7 @@ test('the cookie is HttpOnly and Secure, so a script cannot read it', () => {
   assert.ok(!cookieHeader(mint(PASSWORD), { secure: false }).includes('Secure'));
 });
 
-test('the cookie is read out of a header with other cookies in it', () => {
+test('the cookie is read out of a header with other cookies in it', async () => {
   const t = mint(PASSWORD);
   assert.equal(readCookie(`other=1; ${COOKIE}=${encodeURIComponent(t)}; third=x`), t);
   assert.equal(readCookie('other=1'), null);
@@ -125,14 +125,14 @@ test('the cookie is read out of a header with other cookies in it', () => {
 
 const PUB = { CRM_PUBLIC: '1', CRM_ACCESS_PASSWORD: PASSWORD };
 
-test('everything a person can open is behind the door', () => {
+test('everything a person can open is behind the door', async () => {
   for (const p of ['/', '/index.html', '/console', '/api/people', '/api/config',
     '/api/reports', '/api/history', '/api/inbound/events']) {
     assert.equal(allows(p, PUB), false, p + ' must be behind the door');
   }
 });
 
-test('a provider webhook is NOT behind the door, because it has a stronger one', () => {
+test('a provider webhook is NOT behind the door, because it has a stronger one', async () => {
   // A channel authenticates with a signature or a secret. Putting a shared
   // password in front would break every channel the moment one is connected,
   // and a password a human types is weaker than a signed request anyway.

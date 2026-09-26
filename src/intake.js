@@ -25,7 +25,7 @@ const newPersonId = () => 'p' + Math.random().toString(36).slice(2, 7);
 // "Inbound Monday 21:30, still untouched, surfaces Tuesday 09:00."
 // Computed once on arrival and stored on the row, so a test can assert it
 // without waiting for a clock, and so the rule cannot drift between readers.
-export function surfaceAt(receivedIso, cfg = CFG.ageing) {
+export async function surfaceAt(receivedIso, cfg = CFG.ageing) {
   const tz = cfg?.timezone || 'Europe/Riga';
   const hour = cfg?.hour ?? 9;
   const received = new Date(receivedIso);
@@ -75,7 +75,7 @@ export function whoCanReach(channel) {
 }
 
 // Accepts a person or a role. A role is answered by its people.
-export function canReach(who, channel) {
+export async function canReach(who, channel) {
   if (ACCESS[who]) return personCanReach(who, channel);
   const holders = (CFG.users || []).filter((u) => u.role === who).map((u) => u.name);
   return holders.some((name) => personCanReach(name, channel));
@@ -83,11 +83,11 @@ export function canReach(who, channel) {
 
 // Ieva owns Admissions and has no Instagram. If a hot lead arrives there and we
 // hold no email or phone, handing it over hands over something she cannot act on.
-export function handoverGap({ role, channel, email, phone }) {
+export async function handoverGap({ role, channel, email, phone }) {
   const reachable = (CFG.handoverRule.reachableFields || []).some(
     (f) => (f === 'email' ? email : phone));
   if (reachable) return null;
-  if (canReach(role, channel)) return null;
+  if (await canReach(role, channel)) return null;
   const bridges = whoCanReach(channel);
   return {
     role, channel, bridges,
@@ -100,12 +100,12 @@ export function handoverGap({ role, channel, email, phone }) {
 
 // ------------------------------------------------------------- arrival ----
 // Nothing here decides anything. It stores, extracts and suggests.
-export function receive(db, item) {
+export async function receive(db, item) {
   const at = item.receivedAt || nowIso();
 
   // an exact repeat of a message we already hold is arithmetic, not judgement
   if (item.externalId) {
-    const seen = db.prepare('SELECT id FROM inbound WHERE channel = ? AND external_id = ?')
+    const seen = await db.prepare('SELECT id FROM inbound WHERE channel = ? AND external_id = ?')
       .get(item.channel, item.externalId);
     if (seen) return { duplicate: true, id: seen.id };
   }
@@ -122,16 +122,16 @@ export function receive(db, item) {
   // 'provider': a row may only claim a real provider sent it when the caller
   // knows that for a fact, because the admin Channels panel treats that word as
   // proof a channel is connected.
-  const info = db.prepare(`INSERT INTO inbound
+  const info = await db.prepare(`INSERT INTO inbound
     (channel, thread_key, external_id, received_at, surface_at, contact_name, contact_handle,
      contact_email, contact_phone, body, suggested, suggestion_why, state, source)
     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(
-    item.channel, item.threadKey || null, item.externalId || null, at, surfaceAt(at),
+    item.channel, item.threadKey || null, item.externalId || null, at, await surfaceAt(at),
     item.name || null, item.handle || null, item.email || null, item.phone || null,
     item.body || null, read.suggested, read.why, state, item.source || null);
   const id = Number(info.lastInsertRowid);
   if (read.junk) {
-    db.prepare(`UPDATE inbound SET archive_reason = 'Filtered automatically',
+    await db.prepare(`UPDATE inbound SET archive_reason = 'Filtered automatically',
       archive_note = ?, processed_by = 'machine', processed_at = ?, body = NULL,
       body_deleted_at = ? WHERE id = ?`).run(read.why, at, at, id);
   }
@@ -139,7 +139,7 @@ export function receive(db, item) {
   const stamp = db.prepare(`INSERT INTO field_values
     (person_id, inbound_id, field, value, provenance, recorded_at, recorded_by)
     VALUES (NULL,?,?,?,?,?,'machine')`);
-  for (const f of read.fields) stamp.run(id, f.field, f.value, f.provenance, at);
+  for (const f of read.fields) await stamp.run(id, f.field, f.value, f.provenance, at);
 
   return { id, suggested: read.suggested, why: read.why, missing: read.missing,
     fields: read.fields, filtered: Boolean(read.junk) };
@@ -152,14 +152,14 @@ export function receive(db, item) {
 // real contacts and a sales pitch was never one.
 const STATE_SETS = { notrelevant: ['archived', 'filtered'] };
 
-export function listInbound(db, { state = 'new', now = nowIso() } = {}) {
+export async function listInbound(db, { state = 'new', now = nowIso() } = {}) {
   const wanted = STATE_SETS[state] || (state ? [state] : []);
   const where = wanted.length ? `WHERE i.state IN (${wanted.map(() => '?').join(',')})` : '';
-  const rows = db.prepare(`SELECT i.*, pe.name AS person_name FROM inbound i
+  const rows = await db.prepare(`SELECT i.*, pe.name AS person_name FROM inbound i
     LEFT JOIN people pe ON pe.id = i.person_id
     ${where} ORDER BY i.received_at DESC`).all(...wanted);
   for (const r of rows) {
-    r.fields = db.prepare('SELECT * FROM field_values WHERE inbound_id = ? ORDER BY id').all(r.id);
+    r.fields = await db.prepare('SELECT * FROM field_values WHERE inbound_id = ? ORDER BY id').all(r.id);
     r.missing = missingFor(r.fields);
     r.aged = r.state === 'new' && r.surface_at <= now;
   }
@@ -171,22 +171,22 @@ export function missingFor(fields) {
   return (CFG.qualification.completionFields || []).filter((f) => !present.has(f));
 }
 
-export function agedCount(db, now = nowIso()) {
-  return db.prepare("SELECT COUNT(*) n FROM inbound WHERE state = 'new' AND surface_at <= ?").get(now).n;
+export async function agedCount(db, now = nowIso()) {
+  return (await db.prepare("SELECT COUNT(*) n FROM inbound WHERE state = 'new' AND surface_at <= ?").get(now)).n;
 }
 
 // What each person has waiting for them right now. This is the whole of the
 // notification model: a count per role, and the same rows they would open anyway.
-export function waitingFor(db, role, now = nowIso()) {
+export async function waitingFor(db, role, now = nowIso()) {
   const mine = [];
   if (role === CFG.routing.unclear) {
-    for (const r of listInbound(db, { state: 'new', now })) mine.push({ kind: 'intake', ...r });
+    for (const r of await listInbound(db, { state: 'new', now })) mine.push({ kind: 'intake', ...r });
   }
-  const leads = db.prepare(`SELECT pe.* FROM people pe WHERE pe.qualification = 'lead' AND pe.owner = ?
+  const leads = await db.prepare(`SELECT pe.* FROM people pe WHERE pe.qualification = 'lead' AND pe.owner = ?
     AND pe.status NOT IN (${(CFG.terminalStages || []).map(() => '?').join(',') || "''"})`)
     .all(role, ...(CFG.terminalStages || []));
   for (const p of leads) mine.push({ kind: 'lead', ...p });
-  const overdue = db.prepare(`SELECT t.*, pe.name FROM tasks t JOIN people pe ON pe.id = t.person_id
+  const overdue = await db.prepare(`SELECT t.*, pe.name FROM tasks t JOIN people pe ON pe.id = t.person_id
     WHERE t.done_at IS NULL AND t.due_at < ? AND t.owner = ?`).all(now, role);
   return {
     role,
@@ -200,9 +200,11 @@ export function waitingFor(db, role, now = nowIso()) {
 
 // What an admin sees: the same thing for everybody, side by side. Aigars is not
 // notified himself - he is shown who has what waiting.
-export function waitingByRole(db, now = nowIso()) {
-  return (CFG.owners || []).map((role) => waitingFor(db, role, now))
-    .filter((r) => r.total > 0 || ['Marketing', 'Admissions'].includes(r.role));
+export async function waitingByRole(db, now = nowIso()) {
+  // Resolved first, filtered second. Filtering an array of promises keeps every
+  // element - a Promise is always truthy - and r.total would be undefined.
+  const rows = await Promise.all((CFG.owners || []).map((role) => waitingFor(db, role, now)));
+  return rows.filter((r) => r.total > 0 || ['Marketing', 'Admissions'].includes(r.role));
 }
 
 // ------------------------------------------------------ the human decision --
@@ -223,9 +225,9 @@ export function defaultDueFor(label, from = nowIso()) {
   return new Date(Date.parse(from) + 86400000).toISOString();
 }
 
-export function qualify(db, id, { qualification, personId, createPerson, by, note,
+export async function qualify(db, id, { qualification, personId, createPerson, by, note,
   confirmFields = [], stated = {}, nextAction, nextActionDue, differentPerson = false }) {
-  const item = db.prepare('SELECT * FROM inbound WHERE id = ?').get(id);
+  const item = await db.prepare('SELECT * FROM inbound WHERE id = ?').get(id);
   if (!item) return { error: 'not found' };
   if (item.state !== 'new') return { error: 'this item has already been dealt with' };
   const levels = CFG.qualification.levels.map((l) => l.id);
@@ -250,7 +252,7 @@ export function qualify(db, id, { qualification, personId, createPerson, by, not
   // not stack a second one, or a chatty applicant collects a pile of duplicates.
   if (CFG.nextActionRequired && !String(nextAction || '').trim()) {
     const alreadyHasOne = personId
-      ? db.prepare('SELECT COUNT(*) n FROM tasks WHERE person_id = ? AND done_at IS NULL').get(personId).n > 0
+      ? (await db.prepare('SELECT COUNT(*) n FROM tasks WHERE person_id = ? AND done_at IS NULL').get(personId)).n > 0
       : false;
     if (!alreadyHasOne) {
       return { error: 'a next step is required: every person we keep working with has one',
@@ -262,7 +264,7 @@ export function qualify(db, id, { qualification, personId, createPerson, by, not
   // 23.09.2026, and was applied only on the manual Add person screen. Qualifying
   // from a channel therefore created twins in silence.
   if (!personId && createPerson && !differentPerson) {
-    const dup = duplicateCheck(db, {
+    const dup = await duplicateCheck(db, {
       email: item.contact_email, phone: item.contact_phone, name: item.contact_name });
     if (dup.blocked) {
       return { error: 'this looks like somebody we already have', duplicate: true,
@@ -276,7 +278,7 @@ export function qualify(db, id, { qualification, personId, createPerson, by, not
   if (!pid && createPerson) {
     pid = newPersonId();
     const name = item.contact_name || item.contact_handle || 'Unknown contact';
-    db.prepare(`INSERT INTO people
+    await db.prepare(`INSERT INTO people
       (id,name,email,phone,status,owner,source_channel,source_detail,created_at,last_contact_at,
        qualification,first_channel)
       VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`).run(
@@ -284,16 +286,16 @@ export function qualify(db, id, { qualification, personId, createPerson, by, not
       CFG.stageRoles.first, ownerFor(qualification), item.channel,
       'from ' + item.channel + ' intake', item.received_at, item.received_at,
       qualification, item.channel);
-    logEvent(db, { personId: pid, kind: 'create', channel: item.channel, direction: 'note',
+    await logEvent(db, { personId: pid, kind: 'create', channel: item.channel, direction: 'note',
       at, origin: MANUAL, actor: by, subject: 'Created from intake',
       body: `${qualification} - ${item.suggestion_why}` });
   } else if (pid) {
-    const before = db.prepare('SELECT qualification, owner FROM people WHERE id = ?').get(pid);
+    const before = await db.prepare('SELECT qualification, owner FROM people WHERE id = ?').get(pid);
     if (!before) return { error: 'person not found' };
-    db.prepare('UPDATE people SET qualification = ?, owner = ?, last_contact_at = ? WHERE id = ?')
+    await db.prepare('UPDATE people SET qualification = ?, owner = ?, last_contact_at = ? WHERE id = ?')
       .run(qualification, ownerFor(qualification), at, pid);
     if (before.qualification !== qualification) {
-      logEvent(db, { personId: pid, kind: 'qualification', direction: 'note', at, origin: MANUAL,
+      await logEvent(db, { personId: pid, kind: 'qualification', direction: 'note', at, origin: MANUAL,
         actor: by, subject: `Qualification: ${before.qualification || 'raw'} -> ${qualification}`,
         body: note || '', field: 'qualification', oldValue: before.qualification, newValue: qualification });
     }
@@ -304,14 +306,14 @@ export function qualify(db, id, { qualification, personId, createPerson, by, not
   // the extracted values move onto the person. Confirmed ones become facts;
   // the rest stay suggestions and stay out of every count.
   const confirm = new Set(confirmFields);
-  const fields = db.prepare('SELECT * FROM field_values WHERE inbound_id = ?').all(id);
+  const fields = await db.prepare('SELECT * FROM field_values WHERE inbound_id = ?').all(id);
   for (const f of fields) {
     const provenance = f.provenance === 'extracted' && confirm.has(f.field) ? 'confirmed' : f.provenance;
-    db.prepare(`INSERT INTO field_values
+    await db.prepare(`INSERT INTO field_values
       (person_id, inbound_id, field, value, provenance, recorded_at, recorded_by, confirmed_at, confirmed_by)
       VALUES (?,?,?,?,?,?,?,?,?)`).run(pid, id, f.field, f.value, provenance, at, by,
       provenance === 'confirmed' ? at : null, provenance === 'confirmed' ? by : null);
-    if (provenance === 'confirmed' || provenance === 'provider') applyToPerson(db, pid, f.field, f.value);
+    if (provenance === 'confirmed' || provenance === 'provider') await applyToPerson(db, pid, f.field, f.value);
   }
 
   // What a person read off the conversation and typed in themselves. The machine
@@ -320,34 +322,34 @@ export function qualify(db, id, { qualification, personId, createPerson, by, not
   for (const [field, raw] of Object.entries(stated || {})) {
     const value = String(raw ?? '').trim();
     if (!value) continue;
-    db.prepare(`INSERT INTO field_values
+    await db.prepare(`INSERT INTO field_values
       (person_id, inbound_id, field, value, provenance, recorded_at, recorded_by, confirmed_at, confirmed_by)
       VALUES (?,?,?,?,'operator',?,?,?,?)`).run(pid, id, field, value, at, by, at, by);
     // A person saying it outranks a machine guessing it, so this one overwrites,
     // and the change is written into the history like any other edit.
-    applyToPerson(db, pid, field, value, { by, at, force: true });
+    await applyToPerson(db, pid, field, value, { by, at, force: true });
   }
 
-  db.prepare(`UPDATE inbound SET state = 'qualified', qualification = ?, person_id = ?,
+  await db.prepare(`UPDATE inbound SET state = 'qualified', qualification = ?, person_id = ?,
     processed_by = ?, processed_at = ?, body = NULL, body_deleted_at = ? WHERE id = ?`)
     .run(qualification, pid, by, at, at, id);
 
-  logEvent(db, { personId: pid, kind: 'note', channel: item.channel, direction: 'in', at,
+  await logEvent(db, { personId: pid, kind: 'note', channel: item.channel, direction: 'in', at,
     origin: MANUAL, actor: by, subject: `Qualified from ${item.channel} as ${qualification}`,
     body: note || item.suggestion_why });
 
   // The next step, with an owner and a due date, so nobody can come to rest here.
   if (String(nextAction || '').trim()) {
     const due = nextActionDue || defaultDueFor(nextAction, at);
-    db.prepare('INSERT INTO tasks (person_id,label,due_at,owner,created_at) VALUES (?,?,?,?,?)')
+    await db.prepare('INSERT INTO tasks (person_id,label,due_at,owner,created_at) VALUES (?,?,?,?,?)')
       .run(pid, String(nextAction).trim(), due, ownerFor(qualification), at);
-    logEvent(db, { personId: pid, kind: 'task', direction: 'note', at, origin: MANUAL, actor: by,
+    await logEvent(db, { personId: pid, kind: 'task', direction: 'note', at, origin: MANUAL, actor: by,
       subject: `Next step: ${nextAction}`, body: `due ${due.slice(0, 10)}, ${ownerFor(qualification)}` });
   }
 
-  const person = db.prepare('SELECT * FROM people WHERE id = ?').get(pid);
+  const person = await db.prepare('SELECT * FROM people WHERE id = ?').get(pid);
   const gap = qualification === 'lead'
-    ? handoverGap({ role: ownerFor(qualification), channel: item.channel,
+    ? await handoverGap({ role: ownerFor(qualification), channel: item.channel,
       email: person.email, phone: person.phone })
     : null;
 
@@ -359,27 +361,27 @@ export function qualify(db, id, { qualification, personId, createPerson, by, not
 }
 
 // Only a fact may overwrite the person record. A suggestion never does.
-function applyToPerson(db, personId, field, value, opts = {}) {
+async function applyToPerson(db, personId, field, value, opts = {}) {
   const map = { interest: 'programme', education: 'education', email: 'email', phone: 'phone' };
   const column = map[field];
   if (!column) return;
-  const cur = db.prepare(`SELECT ${column} v FROM people WHERE id = ?`).get(personId);
+  const cur = await db.prepare(`SELECT ${column} v FROM people WHERE id = ?`).get(personId);
   if (!cur) return;
   const empty = cur.v === null || cur.v === '';
   // never overwrite something already there: first touch wins, as everywhere else.
   // The one exception is a value a PERSON stated, which outranks a machine guess.
   if (!empty && !opts.force) return;
   if (!empty && cur.v === value) return;
-  db.prepare(`UPDATE people SET ${column} = ? WHERE id = ?`).run(value, personId);
+  await db.prepare(`UPDATE people SET ${column} = ? WHERE id = ?`).run(value, personId);
   if (!empty && opts.by) {
-    logEvent(db, { personId, kind: 'edit', direction: 'note', at: opts.at || nowIso(),
+    await logEvent(db, { personId, kind: 'edit', direction: 'note', at: opts.at || nowIso(),
       origin: MANUAL, actor: opts.by, subject: `${column} set while qualifying`,
       field: column, oldValue: cur.v, newValue: value });
   }
 }
 
-export function archive(db, id, { reason, note, by }) {
-  const item = db.prepare('SELECT * FROM inbound WHERE id = ?').get(id);
+export async function archive(db, id, { reason, note, by }) {
+  const item = await db.prepare('SELECT * FROM inbound WHERE id = ?').get(id);
   if (!item) return { error: 'not found' };
   if (item.state !== 'new') return { error: 'this item has already been dealt with' };
   if (!by) return { error: 'who is archiving this?' };
@@ -389,7 +391,7 @@ export function archive(db, id, { reason, note, by }) {
     return { error: `"${reason}" needs an explanation`, reasons: allowed, needsNote: true };
   }
   const at = nowIso();
-  db.prepare(`UPDATE inbound SET state = 'archived', archive_reason = ?, archive_note = ?,
+  await db.prepare(`UPDATE inbound SET state = 'archived', archive_reason = ?, archive_note = ?,
     processed_by = ?, processed_at = ?, body = NULL, body_deleted_at = ? WHERE id = ?`)
     .run(reason, note || null, by, at, at, id);
   // archived is not deleted: the row, the contact and the reason stay searchable
@@ -398,44 +400,47 @@ export function archive(db, id, { reason, note, by }) {
 
 // ------------------------------------------------------------- the funnel --
 // Counted from what actually happened. Nothing is modelled or estimated.
-export function funnel(db, now = nowIso()) {
-  const n = (sql, ...a) => db.prepare(sql).get(...a).n;
+export async function funnel(db, now = nowIso()) {
+  const n = async (sql, ...a) => (await db.prepare(sql).get(...a)).n;
   const stages = CFG.stages.map((s) => s.id);
   const terminal = CFG.terminalStages || [];
 
-  const byStage = stages.map((id) => ({
+  // Promise.all, not just async: a .map with an async callback returns an array
+  // of PROMISES. Nothing would throw - the funnel would simply have carried
+  // unresolved objects into the report.
+  const byStage = await Promise.all(stages.map(async (id) => ({
     stage: id,
-    people: n('SELECT COUNT(*) n FROM people WHERE status = ?', id),
-    stuck: n(`SELECT COUNT(*) n FROM people pe WHERE pe.status = ?
+    people: await n('SELECT COUNT(*) n FROM people WHERE status = ?', id),
+    stuck: await n(`SELECT COUNT(*) n FROM people pe WHERE pe.status = ?
       AND NOT EXISTS (SELECT 1 FROM tasks t WHERE t.person_id = pe.id AND t.done_at IS NULL)
       AND pe.status NOT IN (${terminal.map(() => '?').join(',') || "''"})`, id, ...terminal),
-  }));
+  })));
 
   const steps = [
-    { step: 'Contacted us', count: n("SELECT COUNT(*) n FROM inbound WHERE state != 'filtered'"),
+    { step: 'Contacted us', count: await n("SELECT COUNT(*) n FROM inbound WHERE state != 'filtered'"),
       go: '#/car' },
-    { step: 'Waiting to be looked at', count: n("SELECT COUNT(*) n FROM inbound WHERE state = 'new'"),
+    { step: 'Waiting to be looked at', count: await n("SELECT COUNT(*) n FROM inbound WHERE state = 'new'"),
       go: '#/car' },
-    { step: 'Became a lead', count: n("SELECT COUNT(*) n FROM people WHERE qualification = 'lead'"),
+    { step: 'Became a lead', count: await n("SELECT COUNT(*) n FROM people WHERE qualification = 'lead'"),
       go: '#/people?q=&qual=lead' },
-    { step: 'Application', count: n('SELECT COUNT(*) n FROM people WHERE status = ?', CFG.stageRoles.application),
+    { step: 'Application', count: await n('SELECT COUNT(*) n FROM people WHERE status = ?', CFG.stageRoles.application),
       go: '#/people' },
-    { step: 'Admitted', count: n('SELECT COUNT(*) n FROM people WHERE status = ?', CFG.stageRoles.admitted),
+    { step: 'Admitted', count: await n('SELECT COUNT(*) n FROM people WHERE status = ?', CFG.stageRoles.admitted),
       go: '#/people' },
-    { step: 'Handed to SIS', count: n('SELECT COUNT(*) n FROM people WHERE sis_handoff_at IS NOT NULL'),
+    { step: 'Handed to SIS', count: await n('SELECT COUNT(*) n FROM people WHERE sis_handoff_at IS NOT NULL'),
       go: '#/people' },
   ];
 
-  const byChannel = db.prepare(`SELECT channel,
+  const byChannel = await db.prepare(`SELECT channel,
       SUM(CASE WHEN state != 'filtered' THEN 1 ELSE 0 END) contacts,
       SUM(CASE WHEN qualification = 'lead' THEN 1 ELSE 0 END) leads,
       SUM(CASE WHEN state = 'new' THEN 1 ELSE 0 END) waiting
     FROM inbound GROUP BY channel HAVING contacts > 0 ORDER BY contacts DESC`).all();
 
-  const dropOut = db.prepare(`SELECT closed_reason reason, COUNT(*) n FROM people
+  const dropOut = await db.prepare(`SELECT closed_reason reason, COUNT(*) n FROM people
     WHERE status = ? AND closed_reason IS NOT NULL GROUP BY closed_reason ORDER BY n DESC`)
     .all(CFG.stageRoles.closed);
-  const filtered = n("SELECT COUNT(*) n FROM inbound WHERE state = 'filtered'");
+  const filtered = await n("SELECT COUNT(*) n FROM inbound WHERE state = 'filtered'");
 
   const active = byStage.filter((s) => !terminal.includes(s.stage));
   const biggest = active.slice().sort((a, b) => b.people - a.people)[0] || null;
@@ -445,9 +450,9 @@ export function funnel(db, now = nowIso()) {
     steps, byStage, byChannel, dropOut, filtered,
     biggestAccumulation: biggest && biggest.people ? biggest : null,
     mostStuck: mostStuck && mostStuck.stuck ? mostStuck : null,
-    agedInbound: agedCount(db, now),
-    overdueActions: n('SELECT COUNT(*) n FROM tasks WHERE done_at IS NULL AND due_at < ?', now),
-    noNextAction: n(`SELECT COUNT(*) n FROM people pe
+    agedInbound: await agedCount(db, now),
+    overdueActions: await n('SELECT COUNT(*) n FROM tasks WHERE done_at IS NULL AND due_at < ?', now),
+    noNextAction: await n(`SELECT COUNT(*) n FROM people pe
       WHERE pe.status NOT IN (${terminal.map(() => '?').join(',') || "''"})
       AND NOT EXISTS (SELECT 1 FROM tasks t WHERE t.person_id = pe.id AND t.done_at IS NULL)`, ...terminal),
     honesty: 'Every number here is a count of rows that exist. Nothing is modelled, estimated or projected.',
@@ -455,16 +460,16 @@ export function funnel(db, now = nowIso()) {
 }
 
 // ------------------------------------------------------------ SIS handoff --
-export function handoffToSis(db, personId, by) {
-  const p = db.prepare('SELECT * FROM people WHERE id = ?').get(personId);
+export async function handoffToSis(db, personId, by) {
+  const p = await db.prepare('SELECT * FROM people WHERE id = ?').get(personId);
   if (!p) return { error: 'not found' };
   if (p.status !== CFG.stageRoles.admitted) {
     return { error: `only an ${CFG.stageRoles.admitted} person is handed to the SIS` };
   }
   if (p.sis_handoff_at) return { error: 'already handed over', at: p.sis_handoff_at };
   const at = nowIso();
-  db.prepare('UPDATE people SET sis_handoff_at = ? WHERE id = ?').run(at, personId);
-  logEvent(db, { personId, kind: 'status', direction: 'note', at, origin: MANUAL, actor: by,
+  await db.prepare('UPDATE people SET sis_handoff_at = ? WHERE id = ?').run(at, personId);
+  await logEvent(db, { personId, kind: 'status', direction: 'note', at, origin: MANUAL, actor: by,
     subject: 'Handed over to the SIS',
     body: 'The CRM admissions journey ends here. The record stays for reporting.',
     field: 'sis_handoff_at', oldValue: null, newValue: at });

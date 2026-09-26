@@ -79,30 +79,30 @@ export function readPath(value) {
 
 // The feedback row and its screenshot are written together. A bug report must
 // never exist without the evidence its sender attached to it.
-export function saveFeedback(db, { kind, body, path, screenshot, by, at }) {
-  db.exec('BEGIN');
+export async function saveFeedback(db, { kind, body, path, screenshot, by, at }) {
+  await db.exec('BEGIN');
   try {
-    const r = db.prepare(`INSERT INTO feedback (author, kind, body, path, created_at)
+    const r = await db.prepare(`INSERT INTO feedback (author, kind, body, path, created_at)
       VALUES (?,?,?,?,?)`).run(by, kind, body, path, at);
     const id = Number(r.lastInsertRowid);
     if (screenshot) {
-      db.prepare(`INSERT INTO feedback_screenshots (feedback_id, mime_type, size_bytes, data, created_at)
+      await db.prepare(`INSERT INTO feedback_screenshots (feedback_id, mime_type, size_bytes, data, created_at)
         VALUES (?,?,?,?,?)`).run(id, screenshot.mimeType, screenshot.sizeBytes, screenshot.bytes, at);
     }
-    db.exec('COMMIT');
+    await db.exec('COMMIT');
     return { id, screenshot: Boolean(screenshot) };
   } catch (err) {
-    db.exec('ROLLBACK');
+    await db.exec('ROLLBACK');
     throw err;
   }
 }
 
 // Open items first, then the handled ones, which the inbox fades rather than
 // hides. The image bytes are deliberately not selected here.
-export function listFeedback(db, limit = 200) {
-  return db.prepare(`SELECT f.*, s.mime_type, s.size_bytes
+export async function listFeedback(db, limit = 200) {
+  return (await db.prepare(`SELECT f.*, s.mime_type, s.size_bytes
     FROM feedback f LEFT JOIN feedback_screenshots s ON s.feedback_id = f.id
-    ORDER BY (f.handled_at IS NOT NULL), f.created_at DESC LIMIT ?`).all(limit)
+    ORDER BY (f.handled_at IS NOT NULL), f.created_at DESC LIMIT ?`).all(limit))
     .map((r) => ({
       id: r.id, kind: r.kind, body: r.body, path: r.path,
       author: r.author, createdAt: r.created_at, handledAt: r.handled_at,
@@ -110,15 +110,15 @@ export function listFeedback(db, limit = 200) {
     }));
 }
 
-export function getScreenshot(db, id) {
-  return db.prepare('SELECT mime_type, data FROM feedback_screenshots WHERE feedback_id = ?').get(id) || null;
+export async function getScreenshot(db, id) {
+  return await db.prepare('SELECT mime_type, data FROM feedback_screenshots WHERE feedback_id = ?').get(id) || null;
 }
 
-export function setHandled(db, id, handled, by, at) {
-  const before = db.prepare('SELECT handled_at FROM feedback WHERE id = ?').get(id);
+export async function setHandled(db, id, handled, by, at) {
+  const before = await db.prepare('SELECT handled_at FROM feedback WHERE id = ?').get(id);
   if (!before) return { error: 'not found' };
   const was = Boolean(before.handled_at);
-  db.prepare('UPDATE feedback SET handled_at = ?, handled_by = ? WHERE id = ?')
+  await db.prepare('UPDATE feedback SET handled_at = ?, handled_by = ? WHERE id = ?')
     .run(handled ? at : null, handled ? by : null, id);
   return { ok: true, handled, changed: was !== Boolean(handled) };
 }

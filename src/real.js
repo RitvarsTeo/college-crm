@@ -54,7 +54,7 @@ const chan = (v) => CHANNEL_RENAMES[v] || v || 'unknown';
 const EDU_ALIAS = CFG.educationAliases || {};
 const edu = (v) => (v == null || v === '') ? null : (EDU_ALIAS[String(v).trim()] || String(v).trim());
 
-export function loadReal(db, selection = {}) {
+export async function loadReal(db, selection = {}) {
   const raw = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
   const { chosen, reason } = selectPeople(raw.people, selection);
   const skipped = raw.people.length - chosen.length;
@@ -69,10 +69,13 @@ export function loadReal(db, selection = {}) {
   const insDoc = db.prepare('INSERT INTO documents (person_id,name,state) VALUES (?,?,?)');
 
   let n = 0, withTask = 0, withDocs = 0;
-  chosen.forEach((p, i) => {
+  // for...of, not forEach: forEach throws away the callback's promise, so the
+  // inserts would never be waited for and the loop would finish before the
+  // database had anything in it.
+  for (const [i, p] of chosen.entries()) {
     const id = 'r' + String(i + 1).padStart(4, '0');
     const created = p.created_at || now;
-    insPerson.run(id, p.name, p.email || null, p.phone || null, p.programme || null,
+    await insPerson.run(id, p.name, p.email || null, p.phone || null, p.programme || null,
       p.study_form || null, edu(p.education), p.status, 'Admissions',
       chan(p.source_channel), p.source_campaign || null, p.source_detail || null,
       created, null, null, p.admitted_at || null, p.student_no || null,
@@ -82,27 +85,27 @@ export function loadReal(db, selection = {}) {
        p.notes || null].filter(Boolean).join(' | ') || null);
     n++;
 
-    insEvent.run(id, 'channel', chan(p.source_channel), 'in', created,
+    await insEvent.run(id, 'channel', chan(p.source_channel), 'in', created,
       'First contact', p.notes || '', 'ADMISSIONS DATABASE', 'automatic');
     if (p.admitted_at) {
-      insEvent.run(id, 'status', null, 'note', p.admitted_at, 'Admitted',
+      await insEvent.run(id, 'status', null, 'note', p.admitted_at, 'Admitted',
         p.student_no ? 'Matriculation no. ' + p.student_no : '', 'ADMISSIONS DATABASE', 'automatic');
     }
     if (p.next_action_at && !['Admitted', 'Not proceeding'].includes(p.status)) {
-      insTask.run(id, 'Get in touch (from the sheet)', p.next_action_at, 'Admissions', created);
+      await insTask.run(id, 'Get in touch (from the sheet)', p.next_action_at, 'Admissions', created);
       withTask++;
     }
     if (p.docs) {
       const state = p.docs.toLowerCase() === 'done' ? 'received'
         : p.docs.toLowerCase() === 'in process' ? 'missing' : 'missing';
-      insDoc.run(id, 'Documents (' + p.docs + ')', state);
+      await insDoc.run(id, 'Documents (' + p.docs + ')', state);
       withDocs++;
     }
-  });
+  }
 
   // The events the prototype knows about are not in this sheet, so the open-day
   // screen stays honestly empty rather than borrowing synthetic bookings.
-  db.prepare('INSERT INTO open_days (id,title,held_on,place) VALUES (?,?,?,?)')
+  await db.prepare('INSERT INTO open_days (id,title,held_on,place) VALUES (?,?,?,?)')
     .run('od-real', 'Profession taster day', new Date(Date.now() + 9 * 86400000).toISOString().slice(0, 10), 'Duntes iela 17A');
 
   return { dataset: 'real', people: n, withTask, withDocs, source: raw.source, note: raw.note,

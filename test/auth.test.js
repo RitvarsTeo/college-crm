@@ -33,14 +33,14 @@ const FAST = { ...SCRYPT, N: 1024 };
 
 // ------------------------------------------------------------- the hashing --
 
-test('a password round-trips, and a wrong one does not', () => {
+test('a password round-trips, and a wrong one does not', async () => {
   const stored = hashPassword(PASSWORD, FAST);
   assert.equal(verifyPassword(PASSWORD, stored), true);
   assert.equal(verifyPassword(PASSWORD + '!', stored), false);
   assert.equal(verifyPassword('', stored), false);
 });
 
-test('the plain password is nowhere in what gets stored', () => {
+test('the plain password is nowhere in what gets stored', async () => {
   // The whole point of storing a hash. If this ever fails, a copy of the
   // database is a copy of everybody's password.
   const stored = hashPassword(PASSWORD, FAST);
@@ -48,13 +48,13 @@ test('the plain password is nowhere in what gets stored', () => {
   assert.equal(stored.includes('horse'), false);
 });
 
-test('the same password hashes differently every time', () => {
+test('the same password hashes differently every time', async () => {
   // A per-password salt. Without it, two people who chose the same password
   // would be visibly identical in the table, and one rainbow table would do.
   assert.notEqual(hashPassword(PASSWORD, FAST), hashPassword(PASSWORD, FAST));
 });
 
-test('the stored format carries its version and parameters', () => {
+test('the stored format carries its version and parameters', async () => {
   // So that when these parameters are one day too weak, a version 2 can be added
   // and nobody is locked out of their account.
   const stored = hashPassword(PASSWORD, FAST);
@@ -68,7 +68,7 @@ test('the stored format carries its version and parameters', () => {
   assert.equal(parsed.N, FAST.N);
 });
 
-test('rubbish in the password column is refused rather than throwing', () => {
+test('rubbish in the password column is refused rather than throwing', async () => {
   // A half-written row, a hand-edited database, a column from another system.
   for (const junk of ['', null, undefined, 'plaintext', 'scrypt$9$1$1$1$a$b', 'a$b$c', {}]) {
     assert.equal(verifyPassword(PASSWORD, junk), false, String(junk) + ' must not verify');
@@ -77,7 +77,7 @@ test('rubbish in the password column is refused rather than throwing', () => {
 
 // ------------------------------------------------------------- the session --
 
-test('a session round-trips and carries the identity and the role', () => {
+test('a session round-trips and carries the identity and the role', async () => {
   const t = issueSession({ id: 'u1', email: 'ieva@novikontas.org', name: 'Ieva', role: 'user',
     sessionVersion: 3 }, SECRET);
   const s = readSession(t, SECRET);
@@ -87,12 +87,12 @@ test('a session round-trips and carries the identity and the role', () => {
   assert.equal(s.sessionVersion, 3);
 });
 
-test('a session signed with another secret is refused', () => {
+test('a session signed with another secret is refused', async () => {
   const t = issueSession({ email: 'ieva@novikontas.org', role: 'user' }, SECRET);
   assert.equal(readSession(t, 'a-completely-different-session-secret'), null);
 });
 
-test('EDITING the role inside a session invalidates it', () => {
+test('EDITING the role inside a session invalidates it', async () => {
   // The attack this exists for: sign in as a user, change "user" to "admin" in
   // the cookie, reload, and read everybody's channel configuration. The role is
   // inside the signed region, so the signature stops matching.
@@ -105,31 +105,31 @@ test('EDITING the role inside a session invalidates it', () => {
   assert.equal(readSession(forged, SECRET), null, 'an edited role must not be accepted');
 });
 
-test('a session with no signature at all is refused', () => {
+test('a session with no signature at all is refused', async () => {
   const t = issueSession({ email: 'ieva@novikontas.org', role: 'user' }, SECRET);
   const [tag, payload] = t.split('.');
   assert.equal(readSession(`${tag}.${payload}.`, SECRET), null);
   assert.equal(readSession(`${tag}.${payload}`, SECRET), null);
 });
 
-test('an expired session is refused even though it is correctly signed', () => {
+test('an expired session is refused even though it is correctly signed', async () => {
   const t = issueSession({ email: 'ieva@novikontas.org', role: 'user' }, SECRET, -1);
   assert.equal(readSession(t, SECRET), null);
 });
 
-test('a session naming a role that does not exist is refused', () => {
+test('a session naming a role that does not exist is refused', async () => {
   // Belt and braces: a role removed from the code later must not keep working
   // because somebody's old cookie still names it.
   assert.throws(() => issueSession({ email: 'x@y.lv', role: 'superuser' }, SECRET));
 });
 
-test('a session cannot be issued without an identity, a role or a secret', () => {
+test('a session cannot be issued without an identity, a role or a secret', async () => {
   assert.throws(() => issueSession({ role: 'user' }, SECRET), /identity or role/);
   assert.throws(() => issueSession({ email: 'x@y.lv' }, SECRET), /identity or role/);
   assert.throws(() => issueSession({ email: 'x@y.lv', role: 'user' }, ''), /unsigned/);
 });
 
-test('rubbish where a session should be is refused rather than throwing', () => {
+test('rubbish where a session should be is refused rather than throwing', async () => {
   for (const junk of [null, undefined, '', 'x', 'a.b.c', 'c1.!!!.zzz', 42, {}]) {
     assert.equal(readSession(junk, SECRET), null, String(junk));
   }
@@ -137,7 +137,7 @@ test('rubbish where a session should be is refused rather than throwing', () => 
 
 // -------------------------------------------------------------- the cookie --
 
-test('the cookie is HttpOnly and SameSite, and Secure off localhost', () => {
+test('the cookie is HttpOnly and SameSite, and Secure off localhost', async () => {
   // HttpOnly is what stops a script on the page reading the session. It is not
   // decoration: without it, one injected script is everybody's account.
   const h = cookieHeader('token-value');
@@ -148,12 +148,12 @@ test('the cookie is HttpOnly and SameSite, and Secure off localhost', () => {
     'a Secure cookie is never sent over plain http, so localhost needs it off');
 });
 
-test('signing out sends a cookie that expires immediately', () => {
+test('signing out sends a cookie that expires immediately', async () => {
   assert.match(clearCookie(), new RegExp(`${COOKIE}=; `));
   assert.match(clearCookie(), /Max-Age=0/);
 });
 
-test('the cookie is found among others and is not confused with a similar name', () => {
+test('the cookie is found among others and is not confused with a similar name', async () => {
   assert.equal(readCookie(`theme=dark; ${COOKIE}=abc; other=1`), 'abc');
   assert.equal(readCookie(`not_${COOKIE}=abc`), null);
   assert.equal(readCookie(''), null);
@@ -216,7 +216,7 @@ test('the email is canonicalised, so Ieva and IEVA@ are the same account', async
   assert.deepEqual(seen, ['ieva@novikontas.org', 'ieva@novikontas.org']);
 });
 
-test('canonicalEmail leaves a foreign address alone', () => {
+test('canonicalEmail leaves a foreign address alone', async () => {
   assert.equal(canonicalEmail('somebody@gmail.com'), 'somebody@gmail.com');
   assert.equal(canonicalEmail('marina'), 'marina@novikontas.org');
   assert.equal(canonicalEmail(''), '');
@@ -225,7 +225,7 @@ test('canonicalEmail leaves a foreign address alone', () => {
 
 // ------------------------------------------------------------------ roles --
 
-test('only an admin may see, test or enable a channel', () => {
+test('only an admin may see, test or enable a channel', async () => {
   assert.deepEqual(ROLES, ['admin', 'user']);
   for (const fn of [canSeeChannels, canTestChannels, canEnableChannel]) {
     assert.equal(fn('admin'), true);
@@ -238,16 +238,16 @@ test('only an admin may see, test or enable a channel', () => {
 
 // -------------------------------------------------------- password policy --
 
-test('a short password is refused, and the message says what is needed', () => {
+test('a short password is refused, and the message says what is needed', async () => {
   assert.match(passwordProblem('short'), new RegExp(String(MIN_PASSWORD)));
   assert.equal(passwordProblem('a-long-enough-passphrase'), null);
 });
 
-test('a long password made of two characters is still refused', () => {
+test('a long password made of two characters is still refused', async () => {
   assert.match(passwordProblem('abababababababab'), /different characters/);
 });
 
-test('a password containing your own name or an obvious word is refused', () => {
+test('a password containing your own name or an obvious word is refused', async () => {
   assert.match(passwordProblem('novikontas-2026-crm'), /novikontas/);
   assert.match(passwordProblem('my-password-here-12'), /password/);
   assert.match(passwordProblem('ieva-is-the-best-1', { email: 'ieva@novikontas.org' }), /your own name/);
@@ -256,7 +256,7 @@ test('a password containing your own name or an obvious word is refused', () => 
 
 // ------------------------------------------------- refusing to start badly --
 
-test('authentication is off unless it is switched on', () => {
+test('authentication is off unless it is switched on', async () => {
   assert.equal(authOn({}), false);
   assert.equal(authOn({ CRM_AUTH: '0' }), false);
   assert.equal(authOn({ CRM_AUTH: 'no' }), false);
@@ -264,18 +264,18 @@ test('authentication is off unless it is switched on', () => {
   assert.equal(authOn({ CRM_AUTH: 'true' }), true);
 });
 
-test('with sign-in on and no session secret, the server must refuse to start', () => {
+test('with sign-in on and no session secret, the server must refuse to start', async () => {
   const r = requireConfigured({ CRM_AUTH: '1' });
   assert.equal(r.ok, false);
   assert.match(r.why, /CRM_SESSION_SECRET/);
 });
 
-test('a short session secret is refused too', () => {
+test('a short session secret is refused too', async () => {
   assert.equal(requireConfigured({ CRM_AUTH: '1', CRM_SESSION_SECRET: 'tooshort' }).ok, false);
   assert.equal(requireConfigured({ CRM_AUTH: '1', CRM_SESSION_SECRET: SECRET }).ok, true);
 });
 
-test('with sign-in off, nothing is demanded', () => {
+test('with sign-in off, nothing is demanded', async () => {
   assert.deepEqual(requireConfigured({}), { ok: true, auth: false });
 });
 
@@ -479,7 +479,7 @@ test('signing out clears the cookie', async (t) => {
 const CONFIG = JSON.parse(
   fs.readFileSync(path.join(ROOT, 'config', 'prototype.json'), 'utf8'));
 
-test('every configured account is a real address with a real role', () => {
+test('every configured account is a real address with a real role', async () => {
   assert.ok(Array.isArray(CONFIG.accounts) && CONFIG.accounts.length,
     'config/prototype.json must carry an accounts list');
   for (const a of CONFIG.accounts) {
@@ -490,7 +490,7 @@ test('every configured account is a real address with a real role', () => {
   }
 });
 
-test('NO ADDRESS IS DERIVED FROM A DISPLAY NAME', () => {
+test('NO ADDRESS IS DERIVED FROM A DISPLAY NAME', async () => {
   // The exact shape of the bug, asserted directly: if somebody reinstates the
   // guess, the configured address and the guessed one stop matching.
   const guess = (name) => canonicalEmail(String(name).toLowerCase()
@@ -508,14 +508,14 @@ test('NO ADDRESS IS DERIVED FROM A DISPLAY NAME', () => {
   assert.notEqual(aigars.email, guess('Aigars'));
 });
 
-test('the three accounts that were asked for are all there', () => {
+test('the three accounts that were asked for are all there', async () => {
   const byEmail = Object.fromEntries(CONFIG.accounts.map((a) => [a.email, a]));
   assert.equal(byEmail['ritvars.vilcins@novikontas.org'].role, 'admin');
   assert.equal(byEmail['aigars.kluga@novikontas.org'].role, 'admin');
   assert.ok(byEmail['edu@novikontas.org'], 'the shared Admissions account must be able to sign in');
 });
 
-test('the shared Admissions account belongs to Ieva and Laura, and says so', () => {
+test('the shared Admissions account belongs to Ieva and Laura, and says so', async () => {
   // edu@ is how Admissions works: Ieva and Laura both sign in with it. It is a
   // first-class way to use the CRM, and the config records WHO shares it so that
   // nobody reading the account list has to guess whose it is.
@@ -526,7 +526,7 @@ test('the shared Admissions account belongs to Ieva and Laura, and says so', () 
     'the account list must name the people who share it');
 });
 
-test('the shared Admissions account is a user, like every other admissions seat', () => {
+test('the shared Admissions account is a user, like every other admissions seat', async () => {
   // Not a restriction placed on Ieva and Laura: Channels is admin-only for
   // everybody, and admissions work needs no channel configuration. If this ever
   // flips to admin, Ieva and Laura gain the ability to switch a live provider on.
@@ -537,7 +537,7 @@ test('the shared Admissions account is a user, like every other admissions seat'
   assert.equal(canTestChannels(edu.role), false);
 });
 
-test('a company address that is not on the list still cannot sign in', () => {
+test('a company address that is not on the list still cannot sign in', async () => {
   // Being at novikontas.org is not the qualification. Being listed is.
   const listed = new Set(CONFIG.accounts.map((a) => a.email));
   assert.equal(listed.has('somebody.else@novikontas.org'), false);

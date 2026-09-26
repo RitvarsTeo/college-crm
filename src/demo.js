@@ -85,7 +85,7 @@ const NOT_RELEVANT = [
   { channel: 'facebook', name: 'Sports Club Riga', days: 5, reason: 0 },
 ];
 
-function send(db, { channel, scenario, name, phone, email, handle, at }) {
+async function send(db, { channel, scenario, name, phone, email, handle, at }) {
   const payload = buildPayload(channel, scenario || 'study_enquiry', {
     existing: (name || phone || email || handle) ? { name, phone, email, handle } : null, at });
   const ev = adapt(channel, payload);
@@ -93,19 +93,19 @@ function send(db, { channel, scenario, name, phone, email, handle, at }) {
   if (at) ev.receivedAt = at;
   // Marked 'demo' so the admin Channels panel can never read a demo build as
   // evidence that a real provider reached us.
-  return receive(db, { ...toIntake(ev), source: 'demo' });
+  return await receive(db, { ...toIntake(ev), source: 'demo' });
 }
 
-export function buildDemo(db, CFG) {
+export async function buildDemo(db, CFG) {
   const summary = { people: 0, inbox: 0, filtered: 0, notRelevant: 0, admissions: 0, overdue: 0 };
 
   // 1. the cast, each arriving on its own channel and then qualified by a person
   for (const c of CAST) {
     const at = ago(c.days, 9 + (c.days % 8));
-    const r = send(db, { ...c, at });
+    const r = await send(db, { ...c, at });
     if (!r || r.filtered || r.duplicate) continue;
 
-    const q = qualify(db, r.id, {
+    const q = await qualify(db, r.id, {
       qualification: c.outcome,
       createPerson: true,
       by: c.outcome === 'lead' ? 'Ieva' : 'Tetiana',
@@ -123,14 +123,14 @@ export function buildDemo(db, CFG) {
       const order = CFG.stageOrder || [];
       const want = order.indexOf(c.stage);
       for (let i = 1; i <= want; i += 1) {
-        const before = db.prepare('SELECT status FROM people WHERE id = ?').get(q.personId).status;
-        db.prepare('UPDATE people SET status = ? WHERE id = ?').run(order[i], q.personId);
-        logEvent(db, { personId: q.personId, kind: 'status', direction: 'note', at: ago(c.days - i, 11),
+        const before = (await db.prepare('SELECT status FROM people WHERE id = ?').get(q.personId)).status;
+        await db.prepare('UPDATE people SET status = ? WHERE id = ?').run(order[i], q.personId);
+        await logEvent(db, { personId: q.personId, kind: 'status', direction: 'note', at: ago(c.days - i, 11),
           origin: MANUAL, actor: 'Ieva', subject: `Status: ${before} -> ${order[i]}`,
           body: 'moved by Admissions', field: 'status', oldValue: before, newValue: order[i] });
       }
       if (c.stage === 'Admitted') {
-        db.prepare('UPDATE people SET admitted_at = ?, student_no = ? WHERE id = ?')
+        await db.prepare('UPDATE people SET admitted_at = ?, student_no = ? WHERE id = ?')
           .run(ago(c.days - 4, 12), '3-5-IM/2026/' + (10 + summary.people), q.personId);
       }
       summary.admissions += 1;
@@ -138,7 +138,7 @@ export function buildDemo(db, CFG) {
 
     // one overdue next step, so Follow-ups has something red in it
     if (c.overdue) {
-      db.prepare('UPDATE tasks SET due_at = ? WHERE person_id = ? AND done_at IS NULL')
+      await db.prepare('UPDATE tasks SET due_at = ? WHERE person_id = ? AND done_at IS NULL')
         .run(ago(3, 9), q.personId);
       summary.overdue += 1;
     }
@@ -146,34 +146,34 @@ export function buildDemo(db, CFG) {
 
   // 2. work waiting in the Inbox
   for (const w of WAITING) {
-    const r = send(db, { ...w, at: ago(w.days, 8 + w.days) });
+    const r = await send(db, { ...w, at: ago(w.days, 8 + w.days) });
     if (r && !r.filtered) summary.inbox += 1;
   }
 
   // 3. sales pitches, filtered before the queue and out of the funnel
   for (const s of SPAM) {
-    const r = send(db, { channel: s.channel, scenario: 'spam', at: ago(s.days, 7) });
+    const r = await send(db, { channel: s.channel, scenario: 'spam', at: ago(s.days, 7) });
     if (r && r.filtered) summary.filtered += 1;
   }
 
   // 4. things a person looked at and marked not relevant, with a recorded reason
   const reasons = (CFG.intake && CFG.intake.archiveReasons) || [];
   for (const n of NOT_RELEVANT) {
-    const r = send(db, { channel: n.channel, scenario: 'unclear', name: n.name, at: ago(n.days, 10) });
+    const r = await send(db, { channel: n.channel, scenario: 'unclear', name: n.name, at: ago(n.days, 10) });
     if (!r || r.filtered) continue;
-    const a = archive(db, r.id, { reason: reasons[n.reason] || reasons[0], by: 'Tetiana' });
+    const a = await archive(db, r.id, { reason: reasons[n.reason] || reasons[0], by: 'Tetiana' });
     if (a && a.ok) summary.notRelevant += 1;
   }
 
   // 5. somebody we already hold writing again. It must NOT make a second person.
-  const known = db.prepare(`SELECT name, email, phone FROM people
+  const known = await db.prepare(`SELECT name, email, phone FROM people
     WHERE phone IS NOT NULL ORDER BY created_at DESC LIMIT 1`).get();
   if (known) {
-    const r = send(db, { channel: 'whatsapp', scenario: 'programme_question',
+    const r = await send(db, { channel: 'whatsapp', scenario: 'programme_question',
       name: known.name, phone: known.phone, email: known.email, at: ago(0, 12) });
     if (r && !r.filtered) summary.inbox += 1;
   }
 
-  summary.total = db.prepare('SELECT COUNT(*) n FROM people').get().n;
+  summary.total = (await db.prepare('SELECT COUNT(*) n FROM people').get()).n;
   return summary;
 }

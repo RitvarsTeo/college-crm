@@ -51,18 +51,18 @@ const okFetch = (payload, status = 200) => async () => ({
 
 // ======================================================= 1-4. the filter ====
 
-test('1. an incoming call on one of our queues is accepted', () => {
+test('1. an incoming call on one of our queues is accepted', async () => {
   assert.equal(isOurs(call()), true);
 });
 
-test('2. an outgoing call is rejected', () => {
+test('2. an outgoing call is rejected', async () => {
   assert.equal(isOurs(call({ destination: 'outgoing' })), false);
   const { rows, skipped } = rowsFrom([call({ destination: 'outgoing' })]);
   assert.equal(rows.length, 0);
   assert.equal(skipped.notIncoming, 1);
 });
 
-test('3. each of the three allowed queues is accepted', () => {
+test('3. each of the three allowed queues is accepted', async () => {
   assert.deepEqual(QUEUES, ['1001*Q-ADMISSION', '1001*Q-COORDINATORS', '1001*Q-OTHER']);
   for (const queue of QUEUES) {
     assert.equal(isOurs(call({ queue })), true, queue + ' must be kept');
@@ -71,7 +71,7 @@ test('3. each of the three allowed queues is accepted', () => {
   assert.equal(rows.length, 3);
 });
 
-test('4. any other queue is rejected', () => {
+test('4. any other queue is rejected', async () => {
   for (const queue of ['1001*Q-SALES', '1002*Q-ADMISSION', 'Q-ADMISSION', '', null]) {
     assert.equal(isOurs(call({ queue })), false, JSON.stringify(queue) + ' must be dropped');
   }
@@ -81,34 +81,34 @@ test('4. any other queue is rejected', () => {
 
 // ======================================================= 5-9. the mapping ===
 
-test('5. ANSWER maps to picked_up true', () => {
+test('5. ANSWER maps to picked_up true', async () => {
   assert.equal(toRow(call({ state: 'ANSWER' })).picked_up, true);
 });
 
-test('6. NOANSWER, and anything else, maps to picked_up false', () => {
+test('6. NOANSWER, and anything else, maps to picked_up false', async () => {
   for (const state of ['NOANSWER', 'BUSY', 'FAILED', '', null, undefined, 'answer']) {
     assert.equal(toRow(call({ state })).picked_up, false, JSON.stringify(state) + ' is not answered');
   }
 });
 
-test('7. operator_name is preserved when present', () => {
+test('7. operator_name is preserved when present', async () => {
   assert.equal(toRow(call({ operator_name: 'Laura' })).operator_name, 'Laura');
 });
 
-test('8. a missed call with no operator_name is allowed, and stored as null', () => {
+test('8. a missed call with no operator_name is allowed, and stored as null', async () => {
   const row = toRow(call({ state: 'NOANSWER', operator_name: '' }));
   assert.equal(row.picked_up, false);
   assert.equal(row.operator_name, null, 'empty string must not be stored as a name');
   assert.equal(toRow(call({ operator_name: undefined })).operator_name, null);
 });
 
-test('9. the mapping preserves uniqueid, and refuses a call without one', () => {
+test('9. the mapping preserves uniqueid, and refuses a call without one', async () => {
   assert.equal(toRow(call({ uniqueid: '1758632400.42' })).uniqueid, '1758632400.42');
   assert.throws(() => toRow(call({ uniqueid: undefined })), /uniqueid/);
   assert.throws(() => toRow(call({ created_at: undefined })), /created_at/);
 });
 
-test('the row carries exactly the seven fields asked for, and nothing else', () => {
+test('the row carries exactly the seven fields asked for, and nothing else', async () => {
   const row = toRow(call({ recording_url: 'https://example/rec.mp3', duration: 96 }));
   assert.deepEqual(Object.keys(row).sort(),
     ['caller_num', 'created_at', 'operator_name', 'picked_up', 'queue', 'uniqueid'].sort(),
@@ -142,7 +142,7 @@ test('an empty batch makes no request at all', async () => {
 
 // ================================== 11. the window, explicitly Europe/Riga ===
 
-test('11. the window is 15 minutes, in Riga wall clock, in the API format', () => {
+test('11. the window is 15 minutes, in Riga wall clock, in the API format', async () => {
   const now = new Date('2026-09-23T11:05:00.000Z');       // 14:05 Riga, EEST
   const w = pollWindow(WINDOW_MINUTES, now);
   assert.equal(w.dateTo, '2026-09-23 14:05:00');
@@ -152,26 +152,26 @@ test('11. the window is 15 minutes, in Riga wall clock, in the API format', () =
   assert.equal(w.zone, 'Europe/Riga');
 });
 
-test('the window is Riga time, not the machine timezone or UTC', () => {
+test('the window is Riga time, not the machine timezone or UTC', async () => {
   const now = new Date('2026-07-15T21:40:00.000Z');       // 00:40 on the 16th in Riga
   const w = pollWindow(15, now);
   assert.equal(w.dateTo, '2026-07-16 00:40:00', 'the Riga date has already rolled over');
   assert.notEqual(w.dateTo, '2026-07-15 21:40:00', 'UTC would be wrong');
 });
 
-test('EET, winter: Riga is two hours ahead of UTC', () => {
+test('EET, winter: Riga is two hours ahead of UTC', async () => {
   assert.equal(offsetMinutesAt(new Date('2026-01-15T12:00:00Z'), ZONE), 120);
   assert.equal(toRigaStamp('2026-01-15T12:00:00Z'), '2026-01-15 14:00:00');
   assert.equal(fromRigaStamp('2026-01-15 14:00:00').toISOString(), '2026-01-15T12:00:00.000Z');
 });
 
-test('EEST, summer: Riga is three hours ahead of UTC', () => {
+test('EEST, summer: Riga is three hours ahead of UTC', async () => {
   assert.equal(offsetMinutesAt(new Date('2026-07-15T12:00:00Z'), ZONE), 180);
   assert.equal(toRigaStamp('2026-07-15T12:00:00Z'), '2026-07-15 15:00:00');
   assert.equal(fromRigaStamp('2026-07-15 15:00:00').toISOString(), '2026-07-15T12:00:00.000Z');
 });
 
-test('no offset is hardcoded anywhere in the timezone module', () => {
+test('no offset is hardcoded anywhere in the timezone module', async () => {
   const src = fs.readFileSync(path.join(ROOT, 'lib', 'riga.js'), 'utf8');
   const code = src.split('\n').filter((l) => !l.trim().startsWith('//')).join('\n');
   for (const bad of ['+02:00', '+03:00', '+0200', '+0300', '* 120', '* 180']) {
@@ -180,7 +180,7 @@ test('no offset is hardcoded anywhere in the timezone module', () => {
   assert.match(code, /timeZone: zone/, 'the offset is asked of the zone database');
 });
 
-test('the clocks going forward is handled, not guessed', () => {
+test('the clocks going forward is handled, not guessed', async () => {
   // Latvia springs forward on the last Sunday in March 2026: 29 March,
   // 03:00 EET becomes 04:00 EEST.
   assert.equal(offsetMinutesAt(new Date('2026-03-29T00:00:00Z'), ZONE), 120, 'before: EET');
@@ -194,7 +194,7 @@ test('the clocks going forward is handled, not guessed', () => {
   assert.equal(w.dateFrom, '2026-03-29 02:50:00', 'the wall clock jumped, the interval did not');
 });
 
-test('the clocks going back is handled, and the ambiguity is documented', () => {
+test('the clocks going back is handled, and the ambiguity is documented', async () => {
   // 25 October 2026: 04:00 EEST becomes 03:00 EET.
   assert.equal(offsetMinutesAt(new Date('2026-10-25T00:00:00Z'), ZONE), 180, 'before: EEST');
   assert.equal(offsetMinutesAt(new Date('2026-10-25T02:00:00Z'), ZONE), 120, 'after: EET');
@@ -210,7 +210,7 @@ test('the clocks going back is handled, and the ambiguity is documented', () => 
   assert.equal(offsetMinutesAt(first, ZONE), 180, 'the first occurrence, on the summer offset');
 });
 
-test('a round trip through Riga and back is the same instant, in both seasons', () => {
+test('a round trip through Riga and back is the same instant, in both seasons', async () => {
   for (const iso of ['2026-01-15T08:17:31.000Z', '2026-07-15T08:17:31.000Z',
     '2026-03-29T00:30:00.000Z', '2026-10-25T00:30:00.000Z']) {
     const back = fromRigaStamp(toRigaStamp(iso)).toISOString();
@@ -218,7 +218,7 @@ test('a round trip through Riga and back is the same instant, in both seasons', 
   }
 });
 
-test('a PBX created_at is read as Riga, not as UTC, in both seasons', () => {
+test('a PBX created_at is read as Riga, not as UTC, in both seasons', async () => {
   assert.equal(toRow(call({ created_at: '2026-01-15 14:00:00' })).created_at, '2026-01-15T12:00:00.000Z');
   assert.equal(toRow(call({ created_at: '2026-07-15 15:00:00' })).created_at, '2026-07-15T12:00:00.000Z');
 });
@@ -240,7 +240,7 @@ test('12. a PBX failure is handled safely', async () => {
     /not a list of calls/);
 });
 
-test('13. a missing PBX_API_TOKEN fails clearly and names only the variable', () => {
+test('13. a missing PBX_API_TOKEN fails clearly and names only the variable', async () => {
   assert.throws(() => buildRequest({ env: {} }), (err) => {
     assert.match(err.message, /Missing required environment variable PBX_API_TOKEN/);
     assert.ok(!err.message.includes(FAKE_TOKEN));
@@ -279,7 +279,7 @@ test('14. no secret reaches a log, an error or a returned value', async () => {
   assert.ok(!JSON.stringify(result).includes(FAKE_TOKEN));
 });
 
-test('no real-looking secret is committed in any source file', () => {
+test('no real-looking secret is committed in any source file', async () => {
   // The needle is assembled at runtime, so this test cannot match its own source
   // and report itself as a leak - which is exactly what a naive version did.
   const NAME = ['PBX', 'API', 'TOKEN'].join('_');
@@ -298,7 +298,7 @@ test('no real-looking secret is committed in any source file', () => {
 
 // =============================================== 15. the cron authorisation ==
 
-test('15. the cron route refuses a missing or wrong secret', () => {
+test('15. the cron route refuses a missing or wrong secret', async () => {
   assert.equal(authoriseCron(`Bearer ${ENV.CRON_SECRET}`, ENV).ok, true);
   assert.equal(authoriseCron(undefined, ENV).ok, false);
   assert.equal(authoriseCron('', ENV).ok, false);
@@ -308,14 +308,14 @@ test('15. the cron route refuses a missing or wrong secret', () => {
   assert.equal(authoriseCron(`bearer ${ENV.CRON_SECRET}`, ENV).ok, false);
 });
 
-test('a missing CRON_SECRET closes the route rather than opening it', () => {
+test('a missing CRON_SECRET closes the route rather than opening it', async () => {
   const r = authoriseCron('Bearer anything', {});
   assert.equal(r.ok, false);
   assert.equal(r.status, 500);
   assert.match(r.error, /Missing required environment variable CRON_SECRET/);
 });
 
-test('a refusal says Unauthorized and nothing about the secret', () => {
+test('a refusal says Unauthorized and nothing about the secret', async () => {
   const r = authoriseCron('Bearer nope', ENV);
   assert.equal(r.status, 401);
   assert.equal(r.error, 'Unauthorized');
@@ -352,7 +352,7 @@ test('one poll filters, maps and upserts, and reports what it did', async () => 
   assert.equal(sent[1].operator_name, null);
 });
 
-test('the request goes to the documented endpoint, with the token as a query parameter', () => {
+test('the request goes to the documented endpoint, with the token as a query parameter', async () => {
   const req = buildRequest({ env: ENV, now: new Date('2026-09-23T11:05:00Z') });
   const u = new URL(req.url);
   assert.equal(u.origin + u.pathname, PBX_URL);
@@ -361,12 +361,12 @@ test('the request goes to the documented endpoint, with the token as a query par
   assert.equal(u.searchParams.get('dateTo'), '2026-09-23 14:05:00');
 });
 
-test('the window asked for is short, because a wide one makes the API fail', () => {
+test('the window asked for is short, because a wide one makes the API fail', async () => {
   assert.equal(WINDOW_MINUTES, 15);
   assert.ok(WINDOW_MINUTES <= 60, 'never ask this API for months or years');
 });
 
-test('Supabase config follows the org convention and accepts the brief name too', () => {
+test('Supabase config follows the org convention and accepts the brief name too', async () => {
   assert.equal(supabaseConfig(ENV).key, 'fake-service-key');
   assert.equal(supabaseConfig({ SUPABASE_URL: 'https://x', SUPABASE_SERVICE_ROLE_KEY: 'alias' }).key, 'alias');
   assert.throws(() => supabaseConfig({ SUPABASE_URL: 'https://x' }), /SUPABASE_SERVICE_KEY/);
@@ -375,7 +375,7 @@ test('Supabase config follows the org convention and accepts the brief name too'
 
 // ================================================== the cron wiring itself ===
 
-test('the cron is wired every five minutes at the route that exists', () => {
+test('the cron is wired every five minutes at the route that exists', async () => {
   const vercel = JSON.parse(fs.readFileSync(path.join(ROOT, 'vercel.json'), 'utf8'));
   assert.equal(vercel.crons.length, 1);
   assert.equal(vercel.crons[0].schedule, '*/5 * * * *');
@@ -384,7 +384,7 @@ test('the cron is wired every five minutes at the route that exists', () => {
     'the cron points at a file that must exist');
 });
 
-test('the migration turns RLS on and grants nothing to anon or authenticated', () => {
+test('the migration turns RLS on and grants nothing to anon or authenticated', async () => {
   const sql = fs.readFileSync(path.join(ROOT, 'sql', '001_pbx_incoming_calls.sql'), 'utf8');
   assert.match(sql, /enable row level security/i);
   assert.match(sql, /revoke all on public\.pbx_incoming_calls from anon, authenticated/i);
@@ -396,7 +396,7 @@ test('the migration turns RLS on and grants nothing to anon or authenticated', (
   assert.match(sql, /NOT YET APPLIED/, 'a file that is not applied must say so');
 });
 
-test('the env example names every variable and gives none of them a value', () => {
+test('the env example names every variable and gives none of them a value', async () => {
   const env = fs.readFileSync(path.join(ROOT, '.env.example'), 'utf8');
   for (const name of ['PBX_API_TOKEN', 'SUPABASE_URL', 'SUPABASE_SERVICE_KEY', 'CRON_SECRET']) {
     assert.match(env, new RegExp('^' + name + '=\\s*$', 'm'), name + ' must be named and empty');

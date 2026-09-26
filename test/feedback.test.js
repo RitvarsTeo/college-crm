@@ -41,7 +41,7 @@ const url = (buf, type) => `data:${type};base64,${buf.toString('base64')}`;
 
 // ------------------------------------------------------------- the validator -
 
-test('a real PNG, JPEG and WebP are accepted, and the SNIFFED type is what is stored', () => {
+test('a real PNG, JPEG and WebP are accepted, and the SNIFFED type is what is stored', async () => {
   for (const [buf, declared, expected] of [
     [PNG, 'image/png', 'image/png'],
     [JPEG, 'image/jpeg', 'image/jpeg'],
@@ -54,47 +54,47 @@ test('a real PNG, JPEG and WebP are accepted, and the SNIFFED type is what is st
   }
 });
 
-test('the declared type is ignored: a JPEG sent as image/png is stored as a JPEG', () => {
+test('the declared type is ignored: a JPEG sent as image/png is stored as a JPEG', async () => {
   // Not an attack, just a client that guessed wrong. The bytes decide.
   assert.equal(readScreenshot(url(JPEG, 'image/png')).mimeType, 'image/jpeg');
 });
 
-test('HTML labelled image/png is refused, so it can never be served back to an admin', () => {
+test('HTML labelled image/png is refused, so it can never be served back to an admin', async () => {
   // This is the stored-XSS stopper. If this test ever goes green by accident,
   // an admin opening the screenshot would be running somebody else's script.
   assert.throws(() => readScreenshot(url(HTML, 'image/png')), BadScreenshot);
 });
 
-test('invalid base64 is refused, because Node decodes it silently instead of failing', () => {
+test('invalid base64 is refused, because Node decodes it silently instead of failing', async () => {
   const broken = 'data:image/png;base64,' + PNG.toString('base64').slice(0, 20) + '!!!!';
   assert.throws(() => readScreenshot(broken), BadScreenshot);
 });
 
-test('base64 that decodes to different bytes than it claims is refused', () => {
+test('base64 that decodes to different bytes than it claims is refused', async () => {
   // Node drops characters it cannot read. Re-encoding is the only way to notice.
   const good = PNG.toString('base64');
   const smuggled = 'data:image/png;base64,' + good.slice(0, 10) + '\u0000' + good.slice(10);
   assert.throws(() => readScreenshot(smuggled), BadScreenshot);
 });
 
-test('an oversized string is refused on its LENGTH, before anything is decoded', () => {
+test('an oversized string is refused on its LENGTH, before anything is decoded', async () => {
   const huge = 'data:image/png;base64,' + 'A'.repeat(MAX_CHARS + 1);
   assert.throws(() => readScreenshot(huge), BadScreenshot);
   // and the cap really is about 1.5 MB decoded, not something accidentally tiny
   assert.ok(MAX_CHARS > 2_000_000 && MAX_CHARS < 2_100_000, `MAX_CHARS looks wrong: ${MAX_CHARS}`);
 });
 
-test('missing, null and empty all mean no screenshot, and that is allowed', () => {
+test('missing, null and empty all mean no screenshot, and that is allowed', async () => {
   assert.equal(readScreenshot(undefined), null);
   assert.equal(readScreenshot(null), null);
   assert.equal(readScreenshot(''), null);
 });
 
-test('an empty image is refused rather than stored as a zero-byte row', () => {
+test('an empty image is refused rather than stored as a zero-byte row', async () => {
   assert.throws(() => readScreenshot('data:image/png;base64,'), BadScreenshot);
 });
 
-test('the kind and the body are checked', () => {
+test('the kind and the body are checked', async () => {
   assert.equal(readKind('bug'), 'BUG');
   assert.equal(readKind('IDEA'), 'IDEA');
   assert.throws(() => readKind('rant'), BadScreenshot);
@@ -103,7 +103,7 @@ test('the kind and the body are checked', () => {
   assert.equal(readBody('  it broke  '), 'it broke');
 });
 
-test('the query string is cut off the page path, because it can carry a token', () => {
+test('the query string is cut off the page path, because it can carry a token', async () => {
   assert.equal(readPath('/people?token=secret'), '/people');
   // the hash survives, because on a hash-routed app it IS the page
   assert.equal(readPath('#/person/p1?a=b'), '#/person/p1');
@@ -113,52 +113,52 @@ test('the query string is cut off the page path, because it can carry a token', 
 
 // ---------------------------------------------------------------- the store -
 
-test('the feedback and its screenshot are written together, and read back whole', () => {
-  const db = openDb();
+test('the feedback and its screenshot are written together, and read back whole', async () => {
+  const db = await openDb();
   const shot = readScreenshot(url(PNG, 'image/png'));
-  const { id } = saveFeedback(db, { kind: 'BUG', body: 'the open link fails', path: '/car',
+  const { id } = await saveFeedback(db, { kind: 'BUG', body: 'the open link fails', path: '/car',
     screenshot: shot, by: 'Aigars', at: '2026-09-24T09:00:00.000Z' });
-  const rows = listFeedback(db);
+  const rows = await listFeedback(db);
   assert.equal(rows.length, 1);
   assert.equal(rows[0].screenshot.mimeType, 'image/png');
   assert.equal(rows[0].screenshot.sizeBytes, PNG.length);
   // the list must not carry the bytes
   assert.equal(rows[0].screenshot.data, undefined);
-  assert.deepEqual(Buffer.from(getScreenshot(db, id).data), PNG);
+  assert.deepEqual(Buffer.from((await getScreenshot(db, id)).data), PNG);
 });
 
-test('deleting a feedback row deletes its screenshot with it', () => {
-  const db = openDb();
-  const { id } = saveFeedback(db, { kind: 'IDEA', body: 'a table would be easier', path: '/today',
+test('deleting a feedback row deletes its screenshot with it', async () => {
+  const db = await openDb();
+  const { id } = await saveFeedback(db, { kind: 'IDEA', body: 'a table would be easier', path: '/today',
     screenshot: readScreenshot(url(PNG, 'image/png')), by: 'Aigars', at: '2026-09-24T09:00:00.000Z' });
-  assert.ok(getScreenshot(db, id));
-  db.prepare('DELETE FROM feedback WHERE id = ?').run(id);
-  assert.equal(getScreenshot(db, id), null);
+  assert.ok(await getScreenshot(db, id));
+  await db.prepare('DELETE FROM feedback WHERE id = ?').run(id);
+  assert.equal(await getScreenshot(db, id), null);
 });
 
-test('handled is a time, not a flag, and marking it twice is idempotent', () => {
-  const db = openDb();
-  const { id } = saveFeedback(db, { kind: 'BUG', body: 'something broke', path: null,
+test('handled is a time, not a flag, and marking it twice is idempotent', async () => {
+  const db = await openDb();
+  const { id } = await saveFeedback(db, { kind: 'BUG', body: 'something broke', path: null,
     screenshot: null, by: 'Ieva', at: '2026-09-24T09:00:00.000Z' });
-  assert.equal(listFeedback(db)[0].handledAt, null);
-  const first = setHandled(db, id, true, 'Ritvars', '2026-09-24T10:00:00.000Z');
+  assert.equal((await listFeedback(db))[0].handledAt, null);
+  const first = await setHandled(db, id, true, 'Ritvars', '2026-09-24T10:00:00.000Z');
   assert.equal(first.changed, true);
-  const again = setHandled(db, id, true, 'Ritvars', '2026-09-24T11:00:00.000Z');
+  const again = await setHandled(db, id, true, 'Ritvars', '2026-09-24T11:00:00.000Z');
   assert.equal(again.changed, false);                       // open -> handled happened once
-  assert.equal(listFeedback(db)[0].handledAt, '2026-09-24T11:00:00.000Z');
-  setHandled(db, id, false, 'Ritvars', '2026-09-24T12:00:00.000Z');
-  assert.equal(listFeedback(db)[0].handledAt, null);
-  assert.equal(setHandled(db, 999, true, 'Ritvars', 'x').error, 'not found');
+  assert.equal((await listFeedback(db))[0].handledAt, '2026-09-24T11:00:00.000Z');
+  await setHandled(db, id, false, 'Ritvars', '2026-09-24T12:00:00.000Z');
+  assert.equal((await listFeedback(db))[0].handledAt, null);
+  assert.equal((await setHandled(db, 999, true, 'Ritvars', 'x')).error, 'not found');
 });
 
-test('open items come before handled ones', () => {
-  const db = openDb();
-  const a = saveFeedback(db, { kind: 'BUG', body: 'older, and handled', path: null, screenshot: null,
+test('open items come before handled ones', async () => {
+  const db = await openDb();
+  const a = await saveFeedback(db, { kind: 'BUG', body: 'older, and handled', path: null, screenshot: null,
     by: 'Ieva', at: '2026-09-24T09:00:00.000Z' });
-  saveFeedback(db, { kind: 'IDEA', body: 'newer, still open', path: null, screenshot: null,
+  await saveFeedback(db, { kind: 'IDEA', body: 'newer, still open', path: null, screenshot: null,
     by: 'Ieva', at: '2026-09-23T09:00:00.000Z' });
-  setHandled(db, a.id, true, 'Ritvars', '2026-09-24T10:00:00.000Z');
-  assert.deepEqual(listFeedback(db).map((r) => r.body), ['newer, still open', 'older, and handled']);
+  await setHandled(db, a.id, true, 'Ritvars', '2026-09-24T10:00:00.000Z');
+  assert.deepEqual((await listFeedback(db)).map((r) => r.body), ['newer, still open', 'older, and handled']);
 });
 
 // --------------------------------------------------------------- the routes -

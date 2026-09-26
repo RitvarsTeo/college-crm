@@ -279,7 +279,7 @@ test('marking not relevant also says what happened', async (t) => {
   assert.equal(gone.rows[0].contact_name, 'Promo Agency');
 });
 
-test('the Inbox has exactly one work queue on screen', () => {
+test('the Inbox has exactly one work queue on screen', async () => {
   // The screen is one file, so this reads it. Three boards - To look at, Done,
   // Not relevant - were the fault Aigars reported; only the first is a queue.
   const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');

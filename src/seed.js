@@ -50,7 +50,7 @@ function personName(intl) {
 
 const slug = (s) => s.toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^a-z]+/g, '.');
 
-export function seed(db, { people = 64 } = {}) {
+export async function seed(db, { people = 64 } = {}) {
   const now = Date.now();
   const STAGES = ['New', 'Contacted', 'Follow-up', 'Application', 'Contract', 'Admitted', 'Not proceeding'];
   const ins = db.prepare(`INSERT INTO people (id,name,email,phone,programme,study_form,education,status,owner,
@@ -99,7 +99,7 @@ export function seed(db, { people = 64 } = {}) {
     const phone = intl ? '+91' + int(700000000, 999999999) : '+371' + int(20000000, 29999999);
     const lastContact = rnd() < 0.85 ? daysAgo(int(0, Math.min(ageDays, 60)), now) : null;
 
-    ins.run(id, name, email, phone, programme, rnd() < 0.7 ? 'Full time' : 'Part time', education, status, owner,
+    await ins.run(id, name, email, phone, programme, rnd() < 0.7 ? 'Full time' : 'Part time', education, status, owner,
       channel, campaign, detail, created, lastContact, contractAt, admittedAt,
       admittedAt ? `3-5-IM/2026/${int(10, 99)}` : null, null);
     ids.push({ id, name, status, channel, created, owner, intl, admittedAt, contractAt });
@@ -118,7 +118,7 @@ export function seed(db, { people = 64 } = {}) {
       mailchimp: ['Mailchimp', 'Opened the campaign email and applied'],
       agent: ['Agent application', 'A partner submitted the candidate'],
     }[channel] || ['Application', ''];
-    insEv.run(id, 'channel', channel, 'in', created, arrival[0], arrival[1], null, 'automatic');
+    await insEv.run(id, 'channel', channel, 'in', created, arrival[0], arrival[1], null, 'automatic');
 
     // a couple of follow-up entries
     const touches = int(0, 4);
@@ -126,39 +126,39 @@ export function seed(db, { people = 64 } = {}) {
       const when = plusDays(created, int(1, Math.max(2, ageDays)));
       if (Date.parse(when) > now) continue;
       const kind = pick(['call', 'note', 'channel']);
-      if (kind === 'call') insEv.run(id, 'call', 'phone', 'note', when, 'Call: ' + pick(['answered', 'no answer', 'asked us to call back']), pick(['Interested in the January intake', 'Waiting for the medical certificate', 'Still thinking', 'The contract has to be sent']), owner, 'manual');
-      else if (kind === 'note') insEv.run(id, 'note', null, 'note', when, 'Note', pick(['From maritime school, documents in order', 'The parents are asking about the price', 'Still at secondary school', 'Needs to retake the English test']), owner, 'manual');
-      else insEv.run(id, 'channel', pick(['email', 'whatsapp', 'website']), 'in', when, 'Message', pick(['Thank you for the reply!', 'When are the documents due?', 'Can I change the programme?']), null, 'automatic');
+      if (kind === 'call') await insEv.run(id, 'call', 'phone', 'note', when, 'Call: ' + pick(['answered', 'no answer', 'asked us to call back']), pick(['Interested in the January intake', 'Waiting for the medical certificate', 'Still thinking', 'The contract has to be sent']), owner, 'manual');
+      else if (kind === 'note') await insEv.run(id, 'note', null, 'note', when, 'Note', pick(['From maritime school, documents in order', 'The parents are asking about the price', 'Still at secondary school', 'Needs to retake the English test']), owner, 'manual');
+      else await insEv.run(id, 'channel', pick(['email', 'whatsapp', 'website']), 'in', when, 'Message', pick(['Thank you for the reply!', 'When are the documents due?', 'Can I change the programme?']), null, 'automatic');
     }
 
     if (['Application', 'Contract', 'Admitted'].includes(status)) {
       for (const d of ['Passport or ID', 'Education certificate', 'Medical certificate', 'Photo']) {
-        insDoc.run(id, d, rnd() < (status === 'Admitted' ? 0.95 : 0.6) ? 'received' : rnd() < 0.5 ? 'missing' : 'expired');
+        await insDoc.run(id, d, rnd() < (status === 'Admitted' ? 0.95 : 0.6) ? 'received' : rnd() < 0.5 ? 'missing' : 'expired');
       }
     }
     if (status === 'Admitted') {
-      insEv.run(id, 'status', null, 'note', admittedAt, 'Admitted', 'Matriculation ' + String(admittedAt).slice(0, 10), 'Admissions', 'manual');
+      await insEv.run(id, 'status', null, 'note', admittedAt, 'Admitted', 'Matriculation ' + String(admittedAt).slice(0, 10), 'Admissions', 'manual');
     }
 
     // the open next action, which is the whole point of the follow-up screen
     if (!['Admitted', 'Not proceeding'].includes(status)) {
       const label = { New: 'First call', Contacted: 'Follow-up call', 'Follow-up': 'Establish the decision', Application: 'Check the documents', Contract: 'Prepare the contract' }[status] || 'Get in touch';
       const due = daysAgo(int(-9, 14), now); // some overdue, some today, some ahead
-      insTask.run(id, label, due, owner, null, null, created);
+      await insTask.run(id, label, due, owner, null, null, created);
     }
   }
 
   // an open day, with the people who came from the event channel
   const odId = 'od1';
-  db.prepare('INSERT INTO open_days (id,title,held_on,place) VALUES (?,?,?,?)').run(
+  await db.prepare('INSERT INTO open_days (id,title,held_on,place) VALUES (?,?,?,?)').run(
     odId, 'Profession taster day', daysAgo(9, now).slice(0, 10), 'Duntes iela 17A');
   const eventPeople = ids.filter((p) => p.channel === 'event');
   for (const p of eventPeople) {
-    db.prepare('INSERT INTO registrations (open_day_id,person_id,slot,attended,professions) VALUES (?,?,?,?,?)')
+    await db.prepare('INSERT INTO registrations (open_day_id,person_id,slot,attended,professions) VALUES (?,?,?,?,?)')
       .run(odId, p.id, pick(['14:00', '15:00', '16:00']), rnd() < 0.7 ? 1 : 0, pick(['Ship captain', 'Ship engineer', 'Wind turbine technician']));
   }
   const od2 = 'od2';
-  db.prepare('INSERT INTO open_days (id,title,held_on,place) VALUES (?,?,?,?)').run(
+  await db.prepare('INSERT INTO open_days (id,title,held_on,place) VALUES (?,?,?,?)').run(
     od2, 'Open doors day', iso(now + 12 * 86400000).slice(0, 10), 'Duntes iela 17A');
 
   return { people: ids.length, openDays: 2, stages: STAGES };

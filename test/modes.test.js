@@ -19,52 +19,52 @@ import { buildDemo } from '../src/demo.js';
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const CONFIG = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'prototype.json'), 'utf8'));
 
-function seedRealish(db) {
+async function seedRealish(db) {
   const ins = db.prepare(`INSERT INTO people (id,name,email,phone,programme,status,owner,
     source_channel,created_at) VALUES (?,?,?,?,?,?,?,?,?)`);
   for (let i = 0; i < 25; i += 1) {
-    ins.run('r' + i, 'Real Person ' + i, `p${i}@example.lv`, '+3712000' + String(1000 + i),
+    await ins.run('r' + i, 'Real Person ' + i, `p${i}@example.lv`, '+3712000' + String(1000 + i),
       i % 2 ? 'NAV' : 'ENG', i < 5 ? 'Admitted' : 'New', 'Admissions', 'email',
       '2026-0' + (1 + (i % 9)) + '-01T09:00:00.000Z');
-    db.prepare(`INSERT INTO events (person_id,kind,occurred_at,subject,actor,origin)
+    await db.prepare(`INSERT INTO events (person_id,kind,occurred_at,subject,actor,origin)
       VALUES (?,?,?,?,?,?)`).run('r' + i, 'note', '2026-05-01T09:00:00.000Z', 'imported', 'import', 'automatic');
   }
 }
 
-test('a snapshot is written from the source and can be restored exactly', (t) => {
+test('a snapshot is written from the source and can be restored exactly', async (t) => {
   const file = path.join(os.tmpdir(), 'crm-snap-' + Math.random().toString(36).slice(2) + '.json');
   process.env.CRM_SNAPSHOT = file;
   t.after(() => { try { fs.unlinkSync(file); } catch {} delete process.env.CRM_SNAPSHOT; });
 
-  const db = openDb();
-  seedRealish(db);
-  const before = db.prepare('SELECT COUNT(*) n FROM people').get().n;
+  const db = await openDb();
+  await seedRealish(db);
+  const before = (await db.prepare('SELECT COUNT(*) n FROM people').get()).n;
 
   // the module resolves its path at call time, so this test genuinely writes to a
   // temporary file. It used to be a module constant, and this test wrote 25 fake
   // people straight over the real snapshot.
   assert.equal(snapshot.snapshotFile(), file, 'the test must not touch the real snapshot');
-  const written = snapshot.write(db, { source: 'test' });
+  const written = await snapshot.write(db, { source: 'test' });
   assert.equal(written.counts.people, before);
   assert.ok(written.checksum);
 
   // somebody plays: wipe it and put something else there entirely
-  db.exec('DELETE FROM events; DELETE FROM people');
-  db.prepare(`INSERT INTO people (id,name,status,created_at)
+  await db.exec('DELETE FROM events; DELETE FROM people');
+  await db.prepare(`INSERT INTO people (id,name,status,created_at)
     VALUES ('demo1','Demo Person','New','2026-09-24T09:00:00.000Z')`).run();
-  assert.equal(db.prepare('SELECT COUNT(*) n FROM people').get().n, 1);
+  assert.equal((await db.prepare('SELECT COUNT(*) n FROM people').get()).n, 1);
 
-  const r = snapshot.restore(db);
+  const r = await snapshot.restore(db);
   assert.equal(r.ok, true);
   assert.equal(r.verified, true, 'the restore must be checksum-identical, not merely non-empty');
   assert.equal(r.counts.people, before);
-  assert.equal(db.prepare('SELECT COUNT(*) n FROM people').get().n, before);
-  assert.equal(db.prepare("SELECT COUNT(*) n FROM people WHERE id = 'demo1'").get().n, 0,
+  assert.equal((await db.prepare('SELECT COUNT(*) n FROM people').get()).n, before);
+  assert.equal((await db.prepare("SELECT COUNT(*) n FROM people WHERE id = 'demo1'").get()).n, 0,
     'nothing from the demo may survive a restore');
-  assert.equal(db.prepare("SELECT name FROM people WHERE id = 'r7'").get().name, 'Real Person 7');
+  assert.equal((await db.prepare("SELECT name FROM people WHERE id = 'r7'").get()).name, 'Real Person 7');
 });
 
-test('a restore fails honestly when there is no snapshot', (t) => {
+test('a restore fails honestly when there is no snapshot', async (t) => {
   const file = path.join(os.tmpdir(), 'crm-nosnap-' + Math.random().toString(36).slice(2) + '.json');
   process.env.CRM_SNAPSHOT = file;
   t.after(() => { delete process.env.CRM_SNAPSHOT; });
@@ -72,27 +72,27 @@ test('a restore fails honestly when there is no snapshot', (t) => {
   assert.equal(snapshot.info(), null);
 });
 
-test('feedback is not part of the snapshot, so it survives a restore', (t) => {
+test('feedback is not part of the snapshot, so it survives a restore', async (t) => {
   const file = path.join(os.tmpdir(), 'crm-fb-' + Math.random().toString(36).slice(2) + '.json');
   process.env.CRM_SNAPSHOT = file;
   t.after(() => { try { fs.unlinkSync(file); } catch {} delete process.env.CRM_SNAPSHOT; });
 
-  const db = openDb();
-  seedRealish(db);
-  snapshot.write(db);
-  db.prepare(`INSERT INTO feedback (author,kind,body,created_at)
+  const db = await openDb();
+  await seedRealish(db);
+  await snapshot.write(db);
+  await db.prepare(`INSERT INTO feedback (author,kind,body,created_at)
     VALUES ('Aigars','BUG','something is wrong','2026-09-24T09:00:00.000Z')`).run();
-  snapshot.restore(db);
-  assert.equal(db.prepare('SELECT COUNT(*) n FROM feedback').get().n, 1,
+  await snapshot.restore(db);
+  assert.equal((await db.prepare('SELECT COUNT(*) n FROM feedback').get()).n, 1,
     'feedback is about the software, not the data, and must not be wiped by a restore');
   assert.ok(!snapshot.TABLES.includes('feedback'));
 });
 
 // ------------------------------------------------------------- the demo --
 
-test('the demo environment is built through the real inbound path', () => {
-  const db = openDb();
-  const info = buildDemo(db, CONFIG);
+test('the demo environment is built through the real inbound path', async () => {
+  const db = await openDb();
+  const info = await buildDemo(db, CONFIG);
 
   assert.ok(info.people >= 8, 'enough people to be worth looking at');
   assert.ok(info.people <= 20, 'and few enough to read in one screen');
@@ -102,31 +102,31 @@ test('the demo environment is built through the real inbound path', () => {
   assert.ok(info.overdue > 0, 'and something is overdue, so Follow-ups is not empty');
 
   // it arrived the real way: every person has an inbound row behind them
-  const viaInbound = db.prepare(`SELECT COUNT(DISTINCT person_id) n FROM inbound
-    WHERE person_id IS NOT NULL`).get().n;
+  const viaInbound = (await db.prepare(`SELECT COUNT(DISTINCT person_id) n FROM inbound
+    WHERE person_id IS NOT NULL`).get()).n;
   assert.equal(viaInbound, info.people, 'every demo person came through the Inbox, not a direct insert');
 
   // and the rule holds: nobody active is left with nothing scheduled
-  const stranded = db.prepare(`SELECT COUNT(*) n FROM people pe
+  const stranded = (await db.prepare(`SELECT COUNT(*) n FROM people pe
     WHERE pe.status NOT IN ('Admitted','Not proceeding')
-      AND NOT EXISTS (SELECT 1 FROM tasks t WHERE t.person_id = pe.id AND t.done_at IS NULL)`).get().n;
+      AND NOT EXISTS (SELECT 1 FROM tasks t WHERE t.person_id = pe.id AND t.done_at IS NULL)`).get()).n;
   assert.equal(stranded, 0);
 });
 
-test('the demo covers the channels and stages somebody needs to see', () => {
-  const db = openDb();
-  buildDemo(db, CONFIG);
-  const channels = db.prepare('SELECT DISTINCT channel c FROM inbound').all().map((r) => r.c);
+test('the demo covers the channels and stages somebody needs to see', async () => {
+  const db = await openDb();
+  await buildDemo(db, CONFIG);
+  const channels = (await db.prepare('SELECT DISTINCT channel c FROM inbound').all()).map((r) => r.c);
   for (const must of ['instagram', 'facebook', 'messenger', 'whatsapp', 'website', 'gmail',
     'google_form', 'open_day', 'phone', 'agent', 'linkedin', 'tiktok', 'mailchimp', 'in_person']) {
     assert.ok(channels.includes(must), 'the demo never shows ' + must);
   }
-  const stages = db.prepare('SELECT DISTINCT status s FROM people').all().map((r) => r.s);
+  const stages = (await db.prepare('SELECT DISTINCT status s FROM people').all()).map((r) => r.s);
   assert.ok(stages.length >= 4, 'several admissions stages are represented, not just New');
   assert.ok(stages.includes('Admitted'), 'and the end of the journey is visible');
 
   // a reason was recorded for anything marked not relevant
-  const archived = db.prepare("SELECT archive_reason, processed_by FROM inbound WHERE state = 'archived'").all();
+  const archived = await db.prepare("SELECT archive_reason, processed_by FROM inbound WHERE state = 'archived'").all();
   assert.ok(archived.length > 0);
   for (const a of archived) {
     assert.ok(a.archive_reason, 'not relevant always carries a reason');
