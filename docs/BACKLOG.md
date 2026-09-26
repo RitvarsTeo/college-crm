@@ -1530,3 +1530,186 @@ unsafe.
 The application-side code exists and is tested. The provider configuration does not exist. **Live
 Google SSO does not work**, no credentials were created, and nothing in this sheet should be read as
 saying otherwise. Option 2 is what it would take, not a description of something that runs.
+
+---
+
+## DECISION 26.09.2026: College CRM V1 does not go in either existing Supabase project
+
+**DECIDED by Ritvars, 26.09.2026, after a read-only inspection of the whole Supabase organisation.**
+Nothing was created, altered or deleted during that inspection.
+
+### The decision
+
+**College CRM V1 must NOT use `novikontas-customer-hub` or `novikontas-workforce-hub`.**
+
+Both are **live production databases holding real personal data**. No CRM table, schema, function,
+user, policy, index or any other object may be created in either project.
+
+**`QR Sert` must not be repurposed either.**
+
+### What the inspection found
+
+One organisation, `RitvarsTeo`, **on the free plan**. Three projects:
+
+| Project | Status | What is in it |
+|---|---|---|
+| `novikontas-customer-hub` | ACTIVE_HEALTHY, eu-central-1 | 16 tables. **2,235 real contacts**, 11,833 audit rows, 2,736 campaign recipient results, 14 sign-in accounts |
+| `novikontas-workforce-hub` | ACTIVE_HEALTHY, eu-central-1 | 31 tables. **105 real candidates**, 812 append-only hiring events, 94 uploaded files, 835 distilled facts, 214 sign-in attempts |
+| `QR Sert` | INACTIVE, eu-west-2 | unrelated |
+
+Five independent reasons, any one of which is sufficient:
+
+1. **Real personal data.** 2,235 clients and 105 job applicants, including the append-only evidence
+   trail behind hiring decisions. The risk of sharing a database runs toward the hubs, not toward
+   the prototype.
+2. **The organisation is on the FREE plan.** Both active-project slots are used, and free-tier
+   egress is shared org-wide - which has already taken both hubs down once, on 20.09.2026, with the
+   Data API returning 402 while the projects read healthy.
+3. **Concrete schema collisions.** `feedback` and `feedback_screenshots` already exist in **both**
+   projects and in the CRM. Five more CRM tables carry names generic enough to be hazardous in a
+   shared `public` schema: `people`, `tasks`, `events`, `documents`, `consents`.
+4. **Using either would require the Postgres port first**, which is a much larger piece of work than
+   the deployment problem it would be solving.
+5. A prototype under daily change does not belong next to production.
+
+### Backlog C4 is corrected
+
+C4 recorded that *"Aigars already has a paid Supabase project."* **Nothing in the `RitvarsTeo`
+organisation is paid** - the plan reads `free`, tier `tier_free`. Either that project sits in an
+account this session cannot see, or the note was wrong. **C4 is now UNVERIFIED rather than SAID**,
+and it matters, because the two-active-project limit follows from it.
+
+### THE REMAINING INFRASTRUCTURE DECISION
+
+> **Dedicated persistent Postgres environment for College CRM V1.**
+
+**DECISION NEEDED.** Where a durable database for the CRM actually lives. Ruled out already: both
+existing hub projects, and `QR Sert`. Not ruled out and not chosen: a new Supabase project on a paid
+plan, some other managed Postgres, or a Render paid plan with a disk. This overlaps C3.
+
+### Until then
+
+**The CRM remains on SQLite.** `node:sqlite`, `CRM_DB`, exactly as it is today.
+
+**The SQLite to Postgres migration must NOT begin.** It is roughly 200 call sites across 77
+synchronous functions - `node:sqlite` is synchronous and every Postgres client is not - and starting
+it before the destination is chosen would mean writing it against a database nobody has picked.
+
+Everything downstream of that stays where it is: the ephemeral `/tmp` database on Render Free, the
+account bootstrap that exists because of it, and the accepted loss of tester data on restart.
+
+---
+
+## SECURITY FINDING - Client Hub: anon-callable SECURITY DEFINER functions
+
+**This is a Client Hub issue. It has nothing to do with College CRM**, and is recorded here only
+because it was found while answering a College CRM question.
+
+**NOT FIXED. Nothing in the Client Hub was modified.** Do not change it without instruction.
+
+### What it is
+
+`novikontas-customer-hub` exposes **six `SECURITY DEFINER` functions that the `anon` role can call**
+through the public REST API at `/rest/v1/rpc/<name>`. A `SECURITY DEFINER` function runs with its
+owner's rights, so it steps over the caller's permissions by design - which is fine when only the
+application can call it, and not fine when `anon` can.
+
+Confirmed examples:
+
+- `hub_authorized_contacts()`
+- `hub_approved_never_sent()`
+- `hub_campaign_completion()`
+
+The other three are `hub_clear_not_invited(...)`, `hub_import_batch_members(p_batch)` and
+`rls_auto_enable()`. All six are also callable by the `authenticated` role.
+
+Reported by Supabase's own database linter as
+[`0028_anon_security_definer_function_executable`](https://supabase.com/docs/guides/database/database-linter?lint=0028_anon_security_definer_function_executable),
+level WARN, facing EXTERNAL, observed 26.09.2026.
+
+### Why it matters
+
+Every table in that project has RLS enabled with **no policies**, which is deny-by-default and
+correct given the application uses the service key. But that also means **RLS is not load-bearing**:
+nothing behind these functions is protected by a policy, so a `SECURITY DEFINER` function reachable
+by `anon` is not held back by anything else. `hub_authorized_contacts()` names contacts.
+
+### Why it looks like drift rather than design
+
+**`novikontas-workforce-hub` has none.** The same linter reports zero anon-executable
+`SECURITY DEFINER` functions there, on a larger schema. The two hubs were built by the same hands to
+the same standards, so the difference is very unlikely to be intentional.
+
+### What it is not
+
+Not a College CRM issue, not a blocker for any College CRM work, and not evidence that anything has
+been accessed. It is an exposure, not a breach: nothing here says anybody called them.
+
+**Remediation is the Client Hub's own decision** - revoke `EXECUTE` from `anon`, switch the
+functions to `SECURITY INVOKER`, or move them out of the exposed schema. Which of those is right
+depends on whether each function is meant to be public at all, and that is a question for whoever
+owns the Client Hub.
+
+---
+
+## 26.09.2026 - accessibility, the objective half (F2, PARTLY DONE)
+
+Taken on because it is the one queue item that needs no infrastructure decision. **Only faults with
+an unambiguous fix and an already-established intended behaviour were touched.** Nothing was
+redesigned.
+
+### Fixed
+
+**1. The Channels rows could not be reached by keyboard at all.** All 14 rows were
+`<tr style="cursor:pointer" onclick="...">` with no `tabindex`, so a keyboard user could not open a
+channel's detail page by any means. **Mine, from 25.09.2026.**
+
+Fixed by using the convention this application already has rather than inventing one: `class="row"`
+plus `tabindex="0"`, which the existing global Enter/Space handler already answers. Proved with a
+real key press, not a synthetic event: focus a row, press Enter, the address becomes
+`#/channels/agent` and the detail page opens.
+
+**2. Seven filter controls were announced as unlabelled.** The `field()` helper rendered its caption
+in a `<span>` inside a `<div>` - a **visual** label that is not a **programmatic** one. Search,
+Stage, Next step, Programme, Nationality, Owner and Came from were all captioned on screen and
+anonymous to a screen reader.
+
+Fixed by making the helper render a `<label>` instead of a `<div>`. Every usage wraps exactly one
+control, checked, so the association is implicit and no `for=` is needed. **Nothing moves on
+screen:** the `.flab` class and its styling are unchanged.
+
+**3. The People sort headers took a tab stop and then did nothing.** `<th onclick="sortBy(...)">`
+with no `tabindex`. Adding `tabindex` alone would have been the worse of the two states - focusable
+but not activatable - so the global key handler was widened to cover a `TH` carrying an `onclick`,
+alongside the rows it already handled.
+
+### Measured after
+
+Four screens, signed in, demo data:
+
+| Screen | Not keyboard reachable | Unlabelled controls |
+|---|---|---|
+| Today | 0 | 0 |
+| People | 0 | 0 |
+| Channels | 0 | 0 |
+| Inbox | 0 | 0 |
+
+The login screen was already clean: no unlabelled control, no image without `alt`, no button without
+a name, `lang="en"`, one `h1`, `main` and `nav` present.
+
+### NOT done - F2 stays open
+
+- **Focus order** has not been examined. Nothing here says the tab sequence is sensible, only that
+  the controls are in it
+- **Focus visibility** was not re-checked on the new stops. A programmatic `.focus()` does not
+  trigger `:focus-visible`, so this needs real Tab presses to measure and was not done
+- Screens beyond the four above
+- Headings hierarchy, `aria-live` on the parts that update, reduced motion, zoom to 200 per cent
+- **This was not run against a checker.** Four properties were measured by hand. A missing property
+  is not a passing one
+
+### And still open from the contrast run
+
+**58 light-theme AA failures**, every one the same token `--t4` at 3.09:1 against a 4.5:1
+requirement, used app-wide for secondary text. Untouched: changing it is a visual-design change to
+the whole application. **DECISION NEEDED.**

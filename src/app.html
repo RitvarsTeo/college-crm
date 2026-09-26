@@ -1609,8 +1609,12 @@ async function viewPeople() {
     source_channel: STATE.source, nationality: STATE.nationality, due: STATE.due, sort: STATE.sort, dir: STATE.dir });
   const data = await api('/api/people?' + qs);
   const opt = (arr, cur) => ['<option value="">all</option>'].concat(arr.map(v => `<option ${v === cur ? 'selected' : ''}>${esc(v)}</option>`)).join('');
-  const th = (key, label) => `<th onclick="sortBy('${key}')">${label}${STATE.sort === key ? (STATE.dir === 'asc' ? ' ▲' : ' ▼') : ''}</th>`;
-  const field = (label, inner) => `<div class="flab"><span>${esc(label)}</span>${inner}</div>`;
+  const th = (key, label) => `<th tabindex="0" onclick="sortBy('${key}')">${label}${STATE.sort === key ? (STATE.dir === 'asc' ? ' ▲' : ' ▼') : ''}</th>`;
+  // A LABEL, not a div. It rendered the caption in a <span>, so all seven filter
+  // controls were announced as unlabelled - visually captioned, programmatically
+  // anonymous. Each field() wraps exactly one control, so wrapping associates it
+  // implicitly and no for= is needed. Nothing moves on screen: .flab is unchanged.
+  const field = (label, inner) => `<label class="flab"><span>${esc(label)}</span>${inner}</label>`;
 
   const quickRow = (r) => `<tr class="qe"><td colspan="8">
     <div class="qegrid">${EDIT_FIELDS.map(([key, label, kind]) => {
@@ -2602,7 +2606,7 @@ async function viewChannels(which) {
       </tr></thead>
       <tbody>
       ${rows.map(c => `
-        <tr style="cursor:pointer" onclick="location.hash='#/channels/${esc(c.channel)}'">
+        <tr class="row" tabindex="0" style="cursor:pointer" onclick="location.hash='#/channels/${esc(c.channel)}'">
           <td><b>${esc(c.label)}</b><div class="footnote">${esc(c.summary)}</div></td>
           <td><span class="chstate ${chClass(c.state)}">${esc(c.state)}</span></td>
           <td>${c.live ? '<span class="pill ok">ON</span>' : '<span class="pill calm">off</span>'}</td>
@@ -3420,11 +3424,15 @@ function fbZoom(id) {
   // address bar and nothing on screen moved.
   window.addEventListener('hashchange', route);
   document.addEventListener('keydown', (e) => {
-    // a clickable row is a control, so it answers Enter and Space
+    // A clickable row is a control, so it answers Enter and Space. So is a
+    // sortable column header: tabindex alone makes it focusable but not
+    // activatable, which is the worse of the two states - it takes a tab stop
+    // and then does nothing.
     const el = document.activeElement;
-    if ((e.key === 'Enter' || e.key === ' ') && el && el.classList && el.classList.contains('row')) {
-      e.preventDefault(); el.click();
-    }
+    if (!el || (e.key !== 'Enter' && e.key !== ' ')) return;
+    const isRow = el.classList && el.classList.contains('row');
+    const isSortHeader = el.tagName === 'TH' && el.hasAttribute('onclick');
+    if (isRow || isSortHeader) { e.preventDefault(); el.click(); }
   });
   if (AUTH.on && !AUTH.user) {
     drawLogin(back.refused
