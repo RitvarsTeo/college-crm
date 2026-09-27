@@ -743,6 +743,137 @@ i.tin{background:var(--pet)}
 i.tad{background:var(--amb)}
 i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align:middle}
 
+
+  /* ===================================================================== CONCEPT C
+     The main UI since 28.09.2026 (Ritvars: "Concept C is the main now"). The classic
+     UI stays one click away at ?ui=classic. Everything here is scoped to html.ui-c, so
+     the classic UI is byte-for-byte what it was. The palette OVERRIDES the app's own
+     tokens, so the screens C still borrows from the classic UI (People, Journey, New
+     Leads, the person page) take the quieter colours too. Every text tint passes 4.5:1
+     on its surface - which also retires the --t4 contrast failure in C. */
+  html.ui-c{--paper:#f6f7f6;--surface:#ffffff;--surface-2:#f1f3f2;--shell:#f1f3f2;--field:#ffffff;--menu:#ffffff;--ink:#1b2328;
+    --t2:#48535d;--t3:#5c6670;--t4:#66707a;--rule:#e3e7e8;--rule2:#eef1f1;--control-line:#c9d0d3;
+    --pet:#2e6b70;--petink:#2e6b70;--btn-bg:#1f4f59;--btn-ink:#ffffff;--on-navy:#ffffff;--bad:#9f3a31;
+    --c-ok:#2c6e55;--c-warn:#835c12;--c-bad:#9f3a31;--c-accent-bg:#e9f2f1;--c-sunk:#f1f3f2;--c-sel:#eef4f4}
+  html.ui-c[data-theme="dark"]{--paper:#10222a;--surface:#152b33;--surface-2:#1a333c;--shell:#0e1e25;--field:#1a333c;--menu:#1a333c;--ink:#e7eef0;
+    --t2:#b4c3c9;--t3:#9fb0b7;--t4:#93a6ad;--rule:#26434c;--rule2:#1d3840;--control-line:#3a5a63;
+    --pet:#86cbc7;--petink:#a6dcd8;--btn-bg:#8fd2cd;--btn-ink:#0b1d22;--on-navy:#0b1d22;--bad:#ee958c;
+    --c-ok:#7fcaa6;--c-warn:#e3bb72;--c-bad:#ee958c;--c-accent-bg:#1c3f45;--c-sunk:#0e1e25;--c-sel:#1d3b44}
+  /* the classic navigation stays in the page (other code reads it by id) but is not shown */
+  html.ui-c .shell > nav > a.item, html.ui-c .shell > nav > .add, html.ui-c #navFeedbackLink{display:none!important}
+  html.ui-c .cnav{display:flex;flex-direction:column;gap:2px;margin:6px 0 10px}
+  html.ui-c .cnav a{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;color:var(--t2);text-decoration:none;font-weight:500;font-size:13.5px;border:0}
+  html.ui-c .cnav a svg{width:17px;height:17px;flex:0 0 17px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;opacity:.85}
+  html.ui-c .cnav a:hover{background:var(--c-sunk);color:var(--ink)}
+  html.ui-c .cnav a.on{background:var(--c-accent-bg);color:var(--ink);font-weight:600}
+  html.ui-c .cnav a:focus-visible{outline:2px solid var(--pet);outline-offset:1px}
+  html.ui-c .cnav .n{margin-left:auto;font-size:12px;font-variant-numeric:tabular-nums;color:var(--t3)}
+  html.ui-c .cnav .n.warn{color:var(--c-warn);font-weight:600}
+  html.ui-c .cnav .kids{margin:1px 0 6px 18px;padding-left:10px;border-left:1px solid var(--rule)}
+  html.ui-c .cnav .kids a{padding:5px 10px;font-size:13px}
+  html.ui-c .cclassic{display:block;font-size:12px;color:var(--t3);margin-top:10px;text-decoration:underline}
+  /* C's own screens */
+  html.ui-c .c-crumb{font-size:12.5px;color:var(--t3);margin:0 0 6px}
+  html.ui-c .c-sentence{font-family:var(--serif);font-size:27px;line-height:1.3;font-weight:500;letter-spacing:-.01em;margin:0 0 4px;max-width:34ch}
+  html.ui-c .c-sentence em{font-style:normal;color:var(--pet)}
+  html.ui-c .c-health{display:grid;grid-template-columns:auto 1fr;gap:26px;align-items:center;background:var(--surface);border:1px solid var(--rule);border-radius:14px;padding:26px 28px;margin:22px 0 16px;max-width:760px}
+  html.ui-c .c-num{font-size:64px;line-height:1;font-weight:650;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+  html.ui-c .c-num span{font-size:28px;color:var(--t3);margin-left:2px}
+  html.ui-c .c-health.full .c-num{color:var(--c-ok)}
+  html.ui-c .c-hb b{font-size:12px;letter-spacing:.07em;text-transform:uppercase;color:var(--t3)}
+  html.ui-c .c-hb p{margin:4px 0 12px;color:var(--t2);font-size:14.5px}
+  html.ui-c .c-bar{height:6px;border-radius:99px;background:var(--c-sunk);overflow:hidden;margin-bottom:14px;max-width:420px}
+  html.ui-c .c-bar i{display:block;height:100%;border-radius:99px;background:var(--pet)}
+  html.ui-c .c-health.full .c-bar i{background:var(--c-ok)}
+  html.ui-c .c-later{max-width:760px;border-top:1px solid var(--rule);padding-top:12px;font-size:13px;color:var(--t3)}
+  html.ui-c .c-later b{display:block;font-size:12px;font-weight:600;color:var(--t2);margin-bottom:6px}
+  html.ui-c .c-later span{display:inline-block;min-width:78px;font-weight:600;color:var(--t2)}
+  html.ui-c .c-head{display:flex;align-items:flex-end;gap:16px;margin-bottom:18px;flex-wrap:wrap}
+  html.ui-c .c-head h1{margin:0;font-family:inherit;font-size:22px;font-weight:650;letter-spacing:-.015em}
+  html.ui-c .c-head p{margin:3px 0 0;color:var(--t2);font-size:13.5px}
+  html.ui-c .c-head .act{margin-left:auto;display:flex;gap:8px}
+  html.ui-c .c-sheet{background:var(--surface);border:1px solid var(--rule);border-radius:10px;overflow:hidden;margin-bottom:16px}
+  html.ui-c .c-sheet h3{margin:0;padding:12px 16px;font-family:inherit;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule2)}
+  html.ui-c .c-sheet h3 b{color:var(--ink);letter-spacing:0;margin-left:6px}
+  html.ui-c .c-line{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1.3fr) 130px auto;gap:14px;align-items:center;padding:11px 16px;border-top:1px solid var(--rule2);cursor:pointer}
+  html.ui-c .c-sheet h3 + .c-line{border-top:0}
+  html.ui-c .c-line:hover{background:var(--c-sunk)}
+  html.ui-c .c-line:focus-visible{outline:2px solid var(--pet);outline-offset:-2px}
+  html.ui-c .c-who b{display:block;font-weight:600;overflow-wrap:anywhere}
+  html.ui-c .c-who small{display:block;color:var(--t3);font-size:12.5px}
+  html.ui-c .c-what{color:var(--t2)} html.ui-c .c-what.none{color:var(--c-warn)}
+  html.ui-c .c-when{font-size:13px;font-variant-numeric:tabular-nums;color:var(--t2)}
+  html.ui-c .c-when.over{color:var(--c-bad);font-weight:600} html.ui-c .c-when.today{color:var(--c-warn);font-weight:600}
+  html.ui-c .c-acts{display:flex;gap:6px;justify-content:flex-end}
+  html.ui-c .c-empty{padding:18px 16px;color:var(--t3);font-size:13.5px}
+  html.ui-c .c-ev{font-size:12.5px;color:var(--t3);margin-top:10px;max-width:90ch}
+  html.ui-c .c-seg{display:inline-flex;border:1px solid var(--rule);border-radius:9px;padding:3px;background:var(--surface);gap:3px;margin-bottom:16px}
+  html.ui-c .c-seg button{border:0;background:transparent;cursor:pointer;padding:6px 14px;border-radius:7px;font:inherit;font-size:13.5px;font-weight:600;color:var(--t2)}
+  html.ui-c .c-seg button[aria-pressed="true"]{background:var(--c-accent-bg);color:var(--ink)}
+  html.ui-c .c-ok{color:var(--c-ok);font-weight:700;margin-right:6px} html.ui-c .c-no{color:var(--c-bad);font-weight:700;margin-right:6px}
+  html.ui-c .c-gap{color:var(--t3);font-style:italic}
+  html.ui-c .c-set .c-line{grid-template-columns:minmax(0,1fr) auto}
+  html.ui-c .c-dec{font-size:10.5px;font-weight:600;letter-spacing:.04em;color:var(--c-warn);border:1px dashed var(--c-warn);border-radius:4px;padding:0 5px;white-space:nowrap}
+  @media (max-width:760px){ html.ui-c .c-line{grid-template-columns:1fr auto} html.ui-c .c-line .c-what{grid-column:1/-1} html.ui-c .c-health{grid-template-columns:1fr;gap:10px} }
+
+  /* Home: the Admissions KPI page. Hairlines and whitespace, no cards. Chart colours
+     validated with the dataviz validator: teal = admitted, sand = leads / still open,
+     slate = not proceeding or not recorded (always with its word). */
+  html.ui-c{--v-adm:#008E8A;--v-lead:#B9812A;--v-np:#7C8B94;--v-grid:#e8ecec}
+  html.ui-c[data-theme="dark"]{--v-adm:#00A39A;--v-lead:#BE8428;--v-np:#7F8F98;--v-grid:#23404a}
+  html.ui-c .kpage{position:relative;max-width:1080px}
+  html.ui-c .khead{margin-bottom:18px}
+  html.ui-c .ktitle{margin:2px 0 0;font-family:var(--serif);font-weight:500;font-size:30px;letter-spacing:-.012em;line-height:1.15}
+  html.ui-c .kstrip{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);margin-bottom:26px}
+  html.ui-c .kstrip > div{padding:16px 18px 16px 0;min-width:0}
+  html.ui-c .kstrip > div + div{padding-left:18px;border-left:1px solid var(--rule2)}
+  html.ui-c .kstrip span{display:block;font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--t3)}
+  html.ui-c .kstrip b{display:block;font-size:30px;font-weight:650;letter-spacing:-.025em;line-height:1.15;margin:4px 0 3px}
+  html.ui-c .kstrip b em{font-style:normal;font-size:15px;font-weight:500;color:var(--t3);letter-spacing:0}
+  html.ui-c .kstrip .khero b{font-size:54px;letter-spacing:-.04em;line-height:1}
+  html.ui-c .kstrip small{display:block;font-size:12.5px;color:var(--t3);line-height:1.4}
+  html.ui-c .ksec{margin:0 0 26px;min-width:0}
+  html.ui-c .ksh{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid var(--rule2)}
+  html.ui-c .ksh h2{margin:0;font-family:inherit;font-size:13.5px;font-weight:650;letter-spacing:-.005em}
+  html.ui-c .kt2{font-size:12px;color:var(--t3)}
+  html.ui-c .kchart{width:100%;height:auto;display:block;max-width:900px}
+  html.ui-c .kchart .kg{stroke:var(--v-grid);stroke-width:1}
+  html.ui-c .kt{fill:var(--t3);font-size:11px;font-family:var(--sans,Inter),system-ui,sans-serif}
+  html.ui-c .kbig{fill:var(--ink);font-size:24px;font-weight:650;font-family:var(--sans,Inter),system-ui,sans-serif}
+  html.ui-c .kline{fill:none;stroke:var(--v-lead);stroke-width:2;stroke-linejoin:round;stroke-linecap:round;pointer-events:none}
+  html.ui-c .kdot{fill:var(--v-lead);stroke:var(--paper);stroke-width:2;pointer-events:none}
+  html.ui-c .khit{fill:transparent}
+  html.ui-c .kcol{cursor:pointer;outline:none}
+  html.ui-c .kcol:hover .khit,html.ui-c .kcol.hot .khit,html.ui-c .kcol:focus-visible .khit{fill:var(--c-sunk)}
+  html.ui-c .kcol:focus-visible .khit{stroke:var(--pet);stroke-width:1.5}
+  html.ui-c .knote{font-size:12.5px;color:var(--t3);margin:8px 0 0;max-width:80ch}
+  html.ui-c .kdet{margin-top:8px;font-size:12.5px;color:var(--t2)} html.ui-c .kdet summary{cursor:pointer;color:var(--t3)}
+  html.ui-c .ktable{border-collapse:collapse;margin-top:8px;font-size:12.5px} html.ui-c .ktable th,html.ui-c .ktable td{padding:4px 14px 4px 0;text-align:left;border-bottom:1px solid var(--rule2)}
+  html.ui-c .kthree{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr) minmax(0,1.25fr);gap:34px}
+  html.ui-c .kdonut{display:flex;align-items:center;gap:14px;min-width:0}
+  html.ui-c .kdonut svg{width:124px;height:124px;flex:0 0 124px}
+  html.ui-c .kseg{cursor:pointer;outline:none;transition:opacity .12s}
+  html.ui-c .kdonut:hover .kseg:not(:hover):not(.hot){opacity:.55}
+  html.ui-c .kseg:focus-visible{stroke:var(--pet);stroke-width:2}
+  html.ui-c .klegend{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:13px}
+  html.ui-c .klegend li{display:flex;align-items:center;gap:8px}
+  html.ui-c .klegend i{width:10px;height:10px;border-radius:2px;flex:0 0 10px}
+  html.ui-c .klegend b{margin-left:auto;font-variant-numeric:tabular-nums;padding-left:10px}
+  html.ui-c .klegend.inline{flex-direction:row;gap:16px;margin-left:auto;font-size:12px;color:var(--t2)}
+  html.ui-c .klegend .ln{width:14px;height:2px;border-radius:1px;flex-basis:14px}
+  html.ui-c .kbars{display:flex;flex-direction:column;gap:2px}
+  html.ui-c .kbar{display:grid;grid-template-columns:minmax(0,9.5em) minmax(40px,1fr) 28px;align-items:center;gap:10px;padding:4px 6px;border-radius:6px;cursor:pointer;font-size:13px;outline:none}
+  html.ui-c .kbar:hover,html.ui-c .kbar.hot{background:var(--c-sunk)}
+  html.ui-c .kbar:focus-visible{outline:2px solid var(--pet)}
+  html.ui-c .kbl{color:var(--t2);min-width:0;overflow-wrap:anywhere} html.ui-c .kbl small{display:block;color:var(--t3);font-size:11.5px;line-height:1.3}
+  html.ui-c .kbt{height:10px} html.ui-c .kbt i{display:block;height:100%;border-radius:0 3px 3px 0}
+  html.ui-c .kbar b{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink)}
+  html.ui-c .ktip{position:absolute;z-index:5;pointer-events:none;background:var(--menu);border:1px solid var(--rule);box-shadow:0 10px 28px -16px rgba(0,0,0,.35);border-radius:8px;padding:7px 10px;font-size:12.5px;display:none;max-width:240px}
+  html.ui-c .ktip.on{display:block} html.ui-c .ktip b{display:block;font-size:14px;color:var(--ink)} html.ui-c .ktip span{color:var(--t2)}
+  html.ui-c .c-planned{font-size:13px;color:var(--t2)} html.ui-c .c-planned b{font-size:18px;color:var(--ink);margin-right:3px} html.ui-c .c-planned small{display:block;color:var(--t3);font-size:12px}
+  html.ui-c .c-filter{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--c-accent-bg);border:1px solid var(--rule);border-radius:9px;padding:8px 12px;margin:0 0 14px;font-size:13.5px}
+  @media (max-width:1100px){ html.ui-c .kthree{grid-template-columns:minmax(0,1fr) minmax(0,1fr)} }
+  @media (max-width:760px){ html.ui-c .kstrip{grid-template-columns:1fr 1fr} html.ui-c .kstrip > div:nth-child(3){border-left:0;padding-left:0} html.ui-c .kthree{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
@@ -791,6 +922,276 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
 
 <script>
 const $ = (s, r = document) => r.querySelector(s);
+
+// ======================================================================= CONCEPT C
+// The main UI since 28.09.2026 (Ritvars: "build Concept C in the app as main").
+// ?ui=classic brings back the previous UI and ?ui=c returns here; the choice is
+// remembered per browser. Nothing on the server changes: C arranges the same screens,
+// the same data and the same rules differently. Where C has not redrawn a screen yet
+// (New Leads, People, Journey, the person page) it shows the classic one inside its
+// own navigation.
+const UI = (() => {
+  let q = null;
+  try { q = new URLSearchParams(location.search).get('ui'); } catch {}
+  try {
+    if (q) localStorage.setItem('crmUi', q === 'classic' ? 'classic' : 'c');
+    return localStorage.getItem('crmUi') === 'classic' ? 'classic' : 'c';
+  } catch { return q === 'classic' ? 'classic' : 'c'; }
+})();
+document.documentElement.classList.toggle('ui-c', UI === 'c');
+
+const C_ICON = {
+  home: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 10.2 10 4l7 6.2"/><path d="M5 8.8V16h10V8.8"/></svg>',
+  adm: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2 8l8-4 8 4-8 4-8-4z"/><path d="M5.5 9.8V13c0 1.2 2 2.5 4.5 2.5s4.5-1.3 4.5-2.5V9.8"/></svg>',
+  ppl: '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="7.5" cy="7" r="2.8"/><path d="M2.5 16c.6-2.6 2.6-4 5-4s4.4 1.4 5 4"/><path d="M13 4.6a2.6 2.6 0 0 1 0 5"/><path d="M14.6 12.3c1.5.5 2.5 1.8 2.9 3.7"/></svg>',
+  out: '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7"/><path d="M6.8 10.2l2.2 2.2 4.3-4.6"/></svg>',
+  set: '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="2.6"/><path d="M10 2.5v2M10 15.5v2M2.5 10h2M15.5 10h2M4.7 4.7l1.4 1.4M13.9 13.9l1.4 1.4M4.7 15.3l1.4-1.4M13.9 6.1l1.4-1.4"/></svg>' };
+const C_TERMINAL = ['Admitted', 'Not proceeding'];
+// /api/people answers { count, rows } and returns every row: no paging, no cap.
+const cPeopleRows = async () => ((await api('/api/people')) || {}).rows || [];
+const C_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+function installCNav() {
+  const brand = document.querySelector('.shell > nav > .brand');
+  if (!brand || document.querySelector('.cnav')) return;
+  brand.setAttribute('href', '#/home');
+  brand.insertAdjacentHTML('afterend', `<div class="cnav" role="navigation" aria-label="Main">
+    <a href="#/home" data-c="home">${C_ICON.home}<span>Home</span></a>
+    <a href="#/admissions" data-c="admissions">${C_ICON.adm}<span>Admissions</span></a>
+    <div class="kids"><a href="#/leads" data-c="leads"><span>New Leads</span><span class="n" id="cnLeads"></span></a>
+      <a href="#/next" data-c="next"><span>Next Steps</span><span class="n" id="cnNext"></span></a></div>
+    <a href="#/people" data-c="people">${C_ICON.ppl}<span>People</span></a>
+    <div class="kids"><a href="#/journey" data-c="journey"><span>Journey</span></a></div>
+    <a href="#/outcomes" data-c="outcomes">${C_ICON.out}<span>Outcomes</span></a>
+    <a href="#/settings" data-c="settings" id="cnSettings" style="display:none">${C_ICON.set}<span>Settings</span></a>
+  </div>`);
+  const themeBlock = document.querySelector('#theme')?.closest('.themes');
+  if (themeBlock) themeBlock.insertAdjacentHTML('beforeend', '<a class="cclassic" href="?ui=classic">Open the classic view</a>');
+}
+
+// Which C place a hash belongs to. Old links keep working: #/today is Home, #/inbox is
+// New Leads, the old board is the Journey, #/followup is Next Steps.
+function cPlace(page) {
+  return ({ '': 'home', home: 'home', today: 'home', admissions: 'admissions', leads: 'leads', inbox: 'leads', car: 'leads',
+    next: 'next', followup: 'next', people: 'people', person: 'people', journey: 'journey',
+    outcomes: 'outcomes', settings: 'settings', channels: 'settings', feedback: 'settings', reports: 'outcomes' })[page || ''];
+}
+function markCNav(page) {
+  const place = cPlace(page);
+  const lit = { leads: ['admissions', 'leads'], next: ['admissions', 'next'], journey: ['people', 'journey'] }[place] || [place];
+  document.querySelectorAll('.cnav a').forEach((a) => a.classList.toggle('on', lit.includes(a.dataset.c)));
+  const s = document.querySelector('#cnSettings'); if (s) s.style.display = isAdmin() ? '' : 'none';
+  cNavCounts();
+}
+async function cNavCounts() {
+  try {
+    const [i, t] = await Promise.all([api('/api/intake'), api('/api/tasks?scope=open')]);
+    const leads = (i.counts || {}).new || 0; const due = cDueNow(t).length;
+    const L = document.querySelector('#cnLeads'); if (L) L.textContent = leads || '';
+    const N = document.querySelector('#cnNext'); if (N) { N.textContent = due || ''; N.classList.toggle('warn', t.some((x) => cWhenClass(x.due_at) === 'over')); }
+  } catch {}
+}
+const cDay = (iso) => String(iso || '').slice(0, 10);
+// Today in RIGA, like every other screen (TZ). The UTC date is yesterday for the first
+// hours of every Riga day, and it put that morning's due steps under "coming up".
+const cTodayIso = () => new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+const cWhenClass = (iso) => (!iso ? '' : cDay(iso) < cTodayIso() ? 'over' : cDay(iso) === cTodayIso() ? 'today' : '');
+const cWhenText = (iso) => (!iso ? 'no next step' : cWhenClass(iso) === 'over' ? 'overdue · ' + fmtDate(iso) : cWhenClass(iso) === 'today' ? 'today' : fmtDate(iso));
+const cDueNow = (tasks) => tasks.filter((t) => cWhenClass(t.due_at) === 'over' || cWhenClass(t.due_at) === 'today');
+// A channel id as a person reads it. 'unknown' is a gap, and a value that is not one
+// of the configured channels (the old sheet has "school", "campaign") is said to be so.
+const cChannel = (c) => (!c || c === 'unknown' ? ['Not recorded', 'no source was kept'] : (CFG.channels && CFG.channels[c]) ? [channelLabel(c), ''] : [c, 'not a channel']);
+
+// The router's C half. Borrowed screens are the classic ones, inside C's navigation.
+async function routeC(page, arg) {
+  const place = cPlace(page);
+  if (page === 'person') return viewPerson(arg);
+  if (page === 'channels') return viewChannels(arg);
+  if (page === 'feedback') return viewFeedback();
+  if (page === 'reports') return viewReports();
+  if (place === 'admissions') {
+    const i = await api('/api/intake');
+    return ((i.counts || {}).new || 0) > 0 ? viewInbox() : viewNextC();
+  }
+  if (place === 'leads') return viewInbox();
+  if (place === 'next') return viewNextC();
+  if (place === 'people') return viewPeople();
+  if (place === 'journey') return viewAdmissions();
+  if (place === 'outcomes') return viewOutcomesC();
+  if (place === 'settings') return viewSettingsC();
+  return viewHomeC();                      // Home, and anything unknown
+}
+
+// ------------------------------------------------------------------------ HOME
+// "How are Admissions performing?" - not "what is urgent" (that is Admissions).
+// The department's own KPIs, from the report the CRM already computes plus the
+// people list, for the current year. Every chart mark answers hover and focus, and a
+// click opens the admitted people behind that exact number.
+async function viewHomeC() {
+  const year = Number(cTodayIso().slice(0, 4));
+  const [rep, people] = await Promise.all([api(`/api/report?from=${year}-01-01&to=${year}-12-31`), cPeopleRows()]);
+  const s = rep.summary || {};
+  const thisMonth = cTodayIso().slice(0, 7);
+  const months = (rep.trend || []).filter((m) => m.month.startsWith(String(year)) && m.month <= thisMonth);
+  const inYear = (d) => String(d || '').startsWith(String(year));
+  const admitted = people.filter((p) => p.status === 'Admitted' && inYear(p.admitted_at));
+  const undated = people.filter((p) => p.status === 'Admitted' && !p.admitted_at).length;
+  const count = (arr, key) => { const m = new Map(); arr.forEach((p) => { const k = key(p); m.set(k, (m.get(k) || 0) + 1); }); return [...m.entries()].sort((a, b) => b[1] - a[1]); };
+  const known = new Set(CFG.programmes || []);
+  const progs = count(admitted, (p) => p.programme || '(not recorded)').map(([k, n]) => [k, n, known.has(k) ? '' : (k === '(not recorded)' ? 'no programme recorded' : 'not one of the list')]);
+  const chans = count(admitted, (p) => p.source_channel || 'unknown').map(([k, n]) => { const [label, why] = cChannel(k); return [label, n, why, k]; });
+  const nowOpen = people.filter((p) => !C_TERMINAL.includes(p.status)).length;
+  const now = [['Open', nowOpen, 'lead', 'journey'], ['Admitted', people.filter((p) => p.status === 'Admitted').length, 'adm', 'Admitted'], ['Not proceeding', people.filter((p) => p.status === 'Not proceeding').length, 'np', 'Not proceeding']];
+  const asOf = new Intl.DateTimeFormat('en-GB', { timeZone: TZ, day: 'numeric', month: 'long' }).format(new Date());
+  const best = months.length ? Math.max(...months.map((m) => m.admitted)) : 0;
+  $('#view').innerHTML = `<div class="kpage">
+    <div class="khead"><div><p class="c-crumb" style="margin:0">Admissions ${year} · to ${esc(asOf)}</p><h1 class="ktitle">How Admissions is performing</h1></div></div>
+    <div class="kstrip">
+      <div class="khero"><span>Admitted</span><b>${admitted.length}</b><small>in ${year}, with an admission date${undated ? ` (+${undated} without one)` : ''}</small></div>
+      <div><span>Leads</span><b>${s.newLeads ?? 0}</b><small>first contacted in ${year}</small></div>
+      <div><span>Conversion</span><b>${s.conversionPct == null ? '-' : s.conversionPct + '%'}</b><small>${esc(s.conversionOf || '')}</small></div>
+      <div><span>Median time to admission</span><b>${s.medianDaysToAdmission == null ? '-' : s.medianDaysToAdmission} <em>days</em></b><small>first contact to admission</small></div>
+    </div>
+    <section class="ksec"><div class="ksh"><h2>Admissions by month</h2><ul class="klegend inline"><li><i style="background:var(--v-adm)"></i><span>Admitted</span></li><li><i class="ln" style="background:var(--v-lead)"></i><span>New leads</span></li></ul></div>
+      ${cMonthChart(months, year)}
+      <p class="knote">${best ? `The strongest month had ${best} ${best === 1 ? 'admission' : 'admissions'}. ` : ''}Months still to come are not drawn.</p>
+      <details class="kdet"><summary>Show as a table</summary><table class="ktable"><thead><tr><th>Month</th><th>Admitted</th><th>New leads</th></tr></thead><tbody>${months.map((m) => `<tr><td>${C_MONTHS[Number(m.month.slice(5)) - 1]}</td><td>${m.admitted}</td><td>${m.newLeads}</td></tr>`).join('')}</tbody></table></details></section>
+    <div class="kthree">
+      <section class="ksec"><div class="ksh"><h2>Where everyone is now</h2></div>${cDonut(now)}</section>
+      <section class="ksec"><div class="ksh"><h2>Admitted by programme</h2><span class="kt2">${admitted.length} in ${year}</span></div>${cBars(progs.map((r) => [...r, r[0]]), 'prog')}</section>
+      <section class="ksec"><div class="ksh"><h2>Where admitted people came from</h2><span class="kt2">${admitted.length} in ${year}</span></div>${cBars(chans, 'chan')}</section>
+    </div>
+    <div class="ktip" role="status" aria-live="polite"></div></div>`;
+  cWireCharts();
+}
+function cMonthChart(months, year) {
+  if (!months.length) return '<p class="c-empty">No admissions recorded this year yet.</p>';
+  const W = 640, H = 210, L = 30, R = 12, T = 14, B = 26, n = months.length;
+  const top = Math.max(10, ...months.map((m) => Math.max(m.admitted, m.newLeads)));
+  const max = Math.ceil(top / 10) * 10, band = (W - L - R) / n, bw = Math.min(22, band * 0.42), y = (v) => T + (H - T - B) * (1 - v / max);
+  const ticks = [0, max / 4, max / 2, (3 * max) / 4, max].map((v) => Math.round(v));
+  const grid = ticks.map((v) => `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" class="kg"/><text x="${L - 8}" y="${y(v) + 4}" class="kt" text-anchor="end">${v}</text>`).join('');
+  const cols = months.map((m, k) => { const cx = L + band * k + band / 2, t = y(m.admitted), mo = C_MONTHS[Number(m.month.slice(5)) - 1];
+    const bar = m.admitted ? `<path d="M${cx - bw / 2},${y(0)} V${Math.min(t + 4, y(0))} q0,-4 4,-4 h${bw - 8} q4,0 4,4 V${y(0)} Z" style="fill:var(--v-adm)"/>` : '';
+    return `<g class="kcol" tabindex="0" role="button" aria-label="${mo}: ${m.admitted} admitted, ${m.newLeads} new leads" data-tip="${mo} ${year}|${m.admitted} admitted|${m.newLeads} new leads" data-kgo="month|${m.month}|${mo} ${year}"><rect x="${cx - band / 2}" y="${T}" width="${band}" height="${H - T - B}" class="khit"/>${bar}<text x="${cx}" y="${H - 8}" class="kt" text-anchor="middle">${mo}</text></g>`; }).join('');
+  const pts = months.map((m, k) => [L + band * k + band / 2, y(m.newLeads)]);
+  return `<svg viewBox="0 0 ${W} ${H}" class="kchart" role="img" aria-label="Admissions and new leads per month, ${year}">${grid}${cols}<path d="M${pts.map((p) => p.join(',')).join(' L')}" class="kline"/>${pts.map(([x, yy]) => `<circle cx="${x}" cy="${yy}" r="4" class="kdot"/>`).join('')}</svg>`;
+}
+function cDonut(rows) {
+  const total = rows.reduce((a, r) => a + r[1], 0) || 1, R = 58, r0 = 40, c = 70, gap = 0.035;
+  let a = -Math.PI / 2;
+  const p = (ang, rad) => `${c + rad * Math.cos(ang)},${c + rad * Math.sin(ang)}`;
+  const seg = rows.filter((r) => r[1] > 0).map(([k, n, v, go]) => { const sw = (n / total) * Math.PI * 2, a0 = a + gap / 2, a1 = a + sw - gap / 2; a += sw; const big = a1 - a0 > Math.PI ? 1 : 0;
+    return `<path d="M${p(a0, R)} A${R},${R} 0 ${big} 1 ${p(a1, R)} L${p(a1, r0)} A${r0},${r0} 0 ${big} 0 ${p(a0, r0)} Z" style="fill:var(--v-${v})" class="kseg" tabindex="0" role="button" aria-label="${k}: ${n}" data-tip="${k}|${n} people|${Math.round((n / total) * 100)}% of ${total}" data-kgo="${go === 'journey' ? 'journey' : 'outcome|' + go}"/>`; }).join('');
+  return `<div class="kdonut"><svg viewBox="0 0 140 140" role="img" aria-label="Where everyone is now">${seg}<text x="70" y="68" text-anchor="middle" class="kbig">${total}</text><text x="70" y="86" text-anchor="middle" class="kt">people</text></svg>
+    <ul class="klegend">${rows.map(([k, n, v]) => `<li><i style="background:var(--v-${v})"></i><span>${k}</span><b>${n}</b></li>`).join('')}</ul></div>`;
+}
+function cBars(rows, kind) {
+  if (!rows.length) return '<p class="c-empty">Nobody admitted yet.</p>';
+  const max = Math.max(...rows.map((r) => r[1]));
+  return `<div class="kbars">${rows.map(([label, n, why, key]) => `<div class="kbar" tabindex="0" role="button" data-tip="${esc(label)}|${n} admitted${why ? '|' + esc(why) : ''}" data-kgo="${kind}|${esc(key)}|${esc(label)}">
+      <span class="kbl">${esc(label)}${why ? `<small>${esc(why)}</small>` : ''}</span><span class="kbt"><i style="width:${Math.max(3, (n / max) * 100)}%;background:var(--v-${why ? 'np' : 'adm'})"></i></span><b>${n}</b></div>`).join('')}</div>`;
+}
+function cWireCharts() {
+  const page = $('.kpage'); const tip = $('.ktip');
+  if (!page || !tip) return;
+  const show = (el, x, y) => { const [a, b, c] = el.dataset.tip.split('|'); tip.textContent = '';
+    const v = document.createElement('b'); v.textContent = b; tip.appendChild(v);
+    const l = document.createElement('span'); l.textContent = a + (c ? ' · ' + c : ''); tip.appendChild(l);
+    const box = page.getBoundingClientRect(); tip.style.left = (x - box.left + 14) + 'px'; tip.style.top = (y - box.top + 14) + 'px'; tip.classList.add('on'); el.classList.add('hot'); };
+  page.querySelectorAll('[data-tip]').forEach((el) => {
+    el.addEventListener('pointermove', (e) => show(el, e.clientX, e.clientY));
+    el.addEventListener('focus', () => { const r = el.getBoundingClientRect(); show(el, r.left + r.width / 2, r.top); });
+    const hide = () => { tip.classList.remove('on'); el.classList.remove('hot'); };
+    el.addEventListener('pointerleave', hide); el.addEventListener('blur', hide);
+    el.addEventListener('click', () => cChartGo(el.dataset.kgo));
+    el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); cChartGo(el.dataset.kgo); } });
+  });
+}
+// A chart click opens exactly the people behind the number it was showing.
+let C_OUT_FILTER = null;
+function cChartGo(spec) {
+  const [kind, key, label] = String(spec || '').split('|');
+  if (kind === 'journey') { location.hash = '#/journey'; return; }
+  if (kind === 'outcome') { C_OUTCOME = key; C_OUT_FILTER = null; location.hash = '#/outcomes'; return; }
+  C_OUTCOME = 'Admitted';
+  C_OUT_FILTER = { kind, key, label };
+  if (location.hash === '#/outcomes') viewOutcomesC(); else location.hash = '#/outcomes';
+}
+
+// ------------------------------------------------------------------ NEXT STEPS
+// Four states, and every open person is in exactly one of them. No "Waiting on us":
+// a message is a New Lead, a promise is a Next Step. No row limit.
+async function viewNextC() {
+  const [people, tasks] = await Promise.all([cPeopleRows(), api('/api/tasks?scope=open')]);
+  const over = tasks.filter((t) => cWhenClass(t.due_at) === 'over');
+  const today = tasks.filter((t) => cWhenClass(t.due_at) === 'today');
+  const later = tasks.filter((t) => !cWhenClass(t.due_at));
+  const open = people.filter((p) => !C_TERMINAL.includes(p.status));
+  const none = open.filter((p) => !p.next_action_at);
+  const pct = open.length ? Math.round(((open.length - none.length) / open.length) * 100) : 100;
+  const tRow = (t) => `<div class="c-line" tabindex="0" onclick="location.hash='#/person/${esc(t.person_id)}'">
+      <div class="c-who"><b>${esc(t.name)}</b><small>${esc(t.programme || 'programme not said')} · ${esc(t.status)}</small></div>
+      <div class="c-what">${esc(t.label)}</div><div class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</div>
+      <div class="c-acts"><button class="btn sm" onclick="event.stopPropagation();openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))})">Done</button></div></div>`;
+  const pRow = (p) => `<div class="c-line" tabindex="0" onclick="location.hash='#/person/${esc(p.id)}'">
+      <div class="c-who"><b>${esc(p.name)}</b><small>${esc(p.programme || 'programme not said')} · ${esc(p.status)}</small></div>
+      <div class="c-what none">Nothing planned</div><div class="c-when"></div>
+      <div class="c-acts"><button class="btn sm" onclick="event.stopPropagation();openNewTask('${esc(p.id)}')">Plan a next step</button></div></div>`;
+  const sect = (title, rows, fn) => `<div class="c-sheet"><h3>${title}<b>${rows.length}</b></h3>${rows.map(fn).join('') || '<div class="c-empty">None.</div>'}</div>`;
+  $('#view').innerHTML = `<p class="c-crumb">Admissions</p>
+    <div class="c-head"><div><h1>Next Steps</h1><p>What the team has to do. Four states, and every open person is in exactly one of them.</p></div>
+      <div class="act"><span class="c-planned"><b>${pct}%</b> planned <small>${open.length - none.length} of ${open.length} open people have a next step</small></span></div></div>
+    ${sect('Overdue', over, tRow)}${sect('Due today', today, tRow)}${sect('Coming up', later, tRow)}${sect('No next step', none, pRow)}
+    <p class="c-ev">A message someone sent is a New Lead; a promise we made is a Next Step. Every list shows all its people.</p>`;
+}
+
+// -------------------------------------------------------------------- OUTCOMES
+// Two destinations. A reason is a detail of Not proceeding, never a place of its own.
+let C_OUTCOME = 'Admitted';
+async function viewOutcomesC() {
+  const people = await cPeopleRows();
+  const adm = people.filter((p) => p.status === 'Admitted'); const np = people.filter((p) => p.status === 'Not proceeding');
+  let list = C_OUTCOME === 'Admitted' ? adm : np;
+  const f = C_OUTCOME === 'Admitted' ? C_OUT_FILTER : null;
+  if (f) {
+    const year = Number(cTodayIso().slice(0, 4));
+    list = list.filter((p) => String(p.admitted_at || '').startsWith(String(year)));
+    if (f.kind === 'month') list = list.filter((p) => String(p.admitted_at || '').startsWith(f.key));
+    if (f.kind === 'prog') list = list.filter((p) => (p.programme || '(not recorded)') === f.key);
+    if (f.kind === 'chan') list = list.filter((p) => (p.source_channel || 'unknown') === f.key);
+  }
+  const noReason = np.filter((p) => !p.closed_reason).length;
+  const fLabel = f ? ({ month: 'admitted in ', prog: 'programme ', chan: 'came from ' }[f.kind] || '') + f.label : '';
+  $('#view').innerHTML = `<div class="c-head"><div><h1>Outcomes</h1><p>Where finished journeys end.</p></div>
+      <div class="act"><button class="btn" onclick="openExport()">Download for management review (CSV)</button><button class="btn ghost" onclick="location.hash='#/reports'">Full report</button></div></div>
+    <div class="c-seg" role="group" aria-label="Outcome"><button aria-pressed="${C_OUTCOME === 'Admitted'}" onclick="C_OUTCOME='Admitted';viewOutcomesC()"><span class="c-ok">✓</span>Admitted ${adm.length}</button><button aria-pressed="${C_OUTCOME !== 'Admitted'}" onclick="C_OUTCOME='Not proceeding';viewOutcomesC()"><span class="c-no">✕</span>Not proceeding ${np.length}</button></div>
+    ${f ? `<div class="c-filter">Showing <b>${list.length}</b> ${list.length === 1 ? 'admitted person' : 'admitted people'}, ${esc(fLabel)} <button class="btn sm ghost" onclick="C_OUT_FILTER=null;viewOutcomesC()">Show all admitted ✕</button></div>` : ''}
+    ${C_OUTCOME !== 'Admitted' && noReason ? `<p class="c-ev" style="margin-top:0">${noReason} of ${np.length} have no recorded reason yet - it is still in the note. <span class="c-dec">reasons list to agree</span></p>` : ''}
+    <div class="c-sheet">${list.map((p) => `<div class="c-line" tabindex="0" onclick="location.hash='#/person/${esc(p.id)}'" style="grid-template-columns:minmax(0,1.2fr) minmax(0,1.4fr) 110px">
+        <div class="c-who"><b>${esc(p.name)}</b><small>${esc(p.programme || 'programme not said')} · came from ${esc(cChannel(p.source_channel)[0])}</small></div>
+        <div class="c-what">${C_OUTCOME === 'Admitted' ? 'Admitted' : (p.closed_reason ? esc(p.closed_reason) : '<span class="c-gap">reason not recorded</span>')}</div>
+        <div class="c-when">${p.admitted_at ? fmtDate(p.admitted_at) : ''}</div></div>`).join('') || '<div class="c-empty">Nobody here.</div>'}</div>`;
+}
+
+// -------------------------------------------------------------------- SETTINGS
+async function viewSettingsC() {
+  if (!isAdmin()) { $('#view').innerHTML = '<div class="c-head"><div><h1>Settings</h1><p>Settings are for admins.</p></div></div>'; return; }
+  const people = await cPeopleRows();
+  const known = new Set(CFG.programmes || []);
+  const odd = people.filter((p) => p.programme && !known.has(p.programme)).length;
+  const item = (href, t, d, right = '›') => `<div class="c-line" tabindex="0" onclick="location.href='${href}'"><div class="c-who"><b>${t}</b><small>${d}</small></div><div class="c-when">${right}</div></div>`;
+  $('#view').innerHTML = `<div class="c-head"><div><h1>Settings</h1><p>For admins. Nothing here is part of a normal day.</p></div></div>
+    <div class="c-sheet c-set">
+      ${item('#/channels', 'Channels', 'What our side has built, and whether each provider is connected.')}
+      ${item('#/feedback', 'Feedback received', 'What people sent with the feedback button. The button stays on every screen.')}
+      ${item('#/reports', 'Full report', 'The on-screen report behind the management download.')}
+      ${item('#/people', 'Data to tidy', `${odd} ${odd === 1 ? 'person has' : 'people have'} a programme that is not one of the list.`)}
+      ${item('?ui=classic', 'Classic view', 'The previous layout, kept as a backup. Come back with ?ui=c.')}
+    </div>
+    <p class="c-ev">The journey stages and the next-step list are still a working version, to be agreed with Admissions. <span class="c-dec">to agree</span></p>`;
+}
+
 
 // One small line drawing per tab. Plain shapes, no brand, no decoration.
 const svg = (d) => `<svg class="ico" viewBox="0 0 20 20" fill="none" stroke="currentColor"
@@ -1297,6 +1698,9 @@ async function route() {
   const [, page, arg] = hash.split('/');
   fbClose();                       // the help panel never survives a move to another screen
   try {
+    // Concept C is the main UI: its router draws every screen, borrowing the classic
+    // ones where C has not replaced them yet. ?ui=classic skips this entirely.
+    if (UI === 'c') { markCNav(page); await routeC(page, arg); refreshBadge(); drawFeedbackBadge(); return; }
     // The names people use. The old ones still resolve so a link in a note,
     // a feedback report or somebody's bookmark does not break.
     // The Console is a separate page at /console and is deliberately unreachable
@@ -3459,6 +3863,7 @@ function fbZoom(id) {
   // Registered BEFORE the login check. Returning early here left no hashchange
   // listener at all, so after signing in every link in the navigation changed the
   // address bar and nothing on screen moved.
+  if (UI === 'c') installCNav();
   window.addEventListener('hashchange', route);
   document.addEventListener('keydown', (e) => {
     // A clickable row is a control, so it answers Enter and Space. So is a
