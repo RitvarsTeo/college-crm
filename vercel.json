@@ -38,6 +38,13 @@
       "maxDuration": 60
     }
   },
+  "redirects": [
+    { "source": "/src/:path*", "destination": "/not-public", "permanent": false },
+    { "source": "/config/:path*", "destination": "/not-public", "permanent": false },
+    { "source": "/lib/:path*", "destination": "/not-public", "permanent": false },
+    { "source": "/sql/:path*", "destination": "/not-public", "permanent": false },
+    { "source": "/.gitattributes", "destination": "/not-public", "permanent": false }
+  ],
   "rewrites": [
     {
       "source": "/(.*)",
