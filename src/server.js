@@ -287,9 +287,20 @@ const PUBLIC = gate.isPublic();
     catch (err) { console.error('REFUSING TO START: ' + err.message); process.exit(1); }
   } else if (PUBLIC && !kept) {
     // First boot on a fresh host: give the testers something to look at.
-    const info = await buildDemo(db, CONFIG);
-    DATASET = { dataset: 'demo', people: info.total,
-      selection: 'the built-in demo, created through the real inbound path' };
+    //
+    // ONCE, not once per instance. On Vercel several instances can boot at the same
+    // moment against one empty database, and each used to see it empty and build the
+    // demo - the first deploy held it three times over. Under Postgres a transaction
+    // lock makes the others wait, and they look again before building anything.
+    const info = await db.transaction(async (tx) => {
+      if (tx.kind === 'pg') await tx.query('SELECT pg_advisory_xact_lock(7240001)');
+      const again = (await tx.prepare('SELECT COUNT(*) n FROM people').get()).n;
+      return again ? { total: again, kept: true } : buildDemo(tx, CONFIG);
+    });
+    DATASET = info.kept
+      ? { dataset: 'kept', people: info.total, selection: 'another instance built the demo first' }
+      : { dataset: 'demo', people: info.total,
+          selection: 'the built-in demo, created through the real inbound path' };
   } else if (kept) {
     DATASET = { dataset: 'kept', people: kept,
       selection: 'what was in the database when the server last stopped' };
