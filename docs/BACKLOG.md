@@ -1765,3 +1765,38 @@ the Google Form blocker was the old wording.
 | 131 | **No reconciliation on any webhook channel.** Mailchimp (re-read the audience), Google Form (re-read responses) and Meta (Graph API) are all possible; none is built | **OPEN** |
 | 132 | Google Form: bind the script to the form's submit trigger, not the response sheet, unless the sheet is used | **SAID** - review suggestion |
 | 133 | Agent: a referral token on our own website form instead of a partner-side webhook | **SAID** - review suggestion, worth choosing before anybody builds for a partner |
+
+---
+
+## DECISION 27.09.2026 (later): the temporary Postgres is Neon Free, not Supabase
+
+**DECIDED by Ritvars, 27.09.2026.** Supersedes "a dedicated Supabase project" for NOW, not as the
+destination.
+
+**Why Supabase cannot be it today, from Supabase's own billing page:** a person may have two free
+projects, and the limit counts across every organisation they own or administer. The two hubs use
+both. An empty second organisation (Family) does not add a slot. No upgrade, no new account, and the
+hubs and QR Sert are not touched.
+
+**Options weighed, all at $0:**
+
+| Option | Verdict |
+|---|---|
+| **Neon Free**, Frankfurt, added through the Vercel Marketplace | **CHOSEN.** Permanent free plan, no card, 0.5 GB per project, 100 compute-hours a month, sleeps after 5 minutes idle. Vercel's own Postgres was moved to Neon in December 2024. The Marketplace puts the connection into Vercel's settings itself, so nobody pastes a secret |
+| Render Free Postgres | Rejected: expires 30 days after creation, deleted 14 days later, no backups, one per workspace |
+| Keep Render + SQLite until the paid Supabase exists | Rejected: Vercel is impossible without a durable database, the Postgres code stays unproven, testers keep losing data |
+| Other free providers (Aiven, Prisma Postgres, ...) | Not evaluated in depth, so not introduced |
+
+**The destination is unchanged:** the colleague's paid Supabase, when College CRM is complete. The
+code is plain Postgres through `pg`, so the move is a dump and restore of the `crm` schema and one new
+`DATABASE_URL`. Nothing Neon-specific may be introduced.
+
+**Fit work this creates, known now:**
+- Neon's default connection is pooled in transaction mode, which does not keep the per-connection
+  `search_path` the code sets. The code prefers `DATABASE_URL_UNPOOLED` when it is present.
+- `lib/pbx.js` writes through the Supabase REST API. On Neon it must go through `pg` instead - which
+  row 128 needs anyway.
+
+**Who does what:** Ritvars creates the Neon database through the Vercel Marketplace (an account is
+his to create). Everything after that is the session's: tests against Postgres, deploy, live check.
+Render stays as it is until Vercel is verified live.
