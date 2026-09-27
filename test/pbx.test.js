@@ -375,13 +375,16 @@ test('Supabase config follows the org convention and accepts the brief name too'
 
 // ================================================== the cron wiring itself ===
 
-test('the cron is wired every five minutes at the route that exists', async () => {
+// NO CRON IS DECLARED, ON PURPOSE, 27.09.2026. The Vercel team is on Hobby, which only
+// runs a cron once a day and REJECTS the deploy of anything more frequent. Daily would
+// quietly miss almost every call against a 15-minute window, so the schedule is left
+// out rather than degraded. The route stays, ready for a trigger that can run every
+// five minutes. See docs/BACKLOG.md, 27.09.2026.
+test('no cron is declared on Hobby, and the route a five-minute trigger will call exists', async () => {
   const vercel = JSON.parse(fs.readFileSync(path.join(ROOT, 'vercel.json'), 'utf8'));
-  assert.equal(vercel.crons.length, 1);
-  assert.equal(vercel.crons[0].schedule, '*/5 * * * *');
-  assert.equal(vercel.crons[0].path, '/api/cron/pbx-calls');
+  assert.equal(vercel.crons, undefined, 'a sub-daily cron fails the deploy on Hobby');
   assert.ok(fs.existsSync(path.join(ROOT, 'api', 'cron', 'pbx-calls.js')),
-    'the cron points at a file that must exist');
+    'the route a trigger will call must exist');
 });
 
 test('the migration turns RLS on and grants nothing to anon or authenticated', async () => {

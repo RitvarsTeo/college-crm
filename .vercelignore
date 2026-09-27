@@ -1,0 +1,24 @@
+# A DENY LIST, and it REPLACES .gitignore for a CLI deploy rather than adding to it.
+# Everything not listed here is uploaded, so everything gitignored is repeated here.
+
+# Real people. The admissions export never leaves this machine.
+data/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Not part of the application
+_archive/
+test/
+docs/
+scripts/
+import_sheet.py
+server.log
+render.yaml
+.claude/
+node_modules/
+
+# Local-only secret handoffs
+*.local.md

@@ -13,3 +13,9 @@ server.log
 .claude/
 node_modules/
 data/real_snapshot.json
+
+# Vercel CLI link for this folder
+.vercel/
+
+# Local-only secret handoffs
+*.local.md

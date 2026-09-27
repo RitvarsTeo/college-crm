@@ -81,26 +81,25 @@ export async function restore(db) {
   const snap = JSON.parse(fs.readFileSync(snapshotFile(), 'utf8'));
   const tables = snap.tables || {};
 
-  await db.exec('BEGIN');
   try {
-    // children first, so a foreign key never blocks the wipe
-    for (const t of [...TABLES].reverse()) await db.exec(`DELETE FROM ${t}`);
-    for (const t of TABLES) {
-      const rows = tables[t] || [];
-      if (!rows.length) continue;
-      const cols = Object.keys(rows[0]);
-      const stmt = db.prepare(
-        `INSERT INTO ${t} (${cols.join(',')}) VALUES (${cols.map(() => '?').join(',')})`);
-      for (const r of rows) {
-        await stmt.run(...cols.map((c) => {
-          const v = r[c];
-          return (v && typeof v === 'object' && v._b64) ? Buffer.from(v._b64, 'base64') : v;
-        }));
+    await db.transaction(async (tx) => {
+      // children first, so a foreign key never blocks the wipe
+      for (const t of [...TABLES].reverse()) await tx.exec(`DELETE FROM ${t}`);
+      for (const t of TABLES) {
+        const rows = tables[t] || [];
+        if (!rows.length) continue;
+        const cols = Object.keys(rows[0]);
+        const stmt = tx.prepare(
+          `INSERT INTO ${t} (${cols.join(',')}) VALUES (${cols.map(() => '?').join(',')})`);
+        for (const r of rows) {
+          await stmt.run(...cols.map((c) => {
+            const v = r[c];
+            return (v && typeof v === 'object' && v._b64) ? Buffer.from(v._b64, 'base64') : v;
+          }));
+        }
       }
-    }
-    await db.exec('COMMIT');
+    });
   } catch (err) {
-    await db.exec('ROLLBACK');
     return { error: 'the restore failed and nothing was changed: ' + err.message };
   }
 

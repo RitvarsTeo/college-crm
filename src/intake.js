@@ -435,7 +435,8 @@ export async function funnel(db, now = nowIso()) {
       SUM(CASE WHEN state != 'filtered' THEN 1 ELSE 0 END) contacts,
       SUM(CASE WHEN qualification = 'lead' THEN 1 ELSE 0 END) leads,
       SUM(CASE WHEN state = 'new' THEN 1 ELSE 0 END) waiting
-    FROM inbound GROUP BY channel HAVING contacts > 0 ORDER BY contacts DESC`).all();
+    FROM inbound GROUP BY channel
+    HAVING SUM(CASE WHEN state != 'filtered' THEN 1 ELSE 0 END) > 0 ORDER BY contacts DESC`).all();
 
   const dropOut = await db.prepare(`SELECT closed_reason reason, COUNT(*) n FROM people
     WHERE status = ? AND closed_reason IS NOT NULL GROUP BY closed_reason ORDER BY n DESC`)

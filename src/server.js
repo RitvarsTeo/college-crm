@@ -3,7 +3,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { openDb } from './db.js';
+import { openDb, pgUrl } from './db.js';
 import { seed } from './seed.js';
 import { hasRealData, loadReal } from './real.js';
 import { PROVIDERS, runScenario, runOutbound, runFullDemo, listEvents, getEvent, consentFor, consentSummary, DEMO_SEQUENCE } from './simulator.js';
@@ -39,7 +39,9 @@ const FIXTURES = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'inbound_f
 // a restart silently emptied it while the open browser tab carried on showing
 // rows that no longer existed - every link in that stale page then failed.
 const DB_FILE = process.env.CRM_DB || path.join(ROOT, 'data', 'crm.db');
-if (DB_FILE !== ':memory:') fs.mkdirSync(path.dirname(DB_FILE), { recursive: true });
+// Only SQLite needs the folder. Under Postgres the name is not a path, and on Vercel
+// the disk is read-only, so creating it would stop the boot.
+if (DB_FILE !== ':memory:' && !pgUrl()) fs.mkdirSync(path.dirname(DB_FILE), { recursive: true });
 const db = await openDb(DB_FILE);
 
 // ------------------------------------------------------------------ sign-in --
@@ -552,7 +554,7 @@ async function openTask(id) {
   return await db.prepare('SELECT * FROM tasks WHERE person_id = ? AND done_at IS NULL ORDER BY due_at ASC').get(id);
 }
 
-const server = http.createServer(async (req, res) => {
+export const handle = async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
   const p = url.pathname;
   try {
@@ -2030,14 +2032,21 @@ const server = http.createServer(async (req, res) => {
     if (err instanceof BadScreenshot) return json(res, 400, { error: err.message });
     return json(res, 500, { error: err.message });
   }
-});
+};
 
-// The port is read back from the socket rather than echoed from PORT, because
-// PORT=0 means "pick one" and echoing 0 tells nobody anything.
-server.on('error', (err) => {
-  // A port already in use used to be swallowed, and a stale server then answered
-  // for the new one - a whole suite passed against code that had never loaded.
-  console.error('REFUSING TO START. ' + err.message);
-  process.exit(1);
-});
-server.listen(PORT, () => console.log(`Academy CRM prototype on http://localhost:${server.address().port}`));
+// ON VERCEL THERE IS NO SERVER TO START. The platform owns the socket and calls
+// handle() through api/index.js, once per request, on an instance that has already
+// run everything above - database, demo data, accounts - exactly once.
+if (!process.env.VERCEL) {
+  const server = http.createServer(handle);
+
+  // The port is read back from the socket rather than echoed from PORT, because
+  // PORT=0 means "pick one" and echoing 0 tells nobody anything.
+  server.on('error', (err) => {
+    // A port already in use used to be swallowed, and a stale server then answered
+    // for the new one - a whole suite passed against code that had never loaded.
+    console.error('REFUSING TO START. ' + err.message);
+    process.exit(1);
+  });
+  server.listen(PORT, () => console.log(`Academy CRM prototype on http://localhost:${server.address().port}`));
+}

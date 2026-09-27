@@ -2,5 +2,10 @@
   "name": "college-crm-prototype",
   "private": true,
   "type": "module",
-  "scripts": { "start": "node src/server.js" }
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "pg": "^8.23.0"
+  }
 }

@@ -80,21 +80,16 @@ export function readPath(value) {
 // The feedback row and its screenshot are written together. A bug report must
 // never exist without the evidence its sender attached to it.
 export async function saveFeedback(db, { kind, body, path, screenshot, by, at }) {
-  await db.exec('BEGIN');
-  try {
-    const r = await db.prepare(`INSERT INTO feedback (author, kind, body, path, created_at)
+  return db.transaction(async (tx) => {
+    const r = await tx.prepare(`INSERT INTO feedback (author, kind, body, path, created_at)
       VALUES (?,?,?,?,?)`).run(by, kind, body, path, at);
     const id = Number(r.lastInsertRowid);
     if (screenshot) {
-      await db.prepare(`INSERT INTO feedback_screenshots (feedback_id, mime_type, size_bytes, data, created_at)
+      await tx.prepare(`INSERT INTO feedback_screenshots (feedback_id, mime_type, size_bytes, data, created_at)
         VALUES (?,?,?,?,?)`).run(id, screenshot.mimeType, screenshot.sizeBytes, screenshot.bytes, at);
     }
-    await db.exec('COMMIT');
     return { id, screenshot: Boolean(screenshot) };
-  } catch (err) {
-    await db.exec('ROLLBACK');
-    throw err;
-  }
+  });
 }
 
 // Open items first, then the handled ones, which the inbox fades rather than
