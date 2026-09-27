@@ -748,8 +748,8 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
      The main UI since 28.09.2026 (Ritvars: "Concept C is the main now"). The classic
      UI stays one click away at ?ui=classic. Everything here is scoped to html.ui-c, so
      the classic UI is byte-for-byte what it was. The palette OVERRIDES the app's own
-     tokens, so the screens C still borrows from the classic UI (the report, Channels,
-     Feedback) take the quieter colours too. Every text tint passes 4.5:1
+     tokens, so the screens C still borrows from the classic UI (Channels, Feedback)
+     take the quieter colours too. Every text tint passes 4.5:1
      on its surface - which also retires the --t4 contrast failure in C. */
   html.ui-c{--paper:#f6f7f6;--surface:#ffffff;--surface-2:#f1f3f2;--shell:#f1f3f2;--field:#ffffff;--menu:#ffffff;--ink:#1b2328;
     --t2:#48535d;--t3:#5c6670;--t4:#66707a;--rule:#e3e7e8;--rule2:#eef1f1;--control-line:#c9d0d3;
@@ -976,6 +976,23 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-form.c-form1{grid-template-columns:1fr 1fr;max-width:none}
   @media (max-width:900px){ html.ui-c .c-pgrid{grid-template-columns:1fr} }
   @media (max-width:760px){ html.ui-c .c-form.c-form1{grid-template-columns:1fr} }
+
+  /* The full report in C: Home's hairline sheet, a period bar, then the breakdowns. */
+  html.ui-c .c-periodbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:0 0 18px}
+  html.ui-c .c-periodbar .c-seg{margin:0}
+  html.ui-c .c-date{display:flex;align-items:center;gap:6px;margin:0;font-size:12.5px;color:var(--t3)}
+  html.ui-c .c-date input{width:auto}
+  html.ui-c .kstrip.c-five{grid-template-columns:1.2fr 1fr 1fr 1fr 1.2fr}
+  html.ui-c .c-now{font-size:13.5px;color:var(--t2);margin:-12px 0 24px}
+  html.ui-c .c-now b{color:var(--ink)} html.ui-c .c-now b.c-late{color:var(--c-bad)}
+  html.ui-c .c-rgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 34px}
+  html.ui-c .kbar.c-static{cursor:default}
+  html.ui-c .kbar.c-static:hover{background:none}
+  html.ui-c .c-big{font-size:34px;font-weight:650;letter-spacing:-.02em;margin:4px 0 0}
+  html.ui-c .c-wide-table{min-width:min(420px,100%)}
+  html.ui-c .c-thin{display:grid;gap:12px}
+  html.ui-c .c-thin p{margin:3px 0 0;font-size:13px;color:var(--t2)}
+  @media (max-width:900px){ html.ui-c .kstrip.c-five{grid-template-columns:1fr 1fr} html.ui-c .kstrip.c-five > div{border-left:0;padding-left:0} html.ui-c .c-rgrid{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
@@ -1029,8 +1046,8 @@ const $ = (s, r = document) => r.querySelector(s);
 // The main UI since 28.09.2026 (Ritvars: "build Concept C in the app as main").
 // ?ui=classic brings back the previous UI and ?ui=c returns here; the choice is
 // remembered per browser. Nothing on the server changes: C arranges the same screens,
-// the same data and the same rules differently. The full report, Channels and Feedback
-// are still the classic screens, shown inside C's navigation.
+// the same data and the same rules differently. Channels and Feedback are still the
+// classic screens, shown inside C's navigation.
 const UI = (() => {
   let q = null;
   try { q = new URLSearchParams(location.search).get('ui'); } catch {}
@@ -1105,7 +1122,7 @@ const cDueNow = (tasks) => tasks.filter((t) => cWhenClass(t.due_at) === 'over' |
 // of the configured channels (the old sheet has "school", "campaign") is said to be so.
 const cChannel = (c) => (!c || c === 'unknown' ? ['Not recorded', 'no source was kept'] : (CFG.channels && CFG.channels[c]) ? [channelLabel(c), ''] : [c, 'not a channel']);
 
-// The router's C half. The three borrowed screens are the classic ones.
+// The router's C half. The two borrowed screens are the classic ones.
 async function routeC(page, arg) {
   const place = cPlace(page);
   if (page === 'person') return viewPerson(arg);
@@ -1171,12 +1188,14 @@ function cMonthChart(months, year) {
   if (!months.length) return '<p class="c-empty">No admissions recorded this year yet.</p>';
   const W = 640, H = 210, L = 30, R = 12, T = 14, B = 26, n = months.length;
   const top = Math.max(10, ...months.map((m) => Math.max(m.admitted, m.newLeads)));
-  const max = Math.ceil(top / 10) * 10, band = (W - L - R) / n, bw = Math.min(22, band * 0.42), y = (v) => T + (H - T - B) * (1 - v / max);
-  const ticks = [0, max / 4, max / 2, (3 * max) / 4, max].map((v) => Math.round(v));
+  // Gridlines on round numbers (0, 10, 20, 30), never quarters of the top (0, 8, 15, 23).
+  const step = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000].find((s) => top / s <= 5) || Math.ceil(top / 5);
+  const max = Math.ceil(top / step) * step, band = (W - L - R) / n, bw = Math.min(22, band * 0.42), y = (v) => T + (H - T - B) * (1 - v / max);
+  const ticks = Array.from({ length: max / step + 1 }, (_, k) => k * step);
   const grid = ticks.map((v) => `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" class="kg"/><text x="${L - 8}" y="${y(v) + 4}" class="kt" text-anchor="end">${v}</text>`).join('');
   const cols = months.map((m, k) => { const cx = L + band * k + band / 2, t = y(m.admitted), mo = C_MONTHS[Number(m.month.slice(5)) - 1];
     const bar = m.admitted ? `<path d="M${cx - bw / 2},${y(0)} V${Math.min(t + 4, y(0))} q0,-4 4,-4 h${bw - 8} q4,0 4,4 V${y(0)} Z" style="fill:var(--v-adm)"/>` : '';
-    return `<g class="kcol" tabindex="0" role="button" aria-label="${mo}: ${m.admitted} admitted, ${m.newLeads} new leads" data-tip="${mo} ${year}|${m.admitted} admitted|${m.newLeads} new leads" data-kgo="month|${m.month}|${mo} ${year}"><rect x="${cx - band / 2}" y="${T}" width="${band}" height="${H - T - B}" class="khit"/>${bar}<text x="${cx}" y="${H - 8}" class="kt" text-anchor="middle">${mo}</text></g>`; }).join('');
+    return `<g class="kcol" tabindex="0" role="button" aria-label="${mo} ${m.month.slice(0, 4)}: ${m.admitted} admitted, ${m.newLeads} new leads" data-tip="${mo} ${m.month.slice(0, 4)}|${m.admitted} admitted|${m.newLeads} new leads" data-kgo="month|${m.month}|${mo} ${m.month.slice(0, 4)}"><rect x="${cx - band / 2}" y="${T}" width="${band}" height="${H - T - B}" class="khit"/>${bar}<text x="${cx}" y="${H - 8}" class="kt" text-anchor="middle">${mo}</text></g>`; }).join('');
   const pts = months.map((m, k) => [L + band * k + band / 2, y(m.newLeads)]);
   return `<svg viewBox="0 0 ${W} ${H}" class="kchart" role="img" aria-label="Admissions and new leads per month, ${year}">${grid}${cols}<path d="M${pts.map((p) => p.join(',')).join(' L')}" class="kline"/>${pts.map(([x, yy]) => `<circle cx="${x}" cy="${yy}" r="4" class="kdot"/>`).join('')}</svg>`;
 }
@@ -1259,8 +1278,9 @@ async function viewOutcomesC() {
   const f = C_OUTCOME === 'Admitted' ? C_OUT_FILTER : null;
   if (f) {
     const year = Number(cTodayIso().slice(0, 4));
-    list = list.filter((p) => cDay(p.admitted_at).startsWith(String(year)));
+    // a month key names its own year; programme and channel come from Home, which is this year
     if (f.kind === 'month') list = list.filter((p) => cDay(p.admitted_at).startsWith(f.key));
+    else list = list.filter((p) => cDay(p.admitted_at).startsWith(String(year)));
     if (f.kind === 'prog') list = list.filter((p) => (p.programme || '(not recorded)') === f.key);
     if (f.kind === 'chan') list = list.filter((p) => (p.source_channel || 'unknown') === f.key);
   }
@@ -1588,6 +1608,78 @@ async function cSavePersonPage(id) {
   } catch (e) { err(e.message); }
 }
 
+// ----------------------------------------------------------------- FULL REPORT
+// The on-screen report behind the management download, over a period somebody chose.
+// Same /api/report, same numbers. Arranged the way Home is: the period's counts, then
+// what is true right now whatever the period, then the breakdowns, each with its gaps
+// said out loud. Nothing is estimated and a blank is never drawn as a zero.
+let C_RPT_PRESET = 'month';
+function cReportPreset(which) { C_RPT_PRESET = which; return setPeriodPreset(which); }
+function cReportDates(from, to) { C_RPT_PRESET = null; setPeriod(from, to); }
+async function viewReportsC() {
+  const qs = new URLSearchParams();
+  if (RPT.from) qs.set('from', RPT.from);
+  if (RPT.to) qs.set('to', RPT.to);
+  const r = await api('/api/report' + (qs.toString() ? '?' + qs : ''));
+  const s = r.summary || {};
+  const [from, to] = String(r.period.label || '').split(' to ');
+  const thisMonth = cTodayIso().slice(0, 7);
+  const months = (r.trend || []).filter((m) => m.month <= thisMonth);
+  const lists = { programme: CFG.programmes, studyForm: CFG.studyForms, education: CFG.education, nationality: CFG.nationalities };
+  const labelOf = (key, v) => {
+    if (v === '(not recorded)' || v === '(no reason recorded)') return [v.replace(/[()]/g, ''), 'gap'];
+    if (key === 'source') { const [l, why] = cChannel(v); return [l, why]; }
+    if (key === 'stage') return [cStage(v), ''];
+    const list = lists[key];
+    return [v, list && list.length && !list.includes(v) ? 'not one of the list' : ''];
+  };
+  const bars = (key, rows) => {
+    if (!rows || !rows.length) return '<p class="c-empty" style="padding:6px 0">Nobody in this period.</p>';
+    const max = Math.max(...rows.map((x) => x.count));
+    const total = rows.reduce((a, x) => a + x.count, 0);
+    return `<div class="kbars">${rows.map((x) => { const [l, why] = labelOf(key, x.value);
+      return `<div class="kbar c-static" title="${esc(l)}: ${x.count} of ${total}"><span class="kbl">${why === 'gap' ? `<span class="c-gap">${esc(l)}</span>` : esc(l)}${why && why !== 'gap' ? `<small>${esc(why)}</small>` : ''}</span><span class="kbt"><i style="width:${Math.max(3, (x.count / max) * 100)}%;background:var(--v-${why ? 'np' : 'adm'})"></i></span><b>${x.count}</b></div>`; }).join('')}</div>`;
+  };
+  const sect = (key, title, note) => `<section class="ksec"><div class="ksh"><h2>${title}</h2>${note ? `<span class="kt2">${note}</span>` : ''}</div>${bars(key, key === 'lost' ? r.lostReasons : r.breakdowns[key])}</section>`;
+  const seg = (k, l) => `<button aria-pressed="${C_RPT_PRESET === k}" onclick="cReportPreset('${k}')">${l}</button>`;
+  const cov = r.coverage || {};
+  $('#view').innerHTML = `<p class="c-crumb"><a href="#/outcomes">Outcomes</a></p>
+    <div class="c-head"><div><h1>Full report</h1><p>${esc(from || '')} to ${esc(to || '')}. Every figure is a count of rows in the CRM over these days. Nothing is estimated.</p></div>
+      <div class="act"><button class="btn" onclick="openExport()">Download for management review (CSV)</button></div></div>
+    <div class="c-periodbar"><div class="c-seg" role="group" aria-label="Period">${seg('month', 'This month')}${seg('last', 'Last month')}${seg('year', 'This year')}${seg('all', 'Everything')}</div>
+      <label class="c-date">From <input type="date" value="${esc(from || '')}" onchange="cReportDates(this.value, RPT.to || '${esc(to || '')}')"></label>
+      <label class="c-date">To <input type="date" value="${esc(to || '')}" onchange="cReportDates(RPT.from || '${esc(from || '')}', this.value)"></label></div>
+    <div class="kpage">
+    <div class="kstrip c-five">
+      <div class="khero"><span>New leads</span><b>${s.newLeads ?? 0}</b><small>first contact in these days</small></div>
+      <div><span>Applications</span><b>${s.applications ?? 0}</b><small>of them reached Application or beyond</small></div>
+      <div><span>Admitted</span><b>${s.admitted ?? 0}</b><small>admitted in these days, whenever they arrived</small></div>
+      <div><span>Conversion</span><b>${s.conversionPct == null ? '-' : s.conversionPct + '%'}</b><small>${esc(s.conversionOf || '')}</small></div>
+      <div><span>Median time to admission</span><b>${s.medianDaysToAdmission == null ? '-' : s.medianDaysToAdmission} <em>days</em></b><small>for people admitted in these days</small></div>
+    </div>
+    <p class="c-now">Right now, whatever the period: <b>${s.activeApplicants ?? 0}</b> open · <b class="${s.overdue ? 'c-late' : ''}">${s.overdue ?? 0}</b> with an overdue step · <b class="${s.noNextAction ? 'c-late' : ''}">${s.noNextAction ?? 0}</b> with no next step. <a href="#/next">Next Steps</a></p>
+    <section class="ksec"><div class="ksh"><h2>Twelve months</h2><ul class="klegend inline"><li><i style="background:var(--v-adm)"></i><span>Admitted</span></li><li><i class="ln" style="background:var(--v-lead)"></i><span>New leads</span></li></ul></div>
+      ${cMonthChart(months, to ? to.slice(0, 4) : '')}
+      <details class="kdet"><summary>Show as a table</summary><table class="ktable"><thead><tr><th>Month</th><th>Admitted</th><th>New leads</th></tr></thead><tbody>${months.map((m) => `<tr><td>${esc(m.month)}</td><td>${m.admitted}</td><td>${m.newLeads}</td></tr>`).join('')}</tbody></table></details></section>
+    <section class="ksec"><div class="ksh"><h2>By programme</h2><span class="kt2">the programmes the KPI sheet reports on</span></div>
+      <table class="ktable c-wide-table"><thead><tr><th>Programme</th><th>New leads</th><th>Admitted</th></tr></thead><tbody>${(r.programmes || []).map((x) => `<tr><td><b>${esc(x.programme)}</b></td><td>${x.newLeads}</td><td>${x.admitted}</td></tr>`).join('')}</tbody></table></section>
+    <div class="c-rgrid">
+      ${sect('source', 'Where they came from', 'people who arrived')}
+      ${sect('programme', 'Programme', 'people who arrived')}
+      ${sect('studyForm', 'Study form', 'people who arrived')}
+      ${sect('education', 'Education', `recorded for ${cov.education?.filled ?? 0} of ${cov.education?.of ?? 0}`)}
+      ${sect('nationality', 'Nationality', `recorded for ${cov.nationality?.filled ?? 0} of ${cov.nationality?.of ?? 0}`)}
+      ${sect('stage', 'Stage right now', 'everybody, not only these days')}
+      ${sect('lost', 'Why people did not proceed', 'all time')}
+      <section class="ksec"><div class="ksh"><h2>From a maritime school</h2></div><p class="c-big">${s.maritimeGraduates ?? 0}</p><p class="knote">Counted from the education field, which is filled in for ${cov.education?.filled ?? 0} of the ${cov.education?.of ?? 0} people who arrived. The real number is at least this.</p></section>
+    </div>
+    <section class="ksec"><div class="ksh"><h2>What the CRM cannot measure yet</h2></div>
+      <div class="c-thin">${(r.notMeasured || []).map((n) => `<div><b>${esc(n.metric)}</b> <span class="c-dec">${esc(n.kind)}</span><p>${esc(n.why)}</p><p class="c-gap-soft">To fix: ${esc(n.toFix)}</p></div>`).join('') || '<p class="c-empty">Nothing.</p>'}</div></section>
+    <p class="knote">${(r.honesty || []).slice(1).map(esc).join(' ')}</p>
+    <div class="ktip" role="status" aria-live="polite"></div></div>`;
+  cWireCharts();
+}
+
 // ---------------------------------------------------------------- C OVERRIDES
 // Two classic functions redraw a classic screen when they finish. In C they redraw
 // whatever screen you are on, so planning a step from a list keeps you on the list,
@@ -1605,6 +1697,9 @@ if (UI === 'c') {
   // viewPerson(id); in C that is the C person page, so they all land back here.
   // eslint-disable-next-line no-func-assign
   viewPerson = (id) => viewPersonC(id);
+  // setPeriod() and setPeriodPreset() redraw with viewReports(); in C, the C report.
+  // eslint-disable-next-line no-func-assign
+  viewReports = () => viewReportsC();
 }
 
 
@@ -3050,7 +3145,7 @@ function doExport() {
 // Periods are Riga calendar days, and the server reads them as Riga days too.
 function monthStartISO(d = new Date()) { return fmtDate(d).slice(0, 7) + '-01'; }
 function setPeriod(from, to) { RPT = { from, to }; viewReports(); }
-function setPeriodPreset(which) {
+async function setPeriodPreset(which) {
   const now = new Date();
   const [y, m] = todayStr().split('-').map(Number);
   if (which === 'month') return setPeriod(monthStartISO(now), '');
@@ -3061,7 +3156,11 @@ function setPeriodPreset(which) {
     return setPeriod(s, e);
   }
   if (which === 'year') return setPeriod(y + '-01-01', '');
-  return setPeriod('', '');
+  // Everything: from the earliest date the data holds. It used to send no dates, and the
+  // server reads no dates as THIS MONTH, so "Everything" showed one month (28.09.2026).
+  const rows = ((await api('/api/people')) || {}).rows || [];
+  const days = rows.flatMap((p) => [p.created_at, p.admitted_at]).filter(Boolean).map((d) => fmtDate(d)).filter(Boolean).sort();
+  return setPeriod(days[0] || todayStr(), '');
 }
 
 async function viewReports() {

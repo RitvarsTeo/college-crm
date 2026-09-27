@@ -86,3 +86,23 @@ test('the screens take "today" from Riga too', () => {
   assert.ok(!/const todayStr = \(\) => new Date\(\)\.toISOString\(\)/.test(APP), 'todayStr is not the UTC date');
   assert.match(APP, /const cDay = \(iso\) => \(iso \? fmtDate\(iso\) : ''\);/);
 });
+
+// "Everything" sent no dates, and the server reads no dates as THIS MONTH, so the
+// button showed one month. It now asks from the earliest date the data holds.
+test('the report\'s Everything means every date in the data, not this month', async () => {
+  const start = APP.indexOf('async function setPeriodPreset(');
+  const src = APP.slice(start, APP.indexOf('\n}\n', start) + 2);
+  const calls = [];
+  const ctx = {
+    todayStr: () => '2026-09-28', monthStartISO: () => '2026-09-01', fmtDate: (d) => String(d).slice(0, 10),
+    setPeriod: (f, t) => calls.push([f, t]), Date,
+    api: async () => ({ rows: [{ created_at: '2026-03-02T00:00:00', admitted_at: null },
+      { created_at: null, admitted_at: '2025-11-20T00:00:00' }, { created_at: '2026-01-07T00:00:00' }] }),
+  };
+  vm.createContext(ctx);
+  vm.runInContext(src, ctx);
+  await vm.runInContext('setPeriodPreset("all")', ctx);
+  await vm.runInContext('setPeriodPreset("year")', ctx);
+  await vm.runInContext('setPeriodPreset("last")', ctx);
+  assert.deepEqual(calls, [['2025-11-20', ''], ['2026-01-01', ''], ['2026-08-01', '2026-08-31']]);
+});
