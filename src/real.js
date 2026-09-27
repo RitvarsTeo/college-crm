@@ -8,6 +8,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { localDate } from './bizday.js';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 export const DATA_FILE = path.join(ROOT, 'data', 'real_people.json');
@@ -22,7 +23,7 @@ export function hasRealData() {
 // admitted students to show the end of the journey.
 export function selectPeople(all, sel = {}) {
   const mode = sel.include || 'current-cycle';
-  const year = String(sel.year || new Date().getFullYear());
+  const year = String(sel.year || localDate().slice(0, 4));   // the Riga year
   const open = (p) => !['Admitted', 'Not proceeding'].includes(p.status);
   if (mode === 'all') return { chosen: all.slice(), reason: 'every exported person' };
   // THE YEAR'S WHOLE FUNNEL, lost people included: everybody first contacted OR admitted in

@@ -9,19 +9,21 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { localDate, localMidnight, dayStartOf, dayAfterStartOf, todayStart } from './bizday.js';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const CFG = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'prototype.json'), 'utf8'));
 
 // ------------------------------------------------------------- the period --
+// The days are RIGA days (src/bizday.js): "1 January" begins at midnight in Riga,
+// not at 02:00 Riga, so a lead that arrived at 00:30 on New Year's Day belongs to the
+// new year. The label names the same Riga days the counts use.
 export function periodOf(from, to) {
-  const now = new Date();
-  const start = from ? new Date(from + 'T00:00:00.000Z')
-    : new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-  const end = to ? new Date(Date.parse(to + 'T00:00:00.000Z') + 86400000)
-    : new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
-  return { from: start.toISOString(), to: end.toISOString(),
-    label: `${start.toISOString().slice(0, 10)} to ${new Date(Date.parse(end) - 86400000).toISOString().slice(0, 10)}` };
+  const [y, m] = localDate().split('-').map(Number);
+  const start = from ? dayStartOf(from) : localMidnight(y, m, 1);
+  const end = to ? dayAfterStartOf(to) : localMidnight(y, m + 1, 1);
+  const lastDay = localDate(new Date(Date.parse(end) - 1));
+  return { from: start, to: end, label: `${localDate(start)} to ${lastDay}` };
 }
 
 const count = async (db, sql, ...args) => (await db.prepare(sql).get(...args)).n;
@@ -49,8 +51,9 @@ export async function report(db, { from, to } = {}) {
 
   const activeApplicants = await count(db, `SELECT COUNT(*) n FROM people
     WHERE status NOT IN ('Admitted','Not proceeding')`);
+  // Overdue means its day has passed - the same line as every screen draws.
   const overdue = await count(db, `SELECT COUNT(*) n FROM tasks
-    WHERE done_at IS NULL AND due_at < ?`, new Date().toISOString());
+    WHERE done_at IS NULL AND due_at < ?`, todayStart());
   const noNextAction = await count(db, `SELECT COUNT(*) n FROM people pe
     WHERE pe.status NOT IN ('Admitted','Not proceeding')
       AND NOT EXISTS (SELECT 1 FROM tasks t WHERE t.person_id = pe.id AND t.done_at IS NULL)`);
@@ -69,16 +72,15 @@ export async function report(db, { from, to } = {}) {
 
   // Twelve months of arrivals and admissions, for the trend.
   const months = [];
-  const end = new Date(p.to);
+  // Riga months, ending with the month the period's last day falls in.
+  const [ey, em] = localDate(new Date(Date.parse(p.to) - 1)).split('-').map(Number);
   for (let i = 11; i >= 0; i -= 1) {
-    const m0 = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth() - 1 - i, 1));
-    const m1 = new Date(Date.UTC(m0.getUTCFullYear(), m0.getUTCMonth() + 1, 1));
+    const m0 = localMidnight(ey, em - i, 1);
+    const m1 = localMidnight(ey, em - i + 1, 1);
     months.push({
-      month: m0.toISOString().slice(0, 7),
-      newLeads: await count(db, 'SELECT COUNT(*) n FROM people WHERE created_at >= ? AND created_at < ?',
-        m0.toISOString(), m1.toISOString()),
-      admitted: await count(db, 'SELECT COUNT(*) n FROM people WHERE admitted_at >= ? AND admitted_at < ?',
-        m0.toISOString(), m1.toISOString()),
+      month: localDate(m0).slice(0, 7),
+      newLeads: await count(db, 'SELECT COUNT(*) n FROM people WHERE created_at >= ? AND created_at < ?', m0, m1),
+      admitted: await count(db, 'SELECT COUNT(*) n FROM people WHERE admitted_at >= ? AND admitted_at < ?', m0, m1),
     });
   }
 
@@ -296,8 +298,8 @@ export async function reportRows(db, opts = {}) {
     for (const x of people) {
       rows.push([x.name, x.programme, x.study_form, x.education, x.nationality,
         x.source_channel, x.status, x.owner,
-        (x.created_at || '').slice(0, 10), (x.admitted_at || '').slice(0, 10),
-        x.next_label, (x.next_due || '').slice(0, 10)]);
+        x.created_at ? localDate(x.created_at) : '', x.admitted_at ? localDate(x.admitted_at) : '',
+        x.next_label, x.next_due ? localDate(x.next_due) : '']);
     }
     blank();
   }

@@ -165,16 +165,17 @@ test('open items come before handled ones', async () => {
 
 function startServer() {
   return new Promise((resolve, reject) => {
-    const port = 8900 + Math.floor(Math.random() * 90);
     const child = spawn(process.execPath, [path.join(ROOT, 'src', 'server.js')], {
-      env: { ...process.env, PORT: String(port), CRM_DB: ':memory:' },
+      env: { ...process.env, PORT: '0', CRM_DB: ':memory:' },
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     let err = '';
     // stderr is read, not ignored: a port already in use must fail the test
     // rather than let it run green against somebody else's server.
     child.stderr.on('data', (d) => { err += d; });
-    child.stdout.on('data', (d) => { if (String(d).includes('http://')) resolve({ child, port }); });
+    // PORT=0: the system hands out a free port and the boot line names it. A random pick
+    // from a 90-port range collided with parallel suites and other local servers.
+    child.stdout.on('data', (d) => { const m = String(d).match(/http:\/\/localhost:(\d+)/); if (m) resolve({ child, port: Number(m[1]) }); });
     child.on('exit', (code) => reject(new Error(`server exited (${code}): ${err}`)));
     setTimeout(() => reject(new Error('server did not start: ' + err)), 8000);
   });

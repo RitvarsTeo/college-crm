@@ -1054,7 +1054,9 @@ async function cNavCounts() {
     const N = document.querySelector('#cnNext'); if (N) { N.textContent = due || ''; N.classList.toggle('warn', t.some((x) => cWhenClass(x.due_at) === 'over')); }
   } catch {}
 }
-const cDay = (iso) => String(iso || '').slice(0, 10);
+// The RIGA calendar day of an instant. Slicing the ISO string gave the UTC day, one
+// day early for anything stored between 21:00 and 24:00 UTC.
+const cDay = (iso) => (iso ? fmtDate(iso) : '');
 // Today in RIGA, like every other screen (TZ). The UTC date is yesterday for the first
 // hours of every Riga day, and it put that morning's due steps under "coming up".
 const cTodayIso = () => new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
@@ -1096,7 +1098,7 @@ async function viewHomeC() {
   const s = rep.summary || {};
   const thisMonth = cTodayIso().slice(0, 7);
   const months = (rep.trend || []).filter((m) => m.month.startsWith(String(year)) && m.month <= thisMonth);
-  const inYear = (d) => String(d || '').startsWith(String(year));
+  const inYear = (d) => cDay(d).startsWith(String(year));
   const admitted = people.filter((p) => p.status === 'Admitted' && inYear(p.admitted_at));
   const undated = people.filter((p) => p.status === 'Admitted' && !p.admitted_at).length;
   const count = (arr, key) => { const m = new Map(); arr.forEach((p) => { const k = key(p); m.set(k, (m.get(k) || 0) + 1); }); return [...m.entries()].sort((a, b) => b[1] - a[1]); };
@@ -1219,8 +1221,8 @@ async function viewOutcomesC() {
   const f = C_OUTCOME === 'Admitted' ? C_OUT_FILTER : null;
   if (f) {
     const year = Number(cTodayIso().slice(0, 4));
-    list = list.filter((p) => String(p.admitted_at || '').startsWith(String(year)));
-    if (f.kind === 'month') list = list.filter((p) => String(p.admitted_at || '').startsWith(f.key));
+    list = list.filter((p) => cDay(p.admitted_at).startsWith(String(year)));
+    if (f.kind === 'month') list = list.filter((p) => cDay(p.admitted_at).startsWith(f.key));
     if (f.kind === 'prog') list = list.filter((p) => (p.programme || '(not recorded)') === f.key);
     if (f.kind === 'chan') list = list.filter((p) => (p.source_channel || 'unknown') === f.key);
   }
@@ -1947,12 +1949,12 @@ const myRole = () => ((CFG.users || []).find(u => u.name === ACTOR) || {}).role 
 const withActor = (data) => ({ ...(data || {}), by: ACTOR });
 const dueClass = (d) => {
   if (!d) return '';
-  const day = todayStr();
-  return d.slice(0, 10) < day ? 'over' : d.slice(0, 10) === day ? 'today' : '';
+  const day = todayStr(), due = fmtDate(d);           // both Riga days
+  return due < day ? 'over' : due === day ? 'today' : '';
 };
 const dueText = (d) => {
   if (!d) return '<span class="pill calm">none</span>';
-  const diff = Math.round((Date.parse(d.slice(0,10)) - Date.parse(todayStr())) / 86400000);
+  const diff = Math.round((Date.parse(fmtDate(d)) - Date.parse(todayStr())) / 86400000);
   const label = diff === 0 ? 'today' : diff < 0 ? `${-diff} d. overdue` : `in ${diff} d.`;
   return `<span class="due ${dueClass(d)}">${fmtDate(d)} <span style="font-weight:400">(${label})</span></span>`;
 };
@@ -2094,7 +2096,7 @@ function onNextActionChange(selId, dateId, hintId) {
   const label = sel.value;
   const d = new Date(Date.now() + daysForAction(label) * 86400000);
   const date = document.querySelector('#' + dateId);
-  if (date) date.value = d.toISOString().slice(0, 10);
+  if (date) date.value = fmtDate(d);                 // the Riga day, like todayStr()
   const hint = document.querySelector('#' + hintId);
   if (hint) hint.textContent = DRIVES_LABEL[drivesFor(label)] || '';
 }
@@ -2902,19 +2904,20 @@ function doExport() {
   window.location.href = '/api/report.csv?' + qs;
 }
 
-function monthStartISO(d = new Date()) {
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)).toISOString().slice(0, 10);
-}
+// Periods are Riga calendar days, and the server reads them as Riga days too.
+function monthStartISO(d = new Date()) { return fmtDate(d).slice(0, 7) + '-01'; }
 function setPeriod(from, to) { RPT = { from, to }; viewReports(); }
 function setPeriodPreset(which) {
   const now = new Date();
+  const [y, m] = todayStr().split('-').map(Number);
   if (which === 'month') return setPeriod(monthStartISO(now), '');
   if (which === 'last') {
-    const s = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
-    const e = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 0));
-    return setPeriod(s.toISOString().slice(0, 10), e.toISOString().slice(0, 10));
+    // calendar arithmetic on the Riga year and month; Date.UTC only does the rollover
+    const s = new Date(Date.UTC(y, m - 2, 1)).toISOString().slice(0, 10);
+    const e = new Date(Date.UTC(y, m - 1, 0)).toISOString().slice(0, 10);
+    return setPeriod(s, e);
   }
-  if (which === 'year') return setPeriod(now.getUTCFullYear() + '-01-01', '');
+  if (which === 'year') return setPeriod(y + '-01-01', '');
   return setPeriod('', '');
 }
 
@@ -3669,7 +3672,7 @@ function showDuplicateBlock(data) {
       <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;padding:4px 0">
         <div><b>${esc(m.name)}</b> <span class="muted">${esc(m.email || '')} ${esc(m.phone || '')}</span>
           <div style="font-size:12px;color:var(--steel)">same ${esc((m.matchedOn || []).join(' and '))} &middot;
-            added ${esc(String(m.created_at).slice(0, 10))} &middot; ${esc(m.status)}</div></div>
+            added ${esc(fmtDate(m.created_at))} &middot; ${esc(m.status)}</div></div>
         <button class="btn sm ghost" onclick="closeModal();location.hash='#/person/${esc(m.id)}'">Open</button>
       </div>`).join('')}</div>
     <div style="margin-top:10px"><label style="display:flex;gap:8px;align-items:center;font-size:13px">

@@ -24,6 +24,7 @@ import * as auth from './auth.js';
 import * as google from './google.js';
 import { bootstrapIfAuthOn } from './bootstrap.js';
 import * as channeladmin from './channeladmin.js';
+import { todayStart, tomorrowStart, localDate } from './bizday.js';
 
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -367,8 +368,10 @@ function recordInbound(channel, externalId, outcome, how) {
   if (INBOUND_LOG.length > 500) INBOUND_LOG.splice(0, INBOUND_LOG.length - 500);
 }
 
-const dayStart = () => new Date(new Date().toISOString().slice(0, 10) + 'T00:00:00.000Z').toISOString();
-const dayEnd = () => new Date(Date.parse(dayStart()) + 86400000).toISOString();
+// Today is a RIGA day (src/bizday.js). It was the UTC day, so for three hours every
+// night a task due yesterday counted as due today and was not overdue.
+const dayStart = () => todayStart();
+const dayEnd = () => tomorrowStart();
 const newId = () => 'p' + Math.random().toString(36).slice(2, 7);
 
 // There is no login in the prototype. The caller says who it is, the server
@@ -1492,7 +1495,7 @@ export const handle = async (req, res) => {
         ['Attention', 'Active with no next step', f.noNextAction],
         ['Filtered', 'Obvious sales pitches never shown', f.filtered],
       ];
-      const stamp = new Date().toISOString().slice(0, 10);
+      const stamp = localDate();
       const csv = rows.map((r) => r.map((c) => {
         const v = String(c ?? '');
         return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
@@ -1824,7 +1827,7 @@ export const handle = async (req, res) => {
         to: url.searchParams.get('to'), sections: picked });
       const csv = rows.map((r) => (r || []).map((c) =>
         `"${String(c === undefined || c === null ? '' : c).replace(/"/g, '""')}"`).join(',')).join('\r\n');
-      const stamp = new Date().toISOString().slice(0, 10);
+      const stamp = localDate();
       res.writeHead(200, { 'content-type': 'text/csv; charset=utf-8',
         'content-disposition': `attachment; filename="academy-crm-kpi-${stamp}.csv"` });
       return res.end('\ufeff' + csv);

@@ -14,6 +14,7 @@ import { fileURLToPath } from 'node:url';
 import { extractFrom, looksLikeJunk } from './extract.js';
 import { logEvent, MANUAL, AUTOMATIC } from './history.js';
 import { duplicateCheck } from './identity.js';
+import { localDate } from './bizday.js';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const CFG = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'prototype.json'), 'utf8'));
@@ -344,7 +345,7 @@ export async function qualify(db, id, { qualification, personId, createPerson, b
     await db.prepare('INSERT INTO tasks (person_id,label,due_at,owner,created_at) VALUES (?,?,?,?,?)')
       .run(pid, String(nextAction).trim(), due, ownerFor(qualification), at);
     await logEvent(db, { personId: pid, kind: 'task', direction: 'note', at, origin: MANUAL, actor: by,
-      subject: `Next step: ${nextAction}`, body: `due ${due.slice(0, 10)}, ${ownerFor(qualification)}` });
+      subject: `Next step: ${nextAction}`, body: `due ${localDate(due)}, ${ownerFor(qualification)}` });
   }
 
   const person = await db.prepare('SELECT * FROM people WHERE id = ?').get(pid);

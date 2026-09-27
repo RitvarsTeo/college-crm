@@ -13,6 +13,7 @@ import fs from 'node:fs';
 import { logEvent, MANUAL, AUTOMATIC } from './history.js';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { localDate } from './bizday.js';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 export const PROVIDERS = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'providers.json'), 'utf8'));
@@ -708,7 +709,7 @@ async function writeToCrm(db, { channelId, ev, personId, decision, scenarioId, a
     const due = new Date(Date.now() + days * 86400000).toISOString();
     await db.prepare('INSERT INTO tasks (person_id,label,due_at,owner,created_at) VALUES (?,?,?,?,?)')
       .run(personId, label, due, CRMCFG.quickAddDefaults.owner, now);
-    out.taskNote = `${label}, due ${due.slice(0, 10)}`;
+    out.taskNote = `${label}, due ${localDate(due)}`;
   }
 
   if (ev.booking) {
