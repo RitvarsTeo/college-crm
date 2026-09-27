@@ -25,6 +25,14 @@ export function selectPeople(all, sel = {}) {
   const year = String(sel.year || new Date().getFullYear());
   const open = (p) => !['Admitted', 'Not proceeding'].includes(p.status);
   if (mode === 'all') return { chosen: all.slice(), reason: 'every exported person' };
+  // THE YEAR'S WHOLE FUNNEL, lost people included: everybody first contacted OR admitted in
+  // `year`, whatever happened to them. current-cycle leaves out Not proceeding, which is
+  // exactly where a management review needs to look. Added 27.09.2026.
+  if (mode === 'year') {
+    const inYear = (v) => String(v || '').startsWith(year);
+    const chosen = all.filter((p) => inYear(p.created_at) || inYear(p.admitted_at));
+    return { chosen, reason: `everybody first contacted or admitted in ${year} (${chosen.length}), every status` };
+  }
   if (mode === 'sample') {
     const chosen = all.filter(open).slice(0, sel.sampleSize || 40);
     return { chosen, reason: `a sample of ${chosen.length} open records` };

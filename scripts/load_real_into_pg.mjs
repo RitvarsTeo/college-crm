@@ -21,7 +21,8 @@ const r = await db.transaction(async (tx) => {
   await tx.exec(`DELETE FROM events; DELETE FROM tasks; DELETE FROM documents;
     DELETE FROM registrations; DELETE FROM open_days; DELETE FROM consents;
     DELETE FROM sim_events; DELETE FROM field_values; DELETE FROM inbound; DELETE FROM people;`);
-  return loadReal(tx, CONFIG.realData);
+  // CRM_REAL_INCLUDE picks another selection for this load without changing the project default.
+  return loadReal(tx, { ...CONFIG.realData, ...(process.env.CRM_REAL_INCLUDE ? { include: process.env.CRM_REAL_INCLUDE } : {}) });
 });
 const n = (await db.prepare('SELECT COUNT(*) n FROM people').get()).n;
 const u = (await db.prepare('SELECT COUNT(*) n FROM crm_users').get()).n;
