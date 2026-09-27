@@ -1184,7 +1184,7 @@ export const handle = async (req, res) => {
       const orderBy = allowed.includes(sort) ? sort : 'created_at';
       let rows = await db.prepare(`SELECT pe.*, (SELECT label FROM tasks t WHERE t.person_id = pe.id AND t.done_at IS NULL ORDER BY due_at LIMIT 1) AS next_action,
         (SELECT due_at FROM tasks t WHERE t.person_id = pe.id AND t.done_at IS NULL ORDER BY due_at LIMIT 1) AS next_action_at
-        FROM people pe ORDER BY ${orderBy} ${dir}`).all();
+        FROM people pe ORDER BY ${orderBy} ${dir} NULLS LAST`).all();
       // Decision 10: findable by whatever the operator remembers, including the
       // channel's plain name, so "instagram" finds it without knowing the id.
       if (q) {
@@ -1679,7 +1679,9 @@ export const handle = async (req, res) => {
         SUM(CASE WHEN status='Admitted' THEN 1 ELSE 0 END) admitted FROM people GROUP BY source_channel ORDER BY n DESC`).all();
       const byProgramme = await db.prepare('SELECT programme, COUNT(*) n FROM people GROUP BY programme ORDER BY n DESC').all();
       const durations = (await db.prepare(`SELECT education, programme, created_at, contract_at FROM people WHERE contract_at IS NOT NULL`).all())
-        .map((r) => ({ ...r, days: Math.round((Date.parse(r.contract_at) - Date.parse(r.created_at)) / 86400000) }));
+        .map((r) => ({ ...r, days: Math.round((Date.parse(r.contract_at) - Date.parse(r.created_at)) / 86400000) }))
+        // an unknown first-contact date has no duration, rather than a nonsense one
+        .filter((r) => Number.isFinite(r.days));
       const med = (arr) => { if (!arr.length) return null; const s = [...arr].sort((a, b) => a - b); return s[Math.floor(s.length / 2)]; };
       const groups = {};
       for (const d of durations) {

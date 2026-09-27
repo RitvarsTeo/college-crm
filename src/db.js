@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS people (
   source_channel TEXT,
   source_campaign TEXT,
   source_detail TEXT,
-  created_at TEXT NOT NULL,
+  created_at TEXT,              -- first contact. NULL = NOT KNOWN, never a guessed date (27.09.2026)
   last_contact_at TEXT,
   contract_at TEXT,
   admitted_at TEXT,

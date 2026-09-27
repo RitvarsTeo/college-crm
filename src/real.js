@@ -82,7 +82,9 @@ export async function loadReal(db, selection = {}) {
   // database had anything in it.
   for (const [i, p] of chosen.entries()) {
     const id = 'r' + String(i + 1).padStart(4, '0');
-    const created = p.created_at || now;
+    // A missing first-contact date stays MISSING. It used to become the import time, which
+    // counted 18 people admitted in 2026 as September leads (27.09.2026).
+    const created = p.created_at || null;
     await insPerson.run(id, p.name, p.email || null, p.phone || null, p.programme || null,
       p.study_form || null, edu(p.education), p.status, 'Admissions',
       chan(p.source_channel), p.source_campaign || null, p.source_detail || null,
@@ -93,7 +95,8 @@ export async function loadReal(db, selection = {}) {
        p.notes || null].filter(Boolean).join(' | ') || null);
     n++;
 
-    await insEvent.run(id, 'channel', chan(p.source_channel), 'in', created,
+    // No date, no dated history entry: the sheet's notes are already on the record.
+    if (created) await insEvent.run(id, 'channel', chan(p.source_channel), 'in', created,
       'First contact', p.notes || '', 'ADMISSIONS DATABASE', 'automatic');
     if (p.admitted_at) {
       await insEvent.run(id, 'status', null, 'note', p.admitted_at, 'Admitted',

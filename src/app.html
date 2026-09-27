@@ -1164,9 +1164,16 @@ function drawLogin(message) {
                completes a bare name to the company domain. -->
           <input id="liEmail" name="email" autocomplete="username" inputmode="email" required>
         </div>
-        <div class="field">
-          <label for="liPass">Password</label>
-          <input id="liPass" name="password" type="password" autocomplete="current-password" required>
+        <!-- TWO STEPS, as in Client Hub (27.09.2026): the password is not presented until
+             the email field is touched, so Google reads as the primary route. The kit's
+             collapse: the input stays in the DOM, enabled, with no required attribute -
+             revealLoginPassword() adds required only while it is visible, or a hidden
+             required box makes Sign in do nothing and say nothing. -->
+        <div class="field password-field" id="liPassField" aria-hidden="true">
+          <div class="password-content">
+            <label for="liPass">Password</label>
+            <input id="liPass" name="password" type="password" autocomplete="current-password" tabindex="-1">
+          </div>
         </div>
         <div id="loginErr" class="err${message ? '' : ' hidden'}" role="alert">${esc(message || '')}</div>
         <!-- THE BUTTON MUST BE LAST, and this is not a style preference.
@@ -1182,7 +1189,34 @@ function drawLogin(message) {
     </div>
   </div>`;
   startLoginSea();
-  $('#liEmail').focus();
+  wireLoginPassword(Boolean(message));
+}
+
+// Client Hub's rules, 27.09.2026. Focus on the email opens the password; leaving the
+// email-and-password pair for anywhere else closes it again, but only while it is empty -
+// a password that has something in it is never hidden, whoever put it there.
+function revealLoginPassword(show) {
+  const field = $('#liPassField'), pw = $('#liPass');
+  if (!field || !pw) return;
+  const on = Boolean(show) || pw.value !== '';
+  field.classList.toggle('is-revealed', on);
+  field.setAttribute('aria-hidden', on ? 'false' : 'true');
+  pw.tabIndex = on ? 0 : -1;
+  if (on) pw.setAttribute('required', ''); else pw.removeAttribute('required');
+}
+function wireLoginPassword(open) {
+  const email = $('#liEmail'), pw = $('#liPass');
+  if (!email || !pw) return;
+  const pairHolds = (e) => e.relatedTarget === email || e.relatedTarget === pw;
+  email.addEventListener('focus', () => revealLoginPassword(true));
+  email.addEventListener('blur', (e) => { if (!pairHolds(e)) revealLoginPassword(false); });
+  pw.addEventListener('blur', (e) => { if (!pairHolds(e)) revealLoginPassword(false); });
+  pw.addEventListener('input', () => revealLoginPassword(true));
+  pw.addEventListener('change', () => revealLoginPassword(true));
+  // After a refused sign-in the password is wanted again, so it opens straight away.
+  revealLoginPassword(open);
+  // A password manager can fill the pair before any event fires.
+  setTimeout(() => revealLoginPassword(false), 400);
 }
 
 // The sea behind the card, from the kit's assets/login-sea.js. It is inlined
@@ -1774,7 +1808,7 @@ async function viewPerson(id) {
           <div>Programme</div><div>${esc(p.programme || '-')} ${esc(p.study_form || '')}</div>
           <div>Education</div><div>${esc(p.education || '-')}</div>
           <div>Source</div><div>${esc(channelLabel(p.source_channel))}${p.source_campaign ? ' / ' + esc(p.source_campaign) : ''}<div style="color:var(--steel);font-size:12px">${esc(p.source_detail || '')}</div></div>
-          <div>First contact</div><div>${fmtDate(p.created_at)}</div>
+          <div>First contact</div><div>${p.created_at ? fmtDate(p.created_at) : 'not recorded'}</div>
           <div>Last contact</div><div>${fmtDate(p.last_contact_at) || '-'}</div>
           <div>Owner</div><div>${esc(p.owner || '-')}</div>
           ${p.contract_at ? `<div>Contract</div><div>${fmtDate(p.contract_at)}</div>` : ''}
