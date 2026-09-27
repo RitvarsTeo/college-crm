@@ -30,7 +30,8 @@ test('every function the person page calls is actually defined', async () => {
   // Both are checked. A name after a dot is a method (classList.toggle, Math.round),
   // not a function of ours, so it is not counted.
   const classic = APP.slice(APP.indexOf('async function viewPerson(id)'), APP.indexOf('function latestConsents'));
-  const c = APP.slice(APP.indexOf('async function viewPersonC('), APP.indexOf('// ---------------------------------------------------------------- C OVERRIDES'));
+  const cStart = APP.indexOf('async function viewPersonC(');
+  const c = APP.slice(cStart, APP.indexOf('\n// ----', cStart + 1));   // to the next section of the C block
   assert.ok(classic.length > 1000 && c.length > 1000, 'both person pages are where this test expects them');
   const view = classic + c;
   const called = new Set([...view.matchAll(/\$\{[^}]*?(?<![.\w])([a-z][A-Za-z0-9_]*)\s*\(/g)].map((m) => m[1]));
@@ -39,7 +40,7 @@ test('every function the person page calls is actually defined', async () => {
   // 'var' is CSS, var(--steel), not a call
   const BUILTIN = new Set(['esc', 'if', 'for', 'return', 'typeof', 'Number', 'String', 'Boolean',
     'Object', 'Array', 'Math', 'Date', 'JSON', 'filter', 'map', 'join', 'find', 'slice',
-    'var', 'calc', 'rgba', 'url']);
+    'var', 'calc', 'rgba', 'url', 'encodeURIComponent']);
   const missing = [...called].filter((name) => !BUILTIN.has(name)
     && !new RegExp(`(function|const|let)\\s+${name}\\b`).test(APP));
   assert.deepEqual(missing, [], 'the person page calls something that does not exist: ' + missing.join(', '));
