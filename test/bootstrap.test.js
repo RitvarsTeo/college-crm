@@ -257,7 +257,10 @@ test('WITH SIGN-IN OFF IT DOES NOTHING, AND DEMANDS NOTHING', async () => {
 function startServer(env = {}) {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [path.join(ROOT, 'src', 'server.js')],
-      { env: { ...process.env, PORT: '0', CRM_INSECURE_COOKIE: '1', CRM_PUBLIC: '',
+      // CRM_DB defaults to memory. Without it the two tests that pass no file opened
+      // data/crm.db, the developer's own local database, and DATASET=empty cleared it
+      // on every run of the suite (found 28.09.2026).
+      { env: { ...process.env, PORT: '0', CRM_INSECURE_COOKIE: '1', CRM_PUBLIC: '', CRM_DB: ':memory:',
         DATASET: 'empty', CRM_AUTH: '', CRM_SESSION_SECRET: '', ...env },
         stdio: ['ignore', 'pipe', 'pipe'] });
     let out = '';

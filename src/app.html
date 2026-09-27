@@ -760,6 +760,9 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
     --pet:#86cbc7;--petink:#a6dcd8;--btn-bg:#8fd2cd;--btn-ink:#0b1d22;--on-navy:#0b1d22;--bad:#ee958c;
     --c-ok:#7fcaa6;--c-warn:#e3bb72;--c-bad:#ee958c;--c-accent-bg:#1c3f45;--c-sunk:#0e1e25;--c-sel:#1d3b44}
   /* the classic navigation stays in the page (other code reads it by id) but is not shown */
+  /* and so does the old "needs you today / leads you own" counter: C counts New Leads
+     and Next Steps separately in its own navigation (Ritvars, 28.09.2026) */
+  html.ui-c #waiting, html.ui-c #waiting2{display:none!important}
   html.ui-c .shell > nav > a.item, html.ui-c .shell > nav > .add, html.ui-c #navFeedbackLink{display:none!important}
   html.ui-c .cnav{display:flex;flex-direction:column;gap:2px;margin:6px 0 10px}
   html.ui-c .cnav a{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;color:var(--t2);text-decoration:none;font-weight:500;font-size:13.5px;border:0}
@@ -1808,6 +1811,11 @@ async function drawFeedbackBadge() {
 }
 
 async function drawWaiting() {
+  // Not in Concept C (decided by Ritvars 28.09.2026). Its one number mixed new leads
+  // with overdue steps, which C keeps as two places, its link now lands on Home, and
+  // its wording is the old vocabulary. New Leads and Next Steps carry their own counts
+  // in C's navigation. The classic view keeps it exactly as it was.
+  if (UI === 'c') return;
   const box = document.querySelector('#waiting');
   if (!box) return;
   try {
