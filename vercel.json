@@ -35,7 +35,7 @@
   "functions": {
     "api/index.js": {
       "includeFiles": "{src,config}/**",
-      "maxDuration": 30
+      "maxDuration": 60
     }
   },
   "rewrites": [

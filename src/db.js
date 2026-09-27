@@ -538,8 +538,15 @@ async function openPg(file) {
   await db.query(`CREATE SCHEMA IF NOT EXISTS ${schema}`);
   // One round trip for the whole schema, and the same statements every boot.
   await db.query(pgSchemaSql());
-  const rls = tableNames(SCHEMA).map((t) => `ALTER TABLE ${schema}.${t} ENABLE ROW LEVEL SECURITY;`).join('\n');
-  await db.query(rls);
+  // Only where it is still off. ALTER TABLE takes an exclusive lock even when it changes
+  // nothing, and on Vercel several instances boot at once while one of them is filling the
+  // same tables - every boot re-locking every table tangled them past the function timeout.
+  const { rows: off } = await db.query(`SELECT c.relname FROM pg_class c JOIN pg_namespace n
+    ON n.oid = c.relnamespace WHERE n.nspname = $1 AND c.relkind = 'r' AND NOT c.relrowsecurity`, [schema]);
+  const want = new Set(tableNames(SCHEMA));
+  const rls = off.map((r) => r.relname).filter((t) => want.has(t))
+    .map((t) => `ALTER TABLE ${schema}.${t} ENABLE ROW LEVEL SECURITY;`).join('\n');
+  if (rls) await db.query(rls);
   await migrate(db);
   return db;
 }
