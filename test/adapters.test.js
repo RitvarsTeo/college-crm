@@ -15,7 +15,7 @@ import { openDb } from '../src/db.js';
 import { receive, listInbound } from '../src/intake.js';
 import { adapt, toIntake, ADAPTERS, adapterIds } from '../src/adapters.js';
 import { FIXTURES, fixtureFor } from '../src/fixtures.js';
-import { channelIds, channelDef, validateInbound, verifyRequest, channelStatus, BadInbound } from '../src/inbound.js';
+import { channelIds, channelDef, validateInbound, verifyRequest, channelStatus, BadInbound, handshake } from '../src/inbound.js';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const CHANNELS = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'channels.json'), 'utf8'));
@@ -50,15 +50,16 @@ test('all fourteen channels are covered, and each one is honest about its mechan
   }
 });
 
-test('nothing invents a provider capability', async () => {
-  // LinkedIn and TikTok have no confirmed inbound mechanism. If somebody later
-  // writes one in without evidence, this fails.
+test('LinkedIn and TikTok are automated social integrations, not a person typing', async () => {
+  // Ritvars, 27.09.2026: the same rules as any other social page. The mechanism is the
+  // providers' own documented webhook, waiting on app approval as Meta is.
   for (const id of ['linkedin', 'tiktok']) {
     const d = channelDef(id);
-    assert.equal(d.readiness, 'capability_unconfirmed', id + ' has no confirmed mechanism');
-    assert.equal(d.direction, 'manual');
-    assert.match(d.externalBlocker, /EXTERNAL CONFIRMATION REQUIRED/);
-    assert.equal(d.webhookPath, null, id + ' must not claim a webhook it cannot receive');
+    assert.equal(d.direction, 'inbound_webhook');
+    assert.equal(d.readiness, 'waiting_for_external_access');
+    assert.equal(d.webhookPath, '/api/inbound/' + id);
+    assert.ok(d.secretEnv, id + ' names the secret it is signed with');
+    assert.doesNotMatch(JSON.stringify(d), /by hand|human bridge/i);
   }
   // WhatsApp's place in the shared Meta inbox was unverified and is now settled:
   // Ritvars confirmed on 24.09.2026 that all the Meta channels are Business Suite.
@@ -91,7 +92,7 @@ test('an event with no id to deduplicate on is refused, not guessed at', async (
     const stripped = JSON.parse(JSON.stringify(raw));
     // remove whatever that channel deduplicates on
     for (const k of ['submission_id', 'responseId', 'id', 'booking_ref', 'uniqueid', 'partner_ref',
-      'entry_id', 'fired_at']) delete stripped[k];
+      'entry_id', 'fired_at', 'leadGenFormResponse', 'event']) delete stripped[k];
     if (['facebook', 'instagram', 'messenger'].includes(channel)) {
       delete stripped.entry[0].messaging[0].message.mid;
     }
@@ -183,10 +184,41 @@ test('a shared-secret channel compares the whole secret', async () => {
     'a prefix is not a match');
 });
 
-test('a channel with no confirmed mechanism cannot be verified, and says so', async () => {
-  const r = verifyRequest('linkedin', { headers: {} }, {});
-  assert.equal(r.ok, false);
-  assert.equal(r.unconfirmed, true);
+test('LinkedIn: the documented X-LI-Signature is checked, both ways', async () => {
+  const body = '{"leadGenFormResponse":"urn:li:leadGenFormResponse:abc","occurredAt":1700000000000}';
+  const sig = crypto.createHmac('sha256', 'li-secret').update('hmacsha256=' + body).digest('hex');
+  assert.equal(verifyRequest('linkedin', { headers: { 'x-li-signature': sig } }, { secret: 'li-secret', rawBody: body }).ok, true);
+  assert.equal(verifyRequest('linkedin', { headers: { 'x-li-signature': sig } }, { secret: 'li-secret', rawBody: body + ' ' }).ok, false);
+  assert.equal(verifyRequest('linkedin', { headers: {} }, { rawBody: body }).missingSecret, true);
+});
+
+test('LinkedIn: the challenge is answered with the documented HMAC, as JSON', async () => {
+  const url = new URL('https://x/api/inbound/linkedin?challengeCode=890e4665-4dfe-4ab1-b689-ed553bceeed0');
+  const h = handshake('linkedin', url, { LINKEDIN_CLIENT_SECRET: 'li-secret' });
+  assert.equal(h.status, 200);
+  assert.equal(h.contentType, 'application/json');
+  const j = JSON.parse(h.body);
+  assert.equal(j.challengeCode, '890e4665-4dfe-4ab1-b689-ed553bceeed0');
+  assert.equal(j.challengeResponse, crypto.createHmac('sha256', 'li-secret').update(j.challengeCode).digest('hex'));
+  assert.equal(handshake('linkedin', url, {}).missingSecret, true);
+});
+
+test('TikTok: the documented t=,s= signature is checked, and an old one refused', async () => {
+  const body = '{"client_key":"k","event":"e","create_time":1,"user_openid":"u","content":"{}"}';
+  const t = String(Math.floor(Date.now() / 1000));
+  const s = (ts) => crypto.createHmac('sha256', 'tt-secret').update(ts + '.' + body).digest('hex');
+  assert.equal(verifyRequest('tiktok', { headers: { 'tiktok-signature': `t=${t},s=${s(t)}` } }, { secret: 'tt-secret', rawBody: body }).ok, true);
+  assert.equal(verifyRequest('tiktok', { headers: { 'tiktok-signature': `t=${t},s=${s(t)}` } }, { secret: 'tt-secret', rawBody: body + 'x' }).ok, false);
+  const old = String(Number(t) - 3600);
+  assert.equal(verifyRequest('tiktok', { headers: { 'tiktok-signature': `t=${old},s=${s(old)}` } }, { secret: 'tt-secret', rawBody: body }).ok, false);
+});
+
+test('LinkedIn and TikTok dedupe on the keys their documentation gives', async () => {
+  const li = adapt('linkedin', { leadGenFormResponse: 'urn:li:leadGenFormResponse:abc', occurredAt: 1700000000000 });
+  assert.equal(li.externalEventId, 'urn:li:leadGenFormResponse:abc_1700000000000');
+  const tt = adapt('tiktok', { client_key: 'k', event: 'e', create_time: 1700000000, user_openid: 'u', content: '{"a":1}' });
+  assert.equal(tt.externalEventId, 'k:e:1700000000:u');
+  assert.deepEqual(tt.raw.content, { a: 1 }, 'content arrives as a JSON string and is read as JSON');
 });
 
 test('Mailchimp says out loud that its url secret is the weak option', async () => {
@@ -214,6 +246,7 @@ test('status is computed, never claimed, and no secret value is exposed', async 
   // claiming live without the secret is an error state, not a connected one
   assert.equal(channelStatus('website', { CHANNEL_MODE_WEBSITE: 'live' }).state, 'ERROR');
   assert.equal(channelStatus('linkedin', {}).state, 'WAITING FOR EXTERNAL ACCESS');
+  assert.equal(channelStatus('tiktok', {}).state, 'WAITING FOR EXTERNAL ACCESS');
   assert.equal(channelStatus('in_person', {}).state, 'MANUAL ONLY');
 });
 

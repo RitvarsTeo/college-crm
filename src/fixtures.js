@@ -59,11 +59,14 @@ export const FIXTURES = {
     phone: '+37120999888', programme: 'NAV', what_they_said: 'Came to reception asking about NAV',
     by: 'Ieva' },
 
-  linkedin: { entry_id: 'li-1', at: '2026-09-24T10:08:00.000Z', name: 'Anna Berzina',
-    handle: 'in/anna-berzina', what_they_said: 'Asked which documents are needed', by: 'Tetiana' },
+  // The shapes the providers document (27.09.2026). LinkedIn's notification carries
+  // no name or answers - those are fetched afterwards - so neither does the fixture.
+  linkedin: { leadGenFormResponse: 'urn:li:leadGenFormResponse:li-1', occurredAt: 1790502480000 },
 
-  tiktok: { entry_id: 'tt-1', at: '2026-09-24T10:09:00.000Z', handle: '@somebody',
-    what_they_said: 'Do you have scholarships?', by: 'Tetiana' },
+  // TikTok's content is a JSON STRING. The event name here is a test label, not a
+  // TikTok event: which events the app subscribes to is decided at approval.
+  tiktok: { client_key: 'ck-test', event: 'fixture.test', create_time: 1790502540,
+    user_openid: 'act.tt-1', content: '{}' },
 };
 
 // A fresh id each time, so simulating twice is two events rather than a retry -
@@ -77,6 +80,7 @@ export function fixtureFor(channel, { sameId = false } = {}) {
   const bump = (o, key) => { if (o && o[key]) o[key] = String(o[key]) + uniq; };
   bump(raw, 'submission_id'); bump(raw, 'responseId'); bump(raw, 'id');
   bump(raw, 'booking_ref'); bump(raw, 'uniqueid'); bump(raw, 'partner_ref'); bump(raw, 'entry_id');
+  bump(raw, 'leadGenFormResponse'); bump(raw, 'user_openid');
   if (raw.fired_at) raw.fired_at = raw.fired_at;
   if (raw['data[email]']) raw['data[email]'] = uniq.slice(1) + '.' + raw['data[email]'];
   const m = raw.entry && raw.entry[0] && raw.entry[0].messaging && raw.entry[0].messaging[0];

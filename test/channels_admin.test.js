@@ -35,6 +35,8 @@ const FAKE = {
   GOOGLE_FORM_SECRET: 'FAKE-google-form-secret-zzqq',
   MAILCHIMP_WEBHOOK_SECRET: 'FAKE-mailchimp-secret-zzqq',
   OPEN_DAY_SECRET: 'FAKE-open-day-secret-zzqq',
+  LINKEDIN_CLIENT_SECRET: 'FAKE-linkedin-secret-zzqq',
+  TIKTOK_CLIENT_SECRET: 'FAKE-tiktok-secret-zzqq',
   PBX_API_TOKEN: 'FAKE-pbx-token-zzqq',
   AGENT_TOKENS: JSON.stringify({ 'FAKE-partner-token-zzqq': 'A Partner' }),
   GMAIL_SERVICE_ACCOUNT_JSON: JSON.stringify({ client_email: 'crm@fake.iam.gserviceaccount.com',
@@ -125,11 +127,12 @@ test('a channel a person types in is not reported as something to go and fix', a
   assert.match(s.summary, /Nothing to configure/);
 });
 
-test('a channel nobody knows is possible says exactly that', async () => {
-  for (const id of ['linkedin', 'tiktok']) {
+test('LinkedIn and TikTok name the secret they are waiting for, like any social page', async () => {
+  for (const [id, env] of [['linkedin', 'LINKEDIN_CLIENT_SECRET'], ['tiktok', 'TIKTOK_CLIENT_SECRET']]) {
     const s = statusOf(id, { env: {} });
     assert.equal(s.state, 'NOT CONFIGURED');
-    assert.match(s.summary, /whether this is possible/);
+    assert.match(JSON.stringify(s), new RegExp(env));
+    assert.doesNotMatch(s.summary, /whether this is possible/);
   }
 });
 
@@ -222,7 +225,7 @@ test('a check never passes on no evidence at all', async () => {
 test('a channel that cannot be checked is SKIPPED, not passed', async () => {
   // Not ok:true. A manual channel reporting a passing check would be a green
   // tick for something nobody ran.
-  for (const id of ['in_person', 'linkedin', 'tiktok']) {
+  for (const id of ['in_person']) {
     const r = runCheck(id, { env: FAKE });
     assert.equal(r.skipped, true);
     assert.equal(r.ok, null, `${id} must not report a pass`);

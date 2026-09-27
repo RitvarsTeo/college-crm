@@ -411,6 +411,15 @@ function signedRequest(def, id, secret, body) {
     const sig = 'sha256=' + crypto.createHmac('sha256', String(secret)).update(body).digest('hex');
     headers['x-hub-signature-256'] = sig;
     badHeaders['x-hub-signature-256'] = sig;          // right signature, WRONG body
+  } else if (def.auth === 'linkedin_signature') {
+    const sig = crypto.createHmac('sha256', String(secret)).update('hmacsha256=' + body).digest('hex');
+    headers['x-li-signature'] = sig;
+    badHeaders['x-li-signature'] = sig;               // right signature, WRONG body
+  } else if (def.auth === 'tiktok_signature') {
+    const t = String(Math.floor(Date.now() / 1000));
+    const sig = crypto.createHmac('sha256', String(secret)).update(t + '.' + body).digest('hex');
+    headers['tiktok-signature'] = `t=${t},s=${sig}`;
+    badHeaders['tiktok-signature'] = `t=${t},s=${sig}`; // right signature, WRONG body
   } else if (def.auth === 'shared_secret_header') {
     headers['x-crm-secret'] = String(secret);
     badHeaders['x-crm-secret'] = String(secret).split('').reverse().join('');
@@ -427,7 +436,7 @@ function signedRequest(def, id, secret, body) {
   return {
     req: { headers }, url,
     tamper: { req: { headers: badHeaders }, url: badUrl,
-      body: def.auth === 'meta_app_secret_signature' ? body + ' ' : body },
+      body: ['meta_app_secret_signature', 'linkedin_signature', 'tiktok_signature'].includes(def.auth) ? body + ' ' : body },
   };
 }
 

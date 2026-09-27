@@ -105,6 +105,36 @@ export const VERIFY = {
     return { ok, how: ok ? 'signature matched' : 'signature did not match' };
   },
 
+  // LinkedIn, from its webhook documentation (checked 27.09.2026): X-LI-Signature is the
+  // lowercase hex HMAC-SHA256 of the literal "hmacsha256=" followed by the RAW body, keyed
+  // with the app's client secret. The header carries only the digest.
+  linkedin_signature: (req, secret, rawBody) => {
+    if (!secret) return { ok: false, how: 'no LinkedIn client secret configured', missingSecret: true };
+    const header = String(req.headers['x-li-signature'] || '');
+    const expect = crypto.createHmac('sha256', String(secret)).update('hmacsha256=' + (rawBody || '')).digest('hex');
+    const a = Buffer.from(header);
+    const b = Buffer.from(expect);
+    const ok = a.length === b.length && crypto.timingSafeEqual(a, b);
+    return { ok, how: ok ? 'LinkedIn signature matched' : 'LinkedIn signature did not match' };
+  },
+
+  // TikTok, from its webhook documentation (checked 27.09.2026): Tiktok-Signature is
+  // "t=<unix seconds>,s=<hex>", s being HMAC-SHA256 of "<t>.<raw body>" with the client
+  // secret. The timestamp is checked too, so an old delivery cannot be replayed.
+  tiktok_signature: (req, secret, rawBody) => {
+    if (!secret) return { ok: false, how: 'no TikTok client secret configured', missingSecret: true };
+    const parts = Object.fromEntries(String(req.headers['tiktok-signature'] || '').split(',')
+      .map((kv) => kv.split('=').map((x) => x.trim())).filter((kv) => kv.length === 2));
+    if (!parts.t || !parts.s) return { ok: false, how: 'no TikTok signature on the request' };
+    const expect = crypto.createHmac('sha256', String(secret)).update(parts.t + '.' + (rawBody || '')).digest('hex');
+    const a = Buffer.from(parts.s);
+    const b = Buffer.from(expect);
+    if (!(a.length === b.length && crypto.timingSafeEqual(a, b))) return { ok: false, how: 'TikTok signature did not match' };
+    const age = Math.abs(Date.now() / 1000 - Number(parts.t));
+    if (!(age <= 300)) return { ok: false, how: 'TikTok signature is more than five minutes old' };
+    return { ok: true, how: 'TikTok signature matched' };
+  },
+
   // Mailchimp sends no signature. The secret lives in the URL instead, which is
   // weaker, and saying so is part of the contract.
   secret_in_url: (req, secret, _raw, url) => {
@@ -251,6 +281,19 @@ export function handshake(channel, url, env = process.env) {
     if (!match) return { ok: false, status: 403, how: 'the verify token did not match' };
     return { ok: true, status: 200, body: challenge, contentType: 'text/plain',
       how: 'Meta verify token matched, challenge echoed' };
+  }
+
+  // LinkedIn validates the address before it will send anything, and again every two
+  // hours: GET ?challengeCode=<uuid>, answered within 3 s with JSON carrying the code and
+  // challengeResponse = hex HMAC-SHA256(challengeCode) keyed with the client secret.
+  if (channel === 'linkedin') {
+    const code = url.searchParams.get('challengeCode');
+    const secret = env[def.secretEnv];
+    if (!secret) return { ok: false, status: 503, how: def.secretEnv + ' is not set', missingSecret: true };
+    if (!code) return { ok: false, status: 400, how: 'no challengeCode to answer' };
+    const challengeResponse = crypto.createHmac('sha256', String(secret)).update(code).digest('hex');
+    return { ok: true, status: 200, body: JSON.stringify({ challengeCode: code, challengeResponse }),
+      contentType: 'application/json', how: 'LinkedIn challenge answered' };
   }
 
   // Mailchimp GETs the URL when somebody adds it in the audience settings, and

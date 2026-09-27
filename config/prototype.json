@@ -1037,17 +1037,6 @@
       "blocks": [],
       "status": "Not asked yet."
     },
-    "linkedinTiktokPossible": {
-      "ask": "Does LinkedIn or TikTok let a business receive its messages through an API at all?",
-      "why": "Nobody has established this. Both are Tetiana-only today and stay manual either way, so this is PARKED on purpose - it is recorded so it is not mistaken for finished work, not so somebody chases it.",
-      "who": "Nobody. Parked by decision.",
-      "blocks": [
-        "linkedin",
-        "tiktok"
-      ],
-      "status": "Parked. Do not spend time on it.",
-      "parked": true
-    },
     "googleFormOwner": {
       "ask": "Who created the Google Form, and so owns its response sheet?",
       "why": "Only the form owner can paste the Apps Script onto the response sheet and approve the one permission box. Fifteen minutes of their time at a computer.",

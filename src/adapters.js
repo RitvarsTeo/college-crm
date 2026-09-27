@@ -61,6 +61,47 @@ export const ADAPTERS = {
     raw,
   }),
 
+  // ------------------------------------------------------------ linkedin --
+  // LinkedIn Lead Sync (checked 27.09.2026). The webhook only SAYS a lead arrived: it
+  // carries the leadGenFormResponse URN and occurredAt. The answers - name, email - are
+  // fetched afterwards from the Lead Sync API with the app's token, which is not built
+  // yet, so this records the arrival and nothing it was not told. LinkedIn documents the
+  // dedupe key as the URN plus occurredAt, because one URN is reused when the same member
+  // acts on the same form again.
+  linkedin: (raw) => {
+    const urn = need(raw.leadGenFormResponse, 'linkedin', 'leadGenFormResponse');
+    const at = need(raw.occurredAt, 'linkedin', 'occurredAt');
+    return makeInbound('linkedin', {
+      externalEventId: `${urn}_${at}`,
+      receivedAt: iso(Number(at)) || now(),
+      source: 'linkedin',
+      externalContactId: urn,
+      messageBody: 'LinkedIn lead form response - the answers are fetched from LinkedIn, not sent in the notification',
+      extracted: {},
+      raw,
+    });
+  },
+
+  // -------------------------------------------------------------- tiktok --
+  // TikTok webhooks (checked 27.09.2026): client_key, event, create_time (seconds),
+  // user_openid and content, a JSON STRING. TikTok documents NO unique event id, so the
+  // dedupe key is built from the four fields that together identify one delivery.
+  tiktok: (raw) => {
+    const event = need(raw.event, 'tiktok', 'event');
+    const created = need(raw.create_time, 'tiktok', 'create_time');
+    let content = null;
+    try { content = typeof raw.content === 'string' ? JSON.parse(raw.content) : (raw.content || null); } catch { content = null; }
+    return makeInbound('tiktok', {
+      externalEventId: [raw.client_key || '', event, created, raw.user_openid || ''].join(':'),
+      receivedAt: iso(Number(created) * 1000) || now(),
+      source: 'tiktok',
+      externalPersonId: raw.user_openid || null,
+      messageBody: `TikTok ${event}`,
+      extracted: {},
+      raw: { ...raw, content },
+    });
+  },
+
   // --------------------------------------------------------- google form --
   // The Apps Script contract. The script posts exactly this; the field names on
   // the form are Latvian because the form is, and that is provider data.
@@ -188,8 +229,7 @@ export const ADAPTERS = {
   // that have no confirmed mechanism. They normalise identically, so if a
   // mechanism ever appears nothing downstream changes.
   in_person: (raw) => typedIn('in_person', raw),
-  linkedin: (raw) => typedIn('linkedin', raw),
-  tiktok: (raw) => typedIn('tiktok', raw),
+  // linkedin and tiktok are webhook adapters above since 27.09.2026, not typed-in ones.
 };
 
 const QUEUE_INTENT = {

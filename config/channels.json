@@ -558,79 +558,91 @@
     },
     "linkedin": {
       "label": "LinkedIn",
-      "mechanism": "UNKNOWN. No inbound message API is known to be available to us.",
-      "direction": "manual",
-      "auth": "unknown",
-      "secretEnv": null,
-      "webhookPath": null,
-      "externalIdSource": "entered by the person copying it in",
-      "timestampSource": "entered by the person copying it in",
-      "dedupKey": "channel + generated id",
+      "mechanism": "LinkedIn sends a webhook when a Lead Gen Form is submitted (Lead Sync). The notification carries the leadGenFormResponse URN and occurredAt; the answers are fetched from the Lead Sync API afterwards.",
+      "direction": "inbound_webhook",
+      "auth": "linkedin_signature",
+      "secretEnv": "LINKEDIN_CLIENT_SECRET",
+      "webhookPath": "/api/inbound/linkedin",
+      "externalIdSource": "leadGenFormResponse URN + occurredAt, the key LinkedIn documents",
+      "timestampSource": "occurredAt, epoch milliseconds",
+      "dedupKey": "channel + leadGenFormResponse + occurredAt",
       "rateLimit": "Not applicable while manual.",
-      "readiness": "capability_unconfirmed",
-      "externalBlocker": "EXTERNAL CONFIRMATION REQUIRED: whether LinkedIn offers any inbound messaging integration for a page like ours at all. Nothing has been confirmed. Do not promise it.",
+      "readiness": "waiting_for_external_access",
+      "externalBlocker": "A LinkedIn developer app with an APPROVED webhooks use case (Lead Sync), connected to the Novikontas page. Only an approved app gets the Webhooks tab. Same kind of step as Meta App Review.",
       "weControl": [
-        "the normalised shape, so that IF a mechanism appears it maps in without redesign"
+        "the endpoint",
+        "the signature check",
+        "the dedupe key"
       ],
       "providerControls": [
-        "everything else"
+        "app approval",
+        "which events are sent",
+        "retries"
       ],
       "credentialsNeeded": [
-        "unknown"
+        "LINKEDIN_CLIENT_SECRET, the app client secret from the LinkedIn developer portal"
       ],
-      "externalActionRequired": "Somebody has to establish what, if anything, LinkedIn permits.",
-      "howWeTest": "Simulate from DEV CONTROL through the same normalised path.",
-      "howWeGoLive": "Not possible today. Manual entry only.",
-      "howWeDisable": "Not applicable.",
-      "operationalNote": "Access today: Tetiana only. A LinkedIn contact often carries no email and no phone, so the handover gap to Admissions is real and the screen says so.",
-      "blockerKind": "question",
+      "externalActionRequired": "Create the LinkedIn developer app, get the webhooks use case approved, register https://crm-novikontas.vercel.app/api/inbound/linkedin (LinkedIn validates it with a challenge), then subscribe the lead forms.",
+      "howWeTest": "Simulate from DEV CONTROL, or post a signed fixture to the endpoint with the test secret.",
+      "howWeGoLive": "Set LINKEDIN_CLIENT_SECRET in Vercel, register the address with LinkedIn, receive one real event, check it lands in the Inbox, switch mode to live.",
+      "howWeDisable": "Set the channel mode to off. The endpoint then refuses and says so.",
+      "operationalNote": "A social page with the same rules as the Meta pages (Ritvars, 27.09.2026): an automated integration, not a person re-typing what arrived. The Lead Sync API fetch that turns a notification into a name and email is NOT built yet.",
+      "blockerKind": "work",
       "connectSteps": [
-        "Verify whether an API integration is possible at all",
-        "If it is supported, connect it",
-        "If it is not, Tetiana remains the manual bridge"
+        "Create the developer app",
+        "Get the webhook access approved",
+        "Set LINKEDIN_CLIENT_SECRET",
+        "Register the endpoint",
+        "Test a real event"
       ],
-      "ownerPerson": null,
-      "ownerAction": "No integration. Tetiana enters the person by hand",
-      "reliability": "Not applicable until the capability is known.",
-      "reconciliation": "Not applicable."
+      "ownerPerson": "Tetiana",
+      "ownerAction": "LinkedIn developer app, then approval",
+      "reliability": "X-LI-Signature (HMAC-SHA256 of \"hmacsha256=\" + raw body, client secret), constant-time compare; the challenge handshake is answered. A repeat URN + occurredAt is dropped.",
+      "reconciliation": "Possible and not built: the Lead Sync API can list form responses."
     },
     "tiktok": {
       "label": "TikTok",
-      "mechanism": "UNKNOWN. No inbound message API is known to be available to us.",
-      "direction": "manual",
-      "auth": "unknown",
-      "secretEnv": null,
-      "webhookPath": null,
-      "externalIdSource": "entered by the person copying it in",
-      "timestampSource": "entered by the person copying it in",
-      "dedupKey": "channel + generated id",
+      "mechanism": "TikTok sends a webhook to our callback URL for the events the app subscribes to. Every event carries client_key, event, create_time, user_openid and content (a JSON string).",
+      "direction": "inbound_webhook",
+      "auth": "tiktok_signature",
+      "secretEnv": "TIKTOK_CLIENT_SECRET",
+      "webhookPath": "/api/inbound/tiktok",
+      "externalIdSource": "client_key + event + create_time + user_openid: TikTok documents no unique event id",
+      "timestampSource": "create_time, epoch seconds",
+      "dedupKey": "channel + client_key + event + create_time + user_openid",
       "rateLimit": "Not applicable while manual.",
-      "readiness": "capability_unconfirmed",
-      "externalBlocker": "EXTERNAL CONFIRMATION REQUIRED: whether TikTok offers any inbound messaging integration. Nothing has been confirmed. Do not invent one.",
+      "readiness": "waiting_for_external_access",
+      "externalBlocker": "A TikTok developer app for the Novikontas account with webhook access to the events we need, approved by TikTok. Same kind of step as Meta App Review.",
       "weControl": [
-        "the normalised shape only"
+        "the endpoint",
+        "the signature check",
+        "the dedupe key"
       ],
       "providerControls": [
-        "everything else"
+        "app approval",
+        "which events are sent",
+        "retries"
       ],
       "credentialsNeeded": [
-        "unknown"
+        "TIKTOK_CLIENT_SECRET, the app client secret from the TikTok developer portal"
       ],
-      "externalActionRequired": "Somebody has to establish what, if anything, TikTok permits.",
-      "howWeTest": "Simulate from DEV CONTROL through the same normalised path.",
-      "howWeGoLive": "Not possible today. Manual entry only.",
-      "howWeDisable": "Not applicable.",
-      "operationalNote": "Access today: Tetiana only. Same handover gap as LinkedIn.",
-      "blockerKind": "question",
+      "externalActionRequired": "Create the TikTok developer app, get the events approved, set the callback URL to https://crm-novikontas.vercel.app/api/inbound/tiktok.",
+      "howWeTest": "Simulate from DEV CONTROL, or post a signed fixture to the endpoint with the test secret.",
+      "howWeGoLive": "Set TIKTOK_CLIENT_SECRET in Vercel, register the address with TikTok, receive one real event, check it lands in the Inbox, switch mode to live.",
+      "howWeDisable": "Set the channel mode to off. The endpoint then refuses and says so.",
+      "operationalNote": "A social page with the same rules as the Meta pages (Ritvars, 27.09.2026): an automated integration, not a person re-typing what arrived. Which TikTok product carries messages or leads for this account is still to be confirmed with TikTok.",
+      "blockerKind": "work",
       "connectSteps": [
-        "Verify whether an API integration is possible at all",
-        "If it is supported, connect it",
-        "If it is not, Tetiana remains the manual bridge"
+        "Create the developer app",
+        "Get the webhook access approved",
+        "Set TIKTOK_CLIENT_SECRET",
+        "Register the endpoint",
+        "Test a real event"
       ],
-      "ownerPerson": null,
-      "ownerAction": "No integration. Tetiana enters the person by hand",
-      "reliability": "Not applicable until the capability is known.",
-      "reconciliation": "Not applicable."
+      "ownerPerson": "Tetiana",
+      "ownerAction": "TikTok developer app, then approval",
+      "reliability": "Tiktok-Signature t=,s= (HMAC-SHA256 of \"t.body\", client secret), constant-time compare, rejected when older than five minutes. A repeat of the four-field key is dropped.",
+      "reconciliation": "None built."
     }
   },
   "_meta": "Facebook, Instagram, Messenger and WhatsApp are reached through ONE Meta Business Suite connection. That is an integration detail. Each remains a SEPARATE channel in the CRM for reporting, filtering, source and history: there is deliberately no combined \"Meta\" number, because it would hide where people actually came from. WhatsApp being inside the same shared inbox is NOT VERIFIED and must not be claimed.",

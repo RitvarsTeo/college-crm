@@ -189,7 +189,17 @@ export function buildPayload(channel, scenario, { sameId = false, existing = nul
       base.notes = body;
       return base;
 
-    default: // in_person, linkedin, tiktok
+    case 'linkedin':   // the notification carries no name, email or text
+      bump(base, 'leadGenFormResponse');
+      base.occurredAt = Date.parse(when);
+      return base;
+
+    case 'tiktok':
+      bump(base, 'user_openid');
+      base.create_time = Math.floor(Date.parse(when) / 1000);
+      return base;
+
+    default: // in_person
       bump(base, 'entry_id');
       base.at = when;
       base.what_they_said = body;
