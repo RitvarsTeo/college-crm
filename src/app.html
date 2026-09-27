@@ -748,8 +748,8 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
      The main UI since 28.09.2026 (Ritvars: "Concept C is the main now"). The classic
      UI stays one click away at ?ui=classic. Everything here is scoped to html.ui-c, so
      the classic UI is byte-for-byte what it was. The palette OVERRIDES the app's own
-     tokens, so the screens C still borrows from the classic UI (People, Journey, New
-     Leads, the person page) take the quieter colours too. Every text tint passes 4.5:1
+     tokens, so the screens C still borrows from the classic UI (the person page, the
+     report, Channels, Feedback) take the quieter colours too. Every text tint passes 4.5:1
      on its surface - which also retires the --t4 contrast failure in C. */
   html.ui-c{--paper:#f6f7f6;--surface:#ffffff;--surface-2:#f1f3f2;--shell:#f1f3f2;--field:#ffffff;--menu:#ffffff;--ink:#1b2328;
     --t2:#48535d;--t3:#5c6670;--t4:#66707a;--rule:#e3e7e8;--rule2:#eef1f1;--control-line:#c9d0d3;
@@ -874,6 +874,70 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-filter{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--c-accent-bg);border:1px solid var(--rule);border-radius:9px;padding:8px 12px;margin:0 0 14px;font-size:13.5px}
   @media (max-width:1100px){ html.ui-c .kthree{grid-template-columns:minmax(0,1fr) minmax(0,1fr)} }
   @media (max-width:760px){ html.ui-c .kstrip{grid-template-columns:1fr 1fr} html.ui-c .kstrip > div:nth-child(3){border-left:0;padding-left:0} html.ui-c .kthree{grid-template-columns:1fr} }
+
+  /* New Leads, People and Journey in C. Same hairline sheets as Next Steps. */
+  html.ui-c .c-lead.is-open{background:var(--c-sel)}
+  html.ui-c .c-open{padding:2px 16px 16px;background:var(--c-sel)}
+  html.ui-c .c-open select,html.ui-c .c-open textarea{width:100%;max-width:520px}
+  html.ui-c .c-said{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:10px 12px;margin:6px 0 4px;white-space:pre-wrap;overflow-wrap:anywhere;max-width:70ch;font-size:13.5px}
+  html.ui-c .c-q{display:block;font-size:12.5px;font-weight:600;color:var(--t2);margin:12px 0 4px}
+  html.ui-c .c-hint{font-size:12px;color:var(--t3);margin-top:4px}
+  html.ui-c .c-tick{display:flex;gap:8px;align-items:center;font-size:13px;margin:3px 0;color:var(--ink)}
+  html.ui-c .c-tick input{width:auto}
+  html.ui-c .c-row-acts{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
+  html.ui-c .c-late{color:var(--c-bad);font-weight:600}
+  html.ui-c .c-search{width:260px;max-width:100%}
+  html.ui-c .c-chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+  html.ui-c .c-chip{border:1px solid var(--rule);background:var(--surface);color:var(--t2);border-radius:99px;padding:5px 12px;font:inherit;font-size:12.5px;font-weight:500;cursor:pointer;width:auto}
+  html.ui-c .c-chip[aria-pressed="true"]{background:var(--c-accent-bg);border-color:var(--pet);color:var(--ink);font-weight:600}
+  html.ui-c select.c-chip{padding:5px 10px}
+  html.ui-c .c-explain{font-size:13px;color:var(--t2);margin:6px 0 12px}
+  html.ui-c .c-pt{width:100%;border-collapse:collapse;font-size:13.5px}
+  html.ui-c .c-pt th{text-align:left;font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--t3);padding:10px 14px;border-bottom:1px solid var(--rule2)}
+  html.ui-c .c-pt td{padding:10px 14px;border-top:1px solid var(--rule2);vertical-align:top}
+  html.ui-c .c-pt tr.row{cursor:pointer}
+  html.ui-c .c-pt tr.row:hover{background:var(--c-sunk)}
+  html.ui-c .c-pt tr.row:focus-visible{outline:2px solid var(--pet);outline-offset:-2px}
+  html.ui-c .c-pt tr.c-sel,html.ui-c .c-pt tr.c-sel:hover{background:var(--c-sel)}
+  html.ui-c .c-name b{display:block;font-weight:600;overflow-wrap:anywhere}
+  html.ui-c .c-name small{display:block;font-size:12.5px;color:var(--t3);overflow-wrap:anywhere}
+  html.ui-c .c-pt tr.c-edit td{background:var(--c-sel);border-top:0;padding:4px 14px 16px}
+  html.ui-c .c-form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 16px;max-width:900px}
+  html.ui-c .c-form input,html.ui-c .c-form select,html.ui-c .c-form textarea{width:100%}
+  html.ui-c .c-form .c-wide{grid-column:1/-1}
+  html.ui-c .c-steprow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  html.ui-c .c-steprow > span{font-weight:600;color:var(--ink)}
+  html.ui-c .c-steprow select{flex:1 1 240px;width:auto}
+  html.ui-c .c-steprow input[type=date]{width:auto}
+  html.ui-c .c-journey{display:grid;grid-template-columns:minmax(260px,320px) minmax(0,1fr);gap:18px;align-items:start}
+  html.ui-c .c-card{background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:18px 18px 16px;position:sticky;top:12px}
+  html.ui-c .c-card h2{margin:0;font-family:inherit;font-size:19px;font-weight:650;letter-spacing:-.01em;overflow-wrap:anywhere}
+  html.ui-c .c-cardsub{font-size:13px;color:var(--t3);margin:3px 0 12px}
+  html.ui-c .c-next{background:var(--c-accent-bg);border-radius:9px;padding:10px 12px;font-size:13.5px;margin-bottom:12px}
+  html.ui-c .c-next b{display:block;font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--t3);margin-bottom:3px}
+  html.ui-c .c-next.none{background:var(--c-sunk);color:var(--c-warn)}
+  html.ui-c .c-next .c-row-acts{margin-top:8px}
+  html.ui-c .c-card dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:5px 12px;margin:0 0 10px;font-size:13px}
+  html.ui-c .c-card dt{color:var(--t3)} html.ui-c .c-card dd{margin:0;overflow-wrap:anywhere}
+  html.ui-c .c-notes{font-size:12.5px;color:var(--t2);border-top:1px solid var(--rule2);padding-top:9px;white-space:pre-wrap;overflow-wrap:anywhere}
+  html.ui-c .c-cols{display:grid;gap:10px;overflow-x:auto;padding-bottom:4px}
+  html.ui-c .c-col{background:var(--c-sunk);border-radius:10px;padding:8px;min-width:0}
+  html.ui-c .c-col h3{margin:2px 4px 8px;font-family:inherit;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--t3)}
+  html.ui-c .c-col h3 b{color:var(--ink);letter-spacing:0;margin-left:4px}
+  html.ui-c .c-drop{display:flex;flex-direction:column;gap:6px;min-height:60px;border-radius:8px}
+  html.ui-c .c-drop.over{outline:2px dashed var(--pet);outline-offset:2px}
+  html.ui-c .c-jp{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:8px 10px;cursor:grab;font-size:13px}
+  html.ui-c .c-jp b{display:block;font-weight:600;overflow-wrap:anywhere}
+  html.ui-c .c-jp small{display:block;color:var(--t3);font-size:12px;margin-top:2px}
+  html.ui-c .c-jp small.none{color:var(--c-warn)}
+  html.ui-c .c-jp:hover{border-color:var(--control-line)}
+  html.ui-c .c-jp.c-sel{border-color:var(--pet);box-shadow:inset 3px 0 0 var(--pet)}
+  html.ui-c .c-jp:focus-visible{outline:2px solid var(--pet);outline-offset:1px}
+  html.ui-c .c-folded{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:12px;padding:10px 14px;border:1px solid var(--rule);border-radius:10px;background:var(--surface);font-size:13.5px}
+  @media (max-width:900px){ html.ui-c .c-journey{grid-template-columns:1fr} html.ui-c .c-card{position:static} html.ui-c .c-form{grid-template-columns:1fr 1fr} }
+  html.ui-c .c-sheet.c-scroll{overflow-x:auto}
+  @media (max-width:760px){ html.ui-c .c-form{grid-template-columns:1fr} html.ui-c .c-head .act{margin-left:0;width:100%;flex-wrap:wrap} html.ui-c .c-search{flex:1 1 160px;width:auto}
+    html.ui-c .c-pt th:nth-child(2),html.ui-c .c-pt td:nth-child(2),html.ui-c .c-pt th:nth-child(5),html.ui-c .c-pt td:nth-child(5){display:none} html.ui-c .c-pt th,html.ui-c .c-pt td{padding:9px 10px} }
 </style>
 </head>
 <body>
@@ -927,9 +991,8 @@ const $ = (s, r = document) => r.querySelector(s);
 // The main UI since 28.09.2026 (Ritvars: "build Concept C in the app as main").
 // ?ui=classic brings back the previous UI and ?ui=c returns here; the choice is
 // remembered per browser. Nothing on the server changes: C arranges the same screens,
-// the same data and the same rules differently. Where C has not redrawn a screen yet
-// (New Leads, People, Journey, the person page) it shows the classic one inside its
-// own navigation.
+// the same data and the same rules differently. The person page, the full report,
+// Channels and Feedback are still the classic screens, shown inside C's navigation.
 const UI = (() => {
   let q = null;
   try { q = new URLSearchParams(location.search).get('ui'); } catch {}
@@ -1002,7 +1065,7 @@ const cDueNow = (tasks) => tasks.filter((t) => cWhenClass(t.due_at) === 'over' |
 // of the configured channels (the old sheet has "school", "campaign") is said to be so.
 const cChannel = (c) => (!c || c === 'unknown' ? ['Not recorded', 'no source was kept'] : (CFG.channels && CFG.channels[c]) ? [channelLabel(c), ''] : [c, 'not a channel']);
 
-// The router's C half. Borrowed screens are the classic ones, inside C's navigation.
+// The router's C half. The four borrowed screens are the classic ones.
 async function routeC(page, arg) {
   const place = cPlace(page);
   if (page === 'person') return viewPerson(arg);
@@ -1011,12 +1074,12 @@ async function routeC(page, arg) {
   if (page === 'reports') return viewReports();
   if (place === 'admissions') {
     const i = await api('/api/intake');
-    return ((i.counts || {}).new || 0) > 0 ? viewInbox() : viewNextC();
+    return ((i.counts || {}).new || 0) > 0 ? viewLeadsC() : viewNextC();
   }
-  if (place === 'leads') return viewInbox();
+  if (place === 'leads') return viewLeadsC();
   if (place === 'next') return viewNextC();
-  if (place === 'people') return viewPeople();
-  if (place === 'journey') return viewAdmissions();
+  if (place === 'people') return viewPeopleC();
+  if (place === 'journey') return viewJourneyC();
   if (place === 'outcomes') return viewOutcomesC();
   if (place === 'settings') return viewSettingsC();
   return viewHomeC();                      // Home, and anything unknown
@@ -1192,6 +1255,213 @@ async function viewSettingsC() {
     <p class="c-ev">The journey stages and the next-step list are still a working version, to be agreed with Admissions. <span class="c-dec">to agree</span></p>`;
 }
 
+// ------------------------------------------------------------------ NEW LEADS
+// Who has just arrived and needs understanding. One line per arrival; clicking it
+// opens the SAME two questions the classic dialog asks, in place, with the same field
+// ids - so the classic doQualify(), its duplicate check ("This is them" / "a different
+// person") and its rules run unchanged. Nothing about qualifying changed.
+let C_LOPEN = null;
+async function viewLeadsC() {
+  const d = await api('/api/intake?state=new');
+  const rows = d.rows || [];
+  if (C_LOPEN && !rows.some((r) => r.id === C_LOPEN)) C_LOPEN = null;
+  const L = LAST_RESULT; LAST_RESULT = null;
+  const receipt = !L ? '' : L.archived
+    ? `<div class="c-filter">Marked not relevant: <b>${esc(L.who)}</b>${L.reason ? ' · ' + esc(L.reason) : ''}. Nothing is deleted.</div>`
+    : `<div class="c-filter"><b>${esc(L.name)}</b> is now in Admissions${L.status ? ' at ' + esc(L.status) : ''}${L.programme ? ' · ' + esc(L.programme) : ''}.${L.next ? ` Next: ${esc(L.next)}${L.dueAt ? ' by ' + fmtDate(L.dueAt) : ''}.` : ''} <a href="#/person/${esc(L.id)}">Open</a></div>`;
+  const val = (r, f) => { const x = (r.fields || []).find((y) => y.field === f); return x ? x.value : ''; };
+  const panel = (r) => {
+    const extracted = (r.fields || []).filter((f) => f.provenance === 'extracted');
+    const read = (extracted.find((f) => f.field === 'interest') || {}).value || '';
+    const others = extracted.filter((f) => f.field !== 'interest');
+    const sugg = suggestNextAction(r, read);
+    return `<div class="c-open" onclick="event.stopPropagation()">
+      ${r.body ? `<div class="c-said">${esc(r.body)}</div>` : ''}
+      <label class="c-q" for="qInterest">What do they want to study?</label>
+      <select id="qInterest"><option value="">they have not said yet</option>${(CFG.programmes || []).map((pr) => `<option ${pr === read ? 'selected' : ''}>${esc(pr)}</option>`).join('')}</select>
+      <div class="c-hint">${read ? 'Read from the message. Leave it if it is right, change it if it is not.' : 'The message did not say. If you already know, say so here.'}</div>
+      ${others.length ? `<div class="c-q">Tick what else is right</div>${others.map((f) => `<label class="c-tick"><input type="checkbox" class="qConfirm" value="${esc(f.field)}" checked> <b>${esc(f.field)}</b> ${esc(f.value)}</label>`).join('')}` : ''}
+      <label class="c-q" for="qNext">What is the next step?</label>
+      <select id="qNext">${nextActionOptionsWithSuggestion(sugg)}</select>
+      <div class="c-hint">${sugg.label ? `Suggested because ${esc(sugg.why)}.` : 'Required: nobody is in Admissions without a next step.'}</div>
+      <label class="c-q" for="qNote">Note (optional)</label>
+      <textarea id="qNote" rows="2" placeholder="Anything you know that the message does not say"></textarea>
+      <div id="qErr"></div>
+      <div class="c-row-acts"><button class="btn" onclick="doQualify(${Number(r.id)})">Add to Admissions</button><button class="btn ghost" onclick="openArchive(${Number(r.id)})">Not relevant</button><button class="btn ghost" onclick="C_LOPEN=null;viewLeadsC()">Cancel</button></div>
+    </div>`;
+  };
+  $('#view').innerHTML = `<p class="c-crumb">Admissions</p>
+    <div class="c-head"><div><h1>New Leads</h1><p>Who has just arrived and needs understanding. Everything that arrives comes here first; obvious junk is kept aside, never deleted.</p></div></div>
+    ${receipt}
+    <div class="c-sheet">${rows.length ? rows.map((r) => `<div class="c-line row c-lead${C_LOPEN === r.id ? ' is-open' : ''}" tabindex="0" onclick="C_LOPEN=${C_LOPEN === r.id ? 'null' : Number(r.id)};viewLeadsC()">
+        <div class="c-who"><b>${esc(r.contact_name || r.contact_handle || 'Unknown')}</b><small>${esc(channelLabel(r.channel))} · ${fmtDateTime(r.received_at)}${r.aged ? ' · <span class="c-late">late</span>' : ''}</small></div>
+        <div class="c-what">${esc(r.body || val(r, 'question') || '')}</div>
+        <div class="c-when">${esc(val(r, 'interest') || '')}</div><div></div></div>
+        ${C_LOPEN === r.id ? panel(r) : ''}`).join('')
+      : '<div class="c-empty">No new leads right now.</div>'}</div>`;
+  if (C_LOPEN) { const s = $('#qInterest'); if (s) s.focus(); }
+  if (L) cNavCounts();                    // a lead was just saved or set aside: the menu count moves too
+}
+
+// --------------------------------------------------------------------- PEOPLE
+// The database you work in. Click a row and it opens in place: contact details,
+// programme, stage, next step and notes, without going to the person page. Every save
+// goes through the existing routes, so their rules hold: no empty name, a reason to
+// stop working with somebody, and a next step can be moved or done but not renamed.
+let C_PF = new Set(); let C_PQ = ''; let C_PPROG = ''; let C_PEDIT = null; let C_PMSG = ''; let C_PDATA = null; let C_PSCROLL = false;
+// Stage names come from config (they are still a working version): the label a person
+// reads, and the stage that plays the "closed" role, which needs a reason.
+const cStage = (id) => ((CFG.stages || []).find((s) => s.id === id) || {}).label || id || '';
+const cClosedStage = () => (CFG.stageRoles || {}).closed;
+// Journey's Edit opens the same person in People, unfiltered, scrolled to the row.
+function cEditFromJourney(id) { C_PF = new Set(); C_PQ = ''; C_PPROG = ''; C_PEDIT = id; C_PMSG = ''; C_PSCROLL = true; location.hash = '#/people'; }
+async function viewPeopleC() {
+  const [people, tasks] = await Promise.all([cPeopleRows(), api('/api/tasks?scope=open')]);
+  const taskOf = new Map(); tasks.forEach((t) => { if (!taskOf.has(t.person_id)) taskOf.set(t.person_id, t); });
+  C_PDATA = { people, taskOf };
+  cDrawPeople();
+}
+function cDrawPeople() {
+  const { people, taskOf } = C_PDATA;
+  const known = new Set(CFG.programmes || []);
+  const chips = [['open', 'Open'], ['none', 'No next step'], ['over', 'Overdue'], ['nocontact', 'No contact details'], ['odd', 'Programme not in the list']];
+  const words = { open: 'open', none: 'with no next step', over: 'with an overdue step', nocontact: 'with no email or phone', odd: 'whose programme is not one of the list' };
+  let ps = people;
+  if (C_PF.has('open')) ps = ps.filter((p) => !C_TERMINAL.includes(p.status));
+  if (C_PF.has('none')) ps = ps.filter((p) => !C_TERMINAL.includes(p.status) && !taskOf.has(p.id));
+  if (C_PF.has('over')) ps = ps.filter((p) => taskOf.has(p.id) && cWhenClass(taskOf.get(p.id).due_at) === 'over');
+  if (C_PF.has('nocontact')) ps = ps.filter((p) => !p.email && !p.phone);
+  if (C_PF.has('odd')) ps = ps.filter((p) => p.programme && !known.has(p.programme));
+  if (C_PPROG) ps = ps.filter((p) => p.programme === C_PPROG);
+  if (C_PQ) { const q = C_PQ.toLowerCase(); ps = ps.filter((p) => [p.name, p.email, p.phone].some((v) => String(v || '').toLowerCase().includes(q))); }
+  const parts = [...C_PF].map((f) => words[f]); if (C_PPROG) parts.push('interested in ' + C_PPROG); if (C_PQ) parts.push(`matching "${C_PQ}"`);
+  const explain = parts.length ? `${ps.length} of ${people.length} people - ${parts.join(', ')}.` : `All ${people.length} people. Each filter narrows the list, and this sentence says exactly what is left.`;
+  const contact = (p) => [p.email, p.phone].filter(Boolean).join(' · ');
+  const row = (p) => { const t = taskOf.get(p.id); const open = !C_TERMINAL.includes(p.status);
+    return `<tr class="row${C_PEDIT === p.id ? ' c-sel' : ''}" tabindex="0" onclick="C_PEDIT=${C_PEDIT === p.id ? 'null' : `'${esc(p.id)}'`};C_PMSG='';cDrawPeople()">
+      <td class="c-name"><b>${esc(p.name)}</b><small class="${contact(p) ? '' : 'c-gap'}">${contact(p) ? esc(contact(p)) : 'no contact details'}</small></td>
+      <td>${esc(p.programme || '-')}${p.programme && !known.has(p.programme) ? ' <span class="c-dec">not in list</span>' : ''}</td>
+      <td>${esc(cStage(p.status))}</td>
+      <td class="${t ? '' : 'c-gap'}">${t ? esc(t.label) : (open ? 'nothing planned' : '-')}</td>
+      <td class="c-when ${t ? cWhenClass(t.due_at) : ''}">${t ? cWhenText(t.due_at) : ''}</td></tr>
+      ${C_PEDIT === p.id ? `<tr class="c-edit"><td colspan="5">${cEditForm(p, t)}</td></tr>` : ''}`; };
+  $('#view').innerHTML = `<div class="c-head"><div><h1>People</h1><p>Everyone, as a database you can work in. Click a row to edit it right here.</p></div>
+      <div class="act"><input class="c-search" id="cPQ" placeholder="Search name, email or phone" value="${esc(C_PQ)}" aria-label="Search people"><button class="btn" onclick="openAdd()">Add person</button></div></div>
+    <div class="c-chips">${chips.map(([k, l]) => `<button class="c-chip" aria-pressed="${C_PF.has(k)}" onclick="C_PF.has('${k}')?C_PF.delete('${k}'):C_PF.add('${k}');cDrawPeople()">${l}</button>`).join('')}
+      <select class="c-chip" aria-label="Programme" onchange="C_PPROG=this.value;cDrawPeople()"><option value="">Programme: any</option>${(CFG.programmes || []).map((pr) => `<option ${pr === C_PPROG ? 'selected' : ''}>${esc(pr)}</option>`).join('')}</select></div>
+    <p class="c-explain">${explain}</p>
+    ${C_PMSG ? `<div class="c-filter">${esc(C_PMSG)}</div>` : ''}
+    <div class="c-sheet c-scroll"><table class="c-pt"><thead><tr><th>Name</th><th>Programme</th><th>Stage</th><th>Next step</th><th>When</th></tr></thead>
+      <tbody>${ps.map(row).join('') || '<tr><td colspan="5" class="c-empty">Nobody matches. Remove a filter to widen the list.</td></tr>'}</tbody></table></div>`;
+  if (C_PSCROLL) { C_PSCROLL = false; const r = document.querySelector('tr.c-sel'); if (r) r.scrollIntoView({ block: 'center' }); }
+  const s = $('#cPQ'); if (s) s.addEventListener('input', () => { const pos = s.selectionStart; C_PQ = s.value; cDrawPeople(); const n = $('#cPQ'); n.focus(); n.setSelectionRange(pos, pos); });
+}
+function cEditForm(p, t) {
+  const progs = ['', ...(CFG.programmes || [])]; if (p.programme && !progs.includes(p.programme)) progs.push(p.programme);
+  const stages = CFG.stages || [];
+  const closed = cClosedStage();
+  const open = !C_TERMINAL.includes(p.status);
+  return `<div class="c-form" onclick="event.stopPropagation()">
+    <div><label for="pe-name">Name</label><input id="pe-name" value="${esc(p.name)}"></div>
+    <div><label for="pe-email">Email</label><input id="pe-email" value="${esc(p.email || '')}" placeholder="not recorded"></div>
+    <div><label for="pe-phone">Phone</label><input id="pe-phone" value="${esc(p.phone || '')}" placeholder="not recorded"></div>
+    <div><label for="pe-programme">Programme</label><select id="pe-programme">${progs.map((x) => `<option value="${esc(x)}" ${x === (p.programme || '') ? 'selected' : ''}>${esc(x || '(not said)')}</option>`).join('')}</select></div>
+    <div><label for="pe-status">Stage</label><select id="pe-status" onchange="document.querySelector('#pe-closed').hidden = this.value !== ${esc(JSON.stringify(closed))}">${stages.map((s) => `<option value="${esc(s.id)}" ${s.id === p.status ? 'selected' : ''}>${esc(s.label || s.id)}</option>`).join('')}</select></div>
+    <div id="pe-closed" hidden><label for="pe-reason">Why are we stopping?</label><select id="pe-reason">${(CFG.closedReasons || []).map((r) => `<option>${esc(r)}</option>`).join('')}</select><input id="pe-rnote" placeholder="Explanation (needed for Other)" style="margin-top:6px"></div>
+    <div class="c-wide c-step">${t
+      ? `<label for="pe-due">Next step</label><div class="c-steprow"><span>${esc(t.label)}</span><input id="pe-due" type="date" value="${esc(cDay(t.due_at))}" aria-label="Due date"><button class="btn sm ghost" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))})">Done…</button></div><div class="c-hint">Change the date here, or mark it done - done asks for the next step.</div>`
+      : open ? `<label for="pe-next">Next step</label><div class="c-steprow"><select id="pe-next"><option value="">nothing planned</option>${nextActionOptions()}</select><input id="pe-ndue" type="date" value="${cTodayIso()}" aria-label="Due date"></div>` : '<label>Next step</label><div class="c-hint">Finished journeys have no next step.</div>'}</div>
+    <div class="c-wide"><label for="pe-notes">Notes</label><textarea id="pe-notes" rows="4" oninput="this.nextElementSibling.textContent=this.value.length+' characters'">${esc(p.notes || '')}</textarea><div class="c-hint">${(p.notes || '').length} characters</div></div>
+    <div id="pe-err" class="c-wide"></div>
+    <div class="c-wide c-row-acts"><button class="btn" onclick="cSavePerson('${esc(p.id)}')">Save</button><button class="btn ghost" onclick="C_PEDIT=null;cDrawPeople()">Cancel</button><a class="btn ghost" href="#/person/${esc(p.id)}" style="margin-left:auto">Open person details →</a></div>
+  </div>`;
+}
+async function cSavePerson(id) {
+  const { people, taskOf } = C_PDATA; const p = people.find((x) => x.id === id); const t = taskOf.get(id);
+  const v = (sel) => { const el = document.querySelector(sel); return el ? el.value : null; };
+  const err = (m) => { const e = $('#pe-err'); if (e) e.innerHTML = `<div class="err">${esc(m)}</div>`; };
+  // The two refusals the server makes, asked BEFORE anything is saved, so a refused
+  // save never leaves half of the changes written. The server still checks both.
+  if (!String(v('#pe-name') || '').trim()) return err('A person needs a name.');
+  if (v('#pe-status') === cClosedStage() && p.status !== cClosedStage() && (CFG.closedReasonNeedsNote || []).includes(v('#pe-reason')) && !String(v('#pe-rnote') || '').trim()) return err(`"${v('#pe-reason')}" needs an explanation.`);
+  try {
+    const patch = {};
+    for (const [f, sel] of [['name', '#pe-name'], ['email', '#pe-email'], ['phone', '#pe-phone'], ['programme', '#pe-programme'], ['notes', '#pe-notes']]) {
+      const now = v(sel); if (now !== null && now !== (p[f] || '')) patch[f] = now;
+    }
+    if (Object.keys(patch).length) await post(`/api/people/${id}/edit`, patch);
+    const st = v('#pe-status');
+    if (st && st !== p.status) await post(`/api/people/${id}/status`, st === cClosedStage() ? { status: st, reason: v('#pe-reason'), note: v('#pe-rnote') } : { status: st });
+    if (t) { const due = v('#pe-due'); if (due && due !== cDay(t.due_at)) await post(`/api/tasks/${Number(t.id)}/reschedule`, { due }); }
+    else { const label = v('#pe-next'); if (label) await post(`/api/people/${id}/task`, { label, due: v('#pe-ndue') }); }
+    C_PEDIT = null; C_PMSG = `Saved ${p.name}.`;
+    await viewPeopleC(); cNavCounts();
+  } catch (e) { err(e.message); }
+}
+
+// -------------------------------------------------------------------- JOURNEY
+// Where each open person is. The selected person is a large card on the left; the
+// open stages are quiet columns; finished journeys fold into one line to Outcomes.
+// Dragging a card changes the stage through the same route the classic board uses.
+let C_JSEL = null; let C_JDATA = null;
+async function viewJourneyC() {
+  const [people, tasks] = await Promise.all([cPeopleRows(), api('/api/tasks?scope=open')]);
+  const taskOf = new Map(); tasks.forEach((t) => { if (!taskOf.has(t.person_id)) taskOf.set(t.person_id, t); });
+  C_JDATA = { people, taskOf };
+  cDrawJourney();
+}
+function cPersonCard(p, t) {
+  const open = !C_TERMINAL.includes(p.status);
+  const notes = String(p.notes || '');
+  return `<aside class="c-card"><h2>${esc(p.name)}</h2> <div class="c-cardsub">${esc(cStage(p.status))} · ${esc(p.programme || 'programme not said')}</div>
+    <div class="c-next ${open && !t ? 'none' : ''}"><b>${open ? 'Next step' : 'Outcome'}</b>${open ? (t ? `${esc(t.label)} <span class="c-when ${cWhenClass(t.due_at)}">· ${cWhenText(t.due_at)}</span>` : 'Nothing planned yet') : esc(p.status)}
+      ${open ? `<div class="c-row-acts">${t ? `<button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))})">Done</button>` : `<button class="btn sm" onclick="openNewTask('${esc(p.id)}')">Plan a next step</button>`}</div>` : ''}</div>
+    <dl><dt>Email</dt><dd class="${p.email ? '' : 'c-gap'}">${esc(p.email || 'not recorded')}</dd><dt>Phone</dt><dd class="${p.phone ? '' : 'c-gap'}">${esc(p.phone || 'not recorded')}</dd>
+      <dt>Came from</dt><dd>${esc(cChannel(p.source_channel)[0])}</dd><dt>First contact</dt><dd class="${p.created_at ? '' : 'c-gap'}">${p.created_at ? fmtDate(p.created_at) : 'not recorded'}</dd></dl>
+    ${notes ? `<div class="c-notes">${esc(notes.length > 260 ? notes.slice(0, 260) + '…' : notes)}</div>` : ''}
+    <div class="c-row-acts"><button class="btn sm ghost" onclick="cEditFromJourney('${esc(p.id)}')">Edit</button><a class="btn sm ghost" href="#/person/${esc(p.id)}">Details →</a></div></aside>`;
+}
+function cDrawJourney() {
+  const { people, taskOf } = C_JDATA;
+  const stages = (CFG.stages || []).filter((s) => !C_TERMINAL.includes(s.id));
+  const open = people.filter((p) => !C_TERMINAL.includes(p.status));
+  const sel = open.find((p) => p.id === C_JSEL) || open[0];
+  const roles = CFG.stageRoles || {};
+  const adm = people.filter((p) => p.status === roles.admitted).length, np = people.filter((p) => p.status === roles.closed).length;
+  $('#view').innerHTML = `<p class="c-crumb">People</p>
+    <div class="c-head"><div><h1>Journey</h1><p>Where each open person is. Drag a person when something real has happened.</p></div></div>
+    <div class="c-journey">${sel ? cPersonCard(sel, taskOf.get(sel.id)) : '<div></div>'}<div style="min-width:0">
+      <div class="c-cols" style="grid-template-columns:repeat(${stages.length}, minmax(150px, 1fr))">${stages.map((s) => { const ps = open.filter((p) => p.status === s.id);
+        return `<div class="c-col"><h3>${esc(s.label || s.id)} <b>${ps.length}</b></h3><div class="c-drop" data-stage="${esc(s.id)}">${ps.map((p) => { const t = taskOf.get(p.id);
+          return `<div class="c-jp row${sel && p.id === sel.id ? ' c-sel' : ''}" draggable="true" data-id="${esc(p.id)}" tabindex="0" onclick="C_JSEL='${esc(p.id)}';cDrawJourney()"><b>${esc(p.name)}</b><small class="${t ? '' : 'none'}">${t ? esc(t.label) : 'nothing planned'}</small></div>`; }).join('') || '<div class="c-empty" style="padding:8px">empty</div>'}</div></div>`; }).join('')}</div>
+      <div class="c-folded">Finished journeys are in Outcomes: <b><span class="c-ok">✓</span>${adm} admitted</b> <b><span class="c-no">✕</span>${np} not proceeding</b> <a class="btn sm ghost" href="#/outcomes" style="margin-left:auto">Open Outcomes →</a></div>
+      <p class="c-ev">The stages are a working version, to be agreed with Admissions. <span class="c-dec">to agree</span></p>
+    </div></div>`;
+  document.querySelectorAll('.c-jp[draggable]').forEach((c) => c.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', c.dataset.id)));
+  document.querySelectorAll('.c-drop').forEach((col) => {
+    col.addEventListener('dragover', (e) => { e.preventDefault(); col.classList.add('over'); });
+    col.addEventListener('dragleave', () => col.classList.remove('over'));
+    col.addEventListener('drop', async (e) => { e.preventDefault(); col.classList.remove('over');
+      const id = e.dataTransfer.getData('text/plain'); const p = C_JDATA.people.find((x) => x.id === id); if (!p || p.status === col.dataset.stage) return;
+      try { await post(`/api/people/${id}/status`, { status: col.dataset.stage }); C_JSEL = id; await viewJourneyC(); cNavCounts(); } catch (err) { alert(err.message); } });
+  });
+}
+
+// ---------------------------------------------------------------- C OVERRIDES
+// Two classic functions redraw a classic screen when they finish. In C they redraw
+// whatever screen you are on, so planning a step from a list keeps you on the list,
+// and a lead saved from New Leads comes back to New Leads.
+if (UI === 'c') {
+  // eslint-disable-next-line no-func-assign
+  doNewTask = async (personId) => {
+    await post(`/api/people/${personId}/task`, { label: $('#tLabel').value, due: $('#tDate').value });
+    closeModal(); route();
+  };
+  // doQualify and doArchive end with viewInbox(); in C that is the New Leads screen.
+  // eslint-disable-next-line no-func-assign
+  viewInbox = () => viewLeadsC();
+}
+
 
 // One small line drawing per tab. Plain shapes, no brand, no decoration.
 const svg = (d) => `<svg class="ico" viewBox="0 0 20 20" fill="none" stroke="currentColor"
@@ -1282,7 +1552,10 @@ const fmtDateTime = (s) => {
       day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(s)).replace(',', '');
   } catch { return String(s).slice(0, 16).replace('T', ' '); }
 };
-const todayStr = () => new Date().toISOString().slice(0, 10);
+// Today in RIGA. It was the UTC date, which is still yesterday until 03:00 here, so a
+// step planned after midnight defaulted to yesterday and was overdue the moment it was
+// saved (seen 28.09.2026 at 01:24).
+const todayStr = () => new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
 // The four rarely-used filters fold away. Six dropdowns open at once made
 // People read as another dashboard; Aigars asked for it to be the database.
 // They open automatically whenever one of them is actually set, so a filter can
