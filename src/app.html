@@ -748,8 +748,8 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
      The main UI since 28.09.2026 (Ritvars: "Concept C is the main now"). The classic
      UI stays one click away at ?ui=classic. Everything here is scoped to html.ui-c, so
      the classic UI is byte-for-byte what it was. The palette OVERRIDES the app's own
-     tokens, so the screens C still borrows from the classic UI (Channels, Feedback)
-     take the quieter colours too. Every text tint passes 4.5:1
+     tokens, so the screen C still borrows from the classic UI (Channels) takes the
+     quieter colours too. Every text tint passes 4.5:1
      on its surface - which also retires the --t4 contrast failure in C. */
   html.ui-c{--paper:#f6f7f6;--surface:#ffffff;--surface-2:#f1f3f2;--shell:#f1f3f2;--field:#ffffff;--menu:#ffffff;--ink:#1b2328;
     --t2:#48535d;--t3:#5c6670;--t4:#66707a;--rule:#e3e7e8;--rule2:#eef1f1;--control-line:#c9d0d3;
@@ -993,6 +993,17 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-thin{display:grid;gap:12px}
   html.ui-c .c-thin p{margin:3px 0 0;font-size:13px;color:var(--t2)}
   @media (max-width:900px){ html.ui-c .kstrip.c-five{grid-template-columns:1fr 1fr} html.ui-c .kstrip.c-five > div{border-left:0;padding-left:0} html.ui-c .c-rgrid{grid-template-columns:1fr} }
+
+  /* Feedback in C: one sheet, open first. */
+  html.ui-c .c-fb{padding:12px 16px;border-top:1px solid var(--rule2)}
+  html.ui-c .c-sheet > .c-fb:first-child{border-top:0}
+  html.ui-c .c-fb.is-handled{opacity:.8}
+  html.ui-c .c-fb-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  html.ui-c .c-fb-top .btn{margin-left:auto}
+  html.ui-c .c-fb-kind{font-size:11.5px;font-weight:600;letter-spacing:.03em;border:1px solid var(--rule);border-radius:99px;padding:1px 9px;color:var(--t2)}
+  html.ui-c .c-fb-kind.bug{color:var(--c-bad);border-color:var(--c-bad)}
+  html.ui-c .c-fb-body{margin-top:6px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}
+  html.ui-c .c-fb-shot{display:block;margin-top:8px;max-width:min(420px,100%);border:1px solid var(--rule);border-radius:8px;cursor:zoom-in}
 </style>
 </head>
 <body>
@@ -1046,8 +1057,8 @@ const $ = (s, r = document) => r.querySelector(s);
 // The main UI since 28.09.2026 (Ritvars: "build Concept C in the app as main").
 // ?ui=classic brings back the previous UI and ?ui=c returns here; the choice is
 // remembered per browser. Nothing on the server changes: C arranges the same screens,
-// the same data and the same rules differently. Channels and Feedback are still the
-// classic screens, shown inside C's navigation.
+// the same data and the same rules differently. Channels is still the classic screen,
+// shown inside C's navigation.
 const UI = (() => {
   let q = null;
   try { q = new URLSearchParams(location.search).get('ui'); } catch {}
@@ -1122,7 +1133,7 @@ const cDueNow = (tasks) => tasks.filter((t) => cWhenClass(t.due_at) === 'over' |
 // of the configured channels (the old sheet has "school", "campaign") is said to be so.
 const cChannel = (c) => (!c || c === 'unknown' ? ['Not recorded', 'no source was kept'] : (CFG.channels && CFG.channels[c]) ? [channelLabel(c), ''] : [c, 'not a channel']);
 
-// The router's C half. The two borrowed screens are the classic ones.
+// The router's C half. Channels is the one borrowed classic screen.
 async function routeC(page, arg) {
   const place = cPlace(page);
   if (page === 'person') return viewPerson(arg);
@@ -1697,6 +1708,34 @@ async function viewReportsC() {
   cWireCharts();
 }
 
+// -------------------------------------------------------------------- FEEDBACK
+// What people sent with the feedback button, for the two people who read it. Open
+// first; handled is one click away and nothing is ever deleted. Same routes and the
+// same reader list as before, which the server checks on every request.
+let C_FB_SHOW = 'open';
+async function viewFeedbackC() {
+  if (!mayReadFeedback()) {
+    $('#view').innerHTML = `<p class="c-crumb"><a href="#/settings">Settings</a></p><div class="c-head"><div><h1>Feedback</h1>
+      <p>This inbox is read by ${esc(fbReaders())} and by nobody else. ${AUTH.user ? `You are signed in as ${esc(AUTH.user.name)}` : `You are acting as ${esc(ACTOR)}`}, so it is not shown. Being an admin is not enough: feedback has its own shorter list.</p></div></div>`;
+    return;
+  }
+  const d = await api('/api/admin/feedback');
+  const rows = d.rows || [];
+  const open = rows.filter((r) => !r.handledAt); const done = rows.filter((r) => r.handledAt);
+  const list = C_FB_SHOW === 'open' ? open : done;
+  const item = (r) => `<div class="c-fb${r.handledAt ? ' is-handled' : ''}">
+      <div class="c-fb-top"><span class="c-fb-kind ${r.kind === 'BUG' ? 'bug' : ''}">${r.kind === 'BUG' ? 'Something broken' : 'An idea'}</span>
+        <span class="c-gap-soft">${esc(r.author || 'unknown')} · ${fmtDateTime(r.createdAt)}${r.path ? ' · ' + fbPathLink(r.path) : ' · no page recorded'}${r.handledAt ? ' · handled ' + fmtDateTime(r.handledAt) : ''}</span>
+        <button class="btn sm ${r.handledAt ? 'ghost' : ''}" onclick="fbHandle(${Number(r.id)}, ${r.handledAt ? 'false' : 'true'})">${r.handledAt ? 'Reopen' : 'Mark handled'}</button></div>
+      <div class="c-fb-body">${esc(r.body)}</div>
+      ${r.screenshot ? `<img class="c-fb-shot" src="/api/admin/feedback/${Number(r.id)}/screenshot?as=${encodeURIComponent(ACTOR)}" alt="Screenshot sent with this feedback" onclick="fbZoom(${Number(r.id)})">` : ''}
+    </div>`;
+  $('#view').innerHTML = `<p class="c-crumb"><a href="#/settings">Settings</a></p>
+    <div class="c-head"><div><h1>Feedback</h1><p>What people sent with the feedback button, for ${esc(fbReaders())}. It is kept in the CRM's own database and is never sent anywhere.</p></div></div>
+    <div class="c-seg" role="group" aria-label="Show"><button aria-pressed="${C_FB_SHOW === 'open'}" onclick="C_FB_SHOW='open';viewFeedbackC()">Open ${open.length}</button><button aria-pressed="${C_FB_SHOW !== 'open'}" onclick="C_FB_SHOW='handled';viewFeedbackC()">Handled ${done.length}</button></div>
+    <div class="c-sheet">${list.map(item).join('') || `<div class="c-empty">${C_FB_SHOW === 'open' ? (rows.length ? 'Nothing open. Everything sent has been handled.' : 'Nothing has been sent yet.') : 'Nothing handled yet.'}</div>`}</div>`;
+}
+
 // ---------------------------------------------------------------- C OVERRIDES
 // Two classic functions redraw a classic screen when they finish. In C they redraw
 // whatever screen you are on, so planning a step from a list keeps you on the list,
@@ -1717,6 +1756,9 @@ if (UI === 'c') {
   // setPeriod() and setPeriodPreset() redraw with viewReports(); in C, the C report.
   // eslint-disable-next-line no-func-assign
   viewReports = () => viewReportsC();
+  // fbHandle() redraws with viewFeedback(); in C, the C inbox.
+  // eslint-disable-next-line no-func-assign
+  viewFeedback = () => viewFeedbackC();
 }
 
 
@@ -4234,6 +4276,10 @@ function fbSync() {
 
 const fbPath = () => location.hash || '#/today';
 // Named, not implied. Somebody about to report a problem should know who reads it.
+// The page a feedback came from, as a link only when it is an address INSIDE the app.
+// Anything else is shown as text: a planted "javascript:" must never become a link
+// in an admin's inbox. The server keeps only in-app addresses too (readPath).
+const fbPathLink = (p) => (/^(#\/|\/(?!\/))/.test(String(p || '')) ? `<a href="${esc(p)}">${esc(p)}</a>` : `<span>${esc(p)}</span>`);
 const fbReaders = () => {
   const who = CFG.feedbackReaders || [];
   if (!who.length) return 'the people building this';
@@ -4369,7 +4415,7 @@ async function viewFeedback() {
     <div class="fbmeta">
       <span>${esc(r.author || 'unknown')}</span>
       <span>${fmtDateTime(r.createdAt)}</span>
-      ${r.path ? `<a href="${esc(r.path)}">${esc(r.path)}</a>` : '<span>no page recorded</span>'}
+      ${r.path ? fbPathLink(r.path) : '<span>no page recorded</span>'}
       ${r.handledAt ? `<span>handled ${fmtDateTime(r.handledAt)}</span>` : ''}
     </div>
   </div>`;
@@ -4378,8 +4424,7 @@ async function viewFeedback() {
     <p class="sub" style="margin:2px 0 0">${open} open, ${d.rows.length} in total &middot;
       for ${esc(fbReaders())}</p></div></div>
   <div class="prov">Everything here was typed by somebody using the app. It is stored in this
-    machine's own database and has never been sent anywhere. There is no login yet, so this screen
-    is restricted to the Admin seat rather than to those two people by name.</div>
+    CRM's own database and has never been sent anywhere.${AUTH.user ? '' : ' There is no login yet, so this screen is restricted to the Admin seat rather than to those two people by name.'}</div>
   ${d.rows.length ? d.rows.map(row).join('') : '<div class="card"><div class="empty">Nothing has been sent yet.</div></div>'}`;
 }
 

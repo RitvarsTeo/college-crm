@@ -74,7 +74,11 @@ export function readBody(value) {
 // location.pathname is '/' on every screen and would tell an admin nothing.
 export function readPath(value) {
   if (!value) return null;
-  return String(value).split('?')[0].slice(0, 200) || null;
+  const v = String(value).split('?')[0].slice(0, 200);
+  // Only an address INSIDE the app is kept ("#/person/p1", "/"). The path is shown to
+  // the readers as a link, so anything else - "javascript:...", "//elsewhere" - would
+  // be a link a colleague could plant in an admin's inbox (found 28.09.2026).
+  return /^(#\/|\/(?!\/))/.test(v) ? v : null;
 }
 
 // The feedback row and its screenshot are written together. A bug report must

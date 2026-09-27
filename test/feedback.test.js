@@ -109,6 +109,10 @@ test('the query string is cut off the page path, because it can carry a token', 
   assert.equal(readPath('#/person/p1?a=b'), '#/person/p1');
   assert.equal(readPath('/' + 'x'.repeat(400)).length, 200);
   assert.equal(readPath(''), null);
+  // shown as a link to the readers, so only an address inside the app survives
+  assert.equal(readPath('javascript:alert(1)'), null);
+  assert.equal(readPath('//evil.example/x'), null);
+  assert.equal(readPath('https://evil.example/'), null);
 });
 
 // ---------------------------------------------------------------- the store -
@@ -260,4 +264,18 @@ test('the routes: anybody may send, only an admin may read', async (t) => {
 
   const after = await fetch(`${base}/api/feedback/waiting`, { headers: admin }).then((r) => r.json());
   assert.equal(after.open, 0, 'handling it clears the notification');
+});
+
+// The inbox shows where a feedback came from as a link. Run the page's own helper:
+// only an address inside the app may become a link, whatever an older row holds.
+test('a feedback page that is not inside the app is shown as text, never as a link', async () => {
+  const fs = await import('node:fs');
+  const vm = await import('node:vm');
+  const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
+  const line = (name) => APP.slice(APP.indexOf(`const ${name} = `), APP.indexOf('\n', APP.indexOf(`const ${name} = `)));
+  const run = (p) => vm.runInNewContext(`${line('esc')}\n${line('fbPathLink')}\nfbPathLink(${JSON.stringify(p)})`, { String });
+  assert.equal(run('#/people'), '<a href="#/people">#/people</a>');
+  assert.equal(run('javascript:alert(1)'), '<span>javascript:alert(1)</span>');
+  assert.equal(run('//evil.example'), '<span>//evil.example</span>');
+  assert.equal(run('"><img src=x onerror=alert(1)>'), '<span>&quot;&gt;&lt;img src=x onerror=alert(1)&gt;</span>');
 });
