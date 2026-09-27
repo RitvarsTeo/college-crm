@@ -748,8 +748,8 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
      The main UI since 28.09.2026 (Ritvars: "Concept C is the main now"). The classic
      UI stays one click away at ?ui=classic. Everything here is scoped to html.ui-c, so
      the classic UI is byte-for-byte what it was. The palette OVERRIDES the app's own
-     tokens, so the screens C still borrows from the classic UI (the person page, the
-     report, Channels, Feedback) take the quieter colours too. Every text tint passes 4.5:1
+     tokens, so the screens C still borrows from the classic UI (the report, Channels,
+     Feedback) take the quieter colours too. Every text tint passes 4.5:1
      on its surface - which also retires the --t4 contrast failure in C. */
   html.ui-c{--paper:#f6f7f6;--surface:#ffffff;--surface-2:#f1f3f2;--shell:#f1f3f2;--field:#ffffff;--menu:#ffffff;--ink:#1b2328;
     --t2:#48535d;--t3:#5c6670;--t4:#66707a;--rule:#e3e7e8;--rule2:#eef1f1;--control-line:#c9d0d3;
@@ -822,6 +822,9 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c{--v-adm:#008E8A;--v-lead:#B9812A;--v-np:#7C8B94;--v-grid:#e8ecec}
   html.ui-c[data-theme="dark"]{--v-adm:#00A39A;--v-lead:#BE8428;--v-np:#7F8F98;--v-grid:#23404a}
   html.ui-c .kpage{position:relative;max-width:1080px}
+  /* Ritvars 28.09.2026: no title sentence on Home. The page keeps a heading for screen
+     readers only, so it is still announced as Home. */
+  html.ui-c .c-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
   html.ui-c .khead{margin-bottom:18px}
   html.ui-c .ktitle{margin:2px 0 0;font-family:var(--serif);font-weight:500;font-size:30px;letter-spacing:-.012em;line-height:1.15}
   html.ui-c .kstrip{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);margin-bottom:26px}
@@ -938,6 +941,41 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-sheet.c-scroll{overflow-x:auto}
   @media (max-width:760px){ html.ui-c .c-form{grid-template-columns:1fr} html.ui-c .c-head .act{margin-left:0;width:100%;flex-wrap:wrap} html.ui-c .c-search{flex:1 1 160px;width:auto}
     html.ui-c .c-pt th:nth-child(2),html.ui-c .c-pt td:nth-child(2),html.ui-c .c-pt th:nth-child(5),html.ui-c .c-pt td:nth-child(5){display:none} html.ui-c .c-pt th,html.ui-c .c-pt td{padding:9px 10px} }
+
+  /* The person page in C: next step and history on the left, the facts in one side sheet. */
+  html.ui-c .c-sheet h3{display:flex;align-items:center;flex-wrap:wrap;gap:0}
+  html.ui-c .c-h3acts{margin-left:auto;display:flex;gap:6px;text-transform:none;letter-spacing:0;font-weight:500}
+  html.ui-c .c-pname{overflow-wrap:anywhere}
+  html.ui-c .c-pgrid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(280px,1fr);gap:18px;align-items:start;max-width:1180px}
+  html.ui-c .c-pmain,html.ui-c .c-pside{min-width:0}
+  html.ui-c .c-pmain > .c-next{margin-bottom:16px;padding:14px 16px}
+  html.ui-c .c-next-row{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap;font-size:14.5px}
+  html.ui-c .c-next-row > span:first-child{font-weight:600;color:var(--ink)}
+  /* not ".done": the classic sheet already has a .done (centred, 26px padding) */
+  html.ui-c .c-next.c-finished{background:var(--surface);border:1px solid var(--rule)}
+  html.ui-c .c-still{margin-top:12px;padding-top:10px;border-top:1px solid var(--rule2)}
+  html.ui-c .c-still b{color:var(--c-warn)}
+  html.ui-c .c-gap-soft{color:var(--t3);font-size:12.5px}
+  html.ui-c .c-evt{padding:11px 16px;border-top:1px solid var(--rule2)}
+  html.ui-c .c-sheet h3 + .c-evt{border-top:0}
+  html.ui-c .c-evt-when{font-size:12px;color:var(--t3);font-variant-numeric:tabular-nums}
+  html.ui-c .c-evt-what{font-weight:600;margin-top:2px;overflow-wrap:anywhere}
+  html.ui-c .c-evt-body{color:var(--t2);font-size:13.5px;margin-top:3px;white-space:pre-wrap;overflow-wrap:anywhere}
+  html.ui-c .c-evt-diff{font-size:13px;margin-top:3px;overflow-wrap:anywhere} html.ui-c .c-evt-diff s{color:var(--t3)}
+  html.ui-c .c-auto{border:1px solid var(--rule);border-radius:4px;padding:0 4px;font-size:11px}
+  html.ui-c .c-facts dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 14px;margin:0;padding:12px 16px;font-size:13.5px}
+  html.ui-c .c-facts dt{color:var(--t3)} html.ui-c .c-facts dd{margin:0;overflow-wrap:anywhere}
+  html.ui-c .c-facts .c-notes{margin:0 16px 14px;padding-top:10px}
+  html.ui-c .c-facts .c-notes.c-clamp{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4;overflow:hidden;margin-bottom:4px}
+  html.ui-c .c-more{border:0;background:none;color:var(--pet);font:inherit;font-size:12.5px;cursor:pointer;padding:0 16px 12px;text-decoration:underline}
+  html.ui-c .c-pad{padding:12px 16px 14px}
+  html.ui-c .c-pad select{width:100%}
+  html.ui-c .c-pad .c-hint{margin-top:6px}
+  html.ui-c .c-pad .warn-box{margin:8px 0}
+  html.ui-c .c-line2{margin:0 0 6px;font-size:13.5px}
+  html.ui-c .c-form.c-form1{grid-template-columns:1fr 1fr;max-width:none}
+  @media (max-width:900px){ html.ui-c .c-pgrid{grid-template-columns:1fr} }
+  @media (max-width:760px){ html.ui-c .c-form.c-form1{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
@@ -991,8 +1029,8 @@ const $ = (s, r = document) => r.querySelector(s);
 // The main UI since 28.09.2026 (Ritvars: "build Concept C in the app as main").
 // ?ui=classic brings back the previous UI and ?ui=c returns here; the choice is
 // remembered per browser. Nothing on the server changes: C arranges the same screens,
-// the same data and the same rules differently. The person page, the full report,
-// Channels and Feedback are still the classic screens, shown inside C's navigation.
+// the same data and the same rules differently. The full report, Channels and Feedback
+// are still the classic screens, shown inside C's navigation.
 const UI = (() => {
   let q = null;
   try { q = new URLSearchParams(location.search).get('ui'); } catch {}
@@ -1067,7 +1105,7 @@ const cDueNow = (tasks) => tasks.filter((t) => cWhenClass(t.due_at) === 'over' |
 // of the configured channels (the old sheet has "school", "campaign") is said to be so.
 const cChannel = (c) => (!c || c === 'unknown' ? ['Not recorded', 'no source was kept'] : (CFG.channels && CFG.channels[c]) ? [channelLabel(c), ''] : [c, 'not a channel']);
 
-// The router's C half. The four borrowed screens are the classic ones.
+// The router's C half. The three borrowed screens are the classic ones.
 async function routeC(page, arg) {
   const place = cPlace(page);
   if (page === 'person') return viewPerson(arg);
@@ -1110,7 +1148,7 @@ async function viewHomeC() {
   const asOf = new Intl.DateTimeFormat('en-GB', { timeZone: TZ, day: 'numeric', month: 'long' }).format(new Date());
   const best = months.length ? Math.max(...months.map((m) => m.admitted)) : 0;
   $('#view').innerHTML = `<div class="kpage">
-    <div class="khead"><div><p class="c-crumb" style="margin:0">Admissions ${year} · to ${esc(asOf)}</p><h1 class="ktitle">How Admissions is performing</h1></div></div>
+    <div class="khead"><div><h1 class="c-sr">Home</h1><p class="c-crumb" style="margin:0">Admissions ${year} · to ${esc(asOf)}</p></div></div>
     <div class="kstrip">
       <div class="khero"><span>Admitted</span><b>${admitted.length}</b><small>in ${year}, with an admission date${undated ? ` (+${undated} without one)` : ''}</small></div>
       <div><span>Leads</span><b>${s.newLeads ?? 0}</b><small>first contacted in ${year}</small></div>
@@ -1449,6 +1487,107 @@ function cDrawJourney() {
   });
 }
 
+// ----------------------------------------------------------------- PERSON PAGE
+// One person, read top to bottom: who they are, what we do next, what has happened.
+// The facts sit in one sheet on the side and edit in place. Every button is the
+// classic one (Done, Move, Log a call, Add a note, stage, SIS handover), so every rule
+// the server keeps still applies; only the arrangement changed. Nothing is hidden that
+// the classic page showed, and the notes, which it only showed inside Edit, are shown.
+let C_PERSON = null; let C_PERSON_EDIT = false;
+// The imported history carries DATES written as "2026-01-17T00:00:00", with no time and
+// no zone. Printing "00:00" would claim a time nobody recorded, so those show the date.
+const cStamp = (iso) => (/T00:00:00(\.0+)?$/.test(String(iso || '')) ? fmtDate(iso) : fmtDateTime(iso));
+async function viewPersonC(id) {
+  if (!C_PERSON || C_PERSON.id !== id) C_PERSON_EDIT = false;
+  const p = await api('/api/people/' + id);
+  C_PERSON = p;
+  const t = (p.tasks || []).find((x) => !x.done_at);
+  const open = !C_TERMINAL.includes(p.status);
+  const contact = [p.email, p.phone].filter(Boolean).map(esc).join(' · ');
+  const tl = p.timeline || [];
+  const ev = (e) => `<div class="c-evt">
+      <div class="c-evt-when">${cStamp(e.occurred_at)}${e.actor ? ' · ' + esc(e.actor) : ''}${e.channel ? ' · ' + esc(channelLabel(e.channel)) : ''}${e.origin === 'automatic' ? ' · <span class="c-auto">automatic</span>' : ''}</div>
+      <div class="c-evt-what">${esc(e.subject || e.kind || '')}</div>
+      ${e.field ? `<div class="c-evt-diff"><s>${esc(e.old_value ?? '(empty)')}</s> → <b>${esc(e.new_value ?? '(empty)')}</b></div>` : (e.body ? `<div class="c-evt-body">${esc(e.body)}</div>` : '')}</div>`;
+  const next = open
+    ? (t ? `<div class="c-next"><b>Next step</b><div class="c-next-row"><span>${esc(t.label)}</span><span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span>${t.owner ? `<span class="c-gap-soft">${esc(t.owner)}</span>` : ''}</div>
+        <div class="c-row-acts"><button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))})">Done</button><button class="btn sm ghost" onclick="openReschedule(${Number(t.id)})">Move the date</button></div></div>`
+      : `<div class="c-next none"><b>Next step</b>Nothing planned yet.<div class="c-row-acts"><button class="btn sm" onclick="openNewTask('${esc(p.id)}')">Plan a next step</button></div></div>`)
+    : `<div class="c-next c-finished"><b>Outcome</b>${p.status === (CFG.stageRoles || {}).closed ? `<span class="c-no">✕</span>${esc(cStage(p.status))}${p.closed_reason ? ' · ' + esc(p.closed_reason) : ' · <span class="c-gap">reason not recorded</span>'}${p.closed_note ? `<div class="c-evt-body">${esc(p.closed_note)}</div>` : ''}` : `<span class="c-ok">✓</span>${esc(cStage(p.status))}${p.admitted_at ? ' on ' + fmtDate(p.admitted_at) : ''}`}${t ? `
+        <div class="c-still"><b>Still open</b><div class="c-next-row"><span>${esc(t.label)}</span><span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span></div>
+        <div class="c-row-acts"><button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))})">Done</button><button class="btn sm ghost" onclick="openReschedule(${Number(t.id)})">Move the date</button></div></div>` : ''}</div>`;
+  $('#view').innerHTML = `<p class="c-crumb"><a href="#/people">People</a></p>
+    <div class="c-head"><div><h1 class="c-pname">${esc(p.name)}</h1><p>${esc(cStage(p.status))} · ${esc(p.programme || 'programme not said')}${p.study_form ? ' · ' + esc(p.study_form) : ''} · ${contact || '<span class="c-gap">no email or phone recorded</span>'}</p></div></div>
+    <div class="c-pgrid">
+      <div class="c-pmain">
+        ${next}
+        <div class="c-sheet"><h3>History<b>${tl.length}</b><span class="c-h3acts"><button class="btn sm ghost" onclick="openNote('${esc(p.id)}','call')">Log a call</button><button class="btn sm ghost" onclick="openNote('${esc(p.id)}','note')">Add a note</button></span></h3>
+          ${p.hiddenCorrections ? `<p class="c-ev" style="margin:10px 16px 0">${p.hiddenCorrections} ${p.hiddenCorrections === 1 ? 'correction made by a colleague is' : 'corrections made by colleagues are'} not shown. Corrections are private to whoever made them; admins see all of them.</p>` : ''}
+          ${tl.map(ev).join('') || '<div class="c-empty">Nothing has happened yet.</div>'}</div>
+      </div>
+      <aside class="c-pside">${cPersonFacts(p)}</aside>
+    </div>`;
+}
+function cPersonFacts(p) {
+  const known = new Set(CFG.programmes || []);
+  const [came, cameWhy] = cChannel(p.source_channel);
+  const row = (k, v, gap) => `<dt>${k}</dt><dd>${v ? v : `<span class="c-gap">${gap || 'not recorded'}</span>`}</dd>`;
+  if (C_PERSON_EDIT) return cPersonForm(p);
+  const stages = CFG.stages || [];
+  return `<div class="c-sheet c-facts"><h3>Details<span class="c-h3acts"><button class="btn sm ghost" onclick="C_PERSON_EDIT=true;viewPersonC('${esc(p.id)}')">Edit</button></span></h3><dl>
+      ${row('Email', esc(p.email || ''))}${row('Phone', esc(p.phone || ''))}
+      ${row('Programme', p.programme ? esc(p.programme) + (known.has(p.programme) ? '' : ' <span class="c-dec">not in list</span>') : '', 'not said')}
+      ${row('Study form', esc(p.study_form || ''))}${row('Education', esc(p.education || ''))}${row('Nationality', esc(p.nationality || ''))}
+      ${row('Came from', came ? esc(came) + (cameWhy ? ` <small class="c-gap-soft">${esc(cameWhy)}</small>` : '') + (p.source_campaign ? ' / ' + esc(p.source_campaign) : '') : '')}
+      ${p.source_detail ? row('How', esc(p.source_detail)) : ''}
+      ${row('First contact', p.created_at ? fmtDate(p.created_at) : '')}
+      ${row('Last contact', p.last_contact_at ? fmtDate(p.last_contact_at) : '')}
+      ${row('Owner', esc(p.owner || ''), 'none')}
+      ${p.contract_at ? row('Contract', fmtDate(p.contract_at)) : ''}
+      ${p.admitted_at ? row('Admitted', fmtDate(p.admitted_at) + (p.student_no ? ' · ' + esc(p.student_no) : '')) : ''}
+    </dl>
+    ${p.notes ? `<div class="c-notes${p.notes.length > 240 ? ' c-clamp' : ''}">${esc(p.notes)}</div>${p.notes.length > 240 ? `<button class="c-more" onclick="const n=this.previousElementSibling;n.classList.toggle('c-clamp');this.textContent=n.classList.contains('c-clamp')?'Show all ${p.notes.length} characters':'Show less'">Show all ${p.notes.length} characters</button>` : ''}` : ''}</div>
+    <div class="c-sheet c-facts"><h3>Stage</h3><div class="c-pad">
+      <select id="cStage" aria-label="Stage" onchange="changeStatus('${esc(p.id)}', this.value)">${stages.map((s) => `<option value="${esc(s.id)}" ${s.id === p.status ? 'selected' : ''}>${esc(s.label || s.id)}</option>`).join('')}</select>
+      <p class="c-hint">Changes when a step is done, or by hand here. Stopping asks for a reason. The stages are a working version, to be agreed with Admissions.</p>
+      ${p.status === (CFG.stageRoles || {}).admitted ? (p.sis_handoff_at ? `<p class="c-hint">Handed to the SIS on ${fmtDate(p.sis_handoff_at)}. The CRM journey ends here.</p>` : `<button class="btn sm ghost" onclick="doSisHandoff('${esc(p.id)}')">Hand over to SIS</button>`) : ''}
+    </div></div>
+    ${p.qualification || (p.fields || []).length ? `<div class="c-sheet c-facts"><h3>From their first message</h3><div class="c-pad">
+      ${p.qualification ? `<p class="c-line2">${qualChip(p.qualification)} ${p.routedTo ? 'routed to <b>' + esc(p.routedTo) + '</b>' : ''} · arrived on ${esc(channelLabel(p.first_channel || p.source_channel))}</p>` : ''}
+      ${p.handoverGap ? `<div class="warn-box"><b>Handover gap.</b> ${esc(p.handoverGap.problem)}<br>${esc(p.handoverGap.action)}</div>` : ''}
+      ${(p.fields || []).length ? `<div class="chips">${p.fields.map(fieldChip).join('')}</div><p class="c-hint">A dashed chip was read by the machine and nobody confirmed it. It is not counted anywhere.</p>` : ''}
+      ${(p.missingInfo || []).length ? `<p class="c-hint"><b>Still to find out:</b> ${p.missingInfo.map(esc).join(', ')}</p>` : ''}
+    </div></div>` : ''}
+    ${(p.registrations || []).length ? `<div class="c-sheet c-facts"><h3>Events</h3><div class="c-pad">${p.registrations.map((r) => `<p class="c-line2">${esc(r.title)} · ${fmtDate(r.held_on)} ${esc(r.slot || '')} · ${r.attended === 1 ? '<b>attended</b>' : r.attended === 0 ? 'did not attend' : 'not marked'}</p>`).join('')}</div></div>` : ''}
+    ${(p.simEvents || []).length ? `<div class="c-sheet c-facts"><h3>Integration events</h3><div class="c-pad">${p.simEvents.map((e) => `<p class="c-line2"><a href="#/inspector/${esc(e.id)}">${esc(e.channel)} · ${esc(e.scenario)}</a> <span class="c-gap-soft">${esc(e.direction)} · ${esc(e.decision)}</span></p>`).join('')}</div></div>` : ''}`;
+}
+// Edit in place: the same fields, lists and route as the classic Edit record, with
+// the name check asked before anything is sent.
+function cPersonForm(p) {
+  const field = ([key, label, kind]) => {
+    const v = p[key] == null ? '' : String(p[key]);
+    const input = kind === 'textarea' ? `<textarea id="pf_${key}" rows="5">${esc(v)}</textarea>`
+      : kind === 'text' ? `<input id="pf_${key}" value="${esc(v)}">`
+      : `<select id="pf_${key}">${selectFor(kind, v)}</select>`;
+    return `<div class="${kind === 'textarea' ? 'c-wide' : ''}"><label for="pf_${key}">${esc(label)}</label>${input}</div>`;
+  };
+  return `<div class="c-sheet c-facts"><h3>Edit details</h3><div class="c-pad"><div class="c-form c-form1">${EDIT_FIELDS.map(field).join('')}
+      <div id="pfErr" class="c-wide"></div>
+      <div class="c-wide c-row-acts" style="margin-top:4px"><button class="btn" onclick="cSavePersonPage('${esc(p.id)}')">Save</button><button class="btn ghost" onclick="C_PERSON_EDIT=false;viewPersonC('${esc(p.id)}')">Cancel</button></div>
+      <p class="c-hint c-wide">Where they came from and the first contact date are locked. Every change is written to the history with the old value, the new value and ${AUTH.user ? 'your name' : 'the name picked in the sidebar'}.</p></div></div></div>`;
+}
+async function cSavePersonPage(id) {
+  const p = C_PERSON; const err = (m) => { const e = $('#pfErr'); if (e) e.innerHTML = `<div class="err">${esc(m)}</div>`; };
+  const name = ($('#pf_name') || {}).value || '';
+  if (!name.trim()) return err('A person needs a name.');
+  const patch = {};
+  for (const [key] of EDIT_FIELDS) { const el = $('#pf_' + key); if (el && el.value !== (p[key] == null ? '' : String(p[key]))) patch[key] = el.value; }
+  try {
+    if (Object.keys(patch).length) await post(`/api/people/${id}/edit`, patch);
+    C_PERSON_EDIT = false; await viewPersonC(id);
+  } catch (e) { err(e.message); }
+}
+
 // ---------------------------------------------------------------- C OVERRIDES
 // Two classic functions redraw a classic screen when they finish. In C they redraw
 // whatever screen you are on, so planning a step from a list keeps you on the list,
@@ -1462,6 +1601,10 @@ if (UI === 'c') {
   // doQualify and doArchive end with viewInbox(); in C that is the New Leads screen.
   // eslint-disable-next-line no-func-assign
   viewInbox = () => viewLeadsC();
+  // Every classic dialog on a person (edit, note, stage, closing reason, SIS) ends with
+  // viewPerson(id); in C that is the C person page, so they all land back here.
+  // eslint-disable-next-line no-func-assign
+  viewPerson = (id) => viewPersonC(id);
 }
 
 
@@ -3499,8 +3642,13 @@ function selectFor(kind, value) {
     : kind === 'education' ? (CFG.education || [])
     : kind === 'nationality' ? (CFG.nationalities || [])
     : (CFG.owners || []);
-  return ['<option value="">-</option>'].concat(list.map(v =>
-    `<option ${String(value || '') === v ? 'selected' : ''}>${esc(v)}</option>`)).join('');
+  // A value from the old sheet that is not in the list ("NOT DECIDED", "FULL TIME") is
+  // kept as its own option. Left out, the select showed "-", and saving the Edit dialog
+  // for ANY reason erased it - found 28.09.2026 on a copy of the real data.
+  const cur = String(value || '');
+  const all = cur && !list.includes(cur) ? list.concat([cur]) : list;
+  return ['<option value="">-</option>'].concat(all.map(v =>
+    `<option ${cur === v ? 'selected' : ''}>${esc(v)}</option>`)).join('');
 }
 
 async function openEdit(id) {
@@ -3528,8 +3676,9 @@ async function openEdit(id) {
       <button class="btn" onclick="saveEdit('${p.id}')">Save</button>
       <button class="btn ghost" onclick="closeModal()">Cancel</button>
     </div>
-    <div class="prov" style="margin-top:10px">Saving as <b>${esc(ACTOR)}</b>. There is no login, so this is
-      the name the history will carry, not a verified identity.</div>`);
+    <div class="prov" style="margin-top:10px">Saving as <b>${esc(ACTOR)}</b>. ${AUTH.user
+      ? 'That is the account signed in, and it is the name the history will carry.'
+      : 'There is no login, so this is the name the history will carry, not a verified identity.'}</div>`);
 }
 
 async function saveEdit(id) {
@@ -3583,7 +3732,7 @@ async function viewHistory() {
     : 'One log. What the system did and what somebody did by hand, in the same list.'}</p>
   <p class="footnote" title="${esc([data.scopeNote, data.roleWarning, data.honesty].filter(Boolean).join(' '))}">
     ${mine ? 'Only your own actions are listed.' : 'Everything, because you are an admin.'}
-    There is no login yet.</p>
+    ${AUTH.user ? '' : 'There is no login yet.'}</p>
   <div class="filters">${mine ? '' : tab('', 'Everything') + ' ' + tab('manual', 'Manual only') + ' ' + tab('automatic', 'Automatic only')}
     <span class="muted" style="align-self:center">${data.count} entries</span></div>
   <div class="card">

@@ -26,8 +26,14 @@ const STEP = 'Call and establish interest';
 // V1 commit and invisible because the rows clicked during testing had no fields.
 
 test('every function the person page calls is actually defined', async () => {
-  const view = APP.slice(APP.indexOf('async function viewPerson'), APP.indexOf('function latestConsents'));
-  const called = new Set([...view.matchAll(/\$\{[^}]*?\b([a-z][A-Za-z0-9_]*)\s*\(/g)].map((m) => m[1]));
+  // Two person pages since 28.09.2026: the classic one, and Concept C's (the default).
+  // Both are checked. A name after a dot is a method (classList.toggle, Math.round),
+  // not a function of ours, so it is not counted.
+  const classic = APP.slice(APP.indexOf('async function viewPerson(id)'), APP.indexOf('function latestConsents'));
+  const c = APP.slice(APP.indexOf('async function viewPersonC('), APP.indexOf('// ---------------------------------------------------------------- C OVERRIDES'));
+  assert.ok(classic.length > 1000 && c.length > 1000, 'both person pages are where this test expects them');
+  const view = classic + c;
+  const called = new Set([...view.matchAll(/\$\{[^}]*?(?<![.\w])([a-z][A-Za-z0-9_]*)\s*\(/g)].map((m) => m[1]));
   // .map(fieldChip) style references are calls too, and are what broke
   for (const m of view.matchAll(/\.map\((\w+)\)/g)) called.add(m[1]);
   // 'var' is CSS, var(--steel), not a call
@@ -482,4 +488,30 @@ test('the Desktop guide generator refuses to reopen a settled question', async (
   for (const phrase of ['which menu button', 'professional account?', 'rotate']) {
     assert.ok(script.includes(phrase), 'the guard no longer catches: ' + phrase);
   }
+});
+
+// ----------------------------------------- an edit must not erase a value --
+// Found 28.09.2026 on a copy of the real data: the Edit dialog listed only the
+// configured values, so "NOT DECIDED" (programme) and "FULL TIME" (study form, 48
+// people live) showed as "-", and saving the dialog for any reason wrote them empty.
+// Nobody had edited a live record yet, so nothing was lost. Run the page's own
+// selectFor() and check the value it was given is the one it selects.
+test('the edit lists keep a value that is not in the configured list', async () => {
+  const vm = await import('node:vm');
+  const start = APP.indexOf('function selectFor(');
+  const src = APP.slice(start, APP.indexOf('\n}\n', start) + 2);
+  const escSrc = APP.slice(APP.indexOf('const esc = '), APP.indexOf('\n', APP.indexOf('const esc = ')));
+  const run = (kind, value) => vm.runInNewContext(`${escSrc}\n${src}\nselectFor(${JSON.stringify(kind)}, ${JSON.stringify(value)})`,
+    { CFG: { programmes: ['NAV', 'ENG'], studyForms: ['Full time', 'Part time'], education: [], nationalities: [], owners: [] }, String });
+  const selected = (html) => (html.match(/<option selected>([^<]*)<\/option>/) || [])[1];
+  assert.equal(selected(run('programme', 'NOT DECIDED')), 'NOT DECIDED');
+  assert.equal(selected(run('studyForm', 'FULL TIME')), 'FULL TIME');
+  assert.equal(selected(run('programme', 'NAV')), 'NAV');
+  assert.equal((run('programme', 'NAV').match(/>NAV</g) || []).length, 1, 'a listed value is not added twice');
+  assert.equal(selected(run('programme', '')), undefined, 'an empty value stays empty');
+});
+
+// Ritvars, 28.09.2026: "Delete please the text from home: How Admissions is performing".
+test('Home carries no title sentence', () => {
+  assert.ok(!APP.includes('How Admissions is performing'));
 });
