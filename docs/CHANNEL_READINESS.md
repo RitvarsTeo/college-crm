@@ -19,7 +19,7 @@ It should not require redesigning the CRM. That is the whole purpose of this fil
 | Channel | Readiness | How it arrives | Blocked on |
 |---|---|---|---|
 | **Website form** | READY FOR CONFIGURATION | inbound webhook | nothing - our side is finished |
-| **Google Form** | WAITING FOR EXTERNAL ACCESS | inbound webhook | Somebody who owns the form must paste the script, add the installable trigger and authorise it once. |
+| **Google Form** | WAITING FOR EXTERNAL ACCESS | inbound webhook | Nobody has named who created the form. Only its owner can paste the Apps Script onto the response sheet and approve the permission box. |
 | **Email** | WAITING FOR EXTERNAL ACCESS | inbound poll | Twenty minutes of Marina's time. She is the Google Workspace administrator and only she can grant the service account domain-wide delegation. Everything on our side is built. |
 | **Facebook** | WAITING FOR EXTERNAL ACCESS | inbound webhook | A Meta app, page access from the business portfolio, and APP REVIEW for messaging permissions. Review takes weeks and can be refused. |
 | **Messenger** | WAITING FOR EXTERNAL ACCESS | inbound webhook | A Meta app, page access from the business portfolio, and APP REVIEW for messaging permissions. Review takes weeks and can be refused. |
@@ -28,10 +28,33 @@ It should not require redesigning the CRM. That is the whole purpose of this fil
 | **Mailchimp** | READY FOR CONFIGURATION | inbound webhook | nothing - our side is finished |
 | **Open Day** | READY FOR CONFIGURATION | inbound webhook | nothing - our side is finished |
 | **Phone** | WAITING FOR EXTERNAL ACCESS | inbound poll | Nothing from TeleGroup. Ritvars holds the API token; it goes into PBX_API_TOKEN on the host, then the channel needs the three deployment prerequisites. |
-| **Agent or partner** | READY FOR CONFIGURATION | inbound webhook | nothing - our side is finished |
+| **Agent or partner** | WAITING FOR EXTERNAL ACCESS | inbound webhook | Nobody has named which agent we start with, or who at their end would set up the link. |
 | **In person** | MANUAL ONLY, BY DESIGN | manual | nothing - our side is finished |
 | **LinkedIn** | CAPABILITY UNCONFIRMED | manual | EXTERNAL CONFIRMATION REQUIRED: whether LinkedIn offers any inbound messaging integration for a page like ours at all. Nothing has been confirmed. Do not promise it. |
 | **TikTok** | CAPABILITY UNCONFIRMED | manual | EXTERNAL CONFIRMATION REQUIRED: whether TikTok offers any inbound messaging integration. Nothing has been confirmed. Do not invent one. |
+
+## How each channel stays reliable
+
+Added 27.09.2026 after an outside architecture review. Getting an event once is not enough; each channel has to answer: did we get it, did we get it twice, did we process it, what if processing failed, what if the provider retries, what if the CRM was down, can we reconstruct what happened. 'reliability' says what protects the channel TODAY, read from the code. 'reconciliation' says how something missed would be found again, and says 'none built' where that is the truth. Three gaps are shared by every channel and are not repeated per row: (1) the dedupe is not database-enforced (see _idempotency); (2) the log of refused and failed deliveries is an in-memory list of 500 in src/server.js, lost on every restart and, on Vercel, different on every instance - so a refused or failed delivery leaves NO durable trace; (3) a delivery that fails inside the CRM answers 500, which makes a retrying provider try again, but nothing records that it failed.
+
+| Channel | CRM source | How it arrives | What protects it today | How a missed event is found again |
+|---|---|---|---|---|
+| **Website form** | `website` | inbound webhook | Shared-secret header, compared in constant time. A submission without a submission_id is refused. A repeat submission_id is dropped. | None built. Depends on whether the website keeps its own copy of submissions - UNKNOWN. |
+| **Google Form** | `google_form` | inbound webhook | Shared-secret header from the Apps Script. A repeat responseId is dropped. | Possible and not built: the Form keeps every response, so they can be re-read and compared. |
+| **Email** | `gmail` | inbound poll | Read-only scope (gmail.readonly), one mailbox. A repeat Gmail message id would be dropped. | The poll IS the re-read, but it looks back a fixed 15 minutes and takes at most 25 messages, so a missed run or a busy window loses mail. A history-id cursor would close that. Not built. |
+| **Facebook** | `facebook` | inbound webhook | Meta's X-Hub-Signature-256 over the raw body with the app secret. A repeat provider event id is dropped. | None built. The Graph API can list conversations, so a backfill is possible later. |
+| **Messenger** | `messenger` | inbound webhook | As Facebook: the same Meta signature and the same connection. A repeat event id is dropped. | None built. As Facebook. |
+| **Instagram** | `instagram` | inbound webhook | As Facebook: the same Meta signature. A repeat event id is dropped. | None built. As Facebook. |
+| **WhatsApp** | `whatsapp` | inbound webhook | As Facebook: the same Meta signature. A repeat WhatsApp message id is dropped. | None built. |
+| **Mailchimp** | `mailchimp` | inbound webhook | Secret in the webhook URL. A repeat of type + email + fired_at is dropped. | Not built. The review recommends exactly our intended shape: the webhook is the event stream, the API is the correction tool - re-read the audience and compare. |
+| **Open Day** | `open_day` | inbound webhook | Shared-secret header. A repeat booking reference is dropped. | None built. Whether the booking tool has an API to re-read from is UNKNOWN (PROVIDER_QUESTIONS.md). |
+| **Phone** | `phone` | inbound poll | Poll every 5 minutes for the last 15, so two missed runs lose nothing; upsert on uniqueid absorbs the overlap. | The overlap window is the reconciliation. |
+| **Agent or partner** | `agent` | inbound webhook | A token per partner, checked server-side. A repeat partner id + partner reference is dropped. | None built. |
+| **In person** | `in_person` | manual | Typed by staff. The server refuses the save (409) when the email, phone or name matches somebody, unless staff confirm it is a different person. | Not applicable - the person is standing there. |
+| **LinkedIn** | `linkedin` | manual | Not applicable until the capability is known. | Not applicable. |
+| **TikTok** | `tiktok` | manual | Not applicable until the capability is known. | Not applicable. |
+
+**On duplicates:** Every adapter declares an externalId, and receive() in src/intake.js looks for an inbound row with the same channel and external_id before inserting, so the same provider event delivered twice is stored once. Providers retry; that is normal and must never make two people. CORRECTED 27.09.2026: this used to say a unique index enforces it. NO SUCH INDEX EXISTS - it is a look-then-insert check in application code. That is sound on SQLite, where one process runs one request at a time, and NOT sound on PostgreSQL behind Vercel, where two retries of one event can run at once, both look, both find nothing and both insert. The fix - a partial unique index on (channel, external_id) plus an insert that tolerates the conflict - is part of the PostgreSQL move. See docs/BACKLOG.md, 27.09.2026.
 
 ## What Novikontas has to do, by channel
 
@@ -66,6 +89,8 @@ These are the actions nobody in this repository can perform.
 | Timestamp | submitted_at supplied by the form |
 | Deduplicated on | channel + external_event_id |
 | Rate limits | Ours to set. A public form needs a spam control in front of it. |
+| Reliability today | Shared-secret header, compared in constant time. A submission without a submission_id is refused. A repeat submission_id is dropped. |
+| Reconciliation | None built. Depends on whether the website keeps its own copy of submissions - UNKNOWN. |
 
 **What we control:** the endpoint; the field names; the secret; the spam rule
 
@@ -95,6 +120,8 @@ These are the actions nobody in this repository can perform.
 | Timestamp | the response timestamp |
 | Deduplicated on | channel + responseId |
 | Rate limits | Apps Script quotas apply to the sender, not to us. |
+| Reliability today | Shared-secret header from the Apps Script. A repeat responseId is dropped. |
+| Reconciliation | Possible and not built: the Form keeps every response, so they can be re-read and compared. |
 
 **What we control:** the endpoint; the payload contract; the secret
 
@@ -102,7 +129,7 @@ These are the actions nobody in this repository can perform.
 
 **Credentials required:** GOOGLE_FORM_SECRET, generated by us and pasted into the script
 
-**EXTERNAL BLOCKER:** Somebody who owns the form must paste the script, add the installable trigger and authorise it once.
+**EXTERNAL BLOCKER:** Nobody has named who created the form. Only its owner can paste the Apps Script onto the response sheet and approve the permission box.
 
 **Somebody outside has to:** The form owner runs the script once and approves the permission prompt.
 
@@ -113,6 +140,8 @@ These are the actions nobody in this repository can perform.
 **How we turn it off:** Remove the trigger at Google, or set the mode to off here.
 
 **Note:** A second architecture exists - the Forms API with a Cloud project and Pub/Sub. It is heavier and needs a Cloud project. The Apps Script route is what this contract assumes. EXTERNAL CONFIRMATION REQUIRED on which one Novikontas wants.
+
+**Architecture review, 27.09.2026:** The review recommends binding the script to the FORM's own submit trigger rather than the response sheet, so a Sheet is not a middleman unless someone actually works in it. The register still says response sheet; which one is used is the form owner's choice when the owner is named.
 
 
 ## Email
@@ -128,6 +157,8 @@ These are the actions nobody in this repository can perform.
 | Timestamp | the message Date header |
 | Deduplicated on | channel + gmail message id |
 | Rate limits | Gmail API quota per user. Polling every few minutes is well inside it. |
+| Reliability today | Read-only scope (gmail.readonly), one mailbox. A repeat Gmail message id would be dropped. |
+| Reconciliation | The poll IS the re-read, but it looks back a fixed 15 minutes and takes at most 25 messages, so a missed run or a busy window loses mail. A history-id cursor would close that. Not built. |
 
 **What we control:** the polling schedule; what we extract; what we keep
 
@@ -147,6 +178,8 @@ These are the actions nobody in this repository can perform.
 
 **On the message body:** The message body is held only until somebody qualifies or archives the item, then deleted. What survives is the structured record. Decided 23.09.2026.
 
+**Architecture review, 27.09.2026:** BUILT ONLY TO THE FETCH. lib/gmail.js reads messages and api/cron/gmail-poll.js returns them in its reply; NOTHING passes them to receive(), so no email reaches the Inbox yet. Also an open decision the review raised: domain-wide delegation lets the service account read ANY mailbox in the Workspace with that scope - the code chooses one, the grant does not limit it. OAuth on a dedicated mailbox limits it to that mailbox. Ritvars and Marina decide.
+
 
 ## Facebook
 
@@ -161,6 +194,8 @@ These are the actions nobody in this repository can perform.
 | Timestamp | the event timestamp, seconds since epoch |
 | Deduplicated on | channel + provider event id |
 | Rate limits | Meta rate limits apply to our calls back to them, not to their webhook. |
+| Reliability today | Meta's X-Hub-Signature-256 over the raw body with the app secret. A repeat provider event id is dropped. |
+| Reconciliation | None built. The Graph API can list conversations, so a backfill is possible later. |
 
 **What we control:** the endpoint; signature verification; normalisation
 
@@ -194,6 +229,8 @@ These are the actions nobody in this repository can perform.
 | Timestamp | the event timestamp, seconds since epoch |
 | Deduplicated on | channel + provider event id |
 | Rate limits | Meta rate limits apply to our calls back to them, not to their webhook. |
+| Reliability today | As Facebook: the same Meta signature and the same connection. A repeat event id is dropped. |
+| Reconciliation | None built. As Facebook. |
 
 **What we control:** the endpoint; signature verification; normalisation
 
@@ -227,6 +264,8 @@ These are the actions nobody in this repository can perform.
 | Timestamp | the event timestamp, milliseconds since epoch |
 | Deduplicated on | channel + provider event id |
 | Rate limits | As Facebook. |
+| Reliability today | As Facebook: the same Meta signature. A repeat event id is dropped. |
+| Reconciliation | None built. As Facebook. |
 
 **What we control:** the endpoint; signature verification; normalisation
 
@@ -260,6 +299,8 @@ These are the actions nobody in this repository can perform.
 | Timestamp | the message timestamp, seconds since epoch |
 | Deduplicated on | channel + message id |
 | Rate limits | Messaging limits apply to what we SEND, not to what arrives. |
+| Reliability today | As Facebook: the same Meta signature. A repeat WhatsApp message id is dropped. |
+| Reconciliation | None built. |
 
 **What we control:** the endpoint; signature verification; normalisation
 
@@ -293,6 +334,8 @@ These are the actions nobody in this repository can perform.
 | Timestamp | fired_at |
 | Deduplicated on | channel + type + email + fired_at |
 | Rate limits | Not a concern for inbound events. |
+| Reliability today | Secret in the webhook URL. A repeat of type + email + fired_at is dropped. |
+| Reconciliation | Not built. The review recommends exactly our intended shape: the webhook is the event stream, the API is the correction tool - re-read the audience and compare. |
 
 **What we control:** the endpoint; the secret in the path; normalisation
 
@@ -324,6 +367,8 @@ These are the actions nobody in this repository can perform.
 | Timestamp | the booking time |
 | Deduplicated on | channel + booking reference |
 | Rate limits | Not a concern. |
+| Reliability today | Shared-secret header. A repeat booking reference is dropped. |
+| Reconciliation | None built. Whether the booking tool has an API to re-read from is UNKNOWN (PROVIDER_QUESTIONS.md). |
 
 **What we control:** the endpoint; the registration model; attendance
 
@@ -357,6 +402,8 @@ These are the actions nobody in this repository can perform.
 | Timestamp | created_at, read as Europe/Riga |
 | Deduplicated on | uniqueid |
 | Rate limits | UNKNOWN. Must be asked. |
+| Reliability today | Poll every 5 minutes for the last 15, so two missed runs lose nothing; upsert on uniqueid absorbs the overlap. |
+| Reconciliation | The overlap window is the reconciliation. |
 
 **What we control:** the polling window; timezone handling; the queue filter; retention
 
@@ -376,12 +423,14 @@ These are the actions nobody in this repository can perform.
 
 **Note:** V1 logs calls by hand and says so on screen. The logger is built and tested locally and has never called the real API. The queue field gives us the button; that question is settled.
 
+**Architecture review, 27.09.2026:** TWO GAPS, 27.09.2026. (1) NO TRIGGER: the Vercel team is on Hobby, which rejects any cron more frequent than daily, so the 5-minute cron was removed from vercel.json; something else must call /api/cron/pbx-calls every 5 minutes before this channel goes live. (2) Calls are written by lib/pbx.js into its own table, pbx_incoming_calls, through the Supabase REST API. Nothing in src/ reads that table, so no call reaches the Inbox yet. Still worth asking TeleGroup whether a reliable call-event push exists (open question 9); if not, polling stays - it works.
+
 
 ## Agent or partner
 
 | | |
 |---|---|
-| Readiness | **READY FOR CONFIGURATION** |
+| Readiness | **WAITING FOR EXTERNAL ACCESS** |
 | Mechanism | A tokenised link the partner submits through, or a spreadsheet import. |
 | Direction | inbound webhook |
 | Security | per partner token |
@@ -390,12 +439,16 @@ These are the actions nobody in this repository can perform.
 | Timestamp | the submission time |
 | Deduplicated on | channel + partner id + partner reference |
 | Rate limits | Ours to set per partner. |
+| Reliability today | A token per partner, checked server-side. A repeat partner id + partner reference is dropped. |
+| Reconciliation | None built. |
 
 **What we control:** the endpoint; the token per partner; the field contract
 
 **What the provider controls:** nothing standard - every agent is different
 
 **Credentials required:** one token per partner, issued by us
+
+**EXTERNAL BLOCKER:** Nobody has named which agent we start with, or who at their end would set up the link.
 
 **Somebody outside has to:** Agree the format with each partner and issue their token.
 
@@ -408,6 +461,8 @@ These are the actions nobody in this repository can perform.
 **On identity:** The agent is a SOURCE and an attribution. It is never automatically the CRM owner.
 
 **Note:** No public agent API exists to integrate with. This is a contract we define, not one we discover.
+
+**Architecture review, 27.09.2026:** The review suggests the simplest version needs no partner system at all: the agent hands out a unique referral link to OUR website form, the form carries the token, and the CRM records source = agent and which agent. Worth choosing before anybody builds a partner-side webhook.
 
 
 ## In person
@@ -423,6 +478,8 @@ These are the actions nobody in this repository can perform.
 | Timestamp | when it was typed |
 | Deduplicated on | channel + generated id |
 | Rate limits | Not applicable. |
+| Reliability today | Typed by staff. The server refuses the save (409) when the email, phone or name matches somebody, unless staff confirm it is a different person. |
+| Reconciliation | Not applicable - the person is standing there. |
 
 **What we control:** everything
 
@@ -452,6 +509,8 @@ These are the actions nobody in this repository can perform.
 | Timestamp | entered by the person copying it in |
 | Deduplicated on | channel + generated id |
 | Rate limits | Not applicable while manual. |
+| Reliability today | Not applicable until the capability is known. |
+| Reconciliation | Not applicable. |
 
 **What we control:** the normalised shape, so that IF a mechanism appears it maps in without redesign
 
@@ -485,6 +544,8 @@ These are the actions nobody in this repository can perform.
 | Timestamp | entered by the person copying it in |
 | Deduplicated on | channel + generated id |
 | Rate limits | Not applicable while manual. |
+| Reliability today | Not applicable until the capability is known. |
+| Reconciliation | Not applicable. |
 
 **What we control:** the normalised shape only
 

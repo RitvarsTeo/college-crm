@@ -24,6 +24,102 @@ integration work starts.
 
 ---
 
+## 0. Where the architecture stands, 27.09.2026 - reviewed against an outside recommendation
+
+The line above, "Nothing here is built", was true on 23.09.2026 and is not true now. Part of this
+design is built and tested locally. **No channel is connected, and nothing is live.** This section
+records what exists, read from the code, and how it compares with an architecture review Ritvars
+brought in on 27.09.2026.
+
+### The review's central rule, and we already follow it
+
+> Different providers may use different transports, but Academy CRM has **one** standard internal way
+> of receiving, identifying, deduplicating, recording and routing what arrives. Channel 15 is a new
+> adapter, not a redesign.
+
+It also warned against building an "integration platform" before integrating anything: start with
+an endpoint per provider, a provider adapter and one shared processing path, and add a queue or a
+separate gateway only when volume or reliability actually demands it. **That is the shape already
+built.** There is no separate gateway service and none is planned for V1.
+
+### What is built, as it runs today
+
+```
+provider
+   |
+   |  POST /api/inbound/<channel>          (GET on the same address = the provider's handshake)
+   v
+src/server.js      mode check (off | test | live)  ->  raw body read, 3 MB cap
+   |
+src/inbound.js     verifyRequest: the channel's own secret or signature, constant-time compare
+   |               parseInboundBody: JSON, form-encoded (Mailchimp) or a Pub/Sub envelope (Gmail)
+   v
+src/adapters.js    one adapter per channel -> ONE normalized event shape
+   |               (externalEventId, sender, body, extracted fields, attribution, consent)
+   v
+src/intake.js      receive(): drop a repeat external id -> extract with provenance -> junk filter
+   |               -> one row in `inbound`, state new or filtered
+   v
+INBOX ("To look at")   a PERSON qualifies it: identity is matched and SHOWN, a human links or creates
+   |
+   v
+PERSON  ->  history (events)  ->  owner and next step (routing)
+```
+
+The four Meta channels are **one** integration with four CRM sources (`facebook`, `instagram`,
+`messenger`, `whatsapp`) - one signature scheme, one adapter family, one app. The review recommends
+exactly that. The register is `config/channels.json`; its generated view is
+[CHANNEL_READINESS.md](CHANNEL_READINESS.md), which now carries the reliability columns the review
+asked for.
+
+### Where we deliberately differ from the review, and why
+
+| The review | Ours | Why ours stands |
+|---|---|---|
+| Identity resolution decides EXISTING or NEW automatically | The machine **matches and shows**; a person links or creates at qualification | Rule 1 of this document: a machine may sort, only a person may decide. An Instagram sender id is not an email; a wrong automatic merge is worse than two records a human joins |
+| Store the event | Message bodies are **deleted at the qualification decision** | §9, decided. The key and the extracted facts stay; the conversation stays with the provider |
+
+### The seven production questions, answered honestly
+
+The review's point: getting an event once is not enough. For the platform as a whole:
+
+| Question | Today | Status |
+|---|---|---|
+| Did we get it? | A stored `inbound` row, yes. A **refused or failed** delivery leaves only an entry in an in-memory list of 500 in `src/server.js`, lost on restart and, on Vercel, different per instance | **GAP** |
+| Did we get it twice? | `receive()` looks for the same channel + external id before inserting. **Not enforced by the database** - the unique index the register claimed does not exist. Sound on SQLite, unsafe on Postgres under concurrent retries | **GAP, part of the Postgres move** |
+| Did we process it? | Yes: `state` new / filtered / qualified / archived, with who and when | BUILT |
+| What if processing failed? | The route answers 500; nothing durable records the failure | **GAP** |
+| What if the provider retries? | A retry is dropped as a repeat (subject to the row above) and answers 200 "already had it" | BUILT |
+| What if the CRM was down? | Depends on the provider retrying. No reconciliation is built for any webhook channel | **GAP, per channel in the register** |
+| Can we reconstruct what happened? | For stored rows, yes, from `inbound` and history. For refusals and failures, no | **GAP** |
+
+### What this review turned up that was not known before
+
+Found by checking the code on 27.09.2026, not by reading documents:
+
+1. **The dedupe is not database-enforced** (above). The register said it was. Corrected.
+2. **Gmail stops at the fetch.** `lib/gmail.js` reads messages and `api/cron/gmail-poll.js` returns
+   them in its reply. Nothing passes them to `receive()`, so no email would reach the Inbox even with
+   Marina's grant. The poll also looks back a fixed 15 minutes and takes at most 25 messages.
+3. **Phone calls stop at their own table.** `lib/pbx.js` writes to `pbx_incoming_calls` through the
+   Supabase REST API. Nothing in `src/` reads that table, so no call reaches the Inbox.
+4. **The PBX has no trigger on Vercel Hobby**, which rejects any cron more frequent than daily. The
+   5-minute cron was removed from `vercel.json` the same day; the route stays.
+5. **Gmail's permission model is an open decision.** Domain-wide delegation lets the service account
+   read any mailbox in the Workspace with the read-only scope; the code picks one. OAuth on one
+   dedicated mailbox would limit it to that one. The scope is already read-only, as the review asks.
+
+### Two smaller suggestions from the review, recorded as options, not decisions
+
+- **Google Form:** bind the Apps Script to the form's own submit trigger rather than the response
+  sheet, unless somebody actually works in the sheet.
+- **Agent:** the simplest version needs no partner system - a unique referral link to our own website
+  form, the token carried with the submission, `source = agent` plus which agent.
+
+The backlog rows are in [BACKLOG.md](BACKLOG.md), 27.09.2026.
+
+---
+
 ## 1. The problem, in two sentences
 
 If everything that arrives becomes a lead, Admissions drowns. Thirty people send "Hi" on a Tuesday

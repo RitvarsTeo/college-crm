@@ -40,6 +40,19 @@ for cid, c in ch.items():
         c['label'], READY_LABEL.get(c['readiness'], c['readiness']),
         c['direction'].replace('_', ' '), blocker))
 w('')
+w('## How each channel stays reliable')
+w('')
+w(cfg['_reliability'])
+w('')
+w('| Channel | CRM source | How it arrives | What protects it today | How a missed event is found again |')
+w('|---|---|---|---|---|')
+for cid, c in ch.items():
+    w('| **%s** | `%s` | %s | %s | %s |' % (
+        c['label'], cid, c['direction'].replace('_', ' '),
+        c.get('reliability', 'UNKNOWN'), c.get('reconciliation', 'UNKNOWN')))
+w('')
+w('**On duplicates:** ' + cfg['_idempotency'])
+w('')
 w('## What Novikontas has to do, by channel')
 w('')
 w('These are the actions nobody in this repository can perform.')
@@ -67,6 +80,8 @@ for cid, c in ch.items():
     w('| Timestamp | %s |' % c['timestampSource'])
     w('| Deduplicated on | %s |' % c['dedupKey'])
     w('| Rate limits | %s |' % c.get('rateLimit', 'UNKNOWN'))
+    w('| Reliability today | %s |' % c.get('reliability', 'UNKNOWN'))
+    w('| Reconciliation | %s |' % c.get('reconciliation', 'UNKNOWN'))
     w('')
     w('**What we control:** %s' % ('; '.join(c['weControl']) if c['weControl'] else 'nothing'))
     w('')
@@ -88,7 +103,8 @@ for cid, c in ch.items():
     w('**How we turn it off:** %s' % c['howWeDisable'])
     w('')
     for key, label in [('identityNote', 'On identity'), ('operationalNote', 'Operationally'),
-                       ('bodyRetention', 'On the message body'), ('_note', 'Note'), ('_gap', 'Known gap')]:
+                       ('bodyRetention', 'On the message body'), ('_note', 'Note'), ('_gap', 'Known gap'),
+                       ('review_27_09', 'Architecture review, 27.09.2026')]:
         if c.get(key):
             w('**%s:** %s' % (label, c[key]))
             w('')

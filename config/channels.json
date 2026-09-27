@@ -8,7 +8,7 @@
     "capability_unconfirmed": "We do not know whether the provider can do this. EXTERNAL CONFIRMATION REQUIRED before anything is promised."
   },
   "_modes": "Every channel has a mode: off, test or live. Only 'test' accepts a simulated payload. 'live' additionally requires real credentials to be present, and nothing in this repository can set it.",
-  "_idempotency": "Every adapter declares an externalId. The inbound table has a unique index on (channel, external_id), so the same provider event delivered twice is stored once. Providers retry; that is normal and must never make two people.",
+  "_idempotency": "Every adapter declares an externalId, and receive() in src/intake.js looks for an inbound row with the same channel and external_id before inserting, so the same provider event delivered twice is stored once. Providers retry; that is normal and must never make two people. CORRECTED 27.09.2026: this used to say a unique index enforces it. NO SUCH INDEX EXISTS - it is a look-then-insert check in application code. That is sound on SQLite, where one process runs one request at a time, and NOT sound on PostgreSQL behind Vercel, where two retries of one event can run at once, both look, both find nothing and both insert. The fix - a partial unique index on (channel, external_id) plus an insert that tolerates the conflict - is part of the PostgreSQL move. See docs/BACKLOG.md, 27.09.2026.",
   "channels": {
     "website": {
       "label": "Website form",
@@ -46,7 +46,9 @@
         "Test filtering and routing"
       ],
       "ownerPerson": "Oksana",
-      "ownerAction": "Paste the address and secret into the website form"
+      "ownerAction": "Paste the address and secret into the website form",
+      "reliability": "Shared-secret header, compared in constant time. A submission without a submission_id is refused. A repeat submission_id is dropped.",
+      "reconciliation": "None built. Depends on whether the website keeps its own copy of submissions - UNKNOWN."
     },
     "google_form": {
       "label": "Google Form",
@@ -87,7 +89,10 @@
         "Test Inbox routing"
       ],
       "ownerPerson": null,
-      "ownerAction": "Whoever owns the form runs the Apps Script step"
+      "ownerAction": "Whoever owns the form runs the Apps Script step",
+      "reliability": "Shared-secret header from the Apps Script. A repeat responseId is dropped.",
+      "reconciliation": "Possible and not built: the Form keeps every response, so they can be re-read and compared.",
+      "review_27_09": "The review recommends binding the script to the FORM's own submit trigger rather than the response sheet, so a Sheet is not a middleman unless someone actually works in it. The register still says response sheet; which one is used is the form owner's choice when the owner is named."
     },
     "gmail": {
       "label": "Email",
@@ -131,7 +136,10 @@
         "Test an inbound email into the Inbox"
       ],
       "ownerPerson": "Marina",
-      "ownerAction": "Google Workspace administrator approval"
+      "ownerAction": "Google Workspace administrator approval",
+      "reliability": "Read-only scope (gmail.readonly), one mailbox. A repeat Gmail message id would be dropped.",
+      "reconciliation": "The poll IS the re-read, but it looks back a fixed 15 minutes and takes at most 25 messages, so a missed run or a busy window loses mail. A history-id cursor would close that. Not built.",
+      "review_27_09": "BUILT ONLY TO THE FETCH. lib/gmail.js reads messages and api/cron/gmail-poll.js returns them in its reply; NOTHING passes them to receive(), so no email reaches the Inbox yet. Also an open decision the review raised: domain-wide delegation lets the service account read ANY mailbox in the Workspace with that scope - the code chooses one, the grant does not limit it. OAuth on a dedicated mailbox limits it to that mailbox. Ritvars and Marina decide."
     },
     "facebook": {
       "label": "Facebook",
@@ -179,7 +187,9 @@
       "handshake": "GET the webhook path with hub.mode, hub.verify_token and hub.challenge. We echo the challenge as plain text or Meta will not save the subscription.",
       "administeredBy": "Tetiana",
       "ownerPerson": "Tetiana",
-      "ownerAction": "Meta app plus Page setup, then App Review"
+      "ownerAction": "Meta app plus Page setup, then App Review",
+      "reliability": "Meta's X-Hub-Signature-256 over the raw body with the app secret. A repeat provider event id is dropped.",
+      "reconciliation": "None built. The Graph API can list conversations, so a backfill is possible later."
     },
     "messenger": {
       "label": "Messenger",
@@ -226,7 +236,9 @@
       "handshake": "GET the webhook path with hub.mode, hub.verify_token and hub.challenge. We echo the challenge as plain text or Meta will not save the subscription.",
       "administeredBy": "Tetiana",
       "ownerPerson": "Tetiana",
-      "ownerAction": "Meta app plus Messenger setup, then App Review"
+      "ownerAction": "Meta app plus Messenger setup, then App Review",
+      "reliability": "As Facebook: the same Meta signature and the same connection. A repeat event id is dropped.",
+      "reconciliation": "None built. As Facebook."
     },
     "instagram": {
       "label": "Instagram",
@@ -273,7 +285,9 @@
       "handshake": "GET the webhook path with hub.mode, hub.verify_token and hub.challenge. We echo the challenge as plain text or Meta will not save the subscription.",
       "administeredBy": "Tetiana",
       "ownerPerson": "Tetiana",
-      "ownerAction": "Meta app plus Instagram setup, then App Review"
+      "ownerAction": "Meta app plus Instagram setup, then App Review",
+      "reliability": "As Facebook: the same Meta signature. A repeat event id is dropped.",
+      "reconciliation": "None built. As Facebook."
     },
     "whatsapp": {
       "label": "WhatsApp",
@@ -324,7 +338,9 @@
       "handshake": "GET the webhook path with hub.mode, hub.verify_token and hub.challenge. We echo the challenge as plain text or Meta will not save the subscription.",
       "administeredBy": "Tetiana",
       "ownerPerson": "Tetiana",
-      "ownerAction": "Meta app plus WhatsApp setup, then App Review"
+      "ownerAction": "Meta app plus WhatsApp setup, then App Review",
+      "reliability": "As Facebook: the same Meta signature. A repeat WhatsApp message id is dropped.",
+      "reconciliation": "None built."
     },
     "mailchimp": {
       "label": "Mailchimp",
@@ -364,7 +380,9 @@
       ],
       "handshake": "GET the webhook path. Mailchimp checks the URL answers before it will save it, and sends no challenge.",
       "ownerPerson": "Ritvars",
-      "ownerAction": "Paste the address into the audience webhook settings"
+      "ownerAction": "Paste the address into the audience webhook settings",
+      "reliability": "Secret in the webhook URL. A repeat of type + email + fired_at is dropped.",
+      "reconciliation": "Not built. The review recommends exactly our intended shape: the webhook is the event stream, the API is the correction tool - re-read the audience and compare."
     },
     "open_day": {
       "label": "Open Day",
@@ -403,7 +421,9 @@
         "Study interest -> Ieva"
       ],
       "ownerPerson": "Aigars",
-      "ownerAction": "Paste the webhook into the Open Day booking tool"
+      "ownerAction": "Paste the webhook into the Open Day booking tool",
+      "reliability": "Shared-secret header. A repeat booking reference is dropped.",
+      "reconciliation": "None built. Whether the booking tool has an API to re-read from is UNKNOWN (PROVIDER_QUESTIONS.md)."
     },
     "phone": {
       "label": "Phone",
@@ -456,7 +476,10 @@
         "Test buttons 1, 2 and 3"
       ],
       "ownerPerson": "Ritvars",
-      "ownerAction": "Put the token he holds into PBX_API_TOKEN, then configure the poll"
+      "ownerAction": "Put the token he holds into PBX_API_TOKEN, then configure the poll",
+      "reliability": "Poll every 5 minutes for the last 15, so two missed runs lose nothing; upsert on uniqueid absorbs the overlap.",
+      "reconciliation": "The overlap window is the reconciliation.",
+      "review_27_09": "TWO GAPS, 27.09.2026. (1) NO TRIGGER: the Vercel team is on Hobby, which rejects any cron more frequent than daily, so the 5-minute cron was removed from vercel.json; something else must call /api/cron/pbx-calls every 5 minutes before this channel goes live. (2) Calls are written by lib/pbx.js into its own table, pbx_incoming_calls, through the Supabase REST API. Nothing in src/ reads that table, so no call reaches the Inbox yet. Still worth asking TeleGroup whether a reliable call-event push exists (open question 9); if not, polling stays - it works."
     },
     "agent": {
       "label": "Agent or partner",
@@ -495,7 +518,10 @@
       ],
       "ownerPerson": null,
       "ownerAction": "Whoever owns the partner system sets up the webhook",
-      "blockerKind": "question"
+      "blockerKind": "question",
+      "reliability": "A token per partner, checked server-side. A repeat partner id + partner reference is dropped.",
+      "reconciliation": "None built.",
+      "review_27_09": "The review suggests the simplest version needs no partner system at all: the agent hands out a unique referral link to OUR website form, the form carries the token, and the CRM records source = agent and which agent. Worth choosing before anybody builds a partner-side webhook."
     },
     "in_person": {
       "label": "In person",
@@ -526,7 +552,9 @@
         "No external integration needed. Final acceptance test in the CRM."
       ],
       "ownerPerson": null,
-      "ownerAction": "Nothing to do. Already working"
+      "ownerAction": "Nothing to do. Already working",
+      "reliability": "Typed by staff. The server refuses the save (409) when the email, phone or name matches somebody, unless staff confirm it is a different person.",
+      "reconciliation": "Not applicable - the person is standing there."
     },
     "linkedin": {
       "label": "LinkedIn",
@@ -562,7 +590,9 @@
         "If it is not, Tetiana remains the manual bridge"
       ],
       "ownerPerson": null,
-      "ownerAction": "No integration. Tetiana enters the person by hand"
+      "ownerAction": "No integration. Tetiana enters the person by hand",
+      "reliability": "Not applicable until the capability is known.",
+      "reconciliation": "Not applicable."
     },
     "tiktok": {
       "label": "TikTok",
@@ -598,7 +628,9 @@
         "If it is not, Tetiana remains the manual bridge"
       ],
       "ownerPerson": null,
-      "ownerAction": "No integration. Tetiana enters the person by hand"
+      "ownerAction": "No integration. Tetiana enters the person by hand",
+      "reliability": "Not applicable until the capability is known.",
+      "reconciliation": "Not applicable."
     }
   },
   "_meta": "Facebook, Instagram, Messenger and WhatsApp are reached through ONE Meta Business Suite connection. That is an integration detail. Each remains a SEPARATE channel in the CRM for reporting, filtering, source and history: there is deliberately no combined \"Meta\" number, because it would hide where people actually came from. WhatsApp being inside the same shared inbox is NOT VERIFIED and must not be claimed.",
@@ -626,5 +658,6 @@
     "in_person"
   ],
   "_connectOrder": "The order Ritvars set on 24.09.2026. Both the Desktop guide and docs/CHANNEL_READINESS.md render in this order, so his list and the generated documents cannot drift apart.",
-  "_ownerPerson": "Who physically has to act for each channel, told by Ritvars on 25.09.2026. null means nobody is named yet. This is NOT who owns the CRM record - a confirmed study lead always belongs to Admissions, which is Ieva, whatever channel it arrived on."
+  "_ownerPerson": "Who physically has to act for each channel, told by Ritvars on 25.09.2026. null means nobody is named yet. This is NOT who owns the CRM record - a confirmed study lead always belongs to Admissions, which is Ieva, whatever channel it arrived on.",
+  "_reliability": "Added 27.09.2026 after an outside architecture review. Getting an event once is not enough; each channel has to answer: did we get it, did we get it twice, did we process it, what if processing failed, what if the provider retries, what if the CRM was down, can we reconstruct what happened. 'reliability' says what protects the channel TODAY, read from the code. 'reconciliation' says how something missed would be found again, and says 'none built' where that is the truth. Three gaps are shared by every channel and are not repeated per row: (1) the dedupe is not database-enforced (see _idempotency); (2) the log of refused and failed deliveries is an in-memory list of 500 in src/server.js, lost on every restart and, on Vercel, different on every instance - so a refused or failed delivery leaves NO durable trace; (3) a delivery that fails inside the CRM answers 500, which makes a retrying provider try again, but nothing records that it failed."
 }

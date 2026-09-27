@@ -1739,3 +1739,29 @@ the whole application. **DECISION NEEDED.**
 | Hosting shape | `src/server.js` is one long-running HTTP server. Vercel runs functions, so the server must be wrapped or split to run there. **Not started** |
 
 Until the Supabase project exists, the Render copy stays exactly as it is.
+
+---
+
+## 27.09.2026 - channels: what exists, checked against an outside architecture review
+
+Ritvars brought in an architecture recommendation for the inbound channels. It was compared with the
+code, not with our documents. **The shape it recommends is the shape already built**: one endpoint per
+provider, one adapter per channel, one normalized event, one shared receive path, and the four Meta
+channels as one integration. No separate gateway, no queue, deliberately. Full comparison:
+[INBOUND_ARCHITECTURE.md](INBOUND_ARCHITECTURE.md) section 0. Per-channel reliability now lives in
+`config/channels.json` (`reliability`, `reconciliation`) and renders in
+[CHANNEL_READINESS.md](CHANNEL_READINESS.md), regenerated the same day. The regeneration also
+corrected two rows the hand-maintained copy had let drift: Agent had read READY and is WAITING, and
+the Google Form blocker was the old wording.
+
+| # | What | Status |
+|---|---|---|
+| 125 | **The dedupe is not database-enforced.** `config/channels.json` said a unique index on `(channel, external_id)` exists. It does not; `receive()` looks, then inserts. On Postgres two concurrent retries can both insert. Fix: a partial unique index plus an insert that tolerates the conflict. The register text is corrected | **OPEN, part of Phase 2** |
+| 126 | **Refused and failed deliveries leave no durable trace.** The inbound log is an in-memory list of 500 in `src/server.js`, lost on restart and per-instance on Vercel | **OPEN** |
+| 127 | **Gmail stops at the fetch.** `runPoll()` returns messages; nothing passes them to `receive()`. Also a fixed 15-minute look-back and a 25-message cap, so a missed run or a busy window loses mail | **OPEN** |
+| 128 | **Phone calls stop at `pbx_incoming_calls`.** Written through the Supabase REST API; nothing in `src/` reads the table, so no call reaches the Inbox | **OPEN** |
+| 129 | **The PBX has no 5-minute trigger on Vercel Hobby.** Hobby rejects any cron more frequent than daily. The cron was removed from `vercel.json`; the route stays. Needs a free external trigger or a plan change before the channel goes live | **OPEN** |
+| 130 | **Gmail: domain-wide delegation or OAuth on one dedicated mailbox.** Delegation can reach every mailbox with the scope; OAuth reaches one. The scope is already read-only | **DECISION NEEDED** - Ritvars with Marina |
+| 131 | **No reconciliation on any webhook channel.** Mailchimp (re-read the audience), Google Form (re-read responses) and Meta (Graph API) are all possible; none is built | **OPEN** |
+| 132 | Google Form: bind the script to the form's submit trigger, not the response sheet, unless the sheet is used | **SAID** - review suggestion |
+| 133 | Agent: a referral token on our own website form instead of a partner-side webhook | **SAID** - review suggestion, worth choosing before anybody builds for a partner |
