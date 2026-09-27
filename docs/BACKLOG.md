@@ -1713,3 +1713,29 @@ a name, `lang="en"`, one `h1`, `main` and `nav` present.
 **58 light-theme AA failures**, every one the same token `--t4` at 3.09:1 against a 4.5:1
 requirement, used app-wide for secondary text. Untouched: changing it is a visual-design change to
 the whole application. **DECISION NEEDED.**
+
+---
+
+## DECISION 27.09.2026: the Postgres destination is a dedicated Supabase project, hosted on Vercel
+
+**DECIDED by Ritvars, 27.09.2026.** This closes "THE REMAINING INFRASTRUCTURE DECISION" of
+26.09.2026 above, and C3.
+
+    GitHub -> Vercel -> College CRM Node.js app -> pg -> DEDICATED Supabase project -> PostgreSQL
+
+- **Dedicated** means a new Supabase project holding only the CRM. The 26.09.2026 rule stands:
+  nothing goes in `novikontas-customer-hub`, `novikontas-workforce-hub` or `QR Sert`.
+- **The driver is `pg`**, not `supabase-js`: the CRM is a Node backend talking SQL.
+- **Phase 2 (SQLite to Postgres) is now unblocked in principle.** Phase 1 (`c382114`, async
+  database access on SQLite) is committed, pushed to `v1-test` on 27.09.2026 and 511/511 green.
+
+### What is true today, checked 27.09.2026, not assumed
+
+| Piece | State |
+|---|---|
+| Dedicated Supabase project | **Does not exist.** The organisation is on the free plan and both active slots are the two hubs, so a third active project needs a paid plan. Only Ritvars can upgrade and create it |
+| Vercel project | **Does not exist.** `vercel.json` only declares the PBX cron and headers |
+| Current test deployment | Render Free, `academy-crm-test`, `v1-test`, SQLite in `/tmp`. `/healthz` answered 200 with 12 demo people |
+| Hosting shape | `src/server.js` is one long-running HTTP server. Vercel runs functions, so the server must be wrapped or split to run there. **Not started** |
+
+Until the Supabase project exists, the Render copy stays exactly as it is.
