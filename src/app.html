@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Academy CRM - prototype</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Spectral:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Raleway:wght@400;500;600;700&family=Spectral:wght@400;500;600&display=swap">
 <style>
 /* ---------------------------------------------------------------------------
    Palette taken from the reference: the Client Hub preview artifact.
@@ -235,6 +235,9 @@ tr.row:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
     -webkit-mask-position:0 0,center bottom 26px;mask-position:0 0,center bottom 26px;
     -webkit-mask-composite:source-out;mask-composite:subtract}
   .gate-card h1{font-size:19px;font-weight:700;margin:0 0 4px;color:var(--gate-ink)}
+  /* The app sets every h1 in Spectral; the kit's sign-in heading is Raleway, inherited
+     from #login-view. Without this the app rule reached inside the card (27.09.2026). */
+  #login-view .gate-card h1{font-family:inherit}
   .gate-card .sub{color:var(--gate-muted);font-size:12.5px;margin:0 0 9px}
   /* GOOGLE SIGN-IN AND THE OR DIVIDER. Identical to the Client Hub's, so the two
      internal products open the same way - which is the same reason this whole gate
