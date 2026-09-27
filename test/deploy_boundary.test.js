@@ -1,52 +1,53 @@
 // What the hosted copy may serve as a plain file. Found 28.09.2026 by a read-only
 // audit: /src/server.js, /src/db.js, /src/auth.js and /config/*.json answered 200 to
-// anyone, and so did /lib, /sql and /.gitattributes. Every uploaded file is also a
-// static file on Vercel, and static files are served BEFORE the catch-all rewrite
-// to the function - so a rewrite can never close this (Talent Acquisition learned
-// that on 16.09 and reverted a rewrite for exactly this reason). A redirect runs
-// before the file lookup, so each uploaded folder the page does not load is
-// redirected to /not-public, which the function answers with 404.
+// anyone, and so did /lib, /sql, /src/app.html, /src/console.html and /.gitattributes.
 //
-// The rule these tests keep: every top-level folder that is uploaded (not in
-// .vercelignore) is either the functions folder or redirected away.
+// Why: with no output directory, Vercel serves EVERY uploaded file as a static file,
+// and static files are served before the catch-all rewrite to the function. A rewrite
+// can never close that (Talent Acquisition reverted one on 16.09 for this reason). A
+// redirect per folder closed the plain paths (af44737) but not "/%73rc/server.js" or
+// "/src%2Fserver.js": the redirect matched the literal path, the file lookup decoded
+// it and served the source.
+//
+// The fix at the root: static files come ONLY from public/, which holds nothing but
+// robots.txt. The function still carries src/ and config/ (functions.includeFiles),
+// and the logos are served by the server under /assets/. Every other address reaches
+// the function, which answers 404 for anything it does not know.
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const VERCEL = JSON.parse(fs.readFileSync(path.join(ROOT, 'vercel.json'), 'utf8'));
-const IGNORED = fs.readFileSync(path.join(ROOT, '.vercelignore'), 'utf8').split(/\r?\n/)
-  .map((l) => l.trim()).filter((l) => l && !l.startsWith('#') && !l.startsWith('!'))
-  .map((l) => l.replace(/\/$/, ''));
-const redirected = (p) => (VERCEL.redirects || []).some((r) =>
-  r.destination === '/not-public' && (r.source === p || r.source === `${p}/:path*`));
+const PUBLIC_ALLOWED = ['robots.txt'];
 
-test('every uploaded folder is either the functions or redirected away', () => {
-  const tracked = execSync('git ls-files', { cwd: ROOT, encoding: 'utf8' }).split('\n').filter(Boolean);
-  const folders = [...new Set(tracked.filter((f) => f.includes('/')).map((f) => f.split('/')[0]))];
-  const uploaded = folders.filter((d) => !IGNORED.includes(d));
-  assert.ok(uploaded.includes('src') && uploaded.includes('config'), 'the check sees the real folders');
-  const open = uploaded.filter((d) => d !== 'api' && !redirected('/' + d));
-  assert.deepEqual(open, [], 'uploaded and served as plain files: ' + open.join(', '));
+test('static files come only from public/, and public/ holds nothing but the allowed files', () => {
+  assert.equal(VERCEL.outputDirectory, 'public');
+  const inPublic = [];
+  const walk = (d, pre = '') => { for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+    const rel = pre ? `${pre}/${e.name}` : e.name;
+    if (e.isDirectory()) walk(path.join(d, e.name), rel); else inPublic.push(rel);
+  } };
+  walk(path.join(ROOT, 'public'));
+  assert.deepEqual(inPublic.sort(), PUBLIC_ALLOWED, 'public/ is served to anyone; add a file here only on purpose');
+  assert.equal(fs.readFileSync(path.join(ROOT, 'public', 'robots.txt'), 'utf8'), 'User-agent: *\nDisallow: /\n');
 });
 
-test('an uploaded dotfile that Vercel serves is redirected too', () => {
-  // package.json, package-lock.json, vercel.json, .env.example and .vercelignore
-  // answered 404 on 28.09 without a rule; .gitattributes answered 200.
-  assert.ok(redirected('/.gitattributes'));
+test('the function still carries everything it reads at run time', () => {
+  const inc = VERCEL.functions['api/index.js'].includeFiles;
+  assert.equal(inc, '{src,config}/**', 'src/ (app.html, assets, modules) and config/ travel with the function');
+  assert.deepEqual(VERCEL.rewrites, [{ source: '/(.*)', destination: '/api/index' }]);
 });
 
-test('the redirects are not permanent, and none of them catches a real route', () => {
-  for (const r of VERCEL.redirects || []) assert.equal(r.permanent, false, r.source);
+test('the page loads nothing from the folders that are no longer public', () => {
   const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
   const CONSOLE = fs.readFileSync(path.join(ROOT, 'src', 'console.html'), 'utf8');
   for (const [name, text] of [['app.html', APP], ['console.html', CONSOLE]]) {
-    for (const dir of ['src', 'config', 'lib', 'sql']) {
-      assert.ok(!new RegExp(`["'(]/${dir}/`).test(text), `${name} loads something from /${dir}/, which is redirected`);
+    for (const dir of ['src', 'config', 'lib', 'sql', 'public']) {
+      assert.ok(!new RegExp(`["'(]/${dir}/`).test(text), `${name} loads something from /${dir}/`);
     }
   }
   assert.ok(APP.includes('/assets/NoAca_logo_blackhor.svg'), 'the logo comes from /assets/, which the server serves');
