@@ -1837,6 +1837,11 @@ export const handle = async (req, res) => {
     // destructive, so each one requires the caller to say what it is doing.
     // A typo in a fetch must not be able to wipe the real database.
     if (req.method === 'POST' && p === '/api/console/mode') {
+      // With sign-in on this copy holds REAL people (decided 27.09.2026), and the file they
+      // came from never leaves the PC - so a wipe here cannot be undone from the server.
+      // Only an admin may replace the database.
+      if (AUTH_ON && !(await adminOf(req)))
+        return json(res, 403, { error: 'replacing the database is for admins only' });
       const b = await body(req);
       const want = String(b.mode || '');
       if (b.confirm !== 'yes') {
