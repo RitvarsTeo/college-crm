@@ -9,7 +9,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { localDate, localMidnight, dayStartOf, dayAfterStartOf, todayStart } from './bizday.js';
+import { localDate, localDateTime, localMidnight, dayStartOf, dayAfterStartOf, todayStart } from './bizday.js';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const CFG = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'prototype.json'), 'utf8'));
@@ -225,17 +225,30 @@ export const DEFAULT_SECTIONS = ['summary', 'trend', 'programmes'];
 // One flat table, for a CSV or a spreadsheet. `want` is the list of sections
 // somebody ticked; leaving it out gives the sensible default rather than
 // everything, because an export nobody can read is not a report.
+// Which rows to set in bold: every section title, and the column names right under it.
+export function boldRowsOf(rows) {
+  const out = [];
+  rows.forEach((r, i) => {
+    if (!r || !r.head) return;
+    out.push(i);
+    if (i > 0 && rows[i + 1] && rows[i + 1].length > 1) out.push(i + 1);
+  });
+  return out;
+}
+
 export async function reportRows(db, opts = {}) {
   const want = new Set(
     Array.isArray(opts.sections) && opts.sections.length ? opts.sections : DEFAULT_SECTIONS);
   const r = await report(db, opts);
   const rows = [];
   const blank = () => rows.push([]);
-  const head = (t) => rows.push([t]);
+  // A section title is marked, so a spreadsheet can set it (and the column names under
+  // it) in bold. A CSV has no bold and simply ignores the mark.
+  const head = (t) => { const r = [t]; r.head = true; rows.push(r); };
 
-  rows.push(['Academy CRM report']);
+  head('Academy CRM report');
   rows.push(['Period', r.period.label]);
-  rows.push(['Prepared', new Date().toISOString().slice(0, 16).replace('T', ' ') + ' UTC']);
+  rows.push(['Prepared', localDateTime() + ' Riga time']);
   blank();
 
   if (want.has('summary')) {

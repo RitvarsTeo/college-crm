@@ -14,7 +14,9 @@ import { findMatches as matchPeople, duplicateCheck } from './identity.js';
 import { adapt, toIntake, hasAdapter, adapterIds } from './adapters.js';
 import { fixtureFor } from './fixtures.js';
 import { buildPayload, scenariosFor, allScenarios, CHANNEL_LABELS, META_GROUP } from './scenarios.js';
-import { report as buildReport, reportRows, periodOf, EXPORT_SECTIONS, DEFAULT_SECTIONS } from './reports.js';
+import { report as buildReport, reportRows, boldRowsOf, periodOf, EXPORT_SECTIONS, DEFAULT_SECTIONS } from './reports.js';
+import { rowsToXlsx, XLSX_TYPE } from './xlsx.js';
+import * as sheets from './sheets.js';
 import * as snapshot from './snapshot.js';
 import { buildDemo } from './demo.js';
 import * as gate from './gate.js';
@@ -133,6 +135,56 @@ function readFlow(token, secret) {
 const flowCookie = (value, minutes) =>
   `${FLOW_COOKIE}=${encodeURIComponent(value)}; Path=/api/auth/google; HttpOnly`
   + `; SameSite=Lax${DEV_INSECURE_COOKIE ? '' : '; Secure'}; Max-Age=${minutes * 60}`;
+
+// The period and sections of a report export, checked. A malformed date used to
+// reach the period code and fail there.
+const reportParams = (url) => {
+  const day = (v) => (/^\d{4}-\d{2}-\d{2}$/.test(String(v || '')) ? String(v) : '');
+  const known = new Set(EXPORT_SECTIONS.map((x) => x.id));
+  return { from: day(url.searchParams.get('from')), to: day(url.searchParams.get('to')),
+    sections: (url.searchParams.get('sections') || '').split(',').filter((x) => known.has(x)) };
+};
+
+// The end of a Google Sheets export (see /api/report.gsheet). Same code exchange and
+// the same ID-token checks as signing in, and then one more: Google must answer for
+// the person signed in to the CRM, or no sheet is made.
+async function finishSheet(req, res, url, flow, code) {
+  const back = (reason) => {
+    res.writeHead(303, { location: `/?sheet=${encodeURIComponent(reason)}#/reports`, 'cache-control': 'no-store',
+      'set-cookie': flowCookie('', 0) });
+    return res.end();
+  };
+  if (url.searchParams.get('error') || !code) return back(sheets.SHEET_REASON.DECLINED);
+  const me = await currentUser(req);
+  if (!me || me.id !== flow.uid) return back(sheets.SHEET_REASON.WRONG_ACCOUNT);
+  let tokens;
+  try {
+    const body = new URLSearchParams({ code, client_id: process.env.GOOGLE_CLIENT_ID,
+      client_secret: process.env.GOOGLE_CLIENT_SECRET, redirect_uri: process.env.GOOGLE_REDIRECT_URI,
+      grant_type: 'authorization_code' });
+    const r = await fetch(google.tokenUrl(), { method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' }, body });
+    // not read on failure: it can echo the request, which carries the client secret
+    if (!r.ok) return back(sheets.SHEET_REASON.FAILED);
+    tokens = await r.json();
+  } catch { return back(sheets.SHEET_REASON.FAILED); }
+  const verified = await google.verifyIdToken(tokens.id_token, { clientId: process.env.GOOGLE_CLIENT_ID,
+    nonce: flow.nonce, hostedDomain: google.HOSTED_DOMAIN, jwks: await google.getGoogleJwks() });
+  if (!verified.ok || auth.canonicalEmail(verified.email) !== auth.canonicalEmail(me.email)) {
+    return back(sheets.SHEET_REASON.WRONG_ACCOUNT);
+  }
+  if (!tokens.access_token || !String(tokens.scope || 'drive.file').includes('drive.file')) {
+    return back(sheets.SHEET_REASON.NO_PERMISSION);
+  }
+  const rows = await reportRows(db, flow.want || {});
+  const periodRow = rows.find((r) => r[0] === 'Period');
+  const xlsx = rowsToXlsx(rows, { bold: boldRowsOf(rows), sheetName: 'Report', title: 'Academy CRM report' });
+  const up = await sheets.uploadAsSheet({ accessToken: tokens.access_token, xlsx,
+    name: `Academy CRM report ${periodRow ? periodRow[1] : ''} (made ${localDate()})`.replace(/\s+/g, ' ').trim() });
+  if (!up.ok) return back(up.reason);
+  res.writeHead(303, { location: up.link, 'cache-control': 'no-store', 'set-cookie': flowCookie('', 0) });
+  return res.end();
+}
 
 /** Never blocks a sign-in decision. A bounded code and an email, nothing else. */
 async function logAttempt(email, method, outcome) {
@@ -737,6 +789,9 @@ export const handle = async (req, res) => {
         process.env.CRM_SESSION_SECRET);
       const code = url.searchParams.get('code');
       const state = url.searchParams.get('state');
+      if (flow && flow.purpose === 'sheet' && state && state === flow.state) {
+        return finishSheet(req, res, url, flow, code);
+      }
       if (!flow || !state || state !== flow.state || !code) {
         await logAttempt(null, 'google', google.REASON.TOKEN);
         return refuse();
@@ -1511,14 +1566,10 @@ export const handle = async (req, res) => {
         return res.end('\uFEFF' + csv);
       }
       if (fmt === 'xlsx') {
-        // A real .xlsx needs a zip writer, which this prototype does not carry.
-        // Excel opens this file and keeps the columns, and the name says what it
-        // is rather than pretending to be something it is not.
-        res.writeHead(200, {
-          'content-type': 'application/vnd.ms-excel; charset=utf-8',
-          'content-disposition': `attachment; filename="academy-crm-report-${stamp}.xls"`,
-        });
-        return res.end('\uFEFF' + rows.map((r) => r.join('\t')).join('\r\n'));
+        // A real workbook: src/xlsx.js writes the zip the format needs.
+        res.writeHead(200, { 'content-type': XLSX_TYPE,
+          'content-disposition': `attachment; filename="academy-crm-report-${stamp}.xlsx"` });
+        return res.end(rowsToXlsx(rows, { bold: [0], sheetName: 'Funnel', title: 'Academy CRM funnel' }));
       }
       // PDF: a minimal single-page document written by hand, no library.
       const lines = rows.map((r) => `${r[0]} | ${r[1]} | ${r[2]}`);
@@ -1822,15 +1873,49 @@ export const handle = async (req, res) => {
     }
 
     if (req.method === 'GET' && p === '/api/report.csv') {
-      const picked = (url.searchParams.get('sections') || '').split(',').filter(Boolean);
-      const rows = await reportRows(db, { from: url.searchParams.get('from'),
-        to: url.searchParams.get('to'), sections: picked });
+      const rows = await reportRows(db, reportParams(url));
       const csv = rows.map((r) => (r || []).map((c) =>
         `"${String(c === undefined || c === null ? '' : c).replace(/"/g, '""')}"`).join(',')).join('\r\n');
       const stamp = localDate();
       res.writeHead(200, { 'content-type': 'text/csv; charset=utf-8',
         'content-disposition': `attachment; filename="academy-crm-kpi-${stamp}.csv"` });
       return res.end('\ufeff' + csv);
+    }
+
+    // The same rows as the CSV, as a real Excel workbook.
+    if (req.method === 'GET' && p === '/api/report.xlsx') {
+      const rows = await reportRows(db, reportParams(url));
+      const file = rowsToXlsx(rows, { bold: boldRowsOf(rows), sheetName: 'Report', title: 'Academy CRM report' });
+      res.writeHead(200, { 'content-type': XLSX_TYPE, 'cache-control': 'no-store',
+        'content-disposition': `attachment; filename="academy-crm-kpi-${localDate()}.xlsx"` });
+      return res.end(file);
+    }
+
+    // The same rows again, as a Google Sheet in the signed-in person's own Drive. This
+    // starts a Google consent for drive.file (only files the CRM creates) and comes
+    // back through the ONE registered callback, which knows this flow by its purpose.
+    if (req.method === 'GET' && p === '/api/report.gsheet') {
+      const me = await currentUser(req);
+      if (!AUTH_ON || !me) return json(res, 400, { error: 'Google Sheets needs Google sign-in, which is not on for this copy.' });
+      const cfg = google.googleConfigured(process.env);
+      if (!cfg.ok) return json(res, 503, { error: 'google_not_configured', missing: cfg.missing });
+      const state = crypto.randomBytes(24).toString('base64url');
+      const nonce = crypto.randomBytes(24).toString('base64url');
+      const flow = signFlow({ state, nonce, purpose: 'sheet', uid: me.id, want: reportParams(url),
+        exp: Date.now() + FLOW_MINUTES * 60 * 1000 }, process.env.CRM_SESSION_SECRET);
+      const to = new URL(google.GOOGLE_AUTH_URL);
+      to.searchParams.set('client_id', process.env.GOOGLE_CLIENT_ID);
+      to.searchParams.set('redirect_uri', process.env.GOOGLE_REDIRECT_URI);
+      to.searchParams.set('response_type', 'code');
+      to.searchParams.set('scope', sheets.SHEETS_SCOPE);
+      to.searchParams.set('state', state);
+      to.searchParams.set('nonce', nonce);
+      to.searchParams.set('hd', google.HOSTED_DOMAIN);
+      to.searchParams.set('login_hint', me.email);
+      to.searchParams.set('include_granted_scopes', 'true');
+      res.writeHead(302, { location: to.toString(), 'cache-control': 'no-store',
+        'set-cookie': flowCookie(flow, FLOW_MINUTES) });
+      return res.end();
     }
 
     // ------------------------------------------------- real and demo state -

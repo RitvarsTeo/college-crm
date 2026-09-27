@@ -281,7 +281,18 @@ function startFakeGoogle() {
         state.lastTokenRequest = body;
         if (state.tokenStatus !== 200) { res.writeHead(state.tokenStatus); return res.end('{}'); }
         res.writeHead(200, { 'content-type': 'application/json' });
-        res.end(JSON.stringify({ id_token: state.idToken, access_token: 'not-used' }));
+        res.end(JSON.stringify({ id_token: state.idToken, access_token: state.accessToken || 'not-used',
+          ...(state.scope ? { scope: state.scope } : {}) }));
+      });
+    }
+    // Google Drive's upload endpoint, for the Google Sheets export.
+    if (req.url.startsWith('/upload')) {
+      const chunks = [];
+      req.on('data', (d) => chunks.push(d));
+      return req.on('end', () => {
+        state.uploads = (state.uploads || []).concat([{ url: req.url, headers: req.headers, body: Buffer.concat(chunks) }]);
+        res.writeHead(state.uploadStatus || 200, { 'content-type': 'application/json' });
+        res.end(state.uploadBody || JSON.stringify({ id: 'sheet123', webViewLink: 'https://docs.google.com/spreadsheets/d/sheet123/edit' }));
       });
     }
     res.writeHead(404); res.end();
@@ -365,6 +376,7 @@ async function rig(t, extraEnv = {}) {
     GOOGLE_REDIRECT_URI: 'http://127.0.0.1/api/auth/google/callback',
     CRM_GOOGLE_TOKEN_URL: `http://127.0.0.1:${fake.port}/token`,
     CRM_GOOGLE_JWKS_URL: `http://127.0.0.1:${fake.port}/certs`,
+    CRM_GOOGLE_DRIVE_UPLOAD_URL: `http://127.0.0.1:${fake.port}/upload`,
     ...extraEnv,
   });
   // One cleanup, registered once, that cannot throw.
@@ -704,4 +716,93 @@ test('signing out clears a Google session the same as any other', async (t) => {
   const session = cookieValue(cb.cookies, 'crm_session');
   const out = await request(s.port, 'POST', '/api/auth/logout', { headers: { cookie: `crm_session=${session}` } });
   assert.match([].concat(out.cookies).join('; '), /Max-Age=0/);
+});
+
+// ================================ the management report as a Google Sheet
+// 28.09.2026: "Download for management review should be ... also ... google sheets".
+// A new sheet in the signed-in person's OWN Drive, made through the one registered
+// callback. These prove the extra permission is only drive.file, that Google must
+// answer for the person signed in to the CRM, and that every failure says why.
+
+async function signedIn(port, email = 'ritvars@novikontas.org') {
+  const r = await request(port, 'POST', '/api/auth/login', { body: { email, password: 'a-long-enough-password-here' } });
+  assert.equal(r.status, 200);
+  return cookieValue(r.cookies, 'crm_session');
+}
+async function beginSheet(port, session) {
+  const r = await request(port, 'GET', '/api/report.gsheet?from=2026-01-01&to=2026-12-31&sections=summary,trend',
+    { headers: { cookie: `crm_session=${session}` } });
+  assert.equal(r.status, 302, 'it goes to Google');
+  const flow = decodeURIComponent(cookieValue(r.cookies, 'crm_oauth'));
+  const body = JSON.parse(Buffer.from(flow.split('.')[0], 'base64url').toString('utf8'));
+  return { flow, state: body.state, nonce: body.nonce, body, to: new URL(r.location) };
+}
+const both = (session, flow) => ({ cookie: `crm_session=${session}; crm_oauth=${encodeURIComponent(flow)}` });
+
+test('Google Sheets asks only for drive.file and makes the sheet in the signed-in person\'s Drive', async (t) => {
+  const s = await rig(t);
+  const session = await signedIn(s.port);
+  const f = await beginSheet(s.port, session);
+  assert.equal(f.to.searchParams.get('scope'), 'openid email https://www.googleapis.com/auth/drive.file');
+  assert.equal(f.to.searchParams.get('login_hint'), 'ritvars@novikontas.org');
+  assert.equal(f.to.searchParams.get('hd'), HOSTED_DOMAIN);
+  assert.equal(f.to.searchParams.get('redirect_uri'), 'http://127.0.0.1/api/auth/google/callback', 'the one registered callback');
+  assert.equal(f.body.purpose, 'sheet');
+  assert.deepEqual(f.body.want, { from: '2026-01-01', to: '2026-12-31', sections: ['summary', 'trend'] });
+
+  s.fake.state.idToken = mintToken({ nonce: f.nonce });
+  s.fake.state.accessToken = 'at-for-the-sheet';
+  s.fake.state.scope = 'openid email https://www.googleapis.com/auth/drive.file';
+  const cb = await request(s.port, 'GET', `/api/auth/google/callback?code=abc&state=${f.state}`, { headers: both(session, f.flow) });
+  assert.equal(cb.status, 303);
+  assert.equal(cb.location, 'https://docs.google.com/spreadsheets/d/sheet123/edit', 'straight to the new sheet');
+  assert.match([].concat(cb.cookies).join('; '), /crm_oauth=;/, 'the flow cookie is cleared');
+  assert.equal(cookieValue(cb.cookies, 'crm_session'), null, 'and no new sign-in session is issued');
+
+  const up = s.fake.state.uploads[0];
+  assert.equal(up.headers.authorization, 'Bearer at-for-the-sheet');
+  assert.match(up.headers['content-type'], /^multipart\/related; boundary=/);
+  const text = up.body.toString('latin1');
+  assert.match(text, /"mimeType":"application\/vnd.google-apps.spreadsheet"/, 'Drive converts it into a Google Sheet');
+  assert.match(text, /"name":"Academy CRM report 2026-01-01 to 2026-12-31 \(made \d{4}-\d{2}-\d{2}\)"/);
+  assert.ok(up.body.includes(Buffer.from('PK')), 'the file sent is a zip, the .xlsx');
+});
+
+test('no sheet is made when Google answers for a different account', async (t) => {
+  const s = await rig(t);
+  const session = await signedIn(s.port);
+  const f = await beginSheet(s.port, session);
+  s.fake.state.idToken = mintToken({ nonce: f.nonce, email: 'ieva@novikontas.org' });
+  s.fake.state.accessToken = 'at-x';
+  const cb = await request(s.port, 'GET', `/api/auth/google/callback?code=abc&state=${f.state}`, { headers: both(session, f.flow) });
+  assert.equal(cb.location, '/?sheet=wrong_account#/reports');
+  assert.equal((s.fake.state.uploads || []).length, 0, 'nothing reached Drive');
+});
+
+test('a Google Sheets export that fails says why, and never as a sign-in refusal', async (t) => {
+  const s = await rig(t);
+  const session = await signedIn(s.port);
+  // the person said no on Google's screen
+  let f = await beginSheet(s.port, session);
+  let cb = await request(s.port, 'GET', `/api/auth/google/callback?error=access_denied&state=${f.state}`, { headers: both(session, f.flow) });
+  assert.equal(cb.location, '/?sheet=declined#/reports');
+  // the Google Drive API is not switched on in the Cloud project
+  f = await beginSheet(s.port, session);
+  s.fake.state.idToken = mintToken({ nonce: f.nonce });
+  s.fake.state.accessToken = 'at-y';
+  s.fake.state.uploadStatus = 403;
+  s.fake.state.uploadBody = JSON.stringify({ error: { code: 403, errors: [{ reason: 'accessNotConfigured' }],
+    message: 'Google Drive API has not been used in project 1 before or it is disabled.' } });
+  cb = await request(s.port, 'GET', `/api/auth/google/callback?code=abc&state=${f.state}`, { headers: both(session, f.flow) });
+  assert.equal(cb.location, '/?sheet=drive_api_disabled#/reports');
+  // signed out in between: nothing is made for nobody
+  f = await beginSheet(s.port, session);
+  cb = await request(s.port, 'GET', `/api/auth/google/callback?code=abc&state=${f.state}`, { headers: withFlow(f.flow) });
+  assert.equal(cb.location, '/?sheet=wrong_account#/reports');
+});
+
+test('Google Sheets cannot be started by somebody who is not signed in', async (t) => {
+  const s = await rig(t);
+  const r = await request(s.port, 'GET', '/api/report.gsheet');
+  assert.equal(r.status, 401);
 });

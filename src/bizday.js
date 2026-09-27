@@ -48,5 +48,11 @@ export function localMidnight(year, month, day, tz = BUSINESS_TZ) {
 const parts = (ymd) => ymd.split('-').map(Number);
 export const dayStartOf = (ymd) => { const [y, m, d] = parts(ymd); return localMidnight(y, m, d); };
 export const dayAfterStartOf = (ymd) => { const [y, m, d] = parts(ymd); return localMidnight(y, m, d + 1); };
+// 'YYYY-MM-DD HH:MM' in Riga, for a timestamp a person reads.
+export function localDateTime(at = new Date(), tz = BUSINESS_TZ) {
+  const d = at instanceof Date ? at : new Date(at);
+  return new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hour12: false }).format(d).replace(',', '');
+}
 export const todayStart = (now = new Date()) => dayStartOf(localDate(now));
 export const tomorrowStart = (now = new Date()) => dayAfterStartOf(localDate(now));

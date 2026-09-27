@@ -1287,7 +1287,7 @@ async function viewOutcomesC() {
   const noReason = np.filter((p) => !p.closed_reason).length;
   const fLabel = f ? ({ month: 'admitted in ', prog: 'programme ', chan: 'came from ' }[f.kind] || '') + f.label : '';
   $('#view').innerHTML = `<div class="c-head"><div><h1>Outcomes</h1><p>Where finished journeys end.</p></div>
-      <div class="act"><button class="btn" onclick="openExport()">Download for management review (CSV)</button><button class="btn ghost" onclick="location.hash='#/reports'">Full report</button></div></div>
+      <div class="act"><button class="btn" onclick="openExport()">Download for management review</button><button class="btn ghost" onclick="location.hash='#/reports'">Full report</button></div></div>
     <div class="c-seg" role="group" aria-label="Outcome"><button aria-pressed="${C_OUTCOME === 'Admitted'}" onclick="C_OUTCOME='Admitted';viewOutcomesC()"><span class="c-ok">✓</span>Admitted ${adm.length}</button><button aria-pressed="${C_OUTCOME !== 'Admitted'}" onclick="C_OUTCOME='Not proceeding';viewOutcomesC()"><span class="c-no">✕</span>Not proceeding ${np.length}</button></div>
     ${f ? `<div class="c-filter">Showing <b>${list.length}</b> ${list.length === 1 ? 'admitted person' : 'admitted people'}, ${esc(fLabel)} <button class="btn sm ghost" onclick="C_OUT_FILTER=null;viewOutcomesC()">Show all admitted ✕</button></div>` : ''}
     ${C_OUTCOME !== 'Admitted' && noReason ? `<p class="c-ev" style="margin-top:0">${noReason} of ${np.length} have no recorded reason yet - it is still in the note. <span class="c-dec">reasons list to agree</span></p>` : ''}
@@ -1614,6 +1614,22 @@ async function cSavePersonPage(id) {
 // what is true right now whatever the period, then the breakdowns, each with its gaps
 // said out loud. Nothing is estimated and a blank is never drawn as a zero.
 let C_RPT_PRESET = 'month';
+// A Google Sheets export that could not finish comes back here with ?sheet=<reason>.
+// Said once, in plain words, and taken out of the address so a reload does not repeat it.
+const C_SHEET_TEXT = {
+  declined: 'No sheet was made: Google access was not given. Nothing was saved in Google Drive.',
+  wrong_account: 'No sheet was made: Google answered for a different account than the one signed in to the CRM. Choose your own novikontas.org account.',
+  drive_api_disabled: 'No sheet was made: Google Drive is not switched on for the CRM yet. An admin enables the Google Drive API once in the CRM\'s Google Cloud project. Until then, download Excel; it opens in Google Sheets too.',
+  no_permission: 'No sheet was made: Google did not give the CRM permission to create the file.',
+  failed: 'No sheet was made: Google Drive did not accept the file. Nothing was saved. Try again, or download Excel.',
+};
+function cSheetNotice() {
+  let why = null;
+  try { why = new URLSearchParams(location.search).get('sheet'); } catch {}
+  if (!why) return '';
+  try { const u = new URL(location.href); u.searchParams.delete('sheet'); history.replaceState(null, '', u.pathname + u.search + u.hash); } catch {}
+  return `<div class="c-filter">${esc(C_SHEET_TEXT[why] || C_SHEET_TEXT.failed)}</div>`;
+}
 function cReportPreset(which) { C_RPT_PRESET = which; return setPeriodPreset(which); }
 function cReportDates(from, to) { C_RPT_PRESET = null; setPeriod(from, to); }
 async function viewReportsC() {
@@ -1645,7 +1661,8 @@ async function viewReportsC() {
   const cov = r.coverage || {};
   $('#view').innerHTML = `<p class="c-crumb"><a href="#/outcomes">Outcomes</a></p>
     <div class="c-head"><div><h1>Full report</h1><p>${esc(from || '')} to ${esc(to || '')}. Every figure is a count of rows in the CRM over these days. Nothing is estimated.</p></div>
-      <div class="act"><button class="btn" onclick="openExport()">Download for management review (CSV)</button></div></div>
+      <div class="act"><button class="btn" onclick="openExport()">Download for management review</button></div></div>
+    ${cSheetNotice()}
     <div class="c-periodbar"><div class="c-seg" role="group" aria-label="Period">${seg('month', 'This month')}${seg('last', 'Last month')}${seg('year', 'This year')}${seg('all', 'Everything')}</div>
       <label class="c-date">From <input type="date" value="${esc(from || '')}" onchange="cReportDates(this.value, RPT.to || '${esc(to || '')}')"></label>
       <label class="c-date">To <input type="date" value="${esc(to || '')}" onchange="cReportDates(RPT.from || '${esc(from || '')}', this.value)"></label></div>
@@ -3121,25 +3138,34 @@ async function openExport() {
   const row = (x) => `<label class="tick">
     <input type="checkbox" class="xsec" value="${esc(x.id)}" ${RPT_PICK.has(x.id) ? 'checked' : ''}>
     <span>${esc(x.label)}</span></label>`;
-  modal('Export CSV', `
-    <p class="sub" style="margin:0 0 10px">${esc(RPT.from || 'From the start')} to ${esc(RPT.to || 'today')}</p>
+  // Three ways out, one set of rows (Ritvars 28.09.2026: "not just csv, but also the
+  // most recent excel extension and google sheets file").
+  const sheetsOk = AUTH.on && AUTH.google;
+  modal('Download for management review', `
+    <p class="sub" style="margin:0 0 10px">${esc(RPT.from || 'The start of this month')} to ${esc(RPT.to || 'the end of this month')}</p>
     ${d.sections.map(row).join('')}
-    <div style="margin-top:14px;display:flex;gap:8px">
-      <button class="btn" onclick="doExport()">Download</button>
-      <button class="btn ghost" onclick="closeModal()">Cancel</button>
-    </div>`);
+    <div id="xErr"></div>
+    <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" onclick="doExport('xlsx')">Excel (.xlsx)</button>
+      <button class="btn ghost" onclick="doExport('gsheet')" ${sheetsOk ? '' : 'disabled title="Needs Google sign-in, which is not on for this copy."'}>Google Sheets</button>
+      <button class="btn ghost" onclick="doExport('csv')">CSV</button>
+      <button class="btn ghost" onclick="closeModal()" style="margin-left:auto">Cancel</button>
+    </div>
+    <p class="footnote">${sheetsOk ? 'Google Sheets makes a new sheet in your own Google Drive and opens it in a new tab. The first time, Google asks you to let the CRM create files there; it can see only the files it creates.' : 'Google Sheets needs Google sign-in, which is not on for this copy. An Excel file opens in Google Sheets too.'}</p>`);
 }
 
-function doExport() {
+function doExport(fmt = 'csv') {
   const picked = [...document.querySelectorAll('.xsec:checked')].map(c => c.value);
-  if (!picked.length) return;
+  if (!picked.length) { const e = $('#xErr'); if (e) e.innerHTML = '<div class="err">Tick at least one section.</div>'; return; }
   RPT_PICK = new Set(picked);
   const qs = new URLSearchParams();
   if (RPT.from) qs.set('from', RPT.from);
   if (RPT.to) qs.set('to', RPT.to);
   qs.set('sections', picked.join(','));
   closeModal();
-  window.location.href = '/api/report.csv?' + qs;
+  const ext = { xlsx: 'xlsx', gsheet: 'gsheet' }[fmt] || 'csv';
+  if (ext === 'gsheet') { window.open('/api/report.gsheet?' + qs, '_blank', 'noopener'); return; }
+  window.location.href = `/api/report.${ext}?` + qs;
 }
 
 // Periods are Riga calendar days, and the server reads them as Riga days too.
