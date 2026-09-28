@@ -47,6 +47,20 @@ the end of the day).
   transaction; the real `crm` schema was identical before and after (192 people, 4 accounts).
 - Everything reusable went to the component library, part 13 "Academy app kit".
 
+**Aigars' feedback queue, item 1/5 - "ŅAV" -> "NAV": DONE 28.09.2026.**
+- Found: not in the code at all. ONE stored value: person `r0131` (Admitted 25.05.2026, from
+  the spreadsheet import) had programme `ŅAV`; Home's "Admitted by programme" showed it as its
+  own row, "not one of the list", beside NAV's 61. No label could fix it honestly.
+- Changed: on Ritvars' explicit yes, that one record only, in one transaction, with a history
+  line written as the app's own edit writes one ("Programme changed: ŅAV -> NAV ..."). No code,
+  no data model, no other record touched.
+- Verified on the live database: NAV 61 -> 62, ŅAV 1 -> 0, people 192 -> 192. The only
+  remaining "ŅAV" is that history line's old value, on purpose.
+- Tests: full suite 554/554. No code commit, so no deployment: the live app reads the corrected
+  row directly.
+- Still there: the local import file `data/real_people.json` (gitignored, on Ritvars' PC) holds
+  the same typo; a re-import from it would bring `ŅAV` back.
+
 **OPEN after 28.09:**
 - **Privacy, Ritvars to decide:** one real person in the live CRM (created 2026-07-20, source
   unknown) has the same name + phone as a person in the demo data, and that name + phone are
