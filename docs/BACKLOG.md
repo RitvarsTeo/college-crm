@@ -61,6 +61,31 @@ the end of the day).
 - Still there: the local import file `data/real_people.json` (gitignored, on Ritvars' PC) holds
   the same typo; a re-import from it would bring `ŅAV` back.
 
+**Aigars' feedback queue, item 2/5 - Journey visual hierarchy: LIVE 28.09.2026, commit 035543f,
+deployment dpl_Hn7uafA3NYipfoxJq1qbdpMc5jY7.**
+- How far: every column carries its stage number (1-5) and a thin line across its top, one
+  brandbook hue getting darker from stage 1 (Novikontas Blue) to the last (Navy); the column only
+  takes a faint tint (at most 7%). Stages, their labels, order and drag-to-move are unchanged.
+- Next step: its own line on each card, with an arrow, in full ink, and its due day under it.
+- Overdue: a SOLID red badge with white words, "2 d. overdue" (6.5:1), and a red edge on the
+  card; the column header counts them ("1 overdue", same badge). Aigars: "warning messedzus bik
+  cita krasa, sita tada draudziga". Today: amber "Today", no edge. Ordinary days: quiet grey.
+- Dark mode: the columns go deeper so the cards stand out ("Seit viss kka saplust viena"); the
+  red edge survives the glass border.
+- The explaining subtitle "Where each open person is. Drag a person when something real has
+  happened." is removed - Ritvars: "If you have to explain items, the UIUX can be better".
+- Tests: test/journey_visual.test.js 10/10 (overdue, today, normal and no step; every stage in
+  order with its label; the tint; dark rules; phone widths; no subtitle; badge contrast); full
+  suite 564/564 on the exact commit.
+- Verified: live page byte-identical to the commit, all 55 files match, 401s and 0 leaks; the live
+  page carries cJourneyCard, the alarm badge and no subtitle. Signed-in screens rendered from the
+  exact deployed commit with demo data (overdue, today and normal cards) in light, dark and at
+  390 px.
+
+**NEXT, item 2 follow-up - the Journey filter (decided by Ritvars 28.09, not built):** compact
+dropdowns, not checkbox panels and not one-choice pills: **Programme ▾ · Overdue / Today ▾ ·
+Owner ▾ · Came from ▾**, each using the values the data already has. No other categories.
+
 **OPEN after 28.09:**
 - **Privacy, Ritvars to decide:** one real person in the live CRM (created 2026-07-20, source
   unknown) has the same name + phone as a person in the demo data, and that name + phone are
