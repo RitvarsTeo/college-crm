@@ -778,7 +778,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c{--paper:#f6f7f6;--surface:#ffffff;--surface-2:#f1f3f2;--shell:#f1f3f2;--field:#ffffff;--menu:#ffffff;--ink:#1b2328;
     --t2:#48535d;--t3:#5c6670;--t4:#66707a;--rule:#e3e7e8;--rule2:#eef1f1;--control-line:#c9d0d3;
     --pet:#2e6b70;--petink:#2e6b70;--btn-bg:#0a2463;--btn-ink:#ffffff;--on-navy:#ffffff;--bad:#9f3a31;   /* buttons: brandbook Navy */
-    --c-ok:#2c6e55;--c-warn:#835c12;--c-bad:#9f3a31;--c-accent-bg:#e9f2f1;--c-sunk:#f1f3f2;--c-sel:#eef4f4}
+    --c-ok:#2c6e55;--c-warn:#835c12;--c-bad:#9f3a31;--c-accent-bg:#e5f1fa;--c-sunk:#f1f3f2;--c-sel:#eff6fc}   /* Novikontas Blue, lightly (Ritvars 28.09) */
   /* Dark = the sign-in sea (Ritvars, 28.09.2026: "the exact same colours and tones with
      gradients from the login screen"). The page is the sign-in gradient, the sidebar its
      deepest navy, buttons white like the Google button. Amber brightened ("now its kind of
@@ -794,7 +794,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
     --pet:#a8d3f3;--petink:#bcdcf5;--btn-bg:#ffffff;--btn-ink:#0a2463;--on-navy:#0a2463;--bad:#ffb0a8;
     --amb:#F7C04F;--ambink:#F7C04F;--late:#F7C04F;--warn:#F7C04F;
     --c-ok:#9be0bd;--c-warn:#F7C04F;--c-bad:#ffb0a8;--c-accent-bg:#1a4670;--c-sunk:#0b2542;--c-sel:#163f66;
-    --v-adm:#2CC4B6;--v-lead:#F7C04F;--v-np:#93A5B8;--v-grid:#24507a;
+    --v-adm:#53a7db;--v-lead:#e7ebf0;--v-open:#F7C04F;--v-np:#93A5B8;--v-grid:#24507a;
     --j-from:#1d4d7a;--j-to:#8fcbef;   /* the Journey's stage line in dark (Aigars #2) */
     --glass:linear-gradient(180deg,rgba(255,255,255,.06) 0%,rgba(255,255,255,.035) 100%);
     --glass-line:rgba(194,211,222,.18)}
@@ -820,6 +820,13 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .cnav a svg{width:17px;height:17px;flex:0 0 17px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;opacity:.85}
   html.ui-c .cnav a:hover{background:var(--c-sunk);color:var(--ink)}
   html.ui-c .cnav a.on{background:var(--c-accent-bg);color:var(--ink);font-weight:600}
+  /* "Lets incorporate novikontas blue, but lightly" (Ritvars, 28.09.2026): in light, the active item
+     has NO block behind it ("it doesnt need to be highlighted, the home can just stay blue") - a Navy
+     label and the logo's blue on its icon; hover and the tree line take a faint blue. Dark keeps its own. */
+  html.ui-c:not([data-theme="dark"]) .cnav a.on{color:#0a2463;background:transparent}
+  html.ui-c:not([data-theme="dark"]) .cnav a.on svg{color:#29a8df;opacity:1}
+  html.ui-c:not([data-theme="dark"]) .cnav a:hover{background:#f0f7fc;color:#0a2463}
+  html.ui-c:not([data-theme="dark"]) .cnav .kids{border-left-color:#bcdcf1}
   html.ui-c .cnav a:focus-visible{outline:2px solid var(--pet);outline-offset:1px}
   html.ui-c .cnav .n{margin-left:auto;font-size:12px;font-variant-numeric:tabular-nums;color:var(--t3)}
   html.ui-c .cnav .n.warn{color:var(--c-warn);font-weight:600}
@@ -915,7 +922,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   /* Home: the Admissions KPI page. Hairlines and whitespace, no cards. Chart colours
      validated with the dataviz validator: teal = admitted, sand = leads / still open,
      slate = not proceeding or not recorded (always with its word). */
-  html.ui-c{--v-adm:#008E8A;--v-lead:#B9812A;--v-np:#7C8B94;--v-grid:#e8ecec}
+  html.ui-c{--v-adm:#29a8df;--v-lead:#0a2463;--v-open:#F7C04F;--v-np:#98a4b3;--v-grid:#e7ebf0}
   /* dark chart colours: with the rest of the dark sea palette, near the top of CONCEPT C */
   html.ui-c .kpage{position:relative;max-width:1080px}
   /* Ritvars 28.09.2026: no title sentence on Home. The page keeps a heading for screen
@@ -1346,7 +1353,7 @@ async function viewHomeC() {
   const progs = count(admitted, (p) => p.programme || '(not recorded)').map(([k, n]) => [k, n, known.has(k) ? '' : (k === '(not recorded)' ? 'no programme recorded' : 'not one of the list')]);
   const chans = count(admitted, (p) => p.source_channel || 'unknown').map(([k, n]) => { const [label, why] = cChannel(k); return [label, n, why, k]; });
   const nowOpen = people.filter((p) => !C_TERMINAL.includes(p.status)).length;
-  const now = [['Open', nowOpen, 'lead', 'journey'], ['Admitted', people.filter((p) => p.status === 'Admitted').length, 'adm', 'Admitted'], ['Not proceeding', people.filter((p) => p.status === 'Not proceeding').length, 'np', 'Not proceeding']];
+  const now = [['Open', nowOpen, 'open', 'journey'], ['Admitted', people.filter((p) => p.status === 'Admitted').length, 'adm', 'Admitted'], ['Not proceeding', people.filter((p) => p.status === 'Not proceeding').length, 'np', 'Not proceeding']];
   const asOf = new Intl.DateTimeFormat('en-GB', { timeZone: TZ, day: 'numeric', month: 'long' }).format(new Date());
   const best = months.length ? Math.max(...months.map((m) => m.admitted)) : 0;
   $('#view').innerHTML = `<div class="kpage">
