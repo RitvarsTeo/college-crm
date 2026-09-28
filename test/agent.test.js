@@ -73,3 +73,45 @@ test('a partner delivery is attributed to the VERIFIED partner, all the way to t
   assert.equal(person.source_channel, 'agent');
   assert.equal(person.source_detail, 'from agent intake, partner india-partner-1 (India Partner)');
 });
+
+// 28.09.2026 verification brief: consent must survive toIntake() -> receive() -> qualify(),
+// and a later agent lead must not rewrite where a person FIRST came from.
+test('a ticked consent box reaches the person; an unticked one is not turned into anything', async (t) => {
+  const s = await start({ CHANNEL_MODE_WEBSITE: 'test', WEBSITE_FORM_SECRET: 'fixture-only-form-secret' });
+  t.after(() => s.child.kill());
+  const lead = { ...fixtureFor('website'), email: 'consent.check@example.invalid' };
+  assert.equal(toIntake(adapt('website', lead)).consent.admissions, true, 'toIntake carries it');
+  const r = await post(s.base, '/api/inbound/website', lead, { 'x-crm-secret': 'fixture-only-form-secret' });
+  assert.equal(r.status, 200, JSON.stringify(r.json));
+  const q = await post(s.base, `/api/intake/${r.json.inboundId}/qualify`, { qualification: 'lead', createPerson: true,
+    stated: { interest: 'NAV' }, nextAction: 'Call and establish interest', by: 'Ieva' });
+  assert.equal(q.status, 200, JSON.stringify(q.json));
+  const person = await fetch(`${s.base}/api/people/${q.json.personId}`, { headers: { 'x-acting-as': 'Ieva' } }).then((x) => x.json());
+  const given = person.consents.filter((c) => c.state === 'given').map((c) => c.purpose);
+  assert.deepEqual(given, ['admissions'], 'admissions ticked -> given; marketing unticked -> nothing');
+  assert.equal(person.consents.length, 1, 'no "withdrawn" was invented from an unticked box');
+  assert.match(person.consents[0].source, /^inbound #\d+$/);
+});
+
+test('an agent lead about somebody we already have keeps their first source', async (t) => {
+  const s = await start({ AGENT_TOKENS: TOKENS, CHANNEL_MODE_AGENT: 'test', CHANNEL_MODE_WEBSITE: 'test', WEBSITE_FORM_SECRET: 'fixture-only-form-secret' });
+  t.after(() => s.child.kill());
+  const email = 'first.touch@example.invalid';
+  const w = await post(s.base, '/api/inbound/website', { ...fixtureFor('website'), email }, { 'x-crm-secret': 'fixture-only-form-secret' });
+  const q1 = await post(s.base, `/api/intake/${w.json.inboundId}/qualify`, { qualification: 'lead', createPerson: true,
+    stated: { interest: 'NAV' }, nextAction: 'Call and establish interest', by: 'Ieva' });
+  const pid = q1.json.personId;
+  const before = await fetch(`${s.base}/api/people/${pid}`, { headers: { 'x-acting-as': 'Ieva' } }).then((x) => x.json());
+  assert.equal(before.source_channel, 'website');
+
+  const a = await post(s.base, '/api/inbound/agent', { ...fixtureFor('agent'), email }, { 'x-partner-token': 'tok-real-partner' });
+  assert.equal(a.status, 200, JSON.stringify(a.json));
+  const q2 = await post(s.base, `/api/intake/${a.json.inboundId}/qualify`, { qualification: 'lead', personId: pid,
+    stated: { interest: 'NAV' }, by: 'Ieva' });
+  assert.equal(q2.status, 200, JSON.stringify(q2.json));
+  const after = await fetch(`${s.base}/api/people/${pid}`, { headers: { 'x-acting-as': 'Ieva' } }).then((x) => x.json());
+  for (const k of ['source_channel', 'source_detail', 'first_channel', 'created_at']) {
+    assert.ok(before[k] != null && before[k] !== '', `${k} is recorded`);
+    assert.equal(after[k], before[k], `${k} is the first touch, not the agent`);
+  }
+});

@@ -313,6 +313,9 @@ export function toIntake(ev) {
     // Where the adapter recorded one (the agent channel). It used to stop here, so
     // which partner a lead came from never reached the database (28.09.2026).
     attribution: ev.attribution && Object.keys(ev.attribution).length ? ev.attribution : null,
+    // The consent the person gave on the form, read by truthy() above. It stopped here too,
+    // so a ticked box never reached the person's consent record (found 28.09.2026).
+    consent: ev.consent && Object.keys(ev.consent).length ? ev.consent : null,
   };
 }
 

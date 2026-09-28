@@ -141,7 +141,8 @@ CREATE TABLE IF NOT EXISTS inbound (
   -- write through this same table on purpose, so without this column every
   -- channel on the demo copy would read as CONNECTED.
   source TEXT,                   -- provider | simulated | demo | manual | null
-  attribution TEXT               -- JSON: which partner a lead came from (agent), or null
+  attribution TEXT,              -- JSON: which partner a lead came from (agent), or null
+  consent TEXT                   -- JSON: what the form said, e.g. {"admissions":true}, or null
 );
 
 -- One row per field, with where the value came from. An 'extracted' value is a
@@ -266,6 +267,7 @@ const ADDED_COLUMNS = [
   ['people', 'nationality', 'TEXT'],
   ['inbound', 'source', 'TEXT'],
   ['inbound', 'attribution', 'TEXT'],
+  ['inbound', 'consent', 'TEXT'],
 ];
 
 // ---------------------------------------------------------- the async layer --

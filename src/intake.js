@@ -125,12 +125,13 @@ export async function receive(db, item) {
   // proof a channel is connected.
   const info = await db.prepare(`INSERT INTO inbound
     (channel, thread_key, external_id, received_at, surface_at, contact_name, contact_handle,
-     contact_email, contact_phone, body, suggested, suggestion_why, state, source, attribution)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(
+     contact_email, contact_phone, body, suggested, suggestion_why, state, source, attribution, consent)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(
     item.channel, item.threadKey || null, item.externalId || null, at, await surfaceAt(at),
     item.name || null, item.handle || null, item.email || null, item.phone || null,
     item.body || null, read.suggested, read.why, state, item.source || null,
-    item.attribution ? JSON.stringify(item.attribution) : null);
+    item.attribution ? JSON.stringify(item.attribution) : null,
+    item.consent ? JSON.stringify(item.consent) : null);
   const id = Number(info.lastInsertRowid);
   if (read.junk) {
     await db.prepare(`UPDATE inbound SET archive_reason = 'Filtered automatically',
@@ -342,6 +343,21 @@ export async function qualify(db, id, { qualification, personId, createPerson, b
     // A person saying it outranks a machine guessing it, so this one overwrites,
     // and the change is written into the history like any other edit.
     await applyToPerson(db, pid, field, value, { by, at, force: true });
+  }
+
+  // Consent the person GAVE on the form becomes part of their consent record, whether they
+  // are new or already known: consent is a record of acts, so it is added, never replaced.
+  // Only a ticked box is recorded here. An unticked box is not a withdrawal - it may only
+  // mean the form did not ask - so it stays on the lead row as the form sent it and is not
+  // turned into a "withdrawn" on the person. A real withdrawal (a Mailchimp unsubscribe)
+  // belongs to the consent route, not to New Leads (backlog, channel audit 28.09.2026).
+  let consent = null;
+  try { consent = item.consent ? JSON.parse(item.consent) : null; } catch { consent = null; }
+  for (const [purpose, value] of Object.entries(consent || {})) {
+    if (value !== true || !['admissions', 'marketing', 'analytics', 'advertising'].includes(purpose)) continue;
+    await db.prepare('INSERT INTO consents (person_id,purpose,state,basis,source,recorded_at,note) VALUES (?,?,?,?,?,?,?)')
+      .run(pid, purpose, 'given', `ticked on the ${item.channel} form`, `inbound #${id}`, item.received_at,
+        `recorded when ${by} added the lead`);
   }
 
   await db.prepare(`UPDATE inbound SET state = 'qualified', qualification = ?, person_id = ?,
