@@ -82,6 +82,17 @@ deployment dpl_Hn7uafA3NYipfoxJq1qbdpMc5jY7.**
   exact deployed commit with demo data (overdue, today and normal cards) in light, dark and at
   390 px.
 
+**Two fixes from Ritvars' screenshots, LIVE 28.09.2026, commit 07e5480, deployment
+dpl_HCdWwKzbZzczmC75ZLY1RyzsfTSX** (568/568 on the commit; live page byte-identical):
+- "Weird size indifference!": the Home KPI strip had a 54 px Admitted beside 30 px figures. Now
+  one size, and label / number / note sit on shared rows, so a label that wraps ("Median time to
+  admission" at a narrow width) no longer pushes its number down. Checked at 1440, 960 and 390 px.
+- "Anonymize!": the feedback box said "Read by Aigars and Ritvars". Every place the screen says who
+  reads feedback now says "the people who build the CRM" (the box, the form, the Feedback page,
+  the Settings row, the Help center answer). WHO may read feedback is unchanged:
+  `CFG.feedbackReaders` still decides it in `mayReadFeedback()`.
+- The same KPI fix went to the component library, kit 13 (aa2fe35).
+
 **NEXT, item 2 follow-up - the Journey filter (decided by Ritvars 28.09, not built):** compact
 dropdowns, not checkbox panels and not one-choice pills: **Programme ▾ · Overdue / Today ▾ ·
 Owner ▾ · Came from ▾**, each using the values the data already has. No other categories.
