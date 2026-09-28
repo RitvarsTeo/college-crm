@@ -385,8 +385,10 @@ async function rig(t, extraEnv = {}) {
     try { fake.server.close(); } catch {}
     try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
   });
+  RIG_FAKE.set(s.port, fake);
   return { ...s, fake };
 }
+const RIG_FAKE = new Map();
 
 /** Start the flow and read back the state and nonce the server minted. */
 async function beginFlow(port) {
@@ -695,16 +697,13 @@ test('a Google session is a real session everywhere, not just on the Channels sc
   }
 });
 
-test('password sign-in still works alongside Google', async (t) => {
-  // The fallback that always works. Google being added must not have replaced it.
+test('Google is the only way in: a correct password is refused', async (t) => {
+  // Aigars, 28.09.2026. The account has a password hash from before; it opens nothing.
   const s = await rig(t);
   const r = await request(s.port, 'POST', '/api/auth/login',
     { body: { email: 'ritvars@novikontas.org', password: 'a-long-enough-password-here' } });
-  assert.equal(r.status, 200);
-  assert.equal(r.json.user.role, 'admin');
-  const session = cookieValue(r.cookies, 'crm_session');
-  const me = await request(s.port, 'GET', '/api/auth/me', { headers: { cookie: `crm_session=${session}` } });
-  assert.equal(me.json.user.email, 'ritvars@novikontas.org');
+  assert.equal(r.status, 410);
+  assert.equal(cookieValue(r.cookies, 'crm_session'), null, 'no session is issued');
 });
 
 test('signing out clears a Google session the same as any other', async (t) => {
@@ -724,10 +723,14 @@ test('signing out clears a Google session the same as any other', async (t) => {
 // callback. These prove the extra permission is only drive.file, that Google must
 // answer for the person signed in to the CRM, and that every failure says why.
 
-async function signedIn(port, email = 'ritvars@novikontas.org') {
-  const r = await request(port, 'POST', '/api/auth/login', { body: { email, password: 'a-long-enough-password-here' } });
-  assert.equal(r.status, 200);
-  return cookieValue(r.cookies, 'crm_session');
+// Signed in through Google itself, against the fake Google.
+async function signedIn(port) {
+  const f = await beginFlow(port);
+  const fake = RIG_FAKE.get(port);
+  fake.state.idToken = mintToken({ nonce: f.nonce });
+  const cb = await request(port, 'GET', `/api/auth/google/callback?code=abc&state=${f.state}`, { headers: withFlow(f.flow) });
+  assert.equal(cb.status, 303);
+  return cookieValue(cb.cookies, 'crm_session');
 }
 async function beginSheet(port, session) {
   const r = await request(port, 'GET', '/api/report.gsheet?from=2026-01-01&to=2026-12-31&sections=summary,trend',

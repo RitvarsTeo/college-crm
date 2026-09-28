@@ -21,7 +21,7 @@ import { statusOf, allStatuses, runCheck, checkPlanFor, requiredSettings, modeOf
   assertNoSecretValues, STATES } from '../src/channeladmin.js';
 import { channelIds, channelDef } from '../src/inbound.js';
 import { openDb } from '../src/db.js';
-import { hashPassword, SCRYPT } from '../src/auth.js';
+import { hashPassword, SCRYPT, issueSession } from '../src/auth.js';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const SECRET = 'a-session-secret-long-enough-to-be-accepted';
@@ -342,10 +342,14 @@ function request(port, method, p, { body, headers = {} } = {}) {
   });
 }
 
-async function signedIn(port, email, password) {
-  const r = await request(port, 'POST', '/api/auth/login', { body: { email, password } });
-  assert.equal(r.status, 200, 'sign-in failed: ' + r.text);
-  return { cookie: r.cookie };
+// Google sign-in only since 28.09.2026, so the tests hold the session a Google sign-in
+// would have issued for the seeded account. The server still checks it against crm_users.
+const SEEDED_ROLE = { 'admin@novikontas.org': 'admin', 'user@novikontas.org': 'user' };
+async function signedIn(port, email) {
+  const token = issueSession({ email, role: SEEDED_ROLE[email], sessionVersion: 0, authMethod: 'google' }, SECRET);
+  const me = await request(port, 'GET', '/api/auth/me', { headers: { cookie: `crm_session=${token}` } });
+  assert.equal(me.json && me.json.user && me.json.user.email, email, 'the session was not accepted');
+  return { cookie: `crm_session=${token}` };
 }
 
 async function withServer(extraEnv = {}) {
@@ -367,7 +371,7 @@ function cleanup(s) {
 test('a signed-in ADMIN can see the channels', async (t) => {
   const s = await withServer();
   t.after(() => cleanup(s));
-  const me = await signedIn(s.port, 'admin@novikontas.org', 'a-long-enough-admin-password');
+  const me = await signedIn(s.port, 'admin@novikontas.org');
   const r = await request(s.port, 'GET', '/api/admin/channels', { headers: { cookie: me.cookie } });
   assert.equal(r.status, 200);
   assert.equal(r.json.channels.length, channelIds().length);
@@ -377,7 +381,7 @@ test('a signed-in ADMIN can see the channels', async (t) => {
 test('a signed-in ORDINARY USER cannot, however they ask', async (t) => {
   const s = await withServer();
   t.after(() => cleanup(s));
-  const me = await signedIn(s.port, 'user@novikontas.org', 'a-long-enough-user-password');
+  const me = await signedIn(s.port, 'user@novikontas.org');
   for (const [method, p] of [['GET', '/api/admin/channels'], ['GET', '/api/admin/channels/whatsapp'],
     ['POST', '/api/admin/channels/whatsapp/check'], ['POST', '/api/admin/channels/whatsapp/mode']]) {
     const r = await request(s.port, method, p,
@@ -392,7 +396,7 @@ test('the real panel carries no secret value over the wire', async (t) => {
   // would leave the building.
   const s = await withServer();
   t.after(() => cleanup(s));
-  const me = await signedIn(s.port, 'admin@novikontas.org', 'a-long-enough-admin-password');
+  const me = await signedIn(s.port, 'admin@novikontas.org');
   const list = await request(s.port, 'GET', '/api/admin/channels', { headers: { cookie: me.cookie } });
   const one = await request(s.port, 'GET', '/api/admin/channels/whatsapp', { headers: { cookie: me.cookie } });
   const check = await request(s.port, 'POST', '/api/admin/channels/whatsapp/check', { headers: { cookie: me.cookie } });
@@ -406,7 +410,7 @@ test('the real panel carries no secret value over the wire', async (t) => {
 test('a check is recorded, and what it found is what the panel then shows', async (t) => {
   const s = await withServer();
   t.after(() => cleanup(s));
-  const me = await signedIn(s.port, 'admin@novikontas.org', 'a-long-enough-admin-password');
+  const me = await signedIn(s.port, 'admin@novikontas.org');
   const before = await request(s.port, 'GET', '/api/admin/channels/whatsapp', { headers: { cookie: me.cookie } });
   assert.equal(before.json.lastCheckAt, null);
 
@@ -424,7 +428,7 @@ test('a check is recorded, and what it found is what the panel then shows', asyn
 test('a channel cannot be switched on before a check has passed', async (t) => {
   const s = await withServer();
   t.after(() => cleanup(s));
-  const me = await signedIn(s.port, 'admin@novikontas.org', 'a-long-enough-admin-password');
+  const me = await signedIn(s.port, 'admin@novikontas.org');
   const early = await request(s.port, 'POST', '/api/admin/channels/whatsapp/mode',
     { headers: { cookie: me.cookie }, body: { mode: 'live' } });
   assert.equal(early.status, 409);
@@ -440,7 +444,7 @@ test('a channel cannot be switched on before a check has passed', async (t) => {
 test('a channel with a setting missing cannot be switched on at all', async (t) => {
   const s = await withServer({ WEBSITE_FORM_SECRET: '' });
   t.after(() => cleanup(s));
-  const me = await signedIn(s.port, 'admin@novikontas.org', 'a-long-enough-admin-password');
+  const me = await signedIn(s.port, 'admin@novikontas.org');
   const r = await request(s.port, 'POST', '/api/admin/channels/website/mode',
     { headers: { cookie: me.cookie }, body: { mode: 'live' } });
   assert.equal(r.status, 409);
@@ -450,7 +454,7 @@ test('a channel with a setting missing cannot be switched on at all', async (t) 
 test('nothing is live until somebody makes it live', async (t) => {
   const s = await withServer();
   t.after(() => cleanup(s));
-  const me = await signedIn(s.port, 'admin@novikontas.org', 'a-long-enough-admin-password');
+  const me = await signedIn(s.port, 'admin@novikontas.org');
   const r = await request(s.port, 'GET', '/api/admin/channels', { headers: { cookie: me.cookie } });
   assert.equal(r.json.channels.filter((c) => c.live).length, 0);
 });
@@ -469,7 +473,7 @@ test('a switch survives a restart, because it is stored and not just remembered'
 
   const first = await startServer(env);
   running.push(first.child);
-  const me = await signedIn(first.port, 'admin@novikontas.org', 'a-long-enough-admin-password');
+  const me = await signedIn(first.port, 'admin@novikontas.org');
   await request(first.port, 'POST', '/api/admin/channels/website/check', { headers: { cookie: me.cookie } });
   const on = await request(first.port, 'POST', '/api/admin/channels/website/mode',
     { headers: { cookie: me.cookie }, body: { mode: 'test' } });
@@ -479,7 +483,7 @@ test('a switch survives a restart, because it is stored and not just remembered'
 
   const second = await startServer(env);
   running.push(second.child);
-  const me2 = await signedIn(second.port, 'admin@novikontas.org', 'a-long-enough-admin-password');
+  const me2 = await signedIn(second.port, 'admin@novikontas.org');
   const r = await request(second.port, 'GET', '/api/admin/channels/website', { headers: { cookie: me2.cookie } });
   assert.equal(r.json.mode, 'test', 'the switch was forgotten on restart');
 });
@@ -490,7 +494,7 @@ test('a demo build does NOT make channels look connected', async (t) => {
   // channel on the testing copy as CONNECTED, to Aigars, on day one.
   const s = await withServer({ DATASET: 'demo' });
   t.after(() => cleanup(s));
-  const me = await signedIn(s.port, 'admin@novikontas.org', 'a-long-enough-admin-password');
+  const me = await signedIn(s.port, 'admin@novikontas.org');
   await request(s.port, 'POST', '/api/dataset', { headers: { cookie: me.cookie }, body: { kind: 'demo' } });
   const r = await request(s.port, 'GET', '/api/admin/channels', { headers: { cookie: me.cookie } });
   const connected = r.json.channels.filter((c) => c.state === 'CONNECTED');
@@ -501,7 +505,7 @@ test('a demo build does NOT make channels look connected', async (t) => {
 test('a simulated event does not make a channel look connected either', async (t) => {
   const s = await withServer();
   t.after(() => cleanup(s));
-  const me = await signedIn(s.port, 'admin@novikontas.org', 'a-long-enough-admin-password');
+  const me = await signedIn(s.port, 'admin@novikontas.org');
   const sim = await request(s.port, 'POST', '/api/inbound/website/simulate', { headers: { cookie: me.cookie }, body: {} });
   assert.equal(sim.status, 200, sim.text);
   const r = await request(s.port, 'GET', '/api/admin/channels/website', { headers: { cookie: me.cookie } });
@@ -512,7 +516,7 @@ test('a simulated event does not make a channel look connected either', async (t
 test('an unknown channel is a 404, not a crash or an empty panel', async (t) => {
   const s = await withServer();
   t.after(() => cleanup(s));
-  const me = await signedIn(s.port, 'admin@novikontas.org', 'a-long-enough-admin-password');
+  const me = await signedIn(s.port, 'admin@novikontas.org');
   const r = await request(s.port, 'GET', '/api/admin/channels/telepathy', { headers: { cookie: me.cookie } });
   assert.equal(r.status, 404);
 });

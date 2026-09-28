@@ -24,7 +24,7 @@ import { fileURLToPath } from 'node:url';
 import { bootstrapAccounts, bootstrapIfAuthOn, checkAccountConfig, passwordEnvNames }
   from '../src/bootstrap.js';
 import { openDb } from '../src/db.js';
-import { verifyPassword, canonicalEmail } from '../src/auth.js';
+import { verifyPassword, canonicalEmail, issueSession } from '../src/auth.js';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const CONFIG = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'prototype.json'), 'utf8'));
@@ -365,12 +365,15 @@ test('all three sign in, with the authorization each is meant to have', async (t
 
   for (const a of ACCOUNTS) {
     const email = canonicalEmail(a.email);
+    // Google sign-in only since 28.09.2026: the password no longer signs in...
     const login = await request(s.port, 'POST', '/api/auth/login',
       { body: { email, password: PW[a.passwordEnv] } });
-    assert.equal(login.status, 200, `${email} could not sign in: ${login.text}`);
-    assert.equal(login.json.user.role, expected[email].role, email);
-
-    const cookie = `crm_session=${cookieValue(login.cookies, 'crm_session')}`;
+    assert.equal(login.status, 410, `${email}: a password must not sign in`);
+    // ...and the account and its role are what a Google session is checked against.
+    const cookie = `crm_session=${issueSession({ email, role: expected[email].role, sessionVersion: 0,
+      authMethod: 'google' }, SECRET)}`;
+    const me = await request(s.port, 'GET', '/api/auth/me', { headers: { cookie } });
+    assert.equal(me.json.user.role, expected[email].role, email);
     const ch = await request(s.port, 'GET', '/api/admin/channels', { headers: { cookie } });
     assert.equal(ch.status, expected[email].channels, `${email} Channels`);
   }
@@ -385,7 +388,7 @@ test('an unknown company address is still refused after bootstrapping', async (t
   });
   const r = await request(s.port, 'POST', '/api/auth/login',
     { body: { email: 'somebody.else@novikontas.org', password: PW.CRM_RITVARS_PASSWORD } });
-  assert.equal(r.status, 401);
+  assert.equal(r.status, 410);
 });
 
 test('the API stays closed to an unauthenticated caller', async (t) => {

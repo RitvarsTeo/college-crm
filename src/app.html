@@ -234,6 +234,8 @@ tr.row:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
     -webkit-mask-size:auto,304px 48px;mask-size:auto,304px 48px;
     -webkit-mask-position:0 0,center bottom 26px;mask-position:0 0,center bottom 26px;
     -webkit-mask-composite:source-out;mask-composite:subtract}
+  /* Google only (28.09.2026): no Sign in button, so no window is cut for one. */
+  .gate-card.sso-only::after{-webkit-mask-image:none;mask-image:none}
   .gate-card h1{font-size:19px;font-weight:700;margin:0 0 4px;color:var(--gate-ink)}
   /* The app sets every h1 in Spectral; the kit's sign-in heading is Raleway, inherited
      from #login-view. Without this the app rule reached inside the card (27.09.2026). */
@@ -2112,91 +2114,33 @@ function drawLogin(message) {
   // The help button belongs to the application, not to the door.
   const help = $('#helpBtn'); if (help) help.style.display = 'none';
 
-  // Google first: for anybody with a Workspace account it is one click and no
-  // password to remember. The password form stays below as the route that always
-  // works. Hidden entirely when Google is not configured, because a button in
-  // front of a flow that cannot run fails on Google's own error page.
+  // GOOGLE SIGN-IN ONLY (Aigars, 28.09.2026). The email and password form, the OR
+  // divider and the Sign in button are gone, and the server refuses a password too.
+  // Google proves who somebody is; crm_users still decides what they may do. When
+  // Google is not configured on a copy, the card says so rather than showing a button
+  // in front of a flow that cannot run.
   const googleBlock = AUTH.google ? `
       <a class="google-btn" href="/api/auth/google/start">
         ${GOOGLE_MARK}
         <span>Continue with Google</span>
-      </a>
-      <div class="or-divider" aria-hidden="true"><span>OR</span></div>` : '';
+      </a>` : '<p class="sub">Google sign-in is not configured on this copy.</p>';
 
   box.innerHTML = `<div id="login-view">
     <canvas class="sea" id="login-sea" aria-hidden="true"></canvas>
     <div class="sea-scrim" aria-hidden="true"></div>
     <div class="gate-inner">
       <div class="brand"><img src="/assets/NoAca_logo_whitehor.svg" alt="Novikontas Academy"></div>
-      <form id="loginForm" class="gate-card" autocomplete="off" onsubmit="return doLogin(event)">
+      <div class="gate-card sso-only">
         <!-- Just CRM. The mark above the card already says NOVIKONTAS ACADEMY,
              so "Academy CRM" here said Academy twice on one screen. -->
         <h1>CRM</h1>
         <p class="sub">Sign in to continue</p>
         ${googleBlock}
-        <div class="field email-field">
-          <label for="liEmail">Email</label>
-          <!-- NO type="email" ON PURPOSE, exactly as the kit has it. The field
-               carries an @novikontas.org suffix, so what somebody types is their
-               NAME. type="email" made the browser refuse "ritvars" as invalid and
-               Sign in did nothing, which is the same fault the kit records against
-               a required control it had collapsed. canonicalEmail() on the server
-               completes a bare name to the company domain. -->
-          <input id="liEmail" name="email" autocomplete="username" inputmode="email" required>
-        </div>
-        <!-- TWO STEPS, as in Client Hub (27.09.2026): the password is not presented until
-             the email field is touched, so Google reads as the primary route. The kit's
-             collapse: the input stays in the DOM, enabled, with no required attribute -
-             revealLoginPassword() adds required only while it is visible, or a hidden
-             required box makes Sign in do nothing and say nothing. -->
-        <div class="field password-field" id="liPassField" aria-hidden="true">
-          <div class="password-content">
-            <label for="liPass">Password</label>
-            <input id="liPass" name="password" type="password" autocomplete="current-password" tabindex="-1">
-          </div>
-        </div>
         <div id="loginErr" class="err${message ? '' : ' hidden'}" role="alert">${esc(message || '')}</div>
-        <!-- THE BUTTON MUST BE LAST, and this is not a style preference.
-             .gate-card::after punches a 304x48 rounded hole through the card
-             surface at "center bottom 26px" via mask-composite: subtract, so the
-             primary button is a WINDOW THROUGH THE CARD ONTO THE SEA. Anything
-             placed after it takes the hole instead: the note sat in the window and
-             the button sat on solid card, pale, with white text on it.
-             The "forgotten your password" note that used to be here is gone - the
-             kit does not have one on this card either. -->
-        <button class="primary" type="submit" id="liGo">Sign in</button>
-      </form>
+      </div>
     </div>
   </div>`;
   startLoginSea();
-  wireLoginPassword(Boolean(message));
-}
-
-// Client Hub's rules, 27.09.2026. Focus on the email opens the password; leaving the
-// email-and-password pair for anywhere else closes it again, but only while it is empty -
-// a password that has something in it is never hidden, whoever put it there.
-function revealLoginPassword(show) {
-  const field = $('#liPassField'), pw = $('#liPass');
-  if (!field || !pw) return;
-  const on = Boolean(show) || pw.value !== '';
-  field.classList.toggle('is-revealed', on);
-  field.setAttribute('aria-hidden', on ? 'false' : 'true');
-  pw.tabIndex = on ? 0 : -1;
-  if (on) pw.setAttribute('required', ''); else pw.removeAttribute('required');
-}
-function wireLoginPassword(open) {
-  const email = $('#liEmail'), pw = $('#liPass');
-  if (!email || !pw) return;
-  const pairHolds = (e) => e.relatedTarget === email || e.relatedTarget === pw;
-  email.addEventListener('focus', () => revealLoginPassword(true));
-  email.addEventListener('blur', (e) => { if (!pairHolds(e)) revealLoginPassword(false); });
-  pw.addEventListener('blur', (e) => { if (!pairHolds(e)) revealLoginPassword(false); });
-  pw.addEventListener('input', () => revealLoginPassword(true));
-  pw.addEventListener('change', () => revealLoginPassword(true));
-  // After a refused sign-in the password is wanted again, so it opens straight away.
-  revealLoginPassword(open);
-  // A password manager can fill the pair before any event fires.
-  setTimeout(() => revealLoginPassword(false), 400);
 }
 
 // The sea behind the card, from the kit's assets/login-sea.js. It is inlined
@@ -2204,34 +2148,6 @@ function wireLoginPassword(open) {
 // only when the gate is drawn - there is no canvas to paint at any other time.
 function startLoginSea() {
   try { LOGIN_SEA(); } catch { /* the card is legible on the gradient without it */ }
-}
-
-async function doLogin(ev) {
-  ev.preventDefault();
-  const btn = $('#liGo');
-  const err = $('#loginErr');
-  btn.disabled = true; btn.textContent = 'Signing in...';
-  try {
-    const r = await fetch('/api/auth/login', { method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ email: $('#liEmail').value, password: $('#liPass').value }) });
-    const data = await r.json().catch(() => ({}));
-    if (!r.ok) {
-      err.textContent = data.error || 'That did not work.';
-      err.classList.remove('hidden');
-      $('#liPass').value = '';
-      $('#liPass').focus();
-      return false;
-    }
-    $('#loginScreen').remove();
-    document.querySelector('.shell').style.display = '';
-    const help = $('#helpBtn'); if (help) help.style.display = '';
-    await loadAuth();
-    // startShell, NOT route. route() alone leaves CFG empty, which is what made
-    // the Admissions board render a heading above nothing after a form sign-in.
-    await startShell();
-  } finally { btn.disabled = false; btn.textContent = 'Sign in'; }
-  return false;
 }
 
 async function signOut() {

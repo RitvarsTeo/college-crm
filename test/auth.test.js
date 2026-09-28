@@ -415,13 +415,15 @@ test('the observability view is NOT treated as a channel and stays closed', asyn
   assert.equal((await request(s.port, 'POST', '/api/inbound/website/simulate', { body: {} })).status, 401);
 });
 
-test('signing in with an account that does not exist is refused', async (t) => {
+// Google sign-in only (Aigars, 28.09.2026): a password is no longer a way in.
+test('a password never signs anybody in, right or wrong, and sets no cookie', async (t) => {
   const s = await startServer(AUTH_ENV);
   t.after(() => s.child.kill());
-  const r = await request(s.port, 'POST', '/api/auth/login',
-    { body: { email: 'nobody', password: 'whatever-long-enough' } });
-  assert.equal(r.status, 401);
-  assert.equal(r.headers['set-cookie'], undefined, 'a failed sign-in must not set a cookie');
+  for (const body of [{ email: 'nobody', password: 'whatever-long-enough' }, { email: 'ieva', password: PASSWORD }]) {
+    const r = await request(s.port, 'POST', '/api/auth/login', { body });
+    assert.equal(r.status, 410, 'password sign-in is switched off');
+    assert.equal(r.headers['set-cookie'], undefined, 'and it must not set a cookie');
+  }
 });
 
 test('sign-in is refused outright when it is not switched on', async (t) => {
@@ -429,7 +431,7 @@ test('sign-in is refused outright when it is not switched on', async (t) => {
   t.after(() => s.child.kill());
   const r = await request(s.port, 'POST', '/api/auth/login',
     { body: { email: 'ieva', password: PASSWORD } });
-  assert.equal(r.status, 400);
+  assert.equal(r.status, 410);
 });
 
 test('with sign-in OFF the old header still works, so nothing that exists broke', async (t) => {
@@ -449,13 +451,12 @@ test('with sign-in OFF the old header still works, so nothing that exists broke'
 test('too many wrong passwords in a row start being refused', async (t) => {
   const s = await startServer(AUTH_ENV);
   t.after(() => s.child.kill());
-  let sawLimit = false;
+  // There is nothing to guess any more: every attempt is the same refusal.
   for (let i = 0; i < 10; i += 1) {
     const r = await request(s.port, 'POST', '/api/auth/login',
       { body: { email: 'ieva', password: 'wrong-guess-' + i } });
-    if (r.status === 429) { sawLimit = true; break; }
+    assert.equal(r.status, 410);
   }
-  assert.equal(sawLimit, true, 'guessing must cost something');
 });
 
 test('signing out clears the cookie', async (t) => {
@@ -541,4 +542,14 @@ test('a company address that is not on the list still cannot sign in', async () 
   // Being at novikontas.org is not the qualification. Being listed is.
   const listed = new Set(CONFIG.accounts.map((a) => a.email));
   assert.equal(listed.has('somebody.else@novikontas.org'), false);
+});
+
+// Google sign-in only (Aigars, 28.09.2026): the sign-in card offers Google and nothing else.
+test('the sign-in page has no password field and never calls the password route', () => {
+  const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
+  const start = APP.indexOf('function drawLogin(');
+  const card = APP.slice(start, APP.indexOf('function startLoginSea(', start));
+  assert.ok(card.includes('/api/auth/google/start') && card.includes('Continue with Google'));
+  assert.ok(!/type="password"|id="liEmail"|OR<\/span>|>Sign in</.test(card), 'no email/password form on the card');
+  assert.ok(!APP.includes("fetch('/api/auth/login'"), 'nothing on the page posts a password');
 });

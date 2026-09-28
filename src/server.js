@@ -704,33 +704,12 @@ export const handle = async (req, res) => {
       });
     }
 
+    // GOOGLE SIGN-IN ONLY (Aigars, 28.09.2026). A password is no longer a way in: this
+    // route refuses every request, right or wrong, and never sets a cookie. The accounts
+    // in crm_users and their roles are unchanged; Google proves who somebody is and
+    // crm_users still decides what they may do.
     if (req.method === 'POST' && p === '/api/auth/login') {
-      if (!AUTH_ON) return json(res, 400, { error: 'Sign-in is not switched on for this copy.' });
-      const b = await body(req);
-      const email = auth.canonicalEmail(b && b.email);
-      // Deliberately slow on every answer, right or wrong, so the timing of a
-      // reply says nothing about whether the account exists.
-      await new Promise((r) => setTimeout(r, 250));
-      if (loginBlocked(email)) {
-        return json(res, 429, { error: 'Too many attempts. Wait ten minutes.' });
-      }
-      const result = await auth.authenticate({ email, password: b && b.password },
-        async (e) => await db.prepare(`SELECT id, email, display_name, password_hash, role, active, session_version
-                           FROM crm_users WHERE email = ?`).get(e));
-      if (!result.ok) {
-        loginFailed(email);
-        await logAttempt(email, 'password', 'refused_' + (result.reason || 'invalid_credentials'));
-        return json(res, 401, { error: 'That email and password do not match an account.' });
-      }
-      LOGIN_TRIES.delete(email);
-      await logAttempt(email, 'password', 'success');
-      await db.prepare('UPDATE crm_users SET last_login_at = ? WHERE id = ?').run(nowIso(), result.user.id);
-      const token = auth.issueSession(result.user, process.env.CRM_SESSION_SECRET);
-      res.writeHead(200, { 'content-type': 'application/json; charset=utf-8',
-        'cache-control': 'no-store',
-        'set-cookie': auth.cookieHeader(token, { secure: !DEV_INSECURE_COOKIE }) });
-      return res.end(JSON.stringify({ ok: true,
-        user: { name: result.user.name, email: result.user.email, role: result.user.role } }));
+      return json(res, 410, { error: 'Password sign-in is switched off. Use Continue with Google.' });
     }
 
     // GET /api/auth/google/start - begin the authorization code flow.
