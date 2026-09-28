@@ -831,6 +831,9 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c:not([data-theme="dark"]) .cnav a.on svg{color:#29a8df;opacity:1}
   html.ui-c:not([data-theme="dark"]) .cnav a:hover{background:#f0f7fc;color:#0a2463}
   html.ui-c:not([data-theme="dark"]) .cnav .kids{border-left-color:#bcdcf1}
+  /* dark: the same - no block behind the active item, white bold words and a light blue icon (Aigars UX pass) */
+  html.ui-c[data-theme="dark"] .cnav a.on{background:transparent;color:#ffffff}
+  html.ui-c[data-theme="dark"] .cnav a.on svg{color:#8fcbef;opacity:1}
   html.ui-c .cnav a:focus-visible{outline:2px solid var(--pet);outline-offset:1px}
   html.ui-c .cnav .n{margin-left:auto;font-size:12px;font-variant-numeric:tabular-nums;color:var(--t3)}
   html.ui-c .cnav .n.warn{color:var(--c-warn);font-weight:600}
@@ -860,9 +863,29 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c[data-theme="dark"] .theme-switch .ts-thumb{background:var(--surface-2);box-shadow:0 1px 2px rgba(0,0,0,.4),0 0 0 1px var(--glass-line)}
   @media (prefers-reduced-motion:reduce){ html.ui-c .theme-switch .ts-thumb{transition:none} }
   html.ui-c .c-set-theme .theme-switch{width:240px}
+  @media (max-width:760px){ html.ui-c .c-line.c-set-theme{grid-template-columns:minmax(0,1fr)!important;gap:10px} html.ui-c .c-set-theme .theme-switch{width:100%;max-width:none} }
   /* On a phone the menu sits on top, so the switch and the (c) line leave it and go to the bottom
      of the PAGE (kit 13: "all belong to the bottom of the page"). Desktop is unchanged. */
-  @media (max-width:760px){ html.ui-c nav .c-themebar, html.ui-c nav .c-foot{display:none}
+  /* Phone and tablet (Aigars UX pass, 28.09.2026): the menu is a top bar there, and as C's column it
+     stood 360 px tall and stayed pinned over the work. It is ONE row of the same links in the same
+     order, scrolling sideways; Acting as keeps working beside the logo. */
+  @media (max-width:900px){
+    html.ui-c .shell{grid-template-columns:minmax(0,1fr)}   /* a sideways-scrolling row must not widen the page */
+    html.ui-c .shell > nav{flex-wrap:wrap;align-items:center;gap:6px 10px;padding:8px 12px 6px;min-width:0}
+    html.ui-c .shell > nav > .brand{order:0}
+    html.ui-c .shell > nav > #actorBlock, html.ui-c .shell > nav > #whoBlock{order:1;margin-left:auto;align-items:center;gap:8px}
+    html.ui-c .shell > nav > #whoBlock > label{display:none}
+    html.ui-c .shell > nav > #whoBlock .btn{width:auto!important;margin:0!important;padding:5px 10px;font-size:12.5px}
+    html.ui-c .shell > nav > #actorBlock select{max-width:170px}
+    html.ui-c .cnav{order:2;flex:1 0 100%;min-width:0;flex-direction:row;flex-wrap:nowrap;overflow-x:auto;gap:2px;margin:0;
+      scrollbar-width:none;-webkit-overflow-scrolling:touch}
+    html.ui-c .cnav::-webkit-scrollbar{display:none}
+    html.ui-c .cnav .kids{display:contents}
+    html.ui-c .cnav a, html.ui-c .cnav .kids a{flex:0 0 auto;white-space:nowrap;padding:8px 10px;font-size:13.5px;min-height:36px}
+    html.ui-c .cnav .n{margin-left:4px}
+    html.ui-c .c-journey > .c-card{scroll-margin-top:130px}
+    html.ui-c[data-theme="dark"] .shell > nav{background:#08182e}   /* pinned over the work: solid, never see-through */ }
+  @media (max-width:900px){ html.ui-c nav .c-themebar, html.ui-c nav .c-foot{display:none}
     html.ui-c .c-pagefoot{display:block;padding:18px 0 88px;border-top:1px solid var(--rule2);margin:0 16px}
     html.ui-c .c-pagefoot .c-themebar{display:block;margin:0;padding:0;border:0}
     html.ui-c .c-pagefoot .c-foot{display:flex;padding:10px 0 0} }
@@ -927,7 +950,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-gap{color:var(--t3);font-style:italic}
   html.ui-c .c-set .c-line{grid-template-columns:minmax(0,1fr) auto}
   html.ui-c .c-dec{font-size:10.5px;font-weight:600;letter-spacing:.04em;color:var(--c-warn);border:1px dashed var(--c-warn);border-radius:4px;padding:0 5px;white-space:nowrap}
-  @media (max-width:760px){ html.ui-c .c-line{grid-template-columns:1fr auto} html.ui-c .c-line .c-what{grid-column:1/-1} html.ui-c .c-health{grid-template-columns:1fr;gap:10px} }
+  @media (max-width:760px){ html.ui-c .c-line, html.ui-c .c-line[style]{grid-template-columns:minmax(0,1fr) auto!important} html.ui-c .c-line .c-what{grid-column:1/-1} html.ui-c .c-health{grid-template-columns:1fr;gap:10px} }
 
   /* Home: the Admissions KPI page. Hairlines and whitespace, no cards. Chart colours
      validated with the dataviz validator: teal = admitted, sand = leads / still open,
@@ -1052,6 +1075,9 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-jp b{display:block;font-weight:600;overflow-wrap:anywhere}
   html.ui-c .c-jp small{display:block;color:var(--t3);font-size:12px;margin-top:2px}
   html.ui-c .c-jp small.none{color:var(--c-warn)}
+  /* the comment preview (Aigars): one quiet line, cut with an ellipsis; the whole note is on the card and the person page */
+  html.ui-c .c-jp small.c-jnote{margin-top:5px;padding-top:4px;border-top:1px dashed var(--rule);color:var(--t3);font-size:11.5px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   html.ui-c .c-jp:hover{border-color:var(--control-line)}
   html.ui-c .c-jp.c-sel{border-color:var(--pet);box-shadow:0 0 0 1px var(--pet)}
   /* Journey filters: compact labelled dropdowns in one row; a set filter is Navy-edged and bold */
@@ -1298,6 +1324,9 @@ function markCNav(page) {
   const place = cPlace(page);
   const lit = { leads: ['admissions', 'leads'], next: ['admissions', 'next'], journey: ['people', 'journey'] }[place] || [place];
   document.querySelectorAll('.cnav a').forEach((a) => a.classList.toggle('on', lit.includes(a.dataset.c)));
+  // on a phone the menu is one sideways row: bring the place you are in into view (the deepest one lit)
+  setTimeout(() => { const here = [...document.querySelectorAll('.cnav a.on')].pop(); const row = document.querySelector('.cnav');
+    if (here && row && row.scrollWidth > row.clientWidth) row.scrollLeft = Math.max(0, here.offsetLeft - row.offsetLeft - 24); }, 60);
   // Settings is for everybody since 28.09.2026: the theme and the Help center live there.
   // Only its admin section is for admins.
   const s = document.querySelector('#cnSettings'); if (s) s.style.display = '';
@@ -1458,7 +1487,7 @@ async function viewNextC() {
   const pct = open.length ? Math.round(((open.length - none.length) / open.length) * 100) : 100;
   const tRow = (t) => `<div class="c-line" tabindex="0" onclick="location.hash='#/person/${esc(t.person_id)}'">
       <div class="c-who"><b>${esc(t.name)}</b><small>${esc(t.programme || 'programme not said')} · ${esc(t.status)}</small></div>
-      <div class="c-what">${esc(t.label)}</div><div class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</div>
+      <div class="c-what">${esc(cTask(t.label))}</div><div class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</div>
       <div class="c-acts"><button class="btn sm" onclick="event.stopPropagation();openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))})">Done</button></div></div>`;
   const pRow = (p) => `<div class="c-line" tabindex="0" onclick="location.hash='#/person/${esc(p.id)}'">
       <div class="c-who"><b>${esc(p.name)}</b><small>${esc(p.programme || 'programme not said')} · ${esc(p.status)}</small></div>
@@ -1469,8 +1498,7 @@ async function viewNextC() {
   $('#view').innerHTML = `<p class="c-crumb">Admissions</p>
     <div class="c-head"><div><h1>Next Steps</h1><p>What the team has to do.</p></div>
       <div class="act"><span class="c-planned"><b>${pct}%</b> planned <small>${open.length - none.length} of ${open.length} open people have a next step</small></span></div></div>
-    ${sect('Overdue', over, tRow, 'over')}${sect('Due today', today, tRow, 'today')}${sect('Coming up', later, tRow)}${sect('No next step', none, pRow)}
-    <p class="c-ev">A message someone sent is a New Lead; a promise we made is a Next Step. Every list shows all its people.</p>`;
+    ${sect('Overdue', over, tRow, 'over')}${sect('Due today', today, tRow, 'today')}${sect('Coming up', later, tRow)}${sect('No next step', none, pRow)}`;
 }
 
 // -------------------------------------------------------------------- OUTCOMES
@@ -1491,7 +1519,7 @@ async function viewOutcomesC() {
   }
   const noReason = np.filter((p) => !p.closed_reason).length;
   const fLabel = f ? ({ month: 'admitted in ', prog: 'programme ', chan: 'came from ' }[f.kind] || '') + f.label : '';
-  $('#view').innerHTML = `<div class="c-head"><div><h1>Outcomes</h1><p>Where finished journeys end.</p></div>
+  $('#view').innerHTML = `<div class="c-head"><div><h1>Outcomes</h1></div>
       <div class="act"><button class="btn" onclick="openExport()">Download for management review</button><button class="btn ghost" onclick="location.hash='#/reports'">Full report</button></div></div>
     <div class="c-seg" role="group" aria-label="Outcome"><button aria-pressed="${C_OUTCOME === 'Admitted'}" onclick="C_OUTCOME='Admitted';viewOutcomesC()"><span class="c-ok">✓</span>Admitted ${adm.length}</button><button aria-pressed="${C_OUTCOME !== 'Admitted'}" onclick="C_OUTCOME='Not proceeding';viewOutcomesC()"><span class="c-no">✕</span>Not proceeding ${np.length}</button></div>
     ${f ? `<div class="c-filter">Showing <b>${list.length}</b> ${list.length === 1 ? 'admitted person' : 'admitted people'}, ${esc(fLabel)} <button class="btn sm ghost" onclick="C_OUT_FILTER=null;viewOutcomesC()">Show all admitted ✕</button></div>` : ''}
@@ -1519,7 +1547,7 @@ async function viewSettingsC() {
     </div>
     <p class="c-ev">The journey stages and the next-step list are still a working version, to be agreed with Admissions. <span class="c-dec">to agree</span></p>`;
   }
-  $('#view').innerHTML = `<div class="c-head"><div><h1>Settings</h1><p>How the CRM looks for you, and where to get help.</p></div></div>
+  $('#view').innerHTML = `<div class="c-head"><div><h1>Settings</h1></div></div>
     <h2 class="c-set-h">Appearance</h2>
     <div class="c-sheet c-set"><div class="c-line c-set-theme"><div class="c-who"><b>Light or dark</b><small>Remembered on this device.</small></div><div>${themeSwitchHtml()}</div></div></div>
     <h2 class="c-set-h">Help</h2>
@@ -1646,7 +1674,7 @@ function cDrawPeople() {
       <td class="c-name"><b>${esc(p.name)}</b><small class="${contact(p) ? '' : 'c-gap'}">${contact(p) ? esc(contact(p)) : 'no contact details'}</small></td>
       <td>${esc(p.programme || '-')}${p.programme && !known.has(p.programme) ? ' <span class="c-dec">not in list</span>' : ''}</td>
       <td>${esc(cStage(p.status))}</td>
-      <td class="${t ? '' : 'c-gap'}">${t ? esc(t.label) : (open ? 'nothing planned' : '-')}</td>
+      <td class="${t ? '' : 'c-gap'}">${t ? esc(cTask(t.label)) : (open ? 'nothing planned' : '-')}</td>
       <td>${t ? `<span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span>` : ''}</td></tr>
       ${C_PEDIT === p.id ? `<tr class="c-edit"><td colspan="5">${cEditForm(p, t)}</td></tr>` : ''}`; };
   $('#view').innerHTML = `<div class="c-head"><div><h1>People</h1><p>Click a row to edit.</p></div>
@@ -1673,7 +1701,7 @@ function cEditForm(p, t) {
     <div><label for="pe-status">Stage</label><select id="pe-status" onchange="document.querySelector('#pe-closed').hidden = this.value !== ${esc(JSON.stringify(closed))}">${stages.map((s) => `<option value="${esc(s.id)}" ${s.id === p.status ? 'selected' : ''}>${esc(s.label || s.id)}</option>`).join('')}</select></div>
     <div id="pe-closed" hidden><label for="pe-reason">Why are we stopping?</label><select id="pe-reason">${(CFG.closedReasons || []).map((r) => `<option>${esc(r)}</option>`).join('')}</select><input id="pe-rnote" placeholder="Explanation (needed for Other)" style="margin-top:6px"></div>
     <div class="c-wide c-step">${t
-      ? `<label for="pe-due">Next step</label><div class="c-steprow"><span>${esc(t.label)}</span><input id="pe-due" type="date" value="${esc(cDay(t.due_at))}" aria-label="Due date"><button class="btn sm ghost" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))})">Done…</button></div><div class="c-hint">Change the date here, or mark it done - done asks for the next step.</div>`
+      ? `<label for="pe-due">Next step</label><div class="c-steprow"><span>${esc(cTask(t.label))}</span><input id="pe-due" type="date" value="${esc(cDay(t.due_at))}" aria-label="Due date"><button class="btn sm ghost" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))})">Done…</button></div><div class="c-hint">Change the date here, or mark it done - done asks for the next step.</div>`
       : open ? `<label for="pe-next">Next step</label><div class="c-steprow"><select id="pe-next"><option value="">nothing planned</option>${nextActionOptions()}</select><input id="pe-ndue" type="date" value="${cTodayIso()}" aria-label="Due date"></div>` : '<label>Next step</label><div class="c-hint">Finished journeys have no next step.</div>'}</div>
     <div class="c-wide"><label for="pe-notes">Notes</label><textarea id="pe-notes" rows="4" oninput="this.nextElementSibling.textContent=this.value.length+' characters'">${esc(p.notes || '')}</textarea><div class="c-hint">${(p.notes || '').length} characters</div></div>
     <div id="pe-err" class="c-wide"></div>
@@ -1718,7 +1746,7 @@ function cPersonCard(p, t) {
   const open = !C_TERMINAL.includes(p.status);
   const notes = String(p.notes || '');
   return `<aside class="c-card"><h2>${esc(p.name)}</h2> <div class="c-cardsub">${esc(cStage(p.status))} · ${esc(p.programme || 'programme not said')}</div>
-    <div class="c-next ${open && !t ? 'none' : ''}"><b>${open ? 'Next step' : 'Outcome'}</b>${open ? (t ? `${esc(t.label)} · <span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span>` : 'Nothing planned yet') : esc(p.status)}
+    <div class="c-next ${open && !t ? 'none' : ''}"><b>${open ? 'Next step' : 'Outcome'}</b>${open ? (t ? `${esc(cTask(t.label))} · <span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span>` : 'Nothing planned yet') : esc(p.status)}
       ${open ? `<div class="c-row-acts">${t ? `<button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))})">Done</button>` : `<button class="btn sm" onclick="openNewTask('${esc(p.id)}')">Plan a next step</button>`}</div>` : ''}</div>
     <dl><dt>Email</dt><dd class="${p.email ? '' : 'c-gap'}">${esc(p.email || 'not recorded')}</dd><dt>Phone</dt><dd class="${p.phone ? '' : 'c-gap'}">${esc(p.phone || 'not recorded')}</dd>
       <dt>Came from</dt><dd>${esc(cChannel(p.source_channel)[0])}</dd><dt>First contact</dt><dd class="${p.created_at ? '' : 'c-gap'}">${p.created_at ? fmtDate(p.created_at) : 'not recorded'}</dd></dl>
@@ -1734,6 +1762,12 @@ const C_JICON = {
   over: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="M8 4.8v3.6M8 10.9v.1"/></svg>',
   today: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="M8 4.9V8l2.2 1.4"/></svg>',
 };
+// The 23.09 import titled every task "Get in touch (from the sheet)". Where it came from is on the
+// person's history; on screen the step says what to do (Aigars: no engineering language). Display only.
+const cTask = (s) => String(s == null ? '' : s).replace(/ \(from the sheet\)$/, '');
+// The same import put "Sheet status: COLD | Docs: Not submitted | " in front of the comment people wrote.
+// The preview shows the comment; the whole note, tags included, stays on the card and the person page.
+const cNotePreview = (s) => String(s == null ? '' : s).replace(/^(?:(?:Sheet status|Docs):[^|]*\|\s*)+/, '').trim();
 function cJourneyCard(p, t, sel) {
   const w = t ? cWhenClass(t.due_at) : '';
   // overdue says by how much, in the app's own words ("3 d. overdue") - it fits a narrow column
@@ -1742,8 +1776,8 @@ function cJourneyCard(p, t, sel) {
     : w === 'today' ? `${C_JICON.today}Today` : esc(cDay(t.due_at));
   const cls = ['c-jp', 'row', sel && p.id === sel.id ? 'c-sel' : '', w === 'over' ? 'is-over' : '', w === 'today' ? 'is-today' : ''].filter(Boolean).join(' ');
   return `<div class="${cls}" draggable="true" data-id="${esc(p.id)}" tabindex="0" onclick="C_JSEL='${esc(p.id)}';cDrawJourney()"><b>${esc(p.name)}</b>${t
-    ? `<span class="c-jnext">${C_JICON.next}<span>${esc(t.label)}</span></span><small class="c-jdue${w ? ' ' + w : ''}">${due}</small>`
-    : '<small class="none">nothing planned</small>'}</div>`;
+    ? `<span class="c-jnext">${C_JICON.next}<span>${esc(cTask(t.label))}</span></span><small class="c-jdue${w ? ' ' + w : ''}">${due}</small>`
+    : '<small class="none">nothing planned</small>'}${cNotePreview(p.notes) ? `<small class="c-jnote" title="${esc(p.notes)}">${esc(cNotePreview(p.notes))}</small>` : ''}</div>`;
 }
 // JOURNEY FILTERS (Aigars' feedback 2A, 28.09.2026: real filters, not one-choice pills). Four
 // compact dropdowns - Programme, Overdue / Today, Owner, Came from - offering only the values the
@@ -1789,7 +1823,8 @@ function cDrawJourney() {
   const stages = (CFG.stages || []).filter((s) => !C_TERMINAL.includes(s.id));
   const everyone = people.filter((p) => !C_TERMINAL.includes(p.status));
   const open = everyone.filter((p) => cJourneyMatch(p, taskOf.get(p.id), C_JF));
-  const sel = open.find((p) => p.id === C_JSEL) || open[0];
+  const narrow = window.matchMedia && window.matchMedia('(max-width:900px)').matches;
+  const sel = open.find((p) => p.id === C_JSEL) || (narrow ? null : open[0]);
   const roles = CFG.stageRoles || {};
   const adm = people.filter((p) => p.status === roles.admitted).length, np = people.filter((p) => p.status === roles.closed).length;
   $('#view').innerHTML = `<p class="c-crumb">People</p>
@@ -1800,8 +1835,9 @@ function cDrawJourney() {
         const over = ps.filter((p) => { const t = taskOf.get(p.id); return t && cWhenClass(t.due_at) === 'over'; }).length;
         return `<div class="c-col" style="--jt:${((i + 1) / stages.length).toFixed(3)}"><h3><span class="c-jn">${i + 1}</span>${esc(s.label || s.id)} <b>${ps.length}</b>${over ? `<em class="c-jover">${over} overdue</em>` : ''}</h3><div class="c-drop" data-stage="${esc(s.id)}">${ps.map((p) => cJourneyCard(p, taskOf.get(p.id), sel)).join('') || '<div class="c-empty" style="padding:8px">empty</div>'}</div></div>`; }).join('')}</div>
       <div class="c-folded">Finished journeys are in Outcomes: <b><span class="c-ok">✓</span>${adm} admitted</b> <b><span class="c-no">✕</span>${np} not proceeding</b> <a class="btn sm ghost" href="#/outcomes" style="margin-left:auto">Open Outcomes →</a></div>
-      <p class="c-ev">The stages are a working version, to be agreed with Admissions. <span class="c-dec">to agree</span></p>
+      <p class="c-ev"><span class="c-dec">Stages to agree</span></p>
     </div></div>`;
+  if (narrow && sel && C_JSEL === sel.id) { const card = document.querySelector('.c-journey > .c-card'); if (card && card.scrollIntoView) card.scrollIntoView({ block: 'start' }); }
   document.querySelectorAll('.c-jp[draggable]').forEach((c) => c.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', c.dataset.id)));
   document.querySelectorAll('.c-drop').forEach((col) => {
     col.addEventListener('dragover', (e) => { e.preventDefault(); col.classList.add('over'); });
@@ -1835,11 +1871,11 @@ async function viewPersonC(id) {
       <div class="c-evt-what">${esc(e.subject || e.kind || '')}</div>
       ${e.field ? `<div class="c-evt-diff"><s>${esc(e.old_value ?? '(empty)')}</s> → <b>${esc(e.new_value ?? '(empty)')}</b></div>` : (e.body ? `<div class="c-evt-body">${esc(e.body)}</div>` : '')}</div>`;
   const next = open
-    ? (t ? `<div class="c-next"><b>Next step</b><div class="c-next-row"><span>${esc(t.label)}</span><span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span>${t.owner ? `<span class="c-gap-soft">${esc(t.owner)}</span>` : ''}</div>
+    ? (t ? `<div class="c-next"><b>Next step</b><div class="c-next-row"><span>${esc(cTask(t.label))}</span><span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span>${t.owner ? `<span class="c-gap-soft">${esc(t.owner)}</span>` : ''}</div>
         <div class="c-row-acts"><button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))})">Done</button><button class="btn sm ghost" onclick="openReschedule(${Number(t.id)})">Move the date</button></div></div>`
       : `<div class="c-next none"><b>Next step</b>Nothing planned yet.<div class="c-row-acts"><button class="btn sm" onclick="openNewTask('${esc(p.id)}')">Plan a next step</button></div></div>`)
     : `<div class="c-next c-finished"><b>Outcome</b>${p.status === (CFG.stageRoles || {}).closed ? `<span class="c-no">✕</span>${esc(cStage(p.status))}${p.closed_reason ? ' · ' + esc(p.closed_reason) : ' · <span class="c-gap">reason not recorded</span>'}${p.closed_note ? `<div class="c-evt-body">${esc(p.closed_note)}</div>` : ''}` : `<span class="c-ok">✓</span>${esc(cStage(p.status))}${p.admitted_at ? ' on ' + fmtDate(p.admitted_at) : ''}`}${t ? `
-        <div class="c-still"><b>Still open</b><div class="c-next-row"><span>${esc(t.label)}</span><span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span></div>
+        <div class="c-still"><b>Still open</b><div class="c-next-row"><span>${esc(cTask(t.label))}</span><span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span></div>
         <div class="c-row-acts"><button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))})">Done</button><button class="btn sm ghost" onclick="openReschedule(${Number(t.id)})">Move the date</button></div></div>` : ''}</div>`;
   $('#view').innerHTML = `<p class="c-crumb"><a href="#/people">People</a></p>
     <div class="c-head"><div><h1 class="c-pname">${esc(p.name)}</h1><p>${esc(cStage(p.status))} · ${esc(p.programme || 'programme not said')}${p.study_form ? ' · ' + esc(p.study_form) : ''} · ${contact || '<span class="c-gap">no email or phone recorded</span>'}</p></div></div>
@@ -1874,7 +1910,7 @@ function cPersonFacts(p) {
     ${p.notes ? `<div class="c-notes${p.notes.length > 240 ? ' c-clamp' : ''}">${esc(p.notes)}</div>${p.notes.length > 240 ? `<button class="c-more" onclick="const n=this.previousElementSibling;n.classList.toggle('c-clamp');this.textContent=n.classList.contains('c-clamp')?'Show all ${p.notes.length} characters':'Show less'">Show all ${p.notes.length} characters</button>` : ''}` : ''}</div>
     <div class="c-sheet c-facts"><h3>Stage</h3><div class="c-pad">
       <select id="cStage" aria-label="Stage" onchange="changeStatus('${esc(p.id)}', this.value)">${stages.map((s) => `<option value="${esc(s.id)}" ${s.id === p.status ? 'selected' : ''}>${esc(s.label || s.id)}</option>`).join('')}</select>
-      <p class="c-hint">Changes when a step is done, or by hand here. Stopping asks for a reason. The stages are a working version, to be agreed with Admissions.</p>
+      <p class="c-hint"><span class="c-dec">Stages to agree</span></p>
       ${p.status === (CFG.stageRoles || {}).admitted ? (p.sis_handoff_at ? `<p class="c-hint">Handed to the SIS on ${fmtDate(p.sis_handoff_at)}. The CRM journey ends here.</p>` : `<button class="btn sm ghost" onclick="doSisHandoff('${esc(p.id)}')">Hand over to SIS</button>`) : ''}
     </div></div>
     ${p.qualification || (p.fields || []).length ? `<div class="c-sheet c-facts"><h3>From their first message</h3><div class="c-pad">

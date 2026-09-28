@@ -16,7 +16,8 @@ const ratio = (a, b) => { const x = L(a), y = L(b); return (Math.max(x, y) + 0.0
 
 test('phone: the switch and the (c) line sit at the bottom of the page, not gone', () => {
   assert.match(APP, /<main id="view">[\s\S]{0,80}<\/main>\s*<div class="c-pagefoot"><div class="c-themebar" id="cThemeBar2"><\/div>\s*<div class="c-foot"><span>&copy; Novikontas Academy<\/span> <a href="#\/help">Help center<\/a><\/div><\/div>/);
-  assert.match(APP, /@media \(max-width:760px\)\{ html\.ui-c nav \.c-themebar, html\.ui-c nav \.c-foot\{display:none\}\s*html\.ui-c \.c-pagefoot\{display:block/);
+  // <= 900 px: every width where the menu is a top bar (Aigars UX pass, 28.09.2026)
+  assert.match(APP, /@media \(max-width:900px\)\{ html\.ui-c nav \.c-themebar, html\.ui-c nav \.c-foot\{display:none\}\s*html\.ui-c \.c-pagefoot\{display:block/);
   assert.match(APP, /\.c-themebar, \.c-foot, \.c-pagefoot\{display:none\}/, 'hidden on desktop and in classic');
   assert.match(APP, /querySelectorAll\('#cThemeBar, #cThemeBar2'\)\) bar\.innerHTML = themeSwitchHtml\(\)/, 'both copies are filled');
   assert.doesNotMatch(APP, /@media \(max-width:760px\)\{ html\.ui-c \.c-themebar, html\.ui-c \.c-foot\{display:none\} \}/, 'the rule that hid them is gone');
