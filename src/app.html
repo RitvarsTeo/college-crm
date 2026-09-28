@@ -795,6 +795,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
     --amb:#F7C04F;--ambink:#F7C04F;--late:#F7C04F;--warn:#F7C04F;
     --c-ok:#9be0bd;--c-warn:#F7C04F;--c-bad:#ffb0a8;--c-accent-bg:#1a4670;--c-sunk:#0b2542;--c-sel:#163f66;
     --v-adm:#2CC4B6;--v-lead:#F7C04F;--v-np:#93A5B8;--v-grid:#24507a;
+    --j-from:#1d4d7a;--j-to:#8fcbef;   /* the Journey's stage line in dark (Aigars #2) */
     --glass:linear-gradient(180deg,rgba(255,255,255,.06) 0%,rgba(255,255,255,.035) 100%);
     --glass-line:rgba(194,211,222,.18)}
   html.ui-c[data-theme="dark"] body{background:radial-gradient(120% 80% at 50% 0%,#17456e 0%,rgba(23,69,110,0) 60%),
@@ -1029,7 +1030,36 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-jp small{display:block;color:var(--t3);font-size:12px;margin-top:2px}
   html.ui-c .c-jp small.none{color:var(--c-warn)}
   html.ui-c .c-jp:hover{border-color:var(--control-line)}
-  html.ui-c .c-jp.c-sel{border-color:var(--pet);box-shadow:inset 3px 0 0 var(--pet)}
+  html.ui-c .c-jp.c-sel{border-color:var(--pet);box-shadow:0 0 0 1px var(--pet)}
+  /* Journey (Aigars' feedback #2, 28.09.2026). HOW FAR: each stage carries its number and a thin
+     line across its top, one brandbook hue getting darker from stage 1 (Novikontas Blue) to the
+     last (Navy); the column itself only takes a faint tint of it. NEXT STEP: the clearest line
+     on the card. OVERDUE: red words and a red edge. TODAY: amber words, no edge. */
+  html.ui-c{--j-from:#53a7db;--j-to:#0a2463}
+  html.ui-c .c-col{background:color-mix(in srgb,var(--c-sunk),var(--j-from) calc(var(--jt,0) * 7%));
+    box-shadow:inset 0 3px 0 color-mix(in srgb,var(--j-to) calc(var(--jt,0) * 100%),var(--j-from))}
+  html.ui-c .c-col h3{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;margin-top:8px}
+  html.ui-c .c-col h3 b{margin-left:0}
+  html.ui-c .c-jn{display:inline-grid;place-items:center;min-width:17px;height:17px;border-radius:99px;font-size:10.5px;letter-spacing:0;
+    color:var(--ink);border:1px solid var(--control-line);align-self:center}
+  /* WARNINGS LOOK LIKE WARNINGS (Aigars: "warning messedzus bik cita krasa, sita tada draudziga,
+     neliekas ka vispar kkas nav labi"): overdue is a SOLID red badge with white words (6.5:1),
+     in both themes - not the soft pink text it was. Today stays amber text: distinct, calmer. */
+  html.ui-c{--j-alarm:#b3261e;--j-on-alarm:#ffffff}
+  html.ui-c .c-jover{font-style:normal;font-size:10.5px;font-weight:700;letter-spacing:.02em;text-transform:none;margin-left:auto;
+    background:var(--j-alarm);color:var(--j-on-alarm);border-radius:99px;padding:1px 7px}
+  html.ui-c .c-jnext{display:flex;align-items:flex-start;gap:5px;margin-top:4px;font-size:12.5px;font-weight:500;color:var(--ink);line-height:1.35}
+  html.ui-c .c-jnext svg,html.ui-c .c-jdue svg{width:13px;height:13px;flex:0 0 13px;margin-top:1px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  html.ui-c .c-jnext svg{color:var(--pet)}
+  html.ui-c .c-jnext > span{overflow-wrap:anywhere}
+  html.ui-c .c-jp small.c-jdue{display:flex;align-items:center;gap:4px;margin:3px 0 0 18px;font-size:11.5px;color:var(--t3);font-variant-numeric:tabular-nums}
+  html.ui-c .c-jp small.c-jdue.over{background:var(--j-alarm);color:var(--j-on-alarm);font-weight:700;border-radius:5px;padding:1px 6px 1px 4px;margin-left:16px;width:max-content}
+  html.ui-c .c-jp small.c-jdue.today{color:var(--c-warn);font-weight:600}
+  html.ui-c .c-jp.is-over,html.ui-c[data-theme="dark"] .c-jp.is-over{border-left:3px solid var(--j-alarm);padding-left:8px}   /* the dark glass border would hide it */
+  /* "Seit viss kka saplust viena" - in dark the cards and their column were one shade. The column
+     goes deeper, so every card stands out from it. */
+  html.ui-c[data-theme="dark"] .c-col{background:color-mix(in srgb,rgba(1,17,17,.55),var(--j-from) calc(var(--jt,0) * 10%))}
+  html.ui-c .c-jp small.c-jdue{white-space:nowrap}
   html.ui-c .c-jp:focus-visible{outline:2px solid var(--pet);outline-offset:1px}
   html.ui-c .c-folded{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:12px;padding:10px 14px;border:1px solid var(--rule);border-radius:10px;background:var(--surface);font-size:13.5px}
   @media (max-width:900px){ html.ui-c .c-journey{grid-template-columns:1fr} html.ui-c .c-card{position:static} html.ui-c .c-form{grid-template-columns:1fr 1fr} }
@@ -1635,6 +1665,26 @@ function cPersonCard(p, t) {
     ${notes ? `<div class="c-notes">${esc(notes.length > 260 ? notes.slice(0, 260) + '…' : notes)}</div>` : ''}
     <div class="c-row-acts"><button class="btn sm ghost" onclick="cEditFromJourney('${esc(p.id)}')">Edit</button><a class="btn sm ghost" href="#/person/${esc(p.id)}">Details →</a></div></aside>`;
 }
+// JOURNEY CARD (Aigars' feedback #2, 28.09.2026): the name first, then the NEXT STEP as the clearest
+// line on the card - an arrow, ink, with its due day under it. Overdue is red and gives the card a
+// red edge; today is amber text only; an ordinary day is quiet. Nothing planned stays the amber
+// warning it was. The stages, their order and the drag-to-move workflow are unchanged.
+const C_JICON = {
+  next: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9M8.5 4.5 12 8l-3.5 3.5"/></svg>',
+  over: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="M8 4.8v3.6M8 10.9v.1"/></svg>',
+  today: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="M8 4.9V8l2.2 1.4"/></svg>',
+};
+function cJourneyCard(p, t, sel) {
+  const w = t ? cWhenClass(t.due_at) : '';
+  // overdue says by how much, in the app's own words ("3 d. overdue") - it fits a narrow column
+  const late = w === 'over' ? Math.round((Date.parse(cTodayIso()) - Date.parse(cDay(t.due_at))) / 86400000) : 0;
+  const due = !t ? '' : w === 'over' ? `${C_JICON.over}${late} d. overdue`
+    : w === 'today' ? `${C_JICON.today}Today` : esc(cDay(t.due_at));
+  const cls = ['c-jp', 'row', sel && p.id === sel.id ? 'c-sel' : '', w === 'over' ? 'is-over' : '', w === 'today' ? 'is-today' : ''].filter(Boolean).join(' ');
+  return `<div class="${cls}" draggable="true" data-id="${esc(p.id)}" tabindex="0" onclick="C_JSEL='${esc(p.id)}';cDrawJourney()"><b>${esc(p.name)}</b>${t
+    ? `<span class="c-jnext">${C_JICON.next}<span>${esc(t.label)}</span></span><small class="c-jdue${w ? ' ' + w : ''}">${due}</small>`
+    : '<small class="none">nothing planned</small>'}</div>`;
+}
 function cDrawJourney() {
   const { people, taskOf } = C_JDATA;
   const stages = (CFG.stages || []).filter((s) => !C_TERMINAL.includes(s.id));
@@ -1643,11 +1693,11 @@ function cDrawJourney() {
   const roles = CFG.stageRoles || {};
   const adm = people.filter((p) => p.status === roles.admitted).length, np = people.filter((p) => p.status === roles.closed).length;
   $('#view').innerHTML = `<p class="c-crumb">People</p>
-    <div class="c-head"><div><h1>Journey</h1><p>Where each open person is. Drag a person when something real has happened.</p></div></div>
+    <div class="c-head"><div><h1>Journey</h1></div></div>
     <div class="c-journey">${sel ? cPersonCard(sel, taskOf.get(sel.id)) : '<div></div>'}<div style="min-width:0">
-      <div class="c-cols" style="grid-template-columns:repeat(${stages.length}, minmax(150px, 1fr))">${stages.map((s) => { const ps = open.filter((p) => p.status === s.id);
-        return `<div class="c-col"><h3>${esc(s.label || s.id)} <b>${ps.length}</b></h3><div class="c-drop" data-stage="${esc(s.id)}">${ps.map((p) => { const t = taskOf.get(p.id);
-          return `<div class="c-jp row${sel && p.id === sel.id ? ' c-sel' : ''}" draggable="true" data-id="${esc(p.id)}" tabindex="0" onclick="C_JSEL='${esc(p.id)}';cDrawJourney()"><b>${esc(p.name)}</b><small class="${t ? '' : 'none'}">${t ? esc(t.label) : 'nothing planned'}</small></div>`; }).join('') || '<div class="c-empty" style="padding:8px">empty</div>'}</div></div>`; }).join('')}</div>
+      <div class="c-cols" style="grid-template-columns:repeat(${stages.length}, minmax(150px, 1fr))">${stages.map((s, i) => { const ps = open.filter((p) => p.status === s.id);
+        const over = ps.filter((p) => { const t = taskOf.get(p.id); return t && cWhenClass(t.due_at) === 'over'; }).length;
+        return `<div class="c-col" style="--jt:${((i + 1) / stages.length).toFixed(3)}"><h3><span class="c-jn">${i + 1}</span>${esc(s.label || s.id)} <b>${ps.length}</b>${over ? `<em class="c-jover">${over} overdue</em>` : ''}</h3><div class="c-drop" data-stage="${esc(s.id)}">${ps.map((p) => cJourneyCard(p, taskOf.get(p.id), sel)).join('') || '<div class="c-empty" style="padding:8px">empty</div>'}</div></div>`; }).join('')}</div>
       <div class="c-folded">Finished journeys are in Outcomes: <b><span class="c-ok">✓</span>${adm} admitted</b> <b><span class="c-no">✕</span>${np} not proceeding</b> <a class="btn sm ghost" href="#/outcomes" style="margin-left:auto">Open Outcomes →</a></div>
       <p class="c-ev">The stages are a working version, to be agreed with Admissions. <span class="c-dec">to agree</span></p>
     </div></div>`;
