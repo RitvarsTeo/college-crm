@@ -66,10 +66,11 @@ test('every Journey stage still appears, in the same order, with its own label',
   let html = '';
   const ctx = { ...sandbox(), CFG: CONFIG, C_TERMINAL: ['Admitted', 'Not proceeding'], C_JSEL: null,
     C_JDATA: { people: [{ id: 'a', name: 'A', status: open[0].id }], taskOf: new Map() },
-    cPersonCard: () => '', $: () => ({ set innerHTML(v) { html = v; } }), document: { querySelectorAll: () => [] } };
+    cPersonCard: () => '', channelLabel: (c) => c, $: () => ({ set innerHTML(v) { html = v; } }), document: { querySelectorAll: () => [] } };
   const cardSrc = fn('function cJourneyCard(');
   const iconStart = APP.indexOf('const C_JICON = {');
-  vm.runInNewContext(`${line('const cWhenClass =')}\n${APP.slice(iconStart, APP.indexOf('\n};', iconStart) + 3)}\n${cardSrc}\n${draw}\ncDrawJourney();`, ctx);
+  const filters = APP.slice(APP.indexOf('let C_JF = {'), APP.indexOf('function cDrawJourney('));   // the Journey filters (2A)
+  vm.runInNewContext(`${line('const cWhenClass =')}\n${APP.slice(iconStart, APP.indexOf('\n};', iconStart) + 3)}\n${cardSrc}\n${filters}\n${draw}\ncDrawJourney();`, ctx);
   const heads = [...html.matchAll(/<h3><span class="c-jn">(\d+)<\/span>([^<]+) <b>/g)].map((m) => [Number(m[1]), m[2]]);
   assert.deepEqual(heads, open.map((s, i) => [i + 1, s.label || s.id]), 'numbered 1..n, labels exactly as configured');
 });

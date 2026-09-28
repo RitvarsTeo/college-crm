@@ -1037,6 +1037,21 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-jp small.none{color:var(--c-warn)}
   html.ui-c .c-jp:hover{border-color:var(--control-line)}
   html.ui-c .c-jp.c-sel{border-color:var(--pet);box-shadow:0 0 0 1px var(--pet)}
+  /* Journey filters: compact labelled dropdowns in one row; a set filter is Navy-edged and bold */
+  html.ui-c .c-jfilters{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-6px 0 14px}
+  html.ui-c .c-jf-ico{width:16px;height:16px;flex:0 0 16px;fill:none;stroke:var(--t3);stroke-width:1.6;stroke-linejoin:round}
+  html.ui-c .c-jf{display:inline-flex;align-items:center;gap:4px;height:32px;padding:0 0 0 10px;border:1px solid var(--control-line);
+    border-radius:8px;background:var(--field);font-size:12.5px;color:var(--t3);cursor:pointer}
+  html.ui-c .c-jf select{border:0;background:transparent;box-shadow:none;height:30px;padding:0 6px 0 2px;margin:0;width:auto;max-width:14em;
+    font:inherit;font-size:12.5px;font-weight:600;color:var(--ink);cursor:pointer}
+  html.ui-c .c-jf select:focus-visible{outline:none}
+  html.ui-c .c-jf:focus-within{outline:2px solid var(--pet);outline-offset:1px}
+  html.ui-c .c-jf.on{border-color:var(--j-to);box-shadow:inset 0 0 0 1px var(--j-to);background:color-mix(in srgb,var(--field),var(--j-from) 10%)}
+  html.ui-c .c-jf.on > span{color:var(--ink)}
+  html.ui-c .c-jf-clear{height:32px}
+  html.ui-c .c-jf > span{white-space:nowrap}
+  @media (max-width:760px){ html.ui-c .c-jfilters{display:grid;grid-template-columns:1fr 1fr} html.ui-c .c-jf{min-width:0} html.ui-c .c-jf select{flex:1;min-width:0;max-width:none}
+    html.ui-c .c-jf-ico{display:none} html.ui-c .c-jf-clear{grid-column:1 / -1;justify-self:start} }
   /* Buttons are the brandbook CTA in C - Navy with white (dark: white with Navy) - and carry no amber
      stripe (Ritvars, 28.09.2026: the Done and Feedback buttons did not match, "the amber now is quite
      not in place"). The classic UI keeps its own. */
@@ -1711,15 +1726,56 @@ function cJourneyCard(p, t, sel) {
     ? `<span class="c-jnext">${C_JICON.next}<span>${esc(t.label)}</span></span><small class="c-jdue${w ? ' ' + w : ''}">${due}</small>`
     : '<small class="none">nothing planned</small>'}</div>`;
 }
+// JOURNEY FILTERS (Aigars' feedback 2A, 28.09.2026: real filters, not one-choice pills). Four
+// compact dropdowns - Programme, Overdue / Today, Owner, Came from - offering only the values the
+// open people really carry. They combine (all must hold). A filter that is set says so: its box
+// turns Navy-edged and shows the chosen value. Nothing is stored on the server.
+let C_JF = { programme: '', due: '', owner: '', source: '' };
+const C_JF_DUE = [['over', 'Overdue'], ['today', 'Today']];   // "Overdue or today" was dropped: it was just the two together
+const cNotSaid = '\u2014';   // stands for "no value recorded" in a filter
+function cJourneyMatch(p, t, f) {
+  const prog = p.programme || cNotSaid, owner = p.owner || cNotSaid, src = p.source_channel || cNotSaid;
+  if (f.programme && prog !== f.programme) return false;
+  if (f.owner && owner !== f.owner) return false;
+  if (f.source && src !== f.source) return false;
+  if (f.due) {
+    const w = t ? cWhenClass(t.due_at) : '';
+    if (f.due === 'over' && w !== 'over') return false;
+    if (f.due === 'today' && w !== 'today') return false;
+  }
+  return true;
+}
+function cJourneyFilters(open) {
+  const distinct = (key) => [...new Set(open.map((p) => p[key] || cNotSaid))];
+  const known = CFG.programmes || [];
+  const progs = distinct('programme').sort((a, b) => (known.indexOf(a) + 1 || 99) - (known.indexOf(b) + 1 || 99) || a.localeCompare(b));
+  // every configured owner role, even one nobody holds right now (Ritvars: "add coordinator also")
+  const owners = [...new Set([...(CFG.owners || []), ...distinct('owner')])];
+  const sources = distinct('source_channel').sort((a, b) => a.localeCompare(b));
+  const name = (k, v) => (v === cNotSaid ? 'not recorded' : k === 'source' ? channelLabel(v) : v);
+  const box = (k, label, values) => `<label class="c-jf${C_JF[k] ? ' on' : ''}"><span>${label}</span><select aria-label="${label}" onchange="C_JF.${k}=this.value;cDrawJourney()">
+      <option value="">All</option>${values.map(([v, t]) => `<option value="${esc(v)}"${C_JF[k] === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`;
+  const any = Object.values(C_JF).some(Boolean);
+  return `<div class="c-jfilters" role="group" aria-label="Filter the Journey">
+    <svg class="c-jf-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3.5h11l-4.2 5v4l-2.6 1.2V8.5z"/></svg>
+    ${box('programme', 'Programme', progs.map((v) => [v, name('programme', v)]))}
+    ${box('due', 'Overdue / Today', C_JF_DUE)}
+    ${box('owner', 'Owner', owners.map((v) => [v, name('owner', v)]))}
+    ${box('source', 'Came from', sources.map((v) => [v, name('source', v)]))}
+    ${any ? `<button class="btn sm ghost c-jf-clear" onclick="C_JF={programme:'',due:'',owner:'',source:''};cDrawJourney()">Clear</button>` : ''}
+  </div>`;
+}
 function cDrawJourney() {
   const { people, taskOf } = C_JDATA;
   const stages = (CFG.stages || []).filter((s) => !C_TERMINAL.includes(s.id));
-  const open = people.filter((p) => !C_TERMINAL.includes(p.status));
+  const everyone = people.filter((p) => !C_TERMINAL.includes(p.status));
+  const open = everyone.filter((p) => cJourneyMatch(p, taskOf.get(p.id), C_JF));
   const sel = open.find((p) => p.id === C_JSEL) || open[0];
   const roles = CFG.stageRoles || {};
   const adm = people.filter((p) => p.status === roles.admitted).length, np = people.filter((p) => p.status === roles.closed).length;
   $('#view').innerHTML = `<p class="c-crumb">People</p>
     <div class="c-head"><div><h1>Journey</h1></div></div>
+    ${cJourneyFilters(everyone)}
     <div class="c-journey">${sel ? cPersonCard(sel, taskOf.get(sel.id)) : '<div></div>'}<div style="min-width:0">
       <div class="c-cols" style="grid-template-columns:repeat(${stages.length}, minmax(150px, 1fr))">${stages.map((s, i) => { const ps = open.filter((p) => p.status === s.id);
         const over = ps.filter((p) => { const t = taskOf.get(p.id); return t && cWhenClass(t.due_at) === 'over'; }).length;
