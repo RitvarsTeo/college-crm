@@ -11,6 +11,58 @@ Nothing is deleted here. A line changes status, it does not disappear.
 `BUILT` - it exists in the prototype · `LIVE` - verified running in production (nothing is LIVE:
 this is a local prototype) · `UNKNOWN` - named but not checked with the provider.
 
+## 28.09.2026 - LIVE on https://crm-novikontas.vercel.app (the CRM V1 session)
+
+**The release record below is out of date: the CRM IS live.** Every commit here was deployed from
+the clean deploy folder, then checked on production: the live page byte-identical to the commit,
+every uploaded file's checksum matching git, 401 on every private route, 0 leaks from 23
+plain and encoded source/config probes. The full suite passed on the exact commit first (554 at
+the end of the day).
+
+| What | Status | Commit |
+|---|---|---|
+| Sign-in is **Google only** (Aigars' decision); the password route answers 410 | LIVE | da3d3ba |
+| Concept C is the product; no control back to classic; `?ui=classic` still works | LIVE | f7734aa |
+| A faked "simulated event" header no longer gets past a channel's checks | LIVE | 1e716d3 |
+| Agent channel: only a real partner token passes ("0", empty, malformed refused); the verified partner is kept on the lead and the person | LIVE | a9c89db |
+| Only an admin can empty or replace the database when sign-in is on (a user could before) | LIVE | 5761d23 |
+| Sign-in card: "CRM" + "Sign in to continue" centred, CRM 34px, spacing balanced, card size unchanged (360 x 164.3); the sea untouched | LIVE | c0bbdb5 |
+| Dark mode = the sign-in sea: its navy gradient, bright amber #F7C04F (not the mustard), glass panels | LIVE | 61d0fb0 |
+| Academy icon in the browser tab (the symbol fills the tile) and installable as "Academy CRM" (Chrome: 0 installability errors); /favicon.ico answers | LIVE | a9059ff |
+| Light / System / Dark switch with icons at the bottom of the menu and in Settings; System follows the computer | LIVE | a9059ff |
+| Settings open to everybody, with a Help center; admin rows still admin-only | LIVE | a9059ff |
+| "(c) Novikontas Academy" + Help center line at the bottom of the menu | LIVE | a9059ff |
+| The corner button says FEEDBACK (it said HELP) and its box is solid in dark (it was see-through) | LIVE | a9059ff |
+| Consent ticked on a form reaches the person's consent record; a later lead about a known person keeps their first source | LIVE | 41a2c64 |
+| The installed app's window bar is black | LIVE | 8eb2836 |
+
+**Also done 28.09 (not code):**
+- Accounts: ritvars.vilcins@ admin, aigars.kluga@ admin, **mc@ = Maris Cirulis, Director of
+  College, admin** (added on Ritvars' instruction), edu@ user. Google sign-in needs only an active
+  row - no password. Adding one: `vercel env run -e development -- env CRM_PG_SCHEMA=crm node
+  scripts/manage_users.mjs add <email> --role user|admin` (without CRM_PG_SCHEMA it opens an empty
+  schema).
+- 21 leftover test schemas in the live Neon database (from test runs on 27.09 18:46-19:19 UTC,
+  and one empty one made by the users script) were **deleted on Ritvars' yes**, in one
+  transaction; the real `crm` schema was identical before and after (192 people, 4 accounts).
+- Everything reusable went to the component library, part 13 "Academy app kit".
+
+**OPEN after 28.09:**
+- **Privacy, Ritvars to decide:** one real person in the live CRM (created 2026-07-20, source
+  unknown) has the same name + phone as a person in the demo data, and that name + phone are
+  committed in src/demo.js, src/simulator.js, config/inbound_fixtures.json,
+  test/connection.test.js and test/regressions.test.js. Untouched.
+- The CRM still uses the sea palette; moving it to the kit's brandbook colours is not started.
+- Channel audit findings, all still open: Meta/WhatsApp keep 1 of N messages per delivery;
+  Mailchimp events land in New Leads instead of consent; Gmail and PBX never reach New Leads;
+  LinkedIn answer fetch not built; dedupe not enforced by the database; `/api/sim/*`,
+  `/api/intake/demo` add demo records for any signed-in user; production has never received an
+  inbound event.
+- A consent WITHDRAWAL (Mailchimp unsubscribe) is not recorded from intake - it belongs to the
+  consent route above.
+- Queued: reconcile the Admissions numbers against "0. NJK KPI 2026.xlsx" and Ieva's slides.
+- The production database moves to Aigars' paid Supabase later; not started, by instruction.
+
 ## Pin
 
 **Current, 28.09.2026 (this note is newer than the pin below, which is kept as it was written):**
