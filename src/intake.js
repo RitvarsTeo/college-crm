@@ -125,11 +125,12 @@ export async function receive(db, item) {
   // proof a channel is connected.
   const info = await db.prepare(`INSERT INTO inbound
     (channel, thread_key, external_id, received_at, surface_at, contact_name, contact_handle,
-     contact_email, contact_phone, body, suggested, suggestion_why, state, source)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(
+     contact_email, contact_phone, body, suggested, suggestion_why, state, source, attribution)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(
     item.channel, item.threadKey || null, item.externalId || null, at, await surfaceAt(at),
     item.name || null, item.handle || null, item.email || null, item.phone || null,
-    item.body || null, read.suggested, read.why, state, item.source || null);
+    item.body || null, read.suggested, read.why, state, item.source || null,
+    item.attribution ? JSON.stringify(item.attribution) : null);
   const id = Number(info.lastInsertRowid);
   if (read.junk) {
     await db.prepare(`UPDATE inbound SET archive_reason = 'Filtered automatically',
@@ -226,6 +227,18 @@ export function defaultDueFor(label, from = nowIso()) {
   return new Date(Date.parse(from) + 86400000).toISOString();
 }
 
+// Where a new person came from, in words. An agent lead names its partner, from the
+// token the partner signed in with, or says it was simulated when it was.
+function sourceDetailOf(item) {
+  let a = null;
+  try { a = item.attribution ? JSON.parse(item.attribution) : null; } catch { a = null; }
+  if (a && a.agent) {
+    return `from ${item.channel} intake, partner ${a.agent}${a.agent_name ? ' (' + a.agent_name + ')' : ''}`
+      + (a.verified ? '' : ', not verified');
+  }
+  return 'from ' + item.channel + ' intake';
+}
+
 export async function qualify(db, id, { qualification, personId, createPerson, by, note,
   confirmFields = [], stated = {}, nextAction, nextActionDue, differentPerson = false }) {
   const item = await db.prepare('SELECT * FROM inbound WHERE id = ?').get(id);
@@ -285,7 +298,7 @@ export async function qualify(db, id, { qualification, personId, createPerson, b
       VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`).run(
       pid, name, item.contact_email, item.contact_phone,
       CFG.stageRoles.first, ownerFor(qualification), item.channel,
-      'from ' + item.channel + ' intake', item.received_at, item.received_at,
+      sourceDetailOf(item), item.received_at, item.received_at,
       qualification, item.channel);
     await logEvent(db, { personId: pid, kind: 'create', channel: item.channel, direction: 'note',
       at, origin: MANUAL, actor: by, subject: 'Created from intake',

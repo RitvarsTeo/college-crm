@@ -1805,8 +1805,19 @@ export const handle = async (req, res) => {
       }
       const payload = read.payload;
 
+      // An agent lead is attributed to the partner whose token was VERIFIED. A payload that
+      // names a different partner is refused rather than believed (28.09.2026).
+      if (check.partner) {
+        if (payload.partner_id != null && String(payload.partner_id) !== check.partner.id) {
+          recordInbound(channel, null, 'refused', 'payload partner does not match the token');
+          return json(res, 401, { error: 'this event was not accepted', why: 'the payload names a different partner than the token' });
+        }
+        payload.partner_id = check.partner.id;
+      }
+
       try {
         const ev = adapt(channel, payload);
+        if (ev.attribution && channel === 'agent') ev.attribution = { ...ev.attribution, verified: Boolean(check.partner) };
         // Idempotency: await receive() returns {duplicate:true} when it has already
         // seen this channel + external id. A provider retry is normal.
         const r = await receive(db, { ...toIntake(ev), source: simulated ? 'simulated' : 'provider' });

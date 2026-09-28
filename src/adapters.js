@@ -310,6 +310,9 @@ export function toIntake(ev) {
     email: ev.senderEmail,
     phone: ev.senderPhone,
     body: [ev.messageSubject, ev.messageBody].filter(Boolean).join('\n') || null,
+    // Where the adapter recorded one (the agent channel). It used to stop here, so
+    // which partner a lead came from never reached the database (28.09.2026).
+    attribution: ev.attribution && Object.keys(ev.attribution).length ? ev.attribution : null,
   };
 }
 

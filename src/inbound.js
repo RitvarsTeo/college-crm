@@ -144,13 +144,30 @@ export const VERIFY = {
     return { ok, how: ok ? 'url secret matched (weak: this provider does not sign)' : 'url secret did not match' };
   },
 
+  // AGENT_TOKENS is JSON: { "<token>": "<partner id>" } (or { id, name }). It reaches
+  // here as the raw environment STRING, and indexing a string with the header made a
+  // real token fail while "0" or "length" passed (28.09.2026). Now: the JSON is read,
+  // the header is compared in constant time against each real token, and only a real
+  // token names a partner. That partner - not one the payload claims - is the source.
   per_partner_token: (req, secrets) => {
-    const got = String(req.headers['x-partner-token'] || '');
-    const table = secrets || {};
-    const partner = table[got];
+    let table = secrets;
+    if (typeof table === 'string') { try { table = JSON.parse(table); } catch { table = null; } }
+    if (!table || typeof table !== 'object' || Array.isArray(table) || !Object.keys(table).length) {
+      return { ok: false, how: 'no partner tokens configured', missingSecret: true };
+    }
+    const got = Buffer.from(String(req.headers['x-partner-token'] || ''));
+    let match = null;
+    for (const token of Object.keys(table)) {
+      const want = Buffer.from(token);
+      if (got.length === want.length && crypto.timingSafeEqual(got, want)) match = token;
+    }
+    if (!match) return { ok: false, how: 'unknown partner token' };
+    const v = table[match];
+    const partner = typeof v === 'string' ? { id: v, name: null }
+      : v && typeof v === 'object' && v.id ? { id: String(v.id), name: v.name ? String(v.name) : null } : null;
     return partner
       ? { ok: true, how: 'partner token recognised', partner }
-      : { ok: false, how: 'unknown partner token' };
+      : { ok: false, how: 'the partner token has no partner id' };
   },
 
   token_in_query: () => ({ ok: true, how: 'we call them; they do not call us' }),

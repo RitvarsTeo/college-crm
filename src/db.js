@@ -140,7 +140,8 @@ CREATE TABLE IF NOT EXISTS inbound (
   -- evidence that a channel is connected. The demo builder and the simulator
   -- write through this same table on purpose, so without this column every
   -- channel on the demo copy would read as CONNECTED.
-  source TEXT                    -- provider | simulated | demo | manual | null
+  source TEXT,                   -- provider | simulated | demo | manual | null
+  attribution TEXT               -- JSON: which partner a lead came from (agent), or null
 );
 
 -- One row per field, with where the value came from. An 'extracted' value is a
@@ -264,6 +265,7 @@ CREATE TABLE IF NOT EXISTS channel_mode (
 const ADDED_COLUMNS = [
   ['people', 'nationality', 'TEXT'],
   ['inbound', 'source', 'TEXT'],
+  ['inbound', 'attribution', 'TEXT'],
 ];
 
 // ---------------------------------------------------------- the async layer --
