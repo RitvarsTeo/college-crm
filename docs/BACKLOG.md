@@ -145,6 +145,31 @@ dpl_BQ2rpkN6ggPPktnFekPPkrBaGBSj** (588/588; live page = commit + sign-in script
 - Texts cut to a third (Ritvars): People "Click a row to edit.", its count "All N people.", Next
   Steps "What the team has to do.", New Leads "New arrivals land here first."
 - Checked: desktop light/dark, phone light/dark. Tests: test/kit13_polish.test.js.
+**Aigars UX compliance pass - LIVE 28.09.2026, commit c058e63, deployment dpl_5CAAu35HLnJVDRCu4jA5dZRNobQU**
+(595/595; live page = commit + sign-in script, byte-identical; 401s and 0 leaks). Audited screen by
+screen on the real-data snapshot (local, in memory) at 1440 / 900 / 390 px, light and dark.
+- Phone + tablet (<= 900 px): the C menu was a 360 px block PINNED over the work; now one sideways
+  row of the same links in the same order (~95 px), the current place scrolled into view, solid in
+  dark; switch + (c) line at the page bottom on every top-bar width. No page is wider than a phone.
+- Journey cards: the next step reads "Get in touch" - the import titled all 34 open production
+  tasks "Get in touch (from the sheet)" (read-only count 28.09); display only, stored titles
+  untouched. A one-line comment preview of what people wrote, without the import's "Sheet status: |
+  Docs: |" tags (68 of 91 open notes carry them); the whole note stays on the card and person page.
+- Phone Journey opens on its columns; the person card appears once a card is tapped.
+- Dark menu: no block behind the active item (light had lost it earlier today).
+- Sentences removed: Next Steps footer, person Stage explanation, Journey "working version"
+  (both now the tag "Stages to agree"), Settings and Outcomes subtitles. Outcomes rows and the
+  Settings switch fit a phone.
+- Tests: test/aigars_ux_pass.test.js (+ journey_visual, kit13_polish updated).
+- NOT verifiable by me on production: the signed-in screens (Google sign-in). Proof is byte identity
+  of the live page with the commit plus the local renders on the real snapshot.
+- STILL OPEN from Aigars: #3 comments (preview done; a comment thread per person is not built),
+  #4 lifecycle facts "Application form started" / "Matriculated" (NOT built: the SIS feed exists only
+  on the unmerged branch channels-pbx-sis, e14a952, never called against the real SIS; missing
+  evidence = one real SIS response showing which field says a form was started and which says
+  matriculated, and who confirms the mapping), #5 (never written down in this session - Ritvars to
+  restate). Channels simplification is the channels session's. Phone Home chart labels are tiny.
+
 - Left as decided/for Ritvars: part 1 (the CRM is Google-only by Aigars' decision; part 13's card is
   its standard), part 2 backup (none yet; it would hold real people's data - where it may be kept is
   his call), part 14 moving lines (an add-on, not a default; the sign-in has its own sea).
