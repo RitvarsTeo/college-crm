@@ -30,6 +30,26 @@ import { todayStart, tomorrowStart, localDate } from './bizday.js';
 
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+
+// Installed as a desktop app, the CRM is "Academy CRM" with the Academy symbol, in its own
+// window. start_url and scope are the whole site, so the Google sign-in round trip leaves
+// and comes back into the same window (a full-page redirect, no popup).
+export const APP_MANIFEST = {
+  id: '/',
+  name: 'Novikontas Academy CRM',
+  short_name: 'Academy CRM',
+  description: 'The Admissions CRM of Novikontas Academy.',
+  start_url: '/',
+  scope: '/',
+  display: 'standalone',
+  background_color: '#08182e',
+  theme_color: '#0a2463',
+  icons: [
+    { src: '/assets/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+    { src: '/assets/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+    { src: '/assets/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+  ],
+};
 const PORT = Number(process.env.PORT || 8800);
 // A Secure cookie is never sent over plain http, so testing the door on
 // localhost needs it off. Every real host serves https, so this stays unset
@@ -964,6 +984,17 @@ export const handle = async (req, res) => {
       res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' });
       return res.end(fs.readFileSync(path.join(ROOT, 'src', 'app.html')));
     }
+    // The installable-app description: name, the Academy icons, the window. Open before
+    // sign-in like the page itself, because the browser reads it on the sign-in screen.
+    if (req.method === 'GET' && p === '/manifest.webmanifest') {
+      res.writeHead(200, { 'content-type': 'application/manifest+json; charset=utf-8', 'cache-control': 'public, max-age=3600' });
+      return res.end(JSON.stringify(APP_MANIFEST, null, 2));
+    }
+    // Browsers ask for /favicon.ico on their own (bookmarks, some tabs). Answer with the symbol.
+    if (req.method === 'GET' && p === '/favicon.ico') {
+      res.writeHead(200, { 'content-type': 'image/png', 'cache-control': 'public, max-age=3600' });
+      return res.end(fs.readFileSync(path.join(ROOT, 'src', 'assets', 'icon-192.png')));
+    }
     // The brand assets. Only the two authorised logo files, served by an exact
     // name match: no path is ever built out of what the request asked for.
     if (req.method === 'GET' && p.startsWith('/assets/')) {
@@ -976,6 +1007,14 @@ export const handle = async (req, res) => {
         'NoAca_logo_whitehor.svg': 'image/svg+xml; charset=utf-8',
         'NoAca_logo_blackhor.svg': 'image/svg+xml; charset=utf-8',
         'na_pattern_tile.png': 'image/png',
+        // The Academy symbol for the browser tab and the installed app (28.09.2026:
+        // "always Novikontas Academy logos have to be in web tabs and on desktop").
+        // The brandbook symbol, shapes unchanged, filling a navy tile ("more NA than the blue screen").
+        'favicon.svg': 'image/svg+xml; charset=utf-8',
+        'icon-192.png': 'image/png',
+        'icon-512.png': 'image/png',
+        'icon-maskable-512.png': 'image/png',
+        'apple-touch-icon.png': 'image/png',
       };
       const name = p.slice('/assets/'.length);
       const type = ALLOWED[name];
