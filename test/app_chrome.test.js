@@ -37,6 +37,7 @@ test('the Academy logo is in the tab and the CRM installs as "Academy CRM" - all
   assert.equal(man.short_name, 'Academy CRM');
   assert.equal(man.display, 'standalone');
   assert.equal(man.start_url, '/'); assert.equal(man.scope, '/');
+  assert.equal(man.theme_color, '#000000', 'the installed window bar is black');
   assert.ok(man.icons.some((i) => i.sizes === '512x512' && i.purpose === 'maskable'));
   for (const src of [...man.icons.map((i) => i.src), '/assets/favicon.svg', '/assets/apple-touch-icon.png', '/favicon.ico']) {
     const r = await fetch(s.base + src);
@@ -49,12 +50,13 @@ test('the Academy logo is in the tab and the CRM installs as "Academy CRM" - all
   assert.equal((await fetch(s.base + '/api/people')).status, 401, 'opening the icons opened nothing else');
 });
 
-test('the page names the icons, the manifest and the Academy navy', () => {
+test('the page names the icons, the manifest and the black window bar', () => {
   const head = APP.slice(0, APP.indexOf('</head>'));
   assert.match(head, /<link rel="icon" href="\/assets\/favicon\.svg" type="image\/svg\+xml">/);
   assert.match(head, /<link rel="apple-touch-icon" href="\/assets\/apple-touch-icon\.png">/);
   assert.match(head, /<link rel="manifest" href="\/manifest\.webmanifest">/);
-  assert.match(head, /<meta name="theme-color" content="#0a2463">/);
+  assert.match(head, /<meta name="theme-color" content="#000000">/, 'the window bar is black');
+  assert.doesNotMatch(head, /theme-color" content="#0a2463"/, 'not navy any more');
 });
 
 test('the theme switch has Light, System and Dark, says which is on, and System follows the computer', () => {

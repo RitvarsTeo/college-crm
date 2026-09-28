@@ -43,7 +43,7 @@ export const APP_MANIFEST = {
   scope: '/',
   display: 'standalone',
   background_color: '#08182e',
-  theme_color: '#0a2463',
+  theme_color: '#000000',           // the installed window's title bar: black in every app (28.09.2026)
   icons: [
     { src: '/assets/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
     { src: '/assets/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
