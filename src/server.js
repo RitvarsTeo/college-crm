@@ -988,6 +988,10 @@ export const handle = async (req, res) => {
 
     // --------------------------------------------------------- the database -
     if (req.method === 'POST' && p === '/api/dataset') {
+      // Replaces or empties the WHOLE database. With sign-in on this copy holds real people,
+      // so only an admin may, as with /api/console/mode. Any signed-in user could before
+      // (found 28.09.2026: the shared Admissions account emptied a copy with one request).
+      if (AUTH_ON && !(await adminOf(req))) return json(res, 403, { error: 'replacing the database is for admins only' });
       const b = await body(req);
       try {
         const info = await loadDataset(b.kind);
@@ -997,6 +1001,10 @@ export const handle = async (req, res) => {
     }
 
     if (req.method === 'POST' && p === '/api/reset') {
+      // Replaces or empties the WHOLE database. With sign-in on this copy holds real people,
+      // so only an admin may, as with /api/console/mode. Any signed-in user could before
+      // (found 28.09.2026: the shared Admissions account emptied a copy with one request).
+      if (AUTH_ON && !(await adminOf(req))) return json(res, 403, { error: 'replacing the database is for admins only' });
       const info = await loadDataset('empty');
       ACTIVITY.length = 0;
       return json(res, 200, { ok: true, dataset: info });
@@ -1383,6 +1391,10 @@ export const handle = async (req, res) => {
     // One button that builds the whole V1 story, deterministically, so a review
     // always sees the same screens. No provider is contacted.
     if (req.method === 'POST' && p === '/api/demo/scenario') {
+      // Replaces or empties the WHOLE database. With sign-in on this copy holds real people,
+      // so only an admin may, as with /api/console/mode. Any signed-in user could before
+      // (found 28.09.2026: the shared Admissions account emptied a copy with one request).
+      if (AUTH_ON && !(await adminOf(req))) return json(res, 403, { error: 'replacing the database is for admins only' });
       await loadDataset('empty');
       ACTIVITY.length = 0;
       await runFullDemo(db);                                   // the older channel walk-through
