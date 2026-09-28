@@ -74,3 +74,18 @@ test('nothing on screen links to the classic view, and the address still reaches
   assert.equal(pick('?ui=c'), 'c', '?ui=c opens C again');
   assert.equal(pick(''), 'c');
 });
+
+// Ritvars, 28.09.2026: the dark theme is the sign-in sea - the same navy gradient, a
+// brighter amber (the old one read as "dirty amber or mustard") and glass panels.
+test('dark C is the sign-in sea: its gradient, the bright amber, glass panels, one palette', () => {
+  const sky = APP.match(/--gate-sky-top:(#[0-9a-f]{6});--gate-sky-mid:(#[0-9a-f]{6});--gate-sky-deep:(#[0-9a-f]{6})/);
+  assert.ok(sky, 'the sign-in sky colours are where they were');
+  const body = APP.match(/html\.ui-c\[data-theme="dark"\] body\{background:([^}]*)\}/);
+  assert.ok(body, 'dark C paints the page');
+  for (const c of sky.slice(1)) assert.ok(body[1].includes(c), `the dark page uses the sign-in colour ${c}`);
+  const dark = [...APP.matchAll(/html\.ui-c\[data-theme="dark"\]\{([^}]*)\}/g)].map((m) => m[1]);
+  assert.equal(dark.length, 1, 'one dark palette, so a later block cannot quietly override it');
+  assert.match(dark[0], /--v-lead:#F7C04F/);
+  assert.match(dark[0], /--c-warn:#F7C04F/);
+  assert.match(APP, /html\.ui-c\[data-theme="dark"\] :is\([^)]*\.c-sheet[^)]*\.ksec[^)]*\)\{\s*background:var\(--glass\)/);
+});

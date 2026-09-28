@@ -767,10 +767,36 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
     --t2:#48535d;--t3:#5c6670;--t4:#66707a;--rule:#e3e7e8;--rule2:#eef1f1;--control-line:#c9d0d3;
     --pet:#2e6b70;--petink:#2e6b70;--btn-bg:#1f4f59;--btn-ink:#ffffff;--on-navy:#ffffff;--bad:#9f3a31;
     --c-ok:#2c6e55;--c-warn:#835c12;--c-bad:#9f3a31;--c-accent-bg:#e9f2f1;--c-sunk:#f1f3f2;--c-sel:#eef4f4}
-  html.ui-c[data-theme="dark"]{--paper:#10222a;--surface:#152b33;--surface-2:#1a333c;--shell:#0e1e25;--field:#1a333c;--menu:#1a333c;--ink:#e7eef0;
-    --t2:#b4c3c9;--t3:#9fb0b7;--t4:#93a6ad;--rule:#26434c;--rule2:#1d3840;--control-line:#3a5a63;
-    --pet:#86cbc7;--petink:#a6dcd8;--btn-bg:#8fd2cd;--btn-ink:#0b1d22;--on-navy:#0b1d22;--bad:#ee958c;
-    --c-ok:#7fcaa6;--c-warn:#e3bb72;--c-bad:#ee958c;--c-accent-bg:#1c3f45;--c-sunk:#0e1e25;--c-sel:#1d3b44}
+  /* Dark = the sign-in sea (Ritvars, 28.09.2026: "the exact same colours and tones with
+     gradients from the login screen"). The page is the sign-in gradient, the sidebar its
+     deepest navy, buttons white like the Google button. Amber brightened ("now its kind of
+     dirty amber or mustard"), the chart colours with it, and panels are glass wherever a
+     panel exists. Menus, fields and the drop-down lists stay solid so they stay readable.
+     Every text tint is 4.5:1 or more on glass over the brightest part of the sea.
+     Chart colours (dataviz validator, on the sea and on glass): colour-blind separation
+     and normal-vision separation pass, contrast 3:1+ passes. Two flags are deliberate:
+     the amber and teal are lighter than the validator's band because he asked for them
+     brighter, and the slate for 'not proceeding' is a neutral grey that always carries its word. */
+  html.ui-c[data-theme="dark"]{--paper:#0f2f4f;--surface:#133a60;--surface-2:#17456e;--shell:#08182e;--field:#0c2745;--menu:#133a60;--ink:#f2f6f9;
+    --t2:#cddbe5;--t3:#bfd0dd;--t4:#b8cad8;--rule:#2a5580;--rule2:#1d4670;--control-line:#6286a8;
+    --pet:#a8d3f3;--petink:#bcdcf5;--btn-bg:#fbfcfd;--btn-ink:#0f1b35;--on-navy:#0f1b35;--bad:#ffb0a8;
+    --amb:#F7C04F;--ambink:#F7C04F;--late:#F7C04F;--warn:#F7C04F;
+    --c-ok:#9be0bd;--c-warn:#F7C04F;--c-bad:#ffb0a8;--c-accent-bg:#1a4670;--c-sunk:#0b2542;--c-sel:#163f66;
+    --v-adm:#2CC4B6;--v-lead:#F7C04F;--v-np:#93A5B8;--v-grid:#24507a;
+    --glass:linear-gradient(180deg,rgba(255,255,255,.06) 0%,rgba(255,255,255,.035) 100%);
+    --glass-line:rgba(194,211,222,.18)}
+  html.ui-c[data-theme="dark"] body{background:radial-gradient(120% 80% at 50% 0%,#17456e 0%,rgba(23,69,110,0) 60%),
+      linear-gradient(180deg,#0f2f4f 0%,#0f2f4f 45%,#08182e 100%) fixed #0f2f4f}
+  html.ui-c[data-theme="dark"] .shell > nav{background:linear-gradient(180deg,rgba(8,24,46,.78) 0%,rgba(8,24,46,.92) 100%);border-right:1px solid rgba(194,211,222,.10)}
+  html.ui-c[data-theme="dark"] :is(.c-health,.c-sheet,.c-seg,.c-said,.c-card,.c-jp,.c-folded,.c-next.c-finished,.kstrip,.ksec){
+    background:var(--glass);border:1px solid var(--glass-line);
+    -webkit-backdrop-filter:blur(14px) saturate(110%);backdrop-filter:blur(14px) saturate(110%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 10px 28px rgba(3,12,26,.22)}
+  /* Home had hairlines and no boxes; as glass its strip and sections need an edge and room */
+  html.ui-c[data-theme="dark"] .kstrip{border-radius:14px;padding:0 18px}
+  html.ui-c[data-theme="dark"] .ksec{border-radius:14px;padding:16px 14px 14px}
+  html.ui-c[data-theme="dark"] .ksh{border-bottom-color:var(--glass-line)}
+  html.ui-c[data-theme="dark"] .ksec .klegend span{white-space:nowrap}
   /* the classic navigation stays in the page (other code reads it by id) but is not shown */
   /* and so does the old "needs you today / leads you own" counter: C counts New Leads
      and Next Steps separately in its own navigation (Ritvars, 28.09.2026) */
@@ -834,7 +860,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
      validated with the dataviz validator: teal = admitted, sand = leads / still open,
      slate = not proceeding or not recorded (always with its word). */
   html.ui-c{--v-adm:#008E8A;--v-lead:#B9812A;--v-np:#7C8B94;--v-grid:#e8ecec}
-  html.ui-c[data-theme="dark"]{--v-adm:#00A39A;--v-lead:#BE8428;--v-np:#7F8F98;--v-grid:#23404a}
+  /* dark chart colours: with the rest of the dark sea palette, near the top of CONCEPT C */
   html.ui-c .kpage{position:relative;max-width:1080px}
   /* Ritvars 28.09.2026: no title sentence on Home. The page keeps a heading for screen
      readers only, so it is still announced as Home. */
