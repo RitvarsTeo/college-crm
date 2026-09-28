@@ -54,3 +54,23 @@ test('New Leads and Next Steps keep their own counts in C\'s navigation', () => 
   assert.match(src, /\(i\.counts \|\| \{\}\)\.new/, 'New Leads counts new arrivals');
   assert.match(src, /cDueNow\(t\)\.length/, 'Next Steps counts what is due now');
 });
+
+// Ritvars, 28.09.2026: C is the normal product. No visible control invites anybody back
+// to the classic view; it stays a hidden fallback reached by the address ?ui=classic.
+test('nothing on screen links to the classic view, and the address still reaches it', () => {
+  const code = APP.replace(/<!--[\s\S]*?-->/g, '').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  assert.ok(!/href=["']\?ui=classic/.test(code), 'no link to ?ui=classic');
+  assert.ok(!/item\('\?ui=classic'/.test(code), 'no Settings row for it');
+  assert.ok(!/classic view/i.test(code), 'no visible words about it');
+
+  const start = APP.indexOf('const UI = (() => {');
+  const src = APP.slice(start, APP.indexOf('})();', start) + 5);
+  const store = {};
+  const pick = (search) => vm.runInNewContext(`${src}\nUI`, { URLSearchParams,
+    location: { search }, localStorage: { getItem: (k) => store[k] ?? null, setItem: (k, v) => { store[k] = String(v); } } });
+  assert.equal(pick(''), 'c', 'the normal address opens C');
+  assert.equal(pick('?ui=classic'), 'classic', '?ui=classic opens the classic view');
+  assert.equal(pick(''), 'classic', 'and the browser remembers that choice, as before');
+  assert.equal(pick('?ui=c'), 'c', '?ui=c opens C again');
+  assert.equal(pick(''), 'c');
+});

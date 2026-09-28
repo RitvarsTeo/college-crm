@@ -746,7 +746,8 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
 
   /* ===================================================================== CONCEPT C
      The main UI since 28.09.2026 (Ritvars: "Concept C is the main now"). The classic
-     UI stays one click away at ?ui=classic. Everything here is scoped to html.ui-c, so
+     UI stays reachable at ?ui=classic, with no visible control inviting anybody back to
+     it (Ritvars, 28.09.2026). Everything here is scoped to html.ui-c, so
      the classic UI is byte-for-byte what it was. The palette OVERRIDES the app's own
      tokens, so the screen C still borrows from the classic UI (Channels) takes the
      quieter colours too. Every text tint passes 4.5:1
@@ -774,7 +775,6 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .cnav .n.warn{color:var(--c-warn);font-weight:600}
   html.ui-c .cnav .kids{margin:1px 0 6px 18px;padding-left:10px;border-left:1px solid var(--rule)}
   html.ui-c .cnav .kids a{padding:5px 10px;font-size:13px}
-  html.ui-c .cclassic{display:block;font-size:12px;color:var(--t3);margin-top:10px;text-decoration:underline}
   /* C's own screens */
   html.ui-c .c-crumb{font-size:12.5px;color:var(--t3);margin:0 0 6px}
   html.ui-c .c-sentence{font-family:var(--serif);font-size:27px;line-height:1.3;font-weight:500;letter-spacing:-.01em;margin:0 0 4px;max-width:34ch}
@@ -1097,8 +1097,8 @@ function installCNav() {
     <a href="#/outcomes" data-c="outcomes">${C_ICON.out}<span>Outcomes</span></a>
     <a href="#/settings" data-c="settings" id="cnSettings" style="display:none">${C_ICON.set}<span>Settings</span></a>
   </div>`);
-  const themeBlock = document.querySelector('#theme')?.closest('.themes');
-  if (themeBlock) themeBlock.insertAdjacentHTML('beforeend', '<a class="cclassic" href="?ui=classic">Open the classic view</a>');
+  // No "Open the classic view" link: C is the normal product, and the classic view is a
+  // hidden fallback reached only by the address ?ui=classic (Ritvars, 28.09.2026).
 }
 
 // Which C place a hash belongs to. Old links keep working: #/today is Home, #/inbox is
@@ -1324,7 +1324,6 @@ async function viewSettingsC() {
       ${item('#/feedback', 'Feedback received', 'What people sent with the feedback button. The button stays on every screen.')}
       ${item('#/reports', 'Full report', 'The on-screen report behind the management download.')}
       ${item('#/people', 'Data to tidy', `${odd} ${odd === 1 ? 'person has' : 'people have'} a programme that is not one of the list.`)}
-      ${item('?ui=classic', 'Classic view', 'The previous layout, kept as a backup. Come back with ?ui=c.')}
     </div>
     <p class="c-ev">The journey stages and the next-step list are still a working version, to be agreed with Admissions. <span class="c-dec">to agree</span></p>`;
 }
