@@ -10,18 +10,18 @@
 // NOTHING HERE PRINTS A SECRET. The only URL this file is allowed to log is the
 // redacted one the poller hands back.
 
-import { authoriseCron, runPoll, redact, WINDOW_MINUTES } from '../../lib/pbx.js';
+import { authoriseCron, runPoll, redact, WINDOW_MINUTES, sendJson } from '../../lib/pbx.js';
 
 export default async function handler(req, res) {
   const method = req.method || 'GET';
   if (method !== 'GET' && method !== 'POST') {
-    res.status(405).json({ error: 'Method not allowed' });
+    sendJson(res, 405, { error: 'Method not allowed' });
     return;
   }
 
   const auth = authoriseCron(req.headers?.authorization);
   if (!auth.ok) {
-    res.status(auth.status).json({ error: auth.error });
+    sendJson(res, auth.status, { error: auth.error });
     return;
   }
 
@@ -31,10 +31,10 @@ export default async function handler(req, res) {
     // that is the clock the window was built on.
     console.log(`[pbx] ${result.window.from} -> ${result.window.to} ${result.window.zone}: `
       + `fetched ${result.fetched}, kept ${result.kept}, upserted ${result.upserted}`);
-    res.status(200).json(result);
+    sendJson(res, 200, result);
   } catch (err) {
     const message = redact(err && err.message ? err.message : 'poll failed');
     console.error(`[pbx] ${message}`);
-    res.status(502).json({ ok: false, error: message });
+    sendJson(res, 502, { ok: false, error: message });
   }
 }

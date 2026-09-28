@@ -14,25 +14,25 @@
 // is waiting for and makes no request at all - a call that was never made must
 // never be reported as "nothing to do".
 
-import { authoriseCron } from '../../lib/pbx.js';
+import { authoriseCron, sendJson } from '../../lib/pbx.js';
 import { runPoll, ready, MAILBOX, WINDOW_MINUTES } from '../../lib/gmail.js';
 
 export default async function handler(req, res) {
   const method = req.method || 'GET';
   if (method !== 'GET' && method !== 'POST') {
-    res.status(405).json({ error: 'Method not allowed' });
+    sendJson(res, 405, { error: 'Method not allowed' });
     return;
   }
 
   const auth = authoriseCron(req.headers && req.headers.authorization);
   if (!auth.ok) {
-    res.status(auth.status).json({ error: auth.error });
+    sendJson(res, auth.status, { error: auth.error });
     return;
   }
 
   const mode = String(process.env.CHANNEL_MODE_GMAIL || 'off').toLowerCase();
   if (mode === 'off') {
-    res.status(200).json({ ok: true, ran: false, channel: 'gmail',
+    sendJson(res, 200, { ok: true, ran: false, channel: 'gmail',
       why: 'the gmail channel is off', how: 'set CHANNEL_MODE_GMAIL to test or live' });
     return;
   }
@@ -41,16 +41,16 @@ export default async function handler(req, res) {
   if (!state.ok) {
     // 200, not an error: being un-authorised yet is the expected state, and a
     // failing scheduled job every five minutes teaches everybody to ignore it.
-    res.status(200).json({ ok: true, ran: false, channel: 'gmail', mailbox: MAILBOX,
+    sendJson(res, 200, { ok: true, ran: false, channel: 'gmail', mailbox: MAILBOX,
       why: state.why, waitingOn: state.waitingOn });
     return;
   }
 
   try {
     const result = await runPoll({ minutes: WINDOW_MINUTES });
-    res.status(result.ok ? 200 : 502).json({ channel: 'gmail', mailbox: MAILBOX, ...result });
+    sendJson(res, result.ok ? 200 : 502, { channel: 'gmail', mailbox: MAILBOX, ...result });
   } catch (err) {
     // Never echo the message: a Google error can quote the request.
-    res.status(500).json({ ok: false, ran: true, error: 'the poll failed', channel: 'gmail' });
+    sendJson(res, 500, { ok: false, ran: true, error: 'the poll failed', channel: 'gmail' });
   }
 }

@@ -241,8 +241,10 @@ test('the gmail cron route refuses without the scheduled-invocation secret', asy
   const answer = (req, envVars = {}) => new Promise((resolve) => {
     const old = { ...process.env };
     Object.assign(process.env, envVars);
-    const res = { status(code) { this._c = code; return this; },
-      json(body) { Object.assign(process.env, old); resolve({ status: this._c, body }); } };
+    // Shaped like Node's own response, which is what Vercel hands the function. The
+    // Express-shaped fake that was here (status/json) passed while production crashed.
+    const res = { statusCode: 200, headers: {}, setHeader(k, v) { this.headers[k.toLowerCase()] = v; },
+      end(text) { Object.assign(process.env, old); resolve({ status: this.statusCode, body: JSON.parse(text) }); } };
     handler(req, res);
   });
 

@@ -405,3 +405,31 @@ test('the env example names every variable and gives none of them a value', asyn
     assert.match(env, new RegExp('^' + name + '=\\s*$', 'm'), name + ' must be named and empty');
   }
 });
+
+// The cron routes behind a REAL Node server. Vercel hands these functions Node's own
+// response, without Express's res.status()/res.json(); both routes crashed on every
+// request in production with "res.status is not a function" (28.09.2026), while the
+// tests passed on a fake response that had those methods. This one has no helpers.
+test('both cron routes answer through a plain Node response, and refuse without the secret', async (t) => {
+  const http = await import('node:http');
+  const old = process.env.CRON_SECRET;
+  process.env.CRON_SECRET = 'test-cron-secret-not-real';
+  t.after(() => { if (old === undefined) delete process.env.CRON_SECRET; else process.env.CRON_SECRET = old; });
+  for (const rel of ['../api/cron/pbx-calls.js', '../api/cron/gmail-poll.js']) {
+    const { default: handler } = await import(rel);
+    const server = http.createServer((req, res) => { handler(req, res); });
+    await new Promise((r) => server.listen(0, '127.0.0.1', r));
+    const base = `http://127.0.0.1:${server.address().port}`;
+    try {
+      const quick = { signal: AbortSignal.timeout(5000) };   // a crashed handler never answers
+      const none = await fetch(base, quick);
+      assert.equal(none.status, 401, rel + ' without a secret');
+      assert.match(none.headers.get('content-type'), /application\/json/);
+      assert.deepEqual(await none.json(), { error: 'Unauthorized' });
+      const wrong = await fetch(base, { ...quick, headers: { authorization: 'Bearer wrong-secret-x' } });
+      assert.equal(wrong.status, 401, rel + ' with a wrong secret');
+      const put = await fetch(base, { ...quick, method: 'PUT' });
+      assert.equal(put.status, 405, rel + ' refuses other methods');
+    } finally { server.close(); }
+  }
+});
