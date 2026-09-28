@@ -925,11 +925,17 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .ktitle{margin:2px 0 0;font-family:var(--serif);font-weight:500;font-size:30px;letter-spacing:-.012em;line-height:1.15}
   html.ui-c .kstrip{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);margin-bottom:26px}
   html.ui-c .kstrip > div{padding:16px 18px 16px 0;min-width:0}
+  /* label, number and note sit on SHARED rows across the strip, so a label that wraps ("Median time
+     to admission" at a narrow width) no longer pushes its number below the others */
+  html.ui-c .kstrip{grid-template-rows:auto auto auto}
+  html.ui-c .kstrip > div{display:grid;grid-row:span 3;grid-template-rows:subgrid;align-content:start}
   html.ui-c .kstrip > div + div{padding-left:18px;border-left:1px solid var(--rule2)}
   html.ui-c .kstrip span{display:block;font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--t3)}
   html.ui-c .kstrip b{display:block;font-size:30px;font-weight:650;letter-spacing:-.025em;line-height:1.15;margin:4px 0 3px}
   html.ui-c .kstrip b em{font-style:normal;font-size:15px;font-weight:500;color:var(--t3);letter-spacing:0}
-  html.ui-c .kstrip .khero b{font-size:54px;letter-spacing:-.04em;line-height:1}
+  /* one size for every KPI number (Ritvars, 28.09.2026: "Weird size indifference!" at a 54 px
+     Admitted beside 30 px figures) */
+  html.ui-c .kstrip .khero b{font-size:30px;letter-spacing:-.025em;line-height:1.15}
   html.ui-c .kstrip small{display:block;font-size:12.5px;color:var(--t3);line-height:1.4}
   html.ui-c .ksec{margin:0 0 26px;min-width:0}
   html.ui-c .ksh{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid var(--rule2)}
@@ -1465,7 +1471,7 @@ async function viewSettingsC() {
     <h2 class="c-set-h">Help</h2>
     <div class="c-sheet c-set">
       ${item('#/help', 'Help center', 'How each screen works, and answers to common questions.')}
-      <div class="c-line" tabindex="0" onclick="fbToggle()"><div class="c-who"><b>Report a problem or an idea</b><small>Reaches the CRM admins. You can add a screenshot.</small></div><div class="c-when">›</div></div>
+      <div class="c-line" tabindex="0" onclick="fbToggle()"><div class="c-who"><b>Report a problem or an idea</b><small>Reaches the people who build the CRM. You can add a screenshot.</small></div><div class="c-when">›</div></div>
     </div>
     ${admin}`;
 }
@@ -1494,7 +1500,7 @@ function viewHelpC() {
       ${q('Where do the Home numbers come from?', 'From the people in the CRM, counted for this year. <b>Download for management review</b> on Outcomes gives the figures as Excel, Google Sheets or CSV.')}
       ${q('Light, dark or system?', 'Use the switch at the bottom of the menu, or in Settings. <b>System</b> follows your computer, and changes when it does. The choice is remembered on this device.')}
       ${q('Can I install it as an app?', 'Yes. In Chrome or Edge, click the install icon at the right end of the address bar. Academy CRM then opens in its own window, with the Academy logo on the desktop and the taskbar.')}
-      ${q('Something is wrong or missing', 'Press <b>Report a problem</b> above, or the <b>Feedback</b> button in the corner. You can add a screenshot. It reaches the CRM admins.')}
+      ${q('Something is wrong or missing', 'Press <b>Report a problem</b> above, or the <b>Feedback</b> button in the corner. You can add a screenshot. It reaches the people who build the CRM.')}
     </div>
     <p class="c-help-foot">&copy; Novikontas Academy</p>`;
 }
@@ -4428,11 +4434,10 @@ const fbPath = () => location.hash || '#/today';
 // Anything else is shown as text: a planted "javascript:" must never become a link
 // in an admin's inbox. The server keeps only in-app addresses too (readPath).
 const fbPathLink = (p) => (/^(#\/|\/(?!\/))/.test(String(p || '')) ? `<a href="${esc(p)}">${esc(p)}</a>` : `<span>${esc(p)}</span>`);
-const fbReaders = () => {
-  const who = CFG.feedbackReaders || [];
-  if (!who.length) return 'the people building this';
-  return who.length === 1 ? who[0] : who.slice(0, -1).join(', ') + ' and ' + who[who.length - 1];
-};
+// What the screen SAYS about who reads feedback. It names nobody (Ritvars, 28.09.2026: "Anonymize!",
+// when the box named its two readers). WHO may read it is still decided by CFG.feedbackReaders in
+// mayReadFeedback(); only the words shown changed.
+const fbReaders = () => 'the people who build the CRM';
 
 async function fbPick(file) {
   if (!file) return;
