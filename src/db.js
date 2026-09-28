@@ -276,6 +276,53 @@ CREATE TABLE IF NOT EXISTS channel_mode (
   changed_by TEXT,
   CHECK (mode IN ('off', 'test', 'live'))
 );
+
+-- Every incoming call to the three college queues, as the PBX reported it. Lives in
+-- the CRM's own schema, not in a public REST table, so it moves to Supabase with
+-- everything else and the service key never has to leave the database connection.
+-- uniqueid is the PBX's id: the 15-minute poll windows overlap on purpose, and a
+-- call already here is skipped rather than logged twice. Personal data (a number
+-- identifies a person); retention is NOT decided, so nothing purges it yet.
+CREATE TABLE IF NOT EXISTS pbx_calls (
+  uniqueid TEXT PRIMARY KEY,
+  called_at TEXT NOT NULL,       -- an absolute instant; the PBX's Riga wall-clock converted
+  queue TEXT NOT NULL,
+  caller_num TEXT,
+  picked_up INTEGER NOT NULL,    -- 1 only when state was ANSWER
+  operator_name TEXT,            -- null on a missed call
+  person_id TEXT,                -- the person it was logged on, when the number was known
+  inbound_id INTEGER,            -- the Inbox item it became, when it was not
+  inserted_at TEXT NOT NULL
+);
+
+-- The SIS applicant feed, one row per application (a person can apply to more than
+-- one programme; a person who has only registered has no application yet, stored
+-- as ''). The SIS resends a record whenever it changes and the latest version wins.
+CREATE TABLE IF NOT EXISTS sis_applicants (
+  reference TEXT NOT NULL,       -- the SIS person. Never changes.
+  application_id TEXT NOT NULL,  -- '' when they have only registered
+  given_name TEXT,
+  family_name TEXT,
+  email TEXT,
+  phone TEXT,
+  programme_code TEXT,
+  status TEXT NOT NULL,
+  registered_at TEXT,
+  submitted_at TEXT,
+  changed_at TEXT NOT NULL,
+  person_id TEXT,                -- the CRM person, once linked
+  inbound_id INTEGER,            -- the Inbox item raised while nobody was linked
+  synced_at TEXT NOT NULL,
+  PRIMARY KEY (reference, application_id)
+);
+
+-- Where each poller got to, so the next run asks only for what changed.
+CREATE TABLE IF NOT EXISTS sync_state (
+  name TEXT PRIMARY KEY,
+  value TEXT,
+  ran_at TEXT NOT NULL,
+  detail TEXT                    -- what the last run did, never a secret
+);
 `;
 
 // A test opens this in memory. The server opens a file, because a prototype that

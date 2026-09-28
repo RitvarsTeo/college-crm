@@ -1,5 +1,11 @@
 # PBX incoming-call logger
 
+> **28.09.2026: the destination changed.** Calls are no longer written to a Supabase REST table
+> (`public.pbx_incoming_calls`, `sql/001`, never applied, now deleted). They go into the CRM's own
+> database, table `pbx_calls` in schema `crm`, and a known caller is logged on the person while an
+> unknown one goes to the Inbox. The fetch, filter, Riga time and redaction below are unchanged.
+> Current behaviour and the go-live steps: [PBX_SIS_SYNC.md](PBX_SIS_SYNC.md).
+
 Built 23.09.2026. **Not deployed, not connected, no live call has been fetched.**
 
 Collects incoming calls to the three college phone queues and stores them. That is the whole job.

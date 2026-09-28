@@ -37,12 +37,26 @@
     "api/index.js": {
       "includeFiles": "{src,config}/**",
       "maxDuration": 60
+    },
+    "api/cron/*.js": {
+      "includeFiles": "{src,config,lib}/**",
+      "maxDuration": 60
     }
   },
   "rewrites": [
     {
       "source": "/(.*)",
       "destination": "/api/index"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/pbx-calls",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/sis-sync",
+      "schedule": "*/5 * * * *"
     }
   ]
 }

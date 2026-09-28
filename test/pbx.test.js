@@ -14,9 +14,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  QUEUES, TABLE, PBX_URL, WINDOW_MINUTES,
-  isOurs, toRow, rowsFrom, buildRequest, fetchCalls, upsertRows, runPoll,
-  authoriseCron, redact, requiredEnv, supabaseConfig,
+  QUEUES, PBX_URL, WINDOW_MINUTES,
+  isOurs, toRow, rowsFrom, buildRequest, fetchCalls,
+  authoriseCron, redact, requiredEnv,
 } from '../lib/pbx.js';
 import { toRigaStamp, fromRigaStamp, offsetMinutesAt, pollWindow, ZONE } from '../lib/riga.js';
 
@@ -26,8 +26,6 @@ const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const FAKE_TOKEN = 'test-token-not-a-real-secret-0000';
 const ENV = {
   PBX_API_TOKEN: FAKE_TOKEN,
-  SUPABASE_URL: 'https://example.supabase.co',
-  SUPABASE_SERVICE_KEY: 'fake-service-key',
   CRON_SECRET: 'fake-cron-secret',
 };
 
@@ -117,30 +115,11 @@ test('the row carries exactly the seven fields asked for, and nothing else', asy
 
 // ============================================== 10. duplicates and upsert ====
 
-test('10. a duplicate uniqueid is handled through upsert semantics', async () => {
-  // within one batch it is collapsed, so the upsert never sees two rows with one key
+test('10. a duplicate uniqueid inside one batch is collapsed', async () => {
   const { rows, skipped } = rowsFrom([call(), call(), call({ uniqueid: 'other' })]);
   assert.equal(rows.length, 2);
   assert.equal(skipped.duplicateInBatch, 1);
-
-  // and the request itself asks PostgREST to merge on that key
-  let seen = null;
-  await upsertRows(rows, {
-    env: ENV,
-    fetchImpl: async (url, opts) => { seen = { url, opts }; return { ok: true, status: 201, text: async () => '' }; },
-  });
-  assert.match(seen.url, new RegExp(`/rest/v1/${TABLE.replace('*', '\\*')}\\?on_conflict=uniqueid$`));
-  assert.match(seen.opts.headers.Prefer, /resolution=merge-duplicates/);
 });
-
-test('an empty batch makes no request at all', async () => {
-  let called = false;
-  const r = await upsertRows([], { env: ENV, fetchImpl: async () => { called = true; } });
-  assert.equal(r.upserted, 0);
-  assert.equal(called, false);
-});
-
-// ================================== 11. the window, explicitly Europe/Riga ===
 
 test('11. the window is 15 minutes, in Riga wall clock, in the API format', async () => {
   const now = new Date('2026-09-23T11:05:00.000Z');       // 14:05 Riga, EEST
@@ -269,14 +248,12 @@ test('14. no secret reaches a log, an error or a returned value', async () => {
       return true;
     });
 
-  // and a successful poll returns only the redacted url
-  const result = await runPoll({
+  // and a successful fetch hands back only the redacted url as loggable
+  const result = await fetchCalls({
     env: ENV, now: new Date('2026-09-23T11:05:00Z'),
-    fetchImpl: async (url) => (String(url).includes('supabase')
-      ? { ok: true, status: 201, text: async () => '' }
-      : { ok: true, status: 200, json: async () => [call()], text: async () => '[]' }),
+    fetchImpl: async () => ({ ok: true, status: 200, json: async () => [call()], text: async () => '[]' }),
   });
-  assert.ok(!JSON.stringify(result).includes(FAKE_TOKEN));
+  assert.ok(!result.safeUrl.includes(FAKE_TOKEN));
 });
 
 test('no real-looking secret is committed in any source file', async () => {
@@ -286,8 +263,8 @@ test('no real-looking secret is committed in any source file', async () => {
   const assigned = new RegExp(NAME + String.raw`\s*[:=]\s*["'][^"']{12,}["']`);
   const anyLongSecret = /(?:token|secret|service_key)["']?\s*[:=]\s*["'][A-Za-z0-9._-]{24,}["']/i;
 
-  for (const rel of ['lib/pbx.js', 'lib/riga.js', 'api/cron/pbx-calls.js',
-    'vercel.json', '.env.example', 'sql/001_pbx_incoming_calls.sql']) {
+  for (const rel of ['lib/pbx.js', 'lib/riga.js', 'lib/sis.js', 'src/sync.js', 'api/cron/pbx-calls.js',
+    'api/cron/sis-sync.js', 'vercel.json', '.env.example']) {
     const text = fs.readFileSync(path.join(ROOT, rel), 'utf8');
     assert.ok(!assigned.test(text), rel + ' assigns a literal value to ' + NAME);
     assert.ok(!anyLongSecret.test(text), rel + ' looks like it holds a secret');
@@ -322,36 +299,6 @@ test('a refusal says Unauthorized and nothing about the secret', async () => {
   assert.ok(!r.error.includes(ENV.CRON_SECRET));
 });
 
-// ========================================================= the whole poll ====
-
-test('one poll filters, maps and upserts, and reports what it did', async () => {
-  const calls = [
-    call({ uniqueid: 'a', state: 'ANSWER', operator_name: 'Ieva' }),
-    call({ uniqueid: 'b', state: 'NOANSWER', operator_name: '', queue: '1001*Q-COORDINATORS' }),
-    call({ uniqueid: 'c', destination: 'outgoing' }),
-    call({ uniqueid: 'd', queue: '1001*Q-SALES' }),
-    call({ uniqueid: 'a' }),
-  ];
-  let sent = null;
-  const result = await runPoll({
-    env: ENV, now: new Date('2026-09-23T11:05:00Z'),
-    fetchImpl: async (url, opts) => {
-      if (String(url).includes('supabase')) { sent = JSON.parse(opts.body); return { ok: true, status: 201, text: async () => '' }; }
-      return { ok: true, status: 200, json: async () => calls, text: async () => '[]' };
-    },
-  });
-  assert.equal(result.fetched, 5);
-  assert.equal(result.kept, 2);
-  assert.equal(result.upserted, 2);
-  assert.equal(result.skipped.notIncoming, 1);
-  assert.equal(result.skipped.otherQueue, 1);
-  assert.equal(result.skipped.duplicateInBatch, 1);
-  assert.equal(result.window.zone, 'Europe/Riga');
-  assert.deepEqual(sent.map((r) => r.uniqueid), ['a', 'b']);
-  assert.equal(sent[1].picked_up, false);
-  assert.equal(sent[1].operator_name, null);
-});
-
 test('the request goes to the documented endpoint, with the token as a query parameter', async () => {
   const req = buildRequest({ env: ENV, now: new Date('2026-09-23T11:05:00Z') });
   const u = new URL(req.url);
@@ -366,42 +313,32 @@ test('the window asked for is short, because a wide one makes the API fail', asy
   assert.ok(WINDOW_MINUTES <= 60, 'never ask this API for months or years');
 });
 
-test('Supabase config follows the org convention and accepts the brief name too', async () => {
-  assert.equal(supabaseConfig(ENV).key, 'fake-service-key');
-  assert.equal(supabaseConfig({ SUPABASE_URL: 'https://x', SUPABASE_SERVICE_ROLE_KEY: 'alias' }).key, 'alias');
-  assert.throws(() => supabaseConfig({ SUPABASE_URL: 'https://x' }), /SUPABASE_SERVICE_KEY/);
-  assert.equal(supabaseConfig({ ...ENV, SUPABASE_URL: 'https://x/' }).url, 'https://x');
-});
-
 // ================================================== the cron wiring itself ===
 
-// NO CRON IS DECLARED, ON PURPOSE, 27.09.2026. The Vercel team is on Hobby, which only
-// runs a cron once a day and REJECTS the deploy of anything more frequent. Daily would
-// quietly miss almost every call against a 15-minute window, so the schedule is left
-// out rather than degraded. The route stays, ready for a trigger that can run every
-// five minutes. See docs/BACKLOG.md, 27.09.2026.
-test('no cron is declared on Hobby, and the route a five-minute trigger will call exists', async () => {
+// THE CRONS ARE DECLARED, 28.09.2026: Ritvars decided the project moves to Vercel Pro,
+// which runs a cron every five minutes. On Hobby this vercel.json fails the deploy, so
+// this branch deploys only after the upgrade. Both targets are their own functions and
+// need src/ and config/ bundled, because they open the CRM's database themselves.
+test('both pollers run every five minutes, and their routes exist', async () => {
   const vercel = JSON.parse(fs.readFileSync(path.join(ROOT, 'vercel.json'), 'utf8'));
-  assert.equal(vercel.crons, undefined, 'a sub-daily cron fails the deploy on Hobby');
-  assert.ok(fs.existsSync(path.join(ROOT, 'api', 'cron', 'pbx-calls.js')),
-    'the route a trigger will call must exist');
+  const crons = Object.fromEntries((vercel.crons || []).map((c) => [c.path, c.schedule]));
+  assert.equal(crons['/api/cron/pbx-calls'], '*/5 * * * *');
+  assert.equal(crons['/api/cron/sis-sync'], '*/5 * * * *');
+  for (const f of ['pbx-calls.js', 'sis-sync.js']) {
+    assert.ok(fs.existsSync(path.join(ROOT, 'api', 'cron', f)), f + ' must exist');
+  }
+  assert.match(vercel.functions['api/cron/*.js'].includeFiles, /config/);
 });
 
-test('the migration turns RLS on and grants nothing to anon or authenticated', async () => {
-  const sql = fs.readFileSync(path.join(ROOT, 'sql', '001_pbx_incoming_calls.sql'), 'utf8');
-  assert.match(sql, /enable row level security/i);
-  assert.match(sql, /revoke all on public\.pbx_incoming_calls from anon, authenticated/i);
-  assert.match(sql, /uniqueid\s+text primary key/i);
-  assert.match(sql, /picked_up\s+boolean not null/i);
-  assert.match(sql, /created_at\s+timestamptz not null/i);
-  assert.match(sql, /inserted_at\s+timestamptz not null default now\(\)/i);
-  assert.ok(!/create policy/i.test(sql), 'no permissive policy may be added without a decision');
-  assert.match(sql, /NOT YET APPLIED/, 'a file that is not applied must say so');
+test('calls are stored in the CRM database, not in a separate REST table', async () => {
+  assert.ok(!fs.existsSync(path.join(ROOT, 'sql', '001_pbx_incoming_calls.sql')), 'the old destination is gone');
+  const src = fs.readFileSync(path.join(ROOT, 'lib', 'pbx.js'), 'utf8');
+  assert.ok(!/rest\/v1|SUPABASE_/.test(src), 'lib/pbx.js no longer writes anywhere');
 });
 
 test('the env example names every variable and gives none of them a value', async () => {
   const env = fs.readFileSync(path.join(ROOT, '.env.example'), 'utf8');
-  for (const name of ['PBX_API_TOKEN', 'SUPABASE_URL', 'SUPABASE_SERVICE_KEY', 'CRON_SECRET']) {
+  for (const name of ['PBX_API_TOKEN', 'SIS_API_TOKEN', 'CRON_SECRET']) {
     assert.match(env, new RegExp('^' + name + '=\\s*$', 'm'), name + ' must be named and empty');
   }
 });
@@ -415,7 +352,7 @@ test('both cron routes answer through a plain Node response, and refuse without 
   const old = process.env.CRON_SECRET;
   process.env.CRON_SECRET = 'test-cron-secret-not-real';
   t.after(() => { if (old === undefined) delete process.env.CRON_SECRET; else process.env.CRON_SECRET = old; });
-  for (const rel of ['../api/cron/pbx-calls.js', '../api/cron/gmail-poll.js']) {
+  for (const rel of ['../api/cron/pbx-calls.js', '../api/cron/sis-sync.js', '../api/cron/gmail-poll.js']) {
     const { default: handler } = await import(rel);
     const server = http.createServer((req, res) => { handler(req, res); });
     await new Promise((r) => server.listen(0, '127.0.0.1', r));

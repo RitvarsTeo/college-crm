@@ -875,7 +875,8 @@
     "website_form": "Website",
     "gmail": "Email",
     "open_day": "Open Day",
-    "klatiene": "In person"
+    "klatiene": "In person",
+    "sis": "SIS"
   },
   "_channelAliases": "The simulator and older records name some channels differently: website_form is the Website, gmail is Email, open_day is the Open Day, and klatiene is In person. These are the SAME channel, so they are aliases rather than entries in channels - otherwise a filter would offer the same thing twice under two names. A test fails if an alias and a channel key collide.",
   "admissionsOwner": "Admissions",
