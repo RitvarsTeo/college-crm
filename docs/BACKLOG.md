@@ -93,9 +93,33 @@ dpl_HCdWwKzbZzczmC75ZLY1RyzsfTSX** (568/568 on the commit; live page byte-identi
   `CFG.feedbackReaders` still decides it in `mayReadFeedback()`.
 - The same KPI fix went to the component library, kit 13 (aa2fe35).
 
-**NEXT, item 2 follow-up - the Journey filter (decided by Ritvars 28.09, not built):** compact
-dropdowns, not checkbox panels and not one-choice pills: **Programme ▾ · Overdue / Today ▾ ·
-Owner ▾ · Came from ▾**, each using the values the data already has. No other categories.
+**Urgency, buttons, version line: LIVE 28.09.2026, commit 5321a55, deployment
+dpl_2XPnQb2yPoug1UeduiN46238rsyk** (576/576). Ritvars: "these colours also are not urgent colors",
+"again, doesnt feel urgent enough", the Done / Feedback buttons "doesnt match overall uiux ... the
+amber now is quite not in place", "Leave: CRM v1.0".
+- One urgency rule across C: overdue and late = a SOLID red badge with white words ("3 d.
+  overdue"); today = a SOLID amber badge with Pitch Black words; upcoming stays neutral. On the
+  Journey, Next Steps (and its Overdue / Due today counts), New Leads ("late"), Home and the
+  person card.
+- Buttons in C are the brandbook CTA - Navy with white (dark: white with Navy) - with no amber
+  stripe; the Feedback button too. The classic UI keeps its own.
+- The line under the logo reads "CRM · v1.0" (config `version`).
+- NOTE: this deploy also shipped two commits from ANOTHER session on the same branch, ef7917f
+  (shared links sign in first) and 0c5d65d (new app icons, "owner's pick"). Both checked working
+  live afterwards (icons match the repo; a signed-out tab on an /api/ link 302s to sign-in, a script
+  gets 401). From here the live page = the commit + the sign-in return script ef7917f adds in
+  <head>; the deploy check now builds that exact page and compares byte for byte.
+
+**Aigars' feedback 2A - the Journey filters: LIVE 28.09.2026, commit 95cfdad, deployment
+dpl_9tdwjiBbSPkoPMkBhvwiWVoawh3T** (581/581; live page = commit + sign-in script, byte-identical).
+- One row under the title: **Programme ▾ · Overdue / Today ▾ · Owner ▾ · Came from ▾**, compact
+  dropdowns. Programme and Came from offer the values the open people carry (and "not
+  recorded"); Owner offers every configured role, Student Coordinator included ("add
+  coordinator also"); Overdue / Today offers Overdue and Today ("Overdue or today" was dropped:
+  "What is the point of this?").
+- They combine (all must hold); a set filter gets a Navy edge and shows its value; Clear appears
+  when any is set; column counts follow the filter. Phone: two by two.
+- Tests: test/journey_filters.test.js (each filter, combined, the options, the set state, phone).
 
 **OPEN after 28.09:**
 - **Privacy, Ritvars to decide:** one real person in the live CRM (created 2026-07-20, source
