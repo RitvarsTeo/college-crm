@@ -132,6 +132,23 @@ admitted novikontas blue", and on the menu "it doesnt need to be highlighted, th
   with no block behind it. Dark menu unchanged (its own look).
 - Checked: Home light, dark and phone (390 px). Tests: test/metrics_colours.test.js.
 
+**Kit 13 polish (three-app dev-kit audit) - LIVE 28.09.2026, commit ea5d291, deployment
+dpl_BQ2rpkN6ggPPktnFekPPkrBaGBSj** (588/588; live page = commit + sign-in script, byte-identical).
+- Phone: the Light/System/Dark switch and the (c) line + Help center now sit at the bottom of the
+  PAGE (they were hidden below 760 px). Desktop unchanged. Kit level 2 -> 3 for both.
+- Light base colours -> brandbook (kit 2 -> 3): side menu Light Grey #e7ebf0, page #f5f7fa, text
+  Pitch Black, secondary Steel Blue #415c8f (+ two steps, 4.5:1+ on the menu), focus/marks Navy
+  instead of the teal #2e6b70, field and switch edges #6f7e97 (3:1; #c9d0d3 was 1.5:1). The blues,
+  amber, green/red states and the chart colours unchanged.
+- Dark (kit 2 -> 3): field edge #82a0ba and the menu tree line at 28%, the two lines kit 13
+  lightened; Admitted = the logo blue #29a8df as in light. The sea itself unchanged.
+- Texts cut to a third (Ritvars): People "Click a row to edit.", its count "All N people.", Next
+  Steps "What the team has to do.", New Leads "New arrivals land here first."
+- Checked: desktop light/dark, phone light/dark. Tests: test/kit13_polish.test.js.
+- Left as decided/for Ritvars: part 1 (the CRM is Google-only by Aigars' decision; part 13's card is
+  its standard), part 2 backup (none yet; it would hold real people's data - where it may be kept is
+  his call), part 14 moving lines (an add-on, not a default; the sign-in has its own sea).
+
 **OPEN after 28.09:**
 - **Privacy, Ritvars to decide:** one real person in the live CRM (created 2026-07-20, source
   unknown) has the same name + phone as a person in the demo data, and that name + phone are
