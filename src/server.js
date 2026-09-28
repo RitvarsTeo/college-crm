@@ -24,6 +24,7 @@ import { verifyRequest, channelDef, channelIds, allChannelStatus, BadInbound,
          parseInboundBody, handshake } from './inbound.js';
 import * as auth from './auth.js';
 import * as google from './google.js';
+import { signInFirst, withReturnScript } from './signinfirst.js';
 import { bootstrapIfAuthOn } from './bootstrap.js';
 import * as channeladmin from './channeladmin.js';
 import { todayStart, tomorrowStart, localDate } from './bizday.js';
@@ -688,6 +689,10 @@ export const handle = async (req, res) => {
     // /api/inbound/events, which is the observability view and carries sender
     // names and message bodies. Only a path that names a REAL CHANNEL is open.
     if (AUTH_ON && p.startsWith('/api/') && !openBeforeSignIn(p) && !(await currentUser(req))) {
+      // A browser TAB (a shared link, a download) goes to the screen that holds it,
+      // which shows the sign-in card; code still gets the 401. src/signinfirst.js.
+      const back = signInFirst(req, p);
+      if (back) { res.writeHead(302, { location: back, 'cache-control': 'no-store' }); return res.end(); }
       return json(res, 401, { error: 'not signed in', how: 'Open / and sign in.' });
     }
 
@@ -982,7 +987,8 @@ export const handle = async (req, res) => {
       // never cached: the whole app is this one file, and a tester holding a cached
       // copy would keep reporting bugs that were fixed hours ago
       res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' });
-      return res.end(fs.readFileSync(path.join(ROOT, 'src', 'app.html')));
+      // withReturnScript: a hash link survives the Google sign-in. src/signinfirst.js.
+      return res.end(withReturnScript(fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8')));
     }
     // The installable-app description: name, the Academy icons, the window. Open before
     // sign-in like the page itself, because the browser reads it on the sign-in screen.
