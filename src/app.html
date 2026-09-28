@@ -236,6 +236,15 @@ tr.row:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
     -webkit-mask-composite:source-out;mask-composite:subtract}
   /* Google only (28.09.2026): no Sign in button, so no window is cut for one. */
   .gate-card.sso-only::after{-webkit-mask-image:none;mask-image:none}
+  /* Ritvars, 28.09.2026: CRM and "Sign in to continue" centred, CRM much bigger (34px),
+     the card NOT a pixel bigger. The heading block keeps its old height (60.25px) and
+     the space moves from the top padding into the gap above the button, so the space
+     above CRM, the gap before the button and the space below it read as even.
+     The sea behind the card, split to top and bottom, stays exactly as it is - he loves it. */
+  .gate-card.sso-only{padding-top:22px}
+  #login-view .gate-card.sso-only h1{font-size:34px;line-height:36px;margin:0;text-align:center;letter-spacing:.02em}
+  #login-view .gate-card.sso-only .sub{text-align:center;margin:0 0 13.55px}
+  @media(max-width:430px){.gate-card.sso-only{padding-top:18px}}
   .gate-card h1{font-size:19px;font-weight:700;margin:0 0 4px;color:var(--gate-ink)}
   /* The app sets every h1 in Spectral; the kit's sign-in heading is Raleway, inherited
      from #login-view. Without this the app rule reached inside the card (27.09.2026). */
