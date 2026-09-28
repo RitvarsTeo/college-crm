@@ -261,3 +261,71 @@ Ieva validates it against her real work before any code moves.
 same day are **not** implemented and are superseded by this. Nothing is built until Ieva has
 confirmed it matches her work.
 
+---
+
+## 28.09.2026
+
+### Concept C is the main UI
+
+| | |
+|---|---|
+| **Decided** | **ACCEPTED 28.09.2026 by Ritvars**: "Concept C is the main now", then "build Concept C in the app as main". The UI that was live before C stays at `?ui=classic` as the fallback. |
+| **What C is** | Six places a normal user goes: **Home** (how Admissions is performing, on live figures), **Admissions** as a container with **New Leads** and **Next Steps**, **People** with **Journey**, and **Outcomes**. Settings for admins. A message is a New Lead; a promise is a Next Step. Due work has four states (overdue, due today, coming up, no next step) and no row limit. |
+| **Where it came from** | `Projects/College CRM/CRM_UX_AUDIT_AND_CONCEPT.html` (outside the repo), section 15, and the re-run audit `_ux-audit-2026-09-28/CRM_UX_AUDIT_2026-09-28.html`. |
+| **In the code** | `src/app.html`, the `CONCEPT C` block (`html.ui-c`, `routeC()`), deployed from `8eb32e9` on. The server and its rules are unchanged by C: it arranges the same data and the same routes differently. |
+| **Not yet** | **Verified by Admissions: no.** Nobody from Admissions has used C on the real people. The classic view stays until they have. |
+
+These rules carry over into C unchanged and must not be weakened by it: a person is never in two
+places and never nowhere; one inbound path; nobody is deleted, only closed with a reason; a
+machine suggestion nobody confirmed stays dashed and uncounted; Home's honesty lines (gaps shown,
+denominators stated); the classic view as the fallback; deploys only from a clean checkout of one
+commit, verified live before the next.
+
+### Smaller decisions by Ritvars, 28.09.2026
+
+| Decided | In the code |
+|---|---|
+| Home has **no title sentence** ("Delete please the text from home: How Admissions is performing"). | `viewHomeC()`; `test/regressions.test.js` |
+| The management download is **Excel (.xlsx) and Google Sheets as well as CSV**. | `src/xlsx.js`, `src/sheets.js`, `/api/report.xlsx`, `/api/report.gsheet` |
+| The sidebar **"needs you today / leads you own"** counter is **hidden in C** and kept in the classic view. | `drawWaiting()`; `test/concept_c.test.js` |
+
+### Still open: D-C1 to D-C8
+
+Copied from the concept's section 15 with their owners. **None of these is settled.** C shows
+each as a working version and says so on screen.
+
+| # | Decision | Who | Where it shows in C |
+|---|---|---|---|
+| D-C1 | The real Journey stages ("contacted once, waiting for reply…") | Ieva | Journey columns are placeholders |
+| D-C2 | Someone who wrote but said nothing useful gets a next step like everyone else - no "Not clear yet" | Ieva, Aigars | New Leads |
+| D-C3 | The next-step list, item by item; whether document chasing belongs here | Ieva, Aigars | Next Steps, People edit |
+| D-C4 | Are Admitted and Not proceeding the only outcomes; what are the reasons | Ieva | Outcomes |
+| D-C5 | May a person be dragged between stages, and backwards | Ieva | Journey |
+| D-C6 | Are these the KPIs the management review wants on Home (admitted, leads, conversion, time to admission, month trend, programmes, channels), and should Home show targets from the KPI workbook | Ieva, Ritvars | Home |
+| D-C7 | Which facts a person needs (education, nationality, study form, guardian) | Ieva | Person card |
+| D-C8 | Marketing's part, now that all 192 belong to Admissions | Aigars, Tetiana | not shown - no Marketing view in C |
+
+D-C1 to D-C4 are the ones C's screens wait on. They replace, in C's words, backlog rows 46, 50
+("the real process after To look at"), 51 and 108, which say so.
+
+### Reserved for Ritvars, not engineering
+
+| # | Question | Why it is not ours |
+|---|---|---|
+| R-C1 | **When Admissions starts using C on the real people.** | It is Ieva's working day. |
+| R-C2 | **Whether new screens pause until that first real Admissions session is done**, as the 28.09 audit proposes. | It sets the order of the work, not how any screen is built. |
+
+### Found while building C: open, owner not yet named
+
+| Question | What the CRM does now |
+|---|---|
+| Should setting somebody to **Not proceeding** close their open next step? | It keeps it open. C shows it under the outcome as "Still open" rather than hiding it. Unchanged until decided. |
+| Should the old sheet's values that are **not in the configured lists** be tidied, and to what? On the live data on 28.09: study form `FULL TIME` 32 and `PART TIME` 16 (the list says `Full time`, `Part time`), programme `ŅAV` 1 and `NOT DECIDED` 3. | Shown as they are, marked "not one of the list", never merged or renamed silently. Editing a person keeps them (`selectFor()`, fixed 28.09 after it would have blanked them). |
+
+### Facts the next change must not forget
+
+- **A day is a Riga day.** Every day boundary (today, overdue, report periods, the month trend, the CSV dates) comes from `src/bizday.js` on the server and `todayStr()`/`cDay()` on the page. The UTC date is yesterday in Riga until 03:00.
+- **The imported dates carry no time and no zone** (`2026-06-01T00:00:00`). They are shown as dates, never as "00:00".
+- **Only `public/` is served as plain files** (it holds `robots.txt`). Everything else reaches the function, which answers 404 for what it does not know. See `test/deploy_boundary.test.js`.
+- **No cron is scheduled on the hosted copy** (`vercel.json` has no `crons`) and `CRON_SECRET` is not set there, so both poll routes refuse every call. That is the channel work's to change.
+

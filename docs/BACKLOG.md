@@ -13,6 +13,15 @@ this is a local prototype) · `UNKNOWN` - named but not checked with the provide
 
 ## Pin
 
+**Current, 28.09.2026 (this note is newer than the pin below, which is kept as it was written):**
+Academy CRM is **deployed** at https://crm-novikontas.vercel.app (Vercel + Neon Postgres) with
+Google sign-in, and holds the real 2026 admissions people. **Concept C is the main UI**, ACCEPTED by
+Ritvars on 28.09.2026; the previous UI stays at `?ui=classic` as the fallback until Admissions has
+verified C. Nobody from Admissions has used C on the real people yet. Channels are still not
+connected. Its decisions and the eight open D-C questions are in [DECISIONS.md](DECISIONS.md),
+dated 28.09.2026. Deploys go only from a clean checkout of one commit, after the whole suite passes
+on that checkout (538 tests on 28.09.2026), and each is checked on the live site.
+
 **PIN: ACADEMY CRM - V1 VIRTUAL PROTOTYPE. NOT RELEASED, NOT DEPLOYED, NOT CONNECTED.**
 
 - **Version:** V1
@@ -106,8 +115,11 @@ Written 24.09.2026. A fresh session on any account should be able to work from t
   restarting and reading it back, after row 58 fixed a boot-time wipe that made an earlier claim of
   this wrong. `CRM_DB=:memory:` restores throwaway behaviour; the tests use it. `DATASET=empty|real|synthetic`
   forces a load at boot and therefore CLEARS what is there.
-- **Open owner decisions:** the stage names (row 46), the real process after "To look at" (row 50),
-  follow-up outcomes (row 51), and everything in [DECISIONS.md](DECISIONS.md)'s blocking table.
+- **Open owner decisions:** since Concept C was accepted (28.09.2026) these are **D-C1 to D-C8** in
+  [DECISIONS.md](DECISIONS.md): the real Journey stages (was rows 46 and 50, "the real process after
+  To look at"), the lead who said nothing useful (row 108), the next-step list and the outcomes (row 51),
+  dragging between stages, the Home measures, the facts a person needs, and Marketing's part. Plus
+  everything in that file's blocking table.
 - **Exact next action:** Ieva validates the workflow (rows 46, 50, 51). Committing and pushing to
   `v1-test` is authorised; `master` is not, and nothing is deployed anywhere.
 - **UNKNOWN:** whether V1 is ever meant to be deployed, and to what. No environment has been chosen.
@@ -240,12 +252,12 @@ was built.
 | 43 | **CAR: two tabs too many.** | **DECIDED 24.09.2026, BUILT** | The **Junk** tab is gone. Machine-filtered sales pitches and items a person marked *Not relevant* are now one list, hidden by default behind **Show not relevant**. Underneath they stay two states (`filtered` and `archived`) because the funnel counts real contacts and a sales pitch was never one. |
 | 44 | **CAR: an operator could not say what somebody wanted.** | **BUG, FIXED - this was the real complaint** | Aigars wrote a note saying the person wanted the engineer programme, pressed Save, and the person landed in *Done* marked "Not clear yet". The dialog only offered tick boxes for what the **machine** had extracted, and a message saying "hello" gives the machine nothing to extract. So there was no way to record what he already knew, the item could only be filed as unclear, and the person came to rest with nobody owning them. The dialog now asks **"What do they want to study?"** with the programme list, pre-filled from the message when the machine did read one. Saying a programme makes it a lead, routes it to Admissions and puts the person on the pipeline. The value is stored with provenance `operator` - a person said it, not a machine. Stating an interest and filing it as unclear is now **refused**, not quietly accepted. |
 | 45 | **A qualified lead must reach a pipeline.** | **DECIDED 24.09.2026, BUILT** | New **Pipeline** screen: a horizontal board, one column per configured stage, counts per column, people as compact cards showing programme, education, channel, owner and next step. Cards are **dragged between columns and that is a real stage change**: it saves the same way the person page does, so it lands in the history with who moved it, from which stage to which. Dropping somebody into *Not proceeding* still asks for a reason first and changes nothing until it is given. |
-| 46 | **The pipeline stage names are not agreed.** | **OPEN - for Ieva** | The board reads `config/prototype.json` → `stages` and there is no stage list in the code. Renaming, reordering, adding or removing a column is a config edit. The screen says on it that the columns are provisional. **This is the first thing to walk through with Ieva.** |
+| 46 | **The pipeline stage names are not agreed.** | **OPEN - for Ieva** | The board reads `config/prototype.json` → `stages` and there is no stage list in the code. Renaming, reordering, adding or removing a column is a config edit. The screen says on it that the columns are provisional. **This is the first thing to walk through with Ieva.** **28.09.2026:** carried into **D-C1** (the real Journey stages) in [DECISIONS.md](DECISIONS.md). Still open, for Ieva. |
 | 47 | **People: edit without opening the profile.** | **DECIDED 24.09.2026, BUILT** | Every row has an **Edit** button that opens the eight editable fields plus a note box inline, under the row. It saves through the same route the person page uses, so the same field policy applies and the same history entries are written. |
 | 48 | **The Documents card is removed.** | **DECIDED 24.09.2026, BUILT** | Aigars crossed it out: documents are collected in the admissions portal, not here. A half-mirrored checklist only invites somebody to trust the wrong copy. |
 | 49 | **In-app feedback, like the one in Suggest.** | **DECIDED 24.09.2026, BUILT** | A floating **HELP** pill on every screen opens *Send feedback*: an idea or something broken, a message, and an optional screenshot that can be **pasted with Ctrl+V** straight after a Win+Shift+S capture. It records the screen it was sent from. Admins get a **Feedback** inbox with the screenshot inline, a link back to the screen, and *Mark handled*. Built from Aigars's own brief (`feedback-widget-brief.md`). |
-| 50 | **The pipeline after "To look at" needs Ieva's real process.** | **OPEN - for Ieva** | Aigars: "šeit ir jāparunā ar Ievu, kāds šobrīd reali ir tas process". He named *contacted once*, *waiting for reply* as examples. Nothing has been invented: the board uses the stages that were already configured. |
-| 51 | **Follow-up outcomes and next steps need Ieva.** | **OPEN - for Ieva** | Aigars had nothing to add himself and asked for Ieva to go through the lists and comment. |
+| 50 | **The pipeline after "To look at" needs Ieva's real process.** | **OPEN - for Ieva** | Aigars: "šeit ir jāparunā ar Ievu, kāds šobrīd reali ir tas process". He named *contacted once*, *waiting for reply* as examples. Nothing has been invented: the board uses the stages that were already configured. **28.09.2026:** Concept C has no "To look at": a message is a New Lead, a promise is a Next Step. The question is now **D-C1** (the real Journey stages) in [DECISIONS.md](DECISIONS.md). Still open, for Ieva. |
+| 51 | **Follow-up outcomes and next steps need Ieva.** | **OPEN - for Ieva** | Aigars had nothing to add himself and asked for Ieva to go through the lists and comment. **28.09.2026:** now **D-C3** (the next-step list, item by item) and **D-C4** (the outcomes and their reasons) in [DECISIONS.md](DECISIONS.md). Still open. |
 | 52 | **Does every message reach the CRM, or does a human filter first?** | **OPEN - Aigars's question** | Today: obvious sales pitches are dropped on arrival by a word filter and everything else reaches *To look at*, where a person decides. That is the design, but Aigars did not find it obvious from the screens, which is itself worth fixing. |
 
 | 53 | **Renamed to Novikontas Academy CRM, with the official logo.** | **DECIDED 24.09.2026, BUILT** | The header carries the **authorised logo file**, not a redrawn one, and there are two of them: `NoAca_logo_darkhor.svg` on the light shell and `NoAca_logo_whitehor.svg` on the dark one. Neither is recoloured by hand, which the brandbook forbids. Under it, one line only: `CRM - V1 virtual prototype`. The **"V1 DEMO DATA - 12 people" badge is gone from the header** and now sits in DEV CONTROL, next to the buttons that change the dataset. |
@@ -600,7 +612,7 @@ person can sit and be forgotten, which is exactly what he described.
 |---|---|---|---|
 | 106 | **Inbox has ONE list: To look at.** Delete the Done tab and the not-relevant tab from the Inbox. | **SAID** | Qualified means gone from here and visible in Admissions. Not relevant means archived and findable from People or search, not a board. Aigars asked for this directly and it was not done. |
 | 107 | **Qualify is one action, not two.** Confirming what somebody wants puts them in Admissions with an owner and a next step, in one save, and the screen moves on. | **SAID** | Partly built - qualify() already creates the person and the task. What is missing is that the Inbox still leaves them visible in Done, so it reads as unfinished. |
-| 108 | **"Unclear" needs a plain name and a plain next step.** Aigars wrote a note that somebody wanted the engineer programme and the person appeared in Done as "not clear yet", and he could not tell what it meant or what to do. | **SAID** | Either it means "we asked, waiting for their answer" - which is a next step with a due date - or it should not be an outcome at all. Decide with Ieva. |
+| 108 | **"Unclear" needs a plain name and a plain next step.** Aigars wrote a note that somebody wanted the engineer programme and the person appeared in Done as "not clear yet", and he could not tell what it meant or what to do. | **SAID** | Either it means "we asked, waiting for their answer" - which is a next step with a due date - or it should not be an outcome at all. Decide with Ieva. **28.09.2026:** Concept C has no "not clear yet" pile; whether that is right is **D-C2** in [DECISIONS.md](DECISIONS.md), for Ieva and Aigars. |
 | 109 | **Nobody can be left nowhere.** Every person in the system is either in a stage with a next step, or archived with a reason. | **SAID** | Assert it in a test, the way the no-next-action rule already is. |
 | 110 | **Two route names for the same screen.** `#/car` and `#/inbox` both exist, and so do `#/admissions` and `#/pipeline`. | **SAID** | One name per screen. Old names redirect, so a bookmark still works. |
 
@@ -637,7 +649,7 @@ their review. Nothing here is code we can finish alone.
 
 | # | What | Status | Notes |
 |---|---|---|---|
-| 124 | **Ieva walks the whole thing**: TODAY, INBOX, ADMISSIONS, FOLLOW-UPS, PEOPLE, REPORTS, and says whether her eyes tell her what to do next. | **SAID** | Rows 46, 50 and 51 - the stage names, the real process after To look at, and the follow-up outcomes - can only be answered here. Do A and B first so she is reacting to the intended design, not to clutter. |
+| 124 | **Ieva walks the whole thing**: TODAY, INBOX, ADMISSIONS, FOLLOW-UPS, PEOPLE, REPORTS, and says whether her eyes tell her what to do next. | **SAID** | Rows 46, 50 and 51 - the stage names, the real process after To look at, and the follow-up outcomes - can only be answered here. Do A and B first so she is reacting to the intended design, not to clutter. **28.09.2026:** the screens are now Concept C's (Home, New Leads, Next Steps, People, Journey, Outcomes) and the questions are D-C1 to D-C8 in [DECISIONS.md](DECISIONS.md). When Admissions starts working in C is Ritvars's decision, recorded there. |
 
 ### Correcting the record
 
