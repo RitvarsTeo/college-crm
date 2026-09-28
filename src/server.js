@@ -1774,7 +1774,12 @@ export const handle = async (req, res) => {
       if (!def || !hasAdapter(channel)) return json(res, 404, { error: 'no adapter for ' + channel });
 
       const mode = String(process.env['CHANNEL_MODE_' + channel.toUpperCase()] || 'off').toLowerCase();
-      const simulated = req.headers['x-crm-simulated'] === '1';
+      // The x-crm-simulated header counts ONLY on a copy without sign-in (local and the
+      // tests) or for a signed-in admin. It used to count for anybody, and this route is
+      // open before sign-in, so on the hosted copy anyone could skip the signature check
+      // and the off switch and put a lead into New Leads (found 28.09.2026). Anybody else
+      // takes the real path: off answers 409, on needs the provider's own signature.
+      const simulated = req.headers['x-crm-simulated'] === '1' && (!AUTH_ON || Boolean(await adminOf(req)));
       if (mode === 'off' && !simulated) {
         return json(res, 409, { error: `the ${channel} channel is off`,
           how: 'set CHANNEL_MODE_' + channel.toUpperCase() + ' to test or live, or send a simulated event' });

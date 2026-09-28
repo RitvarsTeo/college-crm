@@ -553,3 +553,34 @@ test('the sign-in page has no password field and never calls the password route'
   assert.ok(!/type="password"|id="liEmail"|OR<\/span>|>Sign in</.test(card), 'no email/password form on the card');
   assert.ok(!APP.includes("fetch('/api/auth/login'"), 'nothing on the page posts a password');
 });
+
+// Found 28.09.2026: the x-crm-simulated header skipped the signature check AND the off
+// switch for anybody, and /api/inbound/<channel> is open before sign-in, so on the hosted
+// copy anyone could put a lead into New Leads. With sign-in on, only an admin's header counts.
+test('signed out, channel off, simulated header: REJECTED, and nothing reaches New Leads', async (t) => {
+  const PWS = { CRM_RITVARS_PASSWORD: 'fixture-only-not-a-secret-R9', CRM_AIGARS_PASSWORD: 'fixture-only-not-a-secret-A7',
+    CRM_ADMISSIONS_PASSWORD: 'fixture-only-not-a-secret-E4' };
+  const s = await startServer({ ...AUTH_ENV, ...PWS });
+  t.after(() => s.child.kill());
+  const payload = { submission_id: 'sim-1', name: 'Planted Lead', email: 'planted@example.com', message: 'hello' };
+  const sim = { 'x-crm-simulated': '1' };
+
+  const off = await request(s.port, 'POST', '/api/inbound/website', { body: payload, headers: sim });
+  assert.equal(off.status, 409, 'channel off: the header no longer opens it');
+
+  const admin = `crm_session=${issueSession({ email: 'ritvars.vilcins@novikontas.org', role: 'admin', sessionVersion: 0,
+    authMethod: 'google' }, SECRET)}`;
+  const user = `crm_session=${issueSession({ email: 'edu@novikontas.org', role: 'user', sessionVersion: 0,
+    authMethod: 'google' }, SECRET)}`;
+  const asUser = await request(s.port, 'POST', '/api/inbound/website', { body: payload, headers: { ...sim, cookie: user } });
+  assert.equal(asUser.status, 409, 'a signed-in non-admin does not get the bypass either');
+
+  const leads = await request(s.port, 'GET', '/api/intake?state=new', { headers: { cookie: admin } });
+  assert.equal(leads.status, 200);
+  assert.equal(leads.json.rows.length, 0, 'nothing was queued');
+
+  // An admin's simulated test event still works, as the Channels test tools need it to.
+  const asAdmin = await request(s.port, 'POST', '/api/inbound/website', { body: payload, headers: { ...sim, cookie: admin } });
+  assert.equal(asAdmin.status, 200);
+  assert.match(asAdmin.json.verified, /simulated/);
+});
