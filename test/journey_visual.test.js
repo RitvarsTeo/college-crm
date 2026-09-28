@@ -100,7 +100,7 @@ test('no sentence explaining the Journey: the screen says it itself', () => {
 
 test('warnings look like warnings: overdue is a SOLID red badge with white words, 4.5:1 or more', () => {
   // Aigars: "warning messedzus bik cita krasa, sita tada draudziga, neliekas ka vispar kkas nav labi"
-  const alarm = APP.match(/html\.ui-c\{--j-alarm:(#[0-9a-f]{6});--j-on-alarm:(#[0-9a-f]{6})\}/);
+  const alarm = APP.match(/html\.ui-c\{--j-alarm:(#[0-9a-f]{6});--j-on-alarm:(#[0-9a-f]{6});/);
   assert.ok(alarm, 'one alarm pair for both themes');
   const rgb = (h) => { const n = parseInt(h.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; };
   const lum = (h) => rgb(h).map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }).reduce((a, v, i) => a + v * [0.2126, 0.7152, 0.0722][i], 0);
@@ -108,5 +108,5 @@ test('warnings look like warnings: overdue is a SOLID red badge with white words
   assert.ok(cr(alarm[1], alarm[2]) >= 4.5, `badge words ${cr(alarm[1], alarm[2]).toFixed(2)}:1`);
   assert.match(APP, /html\.ui-c \.c-jp small\.c-jdue\.over\{background:var\(--j-alarm\);color:var\(--j-on-alarm\)/, 'the card badge');
   assert.match(APP, /html\.ui-c \.c-jover\{[^}]*background:var\(--j-alarm\);color:var\(--j-on-alarm\)/, 'the column count badge');
-  assert.doesNotMatch(APP, /\.c-jdue\.today\{[^}]*background/, 'today is amber words, not a badge');
+  assert.match(APP, /html\.ui-c \.c-jp small\.c-jdue\.today\{background:var\(--j-soon\);color:var\(--j-on-soon\)/, 'today is a SOLID amber badge');
 });

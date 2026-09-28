@@ -34,3 +34,9 @@ test('who may READ feedback is unchanged - still the separate list, not every ad
 test('label, number and note line up across the strip even when a label wraps', () => {
   assert.match(APP, /html\.ui-c \.kstrip > div\{display:grid;grid-row:span 3;grid-template-rows:subgrid/);
 });
+
+test('the line under the logo reads "CRM · v1.0", lowercase v', () => {
+  assert.equal(CONFIG.version, 'v1.0');
+  assert.match(APP, /\$\('#ver'\)\.innerHTML = 'CRM &middot; ' \+ \(CFG\.version/);
+  assert.match(APP, /html\.ui-c #ver\{text-transform:none\}/, 'not forced to capitals');
+});

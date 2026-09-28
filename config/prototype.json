@@ -1,6 +1,6 @@
 {
   "title": "Academy CRM",
-  "version": "V1 virtual prototype",
+  "version": "v1.0",
   "provisional": {
     "stages": "The Admissions stages below are a working guess for testing the screens. They are NOT agreed business requirements until Admissions validates them.",
     "documents": "The document checklist is taken from what the current admissions file tracks. Which of these the CRM should own, and which only mirror another system, is not decided.",

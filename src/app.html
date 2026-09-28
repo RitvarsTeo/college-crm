@@ -777,7 +777,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
      on its surface - which also retires the --t4 contrast failure in C. */
   html.ui-c{--paper:#f6f7f6;--surface:#ffffff;--surface-2:#f1f3f2;--shell:#f1f3f2;--field:#ffffff;--menu:#ffffff;--ink:#1b2328;
     --t2:#48535d;--t3:#5c6670;--t4:#66707a;--rule:#e3e7e8;--rule2:#eef1f1;--control-line:#c9d0d3;
-    --pet:#2e6b70;--petink:#2e6b70;--btn-bg:#1f4f59;--btn-ink:#ffffff;--on-navy:#ffffff;--bad:#9f3a31;
+    --pet:#2e6b70;--petink:#2e6b70;--btn-bg:#0a2463;--btn-ink:#ffffff;--on-navy:#ffffff;--bad:#9f3a31;   /* buttons: brandbook Navy */
     --c-ok:#2c6e55;--c-warn:#835c12;--c-bad:#9f3a31;--c-accent-bg:#e9f2f1;--c-sunk:#f1f3f2;--c-sel:#eef4f4}
   /* Dark = the sign-in sea (Ritvars, 28.09.2026: "the exact same colours and tones with
      gradients from the login screen"). The page is the sign-in gradient, the sidebar its
@@ -791,7 +791,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
      brighter, and the slate for 'not proceeding' is a neutral grey that always carries its word. */
   html.ui-c[data-theme="dark"]{--paper:#0f2f4f;--surface:#133a60;--surface-2:#17456e;--shell:#08182e;--field:#0c2745;--menu:#133a60;--ink:#f2f6f9;
     --t2:#cddbe5;--t3:#bfd0dd;--t4:#b8cad8;--rule:#2a5580;--rule2:#1d4670;--control-line:#6286a8;
-    --pet:#a8d3f3;--petink:#bcdcf5;--btn-bg:#fbfcfd;--btn-ink:#0f1b35;--on-navy:#0f1b35;--bad:#ffb0a8;
+    --pet:#a8d3f3;--petink:#bcdcf5;--btn-bg:#ffffff;--btn-ink:#0a2463;--on-navy:#0a2463;--bad:#ffb0a8;
     --amb:#F7C04F;--ambink:#F7C04F;--late:#F7C04F;--warn:#F7C04F;
     --c-ok:#9be0bd;--c-warn:#F7C04F;--c-bad:#ffb0a8;--c-accent-bg:#1a4670;--c-sunk:#0b2542;--c-sel:#163f66;
     --v-adm:#2CC4B6;--v-lead:#F7C04F;--v-np:#93A5B8;--v-grid:#24507a;
@@ -1037,6 +1037,14 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-jp small.none{color:var(--c-warn)}
   html.ui-c .c-jp:hover{border-color:var(--control-line)}
   html.ui-c .c-jp.c-sel{border-color:var(--pet);box-shadow:0 0 0 1px var(--pet)}
+  /* Buttons are the brandbook CTA in C - Navy with white (dark: white with Navy) - and carry no amber
+     stripe (Ritvars, 28.09.2026: the Done and Feedback buttons did not match, "the amber now is quite
+     not in place"). The classic UI keeps its own. */
+  html.ui-c .btn:not(.ghost){border-left:0;padding-left:15px}
+  html.ui-c .btn.sm:not(.ghost){padding-left:10px}
+  html.ui-c .helpbtn{border-left:0;padding-left:18px}
+  /* the version under the logo reads "CRM · v1.0" exactly, lowercase v (Ritvars, 28.09.2026) */
+  html.ui-c #ver{text-transform:none}
   /* Journey (Aigars' feedback #2, 28.09.2026). HOW FAR: each stage carries its number and a thin
      line across its top, one brandbook hue getting darker from stage 1 (Novikontas Blue) to the
      last (Navy); the column itself only takes a faint tint of it. NEXT STEP: the clearest line
@@ -1051,7 +1059,17 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   /* WARNINGS LOOK LIKE WARNINGS (Aigars: "warning messedzus bik cita krasa, sita tada draudziga,
      neliekas ka vispar kkas nav labi"): overdue is a SOLID red badge with white words (6.5:1),
      in both themes - not the soft pink text it was. Today stays amber text: distinct, calmer. */
-  html.ui-c{--j-alarm:#b3261e;--j-on-alarm:#ffffff}
+  html.ui-c{--j-alarm:#b3261e;--j-on-alarm:#ffffff;--j-soon:#F7C04F;--j-on-soon:#011111}
+  /* ONE URGENCY RULE for the whole of C (Ritvars, 28.09.2026, on Next Steps and New Leads: "these
+     colours also are not urgent colors", "again, doesnt feel urgent enough"). Overdue and late: a
+     SOLID red badge with white words. Today: a SOLID amber badge with Pitch Black words. Same in
+     both themes, on every screen - Journey, Next Steps, New Leads, the person card, Home. */
+  html.ui-c .c-when.over,html.ui-c .c-late,html.ui-c .c-now b.c-late{background:var(--j-alarm);color:var(--j-on-alarm);font-weight:700;
+    border-radius:5px;padding:1px 7px;white-space:nowrap;display:inline-block;line-height:1.5;width:max-content}
+  html.ui-c h3 b.c-count{border-radius:99px;padding:0 7px;letter-spacing:0;font-weight:700}
+  html.ui-c h3 b.c-count.over{background:var(--j-alarm);color:var(--j-on-alarm)} html.ui-c h3 b.c-count.today{background:var(--j-soon);color:var(--j-on-soon)}
+  html.ui-c .c-when.today{background:var(--j-soon);color:var(--j-on-soon);font-weight:700;
+    border-radius:5px;padding:1px 7px;white-space:nowrap;display:inline-block;line-height:1.5;width:max-content}
   html.ui-c .c-jover{font-style:normal;font-size:10.5px;font-weight:700;letter-spacing:.02em;text-transform:none;margin-left:auto;
     background:var(--j-alarm);color:var(--j-on-alarm);border-radius:99px;padding:1px 7px}
   html.ui-c .c-jnext{display:flex;align-items:flex-start;gap:5px;margin-top:4px;font-size:12.5px;font-weight:500;color:var(--ink);line-height:1.35}
@@ -1060,7 +1078,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-jnext > span{overflow-wrap:anywhere}
   html.ui-c .c-jp small.c-jdue{display:flex;align-items:center;gap:4px;margin:3px 0 0 18px;font-size:11.5px;color:var(--t3);font-variant-numeric:tabular-nums}
   html.ui-c .c-jp small.c-jdue.over{background:var(--j-alarm);color:var(--j-on-alarm);font-weight:700;border-radius:5px;padding:1px 6px 1px 4px;margin-left:16px;width:max-content}
-  html.ui-c .c-jp small.c-jdue.today{color:var(--c-warn);font-weight:600}
+  html.ui-c .c-jp small.c-jdue.today{background:var(--j-soon);color:var(--j-on-soon);font-weight:700;border-radius:5px;padding:1px 6px 1px 4px;margin-left:16px;width:max-content}
   html.ui-c .c-jp.is-over,html.ui-c[data-theme="dark"] .c-jp.is-over{border-left:3px solid var(--j-alarm);padding-left:8px}   /* the dark glass border would hide it */
   /* "Seit viss kka saplust viena" - in dark the cards and their column were one shade. The column
      goes deeper, so every card stands out from it. */
@@ -1266,7 +1284,8 @@ const cDay = (iso) => (iso ? fmtDate(iso) : '');
 // hours of every Riga day, and it put that morning's due steps under "coming up".
 const cTodayIso = () => new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
 const cWhenClass = (iso) => (!iso ? '' : cDay(iso) < cTodayIso() ? 'over' : cDay(iso) === cTodayIso() ? 'today' : '');
-const cWhenText = (iso) => (!iso ? 'no next step' : cWhenClass(iso) === 'over' ? 'overdue · ' + fmtDate(iso) : cWhenClass(iso) === 'today' ? 'today' : fmtDate(iso));
+const cDaysLate = (iso) => Math.round((Date.parse(cTodayIso()) - Date.parse(cDay(iso))) / 86400000);
+const cWhenText = (iso) => (!iso ? 'no next step' : cWhenClass(iso) === 'over' ? `${cDaysLate(iso)} d. overdue` : cWhenClass(iso) === 'today' ? 'today' : fmtDate(iso));
 const cDueNow = (tasks) => tasks.filter((t) => cWhenClass(t.due_at) === 'over' || cWhenClass(t.due_at) === 'today');
 // A channel id as a person reads it. 'unknown' is a gap, and a value that is not one
 // of the configured channels (the old sheet has "school", "campaign") is said to be so.
@@ -1411,11 +1430,12 @@ async function viewNextC() {
       <div class="c-who"><b>${esc(p.name)}</b><small>${esc(p.programme || 'programme not said')} · ${esc(p.status)}</small></div>
       <div class="c-what none">Nothing planned</div><div class="c-when"></div>
       <div class="c-acts"><button class="btn sm" onclick="event.stopPropagation();openNewTask('${esc(p.id)}')">Plan a next step</button></div></div>`;
-  const sect = (title, rows, fn) => `<div class="c-sheet"><h3>${title}<b>${rows.length}</b></h3>${rows.map(fn).join('') || '<div class="c-empty">None.</div>'}</div>`;
+  // the Overdue and Due today counts carry the urgency badges when there is something in them
+  const sect = (title, rows, fn, tone = '') => `<div class="c-sheet"><h3>${title}<b${tone && rows.length ? ` class="c-count ${tone}"` : ''}>${rows.length}</b></h3>${rows.map(fn).join('') || '<div class="c-empty">None.</div>'}</div>`;
   $('#view').innerHTML = `<p class="c-crumb">Admissions</p>
     <div class="c-head"><div><h1>Next Steps</h1><p>What the team has to do. Four states, and every open person is in exactly one of them.</p></div>
       <div class="act"><span class="c-planned"><b>${pct}%</b> planned <small>${open.length - none.length} of ${open.length} open people have a next step</small></span></div></div>
-    ${sect('Overdue', over, tRow)}${sect('Due today', today, tRow)}${sect('Coming up', later, tRow)}${sect('No next step', none, pRow)}
+    ${sect('Overdue', over, tRow, 'over')}${sect('Due today', today, tRow, 'today')}${sect('Coming up', later, tRow)}${sect('No next step', none, pRow)}
     <p class="c-ev">A message someone sent is a New Lead; a promise we made is a Next Step. Every list shows all its people.</p>`;
 }
 
@@ -1593,7 +1613,7 @@ function cDrawPeople() {
       <td>${esc(p.programme || '-')}${p.programme && !known.has(p.programme) ? ' <span class="c-dec">not in list</span>' : ''}</td>
       <td>${esc(cStage(p.status))}</td>
       <td class="${t ? '' : 'c-gap'}">${t ? esc(t.label) : (open ? 'nothing planned' : '-')}</td>
-      <td class="c-when ${t ? cWhenClass(t.due_at) : ''}">${t ? cWhenText(t.due_at) : ''}</td></tr>
+      <td>${t ? `<span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span>` : ''}</td></tr>
       ${C_PEDIT === p.id ? `<tr class="c-edit"><td colspan="5">${cEditForm(p, t)}</td></tr>` : ''}`; };
   $('#view').innerHTML = `<div class="c-head"><div><h1>People</h1><p>Everyone, as a database you can work in. Click a row to edit it right here.</p></div>
       <div class="act"><input class="c-search" id="cPQ" placeholder="Search name, email or phone" value="${esc(C_PQ)}" aria-label="Search people"><button class="btn" onclick="openAdd()">Add person</button></div></div>
@@ -1664,7 +1684,7 @@ function cPersonCard(p, t) {
   const open = !C_TERMINAL.includes(p.status);
   const notes = String(p.notes || '');
   return `<aside class="c-card"><h2>${esc(p.name)}</h2> <div class="c-cardsub">${esc(cStage(p.status))} · ${esc(p.programme || 'programme not said')}</div>
-    <div class="c-next ${open && !t ? 'none' : ''}"><b>${open ? 'Next step' : 'Outcome'}</b>${open ? (t ? `${esc(t.label)} <span class="c-when ${cWhenClass(t.due_at)}">· ${cWhenText(t.due_at)}</span>` : 'Nothing planned yet') : esc(p.status)}
+    <div class="c-next ${open && !t ? 'none' : ''}"><b>${open ? 'Next step' : 'Outcome'}</b>${open ? (t ? `${esc(t.label)} · <span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span>` : 'Nothing planned yet') : esc(p.status)}
       ${open ? `<div class="c-row-acts">${t ? `<button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))})">Done</button>` : `<button class="btn sm" onclick="openNewTask('${esc(p.id)}')">Plan a next step</button>`}</div>` : ''}</div>
     <dl><dt>Email</dt><dd class="${p.email ? '' : 'c-gap'}">${esc(p.email || 'not recorded')}</dd><dt>Phone</dt><dd class="${p.phone ? '' : 'c-gap'}">${esc(p.phone || 'not recorded')}</dd>
       <dt>Came from</dt><dd>${esc(cChannel(p.source_channel)[0])}</dd><dt>First contact</dt><dd class="${p.created_at ? '' : 'c-gap'}">${p.created_at ? fmtDate(p.created_at) : 'not recorded'}</dd></dl>
