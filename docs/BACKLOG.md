@@ -121,6 +121,17 @@ dpl_9tdwjiBbSPkoPMkBhvwiWVoawh3T** (581/581; live page = commit + sign-in script
   when any is set; column counts follow the filter. Phone: two by two.
 - Tests: test/journey_filters.test.js (each filter, combined, the options, the set state, phone).
 
+**Charts and menu: Novikontas Blue + yellow - LIVE 28.09.2026, commit 3b1f3ca, deployment
+dpl_Dwj3TANZeqwTwTDF9piWhs7Doswh** (584/584; live page = commit + sign-in script, byte-identical).
+Ritvars: "Priority is novikontas blue and yellow. for admissions you can use a navy blue line,
+admitted novikontas blue", and on the menu "it doesnt need to be highlighted, the home can just stay blue".
+- Admitted = Novikontas Blue #29a8df (month bars, donut, programme bars, came-from bars, report
+  bars); new leads = a Navy #0a2463 line (dark: light grey #e7ebf0, Navy disappears on the sea);
+  Open = yellow #F7C04F; Not proceeding / not recorded = grey. No other chart colours.
+- Light menu: a faint blue hover and tree line; the active item keeps its Navy text and blue icon
+  with no block behind it. Dark menu unchanged (its own look).
+- Checked: Home light, dark and phone (390 px). Tests: test/metrics_colours.test.js.
+
 **OPEN after 28.09:**
 - **Privacy, Ritvars to decide:** one real person in the live CRM (created 2026-07-20, source
   unknown) has the same name + phone as a person in the demo data, and that name + phone are
