@@ -17,7 +17,7 @@ test('chart colours: admitted Novikontas Blue, new leads a Navy line, open yello
   assert.deepEqual(light.slice(1).map((c) => c.toLowerCase()), ['#29a8df', '#0a2463', '#f7c04f', '#98a4b3']);
   const dark = APP.match(/--v-adm:(#\w+);--v-lead:(#\w+);--v-open:(#\w+);--v-np:(#\w+);--v-grid:#24507a;/);
   assert.ok(dark, 'the dark chart tokens');
-  assert.equal(dark[1].toLowerCase(), '#53a7db', 'dark admitted = the brand blue');
+  assert.equal(dark[1].toLowerCase(), '#29a8df', 'dark admitted = the logo blue, as in light (kit 13 rule 5)');
   assert.equal(dark[3], '#F7C04F', 'dark open = the bright amber');
   assert.doesNotMatch(APP, /--v-(prog|chan):/, 'no extra chart colours');
 });

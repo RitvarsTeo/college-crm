@@ -775,10 +775,14 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
      tokens, so the screen C still borrows from the classic UI (Channels) takes the
      quieter colours too. Every text tint passes 4.5:1
      on its surface - which also retires the --t4 contrast failure in C. */
-  html.ui-c{--paper:#f6f7f6;--surface:#ffffff;--surface-2:#f1f3f2;--shell:#f1f3f2;--field:#ffffff;--menu:#ffffff;--ink:#1b2328;
-    --t2:#48535d;--t3:#5c6670;--t4:#66707a;--rule:#e3e7e8;--rule2:#eef1f1;--control-line:#c9d0d3;
-    --pet:#2e6b70;--petink:#2e6b70;--btn-bg:#0a2463;--btn-ink:#ffffff;--on-navy:#ffffff;--bad:#9f3a31;   /* buttons: brandbook Navy */
-    --c-ok:#2c6e55;--c-warn:#835c12;--c-bad:#9f3a31;--c-accent-bg:#e5f1fa;--c-sunk:#f1f3f2;--c-sel:#eff6fc}   /* Novikontas Blue, lightly (Ritvars 28.09) */
+  /* Light = the brandbook's neutrals (kit 13, 28.09.2026): the side menu Light Grey #e7ebf0, the page
+     a tint of it, body text Pitch Black, secondary text Steel Blue and two steps of it (4.5:1+ on the
+     menu), field and switch edges #6f7e97 (3:1 on white and on Light Grey; #c9d0d3 was 1.5:1), focus
+     and marks Navy instead of the teal. The blues, the amber and the state colours are unchanged. */
+  html.ui-c{--paper:#f5f7fa;--surface:#ffffff;--surface-2:#eef1f5;--shell:#e7ebf0;--field:#ffffff;--menu:#ffffff;--ink:#011111;
+    --t2:#415c8f;--t3:#4d6187;--t4:#56688a;--rule:#dde3ea;--rule2:#e4e9ef;--control-line:#6f7e97;
+    --pet:#0a2463;--petink:#0a2463;--btn-bg:#0a2463;--btn-ink:#ffffff;--on-navy:#ffffff;--bad:#9f3a31;   /* buttons: brandbook Navy */
+    --c-ok:#2c6e55;--c-warn:#835c12;--c-bad:#9f3a31;--c-accent-bg:#e5f1fa;--c-sunk:#eef1f5;--c-sel:#eff6fc}   /* Novikontas Blue, lightly (Ritvars 28.09) */
   /* Dark = the sign-in sea (Ritvars, 28.09.2026: "the exact same colours and tones with
      gradients from the login screen"). The page is the sign-in gradient, the sidebar its
      deepest navy, buttons white like the Google button. Amber brightened ("now its kind of
@@ -790,11 +794,11 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
      the amber and teal are lighter than the validator's band because he asked for them
      brighter, and the slate for 'not proceeding' is a neutral grey that always carries its word. */
   html.ui-c[data-theme="dark"]{--paper:#0f2f4f;--surface:#133a60;--surface-2:#17456e;--shell:#08182e;--field:#0c2745;--menu:#133a60;--ink:#f2f6f9;
-    --t2:#cddbe5;--t3:#bfd0dd;--t4:#b8cad8;--rule:#2a5580;--rule2:#1d4670;--control-line:#6286a8;
+    --t2:#cddbe5;--t3:#bfd0dd;--t4:#b8cad8;--rule:#2a5580;--rule2:#1d4670;--control-line:#82a0ba;
     --pet:#a8d3f3;--petink:#bcdcf5;--btn-bg:#ffffff;--btn-ink:#0a2463;--on-navy:#0a2463;--bad:#ffb0a8;
     --amb:#F7C04F;--ambink:#F7C04F;--late:#F7C04F;--warn:#F7C04F;
     --c-ok:#9be0bd;--c-warn:#F7C04F;--c-bad:#ffb0a8;--c-accent-bg:#1a4670;--c-sunk:#0b2542;--c-sel:#163f66;
-    --v-adm:#53a7db;--v-lead:#e7ebf0;--v-open:#F7C04F;--v-np:#93A5B8;--v-grid:#24507a;
+    --v-adm:#29a8df;--v-lead:#e7ebf0;--v-open:#F7C04F;--v-np:#93A5B8;--v-grid:#24507a;
     --j-from:#1d4d7a;--j-to:#8fcbef;   /* the Journey's stage line in dark (Aigars #2) */
     --glass:linear-gradient(180deg,rgba(255,255,255,.06) 0%,rgba(255,255,255,.035) 100%);
     --glass-line:rgba(194,211,222,.18)}
@@ -831,9 +835,10 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .cnav .n{margin-left:auto;font-size:12px;font-variant-numeric:tabular-nums;color:var(--t3)}
   html.ui-c .cnav .n.warn{color:var(--c-warn);font-weight:600}
   html.ui-c .cnav .kids{margin:1px 0 6px 18px;padding-left:10px;border-left:1px solid var(--rule)}
+  html.ui-c[data-theme="dark"] .cnav .kids{border-left-color:rgba(194,211,222,.28)}   /* kit 13: 2.05:1 on the sea */
   html.ui-c .cnav .kids a{padding:5px 10px;font-size:13px}
   /* The theme switch and the footer line replace the old Theme select in C only. */
-  .c-themebar, .c-foot{display:none}
+  .c-themebar, .c-foot, .c-pagefoot{display:none}
   html.ui-c #themeBlock{display:none}
   html.ui-c .c-themebar{display:block;margin-top:12px;padding:12px 20px 0;border-top:1px solid var(--rule2)}
   html.ui-c .c-foot{display:flex;flex-wrap:wrap;gap:2px 10px;padding:10px 20px 0;font-size:11.5px;color:var(--t3)}
@@ -855,7 +860,12 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c[data-theme="dark"] .theme-switch .ts-thumb{background:var(--surface-2);box-shadow:0 1px 2px rgba(0,0,0,.4),0 0 0 1px var(--glass-line)}
   @media (prefers-reduced-motion:reduce){ html.ui-c .theme-switch .ts-thumb{transition:none} }
   html.ui-c .c-set-theme .theme-switch{width:240px}
-  @media (max-width:760px){ html.ui-c .c-themebar, html.ui-c .c-foot{display:none} }
+  /* On a phone the menu sits on top, so the switch and the (c) line leave it and go to the bottom
+     of the PAGE (kit 13: "all belong to the bottom of the page"). Desktop is unchanged. */
+  @media (max-width:760px){ html.ui-c nav .c-themebar, html.ui-c nav .c-foot{display:none}
+    html.ui-c .c-pagefoot{display:block;padding:18px 0 88px;border-top:1px solid var(--rule2);margin:0 16px}
+    html.ui-c .c-pagefoot .c-themebar{display:block;margin:0;padding:0;border:0}
+    html.ui-c .c-pagefoot .c-foot{display:flex;padding:10px 0 0} }
   /* Settings sections and the Help center */
   html.ui-c .c-set-h{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);margin:22px 0 8px}
   html.ui-c .c-set-theme{cursor:default}
@@ -1220,6 +1230,8 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
     <div class="c-foot"><span>&copy; Novikontas Academy</span> <a href="#/help">Help center</a></div>
   </nav>
   <main id="view"><div class="empty">Loading...</div></main>
+  <div class="c-pagefoot"><div class="c-themebar" id="cThemeBar2"></div>
+    <div class="c-foot"><span>&copy; Novikontas Academy</span> <a href="#/help">Help center</a></div></div>
 </div>
 <!-- It is the feedback box, so it says Feedback (28.09.2026: "for some reason written as help,
      but its feedback box"). Help is the Help center, in Settings. -->
@@ -1260,7 +1272,7 @@ function installCNav() {
   const brand = document.querySelector('.shell > nav > .brand');
   if (!brand || document.querySelector('.cnav')) return;
   brand.setAttribute('href', '#/home');
-  const bar = document.querySelector('#cThemeBar'); if (bar) bar.innerHTML = themeSwitchHtml();
+  for (const bar of document.querySelectorAll('#cThemeBar, #cThemeBar2')) bar.innerHTML = themeSwitchHtml();
   brand.insertAdjacentHTML('afterend', `<div class="cnav" role="navigation" aria-label="Main">
     <a href="#/home" data-c="home">${C_ICON.home}<span>Home</span></a>
     <a href="#/admissions" data-c="admissions">${C_ICON.adm}<span>Admissions</span></a>
@@ -1455,7 +1467,7 @@ async function viewNextC() {
   // the Overdue and Due today counts carry the urgency badges when there is something in them
   const sect = (title, rows, fn, tone = '') => `<div class="c-sheet"><h3>${title}<b${tone && rows.length ? ` class="c-count ${tone}"` : ''}>${rows.length}</b></h3>${rows.map(fn).join('') || '<div class="c-empty">None.</div>'}</div>`;
   $('#view').innerHTML = `<p class="c-crumb">Admissions</p>
-    <div class="c-head"><div><h1>Next Steps</h1><p>What the team has to do. Four states, and every open person is in exactly one of them.</p></div>
+    <div class="c-head"><div><h1>Next Steps</h1><p>What the team has to do.</p></div>
       <div class="act"><span class="c-planned"><b>${pct}%</b> planned <small>${open.length - none.length} of ${open.length} open people have a next step</small></span></div></div>
     ${sect('Overdue', over, tRow, 'over')}${sect('Due today', today, tRow, 'today')}${sect('Coming up', later, tRow)}${sect('No next step', none, pRow)}
     <p class="c-ev">A message someone sent is a New Lead; a promise we made is a Next Step. Every list shows all its people.</p>`;
@@ -1583,7 +1595,7 @@ async function viewLeadsC() {
     </div>`;
   };
   $('#view').innerHTML = `<p class="c-crumb">Admissions</p>
-    <div class="c-head"><div><h1>New Leads</h1><p>Who has just arrived and needs understanding. Everything that arrives comes here first; obvious junk is kept aside, never deleted.</p></div></div>
+    <div class="c-head"><div><h1>New Leads</h1><p>New arrivals land here first.</p></div></div>
     ${receipt}
     <div class="c-sheet">${rows.length ? rows.map((r) => `<div class="c-line row c-lead${C_LOPEN === r.id ? ' is-open' : ''}" tabindex="0" onclick="C_LOPEN=${C_LOPEN === r.id ? 'null' : Number(r.id)};viewLeadsC()">
         <div class="c-who"><b>${esc(r.contact_name || r.contact_handle || 'Unknown')}</b><small>${esc(channelLabel(r.channel))} · ${fmtDateTime(r.received_at)}${r.aged ? ' · <span class="c-late">late</span>' : ''}</small></div>
@@ -1627,7 +1639,7 @@ function cDrawPeople() {
   if (C_PPROG) ps = ps.filter((p) => p.programme === C_PPROG);
   if (C_PQ) { const q = C_PQ.toLowerCase(); ps = ps.filter((p) => [p.name, p.email, p.phone].some((v) => String(v || '').toLowerCase().includes(q))); }
   const parts = [...C_PF].map((f) => words[f]); if (C_PPROG) parts.push('interested in ' + C_PPROG); if (C_PQ) parts.push(`matching "${C_PQ}"`);
-  const explain = parts.length ? `${ps.length} of ${people.length} people - ${parts.join(', ')}.` : `All ${people.length} people. Each filter narrows the list, and this sentence says exactly what is left.`;
+  const explain = parts.length ? `${ps.length} of ${people.length} people - ${parts.join(', ')}.` : `All ${people.length} people.`;
   const contact = (p) => [p.email, p.phone].filter(Boolean).join(' · ');
   const row = (p) => { const t = taskOf.get(p.id); const open = !C_TERMINAL.includes(p.status);
     return `<tr class="row${C_PEDIT === p.id ? ' c-sel' : ''}" tabindex="0" onclick="C_PEDIT=${C_PEDIT === p.id ? 'null' : `'${esc(p.id)}'`};C_PMSG='';cDrawPeople()">
@@ -1637,7 +1649,7 @@ function cDrawPeople() {
       <td class="${t ? '' : 'c-gap'}">${t ? esc(t.label) : (open ? 'nothing planned' : '-')}</td>
       <td>${t ? `<span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span>` : ''}</td></tr>
       ${C_PEDIT === p.id ? `<tr class="c-edit"><td colspan="5">${cEditForm(p, t)}</td></tr>` : ''}`; };
-  $('#view').innerHTML = `<div class="c-head"><div><h1>People</h1><p>Everyone, as a database you can work in. Click a row to edit it right here.</p></div>
+  $('#view').innerHTML = `<div class="c-head"><div><h1>People</h1><p>Click a row to edit.</p></div>
       <div class="act"><input class="c-search" id="cPQ" placeholder="Search name, email or phone" value="${esc(C_PQ)}" aria-label="Search people"><button class="btn" onclick="openAdd()">Add person</button></div></div>
     <div class="c-chips">${chips.map(([k, l]) => `<button class="c-chip" aria-pressed="${C_PF.has(k)}" onclick="C_PF.has('${k}')?C_PF.delete('${k}'):C_PF.add('${k}');cDrawPeople()">${l}</button>`).join('')}
       <select class="c-chip" aria-label="Programme" onchange="C_PPROG=this.value;cDrawPeople()"><option value="">Programme: any</option>${(CFG.programmes || []).map((pr) => `<option ${pr === C_PPROG ? 'selected' : ''}>${esc(pr)}</option>`).join('')}</select></div>
