@@ -986,7 +986,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-ok{color:var(--c-ok);font-weight:700;margin-right:6px} html.ui-c .c-no{color:var(--c-bad);font-weight:700;margin-right:6px}
   html.ui-c .c-gap{color:var(--t3);font-style:italic}
   html.ui-c .c-set .c-line{grid-template-columns:minmax(0,1fr) auto}
-  html.ui-c .c-dec{font-size:10.5px;font-weight:600;letter-spacing:.04em;color:var(--c-warn);border:1px dashed var(--c-warn);border-radius:4px;padding:0 5px;white-space:nowrap}
+  html.ui-c .c-tag{font-size:10.5px;font-weight:600;letter-spacing:.04em;color:var(--t3);border:1px solid var(--rule);border-radius:4px;padding:0 5px;white-space:nowrap}
   @media (max-width:760px){ html.ui-c .c-line, html.ui-c .c-line[style]{grid-template-columns:minmax(0,1fr) auto!important} html.ui-c .c-line .c-what{grid-column:1/-1} html.ui-c .c-health{grid-template-columns:1fr;gap:10px} }
 
   /* Home: the Admissions KPI page. Hairlines and whitespace, no cards. Chart colours
@@ -1626,7 +1626,7 @@ async function viewOutcomesC() {
       <div class="act"><button class="btn" onclick="openExport()">Download for management review</button><button class="btn ghost" onclick="location.hash='#/reports'">Full report</button></div></div>
     <div class="c-seg" role="group" aria-label="Outcome"><button aria-pressed="${C_OUTCOME === 'Admitted'}" onclick="C_OUTCOME='Admitted';viewOutcomesC()"><span class="c-ok">✓</span>Admitted ${adm.length}</button><button aria-pressed="${C_OUTCOME !== 'Admitted'}" onclick="C_OUTCOME='Not proceeding';viewOutcomesC()"><span class="c-no">✕</span>Not proceeding ${np.length}</button></div>
     ${f ? `<div class="c-filter">Showing <b>${list.length}</b> ${list.length === 1 ? 'admitted person' : 'admitted people'}, ${esc(fLabel)} <button class="btn sm ghost" onclick="C_OUT_FILTER=null;viewOutcomesC()">Show all admitted ✕</button></div>` : ''}
-    ${C_OUTCOME !== 'Admitted' && noReason ? `<p class="c-ev" style="margin-top:0">${noReason} of ${np.length} have no recorded reason yet - it is still in the note. <span class="c-dec">reasons list to agree</span></p>` : ''}
+    ${C_OUTCOME !== 'Admitted' && noReason ? `<p class="c-ev" style="margin-top:0">${noReason} of ${np.length} have no recorded reason yet - it is still in the note. <span class="c-tag">reasons list to agree</span></p>` : ''}
     <div class="c-sheet">${list.map((p) => `<div class="c-line" tabindex="0" onclick="location.hash='#/person/${esc(p.id)}'" style="grid-template-columns:minmax(0,1.2fr) minmax(0,1.4fr) 110px">
         <div class="c-who"><b>${esc(p.name)}</b><small>${esc(p.programme || 'programme not said')} · came from ${esc(cChannel(p.source_channel)[0])}</small></div>
         <div class="c-what">${C_OUTCOME === 'Admitted' ? `Admitted${p.matriculated_at ? ` · <span class="c-lifefact" title="From the SIS: it happened on or before this day">Matriculated <time>by ${esc(cDay(p.matriculated_at))}</time></span>` : ''}` : (p.closed_reason ? esc(p.closed_reason) : '<span class="c-gap">reason not recorded</span>')}</div>
@@ -1647,8 +1647,7 @@ async function viewSettingsC() {
       ${item('#/feedback', 'Feedback received', '')}
       ${item('#/reports', 'Full report', '')}
       ${item('#/people', 'Data to tidy', `${odd} not in the list`)}
-    </div>
-    <p class="c-ev"><span class="c-dec">Stages and next steps to agree</span></p>`;
+    </div>`;
   }
   $('#view').innerHTML = `<div class="c-head"><div><h1>Settings</h1></div></div>
     <h2 class="c-set-h">Appearance</h2>
@@ -1772,7 +1771,7 @@ function cDrawPeople() {
   const row = (p) => { const t = taskOf.get(p.id); const open = !C_TERMINAL.includes(p.status);
     return `<tr class="row${C_PEDIT === p.id ? ' c-sel' : ''}" tabindex="0" onclick="C_PEDIT=${C_PEDIT === p.id ? 'null' : `'${esc(p.id)}'`};C_PMSG='';cDrawPeople()">
       <td class="c-name"><b>${esc(p.name)}</b><small class="c-reach ${contact(p) ? '' : 'c-gap'}">${contact(p) ? cReach(p) : 'no contact details'}</small></td>
-      <td>${esc(p.programme || '-')}${p.programme && !known.has(p.programme) ? ' <span class="c-dec">not in list</span>' : ''}</td>
+      <td>${esc(p.programme || '-')}${p.programme && !known.has(p.programme) ? ' <span class="c-tag">not in list</span>' : ''}</td>
       <td>${esc(cStage(p.status))}</td>
       <td class="${t ? '' : 'c-gap'}">${t ? cStepIcon(t.label) + esc(cTask(t.label)) : (open ? 'nothing planned' : '-')}</td>
       <td>${t ? `<span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span>` : ''}</td></tr>
@@ -2056,7 +2055,6 @@ function cDrawJourney() {
         const over = ps.filter((p) => { const t = taskOf.get(p.id); return t && cWhenClass(t.due_at) === 'over'; }).length;
         return `<div class="c-col" style="--jt:${((i + 1) / stages.length).toFixed(3)}"><h3><span class="c-jn">${i + 1}</span>${esc(s.label || s.id)} <b>${ps.length}</b>${over ? `<em class="c-jover">${over} overdue</em>` : ''}</h3><div class="c-drop" data-stage="${esc(s.id)}">${ps.map((p) => cJourneyCard(p, taskOf.get(p.id), sel)).join('') || '<div class="c-empty" style="padding:8px">empty</div>'}</div></div>`; }).join('')}</div>
       <div class="c-folded">Finished journeys are in Outcomes: <b><span class="c-ok">✓</span>${adm} admitted</b> <b><span class="c-no">✕</span>${np} not proceeding</b> <a class="btn sm ghost" href="#/outcomes" style="margin-left:auto">Open Outcomes →</a></div>
-      <p class="c-ev"><span class="c-dec">Stages to agree</span></p>
     </div></div>`;
   if (narrow && sel && C_JSEL === sel.id) { const card = document.querySelector('.c-journey > .c-card'); if (card && card.scrollIntoView) card.scrollIntoView({ block: 'start' }); }
   // one pair of listeners for the life of the page, not one per redraw: a click anywhere outside a
@@ -2125,7 +2123,7 @@ function cPersonFacts(p) {
   const stages = CFG.stages || [];
   return `<div class="c-sheet c-facts"><h3>Details<span class="c-h3acts"><button class="btn sm ghost" onclick="C_PERSON_EDIT=true;viewPersonC('${esc(p.id)}')">Edit</button></span></h3><dl>
       ${row('Email', esc(p.email || ''))}${row('Phone', esc(p.phone || ''))}
-      ${row('Programme', p.programme ? esc(p.programme) + (known.has(p.programme) ? '' : ' <span class="c-dec">not in list</span>') : '', 'not said')}
+      ${row('Programme', p.programme ? esc(p.programme) + (known.has(p.programme) ? '' : ' <span class="c-tag">not in list</span>') : '', 'not said')}
       ${row('Study form', esc(p.study_form || ''))}${row('Education', esc(p.education || ''))}${row('Nationality', esc(p.nationality || ''))}
       ${row('Came from', came ? esc(came) + (cameWhy ? ` <small class="c-gap-soft">${esc(cameWhy)}</small>` : '') + (p.source_campaign ? ' / ' + esc(p.source_campaign) : '') : '')}
       ${p.source_detail ? row('How', esc(p.source_detail)) : ''}
@@ -2138,7 +2136,6 @@ function cPersonFacts(p) {
     ${p.notes ? `<div class="c-notes${p.notes.length > 240 ? ' c-clamp' : ''}">${esc(p.notes)}</div>${p.notes.length > 240 ? `<button class="c-more" onclick="const n=this.previousElementSibling;n.classList.toggle('c-clamp');this.textContent=n.classList.contains('c-clamp')?'Show all ${p.notes.length} characters':'Show less'">Show all ${p.notes.length} characters</button>` : ''}` : ''}</div>
     <div class="c-sheet c-facts"><h3>Stage</h3><div class="c-pad">
       <select id="cStage" aria-label="Stage" onchange="changeStatus('${esc(p.id)}', this.value)">${stages.map((s) => `<option value="${esc(s.id)}" ${s.id === p.status ? 'selected' : ''}>${esc(s.label || s.id)}</option>`).join('')}</select>
-      <p class="c-hint"><span class="c-dec">Stages to agree</span></p>
       ${p.status === (CFG.stageRoles || {}).admitted ? (p.sis_handoff_at ? `<p class="c-hint">Handed to the SIS on ${fmtDate(p.sis_handoff_at)}</p>` : `<button class="btn sm ghost" onclick="doSisHandoff('${esc(p.id)}')">Hand over to SIS</button>`) : ''}
     </div></div>
     ${p.qualification || (p.fields || []).length ? `<div class="c-sheet c-facts"><h3>From their first message</h3><div class="c-pad">
@@ -2260,7 +2257,7 @@ async function viewReportsC() {
       <section class="ksec"><div class="ksh"><h2>From a maritime school</h2></div><p class="c-big">${s.maritimeGraduates ?? 0}</p><p class="knote">Counted from the education field, which is filled in for ${cov.education?.filled ?? 0} of the ${cov.education?.of ?? 0} people who arrived. The real number is at least this.</p></section>
     </div>
     <section class="ksec"><div class="ksh"><h2>What the CRM cannot measure yet</h2></div>
-      <div class="c-thin">${(r.notMeasured || []).map((n) => `<div><b>${esc(n.metric)}</b> <span class="c-dec">${esc(n.kind)}</span><p>${esc(n.why)}</p><p class="c-gap-soft">To fix: ${esc(n.toFix)}</p></div>`).join('') || '<p class="c-empty">Nothing.</p>'}</div></section>
+      <div class="c-thin">${(r.notMeasured || []).map((n) => `<div><b>${esc(n.metric)}</b> <span class="c-tag">${esc(n.kind)}</span><p>${esc(n.why)}</p><p class="c-gap-soft">To fix: ${esc(n.toFix)}</p></div>`).join('') || '<p class="c-empty">Nothing.</p>'}</div></section>
     <p class="knote">${(r.honesty || []).slice(1).map(esc).join(' ')}</p>
     <div class="ktip" role="status" aria-live="polite"></div></div>`;
   cWireCharts();

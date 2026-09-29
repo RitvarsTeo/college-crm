@@ -60,7 +60,9 @@ test('explaining sentences are gone', () => {
   for (const s of ['A message someone sent is a New Lead; a promise we made is a Next Step.',
     'Changes when a step is done, or by hand here.', 'The stages are a working version, to be agreed with Admissions.',
     'How the CRM looks for you, and where to get help.', 'Where finished journeys end.']) assert.ok(!APP.includes(s), s);
-  assert.match(APP, /<span class="c-dec">Stages to agree<\/span>/, 'the open decision is still said, in three words');
+  // 30.09: even the three words went. A stage list still being agreed is a project fact,
+  // not something to nag about on every visit; it lives in DECISIONS.md, not on the screen.
+  assert.ok(!APP.includes('Stages to agree'), 'the tag is gone from every screen');
 });
 
 test('phone: Outcomes rows and the Settings switch use the full width', () => {
