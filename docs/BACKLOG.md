@@ -157,6 +157,32 @@ page has a Run button that sends CRON_SECRET itself; CHANNEL_MODE_PHONE=test, so
 as `simulated`. TeleGroup (novikontas.tg.lv) not yet called with the real token: first run by hand is next.
 OPEN: the nightly run only reads the last 15 minutes; every 5 minutes waits for Vercel Pro.
 
+**Home width + call / write everywhere - LIVE 29.09.2026, dpl_ACLDen7gEjeuxcoVkpMJBEreL4wy** (660/660, commit 31c6b90):
+Ritvars, from a screenshot: "a lot of space here". MEASURED at 1920: Home was held at 1080px by `.kpage`
+inside a main that allows 1320, and main is left-aligned, so 576px sat empty down the right and 284px below,
+and the page did not scroll - while Journey and People already used the full width. The `.kpage` cap is gone,
+so Home AND Reports now take the same width as every other screen. No Home content, hierarchy, colour or
+component changed. The month chart keeps its own 900px cap on purpose. Checked 1920 / 1440 / 960 / phone,
+light and dark. Test: the width rule in test/frame_drifts.test.js.
+Also LIVE: Ieva's "piezvanīt vai uzrakstīt" applied where it had been missed. `tel:` and `mailto:` existed in
+exactly ONE place in the whole app, the Next Steps row; the People row and the Journey person card printed the
+same phone and email as dead text. One helper now (`cTelLink` / `cMailLink` / `cReach`) used by all three.
+The narrow Journey column cards are deliberately left alone: the person card is one click away and those
+columns are 150px. Test: test/ieva_feedback.test.js.
+
+**A next step says what KIND it is - LIVE 29.09.2026, same deployment** (commit f49a1f7): Aigars' "a colour or
+icon per next-step type". An ICON, not a colour: the card already spends its only two accents on time (amber is
+today, red is overdue), so a colour per type would argue with the only two colours that mean anything there.
+One mark per GROUP, the four the picker is built from. FINDING: on the real database all 34 open next steps are
+the 23.09 import's "Get in touch (from the sheet)", which is in no group, so every real card keeps the plain
+arrow and this shows nothing until Admissions plans real steps. Whether that imported step counts as
+Conversation is OPEN, for Ritvars. Two demo labels had also drifted out of the configured list
+("Check the documents", "Collect the medical certificate") and so could never be matched to a type; both fixed,
+and a test now refuses any demo next step that is not in `config.nextActions`.
+OPEN, not started: the Journey summary for management (Ritvars: decide after seeing the corrected Home width;
+it also needs `0. NJK KPI 2026.xlsx` and Ieva's slides). The Channels rework + the SIS row: layout to be shown
+to Ritvars BEFORE anything is built.
+
 **Ieva's two points - LIVE 29.09.2026, dpl_4hDHjrpkzxdMSydQAMmpoUMKnqzq** (651/651): "Add lead" on New Leads (the Add person form);
 every Next Steps row shows the phone and email as call / write links and one line of the newest comment (else the imported note), without
 opening the profile. Test: test/ieva_feedback.test.js. Also LIVE today: e070927 the Postgres schema as a connection option (the pg
