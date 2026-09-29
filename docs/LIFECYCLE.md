@@ -56,11 +56,12 @@ or "matriculated"** (no startedAt, no matriculatedAt).
 What it means for the mapping:
 - **Matriculated: CONFIRMED as a status** (1 real record). Its date stays `changedAt` - the SIS has no
   other date for it.
-- **Application form started: still PROVISIONAL.** No record is `started` today, so the status has not
-  been seen. The submitted and the matriculated applicant clearly started a form, but the SIS gives no
-  date for when, so under the current rule they get no "form started" fact. Whether an application
-  that is already past `started` should show "Application form started" (and with which date, if
-  any) is Ritvars' decision - asked 29.09.2026.
+- **Application form started:** DECIDED by Ritvars 29.09.2026 ("Yes, by submit date"): `started`
+  dated by changedAt, or an application past it dated by its submittedAt. `started` itself is still
+  unseen in a real reply. Every SIS date is shown as "by <date>".
+- **Where they are now** (Ritvars 29.09.2026, for nudging after submission): the person page says
+  "In the SIS: <status> by <date> - next: <next SIS status>", with "(Student Coordinator)" after
+  Submitted; the Journey card "SIS: <status>". `sisProgress()` in src/lifecycle.js.
 - Registered-only people (4) have no application (applicationId empty) and correctly get no fact.
 
 ## What is still needed before real facts appear

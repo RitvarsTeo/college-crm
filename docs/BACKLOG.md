@@ -145,6 +145,19 @@ dpl_BQ2rpkN6ggPPktnFekPPkrBaGBSj** (588/588; live page = commit + sign-in script
 - Texts cut to a third (Ritvars): People "Click a row to edit.", its count "All N people.", Next
   Steps "What the team has to do.", New Leads "New arrivals land here first."
 - Checked: desktop light/dark, phone light/dark. Tests: test/kit13_polish.test.js.
+**SIS mapping decided + where the person is in the SIS - LIVE 29.09.2026, commits 4b31df5 + fecde5e,
+deployment dpl_8Cazdz5YttPu88dkC94GnYknm6Pu** (645/645).
+- Ritvars: an application already past `started` also shows "Application form started", dated by its
+  submittedAt ("Yes, by submit date"). Every SIS date reads "by <date>" (the SIS dates come after the
+  moment). Registered-only: no fact.
+- Ritvars: after submission it is the Student Coordinator's work; Admissions must see the next step
+  and whether it happened, to nudge. One line on the person page: "In the SIS: Submitted by <date> -
+  next: Admitted (Student Coordinator)"; "SIS: <status>" on the Journey card. SIS statuses only, the
+  next one in their order; a role only where he named one. Not a stage.
+- vercel.json: /api/cron/sis-sync once a day, 08:00 Riga (Hobby allows daily; deploy accepted) - it
+  gives the Cron Jobs page a Run button that sends CRON_SECRET itself.
+- WAITING: CRON_SECRET (Ritvars, steps given), then CHANNEL_MODE_SIS=test, redeploy, one Run, check.
+
 **SIS token in Vercel (Ritvars) + the first real reply read - 29.09.2026, commit 5d19d10, deployment
 dpl_6otifuBwFPWMQkuUcuB36mDowCYh** (643/643). The Vercel CLI does not give production secrets to a local
 machine, so the first look runs inside production: GET /api/admin/sis/first-look (admins only, one
