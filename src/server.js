@@ -1284,7 +1284,10 @@ export const handle = async (req, res) => {
       let rows = await db.prepare(`SELECT pe.*, (SELECT label FROM tasks t WHERE t.person_id = pe.id AND t.done_at IS NULL ORDER BY due_at LIMIT 1) AS next_action,
         (SELECT due_at FROM tasks t WHERE t.person_id = pe.id AND t.done_at IS NULL ORDER BY due_at LIMIT 1) AS next_action_at,
         (SELECT MIN(occurred_at) FROM lifecycle_events le WHERE le.person_id = pe.id AND le.fact = 'form_started') AS form_started_at,
-        (SELECT MIN(occurred_at) FROM lifecycle_events le WHERE le.person_id = pe.id AND le.fact = 'matriculated') AS matriculated_at
+        (SELECT MIN(occurred_at) FROM lifecycle_events le WHERE le.person_id = pe.id AND le.fact = 'matriculated') AS matriculated_at,
+        -- the newest comment somebody wrote (Add a note / Log a call), for the Journey card's one-line preview
+        (SELECT body FROM events e WHERE e.person_id = pe.id AND e.origin = 'manual' AND e.kind IN ('note', 'call')
+          AND COALESCE(e.body, '') <> '' ORDER BY e.occurred_at DESC, e.id DESC LIMIT 1) AS last_comment
         FROM people pe ORDER BY ${orderBy} ${dir} NULLS LAST`).all();
       // Decision 10: findable by whatever the operator remembers, including the
       // channel's plain name, so "instagram" finds it without knowing the id.

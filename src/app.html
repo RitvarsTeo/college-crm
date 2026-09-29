@@ -1001,6 +1001,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .kchart{width:100%;height:auto;display:block;max-width:900px}
   html.ui-c .kchart .kg{stroke:var(--v-grid);stroke-width:1}
   html.ui-c .kt{fill:var(--t3);font-size:11px;font-family:var(--sans,Inter),system-ui,sans-serif}
+  html.ui-c .kchart.narrow .kt{font-size:12.5px}   /* ~11.5 px on a 390 px phone */
   html.ui-c .kbig{fill:var(--ink);font-size:24px;font-weight:650;font-family:var(--sans,Inter),system-ui,sans-serif}
   html.ui-c .kline{fill:none;stroke:var(--v-lead);stroke-width:2;stroke-linejoin:round;stroke-linecap:round;pointer-events:none}
   html.ui-c .kdot{fill:var(--v-lead);stroke:var(--paper);stroke-width:2;pointer-events:none}
@@ -1431,7 +1432,6 @@ async function viewHomeC() {
     </div>
     <section class="ksec"><div class="ksh"><h2>Admissions by month</h2><ul class="klegend inline"><li><i style="background:var(--v-adm)"></i><span>Admitted</span></li><li><i class="ln" style="background:var(--v-lead)"></i><span>New leads</span></li></ul></div>
       ${cMonthChart(months, year)}
-      <p class="knote">${best ? `The strongest month had ${best} ${best === 1 ? 'admission' : 'admissions'}. ` : ''}Months still to come are not drawn.</p>
       <details class="kdet"><summary>Show as a table</summary><table class="ktable"><thead><tr><th>Month</th><th>Admitted</th><th>New leads</th></tr></thead><tbody>${months.map((m) => `<tr><td>${C_MONTHS[Number(m.month.slice(5)) - 1]}</td><td>${m.admitted}</td><td>${m.newLeads}</td></tr>`).join('')}</tbody></table></details></section>
     <div class="kthree">
       <section class="ksec"><div class="ksh"><h2>Where everyone is now</h2></div>${cDonut(now)}</section>
@@ -1443,7 +1443,10 @@ async function viewHomeC() {
 }
 function cMonthChart(months, year) {
   if (!months.length) return '<p class="c-empty">No admissions recorded this year yet.</p>';
-  const W = 640, H = 210, L = 30, R = 12, T = 14, B = 26, n = months.length;
+  // On a phone the chart is drawn for a phone (Aigars UX pass, 29.09.2026): drawn 640 wide and shrunk to
+  // ~330 px, its labels came out at 5-6 px. Drawn 360 wide, they stay about the size they are written.
+  const narrow = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width:760px)').matches;
+  const W = narrow ? 360 : 640, H = narrow ? 230 : 210, L = narrow ? 28 : 30, R = 8, T = 14, B = 26, n = months.length;
   const top = Math.max(10, ...months.map((m) => Math.max(m.admitted, m.newLeads)));
   // Gridlines on round numbers (0, 10, 20, 30), never quarters of the top (0, 8, 15, 23).
   const step = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000].find((s) => top / s <= 5) || Math.ceil(top / 5);
@@ -1454,7 +1457,7 @@ function cMonthChart(months, year) {
     const bar = m.admitted ? `<path d="M${cx - bw / 2},${y(0)} V${Math.min(t + 4, y(0))} q0,-4 4,-4 h${bw - 8} q4,0 4,4 V${y(0)} Z" style="fill:var(--v-adm)"/>` : '';
     return `<g class="kcol" tabindex="0" role="button" aria-label="${mo} ${m.month.slice(0, 4)}: ${m.admitted} admitted, ${m.newLeads} new leads" data-tip="${mo} ${m.month.slice(0, 4)}|${m.admitted} admitted|${m.newLeads} new leads" data-kgo="month|${m.month}|${mo} ${m.month.slice(0, 4)}"><rect x="${cx - band / 2}" y="${T}" width="${band}" height="${H - T - B}" class="khit"/>${bar}<text x="${cx}" y="${H - 8}" class="kt" text-anchor="middle">${mo}</text></g>`; }).join('');
   const pts = months.map((m, k) => [L + band * k + band / 2, y(m.newLeads)]);
-  return `<svg viewBox="0 0 ${W} ${H}" class="kchart" role="img" aria-label="Admissions and new leads per month, ${year}">${grid}${cols}<path d="M${pts.map((p) => p.join(',')).join(' L')}" class="kline"/>${pts.map(([x, yy]) => `<circle cx="${x}" cy="${yy}" r="4" class="kdot"/>`).join('')}</svg>`;
+  return `<svg viewBox="0 0 ${W} ${H}" class="kchart${narrow ? ' narrow' : ''}" role="img" aria-label="Admissions and new leads per month, ${year}">${grid}${cols}<path d="M${pts.map((p) => p.join(',')).join(' L')}" class="kline"/>${pts.map(([x, yy]) => `<circle cx="${x}" cy="${yy}" r="4" class="kdot"/>`).join('')}</svg>`;
 }
 function cDonut(rows) {
   const total = rows.reduce((a, r) => a + r[1], 0) || 1, R = 58, r0 = 40, c = 70, gap = 0.035;
@@ -1556,7 +1559,7 @@ async function viewOutcomesC() {
 
 // -------------------------------------------------------------------- SETTINGS
 async function viewSettingsC() {
-  const item = (href, t, d, right = '›') => `<div class="c-line" tabindex="0" onclick="location.href='${href}'"><div class="c-who"><b>${t}</b><small>${d}</small></div><div class="c-when">${right}</div></div>`;
+  const item = (href, t, d, right = '›') => `<div class="c-line" tabindex="0" onclick="location.href='${href}'"><div class="c-who"><b>${t}</b>${d ? `<small>${d}</small>` : ''}</div><div class="c-when">${right}</div></div>`;
   let admin = '';
   if (isAdmin()) {
     const people = await cPeopleRows();
@@ -1564,20 +1567,20 @@ async function viewSettingsC() {
     const odd = people.filter((p) => p.programme && !known.has(p.programme)).length;
     admin = `<h2 class="c-set-h">For admins</h2>
     <div class="c-sheet c-set">
-      ${item('#/channels', 'Channels', 'What our side has built, and whether each provider is connected.')}
-      ${item('#/feedback', 'Feedback received', 'What people sent with the feedback button. The button stays on every screen.')}
-      ${item('#/reports', 'Full report', 'The on-screen report behind the management download.')}
+      ${item('#/channels', 'Channels', '')}
+      ${item('#/feedback', 'Feedback received', '')}
+      ${item('#/reports', 'Full report', '')}
       ${item('#/people', 'Data to tidy', `${odd} ${odd === 1 ? 'person has' : 'people have'} a programme that is not one of the list.`)}
     </div>
-    <p class="c-ev">The journey stages and the next-step list are still a working version, to be agreed with Admissions. <span class="c-dec">to agree</span></p>`;
+    <p class="c-ev"><span class="c-dec">Stages and next steps to agree</span></p>`;
   }
   $('#view').innerHTML = `<div class="c-head"><div><h1>Settings</h1></div></div>
     <h2 class="c-set-h">Appearance</h2>
-    <div class="c-sheet c-set"><div class="c-line c-set-theme"><div class="c-who"><b>Light or dark</b><small>Remembered on this device.</small></div><div>${themeSwitchHtml()}</div></div></div>
+    <div class="c-sheet c-set"><div class="c-line c-set-theme"><div class="c-who"><b>Light or dark</b></div><div>${themeSwitchHtml()}</div></div></div>
     <h2 class="c-set-h">Help</h2>
     <div class="c-sheet c-set">
-      ${item('#/help', 'Help center', 'How each screen works, and answers to common questions.')}
-      <div class="c-line" tabindex="0" onclick="fbOpen('BUG')"><div class="c-who"><b>Report a problem or an idea</b><small>Reaches the people who build the CRM. You can add a screenshot.</small></div><div class="c-when">›</div></div>
+      ${item('#/help', 'Help center', '')}
+      <div class="c-line" tabindex="0" onclick="fbOpen('BUG')"><div class="c-who"><b>Report a problem or an idea</b></div><div class="c-when">›</div></div>
     </div>
     ${admin}`;
 }
@@ -1807,6 +1810,9 @@ const cTask = (s) => String(s == null ? '' : s).replace(/ \(from the sheet\)$/, 
 // The same import put "Sheet status: COLD | Docs: Not submitted | " in front of the comment people wrote.
 // The preview shows the comment; the whole note, tags included, stays on the card and the person page.
 const cNotePreview = (s) => String(s == null ? '' : s).replace(/^(?:(?:Sheet status|Docs):[^|]*\|\s*)+/, '').trim();
+// The card's comment: the newest one somebody wrote on the person page (Add a note / Log a call), else the
+// note from the import. The whole thread is the person page's History.
+const cComment = (p) => String(p.last_comment || '').trim() || cNotePreview(p.notes);
 function cJourneyCard(p, t, sel) {
   const w = t ? cWhenClass(t.due_at) : '';
   // overdue says by how much, in the app's own words ("3 d. overdue") - it fits a narrow column
@@ -1817,7 +1823,7 @@ function cJourneyCard(p, t, sel) {
   const life = cLifeFacts(p).map(([, at, short]) => `<small class="c-jlife" title="From the SIS, ${esc(cDay(at))}">${esc(short)}</small>`).join('');
   return `<div class="${cls}" draggable="true" data-id="${esc(p.id)}" tabindex="0" onclick="C_JSEL='${esc(p.id)}';cDrawJourney()"><b>${esc(p.name)}</b>${life}${t
     ? `<span class="c-jnext">${C_JICON.next}<span>${esc(cTask(t.label))}</span></span><small class="c-jdue${w ? ' ' + w : ''}">${due}</small>`
-    : '<small class="none">nothing planned</small>'}${cNotePreview(p.notes) ? `<small class="c-jnote" title="${esc(p.notes)}">${esc(cNotePreview(p.notes))}</small>` : ''}</div>`;
+    : '<small class="none">nothing planned</small>'}${cComment(p) ? `<small class="c-jnote" title="${esc(p.last_comment || p.notes)}">${esc(cComment(p))}</small>` : ''}</div>`;
 }
 // JOURNEY FILTERS (Aigars' feedback 2A, 28.09.2026: real filters, not one-choice pills). Four
 // compact dropdowns - Programme, Overdue / Today, Owner, Came from - offering only the values the
@@ -2041,7 +2047,7 @@ async function viewReportsC() {
   const seg = (k, l) => `<button aria-pressed="${C_RPT_PRESET === k}" onclick="cReportPreset('${k}')">${l}</button>`;
   const cov = r.coverage || {};
   $('#view').innerHTML = `<p class="c-crumb"><a href="#/outcomes">Outcomes</a></p>
-    <div class="c-head"><div><h1>Full report</h1><p>${esc(from || '')} to ${esc(to || '')}. Every figure is a count of rows in the CRM over these days. Nothing is estimated.</p></div>
+    <div class="c-head"><div><h1>Full report</h1><p>${esc(from || '')} to ${esc(to || '')}</p></div>
       <div class="act"><button class="btn" onclick="openExport()">Download for management review</button></div></div>
     ${cSheetNotice()}
     <div class="c-periodbar"><div class="c-seg" role="group" aria-label="Period">${seg('month', 'This month')}${seg('last', 'Last month')}${seg('year', 'This year')}${seg('all', 'Everything')}</div>
@@ -2101,7 +2107,7 @@ async function viewFeedbackC() {
       ${r.screenshot ? `<img class="c-fb-shot" src="/api/admin/feedback/${Number(r.id)}/screenshot?as=${encodeURIComponent(ACTOR)}" alt="Screenshot sent with this feedback" onclick="fbZoom(${Number(r.id)})">` : ''}
     </div>`;
   $('#view').innerHTML = `<p class="c-crumb"><a href="#/settings">Settings</a></p>
-    <div class="c-head"><div><h1>Feedback</h1><p>What people sent with the feedback button, for ${esc(fbReaders())}. It is kept in the CRM's own database and is never sent anywhere.</p></div></div>
+    <div class="c-head"><div><h1>Feedback</h1></div></div>
     <div class="c-seg" role="group" aria-label="Show"><button aria-pressed="${C_FB_SHOW === 'open'}" onclick="C_FB_SHOW='open';viewFeedbackC()">Open ${open.length}</button><button aria-pressed="${C_FB_SHOW !== 'open'}" onclick="C_FB_SHOW='handled';viewFeedbackC()">Handled ${done.length}</button></div>
     <div class="c-sheet">${list.map(item).join('') || `<div class="c-empty">${C_FB_SHOW === 'open' ? (rows.length ? 'Nothing open. Everything sent has been handled.' : 'Nothing has been sent yet.') : 'Nothing handled yet.'}</div>`}</div>`;
 }
@@ -4536,9 +4542,9 @@ function fbDraw() {
 function fbMenuHtml() {
   return `<h4>Feedback</h4>
     <button class="helpitem" onclick="fbOpenForm()">Send feedback
-      <span>Something broken, or an idea. Read by ${esc(fbReaders())}.</span></button>
+      <span>Something broken, an idea or a question.</span></button>
     ${mayReadFeedback() ? `<button class="helpitem" onclick="fbClose();location.hash='#/feedback'">Feedback inbox
-      <span>Everything everybody has sent.</span></button>` : ''}`;
+</button>` : ''}`;
 }
 
 function fbOpenForm() { FB.view = 'form'; fbDraw(); }
@@ -4566,7 +4572,7 @@ function fbFormHtml() {
     <textarea id="fbText" rows="4" maxlength="2000" placeholder="${esc(placeholder)}">${esc(text)}</textarea>
     <div id="fbShot">${fbShotHtml()}</div>
     <div id="fbErr"></div>
-    <div class="goeshint">Goes to ${esc(fbReaders())}. It stays on this machine and is never emailed.</div>
+    <div class="goeshint">Goes to ${esc(fbReaders())}.</div>
     <div class="sendrow">
       <div class="pathstamp" title="the screen this will be filed against">${esc(fbPath())}</div>
       <div style="display:flex;gap:6px">
