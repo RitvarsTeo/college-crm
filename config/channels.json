@@ -645,6 +645,22 @@
       "reconciliation": "None built."
     }
   },
+  "_integrations": "Added 29.09.2026. An INTEGRATION is not a channel. A channel receives a message from a person and needs an adapter; an integration is a system we pull from on a schedule. SIS was briefly put in `channels` and the contract test caught it at once: every channel in the register must have an adapter, and SIS has none because nothing is delivered to us. It appears on the Channels screen beside the channels, because that is where somebody looks to see whether anything is coming in, but it is modelled apart.",
+  "integrations": {
+    "sis": {
+      "label": "SIS",
+      "mechanism": "We pull the applicant feed from the SIS on a schedule. It is not a message from a person: it is the study information system telling us where an applicant has reached.",
+      "direction": "inbound_poll",
+      "auth": "bearer_token",
+      "secretEnv": "SIS_API_TOKEN",
+      "dedupKey": "reference + application_id, latest version wins",
+      "readiness": "ready_for_configuration",
+      "externalBlocker": null,
+      "ownerPerson": "Ritvars",
+      "ownerAction": "SIS_API_TOKEN in the host, then switch from test to live",
+      "reconciliation": "sync_state holds the cursor and what the last run did."
+    }
+  },
   "_meta": "Facebook, Instagram, Messenger and WhatsApp are reached through ONE Meta Business Suite connection. That is an integration detail. Each remains a SEPARATE channel in the CRM for reporting, filtering, source and history: there is deliberately no combined \"Meta\" number, because it would hide where people actually came from. WhatsApp being inside the same shared inbox is NOT VERIFIED and must not be claimed.",
   "metaGroup": [
     "facebook",

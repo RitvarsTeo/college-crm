@@ -19,7 +19,7 @@ import { fileURLToPath } from 'node:url';
 
 import { statusOf, allStatuses, runCheck, checkPlanFor, requiredSettings, modeOf,
   assertNoSecretValues, STATES } from '../src/channeladmin.js';
-import { channelIds, channelDef } from '../src/inbound.js';
+import { channelIds, channelDef, integrationIds } from '../src/inbound.js';
 import { openDb } from '../src/db.js';
 import { hashPassword, SCRYPT, issueSession } from '../src/auth.js';
 
@@ -374,7 +374,11 @@ test('a signed-in ADMIN can see the channels', async (t) => {
   const me = await signedIn(s.port, 'admin@novikontas.org');
   const r = await request(s.port, 'GET', '/api/admin/channels', { headers: { cookie: me.cookie } });
   assert.equal(r.status, 200);
-  assert.equal(r.json.channels.length, channelIds().length);
+  // channels AND integrations: SIS is listed here beside them because this is where
+  // somebody looks to see whether anything is coming in, but it has no adapter and is
+  // modelled apart - see the contract test in adapters.test.js that caught exactly that.
+  assert.equal(r.json.channels.length, channelIds().length + integrationIds().length);
+  assert.ok(r.json.channels.some((c) => c.channel === 'sis' && c.isIntegration === true), 'SIS is on the list');
   assert.equal(r.json.identityIsProved, true);
 });
 

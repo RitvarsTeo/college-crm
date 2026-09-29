@@ -23,7 +23,7 @@ import * as sheets from './sheets.js';
 import * as snapshot from './snapshot.js';
 import { buildDemo } from './demo.js';
 import * as gate from './gate.js';
-import { verifyRequest, channelDef, channelIds, allChannelStatus, BadInbound,
+import { verifyRequest, channelDef, channelIds, integrationIds, integrationDef, allChannelStatus, BadInbound,
          parseInboundBody, handshake } from './inbound.js';
 import * as auth from './auth.js';
 import * as google from './google.js';
@@ -633,6 +633,37 @@ async function handshakeRows() {
   return Object.fromEntries(rows.map((r) => [r.channel, r]));
 }
 
+// What the two scheduled jobs last did. sync_state keeps one row per job: when it
+// ran and a small JSON of what it found. Never a secret and never a URL, so it can
+// go to the screen as it is. The phone job is stored under its old name 'pbx';
+// the screen keys everything by channel id, so it is mapped here and not there.
+async function syncRuns() {
+  const out = {};
+  for (const r of await db.prepare('SELECT name, ran_at, detail FROM sync_state').all()) {
+    let detail = null;
+    try { detail = JSON.parse(r.detail || 'null'); } catch { detail = null; }
+    out[r.name === 'pbx' ? 'phone' : r.name] = { at: r.ran_at, detail };
+  }
+  return out;
+}
+// An integration has no adapter and no provider handshake, so it can never earn
+// CONNECTED: the only thing its state can say is whether its settings are there.
+// What it actually brought in is the run record, which is the honest evidence.
+function integrationStatuses(env = process.env) {
+  return integrationIds().map((id) => {
+    const def = integrationDef(id);
+    const settings = (def.secretEnv ? [def.secretEnv] : []).map((name) => ({ name, present: Boolean(env[name]) }));
+    const missing = settings.filter((x) => !x.present).map((x) => x.name);
+    const mode = String(env['CHANNEL_MODE_' + id.toUpperCase()] || 'off').toLowerCase();
+    return {
+      channel: id, label: def.label, mechanism: def.mechanism, direction: def.direction,
+      state: missing.length ? 'NOT CONFIGURED' : 'CONFIGURED',
+      live: mode === 'test' || mode === 'live', mode,
+      endpoint: null, settings, missingSettings: missing, allSettingsPresent: missing.length === 0,
+      providerHandshakeAt: null, lastEventAt: null, events: 0, canTest: false, isIntegration: true,
+    };
+  });
+}
 async function channelCounts() {
   const out = {};
   // ONLY rows a real provider posted. The demo builder and the simulator write
@@ -922,15 +953,22 @@ export const handle = async (req, res) => {
           onOffIsSeparate: 'Whether a channel is switched ON is a different question from whether it works. Everything is OFF until an admin turns it on.',
           channels: channeladmin.allStatuses({
             env: process.env, checks: await latestChecks(), handshakes: await handshakeRows(),
-            countsByChannel: await channelCounts() }),
+            countsByChannel: await channelCounts() }).concat(integrationStatuses()),
+          runs: await syncRuns(),
         };
         channeladmin.assertNoSecretValues(payload, process.env);
         return json(res, 200, payload);
       }
 
-      if (id && !channelDef(id)) return json(res, 404, { error: 'no such channel: ' + id });
+      if (id && !channelDef(id) && !integrationDef(id)) return json(res, 404, { error: 'no such channel: ' + id });
 
       if (req.method === 'GET' && id && !action) {
+        // an integration answers from its own builder: it has no adapter to ask
+        if (!channelDef(id)) {
+          const one = integrationStatuses().find((x) => x.channel === id);
+          channeladmin.assertNoSecretValues(one, process.env);
+          return json(res, 200, one);
+        }
         const def = channelDef(id);
         const payload = {
           ...channeladmin.statusOf(id, { env: process.env, lastCheck: (await latestChecks())[id] || null,

@@ -469,6 +469,8 @@ tr.row:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
 .chstate.s-configured{color:var(--late)}
 .chstate.s-connected{color:var(--ok)}
 .chstate.s-error{color:var(--bad)}
+.chstate.s-manual{color:var(--t2)}
+.ch-test{color:var(--late);font-weight:600}
 .setting{display:inline-block;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;
   padding:1px 6px;border-radius:4px;border:1px solid var(--rule2);margin:2px 4px 2px 0;white-space:nowrap}
 .setting.miss{border-color:rgba(179,38,30,.5)}
@@ -4092,7 +4094,6 @@ async function viewMetrics() {
 // OK or MISSING. There is a test that greps the module's payload for the values,
 // and another that greps the response the browser actually receives.
 
-const CH_ORDER = ['ERROR', 'NOT CONFIGURED', 'CONFIGURED', 'CONNECTED'];
 const chClass = (state) => 's-' + String(state).toLowerCase().replace(/[^a-z]/g, '');
 
 function chSettings(list) {
@@ -4103,6 +4104,50 @@ function chSettings(list) {
 const chStep = (st) => `<li>${st.ok ? '<span class="ok-tick">OK</span>' : '<span class="no-tick">FAILED</span>'}
   ${esc(st.name)} <span class="prov">${esc(st.note || '')}</span></li>`;
 
+// ONE WORD PER CHANNEL, on one axis: can a lead reach us through this? It is the
+// same four-state model the server already computes - only the words changed,
+// because a screen that needs a table to explain its own vocabulary has the wrong
+// vocabulary, and that table is gone.
+//
+// "Receiving" still means exactly what CONNECTED meant: the PROVIDER reached us.
+// Our own check passing cannot earn it, and neither can a run in test mode, which
+// is stored as `simulated` on purpose - so a channel can be bringing things in
+// today and still read Ready, with the count beside it saying so.
+const CH_WORD = {
+  'ERROR':          { word: 'Failed',     cls: 's-error' },
+  'CONNECTED':      { word: 'Receiving',  cls: 's-connected' },
+  'CONFIGURED':     { word: 'Ready',      cls: 's-configured' },
+  'NOT CONFIGURED': { word: 'Not set up', cls: 's-notconfigured' },
+};
+const chWord = (c) => (c.direction === 'manual'
+  ? { word: 'By hand', cls: 's-manual' }
+  : CH_WORD[c.state] || CH_WORD['NOT CONFIGURED']);
+const CH_RANK = ['Failed', 'Receiving', 'Ready', 'By hand', 'Not set up'];
+
+// Test mode belongs next to ON, not hidden: a channel switched on in test is not
+// live, and everything it brings in is stored as simulated.
+const chOn = (c) => (c.direction === 'manual' ? '<span class="c-gap">-</span>'
+  : c.live ? 'ON' + (c.mode === 'test' ? ' <span class="ch-test">&middot; test</span>' : '')
+  : '<span class="c-gap">off</span>');
+
+// What actually arrived. For the two scheduled jobs that is the last run; for a
+// webhook channel it is what a provider has sent, else what is still missing.
+// Data, never an explanation.
+function chActivity(c, run) {
+  const plural = (n, one) => n + ' ' + (n === 1 ? one : one + 's');
+  if (run && run.at) {
+    const x = run.detail || {};
+    const bits = [];
+    if (c.channel === 'sis' && x.stored != null) bits.push(plural(x.stored, 'applicant'));
+    if (c.channel !== 'sis' && x.kept != null) bits.push(plural(x.kept, 'call'));
+    if (x.inbox) bits.push(x.inbox + ' to New Leads');
+    return esc((bits.join(' \u00b7 ') || 'ran') + ' \u00b7 ' + fmtDate(run.at));
+  }
+  if (c.events) return esc(plural(c.events, 'message') + ' \u00b7 ' + fmtDate(c.lastEventAt));
+  if ((c.missingSettings || []).length) return esc(plural(c.missingSettings.length, 'setting') + ' missing');
+  return '<span class="c-gap">-</span>';
+}
+
 async function viewChannels(which) {
   if (!isAdmin()) {
     $('#view').innerHTML = `<h1>Channels</h1>
@@ -4112,112 +4157,52 @@ async function viewChannels(which) {
   if (which) return viewChannel(which);
 
   const d = await api('/api/admin/channels');
+  const runs = d.runs || {};
   const rows = [...d.channels].sort((a, b) =>
-    CH_ORDER.indexOf(a.state) - CH_ORDER.indexOf(b.state) || a.label.localeCompare(b.label));
-
-  const counts = {};
-  for (const c of d.channels) counts[c.state] = (counts[c.state] || 0) + 1;
-  const live = d.channels.filter(c => c.live).length;
+    CH_RANK.indexOf(chWord(a).word) - CH_RANK.indexOf(chWord(b).word) || a.label.localeCompare(b.label));
 
   $('#view').innerHTML = `
     <h1>Channels</h1>
-    <div class="prov">${esc(d.honesty)}</div>
-
-    <div class="chips" style="margin:10px 0 4px">
-      ${CH_ORDER.map(st => `<span class="pill calm"><b class="chstate ${chClass(st)}">${st}</b> ${counts[st] || 0}</span>`).join(' ')}
-      <span class="pill ${live ? 'ok' : 'calm'}">${live} switched ON</span>
-    </div>
-    <div class="footnote" style="margin-bottom:14px">${esc(d.onOffIsSeparate)}</div>
-
     <div class="tablewrap"><table class="cartable">
-      <thead><tr>
-        <th>Channel</th><th>State</th><th>On</th><th>Settings</th>
-        <th>Endpoint</th><th>Last check</th><th>Provider last reached us</th>
-      </tr></thead>
+      <thead><tr><th>Channel</th><th>Status</th><th>On</th><th>Last activity</th></tr></thead>
       <tbody>
       ${rows.map(c => `
         <tr class="row" tabindex="0" style="cursor:pointer" onclick="location.hash='#/channels/${esc(c.channel)}'">
-          <td><b>${esc(c.label)}</b><div class="footnote">${esc(c.summary)}</div></td>
-          <td><span class="chstate ${chClass(c.state)}">${esc(c.state)}</span></td>
-          <td>${c.live ? '<span class="pill ok">ON</span>' : '<span class="pill calm">off</span>'}</td>
-          <td>${chSettings(c.settings)}</td>
-          <td><span class="mono">${esc(c.endpoint || '-')}</span></td>
-          <td>${c.lastCheckAt
-              ? `${c.lastCheckOk ? '<span class="pill ok">passed</span>' : '<span class="pill warn">FAILED</span>'}
-                 <div class="footnote">${fmtDate(c.lastCheckAt)}${c.checkStale ? ' - stale' : ''}</div>`
-              : '<span class="prov">never</span>'}</td>
-          <td>${c.providerHandshakeAt
-              ? `<span class="pill ok">yes</span><div class="footnote">${fmtDate(c.providerHandshakeAt)}</div>`
-              : '<span class="prov">never</span>'}</td>
+          <td><b>${esc(c.label)}</b></td>
+          <td><span class="chstate ${chWord(c).cls}">${esc(chWord(c).word)}</span></td>
+          <td>${chOn(c)}</td>
+          <td>${chActivity(c, runs[c.channel])}</td>
         </tr>`).join('')}
       </tbody>
-    </table></div>
-
-    <h2 style="margin-top:22px">What the four words mean</h2>
-    <table class="cartable"><tbody>
-      ${Object.entries(d.statesMean).map(([k, v]) =>
-        `<tr><td style="width:170px"><span class="chstate ${chClass(k)}">${esc(k)}</span></td>
-         <td>${esc(v)}</td></tr>`).join('')}
-    </tbody></table>`;
+    </table></div>`;
 }
+
 
 async function viewChannel(id) {
   const c = await api('/api/admin/channels/' + encodeURIComponent(id));
+  const d = await api('/api/admin/channels');
+  const run = (d.runs || {})[c.channel] || null;
   const canSwitchOn = c.allSettingsPresent && (!c.canTest || c.lastCheckOk === true);
+  const row = (k, v) => `<div class="kv"><div>${esc(k)}</div><div>${v}</div></div>`;
 
   $('#view').innerHTML = `
     <a class="btn ghost" href="#/channels">&larr; All channels</a>
-    <h1 style="margin-top:12px">${esc(c.label)}
-      <span class="chstate ${chClass(c.state)}" style="font-size:13px">${esc(c.state)}</span>
-      ${c.live ? '<span class="pill ok">ON</span>' : '<span class="pill calm">off</span>'}</h1>
-    <div class="prov">${esc(c.summary)}</div>
-
-    <h2>How it works</h2>
-    <div class="kv"><div>Mechanism</div><div>${esc(c.mechanism || '-')}</div></div>
-    <div class="kv"><div>CRM endpoint</div><div class="mono">${esc(c.endpoint || 'none')}</div></div>
-    <div class="kv"><div>Settings it needs</div><div>${chSettings(c.settings)}</div></div>
-    <div class="kv"><div>Waiting on</div><div>${c.externalBlocker
-      ? `${esc(c.ownerPerson || 'nobody named')} - ${esc(c.ownerAction || '')}
-         <div class="footnote">${esc(c.externalBlocker)}</div>`
-      : 'nothing'}</div></div>
-
-    <h2>Checking it</h2>
-    ${c.canTest ? `
-      <div class="prov">${esc(c.testWhat)}</div>
-      <div class="footnote" style="margin:6px 0">
-        <b>A pass proves:</b> ${esc(c.testProves || '-')}<br>
-        <b>A pass does NOT prove:</b> ${esc(c.testDoesNotProve || '-')}</div>
-      <button class="btn" id="chCheck" onclick="runChannelCheck('${esc(c.channel)}')">Run the check</button>
-      <div id="chResult" style="margin-top:10px"></div>`
-      : '<div class="prov">There is nothing here that can be checked automatically.</div>'}
-
-    <h2>Switching it ${c.live ? 'off' : 'on'}</h2>
-    <div class="prov">${c.live
-      ? 'This channel is accepting real events. Switching it off stops that immediately.'
-      : 'It is off. It accepts nothing from a provider until it is switched on, and it cannot be '
-        + 'switched on until its settings are there and a check has passed.'}</div>
-    <div style="margin-top:8px">
+    <h1 style="margin-top:12px">${esc(c.label)}</h1>
+    ${row('Status', `<span class="chstate ${chWord(c).cls}">${esc(chWord(c).word)}</span>`)}
+    ${row('On', chOn(c))}
+    ${run && run.at ? row('Last run', esc(fmtDate(run.at))) : ''}
+    ${run && run.at ? row('Came in', chActivity(c, run)) : ''}
+    ${row('Settings', chSettings(c.settings))}
+    <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
+      ${c.canTest ? `<button class="btn ghost" id="chCheck" onclick="runChannelCheck('${esc(c.channel)}')">Check</button>` : ''}
       ${c.live
-        ? `<button class="btn ghost" onclick="setChannelMode('${esc(c.channel)}','off')">Switch OFF</button>`
-        : `<button class="btn" ${canSwitchOn ? '' : 'disabled'}
-             onclick="setChannelMode('${esc(c.channel)}','live')">Switch ON</button>
-           ${canSwitchOn ? ''
-             : '<div class="footnote">Not available: the settings are incomplete, or no check has passed yet.</div>'}`}
-      <div id="chMode" style="margin-top:8px"></div>
+        ? `<button class="btn ghost" onclick="setChannelMode('${esc(c.channel)}','off')">Switch off</button>`
+        : `<button class="btn" ${canSwitchOn ? '' : 'disabled'} onclick="setChannelMode('${esc(c.channel)}','live')">Switch on</button>`}
     </div>
-
-    ${(c.checks && c.checks.length) ? `<h2>Every check that has been run</h2>
-      <table class="cartable">
-        <thead><tr><th>When</th><th>Result</th><th>Kind</th><th>What it found</th><th>By</th></tr></thead>
-        <tbody>${c.checks.map(x => `<tr>
-          <td>${fmtDate(x.at)}</td>
-          <td>${x.ok ? '<span class="pill ok">passed</span>' : '<span class="pill warn">FAILED</span>'}</td>
-          <td>${esc(x.kind)}</td><td class="footnote">${esc(x.detail || '')}</td><td>${esc(x.by || '')}</td>
-        </tr>`).join('')}</tbody></table>` : ''}
-
-    ${(c.connectSteps || []).length ? `<h2>What connecting it involves</h2>
-      <ol class="steps">${c.connectSteps.map(x => `<li>${esc(x)}</li>`).join('')}</ol>` : ''}`;
+    <div id="chResult" style="margin-top:10px"></div>
+    <div id="chMode" style="margin-top:8px"></div>`;
 }
+
 
 async function runChannelCheck(id) {
   const btn = $('#chCheck');

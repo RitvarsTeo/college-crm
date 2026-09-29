@@ -21,6 +21,15 @@ export const CHANNELS = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'ch
 export const channelIds = () => Object.keys(CHANNELS.channels);
 export const channelDef = (id) => CHANNELS.channels[id] || null;
 
+// An INTEGRATION is not a channel. A channel receives a message from a person and
+// needs an adapter; an integration is a system we PULL from on a schedule, so
+// nothing is delivered to us and there is no adapter to write. SIS was briefly put
+// in channels and the contract test caught it in one run. They are listed together
+// on the Channels screen, because that is where somebody looks to see whether
+// anything is coming in, and modelled apart everywhere else.
+export const integrationIds = () => Object.keys(CHANNELS.integrations || {});
+export const integrationDef = (id) => (CHANNELS.integrations || {})[id] || null;
+
 // ---------------------------------------------------------------- the shape --
 // Every field a normalised inbound event may carry. Anything a provider sends
 // that is not in here stays in `raw` and never reaches the CRM's own tables.
