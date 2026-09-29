@@ -145,6 +145,28 @@ dpl_BQ2rpkN6ggPPktnFekPPkrBaGBSj** (588/588; live page = commit + sign-in script
 - Texts cut to a third (Ritvars): People "Click a row to edit.", its count "All N people.", Next
   Steps "What the team has to do.", New Leads "New arrivals land here first."
 - Checked: desktop light/dark, phone light/dark. Tests: test/kit13_polish.test.js.
+**Aigars compliance 29.09.2026 - lifecycle facts, comments, phone chart, copy - LIVE**
+- Lifecycle facts "Application form started" / "Matriculated" - **1780c71**, dpl_8GK28PkftV76rZzHWz6TgiEDJg91,
+  615/615. src/lifecycle.js: PROVISIONAL mapping in one place (SIS status 'started' / 'matriculated',
+  dated by changedAt; the SIS document has no startedAt/matriculatedAt; nothing else writes a fact),
+  idempotent (one per person, fact and SIS application). **Schema change on production, one table:**
+  lifecycle_events (PK person_id, fact, source, source_ref), created only if missing, RLS on. Read-only
+  check after deploy: exists, RLS on, 0 rows, 0 of 192 people show a fact, Postgres plans the insert
+  as ON CONFLICT DO NOTHING on its key; src/lifecycle.js not public (404). Shown on the person page,
+  Journey card + side card, Outcomes - never a stage. Test: test/lifecycle.test.js. docs/LIFECYCLE.md.
+  **NOT RUNNING YET:** the SIS fetch (token, since/cursor paging, 5-minute run) is the channels branch
+  channels-pbx-sis (4f14180), not merged; it needs the one recordSisLifecycle() call named in
+  docs/LIFECYCLE.md, Vercel Pro for */5 crons, SIS_API_TOKEN in Vercel, then one real reply to confirm
+  the mapping. The channels session was not reachable to be told (29.09).
+- Comments, dead ends, phone chart, copy - **2f67553 + 43a3f9c**, dpl_BR6G7qGwFLNrSBs6L6T77KdGJ1oe, 619/619
+  (2f67553 alone failed 7 card tests; the deploy gate refused it and nothing was deployed until the
+  test fix 43a3f9c): the Journey card previews the NEWEST comment written on the person page (Add a
+  note / Log a call), else the imported note; the thread is the person page's History (read-only on
+  production: the query runs; 0 of 192 have a written comment yet). Phone month chart drawn 360 wide,
+  labels ~11 px (were 5-6 px). Removed: Home chart caption, Settings sub-lines, the feedback inbox
+  and box lines (incl. the untrue "stays on this machine"), the report's "count of rows". Kept: data
+  warnings (To fix, Data to tidy). Test: test/aigars_gaps.test.js.
+
 **Unified audit work 29.09.2026 (Projects/College CRM/UNIFIED_AUDIT_WORK_2026-09-29.md) - all four
 items LIVE**, each deployed from the clean folder and read back (live page = commit + sign-in script,
 byte-identical; 401s; 0 leaks):
