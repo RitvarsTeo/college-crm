@@ -145,6 +145,26 @@ dpl_BQ2rpkN6ggPPktnFekPPkrBaGBSj** (588/588; live page = commit + sign-in script
 - Texts cut to a third (Ritvars): People "Click a row to edit.", its count "All N people.", Next
   Steps "What the team has to do.", New Leads "New arrivals land here first."
 - Checked: desktop light/dark, phone light/dark. Tests: test/kit13_polish.test.js.
+**SIS feed merged and connected to the lifecycle facts - DEPLOYED 29.09.2026, commits 78108be + f9addb8,
+deployment dpl_93UAHjoPd1xi8qC4hFTG8rv9RRRd** (640/640; live page = commit + sign-in script, byte-identical).
+- Taken from the channels branch: ONLY 4f14180 (SIS client lib/sis.js, sync src/sync.js, storage
+  sis_applicants + sync_state, the PBX poller that shares those files, api/cron/*), cherry-picked as
+  78108be with no conflict on today's v1-test. NOT taken: dbbb027, 8777509, ebe0044 (the channels
+  register, the Channels screen, their docs) - the feed does not need them; they stay on the branch.
+- f9addb8: applyToPerson() calls recordSisLifecycle() for every SIS row linked to a person (stats.facts);
+  4 new tests (started -> fact once, matriculated added later, submitted/unmatched write nothing, the
+  cursor page is followed). vercel.json has NO */5 cron (Vercel Hobby refuses it): the schedule is the
+  deployment dependency. scripts/sis_first_look.mjs = the read-only first look at a real reply.
+- Production, checked: /api/cron/sis-sync answers 500 "Missing CRON_SECRET" with no or a wrong bearer
+  (does nothing); lib/, src/ not public (404). Read-only DB: sis_applicants, sync_state, pbx_calls,
+  lifecycle_events exist with RLS on, all 0 rows; the SIS channel mode has no row (off); only schema crm.
+- Vercel env (names only): SIS_API_TOKEN, CRON_SECRET, PBX_API_TOKEN are NOT set. So no real SIS
+  reply has been received and the mapping is still PROVISIONAL.
+- REMAINS, in order: (1) Ritvars adds SIS_API_TOKEN + CRON_SECRET in Vercel; (2) the first look
+  (`vercel env run -e production -- node scripts/sis_first_look.mjs`), confirm/change SIS_LIFECYCLE_MAP;
+  (3) CHANNEL_MODE_SIS=test, one call of the route with the secret, check; then live; (4) the schedule:
+  Vercel Pro + the */5 cron, or another scheduler calling the route. docs/PBX_SIS_SYNC.md, docs/LIFECYCLE.md.
+
 **Aigars compliance 29.09.2026 - lifecycle facts, comments, phone chart, copy - LIVE**
 - Lifecycle facts "Application form started" / "Matriculated" - **1780c71**, dpl_8GK28PkftV76rZzHWz6TgiEDJg91,
   615/615. src/lifecycle.js: PROVISIONAL mapping in one place (SIS status 'started' / 'matriculated',
