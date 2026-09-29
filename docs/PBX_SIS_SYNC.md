@@ -47,9 +47,13 @@ there is no Supabase service key anywhere. On Supabase use the **direct or sessi
    in vercel.json (the phone the same). The database does not have to move first: the routes run on
    today's Neon database with `CRM_PG_SCHEMA=crm`, and move with it to Supabase later.
 
+## Retention
+
+Decided by Ritvars 29.09.2026: `pbx_calls` and `sis_applicants` rows are deleted after 13 months, at the end of
+each run of their job. What reached a person's timeline stays with the person.
+
 ## Open
 
-- Retention for `pbx_calls` and `sis_applicants` is not decided; nothing purges them.
 - The tables (`pbx_calls`, `sis_applicants`, `sync_state`) are created on production by the boot
   schema like every other; the sync SQL itself has not run against Postgres until step 3.
 - `config/channels.json` still describes the old phone destination and has no SIS entry; that file

@@ -47,6 +47,23 @@ async function onePerson(db, contact) {
   return ids.length === 1 ? ids[0] : null;
 }
 
+// ---------------------------------------------------------------- retention --
+// Decided by Ritvars 29.09.2026: the raw phone and SIS records are kept 13 months
+// (one admission year plus the same month a year ago), then deleted. What reached
+// a person's timeline (events, lifecycle facts) stays with the person.
+export const RETENTION_MONTHS = 13;
+
+export function retentionCutoff(now = new Date()) {
+  const d = new Date(now.getTime());
+  d.setUTCMonth(d.getUTCMonth() - RETENTION_MONTHS);
+  return d.toISOString();
+}
+
+async function purgeOld(db, table, column, now) {
+  const r = await db.prepare(`DELETE FROM ${table} WHERE ${column} < ?`).run(retentionCutoff(now));
+  return (r && (r.changes ?? r.rowCount)) || 0;
+}
+
 // ================================================================== PHONE ===
 
 function menuFor(queue) {
@@ -150,6 +167,7 @@ export async function syncPbx(db, { now = new Date(), minutes = WINDOW_MINUTES,
     window: { from: toRigaStamp(new Date(firstFrom)), to: toRigaStamp(new Date(reached)), zone: ZONE,
       minutes: Math.round((reached - firstFrom) / 60000) },
     pieces, caughtUp, fetched, kept, skipped, ...out, safeUrl };
+  result.purged = await purgeOld(db, 'pbx_calls', 'called_at', now);
   return result;
 }
 
@@ -295,5 +313,6 @@ export async function syncSis(db, { now = new Date(), env = process.env, fetchIm
   // Only a complete run moves the bookmark; an incomplete one asks again next time.
   const value = got.complete ? newest : since;
   await saveState(db, 'sis', value, stats, at);
-  return { ok: true, ran: true, channel: 'sis', mode, since, next: value, complete: got.complete, ...stats };
+  const purged = await purgeOld(db, 'sis_applicants', 'changed_at', now);
+  return { ok: true, ran: true, channel: 'sis', mode, since, next: value, complete: got.complete, ...stats, purged };
 }

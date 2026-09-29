@@ -199,6 +199,26 @@ test('phone catch-up: a failed piece keeps the bookmark at the last good piece',
   assert.equal(mark.value, new Date(NOW.getTime() - 24 * 3600000 + 4 * 15 * 60000).toISOString());
 });
 
+// ---------------------------------------------------- retention, 13 months ---
+
+test('retention: a phone call older than 13 months is deleted, a newer one is kept, the timeline entry stays', async () => {
+  const db = await fresh();
+  const p = await person(db, { phone: '29111222' });
+  const old = new Date(NOW.getTime() - 400 * 86400000);
+  await syncPbx(db, { now: old, env: ON, fetchImpl: pbxFetch([call({ uniqueid: 'old-1', created_at: '2025-08-24 11:00:00' })]) });
+  await db.prepare("DELETE FROM sync_state WHERE name = 'pbx_until'").run();
+  const r = await syncPbx(db, { now: NOW, env: ON, fetchImpl: pbxFetch([call({ uniqueid: 'new-1' })]) });
+  assert.equal(r.purged, 1);
+  const left = (await db.prepare('SELECT uniqueid FROM pbx_calls').all()).map((x) => x.uniqueid);
+  assert.deepEqual(left, ['new-1']);
+  assert.equal((await events(db, p.id)).filter((e) => e.kind === 'call').length, 2, 'the person keeps both calls');
+});
+
+test('retention: the cutoff is 13 calendar months back', async () => {
+  const { retentionCutoff } = await import('../src/sync.js');
+  assert.equal(retentionCutoff(new Date('2026-09-29T10:00:00.000Z')), '2025-08-29T10:00:00.000Z');
+});
+
 // A fake SIS: pages of applicants, and a record of every request it was sent.
 function fakeSis(pages) {
   const seen = [];

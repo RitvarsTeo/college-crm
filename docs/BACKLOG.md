@@ -145,6 +145,10 @@ dpl_BQ2rpkN6ggPPktnFekPPkrBaGBSj** (588/588; live page = commit + sign-in script
 - Texts cut to a third (Ritvars): People "Click a row to edit.", its count "All N people.", Next
   Steps "What the team has to do.", New Leads "New arrivals land here first."
 - Checked: desktop light/dark, phone light/dark. Tests: test/kit13_polish.test.js.
+**Retention 13 months - DECIDED + IMPLEMENTED 29.09.2026** (Ritvars: "ok 13 months"). Raw `pbx_calls` and
+`sis_applicants` rows older than 13 months are deleted at the end of each run; timeline entries stay with the person.
+Also handed to CRM V1 on his yes: New Leads phone rows show the caller's number (tel: link) instead of "Unknown".
+
 **Phone catches up - LIVE 29.09.2026, commit 7ded9c2, dpl_DznzBX4SMXqXMWa4tfqCUy9zZxiv** (656/656). Ritvars: a run should
 bring in all the calls, daily at 08:15 Riga. A run now walks from the bookmark (`pbx_until`) to now in 15-minute
 pieces (at most 24 h, stops at 40 s and carries on next run). Schedule 05:15 UTC = 08:15 Riga, 07:15 after 25.10.
