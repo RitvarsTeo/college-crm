@@ -147,21 +147,7 @@ export const ADAPTERS = {
   messenger: (raw) => metaMessage('messenger', raw),
 
   // ------------------------------------------------------------ whatsapp --
-  whatsapp: (raw) => {
-    const value = raw.entry?.[0]?.changes?.[0]?.value || {};
-    const msg = (value.messages || [])[0] || {};
-    const contact = (value.contacts || [])[0] || {};
-    return makeInbound('whatsapp', {
-      externalEventId: need(msg.id, 'whatsapp', 'message id'),
-      externalPersonId: str(msg.from || contact.wa_id),
-      receivedAt: iso(Number(msg.timestamp)) || now(),
-      source: 'whatsapp',
-      senderName: str(contact.profile?.name),
-      senderPhone: str(msg.from || contact.wa_id),
-      messageBody: str(msg.text?.body),
-      raw: { ...raw, _media: msg.image || msg.document ? { type: msg.type, id: (msg.image || msg.document).id } : null },
-    });
-  },
+  whatsapp: (raw) => whatsappAll(raw)[0],
 
   // ----------------------------------------------------------- mailchimp --
   // Activity about somebody, not a new person. Mailchimp sends no event id, so
@@ -238,6 +224,77 @@ const QUEUE_INTENT = {
   '1001*Q-OTHER': 'other',
 };
 
+// EVERY message in a WhatsApp delivery. A value carries messages[] and contacts[];
+// the contact is matched to the message by wa_id, and falls back to the first when
+// the provider sends only one contact for several messages from the same person.
+function whatsappAll(raw) {
+  const out = [];
+  for (const entry of raw.entry || []) {
+    for (const change of entry.changes || []) {
+      const value = change.value || {};
+      const contacts = value.contacts || [];
+      for (const msg of value.messages || []) {
+        const contact = contacts.find((c) => c.wa_id === msg.from) || contacts[0] || {};
+        out.push(makeInbound('whatsapp', {
+          externalEventId: need(msg.id, 'whatsapp', 'message id'),
+          externalPersonId: str(msg.from || contact.wa_id),
+          receivedAt: iso(Number(msg.timestamp)) || now(),
+          source: 'whatsapp',
+          senderName: str(contact.profile?.name),
+          senderPhone: str(msg.from || contact.wa_id),
+          messageBody: str(msg.text?.body),
+          raw: { ...raw, _media: msg.image || msg.document ? { type: msg.type, id: (msg.image || msg.document).id } : null },
+        }));
+      }
+    }
+  }
+  // an empty delivery is still a bad payload, and need() is what says so
+  if (!out.length) need(null, 'whatsapp', 'message id');
+  return out;
+}
+
+// EVERY lead form and EVERY direct message in a Meta delivery.
+function metaAll(channel, raw) {
+  const out = [];
+  for (const entry of raw.entry || []) {
+    for (const change of entry.changes || []) {
+      if (change.field === 'leadgen') out.push(metaLead(channel, change.value || {}, raw));
+    }
+    for (const m of entry.messaging || []) out.push(metaDirect(channel, m, raw));
+  }
+  if (!out.length) return [metaMessage(channel, raw)];   // let the old path raise the right error
+  return out;
+}
+
+function metaLead(channel, v, raw) {
+  return makeInbound(channel, {
+    externalEventId: need(v.leadgen_id, channel, 'leadgen_id'),
+    externalPersonId: str(v.form_id),
+    receivedAt: iso(v.created_time) || now(),
+    source: channel,
+    senderName: str(v.full_name),
+    senderEmail: str(v.email),
+    senderPhone: str(v.phone_number),
+    extracted: { programme: str(v.programme), intent: 'lead_form' },
+    attribution: { ad_id: str(v.ad_id), campaign_id: str(v.campaign_id) },
+    raw,
+  });
+}
+
+function metaDirect(channel, m, raw) {
+  return makeInbound(channel, {
+    externalEventId: need(m.message?.mid, channel, 'message id'),
+    externalPersonId: str(m.sender?.id),
+    externalContactId: str(m.recipient?.id),
+    receivedAt: iso(m.timestamp) || now(),
+    source: channel,
+    senderName: str(m.sender?.name),
+    senderHandle: str(m.sender?.username || m.sender?.id),
+    messageBody: str(m.message?.text),
+    raw,
+  });
+}
+
 function metaMessage(channel, raw) {
   const entry = raw.entry?.[0] || {};
   const change = entry.changes?.[0];
@@ -287,6 +344,18 @@ function typedIn(channel, raw) {
     extracted: { programme: str(raw.programme) },
     raw: { ...raw, _typedBy: str(raw.by) },
   });
+}
+
+// EVERY event in one delivery. adapt() stays as it is - one event - because three
+// call sites and the suite rest on that; this is what the webhook route walks, so a
+// delivery carrying three messages becomes three rows instead of one.
+export function adaptAll(channel, raw) {
+  const fn = ADAPTERS[channel];
+  if (!fn) throw new BadInbound(`no adapter for channel: ${channel}`);
+  if (!raw || typeof raw !== 'object') throw new BadInbound(`${channel}: the payload is not an object`);
+  if (channel === 'whatsapp') return whatsappAll(raw);
+  if (channel === 'facebook' || channel === 'instagram' || channel === 'messenger') return metaAll(channel, raw);
+  return [fn(raw)];
 }
 
 export function adapt(channel, raw) {

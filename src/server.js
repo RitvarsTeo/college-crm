@@ -14,7 +14,7 @@ import { findMatches as matchPeople, duplicateCheck } from './identity.js';
 import { lifecycleOf, sisProgress, sisProgressByPerson } from './lifecycle.js';
 import { firstLook } from './sisfirstlook.js';
 import { redactSis } from '../lib/sis.js';
-import { adapt, toIntake, hasAdapter, adapterIds } from './adapters.js';
+import { adapt, adaptAll, toIntake, hasAdapter, adapterIds } from './adapters.js';
 import { fixtureFor } from './fixtures.js';
 import { buildPayload, scenariosFor, allScenarios, CHANNEL_LABELS, META_GROUP } from './scenarios.js';
 import { report as buildReport, reportRows, boldRowsOf, periodOf, EXPORT_SECTIONS, DEFAULT_SECTIONS } from './reports.js';
@@ -1904,15 +1904,25 @@ export const handle = async (req, res) => {
       }
 
       try {
-        const ev = adapt(channel, payload);
-        if (ev.attribution && channel === 'agent') ev.attribution = { ...ev.attribution, verified: Boolean(check.partner) };
-        // Idempotency: await receive() returns {duplicate:true} when it has already
-        // seen this channel + external id. A provider retry is normal.
-        const r = await receive(db, { ...toIntake(ev), source: simulated ? 'simulated' : 'provider' });
-        recordInbound(channel, ev.externalEventId, r.duplicate ? 'duplicate' : r.filtered ? 'filtered' : 'queued', check.how);
-        return json(res, 200, { ok: true, channel, externalEventId: ev.externalEventId,
-          outcome: r.duplicate ? 'already had it' : r.filtered ? 'filtered out before the queue' : 'waiting to be looked at',
-          inboundId: r.id, verified: check.how, read: read.as });
+        // EVERY message in the delivery, not the first. Meta can put several entries in
+        // one envelope, several changes in an entry, several messaging events in a
+        // change, and WhatsApp several messages in one value; all of those used to be
+        // read as [0] and the rest dropped, with a 200 going back to the provider.
+        const evs = adaptAll(channel, payload);
+        const done = [];
+        for (const ev of evs) {
+          if (ev.attribution && channel === 'agent') ev.attribution = { ...ev.attribution, verified: Boolean(check.partner) };
+          // Idempotency: await receive() returns {duplicate:true} when it has already
+          // seen this channel + external id. A provider retry is normal.
+          const r = await receive(db, { ...toIntake(ev), source: simulated ? 'simulated' : 'provider' });
+          recordInbound(channel, ev.externalEventId, r.duplicate ? 'duplicate' : r.filtered ? 'filtered' : 'queued', check.how);
+          done.push({ externalEventId: ev.externalEventId, inboundId: r.id,
+            outcome: r.duplicate ? 'already had it' : r.filtered ? 'filtered out before the queue' : 'waiting to be looked at' });
+        }
+        const first = done[0];
+        return json(res, 200, { ok: true, channel, externalEventId: first.externalEventId,
+          outcome: first.outcome, inboundId: first.id ?? first.inboundId,
+          messages: done.length, all: done, verified: check.how, read: read.as });
       } catch (err) {
         recordInbound(channel, null, 'error', err.message);
         if (err instanceof BadInbound) return json(res, 400, { error: err.message, detail: err.detail });
