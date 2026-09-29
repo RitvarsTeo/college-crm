@@ -87,7 +87,7 @@ test('a next step says what KIND it is: one mark per group, and no new colour', 
     'a step that matches no configured type keeps the plain arrow instead of being put in a group');
 
   // one colour for all of them, and none smuggles its own in
-  assert.match(APP, /html\.ui-c \.c-tico\{[^}]*color:var\(--pet\)\}/, 'the marks share the one teal');
+  assert.match(APP, /html\.ui-c \.c-tico\{[^}]*color:var\(--t3\)\}/, 'the marks share one quiet ink');
   assert.doesNotMatch(block, /fill="#|stroke="#|style="/, 'no mark carries a colour of its own');
 });
 
