@@ -145,6 +145,14 @@ dpl_BQ2rpkN6ggPPktnFekPPkrBaGBSj** (588/588; live page = commit + sign-in script
 - Texts cut to a third (Ritvars): People "Click a row to edit.", its count "All N people.", Next
   Steps "What the team has to do.", New Leads "New arrivals land here first."
 - Checked: desktop light/dark, phone light/dark. Tests: test/kit13_polish.test.js.
+**People filters as dropdowns - LIVE 29.09.2026, dpl_5vWRBip8K4L3E9ooQZRfnc8iuz9T** (647/647): Aigars' "filtrus ... nevis vnk pills" was
+written under the PEOPLE screenshot. Stage, Programme, Next step, Owner, Came from, Details - the Journey's look, combined, every old
+pill kept as an option. Test: test/people_filters.test.js.
+NEXT (Ieva, 29.09): (1) "kā var pievienot jaunu leadu?" - Add person is on People only; make adding a lead findable where she works;
+(2) Next Steps rows show the contact details and the notes right there, without opening the profile ("lai es uzreiz saprotu, kas bija
+runāts, un piezvanīt vai uzrakstīt"). Then Aigars' open three: a colour/icon per next-step type, a Journey summary for management,
+the real channels.
+
 **Aigars item 4 ("Application form started" / "Matriculated" from the SIS, automatically): CAPABILITY DONE 29.09.2026** - Ritvars: "we are just creating and testing ... i talk about capabilities". Built, connected, deployed, first real sync run; real people follow as the SIS fills.
 
 **THE FIRST REAL SIS SYNC - 29.09.2026 14:30 Riga, test mode** (Ritvars added CRON_SECRET; CHANNEL_MODE_SIS=test
