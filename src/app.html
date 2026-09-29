@@ -1674,13 +1674,15 @@ async function viewLeadsC() {
 // programme, stage, next step and notes, without going to the person page. Every save
 // goes through the existing routes, so their rules hold: no empty name, a reason to
 // stop working with somebody, and a next step can be moved or done but not renamed.
-let C_PF = new Set(); let C_PQ = ''; let C_PPROG = ''; let C_PEDIT = null; let C_PMSG = ''; let C_PDATA = null; let C_PSCROLL = false;
+// People filters (Aigars: "filtrus ... nevis vnk pills ar vienu izveli"): the Journey's dropdowns, combined.
+const C_PF_EMPTY = () => ({ stage: '', programme: '', due: '', owner: '', source: '', data: '' });
+let C_PF = C_PF_EMPTY(); let C_PQ = ''; let C_PEDIT = null; let C_PMSG = ''; let C_PDATA = null; let C_PSCROLL = false;
 // Stage names come from config (they are still a working version): the label a person
 // reads, and the stage that plays the "closed" role, which needs a reason.
 const cStage = (id) => ((CFG.stages || []).find((s) => s.id === id) || {}).label || id || '';
 const cClosedStage = () => (CFG.stageRoles || {}).closed;
 // Journey's Edit opens the same person in People, unfiltered, scrolled to the row.
-function cEditFromJourney(id) { C_PF = new Set(); C_PQ = ''; C_PPROG = ''; C_PEDIT = id; C_PMSG = ''; C_PSCROLL = true; location.hash = '#/people'; }
+function cEditFromJourney(id) { C_PF = C_PF_EMPTY(); C_PQ = ''; C_PEDIT = id; C_PMSG = ''; C_PSCROLL = true; location.hash = '#/people'; }
 async function viewPeopleC() {
   const [people, tasks] = await Promise.all([cPeopleRows(), api('/api/tasks?scope=open')]);
   const taskOf = new Map(); tasks.forEach((t) => { if (!taskOf.has(t.person_id)) taskOf.set(t.person_id, t); });
@@ -1690,18 +1692,10 @@ async function viewPeopleC() {
 function cDrawPeople() {
   const { people, taskOf } = C_PDATA;
   const known = new Set(CFG.programmes || []);
-  const chips = [['open', 'Open'], ['none', 'No next step'], ['over', 'Overdue'], ['nocontact', 'No contact details'], ['odd', 'Programme not in the list']];
-  const words = { open: 'open', none: 'with no next step', over: 'with an overdue step', nocontact: 'with no email or phone', odd: 'whose programme is not one of the list' };
-  let ps = people;
-  if (C_PF.has('open')) ps = ps.filter((p) => !C_TERMINAL.includes(p.status));
-  if (C_PF.has('none')) ps = ps.filter((p) => !C_TERMINAL.includes(p.status) && !taskOf.has(p.id));
-  if (C_PF.has('over')) ps = ps.filter((p) => taskOf.has(p.id) && cWhenClass(taskOf.get(p.id).due_at) === 'over');
-  if (C_PF.has('nocontact')) ps = ps.filter((p) => !p.email && !p.phone);
-  if (C_PF.has('odd')) ps = ps.filter((p) => p.programme && !known.has(p.programme));
-  if (C_PPROG) ps = ps.filter((p) => p.programme === C_PPROG);
+  let ps = people.filter((p) => cPeopleMatch(p, taskOf.get(p.id), C_PF, known));
   if (C_PQ) { const q = C_PQ.toLowerCase(); ps = ps.filter((p) => [p.name, p.email, p.phone].some((v) => String(v || '').toLowerCase().includes(q))); }
-  const parts = [...C_PF].map((f) => words[f]); if (C_PPROG) parts.push('interested in ' + C_PPROG); if (C_PQ) parts.push(`matching "${C_PQ}"`);
-  const explain = parts.length ? `${ps.length} of ${people.length} people - ${parts.join(', ')}.` : `All ${people.length} people.`;
+  const narrowed = Object.values(C_PF).some(Boolean) || C_PQ;
+  const explain = narrowed ? `${ps.length} of ${people.length} people` : `All ${people.length} people.`;
   const contact = (p) => [p.email, p.phone].filter(Boolean).join(' · ');
   const row = (p) => { const t = taskOf.get(p.id); const open = !C_TERMINAL.includes(p.status);
     return `<tr class="row${C_PEDIT === p.id ? ' c-sel' : ''}" tabindex="0" onclick="C_PEDIT=${C_PEDIT === p.id ? 'null' : `'${esc(p.id)}'`};C_PMSG='';cDrawPeople()">
@@ -1713,14 +1707,48 @@ function cDrawPeople() {
       ${C_PEDIT === p.id ? `<tr class="c-edit"><td colspan="5">${cEditForm(p, t)}</td></tr>` : ''}`; };
   $('#view').innerHTML = `<div class="c-head"><div><h1>People</h1><p>Click a row to edit.</p></div>
       <div class="act"><input class="c-search" id="cPQ" placeholder="Search name, email or phone" value="${esc(C_PQ)}" aria-label="Search people"><button class="btn" onclick="openAdd()">Add person</button></div></div>
-    <div class="c-chips">${chips.map(([k, l]) => `<button class="c-chip" aria-pressed="${C_PF.has(k)}" onclick="C_PF.has('${k}')?C_PF.delete('${k}'):C_PF.add('${k}');cDrawPeople()">${l}</button>`).join('')}
-      <select class="c-chip" aria-label="Programme" onchange="C_PPROG=this.value;cDrawPeople()"><option value="">Programme: any</option>${(CFG.programmes || []).map((pr) => `<option ${pr === C_PPROG ? 'selected' : ''}>${esc(pr)}</option>`).join('')}</select></div>
+    ${cPeopleFilters(people)}
     <p class="c-explain">${explain}</p>
     ${C_PMSG ? `<div class="c-filter">${esc(C_PMSG)}</div>` : ''}
     <div class="c-sheet c-scroll"><table class="c-pt"><thead><tr><th>Name</th><th>Programme</th><th>Stage</th><th>Next step</th><th>When</th></tr></thead>
       <tbody>${ps.map(row).join('') || '<tr><td colspan="5" class="c-empty">Nobody matches. Remove a filter to widen the list.</td></tr>'}</tbody></table></div>`;
   if (C_PSCROLL) { C_PSCROLL = false; const r = document.querySelector('tr.c-sel'); if (r) r.scrollIntoView({ block: 'center' }); }
   const s = $('#cPQ'); if (s) s.addEventListener('input', () => { const pos = s.selectionStart; C_PQ = s.value; cDrawPeople(); const n = $('#cPQ'); n.focus(); n.setSelectionRange(pos, pos); });
+}
+// The People filters: the Journey's compact dropdowns (same look, same Clear), and they combine.
+const C_PF_DUE = [['over', 'Overdue'], ['today', 'Today'], ['none', 'No next step']];
+const C_PF_DATA = [['nocontact', 'No email or phone'], ['odd', 'Programme not in the list']];
+function cPeopleMatch(p, t, f, known) {
+  const open = !C_TERMINAL.includes(p.status);
+  if (f.stage === 'open' && !open) return false;
+  if (f.stage && f.stage !== 'open' && p.status !== f.stage) return false;
+  if (f.due === 'none') { if (!open || t) return false; }
+  else if (f.due && !(t && cWhenClass(t.due_at) === f.due)) return false;
+  if (f.data === 'nocontact' && (p.email || p.phone)) return false;
+  if (f.data === 'odd' && !(p.programme && !known.has(p.programme))) return false;
+  return cJourneyMatch(p, t, { programme: f.programme, due: '', owner: f.owner, source: f.source });
+}
+function cPeopleFilters(people) {
+  const distinct = (key) => [...new Set(people.map((p) => p[key] || cNotSaid))];
+  const known = CFG.programmes || [];
+  const progs = distinct('programme').sort((a, b) => (known.indexOf(a) + 1 || 99) - (known.indexOf(b) + 1 || 99) || a.localeCompare(b));
+  const owners = [...new Set([...(CFG.owners || []), ...distinct('owner')])];
+  const sources = distinct('source_channel').sort((a, b) => a.localeCompare(b));
+  const stages = [['open', 'Open'], ...(CFG.stages || []).map((s) => [s.id, s.label || s.id])];
+  const name = (k, v) => (v === cNotSaid ? 'not recorded' : k === 'source' ? channelLabel(v) : v);
+  const box = (k, label, values) => `<label class="c-jf${C_PF[k] ? ' on' : ''}"><span>${label}</span><select aria-label="${label}" onchange="C_PF.${k}=this.value;cDrawPeople()">
+      <option value="">All</option>${values.map(([v, t]) => `<option value="${esc(v)}"${C_PF[k] === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`;
+  const any = Object.values(C_PF).some(Boolean);
+  return `<div class="c-jfilters" role="group" aria-label="Filter people">
+    <svg class="c-jf-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3.5h11l-4.2 5v4l-2.6 1.2V8.5z"/></svg>
+    ${box('stage', 'Stage', stages)}
+    ${box('programme', 'Programme', progs.map((v) => [v, name('programme', v)]))}
+    ${box('due', 'Next step', C_PF_DUE)}
+    ${box('owner', 'Owner', owners.map((v) => [v, name('owner', v)]))}
+    ${box('source', 'Came from', sources.map((v) => [v, name('source', v)]))}
+    ${box('data', 'Details', C_PF_DATA)}
+    ${any ? `<button class="btn sm ghost c-jf-clear" onclick="C_PF=C_PF_EMPTY();cDrawPeople()">Clear</button>` : ''}
+  </div>`;
 }
 function cEditForm(p, t) {
   const progs = ['', ...(CFG.programmes || [])]; if (p.programme && !progs.includes(p.programme)) progs.push(p.programme);
