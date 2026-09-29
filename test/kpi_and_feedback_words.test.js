@@ -11,10 +11,15 @@ const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
 const CONFIG = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'prototype.json'), 'utf8'));
 
-test('every KPI number on Home is the same size', () => {
+test('the hero KPI leads, and the step is 40 over 30 rather than 54', () => {
   const all = APP.match(/html\.ui-c \.kstrip b\{display:block;font-size:(\d+)px/)[1];
   const hero = APP.match(/html\.ui-c \.kstrip \.khero b\{font-size:(\d+)px/)[1];
-  assert.equal(hero, all, 'the first KPI is not blown up');
+  // 28.09 rejected a 54px hero as "Weird size indifference!" and every number was levelled
+  // to 30. That left the strip with no focal point at all. 30.09 sets the step at 40/30:
+  // the hero leads without shouting, and 54 stays rejected.
+  assert.equal(Number(hero), 40, 'the hero leads');
+  assert.equal(Number(all), 30, 'the other three hold the line');
+  assert.ok(Number(hero) < 54, 'and nothing is blown up to the size that was rejected');
 });
 
 test('what the screen says about feedback names nobody', () => {

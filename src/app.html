@@ -1018,7 +1018,9 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .kstrip b em{font-style:normal;font-size:15px;font-weight:500;color:var(--t3);letter-spacing:0}
   /* one size for every KPI number (the owner, 28.09.2026: "Weird size indifference!" at a 54 px
      Admitted beside 30 px figures) */
-  html.ui-c .kstrip .khero b{font-size:30px;letter-spacing:-.025em;line-height:1.15}
+  /* ONE FOCAL POINT. All four numbers were 30px, so the strip had no focal point:
+     the number that matters most now leads at 40 and the other three stay at 30. */
+  html.ui-c .kstrip .khero b{font-size:40px;letter-spacing:-.03em;line-height:1.1}
   html.ui-c .kstrip small{display:block;font-size:12.5px;color:var(--t3);line-height:1.4}
   html.ui-c .ksec{margin:0 0 26px;min-width:0}
   html.ui-c .ksh{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid var(--rule2)}
@@ -1514,9 +1516,9 @@ async function viewHomeC() {
   $('#view').innerHTML = `<div class="kpage">
     <div class="khead"><div><h1 class="c-sr">Home</h1><p class="c-crumb" style="margin:0">Admissions ${year} · to ${esc(asOf)}</p></div></div>
     <div class="kstrip">
-      <div class="khero"><span>Admitted</span><b>${admitted.length}</b><small>in ${year}, with an admission date${undated ? ` (+${undated} without one)` : ''}</small></div>
-      <div><span>Leads</span><b>${s.newLeads ?? 0}</b><small>first contacted in ${year}</small></div>
-      <div><span>Conversion</span><b>${s.conversionPct == null ? '-' : s.conversionPct + '%'}</b><small>${esc(s.conversionOf || '')}</small></div>
+      <div class="khero"><span>Admitted</span><b>${admitted.length}</b><small>${year}${undated ? ` \u00b7 +${undated} undated` : ''}</small></div>
+      <div><span>Leads</span><b>${s.newLeads ?? 0}</b><small>${year}</small></div>
+      <div><span>Conversion</span><b>${s.conversionPct == null ? '-' : s.conversionPct + '%'}</b><small>${s.conversionA ?? 0} / ${s.conversionB ?? 0} who arrived</small></div>
       <div><span>Median time to admission</span><b>${s.medianDaysToAdmission == null ? '-' : s.medianDaysToAdmission} <em>days</em></b><small>first contact to admission</small></div>
     </div>
     <section class="ksec"><div class="ksh"><h2>Admissions by month</h2><ul class="klegend inline"><li><i style="background:var(--v-adm)"></i><span>Admitted</span></li><li><i class="ln" style="background:var(--v-lead)"></i><span>New leads</span></li></ul></div>
@@ -2268,10 +2270,10 @@ async function viewReportsC() {
     <div class="kpage">
     <div class="kstrip c-five">
       <div class="khero"><span>New leads</span><b>${s.newLeads ?? 0}</b><small>first contact in these days</small></div>
-      <div><span>Applications</span><b>${s.applications ?? 0}</b><small>of them reached Application or beyond</small></div>
-      <div><span>Admitted</span><b>${s.admitted ?? 0}</b><small>admitted in these days, whenever they arrived</small></div>
-      <div><span>Conversion</span><b>${s.conversionPct == null ? '-' : s.conversionPct + '%'}</b><small>${esc(s.conversionOf || '')}</small></div>
-      <div><span>Median time to admission</span><b>${s.medianDaysToAdmission == null ? '-' : s.medianDaysToAdmission} <em>days</em></b><small>for people admitted in these days</small></div>
+      <div><span>Applications</span><b>${s.applications ?? 0}</b><small>reached Application or beyond</small></div>
+      <div><span>Admitted</span><b>${s.admitted ?? 0}</b><small>in these days</small></div>
+      <div><span>Conversion</span><b>${s.conversionPct == null ? '-' : s.conversionPct + '%'}</b><small>${s.conversionA ?? 0} / ${s.conversionB ?? 0} who arrived</small></div>
+      <div><span>Median time to admission</span><b>${s.medianDaysToAdmission == null ? '-' : s.medianDaysToAdmission} <em>days</em></b><small>first contact to admission</small></div>
     </div>
     <a class="c-nowbar" href="#/next">
       <span><b>${s.activeApplicants ?? 0}</b>open</span>

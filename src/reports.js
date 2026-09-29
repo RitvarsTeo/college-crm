@@ -121,6 +121,9 @@ export async function report(db, { from, to } = {}) {
       maritimeGraduates: maritime,
       conversionOf: conversion === null ? 'nobody arrived in this period'
         : `${admittedFromPeriod} of ${newLeads} people who arrived in this period`,
+      // the working, for the screen: a calculated number sits next to its sum
+      conversionA: admittedFromPeriod,
+      conversionB: newLeads,
       medianDaysToAdmission: median,
     },
     trend: months,
