@@ -2,6 +2,7 @@
 // fake page. The owner, 28.09.2026: links open for anyone at ANY time.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import path from 'node:path';
 import http from 'node:http';
 import vm from 'node:vm';
@@ -10,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { signInFirst, screenFor, RETURN_SCRIPT, withReturnScript } from '../src/signinfirst.js';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
 const SECRET = 'x'.repeat(48);
 const NAV = { 'sec-fetch-mode': 'navigate', accept: 'text/html' };
 
@@ -103,4 +105,14 @@ test('the return script follows nothing it should not', () => {
 
 test('withReturnScript puts it right after <head>', () => {
   assert.ok(withReturnScript('<html><head lang="x"><title>t</title></head>').startsWith('<html><head lang="x"><script>'));
+});
+
+test('the sign-in error keeps the gate colours in every scheme', () => {
+  // Measured at 3fb39c5 before the fix: rgb(142,46,38) on rgba(165,52,43,.1) in light,
+  // dark AND ?ui=classic, because .err follows the app palette and the card is white in
+  // all of them. An ID beats a class, so this cannot lose to a later rule.
+  assert.match(APP, /--gate-err-bg:#fdecea;--gate-err-ink:#8c1d18;/, 'the tokens are the gate pair');
+  assert.match(APP, /#login-view \.err\{background:var\(--gate-err-bg\);color:var\(--gate-err-ink\)\}/);
+  assert.match(APP, /\.gate-card \.err\{[^}]*background:var\(--gate-err-bg\);color:var\(--gate-err-ink\)\}/s,
+    'the card keeps its own rule too');
 });
