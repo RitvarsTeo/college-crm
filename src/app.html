@@ -1680,7 +1680,7 @@ async function viewLeadsC() {
       <div class="act"><button class="btn" onclick="openAdd()">Add lead</button></div></div>
     ${receipt}
     <div class="c-sheet">${rows.length ? rows.map((r) => `<div class="c-line row c-lead${C_LOPEN === r.id ? ' is-open' : ''}" tabindex="0" onclick="C_LOPEN=${C_LOPEN === r.id ? 'null' : Number(r.id)};viewLeadsC()">
-        <div class="c-who"><b>${esc(r.contact_name || r.contact_handle || 'Unknown')}</b><small>${esc(channelLabel(r.channel))} · ${fmtDateTime(r.received_at)}${r.aged ? ' · <span class="c-late">late</span>' : ''}</small></div>
+        <div class="c-who"><b class="c-reach">${esc(r.contact_name || r.contact_handle || '') || cTelLink({ phone: r.contact_phone }) || 'Unknown'}</b><small>${esc(channelLabel(r.channel))} · ${fmtDateTime(r.received_at)}${r.aged ? ' · <span class="c-late">late</span>' : ''}</small></div>
         <div class="c-what">${esc(r.body || val(r, 'question') || '')}</div>
         <div class="c-when">${esc(val(r, 'interest') || '')}</div><div></div></div>
         ${C_LOPEN === r.id ? panel(r) : ''}`).join('')
