@@ -450,6 +450,19 @@ export function pgUrl() {
     || process.env.DATABASE_URL || '';
 }
 
+// THE SCHEMA IS PART OF THE CONNECTION (29.09.2026). It used to be a `SET search_path` sent from the
+// pool's 'connect' event - a second query started while the first was still on its way, which pg
+// warns about ("Calling client.query() when the client is already executing a query is deprecated")
+// and pg@9 will refuse. As a startup option there is no second query at all. Anything already in the
+// URL's `options` is kept.
+export function pgConnectionString(schema, url = pgUrl()) {
+  if (!url) return url;
+  const u = new URL(url);
+  const opts = [u.searchParams.get('options'), `-c search_path=${schema}`].filter(Boolean).join(' ');
+  u.searchParams.set('options', opts);
+  return u.toString();
+}
+
 const SQLITE_ONLY = /^\s*PRAGMA\b/i;
 
 function tableNames(schemaSql) {
@@ -598,14 +611,12 @@ async function openPg(file) {
       || `crm_f_${createHash('sha256').update(path.resolve(file)).digest('hex').slice(0, 16)}`);
   if (!/^[a-z_][a-z0-9_]*$/.test(schema)) throw new Error('CRM_PG_SCHEMA must be a plain lower-case name');
   const pool = new pg.Pool({
-    connectionString: pgUrl(),
+    connectionString: pgConnectionString(schema),   // every connection looks in this schema, and only there
     max: temporary ? 2 : Number(process.env.CRM_PG_POOL || 3),
     idleTimeoutMillis: temporary ? 500 : 10000,
     allowExitOnIdle: true,
     ssl: /sslmode=disable/.test(pgUrl()) ? false : { rejectUnauthorized: false },
   });
-  // Every connection the pool opens looks in this schema first, and only there.
-  pool.on('connect', (client) => { client.query(`SET search_path TO ${schema}`).catch(() => {}); });
   pool.on('error', () => {});             // an idle connection dropped by the server is not fatal
   const db = new PgDb(pool, pool, schema);
   await db.query(`CREATE SCHEMA IF NOT EXISTS ${schema}`);
