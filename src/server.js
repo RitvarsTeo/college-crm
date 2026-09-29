@@ -11,7 +11,7 @@ import { logEvent, applyEdit, readHistory, MANUAL, AUTOMATIC, EDITABLE_FIELDS, I
 import { receive, listInbound, qualify, archive, funnel, agedCount, handoffToSis, ownerFor, notifiedFor, handoverGap, canReach, surfaceAt, waitingFor, waitingByRole } from './intake.js';
 import { readScreenshot, readKind, readBody, readPath, saveFeedback, listFeedback, getScreenshot, setHandled, BadScreenshot, helpOpened, helpCounts } from './feedback.js';
 import { findMatches as matchPeople, duplicateCheck } from './identity.js';
-import { lifecycleOf } from './lifecycle.js';
+import { lifecycleOf, sisProgress, sisProgressByPerson } from './lifecycle.js';
 import { firstLook } from './sisfirstlook.js';
 import { redactSis } from '../lib/sis.js';
 import { adapt, toIntake, hasAdapter, adapterIds } from './adapters.js';
@@ -603,6 +603,8 @@ async function personRow(id, viewer) {
   p.registrations = await db.prepare(`SELECT r.*, o.title, o.held_on FROM registrations r JOIN open_days o ON o.id = r.open_day_id WHERE r.person_id = ?`).all(id);
   p.consents = await consentFor(db, id);
   p.lifecycle = await lifecycleOf(db, id);   // dated facts from the SIS; never a stage
+  try { p.sis = sisProgress(await db.prepare('SELECT status, changed_at FROM sis_applicants WHERE person_id = ?').all(id)); }
+  catch { p.sis = null; }                    // a database without the SIS tables yet
   // structured fields with where they came from. A suggestion is never a fact.
   p.fields = await db.prepare('SELECT * FROM field_values WHERE person_id = ? ORDER BY id').all(id);
   const known = new Set(p.fields.filter((f) => f.value).map((f) => f.field));
@@ -1315,6 +1317,8 @@ export const handle = async (req, res) => {
       }
       if (f('due') === 'overdue') rows = rows.filter((r) => r.next_action_at && r.next_action_at < dayStart());
       if (f('due') === 'none') rows = rows.filter((r) => !r.next_action_at && !['Admitted', 'Not proceeding'].includes(r.status));
+      const sis = await sisProgressByPerson(db);   // where each linked person is in the SIS (read back, never a stage)
+      for (const r of rows) r.sis = sis[r.id] || null;
       return json(res, 200, { count: rows.length, rows });
     }
 

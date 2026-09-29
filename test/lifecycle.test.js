@@ -96,3 +96,28 @@ test('the screen: a fact shows only when the SIS said it; none shows nothing', (
   assert.match(APP, /<b>\$\{esc\(p\.name\)\}<\/b>\$\{life\}\$\{t/, 'on the Journey card, under the name');
   assert.doesNotMatch(APP, /stages[^;\n]*form_started|'Matriculated'\s*:\s*\{\s*label/, 'no new stage');
 });
+
+// Ritvars, 29.09.2026: after submission it is the Student Coordinator's work; Admissions sees where
+// the person is in the SIS and the next SIS step, to nudge. SIS statuses only, nothing guessed.
+test('where they are in the SIS: the furthest open application, the next SIS status, who only where said', async () => {
+  const { sisProgress } = await import('../src/lifecycle.js');
+  assert.equal(sisProgress([]), null);
+  assert.deepEqual(sisProgress([{ status: 'submitted', changed_at: '2026-09-28T07:58:02Z' }]),
+    { status: 'submitted', label: 'Submitted', since: '2026-09-28T07:58:02Z', next: 'Admitted', nextBy: 'Student Coordinator' });
+  const two = sisProgress([{ status: 'registered', changed_at: '2026-09-29' }, { status: 'admitted', changed_at: '2026-09-20' }]);
+  assert.equal(two.label, 'Admitted');
+  assert.equal(two.next, 'Matriculated');
+  assert.equal(two.nextBy, null, 'nobody named where Ritvars has not said who');
+  assert.equal(sisProgress([{ status: 'matriculated', changed_at: 'x' }]).next, null, 'the end');
+  assert.equal(sisProgress([{ status: 'rejected', changed_at: '2026-09-28' }]).label, 'Rejected');
+  assert.equal(sisProgress([{ status: 'rejected', changed_at: '2026-09-28' }]).next, null);
+});
+
+test('the screen says it in one line: In the SIS: Submitted by <date> - next: Admitted (Student Coordinator)', () => {
+  const src = APP.slice(APP.indexOf('function cLifeFacts('), APP.indexOf('function cPersonCard('));
+  const ctx = { esc: (s) => String(s ?? ''), cDay: (s) => String(s).slice(0, 10) };
+  vm.runInNewContext(src + '\nthis.line = cLifeLine;', ctx);
+  const html = ctx.line({ sis: { label: 'Submitted', since: '2026-09-28T07:58:02Z', next: 'Admitted', nextBy: 'Student Coordinator' } });
+  assert.match(html, /In the SIS: <b>Submitted<\/b> <time>by 2026-09-28<\/time> · next: Admitted \(Student Coordinator\)/);
+  assert.equal(ctx.line({}), '', 'not in the SIS: nothing');
+});

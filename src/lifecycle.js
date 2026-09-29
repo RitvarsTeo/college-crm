@@ -82,3 +82,45 @@ export async function lifecycleOf(db, personId) {
   return Object.keys(LIFECYCLE_FACTS).filter((f) => by[f])
     .map((f) => ({ fact: f, label: LIFECYCLE_FACTS[f], at: by[f], source: 'SIS' }));
 }
+
+// ================================================================ WHERE THEY ARE IN THE SIS ====
+// Ritvars, 29.09.2026: after the form is submitted it is the Student Coordinator's work, and
+// Admissions has to see the step after it and whether it has happened, to nudge the student or the
+// coordinator. Only the SIS's own statuses are used (Novikontas-CRM-API.md), in their order; the
+// next step is simply the next status. Nothing is guessed beyond that.
+const SIS_ORDER = ['registered', 'started', 'submitted', 'admitted', 'matriculated'];
+const SIS_WORD = { registered: 'Registered', started: 'Form started', submitted: 'Submitted', admitted: 'Admitted',
+  matriculated: 'Matriculated', rejected: 'Rejected', withdrawn: 'Withdrawn' };
+// who does the next step - only where Ritvars has said so
+const SIS_NEXT_BY = { submitted: 'Student Coordinator' };
+
+/** Where a person is in the SIS, from their stored SIS rows: the furthest open application, else
+ *  the latest closed one. null when the SIS knows nothing of them. */
+export function sisProgress(rows) {
+  const list = (rows || []).filter((r) => r && r.status);
+  if (!list.length) return null;
+  const rank = (s) => SIS_ORDER.indexOf(s);
+  const latest = (a, b) => String(b.changed_at).localeCompare(String(a.changed_at));
+  const open = list.filter((r) => rank(r.status) >= 0).sort((a, b) => rank(b.status) - rank(a.status) || latest(a, b));
+  const r = open[0] || [...list].sort(latest)[0];
+  const i = rank(r.status);
+  const nextStatus = i >= 0 && i < SIS_ORDER.length - 1 ? SIS_ORDER[i + 1] : null;
+  return {
+    status: r.status,
+    label: SIS_WORD[r.status] || r.status,
+    since: r.changed_at || null,               // the SIS last changed it: it has been here at least since then
+    next: nextStatus ? SIS_WORD[nextStatus] : null,
+    nextBy: SIS_NEXT_BY[r.status] || null,
+  };
+}
+
+/** The same for every linked person at once: { personId: progress }. */
+export async function sisProgressByPerson(db) {
+  let rows = [];
+  try {
+    rows = await db.prepare(`SELECT person_id, status, changed_at FROM sis_applicants WHERE person_id IS NOT NULL`).all();
+  } catch { return {}; }                       // a database without the SIS tables yet
+  const by = {};
+  for (const r of rows) (by[r.person_id] = by[r.person_id] || []).push(r);
+  return Object.fromEntries(Object.entries(by).map(([id, rs]) => [id, sisProgress(rs)]));
+}
