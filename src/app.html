@@ -910,6 +910,12 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-faq summary:focus-visible{outline:2px solid var(--pet);outline-offset:-2px}
   html.ui-c .c-faq > div{padding:0 16px 14px 32px;color:var(--t2);font-size:14px;line-height:1.55;max-width:75ch}
   html.ui-c .c-help-foot{margin:22px 0 0;font-size:12px;color:var(--t3)}
+  /* Next Steps rows: the contact to call or write, and one line of what was said (Ieva, 29.09) */
+  html.ui-c .c-who small.c-reach{margin-top:2px}
+  html.ui-c .c-reach a{color:var(--petink);text-decoration:none}
+  html.ui-c .c-reach a:hover{text-decoration:underline}
+  html.ui-c .c-line .c-what{min-width:0}
+  html.ui-c .c-nnote{display:block;margin-top:3px;font-size:12.5px;font-weight:400;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   /* dev kit part 3 styles its pieces with part 2's --kit-* tokens: the CRM's own tokens, mapped */
   html.ui-c{--kit-menu:var(--menu);--kit-ink:var(--ink);--kit-ink-2:var(--t2);--kit-line:var(--rule);--kit-control-line:var(--control-line);
     --kit-field:var(--field);--kit-primary:var(--btn-bg);--kit-on-primary:var(--btn-ink);--kit-focus:var(--pet);--kit-link:var(--petink);--kit-mark:#29a8df;--kit-font:inherit}
@@ -1515,13 +1521,19 @@ async function viewNextC() {
   const open = people.filter((p) => !C_TERMINAL.includes(p.status));
   const none = open.filter((p) => !p.next_action_at);
   const pct = open.length ? Math.round(((open.length - none.length) / open.length) * 100) : 100;
+  // Ieva (29.09): the contact details and the notes right here, to call or write without opening the profile
+  const byId = new Map(people.map((p) => [p.id, p]));
+  const stop = 'onclick="event.stopPropagation()"';
+  const reach = (p) => (!p ? '' : `<small class="c-reach">${[p.phone && `<a href="tel:${esc(String(p.phone).replace(/\s/g, ''))}" ${stop}>${esc(p.phone)}</a>`,
+    p.email && `<a href="mailto:${esc(p.email)}" ${stop}>${esc(p.email)}</a>`].filter(Boolean).join(' · ') || '<span class="c-gap">no email or phone</span>'}</small>`);
+  const said = (p) => (p && cComment(p) ? `<small class="c-nnote" title="${esc(p.last_comment || p.notes)}">${esc(cComment(p))}</small>` : '');
   const tRow = (t) => `<div class="c-line" tabindex="0" onclick="location.hash='#/person/${esc(t.person_id)}'">
-      <div class="c-who"><b>${esc(t.name)}</b><small>${esc(t.programme || 'programme not said')} · ${esc(t.status)}</small></div>
-      <div class="c-what">${esc(cTask(t.label))}</div><div class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</div>
+      <div class="c-who"><b>${esc(t.name)}</b><small>${esc(t.programme || 'programme not said')} · ${esc(t.status)}</small>${reach(byId.get(t.person_id))}</div>
+      <div class="c-what">${esc(cTask(t.label))}${said(byId.get(t.person_id))}</div><div class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</div>
       <div class="c-acts"><button class="btn sm" onclick="event.stopPropagation();openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))})">Done</button></div></div>`;
   const pRow = (p) => `<div class="c-line" tabindex="0" onclick="location.hash='#/person/${esc(p.id)}'">
-      <div class="c-who"><b>${esc(p.name)}</b><small>${esc(p.programme || 'programme not said')} · ${esc(p.status)}</small></div>
-      <div class="c-what none">Nothing planned</div><div class="c-when"></div>
+      <div class="c-who"><b>${esc(p.name)}</b><small>${esc(p.programme || 'programme not said')} · ${esc(p.status)}</small>${reach(p)}</div>
+      <div class="c-what none">Nothing planned${said(p)}</div><div class="c-when"></div>
       <div class="c-acts"><button class="btn sm" onclick="event.stopPropagation();openNewTask('${esc(p.id)}')">Plan a next step</button></div></div>`;
   // the Overdue and Due today counts carry the urgency badges when there is something in them
   const sect = (title, rows, fn, tone = '') => `<div class="c-sheet"><h3>${title}<b${tone && rows.length ? ` class="c-count ${tone}"` : ''}>${rows.length}</b></h3>${rows.map(fn).join('') || '<div class="c-empty">None.</div>'}</div>`;
@@ -1657,7 +1669,8 @@ async function viewLeadsC() {
     </div>`;
   };
   $('#view').innerHTML = `<p class="c-crumb">Admissions</p>
-    <div class="c-head"><div><h1>New Leads</h1><p>New arrivals land here first.</p></div></div>
+    <div class="c-head"><div><h1>New Leads</h1><p>New arrivals land here first.</p></div>
+      <div class="act"><button class="btn" onclick="openAdd()">Add lead</button></div></div>
     ${receipt}
     <div class="c-sheet">${rows.length ? rows.map((r) => `<div class="c-line row c-lead${C_LOPEN === r.id ? ' is-open' : ''}" tabindex="0" onclick="C_LOPEN=${C_LOPEN === r.id ? 'null' : Number(r.id)};viewLeadsC()">
         <div class="c-who"><b>${esc(r.contact_name || r.contact_handle || 'Unknown')}</b><small>${esc(channelLabel(r.channel))} · ${fmtDateTime(r.received_at)}${r.aged ? ' · <span class="c-late">late</span>' : ''}</small></div>
