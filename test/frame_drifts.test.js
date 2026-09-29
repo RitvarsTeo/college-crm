@@ -34,3 +34,15 @@ test('C is Inter: no C rule asks for the serif, and headings in the work area in
   assert.deepEqual(cRules.filter((r) => /font-family:var\(--serif\)/.test(r)), []);
   assert.match(APP, /html\.ui-c #view h1, html\.ui-c #view h2, html\.ui-c #view h3, html\.ui-c \.card h3\{font-family:inherit\}/);
 });
+
+test('Home and Reports are as wide as every other screen: no page cap of their own', () => {
+  // 29.09.2026, Ritvars, from a screenshot: "a lot of space here". Home was held at 1080px by
+  // .kpage inside a main that allows 1320, and main is left-aligned, so on a 1920 screen 576px
+  // sat empty down the right while Journey and People used the full width. Measured, not guessed.
+  assert.match(APP, /html\.ui-c \.kpage\{position:relative\}/,
+    '.kpage carries no max-width of its own');
+  assert.doesNotMatch(APP, /\.kpage\{[^}]*max-width/,
+    'and no rule anywhere gives it one back');
+  assert.match(APP, /main\{[^}]*max-width:1320px/,
+    'main is still the one cap, the same for every screen');
+});

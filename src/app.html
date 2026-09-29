@@ -980,7 +980,11 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
      slate = not proceeding or not recorded (always with its word). */
   html.ui-c{--v-adm:#29a8df;--v-lead:#0a2463;--v-open:#F7C04F;--v-np:#98a4b3;--v-grid:#e7ebf0}
   /* dark chart colours: with the rest of the dark sea palette, near the top of CONCEPT C */
-  html.ui-c .kpage{position:relative;max-width:1080px}
+  /* No page cap of its own (29.09.2026). Home and Reports were held at 1080px inside a main that
+     allows 1320, and main is left-aligned, so on a 1920 screen 576px sat empty down the right while
+     Journey and People used the full width. The two dashboards now take the same width as every
+     other screen; main's 1320 is still the one cap. */
+  html.ui-c .kpage{position:relative}
   /* Ritvars 28.09.2026: no title sentence on Home. The page keeps a heading for screen
      readers only, so it is still announced as Home. */
   html.ui-c .c-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
@@ -1528,9 +1532,7 @@ async function viewNextC() {
   const pct = open.length ? Math.round(((open.length - none.length) / open.length) * 100) : 100;
   // Ieva (29.09): the contact details and the notes right here, to call or write without opening the profile
   const byId = new Map(people.map((p) => [p.id, p]));
-  const stop = 'onclick="event.stopPropagation()"';
-  const reach = (p) => (!p ? '' : `<small class="c-reach">${[p.phone && `<a href="tel:${esc(String(p.phone).replace(/\s/g, ''))}" ${stop}>${esc(p.phone)}</a>`,
-    p.email && `<a href="mailto:${esc(p.email)}" ${stop}>${esc(p.email)}</a>`].filter(Boolean).join(' · ') || '<span class="c-gap">no email or phone</span>'}</small>`);
+  const reach = (p) => (!p ? '' : `<small class="c-reach">${cReach(p) || '<span class="c-gap">no email or phone</span>'}</small>`);
   const said = (p) => (p && cComment(p) ? `<small class="c-nnote" title="${esc(p.last_comment || p.notes)}">${esc(cComment(p))}</small>` : '');
   const tRow = (t) => `<div class="c-line" tabindex="0" onclick="location.hash='#/person/${esc(t.person_id)}'">
       <div class="c-who"><b>${esc(t.name)}</b><small>${esc(t.programme || 'programme not said')} · ${esc(t.status)}</small>${reach(byId.get(t.person_id))}</div>
@@ -1717,7 +1719,7 @@ function cDrawPeople() {
   const contact = (p) => [p.email, p.phone].filter(Boolean).join(' · ');
   const row = (p) => { const t = taskOf.get(p.id); const open = !C_TERMINAL.includes(p.status);
     return `<tr class="row${C_PEDIT === p.id ? ' c-sel' : ''}" tabindex="0" onclick="C_PEDIT=${C_PEDIT === p.id ? 'null' : `'${esc(p.id)}'`};C_PMSG='';cDrawPeople()">
-      <td class="c-name"><b>${esc(p.name)}</b><small class="${contact(p) ? '' : 'c-gap'}">${contact(p) ? esc(contact(p)) : 'no contact details'}</small></td>
+      <td class="c-name"><b>${esc(p.name)}</b><small class="c-reach ${contact(p) ? '' : 'c-gap'}">${contact(p) ? cReach(p) : 'no contact details'}</small></td>
       <td>${esc(p.programme || '-')}${p.programme && !known.has(p.programme) ? ' <span class="c-dec">not in list</span>' : ''}</td>
       <td>${esc(cStage(p.status))}</td>
       <td class="${t ? '' : 'c-gap'}">${t ? cStepIcon(t.label) + esc(cTask(t.label)) : (open ? 'nothing planned' : '-')}</td>
@@ -1846,7 +1848,7 @@ function cPersonCard(p, t) {
   return `<aside class="c-card"><h2>${esc(p.name)}</h2> <div class="c-cardsub">${esc(cStage(p.status))} · ${esc(p.programme || 'programme not said')}</div>${cLifeLine(p)}
     <div class="c-next ${open && !t ? 'none' : ''}"><b>${open ? 'Next step' : 'Outcome'}</b>${open ? (t ? `${esc(cTask(t.label))} · <span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span>` : 'Nothing planned yet') : esc(p.status)}
       ${open ? `<div class="c-row-acts">${t ? `<button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))})">Done</button>` : `<button class="btn sm" onclick="openNewTask('${esc(p.id)}')">Plan a next step</button>`}</div>` : ''}</div>
-    <dl><dt>Email</dt><dd class="${p.email ? '' : 'c-gap'}">${esc(p.email || 'not recorded')}</dd><dt>Phone</dt><dd class="${p.phone ? '' : 'c-gap'}">${esc(p.phone || 'not recorded')}</dd>
+    <dl><dt>Email</dt><dd class="${p.email ? 'c-reach' : 'c-gap'}">${cMailLink(p) || 'not recorded'}</dd><dt>Phone</dt><dd class="${p.phone ? 'c-reach' : 'c-gap'}">${cTelLink(p) || 'not recorded'}</dd>
       <dt>Came from</dt><dd>${esc(cChannel(p.source_channel)[0])}</dd><dt>First contact</dt><dd class="${p.created_at ? '' : 'c-gap'}">${p.created_at ? fmtDate(p.created_at) : 'not recorded'}</dd></dl>
     ${notes ? `<div class="c-notes">${esc(notes.length > 260 ? notes.slice(0, 260) + '…' : notes)}</div>` : ''}
     <div class="c-row-acts"><button class="btn sm ghost" onclick="cEditFromJourney('${esc(p.id)}')">Edit</button><a class="btn sm ghost" href="#/person/${esc(p.id)}">Details →</a></div></aside>`;
@@ -1888,6 +1890,14 @@ const cNotePreview = (s) => String(s == null ? '' : s).replace(/^(?:(?:Sheet sta
 // The card's comment: the newest one somebody wrote on the person page (Add a note / Log a call), else the
 // note from the import. The whole thread is the person page's History.
 const cComment = (p) => String(p.last_comment || '').trim() || cNotePreview(p.notes);
+// CALL OR WRITE WITHOUT OPENING THE PROFILE (Ieva, 29.09.2026: "lai es uzreiz saprotu, kas bija
+// runāts, un piezvanīt vai uzrakstīt"). Next Steps got these links first and they were the only
+// tel:/mailto: in the whole app - the People row and the Journey person card printed the same
+// contact as dead text. One helper now, used by all three, so they cannot drift apart again.
+// stopPropagation because each of these sits inside a row that is itself clickable.
+const cTelLink = (p) => (p && p.phone ? `<a href="tel:${esc(String(p.phone).replace(/\s/g, ''))}" onclick="event.stopPropagation()">${esc(p.phone)}</a>` : '');
+const cMailLink = (p) => (p && p.email ? `<a href="mailto:${esc(p.email)}" onclick="event.stopPropagation()">${esc(p.email)}</a>` : '');
+const cReach = (p) => [cTelLink(p), cMailLink(p)].filter(Boolean).join(' · ');
 function cJourneyCard(p, t, sel) {
   const w = t ? cWhenClass(t.due_at) : '';
   // overdue says by how much, in the app's own words ("3 d. overdue") - it fits a narrow column
