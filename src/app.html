@@ -1094,7 +1094,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-card dt{color:var(--t3)} html.ui-c .c-card dd{margin:0;overflow-wrap:anywhere}
   html.ui-c .c-notes{font-size:12.5px;color:var(--t2);border-top:1px solid var(--rule2);padding-top:9px;white-space:pre-wrap;overflow-wrap:anywhere}
   html.ui-c .c-cols{display:grid;gap:10px;overflow-x:auto;padding-bottom:4px}
-  html.ui-c .c-col{background:var(--c-sunk);border-radius:10px;padding:8px;min-width:0}
+  html.ui-c .c-col{background:var(--c-sunk);border-radius:10px;padding:8px;min-width:0;position:relative;overflow:hidden}
   html.ui-c .c-col h3{margin:2px 4px 8px;font-family:inherit;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--t3)}
   html.ui-c .c-col h3 b{color:var(--ink);letter-spacing:0;margin-left:4px}
   html.ui-c .c-drop{display:flex;flex-direction:column;gap:6px;min-height:60px;border-radius:8px}
@@ -1115,6 +1115,10 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   /* the comment preview (Aigars): one quiet line, cut with an ellipsis; the whole note is on the card and the person page */
   html.ui-c .c-jp small.c-jnote{margin-top:5px;padding-top:4px;border-top:1px dashed var(--rule);color:var(--t3);font-size:11.5px;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* A quote mark, so the line reads as something a person SAID rather than as another field of the
+     record. One character: the card is 150px wide at its narrowest and an icon here would compete
+     with the next-step mark directly above it. */
+  html.ui-c .c-jp small.c-jnote::before{content:"\201C";margin-right:2px;font-size:15px;line-height:0;vertical-align:-4px}
   html.ui-c .c-jp:hover{border-color:var(--control-line)}
   html.ui-c .c-jp.c-sel{border-color:var(--pet);box-shadow:0 0 0 1px var(--pet)}
   /* Journey filters: compact labelled dropdowns in one row; a set filter is Navy-edged and bold */
@@ -1126,11 +1130,37 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
     font:inherit;font-size:12.5px;font-weight:600;color:var(--ink);cursor:pointer}
   html.ui-c .c-jf select:focus-visible{outline:none}
   html.ui-c .c-jf:focus-within{outline:2px solid var(--pet);outline-offset:1px}
+  /* the tick list. .c-jfm is the same pill as a single-choice filter, so the row still reads as one
+     set of controls; only what opens underneath is different. */
+  html.ui-c .c-jfm{position:relative}
+  html.ui-c .c-jfb{border:0;background:transparent;height:30px;padding:0 8px 0 2px;margin:0;max-width:14em;
+    font:inherit;font-size:12.5px;font-weight:600;color:var(--ink);cursor:pointer;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  html.ui-c .c-jfb::after{content:"";display:inline-block;margin-left:6px;vertical-align:2px;
+    border:4px solid transparent;border-top-color:currentColor}
+  html.ui-c .c-jfb:focus-visible{outline:none}
+  /* width:max-content, or the list is only as wide as its own filter pill and every label is cut
+     off mid-word - the checkboxes were visible and the programme names were not. overflow is
+     vertical only for the same reason: a long list scrolls, a long label widens. */
+  html.ui-c .c-jfmenu{position:absolute;z-index:40;top:34px;left:0;width:max-content;min-width:100%;max-width:min(320px,78vw);
+    max-height:min(50vh,280px);overflow-y:auto;overflow-x:hidden;
+    background:var(--menu);border:1px solid var(--rule);border-radius:10px;box-shadow:var(--lift);padding:6px;cursor:default}
+  /* nowrap on the LABEL, and nothing on the span. With overflow:hidden on the span it became a
+     flex item whose min-content is zero, so it measured 0px wide: the tick boxes were on screen
+     and not one programme name was, and the menu stayed at the width of its own filter pill
+     because that zero also fed max-content. Measured, not guessed. */
+  html.ui-c .c-jfmenu label{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:6px;
+    font-size:13px;font-weight:500;color:var(--ink);white-space:nowrap;cursor:pointer}
+  html.ui-c .c-jfmenu label:hover{background:var(--c-sunk)}
+  /* The app styles form inputs to fill their field, and a checkbox is an input: measured at 109px
+     wide, which pushed every label out to x=421 inside a menu that ends at 428. The names were
+     being drawn off the edge, not missing. Size it explicitly. */
+  html.ui-c .c-jfmenu input[type="checkbox"]{width:14px;height:14px;min-width:0;flex:0 0 14px;margin:0;accent-color:var(--petink)}
   html.ui-c .c-jf.on{border-color:var(--j-to);box-shadow:inset 0 0 0 1px var(--j-to);background:color-mix(in srgb,var(--field),var(--j-from) 10%)}
   html.ui-c .c-jf.on > span{color:var(--ink)}
   html.ui-c .c-jf-clear{height:32px}
   html.ui-c .c-jf > span{white-space:nowrap}
-  @media (max-width:760px){ html.ui-c .c-jfilters{display:grid;grid-template-columns:1fr 1fr} html.ui-c .c-jf{min-width:0} html.ui-c .c-jf select{flex:1;min-width:0;max-width:none}
+  @media (max-width:760px){ html.ui-c .c-jfilters{display:grid;grid-template-columns:1fr 1fr} html.ui-c .c-jf{min-width:0} html.ui-c .c-jf select,html.ui-c .c-jfb{flex:1;min-width:0;max-width:none}
     html.ui-c .c-jf-ico{display:none} html.ui-c .c-jf-clear{grid-column:1 / -1;justify-self:start} }
   /* Buttons are the brandbook CTA in C - Navy with white (dark: white with Navy) - and carry no amber
      stripe (Ritvars, 28.09.2026: the Done and Feedback buttons did not match, "the amber now is quite
@@ -1145,8 +1175,18 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
      last (Navy); the column itself only takes a faint tint of it. NEXT STEP: the clearest line
      on the card. OVERDUE: red words and a red edge. TODAY: amber words, no edge. */
   html.ui-c{--j-from:#53a7db;--j-to:#0a2463}
+  /* HOW FAR THROUGH (29.09.2026). The rail was already here and already ramped from the light
+     brandbook blue to Navy across the stages - but COLOUR was its only channel, so it said which
+     column you were looking at and never how far along that column is. It is a LENGTH now as well:
+     the track runs the full width and the fill takes that stage's share of it, a fifth in the first
+     column and all of it in the last. One glance answers both "which stage" and "how far".
+     Deliberately not a per-stage icon: the cards already carry the next-step type marks, and a
+     second icon language at the same size on the same screen is two things to learn, not one. */
   html.ui-c .c-col{background:color-mix(in srgb,var(--c-sunk),var(--j-from) calc(var(--jt,0) * 7%));
-    box-shadow:inset 0 3px 0 color-mix(in srgb,var(--j-to) calc(var(--jt,0) * 100%),var(--j-from))}
+    box-shadow:inset 0 3px 0 var(--rule2)}
+  html.ui-c .c-col::after{content:"";position:absolute;top:0;left:0;height:3px;
+    width:calc(var(--jt,0) * 100%);
+    background:color-mix(in srgb,var(--j-to) calc(var(--jt,0) * 100%),var(--j-from))}
   html.ui-c .c-col h3{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;margin-top:8px}
   html.ui-c .c-col h3 b{margin-left:0}
   html.ui-c .c-jn{display:inline-grid;place-items:center;min-width:17px;height:17px;border-radius:99px;font-size:10.5px;letter-spacing:0;
@@ -1746,7 +1786,12 @@ function cPeopleMatch(p, t, f, known) {
   else if (f.due && !(t && cWhenClass(t.due_at) === f.due)) return false;
   if (f.data === 'nocontact' && (p.email || p.phone)) return false;
   if (f.data === 'odd' && !(p.programme && !known.has(p.programme))) return false;
-  return cJourneyMatch(p, t, { programme: f.programme, due: '', owner: f.owner, source: f.source });
+  // People still picks ONE value per filter, the Journey now picks a list, and they share this
+  // matcher. The wrapping is explicit here rather than tolerated inside cJourneyMatch: a matcher
+  // that quietly accepted both shapes is how People's three filters would have stopped filtering
+  // without a single error.
+  const one = (v) => (v ? [v] : []);
+  return cJourneyMatch(p, t, { programme: one(f.programme), due: [], owner: one(f.owner), source: one(f.source) });
 }
 function cPeopleFilters(people) {
   const distinct = (key) => [...new Set(people.map((p) => p[key] || cNotSaid))];
@@ -1915,19 +1960,38 @@ function cJourneyCard(p, t, sel) {
 // compact dropdowns - Programme, Overdue / Today, Owner, Came from - offering only the values the
 // open people really carry. They combine (all must hold). A filter that is set says so: its box
 // turns Navy-edged and shows the chosen value. Nothing is stored on the server.
-let C_JF = { programme: '', due: '', owner: '', source: '' };
+// MULTIPLE SELECTION (29.09.2026). Each filter now holds a LIST, not one value, and an empty list
+// means "all". A native <select multiple> was not an option: it is a resizing list box that needs
+// ctrl-click and is unusable on a phone, so each filter is a button that opens its own tick list.
+// The board redraws on every tick, so the menu that is open is recorded and re-opened afterwards -
+// otherwise choosing two programmes would mean opening the same menu twice.
+// This also brings back "overdue AND today", which was dropped as a third option when it could only
+// be a designed choice; as two ticks it costs nothing and is the manager's own choice.
+let C_JF = { programme: [], due: [], owner: [], source: [] };
+let C_JFOPEN = null;
+const C_JF_EMPTY = () => ({ programme: [], due: [], owner: [], source: [] });
+function cJfToggle(k) { C_JFOPEN = C_JFOPEN === k ? null : k; cDrawJourney(); }
+function cJfPick(k, value, on) {
+  const set = new Set(C_JF[k] || []);
+  if (on) set.add(value); else set.delete(value);
+  C_JF[k] = [...set];
+  cDrawJourney();
+}
+function cJfClear() { C_JF = C_JF_EMPTY(); C_JFOPEN = null; cDrawJourney(); }
 const C_JF_DUE = [['over', 'Overdue'], ['today', 'Today']];   // "Overdue or today" was dropped: it was just the two together
 const cNotSaid = '\u2014';   // stands for "no value recorded" in a filter
 function cJourneyMatch(p, t, f) {
   const prog = p.programme || cNotSaid, owner = p.owner || cNotSaid, src = p.source_channel || cNotSaid;
-  if (f.programme && prog !== f.programme) return false;
-  if (f.owner && owner !== f.owner) return false;
-  if (f.source && src !== f.source) return false;
-  if (f.due) {
-    const w = t ? cWhenClass(t.due_at) : '';
-    if (f.due === 'over' && w !== 'over') return false;
-    if (f.due === 'today' && w !== 'today') return false;
-  }
+  // An empty list means every value, so a filter nobody has touched holds nothing back.
+  // Array.isArray is not defensive dressing: a bare string passes .length AND .includes, and
+  // 'over'.includes('') is true, so a filter left as a string would quietly keep the people it was
+  // supposed to remove. A wrong type now filters nothing, which is visible, instead of filtering
+  // wrongly, which is not.
+  const kept = (k, v) => { const sel = Array.isArray(f[k]) ? f[k] : []; return !sel.length || sel.includes(v); };
+  if (!kept('programme', prog)) return false;
+  if (!kept('owner', owner)) return false;
+  if (!kept('source', src)) return false;
+  if (!kept('due', t ? cWhenClass(t.due_at) : '')) return false;
   return true;
 }
 function cJourneyFilters(open) {
@@ -1938,16 +2002,29 @@ function cJourneyFilters(open) {
   const owners = [...new Set([...(CFG.owners || []), ...distinct('owner')])];
   const sources = distinct('source_channel').sort((a, b) => a.localeCompare(b));
   const name = (k, v) => (v === cNotSaid ? 'not recorded' : k === 'source' ? channelLabel(v) : v);
-  const box = (k, label, values) => `<label class="c-jf${C_JF[k] ? ' on' : ''}"><span>${label}</span><select aria-label="${label}" onchange="C_JF.${k}=this.value;cDrawJourney()">
-      <option value="">All</option>${values.map(([v, t]) => `<option value="${esc(v)}"${C_JF[k] === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`;
-  const any = Object.values(C_JF).some(Boolean);
+  const box = (k, label, values) => {
+    const picked = C_JF[k] || [];
+    const labelOf = (v) => (values.find(([x]) => x === v) || [, v])[1];
+    const text = !picked.length ? 'All'
+      : picked.length === 1 ? labelOf(picked[0])
+      : labelOf(picked[0]) + ' +' + (picked.length - 1);
+    const open = C_JFOPEN === k;
+    return `<div class="c-jf c-jfm${picked.length ? ' on' : ''}"><span>${label}</span><button type="button" class="c-jfb"
+      aria-expanded="${open}" aria-haspopup="true" aria-label="${esc(label)}"
+      onclick="event.stopPropagation();cJfToggle('${k}')">${esc(text)}</button>${open
+      ? `<div class="c-jfmenu" role="group" aria-label="${esc(label)}" onclick="event.stopPropagation()">${values.map(([v, t]) =>
+          `<label><input type="checkbox" value="${esc(v)}"${picked.includes(v) ? ' checked' : ''}
+            onchange="cJfPick('${k}', this.value, this.checked)"><span>${esc(t)}</span></label>`).join('')}</div>`
+      : ''}</div>`;
+  };
+  const any = Object.values(C_JF).some((v) => v && v.length);
   return `<div class="c-jfilters" role="group" aria-label="Filter the Journey">
     <svg class="c-jf-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3.5h11l-4.2 5v4l-2.6 1.2V8.5z"/></svg>
     ${box('programme', 'Programme', progs.map((v) => [v, name('programme', v)]))}
     ${box('due', 'Overdue / Today', C_JF_DUE)}
     ${box('owner', 'Owner', owners.map((v) => [v, name('owner', v)]))}
     ${box('source', 'Came from', sources.map((v) => [v, name('source', v)]))}
-    ${any ? `<button class="btn sm ghost c-jf-clear" onclick="C_JF={programme:'',due:'',owner:'',source:''};cDrawJourney()">Clear</button>` : ''}
+    ${any ? '<button class="btn sm ghost c-jf-clear" onclick="cJfClear()">Clear</button>' : ''}
   </div>`;
 }
 function cDrawJourney() {
@@ -1970,6 +2047,13 @@ function cDrawJourney() {
       <p class="c-ev"><span class="c-dec">Stages to agree</span></p>
     </div></div>`;
   if (narrow && sel && C_JSEL === sel.id) { const card = document.querySelector('.c-journey > .c-card'); if (card && card.scrollIntoView) card.scrollIntoView({ block: 'start' }); }
+  // one pair of listeners for the life of the page, not one per redraw: a click anywhere outside a
+  // filter closes the open tick list, and so does Escape.
+  if (!window.__cJfWired) {
+    window.__cJfWired = 1;
+    document.addEventListener('click', () => { if (C_JFOPEN) { C_JFOPEN = null; cDrawJourney(); } });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && C_JFOPEN) { C_JFOPEN = null; cDrawJourney(); } });
+  }
   document.querySelectorAll('.c-jp[draggable]').forEach((c) => c.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', c.dataset.id)));
   document.querySelectorAll('.c-drop').forEach((col) => {
     col.addEventListener('dragover', (e) => { e.preventDefault(); col.classList.add('over'); });

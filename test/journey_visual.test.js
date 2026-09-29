@@ -114,7 +114,7 @@ test('every Journey stage still appears, in the same order, with its own label',
   let html = '';
   const ctx = { ...sandbox(), CFG: CONFIG, C_TERMINAL: ['Admitted', 'Not proceeding'], C_JSEL: null,
     C_JDATA: { people: [{ id: 'a', name: 'A', status: open[0].id }], taskOf: new Map() },
-    cPersonCard: () => '', channelLabel: (c) => c, $: () => ({ set innerHTML(v) { html = v; } }), document: { querySelectorAll: () => [], querySelector: () => null }, window: {} };
+    cPersonCard: () => '', channelLabel: (c) => c, $: () => ({ set innerHTML(v) { html = v; } }), document: { querySelectorAll: () => [], querySelector: () => null, addEventListener: () => {} }, window: {} };
   const cardSrc = fn('function cJourneyCard(');
   const iconStart = APP.indexOf('const C_JICON = {');
   const filters = APP.slice(APP.indexOf('let C_JF = {'), APP.indexOf('function cDrawJourney('));   // the Journey filters (2A)
