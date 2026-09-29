@@ -145,6 +145,12 @@ dpl_BQ2rpkN6ggPPktnFekPPkrBaGBSj** (588/588; live page = commit + sign-in script
 - Texts cut to a third (Ritvars): People "Click a row to edit.", its count "All N people.", Next
   Steps "What the team has to do.", New Leads "New arrivals land here first."
 - Checked: desktop light/dark, phone light/dark. Tests: test/kit13_polish.test.js.
+**Ieva's two points - LIVE 29.09.2026, dpl_4hDHjrpkzxdMSydQAMmpoUMKnqzq** (651/651): "Add lead" on New Leads (the Add person form);
+every Next Steps row shows the phone and email as call / write links and one line of the newest comment (else the imported note), without
+opening the profile. Test: test/ieva_feedback.test.js. Also LIVE today: e070927 the Postgres schema as a connection option (the pg
+DeprecationWarning gone; checked read-only on Neon first).
+NEXT: Aigars' open three - a colour/icon per next-step type, a Journey summary for management, the real channels.
+
 **People filters as dropdowns - LIVE 29.09.2026, dpl_5vWRBip8K4L3E9ooQZRfnc8iuz9T** (647/647): Aigars' "filtrus ... nevis vnk pills" was
 written under the PEOPLE screenshot. Stage, Programme, Next step, Owner, Came from, Details - the Journey's look, combined, every old
 pill kept as an option. Test: test/people_filters.test.js.
