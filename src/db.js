@@ -176,7 +176,7 @@ CREATE TABLE IF NOT EXISTS consents (
 CREATE TABLE IF NOT EXISTS feedback (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   author TEXT,                 -- who was acting when they sent it
-  kind TEXT NOT NULL,          -- BUG | IDEA
+  kind TEXT NOT NULL,          -- BUG | IDEA | QUESTION
   body TEXT NOT NULL,
   path TEXT,                   -- the screen they were on. A hint from the client, display only.
   created_at TEXT NOT NULL,

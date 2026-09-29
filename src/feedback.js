@@ -11,7 +11,8 @@ const MAX_BYTES = 1536000;                     // 1.5 MB decoded
 export const MAX_CHARS = Math.ceil(MAX_BYTES / 3) * 4 + 64;
 const DATA_URL = /^data:image\/(png|jpe?g|webp);base64,([A-Za-z0-9+/]+={0,2})$/;
 
-export const KINDS = ['BUG', 'IDEA'];
+// QUESTION (29.09.2026, dev kit part 3): asked from the Help center when the answer is not there yet.
+export const KINDS = ['BUG', 'IDEA', 'QUESTION'];
 export const MIN_BODY = 4;
 export const MAX_BODY = 2000;
 
@@ -57,7 +58,7 @@ export function readScreenshot(value) {
 
 export function readKind(value) {
   const kind = String(value || '').toUpperCase();
-  if (!KINDS.includes(kind)) throw new BadScreenshot('Say whether this is an idea or something broken.');
+  if (!KINDS.includes(kind)) throw new BadScreenshot('Say whether this is an idea, something broken or a question.');
   return kind;
 }
 

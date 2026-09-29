@@ -1212,6 +1212,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-fb-top .btn{margin-left:auto}
   html.ui-c .c-fb-kind{font-size:11.5px;font-weight:600;letter-spacing:.03em;border:1px solid var(--rule);border-radius:99px;padding:1px 9px;color:var(--t2)}
   html.ui-c .c-fb-kind.bug{color:var(--c-bad);border-color:var(--c-bad)}
+  html.ui-c .c-fb-kind.question{color:var(--pet);border-color:var(--pet)}
   html.ui-c .c-fb-body{margin-top:6px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}
   html.ui-c .c-fb-shot{display:block;margin-top:8px;max-width:min(420px,100%);border:1px solid var(--rule);border-radius:8px;cursor:zoom-in}
 </style>
@@ -1556,7 +1557,7 @@ async function viewSettingsC() {
     <h2 class="c-set-h">Help</h2>
     <div class="c-sheet c-set">
       ${item('#/help', 'Help center', 'How each screen works, and answers to common questions.')}
-      <div class="c-line" tabindex="0" onclick="fbToggle()"><div class="c-who"><b>Report a problem or an idea</b><small>Reaches the people who build the CRM. You can add a screenshot.</small></div><div class="c-when">›</div></div>
+      <div class="c-line" tabindex="0" onclick="fbOpen('BUG')"><div class="c-who"><b>Report a problem or an idea</b><small>Reaches the people who build the CRM. You can add a screenshot.</small></div><div class="c-when">›</div></div>
     </div>
     ${admin}`;
 }
@@ -1569,7 +1570,7 @@ function viewHelpC() {
   const q = (t, a) => `<details class="c-faq"><summary>${t}</summary><div>${a}</div></details>`;
   $('#view').innerHTML = `<p class="c-crumb"><a href="#/settings">Settings</a></p>
     <div class="c-head"><div><h1>Help center</h1><p>How the CRM works, in short.</p></div>
-      <button class="btn" style="margin-left:auto" onclick="fbToggle()">Report a problem</button></div>
+      <button class="btn" style="margin-left:auto" onclick="fbOpen('BUG')">Report a problem</button></div>
     <div class="c-steps">
       <a class="c-step" href="#/leads"><span class="c-step-n">01</span><b>New Leads</b><small>Everything that arrives lands here first. Say what they want to study and the next step, and they move into Admissions. Junk is marked not relevant, never deleted.</small></a>
       <a class="c-step" href="#/next"><span class="c-step-n">02</span><b>Next Steps</b><small>What the team has to do: overdue, due today, coming up. Press Done, say how it went and choose the next step. Everyone always keeps a next step.</small></a>
@@ -2057,7 +2058,7 @@ async function viewFeedbackC() {
   const open = rows.filter((r) => !r.handledAt); const done = rows.filter((r) => r.handledAt);
   const list = C_FB_SHOW === 'open' ? open : done;
   const item = (r) => `<div class="c-fb${r.handledAt ? ' is-handled' : ''}">
-      <div class="c-fb-top"><span class="c-fb-kind ${r.kind === 'BUG' ? 'bug' : ''}">${r.kind === 'BUG' ? 'Something broken' : 'An idea'}</span>
+      <div class="c-fb-top"><span class="c-fb-kind ${r.kind === 'BUG' ? 'bug' : r.kind === 'QUESTION' ? 'question' : ''}">${FB_KIND_LABEL[r.kind] || 'An idea'}</span>
         <span class="c-gap-soft">${esc(r.author || 'unknown')} · ${fmtDateTime(r.createdAt)}${r.path ? ' · ' + fbPathLink(r.path) : ' · no page recorded'}${r.handledAt ? ' · handled ' + fmtDateTime(r.handledAt) : ''}</span>
         <button class="btn sm ${r.handledAt ? 'ghost' : ''}" onclick="fbHandle(${Number(r.id)}, ${r.handledAt ? 'false' : 'true'})">${r.handledAt ? 'Reopen' : 'Mark handled'}</button></div>
       <div class="c-fb-body">${esc(r.body)}</div>
@@ -4505,17 +4506,26 @@ function fbMenuHtml() {
 }
 
 function fbOpenForm() { FB.view = 'form'; fbDraw(); }
+// Straight into the box on a given kind (dev kit part 3): "Report a problem" opens it on Something
+// broken, the Help center's "Ask a question" on A question with what was searched already in it.
+function fbOpen(kind, text) {
+  FB.open = true; FB.view = 'form'; FB.shot = null;
+  if (['BUG', 'IDEA', 'QUESTION'].includes(kind)) FB.kind = kind;
+  if (text) FB.text = text;
+  fbDraw();
+}
+const FB_KIND_LABEL = { BUG: 'Something broken', IDEA: 'An idea', QUESTION: 'A question' };
 function fbSetKind(k) { FB.kind = k; fbDraw(); }
 
 function fbFormHtml() {
-  const placeholder = FB.kind === 'BUG'
-    ? 'What did you expect, and what happened instead?'
-    : 'What would make this easier to use?';
+  const placeholder = FB.kind === 'BUG' ? 'What did you expect, and what happened instead?'
+    : FB.kind === 'QUESTION' ? 'What would you like to know?' : 'What would make this easier to use?';
   const text = FB.text || '';
   return `<h4>Send feedback</h4>
     <div class="kindtoggle">
       <button class="${FB.kind === 'IDEA' ? 'on' : ''}" onclick="fbSetKind('IDEA')">An idea</button>
       <button class="${FB.kind === 'BUG' ? 'on' : ''}" onclick="fbSetKind('BUG')">Something broken</button>
+      <button class="${FB.kind === 'QUESTION' ? 'on' : ''}" onclick="fbSetKind('QUESTION')">A question</button>
     </div>
     <textarea id="fbText" rows="4" maxlength="2000" placeholder="${esc(placeholder)}">${esc(text)}</textarea>
     <div id="fbShot">${fbShotHtml()}</div>
@@ -4692,7 +4702,7 @@ async function viewFeedback() {
   const open = d.rows.filter(r => !r.handledAt).length;
   const row = (r) => `<div class="fbrow ${r.handledAt ? 'handled' : ''}">
     <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
-      <div><span class="pill ${r.kind === 'BUG' ? 'warn' : 'calm'}">${r.kind === 'BUG' ? 'Something broken' : 'An idea'}</span></div>
+      <div><span class="pill ${r.kind === 'BUG' ? 'warn' : 'calm'}">${FB_KIND_LABEL[r.kind] || 'An idea'}</span></div>
       <button class="btn sm ghost" onclick="fbHandle(${r.id}, ${r.handledAt ? 'false' : 'true'})">
         ${r.handledAt ? 'Reopen' : 'Mark handled'}</button>
     </div>

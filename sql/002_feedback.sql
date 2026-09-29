@@ -12,7 +12,7 @@
 create table if not exists feedback (
   id            bigint generated always as identity primary key,
   author        text,                                   -- who was acting when they sent it
-  kind          text not null check (kind in ('BUG', 'IDEA')),
+  kind          text not null check (kind in ('BUG', 'IDEA', 'QUESTION')),
   body          text not null check (char_length(body) between 4 and 2000),
   path          text check (char_length(path) <= 200),  -- the screen. A hint from the client, display only.
   created_at    timestamptz not null default now(),
