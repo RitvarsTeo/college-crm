@@ -145,6 +145,11 @@ dpl_BQ2rpkN6ggPPktnFekPPkrBaGBSj** (588/588; live page = commit + sign-in script
 - Texts cut to a third (Ritvars): People "Click a row to edit.", its count "All N people.", Next
   Steps "What the team has to do.", New Leads "New arrivals land here first."
 - Checked: desktop light/dark, phone light/dark. Tests: test/kit13_polish.test.js.
+**Phone catches up - LIVE 29.09.2026, commit 7ded9c2, dpl_DznzBX4SMXqXMWa4tfqCUy9zZxiv** (656/656). Ritvars: a run should
+bring in all the calls, daily at 08:15 Riga. A run now walks from the bookmark (`pbx_until`) to now in 15-minute
+pieces (at most 24 h, stops at 40 s and carries on next run). Schedule 05:15 UTC = 08:15 Riga, 07:15 after 25.10.
+First Run before this change: TeleGroup answered, 0 calls in 16:13-16:28 (the real token works).
+
 **Phone channel in TEST mode, with a Run button - LIVE 29.09.2026, commits ad597ce + 3cac650, deployment
 dpl_CDRxXtVNDtZbhJjtiegmD229uwL4, then a redeploy for the mode** (651/651). Ritvars added PBX_API_TOKEN himself
 (Secret, Production). `/api/cron/pbx-calls` is on the Vercel schedule once a night (01:00 UTC) so the Cron Jobs
