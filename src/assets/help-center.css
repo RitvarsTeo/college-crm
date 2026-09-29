@@ -1,0 +1,27 @@
+/* THE HELP CENTER'S QUESTIONS AND THE TOUR. Part 3. Colours are part 2's tokens, with fallbacks. */
+.hc-search{display:flex;flex-direction:column;gap:6px;margin:0 0 12px;font-size:13px;color:var(--kit-ink-2,#3e5372)}
+.hc-search input{font:inherit;font-size:15px;padding:10px 12px;border-radius:8px;border:1px solid var(--kit-control-line,#6f7e97);
+  background:var(--kit-field,#fff);color:var(--kit-ink,#011111);width:100%;max-width:520px}
+.hc-search input:focus-visible{outline:2px solid var(--kit-focus,#0a2463);outline-offset:2px}
+.hc-none{margin:0;padding:14px 16px;color:var(--kit-ink-2,#3e5372)}
+.hc-ask{margin:14px 0 0;color:var(--kit-ink-2,#3e5372)}
+.hc-ask-btn{font:inherit;font-weight:700;background:none;border:0;padding:0;color:var(--kit-link,#0a2463);text-decoration:underline;cursor:pointer}
+
+/* the tour: a scrim, the ringed element above it, and the card docked where there is room */
+.ht-ov{position:fixed;inset:0;z-index:1000;background:rgba(1,17,17,.45);display:flex;align-items:flex-end;justify-content:center;padding:24px}
+.ht-ov.ht-top{align-items:flex-start}
+.ht-card{width:min(460px,100%);background:var(--kit-menu,#fff);color:var(--kit-ink,#011111);border:1px solid var(--kit-line,#c9d2de);
+  border-radius:14px;padding:18px 20px;box-shadow:0 18px 44px rgba(1,17,17,.35);font-family:var(--kit-font,system-ui,sans-serif)}
+.ht-step{font-size:12px;color:var(--kit-ink-2,#3e5372);letter-spacing:.04em}
+.ht-title{margin:4px 0 6px;font-size:19px}
+.ht-body{margin:0 0 14px;line-height:1.5}
+.ht-foot{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ht-main,.ht-quiet{font:inherit;font-size:14px;border-radius:8px;padding:8px 14px;cursor:pointer}
+.ht-main{background:var(--kit-primary,#0a2463);color:var(--kit-on-primary,#fff);border:0;font-weight:700}
+.ht-quiet{background:transparent;color:var(--kit-ink,#011111);border:1px solid var(--kit-control-line,#6f7e97)}
+.ht-dots{margin-left:auto;display:flex;gap:5px}
+.ht-dots i{width:7px;height:7px;border-radius:99px;background:var(--kit-line,#c9d2de)}
+.ht-dots i.on{background:var(--kit-mark,#53a7db)}
+.ht-hint{margin:12px 0 0;font-size:12px;color:var(--kit-ink-2,#3e5372)}
+.ht-spot{position:relative;z-index:1001;outline:3px solid var(--kit-mark,#53a7db);outline-offset:4px;border-radius:8px}
+@media (prefers-reduced-motion:reduce){.ht-ov,.ht-card{transition:none}}

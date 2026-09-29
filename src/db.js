@@ -196,6 +196,14 @@ CREATE TABLE IF NOT EXISTS feedback_screenshots (
   CHECK (mime_type IN ('image/png', 'image/jpeg', 'image/webp'))
 );
 
+-- How often each Help center question has been opened (dev kit part 3). A count per question id
+-- and nothing about who: the Help center puts the most opened first.
+CREATE TABLE IF NOT EXISTS help_faq_opens (
+  faq_id TEXT PRIMARY KEY,           -- the question's id in config/help.json
+  opens INTEGER NOT NULL DEFAULT 0,
+  last_at TEXT
+);
+
 CREATE TABLE IF NOT EXISTS channel_handshake (
   channel TEXT PRIMARY KEY,          -- one per channel: the latest answer wins
   verified_at TEXT NOT NULL,         -- when the provider last checked we were here

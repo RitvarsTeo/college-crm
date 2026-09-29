@@ -14,6 +14,22 @@ const DATA_URL = /^data:image\/(png|jpe?g|webp);base64,([A-Za-z0-9+/]+={0,2})$/;
 // QUESTION (29.09.2026, dev kit part 3): asked from the Help center when the answer is not there yet.
 export const KINDS = ['BUG', 'IDEA', 'QUESTION'];
 export const MIN_BODY = 4;
+
+// ------------------------------------------------ the Help center's questions (dev kit part 3)
+// WHICH QUESTIONS PEOPLE OPEN, counted for everybody, so the Help center shows the most opened
+// first. Only a count per question id: no person, nothing to say who opened what.
+/** A help question id: lower-case words and hyphens, as written in config/help.json. */
+export const HELP_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+export async function helpOpened(db, id, at) {
+  if (!HELP_ID.test(String(id || ''))) throw new BadScreenshot('Not a help question.');
+  // one statement, so two people opening the same question at once both count
+  await db.prepare(`INSERT INTO help_faq_opens (faq_id, opens, last_at) VALUES (?, 1, ?)
+    ON CONFLICT (faq_id) DO UPDATE SET opens = help_faq_opens.opens + 1, last_at = excluded.last_at`).run(String(id), at);
+}
+export async function helpCounts(db) {
+  const rows = await db.prepare('SELECT faq_id, opens FROM help_faq_opens').all();
+  return Object.fromEntries(rows.map((r) => [r.faq_id, Number(r.opens)]));
+}
 export const MAX_BODY = 2000;
 
 // What the first bytes say the file really is. The declared type is not consulted.

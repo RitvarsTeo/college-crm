@@ -11,6 +11,10 @@
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/assets/icon-192.png" sizes="192x192" type="image/png">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<!-- the Help center's tour and questions: dev kit part 3, copied unchanged -->
+<link rel="stylesheet" href="/assets/help-center.css">
+<script src="/assets/help-tour.js" defer></script>
+<script src="/assets/help-center.js" defer></script>
 <link rel="manifest" href="/manifest.webmanifest">
 <!-- The installed app's window bar is BLACK, in every app (28.09.2026: "change the app upper window
      lane to completely black"). The browser uses this over the manifest's theme_color. -->
@@ -906,6 +910,16 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-faq summary:focus-visible{outline:2px solid var(--pet);outline-offset:-2px}
   html.ui-c .c-faq > div{padding:0 16px 14px 32px;color:var(--t2);font-size:14px;line-height:1.55;max-width:75ch}
   html.ui-c .c-help-foot{margin:22px 0 0;font-size:12px;color:var(--t3)}
+  /* dev kit part 3 styles its pieces with part 2's --kit-* tokens: the CRM's own tokens, mapped */
+  html.ui-c{--kit-menu:var(--menu);--kit-ink:var(--ink);--kit-ink-2:var(--t2);--kit-line:var(--rule);--kit-control-line:var(--control-line);
+    --kit-field:var(--field);--kit-primary:var(--btn-bg);--kit-on-primary:var(--btn-ink);--kit-focus:var(--pet);--kit-link:var(--petink);--kit-mark:#29a8df;--kit-font:inherit}
+  html.ui-c .c-helpfaq .hc-list{background:var(--surface);border:1px solid var(--rule);border-radius:12px;overflow:hidden}
+  html.ui-c[data-theme="dark"] .c-helpfaq .hc-list{background:var(--glass);border-color:var(--glass-line)}
+  html.ui-c .help-faq{border-top:1px solid var(--rule2)} html.ui-c .help-faq:first-child{border-top:0}
+  html.ui-c .help-faq summary{cursor:pointer;padding:12px 16px;font-weight:600;font-size:14px;list-style-position:inside}
+  html.ui-c .help-faq summary:focus-visible{outline:2px solid var(--pet);outline-offset:-2px}
+  html.ui-c .help-faq > div{padding:0 16px 14px 32px;color:var(--t2);font-size:14px;line-height:1.55;max-width:75ch}
+  html.ui-c .hc-search input{max-width:520px}
   html.ui-c .helppanel h4{font-family:inherit;font-weight:650;font-size:15px}
   @media (max-width:760px){ html.ui-c .c-steps{grid-template-columns:1fr} }
   html.ui-c[data-theme="dark"] .c-step{background:var(--glass);border-color:var(--glass-line);box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 10px 28px rgba(3,12,26,.22)}
@@ -1567,29 +1581,33 @@ async function viewSettingsC() {
 // hierarchy of apply.novikontas.org, which the owner likes: one clear action, three
 // numbered steps, then short questions. Every answer describes what the CRM really does.
 function viewHelpC() {
-  const q = (t, a) => `<details class="c-faq"><summary>${t}</summary><div>${a}</div></details>`;
   $('#view').innerHTML = `<p class="c-crumb"><a href="#/settings">Settings</a></p>
-    <div class="c-head"><div><h1>Help center</h1><p>How the CRM works, in short.</p></div>
-      <button class="btn" style="margin-left:auto" onclick="fbOpen('BUG')">Report a problem</button></div>
+    <div class="c-head"><div><h1>Help center</h1></div>
+      <div class="act"><button class="btn ghost" id="helpTourBtn" onclick="cStartTour(this)">Take the tour</button>
+      <button class="btn" onclick="fbOpen('BUG')">Report a problem</button></div></div>
     <div class="c-steps">
       <a class="c-step" href="#/leads"><span class="c-step-n">01</span><b>New Leads</b><small>Everything that arrives lands here first. Say what they want to study and the next step, and they move into Admissions. Junk is marked not relevant, never deleted.</small></a>
       <a class="c-step" href="#/next"><span class="c-step-n">02</span><b>Next Steps</b><small>What the team has to do: overdue, due today, coming up. Press Done, say how it went and choose the next step. Everyone always keeps a next step.</small></a>
       <a class="c-step" href="#/outcomes"><span class="c-step-n">03</span><b>Outcomes</b><small>Where finished journeys end: admitted or not proceeding. The download for management review is here.</small></a>
     </div>
-    <h2 class="c-set-h">Questions</h2>
-    <div class="c-sheet c-faqs">
-      ${q('How do I sign in?', 'With <b>Continue with Google</b>, using your @novikontas.org account. If Google signs you in and the CRM still says you are not authorised, you are not on its list yet: ask an admin to add you.')}
-      ${q('Can I delete a person?', 'No. Nobody is deleted. When someone is not going ahead, close them as <b>Not proceeding</b> with a reason. They stay on record in Outcomes.')}
-      ${q('What does "late" mean in New Leads?', 'The lead arrived before today, it is past 09:00 Riga time, and nobody has handled it yet.')}
-      ${q('Which time zone is used?', 'Riga. Every day and time in the CRM is Latvian time, in summer and in winter.')}
-      ${q('How do I move someone along?', 'On <a href="#/journey">Journey</a>, drag the person to the next stage when something real has happened. Click a person to see their details and their next step.')}
-      ${q('Where do the Home numbers come from?', 'From the people in the CRM, counted for this year. <b>Download for management review</b> on Outcomes gives the figures as Excel, Google Sheets or CSV.')}
-      ${q('Light, dark or system?', 'Use the switch at the bottom of the menu, or in Settings. <b>System</b> follows your computer, and changes when it does. The choice is remembered on this device.')}
-      ${q('Can I install it as an app?', 'Yes. In Chrome or Edge, click the install icon at the right end of the address bar. Academy CRM then opens in its own window, with the Academy logo on the desktop and the taskbar.')}
-      ${q('Something is wrong or missing', 'Press <b>Report a problem</b> above, or the <b>Feedback</b> button in the corner. You can add a screenshot. It reaches the people who build the CRM.')}
-    </div>
+    <h2 class="c-set-h">Questions and answers</h2>
+    <div id="helpFaq" class="c-helpfaq"></div>
     <p class="c-help-foot">&copy; Novikontas Academy</p>`;
+  // dev kit part 3: search, the most opened first (counted on the server), "Ask a question" into the
+  // SAME feedback box on A question, with what was searched already in it
+  if (window.HelpCenter) HelpCenter.mount(document.getElementById('helpFaq'), {
+    faq: (CFG.help && CFG.help.faq) || [], onAsk: (text) => fbOpen('QUESTION', text) });
 }
+// The tour (dev kit part 3): every step rings the real thing on screen. The theme switch is in the
+// menu on a wide screen and at the bottom of the page on a narrow one, so its target is chosen now.
+function cStartTour(btn) {
+  if (!window.HelpTour) return;
+  const narrow = window.matchMedia && window.matchMedia('(max-width:900px)').matches;
+  const steps = ((CFG.help && CFG.help.tour) || []).map((s) => ({ ...s,
+    target: s.target === '@theme-switch' ? (narrow ? '#cThemeBar2 .theme-switch' : '#cThemeBar .theme-switch') : s.target }));
+  HelpTour.create({ steps, storageKey: 'crmTour' }).open(btn);
+}
+
 
 // ------------------------------------------------------------------ NEW LEADS
 // Who has just arrived and needs understanding. One line per arrival; clicking it

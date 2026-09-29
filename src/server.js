@@ -9,7 +9,7 @@ import { hasRealData, loadReal } from './real.js';
 import { PROVIDERS, runScenario, runOutbound, runFullDemo, listEvents, getEvent, consentFor, consentSummary, DEMO_SEQUENCE } from './simulator.js';
 import { logEvent, applyEdit, readHistory, MANUAL, AUTOMATIC, EDITABLE_FIELDS, IMMUTABLE_FIELDS, FIELD_LABELS } from './history.js';
 import { receive, listInbound, qualify, archive, funnel, agedCount, handoffToSis, ownerFor, notifiedFor, handoverGap, canReach, surfaceAt, waitingFor, waitingByRole } from './intake.js';
-import { readScreenshot, readKind, readBody, readPath, saveFeedback, listFeedback, getScreenshot, setHandled, BadScreenshot } from './feedback.js';
+import { readScreenshot, readKind, readBody, readPath, saveFeedback, listFeedback, getScreenshot, setHandled, BadScreenshot, helpOpened, helpCounts } from './feedback.js';
 import { findMatches as matchPeople, duplicateCheck } from './identity.js';
 import { adapt, toIntake, hasAdapter, adapterIds } from './adapters.js';
 import { fixtureFor } from './fixtures.js';
@@ -57,6 +57,8 @@ const PORT = Number(process.env.PORT || 8800);
 // there and the cookie is Secure.
 const DEV_INSECURE_COOKIE = String(process.env.CRM_INSECURE_COOKIE || '') === '1';
 const CONFIG = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'prototype.json'), 'utf8'));
+// The Help center's tour and questions (dev kit part 3): one file the CRM keeps and grows.
+const HELP = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'help.json'), 'utf8'));
 const FIXTURES = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'inbound_fixtures.json'), 'utf8'));
 
 // The prototype now keeps its database in a file. It used to live in memory, and
@@ -1017,6 +1019,10 @@ export const handle = async (req, res) => {
         // "always Novikontas Academy logos have to be in web tabs and on desktop").
         // The brandbook symbol on a white tile: NA black, the A's leg Novikontas blue (29.09.2026, every app).
         'NoAca_logo_twotonehor.svg': 'image/svg+xml; charset=utf-8',   // the logo on light (dev kit part 2)
+        // the Help center's tour and questions, copied from dev kit part 3 unchanged
+        'help-tour.js': 'text/javascript; charset=utf-8',
+        'help-center.js': 'text/javascript; charset=utf-8',
+        'help-center.css': 'text/css; charset=utf-8',
         'favicon.svg': 'image/svg+xml; charset=utf-8',
         'icon-192.png': 'image/png',
         'icon-512.png': 'image/png',
@@ -1030,7 +1036,7 @@ export const handle = async (req, res) => {
       return res.end(fs.readFileSync(path.join(ROOT, 'src', 'assets', name)));
     }
 
-    if (req.method === 'GET' && p === '/api/config') return json(res, 200, { ...CONFIG, dataset: DATASET });
+    if (req.method === 'GET' && p === '/api/config') return json(res, 200, { ...CONFIG, dataset: DATASET, help: { tour: HELP.tour, faq: HELP.faq } });
 
     // --------------------------------------------------------- the database -
     if (req.method === 'POST' && p === '/api/dataset') {
@@ -2146,6 +2152,15 @@ export const handle = async (req, res) => {
       });
       return json(res, 200, { ok: true, ...saved });
     }
+
+    // The Help center's questions (dev kit part 3): anybody signed in counts one open of a
+    // question, and reads the counts so the most opened come first. Behind the sign-in door above.
+    if (req.method === 'POST' && p === '/api/help/opened') {
+      const b = await body(req, 4096);
+      await helpOpened(db, b.id, nowIso());
+      return json(res, 200, { ok: true });
+    }
+    if (req.method === 'GET' && p === '/api/help/counts') return json(res, 200, { counts: await helpCounts(db) });
 
     // The notification. Nothing in this app can send an email, so being told
     // happens inside the app: a count of what has not been handled yet.

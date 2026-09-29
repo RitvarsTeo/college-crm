@@ -1,0 +1,22 @@
+{
+  "_about": "THE CRM'S OWN HELP (dev kit part 3): the tour steps and the questions in the Help center. When the same question arrives in the feedback inbox twice (kind 'A question'), add it here with its answer. ids are lower-case words and hyphens and NEVER change once used: the open counts are kept per id (table help_faq_opens). Answers are plain text, and every answer must say what the CRM really does.",
+  "tour": [
+    { "title": "The menu", "body": "Everything in the CRM is one click from here. The numbers show what is waiting.", "target": ".cnav" },
+    { "title": "Next Steps", "body": "What the team has to do: overdue first, then today, then coming up. Press Done, say how it went and choose the next step.", "target": ".cnav a[data-c=\"next\"]" },
+    { "title": "Journey", "body": "Where every open person is, stage by stage, with their next step and its date.", "target": ".cnav a[data-c=\"journey\"]" },
+    { "title": "Light, System or Dark", "body": "Choose how the CRM looks. System follows your computer.", "target": "@theme-switch" },
+    { "title": "Stuck, or have an idea?", "body": "The Feedback button is on every screen. The Help center has this tour and the answers to questions about the CRM.", "target": "#helpBtn" }
+  ],
+  "faq": [
+    { "id": "how-do-i-sign-in", "q": "How do I sign in?", "a": "With Continue with Google, using your @novikontas.org account. If Google signs you in and the CRM still says you are not authorised, you are not on its list yet: ask an admin to add you." },
+    { "id": "delete-a-person", "q": "Can I delete a person?", "a": "No. Nobody is deleted. When someone is not going ahead, close them as Not proceeding with a reason. They stay on record in Outcomes." },
+    { "id": "late-in-new-leads", "q": "What does \"late\" mean in New Leads?", "a": "The lead arrived before today, it is past 09:00 Riga time, and nobody has handled it yet." },
+    { "id": "time-zone", "q": "Which time zone is used?", "a": "Riga. Every day and time in the CRM is Latvian time, in summer and in winter." },
+    { "id": "move-someone-along", "q": "How do I move someone along?", "a": "On Journey, drag the person to the next stage when something real has happened. Click a person to see their details and their next step." },
+    { "id": "home-numbers", "q": "Where do the Home numbers come from?", "a": "From the people in the CRM, counted for this year. Download for management review on Outcomes gives the figures as Excel, Google Sheets or CSV." },
+    { "id": "share-a-link", "q": "Can I send someone a link to a person?", "a": "Yes. Copy the address from the browser and send it. Anyone with a CRM account opens it; if they are signed out, they sign in first and then land on it." },
+    { "id": "light-dark-system", "q": "Light, dark or system?", "a": "Use the switch at the bottom of the menu, or in Settings. System follows your computer, and changes when it does. The choice is remembered on this device." },
+    { "id": "install-as-app", "q": "Can I install it as an app?", "a": "Yes. In Chrome or Edge, click the install icon at the right end of the address bar. Academy CRM then opens in its own window, with the Academy logo on the desktop and the taskbar." },
+    { "id": "something-wrong", "q": "Something is wrong or missing", "a": "Press Report a problem above, or the Feedback button in the corner. You can add a screenshot. It reaches the people who build the CRM." }
+  ]
+}
