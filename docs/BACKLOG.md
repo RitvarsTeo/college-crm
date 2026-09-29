@@ -164,6 +164,25 @@ page has a Run button that sends CRON_SECRET itself; CHANNEL_MODE_PHONE=test, so
 as `simulated`. TeleGroup (novikontas.tg.lv) not yet called with the real token: first run by hand is next.
 OPEN: the nightly run only reads the last 15 minutes; every 5 minutes waits for Vercel Pro.
 
+**Journey: several values per filter, how far along, and a comment that reads as one - LIVE 29.09.2026** (661/661):
+Aigars items 3, 4, 6 and 7. FILTERS: each one holds a LIST and an empty list means all; the same pill opens a tick list,
+and the open menu is remembered across the redraw so picking two programmes does not mean opening it twice. This also
+brings back "overdue AND today", dropped earlier as a designed third option - as two ticks it is the manager's own
+choice. HOW FAR ALONG: the column rail already ramped light blue to Navy across the stages, but colour was its only
+channel, so it said WHICH column and never HOW FAR; it is a length now too, a fifth of the track in the first column and
+all of it in the last. No new colour, and deliberately NO per-stage icon: the cards already carry the next-step type
+marks and a second icon language at the same size on the same screen is two things to learn instead of one. COMMENTS: a
+quote mark before the preview.
+Three bugs found by MEASURING, not by reading, all in the new tick list: the app styles form inputs to fill their field
+and a checkbox is an input, so the tick box was 109px wide and pushed every label out past the menu edge (names drawn off
+screen, not missing); overflow:hidden on the label span made it a flex item whose min-content is zero, measured 0px, and
+fed that zero into the menu width; and People still picks ONE value per filter while sharing cJourneyMatch, so with an
+array-only matcher a bare string passes .length AND .includes ('over'.includes('') is true) and People's Programme,
+Owner and Came-from would have silently stopped filtering. The wrapping is explicit at the People call site, with a test.
+Tests: test/journey_filters.test.js (rewritten for lists, incl. a test that a string filters NOTHING rather than the
+wrong people), test/journey_visual.test.js.
+OPEN: per-stage icons in the column header if Ritvars wants them as well; the Journey management summary; Channels.
+
 **New Leads: a missed call you can ring back - LIVE 29.09.2026** (658/658): the phone job put 9 real calls into
 New Leads and every row read "Unknown" with no number anywhere on it, so the one thing an operator needs after a
 missed call was the one thing the screen did not show. The number was there all along - sync.js storeCall passes
