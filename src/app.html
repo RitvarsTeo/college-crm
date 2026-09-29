@@ -763,7 +763,7 @@ code{font-size:12.5px}
 @keyframes loadbar{0%{transform:scaleX(0);opacity:1}70%{transform:scaleX(.9)}100%{transform:scaleX(1);opacity:.3}}
 
 .ok-tick{color:var(--petink);font-weight:600}
-.no-tick{color:var(--t4)}
+.no-tick{color:var(--bad);font-weight:600}
 .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;color:var(--t3)}
 .blocker{max-width:260px}
 .warnmark{color:var(--ambink);cursor:help}
@@ -802,8 +802,8 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
      and marks Navy instead of the teal. The blues, the amber and the state colours are unchanged. */
   html.ui-c{--paper:#f5f7fa;--surface:#ffffff;--surface-2:#eef1f5;--shell:#e7ebf0;--field:#ffffff;--menu:#ffffff;--ink:#011111;
     --t2:#415c8f;--t3:#4d6187;--t4:#56688a;--rule:#dde3ea;--rule2:#e4e9ef;--control-line:#6f7e97;
-    --pet:#0a2463;--petink:#0a2463;--btn-bg:#0a2463;--btn-ink:#ffffff;--on-navy:#ffffff;--bad:#9f3a31;   /* buttons: brandbook Navy */
-    --c-ok:#2c6e55;--c-warn:#835c12;--c-bad:#9f3a31;--c-accent-bg:#e5f1fa;--c-sunk:#eef1f5;--c-sel:#eff6fc}   /* Novikontas Blue, lightly (the owner 28.09) */
+    --pet:#0a2463;--petink:#0a2463;--btn-bg:#0a2463;--btn-ink:#ffffff;--on-navy:#ffffff;--bad:#b3261e;   /* buttons: brandbook Navy */
+    --c-sis:#29a8df;--c-ok:#2c6e55;--c-warn:#835c12;--c-bad:#b3261e;--c-accent-bg:#e5f1fa;--c-sunk:#eef1f5;--c-sel:#eff6fc}   /* Novikontas Blue, lightly (the owner 28.09) */
   /* Dark = the sign-in sea (the owner, 28.09.2026: "the exact same colours and tones with
      gradients from the login screen"). The page is the sign-in gradient, the sidebar its
      deepest navy, buttons white like the Google button. Amber brightened ("now its kind of
@@ -817,8 +817,8 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c[data-theme="dark"]{--paper:#0f2f4f;--surface:#133a60;--surface-2:#17456e;--shell:#08182e;--field:#0c2745;--menu:#133a60;--ink:#f2f6f9;
     --t2:#cddbe5;--t3:#bfd0dd;--t4:#b8cad8;--rule:#2a5580;--rule2:#1d4670;--control-line:#82a0ba;
     --pet:#a8d3f3;--petink:#bcdcf5;--btn-bg:#ffffff;--btn-ink:#0a2463;--on-navy:#0a2463;--bad:#ffb0a8;
-    --amb:#F7C04F;--ambink:#F7C04F;--late:#F7C04F;--warn:#F7C04F;
-    --c-ok:#9be0bd;--c-warn:#F7C04F;--c-bad:#ffb0a8;--c-accent-bg:#1a4670;--c-sunk:#0b2542;--c-sel:#163f66;
+    --amb:#F7C04F;--ambink:#F7C04F;--late:#ffb0a8;--warn:#F7C04F;
+    --c-sis:#29a8df;--c-ok:#9be0bd;--c-warn:#F7C04F;--c-bad:#ffb0a8;--c-accent-bg:#1a4670;--c-sunk:#0b2542;--c-sel:#163f66;
     --v-adm:#29a8df;--v-lead:#e7ebf0;--v-open:#F7C04F;--v-np:#93A5B8;--v-grid:#24507a;
     --j-from:#1d4d7a;--j-to:#8fcbef;   /* the Journey's stage line in dark (the review #2) */
     --glass:linear-gradient(180deg,rgba(255,255,255,.06) 0%,rgba(255,255,255,.035) 100%);
@@ -1121,13 +1121,13 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-jp small.none{color:var(--c-warn)}
   /* lifecycle facts from the SIS: quiet, one line, the brand blue edge - facts, not warnings */
   html.ui-c .c-life{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
-  html.ui-c .c-lifefact{font-size:12.5px;font-weight:600;color:var(--ink);border:1px solid var(--rule);border-left:3px solid #29a8df;border-radius:6px;padding:3px 9px;background:var(--surface)}
+  html.ui-c .c-lifefact{font-size:12.5px;font-weight:600;color:var(--ink);border:1px solid var(--rule);border-left:3px solid var(--c-sis);border-radius:6px;padding:3px 9px;background:var(--surface)}
   html.ui-c .c-lifefact time{font-weight:500;color:var(--t3);font-variant-numeric:tabular-nums;margin-left:4px}
   html.ui-c .c-card .c-life{margin:8px 0 0}
   html.ui-c .c-sisnow{font-size:12.5px;color:var(--t2);align-self:center}
   html.ui-c .c-sisnow b{color:var(--ink);font-weight:600}
   html.ui-c .c-sisnow time{color:var(--t3);font-variant-numeric:tabular-nums}
-  html.ui-c .c-jp small.c-jlife{display:inline-block;margin:3px 4px 0 0;padding:0 6px;border-radius:4px;border-left:2px solid #29a8df;background:var(--c-accent-bg);color:var(--ink);font-size:11px;font-weight:600}
+  html.ui-c .c-jp small.c-jlife{display:inline-block;margin:3px 4px 0 0;padding:0 6px;border-radius:4px;border-left:2px solid var(--c-sis);background:var(--c-accent-bg);color:var(--ink);font-size:11px;font-weight:600}
   /* the comment preview (the review): one quiet line, cut with an ellipsis; the whole note is on the card and the person page */
   html.ui-c .c-jp small.c-jnote{margin-top:5px;padding-top:4px;border-top:1px dashed var(--rule);color:var(--t3);font-size:11.5px;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
