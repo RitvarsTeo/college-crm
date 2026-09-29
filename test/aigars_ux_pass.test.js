@@ -10,13 +10,14 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
+const CONFIG = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'prototype.json'), 'utf8'));
 const fn = (name) => { const i = APP.indexOf(name); assert.ok(i >= 0, name); return APP.slice(i, APP.indexOf('\n}\n', i) + 2); };
 const line = (start) => { const i = APP.indexOf(start); assert.ok(i >= 0, start); return APP.slice(i, APP.indexOf('\n', i)); };
 
 function card(p, t) {
-  const ctx = { esc: (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`), cTodayIso: () => '2026-09-28', cDay: (iso) => String(iso).slice(0, 10) };
+  const ctx = { esc: (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`), cTodayIso: () => '2026-09-28', cDay: (iso) => String(iso).slice(0, 10), CFG: CONFIG };
   const i = APP.indexOf('const C_JICON = {');
-  vm.runInNewContext(`${line('const cWhenClass =')}\n${line('const cTask =')}\n${line('const cNotePreview =')}\n${line('const cComment =')}\n${APP.slice(i, APP.indexOf('\n};', i) + 3)}\n${fn('function cLifeFacts(')}\n${fn('function cJourneyCard(')}\nthis.card = cJourneyCard;`, ctx);
+  vm.runInNewContext(`${line('const cWhenClass =')}\n${line('const cTask =')}\n${line('const cNotePreview =')}\n${line('const cComment =')}\n${APP.slice(i, APP.indexOf('\n};', i) + 3)}\n${fn('function groupForAction(')}\n${line('const cStepIcon =')}\n${fn('function cLifeFacts(')}\n${fn('function cJourneyCard(')}\nthis.card = cJourneyCard;`, ctx);
   return ctx.card(p, t, null);
 }
 

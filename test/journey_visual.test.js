@@ -19,10 +19,12 @@ function sandbox(today = '2026-09-28') {
   const ctx = {
     esc: (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`),
     cTodayIso: () => today, cDay: (iso) => String(iso).slice(0, 10),
+    // the card reads the configured next-step list now: the type mark is looked up by label
+    CFG: CONFIG,
   };
   const iconStart = APP.indexOf('const C_JICON = {');
   const icons = APP.slice(iconStart, APP.indexOf('\n};', iconStart) + 3);
-  vm.runInNewContext(`${line('const cWhenClass =')}\n${line('const cTask =')}\n${line('const cNotePreview =')}\n${line('const cComment =')}\n${icons}\n${fn('function cLifeFacts(')}\n${fn('function cJourneyCard(')}\nthis.card = cJourneyCard;`, ctx);
+  vm.runInNewContext(`${line('const cWhenClass =')}\n${line('const cTask =')}\n${line('const cNotePreview =')}\n${line('const cComment =')}\n${icons}\n${fn('function groupForAction(')}\n${line('const cStepIcon =')}\n${fn('function cLifeFacts(')}\n${fn('function cJourneyCard(')}\nthis.card = cJourneyCard;`, ctx);
   return ctx;
 }
 const person = { id: 'p1', name: 'Example Person' };
@@ -58,6 +60,52 @@ test('the next step is the clearest line: its own element with an arrow, before 
   assert.match(none, /<small class="none">nothing planned<\/small>/, 'no step stays the amber warning it was');
 });
 
+test('a next step says what KIND it is: one mark per group, and no new colour', () => {
+  // Aigars, 29.09.2026: "a colour or icon per next-step type". An icon, because amber and red
+  // already mean today and overdue on this card - a colour per type would argue with the only
+  // two colours on the screen that currently mean anything.
+  const ic = APP.indexOf('const C_JICON = {');
+  const block = APP.slice(APP.indexOf('  type: {', ic), APP.indexOf('\n};', ic));
+  const groups = (CONFIG.nextActions || []).map((g) => g.group);
+  assert.ok(groups.length >= 3, 'the configured list still has its groups');
+  for (const g of groups) {
+    assert.ok(block.includes(`'${g}':`), `no mark for the group "${g}" - a new group needs one here`);
+  }
+
+  const s = sandbox();
+  const iconOf = (label) => {
+    const m = s.card(person, { label, due_at: '2026-10-02T09:00:00.000Z' }, null)
+      .match(/<span class="c-jnext">(<svg.*?<\/svg>)/s);
+    return m && m[1];
+  };
+  const pay = iconOf('Send the invoice');                  // Contract and payment
+  const talk = iconOf('Call and establish interest');      // Conversation and information
+  const imported = iconOf('Get in touch (from the sheet)');// the 23.09 import: in no group at all
+  assert.ok(pay && talk && imported, 'every card still draws a mark');
+  assert.notEqual(pay, talk, 'two different groups, two different marks');
+  assert.match(imported, /M3 8h9M8\.5 4\.5 12 8l-3\.5 3\.5/,
+    'a step that matches no configured type keeps the plain arrow instead of being put in a group');
+
+  // one colour for all of them, and none smuggles its own in
+  assert.match(APP, /html\.ui-c \.c-tico\{[^}]*color:var\(--pet\)\}/, 'the marks share the one teal');
+  assert.doesNotMatch(block, /fill="#|stroke="#|style="/, 'no mark carries a colour of its own');
+});
+
+test('every next step the demo plans is one of the configured types', () => {
+  // Two had drifted from the list they are supposed to come from: "Check the documents" for
+  // "Check the submitted documents", and "Collect the medical certificate" for "Medical
+  // certificate". A task stores its WORDS and not an id, so a label that is not in the list can
+  // never be matched back to a type again - not for the mark on the card, and not for any count
+  // of steps by kind. Both were found by reading the running demo, not the source.
+  const demo = fs.readFileSync(path.join(ROOT, 'src', 'demo.js'), 'utf8');
+  const known = new Set();
+  for (const g of (CONFIG.nextActions || [])) for (const i of g.items) known.add(i.label);
+  const used = [...demo.matchAll(/next: '([^']+)'/g)].map((m) => m[1]);
+  assert.ok(used.length >= 10, 'the demo still plans next steps');
+  assert.deepEqual([...new Set(used)].filter((l) => !known.has(l)), [],
+    'every demo next step must be a label from config.nextActions');
+});
+
 test('every Journey stage still appears, in the same order, with its own label', () => {
   const open = (CONFIG.stages || []).filter((s) => !['Admitted', 'Not proceeding'].includes(s.id));
   assert.ok(open.length >= 3);
@@ -70,7 +118,7 @@ test('every Journey stage still appears, in the same order, with its own label',
   const cardSrc = fn('function cJourneyCard(');
   const iconStart = APP.indexOf('const C_JICON = {');
   const filters = APP.slice(APP.indexOf('let C_JF = {'), APP.indexOf('function cDrawJourney('));   // the Journey filters (2A)
-  vm.runInNewContext(`${line('const cWhenClass =')}\n${line('const cTask =')}\n${line('const cNotePreview =')}\n${line('const cComment =')}\n${APP.slice(iconStart, APP.indexOf('\n};', iconStart) + 3)}\n${fn('function cLifeFacts(')}\n${cardSrc}\n${filters}\n${draw}\ncDrawJourney();`, ctx);
+  vm.runInNewContext(`${line('const cWhenClass =')}\n${line('const cTask =')}\n${line('const cNotePreview =')}\n${line('const cComment =')}\n${APP.slice(iconStart, APP.indexOf('\n};', iconStart) + 3)}\n${fn('function groupForAction(')}\n${line('const cStepIcon =')}\n${fn('function cLifeFacts(')}\n${cardSrc}\n${filters}\n${draw}\ncDrawJourney();`, ctx);
   const heads = [...html.matchAll(/<h3><span class="c-jn">(\d+)<\/span>([^<]+) <b>/g)].map((m) => [Number(m[1]), m[2]]);
   assert.deepEqual(heads, open.map((s, i) => [i + 1, s.label || s.id]), 'numbered 1..n, labels exactly as configured');
 });

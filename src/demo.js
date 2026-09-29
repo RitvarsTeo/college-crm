@@ -45,7 +45,7 @@ const CAST = [
     outcome: 'lead', next: 'Follow up after the visit', stage: 'Contacted' },
   { name: 'Arun Kumar', email: 'arun.kumar@example.in', phone: '+919876543210',
     channel: 'agent', scenario: 'study_enquiry', programme: 'NAV', days: 8,
-    outcome: 'lead', next: 'Check the documents', stage: 'Application' },
+    outcome: 'lead', next: 'Check the submitted documents', stage: 'Application' },
   { name: 'Raivis Bresis', phone: '+37128662447', email: 'raivis.bresis@gmail.com',
     channel: 'gmail', scenario: 'documents_question', programme: 'ENG', days: 11,
     outcome: 'lead', next: 'Prepare the study contract', stage: 'Contract' },
@@ -54,7 +54,7 @@ const CAST = [
     outcome: 'lead', next: 'Send the invoice', stage: 'Contract' },
   { name: 'Gatis Purmalis', phone: '+37126551234', email: 'gatis.purmalis@inbox.lv',
     channel: 'in_person', scenario: 'study_enquiry', programme: 'MT MTM', days: 30,
-    outcome: 'lead', next: 'Collect the medical certificate', stage: 'Admitted', overdue: true },
+    outcome: 'lead', next: 'Medical certificate', stage: 'Admitted', overdue: true },
 
   // still unclear, and that is a legitimate place to be
   { name: 'Toms Bērziņš', handle: '@toms.b',
