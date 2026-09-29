@@ -317,6 +317,14 @@ CREATE TABLE IF NOT EXISTS sis_applicants (
 );
 
 -- Where each poller got to, so the next run asks only for what changed.
+-- The same provider event, twice, is one row. receive() checks first, but a check and
+-- an insert are two steps and two deliveries of one message can arrive together; the
+-- index is what actually holds. Partial, because a channel with no id of its own must
+-- still be able to store rows: in SQLite and in Postgres, NULLs do not collide anyway,
+-- and saying so keeps the intent on the page.
+CREATE UNIQUE INDEX IF NOT EXISTS inbound_channel_external
+  ON inbound (channel, external_id) WHERE external_id IS NOT NULL;
+
 CREATE TABLE IF NOT EXISTS sync_state (
   name TEXT PRIMARY KEY,
   value TEXT,

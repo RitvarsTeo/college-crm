@@ -123,7 +123,12 @@ export async function receive(db, item) {
   // 'provider': a row may only claim a real provider sent it when the caller
   // knows that for a fact, because the admin Channels panel treats that word as
   // proof a channel is connected.
-  const info = await db.prepare(`INSERT INTO inbound
+  // A clash on inbound_channel_external means another delivery of this same event won
+  // the race between the check above and this insert. That is a repeat, not an error,
+  // and the caller is told exactly what it would have been told a moment earlier.
+  let info;
+  try {
+    info = await db.prepare(`INSERT INTO inbound
     (channel, thread_key, external_id, received_at, surface_at, contact_name, contact_handle,
      contact_email, contact_phone, body, suggested, suggestion_why, state, source, attribution, consent)
     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(
@@ -132,6 +137,14 @@ export async function receive(db, item) {
     item.body || null, read.suggested, read.why, state, item.source || null,
     item.attribution ? JSON.stringify(item.attribution) : null,
     item.consent ? JSON.stringify(item.consent) : null);
+  } catch (err) {
+    const clash = /UNIQUE|duplicate key|unique constraint/i.test(String(err && err.message));
+    if (!clash || !item.externalId) throw err;
+    const seen = await db.prepare('SELECT id FROM inbound WHERE channel = ? AND external_id = ?')
+      .get(item.channel, item.externalId);
+    if (seen) return { duplicate: true, id: seen.id };
+    throw err;
+  }
   const id = Number(info.lastInsertRowid);
   if (read.junk) {
     await db.prepare(`UPDATE inbound SET archive_reason = 'Filtered automatically',
