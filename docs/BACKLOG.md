@@ -145,6 +145,34 @@ dpl_BQ2rpkN6ggPPktnFekPPkrBaGBSj** (588/588; live page = commit + sign-in script
 - Texts cut to a third (Ritvars): People "Click a row to edit.", its count "All N people.", Next
   Steps "What the team has to do.", New Leads "New arrivals land here first."
 - Checked: desktop light/dark, phone light/dark. Tests: test/kit13_polish.test.js.
+**Unified audit work 29.09.2026 (Projects/College CRM/UNIFIED_AUDIT_WORK_2026-09-29.md) - all four
+items LIVE**, each deployed from the clean folder and read back (live page = commit + sign-in script,
+byte-identical; 401s; 0 leaks):
+- Items 3-4, frame drifts (dev kit part 2) - **9bc41e2**, dpl_6QSwwqFAbdTGVbWnHhvyeL8j3YKK, 599/599:
+  manifest background_color #ffffff (read back live); the logo link aria-label "Novikontas Academy -
+  Home" (read back live); the official two-tone logo on light (src/assets/NoAca_logo_twotonehor.svg,
+  served 200; replaces the Pitch Black recolour of 24.09); icon comments say white tile; C headings
+  Inter everywhere (the owner locked Inter, 28.09). Test: test/frame_drifts.test.js.
+- Item 2, feedback kind QUESTION - **ea3b586**, dpl_AdLkFKjerMo62dbNeZnFMoN41Fom, 603/603: the box has
+  An idea / Something broken / A question; server KINDS + sql/002 check; both inboxes label it;
+  "Report a problem" (Settings, Help center) opens the box on Something broken. The live feedback
+  table stores kind as plain TEXT (no DB check), so no schema change. Verified end to end on a
+  local throwaway copy only (a made-up test question, never on production).
+  Test: test/feedback_question.test.js.
+- Item 1, Help center (dev kit part 3) - **1caf366**, dpl_Gg25T1NUi996KdrzyMd59ahvWCyZ, 610/610: Take
+  the tour (steps ring the real menu, Next Steps, Journey, the switch, Feedback), "Questions and
+  answers" with search, most opened first, "Didn't find it? Ask a question" -> the box on A
+  question. Questions in config/help.json. Routes POST /api/help/opened, GET /api/help/counts behind
+  sign-in (401 signed out, read back). **Schema change on production, one table:** help_faq_opens
+  (faq_id TEXT PK, opens INTEGER, last_at TEXT) - a count per question id, nothing about who; created
+  by the boot schema (CREATE TABLE IF NOT EXISTS, RLS switched on like every CRM table), so it is
+  idempotent. Read-only check after deploy: exists, RLS on, those 3 columns, 0 rows, Postgres plans
+  the counting upsert (arbiter = its primary key), no other schema created. Test: test/help_center.test.js.
+- OPEN, the owner's call (audit item 3): light page #f5f7fa (the app, chosen 28.09 so Home is not
+  sterile) vs the kit's #ffffff - which one changes? Dark active menu item: the kit still has the
+  #1a4670 block; the owner removed it in the CRM (28.09 "remove the large highlighted background"),
+  so the KIT should follow (Unified Audit session).
+
 **Aigars UX compliance pass - LIVE 28.09.2026, commit c058e63, deployment dpl_5CAAu35HLnJVDRCu4jA5dZRNobQU**
 (595/595; live page = commit + sign-in script, byte-identical; 401s and 0 leaks). Audited screen by
 screen on the real-data snapshot (local, in memory) at 1440 / 900 / 390 px, light and dark.
