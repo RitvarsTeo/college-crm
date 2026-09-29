@@ -149,6 +149,9 @@ dpl_BQ2rpkN6ggPPktnFekPPkrBaGBSj** (588/588; live page = commit + sign-in script
 bring in all the calls, daily at 08:15 Riga. A run now walks from the bookmark (`pbx_until`) to now in 15-minute
 pieces (at most 24 h, stops at 40 s and carries on next run). Schedule 05:15 UTC = 08:15 Riga, 07:15 after 25.10.
 First Run before this change: TeleGroup answered, 0 calls in 16:13-16:28 (the real token works).
+FIRST CATCH-UP RUN 29.09.2026 16:43 Riga (Ritvars pressed Run): 28.09 16:43 -> 29.09 16:43, 96 pieces, caught up;
+TeleGroup returned 152 calls, 9 were incoming on the three college queues, 0 matched a CRM person, 9 went to New Leads
+as `simulated`. Next: Ritvars looks at the 9, then says when the phone goes live.
 
 **Phone channel in TEST mode, with a Run button - LIVE 29.09.2026, commits ad597ce + 3cac650, deployment
 dpl_CDRxXtVNDtZbhJjtiegmD229uwL4, then a redeploy for the mode** (651/651). Ritvars added PBX_API_TOKEN himself
