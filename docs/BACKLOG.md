@@ -164,6 +164,15 @@ page has a Run button that sends CRON_SECRET itself; CHANNEL_MODE_PHONE=test, so
 as `simulated`. TeleGroup (novikontas.tg.lv) not yet called with the real token: first run by hand is next.
 OPEN: the nightly run only reads the last 15 minutes; every 5 minutes waits for Vercel Pro.
 
+**New Leads: a missed call you can ring back - LIVE 29.09.2026** (658/658): the phone job put 9 real calls into
+New Leads and every row read "Unknown" with no number anywhere on it, so the one thing an operator needs after a
+missed call was the one thing the screen did not show. The number was there all along - sync.js storeCall passes
+`phone: r.caller_num` into receive(), and listInbound selects `i.*` - only the row template dropped it. The classic
+view had always printed it; concept C never did. A row with no name and no handle now shows the number in the name
+slot as a `tel:` link, the same call link as Next Steps, People and the person card. A row with a name is unchanged;
+with neither a name nor a number it still says "Unknown". No explaining sentence. Checked on a real phone-shaped
+lead, not on the source. Test: test/new_leads_callback.test.js, which fails if the fallback is removed.
+
 **Home width + call / write everywhere - LIVE 29.09.2026, dpl_ACLDen7gEjeuxcoVkpMJBEreL4wy** (660/660, commit 31c6b90):
 Ritvars, from a screenshot: "a lot of space here". MEASURED at 1920: Home was held at 1080px by `.kpage`
 inside a main that allows 1320, and main is left-aligned, so 576px sat empty down the right and 284px below,
