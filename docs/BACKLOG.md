@@ -145,6 +145,13 @@ dpl_BQ2rpkN6ggPPktnFekPPkrBaGBSj** (588/588; live page = commit + sign-in script
 - Texts cut to a third (Ritvars): People "Click a row to edit.", its count "All N people.", Next
   Steps "What the team has to do.", New Leads "New arrivals land here first."
 - Checked: desktop light/dark, phone light/dark. Tests: test/kit13_polish.test.js.
+**Phone channel in TEST mode, with a Run button - LIVE 29.09.2026, commits ad597ce + 3cac650, deployment
+dpl_CDRxXtVNDtZbhJjtiegmD229uwL4, then a redeploy for the mode** (651/651). Ritvars added PBX_API_TOKEN himself
+(Secret, Production). `/api/cron/pbx-calls` is on the Vercel schedule once a night (01:00 UTC) so the Cron Jobs
+page has a Run button that sends CRON_SECRET itself; CHANNEL_MODE_PHONE=test, so unknown callers land in New Leads
+as `simulated`. TeleGroup (novikontas.tg.lv) not yet called with the real token: first run by hand is next.
+OPEN: the nightly run only reads the last 15 minutes; every 5 minutes waits for Vercel Pro.
+
 **Ieva's two points - LIVE 29.09.2026, dpl_4hDHjrpkzxdMSydQAMmpoUMKnqzq** (651/651): "Add lead" on New Leads (the Add person form);
 every Next Steps row shows the phone and email as call / write links and one line of the newest comment (else the imported note), without
 opening the profile. Test: test/ieva_feedback.test.js. Also LIVE today: e070927 the Postgres schema as a connection option (the pg
