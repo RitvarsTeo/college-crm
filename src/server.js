@@ -12,6 +12,8 @@ import { receive, listInbound, qualify, archive, funnel, agedCount, handoffToSis
 import { readScreenshot, readKind, readBody, readPath, saveFeedback, listFeedback, getScreenshot, setHandled, BadScreenshot, helpOpened, helpCounts } from './feedback.js';
 import { findMatches as matchPeople, duplicateCheck } from './identity.js';
 import { lifecycleOf } from './lifecycle.js';
+import { firstLook } from './sisfirstlook.js';
+import { redactSis } from '../lib/sis.js';
 import { adapt, toIntake, hasAdapter, adapterIds } from './adapters.js';
 import { fixtureFor } from './fixtures.js';
 import { buildPayload, scenariosFor, allScenarios, CHANNEL_LABELS, META_GROUP } from './scenarios.js';
@@ -883,6 +885,17 @@ export const handle = async (req, res) => {
     // Admin only, every route, checked on the server. What is shown is the NAME
     // of each setting and whether it is present. A value is never read out, and
     // assertNoSecretValues re-checks the whole payload before it is sent.
+
+    // THE FIRST LOOK AT A REAL SIS REPLY (29.09.2026): admins only, read-only, one GET to the SIS through
+    // lib/sis.js. Answers the SHAPE (field names, fill counts, status counts) and never a person, a date
+    // value or the token. It exists because production secrets never leave Vercel.
+    if (req.method === 'GET' && p === '/api/admin/sis/first-look') {
+      if (!(await adminOf(req))) return refuseNotAdmin(res);
+      try { return json(res, 200, { ok: true, ...(await firstLook()) }); } catch (err) {
+        return json(res, 200, { ok: false, status: err && err.status || null,
+          error: redactSis(err && err.message ? err.message : 'the SIS call failed', process.env.SIS_API_TOKEN) });
+      }
+    }
 
     if (p === '/api/admin/channels' || p.startsWith('/api/admin/channels/')) {
       const me = await adminOf(req);
