@@ -277,10 +277,12 @@ test('the suggestion is offered first and is still only a suggestion', async () 
   assert.match(view, /optgroup label="Suggested"/, 'and puts it at the top under its own heading');
   // the full list must still be there underneath
   assert.match(view, /nextActionOptions\(null\)/, 'the whole grouped list stays available');
-  // it says WHY, because a suggestion nobody understands is just a default
+  // 30.09: the sentence under the field went. The suggestion still says what it is
+  // through the optgroup it sits in, and the whole list is still one keystroke away,
+  // which is what "only a suggestion" actually rests on.
   const dialog = APP.slice(APP.indexOf('async function openQualify'), APP.indexOf('async function doQualify'));
-  assert.match(dialog, /Suggested because/);
-  assert.match(dialog, /Change it to anything else/);
+  assert.match(dialog, /nextActionOptionsWithSuggestion\(suggested\)/, 'the dialog still offers it first');
+  assert.ok(!dialog.includes('Suggested because'), 'and no longer explains itself in a sentence');
 });
 
 test('nothing implies an application deadline, because there is not one', async () => {

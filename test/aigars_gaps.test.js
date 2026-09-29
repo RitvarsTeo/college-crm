@@ -70,6 +70,8 @@ test('explaining sentences removed; data warnings kept', () => {
     'The on-screen report behind the management download.', 'still a working version, to be agreed with Admissions',
     'It stays on this machine and is never emailed.', 'Everything everybody has sent.', 'Every figure is a count of rows in the CRM',
     "It is kept in the CRM's own database and is never sent anywhere."]) assert.ok(!APP.includes(s), s);
-  assert.match(APP, /a programme that is not one of the list/, 'the data-to-tidy count stays');
+  // 30.09: the sentence went, the COUNT is the value and stays
+  assert.match(APP, /'Data to tidy', `\$\{odd\} not in the list`/, 'the data-to-tidy count stays');
+  assert.ok(!APP.includes('a programme that is not one of the list.'), 'and it no longer explains itself');
   assert.match(APP, /To fix/, 'the report still says what data is missing');
 });

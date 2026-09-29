@@ -1599,7 +1599,7 @@ async function viewNextC() {
   // the Overdue and Due today counts carry the urgency badges when there is something in them
   const sect = (title, rows, fn, tone = '') => `<div class="c-sheet"><h3>${title}<b${tone && rows.length ? ` class="c-count ${tone}"` : ''}>${rows.length}</b></h3>${rows.map(fn).join('') || '<div class="c-empty">None.</div>'}</div>`;
   $('#view').innerHTML = `<p class="c-crumb">Admissions</p>
-    <div class="c-head"><div><h1>Next Steps</h1><p>What the team has to do.</p></div>
+    <div class="c-head"><div><h1>Next Steps</h1></div>
       <div class="act"><span class="c-planned"><b>${pct}%</b> planned <small>${open.length - none.length} of ${open.length} open people have a next step</small></span></div></div>
     ${sect('Overdue', over, tRow, 'over')}${sect('Due today', today, tRow, 'today')}${sect('Coming up', later, tRow)}${sect('No next step', none, pRow)}`;
 }
@@ -1646,7 +1646,7 @@ async function viewSettingsC() {
       ${item('#/channels', 'Channels', '')}
       ${item('#/feedback', 'Feedback received', '')}
       ${item('#/reports', 'Full report', '')}
-      ${item('#/people', 'Data to tidy', `${odd} ${odd === 1 ? 'person has' : 'people have'} a programme that is not one of the list.`)}
+      ${item('#/people', 'Data to tidy', `${odd} not in the list`)}
     </div>
     <p class="c-ev"><span class="c-dec">Stages and next steps to agree</span></p>`;
   }
@@ -1718,11 +1718,9 @@ async function viewLeadsC() {
       ${r.body ? `<div class="c-said">${esc(r.body)}</div>` : ''}
       <label class="c-q" for="qInterest">What do they want to study?</label>
       <select id="qInterest"><option value="">they have not said yet</option>${(CFG.programmes || []).map((pr) => `<option ${pr === read ? 'selected' : ''}>${esc(pr)}</option>`).join('')}</select>
-      <div class="c-hint">${read ? 'Read from the message. Leave it if it is right, change it if it is not.' : 'The message did not say. If you already know, say so here.'}</div>
       ${others.length ? `<div class="c-q">Tick what else is right</div>${others.map((f) => `<label class="c-tick"><input type="checkbox" class="qConfirm" value="${esc(f.field)}" checked> <b>${esc(f.field)}</b> ${esc(f.value)}</label>`).join('')}` : ''}
       <label class="c-q" for="qNext">What is the next step?</label>
       <select id="qNext">${nextActionOptionsWithSuggestion(sugg)}</select>
-      <div class="c-hint">${sugg.label ? `Suggested because ${esc(sugg.why)}.` : 'Required: nobody is in Admissions without a next step.'}</div>
       <label class="c-q" for="qNote">Note (optional)</label>
       <textarea id="qNote" rows="2" placeholder="Anything you know that the message does not say"></textarea>
       <div id="qErr"></div>
@@ -1730,7 +1728,7 @@ async function viewLeadsC() {
     </div>`;
   };
   $('#view').innerHTML = `<p class="c-crumb">Admissions</p>
-    <div class="c-head"><div><h1>New Leads</h1><p>New arrivals land here first.</p></div>
+    <div class="c-head"><div><h1>New Leads</h1></div>
       <div class="act"><button class="btn" onclick="openAdd()">Add lead</button></div></div>
     ${receipt}
     <div class="c-sheet">${rows.length ? rows.map((r) => `<div class="c-line row c-lead${C_LOPEN === r.id ? ' is-open' : ''}" tabindex="0" onclick="C_LOPEN=${C_LOPEN === r.id ? 'null' : Number(r.id)};viewLeadsC()">
@@ -1779,7 +1777,7 @@ function cDrawPeople() {
       <td class="${t ? '' : 'c-gap'}">${t ? cStepIcon(t.label) + esc(cTask(t.label)) : (open ? 'nothing planned' : '-')}</td>
       <td>${t ? `<span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span>` : ''}</td></tr>
       ${C_PEDIT === p.id ? `<tr class="c-edit"><td colspan="5">${cEditForm(p, t)}</td></tr>` : ''}`; };
-  $('#view').innerHTML = `<div class="c-head"><div><h1>People</h1><p>Click a row to edit.</p></div>
+  $('#view').innerHTML = `<div class="c-head"><div><h1>People</h1></div>
       <div class="act"><input class="c-search" id="cPQ" placeholder="Search name, email or phone" value="${esc(C_PQ)}" aria-label="Search people"><button class="btn" onclick="openAdd()">Add person</button></div></div>
     ${cPeopleFilters(people)}
     <p class="c-explain">${explain}</p>
@@ -1842,8 +1840,8 @@ function cEditForm(p, t) {
     <div><label for="pe-status">Stage</label><select id="pe-status" onchange="document.querySelector('#pe-closed').hidden = this.value !== ${esc(JSON.stringify(closed))}">${stages.map((s) => `<option value="${esc(s.id)}" ${s.id === p.status ? 'selected' : ''}>${esc(s.label || s.id)}</option>`).join('')}</select></div>
     <div id="pe-closed" hidden><label for="pe-reason">Why are we stopping?</label><select id="pe-reason">${(CFG.closedReasons || []).map((r) => `<option>${esc(r)}</option>`).join('')}</select><input id="pe-rnote" placeholder="Explanation (needed for Other)" style="margin-top:6px"></div>
     <div class="c-wide c-step">${t
-      ? `<label for="pe-due">Next step</label><div class="c-steprow"><span>${esc(cTask(t.label))}</span><input id="pe-due" type="date" value="${esc(cDay(t.due_at))}" aria-label="Due date"><button class="btn sm ghost" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))})">Done…</button></div><div class="c-hint">Change the date here, or mark it done - done asks for the next step.</div>`
-      : open ? `<label for="pe-next">Next step</label><div class="c-steprow"><select id="pe-next"><option value="">nothing planned</option>${nextActionOptions()}</select><input id="pe-ndue" type="date" value="${cTodayIso()}" aria-label="Due date"></div>` : '<label>Next step</label><div class="c-hint">Finished journeys have no next step.</div>'}</div>
+      ? `<label for="pe-due">Next step</label><div class="c-steprow"><span>${esc(cTask(t.label))}</span><input id="pe-due" type="date" value="${esc(cDay(t.due_at))}" aria-label="Due date"><button class="btn sm ghost" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))})">Done…</button></div>`
+      : open ? `<label for="pe-next">Next step</label><div class="c-steprow"><select id="pe-next"><option value="">nothing planned</option>${nextActionOptions()}</select><input id="pe-ndue" type="date" value="${cTodayIso()}" aria-label="Due date"></div>` : '<label>Next step</label>'}</div>
     <div class="c-wide"><label for="pe-notes">Notes</label><textarea id="pe-notes" rows="4" oninput="this.nextElementSibling.textContent=this.value.length+' characters'">${esc(p.notes || '')}</textarea><div class="c-hint">${(p.notes || '').length} characters</div></div>
     <div id="pe-err" class="c-wide"></div>
     <div class="c-wide c-row-acts"><button class="btn" onclick="cSavePerson('${esc(p.id)}')">Save</button><button class="btn ghost" onclick="C_PEDIT=null;cDrawPeople()">Cancel</button><a class="btn ghost" href="#/person/${esc(p.id)}" style="margin-left:auto">Open person details →</a></div>
@@ -2141,12 +2139,12 @@ function cPersonFacts(p) {
     <div class="c-sheet c-facts"><h3>Stage</h3><div class="c-pad">
       <select id="cStage" aria-label="Stage" onchange="changeStatus('${esc(p.id)}', this.value)">${stages.map((s) => `<option value="${esc(s.id)}" ${s.id === p.status ? 'selected' : ''}>${esc(s.label || s.id)}</option>`).join('')}</select>
       <p class="c-hint"><span class="c-dec">Stages to agree</span></p>
-      ${p.status === (CFG.stageRoles || {}).admitted ? (p.sis_handoff_at ? `<p class="c-hint">Handed to the SIS on ${fmtDate(p.sis_handoff_at)}. The CRM journey ends here.</p>` : `<button class="btn sm ghost" onclick="doSisHandoff('${esc(p.id)}')">Hand over to SIS</button>`) : ''}
+      ${p.status === (CFG.stageRoles || {}).admitted ? (p.sis_handoff_at ? `<p class="c-hint">Handed to the SIS on ${fmtDate(p.sis_handoff_at)}</p>` : `<button class="btn sm ghost" onclick="doSisHandoff('${esc(p.id)}')">Hand over to SIS</button>`) : ''}
     </div></div>
     ${p.qualification || (p.fields || []).length ? `<div class="c-sheet c-facts"><h3>From their first message</h3><div class="c-pad">
       ${p.qualification ? `<p class="c-line2">${qualChip(p.qualification)} ${p.routedTo ? 'routed to <b>' + esc(p.routedTo) + '</b>' : ''} · arrived on ${esc(channelLabel(p.first_channel || p.source_channel))}</p>` : ''}
       ${p.handoverGap ? `<div class="warn-box"><b>Handover gap.</b> ${esc(p.handoverGap.problem)}<br>${esc(p.handoverGap.action)}</div>` : ''}
-      ${(p.fields || []).length ? `<div class="chips">${p.fields.map(fieldChip).join('')}</div><p class="c-hint">A dashed chip was read by the machine and nobody confirmed it. It is not counted anywhere.</p>` : ''}
+      ${(p.fields || []).length ? `<div class="chips">${p.fields.map(fieldChip).join('')}</div>` : ''}
       ${(p.missingInfo || []).length ? `<p class="c-hint"><b>Still to find out:</b> ${p.missingInfo.map(esc).join(', ')}</p>` : ''}
     </div></div>` : ''}
     ${(p.registrations || []).length ? `<div class="c-sheet c-facts"><h3>Events</h3><div class="c-pad">${p.registrations.map((r) => `<p class="c-line2">${esc(r.title)} · ${fmtDate(r.held_on)} ${esc(r.slot || '')} · ${r.attended === 1 ? '<b>attended</b>' : r.attended === 0 ? 'did not attend' : 'not marked'}</p>`).join('')}</div></div>` : ''}
@@ -3281,7 +3279,7 @@ async function viewPerson(id) {
         ${p.handoverGap ? `<div class="warn-box" style="margin-top:10px">
           <b>Handover gap.</b> ${esc(p.handoverGap.problem)}<br>${esc(p.handoverGap.action)}</div>` : ''}
         ${p.sis_handoff_at ? `<div class="prov" style="margin-top:10px">Handed to the SIS on
-          ${fmtDate(p.sis_handoff_at)}. The CRM journey ends here.</div>`
+          ${fmtDate(p.sis_handoff_at)}</div>`
           : p.status === 'Admitted' ? `<button class="btn sm ghost" style="margin-top:10px"
             onclick="doSisHandoff('${p.id}')">Hand over to SIS</button>` : ''}
       </div>` : ''}
@@ -3496,9 +3494,6 @@ async function openQualify(id) {
       <option value="">they have not said yet</option>
       ${progs.map(pr => `<option ${pr === readInterest ? 'selected' : ''}>${esc(pr)}</option>`).join('')}
     </select>
-    <div class="shothint">${readInterest
-      ? 'Read from the message. Leave it if it is right, change it if it is not.'
-      : 'The message did not say. If you already know, say so here.'}</div>
 
     ${others.length ? `<label style="margin-top:12px">Tick what else is right</label>
       ${others.map(f => `<label class="tick">
@@ -3509,9 +3504,6 @@ async function openQualify(id) {
     <select id="qNext">
       ${nextActionOptionsWithSuggestion(suggested)}
     </select>
-    <div class="shothint">${suggested.label
-      ? `Suggested because ${esc(suggested.why)}. Change it to anything else.`
-      : 'Required. Nobody sits in Admissions without somebody scheduled to act.'}</div>
 
     <label style="margin-top:12px">Note (optional)</label>
     <textarea id="qNote" rows="2"
@@ -4117,8 +4109,7 @@ const chStep = (st) => `<li>${st.ok ? '<span class="ok-tick">OK</span>' : '<span
 async function viewChannels(which) {
   if (!isAdmin()) {
     $('#view').innerHTML = `<h1>Channels</h1>
-      <div class="prov">This screen is for admins. It is not hidden from you by this page alone -
-      the server refuses the request as well.</div>`;
+      <div class="prov">Admins only.</div>`;
     return;
   }
   if (which) return viewChannel(which);

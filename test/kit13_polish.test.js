@@ -44,15 +44,18 @@ test('dark: kit 13 lines - field edge #82a0ba, the menu tree line at 28%', () =>
   assert.match(dark, /--paper:#0f2f4f;--surface:#133a60;--surface-2:#17456e;--shell:#08182e;/, 'the sea itself is unchanged');
 });
 
-test('the four screen texts are a third of what they were, or less', () => {
-  for (const [now, was] of [
-    ['<p>What the team has to do.</p>', 'What the team has to do. Four states, and every open person is in exactly one of them.'],
-    ['<p>New arrivals land here first.</p>', 'Who has just arrived and needs understanding. Everything that arrives comes here first; obvious junk is kept aside, never deleted.'],
-    ['<p>Click a row to edit.</p>', 'Everyone, as a database you can work in. Click a row to edit it right here.'],
-    [': `All ${people.length} people.`;', 'All 12 people. Each filter narrows the list, and this sentence says exactly what is left.'],
-  ]) {
-    assert.ok(APP.includes(now), now);
-    assert.ok(!APP.includes(was), 'old text gone: ' + was.slice(0, 40));
-    assert.ok(now.replace(/<\/?p>|: `|`;|\$\{people\.length\}/g, '').length * 3 <= was.length, now);
-  }
+test('the screen texts are gone entirely, and the one that carries a count stays', () => {
+  // 28.09 shortened them; 30.09 removed them. Both the long and the short form must be gone.
+  for (const gone of [
+    'What the team has to do. Four states, and every open person is in exactly one of them.',
+    '<p>What the team has to do.</p>',
+    'Who has just arrived and needs understanding. Everything that arrives comes here first; obvious junk is kept aside, never deleted.',
+    '<p>New arrivals land here first.</p>',
+    'Everyone, as a database you can work in. Click a row to edit it right here.',
+    '<p>Click a row to edit.</p>',
+    'All 12 people. Each filter narrows the list, and this sentence says exactly what is left.',
+  ]) assert.ok(!APP.includes(gone), 'still on the screen: ' + gone.slice(0, 48));
+
+  // the one that is a COUNT, not a sentence, stays
+  assert.ok(APP.includes(': `All ${people.length} people.`;'), 'the row count is a value');
 });
