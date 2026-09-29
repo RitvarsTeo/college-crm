@@ -167,7 +167,7 @@ tr.row:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
 #login-view .hidden{display:none !important}
 
 /* ===================================================================
-   THE SIGN-IN SCREEN, taken whole from Ritvars's merged sign-in kit:
+   THE SIGN-IN SCREEN, taken whole from the owner's merged sign-in kit:
    Desktop/WF/Local Repo/Dev kits to share/Component library/
      1 Sign-in, merged (Client Hub + Talent Acquisition)/login-view.html
 
@@ -251,7 +251,7 @@ tr.row:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
     -webkit-mask-composite:source-out;mask-composite:subtract}
   /* Google only (28.09.2026): no Sign in button, so no window is cut for one. */
   .gate-card.sso-only::after{-webkit-mask-image:none;mask-image:none}
-  /* Ritvars, 28.09.2026: CRM and "Sign in to continue" centred, CRM much bigger (34px),
+  /* the owner, 28.09.2026: CRM and "Sign in to continue" centred, CRM much bigger (34px),
      the card NOT a pixel bigger. The heading block keeps its old height (60.25px) and
      the space moves from the top padding into the gap above the button, so the space
      above CRM, the gap before the button and the space below it read as even.
@@ -648,7 +648,7 @@ code{font-size:12.5px}
   .shell{grid-template-columns:1fr;grid-template-rows:auto 1fr}
   /* Below 900px the shell drops to one column and the sidebar lands ON TOP of the
      work. As a vertical column it stood 675px tall, so at 880x800 the navigation
-     filled 87% of the first screen and Ieva would have seen nothing but the menu.
+     filled 87% of the first screen and Admissions would have seen nothing but the menu.
      Measured, not guessed. It becomes a top bar instead: same links, same order,
      laid across rather than down. Desktop is untouched - every rule here is
      inside this query. */
@@ -787,9 +787,9 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
 
 
   /* ===================================================================== CONCEPT C
-     The main UI since 28.09.2026 (Ritvars: "Concept C is the main now"). The classic
+     The main UI since 28.09.2026 (the owner: "Concept C is the main now"). The classic
      UI stays reachable at ?ui=classic, with no visible control inviting anybody back to
-     it (Ritvars, 28.09.2026). Everything here is scoped to html.ui-c, so
+     it (the owner, 28.09.2026). Everything here is scoped to html.ui-c, so
      the classic UI is byte-for-byte what it was. The palette OVERRIDES the app's own
      tokens, so the screen C still borrows from the classic UI (Channels) takes the
      quieter colours too. Every text tint passes 4.5:1
@@ -801,8 +801,8 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c{--paper:#f5f7fa;--surface:#ffffff;--surface-2:#eef1f5;--shell:#e7ebf0;--field:#ffffff;--menu:#ffffff;--ink:#011111;
     --t2:#415c8f;--t3:#4d6187;--t4:#56688a;--rule:#dde3ea;--rule2:#e4e9ef;--control-line:#6f7e97;
     --pet:#0a2463;--petink:#0a2463;--btn-bg:#0a2463;--btn-ink:#ffffff;--on-navy:#ffffff;--bad:#9f3a31;   /* buttons: brandbook Navy */
-    --c-ok:#2c6e55;--c-warn:#835c12;--c-bad:#9f3a31;--c-accent-bg:#e5f1fa;--c-sunk:#eef1f5;--c-sel:#eff6fc}   /* Novikontas Blue, lightly (Ritvars 28.09) */
-  /* Dark = the sign-in sea (Ritvars, 28.09.2026: "the exact same colours and tones with
+    --c-ok:#2c6e55;--c-warn:#835c12;--c-bad:#9f3a31;--c-accent-bg:#e5f1fa;--c-sunk:#eef1f5;--c-sel:#eff6fc}   /* Novikontas Blue, lightly (the owner 28.09) */
+  /* Dark = the sign-in sea (the owner, 28.09.2026: "the exact same colours and tones with
      gradients from the login screen"). The page is the sign-in gradient, the sidebar its
      deepest navy, buttons white like the Google button. Amber brightened ("now its kind of
      dirty amber or mustard"), the chart colours with it, and panels are glass wherever a
@@ -818,7 +818,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
     --amb:#F7C04F;--ambink:#F7C04F;--late:#F7C04F;--warn:#F7C04F;
     --c-ok:#9be0bd;--c-warn:#F7C04F;--c-bad:#ffb0a8;--c-accent-bg:#1a4670;--c-sunk:#0b2542;--c-sel:#163f66;
     --v-adm:#29a8df;--v-lead:#e7ebf0;--v-open:#F7C04F;--v-np:#93A5B8;--v-grid:#24507a;
-    --j-from:#1d4d7a;--j-to:#8fcbef;   /* the Journey's stage line in dark (Aigars #2) */
+    --j-from:#1d4d7a;--j-to:#8fcbef;   /* the Journey's stage line in dark (the review #2) */
     --glass:linear-gradient(180deg,rgba(255,255,255,.06) 0%,rgba(255,255,255,.035) 100%);
     --glass-line:rgba(194,211,222,.18)}
   html.ui-c[data-theme="dark"] body{background:radial-gradient(120% 80% at 50% 0%,#17456e 0%,rgba(23,69,110,0) 60%),
@@ -835,7 +835,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c[data-theme="dark"] .ksec .klegend span{white-space:nowrap}
   /* the classic navigation stays in the page (other code reads it by id) but is not shown */
   /* and so does the old "needs you today / leads you own" counter: C counts New Leads
-     and Next Steps separately in its own navigation (Ritvars, 28.09.2026) */
+     and Next Steps separately in its own navigation (the owner, 28.09.2026) */
   html.ui-c #waiting, html.ui-c #waiting2{display:none!important}
   html.ui-c .shell > nav > a.item, html.ui-c .shell > nav > .add, html.ui-c #navFeedbackLink{display:none!important}
   html.ui-c .cnav{display:flex;flex-direction:column;gap:2px;margin:6px 0 10px}
@@ -843,14 +843,14 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .cnav a svg{width:17px;height:17px;flex:0 0 17px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;opacity:.85}
   html.ui-c .cnav a:hover{background:var(--c-sunk);color:var(--ink)}
   html.ui-c .cnav a.on{background:var(--c-accent-bg);color:var(--ink);font-weight:600}
-  /* "Lets incorporate novikontas blue, but lightly" (Ritvars, 28.09.2026): in light, the active item
+  /* the brandbook blue, lightly (the owner, 28.09.2026): in light, the active item
      has NO block behind it ("it doesnt need to be highlighted, the home can just stay blue") - a Navy
      label and the logo's blue on its icon; hover and the tree line take a faint blue. Dark keeps its own. */
   html.ui-c:not([data-theme="dark"]) .cnav a.on{color:#0a2463;background:transparent}
   html.ui-c:not([data-theme="dark"]) .cnav a.on svg{color:#29a8df;opacity:1}
   html.ui-c:not([data-theme="dark"]) .cnav a:hover{background:#f0f7fc;color:#0a2463}
   html.ui-c:not([data-theme="dark"]) .cnav .kids{border-left-color:#bcdcf1}
-  /* dark: the same - no block behind the active item, white bold words and a light blue icon (Aigars UX pass) */
+  /* dark: the same - no block behind the active item, white bold words and a light blue icon (the review UX pass) */
   html.ui-c[data-theme="dark"] .cnav a.on{background:transparent;color:#ffffff}
   html.ui-c[data-theme="dark"] .cnav a.on svg{color:#8fcbef;opacity:1}
   html.ui-c .cnav a:focus-visible{outline:2px solid var(--pet);outline-offset:1px}
@@ -885,7 +885,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   @media (max-width:760px){ html.ui-c .c-line.c-set-theme{grid-template-columns:minmax(0,1fr)!important;gap:10px} html.ui-c .c-set-theme .theme-switch{width:100%;max-width:none} }
   /* On a phone the menu sits on top, so the switch and the (c) line leave it and go to the bottom
      of the PAGE (kit 13: "all belong to the bottom of the page"). Desktop is unchanged. */
-  /* Phone and tablet (Aigars UX pass, 28.09.2026): the menu is a top bar there, and as C's column it
+  /* Phone and tablet (the review UX pass, 28.09.2026): the menu is a top bar there, and as C's column it
      stood 360 px tall and stayed pinned over the work. It is ONE row of the same links in the same
      order, scrolling sideways; Acting as keeps working beside the logo. */
   @media (max-width:900px){
@@ -924,7 +924,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-faq summary:focus-visible{outline:2px solid var(--pet);outline-offset:-2px}
   html.ui-c .c-faq > div{padding:0 16px 14px 32px;color:var(--t2);font-size:14px;line-height:1.55;max-width:75ch}
   html.ui-c .c-help-foot{margin:22px 0 0;font-size:12px;color:var(--t3)}
-  /* Next Steps rows: the contact to call or write, and one line of what was said (Ieva, 29.09) */
+  /* Next Steps rows: the contact to call or write, and one line of what was said (Admissions, 29.09) */
   html.ui-c .c-who small.c-reach{margin-top:2px}
   html.ui-c .c-reach a{color:var(--petink);text-decoration:none}
   html.ui-c .c-reach a:hover{text-decoration:underline}
@@ -999,7 +999,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
      Journey and People used the full width. The two dashboards now take the same width as every
      other screen; main's 1320 is still the one cap. */
   html.ui-c .kpage{position:relative}
-  /* Ritvars 28.09.2026: no title sentence on Home. The page keeps a heading for screen
+  /* the owner 28.09.2026: no title sentence on Home. The page keeps a heading for screen
      readers only, so it is still announced as Home. */
   html.ui-c .c-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
   html.ui-c .khead{margin-bottom:18px}
@@ -1014,7 +1014,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .kstrip span{display:block;font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--t3)}
   html.ui-c .kstrip b{display:block;font-size:30px;font-weight:650;letter-spacing:-.025em;line-height:1.15;margin:4px 0 3px}
   html.ui-c .kstrip b em{font-style:normal;font-size:15px;font-weight:500;color:var(--t3);letter-spacing:0}
-  /* one size for every KPI number (Ritvars, 28.09.2026: "Weird size indifference!" at a 54 px
+  /* one size for every KPI number (the owner, 28.09.2026: "Weird size indifference!" at a 54 px
      Admitted beside 30 px figures) */
   html.ui-c .kstrip .khero b{font-size:30px;letter-spacing:-.025em;line-height:1.15}
   html.ui-c .kstrip small{display:block;font-size:12.5px;color:var(--t3);line-height:1.4}
@@ -1126,7 +1126,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-sisnow b{color:var(--ink);font-weight:600}
   html.ui-c .c-sisnow time{color:var(--t3);font-variant-numeric:tabular-nums}
   html.ui-c .c-jp small.c-jlife{display:inline-block;margin:3px 4px 0 0;padding:0 6px;border-radius:4px;border-left:2px solid #29a8df;background:var(--c-accent-bg);color:var(--ink);font-size:11px;font-weight:600}
-  /* the comment preview (Aigars): one quiet line, cut with an ellipsis; the whole note is on the card and the person page */
+  /* the comment preview (the review): one quiet line, cut with an ellipsis; the whole note is on the card and the person page */
   html.ui-c .c-jp small.c-jnote{margin-top:5px;padding-top:4px;border-top:1px dashed var(--rule);color:var(--t3);font-size:11.5px;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   /* A quote mark, so the line reads as something a person SAID rather than as another field of the
@@ -1177,14 +1177,14 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   @media (max-width:760px){ html.ui-c .c-jfilters{display:grid;grid-template-columns:1fr 1fr} html.ui-c .c-jf{min-width:0} html.ui-c .c-jf select,html.ui-c .c-jfb{flex:1;min-width:0;max-width:none}
     html.ui-c .c-jf-ico{display:none} html.ui-c .c-jf-clear{grid-column:1 / -1;justify-self:start} }
   /* Buttons are the brandbook CTA in C - Navy with white (dark: white with Navy) - and carry no amber
-     stripe (Ritvars, 28.09.2026: the Done and Feedback buttons did not match, "the amber now is quite
+     stripe (the owner, 28.09.2026: the Done and Feedback buttons did not match, "the amber now is quite
      not in place"). The classic UI keeps its own. */
   html.ui-c .btn:not(.ghost){border-left:0;padding-left:15px}
   html.ui-c .btn.sm:not(.ghost){padding-left:10px}
   html.ui-c .helpbtn{border-left:0;padding-left:18px}
-  /* the version under the logo reads "CRM · v1.0" exactly, lowercase v (Ritvars, 28.09.2026) */
+  /* the version under the logo reads "CRM · v1.0" exactly, lowercase v (the owner, 28.09.2026) */
   html.ui-c #ver{text-transform:none}
-  /* Journey (Aigars' feedback #2, 28.09.2026). HOW FAR: each stage carries its number and a thin
+  /* Journey (the review' feedback #2, 28.09.2026). HOW FAR: each stage carries its number and a thin
      line across its top, one brandbook hue getting darker from stage 1 (Novikontas Blue) to the
      last (Navy); the column itself only takes a faint tint of it. NEXT STEP: the clearest line
      on the card. OVERDUE: red words and a red edge. TODAY: amber words, no edge. */
@@ -1205,11 +1205,11 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-col h3 b{margin-left:0}
   html.ui-c .c-jn{display:inline-grid;place-items:center;min-width:17px;height:17px;border-radius:99px;font-size:10.5px;letter-spacing:0;
     color:var(--ink);border:1px solid var(--control-line);align-self:center}
-  /* WARNINGS LOOK LIKE WARNINGS (Aigars: "warning messedzus bik cita krasa, sita tada draudziga,
-     neliekas ka vispar kkas nav labi"): overdue is a SOLID red badge with white words (6.5:1),
+  /* WARNINGS LOOK LIKE WARNINGS: a warning must not look friendly. Overdue is a SOLID red badge
+     with white words (6.5:1),
      in both themes - not the soft pink text it was. Today stays amber text: distinct, calmer. */
   html.ui-c{--j-alarm:#b3261e;--j-on-alarm:#ffffff;--j-soon:#F7C04F;--j-on-soon:#011111}
-  /* ONE URGENCY RULE for the whole of C (Ritvars, 28.09.2026, on Next Steps and New Leads: "these
+  /* ONE URGENCY RULE for the whole of C (the owner, 28.09.2026, on Next Steps and New Leads: "these
      colours also are not urgent colors", "again, doesnt feel urgent enough"). Overdue and late: a
      SOLID red badge with white words. Today: a SOLID amber badge with Pitch Black words. Same in
      both themes, on every screen - Journey, Next Steps, New Leads, the person card, Home. */
@@ -1365,7 +1365,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
 const $ = (s, r = document) => r.querySelector(s);
 
 // ======================================================================= CONCEPT C
-// The main UI since 28.09.2026 (Ritvars: "build Concept C in the app as main").
+// The main UI since 28.09.2026 (the owner: "build Concept C in the app as main").
 // ?ui=classic brings back the previous UI and ?ui=c returns here; the choice is
 // remembered per browser. Nothing on the server changes: C arranges the same screens,
 // the same data and the same rules differently. Channels is still the classic screen,
@@ -1407,7 +1407,7 @@ function installCNav() {
     <a href="#/settings" data-c="settings" id="cnSettings" style="display:none">${C_ICON.set}<span>Settings</span></a>
   </div>`);
   // No "Open the classic view" link: C is the normal product, and the classic view is a
-  // hidden fallback reached only by the address ?ui=classic (Ritvars, 28.09.2026).
+  // hidden fallback reached only by the address ?ui=classic (the owner, 28.09.2026).
 }
 
 // Which C place a hash belongs to. Old links keep working: #/today is Home, #/inbox is
@@ -1515,7 +1515,7 @@ async function viewHomeC() {
 }
 function cMonthChart(months, year) {
   if (!months.length) return '<p class="c-empty">No admissions recorded this year yet.</p>';
-  // On a phone the chart is drawn for a phone (Aigars UX pass, 29.09.2026): drawn 640 wide and shrunk to
+  // On a phone the chart is drawn for a phone (the review UX pass, 29.09.2026): drawn 640 wide and shrunk to
   // ~330 px, its labels came out at 5-6 px. Drawn 360 wide, they stay about the size they are written.
   const narrow = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width:760px)').matches;
   const W = narrow ? 360 : 640, H = narrow ? 230 : 210, L = narrow ? 28 : 30, R = 8, T = 14, B = 26, n = months.length;
@@ -1584,7 +1584,7 @@ async function viewNextC() {
   const open = people.filter((p) => !C_TERMINAL.includes(p.status));
   const none = open.filter((p) => !p.next_action_at);
   const pct = open.length ? Math.round(((open.length - none.length) / open.length) * 100) : 100;
-  // Ieva (29.09): the contact details and the notes right here, to call or write without opening the profile
+  // Admissions (29.09): the contact details and the notes right here, to call or write without opening the profile
   const byId = new Map(people.map((p) => [p.id, p]));
   const reach = (p) => (!p ? '' : `<small class="c-reach">${cReach(p) || '<span class="c-gap">no email or phone</span>'}</small>`);
   const said = (p) => (p && cComment(p) ? `<small class="c-nnote" title="${esc(p.last_comment || p.notes)}">${esc(cComment(p))}</small>` : '');
@@ -1748,7 +1748,7 @@ async function viewLeadsC() {
 // programme, stage, next step and notes, without going to the person page. Every save
 // goes through the existing routes, so their rules hold: no empty name, a reason to
 // stop working with somebody, and a next step can be moved or done but not renamed.
-// People filters (Aigars: "filtrus ... nevis vnk pills ar vienu izveli"): the Journey's dropdowns, combined.
+// People filters (the review: real filters, not one-choice pills): the Journey's dropdowns, combined.
 const C_PF_EMPTY = () => ({ stage: '', programme: '', due: '', owner: '', source: '', data: '' });
 let C_PF = C_PF_EMPTY(); let C_PQ = ''; let C_PEDIT = null; let C_PMSG = ''; let C_PDATA = null; let C_PSCROLL = false;
 // Stage names come from config (they are still a working version): the label a person
@@ -1890,7 +1890,7 @@ function cLifeFacts(p) {
   const fs = p.form_started_at || by.form_started, mt = p.matriculated_at || by.matriculated;
   return [fs && ['Application form started', fs, 'Form started'], mt && ['Matriculated', mt, 'Matriculated']].filter(Boolean);
 }
-// Where they are in the SIS now, and the next SIS step (Ritvars 29.09: after submission it is the
+// Where they are in the SIS now, and the next SIS step (the owner 29.09: after submission it is the
 // Student Coordinator's work; Admissions sees whether it has moved, to nudge). SIS words only.
 function cSisNow(s) {
   if (!s) return '';
@@ -1912,7 +1912,7 @@ function cPersonCard(p, t) {
     ${notes ? `<div class="c-notes">${esc(notes.length > 260 ? notes.slice(0, 260) + '…' : notes)}</div>` : ''}
     <div class="c-row-acts"><button class="btn sm ghost" onclick="cEditFromJourney('${esc(p.id)}')">Edit</button><a class="btn sm ghost" href="#/person/${esc(p.id)}">Details →</a></div></aside>`;
 }
-// JOURNEY CARD (Aigars' feedback #2, 28.09.2026): the name first, then the NEXT STEP as the clearest
+// JOURNEY CARD (the review' feedback #2, 28.09.2026): the name first, then the NEXT STEP as the clearest
 // line on the card - an arrow, ink, with its due day under it. Overdue is red and gives the card a
 // red edge; today is amber text only; an ordinary day is quiet. Nothing planned stays the amber
 // warning it was. The stages, their order and the drag-to-move workflow are unchanged.
@@ -1920,7 +1920,7 @@ const C_JICON = {
   next: '<svg class="c-tico" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9M8.5 4.5 12 8l-3.5 3.5"/></svg>',
   over: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="M8 4.8v3.6M8 10.9v.1"/></svg>',
   today: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="M8 4.9V8l2.2 1.4"/></svg>',
-  // WHAT KIND OF STEP IT IS (Aigars, 29.09.2026: "a colour or icon per next-step type"). An icon,
+  // WHAT KIND OF STEP IT IS (the review, 29.09.2026: "a colour or icon per next-step type"). An icon,
   // and not a colour: the palette carries two accents and on this card both already mean TIME -
   // amber is today, red is overdue - so a colour per type would argue with the only two colours
   // that currently mean anything. One mark per GROUP, the four the picker is already built from.
@@ -1933,7 +1933,7 @@ const C_JICON = {
   },
 };
 // The 23.09 import titled every task "Get in touch (from the sheet)". Where it came from is on the
-// person's history; on screen the step says what to do (Aigars: no engineering language). Display only.
+// person's history; on screen the step says what to do (the review: no engineering language). Display only.
 const cTask = (s) => String(s == null ? '' : s).replace(/ \(from the sheet\)$/, '');
 // A task stores the WORDS of its step, never an id, so the group is looked up by label. An imported
 // step ("Get in touch (from the sheet)") matches nothing in the configured list and keeps the plain
@@ -1949,8 +1949,8 @@ const cNotePreview = (s) => String(s == null ? '' : s).replace(/^(?:(?:Sheet sta
 // The card's comment: the newest one somebody wrote on the person page (Add a note / Log a call), else the
 // note from the import. The whole thread is the person page's History.
 const cComment = (p) => String(p.last_comment || '').trim() || cNotePreview(p.notes);
-// CALL OR WRITE WITHOUT OPENING THE PROFILE (Ieva, 29.09.2026: "lai es uzreiz saprotu, kas bija
-// runāts, un piezvanīt vai uzrakstīt"). Next Steps got these links first and they were the only
+// CALL OR WRITE WITHOUT OPENING THE PROFILE (Admissions, 29.09.2026): what was said must be visible
+// and the number callable. Next Steps got these links first and they were the only
 // tel:/mailto: in the whole app - the People row and the Journey person card printed the same
 // contact as dead text. One helper now, used by all three, so they cannot drift apart again.
 // stopPropagation because each of these sits inside a row that is itself clickable.
@@ -1970,7 +1970,7 @@ function cJourneyCard(p, t, sel) {
     ? `<span class="c-jnext">${cStepIcon(t.label)}<span>${esc(cTask(t.label))}</span></span><small class="c-jdue${w ? ' ' + w : ''}">${due}</small>`
     : '<small class="none">nothing planned</small>'}${cComment(p) ? `<small class="c-jnote" title="${esc(p.last_comment || p.notes)}">${esc(cComment(p))}</small>` : ''}</div>`;
 }
-// JOURNEY FILTERS (Aigars' feedback 2A, 28.09.2026: real filters, not one-choice pills). Four
+// JOURNEY FILTERS (the review' feedback 2A, 28.09.2026: real filters, not one-choice pills). Four
 // compact dropdowns - Programme, Overdue / Today, Owner, Came from - offering only the values the
 // open people really carry. They combine (all must hold). A filter that is set says so: its box
 // turns Navy-edged and shows the chosen value. Nothing is stored on the server.
@@ -2012,7 +2012,7 @@ function cJourneyFilters(open) {
   const distinct = (key) => [...new Set(open.map((p) => p[key] || cNotSaid))];
   const known = CFG.programmes || [];
   const progs = distinct('programme').sort((a, b) => (known.indexOf(a) + 1 || 99) - (known.indexOf(b) + 1 || 99) || a.localeCompare(b));
-  // every configured owner role, even one nobody holds right now (Ritvars: "add coordinator also")
+  // every configured owner role, even one nobody holds right now (the owner: "add coordinator also")
   const owners = [...new Set([...(CFG.owners || []), ...distinct('owner')])];
   const sources = distinct('source_channel').sort((a, b) => a.localeCompare(b));
   const name = (k, v) => (v === cNotSaid ? 'not recorded' : k === 'source' ? channelLabel(v) : v);
@@ -2368,7 +2368,7 @@ async function drawFeedbackBadge() {
 }
 
 async function drawWaiting() {
-  // Not in Concept C (decided by Ritvars 28.09.2026). Its one number mixed new leads
+  // Not in Concept C (decided by the owner 28.09.2026). Its one number mixed new leads
   // with overdue steps, which C keeps as two places, its link now lands on Home, and
   // its wording is the old vocabulary. New Leads and Next Steps carry their own counts
   // in C's navigation. The classic view keeps it exactly as it was.
@@ -2421,7 +2421,7 @@ const fmtDateTime = (s) => {
 // saved (seen 28.09.2026 at 01:24).
 const todayStr = () => new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
 // The four rarely-used filters fold away. Six dropdowns open at once made
-// People read as another dashboard; Aigars asked for it to be the database.
+// People read as another dashboard; the review asked for it to be the database.
 // They open automatically whenever one of them is actually set, so a filter can
 // never be hiding while it is still filtering.
 let MORE_FILTERS = false;
@@ -2535,7 +2535,7 @@ let ACTOR = 'Admissions';
 // it only decides what is worth putting on screen. Every refusal is the server's.
 let AUTH = { on: false, user: null };
 const isAdmin = () => (AUTH.on ? (AUTH.user || {}).role === 'admin' : (CFG.admins || []).includes(ACTOR));
-// Not derived from isAdmin on purpose: Marina is an admin and must not see feedback.
+// Not derived from isAdmin on purpose: an admin is an admin and must not see feedback.
 const mayReadFeedback = () => (CFG.feedbackReaders || []).includes(ACTOR);
 function setActor(who) {
   ACTOR = who;
@@ -2706,7 +2706,7 @@ function drawLogin(message) {
   // The help button belongs to the application, not to the door.
   const help = $('#helpBtn'); if (help) help.style.display = 'none';
 
-  // GOOGLE SIGN-IN ONLY (Aigars, 28.09.2026). The email and password form, the OR
+  // GOOGLE SIGN-IN ONLY (the review, 28.09.2026). The email and password form, the OR
   // divider and the Sign in button are gone, and the server refuses a password too.
   // Google proves who somebody is; crm_users still decides what they may do. When
   // Google is not configured on a copy, the card says so rather than showing a button
@@ -2841,7 +2841,7 @@ async function refreshBadge() {
     const i = await api('/api/intake');
     const el = $('#navIntake');
     // The count is a nudge, and a nudge belongs to whoever owns the queue.
-    // Ieva can still open CAR and look - nothing is hidden - but the intake is
+    // Admissions can still open CAR and look - nothing is hidden - but the intake is
     // Marketing's work and must not sit in her sidebar asking to be done.
     const ownsIntake = myRole() === (CFG.routing || {}).unclear || (CFG.admins || []).includes(ACTOR);
     if (i.counts.new && ownsIntake) {
@@ -3397,7 +3397,7 @@ const fieldChip = (f) => `<span class="chipf ${esc(f.provenance)}"
 const fieldCell = (f) => `<span class="fv ${esc(f.provenance)}" title="${esc(PROV_TITLE[f.provenance] || '')}">
   ${esc(f.value)}</span>`;
 
-// ONE work queue. Aigars: "Butiba CAR sadala ir jabut tikai To look at" - the
+// ONE work queue. the review: the queue holds only what still needs looking at - the
 // Inbox is leads to be processed and nothing else. There were three boards here
 // (To look at, Done, Not relevant) and "Done" was a second place a person could
 // sit and be forgotten, which is the fault he actually reported: "sanak es
@@ -3432,7 +3432,7 @@ async function viewInbox() {
       ${r.aged ? '<div class="sub2 late" title="waiting since 09:00 yesterday">late</div>' : ''}</td>
   </tr>`;
 
-  // What used to be the Done board. It answers the three things Aigars could not
+  // What used to be the Done board. It answers the three things the review could not
   // see - where they went, what they want, what happens next - and then clears,
   // because it is a receipt and not a place.
   const banner = () => {
@@ -3695,7 +3695,7 @@ async function openExport() {
   const row = (x) => `<label class="tick">
     <input type="checkbox" class="xsec" value="${esc(x.id)}" ${RPT_PICK.has(x.id) ? 'checked' : ''}>
     <span>${esc(x.label)}</span></label>`;
-  // Three ways out, one set of rows (Ritvars 28.09.2026: "not just csv, but also the
+  // Three ways out, one set of rows (the owner 28.09.2026: "not just csv, but also the
   // most recent excel extension and google sheets file").
   const sheetsOk = AUTH.on && AUTH.google;
   modal('Download for management review', `
@@ -4804,7 +4804,7 @@ const fbPath = () => location.hash || '#/today';
 // Anything else is shown as text: a planted "javascript:" must never become a link
 // in an admin's inbox. The server keeps only in-app addresses too (readPath).
 const fbPathLink = (p) => (/^(#\/|\/(?!\/))/.test(String(p || '')) ? `<a href="${esc(p)}">${esc(p)}</a>` : `<span>${esc(p)}</span>`);
-// What the screen SAYS about who reads feedback. It names nobody (Ritvars, 28.09.2026: "Anonymize!",
+// What the screen SAYS about who reads feedback. It names nobody (the owner, 28.09.2026: "Anonymize!",
 // when the box named its two readers). WHO may read it is still decided by CFG.feedbackReaders in
 // mayReadFeedback(); only the words shown changed.
 const fbReaders = () => 'the people who build the CRM';
