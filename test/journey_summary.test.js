@@ -87,3 +87,24 @@ test('each bar is the filter for what it counted, and toggles', () => {
   assert.match(on, /aria-pressed="true"/);
   assert.match(on, /onclick="cJfPick\('stage', this\.dataset\.v, !true\)"/, 'and clicking again clears it');
 });
+
+// Found in the screenshot pass, 30.09.2026. Every bar is drawn width:100% of its box, and the
+// boxes were laid out with flex-wrap, so a box was as wide as its LABEL: "Application and
+// documents" (1) drew a bar 2.4 times the ink of "Visit on site" (1). Each bar was individually
+// correct, which is why only looking at the rendered screen found it.
+test('the bar says the number and nothing else: the boxes are all one width', () => {
+  const row = line('  html.ui-c .c-sumrow{');
+  assert.match(row, /display:grid/, 'a grid, so every track is the same size');
+  const tracks = /grid-template-columns:repeat\(auto-fit,minmax\([^)]*\)\)/.exec(row);
+  assert.ok(tracks, 'one repeat() of one minmax: every column identical, on every line');
+  assert.ok(!/flex-wrap/.test(row), 'not flex-wrap, which stretches whatever lands on the last line');
+
+  // and the box may not grow to fit its label
+  const box = APP.slice(APP.indexOf('  html.ui-c .c-sum{'), APP.indexOf('  html.ui-c .c-sum:hover'));
+  assert.match(box, /min-width:0/, 'the box takes the track width, not the label width');
+  assert.ok(!/min-width:\s*[1-9]/.test(box), 'no floor that a long label could push past');
+
+  // the narrow layout is a grid too, or the last line stretches again below 760px
+  const narrow = line('  @media (max-width:760px){ html.ui-c .c-sumrow{');
+  assert.match(narrow, /grid-template-columns:repeat\(auto-fit,minmax\([^)]*\)\)/);
+});
