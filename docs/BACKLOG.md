@@ -145,6 +145,8 @@ dpl_BQ2rpkN6ggPPktnFekPPkrBaGBSj** (588/588; live page = commit + sign-in script
 - Texts cut to a third (Ritvars): People "Click a row to edit.", its count "All N people.", Next
   Steps "What the team has to do.", New Leads "New arrivals land here first."
 - Checked: desktop light/dark, phone light/dark. Tests: test/kit13_polish.test.js.
+**Aigars item 4 ("Application form started" / "Matriculated" from the SIS, automatically): CAPABILITY DONE 29.09.2026** - Ritvars: "we are just creating and testing ... i talk about capabilities". Built, connected, deployed, first real sync run; real people follow as the SIS fills.
+
 **THE FIRST REAL SIS SYNC - 29.09.2026 14:30 Riga, test mode** (Ritvars added CRON_SECRET; CHANNEL_MODE_SIS=test
 set; deployed dpl_CqpFohBN4yHXuFhUmLVgQhdcT7RW; the cron route now 401s a wrong secret; Ritvars pressed Run).
 Read-only before/after: fetched 6, stored 6 (registered 4, submitted 1, matriculated 1), unusable 0,
