@@ -57,7 +57,7 @@ test('the next step is the clearest line: its own element with an arrow, before 
   assert.match(html, /<span class="c-jnext"><svg[^>]*>.*<\/svg><span>Send the invoice<\/span><\/span>/s);
   assert.match(APP, /html\.ui-c \.c-jnext\{[^}]*color:var\(--ink\)/, 'in full ink, not the quiet grey');
   const none = sandbox().card(person, undefined, null);
-  assert.match(none, /<small class="none">nothing planned<\/small>/, 'no step stays the amber warning it was');
+  assert.match(none, /<small class="none">No next step<\/small>/, 'no step stays the amber warning it was');
 });
 
 test('a next step says what KIND it is: one mark per group, and no new colour', () => {

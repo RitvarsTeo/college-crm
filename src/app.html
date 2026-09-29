@@ -1594,7 +1594,7 @@ async function viewNextC() {
       <div class="c-acts"><button class="btn sm" onclick="event.stopPropagation();openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))})">Done</button></div></div>`;
   const pRow = (p) => `<div class="c-line" tabindex="0" onclick="location.hash='#/person/${esc(p.id)}'">
       <div class="c-who"><b>${esc(p.name)}</b><small>${esc(p.programme || 'programme not said')} · ${esc(p.status)}</small>${reach(p)}</div>
-      <div class="c-what none">Nothing planned${said(p)}</div><div class="c-when"></div>
+      <div class="c-what none">No next step${said(p)}</div><div class="c-when"></div>
       <div class="c-acts"><button class="btn sm" onclick="event.stopPropagation();openNewTask('${esc(p.id)}')">Plan a next step</button></div></div>`;
   // the Overdue and Due today counts carry the urgency badges when there is something in them
   const sect = (title, rows, fn, tone = '') => `<div class="c-sheet"><h3>${title}<b${tone && rows.length ? ` class="c-count ${tone}"` : ''}>${rows.length}</b></h3>${rows.map(fn).join('') || '<div class="c-empty">None.</div>'}</div>`;
@@ -1773,7 +1773,7 @@ function cDrawPeople() {
       <td class="c-name"><b>${esc(p.name)}</b><small class="c-reach ${contact(p) ? '' : 'c-gap'}">${contact(p) ? cReach(p) : 'no contact details'}</small></td>
       <td>${esc(p.programme || '-')}${p.programme && !known.has(p.programme) ? ' <span class="c-tag">not in list</span>' : ''}</td>
       <td>${esc(cStage(p.status))}</td>
-      <td class="${t ? '' : 'c-gap'}">${t ? cStepIcon(t.label) + esc(cTask(t.label)) : (open ? 'nothing planned' : '-')}</td>
+      <td class="${t ? '' : 'c-gap'}">${t ? cStepIcon(t.label) + esc(cTask(t.label)) : (open ? 'No next step' : '-')}</td>
       <td>${t ? `<span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span>` : ''}</td></tr>
       ${C_PEDIT === p.id ? `<tr class="c-edit"><td colspan="5">${cEditForm(p, t)}</td></tr>` : ''}`; };
   $('#view').innerHTML = `<div class="c-head"><div><h1>People</h1></div>
@@ -1840,7 +1840,7 @@ function cEditForm(p, t) {
     <div id="pe-closed" hidden><label for="pe-reason">Why are we stopping?</label><select id="pe-reason">${(CFG.closedReasons || []).map((r) => `<option>${esc(r)}</option>`).join('')}</select><input id="pe-rnote" placeholder="Explanation (needed for Other)" style="margin-top:6px"></div>
     <div class="c-wide c-step">${t
       ? `<label for="pe-due">Next step</label><div class="c-steprow"><span>${esc(cTask(t.label))}</span><input id="pe-due" type="date" value="${esc(cDay(t.due_at))}" aria-label="Due date"><button class="btn sm ghost" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))})">Done…</button></div>`
-      : open ? `<label for="pe-next">Next step</label><div class="c-steprow"><select id="pe-next"><option value="">nothing planned</option>${nextActionOptions()}</select><input id="pe-ndue" type="date" value="${cTodayIso()}" aria-label="Due date"></div>` : '<label>Next step</label>'}</div>
+      : open ? `<label for="pe-next">Next step</label><div class="c-steprow"><select id="pe-next"><option value="">No next step</option>${nextActionOptions()}</select><input id="pe-ndue" type="date" value="${cTodayIso()}" aria-label="Due date"></div>` : '<label>Next step</label>'}</div>
     <div class="c-wide"><label for="pe-notes">Notes</label><textarea id="pe-notes" rows="4" oninput="this.nextElementSibling.textContent=this.value.length+' characters'">${esc(p.notes || '')}</textarea><div class="c-hint">${(p.notes || '').length} characters</div></div>
     <div id="pe-err" class="c-wide"></div>
     <div class="c-wide c-row-acts"><button class="btn" onclick="cSavePerson('${esc(p.id)}')">Save</button><button class="btn ghost" onclick="C_PEDIT=null;cDrawPeople()">Cancel</button><a class="btn ghost" href="#/person/${esc(p.id)}" style="margin-left:auto">Open person details →</a></div>
@@ -1902,7 +1902,7 @@ function cPersonCard(p, t) {
   const open = !C_TERMINAL.includes(p.status);
   const notes = String(p.notes || '');
   return `<aside class="c-card"><h2>${esc(p.name)}</h2> <div class="c-cardsub">${esc(cStage(p.status))} · ${esc(p.programme || 'programme not said')}</div>${cLifeLine(p)}
-    <div class="c-next ${open && !t ? 'none' : ''}"><b>${open ? 'Next step' : 'Outcome'}</b>${open ? (t ? `${esc(cTask(t.label))} · <span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span>` : 'Nothing planned yet') : esc(p.status)}
+    <div class="c-next ${open && !t ? 'none' : ''}"><b>${open ? 'Next step' : 'Outcome'}</b>${open ? (t ? `${esc(cTask(t.label))} · <span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span>` : 'No next step') : esc(p.status)}
       ${open ? `<div class="c-row-acts">${t ? `<button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))})">Done</button>` : `<button class="btn sm" onclick="openNewTask('${esc(p.id)}')">Plan a next step</button>`}</div>` : ''}</div>
     <dl><dt>Email</dt><dd class="${p.email ? 'c-reach' : 'c-gap'}">${cMailLink(p) || 'not recorded'}</dd><dt>Phone</dt><dd class="${p.phone ? 'c-reach' : 'c-gap'}">${cTelLink(p) || 'not recorded'}</dd>
       <dt>Came from</dt><dd>${esc(cChannel(p.source_channel)[0])}</dd><dt>First contact</dt><dd class="${p.created_at ? '' : 'c-gap'}">${p.created_at ? fmtDate(p.created_at) : 'not recorded'}</dd></dl>
@@ -1911,7 +1911,7 @@ function cPersonCard(p, t) {
 }
 // JOURNEY CARD (the review' feedback #2, 28.09.2026): the name first, then the NEXT STEP as the clearest
 // line on the card - an arrow, ink, with its due day under it. Overdue is red and gives the card a
-// red edge; today is amber text only; an ordinary day is quiet. Nothing planned stays the amber
+// red edge; today is amber text only; an ordinary day is quiet. No next step stays the amber
 // warning it was. The stages, their order and the drag-to-move workflow are unchanged.
 const C_JICON = {
   next: '<svg class="c-tico" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9M8.5 4.5 12 8l-3.5 3.5"/></svg>',
@@ -1965,7 +1965,7 @@ function cJourneyCard(p, t, sel) {
     : cLifeFacts(p).map(([, at, short]) => `<small class="c-jlife" title="From the SIS, by ${esc(cDay(at))}">${esc(short)}</small>`).join('');
   return `<div class="${cls}" draggable="true" data-id="${esc(p.id)}" tabindex="0" onclick="C_JSEL='${esc(p.id)}';cDrawJourney()"><b>${esc(p.name)}</b>${life}${t
     ? `<span class="c-jnext">${cStepIcon(t.label)}<span>${esc(cTask(t.label))}</span></span><small class="c-jdue${w ? ' ' + w : ''}">${due}</small>`
-    : '<small class="none">nothing planned</small>'}${cComment(p) ? `<small class="c-jnote" title="${esc(p.last_comment || p.notes)}">${esc(cComment(p))}</small>` : ''}</div>`;
+    : '<small class="none">No next step</small>'}${cComment(p) ? `<small class="c-jnote" title="${esc(p.last_comment || p.notes)}">${esc(cComment(p))}</small>` : ''}</div>`;
 }
 // JOURNEY FILTERS (the review' feedback 2A, 28.09.2026: real filters, not one-choice pills). Four
 // compact dropdowns - Programme, Overdue / Today, Owner, Came from - offering only the values the
@@ -2099,7 +2099,7 @@ async function viewPersonC(id) {
   const next = open
     ? (t ? `<div class="c-next"><b>Next step</b><div class="c-next-row"><span>${esc(cTask(t.label))}</span><span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span>${t.owner ? `<span class="c-gap-soft">${esc(t.owner)}</span>` : ''}</div>
         <div class="c-row-acts"><button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))})">Done</button><button class="btn sm ghost" onclick="openReschedule(${Number(t.id)})">Move the date</button></div></div>`
-      : `<div class="c-next none"><b>Next step</b>Nothing planned yet.<div class="c-row-acts"><button class="btn sm" onclick="openNewTask('${esc(p.id)}')">Plan a next step</button></div></div>`)
+      : `<div class="c-next none"><b>Next step</b>No next step<div class="c-row-acts"><button class="btn sm" onclick="openNewTask('${esc(p.id)}')">Plan a next step</button></div></div>`)
     : `<div class="c-next c-finished"><b>Outcome</b>${p.status === (CFG.stageRoles || {}).closed ? `<span class="c-no">✕</span>${esc(cStage(p.status))}${p.closed_reason ? ' · ' + esc(p.closed_reason) : ' · <span class="c-gap">reason not recorded</span>'}${p.closed_note ? `<div class="c-evt-body">${esc(p.closed_note)}</div>` : ''}` : `<span class="c-ok">✓</span>${esc(cStage(p.status))}${p.admitted_at ? ' on ' + fmtDate(p.admitted_at) : ''}`}${t ? `
         <div class="c-still"><b>Still open</b><div class="c-next-row"><span>${esc(cTask(t.label))}</span><span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span></div>
         <div class="c-row-acts"><button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))})">Done</button><button class="btn sm ghost" onclick="openReschedule(${Number(t.id)})">Move the date</button></div></div>` : ''}</div>`;
@@ -3784,7 +3784,7 @@ async function viewReports() {
     ${tile(s.conversionPct === null ? '-' : s.conversionPct + '%', 'conversion', s.conversionOf)}
     ${tile(s.activeApplicants, 'active now', 'Not admitted and not closed. Not limited to the period.')}
     ${tile(s.overdue, 'overdue', 'Open next steps past their due date.', s.overdue > 0)}
-    ${tile(s.noNextAction, 'no next step', 'Active people with nothing scheduled. This should be zero.', s.noNextAction > 0)}
+    ${tile(s.noNextAction, 'No next step', '', s.noNextAction > 0)}
     ${tile(s.medianDaysToAdmission, 'days to admit', 'Median first contact to admitted, for people admitted in this period.')}
     ${tile(s.maritimeGraduates, 'maritime school',
       `Counted from the education field. It is filled in for ${r.coverage.education.filled} of ${r.coverage.education.of} people who arrived in this period, so the real number is at least this.`)}
