@@ -1,6 +1,6 @@
-// Vercel Cron target, every 5 minutes: the last 15 minutes of PBX calls into the
-// CRM. The overlap is deliberate - a late run must never leave a gap - and a call
-// already stored is skipped by its uniqueid. What happens to each call is in
+// Vercel Cron target (once a day on Hobby, every 5 minutes on Pro): every PBX call
+// since the last run, fetched in 15-minute pieces (src/sync.js). A call already
+// stored is skipped by its uniqueid. What happens to each call is in
 // src/sync.js: a known caller is logged on the person, an unknown one goes to the
 // Inbox.
 //
@@ -35,7 +35,7 @@ export default async function handler(req, res) {
       // Riga times, because that is the clock the window was built on
       console.log(`[pbx] ${result.window.from} -> ${result.window.to} ${result.window.zone}: `
         + `fetched ${result.fetched}, kept ${result.kept}, logged ${result.logged}, inbox ${result.inbox}, `
-        + `already had ${result.seen}`);
+        + `already had ${result.seen}, pieces ${result.pieces}${result.caughtUp ? '' : ', NOT caught up yet'}`);
     }
     sendJson(res, 200, result);
   } catch (err) {

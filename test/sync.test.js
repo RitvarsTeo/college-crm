@@ -127,6 +127,78 @@ const app = (over = {}) => ({
   changedAt: '2026-09-28T07:58:02.000Z', ...over,
 });
 
+// ------------------------------------------------ phone catch-up (29.09.2026) ---
+// TeleGroup fails on a wide window, so a run walks forward in 15-minute pieces from the
+// bookmark to now. Once a day on Hobby therefore still brings in the whole day.
+
+function recordingPbx(calls = () => []) {
+  const seen = [];
+  const fetchImpl = async (url) => {
+    const u = new URL(url);
+    seen.push({ from: u.searchParams.get('dateFrom'), to: u.searchParams.get('dateTo') });
+    return { ok: true, status: 200, json: async () => calls(seen.length), text: async () => '' };
+  };
+  return { seen, fetchImpl };
+}
+
+test('phone catch-up: the first run reads the last 24 hours in 96 pieces of 15 minutes, back to back', async () => {
+  const db = await fresh();
+  const pbx = recordingPbx();
+  const r = await syncPbx(db, { now: NOW, env: ON, fetchImpl: pbx.fetchImpl });
+  assert.equal(r.pieces, 96);
+  assert.equal(r.caughtUp, true);
+  for (let i = 1; i < pbx.seen.length; i++) assert.equal(pbx.seen[i].from, pbx.seen[i - 1].to, 'no gap between pieces');
+  assert.equal(pbx.seen[0].from, '2026-09-27 12:05:00', '24 hours back, in Riga time');
+  assert.equal(pbx.seen.at(-1).to, '2026-09-28 12:05:00');
+});
+
+test('phone catch-up: the next run starts from the bookmark (2 minutes early), not from 24 hours back', async () => {
+  const db = await fresh();
+  await syncPbx(db, { now: NOW, env: ON, fetchImpl: recordingPbx().fetchImpl });
+  const pbx = recordingPbx();
+  const later = new Date(NOW.getTime() + 3 * 3600000);
+  const r = await syncPbx(db, { now: later, env: ON, fetchImpl: pbx.fetchImpl });
+  assert.equal(pbx.seen[0].from, '2026-09-28 12:03:00');
+  assert.equal(pbx.seen.at(-1).to, '2026-09-28 15:05:00');
+  assert.equal(r.pieces, 13, '3 hours and 2 minutes = 12 full pieces and a short one');
+});
+
+test('phone catch-up: a call found in the morning piece of a daily run is stored once', async () => {
+  const db = await fresh();
+  const pbx = recordingPbx((n) => (n === 10 ? [call({ uniqueid: 'morning-1', caller_num: '+37120000009' })] : []));
+  const r = await syncPbx(db, { now: NOW, env: ON, fetchImpl: pbx.fetchImpl });
+  assert.equal(r.inbox, 1);
+  assert.equal((await db.prepare('SELECT COUNT(*) n FROM pbx_calls').get()).n, 1);
+});
+
+test('phone catch-up: a run that runs out of time saves how far it got, and the next run carries on', async () => {
+  const db = await fresh();
+  let t = 0;
+  const clock = () => (t += 1000);           // every look at the clock is one second later
+  const first = await syncPbx(db, { now: NOW, env: ON, fetchImpl: recordingPbx().fetchImpl, budgetMs: 10000, clock });
+  assert.equal(first.caughtUp, false);
+  assert.ok(first.pieces > 0 && first.pieces < 96);
+  const pbx = recordingPbx();
+  const second = await syncPbx(db, { now: NOW, env: ON, fetchImpl: pbx.fetchImpl });
+  assert.equal(second.caughtUp, true);
+  const mark = Date.parse((await db.prepare("SELECT value FROM sync_state WHERE name = 'pbx_until'").get()).value);
+  assert.equal(mark, NOW.getTime(), 'the bookmark ends at now');
+  const { toRigaStamp } = await import('../lib/riga.js');
+  const stopped = NOW.getTime() - 24 * 3600000 + first.pieces * 15 * 60000;
+  assert.equal(pbx.seen[0].from, toRigaStamp(new Date(stopped - 2 * 60000)), 'carries on from where the first run stopped');
+  assert.equal(first.pieces + second.pieces, 97, 'the one extra piece is the 2-minute overlap');
+});
+
+test('phone catch-up: a failed piece keeps the bookmark at the last good piece', async () => {
+  const db = await fresh();
+  let n = 0;
+  const fetchImpl = async () => (++n === 5 ? { ok: false, status: 500, text: async () => '' }
+    : { ok: true, status: 200, json: async () => [], text: async () => '' });
+  await assert.rejects(syncPbx(db, { now: NOW, env: ON, fetchImpl }), /PBX returned 500/);
+  const mark = await db.prepare("SELECT value FROM sync_state WHERE name = 'pbx_until'").get();
+  assert.equal(mark.value, new Date(NOW.getTime() - 24 * 3600000 + 4 * 15 * 60000).toISOString());
+});
+
 // A fake SIS: pages of applicants, and a record of every request it was sent.
 function fakeSis(pages) {
   const seen = [];

@@ -16,7 +16,7 @@ a day, so `*/5 * * * *` waits for Vercel Pro (or any scheduler that calls the ro
 
 | Route | Does |
 |---|---|
-| `/api/cron/pbx-calls` | Last 15 minutes of PBX calls, three queues, incoming only. Each new call is stored in `pbx_calls`. The caller's number matches ONE person -> a `call` entry on their timeline (answered calls also set last contact). Unknown number, or two people share it -> Inbox item on channel `phone`. Withheld number -> stored only. |
+| `/api/cron/pbx-calls` | Every PBX call since the last run (at most the last 24 hours), asked for in 15-minute pieces because a wide window makes the API fail; a run stops after 40 s and the next carries on. Three queues, incoming only. Each new call is stored in `pbx_calls`. The caller's number matches ONE person -> a `call` entry on their timeline (answered calls also set last contact). Unknown number, or two people share it -> Inbox item on channel `phone`. Withheld number -> stored only. |
 | `/api/cron/sis-sync` | SIS records changed since the last run (`since` + every `nextCursor` page). Stored in `sis_applicants`, one row per application. Email or phone matches ONE person -> linked, and their stage moves forward. Anybody else -> one Inbox item on channel `sis`; once somebody confirms it, the next run links and moves them. |
 
 SIS status -> CRM stage, forwards only, never reopening `Not proceeding`:

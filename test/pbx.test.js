@@ -321,14 +321,14 @@ test('the window asked for is short, because a wide one makes the API fail', asy
 // need src/ and config/ bundled, because they open the CRM's database themselves.
 // 29.09.2026: the CRM is on Vercel Hobby, which refuses a deployment whose cron runs more often than
 // once a day, so the */5 schedule waits for Vercel Pro (docs/PBX_SIS_SYNC.md). The SIS runs once a day
-// until then; the phone runs once a night (29.09, token set) so it has a Run button too.
+// until then; the phone runs at 05:15 UTC (08:15 Riga in summer) and catches up the whole day.
 test('both poller routes exist and bundle what they need; the schedule waits for Vercel Pro', async () => {
   const vercel = JSON.parse(fs.readFileSync(path.join(ROOT, 'vercel.json'), 'utf8'));
   assert.equal((vercel.crons || []).filter((c) => /\*\/5/.test(c.schedule)).length, 0, 'no */5 cron on Hobby');
   // once a day is what Hobby allows (08:00 Riga); it also gives the Vercel Cron Jobs page a Run button that
   // sends CRON_SECRET itself, so a run by hand never needs the secret typed anywhere
   assert.deepEqual(vercel.crons, [{ path: '/api/cron/sis-sync', schedule: '0 5 * * *' },
-    { path: '/api/cron/pbx-calls', schedule: '0 1 * * *' }]);
+    { path: '/api/cron/pbx-calls', schedule: '15 5 * * *' }]);
   for (const f of ['pbx-calls.js', 'sis-sync.js']) {
     assert.ok(fs.existsSync(path.join(ROOT, 'api', 'cron', f)), f + ' must exist');
   }

@@ -56,7 +56,7 @@
     },
     {
       "path": "/api/cron/pbx-calls",
-      "schedule": "0 1 * * *"
+      "schedule": "15 5 * * *"
     }
   ]
 }

@@ -16,7 +16,7 @@
 import { receive, CONFIG } from './intake.js';
 import { findMatches, isStrong } from './identity.js';
 import { logEvent, AUTOMATIC } from './history.js';
-import { fetchCalls, rowsFrom, WINDOW_MINUTES } from '../lib/pbx.js';
+import { fetchCalls, rowsFrom, WINDOW_MINUTES, toRigaStamp, ZONE } from '../lib/pbx.js';
 import { fetchChanged, toSisRow } from '../lib/sis.js';
 import { recordSisLifecycle } from './lifecycle.js';
 
@@ -63,52 +63,93 @@ function callSentence(row) {
     : `Missed call on ${line}`;
 }
 
+// The phone catches up. TeleGroup fails when asked for a wide window, so a run
+// walks forward in 15-minute pieces from where the last run stopped (the
+// bookmark in sync_state 'pbx_until'), up to now. A run once a day therefore
+// brings in the whole day, and the Run button brings in everything since the
+// last run. No bookmark yet, or an old one: the last CATCH_UP_HOURS only. A run
+// stops at RUN_BUDGET_MS so it always finishes inside the function limit, saves
+// how far it got, and the next run carries on from there. Each piece starts a
+// little before the bookmark, because a call can be written late; a call
+// already stored is skipped by its uniqueid.
+export const CATCH_UP_HOURS = 24;
+export const OVERLAP_MINUTES = 2;
+export const RUN_BUDGET_MS = 40000;
+const PBX_BOOKMARK = 'pbx_until';
+
+async function storeCall(db, r, mode, at, out) {
+  // the pieces overlap on purpose; a call already here was handled last time
+  const had = await db.prepare('SELECT uniqueid FROM pbx_calls WHERE uniqueid = ?').get(r.uniqueid);
+  if (had) { out.seen++; return; }
+
+  let personId = null;
+  let inboundId = null;
+  const sentence = callSentence(r);
+  if (r.caller_num) personId = await onePerson(db, { phone: r.caller_num });
+  if (personId) {
+    await logEvent(db, { personId, kind: 'call', channel: 'phone', direction: 'in', at: r.created_at,
+      origin: AUTOMATIC, actor: 'PBX', subject: sentence, body: r.caller_num });
+    if (r.picked_up) {
+      await db.prepare('UPDATE people SET last_contact_at = ? WHERE id = ? AND (last_contact_at IS NULL OR last_contact_at < ?)')
+        .run(r.created_at, personId, r.created_at);
+    }
+    out.logged++;
+  } else if (r.caller_num) {
+    const got = await receive(db, { channel: 'phone', externalId: r.uniqueid, receivedAt: r.created_at,
+      phone: r.caller_num, body: sentence, source: mode === 'live' ? 'provider' : 'simulated' });
+    inboundId = got.id;
+    out.inbox++;
+  } else {
+    // a withheld number: kept for the call counts, but nobody can ring it back
+    out.noNumber++;
+  }
+  await db.prepare(`INSERT INTO pbx_calls (uniqueid, called_at, queue, caller_num, picked_up,
+    operator_name, person_id, inbound_id, inserted_at) VALUES (?,?,?,?,?,?,?,?,?)`).run(
+    r.uniqueid, r.created_at, r.queue, r.caller_num, r.picked_up ? 1 : 0, r.operator_name,
+    personId, inboundId, at);
+}
+
 export async function syncPbx(db, { now = new Date(), minutes = WINDOW_MINUTES,
-  env = process.env, fetchImpl = fetch } = {}) {
+  env = process.env, fetchImpl = fetch, budgetMs = RUN_BUDGET_MS, clock = () => Date.now() } = {}) {
   const at = now.toISOString();
   const mode = await channelMode(db, 'phone', env);
   if (mode === 'off') return { ok: true, ran: false, channel: 'phone', why: 'the phone channel is off' };
 
-  const { calls, window, safeUrl } = await fetchCalls({ now, minutes, env, fetchImpl });
-  const { rows, skipped } = rowsFrom(calls);
+  const nowMs = now.getTime();
+  const earliest = nowMs - CATCH_UP_HOURS * 3600000;
+  const mark = await db.prepare('SELECT value FROM sync_state WHERE name = ?').get(PBX_BOOKMARK);
+  const markMs = mark && mark.value ? Date.parse(mark.value) : NaN;
+  let from = Number.isFinite(markMs) ? Math.max(earliest, markMs - OVERLAP_MINUTES * 60000) : earliest;
+  const firstFrom = from;
+
+  const startedAt = clock();
   const out = { logged: 0, inbox: 0, seen: 0, noNumber: 0 };
+  const skipped = { notIncoming: 0, otherQueue: 0, unusable: 0, duplicateInBatch: 0 };
+  let fetched = 0, kept = 0, pieces = 0, safeUrl = null, reached = from;
 
-  for (const r of rows) {
-    // the windows overlap on purpose; a call already here was handled last time
-    const had = await db.prepare('SELECT uniqueid FROM pbx_calls WHERE uniqueid = ?').get(r.uniqueid);
-    if (had) { out.seen++; continue; }
-
-    let personId = null;
-    let inboundId = null;
-    const sentence = callSentence(r);
-    if (r.caller_num) personId = await onePerson(db, { phone: r.caller_num });
-    if (personId) {
-      await logEvent(db, { personId, kind: 'call', channel: 'phone', direction: 'in', at: r.created_at,
-        origin: AUTOMATIC, actor: 'PBX', subject: sentence, body: r.caller_num });
-      if (r.picked_up) {
-        await db.prepare('UPDATE people SET last_contact_at = ? WHERE id = ? AND (last_contact_at IS NULL OR last_contact_at < ?)')
-          .run(r.created_at, personId, r.created_at);
-      }
-      out.logged++;
-    } else if (r.caller_num) {
-      const got = await receive(db, { channel: 'phone', externalId: r.uniqueid, receivedAt: r.created_at,
-        phone: r.caller_num, body: sentence, source: mode === 'live' ? 'provider' : 'simulated' });
-      inboundId = got.id;
-      out.inbox++;
-    } else {
-      // a withheld number: kept for the call counts, but nobody can ring it back
-      out.noNumber++;
-    }
-    await db.prepare(`INSERT INTO pbx_calls (uniqueid, called_at, queue, caller_num, picked_up,
-      operator_name, person_id, inbound_id, inserted_at) VALUES (?,?,?,?,?,?,?,?,?)`).run(
-      r.uniqueid, r.created_at, r.queue, r.caller_num, r.picked_up ? 1 : 0, r.operator_name,
-      personId, inboundId, at);
+  while (from < nowMs) {
+    if (pieces > 0 && clock() - startedAt > budgetMs) break;
+    const to = Math.min(from + minutes * 60000, nowMs);
+    const got = await fetchCalls({ now: new Date(to), minutes: (to - from) / 60000, env, fetchImpl });
+    safeUrl = got.safeUrl;
+    const { rows, skipped: sk } = rowsFrom(got.calls);
+    for (const k of Object.keys(skipped)) skipped[k] += sk[k] || 0;
+    fetched += got.calls.length;
+    kept += rows.length;
+    for (const r of rows) await storeCall(db, r, mode, at, out);
+    pieces++;
+    reached = to;
+    // saved after every piece, so a run that dies half way loses nothing
+    await saveState(db, PBX_BOOKMARK, new Date(reached).toISOString(),
+      { pieces, fetched, kept, ...out }, at);
+    from = to;
   }
 
+  const caughtUp = reached >= nowMs;
   const result = { ok: true, ran: true, channel: 'phone', mode,
-    window: { from: window.dateFrom, to: window.dateTo, zone: window.zone, minutes: window.minutes },
-    fetched: calls.length, kept: rows.length, skipped, ...out, safeUrl };
-  await saveState(db, 'pbx', window.dateTo, { fetched: result.fetched, kept: result.kept, ...out }, at);
+    window: { from: toRigaStamp(new Date(firstFrom)), to: toRigaStamp(new Date(reached)), zone: ZONE,
+      minutes: Math.round((reached - firstFrom) / 60000) },
+    pieces, caughtUp, fetched, kept, skipped, ...out, safeUrl };
   return result;
 }
 
