@@ -17,7 +17,7 @@ function sandbox() {
   const ctx = { C_TERMINAL: ['Admitted', 'Not proceeding'], cTodayIso: () => '2026-09-29', cDay: (s) => String(s).slice(0, 10),
     esc: (s) => String(s ?? ''), channelLabel: (c) => c, CFG: { programmes: ['NAV', 'ENG'], owners: ['Admissions', 'Student Coordinator'],
       stages: [{ id: 'New', label: 'New' }, { id: 'Admitted', label: 'Admitted' }] } };
-  vm.runInNewContext([line('const cWhenClass ='), line('const cNotSaid ='), fn('function cJourneyMatch('), line('const C_PF_EMPTY ='),
+  vm.runInNewContext([line('const cWhenClass ='), line('const cNotSaid ='), line('const cTask ='), fn('function groupForAction('), fn('function cJourneyMatch('), line('const C_PF_EMPTY ='),
     line('const C_PF_DUE ='), line('const C_PF_DATA ='), fn('function cPeopleMatch('), 'let C_PF = C_PF_EMPTY();', fn('function cPeopleFilters('),
     'this.m = cPeopleMatch; this.f = (x) => { C_PF = { ...C_PF_EMPTY(), ...x }; return cPeopleFilters; }; this.draw = (ps) => cPeopleFilters(ps);'].join('\n'), ctx);
   return ctx;

@@ -1140,6 +1140,19 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-jp:hover{border-color:var(--control-line)}
   html.ui-c .c-jp.c-sel{border-color:var(--pet);box-shadow:0 0 0 1px var(--pet)}
   /* Journey filters: compact labelled dropdowns in one row; a set filter is Navy-edged and bold */
+  /* the summary reads as one thing: a count, a bar, a label, and the bar is the button */
+  html.ui-c .c-summary{display:grid;gap:8px;margin:0 0 12px}
+  html.ui-c .c-sumrow{display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end}
+  html.ui-c .c-sum{display:flex;flex-direction:column;align-items:flex-start;gap:3px;
+    min-width:74px;padding:6px 8px 7px;border:1px solid var(--rule2);border-radius:8px;
+    background:var(--surface);cursor:pointer;font:inherit;text-align:left}
+  html.ui-c .c-sum:hover{border-color:var(--control-line)}
+  html.ui-c .c-sum.on{border-color:var(--j-to);box-shadow:inset 0 0 0 1px var(--j-to)}
+  html.ui-c .c-sum b{font-size:17px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums}
+  html.ui-c .c-sum i{display:block;width:100%;border-radius:2px;background:var(--j-from);min-height:3px}
+  html.ui-c .c-sum.on i{background:var(--j-to)}
+  html.ui-c .c-sum span{font-size:11px;color:var(--t3);line-height:1.25;overflow-wrap:anywhere}
+  @media (max-width:760px){ html.ui-c .c-sum{min-width:0;flex:1 1 84px} }
   html.ui-c .c-jfilters{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-6px 0 14px}
   html.ui-c .c-jf-ico{width:16px;height:16px;flex:0 0 16px;fill:none;stroke:var(--t3);stroke-width:1.6;stroke-linejoin:round}
   html.ui-c .c-jf{display:inline-flex;align-items:center;gap:4px;height:32px;padding:0 0 0 10px;border:1px solid var(--control-line);
@@ -2013,9 +2026,9 @@ function cJourneyCard(p, t, sel) {
 // otherwise choosing two programmes would mean opening the same menu twice.
 // This also brings back "overdue AND today", which was dropped as a third option when it could only
 // be a designed choice; as two ticks it costs nothing and is the manager's own choice.
-let C_JF = { programme: [], due: [], owner: [], source: [] };
+let C_JF = { programme: [], due: [], owner: [], source: [], stage: [], group: [] };
 let C_JFOPEN = null;
-const C_JF_EMPTY = () => ({ programme: [], due: [], owner: [], source: [] });
+const C_JF_EMPTY = () => ({ programme: [], due: [], owner: [], source: [], stage: [], group: [] });
 function cJfToggle(k) { C_JFOPEN = C_JFOPEN === k ? null : k; cDrawJourney(); }
 function cJfPick(k, value, on) {
   const set = new Set(C_JF[k] || []);
@@ -2037,6 +2050,9 @@ function cJourneyMatch(p, t, f) {
   if (!kept('programme', prog)) return false;
   if (!kept('owner', owner)) return false;
   if (!kept('source', src)) return false;
+  if (!kept('stage', p.status)) return false;
+  // the kind of the next step. A person with none can only match when nothing is chosen.
+  if (!kept('group', t ? (groupForAction(cTask(t.label)) || 'No group') : 'No next step')) return false;
   if (!kept('due', t ? cWhenClass(t.due_at) : '')) return false;
   return true;
 }
@@ -2073,6 +2089,38 @@ function cJourneyFilters(open) {
     ${any ? '<button class="btn sm ghost c-jf-clear" onclick="cJfClear()">Clear</button>' : ''}
   </div>`;
 }
+// FOR MANAGEMENT (30.09.2026): where the waiting is, in two rows of bars.
+// Row one is the stages, in board order. Row two is the kind of next step, which is
+// the question "what is the team actually doing next", and it carries No next step as
+// a real bar because that is the number worth acting on.
+//
+// Both rows count the SAME people the columns below are drawn from - everyone still
+// open, before the filters - so a bar can never disagree with the board. Clicking a
+// bar filters the board by exactly what that bar counted, and clicking it again clears
+// it, so the summary is also the control.
+function cJourneySummary(everyone, taskOf, stages) {
+  const on = (k, v) => (C_JF[k] || []).includes(v);
+  const byStage = stages.map((st) => [st.id, st.label || st.id,
+    everyone.filter((p) => p.status === st.id).length]);
+
+  const groups = (CFG.nextActions || []).map((g) => g.group);
+  const kindOf = (p) => { const t = taskOf.get(p.id); if (!t) return 'No next step';
+    return groupForAction(cTask(t.label)) || 'No group'; };
+  const byKind = [...groups, 'No group', 'No next step']
+    .map((g) => [g, g, everyone.filter((p) => kindOf(p) === g).length])
+    .filter(([, , n]) => n > 0);
+
+  const row = (key, rows) => {
+    const top = Math.max(1, ...rows.map((r) => r[2]));
+    return `<div class="c-sumrow">${rows.map(([v, label, n]) => `<button type="button"
+      class="c-sum${on(key, v) ? ' on' : ''}" aria-pressed="${on(key, v)}"
+      onclick="cJfPick('${key}', this.dataset.v, !${on(key, v)})" data-v="${esc(v)}">
+      <b>${n}</b><i style="height:${Math.max(3, (n / top) * 34)}px"></i><span>${esc(label)}</span>
+    </button>`).join('')}</div>`;
+  };
+  return `<div class="c-summary">${row('stage', byStage)}${row('group', byKind)}</div>`;
+}
+
 function cDrawJourney() {
   const { people, taskOf } = C_JDATA;
   const stages = (CFG.stages || []).filter((s) => !C_TERMINAL.includes(s.id));
@@ -2084,6 +2132,7 @@ function cDrawJourney() {
   const adm = people.filter((p) => p.status === roles.admitted).length, np = people.filter((p) => p.status === roles.closed).length;
   $('#view').innerHTML = `<p class="c-crumb">People</p>
     <div class="c-head"><div><h1>Journey</h1></div></div>
+    ${cJourneySummary(everyone, taskOf, stages)}
     ${cJourneyFilters(everyone)}
     <div class="c-journey">${sel ? cPersonCard(sel, taskOf.get(sel.id)) : '<div></div>'}<div style="min-width:0">
       <div class="c-cols" style="grid-template-columns:repeat(${stages.length}, minmax(150px, 1fr))">${stages.map((s, i) => { const ps = open.filter((p) => p.status === s.id);

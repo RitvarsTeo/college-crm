@@ -19,7 +19,7 @@ const DASH = '—';
 function load(today = '2026-09-28') {
   const ctx = { CFG: CONFIG, esc: (s) => String(s ?? ''), channelLabel: (c) => `label:${c}`, cTodayIso: () => today, cDay: (iso) => String(iso).slice(0, 10) };
   const i = APP.indexOf('let C_JF = {'); const j = APP.indexOf('function cJourneyMatch(');
-  vm.runInNewContext([line('const cWhenClass ='), APP.slice(i, j), fn('function cJourneyMatch('), fn('function cJourneyFilters('),
+  vm.runInNewContext([line('const cWhenClass ='), line('const cTask ='), fn('function groupForAction('), APP.slice(i, j), fn('function cJourneyMatch('), fn('function cJourneyFilters('),
     'this.match = cJourneyMatch; this.filters = cJourneyFilters; this.setF = (f) => { C_JF = f; };',
     'this.setOpen = (k) => { C_JFOPEN = k; }; this.empty = C_JF_EMPTY;'].join('\n'), ctx);
   return ctx;
