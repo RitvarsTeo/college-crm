@@ -18,6 +18,8 @@ import { findMatches, isStrong } from './identity.js';
 import { logEvent, AUTOMATIC } from './history.js';
 import { fetchCalls, rowsFrom, WINDOW_MINUTES, toRigaStamp, ZONE } from '../lib/pbx.js';
 import { fetchChanged, toSisRow } from '../lib/sis.js';
+import { runPoll as gmailPoll } from '../lib/gmail.js';
+import { adapt, toIntake } from './adapters.js';
 import { recordSisLifecycle } from './lifecycle.js';
 
 const nowIso = () => new Date().toISOString();
@@ -233,6 +235,40 @@ async function applyToPerson(db, reference, personId, at, stats) {
   // The lifecycle facts ("Application form started", "Matriculated") each row states, dated and
   // written once (src/lifecycle.js holds the PROVISIONAL mapping; docs/LIFECYCLE.md). Facts, not stages.
   for (const r of rows) stats.facts += await recordSisLifecycle(db, personId, r, { now: new Date(at) });
+}
+
+// GMAIL -> NEW LEADS (30.09.2026). runPoll fetched and shaped the messages and handed
+// them back to nobody, so the mailbox was read and the queue never saw a thing. Each
+// message goes through the gmail adapter and receive(), the same door every channel
+// uses, which is what gives it the dedupe, the ageing rule and the junk filter.
+//
+// A second run over the same window adds nothing: Gmail's own message id is the
+// external id, receive() knows it already, and the unique index holds underneath.
+export async function syncGmail(db, { now = new Date(), env = process.env, fetchImpl = fetch,
+  minutes = undefined, max = 25 } = {}) {
+  const at = now.toISOString();
+  const mode = await channelMode(db, 'gmail', env);
+  if (mode === 'off') return { ok: true, ran: false, channel: 'gmail', why: 'the email channel is off' };
+
+  const got = await gmailPoll({ env, now, fetchImpl, max, ...(minutes ? { minutes } : {}) });
+  if (!got.ok) {
+    await saveState(db, 'gmail', null, { ok: false, why: got.why }, at);
+    return { ok: false, ran: got.ran, channel: 'gmail', mode, why: got.why, waitingOn: got.waitingOn || null };
+  }
+
+  const out = { fetched: got.messages, inbox: 0, repeat: 0, filtered: 0, unusable: 0 };
+  for (const shaped of got.items || []) {
+    let ev;
+    try { ev = adapt('gmail', shaped); } catch { out.unusable++; continue; }
+    const r = await receive(db, { ...toIntake(ev), source: mode === 'live' ? 'provider' : 'simulated' });
+    if (r.duplicate) out.repeat++;
+    else if (r.filtered) out.filtered++;
+    else out.inbox++;
+  }
+
+  // more:true means Gmail had another page. Say so rather than report a clean run.
+  await saveState(db, 'gmail', got.query || null, { ...out, more: Boolean(got.more) }, at);
+  return { ok: true, ran: true, channel: 'gmail', mode, ...out, more: Boolean(got.more), query: got.query };
 }
 
 export async function syncSis(db, { now = new Date(), env = process.env, fetchImpl = fetch } = {}) {
