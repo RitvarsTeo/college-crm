@@ -1092,6 +1092,12 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-jp b{display:block;font-weight:600;overflow-wrap:anywhere}
   html.ui-c .c-jp small{display:block;color:var(--t3);font-size:12px;margin-top:2px}
   html.ui-c .c-jp small.none{color:var(--c-warn)}
+  /* lifecycle facts from the SIS: quiet, one line, the brand blue edge - facts, not warnings */
+  html.ui-c .c-life{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
+  html.ui-c .c-lifefact{font-size:12.5px;font-weight:600;color:var(--ink);border:1px solid var(--rule);border-left:3px solid #29a8df;border-radius:6px;padding:3px 9px;background:var(--surface)}
+  html.ui-c .c-lifefact time{font-weight:500;color:var(--t3);font-variant-numeric:tabular-nums;margin-left:4px}
+  html.ui-c .c-card .c-life{margin:8px 0 0}
+  html.ui-c .c-jp small.c-jlife{display:inline-block;margin:3px 4px 0 0;padding:0 6px;border-radius:4px;border-left:2px solid #29a8df;background:var(--c-accent-bg);color:var(--ink);font-size:11px;font-weight:600}
   /* the comment preview (Aigars): one quiet line, cut with an ellipsis; the whole note is on the card and the person page */
   html.ui-c .c-jp small.c-jnote{margin-top:5px;padding-top:4px;border-top:1px dashed var(--rule);color:var(--t3);font-size:11.5px;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1544,7 +1550,7 @@ async function viewOutcomesC() {
     ${C_OUTCOME !== 'Admitted' && noReason ? `<p class="c-ev" style="margin-top:0">${noReason} of ${np.length} have no recorded reason yet - it is still in the note. <span class="c-dec">reasons list to agree</span></p>` : ''}
     <div class="c-sheet">${list.map((p) => `<div class="c-line" tabindex="0" onclick="location.hash='#/person/${esc(p.id)}'" style="grid-template-columns:minmax(0,1.2fr) minmax(0,1.4fr) 110px">
         <div class="c-who"><b>${esc(p.name)}</b><small>${esc(p.programme || 'programme not said')} · came from ${esc(cChannel(p.source_channel)[0])}</small></div>
-        <div class="c-what">${C_OUTCOME === 'Admitted' ? 'Admitted' : (p.closed_reason ? esc(p.closed_reason) : '<span class="c-gap">reason not recorded</span>')}</div>
+        <div class="c-what">${C_OUTCOME === 'Admitted' ? `Admitted${p.matriculated_at ? ` · <span class="c-lifefact" title="From the SIS">Matriculated <time>${esc(cDay(p.matriculated_at))}</time></span>` : ''}` : (p.closed_reason ? esc(p.closed_reason) : '<span class="c-gap">reason not recorded</span>')}</div>
         <div class="c-when">${p.admitted_at ? fmtDate(p.admitted_at) : ''}</div></div>`).join('') || '<div class="c-empty">Nobody here.</div>'}</div>`;
 }
 
@@ -1764,10 +1770,21 @@ async function viewJourneyC() {
   C_JDATA = { people, taskOf };
   cDrawJourney();
 }
+// LIFECYCLE FACTS (src/lifecycle.js): "Application form started" and "Matriculated", dated, from the
+// SIS. Not stages. Shown only when the SIS has said so; a person with none shows nothing.
+function cLifeFacts(p) {
+  const by = Object.fromEntries((p.lifecycle || []).map((f) => [f.fact, f.at]));
+  const fs = p.form_started_at || by.form_started, mt = p.matriculated_at || by.matriculated;
+  return [fs && ['Application form started', fs, 'Form started'], mt && ['Matriculated', mt, 'Matriculated']].filter(Boolean);
+}
+function cLifeLine(p) {
+  const f = cLifeFacts(p);
+  return f.length ? `<div class="c-life">${f.map(([l, at]) => `<span class="c-lifefact" title="From the SIS">${esc(l)} <time>${esc(cDay(at))}</time></span>`).join('')}</div>` : '';
+}
 function cPersonCard(p, t) {
   const open = !C_TERMINAL.includes(p.status);
   const notes = String(p.notes || '');
-  return `<aside class="c-card"><h2>${esc(p.name)}</h2> <div class="c-cardsub">${esc(cStage(p.status))} · ${esc(p.programme || 'programme not said')}</div>
+  return `<aside class="c-card"><h2>${esc(p.name)}</h2> <div class="c-cardsub">${esc(cStage(p.status))} · ${esc(p.programme || 'programme not said')}</div>${cLifeLine(p)}
     <div class="c-next ${open && !t ? 'none' : ''}"><b>${open ? 'Next step' : 'Outcome'}</b>${open ? (t ? `${esc(cTask(t.label))} · <span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span>` : 'Nothing planned yet') : esc(p.status)}
       ${open ? `<div class="c-row-acts">${t ? `<button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))})">Done</button>` : `<button class="btn sm" onclick="openNewTask('${esc(p.id)}')">Plan a next step</button>`}</div>` : ''}</div>
     <dl><dt>Email</dt><dd class="${p.email ? '' : 'c-gap'}">${esc(p.email || 'not recorded')}</dd><dt>Phone</dt><dd class="${p.phone ? '' : 'c-gap'}">${esc(p.phone || 'not recorded')}</dd>
@@ -1797,7 +1814,8 @@ function cJourneyCard(p, t, sel) {
   const due = !t ? '' : w === 'over' ? `${C_JICON.over}${late} d. overdue`
     : w === 'today' ? `${C_JICON.today}Today` : esc(cDay(t.due_at));
   const cls = ['c-jp', 'row', sel && p.id === sel.id ? 'c-sel' : '', w === 'over' ? 'is-over' : '', w === 'today' ? 'is-today' : ''].filter(Boolean).join(' ');
-  return `<div class="${cls}" draggable="true" data-id="${esc(p.id)}" tabindex="0" onclick="C_JSEL='${esc(p.id)}';cDrawJourney()"><b>${esc(p.name)}</b>${t
+  const life = cLifeFacts(p).map(([, at, short]) => `<small class="c-jlife" title="From the SIS, ${esc(cDay(at))}">${esc(short)}</small>`).join('');
+  return `<div class="${cls}" draggable="true" data-id="${esc(p.id)}" tabindex="0" onclick="C_JSEL='${esc(p.id)}';cDrawJourney()"><b>${esc(p.name)}</b>${life}${t
     ? `<span class="c-jnext">${C_JICON.next}<span>${esc(cTask(t.label))}</span></span><small class="c-jdue${w ? ' ' + w : ''}">${due}</small>`
     : '<small class="none">nothing planned</small>'}${cNotePreview(p.notes) ? `<small class="c-jnote" title="${esc(p.notes)}">${esc(cNotePreview(p.notes))}</small>` : ''}</div>`;
 }
@@ -1903,7 +1921,7 @@ async function viewPersonC(id) {
     <div class="c-head"><div><h1 class="c-pname">${esc(p.name)}</h1><p>${esc(cStage(p.status))} · ${esc(p.programme || 'programme not said')}${p.study_form ? ' · ' + esc(p.study_form) : ''} · ${contact || '<span class="c-gap">no email or phone recorded</span>'}</p></div></div>
     <div class="c-pgrid">
       <div class="c-pmain">
-        ${next}
+        ${cLifeLine(p)}${next}
         <div class="c-sheet"><h3>History<b>${tl.length}</b><span class="c-h3acts"><button class="btn sm ghost" onclick="openNote('${esc(p.id)}','call')">Log a call</button><button class="btn sm ghost" onclick="openNote('${esc(p.id)}','note')">Add a note</button></span></h3>
           ${p.hiddenCorrections ? `<p class="c-ev" style="margin:10px 16px 0">${p.hiddenCorrections} ${p.hiddenCorrections === 1 ? 'correction made by a colleague is' : 'corrections made by colleagues are'} not shown. Corrections are private to whoever made them; admins see all of them.</p>` : ''}
           ${tl.map(ev).join('') || '<div class="c-empty">Nothing has happened yet.</div>'}</div>

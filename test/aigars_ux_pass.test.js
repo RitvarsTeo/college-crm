@@ -16,7 +16,7 @@ const line = (start) => { const i = APP.indexOf(start); assert.ok(i >= 0, start)
 function card(p, t) {
   const ctx = { esc: (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`), cTodayIso: () => '2026-09-28', cDay: (iso) => String(iso).slice(0, 10) };
   const i = APP.indexOf('const C_JICON = {');
-  vm.runInNewContext(`${line('const cWhenClass =')}\n${line('const cTask =')}\n${line('const cNotePreview =')}\n${APP.slice(i, APP.indexOf('\n};', i) + 3)}\n${fn('function cJourneyCard(')}\nthis.card = cJourneyCard;`, ctx);
+  vm.runInNewContext(`${line('const cWhenClass =')}\n${line('const cTask =')}\n${line('const cNotePreview =')}\n${APP.slice(i, APP.indexOf('\n};', i) + 3)}\n${fn('function cLifeFacts(')}\n${fn('function cJourneyCard(')}\nthis.card = cJourneyCard;`, ctx);
   return ctx.card(p, t, null);
 }
 

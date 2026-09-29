@@ -196,6 +196,20 @@ CREATE TABLE IF NOT EXISTS feedback_screenshots (
   CHECK (mime_type IN ('image/png', 'image/jpeg', 'image/webp'))
 );
 
+-- Lifecycle facts (src/lifecycle.js): dated things that happened to a person, from a system that
+-- knows them - today "Application form started" and "Matriculated" from the SIS. NOT stages: they
+-- never move anybody on the Journey. One row per person, fact and source record, so a sync that
+-- sees the same record again writes nothing.
+CREATE TABLE IF NOT EXISTS lifecycle_events (
+  person_id TEXT NOT NULL,
+  fact TEXT NOT NULL,                -- form_started | matriculated
+  source TEXT NOT NULL,              -- sis
+  source_ref TEXT NOT NULL,          -- the SIS reference:applicationId it came from
+  occurred_at TEXT NOT NULL,         -- when it happened, as the source dates it
+  recorded_at TEXT NOT NULL,
+  PRIMARY KEY (person_id, fact, source, source_ref)
+);
+
 -- How often each Help center question has been opened (dev kit part 3). A count per question id
 -- and nothing about who: the Help center puts the most opened first.
 CREATE TABLE IF NOT EXISTS help_faq_opens (

@@ -11,6 +11,7 @@ import { logEvent, applyEdit, readHistory, MANUAL, AUTOMATIC, EDITABLE_FIELDS, I
 import { receive, listInbound, qualify, archive, funnel, agedCount, handoffToSis, ownerFor, notifiedFor, handoverGap, canReach, surfaceAt, waitingFor, waitingByRole } from './intake.js';
 import { readScreenshot, readKind, readBody, readPath, saveFeedback, listFeedback, getScreenshot, setHandled, BadScreenshot, helpOpened, helpCounts } from './feedback.js';
 import { findMatches as matchPeople, duplicateCheck } from './identity.js';
+import { lifecycleOf } from './lifecycle.js';
 import { adapt, toIntake, hasAdapter, adapterIds } from './adapters.js';
 import { fixtureFor } from './fixtures.js';
 import { buildPayload, scenariosFor, allScenarios, CHANNEL_LABELS, META_GROUP } from './scenarios.js';
@@ -599,6 +600,7 @@ async function personRow(id, viewer) {
   p.documents = await db.prepare('SELECT * FROM documents WHERE person_id = ?').all(id);
   p.registrations = await db.prepare(`SELECT r.*, o.title, o.held_on FROM registrations r JOIN open_days o ON o.id = r.open_day_id WHERE r.person_id = ?`).all(id);
   p.consents = await consentFor(db, id);
+  p.lifecycle = await lifecycleOf(db, id);   // dated facts from the SIS; never a stage
   // structured fields with where they came from. A suggestion is never a fact.
   p.fields = await db.prepare('SELECT * FROM field_values WHERE person_id = ? ORDER BY id').all(id);
   const known = new Set(p.fields.filter((f) => f.value).map((f) => f.field));
@@ -1280,7 +1282,9 @@ export const handle = async (req, res) => {
       const allowed = ['name', 'programme', 'status', 'owner', 'source_channel', 'created_at', 'last_contact_at'];
       const orderBy = allowed.includes(sort) ? sort : 'created_at';
       let rows = await db.prepare(`SELECT pe.*, (SELECT label FROM tasks t WHERE t.person_id = pe.id AND t.done_at IS NULL ORDER BY due_at LIMIT 1) AS next_action,
-        (SELECT due_at FROM tasks t WHERE t.person_id = pe.id AND t.done_at IS NULL ORDER BY due_at LIMIT 1) AS next_action_at
+        (SELECT due_at FROM tasks t WHERE t.person_id = pe.id AND t.done_at IS NULL ORDER BY due_at LIMIT 1) AS next_action_at,
+        (SELECT MIN(occurred_at) FROM lifecycle_events le WHERE le.person_id = pe.id AND le.fact = 'form_started') AS form_started_at,
+        (SELECT MIN(occurred_at) FROM lifecycle_events le WHERE le.person_id = pe.id AND le.fact = 'matriculated') AS matriculated_at
         FROM people pe ORDER BY ${orderBy} ${dir} NULLS LAST`).all();
       // Decision 10: findable by whatever the operator remembers, including the
       // channel's plain name, so "instagram" finds it without knowing the id.
