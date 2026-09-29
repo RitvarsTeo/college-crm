@@ -48,5 +48,11 @@
       "source": "/(.*)",
       "destination": "/api/index"
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/sis-sync",
+      "schedule": "0 5 * * *"
+    }
   ]
 }

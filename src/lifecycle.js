@@ -14,16 +14,20 @@
 // recordSisLifecycle() below for every SIS row it links to a person. The token never reaches this
 // file.
 //
-// ================================================================= PROVISIONAL MAPPING ======
+// ======================================================================== THE MAPPING =======
 // The document lists `status`: registered | started | submitted | admitted | rejected |
-// withdrawn | matriculated, and three times: registeredAt, submittedAt, changedAt. It has NO
-// "startedAt" and NO "matriculatedAt". So, until one real SIS reply has been looked at:
-//   - form_started  = a row whose status IS 'started'
-//   - matriculated  = a row whose status IS 'matriculated'
-//   - the date      = that row's changedAt (when the SIS record changed to that status)
-// A row first seen as 'submitted' does NOT write form_started: the form was surely started, but
-// the SIS does not say when, and a made-up date is worse than none.
-// To change the mapping once a real payload is seen, change SIS_LIFECYCLE_MAP and nothing else.
+// withdrawn | matriculated, and three times: registeredAt, submittedAt, changedAt. The FIRST REAL
+// REPLY (29.09.2026: 6 applicants, registered 4 / submitted 1 / matriculated 1) has exactly those
+// fields: NO "startedAt" and NO "matriculatedAt".
+//   - matriculated  = a row whose status IS 'matriculated' (CONFIRMED: seen in the real reply),
+//                     dated by changedAt
+//   - form_started  = a row whose status IS 'started', dated by changedAt; OR a row already past it
+//                     that has a submittedAt, dated by submittedAt (Ritvars, 29.09.2026: "Yes, by
+//                     submit date"). A registered-only row has no application and writes nothing.
+// EVERY SIS DATE IS A "BY" DATE: changedAt and submittedAt come AFTER the moment itself, never
+// before it, so the screen says "by <date>" - true, and never more exact than the SIS is.
+// 'started' is still PROVISIONAL: no real record has had it yet. To change the mapping, change
+// SIS_LIFECYCLE_MAP and its tests, nothing else.
 // ============================================================================================
 
 export const LIFECYCLE_FACTS = {
@@ -32,8 +36,9 @@ export const LIFECYCLE_FACTS = {
 };
 
 export const SIS_LIFECYCLE_MAP = {
-  provisional: true,
-  form_started: { when: (r) => r.status === 'started', at: (r) => r.changed_at },
+  provisional: true,          // 'started' not yet seen in a real reply; 'matriculated' confirmed 29.09
+  form_started: { when: (r) => r.status === 'started' || (r.status !== 'registered' && Boolean(r.submitted_at)),
+    at: (r) => (r.status === 'started' ? r.changed_at : r.submitted_at) },
   matriculated: { when: (r) => r.status === 'matriculated', at: (r) => r.changed_at },
 };
 

@@ -18,12 +18,19 @@ const LIB = fs.readFileSync(path.join(ROOT, 'src', 'lifecycle.js'), 'utf8');
 const row = (status, changed = '2026-09-28T07:58:02.000Z', extra = {}) => ({ reference: 'ref-1', application_id: 'app-1',
   status, registered_at: '2026-09-28T07:40:11.000Z', submitted_at: null, changed_at: changed, ...extra });
 
-test('the provisional mapping: the literal SIS status, dated by changedAt; nothing else writes a fact', () => {
-  assert.equal(SIS_LIFECYCLE_MAP.provisional, true, 'marked provisional until a real payload is seen');
-  assert.match(LIB, /PROVISIONAL MAPPING/);
+test('the mapping: started by changedAt; past started by submittedAt (Ritvars 29.09); matriculated by changedAt; nothing else', () => {
+  assert.equal(SIS_LIFECYCLE_MAP.provisional, true, "'started' not yet seen in a real reply");
+  assert.match(LIB, /THE MAPPING/);
   assert.deepEqual(sisFacts(row('started')), [{ fact: 'form_started', occurredAt: '2026-09-28T07:58:02.000Z', sourceRef: 'ref-1:app-1' }]);
-  assert.deepEqual(sisFacts(row('matriculated')).map((f) => f.fact), ['matriculated']);
-  for (const s of ['registered', 'submitted', 'admitted', 'rejected', 'withdrawn']) assert.deepEqual(sisFacts(row(s)), [], s + ' states no fact');
+  const sub = { submitted_at: '2026-09-27T12:00:00.000Z' };
+  for (const s of ['submitted', 'admitted', 'rejected', 'withdrawn']) {
+    assert.deepEqual(sisFacts(row(s, undefined, sub)).map((f) => [f.fact, f.occurredAt]), [['form_started', '2026-09-27T12:00:00.000Z']], s + ' with a submit date: form started, by that date');
+    assert.deepEqual(sisFacts(row(s)), [], s + ' without a submit date: no fact, no made-up date');
+  }
+  assert.deepEqual(sisFacts(row('matriculated', undefined, sub)).map((f) => [f.fact, f.occurredAt]),
+    [['form_started', '2026-09-27T12:00:00.000Z'], ['matriculated', '2026-09-28T07:58:02.000Z']]);
+  assert.deepEqual(sisFacts(row('registered', undefined, sub)), [], 'registered only: no application, no fact');
+  assert.deepEqual(sisFacts(row('registered')), []);
   assert.deepEqual(sisFacts(row('started', null)), [], 'no date in the record: no fact');
   assert.deepEqual(sisFacts(row('started', 'not a date')), []);
   assert.deepEqual(sisFacts({ ...row('started'), reference: '' }), [], 'no SIS person: no fact');
@@ -83,8 +90,8 @@ test('the screen: a fact shows only when the SIS said it; none shows nothing', (
   vm.runInNewContext(src + '\nthis.line = cLifeLine; this.facts = cLifeFacts;', ctx);
   assert.equal(ctx.line({}), '');
   assert.equal(ctx.line({ lifecycle: [] }), '');
-  assert.match(ctx.line({ lifecycle: [{ fact: 'form_started', at: '2026-09-28T07:58:02Z' }] }), /Application form started <time>2026-09-28<\/time>/);
-  assert.match(ctx.line({ form_started_at: '2026-09-28', matriculated_at: '2026-10-05' }), /Application form started[\s\S]*Matriculated <time>2026-10-05<\/time>/);
+  assert.match(ctx.line({ lifecycle: [{ fact: 'form_started', at: '2026-09-28T07:58:02Z' }] }), /Application form started <time>by 2026-09-28<\/time>/, 'every SIS date is a "by" date');
+  assert.match(ctx.line({ form_started_at: '2026-09-28', matriculated_at: '2026-10-05' }), /Application form started[\s\S]*Matriculated <time>by 2026-10-05<\/time>/);
   assert.match(APP, /\$\{cLifeLine\(p\)\}\$\{next\}/, 'on the person page, above the next step');
   assert.match(APP, /<b>\$\{esc\(p\.name\)\}<\/b>\$\{life\}\$\{t/, 'on the Journey card, under the name');
   assert.doesNotMatch(APP, /stages[^;\n]*form_started|'Matriculated'\s*:\s*\{\s*label/, 'no new stage');

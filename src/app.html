@@ -1553,7 +1553,7 @@ async function viewOutcomesC() {
     ${C_OUTCOME !== 'Admitted' && noReason ? `<p class="c-ev" style="margin-top:0">${noReason} of ${np.length} have no recorded reason yet - it is still in the note. <span class="c-dec">reasons list to agree</span></p>` : ''}
     <div class="c-sheet">${list.map((p) => `<div class="c-line" tabindex="0" onclick="location.hash='#/person/${esc(p.id)}'" style="grid-template-columns:minmax(0,1.2fr) minmax(0,1.4fr) 110px">
         <div class="c-who"><b>${esc(p.name)}</b><small>${esc(p.programme || 'programme not said')} · came from ${esc(cChannel(p.source_channel)[0])}</small></div>
-        <div class="c-what">${C_OUTCOME === 'Admitted' ? `Admitted${p.matriculated_at ? ` · <span class="c-lifefact" title="From the SIS">Matriculated <time>${esc(cDay(p.matriculated_at))}</time></span>` : ''}` : (p.closed_reason ? esc(p.closed_reason) : '<span class="c-gap">reason not recorded</span>')}</div>
+        <div class="c-what">${C_OUTCOME === 'Admitted' ? `Admitted${p.matriculated_at ? ` · <span class="c-lifefact" title="From the SIS: it happened on or before this day">Matriculated <time>by ${esc(cDay(p.matriculated_at))}</time></span>` : ''}` : (p.closed_reason ? esc(p.closed_reason) : '<span class="c-gap">reason not recorded</span>')}</div>
         <div class="c-when">${p.admitted_at ? fmtDate(p.admitted_at) : ''}</div></div>`).join('') || '<div class="c-empty">Nobody here.</div>'}</div>`;
 }
 
@@ -1782,7 +1782,7 @@ function cLifeFacts(p) {
 }
 function cLifeLine(p) {
   const f = cLifeFacts(p);
-  return f.length ? `<div class="c-life">${f.map(([l, at]) => `<span class="c-lifefact" title="From the SIS">${esc(l)} <time>${esc(cDay(at))}</time></span>`).join('')}</div>` : '';
+  return f.length ? `<div class="c-life">${f.map(([l, at]) => `<span class="c-lifefact" title="From the SIS: it happened on or before this day">${esc(l)} <time>by ${esc(cDay(at))}</time></span>`).join('')}</div>` : '';
 }
 function cPersonCard(p, t) {
   const open = !C_TERMINAL.includes(p.status);
@@ -1820,7 +1820,7 @@ function cJourneyCard(p, t, sel) {
   const due = !t ? '' : w === 'over' ? `${C_JICON.over}${late} d. overdue`
     : w === 'today' ? `${C_JICON.today}Today` : esc(cDay(t.due_at));
   const cls = ['c-jp', 'row', sel && p.id === sel.id ? 'c-sel' : '', w === 'over' ? 'is-over' : '', w === 'today' ? 'is-today' : ''].filter(Boolean).join(' ');
-  const life = cLifeFacts(p).map(([, at, short]) => `<small class="c-jlife" title="From the SIS, ${esc(cDay(at))}">${esc(short)}</small>`).join('');
+  const life = cLifeFacts(p).map(([, at, short]) => `<small class="c-jlife" title="From the SIS, by ${esc(cDay(at))}">${esc(short)}</small>`).join('');
   return `<div class="${cls}" draggable="true" data-id="${esc(p.id)}" tabindex="0" onclick="C_JSEL='${esc(p.id)}';cDrawJourney()"><b>${esc(p.name)}</b>${life}${t
     ? `<span class="c-jnext">${C_JICON.next}<span>${esc(cTask(t.label))}</span></span><small class="c-jdue${w ? ' ' + w : ''}">${due}</small>`
     : '<small class="none">nothing planned</small>'}${cComment(p) ? `<small class="c-jnote" title="${esc(p.last_comment || p.notes)}">${esc(cComment(p))}</small>` : ''}</div>`;

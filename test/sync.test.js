@@ -317,15 +317,17 @@ test('sis -> lifecycle: matriculated arrives later and is added; the first fact 
     [['form_started', '2026-09-28T07:45:00.000Z'], ['matriculated', '2026-10-05T09:00:00.000Z']]);
 });
 
-test('sis -> lifecycle: nothing is invented - submitted writes no fact, an unmatched applicant writes none', async () => {
+test('sis -> lifecycle: submitted = form started by its submit date; registered and unmatched write nothing', async () => {
   const db = await fresh();
   const p = await person(db, { email: 'jonas@example.com' });
   const r = await syncSis(db, { now: NOW, env: ON, fetchImpl: fakeSis([[app({ status: 'submitted' }),
-    app({ reference: 'ref-2', applicationId: 'app-9', email: 'nobody@example.com', phone: null, status: 'started' })]]).fetchImpl });
-  assert.equal(r.facts, 0);
-  assert.equal(r.inbox, 1, 'the unmatched one goes to the Inbox, without a fact');
-  assert.equal((await db.prepare('SELECT COUNT(*) n FROM lifecycle_events').get()).n, 0);
-  void p;
+    app({ reference: 'ref-2', applicationId: 'app-9', email: 'nobody@example.com', phone: null, status: 'started' }),
+    app({ reference: 'ref-3', applicationId: null, email: 'reg@example.com', phone: null, status: 'registered', submittedAt: null })]]).fetchImpl });
+  assert.equal(r.facts, 1, 'only the matched, submitted one');
+  assert.equal(r.inbox, 2, 'the two unmatched go to the Inbox, without a fact');
+  const { lifecycleOf } = await import('../src/lifecycle.js');
+  assert.deepEqual((await lifecycleOf(db, p.id)).map((f) => [f.fact, f.at]), [['form_started', '2026-09-28T07:58:02.000Z']]);
+  assert.equal((await db.prepare('SELECT COUNT(*) n FROM lifecycle_events').get()).n, 1);
 });
 
 test('sis -> lifecycle: a fact on the second page is found (the cursor is followed)', async () => {
