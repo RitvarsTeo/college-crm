@@ -48,15 +48,5 @@
       "source": "/(.*)",
       "destination": "/api/index"
     }
-  ],
-  "crons": [
-    {
-      "path": "/api/cron/pbx-calls",
-      "schedule": "*/5 * * * *"
-    },
-    {
-      "path": "/api/cron/sis-sync",
-      "schedule": "*/5 * * * *"
-    }
   ]
 }

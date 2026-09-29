@@ -319,15 +319,17 @@ test('the window asked for is short, because a wide one makes the API fail', asy
 // which runs a cron every five minutes. On Hobby this vercel.json fails the deploy, so
 // this branch deploys only after the upgrade. Both targets are their own functions and
 // need src/ and config/ bundled, because they open the CRM's database themselves.
-test('both pollers run every five minutes, and their routes exist', async () => {
+// 29.09.2026: the SCHEDULE is not in vercel.json yet. The CRM is on Vercel Hobby, which refuses a
+// deployment whose cron runs more often than once a day, so the */5 schedule waits for Vercel Pro
+// (docs/PBX_SIS_SYNC.md). The routes, and what their functions bundle, are here now.
+test('both poller routes exist and bundle what they need; the schedule waits for Vercel Pro', async () => {
   const vercel = JSON.parse(fs.readFileSync(path.join(ROOT, 'vercel.json'), 'utf8'));
-  const crons = Object.fromEntries((vercel.crons || []).map((c) => [c.path, c.schedule]));
-  assert.equal(crons['/api/cron/pbx-calls'], '*/5 * * * *');
-  assert.equal(crons['/api/cron/sis-sync'], '*/5 * * * *');
+  assert.equal((vercel.crons || []).filter((c) => /\*\/5/.test(c.schedule)).length, 0, 'no */5 cron on Hobby');
   for (const f of ['pbx-calls.js', 'sis-sync.js']) {
     assert.ok(fs.existsSync(path.join(ROOT, 'api', 'cron', f)), f + ' must exist');
   }
   assert.match(vercel.functions['api/cron/*.js'].includeFiles, /config/);
+  assert.match(vercel.functions['api/cron/*.js'].includeFiles, /lib/);
 });
 
 test('calls are stored in the CRM database, not in a separate REST table', async () => {

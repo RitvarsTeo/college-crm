@@ -18,6 +18,7 @@ import { findMatches, isStrong } from './identity.js';
 import { logEvent, AUTOMATIC } from './history.js';
 import { fetchCalls, rowsFrom, WINDOW_MINUTES } from '../lib/pbx.js';
 import { fetchChanged, toSisRow } from '../lib/sis.js';
+import { recordSisLifecycle } from './lifecycle.js';
 
 const nowIso = () => new Date().toISOString();
 
@@ -170,6 +171,9 @@ async function applyToPerson(db, reference, personId, at, stats) {
   }
   const moved = await advanceTo(db, personId, target, at, 'from the SIS: ' + rows.map(sisSentence).join('; '));
   if (moved) stats.moved++;
+  // The lifecycle facts ("Application form started", "Matriculated") each row states, dated and
+  // written once (src/lifecycle.js holds the PROVISIONAL mapping; docs/LIFECYCLE.md). Facts, not stages.
+  for (const r of rows) stats.facts += await recordSisLifecycle(db, personId, r, { now: new Date(at) });
 }
 
 export async function syncSis(db, { now = new Date(), env = process.env, fetchImpl = fetch } = {}) {
@@ -181,7 +185,7 @@ export async function syncSis(db, { now = new Date(), env = process.env, fetchIm
   const since = state && state.value ? state.value : null;
   const got = await fetchChanged({ since, env, fetchImpl });
   const stats = { fetched: got.applicants.length, stored: 0, unusable: 0, linked: 0, moved: 0, inbox: 0,
-    noted: 0, pages: got.pages };
+    noted: 0, facts: 0, pages: got.pages };
   let newest = since;
   const touched = new Set();
 

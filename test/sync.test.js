@@ -289,3 +289,53 @@ test('sis: a failed run keeps the bookmark, so nothing is skipped', async () => 
   assert.equal((await db.prepare("SELECT value FROM sync_state WHERE name = 'sis'").get()).value,
     '2026-09-28T07:58:02.000Z');
 });
+
+// -------------------------------------------- SIS -> lifecycle facts (29.09.2026) ---
+// The sync hands every linked row to src/lifecycle.js, which writes "Application form started" and
+// "Matriculated" once each, dated by the SIS record (PROVISIONAL mapping, docs/LIFECYCLE.md).
+
+test('sis -> lifecycle: a linked "started" row writes Application form started once, dated by changedAt', async () => {
+  const db = await fresh();
+  const p = await person(db, { email: 'jonas@example.com' });
+  const started = app({ status: 'started', changedAt: '2026-09-28T07:45:00.000Z' });
+  const r1 = await syncSis(db, { now: NOW, env: ON, fetchImpl: fakeSis([[started]]).fetchImpl });
+  assert.equal(r1.facts, 1);
+  const r2 = await syncSis(db, { now: NOW, env: ON, fetchImpl: fakeSis([[started]]).fetchImpl });
+  assert.equal(r2.facts, 0, 'the same record again writes nothing');
+  const { lifecycleOf } = await import('../src/lifecycle.js');
+  assert.deepEqual((await lifecycleOf(db, p.id)).map((f) => [f.fact, f.at]), [['form_started', '2026-09-28T07:45:00.000Z']]);
+});
+
+test('sis -> lifecycle: matriculated arrives later and is added; the first fact keeps its date', async () => {
+  const db = await fresh();
+  const p = await person(db, { email: 'jonas@example.com' });
+  await syncSis(db, { now: NOW, env: ON, fetchImpl: fakeSis([[app({ status: 'started', changedAt: '2026-09-28T07:45:00.000Z' })]]).fetchImpl });
+  const r = await syncSis(db, { now: NOW, env: ON, fetchImpl: fakeSis([[app({ status: 'matriculated', changedAt: '2026-10-05T09:00:00.000Z' })]]).fetchImpl });
+  assert.equal(r.facts, 1);
+  const { lifecycleOf } = await import('../src/lifecycle.js');
+  assert.deepEqual((await lifecycleOf(db, p.id)).map((f) => [f.fact, f.at]),
+    [['form_started', '2026-09-28T07:45:00.000Z'], ['matriculated', '2026-10-05T09:00:00.000Z']]);
+});
+
+test('sis -> lifecycle: nothing is invented - submitted writes no fact, an unmatched applicant writes none', async () => {
+  const db = await fresh();
+  const p = await person(db, { email: 'jonas@example.com' });
+  const r = await syncSis(db, { now: NOW, env: ON, fetchImpl: fakeSis([[app({ status: 'submitted' }),
+    app({ reference: 'ref-2', applicationId: 'app-9', email: 'nobody@example.com', phone: null, status: 'started' })]]).fetchImpl });
+  assert.equal(r.facts, 0);
+  assert.equal(r.inbox, 1, 'the unmatched one goes to the Inbox, without a fact');
+  assert.equal((await db.prepare('SELECT COUNT(*) n FROM lifecycle_events').get()).n, 0);
+  void p;
+});
+
+test('sis -> lifecycle: a fact on the second page is found (the cursor is followed)', async () => {
+  const db = await fresh();
+  await person(db, { email: 'jonas@example.com' });
+  const sis = fakeSis([[app({ reference: 'ref-0', applicationId: 'x', email: 'other@example.com', phone: null })],
+    [app({ status: 'started' })]]);
+  const r = await syncSis(db, { now: NOW, env: ON, fetchImpl: sis.fetchImpl });
+  assert.equal(sis.seen.length, 2);
+  assert.match(sis.seen[1].url, /cursor=1/);
+  assert.doesNotMatch(sis.seen[1].url, /since=/, 'the cursor page carries no since');
+  assert.equal(r.facts, 1);
+});
