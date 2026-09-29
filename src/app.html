@@ -1579,7 +1579,7 @@ function cBars(rows, kind) {
   if (!rows.length) return '<p class="c-empty">Nobody admitted yet.</p>';
   const max = Math.max(...rows.map((r) => r[1]));
   return `<div class="kbars">${rows.map(([label, n, why, key]) => `<div class="kbar" tabindex="0" role="button" data-tip="${esc(label)}|${n} admitted${why ? '|' + esc(why) : ''}" data-kgo="${kind}|${esc(key)}|${esc(label)}">
-      <span class="kbl">${esc(label)}${why ? `<small>${esc(why)}</small>` : ''}</span><span class="kbt"><i style="width:${Math.max(3, (n / max) * 100)}%;background:var(--v-${why ? 'np' : 'adm'})"></i></span><b>${n}</b></div>`).join('')}</div>`;
+      <span class="kbl">${why ? `<span class="c-gap">${esc(label)}</span>` : esc(label)}</span><span class="kbt"><i style="width:${Math.max(3, (n / max) * 100)}%;background:var(--v-${why ? 'np' : 'adm'})"></i></span><b>${n}</b></div>`).join('')}</div>`;
 }
 function cWireCharts() {
   const page = $('.kpage'); const tip = $('.ktip');
@@ -2255,7 +2255,7 @@ async function viewReportsC() {
     const max = Math.max(...rows.map((x) => x.count));
     const total = rows.reduce((a, x) => a + x.count, 0);
     return `<div class="kbars">${rows.map((x) => { const [l, why] = labelOf(key, x.value);
-      return `<div class="kbar c-static" title="${esc(l)}: ${x.count} of ${total}"><span class="kbl">${why === 'gap' ? `<span class="c-gap">${esc(l)}</span>` : esc(l)}${why && why !== 'gap' ? `<small>${esc(why)}</small>` : ''}</span><span class="kbt"><i style="width:${Math.max(3, (x.count / max) * 100)}%;background:var(--v-${why ? 'np' : 'adm'})"></i></span><b>${x.count}</b></div>`; }).join('')}</div>`;
+      return `<div class="kbar c-static" title="${esc(l)}: ${x.count} of ${total}${why && why !== 'gap' ? ' · ' + esc(why) : ''}"><span class="kbl">${why ? `<span class="c-gap">${esc(l)}</span>` : esc(l)}</span><span class="kbt"><i style="width:${Math.max(3, (x.count / max) * 100)}%;background:var(--v-${why ? 'np' : 'adm'})"></i></span><b>${x.count}</b></div>`; }).join('')}</div>`;
   };
   const sect = (key, title, note) => `<section class="ksec"><div class="ksh"><h2>${title}</h2>${note ? `<span class="kt2">${note}</span>` : ''}</div>${bars(key, key === 'lost' ? r.lostReasons : r.breakdowns[key])}</section>`;
   const seg = (k, l) => `<button aria-pressed="${C_RPT_PRESET === k}" onclick="cReportPreset('${k}')">${l}</button>`;
