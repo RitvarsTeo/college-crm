@@ -50,5 +50,5 @@ test('the page loads nothing from the folders that are no longer public', () => 
       assert.ok(!new RegExp(`["'(]/${dir}/`).test(text), `${name} loads something from /${dir}/`);
     }
   }
-  assert.ok(APP.includes('/assets/NoAca_logo_blackhor.svg'), 'the logo comes from /assets/, which the server serves');
+  assert.ok(APP.includes('/assets/NoAca_logo_twotonehor.svg'), 'the logo comes from /assets/, which the server serves');
 });

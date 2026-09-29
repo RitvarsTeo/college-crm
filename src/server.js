@@ -43,7 +43,7 @@ export const APP_MANIFEST = {
   start_url: '/',
   scope: '/',
   display: 'standalone',
-  background_color: '#08182e',
+  background_color: '#ffffff',       // the splash behind the icon: white, like the icon tile (dev kit part 2)
   theme_color: '#000000',           // the installed window's title bar: black in every app (28.09.2026)
   icons: [
     { src: '/assets/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
@@ -1015,7 +1015,8 @@ export const handle = async (req, res) => {
         'na_pattern_tile.png': 'image/png',
         // The Academy symbol for the browser tab and the installed app (28.09.2026:
         // "always Novikontas Academy logos have to be in web tabs and on desktop").
-        // The brandbook symbol, shapes unchanged, filling a navy tile ("more NA than the blue screen").
+        // The brandbook symbol on a white tile: NA black, the A's leg Novikontas blue (29.09.2026, every app).
+        'NoAca_logo_twotonehor.svg': 'image/svg+xml; charset=utf-8',   // the logo on light (dev kit part 2)
         'favicon.svg': 'image/svg+xml; charset=utf-8',
         'icon-192.png': 'image/png',
         'icon-512.png': 'image/png',
