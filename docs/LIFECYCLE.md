@@ -66,9 +66,9 @@ What it means for the mapping:
 
 ## What is still needed before real facts appear
 
-1. ~~`SIS_API_TOKEN` in Vercel~~ DONE 29.09; `CRON_SECRET` still to add (Ritvars).
+1. ~~`SIS_API_TOKEN` and `CRON_SECRET` in Vercel~~ DONE 29.09 (Ritvars).
 2. ~~One real reply looked at~~ DONE 29.09 (above); the "form started" rule for applications already past `started` is Ritvars' call.
-3. `CHANNEL_MODE_SIS=test`, one run by hand, check; then `live`.
+3. ~~`CHANNEL_MODE_SIS=test`, one run by hand~~ DONE 29.09 14:30: 6 stored, 0 linked (none of them is a CRM person), 6 to the Inbox as simulated, 0 facts. Then `live` (Ritvars).
 4. The schedule (every 5 minutes): Vercel Pro, or another scheduler calling the route with the secret.
    Until then a run happens only when the route is called.
 - Known limit of the provisional mapping: a record that goes from `started` to `submitted` between

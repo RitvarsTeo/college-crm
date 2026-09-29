@@ -145,6 +145,16 @@ dpl_BQ2rpkN6ggPPktnFekPPkrBaGBSj** (588/588; live page = commit + sign-in script
 - Texts cut to a third (Ritvars): People "Click a row to edit.", its count "All N people.", Next
   Steps "What the team has to do.", New Leads "New arrivals land here first."
 - Checked: desktop light/dark, phone light/dark. Tests: test/kit13_polish.test.js.
+**THE FIRST REAL SIS SYNC - 29.09.2026 14:30 Riga, test mode** (Ritvars added CRON_SECRET; CHANNEL_MODE_SIS=test
+set; deployed dpl_CqpFohBN4yHXuFhUmLVgQhdcT7RW; the cron route now 401s a wrong secret; Ritvars pressed Run).
+Read-only before/after: fetched 6, stored 6 (registered 4, submitted 1, matriculated 1), unusable 0,
+**linked 0, stage moves 0, facts 0, Inbox 6** (all `simulated`, state new). Correct: none of the 6 has an
+email or phone (last 8 digits) that exists on any of the 192 CRM people - checked as counts. The
+bookmark is the newest changedAt (2026-09-29T05:01:25Z), so the next run asks only for what changed.
+People unchanged (192; statuses as before). The daily run (08:00 Riga) now repeats this in test mode.
+OPEN, Ritvars: the 6 SIS applicants are in New Leads as simulated items - confirm them as people or
+archive them; and when to switch CHANNEL_MODE_SIS from test to live.
+
 **SIS mapping decided + where the person is in the SIS - LIVE 29.09.2026, commits 4b31df5 + fecde5e,
 deployment dpl_8Cazdz5YttPu88dkC94GnYknm6Pu** (645/645).
 - Ritvars: an application already past `started` also shows "Application form started", dated by its
