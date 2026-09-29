@@ -73,5 +73,8 @@ test('explaining sentences removed; data warnings kept', () => {
   // 30.09: the sentence went, the COUNT is the value and stays
   assert.match(APP, /'Data to tidy', `\$\{odd\} not in the list`/, 'the data-to-tidy count stays');
   assert.ok(!APP.includes('a programme that is not one of the list.'), 'and it no longer explains itself');
-  assert.match(APP, /To fix/, 'the report still says what data is missing');
+  // 30.09: the gaps block left the SCREEN and stayed in the export, which is where
+  // somebody reconciling the figures needs it.
+  const REP = fs.readFileSync(path.join(ROOT, 'src', 'reports.js'), 'utf8');
+  assert.match(REP, /What would fix it/, 'the export still says what data is missing');
 });

@@ -1295,6 +1295,21 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .kbar.c-static:hover{background:none}
   html.ui-c .c-big{font-size:34px;font-weight:650;letter-spacing:-.02em;margin:4px 0 0}
   html.ui-c .c-wide-table{min-width:min(420px,100%)}
+  html.ui-c .c-nowbar{display:flex;gap:26px;margin:0 0 18px;text-decoration:none;color:inherit;flex-wrap:wrap}
+  html.ui-c .c-nowbar span{display:flex;flex-direction:column;font-size:12px;color:var(--t3)}
+  html.ui-c .c-nowbar b{font-size:24px;font-weight:600;color:var(--ink);line-height:1.1;font-variant-numeric:tabular-nums}
+  html.ui-c .c-nowbar span.is-late b{color:var(--c-bad)}
+  html.ui-c .c-nowbar:hover b{text-decoration:underline}
+  html.ui-c .c-progs{display:grid;gap:7px}
+  html.ui-c .c-prog{display:grid;grid-template-columns:minmax(72px,auto) minmax(0,1fr) minmax(0,1fr);gap:10px;align-items:center}
+  html.ui-c .c-prog > b{font-size:13px;font-weight:600}
+  html.ui-c .c-pbar{position:relative;display:flex;align-items:center;gap:7px;min-width:0}
+  html.ui-c .c-pbar i{height:11px;border-radius:2px;min-width:2px;display:block}
+  html.ui-c .c-pbar i.lead{background:var(--c-accent-bg)}
+  html.ui-c .c-pbar i.adm{background:var(--v-adm)}
+  html.ui-c .c-pbar em{font-style:normal;font-size:12px;color:var(--t2);font-variant-numeric:tabular-nums}
+  html.ui-c .c-num{font-size:24px;font-weight:600;margin:2px 0 0;font-variant-numeric:tabular-nums}
+  html.ui-c .c-sub{margin:2px 0 0;font-size:12px;color:var(--t3);font-variant-numeric:tabular-nums}
   html.ui-c .c-thin{display:grid;gap:12px}
   html.ui-c .c-thin p{margin:3px 0 0;font-size:13px;color:var(--t2)}
   @media (max-width:900px){ html.ui-c .kstrip.c-five{grid-template-columns:1fr 1fr} html.ui-c .kstrip.c-five > div{border-left:0;padding-left:0} html.ui-c .c-rgrid{grid-template-columns:1fr} }
@@ -1515,6 +1530,22 @@ async function viewHomeC() {
     <div class="ktip" role="status" aria-live="polite"></div></div>`;
   cWireCharts();
 }
+// BY PROGRAMME, DRAWN (30.09.2026). One blue ramp, two weights: new leads light,
+// admitted solid, both scaled to the largest new-leads figure so the pair can be
+// compared across programmes. The numbers stay beside their own bar - a bar without
+// its value is a picture of a number nobody can check.
+function cProgBars(rows) {
+  if (!rows.length) return '<p class="c-empty">Nothing yet.</p>';
+  const top = Math.max(1, ...rows.map((x) => Number(x.newLeads) || 0));
+  const w = (n) => ((Number(n) || 0) / top * 100).toFixed(1);
+  return `<div class="c-progs">${rows.map((x) => `<div class="c-prog">
+    <b>${esc(x.programme)}</b>
+    <span class="c-pbar"><i class="lead" style="width:${w(x.newLeads)}%"></i><em>${Number(x.newLeads) || 0}</em></span>
+    <span class="c-pbar"><i class="adm" style="width:${w(x.admitted)}%"></i><em>${Number(x.admitted) || 0}</em></span>
+  </div>`).join('')}</div>`;
+}
+
+
 function cMonthChart(months, year) {
   if (!months.length) return '<p class="c-empty">No admissions recorded this year yet.</p>';
   // On a phone the chart is drawn for a phone (the review UX pass, 29.09.2026): drawn 640 wide and shrunk to
@@ -2242,12 +2273,16 @@ async function viewReportsC() {
       <div><span>Conversion</span><b>${s.conversionPct == null ? '-' : s.conversionPct + '%'}</b><small>${esc(s.conversionOf || '')}</small></div>
       <div><span>Median time to admission</span><b>${s.medianDaysToAdmission == null ? '-' : s.medianDaysToAdmission} <em>days</em></b><small>for people admitted in these days</small></div>
     </div>
-    <p class="c-now">Right now, whatever the period: <b>${s.activeApplicants ?? 0}</b> open · <b class="${s.overdue ? 'c-late' : ''}">${s.overdue ?? 0}</b> with an overdue step · <b class="${s.noNextAction ? 'c-late' : ''}">${s.noNextAction ?? 0}</b> with no next step. <a href="#/next">Next Steps</a></p>
+    <a class="c-nowbar" href="#/next">
+      <span><b>${s.activeApplicants ?? 0}</b>open</span>
+      <span class="${s.overdue ? 'is-late' : ''}"><b>${s.overdue ?? 0}</b>overdue</span>
+      <span class="${s.noNextAction ? 'is-late' : ''}"><b>${s.noNextAction ?? 0}</b>no next step</span>
+    </a>
     <section class="ksec"><div class="ksh"><h2>Twelve months</h2><ul class="klegend inline"><li><i style="background:var(--v-adm)"></i><span>Admitted</span></li><li><i class="ln" style="background:var(--v-lead)"></i><span>New leads</span></li></ul></div>
       ${cMonthChart(months, to ? to.slice(0, 4) : '')}
       <details class="kdet"><summary>Show as a table</summary><table class="ktable"><thead><tr><th>Month</th><th>Admitted</th><th>New leads</th></tr></thead><tbody>${months.map((m) => `<tr><td>${esc(m.month)}</td><td>${m.admitted}</td><td>${m.newLeads}</td></tr>`).join('')}</tbody></table></details></section>
     <section class="ksec"><div class="ksh"><h2>By programme</h2><span class="kt2">the programmes the KPI sheet reports on</span></div>
-      <table class="ktable c-wide-table"><thead><tr><th>Programme</th><th>New leads</th><th>Admitted</th></tr></thead><tbody>${(r.programmes || []).map((x) => `<tr><td><b>${esc(x.programme)}</b></td><td>${x.newLeads}</td><td>${x.admitted}</td></tr>`).join('')}</tbody></table></section>
+      ${cProgBars(r.programmes || [])}</section>
     <div class="c-rgrid">
       ${sect('source', 'Where they came from', 'people who arrived')}
       ${sect('programme', 'Programme', 'people who arrived')}
@@ -2256,11 +2291,8 @@ async function viewReportsC() {
       ${sect('nationality', 'Nationality', `recorded for ${cov.nationality?.filled ?? 0} of ${cov.nationality?.of ?? 0}`)}
       ${sect('stage', 'Stage right now', 'everybody, not only these days')}
       ${sect('lost', 'Why people did not proceed', 'all time')}
-      <section class="ksec"><div class="ksh"><h2>From a maritime school</h2></div><p class="c-big">${s.maritimeGraduates ?? 0}</p><p class="knote">Counted from the education field, which is filled in for ${cov.education?.filled ?? 0} of the ${cov.education?.of ?? 0} people who arrived. The real number is at least this.</p></section>
+      <section class="ksec"><div class="ksh"><h2>From a maritime school</h2></div><p class="c-num">${s.maritimeGraduates ?? 0}</p><p class="c-sub">${cov.education?.filled ?? 0} / ${cov.education?.of ?? 0} have an education recorded</p></section>
     </div>
-    <section class="ksec"><div class="ksh"><h2>What the CRM cannot measure yet</h2></div>
-      <div class="c-thin">${(r.notMeasured || []).map((n) => `<div><b>${esc(n.metric)}</b> <span class="c-tag">${esc(n.kind)}</span><p>${esc(n.why)}</p><p class="c-gap-soft">To fix: ${esc(n.toFix)}</p></div>`).join('') || '<p class="c-empty">Nothing.</p>'}</div></section>
-    <p class="knote">${(r.honesty || []).slice(1).map(esc).join(' ')}</p>
     <div class="ktip" role="status" aria-live="polite"></div></div>`;
   cWireCharts();
 }
