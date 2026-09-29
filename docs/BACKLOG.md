@@ -145,6 +145,16 @@ dpl_BQ2rpkN6ggPPktnFekPPkrBaGBSj** (588/588; live page = commit + sign-in script
 - Texts cut to a third (Ritvars): People "Click a row to edit.", its count "All N people.", Next
   Steps "What the team has to do.", New Leads "New arrivals land here first."
 - Checked: desktop light/dark, phone light/dark. Tests: test/kit13_polish.test.js.
+**SIS token in Vercel (Ritvars) + the first real reply read - 29.09.2026, commit 5d19d10, deployment
+dpl_6otifuBwFPWMQkuUcuB36mDowCYh** (643/643). The Vercel CLI does not give production secrets to a local
+machine, so the first look runs inside production: GET /api/admin/sis/first-look (admins only, one
+read-only GET, SHAPE only). Ritvars opened it: 6 applicants, all documented fields and no others,
+registered 4 / submitted 1 / matriculated 1, no started or matriculated date field. Matriculated
+CONFIRMED as a status (dated by changedAt); "form started" still PROVISIONAL (no `started` record yet).
+OPEN, Ritvars: should an application already past `started` show "Application form started", and dated
+how? Then: CRON_SECRET + CHANNEL_MODE_SIS=test for the first sync (writes the 6 SIS rows, links/moves
+matching people, raises Inbox items) - needs his yes. docs/LIFECYCLE.md.
+
 **SIS feed merged and connected to the lifecycle facts - DEPLOYED 29.09.2026, commits 78108be + f9addb8,
 deployment dpl_93UAHjoPd1xi8qC4hFTG8rv9RRRd** (640/640; live page = commit + sign-in script, byte-identical).
 - Taken from the channels branch: ONLY 4f14180 (SIS client lib/sis.js, sync src/sync.js, storage

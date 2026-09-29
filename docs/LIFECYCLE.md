@@ -45,11 +45,28 @@ await recordSisLifecycle(db, personId, row);   // row = the stored sis_applicant
 
 It never reads the token and never calls the SIS; it only turns a stored row into facts.
 
+## The first real SIS reply (29.09.2026, read through GET /api/admin/sis/first-look by Ritvars)
+
+Shape only - no person was seen. **6 applicants, one page.** Every documented field is there and
+nothing else: reference 6/6, applicationId 2/6, givenName 6/6, familyName 6/6, email 6/6, phone 4/6,
+programmeCode 2/6, programmeName 2/6, status 6/6, registeredAt 6/6, submittedAt 2/6, changedAt 6/6.
+Status: **registered 4, submitted 1, matriculated 1**; no unknown status; **no field dates "started"
+or "matriculated"** (no startedAt, no matriculatedAt).
+
+What it means for the mapping:
+- **Matriculated: CONFIRMED as a status** (1 real record). Its date stays `changedAt` - the SIS has no
+  other date for it.
+- **Application form started: still PROVISIONAL.** No record is `started` today, so the status has not
+  been seen. The submitted and the matriculated applicant clearly started a form, but the SIS gives no
+  date for when, so under the current rule they get no "form started" fact. Whether an application
+  that is already past `started` should show "Application form started" (and with which date, if
+  any) is Ritvars' decision - asked 29.09.2026.
+- Registered-only people (4) have no application (applicationId empty) and correctly get no fact.
+
 ## What is still needed before real facts appear
 
-1. `SIS_API_TOKEN` and `CRON_SECRET` in Vercel (Ritvars; never in a file, a URL or a log).
-2. One real reply looked at: `vercel env run -e production -- node scripts/sis_first_look.mjs`
-   (shape and status counts only), then confirm or change `SIS_LIFECYCLE_MAP`.
+1. ~~`SIS_API_TOKEN` in Vercel~~ DONE 29.09; `CRON_SECRET` still to add (Ritvars).
+2. ~~One real reply looked at~~ DONE 29.09 (above); the "form started" rule for applications already past `started` is Ritvars' call.
 3. `CHANNEL_MODE_SIS=test`, one run by hand, check; then `live`.
 4. The schedule (every 5 minutes): Vercel Pro, or another scheduler calling the route with the secret.
    Until then a run happens only when the route is called.
