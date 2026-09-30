@@ -9,6 +9,7 @@ import { hasRealData, loadReal } from './real.js';
 import { PROVIDERS, runScenario, runOutbound, runFullDemo, listEvents, getEvent, consentFor, consentSummary, DEMO_SEQUENCE } from './simulator.js';
 import { logEvent, applyEdit, readHistory, MANUAL, AUTOMATIC, EDITABLE_FIELDS, IMMUTABLE_FIELDS, FIELD_LABELS } from './history.js';
 import { stampOpenDay, registerOpenDay } from './intake.js';
+import { queueLeadAnswers } from './leadanswers.js';
 import { receive, listInbound, qualify, archive, funnel, agedCount, handoffToSis, ownerFor, notifiedFor, handoverGap, canReach, surfaceAt, waitingFor, waitingByRole } from './intake.js';
 import { readScreenshot, readKind, readBody, readPath, saveFeedback, listFeedback, getScreenshot, setHandled, BadScreenshot, helpOpened, helpCounts } from './feedback.js';
 import { findMatches as matchPeople, duplicateCheck } from './identity.js';
@@ -2066,6 +2067,11 @@ export const handle = async (req, res) => {
           // Idempotency: await receive() returns {duplicate:true} when it has already
           // seen this channel + external id. A provider retry is normal.
           const r = await receive(db, { ...toIntake(ev), source: simulated ? 'simulated' : 'provider' });
+          // C2 + C7: a Meta or LinkedIn lead carries ids only; its answers are fetched now, and by
+          // the daily retry if that fails. The lead is already stored either way.
+          if (!r.duplicate && r.id) {
+            try { await queueLeadAnswers(db, ev); } catch { /* the retry picks it up */ }
+          }
           // C4: the same booking again may carry attendance; that is news, not a repeat.
           let attendance = false;
           if (channel === 'open_day' && r.id) {

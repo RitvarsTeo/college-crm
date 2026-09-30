@@ -325,6 +325,19 @@ CREATE TABLE IF NOT EXISTS sis_applicants (
 CREATE UNIQUE INDEX IF NOT EXISTS inbound_channel_external
   ON inbound (channel, external_id) WHERE external_id IS NOT NULL;
 
+-- A Meta or LinkedIn lead whose answers are still to be fetched (C2 + C7, 30.09.2026).
+CREATE TABLE IF NOT EXISTS lead_answers (
+  channel TEXT NOT NULL,
+  external_id TEXT NOT NULL,
+  provider_ref TEXT NOT NULL,     -- the leadgen_id, or the LinkedIn response URN
+  state TEXT NOT NULL,            -- pending | done
+  tries INTEGER NOT NULL DEFAULT 0,
+  last_error TEXT,                -- a plain sentence, never a token
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  PRIMARY KEY (channel, external_id)
+);
+
 CREATE TABLE IF NOT EXISTS sync_state (
   name TEXT PRIMARY KEY,
   value TEXT,

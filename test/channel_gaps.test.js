@@ -123,3 +123,104 @@ test('C4: a booking with no attendance yet is a registration with attendance not
   const a = await send(s.base, 'open_day', booking({ booking_ref: 'od-78', attended: 'maybe' }));
   assert.equal(a.json.outcome, 'already had it');
 });
+
+// ------------------------------------------------------------ C2 + C7a ----
+// A Meta lead and a LinkedIn lead notify with ids only. The answers are fetched with the page's /
+// app's token (lib/leads.js, shapes checked against Meta's and LinkedIn's documents 30.09.2026),
+// straight away, and again by the daily retry when that failed. A local stand-in plays the provider.
+import http from 'node:http';
+const META_TOKEN = 'test-meta-page-token-not-real';
+const LI_TOKEN = 'test-linkedin-token-not-real';
+
+function provider() {
+  const seen = [];
+  const srv = http.createServer((req, res) => {
+    seen.push({ url: req.url, auth: req.headers.authorization, version: req.headers['linkedin-version'] });
+    const send = (code, body) => { res.writeHead(code, { 'content-type': 'application/json' }); res.end(JSON.stringify(body)); };
+    if (req.url.startsWith('/lead-9?')) {
+      return send(200, { id: 'lead-9', created_time: '2026-09-30T08:00:00+0000', ad_id: 'ad-1', form_id: 'form-1',
+        field_data: [{ name: 'full_name', values: ['Marta Liepa'] }, { name: 'email', values: ['marta@example.com'] },
+          { name: 'phone_number', values: ['+37129990011'] }, { name: 'programme', values: ['NAV'] },
+          { name: 'kad_vari_sakt', values: ['2027'] }] });
+    }
+    if (req.url === '/leadFormResponses/resp-5') {
+      return send(200, { id: 'resp-5', versionedLeadGenFormUrn: 'urn:li:versionedLeadGenForm:(urn:li:leadGenForm:3162,1)',
+        formResponse: { answers: [
+          { questionId: 1, answerDetails: { textQuestionAnswer: { answer: 'Janis' } } },
+          { questionId: 2, answerDetails: { textQuestionAnswer: { answer: 'Kalns' } } },
+          { questionId: 3, answerDetails: { textQuestionAnswer: { answer: 'janis.k@example.com' } } }] } });
+    }
+    if (req.url === '/leadForms/3162') {
+      return send(200, { id: 3162, content: { questions: [
+        { questionId: 1, name: 'firstName', predefinedField: 'FIRST_NAME' },
+        { questionId: 2, name: 'lastName', predefinedField: 'LAST_NAME' },
+        { questionId: 3, name: 'email', predefinedField: 'EMAIL' }] } });
+    }
+    return send(404, { error: 'no' });
+  });
+  return new Promise((resolve) => srv.listen(0, '127.0.0.1', () => resolve({ srv, seen, base: `http://127.0.0.1:${srv.address().port}` })));
+}
+const metaLeadDelivery = { object: 'page', entry: [{ id: 'page-1', time: 1727690000,
+  changes: [{ field: 'leadgen', value: { leadgen_id: 'lead-9', page_id: 'page-1', form_id: 'form-1', ad_id: 'ad-1', created_time: 1727690000 } }] }] };
+const liDelivery = { leadGenFormResponse: 'urn:li:leadGenFormResponse:resp-5', occurredAt: 1727690000000,
+  leadType: 'SPONSORED', owner: { sponsoredAccount: 'urn:li:sponsoredAccount:1' } };
+
+test('C2: a Meta lead arrives with its name, email and phone fetched from Meta', async (t) => {
+  const p = await provider();
+  t.after(() => p.srv.close());
+  const s = await start({ CHANNEL_MODE_FACEBOOK: 'test', META_PAGE_ACCESS_TOKEN: META_TOKEN, META_GRAPH_BASE: p.base });
+  t.after(() => s.child.kill());
+  const r = await send(s.base, 'facebook', metaLeadDelivery);
+  assert.equal(r.status, 200, JSON.stringify(r.json));
+  const [item] = await newLeads(s.base);
+  assert.equal(item.contact_name, 'Marta Liepa');
+  assert.equal(item.contact_email, 'marta@example.com');
+  assert.equal(item.contact_phone, '+37129990011');
+  assert.match(item.body, /kad_vari_sakt: 2027/, 'every answer is there to read');
+  assert.equal(p.seen[0].auth, `Bearer ${META_TOKEN}`);
+  assert.ok(!p.seen[0].url.includes(META_TOKEN), 'the token is never in a URL');
+  assert.ok(!JSON.stringify(r.json).includes(META_TOKEN));
+});
+
+test('C7: a LinkedIn lead arrives with its answers fetched from Lead Sync, mapped by the form', async (t) => {
+  const p = await provider();
+  t.after(() => p.srv.close());
+  const s = await start({ CHANNEL_MODE_LINKEDIN: 'test', LINKEDIN_ACCESS_TOKEN: LI_TOKEN, LINKEDIN_API_BASE: p.base });
+  t.after(() => s.child.kill());
+  const r = await send(s.base, 'linkedin', liDelivery);
+  assert.equal(r.status, 200, JSON.stringify(r.json));
+  const [item] = await newLeads(s.base);
+  assert.equal(item.contact_name, 'Janis Kalns');
+  assert.equal(item.contact_email, 'janis.k@example.com');
+  assert.ok(p.seen.every((x) => x.auth === `Bearer ${LI_TOKEN}` && x.version === '202609'));
+});
+
+test('C2: no token yet -> the lead still arrives (ids only) and the daily retry fills it in later', async (t) => {
+  const p = await provider();
+  t.after(() => p.srv.close());
+  const { openDb } = await import('../src/db.js');
+  const { receive } = await import('../src/intake.js');
+  const { queueLeadAnswers, retryLeadAnswers } = await import('../src/leadanswers.js');
+  const db = await openDb(':memory:');
+  const ev = adaptAll('facebook', metaLeadDelivery)[0];
+  const { toIntake } = await import('../src/adapters.js');
+  const got = await receive(db, { ...toIntake(ev), source: 'simulated' });
+  const first = await queueLeadAnswers(db, ev, { env: {} });
+  assert.equal(first.state, 'pending');
+  assert.match(first.why, /META_PAGE_ACCESS_TOKEN is not set/);
+  let row = await db.prepare('SELECT * FROM inbound WHERE id = ?').get(got.id);
+  assert.equal(row.contact_email, null);
+  const env = { META_PAGE_ACCESS_TOKEN: META_TOKEN, META_GRAPH_BASE: p.base };
+  const r = await retryLeadAnswers(db, { env });
+  assert.equal(r.filled, 1);
+  row = await db.prepare('SELECT * FROM inbound WHERE id = ?').get(got.id);
+  assert.equal(row.contact_email, 'marta@example.com');
+  assert.equal((await retryLeadAnswers(db, { env })).filled, 0, 'done once');
+});
+
+test('C2: the retry runs from the cron list', async () => {
+  const fs = await import('node:fs');
+  const v = JSON.parse(fs.readFileSync(path.join(ROOT, 'vercel.json'), 'utf8'));
+  assert.ok(v.crons.some((c) => c.path === '/api/cron/lead-answers'));
+  assert.ok(fs.existsSync(path.join(ROOT, 'api', 'cron', 'lead-answers.js')));
+});
