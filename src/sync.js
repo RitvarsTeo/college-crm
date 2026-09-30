@@ -18,7 +18,7 @@ import { findMatches, isStrong, normEmail, normPhone } from './identity.js';
 import { logEvent, AUTOMATIC, MANUAL } from './history.js';
 import { fetchCalls, rowsFrom, WINDOW_MINUTES, toRigaStamp, ZONE } from '../lib/pbx.js';
 import { fetchChanged, toSisRow } from '../lib/sis.js';
-import { runPoll as gmailPoll } from '../lib/gmail.js';
+import { runPoll as gmailPoll, loadGmailRefreshToken } from '../lib/gmail.js';
 import { adapt, toIntake } from './adapters.js';
 import { recordSisLifecycle } from './lifecycle.js';
 
@@ -387,7 +387,8 @@ export async function syncGmail(db, { now = new Date(), env = process.env, fetch
   const last = state && state.value && !Number.isNaN(Date.parse(state.value)) ? state.value : null;
   const since = minutes ? null
     : new Date((last ? Date.parse(last) - 10 * 60000 : now.getTime() - 26 * 3600000)).toISOString();
-  const got = await gmailPoll({ env, now, fetchImpl, max, since, ...(minutes ? { minutes } : {}) });
+  const refreshToken = await loadGmailRefreshToken(db, env);     // option B, when connected
+  const got = await gmailPoll({ env, now, fetchImpl, max, since, refreshToken, ...(minutes ? { minutes } : {}) });
   if (!got.ok) {
     await saveState(db, 'gmail', last, { ok: false, why: got.why }, at);
     return { ok: false, ran: got.ran, channel: 'gmail', mode, why: got.why, waitingOn: got.waitingOn || null };

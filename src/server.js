@@ -10,6 +10,7 @@ import { PROVIDERS, runScenario, runOutbound, runFullDemo, listEvents, getEvent,
 import { logEvent, applyEdit, readHistory, MANUAL, AUTOMATIC, EDITABLE_FIELDS, IMMUTABLE_FIELDS, FIELD_LABELS } from './history.js';
 import { stampOpenDay, registerOpenDay } from './intake.js';
 import { queueLeadAnswers } from './leadanswers.js';
+import * as gmailB from '../lib/gmail.js';
 import { receive, listInbound, qualify, archive, funnel, agedCount, handoffToSis, ownerFor, notifiedFor, handoverGap, canReach, surfaceAt, waitingFor, waitingByRole } from './intake.js';
 import { readScreenshot, readKind, readBody, readPath, saveFeedback, listFeedback, getScreenshot, setHandled, BadScreenshot, helpOpened, helpCounts } from './feedback.js';
 import { findMatches as matchPeople, duplicateCheck } from './identity.js';
@@ -181,6 +182,47 @@ const reportParams = (url) => {
 // The end of a Google Sheets export (see /api/report.gsheet). Same code exchange and
 // the same ID-token checks as signing in, and then one more: Google must answer for
 // the person signed in to the CRM, or no sheet is made.
+// ------------------------------------------------------ Gmail option B --
+// The link an admin hands to whoever holds edu@'s password lasts this long.
+const GMAIL_INVITE_HOURS = 48;
+
+const originOf = (req) => `${req.headers['x-forwarded-proto']
+  || (DEV_INSECURE_COOKIE || !process.env.VERCEL ? 'http' : 'https')}://${req.headers.host}`;
+
+async function gmailStatus() {
+  const b = Boolean(await gmailB.loadGmailRefreshToken(db, process.env));
+  const a = gmailB.credentials(process.env).ok;
+  const last = await db.prepare("SELECT value, ran_at, detail FROM sync_state WHERE name = 'gmail'").get();
+  let lastRun = null;
+  if (last) { try { lastRun = { at: last.ran_at, ...JSON.parse(last.detail || '{}') }; } catch { lastRun = { at: last.ran_at }; } }
+  return { mailbox: gmailB.MAILBOX, connected: b, how: b ? 'B' : a ? 'A' : null, lastRun };
+}
+
+// One plain page for whoever connected edu@. They may have no Intake account, so it never
+// sends them into the app.
+function gmailPage(res, status, ok, line) {
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Intake - Gmail</title><style>body{font:16px/1.5 Raleway,system-ui,sans-serif;background:#f5f7fa;color:#14213d;margin:0;display:grid;place-items:center;min-height:100vh}
+main{background:#fff;border-radius:12px;padding:32px;max-width:420px;margin:16px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+h1{font-size:20px;margin:0 0 8px;color:${ok ? '#1b7f4b' : '#b3261e'}}p{margin:0}</style></head>
+<body><main><h1>${ok ? 'Connected' : 'Not connected'}</h1><p>${line}</p></main></body></html>`;
+  res.writeHead(status, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store',
+    'set-cookie': flowCookie('', 0) });
+  return res.end(html);
+}
+
+async function finishGmail(req, res, url, code) {
+  const mailbox = gmailB.MAILBOX;
+  if (url.searchParams.get('error') || !code) return gmailPage(res, 400, false, `Access was not given. Open the link again and press Allow.`);
+  const got = await gmailB.exchangeCode({ env: process.env, code, redirectUri: process.env.GOOGLE_REDIRECT_URI });
+  if (!got.ok) return gmailPage(res, 400, false, `Google did not finish: ${got.why}. Open the link again.`);
+  if (got.mailbox !== mailbox) {
+    return gmailPage(res, 400, false, `You signed in as ${got.mailbox || 'another account'}. Only ${mailbox} can be connected. Open the link again and choose ${mailbox}.`);
+  }
+  await gmailB.saveGmailRefreshToken(db, got.refreshToken, process.env);
+  return gmailPage(res, 200, true, `${mailbox} is connected to Intake, read-only. You can close this page.`);
+}
+
 async function finishSheet(req, res, url, flow, code) {
   const back = (reason) => {
     res.writeHead(303, { location: `/?sheet=${encodeURIComponent(reason)}#/reports`, 'cache-control': 'no-store',
@@ -855,6 +897,23 @@ export const handle = async (req, res) => {
       return res.end();
     }
 
+    // GET /api/auth/gmail/connect?invite=... - Gmail option B, opened by whoever holds edu@'s
+    // password. The invite is signed by an admin's /api/admin/gmail/link and expires; it is the
+    // only thing that opens this door, and the callback still keeps ONLY edu@.
+    if (req.method === 'GET' && p === '/api/auth/gmail/connect') {
+      const invite = readFlow(url.searchParams.get('invite'), process.env.CRM_SESSION_SECRET);
+      if (!invite || invite.purpose !== 'gmail-invite') {
+        return gmailPage(res, 403, false, 'This link has expired or is not valid. Ask for a new one.');
+      }
+      const state = crypto.randomBytes(24).toString('base64url');
+      const flow = signFlow({ state, purpose: 'gmail', exp: Date.now() + FLOW_MINUTES * 60 * 1000 },
+        process.env.CRM_SESSION_SECRET);
+      const to = gmailB.consentUrl({ env: process.env, state, redirectUri: process.env.GOOGLE_REDIRECT_URI });
+      if (!to || !process.env.GOOGLE_REDIRECT_URI) return gmailPage(res, 503, false, 'Gmail cannot be connected on this copy yet.');
+      res.writeHead(302, { location: to, 'cache-control': 'no-store', 'set-cookie': flowCookie(flow, FLOW_MINUTES) });
+      return res.end();
+    }
+
     // GET /api/auth/google/callback - finish it.
     //
     // Every refusal sends the SAME sentence to the same place. The reason is
@@ -866,6 +925,14 @@ export const handle = async (req, res) => {
           'set-cookie': flowCookie('', 0) });
         return res.end();
       };
+      // Gmail option B rides this same registered address. It is decided by the signed flow cookie
+      // that /api/auth/gmail/connect set, before anything about staff sign-in, because the person
+      // connecting edu@ needs no Intake account.
+      {
+        const gf = readFlow(auth.readCookie(req.headers.cookie, FLOW_COOKIE), process.env.CRM_SESSION_SECRET);
+        const gs = url.searchParams.get('state');
+        if (gf && gf.purpose === 'gmail' && gs && gs === gf.state) return finishGmail(req, res, url, url.searchParams.get('code'));
+      }
       if (!AUTH_ON) return json(res, 400, { error: 'Sign-in is not switched on for this copy.' });
       const cfg = google.googleConfigured(process.env);
       if (!cfg.ok) return json(res, 503, { error: 'google_not_configured', missing: cfg.missing });
@@ -1691,6 +1758,35 @@ export const handle = async (req, res) => {
       const r = await mergeSisDuplicate(db, p.split('/')[3], b.targetId, { by: await actorOf(req, b) });
       if (!r.ok) return json(res, r.error === 'not found' ? 404 : 400, { error: r.error });
       return json(res, 200, r);
+    }
+
+    // ------------------------------------------------- Gmail option B (01.10.2026) --
+    // "Sign in once as edu@ and approve read-only access" (Ritvars chose B, 01.10.2026).
+    // An admin asks for a link (48 hours). Whoever holds edu@'s password opens it, signs in
+    // as edu@ and approves gmail.readonly; that person needs no Intake account. Google comes
+    // back to the sign-in address it already knows (GOOGLE_REDIRECT_URI), so nothing has to
+    // be registered in Google Cloud. Only edu@novikontas.org is ever kept. The refresh token
+    // is stored encrypted (lib/gmail.js); nothing secret goes in a URL, a reply or a log.
+    if (req.method === 'GET' && p === '/api/admin/gmail/status') {
+      if (!(await adminOf(req))) return refuseNotAdmin(res);
+      return json(res, 200, await gmailStatus());
+    }
+    if (req.method === 'POST' && p === '/api/admin/gmail/link') {
+      if (!(await adminOf(req))) return refuseNotAdmin(res);
+      if (!process.env.CRM_SESSION_SECRET) return json(res, 503, { error: 'CRM_SESSION_SECRET is not set' });
+      const c = gmailB.oauthClient(process.env);
+      if (!c.ok || !process.env.GOOGLE_REDIRECT_URI) {
+        return json(res, 503, { error: c.ok ? 'GOOGLE_REDIRECT_URI is not set' : c.why });
+      }
+      const exp = Date.now() + GMAIL_INVITE_HOURS * 3600 * 1000;
+      const invite = signFlow({ purpose: 'gmail-invite', exp }, process.env.CRM_SESSION_SECRET);
+      return json(res, 200, { mailbox: gmailB.MAILBOX, link: `${originOf(req)}/api/auth/gmail/connect?invite=${invite}`,
+        expires: new Date(exp).toISOString() });
+    }
+    if (req.method === 'POST' && p === '/api/admin/gmail/disconnect') {
+      if (!(await adminOf(req))) return refuseNotAdmin(res);
+      await gmailB.forgetGmailRefreshToken(db);
+      return json(res, 200, { ok: true, ...(await gmailStatus()) });
     }
 
     if (req.method === 'POST' && p === '/api/intake/receive') {

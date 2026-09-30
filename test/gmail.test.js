@@ -257,12 +257,12 @@ test('the gmail cron route refuses without the scheduled-invocation secret', asy
   assert.equal(wrong.status, 401);
 
   const offChannel = await answer({ method: 'GET', headers: { authorization: 'Bearer s' } },
-    { CRON_SECRET: 's', CHANNEL_MODE_GMAIL: 'off' });
+    { CRON_SECRET: 's', CHANNEL_MODE_GMAIL: 'off', CRM_DB: ':memory:', DATABASE_URL: '', CRM_DB_DATABASE_URL_UNPOOLED: '' });   // a database since C3: the switch lives there
   assert.equal(offChannel.status, 200);
   assert.equal(offChannel.body.ran, false, 'a channel that is off does not run');
 
   const waiting = await answer({ method: 'GET', headers: { authorization: 'Bearer s' } },
-    { CRON_SECRET: 's', CHANNEL_MODE_GMAIL: 'test', GMAIL_SERVICE_ACCOUNT_JSON: '' });
+    { CRON_SECRET: 's', CHANNEL_MODE_GMAIL: 'test', GMAIL_SERVICE_ACCOUNT_JSON: '', CRM_DB: ':memory:', DATABASE_URL: '', CRM_DB_DATABASE_URL_UNPOOLED: '' });
   assert.equal(waiting.status, 200, 'waiting for an administrator is not an error every 5 minutes');
   assert.equal(waiting.body.ran, false);
   assert.match(waiting.body.waitingOn, /Workspace administrator/);
