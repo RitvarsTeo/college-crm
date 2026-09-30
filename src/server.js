@@ -32,6 +32,7 @@ import { signInFirst, withReturnScript } from './signinfirst.js';
 import { bootstrapIfAuthOn } from './bootstrap.js';
 import * as channeladmin from './channeladmin.js';
 import { todayStart, tomorrowStart, localDate } from './bizday.js';
+import { receiveSisApplication } from './sync.js';
 
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -234,6 +235,7 @@ function openBeforeSignIn(pathname) {
   // A REAL CHANNEL only. Never a prefix match - see the comment at the door.
   const inbound = /^\/api\/inbound\/([a-z_]+)$/.exec(pathname);
   if (inbound && channelDef(inbound[1])) return true;
+  if (pathname === '/api/intake/application') return true;   // its own secret header is its auth
   return false;
 }
 
@@ -1628,6 +1630,20 @@ export const handle = async (req, res) => {
         people: DATASET.people,
         inbound: (await db.prepare('SELECT COUNT(*) n FROM inbound').get()).n,
         qualified: out.length });
+    }
+
+    // THE APPLICATION FAST PATH (30.09.2026, src/sync.js receiveSisApplication). A public URL: the
+    // header x-crm-application-secret must equal SIS_APPLICATION_SECRET, set in Vercel by Ritvars.
+    // No value configured refuses everything. The secret is never echoed, logged or stored.
+    if (req.method === 'POST' && p === '/api/intake/application') {
+      const want = Buffer.from(String(process.env.SIS_APPLICATION_SECRET || ''));
+      const got = Buffer.from(String(req.headers['x-crm-application-secret'] || ''));
+      if (!want.length || want.length !== got.length || !crypto.timingSafeEqual(want, got)) {
+        return json(res, 401, { error: 'this application was not accepted' });
+      }
+      const r = await receiveSisApplication(db, await body(req));
+      if (!r.ok) return json(res, r.status, { error: r.error });
+      return json(res, 200, r);
     }
 
     if (req.method === 'POST' && p === '/api/intake/receive') {

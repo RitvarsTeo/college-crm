@@ -359,6 +359,51 @@ export async function syncGmail(db, { now = new Date(), env = process.env, fetch
   return { ok: true, ran: true, channel: 'gmail', mode, ...out, more: Boolean(got.more), query: got.query };
 }
 
+// One SIS record into sis_applicants. False when an older or equal copy arrives after the one we
+// hold: that changes nothing. The pull and the application webhook both come through here.
+async function storeSisRow(db, r, at, stats) {
+  const old = await db.prepare('SELECT * FROM sis_applicants WHERE reference = ? AND application_id = ?')
+    .get(r.reference, r.application_id);
+  if (old && old.changed_at >= r.changed_at) return false;
+  await db.prepare(`INSERT INTO sis_applicants (reference, application_id, given_name, family_name, email,
+    phone, programme_code, status, registered_at, submitted_at, changed_at, synced_at)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+    ON CONFLICT (reference, application_id) DO UPDATE SET given_name = excluded.given_name,
+    family_name = excluded.family_name, email = excluded.email, phone = excluded.phone,
+    programme_code = excluded.programme_code, status = excluded.status,
+    registered_at = excluded.registered_at, submitted_at = excluded.submitted_at,
+    changed_at = excluded.changed_at, synced_at = excluded.synced_at`).run(
+    r.reference, r.application_id, r.given_name, r.family_name, r.email, r.phone, r.programme_code,
+    r.status, r.registered_at, r.submitted_at, r.changed_at, at);
+  stats.stored++;
+  // a closing status on a person we already know goes on their timeline
+  if (old && old.person_id && old.status !== r.status && !SIS_STAGE[r.status]) {
+    await logEvent(db, { personId: old.person_id, kind: 'status', direction: 'note', at, origin: AUTOMATIC,
+      actor: 'SIS', subject: sisSentence(r), body: 'The CRM stage is unchanged.' });
+    stats.noted++;
+  }
+  return true;
+}
+
+// THE FAST PATH (POST /api/intake/application, 30.09.2026). apply.novikontas.org or the SIS sends one
+// applicant record, in the SIS feed's own fields, the moment it changes. It goes through exactly
+// what the daily pull does for that record; the pull stays the safety net and keeps its own
+// bookmark. The same record twice, from either side, is a repeat.
+export async function receiveSisApplication(db, raw, { now = new Date(), env = process.env } = {}) {
+  const mode = await channelMode(db, 'sis', env);
+  if (mode === 'off') return { ok: false, status: 409, error: 'the SIS channel is off' };
+  let r;
+  try { r = toSisRow(raw); } catch (err) { return { ok: false, status: 400, error: err.message }; }
+  const at = now.toISOString();
+  const stats = { stored: 0, linked: 0, moved: 0, inbox: 0, created: 0, noted: 0, facts: 0 };
+  if (!(await storeSisRow(db, r, at, stats))) return { ok: true, outcome: 'repeat', mode };
+  await placeSisReference(db, r.reference, { at, mode, stats });
+  const outcome = stats.created ? 'created'
+    : stats.linked || stats.moved || stats.facts || stats.noted ? 'linked'
+      : stats.inbox ? 'waiting' : 'repeat';
+  return { ok: true, outcome, mode };
+}
+
 export async function syncSis(db, { now = new Date(), env = process.env, fetchImpl = fetch } = {}) {
   const at = now.toISOString();
   const mode = await channelMode(db, 'sis', env);
@@ -376,28 +421,7 @@ export async function syncSis(db, { now = new Date(), env = process.env, fetchIm
     let r;
     try { r = toSisRow(a); } catch { stats.unusable++; continue; }
     if (!newest || r.changed_at > newest) newest = r.changed_at;
-    const old = await db.prepare('SELECT * FROM sis_applicants WHERE reference = ? AND application_id = ?')
-      .get(r.reference, r.application_id);
-    // an older copy arriving after a newer one changes nothing
-    if (old && old.changed_at >= r.changed_at) continue;
-    await db.prepare(`INSERT INTO sis_applicants (reference, application_id, given_name, family_name, email,
-      phone, programme_code, status, registered_at, submitted_at, changed_at, synced_at)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
-      ON CONFLICT (reference, application_id) DO UPDATE SET given_name = excluded.given_name,
-      family_name = excluded.family_name, email = excluded.email, phone = excluded.phone,
-      programme_code = excluded.programme_code, status = excluded.status,
-      registered_at = excluded.registered_at, submitted_at = excluded.submitted_at,
-      changed_at = excluded.changed_at, synced_at = excluded.synced_at`).run(
-      r.reference, r.application_id, r.given_name, r.family_name, r.email, r.phone, r.programme_code,
-      r.status, r.registered_at, r.submitted_at, r.changed_at, at);
-    stats.stored++;
-    touched.add(r.reference);
-    // a closing status on a person we already know goes on their timeline
-    if (old && old.person_id && old.status !== r.status && !SIS_STAGE[r.status]) {
-      await logEvent(db, { personId: old.person_id, kind: 'status', direction: 'note', at, origin: AUTOMATIC,
-        actor: 'SIS', subject: sisSentence(r), body: 'The CRM stage is unchanged.' });
-      stats.noted++;
-    }
+    if (await storeSisRow(db, r, at, stats)) touched.add(r.reference);
   }
 
   // Every SIS person still unlinked is tried again, not only the ones that changed:
