@@ -1,38 +1,39 @@
 # Mailchimp into the Academy CRM
 
-For: Ritvars (you hold the Mailchimp access). 30.09.2026. Not on the MVP map: parked until you say.
+For: Ritvars. 30.09.2026. **Set up 30.09, in test mode.** Nothing for anybody to do.
 
-## 1. What we want to receive
+## 1. What we receive
 
 Subscribe, unsubscribe, profile update and cleaned events from the Novikontas audience
-(`c6ab4facba`), so we see in the CRM who subscribed or left the newsletter.
+(`c6ab4facba`, 2,773 people on 30.09).
 
-## 2. What you set up
+## 2. What was set up (30.09, on Ritvars' yes)
 
-Audience > Settings > Webhooks > Create new webhook: the address below; events Subscribes,
-Unsubscribes, Profile updates, Cleaned address; sources "by a subscriber" and "by an account admin".
-Leave "by the API" off.
+- Checked through the Mailchimp API: paid monthly plan, one audience, webhooks available, none there before.
+- A new secret was generated and put straight into Vercel as `MAILCHIMP_WEBHOOK_SECRET`. It was never
+  shown or written anywhere. `CHANNEL_MODE_MAILCHIMP=test`.
+- Webhook `c9a1dc71dd` registered on the audience: events subscribe, unsubscribe, profile, cleaned;
+  sources "by a subscriber" and "by an account admin". "By the API" is off, so the Client Hub's own
+  changes do not come back in. "Email changed" is off because our side cannot read it yet.
+- Production redeployed with the same build; the address answers Mailchimp's check (200) and refuses
+  a wrong secret (401).
 
-## 3. What we provide
+## 3. The address
 
-- Address: `https://crm-novikontas.vercel.app/api/inbound/mailchimp?s=<the secret>`
-- Mailchimp signs nothing, so the secret sits in the address. **The full address is therefore a
-  secret itself**: type it in yourself, never paste it into email or chat. Setting name:
-  `MAILCHIMP_WEBHOOK_SECRET`.
-- Mailchimp checks the address with a GET when you save; the CRM answers it.
+`https://crm-novikontas.vercel.app/api/inbound/mailchimp?s=<secret>`. Mailchimp signs nothing, so the
+full address is itself a secret: never paste it into email, chat or a document.
 
 ## 4. The fields we read
 
-Form-encoded: `type`, `fired_at`, `data[id]`, `data[email]`, `data[merges][FNAME]`,
-`data[merges][LNAME]`.
+Form-encoded: `type`, `fired_at`, `data[id]`, `data[email]`, `data[merges][FNAME]`, `data[merges][LNAME]`.
 
-## 5. What we already found
+## 5. Still open
 
-- Answered 24.09: the plan includes webhooks; the audience has none today.
-- Built and tested with test events only. **No real Mailchimp event has ever reached the CRM.**
-- Known gap: a new subscriber currently lands in New Leads, although a subscriber is not a lead.
+- No real Mailchimp event has arrived yet; the first one proves it.
+- A new subscriber lands in New Leads, although a subscriber is not a lead.
+- Switch to live once the first real events look right.
 
-## 6. What you will see once it is on
+## 6. What you see
 
 Each event appears in **New Leads** labelled Mailchimp, with the email, the name and whether they
-subscribed or unsubscribed, matched to the person if we hold them (see the gap above).
+subscribed or unsubscribed, matched to the person if we hold them.

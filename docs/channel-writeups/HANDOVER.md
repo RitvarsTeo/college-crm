@@ -1,6 +1,6 @@
 # Handover from Session C (channel write-ups), 30.09.2026
 
-Session C writes documents only. Nothing below was fixed; each item goes to the session that owns
+Session C writes documents only (plus, on Ritvars' yes 30.09: phone set to live, Mailchimp set up in test mode). Nothing below was fixed; each item goes to the session that owns
 the file. Checked against production commit `e52e1b4`.
 
 ## Code items found while writing (for Session B: server.js, adapters.js, sync.js)
@@ -13,7 +13,10 @@ the file. Checked against production commit `e52e1b4`.
 | C4 | Open Day: attendance sent later for the same `booking_ref` is dropped as a duplicate | `open_day` adapter + dedup | "did they come" can never arrive |
 | C5 | Gmail option B (OAuth on the one mailbox, backlog row 130) needs code; only service-account delegation exists | `lib/gmail.js` | only matters if Ritvars and Marina pick B |
 | C6 | Google Form: no Apps Script exists anywhere, though older documents say "documented" | none | the form owner has nothing to paste |
-| C7 | TikTok `content` and the LinkedIn Lead Sync answers are not read | adapters | both are LATER on the MVP map; parked, not for now |
+| C7 | TikTok `content` and the LinkedIn Lead Sync answers are not read | adapters | every channel is MVP (Ritvars 30.09), so both are needed |
+| C8 | The website is Tilda. The `website` adapter needs `submission_id` and the `x-crm-secret` header; Tilda's webhook sends its own field names (id probably `tranid`) and may not set custom headers | `website` adapter, `shared_secret_header` | a real Tilda submission would be refused. Wait for Oksana's two answers (03-website-form-oksana.md) |
+| C9 | Mailchimp `upemail` events carry `data[new_email]`, not `data[email]`, so the adapter would refuse them; the webhook has "email changed" switched off until this is read | `mailchimp` adapter | email changes in Mailchimp do not reach the CRM |
+| C10 | `config/channels.json` still says Tetiana owns and administers Meta (`ownerPerson`, `administeredBy`); Ritvars 30.09: Oksana owns Meta Business Suite. Open Day `ownerPerson` Aigars, parked by Ritvars 30.09 | config | the Channels screen names the wrong person |
 
 ## The three existing documents: what is now false
 

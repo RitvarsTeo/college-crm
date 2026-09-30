@@ -9,13 +9,18 @@ Send, together with the advert tags (utm) of the page they came from.
 
 ## 2. What you set up
 
-1. When the form is submitted, the **website's server** sends one POST to our address, with the
-   secret in a header. It must come from the server, not from the visitor's browser: anything the
-   browser sends can be read by anyone who opens the page, secret included.
-2. Keep sending the form's usual thank-you page. If our address does not answer, still show it and
-   keep the submission on the website side, so nothing is lost.
-3. Keep the `utm_...` tags from the landing page URL and send them with the form. Without them we
-   cannot tell an Instagram advert from somebody who found us themselves.
+The website is on **Tilda** (checked 30.09: the college pages' forms post to `forms.tildacdn.com`).
+Tilda can hand each form submission on to a webhook address of ours, from Tilda's servers, so the
+visitor's browser never sees the secret.
+
+1. In Tilda, add our address as a **Webhook** form receiver and switch it on for the college enquiry
+   forms.
+2. Keep the `utm_...` tags from the landing page and let the form send them. Without them we cannot
+   tell an Instagram advert from somebody who found us themselves.
+3. Two questions before you start, because our side may need a small change:
+   - Can Tilda's webhook send our secret as a request **header** called `x-crm-secret`? If it can only
+     send it another way (a field, or in the address), tell Ritvars which.
+   - Tilda's own id for a submission (we believe it is called `tranid`): please confirm the name.
 
 ## 3. What we provide
 
@@ -41,10 +46,12 @@ A submission without `submission_id` is refused, because we could not tell a ret
 
 ## 5. What we already found
 
-- Nothing was blocking except this step. Our side is built and tested with test submissions only.
-  **No real website submission has ever reached the CRM.**
-- To agree with you: what the form's fields are called today, and whether the website can send
-  from its server (step 1). If it cannot, tell Ritvars before building anything.
+- Our side is built and tested with test submissions only. **No real website submission has ever
+  reached the CRM.**
+- Our side expects `submission_id` and the header above; Tilda may name and send them differently.
+  Once you answer the two questions, the developers match our side to Tilda.
+- The "Application form" button on the Study programmes page is a Google Form, not Tilda: that one
+  has its own write-up.
 
 ## 6. What you will see once it is on
 

@@ -1,7 +1,7 @@
 # Referrals from a partner agency into the Novikontas admissions CRM
 
 For: the first partner agency (not chosen yet). From: Ritvars Vilcins, Novikontas. 30.09.2026.
-Not on the MVP map: nobody to send it to until Novikontas chooses the first partner.
+Nobody to send it to until Novikontas chooses the first partner.
 
 ## 1. What we want to receive
 

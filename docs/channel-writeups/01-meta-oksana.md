@@ -1,6 +1,6 @@
 # Facebook, Messenger, Instagram and WhatsApp into the Academy CRM
 
-For: Tetiana, Meta Business Suite administrator. From: Ritvars. 30.09.2026.
+For: Oksana, owner of the Novikontas Meta Business Suite. From: Ritvars. 30.09.2026.
 
 All four run through **one Meta app**. You set it up once and get four channels.
 
@@ -56,7 +56,7 @@ them, messages as Messenger and lead forms as Facebook.
 
 ## 5. What we already found
 
-- Answered: you administer Meta Business Suite; Ieva, Laura, Tetiana and Marina have access; the
+- Answered: you own Meta Business Suite (Ritvars, 30.09); Ieva, Laura, Tetiana and Marina have access; the
   Instagram account is Professional; the WhatsApp number is +371 23111114 (Marina, 24.09).
 - Fixed on 30.09 and live: a delivery carrying several messages now keeps every one, not only the
   first.

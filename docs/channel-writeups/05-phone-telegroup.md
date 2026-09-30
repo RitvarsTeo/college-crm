@@ -27,8 +27,8 @@ four questions, below in section 5.
 
 ## 5. What we already found, and our questions
 
-Running since 29.09.2026 in **test mode**, once a day. The first run read 152 calls, 9 of them for
-the college queues. So the API works for us as documented.
+Running since 29.09.2026, once a day, and switched to live use on 30.09. The first run read 152
+calls, 9 of them for the college queues. So the API works for us as documented.
 
 Our questions:
 

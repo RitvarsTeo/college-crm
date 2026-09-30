@@ -1,15 +1,23 @@
-# The Google Form into the Academy CRM
+# The website's "Application form" (a Google Form) into the Academy CRM
 
-For: whoever owns the admissions Google Form (not named yet). From: Ritvars. 30.09.2026.
-Not on the MVP map: parked until the owner is named.
+For: Oksana, or whoever created the form. From: Ritvars. 30.09.2026.
+
+## Which form this is
+
+Checked on the live website 30.09: the **"Application form"** button on the Study programmes page,
+in both languages (`novikontas.org/college/lv/macibu_programmas` and
+`novikontas.org/college/en/study_programs`), opens a Google Form. The form only opens after a Google
+sign-in, so its questions could not be read from outside. Every other form on the college pages is a
+Tilda form (see the website form write-up).
 
 ## 1. What we want to receive
 
-Every new response to the form, the moment it is submitted.
+Every new response to that form, the moment it is submitted.
 
 ## 2. What you set up
 
-1. Tell Ritvars that you own the form, and whether it stays or the website form replaces it.
+1. Tell Ritvars who created the form, and whether it stays now that applications also go through
+   apply.novikontas.org.
 2. Open the form's script editor and paste a short script Ritvars' developers send you. It runs on
    each submit and posts the answers to our address.
 3. Approve the one permission box Google shows. About 15 minutes at a computer.
@@ -30,7 +38,6 @@ our guess.
 
 ## 5. What we already found
 
-- Not answered since 23.09: who owns the form.
 - Our side is built and tested with test responses only. **No real response has ever reached the CRM.**
 - Google does not retry if our address is down; the answers stay in the form and can be re-read.
 

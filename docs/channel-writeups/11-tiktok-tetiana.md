@@ -1,6 +1,6 @@
 # TikTok into the Academy CRM
 
-For: Tetiana. From: Ritvars. 30.09.2026. On the MVP map as LATER: do not start before Meta is done.
+For: Tetiana. From: Ritvars. 30.09.2026.
 
 ## 1. What we want to receive
 

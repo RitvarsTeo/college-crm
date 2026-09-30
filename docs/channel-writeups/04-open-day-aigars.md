@@ -2,6 +2,9 @@
 
 For: Aigars. From: Ritvars. 30.09.2026.
 
+**Parked 30.09 by Ritvars: do not send yet.** Our end is prepared; it is connected later, when the
+Open Day project is deployed on Vercel.
+
 ## 1. What we want to receive
 
 Every Open Day booking, the moment it is made, and later whether the person actually came.
