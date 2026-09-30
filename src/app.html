@@ -1212,8 +1212,18 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .btn:not(.ghost){border-left:0;padding-left:15px}
   html.ui-c .btn.sm:not(.ghost){padding-left:10px}
   html.ui-c .helpbtn{border-left:0;padding-left:18px}
-  /* the version under the logo reads "CRM · v1.0" exactly, lowercase v (the owner, 28.09.2026) */
+  /* the version under the logo reads "Intake · v1.0" exactly, lowercase v (the owner, 28.09.2026;
+     renamed from CRM 30.09.2026). The logo above it already says NOVIKONTAS, so the name does not
+     repeat it. */
   html.ui-c #ver{text-transform:none}
+  /* THE ONE SENTENCE THE APP IS ALLOWED. The owner chose it on 30.09.2026 knowing it goes against
+     his own rule that a screen never explains itself; it was offered to him as breaking that rule
+     and he took it. It is the product's line, not an instruction, so it is quiet: sentence case,
+     no letter-spacing, lighter than the name above it. Do not delete it as a helper sentence. */
+  /* the full menu width, not the logo's 158px, and balanced: capped at the logo it broke as
+     "Every first contact, in one / place" and left "place" alone on a line. */
+  html.ui-c #tagline{text-transform:none;letter-spacing:0;font-weight:500;font-size:11px;
+    line-height:1.35;color:var(--t3);margin-top:3px;text-wrap:balance}
   /* Journey (the review' feedback #2, 28.09.2026). HOW FAR: each stage carries its number and a thin
      line across its top, one brandbook hue getting darker from stage 1 (Novikontas Blue) to the
      last (Navy); the column itself only takes a faint tint of it. NEXT STEP: the clearest line
@@ -1361,7 +1371,8 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
     <a class="brand" href="#/today" title="Home" aria-label="Novikontas Academy - Home">
       <img class="logo light" src="/assets/NoAca_logo_twotonehor.svg" alt="" width="1500" height="569">
       <img class="logo dark" src="/assets/NoAca_logo_whitehor.svg" alt="" width="1500" height="569">
-      <span id="ver">CRM</span>
+      <span id="ver">Intake</span>
+      <span id="tagline">Every first contact, in one place</span>
     </a>
     <a class="item" href="#/today" data-icon="today"><span>Today</span><span class="pill late" id="navOverdue" style="display:none"></span></a>
     <a class="item" href="#/inbox" data-icon="inbox" title="Things that have come in and need a person to look at them"><span>Inbox</span><span class="pill warn" id="navIntake" style="display:none"></span></a>
@@ -5103,7 +5114,7 @@ function fbZoom(id) {
  */
 async function startShell() {
   CFG = await api('/api/config');
-  $('#ver').innerHTML = 'CRM &middot; ' + (CFG.version || 'prototype');
+  $('#ver').innerHTML = 'Intake &middot; ' + (CFG.version || 'prototype');
   drawDatasetBadge(CFG.dataset || {});
   let saved = 'light';
   try { saved = localStorage.getItem('crmTheme') || 'light'; } catch {}
