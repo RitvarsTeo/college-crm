@@ -170,3 +170,20 @@ test('the Done dialog drops the next-step row for a finished person', () => {
     'never straight off a null element');
   assert.match(doComplete, /!nextLabel && !finished/, 'an open lead still must keep a next step');
 });
+
+// Found by measuring the dialog, not by reading it (30.09.2026). In dark, --card is a 5.5% white
+// overlay, so the modal box opened see-through and the page read straight through the dialog. A
+// panel may be glass because it sits on the sea; a modal may not, because arbitrary content is
+// behind it. The help panel hit exactly this on 28.09 and --menu was the answer: opaque in every
+// theme. This test fails if a modal ever goes back to a translucent token.
+test('the modal box is opaque in every theme', () => {
+  const rule = APP.slice(APP.indexOf('.modal .box{'), APP.indexOf('.row2{'));
+  assert.match(rule, /background:var\(--menu\)/, 'the modal uses the opaque token');
+  assert.ok(!/background:var\(--card\)/.test(rule), 'and not the glass one');
+
+  // and --menu really is opaque wherever it is defined
+  for (const m of APP.matchAll(/--menu:\s*([^;]+);/g)) {
+    const v = m[1].trim();
+    assert.ok(!/rgba?\([^)]*,\s*0?\.\d+\s*\)/.test(v), `--menu must be opaque, found ${v}`);
+  }
+});

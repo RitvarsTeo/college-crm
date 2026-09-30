@@ -516,7 +516,12 @@ label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px}
 .tl .ev .said{white-space:pre-line;margin-top:2px}
 
 .modal{position:fixed;inset:0;background:rgba(1,17,17,.5);display:flex;align-items:flex-start;justify-content:center;padding:60px 16px;z-index:20}
-.modal .box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 22px;width:100%;max-width:560px;
+/* --menu, not --card: in dark --card is a 5.5% white overlay, so the dialog opened see-through
+   and the page read straight through it (measured rgba(255,255,255,.055) on 30.09.2026). A panel
+   may be glass because it sits on the sea; a modal may not, because arbitrary content is behind
+   it. The help panel hit the same thing on 28.09 and --menu was the answer then: opaque in every
+   theme. Same token here, not a new one. */
+.modal .box{background:var(--menu);border:1px solid var(--line);border-radius:14px;padding:20px 22px;width:100%;max-width:560px;
    max-height:80vh;overflow:auto;box-shadow:var(--shadow)}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .dupe{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;
