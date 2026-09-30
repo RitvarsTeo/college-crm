@@ -4363,8 +4363,8 @@ async function viewPrivacy() {
 function closeModal() { $('#modal').innerHTML = ''; }
 function modal(title, inner) {
   $('#modal').innerHTML = `<div class="modal" onclick="if(event.target===this)closeModal()"><div class="box">
-    <div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">${esc(title)}</h3>
-    <button class="btn sm ghost" onclick="closeModal()">Close</button></div>${inner}</div></div>`;
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px"><h3 style="margin:0;min-width:0">${esc(title)}</h3>
+    <button class="btn sm ghost" style="flex:0 0 auto" onclick="closeModal()">Close</button></div>${inner}</div></div>`;
 }
 
 // ----------------------------------------------------------- edit a person --
@@ -4584,8 +4584,11 @@ function showDuplicateBlock(data) {
 // empty value outright. So the last task could not be closed at all, and Ieva was left with
 // "confirm the payment" open on a person who had already paid.
 //
-// The entry appears ONLY for a finished person. An open lead still keeps a next step, unchanged.
-const C_NO_NEXT = 'No next step - the person is finished';
+// THE WHOLE ROW GOES, rather than gaining a "no next step" entry. The server ignores nextLabel for
+// somebody already finished, so offering the seven real steps would be a control that does nothing
+// when used: she picks one, presses Save, and nothing is planned. Found by opening the dialog and
+// looking at it, not by a test.
+//
 // `finished` is passed in, never guessed from C_PERSON: that variable holds whichever person page
 // was opened last, so on Next Steps it would answer about the wrong person. The only caller that
 // passes true is the "Still open" block, which is drawn only for somebody already finished.
@@ -4595,20 +4598,22 @@ function openComplete(taskId, label, finished) {
     <label>Outcome</label>
     <select id="cOut">${(CFG.callOutcomes || ['Done']).map(o => `<option>${esc(o)}</option>`).join('')}</select>
     <label>Note</label><textarea id="cNote" rows="2"></textarea>
-    <div class="row2">
-      <div><label>Next step${done ? '' : ' (required)'}</label>
-        <select id="cNext" onchange="onNextActionChange('cNext','cDate','cHint')">${
-          done ? `<option value="" selected>${esc(C_NO_NEXT)}</option>` : ''}${nextActionOptions()}</select>
+    ${done ? '' : `<div class="row2">
+      <div><label>Next step (required)</label>
+        <select id="cNext" onchange="onNextActionChange('cNext','cDate','cHint')">${nextActionOptions()}</select>
         <div class="muted" id="cHint" style="font-size:12px;margin-top:4px"></div></div>
       <div><label>When</label><input id="cDate" type="date" value="${todayStr()}"></div>
-    </div>
+    </div>`}
     <div id="cErr"></div>
     <div style="margin-top:14px;display:flex;gap:8px"><button class="btn" onclick="doComplete(${taskId}, ${done})">Save</button>
     <button class="btn ghost" onclick="closeModal()">Cancel</button></div>`);
-  onNextActionChange('cNext', 'cDate', 'cHint');
+  // the next-step row is not drawn for a finished person, so there is nothing to prime
+  if (!done) onNextActionChange('cNext', 'cDate', 'cHint');
 }
 async function doComplete(id, finished) {
-  const nextLabel = $('#cNext').value;
+  // $('#cNext') does not exist for a finished person: the row is not in the dialog at all.
+  const next = $('#cNext');
+  const nextLabel = next ? next.value : '';
   if (!nextLabel && !finished) { $('#cErr').innerHTML = '<div class="err">The next step is required.</div>'; return; }
   try {
     await post(`/api/tasks/${id}/complete`, { outcome: $('#cOut').value, note: $('#cNote').value,

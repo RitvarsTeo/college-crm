@@ -151,13 +151,22 @@ test('the rule is unchanged for an open lead: they still must keep a next step',
   assert.ok(open.some((x) => x.person_id === id), 'and their task is still there');
 });
 
-test('the Done dialog offers "no next step", and only to a finished person', () => {
-  // The server has always allowed this for a finished person; the screen was what refused, because
-  // the dropdown had no empty entry and doComplete() rejected an empty value outright.
-  assert.match(APP, /No next step - the person is finished/,
-    'the dialog names the choice in words she would use');
+test('the Done dialog drops the next-step row for a finished person', () => {
+  // Found by opening the dialog and looking at it. Offering the seven real next steps to somebody
+  // already finished is a control that does nothing when used: the server ignores nextLabel for
+  // them, so she would pick one, press Save and nothing would be planned. The row goes instead.
+  const open = APP.slice(APP.indexOf('function openComplete('), APP.indexOf('async function doComplete('));
+  assert.match(open, /\$\{done \? '' : `<div class="row2">/,
+    'the whole Next step / When row is drawn only when the person is NOT finished');
+  // "No next step" is a real section name on Next Steps and a People filter value, so this checks
+  // the dead OPTION and its constant, not the words.
+  assert.ok(!/No next step - the person is finished/.test(APP), 'no dead option is left behind');
+  assert.ok(!/C_NO_NEXT/.test(APP), 'and its constant went with it');
+  assert.ok(!/<option value="" selected>/.test(open), 'the dropdown has no empty entry');
+
   const doComplete = APP.slice(APP.indexOf('async function doComplete('), APP.indexOf('function openReschedule('));
-  assert.ok(!/if \(!nextLabel\) \{[^}]*The next step is required/.test(doComplete),
-    'doComplete no longer refuses an empty next step outright');
-  assert.match(doComplete, /finished/i, 'it decides by whether the person is finished');
+  assert.match(doComplete, /const next = \$\('#cNext'\)/, 'it reads the field that may not be there');
+  assert.ok(!/const nextLabel = \$\('#cNext'\)\.value/.test(doComplete),
+    'never straight off a null element');
+  assert.match(doComplete, /!nextLabel && !finished/, 'an open lead still must keep a next step');
 });
