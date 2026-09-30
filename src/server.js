@@ -32,7 +32,7 @@ import { signInFirst, withReturnScript } from './signinfirst.js';
 import { bootstrapIfAuthOn } from './bootstrap.js';
 import * as channeladmin from './channeladmin.js';
 import { todayStart, tomorrowStart, localDate } from './bizday.js';
-import { receiveSisApplication } from './sync.js';
+import { receiveSisApplication, mergeSisDuplicate } from './sync.js';
 
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -1643,6 +1643,14 @@ export const handle = async (req, res) => {
       }
       const r = await receiveSisApplication(db, await body(req));
       if (!r.ok) return json(res, r.status, { error: r.error });
+      return json(res, 200, r);
+    }
+
+    // "Same person as..." on a person the SIS created (30.09.2026, src/sync.js mergeSisDuplicate).
+    if (req.method === 'POST' && /^\/api\/people\/[^/]+\/merge-into$/.test(p)) {
+      const b = await body(req);
+      const r = await mergeSisDuplicate(db, p.split('/')[3], b.targetId, { by: await actorOf(req, b) });
+      if (!r.ok) return json(res, r.error === 'not found' ? 404 : 400, { error: r.error });
       return json(res, 200, r);
     }
 

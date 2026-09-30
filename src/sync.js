@@ -15,7 +15,7 @@
 
 import { receive, CONFIG, newPersonId, ownerFor } from './intake.js';
 import { findMatches, isStrong, normEmail, normPhone } from './identity.js';
-import { logEvent, AUTOMATIC } from './history.js';
+import { logEvent, AUTOMATIC, MANUAL } from './history.js';
 import { fetchCalls, rowsFrom, WINDOW_MINUTES, toRigaStamp, ZONE } from '../lib/pbx.js';
 import { fetchChanged, toSisRow } from '../lib/sis.js';
 import { runPoll as gmailPoll } from '../lib/gmail.js';
@@ -323,6 +323,43 @@ export async function placeSisReference(db, reference, { at, mode, stats }) {
     body: rows.map(sisSentence).join('; '), source: mode === 'live' ? 'provider' : 'simulated' });
   await db.prepare('UPDATE sis_applicants SET inbound_id = ? WHERE reference = ?').run(item.id, reference);
   if (!item.duplicate) stats.inbox++;
+}
+
+// UNDO A DUPLICATE THE SIS MADE (decided by Ritvars 30.09.2026: the merge button). The SIS creates a
+// person only when nobody shares their email or phone, so a twin appears only when somebody we
+// already had used another email and phone. "Same person as..." folds the SIS-created record into
+// the real one: every row that points at it moves there, her own values stay (an empty one is
+// filled), the SIS stage moves her on, forwards only, and the extra record goes. One transaction.
+const PERSON_TABLES = ['events', 'tasks', 'documents', 'registrations', 'sim_events', 'inbound', 'field_values',
+  'consents', 'pbx_calls', 'sis_applicants'];
+
+export async function mergeSisDuplicate(db, sourceId, targetId, { by, now = new Date() } = {}) {
+  if (!by) return { ok: false, error: 'who is merging this?' };
+  if (!sourceId || !targetId || sourceId === targetId) return { ok: false, error: 'pick another person' };
+  const source = await db.prepare('SELECT * FROM people WHERE id = ?').get(sourceId);
+  const target = await db.prepare('SELECT * FROM people WHERE id = ?').get(targetId);
+  if (!source || !target) return { ok: false, error: 'not found' };
+  if (source.first_channel !== 'sis') return { ok: false, error: 'only a person the SIS created can be merged' };
+  const at = now.toISOString();
+  return db.transaction(async (tx) => {
+    for (const t of PERSON_TABLES) await tx.prepare(`UPDATE ${t} SET person_id = ? WHERE person_id = ?`).run(targetId, sourceId);
+    for (const f of await tx.prepare('SELECT * FROM lifecycle_events WHERE person_id = ?').all(sourceId)) {
+      await tx.prepare(`INSERT INTO lifecycle_events (person_id, fact, source, source_ref, occurred_at, recorded_at)
+        VALUES (?,?,?,?,?,?) ON CONFLICT (person_id, fact, source, source_ref) DO NOTHING`)
+        .run(targetId, f.fact, f.source, f.source_ref, f.occurred_at, f.recorded_at);
+    }
+    await tx.prepare('DELETE FROM lifecycle_events WHERE person_id = ?').run(sourceId);
+    await tx.prepare(`UPDATE people SET email = COALESCE(email, ?), phone = COALESCE(phone, ?),
+      programme = COALESCE(programme, ?) WHERE id = ?`).run(source.email, source.phone, source.programme, targetId);
+    await tx.prepare('DELETE FROM people WHERE id = ?').run(sourceId);
+    await logEvent(tx, { personId: targetId, kind: 'note', direction: 'note', at, origin: MANUAL, actor: by,
+      subject: `Merged: ${source.name} (created by the SIS) is this person`,
+      body: [source.email, source.phone].filter(Boolean).join(', ') });
+    const stats = { linked: 0, moved: 0, facts: 0 };
+    const refs = await tx.prepare('SELECT DISTINCT reference FROM sis_applicants WHERE person_id = ?').all(targetId);
+    for (const { reference } of refs) await applyToPerson(tx, reference, targetId, at, stats);
+    return { ok: true, personId: targetId, moved: stats.moved };
+  });
 }
 
 // GMAIL -> NEW LEADS (30.09.2026). runPoll fetched and shaped the messages and handed
