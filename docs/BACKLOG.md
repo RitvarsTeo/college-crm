@@ -55,6 +55,50 @@ behavioural proof on production until a provider is connected.
 *(The status key said "nothing is LIVE: this is a local prototype" when this row was written. It
 was corrected on 30.09.2026, on Ritvars' yes, in its own commit.)*
 
+## 30.09.2026 - Ieva's two bugs, and the 6 SIS rows archived
+
+Branch `fix/ieva-2026-09-30`, cut from the live commit `e52e1b4`. **690/690. COMMITTED, NOT DEPLOYED.**
+
+| What | Status | Commit |
+|---|---|---|
+| IEVA-3 + IEVA-5: a finished person stops nagging Next Steps. Reaching Admitted or Not proceeding closes what is still open and writes one history line naming it; a step that finishes somebody plans nothing after it | COMMITTED, NOT DEPLOYED | `ff3b444` |
+| IEVA-4: the Done dialog drops the Next step row for a finished person, so their last task can actually be closed. An open lead still must keep one | COMMITTED, NOT DEPLOYED | `7b327bd` |
+
+**What the bug actually was.** `/api/summary` counted a finished person OUT of `openPeople` and
+`noNextAction` and IN to `overdue` and `today`, in the same response. One endpoint disagreeing with
+itself. There is one name for the rule now, `FINISHED` and `STILL_OPEN_SQL`, used by every query,
+because the bug was two copies of the same sentence drifting apart. And the only way a task ever
+closed was somebody pressing Done on that exact task, while the dialog made a next step required, so
+completing the last one immediately opened another.
+
+**Found by looking, not by a test** (KB 08 P0 step 7). The first version of the IEVA-4 fix added a
+"No next step" entry to a dropdown that still offered the seven real next steps to somebody already
+finished. The server ignores `nextLabel` for them, so she could have picked one, pressed Save, and
+nothing would have been planned. The whole row goes instead.
+
+**Still open, handed over, not fixed here:** the modal header at 390 px. The title wraps under the
+Close button and page content shows through behind the box. `min-width:0` and a flex basis improved
+it and did not settle it. It affects every modal with a long title, not only this one.
+
+**The 6 SIS rows: ARCHIVED 30.09.2026 on Ritvars' instruction, in production.**
+They were the team's own submissions through apply.novikontas.org while the SIS sync was being built
+(25-27.09): one named "Test Man", one with the phone +371 20000000, "Abdullah Ansari" three times
+with three different emails, and three colleague names. **None of the six matched any of the 192
+people.** Archived as `Internal`, `processed_by` Ritvars, in one transaction that would have rolled
+back unless exactly 6 rows changed. Verified after: inbound still 15, archived 6, sis new 0, people
+192 unchanged, **`sis_applicants` untouched so every identity is kept**. Archiving nulls the body,
+which is the app's own behaviour. New Leads now holds 9, all phone calls.
+
+**One row is worth a question to Māris.** The SIS holds his surname spelled correctly in the name
+field (`Cirulis`) and `maris.cyrulis@gmail.com` in the email field, with a y. The CRM copies the
+email verbatim - `toSisRow()` does `email: str(a.email)`, no transformation - so the two fields
+disagreed at the source, before we saw them. His CRM account is `mc@novikontas.org`, and that gmail
+appears nowhere else in the database. Only he can say whether it is his.
+
+**Handed to Session B:** a SIS row in New Leads shows no name, no email and no phone. The identities
+are one table away in `sis_applicants` and never reach the card, which is why these six had to be
+read out of the database to be judged at all.
+
 ## 28.09.2026 - LIVE on https://crm-novikontas.vercel.app (the CRM V1 session)
 
 **The release record below is out of date: the CRM IS live.** Every commit here was deployed from
