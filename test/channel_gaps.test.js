@@ -224,3 +224,30 @@ test('C2: the retry runs from the cron list', async () => {
   assert.ok(v.crons.some((c) => c.path === '/api/cron/lead-answers'));
   assert.ok(fs.existsSync(path.join(ROOT, 'api', 'cron', 'lead-answers.js')));
 });
+
+// ---------------------------------------------------------------- C7b ----
+// TikTok sends `content` as a JSON STRING and documents no single shape for it (which product
+// carries our messages or lead forms is Tetiana's open question). So only fields that plainly
+// ARE a name, an email, a phone or a message text are read, at any depth; nothing is guessed.
+const tik = (content) => ({ client_key: 'ck', event: 'lead.create', create_time: 1727690000, user_openid: 'oid-1',
+  content: JSON.stringify(content) });
+
+test('C7: TikTok content: a plainly named name, email, phone and message are read', () => {
+  const [ev] = adaptAll('tiktok', tik({ lead: { full_name: 'Ance Roze', email: 'ance@example.com',
+    phone_number: '+37129990033' }, message: { text: 'Vai ir vietas NAV?' } }));
+  assert.equal(ev.senderName, 'Ance Roze');
+  assert.equal(ev.senderEmail, 'ance@example.com');
+  assert.equal(ev.senderPhone, '+37129990033');
+  assert.equal(ev.messageBody, 'Vai ir vietas NAV?');
+});
+
+test('C7: TikTok content: nothing plainly named -> nothing invented', () => {
+  const [ev] = adaptAll('tiktok', tik({ video_id: '123', share_id: 'x', status: 'ok' }));
+  assert.equal(ev.senderName, null);
+  assert.equal(ev.senderEmail, null);
+  assert.equal(ev.senderPhone, null);
+  assert.equal(ev.messageBody, 'TikTok lead.create');
+  // an "email" that is not an email is not taken
+  const [bad] = adaptAll('tiktok', tik({ email: 'not-an-address' }));
+  assert.equal(bad.senderEmail, null);
+});

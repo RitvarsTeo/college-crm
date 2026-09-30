@@ -91,12 +91,16 @@ export const ADAPTERS = {
     const created = need(raw.create_time, 'tiktok', 'create_time');
     let content = null;
     try { content = typeof raw.content === 'string' ? JSON.parse(raw.content) : (raw.content || null); } catch { content = null; }
+    const said = contactIn(content);
     return makeInbound('tiktok', {
       externalEventId: [raw.client_key || '', event, created, raw.user_openid || ''].join(':'),
       receivedAt: iso(Number(created) * 1000) || now(),
       source: 'tiktok',
       externalPersonId: raw.user_openid || null,
-      messageBody: `TikTok ${event}`,
+      senderName: said.name,
+      senderEmail: said.email,
+      senderPhone: said.phone,
+      messageBody: said.text || `TikTok ${event}`,
       extracted: {},
       raw: { ...raw, content },
     });
@@ -217,6 +221,37 @@ export const ADAPTERS = {
   in_person: (raw) => typedIn('in_person', raw),
   // linkedin and tiktok are webhook adapters above since 27.09.2026, not typed-in ones.
 };
+
+// C7 (30.09.2026): TikTok documents no single shape for `content`, and no real event has reached us
+// yet. So only a field that plainly IS a name, an email, a phone or a message text is read, at any
+// depth, the first one found; an email must look like one. Nothing else is guessed.
+const CONTENT_KEYS = {
+  name: ['full_name', 'name', 'display_name', 'nickname'],
+  email: ['email', 'email_address'],
+  phone: ['phone_number', 'phone', 'mobile'],
+  text: ['text', 'message_text', 'comment_text'],
+};
+function contactIn(content) {
+  const out = { name: null, email: null, phone: null, text: null };
+  const walk = (o, depth) => {
+    if (!o || typeof o !== 'object' || depth > 4) return;
+    for (const [want, keys] of Object.entries(CONTENT_KEYS)) {
+      if (out[want]) continue;
+      for (const k of keys) {
+        const v = o[k];
+        if (typeof v !== 'string' && typeof v !== 'number') continue;
+        const t = String(v).trim();
+        if (!t) continue;
+        if (want === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t)) continue;
+        out[want] = t;
+        break;
+      }
+    }
+    for (const v of Object.values(o)) if (v && typeof v === 'object') walk(v, depth + 1);
+  };
+  walk(content, 0);
+  return out;
+}
 
 const QUEUE_INTENT = {
   '1001*Q-ADMISSION': 'admissions',
