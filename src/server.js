@@ -515,6 +515,38 @@ function visibleTimeline(rows, viewer) {
 }
 const ACTIVITY = [];
 
+// FINISHED MEANS FINISHED (Ieva, 30.09.2026: IEVA-3, IEVA-4, IEVA-5).
+//
+// Admitted and Not proceeding are the two ends of the journey. A person who has reached one of
+// them is done, and the CRM must stop asking for a next step. It was not doing that: /api/summary
+// counted a finished person OUT of openPeople and noNextAction and IN to overdue and today, in
+// the same response, so an Admitted person kept nagging Ieva in Next Steps.
+//
+// One name for the rule, used everywhere, because the bug was two copies of the same sentence
+// drifting apart.
+const FINISHED = ['Admitted', 'Not proceeding'];
+const STILL_OPEN_SQL = `pe.status NOT IN ('${FINISHED.join("','")}')`;
+const isFinished = (status) => FINISHED.includes(status);
+
+/**
+ * Close whatever is still open on a person who has just finished, and say so in their history.
+ *
+ * This is what Ieva asked for in IEVA-5: when the last admission step is done, the CRM marks the
+ * outcome and nothing more. Without it the leftover task lives on for ever, because the only other
+ * way a task closes is somebody pressing Done on that exact task.
+ */
+async function finishOpenTasks(personId, at, why) {
+  const open = await db.prepare('SELECT id, label FROM tasks WHERE person_id = ? AND done_at IS NULL').all(personId);
+  if (!open.length) return 0;
+  await db.prepare("UPDATE tasks SET done_at = ?, outcome = 'Closed: the person is finished' WHERE person_id = ? AND done_at IS NULL")
+    .run(at, personId);
+  await logEvent(db, { personId, kind: 'task', channel: 'phone', direction: 'note', at,
+    origin: AUTOMATIC, actor: null,
+    subject: `${open.length === 1 ? 'Open step closed' : open.length + ' open steps closed'}: ${why}`,
+    body: open.map((t) => t.label).join(', ') });
+  return open.length;
+}
+
 // The status follows the events. A completed step moves the person to the stage
 // that step belongs to, forwards only, and the move is recorded like any other
 // event so nothing changes silently.
@@ -537,6 +569,8 @@ async function advanceStatus(personId, actionLabel, now) {
   // never move backwards, and never touch a person somebody has closed
   if (person.status === 'Not proceeding' || to < 0 || (from >= 0 && to <= from)) return null;
   await db.prepare('UPDATE people SET status = ? WHERE id = ?').run(target, personId);
+  // The same rule when the stage moves by itself: a step that finishes somebody closes the rest.
+  if (isFinished(target)) await finishOpenTasks(personId, now, `the person is ${target}`);
   if (target === 'Admitted') {
     await db.prepare("UPDATE people SET admitted_at = COALESCE(admitted_at, ?) WHERE id = ?").run(now, personId);
   }
@@ -1307,15 +1341,17 @@ export const handle = async (req, res) => {
       const q = async (sql, ...a) => await db.prepare(sql).get(...a);
       const since7 = new Date(Date.now() - 7 * 86400000).toISOString();
       const since30 = new Date(Date.now() - 30 * 86400000).toISOString();
+      // STILL_OPEN_SQL, not a bare task query: a finished person's leftover task used to appear
+      // here as overdue while openPeople and noNextAction below already counted them out.
       const overdue = await db.prepare(`SELECT t.*, pe.name, pe.programme, pe.status FROM tasks t JOIN people pe ON pe.id = t.person_id
-        WHERE t.done_at IS NULL AND t.due_at < ? ORDER BY t.due_at ASC`).all(dayStart());
+        WHERE t.done_at IS NULL AND ${STILL_OPEN_SQL} AND t.due_at < ? ORDER BY t.due_at ASC`).all(dayStart());
       const today = await db.prepare(`SELECT t.*, pe.name, pe.programme, pe.status FROM tasks t JOIN people pe ON pe.id = t.person_id
-        WHERE t.done_at IS NULL AND t.due_at >= ? AND t.due_at < ? ORDER BY t.due_at ASC`).all(dayStart(), dayEnd());
+        WHERE t.done_at IS NULL AND ${STILL_OPEN_SQL} AND t.due_at >= ? AND t.due_at < ? ORDER BY t.due_at ASC`).all(dayStart(), dayEnd());
       return json(res, 200, {
         newLeads7: (await q('SELECT COUNT(*) n FROM people WHERE created_at >= ?', since7)).n,
         newLeadsToday: (await q('SELECT COUNT(*) n FROM people WHERE created_at >= ?', dayStart())).n,
-        openPeople: (await q("SELECT COUNT(*) n FROM people WHERE status NOT IN ('Admitted','Not proceeding')")).n,
-        noNextAction: (await q(`SELECT COUNT(*) n FROM people pe WHERE pe.status NOT IN ('Admitted','Not proceeding')
+        openPeople: (await q(`SELECT COUNT(*) n FROM people pe WHERE ${STILL_OPEN_SQL}`)).n,
+        noNextAction: (await q(`SELECT COUNT(*) n FROM people pe WHERE ${STILL_OPEN_SQL}
           AND NOT EXISTS (SELECT 1 FROM tasks t WHERE t.person_id = pe.id AND t.done_at IS NULL)`)).n,
         admitted30: (await q('SELECT COUNT(*) n FROM people WHERE admitted_at >= ?', since30)).n,
         admittedTotal: (await q('SELECT COUNT(*) n FROM people WHERE status = ?', 'Admitted')).n,
@@ -1446,6 +1482,9 @@ export const handle = async (req, res) => {
       }
       const now = nowIso();
       await db.prepare('UPDATE people SET status = ? WHERE id = ?').run(b.status, id);
+      // Finished means finished: whatever was still planned for them is closed here, not left for
+      // somebody to tidy by hand in Next Steps (Ieva, IEVA-3 and IEVA-5, 30.09.2026).
+      if (isFinished(b.status)) await finishOpenTasks(id, now, `the person is ${b.status}`);
       if (b.status === 'Contract') await db.prepare('UPDATE people SET contract_at = ? WHERE id = ? AND contract_at IS NULL').run(now, id);
       if (b.status === 'Admitted') await db.prepare('UPDATE people SET admitted_at = ?, student_no = COALESCE(student_no, ?) WHERE id = ?')
         .run(now, '3-5-IM/2026/' + Math.floor(10 + Math.random() * 89), id);
@@ -1771,7 +1810,11 @@ export const handle = async (req, res) => {
       await db.prepare('UPDATE people SET last_contact_at = ? WHERE id = ?').run(now, t.person_id);
       // the step that was just completed decides the stage
       const moved = await advanceStatus(t.person_id, t.label, now);
-      if (b.nextLabel) {
+      // If that step finished them, no next step is planned even when one was sent. Otherwise the
+      // last step of the journey would immediately open another one, which is exactly what Ieva
+      // hit: "changing the last task in Still open leaves it open" (IEVA-4).
+      const after = await db.prepare('SELECT status FROM people WHERE id = ?').get(t.person_id);
+      if (b.nextLabel && !isFinished(after && after.status)) {
         const due = b.nextDate ? new Date(b.nextDate + 'T09:00:00.000Z').toISOString() : new Date(Date.now() + 3 * 86400000).toISOString();
         await db.prepare('INSERT INTO tasks (person_id,label,due_at,owner,created_at) VALUES (?,?,?,?,?)').run(t.person_id, b.nextLabel, due, t.owner, now);
       }

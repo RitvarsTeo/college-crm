@@ -2194,7 +2194,7 @@ async function viewPersonC(id) {
       : `<div class="c-next none"><b>Next step</b>No next step<div class="c-row-acts"><button class="btn sm" onclick="openNewTask('${esc(p.id)}')">Plan a next step</button></div></div>`)
     : `<div class="c-next c-finished"><b>Outcome</b>${p.status === (CFG.stageRoles || {}).closed ? `<span class="c-no">✕</span>${esc(cStage(p.status))}${p.closed_reason ? ' · ' + esc(p.closed_reason) : ' · <span class="c-gap">reason not recorded</span>'}${p.closed_note ? `<div class="c-evt-body">${esc(p.closed_note)}</div>` : ''}` : `<span class="c-ok">✓</span>${esc(cStage(p.status))}${p.admitted_at ? ' on ' + fmtDate(p.admitted_at) : ''}`}${t ? `
         <div class="c-still"><b>Still open</b><div class="c-next-row"><span>${esc(cTask(t.label))}</span><span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span></div>
-        <div class="c-row-acts"><button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))})">Done</button><button class="btn sm ghost" onclick="openReschedule(${Number(t.id)})">Move the date</button></div></div>` : ''}</div>`;
+        <div class="c-row-acts"><button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, true)">Done</button><button class="btn sm ghost" onclick="openReschedule(${Number(t.id)})">Move the date</button></div></div>` : ''}</div>`;
   $('#view').innerHTML = `<p class="c-crumb"><a href="#/people">People</a></p>
     <div class="c-head"><div><h1 class="c-pname">${esc(p.name)}</h1><p>${esc(cStage(p.status))} · ${esc(p.programme || 'programme not said')}${p.study_form ? ' · ' + esc(p.study_form) : ''} · ${contact || '<span class="c-gap">no email or phone recorded</span>'}</p></div></div>
     <div class="c-pgrid">
@@ -4577,29 +4577,42 @@ function showDuplicateBlock(data) {
   $('#addErr').innerHTML = '';
 }
 
-function openComplete(taskId, label) {
+// FINISHED PEOPLE CAN CLOSE THEIR LAST STEP (Ieva, IEVA-4, 30.09.2026).
+//
+// The server has always allowed this for somebody Admitted or Not proceeding. The SCREEN was what
+// refused: the dropdown held only real actions, so it was never empty, and doComplete() rejected an
+// empty value outright. So the last task could not be closed at all, and Ieva was left with
+// "confirm the payment" open on a person who had already paid.
+//
+// The entry appears ONLY for a finished person. An open lead still keeps a next step, unchanged.
+const C_NO_NEXT = 'No next step - the person is finished';
+// `finished` is passed in, never guessed from C_PERSON: that variable holds whichever person page
+// was opened last, so on Next Steps it would answer about the wrong person. The only caller that
+// passes true is the "Still open" block, which is drawn only for somebody already finished.
+function openComplete(taskId, label, finished) {
+  const done = Boolean(finished);
   modal('Complete: ' + label, `
     <label>Outcome</label>
     <select id="cOut">${(CFG.callOutcomes || ['Done']).map(o => `<option>${esc(o)}</option>`).join('')}</select>
     <label>Note</label><textarea id="cNote" rows="2"></textarea>
     <div class="row2">
-      <div><label>Next step (required)</label>
-        <select id="cNext" onchange="onNextActionChange('cNext','cDate','cHint')">${nextActionOptions()}</select>
+      <div><label>Next step${done ? '' : ' (required)'}</label>
+        <select id="cNext" onchange="onNextActionChange('cNext','cDate','cHint')">${
+          done ? `<option value="" selected>${esc(C_NO_NEXT)}</option>` : ''}${nextActionOptions()}</select>
         <div class="muted" id="cHint" style="font-size:12px;margin-top:4px"></div></div>
       <div><label>When</label><input id="cDate" type="date" value="${todayStr()}"></div>
     </div>
-    <div class="prov" style="margin-top:10px">Every person always keeps a next step. It leads either to a visit on site, or to an application in SIS with documents, and on to payment.</div>
     <div id="cErr"></div>
-    <div style="margin-top:14px;display:flex;gap:8px"><button class="btn" onclick="doComplete(${taskId})">Save</button>
+    <div style="margin-top:14px;display:flex;gap:8px"><button class="btn" onclick="doComplete(${taskId}, ${done})">Save</button>
     <button class="btn ghost" onclick="closeModal()">Cancel</button></div>`);
   onNextActionChange('cNext', 'cDate', 'cHint');
 }
-async function doComplete(id) {
+async function doComplete(id, finished) {
   const nextLabel = $('#cNext').value;
-  if (!nextLabel) { $('#cErr').innerHTML = '<div class="err">The next step is required.</div>'; return; }
+  if (!nextLabel && !finished) { $('#cErr').innerHTML = '<div class="err">The next step is required.</div>'; return; }
   try {
     await post(`/api/tasks/${id}/complete`, { outcome: $('#cOut').value, note: $('#cNote').value,
-      nextLabel, nextDate: $('#cDate').value });
+      ...(nextLabel ? { nextLabel, nextDate: $('#cDate').value } : {}) });
     closeModal(); route();
   } catch (e) { $('#cErr').innerHTML = `<div class="err">${esc(e.message)}</div>`; }
 }
