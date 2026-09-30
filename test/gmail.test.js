@@ -210,7 +210,8 @@ test('a real poll fetches each message and reports an unread page rather than lo
     }
     return { ok: true, json: async () => MESSAGE };
   };
-  const r = await runPoll({ env: env(), fetchImpl });
+  // maxPages: 1, so the page left unread is the one this test is about (pages are followed since 30.09)
+  const r = await runPoll({ env: env(), fetchImpl, maxPages: 1 });
   assert.equal(r.ok, true);
   assert.equal(r.messages, 1);
   assert.equal(r.items[0].subject, 'Jautājums par studijām');

@@ -381,9 +381,15 @@ export async function syncGmail(db, { now = new Date(), env = process.env, fetch
   const mode = await channelMode(db, 'gmail', env);
   if (mode === 'off') return { ok: true, ran: false, channel: 'gmail', why: 'the email channel is off' };
 
-  const got = await gmailPoll({ env, now, fetchImpl, max, ...(minutes ? { minutes } : {}) });
+  // The bookmark is the time of the last GOOD run; the next run asks from there, with ten minutes
+  // of overlap (a repeat is free: receive() knows the message id). The first run asks for 26 hours.
+  const state = await db.prepare("SELECT value FROM sync_state WHERE name = 'gmail'").get();
+  const last = state && state.value && !Number.isNaN(Date.parse(state.value)) ? state.value : null;
+  const since = minutes ? null
+    : new Date((last ? Date.parse(last) - 10 * 60000 : now.getTime() - 26 * 3600000)).toISOString();
+  const got = await gmailPoll({ env, now, fetchImpl, max, since, ...(minutes ? { minutes } : {}) });
   if (!got.ok) {
-    await saveState(db, 'gmail', null, { ok: false, why: got.why }, at);
+    await saveState(db, 'gmail', last, { ok: false, why: got.why }, at);
     return { ok: false, ran: got.ran, channel: 'gmail', mode, why: got.why, waitingOn: got.waitingOn || null };
   }
 
@@ -398,7 +404,8 @@ export async function syncGmail(db, { now = new Date(), env = process.env, fetch
   }
 
   // more:true means Gmail had another page. Say so rather than report a clean run.
-  await saveState(db, 'gmail', got.query || null, { ...out, more: Boolean(got.more) }, at);
+  // A run that had to stop with pages left keeps the old bookmark, so the rest is asked again.
+  await saveState(db, 'gmail', got.more ? last : at, { ...out, query: got.query, more: Boolean(got.more) }, at);
   return { ok: true, ran: true, channel: 'gmail', mode, ...out, more: Boolean(got.more), query: got.query };
 }
 

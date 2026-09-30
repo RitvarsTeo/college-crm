@@ -15,7 +15,9 @@
 // never be reported as "nothing to do".
 
 import { authoriseCron, sendJson } from '../../lib/pbx.js';
-import { runPoll, ready, MAILBOX, WINDOW_MINUTES } from '../../lib/gmail.js';
+import { ready, MAILBOX } from '../../lib/gmail.js';
+import { cronDb } from '../../src/crondb.js';
+import { syncGmail } from '../../src/sync.js';
 
 export default async function handler(req, res) {
   const method = req.method || 'GET';
@@ -30,13 +32,6 @@ export default async function handler(req, res) {
     return;
   }
 
-  const mode = String(process.env.CHANNEL_MODE_GMAIL || 'off').toLowerCase();
-  if (mode === 'off') {
-    sendJson(res, 200, { ok: true, ran: false, channel: 'gmail',
-      why: 'the gmail channel is off', how: 'set CHANNEL_MODE_GMAIL to test or live' });
-    return;
-  }
-
   const state = ready();
   if (!state.ok) {
     // 200, not an error: being un-authorised yet is the expected state, and a
@@ -47,7 +42,10 @@ export default async function handler(req, res) {
   }
 
   try {
-    const result = await runPoll({ minutes: WINDOW_MINUTES });
+    // syncGmail, not runPoll: runPoll only reads; syncGmail puts every message through the gmail
+    // adapter into New Leads, keeps the since-last-run bookmark, and reads the channel switch
+    // (Channels screen first, CHANNEL_MODE_GMAIL second). Fixed 30.09.2026 (Session C, C3).
+    const result = await syncGmail(await cronDb());
     sendJson(res, result.ok ? 200 : 502, { channel: 'gmail', mailbox: MAILBOX, ...result });
   } catch (err) {
     // Never echo the message: a Google error can quote the request.

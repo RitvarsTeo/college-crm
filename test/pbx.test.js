@@ -328,8 +328,9 @@ test('both poller routes exist and bundle what they need; the schedule waits for
   // once a day is what Hobby allows (08:00 Riga); it also gives the Vercel Cron Jobs page a Run button that
   // sends CRON_SECRET itself, so a run by hand never needs the secret typed anywhere
   assert.deepEqual(vercel.crons, [{ path: '/api/cron/sis-sync', schedule: '0 5 * * *' },
-    { path: '/api/cron/pbx-calls', schedule: '15 5 * * *' }]);
-  for (const f of ['pbx-calls.js', 'sis-sync.js']) {
+    { path: '/api/cron/pbx-calls', schedule: '15 5 * * *' },
+    { path: '/api/cron/gmail-poll', schedule: '30 5 * * *' }]);   // C3, 30.09.2026
+  for (const f of ['pbx-calls.js', 'sis-sync.js', 'gmail-poll.js']) {
     assert.ok(fs.existsSync(path.join(ROOT, 'api', 'cron', f)), f + ' must exist');
   }
   assert.match(vercel.functions['api/cron/*.js'].includeFiles, /config/);
