@@ -1,6 +1,7 @@
 # TikTok into the Academy CRM
 
-For: Tetiana. From: Ritvars. 30.09.2026.
+Owner: Tetiana. **Tetiana only gives Ritvars access to the business account; Ritvars creates the
+app himself** (30.09). This file is our setup checklist.
 
 ## 1. What we want to receive
 
@@ -30,7 +31,8 @@ Every TikTok webhook event: `client_key`, `event`, `create_time`, `user_openid`,
 ## 5. What we already found, and the questions
 
 - Our side can receive and check a TikTok event; tested with test events only. **No real TikTok event
-  has ever reached the CRM.** Reading names or messages out of `content` is not built.
+  has ever reached the CRM.** Built, NOT deployed (Session B branch `feat/channel-gaps-2026-09-30`, 095ae31): a name, email, phone or message plainly named in
+  `content` is read; nothing is guessed.
 - Questions for you:
   1. Is it a TikTok Business account, and are you its admin?
   2. What actually arrives there: direct messages, comments, or lead forms from ads?
@@ -40,5 +42,5 @@ Every TikTok webhook event: `client_key`, `event`, `create_time`, `user_openid`,
 
 ## 6. What you will see once it is on
 
-A TikTok event appears in **New Leads** labelled TikTok. Until the content is read, it says only
-which kind of event arrived.
+A TikTok event appears in **New Leads** labelled TikTok, with any name, email, phone or message it
+plainly carries.

@@ -1,6 +1,7 @@
 # edu@novikontas.org into the Academy CRM
 
-For: Marina, Google Workspace administrator. From: Ritvars. 30.09.2026.
+Owner: Marina (Google Workspace administrator). **Option A chosen; Marina's steps sent 30.09**
+(MESSAGES_TO_CHANNEL_OWNERS.md).
 
 ## 1. What we want to receive
 
@@ -40,12 +41,16 @@ What stays is the structured record (name, email, programme asked about).
 ## 5. What we already found
 
 - Answered: you are the Workspace administrator (25.09).
-- Built on our side and live since 30.09: the CRM reads the mailbox and puts new mail into New Leads.
-  The channel is **off** until access is granted.
+- Done 30.09: service account `intake-mail-reader@novikontas-academy-crm.iam.gserviceaccount.com`,
+  Client ID `116501730766051915222`, Gmail API on; its key is in Vercel as `GMAIL_SERVICE_ACCOUNT_JSON`
+  (Secret). The channel stays **off** until access is granted.
+- Built, NOT deployed (Session B branch `feat/channel-gaps-2026-09-30`): the job is on the daily schedule, puts mail into New Leads
+  and reads everything since its last good run (8e5717d). The live version reads and keeps nothing.
+  Option B (sign in once as edu@) is built too (57222df), not chosen.
+- Not built yet: training@novikontas.org as a second mailbox (course leads, to Liva Mihailova's
+  department); asked of Session B 30.09. Google needs nothing more for it.
 - Tested: only with test messages. **No real email has ever been read.**
-- Still open on our side: the job that checks the mailbox is not on the schedule yet; it is added
-  when you grant access (with Ritvars' developers).
-- Blocking: the A or B choice, then your approval.
+- Blocking: Marina's approval, then the deploy.
 
 ## 6. What you will see once it is on
 

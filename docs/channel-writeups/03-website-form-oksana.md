@@ -1,6 +1,8 @@
 # The website enquiry form into the Academy CRM
 
-For: Oksana, who maintains the website. From: Ritvars. 30.09.2026.
+Owner: Oksana (website, Tilda). **Oksana only gives Ritvars Tilda access; Ritvars sets it up**
+(30.09). Not built yet: accepting the secret inside the address and Tilda's own id (C8, asked of
+Session B 30.09).
 
 ## 1. What we want to receive
 

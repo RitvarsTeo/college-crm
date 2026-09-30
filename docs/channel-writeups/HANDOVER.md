@@ -3,6 +3,12 @@
 Session C writes documents only (plus, on Ritvars' yes 30.09: phone set to live, Mailchimp set up in test mode). Nothing below was fixed; each item goes to the session that owns
 the file. Checked against production commit `e52e1b4`.
 
+## Status 30.09 evening
+
+C1-C7 BUILT by Session B on `feat/channel-gaps-2026-09-30` (bfdeb31, 4f40f78, 8e5717d, f927437,
+57222df, 0800af3, 095ae31), NOT deployed. C8, C9, C10 and training@ as a second mailbox: asked of
+Session B 30.09, not built. Production = `release/patches-2026-09-30` 4d174c7, none of the above.
+
 ## Code items found while writing (for Session B: server.js, adapters.js, sync.js)
 
 | # | What | Where | Why it matters |

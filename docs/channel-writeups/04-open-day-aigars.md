@@ -15,8 +15,8 @@ First, one answer: **which tool takes the Open Day bookings today?** Everything 
 Then, if that tool can call a web address when a booking is made:
 
 1. Point it at our address with the secret in a header, once per booking.
-2. Tell us whether the tool also records who actually came. Our side cannot take attendance yet:
-   a second message for the same booking is treated as a repeat and dropped.
+2. If the tool also records who actually came, send the same booking again with `attended`; it
+   updates the Open Day list and the person (built, not deployed: f927437).
 
 If the tool cannot call an address, say so; we then look at an export instead.
 
@@ -39,14 +39,14 @@ names them differently, send Ritvars one example booking with made-up data and w
 | `event_id`, `slot` | yes | Which Open Day and which time |
 | `name`, `email`, `phone` | as filled in | The person |
 | `programme` | if asked | What they are interested in |
-| `attended` | if known | `true` or `false`; kept, not yet used |
+| `attended` | if known | `true` or `false` |
 
 ## 5. What we already found
 
 - Not answered since 23.09: which tool it is, whether it can post to an address, and what consent
   wording it shows.
 - Our side is built and tested with test bookings only. **No real booking has ever reached the CRM.**
-- Attendance: not yet taken in or shown on the person's record.
+- Attendance: built, not deployed (Session B branch `feat/channel-gaps-2026-09-30`, f927437).
 
 ## 6. What you will see once it is on
 

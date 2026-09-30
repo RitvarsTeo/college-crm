@@ -1,6 +1,7 @@
 # LinkedIn lead forms into the Academy CRM
 
-For: Tetiana. From: Ritvars. 30.09.2026.
+Owner: Tetiana. **Tetiana only gives Ritvars admin access to the company page; Ritvars creates the
+app and the token himself** (30.09). This file is our setup checklist.
 
 ## 1. What we want to receive
 
@@ -31,11 +32,10 @@ are fetched from the Lead Sync API afterwards.
 
 - Our side receives and checks the notification; tested with test events only. **No real LinkedIn
   event has ever reached the CRM.**
-- Not built: fetching the answers after the notification. Until it is, a LinkedIn lead arrives
-  without a name or email.
+- Built, NOT deployed (Session B branch `feat/channel-gaps-2026-09-30`, 4f40f78): the name, email and phone are fetched from Lead Sync
+  after the notification, with a daily retry. Needs the app's token: `LINKEDIN_ACCESS_TOKEN`.
 - Questions for you: roughly how many leads a week, and are lead forms used at all today?
 
 ## 6. What you will see once it is on
 
-A LinkedIn lead appears in **New Leads** labelled LinkedIn. Until the answer fetch is built it says
-only that a lead arrived, so you open it in LinkedIn.
+A LinkedIn lead appears in **New Leads** labelled LinkedIn, with the name, email and phone.

@@ -38,6 +38,10 @@ moment somebody starts an application?** Only `reference`, `applicationId` and `
 with a secret we hand over in person. Then the CRM would show it at once instead of on the next run.
 If not, nothing breaks; we keep reading the feed.
 
+(For us: the address is built, NOT deployed: `POST /api/intake/application`, header
+`x-crm-application-secret`, setting `SIS_APPLICATION_SECRET`, commit 7216ec6. A person whose first
+contact is the application is created at the application stage, 73b8696.)
+
 ## 6. What changes once it is on
 
 For you, nothing. In the CRM, a person who applies shows "Application form started" and later

@@ -27,7 +27,8 @@ Every new response to that form, the moment it is submitted.
 - Address: `POST https://crm-novikontas.vercel.app/api/inbound/google_form`
 - Header: `x-crm-secret: <the secret>`. The secret goes into the script's Properties, not the script
   text, and Ritvars enters it with you in person. Setting name on our side: `GOOGLE_FORM_SECRET`.
-- The script itself (not written yet).
+- The script itself: written and tested (`scripts/google-form/Code.gs`, 0800af3). We paste it in
+  with you.
 
 ## 4. The fields
 

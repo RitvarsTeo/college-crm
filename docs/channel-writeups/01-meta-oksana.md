@@ -1,6 +1,7 @@
 # Facebook, Messenger, Instagram and WhatsApp into the Academy CRM
 
-For: Oksana, owner of the Novikontas Meta Business Suite. From: Ritvars. 30.09.2026.
+Owner: Oksana (Meta Business Suite). **Oksana only gives Ritvars admin access; Ritvars does every
+step below himself** (30.09). This file is our setup checklist, not a message to her.
 
 All four run through **one Meta app**. You set it up once and get four channels.
 
@@ -61,9 +62,11 @@ them, messages as Messenger and lead forms as Facebook.
 - Fixed on 30.09 and live: a delivery carrying several messages now keeps every one, not only the
   first.
 - Tested: only with test events on our side. **No real Meta event has ever reached the CRM.**
-- Still open on our side: a lead form arrives from Meta with ids only. The name, email and phone
-  are fetched from Meta afterwards, and that fetch is not built yet (with Ritvars' developers).
-- Blocking: the app, business verification and App Review. All yours at Meta.
+- Built, NOT deployed (Session B branch `feat/channel-gaps-2026-09-30`): one Page address, messages counted as Messenger and lead
+  forms as Facebook (bfdeb31); the lead's name, email and phone fetched from Meta after the
+  notification, with a daily retry (4f40f78). The fetch needs a Page token with `leads_retrieval`,
+  which we create once we have admin access. Setting name: `META_PAGE_ACCESS_TOKEN`.
+- Blocking: Oksana's admin access, then the app, business verification and App Review (ours).
 
 ## 6. What you will see once it is on
 
