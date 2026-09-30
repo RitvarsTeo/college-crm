@@ -4581,11 +4581,11 @@ function showDuplicateBlock(data) {
   $('#addErr').innerHTML = '';
 }
 
-// FINISHED PEOPLE CAN CLOSE THEIR LAST STEP (Ieva, IEVA-4, 30.09.2026).
+// FINISHED PEOPLE CAN CLOSE THEIR LAST STEP (Admissions, 30.09.2026).
 //
 // The server has always allowed this for somebody Admitted or Not proceeding. The SCREEN was what
 // refused: the dropdown held only real actions, so it was never empty, and doComplete() rejected an
-// empty value outright. So the last task could not be closed at all, and Ieva was left with
+// empty value outright. So the last task could not be closed at all, and Admissions was left with
 // "confirm the payment" open on a person who had already paid.
 //
 // THE WHOLE ROW GOES, rather than gaining a "no next step" entry. The server ignores nextLabel for
