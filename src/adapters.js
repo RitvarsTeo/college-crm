@@ -253,6 +253,8 @@ function whatsappAll(raw) {
   return out;
 }
 
+const pageDm = (channel) => (channel === 'facebook' ? 'messenger' : channel);
+
 // EVERY lead form and EVERY direct message in a Meta delivery.
 function metaAll(channel, raw) {
   const out = [];
@@ -260,7 +262,11 @@ function metaAll(channel, raw) {
     for (const change of entry.changes || []) {
       if (change.field === 'leadgen') out.push(metaLead(channel, change.value || {}, raw));
     }
-    for (const m of entry.messaging || []) out.push(metaDirect(channel, m, raw));
+    // Decided by Ritvars 30.09.2026 (popup B): a Page registers ONE Meta address, the facebook one.
+    // Its messaging[] events are Messenger conversations; its leadgen changes are Facebook lead forms.
+    // Only the real webhook path splits them; adapt() (the Console simulator, the demo) keeps the
+    // channel it is asked for.
+    for (const m of entry.messaging || []) out.push(metaDirect(pageDm(channel), m, raw));
   }
   if (!out.length) return [metaMessage(channel, raw)];   // let the old path raise the right error
   return out;

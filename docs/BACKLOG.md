@@ -452,6 +452,14 @@ only, behind sign-in, the last 2 minutes, per call only uniqueid, created_at, qu
 4 digits; never the token. Needs production (the token lives only in Vercel), so it waits for his go to deploy.
 Then: he calls +371 23111114 (press 1); it is read while ringing, after answer, after hang-up. RESULT: not run yet.
 
+**Channel gaps C1-C7 (Session C HANDOVER, 30.09.2026).** Ritvars: "LETS DO ALL as per maximum in our code, if vercel
+plan is the blocker, it will get unblocked by shifting accounts". C7 (TikTok, LinkedIn answers) was LATER on the MVP
+map; pulled forward by him. Branch feat/channel-gaps-2026-09-30, stacked on feat/application-first-2026-09-30.
+
+| Item | Status | Commit |
+|---|---|---|
+| C1. One Meta address for the Page (his popup B): on /api/inbound/facebook, messaging[] is recorded as Messenger and a leadgen change as Facebook. Only the real webhook path splits; the Console simulator and the demo keep the channel they ask for. 705/705 | COMMITTED, NOT DEPLOYED | (C1) |
+
 **SIS mapping decided + where the person is in the SIS - LIVE 29.09.2026, commits 4b31df5 + fecde5e,
 deployment dpl_8Cazdz5YttPu88dkC94GnYknm6Pu** (645/645).
 - Ritvars: an application already past `started` also shows "Application form started", dated by its
