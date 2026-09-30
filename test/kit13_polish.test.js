@@ -59,3 +59,31 @@ test('the screen texts are gone entirely, and the one that carries a count stays
   // the one that is a COUNT, not a sentence, stays
   assert.ok(APP.includes(': `All ${people.length} people.`;'), 'the row count is a value');
 });
+
+test('panels are the kit card, and the card in dark is solid', () => {
+  // The owner chose modern cards in the Client Hub on 30.09.2026 and asked for the decision to be
+  // packaged for every app; then "Cards there too" for the Home KPI strip. Taken from the dev kit
+  // (Component library, 2 App frame, academy-kit.css), not re-invented here.
+  for (const theme of ['light', 'dark']) {
+    const block = theme === 'light'
+      ? APP.slice(APP.indexOf('html.ui-c{--paper:'), APP.indexOf('html.ui-c[data-theme="dark"]{--paper:'))
+      : APP.slice(APP.indexOf('html.ui-c[data-theme="dark"]{--paper:'));
+    assert.match(block, /--c-card-line:/, `${theme} defines the card edge`);
+    assert.match(block, /--c-card-lift:/, `${theme} defines the card lift`);
+  }
+  // the kit's exact values, so the apps cannot drift apart
+  assert.match(APP, /--c-card-line:rgba\(10,36,99,\.07\)/, 'light edge is the kit value');
+  assert.match(APP, /--c-card-lift:0 1px 2px rgba\(10,36,99,\.06\),0 10px 28px rgba\(10,36,99,\.08\)/);
+  assert.match(APP, /--c-card-line:rgba\(194,211,222,\.12\)/, 'dark edge is the kit value');
+
+  // the panel and the KPI strip both take it
+  assert.match(APP, /html\.ui-c \.c-sheet\{background:var\(--surface\);border:1px solid var\(--c-card-line\);border-radius:14px;\s*box-shadow:var\(--c-card-lift\)/);
+  assert.match(APP, /html\.ui-c \.kstrip > div\{padding:16px 18px;min-width:0;background:var\(--surface\);\s*border:1px solid var\(--c-card-line\);border-radius:14px;box-shadow:var\(--c-card-lift\)\}/,
+    'the Home figures are cards, not a hairline row');
+  assert.doesNotMatch(APP, /html\.ui-c \.kstrip > div \+ div\{padding-left:18px;border-left/,
+    'the dividing rules are gone');
+
+  // NEVER glass in dark: --surface in ui-c dark is the solid #133a60, and the card uses --surface
+  assert.match(APP, /html\.ui-c\[data-theme="dark"\]\{--paper:#0f2f4f;--surface:#133a60/,
+    'the dark card surface is solid, the way the kit requires');
+});

@@ -812,7 +812,13 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c{--paper:#f5f7fa;--surface:#ffffff;--surface-2:#eef1f5;--shell:#e7ebf0;--field:#ffffff;--menu:#ffffff;--ink:#011111;
     --t2:#415c8f;--t3:#4d6187;--t4:#56688a;--rule:#dde3ea;--rule2:#e4e9ef;--control-line:#6f7e97;
     --pet:#0a2463;--petink:#0a2463;--btn-bg:#0a2463;--btn-ink:#ffffff;--on-navy:#ffffff;--bad:#b3261e;   /* buttons: brandbook Navy */
-    --c-sis:#29a8df;--c-ok:#2c6e55;--c-warn:#835c12;--c-bad:#b3261e;--c-accent-bg:#e5f1fa;--c-sunk:#eef1f5;--c-sel:#eff6fc}   /* Novikontas Blue, lightly (the owner 28.09) */
+    --c-sis:#29a8df;--c-ok:#2c6e55;--c-warn:#835c12;--c-bad:#b3261e;--c-accent-bg:#e5f1fa;--c-sunk:#eef1f5;--c-sel:#eff6fc;   /* Novikontas Blue, lightly (the owner 28.09) */
+    /* THE MODERN CARD, copied from the dev kit's --kit-card-line / --kit-card-lift, not re-invented
+       (Component library, 2 App frame, academy-kit.css). Every panel takes these two.
+       They go LAST: the contrast test reads this block with one regex that expects the named
+       colours in order, and a token inserted between --control-line and --pet breaks its match. */
+    --c-card-line:rgba(10,36,99,.07);
+    --c-card-lift:0 1px 2px rgba(10,36,99,.06),0 10px 28px rgba(10,36,99,.08)}
   /* Dark = the sign-in sea (the owner, 28.09.2026: "the exact same colours and tones with
      gradients from the login screen"). The page is the sign-in gradient, the sidebar its
      deepest navy, buttons white like the Google button. Amber brightened ("now its kind of
@@ -825,7 +831,12 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
      brighter, and the slate for 'not proceeding' is a neutral grey that always carries its word. */
   html.ui-c[data-theme="dark"]{--paper:#0f2f4f;--surface:#133a60;--surface-2:#17456e;--shell:#08182e;--field:#0c2745;--menu:#133a60;--ink:#f2f6f9;
     --t2:#cddbe5;--t3:#bfd0dd;--t4:#b8cad8;--rule:#2a5580;--rule2:#1d4670;--control-line:#82a0ba;
+    /* the kit's dark card: SOLID, never glass. --surface here is already #133a60, so only the
+       edge and the lift change. Kept out of the way of the named colours the contrast test reads. */
+    --c-card-line:rgba(194,211,222,.12);
+    --c-card-lift:inset 0 1px 0 rgba(255,255,255,.05),0 14px 32px rgba(1,17,17,.34);
     --pet:#a8d3f3;--petink:#bcdcf5;--btn-bg:#ffffff;--btn-ink:#0a2463;--on-navy:#0a2463;--bad:#ffb0a8;
+
     --amb:#F7C04F;--ambink:#F7C04F;--late:#ffb0a8;--warn:#F7C04F;
     --c-sis:#29a8df;--c-ok:#9be0bd;--c-warn:#F7C04F;--c-bad:#ffb0a8;--c-accent-bg:#1a4670;--c-sunk:#0b2542;--c-sel:#163f66;
     --v-adm:#29a8df;--v-lead:#e7ebf0;--v-open:#F7C04F;--v-np:#93A5B8;--v-grid:#24507a;
@@ -976,7 +987,12 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-head h1{margin:0;font-family:inherit;font-size:22px;font-weight:650;letter-spacing:-.015em}
   html.ui-c .c-head p{margin:3px 0 0;color:var(--t2);font-size:13.5px}
   html.ui-c .c-head .act{margin-left:auto;display:flex;gap:8px}
-  html.ui-c .c-sheet{background:var(--surface);border:1px solid var(--rule);border-radius:10px;overflow:hidden;margin-bottom:16px}
+  /* THE MODERN CARD, from the dev kit (the owner 30.09.2026, chosen in the Client Hub and packaged
+     for every app): solid surface, soft shadow, 14px corner. It was a 10px box with a plain border
+     and no lift. The values are the kit's, carried on two tokens so every panel here uses one
+     definition instead of repeating a shadow. */
+  html.ui-c .c-sheet{background:var(--surface);border:1px solid var(--c-card-line);border-radius:14px;
+    box-shadow:var(--c-card-lift);overflow:hidden;margin-bottom:16px}
   html.ui-c .c-sheet h3{margin:0;padding:12px 16px;font-family:inherit;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule2)}
   html.ui-c .c-sheet h3 b{color:var(--ink);letter-spacing:0;margin-left:6px}
   html.ui-c .c-line{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1.3fr) 130px auto;gap:14px;align-items:center;padding:11px 16px;border-top:1px solid var(--rule2);cursor:pointer}
@@ -1022,13 +1038,18 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
   html.ui-c .khead{margin-bottom:18px}
   html.ui-c .ktitle{margin:2px 0 0;font-family:inherit;font-weight:500;font-size:30px;letter-spacing:-.012em;line-height:1.15}
-  html.ui-c .kstrip{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);margin-bottom:26px}
-  html.ui-c .kstrip > div{padding:16px 18px 16px 0;min-width:0}
+  /* FIGURE CARDS, from the dev kit (the owner, 30.09.2026: "Cards there too"). The kit's
+     .kit-stats / .kit-stat: a solid surface, a soft shadow and a 14px corner, one card per figure.
+     It was a hairline row divided by 1px rules. Everything else on Home is unchanged.
+     The kit's card in dark is the SOLID panel, never glass, and in ui-c --surface is already
+     #133a60 solid, so this is the card LOOK and not a colour change. */
+  html.ui-c .kstrip{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;gap:12px;margin-bottom:26px}
+  html.ui-c .kstrip > div{padding:16px 18px;min-width:0;background:var(--surface);
+    border:1px solid var(--c-card-line);border-radius:14px;box-shadow:var(--c-card-lift)}
   /* label, number and note sit on SHARED rows across the strip, so a label that wraps ("Median time
      to admission" at a narrow width) no longer pushes its number below the others */
   html.ui-c .kstrip{grid-template-rows:auto auto auto}
   html.ui-c .kstrip > div{display:grid;grid-row:span 3;grid-template-rows:subgrid;align-content:start}
-  html.ui-c .kstrip > div + div{padding-left:18px;border-left:1px solid var(--rule2)}
   html.ui-c .kstrip span{display:block;font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--t3)}
   html.ui-c .kstrip b{display:block;font-size:30px;font-weight:650;letter-spacing:-.025em;line-height:1.15;margin:4px 0 3px}
   html.ui-c .kstrip b em{font-style:normal;font-size:15px;font-weight:500;color:var(--t3);letter-spacing:0}
