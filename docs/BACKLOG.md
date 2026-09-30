@@ -8,8 +8,11 @@ decision for Ritvars.*
 Nothing is deleted here. A line changes status, it does not disappear.
 
 **Statuses:** `SAID` - somebody said it, nothing checked · `DECIDED` - the owner decided it ·
-`BUILT` - it exists in the prototype · `LIVE` - verified running in production (nothing is LIVE:
-this is a local prototype) · `UNKNOWN` - named but not checked with the provider.
+`BUILT` - it exists in the code, committed, not deployed · `LIVE` - verified running in production ·
+`UNKNOWN` - named but not checked with the provider.
+
+The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
+this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
 ## 30.09.2026 - LIVE: bug-fix release, four commits
 
@@ -49,9 +52,8 @@ only: their files uploaded byte-identical to the commit and the suite passed on 
 them live would mean posting to a webhook or polling a mailbox, which writes rows. They get no
 behavioural proof on production until a provider is connected.
 
-*(The status key above still reads "nothing is LIVE: this is a local prototype". It has been
-untrue since 27.09 and is not corrected here, because that correction is part of the unapproved
-overnight batch. It is Ritvars' call.)*
+*(The status key said "nothing is LIVE: this is a local prototype" when this row was written. It
+was corrected on 30.09.2026, on Ritvars' yes, in its own commit.)*
 
 ## 28.09.2026 - LIVE on https://crm-novikontas.vercel.app (the CRM V1 session)
 
@@ -407,37 +409,52 @@ screen on the real-data snapshot (local, in memory) at 1440 / 900 / 390 px, ligh
 
 ## Pin
 
-**Current, 28.09.2026 (this note is newer than the pin below, which is kept as it was written):**
-Academy CRM is **deployed** at https://crm-novikontas.vercel.app (Vercel + Neon Postgres) with
-Google sign-in, and holds the real 2026 admissions people. **Concept C is the main UI**, ACCEPTED by
-Ritvars on 28.09.2026; the previous UI stays at `?ui=classic` as the fallback until Admissions has
-verified C. Nobody from Admissions has used C on the real people yet. Channels are still not
-connected. Its decisions and the eight open D-C questions are in [DECISIONS.md](DECISIONS.md),
-dated 28.09.2026. Deploys go only from a clean checkout of one commit, after the whole suite passes
-on that checkout (538 tests on 28.09.2026), and each is checked on the live site.
+**PIN: ACADEMY CRM V1 IS DEPLOYED AND IN USE. CHANNELS ARE NOT CONNECTED.**
 
-**PIN: ACADEMY CRM - V1 VIRTUAL PROTOTYPE. NOT RELEASED, NOT DEPLOYED, NOT CONNECTED.**
+Rewritten 30.09.2026. It said "NOT RELEASED, NOT DEPLOYED, NOT CONNECTED" until then, which had
+been untrue since 27.09 and sat directly under a note saying the opposite. The old text is kept
+below, dated, as the record of where the project was.
 
-- **Version:** V1
-- **Scope: NOT LOCKED.** A clickable prototype for arguing with the Admissions workflow on screen,
-  plus every channel adapter prepared but switched off and no provider contacted. It is changed
-  daily by owner feedback and Ieva has not yet validated the workflow, so treat every row below as
-  provisional until she has.
+- **Version:** V1.
+- **Live:** https://crm-novikontas.vercel.app, Vercel + Neon Postgres, production at `e52e1b4`.
+  It holds the real 2026 admissions people. Google sign-in only; the password route answers 410.
+- **The UI:** Concept C is the product, ACCEPTED by Ritvars 28.09.2026. The previous UI stays at
+  `?ui=classic` as the fallback until Admissions has verified C. Nobody from Admissions has worked
+  a full day in C on the real people yet.
+- **Channels: NOT CONNECTED.** Every adapter is written and tested and every one is switched off.
+  `inbound` holds 15 rows, all `source=simulated` from test-mode runs of the phone and SIS jobs,
+  and **0 from a real provider**. That is the single largest gap between what this file describes
+  and what the CRM does for its users today.
+- **Scope: NOT LOCKED.** It changes daily on owner feedback, and Ieva has not validated the
+  workflow, so treat every row below as provisional until she has.
+- **Release line:** `master` at `afea424`, unchanged, never deployed, no tag exists. Production is
+  deployed from release branches cut off the live commit, not from `master`, and that is the
+  arrangement in force - not an accident, and not a release process anybody has signed off.
+- **How a deploy happens:** from a clean checkout of one commit, after the whole suite passes on
+  that checkout, then checked on the live site (page byte-identical to the commit, 401 on every
+  private route, 0 leaks from the source and config probes).
+- **Next:** Ieva validates the workflow (rows 46, 50, 51). V2: **UNKNOWN** - no V2 has been defined
+  by the owner and this file does not invent one.
+- **Blockers:** rows 46, 50, 51 (all Ieva); the open questions below; connecting the channels.
+
+Decisions and the open D-C questions are in [DECISIONS.md](DECISIONS.md).
+
+### The Pin as it stood on 25.09.2026, kept
+
+Read from Git and a test run at the time, not from memory of a conversation. Every line below was
+true then and several are not true now: the CRM was deployed on 27.09.2026.
+
+**PIN (25.09.2026): ACADEMY CRM - V1 VIRTUAL PROTOTYPE. NOT RELEASED, NOT DEPLOYED, NOT CONNECTED.**
+
 - **State:** implemented and tested locally; committed and pushed to `v1-test` for Aigars to test.
   Not deployed anywhere, so not verified anywhere but a local browser.
-- **Release line / deployed:** `master` at `afea424`, unchanged and never deployed. It is the
-  release line. `v1-test` at `b4d7ba3` is the **testing branch** Aigars works from, and it is meant
-  to reach `master` through a pull request once Ieva has validated the workflow. That answer
-  reached this file relayed rather than directly, so question 14 stays open until Ritvars confirms
-  it himself. Nothing has been merged, deployed or tagged either way.
-- **Next:** Ieva validates the workflow (rows 46, 50, 51). Next version: **UNKNOWN** - no V2 has
-  been defined by the owner and this file does not invent one.
-- **Blockers:** rows 46, 50, 51 (all for Ieva); open questions 1 to 6 and 9 to 14; the Google
-  Workspace administrator; and every remaining item under "What is NOT done". Deployment is blocked
-  by all of it. There is still no authentication, so every admin-only screen is a workflow rule and
-  not a security boundary.
-
-State as at 25.09.2026, read from Git and a test run, not from memory of a conversation:
+- **Release line / deployed:** `master` at `afea424`, unchanged and never deployed. `v1-test` at
+  `b4d7ba3` is the **testing branch** Aigars works from, meant to reach `master` through a pull
+  request once Ieva has validated the workflow. That answer reached this file relayed rather than
+  directly, so question 14 stayed open. Nothing had been merged, deployed or tagged either way.
+- **Blockers then:** rows 46, 50, 51; open questions 1 to 6 and 9 to 14; the Google Workspace
+  administrator; every remaining item under "What is NOT done". There was no authentication at
+  all, so every admin-only screen was a workflow rule and not a security boundary.
 
 | Delivery state | Answer | Evidence |
 |---|---|---|
