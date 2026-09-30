@@ -251,3 +251,66 @@ test('C7: TikTok content: nothing plainly named -> nothing invented', () => {
   const [bad] = adaptAll('tiktok', tik({ email: 'not-an-address' }));
   assert.equal(bad.senderEmail, null);
 });
+
+// ------------------------------------------------------------------ C6 ----
+// The Apps Script the form owner pastes (scripts/google-form/Code.gs). Run here against stand-ins for
+// Google's objects; what it would send is posted to the running server with the shared secret.
+import vm from 'node:vm';
+const FORM_SECRET = 'test-google-form-secret-not-real';
+
+function runScript(fn, { responses = 1, secret = FORM_SECRET } = {}) {
+  const sent = [];
+  const triggers = [];
+  const resp = (i) => ({ getId: () => 'resp-' + i, getTimestamp: () => new Date('2026-09-30T08:0' + i + ':00Z'),
+    getRespondentEmail: () => 'liga' + i + '@example.com',
+    getItemResponses: () => [
+      { getItem: () => ({ getTitle: () => 'Vārds uzvārds' }), getResponse: () => 'Līga Bērza ' + i },
+      { getItem: () => ({ getTitle: () => 'Programma' }), getResponse: () => 'NAV' },
+      { getItem: () => ({ getTitle: () => 'Piekrītu saņemt informāciju par studijām' }), getResponse: () => ['Jā'] }] });
+  const form = { getId: () => 'form-app-1', getResponses: () => Array.from({ length: responses }, (_, i) => resp(i)) };
+  const ctx = {
+    console: { error() {} },
+    PropertiesService: { getScriptProperties: () => ({ getProperty: (k) => (k === 'CRM_SECRET' ? secret : null) }) },
+    UrlFetchApp: { fetch: (url, o) => { sent.push({ url, o }); return { getResponseCode: () => 200 }; } },
+    FormApp: { getActiveForm: () => form },
+    ScriptApp: { getProjectTriggers: () => [], deleteTrigger() {},
+      newTrigger: (h) => ({ forForm: () => ({ onFormSubmit: () => ({ create: () => triggers.push(h) }) }) }) },
+  };
+  vm.createContext(ctx);
+  vm.runInContext(fs.readFileSync(path.join(ROOT, 'scripts', 'google-form', 'Code.gs'), 'utf8'), ctx);
+  const out = fn(ctx, { form, resp });
+  return { sent, triggers, out };
+}
+import fs from 'node:fs';
+
+test('C6: the script sends each response with the secret from Script Properties, never from its text', () => {
+  const src = fs.readFileSync(path.join(ROOT, 'scripts', 'google-form', 'Code.gs'), 'utf8');
+  assert.doesNotMatch(src, /x-crm-secret':\s*'[^']/, 'no secret value in the script');
+  const r = runScript((ctx, { form, resp }) => ctx.onFormSubmit({ source: form, response: resp(0) }));
+  assert.equal(r.sent.length, 1);
+  assert.equal(r.sent[0].url, 'https://crm-novikontas.vercel.app/api/inbound/google_form');
+  assert.equal(r.sent[0].o.headers['x-crm-secret'], FORM_SECRET);
+  const body = JSON.parse(r.sent[0].o.payload);
+  assert.equal(body.responseId, 'resp-0');
+  assert.deepEqual(body.answers['Programma'], ['NAV']);
+  assert.equal(runScript((ctx) => ctx.install()).triggers[0], 'onFormSubmit');
+  assert.throws(() => runScript((ctx, { form, resp }) => ctx.onFormSubmit({ source: form, response: resp(0) }), { secret: null }),
+    /CRM_SECRET is not set/);
+});
+
+test('C6 over the wire: what the script sends lands in New Leads, and resendAll repeats nothing', async (t) => {
+  const s = await start({ CHANNEL_MODE_GOOGLE_FORM: 'test', GOOGLE_FORM_SECRET: FORM_SECRET });
+  t.after(() => s.child.kill());
+  const r = runScript((ctx) => ctx.resendAll(), { responses: 2 });
+  const post = (x) => fetch(s.base + '/api/inbound/google_form', { method: 'POST',
+    headers: { 'content-type': x.o.contentType, ...x.o.headers }, body: x.o.payload }).then((res) => res.status);
+  for (const x of r.sent) assert.equal(await post(x), 200);
+  for (const x of r.sent) assert.equal(await post(x), 200, 'a repeat is fine');
+  const items = await newLeads(s.base);
+  assert.equal(items.length, 2);
+  const one = items.find((i) => i.contact_name === 'Līga Bērza 0');
+  assert.equal(one.contact_email, 'liga0@example.com', 'the collected respondent email is used');
+  const bad = await fetch(s.base + '/api/inbound/google_form', { method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-crm-secret': 'wrong' }, body: r.sent[0].o.payload });
+  assert.equal(bad.status, 401);
+});

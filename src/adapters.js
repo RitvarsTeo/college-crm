@@ -118,7 +118,9 @@ export const ADAPTERS = {
       receivedAt: iso(raw.timestamp) || now(),
       source: 'website',
       senderName: pick('Vārds uzvārds', 'name', 'Name'),
-      senderEmail: pick('E-pasta adrese', 'email', 'Email'),
+      // The form asks for a Google sign-in, so the address it collects arrives as respondentEmail
+      // (scripts/google-form/Code.gs, 30.09.2026); a typed-in answer still wins.
+      senderEmail: pick('E-pasta adrese', 'email', 'Email') || str(raw.respondentEmail),
       senderPhone: pick('Tālrunis', 'phone', 'Phone'),
       extracted: { programme: pick('Programma', 'programme'), study_form: pick('Studiju forma', 'study_form') },
       consent: { admissions: true,
