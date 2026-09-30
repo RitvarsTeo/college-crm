@@ -360,6 +360,13 @@ People unchanged (192; statuses as before). The daily run (08:00 Riga) now repea
 OPEN, Ritvars: the 6 SIS applicants are in New Leads as simulated items - confirm them as people or
 archive them; and when to switch CHANNEL_MODE_SIS from test to live.
 
+**Live call test - COMMITTED, NOT DEPLOYED 30.09.2026** (Ritvars' test brief; branch test/pbx-live-2026-09-30 from live
+e52e1b4). Question: does /api/crm/pbx/calls/list/ show a call while it rings and while it is answered, or only after it
+ends? It decides the call pop-up (poll every ~10 s vs a real-time event from TeleGroup). GET /api/admin/pbx/live: admins
+only, behind sign-in, the last 2 minutes, per call only uniqueid, created_at, queue, state, operator_name, caller's last
+4 digits; never the token. Needs production (the token lives only in Vercel), so it waits for his go to deploy.
+Then: he calls +371 23111114 (press 1); it is read while ringing, after answer, after hang-up. RESULT: not run yet.
+
 **SIS mapping decided + where the person is in the SIS - LIVE 29.09.2026, commits 4b31df5 + fecde5e,
 deployment dpl_8Cazdz5YttPu88dkC94GnYknm6Pu** (645/645).
 - Ritvars: an application already past `started` also shows "Application form started", dated by its

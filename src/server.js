@@ -14,6 +14,7 @@ import { findMatches as matchPeople, duplicateCheck } from './identity.js';
 import { lifecycleOf, sisProgress, sisProgressByPerson } from './lifecycle.js';
 import { firstLook } from './sisfirstlook.js';
 import { redactSis } from '../lib/sis.js';
+import { pbxLive } from '../lib/pbx.js';
 import { adapt, adaptAll, toIntake, hasAdapter, adapterIds } from './adapters.js';
 import { fixtureFor } from './fixtures.js';
 import { buildPayload, scenariosFor, allScenarios, CHANNEL_LABELS, META_GROUP } from './scenarios.js';
@@ -956,6 +957,13 @@ export const handle = async (req, res) => {
     // THE FIRST LOOK AT A REAL SIS REPLY (29.09.2026): admins only, read-only, one GET to the SIS through
     // lib/sis.js. Answers the SHAPE (field names, fill counts, status counts) and never a person, a date
     // value or the token. It exists because production secrets never leave Vercel.
+    // RITVARS' LIVE CALL TEST (30.09.2026): is a call in the TeleGroup list while it rings? Admins only,
+    // read-only, one GET through lib/pbx.js for the last 2 minutes; never the token (lib/pbx.js pbxLive).
+    if (req.method === 'GET' && p === '/api/admin/pbx/live') {
+      if (!(await adminOf(req))) return refuseNotAdmin(res);
+      return json(res, 200, await pbxLive());
+    }
+
     if (req.method === 'GET' && p === '/api/admin/sis/first-look') {
       if (!(await adminOf(req))) return refuseNotAdmin(res);
       try { return json(res, 200, { ok: true, ...(await firstLook()) }); } catch (err) {
