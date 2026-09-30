@@ -60,3 +60,66 @@ test('C1 over the wire: one POST to /api/inbound/facebook lands as one Messenger
   await send(s.base, 'facebook', page);
   assert.equal((await newLeads(s.base)).length, 2);
 });
+
+// ------------------------------------------------------------------ C4 ----
+// Open Day: the booking tool sends the booking, and later whether the person came. The second
+// message has the same booking_ref, so it used to be dropped as a repeat. Now a linked booking is a
+// registration on the Open Day list, and attendance from the tool updates it exactly as the hand
+// tick on that list does ("Attended the visit" + "Follow up after the visit").
+const booking = (over = {}) => ({ booking_ref: 'od-77', event_id: 'openday-2026-10', booked_at: '2026-09-30T08:00:00.000Z',
+  name: 'Gatis Purmalis', email: 'gatis.p@example.com', phone: '+37126550077', programme: 'NAV', slot: '14:00', ...over });
+const qualifyItem = (base, id) => fetch(`${base}/api/intake/${id}/qualify`, { method: 'POST',
+  headers: { 'content-type': 'application/json', 'x-acting-as': 'Ieva' },
+  body: JSON.stringify({ qualification: 'lead', createPerson: true, nextAction: 'Call after the visit', by: 'Ieva' }) })
+  .then((r) => r.json());
+const personOf = (base, id) => fetch(`${base}/api/people/${id}`, { headers: { 'x-acting-as': 'Ieva' } }).then((r) => r.json());
+
+test('C4: attendance sent later for the same booking reaches the Open Day list and the person', async (t) => {
+  const s = await start({ CHANNEL_MODE_OPEN_DAY: 'test' });
+  t.after(() => s.child.kill());
+  const b1 = await send(s.base, 'open_day', booking());
+  assert.equal(b1.status, 200);
+  // attendance arrives before anybody linked the booking: kept, not dropped
+  const a1 = await send(s.base, 'open_day', booking({ attended: true }));
+  assert.equal(a1.json.outcome, 'attendance recorded');
+  assert.equal((await newLeads(s.base)).length, 1, 'still one item in New Leads');
+
+  const q = await qualifyItem(s.base, b1.json.inboundId);
+  assert.equal(q.ok, true, JSON.stringify(q));
+  let person = await personOf(s.base, q.personId);
+  assert.equal(person.registrations.length, 1, 'the booking is on the Open Day list');
+  assert.equal(person.registrations[0].open_day_id, 'openday-2026-10');
+  assert.equal(person.registrations[0].slot, '14:00');
+  assert.equal(person.registrations[0].attended, 1);
+  assert.equal(person.timeline.filter((e) => e.subject === 'Attended the visit').length, 1);
+  assert.ok(person.tasks.some((x) => x.label === 'Follow up after the visit' && !x.done_at));
+
+  // the tool sends the same again: nothing new
+  const a2 = await send(s.base, 'open_day', booking({ attended: true }));
+  assert.equal(a2.json.outcome, 'already had it');
+  person = await personOf(s.base, q.personId);
+  assert.equal(person.timeline.filter((e) => e.subject === 'Attended the visit').length, 1);
+  assert.equal(person.tasks.filter((x) => x.label === 'Follow up after the visit').length, 1);
+
+  // a correction from the tool
+  const a3 = await send(s.base, 'open_day', booking({ attended: 'false' }));
+  assert.equal(a3.json.outcome, 'attendance recorded');
+  person = await personOf(s.base, q.personId);
+  assert.equal(person.registrations[0].attended, 0);
+  assert.equal(person.timeline.filter((e) => e.subject === 'Did not attend').length, 1);
+  const days = await fetch(`${s.base}/api/opendays`, { headers: { 'x-acting-as': 'Ieva' } }).then((r) => r.json());
+  assert.equal(days.find((d) => d.id === 'openday-2026-10').registrations.length, 1);
+});
+
+test('C4: a booking with no attendance yet is a registration with attendance not marked', async (t) => {
+  const s = await start({ CHANNEL_MODE_OPEN_DAY: 'test' });
+  t.after(() => s.child.kill());
+  const b1 = await send(s.base, 'open_day', booking({ booking_ref: 'od-78', email: 'other@example.com', phone: '+37126550078' }));
+  const q = await qualifyItem(s.base, b1.json.inboundId);
+  const person = await personOf(s.base, q.personId);
+  assert.equal(person.registrations.length, 1);
+  assert.equal(person.registrations[0].attended, null);
+  // an unreadable attendance value is ignored, not guessed
+  const a = await send(s.base, 'open_day', booking({ booking_ref: 'od-78', attended: 'maybe' }));
+  assert.equal(a.json.outcome, 'already had it');
+});

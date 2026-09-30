@@ -8,6 +8,7 @@ import { seed } from './seed.js';
 import { hasRealData, loadReal } from './real.js';
 import { PROVIDERS, runScenario, runOutbound, runFullDemo, listEvents, getEvent, consentFor, consentSummary, DEMO_SEQUENCE } from './simulator.js';
 import { logEvent, applyEdit, readHistory, MANUAL, AUTOMATIC, EDITABLE_FIELDS, IMMUTABLE_FIELDS, FIELD_LABELS } from './history.js';
+import { stampOpenDay, registerOpenDay } from './intake.js';
 import { receive, listInbound, qualify, archive, funnel, agedCount, handoffToSis, ownerFor, notifiedFor, handoverGap, canReach, surfaceAt, waitingFor, waitingByRole } from './intake.js';
 import { readScreenshot, readKind, readBody, readPath, saveFeedback, listFeedback, getScreenshot, setHandled, BadScreenshot, helpOpened, helpCounts } from './feedback.js';
 import { findMatches as matchPeople, duplicateCheck } from './identity.js';
@@ -2065,9 +2066,16 @@ export const handle = async (req, res) => {
           // Idempotency: await receive() returns {duplicate:true} when it has already
           // seen this channel + external id. A provider retry is normal.
           const r = await receive(db, { ...toIntake(ev), source: simulated ? 'simulated' : 'provider' });
+          // C4: the same booking again may carry attendance; that is news, not a repeat.
+          let attendance = false;
+          if (channel === 'open_day' && r.id) {
+            attendance = await stampOpenDay(db, r.id, { slot: ev.raw._slot, attended: ev.raw._attended });
+            if (attendance) await registerOpenDay(db, r.id);
+          }
           recordInbound(channel, ev.externalEventId, r.duplicate ? 'duplicate' : r.filtered ? 'filtered' : 'queued', check.how);
           done.push({ externalEventId: ev.externalEventId, inboundId: r.id,
-            outcome: r.duplicate ? 'already had it' : r.filtered ? 'filtered out before the queue' : 'waiting to be looked at' });
+            outcome: r.duplicate && attendance ? 'attendance recorded'
+              : r.duplicate ? 'already had it' : r.filtered ? 'filtered out before the queue' : 'waiting to be looked at' });
         }
         const first = done[0];
         return json(res, 200, { ok: true, channel, externalEventId: first.externalEventId,

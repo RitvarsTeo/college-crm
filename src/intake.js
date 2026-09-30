@@ -391,6 +391,8 @@ export async function qualify(db, id, { qualification, personId, createPerson, b
       subject: `Next step: ${nextAction}`, body: `due ${localDate(due)}, ${ownerFor(qualification)}` });
   }
 
+  if (item.channel === 'open_day') await registerOpenDay(db, id, { at });
+
   const person = await db.prepare('SELECT * FROM people WHERE id = ?').get(pid);
   const gap = qualification === 'lead'
     ? await handoverGap({ role: ownerFor(qualification), channel: item.channel,
@@ -511,6 +513,76 @@ export async function funnel(db, now = nowIso()) {
       AND NOT EXISTS (SELECT 1 FROM tasks t WHERE t.person_id = pe.id AND t.done_at IS NULL)`, ...terminal),
     honesty: 'Every number here is a count of rows that exist. Nothing is modelled, estimated or projected.',
   };
+}
+
+// ------------------------------------------------------------ open day ----
+// C4 (Session C HANDOVER, fixed 30.09.2026). The booking tool sends a booking and, later, for the
+// SAME booking_ref, whether the person came. That second message used to be dropped as a repeat.
+// Now: a booking linked to a person is a registration on the Open Day list (the table the hand tick
+// uses), and attendance from the tool updates it exactly as the hand tick does. Attendance that
+// arrives before anybody linked the booking is kept on the New Leads item and applied at the link.
+const CAME = new Set(['true', '1', 'yes', 'came', 'attended', 'jā', 'ja']);
+const NOT_CAME = new Set(['false', '0', 'no', 'no_show', 'did_not_come', 'nē', 'ne']);
+export function attendanceOf(v) {
+  if (v === true) return 1;
+  if (v === false) return 0;
+  const t = String(v ?? '').trim().toLowerCase();
+  if (CAME.has(t)) return 1;
+  if (NOT_CAME.has(t)) return 0;
+  return null;                                   // unreadable: ignored, never guessed
+}
+
+const lastField = async (db, inboundId, field) => {
+  const r = await db.prepare(`SELECT value FROM field_values WHERE inbound_id = ? AND field = ?
+    ORDER BY id DESC LIMIT 1`).get(inboundId, field);
+  return r ? r.value : null;
+};
+
+/** What one Open Day delivery says, stored on its New Leads item. Returns true when attendance is
+ *  new or changed. The slot is kept too, for the registration. */
+export async function stampOpenDay(db, inboundId, { slot, attended, at = nowIso() }) {
+  if (slot && !(await lastField(db, inboundId, 'open_day_slot'))) {
+    await db.prepare(`INSERT INTO field_values (person_id, inbound_id, field, value, provenance, recorded_at, recorded_by)
+      VALUES (NULL, ?, 'open_day_slot', ?, 'provider', ?, 'machine')`).run(inboundId, String(slot), at);
+  }
+  const a = attendanceOf(attended);
+  if (a === null) return false;
+  if ((await lastField(db, inboundId, 'attended')) === String(a)) return false;
+  await db.prepare(`INSERT INTO field_values (person_id, inbound_id, field, value, provenance, recorded_at, recorded_by)
+    VALUES (NULL, ?, 'attended', ?, 'provider', ?, 'machine')`).run(inboundId, String(a), at);
+  return true;
+}
+
+/** Puts a linked Open Day booking on the Open Day list and applies the attendance the tool sent. */
+export async function registerOpenDay(db, inboundId, { at = nowIso() } = {}) {
+  const item = await db.prepare('SELECT * FROM inbound WHERE id = ?').get(inboundId);
+  if (!item || item.channel !== 'open_day' || !item.person_id || !item.thread_key) return null;
+  const dayId = item.thread_key;                 // the tool's event_id
+  // The day itself: the tool's id is its name until somebody names it. The date is not known
+  // from a booking, so it is left empty rather than guessed.
+  await db.prepare(`INSERT INTO open_days (id, title, held_on, place) VALUES (?, ?, '', NULL)
+    ON CONFLICT (id) DO NOTHING`).run(dayId, dayId);
+  let reg = await db.prepare('SELECT * FROM registrations WHERE open_day_id = ? AND person_id = ?')
+    .get(dayId, item.person_id);
+  if (!reg) {
+    await db.prepare('INSERT INTO registrations (open_day_id, person_id, slot, attended) VALUES (?,?,?,NULL)')
+      .run(dayId, item.person_id, await lastField(db, inboundId, 'open_day_slot'));
+    reg = await db.prepare('SELECT * FROM registrations WHERE open_day_id = ? AND person_id = ?').get(dayId, item.person_id);
+  }
+  const sent = await lastField(db, inboundId, 'attended');
+  if (sent === null || String(reg.attended) === sent) return reg;
+  const came = sent === '1';
+  await db.prepare('UPDATE registrations SET attended = ? WHERE id = ?').run(came ? 1 : 0, reg.id);
+  await logEvent(db, { personId: item.person_id, kind: 'note', channel: 'event', direction: 'note', at,
+    origin: AUTOMATIC, actor: 'Open Day', subject: came ? 'Attended the visit' : 'Did not attend',
+    body: 'sent by the Open Day booking tool' });
+  const open = await db.prepare(`SELECT COUNT(*) n FROM tasks WHERE person_id = ? AND label = 'Follow up after the visit'`)
+    .get(item.person_id);
+  if (came && !Number(open.n)) {
+    await db.prepare('INSERT INTO tasks (person_id,label,due_at,owner,created_at) VALUES (?,?,?,?,?)')
+      .run(item.person_id, 'Follow up after the visit', new Date(Date.parse(at) + 2 * 86400000).toISOString(), 'Admissions', at);
+  }
+  return reg;
 }
 
 // ------------------------------------------------------------ SIS handoff --
