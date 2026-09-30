@@ -11,6 +11,48 @@ Nothing is deleted here. A line changes status, it does not disappear.
 `BUILT` - it exists in the prototype · `LIVE` - verified running in production (nothing is LIVE:
 this is a local prototype) · `UNKNOWN` - named but not checked with the provider.
 
+## 30.09.2026 - LIVE: bug-fix release, four commits
+
+Branch `release/bugfix-2026-09-30`, cut from production `b18f5f4`, four commits and nothing else.
+Approved by Ritvars as its own scope, deliberately separate from the 20-commit overnight batch,
+which stays unmerged and unapproved on `overnight-2026-09-30`.
+
+| What | Status | Commit |
+|---|---|---|
+| Meta and WhatsApp keep **every** message in a delivery. They kept the first and dropped the rest, so a person who sent three messages arrived as one | LIVE | `8a8724e` |
+| A repeated provider event is arithmetic, not a race: unique partial index on `inbound (channel, external_id) WHERE external_id IS NOT NULL`. The check-then-insert could let two deliveries of one message both land | LIVE | `5f921eb` |
+| The Gmail poll writes to New Leads through `receive()`. It fetched and shaped the mail and handed it to nobody, so the mailbox was read and the queue never saw a thing. The channel stays OFF | LIVE | `e52e1b4` |
+| The sign-in error box keeps the gate's own colours in light, dark and `?ui=classic`. It followed the app palette and read grey on grey in dark, on the one screen somebody sees before any preference of theirs has loaded | LIVE | `f7a8016` |
+
+**Release record.** Production commit `e52e1b4`, deployment `dpl_5x4vMfnnePhW5nosR12H1FCWDyGW`.
+Deployed from a clean detached checkout of that commit; **684/684** tests passed on that exact
+checkout before the deploy could start, with the database variables unset.
+
+**Verified on production:** live `/` byte-identical to the commit's `src/app.html` plus its own
+sign-in return script; 66 uploaded source files, 66 identical to the commit, 0 differing, 0 not in
+git; 401 on all seven private routes; 0 leaks from 23 plain and encoded source and config probes;
+`/`, the logo, `robots.txt` and `/api/auth/me` all 200, Google start 302 to accounts.google.com.
+
+**The database change.** `5f921eb` is not code alone: the whole schema runs on every boot, so the
+index was created on Neon by the app's own first boot after the deploy. Confirmed read-only
+afterwards: `CREATE UNIQUE INDEX inbound_channel_external ON crm.inbound USING btree (channel,
+external_id) WHERE (external_id IS NOT NULL)`, unique and partial as written. A read-only check
+immediately before the deploy showed **15 inbound rows, 15 with an external_id, 0 duplicate
+groups**, so the statement could not fail. Afterwards, still 15 rows and 0 duplicate groups:
+9 `phone` and 6 `sis`, all `source=simulated`, newest 29.09, none touched. People 192, tasks 34,
+crm_users 4, events 249, all unchanged. Every query ran inside `BEGIN READ ONLY` and was rolled
+back.
+
+**What is NOT proven by behaviour.** `5f921eb` is proven by the index existing and `f7a8016` by
+the live page's own bytes. `8a8724e` and `e52e1b4` are server-side and are proven by deployment
+only: their files uploaded byte-identical to the commit and the suite passed on it. Exercising
+them live would mean posting to a webhook or polling a mailbox, which writes rows. They get no
+behavioural proof on production until a provider is connected.
+
+*(The status key above still reads "nothing is LIVE: this is a local prototype". It has been
+untrue since 27.09 and is not corrected here, because that correction is part of the unapproved
+overnight batch. It is Ritvars' call.)*
+
 ## 28.09.2026 - LIVE on https://crm-novikontas.vercel.app (the CRM V1 session)
 
 **The release record below is out of date: the CRM IS live.** Every commit here was deployed from
