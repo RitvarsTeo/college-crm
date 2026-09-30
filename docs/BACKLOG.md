@@ -14,6 +14,53 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 30.09.2026 - LIVE: the patch release, seven commits
+
+Branch `release/patches-2026-09-30`. Production commit `4547505`, deployment
+`dpl_BeryxGTzp776fKEXSUSyBUSo9Pqp`, **732/732** on that exact checkout.
+
+**Cherry-picked onto the live commit, not merged over it.** The work was built on `fix/ieva-2026-09-30`,
+which was cut from `e52e1b4` before the UI release shipped. Merging that branch would have reverted
+the twelve UI commits. All seven applied to `037901e` with no conflicts, and the UI work was checked
+still present afterwards (`cJourneySummary`, `c-sumrow`, `chActivity`, `cProgBars`, `c-tag`).
+
+| What | Status | Commit |
+|---|---|---|
+| A finished person stops nagging Next Steps. `/api/summary` counted them OUT of `openPeople` and `noNextAction` and IN to `overdue` and `today`, in the same response. One name for the rule now, used by every query | LIVE | `7d1bab5` |
+| The last step of a finished person can be closed. The dialog made a next step required, so completing the last one opened another. The whole row is gone for somebody finished; an open lead still keeps one | LIVE | `ffd7e54` |
+| **Every dialog in the app was see-through in dark**, at every width. `--card` in dark is `rgba(255,255,255,.055)`. The help panel hit this on 28.09 and `--menu` was the answer then; same token, not a new one | LIVE | `9b99f7e` |
+| The tab icon reads on a dark tab strip: letters turn white, the Novikontas blue leg stays blue, light unchanged | LIVE | `68068d0` |
+| **Every walk-in was recorded as arriving from the website.** `quickAddDefaults.source_channel` was `"klatiene"`, a key no channel has, so the browser fell back to the first option. Now `in_person` | LIVE | `17cb4b7` |
+| The tab says **Novikontas Intake**. It said "Academy CRM - prototype" while live and in daily use | LIVE | `17cb4b7` |
+| Use the role, not the person, in the shipped comment | LIVE | `4547505` |
+| The record of the two bugs and the 6 archived SIS rows | LIVE | `3d13af7` |
+
+**The walk-in bug is the one worth remembering.** It failed silently: no error, no warning, just a
+form quietly saying Website. It fed "where admitted people came from" on Home and Reports for as
+long as it existed. The guard added with it checks **all five** quick-add defaults, because the trap
+is a default that matches nothing picking the first option, not the spelling of one key.
+
+**The hygiene guard that shipped with the UI release caught this session's own comment** and named
+a colleague twice. The rule was right and stayed; the comment changed. That is the guard working.
+
+**Release contents.** 7 commits over `037901e`. Files: `config/prototype.json`, `docs/BACKLOG.md`,
+`src/app.html`, `src/assets/favicon.svg`, `src/server.js` and three test files. **0** for
+`lib/linkedin.js`, `scripts/drill_demo.mjs`, the drill and LinkedIn tests. **`src/db.js` is
+untouched, so this release writes nothing to the database on deploy.**
+
+**Verified on production:** live `/` byte-identical to the commit plus its sign-in script; 66
+uploaded files, 66 identical, 0 differing, 0 not in git; 401 on all seven private routes; 0 leaks
+from 23 probes; all health checks 200. Read back off the live page: "Novikontas Intake" present,
+`background:var(--menu)` present, the served `favicon.svg` carries its dark rule, and the helper
+sentence "the source defaults to" is gone.
+
+**How the config fix is proven.** `/api/config` is behind sign-in, so the live value cannot be read
+without an account. The proof is file identity: `config/prototype.json` is tracked, it is one of the
+66 files the deploy hashed against git, all 66 matched, and at `4547505` it reads
+`in_person -> In person`.
+
+**Not deployed and still open:** LinkedIn Lead Sync (`f737090`) and the restore drill (`937d423`).
+
 ## 30.09.2026 - LIVE: bug-fix release, four commits
 
 Branch `release/bugfix-2026-09-30`, cut from production `b18f5f4`, four commits and nothing else.
