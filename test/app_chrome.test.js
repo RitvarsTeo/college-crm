@@ -119,3 +119,29 @@ test('the corner button is the feedback box, says so, and opens solid', () => {
   assert.match(panel, /background:var\(--menu\)/, 'an opaque ground, not the 5.5% dark overlay');
   assert.doesNotMatch(panel, /background:var\(--card\)/);
 });
+
+// 30.09.2026, Ritvars: on a dark tab strip the icon showed as a white square, because the tile is
+// white and the letters are black. His words: "take the white tile coloured logo and for dark mode
+// only turn the text into white and let the logo stay colourful". So the letters and the tile
+// follow the theme and the Novikontas blue leg does not.
+test('the tab icon turns its letters white in dark, and keeps the blue leg in both', () => {
+  const svg = fs.readFileSync(path.join(ROOT, 'src', 'assets', 'favicon.svg'), 'utf8');
+
+  // his 28.09 pick is untouched in light
+  assert.match(svg, /\.tile \{ fill: #ffffff/, 'light: the white tile stays');
+  assert.match(svg, /\.mark \{ fill: #011111 \}/, 'light: black letters stay');
+
+  // only the media block, not the rest of the file: the blue path sits after </style>
+  const from = svg.indexOf('@media (prefers-color-scheme: dark)');
+  assert.ok(from > 0, 'there is a dark block at all');
+  const dark = svg.slice(from, svg.indexOf('</style>', from));
+  assert.match(dark, /\.mark \{ fill: #ffffff \}/, 'dark: the letters turn white');
+  assert.match(dark, /\.tile \{ fill: #0[0-9a-f]{5}/, 'dark: the tile goes dark with them');
+
+  // the blue leg is NOT in the media query: it is the same colour in both themes
+  assert.ok(!/29a8df/i.test(dark), 'the Novikontas blue leg is never restated for dark');
+  assert.equal((svg.match(/#29a8df/gi) || []).length, 1, 'it is declared once, on the shape itself');
+
+  // and the brandbook shapes were not redrawn
+  assert.match(svg, /viewBox="155\.18 59\.40 589\.35 589\.35"/, 'the symbol geometry is unchanged');
+});
