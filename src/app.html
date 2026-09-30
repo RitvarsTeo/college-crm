@@ -128,7 +128,11 @@ nav .add{margin:16px 20px 0}
 nav .themes{margin-top:auto;padding:16px 20px 0;border-top:1px solid var(--shell-line)}
 nav .themes label{color:var(--t3);font-size:10px;letter-spacing:1.2px;text-transform:uppercase;margin:0 0 6px}
 nav .themes select{background:var(--field);color:var(--ink);border:1px solid var(--control-line)}
-main{padding:22px 26px 60px;max-width:1320px;min-width:0}
+/* No fixed cap. At 1890 the 1320px cap left 332px of the window empty, 18% of the screen, on
+   EVERY page and not only Home (the owner, 30.09.2026: "still so much more space you can use").
+   The screens under it are grids, not prose, so they fill instead of stretching a text column:
+   .kstrip, .cards and .tiles all reflow on their own. */
+main{padding:22px 26px 60px;min-width:0}
 h1{font-family:var(--serif);font-weight:500;font-size:27px;letter-spacing:-.01em;margin:0 0 2px;color:var(--ink)}
 .sub{color:var(--muted);font-size:13px;margin:0 0 18px}
 
@@ -976,6 +980,13 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-sheet h3{margin:0;padding:12px 16px;font-family:inherit;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--rule2)}
   html.ui-c .c-sheet h3 b{color:var(--ink);letter-spacing:0;margin-left:6px}
   html.ui-c .c-line{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1.3fr) 130px auto;gap:14px;align-items:center;padding:11px 16px;border-top:1px solid var(--rule2);cursor:pointer}
+  /* NEXT STEPS: the fixed thing stops stretching and the stretchy thing stops being cut.
+     Measured on a 1598px row with 1.4fr 1.3fr: the person got 697px for about 330px of name,
+     stage and phone, while what was actually said was clipped at 647px. A name is a name; the
+     comment is the part that wants room, so it takes what is left (the owner, 30.09.2026:
+     "there is so much space here! IMPROVE THE UI readability"). */
+  html.ui-c .c-nextsheet .c-line{grid-template-columns:minmax(240px,400px) minmax(0,1fr) 130px auto}
+  html.ui-c .c-nextsheet .c-what small{white-space:normal;overflow:visible;text-overflow:clip}
   html.ui-c .c-sheet h3 + .c-line{border-top:0}
   html.ui-c .c-line:hover{background:var(--c-sunk)}
   html.ui-c .c-line:focus-visible{outline:2px solid var(--pet);outline-offset:-2px}
@@ -1032,6 +1043,8 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .ksh h2{margin:0;font-family:inherit;font-size:13.5px;font-weight:650;letter-spacing:-.005em}
   html.ui-c .kt2{font-size:12px;color:var(--t3)}
   html.ui-c .kchart{width:100%;height:auto;display:block;max-width:900px}
+  /* the same 1500 px step the drawing uses, so the cap and the viewBox never disagree */
+  @media (min-width:1500px){ html.ui-c .kchart{max-width:1500px} }
   html.ui-c .kchart .kg{stroke:var(--v-grid);stroke-width:1}
   html.ui-c .kt{fill:var(--t3);font-size:11px;font-family:var(--sans,Inter),system-ui,sans-serif}
   html.ui-c .kchart.narrow .kt{font-size:12.5px}   /* ~11.5 px on a 390 px phone */
@@ -1333,11 +1346,22 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .kbar.c-static:hover{background:none}
   html.ui-c .c-big{font-size:34px;font-weight:650;letter-spacing:-.02em;margin:4px 0 0}
   html.ui-c .c-wide-table{min-width:min(420px,100%)}
-  html.ui-c .c-nowbar{display:flex;gap:26px;margin:0 0 18px;text-decoration:none;color:inherit;flex-wrap:wrap}
-  html.ui-c .c-nowbar span{display:flex;flex-direction:column;font-size:12px;color:var(--t3)}
+  html.ui-c .c-nowbar{display:flex;gap:10px;margin:0 0 18px;text-decoration:none;color:inherit;flex-wrap:wrap}
+  /* THE HOVER IS PER FIGURE, NOT PER LINK. The rule used to be .c-nowbar:hover b, and all three
+     are inside one <a>, so hovering any of them underlined all three (the owner, 30.09.2026:
+     "all get underlined. I want only the one i hover over"). The hover sits on the span now.
+     And it is not an underline: the figure lifts and its own meaning colour washes in behind it,
+     amber for what is open and waiting, red for what is late. Colour carries the meaning, so the
+     hover says which number you are about to open rather than only that it is clickable. */
+  html.ui-c .c-nowbar span{display:flex;flex-direction:column;font-size:12px;color:var(--t3);
+    padding:7px 14px 8px;border-radius:10px;background:transparent;
+    border:1px solid transparent;transition:background-color var(--dur-quick) var(--ease-standard),
+    border-color var(--dur-quick) var(--ease-standard),transform var(--dur-quick) var(--ease-standard)}
   html.ui-c .c-nowbar b{font-size:24px;font-weight:600;color:var(--ink);line-height:1.1;font-variant-numeric:tabular-nums}
   html.ui-c .c-nowbar span.is-late b{color:var(--c-bad)}
-  html.ui-c .c-nowbar:hover b{text-decoration:underline}
+  html.ui-c .c-nowbar span:hover{background:rgba(247,192,79,.20);border-color:rgba(247,192,79,.55);transform:translateY(-1px)}
+  html.ui-c .c-nowbar span.is-late:hover{background:rgba(179,38,30,.11);border-color:rgba(179,38,30,.40)}
+  @media (prefers-reduced-motion:reduce){ html.ui-c .c-nowbar span{transition:none} html.ui-c .c-nowbar span:hover{transform:none} }
   html.ui-c .c-progs{display:grid;gap:7px}
   html.ui-c .c-prog{display:grid;grid-template-columns:minmax(72px,auto) minmax(0,1fr) minmax(0,1fr);gap:10px;align-items:center}
   html.ui-c .c-prog > b{font-size:13px;font-weight:600}
@@ -1590,7 +1614,12 @@ function cMonthChart(months, year) {
   // On a phone the chart is drawn for a phone (the review UX pass, 29.09.2026): drawn 640 wide and shrunk to
   // ~330 px, its labels came out at 5-6 px. Drawn 360 wide, they stay about the size they are written.
   const narrow = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width:760px)').matches;
-  const W = narrow ? 360 : 640, H = narrow ? 230 : 210, L = narrow ? 28 : 30, R = 8, T = 14, B = 26, n = months.length;
+  // WIDE: drawn WIDER, not BIGGER. The viewBox locks height to width, so letting a 640x210 chart
+  // fill a 1600 px panel would make it 525 px tall. Drawing it 1100 wide at the same height keeps
+  // the rendered height where it was (about 290 px) and spends the new room on the months instead.
+  // The CSS cap steps at the same 1500 px, so the two never disagree.
+  const wide = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(min-width:1500px)').matches;
+  const W = narrow ? 360 : wide ? 1100 : 640, H = narrow ? 230 : 210, L = narrow ? 28 : 30, R = 8, T = 14, B = 26, n = months.length;
   const top = Math.max(10, ...months.map((m) => Math.max(m.admitted, m.newLeads)));
   // Gridlines on round numbers (0, 10, 20, 30), never quarters of the top (0, 8, 15, 23).
   const step = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000].find((s) => top / s <= 5) || Math.ceil(top / 5);
@@ -1669,7 +1698,7 @@ async function viewNextC() {
       <div class="c-what none">No next step${said(p)}</div><div class="c-when"></div>
       <div class="c-acts"><button class="btn sm" onclick="event.stopPropagation();openNewTask('${esc(p.id)}')">Plan a next step</button></div></div>`;
   // the Overdue and Due today counts carry the urgency badges when there is something in them
-  const sect = (title, rows, fn, tone = '') => `<div class="c-sheet"><h3>${title}<b${tone && rows.length ? ` class="c-count ${tone}"` : ''}>${rows.length}</b></h3>${rows.map(fn).join('') || '<div class="c-empty">None.</div>'}</div>`;
+  const sect = (title, rows, fn, tone = '') => `<div class="c-sheet c-nextsheet"><h3>${title}<b${tone && rows.length ? ` class="c-count ${tone}"` : ''}>${rows.length}</b></h3>${rows.map(fn).join('') || '<div class="c-empty">None.</div>'}</div>`;
   $('#view').innerHTML = `<p class="c-crumb">Admissions</p>
     <div class="c-head"><div><h1>Next Steps</h1></div>
       <div class="act"><span class="c-planned"><b>${pct}%</b> planned <small>${open.length - none.length} of ${open.length} open people have a next step</small></span></div></div>

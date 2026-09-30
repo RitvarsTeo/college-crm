@@ -43,6 +43,40 @@ test('Home and Reports are as wide as every other screen: no page cap of their o
     '.kpage carries no max-width of its own');
   assert.doesNotMatch(APP, /\.kpage\{[^}]*max-width/,
     'and no rule anywhere gives it one back');
-  assert.match(APP, /main\{[^}]*max-width:1320px/,
-    'main is still the one cap, the same for every screen');
+  // 30.09.2026, from a screenshot again: "still so much more space you can use". main itself
+  // carried max-width:1320px, which left 332px of a 1890px window empty, 18% of the screen, on
+  // EVERY screen and not only Home. There is no page cap at all now.
+  assert.doesNotMatch(APP, /\nmain\{[^}]*max-width/,
+    'main carries no cap either: the window is the width');
+});
+
+test('the month chart is drawn WIDER on a wide screen, not bigger', () => {
+  // The viewBox locks height to width, so uncapping a 640x210 chart into a 1600px panel would
+  // make it 525px tall. Drawn 1100 wide at the same height it stays about 290px and spends the
+  // room on the months. Measured at 1890: 1500x286, against 900x295 before.
+  assert.match(APP, /matchMedia\('\(min-width:1500px\)'\)/, 'there is a wide branch');
+  assert.match(APP, /const W = narrow \? 360 : wide \? 1100 : 640, H = narrow \? 230 : 210/,
+    'wider drawing, same height');
+
+  // the CSS cap must step at the SAME width, or the two disagree and the chart jumps
+  assert.match(APP, /@media \(min-width:1500px\)\{ html\.ui-c \.kchart\{max-width:1500px\} \}/,
+    'the cap steps where the drawing does');
+});
+
+test('the three figures light up one at a time, not all together', () => {
+  // 30.09.2026: all three are inside ONE <a href="#/next">, and the rule was .c-nowbar:hover b,
+  // so hovering any of them underlined all three. The owner: "all get underlined. I want only the
+  // one i hover over. but not underline, but make it dynamic in different way."
+  assert.doesNotMatch(APP, /\.c-nowbar:hover b\{text-decoration:underline\}/,
+    'the whole-link underline is gone');
+  assert.match(APP, /html\.ui-c \.c-nowbar span:hover\{/, 'the hover is on the figure, not the link');
+
+  // and it is colour with meaning, not decoration: amber for what is waiting, red for what is late
+  const warm = APP.slice(APP.indexOf('html.ui-c .c-nowbar span:hover{'), APP.indexOf('html.ui-c .c-nowbar span.is-late:hover{'));
+  assert.match(warm, /rgba\(247,192,79/, 'amber #F7C04F for open and waiting');
+  const late = APP.slice(APP.indexOf('html.ui-c .c-nowbar span.is-late:hover{'));
+  assert.match(late.slice(0, 200), /rgba\(179,38,30/, 'red #b3261e for late');
+
+  assert.match(APP, /@media \(prefers-reduced-motion:reduce\)\{ html\.ui-c \.c-nowbar span\{transition:none\}/,
+    'the lift respects reduced motion');
 });
