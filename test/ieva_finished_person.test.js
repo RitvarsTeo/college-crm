@@ -187,3 +187,31 @@ test('the modal box is opaque in every theme', () => {
     assert.ok(!/rgba?\([^)]*,\s*0?\.\d+\s*\)/.test(v), `--menu must be opaque, found ${v}`);
   }
 });
+
+// 30.09.2026, Ritvars: the Add person form said "the source defaults to Walk-in" and the source
+// was Website. quickAddDefaults.source_channel was "klatiene", a Latvian key left over from before
+// the channels were renamed to English. No channel has that key, so `k === d.source_channel` never
+// matched, no option was selected, and the browser fell back to the FIRST option: website.
+//
+// It failed silently, which is why it lasted: no error, just every walk-in typed in by staff
+// recorded as having arrived from the website, feeding "where they came from" on Home and Reports.
+test('every quick-add default names a thing that actually exists', () => {
+  const CFG = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'prototype.json'), 'utf8'));
+  const d = CFG.quickAddDefaults || {};
+
+  assert.ok(CFG.channels[d.source_channel],
+    `quickAddDefaults.source_channel is "${d.source_channel}", which is not a channel`);
+  assert.equal(d.source_channel, 'in_person', 'somebody typed in by staff did not arrive by website');
+
+  // the same trap for the other defaults: a value nothing matches silently picks the first option
+  assert.ok((CFG.owners || []).includes(d.owner), `owner "${d.owner}" is not an owner`);
+  assert.ok((CFG.stages || []).some((s) => s.id === d.status), `status "${d.status}" is not a stage`);
+  const actions = (CFG.nextActions || []).flatMap((g) => g.items.map((i) => i.label));
+  assert.ok(actions.includes(d.nextAction), `nextAction "${d.nextAction}" is not an action`);
+});
+
+test('the Add person form does not explain its own default', () => {
+  // P5: if a screen needs a sentence to explain it, fix the screen. The select now shows
+  // "In person" on its own, so the sentence has nothing left to say.
+  assert.ok(!/the source defaults to/i.test(APP), 'the helper sentence is gone');
+});

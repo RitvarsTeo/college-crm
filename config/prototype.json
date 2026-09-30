@@ -85,7 +85,7 @@
     "in_person": "In person"
   },
   "quickAddDefaults": {
-    "source_channel": "klatiene",
+    "source_channel": "in_person",
     "owner": "Admissions",
     "status": "New",
     "nextAction": "Call and establish interest",

@@ -186,7 +186,9 @@ test('the Console is a separate page, and the CRM has no way into it', async (t)
   const consoleHtml = await console_.text();
 
   assert.match(consoleHtml, /<title>Academy CRM - Console<\/title>/);
-  assert.match(crm, /<title>Academy CRM - prototype<\/title>/);
+  // Renamed 30.09.2026, Ritvars: "its now called intake". The tab said
+  // "Academy CRM - prototype" while it was live, in daily use, holding 192 real people.
+  assert.match(crm, /<title>Novikontas Intake<\/title>/);
 
   // the CRM must not link to the console, or carry demo machinery
   assert.ok(!/href="\/console"/.test(crm), 'the CRM must not link to the Console');
