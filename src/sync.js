@@ -13,8 +13,8 @@
 //
 // Neither poller runs while its channel is off, and off is the default.
 
-import { receive, CONFIG } from './intake.js';
-import { findMatches, isStrong } from './identity.js';
+import { receive, CONFIG, newPersonId, ownerFor } from './intake.js';
+import { findMatches, isStrong, normEmail, normPhone } from './identity.js';
 import { logEvent, AUTOMATIC } from './history.js';
 import { fetchCalls, rowsFrom, WINDOW_MINUTES, toRigaStamp, ZONE } from '../lib/pbx.js';
 import { fetchChanged, toSisRow } from '../lib/sis.js';
@@ -223,10 +223,13 @@ async function applyToPerson(db, reference, personId, at, stats) {
       actor: 'SIS', subject: 'Linked to the SIS applicant record', body: rows.map(sisSentence).join('; ') });
     stats.linked++;
   }
-  // the furthest stage any of their applications reaches
+  // the furthest stage any of their applications reaches. A person the SIS itself created stays at
+  // New while the SIS only says registered (Ritvars, 30.09.2026); a known lead keeps the 29.09 path.
   const order = STAGE_ORDER();
+  const who = await db.prepare('SELECT first_channel FROM people WHERE id = ?').get(personId);
   let target = null;
   for (const r of rows) {
+    if (r.status === 'registered' && who && who.first_channel === 'sis') continue;
     const t = SIS_STAGE[r.status];
     if (t && (target === null || order.indexOf(t) > order.indexOf(target))) target = t;
   }
@@ -235,6 +238,91 @@ async function applyToPerson(db, reference, personId, at, stats) {
   // The lifecycle facts ("Application form started", "Matriculated") each row states, dated and
   // written once (src/lifecycle.js holds the PROVISIONAL mapping; docs/LIFECYCLE.md). Facts, not stages.
   for (const r of rows) stats.facts += await recordSisLifecycle(db, personId, r, { now: new Date(at) });
+}
+
+// APPLICATION-FIRST (CRM TEST CASE, SAID + decided by Ritvars 30.09.2026, docs/BACKLOG.md).
+// Somebody whose first appearance anywhere is apply.novikontas.org is not a lead waiting in New
+// Leads: the SIS already knows they applied. So when nobody in people AND nothing waiting in New
+// Leads shares their email or the last 8 digits of their phone, the SIS creates the person:
+//   started or later -> the application stage, "Application form started" dated as the SIS dates it
+//   registered only  -> the first stage, no fact, until the SIS says started
+// New Leads gets a DONE item, confirmed by the SIS, so the funnel counts them from the top.
+// Somebody who called or wrote and is still waiting to be confirmed is NOT application-first: that
+// item is a human's to confirm, and a second record for one person is exactly what this avoids.
+const PHONE_TAIL = 8;
+
+async function waitingFor(db, { email, phone }) {
+  const e = normEmail(email);
+  const ph = normPhone(phone);
+  if (!e && ph.length <= 5) return false;
+  const items = await db.prepare("SELECT contact_email, contact_phone FROM inbound WHERE state = 'new'").all();
+  return items.some((i) => (e && normEmail(i.contact_email) === e)
+    || (ph.length > 5 && normPhone(i.contact_phone).endsWith(ph.slice(-PHONE_TAIL))));
+}
+
+async function createFromSis(db, reference, rows, at, mode, stats) {
+  const order = STAGE_ORDER();
+  let stage = CONFIG.stageRoles.first;
+  let lead = rows[0];
+  for (const r of rows) {
+    const t = r.status === 'registered' ? null : SIS_STAGE[r.status];
+    if (t && order.indexOf(t) > order.indexOf(stage)) { stage = t; lead = r; }
+  }
+  const latest = rows[0];
+  // The door is claimed first: the unique (channel, external_id) index makes a second run, or the
+  // webhook racing the daily pull, a repeat rather than a second person.
+  const item = await receive(db, { channel: 'sis', externalId: 'sis:' + reference, receivedAt: at,
+    name: fullName(latest), email: latest.email, phone: latest.phone,
+    body: rows.map(sisSentence).join('; '), source: mode === 'live' ? 'provider' : 'simulated' });
+  if (item.duplicate) return null;
+
+  const firstSeen = rows.map((r) => r.registered_at || r.changed_at).filter(Boolean).sort()[0] || at;
+  const id = newPersonId();
+  await db.prepare(`INSERT INTO people (id, name, email, phone, programme, status, owner, source_channel,
+    created_at, last_contact_at, admitted_at, qualification, first_channel) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(
+    id, fullName(latest) || 'Unknown contact', latest.email, latest.phone, lead.programme_code, stage,
+    ownerFor('lead'), 'sis', firstSeen, latest.changed_at, stage === CONFIG.stageRoles.admitted ? at : null,
+    'lead', 'sis');
+  await logEvent(db, { personId: id, kind: 'create', channel: 'sis', direction: 'in', at, origin: AUTOMATIC,
+    actor: 'SIS', subject: 'Created from the SIS', body: rows.map(sisSentence).join('; ') });
+  await db.prepare(`UPDATE inbound SET state = 'qualified', qualification = 'lead', person_id = ?,
+    processed_by = 'SIS', processed_at = ?, archive_reason = NULL, archive_note = NULL, body = NULL,
+    body_deleted_at = ? WHERE id = ?`).run(id, at, at, item.id);
+  await db.prepare('UPDATE sis_applicants SET person_id = ?, inbound_id = ? WHERE reference = ?').run(id, item.id, reference);
+  for (const r of rows) stats.facts += await recordSisLifecycle(db, id, r, { now: new Date(at) });
+  stats.created++;
+  return id;
+}
+
+// One SIS person: link them to the person they already are, create them when they are
+// application-first, or raise them in New Leads for a human. The daily pull calls this for every
+// reference it touched or still has open.
+export async function placeSisReference(db, reference, { at, mode, stats }) {
+  const rows = await db.prepare('SELECT * FROM sis_applicants WHERE reference = ? ORDER BY changed_at DESC')
+    .all(reference);
+  if (!rows.length) return;
+  const linked = rows.find((r) => r.person_id);
+  let personId = linked ? linked.person_id : null;
+  const inboundId = rows.map((r) => r.inbound_id).find(Boolean) || null;
+  if (!personId && inboundId) {
+    // a person confirmed the Inbox item: that decision is the link
+    const item = await db.prepare('SELECT state, person_id FROM inbound WHERE id = ?').get(inboundId);
+    if (item && item.state === 'qualified' && item.person_id) personId = item.person_id;
+    if (item && item.state !== 'new' && !personId) return;   // archived: a human said no
+  }
+  const latest = rows[0];
+  if (!personId) personId = await onePerson(db, { email: latest.email, phone: latest.phone });
+  if (personId) { await applyToPerson(db, reference, personId, at, stats); return; }
+  if (inboundId) return;                                     // already waiting for a human
+  if (!(await waitingFor(db, latest))) {
+    await createFromSis(db, reference, rows, at, mode, stats);
+    return;
+  }
+  const item = await receive(db, { channel: 'sis', externalId: 'sis:' + reference, receivedAt: at,
+    name: fullName(latest), email: latest.email, phone: latest.phone,
+    body: rows.map(sisSentence).join('; '), source: mode === 'live' ? 'provider' : 'simulated' });
+  await db.prepare('UPDATE sis_applicants SET inbound_id = ? WHERE reference = ?').run(item.id, reference);
+  if (!item.duplicate) stats.inbox++;
 }
 
 // GMAIL -> NEW LEADS (30.09.2026). runPoll fetched and shaped the messages and handed
@@ -280,7 +368,7 @@ export async function syncSis(db, { now = new Date(), env = process.env, fetchIm
   const since = state && state.value ? state.value : null;
   const got = await fetchChanged({ since, env, fetchImpl });
   const stats = { fetched: got.applicants.length, stored: 0, unusable: 0, linked: 0, moved: 0, inbox: 0,
-    noted: 0, facts: 0, pages: got.pages };
+    created: 0, noted: 0, facts: 0, pages: got.pages };
   let newest = since;
   const touched = new Set();
 
@@ -318,33 +406,7 @@ export async function syncSis(db, { now = new Date(), env = process.env, fetchIm
     WHERE person_id IS NULL GROUP BY reference`).all();
   const refs = new Set([...touched, ...open.map((o) => o.reference)]);
 
-  for (const reference of refs) {
-    const rows = await db.prepare('SELECT * FROM sis_applicants WHERE reference = ? ORDER BY changed_at DESC')
-      .all(reference);
-    if (!rows.length) continue;
-    const linked = rows.find((r) => r.person_id);
-    let personId = linked ? linked.person_id : null;
-    const inboundId = rows.map((r) => r.inbound_id).find(Boolean) || null;
-    if (!personId && inboundId) {
-      // a person confirmed the Inbox item: that decision is the link
-      const item = await db.prepare('SELECT state, person_id FROM inbound WHERE id = ?').get(inboundId);
-      if (item && item.state === 'qualified' && item.person_id) personId = item.person_id;
-      if (item && item.state !== 'new' && !personId) continue;   // archived: a human said no
-    }
-    if (!personId) {
-      const latest = rows[0];
-      personId = await onePerson(db, { email: latest.email, phone: latest.phone });
-    }
-    if (personId) { await applyToPerson(db, reference, personId, at, stats); continue; }
-    if (!inboundId) {
-      const latest = rows[0];
-      const item = await receive(db, { channel: 'sis', externalId: 'sis:' + reference, receivedAt: at,
-        name: fullName(latest), email: latest.email, phone: latest.phone,
-        body: rows.map(sisSentence).join('; '), source: mode === 'live' ? 'provider' : 'simulated' });
-      await db.prepare('UPDATE sis_applicants SET inbound_id = ? WHERE reference = ?').run(item.id, reference);
-      stats.inbox++;
-    }
-  }
+  for (const reference of refs) await placeSisReference(db, reference, { at, mode, stats });
 
   // Only a complete run moves the bookmark; an incomplete one asks again next time.
   const value = got.complete ? newest : since;

@@ -20,7 +20,7 @@ const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const CFG = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'prototype.json'), 'utf8'));
 
 const nowIso = () => new Date().toISOString();
-const newPersonId = () => 'p' + Math.random().toString(36).slice(2, 7);
+export const newPersonId = () => 'p' + Math.random().toString(36).slice(2, 7);
 
 // ------------------------------------------------------------- the ageing --
 // "Inbound Monday 21:30, still untouched, surfaces Tuesday 09:00."

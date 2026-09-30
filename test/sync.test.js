@@ -29,7 +29,15 @@ async function person(db, over = {}) {
 }
 
 const events = (db, personId) => db.prepare('SELECT * FROM events WHERE person_id = ? ORDER BY id').all(personId);
-const inbox = (db) => db.prepare('SELECT * FROM inbound ORDER BY id').all();
+const inbox = (db, channel) => (channel
+  ? db.prepare('SELECT * FROM inbound WHERE channel = ? ORDER BY id').all(channel)
+  : db.prepare('SELECT * FROM inbound ORDER BY id').all());
+// Since 30.09.2026 an applicant nobody has seen is created by the SIS (test/application_first.test.js).
+// The New Leads path is for somebody already waiting there: an email from the same address, unconfirmed.
+async function waitingEmail(db, email = 'jonas@example.com') {
+  const { receive } = await import('../src/intake.js');
+  await receive(db, { channel: 'email', externalId: 'mail-' + email, email, body: 'Hello', source: 'simulated' });
+}
 
 // ------------------------------------------------------------------ PBX ----
 
@@ -277,11 +285,12 @@ test('sis: a stage never moves backwards, and a closed person is never reopened'
   assert.equal((await db.prepare('SELECT status FROM people WHERE id = ?').get(closed.id)).status, 'Not proceeding');
 });
 
-test('sis: an unknown applicant goes to the Inbox once, not every five minutes', async () => {
+test('sis: an applicant already waiting in New Leads goes to the Inbox once, not every five minutes', async () => {
   const db = await fresh();
+  await waitingEmail(db);
   const first = await syncSis(db, { now: NOW, env: ON, fetchImpl: fakeSis([[app()]]).fetchImpl });
   assert.equal(first.inbox, 1);
-  const [item] = await inbox(db);
+  const [item] = await inbox(db, 'sis');
   assert.equal(item.channel, 'sis');
   assert.equal(item.contact_name, 'Jonas Berzins');
   assert.equal(item.contact_email, 'jonas@example.com');
@@ -289,13 +298,14 @@ test('sis: an unknown applicant goes to the Inbox once, not every five minutes',
   const second = await syncSis(db, { now: NOW, env: ON,
     fetchImpl: fakeSis([[app({ status: 'admitted', changedAt: '2026-09-28T08:30:00.000Z' })]]).fetchImpl });
   assert.equal(second.inbox, 0);
-  assert.equal((await inbox(db)).length, 1);
+  assert.equal((await inbox(db, 'sis')).length, 1);
 });
 
 test('sis: once a person confirms the Inbox item, the next run links and moves them', async () => {
   const db = await fresh();
+  await waitingEmail(db);
   await syncSis(db, { now: NOW, env: ON, fetchImpl: fakeSis([[app()]]).fetchImpl });
-  const [item] = await inbox(db);
+  const [item] = await inbox(db, 'sis');
   // what the Inbox's qualify step leaves behind, without an email on the person
   const p = await person(db, { name: 'J. Berzins' });
   await db.prepare("UPDATE inbound SET state = 'qualified', person_id = ? WHERE id = ?").run(p.id, item.id);
@@ -306,11 +316,13 @@ test('sis: once a person confirms the Inbox item, the next run links and moves t
 
 test('sis: an Inbox item a person archived is never raised again', async () => {
   const db = await fresh();
+  await waitingEmail(db);
   await syncSis(db, { now: NOW, env: ON, fetchImpl: fakeSis([[app()]]).fetchImpl });
-  await db.prepare("UPDATE inbound SET state = 'archived'").run();
+  await db.prepare("UPDATE inbound SET state = 'archived' WHERE channel = 'sis'").run();
   await syncSis(db, { now: NOW, env: ON,
     fetchImpl: fakeSis([[app({ status: 'admitted', changedAt: '2026-09-28T09:00:00.000Z' })]]).fetchImpl });
-  assert.equal((await inbox(db)).length, 1);
+  assert.equal((await inbox(db, 'sis')).length, 1);
+  assert.equal((await db.prepare('SELECT COUNT(*) n FROM people').get()).n, 0, 'and nobody is created');
 });
 
 test('sis: rejected or withdrawn is written on the timeline, and the stage is left to a human', async () => {
@@ -409,23 +421,26 @@ test('sis -> lifecycle: matriculated arrives later and is added; the first fact 
     [['form_started', '2026-09-28T07:45:00.000Z'], ['matriculated', '2026-10-05T09:00:00.000Z']]);
 });
 
-test('sis -> lifecycle: submitted = form started by its submit date; registered and unmatched write nothing', async () => {
+test('sis -> lifecycle: submitted = form started by its submit date; registered writes nothing', async () => {
   const db = await fresh();
   const p = await person(db, { email: 'jonas@example.com' });
   const r = await syncSis(db, { now: NOW, env: ON, fetchImpl: fakeSis([[app({ status: 'submitted' }),
     app({ reference: 'ref-2', applicationId: 'app-9', email: 'nobody@example.com', phone: null, status: 'started' }),
     app({ reference: 'ref-3', applicationId: null, email: 'reg@example.com', phone: null, status: 'registered', submittedAt: null })]]).fetchImpl });
-  assert.equal(r.facts, 1, 'only the matched, submitted one');
-  assert.equal(r.inbox, 2, 'the two unmatched go to the Inbox, without a fact');
+  assert.equal(r.facts, 2, 'the matched submitted one, and the started one the SIS created');
+  assert.equal(r.created, 2, 'the two unknown are created by the SIS (30.09.2026)');
+  assert.equal(r.inbox, 0);
   const { lifecycleOf } = await import('../src/lifecycle.js');
   assert.deepEqual((await lifecycleOf(db, p.id)).map((f) => [f.fact, f.at]), [['form_started', '2026-09-28T07:58:02.000Z']]);
-  assert.equal((await db.prepare('SELECT COUNT(*) n FROM lifecycle_events').get()).n, 1);
+  const reg = await db.prepare("SELECT person_id FROM sis_applicants WHERE reference = 'ref-3'").get();
+  assert.deepEqual(await lifecycleOf(db, reg.person_id), [], 'registered only: no fact');
 });
 
 test('sis -> lifecycle: a fact on the second page is found (the cursor is followed)', async () => {
   const db = await fresh();
   await person(db, { email: 'jonas@example.com' });
-  const sis = fakeSis([[app({ reference: 'ref-0', applicationId: 'x', email: 'other@example.com', phone: null })],
+  const sis = fakeSis([[app({ reference: 'ref-0', applicationId: null, email: 'other@example.com', phone: null,
+    status: 'registered', submittedAt: null })],
     [app({ status: 'started' })]]);
   const r = await syncSis(db, { now: NOW, env: ON, fetchImpl: sis.fetchImpl });
   assert.equal(sis.seen.length, 2);
