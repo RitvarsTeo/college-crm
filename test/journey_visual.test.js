@@ -24,7 +24,10 @@ function sandbox(today = '2026-09-28') {
   };
   const iconStart = APP.indexOf('const C_JICON = {');
   const icons = APP.slice(iconStart, APP.indexOf('\n};', iconStart) + 3);
-  vm.runInNewContext(`${line('const cWhenClass =')}\n${line('const cTask =')}\n${line('const cNotePreview =')}\n${line('const cComment =')}\n${icons}\n${fn('function groupForAction(')}\n${line('const cStepIcon =')}\n${fn('function cLifeFacts(')}\n${fn('function cJourneyCard(')}\nthis.card = cJourneyCard;`, ctx);
+  vm.runInNewContext(`${line('const cWhenClass =')}\n${line('const cTask =')}\n${line('const cNotePreview =')}\n${line('const cComment =')}\n${icons}\n${fn('function groupForAction(')}\n${line('const cStepIcon =')}\n${fn('function cLifeFacts(')}\n${line('const C_SIS_HOLDS =')}
+${line('const cSisHolds =')}
+${line('const cSisHeld =')}
+${fn('function cJourneyCard(')}\nthis.card = cJourneyCard;`, ctx);
   return ctx;
 }
 const person = { id: 'p1', name: 'Example Person' };
@@ -118,7 +121,10 @@ test('every Journey stage still appears, in the same order, with its own label',
   const cardSrc = fn('function cJourneyCard(');
   const iconStart = APP.indexOf('const C_JICON = {');
   const filters = APP.slice(APP.indexOf('let C_JF = {'), APP.indexOf('function cDrawJourney('));   // the Journey filters (2A)
-  vm.runInNewContext(`${line('const cWhenClass =')}\n${line('const cTask =')}\n${line('const cNotePreview =')}\n${line('const cComment =')}\n${APP.slice(iconStart, APP.indexOf('\n};', iconStart) + 3)}\n${fn('function groupForAction(')}\n${line('const cStepIcon =')}\n${fn('function cLifeFacts(')}\n${cardSrc}\n${filters}\n${draw}\ncDrawJourney();`, ctx);
+  vm.runInNewContext(`${line('const cWhenClass =')}\n${line('const cTask =')}\n${line('const cNotePreview =')}\n${line('const cComment =')}\n${APP.slice(iconStart, APP.indexOf('\n};', iconStart) + 3)}\n${fn('function groupForAction(')}\n${line('const cStepIcon =')}\n${fn('function cLifeFacts(')}\n${line('const C_SIS_HOLDS =')}
+${line('const cSisHolds =')}
+${line('const cSisHeld =')}
+${cardSrc}\n${filters}\n${draw}\ncDrawJourney();`, ctx);
   const heads = [...html.matchAll(/<h3><span class="c-jn">(\d+)<\/span>([^<]+) <b>/g)].map((m) => [Number(m[1]), m[2]]);
   assert.deepEqual(heads, open.map((s, i) => [i + 1, s.label || s.id]), 'numbered 1..n, labels exactly as configured');
 });

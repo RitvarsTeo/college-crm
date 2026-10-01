@@ -9,6 +9,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { SIS_HOLDS_SQL } from './lifecycle.js';
 import { localDate, localDateTime, localMidnight, dayStartOf, dayAfterStartOf, todayStart } from './bizday.js';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -55,7 +56,7 @@ export async function report(db, { from, to } = {}) {
   const overdue = await count(db, `SELECT COUNT(*) n FROM tasks
     WHERE done_at IS NULL AND due_at < ?`, todayStart());
   const noNextAction = await count(db, `SELECT COUNT(*) n FROM people pe
-    WHERE pe.status NOT IN ('Admitted','Not proceeding')
+    WHERE pe.status NOT IN ('Admitted','Not proceeding') AND NOT ${SIS_HOLDS_SQL}
       AND NOT EXISTS (SELECT 1 FROM tasks t WHERE t.person_id = pe.id AND t.done_at IS NULL)`);
 
   // Conversion follows the people who ARRIVED in the period, so the two numbers

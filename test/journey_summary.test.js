@@ -27,6 +27,7 @@ function sandbox(filters = {}) {
     line('const cTask ='), fn('function groupForAction('),
     'let C_JF = { programme: [], due: [], owner: [], source: [], stage: [], group: [] };',
     'Object.assign(C_JF, ' + JSON.stringify(filters) + ');',
+    line('const C_SIS_HOLDS ='), line('const cSisHolds ='),
     fn('function cJourneySummary('),
     'this.summary = cJourneySummary;',
   ].join('\n'), ctx);

@@ -89,6 +89,15 @@ export async function lifecycleOf(db, personId) {
 // coordinator. Only the SIS's own statuses are used (Novikontas-CRM-API.md), in their order; the
 // next step is simply the next status. Nothing is guessed beyond that.
 const SIS_ORDER = ['registered', 'started', 'submitted', 'admitted', 'matriculated'];
+
+// HELD BY THE SIS (Ritvars, 01.10.2026 popup, A). A person the SIS itself created, at started or
+// later there, has nothing for Admissions to do until the SIS moves them on: no task, and never
+// counted in "No next step". Registered-only is still a lead with a step; a known lead who reaches
+// the SIS stays as before; rejected or withdrawn is a human's to close, so they count again.
+// One rule, used by every count (this) and by the page (cSisHolds in src/app.html).
+export const SIS_HOLDS = ['started', 'submitted', 'admitted', 'matriculated'];
+export const SIS_HOLDS_SQL = `(pe.first_channel = 'sis' AND EXISTS (SELECT 1 FROM sis_applicants sa
+  WHERE sa.person_id = pe.id AND sa.status IN ('${SIS_HOLDS.join("','")}')))`;
 const SIS_WORD = { registered: 'Registered', started: 'Form started', submitted: 'Submitted', admitted: 'Admitted',
   matriculated: 'Matriculated', rejected: 'Rejected', withdrawn: 'Withdrawn' };
 // who does the next step - only where Ritvars has said so

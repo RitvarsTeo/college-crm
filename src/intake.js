@@ -15,6 +15,7 @@ import { extractFrom, looksLikeJunk } from './extract.js';
 import { logEvent, MANUAL, AUTOMATIC } from './history.js';
 import { duplicateCheck } from './identity.js';
 import { localDate } from './bizday.js';
+import { SIS_HOLDS_SQL } from './lifecycle.js';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const CFG = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'prototype.json'), 'utf8'));
@@ -497,7 +498,7 @@ export async function funnel(db, now = nowIso()) {
     agedInbound: await agedCount(db, now),
     overdueActions: await n('SELECT COUNT(*) n FROM tasks WHERE done_at IS NULL AND due_at < ?', now),
     noNextAction: await n(`SELECT COUNT(*) n FROM people pe
-      WHERE pe.status NOT IN (${terminal.map(() => '?').join(',') || "''"})
+      WHERE pe.status NOT IN (${terminal.map(() => '?').join(',') || "''"}) AND NOT ${SIS_HOLDS_SQL}
       AND NOT EXISTS (SELECT 1 FROM tasks t WHERE t.person_id = pe.id AND t.done_at IS NULL)`, ...terminal),
     honesty: 'Every number here is a count of rows that exist. Nothing is modelled, estimated or projected.',
   };
