@@ -1209,6 +1209,59 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
     background:var(--c-sunk);color:var(--t3);font-style:normal;font-size:10px;font-weight:600;
     letter-spacing:.04em;vertical-align:1px}
   html.ui-c .c-reach a,html.ui-c .c-pt a{white-space:nowrap}
+  /* ===== VARIANT B - VISUAL COMMAND CENTER (the owner's A/B, 01.10.2026) =====
+     A large visual main column with the rest of the numbers in CONTEXTUAL GROUPS down
+     the right, each ending in the action that opens it. IA reference: DoorDash
+     Merchant on Mobbin, free tier - pattern only, none of their colours or branding.
+     The KPI strip KEEPS THE CARD treatment the shared kit carries (kit part 2,
+     30.09.2026). That is B's half of the strip A/B; A is the hairline row. */
+  html.ui-c .kcmd{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:26px;align-items:start}
+  html.ui-c .kcmd-main{min-width:0}
+  html.ui-c .kcmd-rail{display:flex;flex-direction:column;gap:10px;min-width:0}
+  /* a group is a few numbers that belong together, then the way in */
+  html.ui-c .kgrp{background:var(--surface);border:1px solid var(--c-card-line);
+    border-radius:14px;box-shadow:var(--c-card-lift);padding:12px 14px;min-width:0}
+  html.ui-c .kgrp h3{margin:0 0 7px;font-size:11.5px;font-weight:650;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--t3)}
+  html.ui-c .kgrow{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:baseline;
+    gap:8px;padding:3px 0;font-size:13px;color:var(--t2)}
+  html.ui-c .kgrow span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  html.ui-c .kgrow b{font-weight:650;font-variant-numeric:tabular-nums;color:var(--ink)}
+  html.ui-c .kgrow small{grid-column:1/-1;font-size:11px;color:var(--t4);margin-top:-2px}
+  /* A DASH IS AN HONEST ANSWER. When a read fails the group shows a dash and the note
+     below says why, instead of printing a number from an earlier session. */
+  /* B keeps the three drill-down charts, side by side under the month chart: the rail is
+     for the journey and what needs attention, never a replacement for a picture. */
+  html.ui-c .kthree.kthree-b{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:26px}
+  @media (max-width:980px){ html.ui-c .kthree.kthree-b{grid-template-columns:minmax(0,1fr)} }
+  /* B keeps the three drill-down charts side by side under the month chart: the rail is
+     for the journey and what needs attention, never a replacement for a picture. */
+  html.ui-c .kthree.kthree-b{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:26px}
+  @media (max-width:980px){ html.ui-c .kthree.kthree-b{grid-template-columns:minmax(0,1fr)} }
+  html.ui-c .kgapn{color:var(--t4);font-weight:400}
+  html.ui-c .kgap-note{margin:0;font-size:11.5px;color:var(--t4);line-height:1.5;max-width:40ch}
+  html.ui-c .kgrp-go{display:block;margin-top:8px;padding-top:8px;border-top:1px solid var(--rule2);
+    font-size:12px;color:var(--petink);text-decoration:none}
+  html.ui-c .kgrp-go:hover{text-decoration:underline}
+  html.ui-c .kgo{display:inline-block;margin-top:5px;font-size:11.5px;color:var(--petink);
+    text-decoration:none;opacity:.8}
+  html.ui-c .kgo:hover{opacity:1;text-decoration:underline}
+  html.ui-c .ksrc{font-size:11.5px;color:var(--t4);margin-left:auto}
+  /* B's strip is two up, so the headline figure stays the biggest thing on the screen */
+  html.ui-c .kcmd .kstrip{grid-template-columns:1.35fr 1fr;grid-template-rows:none;margin-bottom:22px}
+  html.ui-c .kcmd .kstrip > div{grid-row:auto;grid-template-rows:none}
+  /* MOBILE: the rail stops being a rail and follows the main column. Nothing is hidden,
+     and the month chart keeps the width it needs (the phone-label problem is NOT
+     solved by this - it is still open and recorded as such). */
+  @media (max-width:980px){
+    html.ui-c .kcmd{grid-template-columns:minmax(0,1fr);gap:16px}
+    html.ui-c .kcmd-rail{flex-direction:row;flex-wrap:wrap}
+    html.ui-c .kgrp{flex:1 1 220px}
+  }
+  @media (max-width:620px){
+    html.ui-c .kcmd .kstrip{grid-template-columns:1fr 1fr}
+    html.ui-c .kcmd-rail{flex-direction:column}
+  }
   html.ui-c .c-ptabs{display:flex;gap:2px;border-bottom:1px solid var(--rule2);margin:0 0 14px}
   html.ui-c .c-ptab{padding:7px 14px;font-size:14px;color:var(--t3);text-decoration:none;
     border-bottom:2px solid transparent;margin-bottom:-1px}
@@ -1548,6 +1601,10 @@ const C_ICON = {
   adm: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2 8l8-4 8 4-8 4-8-4z"/><path d="M5.5 9.8V13c0 1.2 2 2.5 4.5 2.5s4.5-1.3 4.5-2.5V9.8"/></svg>',
   ppl: '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="7.5" cy="7" r="2.8"/><path d="M2.5 16c.6-2.6 2.6-4 5-4s4.4 1.4 5 4"/><path d="M13 4.6a2.6 2.6 0 0 1 0 5"/><path d="M14.6 12.3c1.5.5 2.5 1.8 2.9 3.7"/></svg>',
   out: '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7"/><path d="M6.8 10.2l2.2 2.2 4.3-4.6"/></svg>',
+  // PROVISIONAL, not a locked design-system decision (01.10.2026): Reports had no icon in
+  // C_ICON. Drawn in the same stroke language as the locked five so the menu is not half
+  // iconed, and marked here so nobody mistakes it for an agreed glyph.
+  rep: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 16V8.5M7.7 16V4.8M12.3 16v-5.4M17 16V7"/></svg>',
   set: '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="2.6"/><path d="M10 2.5v2M10 15.5v2M2.5 10h2M15.5 10h2M4.7 4.7l1.4 1.4M13.9 13.9l1.4 1.4M4.7 15.3l1.4-1.4M13.9 6.1l1.4-1.4"/></svg>' };
 const C_TERMINAL = ['Admitted', 'Not proceeding'];
 // Held by the SIS (the owner, 01.10.2026): an SIS-created person at started or later is never "No next
@@ -1565,26 +1622,33 @@ function installCNav() {
   brand.setAttribute('href', '#/home');
   for (const bar of document.querySelectorAll('#cThemeBar, #cThemeBar2')) bar.innerHTML = themeSwitchHtml();
   brand.insertAdjacentHTML('afterend', `<div class="cnav" role="navigation" aria-label="Main">
-    <a href="#/home" data-c="home" title="What needs my attention"><span>Today</span><span class="n" id="cnNext"></span></a>
-    <a href="#/leads" data-c="leads" title="What arrived and needs a person to look at it"><span>Inbox</span><span class="n" id="cnLeads"></span></a>
+    <a href="#/home" data-c="home" title="How admissions is performing">${C_ICON.home}<span>Home</span></a>
+    <a href="#/admissions" data-c="admissions" title="The work and what has arrived">${C_ICON.adm}<span>Admissions</span></a>
+    <div class="kids"><a href="#/today" data-c="today" title="What needs my attention"><span>Today</span><span class="n" id="cnNext"></span></a>
+      <a href="#/leads" data-c="leads" title="What arrived and needs a person to look at it"><span>Inbox</span><span class="n" id="cnLeads"></span></a></div>
     <a href="#/people" data-c="people" title="Who we are working with, and where they are">${C_ICON.ppl}<span>People</span></a>
-    <a href="#/reports" data-c="reports" title="What is happening">${C_ICON.out}<span>Reports</span></a>
+    <div class="kids"><a href="#/journey" data-c="journey"><span>Journey</span></a>
+      <a href="#/people/all" data-c="all"><span>All people</span></a></div>
+    <a href="#/reports" data-c="reports" title="What is happening">${C_ICON.rep}<span>Reports</span></a>
     <a href="#/settings" data-c="settings" id="cnSettings" class="c-navfoot">${C_ICON.set}<span>Settings</span></a>
   </div>`);
   // No "Open the classic view" link: C is the normal product, and the classic view is a
   // hidden fallback reached only by the address ?ui=classic (the owner, 28.09.2026).
 }
 
-// Which of the four places a hash belongs to (the owner, 01.10.2026: Today, Inbox,
-// People, Reports). Every old link still resolves and NOTHING is redirected, because
-// people have these in their address bar and in each other's messages:
-//   #/today and #/admissions   -> Today, which now holds the work
-//   #/next and #/followup      -> Today: Next Steps was folded into it, not deleted
-//   #/inbox, #/car             -> the Inbox
-//   #/journey, #/outcomes      -> People, where the lifecycle now lives
-//   #/reports                  -> Reports, which has its own place in the menu now
+// Which place a hash belongs to. HOME IS ITS OWN PLACE AGAIN (the owner, 01.10.2026):
+// Home is the metrics landing page, Today is the work. They were one screen for half a
+// day and he asked for the metrics back on the first page.
+// Every old link still resolves and nothing is redirected: people have these in
+// bookmarks and in each other's messages.
+//   #/next, #/followup          -> Today, which absorbed Next Steps
+//   #/admissions                -> Today (the work is what Admissions opens on)
+//   #/inbox, #/car              -> the Inbox
+//   #/journey, #/outcomes       -> People, where the lifecycle lives
+//   #/funnel, #/metrics         -> Reports
 function cPlace(page) {
-  return ({ '': 'home', home: 'home', today: 'home', admissions: 'home', next: 'home', followup: 'home',
+  return ({ '': 'home', home: 'home',
+    today: 'today', next: 'today', followup: 'today', admissions: 'today',
     leads: 'leads', inbox: 'leads', car: 'leads',
     people: 'people', person: 'people', journey: 'people', outcomes: 'people',
     reports: 'reports', funnel: 'reports', metrics: 'reports',
@@ -1650,20 +1714,104 @@ async function routeC(page, arg) {
     else if (page === 'people' && arg === 'all') C_PTAB = 'all';
     return C_PTAB === 'all' ? viewPeopleC() : viewJourneyC();
   }
+  if (place === 'today') return viewTodayC();
   if (page === 'help') return viewHelpC();
   if (place === 'settings') return viewSettingsC();
-  return viewTodayC();                     // Today, and anything unknown
+  return viewHomeC();                      // Home, and anything unknown
 }
 
 // ------------------------------------------------------------------------ HOME
-// "How are Admissions performing?" - not "what is urgent" (that is Admissions).
-// The department's own KPIs, from the report the CRM already computes plus the
-// people list, for the current year. Every chart mark answers hover and focus, and a
-// click opens the admitted people behind that exact number.
-// BY PROGRAMME, DRAWN (30.09.2026). One blue ramp, two weights: new leads light,
-// admitted solid, both scaled to the largest new-leads figure so the pair can be
-// compared across programmes. The numbers stay beside their own bar - a bar without
-// its value is a picture of a number nobody can check.
+// HOME IS THE FIRST PAGE AGAIN (the owner, 01.10.2026). Two screens, two jobs:
+// Home is the visual dashboard, Today is the work.
+//
+// VARIANT B - VISUAL COMMAND CENTER. One strong headline figure and a large visual
+// main column, with the rest of the numbers in CONTEXTUAL GROUPS down the right,
+// each ending in the action that opens it. Information architecture reference:
+// DoorDash Merchant on Mobbin (free tier) - headline metrics, a visual main column,
+// right-hand metric groups, explicit "View ... insights" destinations and honest
+// zero states. Pattern only; none of their colours or branding.
+//
+// The KPI strip keeps the CARD treatment the shared kit carries (kit part 2,
+// 30.09.2026). That is B's half of the strip A/B; A is the hairline row.
+//
+// Nothing here invents a number. Every figure is read from /api/report or
+// /api/summary; when a read fails the figure says so instead of showing a stale one.
+async function viewHomeC() {
+  const year = Number(cTodayIso().slice(0, 4));
+  const [rep, people, sum] = await Promise.all([
+    api(`/api/report?from=${year}-01-01&to=${year}-12-31`),
+    cPeopleRows(),
+    api('/api/summary').catch(() => null),
+  ]);
+  const s = rep.summary || {};
+  const thisMonth = cTodayIso().slice(0, 7);
+  const months = (rep.trend || []).filter((m) => m.month.startsWith(String(year)) && m.month <= thisMonth);
+  const inYear = (d) => cDay(d).startsWith(String(year));
+  const admitted = people.filter((p) => p.status === 'Admitted' && inYear(p.admitted_at));
+  const undated = people.filter((p) => p.status === 'Admitted' && !p.admitted_at).length;
+  const count = (arr, key) => { const m = new Map(); arr.forEach((p) => { const k = key(p); m.set(k, (m.get(k) || 0) + 1); }); return [...m.entries()].sort((a, b) => b[1] - a[1]); };
+  const known = new Set(CFG.programmes || []);
+  const progs = count(admitted, (p) => p.programme || '(not recorded)').map(([k, n]) => [k, n, known.has(k) ? '' : (k === '(not recorded)' ? 'no programme recorded' : 'not one of the list')]);
+  const chans = count(admitted, (p) => p.source_channel || 'unknown').map(([k, n]) => { const [label, why] = cChannel(k); return [label, n, why, k]; });
+  const nowOpen = people.filter((p) => !C_TERMINAL.includes(p.status)).length;
+  const now = [['Open', nowOpen, 'open', 'journey'], ['Admitted', people.filter((p) => p.status === 'Admitted').length, 'adm', 'Admitted'], ['Not proceeding', people.filter((p) => p.status === 'Not proceeding').length, 'np', 'Not proceeding']];
+  const asOf = new Intl.DateTimeFormat('en-GB', { timeZone: TZ, day: 'numeric', month: 'long' }).format(new Date());
+  const stages = (CFG.stages || []).filter((st) => !C_TERMINAL.includes(st.id));
+
+  // NEVER A REMEMBERED FIGURE. Read live; a failed read is said out loud.
+  const noNext = sum && typeof sum.noNextAction === 'number' ? sum.noNextAction : null;
+  const overdue = sum && Array.isArray(sum.overdue) ? sum.overdue.length : null;
+  const fig = (n) => (n === null ? '<span class="kgapn" title="not available">—</span>' : n);
+
+  // A contextual group: a few numbers that belong together, then the way in.
+  const group = (title, rows, href, action) => `<section class="kgrp">
+    <h3>${esc(title)}</h3>
+    ${rows.map(([label, value, hint]) => `<div class="kgrow"><span>${esc(label)}</span><b>${value}</b>${
+      hint ? `<small>${esc(hint)}</small>` : ''}</div>`).join('')}
+    <a class="kgrp-go" href="${href}">${esc(action)} →</a></section>`;
+
+  $('#view').innerHTML = `<div class="kpage kb">
+    <div class="khead"><div><h1 class="c-sr">Home</h1><p class="c-crumb" style="margin:0">Admissions ${year} · to ${esc(asOf)}</p></div></div>
+
+    <div class="kcmd">
+      <div class="kcmd-main">
+        <div class="kstrip">
+          <div class="khero"><span>Admitted</span><b>${admitted.length}</b><small>${year}${undated ? ` \u00b7 +${undated} undated` : ''}</small><a class="kgo" href="#/outcomes">Outcomes →</a></div>
+          <div><span>Leads</span><b>${s.newLeads ?? 0}</b><small>${year}</small><a class="kgo" href="#/leads">Inbox →</a></div>
+          <div><span>Conversion</span><b>${s.conversionPct == null ? '-' : s.conversionPct + '%'}</b><small>${s.conversionA ?? 0} / ${s.conversionB ?? 0} who arrived</small><a class="kgo" href="#/reports">Reports →</a></div>
+          <div><span>Median time to admission</span><b>${s.medianDaysToAdmission == null ? '-' : s.medianDaysToAdmission} <em>days</em></b><small>first contact to admission</small><a class="kgo" href="#/reports">Reports →</a></div>
+        </div>
+
+        <section class="ksec">
+          <div class="ksh"><h2>Admissions by month</h2>
+            <ul class="klegend inline"><li><i style="background:var(--v-adm)"></i><span>Admitted</span></li><li><i class="ln" style="background:var(--v-lead)"></i><span>New leads</span></li></ul>
+            <span class="ksrc">from Reports · click a month → Inbox</span></div>
+          ${cMonthChart(months, year)}
+          <details class="kdet"><summary>Show as a table</summary><table class="ktable"><thead><tr><th>Month</th><th>Admitted</th><th>New leads</th></tr></thead><tbody>${months.map((m) => `<tr><td>${C_MONTHS[Number(m.month.slice(5)) - 1]}</td><td>${m.admitted}</td><td>${m.newLeads}</td></tr>`).join('')}</tbody></table></details>
+        </section>
+
+        <div class="kthree kthree-b">
+          <section class="ksec"><div class="ksh"><h2>Where everyone is now</h2><span class="ksrc">click a slice</span></div>${cDonut(now)}</section>
+          <section class="ksec"><div class="ksh"><h2>Admitted by programme</h2><span class="kt2">${admitted.length} in ${year}</span><span class="ksrc">click a bar → Outcomes</span></div>${cBars(progs.map((r) => [...r, r[0]]), 'prog')}</section>
+          <section class="ksec"><div class="ksh"><h2>Where admitted people came from</h2><span class="kt2">${admitted.length} in ${year}</span><span class="ksrc">click a bar → Outcomes</span></div>${cBars(chans, 'chan')}</section>
+        </div>
+      </div>
+
+      <aside class="kcmd-rail">
+        ${group('The journey', stages.map((st) => [st.label || st.id, people.filter((p) => p.status === st.id).length]),
+          '#/journey', 'Open the Journey')}
+        ${group('Needs attention', [
+          ['Overdue', fig(overdue)],
+          ['No next step', fig(noNext)],
+        ], '#/today', 'Open Today')}
+        ${noNext === null || overdue === null
+          ? `<p class="kgap-note">A dash means the summary did not answer. Nothing here is filled in from an earlier session.</p>` : ''}
+      </aside>
+    </div>
+    <div class="ktip" role="status" aria-live="polite"></div></div>`;
+  cWireCharts();
+}
+
 function cProgBars(rows) {
   if (!rows.length) return '<p class="c-empty">Nothing yet.</p>';
   const top = Math.max(1, ...rows.map((x) => Number(x.newLeads) || 0));
@@ -1674,7 +1822,6 @@ function cProgBars(rows) {
     <span class="c-pbar"><i class="adm" style="width:${w(x.admitted)}%"></i><em>${Number(x.admitted) || 0}</em></span>
   </div>`).join('')}</div>`;
 }
-
 
 function cMonthChart(months, year) {
   if (!months.length) return '<p class="c-empty">No admissions recorded this year yet.</p>';
@@ -1699,12 +1846,35 @@ function cMonthChart(months, year) {
   const pts = months.map((m, k) => [L + band * k + band / 2, y(m.newLeads)]);
   return `<svg viewBox="0 0 ${W} ${H}" class="kchart${narrow ? ' narrow' : ''}" role="img" aria-label="Admissions and new leads per month, ${year}">${grid}${cols}<path d="M${pts.map((p) => p.join(',')).join(' L')}" class="kline"/>${pts.map(([x, yy]) => `<circle cx="${x}" cy="${yy}" r="4" class="kdot"/>`).join('')}</svg>`;
 }
+
+function cDonut(rows) {
+  const total = rows.reduce((a, r) => a + r[1], 0) || 1, R = 58, r0 = 40, c = 70, gap = 0.035;
+  let a = -Math.PI / 2;
+  const p = (ang, rad) => `${c + rad * Math.cos(ang)},${c + rad * Math.sin(ang)}`;
+  const seg = rows.filter((r) => r[1] > 0).map(([k, n, v, go]) => { const sw = (n / total) * Math.PI * 2, a0 = a + gap / 2, a1 = a + sw - gap / 2; a += sw; const big = a1 - a0 > Math.PI ? 1 : 0;
+    return `<path d="M${p(a0, R)} A${R},${R} 0 ${big} 1 ${p(a1, R)} L${p(a1, r0)} A${r0},${r0} 0 ${big} 0 ${p(a0, r0)} Z" style="fill:var(--v-${v})" class="kseg" tabindex="0" role="button" aria-label="${k}: ${n}" data-tip="${k}|${n} people|${Math.round((n / total) * 100)}% of ${total}" data-kgo="${go === 'journey' ? 'journey' : 'outcome|' + go}"/>`; }).join('');
+  return `<div class="kdonut"><svg viewBox="0 0 140 140" role="img" aria-label="Where everyone is now">${seg}<text x="70" y="68" text-anchor="middle" class="kbig">${total}</text><text x="70" y="86" text-anchor="middle" class="kt">people</text></svg>
+    <ul class="klegend">${rows.map(([k, n, v]) => `<li><i style="background:var(--v-${v})"></i><span>${k}</span><b>${n}</b></li>`).join('')}</ul></div>`;
+}
+
 function cBars(rows, kind) {
   if (!rows.length) return '<p class="c-empty">Nobody admitted yet.</p>';
   const max = Math.max(...rows.map((r) => r[1]));
   return `<div class="kbars">${rows.map(([label, n, why, key]) => `<div class="kbar" tabindex="0" role="button" data-tip="${esc(label)}|${n} admitted${why ? '|' + esc(why) : ''}" data-kgo="${kind}|${esc(key)}|${esc(label)}">
       <span class="kbl">${why ? `<span class="c-gap">${esc(label)}</span>` : esc(label)}</span><span class="kbt"><i style="width:${Math.max(3, (n / max) * 100)}%;background:var(--v-${why ? 'np' : 'adm'})"></i></span><b>${n}</b></div>`).join('')}</div>`;
 }
+
+
+let C_OUT_FILTER = null;
+function cChartGo(spec) {
+  const [kind, key, label] = String(spec || '').split('|');
+  if (kind === 'journey') { location.hash = '#/journey'; return; }
+  if (kind === 'outcome') { C_OUTCOME = key; C_OUT_FILTER = null; location.hash = '#/outcomes'; return; }
+  C_OUTCOME = 'Admitted';
+  C_OUT_FILTER = { kind, key, label };
+  if (location.hash === '#/outcomes') viewOutcomesC(); else location.hash = '#/outcomes';
+}
+
 function cWireCharts() {
   const page = $('.kpage'); const tip = $('.ktip');
   if (!page || !tip) return;
@@ -1721,16 +1891,8 @@ function cWireCharts() {
     el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); cChartGo(el.dataset.kgo); } });
   });
 }
-// A chart click opens exactly the people behind the number it was showing.
-let C_OUT_FILTER = null;
-function cChartGo(spec) {
-  const [kind, key, label] = String(spec || '').split('|');
-  if (kind === 'journey') { location.hash = '#/journey'; return; }
-  if (kind === 'outcome') { C_OUTCOME = key; C_OUT_FILTER = null; location.hash = '#/outcomes'; return; }
-  C_OUTCOME = 'Admitted';
-  C_OUT_FILTER = { kind, key, label };
-  if (location.hash === '#/outcomes') viewOutcomesC(); else location.hash = '#/outcomes';
-}
+
+
 
 // ------------------------------------------------------------------ NEXT STEPS
 // Four states, and every open person is in exactly one of them. No "Waiting on us":

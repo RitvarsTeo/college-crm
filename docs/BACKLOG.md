@@ -14,6 +14,55 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 01.10.2026 - A/B: Variant B, Visual Command Center
+
+Branch `feat/home-b-command`, cut from `v0.9` (`52e2232`), carrying the same Home restore and the
+same grouped navigation as A. **872/872.** COMMITTED, NOT DEPLOYED.
+
+| What | Status |
+|---|---|
+| One strong headline figure and a large visual main column: the KPI strip two-up, the month chart, then the donut and the two drill-down bar charts side by side | BUILT |
+| A **contextual rail** down the right: "The journey" with every active stage and its live count, and "Needs attention" with Overdue and No next step, each ending in the action that opens it | BUILT |
+| **B's half of the strip A/B: the CARD treatment**, exactly as the shared kit carries it. A is the hairline row | BUILT |
+| The rail never replaces a picture. The bar charts stay charts in the main column; the rail carries only the numbers that have no useful shape | BUILT |
+| **Read live, never remembered.** Overdue and No next step come from `/api/summary`; a failed read shows a dash and a note saying why. 57 is hardcoded nowhere | BUILT |
+| On a narrow screen the rail stops being a rail and follows the main column, wrapping to two groups then one | BUILT |
+
+**IA reference:** DoorDash Merchant on Mobbin, free tier: headline metrics, a visual main column,
+right-hand metric groups, explicit destination actions, honest zero states. Pattern only; none of
+their colours or branding. Square, also free tier, informed A's titled bands instead.
+
+**MORNING DECISION REQUIRED** - the same strip conflict recorded against A. The shared kit and the
+other apps were NOT touched tonight.
+
+## 01.10.2026 - A/B: Home returns. Variant A, Structured Operations
+
+Branch `feat/home-a-structured`, cut from `v0.9` (`52e2232`). **872/872.** COMMITTED, NOT DEPLOYED.
+
+Home is the first page again. It was deleted this morning when Today absorbed Next Steps; the owner
+asked for the metrics back on the landing screen, so Home returns as the visual dashboard and Today
+keeps the work. Two screens, two jobs.
+
+| What | Status |
+|---|---|
+| `viewHomeC` and `cDonut` restored from `62c24a4`, not rewritten. Every chart helper they need (`cMonthChart`, `cBars`, `cWireCharts`, `cChartGo`) had survived in Reports | BUILT |
+| The grouped navigation and **the established hairline**, unchanged: `.cnav .kids{margin:1px 0 6px 18px;padding-left:10px;border-left:1px solid var(--rule)}`. Admissions > Today, Inbox. People > Journey, All people | BUILT |
+| All five locked `C_ICON` glyphs back on the menu. Reports has **no locked icon**; a glyph in the same stroke language is marked PROVISIONAL where it is defined, and a test asserts that marking | BUILT |
+| **A's half of the strip A/B: the HAIRLINE strip.** One ruled row, no boxes | BUILT |
+| Every figure and every band says its source and its destination (`.kgo`, `.ksrc`) | BUILT |
+| **"Active with no next step" is read live from `/api/summary`.** When the read fails the band says "Data not available" in the same shape rather than printing a remembered number. 57 is NOT hardcoded anywhere | BUILT |
+| Amber for that figure is the attention rank, listed in the amber guard with its reason. Red stays late-and-overdue only and is not on Home | BUILT |
+
+**MORNING DECISION REQUIRED - the KPI strip.** Two of the owner's own decisions disagree. On
+30.09 he picked modern cards for panels, and kit part 2 carries that to every app. On 01.10 he asked
+repeatedly for the hairline strip back. Rather than stop the run, the strip is now **part of the
+A/B**: A is the hairline, B keeps the cards. **The shared kit and the other apps were not touched
+tonight.** Whichever wins has to be answered in kit part 2 as well, or the apps drift apart.
+
+**Still open, not decided here:** Aigars' per-person comment thread and the Home phone-chart
+readability; Ieva's real Journey stage names, the item-by-item next-step list, and the
+Admitted / Not proceeding outcome reasons.
+
 ## 01.10.2026 - LIVE: v0.9, all three lanes in one release
 
 Branch `v0.9`, **pushed to GitHub**. Production commit `292b4f9`, deployment

@@ -33,6 +33,7 @@ test('amber is only ever today, a count, or needs-you', () => {
     '.c-next.none',             // no next step
     '.c-jp small.none',         // no next step, on the card
     '.c-still b',               // the still-open count
+    '.kattn-row b.kattn-on',   // Home: active with no next step - the needs-you meaning
   ];
   const lines = APP.split('\n').filter((l) => l.includes('var(--c-warn)'));
   for (const l of lines) {
