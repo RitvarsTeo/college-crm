@@ -29,6 +29,9 @@ byte-identical to it on 01.10 with its own sign-in return script). Technical pro
 
 | Item 2, held by the SIS: an SIS-created person at started or later is not counted or listed as "No next step" (Home, funnel, report, Next Steps, People, person page, Journey card and bar); registered-only still needs a step; a known lead keeps today's path; rejected or withdrawn counts again. Demo: noNextAction 2 -> 1. 768/768 | COMMITTED, NOT DEPLOYED | `91d5cbf` |
 
+| Webhook hardening: not JSON, a list, no changedAt = 400 and nothing stored; too big = connection cut, nothing stored, the next call lands; `SIS_APPLICATION_SECRET=` (empty) in `.env.example`. 770/770 | COMMITTED, NOT DEPLOYED | `7386ced` |
+| Item 3, "Same person as..." (the 30.09 undo decision) on an SIS-created person's page: search People, "This is them" calls merge-into, opens the real person. Clicked through locally. 773/773 | COMMITTED, NOT DEPLOYED | `4fa8912` |
+
 **DECIDED 01.10.2026 by Ritvars (popup):**
 - **SIS step: A, "SIS holds them".** No task for an SIS-created person at started or later; never in
   "No next step"; the page says "In the SIS: <status>". Registered-only stays a lead with a step.
