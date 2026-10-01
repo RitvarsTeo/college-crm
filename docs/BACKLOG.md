@@ -120,7 +120,8 @@ lead until a person qualifies them; the menu button 1/2/3 decides whose call it 
 | **Gmail B reworked:** link from an admin page, no Intake account for Marina, back to the registered sign-in address, edu@ only, B wins over the key already in Vercel | COMMITTED, NOT DEPLOYED | `8536f46` + `d03cd60` (from 57222df) |
 | **Phone filter** in `config.phoneFilter`: numbers archived as Spam / Supplier or vendor / Internal are filtered with the reason; a repeat call joins the open item; counted per run | COMMITTED, NOT DEPLOYED | `68c28ae` |
 | **Tilda (C8):** tranid, any field case, utm from COOKIES, secret as header or field, `ok` reply, test request | COMMITTED, NOT DEPLOYED | `5759b7c` |
-| The 11 owner write-ups; Marina (B), Tilda (Ritvars's steps), LinkedIn and TikTok access requests rewritten | COMMITTED, NOT DEPLOYED | this commit |
+| The 11 owner write-ups; Marina (B), Tilda (Ritvars's steps), LinkedIn and TikTok access requests rewritten | COMMITTED, NOT DEPLOYED | `ddb1ffa` |
+| C9 Mailchimp email change read from data[new_email]; C10 the four Meta channels name Oksana (30.09) | COMMITTED, NOT DEPLOYED | this commit |
 
 **Left out on purpose:** the application fast path and the SIS merge that rode along in 57222df's
 conflict (applications lane); f737090; the twelve backlog-only commits; 8777509 (second Channels screen, open).

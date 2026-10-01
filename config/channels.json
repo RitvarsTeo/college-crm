@@ -185,8 +185,8 @@
       ],
       "handshakeEnv": "META_VERIFY_TOKEN",
       "handshake": "GET the webhook path with hub.mode, hub.verify_token and hub.challenge. We echo the challenge as plain text or Meta will not save the subscription.",
-      "administeredBy": "Tetiana",
-      "ownerPerson": "Tetiana",
+      "administeredBy": "Oksana",
+      "ownerPerson": "Oksana",
       "ownerAction": "Meta app plus Page setup, then App Review",
       "reliability": "Meta's X-Hub-Signature-256 over the raw body with the app secret. A repeat provider event id is dropped.",
       "reconciliation": "None built. The Graph API can list conversations, so a backfill is possible later."
@@ -234,8 +234,8 @@
       ],
       "handshakeEnv": "META_VERIFY_TOKEN",
       "handshake": "GET the webhook path with hub.mode, hub.verify_token and hub.challenge. We echo the challenge as plain text or Meta will not save the subscription.",
-      "administeredBy": "Tetiana",
-      "ownerPerson": "Tetiana",
+      "administeredBy": "Oksana",
+      "ownerPerson": "Oksana",
       "ownerAction": "Meta app plus Messenger setup, then App Review",
       "reliability": "As Facebook: the same Meta signature and the same connection. A repeat event id is dropped.",
       "reconciliation": "None built. As Facebook."
@@ -283,8 +283,8 @@
       ],
       "handshakeEnv": "META_VERIFY_TOKEN",
       "handshake": "GET the webhook path with hub.mode, hub.verify_token and hub.challenge. We echo the challenge as plain text or Meta will not save the subscription.",
-      "administeredBy": "Tetiana",
-      "ownerPerson": "Tetiana",
+      "administeredBy": "Oksana",
+      "ownerPerson": "Oksana",
       "ownerAction": "Meta app plus Instagram setup, then App Review",
       "reliability": "As Facebook: the same Meta signature. A repeat event id is dropped.",
       "reconciliation": "None built. As Facebook."
@@ -336,8 +336,8 @@
       ],
       "handshakeEnv": "META_VERIFY_TOKEN",
       "handshake": "GET the webhook path with hub.mode, hub.verify_token and hub.challenge. We echo the challenge as plain text or Meta will not save the subscription.",
-      "administeredBy": "Tetiana",
-      "ownerPerson": "Tetiana",
+      "administeredBy": "Oksana",
+      "ownerPerson": "Oksana",
       "ownerAction": "Meta app plus WhatsApp setup, then App Review",
       "reliability": "As Facebook: the same Meta signature. A repeat WhatsApp message id is dropped.",
       "reconciliation": "None built."

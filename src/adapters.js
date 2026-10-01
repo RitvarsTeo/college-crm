@@ -187,7 +187,8 @@ export const ADAPTERS = {
   // Activity about somebody, not a new person. Mailchimp sends no event id, so
   // the deduplication key is assembled from what it does send.
   mailchimp: (raw) => {
-    const email = str(raw['data[email]'] || raw.data?.email);
+    // an email change (upemail) carries the new address as data[new_email] (C9, 01.10.2026)
+    const email = str(raw['data[email]'] || raw.data?.email || raw['data[new_email]'] || raw.data?.new_email);
     const type = str(raw.type) || 'unknown';
     const fired = str(raw.fired_at || raw.fired);
     return makeInbound('mailchimp', {
