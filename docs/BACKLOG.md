@@ -14,6 +14,78 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 01.10.2026 - Channels: the screen now says whose turn it is
+
+On both variant branches. **915/915.** COMMITTED, NOT DEPLOYED.
+
+| What | Status | Commit |
+|---|---|---|
+| Channels screen shows the owner and the one blocking action | BUILT | A `2338ac4` · B `5b10642` |
+| Variant B: the same facts cut by person, one card per owner | BUILT | B `46d0814` |
+| Every `var(--token)` must be a token the file declares | BUILT | A `6800ca9` · B `46d0814` |
+| Sign-in input asked for `var(--t1)`, which does not exist | **BUG, FIXED** | A `6800ca9` · B `46d0814` |
+
+**Nothing new was gathered.** `config/channels.json` has carried `ownerPerson`,
+`ownerAction` and `externalBlocker` since the channel write-ups of 30.09, and
+`src/channeladmin.js` has been sending all three to the client ever since. The screen
+dropped them. An admin could see that nine of fourteen channels were not receiving and
+could not see who was holding any one of them.
+
+What the fourteen real rows say, which is what the column now prints:
+
+| Waiting on | Channels |
+|---|---|
+| Oksana | Website, Facebook, Messenger, Instagram, WhatsApp |
+| Tetiana | LinkedIn, TikTok |
+| Ritvars | Mailchimp, Phone |
+| Marina | Gmail |
+| Aigars | Open Day |
+| **Nobody named** | Google Form, Agent |
+| Waiting on nobody | In person (by hand, and that is the design) |
+
+**The green suite did not catch the one real fault here; printing the rows did.**
+`in_person` was rendering as "nobody named" in amber, over an action that reads
+"Nothing to do. Already working". The config itself defines `manual_only` as "a person
+enters it by hand, and that is the design, not a gap", so a manual channel is now
+waiting on nobody, same as a receiving one.
+
+### NEEDS A DECISION: Google Form and Open Day are recorded as parked, the config does not know it
+
+`docs/BACKLOG.md` records Open Day as parked (`274f31c`) and Google Form as out. The
+channel config records neither. It carries `readiness: waiting_for_external_access` for
+Google Form and `ready_for_configuration` for Open Day, so the new column reports both
+as live work that somebody has to chase, and Google Form reports as **nobody named**.
+
+I have not written the decision into the config. Marking a channel parked is a product
+decision about what the screen claims, not a rendering fix, and inventing a `parked`
+field would be me deciding the vocabulary.
+
+Three ways to settle it, for Ritvars:
+
+1. **Record it in the config.** A `parked` field with the reason and the date, and the
+   screen groups parked channels away from the chase list. Honest, and the screen stops
+   asking for work nobody intends to do.
+2. **Leave it.** The column keeps naming them, and whoever reads it re-decides each time.
+3. **Remove them from the config.** Cheapest to read, and it loses the record that we
+   ever considered them, which this file exists to prevent.
+
+### A/B for C: the Channels screen
+
+Both are built and can be looked at side by side.
+
+| | **A, the table** | **B, the board** |
+|---|---|---|
+| Axis | status, then name | the person holding it |
+| Shape | 14 rows, 5 columns | one card per owner, biggest pile first |
+| Answers | "what is the state of everything" | "what do I chase, and from whom" |
+| Costs | the owner is a column you have to scan for | the status axis becomes secondary, and a channel moves card when its owner changes |
+| Where it lives | `viewChannels` table | `chBoard()` |
+
+Both read the same fields and print the same words. The hybrid worth considering for C:
+the board's grouping for the channels that are stuck, and the table for the ones that
+are working, because once a channel receives there is no person to name and a row is
+enough.
+
 ## 01.10.2026 - Aigars and Ieva: the actionable items finished
 
 On `feat/home-a-structured`. **900/900.** COMMITTED, NOT DEPLOYED.
