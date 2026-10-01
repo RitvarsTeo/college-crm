@@ -14,6 +14,26 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 01.10.2026 - The light sea, and a shape for every figure
+
+On `feat/home-b-command`. **878/878.** COMMITTED, NOT DEPLOYED.
+
+| What | Status |
+|---|---|
+| **The light sea.** Dark has always taken the sign-in gradient: a glow from the top centre over a vertical deepening, `#17456e` → `#0f2f4f` → `#08182e`. Light had no gradient at all. Light now has the **same geometry in its own tones**, `#fbfcfd` → `#f7f9fb` → `#e7ebf0`, `fixed` so it is one sea and not a sea per scroll. Not a third theme: the same recipe, each mode in its own palette | BUILT |
+| The side menu takes the same quiet vertical fall it already takes in dark, so the two modes are one design | BUILT |
+| **A sparkline under the two KPIs that have a monthly series.** The number stops being a bare digit and carries its own shape | BUILT |
+| It draws **nothing** rather than draw a lie: fewer than two months, or a series flat at zero, gets no line. A zero month inside a real series is a low point on the line, not a gap | BUILT |
+| Conversion and median days get **no** sparkline: they are one value for the period, and a line there would be a shape the data does not have | BUILT |
+| Both lines take their colour from the mode tokens (`--v-adm`, `--t3`). A test asserts there is no hard-coded hex in that rule, so dark is not a second definition to keep in step | BUILT |
+
+**Reference:** the Mixpanel Home screen downloaded from Mobbin, where every headline figure carries a
+sparkline of its own series. Pattern only. The line is drawn from the same monthly trend the month
+chart already uses, so it is the real series, not an illustration.
+
+**Contrast:** the whole light range spans about 3% of lightness, so no text contrast anywhere on the
+page moves.
+
 ## 01.10.2026 - A/B: Variant B, Visual Command Center
 
 Branch `feat/home-b-command`, cut from `v0.9` (`52e2232`), carrying the same Home restore and the

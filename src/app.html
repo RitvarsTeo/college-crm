@@ -843,6 +843,21 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
     --j-from:#1d4d7a;--j-to:#8fcbef;   /* the Journey's stage line in dark (the review #2) */
     --glass:linear-gradient(180deg,rgba(255,255,255,.06) 0%,rgba(255,255,255,.035) 100%);
     --glass-line:rgba(194,211,222,.18)}
+  /* THE LIGHT SEA (the owner, 01.10.2026: "same way we have a gradient for the dark mode,
+     lets have a gradient for the light version"). Dark takes the sign-in screen's sea:
+     a glow from the top centre over a vertical deepening, #17456e -> #0f2f4f -> #08182e.
+     Light is the SAME GEOMETRY in light mode's own tones, not a new theme and not a
+     second palette: the glow is the page's lightest surface, and the page deepens to
+     --shell at the foot, exactly as dark deepens to its own.
+     The whole range is #fbfcfd -> #e7ebf0, about 3% of lightness, so no text contrast
+     anywhere on the page moves. `fixed` so it is one sea, not a sea per scroll. */
+  html.ui-c:not([data-theme="dark"]) body{
+    background:radial-gradient(120% 80% at 50% 0%,#fbfcfd 0%,rgba(251,252,253,0) 60%),
+      linear-gradient(180deg,#f7f9fb 0%,#f5f7fa 45%,#e7ebf0 100%) fixed #f5f7fa}
+  /* the menu takes the same treatment it takes in dark: a quiet vertical fall, so the
+     two modes are the same design and not two designs */
+  html.ui-c:not([data-theme="dark"]) .shell > nav{
+    background:linear-gradient(180deg,#ffffff 0%,#fafbfc 100%);border-right:1px solid var(--rule)}
   html.ui-c[data-theme="dark"] body{background:radial-gradient(120% 80% at 50% 0%,#17456e 0%,rgba(23,69,110,0) 60%),
       linear-gradient(180deg,#0f2f4f 0%,#0f2f4f 45%,#08182e 100%) fixed #0f2f4f}
   html.ui-c[data-theme="dark"] .shell > nav{background:linear-gradient(180deg,rgba(8,24,46,.78) 0%,rgba(8,24,46,.92) 100%);border-right:1px solid rgba(194,211,222,.10)}
@@ -1243,6 +1258,12 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .kgrp-go{display:block;margin-top:8px;padding-top:8px;border-top:1px solid var(--rule2);
     font-size:12px;color:var(--petink);text-decoration:none}
   html.ui-c .kgrp-go:hover{text-decoration:underline}
+  /* the sparkline under a KPI: its own series, quiet, never competing with the figure */
+  html.ui-c .kspark{display:block;width:100%;height:22px;margin:5px 0 2px;overflow:visible}
+  html.ui-c .kspark path{fill:none;stroke:var(--v-adm);stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke}
+  html.ui-c .kspark circle{fill:var(--v-adm)}
+  html.ui-c .kspark.lead path,html.ui-c .kspark.lead circle{stroke:var(--t3);fill:var(--t3)}
+  html.ui-c .kspark.lead path{stroke-dasharray:none}
   html.ui-c .kgo{display:inline-block;margin-top:5px;font-size:11.5px;color:var(--petink);
     text-decoration:none;opacity:.8}
   html.ui-c .kgo:hover{opacity:1;text-decoration:underline}
@@ -1776,8 +1797,8 @@ async function viewHomeC() {
     <div class="kcmd">
       <div class="kcmd-main">
         <div class="kstrip">
-          <div class="khero"><span>Admitted</span><b>${admitted.length}</b><small>${year}${undated ? ` \u00b7 +${undated} undated` : ''}</small><a class="kgo" href="#/outcomes">Outcomes →</a></div>
-          <div><span>Leads</span><b>${s.newLeads ?? 0}</b><small>${year}</small><a class="kgo" href="#/leads">Inbox →</a></div>
+          <div class="khero"><span>Admitted</span><b>${admitted.length}</b><small>${year}${undated ? ` \u00b7 +${undated} undated` : ''}</small>${cSpark(months.map((m) => m.admitted), 'adm')}<a class="kgo" href="#/outcomes">Outcomes →</a></div>
+          <div><span>Leads</span><b>${s.newLeads ?? 0}</b><small>${year}</small>${cSpark(months.map((m) => m.newLeads), 'lead')}<a class="kgo" href="#/leads">Inbox →</a></div>
           <div><span>Conversion</span><b>${s.conversionPct == null ? '-' : s.conversionPct + '%'}</b><small>${s.conversionA ?? 0} / ${s.conversionB ?? 0} who arrived</small><a class="kgo" href="#/reports">Reports →</a></div>
           <div><span>Median time to admission</span><b>${s.medianDaysToAdmission == null ? '-' : s.medianDaysToAdmission} <em>days</em></b><small>first contact to admission</small><a class="kgo" href="#/reports">Reports →</a></div>
         </div>
@@ -1821,6 +1842,29 @@ function cProgBars(rows) {
     <span class="c-pbar"><i class="lead" style="width:${w(x.newLeads)}%"></i><em>${Number(x.newLeads) || 0}</em></span>
     <span class="c-pbar"><i class="adm" style="width:${w(x.admitted)}%"></i><em>${Number(x.admitted) || 0}</em></span>
   </div>`).join('')}</div>`;
+}
+
+// A KPI'S OWN SHAPE (Mixpanel Home, seen on Mobbin 01.10.2026: every headline figure
+// carries a sparkline of its own series, so a number is never a bare digit). Pattern
+// only - the line is ours, drawn from the same monthly trend the month chart uses, so
+// it is the real series and not an illustration.
+//
+// It draws nothing when there is nothing to say: fewer than two months of data, or a
+// series that is flat at zero, gets no line rather than a straight one pretending to
+// be a trend.
+function cSpark(values, kind) {
+  const v = (values || []).map((n) => Number(n) || 0);
+  if (v.length < 2 || !v.some((n) => n > 0)) return '';
+  const max = Math.max(...v), W = 100, H = 22;
+  const pts = v.map((n, i) => [
+    (i / (v.length - 1)) * W,
+    H - 2 - (max ? (n / max) * (H - 4) : 0),
+  ]);
+  const d = pts.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+  const last = pts[pts.length - 1];
+  return `<svg class="kspark ${esc(kind || '')}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"
+    role="img" aria-label="the last ${v.length} months, ending at ${v[v.length - 1]}">
+    <path d="${d}"/><circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="2.2"/></svg>`;
 }
 
 function cMonthChart(months, year) {
