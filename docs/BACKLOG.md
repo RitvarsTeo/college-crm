@@ -14,6 +14,46 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 01.10.2026 - AI Review: decided, recorded, NOT built
+
+From the AI Review feasibility session. Brief:
+`Projects/College CRM/BRIEF_INTAKE_AI_REVIEW_DIRECTION.md`, design
+`STAGE2_AI_REVIEW_DESIGN.md`, report `AI_REVIEW_FEASIBILITY_2026-10-01.html`.
+
+Feasible, about $1-$135 a month. Direction: channels capture broadly, `receive()` stores, Claude
+writes a suggestion, a person decides. **Nothing of the AI layer is built and V1 does not wait for
+it.** These rows are kept here because the backlog is the memory and `INBOUND_ARCHITECTURE.md`
+section 5 alone is not where anybody looks for what was decided.
+
+| What | Status | Note |
+|---|---|---|
+| **Stage 2 scope** | DECIDED 01.10 | the AI MAY filter the working Inbox, prioritise, recommend routing and a next action, and flag duplicates and known people. **Filtered is not destroyed:** the event stays recoverable and auditable with source, provenance and the AI's reason. Uncertain but genuine stays for a person. A person still decides every lifecycle change |
+| Legal approval to send inbound data to Anthropic (US/global processing) | DECIDED 01.10 | exact record: "Legal approval obtained. Approver not specified in the current decision record." |
+| **1a, what the AI may hide alone** | DECIDED 01.10 | **only spam and automated mail** at high confidence: spam, bots, bounces, newsletters, no-reply and system mail. Irrelevant, supplier, internal and not-a-prospective-student are classified and recommended, **never hidden** - each is a judgement about a real person who wrote to us |
+| **1b, the threshold** | DECIDED 01.10 | **set by the test set, never a hard-coded number.** Shadow mode first, hiding nothing; measure false filtering; the threshold is where no known genuine prospective-student message is filtered. Re-measured on any change to the model, prompt, categories or threshold |
+| **1c, who checks Filtered** | DECIDED 01.10 | Admissions, weekly |
+| **1d, how long a filtered body is kept** | DECIDED 01.10 | 13 months from the **newest** line; joined lines each keep their own clock, so an old call never deletes a newer one. **This is now built** - see the INTAKE FLOW lane section |
+| **2, who sees the AI metadata in shadow mode** | DECIDED 01.10 | admins and Admissions only |
+| **3, the AI's labels** | DECIDED 01.10 | it reuses the labels that exist - unclear / lead, the archive reasons, the programme codes. No second ladder |
+| **9, one line per arrival (`inbound_line`)** | **BUILT 01.10** | on Ritvars' direct instruction to this lane ("Q9 = IN V1 NOW. BUILD IT NOW"), not on a relay. The feasibility session has since confirmed it never authorised a V1 change itself |
+| 11, order of work | DECIDED 01.10 | V1 and channels first |
+| 4-8 and 10 | OPEN | his |
+| Anthropic SDK, API key, prompt, review table, AI labels in the Inbox | NOT BUILT | out of scope until he decides |
+
+**The six rules every change to the inbound path must keep** (also in `INBOUND_ARCHITECTURE.md` §5):
+
+1. `receive()` is the single entry point. No per-channel lead logic.
+2. Store the inbound row first, before any judgement.
+3. `inbound.body` lives until qualify or archive. Never deleted earlier.
+4. Machine output keeps provenance `extracted` and is never counted until somebody confirms it.
+5. Person matching stays in `src/identity.js`, never in the AI.
+6. Add no new place that nulls a body or filters without a trace.
+
+**The one that already exists, verified 01.10:** the word-list junk filter in `receive()` sets the
+ROW body to NULL the moment it fires and writes no history row. Left alone in V1 on his
+instruction. Since this lane's line work, the **line** keeps its body, so a filtered item is
+recoverable and auditable even though the row shows nothing - which is what 1a and 1c need.
+
 ## 01.10.2026 - INTAKE FLOW lane (lane/intake-flow)
 
 Branch `lane/intake-flow`, **re-cut from production `24279e2`** (the Applications lane's release;
