@@ -32,6 +32,8 @@ byte-identical to it on 01.10 with its own sign-in return script). Technical pro
 | Webhook hardening: not JSON, a list, no changedAt = 400 and nothing stored; too big = connection cut, nothing stored, the next call lands; `SIS_APPLICATION_SECRET=` (empty) in `.env.example`. 770/770 | COMMITTED, NOT DEPLOYED | `7386ced` |
 | Item 3, "Same person as..." (the 30.09 undo decision) on an SIS-created person's page: search People, "This is them" calls merge-into, opens the real person. Clicked through locally. 773/773 | COMMITTED, NOT DEPLOYED | `4fa8912` |
 
+| The SIS poller writes nothing to `inbound`: the one write moves to `confirmedBySystem()` in intake.js; a test pins it (the rule the other lanes are adding). 775/775 | COMMITTED, NOT DEPLOYED | `8391e50` |
+
 **DECIDED 01.10.2026 by Ritvars (popup):**
 - **SIS step: A, "SIS holds them".** No task for an SIS-created person at started or later; never in
   "No next step"; the page says "In the SIS: <status>". Registered-only stays a lead with a step.
@@ -39,6 +41,19 @@ byte-identical to it on 01.10 with its own sign-in return script). Technical pro
 - **SIS live: A, after this release.** Ritvars sets `CHANNEL_MODE_SIS=live` in Vercel himself;
   `SIS_API_TOKEN` is present in Production (seen in `vercel env ls`, 01.10). Then the next 08:00 run
   is verified.
+
+- **Release owner: A, this lane deploys** (01.10, popup). No Release + Ops session was running and
+  Intake MAIN V1 is told not to deploy; Ritvars chose this lane, with `deploy_verify.sh`.
+- **Applications view, the metrics source: A, SIS data in Intake** (01.10, popup; the Stage 2 /
+  Applications design decision). In his words: "Build the Applications view from the SIS/application
+  data already available in Intake. Track the application funnel per programme and week, using the
+  real SIS lifecycle data: registered -> started -> submitted -> admitted -> matriculated. Do not
+  depend on Aigars' Vercel analytics account for the core Applications dashboard. The dashboard can be
+  sparse until SIS goes live; that is acceptable. Do not fabricate data. Keep external
+  traffic/landing-page analytics as a separate future enhancement if access becomes available."
+  Evidence behind the question: apply.novikontas.org is served by Caddy (the SIS server), not Vercel,
+  and its page says "No third-party analytics"; this Vercel account has no domain and no apply
+  project. Traffic analytics: SAID, later, needs access.
 
 Already decided 30.09 and NOT asked again: who is application-first, registered at New, the done New
 Leads item, the history line "Created from the SIS", a known lead keeps her path, the merge as undo.
