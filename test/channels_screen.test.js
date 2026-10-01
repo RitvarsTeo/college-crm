@@ -66,16 +66,16 @@ test('last activity is what arrived, never an explanation', () => {
   const sis = ch({ channel: 'sis', direction: 'inbound_poll' });
 
   assert.equal(s.activity(phone, { at: '2026-09-29T05:15:00Z', detail: { kept: 9, inbox: 9 } }),
-    '9 calls · 9 to New Leads · AT(2026-09-29)');
+    '9 calls · 9 to the Inbox · AT(2026-09-29)');
   assert.equal(s.activity(sis, { at: '2026-09-29T14:30:00Z', detail: { stored: 6, inbox: 6 } }),
-    '6 applicants · 6 to New Leads · AT(2026-09-29)');
+    '6 applicants · 6 to the Inbox · AT(2026-09-29)');
   assert.equal(s.activity(phone, { at: '2026-09-29T05:15:00Z', detail: { kept: 1, inbox: 0 } }),
     '1 call · AT(2026-09-29)', 'one call, not "1 calls", and nothing about an empty inbox');
 
   // a number already in the queue that rang again makes no new row, and saying so
   // is the only way anybody can tell that run apart from a run that did nothing
   assert.equal(s.activity(phone, { at: '2026-09-29T05:15:00Z', detail: { kept: 3, inbox: 1, again: 2 } }),
-    '3 calls · 1 to New Leads · 2 rang again · AT(2026-09-29)');
+    '3 calls · 1 to the Inbox · 2 rang again · AT(2026-09-29)');
 
   // no run yet: what a provider sent, else what is still missing
   assert.equal(s.activity(ch({ events: 3, lastEventAt: '2026-09-20T10:00:00Z' }), null),

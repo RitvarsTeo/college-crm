@@ -1105,7 +1105,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   @media (max-width:1100px){ html.ui-c .kthree{grid-template-columns:minmax(0,1fr) minmax(0,1fr)} }
   @media (max-width:760px){ html.ui-c .kstrip{grid-template-columns:1fr 1fr} html.ui-c .kstrip > div:nth-child(3){border-left:0;padding-left:0} html.ui-c .kthree{grid-template-columns:1fr} }
 
-  /* New Leads, People and Journey in C. Same hairline sheets as Next Steps. */
+  /* Inbox, People and Journey in C. Same hairline sheets as Next Steps. */
   html.ui-c .c-lead.is-open{background:var(--c-sel)}
   html.ui-c .c-open{padding:2px 16px 16px;background:var(--c-sel)}
   html.ui-c .c-open select,html.ui-c .c-open textarea{width:100%;max-width:520px}
@@ -1505,7 +1505,7 @@ function installCNav() {
   brand.insertAdjacentHTML('afterend', `<div class="cnav" role="navigation" aria-label="Main">
     <a href="#/home" data-c="home">${C_ICON.home}<span>Home</span></a>
     <a href="#/admissions" data-c="admissions">${C_ICON.adm}<span>Admissions</span></a>
-    <div class="kids"><a href="#/leads" data-c="leads"><span>New Leads</span><span class="n" id="cnLeads"></span></a>
+    <div class="kids"><a href="#/leads" data-c="leads" title="Things that have come in and need a person to look at them"><span>Inbox</span><span class="n" id="cnLeads"></span></a>
       <a href="#/next" data-c="next"><span>Next Steps</span><span class="n" id="cnNext"></span></a></div>
     <a href="#/people" data-c="people">${C_ICON.ppl}<span>People</span></a>
     <div class="kids"><a href="#/journey" data-c="journey"><span>Journey</span></a></div>
@@ -1797,7 +1797,7 @@ function viewHelpC() {
       <div class="act"><button class="btn ghost" id="helpTourBtn" onclick="cStartTour(this)">Take the tour</button>
       <button class="btn" onclick="fbOpen('BUG')">Report a problem</button></div></div>
     <div class="c-steps">
-      <a class="c-step" href="#/leads"><span class="c-step-n">01</span><b>New Leads</b><small>Everything that arrives lands here first. Say what they want to study and the next step, and they move into Admissions. Junk is marked not relevant, never deleted.</small></a>
+      <a class="c-step" href="#/leads"><span class="c-step-n">01</span><b>Inbox</b><small>Everything that arrives lands here first. Say what they want to study and the next step, and they move into Admissions. Junk is marked not relevant, never deleted.</small></a>
       <a class="c-step" href="#/next"><span class="c-step-n">02</span><b>Next Steps</b><small>What the team has to do: overdue, due today, coming up. Press Done, say how it went and choose the next step. Everyone always keeps a next step.</small></a>
       <a class="c-step" href="#/outcomes"><span class="c-step-n">03</span><b>Outcomes</b><small>Where finished journeys end: admitted or not proceeding. The download for management review is here.</small></a>
     </div>
@@ -1826,6 +1826,20 @@ function cStartTour(btn) {
 // ids - so the classic doQualify(), its duplicate check ("This is them" / "a different
 // person") and its rules run unchanged. Nothing about qualifying changed.
 let C_LOPEN = null;
+// A phone row's body is the call log, one line per call, because one number is one
+// thing to look at however many times it rings. Printed raw that is three near-
+// identical sentences on a queue you SCAN, which is the fault P5 names: the row must
+// show what you decide on - how many times, and whether the last one was answered -
+// and the full log stays in the body for whoever opens the row. One call: unchanged.
+function cCallLine(body) {
+  const lines = String(body || '').split('\n').filter(Boolean);
+  if (lines.length < 2) return body || '';
+  const last = lines[lines.length - 1];
+  const when = (last.match(/(\d{2}:\d{2})/) || [])[1] || '';
+  return `${lines.length} calls, last ${/missed call/i.test(last) ? 'missed' : 'answered'}${when ? ' ' + when : ''}`;
+}
+
+
 async function viewLeadsC() {
   const d = await api('/api/intake?state=new');
   const rows = d.rows || [];
@@ -1854,15 +1868,15 @@ async function viewLeadsC() {
     </div>`;
   };
   $('#view').innerHTML = `<p class="c-crumb">Admissions</p>
-    <div class="c-head"><div><h1>New Leads</h1></div>
+    <div class="c-head"><div><h1>Inbox</h1></div>
       <div class="act"><button class="btn" onclick="openAdd()">Add lead</button></div></div>
     ${receipt}
     <div class="c-sheet">${rows.length ? rows.map((r) => `<div class="c-line row c-lead${C_LOPEN === r.id ? ' is-open' : ''}" tabindex="0" onclick="C_LOPEN=${C_LOPEN === r.id ? 'null' : Number(r.id)};viewLeadsC()">
         <div class="c-who"><b class="c-reach">${esc(r.contact_name || r.contact_handle || '') || cTelLink({ phone: r.contact_phone }) || 'Unknown'}</b><small>${esc(channelLabel(r.channel))} · ${fmtDateTime(r.received_at)}${r.aged ? ' · <span class="c-late">late</span>' : ''}</small></div>
-        <div class="c-what">${esc(r.body || val(r, 'question') || '')}</div>
+        <div class="c-what">${esc(r.channel === 'phone' ? cCallLine(r.body) : (r.body || val(r, 'question') || ''))}</div>
         <div class="c-when">${esc(val(r, 'interest') || '')}</div><div></div></div>
         ${C_LOPEN === r.id ? panel(r) : ''}`).join('')
-      : '<div class="c-empty">No new leads right now.</div>'}</div>`;
+      : '<div class="c-empty">Nothing waiting. This queue is clear.</div>'}</div>`;
   if (C_LOPEN) { const s = $('#qInterest'); if (s) s.focus(); }
   if (L) cNavCounts();                    // a lead was just saved or set aside: the menu count moves too
 }
@@ -2499,14 +2513,14 @@ async function viewFeedbackC() {
 // ---------------------------------------------------------------- C OVERRIDES
 // Two classic functions redraw a classic screen when they finish. In C they redraw
 // whatever screen you are on, so planning a step from a list keeps you on the list,
-// and a lead saved from New Leads comes back to New Leads.
+// and a lead saved from the Inbox comes back to the Inbox.
 if (UI === 'c') {
   // eslint-disable-next-line no-func-assign
   doNewTask = async (personId) => {
     await post(`/api/people/${personId}/task`, { label: $('#tLabel').value, due: $('#tDate').value });
     closeModal(); route();
   };
-  // doQualify and doArchive end with viewInbox(); in C that is the New Leads screen.
+  // doQualify and doArchive end with viewInbox(); in C that is the Inbox screen.
   // eslint-disable-next-line no-func-assign
   viewInbox = () => viewLeadsC();
   // Every classic dialog on a person (edit, note, stage, closing reason, SIS) ends with
@@ -4373,7 +4387,7 @@ function chActivity(c, run) {
     const bits = [];
     if (c.channel === 'sis' && x.stored != null) bits.push(plural(x.stored, 'applicant'));
     if (c.channel !== 'sis' && x.kept != null) bits.push(plural(x.kept, 'call'));
-    if (x.inbox) bits.push(x.inbox + ' to New Leads');
+    if (x.inbox) bits.push(x.inbox + ' to the Inbox');
     // a number already waiting that rang again: no new row, and the run says so
     if (x.again) bits.push(x.again + ' rang again');
     return esc((bits.join(' \u00b7 ') || 'ran') + ' \u00b7 ' + fmtDate(run.at));

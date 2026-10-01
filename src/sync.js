@@ -104,7 +104,7 @@ const PBX_BOOKMARK = 'pbx_until';
 // cannot see it; the NUMBER has to be the key. Last 8 digits, the same comparison
 // identity.js makes, because one number is written three ways by three systems.
 const phoneThread = (num) => {
-  const d = normPhone(num).replace(/D/g, '');
+  const d = normPhone(num).replace(/[^0-9]/g, '');
   return d.length > 5 ? 'phone:' + d.slice(-8) : null;
 };
 
@@ -160,8 +160,7 @@ async function storeCall(db, r, mode, at, out) {
       joinBody: `Rang again ${toRigaStamp(r.created_at).slice(0, 16)}, ${sentence.charAt(0).toLowerCase()}${sentence.slice(1)}`,
       filterWhy: before ? `this number was archived before as "${before.archive_reason}"` : null });
     inboundId = got.id;
-    if (got.joined) out.again++; else if (got.filtered) out.filtered++; else out.inbox++;
-  } else {
+    if (got.joined) out.again++; else if (got.filtered) out.filtered++; else out.inbox++;  } else {
     // a withheld number: kept for the call counts, but nobody can ring it back
     out.noNumber++;
   }

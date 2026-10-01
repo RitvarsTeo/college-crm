@@ -46,12 +46,16 @@ test('the old sidebar counter is not drawn in C, and still is in the classic vie
   assert.match(APP, /html\.ui-c #waiting, html\.ui-c #waiting2\{display:none!important\}/);
 });
 
-test('New Leads and Next Steps keep their own counts in C\'s navigation', () => {
-  assert.match(APP, /<span>New Leads<\/span><span class="n" id="cnLeads">/);
+// The queue is called Inbox, not New Leads (Ritvars, 01.10.2026): a stranger who
+// rang once is not a lead, and src/intake.js line 4 has always said so. The route
+// (#/leads) and the id (cnLeads) are identifiers other things point at, so they stay.
+test('the Inbox and Next Steps keep their own counts in C\'s navigation', () => {
+  assert.match(APP, /<span>Inbox<\/span><span class="n" id="cnLeads">/);
+  assert.doesNotMatch(APP, /<span>New Leads<\/span>/, 'nothing calls the queue New Leads');
   assert.match(APP, /<span>Next Steps<\/span><span class="n" id="cnNext">/);
   const start = APP.indexOf('async function cNavCounts(');
   const src = APP.slice(start, APP.indexOf('\n}\n', start));
-  assert.match(src, /\(i\.counts \|\| \{\}\)\.new/, 'New Leads counts new arrivals');
+  assert.match(src, /\(i\.counts \|\| \{\}\)\.new/, 'the Inbox counts new arrivals');
   assert.match(src, /cDueNow\(t\)\.length/, 'Next Steps counts what is due now');
 });
 

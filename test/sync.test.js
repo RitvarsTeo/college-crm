@@ -475,6 +475,8 @@ test('phone: the same unknown number ringing again joins the row it already has'
   assert.equal(rows.length, 1, 'one number, one row');
   assert.match(rows[0].body, /Missed call on button 3/);
   assert.match(rows[0].body, /rang again/i, 'the row says they rang again');
+  assert.match(rows[0].body, /Rang again 2026-09-28 12:01, missed call/,
+    'Riga local time, no seconds: the stamp is read by a person, not parsed');
 
   // THE CLOCK DOES NOT RESTART. Somebody who keeps ringing has waited LONGER, not
   // less, so a repeat call must never push them back down the queue or clear "late".
