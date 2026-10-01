@@ -112,6 +112,20 @@ export async function receive(db, item) {
     if (seen) return { duplicate: true, id: seen.id };
   }
 
+  // ONE OPEN ITEM PER THREAD (the phone, 01.10.2026: a repeat caller joins the item staff have not
+  // looked at yet). Same option names as the intake-flow lane, so the two meet without a second rule.
+  // A row stored before thread keys existed is matched by its number. The clock does not restart.
+  if (item.joinOpenThread && item.threadKey) {
+    const open = await db.prepare(`SELECT id, body FROM inbound WHERE channel = ? AND state = 'new'
+      AND (thread_key = ? OR (thread_key IS NULL AND contact_phone = ?)) ORDER BY id DESC`)
+      .get(item.channel, item.threadKey, item.phone || '');
+    if (open) {
+      const body = [open.body || '', item.joinBody || item.body || ''].filter(Boolean).join('\n');
+      await db.prepare('UPDATE inbound SET body = ? WHERE id = ?').run(body, open.id);
+      return { joined: true, id: open.id };
+    }
+  }
+
   const provided = {};
   if (item.email) provided.email = item.email;
   if (item.phone) provided.phone = item.phone;
