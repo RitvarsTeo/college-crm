@@ -14,6 +14,41 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 01.10.2026 - LIVE: v0.9, all three lanes in one release
+
+Branch `v0.9`, **pushed to GitHub**. Production commit `292b4f9`, deployment
+`dpl_6ENuvYa9Gso16WXH8BgWUUJsaPNH`. **871/871** run by the deploy gate on that exact checkout.
+Live `/` proven byte-identical to the commit; 70 of 70 uploaded files hash-identical to git, none
+untracked; 23 leak probes clean; 8 private routes answer 401.
+
+The first release carrying all three lanes. Base `7b327ff`, which already held APPLICATIONS, SIS
+and all seventeen CHANNELS commits; the nine INTAKE FLOW commits replayed on top.
+
+**What the reconciliation found, and why it mattered.** The lanes were two steps further on than
+the brief recorded, and `lane/channels-2` already contained its own re-implementation of the
+repeat-caller join. Cherry-picking "three lanes in order" would have shipped it twice.
+
+**The join was a real merge, not a pick.** Each lane was better in a different way and the release
+keeps all three behaviours:
+
+| From | What |
+|---|---|
+| CHANNELS | the `contact_phone` fallback in `receive()`, for rows stored before thread keys existed. Without it every such row is orphaned the day this ships |
+| CHANNELS | the archived-number filter, `filterWhy`, and the `oneOpenItemPerNumber` gate |
+| INTAKE FLOW | the thread key NORMALISED to the last 8 digits. The raw number made `+37129111222`, `371 29 111 222` and `29111222` three rows for one caller |
+| INTAKE FLOW | `joinBody`, so a repeat call appends "Rang again 12:20, missed call on button 1" instead of the same sentence with no time. `cCallLine` reads it to say "3 calls, last answered 11:52" |
+
+One counter, `again`, not two. The channels lane counted `folded` and never printed it; a number
+counted but never shown is not a count. Their `pbx_filter` tests were updated to both changes,
+not worked around.
+
+**One integration bug, caused and caught here:** combining the two join blocks inlined a variable
+that `addLine` still referenced by name. Six tests across both lanes failed on it.
+
+Verified before the push: all four screens, the phone chips, five per-stage exit marks, the
+outcomes band, Reports. Verified after: the live page carries every integrated marker, "New Leads"
+is gone, nothing of the AI layer is present, and the manifest reads **Novikontas Intake**.
+
 ## 01.10.2026 - AI Review: decided, recorded, NOT built
 
 From the AI Review feasibility session. Brief:
