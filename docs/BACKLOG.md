@@ -14,6 +14,42 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 01.10.2026 - APPLICATIONS lane (apply.novikontas.org -> SIS -> Intake)
+
+Worktree `crm-applications`, branch `lane/applications`, cut from production `b8454f7` (live `/` proven
+byte-identical to it on 01.10 with its own sign-in return script). Technical prototype (P4). Brief:
+`Projects/College CRM/LANE_APPLICATIONS.md`. **Release goes through CRM V1 / Release + Ops, not this lane.**
+
+| What | Status | Commit |
+|---|---|---|
+| Migrated: the SIS creates an application-first person at the application stage (decided 30.09 popup) | COMMITTED, NOT DEPLOYED | `a94e3f9` (from `73b8696`) |
+| Migrated: `POST /api/intake/application`, the fast path, secret `SIS_APPLICATION_SECRET` (name only) | COMMITTED, NOT DEPLOYED | `fd5d0fd` (from `7216ec6`) |
+| Migrated: an SIS-created twin folds into the real person, `POST /api/people/<id>/merge-into` | COMMITTED, NOT DEPLOYED | `fc0f877` (from `29393b6`) |
+| Item 1, SIS person identity: the SIS's email, phone and programme are written onto the person as provider facts, so the page no longer lists them as "still to find out"; Came from reads SIS, not "sis not a channel" (the alias fix also covers website_form, gmail, open_day, klatiene). 761/761 | COMMITTED, NOT DEPLOYED | `557898b` |
+
+The backlog-only commits of `feat/application-first-2026-09-30` (`5ef4322`, `ef199e2`, `f6f958d`,
+`9806352`) were NOT carried; these rows replace them.
+
+**Evidence that corrects the brief (P1).** "A SIS row in New Leads shows nobody" is not what the data
+says. The 30.09 00:45 backup (before the archive) holds the six SIS inbound rows with `contact_name`
+6/6, `contact_email` 6/6, `contact_phone` 4/6, and the 01.10 backup still holds them after archiving.
+On the live commit, run locally with one SIS applicant through the real `syncSis`, the New Leads card
+shows the name. The card shows no email or phone for ANY channel, which is the card's design, not a
+SIS fault. The real gap was the person page of an SIS-created person (handed over 30.09 as 3c), now
+fixed in `557898b`.
+
+**Measured on the person page, before -> after** (local, SIS applicant with email, no phone, NAV):
+Came from "sis not a channel" -> "SIS"; Still to find out "interest, start, education, question,
+email, phone" -> "start, education, question, phone"; chips EMAIL and WANTS TO STUDY NAV appear.
+
+**Parked, not this lane (P3):** the "not recorded" rows on every person page (Phone, Study form,
+Education, Nationality) break the 30.09 no-gaps rule app-wide; that is the person page's owner, not
+the SIS. SAID.
+
+**Application metrics (apply.novikontas.org / Vercel analytics inside Intake):** not in this lane's
+brief, the MVP map or its definition of done. QUEUED after the core application/SIS path, SAID
+01.10.2026. Not Intake itself; a clarifying dashboard, like the landing-page analysis.
+
 ## 30.09.2026 - LIVE: the patch release, seven commits
 
 Branch `release/patches-2026-09-30`. Production commit `4547505`, deployment
