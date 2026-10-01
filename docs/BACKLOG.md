@@ -98,6 +98,39 @@ since 14:54 (Applications release), no live run yet.
 against the real SIS) and presses the on-demand sync; the first real applicant after 14:54 is seen in
 Intake with reference, status, programme and contact; the Reports section shows real figures.
 **Every 5 minutes:** the code allows it; the schedule is daily because of the Vercel plan (not a code limit).
+## 01.10.2026 - CHANNELS lane: COMMITTED, NOT DEPLOYED
+
+Branch `lane/channels`, worktree `crm-channels`, cut from production `b8454f7` (verified: deployment
+`dpl_G1vvHuMFXirySJo9A6JxqcvkKWSm`, 10:27 Riga). Cherry-picked, never merged. Discovery:
+`docs/CHANNELS_LANE_2026-10-01.md`. Release belongs to CRM V1 / Release + Ops, on Ritvars's yes.
+
+**DECIDED 01.10.2026 (Ritvars):** Gmail option B, edu@ signs in once (replaces A of 30.09).
+**DECIDED 01.10.2026 (Ritvars):** "there will be filtration" before calls become New Leads; "build it now".
+**Kept, already decided:** an unknown caller goes to New Leads, where staff assess interest; nobody is a
+lead until a person qualifies them; the menu button 1/2/3 decides whose call it is.
+
+| Item | Status | Commit |
+|---|---|---|
+| Meta: Page messages are Messenger, lead forms are Facebook, one address (popup B, 30.09) | COMMITTED, NOT DEPLOYED | `f4a3ad1` (from bfdeb31) |
+| Open Day: attendance sent later reaches the person (channel stays parked) | COMMITTED, NOT DEPLOYED | `274f31c` (from f927437) |
+| Gmail: the daily poll writes to New Leads from the last good run; cron 05:30 UTC | COMMITTED, NOT DEPLOYED | `6ed7653` (from 8e5717d) |
+| Meta and LinkedIn lead answers fetched after the notification; cron 05:45 UTC | COMMITTED, NOT DEPLOYED | `8cba9e1` (from 4f40f78) |
+| TikTok content read (built for the developer webhook, NOT ad lead forms; to match on the first real test lead) | COMMITTED, NOT DEPLOYED | `5de2a02` (from 095ae31) |
+| Google Form Apps Script | COMMITTED, NOT DEPLOYED | `975edb6` (from 0800af3) |
+| **Gmail B reworked:** link from an admin page, no Intake account for Marina, back to the registered sign-in address, edu@ only, B wins over the key already in Vercel | COMMITTED, NOT DEPLOYED | `8536f46` + `d03cd60` (from 57222df) |
+| **Phone filter** in `config.phoneFilter`: numbers archived as Spam / Supplier or vendor / Internal are filtered with the reason; a repeat call joins the open item; counted per run | COMMITTED, NOT DEPLOYED | `68c28ae` |
+| **Tilda (C8):** tranid, any field case, utm from COOKIES, secret as header or field, `ok` reply, test request | COMMITTED, NOT DEPLOYED | `5759b7c` |
+| The 11 owner write-ups; Marina (B), Tilda (Ritvars's steps), LinkedIn and TikTok access requests rewritten | COMMITTED, NOT DEPLOYED | this commit |
+
+**Left out on purpose:** the application fast path and the SIS merge that rode along in 57222df's
+conflict (applications lane); f737090; the twelve backlog-only commits; 8777509 (second Channels screen, open).
+
+**Waits on, after the deploy:** Marina opens the edu@ link (Ritvars opens `/api/admin/gmail/link`);
+Ritvars sets `WEBSITE_FORM_SECRET` + `CHANNEL_MODE_WEBSITE=test` and the Tilda webhook; Oksana: Meta
+admin; Tetiana: LinkedIn Super admin + Account manager, TikTok ad-account Admin, and her answers.
+**Not DONE until** a real message is seen in Intake as `source=provider` per channel.
+**What can break:** if the OAuth consent screen is External, Google shows an "unverified app" stop for
+gmail.readonly. Check: Ritvars opens the link himself first; our side keeps nothing from his account.
 
 ## 30.09.2026 - LIVE: the patch release, seven commits
 
@@ -451,14 +484,6 @@ ends? It decides the call pop-up (poll every ~10 s vs a real-time event from Tel
 only, behind sign-in, the last 2 minutes, per call only uniqueid, created_at, queue, state, operator_name, caller's last
 4 digits; never the token. Needs production (the token lives only in Vercel), so it waits for his go to deploy.
 Then: he calls +371 23111114 (press 1); it is read while ringing, after answer, after hang-up. RESULT: not run yet.
-
-**Channel gaps C1-C7 (Session C HANDOVER, 30.09.2026).** Ritvars: "LETS DO ALL as per maximum in our code, if vercel
-plan is the blocker, it will get unblocked by shifting accounts". C7 (TikTok, LinkedIn answers) was LATER on the MVP
-map; pulled forward by him. Branch feat/channel-gaps-2026-09-30, stacked on feat/application-first-2026-09-30.
-
-| Item | Status | Commit |
-|---|---|---|
-| C1. One Meta address for the Page (his popup B): on /api/inbound/facebook, messaging[] is recorded as Messenger and a leadgen change as Facebook. Only the real webhook path splits; the Console simulator and the demo keep the channel they ask for. 705/705 | COMMITTED, NOT DEPLOYED | (C1) |
 
 **SIS mapping decided + where the person is in the SIS - LIVE 29.09.2026, commits 4b31df5 + fecde5e,
 deployment dpl_8Cazdz5YttPu88dkC94GnYknm6Pu** (645/645).

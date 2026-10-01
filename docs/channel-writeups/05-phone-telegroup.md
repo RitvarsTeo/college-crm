@@ -42,5 +42,9 @@ Our questions:
 ## 6. What changes once it is on
 
 For you, nothing. On our side each call to the college queues appears on the caller's record, and a
-call from an unknown number (or a missed call) lands in our New Leads queue with the number to ring
-back.
+call from an unknown number, answered or missed, lands in our New Leads queue with the number to ring
+back, where staff decide whether there is interest.
+
+Filter before New Leads (01.10.2026, built, not deployed, 68c28ae): a number staff already archived as
+Spam, Supplier or vendor, or Internal is kept under Not relevant instead; a second call from a number
+that is already waiting in New Leads joins that item. Every call is still stored.

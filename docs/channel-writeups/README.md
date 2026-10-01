@@ -1,22 +1,22 @@
 # Channel write-ups - one per owner
 
-30.09.2026, updated in the evening with Session B's commits. Production = `release/patches-2026-09-30`
-4d174c7. "Built, not deployed" = on Session B's branch `feat/channel-gaps-2026-09-30`. **Every channel is in
+Updated 01.10.2026. Production = `b8454f7`. "Built, not deployed" = on branch `lane/channels`
+(worktree `crm-channels`), cherry-picked from Session B's branch. **Every channel is in
 the MVP** (Ritvars, 30.09). Each file can be forwarded as it is.
 
 | File | Channel | Send to | Where it stands |
 |---|---|---|---|
 | [01-meta-oksana.md](01-meta-oksana.md) | Facebook, Messenger, Instagram, WhatsApp | Oksana (gives access) | Access asked 30.09; fixes built, not deployed |
-| [02-gmail-marina.md](02-gmail-marina.md) | Email (edu@novikontas.org) | Marina | Her steps sent 30.09; key in Vercel; fixes built, not deployed |
-| [03-website-form-oksana.md](03-website-form-oksana.md) | Website forms (Tilda) | Oksana (gives access) | Access asked 30.09; Tilda fix (C8) not built |
+| [02-gmail-marina.md](02-gmail-marina.md) | Email (edu@novikontas.org) | Marina | **Option B (01.10)**: she opens a link and signs in as edu@; built on `lane/channels`, not deployed, link exists only after the deploy |
+| [03-website-form-oksana.md](03-website-form-oksana.md) | Website forms (Tilda) | Ritvars (has Tilda access 01.10) | Tilda format built (C8, 5759b7c), not deployed; Ritvars sets the webhook after the deploy |
 | [04-open-day-aigars.md](04-open-day-aigars.md) | Open Day bookings | nobody yet | **Parked by Ritvars 30.09**: connected with the Open Day project on Vercel |
-| [05-phone-telegroup.md](05-phone-telegroup.md) | Phone | TeleGroup | **Live since 30.09** (runs daily) |
+| [05-phone-telegroup.md](05-phone-telegroup.md) | Phone | TeleGroup | **Live since 30.09** (runs daily); filter before New Leads built 01.10 (68c28ae), not deployed |
 | [06-sis-team.md](06-sis-team.md) | SIS applicants | SIS team | Test mode, daily, since 29.09 |
 | [07-mailchimp-ritvars.md](07-mailchimp-ritvars.md) | Mailchimp | nobody: done | **Test mode since 30.09**, webhook registered |
 | [08-google-form-owner.md](08-google-form-owner.md) | Website "Application form" (Google Form) | Oksana or the form's creator | Script written, not deployed; owner asked 30.09 |
 | [09-agent-partner.md](09-agent-partner.md) | Agent or partner | the first partner (not chosen) | Built on our side |
-| [10-linkedin-tetiana.md](10-linkedin-tetiana.md) | LinkedIn | Tetiana (gives access) | Answer fetch built, not deployed; access asked 30.09 |
-| [11-tiktok-tetiana.md](11-tiktok-tetiana.md) | TikTok | Tetiana (gives access) | Content reading built, not deployed; product unconfirmed |
+| [10-linkedin-tetiana.md](10-linkedin-tetiana.md) | LinkedIn | Tetiana (gives access) | Answer fetch built, not deployed; access request rewritten 01.10: page Super admin + ad account Account manager |
+| [11-tiktok-tetiana.md](11-tiktok-tetiana.md) | TikTok | Tetiana (gives access) | Access request rewritten 01.10: ad account Admin; our adapter still to match ad lead forms |
 
 **In person** has no outside owner: staff type the person in at the desk, and it already works.
 
