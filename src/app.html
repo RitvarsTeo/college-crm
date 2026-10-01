@@ -1550,7 +1550,7 @@ const cWhenText = (iso) => (!iso ? 'no next step' : cWhenClass(iso) === 'over' ?
 const cDueNow = (tasks) => tasks.filter((t) => cWhenClass(t.due_at) === 'over' || cWhenClass(t.due_at) === 'today');
 // A channel id as a person reads it. 'unknown' is a gap, and a value that is not one
 // of the configured channels (the old sheet has "school", "campaign") is said to be so.
-const cChannel = (c) => (!c || c === 'unknown' ? ['Not recorded', 'no source was kept'] : (CFG.channels && CFG.channels[c]) ? [channelLabel(c), ''] : [c, 'not a channel']);
+const cChannel = (c) => (!c || c === 'unknown' ? ['Not recorded', 'no source was kept'] : ((CFG.channels && CFG.channels[c]) || (CFG.channelAliases && CFG.channelAliases[c])) ? [channelLabel(c), ''] : [c, 'not a channel']);
 
 // The router's C half. Channels is the one borrowed classic screen.
 async function routeC(page, arg) {

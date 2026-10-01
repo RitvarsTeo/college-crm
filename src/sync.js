@@ -289,6 +289,14 @@ async function createFromSis(db, reference, rows, at, mode, stats) {
     processed_by = 'SIS', processed_at = ?, archive_reason = NULL, archive_note = NULL, body = NULL,
     body_deleted_at = ? WHERE id = ?`).run(id, at, at, item.id);
   await db.prepare('UPDATE sis_applicants SET person_id = ?, inbound_id = ? WHERE reference = ?').run(id, item.id, reference);
+  // What the SIS said about them is known, the provider's word, so the person page never lists the
+  // email, phone or programme it was sent as "still to find out" (APPLICATIONS lane, 01.10.2026).
+  const told = [['email', latest.email], ['phone', latest.phone], ['interest', lead.programme_code]];
+  for (const [field, value] of told) {
+    if (!value) continue;
+    await db.prepare(`INSERT INTO field_values (person_id, inbound_id, field, value, provenance, recorded_at,
+      recorded_by) VALUES (?,?,?,?,'provider',?,'SIS')`).run(id, item.id, field, value, at);
+  }
   for (const r of rows) stats.facts += await recordSisLifecycle(db, id, r, { now: new Date(at) });
   stats.created++;
   return id;
