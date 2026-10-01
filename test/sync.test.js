@@ -448,3 +448,54 @@ test('sis -> lifecycle: a fact on the second page is found (the cursor is follow
   assert.doesNotMatch(sis.seen[1].url, /since=/, 'the cursor page carries no since');
   assert.equal(r.facts, 1);
 });
+
+// ---------------------------------------------- one number, one thing to look at
+// Ritvars, 01.10.2026: "Leads become those who have some interest. How can we know
+// about a caller with no notes? So a new number called first time sits in to look at."
+// A stranger who rings three times is one person to call back, not three. Before
+// this, every call wrote its own queue row, because the only de-duplication was on
+// the call's own uniqueid and each call has a different one.
+test('phone: the same unknown number ringing again joins the row it already has', async () => {
+  const db = await fresh();
+  const first = call({ uniqueid: 'c1', state: 'NOANSWER', operator_name: '',
+    queue: '1001*Q-OTHER', created_at: '2026-09-28 11:58:00' });
+  const second = call({ uniqueid: 'c2', state: 'NOANSWER', operator_name: '',
+    queue: '1001*Q-OTHER', caller_num: '371 29 111 222', created_at: '2026-09-28 12:01:00' });
+
+  const a = await syncPbx(db, { now: NOW, env: ON, fetchImpl: pbxFetch([first]) });
+  assert.equal(a.inbox, 1);
+  const [one] = await inbox(db);
+
+  const b = await syncPbx(db, { now: new Date(NOW.getTime() + 300000), env: ON,
+    fetchImpl: pbxFetch([second]) });
+  assert.equal(b.inbox, 0, 'the second call is not a second thing to look at');
+  assert.equal(b.again, 1, 'it is counted as the same number ringing again');
+
+  const rows = await inbox(db);
+  assert.equal(rows.length, 1, 'one number, one row');
+  assert.match(rows[0].body, /Missed call on button 3/);
+  assert.match(rows[0].body, /rang again/i, 'the row says they rang again');
+
+  // THE CLOCK DOES NOT RESTART. Somebody who keeps ringing has waited LONGER, not
+  // less, so a repeat call must never push them back down the queue or clear "late".
+  assert.equal(rows[0].received_at, one.received_at);
+  assert.equal(rows[0].surface_at, one.surface_at);
+
+  // both calls are kept, and both point at the one row
+  const stored = await db.prepare('SELECT * FROM pbx_calls ORDER BY uniqueid').all();
+  assert.equal(stored.length, 2);
+  assert.deepEqual(stored.map((s) => s.inbound_id), [rows[0].id, rows[0].id]);
+});
+
+test('phone: a number that rings again AFTER its row was dealt with starts a new one', async () => {
+  const db = await fresh();
+  const first = call({ uniqueid: 'c1', state: 'NOANSWER', operator_name: '', queue: '1001*Q-OTHER' });
+  await syncPbx(db, { now: NOW, env: ON, fetchImpl: pbxFetch([first]) });
+  const [one] = await inbox(db);
+  await db.prepare("UPDATE inbound SET state = 'archived' WHERE id = ?").run(one.id);
+
+  const r = await syncPbx(db, { now: new Date(NOW.getTime() + 300000), env: ON,
+    fetchImpl: pbxFetch([call({ uniqueid: 'c2', state: 'NOANSWER', operator_name: '', queue: '1001*Q-OTHER' })]) });
+  assert.equal(r.inbox, 1, 'the queue is empty for them again, so this is new');
+  assert.equal((await inbox(db)).length, 2);
+});

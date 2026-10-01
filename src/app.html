@@ -4374,6 +4374,8 @@ function chActivity(c, run) {
     if (c.channel === 'sis' && x.stored != null) bits.push(plural(x.stored, 'applicant'));
     if (c.channel !== 'sis' && x.kept != null) bits.push(plural(x.kept, 'call'));
     if (x.inbox) bits.push(x.inbox + ' to New Leads');
+    // a number already waiting that rang again: no new row, and the run says so
+    if (x.again) bits.push(x.again + ' rang again');
     return esc((bits.join(' \u00b7 ') || 'ran') + ' \u00b7 ' + fmtDate(run.at));
   }
   if (c.events) return esc(plural(c.events, 'message') + ' \u00b7 ' + fmtDate(c.lastEventAt));

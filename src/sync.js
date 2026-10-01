@@ -96,6 +96,28 @@ export const OVERLAP_MINUTES = 2;
 export const RUN_BUDGET_MS = 40000;
 const PBX_BOOKMARK = 'pbx_until';
 
+// ---------------------------------------------- one number, one thing to look at
+// Ritvars, 01.10.2026: "Leads become those who have some interest. How can we know
+// about a caller with no notes? So a new number called first time sits in to look
+// at." A stranger who rings three times is ONE person to call back, not three.
+// The call's own uniqueid is different every time, so the de-duplication above
+// cannot see it; the NUMBER has to be the key. Last 8 digits, the same comparison
+// identity.js makes, because one number is written three ways by three systems.
+const phoneThread = (num) => {
+  const d = normPhone(num).replace(/D/g, '');
+  return d.length > 5 ? 'phone:' + d.slice(-8) : null;
+};
+
+// Only a row NOBODY HAS DEALT WITH YET absorbs the next call. Once it is qualified
+// or set aside the queue is empty for that number again, so a later call is
+// genuinely new and starts its own row.
+async function openPhoneRow(db, threadKey) {
+  if (!threadKey) return null;
+  return db.prepare(`SELECT id, body FROM inbound
+    WHERE channel = 'phone' AND thread_key = ? AND state = 'new'
+    ORDER BY id DESC`).get(threadKey);
+}
+
 async function storeCall(db, r, mode, at, out) {
   // the pieces overlap on purpose; a call already here was handled last time
   const had = await db.prepare('SELECT uniqueid FROM pbx_calls WHERE uniqueid = ?').get(r.uniqueid);
@@ -122,12 +144,23 @@ async function storeCall(db, r, mode, at, out) {
       ORDER BY id DESC LIMIT 1`).get(r.caller_num, ...reasons) : null;
     // receive() owns every write: it joins the open item for this number when there is one (the
     // same caller again while staff have not looked yet), otherwise it stores, filtered or not.
+    //
+    // threadKey is NORMALISED, not the raw number. The same number reaches us written
+    // +37129111222, 371 29 111 222 and 29111222 by three different systems, and a raw key
+    // makes those three rows for one person to ring back.
+    //
+    // joinBody is how this call reads as a LATER one. Without it the row grows the same
+    // sentence twice with no time on it, and the Inbox cannot say when they last rang.
+    //
+    // THE CLOCK DOES NOT RESTART: receive() leaves received_at and surface_at alone, because
+    // somebody who keeps ringing has been waiting LONGER, not less.
     const got = await receive(db, { channel: 'phone', externalId: r.uniqueid, receivedAt: r.created_at,
       phone: r.caller_num, body: sentence, source: mode === 'live' ? 'provider' : 'simulated',
-      threadKey: 'phone:' + r.caller_num, joinOpenThread: Boolean(rule.oneOpenItemPerNumber),
+      threadKey: phoneThread(r.caller_num), joinOpenThread: Boolean(rule.oneOpenItemPerNumber),
+      joinBody: `Rang again ${toRigaStamp(r.created_at).slice(0, 16)}, ${sentence.charAt(0).toLowerCase()}${sentence.slice(1)}`,
       filterWhy: before ? `this number was archived before as "${before.archive_reason}"` : null });
     inboundId = got.id;
-    if (got.joined) out.folded++; else if (got.filtered) out.filtered++; else out.inbox++;
+    if (got.joined) out.again++; else if (got.filtered) out.filtered++; else out.inbox++;
   } else {
     // a withheld number: kept for the call counts, but nobody can ring it back
     out.noNumber++;
@@ -152,7 +185,7 @@ export async function syncPbx(db, { now = new Date(), minutes = WINDOW_MINUTES,
   const firstFrom = from;
 
   const startedAt = clock();
-  const out = { logged: 0, inbox: 0, folded: 0, filtered: 0, seen: 0, noNumber: 0 };
+  const out = { logged: 0, inbox: 0, again: 0, filtered: 0, seen: 0, noNumber: 0 };
   const skipped = { notIncoming: 0, otherQueue: 0, unusable: 0, duplicateInBatch: 0 };
   let fetched = 0, kept = 0, pieces = 0, safeUrl = null, reached = from;
 
