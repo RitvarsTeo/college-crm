@@ -1298,6 +1298,12 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   /* WHAT WAS SAID, on the Journey card (the review, #3). The conversation, not the history:
      notes and calls a person wrote, newest first, three at a time. */
   /* why people stop, against the list the server actually enforces */
+  /* whose turn it is, from the config that has always held it */
+  html.ui-c .chwho{display:flex;flex-direction:column;gap:1px;min-width:0;max-width:34em}
+  html.ui-c .chwho b{font-size:13px;font-weight:600}
+  html.ui-c .chwho b.chwho-none{color:var(--c-warn)}
+  html.ui-c .chwho small{font-size:11.5px;color:var(--t3);line-height:1.45;overflow-wrap:anywhere}
+  html.ui-c .chwaiting{margin:0 0 12px}
   html.ui-c .c-reasons{margin:0 0 14px}
   html.ui-c .c-reasons h3{margin:0 0 7px;font-size:13px;font-weight:650;display:flex;align-items:baseline;gap:8px}
   html.ui-c .c-reasons h3 b{font-weight:500;font-size:11.5px;color:var(--t4)}
@@ -4966,6 +4972,41 @@ function chActivity(c, run) {
   return '<span class="c-gap">-</span>';
 }
 
+// WHOSE TURN IS IT (01.10.2026). config/channels.json has carried ownerPerson,
+// ownerAction and externalBlocker all along, and the API has been sending all three.
+// The screen showed a status word and a last-run line, so an operator could see that
+// nine channels were not receiving and not who was holding each one, or why.
+//
+// Nothing invented: every word here is the config's own. A channel with no owner
+// recorded says SO, because "nobody is named" is the finding, not a blank cell.
+function chWho(c) {
+  // A live channel is waiting on nobody, and neither is a manual one: config/channels.json
+  // defines manual_only as "a person enters it by hand, and that is the design, not a gap".
+  // in_person reads exactly that way, and its own action says "Nothing to do. Already working" -
+  // amber there would invent an alarm out of a finished channel.
+  if (chWord(c).word === 'Receiving' || c.direction === 'manual') return '<span class="c-gap">-</span>';
+  const who = c.ownerPerson;
+  const what = c.externalBlocker || c.ownerAction;
+  if (!who && !what) return '<span class="c-gap">-</span>';
+  return `<div class="chwho">${who
+    ? `<b>${esc(who)}</b>`
+    : '<b class="chwho-none">nobody named</b>'}${
+    what ? `<small title="${esc(what)}">${esc(what.length > 90 ? what.slice(0, 90) + '…' : what)}</small>` : ''}</div>`;
+}
+
+// How many channels are waiting on a person, and on how many people. The one line an
+// admin needs before reading fourteen rows.
+function chWaiting(rows) {
+  const waiting = rows.filter((c) => chWord(c).word !== 'Receiving' && c.direction !== 'manual'
+    && (c.ownerPerson || c.externalBlocker || c.ownerAction));
+  if (!waiting.length) return '';
+  const people = [...new Set(waiting.map((c) => c.ownerPerson).filter(Boolean))];
+  const unnamed = waiting.filter((c) => !c.ownerPerson).length;
+  return `<p class="c-ev chwaiting">${waiting.length} of ${rows.length} channels are waiting on somebody${
+    people.length ? ': ' + esc(people.join(', ')) : ''}${
+    unnamed ? ` · ${unnamed} with nobody named` : ''}.</p>`;
+}
+
 async function viewChannels(which) {
   if (!isAdmin()) {
     $('#view').innerHTML = `<h1>Channels</h1>
@@ -4981,8 +5022,9 @@ async function viewChannels(which) {
 
   $('#view').innerHTML = `
     <h1>Channels</h1>
+    ${chWaiting(rows)}
     <div class="tablewrap"><table class="cartable">
-      <thead><tr><th>Channel</th><th>Status</th><th>On</th><th>Last activity</th></tr></thead>
+      <thead><tr><th>Channel</th><th>Status</th><th>On</th><th>Last activity</th><th>Waiting on</th></tr></thead>
       <tbody>
       ${rows.map(c => `
         <tr class="row" tabindex="0" style="cursor:pointer" onclick="location.hash='#/channels/${esc(c.channel)}'">
@@ -4990,6 +5032,7 @@ async function viewChannels(which) {
           <td><span class="chstate ${chWord(c).cls}">${esc(chWord(c).word)}</span></td>
           <td>${chOn(c)}</td>
           <td>${chActivity(c, runs[c.channel])}</td>
+          <td>${chWho(c)}</td>
         </tr>`).join('')}
       </tbody>
     </table></div>`;

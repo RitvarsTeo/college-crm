@@ -22,7 +22,10 @@ function sandbox() {
   vm.runInNewContext([
     span('const CH_WORD = {', 'function chActivity('),
     fn('function chActivity('),
+    fn('function chWho('),
+    fn('function chWaiting('),
     'this.word = chWord; this.on = chOn; this.activity = chActivity; this.rank = CH_RANK;',
+    'this.who = chWho; this.waiting = chWaiting;',
   ].join('\n'), ctx);
   return ctx;
 }
@@ -85,10 +88,72 @@ test('last activity is what arrived, never an explanation', () => {
   assert.match(s.activity(ch({}), null), /-/);
 });
 
-test('the screen shows four columns and no engineering detail', () => {
+test('the screen shows five columns and no engineering detail', () => {
   const list = span("  const d = await api('/api/admin/channels');", '\nasync function viewChannel(id) {');
-  assert.match(list, /<th>Channel<\/th><th>Status<\/th><th>On<\/th><th>Last activity<\/th>/);
+  assert.match(list, /<th>Channel<\/th><th>Status<\/th><th>On<\/th><th>Last activity<\/th><th>Waiting on<\/th>/);
   assert.doesNotMatch(APP, /<th>Endpoint<\/th>/, 'an endpoint is a machine detail');
   assert.doesNotMatch(APP, /A pass does NOT prove/, 'the audit prose is not product UI');
   assert.doesNotMatch(APP, /esc\(d\.honesty\)/, 'no honesty sentence above the table');
+});
+
+// WAITING ON (01.10.2026). The fifth column is not decoration: before it, an operator
+// could see that nine of fourteen channels were not receiving and could not see who
+// was holding any one of them. config/channels.json has always named the person and
+// the blocker, and src/channeladmin.js has always sent them - only the screen dropped them.
+test('a channel that is not receiving says whose turn it is, in the config\u2019s own words', () => {
+  const s = sandbox();
+  const out = s.who(ch({ ownerPerson: 'Oksana', ownerAction: 'Add the Page token' }));
+  assert.match(out, /Oksana/, 'the person is named');
+  assert.match(out, /Add the Page token/, 'and the one thing they have to do');
+});
+
+test('the blocker outranks the action, because it is what actually stops the channel', () => {
+  const s = sandbox();
+  const out = s.who(ch({ ownerPerson: 'Marina', ownerAction: 'Connect the mailbox',
+    externalBlocker: 'Google has not approved the app' }));
+  assert.match(out, /Google has not approved the app/);
+  assert.doesNotMatch(out, /Connect the mailbox/, 'one line, and it is the real obstacle');
+});
+
+test('a receiving channel is waiting on nobody', () => {
+  const s = sandbox();
+  const out = s.who(ch({ state: 'CONNECTED', live: true, mode: 'live',
+    ownerPerson: 'Oksana', ownerAction: 'Add the Page token' }));
+  assert.doesNotMatch(out, /Oksana/, 'a live channel does not keep asking for its setup');
+});
+
+test('a blocked channel with nobody named says so, instead of a blank cell', () => {
+  const s = sandbox();
+  const out = s.who(ch({ ownerAction: 'Somebody has to own this' }));
+  assert.match(out, /nobody named/, '"no owner" is the finding, not an empty cell');
+});
+
+test('the count above the table is the channels, not a guess', () => {
+  const s = sandbox();
+  const rows = [
+    ch({ channel: 'website', ownerPerson: 'Oksana', ownerAction: 'a' }),
+    ch({ channel: 'facebook', ownerPerson: 'Oksana', ownerAction: 'b' }),
+    ch({ channel: 'gmail', ownerPerson: 'Marina', ownerAction: 'c' }),
+    ch({ channel: 'agent', ownerAction: 'nobody owns this one' }),
+    ch({ channel: 'phone', state: 'CONNECTED', live: true, mode: 'live' }),
+  ];
+  const line = s.waiting(rows);
+  assert.match(line, /4 of 5 channels are waiting on somebody/);
+  assert.match(line, /Oksana, Marina/, 'each person once, in the order they appear');
+  assert.match(line, /1 with nobody named/);
+});
+
+test('when nothing is blocked the line is absent, not an empty sentence', () => {
+  const s = sandbox();
+  assert.equal(s.waiting([ch({ state: 'CONNECTED', live: true, mode: 'live' })]), '');
+});
+
+test('a by-hand channel is not a gap, so it is never waiting on anybody', () => {
+  // config/channels.json: manual_only = "a person enters it by hand, and that is the
+  // design, not a gap". in_person's own action reads "Nothing to do. Already working".
+  const s = sandbox();
+  const out = s.who(ch({ channel: 'in_person', direction: 'manual', state: 'CONFIGURED',
+    ownerAction: 'Nothing to do. Already working' }));
+  assert.doesNotMatch(out, /nobody named/, 'a finished channel must not raise an alarm');
+  assert.doesNotMatch(out, /Nothing to do/);
 });
