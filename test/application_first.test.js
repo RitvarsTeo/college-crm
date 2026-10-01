@@ -169,3 +169,43 @@ test('application-first: an SIS item already waiting in New Leads is left for a 
   assert.equal(r.created, 0);
   assert.equal(await waiting(db), 1);
 });
+
+// PRODUCTION SHAPE (APPLICATIONS lane, 01.10.2026). Production holds six SIS rows archived as
+// Internal on 30.09 (the team's own test submissions): four registered-only, one matriculated, one
+// submitted, none linked. After this release the daily pull retries every unlinked reference, so
+// it must leave all six alone: no person, no new New Leads item, even when one of them changes.
+test('application-first: the six archived production SIS rows are never turned into people', async () => {
+  const { openDb } = await import('../src/db.js');
+  const { syncSis } = await import('../src/sync.js');
+  const { archive, receive } = await import('../src/intake.js');
+  const env = { SIS_API_TOKEN: 'test-sis-token-not-real-0000', CHANNEL_MODE_SIS: 'test' };
+  const six = ['registered', 'registered', 'registered', 'registered', 'matriculated', 'submitted'].map((status, i) => ({
+    reference: 'prod-like-' + i, applicationId: status === 'registered' ? '' : 'app-' + i, givenName: 'Test',
+    familyName: 'Person ' + i, email: `test.person.${i}@example.com`, phone: i % 2 ? null : '+3712000000' + i,
+    programmeCode: status === 'registered' ? null : 'ENG', status, registeredAt: '2026-09-25T10:00:00.000Z',
+    submittedAt: status === 'registered' ? null : '2026-09-27T10:00:00.000Z', changedAt: `2026-09-2${5 + (i % 4)}T10:00:00.000Z`,
+  }));
+  const feed = (apps) => async () => ({ ok: true, status: 200, json: async () => ({ applicants: apps, nextCursor: null }) });
+  const db = await openDb(':memory:');
+  // how production got there: the 29.09 build raised all six in New Leads, a person archived them
+  for (const a of six) {
+    await db.prepare(`INSERT INTO sis_applicants (reference, application_id, given_name, family_name, email, phone,
+      programme_code, status, registered_at, submitted_at, changed_at, synced_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`).run(
+      a.reference, a.applicationId, a.givenName, a.familyName, a.email, a.phone, a.programmeCode, a.status,
+      a.registeredAt, a.submittedAt, a.changedAt, '2026-09-29T11:30:40.888Z');
+    const { id } = await receive(db, { channel: 'sis', externalId: 'sis:' + a.reference,
+      receivedAt: '2026-09-29T11:30:40.888Z', name: a.givenName + ' ' + a.familyName, email: a.email,
+      phone: a.phone, body: 'SIS: registered, no application yet', source: 'simulated' });
+    await db.prepare('UPDATE sis_applicants SET inbound_id = ? WHERE reference = ?').run(id, a.reference);
+    const done = await archive(db, id, { reason: 'Internal', by: 'Admin', note: 'team test submission' });
+    assert.ok(!done.error, JSON.stringify(done));
+  }
+  // the same six again, and one of them moves on in the SIS
+  const moved = six.map((a, i) => (i === 0 ? { ...a, status: 'started', applicationId: 'app-0', changedAt: '2026-10-01T05:00:00.000Z' } : a));
+  const r = await syncSis(db, { now: new Date('2026-10-02T05:00:00Z'), env, fetchImpl: feed(moved) });
+  assert.equal(r.created, 0);
+  assert.equal(r.inbox, 0);
+  assert.equal((await db.prepare('SELECT COUNT(*) n FROM people').get()).n, 0);
+  assert.equal((await db.prepare("SELECT COUNT(*) n FROM inbound WHERE channel = 'sis' AND state = 'archived'").get()).n, 6);
+  assert.equal((await db.prepare("SELECT COUNT(*) n FROM inbound WHERE channel = 'sis'").get()).n, 6);
+});
