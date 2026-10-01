@@ -27,6 +27,19 @@ byte-identical to it on 01.10 with its own sign-in return script). Technical pro
 | Migrated: an SIS-created twin folds into the real person, `POST /api/people/<id>/merge-into` | COMMITTED, NOT DEPLOYED | `fc0f877` (from `29393b6`) |
 | Item 1, SIS person identity: the SIS's email, phone and programme are written onto the person as provider facts, so the page no longer lists them as "still to find out"; Came from reads SIS, not "sis not a channel" (the alias fix also covers website_form, gmail, open_day, klatiene). 761/761 | COMMITTED, NOT DEPLOYED | `557898b` |
 
+| Item 2, held by the SIS: an SIS-created person at started or later is not counted or listed as "No next step" (Home, funnel, report, Next Steps, People, person page, Journey card and bar); registered-only still needs a step; a known lead keeps today's path; rejected or withdrawn counts again. Demo: noNextAction 2 -> 1. 768/768 | COMMITTED, NOT DEPLOYED | `91d5cbf` |
+
+**DECIDED 01.10.2026 by Ritvars (popup):**
+- **SIS step: A, "SIS holds them".** No task for an SIS-created person at started or later; never in
+  "No next step"; the page says "In the SIS: <status>". Registered-only stays a lead with a step.
+- **Release: A, own release**, before the channels lane, through CRM V1 / Release + Ops.
+- **SIS live: A, after this release.** Ritvars sets `CHANNEL_MODE_SIS=live` in Vercel himself;
+  `SIS_API_TOKEN` is present in Production (seen in `vercel env ls`, 01.10). Then the next 08:00 run
+  is verified.
+
+Already decided 30.09 and NOT asked again: who is application-first, registered at New, the done New
+Leads item, the history line "Created from the SIS", a known lead keeps her path, the merge as undo.
+
 The backlog-only commits of `feat/application-first-2026-09-30` (`5ef4322`, `ef199e2`, `f6f958d`,
 `9806352`) were NOT carried; these rows replace them.
 
