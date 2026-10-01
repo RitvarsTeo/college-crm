@@ -13,7 +13,8 @@ import { readScreenshot, readKind, readBody, readPath, saveFeedback, listFeedbac
 import { findMatches as matchPeople, duplicateCheck } from './identity.js';
 import { lifecycleOf, sisProgress, sisProgressByPerson, SIS_HOLDS_SQL } from './lifecycle.js';
 import { firstLook } from './sisfirstlook.js';
-import { redactSis } from '../lib/sis.js';
+import { redactSis, fetchWebStats, WEB_RANGES } from '../lib/sis.js';
+import { sisLiveCheck } from './sischeck.js';
 import { pbxLive } from '../lib/pbx.js';
 import { adapt, adaptAll, toIntake, hasAdapter, adapterIds } from './adapters.js';
 import { fixtureFor } from './fixtures.js';
@@ -32,7 +33,7 @@ import { signInFirst, withReturnScript } from './signinfirst.js';
 import { bootstrapIfAuthOn } from './bootstrap.js';
 import * as channeladmin from './channeladmin.js';
 import { todayStart, tomorrowStart, localDate } from './bizday.js';
-import { receiveSisApplication, mergeSisDuplicate } from './sync.js';
+import { receiveSisApplication, mergeSisDuplicate, syncSis } from './sync.js';
 
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -139,6 +140,8 @@ async function resolveUser(req) {
 
 const FLOW_COOKIE = 'crm_oauth';
 const FLOW_MINUTES = 10;
+// apply.novikontas.org web stats, per range, for 15 minutes (the SIS builds them once a night).
+const WEB_STATS_CACHE = new Map();
 
 function signFlow(payload, secret) {
   const body = Buffer.from(JSON.stringify(payload)).toString('base64url');
@@ -969,6 +972,40 @@ export const handle = async (req, res) => {
     if (req.method === 'GET' && p === '/api/admin/sis/first-look') {
       if (!(await adminOf(req))) return refuseNotAdmin(res);
       try { return json(res, 200, { ok: true, ...(await firstLook()) }); } catch (err) {
+        return json(res, 200, { ok: false, status: err && err.status || null,
+          error: redactSis(err && err.message ? err.message : 'the SIS call failed', process.env.SIS_API_TOKEN) });
+      }
+    }
+
+    // THE SIS, ON DEMAND (01.10.2026). The same syncSis the 05:00 UTC cron runs, for an admin who
+    // wants a run now (Vercel's plan allows only a daily schedule). Answers counts, never a person.
+    if (req.method === 'POST' && p === '/api/admin/sis/sync') {
+      if (!(await adminOf(req))) return refuseNotAdmin(res);
+      try { return json(res, 200, await syncSis(db)); } catch (err) {
+        return json(res, 200, { ok: false, ran: true, channel: 'sis', status: err && err.status || null,
+          error: redactSis(err && err.message ? err.message : 'the SIS run failed', process.env.SIS_API_TOKEN) });
+      }
+    }
+    // The live check against the real SIS: pages, since, refusals, web stats (src/sischeck.js).
+    if (req.method === 'GET' && p === '/api/admin/sis/check') {
+      if (!(await adminOf(req))) return refuseNotAdmin(res);
+      try { return json(res, 200, await sisLiveCheck({ db })); } catch (err) {
+        return json(res, 200, { ok: false, error: redactSis(err && err.message ? err.message : 'the check failed', process.env.SIS_API_TOKEN) });
+      }
+    }
+    // apply.novikontas.org visits for the Reports screen (popup A, 01.10.2026). Counts only,
+    // so any signed-in user may read them. Built nightly and ending with yesterday, so a copy is kept
+    // for 15 minutes per range: well inside the SIS limit of 60 calls a minute.
+    if (req.method === 'GET' && p === '/api/web-stats') {
+      const range = url.searchParams.get('range') || '30d';
+      if (!WEB_RANGES.includes(range)) return json(res, 400, { error: 'range must be one of ' + WEB_RANGES.join(', ') });
+      const hit = WEB_STATS_CACHE.get(range);
+      if (hit && Date.now() - hit.at < 15 * 60 * 1000) return json(res, 200, { ok: true, cached: true, ...hit.data });
+      try {
+        const data = await fetchWebStats({ range });
+        WEB_STATS_CACHE.set(range, { at: Date.now(), data });
+        return json(res, 200, { ok: true, ...data });
+      } catch (err) {
         return json(res, 200, { ok: false, status: err && err.status || null,
           error: redactSis(err && err.message ? err.message : 'the SIS call failed', process.env.SIS_API_TOKEN) });
       }
