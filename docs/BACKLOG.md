@@ -1310,6 +1310,15 @@ was built.
     master through a pull request."* It matches the recommendation above and nothing has been done
     that depends on it. It is recorded here rather than acted on, and it is marked relayed because
     a decision in this file has to say where it came from. One word from him closes it.
+    **OVERTAKEN BY EVENTS, 01.10.2026.** Neither reading survived. The release line is
+    now `v0.9`: it was pushed to GitHub and deployed, production runs `292b4f9` from it,
+    and `origin/v0.9` carries one commit more (`52e2232`, the backlog record of the
+    release). `master` is still untouched at `afea424` and has never received a merge.
+    `origin/v1-test` sits at `3fb39c5` and is behind the release. So "released" is now
+    defined, and it is defined by a branch that did not exist when this question was
+    written. **What is left of the question** is only tidying: whether `v0.9` becomes the
+    permanent release line, whether `master` is fast-forwarded to it or retired, and
+    whether `v1-test` is deleted. Nothing is blocked on it, and no work depends on it.
 
 ## 24.09.2026 - settled decisions can no longer be reopened
 
