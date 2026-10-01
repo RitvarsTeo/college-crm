@@ -2424,8 +2424,48 @@ async function viewReportsC() {
       ${sect('lost', 'Why people did not proceed', 'all time')}
       <section class="ksec"><div class="ksh"><h2>From a maritime school</h2></div><p class="c-num">${s.maritimeGraduates ?? 0}</p><p class="c-sub">${cov.education?.filled ?? 0} / ${cov.education?.of ?? 0} have an education recorded</p></section>
     </div>
+    <section class="ksec" id="cWeb" hidden></section>
     <div class="ktip" role="status" aria-live="polite"></div></div>`;
   cWireCharts();
+  cWebStats();
+}
+
+// apply.novikontas.org, from the SIS's web-stats (the owner's popup A, 01.10.2026: a section on Reports).
+// Real counts only. A value the SIS did not send is not drawn; search appears only once it is connected.
+let C_WEB_RANGE = '30d';
+async function cWebStats(range) {
+  if (range) C_WEB_RANGE = range;
+  const el = $('#cWeb');
+  if (!el) return;
+  let d;
+  try { d = await api('/api/web-stats?range=' + encodeURIComponent(C_WEB_RANGE)); } catch { d = { ok: false }; }
+  if (!document.body.contains(el)) return;
+  el.hidden = false;
+  const seg = ['7d', '30d', '90d'].map((k) => `<button aria-pressed="${C_WEB_RANGE === k}" onclick="cWebStats('${k}')">${k.replace('d', ' days')}</button>`).join('');
+  const head = `<div class="ksh"><h2>apply.novikontas.org</h2><div class="c-seg" role="group" aria-label="Days">${seg}</div></div>`;
+  if (!d.ok) { el.innerHTML = head + `<p class="c-empty" style="padding:6px 0">The SIS did not answer${d.status ? ' (' + Number(d.status) + ')' : ''}.</p>`; return; }
+  const n = (v) => (typeof v === 'number' ? v.toLocaleString('en-GB') : null);
+  const tileW = (label, v, prev, unit) => v == null ? '' : `<div><span>${label}</span><b>${n(v)}</b>${prev == null ? '' : `<small>${n(prev)} the ${unit} before</small>`}</div>`;
+  const days = (d.daily || []).filter((x) => typeof x.visits === 'number');
+  const maxV = Math.max(1, ...days.map((x) => x.visits));
+  const chart = days.length ? `<div class="c-webdays" style="display:flex;align-items:flex-end;gap:2px;height:96px;margin:8px 0 4px">${days.map((x) =>
+    `<i title="${esc(x.day)}: ${x.visits} visits${x.pageViews == null ? '' : ', ' + x.pageViews + ' page views'}" style="flex:1;min-width:2px;height:${Math.max(2, (x.visits / maxV) * 100)}%;background:var(--v-adm);border-radius:2px 2px 0 0"></i>`).join('')}</div>
+    <p class="c-sub">${esc(days[0].day)} to ${esc(days[days.length - 1].day)}</p>` : '';
+  const list = (title, rows, valueKey, sub) => {
+    const r = (rows || []).filter((x) => typeof x[valueKey] === 'number').slice(0, 6);
+    if (!r.length) return '';
+    const max = Math.max(...r.map((x) => x[valueKey]));
+    return `<section class="ksec"><div class="ksh"><h2>${title}</h2><span class="kt2">${sub}</span></div><div class="kbars">${r.map((x) =>
+      `<div class="kbar c-static" title="${esc(x.name)}${x.detail ? ' · ' + esc(x.detail) : ''}: ${x[valueKey]}"><span class="kbl">${esc(x.name)}${x.detail ? ` <span class="c-gap-soft">${esc(x.detail)}</span>` : ''}</span><span class="kbt"><i style="width:${Math.max(3, (x[valueKey] / max) * 100)}%;background:var(--v-adm)"></i></span><b>${x[valueKey]}</b></div>`).join('')}</div></section>`;
+  };
+  const t = d.totals || {}; const pr = d.previous || {};
+  const unit = C_WEB_RANGE.replace('d', ' days');
+  const sr = d.search;
+  el.innerHTML = head + `<div class="kstrip">${tileW('Visits', t.visits, pr.visits, unit)}${tileW('Page views', t.pageViews, pr.pageViews, unit)}</div>
+    ${chart}
+    <div class="c-rgrid">${list('Came from', d.referrers, 'visitors', 'visitors')}${list('Campaign links', d.campaigns, 'visitors', 'visitors')}${list('Device', d.devices, 'visitors', 'visitors')}${list('Pages', d.pages, 'visitors', 'visitors')}</div>
+    ${sr ? `<div class="kstrip">${tileW('Google clicks', sr.totals && sr.totals.clicks, sr.previous && sr.previous.clicks, unit)}${tileW('Google impressions', sr.totals && sr.totals.impressions, sr.previous && sr.previous.impressions, unit)}</div>
+    <div class="c-rgrid">${list('Searched for', sr.queries, 'clicks', 'clicks')}</div>` : ''}`;
 }
 
 // -------------------------------------------------------------------- FEEDBACK
