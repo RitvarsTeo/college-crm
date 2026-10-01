@@ -1297,6 +1297,22 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   /* the one line that holds the second half of the summary */
   /* WHAT WAS SAID, on the Journey card (the review, #3). The conversation, not the history:
      notes and calls a person wrote, newest first, three at a time. */
+  /* why people stop, against the list the server actually enforces */
+  html.ui-c .c-reasons{margin:0 0 14px}
+  html.ui-c .c-reasons h3{margin:0 0 7px;font-size:13px;font-weight:650;display:flex;align-items:baseline;gap:8px}
+  html.ui-c .c-reasons h3 b{font-weight:500;font-size:11.5px;color:var(--t4)}
+  html.ui-c .c-reasonbars{display:grid;gap:2px}
+  html.ui-c .c-reasonbar{display:grid;grid-template-columns:minmax(0,13em) minmax(30px,1fr) 28px;
+    align-items:center;gap:10px;padding:3px 6px;border-radius:6px;font-size:12.5px;color:var(--t2)}
+  html.ui-c .c-reasonbar span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  html.ui-c .c-reasonbar em{font-style:normal;font-size:10.5px;color:var(--c-warn)}
+  html.ui-c .c-reasonbar i{display:block;height:8px;border-radius:2px;background:var(--v-np)}
+  html.ui-c .c-reasonbar b{text-align:right;font-variant-numeric:tabular-nums}
+  /* a reason nobody has used is still shown, quietly: a list you cannot see all of is a
+     list you cannot agree */
+  html.ui-c .c-reasonbar.none{color:var(--t4)}
+  html.ui-c .c-reasonbar.none i{background:var(--rule)}
+  html.ui-c .c-reasons-ask{margin-top:7px}
   html.ui-c .c-talk{margin-top:12px;border-top:1px solid var(--rule2);padding-top:10px}
   html.ui-c .c-talk h4{margin:0 0 7px;font-size:11.5px;font-weight:650;letter-spacing:.05em;
     text-transform:uppercase;color:var(--t3);display:flex;align-items:center;gap:7px}
@@ -2025,6 +2041,39 @@ async function viewTodayC() {
 // -------------------------------------------------------------------- OUTCOMES
 // Two destinations. A reason is a detail of Not proceeding, never a place of its own.
 let C_OUTCOME = 'Admitted';
+// WHY PEOPLE STOP, AGAINST THE LIST WE ACTUALLY ENFORCE (Admissions, open since
+// 29.09.2026). The reason model was never missing: config.closedReasons holds ten, the
+// status route refuses a close without one of them, and the picker is built from it.
+// What was missing was any way to SEE the list against real use, so the screen carried a
+// tag saying the list was "to agree" while the server was already enforcing it.
+//
+// This decides nothing. It shows every configured reason with how many people carry it,
+// so confirming the list - or asking for a different one - is a glance instead of a
+// meeting. A reason nobody has used yet is still listed, at zero, because a list you
+// cannot see all of is a list you cannot agree.
+function cReasonBreakdown(np, noReason) {
+  const all = CFG.closedReasons || [];
+  if (!np.length) return '';
+  const used = new Map();
+  for (const p of np) if (p.closed_reason) used.set(p.closed_reason, (used.get(p.closed_reason) || 0) + 1);
+  // Anything RECORDED that is not in the list is shown too, and marked. It means the list
+  // changed under data already written, and hiding it would hide the drift.
+  const extra = [...used.keys()].filter((r) => !all.includes(r));
+  const rows = [...all.map((r) => [r, used.get(r) || 0, false]), ...extra.map((r) => [r, used.get(r), true])];
+  const top = Math.max(1, ...rows.map((r) => r[1]));
+  const bars = rows.map(([label, n, odd]) => '<div class="c-reasonbar' + (n ? '' : ' none') + '">'
+    + '<span>' + esc(label) + (odd ? ' <em>not in the list</em>' : '') + '</span>'
+    + '<i style="width:' + Math.max(2, (n / top) * 100) + '%"></i><b>' + n + '</b></div>').join('');
+  return '<div class="c-reasons">'
+    + '<h3>Why they stopped<b>' + (np.length - noReason) + ' of ' + np.length + ' recorded</b></h3>'
+    + (noReason ? '<p class="c-ev">' + noReason + (noReason === 1 ? ' person has' : ' people have')
+        + ' no recorded reason yet - it is still in the note.</p>' : '')
+    + '<div class="c-reasonbars">' + bars + '</div>'
+    + '<p class="c-ev c-reasons-ask">These are the ' + all.length
+    + ' reasons the CRM accepts today. Changing them is a config change, not a rebuild.</p>'
+    + '</div>';
+}
+
 async function viewOutcomesC() {
   const people = await cPeopleRows();
   const adm = people.filter((p) => p.status === 'Admitted'); const np = people.filter((p) => p.status === 'Not proceeding');
@@ -2045,7 +2094,7 @@ async function viewOutcomesC() {
       <div class="act"><button class="btn" onclick="openExport()">Download for management review</button><button class="btn ghost" onclick="location.hash='#/reports'">Full report</button></div></div>
     <div class="c-seg" role="group" aria-label="Outcome"><button aria-pressed="${C_OUTCOME === 'Admitted'}" onclick="C_OUTCOME='Admitted';viewOutcomesC()"><span class="c-ok">✓</span>Admitted ${adm.length}</button><button aria-pressed="${C_OUTCOME !== 'Admitted'}" onclick="C_OUTCOME='Not proceeding';viewOutcomesC()"><span class="c-no">✕</span>Not proceeding ${np.length}</button></div>
     ${f ? `<div class="c-filter">Showing <b>${list.length}</b> ${list.length === 1 ? 'admitted person' : 'admitted people'}, ${esc(fLabel)} <button class="btn sm ghost" onclick="C_OUT_FILTER=null;viewOutcomesC()">Show all admitted ✕</button></div>` : ''}
-    ${C_OUTCOME !== 'Admitted' && noReason ? `<p class="c-ev" style="margin-top:0">${noReason} of ${np.length} have no recorded reason yet - it is still in the note. <span class="c-tag">reasons list to agree</span></p>` : ''}
+    ${C_OUTCOME !== 'Admitted' ? cReasonBreakdown(np, noReason) : ''}
     <div class="c-sheet">${list.map((p) => `<div class="c-line" tabindex="0" onclick="location.hash='#/person/${esc(p.id)}'" style="grid-template-columns:minmax(0,1.2fr) minmax(0,1.4fr) 110px">
         <div class="c-who"><b>${esc(p.name)}</b><small>${esc(p.programme || 'programme not said')} · came from ${esc(cChannel(p.source_channel)[0])}</small></div>
         <div class="c-what">${C_OUTCOME === 'Admitted' ? `Admitted${p.matriculated_at ? ` · <span class="c-lifefact" title="From the SIS: it happened on or before this day">Matriculated <time>by ${esc(cDay(p.matriculated_at))}</time></span>` : ''}` : (p.closed_reason ? esc(p.closed_reason) : '<span class="c-gap">reason not recorded</span>')}</div>
