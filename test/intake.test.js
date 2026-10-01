@@ -576,3 +576,67 @@ test('the not-relevant screen is one list over two stored states', async () => {
   assert.equal((await listInbound(db, { state: 'archived' })).length, 1);
   assert.equal((await listInbound(db, { state: 'filtered' })).length, 1);
 });
+
+// ============================== one thread, not one row per arrival (01.10.2026) ===
+// Ritvars set the rule for phone: "a new number called first time sits in to look at",
+// and a stranger ringing three times is one person to ring back. The rule is written
+// HERE, in receive(), not in the phone poller, because receive() is the single entry
+// point every channel goes through - a rule kept in one poller is a rule the next
+// channel will not have.
+
+test('a second arrival on an open thread joins the row, it does not open another', async () => {
+  const db = await openDb();
+  const first = await receive(db, { channel: 'phone', externalId: 'c1', threadKey: 'phone:29111222',
+    joinOpenThread: true, phone: '+37129111222', body: 'Missed call on button 3 (Other)',
+    receivedAt: '2026-10-01T08:05:00.000Z' });
+  assert.ok(first.id);
+
+  const again = await receive(db, { channel: 'phone', externalId: 'c2', threadKey: 'phone:29111222',
+    joinOpenThread: true, phone: '371 29 111 222', body: 'Missed call on button 3 (Other)',
+    joinBody: 'Rang again 2026-10-01 11:31, missed call on button 3 (Other)',
+    receivedAt: '2026-10-01T08:31:00.000Z' });
+  assert.equal(again.joined, true);
+  assert.equal(again.id, first.id);
+
+  const rows = await listInbound(db, { state: 'new' });
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].body,
+    'Missed call on button 3 (Other)\nRang again 2026-10-01 11:31, missed call on button 3 (Other)',
+    'joinBody is what a LATER arrival reads as; body is what the first one reads as');
+
+  // THE CLOCK DOES NOT RESTART: whoever keeps getting in touch has waited LONGER, so
+  // refreshing the arrival time would push them down the queue and clear "late".
+  assert.equal(rows[0].received_at, '2026-10-01T08:05:00.000Z');
+});
+
+test('a thread whose row was dealt with starts a fresh row', async () => {
+  const db = await openDb();
+  const first = await receive(db, { channel: 'phone', externalId: 'c1', threadKey: 'phone:29111222',
+    joinOpenThread: true, phone: '+37129111222', body: 'Missed call on button 3 (Other)' });
+  await db.prepare("UPDATE inbound SET state = 'archived' WHERE id = ?").run(first.id);
+
+  const next = await receive(db, { channel: 'phone', externalId: 'c2', threadKey: 'phone:29111222',
+    joinOpenThread: true, phone: '+37129111222', body: 'Missed call on button 3 (Other)' });
+  assert.notEqual(next.id, first.id);
+  assert.ok(!next.joined);
+});
+
+test('a channel that does not opt in is untouched, and so is one with no thread key', async () => {
+  const db = await openDb();
+  // adapters.js already sets threadKey on some channels. Without joinOpenThread that
+  // must keep meaning exactly what it meant before: two Instagram messages from one
+  // handle are two things to read, not one row that quietly swallowed the second.
+  const a = await receive(db, { channel: 'instagram', externalId: 'm1', threadKey: 'ig:darja', body: HI });
+  const b = await receive(db, { channel: 'instagram', externalId: 'm2', threadKey: 'ig:darja', body: HI });
+  assert.notEqual(a.id, b.id);
+
+  const c = await receive(db, { channel: 'phone', externalId: 'c9', joinOpenThread: true, body: HI });
+  assert.ok(!c.joined, 'no thread key, nothing to join');
+});
+
+test('the phone poller writes no inbound row itself: receive() is the only door', () => {
+  const sync = fs.readFileSync(path.join(ROOT, 'src', 'sync.js'), 'utf8')
+    .split('\n').filter((l) => !l.trim().startsWith('//')).join('\n');
+  assert.doesNotMatch(sync, /INSERT INTO inbound/i);
+  assert.doesNotMatch(sync, /UPDATE inbound/i);
+});

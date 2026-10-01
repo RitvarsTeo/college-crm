@@ -108,16 +108,6 @@ const phoneThread = (num) => {
   return d.length > 5 ? 'phone:' + d.slice(-8) : null;
 };
 
-// Only a row NOBODY HAS DEALT WITH YET absorbs the next call. Once it is qualified
-// or set aside the queue is empty for that number again, so a later call is
-// genuinely new and starts its own row.
-async function openPhoneRow(db, threadKey) {
-  if (!threadKey) return null;
-  return db.prepare(`SELECT id, body FROM inbound
-    WHERE channel = 'phone' AND thread_key = ? AND state = 'new'
-    ORDER BY id DESC`).get(threadKey);
-}
-
 async function storeCall(db, r, mode, at, out) {
   // the pieces overlap on purpose; a call already here was handled last time
   const had = await db.prepare('SELECT uniqueid FROM pbx_calls WHERE uniqueid = ?').get(r.uniqueid);
@@ -160,8 +150,8 @@ async function storeCall(db, r, mode, at, out) {
       joinBody: `Rang again ${toRigaStamp(r.created_at).slice(0, 16)}, ${sentence.charAt(0).toLowerCase()}${sentence.slice(1)}`,
       filterWhy: before ? `this number was archived before as "${before.archive_reason}"` : null });
     inboundId = got.id;
-    if (got.joined) out.again++; else if (got.filtered) out.filtered++; else out.inbox++;  } else {
-    // a withheld number: kept for the call counts, but nobody can ring it back
+    if (got.joined) out.again++; else if (got.filtered) out.filtered++; else out.inbox++;
+  } else {    // a withheld number: kept for the call counts, but nobody can ring it back
     out.noNumber++;
   }
   await db.prepare(`INSERT INTO pbx_calls (uniqueid, called_at, queue, caller_num, picked_up,
