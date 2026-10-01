@@ -62,3 +62,14 @@ test('every var(--token) is a token this file declares', () => {
   assert.deepEqual(missing, [], 'invented tokens: ' + missing.join(', '));
   assert.ok(declared.size > 20, 'the tokens were actually found');
 });
+
+// A BROKEN FILE MUST NOT PASS (01.10.2026). A cherry-pick left conflict markers in
+// the stylesheet and all 918 tests passed, because every test reads this file as text
+// or runs a NAMED SLICE of it, and no slice covered the corrupted lines. The served
+// page would have been broken. The cheapest possible check, and it has to exist.
+test('no conflict markers survive anywhere in the app', () => {
+  const bad = APP.split('\n')
+    .map((l, i) => [i + 1, l])
+    .filter(([, l]) => /^(<{7}|={7}|>{7})(\s|$)/.test(l));
+  assert.deepEqual(bad, [], 'conflict markers at lines ' + bad.map((b) => b[0]).join(', '));
+});

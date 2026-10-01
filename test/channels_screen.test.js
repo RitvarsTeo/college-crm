@@ -22,6 +22,7 @@ function sandbox() {
   vm.runInNewContext([
     span('const CH_WORD = {', 'function chActivity('),
     fn('function chActivity('),
+    fn('function chCut('),
     fn('function chWho('),
     fn('function chWaiting('),
     'this.word = chWord; this.on = chOn; this.activity = chActivity; this.rank = CH_RANK;',
@@ -179,4 +180,24 @@ test('every row the Channels API returns can say who owns it', () => {
   // and the config really does name somebody, so the test is not guarding an empty case
   const sis = (cfg.integrations || {}).sis;
   assert.ok(sis && sis.ownerPerson, 'SIS names an owner in the config');
+});
+
+test('a cut blocker is cut at a space, and keeps the whole text in its title', () => {
+  const s = sandbox();
+  const long = 'A Meta app, page access from the business portfolio, and APP REVIEW for messaging permissions. Review takes weeks and can be refused.';
+  const out = s.who(ch({ ownerPerson: 'Oksana', externalBlocker: long }));
+  const shown = out.match(/<small title="[^"]*">([^<]*)<\/small>/)[1];
+  assert.ok(shown.length < long.length, 'it really is cut');
+  assert.ok(!/\w\u2026$/.test(shown.replace(/\u2026$/, '') + '\u2026') || / \S*\u2026$/.test(' ' + shown),
+    'the cut lands after a whole word');
+  assert.ok(long.startsWith(shown.replace(/\u2026$/, '')), 'and it is the start of the real text');
+  assert.match(out, /title="A Meta app, page access from the business portfolio, and APP REVIEW for messaging permissions\./,
+    'the whole text is still there to hover');
+});
+
+test('a short blocker is not touched at all', () => {
+  const s = sandbox();
+  const out = s.who(ch({ ownerPerson: 'Ritvars', ownerAction: 'Paste the address into the audience webhook settings' }));
+  assert.match(out, />Paste the address into the audience webhook settings</);
+  assert.doesNotMatch(out, /\u2026/, 'nothing to shorten, so no ellipsis');
 });

@@ -1318,6 +1318,8 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .chb-h .chstate{margin-left:auto}
   html.ui-c .chb-i p{margin:3px 0 0;font-size:11.5px;line-height:1.5;color:var(--t3);overflow-wrap:anywhere}
   html.ui-c .chb-ok{opacity:.8}
+  /* "Not set up" is one word-group, not three lines of a narrow column */
+  html.ui-c .cartable .chstate{white-space:nowrap}
   html.ui-c .c-reasons{margin:0 0 14px}
   html.ui-c .c-reasons h3{margin:0 0 7px;font-size:13px;font-weight:650;display:flex;align-items:baseline;gap:8px}
   html.ui-c .c-reasons h3 b{font-weight:500;font-size:11.5px;color:var(--t4)}
@@ -4993,6 +4995,16 @@ function chActivity(c, run) {
 //
 // Nothing invented: every word here is the config's own. A channel with no owner
 // recorded says SO, because "nobody is named" is the finding, not a blank cell.
+// A table cell cannot hold a paragraph, so the long blockers are cut and the whole
+// text stays in the title. Cut on a SPACE: a cut through the middle of a word reads
+// as a rendering fault rather than as a deliberate shortening.
+function chCut(t, n) {
+  if (t.length <= n) return t;
+  const head = t.slice(0, n);
+  const sp = head.lastIndexOf(' ');
+  return (sp > n * 0.6 ? head.slice(0, sp) : head).replace(/[,.;:]$/, '') + '…';
+}
+
 function chWho(c) {
   // A live channel is waiting on nobody, and neither is a manual one: config/channels.json
   // defines manual_only as "a person enters it by hand, and that is the design, not a gap".
@@ -5005,7 +5017,7 @@ function chWho(c) {
   return `<div class="chwho">${who
     ? `<b>${esc(who)}</b>`
     : '<b class="chwho-none">nobody named</b>'}${
-    what ? `<small title="${esc(what)}">${esc(what.length > 90 ? what.slice(0, 90) + '…' : what)}</small>` : ''}</div>`;
+    what ? `<small title="${esc(what)}">${esc(chCut(what, 90))}</small>` : ''}</div>`;
 }
 
 // How many channels are waiting on a person, and on how many people. The one line an
