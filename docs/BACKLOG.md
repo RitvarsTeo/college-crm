@@ -31,6 +31,8 @@ the live page is byte-identical to it apart from the sign-in return script the s
 | **A person deciding still deletes it.** Qualify and archive have always deleted the body the moment somebody dealt with it, which is a privacy promise, so the lines go with them. Only the machine's own filter keeps its lines | BUILT |
 | A repeat delivery of a LATER arrival is now caught. Its `external_id` is written to its line, never to `inbound`, so before this only the first arrival was de-duplicated | BUILT |
 | `inbound.body` is kept in sync and stays the whole conversation as one text: every screen and every export reads it. The lines are the record, the body is the read | BUILT |
+| Every phone number shows its dialling code and its country: `LV +371 26 551 234`, `IN +91 98 1234 5678`. A two-letter chip, not a flag emoji - checked on his screen first, Windows draws a regional-indicator pair as two small letters, so the emoji buys nothing and makes the screen depend on how each machine renders it. Longest-prefix match, because +7 is Russia and +77 is Kazakhstan. An unknown or local number keeps its number and claims no country | BUILT |
+| The installed app called itself "Novikontas Academy CRM", so its window read "Novikontas Academy CRM - Novikontas Intake". The manifest is Intake now | BUILT |
 
 ### Four places, and the lifecycle in one view
 

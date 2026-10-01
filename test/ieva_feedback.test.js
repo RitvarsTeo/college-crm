@@ -19,7 +19,12 @@ test('every Next Steps row carries the phone and email as call / write links, an
   const v = view('async function viewTodayC()');
   // 29.09.2026: the links moved out of this view into one shared helper, because People and the
   // person card printed the same contact as dead text and had to get the same behaviour.
-  assert.match(APP, /const cTelLink = \(p\) => \(p && p\.phone \? `<a href="tel:/, 'the call link is built once');
+  // Still built once, one level deeper: cTelLink delegates to cPhoneHtml, which also puts
+  // the dialling code and the country on it (the owner, 01.10.2026). Every screen that
+  // showed a number got the chip at the same moment, because they all go through here.
+  assert.ok(APP.includes('const cTelLink = (p) => (p && p.phone ? cPhoneHtml(p.phone)'),
+    'the call link is built once');
+  assert.ok(APP.includes('function cPhoneHtml(value) {'), 'and that one helper makes the tel: link');
   assert.match(APP, /const cMailLink = \(p\) => \(p && p\.email \? `<a href="mailto:/, 'and the write link with it');
   assert.match(APP, /const cReach = \(p\) => \[cTelLink\(p\), cMailLink\(p\)\]/, 'one helper for both');
   assert.match(v, /cReach\(p\)/, 'the Next Steps row uses it');

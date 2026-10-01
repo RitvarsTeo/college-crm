@@ -1203,6 +1203,12 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   /* PEOPLE IS TWO VIEWS (the owner, 01.10.2026). Tabs, not menu items: one place, two ways
      of looking at the same people. The active one carries the underline and the ink; the
      other is quiet, so the pair reads as a choice and not as two links. */
+  /* The country chip: a LABEL on the number, quiet enough that the number stays the thing
+     you read. Tabular so a column of them lines up, and it never wraps away from its number. */
+  html.ui-c .c-cc{display:inline-block;margin-right:6px;padding:1px 5px;border-radius:4px;
+    background:var(--c-sunk);color:var(--t3);font-style:normal;font-size:10px;font-weight:600;
+    letter-spacing:.04em;vertical-align:1px}
+  html.ui-c .c-reach a,html.ui-c .c-pt a{white-space:nowrap}
   html.ui-c .c-ptabs{display:flex;gap:2px;border-bottom:1px solid var(--rule2);margin:0 0 14px}
   html.ui-c .c-ptab{padding:7px 14px;font-size:14px;color:var(--t3);text-decoration:none;
     border-bottom:2px solid transparent;margin-bottom:-1px}
@@ -2142,7 +2148,80 @@ const cComment = (p) => String(p.last_comment || '').trim() || cNotePreview(p.no
 // tel:/mailto: in the whole app - the People row and the Journey person card printed the same
 // contact as dead text. One helper now, used by all three, so they cannot drift apart again.
 // stopPropagation because each of these sits inside a row that is itself clickable.
-const cTelLink = (p) => (p && p.phone ? `<a href="tel:${esc(String(p.phone).replace(/\s/g, ''))}" onclick="event.stopPropagation()">${esc(p.phone)}</a>` : '');
+// ------------------------------------------------------------------- A PHONE NUMBER
+// The owner, 01.10.2026: the dialling code and the country, next to every number.
+//
+// NOT A FLAG EMOJI. Checked on his own screen: Windows draws a regional-indicator pair
+// as two small letters, not a flag, so the emoji buys nothing and costs a dependency on
+// how each machine renders it. A two-letter code says the same thing everywhere, needs
+// no assets, and never renders as a blank box.
+//
+// Longest prefix wins, because codes are nested: +1 is the US and +1868 is Trinidad,
+// +7 is Russia and +77 is Kazakhstan. The list is the countries Novikontas actually
+// deals with plus the common ones; anything unknown keeps the number and shows no chip
+// rather than guessing a country onto somebody's record.
+const DIAL_CODES = {
+  371: ['LV', 'Latvia'], 370: ['LT', 'Lithuania'], 372: ['EE', 'Estonia'],
+  358: ['FI', 'Finland'], 46: ['SE', 'Sweden'], 47: ['NO', 'Norway'], 45: ['DK', 'Denmark'],
+  48: ['PL', 'Poland'], 49: ['DE', 'Germany'], 31: ['NL', 'Netherlands'], 32: ['BE', 'Belgium'],
+  33: ['FR', 'France'], 34: ['ES', 'Spain'], 39: ['IT', 'Italy'], 30: ['GR', 'Greece'],
+  351: ['PT', 'Portugal'], 353: ['IE', 'Ireland'], 44: ['GB', 'United Kingdom'],
+  380: ['UA', 'Ukraine'], 375: ['BY', 'Belarus'], 7: ['RU', 'Russia'], 77: ['KZ', 'Kazakhstan'],
+  373: ['MD', 'Moldova'], 40: ['RO', 'Romania'], 359: ['BG', 'Bulgaria'], 381: ['RS', 'Serbia'],
+  385: ['HR', 'Croatia'], 386: ['SI', 'Slovenia'], 420: ['CZ', 'Czechia'], 421: ['SK', 'Slovakia'],
+  36: ['HU', 'Hungary'], 43: ['AT', 'Austria'], 41: ['CH', 'Switzerland'], 90: ['TR', 'Turkey'],
+  995: ['GE', 'Georgia'], 374: ['AM', 'Armenia'], 994: ['AZ', 'Azerbaijan'],
+  91: ['IN', 'India'], 63: ['PH', 'Philippines'], 62: ['ID', 'Indonesia'], 84: ['VN', 'Vietnam'],
+  86: ['CN', 'China'], 92: ['PK', 'Pakistan'], 880: ['BD', 'Bangladesh'], 94: ['LK', 'Sri Lanka'],
+  234: ['NG', 'Nigeria'], 20: ['EG', 'Egypt'], 212: ['MA', 'Morocco'], 27: ['ZA', 'South Africa'],
+  971: ['AE', 'UAE'], 966: ['SA', 'Saudi Arabia'], 1: ['US', 'United States'],
+};
+
+// Everything except the leading +, so a number typed with spaces, brackets or dashes is
+// read the same as one stored bare.
+const phoneDigits = (v) => String(v || '').replace(/[^0-9]/g, '');
+
+function phoneParts(value) {
+  const raw = String(value || '').trim();
+  const digits = phoneDigits(raw);
+  // The + may be inside brackets: "(+371) 26-551-234" is how a number arrives from a form
+  // somebody typed. Look for it anywhere before the first digit, not only at position 0.
+  const international = /^[^0-9]*\+/.test(raw);
+  if (!international || digits.length < 6) return { country: null, code: '', rest: raw };
+  for (const len of [4, 3, 2, 1]) {                 // longest prefix first: +1 vs +1868
+    const code = digits.slice(0, len);
+    if (DIAL_CODES[code]) return { country: DIAL_CODES[code], code, rest: digits.slice(len) };
+  }
+  return { country: null, code: '', rest: raw };
+}
+
+// The dialling code stands apart, then the rest in groups small enough to read back to
+// somebody. Groups of 3 from the left with a 2 leading when the length calls for it;
+// the exact grouping is cosmetic, the separation of the code is the part that matters.
+function phonePretty(value) {
+  const { country, code, rest } = phoneParts(value);
+  if (!country) return String(value || '');
+  const n = rest.length;
+  let groups;
+  if (n <= 6) groups = [rest];
+  else if (n === 7) groups = [rest.slice(0, 3), rest.slice(3)];
+  else if (n === 8) groups = [rest.slice(0, 2), rest.slice(2, 5), rest.slice(5)];
+  else if (n === 9) groups = [rest.slice(0, 3), rest.slice(3, 6), rest.slice(6)];
+  else groups = [rest.slice(0, n - 8), rest.slice(n - 8, n - 4), rest.slice(n - 4)];
+  return `+${code} ${groups.filter(Boolean).join(' ')}`;
+}
+
+// The chip is a LABEL on the number, not a link of its own, so it sits inside the <a>:
+// clicking anywhere on the number dials, which is what somebody reaching for it wants.
+function cPhoneHtml(value) {
+  const { country } = phoneParts(value);
+  const tel = String(value || '').replace(/[^\d+]/g, '');
+  const shown = esc(phonePretty(value));
+  const chip = country ? `<i class="c-cc" title="${esc(country[1])}">${esc(country[0])}</i>` : '';
+  return `<a href="tel:${esc(tel)}" onclick="event.stopPropagation()">${chip}${shown}</a>`;
+}
+
+const cTelLink = (p) => (p && p.phone ? cPhoneHtml(p.phone) : '');
 const cMailLink = (p) => (p && p.email ? `<a href="mailto:${esc(p.email)}" onclick="event.stopPropagation()">${esc(p.email)}</a>` : '');
 const cReach = (p) => [cTelLink(p), cMailLink(p)].filter(Boolean).join(' · ');
 function cJourneyCard(p, t, sel) {
