@@ -289,9 +289,15 @@ retention ends, and to write one audit row per machine filter.
 - **Rank and sort** the intake queue so likely-real items are at the top.
 - **Drop a byte-for-byte repeat** of a message already stored (same provider message id). This is the
   only thing the machine acts on alone, and it is arithmetic, not judgement.
-- **Stage 2, not built:** filter noise out of the WORKING queue, prioritise, recommend routing and a
-  next action, and flag duplicates and people we already have. Every one of those is reversible and
-  leaves the record intact.
+- **Stage 2, not built:** prioritise, recommend routing and a next action, and flag duplicates and
+  people we already have. Every one of those is reversible and leaves the record intact.
+- **Stage 2, not built, and narrow (decision 1a, 01.10.2026):** hide from the WORKING queue, at high
+  confidence, **only spam and automated mail** - spam, bots, bounces, newsletters, no-reply and
+  system mail. Everything else stays visible. Irrelevant, supplier, internal and
+  not-a-prospective-student are **classified and recommended, never hidden**, because each of those
+  is a judgement about a real sender and the machine does not get to make it alone. The Filtered tab
+  is a working view, not deletion: it keeps the body, the provenance, and the AI's label, its
+  confidence and its reason.
 
 ### Must NOT
 
