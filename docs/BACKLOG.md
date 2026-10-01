@@ -130,6 +130,26 @@ What the fourteen real rows say, which is what the column now prints:
 enters it by hand, and that is the design, not a gap", so a manual channel is now
 waiting on nobody, same as a receiving one.
 
+### What running the screen found that 915 green tests did not
+
+The tests passed before any of these. Each was found by starting the server, signing in
+as an admin and reading the fifteen rows.
+
+| Found by looking | What it was |
+|---|---|
+| **SIS was filed under "nobody named"** | It is the fifteenth row: an integration, not a channel, modelled apart on purpose because nothing is delivered to us and it has no adapter. `config/channels.json` names **Ritvars** for it and says what he has to do. `integrationStatuses()` in `src/server.js` never copied the three owner fields that the channel path has always copied. Nothing was missing in the config; **the API dropped it.** A test now reads that function for all three, and asserts the config really does name somebody so it is not guarding an empty case |
+| **`in_person` raised an amber alarm** | over an action that reads "Nothing to do. Already working". The config defines `manual_only` as "a person enters it by hand, and that is the design, not a gap" |
+| **The line and the cards disagreed** | the line above the board listed people in row order, the cards below were ordered by pile size. The line follows the cards now: biggest pile first, ties alphabetical |
+| **Blockers were cut mid-word** | a cell ended "...for messaging permissi", which reads as a rendering fault and not as a deliberate shortening. The cut backs up to the last space; the whole text stays in the title |
+| **"Not set up" wrapped to two lines** | in the narrow Status column, making every row twice as tall for nothing |
+
+### Two guards that did not exist
+
+| Guard | What it caught on its first run |
+|---|---|
+| **Every `var(--token)` is a token the file declares** | `background:var(--hover)` is not a syntax error. There is no `--hover`; the declaration was dropped at compute time with no warning and no failing test. It found `--t1` too: the ramp is `--t2`/`--t3`/`--t4` and starts at `--ink`, so the **sign-in input had been asking for a colour that does not exist**. `--jt` is real and declared inline on the element that uses it, so the guard reads the whole file |
+| **No conflict markers survive anywhere** | A cherry-pick left markers in the stylesheet and **all 918 tests passed**, because every test reads `src/app.html` as text or runs a named slice of it and no slice covered the corrupted lines. The served page would have been broken. Proved by putting a marker back and watching it fail |
+
 ### NEEDS A DECISION: Google Form and Open Day are recorded as parked, the config does not know it
 
 `docs/BACKLOG.md` records Open Day as parked (`274f31c`) and Google Form as out. The
