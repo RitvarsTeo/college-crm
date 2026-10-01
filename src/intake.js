@@ -183,7 +183,8 @@ export async function receive(db, item) {
       // joinBody is how this arrival reads as a LATER one ("Rang again 11:31, ...").
       // Only the caller knows its own channel's wording, and only receive() knows that
       // it joined, so the caller hands in both and receive() picks.
-      const body = [open.body || '', item.joinBody || item.body || ''].filter(Boolean).join('\n');
+      const line = item.joinBody || item.body || '';
+      const body = [open.body || '', line].filter(Boolean).join('\n');
       await db.prepare('UPDATE inbound SET body = ? WHERE id = ?').run(body, open.id);
       // THE LINE CARRIES ITS OWN CLOCK. `at` is this arrival's time, not the row's, so
       // retention can delete this line 13 months after IT arrived without touching an
