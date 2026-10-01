@@ -257,6 +257,29 @@ irreversible happens.
 
 ## 5. What the machine may and may not do
 
+> **Changed 01.10.2026 by Ritvars, for Stage 2 only.** This section said a machine may sort and only
+> a person may discard. It now reads: **the AI may filter the working Inbox, but never destroys the
+> record.** Filtering is hiding from the working queue, not deleting: the inbound event stays
+> recoverable and auditable with its source, its provenance and the AI's reason, a message that is
+> uncertain but genuine stays for a person, and a person still decides every lifecycle change
+> (creating or promoting a lead). Decided in the AI Review feasibility session; the eleven decisions
+> and the five standing rules are in `Projects/College CRM/BRIEF_INTAKE_AI_REVIEW_DIRECTION.md`.
+>
+> **None of this is built, and V1 does not wait for it.** Everything below is what the code does
+> TODAY unless a line says otherwise.
+
+### What V1 does today, and where it already falls short of the rule above
+
+`receive()` runs a word-list junk check (`looksLikeJunk` in `src/extract.js`). When it fires, the row
+is stored, then immediately set to `state = 'filtered'`, `processed_by = 'machine'`, and **its body is
+set to NULL in the same breath** (`src/intake.js`, the `read.junk` branch). **No history row is
+written**, so there is no audit trail of what the machine threw away or why, beyond `archive_reason`
+and `archive_note` on the row itself.
+
+That is the one place V1 already discards without a person and without a trace. **It is deliberately
+left alone in V1** (Ritvars' call). Stage 2 needs it to keep the body until the item is restored or
+retention ends, and to write one audit row per machine filter.
+
 ### May (safe, reversible, never destructive)
 
 - **Detect potential intent.** Does this message mention a programme, a start date, a price question?
@@ -266,13 +289,27 @@ irreversible happens.
 - **Rank and sort** the intake queue so likely-real items are at the top.
 - **Drop a byte-for-byte repeat** of a message already stored (same provider message id). This is the
   only thing the machine acts on alone, and it is arithmetic, not judgement.
+- **Stage 2, not built:** filter noise out of the WORKING queue, prioritise, recommend routing and a
+  next action, and flag duplicates and people we already have. Every one of those is reversible and
+  leaves the record intact.
 
 ### Must NOT
 
-- Decide a human being is irrelevant.
+- Destroy, or make unrecoverable, anything a human being sent us.
 - Create a Hot lead.
 - Notify Admissions.
+- Decide a lifecycle change: creating or promoting a lead stays with a person.
 - **Invent a fact that was not in the message.**
+
+### The six rules every change to the inbound path must keep
+
+1. `receive()` is the single entry point. No per-channel lead logic.
+2. Store the inbound row first, before any judgement.
+3. `inbound.body` lives until qualify or archive. Never deleted earlier.
+4. Machine output keeps provenance `extracted` and is never counted until somebody confirms it.
+5. Person matching stays in `src/identity.js`, never in the AI.
+6. **Add no new place that nulls a body or filters without a trace.** The one that exists is named
+   above; it is not a licence for another.
 
 ### How "must not invent" is made real
 
