@@ -200,12 +200,12 @@ async function gmailStatus() {
 
 // One plain page for whoever connected edu@. They may have no Intake account, so it never
 // sends them into the app.
-function gmailPage(res, status, ok, line) {
+function gmailPage(res, status, ok, line, heading) {
   const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Intake - Gmail</title><style>body{font:16px/1.5 Raleway,system-ui,sans-serif;background:#f5f7fa;color:#14213d;margin:0;display:grid;place-items:center;min-height:100vh}
 main{background:#fff;border-radius:12px;padding:32px;max-width:420px;margin:16px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
-h1{font-size:20px;margin:0 0 8px;color:${ok ? '#1b7f4b' : '#b3261e'}}p{margin:0}</style></head>
-<body><main><h1>${ok ? 'Connected' : 'Not connected'}</h1><p>${line}</p></main></body></html>`;
+h1{font-size:20px;margin:0 0 8px;color:${heading ? '#14213d' : ok ? '#1b7f4b' : '#b3261e'}}p{margin:0}</style></head>
+<body><main><h1>${heading || (ok ? 'Connected' : 'Not connected')}</h1><p>${line}</p></main></body></html>`;
   res.writeHead(status, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store',
     'set-cookie': flowCookie('', 0) });
   return res.end(html);
@@ -1771,7 +1771,8 @@ export const handle = async (req, res) => {
       if (!(await adminOf(req))) return refuseNotAdmin(res);
       return json(res, 200, await gmailStatus());
     }
-    if (req.method === 'POST' && p === '/api/admin/gmail/link') {
+    // GET, so an admin can simply open it while signed in; a page shows the link to pass on.
+    if (req.method === 'GET' && p === '/api/admin/gmail/link') {
       if (!(await adminOf(req))) return refuseNotAdmin(res);
       if (!process.env.CRM_SESSION_SECRET) return json(res, 503, { error: 'CRM_SESSION_SECRET is not set' });
       const c = gmailB.oauthClient(process.env);
@@ -1780,8 +1781,13 @@ export const handle = async (req, res) => {
       }
       const exp = Date.now() + GMAIL_INVITE_HOURS * 3600 * 1000;
       const invite = signFlow({ purpose: 'gmail-invite', exp }, process.env.CRM_SESSION_SECRET);
-      return json(res, 200, { mailbox: gmailB.MAILBOX, link: `${originOf(req)}/api/auth/gmail/connect?invite=${invite}`,
-        expires: new Date(exp).toISOString() });
+      const link = `${originOf(req)}/api/auth/gmail/connect?invite=${invite}`;
+      if (url.searchParams.get('format') === 'json') {
+        return json(res, 200, { mailbox: gmailB.MAILBOX, link, expires: new Date(exp).toISOString() });
+      }
+      const until = new Date(exp).toLocaleString('en-GB', { timeZone: 'Europe/Riga', dateStyle: 'medium', timeStyle: 'short' });
+      return gmailPage(res, 200, true, `Link for ${gmailB.MAILBOX}, valid until ${until} (Riga):<br><br>`
+        + `<input readonly style="width:100%;font:14px monospace;padding:8px" onclick="this.select()" value="${link}">`, 'Gmail link');
     }
     if (req.method === 'POST' && p === '/api/admin/gmail/disconnect') {
       if (!(await adminOf(req))) return refuseNotAdmin(res);

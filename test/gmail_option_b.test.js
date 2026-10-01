@@ -1,7 +1,7 @@
 // Gmail option B, "sign in once as edu@ and approve read-only access" (built 30.09.2026 as C5,
 // Ritvars chose B 01.10.2026, reworked the same day so Marina can actually use it):
 //
-//   POST /api/admin/gmail/link        admin only -> a link that lasts 48 hours
+//   GET  /api/admin/gmail/link        admin only -> a page with a link that lasts 48 hours
 //   GET  /api/auth/gmail/connect      the link; NO Intake account needed -> Google consent,
 //                                     gmail.readonly, offline, login_hint edu@novikontas.org,
 //                                     back to GOOGLE_REDIRECT_URI (already registered at Google)
@@ -76,7 +76,10 @@ function start(env) {
 const as = (who) => ({ 'x-acting-as': who });
 
 async function linkFor(s) {
-  const r = await fetch(s.base + '/api/admin/gmail/link', { method: 'POST', headers: as('Ritvars') });
+  const page = await fetch(s.base + '/api/admin/gmail/link', { headers: as('Ritvars') });
+  assert.equal(page.status, 200);
+  assert.match(await page.text(), /Link for edu@novikontas\.org, valid until/);
+  const r = await fetch(s.base + '/api/admin/gmail/link?format=json', { headers: as('Ritvars') });
   assert.equal(r.status, 200, await r.clone().text());
   return (await r.json()).link.replace(/^https?:\/\/[^/]+/, s.base);
 }
@@ -91,7 +94,7 @@ async function openLink(link) {
 test('B: an admin gets a link; opening it needs no Intake account and asks Google for read-only edu@', async (t) => {
   const s = await start({ ...CLIENT, GOOGLE_REDIRECT_URI: REDIRECT });
   t.after(() => s.child.kill());
-  assert.equal((await fetch(s.base + '/api/admin/gmail/link', { method: 'POST', headers: as('Ieva') })).status, 403);
+  assert.equal((await fetch(s.base + '/api/admin/gmail/link', { headers: as('Ieva') })).status, 403);
   const link = await linkFor(s);
   assert.match(link, /\/api\/auth\/gmail\/connect\?invite=/);
   const { cookie, to, r } = await openLink(link);
