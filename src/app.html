@@ -2268,7 +2268,7 @@ async function viewPersonC(id) {
         <div class="c-still"><b>Still open</b><div class="c-next-row"><span>${esc(cTask(t.label))}</span><span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span></div>
         <div class="c-row-acts"><button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, true)">Done</button><button class="btn sm ghost" onclick="openReschedule(${Number(t.id)})">Move the date</button></div></div>` : ''}</div>`;
   $('#view').innerHTML = `<p class="c-crumb"><a href="#/people">People</a></p>
-    <div class="c-head"><div><h1 class="c-pname">${esc(p.name)}</h1><p>${esc(cStage(p.status))} · ${esc(p.programme || 'programme not said')}${p.study_form ? ' · ' + esc(p.study_form) : ''} · ${contact || '<span class="c-gap">no email or phone recorded</span>'}</p></div></div>
+    <div class="c-head"><div><h1 class="c-pname">${esc(p.name)}</h1><p>${esc(cStage(p.status))} · ${esc(p.programme || 'programme not said')}${p.study_form ? ' · ' + esc(p.study_form) : ''} · ${contact || '<span class="c-gap">no email or phone recorded</span>'}</p></div>${p.first_channel === 'sis' ? `<div class="act"><button class="btn ghost" onclick="openSisMerge('${esc(p.id)}')">Same person as...</button></div>` : ''}</div>
     <div class="c-pgrid">
       <div class="c-pmain">
         ${cLifeLine(p)}${next}
@@ -3488,6 +3488,36 @@ function latestConsents(rows) {
   const seen = new Map();
   for (const r of rows) if (!seen.has(r.purpose)) seen.set(r.purpose, r);  // rows arrive newest first
   return [...seen.values()];
+}
+
+// SAME PERSON AS... (decided 30.09.2026): a person the SIS created is folded into the person they
+// really are. The server moves the SIS link, history and steps, and removes the extra record.
+function cMergeCandidates(people, selfId, q) {
+  const s = String(q || '').trim().toLowerCase();
+  return people.filter((p) => p.id !== selfId)
+    .filter((p) => !s || [p.name, p.email, p.phone].some((v) => String(v || '').toLowerCase().includes(s)))
+    .slice(0, 20);
+}
+let C_MERGE = null;
+async function openSisMerge(id) {
+  C_MERGE = { id, people: await cPeopleRows() };
+  modal('Same person as...', `<input id="mQ" placeholder="Name, email or phone" oninput="cDrawMerge()" autocomplete="off"><div id="mList"></div><div id="mErr"></div>`);
+  cDrawMerge();
+  const q = $('#mQ'); if (q) q.focus();
+}
+function cDrawMerge() {
+  const rows = cMergeCandidates(C_MERGE.people, C_MERGE.id, ($('#mQ') || {}).value);
+  $('#mList').innerHTML = rows.map((m) => `<div class="dupe"><div><b>${esc(m.name)}</b>
+      <div class="sub2">${[m.email, m.phone].filter(Boolean).map(esc).join(' &middot; ')}</div>
+      <div class="sub2">${esc(cStage(m.status))}</div></div>
+    <div><button class="btn sm" onclick="doSisMerge('${esc(m.id)}')">This is them</button></div></div>`).join('')
+    || '<div class="c-empty">Nobody matches.</div>';
+}
+async function doSisMerge(targetId) {
+  try {
+    await post(`/api/people/${C_MERGE.id}/merge-into`, { targetId });
+    closeModal(); location.hash = '#/person/' + targetId;
+  } catch (e) { $('#mErr').innerHTML = `<div class="warn-box">${esc(e.message)}</div>`; }
 }
 
 async function doSisHandoff(id) {
