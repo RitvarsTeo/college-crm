@@ -54,11 +54,16 @@ test('phone filter: the same unknown number calling again adds to its open item,
   const r = await run(db, [call({ uniqueid: 'c2', state: 'NOANSWER', operator_name: '', created_at: '2026-10-01 12:20:00' })],
     new Date('2026-10-01T09:30:00Z'));
   assert.equal(r.inbox, 0);
-  assert.equal(r.folded, 1);
+  // One counter for this, not two. The channels lane called it folded and the intake-flow
+  // lane called it again; the release keeps `again`, because that is the one the Channels
+  // screen prints ("2 rang again") and a counted-but-never-shown number is not a count.
+  assert.equal(r.again, 1);
   const open = await listInbound(db, { state: 'new' });
   assert.equal(open.length, 1);
   assert.match(open[0].body, /answered by Ieva/);
-  assert.match(open[0].body, /Missed call on button 1/);
+  // The second call reads as a LATER one and carries the time it came in, so the row can say
+  // WHEN they last rang rather than printing the same sentence twice.
+  assert.match(open[0].body, /Rang again 2026-10-01 12:20, missed call on button 1/);
   const calls = await db.prepare('SELECT uniqueid, inbound_id FROM pbx_calls ORDER BY uniqueid').all();
   assert.deepEqual(calls.map((c) => c.inbound_id), [open[0].id, open[0].id], 'every call is still kept, both on the item');
 });
@@ -100,5 +105,5 @@ test('phone filter: a withheld number still only counts, and a known number stil
   const r = await run(db, [call(), call({ uniqueid: 'c2', caller_num: '' })]);
   assert.equal(r.logged, 1);
   assert.equal(r.noNumber, 1);
-  assert.equal(r.inbox + r.folded + r.filtered, 0);
+  assert.equal(r.inbox + r.again + r.filtered, 0);
 });
