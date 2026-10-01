@@ -145,6 +145,41 @@ CREATE TABLE IF NOT EXISTS inbound (
   consent TEXT                   -- JSON: what the form said, e.g. {"admissions":true}, or null
 );
 
+-- ONE LINE PER ARRIVAL (locked 01.10.2026, Q9).
+--
+-- An inbound row is one THING TO LOOK AT. A line is one arrival on it: the first
+-- call, the second call twenty minutes later, the message after that. One number is
+-- one thing to ring back however many times it rings, so the row does not multiply -
+-- but each arrival keeps its own time, its own provider id and its own body.
+--
+-- WHY A TABLE AND NOT A GROWING TEXT. Retention is 13 months PER LINE, counted from
+-- that line's own received_at. A single body column has one timestamp for the whole
+-- thread, so the oldest line would decide when the newest is deleted: somebody who
+-- rang this morning would lose this morning's line because their first call was last
+-- year. A row per line is the only shape that can carry a clock each.
+--
+-- inbound.body is KEPT IN SYNC and stays the whole conversation as one text, because
+-- every screen and every export reads it. The lines are the record; the body is the
+-- read.
+CREATE TABLE IF NOT EXISTS inbound_line (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  inbound_id INTEGER NOT NULL,
+  seq INTEGER NOT NULL,          -- 1, 2, 3... the order they arrived on this row
+  channel TEXT NOT NULL,
+  external_id TEXT,              -- THIS arrival's provider id, not the row's
+  received_at TEXT NOT NULL,     -- this line's own clock, for its own 13 months
+  kind TEXT NOT NULL,            -- message | call | form | activity
+  body TEXT,                     -- survives filtering; emptied only by retention
+  body_deleted_at TEXT
+);
+CREATE UNIQUE INDEX IF NOT EXISTS inbound_line_seq ON inbound_line (inbound_id, seq);
+-- The row-level unique index catches a repeat of the FIRST arrival. Without this one,
+-- a repeat delivery of the second arrival is not caught at all: its external_id was
+-- never written to inbound, only to its line.
+CREATE UNIQUE INDEX IF NOT EXISTS inbound_line_external
+  ON inbound_line (channel, external_id) WHERE external_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS inbound_line_inbound ON inbound_line (inbound_id);
+
 -- One row per field, with where the value came from. An 'extracted' value is a
 -- suggestion nobody has confirmed and must never reach a count or a report.
 CREATE TABLE IF NOT EXISTS field_values (

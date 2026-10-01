@@ -41,14 +41,16 @@ import { receiveSisApplication, mergeSisDuplicate, syncSis, channelMode } from '
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
-// Installed as a desktop app, the CRM is "Academy CRM" with the Academy symbol, in its own
-// window. start_url and scope are the whole site, so the Google sign-in round trip leaves
+// Installed as a desktop app it is "Novikontas Intake", with the Academy symbol, in its own
+// window. The installed window titles itself manifest.name + the page title, so a name here
+// that disagrees with the product reads back as "Novikontas Academy CRM - Novikontas Intake".
+// One name (the owner, 01.10.2026: the product is Intake). start_url and scope are the whole site, so the Google sign-in round trip leaves
 // and comes back into the same window (a full-page redirect, no popup).
 export const APP_MANIFEST = {
   id: '/',
-  name: 'Novikontas Academy CRM',
-  short_name: 'Academy CRM',
-  description: 'The Admissions CRM of Novikontas Academy.',
+  name: 'Novikontas Intake',
+  short_name: 'Intake',
+  description: 'Every first contact with Novikontas Academy, in one place.',
   start_url: '/',
   scope: '/',
   display: 'standalone',

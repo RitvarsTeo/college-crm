@@ -13,7 +13,7 @@
 //
 // Neither poller runs while its channel is off, and off is the default.
 
-import { receive, confirmedBySystem, CONFIG, newPersonId, ownerFor, emailFilterWhy } from './intake.js';
+import { receive, confirmedBySystem, CONFIG, newPersonId, ownerFor, emailFilterWhy, purgeLineBodies } from './intake.js';
 import { findMatches, isStrong, normEmail, normPhone } from './identity.js';
 import { logEvent, AUTOMATIC, MANUAL } from './history.js';
 import { fetchCalls, rowsFrom, WINDOW_MINUTES, toRigaStamp, ZONE } from '../lib/pbx.js';
@@ -202,6 +202,10 @@ export async function syncPbx(db, { now = new Date(), minutes = WINDOW_MINUTES,
       minutes: Math.round((reached - firstFrom) / 60000) },
     pieces, caughtUp, fetched, kept, skipped, ...out, safeUrl };
   result.purged = await purgeOld(db, 'pbx_calls', 'called_at', now);
+  // 13 months PER LINE, each from its own received_at, so an old call never takes a
+  // newer one with it. The line stays and says when its body went: a deletion nobody
+  // can see is not auditable.
+  result.purgedLines = await purgeLineBodies(db, retentionCutoff(now));
   return result;
 }
 

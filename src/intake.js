@@ -100,16 +100,64 @@ export async function handoverGap({ role, channel, email, phone }) {
   };
 }
 
+// ---------------------------------------------------- one line per arrival ----
+// A row is one thing to look at; a line is one arrival on it. Kinds are the four the
+// channels actually produce: a message somebody typed, a call, a submitted form, and
+// an activity we recorded about them (an open day, an event).
+export const LINE_KINDS = ['message', 'call', 'form', 'activity'];
+
+// Guessed from the channel when the caller does not say. A caller that knows better
+// passes kind explicitly; nothing here ever overrules it.
+const kindFor = (channel, kind) => {
+  if (LINE_KINDS.includes(kind)) return kind;
+  if (channel === 'phone') return 'call';
+  if (channel === 'website_form' || channel === 'google_form' || channel === 'sis') return 'form';
+  if (channel === 'open_day') return 'activity';
+  return 'message';
+};
+
+// Appends a line and returns its seq. seq is read inside the same statement sequence
+// as the insert, and (inbound_id, seq) is UNIQUE, so two arrivals racing for the same
+// number lose one insert loudly instead of silently overwriting each other.
+export async function addLine(db, inboundId, { channel, externalId, receivedAt, kind, body }) {
+  const last = await db.prepare('SELECT MAX(seq) AS n FROM inbound_line WHERE inbound_id = ?').get(inboundId);
+  const seq = Number((last && last.n) || 0) + 1;
+  await db.prepare(`INSERT INTO inbound_line
+    (inbound_id, seq, channel, external_id, received_at, kind, body)
+    VALUES (?,?,?,?,?,?,?)`).run(
+    inboundId, seq, channel, externalId || null, receivedAt, kindFor(channel, kind), body || null);
+  return seq;
+}
+
+export const linesOf = (db, inboundId) =>
+  db.prepare('SELECT * FROM inbound_line WHERE inbound_id = ? ORDER BY seq').all(inboundId);
+
+// RETENTION, PER LINE (decided 01.10.2026). 13 months from the line's OWN received_at.
+// The body is emptied, the line is kept: the row still shows that something arrived on
+// that day, which is what makes a deletion auditable rather than invisible. An old line
+// can never take a newer one with it, because every line is compared to its own clock.
+export async function purgeLineBodies(db, cutoffIso) {
+  const r = await db.prepare(`UPDATE inbound_line SET body = NULL, body_deleted_at = ?
+    WHERE received_at < ? AND body IS NOT NULL`).run(new Date().toISOString(), cutoffIso);
+  return (r && (r.changes ?? r.rowCount)) || 0;
+}
+
 // ------------------------------------------------------------- arrival ----
 // Nothing here decides anything. It stores, extracts and suggests.
 export async function receive(db, item) {
   const at = item.receivedAt || nowIso();
 
-  // an exact repeat of a message we already hold is arithmetic, not judgement
+  // an exact repeat of a message we already hold is arithmetic, not judgement.
+  // BOTH tables: a second arrival on an existing row writes its external_id onto its
+  // LINE, never onto `inbound`, so checking only `inbound` misses a repeat delivery of
+  // everything after the first arrival.
   if (item.externalId) {
     const seen = await db.prepare('SELECT id FROM inbound WHERE channel = ? AND external_id = ?')
       .get(item.channel, item.externalId);
     if (seen) return { duplicate: true, id: seen.id };
+    const line = await db.prepare('SELECT inbound_id FROM inbound_line WHERE channel = ? AND external_id = ?')
+      .get(item.channel, item.externalId);
+    if (line) return { duplicate: true, id: Number(line.inbound_id) };
   }
 
   // ONE THREAD, NOT ONE ROW PER ARRIVAL (Ritvars, 01.10.2026). A caller opts in with
@@ -137,7 +185,12 @@ export async function receive(db, item) {
       // it joined, so the caller hands in both and receive() picks.
       const body = [open.body || '', item.joinBody || item.body || ''].filter(Boolean).join('\n');
       await db.prepare('UPDATE inbound SET body = ? WHERE id = ?').run(body, open.id);
-      return { joined: true, id: open.id };
+      // THE LINE CARRIES ITS OWN CLOCK. `at` is this arrival's time, not the row's, so
+      // retention can delete this line 13 months after IT arrived without touching an
+      // older or newer one. That is the whole reason the table exists.
+      const seq = await addLine(db, open.id, { channel: item.channel, externalId: item.externalId,
+        receivedAt: at, kind: item.kind, body: line });
+      return { joined: true, id: open.id, seq };
     }
   }
 
@@ -179,7 +232,16 @@ export async function receive(db, item) {
     throw err;
   }
   const id = Number(info.lastInsertRowid);
+  // The first arrival is line 1. Written BEFORE the junk branch below, on purpose.
+  await addLine(db, id, { channel: item.channel, externalId: item.externalId,
+    receivedAt: at, kind: item.kind, body: item.body });
+
   if (read.junk) {
+    // FILTERING DOES NOT DESTROY THE RECORD (decided 01.10.2026). The row's body is
+    // emptied, as it always was, so nothing filtered shows a message on a screen. The
+    // LINE keeps its body until retention takes it, so a filtered item is recoverable
+    // and auditable - which is what makes a Filtered view a working view rather than a
+    // list of things nobody can check.
     await db.prepare(`UPDATE inbound SET archive_reason = 'Filtered automatically',
       archive_note = ?, processed_by = 'machine', processed_at = ?, body = NULL,
       body_deleted_at = ? WHERE id = ?`).run(read.why, at, at, id);
@@ -414,6 +476,7 @@ export async function qualify(db, id, { qualification, personId, createPerson, b
   await db.prepare(`UPDATE inbound SET state = 'qualified', qualification = ?, person_id = ?,
     processed_by = ?, processed_at = ?, body = NULL, body_deleted_at = ? WHERE id = ?`)
     .run(qualification, pid, by, at, at, id);
+  await dropLineBodies(db, id, at);
 
   await logEvent(db, { personId: pid, kind: 'note', channel: item.channel, direction: 'in', at,
     origin: MANUAL, actor: by, subject: `Qualified from ${item.channel} as ${qualification}`,
@@ -466,10 +529,22 @@ async function applyToPerson(db, personId, field, value, opts = {}) {
 // A New Leads item another system already settled (the SIS creating an application-first person):
 // done, a lead, linked to the person, nobody pressed anything. Every write to inbound lives in this
 // file, so the pollers never touch the table themselves.
+// A PERSON deciding is not the machine filtering. Qualify and archive have always
+// deleted the message body the moment somebody dealt with it - that is a privacy
+// promise, not an implementation detail - so the lines go with it. Only the MACHINE's
+// own filter keeps its lines, because a filtered item has to stay checkable by a human
+// who never saw it. Extending retention on the human path would be the wrong direction
+// to be wrong in.
+export async function dropLineBodies(db, inboundId, at) {
+  await db.prepare(`UPDATE inbound_line SET body = NULL, body_deleted_at = ?
+    WHERE inbound_id = ? AND body IS NOT NULL`).run(at, inboundId);
+}
+
 export async function confirmedBySystem(db, id, { personId, by, at = nowIso() }) {
   await db.prepare(`UPDATE inbound SET state = 'qualified', qualification = 'lead', person_id = ?,
     processed_by = ?, processed_at = ?, archive_reason = NULL, archive_note = NULL, body = NULL,
     body_deleted_at = ? WHERE id = ?`).run(personId, by, at, at, id);
+  await dropLineBodies(db, id, at);
 }
 
 export async function archive(db, id, { reason, note, by }) {
@@ -486,6 +561,7 @@ export async function archive(db, id, { reason, note, by }) {
   await db.prepare(`UPDATE inbound SET state = 'archived', archive_reason = ?, archive_note = ?,
     processed_by = ?, processed_at = ?, body = NULL, body_deleted_at = ? WHERE id = ?`)
     .run(reason, note || null, by, at, at, id);
+  await dropLineBodies(db, id, at);
   // archived is not deleted: the row, the contact and the reason stay searchable
   return { ok: true, id, reason, bodyDeleted: true };
 }

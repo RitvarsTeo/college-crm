@@ -14,6 +14,37 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 01.10.2026 - INTAKE FLOW lane (lane/intake-flow)
+
+Branch `lane/intake-flow`, **re-cut from production `24279e2`** (the Applications lane's release;
+the live page is byte-identical to it apart from the sign-in return script the server injects).
+**809/809.** NOT DEPLOYED, and this lane does not deploy.
+
+### One line per arrival (locked 01.10, Q9)
+
+| What | Status |
+|---|---|
+| `inbound_line`: one row per arrival on an inbound row. `seq`, `channel`, `external_id`, `received_at`, `kind` (message/call/form/activity), `body`, `body_deleted_at`. Unique on `(inbound_id, seq)` and on `(channel, external_id)` where it is not null | BUILT |
+| Retention is **13 months per line**, from that line's OWN `received_at`. An old call can never take a newer one with it. The body is emptied, the line is kept with `body_deleted_at`, so the deletion is auditable | BUILT |
+| The purge runs on every phone poll beside the existing `pbx_calls` purge, so it is a live path and not a function nobody calls | BUILT |
+| **Filtering does not destroy the record.** The machine's word-list filter still empties the ROW body, so nothing filtered shows a message on screen, but the LINE keeps its body until retention takes it. A Filtered view nobody can check is not a working view | BUILT |
+| **A person deciding still deletes it.** Qualify and archive have always deleted the body the moment somebody dealt with it, which is a privacy promise, so the lines go with them. Only the machine's own filter keeps its lines | BUILT |
+| A repeat delivery of a LATER arrival is now caught. Its `external_id` is written to its line, never to `inbound`, so before this only the first arrival was de-duplicated | BUILT |
+| `inbound.body` is kept in sync and stays the whole conversation as one text: every screen and every export reads it. The lines are the record, the body is the read | BUILT |
+
+### Four places, and the lifecycle in one view
+
+Menu is **Today | Inbox | People | Reports**, Settings separated at the foot for admins.
+Today holds the whole Next Steps screen plus a counts strip and the Inbox count; the KPI Home and
+its donut are deleted, because Reports already held every figure and more. People is
+`[Journey] [All people]`; the Journey shows the five active stages above a rule with an exit mark
+in each stage's own cell, and Admitted / Not proceeding below it. `GET /api/journey/exits` reads
+those counts from history. Outcomes left the MENU, not the product. All 18 old hashes resolve.
+
+Also: IEVA-4 again (only the person page passed the finished flag to the Done dialog), and the
+installed app called itself "Novikontas Academy CRM", so its window read
+"Novikontas Academy CRM - Novikontas Intake". The manifest says Intake now.
+
 ## 01.10.2026 - APPLICATIONS lane (apply.novikontas.org -> SIS -> Intake)
 
 Worktree `crm-applications`, branch `lane/applications`, cut from production `b8454f7` (live `/` proven

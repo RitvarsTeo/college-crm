@@ -27,14 +27,18 @@ function start() {
   });
 }
 
-test('the Academy logo is in the tab and the CRM installs as "Academy CRM" - all before sign-in', async (t) => {
+test('the Academy logo is in the tab and it installs as "Intake" - all before sign-in', async (t) => {
   const s = await start();
   t.after(() => s.child.kill());
   const m = await fetch(s.base + '/manifest.webmanifest');
   assert.equal(m.status, 200, 'the manifest is open before sign-in, like the page');
   assert.match(m.headers.get('content-type'), /^application\/manifest\+json/);
   const man = await m.json();
-  assert.equal(man.short_name, 'Academy CRM');
+  // The installed window titles itself manifest.name + the page title. A manifest name that
+  // disagrees with the product read back as "Novikontas Academy CRM - Novikontas Intake".
+  assert.equal(man.short_name, 'Intake');
+  assert.equal(man.name, 'Novikontas Intake');
+  assert.ok(APP.includes('<title>Novikontas Intake</title>'), 'and the page agrees with it');
   assert.equal(man.display, 'standalone');
   assert.equal(man.start_url, '/'); assert.equal(man.scope, '/');
   assert.equal(man.theme_color, '#000000', 'the installed window bar is black');
