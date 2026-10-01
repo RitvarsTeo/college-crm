@@ -14,6 +14,87 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 01.10.2026 - Everything C has to choose between
+
+**The two branches differ in exactly two places.** Eight of the ten commits on each are the
+same work, replayed identically: the light sea, the sparklines, screens 2 and 3, the Aigars
+and Ieva items, the exit reasons, the Channels owner column, the token guard. The A/B is
+`c049c5a` against `dc2ddcd` for Home, and the Channels screen. **C is two choices and a port,
+not a merge of two codebases.**
+
+Everything below is built and can be looked at running. Nothing here is a mockup.
+
+### 1. The KPI strip: hairline or cards
+
+| | **A, the hairline** | **B, the cards** |
+|---|---|---|
+| What it is | one ruled row, no boxes | the modern card treatment, exactly as kit part 2 carries it |
+| Where | `c049c5a` | `dc2ddcd` |
+
+**This is two of his own decisions disagreeing, and it is the one that reaches other apps.**
+On 30.09 he picked modern cards for panels and kit part 2 was built to carry that to every
+app. On 01.10 he asked repeatedly for the hairline back. Rather than stop the run, both were
+built.
+
+**Impact beyond MAIN:** whichever wins has to be answered in **kit part 2**, or Intake, the
+Client Hub and TA drift apart. The kit and the other apps were **not** touched. There is no
+hybrid here: a strip is one or the other.
+
+### 2. Home: stacked bands, or a headline and a rail
+
+| | **A, Structured Operations** | **B, Visual Command Center** |
+|---|---|---|
+| Opens with | titled bands, stacked | one headline figure and a large visual main column |
+| The rest of the numbers | inside their bands | contextual groups down the right, each ending in the action that opens it |
+| Charts | in their bands | in the main column beside the donut. The rail carries only numbers that have no useful shape |
+| Reference | Square, Mobbin free tier | DoorDash Merchant, Mobbin free tier |
+
+Both read Overdue and No next step live from `/api/summary` on every load and show a dash
+with a reason when the read fails. **57 is hardcoded in neither.**
+
+**The hybrid worth building:** B's headline figure and visual main column, with A's explicit
+`.ksrc` / `.kgo` source-and-destination line on every figure. B's rail already ends each group
+in its destination, so the two are the same idea at different strengths and they compose.
+
+**What it would cost:** the rail and the bands are different containers for the same helpers.
+Both call the same `cDonut`, `cBars`, `cMonthChart`, `cWireCharts`. A hybrid re-parents them;
+it does not rewrite them.
+
+### 3. The Channels screen: a table, or a board cut by person
+
+| | **A, the table** | **B, the board** |
+|---|---|---|
+| Axis | status, then name | the person holding it |
+| Shape | 14 rows, 5 columns | one card per owner, biggest pile first, "Nobody named" last |
+| Answers | "what is the state of everything" | "what do I chase, and from whom" |
+| Costs | the owner is a column you scan for | status becomes secondary, and a channel moves card when its owner changes |
+
+**The hybrid worth building:** the board for the channels that are stuck, the table for the
+ones that are working. Once a channel receives there is no person to name, so a row is enough
+and a card is a waste of the screen. B already separates the two piles (`chBoard` splits
+`done` from `stuck`); the hybrid renders the `done` half as A's table.
+
+### 4. Google Form and Open Day: parked where the config cannot see it
+
+Not an A/B. A decision I did not take, written up in full in the Channels section above.
+The backlog records Open Day as parked and Google Form as out; `config/channels.json` records
+neither, so the new column reports both as live work and Google Form as **nobody named**.
+Three ways to settle it are listed there. **Marking a channel parked is a product decision
+about what the screen claims, not a rendering fix.**
+
+### 5. Ieva's Journey stage names
+
+Not an A/B and not a code gap. `config.stages` defines and implements seven, the screen says
+they are provisional, and nothing in the code is missing. **Only the names are open**, and
+only Ieva can close them.
+
+### What C does NOT have to choose
+
+Built once, on both branches, and carried into C whichever way the three above go: the light
+sea, the KPI sparklines, screens 2 and 3 recomposed, the per-person comment thread, the phone
+chart label thinning, the step-by-step next-action row, the exit reasons against the enforced
+list, the Channels owner data, the token guard, and the sign-in colour fix.
+
 ## 01.10.2026 - Channels: the screen now says whose turn it is
 
 On both variant branches. **915/915.** COMMITTED, NOT DEPLOYED.
