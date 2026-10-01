@@ -466,7 +466,7 @@ tr.row:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
 .login h1{margin:0 0 4px}
 .login label{display:block;font-size:12px;color:var(--t2);margin:12px 0 4px}
 .login input{width:100%;padding:10px 12px;border:1px solid var(--rule);border-radius:8px;
-  background:var(--surface);color:var(--t1);font:inherit}
+  background:var(--surface);color:var(--ink);font:inherit}
 .login input:focus-visible{outline:2px solid var(--pet);outline-offset:1px}
 .chstate{font-weight:600;font-size:11px;letter-spacing:.04em}
 .chstate.s-notconfigured{color:var(--t2)}
@@ -1304,6 +1304,20 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .chwho-none{color:var(--c-warn)}
   html.ui-c .chwho small{font-size:11.5px;color:var(--t3);line-height:1.45;overflow-wrap:anywhere}
   html.ui-c .chwaiting{margin:0 0 12px}
+  /* variant B: one card per person, because the question is "who do I chase" */
+  html.ui-c .chbgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:14px}
+  html.ui-c .chb{border:1px solid var(--rule);border-radius:12px;background:var(--card);padding:14px 16px 10px}
+  html.ui-c .chb h2{display:flex;align-items:baseline;gap:8px;margin:0 0 8px;font-size:15px;font-weight:650}
+  html.ui-c .chb h2 small{margin-left:auto;font-size:11.5px;font-weight:500;color:var(--t3)}
+  html.ui-c .chb ul{list-style:none;margin:0;padding:0}
+  html.ui-c .chb-i{padding:9px 0;border-top:1px solid var(--rule);cursor:pointer}
+  html.ui-c .chb-i:first-child{border-top:0}
+  html.ui-c .chb-i:hover,html.ui-c .chb-i:focus-visible{background:var(--surface-2)}
+  html.ui-c .chb-h{display:flex;align-items:center;gap:8px}
+  html.ui-c .chb-h b{font-size:13.5px}
+  html.ui-c .chb-h .chstate{margin-left:auto}
+  html.ui-c .chb-i p{margin:3px 0 0;font-size:11.5px;line-height:1.5;color:var(--t3);overflow-wrap:anywhere}
+  html.ui-c .chb-ok{opacity:.8}
   html.ui-c .c-reasons{margin:0 0 14px}
   html.ui-c .c-reasons h3{margin:0 0 7px;font-size:13px;font-weight:650;display:flex;align-items:baseline;gap:8px}
   html.ui-c .c-reasons h3 b{font-weight:500;font-size:11.5px;color:var(--t4)}
@@ -5007,6 +5021,57 @@ function chWaiting(rows) {
     unnamed ? ` · ${unnamed} with nobody named` : ''}.</p>`;
 }
 
+// VARIANT B, the Channels board (01.10.2026). Same facts as variant A's table, on a
+// different axis. A sorts by status and asks you to read fourteen rows to work out
+// who is holding what. B sorts by PERSON, because that is the question the screen is
+// actually asked: "what do I have to chase, and who do I chase it from."
+//
+// Nothing here is new data. Every word comes from config/channels.json, the same
+// fields A's fifth column reads.
+function chBoard(rows, runs) {
+  const done = rows.filter((c) => chWord(c).word === 'Receiving' || c.direction === 'manual');
+  const stuck = rows.filter((c) => !done.includes(c));
+
+  const by = new Map();
+  for (const c of stuck) {
+    const k = c.ownerPerson || '';
+    if (!by.has(k)) by.set(k, []);
+    by.get(k).push(c);
+  }
+  // A named person first, the biggest pile first, and "nobody named" last: it is not
+  // somebody's queue, it is the thing to settle before anybody can have a queue.
+  const groups = [...by.entries()].sort((a, b) =>
+    (a[0] ? 0 : 1) - (b[0] ? 0 : 1) || b[1].length - a[1].length || a[0].localeCompare(b[0]));
+
+  const item = (c) => `
+    <li class="chb-i" tabindex="0" onclick="location.hash='#/channels/${esc(c.channel)}'">
+      <div class="chb-h"><b>${esc(c.label)}</b>
+        <span class="chstate ${chWord(c).cls}">${esc(chWord(c).word)}</span></div>
+      ${c.externalBlocker || c.ownerAction
+        ? `<p>${esc(c.externalBlocker || c.ownerAction)}</p>` : ''}
+    </li>`;
+
+  const card = (name, list) => `
+    <section class="chb">
+      <h2>${name ? esc(name) : '<span class="chwho-none">Nobody named</span>'}
+        <small>${list.length} channel${list.length === 1 ? '' : 's'}</small></h2>
+      <ul>${list.map(item).join('')}</ul>
+    </section>`;
+
+  const working = done.length ? `
+    <section class="chb chb-ok">
+      <h2>Working<small>${done.length} channel${done.length === 1 ? '' : 's'}</small></h2>
+      <ul>${done.map((c) => `
+        <li class="chb-i" tabindex="0" onclick="location.hash='#/channels/${esc(c.channel)}'">
+          <div class="chb-h"><b>${esc(c.label)}</b>
+            <span class="chstate ${chWord(c).cls}">${esc(chWord(c).word)}</span></div>
+          <p>${chActivity(c, runs[c.channel])}</p>
+        </li>`).join('')}</ul>
+    </section>` : '';
+
+  return `<div class="chbgrid">${groups.map(([n, l]) => card(n, l)).join('')}${working}</div>`;
+}
+
 async function viewChannels(which) {
   if (!isAdmin()) {
     $('#view').innerHTML = `<h1>Channels</h1>
@@ -5023,19 +5088,7 @@ async function viewChannels(which) {
   $('#view').innerHTML = `
     <h1>Channels</h1>
     ${chWaiting(rows)}
-    <div class="tablewrap"><table class="cartable">
-      <thead><tr><th>Channel</th><th>Status</th><th>On</th><th>Last activity</th><th>Waiting on</th></tr></thead>
-      <tbody>
-      ${rows.map(c => `
-        <tr class="row" tabindex="0" style="cursor:pointer" onclick="location.hash='#/channels/${esc(c.channel)}'">
-          <td><b>${esc(c.label)}</b></td>
-          <td><span class="chstate ${chWord(c).cls}">${esc(chWord(c).word)}</span></td>
-          <td>${chOn(c)}</td>
-          <td>${chActivity(c, runs[c.channel])}</td>
-          <td>${chWho(c)}</td>
-        </tr>`).join('')}
-      </tbody>
-    </table></div>`;
+    ${chBoard(rows, runs)}`;
 }
 
 

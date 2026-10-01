@@ -88,9 +88,14 @@ test('last activity is what arrived, never an explanation', () => {
   assert.match(s.activity(ch({}), null), /-/);
 });
 
-test('the screen shows five columns and no engineering detail', () => {
-  const list = span("  const d = await api('/api/admin/channels');", '\nasync function viewChannel(id) {');
-  assert.match(list, /<th>Channel<\/th><th>Status<\/th><th>On<\/th><th>Last activity<\/th><th>Waiting on<\/th>/);
+// VARIANT B. A renders one table sorted by status, with a "Waiting on" column.
+// B renders one card per person. Same fields, same words, different axis - this is
+// the A/B, so this one test is deliberately different on the two branches.
+test('the board groups by person, and carries no engineering detail', () => {
+  const list = span('function chBoard(rows, runs) {', '\nasync function viewChannels(');
+  assert.match(list, /c\.ownerPerson/, 'the person is what the board is cut by');
+  assert.match(list, /c\.externalBlocker \|\| c\.ownerAction/, 'the blocker outranks the action here too');
+  assert.match(list, /Nobody named/, 'the unowned pile is a pile, not a silence');
   assert.doesNotMatch(APP, /<th>Endpoint<\/th>/, 'an endpoint is a machine detail');
   assert.doesNotMatch(APP, /A pass does NOT prove/, 'the audit prose is not product UI');
   assert.doesNotMatch(APP, /esc\(d\.honesty\)/, 'no honesty sentence above the table');

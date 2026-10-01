@@ -43,3 +43,22 @@ test('amber is only ever today, a count, or needs-you', () => {
   }
   assert.ok(lines.length >= 5, 'the real amber signals are still there');
 });
+
+// EVERY TOKEN IS A REAL TOKEN (01.10.2026). I wrote background:var(--hover) into the
+// Channels board. There is no --hover in this file; the rule simply did nothing, and
+// 913 other tests stayed green. A colour that silently does nothing is the same class
+// of fault as a wrong colour, and it is cheap to make impossible.
+//
+// It found two more on its first run. --jt is real: the journey columns declare it
+// inline, on the element that uses it, so the whole file is read and not only the
+// stylesheet. --t1 was not real. The ramp is --t2/--t3/--t4 and starts at --ink, so
+// the sign-in input had been asking for a colour that does not exist.
+test('every var(--token) is a token this file declares', () => {
+  const css = APP.slice(0, APP.indexOf('</style>'));
+  const declared = new Set([...css.matchAll(/(--[a-z0-9-]+)\s*:/gi)].map((m) => m[1]));
+  for (const m of APP.matchAll(/style="[^"]*?(--[a-z0-9-]+)\s*:/gi)) declared.add(m[1]);
+  const used = new Set([...css.matchAll(/var\((--[a-z0-9-]+)/gi)].map((m) => m[1]));
+  const missing = [...used].filter((t) => !declared.has(t));
+  assert.deepEqual(missing, [], 'invented tokens: ' + missing.join(', '));
+  assert.ok(declared.size > 20, 'the tokens were actually found');
+});
