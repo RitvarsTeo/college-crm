@@ -14,6 +14,26 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 01.10.2026 - Aigars and Ieva: the actionable items finished
+
+On `feat/home-a-structured`. **900/900.** COMMITTED, NOT DEPLOYED.
+
+Three items that had been carried as OPEN for days turned out to be actionable once the project
+resources were actually searched rather than quoted.
+
+| Item | Was | Now |
+|---|---|---|
+| **Aigars 3: per-person comment thread** | "preview done, a thread is not built" | **DONE.** The thread is on the Journey person card: the notes and calls that person already has, newest first, three at a time with "Show all", and the two buttons that write through the route that has always existed. No new architecture - a comment is an event of kind `note` or `call` |
+| **Aigars: Home phone chart readability** | open, and live again now Home is back | **DONE.** The type was never the problem (12.5px on a phone, bigger than desktop). Twelve labels in a 324px plot area give each a 27px band against a ~22px name, so they crowd. The LABELS are thinned to about six, the newest month always keeps its tick, and every column keeps its aria-label and tooltip, so no month loses its name |
+| **Ieva: the next-step list, item by item** | "NEEDS DECISION" | **DONE.** The list was never undefined: `config.nextActions` has 19 steps in 4 groups and has been driving the picker all along. The real fault was the Journey collapsing all 19 into 4 group totals. A "Step by step" row now lists the steps somebody is actually waiting on, biggest first, each its own filter |
+| **Ieva: Admitted / Not proceeding reasons** | "NEEDS DECISION" | **MODEL ALREADY BUILT.** `config.closedReasons` holds a complete 10-item taxonomy, the status route refuses a close without one, and Outcomes already counts how many lack a reason. See the decision note below for what is genuinely left |
+| **Ieva: real Journey stage names** | "NEEDS DECISION" | **DECISION REQUIRED, and it is only the names.** `config.stages` defines and implements seven; the screen says they are provisional. Nothing is missing in code |
+
+**One real defect found and closed while building the thread:** the board redraws when the thread
+arrives, and a redraw asks again. In flight is now marked BEFORE the await and the redraw only
+happens if the answer actually landed, so a fetch that resolves without filling the map can no
+longer spin. A stub in a test found it by hanging the suite for seven minutes.
+
 ## 01.10.2026 - Screens 2 and 3 recomposed (both variants)
 
 On both `feat/home-a-structured` and `feat/home-b-command`. **882/882.** COMMITTED, NOT DEPLOYED.

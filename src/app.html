@@ -1295,6 +1295,20 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-ptab.on{color:var(--petink);border-bottom-color:var(--petink);font-weight:600}
   /* the two headings that split the lifecycle in half */
   /* the one line that holds the second half of the summary */
+  /* WHAT WAS SAID, on the Journey card (the review, #3). The conversation, not the history:
+     notes and calls a person wrote, newest first, three at a time. */
+  html.ui-c .c-talk{margin-top:12px;border-top:1px solid var(--rule2);padding-top:10px}
+  html.ui-c .c-talk h4{margin:0 0 7px;font-size:11.5px;font-weight:650;letter-spacing:.05em;
+    text-transform:uppercase;color:var(--t3);display:flex;align-items:center;gap:7px}
+  html.ui-c .c-talk h4 b{font-weight:650;color:var(--t4);font-variant-numeric:tabular-nums}
+  html.ui-c .c-talk-acts{margin-left:auto;display:flex;gap:4px}
+  html.ui-c .c-talkrow{padding:6px 0;border-top:1px solid var(--rule2)}
+  html.ui-c .c-talkrow:first-of-type{border-top:0}
+  html.ui-c .c-talk-when{font-size:11px;color:var(--t4)}
+  html.ui-c .c-talk-what{font-size:13px;color:var(--t2);line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;margin-top:1px}
+  html.ui-c .c-talk-wait{margin:0;font-size:12.5px;color:var(--t4)}
+  html.ui-c .c-talk-more{margin-top:7px;background:none;border:0;padding:2px 0;font:inherit;
+    font-size:12px;color:var(--petink);cursor:pointer;text-decoration:underline}
   html.ui-c .c-more{margin-top:10px;border-top:1px solid var(--rule2);padding-top:4px}
   html.ui-c .c-more > summary{cursor:pointer;list-style:none;padding:6px 2px;font-size:12px;
     color:var(--t3);display:flex;align-items:center;gap:7px;border-radius:6px}
@@ -1900,9 +1914,17 @@ function cMonthChart(months, year) {
   const max = Math.ceil(top / step) * step, band = (W - L - R) / n, bw = Math.min(22, band * 0.42), y = (v) => T + (H - T - B) * (1 - v / max);
   const ticks = Array.from({ length: max / step + 1 }, (_, k) => k * step);
   const grid = ticks.map((v) => `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" class="kg"/><text x="${L - 8}" y="${y(v) + 4}" class="kt" text-anchor="end">${v}</text>`).join('');
+  // READABLE ON A PHONE (the review, 29.09.2026, still open): the type was never the
+  // problem - it is 12.5px on a phone already. TWELVE labels in a 324px plot area gives
+  // each one a 27px band, and a month name is about 22px wide, so they crowd and touch.
+  // So THIN THE LABELS, never the type: keep about six, and always keep the LAST month,
+  // because "where are we now" is the one anybody looks for. Every column keeps its own
+  // aria-label and its tooltip, so no month loses its name - only its printed tick.
+  const every = narrow ? Math.max(1, Math.ceil(n / 6)) : 1;
+  const labelled = (k) => every === 1 || k === n - 1 || (n - 1 - k) % every === 0;
   const cols = months.map((m, k) => { const cx = L + band * k + band / 2, t = y(m.admitted), mo = C_MONTHS[Number(m.month.slice(5)) - 1];
     const bar = m.admitted ? `<path d="M${cx - bw / 2},${y(0)} V${Math.min(t + 4, y(0))} q0,-4 4,-4 h${bw - 8} q4,0 4,4 V${y(0)} Z" style="fill:var(--v-adm)"/>` : '';
-    return `<g class="kcol" tabindex="0" role="button" aria-label="${mo} ${m.month.slice(0, 4)}: ${m.admitted} admitted, ${m.newLeads} new leads" data-tip="${mo} ${m.month.slice(0, 4)}|${m.admitted} admitted|${m.newLeads} new leads" data-kgo="month|${m.month}|${mo} ${m.month.slice(0, 4)}"><rect x="${cx - band / 2}" y="${T}" width="${band}" height="${H - T - B}" class="khit"/>${bar}<text x="${cx}" y="${H - 8}" class="kt" text-anchor="middle">${mo}</text></g>`; }).join('');
+    return `<g class="kcol" tabindex="0" role="button" aria-label="${mo} ${m.month.slice(0, 4)}: ${m.admitted} admitted, ${m.newLeads} new leads" data-tip="${mo} ${m.month.slice(0, 4)}|${m.admitted} admitted|${m.newLeads} new leads" data-kgo="month|${m.month}|${mo} ${m.month.slice(0, 4)}"><rect x="${cx - band / 2}" y="${T}" width="${band}" height="${H - T - B}" class="khit"/>${bar}${labelled(k) ? `<text x="${cx}" y="${H - 8}" class="kt" text-anchor="middle">${mo}</text>` : ''}</g>`; }).join('');
   const pts = months.map((m, k) => [L + band * k + band / 2, y(m.newLeads)]);
   return `<svg viewBox="0 0 ${W} ${H}" class="kchart${narrow ? ' narrow' : ''}" role="img" aria-label="Admissions and new leads per month, ${year}">${grid}${cols}<path d="M${pts.map((p) => p.join(',')).join(' L')}" class="kline"/>${pts.map(([x, yy]) => `<circle cx="${x}" cy="${yy}" r="4" class="kdot"/>`).join('')}</svg>`;
 }
@@ -2317,6 +2339,60 @@ function cLifeLine(p) {
   const facts = f.map(([l, at]) => `<span class="c-lifefact" title="From the SIS: it happened on or before this day">${esc(l)} <time>by ${esc(cDay(at))}</time></span>`).join('');
   return f.length || p.sis ? `<div class="c-life">${facts}${cSisNow(p.sis)}</div>` : '';
 }
+// THE COMMENT THREAD ON THE JOURNEY CARD (the review, #3, open since 29.09.2026).
+// The card showed ONE comment preview and a truncated notes blob, so reading what was
+// actually said meant leaving the board for the person page and losing your place.
+//
+// No new architecture: the thread is the events this person already has. A comment is a
+// note or a call somebody wrote (kind 'note' or 'call'), which is what openNote() has
+// always written through POST /api/people/<id>/note. Status changes, SIS facts and
+// field edits are history, not conversation, and stay on the person page.
+//
+// /api/people (the list) carries no timeline - only /api/people/<id> does - so the
+// selected person is fetched once and kept, and a redraw of the board does not refetch.
+const C_JTALK = new Map();          // person id -> their notes and calls, newest first
+const C_JTALK_BUSY = new Set();     // ids being fetched right now
+const C_JTALK_KINDS = ['note', 'call'];
+
+// IN FLIGHT IS MARKED BEFORE THE AWAIT, not after. The board redraws when the answer
+// arrives, and a redraw asks again; if the only guard were "is it in the map", a fetch
+// that resolved without filling the map would redraw, ask, resolve, redraw, for ever.
+// Marking first makes a redraw during the fetch harmless and a never-answering fetch
+// simply leave "Reading…" on the card instead of spinning.
+async function cJourneyTalk(id) {
+  if (!id || C_JTALK.has(id) || C_JTALK_BUSY.has(id)) return;
+  C_JTALK_BUSY.add(id);
+  try {
+    const p = await api('/api/people/' + encodeURIComponent(id));
+    C_JTALK.set(id, (p.timeline || []).filter((e) => C_JTALK_KINDS.includes(e.kind)));
+  } catch {
+    C_JTALK.set(id, null);           // null = we asked and could not read it
+  } finally {
+    C_JTALK_BUSY.delete(id);
+  }
+}
+
+// Written, not derived: a comment is only what a person typed. An empty thread says so
+// rather than falling back to the imported notes blob, which is not a conversation.
+function cTalkHtml(p) {
+  const rows = C_JTALK.get(p.id);
+  if (rows === undefined) return '<div class="c-talk"><h4>What was said</h4><p class="c-talk-wait">Reading…</p></div>';
+  if (rows === null) return '<div class="c-talk"><h4>What was said</h4><p class="c-talk-wait">Could not read the history just now.</p></div>';
+  const shown = C_JTALK_ALL ? rows : rows.slice(0, 3);
+  const more = rows.length - shown.length;
+  return `<div class="c-talk">
+    <h4>What was said<b>${rows.length}</b>
+      <span class="c-talk-acts"><button class="btn sm ghost" onclick="event.stopPropagation();openNote('${esc(p.id)}','call')">Log a call</button><button class="btn sm ghost" onclick="event.stopPropagation();openNote('${esc(p.id)}','note')">Add a note</button></span></h4>
+    ${shown.length ? shown.map((e) => `<div class="c-talkrow">
+        <div class="c-talk-when">${cStamp(e.occurred_at)}${e.actor ? ' · ' + esc(e.actor) : ''}${e.kind === 'call' ? ' · call' : ''}</div>
+        <div class="c-talk-what">${esc(e.body || e.subject || '')}</div>
+      </div>`).join('')
+      : '<p class="c-talk-wait">Nothing written yet. The first note goes here.</p>'}
+    ${more > 0 ? `<button class="c-talk-more" onclick="event.stopPropagation();C_JTALK_ALL=true;cDrawJourney()">Show all ${rows.length}</button>` : ''}
+  </div>`;
+}
+let C_JTALK_ALL = false;
+
 function cPersonCard(p, t) {
   const open = !C_TERMINAL.includes(p.status);
   const notes = String(p.notes || '');
@@ -2325,6 +2401,7 @@ function cPersonCard(p, t) {
       ${open ? `<div class="c-row-acts">${t ? `<button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))})">Done</button>` : `<button class="btn sm" onclick="openNewTask('${esc(p.id)}')">Plan a next step</button>`}</div>` : ''}</div>
     <dl><dt>Email</dt><dd class="${p.email ? 'c-reach' : 'c-gap'}">${cMailLink(p) || 'not recorded'}</dd><dt>Phone</dt><dd class="${p.phone ? 'c-reach' : 'c-gap'}">${cTelLink(p) || 'not recorded'}</dd>
       <dt>Came from</dt><dd>${esc(cChannel(p.source_channel)[0])}</dd><dt>First contact</dt><dd class="${p.created_at ? '' : 'c-gap'}">${p.created_at ? fmtDate(p.created_at) : 'not recorded'}</dd></dl>
+    ${cTalkHtml(p)}
     ${notes ? `<div class="c-notes">${esc(notes.length > 260 ? notes.slice(0, 260) + '…' : notes)}</div>` : ''}
     <div class="c-row-acts"><button class="btn sm ghost" onclick="cEditFromJourney('${esc(p.id)}')">Edit</button><a class="btn sm ghost" href="#/person/${esc(p.id)}">Details →</a></div></aside>`;
 }
@@ -2470,9 +2547,9 @@ function cJourneyCard(p, t, sel) {
 // otherwise choosing two programmes would mean opening the same menu twice.
 // This also brings back "overdue AND today", which was dropped as a third option when it could only
 // be a designed choice; as two ticks it costs nothing and is the manager's own choice.
-let C_JF = { programme: [], due: [], owner: [], source: [], stage: [], group: [] };
+let C_JF = { programme: [], due: [], owner: [], source: [], stage: [], group: [], step: [] };
 let C_JFOPEN = null;
-const C_JF_EMPTY = () => ({ programme: [], due: [], owner: [], source: [], stage: [], group: [] });
+const C_JF_EMPTY = () => ({ programme: [], due: [], owner: [], source: [], stage: [], group: [], step: [] });
 function cJfToggle(k) { C_JFOPEN = C_JFOPEN === k ? null : k; cDrawJourney(); }
 function cJfPick(k, value, on) {
   const set = new Set(C_JF[k] || []);
@@ -2497,6 +2574,9 @@ function cJourneyMatch(p, t, f) {
   if (!kept('stage', p.status)) return false;
   // the kind of the next step. A person with none can only match when nothing is chosen.
   if (!kept('group', t ? (groupForAction(cTask(t.label)) || 'No group') : cSisHolds(p) ? null : 'No next step')) return false;
+  // THE STEP ITSELF, not only its group (Admissions: the list item by item). A person with no
+  // step can only match when nothing is chosen, exactly as the group filter behaves.
+  if (!kept('step', t ? cTask(t.label) : cSisHolds(p) ? null : 'No next step')) return false;
   if (!kept('due', t ? cWhenClass(t.due_at) : '')) return false;
   return true;
 }
@@ -2561,6 +2641,20 @@ function cJourneySummary(everyone, taskOf, stages) {
     .map((g) => [g, g, everyone.filter((p) => kindOf(p) === g).length])
     .filter(([, , n]) => n > 0);
 
+  // ITEM BY ITEM, NOT ONLY BY GROUP (Admissions, open since 29.09.2026). The row above counts
+  // the four GROUPS, which is the summary; this counts the STEPS people are actually
+  // waiting on, which is the work. Nineteen steps are configured; only the ones somebody
+  // is actually waiting on are listed, so the list is the real queue and not the catalogue.
+  const byStep = [...new Map(everyone.map((p) => {
+    const t = taskOf.get(p.id);
+    return [t ? cTask(t.label) : (cSisHolds(p) ? null : 'No next step'), null];
+  })).keys()].filter(Boolean)
+    .map((label) => [label, label, everyone.filter((p) => {
+      const t = taskOf.get(p.id);
+      return (t ? cTask(t.label) : (cSisHolds(p) ? null : 'No next step')) === label;
+    }).length])
+    .sort((a, b) => b[2] - a[2]);
+
   const row = (key, rows, mark) => {
     const top = Math.max(1, ...rows.map((r) => r[2]));
     return `<div class="c-sumrow">${rows.map(([v, label, n]) => `<div class="c-sumcell"><button type="button"
@@ -2619,6 +2713,8 @@ function cJourneySummary(everyone, taskOf, stages) {
       <summary onclick="cJMore(this)">${esc(moreLabel)}</summary>
       <h4>What comes next <small>the same ${everyone.length} people, by the kind of step they are waiting on</small></h4>
       ${row('group', byKind)}
+      <h4>Step by step <small>the ${byStep.length} ${byStep.length === 1 ? 'step' : 'steps'} somebody is waiting on right now</small></h4>
+      ${row('step', byStep)}
       ${outcomes}
     </details></div>`;
 }
@@ -2640,6 +2736,13 @@ function cDrawJourney() {
   const open = everyone.filter((p) => cJourneyMatch(p, taskOf.get(p.id), C_JF));
   const narrow = window.matchMedia && window.matchMedia('(max-width:900px)').matches;
   const sel = open.find((p) => p.id === C_JSEL) || (narrow ? null : open[0]);
+  // fetch the selected person's conversation once, then redraw with it
+  // Redraw only if the answer actually arrived. Without the check, anything that
+  // resolves without filling the map - a stub, a future refactor - redraws, asks again,
+  // resolves, redraws, for ever.
+  if (sel && !C_JTALK.has(sel.id) && !C_JTALK_BUSY.has(sel.id)) {
+    cJourneyTalk(sel.id).then(() => { if (C_JTALK.has(sel.id)) cDrawJourney(); });
+  }
   $('#view').innerHTML = `
     <div class="c-head"><div><h1>People</h1></div></div>
     ${cPeopleTabs('journey')}

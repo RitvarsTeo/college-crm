@@ -73,7 +73,9 @@ test('the kinds row counts the same people, grouped by what comes next', () => {
   const html = sandbox().summary(people, build(people), STAGES);
   // anchored on the heading that introduces it, not on "the row after the first one":
   // an exit row now sits between them, and the next thing inserted would break it again
-  const kinds = html.slice(html.indexOf('What comes next'));
+  // bounded at the next heading: the step-by-step row below counts the SAME people a
+  // second time, by their individual step, so an unbounded slice double-counts everybody
+  const kinds = html.slice(html.indexOf('What comes next'), html.indexOf('Step by step'));
   const pairs = [...kinds.matchAll(/<b>(\d+)<\/b>.*?<span>([^<]+)<\/span>/gs)].map((m) => [m[2], Number(m[1])]);
   assert.deepEqual(pairs.find((x) => x[0] === 'Conversation and information'), ['Conversation and information', 2]);
   assert.deepEqual(pairs.find((x) => x[0] === 'Visit on site'), ['Visit on site', 1]);
@@ -234,4 +236,65 @@ test('the stage row fills the width instead of stopping at 160px', () => {
   // equal counts drawing different amounts of ink.
   assert.match(APP, /html\.ui-c \.c-sumrow\{display:grid;grid-template-columns:repeat\(auto-fit,minmax\(104px,1fr\)\)/);
   assert.match(APP, /justify-content:stretch/);
+});
+
+// ============ item by item, not only by group (Ieva, open since 29.09.2026) ============
+// The group row is the summary: four kinds of work. The step row is the WORK: the actual
+// steps people are waiting on. Collapsing nineteen configured steps into four totals is
+// the ambiguous aggregate she was pointing at.
+
+const withSteps = [
+  { id: 's1', status: 'New', taskLabel: 'call_interest' },
+  { id: 's2', status: 'New', taskLabel: 'call_interest' },
+  { id: 's3', status: 'Contacted', taskLabel: 'invite_visit' },
+  { id: 's4', status: 'New' },
+];
+const stepTaskOf = () => {
+  const m = new Map();
+  for (const p of withSteps) if (p.taskLabel) m.set(p.id, { label: label(p.taskLabel) });
+  return m;
+};
+
+test('each step somebody is waiting on is its own row, with its own count', () => {
+  const s = sandbox({}, { all: withSteps });
+  const html = s.summary(withSteps, stepTaskOf(), STAGES);
+  const steps = html.slice(html.indexOf('Step by step'));
+  const pairs = [...steps.matchAll(/<b>(\d+)<\/b>.*?<span>([^<]+)<\/span>/gs)].map((m) => [m[2], Number(m[1])]);
+
+  assert.deepEqual(pairs.find((x) => x[0] === label('call_interest')), [label('call_interest'), 2],
+    'two people waiting on the same step are one row of 2, not two rows');
+  assert.deepEqual(pairs.find((x) => x[0] === label('invite_visit')), [label('invite_visit'), 1]);
+  assert.deepEqual(pairs.find((x) => x[0] === 'No next step'), ['No next step', 1],
+    'and having nothing planned is itself a step somebody must act on');
+});
+
+test('it lists the real queue, not the catalogue', () => {
+  const s = sandbox({}, { all: withSteps });
+  const html = s.summary(withSteps, stepTaskOf(), STAGES);
+  const steps = html.slice(html.indexOf('Step by step'));
+  const rows = (steps.match(/class="c-sum[ "]/g) || []).length;
+  assert.equal(rows, 3, 'three steps are being waited on, so three rows - not all 19 configured');
+  assert.match(html, /the 3 steps somebody is waiting on right now/);
+});
+
+test('the busiest step leads', () => {
+  const s = sandbox({}, { all: withSteps });
+  const steps = s.summary(withSteps, stepTaskOf(), STAGES).slice(0);
+  const order = [...steps.slice(steps.indexOf('Step by step')).matchAll(/<span>([^<]+)<\/span>/g)].map((m) => m[1]);
+  assert.equal(order[0], label('call_interest'), 'the step most people are waiting on is first');
+});
+
+test('each step row is its own filter, like the group rows above it', () => {
+  const s = sandbox({}, { all: withSteps });
+  const html = s.summary(withSteps, stepTaskOf(), STAGES);
+  const steps = html.slice(html.indexOf('Step by step'));
+  assert.match(steps, /cJfPick\('step',/, 'clicking a step filters the board by that step');
+});
+
+test('the filter model carries step beside group, and an untouched one holds nothing back', () => {
+  assert.match(APP, /let C_JF = \{ programme: \[\], due: \[\], owner: \[\], source: \[\], stage: \[\], group: \[\], step: \[\] \}/);
+  assert.match(APP, /const C_JF_EMPTY = \(\) => \(\{[^}]*step: \[\] \}\)/, 'and Clear clears it too');
+  const match = APP.slice(APP.indexOf('function cJourneyMatch('), APP.indexOf('function cJourneyFilters('));
+  assert.match(match, /kept\('step', t \? cTask\(t\.label\) : cSisHolds\(p\) \? null : 'No next step'\)/,
+    'a person held by the SIS is not counted as having no step, same as the group rule');
 });

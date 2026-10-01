@@ -121,6 +121,10 @@ test('every Journey stage still appears, in the same order, with its own label',
   const cardSrc = fn('function cJourneyCard(');
   const iconStart = APP.indexOf('const C_JICON = {');
   const filters = APP.slice(APP.indexOf('let C_JF = {'), APP.indexOf('function cDrawJourney('));   // the Journey filters (2A)
+  ctx.C_JTALK = new Map();
+  ctx.C_JTALK_BUSY = new Set();                        // the conversation: its own test owns it
+  ctx.cTalkHtml = () => '<talk>';
+  ctx.cJourneyTalk = async () => {};
   ctx.C_JEXITS = null;                            // no exit data: every mark reads zero
   ctx.cPeopleTabs = (which) => `<tabs ${which}>`; // the tabs have their own test
   ctx.cJourneySummary = () => '';                 // and so does the summary
