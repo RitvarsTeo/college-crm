@@ -8,7 +8,7 @@ import { seed } from './seed.js';
 import { hasRealData, loadReal } from './real.js';
 import { PROVIDERS, runScenario, runOutbound, runFullDemo, listEvents, getEvent, consentFor, consentSummary, DEMO_SEQUENCE } from './simulator.js';
 import { logEvent, applyEdit, readHistory, MANUAL, AUTOMATIC, EDITABLE_FIELDS, IMMUTABLE_FIELDS, FIELD_LABELS } from './history.js';
-import { stampOpenDay, registerOpenDay } from './intake.js';
+import { stampOpenDay, registerOpenDay, refilterOpenEmail } from './intake.js';
 import { queueLeadAnswers } from './leadanswers.js';
 import * as gmailB from '../lib/gmail.js';
 import { receive, listInbound, qualify, archive, funnel, agedCount, handoffToSis, ownerFor, notifiedFor, handoverGap, canReach, surfaceAt, waitingFor, waitingByRole } from './intake.js';
@@ -36,7 +36,7 @@ import { signInFirst, withReturnScript } from './signinfirst.js';
 import { bootstrapIfAuthOn } from './bootstrap.js';
 import * as channeladmin from './channeladmin.js';
 import { todayStart, tomorrowStart, localDate } from './bizday.js';
-import { receiveSisApplication, mergeSisDuplicate, syncSis } from './sync.js';
+import { receiveSisApplication, mergeSisDuplicate, syncSis, channelMode } from './sync.js';
 
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -1789,6 +1789,11 @@ export const handle = async (req, res) => {
       return gmailPage(res, 200, true, `Link for ${gmailB.MAILBOX}, valid until ${until} (Riga):<br><br>`
         + `<input readonly style="width:100%;font:14px monospace;padding:8px" onclick="this.select()" value="${link}">`, 'Gmail link');
     }
+    // The email filter over what already waits in the Inbox (popup A, 01.10.2026). Admins only.
+    if (req.method === 'POST' && p === '/api/admin/gmail/refilter') {
+      if (!(await adminOf(req))) return refuseNotAdmin(res);
+      return json(res, 200, { ok: true, ...(await refilterOpenEmail(db)) });
+    }
     if (req.method === 'POST' && p === '/api/admin/gmail/disconnect') {
       if (!(await adminOf(req))) return refuseNotAdmin(res);
       await gmailB.forgetGmailRefreshToken(db);
@@ -2115,7 +2120,9 @@ export const handle = async (req, res) => {
       const def = channelDef(channel);
       if (!def || !hasAdapter(channel)) return json(res, 404, { error: 'no adapter for ' + channel });
 
-      const mode = String(process.env['CHANNEL_MODE_' + channel.toUpperCase()] || 'off').toLowerCase();
+      // The Channels screen's switch (channel_mode table) first, the Vercel setting second: the same
+      // rule the pollers use. Reading only the environment meant a switch reached one instance only.
+      const mode = await channelMode(db, channel);
       // The x-crm-simulated header counts ONLY on a copy without sign-in (local and the
       // tests) or for a signed-in admin. It used to count for anybody, and this route is
       // open before sign-in, so on the hosted copy anyone could skip the signature check

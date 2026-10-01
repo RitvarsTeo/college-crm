@@ -13,7 +13,7 @@
 //
 // Neither poller runs while its channel is off, and off is the default.
 
-import { receive, confirmedBySystem, CONFIG, newPersonId, ownerFor } from './intake.js';
+import { receive, confirmedBySystem, CONFIG, newPersonId, ownerFor, emailFilterWhy } from './intake.js';
 import { findMatches, isStrong, normEmail, normPhone } from './identity.js';
 import { logEvent, AUTOMATIC, MANUAL } from './history.js';
 import { fetchCalls, rowsFrom, WINDOW_MINUTES, toRigaStamp, ZONE } from '../lib/pbx.js';
@@ -408,7 +408,9 @@ export async function syncGmail(db, { now = new Date(), env = process.env, fetch
   for (const shaped of got.items || []) {
     let ev;
     try { ev = adapt('gmail', shaped); } catch { out.unusable++; continue; }
-    const r = await receive(db, { ...toIntake(ev), source: mode === 'live' ? 'provider' : 'simulated' });
+    const it = toIntake(ev);
+    const r = await receive(db, { ...it, source: mode === 'live' ? 'provider' : 'simulated',
+      filterWhy: emailFilterWhy(it.email) });
     if (r.duplicate) out.repeat++;
     else if (r.filtered) out.filtered++;
     else out.inbox++;

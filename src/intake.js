@@ -625,3 +625,30 @@ export async function handoffToSis(db, personId, by) {
 }
 
 export const CONFIG = CFG;
+
+// ------------------------------------------------------------ the email filter --
+// The edu@ filter (config.emailFilter, decided 01.10.2026 after the first real read). Returns the
+// reason a message is set aside, or null for the Inbox. Kept, with the reason, never deleted.
+export function emailFilterWhy(address, cfg = CFG.emailFilter) {
+  if (!cfg || !address) return null;
+  const [local, domain] = String(address).toLowerCase().split('@');
+  if (!domain) return null;
+  if ((cfg.internalDomains || []).includes(domain)) return `sent from our own address (@${domain})`;
+  if (cfg.automaticSender && new RegExp(cfg.automaticSender, 'i').test(local)) return `an automatic sender (${local}@${domain})`;
+  return null;
+}
+
+// The same rule over email items still waiting in the Inbox (the 40 of the first read). Only an item
+// nobody has dealt with; the body stays (decision 1d). Returns how many were set aside.
+export async function refilterOpenEmail(db, { at = nowIso() } = {}) {
+  const open = await db.prepare("SELECT id, contact_email FROM inbound WHERE channel = 'gmail' AND state = 'new'").all();
+  let moved = 0;
+  for (const r of open) {
+    const why = emailFilterWhy(r.contact_email);
+    if (!why) continue;
+    await db.prepare(`UPDATE inbound SET state = 'filtered', archive_reason = 'Filtered automatically',
+      archive_note = ?, processed_by = 'machine', processed_at = ? WHERE id = ? AND state = 'new'`).run(why, at, r.id);
+    moved++;
+  }
+  return { checked: open.length, setAside: moved, left: open.length - moved };
+}
