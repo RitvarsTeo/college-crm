@@ -150,10 +150,15 @@ export async function receive(db, item) {
     throw err;
   }
   const id = Number(info.lastInsertRowid);
-  if (read.junk || filterWhy) {
+  if (read.junk) {
     await db.prepare(`UPDATE inbound SET archive_reason = 'Filtered automatically',
       archive_note = ?, processed_by = 'machine', processed_at = ?, body = NULL,
-      body_deleted_at = ? WHERE id = ?`).run(filterWhy || read.why, at, at, id);
+      body_deleted_at = ? WHERE id = ?`).run(read.why, at, at, id);
+  } else if (filterWhy) {
+    // A channel's own filter KEEPS the body (Ritvars 01.10.2026, decision 1d: "filtering never
+    // means immediate body deletion"; a filtered body is kept 13 months from its newest line).
+    await db.prepare(`UPDATE inbound SET archive_reason = 'Filtered automatically',
+      archive_note = ?, processed_by = 'machine', processed_at = ? WHERE id = ?`).run(filterWhy, at, id);
   }
 
   const stamp = db.prepare(`INSERT INTO field_values

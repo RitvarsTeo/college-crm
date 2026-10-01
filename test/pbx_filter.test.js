@@ -78,6 +78,9 @@ test('phone filter: a number archived as Spam, Supplier or vendor, or Internal i
     assert.equal(gone.state, 'filtered');
     assert.match(gone.archive_note, new RegExp(`archived before as "${reason}"`));
     assert.equal(gone.contact_phone, '+37129111222', 'the number is still there to look at');
+    assert.match(gone.body || '', /Incoming call on button 1/, 'decision 1d: filtering never deletes the body at once');
+    const row = await db.prepare('SELECT body_deleted_at FROM inbound WHERE id = ?').get(gone.id);
+    assert.equal(row.body_deleted_at, null);
   }
 });
 
