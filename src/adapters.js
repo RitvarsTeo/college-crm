@@ -44,22 +44,50 @@ function need(id, channel, what) {
   return String(id);
 }
 
+// A field by any of its names, whatever the case: a form author on Tilda names fields freely.
+function pickFrom(raw) {
+  const lower = new Map(Object.keys(raw || {}).map((k) => [k.toLowerCase(), k]));
+  return (...names) => {
+    for (const n of names) { const k = lower.get(n.toLowerCase()); if (k && raw[k] !== '' && raw[k] != null) return raw[k]; }
+    return null;
+  };
+}
+
+// Tilda's COOKIES field carries TILDAUTM=utm_source%3D...%7C%7C%7Cutm_medium%3D...; read the
+// utm_ pairs out of it and nothing else.
+export function utmFromCookies(cookies) {
+  const out = {};
+  if (!cookies) return out;
+  let text = String(cookies);
+  for (let i = 0; i < 2; i++) { try { text = decodeURIComponent(text); } catch { break; } }
+  for (const m of text.matchAll(/(utm_source|utm_medium|utm_campaign|gclid)=([^|;&]+)/g)) out[m[1]] = m[2].trim();
+  return out;
+}
+
 export const ADAPTERS = {
   // ------------------------------------------------------------- website --
-  website: (raw) => makeInbound('website', {
-    externalEventId: need(raw.submission_id || raw.idempotency_key, 'website', 'submission_id'),
-    receivedAt: iso(raw.submitted_at) || now(),
-    source: str(raw.utm_source) || 'website',
-    senderName: str(raw.name),
-    senderEmail: str(raw.email),
-    senderPhone: str(raw.phone),
-    messageBody: str(raw.message),
-    extracted: { programme: str(raw.programme), study_form: str(raw.study_form) },
-    attribution: { utm_source: str(raw.utm_source), utm_medium: str(raw.utm_medium),
-      utm_campaign: str(raw.utm_campaign), gclid: str(raw.gclid) },
-    consent: { admissions: truthy(raw.consent_admissions), marketing: truthy(raw.consent_marketing) },
-    raw,
-  }),
+  website: (raw) => {
+    // Our own field names first, then Tilda's (01.10.2026, C8): Tilda posts form-encoded with its
+    // own id `tranid`, the field names the form author chose (Name, Email, Phone, Comments...),
+    // and the advert tags inside the COOKIES field when "Send cookies" is on.
+    const f = pickFrom(raw);
+    const utm = { ...utmFromCookies(raw.COOKIES || raw.cookies) };
+    for (const k of ['utm_source', 'utm_medium', 'utm_campaign', 'gclid']) if (f(k)) utm[k] = f(k);
+    return makeInbound('website', {
+      externalEventId: need(raw.submission_id || raw.idempotency_key || (raw.tranid && 'tilda-' + raw.tranid), 'website', 'submission_id'),
+      receivedAt: iso(raw.submitted_at) || now(),
+      source: str(utm.utm_source) || 'website',
+      senderName: str(f('name', 'full_name', 'vards', 'vārds')),
+      senderEmail: str(f('email', 'e-mail', 'epasts', 'e-pasts')),
+      senderPhone: str(f('phone', 'telefons', 'tel')),
+      messageBody: str(f('message', 'comments', 'comment', 'textarea', 'jautajums', 'jautājums')),
+      extracted: { programme: str(f('programme', 'program', 'programma')), study_form: str(f('study_form')) },
+      attribution: { utm_source: str(utm.utm_source), utm_medium: str(utm.utm_medium),
+        utm_campaign: str(utm.utm_campaign), gclid: str(utm.gclid) },
+      consent: { admissions: truthy(f('consent_admissions')), marketing: truthy(f('consent_marketing')) },
+      raw,
+    });
+  },
 
   // ------------------------------------------------------------ linkedin --
   // LinkedIn Lead Sync (checked 27.09.2026). The webhook only SAYS a lead arrived: it

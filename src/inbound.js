@@ -94,9 +94,15 @@ export const VERIFY = {
   none: () => ({ ok: true, how: 'no verification: this channel carries no signature' }),
 
   // A secret we generate and both sides hold. Compared in constant time.
-  shared_secret_header: (req, secret) => {
+  // Tilda (01.10.2026) can send an "API key" as a header or as a form field, so the same secret
+  // may also arrive as the form field crm_secret. The server removes that field before anything
+  // is stored.
+  shared_secret_header: (req, secret, rawBody) => {
     if (!secret) return { ok: false, how: 'no secret configured', missingSecret: true };
-    const got = String(req.headers['x-crm-secret'] || '');
+    let got = String(req.headers['x-crm-secret'] || '');
+    if (!got && rawBody && !String(rawBody).trimStart().startsWith('{')) {
+      try { got = new URLSearchParams(String(rawBody)).get('crm_secret') || ''; } catch { got = ''; }
+    }
     const a = Buffer.from(got);
     const b = Buffer.from(String(secret));
     const ok = a.length === b.length && crypto.timingSafeEqual(a, b);

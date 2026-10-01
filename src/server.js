@@ -2140,6 +2140,15 @@ export const handle = async (req, res) => {
         return json(res, 400, { error: read.how });
       }
       const payload = read.payload;
+      // The website form secret may come as a form field (Tilda's API key); it is never stored.
+      if (channel === 'website') delete payload.crm_secret;
+      // Tilda checks a new webhook with test=test and wants "ok" back; nothing is stored.
+      const tilda = channel === 'website' && (payload.tranid != null || payload.test === 'test');
+      if (tilda && payload.test === 'test' && payload.tranid == null) {
+        recordInbound(channel, null, 'handshake', 'Tilda test request');
+        res.writeHead(200, { 'content-type': 'text/plain' });
+        return res.end('ok');
+      }
 
       // An agent lead is attributed to the partner whose token was VERIFIED. A payload that
       // names a different partner is refused rather than believed (28.09.2026).
@@ -2180,6 +2189,8 @@ export const handle = async (req, res) => {
               : r.duplicate ? 'already had it' : r.filtered ? 'filtered out before the queue' : 'waiting to be looked at' });
         }
         const first = done[0];
+        // Tilda reads only the word "ok" and retries otherwise (help.tilda.cc/formswebhook).
+        if (tilda) { res.writeHead(200, { 'content-type': 'text/plain' }); return res.end('ok'); }
         return json(res, 200, { ok: true, channel, externalEventId: first.externalEventId,
           outcome: first.outcome, inboundId: first.id ?? first.inboundId,
           messages: done.length, all: done, verified: check.how, read: read.as });
