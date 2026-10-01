@@ -13,7 +13,7 @@
 //
 // Neither poller runs while its channel is off, and off is the default.
 
-import { receive, CONFIG, newPersonId, ownerFor } from './intake.js';
+import { receive, confirmedBySystem, CONFIG, newPersonId, ownerFor } from './intake.js';
 import { findMatches, isStrong, normEmail, normPhone } from './identity.js';
 import { logEvent, AUTOMATIC, MANUAL } from './history.js';
 import { fetchCalls, rowsFrom, WINDOW_MINUTES, toRigaStamp, ZONE } from '../lib/pbx.js';
@@ -285,9 +285,7 @@ async function createFromSis(db, reference, rows, at, mode, stats) {
     'lead', 'sis');
   await logEvent(db, { personId: id, kind: 'create', channel: 'sis', direction: 'in', at, origin: AUTOMATIC,
     actor: 'SIS', subject: 'Created from the SIS', body: rows.map(sisSentence).join('; ') });
-  await db.prepare(`UPDATE inbound SET state = 'qualified', qualification = 'lead', person_id = ?,
-    processed_by = 'SIS', processed_at = ?, archive_reason = NULL, archive_note = NULL, body = NULL,
-    body_deleted_at = ? WHERE id = ?`).run(id, at, at, item.id);
+  await confirmedBySystem(db, item.id, { personId: id, by: 'SIS', at });
   await db.prepare('UPDATE sis_applicants SET person_id = ?, inbound_id = ? WHERE reference = ?').run(id, item.id, reference);
   // What the SIS said about them is known, the provider's word, so the person page never lists the
   // email, phone or programme it was sent as "still to find out" (APPLICATIONS lane, 01.10.2026).

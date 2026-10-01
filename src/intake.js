@@ -424,6 +424,15 @@ async function applyToPerson(db, personId, field, value, opts = {}) {
   }
 }
 
+// A New Leads item another system already settled (the SIS creating an application-first person):
+// done, a lead, linked to the person, nobody pressed anything. Every write to inbound lives in this
+// file, so the pollers never touch the table themselves.
+export async function confirmedBySystem(db, id, { personId, by, at = nowIso() }) {
+  await db.prepare(`UPDATE inbound SET state = 'qualified', qualification = 'lead', person_id = ?,
+    processed_by = ?, processed_at = ?, archive_reason = NULL, archive_note = NULL, body = NULL,
+    body_deleted_at = ? WHERE id = ?`).run(personId, by, at, at, id);
+}
+
 export async function archive(db, id, { reason, note, by }) {
   const item = await db.prepare('SELECT * FROM inbound WHERE id = ?').get(id);
   if (!item) return { error: 'not found' };

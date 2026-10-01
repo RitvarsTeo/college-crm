@@ -11,10 +11,15 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { openDb } from '../src/db.js';
 import { syncSis } from '../src/sync.js';
 import { receive, funnel } from '../src/intake.js';
 import { lifecycleOf } from '../src/lifecycle.js';
+
+const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
 const ON = { SIS_API_TOKEN: 'test-sis-token-not-real-0000', CHANNEL_MODE_SIS: 'test' };
 const NOW = new Date('2026-09-30T05:00:00Z');
@@ -208,4 +213,10 @@ test('application-first: the six archived production SIS rows are never turned i
   assert.equal((await db.prepare('SELECT COUNT(*) n FROM people').get()).n, 0);
   assert.equal((await db.prepare("SELECT COUNT(*) n FROM inbound WHERE channel = 'sis' AND state = 'archived'").get()).n, 6);
   assert.equal((await db.prepare("SELECT COUNT(*) n FROM inbound WHERE channel = 'sis'").get()).n, 6);
+});
+
+test('application-first: the SIS poller writes nothing to inbound itself; intake.js owns every write', () => {
+  const src = fs.readFileSync(path.join(ROOT, 'src', 'sync.js'), 'utf8');
+  assert.doesNotMatch(src, /INSERT INTO inbound/);
+  assert.doesNotMatch(src, /UPDATE inbound/);
 });
