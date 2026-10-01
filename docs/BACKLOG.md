@@ -81,6 +81,24 @@ the SIS. SAID.
 brief, the MVP map or its definition of done. QUEUED after the core application/SIS path, SAID
 01.10.2026. Not Intake itself; a clarifying dashboard, like the landing-page analysis.
 
+## 01.10.2026 - SIS to LIVE: COMMITTED, NOT DEPLOYED
+
+Branch `lane/sis`, worktree `crm-sis`, cut from production `24279e2`. Contract: the SIS team's
+"Novikontas CRM API" (applicants + web-stats, one token). **Seen in production (read-only, 01.10):** the
+05:31 UTC run authenticated and asked `since=2026-09-29T05:01:25Z`, got 1 repeat; 6 SIS records, 6
+references, 0 repeated keys; all 6 arrived in test mode and are archived on purpose; CHANNEL_MODE_SIS=live
+since 14:54 (Applications release), no live run yet.
+
+| Item | Status | Commit |
+|---|---|---|
+| web-stats client; POST /api/admin/sis/sync (on demand); GET /api/admin/sis/check (live proof in counts); GET /api/web-stats | COMMITTED, NOT DEPLOYED | `14bdd26` |
+| Reports: apply.novikontas.org section (popup A, 01.10); search only when the SIS sends it | COMMITTED, NOT DEPLOYED | `57d9f69` |
+
+**Not DONE until:** deployed; an admin opens `/api/admin/sis/check` (pagination, since, 404, 400, web-stats
+against the real SIS) and presses the on-demand sync; the first real applicant after 14:54 is seen in
+Intake with reference, status, programme and contact; the Reports section shows real figures.
+**Every 5 minutes:** the code allows it; the schedule is daily because of the Vercel plan (not a code limit).
+
 ## 30.09.2026 - LIVE: the patch release, seven commits
 
 Branch `release/patches-2026-09-30`. Production commit `4547505`, deployment
