@@ -162,3 +162,21 @@ test('a by-hand channel is not a gap, so it is never waiting on anybody', () => 
   assert.doesNotMatch(out, /nobody named/, 'a finished channel must not raise an alarm');
   assert.doesNotMatch(out, /Nothing to do/);
 });
+
+// AN INTEGRATION IS OWNED TOO (01.10.2026). The Channels screen filed SIS under
+// "nobody named" although config/channels.json names Ritvars for it and says what he
+// has to do. integrationStatuses() simply never copied the three fields the channel
+// path has always copied. Nothing was missing in the config; the API dropped it.
+test('every row the Channels API returns can say who owns it', () => {
+  const cfg = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'channels.json'), 'utf8'));
+  const src = fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8');
+  const i = src.indexOf('function integrationStatuses(');
+  assert.ok(i > 0, 'integrationStatuses is still where this test looks');
+  const body = src.slice(i, src.indexOf('\n}\n', i));
+  for (const k of ['ownerPerson', 'ownerAction', 'externalBlocker']) {
+    assert.ok(body.includes(k + ': def.' + k), 'an integration row must carry ' + k);
+  }
+  // and the config really does name somebody, so the test is not guarding an empty case
+  const sis = (cfg.integrations || {}).sis;
+  assert.ok(sis && sis.ownerPerson, 'SIS names an owner in the config');
+});

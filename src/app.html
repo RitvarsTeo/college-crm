@@ -5014,7 +5014,11 @@ function chWaiting(rows) {
   const waiting = rows.filter((c) => chWord(c).word !== 'Receiving' && c.direction !== 'manual'
     && (c.ownerPerson || c.externalBlocker || c.ownerAction));
   if (!waiting.length) return '';
-  const people = [...new Set(waiting.map((c) => c.ownerPerson).filter(Boolean))];
+  // biggest pile first, which is the order the board draws its cards in, so the line
+  // above the table and the cards below it cannot disagree about who matters most
+  const pile = new Map();
+  for (const c of waiting) if (c.ownerPerson) pile.set(c.ownerPerson, (pile.get(c.ownerPerson) || 0) + 1);
+  const people = [...pile.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map((e) => e[0]);
   const unnamed = waiting.filter((c) => !c.ownerPerson).length;
   return `<p class="c-ev chwaiting">${waiting.length} of ${rows.length} channels are waiting on somebody${
     people.length ? ': ' + esc(people.join(', ')) : ''}${
@@ -5060,7 +5064,7 @@ function chBoard(rows, runs) {
 
   const working = done.length ? `
     <section class="chb chb-ok">
-      <h2>Working<small>${done.length} channel${done.length === 1 ? '' : 's'}</small></h2>
+      <h2>Working <small>${done.length} channel${done.length === 1 ? '' : 's'}</small></h2>
       <ul>${done.map((c) => `
         <li class="chb-i" tabindex="0" onclick="location.hash='#/channels/${esc(c.channel)}'">
           <div class="chb-h"><b>${esc(c.label)}</b>

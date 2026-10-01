@@ -747,6 +747,12 @@ function integrationStatuses(env = process.env) {
       live: mode === 'test' || mode === 'live', mode,
       endpoint: null, settings, missingSettings: missing, allSettingsPresent: missing.length === 0,
       providerHandshakeAt: null, lastEventAt: null, events: 0, canTest: false, isIntegration: true,
+      // An integration is owned by somebody too. config/channels.json names Ritvars for
+      // SIS and says what he has to do; the channel path has always passed these three
+      // and this one did not, so the Channels screen filed SIS under "nobody named".
+      ownerPerson: def.ownerPerson || null,
+      ownerAction: def.ownerAction || null,
+      externalBlocker: def.externalBlocker || null,
     };
   });
 }
