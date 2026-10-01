@@ -21,15 +21,19 @@ test('the hero number is bigger than the other three', () => {
   assert.ok(Number(hero[1]) > Number(rest[1]), 'the focal point is the biggest thing');
 });
 
-test('both screens have exactly one hero', () => {
-  assert.equal(APP.split('class="khero"').length - 1, 2, 'Home and Reports, one each');
+// One screen, one hero (the owner, 01.10.2026). There were two KPI screens: a Home and
+// Reports, and Reports already held every figure Home drew plus Applications, a date
+// range and the download. Home became Today, the work screen, and has no hero figure -
+// its biggest thing is the overdue list, which is the point of it.
+test('Reports is the one screen with a hero figure', () => {
+  assert.equal(APP.split('class="khero"').length - 1, 1, 'Reports only: Today is work, not figures');
 });
 
 test('conversion shows its sum, not a sentence about it', () => {
   assert.match(REPORTS, /conversionA: admittedFromPeriod/, 'the report carries a');
   assert.match(REPORTS, /conversionB: newLeads/, 'and b');
-  assert.equal(APP.split('${s.conversionA ?? 0} / ${s.conversionB ?? 0} who arrived').length - 1, 2,
-    'Home and Reports both show a / b');
+  assert.equal(APP.split('${s.conversionA ?? 0} / ${s.conversionB ?? 0} who arrived').length - 1, 1,
+    'Reports shows a / b; there is no second KPI screen to disagree with it');
   assert.ok(!APP.includes('esc(s.conversionOf || \'\')'), 'the sentence is off both screens');
   assert.match(REPORTS, /conversionOf: conversion === null/, 'and stays for the export');
 });

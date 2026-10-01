@@ -16,7 +16,7 @@ test('New Leads has Add lead, opening the same add form as People', () => {
 });
 
 test('every Next Steps row carries the phone and email as call / write links, and one line of what was said', () => {
-  const v = view('async function viewNextC()');
+  const v = view('async function viewTodayC()');
   // 29.09.2026: the links moved out of this view into one shared helper, because People and the
   // person card printed the same contact as dead text and had to get the same behaviour.
   assert.match(APP, /const cTelLink = \(p\) => \(p && p\.phone \? `<a href="tel:/, 'the call link is built once');

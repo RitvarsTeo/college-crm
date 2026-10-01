@@ -121,6 +121,9 @@ test('every Journey stage still appears, in the same order, with its own label',
   const cardSrc = fn('function cJourneyCard(');
   const iconStart = APP.indexOf('const C_JICON = {');
   const filters = APP.slice(APP.indexOf('let C_JF = {'), APP.indexOf('function cDrawJourney('));   // the Journey filters (2A)
+  ctx.C_JEXITS = null;                            // no exit data: every mark reads zero
+  ctx.cPeopleTabs = (which) => `<tabs ${which}>`; // the tabs have their own test
+  ctx.cJourneySummary = () => '';                 // and so does the summary
   vm.runInNewContext(`${line('const cWhenClass =')}\n${line('const cTask =')}\n${line('const cNotePreview =')}\n${line('const cComment =')}\n${APP.slice(iconStart, APP.indexOf('\n};', iconStart) + 3)}\n${fn('function groupForAction(')}\n${line('const cStepIcon =')}\n${fn('function cLifeFacts(')}\n${line('const C_SIS_HOLDS =')}
 ${line('const cSisHolds =')}
 ${line('const cSisHeld =')}
@@ -150,7 +153,10 @@ test('phone widths: columns keep their minimum and scroll sideways as before; da
 test('no sentence explaining the Journey: the screen says it itself', () => {
   // the owner, 28.09.2026: "If you have to explain items, the UIUX can be better"
   assert.doesNotMatch(APP, /Where each open person is\. Drag a person when something real has happened\./);
-  assert.match(fn('function cDrawJourney('), /<div class="c-head"><div><h1>Journey<\/h1><\/div><\/div>/);
+  // Journey is one of two tabs inside People now (the owner, 01.10.2026), so the screen
+  // is titled People and the tab says which view you are on. Still no explaining sentence.
+  assert.match(fn('function cDrawJourney('), /<div class="c-head"><div><h1>People<\/h1><\/div><\/div>/);
+  assert.match(fn('function cDrawJourney('), /cPeopleTabs\('journey'\)/);
 });
 
 test('warnings look like warnings: overdue is a SOLID red badge with white words, 4.5:1 or more', () => {

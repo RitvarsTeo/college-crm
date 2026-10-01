@@ -22,10 +22,12 @@ test('chart colours: admitted Novikontas Blue, new leads a Navy line, open yello
   assert.doesNotMatch(APP, /--v-(prog|chan):/, 'no extra chart colours');
 });
 
-test('the donut: Open yellow, Admitted blue, Not proceeding grey; every bar is the admitted blue', () => {
-  assert.match(APP, /\['Open', nowOpen, 'open', 'journey'\], \['Admitted', [^\]]*'adm', 'Admitted'\]/);
+// The donut went with the KPI Home (the owner, 01.10.2026): People -> Journey says the
+// same thing with five stages instead of one lump, and marks where people left. The bar
+// colours it shared with the report are unchanged, and are what this now guards.
+test('every bar is the admitted blue, and not proceeding is the grey', () => {
   const bars = APP.match(/background:var\(--v-\$\{why \? 'np' : '(\w+)'\}\)/g) || [];
-  assert.equal(bars.length, 2, 'Home bars and report bars');
+  assert.equal(bars.length, 2, 'both report bar groups');
   for (const b of bars) assert.match(b, /'adm'/);
 });
 

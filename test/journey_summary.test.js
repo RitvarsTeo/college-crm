@@ -21,13 +21,19 @@ const line = (start) => { const i = APP.indexOf(start); assert.ok(i >= 0, start)
 const STAGES = (CONFIG.stages || []).filter((s) => !['Admitted', 'Not proceeding'].includes(s.id));
 const label = (id) => (CONFIG.nextActions || []).flatMap((g) => g.items).find((i) => i.id === id).label;
 
-function sandbox(filters = {}) {
+// The summary also draws the exit marks and the outcomes band (01.10.2026), so it reads
+// C_JEXITS (what the server counted per stage) and C_JDATA (the whole database, because
+// admitted and not-proceeding people are NOT in the open set the bars are built from).
+// Both default to nothing here: a summary with no exit data must still draw.
+function sandbox(filters = {}, { exits = null, all = [] } = {}) {
   const ctx = { CFG: CONFIG, esc: (s) => String(s ?? '') };
   vm.runInNewContext([
     line('const cTask ='), fn('function groupForAction('),
     'let C_JF = { programme: [], due: [], owner: [], source: [], stage: [], group: [] };',
     'Object.assign(C_JF, ' + JSON.stringify(filters) + ');',
     line('const C_SIS_HOLDS ='), line('const cSisHolds ='),
+    'let C_JEXITS = ' + JSON.stringify(exits) + ';',
+    'let C_JDATA = { people: ' + JSON.stringify(all) + ' };',
     fn('function cJourneySummary('),
     'this.summary = cJourneySummary;',
   ].join('\n'), ctx);
@@ -64,7 +70,9 @@ test('the kinds row counts the same people, grouped by what comes next', () => {
     person(STAGES[2].id, null),                         // No next step
   ];
   const html = sandbox().summary(people, build(people), STAGES);
-  const kinds = html.slice(html.indexOf('</div><div class="c-sumrow">'));
+  // anchored on the heading that introduces it, not on "the row after the first one":
+  // an exit row now sits between them, and the next thing inserted would break it again
+  const kinds = html.slice(html.indexOf('What comes next'));
   const pairs = [...kinds.matchAll(/<b>(\d+)<\/b>.*?<span>([^<]+)<\/span>/gs)].map((m) => [m[2], Number(m[1])]);
   assert.deepEqual(pairs.find((x) => x[0] === 'Conversation and information'), ['Conversation and information', 2]);
   assert.deepEqual(pairs.find((x) => x[0] === 'Visit on site'), ['Visit on site', 1]);
@@ -108,4 +116,81 @@ test('the bar says the number and nothing else: the boxes are all one width', ()
   // the narrow layout is a grid too, or the last line stretches again below 760px
   const narrow = line('  @media (max-width:760px){ html.ui-c .c-sumrow{');
   assert.match(narrow, /grid-template-columns:repeat\(auto-fit,minmax\([^)]*\)\)/);
+});
+
+// ============ the active journey, and the outcomes under it (01.10.2026) ============
+// The owner: "Not proceeding is an exit from the active journey and can happen from any
+// active stage. It is not simply the stage after Contract. Admitted is the successful
+// terminal outcome and should not visually read as another active lead stage."
+
+const OPEN3 = [person('New'), person('Contacted'), person('New')];
+const ALL = [...OPEN3, { id: 'a1', status: 'Admitted' }, { id: 'a2', status: 'Admitted' },
+  { id: 'n1', status: 'Not proceeding' }];
+
+test('the five active stages sit above a rule, the two outcomes below it', () => {
+  const s = sandbox({}, { all: ALL, exits: { byStage: { New: 1 }, total: 1, unrecorded: 0 } });
+  const html = s.summary(OPEN3, build(OPEN3), STAGES);
+
+  const active = html.indexOf('Active journey');
+  const outcomes = html.indexOf('Outcomes');
+  assert.ok(active >= 0 && outcomes > active, 'active journey first, outcomes after it');
+
+  // neither outcome is a stage button in the track
+  const track = html.slice(active, outcomes);
+  for (const word of ['Admitted', 'Not proceeding']) {
+    assert.ok(!track.includes(word), word + ' is not drawn among the active stages');
+  }
+  assert.match(html.slice(outcomes), /Admitted/);
+  assert.match(html.slice(outcomes), /Not proceeding/);
+});
+
+test('the outcomes count the whole database, not the open set the bars are built from', () => {
+  const s = sandbox({}, { all: ALL });
+  const html = s.summary(OPEN3, build(OPEN3), STAGES);
+  const band = html.slice(html.indexOf('c-outcomes'));
+  assert.match(band, /<b>2<\/b><span>Admitted<\/span>/, 'both admitted people');
+  assert.match(band, /<b>1<\/b><span>Not proceeding<\/span>/);
+  // and the active heading counts only the people still moving
+  assert.match(html, /Active journey <small>3 people you are still working with/);
+});
+
+// The mark lives INSIDE the stage's cell, not in a parallel row. A second row only lines
+// up while the stages fit on one line; the moment it wrapped, every mark was still in its
+// grid column but no longer under the stage it belonged to.
+test('every active stage carries its own exit mark, inside its own cell', () => {
+  const s = sandbox({}, { all: ALL, exits: { byStage: { New: 2, Application: 1 }, total: 3, unrecorded: 0 } });
+  const html = s.summary(OPEN3, build(OPEN3), STAGES);
+  const track = html.slice(html.indexOf('Active journey'), html.indexOf('What comes next'));
+
+  const cells = track.split('class="c-sumcell"').slice(1);
+  assert.equal(cells.length, STAGES.length, 'one cell per stage');
+  for (const [i, cell] of cells.entries()) {
+    assert.match(cell, /class="c-exit/, STAGES[i].id + ' carries its mark in its own cell');
+  }
+
+  const markFor = (id) => cells[STAGES.findIndex((x) => x.id === id)];
+  assert.match(markFor('New'), /<i><\/i>2<\/span>/, 'the two who left from New, on New');
+  assert.match(markFor('Application'), /<i><\/i>1<\/span>/, 'the one who left from Application');
+  assert.match(markFor('Contacted'), /c-exit none"[^>]*>.*<i><\/i>0<\/span>/,
+    'a stage nobody left from keeps its mark and reads zero: a missing mark would look like missing data');
+
+  // and the group row below gets no marks: people are not "leaving" a kind of next step
+  const kinds = html.slice(html.indexOf('What comes next'));
+  assert.ok(!kinds.includes('c-exit'), 'only the journey stages have exits');
+});
+
+test('exits with no recorded stage are said out loud, never folded into a stage', () => {
+  const s = sandbox({}, { all: ALL, exits: { byStage: {}, total: 1, unrecorded: 1 } });
+  const html = s.summary(OPEN3, build(OPEN3), STAGES);
+  assert.match(html, /0 with a recorded stage, 1 without/,
+    'a figure on screen has to be one somebody can check');
+});
+
+test('the summary still draws when the exits endpoint gave nothing', () => {
+  const s = sandbox({}, { all: ALL, exits: null });
+  const html = s.summary(OPEN3, build(OPEN3), STAGES);
+  assert.match(html, /Active journey/);
+  assert.match(html, /c-outcomes/);
+  assert.equal((html.match(/class="c-exit none"/g) || []).length, STAGES.length,
+    'every mark reads zero rather than the screen failing');
 });

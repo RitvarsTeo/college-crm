@@ -232,7 +232,7 @@ test('the three Today groups exist and each says what it is for', async () => {
 test('the merged queue still says which of the two reasons put a row there', async () => {
   // The merge must not cost the operator the information: a step we planned is
   // marked done, a message they sent is answered. Different actions.
-  const card = APP.slice(APP.indexOf('function todayCard'), APP.indexOf('async function viewToday'));
+  const card = APP.slice(APP.indexOf('function todayCard'), APP.indexOf('async function viewToday('));
   assert.match(card, /why === 'both'/, 'a person who is in for both reasons says so');
   assert.match(card, /they wrote/, 'an unanswered message is labelled');
   assert.match(card, /we planned this/, 'a due step is labelled');
@@ -250,7 +250,7 @@ test('Today is a work queue: one person at a time, and every queue still reachab
 });
 
 test('Today shows no wall of metrics', async () => {
-  const today = APP.slice(APP.indexOf('async function viewToday'), APP.indexOf('function funnelHtml'));
+  const today = APP.slice(APP.indexOf('async function viewToday('), APP.indexOf('function funnelHtml'));
   assert.ok(!today.includes('class="tiles"'), 'Today must not carry the reports tiles');
   assert.ok(!today.includes('conversionPct'), 'a conversion figure belongs in Reports');
   assert.ok(!today.includes('/api/metrics/core'), 'Today does not fetch metrics at all');
@@ -281,7 +281,7 @@ test('the reporting dimensions are marked as things to investigate, not a dashbo
 // ------------------------------------------------------- 13. channels, plain --
 
 test('the daily screens name a channel in plain words, never an endpoint', async () => {
-  const daily = APP.slice(APP.indexOf('async function viewToday'), APP.indexOf('async function viewIntegrations'));
+  const daily = APP.slice(APP.indexOf('async function viewToday('), APP.indexOf('async function viewIntegrations'));
   void daily;
   for (const jargon of ['webhook', 'oauth', 'Pub/Sub', 'endpoint', 'API key']) {
     assert.ok(!daily.toLowerCase().includes(jargon.toLowerCase()),

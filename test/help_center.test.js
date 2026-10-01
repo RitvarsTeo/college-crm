@@ -30,7 +30,13 @@ test('the help file: valid unique ids, plain-text answers, tour steps that name 
   for (const s of HELP.tour) {
     assert.ok(s.title && s.body && s.target, s.title);
     if (s.target === '@theme-switch') continue;
-    const hook = { '.cnav': 'class="cnav"', '.cnav a[data-c="next"]': 'data-c="next"', '.cnav a[data-c="journey"]': 'data-c="journey"', '#helpBtn': 'id="helpBtn"' }[s.target];
+    // Derived from the selector, not a hand-kept list. The list had to be edited every
+    // time the menu changed, and a tour step pointing at a menu item that no longer
+    // exists is exactly what this test is for - it should not also be the thing that
+    // makes the test fail to compile its own expectation.
+    const m = /^\.cnav a\[data-c="([a-z-]+)"\]$/.exec(s.target);
+    const hook = m ? `data-c="${m[1]}"`
+      : { '.cnav': 'class="cnav"', '#helpBtn': 'id="helpBtn"' }[s.target];
     assert.ok(hook, 'a known target: ' + s.target);
     assert.ok(APP.includes(hook), 'the target exists in the page: ' + s.target);
   }

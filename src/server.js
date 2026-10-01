@@ -1453,6 +1453,36 @@ export const handle = async (req, res) => {
       });
     }
 
+    // WHERE PEOPLE LEFT THE ACTIVE JOURNEY (Ritvars, 01.10.2026). Not proceeding is an
+    // EXIT, not the stage after Contract, and it can happen from any active stage. The
+    // Journey screen draws one mark per stage, so it needs the count per stage.
+    //
+    // The number is read from history, never guessed: every status change writes an
+    // events row carrying old_value, so the stage somebody was in when they left is a
+    // recorded fact. The LAST such event per person wins - somebody reopened and closed
+    // again left from wherever they were the second time.
+    if (req.method === 'GET' && p === '/api/journey/exits') {
+      const closed = CONFIG.stageRoles && CONFIG.stageRoles.closed;
+      const rows = await db.prepare(`SELECT e.person_id, e.old_value, e.id FROM events e
+        WHERE e.field = 'status' AND e.new_value = ?
+        ORDER BY e.person_id, e.id`).all(closed);
+      const lastPerStage = new Map();          // person -> the stage of their newest exit
+      for (const r of rows) lastPerStage.set(r.person_id, r.old_value);
+
+      // Only people who are not proceeding NOW. Somebody closed in March and reopened in
+      // May is working again, and counting their old exit would show a loss we recovered.
+      const nowClosed = new Set((await db.prepare('SELECT id FROM people WHERE status = ?').all(closed)).map((x) => x.id));
+      const byStage = {};
+      for (const [personId, stage] of lastPerStage) {
+        if (!stage || !nowClosed.has(personId)) continue;
+        byStage[stage] = (byStage[stage] || 0) + 1;
+      }
+      // Somebody not proceeding with NO status event behind them: imported, or closed
+      // before the history existed. Reported, never silently folded into a stage.
+      const counted = Object.values(byStage).reduce((a, b) => a + b, 0);
+      return json(res, 200, { byStage, total: nowClosed.size, unrecorded: nowClosed.size - counted });
+    }
+
     if (req.method === 'GET' && p === '/api/summary') {
       const q = async (sql, ...a) => await db.prepare(sql).get(...a);
       const since7 = new Date(Date.now() - 7 * 86400000).toISOString();

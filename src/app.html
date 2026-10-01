@@ -1200,6 +1200,62 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-sum.on i{background:var(--j-to)}
   html.ui-c .c-sum span{font-size:11px;color:var(--t3);line-height:1.25;overflow-wrap:anywhere}
   @media (max-width:760px){ html.ui-c .c-sumrow{grid-template-columns:repeat(auto-fit,minmax(88px,1fr))} }
+  /* PEOPLE IS TWO VIEWS (the owner, 01.10.2026). Tabs, not menu items: one place, two ways
+     of looking at the same people. The active one carries the underline and the ink; the
+     other is quiet, so the pair reads as a choice and not as two links. */
+  html.ui-c .c-ptabs{display:flex;gap:2px;border-bottom:1px solid var(--rule2);margin:0 0 14px}
+  html.ui-c .c-ptab{padding:7px 14px;font-size:14px;color:var(--t3);text-decoration:none;
+    border-bottom:2px solid transparent;margin-bottom:-1px}
+  html.ui-c .c-ptab:hover{color:var(--ink)}
+  html.ui-c .c-ptab.on{color:var(--petink);border-bottom-color:var(--petink);font-weight:600}
+  /* the two headings that split the lifecycle in half */
+  html.ui-c .c-summary h4,html.ui-c .c-outcomes h4{margin:0;font:inherit;font-size:11px;
+    letter-spacing:.07em;text-transform:uppercase;color:var(--t3);font-weight:600}
+  html.ui-c .c-summary h4 small,html.ui-c .c-outcomes h4 small{margin-left:8px;font-size:11px;
+    letter-spacing:0;text-transform:none;color:var(--t4);font-weight:400}
+  /* WHERE PEOPLE LEFT. One mark under every stage, on the SAME grid as the bars above it, so
+     each count sits under the stage it belongs to. Leaving is possible from any of them; a
+     single box after Contract would say the opposite. A stage nobody left from keeps its mark
+     and reads zero - a missing mark would look like missing data. */
+  html.ui-c .c-sumcell{display:flex;flex-direction:column;gap:3px;min-width:0}
+  html.ui-c .c-exit{display:flex;align-items:center;justify-content:center;gap:5px;
+    min-width:0;padding:1px 8px;color:var(--t4);font-size:12px;
+    font-variant-numeric:tabular-nums;font-weight:600}
+  html.ui-c .c-exit i{display:block;width:0;height:0;border-left:4px solid transparent;
+    border-right:4px solid transparent;border-top:5px solid currentColor;opacity:.8}
+  html.ui-c .c-exit.none{opacity:.38}
+  /* OUTCOMES, under a rule and in a different shape. Not bars: a bar invites the eye to
+     compare it with the bars above, and these are not another stage - they are what happened
+     to the journey. Admitted carries the one positive colour in the palette; not proceeding
+     stays neutral, because stopping is an outcome and not a failure state to shout about. */
+  html.ui-c .c-outcomes{display:grid;gap:8px;border-top:1px solid var(--rule);
+    padding-top:12px;margin:0 0 14px}
+  html.ui-c .c-outrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,330px));
+    gap:8px;justify-content:start}
+  html.ui-c .c-out{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;
+    column-gap:10px;align-items:center;padding:9px 13px;border:1px solid var(--rule2);
+    border-radius:8px;background:var(--surface);text-decoration:none;color:inherit}
+  html.ui-c .c-out:hover{border-color:var(--control-line)}
+  html.ui-c .c-out b{grid-row:1/3;font-size:21px;font-weight:600;line-height:1;
+    font-variant-numeric:tabular-nums}
+  html.ui-c .c-out span{font-size:13px;color:var(--ink)}
+  html.ui-c .c-out small{font-size:11px;color:var(--t4)}
+  html.ui-c .c-out.good b,html.ui-c .c-out.good span{color:var(--c-ok)}
+  html.ui-c .c-out.good{border-color:color-mix(in srgb,var(--rule2),var(--c-ok) 35%)}
+  /* TODAY'S STRIP: the three figures about the work, plus what is waiting in the Inbox,
+     because a next step is a promise you made and an Inbox item is somebody waiting for a
+     first answer. Seeing one of them is how the other is forgotten. */
+  html.ui-c .c-todaystrip{display:flex;flex-wrap:wrap;gap:22px;padding:10px 14px;
+    border:1px solid var(--rule2);border-radius:10px;background:var(--surface);margin:0 0 14px}
+  html.ui-c .c-todaystrip > div{display:flex;flex-direction:column;gap:2px}
+  html.ui-c .c-todaystrip b{font-size:19px;font-weight:600;line-height:1.1;
+    font-variant-numeric:tabular-nums}
+  html.ui-c .c-todaystrip b.c-od{color:var(--c-bad)}
+  html.ui-c .c-todaystrip b a{color:inherit;text-decoration:none}
+  html.ui-c .c-todaystrip b a:hover{text-decoration:underline}
+  html.ui-c .c-todaystrip span{font-size:11px;color:var(--t3)}
+  /* Settings is not one of the four. It sits at the foot, behind a rule, for admins. */
+  html.ui-c .cnav a.c-navfoot{margin-top:auto;border-top:1px solid var(--rule2);padding-top:10px}
   html.ui-c .c-jfilters{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-6px 0 14px}
   html.ui-c .c-jf-ico{width:16px;height:16px;flex:0 0 16px;fill:none;stroke:var(--t3);stroke-width:1.6;stroke-linejoin:round}
   html.ui-c .c-jf{display:inline-flex;align-items:center;gap:4px;height:32px;padding:0 0 0 10px;border:1px solid var(--control-line);
@@ -1503,29 +1559,34 @@ function installCNav() {
   brand.setAttribute('href', '#/home');
   for (const bar of document.querySelectorAll('#cThemeBar, #cThemeBar2')) bar.innerHTML = themeSwitchHtml();
   brand.insertAdjacentHTML('afterend', `<div class="cnav" role="navigation" aria-label="Main">
-    <a href="#/home" data-c="home">${C_ICON.home}<span>Home</span></a>
-    <a href="#/admissions" data-c="admissions">${C_ICON.adm}<span>Admissions</span></a>
-    <div class="kids"><a href="#/leads" data-c="leads" title="Things that have come in and need a person to look at them"><span>Inbox</span><span class="n" id="cnLeads"></span></a>
-      <a href="#/next" data-c="next"><span>Next Steps</span><span class="n" id="cnNext"></span></a></div>
-    <a href="#/people" data-c="people">${C_ICON.ppl}<span>People</span></a>
-    <div class="kids"><a href="#/journey" data-c="journey"><span>Journey</span></a></div>
-    <a href="#/outcomes" data-c="outcomes">${C_ICON.out}<span>Outcomes</span></a>
-    <a href="#/settings" data-c="settings" id="cnSettings" style="display:none">${C_ICON.set}<span>Settings</span></a>
+    <a href="#/home" data-c="home" title="What needs my attention"><span>Today</span><span class="n" id="cnNext"></span></a>
+    <a href="#/leads" data-c="leads" title="What arrived and needs a person to look at it"><span>Inbox</span><span class="n" id="cnLeads"></span></a>
+    <a href="#/people" data-c="people" title="Who we are working with, and where they are">${C_ICON.ppl}<span>People</span></a>
+    <a href="#/reports" data-c="reports" title="What is happening">${C_ICON.out}<span>Reports</span></a>
+    <a href="#/settings" data-c="settings" id="cnSettings" class="c-navfoot">${C_ICON.set}<span>Settings</span></a>
   </div>`);
   // No "Open the classic view" link: C is the normal product, and the classic view is a
   // hidden fallback reached only by the address ?ui=classic (the owner, 28.09.2026).
 }
 
-// Which C place a hash belongs to. Old links keep working: #/today is Home, #/inbox is
-// New Leads, the old board is the Journey, #/followup is Next Steps.
+// Which of the four places a hash belongs to (the owner, 01.10.2026: Today, Inbox,
+// People, Reports). Every old link still resolves and NOTHING is redirected, because
+// people have these in their address bar and in each other's messages:
+//   #/today and #/admissions   -> Today, which now holds the work
+//   #/next and #/followup      -> Today: Next Steps was folded into it, not deleted
+//   #/inbox, #/car             -> the Inbox
+//   #/journey, #/outcomes      -> People, where the lifecycle now lives
+//   #/reports                  -> Reports, which has its own place in the menu now
 function cPlace(page) {
-  return ({ '': 'home', home: 'home', today: 'home', admissions: 'admissions', leads: 'leads', inbox: 'leads', car: 'leads',
-    next: 'next', followup: 'next', people: 'people', person: 'people', journey: 'journey',
-    outcomes: 'outcomes', settings: 'settings', help: 'settings', channels: 'settings', feedback: 'settings', reports: 'outcomes' })[page || ''];
+  return ({ '': 'home', home: 'home', today: 'home', admissions: 'home', next: 'home', followup: 'home',
+    leads: 'leads', inbox: 'leads', car: 'leads',
+    people: 'people', person: 'people', journey: 'people', outcomes: 'people',
+    reports: 'reports', funnel: 'reports', metrics: 'reports',
+    settings: 'settings', help: 'settings', channels: 'settings', feedback: 'settings' })[page || ''];
 }
 function markCNav(page) {
   const place = cPlace(page);
-  const lit = { leads: ['admissions', 'leads'], next: ['admissions', 'next'], journey: ['people', 'journey'] }[place] || [place];
+  const lit = [place];
   document.querySelectorAll('.cnav a').forEach((a) => a.classList.toggle('on', lit.includes(a.dataset.c)));
   // on a phone the menu is one sideways row: bring the place you are in into view (the deepest one lit)
   setTimeout(() => { const here = [...document.querySelectorAll('.cnav a.on')].pop(); const row = document.querySelector('.cnav');
@@ -1558,24 +1619,34 @@ const cDueNow = (tasks) => tasks.filter((t) => cWhenClass(t.due_at) === 'over' |
 const cChannel = (c) => (!c || c === 'unknown' ? ['Not recorded', 'no source was kept'] : ((CFG.channels && CFG.channels[c]) || (CFG.channelAliases && CFG.channelAliases[c])) ? [channelLabel(c), ''] : [c, 'not a channel']);
 
 // The router's C half. Channels is the one borrowed classic screen.
+// Which of the two People views is showing. Journey by default: it is the operational
+// one. Remembered across a redraw so an action does not throw you back to the other tab.
+let C_PTAB = 'journey';
 async function routeC(page, arg) {
   const place = cPlace(page);
   if (page === 'person') return viewPerson(arg);
   if (page === 'channels') return viewChannels(arg);
   if (page === 'feedback') return viewFeedback();
-  if (page === 'reports') return viewReports();
-  if (place === 'admissions') {
-    const i = await api('/api/intake');
-    return ((i.counts || {}).new || 0) > 0 ? viewLeadsC() : viewNextC();
-  }
+  if (place === 'reports') return viewReports();
   if (place === 'leads') return viewLeadsC();
-  if (place === 'next') return viewNextC();
-  if (place === 'people') return viewPeopleC();
-  if (place === 'journey') return viewJourneyC();
-  if (place === 'outcomes') return viewOutcomesC();
+  // People is two views behind one menu item: Journey is the operational one and opens
+  // by default, All people is the whole database. #/journey and #/people both land here;
+  // the tab decides which is drawn. #/outcomes still resolves, into the Journey, because
+  // that is where outcomes live now.
+  // The Outcomes LIST is not in the menu any more, but it is not gone: the Journey's
+  // outcomes band links to it, a Reports chart click still drills into it through
+  // cChartGo, and it is the only place carrying the closed REASONS and the matriculated
+  // dates. Routing #/outcomes back to the Journey would have made the band link to
+  // itself and silently broken the chart drill-down.
+  if (page === 'outcomes') return viewOutcomesC();
+  if (place === 'people') {
+    if (page === 'journey') C_PTAB = 'journey';
+    else if (page === 'people' && arg === 'all') C_PTAB = 'all';
+    return C_PTAB === 'all' ? viewPeopleC() : viewJourneyC();
+  }
   if (page === 'help') return viewHelpC();
   if (place === 'settings') return viewSettingsC();
-  return viewHomeC();                      // Home, and anything unknown
+  return viewTodayC();                     // Today, and anything unknown
 }
 
 // ------------------------------------------------------------------------ HOME
@@ -1583,42 +1654,6 @@ async function routeC(page, arg) {
 // The department's own KPIs, from the report the CRM already computes plus the
 // people list, for the current year. Every chart mark answers hover and focus, and a
 // click opens the admitted people behind that exact number.
-async function viewHomeC() {
-  const year = Number(cTodayIso().slice(0, 4));
-  const [rep, people] = await Promise.all([api(`/api/report?from=${year}-01-01&to=${year}-12-31`), cPeopleRows()]);
-  const s = rep.summary || {};
-  const thisMonth = cTodayIso().slice(0, 7);
-  const months = (rep.trend || []).filter((m) => m.month.startsWith(String(year)) && m.month <= thisMonth);
-  const inYear = (d) => cDay(d).startsWith(String(year));
-  const admitted = people.filter((p) => p.status === 'Admitted' && inYear(p.admitted_at));
-  const undated = people.filter((p) => p.status === 'Admitted' && !p.admitted_at).length;
-  const count = (arr, key) => { const m = new Map(); arr.forEach((p) => { const k = key(p); m.set(k, (m.get(k) || 0) + 1); }); return [...m.entries()].sort((a, b) => b[1] - a[1]); };
-  const known = new Set(CFG.programmes || []);
-  const progs = count(admitted, (p) => p.programme || '(not recorded)').map(([k, n]) => [k, n, known.has(k) ? '' : (k === '(not recorded)' ? 'no programme recorded' : 'not one of the list')]);
-  const chans = count(admitted, (p) => p.source_channel || 'unknown').map(([k, n]) => { const [label, why] = cChannel(k); return [label, n, why, k]; });
-  const nowOpen = people.filter((p) => !C_TERMINAL.includes(p.status)).length;
-  const now = [['Open', nowOpen, 'open', 'journey'], ['Admitted', people.filter((p) => p.status === 'Admitted').length, 'adm', 'Admitted'], ['Not proceeding', people.filter((p) => p.status === 'Not proceeding').length, 'np', 'Not proceeding']];
-  const asOf = new Intl.DateTimeFormat('en-GB', { timeZone: TZ, day: 'numeric', month: 'long' }).format(new Date());
-  const best = months.length ? Math.max(...months.map((m) => m.admitted)) : 0;
-  $('#view').innerHTML = `<div class="kpage">
-    <div class="khead"><div><h1 class="c-sr">Home</h1><p class="c-crumb" style="margin:0">Admissions ${year} · to ${esc(asOf)}</p></div></div>
-    <div class="kstrip">
-      <div class="khero"><span>Admitted</span><b>${admitted.length}</b><small>${year}${undated ? ` \u00b7 +${undated} undated` : ''}</small></div>
-      <div><span>Leads</span><b>${s.newLeads ?? 0}</b><small>${year}</small></div>
-      <div><span>Conversion</span><b>${s.conversionPct == null ? '-' : s.conversionPct + '%'}</b><small>${s.conversionA ?? 0} / ${s.conversionB ?? 0} who arrived</small></div>
-      <div><span>Median time to admission</span><b>${s.medianDaysToAdmission == null ? '-' : s.medianDaysToAdmission} <em>days</em></b><small>first contact to admission</small></div>
-    </div>
-    <section class="ksec"><div class="ksh"><h2>Admissions by month</h2><ul class="klegend inline"><li><i style="background:var(--v-adm)"></i><span>Admitted</span></li><li><i class="ln" style="background:var(--v-lead)"></i><span>New leads</span></li></ul></div>
-      ${cMonthChart(months, year)}
-      <details class="kdet"><summary>Show as a table</summary><table class="ktable"><thead><tr><th>Month</th><th>Admitted</th><th>New leads</th></tr></thead><tbody>${months.map((m) => `<tr><td>${C_MONTHS[Number(m.month.slice(5)) - 1]}</td><td>${m.admitted}</td><td>${m.newLeads}</td></tr>`).join('')}</tbody></table></details></section>
-    <div class="kthree">
-      <section class="ksec"><div class="ksh"><h2>Where everyone is now</h2></div>${cDonut(now)}</section>
-      <section class="ksec"><div class="ksh"><h2>Admitted by programme</h2><span class="kt2">${admitted.length} in ${year}</span></div>${cBars(progs.map((r) => [...r, r[0]]), 'prog')}</section>
-      <section class="ksec"><div class="ksh"><h2>Where admitted people came from</h2><span class="kt2">${admitted.length} in ${year}</span></div>${cBars(chans, 'chan')}</section>
-    </div>
-    <div class="ktip" role="status" aria-live="polite"></div></div>`;
-  cWireCharts();
-}
 // BY PROGRAMME, DRAWN (30.09.2026). One blue ramp, two weights: new leads light,
 // admitted solid, both scaled to the largest new-leads figure so the pair can be
 // compared across programmes. The numbers stay beside their own bar - a bar without
@@ -1658,15 +1693,6 @@ function cMonthChart(months, year) {
   const pts = months.map((m, k) => [L + band * k + band / 2, y(m.newLeads)]);
   return `<svg viewBox="0 0 ${W} ${H}" class="kchart${narrow ? ' narrow' : ''}" role="img" aria-label="Admissions and new leads per month, ${year}">${grid}${cols}<path d="M${pts.map((p) => p.join(',')).join(' L')}" class="kline"/>${pts.map(([x, yy]) => `<circle cx="${x}" cy="${yy}" r="4" class="kdot"/>`).join('')}</svg>`;
 }
-function cDonut(rows) {
-  const total = rows.reduce((a, r) => a + r[1], 0) || 1, R = 58, r0 = 40, c = 70, gap = 0.035;
-  let a = -Math.PI / 2;
-  const p = (ang, rad) => `${c + rad * Math.cos(ang)},${c + rad * Math.sin(ang)}`;
-  const seg = rows.filter((r) => r[1] > 0).map(([k, n, v, go]) => { const sw = (n / total) * Math.PI * 2, a0 = a + gap / 2, a1 = a + sw - gap / 2; a += sw; const big = a1 - a0 > Math.PI ? 1 : 0;
-    return `<path d="M${p(a0, R)} A${R},${R} 0 ${big} 1 ${p(a1, R)} L${p(a1, r0)} A${r0},${r0} 0 ${big} 0 ${p(a0, r0)} Z" style="fill:var(--v-${v})" class="kseg" tabindex="0" role="button" aria-label="${k}: ${n}" data-tip="${k}|${n} people|${Math.round((n / total) * 100)}% of ${total}" data-kgo="${go === 'journey' ? 'journey' : 'outcome|' + go}"/>`; }).join('');
-  return `<div class="kdonut"><svg viewBox="0 0 140 140" role="img" aria-label="Where everyone is now">${seg}<text x="70" y="68" text-anchor="middle" class="kbig">${total}</text><text x="70" y="86" text-anchor="middle" class="kt">people</text></svg>
-    <ul class="klegend">${rows.map(([k, n, v]) => `<li><i style="background:var(--v-${v})"></i><span>${k}</span><b>${n}</b></li>`).join('')}</ul></div>`;
-}
 function cBars(rows, kind) {
   if (!rows.length) return '<p class="c-empty">Nobody admitted yet.</p>';
   const max = Math.max(...rows.map((r) => r[1]));
@@ -1703,7 +1729,7 @@ function cChartGo(spec) {
 // ------------------------------------------------------------------ NEXT STEPS
 // Four states, and every open person is in exactly one of them. No "Waiting on us":
 // a message is a New Lead, a promise is a Next Step. No row limit.
-async function viewNextC() {
+async function viewTodayC() {
   const [people, tasks] = await Promise.all([cPeopleRows(), api('/api/tasks?scope=open')]);
   const over = tasks.filter((t) => cWhenClass(t.due_at) === 'over');
   const today = tasks.filter((t) => cWhenClass(t.due_at) === 'today');
@@ -1718,16 +1744,31 @@ async function viewNextC() {
   const tRow = (t) => `<div class="c-line" tabindex="0" onclick="location.hash='#/person/${esc(t.person_id)}'">
       <div class="c-who"><b>${esc(t.name)}</b><small>${esc(t.programme || 'programme not said')} · ${esc(t.status)}</small>${reach(byId.get(t.person_id))}</div>
       <div class="c-what">${cStepIcon(t.label)}${esc(cTask(t.label))}${said(byId.get(t.person_id))}</div><div class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</div>
-      <div class="c-acts"><button class="btn sm" onclick="event.stopPropagation();openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))})">Done</button></div></div>`;
+      <div class="c-acts"><button class="btn sm" onclick="event.stopPropagation();openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, ${
+        C_TERMINAL.includes((byId.get(t.person_id) || {}).status)})">Done</button></div></div>`;
   const pRow = (p) => `<div class="c-line" tabindex="0" onclick="location.hash='#/person/${esc(p.id)}'">
       <div class="c-who"><b>${esc(p.name)}</b><small>${esc(p.programme || 'programme not said')} · ${esc(p.status)}</small>${reach(p)}</div>
       <div class="c-what none">No next step${said(p)}</div><div class="c-when"></div>
       <div class="c-acts"><button class="btn sm" onclick="event.stopPropagation();openNewTask('${esc(p.id)}')">Plan a next step</button></div></div>`;
   // the Overdue and Due today counts carry the urgency badges when there is something in them
   const sect = (title, rows, fn, tone = '') => `<div class="c-sheet c-nextsheet"><h3>${title}<b${tone && rows.length ? ` class="c-count ${tone}"` : ''}>${rows.length}</b></h3>${rows.map(fn).join('') || '<div class="c-empty">None.</div>'}</div>`;
-  $('#view').innerHTML = `<p class="c-crumb">Admissions</p>
-    <div class="c-head"><div><h1>Next Steps</h1></div>
+
+  // TODAY ANSWERS ONE QUESTION: what needs my attention? (the owner, 01.10.2026.) This was
+  // two screens - a Home of KPIs and a Next Steps of work - and the KPIs went to Reports,
+  // which already held every one of them and more. So Today is the WORK, unchanged: the
+  // same four sections, the same rows, the same Done button, the same rule for what is
+  // overdue. Only the heading and the strip above it are new.
+  //
+  // The Inbox count is here because the two kinds of work are not the same kind: a next
+  // step is a promise you made, an Inbox item is somebody waiting for a first answer.
+  // Seeing only one of them is how the other is forgotten.
+  const waiting = (await api('/api/intake').catch(() => ({}))).counts || {};
+  const fig = (n, label, tone = '') => `<div><b${tone ? ` class="${tone}"` : ''}>${n}</b><span>${label}</span></div>`;
+  $('#view').innerHTML = `
+    <div class="c-head"><div><h1>Today</h1></div>
       <div class="act"><span class="c-planned"><b>${pct}%</b> planned <small>${open.length - none.length} of ${open.length} open people have a next step</small></span></div></div>
+    <div class="c-todaystrip">${fig(open.length, 'open')}${fig(over.length, 'overdue', over.length ? 'c-od' : '')}${fig(none.length, 'no next step')}${
+      fig(`<a href="#/leads">${waiting.new || 0}</a>`, 'waiting in the Inbox')}</div>
     ${sect('Overdue', over, tRow, 'over')}${sect('Due today', today, tRow, 'today')}${sect('Coming up', later, tRow)}${sect('No next step', none, pRow)}`;
 }
 
@@ -1749,7 +1790,8 @@ async function viewOutcomesC() {
   }
   const noReason = np.filter((p) => !p.closed_reason).length;
   const fLabel = f ? ({ month: 'admitted in ', prog: 'programme ', chan: 'came from ' }[f.kind] || '') + f.label : '';
-  $('#view').innerHTML = `<div class="c-head"><div><h1>Outcomes</h1></div>
+  $('#view').innerHTML = `<p class="c-crumb"><a href="#/journey">People</a></p>
+    <div class="c-head"><div><h1>Outcomes</h1></div>
       <div class="act"><button class="btn" onclick="openExport()">Download for management review</button><button class="btn ghost" onclick="location.hash='#/reports'">Full report</button></div></div>
     <div class="c-seg" role="group" aria-label="Outcome"><button aria-pressed="${C_OUTCOME === 'Admitted'}" onclick="C_OUTCOME='Admitted';viewOutcomesC()"><span class="c-ok">✓</span>Admitted ${adm.length}</button><button aria-pressed="${C_OUTCOME !== 'Admitted'}" onclick="C_OUTCOME='Not proceeding';viewOutcomesC()"><span class="c-no">✕</span>Not proceeding ${np.length}</button></div>
     ${f ? `<div class="c-filter">Showing <b>${list.length}</b> ${list.length === 1 ? 'admitted person' : 'admitted people'}, ${esc(fLabel)} <button class="btn sm ghost" onclick="C_OUT_FILTER=null;viewOutcomesC()">Show all admitted ✕</button></div>` : ''}
@@ -1919,6 +1961,7 @@ function cDrawPeople() {
       ${C_PEDIT === p.id ? `<tr class="c-edit"><td colspan="5">${cEditForm(p, t)}</td></tr>` : ''}`; };
   $('#view').innerHTML = `<div class="c-head"><div><h1>People</h1></div>
       <div class="act"><input class="c-search" id="cPQ" placeholder="Search name, email or phone" value="${esc(C_PQ)}" aria-label="Search people"><button class="btn" onclick="openAdd()">Add person</button></div></div>
+    ${cPeopleTabs('all')}
     ${cPeopleFilters(people)}
     <p class="c-explain">${explain}</p>
     ${C_PMSG ? `<div class="c-filter">${esc(C_PMSG)}</div>` : ''}
@@ -2015,8 +2058,15 @@ async function cSavePerson(id) {
 // open stages are quiet columns; finished journeys fold into one line to Outcomes.
 // Dragging a card changes the stage through the same route the classic board uses.
 let C_JSEL = null; let C_JDATA = null;
+// Where people LEFT the active journey, per stage. Read from history on the server
+// (GET /api/journey/exits reads the events rows that record every status change), never
+// inferred in the browser from where somebody is now - a person who is Not proceeding
+// carries no trace of the stage they left in their current row.
+let C_JEXITS = null;
 async function viewJourneyC() {
-  const [people, tasks] = await Promise.all([cPeopleRows(), api('/api/tasks?scope=open')]);
+  const [people, tasks, exits] = await Promise.all([cPeopleRows(), api('/api/tasks?scope=open'),
+    api('/api/journey/exits').catch(() => null)]);
+  C_JEXITS = exits;
   const taskOf = new Map(); tasks.forEach((t) => { if (!taskOf.has(t.person_id)) taskOf.set(t.person_id, t); });
   C_JDATA = { people, taskOf };
   cDrawJourney();
@@ -2203,15 +2253,63 @@ function cJourneySummary(everyone, taskOf, stages) {
     .map((g) => [g, g, everyone.filter((p) => kindOf(p) === g).length])
     .filter(([, , n]) => n > 0);
 
-  const row = (key, rows) => {
+  const row = (key, rows, mark) => {
     const top = Math.max(1, ...rows.map((r) => r[2]));
-    return `<div class="c-sumrow">${rows.map(([v, label, n]) => `<button type="button"
+    return `<div class="c-sumrow">${rows.map(([v, label, n]) => `<div class="c-sumcell"><button type="button"
       class="c-sum${on(key, v) ? ' on' : ''}" aria-pressed="${on(key, v)}"
       onclick="cJfPick('${key}', this.dataset.v, !${on(key, v)})" data-v="${esc(v)}">
       <b>${n}</b><i style="height:${Math.max(3, (n / top) * 34)}px"></i><span>${esc(label)}</span>
-    </button>`).join('')}</div>`;
+    </button>${mark ? mark(v) : ''}</div>`).join('')}</div>`;
   };
-  return `<div class="c-summary">${row('stage', byStage)}${row('group', byKind)}</div>`;
+  // ACTIVE JOURNEY above the line, OUTCOMES below it (the owner, 01.10.2026). The five
+  // stages are a track somebody is still moving along. Admitted and Not proceeding are
+  // what HAPPENED to that journey, not two more stages, so they sit under a rule, in
+  // their own words, and neither can be mistaken for the step after Contract.
+  //
+  // One exit mark under every stage, because leaving is possible from ANY of them. A
+  // single "Not proceeding" box at the end would say the opposite - that you only stop
+  // after Contract - and the per-stage counts also make the shape of the losses
+  // readable: three leaving at Contacted is a different problem from three at
+  // Application.
+  // The mark sits INSIDE the stage's own cell, not in a second row underneath. A parallel
+  // row only lines up while the stages fit on one line: the moment the row wrapped - a
+  // narrow window, or a sixth stage - every mark was still in its grid column but no
+  // longer under the stage it belonged to, which is worse than not drawing it at all.
+  const exits = C_JEXITS || {};
+  const exitMark = (id) => {
+    const n = exits.byStage ? (exits.byStage[id] || 0) : 0;
+    return `<span class="c-exit${n ? '' : ' none'}" title="${n} left the journey from ${esc(id)}"><i></i>${n}</span>`;
+  };
+
+  const roles = CFG.stageRoles || {};
+  // from the WHOLE database, not from `everyone`, which is the open people only
+  const all = (C_JDATA && C_JDATA.people) || [];
+  const adm = all.filter((p) => p.status === roles.admitted).length;
+  const np = all.filter((p) => p.status === roles.closed).length;
+  const outcomes = `<div class="c-outcomes">
+    <h4>Outcomes <small>${adm + np} ${adm + np === 1 ? 'person whose journey has ended' : 'people whose journey has ended'}</small></h4>
+    <div class="c-outrow">
+      <a class="c-out good" href="#/outcomes"><b>${adm}</b><span>${esc(roles.admitted || 'Admitted')}</span><small>finished the journey</small></a>
+      <a class="c-out" href="#/outcomes"><b>${np}</b><span>${esc(roles.closed || 'Not proceeding')}</span><small>${
+        exits.unrecorded ? `${np - exits.unrecorded} with a recorded stage, ${exits.unrecorded} without` : 'left from the stages above'}</small></a>
+    </div></div>`;
+
+  return `<div class="c-summary">
+    <h4>Active journey <small>${everyone.length} ${everyone.length === 1 ? 'person you are still working with' : 'people you are still working with'}</small></h4>
+    ${row('stage', byStage, exitMark)}
+    <h4>What comes next <small>the same ${everyone.length} people, by the kind of step they are waiting on</small></h4>
+    ${row('group', byKind)}</div>
+    ${outcomes}`;
+}
+
+// People is one place with two views (the owner, 01.10.2026). Journey is the operational
+// one and opens by default; All people is the whole database, admitted and closed
+// included. One person, one record: the tab changes what you see, never where they live.
+function cPeopleTabs(which) {
+  const tab = (id, href, label) => `<a class="c-ptab${which === id ? ' on' : ''}" href="${href}"${
+    which === id ? ' aria-current="page"' : ''}>${label}</a>`;
+  return `<div class="c-ptabs" role="navigation" aria-label="People">${
+    tab('journey', '#/journey', 'Journey')}${tab('all', '#/people/all', 'All people')}</div>`;
 }
 
 function cDrawJourney() {
@@ -2221,17 +2319,15 @@ function cDrawJourney() {
   const open = everyone.filter((p) => cJourneyMatch(p, taskOf.get(p.id), C_JF));
   const narrow = window.matchMedia && window.matchMedia('(max-width:900px)').matches;
   const sel = open.find((p) => p.id === C_JSEL) || (narrow ? null : open[0]);
-  const roles = CFG.stageRoles || {};
-  const adm = people.filter((p) => p.status === roles.admitted).length, np = people.filter((p) => p.status === roles.closed).length;
-  $('#view').innerHTML = `<p class="c-crumb">People</p>
-    <div class="c-head"><div><h1>Journey</h1></div></div>
+  $('#view').innerHTML = `
+    <div class="c-head"><div><h1>People</h1></div></div>
+    ${cPeopleTabs('journey')}
     ${cJourneySummary(everyone, taskOf, stages)}
     ${cJourneyFilters(everyone)}
     <div class="c-journey">${sel ? cPersonCard(sel, taskOf.get(sel.id)) : '<div></div>'}<div style="min-width:0">
       <div class="c-cols" style="grid-template-columns:repeat(${stages.length}, minmax(150px, 1fr))">${stages.map((s, i) => { const ps = open.filter((p) => p.status === s.id);
         const over = ps.filter((p) => { const t = taskOf.get(p.id); return t && cWhenClass(t.due_at) === 'over'; }).length;
         return `<div class="c-col" style="--jt:${((i + 1) / stages.length).toFixed(3)}"><h3><span class="c-jn">${i + 1}</span>${esc(s.label || s.id)} <b>${ps.length}</b>${over ? `<em class="c-jover">${over} overdue</em>` : ''}</h3><div class="c-drop" data-stage="${esc(s.id)}">${ps.map((p) => cJourneyCard(p, taskOf.get(p.id), sel)).join('') || '<div class="c-empty" style="padding:8px">empty</div>'}</div></div>`; }).join('')}</div>
-      <div class="c-folded">Finished journeys are in Outcomes: <b><span class="c-ok">✓</span>${adm} admitted</b> <b><span class="c-no">✕</span>${np} not proceeding</b> <a class="btn sm ghost" href="#/outcomes" style="margin-left:auto">Open Outcomes →</a></div>
     </div></div>`;
   if (narrow && sel && C_JSEL === sel.id) { const card = document.querySelector('.c-journey > .c-card'); if (card && card.scrollIntoView) card.scrollIntoView({ block: 'start' }); }
   // one pair of listeners for the life of the page, not one per redraw: a click anywhere outside a

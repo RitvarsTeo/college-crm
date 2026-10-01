@@ -215,3 +215,22 @@ test('the Add person form does not explain its own default', () => {
   // "In person" on its own, so the sentence has nothing left to say.
   assert.ok(!/the source defaults to/i.test(APP), 'the helper sentence is gone');
 });
+
+// IEVA-4 again, on the screen Next Steps became (01.10.2026). The dialog has always been
+// able to drop the "Next step (required)" row for somebody already finished - openComplete
+// takes a third argument for exactly that - but only the PERSON PAGE ever passed it. From
+// the work queue, an Admitted person's last task still offered a required next step that
+// the server then ignores, because a step that finishes somebody plans nothing after it.
+// A control that cannot do what it says is the thing Ieva reported; this is the same fault
+// one screen over.
+test('IEVA-4 on Today: a finished person is not asked for a next step they cannot have', () => {
+  const todayRow = APP.slice(APP.indexOf('async function viewTodayC('), APP.indexOf('\n}\n', APP.indexOf('async function viewTodayC(')));
+  const done = todayRow.slice(todayRow.indexOf('openComplete('));
+  assert.match(done.slice(0, 220), /C_TERMINAL\.includes\(\(byId\.get\(t\.person_id\) \|\| \{\}\)\.status\)/,
+    'Today passes whether the person is finished, like the person page already did');
+
+  // and the dialog still honours it
+  const dlg = APP.slice(APP.indexOf('function openComplete('), APP.indexOf('\n}\n', APP.indexOf('function openComplete(')));
+  assert.match(dlg, /const done = Boolean\(finished\)/);
+  assert.match(dlg, /\$\{done \? '' : `<div class="row2">/, 'the whole row goes, rather than an option that lies');
+});

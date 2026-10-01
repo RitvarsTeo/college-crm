@@ -49,14 +49,17 @@ test('the old sidebar counter is not drawn in C, and still is in the classic vie
 // The queue is called Inbox, not New Leads (Ritvars, 01.10.2026): a stranger who
 // rang once is not a lead, and src/intake.js line 4 has always said so. The route
 // (#/leads) and the id (cnLeads) are identifiers other things point at, so they stay.
-test('the Inbox and Next Steps keep their own counts in C\'s navigation', () => {
+test('Today and the Inbox keep their own counts in C\'s navigation', () => {
   assert.match(APP, /<span>Inbox<\/span><span class="n" id="cnLeads">/);
   assert.doesNotMatch(APP, /<span>New Leads<\/span>/, 'nothing calls the queue New Leads');
-  assert.match(APP, /<span>Next Steps<\/span><span class="n" id="cnNext">/);
+  // Next Steps was folded INTO Today (the owner, 01.10.2026), so the due count it carried
+  // is now the Today badge: same id, same number, one screen fewer to visit.
+  assert.match(APP, /<span>Today<\/span><span class="n" id="cnNext">/);
+  assert.doesNotMatch(APP, /<span>Next Steps<\/span>/, 'Next Steps is not a menu item any more');
   const start = APP.indexOf('async function cNavCounts(');
   const src = APP.slice(start, APP.indexOf('\n}\n', start));
   assert.match(src, /\(i\.counts \|\| \{\}\)\.new/, 'the Inbox counts new arrivals');
-  assert.match(src, /cDueNow\(t\)\.length/, 'Next Steps counts what is due now');
+  assert.match(src, /cDueNow\(t\)\.length/, 'Today counts what is due now');
 });
 
 // Ritvars, 28.09.2026: C is the normal product. No visible control invites anybody back
