@@ -121,7 +121,9 @@ lead until a person qualifies them; the menu button 1/2/3 decides whose call it 
 | **Phone filter** in `config.phoneFilter`: numbers archived as Spam / Supplier or vendor / Internal are filtered with the reason; a repeat call joins the open item; counted per run | COMMITTED, NOT DEPLOYED | `68c28ae` |
 | **Tilda (C8):** tranid, any field case, utm from COOKIES, secret as header or field, `ok` reply, test request | COMMITTED, NOT DEPLOYED | `5759b7c` |
 | The 11 owner write-ups; Marina (B), Tilda (Ritvars's steps), LinkedIn and TikTok access requests rewritten | COMMITTED, NOT DEPLOYED | `ddb1ffa` |
-| C9 Mailchimp email change read from data[new_email]; C10 the four Meta channels name Oksana (30.09) | COMMITTED, NOT DEPLOYED | this commit |
+| C9 Mailchimp email change read from data[new_email]; C10 the four Meta channels name Oksana (30.09) | COMMITTED, NOT DEPLOYED | `1c72912` |
+| Phone filter keeps the body of a filtered call (decision 1d, 01.10: filtering never deletes the body at once) | COMMITTED, NOT DEPLOYED | see git log |
+| **Mailchimp is not a lead** (rule of 24.09 in config mailchimp._note): every event kept under Not relevant with the reason, never in New Leads; a known subscriber gets it on their timeline | COMMITTED, NOT DEPLOYED | this commit |
 
 **Left out on purpose:** the application fast path and the SIS merge that rode along in 57222df's
 conflict (applications lane); f737090; the twelve backlog-only commits; 8777509 (second Channels screen, open).

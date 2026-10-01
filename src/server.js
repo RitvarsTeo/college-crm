@@ -13,7 +13,7 @@ import { queueLeadAnswers } from './leadanswers.js';
 import * as gmailB from '../lib/gmail.js';
 import { receive, listInbound, qualify, archive, funnel, agedCount, handoffToSis, ownerFor, notifiedFor, handoverGap, canReach, surfaceAt, waitingFor, waitingByRole } from './intake.js';
 import { readScreenshot, readKind, readBody, readPath, saveFeedback, listFeedback, getScreenshot, setHandled, BadScreenshot, helpOpened, helpCounts } from './feedback.js';
-import { findMatches as matchPeople, duplicateCheck } from './identity.js';
+import { findMatches as matchPeople, duplicateCheck, isStrong as isStrongMatch } from './identity.js';
 import { lifecycleOf, sisProgress, sisProgressByPerson, SIS_HOLDS_SQL } from './lifecycle.js';
 import { firstLook } from './sisfirstlook.js';
 import { redactSis, fetchWebStats, WEB_RANGES } from '../lib/sis.js';
@@ -2177,7 +2177,20 @@ export const handle = async (req, res) => {
           if (ev.attribution && channel === 'agent') ev.attribution = { ...ev.attribution, verified: Boolean(check.partner) };
           // Idempotency: await receive() returns {duplicate:true} when it has already
           // seen this channel + external id. A provider retry is normal.
-          const r = await receive(db, { ...toIntake(ev), source: simulated ? 'simulated' : 'provider' });
+          // Mailchimp is activity about somebody, never an enquiry (config mailchimp._note,
+          // 24.09.2026: "a newsletter subscriber is not a lead"; routed so on 01.10.2026). It is
+          // kept, set aside with that reason, and goes on the person's timeline when we know them.
+          const mc = channel === 'mailchimp';
+          const r = await receive(db, { ...toIntake(ev), source: simulated ? 'simulated' : 'provider',
+            ...(mc ? { filterWhy: 'Mailchimp audience activity: a newsletter subscriber is not a lead' } : {}) });
+          if (mc && !r.duplicate && ev.senderEmail) {
+            const known = [...new Set((await matchPeople(db, { email: ev.senderEmail })).filter(isStrongMatch).map((m) => m.id))];
+            if (known.length === 1) {
+              await logEvent(db, { personId: known[0], kind: 'channel', channel: 'mailchimp', direction: 'in',
+                at: ev.receivedAt, origin: AUTOMATIC, actor: 'Mailchimp', subject: `Mailchimp: ${ev.messageSubject || 'event'}`,
+                body: ev.senderEmail });
+            }
+          }
           // C2 + C7: a Meta or LinkedIn lead carries ids only; its answers are fetched now, and by
           // the daily retry if that fails. The lead is already stored either way.
           if (!r.duplicate && r.id) {
