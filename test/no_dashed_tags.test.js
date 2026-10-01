@@ -35,7 +35,7 @@ test('amber is only ever today, a count, or needs-you', () => {
     '.c-still b',               // the still-open count
     '.kattn-row b.kattn-on',   // Home: active with no next step - the needs-you meaning
     '.c-reasonbar em',         // Outcomes: a recorded reason that is NOT in the list - drift, needs somebody
-    '.chwho b.chwho-none',    // Channels: not receiving and NOBODY is named to fix it - needs somebody
+    '.chwho-none',            // Channels: not receiving and NOBODY is named to fix it - needs somebody
   ];
   const lines = APP.split('\n').filter((l) => l.includes('var(--c-warn)'));
   for (const l of lines) {
