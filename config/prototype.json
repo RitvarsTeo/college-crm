@@ -840,6 +840,15 @@
     },
     "_note": "The CRM does not model individuals operating a social account. Facebook and Instagram arrive through one shared operational inbox, Meta Business Suite. The channel records stay SEPARATE for reporting, because \"where did this person come from\" is still Facebook or Instagram. LinkedIn and TikTok have no shared inbox, so Tetiana is the access bridge for those two and only those two."
   },
+  "phoneFilter": {
+    "decided": "Ritvars 01.10.2026: there will be filtration before calls become New Leads; build it now. An unknown caller still goes to New Leads, where staff assess interest; nobody is a lead until a person qualifies them.",
+    "filterArchivedAs": [
+      "Spam",
+      "Supplier or vendor",
+      "Internal"
+    ],
+    "oneOpenItemPerNumber": true
+  },
   "phoneMenu": {
     "1": {
       "role": "Admissions",

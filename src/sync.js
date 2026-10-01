@@ -114,10 +114,27 @@ async function storeCall(db, r, mode, at, out) {
     }
     out.logged++;
   } else if (r.caller_num) {
-    const got = await receive(db, { channel: 'phone', externalId: r.uniqueid, receivedAt: r.created_at,
-      phone: r.caller_num, body: sentence, source: mode === 'live' ? 'provider' : 'simulated' });
-    inboundId = got.id;
-    out.inbox++;
+    // The filter before New Leads (Ritvars 01.10.2026, config.phoneFilter). Explicit and counted.
+    const rule = CONFIG.phoneFilter || {};
+    const open = rule.oneOpenItemPerNumber ? await db.prepare(`SELECT id, body FROM inbound
+      WHERE channel = 'phone' AND contact_phone = ? AND state = 'new' ORDER BY id DESC LIMIT 1`).get(r.caller_num) : null;
+    const reasons = rule.filterArchivedAs || [];
+    const before = !open && reasons.length ? await db.prepare(`SELECT archive_reason FROM inbound
+      WHERE contact_phone = ? AND state = 'archived' AND archive_reason IN (${reasons.map(() => '?').join(',')})
+      ORDER BY id DESC LIMIT 1`).get(r.caller_num, ...reasons) : null;
+    if (open) {
+      // the same caller again while staff have not looked yet: one item, every call listed on it
+      await db.prepare('UPDATE inbound SET body = ? WHERE id = ?')
+        .run([open.body, sentence].filter(Boolean).join('\n'), open.id);
+      inboundId = open.id;
+      out.folded++;
+    } else {
+      const got = await receive(db, { channel: 'phone', externalId: r.uniqueid, receivedAt: r.created_at,
+        phone: r.caller_num, body: sentence, source: mode === 'live' ? 'provider' : 'simulated',
+        filterWhy: before ? `this number was archived before as "${before.archive_reason}"` : null });
+      inboundId = got.id;
+      if (got.filtered) out.filtered++; else out.inbox++;
+    }
   } else {
     // a withheld number: kept for the call counts, but nobody can ring it back
     out.noNumber++;
@@ -142,7 +159,7 @@ export async function syncPbx(db, { now = new Date(), minutes = WINDOW_MINUTES,
   const firstFrom = from;
 
   const startedAt = clock();
-  const out = { logged: 0, inbox: 0, seen: 0, noNumber: 0 };
+  const out = { logged: 0, inbox: 0, folded: 0, filtered: 0, seen: 0, noNumber: 0 };
   const skipped = { notIncoming: 0, otherQueue: 0, unusable: 0, duplicateInBatch: 0 };
   let fetched = 0, kept = 0, pieces = 0, safeUrl = null, reached = from;
 

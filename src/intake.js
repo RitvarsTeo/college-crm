@@ -119,7 +119,10 @@ export async function receive(db, item) {
 
   // Obvious junk is stored, so nothing disappears, but it never reaches the
   // queue and never costs anybody a second. Decided at the visual review.
-  const state = read.junk ? 'filtered' : 'new';
+  // A channel may also filter by a rule of its own (the phone, 01.10.2026: a number staff
+  // already archived as spam). Stored the same way, with that rule as the reason.
+  const filterWhy = item.filterWhy || null;
+  const state = read.junk || filterWhy ? 'filtered' : 'new';
   // `source` records HOW this arrived. It defaults to null rather than to
   // 'provider': a row may only claim a real provider sent it when the caller
   // knows that for a fact, because the admin Channels panel treats that word as
@@ -147,10 +150,10 @@ export async function receive(db, item) {
     throw err;
   }
   const id = Number(info.lastInsertRowid);
-  if (read.junk) {
+  if (read.junk || filterWhy) {
     await db.prepare(`UPDATE inbound SET archive_reason = 'Filtered automatically',
       archive_note = ?, processed_by = 'machine', processed_at = ?, body = NULL,
-      body_deleted_at = ? WHERE id = ?`).run(read.why, at, at, id);
+      body_deleted_at = ? WHERE id = ?`).run(filterWhy || read.why, at, at, id);
   }
 
   const stamp = db.prepare(`INSERT INTO field_values
@@ -159,7 +162,7 @@ export async function receive(db, item) {
   for (const f of read.fields) await stamp.run(id, f.field, f.value, f.provenance, at);
 
   return { id, suggested: read.suggested, why: read.why, missing: read.missing,
-    fields: read.fields, filtered: Boolean(read.junk) };
+    fields: read.fields, filtered: Boolean(read.junk || filterWhy) };
 }
 
 // ------------------------------------------------------------ what is here --
