@@ -14,46 +14,52 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
-## 01.10.2026 - The light sea, and a shape for every figure
+## 01.10.2026 - Screens 2 and 3 recomposed (both variants)
 
-On `feat/home-b-command`. **878/878.** COMMITTED, NOT DEPLOYED.
+On both `feat/home-a-structured` and `feat/home-b-command`. **882/882.** COMMITTED, NOT DEPLOYED.
 
-| What | Status |
-|---|---|
-| **The light sea.** Dark has always taken the sign-in gradient: a glow from the top centre over a vertical deepening, `#17456e` → `#0f2f4f` → `#08182e`. Light had no gradient at all. Light now has the **same geometry in its own tones**, `#fbfcfd` → `#f7f9fb` → `#e7ebf0`, `fixed` so it is one sea and not a sea per scroll. Not a third theme: the same recipe, each mode in its own palette | BUILT |
-| The side menu takes the same quiet vertical fall it already takes in dark, so the two modes are one design | BUILT |
-| **A sparkline under the two KPIs that have a monthly series.** The number stops being a bare digit and carries its own shape | BUILT |
-| It draws **nothing** rather than draw a lie: fewer than two months, or a series flat at zero, gets no line. A zero month inside a real series is a low point on the line, not a gap | BUILT |
-| Conversion and median days get **no** sparkline: they are one value for the period, and a line there would be a shape the data does not have | BUILT |
-| Both lines take their colour from the mode tokens (`--v-adm`, `--t3`). A test asserts there is no hard-coded hex in that rule, so dark is not a second definition to keep in step | BUILT |
+**Screen 2, the wasted horizontal space.** The owner: *"we have twice as much almost space
+horizontally"*. It was one value: `.c-sumrow` was `repeat(auto-fit, minmax(104px, 160px))` with
+`justify-content:start`, so the tracks were **capped at 160px** and five stages used 800px of a
+1400px page. Now `minmax(104px, 1fr)` and `stretch`, so the row fills the width. **The tracks stay
+equal** - that is what the existing note in the file is about: boxes sized by their own label made
+two equal counts draw different amounts of ink.
 
-**Reference:** the Mixpanel Home screen downloaded from Mobbin, where every headline figure carries a
-sparkline of its own series. Pattern only. The line is drawn from the same monthly trend the month
-chart already uses, so it is the real series, not an illustration.
+**Screen 3, the overload.** The owner: *"all together is just tooooo much"*. The screen opened with
+two full bar rows, the exit marks, the outcomes band, four filters, the person card and five
+columns - everything at level one, always. Not shrunk: **re-levelled.**
 
-**Contrast:** the whole light range spans about 3% of lightness, so no text contrast anywhere on the
-page moves.
+| Level | What | Why |
+|---|---|---|
+| Always open | Active journey: the five stages with their exit marks | What you need BEFORE asking a question: where the people you are working with are standing |
+| Behind one line | "What comes next" (the same people by kind of step) and the OUTCOMES band | Answers to questions you have to ask first |
 
-## 01.10.2026 - A/B: Variant B, Visual Command Center
+The line carries its counts - *"What comes next, and 3 finished"* - so opening it is a choice and
+not a lottery, and the open state survives a redraw so filtering does not slam it shut.
 
-Branch `feat/home-b-command`, cut from `v0.9` (`52e2232`), carrying the same Home restore and the
-same grouped navigation as A. **872/872.** COMMITTED, NOT DEPLOYED.
+**One real markup fault found doing it:** the disclosure's `onclick` held an arrow function, and the
+`>` in `=>` closes the tag early for anything that parses the markup. It is a named handler now.
 
-| What | Status |
-|---|---|
-| One strong headline figure and a large visual main column: the KPI strip two-up, the month chart, then the donut and the two drill-down bar charts side by side | BUILT |
-| A **contextual rail** down the right: "The journey" with every active stage and its live count, and "Needs attention" with Overdue and No next step, each ending in the action that opens it | BUILT |
-| **B's half of the strip A/B: the CARD treatment**, exactly as the shared kit carries it. A is the hairline row | BUILT |
-| The rail never replaces a picture. The bar charts stay charts in the main column; the rail carries only the numbers that have no useful shape | BUILT |
-| **Read live, never remembered.** Overdue and No next step come from `/api/summary`; a failed read shows a dash and a note saying why. 57 is hardcoded nowhere | BUILT |
-| On a narrow screen the rail stops being a rail and follows the main column, wrapping to two groups then one | BUILT |
+Not touched, still open: the person card and the five columns below. Aigars' per-person comment
+thread belongs on that card and is still not built.
 
-**IA reference:** DoorDash Merchant on Mobbin, free tier: headline metrics, a visual main column,
-right-hand metric groups, explicit destination actions, honest zero states. Pattern only; none of
-their colours or branding. Square, also free tier, informed A's titled bands instead.
+## 01.10.2026 - The light sea, and a shape for every figure (both variants)
 
-**MORNING DECISION REQUIRED** - the same strip conflict recorded against A. The shared kit and the
-other apps were NOT touched tonight.
+Applied to **both** `feat/home-a-structured` and `feat/home-b-command`: these are shell and data
+improvements, not variant choices. **878/878** on each. COMMITTED, NOT DEPLOYED.
+
+- **The light sea.** Dark has always taken the sign-in gradient, a glow from the top centre over a
+  vertical deepening (`#17456e` → `#0f2f4f` → `#08182e`). Light had none. Light now has the same
+  geometry in its own tones (`#fbfcfd` → `#f7f9fb` → `#e7ebf0`), `fixed`. Not a third theme: one
+  recipe, each mode in its own palette. The range spans about 3% of lightness, so no text contrast
+  moves. The menu takes the same quiet fall it already takes in dark.
+- **A sparkline under each KPI that has a monthly series**, drawn from the same trend the month
+  chart uses. It draws NOTHING rather than a lie: under two months, or flat at zero, gets no line;
+  a zero month inside a real series stays a low point on the line. Conversion and median days get
+  none, because one value for a period has no shape. Colours come from the mode tokens and a test
+  forbids a hard-coded hex there.
+
+**Reference:** the Mixpanel Home screen he downloaded from Mobbin. Pattern only.
 
 ## 01.10.2026 - A/B: Home returns. Variant A, Structured Operations
 

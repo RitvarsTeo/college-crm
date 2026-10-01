@@ -25,7 +25,7 @@ const label = (id) => (CONFIG.nextActions || []).flatMap((g) => g.items).find((i
 // C_JEXITS (what the server counted per stage) and C_JDATA (the whole database, because
 // admitted and not-proceeding people are NOT in the open set the bars are built from).
 // Both default to nothing here: a summary with no exit data must still draw.
-function sandbox(filters = {}, { exits = null, all = [] } = {}) {
+function sandbox(filters = {}, { exits = null, all = [], more = false } = {}) {
   const ctx = { CFG: CONFIG, esc: (s) => String(s ?? '') };
   vm.runInNewContext([
     line('const cTask ='), fn('function groupForAction('),
@@ -33,6 +33,7 @@ function sandbox(filters = {}, { exits = null, all = [] } = {}) {
     'Object.assign(C_JF, ' + JSON.stringify(filters) + ');',
     line('const C_SIS_HOLDS ='), line('const cSisHolds ='),
     'let C_JEXITS = ' + JSON.stringify(exits) + ';',
+    'let C_JMORE = ' + JSON.stringify(Boolean(more)) + ';',   // the second half: closed unless asked
     'let C_JDATA = { people: ' + JSON.stringify(all) + ' };',
     fn('function cJourneySummary('),
     'this.summary = cJourneySummary;',
@@ -193,4 +194,44 @@ test('the summary still draws when the exits endpoint gave nothing', () => {
   assert.match(html, /c-outcomes/);
   assert.equal((html.match(/class="c-exit none"/g) || []).length, STAGES.length,
     'every mark reads zero rather than the screen failing');
+});
+
+// ============== progressive disclosure on the Journey (01.10.2026) ==============
+// The owner: "all together in screen 3 is just tooooo much". The screen opened with two
+// full bar rows, the exit marks, the outcomes band, four filters, the person card and
+// five columns, all at level one. What you need BEFORE asking a question is one thing:
+// where the people you are working with are standing. The rest waits behind one line.
+
+test('the active journey is open; the second cut and the outcomes wait behind one line', () => {
+  const s = sandbox({}, { all: ALL, exits: { byStage: { New: 1 }, total: 1, unrecorded: 0 } });
+  const html = s.summary(OPEN3, build(OPEN3), STAGES);
+
+  const details = html.indexOf('<details class="c-more"');
+  assert.ok(details > 0, 'there is a disclosure');
+  assert.ok(html.indexOf('Active journey') < details, 'the active journey is above it, always open');
+  assert.ok(!/<details class="c-more"[^>]* open/.test(html), 'and it starts closed');
+
+  const inside = html.slice(details);
+  assert.match(inside, /What comes next/, 'the second cut is inside');
+  assert.match(inside, /c-outcomes/, 'and so are the outcomes');
+});
+
+test('the line says what is inside it, with the count, so opening it is not a lottery', () => {
+  const s = sandbox({}, { all: ALL });
+  const html = s.summary(OPEN3, build(OPEN3), STAGES);
+  // ALL carries 2 admitted + 1 not proceeding
+  assert.match(html, /<summary[^>]*>What comes next, and 3 finished<\/summary>/);
+});
+
+test('once opened it stays opened through a redraw', () => {
+  const open = sandbox({}, { all: ALL, more: true }).summary(OPEN3, build(OPEN3), STAGES);
+  assert.match(open, /<details class="c-more" open>/, 'a redraw does not slam it shut under the reader');
+});
+
+test('the stage row fills the width instead of stopping at 160px', () => {
+  // the owner: "we have twice as much almost space horizontally". The tracks were capped,
+  // so five stages used 800px of a 1400px page. They stay EQUAL, which is what stops two
+  // equal counts drawing different amounts of ink.
+  assert.match(APP, /html\.ui-c \.c-sumrow\{display:grid;grid-template-columns:repeat\(auto-fit,minmax\(104px,1fr\)\)/);
+  assert.match(APP, /justify-content:stretch/);
 });

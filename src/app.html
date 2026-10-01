@@ -1199,8 +1199,13 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   /* A grid, not flex-wrap: every track is the same minmax, so every box is the same width on
      every line. Flex-wrap stretched whatever landed on the last line, which put a wider bar
      under a smaller number. */
-  html.ui-c .c-sumrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,160px));
-    gap:6px;justify-content:start;align-items:end}
+  /* THE ROW FILLS THE WIDTH (the owner, 01.10.2026: "we have twice as much almost space
+     horizontally"). The tracks were CAPPED at 160px, so five stages used 800px of a
+     1400px page and left the rest empty. 1fr fills it. The tracks stay EQUAL, which is
+     the thing the note below is about: boxes sized by their label made two equal counts
+     draw different amounts of ink. */
+  html.ui-c .c-sumrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));
+    gap:8px;justify-content:stretch;align-items:end}
   /* min-width:0 so the box takes the track's width and not its label's. The bar inside is
      width:100%, so a box sized by its label made "Application and documents" (1) draw 2.4x the
      ink of "Visit on site" (1): two equal numbers, two different-looking bars. Equal boxes
@@ -1289,6 +1294,17 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-ptab:hover{color:var(--ink)}
   html.ui-c .c-ptab.on{color:var(--petink);border-bottom-color:var(--petink);font-weight:600}
   /* the two headings that split the lifecycle in half */
+  /* the one line that holds the second half of the summary */
+  html.ui-c .c-more{margin-top:10px;border-top:1px solid var(--rule2);padding-top:4px}
+  html.ui-c .c-more > summary{cursor:pointer;list-style:none;padding:6px 2px;font-size:12px;
+    color:var(--t3);display:flex;align-items:center;gap:7px;border-radius:6px}
+  html.ui-c .c-more > summary::-webkit-details-marker{display:none}
+  html.ui-c .c-more > summary::before{content:"";width:0;height:0;flex:0 0 auto;
+    border-left:5px solid currentColor;border-top:4px solid transparent;border-bottom:4px solid transparent;
+    transition:transform .15s}
+  html.ui-c .c-more[open] > summary::before{transform:rotate(90deg)}
+  html.ui-c .c-more > summary:hover{color:var(--ink);background:var(--c-sunk)}
+  html.ui-c .c-more > summary:focus-visible{outline:2px solid var(--pet);outline-offset:1px}
   html.ui-c .c-summary h4,html.ui-c .c-outcomes h4{margin:0;font:inherit;font-size:11px;
     letter-spacing:.07em;text-transform:uppercase;color:var(--t3);font-weight:600}
   html.ui-c .c-summary h4 small,html.ui-c .c-outcomes h4 small{margin-left:8px;font-size:11px;
@@ -2526,6 +2542,13 @@ function cJourneyFilters(open) {
 // open, before the filters - so a bar can never disagree with the board. Clicking a
 // bar filters the board by exactly what that bar counted, and clicking it again clears
 // it, so the summary is also the control.
+// Whether the second half of the summary is open. Remembered across a redraw, so
+// filtering or moving somebody does not slam it shut under the reader.
+let C_JMORE = false;
+// Remembers the disclosure across a redraw. A NAMED handler on purpose: an arrow
+// function inside an onclick puts a > inside the tag, which closes it early for
+// anything that parses the markup.
+function cJMore(el) { setTimeout(() => { C_JMORE = Boolean(el.parentElement && el.parentElement.open); }, 0); }
 function cJourneySummary(everyone, taskOf, stages) {
   const on = (k, v) => (C_JF[k] || []).includes(v);
   const byStage = stages.map((st) => [st.id, st.label || st.id,
@@ -2579,12 +2602,25 @@ function cJourneySummary(everyone, taskOf, stages) {
         exits.unrecorded ? `${np - exits.unrecorded} with a recorded stage, ${exits.unrecorded} without` : 'left from the stages above'}</small></a>
     </div></div>`;
 
+  // PROGRESSIVE DISCLOSURE (the owner, 01.10.2026: "all together is just tooooo much").
+  // The screen used to open with two full bar rows, the exit marks, the outcomes band,
+  // four filters, the person card and five columns, all at once and all at level one.
+  //
+  // What you need BEFORE you have asked a question is one thing: where the people you
+  // are working with are standing right now. That stays open. The second cut of the
+  // same people, and what happened to the ones who finished, are answers to questions
+  // you have to ask - so they wait behind one line that says what is in them, and the
+  // line carries the counts so opening it is a choice and not a lottery.
+  const moreLabel = `What comes next, and ${adm + np} finished`;
   return `<div class="c-summary">
     <h4>Active journey <small>${everyone.length} ${everyone.length === 1 ? 'person you are still working with' : 'people you are still working with'}</small></h4>
     ${row('stage', byStage, exitMark)}
-    <h4>What comes next <small>the same ${everyone.length} people, by the kind of step they are waiting on</small></h4>
-    ${row('group', byKind)}</div>
-    ${outcomes}`;
+    <details class="c-more"${C_JMORE ? ' open' : ''}>
+      <summary onclick="cJMore(this)">${esc(moreLabel)}</summary>
+      <h4>What comes next <small>the same ${everyone.length} people, by the kind of step they are waiting on</small></h4>
+      ${row('group', byKind)}
+      ${outcomes}
+    </details></div>`;
 }
 
 // People is one place with two views (the owner, 01.10.2026). Journey is the operational
