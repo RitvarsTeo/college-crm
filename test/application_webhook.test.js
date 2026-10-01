@@ -125,3 +125,21 @@ test('webhook: only the NAME of the secret is in the source', () => {
   assert.match(src, /process\.env\.SIS_APPLICATION_SECRET/);
   assert.doesNotMatch(src, /SIS_APPLICATION_SECRET\s*[=:]\s*['"`][^'"`]+['"`]/);
 });
+
+test('webhook: a body that is not JSON, a list, or too big is refused and stores nothing', async (t) => {
+  const s = await start({ CHANNEL_MODE_SIS: 'test', SIS_APPLICATION_SECRET: SECRET });
+  t.after(() => s.child.kill());
+  const h = { 'content-type': 'application/json', 'x-crm-application-secret': SECRET };
+  const send = (raw) => fetch(s.base + PATH, { method: 'POST', headers: h, body: raw }).then((r) => r.status);
+  assert.equal(await send('{not json'), 400);
+  assert.equal(await send(JSON.stringify([app()])), 400);
+  assert.equal(await send(JSON.stringify(app({ changedAt: null }))), 400);
+  // too big: the server's own body guard cuts the connection; the caller sees an error, never a 200
+  assert.notEqual(await send('x'.repeat(600 * 1024)).catch(() => 'cut'), 200);
+  assert.equal(await send(JSON.stringify(app())), 200, 'and the server still answers the next one');
+  assert.equal(list(await people(s.base)).length, 1, 'only the good one was stored');
+});
+
+test('webhook: the secret is named, empty, in .env.example', () => {
+  assert.match(fs.readFileSync(path.join(ROOT, '.env.example'), 'utf8'), /^SIS_APPLICATION_SECRET=$/m);
+});
