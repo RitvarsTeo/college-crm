@@ -74,3 +74,22 @@ test('no colleague is named on screen', () => {
   assert.ok(i > 0);
   assert.ok(!APP.slice(i - 2000, i + 2000).includes('Ieva'), 'the screen says the thing, not who asked');
 });
+
+test('a database that existed before the tag gets the column on boot', async () => {
+  // Production's people table was created before 02.10.2026. CREATE TABLE IF NOT EXISTS
+  // leaves an existing table alone, so without a migration the status route's
+  // `UPDATE people SET closed_tag` fails on EVERY status change, not only on a close.
+  const os = await import('node:os');
+  const { DatabaseSync } = await import('node:sqlite');
+  const { openDb } = await import('../src/db.js');
+  const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'crm-tag-')), 'old.db');
+  const first = await openDb(file);
+  await first.close();
+  const raw = new DatabaseSync(file);
+  raw.exec('ALTER TABLE people DROP COLUMN closed_tag');
+  raw.close();
+  const db = await openDb(file);
+  const row = await db.prepare(`SELECT COUNT(*) n FROM pragma_table_info('people') WHERE name = 'closed_tag'`).get();
+  await db.close();
+  assert.equal(row.n, 1, 'closed_tag must be added to an existing people table');
+});
