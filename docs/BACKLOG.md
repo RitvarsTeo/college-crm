@@ -23,7 +23,7 @@ NOT DEPLOYED.** The full matrix, every item DONE or BLOCKED with its owner:
 | What was found by clicking, and fixed | Commit |
 |---|---|
 | **`closed_tag` had no migration.** Deployed as it stood, every status change on production would fail on a missing column. Now one `ALTER TABLE` at boot. **Schema change on release** | `0e1da1d` |
-| Cold / reject skipped on the People quick edit; stored but shown nowhere. Now offered there too, counted on Outcomes, named on each row and the person page | `1345cd7` |
+| Cold / reject skipped on the People quick edit; stored but shown nowhere. Now offered there too and named on the person page. The Outcomes display (counts, filter, row chip) is the UI/UX lane's (`ui/2026-10-02-main-ab`), agreed through QA S6 after a merge collision | `1345cd7`, `7cce0f8` |
 | The Journey card's **Edit** button did nothing | `7c3f30a` |
 | A note written on the Journey card jumped to the person page under a `#/journey` address, and the thread stayed stale until reload | `a6a290f` |
 | Plan a next step from Today jumped the same way | `80710a6` |
@@ -33,8 +33,7 @@ are provisional". It does not: that tag was removed on purpose on 29.09 (`6b25ce
 lives in DECISIONS.md and `config/prototype.json` only.
 
 **Owed:** the MVP map says the cold / reject field and screen go to Ritvars as an A/B first. Neither
-`b5f3a4c` nor `1345cd7` had one. The Outcomes count line is the smallest form; he keeps, changes or
-asks for the A/B.
+`b5f3a4c` nor `1345cd7` had one. The Outcomes form is now the UI/UX lane's to put in front of him.
 
 ## 02.10.2026 - HANDOFF: where this run stopped
 
