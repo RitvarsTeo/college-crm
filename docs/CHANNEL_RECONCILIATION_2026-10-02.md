@@ -155,3 +155,31 @@ and it changes what four channels claim. For Ritvars:
    can say no.
 3. **A third kind, `approval`** - the steps are known AND an outsider can still refuse. More
    honest than either, and it is a change to the vocabulary, so it is a decision not a fix.
+
+## SESSION 3 - reconciled again, same day (02.10.2026, branch `ui/2026-10-02-channels-s3`)
+
+Re-read against the PIN, KB 08, the backlog, this document, `channels.json`, the channel code
+and the owner's latest decisions (recorded in memory on 02.10, never in this repository until
+now). **The universe is still 12.** What changed:
+
+| Channel | Was | Now | Source |
+|---|---|---|---|
+| LinkedIn | Tetiana; "developer app, then approval" | **Ritvars**. Page Super Admin (Oksana, 02.10), developer app "Novikontas Intake" created and verified with the Page, Lead Sync API access **submitted 02.10**. **Blocked by an external provider**: LinkedIn decides, and can refuse. Still missing: Campaign Manager account manager role, asked through Oksana (Natalija grants) | Ritvars, 02.10 |
+| TikTok | Tetiana | **Oksana** gives access: the business account is on her email. TikTok's app approval is AHEAD, not blocking yet | Ritvars, 02.10 |
+| Email | "Twenty minutes of Marina's time" (option A) | **Option B**: Ritvars verifies the link on production, then Marina authorises edu@ through the 48-hour link. Option A cannot work: domain-wide delegation needs Super Admin, which Marina does not have | decided 01.10; Marina's attempt, 02.10 |
+| Meta four | blocker = APP REVIEW | today's step is **Oksana's access** ("šonedēļ", 30.09). APP REVIEW is recorded as a gate AHEAD, not today's blocker. The work / question / approval call above is **still open** | Oksana 30.09 |
+| Phone | production configured, not live verified | **Unchanged and unresolved.** Both records are on the screen side by side, with the check | see the PBX section in BACKLOG |
+
+**Where this lives now.** `config/channels.json -> channels.<id>.record` holds, per active
+channel: access, deployed, productionConfigured, liveVerified, nextAction, blocker, gateAhead,
+destination. Every state carries the date it was seen and its source. A blocker carries its
+dependency, owner, action and side (internal / external) and whether it can be refused. A missing
+local credential is never a blocker. `_production` records the proven running commit; `downstream`
+records apply.novikontas.org, which is never counted.
+
+**On production the screen reads live verification from real provider rows, and that reading
+outranks the record**, so the PBX question settles itself the first time the screen is opened
+signed in on production. Locally it never does.
+
+Counts from the record: Live verified 0 · Configured 2 (Mailchimp, Phone) · Needs owner action 8 ·
+Blocked by external provider 1 (LinkedIn) · Working by hand 1 (In person) = 12. Parked 1, Dropped 1.

@@ -14,6 +14,32 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 02.10.2026 - SESSION 3, Channels: reconciled again, A and B rebuilt
+
+Worktree `crm-channels-s3`, branch **`ui/2026-10-02-channels-s3`**, cut from `561bce2`.
+**935/935. COMMITTED, NOT DEPLOYED.** Design prototype on the real model: no backend change
+beyond passing the record through `/api/admin/channels`.
+
+| Item | Status | Commit |
+|---|---|---|
+| Channel record per active channel (access, deployed, production configured, live verified, blocker, next action, destination, each dated with its source) | BUILT | `80de328` |
+| Owners: LinkedIn = Ritvars, TikTok = Oksana; Gmail = option B; LinkedIn blocked by provider | BUILT | `80de328` |
+| **Channel A - who acts next** (lanes of people, cards of work) | BUILT | `49706ba` |
+| **Channel B - what is proven** (ledger of the four proofs, inspector) | BUILT | `49706ba` |
+| `--sea` names the one gradient; the channel frame carries it, with a uniform SVG rim below | BUILT | `49706ba` |
+| Ritvars picks A or B | SAID | - |
+
+**Open with A / B: ?chv=a or ?chv=b** in the address, or the switch on the screen.
+
+**Research.** Recorded Square findings (figures first, named bands, comparison as its own row)
+plus Mobbin 02.10 (free tier, his Chrome): **Laravel Cloud's environment canvas** - each resource
+a box listing its properties with a status word each ("Enabled", "Not connected"), a direct
+pattern for B's per-proof cells; **GitBook's integrations list** for A's card rhythm. Pattern
+only, no colours or type taken.
+
+**Still open, not taken here:** PBX live? (the screen shows both records); Meta App Review
+work / question / approval; which agent partner first (nobody named).
+
 ## 02.10.2026 - HANDOFF: where this run stopped
 
 Branch **`ui/2026-10-02-journey`**, cut from `feat/home-b-command`. **933/933. Clean tree.
