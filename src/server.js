@@ -567,7 +567,7 @@ function visibleTimeline(rows, viewer) {
 }
 const ACTIVITY = [];
 
-// FINISHED MEANS FINISHED (Ieva, 30.09.2026: IEVA-3, IEVA-4, IEVA-5).
+// FINISHED MEANS FINISHED (Admissions, 30.09.2026: IEVA-3, IEVA-4, IEVA-5).
 //
 // Admitted and Not proceeding are the two ends of the journey. A person who has reached one of
 // them is done, and the CRM must stop asking for a next step. It was not doing that: /api/summary
@@ -1652,7 +1652,7 @@ export const handle = async (req, res) => {
       const now = nowIso();
       await db.prepare('UPDATE people SET status = ? WHERE id = ?').run(b.status, id);
       // Finished means finished: whatever was still planned for them is closed here, not left for
-      // somebody to tidy by hand in Next Steps (Ieva, IEVA-3 and IEVA-5, 30.09.2026).
+      // somebody to tidy by hand in Next Steps (Admissions, IEVA-3 and IEVA-5, 30.09.2026).
       if (isFinished(b.status)) await finishOpenTasks(id, now, `the person is ${b.status}`);
       if (b.status === 'Contract') await db.prepare('UPDATE people SET contract_at = ? WHERE id = ? AND contract_at IS NULL').run(now, id);
       if (b.status === 'Admitted') await db.prepare('UPDATE people SET admitted_at = ?, student_no = COALESCE(student_no, ?) WHERE id = ?')
@@ -1664,6 +1664,15 @@ export const handle = async (req, res) => {
         field: 'status', oldValue: before.status, newValue: b.status });
       if (b.reason) await db.prepare('UPDATE people SET closed_reason = ?, closed_note = ? WHERE id = ?')
         .run(b.reason, b.note || null, id);
+      // COLD IS NOT REJECTED (Admissions, 30.09.2026). The tag is only meaningful on 'Not proceeding',
+      // and moving somebody back to an active stage clears it: a person who is active again is
+      // neither cold nor rejected, and leaving a stale tag on them would poison the statistics.
+      if (b.status === 'Not proceeding') {
+        const tag = CONFIG.closedTags.some((t) => t.id === b.closedTag) ? b.closedTag : null;
+        await db.prepare('UPDATE people SET closed_tag = ? WHERE id = ?').run(tag, id);
+      } else {
+        await db.prepare('UPDATE people SET closed_tag = NULL WHERE id = ?').run(id);
+      }
       return json(res, 200, await personRow(id, await actorOf(req, b)));
     }
 

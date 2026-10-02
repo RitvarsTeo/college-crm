@@ -1096,5 +1096,20 @@
     "workspaceAdmin": "Marina",
     "confirmedOn": "25.09.2026",
     "_note": "Only Marina can grant domain-wide delegation. Our side is built: the poll route, the JWT assertion with sub=edu@novikontas.org, read-only scope, multipart flattening and watch expiry. What is left is twenty minutes of her time and the key file, which comes by password manager or in person and never by chat or email."
-  }
+  },
+  "_closedTags": "Ieva, 30.09.2026, in her own words: 'pie not proceeding katram ir iespeja pievienot, piemeram, tag - cold, reject'. This is a SECOND axis and not a second reason list. closedReason says WHY we stopped. closedTag says WHAT NOW: is this person dormant and expected back, or declined. She needs it for statistics and to aim marketing at the cold ones.",
+  "closedTags": [
+    {
+      "id": "cold",
+      "label": "Cold",
+      "what": "No next activity, on purpose. Not rejected. A cold one sometimes becomes an active lead again.",
+      "dormant": true
+    },
+    {
+      "id": "reject",
+      "label": "Reject",
+      "what": "Declined, and often only for now: somebody who cannot yet, for example still at secondary school. The contact is kept.",
+      "dormant": false
+    }
+  ]
 }

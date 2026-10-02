@@ -26,6 +26,11 @@ CREATE TABLE IF NOT EXISTS people (
   notes TEXT,
   closed_reason TEXT,          -- why we stopped, required on 'Not proceeding'
   closed_note TEXT,            -- the explanation, required when the reason is 'Other'
+  closed_tag TEXT,             -- Admissions, 30.09.2026: cold | reject, on 'Not proceeding' only.
+                               -- A SECOND axis, not a second reason. closed_reason says why we
+                               -- stopped; this says what now. Cold is dormant and expected back,
+                               -- reject is declined and often only for now. Her words are in
+                               -- docs/IEVA_AIGARS_FEEDBACK_VERBATIM.md.
   qualification TEXT,          -- raw | warm | hot. Separate from status on purpose:
                                -- the stage vocabulary is provisional, this ladder is not.
   first_channel TEXT,          -- the channel the first contact arrived on, never rewritten

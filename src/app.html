@@ -1360,6 +1360,16 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .chshelf li small{flex:1 1 20em;min-width:0;font-size:11px;color:var(--t4);line-height:1.45}
   html.ui-c .chlife{font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;
     border:1px solid var(--rule);border-radius:4px;padding:1px 5px;color:var(--t4)}
+  /* Admissions second axis: dormant or declined. Two choices, each saying what it means,
+     because "cold" and "reject" are Admissions own words and not everyone's. */
+  html.ui-c .cltags{display:grid;gap:7px;margin-top:2px}
+  html.ui-c .cltag{display:grid;grid-template-columns:auto 1fr;gap:3px 9px;align-items:baseline;
+    border:1px solid var(--rule);border-radius:9px;padding:9px 11px;cursor:pointer}
+  html.ui-c .cltag:hover{background:var(--surface-2)}
+  html.ui-c .cltag input{grid-row:1 / span 2;align-self:center}
+  html.ui-c .cltag b{font-size:13px}
+  html.ui-c .cltag small{grid-column:2;font-size:11.5px;color:var(--t3);line-height:1.45}
+  html.ui-c .cltag:has(input:checked){border-color:var(--v-adm);background:var(--c-accent-bg)}
   html.ui-c .c-reasons{margin:0 0 14px}
   html.ui-c .c-reasons h3{margin:0 0 7px;font-size:13px;font-weight:650;display:flex;align-items:baseline;gap:8px}
   html.ui-c .c-reasons h3 b{font-weight:500;font-size:11.5px;color:var(--t4)}
@@ -4228,13 +4238,18 @@ function openCloseReason(id) {
   modal('Stop working with this person', `
     <label>Reason</label>
     <select id="clReason" onchange="onCloseReason()">${reasons.map(r => `<option>${esc(r)}</option>`).join('')}</select>
+    <label style="margin-top:10px">And now?</label>
+    <div class="cltags">${(CFG.closedTags || []).map((t, i) => `
+      <label class="cltag"><input type="radio" name="clTag" value="${esc(t.id)}"${i === 0 ? ' checked' : ''}>
+        <b>${esc(t.label)}</b><small>${esc(t.what)}</small></label>`).join('')}</div>
     <label id="clNoteLabel" style="margin-top:10px">Explanation</label>
     <textarea id="clNote" rows="2" placeholder="What actually happened"></textarea>
     <div id="clErr"></div>
     <div style="margin-top:14px;display:flex;gap:8px"><button class="btn" onclick="doClose('${id}')">Save</button>
       <button class="btn ghost" onclick="closeModal();viewPerson('${id}')">Cancel</button></div>
     <div class="prov" style="margin-top:12px">These reasons are provisional until Admissions validates
-      them. The status only ever stops here by somebody deciding it - it never happens automatically.</div>`);
+      them. The status only ever stops here by somebody
+      deciding it - it never happens automatically.</div>`);
   onCloseReason();
 }
 function onCloseReason() {
@@ -4244,8 +4259,10 @@ function onCloseReason() {
 }
 async function doClose(id) {
   try {
+    const tag = document.querySelector('input[name="clTag"]:checked');
     await post(`/api/people/${id}/status`, { status: 'Not proceeding',
-      reason: $('#clReason').value, note: $('#clNote').value });
+      reason: $('#clReason').value, note: $('#clNote').value,
+      closedTag: tag ? tag.value : null });
     closeModal(); viewPerson(id);
   } catch (e) { $('#clErr').innerHTML = `<div class="err">${esc(e.message)}</div>`; }
 }
