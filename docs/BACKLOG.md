@@ -14,6 +14,17 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 02.10.2026 - DECIDED: Home is B, the Journey takes A's band
+
+Ritvars, 02.10.2026: **"B for home. Then the journey displayed like the ui from A."**
+
+| What | Status |
+|---|---|
+| Home = **B, Today first** (Needs you, KPI cards with the delta row, charts + donut) | DECIDED |
+| People > Journey opens with **A's band** (Arrived -> the five stages with one dot per person and overdue on its stage -> Admitted / Not proceeding), in the lit well with the spine | DECIDED, NOT BUILT |
+| The band takes the place of the current stage row (screen 2); the filters and the board (screen 3) stay below it | PROPOSED, waits for his go |
+| The A/B switch on Home goes; A's Home code is reused on the Journey, not kept as a second Home | PROPOSED |
+
 ## 02.10.2026 - MAIN A and B of this run: BUILT, COMMITTED, NOT DEPLOYED
 
 Branch **`ui/2026-10-02-main-ab`**, own worktree `crm-main-ab`, cut from `561bce2`
