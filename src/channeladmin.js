@@ -159,6 +159,11 @@ export function statusOf(id, { env = process.env, lastCheck = null, handshakeAt 
     lifecycleDecidedOn: def.lifecycleDecidedOn || null,
     lifecycleDecidedBy: def.lifecycleDecidedBy || null,
 
+    // THE RECONCILED RECORD (02.10.2026, Session 3): what was last SEEN about access,
+    // deployment, production configuration and live verification, each with its date
+    // and source. A local checkout cannot read production, so this is what it shows.
+    record: def.record || null,
+
     // the one sentence a human should read first
     summary: summarise({ state, live, def, missing, connected, selfTestOk, plan }),
   };

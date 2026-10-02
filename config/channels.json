@@ -49,7 +49,38 @@
       "ownerAction": "Set WEBSITE_FORM_SECRET and CHANNEL_MODE_WEBSITE in Vercel, then add the webhook to the Tilda forms",
       "reliability": "Shared-secret header, compared in constant time. A submission without a submission_id is refused. A repeat submission_id is dropped.",
       "reconciliation": "None built. Depends on whether the website keeps its own copy of submissions - UNKNOWN.",
-      "_ownerNote": "Oksana gave access; Ritvars sets it up himself, he has Tilda access (01.10.2026, docs/channel-writeups/03-website-form-oksana.md). This is the ENQUIRY form on the Tilda site, NOT apply.novikontas.org, which is downstream."
+      "_ownerNote": "Oksana gave access; Ritvars sets it up himself, he has Tilda access (01.10.2026, docs/channel-writeups/03-website-form-oksana.md). This is the ENQUIRY form on the Tilda site, NOT apply.novikontas.org, which is downstream.",
+      "record": {
+        "access": {
+          "state": "granted",
+          "seen": "2026-10-01",
+          "detail": "Oksana gave Tilda access; Ritvars sets it up himself.",
+          "source": "docs/channel-writeups/03-website-form-oksana.md"
+        },
+        "deployed": {
+          "state": "yes",
+          "commit": "292b4f9",
+          "detail": null
+        },
+        "productionConfigured": {
+          "state": "no",
+          "seen": "2026-10-01",
+          "source": "vercel env ls, read in the CHANNELS lane",
+          "detail": "WEBSITE_FORM_SECRET is not set."
+        },
+        "liveVerified": {
+          "state": "no",
+          "seen": "2026-09-30",
+          "source": "Intake Pin: inbound held 15 rows, all source=simulated, 0 from a real provider. Not re-read against production since."
+        },
+        "nextAction": {
+          "owner": "Ritvars",
+          "action": "Set WEBSITE_FORM_SECRET and CHANNEL_MODE_WEBSITE in Vercel, then add the webhook to the Tilda forms",
+          "input": null
+        },
+        "blocker": null,
+        "destination": "A new enquiry in the Inbox. NOT apply.novikontas.org."
+      }
     },
     "google_form": {
       "label": "Google Form",
@@ -113,7 +144,7 @@
       "dedupKey": "channel + gmail message id",
       "rateLimit": "Gmail API quota per user. Polling every few minutes is well inside it.",
       "readiness": "waiting_for_external_access",
-      "externalBlocker": "Twenty minutes of Marina's time. She is the Google Workspace administrator and only she can grant the service account domain-wide delegation. Everything on our side is built.",
+      "externalBlocker": "Option B (decided 01.10): Marina authorises edu@ herself through the 48-hour link, which is sent only after the link is verified on production. Option A cannot work: domain-wide delegation needs Super Admin, which Marina does not have.",
       "weControl": [
         "the polling schedule",
         "what we extract",
@@ -142,10 +173,41 @@
         "Test an inbound email into the Inbox"
       ],
       "ownerPerson": "Marina",
-      "ownerAction": "Google Workspace administrator approval",
+      "ownerAction": "Option B: Ritvars verifies the link on production, then Marina authorises edu@ through the 48-hour link",
       "reliability": "Read-only scope (gmail.readonly), one mailbox. A repeat Gmail message id would be dropped.",
       "reconciliation": "The poll IS the re-read, but it looks back a fixed 15 minutes and takes at most 25 messages, so a missed run or a busy window loses mail. A history-id cursor would close that. Not built.",
-      "review_27_09": "BUILT ONLY TO THE FETCH. lib/gmail.js reads messages and api/cron/gmail-poll.js returns them in its reply; NOTHING passes them to receive(), so no email reaches the Inbox yet. Also an open decision the review raised: domain-wide delegation lets the service account read ANY mailbox in the Workspace with that scope - the code chooses one, the grant does not limit it. OAuth on a dedicated mailbox limits it to that mailbox. Ritvars and Marina decide."
+      "review_27_09": "BUILT ONLY TO THE FETCH. lib/gmail.js reads messages and api/cron/gmail-poll.js returns them in its reply; NOTHING passes them to receive(), so no email reaches the Inbox yet. Also an open decision the review raised: domain-wide delegation lets the service account read ANY mailbox in the Workspace with that scope - the code chooses one, the grant does not limit it. OAuth on a dedicated mailbox limits it to that mailbox. Ritvars and Marina decide.",
+      "record": {
+        "access": {
+          "state": "pending",
+          "seen": "2026-10-02",
+          "detail": "Option A (domain-wide delegation) needs Super Admin, which Marina does not have. Option B (Marina authorises edu@ herself through a 48-hour link) was decided 01.10.",
+          "source": "Marina tried Security > API controls; memory intake-pbx-live-contradiction, crm-channels-lane-2026-10-01"
+        },
+        "deployed": {
+          "state": "yes",
+          "commit": "292b4f9",
+          "detail": "The option-B link (/api/admin/gmail/link) is in the running commit."
+        },
+        "productionConfigured": {
+          "state": "no",
+          "seen": "2026-10-01",
+          "source": "vercel env ls, read in the CHANNELS lane",
+          "detail": "No mailbox is authorised. GMAIL_SERVICE_ACCOUNT_JSON IS set, but that is option A, which cannot work."
+        },
+        "liveVerified": {
+          "state": "no",
+          "seen": "2026-09-30",
+          "source": "Intake Pin: inbound held 15 rows, all source=simulated, 0 from a real provider. Not re-read against production since."
+        },
+        "nextAction": {
+          "owner": "Ritvars",
+          "action": "Verify the option-B link on production, then send Marina the 48-hour link",
+          "input": "Never send the link before production is verified (decided 01.10)"
+        },
+        "blocker": null,
+        "destination": "Each new email to edu@ becomes an enquiry in the Inbox."
+      }
     },
     "facebook": {
       "label": "Facebook",
@@ -195,7 +257,45 @@
       "ownerPerson": "Oksana",
       "ownerAction": "Meta app plus Page setup, then App Review",
       "reliability": "Meta's X-Hub-Signature-256 over the raw body with the app secret. A repeat provider event id is dropped.",
-      "reconciliation": "None built. The Graph API can list conversations, so a backfill is possible later."
+      "reconciliation": "None built. The Graph API can list conversations, so a backfill is possible later.",
+      "record": {
+        "access": {
+          "state": "pending",
+          "seen": "2026-09-30",
+          "detail": "Oksana said Meta Business access would come \"šonedēļ\" (this week).",
+          "source": "Oksana, 30.09, recorded in memory crm-channels-lane-2026-10-01"
+        },
+        "deployed": {
+          "state": "yes",
+          "commit": "292b4f9",
+          "detail": null
+        },
+        "productionConfigured": {
+          "state": "no",
+          "seen": "2026-10-01",
+          "source": "vercel env ls, read in the CHANNELS lane",
+          "detail": "META_APP_SECRET and META_VERIFY_TOKEN are not set."
+        },
+        "liveVerified": {
+          "state": "no",
+          "seen": "2026-09-30",
+          "source": "Intake Pin: inbound held 15 rows, all source=simulated, 0 from a real provider. Not re-read against production since."
+        },
+        "nextAction": {
+          "owner": "Oksana",
+          "action": "Give Ritvars access to the Meta business portfolio",
+          "input": "Admin access to the Page / account in Meta Business Suite"
+        },
+        "blocker": null,
+        "gateAhead": {
+          "dependency": "Meta APP REVIEW for messaging permissions",
+          "owner": "Meta",
+          "side": "external",
+          "canRefuse": true,
+          "detail": "Not submitted yet, so it is not blocking today. Takes weeks and can be refused. Whether this is \"work\" or a \"question\" is still Ritvars's call (three options in CHANNEL_RECONCILIATION_2026-10-02.md)."
+        },
+        "destination": "A message or lead form becomes an enquiry in the Inbox."
+      }
     },
     "messenger": {
       "label": "Messenger",
@@ -244,7 +344,45 @@
       "ownerPerson": "Oksana",
       "ownerAction": "Meta app plus Messenger setup, then App Review",
       "reliability": "As Facebook: the same Meta signature and the same connection. A repeat event id is dropped.",
-      "reconciliation": "None built. As Facebook."
+      "reconciliation": "None built. As Facebook.",
+      "record": {
+        "access": {
+          "state": "pending",
+          "seen": "2026-09-30",
+          "detail": "Oksana said Meta Business access would come \"šonedēļ\" (this week).",
+          "source": "Oksana, 30.09, recorded in memory crm-channels-lane-2026-10-01"
+        },
+        "deployed": {
+          "state": "yes",
+          "commit": "292b4f9",
+          "detail": null
+        },
+        "productionConfigured": {
+          "state": "no",
+          "seen": "2026-10-01",
+          "source": "vercel env ls, read in the CHANNELS lane",
+          "detail": "META_APP_SECRET and META_VERIFY_TOKEN are not set."
+        },
+        "liveVerified": {
+          "state": "no",
+          "seen": "2026-09-30",
+          "source": "Intake Pin: inbound held 15 rows, all source=simulated, 0 from a real provider. Not re-read against production since."
+        },
+        "nextAction": {
+          "owner": "Oksana",
+          "action": "Give Ritvars access to the Meta business portfolio",
+          "input": "Admin access to the Page / account in Meta Business Suite"
+        },
+        "blocker": null,
+        "gateAhead": {
+          "dependency": "Meta APP REVIEW for messaging permissions",
+          "owner": "Meta",
+          "side": "external",
+          "canRefuse": true,
+          "detail": "Not submitted yet, so it is not blocking today. Takes weeks and can be refused. Whether this is \"work\" or a \"question\" is still Ritvars's call (three options in CHANNEL_RECONCILIATION_2026-10-02.md)."
+        },
+        "destination": "A Messenger conversation becomes an enquiry in the Inbox."
+      }
     },
     "instagram": {
       "label": "Instagram",
@@ -293,7 +431,45 @@
       "ownerPerson": "Oksana",
       "ownerAction": "Meta app plus Instagram setup, then App Review",
       "reliability": "As Facebook: the same Meta signature. A repeat event id is dropped.",
-      "reconciliation": "None built. As Facebook."
+      "reconciliation": "None built. As Facebook.",
+      "record": {
+        "access": {
+          "state": "pending",
+          "seen": "2026-09-30",
+          "detail": "Oksana said Meta Business access would come \"šonedēļ\" (this week).",
+          "source": "Oksana, 30.09, recorded in memory crm-channels-lane-2026-10-01"
+        },
+        "deployed": {
+          "state": "yes",
+          "commit": "292b4f9",
+          "detail": null
+        },
+        "productionConfigured": {
+          "state": "no",
+          "seen": "2026-10-01",
+          "source": "vercel env ls, read in the CHANNELS lane",
+          "detail": "META_APP_SECRET and META_VERIFY_TOKEN are not set."
+        },
+        "liveVerified": {
+          "state": "no",
+          "seen": "2026-09-30",
+          "source": "Intake Pin: inbound held 15 rows, all source=simulated, 0 from a real provider. Not re-read against production since."
+        },
+        "nextAction": {
+          "owner": "Oksana",
+          "action": "Give Ritvars access to the Meta business portfolio",
+          "input": "Admin access to the Page / account in Meta Business Suite"
+        },
+        "blocker": null,
+        "gateAhead": {
+          "dependency": "Meta APP REVIEW for messaging permissions",
+          "owner": "Meta",
+          "side": "external",
+          "canRefuse": true,
+          "detail": "Not submitted yet, so it is not blocking today. Takes weeks and can be refused. Whether this is \"work\" or a \"question\" is still Ritvars's call (three options in CHANNEL_RECONCILIATION_2026-10-02.md)."
+        },
+        "destination": "A DM becomes an enquiry in the Inbox."
+      }
     },
     "whatsapp": {
       "label": "WhatsApp",
@@ -346,7 +522,45 @@
       "ownerPerson": "Oksana",
       "ownerAction": "Meta app plus WhatsApp setup, then App Review",
       "reliability": "As Facebook: the same Meta signature. A repeat WhatsApp message id is dropped.",
-      "reconciliation": "None built."
+      "reconciliation": "None built.",
+      "record": {
+        "access": {
+          "state": "pending",
+          "seen": "2026-09-30",
+          "detail": "Oksana said Meta Business access would come \"šonedēļ\" (this week).",
+          "source": "Oksana, 30.09, recorded in memory crm-channels-lane-2026-10-01"
+        },
+        "deployed": {
+          "state": "yes",
+          "commit": "292b4f9",
+          "detail": null
+        },
+        "productionConfigured": {
+          "state": "no",
+          "seen": "2026-10-01",
+          "source": "vercel env ls, read in the CHANNELS lane",
+          "detail": "META_APP_SECRET and META_VERIFY_TOKEN are not set."
+        },
+        "liveVerified": {
+          "state": "no",
+          "seen": "2026-09-30",
+          "source": "Intake Pin: inbound held 15 rows, all source=simulated, 0 from a real provider. Not re-read against production since."
+        },
+        "nextAction": {
+          "owner": "Oksana",
+          "action": "Give Ritvars access to the Meta business portfolio",
+          "input": "The number +371 23111114 is settled (24.09), not an input"
+        },
+        "blocker": null,
+        "gateAhead": {
+          "dependency": "Meta APP REVIEW for messaging permissions",
+          "owner": "Meta",
+          "side": "external",
+          "canRefuse": true,
+          "detail": "Not submitted yet, so it is not blocking today. Takes weeks and can be refused. Whether this is \"work\" or a \"question\" is still Ritvars's call (three options in CHANNEL_RECONCILIATION_2026-10-02.md)."
+        },
+        "destination": "A WhatsApp message to +371 23111114 becomes an enquiry in the Inbox."
+      }
     },
     "mailchimp": {
       "label": "Mailchimp",
@@ -388,7 +602,38 @@
       "ownerPerson": "Ritvars",
       "ownerAction": "Paste the address into the audience webhook settings",
       "reliability": "Secret in the webhook URL. A repeat of type + email + fired_at is dropped.",
-      "reconciliation": "Not built. The review recommends exactly our intended shape: the webhook is the event stream, the API is the correction tool - re-read the audience and compare."
+      "reconciliation": "Not built. The review recommends exactly our intended shape: the webhook is the event stream, the API is the correction tool - re-read the audience and compare.",
+      "record": {
+        "access": {
+          "state": "granted",
+          "seen": "2026-09-24",
+          "detail": "Nothing has to be bought or asked for.",
+          "source": "channels.json externalActionRequired, checked 24.09"
+        },
+        "deployed": {
+          "state": "yes",
+          "commit": "292b4f9",
+          "detail": null
+        },
+        "productionConfigured": {
+          "state": "yes",
+          "seen": "2026-10-01",
+          "source": "vercel env ls, read in the CHANNELS lane",
+          "detail": "MAILCHIMP_WEBHOOK_SECRET and CHANNEL_MODE_MAILCHIMP are set."
+        },
+        "liveVerified": {
+          "state": "no",
+          "seen": "2026-09-30",
+          "source": "Intake Pin: inbound held 15 rows, all source=simulated, 0 from a real provider. Not re-read against production since."
+        },
+        "nextAction": {
+          "owner": "Ritvars",
+          "action": "Paste our address into the Novikontas audience (c6ab4facba) under Webhooks",
+          "input": null
+        },
+        "blocker": null,
+        "destination": "Updates consent on a person we already have. A newsletter subscriber is NOT a lead (rule 24.09)."
+      }
     },
     "open_day": {
       "label": "Open Day",
@@ -490,7 +735,52 @@
       "ownerAction": "Put the token he holds into PBX_API_TOKEN, then configure the poll",
       "reliability": "Poll every 5 minutes for the last 15, so two missed runs lose nothing; upsert on uniqueid absorbs the overlap.",
       "reconciliation": "The overlap window is the reconciliation.",
-      "review_27_09": "TWO GAPS, 27.09.2026. (1) NO TRIGGER: the Vercel team is on Hobby, which rejects any cron more frequent than daily, so the 5-minute cron was removed from vercel.json; something else must call /api/cron/pbx-calls every 5 minutes before this channel goes live. (2) Calls are written by lib/pbx.js into its own table, pbx_incoming_calls, through the Supabase REST API. Nothing in src/ reads that table, so no call reaches the Inbox yet. Still worth asking TeleGroup whether a reliable call-event push exists (open question 9); if not, polling stays - it works."
+      "review_27_09": "TWO GAPS, 27.09.2026. (1) NO TRIGGER: the Vercel team is on Hobby, which rejects any cron more frequent than daily, so the 5-minute cron was removed from vercel.json; something else must call /api/cron/pbx-calls every 5 minutes before this channel goes live. (2) Calls are written by lib/pbx.js into its own table, pbx_incoming_calls, through the Supabase REST API. Nothing in src/ reads that table, so no call reaches the Inbox yet. Still worth asking TeleGroup whether a reliable call-event push exists (open question 9); if not, polling stays - it works.",
+      "record": {
+        "access": {
+          "state": "granted",
+          "seen": "2026-10-01",
+          "detail": "Ritvars holds the TeleGroup token. Nothing is needed from TeleGroup.",
+          "source": "channels.json externalBlocker"
+        },
+        "deployed": {
+          "state": "yes",
+          "commit": "292b4f9",
+          "detail": null
+        },
+        "productionConfigured": {
+          "state": "yes",
+          "seen": "2026-10-01",
+          "source": "vercel env ls, read in the CHANNELS lane",
+          "detail": "PBX_API_TOKEN and CHANNEL_MODE_PHONE are set."
+        },
+        "liveVerified": {
+          "state": "conflict",
+          "seen": "2026-10-02",
+          "claims": [
+            {
+              "who": "Ritvars, to the team",
+              "on": "2026-10-01",
+              "says": "\"PBX ir live\""
+            },
+            {
+              "who": "Intake Pin",
+              "on": "2026-09-30",
+              "says": "0 rows from a real provider; all 15 inbound rows simulated"
+            }
+          ],
+          "check": "Signed in on production, open #/channels and read the Phone row: Receiving = a real call arrived; Ready = configured only.",
+          "why": "Every production route answers 401 to a Claude session; the read-only checker (feat/checker-gate-2026-09-30) is committed, not deployed.",
+          "source": "docs/BACKLOG.md [VERIFY]; memory intake-pbx-live-contradiction"
+        },
+        "nextAction": {
+          "owner": "Ritvars",
+          "action": "Read the Phone row on production, signed in, and say which record is right",
+          "input": null
+        },
+        "blocker": null,
+        "destination": "A call is logged on the caller's profile. Unknown callers land in the Inbox; numbers archived as Spam, Supplier or Internal are filtered with the reason kept."
+      }
     },
     "agent": {
       "label": "Agent or partner",
@@ -532,7 +822,40 @@
       "blockerKind": "question",
       "reliability": "A token per partner, checked server-side. A repeat partner id + partner reference is dropped.",
       "reconciliation": "None built.",
-      "review_27_09": "The review suggests the simplest version needs no partner system at all: the agent hands out a unique referral link to OUR website form, the form carries the token, and the CRM records source = agent and which agent. Worth choosing before anybody builds a partner-side webhook."
+      "review_27_09": "The review suggests the simplest version needs no partner system at all: the agent hands out a unique referral link to OUR website form, the form carries the token, and the CRM records source = agent and which agent. Worth choosing before anybody builds a partner-side webhook.",
+      "record": {
+        "access": {
+          "state": "pending",
+          "seen": "2026-10-02",
+          "detail": "No partner named, so nobody to ask yet.",
+          "source": "prototype.json openQuestions.agentPartnerOwner"
+        },
+        "deployed": {
+          "state": "yes",
+          "commit": "292b4f9",
+          "detail": null
+        },
+        "productionConfigured": {
+          "state": "no",
+          "seen": "2026-10-01",
+          "source": "vercel env ls, read in the CHANNELS lane",
+          "detail": "AGENT_TOKENS is not set, and its shape is not defined."
+        },
+        "liveVerified": {
+          "state": "no",
+          "seen": "2026-09-30",
+          "source": "Intake Pin: inbound held 15 rows, all source=simulated, 0 from a real provider. Not re-read against production since."
+        },
+        "nextAction": null,
+        "blocker": {
+          "dependency": "A decision: which agent or partner we start with, and who at their end sets up the link",
+          "owner": null,
+          "action": "Somebody inside Novikontas names the first partner",
+          "side": "internal",
+          "canRefuse": false
+        },
+        "destination": "A partner submission becomes an enquiry, the agent recorded as the SOURCE, never the owner."
+      }
     },
     "in_person": {
       "label": "In person",
@@ -565,7 +888,31 @@
       "ownerPerson": null,
       "ownerAction": "Nothing to do. Already working",
       "reliability": "Typed by staff. The server refuses the save (409) when the email, phone or name matches somebody, unless staff confirm it is a different person.",
-      "reconciliation": "Not applicable - the person is standing there."
+      "reconciliation": "Not applicable - the person is standing there.",
+      "record": {
+        "access": {
+          "state": "not_needed",
+          "seen": "2026-10-02",
+          "detail": "Nothing outside Novikontas is involved.",
+          "source": "channels.json"
+        },
+        "deployed": {
+          "state": "yes",
+          "commit": "292b4f9",
+          "detail": null
+        },
+        "productionConfigured": {
+          "state": "not_needed",
+          "detail": "Typed in by staff. That is the design, not a gap."
+        },
+        "liveVerified": {
+          "state": "not_applicable",
+          "detail": "Nothing arrives from a provider."
+        },
+        "nextAction": null,
+        "blocker": null,
+        "destination": "Staff add the person; the same duplicate check runs."
+      }
     },
     "linkedin": {
       "label": "LinkedIn",
@@ -579,7 +926,7 @@
       "dedupKey": "channel + leadGenFormResponse + occurredAt",
       "rateLimit": "Not applicable while manual.",
       "readiness": "waiting_for_external_access",
-      "externalBlocker": "A LinkedIn developer app with an APPROVED webhooks use case (Lead Sync), connected to the Novikontas page. Only an approved app gets the Webhooks tab. Same kind of step as Meta App Review.",
+      "externalBlocker": "LinkedIn's decision on the Lead Sync API access request, submitted 02.10.2026. It can be refused.",
       "weControl": [
         "the endpoint",
         "the signature check",
@@ -598,7 +945,7 @@
       "howWeGoLive": "Set LINKEDIN_CLIENT_SECRET in Vercel, register the address with LinkedIn, receive one real event, check it lands in the Inbox, switch mode to live.",
       "howWeDisable": "Set the channel mode to off. The endpoint then refuses and says so.",
       "operationalNote": "A social page with the same rules as the Meta pages (Ritvars, 27.09.2026): an automated integration, not a person re-typing what arrived. The Lead Sync API fetch that turns a notification into a name and email is NOT built yet.",
-      "blockerKind": "work",
+      "blockerKind": "question",
       "connectSteps": [
         "Create the developer app",
         "Get the webhook access approved",
@@ -606,10 +953,47 @@
         "Register the endpoint",
         "Test a real event"
       ],
-      "ownerPerson": "Tetiana",
+      "ownerPerson": "Ritvars",
       "ownerAction": "LinkedIn developer app, then approval",
       "reliability": "X-LI-Signature (HMAC-SHA256 of \"hmacsha256=\" + raw body, client secret), constant-time compare; the challenge handshake is answered. A repeat URN + occurredAt is dropped.",
-      "reconciliation": "Possible and not built: the Lead Sync API can list form responses."
+      "reconciliation": "Possible and not built: the Lead Sync API can list form responses.",
+      "record": {
+        "access": {
+          "state": "requested",
+          "seen": "2026-10-02",
+          "detail": "Oksana made Ritvars Super Admin of the Page. Ritvars created the developer app \"Novikontas Intake\", verified with the Page, and submitted the Lead Sync API access form. Still missing: the Campaign Manager account manager role.",
+          "source": "Ritvars, 02.10, memory crm-channels-lane-2026-10-01"
+        },
+        "deployed": {
+          "state": "partial",
+          "commit": "292b4f9",
+          "detail": "The webhook receiver is deployed. The Lead Sync fetch that turns a notification into a name and email is NOT built."
+        },
+        "productionConfigured": {
+          "state": "no",
+          "seen": "2026-10-01",
+          "source": "vercel env ls, read in the CHANNELS lane",
+          "detail": "LINKEDIN_CLIENT_SECRET is not set."
+        },
+        "liveVerified": {
+          "state": "no",
+          "seen": "2026-09-30",
+          "source": "Intake Pin: inbound held 15 rows, all source=simulated, 0 from a real provider. Not re-read against production since."
+        },
+        "nextAction": {
+          "owner": "Oksana",
+          "action": "Ask Natalija to give Ritvars the Campaign Manager account manager role",
+          "input": "Requests for Natalija go through Oksana, never to Natalija directly"
+        },
+        "blocker": {
+          "dependency": "LinkedIn's decision on Lead Sync API access (submitted 02.10)",
+          "owner": "LinkedIn / Microsoft vetting",
+          "action": "Wait for their email at ritvars.vilcins@; answer any vetting questions",
+          "side": "external",
+          "canRefuse": true
+        },
+        "destination": "A Lead Gen Form response becomes an enquiry in the Inbox."
+      }
     },
     "tiktok": {
       "label": "TikTok",
@@ -650,10 +1034,48 @@
         "Register the endpoint",
         "Test a real event"
       ],
-      "ownerPerson": "Tetiana",
-      "ownerAction": "TikTok developer app, then approval",
+      "ownerPerson": "Oksana",
+      "ownerAction": "Give Ritvars access to the TikTok business account (it is on her email), then the developer app",
       "reliability": "Tiktok-Signature t=,s= (HMAC-SHA256 of \"t.body\", client secret), constant-time compare, rejected when older than five minutes. A repeat of the four-field key is dropped.",
-      "reconciliation": "None built."
+      "reconciliation": "None built.",
+      "record": {
+        "access": {
+          "state": "pending",
+          "seen": "2026-10-02",
+          "detail": "The TikTok business account is on Oksana's email, so Oksana gives the access.",
+          "source": "Ritvars, 02.10"
+        },
+        "deployed": {
+          "state": "yes",
+          "commit": "292b4f9",
+          "detail": null
+        },
+        "productionConfigured": {
+          "state": "no",
+          "seen": "2026-10-01",
+          "source": "vercel env ls, read in the CHANNELS lane",
+          "detail": "TIKTOK_CLIENT_SECRET is not set."
+        },
+        "liveVerified": {
+          "state": "no",
+          "seen": "2026-09-30",
+          "source": "Intake Pin: inbound held 15 rows, all source=simulated, 0 from a real provider. Not re-read against production since."
+        },
+        "nextAction": {
+          "owner": "Oksana",
+          "action": "Give Ritvars access to the TikTok business account",
+          "input": null
+        },
+        "blocker": null,
+        "gateAhead": {
+          "dependency": "TikTok approval of a developer app with webhook access",
+          "owner": "TikTok",
+          "side": "external",
+          "canRefuse": true,
+          "detail": "Not applied for yet, so it is not blocking today."
+        },
+        "destination": "A lead or message becomes an enquiry in the Inbox."
+      }
     }
   },
   "_integrations": "Added 29.09.2026. An INTEGRATION is not a channel. A channel receives a message from a person and needs an adapter; an integration is a system we pull from on a schedule. SIS was briefly put in `channels` and the contract test caught it at once: every channel in the register must have an adapter, and SIS has none because nothing is delivered to us. It appears on the Channels screen beside the channels, because that is where somebody looks to see whether anything is coming in, but it is modelled apart.",
@@ -697,7 +1119,21 @@
     "in_person"
   ],
   "_connectOrder": "The order Ritvars set on 24.09.2026. Both the Desktop guide and docs/CHANNEL_READINESS.md render in this order, so his list and the generated documents cannot drift apart.",
-  "_ownerPerson": "Who physically has to act for each channel, told by Ritvars on 25.09.2026. null means nobody is named yet. This is NOT who owns the CRM record - a confirmed study lead always belongs to Admissions, which is Ieva, whatever channel it arrived on.",
+  "_ownerPerson": "Who physically has to act for each channel, told by Ritvars on 25.09.2026. null means nobody is named yet. This is NOT who owns the CRM record - a confirmed study lead always belongs to Admissions, which is Ieva, whatever channel it arrived on. Corrected 02.10.2026 by Ritvars: LinkedIn is Ritvars (Page Super Admin, developer app, Lead Sync request); TikTok is Oksana (the business account is on her email). Tetiana is content only.",
   "_reliability": "Added 27.09.2026 after an outside architecture review. Getting an event once is not enough; each channel has to answer: did we get it, did we get it twice, did we process it, what if processing failed, what if the provider retries, what if the CRM was down, can we reconstruct what happened. 'reliability' says what protects the channel TODAY, read from the code. 'reconciliation' says how something missed would be found again, and says 'none built' where that is the truth. Three gaps are shared by every channel and are not repeated per row: (1) the dedupe is not database-enforced (see _idempotency); (2) the log of refused and failed deliveries is an in-memory list of 500 in src/server.js, lost on every restart and, on Vercel, different on every instance - so a refused or failed delivery leaves NO durable trace; (3) a delivery that fails inside the CRM answers 500, which makes a retrying provider try again, but nothing records that it failed.",
-  "_lifecycle": "Added 02.10.2026. readiness says whether OUR SIDE is technically ready. lifecycle says whether the PRODUCT HAS THIS CHANNEL AT ALL, which is a decision and not an engineering fact. active = a channel we intend to connect. parked = decided, prepared, deliberately not connected yet; it is not work and nobody holds it. dropped = decided out of the product; the adapter may stay in the repository, the channel does not exist. Anything without this field is active. A screen MUST read lifecycle, never readiness, to decide whether a channel is current work."
+  "_lifecycle": "Added 02.10.2026. readiness says whether OUR SIDE is technically ready. lifecycle says whether the PRODUCT HAS THIS CHANNEL AT ALL, which is a decision and not an engineering fact. active = a channel we intend to connect. parked = decided, prepared, deliberately not connected yet; it is not work and nobody holds it. dropped = decided out of the product; the adapter may stay in the repository, the channel does not exist. Anything without this field is active. A screen MUST read lifecycle, never readiness, to decide whether a channel is current work.",
+  "_record": "Added 02.10.2026 (Session 3, Channels). The reconciled state of every ACTIVE channel, each fact with the date it was seen and where. It exists because a local checkout has no secrets and no production rows, so the screen can never READ production from here: it must show what was last SEEN, and say when. Four states are kept apart and never inferred from each other: deployed (the code is in the running commit), productionConfigured (the settings are in Vercel Production), liveVerified (a row a real provider sent exists), and access (we hold what we need from the people outside). A blocker names its dependency, its owner, the action or input needed, and whether it is internal or external; local credentials being absent is NEVER a blocker. On production the screen reads live verification from real provider rows and ignores the recorded value; locally it never does.",
+  "_production": {
+    "commit": "292b4f9",
+    "provenOn": "2026-10-02",
+    "how": "byte comparison of the live page with the commit (367029 = 366424 + the 605-byte sign-in script)",
+    "allAdaptersDeployed": true
+  },
+  "downstream": {
+    "_what": "Things that sit AFTER qualification in the lifecycle (Ritvars, 02.10.2026: Channels -> Intake -> qualification / follow-up -> apply.novikontas.org -> payment -> SIS). They are not a way a person first reaches us, so they are never counted as channels.",
+    "apply": {
+      "label": "apply.novikontas.org",
+      "why": "The application, after qualification. Owned by the Applications lane. Not the Tilda enquiry form."
+    }
+  }
 }

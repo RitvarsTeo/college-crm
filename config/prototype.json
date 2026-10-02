@@ -1071,6 +1071,15 @@
         "agent"
       ],
       "status": "Not named yet."
+    },
+    "linkedinLeadSync": {
+      "ask": "Will LinkedIn grant the Lead Sync API access requested on 02.10.2026?",
+      "why": "Without it LinkedIn sends us nothing. The request was submitted by Ritvars for SIA Novikontas Jūras koledža; Microsoft vetting may write first. It can be refused.",
+      "who": "Ritvars",
+      "blocks": [
+        "linkedin"
+      ],
+      "status": "Submitted 02.10.2026. Waiting on LinkedIn."
     }
   },
   "mailchimp": {

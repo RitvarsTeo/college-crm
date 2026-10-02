@@ -29,7 +29,7 @@ import * as snapshot from './snapshot.js';
 import { buildDemo } from './demo.js';
 import * as gate from './gate.js';
 import { verifyRequest, channelDef, channelIds, integrationIds, integrationDef, allChannelStatus, BadInbound,
-         parseInboundBody, handshake } from './inbound.js';
+         parseInboundBody, handshake, CHANNELS } from './inbound.js';
 import * as auth from './auth.js';
 import * as google from './google.js';
 import { signInFirst, withReturnScript } from './signinfirst.js';
@@ -1120,6 +1120,9 @@ export const handle = async (req, res) => {
           // knows nothing about Vercel's and must never be shown as if it did. These are
           // four different states: local configuration, deployed code, production
           // configured, live verified. Only a provider row proves the last one.
+          // the commit proven to be running, and what sits downstream and is NOT a channel
+          production: CHANNELS._production || null,
+          downstream: CHANNELS.downstream || null,
           environment: {
             name: process.env.VERCEL_ENV || (process.env.VERCEL ? 'vercel' : 'local'),
             isProduction: process.env.VERCEL_ENV === 'production',
