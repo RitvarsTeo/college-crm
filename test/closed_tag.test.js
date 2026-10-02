@@ -106,17 +106,10 @@ test('the People quick edit offers cold / reject too, not only the dialog', () =
   assert.match(save, /closedTag:/, 'and the chosen tag reaches the server');
 });
 
-test('Outcomes counts cold and reject, the statistics the tag exists for', () => {
-  const i = APP.indexOf('function cReasonBreakdown(');
-  const block = APP.slice(i, APP.indexOf('async function viewOutcomesC(', i));
-  assert.match(block, /closed_tag/, 'the breakdown reads the tag');
-  assert.match(block, /CFG\.closedTags/, 'one count per configured tag, never a hand-written pair');
-});
-
-test('a closed person shows the tag beside the reason', () => {
+// The Outcomes display of the tag (counts, filter, a chip per row) belongs to the UI/UX lane,
+// ui/2026-10-02-main-ab (714302b), agreed 02.10.2026 so the two branches do not draw it twice.
+test('the person page shows the tag beside the reason', () => {
   assert.match(APP, /const cTagLabel = /, 'one helper names the tag');
-  const i = APP.indexOf('async function viewOutcomesC(');
-  assert.match(APP.slice(i, i + 4000), /cTagLabel\(p\)/, 'on each Outcomes row');
   const j = APP.indexOf('<b>Outcome</b>');
   assert.match(APP.slice(j, j + 600), /cTagLabel\(p\)/, 'and on the person page');
 });

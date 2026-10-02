@@ -1363,8 +1363,6 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   /* Admissions second axis: dormant or declined. Two choices, each saying what it means,
      because "cold" and "reject" are Admissions own words and not everyone's. */
   html.ui-c .cltags{display:grid;gap:7px;margin-top:2px}
-  html.ui-c .c-tagcount{margin:2px 0 10px;font-size:13px;color:var(--t2)}
-  html.ui-c .c-tagcount strong{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
   html.ui-c .cltag{display:grid;grid-template-columns:auto 1fr;gap:3px 9px;align-items:baseline;
     border:1px solid var(--rule);border-radius:9px;padding:9px 11px;cursor:pointer}
   html.ui-c .cltag:hover{background:var(--surface-2)}
@@ -2198,13 +2196,8 @@ function cReasonBreakdown(np, noReason) {
   const bars = rows.map(([label, n, odd]) => '<div class="c-reasonbar' + (n ? '' : ' none') + '">'
     + '<span>' + esc(label) + (odd ? ' <em>not in the list</em>' : '') + '</span>'
     + '<i style="width:' + Math.max(2, (n / top) * 100) + '%"></i><b>' + n + '</b></div>').join('');
-  // What now, beside why: one count per configured tag, and the people with none.
-  const tags = (CFG.closedTags || []).map((t) => [t.label, np.filter((p) => p.closed_tag === t.id).length]);
-  const untagged = np.filter((p) => !(CFG.closedTags || []).some((t) => t.id === p.closed_tag)).length;
-  const tagLine = tags.length ? '<p class="c-tagcount">' + tags.map(([l, n]) => esc(l) + ' <strong>' + n + '</strong>').join(' · ')
-    + (untagged ? ' · no tag <strong>' + untagged + '</strong>' : '') + '</p>' : '';
   return '<div class="c-reasons">'
-    + '<h3>Why they stopped<b>' + (np.length - noReason) + ' of ' + np.length + ' recorded</b></h3>' + tagLine
+    + '<h3>Why they stopped<b>' + (np.length - noReason) + ' of ' + np.length + ' recorded</b></h3>'
     + (noReason ? '<p class="c-ev">' + noReason + (noReason === 1 ? ' person has' : ' people have')
         + ' no recorded reason yet - it is still in the note.</p>' : '')
     + '<div class="c-reasonbars">' + bars + '</div>'
@@ -2236,7 +2229,7 @@ async function viewOutcomesC() {
     ${C_OUTCOME !== 'Admitted' ? cReasonBreakdown(np, noReason) : ''}
     <div class="c-sheet">${list.map((p) => `<div class="c-line" tabindex="0" onclick="location.hash='#/person/${esc(p.id)}'" style="grid-template-columns:minmax(0,1.2fr) minmax(0,1.4fr) 110px">
         <div class="c-who"><b>${esc(p.name)}</b><small>${esc(p.programme || 'programme not said')} · came from ${esc(cChannel(p.source_channel)[0])}</small></div>
-        <div class="c-what">${C_OUTCOME === 'Admitted' ? `Admitted${p.matriculated_at ? ` · <span class="c-lifefact" title="From the SIS: it happened on or before this day">Matriculated <time>by ${esc(cDay(p.matriculated_at))}</time></span>` : ''}` : (cTagLabel(p) ? '<b>' + esc(cTagLabel(p)) + '</b> · ' : '') + (p.closed_reason ? esc(p.closed_reason) : '<span class="c-gap">reason not recorded</span>')}</div>
+        <div class="c-what">${C_OUTCOME === 'Admitted' ? `Admitted${p.matriculated_at ? ` · <span class="c-lifefact" title="From the SIS: it happened on or before this day">Matriculated <time>by ${esc(cDay(p.matriculated_at))}</time></span>` : ''}` : (p.closed_reason ? esc(p.closed_reason) : '<span class="c-gap">reason not recorded</span>')}</div>
         <div class="c-when">${p.admitted_at ? fmtDate(p.admitted_at) : ''}</div></div>`).join('') || '<div class="c-empty">Nobody here.</div>'}</div>`;
 }
 
