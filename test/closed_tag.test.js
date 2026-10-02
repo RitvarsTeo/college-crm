@@ -93,3 +93,30 @@ test('a database that existed before the tag gets the column on boot', async () 
   await db.close();
   assert.equal(row.n, 1, 'closed_tag must be added to an existing people table');
 });
+
+// THE CLOSURE AUDIT, 02.10.2026. The tag was written on one of the two close paths and
+// shown nowhere, so the statistics she asked for it for could not be read anywhere.
+test('the People quick edit offers cold / reject too, not only the dialog', () => {
+  const i = APP.indexOf('function cEditForm(');
+  const form = APP.slice(i, APP.indexOf('function cSavePerson(', i));
+  assert.match(form, /name="peTag"/, 'closing from the People row must offer the tag');
+  assert.match(form, /CFG\.closedTags \|\| \[\]/, 'read from config');
+  const j = APP.indexOf('async function cSavePerson(');
+  const save = APP.slice(j, j + 2500);
+  assert.match(save, /closedTag:/, 'and the chosen tag reaches the server');
+});
+
+test('Outcomes counts cold and reject, the statistics the tag exists for', () => {
+  const i = APP.indexOf('function cReasonBreakdown(');
+  const block = APP.slice(i, APP.indexOf('async function viewOutcomesC(', i));
+  assert.match(block, /closed_tag/, 'the breakdown reads the tag');
+  assert.match(block, /CFG\.closedTags/, 'one count per configured tag, never a hand-written pair');
+});
+
+test('a closed person shows the tag beside the reason', () => {
+  assert.match(APP, /const cTagLabel = /, 'one helper names the tag');
+  const i = APP.indexOf('async function viewOutcomesC(');
+  assert.match(APP.slice(i, i + 4000), /cTagLabel\(p\)/, 'on each Outcomes row');
+  const j = APP.indexOf('<b>Outcome</b>');
+  assert.match(APP.slice(j, j + 600), /cTagLabel\(p\)/, 'and on the person page');
+});

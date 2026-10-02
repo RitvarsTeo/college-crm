@@ -1363,6 +1363,8 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   /* Admissions second axis: dormant or declined. Two choices, each saying what it means,
      because "cold" and "reject" are Admissions own words and not everyone's. */
   html.ui-c .cltags{display:grid;gap:7px;margin-top:2px}
+  html.ui-c .c-tagcount{margin:2px 0 10px;font-size:13px;color:var(--t2)}
+  html.ui-c .c-tagcount strong{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
   html.ui-c .cltag{display:grid;grid-template-columns:auto 1fr;gap:3px 9px;align-items:baseline;
     border:1px solid var(--rule);border-radius:9px;padding:9px 11px;cursor:pointer}
   html.ui-c .cltag:hover{background:var(--surface-2)}
@@ -2168,6 +2170,9 @@ async function viewTodayC() {
 }
 
 // -------------------------------------------------------------------- OUTCOMES
+// Cold or reject, the SECOND axis on Not proceeding (Admissions, 30.09.2026). Empty when
+// the person carries no tag, so a close from before the tag existed reads as it always did.
+const cTagLabel = (p) => ((CFG.closedTags || []).find((t) => t.id === p.closed_tag) || {}).label || '';
 // Two destinations. A reason is a detail of Not proceeding, never a place of its own.
 let C_OUTCOME = 'Admitted';
 // WHY PEOPLE STOP, AGAINST THE LIST WE ACTUALLY ENFORCE (Admissions, open since
@@ -2193,8 +2198,13 @@ function cReasonBreakdown(np, noReason) {
   const bars = rows.map(([label, n, odd]) => '<div class="c-reasonbar' + (n ? '' : ' none') + '">'
     + '<span>' + esc(label) + (odd ? ' <em>not in the list</em>' : '') + '</span>'
     + '<i style="width:' + Math.max(2, (n / top) * 100) + '%"></i><b>' + n + '</b></div>').join('');
+  // What now, beside why: one count per configured tag, and the people with none.
+  const tags = (CFG.closedTags || []).map((t) => [t.label, np.filter((p) => p.closed_tag === t.id).length]);
+  const untagged = np.filter((p) => !(CFG.closedTags || []).some((t) => t.id === p.closed_tag)).length;
+  const tagLine = tags.length ? '<p class="c-tagcount">' + tags.map(([l, n]) => esc(l) + ' <strong>' + n + '</strong>').join(' · ')
+    + (untagged ? ' · no tag <strong>' + untagged + '</strong>' : '') + '</p>' : '';
   return '<div class="c-reasons">'
-    + '<h3>Why they stopped<b>' + (np.length - noReason) + ' of ' + np.length + ' recorded</b></h3>'
+    + '<h3>Why they stopped<b>' + (np.length - noReason) + ' of ' + np.length + ' recorded</b></h3>' + tagLine
     + (noReason ? '<p class="c-ev">' + noReason + (noReason === 1 ? ' person has' : ' people have')
         + ' no recorded reason yet - it is still in the note.</p>' : '')
     + '<div class="c-reasonbars">' + bars + '</div>'
@@ -2226,7 +2236,7 @@ async function viewOutcomesC() {
     ${C_OUTCOME !== 'Admitted' ? cReasonBreakdown(np, noReason) : ''}
     <div class="c-sheet">${list.map((p) => `<div class="c-line" tabindex="0" onclick="location.hash='#/person/${esc(p.id)}'" style="grid-template-columns:minmax(0,1.2fr) minmax(0,1.4fr) 110px">
         <div class="c-who"><b>${esc(p.name)}</b><small>${esc(p.programme || 'programme not said')} · came from ${esc(cChannel(p.source_channel)[0])}</small></div>
-        <div class="c-what">${C_OUTCOME === 'Admitted' ? `Admitted${p.matriculated_at ? ` · <span class="c-lifefact" title="From the SIS: it happened on or before this day">Matriculated <time>by ${esc(cDay(p.matriculated_at))}</time></span>` : ''}` : (p.closed_reason ? esc(p.closed_reason) : '<span class="c-gap">reason not recorded</span>')}</div>
+        <div class="c-what">${C_OUTCOME === 'Admitted' ? `Admitted${p.matriculated_at ? ` · <span class="c-lifefact" title="From the SIS: it happened on or before this day">Matriculated <time>by ${esc(cDay(p.matriculated_at))}</time></span>` : ''}` : (cTagLabel(p) ? '<b>' + esc(cTagLabel(p)) + '</b> · ' : '') + (p.closed_reason ? esc(p.closed_reason) : '<span class="c-gap">reason not recorded</span>')}</div>
         <div class="c-when">${p.admitted_at ? fmtDate(p.admitted_at) : ''}</div></div>`).join('') || '<div class="c-empty">Nobody here.</div>'}</div>`;
 }
 
@@ -2449,7 +2459,7 @@ function cEditForm(p, t) {
     <div><label for="pe-phone">Phone</label><input id="pe-phone" value="${esc(p.phone || '')}" placeholder="not recorded"></div>
     <div><label for="pe-programme">Programme</label><select id="pe-programme">${progs.map((x) => `<option value="${esc(x)}" ${x === (p.programme || '') ? 'selected' : ''}>${esc(x || '(not said)')}</option>`).join('')}</select></div>
     <div><label for="pe-status">Stage</label><select id="pe-status" onchange="document.querySelector('#pe-closed').hidden = this.value !== ${esc(JSON.stringify(closed))}">${stages.map((s) => `<option value="${esc(s.id)}" ${s.id === p.status ? 'selected' : ''}>${esc(s.label || s.id)}</option>`).join('')}</select></div>
-    <div id="pe-closed" hidden><label for="pe-reason">Why are we stopping?</label><select id="pe-reason">${(CFG.closedReasons || []).map((r) => `<option>${esc(r)}</option>`).join('')}</select><input id="pe-rnote" placeholder="Explanation (needed for Other)" style="margin-top:6px"></div>
+    <div id="pe-closed" hidden><label for="pe-reason">Why are we stopping?</label><select id="pe-reason">${(CFG.closedReasons || []).map((r) => `<option>${esc(r)}</option>`).join('')}</select><input id="pe-rnote" placeholder="Explanation (needed for Other)" style="margin-top:6px"><label style="margin-top:8px">And now?</label><div class="cltags">${(CFG.closedTags || []).map((x, i) => `<label class="cltag"><input type="radio" name="peTag" value="${esc(x.id)}"${i === 0 ? ' checked' : ''}><b>${esc(x.label)}</b><small>${esc(x.what)}</small></label>`).join('')}</div></div>
     <div class="c-wide c-step">${t
       ? `<label for="pe-due">Next step</label><div class="c-steprow"><span>${esc(cTask(t.label))}</span><input id="pe-due" type="date" value="${esc(cDay(t.due_at))}" aria-label="Due date"><button class="btn sm ghost" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))})">Done…</button></div>`
       : open ? `<label for="pe-next">Next step</label><div class="c-steprow"><select id="pe-next"><option value="">No next step</option>${nextActionOptions()}</select><input id="pe-ndue" type="date" value="${cTodayIso()}" aria-label="Due date"></div>` : '<label>Next step</label>'}</div>
@@ -2473,7 +2483,7 @@ async function cSavePerson(id) {
     }
     if (Object.keys(patch).length) await post(`/api/people/${id}/edit`, patch);
     const st = v('#pe-status');
-    if (st && st !== p.status) await post(`/api/people/${id}/status`, st === cClosedStage() ? { status: st, reason: v('#pe-reason'), note: v('#pe-rnote') } : { status: st });
+    if (st && st !== p.status) await post(`/api/people/${id}/status`, st === cClosedStage() ? { status: st, reason: v('#pe-reason'), note: v('#pe-rnote'), closedTag: (document.querySelector('input[name="peTag"]:checked') || {}).value || null } : { status: st });
     if (t) { const due = v('#pe-due'); if (due && due !== cDay(t.due_at)) await post(`/api/tasks/${Number(t.id)}/reschedule`, { due }); }
     else { const label = v('#pe-next'); if (label) await post(`/api/people/${id}/task`, { label, due: v('#pe-ndue') }); }
     C_PEDIT = null; C_PMSG = `Saved ${p.name}.`;
@@ -2981,7 +2991,7 @@ async function viewPersonC(id) {
         <div class="c-row-acts"><button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))})">Done</button><button class="btn sm ghost" onclick="openReschedule(${Number(t.id)})">Move the date</button></div></div>`
       : cSisHolds(p) ? `<div class="c-next"><b>Next step</b>${cSisHeld(p)}<div class="c-row-acts"><button class="btn sm ghost" onclick="openNewTask('${esc(p.id)}')">Plan a next step</button></div></div>`
       : `<div class="c-next none"><b>Next step</b>No next step<div class="c-row-acts"><button class="btn sm" onclick="openNewTask('${esc(p.id)}')">Plan a next step</button></div></div>`)
-    : `<div class="c-next c-finished"><b>Outcome</b>${p.status === (CFG.stageRoles || {}).closed ? `<span class="c-no">✕</span>${esc(cStage(p.status))}${p.closed_reason ? ' · ' + esc(p.closed_reason) : ' · <span class="c-gap">reason not recorded</span>'}${p.closed_note ? `<div class="c-evt-body">${esc(p.closed_note)}</div>` : ''}` : `<span class="c-ok">✓</span>${esc(cStage(p.status))}${p.admitted_at ? ' on ' + fmtDate(p.admitted_at) : ''}`}${t ? `
+    : `<div class="c-next c-finished"><b>Outcome</b>${p.status === (CFG.stageRoles || {}).closed ? `<span class="c-no">✕</span>${esc(cStage(p.status))}${cTagLabel(p) ? ' · ' + esc(cTagLabel(p)) : ''}${p.closed_reason ? ' · ' + esc(p.closed_reason) : ' · <span class="c-gap">reason not recorded</span>'}${p.closed_note ? `<div class="c-evt-body">${esc(p.closed_note)}</div>` : ''}` : `<span class="c-ok">✓</span>${esc(cStage(p.status))}${p.admitted_at ? ' on ' + fmtDate(p.admitted_at) : ''}`}${t ? `
         <div class="c-still"><b>Still open</b><div class="c-next-row"><span>${esc(cTask(t.label))}</span><span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span></div>
         <div class="c-row-acts"><button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, true)">Done</button><button class="btn sm ghost" onclick="openReschedule(${Number(t.id)})">Move the date</button></div></div>` : ''}</div>`;
   $('#view').innerHTML = `<p class="c-crumb"><a href="#/people">People</a></p>
