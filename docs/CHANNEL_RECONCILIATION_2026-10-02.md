@@ -127,3 +127,31 @@ The resource, not the screen. `config/channels.json` gains an explicit lifecycle
 (`active` / `parked` / `dropped`) carrying the decision and its date, so the UI reads the
 decision instead of inferring intent from `readiness` - which only ever meant "is our side
 technically ready", never "do we want this".
+
+## FOUND BUILDING THE SCREEN - one more resource question, not taken
+
+`config/channels.json` defines `blockerKind` itself:
+
+> question = somebody outside has to answer and the answer may be no.
+> work = the steps are known and nobody has done them yet.
+
+Reading that honestly, **only Agent is waiting on an answer**. Phone carries an
+`externalBlocker` whose own first words are *"Nothing from TeleGroup"* and is marked `work`,
+and it was being drawn as blocked outside - which is how a channel whose token is already in
+Production came to look like somebody else's problem. That is fixed: the screen now reads
+`blockerKind` instead of treating any recorded blocker as a dependency.
+
+**But the four Meta channels are marked `work` too, and APP REVIEW can be refused.** By the
+config's own definition that is a `question`, not work. Changing it moves Facebook, Messenger,
+Instagram and WhatsApp out of "steps known, not done" and into "waiting on an answer", and it
+would require an owner in `prototype.json -> openQuestions`, which a test enforces.
+
+**Not changed here.** It is a judgement about whether Meta's review is a dependency or a chore,
+and it changes what four channels claim. For Ritvars:
+
+1. **Mark the Meta four as `question`** and add the open question with an owner. Truthful about
+   the risk; adds a question to a list that is meant to stay short.
+2. **Leave them as `work`.** They sit with the ordinary steps; the screen understates that Meta
+   can say no.
+3. **A third kind, `approval`** - the steps are known AND an outsider can still refuse. More
+   honest than either, and it is a change to the vocabulary, so it is a decision not a fix.

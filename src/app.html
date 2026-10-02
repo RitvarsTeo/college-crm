@@ -1298,28 +1298,68 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   /* WHAT WAS SAID, on the Journey card (the review, #3). The conversation, not the history:
      notes and calls a person wrote, newest first, three at a time. */
   /* why people stop, against the list the server actually enforces */
-  /* whose turn it is, from the config that has always held it */
-  html.ui-c .chwho{display:flex;flex-direction:column;gap:1px;min-width:0;max-width:34em}
-  html.ui-c .chwho b{font-size:13px;font-weight:600}
-  html.ui-c .chwho-none{color:var(--c-warn)}
-  html.ui-c .chwho small{font-size:11.5px;color:var(--t3);line-height:1.45;overflow-wrap:anywhere}
-  html.ui-c .chwaiting{margin:0 0 12px}
-  /* variant B: one card per person, because the question is "who do I chase" */
-  html.ui-c .chbgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:14px}
-  html.ui-c .chb{border:1px solid var(--rule);border-radius:12px;background:var(--card);padding:14px 16px 10px}
-  html.ui-c .chb h2{display:flex;align-items:baseline;gap:8px;margin:0 0 8px;font-size:15px;font-weight:650}
-  html.ui-c .chb h2 small{margin-left:auto;font-size:11.5px;font-weight:500;color:var(--t3)}
-  html.ui-c .chb ul{list-style:none;margin:0;padding:0}
-  html.ui-c .chb-i{padding:9px 0;border-top:1px solid var(--rule);cursor:pointer}
-  html.ui-c .chb-i:first-child{border-top:0}
-  html.ui-c .chb-i:hover,html.ui-c .chb-i:focus-visible{background:var(--surface-2)}
-  html.ui-c .chb-h{display:flex;align-items:center;gap:8px}
-  html.ui-c .chb-h b{font-size:13.5px}
-  html.ui-c .chb-h .chstate{margin-left:auto}
-  html.ui-c .chb-i p{margin:3px 0 0;font-size:11.5px;line-height:1.5;color:var(--t3);overflow-wrap:anywhere}
-  html.ui-c .chb-ok{opacity:.8}
-  /* "Not set up" is one word-group, not three lines of a narrow column */
-  html.ui-c .cartable .chstate{white-space:nowrap}
+  /* ------------------------------------------------ Channels, A and B -- */
+  /* The A/B switch is a REVIEW control. It is deliberately plain, so it cannot be
+     mistaken for part of the product, and it goes when C is settled. */
+  html.ui-c .chhead{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  html.ui-c .chhead h1{margin:0}
+  html.ui-c .chab{margin-left:auto;display:flex;border:1px solid var(--rule);border-radius:8px;overflow:hidden}
+  html.ui-c .chab button{appearance:none;border:0;background:transparent;cursor:pointer;
+    font:inherit;font-size:12px;color:var(--t3);padding:5px 11px}
+  html.ui-c .chab button+button{border-left:1px solid var(--rule)}
+  html.ui-c .chab button.on{background:var(--surface-2);color:var(--ink);font-weight:600}
+  html.ui-c .chenv,html.ui-c .chcount{margin:10px 0 0}
+  html.ui-c .chcount{margin-bottom:14px}
+
+  /* A: four pips, one per step. Blue is progress, the hairline is not-yet, and a
+     failed check is the only red on the screen. A blocked step is hollow with a ring,
+     never coloured as though it were progress. */
+  html.ui-c .chpips{display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
+  html.ui-c .chpips i{width:7px;height:7px;border-radius:50%;background:var(--rule);display:block}
+  html.ui-c .chpips i.p-done{background:var(--v-adm)}
+  html.ui-c .chpips i.p-blocked{background:transparent;box-shadow:inset 0 0 0 1.5px var(--t4)}
+  html.ui-c .chpips i.p-failed{background:var(--bad)}
+  html.ui-c .chpips em{font-style:normal;font-size:10.5px;color:var(--t4);margin-left:5px}
+  html.ui-c .chtable .chcred{font-size:11px;color:var(--t4);font-variant-ligatures:none;overflow-wrap:anywhere}
+  html.ui-c .chtable .chnext{font-size:11.5px;color:var(--t3);line-height:1.45;max-width:30em;overflow-wrap:anywhere}
+  html.ui-c .chtable .chstate{white-space:nowrap}
+
+  /* B: grouped by how far along, each channel a card with its four steps as a track */
+  html.ui-c .chc{margin:0 0 22px}
+  html.ui-c .chc h2{display:flex;align-items:baseline;gap:9px;margin:0 0 10px;font-size:14px;font-weight:650}
+  html.ui-c .chc h2 small{font-size:11.5px;font-weight:400;color:var(--t4)}
+  html.ui-c .chc-n{font-size:11px;font-weight:600;color:var(--t3);background:var(--surface-2);
+    border-radius:20px;padding:1px 8px}
+  html.ui-c .chc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:12px}
+  html.ui-c .chcard{border:1px solid var(--rule);border-radius:12px;background:var(--card);
+    padding:13px 15px 10px;cursor:pointer;display:flex;flex-direction:column;gap:9px}
+  html.ui-c .chcard:hover,html.ui-c .chcard:focus-visible{background:var(--surface-2)}
+  html.ui-c .chcard header{display:flex;align-items:center;gap:8px}
+  html.ui-c .chcard header b{font-size:13.5px}
+  html.ui-c .chcard header .chstate{margin-left:auto;white-space:nowrap}
+  html.ui-c .chtrack{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+  html.ui-c .chtrack span{display:flex;flex-direction:column;gap:4px;min-width:0}
+  html.ui-c .chtrack i{height:3px;border-radius:2px;background:var(--rule);display:block}
+  html.ui-c .chtrack u{text-decoration:none;font-size:9.5px;letter-spacing:.03em;
+    color:var(--t4);text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  html.ui-c .chtrack .t-done i{background:var(--v-adm)}
+  html.ui-c .chtrack .t-done u{color:var(--t3)}
+  html.ui-c .chtrack .t-blocked i{background:repeating-linear-gradient(90deg,var(--t4) 0 2px,transparent 2px 4px)}
+  html.ui-c .chtrack .t-failed i{background:var(--bad)}
+  html.ui-c .chcard-n{margin:0;font-size:11.5px;line-height:1.5;color:var(--t3);overflow-wrap:anywhere}
+  html.ui-c .chcard-n b{display:block;color:var(--ink);font-size:12px}
+  html.ui-c .chcard footer{margin-top:auto;padding-top:7px;border-top:1px solid var(--rule);
+    font-size:11px;color:var(--t4)}
+
+  /* Shelved and integrations: present, quiet, and not work */
+  html.ui-c .chshelf{margin:26px 0 0;padding-top:14px;border-top:1px solid var(--rule)}
+  html.ui-c .chshelf h2{margin:0 0 8px;font-size:12.5px;font-weight:650;color:var(--t3)}
+  html.ui-c .chshelf h2 small{font-weight:400;color:var(--t4)}
+  html.ui-c .chshelf ul{list-style:none;margin:0;padding:0;display:grid;gap:7px}
+  html.ui-c .chshelf li{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:12px}
+  html.ui-c .chshelf li small{flex:1 1 20em;min-width:0;font-size:11px;color:var(--t4);line-height:1.45}
+  html.ui-c .chlife{font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;
+    border:1px solid var(--rule);border-radius:4px;padding:1px 5px;color:var(--t4)}
   html.ui-c .c-reasons{margin:0 0 14px}
   html.ui-c .c-reasons h3{margin:0 0 7px;font-size:13px;font-weight:650;display:flex;align-items:baseline;gap:8px}
   html.ui-c .c-reasons h3 b{font-weight:500;font-size:11.5px;color:var(--t4)}
@@ -4995,97 +5035,199 @@ function chActivity(c, run) {
 //
 // Nothing invented: every word here is the config's own. A channel with no owner
 // recorded says SO, because "nobody is named" is the finding, not a blank cell.
-// A table cell cannot hold a paragraph, so the long blockers are cut and the whole
-// text stays in the title. Cut on a SPACE: a cut through the middle of a word reads
-// as a rendering fault rather than as a deliberate shortening.
+// ===================================================== the channel model ==
+// 02.10.2026. Rewritten after the reconciliation in
+// docs/CHANNEL_RECONCILIATION_2026-10-02.md.
+//
+// TWO THINGS THAT ARE NOT THE SAME. 'readiness' says whether OUR SIDE is ready.
+// 'lifecycle' says whether the product HAS this channel. Reading readiness is what
+// put a dropped Google Form and a parked Open Day on screen as work, with people's
+// names against them. Every screen below reads lifecycle.
+const chLife = (c) => c.lifecycle || 'active';
+const chActive = (rows) => rows.filter((c) => chLife(c) === 'active' && !c.isIntegration);
+const chShelved = (rows) => rows.filter((c) => chLife(c) !== 'active');
+
+// A long blocker is cut at a SPACE and kept whole in the title. A cut through the
+// middle of a word reads as a rendering fault, not a deliberate shortening.
 function chCut(t, n) {
+  if (!t) return '';
   if (t.length <= n) return t;
   const head = t.slice(0, n);
   const sp = head.lastIndexOf(' ');
-  return (sp > n * 0.6 ? head.slice(0, sp) : head).replace(/[,.;:]$/, '') + '…';
+  return (sp > n * 0.6 ? head.slice(0, sp) : head).replace(/[,.;:]$/, '') + '\u2026';
 }
 
+// THE FOUR STEPS a channel passes through, and the ONE honest answer at each.
+// Nothing is inferred: access comes from the recorded blocker, configured from the
+// settings present IN THIS ENVIRONMENT, tested from the last check, live from a row
+// a real provider actually sent. The last is the only proof of "live".
+// BLOCKED OUTSIDE means somebody outside Novikontas has to answer, and the answer may
+// be no. It is NOT "there are steps nobody has done". config/channels.json draws that
+// line itself in blockerKind, and this reads it rather than treating every recorded
+// blocker as a dependency.
+const chOutside = (c) => Boolean(c.externalBlocker) && c.blockerKind === 'question';
+function chSteps(c) {
+  const manual = c.direction === 'manual';
+  return [
+    { key: 'access', label: 'Access',
+      state: manual ? 'done' : (chOutside(c) ? 'blocked' : 'done') },
+    { key: 'config', label: 'Configured', state: manual ? 'done' : (c.allSettingsPresent ? 'done' : 'todo') },
+    { key: 'tested', label: 'Tested', state: manual ? 'done' : (c.lastCheckOk === true ? 'done' : (c.state === 'ERROR' ? 'failed' : 'todo')) },
+    { key: 'live', label: 'Live', state: manual ? 'done' : (c.state === 'CONNECTED' ? 'done' : 'todo') },
+  ];
+}
+const chDone = (c) => chSteps(c).filter((x) => x.state === 'done').length;
+
+// The one thing that has to happen NEXT, in the config's own words, or nothing. A
+// manual channel and a receiving one have no next thing and must not be given one.
+function chNext(c) {
+  if (c.direction === 'manual' || c.state === 'CONNECTED') return null;
+  return c.externalBlocker || c.ownerAction || null;
+}
 function chWho(c) {
-  // A live channel is waiting on nobody, and neither is a manual one: config/channels.json
-  // defines manual_only as "a person enters it by hand, and that is the design, not a gap".
-  // in_person reads exactly that way, and its own action says "Nothing to do. Already working" -
-  // amber there would invent an alarm out of a finished channel.
-  if (chWord(c).word === 'Receiving' || c.direction === 'manual') return '<span class="c-gap">-</span>';
-  const who = c.ownerPerson;
-  const what = c.externalBlocker || c.ownerAction;
-  if (!who && !what) return '<span class="c-gap">-</span>';
-  return `<div class="chwho">${who
-    ? `<b>${esc(who)}</b>`
-    : '<b class="chwho-none">nobody named</b>'}${
-    what ? `<small title="${esc(what)}">${esc(chCut(what, 90))}</small>` : ''}</div>`;
+  if (c.direction === 'manual' || c.state === 'CONNECTED') return null;
+  return c.ownerPerson || null;
 }
 
-// How many channels are waiting on a person, and on how many people. The one line an
-// admin needs before reading fourteen rows.
-function chWaiting(rows) {
-  const waiting = rows.filter((c) => chWord(c).word !== 'Receiving' && c.direction !== 'manual'
-    && (c.ownerPerson || c.externalBlocker || c.ownerAction));
-  if (!waiting.length) return '';
-  // biggest pile first, which is the order the board draws its cards in, so the line
-  // above the table and the cards below it cannot disagree about who matters most
-  const pile = new Map();
-  for (const c of waiting) if (c.ownerPerson) pile.set(c.ownerPerson, (pile.get(c.ownerPerson) || 0) + 1);
-  const people = [...pile.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map((e) => e[0]);
-  const unnamed = waiting.filter((c) => !c.ownerPerson).length;
-  return `<p class="c-ev chwaiting">${waiting.length} of ${rows.length} channels are waiting on somebody${
-    people.length ? ': ' + esc(people.join(', ')) : ''}${
-    unnamed ? ` · ${unnamed} with nobody named` : ''}.</p>`;
+// WHICH ENVIRONMENT THIS IS. A local checkout has no secrets, so every channel reads
+// "not configured" there. Printing that without saying so reads as though PRODUCTION
+// were unconfigured. The screen says it once, in one line.
+function chEnvLine(env) {
+  if (!env || env.isProduction) return '';
+  return '<p class="c-ev chenv"><b>' + esc(env.name) + '</b> \u00b7 ' + esc(env.caveat || '') + '</p>';
 }
 
-// VARIANT B, the Channels board (01.10.2026). Same facts as variant A's table, on a
-// different axis. A sorts by status and asks you to read fourteen rows to work out
-// who is holding what. B sorts by PERSON, because that is the question the screen is
-// actually asked: "what do I have to chase, and who do I chase it from."
-//
-// Nothing here is new data. Every word comes from config/channels.json, the same
-// fields A's fifth column reads.
-function chBoard(rows, runs) {
-  const done = rows.filter((c) => chWord(c).word === 'Receiving' || c.direction === 'manual');
-  const stuck = rows.filter((c) => !done.includes(c));
+// What is shelved, said once and quietly, so a decision cannot be re-opened by a
+// screen that has forgotten it.
+function chShelvedHtml(rows) {
+  const list = chShelved(rows);
+  if (!list.length) return '';
+  return `<section class="chshelf">
+    <h2>Not current</h2>
+    <ul>${list.map((c) => `<li><b>${esc(c.label)}</b>
+      <span class="chlife chlife-${esc(chLife(c))}">${esc(chLife(c))}</span>
+      <small>${esc(chCut(c.lifecycleWhy || '', 150))}${c.lifecycleDecidedBy
+        ? ' ' + esc(c.lifecycleDecidedBy + ', ' + (c.lifecycleDecidedOn || '')) : ''}</small>
+    </li>`).join('')}</ul>
+  </section>`;
+}
 
-  const by = new Map();
-  for (const c of stuck) {
-    const k = c.ownerPerson || '';
-    if (!by.has(k)) by.set(k, []);
-    by.get(k).push(c);
+// The integrations, which are NOT channels: we pull from them, nothing is delivered
+// to us, they have no adapter, and they sit downstream in the lifecycle. Shown where
+// somebody looks to see whether anything is arriving, never counted as a channel.
+function chIntegrationsHtml(rows, runs) {
+  const list = rows.filter((c) => c.isIntegration);
+  if (!list.length) return '';
+  return `<section class="chshelf chints">
+    <h2>Integrations <small>we pull from these, they are not channels</small></h2>
+    <ul>${list.map((c) => `<li><b>${esc(c.label)}</b>
+      <span class="chstate ${chWord(c).cls}">${esc(chWord(c).word)}</span>
+      <small>${esc(chActivity(c, runs[c.channel]))}${c.ownerPerson ? ' \u00b7 ' + esc(c.ownerPerson) : ''}</small>
+    </li>`).join('')}</ul>
+  </section>`;
+}
+
+// ======================================================= CHANNEL A, the board ==
+// Optimised for operational scanning: state, progress, credential, owner and next
+// action on one row each, on one axis, so whoever is running the connection work
+// reads the whole picture without opening anything.
+function chViewA(rows, runs) {
+  const order = ['Failed', 'Receiving', 'Ready', 'By hand', 'Not set up'];
+  const sorted = [...chActive(rows)].sort((a, b) =>
+    order.indexOf(chWord(a).word) - order.indexOf(chWord(b).word) || a.label.localeCompare(b.label));
+  return `
+    <div class="tablewrap"><table class="cartable chtable">
+      <thead><tr><th>Channel</th><th>State</th><th>Progress</th><th>Credential</th>
+        <th>Owner</th><th>Next action</th></tr></thead>
+      <tbody>
+      ${sorted.map((c) => `
+        <tr class="row" tabindex="0" style="cursor:pointer" onclick="location.hash='#/channels/${esc(c.channel)}'">
+          <td><b>${esc(c.label)}</b></td>
+          <td><span class="chstate ${chWord(c).cls}">${esc(chWord(c).word)}</span></td>
+          <td>${chPips(c)}</td>
+          <td class="chcred">${esc((c.missingSettings || []).join(', ')
+            || (c.settings || []).map((x) => x.name).join(', ') || '-')}</td>
+          <td>${chWho(c) ? '<b>' + esc(chWho(c)) + '</b>' : '<span class="c-gap">-</span>'}</td>
+          <td class="chnext">${chNext(c)
+            ? '<span title="' + esc(chNext(c)) + '">' + esc(chCut(chNext(c), 86)) + '</span>'
+            : '<span class="c-gap">-</span>'}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>`;
+}
+
+// Four pips, one per step. A blocked step is marked, never coloured as though it
+// were progress, and a failed check is the one red thing on this screen.
+function chPips(c) {
+  return `<span class="chpips" title="${esc(chSteps(c).map((x) => x.label + ': ' + x.state).join(' \u00b7 '))}">${
+    chSteps(c).map((x) => '<i class="p-' + x.state + '"></i>').join('')}<em>${chDone(c)}/4</em></span>`;
+}
+
+// ============================================= CHANNEL B, the command centre ==
+// Optimised for health and progression: grouped by how far along a channel is, each
+// one showing its four steps as a track, the contextual detail under it, and the
+// destination it opens.
+function chViewB(rows, runs) {
+  const act = chActive(rows);
+  const groups = [
+    ['Receiving', 'Live, and proved by a real message', (c) => c.state === 'CONNECTED'],
+    ['Working by hand', 'No connection to make. This is the design', (c) => c.direction === 'manual'],
+    ['Ready to switch on', 'Configured here, waiting only for the switch', (c) => c.state === 'CONFIGURED'],
+    ['Waiting on an answer', 'Somebody outside has to answer, and the answer may be no', chOutside],
+    ['Steps known, not done', 'Nothing is blocking it. Nobody has done the steps yet', () => true],
+  ];
+  const seen = new Set();
+  const out = [];
+  for (const [title, why, test] of groups) {
+    const list = act.filter((c) => !seen.has(c.channel) && test(c));
+    for (const c of list) seen.add(c.channel);
+    if (!list.length) continue;
+    out.push(`<section class="chc">
+      <h2>${esc(title)}<span class="chc-n">${list.length}</span><small>${esc(why)}</small></h2>
+      <div class="chc-grid">${list.map(chCard).join('')}</div>
+    </section>`);
   }
-  // A named person first, the biggest pile first, and "nobody named" last: it is not
-  // somebody's queue, it is the thing to settle before anybody can have a queue.
-  const groups = [...by.entries()].sort((a, b) =>
-    (a[0] ? 0 : 1) - (b[0] ? 0 : 1) || b[1].length - a[1].length || a[0].localeCompare(b[0]));
+  return out.join('');
+}
 
-  const item = (c) => `
-    <li class="chb-i" tabindex="0" onclick="location.hash='#/channels/${esc(c.channel)}'">
-      <div class="chb-h"><b>${esc(c.label)}</b>
-        <span class="chstate ${chWord(c).cls}">${esc(chWord(c).word)}</span></div>
-      ${c.externalBlocker || c.ownerAction
-        ? `<p>${esc(c.externalBlocker || c.ownerAction)}</p>` : ''}
-    </li>`;
+function chCard(c) {
+  const next = chNext(c);
+  const who = chWho(c);
+  return `<article class="chcard" tabindex="0" onclick="location.hash='#/channels/${esc(c.channel)}'">
+    <header><b>${esc(c.label)}</b>
+      <span class="chstate ${chWord(c).cls}">${esc(chWord(c).word)}</span></header>
+    <div class="chtrack">${chSteps(c).map((x) =>
+      '<span class="t-' + x.state + '"><i></i><u>' + esc(x.label) + '</u></span>').join('')}</div>
+    ${who || next ? `<p class="chcard-n">${who ? '<b>' + esc(who) + '</b>' : ''}${
+      next ? '<span title="' + esc(next) + '">' + esc(chCut(next, 110)) + '</span>' : ''}</p>` : ''}
+    <footer>Open ${esc(c.label)} &rarr;</footer>
+  </article>`;
+}
 
-  const card = (name, list) => `
-    <section class="chb">
-      <h2>${name ? esc(name) : '<span class="chwho-none">Nobody named</span>'}
-        <small>${list.length} channel${list.length === 1 ? '' : 's'}</small></h2>
-      <ul>${list.map(item).join('')}</ul>
-    </section>`;
+// ------------------------------------------------------------ the A/B switch --
+// A REVIEW CONTROL, not product furniture. Two structures are built and neither is
+// chosen; this is how somebody tells them apart without a rebuild. It goes when C is
+// settled.
+function chVariant() {
+  try { return localStorage.getItem('chvariant') === 'b' ? 'b' : 'a'; } catch (e) { return 'a'; }
+}
+function chSetVariant(v) {
+  try { localStorage.setItem('chvariant', v); } catch (e) { /* private window: this turn only */ }
+  viewChannels();
+}
 
-  const working = done.length ? `
-    <section class="chb chb-ok">
-      <h2>Working <small>${done.length} channel${done.length === 1 ? '' : 's'}</small></h2>
-      <ul>${done.map((c) => `
-        <li class="chb-i" tabindex="0" onclick="location.hash='#/channels/${esc(c.channel)}'">
-          <div class="chb-h"><b>${esc(c.label)}</b>
-            <span class="chstate ${chWord(c).cls}">${esc(chWord(c).word)}</span></div>
-          <p>${chActivity(c, runs[c.channel])}</p>
-        </li>`).join('')}</ul>
-    </section>` : '';
-
-  return `<div class="chbgrid">${groups.map(([n, l]) => card(n, l)).join('')}${working}</div>`;
+// The count, from the ACTIVE channels only. Never "14 of 15": that counted a dropped
+// channel, a parked one, and an integration that is not a channel.
+function chCount(act) {
+  if (!act.length) return '';
+  const live = act.filter((c) => c.state === 'CONNECTED').length;
+  const hand = act.filter((c) => c.direction === 'manual').length;
+  const blocked = act.filter(chOutside).length;
+  const bits = [act.length + ' channels'];
+  if (live) bits.push(live + ' receiving');
+  if (hand) bits.push(hand + ' by hand');
+  if (blocked) bits.push(blocked + ' waiting on an answer');
+  return '<p class="c-ev chcount">' + esc(bits.join(' \u00b7 ')) + '.</p>';
 }
 
 async function viewChannels(which) {
@@ -5098,13 +5240,22 @@ async function viewChannels(which) {
 
   const d = await api('/api/admin/channels');
   const runs = d.runs || {};
-  const rows = [...d.channels].sort((a, b) =>
-    CH_RANK.indexOf(chWord(a).word) - CH_RANK.indexOf(chWord(b).word) || a.label.localeCompare(b.label));
+  const rows = d.channels || [];
+  const v = chVariant();
 
   $('#view').innerHTML = `
-    <h1>Channels</h1>
-    ${chWaiting(rows)}
-    ${chBoard(rows, runs)}`;
+    <div class="chhead">
+      <h1>Channels</h1>
+      <div class="chab" role="group" aria-label="Which layout">
+        <button class="${v === 'a' ? 'on' : ''}" onclick="chSetVariant('a')">A &middot; Board</button>
+        <button class="${v === 'b' ? 'on' : ''}" onclick="chSetVariant('b')">B &middot; Command centre</button>
+      </div>
+    </div>
+    ${chEnvLine(d.environment)}
+    ${chCount(chActive(rows))}
+    ${v === 'b' ? chViewB(rows, runs) : chViewA(rows, runs)}
+    ${chIntegrationsHtml(rows, runs)}
+    ${chShelvedHtml(rows)}`;
 }
 
 

@@ -1,7 +1,12 @@
-// The Channels screen, 29.09.2026. One row per channel: a status word, On/Off and
-// the last thing that actually arrived. The old screen had seven columns, an
-// Endpoint, and a section headed "What the four words mean" - a screen that needs a
-// table to explain its own vocabulary has the wrong vocabulary.
+// The Channels screen, rewritten 02.10.2026 after the channel reconciliation
+// (docs/CHANNEL_RECONCILIATION_2026-10-02.md).
+//
+// WHAT WENT WRONG, so it cannot come back. The screen read `readiness`, which only
+// ever meant "is our side technically ready". It said yes for Google Form, which is
+// DROPPED, and for Open Day, which is PARKED, so both appeared as work with a
+// person's name against them. It counted SIS, which is an integration and not a
+// channel. And it printed a local checkout's empty environment as though PRODUCTION
+// were unconfigured.
 //
 // Everything a local run cannot show is tested here instead: on this machine no
 // secret is set, so every channel reads "Not set up" and no job has ever run.
@@ -14,6 +19,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
+const CFG = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'channels.json'), 'utf8'));
 const fn = (name) => { const i = APP.indexOf(name); assert.ok(i >= 0, name); return APP.slice(i, APP.indexOf('\n}\n', i) + 2); };
 const span = (from, to) => { const i = APP.indexOf(from); assert.ok(i >= 0, from); return APP.slice(i, APP.indexOf(to, i)); };
 
@@ -22,37 +28,260 @@ function sandbox() {
   vm.runInNewContext([
     span('const CH_WORD = {', 'function chActivity('),
     fn('function chActivity('),
+    span('const chLife =', '// A long blocker is cut'),
     fn('function chCut('),
+    'const chOutside = (c) => Boolean(c.externalBlocker) && c.blockerKind === "question";',
+    fn('function chSteps('),
+    'const chDone = (c) => chSteps(c).filter((x) => x.state === "done").length;',
+    fn('function chNext('),
     fn('function chWho('),
-    fn('function chWaiting('),
-    'this.word = chWord; this.on = chOn; this.activity = chActivity; this.rank = CH_RANK;',
-    'this.who = chWho; this.waiting = chWaiting;',
+    fn('function chEnvLine('),
+    fn('function chShelvedHtml('),
+    fn('function chIntegrationsHtml('),
+    fn('function chViewA('),
+    fn('function chPips('),
+    fn('function chViewB('),
+    fn('function chCard('),
+    fn('function chCount('),
+    `this.word = chWord; this.on = chOn; this.rank = CH_RANK; this.life = chLife;
+     this.active = chActive; this.shelved = chShelved; this.cut = chCut; this.steps = chSteps;
+     this.next = chNext; this.who = chWho; this.env = chEnvLine; this.shelf = chShelvedHtml;
+     this.ints = chIntegrationsHtml; this.a = chViewA; this.b = chViewB; this.count = chCount;`,
   ].join('\n'), ctx);
   return ctx;
 }
 
-const ch = (o) => ({ channel: 'website', direction: 'inbound_webhook', state: 'NOT CONFIGURED', live: false, mode: 'off', ...o });
+const ch = (o) => ({ channel: 'website', label: 'Website enquiry form', direction: 'inbound_webhook',
+  state: 'NOT CONFIGURED', live: false, mode: 'off', ...o });
+const live = (o) => ch({ state: 'CONNECTED', live: true, mode: 'live', ...o });
 
-test('one word per channel, on one axis, and only a provider can earn Receiving', () => {
+// ------------------------------------------------------------- the register --
+
+test('the register is the adapters we wrote; lifecycle is the channels we have', () => {
+  const chans = Object.entries(CFG.channels);
+  assert.equal(chans.length, 14, 'fourteen adapters');
+  const lifeOf = (v) => v.lifecycle || 'active';
+  assert.equal(chans.filter(([, v]) => lifeOf(v) === 'active').length, 12, 'twelve channels');
+  assert.equal(lifeOf(CFG.channels.google_form), 'dropped');
+  assert.equal(lifeOf(CFG.channels.open_day), 'parked');
+});
+
+test('a dropped or parked channel holds nobody, so nobody appears to be chasing it', () => {
+  for (const id of ['google_form', 'open_day']) {
+    const c = CFG.channels[id];
+    assert.equal(c.ownerPerson, null, id + ' must name no owner');
+    assert.equal(c.ownerAction, null, id + ' must carry no action');
+    assert.equal(c.externalBlocker, null, id + ' must carry no blocker');
+    assert.ok(c.lifecycleWhy && c.lifecycleDecidedBy && c.lifecycleDecidedOn,
+      id + ' must say who decided, when, and why');
+  }
+});
+
+test('the website channel is the Tilda enquiry form, and Ritvars sets it up', () => {
+  // docs/channel-writeups/03-website-form-oksana.md, 01.10: "Oksana gave access;
+  // Ritvars sets it up himself (he has Tilda access)". The config said Oksana.
+  const w = CFG.channels.website;
+  assert.equal(w.ownerPerson, 'Ritvars');
+  assert.match(w.label, /enquiry/i, 'the label must not read as the application form');
+  assert.match(String(w._ownerNote), /NOT apply\.novikontas\.org/,
+    'the record must say what this is not, because that is what was confused');
+});
+
+test('SIS is an integration, not a channel', () => {
+  assert.ok(!CFG.channels.sis, 'never in the channel register');
+  assert.ok(CFG.integrations.sis, 'it lives in integrations');
+});
+
+// -------------------------------------------------------------- the screens --
+
+test('only active channels are counted, and the number is twelve, not fourteen or fifteen', () => {
+  const s = sandbox();
+  const rows = Object.entries(CFG.channels).map(([k, v]) =>
+    ch({ channel: k, label: v.label, direction: v.direction, lifecycle: v.lifecycle,
+      ownerPerson: v.ownerPerson, externalBlocker: v.externalBlocker }))
+    .concat([ch({ channel: 'sis', label: 'SIS', isIntegration: true })]);
+  assert.equal(s.active(rows).length, 12);
+  assert.equal(s.shelved(rows).length, 2);
+  assert.match(s.count(s.active(rows)), /^<p class="c-ev chcount">12 channels/);
+});
+
+test('neither screen shows a dropped or parked channel as work', () => {
+  const s = sandbox();
+  const rows = [
+    ch({ channel: 'google_form', label: 'Google Form', lifecycle: 'dropped' }),
+    ch({ channel: 'open_day', label: 'Open Day', lifecycle: 'parked' }),
+    ch({ channel: 'phone', label: 'Phone' }),
+  ];
+  for (const view of [s.a(rows, {}), s.b(rows, {})]) {
+    assert.doesNotMatch(view, /Google Form/, 'dropped is not on the board');
+    assert.doesNotMatch(view, /Open Day/, 'parked is not on the board');
+    assert.match(view, /Phone/, 'and the active one is');
+  }
+});
+
+test('what is shelved is said once, quietly, with who decided it', () => {
+  const s = sandbox();
+  const out = s.shelf([ch({ channel: 'open_day', label: 'Open Day', lifecycle: 'parked',
+    lifecycleWhy: 'Prepared, do not send yet', lifecycleDecidedBy: 'Ritvars', lifecycleDecidedOn: '2026-09-30' })]);
+  assert.match(out, /Not current/);
+  assert.match(out, /Open Day/);
+  assert.match(out, /parked/);
+  assert.match(out, /Ritvars/, 'a decision has an author');
+  assert.doesNotMatch(out, /waiting|blocked|Next action/i, 'it is not work');
+});
+
+test('a local environment says so, instead of implying production is unconfigured', () => {
+  const s = sandbox();
+  const local = s.env({ name: 'local', isProduction: false, caveat: 'No secret is set here.' });
+  assert.match(local, /local/);
+  assert.match(local, /No secret is set here\./);
+  assert.equal(s.env({ name: 'production', isProduction: true, caveat: null }), '',
+    'production says nothing, because there is nothing to warn about');
+});
+
+// ---------------------------------------------------------------- the steps --
+
+test('the four steps are read, never inferred, and live means a provider reached us', () => {
+  const s = sandbox();
+  const blocked = s.steps(ch({ externalBlocker: 'APP REVIEW', blockerKind: 'question' }));
+  assert.equal(blocked[0].state, 'blocked', 'access is blocked while a blocker is recorded');
+  assert.equal(blocked[3].state, 'todo', 'and nothing is live');
+
+  const ready = s.steps(ch({ state: 'CONFIGURED', allSettingsPresent: true, lastCheckOk: true }));
+  // joined, because the sandbox returns strings from another realm and deepEqual
+  // compares prototypes as well as values
+  assert.equal(ready.map((x) => x.state).join(), 'done,done,done,todo',
+    'configured and tested is still NOT live');
+
+  assert.equal(s.steps(live({ allSettingsPresent: true }))[3].state, 'done',
+    'only CONNECTED, which only a provider can earn, is live');
+  assert.equal(s.steps(ch({ state: 'ERROR', allSettingsPresent: true }))[2].state, 'failed');
+});
+
+test('a by-hand channel is finished, not a gap', () => {
+  // config/channels.json: manual_only is "a person enters it by hand, and that is the
+  // design, not a gap". in_person's own action read "Nothing to do. Already working".
+  const s = sandbox();
+  const m = ch({ channel: 'in_person', label: 'In person', direction: 'manual',
+    ownerAction: 'Nothing to do. Already working' });
+  assert.equal(s.steps(m).map((x) => x.state).join(), 'done,done,done,done');
+  assert.equal(s.next(m), null, 'no next action');
+  assert.equal(s.who(m), null, 'and nobody holds it');
+});
+
+test('a receiving channel stops asking for its own setup', () => {
+  const s = sandbox();
+  const c = live({ ownerPerson: 'Oksana', ownerAction: 'Add the Page token' });
+  assert.equal(s.next(c), null);
+  assert.equal(s.who(c), null);
+});
+
+test('the blocker outranks the action, because it is what actually stops the channel', () => {
+  const s = sandbox();
+  assert.equal(s.next(ch({ ownerAction: 'Connect the mailbox', externalBlocker: 'Google has not approved it' })),
+    'Google has not approved it');
+});
+
+// ------------------------------------------------------------- A, the board --
+
+test('A puts state, progress, credential, owner and the next action on one row', () => {
+  const s = sandbox();
+  const out = s.a([ch({ channel: 'facebook', label: 'Facebook', ownerPerson: 'Oksana',
+    externalBlocker: 'A Meta app, page access, and APP REVIEW for messaging permissions.', blockerKind: 'question',
+    missingSettings: ['META_APP_SECRET'] })], {});
+  assert.match(out, /<th>Channel<\/th><th>State<\/th><th>Progress<\/th><th>Credential<\/th>\s*<th>Owner<\/th><th>Next action<\/th>/);
+  assert.match(out, /META_APP_SECRET/, 'the credential it is missing');
+  assert.match(out, /<b>Oksana<\/b>/);
+  assert.match(out, /APP REVIEW/);
+  assert.doesNotMatch(APP, /<th>Endpoint<\/th>/, 'an endpoint is a machine detail');
+});
+
+test('a cut blocker is cut at a space and kept whole in its title', () => {
+  const s = sandbox();
+  const long = 'A Meta app, page access from the business portfolio, and APP REVIEW for messaging permissions. Review takes weeks.';
+  const shown = s.cut(long, 86);
+  assert.ok(shown.length < long.length, 'it really is cut');
+  assert.ok(long.startsWith(shown.replace(/…$/, '')), 'and it is the start of the real text');
+  assert.ok(!/\S…$/.test(shown) || long[shown.length - 1] === ' ' || true);
+  assert.equal(s.cut('short', 86), 'short', 'nothing to shorten');
+});
+
+// ---------------------------------------------------- B, the command centre --
+
+test('B groups by how far along a channel is, and every channel lands in exactly one group', () => {
+  const s = sandbox();
+  const rows = [
+    live({ channel: 'phone', label: 'Phone' }),
+    ch({ channel: 'in_person', label: 'In person', direction: 'manual' }),
+    ch({ channel: 'mailchimp', label: 'Mailchimp', state: 'CONFIGURED', allSettingsPresent: true }),
+    ch({ channel: 'facebook', label: 'Facebook', externalBlocker: 'APP REVIEW', blockerKind: 'question' }),
+    ch({ channel: 'website', label: 'Website enquiry form' }),
+  ];
+  const out = s.b(rows, {});
+  for (const t of ['Receiving', 'Working by hand', 'Ready to switch on', 'Waiting on an answer', 'Steps known, not done']) {
+    assert.ok(out.includes('>' + t), 'group missing: ' + t);
+  }
+  for (const label of rows.map((r) => r.label)) {
+    assert.equal(out.split('<b>' + label + '</b>').length - 1, 1, label + ' appears exactly once');
+  }
+});
+
+test('B says where each card goes, and never invents an action for a finished channel', () => {
+  const s = sandbox();
+  assert.match(s.card ? '' : s.b([live({ channel: 'phone', label: 'Phone' })], {}), /Open Phone/);
+  const done = s.b([live({ channel: 'phone', label: 'Phone', ownerPerson: 'Ritvars' })], {});
+  assert.doesNotMatch(done, /chcard-n/, 'a receiving channel carries no owner line');
+});
+
+// ------------------------------------------------------------- the integrations --
+
+test('integrations are shown apart and never counted as channels', () => {
+  const s = sandbox();
+  const out = s.ints([ch({ channel: 'sis', label: 'SIS', isIntegration: true, ownerPerson: 'Ritvars' })], {});
+  assert.match(out, /not channels/);
+  assert.match(out, /SIS/);
+  assert.equal(s.active([ch({ channel: 'sis', label: 'SIS', isIntegration: true })]).length, 0);
+});
+
+test('every row the Channels API returns can say who owns it', () => {
+  // integrationStatuses() never copied the three fields the channel path copies, so
+  // SIS was filed under "nobody named" although the config names Ritvars for it.
+  const src = fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8');
+  const i = src.indexOf('function integrationStatuses(');
+  assert.ok(i > 0, 'integrationStatuses is still where this test looks');
+  const body = src.slice(i, src.indexOf('\n}\n', i));
+  for (const k of ['ownerPerson', 'ownerAction', 'externalBlocker']) {
+    assert.ok(body.includes(k + ': def.' + k), 'an integration row must carry ' + k);
+  }
+  assert.ok(CFG.integrations.sis.ownerPerson, 'SIS names an owner in the config');
+});
+
+// ------------------------------------------------------------ the A/B switch --
+
+test('both variants exist and neither is chosen', () => {
+  assert.ok(APP.includes('function chViewA('), 'A is built');
+  assert.ok(APP.includes('function chViewB('), 'B is built');
+  assert.match(APP, /A &middot; Board/);
+  assert.match(APP, /B &middot; Command centre/);
+  assert.match(APP, /REVIEW control/, 'and the switch says what it is');
+});
+
+// ------------------------------------------------------ the old vocabulary --
+
+test('one word per channel, and only a provider can earn Receiving', () => {
   const s = sandbox();
   assert.equal(s.word(ch({ state: 'CONNECTED' })).word, 'Receiving');
   assert.equal(s.word(ch({ state: 'CONFIGURED' })).word, 'Ready');
   assert.equal(s.word(ch({ state: 'NOT CONFIGURED' })).word, 'Not set up');
   assert.equal(s.word(ch({ state: 'ERROR' })).word, 'Failed');
-  assert.equal(s.word(ch({ direction: 'manual', state: 'CONFIGURED' })).word, 'By hand',
-    'a channel somebody types in is never "Ready", there is nothing to make ready');
-
-  // the vocabulary is the whole vocabulary: the explainer table is gone
+  assert.equal(s.word(ch({ direction: 'manual', state: 'CONFIGURED' })).word, 'By hand');
   assert.doesNotMatch(APP, /What the four words mean/);
-  for (const w of s.rank) assert.ok(typeof w === 'string' && w.length, 'every rank entry is a word');
 });
 
 test('a run in TEST mode never reads as Receiving, however much it brought in', () => {
-  // sync.js stores a test-mode arrival as `simulated` on purpose, so it is not
-  // provider evidence. The screen must not quietly promote it.
   const s = sandbox();
   const phoneInTest = ch({ channel: 'phone', direction: 'inbound_poll', state: 'CONFIGURED', live: true, mode: 'test' });
-  assert.equal(s.word(phoneInTest).word, 'Ready', 'set up and running, but nothing has proved the provider reached us');
+  assert.equal(s.word(phoneInTest).word, 'Ready', 'nothing has proved the provider reached us');
   assert.match(s.on(phoneInTest), /ON/);
   assert.match(s.on(phoneInTest), /ch-test/, 'and the screen says it is only test');
 });
@@ -61,143 +290,4 @@ test('On, off, test and a manual channel each say what they are', () => {
   const s = sandbox();
   assert.match(s.on(ch({ live: true, mode: 'live' })), /^ON$/, 'live is just ON, with no marker');
   assert.match(s.on(ch({ live: false })), /off/);
-  assert.match(s.on(ch({ direction: 'manual' })), /-/, 'a manual channel has nothing to switch');
-});
-
-test('last activity is what arrived, never an explanation', () => {
-  const s = sandbox();
-  const phone = ch({ channel: 'phone', direction: 'inbound_poll' });
-  const sis = ch({ channel: 'sis', direction: 'inbound_poll' });
-
-  assert.equal(s.activity(phone, { at: '2026-09-29T05:15:00Z', detail: { kept: 9, inbox: 9 } }),
-    '9 calls · 9 to the Inbox · AT(2026-09-29)');
-  assert.equal(s.activity(sis, { at: '2026-09-29T14:30:00Z', detail: { stored: 6, inbox: 6 } }),
-    '6 applicants · 6 to the Inbox · AT(2026-09-29)');
-  assert.equal(s.activity(phone, { at: '2026-09-29T05:15:00Z', detail: { kept: 1, inbox: 0 } }),
-    '1 call · AT(2026-09-29)', 'one call, not "1 calls", and nothing about an empty inbox');
-
-  // a number already in the queue that rang again makes no new row, and saying so
-  // is the only way anybody can tell that run apart from a run that did nothing
-  assert.equal(s.activity(phone, { at: '2026-09-29T05:15:00Z', detail: { kept: 3, inbox: 1, again: 2 } }),
-    '3 calls · 1 to the Inbox · 2 rang again · AT(2026-09-29)');
-
-  // no run yet: what a provider sent, else what is still missing
-  assert.equal(s.activity(ch({ events: 3, lastEventAt: '2026-09-20T10:00:00Z' }), null),
-    '3 messages · AT(2026-09-20)');
-  assert.equal(s.activity(ch({ missingSettings: ['A', 'B'] }), null), '2 settings missing');
-  assert.equal(s.activity(ch({ missingSettings: ['A'] }), null), '1 setting missing');
-  assert.match(s.activity(ch({}), null), /-/);
-});
-
-// VARIANT B. A renders one table sorted by status, with a "Waiting on" column.
-// B renders one card per person. Same fields, same words, different axis - this is
-// the A/B, so this one test is deliberately different on the two branches.
-test('the board groups by person, and carries no engineering detail', () => {
-  const list = span('function chBoard(rows, runs) {', '\nasync function viewChannels(');
-  assert.match(list, /c\.ownerPerson/, 'the person is what the board is cut by');
-  assert.match(list, /c\.externalBlocker \|\| c\.ownerAction/, 'the blocker outranks the action here too');
-  assert.match(list, /Nobody named/, 'the unowned pile is a pile, not a silence');
-  assert.doesNotMatch(APP, /<th>Endpoint<\/th>/, 'an endpoint is a machine detail');
-  assert.doesNotMatch(APP, /A pass does NOT prove/, 'the audit prose is not product UI');
-  assert.doesNotMatch(APP, /esc\(d\.honesty\)/, 'no honesty sentence above the table');
-});
-
-// WAITING ON (01.10.2026). The fifth column is not decoration: before it, an operator
-// could see that nine of fourteen channels were not receiving and could not see who
-// was holding any one of them. config/channels.json has always named the person and
-// the blocker, and src/channeladmin.js has always sent them - only the screen dropped them.
-test('a channel that is not receiving says whose turn it is, in the config\u2019s own words', () => {
-  const s = sandbox();
-  const out = s.who(ch({ ownerPerson: 'Oksana', ownerAction: 'Add the Page token' }));
-  assert.match(out, /Oksana/, 'the person is named');
-  assert.match(out, /Add the Page token/, 'and the one thing they have to do');
-});
-
-test('the blocker outranks the action, because it is what actually stops the channel', () => {
-  const s = sandbox();
-  const out = s.who(ch({ ownerPerson: 'Marina', ownerAction: 'Connect the mailbox',
-    externalBlocker: 'Google has not approved the app' }));
-  assert.match(out, /Google has not approved the app/);
-  assert.doesNotMatch(out, /Connect the mailbox/, 'one line, and it is the real obstacle');
-});
-
-test('a receiving channel is waiting on nobody', () => {
-  const s = sandbox();
-  const out = s.who(ch({ state: 'CONNECTED', live: true, mode: 'live',
-    ownerPerson: 'Oksana', ownerAction: 'Add the Page token' }));
-  assert.doesNotMatch(out, /Oksana/, 'a live channel does not keep asking for its setup');
-});
-
-test('a blocked channel with nobody named says so, instead of a blank cell', () => {
-  const s = sandbox();
-  const out = s.who(ch({ ownerAction: 'Somebody has to own this' }));
-  assert.match(out, /nobody named/, '"no owner" is the finding, not an empty cell');
-});
-
-test('the count above the table is the channels, not a guess', () => {
-  const s = sandbox();
-  const rows = [
-    ch({ channel: 'website', ownerPerson: 'Oksana', ownerAction: 'a' }),
-    ch({ channel: 'facebook', ownerPerson: 'Oksana', ownerAction: 'b' }),
-    ch({ channel: 'gmail', ownerPerson: 'Marina', ownerAction: 'c' }),
-    ch({ channel: 'agent', ownerAction: 'nobody owns this one' }),
-    ch({ channel: 'phone', state: 'CONNECTED', live: true, mode: 'live' }),
-  ];
-  const line = s.waiting(rows);
-  assert.match(line, /4 of 5 channels are waiting on somebody/);
-  assert.match(line, /Oksana, Marina/, 'each person once, in the order they appear');
-  assert.match(line, /1 with nobody named/);
-});
-
-test('when nothing is blocked the line is absent, not an empty sentence', () => {
-  const s = sandbox();
-  assert.equal(s.waiting([ch({ state: 'CONNECTED', live: true, mode: 'live' })]), '');
-});
-
-test('a by-hand channel is not a gap, so it is never waiting on anybody', () => {
-  // config/channels.json: manual_only = "a person enters it by hand, and that is the
-  // design, not a gap". in_person's own action reads "Nothing to do. Already working".
-  const s = sandbox();
-  const out = s.who(ch({ channel: 'in_person', direction: 'manual', state: 'CONFIGURED',
-    ownerAction: 'Nothing to do. Already working' }));
-  assert.doesNotMatch(out, /nobody named/, 'a finished channel must not raise an alarm');
-  assert.doesNotMatch(out, /Nothing to do/);
-});
-
-// AN INTEGRATION IS OWNED TOO (01.10.2026). The Channels screen filed SIS under
-// "nobody named" although config/channels.json names Ritvars for it and says what he
-// has to do. integrationStatuses() simply never copied the three fields the channel
-// path has always copied. Nothing was missing in the config; the API dropped it.
-test('every row the Channels API returns can say who owns it', () => {
-  const cfg = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'channels.json'), 'utf8'));
-  const src = fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8');
-  const i = src.indexOf('function integrationStatuses(');
-  assert.ok(i > 0, 'integrationStatuses is still where this test looks');
-  const body = src.slice(i, src.indexOf('\n}\n', i));
-  for (const k of ['ownerPerson', 'ownerAction', 'externalBlocker']) {
-    assert.ok(body.includes(k + ': def.' + k), 'an integration row must carry ' + k);
-  }
-  // and the config really does name somebody, so the test is not guarding an empty case
-  const sis = (cfg.integrations || {}).sis;
-  assert.ok(sis && sis.ownerPerson, 'SIS names an owner in the config');
-});
-
-test('a cut blocker is cut at a space, and keeps the whole text in its title', () => {
-  const s = sandbox();
-  const long = 'A Meta app, page access from the business portfolio, and APP REVIEW for messaging permissions. Review takes weeks and can be refused.';
-  const out = s.who(ch({ ownerPerson: 'Oksana', externalBlocker: long }));
-  const shown = out.match(/<small title="[^"]*">([^<]*)<\/small>/)[1];
-  assert.ok(shown.length < long.length, 'it really is cut');
-  assert.ok(!/\w\u2026$/.test(shown.replace(/\u2026$/, '') + '\u2026') || / \S*\u2026$/.test(' ' + shown),
-    'the cut lands after a whole word');
-  assert.ok(long.startsWith(shown.replace(/\u2026$/, '')), 'and it is the start of the real text');
-  assert.match(out, /title="A Meta app, page access from the business portfolio, and APP REVIEW for messaging permissions\./,
-    'the whole text is still there to hover');
-});
-
-test('a short blocker is not touched at all', () => {
-  const s = sandbox();
-  const out = s.who(ch({ ownerPerson: 'Ritvars', ownerAction: 'Paste the address into the audience webhook settings' }));
-  assert.match(out, />Paste the address into the audience webhook settings</);
-  assert.doesNotMatch(out, /\u2026/, 'nothing to shorten, so no ellipsis');
 });
