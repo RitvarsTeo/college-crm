@@ -14,6 +14,29 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 02.10.2026 - SESSION 4: Applications inside Reports (COMMITTED, NOT DEPLOYED)
+
+Worktree `crm-applications-s4`, branch `ui/2026-10-02-applications-s4`, cut from `561bce2`.
+Technical prototype (P4) on the existing shell. Production untouched: no deploy, env, sync or rollback.
+
+| What | Status |
+|---|---|
+| `GET /api/applications` (src/applications.js): the SIS funnel from rows already in Intake. SELECTs only, never calls the SIS, counts only | BUILT |
+| Basis: **registration-week cohort**, where each person stands NOW. No status history is made up: the SIS sends current status only | BUILT |
+| A later status counts as passing the earlier ones (SIS order, already accepted 29.09 "by submit date"); rejected / withdrawn kept apart, the SIS does not say at which step | BUILT |
+| The records a person archived in the Inbox (production's 6 team tests) are **set aside**, never counted | BUILT |
+| One truthful state: Off / No run yet / No real applicant yet / Test / Live. A webhook record before any pull is still counted | BUILT |
+| Reports / Full report: one **Applications** chapter holding apply.novikontas.org web stats and the SIS funnel, in journey order; header link + `#/reports/applications`; no menu item | BUILT |
+| Funnel bars open People filtered to Came from = SIS (when anyone is linked) | BUILT |
+| Frame: the locked sea gradient (#fbfcfd / #17456e) + shadow; marks flat. Web traffic in mustard #E0A526, SIS in blue. One scene (step bars draw once) | BUILT |
+
+**What production will show today** (from the 01.10 evidence, not re-read): SIS live, 6 records in the
+store, 6 set aside, **0 counted -> "No real applicant yet"**. That is the true blocked state.
+
+**Data gaps:** no date for `started` / `admitted`, so no event-by-week view; a person with two
+applications counts once by week and twice by programme (both labelled); traffic and applications
+are different bases, so no visit-to-application conversion is drawn.
+
 ## 02.10.2026 - HANDOFF: where this run stopped
 
 Branch **`ui/2026-10-02-journey`**, cut from `feat/home-b-command`. **933/933. Clean tree.

@@ -17,6 +17,7 @@ import { findMatches as matchPeople, duplicateCheck, isStrong as isStrongMatch }
 import { lifecycleOf, sisProgress, sisProgressByPerson, SIS_HOLDS_SQL } from './lifecycle.js';
 import { firstLook } from './sisfirstlook.js';
 import { redactSis, fetchWebStats, WEB_RANGES } from '../lib/sis.js';
+import { applicationFunnel } from './applications.js';
 import { sisLiveCheck } from './sischeck.js';
 import { pbxLive } from '../lib/pbx.js';
 import { adapt, adaptAll, toIntake, hasAdapter, adapterIds } from './adapters.js';
@@ -1086,6 +1087,13 @@ export const handle = async (req, res) => {
         return json(res, 200, { ok: false, status: err && err.status || null,
           error: redactSis(err && err.message ? err.message : 'the SIS call failed', process.env.SIS_API_TOKEN) });
       }
+    }
+
+    // Applications in Reports (popup A, 01.10.2026): the SIS funnel by registration week, from the
+    // rows already stored here. Counts only and SELECTs only: it never calls the SIS, never runs a
+    // sync and never writes, so any signed-in user may read it, like the web stats beside it.
+    if (req.method === 'GET' && p === '/api/applications') {
+      return json(res, 200, await applicationFunnel(db));
     }
 
     if (p === '/api/admin/channels' || p.startsWith('/api/admin/channels/')) {

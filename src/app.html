@@ -1380,6 +1380,53 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   @media(prefers-reduced-motion:reduce){
     html.ui-c .kseg,html.ui-c .kwall{animation:none}
   }
+  /* APPLICATIONS (Reports, 02.10.2026). The chapter is a FRAME with depth: the locked sea,
+     radial-gradient(120% 80% at 50% 0%, <glow> 0%, transparent 60%) over the vertical deepening,
+     the same values as the page (#fbfcfd light, #17456e dark), and a soft shadow. The marks
+     inside stay flat and exact (KB 08 P5, depth belongs to the frame, never the mark).
+     Two sources, two colours: web traffic in the data mustard #E0A526, the SIS in logo blue. */
+  html.ui-c{--v-web:#E0A526}
+  html.ui-c .c-apps{position:relative;margin-top:26px;padding:18px 18px 6px;border-radius:18px;border:1px solid var(--rule);
+    background:radial-gradient(120% 80% at 50% 0%,#fbfcfd 0%,rgba(251,252,253,0) 60%),linear-gradient(180deg,#f7f9fb 0%,#f5f7fa 45%,#e7ebf0 100%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 16px 36px rgba(10,36,99,.08),0 2px 6px rgba(10,36,99,.05)}
+  html.ui-c[data-theme="dark"] .c-apps{border-color:var(--glass-line);
+    background:radial-gradient(120% 80% at 50% 0%,#17456e 0%,rgba(23,69,110,0) 60%),linear-gradient(180deg,#0f2f4f 0%,#0f2f4f 45%,#08182e 100%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 18px 40px rgba(3,12,26,.34)}
+  html.ui-c .c-apps > .ksec{margin-bottom:14px}
+  html.ui-c .c-apps-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin:0 0 8px}
+  html.ui-c .c-apps-head h2{margin:0;font-size:20px;font-weight:650;letter-spacing:-.01em}
+  html.ui-c .c-apps-path{font-size:12.5px;color:var(--t3)}
+  html.ui-c .c-apps-path i{font-style:normal;color:var(--t4);margin:0 3px}
+  html.ui-c .c-appstate{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin:0 0 14px;font-size:12.5px;color:var(--t3)}
+  html.ui-c .c-appstate b{color:var(--ink);font-weight:650;font-variant-numeric:tabular-nums}
+  html.ui-c .c-appchip{display:inline-block;padding:2px 9px;border-radius:999px;font-weight:650;font-size:12px;color:var(--ink);border:1px solid var(--v-adm)}
+  html.ui-c .c-appchip.is-live{background:var(--v-adm);color:#08182e;border-color:var(--v-adm)}
+  html.ui-c .c-appchip.is-off{border-color:var(--v-np);color:var(--t3)}
+  html.ui-c .c-appempty{padding:6px 0}
+  html.ui-c .c-fsteps{display:grid;gap:6px;margin:6px 0 8px}
+  html.ui-c .c-fsteps[role="link"]{cursor:pointer}
+  html.ui-c .c-fstep{display:grid;grid-template-columns:minmax(0,9em) minmax(40px,1fr) 3em;align-items:center;gap:10px;font-size:13px}
+  html.ui-c .c-fstep b{text-align:right;font-variant-numeric:tabular-nums}
+  html.ui-c .c-fbar{display:block;height:12px;border-radius:3px;background:var(--v-grid)}
+  html.ui-c .c-fbar i{display:block;height:100%;border-radius:3px;background:var(--v-adm);transform-origin:left}
+  html.ui-c .c-fapart{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12.5px;color:var(--t3);margin:0 0 12px}
+  html.ui-c .c-fapart b{color:var(--ink);font-variant-numeric:tabular-nums}
+  html.ui-c .c-ftable{overflow-x:auto;margin:0 0 12px;-webkit-overflow-scrolling:touch}
+  html.ui-c .c-fgrid{min-width:620px}
+  html.ui-c .c-fgrid caption{text-align:left;font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--t3);padding:0 0 6px}
+  html.ui-c .c-fgrid th[scope="row"]{white-space:nowrap;font-weight:650}
+  html.ui-c .c-fgrid th[scope="row"] small{display:block;font-weight:400;font-size:11px;color:var(--t4)}
+  html.ui-c .c-fgrid td{white-space:nowrap}
+  html.ui-c .c-fgrid td b{font-variant-numeric:tabular-nums;margin-left:6px}
+  html.ui-c .c-fcell{display:inline-block;vertical-align:middle;width:44px;height:6px;border-radius:2px;background:var(--v-grid)}
+  html.ui-c .c-fcell i{display:block;height:100%;border-radius:2px;background:var(--v-adm)}
+  html.ui-c .c-fcell i.np{background:var(--v-np)}
+  /* the chapter's ONE scene: the step bars draw from the left, once, in order */
+  html.ui-c .c-apps:not(.is-in) .c-fbar i{transform:scaleX(0)}
+  html.ui-c .c-apps.is-in .c-fbar i{transition:transform .7s cubic-bezier(.22,.9,.3,1)}
+  html.ui-c .c-apps.is-in .c-fstep .c-fbar i{transition-delay:calc(var(--i,0) * 90ms)}
+  @media(prefers-reduced-motion:reduce){ html.ui-c .c-apps:not(.is-in) .c-fbar i{transform:none} html.ui-c .c-apps.is-in .c-fbar i{transition:none} }
+  @media(max-width:640px){ html.ui-c .c-apps{padding:14px 12px 4px;border-radius:14px} html.ui-c .c-fstep{grid-template-columns:minmax(0,7.5em) minmax(30px,1fr) 2.6em} }
   html.ui-c .c-reasons{margin:0 0 14px}
   html.ui-c .c-reasons h3{margin:0 0 7px;font-size:13px;font-weight:650;display:flex;align-items:baseline;gap:8px}
   html.ui-c .c-reasons h3 b{font-weight:500;font-size:11.5px;color:var(--t4)}
@@ -1846,7 +1893,11 @@ async function routeC(page, arg) {
   if (page === 'person') return viewPerson(arg);
   if (page === 'channels') return viewChannels(arg);
   if (page === 'feedback') return viewFeedback();
-  if (place === 'reports') return viewReports();
+  if (place === 'reports') {
+    await viewReports();
+    if (arg === 'applications') { const a = $('#applications'); if (a) a.scrollIntoView({ block: 'start' }); }
+    return;
+  }
   if (place === 'leads') return viewLeadsC();
   // People is two views behind one menu item: Journey is the operational one and opens
   // by default, All people is the whole database. #/journey and #/people both land here;
@@ -3108,7 +3159,7 @@ async function viewReportsC() {
   const cov = r.coverage || {};
   $('#view').innerHTML = `<p class="c-crumb"><a href="#/outcomes">Outcomes</a></p>
     <div class="c-head"><div><h1>Full report</h1><p>${esc(from || '')} to ${esc(to || '')}</p></div>
-      <div class="act"><button class="btn" onclick="openExport()">Download for management review</button></div></div>
+      <div class="act"><a class="btn ghost" href="#/reports/applications">Applications</a><button class="btn" onclick="openExport()">Download for management review</button></div></div>
     ${cSheetNotice()}
     <div class="c-periodbar"><div class="c-seg" role="group" aria-label="Period">${seg('month', 'This month')}${seg('last', 'Last month')}${seg('year', 'This year')}${seg('all', 'Everything')}</div>
       <label class="c-date">From <input type="date" value="${esc(from || '')}" onchange="cReportDates(this.value, RPT.to || '${esc(to || '')}')"></label>
@@ -3141,10 +3192,16 @@ async function viewReportsC() {
       ${sect('lost', 'Why people did not proceed', 'all time')}
       <section class="ksec"><div class="ksh"><h2>From a maritime school</h2></div><p class="c-num">${s.maritimeGraduates ?? 0}</p><p class="c-sub">${cov.education?.filled ?? 0} / ${cov.education?.of ?? 0} have an education recorded</p></section>
     </div>
-    <section class="ksec" id="cWeb" hidden></section>
+    <section class="c-apps" id="applications" aria-labelledby="cAppsH">
+      <div class="c-apps-head"><h2 id="cAppsH">Applications</h2><span class="c-apps-path">apply.novikontas.org <i aria-hidden="true">&rarr;</i> SIS</span></div>
+      <div id="cAppState" class="c-appstate"></div>
+      <section class="ksec" id="cWeb" hidden></section>
+      <section class="ksec" id="cSis" hidden></section>
+    </section>
     <div class="ktip" role="status" aria-live="polite"></div></div>`;
   cWireCharts();
   cWebStats();
+  cApplications();
 }
 
 // apply.novikontas.org, from the SIS's web-stats (the owner's popup A, 01.10.2026: a section on Reports).
@@ -3166,14 +3223,14 @@ async function cWebStats(range) {
   const days = (d.daily || []).filter((x) => typeof x.visits === 'number');
   const maxV = Math.max(1, ...days.map((x) => x.visits));
   const chart = days.length ? `<div class="c-webdays" style="display:flex;align-items:flex-end;gap:2px;height:96px;margin:8px 0 4px">${days.map((x) =>
-    `<i title="${esc(x.day)}: ${x.visits} visits${x.pageViews == null ? '' : ', ' + x.pageViews + ' page views'}" style="flex:1;min-width:2px;height:${Math.max(2, (x.visits / maxV) * 100)}%;background:var(--v-adm);border-radius:2px 2px 0 0"></i>`).join('')}</div>
+    `<i title="${esc(x.day)}: ${x.visits} visits${x.pageViews == null ? '' : ', ' + x.pageViews + ' page views'}" style="flex:1;min-width:2px;height:${Math.max(2, (x.visits / maxV) * 100)}%;background:var(--v-web);border-radius:2px 2px 0 0"></i>`).join('')}</div>
     <p class="c-sub">${esc(days[0].day)} to ${esc(days[days.length - 1].day)}</p>` : '';
   const list = (title, rows, valueKey, sub) => {
     const r = (rows || []).filter((x) => typeof x[valueKey] === 'number').slice(0, 6);
     if (!r.length) return '';
     const max = Math.max(...r.map((x) => x[valueKey]));
     return `<section class="ksec"><div class="ksh"><h2>${title}</h2><span class="kt2">${sub}</span></div><div class="kbars">${r.map((x) =>
-      `<div class="kbar c-static" title="${esc(x.name)}${x.detail ? ' · ' + esc(x.detail) : ''}: ${x[valueKey]}"><span class="kbl">${esc(x.name)}${x.detail ? ` <span class="c-gap-soft">${esc(x.detail)}</span>` : ''}</span><span class="kbt"><i style="width:${Math.max(3, (x[valueKey] / max) * 100)}%;background:var(--v-adm)"></i></span><b>${x[valueKey]}</b></div>`).join('')}</div></section>`;
+      `<div class="kbar c-static" title="${esc(x.name)}${x.detail ? ' · ' + esc(x.detail) : ''}: ${x[valueKey]}"><span class="kbl">${esc(x.name)}${x.detail ? ` <span class="c-gap-soft">${esc(x.detail)}</span>` : ''}</span><span class="kbt"><i style="width:${Math.max(3, (x[valueKey] / max) * 100)}%;background:var(--v-web)"></i></span><b>${x[valueKey]}</b></div>`).join('')}</div></section>`;
   };
   const t = d.totals || {}; const pr = d.previous || {};
   const unit = C_WEB_RANGE.replace('d', ' days');
@@ -3183,6 +3240,64 @@ async function cWebStats(range) {
     <div class="c-rgrid">${list('Came from', d.referrers, 'visitors', 'visitors')}${list('Campaign links', d.campaigns, 'visitors', 'visitors')}${list('Device', d.devices, 'visitors', 'visitors')}${list('Pages', d.pages, 'visitors', 'visitors')}</div>
     ${sr ? `<div class="kstrip">${tileW('Google clicks', sr.totals && sr.totals.clicks, sr.previous && sr.previous.clicks, unit)}${tileW('Google impressions', sr.totals && sr.totals.impressions, sr.previous && sr.previous.impressions, unit)}</div>
     <div class="c-rgrid">${list('Searched for', sr.queries, 'clicks', 'clicks')}</div>` : ''}`;
+}
+
+// Applications: the SIS funnel by REGISTRATION WEEK (popup A, 01.10.2026; src/applications.js).
+// The SIS sends each application's CURRENT status and no history, so a week is a cohort: who
+// registered then, and where they stand now. No week is drawn that nobody registered in, a value
+// the SIS did not send is not drawn, and the six team tests a person set aside are not counted.
+const C_APP_WORD = { 'off': 'Off', 'no-run': 'No run yet', 'no-real-applicant': 'No real applicant yet', 'test': 'Test', 'live': 'Live' };
+async function cApplications() {
+  const box = $('#cSis'); const st = $('#cAppState');
+  if (!box || !st) return;
+  let d;
+  try { d = await api('/api/applications'); } catch { d = null; }
+  if (!document.body.contains(box)) return;
+  box.hidden = false;
+  if (!d) { st.innerHTML = `<span class="c-appchip is-off">SIS</span><span>Intake did not answer</span>`; box.innerHTML = ''; return; }
+  const L = d.labels || {}; const F = d.funnel || []; const A = d.apart || [];
+  const run = d.feed && d.feed.lastRun;
+  const live = d.state === 'live';
+  st.innerHTML = `<span class="c-appchip${live ? ' is-live' : d.state === 'test' ? '' : ' is-off'}">SIS &middot; ${esc(C_APP_WORD[d.state] || d.state)}</span>
+    <span>feed <b>${esc(d.feed.mode)}</b></span>
+    <span>${run ? `last run <b>${esc(fmtDateTime(run.at))}</b>` : 'no run recorded'}</span>
+    <span><b>${d.feed.references}</b> in the SIS store</span>
+    ${d.setAside ? `<span><b>${d.setAside}</b> set aside in the Inbox</span>` : ''}
+    <span><b>${d.people}</b> counted</span>`;
+  const head = `<div class="ksh"><h2>SIS funnel</h2><span class="kt2">by registration week &middot; where each person stands now</span></div>`;
+  if (!d.people) {
+    box.innerHTML = head + `<p class="c-empty c-appempty">${d.state === 'off' ? 'The SIS feed is off.' : d.state === 'no-run' ? 'The SIS feed has not run yet.'
+      : `No real applicant yet.${d.setAside ? ` The SIS holds ${d.setAside} ${d.setAside === 1 ? 'record' : 'records'} a person set aside.` : ''}`}</p>`;
+    return;
+  }
+  const R = d.reached || {}; const top = Math.max(1, R[F[0]] || 0);
+  const linkPeople = d.linked ? ` onclick="cAppPeople()" role="link" tabindex="0" title="Open the people the SIS sent"` : '';
+  const steps = `<div class="c-fsteps"${linkPeople}>${F.map((k, i) => `<div class="c-fstep" style="--i:${i}"><span>${esc(L[k] || k)}</span>
+      <span class="c-fbar"><i style="width:${(R[k] / top) * 100}%"></i></span><b>${R[k]}</b></div>`).join('')}</div>
+    <div class="c-fapart">${A.map((k) => `<span><b>${d.now[k]}</b> ${esc((L[k] || k).toLowerCase())}</span>`).join('')}${d.undatedRegistration ? `<span><b>${d.undatedRegistration}</b> no registration date sent</span>` : ''}</div>`;
+  const cols = [...F, 'apart'];
+  const cell = (row, k, base) => {
+    const v = k === 'apart' ? A.reduce((a, x) => a + row.now[x], 0) : row.reached[k];
+    const w = base ? (v / base) * 100 : 0;
+    return `<td title="${esc(k === 'apart' ? 'Rejected or withdrawn' : L[k] || k)}: ${v} of ${base}"><span class="c-fcell"><i class="${k === 'apart' ? 'np' : ''}" style="width:${w}%"></i></span><b>${v}</b></td>`;
+  };
+  const thead = `<thead><tr><th></th>${cols.map((k) => `<th>${esc(k === 'apart' ? 'Rejected / withdrawn' : L[k] || k)}</th>`).join('')}</tr></thead>`;
+  const weekRows = (d.weeks || []).map((w) => `<tr><th scope="row">${esc(w.week.slice(5))}<small>from ${esc(w.monday)}</small></th>${cols.map((k) => cell(w, k, w.reached[F[0]])).join('')}</tr>`).join('');
+  const progRows = (d.programmes || []).map((p) => `<tr><th scope="row">${p.code ? esc(p.code) : '<span class="c-gap">no programme sent</span>'}</th>${cols.map((k) => cell(p, k, p.reached[F[0]])).join('')}</tr>`).join('');
+  box.innerHTML = head + steps
+    + `<div class="c-ftable"><table class="ktable c-fgrid"><caption>People, by the week they registered</caption>${thead}<tbody>${weekRows}</tbody></table></div>`
+    + (progRows ? `<div class="c-ftable"><table class="ktable c-fgrid"><caption>Applications, by programme</caption>${thead}<tbody>${progRows}</tbody></table></div>` : '');
+  cAppScene();
+}
+function cAppPeople() { C_PF = { ...C_PF_EMPTY(), source: 'sis' }; C_PQ = ''; C_PTAB = 'all'; location.hash = '#/people/all'; }
+// The one scene of this chapter: the step bars draw once when the chapter comes into view.
+// The marks end at their exact widths; nothing else on the report moves.
+function cAppScene() {
+  const el = $('#applications');
+  if (!el || el.classList.contains('is-in')) return;
+  if (!('IntersectionObserver' in window)) { el.classList.add('is-in'); return; }
+  const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { el.classList.add('is-in'); io.disconnect(); } }, { threshold: 0.2 });
+  io.observe(el);
 }
 
 // -------------------------------------------------------------------- FEEDBACK
