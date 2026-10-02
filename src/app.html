@@ -3284,7 +3284,7 @@ async function cApplications() {
   const step = (k, i) => `<div class="c-fstep" style="--i:${i}"><span>${esc(L[k] || k)}</span>
       <span class="c-fbar"><i style="width:${(R[k] / top) * 100}%"></i></span><b>${R[k]}</b></div>`;
   const group = (title, keys) => `<div class="c-fgroup"><h3>${title}</h3>${keys.map((k) => step(k, F.indexOf(k))).join('')}</div>`;
-  const steps = `<div class="c-fsteps"${linkPeople}>${group('On the website', C_APP_SITE)}${group('College decision', F.filter((k) => !C_APP_SITE.includes(k)))}</div>
+  const steps = `<div class="c-fsteps"${linkPeople}>${group('On the website', C_APP_SITE)}${group('Academy decision', F.filter((k) => !C_APP_SITE.includes(k)))}</div>
     <div class="c-fapart">${A.map((k) => `<span><b>${d.now[k]}</b> ${esc((L[k] || k).toLowerCase())}</span>`).join('')}${d.undatedRegistration ? `<span><b>${d.undatedRegistration}</b> no registration date sent</span>` : ''}</div>`;
   const cols = [...F, 'apart'];
   const cell = (row, k, base) => {
@@ -3292,7 +3292,7 @@ async function cApplications() {
     const w = base ? (v / base) * 100 : 0;
     return `<td title="${esc(k === 'apart' ? 'Rejected or withdrawn' : L[k] || k)}: ${v} of ${base}"><span class="c-fcell"><i class="${k === 'apart' ? 'np' : ''}" style="width:${w}%"></i></span><b>${v}</b></td>`;
   };
-  const thead = `<thead><tr class="c-fghead"><th></th><th colspan="${C_APP_SITE.length}">On the website</th><th colspan="${F.length - C_APP_SITE.length}">College decision</th><th></th></tr><tr><th></th>${cols.map((k) => `<th>${esc(k === 'apart' ? 'Rejected / withdrawn' : L[k] || k)}</th>`).join('')}</tr></thead>`;
+  const thead = `<thead><tr class="c-fghead"><th></th><th colspan="${C_APP_SITE.length}">On the website</th><th colspan="${F.length - C_APP_SITE.length}">Academy decision</th><th></th></tr><tr><th></th>${cols.map((k) => `<th>${esc(k === 'apart' ? 'Rejected / withdrawn' : L[k] || k)}</th>`).join('')}</tr></thead>`;
   const weekRows = (d.weeks || []).map((w) => `<tr><th scope="row">${esc(w.week.slice(5))}<small>from ${esc(w.monday)}</small></th>${cols.map((k) => cell(w, k, w.reached[F[0]])).join('')}</tr>`).join('');
   const progRows = (d.programmes || []).map((p) => `<tr><th scope="row">${p.code ? esc(p.code) : '<span class="c-gap">no programme sent</span>'}</th>${cols.map((k) => cell(p, k, p.reached[F[0]])).join('')}</tr>`).join('');
   box.innerHTML = head + steps
