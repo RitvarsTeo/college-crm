@@ -1372,10 +1372,10 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .cltag:has(input:checked){border-color:var(--v-adm);background:var(--c-accent-bg)}
   /* the ring arrives as one scene: each segment lifts into place, back to front.
      KB 08 P5: one sequence, plays once, slower rather than faster, off for reduced motion. */
-  html.ui-c .kseg{transform-origin:70px 64px;animation:kseg-in .63s cubic-bezier(.22,.9,.3,1) backwards;
+  html.ui-c .kseg{transform-origin:70px 62px;animation:kseg-in .63s cubic-bezier(.22,.9,.3,1) backwards;
     animation-delay:calc(var(--i,0) * 90ms)}
   html.ui-c .kwall{animation:kwall-in .63s ease-out backwards;animation-delay:60ms}
-  @keyframes kseg-in{from{opacity:0;transform:translateY(-9px) scale(.96)}to{opacity:1;transform:none}}
+  @keyframes kseg-in{from{opacity:0;transform:translateY(-11px)}to{opacity:1;transform:none}}
   @keyframes kwall-in{from{opacity:0}to{opacity:1}}
   @media(prefers-reduced-motion:reduce){
     html.ui-c .kseg,html.ui-c .kwall{animation:none}
@@ -2027,29 +2027,35 @@ function cMonthChart(months, year) {
   return `<svg viewBox="0 0 ${W} ${H}" class="kchart${narrow ? ' narrow' : ''}" role="img" aria-label="Admissions and new leads per month, ${year}">${grid}${cols}<path d="M${pts.map((p) => p.join(',')).join(' L')}" class="kline"/>${pts.map(([x, yy]) => `<circle cx="${x}" cy="${yy}" r="4" class="kdot"/>`).join('')}</svg>`;
 }
 
-// A REAL EXTRUDED RING (02.10.2026), not a flat disc with a drop shadow under it.
+// PRESENCE WITHOUT DISTORTION (the owner, 02.10.2026).
 //
-// The tilt is in the GEOMETRY, not a CSS transform: every arc is an ellipse arc with
-// ry = rx * TILT, so the ring is drawn as it would be seen from above and in front.
-// A CSS scaleY would have squashed the depth with it and the walls would be wrong.
+// The rule: 3D geometry gives the object physical presence, and depth must NEVER
+// change the reader's ability to compare the underlying values.
 //
-// Each segment gets a side wall: its outer arc, dropped by DEPTH, closed. Every wall is
-// drawn BEFORE every top face, so the walls at the back are covered by the ring itself
-// and only the front ones remain visible. That is the whole hidden-surface problem here,
-// solved by draw order rather than by maths.
+// The first version broke it. It tilted the ring (ry = rx * 0.58), so a segment at the
+// side covered more visual arc than the same number at the top, and only the front
+// segments carried a side wall, so they gained weight from WHERE THEY SAT rather than
+// from what they counted. That is the 3D pie-chart fault.
 //
-// The wall is the segment's own colour at brightness(.58), so depth never introduces a
-// colour that means nothing. One meaning per colour still holds.
+// What this does instead:
+//   - the top face is a TRUE CIRCLE. Every angle and arc length is exactly proportional
+//     to its value, the same as a flat ring. Nothing is foreshortened
+//   - the solid is the SAME ring drawn once more, DEPTH lower, in each segment's own
+//     colour darkened. The top covers it completely on the upper half and it shows as a
+//     rim below. Uniform thickness, identical for every segment
+//   - so depth lives entirely BELOW the reading surface. The value is read from the top
+//     face, which is undistorted, and the legend carries the counts besides
+//
+// Drawn bottom first, top second. No visibility maths: the top face hides what should
+// be hidden because it is painted last and is exactly the same shape.
 function cDonut(rows) {
   const total = rows.reduce((a, r) => a + r[1], 0) || 1;
-  const R = 58, r0 = 40, c = 70, cy = 64, gap = 0.035, TILT = 0.58, DEPTH = 13;
+  const R = 54, r0 = 37, c = 70, cy = 62, gap = 0.035, DEPTH = 11;
   const live = rows.filter((r) => r[1] > 0);
 
-  const px = (ang, rad) => c + rad * Math.cos(ang);
-  const py = (ang, rad, dy = 0) => cy + rad * TILT * Math.sin(ang) + dy;
-  const p = (ang, rad, dy = 0) => `${px(ang, rad)},${py(ang, rad, dy)}`;
+  const p = (ang, rad, dy = 0) =>
+    `${c + rad * Math.cos(ang)},${cy + rad * Math.sin(ang) + dy}`;
 
-  // walk the ring once, keeping each segment's angles, so walls and faces agree exactly
   let a = -Math.PI / 2;
   const segs = live.map(([k, n, v, go]) => {
     const sw = (n / total) * Math.PI * 2;
@@ -2058,19 +2064,21 @@ function cDonut(rows) {
     return { k, n, v, go, a0, a1, big: a1 - a0 > Math.PI ? 1 : 0 };
   });
 
-  const wall = (g) => `<path d="M${p(g.a0, R)} A${R},${R * TILT} 0 ${g.big} 1 ${p(g.a1, R)}
-    L${p(g.a1, R, DEPTH)} A${R},${R * TILT} 0 ${g.big} 0 ${p(g.a0, R, DEPTH)} Z"
-    style="fill:var(--v-${g.v});filter:brightness(.58)" class="kwall"/>`;
+  // one segment of the ring, as a true-circle annulus sector, optionally dropped
+  const ring = (g, dy) => `M${p(g.a0, R, dy)} A${R},${R} 0 ${g.big} 1 ${p(g.a1, R, dy)}
+    L${p(g.a1, r0, dy)} A${r0},${r0} 0 ${g.big} 0 ${p(g.a0, r0, dy)} Z`;
 
-  const face = (g, i) => `<path d="M${p(g.a0, R)} A${R},${R * TILT} 0 ${g.big} 1 ${p(g.a1, R)}
-    L${p(g.a1, r0)} A${r0},${r0 * TILT} 0 ${g.big} 0 ${p(g.a0, r0)} Z"
+  const base = (g) => `<path d="${ring(g, DEPTH)}"
+    style="fill:var(--v-${g.v});filter:brightness(.6)" class="kwall"/>`;
+
+  const face = (g, i) => `<path d="${ring(g, 0)}"
     style="fill:var(--v-${g.v});--i:${i}" class="kseg" tabindex="0" role="button"
     aria-label="${esc(g.k)}: ${g.n}"
     data-tip="${esc(g.k)}|${g.n} people|${Math.round((g.n / total) * 100)}% of ${total}"
     data-kgo="${g.go === 'journey' ? 'journey' : 'outcome|' + g.go}"/>`;
 
   return `<div class="kdonut"><svg viewBox="0 0 140 140" role="img" aria-label="Where everyone is now">
-    <g class="kring">${segs.map(wall).join('')}${segs.map(face).join('')}</g>
+    <g class="kring">${segs.map(base).join('')}${segs.map(face).join('')}</g>
     <text x="${c}" y="${cy + 4}" text-anchor="middle" class="kbig">${total}</text>
     <text x="${c}" y="${cy + 22}" text-anchor="middle" class="kt">people</text></svg>
     <ul class="klegend">${rows.map(([k, n, v]) => `<li><i style="background:var(--v-${v})"></i><span>${esc(k)}</span><b>${n}</b></li>`).join('')}</ul></div>`;
