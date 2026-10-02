@@ -29,6 +29,7 @@ Technical prototype (P4) on the existing shell. Production untouched: no deploy,
 | Reports / Full report: one **Applications** chapter holding apply.novikontas.org web stats and the SIS funnel, in journey order; header link + `#/reports/applications`; no menu item | BUILT |
 | Funnel bars open People filtered to Came from = SIS (when anyone is linked) | BUILT |
 | Frame: the locked sea gradient (#fbfcfd / #17456e) + shadow; marks flat. Web traffic in mustard #E0A526, SIS in blue. One scene (step bars draw once) | BUILT |
+| **DECIDED 02.10 (Ritvars, "Ok"):** the funnel is split the way apply.novikontas.org describes it: **On the website** (Registered, Form started, Submitted) and **College decision** (Admitted, Matriculated). One scale for both | BUILT |
 
 **What production will show today** (from the 01.10 evidence, not re-read): SIS live, 6 records in the
 store, 6 set aside, **0 counted -> "No real applicant yet"**. That is the true blocked state.

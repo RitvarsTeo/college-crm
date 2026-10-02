@@ -1405,6 +1405,10 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-appempty{padding:6px 0}
   html.ui-c .c-fsteps{display:grid;gap:6px;margin:6px 0 8px}
   html.ui-c .c-fsteps[role="link"]{cursor:pointer}
+  html.ui-c .c-fgroup{display:grid;gap:6px}
+  html.ui-c .c-fgroup + .c-fgroup{padding-top:10px;margin-top:4px;border-top:1px solid var(--rule)}
+  html.ui-c .c-fgroup h3{margin:0;font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--t3)}
+  html.ui-c .c-fghead th{font-size:11px;font-weight:600;color:var(--t3);text-align:left;border-bottom:1px solid var(--rule)}
   html.ui-c .c-fstep{display:grid;grid-template-columns:minmax(0,9em) minmax(40px,1fr) 3em;align-items:center;gap:10px;font-size:13px}
   html.ui-c .c-fstep b{text-align:right;font-variant-numeric:tabular-nums}
   html.ui-c .c-fbar{display:block;height:12px;border-radius:3px;background:var(--v-grid)}
@@ -3246,6 +3250,8 @@ async function cWebStats(range) {
 // The SIS sends each application's CURRENT status and no history, so a week is a cohort: who
 // registered then, and where they stand now. No week is drawn that nobody registered in, a value
 // the SIS did not send is not drawn, and the six team tests a person set aside are not counted.
+// the steps the applicant takes on apply.novikontas.org; the rest are the college's, in the SIS
+const C_APP_SITE = ['registered', 'started', 'submitted'];
 const C_APP_WORD = { 'off': 'Off', 'no-run': 'No run yet', 'no-real-applicant': 'No real applicant yet', 'test': 'Test', 'live': 'Live' };
 async function cApplications() {
   const box = $('#cSis'); const st = $('#cAppState');
@@ -3272,8 +3278,13 @@ async function cApplications() {
   }
   const R = d.reached || {}; const top = Math.max(1, R[F[0]] || 0);
   const linkPeople = d.linked ? ` onclick="cAppPeople()" role="link" tabindex="0" title="Open the people the SIS sent"` : '';
-  const steps = `<div class="c-fsteps"${linkPeople}>${F.map((k, i) => `<div class="c-fstep" style="--i:${i}"><span>${esc(L[k] || k)}</span>
-      <span class="c-fbar"><i style="width:${(R[k] / top) * 100}%"></i></span><b>${R[k]}</b></div>`).join('')}</div>
+  // Two groups, as apply.novikontas.org itself describes the journey (the owner, 02.10.2026):
+  // the applicant's own steps on the site, then the college's decision in the SIS. One scale for
+  // all five bars, so a bar in one group compares honestly with a bar in the other.
+  const step = (k, i) => `<div class="c-fstep" style="--i:${i}"><span>${esc(L[k] || k)}</span>
+      <span class="c-fbar"><i style="width:${(R[k] / top) * 100}%"></i></span><b>${R[k]}</b></div>`;
+  const group = (title, keys) => `<div class="c-fgroup"><h3>${title}</h3>${keys.map((k) => step(k, F.indexOf(k))).join('')}</div>`;
+  const steps = `<div class="c-fsteps"${linkPeople}>${group('On the website', C_APP_SITE)}${group('College decision', F.filter((k) => !C_APP_SITE.includes(k)))}</div>
     <div class="c-fapart">${A.map((k) => `<span><b>${d.now[k]}</b> ${esc((L[k] || k).toLowerCase())}</span>`).join('')}${d.undatedRegistration ? `<span><b>${d.undatedRegistration}</b> no registration date sent</span>` : ''}</div>`;
   const cols = [...F, 'apart'];
   const cell = (row, k, base) => {
@@ -3281,7 +3292,7 @@ async function cApplications() {
     const w = base ? (v / base) * 100 : 0;
     return `<td title="${esc(k === 'apart' ? 'Rejected or withdrawn' : L[k] || k)}: ${v} of ${base}"><span class="c-fcell"><i class="${k === 'apart' ? 'np' : ''}" style="width:${w}%"></i></span><b>${v}</b></td>`;
   };
-  const thead = `<thead><tr><th></th>${cols.map((k) => `<th>${esc(k === 'apart' ? 'Rejected / withdrawn' : L[k] || k)}</th>`).join('')}</tr></thead>`;
+  const thead = `<thead><tr class="c-fghead"><th></th><th colspan="${C_APP_SITE.length}">On the website</th><th colspan="${F.length - C_APP_SITE.length}">College decision</th><th></th></tr><tr><th></th>${cols.map((k) => `<th>${esc(k === 'apart' ? 'Rejected / withdrawn' : L[k] || k)}</th>`).join('')}</tr></thead>`;
   const weekRows = (d.weeks || []).map((w) => `<tr><th scope="row">${esc(w.week.slice(5))}<small>from ${esc(w.monday)}</small></th>${cols.map((k) => cell(w, k, w.reached[F[0]])).join('')}</tr>`).join('');
   const progRows = (d.programmes || []).map((p) => `<tr><th scope="row">${p.code ? esc(p.code) : '<span class="c-gap">no programme sent</span>'}</th>${cols.map((k) => cell(p, k, p.reached[F[0]])).join('')}</tr>`).join('');
   box.innerHTML = head + steps

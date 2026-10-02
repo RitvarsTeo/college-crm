@@ -209,3 +209,10 @@ test('state: a record that came by the webhook, before any pull, is counted and 
   assert.equal(f.people, 1);
   assert.equal(f.state, 'test');
 });
+
+test('split: the funnel is two groups, the site steps then the college decision, on one scale', () => {
+  const fn = APP.slice(APP.indexOf('async function cApplications'), APP.indexOf('function cAppPeople'));
+  assert.match(APP, /const C_APP_SITE = \['registered', 'started', 'submitted'\];/);
+  assert.ok(fn.indexOf("group('On the website'") < fn.indexOf("group('College decision'"));
+  assert.equal((fn.match(/R\[k\] \/ top/g) || []).length, 1, 'one scale for both groups');
+});
