@@ -1396,6 +1396,16 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .kspark circle{fill:var(--v-adm)}
   html.ui-c .kspark.lead path,html.ui-c .kspark.lead circle{stroke:var(--t3);fill:var(--t3)}
   html.ui-c .kspark.lead path{stroke-dasharray:none}
+  /* THE CIRCLE'S SHADOW ON HOME'S OTHER VISUALS (the owner, 02.10.2026: "almost every visual that is
+     dynamic can gain from a shadow like on the circle"). The same solid plinth colour as the donut, no
+     blur, and the SAME offset for every mark, so no value can gain weight from it. The offset runs only
+     ACROSS the value axis, never along it: a bar's shadow drops straight down so its length is untouched,
+     a column's shadow steps sideways so its height is untouched, a line's drops below it. Home only:
+     Reports keeps its flat charts. KB 08 P5, Depth and 3D. */
+  html.ui-c .kpage.kb .kbt i{box-shadow:0 3px 0 var(--k-plinth)}
+  html.ui-c .kpage.kb .kchart .kcol path{filter:drop-shadow(3px 0 0 var(--k-plinth))}
+  html.ui-c .kpage.kb .kchart .kline{filter:drop-shadow(0 3px 0 var(--k-plinth))}
+  html.ui-c .kpage.kb .kspark path{filter:drop-shadow(0 2px 0 var(--k-plinth))}
   html.ui-c .kgo{display:inline-block;margin-top:5px;font-size:11.5px;color:var(--petink);
     text-decoration:none;opacity:.8}
   html.ui-c .kgo:hover{opacity:1;text-decoration:underline}
