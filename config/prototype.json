@@ -152,7 +152,8 @@
           "label": "Answer the question",
           "days": 1,
           "drives": "info",
-          "advancesTo": "Contacted"
+          "advancesTo": "Contacted",
+          "anyStage": true
         },
         {
           "id": "call_back",
@@ -160,6 +161,7 @@
           "days": 0,
           "drives": "info",
           "advancesTo": "Contacted",
+          "anyStage": true,
           "_why": "Ritvars 02.10.2026: a known lead whose call nobody answered goes to Today. The phone sync plans this step itself, due when they rang; one at a time per person."
         }
       ]
@@ -279,6 +281,14 @@
     }
   ],
   "nextActionRequired": true,
+  "stepGroupsByStage": {
+    "New": ["Conversation and information", "Visit on site"],
+    "Contacted": ["Conversation and information", "Visit on site", "Application and documents"],
+    "Follow-up": ["Visit on site", "Application and documents"],
+    "Application": ["Application and documents", "Contract and payment"],
+    "Contract": ["Contract and payment"]
+  },
+  "_stepGroupsByStage": "Ritvars 02.10.2026: the steps offered depend on the lead's stage, by group, so the list is shorter and what cannot happen yet is not shown. A step marked anyStage fits every stage. The step already planned is always kept. MVP: Admissions tunes it here by using it, a config edit and never code.",
   "_nextActions": "Next action is mandatory everywhere. Every option drives towards one of: a visit on site, an application in SIS with documents, or payment. Provisional wording until Admissions confirms it.",
   "stageOrder": [
     "New",

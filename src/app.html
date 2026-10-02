@@ -1762,7 +1762,9 @@ const C_SIS_HOLDS = ['started', 'submitted', 'admitted', 'matriculated'];
 const cSisHolds = (p) => Boolean(p && p.first_channel === 'sis' && p.sis && C_SIS_HOLDS.includes(p.sis.status));
 const cSisHeld = (p) => `In the SIS: ${esc((p.sis && p.sis.label) || '')}`;
 // /api/people answers { count, rows } and returns every row: no paging, no cap.
-const cPeopleRows = async () => ((await api('/api/people')) || {}).rows || [];
+// Each person's stage as last read, so a dialog opened from any list can offer the steps that fit it.
+const C_STAGE_OF = new Map();
+const cPeopleRows = async () => { const rows = ((await api('/api/people')) || {}).rows || []; rows.forEach((p) => C_STAGE_OF.set(p.id, p.status)); return rows; };
 const C_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 function installCNav() {
@@ -2140,7 +2142,7 @@ async function viewTodayC() {
       <div class="c-who"><b>${esc(t.name)}</b><small>${esc(t.programme || 'programme not said')} · ${esc(t.status)}</small>${reach(byId.get(t.person_id))}</div>
       <div class="c-what">${cStepIcon(t.label)}${esc(cTask(t.label))}${said(byId.get(t.person_id))}</div><div class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</div>
       <div class="c-acts"><button class="btn sm" onclick="event.stopPropagation();openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, ${
-        C_TERMINAL.includes((byId.get(t.person_id) || {}).status)})">Done</button></div></div>`;
+        C_TERMINAL.includes((byId.get(t.person_id) || {}).status)}, '${esc(t.person_id)}')">Done</button></div></div>`;
   const pRow = (p) => `<div class="c-line" tabindex="0" onclick="location.hash='#/person/${esc(p.id)}'">
       <div class="c-who"><b>${esc(p.name)}</b><small>${esc(p.programme || 'programme not said')} · ${esc(p.status)}</small>${reach(p)}</div>
       <div class="c-what none">No next step${said(p)}</div><div class="c-when"></div>
@@ -2454,8 +2456,8 @@ function cEditForm(p, t) {
     <div><label for="pe-status">Stage</label><select id="pe-status" onchange="document.querySelector('#pe-closed').hidden = this.value !== ${esc(JSON.stringify(closed))}">${stages.map((s) => `<option value="${esc(s.id)}" ${s.id === p.status ? 'selected' : ''}>${esc(s.label || s.id)}</option>`).join('')}</select></div>
     <div id="pe-closed" hidden><label for="pe-reason">Why are we stopping?</label><select id="pe-reason">${(CFG.closedReasons || []).map((r) => `<option>${esc(r)}</option>`).join('')}</select><input id="pe-rnote" placeholder="Explanation (needed for Other)" style="margin-top:6px"><label style="margin-top:8px">And now?</label><div class="cltags">${(CFG.closedTags || []).map((x, i) => `<label class="cltag"><input type="radio" name="peTag" value="${esc(x.id)}"${i === 0 ? ' checked' : ''}><b>${esc(x.label)}</b><small>${esc(x.what)}</small></label>`).join('')}</div></div>
     <div class="c-wide c-step">${t
-      ? `<label for="pe-due">Next step</label><div class="c-steprow"><span>${esc(cTask(t.label))}</span><input id="pe-due" type="date" value="${esc(cDay(t.due_at))}" aria-label="Due date"><button class="btn sm ghost" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))})">Done…</button></div>`
-      : open ? `<label for="pe-next">Next step</label><div class="c-steprow"><select id="pe-next"><option value="">No next step</option>${nextActionOptions()}</select><input id="pe-ndue" type="date" value="${cTodayIso()}" aria-label="Due date"></div>` : '<label>Next step</label>'}</div>
+      ? `<label for="pe-due">Next step</label><div class="c-steprow"><span>${esc(cTask(t.label))}</span><input id="pe-due" type="date" value="${esc(cDay(t.due_at))}" aria-label="Due date"><button class="btn sm ghost" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, false, '${esc(p.id)}')">Done…</button></div>`
+      : open ? `<label for="pe-next">Next step</label><div class="c-steprow"><select id="pe-next"><option value="">No next step</option>${nextActionOptions(null, p.status)}</select><input id="pe-ndue" type="date" value="${cTodayIso()}" aria-label="Due date"></div>` : '<label>Next step</label>'}</div>
     <div class="c-wide"><label for="pe-notes">Notes</label><textarea id="pe-notes" rows="4" oninput="this.nextElementSibling.textContent=this.value.length+' characters'">${esc(p.notes || '')}</textarea><div class="c-hint">${(p.notes || '').length} characters</div></div>
     <div id="pe-err" class="c-wide"></div>
     <div class="c-wide c-row-acts"><button class="btn" onclick="cSavePerson('${esc(p.id)}')">Save</button><button class="btn ghost" onclick="C_PEDIT=null;cDrawPeople()">Cancel</button><a class="btn ghost" href="#/person/${esc(p.id)}" style="margin-left:auto">Open person details →</a></div>
@@ -2579,7 +2581,7 @@ function cPersonCard(p, t) {
   const notes = String(p.notes || '');
   return `<aside class="c-card"><h2>${esc(p.name)}</h2> <div class="c-cardsub">${esc(cStage(p.status))} · ${esc(p.programme || 'programme not said')}</div>${cLifeLine(p)}
     <div class="c-next ${open && !t && !cSisHolds(p) ? 'none' : ''}"><b>${open ? 'Next step' : 'Outcome'}</b>${open ? (t ? `${esc(cTask(t.label))} · <span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span>` : cSisHolds(p) ? cSisHeld(p) : 'No next step') : esc(p.status)}
-      ${open ? `<div class="c-row-acts">${t ? `<button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))})">Done</button>` : `<button class="btn sm" onclick="openNewTask('${esc(p.id)}')">Plan a next step</button>`}</div>` : ''}</div>
+      ${open ? `<div class="c-row-acts">${t ? `<button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, false, '${esc(p.id)}')">Done</button>` : `<button class="btn sm" onclick="openNewTask('${esc(p.id)}')">Plan a next step</button>`}</div>` : ''}</div>
     <dl><dt>Email</dt><dd class="${p.email ? 'c-reach' : 'c-gap'}">${cMailLink(p) || 'not recorded'}</dd><dt>Phone</dt><dd class="${p.phone ? 'c-reach' : 'c-gap'}">${cTelLink(p) || 'not recorded'}</dd>
       <dt>Came from</dt><dd>${esc(cChannel(p.source_channel)[0])}</dd><dt>First contact</dt><dd class="${p.created_at ? '' : 'c-gap'}">${p.created_at ? fmtDate(p.created_at) : 'not recorded'}</dd></dl>
     ${cTalkHtml(p)}
@@ -2970,7 +2972,7 @@ const cStamp = (iso) => (/T00:00:00(\.0+)?$/.test(String(iso || '')) ? fmtDate(i
 async function viewPersonC(id) {
   if (!C_PERSON || C_PERSON.id !== id) C_PERSON_EDIT = false;
   const p = await api('/api/people/' + id);
-  C_PERSON = p;
+  C_PERSON = p; C_STAGE_OF.set(p.id, p.status);
   const t = (p.tasks || []).find((x) => !x.done_at);
   const open = !C_TERMINAL.includes(p.status);
   const contact = [p.email, p.phone].filter(Boolean).map(esc).join(' · ');
@@ -2981,12 +2983,12 @@ async function viewPersonC(id) {
       ${e.field ? `<div class="c-evt-diff"><s>${esc(e.old_value ?? '(empty)')}</s> → <b>${esc(e.new_value ?? '(empty)')}</b></div>` : (e.body ? `<div class="c-evt-body">${esc(e.body)}</div>` : '')}</div>`;
   const next = open
     ? (t ? `<div class="c-next"><b>Next step</b><div class="c-next-row"><span>${esc(cTask(t.label))}</span><span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span>${t.owner ? `<span class="c-gap-soft">${esc(t.owner)}</span>` : ''}</div>
-        <div class="c-row-acts"><button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))})">Done</button><button class="btn sm ghost" onclick="openReschedule(${Number(t.id)})">Move the date</button></div></div>`
+        <div class="c-row-acts"><button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, false, '${esc(p.id)}')">Done</button><button class="btn sm ghost" onclick="openReschedule(${Number(t.id)})">Move the date</button></div></div>`
       : cSisHolds(p) ? `<div class="c-next"><b>Next step</b>${cSisHeld(p)}<div class="c-row-acts"><button class="btn sm ghost" onclick="openNewTask('${esc(p.id)}')">Plan a next step</button></div></div>`
       : `<div class="c-next none"><b>Next step</b>No next step<div class="c-row-acts"><button class="btn sm" onclick="openNewTask('${esc(p.id)}')">Plan a next step</button></div></div>`)
     : `<div class="c-next c-finished"><b>Outcome</b>${p.status === (CFG.stageRoles || {}).closed ? `<span class="c-no">✕</span>${esc(cStage(p.status))}${cTagLabel(p) ? ' · ' + esc(cTagLabel(p)) : ''}${p.closed_reason ? ' · ' + esc(p.closed_reason) : ' · <span class="c-gap">reason not recorded</span>'}${p.closed_note ? `<div class="c-evt-body">${esc(p.closed_note)}</div>` : ''}` : `<span class="c-ok">✓</span>${esc(cStage(p.status))}${p.admitted_at ? ' on ' + fmtDate(p.admitted_at) : ''}`}${t ? `
         <div class="c-still"><b>Still open</b><div class="c-next-row"><span>${esc(cTask(t.label))}</span><span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span></div>
-        <div class="c-row-acts"><button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, true)">Done</button><button class="btn sm ghost" onclick="openReschedule(${Number(t.id)})">Move the date</button></div></div>` : ''}</div>`;
+        <div class="c-row-acts"><button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, true, '${esc(p.id)}')">Done</button><button class="btn sm ghost" onclick="openReschedule(${Number(t.id)})">Move the date</button></div></div>` : ''}</div>`;
   $('#view').innerHTML = `<p class="c-crumb"><a href="#/people">People</a></p>
     <div class="c-head"><div><h1 class="c-pname">${esc(p.name)}</h1><p>${esc(cStage(p.status))} · ${esc(p.programme || 'programme not said')}${p.study_form ? ' · ' + esc(p.study_form) : ''} · ${contact || '<span class="c-gap">no email or phone recorded</span>'}</p></div>${p.first_channel === 'sis' ? `<div class="act"><button class="btn ghost" onclick="openSisMerge('${esc(p.id)}')">Same person as...</button></div>` : ''}</div>
     <div class="c-pgrid">
@@ -3808,8 +3810,21 @@ function nextActionOptionsWithSuggestion(suggested) {
     </optgroup>` + rest;
 }
 
-function nextActionOptions(selectedLabel) {
-  const groups = CFG.nextActions || [];
+// THE STEPS FOLLOW THE STAGE (the owner, 02.10.2026: "an algorithm that depends on at what stage the
+// lead is ... shorter list ... the impossible are not shown"). config.stepGroupsByStage names the
+// groups that fit each open stage; anyStage steps fit all; no stage known = everything, as before.
+function stepsForStage(stage) {
+  const fit = stage && (CFG.stepGroupsByStage || {})[stage];
+  return (CFG.nextActions || []).map((g) => ({ group: g.group,
+    items: g.items.filter((i) => !fit || fit.includes(g.group) || i.anyStage) })).filter((g) => g.items.length);
+}
+function nextActionOptions(selectedLabel, stage) {
+  const groups = stepsForStage(stage);
+  // the step already planned is never hidden, whatever the stage says
+  const shown = new Set(groups.flatMap((g) => g.items.map((i) => i.label)));
+  const keep = selectedLabel && !shown.has(selectedLabel)
+    ? (CFG.nextActions || []).flatMap((g) => g.items).filter((i) => i.label === selectedLabel) : [];
+  if (keep.length) groups.unshift({ group: 'Planned now', items: keep });
   const opts = groups.map(g => `<optgroup label="${esc(g.group)}">` +
     g.items.map(i => `<option value="${esc(i.label)}" data-days="${i.days}" data-drives="${esc(i.drives)}"
       ${i.label === selectedLabel ? 'selected' : ''}>${esc(i.label)}</option>`).join('') + '</optgroup>').join('');
@@ -5596,7 +5611,7 @@ function openAdd() {
     </div>
     <div class="row2">
       <div><label>Next step (required)</label>
-        <select id="aNext" onchange="document.querySelector('#aDays').value = daysForAction(this.value)">${nextActionOptions(d.nextAction)}</select></div>
+        <select id="aNext" onchange="document.querySelector('#aDays').value = daysForAction(this.value)">${nextActionOptions(d.nextAction, d.status)}</select></div>
       <div><label>In how many days</label><input id="aDays" type="number" value="${d.nextActionDays ?? 1}"></div>
     </div>
     <label>Note</label><textarea id="aNote" rows="2"></textarea>
@@ -5664,7 +5679,7 @@ function showDuplicateBlock(data) {
 // `finished` is passed in, never guessed from C_PERSON: that variable holds whichever person page
 // was opened last, so on Next Steps it would answer about the wrong person. The only caller that
 // passes true is the "Still open" block, which is drawn only for somebody already finished.
-function openComplete(taskId, label, finished) {
+function openComplete(taskId, label, finished, personId) {
   const done = Boolean(finished);
   modal('Complete: ' + label, `
     <label>Outcome</label>
@@ -5672,7 +5687,7 @@ function openComplete(taskId, label, finished) {
     <label>Note</label><textarea id="cNote" rows="2"></textarea>
     ${done ? '' : `<div class="row2">
       <div><label>Next step (required)</label>
-        <select id="cNext" onchange="onNextActionChange('cNext','cDate','cHint')">${nextActionOptions()}</select>
+        <select id="cNext" onchange="onNextActionChange('cNext','cDate','cHint')">${nextActionOptions(null, C_STAGE_OF.get(personId))}</select>
         <div class="muted" id="cHint" style="font-size:12px;margin-top:4px"></div></div>
       <div><label>When</label><input id="cDate" type="date" value="${todayStr()}"></div>
     </div>`}
@@ -5702,7 +5717,7 @@ async function doReschedule(id) { await post(`/api/tasks/${id}/reschedule`, { du
 
 function openNewTask(personId) {
   modal('Add an action', `<label>Next step</label>
-    <select id="tLabel" onchange="onNextActionChange('tLabel','tDate','tHint')">${nextActionOptions()}</select>
+    <select id="tLabel" onchange="onNextActionChange('tLabel','tDate','tHint')">${nextActionOptions(null, C_STAGE_OF.get(personId))}</select>
     <div class="muted" id="tHint" style="font-size:12px;margin-top:4px"></div>
     <label>Due</label><input id="tDate" type="date" value="${todayStr()}">
     <div style="margin-top:14px;display:flex;gap:8px"><button class="btn" onclick="doNewTask('${personId}')">Save</button>
