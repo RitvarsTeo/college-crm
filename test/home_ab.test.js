@@ -112,7 +112,7 @@ test('A: one dot per person, and the stage figure is the same count', async () =
 test('A: each fact once - conversion and the median on the Admitted card, the tags on Not proceeding', async () => {
   const h = harness(); const html = h.A(await h.data());
   const adm = html.slice(html.indexOf('kfl-adm'), html.indexOf('kfl-np'));
-  assert.match(adm, /19%<\/b> of 55 who arrived/);
+  assert.match(adm, /19%<\/b> converted · 2 \/ 55 who arrived/, 'the working, not a percentage under a figure it was not computed from');
   assert.match(adm, /38<\/b> days/);
   assert.equal((html.match(/19%/g) || []).length, 1, 'conversion printed once');
   const np = html.slice(html.indexOf('kfl-np'));
@@ -159,6 +159,20 @@ test('the switch: ?home=a|b, remembered, A by default', () => {
   ctx.location.search = '?home=nonsense'; assert.equal(ctx.v(), 'b', 'an unknown value changes nothing');
 });
 
+test('the switch works while ?home= is still in the address (found by QA, 02.10)', () => {
+  const store = {}; let drawn = 0;
+  const loc = { search: '?home=a', href: 'http://x/?home=a#/home' };
+  const ctx = { localStorage: { getItem: (k) => store[k] ?? null, setItem: (k, v) => { store[k] = v; } }, URLSearchParams, URL,
+    location: loc, history: { state: null, replaceState: (st, t, url) => { loc.href = url; loc.search = new URL(url).search; } },
+    viewHomeC: () => { drawn += 1; } };
+  vm.runInNewContext(fn('function homeVariant(') + fn('function homeSetVariant(') + '\nthis.v = homeVariant; this.set = homeSetVariant;', ctx);
+  assert.equal(ctx.v(), 'a');
+  ctx.set('b');
+  assert.equal(loc.search, '', 'the param is gone');
+  assert.equal(ctx.v(), 'b', 'and the click holds on the next render');
+  assert.equal(drawn, 1);
+});
+
 test('a Home stage click lands on the Journey filtered to exactly that stage', () => {
   const ctx = { C_JF: { programme: ['ENG'], stage: [] }, C_PTAB: 'all', location: { hash: '#/home' }, viewJourneyC: () => {} };
   vm.runInNewContext(line('const C_JF_EMPTY = ') + fn('function cGoStage(') + '\nthis.go = cGoStage;', ctx);
@@ -170,17 +184,46 @@ test('a Home stage click lands on the Journey filtered to exactly that stage', (
 });
 
 // Admissions, 30.09: cold and reject "for statistics", and marketing aimed at the cold ones.
-// Home counts them and its links open Not proceeding filtered to that tag. The row label and
-// the count line on Outcomes are the feedback closure work, so they are not drawn twice here.
-test('Outcomes: a tag from Home filters Not proceeding, says so, and can be cleared', () => {
-  const ctx = { esc: (s) => String(s ?? ''), C_OUT_TAG: 'cold',
+// One owner on Outcomes (agreed through QA, 02.10): the tag on each row, and one split whose
+// counts are the filters.
+test('Outcomes: Not proceeding splits by cold and reject, each a filter, and an unused tag is not drawn', () => {
+  const ctx = { esc: (s) => String(s ?? ''), C_OUT_TAG: null,
     CFG: { closedTags: [{ id: 'cold', label: 'Cold' }, { id: 'reject', label: 'Reject' }] } };
-  vm.runInNewContext(fn('function cTagFilterBar(') + '\nthis.bar = cTagFilterBar;', ctx);
-  const cold = PEOPLE.filter((p) => p.closed_tag === 'cold');
-  assert.match(ctx.bar(cold), /Showing <b>2<\/b> not proceeding, Cold/);
-  assert.match(ctx.bar(cold), /onclick="C_OUT_TAG=null;viewOutcomesC\(\)"/);
-  ctx.C_OUT_TAG = null; assert.equal(ctx.bar(cold), '', 'no tag chosen, no bar');
+  vm.runInNewContext(fn('function cTagSplit(') + '\nthis.split = cTagSplit;', ctx);
+  const np = PEOPLE.filter((p) => p.status === 'Not proceeding');
+  const html = ctx.split(np);
+  assert.match(html, /Everybody 4/);
+  assert.match(html, /onclick="C_OUT_TAG='cold';viewOutcomesC\(\)">Cold 2</);
+  assert.match(html, /Reject 1/);
+  assert.doesNotMatch(ctx.split(np.filter((p) => p.closed_tag !== 'reject')), /Reject/, 'nobody rejected, no Reject button');
+  assert.equal(ctx.split(np.filter((p) => !p.closed_tag)), '', 'nobody tagged, nothing drawn');
   const view = fn('async function viewOutcomesC(');
   assert.match(view, /if \(C_OUTCOME !== 'Admitted' && C_OUT_TAG\) list = list\.filter\(\(p\) => p\.closed_tag === C_OUT_TAG\);/);
-  assert.doesNotMatch(APP, /function cTagSplit\(|const cTagChip = /, 'no second tag summary or row chip from this branch');
+  assert.match(view, /C_OUTCOME !== 'Admitted' && p\.closed_tag \? cTagChip\(p\.closed_tag\)/, 'the tag on every Not proceeding row');
+  assert.equal((view.match(/cTagChip\(|cTagLabel\(/g) || []).length, 1, 'drawn once per row, by one helper');
 });
+
+test('the switch works while ?home= is still in the address (found by QA, 02.10)', () => {
+  const store = {}; let drawn = 0;
+  const loc = { search: '?home=a', href: 'http://x/?home=a#/home' };
+  const ctx = { localStorage: { getItem: (k) => store[k] ?? null, setItem: (k, v) => { store[k] = v; } }, URLSearchParams, URL,
+    location: loc, history: { state: null, replaceState: (st, t, url) => { loc.href = url; loc.search = new URL(url).search; } },
+    viewHomeC: () => { drawn += 1; } };
+  vm.runInNewContext(fn('function homeVariant(') + fn('function homeSetVariant(') + '\nthis.v = homeVariant; this.set = homeSetVariant;', ctx);
+  assert.equal(ctx.v(), 'a');
+  ctx.set('b');
+  assert.equal(loc.search, '', 'the param is gone');
+  assert.equal(ctx.v(), 'b', 'and the click holds on the next render');
+  assert.equal(drawn, 1);
+});
+
+test('a Home stage click lands on the Journey filtered to exactly that stage', () => {
+  const ctx = { C_JF: { programme: ['ENG'], stage: [] }, C_PTAB: 'all', location: { hash: '#/home' }, viewJourneyC: () => {} };
+  vm.runInNewContext(line('const C_JF_EMPTY = ') + fn('function cGoStage(') + '\nthis.go = cGoStage;', ctx);
+  ctx.go('Application');
+  assert.equal(JSON.stringify(ctx.C_JF.stage), '["Application"]');
+  assert.equal(JSON.stringify(ctx.C_JF.programme), '[]', 'an earlier programme filter does not hide anybody Home counted');
+  assert.equal(ctx.C_PTAB, 'journey');
+  assert.equal(ctx.location.hash, '#/journey');
+});
+

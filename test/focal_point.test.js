@@ -32,8 +32,10 @@ test('Home and Reports each have exactly one hero figure', () => {
 test('conversion shows its sum, not a sentence about it', () => {
   assert.match(REPORTS, /conversionA: admittedFromPeriod/, 'the report carries a');
   assert.match(REPORTS, /conversionB: newLeads/, 'and b');
-  assert.equal(APP.split('${s.conversionA ?? 0} / ${s.conversionB ?? 0} who arrived').length - 1, 2,
-    'Reports shows a / b; there is no second KPI screen to disagree with it');
+  // Reports, Home A and Home B (02.10.2026): all three print the same a / b from the same
+  // report fields, so the screens cannot disagree about it
+  assert.equal(APP.split('${s.conversionA ?? 0} / ${s.conversionB ?? 0} who arrived').length - 1, 3,
+    'Reports and both Home alternatives show a / b');
   assert.ok(!APP.includes('esc(s.conversionOf || \'\')'), 'the sentence is off both screens');
   assert.match(REPORTS, /conversionOf: conversion === null/, 'and stays for the export');
 });

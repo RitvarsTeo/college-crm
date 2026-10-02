@@ -1298,6 +1298,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .kfl-tag.t-cold{border-left:3px solid var(--v-lead)}     /* dormant, expected back */
   html.ui-c .kfl-tag.t-reject{border-left:3px solid var(--v-np)}     /* declined, often for now */
   html.ui-c a.kfl-tag:hover{border-color:var(--control-line)}
+  html.ui-c .c-tagseg{margin:-4px 0 14px}
 
   /* A - the journey band: a lit well, a hairline through it, raised cards on one plinth */
   html.ui-c .kflow{position:relative;margin:0 0 26px;padding:18px 16px 16px;border-radius:18px;
@@ -2285,6 +2286,12 @@ function homeVariant() {
 }
 function homeSetVariant(v) {
   try { localStorage.setItem('homevariant', v); } catch (e) { /* private window: this turn only */ }
+  // The address wins on every render, so a ?home= left in it would put the old choice straight
+  // back (found by the QA session, 02.10.2026). The click is the newer choice: drop the param.
+  try {
+    const u = new URL(location.href);
+    if (u.searchParams.has('home')) { u.searchParams.delete('home'); history.replaceState(history.state, '', u.toString()); }
+  } catch (e) { /* no URL API: the stored choice still holds once the address is clean */ }
   viewHomeC();
 }
 
@@ -2385,7 +2392,10 @@ function cHomeA(D) {
       `${cDots(n)}${late ? `<em class="kfl-late">${late} overdue</em>` : ''}`);
   }).join('');
   const s = D.s;
-  const conv = s.conversionPct == null ? '' : `<span class="kfl-row"><b>${s.conversionPct}%</b> of ${s.conversionB ?? 0} who arrived</span>`;
+  // Show the working (KB 08 P5): the numerator is the people who ARRIVED this year and were
+  // admitted, which is not always the Admitted figure above it (somebody who arrived last year
+  // and was admitted this year counts there, not here). Printed, so the sum is checkable.
+  const conv = s.conversionPct == null ? '' : `<span class="kfl-row"><b>${s.conversionPct}%</b> converted · ${s.conversionA ?? 0} / ${s.conversionB ?? 0} who arrived</span>`;
   const med = s.medianDaysToAdmission == null ? '' : `<span class="kfl-row"><b>${s.medianDaysToAdmission}</b> days, the median from first contact</span>`;
   const tagged = D.tags.filter(([, , n]) => n > 0);
   const tagRow = tagged.length ? `<span class="kfl-tags">${tagged.map(([id, label, n]) =>
@@ -2770,15 +2780,23 @@ function cReasonBreakdown(np, noReason) {
     + '</div>';
 }
 
-// COLD AND REJECT, PICKED OUT (Admissions, 30.09: easier for statistics, and extra marketing
-// aimed at the cold ones specifically; the verbatim words are in the feedback doc).
-// The tag's DISPLAY on this screen (the label on each row and the count line) belongs to the
-// feedback closure work; this is only the filter Home's Cold / Reject links open, said in the
-// same shape as the Admitted filter above it so it can be cleared.
-function cTagFilterBar(list) {
-  const t = (CFG.closedTags || []).find((x) => x.id === C_OUT_TAG);
-  if (!t) return '';
-  return `<div class="c-filter">Showing <b>${list.length}</b> not proceeding, ${esc(t.label || t.id)} <button class="btn sm ghost" onclick="C_OUT_TAG=null;viewOutcomesC()">Everybody not proceeding ✕</button></div>`;
+// COLD AND REJECT ON OUTCOMES (Admissions, 30.09: easier for statistics, and extra marketing
+// aimed at the cold ones specifically; the verbatim words are in the feedback doc). The tag
+// could be SET since b5f3a4c; nothing counted it or picked the cold ones out.
+// This screen has ONE owner for it, this branch (agreed with the feedback closure session
+// through QA, 02.10.2026), so the tag is drawn once per row and summarised once:
+//   - each Not proceeding row carries its tag
+//   - one split, Everybody / Cold n / Reject n, where every count is the filter for its people.
+//     Home's Cold / Reject links open the same filter. A tag nobody carries is not drawn
+//     (KB 08 P5: gaps never shown)
+const cTagChip = (id) => { const t = (CFG.closedTags || []).find((x) => x.id === id); return t ? `<span class="kfl-tag t-${esc(id)}">${esc(t.label || id)}</span> ` : ''; };
+function cTagSplit(np) {
+  const tags = (CFG.closedTags || []).map((t) => [t.id, t.label || t.id, np.filter((p) => p.closed_tag === t.id).length]).filter(([, , n]) => n > 0);
+  if (!tags.length) return '';
+  const pick = (id) => `C_OUT_TAG=${id ? `'${esc(id)}'` : 'null'};viewOutcomesC()`;
+  return `<div class="c-seg c-tagseg" role="group" aria-label="Cold or reject">
+    <button aria-pressed="${!C_OUT_TAG}" onclick="${pick(null)}">Everybody ${np.length}</button>${tags.map(([id, label, n]) =>
+    `<button aria-pressed="${C_OUT_TAG === id}" onclick="${pick(id)}">${esc(label)} ${n}</button>`).join('')}</div>`;
 }
 async function viewOutcomesC() {
   const people = await cPeopleRows();
@@ -2801,11 +2819,11 @@ async function viewOutcomesC() {
       <div class="act"><button class="btn" onclick="openExport()">Download for management review</button><button class="btn ghost" onclick="location.hash='#/reports'">Full report</button></div></div>
     <div class="c-seg" role="group" aria-label="Outcome"><button aria-pressed="${C_OUTCOME === 'Admitted'}" onclick="C_OUTCOME='Admitted';viewOutcomesC()"><span class="c-ok">✓</span>Admitted ${adm.length}</button><button aria-pressed="${C_OUTCOME !== 'Admitted'}" onclick="C_OUTCOME='Not proceeding';viewOutcomesC()"><span class="c-no">✕</span>Not proceeding ${np.length}</button></div>
     ${f ? `<div class="c-filter">Showing <b>${list.length}</b> ${list.length === 1 ? 'admitted person' : 'admitted people'}, ${esc(fLabel)} <button class="btn sm ghost" onclick="C_OUT_FILTER=null;viewOutcomesC()">Show all admitted ✕</button></div>` : ''}
-    ${C_OUTCOME !== 'Admitted' ? cTagFilterBar(list) : ''}
+    ${C_OUTCOME !== 'Admitted' ? cTagSplit(np) : ''}
     ${C_OUTCOME !== 'Admitted' ? cReasonBreakdown(np, noReason) : ''}
     <div class="c-sheet">${list.map((p) => `<div class="c-line" tabindex="0" onclick="location.hash='#/person/${esc(p.id)}'" style="grid-template-columns:minmax(0,1.2fr) minmax(0,1.4fr) 110px">
         <div class="c-who"><b>${esc(p.name)}</b><small>${esc(p.programme || 'programme not said')} · came from ${esc(cChannel(p.source_channel)[0])}</small></div>
-        <div class="c-what">${C_OUTCOME === 'Admitted' ? `Admitted${p.matriculated_at ? ` · <span class="c-lifefact" title="From the SIS: it happened on or before this day">Matriculated <time>by ${esc(cDay(p.matriculated_at))}</time></span>` : ''}` : (p.closed_reason ? esc(p.closed_reason) : '<span class="c-gap">reason not recorded</span>')}</div>
+        <div class="c-what">${C_OUTCOME !== 'Admitted' && p.closed_tag ? cTagChip(p.closed_tag) : ''}${C_OUTCOME === 'Admitted' ? `Admitted${p.matriculated_at ? ` · <span class="c-lifefact" title="From the SIS: it happened on or before this day">Matriculated <time>by ${esc(cDay(p.matriculated_at))}</time></span>` : ''}` : (p.closed_reason ? esc(p.closed_reason) : '<span class="c-gap">reason not recorded</span>')}</div>
         <div class="c-when">${p.admitted_at ? fmtDate(p.admitted_at) : ''}</div></div>`).join('') || '<div class="c-empty">Nobody here.</div>'}</div>`;
 }
 
