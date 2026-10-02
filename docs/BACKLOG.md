@@ -14,6 +14,93 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 02.10.2026 - MAIN A and B of this run: BUILT, COMMITTED, NOT DEPLOYED
+
+Branch **`ui/2026-10-02-main-ab`**, own worktree `crm-main-ab`, cut from `561bce2`
+(`ui/2026-10-02-journey`). **963/963. NOTHING DEPLOYED.** Production is still `292b4f9`.
+Design prototype on the real data model: every figure is read live from `/api/report`,
+`/api/summary`, `/api/people` and `/api/intake`; nothing is hardcoded.
+
+| What | Status | Commit |
+|---|---|---|
+| Home donut Open slice was the signal amber `#F7C04F`; now the data mustard `#E0A526`, both modes. Donut not redesigned | BUILT | `1bc018d` |
+| **The spine**: the children's hairline carried up behind the top-level menu icons, measured from the menu as drawn, blue from Home down to where you are. Settings is off it; hidden on a phone | BUILT | `5e20aad` |
+| Donut solid = ONE neutral plinth ring (`--k-plinth`), not each slice again in its own colour. The per-slice rim gave a slice at six o'clock more coloured ink than one at three (found by the QA session) | BUILT | `0401016` |
+| **Home A and B**, switch on the page and `?home=a|b` | BUILT | `714302b` |
+| Kit part 9 motion inlined verbatim (no build step), `cScenes()` plays it per view, two scenes per tab | BUILT | `714302b` |
+| Month chart: the peak annotates itself in place; its source line said a click opens the Inbox, it opens Outcomes | BUILT | `714302b` |
+| **Screen 3**: each Journey column shows its 5 most urgent people, then "n more" | BUILT | `80d7e63` |
+| **Cold / reject counted**: Home counts, Outcomes split with a filter per tag, the tag on each Not proceeding row | BUILT | `714302b`, `07bac8b` |
+| QA truth fixes: switch dead while `?home=` was in the address; A's "20.9% of 115" printed under 25 now shows "24 / 115" | BUILT | `07bac8b` |
+
+### A vs B - what materially differs
+
+Neither is the winner. Both read the same data, use the same cards, colours, spine and motion kit.
+**The difference is what the page is organised around.**
+
+| | **A - Journey first** | **B - Today first** |
+|---|---|---|
+| Axis | where the people are in the lead's flow | what needs a person now, then how we are doing |
+| Opens with | one band: Arrived → New, Contacted, Follow-up, Application, Contract → Admitted / Not proceeding | "Needs you": Overdue, Due today, In the Inbox (No next step when there is one) |
+| Countable | one dot per person in every stage | figures only |
+| Overdue | on the stage it belongs to ("9 overdue" on Application) | one total, first thing on the page |
+| Comparison | none on the cards | delta row on Admitted and Leads, last COMPLETE month vs the one before, basis named ("Sep 4 · vs Aug 1 · +3") |
+| Donut | none: the band already says where everyone is | yes, beside the month chart |
+| Depth (frame only) | a lit well with the locked glow, cards on one plinth, the spine laid on its side behind them | a stacked sheet (two sheets behind, constant offset), amber top rule for "needs you" |
+| Scene 1 | the spine draws and the cards arrive along it | the needs-you figures count up |
+| Scene 2 | the charts: line draws, bars and dots fade | the charts, and the ring lifts in |
+| Every figure opens | its stage on the Journey (filter set), the Inbox, Outcomes | Today, the Inbox, a Journey stage, Outcomes |
+| Reference | Admissions' own words (statistics first, the sequential order) | Remote dashboard (to-do first, groups ending in "View all"), Square (figure first, delta row) |
+
+**Research, 02.10, Mobbin free tier in his Chrome:** Dashboard category shows Cake Equity (a
+vertical figure stack beside one hero visual, "Last 30 days vs Previous"), Quicken (a labelled
+donut beside the accounts rail), Remote (things to do first, side cards ending in "View all").
+Square's recorded finding (zero depth, hierarchy wins) still governs depth. Pattern only.
+
+**What can break, and the check that catches it:** a figure that differs between A and B, or
+between Home and the screen it opens. Checked: stage overdue counts sum to the Today overdue
+total (21 = 1+1+2+9+8 on the synthetic set); the Journey filter Home sets is the only filter
+on (`cGoStage` resets the rest); conversion prints its a / b on A, B and Reports.
+
+**Seen running:** both at 1440 in light and dark (headless Edge for the finished state, Chrome
+for the motion landing), the Journey at 1440, and A, B and the Journey at 390 measured with no
+sideways overflow. Screenshots: `College CRM/For review/MAIN A-B 2026-10-02/`.
+
+### One departure from the kit, on purpose
+
+Kit part 9 plays a scene when it reaches **mid-screen**. A report scrolls into the middle; a
+dashboard OPENS with its charts in view, and at the mid line the month chart sat as an empty
+axis until somebody scrolled. `cScenes()` plays a scene once its top is in the upper 85% of
+the window. The kit itself is unchanged. **[DECIDE, Ritvars]** whether the kit should carry an
+"app" trigger beside the "report" one.
+
+### Ieva and Aigars, item by item (from `docs/IEVA_AIGARS_FEEDBACK_VERBATIM.md`)
+
+| Item | Status | Proof |
+|---|---|---|
+| Ieva 29.09: statistics on the home page | **DONE** | Both A and B open on live metrics; `test/home_ab.test.js` |
+| Ieva 29.09: how to add a new lead | **DONE** 30.09 | She confirmed it 30.09 09:59 |
+| Ieva 29.09: the sequential order, overdue and due today at once | **DONE** | A follows the order; Journey columns now sort most-late first (`test/journey_disclosure.test.js`) |
+| Ieva 29.09: contact info and notes on the row | **DONE** 30.09 | She confirmed it 30.09 09:59 |
+| Ieva 30.09: cold / reject on Not proceeding | **DONE** (set) `b5f3a4c`; the closure branch fixed a production-breaking fault in it (`0e1da1d`) and added the tag to both close paths |
+| Ieva 30.09: cold / reject "for statistics", marketing to the cold ones | **DONE on this branch** | Counted on Home, a filter per tag on Outcomes, the tag on every row. Run end to end on the preview: tagged 2 cold + 1 reject, Home showed Cold 2 · Reject 1, the Cold chip opened exactly those 2 |
+| Ieva 30.09: where do unanswered calls in New Leads come from | **BLOCKED** - the PBX filter is CHANNELS work - owner: the Channels session / Ritvars - needs: the call-filter rule, and whether PBX is live (see the open PBX check) |
+| Ieva 30.09 10:23: "one lead who is already admitted..." | **BLOCKED** - the rest of the message is not in the record - owner: Ritvars - needs: the full text from the chat |
+| Ieva: the real Journey stage names | **BLOCKED** - only she can name them - owner: Ieva - needs: her names for the five stages |
+| Aigars 30.09: an update when the real channels are connected | **BLOCKED** - not MAIN UI - owner: Ritvars / Channels - needs: the channels connected |
+| Aigars 30.09: how far from V1 real use | **BLOCKED** - a project-control report, not a screen - owner: Ritvars |
+| Aigars 30.09: connect the domain when ready | **BLOCKED** - release, waits for his go - owner: Ritvars / Aigars |
+| Aigars: per-person comment thread, phone chart readability | **DONE** 01.10 | Unchanged; both Home variants use the same thinned-label month chart |
+
+### Still open on MAIN
+
+- **[DECIDE, Ritvars] A or B.** Then C is built from his pick. Not C in this run.
+- The A/B switch is a review control and goes when C is settled.
+- Screen 2 (the Journey stage row) was fixed 01.10 (`d93938a`) and measured again today:
+  1,615 of 1,667 px at 1920. Nothing new built there.
+- Merge: a trial merge with `audit/2026-10-02-feedback-closure-s5` is clean and 971/971; the
+  Outcomes tag display is owned by this branch, agreed through QA.
+
 ## 02.10.2026 - HANDOFF: where this run stopped
 
 Branch **`ui/2026-10-02-journey`**, cut from `feat/home-b-command`. **933/933. Clean tree.
@@ -30,6 +117,9 @@ NOTHING DEPLOYED.** Production is still `292b4f9`, proven today by byte comparis
 | **Cold / reject** on Not proceeding - her clearest request | `b5f3a4c` |
 
 ### The exact next action
+
+**DONE 02.10 on `ui/2026-10-02-main-ab`**, see the section above: the spine, metrics Home in blue and
+mustard, depth on the frame, two scenes per tab, A and B. Kept below as the brief it was.
 
 Build **A and B of this run** on top of this branch. He called it "a relaunch of that same
 task, properly this time", so the earlier A/B is not the deliverable.
@@ -1148,7 +1238,7 @@ below, dated, as the record of where the project was.
 - **Blockers:** rows 46, 50, 51 (all Ieva); the 2 open questions in `config/prototype.json`
   (Tetiana's spam words, which agent partner to start with); connecting the channels. **Open owner
   decisions, none blocking code:** the KPI strip (hairline or cards, and it reaches kit part 2),
-  Home A or B, Channels A or B, Ieva's Journey stage names, and whether Meta's APP REVIEW is a
+  Home A (journey first) or B (today first), rebuilt 02.10 on `ui/2026-10-02-main-ab`, Channels A or B, Ieva's Journey stage names, and whether Meta's APP REVIEW is a
   `question` or `work` in `blockerKind`.
 
 Decisions and the open D-C questions are in [DECISIONS.md](DECISIONS.md).
