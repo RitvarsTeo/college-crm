@@ -22,7 +22,8 @@ this is a local prototype" stood here until 30.09.2026, from the weeks before th
 | Journey person card: **only after a click**, and "it expands exactly from the spot you clicked it, pushed other around it away and slightly making darker the everything around that card". The automatic first person (the "hero") is gone | BUILT |
 | Menu in light: **white into a soft Novikontas Blue tint** (#53a7db at 15%) | BUILT |
 | Pitch Black #011111 as the strong accent: **a short bar before each section heading** (dark mode uses its own ink, black would vanish on the sea) | BUILT |
-| Motion: **every metric counts up**; the bump only when a number changed since you last saw it; a soft "presentation slide" opening for all data when a tab opens | SAID, next |
+| Motion: **every metric counts up**; the bump only when a number changed since you last saw it; a soft "presentation slide" opening for all data when a tab opens | BUILT, see the commit |
+| **Two-colour sentences in subtle places** (Ritvars via MASTER CONTROL, 02.10, Q2): the apply.novikontas.org hero pattern, first word in brand blue bold, the rest plain; sparingly (a section title or an empty state), never on data, at most one per screen; Intake would use #29a8df because KB 08 P5 keeps #53a7db off text. Where it goes is a UI choice: A/B to Ritvars first | SAID |
 
 ## 02.10.2026 - DECIDED: Home is B, the Journey takes A's band
 

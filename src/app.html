@@ -1905,6 +1905,11 @@ svg .m-flag-mark{transform-origin:0 100%}
 /* the finished state, always, for print */
 @media print{.m-on *{animation:none!important;opacity:1!important;transform:none!important;stroke-dashoffset:0!important}}
 /* ===== end of kit part 9 ===== */
+  /* the tab opening (see cOpenView): a fade and a 10px lift per block, never a scale */
+  html.ui-c{--vi:0}   /* each block's place in the opening; cOpenView() sets it per block */
+  @keyframes v-open{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  html.ui-c.m-on .v-open{animation:v-open .63s cubic-bezier(.22,.9,.3,1) both;animation-delay:calc(var(--vi,0) * 70ms)}
+  @media (prefers-reduced-motion:reduce){ html.ui-c .v-open{animation:none} }
 </style>
 </head>
 <body>
@@ -2267,6 +2272,47 @@ const cChannel = (c) => (!c || c === 'unknown' ? ['Not recorded', 'no source was
 // Which of the two People views is showing. Journey by default: it is the operational
 // one. Remembered across a redraw so an action does not throw you back to the other tab.
 let C_PTAB = 'journey';
+// EVERY TAB OPENS LIKE A SLIDE, AND EVERY FIGURE COUNTS (the owner, 02.10.2026: "when switching
+// between tabs to have a very minimalistic opening animation for all data ... like a presentation
+// slide opening", and "Make them count, remove the shakey thingy ... shakey will only be for any
+// data changed ... and this is the first time viewing this number").
+//
+// Called once per tab change from the router, never on a redraw inside the tab, so a filter
+// click does not replay it. Three things, all from kit part 9's pace:
+//   1. the opening: each block of the screen fades in and lifts 10px, in reading order, 70ms apart.
+//      A lift and a fade, never a scale, so no chart reads as a different size while it arrives
+//   2. every figure counts up to its exact value (Motion.count lands on the original text)
+//   3. the BUMP only for a figure that is DIFFERENT from the last time this viewer saw it. The
+//      last-seen values live in this browser only (a per-viewer convenience); the first visit
+//      bumps nothing, because nothing has changed yet
+// Reduced motion: the kit never turns on, nothing moves, every figure is already final.
+const C_METRICS = ['.kneed b', '.kstrip > div > b', '.kday-st b', '.klegend b', '.kbar > b', '.jb-end > b', '.jb-n',
+  '.c-col h3 > b', '.kbig', '.c-sum > b', '.kgrow b', '.c-out b'].join(',');
+const cMetricKey = (el, i) => {
+  const holder = el.closest('[data-v],[data-kgo],[data-tip]');
+  const label = holder ? (holder.dataset.v || holder.dataset.kgo || holder.dataset.tip) : ((el.parentElement && el.parentElement.querySelector('span')) || {}).textContent;
+  return `${location.hash.split('?')[0] || '#/home'}|${String(label || i).trim().slice(0, 60)}`;
+};
+function cOpenView() {
+  const M = window.Motion, view = $('#view');
+  if (!view || !M || !M.on) return;
+  let blocks = [...view.children];
+  if (blocks.length === 1 && blocks[0].children.length > 1) blocks = [...blocks[0].children];
+  blocks.forEach((b, i) => { b.style.setProperty('--vi', Math.min(i, 8)); b.classList.add('v-open'); });
+  let seen = {};
+  try { seen = JSON.parse(localStorage.getItem('intakeSeen') || '{}') || {}; } catch (e) { seen = {}; }
+  const now = {};
+  view.querySelectorAll(C_METRICS).forEach((el, i) => {
+    if (!/\d/.test(el.textContent)) return;               // a dash for a failed read stays a dash
+    const key = cMetricKey(el, i), value = el.textContent.trim();
+    now[key] = value;
+    const changed = Object.prototype.hasOwnProperty.call(seen, key) && seen[key] !== value;
+    M.count(el, { ms: 1125, delay: 120 + Math.min(i, 12) * 40,
+      done: () => { if (!changed) el.classList.remove('m-bumped'); } });
+  });
+  try { localStorage.setItem('intakeSeen', JSON.stringify({ ...seen, ...now })); } catch (e) { /* private window */ }
+}
+
 async function routeC(page, arg) {
   const place = cPlace(page);
   if (page === 'person') return viewPerson(arg);
@@ -2395,7 +2441,7 @@ function cHomeB(D) {
     return `<span class="kdelta${d > 0 ? ' up' : d < 0 ? ' down' : ''}">${mo(last)} <b>${last[key]}</b> · vs ${mo(prev)} ${prev[key]} · ${d > 0 ? '+' : ''}${d}</span>`;
   };
   const need = (label, n, go, href, k) => `<a class="kneed" href="${href}" style="--i:${k}" ${go ? `onclick="${go};return false"` : ''}>
-      <span>${esc(label)}</span><b ${n === null ? '' : 'data-count'}>${cFig(n)}</b></a>`;
+      <span>${esc(label)}</span><b>${cFig(n)}</b></a>`;
   const allDots = D.stages.map((st) => [st, D.open.filter((p) => p.status === st.id).length]);
   return `<section class="kday m-scene" aria-label="Needs you">
       <div class="kday-sheet">
@@ -4390,7 +4436,7 @@ async function route() {
   try {
     // Concept C is the main UI: its router draws every screen, borrowing the classic
     // ones where C has not replaced them yet. ?ui=classic skips this entirely.
-    if (UI === 'c') { markCNav(page); await routeC(page, arg); refreshBadge(); drawFeedbackBadge(); return; }
+    if (UI === 'c') { markCNav(page); await routeC(page, arg); cOpenView(); refreshBadge(); drawFeedbackBadge(); return; }
     // The names people use. The old ones still resolve so a link in a note,
     // a feedback report or somebody's bookmark does not break.
     // The Console is a separate page at /console and is deliberately unreachable

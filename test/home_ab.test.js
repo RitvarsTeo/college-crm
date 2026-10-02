@@ -86,10 +86,10 @@ test('a read that fails is null, never a remembered figure, and Home says so', a
 test('B: what needs a person comes first, and every figure links to where the people are', async () => {
   const h = harness(); const html = h.B(await h.data());
   assert.ok(html.indexOf('Needs you') < html.indexOf('kb-strip'), 'the work before the performance');
-  assert.match(html, /href="#\/today"[^>]*>\s*<span>Overdue<\/span><b data-count>3<\/b>/);
-  assert.match(html, /<span>Due today<\/span><b data-count>1<\/b>/);
-  assert.match(html, /href="#\/leads"[^>]*>\s*<span>In the Inbox<\/span><b data-count>6<\/b>/);
-  assert.match(html, /<span>No next step<\/span><b data-count>3<\/b>/);
+  assert.match(html, /href="#\/today"[^>]*>\s*<span>Overdue<\/span><b>3<\/b>/);
+  assert.match(html, /<span>Due today<\/span><b>1<\/b>/);
+  assert.match(html, /href="#\/leads"[^>]*>\s*<span>In the Inbox<\/span><b>6<\/b>/);
+  assert.match(html, /<span>No next step<\/span><b>3<\/b>/);
   assert.match(html, /cGoStage\('Application'\)/, 'the journey list opens the Journey on a stage');
   assert.match(html, /kdonut">Open=6,Admitted=2,Not proceeding=4/, 'the donut counts the same people');
 });
