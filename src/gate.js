@@ -33,7 +33,7 @@ export function requireConfigured(env = process.env) {
   if (!password) {
     return { ok: false, gate: true,
       why: 'CRM_PUBLIC is on but CRM_ACCESS_PASSWORD is not set. Refusing to start '
-         + 'rather than publishing the CRM with no door on it.' };
+         + 'rather than publishing Intake with no door on it.' };
   }
   if (password.length < 12) {
     return { ok: false, gate: true,
@@ -119,7 +119,7 @@ export const LOGIN_PAGE = (message = '') => `<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>Academy CRM</title>
+<title>Intake</title>
 <style>
   :root { color-scheme: light dark; --bg:#f6f7f9; --card:#fff; --ink:#15202b;
           --muted:#5b6b7a; --line:#dde3ea; --accent:#0b3d6b; }
@@ -146,7 +146,7 @@ export const LOGIN_PAGE = (message = '') => `<!doctype html>
           font-size:12.5px; color:var(--muted); }
 </style></head>
 <body><form class="card" method="POST" action="/access">
-  <h1>Academy CRM</h1>
+  <h1>Intake</h1>
   <p>Testing copy. Enter the password you were given.</p>
   <label for="p">Password</label>
   <input id="p" name="password" type="password" autocomplete="current-password" autofocus required>

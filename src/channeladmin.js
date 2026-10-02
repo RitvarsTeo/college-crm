@@ -215,7 +215,7 @@ export function checkPlanFor(id) {
     proves: null, doesNotProve: null };
 
   if (isManual(def)) return { kind: 'none',
-    what: 'Nothing to check. Somebody types this in, and the CRM already accepts it.',
+    what: 'Nothing to check. Somebody types this in, and Intake already accepts it.',
     proves: null, doesNotProve: null };
 
   if (def.direction === 'inbound_poll') return { kind: 'config',

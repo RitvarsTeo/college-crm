@@ -30,7 +30,7 @@ test('none of those sentences is on the screen', () => {
 test('the export still carries both', () => {
   assert.match(REPORTS, /notMeasured: await notMeasured\(db, p\)/, 'the report still computes them');
   assert.match(REPORTS, /for \(const n of r\.notMeasured\) rows\.push/, 'the export writes the gaps table');
-  assert.match(REPORTS, /Every figure above is a count of rows in the CRM/, 'and the honesty line');
+  assert.match(REPORTS, /Every figure above is a count of rows in Intake/, 'and the honesty line');
 });
 
 test('"Right now" is three badges, and the count is bigger than its label', () => {

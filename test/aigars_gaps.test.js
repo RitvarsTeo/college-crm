@@ -66,7 +66,7 @@ test('phone: the month chart is drawn 360 wide with larger labels; desktop keeps
 
 test('explaining sentences removed; data warnings kept', () => {
   for (const s of ['Months still to come are not drawn.', 'Remembered on this device.', 'How each screen works, and answers to common questions.',
-    'Reaches the people who build the CRM. You can add a screenshot.', 'What our side has built, and whether each provider is connected.',
+    'Reaches the people who build Intake. You can add a screenshot.', 'What our side has built, and whether each provider is connected.',
     'The on-screen report behind the management download.', 'still a working version, to be agreed with Admissions',
     'It stays on this machine and is never emailed.', 'Everything everybody has sent.', 'Every figure is a count of rows in the CRM',
     "It is kept in the CRM's own database and is never sent anywhere."]) assert.ok(!APP.includes(s), s);

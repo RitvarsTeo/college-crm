@@ -24,6 +24,8 @@ function sandbox(rows, { all = false } = {}) {
     cStamp: (d) => 'AT(' + String(d).slice(0, 10) + ')',
     C_JTALK: new Map([['p1', rows]]),
     C_JTALK_ALL: all,
+    // the timeline shows one name for the system, whatever the stored row says
+    actorName: (x) => (x === 'CRM' ? 'Intake' : x),
   };
   if (rows === undefined) ctx.C_JTALK = new Map();
   vm.runInNewContext(fn('function cTalkHtml(') + '\nthis.talk = cTalkHtml;', ctx);

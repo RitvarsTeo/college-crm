@@ -182,7 +182,7 @@ test('the record has somewhere to keep the reason', async () => {
 test('duplicate prevention is on, and a match blocks rather than warns', async () => {
   assert.equal(CONFIG.duplicateRule.blockOnMatch, true);
   assert.deepEqual(CONFIG.duplicateRule.matchOn, ['email', 'phone', 'name']);
-  assert.match(SERVER, /This person may already be in the CRM/);
+  assert.match(SERVER, /This person may already be in Intake/);
   assert.match(SERVER, /confirmedNotDuplicate/);
   assert.match(SERVER, /409/, 'a blocked save must be a refusal, not a silent success');
 });

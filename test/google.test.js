@@ -767,7 +767,7 @@ test('Google Sheets asks only for drive.file and makes the sheet in the signed-i
   assert.match(up.headers['content-type'], /^multipart\/related; boundary=/);
   const text = up.body.toString('latin1');
   assert.match(text, /"mimeType":"application\/vnd.google-apps.spreadsheet"/, 'Drive converts it into a Google Sheet');
-  assert.match(text, /"name":"Academy CRM report 2026-01-01 to 2026-12-31 \(made \d{4}-\d{2}-\d{2}\)"/);
+  assert.match(text, /"name":"Intake report 2026-01-01 to 2026-12-31 \(made \d{4}-\d{2}-\d{2}\)"/);
   assert.ok(up.body.includes(Buffer.from('PK')), 'the file sent is a zip, the .xlsx');
 });
 

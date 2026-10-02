@@ -58,7 +58,7 @@ test('text stays text, numbers stay numbers, and odd characters cannot break the
 test('the report\'s section titles and their column names are bold', () => {
   const rows = [];
   const head = (t) => { const r = [t]; r.head = true; rows.push(r); };
-  head('Academy CRM report'); rows.push(['Period', 'x']); rows.push([]);
+  head('Intake report'); rows.push(['Period', 'x']); rows.push([]);
   head('The headline figures'); rows.push(['Metric', 'Value']); rows.push(['New leads', 3]);
   assert.deepEqual(boldRowsOf(rows), [0, 3, 4]);
   const sheet = unzip(rowsToXlsx(rows, { bold: boldRowsOf(rows) }))['xl/worksheets/sheet1.xml'];
@@ -84,7 +84,7 @@ test('/api/report.xlsx sends a real workbook with the report in it', async (t) =
   assert.equal(r.headers.get('content-type'), XLSX_TYPE);
   assert.match(r.headers.get('content-disposition'), /filename="academy-crm-kpi-\d{4}-\d{2}-\d{2}\.xlsx"/);
   const sheet = unzip(Buffer.from(await r.arrayBuffer()))['xl/worksheets/sheet1.xml'];
-  assert.match(sheet, /Academy CRM report/);
+  assert.match(sheet, /Intake report/);
   assert.match(sheet, /2026-01-01 to 2026-12-31/);
   assert.match(sheet, /The headline figures/);
   const bad = await fetch(`http://127.0.0.1:${port}/api/report.xlsx?from=not-a-date`);

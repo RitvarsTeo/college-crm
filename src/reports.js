@@ -250,7 +250,7 @@ export async function reportRows(db, opts = {}) {
   // it) in bold. A CSV has no bold and simply ignores the mark.
   const head = (t) => { const r = [t]; r.head = true; rows.push(r); };
 
-  head('Academy CRM report');
+  head('Intake report');
   rows.push(['Period', r.period.label]);
   rows.push(['Prepared', localDateTime() + ' Riga time']);
   blank();
@@ -328,6 +328,6 @@ export async function reportRows(db, opts = {}) {
     blank();
   }
 
-  rows.push(['Every figure above is a count of rows in the CRM over the chosen period. Nothing is estimated.']);
+  rows.push(['Every figure above is a count of rows in Intake over the chosen period. Nothing is estimated.']);
   return rows;
 }

@@ -255,9 +255,9 @@ async function finishSheet(req, res, url, flow, code) {
   }
   const rows = await reportRows(db, flow.want || {});
   const periodRow = rows.find((r) => r[0] === 'Period');
-  const xlsx = rowsToXlsx(rows, { bold: boldRowsOf(rows), sheetName: 'Report', title: 'Academy CRM report' });
+  const xlsx = rowsToXlsx(rows, { bold: boldRowsOf(rows), sheetName: 'Report', title: 'Intake report' });
   const up = await sheets.uploadAsSheet({ accessToken: tokens.access_token, xlsx,
-    name: `Academy CRM report ${periodRow ? periodRow[1] : ''} (made ${localDate()})`.replace(/\s+/g, ' ').trim() });
+    name: `Intake report ${periodRow ? periodRow[1] : ''} (made ${localDate()})`.replace(/\s+/g, ' ').trim() });
   if (!up.ok) return back(up.reason);
   res.writeHead(303, { location: up.link, 'cache-control': 'no-store', 'set-cookie': flowCookie('', 0) });
   return res.end();
@@ -629,7 +629,7 @@ async function advanceStatus(personId, actionLabel, now) {
   if (target === 'Contract') {
     await db.prepare("UPDATE people SET contract_at = COALESCE(contract_at, ?) WHERE id = ?").run(now, personId);
   }
-  await logEvent(db, { personId, kind: 'status', direction: 'note', at: now, origin: AUTOMATIC, actor: 'CRM',
+  await logEvent(db, { personId, kind: 'status', direction: 'note', at: now, origin: AUTOMATIC, actor: 'Intake',
     subject: `Status: ${person.status} -> ${target}`,
     body: `automatically, because this was done: ${actionLabel}`,
     field: 'status', oldValue: person.status, newValue: target });
@@ -1344,9 +1344,9 @@ export const handle = async (req, res) => {
         crmKnows: ['lead created', 'source and campaign', 'contact details', 'every message', 'follow-up and outcome', 'application', 'contract', 'admission'],
         platformKnows: ['ad impression and click', 'form or message interaction', 'delivery and engagement', 'platform-side conversion signal only if we send it back'],
         returnPath: {
-          google: 'Offline conversion import and enhanced conversions for leads move to the Data Manager API: from 15 June 2026 those uploads are blocked in the Google Ads API. Sending a CRM admission back as a conversion means hashed user-provided data through Data Manager, and for EEA traffic it depends on consent mode signals (ad_user_data, ad_personalization).',
-          meta: 'A CRM outcome reaches Meta only through the Conversions API with hashed identifiers, and it is a separate build from the lead webhook.',
-          mailchimp: 'A CRM outcome reaches Mailchimp as a tag or merge field through the Marketing API.',
+          google: 'Offline conversion import and enhanced conversions for leads move to the Data Manager API: from 15 June 2026 those uploads are blocked in the Google Ads API. Sending an Intake admission back as a conversion means hashed user-provided data through Data Manager, and for EEA traffic it depends on consent mode signals (ad_user_data, ad_personalization).',
+          meta: 'An Intake outcome reaches Meta only through the Conversions API with hashed identifiers, and it is a separate build from the lead webhook.',
+          mailchimp: 'An Intake outcome reaches Mailchimp as a tag or merge field through the Marketing API.',
           note: 'No platform learns that somebody enrolled unless we tell it. Nothing here sends anything anywhere.'
         } });
     }
@@ -1595,7 +1595,7 @@ export const handle = async (req, res) => {
         const hits = await findMatches({ email: b.email, phone: b.phone, name: b.name });
         if (hits.length) {
           return json(res, 409, {
-            error: 'This person may already be in the CRM.',
+            error: 'This person may already be in Intake.',
             matches: hits,
             whatToDo: 'Open the existing record, or confirm in as many words that this is a different person.',
           });
@@ -1944,14 +1944,14 @@ export const handle = async (req, res) => {
         // A real workbook: src/xlsx.js writes the zip the format needs.
         res.writeHead(200, { 'content-type': XLSX_TYPE,
           'content-disposition': `attachment; filename="academy-crm-report-${stamp}.xlsx"` });
-        return res.end(rowsToXlsx(rows, { bold: [0], sheetName: 'Funnel', title: 'Academy CRM funnel' }));
+        return res.end(rowsToXlsx(rows, { bold: [0], sheetName: 'Funnel', title: 'Intake funnel' }));
       }
       // PDF: a minimal single-page document written by hand, no library.
       const lines = rows.map((r) => `${r[0]} | ${r[1]} | ${r[2]}`);
       return res.writeHead(200, {
         'content-type': 'application/pdf',
         'content-disposition': `attachment; filename="academy-crm-report-${stamp}.pdf"`,
-      }), res.end(simplePdf(`Academy CRM report ${stamp}`, lines));
+      }), res.end(simplePdf(`Intake report ${stamp}`, lines));
     }
 
     if (req.method === 'GET' && p === '/api/funnel') {
@@ -2328,7 +2328,7 @@ export const handle = async (req, res) => {
     // The same rows as the CSV, as a real Excel workbook.
     if (req.method === 'GET' && p === '/api/report.xlsx') {
       const rows = await reportRows(db, reportParams(url));
-      const file = rowsToXlsx(rows, { bold: boldRowsOf(rows), sheetName: 'Report', title: 'Academy CRM report' });
+      const file = rowsToXlsx(rows, { bold: boldRowsOf(rows), sheetName: 'Report', title: 'Intake report' });
       res.writeHead(200, { 'content-type': XLSX_TYPE, 'cache-control': 'no-store',
         'content-disposition': `attachment; filename="academy-crm-kpi-${localDate()}.xlsx"` });
       return res.end(file);
@@ -2606,5 +2606,5 @@ if (!process.env.VERCEL) {
     console.error('REFUSING TO START. ' + err.message);
     process.exit(1);
   });
-  server.listen(PORT, () => console.log(`Academy CRM prototype on http://localhost:${server.address().port}`));
+  server.listen(PORT, () => console.log(`Intake on http://localhost:${server.address().port}`));
 }

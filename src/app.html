@@ -2132,7 +2132,7 @@ function cReasonBreakdown(np, noReason) {
         + ' no recorded reason yet - it is still in the note.</p>' : '')
     + '<div class="c-reasonbars">' + bars + '</div>'
     + '<p class="c-ev c-reasons-ask">These are the ' + all.length
-    + ' reasons the CRM accepts today. Changing them is a config change, not a rebuild.</p>'
+    + ' reasons Intake accepts today. Changing them is a config change, not a rebuild.</p>'
     + '</div>';
 }
 
@@ -2495,7 +2495,7 @@ function cTalkHtml(p) {
     <h4>What was said<b>${rows.length}</b>
       <span class="c-talk-acts"><button class="btn sm ghost" onclick="event.stopPropagation();openNote('${esc(p.id)}','call')">Log a call</button><button class="btn sm ghost" onclick="event.stopPropagation();openNote('${esc(p.id)}','note')">Add a note</button></span></h4>
     ${shown.length ? shown.map((e) => `<div class="c-talkrow">
-        <div class="c-talk-when">${cStamp(e.occurred_at)}${e.actor ? ' · ' + esc(e.actor) : ''}${e.kind === 'call' ? ' · call' : ''}</div>
+        <div class="c-talk-when">${cStamp(e.occurred_at)}${e.actor ? ' · ' + esc(actorName(e.actor)) : ''}${e.kind === 'call' ? ' · call' : ''}</div>
         <div class="c-talk-what">${esc(e.body || e.subject || '')}</div>
       </div>`).join('')
       : '<p class="c-talk-wait">Nothing written yet. The first note goes here.</p>'}
@@ -2891,6 +2891,11 @@ function cDrawJourney() {
 let C_PERSON = null; let C_PERSON_EDIT = false;
 // The imported history carries DATES written as "2026-01-17T00:00:00", with no time and
 // no zone. Printing "00:00" would claim a time nobody recorded, so those show the date.
+// WHO DID IT, under one name (02.10.2026). The product was renamed from CRM to
+// Intake. Rows written before that say actor 'CRM' and are NOT rewritten: the history
+// is what it is. The screen shows the current name, so a person reading a timeline
+// does not meet two names for the same system.
+const actorName = (x) => (x === 'CRM' ? 'Intake' : x);
 const cStamp = (iso) => (/T00:00:00(\.0+)?$/.test(String(iso || '')) ? fmtDate(iso) : fmtDateTime(iso));
 async function viewPersonC(id) {
   if (!C_PERSON || C_PERSON.id !== id) C_PERSON_EDIT = false;
@@ -2901,7 +2906,7 @@ async function viewPersonC(id) {
   const contact = [p.email, p.phone].filter(Boolean).map(esc).join(' · ');
   const tl = p.timeline || [];
   const ev = (e) => `<div class="c-evt">
-      <div class="c-evt-when">${cStamp(e.occurred_at)}${e.actor ? ' · ' + esc(e.actor) : ''}${e.channel ? ' · ' + esc(channelLabel(e.channel)) : ''}${e.origin === 'automatic' ? ' · <span class="c-auto">automatic</span>' : ''}</div>
+      <div class="c-evt-when">${cStamp(e.occurred_at)}${e.actor ? ' · ' + esc(actorName(e.actor)) : ''}${e.channel ? ' · ' + esc(channelLabel(e.channel)) : ''}${e.origin === 'automatic' ? ' · <span class="c-auto">automatic</span>' : ''}</div>
       <div class="c-evt-what">${esc(e.subject || e.kind || '')}</div>
       ${e.field ? `<div class="c-evt-diff"><s>${esc(e.old_value ?? '(empty)')}</s> → <b>${esc(e.new_value ?? '(empty)')}</b></div>` : (e.body ? `<div class="c-evt-body">${esc(e.body)}</div>` : '')}</div>`;
   const next = open
@@ -2993,9 +2998,9 @@ let C_RPT_PRESET = 'month';
 // Said once, in plain words, and taken out of the address so a reload does not repeat it.
 const C_SHEET_TEXT = {
   declined: 'No sheet was made: Google access was not given. Nothing was saved in Google Drive.',
-  wrong_account: 'No sheet was made: Google answered for a different account than the one signed in to the CRM. Choose your own novikontas.org account.',
-  drive_api_disabled: 'No sheet was made: Google Drive is not switched on for the CRM yet. An admin enables the Google Drive API once in the CRM\'s Google Cloud project. Until then, download Excel; it opens in Google Sheets too.',
-  no_permission: 'No sheet was made: Google did not give the CRM permission to create the file.',
+  wrong_account: 'No sheet was made: Google answered for a different account than the one signed in to Intake. Choose your own novikontas.org account.',
+  drive_api_disabled: 'No sheet was made: Google Drive is not switched on for Intake yet. An admin enables the Google Drive API once in Intake\'s Google Cloud project. Until then, download Excel; it opens in Google Sheets too.',
+  no_permission: 'No sheet was made: Google did not give Intake permission to create the file.',
   failed: 'No sheet was made: Google Drive did not accept the file. Nothing was saved. Try again, or download Excel.',
 };
 function cSheetNotice() {
@@ -3568,9 +3573,10 @@ function drawLogin(message) {
     <div class="gate-inner">
       <div class="brand"><img src="/assets/NoAca_logo_whitehor.svg" alt="Novikontas Academy"></div>
       <div class="gate-card sso-only">
-        <!-- Just CRM. The mark above the card already says NOVIKONTAS ACADEMY,
-             so "Academy CRM" here said Academy twice on one screen. -->
-        <h1>CRM</h1>
+        <!-- Just the product name. The mark above the card already says NOVIKONTAS
+             ACADEMY, so "Academy CRM" here said Academy twice on one screen. Renamed to
+             Intake 02.10.2026, matching the sidebar and the installed app name. -->
+        <h1>Intake</h1>
         <p class="sub">Sign in to continue</p>
         ${googleBlock}
         <div id="loginErr" class="err${message ? '' : ' hidden'}" role="alert">${esc(message || '')}</div>
@@ -3599,7 +3605,7 @@ function drawActorPicker() {
   const users = (CFG.users || []).map(u =>
     `<option value="${esc(u.name)}">${esc(u.name)} - ${esc(u.title || u.role)}</option>`).join('');
   const admins = (CFG.admins || []).map(a => `<option value="${esc(a)}">${esc(a)} - admin</option>`).join('');
-  sel.innerHTML = `<optgroup label="CRM users">${users}</optgroup><optgroup label="Admins">${admins}</optgroup>`;
+  sel.innerHTML = `<optgroup label="Intake users">${users}</optgroup><optgroup label="Admins">${admins}</optgroup>`;
   sel.value = ACTOR;
 }
 const myRole = () => ((CFG.users || []).find(u => u.name === ACTOR) || {}).role || null;
@@ -4113,7 +4119,7 @@ async function viewPerson(id) {
           correction${p.hiddenCorrections === 1 ? '' : 's'} made by a colleague ${p.hiddenCorrections === 1 ? 'is' : 'are'}
           not shown. Corrections are private to whoever made them; admins see all of them.</div>` : ''}
         <div class="tl">${p.timeline.map(e => `<div class="ev ${esc(e.kind)}">
-          <div class="when">${fmtDateTime(e.occurred_at)} &middot; ${originChip(e.origin)} &middot; ${esc(channelLabel(e.channel) || e.kind)}${e.actor ? ' &middot; ' + esc(e.actor) : ''}</div>
+          <div class="when">${fmtDateTime(e.occurred_at)} &middot; ${originChip(e.origin)} &middot; ${esc(channelLabel(e.channel) || e.kind)}${e.actor ? ' &middot; ' + esc(actorName(e.actor)) : ''}</div>
           <div><b>${esc(e.subject || '')}</b></div>${e.body && !e.field ? `<div class="said">${esc(e.body)}</div>` : ''}
           ${e.field ? `<div class="diff"><span class="was">${esc(e.old_value ?? '(empty)')}</span> &rarr; <span class="now">${esc(e.new_value ?? '(empty)')}</span></div>` : ''}</div>`).join('') || '<div class="empty">no events</div>'}</div>
       </div>
@@ -4452,7 +4458,7 @@ async function openArchive(id) {
     <div style="margin-top:14px;display:flex;gap:8px">
       <button class="btn" onclick="doArchive(${id})">Save</button>
       <button class="btn ghost" onclick="closeModal()">Cancel</button></div>
-    <p class="footnote" title="The contact stays in the CRM and can still be found by name.">Nothing is deleted.</p>`);
+    <p class="footnote" title="The contact stays in Intake and can still be found by name.">Nothing is deleted.</p>`);
 }
 
 async function doArchive(id) {
@@ -4577,7 +4583,7 @@ async function openExport() {
       <button class="btn ghost" onclick="doExport('csv')">CSV</button>
       <button class="btn ghost" onclick="closeModal()" style="margin-left:auto">Cancel</button>
     </div>
-    <p class="footnote">${sheetsOk ? 'Google Sheets makes a new sheet in your own Google Drive and opens it in a new tab. The first time, Google asks you to let the CRM create files there; it can see only the files it creates.' : 'Google Sheets needs Google sign-in, which is not on for this copy. An Excel file opens in Google Sheets too.'}</p>`);
+    <p class="footnote">${sheetsOk ? 'Google Sheets makes a new sheet in your own Google Drive and opens it in a new tab. The first time, Google asks you to let Intake create files there; it can see only the files it creates.' : 'Google Sheets needs Google sign-in, which is not on for this copy. An Excel file opens in Google Sheets too.'}</p>`);
 }
 
 function doExport(fmt = 'csv') {
@@ -4826,7 +4832,7 @@ function runCard(r) {
     ${r.personId ? `<div style="margin-top:10px"><a href="#/person/${esc(r.personId)}">Open person ${esc(r.personId)}</a></div>` : ''}
     ${r.crmResult && r.crmResult.note ? `<div class="prov" style="margin-top:10px">${esc(r.crmResult.note)}</div>` : ''}
     ${r.mapping && r.mapping.length ? `<h3 style="margin-top:14px">Field mapping</h3>
-      <table><thead><tr><th>From the provider</th><th></th><th>CRM field</th><th>Value</th></tr></thead><tbody>
+      <table><thead><tr><th>From the provider</th><th></th><th>Intake field</th><th>Value</th></tr></thead><tbody>
       ${r.mapping.map(m => `<tr><td><code>${esc(m.from)}</code></td><td>&rarr;</td><td><code>${esc(m.to)}</code></td><td>${esc(m.value)}</td></tr>`).join('')}
       </tbody></table>` : ''}
     ${r.identity ? `<h3 style="margin-top:14px">Identity</h3>
@@ -4909,7 +4915,7 @@ async function viewInspector(arg) {
       <h3>IDENTITY</h3><pre>${esc(JSON.stringify(e.identity, null, 2))}</pre>
       <h3>MAPPING</h3><pre>${esc(JSON.stringify(e.mapping, null, 2))}</pre>
       <h3>DECISION</h3><pre>${esc(e.decision)} (${esc(e.status)})</pre>
-      <h3>CRM RESULT</h3><pre>${esc(JSON.stringify(e.crm_result, null, 2))}</pre>
+      <h3>INTAKE RESULT</h3><pre>${esc(JSON.stringify(e.crm_result, null, 2))}</pre>
       ${e.outbound ? `<h3>OUTBOUND</h3><pre>${esc(JSON.stringify(e.outbound, null, 2))}</pre>` : ''}
       ${e.provider_result ? `<h3>PROVIDER RESULT</h3><pre>${esc(JSON.stringify(e.provider_result, null, 2))}</pre>` : ''}
       <h3>AUDIT</h3><pre>${esc(JSON.stringify(e.audit, null, 2))}</pre>
@@ -4935,9 +4941,9 @@ async function viewMetrics() {
   const m = await api('/api/metrics');
   const max = Math.max(1, ...m.bySource.map(x => x.n));
   $('#view').innerHTML = `
-  <h1>Metrics and attribution</h1><p class="sub">What the CRM knows and what the platforms know</p>
+  <h1>Metrics and attribution</h1><p class="sub">What Intake knows and what the platforms know</p>
   <div class="grid2">
-    <div class="card"><h3>The CRM knows</h3><ul>${m.crmKnows.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>
+    <div class="card"><h3>Intake knows</h3><ul>${m.crmKnows.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>
     <div class="card"><h3>The platform knows</h3><ul>${m.platformKnows.map(x => `<li>${esc(x)}</li>`).join('')}</ul>
       <div class="prov">${esc(m.returnPath.note)}</div></div>
   </div>
@@ -5459,7 +5465,7 @@ async function viewHistory() {
     <td>${r.personName ? esc(r.personName) : '<span class="muted">-</span>'}</td>
     <td><b>${esc(r.subject || '')}</b>${r.body && !r.field ? `<div style="color:var(--steel);font-size:12px">${esc(r.body)}</div>` : ''}
       ${r.field ? `<div class="diff"><span class="was">${esc(r.oldValue ?? '(empty)')}</span> &rarr; <span class="now">${esc(r.newValue ?? '(empty)')}</span></div>` : ''}</td>
-    ${mine ? '' : `<td>${esc(r.actor || '-')}</td>`}</tr>`;
+    ${mine ? '' : `<td>${esc(actorName(r.actor) || '-')}</td>`}</tr>`;
   const tab = (v, label) => `<button class="btn sm ${HISTORY_FILTER === v ? '' : 'ghost'}" onclick="setHistoryFilter('${v}')">${label}</button>`;
   $('#view').innerHTML = `
   <h1>${mine ? 'My history' : 'History'}</h1>
@@ -5527,7 +5533,7 @@ async function checkDup() {
   const q = new URLSearchParams({ name: $('#aName').value, email: $('#aEmail').value, phone: $('#aPhone').value });
   const r = await api('/api/people/check?' + q);
   if (!r.matches.length) { $('#dup').innerHTML = ''; return; }
-  showDuplicateBlock({ error: 'This person may already be in the CRM.', matches: r.matches });
+  showDuplicateBlock({ error: 'This person may already be in Intake.', matches: r.matches });
 }
 let ADD_CONFIRMED_NEW = false;
 async function saveAdd() {
@@ -5878,7 +5884,7 @@ const fbPathLink = (p) => (/^(#\/|\/(?!\/))/.test(String(p || '')) ? `<a href="$
 // What the screen SAYS about who reads feedback. It names nobody (the owner, 28.09.2026: "Anonymize!",
 // when the box named its two readers). WHO may read it is still decided by CFG.feedbackReaders in
 // mayReadFeedback(); only the words shown changed.
-const fbReaders = () => 'the people who build the CRM';
+const fbReaders = () => 'the people who build Intake';
 
 async function fbPick(file) {
   if (!file) return;
@@ -6018,7 +6024,7 @@ async function viewFeedback() {
     <p class="sub" style="margin:2px 0 0">${open} open, ${d.rows.length} in total &middot;
       for ${esc(fbReaders())}</p></div></div>
   <div class="prov">Everything here was typed by somebody using the app. It is stored in this
-    CRM's own database and has never been sent anywhere.${AUTH.user ? '' : ' There is no login yet, so this screen is restricted to the Admin seat rather than to those two people by name.'}</div>
+    Intake's own database and has never been sent anywhere.${AUTH.user ? '' : ' There is no login yet, so this screen is restricted to the Admin seat rather than to those two people by name.'}</div>
   ${d.rows.length ? d.rows.map(row).join('') : '<div class="card"><div class="empty">Nothing has been sent yet.</div></div>'}`;
 }
 
@@ -6067,7 +6073,7 @@ function fbZoom(id) {
   });
   if (AUTH.on && !AUTH.user) {
     drawLogin(back.refused
-      ? 'That Google account cannot sign in to the Academy CRM. Ask an admin to set an account up for you.'
+      ? 'That Google account cannot sign in to Intake. Ask an admin to set an account up for you.'
       : '');
     return;
   }

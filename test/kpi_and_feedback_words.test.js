@@ -26,7 +26,7 @@ test('what the screen says about feedback names nobody', () => {
   const i = APP.indexOf('const fbReaders = () =>');
   const ctx = { CFG: CONFIG };
   vm.runInNewContext(APP.slice(i, APP.indexOf('\n', i)) + '\nthis.r = fbReaders();', ctx);
-  assert.equal(ctx.r, 'the people who build the CRM');
+  assert.equal(ctx.r, 'the people who build Intake');
   for (const name of CONFIG.feedbackReaders) assert.ok(!ctx.r.includes(name), `${name} is not shown`);
   assert.doesNotMatch(APP, /Read by Aigars|Reaches the CRM admins|It reaches the CRM admins/);
 });

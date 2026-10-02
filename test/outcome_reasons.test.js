@@ -73,7 +73,7 @@ test('nobody has stopped, nothing is drawn', () => {
 
 test('it states what the list is for, and that changing it is a config change', () => {
   const html = breakdown([closed('No response')], 0);
-  assert.match(html, new RegExp('These are the ' + CONFIG.closedReasons.length + ' reasons the CRM accepts today'));
+  assert.match(html, new RegExp('These are the ' + CONFIG.closedReasons.length + ' reasons Intake accepts today'));
   assert.match(html, /config change, not a rebuild/);
   // and the stale tag that said the list was still to agree is gone
   assert.ok(!APP.includes('reasons list to agree'),
