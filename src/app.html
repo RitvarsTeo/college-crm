@@ -1402,6 +1402,13 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .chconf ul{margin:5px 0;padding:0;list-style:none;display:grid;gap:3px}
   html.ui-c .chconf li span{display:block;font-size:10px;color:var(--t4);letter-spacing:.03em}
   html.ui-c .chconf p{margin:4px 0 0}
+  html.ui-c .chnote{border-left:3px solid var(--k-live);padding:4px 0 4px 9px;font-size:11.5px;line-height:1.45;color:var(--t2);display:grid;gap:4px}
+  html.ui-c .chnote p{margin:0}
+  html.ui-c .chmb{list-style:none;margin:0;padding:0;display:grid;gap:3px}
+  html.ui-c .chmb li span{margin-left:6px;font-weight:600}
+  html.ui-c .chmb li.m-live span{color:var(--k-live)}
+  html.ui-c .chmb li.m-not_connected span{color:var(--t4)}
+  html.ui-c .chmb small{display:block;color:var(--t4);font-size:10.5px}
 
   /* ---- B: the lifecycle strip, the ledger, the inspector */
   html.ui-c .chflow{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px;font-size:11.5px}
@@ -5394,6 +5401,25 @@ function chConflictHtml(c, env) {
     ${l.why ? `<p class="c-ev">${esc(l.why)}</p>` : ''}</div>`;
 }
 
+// What the live answer settled, what it still does not prove, and, for a channel with
+// several mailboxes, which one it is true of. A conflict stays a conflict; evidence that
+// settled one says so, with what it was, instead of quietly dropping the question.
+function chLiveNoteHtml(c, env) {
+  const l = chLiveOf(c, env);
+  if (l.state === 'conflict') return chConflictHtml(c, env);
+  const parts = [];
+  if (l.settled && !l.observed) {
+    parts.push(`<p><b>Settled on evidence, ${esc(chDay(l.settled.on))}.</b> ${esc(l.settled.outcome || '')}</p>`);
+  }
+  if (l.gap && !l.observed) parts.push(`<p><b>Not proven yet:</b> ${esc(l.gap)}</p>`);
+  const mb = chRec(c).mailboxes;
+  if (mb && mb.length) {
+    parts.push(`<ul class="chmb">${mb.map((m) => `<li class="m-${esc(m.state)}"><b>${esc(m.address)}</b>
+      <span>${m.state === 'live' ? 'Live' : 'Not connected'}</span><small>${esc(m.detail || '')}</small></li>`).join('')}</ul>`);
+  }
+  return parts.length ? '<div class="chnote">' + parts.join('') + '</div>' : '';
+}
+
 // The not-current and the not-a-channel, said once and quietly.
 function chShelvedHtml(rows) {
   const list = chShelved(rows);
@@ -5466,7 +5492,7 @@ function chCardA(c, env) {
     <header><b>${esc(c.label)}</b>${chKindTag(k)}</header>
     ${a ? `<p class="chq-do">${esc(a.action)}</p>${a.input ? `<p class="chq-in"><span>Input</span>${esc(a.input)}</p>` : ''}` : ''}
     ${chBlockerHtml(chBlocker(c))}
-    ${chConflictHtml(c, env)}
+    ${chLiveNoteHtml(c, env)}
     ${chGateHtml(c)}
     ${chEvRow(c, env)}
     <p class="chq-to"><span>Delivers to</span>${esc(chRec(c).destination || '-')}</p>
@@ -5477,13 +5503,18 @@ function chCardA(c, env) {
 function chViewA(rows, env) {
   const act = chActive(rows);
   const lanes = new Map();
+  // the lane is whoever acts NEXT; a blocker nobody holds is its own lane, and a channel
+  // with no action and no blocker (by hand, or live with nothing to do) asks nobody
   for (const c of act) {
-    const who = chWhoActs(c);
-    const key = c.direction === 'manual' ? '~none' : who || '~nobody';
+    const a = chAction(c);
+    const b = chBlocker(c);
+    const key = a ? a.owner || '~nobody' : b ? b.owner || '~nobody' : '~none';
     if (!lanes.has(key)) lanes.set(key, []);
     lanes.get(key).push(c);
   }
-  const keys = [...lanes.keys()].sort((x, y) => (x[0] === '~') - (y[0] === '~') || lanes.get(y).length - lanes.get(x).length || x.localeCompare(y));
+  // people first, busiest first; then the decision nobody holds; then nothing to do, last
+  const rank = (k) => (k === '~none' ? 2 : k === '~nobody' ? 1 : 0);
+  const keys = [...lanes.keys()].sort((x, y) => rank(x) - rank(y) || lanes.get(y).length - lanes.get(x).length || x.localeCompare(y));
   const title = (k) => k === '~none' ? 'Nobody has to act' : k === '~nobody' ? 'Needs a decision, nobody named' : k;
   return chDeck(`<div class="chdeck-in">${chFigures(rows, env)}${chSlots(rows, env)}</div>`, 'chdeck-a')
     + keys.map((k, li) => `<section class="chlane" style="--l:${li}">
@@ -5510,7 +5541,9 @@ function chViewB(rows, env) {
   const act = [...chActive(rows)].sort((a, b) => CH_ORDER.indexOf(chKind(a, env)) - CH_ORDER.indexOf(chKind(b, env))
     || a.label.localeCompare(b.label));
   if (!CH_PICK || !act.some((c) => c.channel === CH_PICK)) {
-    const first = act.find((c) => chLiveOf(c, env).state === 'conflict') || act.find((c) => chBlocker(c)) || act[0];
+    // open on the most open question: a conflict, then a proof with a stated gap, then a blocker
+    const first = act.find((c) => chLiveOf(c, env).state === 'conflict')
+      || act.find((c) => chLiveOf(c, env).gap) || act.find((c) => chBlocker(c)) || act[0];
     CH_PICK = first ? first.channel : null;
   }
   const cols = ['Access', 'Code deployed', 'Production configured', 'Live verified'];
@@ -5541,7 +5574,7 @@ function chInspector(c, env) {
   return `<div class="chinsp-in">
     <h2>${esc(c.label)} ${chKindTag(chKind(c, env))}</h2>
     <p class="chq-to"><span>Delivers to</span>${esc(chRec(c).destination || '-')}</p>
-    ${chConflictHtml(c, env)}
+    ${chLiveNoteHtml(c, env)}
     ${chBlockerHtml(chBlocker(c)) || '<p class="c-ev">No blocker.</p>'}
     ${a ? `<dl class="chblk chnext"><div><dt>Next</dt><dd>${esc(a.action)}</dd></div>
       <div><dt>Who</dt><dd>${a.owner ? esc(a.owner) : '<span class="c-gap">Nobody named</span>'}</dd></div>

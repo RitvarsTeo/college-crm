@@ -117,13 +117,14 @@ test('each channel lands in exactly one lifecycle state, read from the record', 
   const rows = apiRows();
   const got = Object.fromEntries(rows.filter((r) => !r.isIntegration).map((r) => [r.channel, s.kind(r, LOCAL)]));
   assert.deepEqual({ ...got }, {
-    website: 'owner', google_form: 'dropped', gmail: 'owner', facebook: 'owner', messenger: 'owner',
-    instagram: 'owner', whatsapp: 'owner', mailchimp: 'configured', open_day: 'parked', phone: 'configured',
+    website: 'owner', google_form: 'dropped', gmail: 'live', facebook: 'owner', messenger: 'owner',
+    instagram: 'owner', whatsapp: 'owner', mailchimp: 'configured', open_day: 'parked', phone: 'live',
     agent: 'owner', in_person: 'hand', linkedin: 'provider', tiktok: 'owner',
   });
   const { n } = s.count(rows, LOCAL);
-  assert.equal(n.live, undefined, 'nothing is live verified: no provider row has been seen');
-  assert.equal(n.owner + n.configured + n.provider + n.hand, 12);
+  // the production backup of 02.10 01:17Z holds 44 provider rows: phone 4, gmail 40
+  assert.equal(n.live, 2, 'Phone and Email (edu@) are live verified, from the 02.10 backup');
+  assert.equal(n.live + n.owner + n.configured + n.provider + n.hand, 12);
   for (const k of ['Not configured', 'Configured', 'Live verified', 'Needs owner action',
     'Blocked by external provider', 'Parked', 'Dropped']) {
     assert.ok(Object.values(s.kinds).some((x) => x.word === k), 'the vocabulary has ' + k);
@@ -166,21 +167,21 @@ test('downstream is shown apart and never counted', () => {
 
 test('locally, a provider row on THIS machine never makes production live', () => {
   const s = sandbox();
-  const rows = apiRows({ phone: { events: 4, lastEventAt: '2026-10-02T09:00:00Z' } });
-  const phone = byId(rows, 'phone');
-  assert.equal(s.liveOf(phone, LOCAL).state, 'conflict', 'the record stands, unresolved');
-  assert.equal(s.liveOf(phone, LOCAL).observed, false);
-  assert.notEqual(s.kind(phone, LOCAL), 'live');
+  const rows = apiRows({ mailchimp: { events: 4, lastEventAt: '2026-10-02T09:00:00Z' } });
+  const mc = byId(rows, 'mailchimp');
+  assert.equal(s.liveOf(mc, LOCAL).state, 'no', 'the record stands');
+  assert.equal(s.liveOf(mc, LOCAL).observed, false);
+  assert.notEqual(s.kind(mc, LOCAL), 'live');
 });
 
 test('on production the rows answer, and they settle the conflict either way', () => {
   const s = sandbox();
-  const yes = byId(apiRows({ phone: { events: 3, lastEventAt: '2026-10-02T09:00:00Z' } }), 'phone');
+  const yes = byId(apiRows({ mailchimp: { events: 3, lastEventAt: '2026-10-02T09:00:00Z' } }), 'mailchimp');
   assert.equal(s.liveOf(yes, PROD).state, 'yes');
   assert.equal(s.liveOf(yes, PROD).observed, true);
   assert.equal(s.kind(yes, PROD), 'live');
   const no = byId(apiRows(), 'phone');
-  assert.equal(s.liveOf(no, PROD).state, 'no', 'no provider row on production means not live');
+  assert.equal(s.liveOf(no, PROD).state, 'no', 'no provider row on production means not live, whatever the record says');
   assert.equal(s.kind(no, PROD), 'configured');
 });
 
@@ -201,7 +202,7 @@ test('the four states stay apart, each dated, and this machine is labelled as lo
 
 test('a missing local credential is never a blocker', () => {
   const s = sandbox();
-  for (const id of ['website', 'mailchimp', 'phone', 'tiktok']) {
+  for (const id of ['website', 'mailchimp', 'tiktok']) {
     assert.equal(s.blocker(byId(apiRows(), id)), null, id + ' has steps, not a blocker');
   }
 });
@@ -240,19 +241,41 @@ test('Meta review is shown as ahead, not as today\'s blocker, and the open call 
 
 // --------------------------------------------------------------------- PBX --
 
-test('PBX: the contradiction is shown with both records and the check, never resolved here', () => {
+test('PBX: settled on production evidence, with what it was and the gap still open', () => {
+  // The 02.10 01:17Z production backup (VERIFIED) holds 4 phone rows with source=provider,
+  // written by the daily TeleGroup pull at 01.10 05:27Z. "PBX ir live" was right; the Pin
+  // was stale. What the backup cannot show is that the pull kept running after 01.10.
   const s = sandbox();
   const phone = byId(apiRows(), 'phone');
   const l = s.liveOf(phone, LOCAL);
-  assert.equal(l.state, 'conflict');
-  assert.equal(l.claims.length, 2);
-  const html = s.conflict(phone, LOCAL);
-  assert.match(html, /Two records disagree\. Not settled here\./);
-  assert.match(html, /PBX ir live/);
-  assert.match(html, /0 rows from a real provider/);
-  assert.match(html, /The check:/);
-  assert.equal(s.kind(phone, LOCAL), 'configured', 'neither Live verified nor demoted');
-  for (const view of [s.a(apiRows(), LOCAL), s.insp(phone, LOCAL)]) assert.match(view, /Two records disagree/);
+  assert.equal(l.state, 'yes');
+  assert.match(l.source, /2026-10-02T01-17-43Z/);
+  assert.equal(l.settled.was.length, 2, 'both earlier records are kept, not erased');
+  assert.match(l.gap, /kept running after 01\.10/);
+  assert.equal(s.kind(phone, LOCAL), 'live');
+  for (const view of [s.a(apiRows(), LOCAL), s.insp(phone, LOCAL)]) {
+    assert.match(view, /Settled on evidence, 02\.10\./);
+    assert.match(view, /Not proven yet:/);
+  }
+});
+
+test('a conflict, whenever one is recorded, is shown with both sides and never resolved', () => {
+  const s = sandbox();
+  const c = { channel: 'x', label: 'X', direction: 'inbound_poll', lifecycle: 'active', record: {
+    liveVerified: { state: 'conflict', claims: [{ who: 'A', on: '2026-10-01', says: 'live' }, { who: 'B', on: '2026-10-01', says: 'not live' }], check: 'look' } } };
+  assert.equal(s.liveOf(c, LOCAL).state, 'conflict');
+  assert.notEqual(s.kind(c, LOCAL), 'live');
+  assert.match(s.conflict(c, LOCAL), /Two records disagree\. Not settled here\.[\s\S]*The check:/);
+});
+
+test('Email is told per mailbox: edu@ live, nothing else connected', () => {
+  const s = sandbox();
+  const g = byId(apiRows(), 'gmail');
+  assert.equal(s.kind(g, LOCAL), 'live');
+  const out = s.insp(g, LOCAL);
+  assert.match(out, /edu@novikontas\.org<\/b>\s*<span>Live/);
+  assert.match(out, /training@novikontas\.org<\/b>\s*<span>Not connected/);
+  assert.match(CFG.channels.gmail.record.liveVerified.detail, /40 rows from a real provider/);
 });
 
 // ------------------------------------------------------------ A and B --
@@ -261,7 +284,7 @@ test('A is a work queue: one lane per person who acts next, every channel once',
   const s = sandbox();
   const out = s.a(apiRows(), LOCAL);
   const lanes = [...out.matchAll(/<section class="chlane"[^>]*>\s*<h2>([^<]+)<span class="chc-n">(\d+)/g)].map((m) => m[1] + ':' + m[2]);
-  assert.deepEqual(lanes, ['Oksana:6', 'Ritvars:4', 'Needs a decision, nobody named:1', 'Nobody has to act:1']);
+  assert.deepEqual(lanes, ['Oksana:6', 'Ritvars:3', 'Needs a decision, nobody named:1', 'Nobody has to act:2']);
   for (const r of apiRows().filter((x) => !x.isIntegration && (x.lifecycle || 'active') === 'active')) {
     assert.equal(out.split('<b>' + r.label + '</b>').length - 1, 1, r.label + ' once');
   }
@@ -277,8 +300,9 @@ test('B is a ledger: four proofs plus this machine, every cell labelled, an insp
   const tds = [...out.matchAll(/<td(?![^>]*data-label)[^>]*>/g)].filter((m) => !/tfoot/.test(m[0]));
   assert.ok([...out.matchAll(/<td class="chcell[^"]*" data-label="/g)].length === 48, 'every proof cell is labelled for the phone layout');
   assert.match(out, /<aside class="chinsp"/);
-  assert.match(out, /Two records disagree/, 'the inspector opens on the unresolved one first');
-  assert.match(out, /<td><b>0<\/b> of 12<\/td><td><\/td><\/tr><\/tfoot>/, 'live verified: 0 of 12, counted');
+  assert.match(out, /<h2>Phone <span/, 'the inspector opens on the proof with a stated gap');
+  assert.match(out, /Not proven yet:/);
+  assert.match(out, /<td><b>2<\/b> of 12<\/td><td><\/td><\/tr><\/tfoot>/, 'live verified: 2 of 12, counted');
   assert.ok(tds.length >= 0);
 });
 

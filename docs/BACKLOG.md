@@ -37,8 +37,13 @@ a box listing its properties with a status word each ("Enabled", "Not connected"
 pattern for B's per-proof cells; **GitBook's integrations list** for A's card rhythm. Pattern
 only, no colours or type taken.
 
-**Still open, not taken here:** PBX live? (the screen shows both records); Meta App Review
-work / question / approval; which agent partner first (nobody named).
+**Corrected the same day** on the 02.10 production backup (VERIFIED): 44 real provider rows,
+Phone 4 and Email 40 (edu@, option B). **PBX is live verified**; "PBX ir live" was right; the
+gap is continuity after 01.10. Email is live for edu@ only. Live verified: 2 of 12.
+
+**Still open, not taken here:** Phone continuity past 01.10; Meta App Review work / question /
+approval; which agent partner first (nobody named); LinkedIn = Ritvars and TikTok = Oksana to
+be confirmed by him (derived from his 02.10 messages, not stated as an owner change).
 
 ## 02.10.2026 - HANDOFF: where this run stopped
 

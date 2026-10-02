@@ -183,3 +183,27 @@ signed in on production. Locally it never does.
 
 Counts from the record: Live verified 0 · Configured 2 (Mailchimp, Phone) · Needs owner action 8 ·
 Blocked by external provider 1 (LinkedIn) · Working by hand 1 (In person) = 12. Parked 1, Dropped 1.
+
+### Session 3 correction, later on 02.10: production already had real provider rows
+
+The QA session pointed to the production backup `_backups/2026-10-02T01-17-43Z` (status VERIFIED)
+and `docs/INTAKE_CONTROL_2026-10-02.md` (branch `control/2026-10-02-s1`, `1a09a87`). **Read
+again here, counts only:** `inbound` holds **44 rows with source=provider**: phone 4 (calls of
+30.09), gmail 40 (4 dated 30.09, 36 dated 01.10), all still state `new`. `sync_state`: `pbx_until`
+ran 01.10 05:27Z; `gmail_oauth` connected **edu@novikontas.org** at 01.10 13:27Z; last Gmail poll
+01.10 17:00Z. `source='provider'` is written only in live mode.
+
+So **everything above that says "live verified: nothing" and "0 from a real provider" was stale
+from 01.10 05:27Z**, and so was this session's first record (`80de328`). Corrected:
+
+- **Phone: Live verified** (daily pull). "PBX ir live" was right. **Gap still open:** continuity
+  after 01.10 is not proven by one backup.
+- **Email: Live verified for edu@** (option B). No other mailbox is connected.
+- Every other channel: 0 provider rows, now cited to the 02.10 backup instead of the 30.09 Pin.
+- Count: **2 live verified**, 1 configured (Mailchimp), 7 need owner action, 1 blocked by an
+  external provider (LinkedIn), 1 by hand = 12.
+
+Not taken from the control table: it files the Meta four and TikTok as "Blocked by external
+provider"; here today's step is the access Oksana gives, and review is a gate ahead, not yet
+submitted. Its owners for LinkedIn / TikTok (Tetiana) predate Ritvars's 02.10 changes; for him
+to confirm.

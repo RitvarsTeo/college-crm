@@ -70,8 +70,9 @@
         },
         "liveVerified": {
           "state": "no",
-          "seen": "2026-09-30",
-          "source": "Intake Pin: inbound held 15 rows, all source=simulated, 0 from a real provider. Not re-read against production since."
+          "seen": "2026-10-02",
+          "source": "production backup _backups/2026-10-02T01-17-43Z (status VERIFIED), counts read 02.10; also docs/INTAKE_CONTROL_2026-10-02.md (control/2026-10-02-s1, 1a09a87)",
+          "detail": "0 rows from a real provider for this channel"
         },
         "nextAction": {
           "owner": "Ritvars",
@@ -143,8 +144,8 @@
       "timestampSource": "the message Date header",
       "dedupKey": "channel + gmail message id",
       "rateLimit": "Gmail API quota per user. Polling every few minutes is well inside it.",
-      "readiness": "waiting_for_external_access",
-      "externalBlocker": "Option B (decided 01.10): Marina authorises edu@ herself through the 48-hour link, which is sent only after the link is verified on production. Option A cannot work: domain-wide delegation needs Super Admin, which Marina does not have.",
+      "readiness": "ready_for_configuration",
+      "externalBlocker": null,
       "weControl": [
         "the polling schedule",
         "what we extract",
@@ -164,7 +165,7 @@
       "howWeGoLive": "Deploy, add the key, poll once by hand, check CAR, then enable the schedule.",
       "howWeDisable": "Disable the schedule. The key can also be revoked at Google.",
       "bodyRetention": "The message body is held only until somebody qualifies or archives the item, then deleted. What survives is the structured record. Decided 23.09.2026.",
-      "blockerKind": "work",
+      "blockerKind": null,
       "connectSteps": [
         "**Identify the Google Workspace administrator** - the one thing still unknown",
         "Get authorisation for the Gmail integration",
@@ -173,16 +174,16 @@
         "Test an inbound email into the Inbox"
       ],
       "ownerPerson": "Marina",
-      "ownerAction": "Option B: Ritvars verifies the link on production, then Marina authorises edu@ through the 48-hour link",
+      "ownerAction": "Live for edu@ since 01.10 (option B). No other mailbox is connected.",
       "reliability": "Read-only scope (gmail.readonly), one mailbox. A repeat Gmail message id would be dropped.",
       "reconciliation": "The poll IS the re-read, but it looks back a fixed 15 minutes and takes at most 25 messages, so a missed run or a busy window loses mail. A history-id cursor would close that. Not built.",
       "review_27_09": "BUILT ONLY TO THE FETCH. lib/gmail.js reads messages and api/cron/gmail-poll.js returns them in its reply; NOTHING passes them to receive(), so no email reaches the Inbox yet. Also an open decision the review raised: domain-wide delegation lets the service account read ANY mailbox in the Workspace with that scope - the code chooses one, the grant does not limit it. OAuth on a dedicated mailbox limits it to that mailbox. Ritvars and Marina decide.",
       "record": {
         "access": {
-          "state": "pending",
+          "state": "granted",
           "seen": "2026-10-02",
-          "detail": "Option A (domain-wide delegation) needs Super Admin, which Marina does not have. Option B (Marina authorises edu@ herself through a 48-hour link) was decided 01.10.",
-          "source": "Marina tried Security > API controls; memory intake-pbx-live-contradiction, crm-channels-lane-2026-10-01"
+          "detail": "edu@novikontas.org authorised through option B at 01.10 13:27Z. Option A (domain-wide delegation) was never possible: it needs Super Admin.",
+          "source": "production backup _backups/2026-10-02T01-17-43Z (status VERIFIED), counts read 02.10; also docs/INTAKE_CONTROL_2026-10-02.md (control/2026-10-02-s1, 1a09a87)"
         },
         "deployed": {
           "state": "yes",
@@ -190,23 +191,32 @@
           "detail": "The option-B link (/api/admin/gmail/link) is in the running commit."
         },
         "productionConfigured": {
-          "state": "no",
-          "seen": "2026-10-01",
-          "source": "vercel env ls, read in the CHANNELS lane",
-          "detail": "No mailbox is authorised. GMAIL_SERVICE_ACCOUNT_JSON IS set, but that is option A, which cannot work."
+          "state": "yes",
+          "seen": "2026-10-02",
+          "source": "production backup _backups/2026-10-02T01-17-43Z (status VERIFIED), counts read 02.10; also docs/INTAKE_CONTROL_2026-10-02.md (control/2026-10-02-s1, 1a09a87)",
+          "detail": "Option B: the edu@ authorisation is stored, and CHANNEL_MODE_GMAIL is set (control session, 02.10)."
         },
         "liveVerified": {
-          "state": "no",
-          "seen": "2026-09-30",
-          "source": "Intake Pin: inbound held 15 rows, all source=simulated, 0 from a real provider. Not re-read against production since."
+          "state": "yes",
+          "seen": "2026-10-02",
+          "source": "production backup _backups/2026-10-02T01-17-43Z (status VERIFIED), counts read 02.10; also docs/INTAKE_CONTROL_2026-10-02.md (control/2026-10-02-s1, 1a09a87)",
+          "detail": "edu@: 40 rows from a real provider (4 dated 30.09, 36 dated 01.10); last poll 01.10 17:00Z"
         },
-        "nextAction": {
-          "owner": "Ritvars",
-          "action": "Verify the option-B link on production, then send Marina the 48-hour link",
-          "input": "Never send the link before production is verified (decided 01.10)"
-        },
+        "nextAction": null,
         "blocker": null,
-        "destination": "Each new email to edu@ becomes an enquiry in the Inbox."
+        "destination": "Each new email to edu@ becomes an enquiry in the Inbox. Of the 44 real rows in production, all are still unprocessed (state new).",
+        "mailboxes": [
+          {
+            "address": "edu@novikontas.org",
+            "state": "live",
+            "detail": "40 provider rows; authorised 01.10 13:27Z"
+          },
+          {
+            "address": "training@novikontas.org",
+            "state": "not_connected",
+            "detail": "Not authorised. Whether it should be is not recorded in this repository."
+          }
+        ]
       }
     },
     "facebook": {
@@ -278,8 +288,9 @@
         },
         "liveVerified": {
           "state": "no",
-          "seen": "2026-09-30",
-          "source": "Intake Pin: inbound held 15 rows, all source=simulated, 0 from a real provider. Not re-read against production since."
+          "seen": "2026-10-02",
+          "source": "production backup _backups/2026-10-02T01-17-43Z (status VERIFIED), counts read 02.10; also docs/INTAKE_CONTROL_2026-10-02.md (control/2026-10-02-s1, 1a09a87)",
+          "detail": "0 rows from a real provider for this channel"
         },
         "nextAction": {
           "owner": "Oksana",
@@ -365,8 +376,9 @@
         },
         "liveVerified": {
           "state": "no",
-          "seen": "2026-09-30",
-          "source": "Intake Pin: inbound held 15 rows, all source=simulated, 0 from a real provider. Not re-read against production since."
+          "seen": "2026-10-02",
+          "source": "production backup _backups/2026-10-02T01-17-43Z (status VERIFIED), counts read 02.10; also docs/INTAKE_CONTROL_2026-10-02.md (control/2026-10-02-s1, 1a09a87)",
+          "detail": "0 rows from a real provider for this channel"
         },
         "nextAction": {
           "owner": "Oksana",
@@ -452,8 +464,9 @@
         },
         "liveVerified": {
           "state": "no",
-          "seen": "2026-09-30",
-          "source": "Intake Pin: inbound held 15 rows, all source=simulated, 0 from a real provider. Not re-read against production since."
+          "seen": "2026-10-02",
+          "source": "production backup _backups/2026-10-02T01-17-43Z (status VERIFIED), counts read 02.10; also docs/INTAKE_CONTROL_2026-10-02.md (control/2026-10-02-s1, 1a09a87)",
+          "detail": "0 rows from a real provider for this channel"
         },
         "nextAction": {
           "owner": "Oksana",
@@ -543,8 +556,9 @@
         },
         "liveVerified": {
           "state": "no",
-          "seen": "2026-09-30",
-          "source": "Intake Pin: inbound held 15 rows, all source=simulated, 0 from a real provider. Not re-read against production since."
+          "seen": "2026-10-02",
+          "source": "production backup _backups/2026-10-02T01-17-43Z (status VERIFIED), counts read 02.10; also docs/INTAKE_CONTROL_2026-10-02.md (control/2026-10-02-s1, 1a09a87)",
+          "detail": "0 rows from a real provider for this channel"
         },
         "nextAction": {
           "owner": "Oksana",
@@ -623,8 +637,9 @@
         },
         "liveVerified": {
           "state": "no",
-          "seen": "2026-09-30",
-          "source": "Intake Pin: inbound held 15 rows, all source=simulated, 0 from a real provider. Not re-read against production since."
+          "seen": "2026-10-02",
+          "source": "production backup _backups/2026-10-02T01-17-43Z (status VERIFIED), counts read 02.10; also docs/INTAKE_CONTROL_2026-10-02.md (control/2026-10-02-s1, 1a09a87)",
+          "detail": "0 rows from a real provider. Mailchimp did verify our URL (handshake 30.09 13:40Z), which proves the address, not a lead or a subscriber event"
         },
         "nextAction": {
           "owner": "Ritvars",
@@ -693,8 +708,8 @@
       "timestampSource": "created_at, read as Europe/Riga",
       "dedupKey": "uniqueid",
       "rateLimit": "UNKNOWN. Must be asked.",
-      "readiness": "waiting_for_external_access",
-      "externalBlocker": "Nothing from TeleGroup. Ritvars holds the API token; it goes into PBX_API_TOKEN on the host, then the channel needs the three deployment prerequisites.",
+      "readiness": "ready_for_configuration",
+      "externalBlocker": null,
       "weControl": [
         "the polling window",
         "timezone handling",
@@ -721,7 +736,7 @@
       ],
       "_note": "V1 logs calls by hand and says so on screen. The logger is built and tested locally and has never called the real API. The queue field gives us the button; that question is settled.",
       "_answered": "ANSWERED 24.09.2026, and it was in the brief all along. The event carries a `queue` field, and the queue IS the button: 1001*Q-ADMISSION is button 1, 1001*Q-COORDINATORS is button 2, 1001*Q-OTHER is button 3. config/prototype.json -> phoneMenu has mapped it since 23.09.2026. It was listed as an open question by mistake and Ritvars had to point that out.",
-      "blockerKind": "work",
+      "blockerKind": null,
       "connectSteps": [
         "Paste the token Ritvars holds into the server setting `PBX_API_TOKEN`. Never into a document, a chat or this repository",
         "Connect the production PBX polling schedule",
@@ -732,7 +747,7 @@
         "Test buttons 1, 2 and 3"
       ],
       "ownerPerson": "Ritvars",
-      "ownerAction": "Put the token he holds into PBX_API_TOKEN, then configure the poll",
+      "ownerAction": "Live since 01.10 05:27Z (daily pull). Continuity past 01.10 not yet proven.",
       "reliability": "Poll every 5 minutes for the last 15, so two missed runs lose nothing; upsert on uniqueid absorbs the overlap.",
       "reconciliation": "The overlap window is the reconciliation.",
       "review_27_09": "TWO GAPS, 27.09.2026. (1) NO TRIGGER: the Vercel team is on Hobby, which rejects any cron more frequent than daily, so the 5-minute cron was removed from vercel.json; something else must call /api/cron/pbx-calls every 5 minutes before this channel goes live. (2) Calls are written by lib/pbx.js into its own table, pbx_incoming_calls, through the Supabase REST API. Nothing in src/ reads that table, so no call reaches the Inbox yet. Still worth asking TeleGroup whether a reliable call-event push exists (open question 9); if not, polling stays - it works.",
@@ -755,27 +770,31 @@
           "detail": "PBX_API_TOKEN and CHANNEL_MODE_PHONE are set."
         },
         "liveVerified": {
-          "state": "conflict",
+          "state": "yes",
           "seen": "2026-10-02",
-          "claims": [
-            {
-              "who": "Ritvars, to the team",
-              "on": "2026-10-01",
-              "says": "\"PBX ir live\""
-            },
-            {
-              "who": "Intake Pin",
-              "on": "2026-09-30",
-              "says": "0 rows from a real provider; all 15 inbound rows simulated"
-            }
-          ],
-          "check": "Signed in on production, open #/channels and read the Phone row: Receiving = a real call arrived; Ready = configured only.",
-          "why": "Every production route answers 401 to a Claude session; the read-only checker (feat/checker-gate-2026-09-30) is committed, not deployed.",
-          "source": "docs/BACKLOG.md [VERIFY]; memory intake-pbx-live-contradiction"
+          "source": "production backup _backups/2026-10-02T01-17-43Z (status VERIFIED), counts read 02.10; also docs/INTAKE_CONTROL_2026-10-02.md (control/2026-10-02-s1, 1a09a87)",
+          "detail": "4 rows from a real provider (calls of 30.09), written by the daily TeleGroup pull at 01.10 05:27Z",
+          "gap": "that the daily pull kept running after 01.10. The 02.10 backup holds one pull. One signed-in look at the Phone row, the 03.10 backup, or the checker gate (needs GO) proves it.",
+          "settled": {
+            "on": "2026-10-02",
+            "was": [
+              {
+                "who": "Ritvars, to the team",
+                "on": "2026-10-01",
+                "says": "\"PBX ir live\""
+              },
+              {
+                "who": "Intake Pin",
+                "on": "2026-09-30",
+                "says": "0 rows from a real provider"
+              }
+            ],
+            "outcome": "The live claim was right. The Pin was stale from 01.10 05:27Z."
+          }
         },
         "nextAction": {
           "owner": "Ritvars",
-          "action": "Read the Phone row on production, signed in, and say which record is right",
+          "action": "Prove the daily pull continues: one signed-in look at the Phone row, or GO for the checker gate",
           "input": null
         },
         "blocker": null,
@@ -843,8 +862,9 @@
         },
         "liveVerified": {
           "state": "no",
-          "seen": "2026-09-30",
-          "source": "Intake Pin: inbound held 15 rows, all source=simulated, 0 from a real provider. Not re-read against production since."
+          "seen": "2026-10-02",
+          "source": "production backup _backups/2026-10-02T01-17-43Z (status VERIFIED), counts read 02.10; also docs/INTAKE_CONTROL_2026-10-02.md (control/2026-10-02-s1, 1a09a87)",
+          "detail": "0 rows from a real provider for this channel"
         },
         "nextAction": null,
         "blocker": {
@@ -977,8 +997,9 @@
         },
         "liveVerified": {
           "state": "no",
-          "seen": "2026-09-30",
-          "source": "Intake Pin: inbound held 15 rows, all source=simulated, 0 from a real provider. Not re-read against production since."
+          "seen": "2026-10-02",
+          "source": "production backup _backups/2026-10-02T01-17-43Z (status VERIFIED), counts read 02.10; also docs/INTAKE_CONTROL_2026-10-02.md (control/2026-10-02-s1, 1a09a87)",
+          "detail": "0 rows from a real provider for this channel"
         },
         "nextAction": {
           "owner": "Oksana",
@@ -1058,8 +1079,9 @@
         },
         "liveVerified": {
           "state": "no",
-          "seen": "2026-09-30",
-          "source": "Intake Pin: inbound held 15 rows, all source=simulated, 0 from a real provider. Not re-read against production since."
+          "seen": "2026-10-02",
+          "source": "production backup _backups/2026-10-02T01-17-43Z (status VERIFIED), counts read 02.10; also docs/INTAKE_CONTROL_2026-10-02.md (control/2026-10-02-s1, 1a09a87)",
+          "detail": "0 rows from a real provider for this channel"
         },
         "nextAction": {
           "owner": "Oksana",
