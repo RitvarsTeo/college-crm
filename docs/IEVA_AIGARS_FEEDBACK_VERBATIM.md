@@ -124,6 +124,46 @@ tool."
 
 ---
 
+## Aigars, Wednesday 24.09 - the braindump (`Crm braindump.docx`, six screenshots)
+
+The first real test. Latvian as written, English beside it. The file lives in Ritvars's Downloads;
+the screenshots are not copied here.
+
+| Where | His words | Plain English |
+|---|---|---|
+| Today | "Šeit vajadzētu tabulas view lai ir overview nevis spaida cauri, katrā logā. Var dot iespēju change view ja kādam šitā vairāk vai kā citādi patīk, bet main ir jābūt table." | A table for the overview, not clicking through one at a time. A view switch is fine, but the main view is a table |
+| CAR 1 | "Jāpadomā vai Not relevant un junk vispār vajag, ja jā, tad kāpēc un kā to var apvienot jo 2 tabi noteikti par daudz." | Are Not relevant and Junk needed at all; if so, merge them, two tabs is too many |
+| CAR 2 | "To look at: good, lai paliek, aiz to look at ir jābūt jau pipeline (pieņemu ka tas ir jātaisa kā atsevišķs page), ķip tur contacted once, waiting for reply bla bla bla - šeit ir jāparunā ar Ievu, kāds šobrīd reali ir tas process, lai varam tad uztaisīt. Tam ir jābūt drag and drop, for inspo ielieku attēlu no EMBARK zemāk" | To look at stays. Behind it a pipeline, its own page, stages like "contacted once, waiting for reply" - ask Ieva what the real process is. Drag and drop, EMBARK as inspiration |
+| People | "Šis cik saprotu ir vnk takā database, bet trūkst tad attiecīgi tas pipeline ko minēju iepriekš" | This is the database; the pipeline is missing |
+| People filters | "Šajā attēlā filtriem vajag tad arī nosaukumu, ko tas īsti izvifltrēs" | The filters need names saying what they filter |
+| People edit | "Te vajadzētu funkciju quick edit, lai katru no logiem varētu quick editot, pielikt note vai vēl ko, lai editiem nevajadzētu iet uz personal page" | Quick edit on each row, add a note, without going to the person page |
+| Follow-up list | "Īsti laikam nav ko teikt, par tiem Outcomes tur jārunā ar Ievu, vai ir ko noņemt pielikt. Also, ar ievu ir jārunā par Next Steps, lai vina iziet cauri sarakstam un iedod komentārus." | Outcomes: ask Ieva what to remove or add. Next Steps: Ieva goes through the list and comments |
+| Random 1 | "Šeit man nav saprotams, vai CRM rādīsies katra ziņa ko mēs saņemam, vai tomēr tur būs kkāda cilvēka filtrācija?" | Will every message show in the CRM, or does a person filter first? |
+| Random 2 | "Es uzrakstiju notes ka grib engineer programmu, talak tas cilveks paradijas Done sadala ar not clear yet, ko tas nozime un ko talak ar to cilveku darit? Kas notiks ja to cilveku vnk aizmirsis un vins tur Done ari paliks dzivot, nedaudz nesaprotu flowu." | I noted they want engineering, they landed in Done as "not clear yet". What does it mean, what next? If forgotten they live in Done for ever |
+| Random 3 | "Šeit spiežot uz apvilkto - open, met erroru." | Clicking "open" throws an error |
+| CAR overall | "Kopuma CAR nav isti saprotams man - es nevaru tur konkreti atzimet ko cilveks gribeja un ts cilveks neaiziet uz pipeline, paradas vel kkadi papildus soli ieksh done un no turienes es ari isti nevaru to cilveku iemest pipeline, sanak es izdaru 2 soļus bet nekas nenotiek." | I cannot mark what they wanted, they do not reach the pipeline, extra steps appear in Done. "I do two steps and nothing happens" |
+| CAR, how it should be | "Es redzu ka te ir jabut automatiskak ... tad mes ieks ta CAR atzimejam to visu un vins automatiski aiziet uz pipeline, next steps. Butiba CAR sadala ir jābūt tikai To look at manā uztverē, ķip apstrādājamie leadi." | More automatic: mark it in CAR and the person goes to the pipeline and next steps by themselves. CAR is only To look at, the leads to process |
+| Documents | "Šajā sistēmā document upload nav, to cilvēki liks iekš admission portala." | No document upload here; that is the admissions portal |
+| People, everything editable | "Iekš people tad visam ko vajag no musu puses editot ir jabut editejamam no turienes, lai nav vislaik jaiet uz cilveka profilu." | Everything we edit must be editable from People, not always via the profile |
+
+## Aigars, 28-29.09 - the five-point review, and three more
+
+His original message is not in any file; these are the words the build commits quoted.
+
+| # | What | His words on record |
+|---|---|---|
+| 1 | "ŅAV" should be NAV | - |
+| 2 | Journey: overdue must look urgent; dark mode runs together | "warning messedzus bik cita krasa, sita tada draudziga"; "Seit viss kka saplust viena" |
+| 2A | Journey filters, with the Student Coordinator as an owner | "add coordinator also" |
+| 3 | A comment thread per person | - |
+| 4 | "Application form started" and "Matriculated" recorded | - |
+| 5 | **never written down** | - |
+| 29.09 | People filters as dropdowns, not one-choice pills | "filtrus ... nevis vnk pills ar vienu izveli" |
+| 29.09 | A colour or icon per next-step type | "a colour or icon per next-step type" |
+| 29.09 | A Journey summary for management: how many waiting, how many per next step | - |
+
+---
+
 ## Ritvars's channel status to the team, 01.10
 
 Quoted because it is the most recent first-hand statement of channel state, and it disagrees with
