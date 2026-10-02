@@ -5717,7 +5717,8 @@ function openNewTask(personId) {
 }
 async function doNewTask(personId) {
   await post(`/api/people/${personId}/task`, { label: $('#tLabel').value, due: $('#tDate').value });
-  closeModal(); viewPerson(personId);
+  closeModal();
+  if (String(location.hash).startsWith('#/person/')) viewPerson(personId); else route();   // stay where it was planned
 }
 
 // A note carries a type so it can be read and reported on, and it stays in the

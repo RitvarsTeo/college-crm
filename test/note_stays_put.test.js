@@ -44,3 +44,23 @@ test('from Today, Today is redrawn', async () => {
 test('from the person page, the person page is redrawn as before', async () => {
   assert.deepEqual(await save('#/person/p1'), ['person:p1']);
 });
+
+// The same jump on "Plan a next step", offered on Today's No next step rows and on the
+// Journey card. Done and Move the date already redraw in place (route()); this one did not.
+async function plan(hash) {
+  const i = APP.indexOf('async function doNewTask(');
+  assert.ok(i > 0);
+  const src = APP.slice(i, APP.indexOf('\n}\n', i) + 2);
+  const calls = [];
+  const ctx = { location: { hash }, $: () => ({ value: 'x' }), post: async () => ({}),
+    closeModal: () => {}, viewPerson: (id) => calls.push('person:' + id), route: () => calls.push('route') };
+  vm.runInNewContext(src + '\nthis.go = doNewTask;', ctx);
+  await ctx.go('p1');
+  return calls;
+}
+
+test('planning a next step from Today or the Journey stays there', async () => {
+  assert.deepEqual(await plan('#/today'), ['route']);
+  assert.deepEqual(await plan('#/journey'), ['route']);
+  assert.deepEqual(await plan('#/person/p1'), ['person:p1']);
+});
