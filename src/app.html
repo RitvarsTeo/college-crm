@@ -1209,6 +1209,10 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
      with the next-step mark directly above it. */
   html.ui-c .c-jp small.c-jnote::before{content:"\201C";margin-right:2px;font-size:15px;line-height:0;vertical-align:-4px}
   html.ui-c .c-jp:hover{border-color:var(--control-line)}
+  html.ui-c .c-jmore{display:block;width:100%;margin:6px 0 0;padding:6px 8px;border:1px dashed var(--rule);border-radius:8px;
+    background:transparent;color:var(--t2);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;text-align:center}
+  html.ui-c .c-jmore:hover{border-style:solid;border-color:var(--control-line);color:var(--ink)}
+  html.ui-c .c-jmore:focus-visible{outline:2px solid var(--pet);outline-offset:1px}
   html.ui-c .c-jp.c-sel{border-color:var(--pet);box-shadow:0 0 0 1px var(--pet)}
   /* Journey filters: compact labelled dropdowns in one row; a set filter is Navy-edged and bold */
   /* the summary reads as one thing: a count, a bar, a label, and the bar is the button */
@@ -1294,7 +1298,6 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .kfl-tag.t-cold{border-left:3px solid var(--v-lead)}     /* dormant, expected back */
   html.ui-c .kfl-tag.t-reject{border-left:3px solid var(--v-np)}     /* declined, often for now */
   html.ui-c a.kfl-tag:hover{border-color:var(--control-line)}
-  html.ui-c .c-tagseg{margin:-4px 0 14px}
 
   /* A - the journey band: a lit well, a hairline through it, raised cards on one plinth */
   html.ui-c .kflow{position:relative;margin:0 0 26px;padding:18px 16px 16px;border-radius:18px;
@@ -2767,18 +2770,15 @@ function cReasonBreakdown(np, noReason) {
     + '</div>';
 }
 
-// COLD AND REJECT, COUNTED (Admissions, 30.09: easier for statistics, and extra marketing
-// aimed at the cold ones specifically; the verbatim words are in the feedback doc). The tag was
-// built in b5f3a4c and could be SET; nothing counted it or picked the cold ones out.
-// Each tag is a filter. A tag nobody carries is not drawn (KB 08 P5: gaps never shown).
-const cTagChip = (id) => { const t = (CFG.closedTags || []).find((x) => x.id === id); return t ? `<span class="kfl-tag t-${esc(id)}">${esc(t.label || id)}</span> ` : ''; };
-function cTagSplit(np) {
-  const tags = (CFG.closedTags || []).map((t) => [t.id, t.label || t.id, np.filter((p) => p.closed_tag === t.id).length]).filter(([, , n]) => n > 0);
-  if (!tags.length) return '';
-  const pick = (id) => `C_OUT_TAG=${id ? `'${esc(id)}'` : 'null'};viewOutcomesC()`;
-  return `<div class="c-seg c-tagseg" role="group" aria-label="Cold or reject">
-    <button aria-pressed="${!C_OUT_TAG}" onclick="${pick(null)}">Everybody ${np.length}</button>${tags.map(([id, label, n]) =>
-    `<button aria-pressed="${C_OUT_TAG === id}" onclick="${pick(id)}">${esc(label)} ${n}</button>`).join('')}</div>`;
+// COLD AND REJECT, PICKED OUT (Admissions, 30.09: easier for statistics, and extra marketing
+// aimed at the cold ones specifically; the verbatim words are in the feedback doc).
+// The tag's DISPLAY on this screen (the label on each row and the count line) belongs to the
+// feedback closure work; this is only the filter Home's Cold / Reject links open, said in the
+// same shape as the Admitted filter above it so it can be cleared.
+function cTagFilterBar(list) {
+  const t = (CFG.closedTags || []).find((x) => x.id === C_OUT_TAG);
+  if (!t) return '';
+  return `<div class="c-filter">Showing <b>${list.length}</b> not proceeding, ${esc(t.label || t.id)} <button class="btn sm ghost" onclick="C_OUT_TAG=null;viewOutcomesC()">Everybody not proceeding ✕</button></div>`;
 }
 async function viewOutcomesC() {
   const people = await cPeopleRows();
@@ -2801,11 +2801,11 @@ async function viewOutcomesC() {
       <div class="act"><button class="btn" onclick="openExport()">Download for management review</button><button class="btn ghost" onclick="location.hash='#/reports'">Full report</button></div></div>
     <div class="c-seg" role="group" aria-label="Outcome"><button aria-pressed="${C_OUTCOME === 'Admitted'}" onclick="C_OUTCOME='Admitted';viewOutcomesC()"><span class="c-ok">✓</span>Admitted ${adm.length}</button><button aria-pressed="${C_OUTCOME !== 'Admitted'}" onclick="C_OUTCOME='Not proceeding';viewOutcomesC()"><span class="c-no">✕</span>Not proceeding ${np.length}</button></div>
     ${f ? `<div class="c-filter">Showing <b>${list.length}</b> ${list.length === 1 ? 'admitted person' : 'admitted people'}, ${esc(fLabel)} <button class="btn sm ghost" onclick="C_OUT_FILTER=null;viewOutcomesC()">Show all admitted ✕</button></div>` : ''}
-    ${C_OUTCOME !== 'Admitted' ? cTagSplit(np) : ''}
+    ${C_OUTCOME !== 'Admitted' ? cTagFilterBar(list) : ''}
     ${C_OUTCOME !== 'Admitted' ? cReasonBreakdown(np, noReason) : ''}
     <div class="c-sheet">${list.map((p) => `<div class="c-line" tabindex="0" onclick="location.hash='#/person/${esc(p.id)}'" style="grid-template-columns:minmax(0,1.2fr) minmax(0,1.4fr) 110px">
         <div class="c-who"><b>${esc(p.name)}</b><small>${esc(p.programme || 'programme not said')} · came from ${esc(cChannel(p.source_channel)[0])}</small></div>
-        <div class="c-what">${C_OUTCOME !== 'Admitted' && p.closed_tag ? cTagChip(p.closed_tag) : ''}${C_OUTCOME === 'Admitted' ? `Admitted${p.matriculated_at ? ` · <span class="c-lifefact" title="From the SIS: it happened on or before this day">Matriculated <time>by ${esc(cDay(p.matriculated_at))}</time></span>` : ''}` : (p.closed_reason ? esc(p.closed_reason) : '<span class="c-gap">reason not recorded</span>')}</div>
+        <div class="c-what">${C_OUTCOME === 'Admitted' ? `Admitted${p.matriculated_at ? ` · <span class="c-lifefact" title="From the SIS: it happened on or before this day">Matriculated <time>by ${esc(cDay(p.matriculated_at))}</time></span>` : ''}` : (p.closed_reason ? esc(p.closed_reason) : '<span class="c-gap">reason not recorded</span>')}</div>
         <div class="c-when">${p.admitted_at ? fmtDate(p.admitted_at) : ''}</div></div>`).join('') || '<div class="c-empty">Nobody here.</div>'}</div>`;
 }
 
@@ -3486,6 +3486,41 @@ function cPeopleTabs(which) {
     tab('journey', '#/journey', 'Journey')}${tab('all', '#/people/all', 'All people')}</div>`;
 }
 
+// SCREEN 3, THE BOARD, ONE LEVEL AT A TIME (the owner, 01.10.2026: "all together is just
+// tooooo much"). The summary above was re-levelled on 01.10; the five columns below still
+// printed every card, so Application and Contract ran the page to about 1,460 px.
+//
+// Each column now opens with its C_JCOL_SHOW most urgent people and one line for the rest.
+// MOST URGENT FIRST, or a cap would hide exactly the people somebody is late for:
+// most days overdue, then due today, then the next date, then nobody's next step. The
+// line carries its count, so opening it is a choice, not a lottery, and a column that is
+// open stays open across a redraw. The person whose card is open is always shown.
+const C_JCOL_SHOW = 5;
+const C_JCOLOPEN = new Set();
+function cJUrgency(t) {
+  if (!t || !t.due_at) return [3, 0];
+  const w = cWhenClass(t.due_at);
+  return w === 'over' ? [0, -cDaysLate(t.due_at)] : w === 'today' ? [1, 0] : [2, Date.parse(cDay(t.due_at)) || 0];
+}
+function cJSort(ps, taskOf) {
+  return ps.map((p, i) => [p, cJUrgency(taskOf.get(p.id)), i])
+    .sort((a, b) => a[1][0] - b[1][0] || a[1][1] - b[1][1] || a[2] - b[2]).map((x) => x[0]);
+}
+function cJColumn(stageId, ps, taskOf, sel) {
+  const sorted = cJSort(ps, taskOf);
+  const open = C_JCOLOPEN.has(stageId);
+  let shown = open ? sorted : sorted.slice(0, C_JCOL_SHOW);
+  if (!open && sel && sorted.includes(sel) && !shown.includes(sel)) shown = [...shown, sel];
+  const rest = sorted.length - shown.length;
+  const cards = shown.map((p) => cJourneyCard(p, taskOf.get(p.id), sel)).join('');
+  const more = rest > 0
+    ? `<button type="button" class="c-jmore" onclick="event.stopPropagation();cJColToggle('${esc(stageId)}')">${rest} more</button>`
+    : open && sorted.length > C_JCOL_SHOW
+      ? `<button type="button" class="c-jmore" onclick="event.stopPropagation();cJColToggle('${esc(stageId)}')">Show fewer</button>` : '';
+  return cards + more;
+}
+function cJColToggle(id) { if (C_JCOLOPEN.has(id)) C_JCOLOPEN.delete(id); else C_JCOLOPEN.add(id); cDrawJourney(); }
+
 function cDrawJourney() {
   const { people, taskOf } = C_JDATA;
   const stages = (CFG.stages || []).filter((s) => !C_TERMINAL.includes(s.id));
@@ -3508,7 +3543,7 @@ function cDrawJourney() {
     <div class="c-journey">${sel ? cPersonCard(sel, taskOf.get(sel.id)) : '<div></div>'}<div style="min-width:0">
       <div class="c-cols" style="grid-template-columns:repeat(${stages.length}, minmax(150px, 1fr))">${stages.map((s, i) => { const ps = open.filter((p) => p.status === s.id);
         const over = ps.filter((p) => { const t = taskOf.get(p.id); return t && cWhenClass(t.due_at) === 'over'; }).length;
-        return `<div class="c-col" style="--jt:${((i + 1) / stages.length).toFixed(3)}"><h3><span class="c-jn">${i + 1}</span>${esc(s.label || s.id)} <b>${ps.length}</b>${over ? `<em class="c-jover">${over} overdue</em>` : ''}</h3><div class="c-drop" data-stage="${esc(s.id)}">${ps.map((p) => cJourneyCard(p, taskOf.get(p.id), sel)).join('') || '<div class="c-empty" style="padding:8px">empty</div>'}</div></div>`; }).join('')}</div>
+        return `<div class="c-col" style="--jt:${((i + 1) / stages.length).toFixed(3)}"><h3><span class="c-jn">${i + 1}</span>${esc(s.label || s.id)} <b>${ps.length}</b>${over ? `<em class="c-jover">${over} overdue</em>` : ''}</h3><div class="c-drop" data-stage="${esc(s.id)}">${cJColumn(s.id, ps, taskOf, sel) || '<div class="c-empty" style="padding:8px">empty</div>'}</div></div>`; }).join('')}</div>
     </div></div>`;
   if (narrow && sel && C_JSEL === sel.id) { const card = document.querySelector('.c-journey > .c-card'); if (card && card.scrollIntoView) card.scrollIntoView({ block: 'start' }); }
   // one pair of listeners for the life of the page, not one per redraw: a click anywhere outside a

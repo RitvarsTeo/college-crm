@@ -170,17 +170,17 @@ test('a Home stage click lands on the Journey filtered to exactly that stage', (
 });
 
 // Admissions, 30.09: cold and reject "for statistics", and marketing aimed at the cold ones.
-// The tag could be SET since b5f3a4c; nothing counted it or picked the cold ones out.
-test('Outcomes: Not proceeding splits by cold and reject, each a filter, and an unused tag is not drawn', () => {
-  const ctx = { esc: (s) => String(s ?? ''), C_OUT_TAG: null,
+// Home counts them and its links open Not proceeding filtered to that tag. The row label and
+// the count line on Outcomes are the feedback closure work, so they are not drawn twice here.
+test('Outcomes: a tag from Home filters Not proceeding, says so, and can be cleared', () => {
+  const ctx = { esc: (s) => String(s ?? ''), C_OUT_TAG: 'cold',
     CFG: { closedTags: [{ id: 'cold', label: 'Cold' }, { id: 'reject', label: 'Reject' }] } };
-  vm.runInNewContext(fn('function cTagSplit(') + '\nthis.split = cTagSplit;', ctx);
-  const np = PEOPLE.filter((p) => p.status === 'Not proceeding');
-  const html = ctx.split(np);
-  assert.match(html, /Everybody 4/);
-  assert.match(html, /onclick="C_OUT_TAG='cold';viewOutcomesC\(\)">Cold 2</);
-  assert.match(html, /Reject 1/);
-  assert.doesNotMatch(ctx.split(np.filter((p) => p.closed_tag !== 'reject')), /Reject/, 'nobody rejected, no Reject button');
-  assert.equal(ctx.split(np.filter((p) => !p.closed_tag)), '', 'nobody tagged, nothing drawn');
-  assert.match(fn('async function viewOutcomesC('), /if \(C_OUTCOME !== 'Admitted' && C_OUT_TAG\) list = list\.filter\(\(p\) => p\.closed_tag === C_OUT_TAG\);/);
+  vm.runInNewContext(fn('function cTagFilterBar(') + '\nthis.bar = cTagFilterBar;', ctx);
+  const cold = PEOPLE.filter((p) => p.closed_tag === 'cold');
+  assert.match(ctx.bar(cold), /Showing <b>2<\/b> not proceeding, Cold/);
+  assert.match(ctx.bar(cold), /onclick="C_OUT_TAG=null;viewOutcomesC\(\)"/);
+  ctx.C_OUT_TAG = null; assert.equal(ctx.bar(cold), '', 'no tag chosen, no bar');
+  const view = fn('async function viewOutcomesC(');
+  assert.match(view, /if \(C_OUTCOME !== 'Admitted' && C_OUT_TAG\) list = list\.filter\(\(p\) => p\.closed_tag === C_OUT_TAG\);/);
+  assert.doesNotMatch(APP, /function cTagSplit\(|const cTagChip = /, 'no second tag summary or row chip from this branch');
 });
