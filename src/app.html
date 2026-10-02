@@ -3197,7 +3197,7 @@ async function viewReportsC() {
       <section class="ksec"><div class="ksh"><h2>From a maritime school</h2></div><p class="c-num">${s.maritimeGraduates ?? 0}</p><p class="c-sub">${cov.education?.filled ?? 0} / ${cov.education?.of ?? 0} have an education recorded</p></section>
     </div>
     <section class="c-apps" id="applications" aria-labelledby="cAppsH">
-      <div class="c-apps-head"><h2 id="cAppsH">Applications</h2><span class="c-apps-path">apply.novikontas.org <i aria-hidden="true">&rarr;</i> SIS</span></div>
+      <div class="c-apps-head"><h2 id="cAppsH">Applications</h2><span class="c-apps-path">Academy Application form <i aria-hidden="true">&rarr;</i> SIS</span></div>
       <div id="cAppState" class="c-appstate"></div>
       <section class="ksec" id="cWeb" hidden></section>
       <section class="ksec" id="cSis" hidden></section>
@@ -3220,7 +3220,7 @@ async function cWebStats(range) {
   if (!document.body.contains(el)) return;
   el.hidden = false;
   const seg = ['7d', '30d', '90d'].map((k) => `<button aria-pressed="${C_WEB_RANGE === k}" onclick="cWebStats('${k}')">${k.replace('d', ' days')}</button>`).join('');
-  const head = `<div class="ksh"><h2>apply.novikontas.org</h2><div class="c-seg" role="group" aria-label="Days">${seg}</div></div>`;
+  const head = `<div class="ksh"><h2>Academy Application form</h2><div class="c-seg" role="group" aria-label="Days">${seg}</div></div>`;
   if (!d.ok) { el.innerHTML = head + `<p class="c-empty" style="padding:6px 0">The SIS did not answer${d.status ? ' (' + Number(d.status) + ')' : ''}.</p>`; return; }
   const n = (v) => (typeof v === 'number' ? v.toLocaleString('en-GB') : null);
   const tileW = (label, v, prev, unit) => v == null ? '' : `<div><span>${label}</span><b>${n(v)}</b>${prev == null ? '' : `<small>${n(prev)} the ${unit} before</small>`}</div>`;

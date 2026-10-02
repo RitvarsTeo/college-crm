@@ -216,3 +216,12 @@ test('split: the funnel is two groups, the site steps then the college decision,
   assert.ok(fn.indexOf("group('On the website'") < fn.indexOf("group('Academy decision'"));
   assert.equal((fn.match(/R\[k\] \/ top/g) || []).length, 1, 'one scale for both groups');
 });
+
+test('name: Intake calls apply.novikontas.org the Academy Application form, and it is never a channel', () => {
+  const rep = APP.slice(APP.indexOf('async function viewReportsC'), APP.indexOf('// -------------------------------------------------------------------- FEEDBACK'));
+  assert.match(rep, /<span class="c-apps-path">Academy Application form <i aria-hidden="true">&rarr;<\/i> SIS<\/span>/, 'the lifecycle line');
+  assert.ok(rep.includes('<h2>Academy Application form</h2>'), 'the web statistics heading');
+  assert.ok(!/>apply\.novikontas\.org</.test(rep), 'the domain is no longer the visible name');
+  const channels = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'channels.json'), 'utf8'));
+  assert.ok(!JSON.stringify(Object.keys(channels.channels || channels)).match(/apply|academy.?application/i), 'not in the Channels model');
+});
