@@ -14,6 +14,37 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 02.10.2026 - AI Review decisions, written into the record at last
+
+**These existed only in a ChatGPT session.** A search of this repository on 02.10 found no trace
+of them: not in the backlog, not in DECISIONS.md, not in INBOUND_ARCHITECTURE.md, not in any
+config. A decision that lives only in a chat is a defect in project control, and if that session
+is lost the decisions are lost with it. Ritvars confirmed on 02.10: write them in.
+
+**Stage 2. None of these blocks INTAKE V1.**
+
+| # | Decision | Answer | Status |
+|---|---|---|---|
+| Q3 | What the AI is asked to produce | **Match + stage confirmed** | DECIDED |
+| Q4 | Which model | **The cheapest model that passes** | DECIDED |
+| Q7 | Monthly Anthropic spend limit | **$50 / month** | DECIDED |
+| Q8 | Phone-call transcription | **DROPPED for Stage 2.** TeleGroup recordings, speech-to-text and caller-consent transcription are not in Stage 2 | DECIDED |
+| Q10 | Zero Data Retention | **Action item recorded** - ZDR is required; the exact arrangement is not yet written down | DECIDED, detail open |
+
+**Already recorded elsewhere and not re-opened here:** AI may filter the Inbox and may never
+destroy; a person decides lifecycle; legal approved 01.10; the review is feasible at roughly
+$1-135/month in the earlier estimate, which Q7 now caps at $50.
+
+### The gap this exposes
+
+The relaying session recorded **11 decisions open** for AI Review. **Five are above.** The other
+six were not carried over and are not in this repository. They are not lost if that chat survives,
+but this file cannot name them, and nothing here should pretend to.
+
+**[VERIFY: the remaining six AI Review decisions]** - recover them from the AI Review session and
+add them here, or re-take them. Until then the AI Review decision set in this repository is
+**incomplete and known to be incomplete**.
+
 ## 01.10.2026 - Everything C has to choose between
 
 **The two branches differ in exactly two places.** Eight of the ten commits on each are the
