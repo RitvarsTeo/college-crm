@@ -840,6 +840,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
     --amb:#F7C04F;--ambink:#F7C04F;--late:#ffb0a8;--warn:#F7C04F;
     --c-sis:#29a8df;--c-ok:#9be0bd;--c-warn:#F7C04F;--c-bad:#ffb0a8;--c-accent-bg:#1a4670;--c-sunk:#0b2542;--c-sel:#163f66;
     --v-adm:#29a8df;--v-lead:#e7ebf0;--v-open:#E0A526;--v-np:#93A5B8;--v-grid:#24507a;
+    --k-plinth:#0b2542;   /* the donut's plinth: a frame colour, the dark card well, never a data colour */
     --j-from:#1d4d7a;--j-to:#8fcbef;   /* the Journey's stage line in dark (the review #2) */
     --glass:linear-gradient(180deg,rgba(255,255,255,.06) 0%,rgba(255,255,255,.035) 100%);
     --glass-line:rgba(194,211,222,.18)}
@@ -1057,6 +1058,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
      validated with the dataviz validator: teal = admitted, sand = leads / still open,
      slate = not proceeding or not recorded (always with its word). */
   html.ui-c{--v-adm:#29a8df;--v-lead:#0a2463;--v-open:#E0A526;--v-np:#98a4b3;--v-grid:#e7ebf0}
+  html.ui-c:not([data-theme="dark"]){--k-plinth:#d6dee7}   /* the donut's plinth in light: a frame grey, not a data colour */
   /* dark chart colours: with the rest of the dark sea palette, near the top of CONCEPT C */
   /* No page cap of its own (29.09.2026). Home and Reports were held at 1080px inside a main that
      allows 1320, and main is left-aligned, so on a 1920 screen 576px sat empty down the right while
@@ -2074,24 +2076,27 @@ function cMonthChart(months, year) {
 // PRESENCE WITHOUT DISTORTION (the owner, 02.10.2026).
 //
 // The rule: 3D geometry gives the object physical presence, and depth must NEVER
-// change the reader's ability to compare the underlying values.
+// change the reader's ability to compare the underlying values. DEPTH BELONGS TO THE
+// FRAME, NEVER TO THE MARK.
 //
-// The first version broke it. It tilted the ring (ry = rx * 0.58), so a segment at the
-// side covered more visual arc than the same number at the top, and only the front
-// segments carried a side wall, so they gained weight from WHERE THEY SAT rather than
-// from what they counted. That is the 3D pie-chart fault.
+// It took two goes to get right, and both are kept in the history:
+//   - 606d41b tilted the ring (ry = rx * 0.58): a segment at the side covered more
+//     visual arc than the same number at the top, and only the front segments carried
+//     a wall. The 3D pie-chart fault
+//   - 074d141 made the top a true circle but kept a rim drawn in EACH SEGMENT'S OWN
+//     colour, dropped straight down. A slice at six o'clock then showed a full wall and a
+//     slice at three or nine o'clock almost none, so a slice still gained coloured ink
+//     from WHERE IT SAT (found by the QA session, 02.10.2026)
 //
 // What this does instead:
 //   - the top face is a TRUE CIRCLE. Every angle and arc length is exactly proportional
 //     to its value, the same as a flat ring. Nothing is foreshortened
-//   - the solid is the SAME ring drawn once more, DEPTH lower, in each segment's own
-//     colour darkened. The top covers it completely on the upper half and it shows as a
-//     rim below. Uniform thickness, identical for every segment
-//   - so depth lives entirely BELOW the reading surface. The value is read from the top
-//     face, which is undistorted, and the legend carries the counts besides
+//   - the solid under it is ONE neutral ring, the whole annulus, in the frame token
+//     --k-plinth. It belongs to the object, not to any value: no slice has a wall of its
+//     own colour, so no slice can gain weight from its position
 //
-// Drawn bottom first, top second. No visibility maths: the top face hides what should
-// be hidden because it is painted last and is exactly the same shape.
+// Drawn plinth first, faces second. No visibility maths: the faces hide what should be
+// hidden because they are painted last and are exactly the same shape.
 function cDonut(rows) {
   const total = rows.reduce((a, r) => a + r[1], 0) || 1;
   const R = 54, r0 = 37, c = 70, cy = 62, gap = 0.035, DEPTH = 11;
@@ -2112,8 +2117,10 @@ function cDonut(rows) {
   const ring = (g, dy) => `M${p(g.a0, R, dy)} A${R},${R} 0 ${g.big} 1 ${p(g.a1, R, dy)}
     L${p(g.a1, r0, dy)} A${r0},${r0} 0 ${g.big} 0 ${p(g.a0, r0, dy)} Z`;
 
-  const base = (g) => `<path d="${ring(g, DEPTH)}"
-    style="fill:var(--v-${g.v});filter:brightness(.6)" class="kwall"/>`;
+  // the plinth: the whole annulus, once, dropped by DEPTH, in a frame colour
+  const plinth = `<path d="M${p(-Math.PI / 2, R, DEPTH)} A${R},${R} 0 1 1 ${p(Math.PI / 2, R, DEPTH)} A${R},${R} 0 1 1 ${p(-Math.PI / 2, R, DEPTH)}
+    M${p(-Math.PI / 2, r0, DEPTH)} A${r0},${r0} 0 1 0 ${p(Math.PI / 2, r0, DEPTH)} A${r0},${r0} 0 1 0 ${p(-Math.PI / 2, r0, DEPTH)} Z"
+    style="fill:var(--k-plinth)" fill-rule="evenodd" class="kwall"/>`;
 
   const face = (g, i) => `<path d="${ring(g, 0)}"
     style="fill:var(--v-${g.v});--i:${i}" class="kseg" tabindex="0" role="button"
@@ -2122,7 +2129,7 @@ function cDonut(rows) {
     data-kgo="${g.go === 'journey' ? 'journey' : 'outcome|' + g.go}"/>`;
 
   return `<div class="kdonut"><svg viewBox="0 0 140 140" role="img" aria-label="Where everyone is now">
-    <g class="kring">${segs.map(base).join('')}${segs.map(face).join('')}</g>
+    <g class="kring">${segs.length ? plinth : ''}${segs.map(face).join('')}</g>
     <text x="${c}" y="${cy + 4}" text-anchor="middle" class="kbig">${total}</text>
     <text x="${c}" y="${cy + 22}" text-anchor="middle" class="kt">people</text></svg>
     <ul class="klegend">${rows.map(([k, n, v]) => `<li><i style="background:var(--v-${v})"></i><span>${esc(k)}</span><b>${n}</b></li>`).join('')}</ul></div>`;
