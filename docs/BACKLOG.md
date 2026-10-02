@@ -26,6 +26,13 @@ Ritvars, 02.10.2026: **"B for home. Then the journey displayed like the ui from 
 | Home = B only: the switch, `cHomeA` and the remembered `?home=` choice are removed | BUILT `3235467` |
 | **The band's stage visual = columns from one shared baseline**, the count on top, overdue the darker stacked part (hover gives its number); the words "now" and "n overdue" go. One dot per person is OUT: "cant count them really". Rule: the task picks the visual, comparison wins (KB 08 P5 rule 12) | BUILT `3235467` |
 
+**Merge note from the feedback closure session (02.10, `audit/2026-10-02-feedback-closure-s5` at `cf6b112`):**
+trial merge with `cd6b7f0` is code-clean, 994/994; only this file conflicts (both add sections at the top, keep both).
+It brings to MAIN screens: "Add lead" on the Journey head (the Inbox lost its button, channel results only, his decision),
+Today without finished people's leftover steps (server filter in /api/tasks), stage-fitted step and close-reason pickers,
+and "Not proceeding · Cold / · Reject" in the All people Stage filter. Outcomes stays MAIN's.
+**RELEASE RULE: `0e1da1d` (the closed_tag migration) must ship with anything that carries cold/reject.**
+
 **Built 02.10 (`3235467`), 968/968, NOT DEPLOYED.** Columns on one baseline and ONE scale (the biggest
 stage sets it), the count above, overdue the red base drawn at rest (on the same scale, so overdue
 compares across stages too). A column IS the board's stage filter: click filters the board in place,
