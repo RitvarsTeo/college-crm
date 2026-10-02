@@ -14,6 +14,50 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 02.10.2026 - HANDOFF: where this run stopped
+
+Branch **`ui/2026-10-02-journey`**, cut from `feat/home-b-command`. **933/933. Clean tree.
+NOTHING DEPLOYED.** Production is still `292b4f9`, proven today by byte comparison.
+
+| Done this session | Commit |
+|---|---|
+| Channel universe reconciled: 12 active, Google Form dropped, Open Day parked | `e2ea549` |
+| Channel A (operational board) and B (command centre), switch on the screen | `a7b7e08` |
+| Pin reconciled - it claimed `e52e1b4`, three releases stale | `3576a3c` |
+| The product is called **Intake** everywhere a person reads it, 33 strings | `05485ec` |
+| AI Review decisions written in, and the six missing ones named as missing | `e084aee` |
+| Ieva's and Aigars's own words, verbatim, in `docs/IEVA_AIGARS_FEEDBACK_VERBATIM.md` | `ea8757c` |
+| **Cold / reject** on Not proceeding - her clearest request | `b5f3a4c` |
+
+### The exact next action
+
+Build **A and B of this run** on top of this branch. He called it "a relaunch of that same
+task, properly this time", so the earlier A/B is not the deliverable.
+
+1. **The spine.** A hairline **behind** the top-level menu icons, continuous with the children's
+   existing one. They are already the same line: the children's border sits at x=18px and the
+   icon centres at x=18.5px. The nav order is already the lead's journey.
+2. **Metrics Home** in logo blue `#29a8df` and the data yellow **mustard `#E0A526`**. Validated
+   with the dataviz validator: CVD delta-E 24.0, normal-vision 27.9. Both under 3:1 on white, so
+   charts keep visible labels or the table view.
+3. **Depth / 3D on an SVG basis** where it earns its place, **two animations per tab** (KB 08 P5
+   raised from one to two on his decision today).
+4. **KPI figures are CARDS.** Already decided 30.09 and recorded in KB 08 P5. Not an open A/B.
+
+### Open, and not ours to take
+
+- **[VERIFY] Is PBX live?** He told the team "PBX ir live" on 01.10; this file says 0 rows from
+  a real provider. Production answers 401 everywhere and the read-only checker
+  (`scripts/crm-check.ps1`, branch `feat/checker-gate-2026-09-30`) is committed but **not
+  deployed**, so no Claude session can settle it. The cheap check: open `#/channels` signed in
+  and read the Phone row.
+- **Meta's APP REVIEW** is marked `blockerKind: work` although it can be refused, which is the
+  config's own definition of `question`. Three options in the reconciliation document.
+- **Journey stage names.** Ieva has said nothing directly; the only words on record are Aigars's
+  two examples, *contacted once* and *waiting for reply*, which are two different kinds of thing
+  (an action we did, and a state we are in). The current seven mix both.
+- **The other six AI Review decisions**, which exist only in the relaying session.
+
 ## 02.10.2026 - AI Review decisions, written into the record at last
 
 **These existed only in a ChatGPT session.** A search of this repository on 02.10 found no trace
