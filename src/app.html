@@ -1370,6 +1370,16 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .cltag b{font-size:13px}
   html.ui-c .cltag small{grid-column:2;font-size:11.5px;color:var(--t3);line-height:1.45}
   html.ui-c .cltag:has(input:checked){border-color:var(--v-adm);background:var(--c-accent-bg)}
+  /* the ring arrives as one scene: each segment lifts into place, back to front.
+     KB 08 P5: one sequence, plays once, slower rather than faster, off for reduced motion. */
+  html.ui-c .kseg{transform-origin:70px 64px;animation:kseg-in .63s cubic-bezier(.22,.9,.3,1) backwards;
+    animation-delay:calc(var(--i,0) * 90ms)}
+  html.ui-c .kwall{animation:kwall-in .63s ease-out backwards;animation-delay:60ms}
+  @keyframes kseg-in{from{opacity:0;transform:translateY(-9px) scale(.96)}to{opacity:1;transform:none}}
+  @keyframes kwall-in{from{opacity:0}to{opacity:1}}
+  @media(prefers-reduced-motion:reduce){
+    html.ui-c .kseg,html.ui-c .kwall{animation:none}
+  }
   html.ui-c .c-reasons{margin:0 0 14px}
   html.ui-c .c-reasons h3{margin:0 0 7px;font-size:13px;font-weight:650;display:flex;align-items:baseline;gap:8px}
   html.ui-c .c-reasons h3 b{font-weight:500;font-size:11.5px;color:var(--t4)}
@@ -2017,14 +2027,53 @@ function cMonthChart(months, year) {
   return `<svg viewBox="0 0 ${W} ${H}" class="kchart${narrow ? ' narrow' : ''}" role="img" aria-label="Admissions and new leads per month, ${year}">${grid}${cols}<path d="M${pts.map((p) => p.join(',')).join(' L')}" class="kline"/>${pts.map(([x, yy]) => `<circle cx="${x}" cy="${yy}" r="4" class="kdot"/>`).join('')}</svg>`;
 }
 
+// A REAL EXTRUDED RING (02.10.2026), not a flat disc with a drop shadow under it.
+//
+// The tilt is in the GEOMETRY, not a CSS transform: every arc is an ellipse arc with
+// ry = rx * TILT, so the ring is drawn as it would be seen from above and in front.
+// A CSS scaleY would have squashed the depth with it and the walls would be wrong.
+//
+// Each segment gets a side wall: its outer arc, dropped by DEPTH, closed. Every wall is
+// drawn BEFORE every top face, so the walls at the back are covered by the ring itself
+// and only the front ones remain visible. That is the whole hidden-surface problem here,
+// solved by draw order rather than by maths.
+//
+// The wall is the segment's own colour at brightness(.58), so depth never introduces a
+// colour that means nothing. One meaning per colour still holds.
 function cDonut(rows) {
-  const total = rows.reduce((a, r) => a + r[1], 0) || 1, R = 58, r0 = 40, c = 70, gap = 0.035;
+  const total = rows.reduce((a, r) => a + r[1], 0) || 1;
+  const R = 58, r0 = 40, c = 70, cy = 64, gap = 0.035, TILT = 0.58, DEPTH = 13;
+  const live = rows.filter((r) => r[1] > 0);
+
+  const px = (ang, rad) => c + rad * Math.cos(ang);
+  const py = (ang, rad, dy = 0) => cy + rad * TILT * Math.sin(ang) + dy;
+  const p = (ang, rad, dy = 0) => `${px(ang, rad)},${py(ang, rad, dy)}`;
+
+  // walk the ring once, keeping each segment's angles, so walls and faces agree exactly
   let a = -Math.PI / 2;
-  const p = (ang, rad) => `${c + rad * Math.cos(ang)},${c + rad * Math.sin(ang)}`;
-  const seg = rows.filter((r) => r[1] > 0).map(([k, n, v, go]) => { const sw = (n / total) * Math.PI * 2, a0 = a + gap / 2, a1 = a + sw - gap / 2; a += sw; const big = a1 - a0 > Math.PI ? 1 : 0;
-    return `<path d="M${p(a0, R)} A${R},${R} 0 ${big} 1 ${p(a1, R)} L${p(a1, r0)} A${r0},${r0} 0 ${big} 0 ${p(a0, r0)} Z" style="fill:var(--v-${v})" class="kseg" tabindex="0" role="button" aria-label="${k}: ${n}" data-tip="${k}|${n} people|${Math.round((n / total) * 100)}% of ${total}" data-kgo="${go === 'journey' ? 'journey' : 'outcome|' + go}"/>`; }).join('');
-  return `<div class="kdonut"><svg viewBox="0 0 140 140" role="img" aria-label="Where everyone is now">${seg}<text x="70" y="68" text-anchor="middle" class="kbig">${total}</text><text x="70" y="86" text-anchor="middle" class="kt">people</text></svg>
-    <ul class="klegend">${rows.map(([k, n, v]) => `<li><i style="background:var(--v-${v})"></i><span>${k}</span><b>${n}</b></li>`).join('')}</ul></div>`;
+  const segs = live.map(([k, n, v, go]) => {
+    const sw = (n / total) * Math.PI * 2;
+    const a0 = a + gap / 2, a1 = a + sw - gap / 2;
+    a += sw;
+    return { k, n, v, go, a0, a1, big: a1 - a0 > Math.PI ? 1 : 0 };
+  });
+
+  const wall = (g) => `<path d="M${p(g.a0, R)} A${R},${R * TILT} 0 ${g.big} 1 ${p(g.a1, R)}
+    L${p(g.a1, R, DEPTH)} A${R},${R * TILT} 0 ${g.big} 0 ${p(g.a0, R, DEPTH)} Z"
+    style="fill:var(--v-${g.v});filter:brightness(.58)" class="kwall"/>`;
+
+  const face = (g, i) => `<path d="M${p(g.a0, R)} A${R},${R * TILT} 0 ${g.big} 1 ${p(g.a1, R)}
+    L${p(g.a1, r0)} A${r0},${r0 * TILT} 0 ${g.big} 0 ${p(g.a0, r0)} Z"
+    style="fill:var(--v-${g.v});--i:${i}" class="kseg" tabindex="0" role="button"
+    aria-label="${esc(g.k)}: ${g.n}"
+    data-tip="${esc(g.k)}|${g.n} people|${Math.round((g.n / total) * 100)}% of ${total}"
+    data-kgo="${g.go === 'journey' ? 'journey' : 'outcome|' + g.go}"/>`;
+
+  return `<div class="kdonut"><svg viewBox="0 0 140 140" role="img" aria-label="Where everyone is now">
+    <g class="kring">${segs.map(wall).join('')}${segs.map(face).join('')}</g>
+    <text x="${c}" y="${cy + 4}" text-anchor="middle" class="kbig">${total}</text>
+    <text x="${c}" y="${cy + 22}" text-anchor="middle" class="kt">people</text></svg>
+    <ul class="klegend">${rows.map(([k, n, v]) => `<li><i style="background:var(--v-${v})"></i><span>${esc(k)}</span><b>${n}</b></li>`).join('')}</ul></div>`;
 }
 
 function cBars(rows, kind) {
