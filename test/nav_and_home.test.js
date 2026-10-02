@@ -63,11 +63,13 @@ test('every old hash still resolves, and lands in the right place', () => {
 });
 
 test('Home is the metrics page and Today is the work; neither does the other job', () => {
-  const home = fn('async function viewHomeC(');
+  // Home is viewHomeC plus the one loader and the two alternatives it switches between
+  const home = ['async function viewHomeC(', 'async function cHomeData(', 'function cHomeA(', 'function cHomeB('].map(fn).join('\n');
   const today = fn('async function viewTodayC(');
 
   assert.match(home, /\/api\/report\?from=/, 'Home reads the report');
-  assert.match(home, /kstrip/, 'and carries the KPI strip');
+  assert.match(fn('function cHomeB('), /kstrip/, 'B carries the KPI strip as cards');
+  assert.match(fn('function cHomeA('), /class="kfl /, 'A carries the same figures as cards in the journey band');
   assert.ok(!home.includes("sect('Overdue'"), 'Home does not list the work');
 
   assert.match(today, /<h1>Today<\/h1>/);

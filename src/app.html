@@ -1276,6 +1276,100 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .kthree.kthree-b{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:26px}
   @media (max-width:980px){ html.ui-c .kthree.kthree-b{grid-template-columns:minmax(0,1fr)} }
   html.ui-c .kgapn{color:var(--t4);font-weight:400}
+  /* ---- HOME A and B (02.10.2026). Both extend the LOCKED gradient recipe, never a new one:
+     radial-gradient(120% 80% at 50% 0%, <glow> 0%, transparent 60%) over the vertical deepening,
+     glow #fbfcfd in light and #17456e in dark, exactly the page's own sea. Here it lights a FRAME
+     (a well the cards sit in), so the depth is the frame's and every mark stays flat. */
+  html.ui-c{--k-well:radial-gradient(120% 80% at 50% 0%,#fbfcfd 0%,rgba(251,252,253,0) 60%),linear-gradient(180deg,#f7f9fb 0%,#eef2f6 55%,#e7ebf0 100%);
+    --k-well-line:rgba(10,36,99,.08)}
+  html.ui-c[data-theme="dark"] .kpage{--k-well:radial-gradient(120% 80% at 50% 0%,#17456e 0%,rgba(23,69,110,0) 60%),linear-gradient(180deg,#0f2f4f 0%,#0f2f4f 45%,#08182e 100%);
+    --k-well-line:rgba(194,211,222,.14)}
+  html.ui-c .khead{display:flex;align-items:flex-start;gap:12px}
+  html.ui-c .kpeak{fill:var(--ink);font-size:11.5px;font-weight:650;font-family:var(--sans,Inter),system-ui,sans-serif}
+  html.ui-c .kdots{display:flex;flex-wrap:wrap;gap:3px;margin:8px 0 0;max-width:100%}
+  html.ui-c .kdots i{width:7px;height:7px;border-radius:50%;background:var(--v-open)}
+  html.ui-c .kfl-tag{display:inline-flex;align-items:center;gap:4px;padding:1px 7px;border-radius:99px;font-size:11.5px;font-weight:600;
+    color:var(--t2);background:var(--c-sunk);border:1px solid var(--rule);text-decoration:none}
+  html.ui-c .kfl-tag b{color:var(--ink)}
+  html.ui-c .kfl-tag.t-cold{border-left:3px solid var(--v-lead)}     /* dormant, expected back */
+  html.ui-c .kfl-tag.t-reject{border-left:3px solid var(--v-np)}     /* declined, often for now */
+  html.ui-c a.kfl-tag:hover{border-color:var(--control-line)}
+  html.ui-c .c-tagseg{margin:-4px 0 14px}
+
+  /* A - the journey band: a lit well, a hairline through it, raised cards on one plinth */
+  html.ui-c .kflow{position:relative;margin:0 0 26px;padding:18px 16px 16px;border-radius:18px;
+    background:var(--k-well);border:1px solid var(--k-well-line);box-shadow:inset 0 1px 0 rgba(255,255,255,.5)}
+  html.ui-c[data-theme="dark"] .kflow{box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+  html.ui-c .kflow-row{position:relative;display:grid;grid-template-columns:minmax(0,1.15fr) repeat(var(--n),minmax(0,1fr)) minmax(0,1.3fr);gap:12px;align-items:start}
+  /* the spine laid on its side: the same line as the menu, in the same blue, BEHIND the cards */
+  html.ui-c .kflow-spine{position:absolute;left:28px;top:62px;width:calc(100% - 56px);height:2px;overflow:visible;pointer-events:none}
+  html.ui-c .kflow-spine line{stroke:#29a8df;stroke-width:1.5;vector-effect:non-scaling-stroke;opacity:.7;--m-dur:1.6s}
+  html.ui-c[data-theme="dark"] .kflow-spine line{stroke:#8fcbef;opacity:.6}
+  html.ui-c .kfl{position:relative;display:flex;flex-direction:column;min-width:0;padding:12px 13px 12px;cursor:pointer;outline:none;
+    background:var(--surface);border:1px solid var(--c-card-line);border-radius:14px;
+    box-shadow:0 4px 0 var(--k-plinth),0 10px 24px -18px rgba(3,12,26,.35)}   /* ONE plinth, the same under every card */
+  html.ui-c .kfl:hover,html.ui-c .kfl.hot{border-color:var(--control-line)}
+  html.ui-c .kfl:focus-visible{outline:2px solid var(--pet);outline-offset:2px}
+  html.ui-c .kfl-l{font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--t3)}
+  html.ui-c .kfl > b{font-size:30px;font-weight:650;letter-spacing:-.025em;line-height:1.1;margin:3px 0 1px;font-variant-numeric:tabular-nums}
+  html.ui-c .kfl > small{font-size:12px;color:var(--t3)}
+  html.ui-c .kfl .kspark{margin-top:8px}
+  html.ui-c .kfl-row{display:block;margin-top:6px;font-size:12px;color:var(--t2);line-height:1.35}
+  html.ui-c .kfl-row b{color:var(--ink);font-weight:650}
+  html.ui-c .kfl-late{display:block;margin-top:8px;font-style:normal;font-size:12px;font-weight:600;color:var(--t2)}
+  html.ui-c .kfl-out{display:grid;grid-template-rows:auto auto;gap:12px;min-width:0}
+  html.ui-c .kfl-adm > b{font-size:40px;letter-spacing:-.03em}                 /* the one focal point */
+  html.ui-c .kfl-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+  html.ui-c .kflow-note{display:inline-block;margin:14px 2px 0;font-size:12.5px;color:var(--t2);text-decoration:none}
+  html.ui-c .kflow-note b{color:var(--ink)} html.ui-c .kflow-note:hover{text-decoration:underline}
+  html.ui-c .ka-grid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:30px;align-items:start}
+  html.ui-c .ka-side{display:flex;flex-direction:column;min-width:0}
+  @media (max-width:1180px){
+    html.ui-c .kflow-row{grid-template-columns:repeat(4,minmax(0,1fr))}
+    html.ui-c .kfl-out{grid-column:span 2;grid-template-rows:none;grid-template-columns:1fr 1fr}
+    html.ui-c .kflow-spine{display:none}
+    html.ui-c .ka-grid{grid-template-columns:minmax(0,1fr)} }
+  @media (max-width:760px){
+    html.ui-c .kflow-row{grid-template-columns:1fr 1fr}
+    html.ui-c .kfl-out{grid-column:1 / -1} }
+
+  /* B - the day: a stacked sheet. Two sheets behind it, a CONSTANT offset identical for every
+     figure, so the stack says "work waiting" and no number gains weight from it. Signal amber
+     marks the sheet (never amber text on white, KB 08 P5) because today / needs you is its meaning. */
+  html.ui-c .kday{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:22px;margin:0 0 30px;align-items:start;--m-delay:.1s}
+  html.ui-c .kday-sheet{position:relative;z-index:0;padding:16px 20px 18px;border-radius:16px;background:var(--surface);
+    border:1px solid var(--c-card-line);border-top:3px solid #F7C04F;box-shadow:0 12px 30px -22px rgba(3,12,26,.45)}
+  html.ui-c .kday-sheet::before,html.ui-c .kday-sheet::after{content:"";position:absolute;z-index:-1;left:14px;right:14px;bottom:-7px;height:20px;
+    border-radius:0 0 14px 14px;background:var(--k-well);border:1px solid var(--k-well-line);border-top:0}
+  html.ui-c .kday-sheet::after{left:28px;right:28px;bottom:-13px;z-index:-2;opacity:.8}
+  html.ui-c .kday h2{margin:0 0 10px;font-family:inherit;font-size:12px;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--t3)}
+  html.ui-c .kday-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+  html.ui-c .kneed{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:12px;text-decoration:none;color:var(--ink);
+    background:var(--k-well);border:1px solid var(--k-well-line)}
+  html.ui-c .kneed:hover{border-color:var(--control-line)}
+  html.ui-c .kneed span{font-size:12.5px;color:var(--t2);font-weight:600}
+  html.ui-c .kneed b{font-size:44px;font-weight:650;letter-spacing:-.035em;line-height:1;font-variant-numeric:tabular-nums}
+  html.ui-c .kday-side{display:flex;flex-direction:column;gap:2px;padding:14px 14px 12px;border-radius:16px;background:var(--surface);border:1px solid var(--c-card-line)}
+  html.ui-c .kday-side h3{margin:0 0 6px;font-size:11.5px;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--t3)}
+  html.ui-c .kday-st{display:grid;grid-template-columns:22px minmax(0,1fr) auto;align-items:center;gap:6px;padding:5px 4px;border-radius:7px;color:var(--t2);text-decoration:none;font-size:13px}
+  html.ui-c .kday-st:hover{background:var(--c-sunk);color:var(--ink)}
+  html.ui-c .kday-st b{color:var(--ink);font-variant-numeric:tabular-nums}
+  html.ui-c .kdelta{display:block;margin-top:6px;font-size:12px;color:var(--t3)}
+  html.ui-c .kdelta b{color:var(--ink);font-weight:650}
+  html.ui-c .kb-strip{grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:none}
+  html.ui-c .kb-strip > div{display:flex;flex-direction:column;grid-row:auto;grid-template-rows:none}
+  html.ui-c .kb-strip > div > .kgo{margin-top:auto;padding-top:6px}
+  /* the cards ARE the frame here; the old dark glass on the strip itself would box them twice */
+  html.ui-c[data-theme="dark"] .kstrip.kb-strip{background:none;border:0;padding:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+  html.ui-c .kstrip .kdelta b{display:inline;font-size:12px;margin:0;letter-spacing:0;line-height:inherit}
+  html.ui-c .kb-top{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:30px;align-items:start}
+  html.ui-c .kb-charts .kthree{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:26px}
+  @media (max-width:1100px){ html.ui-c .kb-top{grid-template-columns:minmax(0,1fr)} }
+  html.ui-c .ktags{display:flex;flex-wrap:wrap;gap:5px;margin:10px 0 0}
+  @media (max-width:1100px){ html.ui-c .kday{grid-template-columns:minmax(0,1fr)} html.ui-c .kb-charts .kthree{grid-template-columns:minmax(0,1fr) minmax(0,1fr)} }
+  @media (max-width:760px){ html.ui-c .kb-strip{grid-template-columns:1fr 1fr} html.ui-c .kb-charts .kthree{grid-template-columns:1fr} html.ui-c .kneed b{font-size:34px} }
+  /* the kit's per-scene knobs (part 9): when a scene starts and how far apart its pieces are */
+  html.ui-c .kflow{--m-delay:.2s;--m-step:90ms}
   html.ui-c .kgap-note{margin:0;font-size:11.5px;color:var(--t4);line-height:1.5;max-width:40ch}
   html.ui-c .kgrp-go{display:block;margin-top:8px;padding-top:8px;border-top:1px solid var(--rule2);
     font-size:12px;color:var(--petink);text-decoration:none}
@@ -1389,9 +1483,13 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .cltag:has(input:checked){border-color:var(--v-adm);background:var(--c-accent-bg)}
   /* the ring arrives as one scene: each segment lifts into place, back to front.
      KB 08 P5: one sequence, plays once, slower rather than faster, off for reduced motion. */
-  html.ui-c .kseg{transform-origin:70px 62px;animation:kseg-in .63s cubic-bezier(.22,.9,.3,1) backwards;
-    animation-delay:calc(var(--i,0) * 90ms)}
-  html.ui-c .kwall{animation:kwall-in .63s ease-out backwards;animation-delay:60ms}
+  /* The ring's arrival belongs to the charts SCENE now (KB 08 P5: at most two per tab), so it
+     plays when the charts reach mid-screen, not at render, off-screen. A lift and a fade, never a
+     scale: a scaled slice reads as a different share while it moves. */
+  html.ui-c.m-on .m-scene:not(.in) :is(.kseg,.kwall){opacity:0}
+  html.ui-c .m-scene.in .kseg{transform-origin:70px 62px;animation:kseg-in .63s cubic-bezier(.22,.9,.3,1) backwards;
+    animation-delay:calc(.4s + var(--i,0) * 90ms)}
+  html.ui-c .m-scene.in .kwall{animation:kwall-in .63s ease-out backwards;animation-delay:.4s}
   @keyframes kseg-in{from{opacity:0;transform:translateY(-11px)}to{opacity:1;transform:none}}
   @keyframes kwall-in{from{opacity:0}to{opacity:1}}
   @media(prefers-reduced-motion:reduce){
@@ -1689,6 +1787,81 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-fb-kind.question{color:var(--pet);border-color:var(--pet)}
   html.ui-c .c-fb-body{margin-top:6px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}
   html.ui-c .c-fb-shot{display:block;margin-top:8px;max-width:min(420px,100%);border:1px solid var(--rule);border-radius:8px;cursor:zoom-in}
+/* ===== KIT PART 9, REPORT MOTION: copied verbatim from Dev kits to share/Component library/9 Report motion/motion.css
+   (the rule: take it, never hand-write motion). Intake is one file with no build step, so it is inlined, not linked.
+   Change it in the kit first, then copy it here again. ===== */
+/* Part 9 - Report motion. Motion building blocks for report and presentation pages.
+   One choreographed sequence per screen (.m-scene), played once when the screen reaches mid-screen.
+   Nothing here runs unless motion.js has set html.m-on, so a page without the script, with reduced motion,
+   or in print always shows its finished state.
+   Pace = the Piemeri report v88 (the owner: "Nothing faster. Make everything slower by 25%"). */
+
+:root{
+  --m-pop:.47s; --m-drop:.63s; --m-bar:.63s; --m-grow:1s; --m-draw:1.4s;
+  --m-slide:.5s; --m-fade:.5s; --m-race:1.44s; --m-step:30ms;
+  --m-accent:#29a8df;                 /* pulse colour */
+  --m-glow:rgba(191,149,52,.28);      /* card glow */
+  --m-shine:rgba(191,149,52,.95);     /* total shine */
+  --m-typing:rgba(191,149,52,.1);     /* row being typed */
+}
+
+@keyframes m-pop  {0%{opacity:0;transform:scale(0)}70%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes m-drop {0%{opacity:0;transform:translateY(-16px)}70%{opacity:1;transform:translateY(2px)}100%{opacity:1;transform:none}}
+@keyframes m-bar  {0%{transform:scaleY(0)}75%{transform:scaleY(1.08)}100%{transform:scaleY(1)}}
+@keyframes m-grow {from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes m-draw {from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+@keyframes m-slide{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:none}}
+@keyframes m-fade {from{opacity:0}to{opacity:1}}
+@keyframes m-race {from{left:0;opacity:0}to{opacity:1}}
+@keyframes m-pulse{0%{stroke-width:1.5}35%{stroke-width:5;stroke:var(--m-accent)}100%{stroke-width:1.5}}
+@keyframes m-glow {0%{box-shadow:0 0 0 0 transparent}45%{box-shadow:0 0 0 6px var(--m-glow)}100%{box-shadow:0 0 0 0 transparent}}
+@keyframes m-shine{0%{text-shadow:none}40%{text-shadow:0 0 18px var(--m-shine)}100%{text-shadow:none}}
+@keyframes m-bump {0%{transform:scale(1)}40%{transform:scale(1.22)}100%{transform:scale(1)}}
+@keyframes m-drift{from{transform:translateX(-7px)}to{transform:translateX(9px)}}
+@keyframes m-flag {0%{transform:scale(1)}40%{transform:scale(1.5) rotate(-8deg)}100%{transform:scale(1)}}
+
+/* SVG pieces scale and grow around their own box */
+svg .m-pop,svg .m-drop,svg .m-bar,svg .m-grow,svg .m-bump,svg .m-flag-mark{transform-box:fill-box}
+.m-pop,.m-bump{transform-origin:50% 50%}
+.m-bar{transform-origin:50% 100%}
+.m-grow{transform-origin:0 50%}
+.m-bump{display:inline-block}
+svg .m-flag-mark{transform-origin:0 100%}
+
+/* start state (only when motion is on) */
+.m-on .m-scene .m-pop,.m-on .m-scene .m-drop,.m-on .m-scene .m-slide,
+.m-on .m-scene .m-fade,.m-on .m-scene .m-race,.m-on .m-scene .m-flow,.m-on .m-scene .m-after{opacity:0}
+.m-on .m-scene .m-bar{transform:scaleY(0)}
+.m-on .m-scene .m-grow{transform:scaleX(0)}
+.m-on .m-scene .m-draw{stroke-dasharray:1;stroke-dashoffset:1}
+
+/* play: start time = --m-delay + --i x --m-step (set --i with data-stagger, or inline) */
+.m-on .m-scene.in .m-pop  {animation:m-pop   var(--m-dur,var(--m-pop))   cubic-bezier(.3,1.6,.5,1) both;animation-delay:calc(var(--m-delay,0s) + var(--i,0) * var(--m-step))}
+.m-on .m-scene.in .m-drop {animation:m-drop  var(--m-dur,var(--m-drop))  cubic-bezier(.3,1.3,.5,1) both;animation-delay:calc(var(--m-delay,0s) + var(--i,0) * var(--m-step))}
+.m-on .m-scene.in .m-bar  {animation:m-bar   var(--m-dur,var(--m-bar))   cubic-bezier(.3,1.3,.5,1) both;animation-delay:calc(var(--m-delay,0s) + var(--i,0) * var(--m-step))}
+.m-on .m-scene.in .m-grow {animation:m-grow  var(--m-dur,var(--m-grow))  cubic-bezier(.2,.9,.25,1) both;animation-delay:calc(var(--m-delay,0s) + var(--i,0) * var(--m-step))}
+.m-on .m-scene.in .m-draw {animation:m-draw  var(--m-dur,var(--m-draw))  cubic-bezier(.5,0,.25,1) both;animation-delay:calc(var(--m-delay,0s) + var(--i,0) * var(--m-step))}
+.m-on .m-scene.in .m-slide{animation:m-slide var(--m-dur,var(--m-slide)) ease both;animation-delay:calc(var(--m-delay,0s) + var(--i,0) * var(--m-step))}
+.m-on .m-scene.in .m-fade {animation:m-fade  var(--m-dur,var(--m-fade))  ease both;animation-delay:calc(var(--m-delay,0s) + var(--i,0) * var(--m-step))}
+.m-on .m-scene.in .m-race {animation:m-race  var(--m-dur,var(--m-race))  cubic-bezier(.3,1.35,.45,1) both;animation-delay:calc(var(--m-delay,0s) + var(--i,0) * var(--m-step))}
+.m-on .m-scene.in .m-flow {animation:m-fade .75s ease both;animation-delay:var(--m-delay,2.4s)}
+.m-on .m-scene.in .m-pulse{animation:m-pulse 1.13s ease both;animation-delay:var(--m-delay,0s)}
+.m-on .m-scene.in .m-glow {animation:m-glow 1.75s ease both;animation-delay:var(--m-delay,0s)}
+.m-on .m-drift{animation:m-drift 7.5s ease-in-out infinite alternate}
+.m-on .m-shine.m-shone{animation:m-shine 1.63s ease both}
+.m-on .m-bumped{animation:m-bump .63s cubic-bezier(.3,1.6,.5,1)}
+.m-on .m-flag-mark.m-hit{animation:m-flag .69s cubic-bezier(.3,1.6,.5,1) both}
+.m-on .m-after.m-shown{opacity:1;transition:opacity .75s}
+
+/* typewriter */
+.m-tw{position:relative}
+.m-tg{visibility:hidden}
+.m-typing{background:var(--m-typing);transition:background .31s}
+.m-twa:not(.m-twd) .m-tw::after{content:"";position:absolute;right:-3px;top:.08em;bottom:.08em;width:2px;background:currentColor;opacity:.7}
+
+/* the finished state, always, for print */
+@media print{.m-on *{animation:none!important;opacity:1!important;transform:none!important;stroke-dashoffset:0!important}}
+/* ===== end of kit part 9 ===== */
 </style>
 </head>
 <body>
@@ -1744,6 +1917,170 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
 <div id="modal"></div>
 
 <script>
+// ===== KIT PART 9, REPORT MOTION: motion.js copied verbatim from the kit (see the stylesheet note). =====
+/* Part 9 - Report motion engine.
+   Plays every .m-scene once, when its top reaches mid-screen, then never again.
+   Refuses to move for anybody who asked for stillness (reduced motion), and leaves the page finished
+   when it cannot run. Timing runs on setTimeout + performance.now, so it also finishes in hidden tabs
+   and headless browsers (requestAnimationFrame stalls there).
+
+   API (window.Motion):
+     Motion.scene(name, fn)   register a custom sequence: <section class="m-scene" data-scene="name">
+     Motion.count(el, opts)   count the first number in el up from 0 ({ms, delay, done})
+     Motion.fire(el)          play a scene now (once only)
+   Markup:
+     .m-scene                 a screen that plays once
+     data-count[="ms"]        number counts up; data-count-delay="ms"
+     data-type                cell types itself; data-type-order="n" (optional); .m-shine gets .m-shone after
+     data-stagger="selector"  gives each match --i (0,1,2...); data-stagger-var="--c" to use another variable
+     climb scene              data-scene="climb": .m-climb path (pathLength="1"), .m-rider circle,
+                              [data-climb-count] number, .m-flag-mark[data-x], .m-route-clip[data-w], .m-mark[data-dx], .m-after
+*/
+(function () {
+  "use strict";
+  var M = window.Motion = { on: false, hooks: {} };
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduce || !("IntersectionObserver" in window)) return;          // still page; nothing is hidden
+  var root = document.documentElement;
+  root.classList.add("m-on"); M.on = true;
+
+  var tick = M.tick = function (f) { return setTimeout(function () { f(performance.now()); }, 16); };
+  var ease = function (t) { return t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; };
+  var out3 = function (t) { return 1 - Math.pow(1 - t, 3); };
+  var all = function (sel, el) { return [].slice.call((el || document).querySelectorAll(sel)); };
+
+  /* ---------- numbers ---------- */
+  function firstNumberNode(el) {
+    var w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null), n;
+    while ((n = w.nextNode())) if (/\d/.test(n.nodeValue)) return n;
+    return null;
+  }
+  function parse(s) {
+    var m = /^([\s\S]*?)(\d[\d,]*(?:\.\d+)?)([\s\S]*)$/.exec(s); if (!m) return null;
+    var raw = m[2], plain = raw.replace(/,/g, "");
+    return { pre: m[1], suf: m[3], n: parseFloat(plain), dec: (plain.split(".")[1] || "").length, comma: raw.indexOf(",") > -1 };
+  }
+  function fmt(v, p) {
+    var s = v.toFixed(p.dec);
+    if (p.comma) { var a = s.split("."); a[0] = a[0].replace(/\B(?=(\d{3})+(?!\d))/g, ","); s = a.join("."); }
+    return s;
+  }
+  function prepCount(el) {
+    if (el._m) return el._m;
+    var tn = firstNumberNode(el); if (!tn) return null;
+    var p = parse(tn.nodeValue); if (!p) return null;
+    el._m = { tn: tn, orig: tn.nodeValue, p: p };
+    tn.nodeValue = p.pre + fmt(0, p) + p.suf;
+    return el._m;
+  }
+  M.count = function (el, o) {
+    o = o || {}; var c = prepCount(el); if (!c) return;
+    var ms = o.ms || 1125, delay = o.delay || 0;
+    setTimeout(function () {
+      var t0 = performance.now();
+      (function f(t) {
+        var q = Math.min(1, (t - t0) / ms);
+        c.tn.nodeValue = q < 1 ? c.p.pre + fmt(c.p.n * out3(q), c.p) + c.p.suf : c.orig;   // lands on the exact original text
+        if (q < 1) tick(f); else { el.classList.add("m-bumped"); if (o.done) o.done(); }
+      })(performance.now());
+    }, delay);
+  };
+
+  /* ---------- typewriter ---------- */
+  function prepType(el) {
+    if (el._t != null || el.children.length) return;           // only plain-text cells
+    el._t = el.textContent;
+    el.innerHTML = '<span class="m-tw"></span><span class="m-tg"></span>';
+    el.lastChild.textContent = el._t;
+  }
+  function typeScene(sec) {
+    var cells = all("[data-type]", sec).filter(function (c) { return c._t != null; });
+    if (!cells.length) return;
+    var gap = +(sec.getAttribute("data-type-gap") || 100), per = +(sec.getAttribute("data-type-char") || 28);
+    cells.forEach(function (c, k) {
+      var t = c._t, n = 0, tr = c.closest("tr");
+      setTimeout(function step() {
+        if (!n) { c.classList.add("m-twa"); if (tr) tr.classList.add("m-typing"); }
+        n++; c.firstChild.textContent = t.slice(0, n); c.lastChild.textContent = t.slice(n);
+        if (n < t.length) { setTimeout(step, per); return; }
+        c.classList.add("m-twd"); if (tr) setTimeout(function () { tr.classList.remove("m-typing"); }, 150);
+        if (k === cells.length - 1) setTimeout(function () { all(".m-shine", sec).forEach(function (s) { s.classList.add("m-shone"); }); }, 100);
+      }, k * gap);
+    });
+  }
+
+  /* ---------- climb: a rider follows the drawn path, the number climbs with it ---------- */
+  M.hooks.climb = function (sec) {
+    var path = sec.querySelector(".m-climb"), rider = sec.querySelector(".m-rider"); if (!path || !rider) return;
+    var ms = +(sec.getAttribute("data-climb-ms") || 2500), num = sec.querySelector("[data-climb-count]");
+    var flags = all(".m-flag-mark", sec), marks = all(".m-mark", sec), clip = sec.querySelector(".m-route-clip");
+    var cw = clip ? +clip.getAttribute("data-w") : 0, x0 = clip ? +clip.getAttribute("x") : 0;
+    var L = path.getTotalLength(), cx = +rider.getAttribute("cx"), cy = +rider.getAttribute("cy");
+    var c = num ? prepCount(num) : null;
+    if (clip) clip.setAttribute("width", 0);
+    path.style.strokeDasharray = 1; path.style.strokeDashoffset = 1;
+    function place(e) { var p = path.getPointAtLength(e * L); rider.setAttribute("transform", "translate(" + (p.x - cx).toFixed(1) + "," + (p.y - cy).toFixed(1) + ")"); return p; }
+    place(0); rider.style.opacity = 1;
+    var t0 = performance.now();
+    (function f(t) {
+      var q = Math.min(1, (t - t0) / ms), e = ease(q), p = place(e);
+      path.style.strokeDashoffset = 1 - e;
+      if (c) c.tn.nodeValue = q < 1 ? c.p.pre + fmt(c.p.n * e, c.p) + c.p.suf : c.orig;
+      flags.forEach(function (g) { if (!g.classList.contains("m-hit") && p.x >= +g.getAttribute("data-x") - 2) g.classList.add("m-hit"); });
+      if (q < 1) { tick(f); return; }
+      rider.removeAttribute("transform"); rider.classList.add("m-bumped");
+      all(".m-after", sec).forEach(function (a) { a.classList.add("m-shown"); });
+      if (!clip) return;
+      setTimeout(function () {
+        var t1 = performance.now(), ms2 = +(sec.getAttribute("data-route-ms") || 1563);
+        (function g(t) {
+          var q2 = Math.min(1, (t - t1) / ms2), w = cw * out3(q2);
+          clip.setAttribute("width", w.toFixed(1));
+          marks.forEach(function (m) { if (!m.classList.contains("m-hit") && w >= +m.getAttribute("data-dx")) { m.classList.add("m-hit"); m.style.opacity = 1; m.classList.add("m-bumped"); } });
+          flags.forEach(function (fl) { if (!fl.classList.contains("m-hit") && x0 + w >= +fl.getAttribute("data-x")) fl.classList.add("m-hit"); });
+          if (q2 < 1) tick(g);
+        })(performance.now());
+      }, 313);
+    })(t0);
+  };
+
+  /* ---------- scenes ---------- */
+  M.scene = function (name, fn) { M.hooks[name] = fn; };
+  M.fire = function (sec) {
+    if (!sec || sec.classList.contains("in")) return;            // once only, ever
+    sec.classList.add("in");
+    all("[data-count]", sec).forEach(function (el) {
+      if (el.hasAttribute("data-climb-count")) return;
+      M.count(el, { ms: +el.getAttribute("data-count") || 1125, delay: +(el.getAttribute("data-count-delay") || 0) });
+    });
+    typeScene(sec);
+    var h = sec.getAttribute("data-scene"); if (h && M.hooks[h]) M.hooks[h](sec);
+  };
+
+  function init() {
+    all("[data-stagger]").forEach(function (box) {
+      var v = box.getAttribute("data-stagger-var") || "--i";
+      all(box.getAttribute("data-stagger"), box).forEach(function (e, i) { e.style.setProperty(v, i); });
+    });
+    all(".m-scene [data-count], .m-scene [data-climb-count]").forEach(prepCount);   // start from 0, not from the answer
+    all(".m-scene [data-type]").forEach(prepType);
+    all(".m-scene[data-scene=climb] .m-rider, .m-scene .m-mark").forEach(function (r) { r.style.opacity = 0; });
+    var scenes = all(".m-scene");
+    if (/[?&]motion=all\b/.test(location.search)) { scenes.forEach(M.fire); return; }   // tests and thumbnails
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (e) { if (e.isIntersecting) { M.fire(e.target); io.unobserve(e.target); } });
+    }, { rootMargin: "0px 0px -55% 0px" });
+    scenes.forEach(function (s) { io.observe(s); });
+    function sweep() {                                           // a hidden pane stalls the observer; scrolling still fires
+      var h = window.innerHeight;
+      scenes.forEach(function (s) { var r = s.getBoundingClientRect(); if (r.top < h * .45 && r.bottom > 0) M.fire(s); });
+    }
+    window.addEventListener("scroll", sweep, { passive: true }); setTimeout(sweep, 60);
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
+})();
+// ===== end of kit part 9 =====
+
 const $ = (s, r = document) => r.querySelector(s);
 
 // ======================================================================= CONCEPT C
@@ -1916,27 +2253,45 @@ async function routeC(page, arg) {
 }
 
 // ------------------------------------------------------------------------ HOME
-// HOME IS THE FIRST PAGE AGAIN (the owner, 01.10.2026). Two screens, two jobs:
-// Home is the visual dashboard, Today is the work.
+// HOME IS THE FIRST PAGE (the owner, 01.10.2026), and the metrics on it are Admissions'
+// own ask (29.09: very good that the home page has a place for current statistics straight
+// away; docs/IEVA_AIGARS_FEEDBACK_VERBATIM.md). Two screens, two jobs: Home is the visual dashboard, Today is the work.
 //
-// VARIANT B - VISUAL COMMAND CENTER. One strong headline figure and a large visual
-// main column, with the rest of the numbers in CONTEXTUAL GROUPS down the right,
-// each ending in the action that opens it. Information architecture reference:
-// DoorDash Merchant on Mobbin (free tier) - headline metrics, a visual main column,
-// right-hand metric groups, explicit "View ... insights" destinations and honest
-// zero states. Pattern only; none of their colours or branding.
+// TWO ALTERNATIVES, BOTH BUILT, NEITHER CHOSEN (02.10.2026). They read the SAME live data
+// through cHomeData() and differ in what the page is organised around:
 //
-// The KPI strip keeps the CARD treatment the shared kit carries (kit part 2,
-// 30.09.2026). That is B's half of the strip A/B; A is the hairline row.
+//   A - JOURNEY FIRST. The page follows the lead: arrived -> the five stages -> what
+//       happened. One band, read left to right, in the sequential order Admissions
+//       praised on day one. One dot per person, so a stage is
+//       countable at a glance. Attention lives IN the stage it belongs to.
+//   B - TODAY FIRST. The page follows the working day: what needs a person now, then
+//       how admissions is performing, each figure with its comparison and the basis
+//       named. Reference: Remote's dashboard (the to-do list first, side groups ending in
+//       "View all") and Square's figure-first stack with a delta row (Mobbin, free tier).
 //
-// Nothing here invents a number. Every figure is read from /api/report or
-// /api/summary; when a read fails the figure says so instead of showing a stale one.
-async function viewHomeC() {
+// A review control switches them (?home=a|b or the switch on the page). It goes when C is
+// settled. Nothing here invents a number: every figure is read from /api/report,
+// /api/summary, /api/people or /api/intake on every load, and a failed read says so.
+function homeVariant() {
+  let q = null;
+  try { q = new URLSearchParams(location.search).get('home'); } catch (e) { /* no URL */ }
+  try {
+    if (q === 'a' || q === 'b') localStorage.setItem('homevariant', q);
+    return localStorage.getItem('homevariant') === 'b' ? 'b' : 'a';
+  } catch (e) { return q === 'b' ? 'b' : 'a'; }
+}
+function homeSetVariant(v) {
+  try { localStorage.setItem('homevariant', v); } catch (e) { /* private window: this turn only */ }
+  viewHomeC();
+}
+
+async function cHomeData() {
   const year = Number(cTodayIso().slice(0, 4));
-  const [rep, people, sum] = await Promise.all([
+  const [rep, people, sum, intake] = await Promise.all([
     api(`/api/report?from=${year}-01-01&to=${year}-12-31`),
     cPeopleRows(),
     api('/api/summary').catch(() => null),
+    api('/api/intake').catch(() => null),
   ]);
   const s = rep.summary || {};
   const thisMonth = cTodayIso().slice(0, 7);
@@ -1946,65 +2301,182 @@ async function viewHomeC() {
   const undated = people.filter((p) => p.status === 'Admitted' && !p.admitted_at).length;
   const count = (arr, key) => { const m = new Map(); arr.forEach((p) => { const k = key(p); m.set(k, (m.get(k) || 0) + 1); }); return [...m.entries()].sort((a, b) => b[1] - a[1]); };
   const known = new Set(CFG.programmes || []);
-  const progs = count(admitted, (p) => p.programme || '(not recorded)').map(([k, n]) => [k, n, known.has(k) ? '' : (k === '(not recorded)' ? 'no programme recorded' : 'not one of the list')]);
+  const progs = count(admitted, (p) => p.programme || '(not recorded)').map(([k, n]) => [k, n, known.has(k) ? '' : (k === '(not recorded)' ? 'no programme recorded' : 'not one of the list'), k]);
   const chans = count(admitted, (p) => p.source_channel || 'unknown').map(([k, n]) => { const [label, why] = cChannel(k); return [label, n, why, k]; });
-  const nowOpen = people.filter((p) => !C_TERMINAL.includes(p.status)).length;
-  const now = [['Open', nowOpen, 'open', 'journey'], ['Admitted', people.filter((p) => p.status === 'Admitted').length, 'adm', 'Admitted'], ['Not proceeding', people.filter((p) => p.status === 'Not proceeding').length, 'np', 'Not proceeding']];
-  const asOf = new Intl.DateTimeFormat('en-GB', { timeZone: TZ, day: 'numeric', month: 'long' }).format(new Date());
   const stages = (CFG.stages || []).filter((st) => !C_TERMINAL.includes(st.id));
+  const open = people.filter((p) => !C_TERMINAL.includes(p.status));
+  const closed = people.filter((p) => p.status === 'Not proceeding');
+  // NEVER A REMEMBERED FIGURE. Read live; a failed read is null and is said out loud.
+  const overdueRows = sum && Array.isArray(sum.overdue) ? sum.overdue : null;
+  const todayRows = sum && Array.isArray(sum.today) ? sum.today : null;
+  const overdueBy = new Map();
+  (overdueRows || []).forEach((t) => { if (!overdueBy.has(t.status)) overdueBy.set(t.status, new Set()); overdueBy.get(t.status).add(t.person_id); });
+  return {
+    year, s, months, people, admitted, undated, progs, chans, stages, open, closed,
+    allAdmitted: people.filter((p) => p.status === 'Admitted').length,
+    // Admissions, 30.09: cold and reject, for statistics and to aim marketing at the cold ones
+    tags: (CFG.closedTags || []).map((t) => [t.id, t.label || t.id, closed.filter((p) => p.closed_tag === t.id).length]),
+    overdue: overdueRows ? new Set(overdueRows.map((t) => t.person_id)).size : null,
+    dueToday: todayRows ? new Set(todayRows.map((t) => t.person_id)).size : null,
+    overdueIn: (stage) => (overdueBy.get(stage) || new Set()).size,
+    noNext: sum && typeof sum.noNextAction === 'number' ? sum.noNextAction : null,
+    inbox: intake && intake.counts && typeof intake.counts.new === 'number' ? intake.counts.new : null,
+    asOf: new Intl.DateTimeFormat('en-GB', { timeZone: TZ, day: 'numeric', month: 'long' }).format(new Date()),
+  };
+}
 
-  // NEVER A REMEMBERED FIGURE. Read live; a failed read is said out loud.
-  const noNext = sum && typeof sum.noNextAction === 'number' ? sum.noNextAction : null;
-  const overdue = sum && Array.isArray(sum.overdue) ? sum.overdue.length : null;
-  const fig = (n) => (n === null ? '<span class="kgapn" title="not available">—</span>' : n);
+const cFig = (n) => (n === null ? '<span class="kgapn" title="not available">—</span>' : n);
+// One dot per person (KB 08 P5: countable things look countable). Above 120 a row of
+// dots stops being countable, so it is left out and the figure carries it alone.
+const cDots = (n, cls = '') => (n > 0 && n <= 120 ? `<span class="kdots ${cls}" aria-hidden="true">${'<i></i>'.repeat(n)}</span>` : '');
 
-  // A contextual group: a few numbers that belong together, then the way in.
-  const group = (title, rows, href, action) => `<section class="kgrp">
-    <h3>${esc(title)}</h3>
-    ${rows.map(([label, value, hint]) => `<div class="kgrow"><span>${esc(label)}</span><b>${value}</b>${
-      hint ? `<small>${esc(hint)}</small>` : ''}</div>`).join('')}
-    <a class="kgrp-go" href="${href}">${esc(action)} →</a></section>`;
-
-  $('#view').innerHTML = `<div class="kpage kb">
-    <div class="khead"><div><h1 class="c-sr">Home</h1><p class="c-crumb" style="margin:0">Admissions ${year} · to ${esc(asOf)}</p></div></div>
-
-    <div class="kcmd">
-      <div class="kcmd-main">
-        <div class="kstrip">
-          <div class="khero"><span>Admitted</span><b>${admitted.length}</b><small>${year}${undated ? ` \u00b7 +${undated} undated` : ''}</small>${cSpark(months.map((m) => m.admitted), 'adm')}<a class="kgo" href="#/outcomes">Outcomes →</a></div>
-          <div><span>Leads</span><b>${s.newLeads ?? 0}</b><small>${year}</small>${cSpark(months.map((m) => m.newLeads), 'lead')}<a class="kgo" href="#/leads">Inbox →</a></div>
-          <div><span>Conversion</span><b>${s.conversionPct == null ? '-' : s.conversionPct + '%'}</b><small>${s.conversionA ?? 0} / ${s.conversionB ?? 0} who arrived</small><a class="kgo" href="#/reports">Reports →</a></div>
-          <div><span>Median time to admission</span><b>${s.medianDaysToAdmission == null ? '-' : s.medianDaysToAdmission} <em>days</em></b><small>first contact to admission</small><a class="kgo" href="#/reports">Reports →</a></div>
-        </div>
-
-        <section class="ksec">
-          <div class="ksh"><h2>Admissions by month</h2>
-            <ul class="klegend inline"><li><i style="background:var(--v-adm)"></i><span>Admitted</span></li><li><i class="ln" style="background:var(--v-lead)"></i><span>New leads</span></li></ul>
-            <span class="ksrc">from Reports · click a month → Inbox</span></div>
-          ${cMonthChart(months, year)}
-          <details class="kdet"><summary>Show as a table</summary><table class="ktable"><thead><tr><th>Month</th><th>Admitted</th><th>New leads</th></tr></thead><tbody>${months.map((m) => `<tr><td>${C_MONTHS[Number(m.month.slice(5)) - 1]}</td><td>${m.admitted}</td><td>${m.newLeads}</td></tr>`).join('')}</tbody></table></details>
-        </section>
-
-        <div class="kthree kthree-b">
-          <section class="ksec"><div class="ksh"><h2>Where everyone is now</h2><span class="ksrc">click a slice</span></div>${cDonut(now)}</section>
-          <section class="ksec"><div class="ksh"><h2>Admitted by programme</h2><span class="kt2">${admitted.length} in ${year}</span><span class="ksrc">click a bar → Outcomes</span></div>${cBars(progs.map((r) => [...r, r[0]]), 'prog')}</section>
-          <section class="ksec"><div class="ksh"><h2>Where admitted people came from</h2><span class="kt2">${admitted.length} in ${year}</span><span class="ksrc">click a bar → Outcomes</span></div>${cBars(chans, 'chan')}</section>
-        </div>
-      </div>
-
-      <aside class="kcmd-rail">
-        ${group('The journey', stages.map((st) => [st.label || st.id, people.filter((p) => p.status === st.id).length]),
-          '#/journey', 'Open the Journey')}
-        ${group('Needs attention', [
-          ['Overdue', fig(overdue)],
-          ['No next step', fig(noNext)],
-        ], '#/today', 'Open Today')}
-        ${noNext === null || overdue === null
-          ? `<p class="kgap-note">A dash means the summary did not answer. Nothing here is filled in from an earlier session.</p>` : ''}
-      </aside>
-    </div>
+async function viewHomeC() {
+  const v = homeVariant();
+  const D = await cHomeData();
+  $('#view').innerHTML = `<div class="kpage k${v}">
+    <div class="khead"><div><h1 class="c-sr">Home</h1><p class="c-crumb" style="margin:0">Admissions ${D.year} · to ${esc(D.asOf)}</p></div>
+      <div class="chab" role="group" aria-label="Which Home">
+        <button class="${v === 'a' ? 'on' : ''}" aria-pressed="${v === 'a'}" onclick="homeSetVariant('a')">A &middot; Journey first</button>
+        <button class="${v === 'b' ? 'on' : ''}" aria-pressed="${v === 'b'}" onclick="homeSetVariant('b')">B &middot; Today first</button>
+      </div></div>
+    ${v === 'b' ? cHomeB(D) : cHomeA(D)}
+    ${D.noNext === null || D.overdue === null || D.inbox === null
+      ? '<p class="kgap-note">A dash means that figure did not answer. Nothing here is filled in from an earlier session.</p>' : ''}
     <div class="ktip" role="status" aria-live="polite"></div></div>`;
   cWireCharts();
+  cScenes($('#view'));
+}
+
+// The month chart and its table, the same in both: one chart, one source.
+function cHomeMonths(D, extraCls = '') {
+  return `<section class="ksec ${extraCls}">
+    <div class="ksh"><h2>Admissions by month</h2>
+      <ul class="klegend inline"><li><i style="background:var(--v-adm)"></i><span>Admitted</span></li><li><i class="ln" style="background:var(--v-lead)"></i><span>New leads</span></li></ul>
+      <span class="ksrc">from Reports · click a month → Outcomes</span></div>
+    ${cMonthChart(D.months, D.year)}
+    <details class="kdet"><summary>Show as a table</summary><table class="ktable"><thead><tr><th>Month</th><th>Admitted</th><th>New leads</th></tr></thead><tbody>${D.months.map((m) => `<tr><td>${C_MONTHS[Number(m.month.slice(5)) - 1]}</td><td>${m.admitted}</td><td>${m.newLeads}</td></tr>`).join('')}</tbody></table></details>
+  </section>`;
+}
+const cHomeProg = (D) => `<section class="ksec"><div class="ksh"><h2>Admitted by programme</h2><span class="kt2">${D.admitted.length} in ${D.year}</span><span class="ksrc">click a bar → Outcomes</span></div>${cBars(D.progs, 'prog')}</section>`;
+const cHomeChan = (D) => `<section class="ksec"><div class="ksh"><h2>Where admitted people came from</h2><span class="kt2">${D.admitted.length} in ${D.year}</span><span class="ksrc">click a bar → Outcomes</span></div>${cBars(D.chans, 'chan')}</section>`;
+
+// ---- A: JOURNEY FIRST ----------------------------------------------------------
+// One band in the lead's own order. The hairline through it is the menu's spine laid on
+// its side, drawn in the same blue: the frame carries the journey, the cards carry the
+// numbers. Depth is the FRAME's - a lit well with the sign-in glow, raised cards on one
+// uniform plinth - never a mark's (KB 08 P5).
+//
+// Each fact once: conversion and the median live on the Admitted card, because both are
+// facts ABOUT admission; overdue lives on the stage it belongs to.
+//
+// SCENE 1 (of two): the spine draws left to right and the cards arrive along it.
+function cHomeA(D) {
+  const card = (cls, k, label, n, base, go, tip, body = '') => `<div class="kfl ${cls} m-slide" style="--i:${k}" tabindex="0" role="button"
+      data-tip="${esc(label)}|${esc(tip)}" data-kgo="${esc(go)}">
+      <span class="kfl-l">${esc(label)}</span><b>${n}</b><small>${esc(base)}</small>${body}</div>`;
+  const stageCards = D.stages.map((st, i) => {
+    const n = D.open.filter((p) => p.status === st.id).length;
+    const late = D.overdue === null ? null : D.overdueIn(st.id);
+    return card('kfl-st', i + 1, st.label || st.id, n, 'now', `stage|${st.id}|${st.label || st.id}`,
+      `${n} ${n === 1 ? 'person' : 'people'} now${late ? ` · ${late} overdue` : ''}`,
+      `${cDots(n)}${late ? `<em class="kfl-late">${late} overdue</em>` : ''}`);
+  }).join('');
+  const s = D.s;
+  const conv = s.conversionPct == null ? '' : `<span class="kfl-row"><b>${s.conversionPct}%</b> of ${s.conversionB ?? 0} who arrived</span>`;
+  const med = s.medianDaysToAdmission == null ? '' : `<span class="kfl-row"><b>${s.medianDaysToAdmission}</b> days, the median from first contact</span>`;
+  const tagged = D.tags.filter(([, , n]) => n > 0);
+  const tagRow = tagged.length ? `<span class="kfl-tags">${tagged.map(([id, label, n]) =>
+    `<a href="#/outcomes" onclick="event.stopPropagation();cGoClosedTag('${esc(id)}');return false" class="kfl-tag t-${esc(id)}">${esc(label)} <b>${n}</b></a>`).join('')}</span>` : '';
+  const n = D.stages.length;
+  return `<section class="kflow m-scene" aria-label="The journey">
+      <svg class="kflow-spine" viewBox="0 0 100 2" preserveAspectRatio="none" aria-hidden="true"><line x1="0" y1="1" x2="100" y2="1" pathLength="1" class="m-draw"/></svg>
+      <div class="kflow-row" style="--n:${n}">
+        ${card('kfl-in', 0, 'Arrived', s.newLeads ?? 0, `new leads in ${D.year}`, 'inbox', `${s.newLeads ?? 0} new leads in ${D.year}`,
+          `${cSpark(D.months.map((m) => m.newLeads), 'lead')}${D.inbox ? `<span class="kfl-row"><b>${D.inbox}</b> waiting in the Inbox</span>` : ''}`)}
+        ${stageCards}
+        <div class="kfl-out">
+          ${card('kfl-adm', n + 1, 'Admitted', D.admitted.length, `in ${D.year}${D.undated ? ` · +${D.undated} undated` : ''}`, 'outcome|Admitted', `${D.admitted.length} admitted in ${D.year}`, cSpark(D.months.map((m) => m.admitted), 'adm') + conv + med)}
+          ${card('kfl-np', n + 2, 'Not proceeding', D.closed.length, 'all time', 'outcome|Not proceeding', `${D.closed.length} not proceeding`, tagRow)}
+        </div>
+      </div>
+      ${D.noNext ? `<a class="kflow-note" href="#/today"><b>${D.noNext}</b> still open with no next step →</a>` : ''}
+    </section>
+    <div class="ka-grid m-scene">
+      ${cHomeMonths(D)}
+      <div class="ka-side">${cHomeProg(D)}${cHomeChan(D)}</div>
+    </div>`;
+}
+
+// ---- B: TODAY FIRST ------------------------------------------------------------
+// The working day first. The figures that need a person now sit on a stacked frame - a
+// sheet with two sheets behind it, a constant offset identical for every figure, so the
+// stack says "work waiting" and cannot make one number heavier than another. Signal
+// amber is the focus colour here because that is its one meaning: today / needs you.
+//
+// Then performance, each figure with its comparison as its own delta row and the basis
+// named (Square). The comparison is the last COMPLETE month against the one before it,
+// never the month in progress against a whole one.
+//
+// SCENE 1 (of two): the figures that need you count up. SCENE 2: the charts.
+function cHomeB(D) {
+  const s = D.s;
+  const now = cTodayIso().slice(0, 7);
+  const done = D.months.filter((m) => m.month < now);
+  const [prev, last] = done.slice(-2);
+  const mo = (m) => C_MONTHS[Number(m.month.slice(5)) - 1];
+  const delta = (key) => {
+    if (!prev || !last) return '';
+    const d = last[key] - prev[key];
+    return `<span class="kdelta${d > 0 ? ' up' : d < 0 ? ' down' : ''}">${mo(last)} <b>${last[key]}</b> · vs ${mo(prev)} ${prev[key]} · ${d > 0 ? '+' : ''}${d}</span>`;
+  };
+  const need = (label, n, go, href, k) => `<a class="kneed" href="${href}" style="--i:${k}" ${go ? `onclick="${go};return false"` : ''}>
+      <span>${esc(label)}</span><b ${n === null ? '' : 'data-count'}>${cFig(n)}</b></a>`;
+  const allDots = D.stages.map((st) => [st, D.open.filter((p) => p.status === st.id).length]);
+  return `<section class="kday m-scene" aria-label="Needs you">
+      <div class="kday-sheet">
+        <h2>Needs you</h2>
+        <div class="kday-row">
+          ${need('Overdue', D.overdue, '', '#/today', 0)}
+          ${need('Due today', D.dueToday, '', '#/today', 1)}
+          ${need('In the Inbox', D.inbox, '', '#/leads', 2)}
+          ${D.noNext ? need('No next step', D.noNext, '', '#/today', 3) : ''}
+        </div>
+      </div>
+      <aside class="kday-side">
+        <h3>The journey now</h3>
+        ${allDots.map(([st, n], i) => `<a class="kday-st" href="#/journey" onclick="cGoStage('${esc(st.id)}');return false"><span class="c-jn">${i + 1}</span><span>${esc(st.label || st.id)}</span><b>${n}</b></a>`).join('')}
+        <a class="kgrp-go" href="#/journey">Open the Journey →</a>
+      </aside>
+    </section>
+    <div class="kstrip kb-strip">
+      <div class="khero"><span>Admitted</span><b>${D.admitted.length}</b><small>${D.year}${D.undated ? ` · +${D.undated} undated` : ''}</small>${cSpark(D.months.map((m) => m.admitted), 'adm')}${delta('admitted')}<a class="kgo" href="#/outcomes">Outcomes →</a></div>
+      <div><span>Leads</span><b>${s.newLeads ?? 0}</b><small>${D.year}</small>${cSpark(D.months.map((m) => m.newLeads), 'lead')}${delta('newLeads')}<a class="kgo" href="#/leads">Inbox →</a></div>
+      <div><span>Conversion</span><b>${s.conversionPct == null ? '-' : s.conversionPct + '%'}</b><small>${s.conversionA ?? 0} / ${s.conversionB ?? 0} who arrived</small><a class="kgo" href="#/reports">Reports →</a></div>
+      <div><span>Median time to admission</span><b>${s.medianDaysToAdmission == null ? '-' : s.medianDaysToAdmission} <em>days</em></b><small>first contact to admission</small><a class="kgo" href="#/reports">Reports →</a></div>
+    </div>
+    <div class="m-scene kb-charts">
+      <div class="kb-top">
+      ${cHomeMonths(D)}
+        <section class="ksec"><div class="ksh"><h2>Where everyone is now</h2><span class="ksrc">click a slice</span></div>${cDonut([
+          ['Open', D.open.length, 'open', 'journey'], ['Admitted', D.allAdmitted, 'adm', 'Admitted'], ['Not proceeding', D.closed.length, 'np', 'Not proceeding']])}
+          ${D.tags.some(([, , n]) => n > 0) ? `<p class="ktags">${D.tags.filter(([, , n]) => n > 0).map(([id, label, n]) =>
+            `<a href="#/outcomes" onclick="cGoClosedTag('${esc(id)}');return false" class="kfl-tag t-${esc(id)}">${esc(label)} <b>${n}</b></a>`).join('')}</p>` : ''}</section>
+      </div>
+      <div class="kthree">${cHomeProg(D)}${cHomeChan(D)}</div>
+    </div>`;
+}
+
+// A stage on Home opens the Journey on exactly that stage: the filter the Journey already
+// has (C_JF.stage), set and then shown. Nothing else the reader had chosen is kept, so
+// the count on Home and the count on the Journey are the same people.
+function cGoStage(id) {
+  C_JF = C_JF_EMPTY(); C_JF.stage = [id]; C_PTAB = 'journey';
+  if (location.hash === '#/journey') viewJourneyC(); else location.hash = '#/journey';
+}
+// Cold / reject on Home opens Not proceeding with exactly that tag.
+function cGoClosedTag(id) {
+  C_OUTCOME = 'Not proceeding'; C_OUT_FILTER = null; C_OUT_TAG = id;
+  if (location.hash === '#/outcomes') viewOutcomesC(); else location.hash = '#/outcomes';
 }
 
 function cProgBars(rows) {
@@ -2066,11 +2538,16 @@ function cMonthChart(months, year) {
   // aria-label and its tooltip, so no month loses its name - only its printed tick.
   const every = narrow ? Math.max(1, Math.ceil(n / 6)) : 1;
   const labelled = (k) => every === 1 || k === n - 1 || (n - 1 - k) % every === 0;
+  const best = Math.max(0, ...months.map((m) => m.admitted));
+  const peakAt = best > 0 ? months.map((m) => m.admitted).lastIndexOf(best) : -1;
   const cols = months.map((m, k) => { const cx = L + band * k + band / 2, t = y(m.admitted), mo = C_MONTHS[Number(m.month.slice(5)) - 1];
-    const bar = m.admitted ? `<path d="M${cx - bw / 2},${y(0)} V${Math.min(t + 4, y(0))} q0,-4 4,-4 h${bw - 8} q4,0 4,4 V${y(0)} Z" style="fill:var(--v-adm)"/>` : '';
-    return `<g class="kcol" tabindex="0" role="button" aria-label="${mo} ${m.month.slice(0, 4)}: ${m.admitted} admitted, ${m.newLeads} new leads" data-tip="${mo} ${m.month.slice(0, 4)}|${m.admitted} admitted|${m.newLeads} new leads" data-kgo="month|${m.month}|${mo} ${m.month.slice(0, 4)}"><rect x="${cx - band / 2}" y="${T}" width="${band}" height="${H - T - B}" class="khit"/>${bar}${labelled(k) ? `<text x="${cx}" y="${H - 8}" class="kt" text-anchor="middle">${mo}</text>` : ''}</g>`; }).join('');
+    const bar = m.admitted ? `<path d="M${cx - bw / 2},${y(0)} V${Math.min(t + 4, y(0))} q0,-4 4,-4 h${bw - 8} q4,0 4,4 V${y(0)} Z" style="fill:var(--v-adm);--i:${k}" class="m-fade"/>` : '';
+    // THE PEAK SAYS ITSELF, in place (Square on Mobbin): the best month carries its own figure above
+    // its bar, so the answer is on the mark and not in a legend. The latest of equal peaks wins.
+    const peak = k === peakAt ? `<text x="${cx}" y="${t - 7}" class="kpeak m-fade" text-anchor="middle" style="--i:${n}">${m.admitted} admitted</text>` : '';
+    return `<g class="kcol" tabindex="0" role="button" aria-label="${mo} ${m.month.slice(0, 4)}: ${m.admitted} admitted, ${m.newLeads} new leads" data-tip="${mo} ${m.month.slice(0, 4)}|${m.admitted} admitted|${m.newLeads} new leads" data-kgo="month|${m.month}|${mo} ${m.month.slice(0, 4)}"><rect x="${cx - band / 2}" y="${T}" width="${band}" height="${H - T - B}" class="khit"/>${bar}${labelled(k) ? `<text x="${cx}" y="${H - 8}" class="kt" text-anchor="middle">${mo}</text>` : ''}${peak}</g>`; }).join('');
   const pts = months.map((m, k) => [L + band * k + band / 2, y(m.newLeads)]);
-  return `<svg viewBox="0 0 ${W} ${H}" class="kchart${narrow ? ' narrow' : ''}" role="img" aria-label="Admissions and new leads per month, ${year}">${grid}${cols}<path d="M${pts.map((p) => p.join(',')).join(' L')}" class="kline"/>${pts.map(([x, yy]) => `<circle cx="${x}" cy="${yy}" r="4" class="kdot"/>`).join('')}</svg>`;
+  return `<svg viewBox="0 0 ${W} ${H}" class="kchart${narrow ? ' narrow' : ''}" role="img" aria-label="Admissions and new leads per month, ${year}">${grid}${cols}<path d="M${pts.map((p) => p.join(',')).join(' L')}" class="kline m-draw" pathLength="1"/>${pts.map(([x, yy], k) => `<circle cx="${x}" cy="${yy}" r="4" class="kdot m-fade" style="--i:${k}"/>`).join('')}</svg>`;
 }
 
 // PRESENCE WITHOUT DISTORTION (the owner, 02.10.2026).
@@ -2147,6 +2624,8 @@ let C_OUT_FILTER = null;
 function cChartGo(spec) {
   const [kind, key, label] = String(spec || '').split('|');
   if (kind === 'journey') { location.hash = '#/journey'; return; }
+  if (kind === 'stage') { cGoStage(key); return; }
+  if (kind === 'inbox') { location.hash = '#/leads'; return; }
   if (kind === 'outcome') { C_OUTCOME = key; C_OUT_FILTER = null; location.hash = '#/outcomes'; return; }
   C_OUTCOME = 'Admitted';
   C_OUT_FILTER = { kind, key, label };
@@ -2171,6 +2650,37 @@ function cWireCharts() {
 }
 
 
+
+// THE KIT'S SCENES IN A PAGE THAT NEVER RELOADS. Kit part 9 looks for its .m-scene sections
+// once, at load, which suits a report and misses every screen this app draws later. So each
+// view that carries a scene calls this after it renders: stagger is applied, then every scene
+// plays once when it reaches the middle of the window, exactly as the kit does it (the same
+// observer margin, the same scroll sweep). AT MOST TWO SCENES PER TAB (KB 08 P5, 02.10.2026),
+// and a test counts them. With reduced motion the kit never sets html.m-on, nothing is hidden
+// and this does nothing.
+function cScenes(root) {
+  const M = window.Motion;
+  if (!M || !M.on || !root) return;
+  root.querySelectorAll('[data-stagger]').forEach((box) => {
+    const v = box.getAttribute('data-stagger-var') || '--i';
+    box.querySelectorAll(box.getAttribute('data-stagger')).forEach((e, i) => e.style.setProperty(v, i));
+  });
+  const scenes = [...root.querySelectorAll('.m-scene:not(.in)')];
+  if (!scenes.length) return;
+  // ONE DEPARTURE FROM THE KIT, on purpose: a report scrolls a chapter into the middle of the
+  // window, a dashboard OPENS with its charts already in view. At the kit's mid-screen line a
+  // chart sitting at 50-60% of the height stayed an empty axis until somebody scrolled, which
+  // reads as a broken chart. Here a scene plays once its top is in the upper 85% of the window.
+  const io = new IntersectionObserver((es) => es.forEach((e) => {
+    if (e.isIntersecting) { M.fire(e.target); io.unobserve(e.target); }
+  }), { rootMargin: '0px 0px -15% 0px' });
+  scenes.forEach((sc) => io.observe(sc));
+  // a hidden pane stalls the observer, so look once now and on every scroll, as the kit does
+  const sweep = () => { const h = window.innerHeight;
+    scenes.forEach((sc) => { const r = sc.getBoundingClientRect(); if (r.top < h * 0.85 && r.bottom > 0) M.fire(sc); }); };
+  setTimeout(sweep, 60);
+  window.addEventListener('scroll', sweep, { passive: true });
+}
 
 // ------------------------------------------------------------------ NEXT STEPS
 // Four states, and every open person is in exactly one of them. No "Waiting on us":
@@ -2221,6 +2731,9 @@ async function viewTodayC() {
 // -------------------------------------------------------------------- OUTCOMES
 // Two destinations. A reason is a detail of Not proceeding, never a place of its own.
 let C_OUTCOME = 'Admitted';
+// Cold / reject, Admissions 30.09: a filter on Not proceeding only, so the cold ones can be picked
+// out for marketing. null = everybody not proceeding.
+let C_OUT_TAG = null;
 // WHY PEOPLE STOP, AGAINST THE LIST WE ACTUALLY ENFORCE (Admissions, open since
 // 29.09.2026). The reason model was never missing: config.closedReasons holds ten, the
 // status route refuses a close without one of them, and the picker is built from it.
@@ -2254,6 +2767,19 @@ function cReasonBreakdown(np, noReason) {
     + '</div>';
 }
 
+// COLD AND REJECT, COUNTED (Admissions, 30.09: easier for statistics, and extra marketing
+// aimed at the cold ones specifically; the verbatim words are in the feedback doc). The tag was
+// built in b5f3a4c and could be SET; nothing counted it or picked the cold ones out.
+// Each tag is a filter. A tag nobody carries is not drawn (KB 08 P5: gaps never shown).
+const cTagChip = (id) => { const t = (CFG.closedTags || []).find((x) => x.id === id); return t ? `<span class="kfl-tag t-${esc(id)}">${esc(t.label || id)}</span> ` : ''; };
+function cTagSplit(np) {
+  const tags = (CFG.closedTags || []).map((t) => [t.id, t.label || t.id, np.filter((p) => p.closed_tag === t.id).length]).filter(([, , n]) => n > 0);
+  if (!tags.length) return '';
+  const pick = (id) => `C_OUT_TAG=${id ? `'${esc(id)}'` : 'null'};viewOutcomesC()`;
+  return `<div class="c-seg c-tagseg" role="group" aria-label="Cold or reject">
+    <button aria-pressed="${!C_OUT_TAG}" onclick="${pick(null)}">Everybody ${np.length}</button>${tags.map(([id, label, n]) =>
+    `<button aria-pressed="${C_OUT_TAG === id}" onclick="${pick(id)}">${esc(label)} ${n}</button>`).join('')}</div>`;
+}
 async function viewOutcomesC() {
   const people = await cPeopleRows();
   const adm = people.filter((p) => p.status === 'Admitted'); const np = people.filter((p) => p.status === 'Not proceeding');
@@ -2267,6 +2793,7 @@ async function viewOutcomesC() {
     if (f.kind === 'prog') list = list.filter((p) => (p.programme || '(not recorded)') === f.key);
     if (f.kind === 'chan') list = list.filter((p) => (p.source_channel || 'unknown') === f.key);
   }
+  if (C_OUTCOME !== 'Admitted' && C_OUT_TAG) list = list.filter((p) => p.closed_tag === C_OUT_TAG);
   const noReason = np.filter((p) => !p.closed_reason).length;
   const fLabel = f ? ({ month: 'admitted in ', prog: 'programme ', chan: 'came from ' }[f.kind] || '') + f.label : '';
   $('#view').innerHTML = `<p class="c-crumb"><a href="#/journey">People</a></p>
@@ -2274,10 +2801,11 @@ async function viewOutcomesC() {
       <div class="act"><button class="btn" onclick="openExport()">Download for management review</button><button class="btn ghost" onclick="location.hash='#/reports'">Full report</button></div></div>
     <div class="c-seg" role="group" aria-label="Outcome"><button aria-pressed="${C_OUTCOME === 'Admitted'}" onclick="C_OUTCOME='Admitted';viewOutcomesC()"><span class="c-ok">✓</span>Admitted ${adm.length}</button><button aria-pressed="${C_OUTCOME !== 'Admitted'}" onclick="C_OUTCOME='Not proceeding';viewOutcomesC()"><span class="c-no">✕</span>Not proceeding ${np.length}</button></div>
     ${f ? `<div class="c-filter">Showing <b>${list.length}</b> ${list.length === 1 ? 'admitted person' : 'admitted people'}, ${esc(fLabel)} <button class="btn sm ghost" onclick="C_OUT_FILTER=null;viewOutcomesC()">Show all admitted ✕</button></div>` : ''}
+    ${C_OUTCOME !== 'Admitted' ? cTagSplit(np) : ''}
     ${C_OUTCOME !== 'Admitted' ? cReasonBreakdown(np, noReason) : ''}
     <div class="c-sheet">${list.map((p) => `<div class="c-line" tabindex="0" onclick="location.hash='#/person/${esc(p.id)}'" style="grid-template-columns:minmax(0,1.2fr) minmax(0,1.4fr) 110px">
         <div class="c-who"><b>${esc(p.name)}</b><small>${esc(p.programme || 'programme not said')} · came from ${esc(cChannel(p.source_channel)[0])}</small></div>
-        <div class="c-what">${C_OUTCOME === 'Admitted' ? `Admitted${p.matriculated_at ? ` · <span class="c-lifefact" title="From the SIS: it happened on or before this day">Matriculated <time>by ${esc(cDay(p.matriculated_at))}</time></span>` : ''}` : (p.closed_reason ? esc(p.closed_reason) : '<span class="c-gap">reason not recorded</span>')}</div>
+        <div class="c-what">${C_OUTCOME !== 'Admitted' && p.closed_tag ? cTagChip(p.closed_tag) : ''}${C_OUTCOME === 'Admitted' ? `Admitted${p.matriculated_at ? ` · <span class="c-lifefact" title="From the SIS: it happened on or before this day">Matriculated <time>by ${esc(cDay(p.matriculated_at))}</time></span>` : ''}` : (p.closed_reason ? esc(p.closed_reason) : '<span class="c-gap">reason not recorded</span>')}</div>
         <div class="c-when">${p.admitted_at ? fmtDate(p.admitted_at) : ''}</div></div>`).join('') || '<div class="c-empty">Nobody here.</div>'}</div>`;
 }
 
