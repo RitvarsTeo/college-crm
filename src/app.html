@@ -5752,7 +5752,11 @@ async function doNote(personId) {
   const subject = type === 'call' ? `Call: ${$('#nOutcome').value}` : label;
   await post(`/api/people/${personId}/note`, { kind: type === 'call' ? 'call' : 'note',
     noteType: type, subject, body: $('#nBody').value });
-  closeModal(); viewPerson(personId);
+  // Stay where it was written: the Journey card's thread and Today redraw in place, so the
+  // note is seen landing and the address stays true. Only the person page redraws itself.
+  closeModal();
+  if (typeof C_JTALK !== 'undefined') C_JTALK.delete(personId);   // the Journey thread reads it again
+  if (String(location.hash).startsWith('#/person/')) viewPerson(personId); else route();
 }
 
 // ------------------------------------------------------------------ boot --
