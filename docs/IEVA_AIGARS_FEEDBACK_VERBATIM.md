@@ -94,10 +94,13 @@ differently, and one of them is expected to return. A person who is cold is dorm
 
 "In new leads I also see unanswered calls appearing. Where do those come from?"
 
-> Vēl jautājums - ir viens leads, kurš jau ir admitted. Tā arī saminēju u... *(cut off in the
-> screenshot; the rest of this message is NOT known and must not be guessed)*
+> Vēl jautājums - ir viens leads, kurš jau ir admitted. Tā arī samainīju statusu, bet viņš man
+> joprojām rādās pie next steps sadaļas kā overdue
 
-**[VERIFY: the rest of Ieva's 10:23 message]**
+"One more question: there is one lead who is already admitted. I changed the status, but he still
+shows for me under Next Steps as overdue."
+
+*(Full text pasted by Ritvars 02.10. Until then only the first half was known.)*
 
 **Ritvars answered the first one** (01.10): the call-filtering logic is not finished and that was a
 test of whether the channel is wired to the app, so unanswered calls currently appear in New Leads.
