@@ -1,5 +1,7 @@
 # Channel reconciliation - 02.10.2026
 
+> **Superseded on live state, 02.10 later:** Phone and Gmail(edu@) are LIVE VERIFIED from the production backup; the current per-channel table is in `INTAKE_CONTROL_2026-10-02.md`. The universe, owners and rules below still stand.
+
 The gate before any more Channel UI. Written because the Channels screen was showing a
 channel universe that disagrees with decisions already recorded, and because
 `config/channels.json` was being treated as authoritative when it is not.
