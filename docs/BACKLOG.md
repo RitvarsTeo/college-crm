@@ -14,6 +14,16 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 02.10.2026 - DECIDED (popup): the person card, the menu, black, shadows
+
+| Decision (Ritvars, 02.10.2026) | Status |
+|---|---|
+| Home B: every moving visual gets the circle's shadow (same plinth, offset only across the value axis) | BUILT `449f35a` |
+| Journey person card: **only after a click**, and "it expands exactly from the spot you clicked it, pushed other around it away and slightly making darker the everything around that card". The automatic first person (the "hero") is gone | BUILT |
+| Menu in light: **white into a soft Novikontas Blue tint** (#53a7db at 15%) | BUILT |
+| Pitch Black #011111 as the strong accent: **a short bar before each section heading** (dark mode uses its own ink, black would vanish on the sea) | BUILT |
+| Motion: **every metric counts up**; the bump only when a number changed since you last saw it; a soft "presentation slide" opening for all data when a tab opens | SAID, next |
+
 ## 02.10.2026 - DECIDED: Home is B, the Journey takes A's band
 
 Ritvars, 02.10.2026: **"B for home. Then the journey displayed like the ui from A."**

@@ -149,7 +149,8 @@ test('dark mode keeps the warning edge (the glass border would hide it) and the 
 });
 
 test('phone widths: columns keep their minimum and scroll sideways as before; dates never wrap', () => {
-  assert.match(APP, /repeat\(\$\{stages\.length\}, minmax\(150px, 1fr\)\)/);
+  // every column keeps 150px; the column holding the opened person widens to 330px (02.10.2026)
+  assert.match(APP, /sel && sel\.status === s\.id \? 'minmax\(330px, 2\.4fr\)' : 'minmax\(150px, 1fr\)'/);
   assert.match(APP, /html\.ui-c \.c-cols\{display:grid;gap:10px;overflow-x:auto/);
   assert.match(APP, /html\.ui-c \.c-jp small\.c-jdue\{white-space:nowrap\}/);
 });

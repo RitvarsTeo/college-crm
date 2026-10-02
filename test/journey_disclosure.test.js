@@ -20,6 +20,8 @@ const ctx = {
   cDay: (iso) => (iso ? String(iso).slice(0, 10) : ''),
   // the card is stubbed to its id so the order can be read straight off the output
   cJourneyCard: (p) => `[${p.id}]`,
+  // the opened person is drawn as the quick view in place (02.10.2026), stubbed the same way
+  cPersonCard: (p) => `[${p.id}]`,
 };
 vm.createContext(ctx);
 vm.runInContext([
@@ -78,4 +80,27 @@ test('the board uses it, and the toggle redraws without dropping the filters', (
   assert.match(fn('function cDrawJourney('), /cJColumn\(s\.id, ps, taskOf, sel\)/);
   assert.match(fn('function cJColToggle('), /cDrawJourney\(\)/);
   assert.doesNotMatch(fn('function cJColToggle('), /C_JF\s*=/, 'opening a column never resets a filter');
+});
+
+// THE QUICK VIEW OPENS IN PLACE (the owner, 02.10.2026): nobody is shown until clicked; the card
+// grows out of the spot that was clicked, the others move aside, the rest darkens a little.
+test('the opened person is drawn as the quick view exactly where their card was', () => {
+  ctx.open.clear();
+  const sel = people.find((p) => p.id === 'late2');
+  const html = ctx.col('S', people, taskOf, sel);
+  assert.match(html, /<div class="c-jexp" data-id="late2">/, 'the quick view carries the same id, so it grows from that card');
+  assert.ok(html.indexOf('data-id="late2"') > html.indexOf('[late5]'), 'in its own place in the urgency order');
+  assert.match(html, /onclick="event\.stopPropagation\(\);cJClose\(\)"/, 'with a cross that closes it');
+});
+test('the board shows nobody until a click, widens the opened column, darkens the rest, and moves cards', () => {
+  const draw = fn('function cDrawJourney(');
+  assert.match(draw, /const sel = open\.find\(\(p\) => p\.id === C_JSEL\) \|\| null;/);
+  assert.match(draw, /<div class="c-jveil" onclick="cJClose\(\)"><\/div>/);
+  assert.match(draw, /cJFlipPlay\(\);/);
+  assert.match(fn('function cJOpen('), /C_JFLIP = cJFlipMeasure\(\); C_JSEL = id; cDrawJourney\(\);/, 'measured BEFORE the redraw');
+  assert.match(fn('function cJFlipPlay('), /prefers-reduced-motion/, 'reduced motion: it just appears');
+  assert.match(APP, /onclick="cJOpen\('\$\{esc\(p\.id\)\}'\)"/, 'a board card opens it');
+});
+test('only the quick view scales; every other card slides, so no words are stretched', () => {
+  assert.match(fn('function cJFlipPlay('), /sx = grow \? a\.width \/ b\.width : 1, sy = grow \? a\.height \/ b\.height : 1/);
 });

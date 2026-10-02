@@ -858,7 +858,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   /* the menu takes the same treatment it takes in dark: a quiet vertical fall, so the
      two modes are the same design and not two designs */
   html.ui-c:not([data-theme="dark"]) .shell > nav{
-    background:linear-gradient(180deg,#ffffff 0%,#fafbfc 100%);border-right:1px solid var(--rule)}
+    background:linear-gradient(180deg,#ffffff 0%,#ffffff 40%,#e5f2fa 100%);border-right:1px solid var(--rule)}   /* white into a soft Novikontas Blue #53a7db tint (15% on white), the owner 02.10.2026 */
   html.ui-c[data-theme="dark"] body{background:radial-gradient(120% 80% at 50% 0%,#17456e 0%,rgba(23,69,110,0) 60%),
       linear-gradient(180deg,#0f2f4f 0%,#0f2f4f 45%,#08182e 100%) fixed #0f2f4f}
   html.ui-c[data-theme="dark"] .shell > nav{background:linear-gradient(180deg,rgba(8,24,46,.78) 0%,rgba(8,24,46,.92) 100%);border-right:1px solid rgba(194,211,222,.10)}
@@ -955,7 +955,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
     html.ui-c .cnav .kids{display:contents}
     html.ui-c .cnav a, html.ui-c .cnav .kids a{flex:0 0 auto;white-space:nowrap;padding:8px 10px;font-size:13.5px;min-height:36px}
     html.ui-c .cnav .n{margin-left:4px}
-    html.ui-c .c-journey > .c-card{scroll-margin-top:130px}
+    html.ui-c .c-jexp{scroll-margin-top:130px}
     html.ui-c[data-theme="dark"] .shell > nav{background:#08182e}   /* pinned over the work: solid, never see-through */ }
   @media (max-width:900px){ html.ui-c nav .c-themebar, html.ui-c nav .c-foot{display:none}
     html.ui-c .c-pagefoot{display:block;padding:18px 0 88px;border-top:1px solid var(--rule2);margin:0 16px}
@@ -1094,6 +1094,11 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .ksec{margin:0 0 26px;min-width:0}
   html.ui-c .ksh{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid var(--rule2)}
   html.ui-c .ksh h2{margin:0;font-family:inherit;font-size:13.5px;font-weight:650;letter-spacing:-.005em}
+  /* PITCH BLACK #011111, the brandbook's black, as the strong accent (the owner, 02.10.2026: "novikontas
+     blue with black looks especially good"): a short bar before each section heading. In dark the same
+     bar takes the dark-mode ink, because black on the navy sea would disappear. */
+  html.ui-c .ksh h2::before{content:"";display:inline-block;width:3px;height:.95em;margin-right:8px;vertical-align:-.1em;border-radius:1px;background:#011111}
+  html.ui-c[data-theme="dark"] .ksh h2::before{background:var(--ink)}
   html.ui-c .kt2{font-size:12px;color:var(--t3)}
   html.ui-c .kchart{width:100%;height:auto;display:block;max-width:900px}
   /* the same 1500 px step the drawing uses, so the cap and the viewBox never disagree */
@@ -1172,6 +1177,18 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-steprow select{flex:1 1 240px;width:auto}
   html.ui-c .c-steprow input[type=date]{width:auto}
   html.ui-c .c-journey{display:grid;grid-template-columns:minmax(260px,320px) minmax(0,1fr);gap:18px;align-items:start}
+  html.ui-c .c-journey.c-nosel{grid-template-columns:minmax(0,1fr)}
+  /* the quick view, opened in place: above a veil that darkens everything else a little */
+  html.ui-c .c-jveil{position:fixed;inset:0;z-index:40;background:rgba(1,17,17,.18);animation:jveil-in .45s ease both}
+  html.ui-c[data-theme="dark"] .c-jveil{background:rgba(1,10,20,.38)}
+  @keyframes jveil-in{from{opacity:0}to{opacity:1}}
+  html.ui-c .c-jexp{position:relative;z-index:41;margin:0 0 8px}
+  html.ui-c .c-jexp > .c-card{position:relative;top:auto;box-shadow:0 18px 44px -18px rgba(1,17,17,.45)}
+  html.ui-c .c-jexp-x{position:absolute;z-index:2;top:8px;right:8px;width:28px;height:28px;padding:0;border:0;border-radius:50%;
+    background:var(--c-sunk);color:var(--t2);font:inherit;font-size:13px;cursor:pointer}
+  html.ui-c .c-jexp-x:hover{color:var(--ink)}
+  html.ui-c .c-jexp-x:focus-visible{outline:2px solid var(--pet);outline-offset:1px}
+  @media (prefers-reduced-motion:reduce){ html.ui-c .c-jveil{animation:none} }
   html.ui-c .c-card{background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:18px 18px 16px;position:sticky;top:12px}
   html.ui-c .c-card h2{margin:0;font-family:inherit;font-size:19px;font-weight:650;letter-spacing:-.01em;overflow-wrap:anywhere}
   html.ui-c .c-cardsub{font-size:13px;color:var(--t3);margin:3px 0 12px}
@@ -3250,7 +3267,7 @@ function cJourneyCard(p, t, sel) {
   const cls = ['c-jp', 'row', sel && p.id === sel.id ? 'c-sel' : '', w === 'over' ? 'is-over' : '', w === 'today' ? 'is-today' : ''].filter(Boolean).join(' ');
   const life = p.sis ? `<small class="c-jlife" title="In the SIS${p.sis.since ? ', by ' + esc(cDay(p.sis.since)) : ''}">SIS: ${esc(p.sis.label)}</small>`
     : cLifeFacts(p).map(([, at, short]) => `<small class="c-jlife" title="From the SIS, by ${esc(cDay(at))}">${esc(short)}</small>`).join('');
-  return `<div class="${cls}" draggable="true" data-id="${esc(p.id)}" tabindex="0" onclick="C_JSEL='${esc(p.id)}';cDrawJourney()"><b>${esc(p.name)}</b>${life}${t
+  return `<div class="${cls}" draggable="true" data-id="${esc(p.id)}" tabindex="0" onclick="cJOpen('${esc(p.id)}')" onkeydown="if(event.key==='Enter')cJOpen('${esc(p.id)}')"><b>${esc(p.name)}</b>${life}${t
     ? `<span class="c-jnext">${cStepIcon(t.label)}<span>${esc(cTask(t.label))}</span></span><small class="c-jdue${w ? ' ' + w : ''}">${due}</small>`
     : cSisHolds(p) ? '' : '<small class="none">No next step</small>'}${cComment(p) ? `<small class="c-jnote" title="${esc(p.last_comment || p.notes)}">${esc(cComment(p))}</small>` : ''}</div>`;
 }
@@ -3527,7 +3544,9 @@ function cJColumn(stageId, ps, taskOf, sel) {
   let shown = open ? sorted : sorted.slice(0, C_JCOL_SHOW);
   if (!open && sel && sorted.includes(sel) && !shown.includes(sel)) shown = [...shown, sel];
   const rest = sorted.length - shown.length;
-  const cards = shown.map((p) => cJourneyCard(p, taskOf.get(p.id), sel)).join('');
+  const cards = shown.map((p) => (sel && p.id === sel.id
+    ? `<div class="c-jexp" data-id="${esc(p.id)}"><button type="button" class="c-jexp-x" aria-label="Close" onclick="event.stopPropagation();cJClose()">✕</button>${cPersonCard(p, taskOf.get(p.id))}</div>`
+    : cJourneyCard(p, taskOf.get(p.id), sel))).join('');
   const more = rest > 0
     ? `<button type="button" class="c-jmore" onclick="event.stopPropagation();cJColToggle('${esc(stageId)}')">${rest} more</button>`
     : open && sorted.length > C_JCOL_SHOW
@@ -3536,13 +3555,48 @@ function cJColumn(stageId, ps, taskOf, sel) {
 }
 function cJColToggle(id) { if (C_JCOLOPEN.has(id)) C_JCOLOPEN.delete(id); else C_JCOLOPEN.add(id); cDrawJourney(); }
 
+// THE QUICK VIEW OPENS WHERE YOU CLICKED (the owner, 02.10.2026: "it expands exactly from the spot
+// you clicked it, pushed other around it away and slightly making darker the everything around
+// that card"). FLIP: every card's box is measured before the redraw and after it, and each one is
+// moved back to where it was and let go, so the clicked card grows out of its own spot and its
+// neighbours slide out of the way. A veil darkens the rest; the veil, Escape or the cross closes it.
+// This is the tab's second motion scene (the band's arrival is the first): KB 08 P5 allows two.
+// Reduced motion: the card simply appears.
+let C_JFLIP = null;
+function cJFlipMeasure() {
+  const m = new Map();
+  document.querySelectorAll('.c-cols [data-id]').forEach((el) => m.set(el.dataset.id, el.getBoundingClientRect()));
+  return m;
+}
+function cJOpen(id) { C_JFLIP = cJFlipMeasure(); C_JSEL = id; cDrawJourney(); }
+function cJClose() { if (!C_JSEL) return; C_JFLIP = cJFlipMeasure(); C_JSEL = null; cDrawJourney(); }
+function cJFlipPlay() {
+  const before = C_JFLIP; C_JFLIP = null;
+  const still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!before || still) return;
+  document.querySelectorAll('.c-cols [data-id]').forEach((el) => {
+    const a = before.get(el.dataset.id); if (!a || !el.animate) return;
+    const b = el.getBoundingClientRect(); if (!b.width || !b.height) return;
+    // only the quick view itself grows out of the clicked card; every other card SLIDES, never
+    // stretches, because a stretched card stretches its words (seen running, 02.10.2026)
+    const grow = el.classList.contains('c-jexp');
+    const dx = a.left - b.left, dy = a.top - b.top, sx = grow ? a.width / b.width : 1, sy = grow ? a.height / b.height : 1;
+    if (Math.abs(dx) < 1 && Math.abs(dy) < 1 && Math.abs(sx - 1) < 0.01 && Math.abs(sy - 1) < 0.01) return;
+    el.animate([{ transformOrigin: '0 0', transform: `translate(${dx}px,${dy}px) scale(${sx},${sy})` }, { transformOrigin: '0 0', transform: 'none' }],
+      { duration: 563, easing: 'cubic-bezier(.22,.9,.3,1)' });   // the kit's pace, 25% slower than 450
+  });
+}
+if (typeof document !== 'undefined' && document.addEventListener) document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && C_JSEL && !C_JFOPEN) cJClose(); });
+
 function cDrawJourney() {
   const { people, taskOf } = C_JDATA;
   const stages = (CFG.stages || []).filter((s) => !C_TERMINAL.includes(s.id));
   const everyone = people.filter((p) => !C_TERMINAL.includes(p.status));
   const open = everyone.filter((p) => cJourneyMatch(p, taskOf.get(p.id), C_JF));
   const narrow = window.matchMedia && window.matchMedia('(max-width:900px)').matches;
-  const sel = open.find((p) => p.id === C_JSEL) || (narrow ? null : open[0]);
+  // NO PERSON UNTIL ONE IS CLICKED (the owner, 02.10.2026). The board used to pick the first
+  // person on its own, so a random lead sat on the left like a hero and took 320px from the board.
+  const sel = open.find((p) => p.id === C_JSEL) || null;
   // fetch the selected person's conversation once, then redraw with it
   // Redraw only if the answer actually arrived. Without the check, anything that
   // resolves without filling the map - a stub, a future refactor - redraws, asks again,
@@ -3555,13 +3609,14 @@ function cDrawJourney() {
     ${cPeopleTabs('journey')}
     ${cJourneySummary(everyone, taskOf, stages)}
     ${cJourneyFilters(everyone)}
-    <div class="c-journey">${sel ? cPersonCard(sel, taskOf.get(sel.id)) : '<div></div>'}<div style="min-width:0">
-      <div class="c-cols" style="grid-template-columns:repeat(${stages.length}, minmax(150px, 1fr))">${stages.map((s, i) => { const ps = open.filter((p) => p.status === s.id);
+    <div class="c-journey c-nosel">${sel ? '<div class="c-jveil" onclick="cJClose()"></div>' : ''}<div style="min-width:0">
+      <div class="c-cols" style="grid-template-columns:${stages.map((s) => (sel && sel.status === s.id ? 'minmax(330px, 2.4fr)' : 'minmax(150px, 1fr)')).join(' ')}">${stages.map((s, i) => { const ps = open.filter((p) => p.status === s.id);
         const over = ps.filter((p) => { const t = taskOf.get(p.id); return t && cWhenClass(t.due_at) === 'over'; }).length;
         return `<div class="c-col" style="--jt:${((i + 1) / stages.length).toFixed(3)}"><h3><span class="c-jn">${i + 1}</span>${esc(s.label || s.id)} <b>${ps.length}</b>${over ? `<em class="c-jover">${over} overdue</em>` : ''}</h3><div class="c-drop" data-stage="${esc(s.id)}">${cJColumn(s.id, ps, taskOf, sel) || '<div class="c-empty" style="padding:8px">empty</div>'}</div></div>`; }).join('')}</div>
     </div></div>`;
   if (C_JDATA.play) cScenes($('#view'));
-  if (narrow && sel && C_JSEL === sel.id) { const card = document.querySelector('.c-journey > .c-card'); if (card && card.scrollIntoView) card.scrollIntoView({ block: 'start' }); }
+  if (narrow && sel && C_JSEL === sel.id) { const card = document.querySelector('.c-jexp'); if (card && card.scrollIntoView) card.scrollIntoView({ block: 'nearest', inline: 'center' }); }
+  cJFlipPlay();
   // one pair of listeners for the life of the page, not one per redraw: a click anywhere outside a
   // filter closes the open tick list, and so does Escape.
   if (!window.__cJfWired) {

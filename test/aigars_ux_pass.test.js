@@ -51,7 +51,8 @@ test('phone and tablet: the menu is one sideways row, never wider than the page;
 
 test('phone: the Journey opens on its columns; the person card only once somebody taps one', () => {
   const draw = fn('function cDrawJourney(');
-  assert.match(draw, /const sel = open\.find\(\(p\) => p\.id === C_JSEL\) \|\| \(narrow \? null : open\[0\]\);/);
+  // 02.10.2026 the owner: no person until one is clicked, on EVERY width (was phone only)
+  assert.match(draw, /const sel = open\.find\(\(p\) => p\.id === C_JSEL\) \|\| null;/);
   assert.match(draw, /if \(narrow && sel && C_JSEL === sel\.id\)/);
 });
 
