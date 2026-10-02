@@ -44,6 +44,30 @@ task, properly this time", so the earlier A/B is not the deliverable.
    raised from one to two on his decision today).
 4. **KPI figures are CARDS.** Already decided 30.09 and recorded in KB 08 P5. Not an open A/B.
 
+### The design rule set 02.10, and the research behind it
+
+**"Use 3D geometry to give the object physical presence, but never let perspective or depth
+alter the user’s ability to compare the underlying values."** His words. Written into KB 08 P5
+as a new **Depth and 3D** section, so it governs every app and not this one chart.
+
+The first extruded ring BROKE it: tilting meant a segment at the side covered more visual arc
+than the same number at the top, and only front segments carried a wall, so they gained weight
+from where they sat. Fixed in `074d141`: the top face is a **true circle**, every angle exactly
+proportional, and the extrusion is a uniform rim entirely **below** the reading surface.
+
+**Mobbin, Square web dashboard** (free tier, 02.10; also available: Browserbase, DoorDash
+Merchant, Variant, ZARA, Calendly). **It uses ZERO depth** and wins on hierarchy instead:
+figures at display size with a small label above and a small explanation below, named bands
+separated by hairlines, one thin unfilled line with no gridlines, **the peak annotating itself
+in place**, and **comparison as its own delta row with the basis named** ("vs Prior Monday")
+rather than a second colour. Its left nav uses quiet non-clickable section labels, where ours
+indents clickable parents behind a hairline.
+
+**The synthesis: depth belongs to the FRAME, never to the MARK.** Cards, surfaces and the menu
+spine may have presence; the donut face, the bar and the line stay flat and exact.
+
+Pattern only, never their colours, type or branding.
+
 ### Open, and not ours to take
 
 - **[VERIFY] Is PBX live?** He told the team "PBX ir live" on 01.10; this file says 0 rows from
