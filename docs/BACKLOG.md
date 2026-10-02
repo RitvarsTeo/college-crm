@@ -21,10 +21,17 @@ Ritvars, 02.10.2026: **"B for home. Then the journey displayed like the ui from 
 | What | Status |
 |---|---|
 | Home = **B, Today first** (Needs you, KPI cards with the delta row, charts + donut) | DECIDED |
-| People > Journey opens with **A's band** (Arrived -> the five stages with one dot per person and overdue on its stage -> Admitted / Not proceeding), in the lit well with the spine | DECIDED, NOT BUILT |
-| The band takes the place of the current stage row (screen 2); the filters and the board (screen 3) stay below it | PROPOSED, waits for his go |
-| The A/B switch on Home goes; A's Home code is reused on the Journey, not kept as a second Home | PROPOSED |
-| **The band's stage visual = columns from one shared baseline**, the count on top, overdue the darker stacked part (hover gives its number); the words "now" and "n overdue" go. One dot per person is OUT: "cant count them really". Rule: the task picks the visual, comparison wins (KB 08 P5 rule 12) | DECIDED by his rule, NOT BUILT |
+| People > Journey opens with **A's band** (Arrived -> the five stages -> Admitted / Not proceeding), in the lit well | BUILT `3235467` |
+| The band takes the place of the stage row (screen 2) and of the outcomes strip behind the disclosure line; filters, board, 5 most urgent + "n more" unchanged | BUILT `3235467` |
+| Home = B only: the switch, `cHomeA` and the remembered `?home=` choice are removed | BUILT `3235467` |
+| **The band's stage visual = columns from one shared baseline**, the count on top, overdue the darker stacked part (hover gives its number); the words "now" and "n overdue" go. One dot per person is OUT: "cant count them really". Rule: the task picks the visual, comparison wins (KB 08 P5 rule 12) | BUILT `3235467` |
+
+**Built 02.10 (`3235467`), 968/968, NOT DEPLOYED.** Columns on one baseline and ONE scale (the biggest
+stage sets it), the count above, overdue the red base drawn at rest (on the same scale, so overdue
+compares across stages too). A column IS the board's stage filter: click filters the board in place,
+click again clears. Arrived and the outcomes are bookends, not columns, because they count other bases
+(this year's leads, the whole database). One scene on arrival only. Seen at 1440 light and dark, and
+at 390 with no sideways page scroll. **Stage names unchanged: still BLOCKED on Ieva's wording.**
 
 ## 02.10.2026 - MAIN A and B of this run: BUILT, COMMITTED, NOT DEPLOYED
 
