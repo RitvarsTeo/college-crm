@@ -120,7 +120,8 @@ The Meta "question vs work" choice in the reconciliation doc is **still Ritvars'
 
 ## IN PROGRESS
 
-- Session 2 MAIN A/B, Session 3 CHANNELS: see their branches.
+- Session 2 MAIN [reported by S2 + seen in git, 02.10]: `ui/2026-10-02-main-ab`, 983/983, NOT deployed. **Breach 1 fixed** (`1bc018d`, `--v-open:#E0A526` in both modes, seen). Spine `5e20aad`. Home = B decided (`17d1a4d`), Journey takes A's band (`3235467`). Then `449f35a` Home shadows, `ac13fd7` Journey quick view / menu blue tint / black heading bars, `bea0556` tab opening + count-up, bump only on changed figures.
+- Session 3 CHANNELS: see its branch.
 - Session 4 APPLICATIONS [reported by S4, 02.10]: `ui/2026-10-02-applications-s4`, 945/945, NOT deployed. `581a032` Applications chapter, `496cbfa` funnel split, `b015c57` label "Academy decision" (Ritvars renamed it from "College decision"), `495d1c3` Q1 recorded.
 
 ## BLOCKED
@@ -154,6 +155,6 @@ The Meta "question vs work" choice in the reconciliation doc is **still Ritvars'
 | # | Item | Owner session | Status |
 |---|---|---|---|
 | Q1 | **apply.novikontas.org may be called "Academy Application form"** wherever Intake names it (Reports > Applications, the lifecycle line). Still downstream, never a channel | Session 4 APPLICATIONS | SAID, recorded by S4 in its backlog (`495d1c3`) |
-| Q2 | **Two-colour sentences, in subtle places.** Reference [seen 02.10]: apply.novikontas.org hero H1 *"Studē / Novikontas Akadēmijā"* - first word in brand blue, bold 700, the rest in white on the app navy, Inter. Use it sparingly (e.g. a section title or empty state), never on data, never more than one per screen | Session 2 MAIN | SAID |
+| Q2 | **Two-colour sentences, in subtle places.** Reference [seen 02.10]: apply.novikontas.org hero H1 *"Studē / Novikontas Akadēmijā"* - first word in brand blue, bold 700, the rest in white on the app navy, Inter. Use it sparingly (e.g. a section title or empty state), never on data, never more than one per screen | Session 2 MAIN | SAID, recorded by S2 (`bea0556`); goes to Ritvars as A/B before build |
 
 Note on Q2: the apply site colours that word `#53a7db` (brandbook blue). KB 08 P5 (30.09) keeps `#53a7db` as marker/hover, **never text**, and the app's blue is `#29a8df`. So Intake takes the PATTERN with `#29a8df`, not the apply site's colour - unless Ritvars says otherwise.
