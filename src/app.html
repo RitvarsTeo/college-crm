@@ -896,6 +896,21 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .cnav .kids{margin:1px 0 6px 18px;padding-left:10px;border-left:1px solid var(--rule)}
   html.ui-c[data-theme="dark"] .cnav .kids{border-left-color:rgba(194,211,222,.28)}   /* kit 13: 2.05:1 on the sea */
   html.ui-c .cnav .kids a{padding:5px 10px;font-size:13px}
+  /* THE SPINE (the owner, 02.10.2026: "a hairline BEHIND the logos of the menu tabs, with a flow
+     to it"). Not a new line: the children's hairline sits at x=18px and the top-level icon centres at
+     x=18.5px, so this is that same hairline carried up through the icons. It stops short of every icon
+     so it reads as running behind them, and it is drawn in the logo blue from Home down to the place
+     you are in: the menu order IS the lead's journey, so the line says how far along it you are.
+     Frame, not data (KB 08 P5 Depth): it carries no value. Drawn by cSpine(); hidden on a phone,
+     where the menu is one sideways row. */
+  html.ui-c .cnav{position:relative}
+  html.ui-c .cnav > a, html.ui-c .cnav .kids{position:relative}
+  html.ui-c .cnav .c-spine{position:absolute;left:0;top:0;width:40px;height:100%;pointer-events:none;overflow:visible}
+  html.ui-c .cnav .c-spine line{stroke:#bcdcf1;stroke-width:1;shape-rendering:crispEdges}
+  html.ui-c .cnav .c-spine line.on{stroke:#29a8df}
+  html.ui-c[data-theme="dark"] .cnav .c-spine line{stroke:rgba(194,211,222,.28)}
+  html.ui-c[data-theme="dark"] .cnav .c-spine line.on{stroke:#8fcbef}
+  @media (max-width:900px){ html.ui-c .cnav .c-spine{display:none} }
   /* The theme switch and the footer line replace the old Theme select in C only. */
   .c-themebar, .c-foot, .c-pagefoot{display:none}
   html.ui-c #themeBlock{display:none}
@@ -1813,8 +1828,37 @@ function markCNav(page) {
   // Settings is for everybody since 28.09.2026: the theme and the Help center live there.
   // Only its admin section is for admins.
   const s = document.querySelector('#cnSettings'); if (s) s.style.display = '';
+  cSpine();
   cNavCounts();
 }
+// THE SPINE, measured from the menu as drawn, never from fixed offsets: a longer label, a
+// count arriving or a font swap moves the icons and the line must still meet them. One
+// segment between each pair of top-level icons, stopping GAP short of each so it runs
+// BEHIND them; the part above the place you are in is drawn again in blue.
+function cSpine() {
+  const nav = document.querySelector('.cnav');
+  if (!nav || !nav.getBoundingClientRect) return;
+  let svg = nav.querySelector('.c-spine');
+  if (!svg) { nav.insertAdjacentHTML('afterbegin', '<svg class="c-spine" aria-hidden="true"></svg>'); svg = nav.querySelector('.c-spine'); }
+  const box = nav.getBoundingClientRect();
+  // Settings sits apart at the foot of the menu, so it is not on the journey
+  const icons = [...nav.querySelectorAll(':scope > a:not(.c-navfoot) > svg')].map((i) => i.getBoundingClientRect());
+  if (icons.length < 2 || !icons[0].height) { svg.innerHTML = ''; return; }
+  const x = (icons[0].left + icons[0].width / 2 - box.left).toFixed(1);
+  const here = [...nav.querySelectorAll('a.on:not(.c-navfoot)')].pop();
+  const hereY = here ? here.getBoundingClientRect().top + here.getBoundingClientRect().height / 2 - box.top : -1;
+  const GAP = 3;
+  const segs = [];
+  for (let k = 0; k < icons.length - 1; k++) {
+    const y1 = icons[k].bottom - box.top + GAP, y2 = icons[k + 1].top - box.top - GAP;
+    if (y2 <= y1) continue;
+    segs.push(`<line x1="${x}" x2="${x}" y1="${y1.toFixed(1)}" y2="${y2.toFixed(1)}"/>`);
+    const end = Math.min(y2, hereY);
+    if (end > y1) segs.push(`<line class="on" x1="${x}" x2="${x}" y1="${y1.toFixed(1)}" y2="${end.toFixed(1)}"/>`);
+  }
+  svg.innerHTML = segs.join('');
+}
+if (typeof window !== 'undefined' && window.addEventListener) window.addEventListener('resize', () => cSpine());
 async function cNavCounts() {
   try {
     const [i, t] = await Promise.all([api('/api/intake'), api('/api/tasks?scope=open')]);
