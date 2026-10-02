@@ -14,6 +14,28 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 02.10.2026 - Session 5: Ieva and Aigars feedback closure
+
+Branch **`audit/2026-10-02-feedback-closure-s5`**, cut from `561bce2`. **944/944. COMMITTED,
+NOT DEPLOYED.** The full matrix, every item DONE or BLOCKED with its owner:
+[`FEEDBACK_CLOSURE_2026-10-02.md`](FEEDBACK_CLOSURE_2026-10-02.md).
+
+| What was found by clicking, and fixed | Commit |
+|---|---|
+| **`closed_tag` had no migration.** Deployed as it stood, every status change on production would fail on a missing column. Now one `ALTER TABLE` at boot. **Schema change on release** | `0e1da1d` |
+| Cold / reject skipped on the People quick edit; stored but shown nowhere. Now offered there too, counted on Outcomes, named on each row and the person page | `1345cd7` |
+| The Journey card's **Edit** button did nothing | `7c3f30a` |
+| A note written on the Journey card jumped to the person page under a `#/journey` address, and the thread stayed stale until reload | `a6a290f` |
+| Plan a next step from Today jumped the same way | `80710a6` |
+
+**Correcting the record.** The 01.10 tables below say of the Journey stages "the screen says they
+are provisional". It does not: that tag was removed on purpose on 29.09 (`6b25ce7`). The caveat
+lives in DECISIONS.md and `config/prototype.json` only.
+
+**Owed:** the MVP map says the cold / reject field and screen go to Ritvars as an A/B first. Neither
+`b5f3a4c` nor `1345cd7` had one. The Outcomes count line is the smallest form; he keeps, changes or
+asks for the A/B.
+
 ## 02.10.2026 - HANDOFF: where this run stopped
 
 Branch **`ui/2026-10-02-journey`**, cut from `feat/home-b-command`. **933/933. Clean tree.
