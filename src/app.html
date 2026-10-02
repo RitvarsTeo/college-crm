@@ -1689,7 +1689,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
     <a class="item" href="#/followup" data-icon="clock" title="What has to happen, and when"><span>Follow-ups</span></a>
     <a class="item" href="#/people" data-icon="people" title="Everybody we hold"><span>People</span></a>
     <a class="item" href="#/reports" data-icon="chart" title="Numbers for a KPI meeting"><span>Reports</span></a>
-    <div class="add"><button class="btn" style="width:100%" onclick="openAdd()">+ Add person</button></div>
+    <div class="add"><button class="btn" style="width:100%" onclick="openAdd()">+ Add lead</button></div>
 
     <div class="navsplit"></div>
     <div class="themes" style="border-top:none;padding-top:0" id="actorBlock">
@@ -2343,8 +2343,7 @@ async function viewLeadsC() {
     </div>`;
   };
   $('#view').innerHTML = `<p class="c-crumb">Admissions</p>
-    <div class="c-head"><div><h1>Inbox</h1></div>
-      <div class="act"><button class="btn" onclick="openAdd()">Add lead</button></div></div>
+    <div class="c-head"><div><h1>Inbox</h1></div></div>
     ${receipt}
     <div class="c-sheet">${rows.length ? rows.map((r) => `<div class="c-line row c-lead${C_LOPEN === r.id ? ' is-open' : ''}" tabindex="0" onclick="C_LOPEN=${C_LOPEN === r.id ? 'null' : Number(r.id)};viewLeadsC()">
         <div class="c-who"><b class="c-reach">${esc(r.contact_name || r.contact_handle || '') || cTelLink({ phone: r.contact_phone }) || 'Unknown'}</b><small>${esc(channelLabel(r.channel))} · ${fmtDateTime(r.received_at)}${r.aged ? ' · <span class="c-late">late</span>' : ''}</small></div>
@@ -2393,7 +2392,7 @@ function cDrawPeople() {
       <td>${t ? `<span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span>` : ''}</td></tr>
       ${C_PEDIT === p.id ? `<tr class="c-edit"><td colspan="5">${cEditForm(p, t)}</td></tr>` : ''}`; };
   $('#view').innerHTML = `<div class="c-head"><div><h1>People</h1></div>
-      <div class="act"><input class="c-search" id="cPQ" placeholder="Search name, email or phone" value="${esc(C_PQ)}" aria-label="Search people"><button class="btn" onclick="openAdd()">Add person</button></div></div>
+      <div class="act"><input class="c-search" id="cPQ" placeholder="Search name, email or phone" value="${esc(C_PQ)}" aria-label="Search people"><button class="btn" onclick="openAdd()">Add lead</button></div></div>
     ${cPeopleTabs('all')}
     ${cPeopleFilters(people)}
     <p class="c-explain">${explain}</p>
@@ -2927,7 +2926,7 @@ function cDrawJourney() {
     cJourneyTalk(sel.id).then(() => { if (C_JTALK.has(sel.id)) cDrawJourney(); });
   }
   $('#view').innerHTML = `
-    <div class="c-head"><div><h1>People</h1></div></div>
+    <div class="c-head"><div><h1>People</h1></div><div class="act"><button class="btn" onclick="openAdd()">Add lead</button></div></div>
     ${cPeopleTabs('journey')}
     ${cJourneySummary(everyone, taskOf, stages)}
     ${cJourneyFilters(everyone)}
@@ -5604,7 +5603,7 @@ function renderHistoryRefusal(message) {
 function openAdd() {
   const d = CFG.quickAddDefaults || {};
   ADD_CONFIRMED_NEW = false;
-  modal('Add person', `
+  modal('Add a lead', `
     <div class="row2">
       <div><label>Full name *</label><input id="aName" oninput="checkDup()"></div>
       <div><label>Phone</label><input id="aPhone" oninput="checkDup()"></div>

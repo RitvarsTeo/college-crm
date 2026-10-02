@@ -159,7 +159,8 @@ test('no sentence explaining the Journey: the screen says it itself', () => {
   assert.doesNotMatch(APP, /Where each open person is\. Drag a person when something real has happened\./);
   // Journey is one of two tabs inside People now (the owner, 01.10.2026), so the screen
   // is titled People and the tab says which view you are on. Still no explaining sentence.
-  assert.match(fn('function cDrawJourney('), /<div class="c-head"><div><h1>People<\/h1><\/div><\/div>/);
+  // the title carries no <p>; since 02.10.2026 Add lead sits beside it (leads are added with the leads)
+  assert.match(fn('function cDrawJourney('), /<div class="c-head"><div><h1>People<\/h1><\/div><div class="act"><button class="btn" onclick="openAdd\(\)">Add lead<\/button><\/div><\/div>/);
   assert.match(fn('function cDrawJourney('), /cPeopleTabs\('journey'\)/);
 });
 
