@@ -428,6 +428,14 @@
     "Duplicate",
     "Other"
   ],
+  "closedReasonsByStage": {
+    "New": ["No response", "Not eligible", "Programme not suitable", "Chose another institution", "Duplicate", "Other"],
+    "Contacted": ["No response", "Chose another institution", "Changed study plans", "Programme not suitable", "Not eligible", "Timing / postponed", "Duplicate", "Other"],
+    "Follow-up": ["No response", "Chose another institution", "Changed study plans", "Financial reasons", "Timing / postponed", "Programme not suitable", "Not eligible", "Other"],
+    "Application": ["No response", "Requirements not met", "Not eligible", "Financial reasons", "Chose another institution", "Timing / postponed", "Changed study plans", "Other"],
+    "Contract": ["Financial reasons", "Chose another institution", "Timing / postponed", "Changed study plans", "Requirements not met", "No response", "Other"]
+  },
+  "_closedReasonsByStage": "Ritvars 02.10.2026: the reasons offered depend on the stage the person leaves, so the list is shorter and what cannot have happened yet is not offered. Every entry is one of closedReasons, which the server still enforces whole. MVP, provisional until Admissions has used it.",
   "closedReasonNeedsNote": [
     "Other"
   ],

@@ -2454,7 +2454,7 @@ function cEditForm(p, t) {
     <div><label for="pe-phone">Phone</label><input id="pe-phone" value="${esc(p.phone || '')}" placeholder="not recorded"></div>
     <div><label for="pe-programme">Programme</label><select id="pe-programme">${progs.map((x) => `<option value="${esc(x)}" ${x === (p.programme || '') ? 'selected' : ''}>${esc(x || '(not said)')}</option>`).join('')}</select></div>
     <div><label for="pe-status">Stage</label><select id="pe-status" onchange="document.querySelector('#pe-closed').hidden = this.value !== ${esc(JSON.stringify(closed))}">${stages.map((s) => `<option value="${esc(s.id)}" ${s.id === p.status ? 'selected' : ''}>${esc(s.label || s.id)}</option>`).join('')}</select></div>
-    <div id="pe-closed" hidden><label for="pe-reason">Why are we stopping?</label><select id="pe-reason">${(CFG.closedReasons || []).map((r) => `<option>${esc(r)}</option>`).join('')}</select><input id="pe-rnote" placeholder="Explanation (needed for Other)" style="margin-top:6px"><label style="margin-top:8px">And now?</label><div class="cltags">${(CFG.closedTags || []).map((x, i) => `<label class="cltag"><input type="radio" name="peTag" value="${esc(x.id)}"${i === 0 ? ' checked' : ''}><b>${esc(x.label)}</b><small>${esc(x.what)}</small></label>`).join('')}</div></div>
+    <div id="pe-closed" hidden><label for="pe-reason">Why are we stopping?</label><select id="pe-reason">${reasonsForStage(p.status).map((r) => `<option>${esc(r)}</option>`).join('')}</select><input id="pe-rnote" placeholder="Explanation (needed for Other)" style="margin-top:6px"><label style="margin-top:8px">And now?</label><div class="cltags">${(CFG.closedTags || []).map((x, i) => `<label class="cltag"><input type="radio" name="peTag" value="${esc(x.id)}"${i === 0 ? ' checked' : ''}><b>${esc(x.label)}</b><small>${esc(x.what)}</small></label>`).join('')}</div></div>
     <div class="c-wide c-step">${t
       ? `<label for="pe-due">Next step</label><div class="c-steprow"><span>${esc(cTask(t.label))}</span><input id="pe-due" type="date" value="${esc(cDay(t.due_at))}" aria-label="Due date"><button class="btn sm ghost" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, false, '${esc(p.id)}')">Done…</button></div>`
       : open ? `<label for="pe-next">Next step</label><div class="c-steprow"><select id="pe-next"><option value="">No next step</option>${nextActionOptions(null, p.status)}</select><input id="pe-ndue" type="date" value="${cTodayIso()}" aria-label="Due date"></div>` : '<label>Next step</label>'}</div>
@@ -4307,9 +4307,17 @@ async function changeStatus(id, status) {
   viewPerson(id);
 }
 
+// The reasons that can happen when somebody leaves from this stage (the owner, 02.10.2026: "the
+// outcomes impossible are not shown"). config.closedReasonsByStage; stage unknown = all of them.
+function reasonsForStage(stage) {
+  const all = CFG.closedReasons || [];
+  const fit = stage && (CFG.closedReasonsByStage || {})[stage];
+  return fit ? all.filter((r) => fit.includes(r)) : all;
+}
+
 // Decision 8: nobody is closed without a reason, and "Other" is not a reason.
 function openCloseReason(id) {
-  const reasons = CFG.closedReasons || [];
+  const reasons = reasonsForStage(C_STAGE_OF.get(id));
   modal('Stop working with this person', `
     <label>Reason</label>
     <select id="clReason" onchange="onCloseReason()">${reasons.map(r => `<option>${esc(r)}</option>`).join('')}</select>
