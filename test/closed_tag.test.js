@@ -15,6 +15,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import vm from 'node:vm';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const CFG = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'prototype.json'), 'utf8'));
@@ -112,4 +113,24 @@ test('the person page shows the tag beside the reason', () => {
   assert.match(APP, /const cTagLabel = /, 'one helper names the tag');
   const j = APP.indexOf('<b>Outcome</b>');
   assert.match(APP.slice(j, j + 600), /cTagLabel\(p\)/, 'and on the person page');
+});
+
+// MARKETING TO THE COLD ONES, the MVP (the owner, 02.10.2026: "if you can autonomously think of and
+// implement some mvp idea, ok, go for it"). Ieva's reason for the split was "papildus mārketinga
+// aktivitātes ... tiem, kas ir cold". The smallest thing that serves it: All people can list exactly
+// the cold ones, with the phone and email every row already shows. Nothing is sent from here.
+test('All people can list exactly the cold ones, for marketing', () => {
+  const i = APP.indexOf('function cPeopleMatch(');
+  const src = APP.slice(i, APP.indexOf('\n}\n', i) + 2);
+  const ctx = { C_TERMINAL: ['Admitted', 'Not proceeding'], CFG, cWhenClass: () => '', cSisHolds: () => false,
+    cJourneyMatch: () => true };
+  vm.runInNewContext(src + '\nthis.m = cPeopleMatch;', ctx);
+  const f = { stage: 'tag:cold' };
+  const known = new Set();
+  assert.equal(ctx.m({ status: 'Not proceeding', closed_tag: 'cold' }, null, f, known), true);
+  assert.equal(ctx.m({ status: 'Not proceeding', closed_tag: 'reject' }, null, f, known), false);
+  assert.equal(ctx.m({ status: 'Not proceeding', closed_tag: null }, null, f, known), false);
+  assert.equal(ctx.m({ status: 'New', closed_tag: null }, null, f, known), false);
+  const j = APP.indexOf('function cPeopleFilters(');
+  assert.match(APP.slice(j, j + 1500), /CFG\.closedTags/, 'the choices come from config.closedTags');
 });
