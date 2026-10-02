@@ -1290,8 +1290,6 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
     --k-well-line:rgba(194,211,222,.14)}
   html.ui-c .khead{display:flex;align-items:flex-start;gap:12px}
   html.ui-c .kpeak{fill:var(--ink);font-size:11.5px;font-weight:650;font-family:var(--sans,Inter),system-ui,sans-serif}
-  html.ui-c .kdots{display:flex;flex-wrap:wrap;gap:3px;margin:8px 0 0;max-width:100%}
-  html.ui-c .kdots i{width:7px;height:7px;border-radius:50%;background:var(--v-open)}
   html.ui-c .kfl-tag{display:inline-flex;align-items:center;gap:4px;padding:1px 7px;border-radius:99px;font-size:11.5px;font-weight:600;
     color:var(--t2);background:var(--c-sunk);border:1px solid var(--rule);text-decoration:none}
   html.ui-c .kfl-tag b{color:var(--ink)}
@@ -1300,42 +1298,55 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c a.kfl-tag:hover{border-color:var(--control-line)}
   html.ui-c .c-tagseg{margin:-4px 0 14px}
 
-  /* A - the journey band: a lit well, a hairline through it, raised cards on one plinth */
-  html.ui-c .kflow{position:relative;margin:0 0 26px;padding:18px 16px 16px;border-radius:18px;
+  /* THE FRAME: a lit well with the locked glow (shared by the Journey band) */
+  html.ui-c .kflow{position:relative;margin:0 0 18px;padding:16px 16px 12px;border-radius:18px;
     background:var(--k-well);border:1px solid var(--k-well-line);box-shadow:inset 0 1px 0 rgba(255,255,255,.5)}
   html.ui-c[data-theme="dark"] .kflow{box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
-  html.ui-c .kflow-row{position:relative;display:grid;grid-template-columns:minmax(0,1.15fr) repeat(var(--n),minmax(0,1fr)) minmax(0,1.3fr);gap:12px;align-items:start}
-  /* the spine laid on its side: the same line as the menu, in the same blue, BEHIND the cards */
-  html.ui-c .kflow-spine{position:absolute;left:28px;top:62px;width:calc(100% - 56px);height:2px;overflow:visible;pointer-events:none}
-  html.ui-c .kflow-spine line{stroke:#29a8df;stroke-width:1.5;vector-effect:non-scaling-stroke;opacity:.7;--m-dur:1.6s}
-  html.ui-c[data-theme="dark"] .kflow-spine line{stroke:#8fcbef;opacity:.6}
-  html.ui-c .kfl{position:relative;display:flex;flex-direction:column;min-width:0;padding:12px 13px 12px;cursor:pointer;outline:none;
-    background:var(--surface);border:1px solid var(--c-card-line);border-radius:14px;
-    box-shadow:0 4px 0 var(--k-plinth),0 10px 24px -18px rgba(3,12,26,.35)}   /* ONE plinth, the same under every card */
-  html.ui-c .kfl:hover,html.ui-c .kfl.hot{border-color:var(--control-line)}
-  html.ui-c .kfl:focus-visible{outline:2px solid var(--pet);outline-offset:2px}
-  html.ui-c .kfl-l{font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--t3)}
-  html.ui-c .kfl > b{font-size:30px;font-weight:650;letter-spacing:-.025em;line-height:1.1;margin:3px 0 1px;font-variant-numeric:tabular-nums}
-  html.ui-c .kfl > small{font-size:12px;color:var(--t3)}
-  html.ui-c .kfl .kspark{margin-top:8px}
-  html.ui-c .kfl-row{display:block;margin-top:6px;font-size:12px;color:var(--t2);line-height:1.35}
-  html.ui-c .kfl-row b{color:var(--ink);font-weight:650}
-  html.ui-c .kfl-late{display:block;margin-top:8px;font-style:normal;font-size:12px;font-weight:600;color:var(--t2)}
-  html.ui-c .kfl-out{display:grid;grid-template-rows:auto auto;gap:12px;min-width:0}
-  html.ui-c .kfl-adm > b{font-size:40px;letter-spacing:-.03em}                 /* the one focal point */
-  html.ui-c .kfl-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
-  html.ui-c .kflow-note{display:inline-block;margin:14px 2px 0;font-size:12.5px;color:var(--t2);text-decoration:none}
-  html.ui-c .kflow-note b{color:var(--ink)} html.ui-c .kflow-note:hover{text-decoration:underline}
-  html.ui-c .ka-grid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:30px;align-items:start}
-  html.ui-c .ka-side{display:flex;flex-direction:column;min-width:0}
-  @media (max-width:1180px){
-    html.ui-c .kflow-row{grid-template-columns:repeat(4,minmax(0,1fr))}
-    html.ui-c .kfl-out{grid-column:span 2;grid-template-rows:none;grid-template-columns:1fr 1fr}
-    html.ui-c .kflow-spine{display:none}
-    html.ui-c .ka-grid{grid-template-columns:minmax(0,1fr)} }
-  @media (max-width:760px){
-    html.ui-c .kflow-row{grid-template-columns:1fr 1fr}
-    html.ui-c .kfl-out{grid-column:1 / -1} }
+  html.ui-c[data-theme="dark"] .c-summary{--k-well:radial-gradient(120% 80% at 50% 0%,#17456e 0%,rgba(23,69,110,0) 60%),linear-gradient(180deg,#0f2f4f 0%,#0f2f4f 45%,#08182e 100%);
+    --k-well-line:rgba(194,211,222,.14)}
+  html.ui-c .kfl-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+
+  /* THE JOURNEY BAND: Arrived | the stages on ONE baseline and ONE scale | the outcomes */
+  html.ui-c .jband-row{display:grid;grid-template-columns:120px minmax(0,1fr) 170px;gap:14px;align-items:end}
+  html.ui-c .jb-end{display:flex;flex-direction:column;gap:1px;padding:10px 12px;border-radius:12px;text-decoration:none;color:var(--ink);
+    background:var(--surface);border:1px solid var(--c-card-line);box-shadow:0 3px 0 var(--k-plinth),0 10px 24px -18px rgba(3,12,26,.35)}
+  html.ui-c .jb-end:hover{border-color:var(--control-line)}
+  html.ui-c .jb-end > span{font-size:12px;font-weight:600;color:var(--t3)}
+  html.ui-c .jb-end > b{font-size:26px;font-weight:650;letter-spacing:-.02em;line-height:1.1;font-variant-numeric:tabular-nums}
+  html.ui-c .jb-end > small{font-size:11.5px;color:var(--t3)}
+  html.ui-c .jb-outs{display:flex;flex-direction:column;gap:10px}
+  html.ui-c .jb-cols{position:relative;display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:8px}
+  /* the shared baseline is drawn once under every column: the spine laid on its side */
+  html.ui-c .jb-base{position:absolute;left:0;top:132px;width:100%;height:2px;overflow:visible;pointer-events:none}
+  html.ui-c .jb-base line{stroke:#29a8df;stroke-width:1.5;vector-effect:non-scaling-stroke}
+  html.ui-c[data-theme="dark"] .jb-base line{stroke:#8fcbef}
+  html.ui-c .jb-cell{display:flex;flex-direction:column;align-items:stretch;min-width:0}
+  html.ui-c .jb-col{appearance:none;display:flex;flex-direction:column;align-items:stretch;gap:6px;margin:0;padding:0 0 4px;border:0;border-radius:10px;
+    background:transparent;font:inherit;color:inherit;cursor:pointer;min-width:0}
+  html.ui-c .jb-col:hover .jb-l,html.ui-c .jb-col.on .jb-l{color:var(--ink)}
+  html.ui-c .jb-col.on{background:var(--c-sunk)}
+  html.ui-c .jb-col:focus-visible{outline:2px solid var(--pet);outline-offset:1px}
+  /* the plot: a fixed height, bars grow from its floor; the top 22px is room for the count */
+  html.ui-c .jb-plot{position:relative;display:flex;align-items:flex-end;justify-content:center;height:133px;padding-top:22px;box-sizing:border-box}
+  html.ui-c .jb-bar{position:relative;display:block;width:min(56px,60%);min-height:2px;background:var(--v-open);border-radius:4px 4px 0 0}
+  html.ui-c .jb-over{position:absolute;left:0;right:0;bottom:0;display:block;background:var(--j-alarm)}   /* late work, on the same baseline */
+  html.ui-c .jb-n{position:absolute;left:50%;bottom:100%;transform:translateX(-50%);padding-bottom:3px;display:flex;align-items:baseline;gap:4px;
+    font-size:18px;font-weight:650;line-height:1;color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums}
+  html.ui-c .jb-n em{font-style:normal;font-size:11px;font-weight:700;padding:1px 5px;border-radius:5px;background:var(--j-alarm);color:var(--j-on-alarm)}
+  html.ui-c .jb-l{display:flex;align-items:center;justify-content:center;gap:5px;font-size:12px;font-weight:600;color:var(--t2);text-align:center;overflow-wrap:anywhere}
+  html.ui-c .jb-cell .c-exit{align-self:center;margin-top:2px}
+  @media (max-width:900px){
+    html.ui-c .jband-row{grid-template-columns:1fr 1fr}
+    html.ui-c .jb-cols{grid-column:1 / -1;order:-1}
+    html.ui-c .jb-outs{flex-direction:row}
+    html.ui-c .jb-outs > *{flex:1 1 0;min-width:0} }
+  @media (max-width:520px){
+    html.ui-c .jb-cols{gap:4px}
+    html.ui-c .jb-n{font-size:15px}
+    html.ui-c .jb-l .c-jn{display:none}
+    html.ui-c .jb-l{font-size:11px}
+    html.ui-c .jband-row{grid-template-columns:1fr}
+    html.ui-c .jb-outs{flex-direction:column} }
 
   /* B - the day: a stacked sheet. Two sheets behind it, a CONSTANT offset identical for every
      figure, so the stack says "work waiting" and no number gains weight from it. Signal amber
@@ -1374,6 +1385,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   @media (max-width:760px){ html.ui-c .kb-strip{grid-template-columns:1fr 1fr} html.ui-c .kb-charts .kthree{grid-template-columns:1fr} html.ui-c .kneed b{font-size:34px} }
   /* the kit's per-scene knobs (part 9): when a scene starts and how far apart its pieces are */
   html.ui-c .kflow{--m-delay:.2s;--m-step:90ms}
+  html.ui-c .jb-base line{--m-dur:1.6s}
   html.ui-c .kgap-note{margin:0;font-size:11.5px;color:var(--t4);line-height:1.5;max-width:40ch}
   html.ui-c .kgrp-go{display:block;margin-top:8px;padding-top:8px;border-top:1px solid var(--rule2);
     font-size:12px;color:var(--petink);text-decoration:none}
@@ -2261,40 +2273,14 @@ async function routeC(page, arg) {
 // own ask (29.09: very good that the home page has a place for current statistics straight
 // away; docs/IEVA_AIGARS_FEEDBACK_VERBATIM.md). Two screens, two jobs: Home is the visual dashboard, Today is the work.
 //
-// TWO ALTERNATIVES, BOTH BUILT, NEITHER CHOSEN (02.10.2026). They read the SAME live data
-// through cHomeData() and differ in what the page is organised around:
-//
-//   A - JOURNEY FIRST. The page follows the lead: arrived -> the five stages -> what
-//       happened. One band, read left to right, in the sequential order Admissions
-//       praised on day one. One dot per person, so a stage is
-//       countable at a glance. Attention lives IN the stage it belongs to.
-//   B - TODAY FIRST. The page follows the working day: what needs a person now, then
-//       how admissions is performing, each figure with its comparison and the basis
-//       named. Reference: Remote's dashboard (the to-do list first, side groups ending in
-//       "View all") and Square's figure-first stack with a delta row (Mobbin, free tier).
-//
-// A review control switches them (?home=a|b or the switch on the page). It goes when C is
-// settled. Nothing here invents a number: every figure is read from /api/report,
-// /api/summary, /api/people or /api/intake on every load, and a failed read says so.
-function homeVariant() {
-  let q = null;
-  try { q = new URLSearchParams(location.search).get('home'); } catch (e) { /* no URL */ }
-  try {
-    if (q === 'a' || q === 'b') localStorage.setItem('homevariant', q);
-    return localStorage.getItem('homevariant') === 'b' ? 'b' : 'a';
-  } catch (e) { return q === 'b' ? 'b' : 'a'; }
-}
-function homeSetVariant(v) {
-  try { localStorage.setItem('homevariant', v); } catch (e) { /* private window: this turn only */ }
-  // The address wins on every render, so a ?home= left in it would put the old choice straight
-  // back (found by the QA session, 02.10.2026). The click is the newer choice: drop the param.
-  try {
-    const u = new URL(location.href);
-    if (u.searchParams.has('home')) { u.searchParams.delete('home'); history.replaceState(history.state, '', u.toString()); }
-  } catch (e) { /* no URL API: the stored choice still holds once the address is clean */ }
-  viewHomeC();
-}
-
+// HOME IS B, TODAY FIRST (locked by the owner, 02.10.2026, "B for home"). Its job is one
+// question: what needs me today? So it opens with the work waiting (Overdue, Due today, the
+// Inbox), then how admissions is performing, each trend figure with its comparison and the
+// basis named. "The journey now" is the way into the Journey, where the stages are compared.
+// The former A (journey first) lives on as the Journey band: cJourneyBand().
+// Reference: Remote's dashboard (to-do first, groups ending in "View all") and Square's
+// figure-first stack with a delta row (Mobbin, free tier). Every figure is read live from
+// /api/report, /api/summary, /api/people and /api/intake; a failed read says so.
 async function cHomeData() {
   const year = Number(cTodayIso().slice(0, 4));
   const [rep, people, sum, intake] = await Promise.all([
@@ -2319,8 +2305,6 @@ async function cHomeData() {
   // NEVER A REMEMBERED FIGURE. Read live; a failed read is null and is said out loud.
   const overdueRows = sum && Array.isArray(sum.overdue) ? sum.overdue : null;
   const todayRows = sum && Array.isArray(sum.today) ? sum.today : null;
-  const overdueBy = new Map();
-  (overdueRows || []).forEach((t) => { if (!overdueBy.has(t.status)) overdueBy.set(t.status, new Set()); overdueBy.get(t.status).add(t.person_id); });
   return {
     year, s, months, people, admitted, undated, progs, chans, stages, open, closed,
     allAdmitted: people.filter((p) => p.status === 'Admitted').length,
@@ -2328,7 +2312,6 @@ async function cHomeData() {
     tags: (CFG.closedTags || []).map((t) => [t.id, t.label || t.id, closed.filter((p) => p.closed_tag === t.id).length]),
     overdue: overdueRows ? new Set(overdueRows.map((t) => t.person_id)).size : null,
     dueToday: todayRows ? new Set(todayRows.map((t) => t.person_id)).size : null,
-    overdueIn: (stage) => (overdueBy.get(stage) || new Set()).size,
     noNext: sum && typeof sum.noNextAction === 'number' ? sum.noNextAction : null,
     inbox: intake && intake.counts && typeof intake.counts.new === 'number' ? intake.counts.new : null,
     asOf: new Intl.DateTimeFormat('en-GB', { timeZone: TZ, day: 'numeric', month: 'long' }).format(new Date()),
@@ -2336,20 +2319,12 @@ async function cHomeData() {
 }
 
 const cFig = (n) => (n === null ? '<span class="kgapn" title="not available">—</span>' : n);
-// One dot per person (KB 08 P5: countable things look countable). Above 120 a row of
-// dots stops being countable, so it is left out and the figure carries it alone.
-const cDots = (n, cls = '') => (n > 0 && n <= 120 ? `<span class="kdots ${cls}" aria-hidden="true">${'<i></i>'.repeat(n)}</span>` : '');
 
 async function viewHomeC() {
-  const v = homeVariant();
   const D = await cHomeData();
-  $('#view').innerHTML = `<div class="kpage k${v}">
-    <div class="khead"><div><h1 class="c-sr">Home</h1><p class="c-crumb" style="margin:0">Admissions ${D.year} · to ${esc(D.asOf)}</p></div>
-      <div class="chab" role="group" aria-label="Which Home">
-        <button class="${v === 'a' ? 'on' : ''}" aria-pressed="${v === 'a'}" onclick="homeSetVariant('a')">A &middot; Journey first</button>
-        <button class="${v === 'b' ? 'on' : ''}" aria-pressed="${v === 'b'}" onclick="homeSetVariant('b')">B &middot; Today first</button>
-      </div></div>
-    ${v === 'b' ? cHomeB(D) : cHomeA(D)}
+  $('#view').innerHTML = `<div class="kpage kb">
+    <div class="khead"><div><h1 class="c-sr">Home</h1><p class="c-crumb" style="margin:0">Admissions ${D.year} · to ${esc(D.asOf)}</p></div></div>
+    ${cHomeB(D)}
     ${D.noNext === null || D.overdue === null || D.inbox === null
       ? '<p class="kgap-note">A dash means that figure did not answer. Nothing here is filled in from an earlier session.</p>' : ''}
     <div class="ktip" role="status" aria-live="polite"></div></div>`;
@@ -2369,56 +2344,6 @@ function cHomeMonths(D, extraCls = '') {
 }
 const cHomeProg = (D) => `<section class="ksec"><div class="ksh"><h2>Admitted by programme</h2><span class="kt2">${D.admitted.length} in ${D.year}</span><span class="ksrc">click a bar → Outcomes</span></div>${cBars(D.progs, 'prog')}</section>`;
 const cHomeChan = (D) => `<section class="ksec"><div class="ksh"><h2>Where admitted people came from</h2><span class="kt2">${D.admitted.length} in ${D.year}</span><span class="ksrc">click a bar → Outcomes</span></div>${cBars(D.chans, 'chan')}</section>`;
-
-// ---- A: JOURNEY FIRST ----------------------------------------------------------
-// One band in the lead's own order. The hairline through it is the menu's spine laid on
-// its side, drawn in the same blue: the frame carries the journey, the cards carry the
-// numbers. Depth is the FRAME's - a lit well with the sign-in glow, raised cards on one
-// uniform plinth - never a mark's (KB 08 P5).
-//
-// Each fact once: conversion and the median live on the Admitted card, because both are
-// facts ABOUT admission; overdue lives on the stage it belongs to.
-//
-// SCENE 1 (of two): the spine draws left to right and the cards arrive along it.
-function cHomeA(D) {
-  const card = (cls, k, label, n, base, go, tip, body = '') => `<div class="kfl ${cls} m-slide" style="--i:${k}" tabindex="0" role="button"
-      data-tip="${esc(label)}|${esc(tip)}" data-kgo="${esc(go)}">
-      <span class="kfl-l">${esc(label)}</span><b>${n}</b><small>${esc(base)}</small>${body}</div>`;
-  const stageCards = D.stages.map((st, i) => {
-    const n = D.open.filter((p) => p.status === st.id).length;
-    const late = D.overdue === null ? null : D.overdueIn(st.id);
-    return card('kfl-st', i + 1, st.label || st.id, n, 'now', `stage|${st.id}|${st.label || st.id}`,
-      `${n} ${n === 1 ? 'person' : 'people'} now${late ? ` · ${late} overdue` : ''}`,
-      `${cDots(n)}${late ? `<em class="kfl-late">${late} overdue</em>` : ''}`);
-  }).join('');
-  const s = D.s;
-  // Show the working (KB 08 P5): the numerator is the people who ARRIVED this year and were
-  // admitted, which is not always the Admitted figure above it (somebody who arrived last year
-  // and was admitted this year counts there, not here). Printed, so the sum is checkable.
-  const conv = s.conversionPct == null ? '' : `<span class="kfl-row"><b>${s.conversionPct}%</b> converted · ${s.conversionA ?? 0} / ${s.conversionB ?? 0} who arrived</span>`;
-  const med = s.medianDaysToAdmission == null ? '' : `<span class="kfl-row"><b>${s.medianDaysToAdmission}</b> days, the median from first contact</span>`;
-  const tagged = D.tags.filter(([, , n]) => n > 0);
-  const tagRow = tagged.length ? `<span class="kfl-tags">${tagged.map(([id, label, n]) =>
-    `<a href="#/outcomes" onclick="event.stopPropagation();cGoClosedTag('${esc(id)}');return false" class="kfl-tag t-${esc(id)}">${esc(label)} <b>${n}</b></a>`).join('')}</span>` : '';
-  const n = D.stages.length;
-  return `<section class="kflow m-scene" aria-label="The journey">
-      <svg class="kflow-spine" viewBox="0 0 100 2" preserveAspectRatio="none" aria-hidden="true"><line x1="0" y1="1" x2="100" y2="1" pathLength="1" class="m-draw"/></svg>
-      <div class="kflow-row" style="--n:${n}">
-        ${card('kfl-in', 0, 'Arrived', s.newLeads ?? 0, `new leads in ${D.year}`, 'inbox', `${s.newLeads ?? 0} new leads in ${D.year}`,
-          `${cSpark(D.months.map((m) => m.newLeads), 'lead')}${D.inbox ? `<span class="kfl-row"><b>${D.inbox}</b> waiting in the Inbox</span>` : ''}`)}
-        ${stageCards}
-        <div class="kfl-out">
-          ${card('kfl-adm', n + 1, 'Admitted', D.admitted.length, `in ${D.year}${D.undated ? ` · +${D.undated} undated` : ''}`, 'outcome|Admitted', `${D.admitted.length} admitted in ${D.year}`, cSpark(D.months.map((m) => m.admitted), 'adm') + conv + med)}
-          ${card('kfl-np', n + 2, 'Not proceeding', D.closed.length, 'all time', 'outcome|Not proceeding', `${D.closed.length} not proceeding`, tagRow)}
-        </div>
-      </div>
-      ${D.noNext ? `<a class="kflow-note" href="#/today"><b>${D.noNext}</b> still open with no next step →</a>` : ''}
-    </section>
-    <div class="ka-grid m-scene">
-      ${cHomeMonths(D)}
-      <div class="ka-side">${cHomeProg(D)}${cHomeChan(D)}</div>
-    </div>`;
-}
 
 // ---- B: TODAY FIRST ------------------------------------------------------------
 // The working day first. The figures that need a person now sit on a stacked frame - a
@@ -3089,12 +3014,20 @@ let C_JSEL = null; let C_JDATA = null;
 // carries no trace of the stage they left in their current row.
 let C_JEXITS = null;
 async function viewJourneyC() {
-  const [people, tasks, exits] = await Promise.all([cPeopleRows(), api('/api/tasks?scope=open'),
-    api('/api/journey/exits').catch(() => null)]);
+  const year = Number(cTodayIso().slice(0, 4));
+  const [people, tasks, exits, rep] = await Promise.all([cPeopleRows(), api('/api/tasks?scope=open'),
+    api('/api/journey/exits').catch(() => null),
+    // Arrived is the SAME figure Home's Leads card reads, from the same report, so the two
+    // screens cannot disagree. A failed read is a dash, never a number from earlier.
+    api(`/api/report?from=${year}-01-01&to=${year}-12-31`).catch(() => null)]);
   C_JEXITS = exits;
   const taskOf = new Map(); tasks.forEach((t) => { if (!taskOf.has(t.person_id)) taskOf.set(t.person_id, t); });
-  C_JDATA = { people, taskOf };
+  const arrived = rep && rep.summary && typeof rep.summary.newLeads === 'number' ? rep.summary.newLeads : null;
+  // play: the band's ONE scene runs on arrival only. A filter click redraws the board, and a
+  // band that re-animated on every click would be motion for its own sake.
+  C_JDATA = { people, taskOf, arrived, year, play: true };
   cDrawJourney();
+  C_JDATA.play = false;
 }
 // LIFECYCLE FACTS (src/lifecycle.js): "Application form started" and "Matriculated", dated, from the
 // SIS. Not stages. Shown only when the SIS has said so; a person with none shows nothing.
@@ -3404,6 +3337,60 @@ let C_JMORE = false;
 // function inside an onclick puts a > inside the tag, which closes it early for
 // anything that parses the markup.
 function cJMore(el) { setTimeout(() => { C_JMORE = Boolean(el.parentElement && el.parentElement.open); }, 0); }
+// THE JOURNEY BAND (the owner, 02.10.2026: "B for home. Then the journey displayed like the ui
+// from A", then "Dots per person is not very portraying visual. Cant count them really").
+//
+// THE TASK FIRST (KB 08 P5 rule 12): compare stage against stage, to see where people pile up
+// and where the late work sits. Comparison is easiest on ONE baseline and ONE scale, so:
+//   - one column per active stage, every column on the same baseline and the same scale
+//     (the biggest stage sets it; no stage is normalised on its own)
+//   - the count above the column is the only text on it
+//   - overdue is the RED BASE of the column, always drawn, never hover-only. It sits on the
+//     baseline too, so overdue is comparable stage to stage on the same scale as the totals
+//   - the exit mark under each stage stays: who left the journey from there
+// Arrived and the two outcomes are the bookends, figures and not columns: Arrived counts
+// this year's new leads and the outcomes count the whole database, so putting them on the
+// stages' scale would mix three different bases in one comparison.
+//
+// One operational surface: a column IS the stage filter the board already has (cJfPick), so
+// clicking it filters the board right under it and clicking it again clears it.
+// Depth is the FRAME's (the lit well, the locked gradient); every column is flat, one colour,
+// no light on it, so no stage can look bigger than it counts (KB 08 P5 Depth and 3D).
+function cJourneyBand(everyone, taskOf, stages, exitMark, out) {
+  const on = (v) => (C_JF.stage || []).includes(v);
+  const late = (p) => { const t = taskOf.get(p.id); return Boolean(t && cWhenClass(t.due_at) === 'over'); };
+  const cols = stages.map((st) => {
+    const ps = everyone.filter((p) => p.status === st.id);
+    return { id: st.id, label: st.label || st.id, n: ps.length, over: ps.filter(late).length };
+  });
+  const max = Math.max(1, ...cols.map((c) => c.n));
+  const pct = (n) => ((n / max) * 100).toFixed(2);
+  const col = (c, i) => `<div class="jb-cell"><button type="button" class="jb-col${on(c.id) ? ' on' : ''} m-fade" style="--i:${i}"
+      aria-pressed="${on(c.id)}" data-v="${esc(c.id)}" onclick="cJfPick('stage', this.dataset.v, !${on(c.id)})"
+      title="${esc(c.label)}: ${c.n} ${c.n === 1 ? 'person' : 'people'}${c.over ? `, ${c.over} overdue` : ''}"
+      aria-label="${esc(c.label)}: ${c.n}${c.over ? `, ${c.over} overdue` : ''}">
+      <span class="jb-plot"><span class="jb-bar" style="height:${pct(c.n)}%"><b class="jb-n">${c.n}${c.over ? `<em>${c.over}</em>` : ''}</b>${
+        c.over ? `<i class="jb-over" style="height:${((c.over / c.n) * 100).toFixed(2)}%"></i>` : ''}</span></span>
+      <span class="jb-l"><span class="c-jn">${i + 1}</span>${esc(c.label)}</span>
+    </button>${exitMark(c.id)}</div>`;
+  const tags = (out.tags || []).filter(([, , n]) => n > 0);
+  return `<section class="kflow jband${out.play ? ' m-scene' : ''}" aria-label="The journey">
+    <div class="jband-row">
+      <a class="jb-end" href="#/leads"><span>Arrived</span><b>${out.arrived === null ? '<span class="kgapn" title="not available">—</span>' : out.arrived}</b><small>${out.year}</small></a>
+      <div class="jb-cols" style="--n:${cols.length}">
+        <svg class="jb-base" viewBox="0 0 100 2" preserveAspectRatio="none" aria-hidden="true"><line x1="0" y1="1" x2="100" y2="1" pathLength="1" class="m-draw"/></svg>
+        ${cols.map(col).join('')}
+      </div>
+      <div class="jb-outs">
+        <a class="jb-end good" href="#/outcomes" onclick="C_OUTCOME='Admitted';C_OUT_FILTER=null"><span>${esc(out.admLabel)}</span><b>${out.adm}</b></a>
+        <a class="jb-end" href="#/outcomes" onclick="C_OUTCOME='Not proceeding';C_OUT_TAG=null"><span>${esc(out.npLabel)}</span><b>${out.np}</b>${
+          tags.length ? `<span class="kfl-tags">${tags.map(([id, label, n]) =>
+            `<span role="link" tabindex="0" class="kfl-tag t-${esc(id)}" onclick="event.preventDefault();event.stopPropagation();cGoClosedTag('${esc(id)}')" onkeydown="if(event.key==='Enter'){event.preventDefault();event.stopPropagation();cGoClosedTag('${esc(id)}')}">${esc(label)} <b>${n}</b></span>`).join('')}</span>` : ''}${
+          out.unrecorded ? `<small>${out.np - out.unrecorded} with a recorded stage, ${out.unrecorded} without</small>` : ''}</a>
+      </div>
+    </div></section>`;
+}
+
 function cJourneySummary(everyone, taskOf, stages) {
   const on = (k, v) => (C_JF[k] || []).includes(v);
   const byStage = stages.map((st) => [st.id, st.label || st.id,
@@ -3463,13 +3450,14 @@ function cJourneySummary(everyone, taskOf, stages) {
   const all = (C_JDATA && C_JDATA.people) || [];
   const adm = all.filter((p) => p.status === roles.admitted).length;
   const np = all.filter((p) => p.status === roles.closed).length;
-  const outcomes = `<div class="c-outcomes">
-    <h4>Outcomes <small>${adm + np} ${adm + np === 1 ? 'person whose journey has ended' : 'people whose journey has ended'}</small></h4>
-    <div class="c-outrow">
-      <a class="c-out good" href="#/outcomes"><b>${adm}</b><span>${esc(roles.admitted || 'Admitted')}</span><small>finished the journey</small></a>
-      <a class="c-out" href="#/outcomes"><b>${np}</b><span>${esc(roles.closed || 'Not proceeding')}</span><small>${
-        exits.unrecorded ? `${np - exits.unrecorded} with a recorded stage, ${exits.unrecorded} without` : 'left from the stages above'}</small></a>
-    </div></div>`;
+  // The outcomes are the band's right-hand bookends now (02.10.2026), so they are not drawn
+  // a second time behind the disclosure line: each fact once.
+  const closedTags = (CFG.closedTags || []).map((t) => [t.id, t.label || t.id, all.filter((p) => p.status === roles.closed && p.closed_tag === t.id).length]);
+  const band = cJourneyBand(everyone, taskOf, stages, exitMark, {
+    adm, np, admLabel: roles.admitted || 'Admitted', npLabel: roles.closed || 'Not proceeding',
+    unrecorded: exits.unrecorded || 0, tags: closedTags,
+    arrived: C_JDATA && typeof C_JDATA.arrived === 'number' ? C_JDATA.arrived : null,
+    year: C_JDATA && C_JDATA.year ? C_JDATA.year : '', play: Boolean(C_JDATA && C_JDATA.play) });
 
   // PROGRESSIVE DISCLOSURE (the owner, 01.10.2026: "all together is just tooooo much").
   // The screen used to open with two full bar rows, the exit marks, the outcomes band,
@@ -3480,17 +3468,16 @@ function cJourneySummary(everyone, taskOf, stages) {
   // same people, and what happened to the ones who finished, are answers to questions
   // you have to ask - so they wait behind one line that says what is in them, and the
   // line carries the counts so opening it is a choice and not a lottery.
-  const moreLabel = `What comes next, and ${adm + np} finished`;
+  const moreLabel = 'What comes next';
   return `<div class="c-summary">
     <h4>Active journey <small>${everyone.length} ${everyone.length === 1 ? 'person you are still working with' : 'people you are still working with'}</small></h4>
-    ${row('stage', byStage, exitMark)}
+    ${band}
     <details class="c-more"${C_JMORE ? ' open' : ''}>
       <summary onclick="cJMore(this)">${esc(moreLabel)}</summary>
       <h4>What comes next <small>the same ${everyone.length} people, by the kind of step they are waiting on</small></h4>
       ${row('group', byKind)}
       <h4>Step by step <small>the ${byStep.length} ${byStep.length === 1 ? 'step' : 'steps'} somebody is waiting on right now</small></h4>
       ${row('step', byStep)}
-      ${outcomes}
     </details></div>`;
 }
 
@@ -3563,6 +3550,7 @@ function cDrawJourney() {
         const over = ps.filter((p) => { const t = taskOf.get(p.id); return t && cWhenClass(t.due_at) === 'over'; }).length;
         return `<div class="c-col" style="--jt:${((i + 1) / stages.length).toFixed(3)}"><h3><span class="c-jn">${i + 1}</span>${esc(s.label || s.id)} <b>${ps.length}</b>${over ? `<em class="c-jover">${over} overdue</em>` : ''}</h3><div class="c-drop" data-stage="${esc(s.id)}">${cJColumn(s.id, ps, taskOf, sel) || '<div class="c-empty" style="padding:8px">empty</div>'}</div></div>`; }).join('')}</div>
     </div></div>`;
+  if (C_JDATA.play) cScenes($('#view'));
   if (narrow && sel && C_JSEL === sel.id) { const card = document.querySelector('.c-journey > .c-card'); if (card && card.scrollIntoView) card.scrollIntoView({ block: 'start' }); }
   // one pair of listeners for the life of the page, not one per redraw: a click anywhere outside a
   // filter closes the open tick list, and so does Escape.

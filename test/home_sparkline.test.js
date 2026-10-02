@@ -55,9 +55,8 @@ test('it says what it is for a screen reader, and the dot marks the latest month
   assert.match(html, /<circle cx="100\.0"/, 'the dot is on the newest month');
 });
 
-// Home is two alternatives since 02.10.2026 (A journey first, B today first). The
-// sparklines were decided 01.10 as shared work, not a variant choice, so EACH carries both.
-for (const v of ['A', 'B']) test(`Home ${v}: both trend KPIs carry one, and only the two that have a trend`, () => {
+// Home is B since 02.10.2026 (locked). The sparklines were decided 01.10 as shared work.
+for (const v of ['B']) test(`Home ${v}: both trend KPIs carry one, and only the two that have a trend`, () => {
   const home = fn(`function cHome${v}(`);
   assert.match(home, /cSpark\(D\.months\.map\(\(m\) => m\.admitted\), 'adm'\)/, 'Admitted');
   assert.match(home, /cSpark\(D\.months\.map\(\(m\) => m\.newLeads\), 'lead'\)/, 'Leads');

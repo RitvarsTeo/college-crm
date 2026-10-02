@@ -35,6 +35,9 @@ function sandbox(filters = {}, { exits = null, all = [], more = false } = {}) {
     'let C_JEXITS = ' + JSON.stringify(exits) + ';',
     'let C_JMORE = ' + JSON.stringify(Boolean(more)) + ';',   // the second half: closed unless asked
     'let C_JDATA = { people: ' + JSON.stringify(all) + ' };',
+    // the band (02.10.2026): a task due 'over' is overdue here, anything else is not
+    "const cWhenClass = (iso) => (iso === 'over' ? 'over' : '');",
+    fn('function cJourneyBand('),
     fn('function cJourneySummary('),
     'this.summary = cJourneySummary;',
   ].join('\n'), ctx);
@@ -56,8 +59,8 @@ test('a stage bar counts exactly what its column holds', () => {
     person(STAGES[2].id, null),
   ];
   const html = sandbox().summary(people, build(people), STAGES);
-  const counts = [...html.matchAll(/<b>(\d+)<\/b>/g)].map((m) => Number(m[1]));
-  // first row is the stages, in board order
+  // the band's columns, in board order (02.10.2026: columns on one baseline, not bars)
+  const counts = [...html.matchAll(/class="jb-n">(\d+)/g)].map((m) => Number(m[1]));
   assert.deepEqual(counts.slice(0, STAGES.length),
     STAGES.map((st) => people.filter((p) => p.status === st.id).length),
     'every stage bar equals the people standing in that stage');
@@ -95,7 +98,7 @@ test('each bar is the filter for what it counted, and toggles', () => {
   const html = sandbox().summary([person(STAGES[0].id, null)], new Map(), STAGES);
   assert.match(html, /onclick="cJfPick\('stage', this\.dataset\.v, !false\)"/, 'clicking sets the stage filter');
   const on = sandbox({ stage: [STAGES[0].id] }).summary([person(STAGES[0].id, null)], new Map(), STAGES);
-  assert.match(on, /class="c-sum on"/, 'a chosen bar says so');
+  assert.match(on, /class="jb-col on /, 'a chosen column says so');
   assert.match(on, /aria-pressed="true"/);
   assert.match(on, /onclick="cJfPick\('stage', this\.dataset\.v, !true\)"/, 'and clicking again clears it');
 });
@@ -134,8 +137,9 @@ test('the five active stages sit above a rule, the two outcomes below it', () =>
   const s = sandbox({}, { all: ALL, exits: { byStage: { New: 1 }, total: 1, unrecorded: 0 } });
   const html = s.summary(OPEN3, build(OPEN3), STAGES);
 
-  const active = html.indexOf('Active journey');
-  const outcomes = html.indexOf('Outcomes');
+  // 02.10.2026: the outcomes are the band's right-hand bookends, figures and NOT columns
+  const active = html.indexOf('class="jb-cols"');
+  const outcomes = html.indexOf('class="jb-outs"');
   assert.ok(active >= 0 && outcomes > active, 'active journey first, outcomes after it');
 
   // neither outcome is a stage button in the track
@@ -150,9 +154,9 @@ test('the five active stages sit above a rule, the two outcomes below it', () =>
 test('the outcomes count the whole database, not the open set the bars are built from', () => {
   const s = sandbox({}, { all: ALL });
   const html = s.summary(OPEN3, build(OPEN3), STAGES);
-  const band = html.slice(html.indexOf('c-outcomes'));
-  assert.match(band, /<b>2<\/b><span>Admitted<\/span>/, 'both admitted people');
-  assert.match(band, /<b>1<\/b><span>Not proceeding<\/span>/);
+  const band = html.slice(html.indexOf('jb-outs'));
+  assert.match(band, /<span>Admitted<\/span><b>2<\/b>/, 'both admitted people');
+  assert.match(band, /<span>Not proceeding<\/span><b>1<\/b>/);
   // and the active heading counts only the people still moving
   assert.match(html, /Active journey <small>3 people you are still working with/);
 });
@@ -165,7 +169,7 @@ test('every active stage carries its own exit mark, inside its own cell', () => 
   const html = s.summary(OPEN3, build(OPEN3), STAGES);
   const track = html.slice(html.indexOf('Active journey'), html.indexOf('What comes next'));
 
-  const cells = track.split('class="c-sumcell"').slice(1);
+  const cells = track.split('class="jb-cell"').slice(1);
   assert.equal(cells.length, STAGES.length, 'one cell per stage');
   for (const [i, cell] of cells.entries()) {
     assert.match(cell, /class="c-exit/, STAGES[i].id + ' carries its mark in its own cell');
@@ -193,7 +197,7 @@ test('the summary still draws when the exits endpoint gave nothing', () => {
   const s = sandbox({}, { all: ALL, exits: null });
   const html = s.summary(OPEN3, build(OPEN3), STAGES);
   assert.match(html, /Active journey/);
-  assert.match(html, /c-outcomes/);
+  assert.match(html, /jb-outs/);
   assert.equal((html.match(/class="c-exit none"/g) || []).length, STAGES.length,
     'every mark reads zero rather than the screen failing');
 });
@@ -215,14 +219,17 @@ test('the active journey is open; the second cut and the outcomes wait behind on
 
   const inside = html.slice(details);
   assert.match(inside, /What comes next/, 'the second cut is inside');
-  assert.match(inside, /c-outcomes/, 'and so are the outcomes');
+  // 02.10.2026: the outcomes moved OUT, onto the band, so they are not drawn twice
+  assert.ok(html.indexOf('jb-outs') < details, 'the outcomes are on the band, above the line');
+  assert.doesNotMatch(inside, /jb-outs|c-outcomes/, 'and not repeated behind it');
 });
 
 test('the line says what is inside it, with the count, so opening it is not a lottery', () => {
   const s = sandbox({}, { all: ALL });
   const html = s.summary(OPEN3, build(OPEN3), STAGES);
-  // ALL carries 2 admitted + 1 not proceeding
-  assert.match(html, /<summary[^>]*>What comes next, and 3 finished<\/summary>/);
+  // the finished count moved onto the band's bookends (02.10.2026), so the line names only
+  // what is still inside it
+  assert.match(html, /<summary[^>]*>What comes next<\/summary>/);
 });
 
 test('once opened it stays opened through a redraw', () => {

@@ -1,9 +1,8 @@
-// HOME A AND B (02.10.2026). Two alternatives on the same live reads; neither is chosen.
-//   A - journey first: arrived -> the five stages -> what happened, one dot per person
-//   B - today first: what needs a person now, then performance with its comparison
+// HOME IS B, TODAY FIRST (locked by the owner, 02.10.2026: "B for home"). The former A,
+// journey first, became the Journey band (test/journey_band.test.js).
 //
 // These run the real functions from src/app.html against stubbed API answers, so they
-// prove what each variant DRAWS from a known set of rows - not the text of the code.
+// prove what Home DRAWS from a known set of rows - not the text of the code.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -61,63 +60,27 @@ function harness({ summary = 'ok', intake = 'ok' } = {}) {
   vm.createContext(ctx);
   vm.runInContext([
     line('const esc = '), line('const channelLabel = '), line('const cChannel = '),
-    line('const cFig = '), line('const cDots = '),
+    line('const cFig = '),
     fn('async function cHomeData('), fn('function cHomeMonths('), line('const cHomeProg = '), line('const cHomeChan = '),
-    fn('function cHomeA('), fn('function cHomeB('),
-  ].join('\n') + '\nthis.data = cHomeData; this.A = cHomeA; this.B = cHomeB;', ctx);
+    fn('function cHomeB('),
+  ].join('\n') + '\nthis.data = cHomeData; this.B = cHomeB;', ctx);
   return ctx;
 }
 
 test('the loader counts PEOPLE, not tasks: two late tasks on one person are one overdue', async () => {
   const D = await harness().data();
   assert.equal(D.overdue, 3, 'a1, a2 and k1');
-  assert.equal(D.overdueIn('Application'), 2);
-  assert.equal(D.overdueIn('Contract'), 1);
   assert.equal(D.dueToday, 1);
   assert.equal(D.inbox, 6);
   assert.equal(D.admitted.length, 2, 'admitted this year, by their date');
   assert.deepEqual(D.tags.map((t) => [t[0], t[2]]), [['cold', 2], ['reject', 1]], 'cold and reject counted from closed_tag');
 });
 
-test('a read that fails is null, never a remembered figure, and both variants say so', async () => {
+test('a read that fails is null, never a remembered figure, and Home says so', async () => {
   const h = harness({ summary: 'down', intake: 'down' });
   const D = await h.data();
   assert.equal(D.overdue, null); assert.equal(D.noNext, null); assert.equal(D.inbox, null);
   assert.match(h.B(D), /class="kgapn"/, 'B shows a dash for Overdue');
-  assert.doesNotMatch(h.A(D), /overdue<\/em>/, 'A prints no overdue count it could not read');
-});
-
-test('A: one card per stage, in the configured order, each opening the Journey on that stage', async () => {
-  const h = harness(); const html = h.A(await h.data());
-  const stages = [...html.matchAll(/data-kgo="stage\|([^|"]+)\|/g)].map((m) => m[1]);
-  assert.deepEqual(stages, STAGES.map((s) => s.id));
-  assert.match(html, /data-kgo="inbox"/, 'Arrived opens the Inbox');
-  assert.match(html, /data-kgo="outcome\|Admitted"/);
-  assert.match(html, /data-kgo="outcome\|Not proceeding"/);
-});
-
-test('A: one dot per person, and the stage figure is the same count', async () => {
-  const h = harness(); const html = h.A(await h.data());
-  const cards = html.split('class="kfl kfl-st').slice(1);
-  const want = { New: 2, Contacted: 0, 'Follow-up': 0, Application: 3, Contract: 1 };
-  cards.forEach((c, k) => {
-    const id = STAGES[k].id;
-    assert.equal(Number(/<b>(\d+)<\/b>/.exec(c)[1]), want[id], id + ' figure');
-    const dots = (/<span class="kdots[^"]*"[^>]*>((?:<i><\/i>)*)<\/span>/.exec(c) || ['', ''])[1];
-    assert.equal(dots.length / 7, want[id], id + ' dots');
-  });
-  assert.match(cards[3], /2 overdue/, 'overdue sits on the stage it belongs to');
-});
-
-test('A: each fact once - conversion and the median on the Admitted card, the tags on Not proceeding', async () => {
-  const h = harness(); const html = h.A(await h.data());
-  const adm = html.slice(html.indexOf('kfl-adm'), html.indexOf('kfl-np'));
-  assert.match(adm, /19%<\/b> converted · 2 \/ 55 who arrived/, 'the working, not a percentage under a figure it was not computed from');
-  assert.match(adm, /38<\/b> days/);
-  assert.equal((html.match(/19%/g) || []).length, 1, 'conversion printed once');
-  const np = html.slice(html.indexOf('kfl-np'));
-  assert.match(np, /Cold <b>2<\/b>/); assert.match(np, /Reject <b>1<\/b>/);
-  assert.doesNotMatch(html, /kdonut/, 'A carries no donut: the band already says where everyone is');
 });
 
 test('B: what needs a person comes first, and every figure links to where the people are', async () => {
@@ -139,38 +102,22 @@ test('B: the comparison is the last COMPLETE month against the one before, with 
   assert.doesNotMatch(html, /Oct <b>/);
 });
 
-test('at most TWO scenes per variant (KB 08 P5), and no mark is scaled on arrival', async () => {
-  const h = harness(); const D = await h.data();
-  for (const [v, html] of [['A', h.A(D)], ['B', h.B(D)]]) {
-    assert.equal((html.match(/\bm-scene\b/g) || []).length, 2, v + ' has two scenes');
-    assert.doesNotMatch(html, /\bm-(pop|bar|grow|bump)\b/, v + ': pop, bar and grow SCALE a mark, which reads as a different value');
-  }
+test('at most TWO scenes on Home (KB 08 P5), and no mark is scaled on arrival', async () => {
+  const h = harness(); const html = h.B(await h.data());
+  assert.equal((html.match(/\bm-scene\b/g) || []).length, 2, 'two scenes');
+  assert.doesNotMatch(html, /\bm-(pop|bar|grow|bump)\b/, 'pop, bar and grow SCALE a mark, which reads as a different value');
   assert.doesNotMatch(fn('function cMonthChart('), /\bm-(pop|bar|grow)\b/, 'the month chart only fades and draws');
   assert.match(APP, /html\.ui-c\.m-on \.m-scene:not\(\.in\) :is\(\.kseg,\.kwall\)\{opacity:0\}/, 'the ring arrives with its scene');
 });
 
-test('the switch: ?home=a|b, remembered, A by default', () => {
-  const store = {};
-  const ctx = { localStorage: { getItem: (k) => store[k] ?? null, setItem: (k, v) => { store[k] = v; } }, URLSearchParams, location: { search: '' } };
-  vm.runInNewContext(fn('function homeVariant(') + '\nthis.v = homeVariant;', ctx);
-  assert.equal(ctx.v(), 'a');
-  ctx.location.search = '?home=b'; assert.equal(ctx.v(), 'b');
-  ctx.location.search = ''; assert.equal(ctx.v(), 'b', 'remembered');
-  ctx.location.search = '?home=nonsense'; assert.equal(ctx.v(), 'b', 'an unknown value changes nothing');
-});
-
-test('the switch works while ?home= is still in the address (found by QA, 02.10)', () => {
-  const store = {}; let drawn = 0;
-  const loc = { search: '?home=a', href: 'http://x/?home=a#/home' };
-  const ctx = { localStorage: { getItem: (k) => store[k] ?? null, setItem: (k, v) => { store[k] = v; } }, URLSearchParams, URL,
-    location: loc, history: { state: null, replaceState: (st, t, url) => { loc.href = url; loc.search = new URL(url).search; } },
-    viewHomeC: () => { drawn += 1; } };
-  vm.runInNewContext(fn('function homeVariant(') + fn('function homeSetVariant(') + '\nthis.v = homeVariant; this.set = homeSetVariant;', ctx);
-  assert.equal(ctx.v(), 'a');
-  ctx.set('b');
-  assert.equal(loc.search, '', 'the param is gone');
-  assert.equal(ctx.v(), 'b', 'and the click holds on the next render');
-  assert.equal(drawn, 1);
+// LOCKED 02.10.2026: Home = B only. The review switch and the A code are gone from the
+// product, and an old ?home=a link cannot bring A back.
+test('Home is B, always: no switch, no A, and ?home= changes nothing', () => {
+  const home = fn('async function viewHomeC(');
+  assert.match(home, /\$\{cHomeB\(D\)\}/, 'Home draws B');
+  assert.doesNotMatch(home, /cHomeA|homeVariant|chab|Journey first|Today first/, 'and nothing else, with no switch');
+  assert.doesNotMatch(APP, /function cHomeA\(|function homeVariant\(|function homeSetVariant\(|homevariant/, 'the A code and the remembered choice are gone');
+  assert.doesNotMatch(APP, /get\('home'\)/, 'nothing reads ?home= any more');
 });
 
 test('a Home stage click lands on the Journey filtered to exactly that stage', () => {
@@ -202,28 +149,3 @@ test('Outcomes: Not proceeding splits by cold and reject, each a filter, and an 
   assert.match(view, /C_OUTCOME !== 'Admitted' && p\.closed_tag \? cTagChip\(p\.closed_tag\)/, 'the tag on every Not proceeding row');
   assert.equal((view.match(/cTagChip\(|cTagLabel\(/g) || []).length, 1, 'drawn once per row, by one helper');
 });
-
-test('the switch works while ?home= is still in the address (found by QA, 02.10)', () => {
-  const store = {}; let drawn = 0;
-  const loc = { search: '?home=a', href: 'http://x/?home=a#/home' };
-  const ctx = { localStorage: { getItem: (k) => store[k] ?? null, setItem: (k, v) => { store[k] = v; } }, URLSearchParams, URL,
-    location: loc, history: { state: null, replaceState: (st, t, url) => { loc.href = url; loc.search = new URL(url).search; } },
-    viewHomeC: () => { drawn += 1; } };
-  vm.runInNewContext(fn('function homeVariant(') + fn('function homeSetVariant(') + '\nthis.v = homeVariant; this.set = homeSetVariant;', ctx);
-  assert.equal(ctx.v(), 'a');
-  ctx.set('b');
-  assert.equal(loc.search, '', 'the param is gone');
-  assert.equal(ctx.v(), 'b', 'and the click holds on the next render');
-  assert.equal(drawn, 1);
-});
-
-test('a Home stage click lands on the Journey filtered to exactly that stage', () => {
-  const ctx = { C_JF: { programme: ['ENG'], stage: [] }, C_PTAB: 'all', location: { hash: '#/home' }, viewJourneyC: () => {} };
-  vm.runInNewContext(line('const C_JF_EMPTY = ') + fn('function cGoStage(') + '\nthis.go = cGoStage;', ctx);
-  ctx.go('Application');
-  assert.equal(JSON.stringify(ctx.C_JF.stage), '["Application"]');
-  assert.equal(JSON.stringify(ctx.C_JF.programme), '[]', 'an earlier programme filter does not hide anybody Home counted');
-  assert.equal(ctx.C_PTAB, 'journey');
-  assert.equal(ctx.location.hash, '#/journey');
-});
-
