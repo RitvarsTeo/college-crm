@@ -147,3 +147,12 @@ The Meta "question vs work" choice in the reconciliation doc is **still Ritvars'
 **Sessions 5 and 6.** Not started when this was written; their briefs were not seen here. They must read this file first.
 
 **Every session:** no deploy, no env change, no production write. Release authority for a deploy stays with whoever Ritvars names, on his GO.
+
+## QUEUE - added 02.10 by Ritvars (SAID, not built)
+
+| # | Item | Owner session | Status |
+|---|---|---|---|
+| Q1 | **apply.novikontas.org may be called "Academy Application form"** wherever Intake names it (Reports > Applications, the lifecycle line). Still downstream, never a channel | Session 4 APPLICATIONS | SAID |
+| Q2 | **Two-colour sentences, in subtle places.** Reference [seen 02.10]: apply.novikontas.org hero H1 *"Studē / Novikontas Akadēmijā"* - first word in brand blue, bold 700, the rest in white on the app navy, Inter. Use it sparingly (e.g. a section title or empty state), never on data, never more than one per screen | Session 2 MAIN | SAID |
+
+Note on Q2: the apply site colours that word `#53a7db` (brandbook blue). KB 08 P5 (30.09) keeps `#53a7db` as marker/hover, **never text**, and the app's blue is `#29a8df`. So Intake takes the PATTERN with `#29a8df`, not the apply site's colour - unless Ritvars says otherwise.
