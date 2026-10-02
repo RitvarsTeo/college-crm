@@ -14,11 +14,16 @@ const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
 test('chart colours: admitted Novikontas Blue, new leads a Navy line, open yellow, not proceeding grey', () => {
   const light = APP.match(/html\.ui-c\{--v-adm:(#\w+);--v-lead:(#\w+);--v-open:(#\w+);--v-np:(#\w+);--v-grid:#\w+\}/);
   assert.ok(light, 'the light chart tokens, and no others');
-  assert.deepEqual(light.slice(1).map((c) => c.toLowerCase()), ['#29a8df', '#0a2463', '#f7c04f', '#98a4b3']);
+  assert.deepEqual(light.slice(1).map((c) => c.toLowerCase()), ['#29a8df', '#0a2463', '#e0a526', '#98a4b3']);
   const dark = APP.match(/--v-adm:(#\w+);--v-lead:(#\w+);--v-open:(#\w+);--v-np:(#\w+);--v-grid:#24507a;/);
   assert.ok(dark, 'the dark chart tokens');
   assert.equal(dark[1].toLowerCase(), '#29a8df', 'dark admitted = the logo blue, as in light (kit 13 rule 5)');
-  assert.equal(dark[3], '#F7C04F', 'dark open = the bright amber');
+  // THE DATA YELLOW IS NOT THE SIGNAL AMBER (the owner, 02.10.2026, KB 08 P5): Open is a
+  // quantity on a chart, so it takes the data mustard. Signal amber #F7C04F keeps one
+  // meaning, today / needs you, and a slice of the donut is neither.
+  assert.equal(dark[3], '#E0A526', 'dark open = the data mustard, not the signal amber');
+  assert.doesNotMatch(APP, /--v-open:#F7C04F/i, 'no Open slice left on the signal amber, in either mode');
+  assert.match(APP, /--c-warn:#F7C04F/, 'and the signal amber itself is untouched');
   assert.doesNotMatch(APP, /--v-(prog|chan):/, 'no extra chart colours');
 });
 
