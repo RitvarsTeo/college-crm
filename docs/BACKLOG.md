@@ -24,6 +24,7 @@ Ritvars, 02.10.2026: **"B for home. Then the journey displayed like the ui from 
 | People > Journey opens with **A's band** (Arrived -> the five stages with one dot per person and overdue on its stage -> Admitted / Not proceeding), in the lit well with the spine | DECIDED, NOT BUILT |
 | The band takes the place of the current stage row (screen 2); the filters and the board (screen 3) stay below it | PROPOSED, waits for his go |
 | The A/B switch on Home goes; A's Home code is reused on the Journey, not kept as a second Home | PROPOSED |
+| **The band's stage visual = columns from one shared baseline**, the count on top, overdue the darker stacked part (hover gives its number); the words "now" and "n overdue" go. One dot per person is OUT: "cant count them really". Rule: the task picks the visual, comparison wins (KB 08 P5 rule 12) | DECIDED by his rule, NOT BUILT |
 
 ## 02.10.2026 - MAIN A and B of this run: BUILT, COMMITTED, NOT DEPLOYED
 
