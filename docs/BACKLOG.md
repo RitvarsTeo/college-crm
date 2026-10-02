@@ -150,7 +150,14 @@ as an admin and reading the fifteen rows.
 | **Every `var(--token)` is a token the file declares** | `background:var(--hover)` is not a syntax error. There is no `--hover`; the declaration was dropped at compute time with no warning and no failing test. It found `--t1` too: the ramp is `--t2`/`--t3`/`--t4` and starts at `--ink`, so the **sign-in input had been asking for a colour that does not exist**. `--jt` is real and declared inline on the element that uses it, so the guard reads the whole file |
 | **No conflict markers survive anywhere** | A cherry-pick left markers in the stylesheet and **all 918 tests passed**, because every test reads `src/app.html` as text or runs a named slice of it and no slice covered the corrupted lines. The served page would have been broken. Proved by putting a marker back and watching it fail |
 
-### NEEDS A DECISION: Google Form and Open Day are recorded as parked, the config does not know it
+### SETTLED 02.10.2026: Google Form dropped, Open Day parked, both written into the config
+
+**This section is kept as the record of how it was found and closed.** The config now carries a
+`lifecycle` per channel, neither appears as work, neither holds an owner, and the
+`googleFormOwner` open question moved to `settled` with a re-ask guard. See
+`docs/CHANNEL_RECONCILIATION_2026-10-02.md`. The original write-up follows.
+
+#### As it stood on 01.10, unresolved
 
 `docs/BACKLOG.md` records Open Day as parked (`274f31c`) and Google Form as out. The
 channel config records neither. It carries `readiness: waiting_for_external_access` for
@@ -1011,26 +1018,39 @@ been untrue since 27.09 and sat directly under a note saying the opposite. The o
 below, dated, as the record of where the project was.
 
 - **Version:** V1.
-- **Live:** https://crm-novikontas.vercel.app, Vercel + Neon Postgres, production at `e52e1b4`.
+- **Live:** https://crm-novikontas.vercel.app, Vercel + Neon Postgres, production at `292b4f9`.
+  **PROVEN 02.10.2026:** the live page is byte-identical to that commit apart from the 605-byte
+  sign-in return script the server injects (367029 = 366424 + 605). The Pin said `e52e1b4` until
+  today, which was three releases stale.
   It holds the real 2026 admissions people. Google sign-in only; the password route answers 410.
 - **The UI:** Concept C is the product, ACCEPTED by Ritvars 28.09.2026. The previous UI stays at
   `?ui=classic` as the fallback until Admissions has verified C. Nobody from Admissions has worked
   a full day in C on the real people yet.
-- **Channels: NOT CONNECTED.** Every adapter is written and tested and every one is switched off.
+- **Channels: 12 active, NOT CONNECTED.** The universe was reconciled 02.10
+  (`docs/CHANNEL_RECONCILIATION_2026-10-02.md`): Google Form is **dropped**, Open Day is **parked**,
+  apply.novikontas.org is **downstream and not a channel**, and SIS is an **integration**. The old
+  counts of 14 and 15 included those. Every adapter is written and tested and every one is switched off.
   `inbound` holds 15 rows, all `source=simulated` from test-mode runs of the phone and SIS jobs,
   and **0 from a real provider**. That is the single largest gap between what this file describes
   and what the CRM does for its users today.
 - **Scope: NOT LOCKED.** It changes daily on owner feedback, and Ieva has not validated the
   workflow, so treat every row below as provisional until she has.
-- **Release line:** `master` at `afea424`, unchanged, never deployed, no tag exists. Production is
-  deployed from release branches cut off the live commit, not from `master`, and that is the
-  arrangement in force - not an accident, and not a release process anybody has signed off.
+- **Release line:** `v0.9`, pushed to GitHub (`origin/v0.9` at `52e2232`, one doc commit above
+  production). `master` is still `afea424`, unchanged, never deployed, no tag exists. Production is
+  deployed from release branches cut off the live commit, not from `master` - the arrangement in
+  force, not a release process anybody has signed off. **Open tidy-up:** whether `v0.9` becomes the
+  permanent release line, whether `master` is fast-forwarded or retired, and whether `v1-test`
+  (behind, at `3fb39c5`) is deleted. Nothing is blocked on it.
 - **How a deploy happens:** from a clean checkout of one commit, after the whole suite passes on
   that checkout, then checked on the live site (page byte-identical to the commit, 401 on every
   private route, 0 leaks from the source and config probes).
 - **Next:** Ieva validates the workflow (rows 46, 50, 51). V2: **UNKNOWN** - no V2 has been defined
   by the owner and this file does not invent one.
-- **Blockers:** rows 46, 50, 51 (all Ieva); the open questions below; connecting the channels.
+- **Blockers:** rows 46, 50, 51 (all Ieva); the 2 open questions in `config/prototype.json`
+  (Tetiana's spam words, which agent partner to start with); connecting the channels. **Open owner
+  decisions, none blocking code:** the KPI strip (hairline or cards, and it reaches kit part 2),
+  Home A or B, Channels A or B, Ieva's Journey stage names, and whether Meta's APP REVIEW is a
+  `question` or `work` in `blockerKind`.
 
 Decisions and the open D-C questions are in [DECISIONS.md](DECISIONS.md).
 
