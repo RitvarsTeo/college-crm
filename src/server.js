@@ -1113,6 +1113,21 @@ export const handle = async (req, res) => {
             env: process.env, checks: await latestChecks(), handshakes: await handshakeRows(),
             countsByChannel: await channelCounts() }).concat(integrationStatuses()),
           runs: await syncRuns(),
+
+          // WHICH ENVIRONMENT THIS IS (02.10.2026). The Channels screen was printing
+          // "Not set up" for every channel on a local checkout, where no secret exists,
+          // and that read as though PRODUCTION were unconfigured. A local environment
+          // knows nothing about Vercel's and must never be shown as if it did. These are
+          // four different states: local configuration, deployed code, production
+          // configured, live verified. Only a provider row proves the last one.
+          environment: {
+            name: process.env.VERCEL_ENV || (process.env.VERCEL ? 'vercel' : 'local'),
+            isProduction: process.env.VERCEL_ENV === 'production',
+            // said plainly, because the screen shows this sentence
+            caveat: process.env.VERCEL_ENV === 'production'
+              ? null
+              : 'This is not production. No secret is set here, so every channel reads as not configured. It says nothing about the live site.',
+          },
         };
         channeladmin.assertNoSecretValues(payload, process.env);
         return json(res, 200, payload);

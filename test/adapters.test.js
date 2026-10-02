@@ -33,17 +33,37 @@ test('every channel in the register has an adapter, and every adapter has a regi
     'a channel without an adapter cannot receive; an adapter without a register entry has no status');
 });
 
-test('all fourteen channels are covered, and each one is honest about its mechanism', async () => {
-  // 14 since 24.09.2026: Messenger became its own channel, sharing the Meta
-  // connection with Facebook but staying separate for reporting.
-  assert.equal(channelIds().length, 14);
+test('the register holds every adapter, and twelve of them are channels the product has', async () => {
+  // THE REGISTER IS NOT THE PRODUCT (02.10.2026). channels.json describes the adapters
+  // we have WRITTEN. 'lifecycle' says whether the product still has that channel, which
+  // is a decision, not an engineering fact. Google Form is DROPPED and Open Day is
+  // PARKED, so the register holds fourteen adapters and the product has twelve channels.
+  // A screen must read lifecycle, never readiness: readiness only ever meant "is our
+  // side technically ready", and it said yes for both of those.
+  assert.equal(channelIds().length, 14, 'fourteen adapters, unchanged');
+
+  const lifeOf = (id) => channelDef(id).lifecycle || 'active';
+  const active = channelIds().filter((id) => lifeOf(id) === 'active');
+  assert.equal(active.length, 12, 'twelve channels the product has');
+  assert.equal(lifeOf('google_form'), 'dropped', 'Ritvars, 01.10 and 02.10');
+  assert.equal(lifeOf('open_day'), 'parked', 'Ritvars, 30.09: prepared, do not send yet');
+
   for (const id of channelIds()) {
     const d = channelDef(id);
     for (const key of ['label', 'mechanism', 'direction', 'auth', 'dedupKey', 'readiness',
       'weControl', 'providerControls', 'howWeTest', 'howWeGoLive', 'howWeDisable']) {
       assert.ok(d[key] !== undefined, `${id} is missing ${key}`);
     }
-    // a channel that needs somebody outside to act must say who and what
+    if (lifeOf(id) !== 'active') {
+      // A parked or dropped channel is NOT work. It holds nobody and blocks nobody;
+      // leaving an owner on it is what made Aigars appear to be holding Open Day.
+      assert.equal(d.ownerPerson, null, id + ' is ' + lifeOf(id) + ' and must hold nobody');
+      assert.equal(d.externalBlocker, null, id + ' is ' + lifeOf(id) + ', so it has no blocker');
+      assert.ok(d.lifecycleWhy && d.lifecycleDecidedOn && d.lifecycleDecidedBy,
+        id + ' must say who decided that, when, and why');
+      continue;
+    }
+    // an ACTIVE channel that needs somebody outside to act must say who and what
     if (d.readiness === 'waiting_for_external_access' || d.readiness === 'capability_unconfirmed') {
       assert.ok(d.externalBlocker, id + ' must name its blocker');
     }

@@ -353,6 +353,8 @@ test('nothing Ritvars has settled can come back as an open question', async () =
     teleGroupTokenHeld: ['please issue us an api token', 'do we have a telegroup token',
       'ask telegroup for an api token'],
     metaAdministeredByTetiana: ['who administers the meta business suite', 'who holds the business suite'],
+    googleFormDropped: ['who created the google form', 'who owns its response sheet',
+      'who owns the google form'],
   };
   // Every settled decision must be covered, or a new one silently gains no guard.
   for (const [key] of closed) {

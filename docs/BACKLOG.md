@@ -1838,8 +1838,10 @@ The settled guard caught this itself: it refused to pass while a question
 claimed to block a channel typed as `work`. Google Form was `work` on the
 assumption somebody known would run the Apps Script, and nobody is known.
 
-**Open questions: 4.** The spam word list from Tetiana, who owns the Google Form,
-which agent we start with, and LinkedIn/TikTok which stays parked.
+**Open questions: 2** (was 4). The spam word list from Tetiana, and which agent we start with.
+The Google Form owner is SETTLED 01.10 - the channel is dropped, so it does not matter who owns
+the form. LinkedIn and TikTok are active channels waiting on developer-app approval, which is a
+blocker and not a question.
 
 346 tests.
 
@@ -2038,7 +2040,7 @@ checked. **Nothing in this whole project is LIVE.**
 | A3 | Passwords for the three accounts, if Google is not used. Not settable by anyone but Ritvars, and never through a Claude session | **SAID** | Ritvars |
 | A4 | Email addresses for Marina, Tetiana, Maris Cirulis and Arina, if they are to have accounts at all. `seed` names them on every run rather than inventing one | **UNKNOWN** | Ritvars |
 | A5 | The 14 channels. Every external blocker is already recorded per channel in `config/channels.json` as `ownerPerson` and `ownerAction`: Tetiana holds the Meta build for four channels, Marina the Gmail delegation, Oksana the website form, Aigars the Open Day webhook, Ritvars the PBX token and Mailchimp | **SAID** | named per channel |
-| A6 | The four open questions in `config/prototype.json` under `openQuestions`: the spam word list from Tetiana, who owns the Google Form, which agent to start with, and whether LinkedIn or TikTok are possible at all | **UNKNOWN** | named per question |
+| A6 | The open questions in `config/prototype.json` under `openQuestions`: **2 since 02.10** - the spam word list from Tetiana, and which agent to start with. The Google Form owner moved to `settled` when the channel was dropped | **UNKNOWN** | named per question |
 
 ### B. Product and workflow decisions nobody has taken
 

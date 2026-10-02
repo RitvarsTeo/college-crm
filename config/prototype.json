@@ -1043,6 +1043,14 @@
       "decidedOn": "25.09.2026",
       "doNotReopen": true,
       "note": "Access is Ieva, Laura, Tetiana and Marina; Tetiana is the one who holds it. She is who creates the app at developers.facebook.com and submits it for App Review."
+    },
+    "googleFormDropped": {
+      "question": "Who created the Google Form, and so owns its response sheet?",
+      "answer": "It does not matter. The Google Form channel is DROPPED from the product.",
+      "decidedBy": "Ritvars",
+      "decidedOn": "01.10.2026",
+      "doNotReopen": true,
+      "note": "The website Application form button opened a Google Form. The application path is apply.novikontas.org, which is downstream in the lifecycle and is not a channel. Restated 02.10 when the Channels screen was still asking who owns the form. The adapter and the Apps Script stay in the repository; the channel does not exist. See docs/CHANNEL_RECONCILIATION_2026-10-02.md."
     }
   },
   "openQuestions": {
@@ -1054,15 +1062,6 @@
       "who": "Tetiana",
       "blocks": [],
       "status": "Not asked yet."
-    },
-    "googleFormOwner": {
-      "ask": "Who created the Google Form, and so owns its response sheet?",
-      "why": "Only the form owner can paste the Apps Script onto the response sheet and approve the one permission box. Fifteen minutes of their time at a computer.",
-      "who": "Inside Novikontas",
-      "blocks": [
-        "google_form"
-      ],
-      "status": "Not named yet. Every other channel now has a person against it."
     },
     "agentPartnerOwner": {
       "ask": "Which agent do we start with, and who at their end sets up the link?",

@@ -150,6 +150,15 @@ export function statusOf(id, { env = process.env, lastCheck = null, handshakeAt 
     externalBlocker: def.externalBlocker || null,
     blockerKind: def.blockerKind || null,
 
+    // WHETHER THE PRODUCT HAS THIS CHANNEL AT ALL (02.10.2026). readiness says whether
+    // OUR SIDE is technically ready; it said yes for Google Form and Open Day, which are
+    // dropped and parked. A screen that reads readiness asks for work nobody intends to
+    // do, and names people as holding it. lifecycle carries the decision instead.
+    lifecycle: def.lifecycle || 'active',
+    lifecycleWhy: def.lifecycleWhy || null,
+    lifecycleDecidedOn: def.lifecycleDecidedOn || null,
+    lifecycleDecidedBy: def.lifecycleDecidedBy || null,
+
     // the one sentence a human should read first
     summary: summarise({ state, live, def, missing, connected, selfTestOk, plan }),
   };

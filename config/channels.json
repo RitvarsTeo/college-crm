@@ -11,7 +11,7 @@
   "_idempotency": "Every adapter declares an externalId, and receive() in src/intake.js looks for an inbound row with the same channel and external_id before inserting, so the same provider event delivered twice is stored once. Providers retry; that is normal and must never make two people. CORRECTED 27.09.2026: this used to say a unique index enforces it. NO SUCH INDEX EXISTS - it is a look-then-insert check in application code. That is sound on SQLite, where one process runs one request at a time, and NOT sound on PostgreSQL behind Vercel, where two retries of one event can run at once, both look, both find nothing and both insert. The fix - a partial unique index on (channel, external_id) plus an insert that tolerates the conflict - is part of the PostgreSQL move. See docs/BACKLOG.md, 27.09.2026.",
   "channels": {
     "website": {
-      "label": "Website form",
+      "label": "Website enquiry form",
       "mechanism": "We publish an endpoint. The website posts to it.",
       "direction": "inbound_webhook",
       "auth": "shared_secret_header",
@@ -45,10 +45,11 @@
         "Test an existing person",
         "Test filtering and routing"
       ],
-      "ownerPerson": "Oksana",
-      "ownerAction": "Paste the address and secret into the website form",
+      "ownerPerson": "Ritvars",
+      "ownerAction": "Set WEBSITE_FORM_SECRET and CHANNEL_MODE_WEBSITE in Vercel, then add the webhook to the Tilda forms",
       "reliability": "Shared-secret header, compared in constant time. A submission without a submission_id is refused. A repeat submission_id is dropped.",
-      "reconciliation": "None built. Depends on whether the website keeps its own copy of submissions - UNKNOWN."
+      "reconciliation": "None built. Depends on whether the website keeps its own copy of submissions - UNKNOWN.",
+      "_ownerNote": "Oksana gave access; Ritvars sets it up himself, he has Tilda access (01.10.2026, docs/channel-writeups/03-website-form-oksana.md). This is the ENQUIRY form on the Tilda site, NOT apply.novikontas.org, which is downstream."
     },
     "google_form": {
       "label": "Google Form",
@@ -62,7 +63,7 @@
       "dedupKey": "channel + responseId",
       "rateLimit": "Apps Script quotas apply to the sender, not to us.",
       "readiness": "waiting_for_external_access",
-      "externalBlocker": "Nobody has named who created the form. Only its owner can paste the Apps Script onto the response sheet and approve the permission box.",
+      "externalBlocker": null,
       "weControl": [
         "the endpoint",
         "the payload contract",
@@ -89,10 +90,15 @@
         "Test Inbox routing"
       ],
       "ownerPerson": null,
-      "ownerAction": "Whoever owns the form runs the Apps Script step",
+      "ownerAction": null,
       "reliability": "Shared-secret header from the Apps Script. A repeat responseId is dropped.",
       "reconciliation": "Possible and not built: the Form keeps every response, so they can be re-read and compared.",
-      "review_27_09": "The review recommends binding the script to the FORM's own submit trigger rather than the response sheet, so a Sheet is not a middleman unless someone actually works in it. The register still says response sheet; which one is used is the form owner's choice when the owner is named."
+      "review_27_09": "The review recommends binding the script to the FORM's own submit trigger rather than the response sheet, so a Sheet is not a middleman unless someone actually works in it. The register still says response sheet; which one is used is the form owner's choice when the owner is named.",
+      "lifecycle": "dropped",
+      "lifecycleDecidedOn": "2026-10-01",
+      "lifecycleDecidedBy": "Ritvars",
+      "lifecycleWhy": "Dropped from the product. The website Application form button was a Google Form; the application path is apply.novikontas.org, which is downstream and not a channel. Restated 02.10.",
+      "ownerPersonBeforePark": null
     },
     "gmail": {
       "label": "Email",
@@ -420,10 +426,15 @@
         "Attendance -> follow-up",
         "Study interest -> Ieva"
       ],
-      "ownerPerson": "Aigars",
-      "ownerAction": "Paste the webhook into the Open Day booking tool",
+      "ownerPerson": null,
+      "ownerAction": null,
       "reliability": "Shared-secret header. A repeat booking reference is dropped.",
-      "reconciliation": "None built. Whether the booking tool has an API to re-read from is UNKNOWN (PROVIDER_QUESTIONS.md)."
+      "reconciliation": "None built. Whether the booking tool has an API to re-read from is UNKNOWN (PROVIDER_QUESTIONS.md).",
+      "lifecycle": "parked",
+      "lifecycleDecidedOn": "2026-09-30",
+      "lifecycleDecidedBy": "Ritvars",
+      "lifecycleWhy": "Parked 30.09: do not send yet. Our end is prepared; it connects when the Open Day project is deployed on Vercel. See docs/channel-writeups/04-open-day-aigars.md.",
+      "ownerPersonBeforePark": "Aigars"
     },
     "phone": {
       "label": "Phone",
@@ -687,5 +698,6 @@
   ],
   "_connectOrder": "The order Ritvars set on 24.09.2026. Both the Desktop guide and docs/CHANNEL_READINESS.md render in this order, so his list and the generated documents cannot drift apart.",
   "_ownerPerson": "Who physically has to act for each channel, told by Ritvars on 25.09.2026. null means nobody is named yet. This is NOT who owns the CRM record - a confirmed study lead always belongs to Admissions, which is Ieva, whatever channel it arrived on.",
-  "_reliability": "Added 27.09.2026 after an outside architecture review. Getting an event once is not enough; each channel has to answer: did we get it, did we get it twice, did we process it, what if processing failed, what if the provider retries, what if the CRM was down, can we reconstruct what happened. 'reliability' says what protects the channel TODAY, read from the code. 'reconciliation' says how something missed would be found again, and says 'none built' where that is the truth. Three gaps are shared by every channel and are not repeated per row: (1) the dedupe is not database-enforced (see _idempotency); (2) the log of refused and failed deliveries is an in-memory list of 500 in src/server.js, lost on every restart and, on Vercel, different on every instance - so a refused or failed delivery leaves NO durable trace; (3) a delivery that fails inside the CRM answers 500, which makes a retrying provider try again, but nothing records that it failed."
+  "_reliability": "Added 27.09.2026 after an outside architecture review. Getting an event once is not enough; each channel has to answer: did we get it, did we get it twice, did we process it, what if processing failed, what if the provider retries, what if the CRM was down, can we reconstruct what happened. 'reliability' says what protects the channel TODAY, read from the code. 'reconciliation' says how something missed would be found again, and says 'none built' where that is the truth. Three gaps are shared by every channel and are not repeated per row: (1) the dedupe is not database-enforced (see _idempotency); (2) the log of refused and failed deliveries is an in-memory list of 500 in src/server.js, lost on every restart and, on Vercel, different on every instance - so a refused or failed delivery leaves NO durable trace; (3) a delivery that fails inside the CRM answers 500, which makes a retrying provider try again, but nothing records that it failed.",
+  "_lifecycle": "Added 02.10.2026. readiness says whether OUR SIDE is technically ready. lifecycle says whether the PRODUCT HAS THIS CHANNEL AT ALL, which is a decision and not an engineering fact. active = a channel we intend to connect. parked = decided, prepared, deliberately not connected yet; it is not work and nobody holds it. dropped = decided out of the product; the adapter may stay in the repository, the channel does not exist. Anything without this field is active. A screen MUST read lifecycle, never readiness, to decide whether a channel is current work."
 }
