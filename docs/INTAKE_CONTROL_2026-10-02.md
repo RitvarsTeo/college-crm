@@ -209,7 +209,7 @@ All worktrees clean. **Combined scratch merge of all six tips** (`scratchpad/mer
 
 ### 04.10 20:48 - Gate 1 PASSED, and what the fresh backup shows [seen]
 
-- Ritvars ran `run_nightly.cmd`: Intake backup **VERIFIED, 24 tables, 1083 rows** -> `_backups/2026-10-04T17-47-57Z`. TA fresh too. Client Hub backup still STALE (64 h, its own task) - separate item.
+- Ritvars ran `run_nightly.cmd`: Intake backup **VERIFIED, 24 tables, 1083 rows** -> `_backups/2026-10-04T17-47-57Z`.
 - **Phone continuity PROVEN:** the daily TeleGroup pull ran every day, last 04.10 05:27Z; 7 real calls from 02.10 arrived. Weekend: 1 fetched.
 - **Gmail edu@ keeps flowing daily:** provider rows 30.09-04.10, last poll 04.10 05:35Z.
 - **SIS: 1 provider row dated 03.10** - possibly the first real applicant. Not opened here (personal data); S4 checks it signed in.
