@@ -152,7 +152,17 @@
           "label": "Answer the question",
           "days": 1,
           "drives": "info",
-          "advancesTo": "Contacted"
+          "advancesTo": "Contacted",
+          "anyStage": true
+        },
+        {
+          "id": "call_back",
+          "label": "Call back",
+          "days": 0,
+          "drives": "info",
+          "advancesTo": "Contacted",
+          "anyStage": true,
+          "_why": "Ritvars 02.10.2026: a known lead whose call nobody answered goes to Today. The phone sync plans this step itself, due when they rang; one at a time per person."
         }
       ]
     },
@@ -271,6 +281,14 @@
     }
   ],
   "nextActionRequired": true,
+  "stepGroupsByStage": {
+    "New": ["Conversation and information", "Visit on site"],
+    "Contacted": ["Conversation and information", "Visit on site", "Application and documents"],
+    "Follow-up": ["Visit on site", "Application and documents"],
+    "Application": ["Application and documents", "Contract and payment"],
+    "Contract": ["Contract and payment"]
+  },
+  "_stepGroupsByStage": "Ritvars 02.10.2026: the steps offered depend on the lead's stage, by group, so the list is shorter and what cannot happen yet is not shown. A step marked anyStage fits every stage. The step already planned is always kept. MVP: Admissions tunes it here by using it, a config edit and never code.",
   "_nextActions": "Next action is mandatory everywhere. Every option drives towards one of: a visit on site, an application in SIS with documents, or payment. Provisional wording until Admissions confirms it.",
   "stageOrder": [
     "New",
@@ -410,6 +428,14 @@
     "Duplicate",
     "Other"
   ],
+  "closedReasonsByStage": {
+    "New": ["No response", "Not eligible", "Programme not suitable", "Chose another institution", "Duplicate", "Other"],
+    "Contacted": ["No response", "Chose another institution", "Changed study plans", "Programme not suitable", "Not eligible", "Timing / postponed", "Duplicate", "Other"],
+    "Follow-up": ["No response", "Chose another institution", "Changed study plans", "Financial reasons", "Timing / postponed", "Programme not suitable", "Not eligible", "Other"],
+    "Application": ["No response", "Requirements not met", "Not eligible", "Financial reasons", "Chose another institution", "Timing / postponed", "Changed study plans", "Other"],
+    "Contract": ["Financial reasons", "Chose another institution", "Timing / postponed", "Changed study plans", "Requirements not met", "No response", "Other"]
+  },
+  "_closedReasonsByStage": "Ritvars 02.10.2026: the reasons offered depend on the stage the person leaves, so the list is shorter and what cannot have happened yet is not offered. Every entry is one of closedReasons, which the server still enforces whole. MVP, provisional until Admissions has used it.",
   "closedReasonNeedsNote": [
     "Other"
   ],
@@ -1071,6 +1097,15 @@
         "agent"
       ],
       "status": "Not named yet."
+    },
+    "linkedinLeadSync": {
+      "ask": "Will LinkedIn grant the Lead Sync API access requested on 02.10.2026?",
+      "why": "Without it LinkedIn sends us nothing. The request was submitted by Ritvars for SIA Novikontas Jūras koledža; Microsoft vetting may write first. It can be refused.",
+      "who": "Ritvars",
+      "blocks": [
+        "linkedin"
+      ],
+      "status": "Submitted 02.10.2026. Waiting on LinkedIn."
     }
   },
   "mailchimp": {

@@ -123,6 +123,18 @@ async function storeCall(db, r, mode, at, out) {
     if (r.picked_up) {
       await db.prepare('UPDATE people SET last_contact_at = ? WHERE id = ? AND (last_contact_at IS NULL OR last_contact_at < ?)')
         .run(r.created_at, personId, r.created_at);
+    } else {
+      // A KNOWN LEAD RANG AND NOBODY ANSWERED: that is work for today (Ritvars 02.10.2026, "they get
+      // recorded for needs action which is today"). Due when they rang, because they have waited since
+      // then. One Call back at a time per person, and none for a finished person, who is not in any
+      // list; their call stays on their history above.
+      const p = await db.prepare('SELECT status, owner FROM people WHERE id = ?').get(personId);
+      const open = await db.prepare("SELECT COUNT(*) n FROM tasks WHERE person_id = ? AND label = 'Call back' AND done_at IS NULL").get(personId);
+      if (p && !(CONFIG.terminalStages || []).includes(p.status) && !Number(open.n)) {
+        await db.prepare('INSERT INTO tasks (person_id,label,due_at,owner,created_at) VALUES (?,?,?,?,?)')
+          .run(personId, 'Call back', r.created_at, p.owner || 'Admissions', at);
+        out.callBack++;
+      }
     }
     out.logged++;
   } else if (r.caller_num) {
@@ -174,7 +186,7 @@ export async function syncPbx(db, { now = new Date(), minutes = WINDOW_MINUTES,
   const firstFrom = from;
 
   const startedAt = clock();
-  const out = { logged: 0, inbox: 0, again: 0, filtered: 0, seen: 0, noNumber: 0 };
+  const out = { logged: 0, inbox: 0, again: 0, filtered: 0, seen: 0, noNumber: 0, callBack: 0 };
   const skipped = { notIncoming: 0, otherQueue: 0, unusable: 0, duplicateInBatch: 0 };
   let fetched = 0, kept = 0, pieces = 0, safeUrl = null, reached = from;
 

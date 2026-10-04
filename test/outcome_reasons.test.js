@@ -31,7 +31,9 @@ test('the model is real: a taxonomy, enforced by the server, driving the picker'
   assert.ok(Array.isArray(CONFIG.closedReasons) && CONFIG.closedReasons.length >= 5,
     'the reasons are configured, not invented at the screen');
   assert.match(SERVER, /const allowed = CONFIG\.closedReasons \|\| \[\];/, 'the server reads the same list');
-  assert.match(APP, /\(CFG\.closedReasons \|\| \[\]\)\.map\(\(r\) => `<option>/, 'and so does the picker');
+  // since 02.10.2026 by stage (test/reasons_by_stage.test.js), still from the same configured list
+  assert.match(APP, /reasonsForStage\(p\.status\)\.map\(\(r\) => `<option>/, 'and so does the picker');
+  assert.match(APP, /const all = CFG\.closedReasons \|\| \[\];/, 'which reads the same list');
 });
 
 test('every configured reason is shown, including the ones nobody has used', () => {

@@ -843,7 +843,8 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
     --k-plinth:#0b2542;   /* the donut's plinth: a frame colour, the dark card well, never a data colour */
     --j-from:#1d4d7a;--j-to:#8fcbef;   /* the Journey's stage line in dark (the review #2) */
     --glass:linear-gradient(180deg,rgba(255,255,255,.06) 0%,rgba(255,255,255,.035) 100%);
-    --glass-line:rgba(194,211,222,.18)}
+    --glass-line:rgba(194,211,222,.18);
+    --sea:radial-gradient(120% 80% at 50% 0%,#17456e 0%,rgba(23,69,110,0) 60%),linear-gradient(180deg,#0f2f4f 0%,#0f2f4f 45%,#08182e 100%)}
   /* THE LIGHT SEA (the owner, 01.10.2026: "same way we have a gradient for the dark mode,
      lets have a gradient for the light version"). Dark takes the sign-in screen's sea:
      a glow from the top centre over a vertical deepening, #17456e -> #0f2f4f -> #08182e.
@@ -852,15 +853,16 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
      --shell at the foot, exactly as dark deepens to its own.
      The whole range is #fbfcfd -> #e7ebf0, about 3% of lightness, so no text contrast
      anywhere on the page moves. `fixed` so it is one sea, not a sea per scroll. */
-  html.ui-c:not([data-theme="dark"]) body{
-    background:radial-gradient(120% 80% at 50% 0%,#fbfcfd 0%,rgba(251,252,253,0) 60%),
-      linear-gradient(180deg,#f7f9fb 0%,#f5f7fa 45%,#e7ebf0 100%) fixed #f5f7fa}
+  /* --sea is the ONE gradient system (dark's is in the dark palette below), named so a frame can carry the same sea as the
+     page (Session 3, 02.10) instead of inventing a second one. Same values as before. */
+  html.ui-c{--sea:radial-gradient(120% 80% at 50% 0%,#fbfcfd 0%,rgba(251,252,253,0) 60%),
+      linear-gradient(180deg,#f7f9fb 0%,#f5f7fa 45%,#e7ebf0 100%)}
+  html.ui-c:not([data-theme="dark"]) body{background:var(--sea) fixed #f5f7fa}
   /* the menu takes the same treatment it takes in dark: a quiet vertical fall, so the
      two modes are the same design and not two designs */
   html.ui-c:not([data-theme="dark"]) .shell > nav{
     background:linear-gradient(180deg,#ffffff 0%,#ffffff 40%,#e5f2fa 100%);border-right:1px solid var(--rule)}   /* white into a soft Novikontas Blue #53a7db tint (15% on white), the owner 02.10.2026 */
-  html.ui-c[data-theme="dark"] body{background:radial-gradient(120% 80% at 50% 0%,#17456e 0%,rgba(23,69,110,0) 60%),
-      linear-gradient(180deg,#0f2f4f 0%,#0f2f4f 45%,#08182e 100%) fixed #0f2f4f}
+  html.ui-c[data-theme="dark"] body{background:var(--sea) fixed #0f2f4f}
   html.ui-c[data-theme="dark"] .shell > nav{background:linear-gradient(180deg,rgba(8,24,46,.78) 0%,rgba(8,24,46,.92) 100%);border-right:1px solid rgba(194,211,222,.10)}
   html.ui-c[data-theme="dark"] :is(.c-health,.c-sheet,.c-seg,.c-said,.c-card,.c-jp,.c-folded,.c-next.c-finished,.kstrip,.ksec){
     background:var(--glass);border:1px solid var(--glass-line);
@@ -1477,9 +1479,9 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   /* WHAT WAS SAID, on the Journey card (the review, #3). The conversation, not the history:
      notes and calls a person wrote, newest first, three at a time. */
   /* why people stop, against the list the server actually enforces */
-  /* ------------------------------------------------ Channels, A and B -- */
+  /* ------------------------------------------ Channels, A and B (Session 3) -- */
   /* The A/B switch is a REVIEW control. It is deliberately plain, so it cannot be
-     mistaken for part of the product, and it goes when C is settled. */
+     mistaken for part of the product, and it goes when one is picked. */
   html.ui-c .chhead{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
   html.ui-c .chhead h1{margin:0}
   html.ui-c .chab{margin-left:auto;display:flex;border:1px solid var(--rule);border-radius:8px;overflow:hidden}
@@ -1487,58 +1489,178 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
     font:inherit;font-size:12px;color:var(--t3);padding:5px 11px}
   html.ui-c .chab button+button{border-left:1px solid var(--rule)}
   html.ui-c .chab button.on{background:var(--surface-2);color:var(--ink);font-weight:600}
-  html.ui-c .chenv,html.ui-c .chcount{margin:10px 0 0}
-  html.ui-c .chcount{margin-bottom:14px}
+  html.ui-c .chenv{margin:10px 0 16px}
 
-  /* A: four pips, one per step. Blue is progress, the hairline is not-yet, and a
-     failed check is the only red on the screen. A blocked step is hollow with a ring,
-     never coloured as though it were progress. */
-  html.ui-c .chpips{display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
-  html.ui-c .chpips i{width:7px;height:7px;border-radius:50%;background:var(--rule);display:block}
-  html.ui-c .chpips i.p-done{background:var(--v-adm)}
-  html.ui-c .chpips i.p-blocked{background:transparent;box-shadow:inset 0 0 0 1.5px var(--t4)}
-  html.ui-c .chpips i.p-failed{background:var(--bad)}
-  html.ui-c .chpips em{font-style:normal;font-size:10.5px;color:var(--t4);margin-left:5px}
-  html.ui-c .chtable .chcred{font-size:11px;color:var(--t4);font-variant-ligatures:none;overflow-wrap:anywhere}
-  html.ui-c .chtable .chnext{font-size:11.5px;color:var(--t3);line-height:1.45;max-width:30em;overflow-wrap:anywhere}
-  html.ui-c .chtable .chstate{white-space:nowrap}
+  /* STATE COLOURS. Data blue and the data mustard (KB 08 P5), the existing --v-lead
+     for configured, grey for by hand. Blocked by a provider is mustard HATCHED: it is
+     the same "somebody must act" family, and the hatch says the somebody is outside.
+     Every mark also carries its word, so colour never carries a state alone. */
+  html.ui-c{--k-live:#29a8df;--k-conf:var(--v-lead);--k-owner:#E0A526;--k-hand:var(--v-np);--k-none:var(--rule)}
+  html.ui-c .chk{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;
+    color:var(--t2);white-space:nowrap}
+  html.ui-c .chk::before{content:"";width:8px;height:8px;border-radius:2px;background:var(--k-none)}
+  html.ui-c .chk.k-live::before{background:var(--k-live)}
+  html.ui-c .chk.k-conf::before{background:var(--k-conf)}
+  html.ui-c .chk.k-owner::before{background:var(--k-owner)}
+  html.ui-c .chk.k-prov::before{background:repeating-linear-gradient(135deg,var(--k-owner) 0 2px,transparent 2px 4px);box-shadow:inset 0 0 0 1px var(--k-owner)}
+  html.ui-c .chk.k-hand::before{background:var(--k-hand)}
+  html.ui-c .chk.k-park::before,html.ui-c .chk.k-drop::before{background:transparent;box-shadow:inset 0 0 0 1px var(--t4)}
+  html.ui-c .chk.k-park,html.ui-c .chk.k-drop{color:var(--t4);font-weight:500}
 
-  /* B: grouped by how far along, each channel a card with its four steps as a track */
-  html.ui-c .chc{margin:0 0 22px}
-  html.ui-c .chc h2{display:flex;align-items:baseline;gap:9px;margin:0 0 10px;font-size:14px;font-weight:650}
-  html.ui-c .chc h2 small{font-size:11.5px;font-weight:400;color:var(--t4)}
-  html.ui-c .chc-n{font-size:11px;font-weight:600;color:var(--t3);background:var(--surface-2);
-    border-radius:20px;padding:1px 8px}
-  html.ui-c .chc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:12px}
-  html.ui-c .chcard{border:1px solid var(--rule);border-radius:12px;background:var(--card);
-    padding:13px 15px 10px;cursor:pointer;display:flex;flex-direction:column;gap:9px}
-  html.ui-c .chcard:hover,html.ui-c .chcard:focus-visible{background:var(--surface-2)}
-  html.ui-c .chcard header{display:flex;align-items:center;gap:8px}
-  html.ui-c .chcard header b{font-size:13.5px}
-  html.ui-c .chcard header .chstate{margin-left:auto;white-space:nowrap}
-  html.ui-c .chtrack{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
-  html.ui-c .chtrack span{display:flex;flex-direction:column;gap:4px;min-width:0}
-  html.ui-c .chtrack i{height:3px;border-radius:2px;background:var(--rule);display:block}
-  html.ui-c .chtrack u{text-decoration:none;font-size:9.5px;letter-spacing:.03em;
-    color:var(--t4);text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  html.ui-c .chtrack .t-done i{background:var(--v-adm)}
-  html.ui-c .chtrack .t-done u{color:var(--t3)}
-  html.ui-c .chtrack .t-blocked i{background:repeating-linear-gradient(90deg,var(--t4) 0 2px,transparent 2px 4px)}
-  html.ui-c .chtrack .t-failed i{background:var(--bad)}
-  html.ui-c .chcard-n{margin:0;font-size:11.5px;line-height:1.5;color:var(--t3);overflow-wrap:anywhere}
-  html.ui-c .chcard-n b{display:block;color:var(--ink);font-size:12px}
-  html.ui-c .chcard footer{margin-top:auto;padding-top:7px;border-top:1px solid var(--rule);
-    font-size:11px;color:var(--t4)}
+  /* THE FRAME: the page's own sea (--sea), and a rim BELOW it drawn once in SVG,
+     uniform along its whole length. Depth belongs to the frame; nothing on it is data. */
+  html.ui-c .chdeck{position:relative;isolation:isolate;margin:0 0 30px;border-radius:16px;
+    background:var(--sea);border:1px solid var(--rule)}
+  html.ui-c .chdeck .chrim{position:absolute;left:0;right:0;bottom:-7px;width:100%;height:16px;z-index:-1}
+  html.ui-c .chdeck .chrim path{fill:#d3dce6}
+  html.ui-c[data-theme="dark"] .chdeck{border-color:var(--glass-line);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.07)}
+  html.ui-c[data-theme="dark"] .chdeck .chrim path{fill:#08182e}
+  html.ui-c .chdeck-in{padding:18px 20px 20px;display:grid;gap:16px;border-radius:16px;overflow:hidden}
 
-  /* Shelved and integrations: present, quiet, and not work */
+  /* the figures, Square-style: a small label above, the number at display size */
+  html.ui-c .chfigs{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:10px}
+  html.ui-c .chfig{display:grid;grid-template-columns:1fr auto;align-items:end;gap:2px 8px;
+    background:var(--card);border:1px solid var(--rule);border-radius:12px;padding:10px 12px}
+  html.ui-c[data-theme="dark"] .chfig{background:var(--glass);border-color:var(--glass-line)}
+  html.ui-c .chfig small{grid-column:1 / -1;font-size:11px;color:var(--t3);line-height:1.3}
+  html.ui-c .chfig b{font-size:30px;line-height:1;font-weight:650;font-variant-numeric:tabular-nums;color:var(--ink)}
+  html.ui-c .chfig .sw{width:10px;height:10px;border-radius:2px;margin-bottom:5px}
+  html.ui-c .chfig .sw.k-live{background:var(--k-live)} html.ui-c .chfig .sw.k-conf{background:var(--k-conf)}
+  html.ui-c .chfig .sw.k-owner{background:var(--k-owner)} html.ui-c .chfig .sw.k-hand{background:var(--k-hand)}
+  html.ui-c .chfig .sw.k-none{background:var(--k-none)}
+  html.ui-c .chfig .sw.k-prov{background:repeating-linear-gradient(135deg,var(--k-owner) 0 2px,transparent 2px 4px);box-shadow:inset 0 0 0 1px var(--k-owner)}
+  html.ui-c .chfig-total b{color:var(--k-live)}
+
+  /* the twelve slots: equal, flat, counted */
+  html.ui-c .chslots{display:block;width:100%;height:14px}
+  html.ui-c .chslots rect{fill:var(--k-none)}
+  html.ui-c .chslots rect.k-live{fill:var(--k-live)} html.ui-c .chslots rect.k-conf{fill:var(--k-conf)}
+  html.ui-c .chslots rect.k-owner{fill:var(--k-owner)} html.ui-c .chslots rect.k-hand{fill:var(--k-hand)}
+  html.ui-c .chslots rect.k-prov{fill:transparent;stroke:var(--k-owner);stroke-width:.35;stroke-dasharray:.6 .4}
+
+  /* ---- A: lanes of people, cards of work */
+  html.ui-c .chlane{margin:0 0 26px}
+  html.ui-c .chlane h2{display:flex;align-items:baseline;gap:9px;margin:0 0 10px;font-size:14px;font-weight:650}
+  html.ui-c .chc-n{font-size:11px;font-weight:600;color:var(--t3);background:var(--surface-2);border-radius:20px;padding:1px 8px}
+  html.ui-c .chlane-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,310px),1fr));gap:12px}
+  html.ui-c .chq{border:1px solid var(--rule);border-radius:12px;background:var(--card);padding:13px 15px 10px;
+    display:flex;flex-direction:column;gap:9px;min-width:0}
+  html.ui-c[data-theme="dark"] .chq{background:var(--glass);border-color:var(--glass-line)}
+  html.ui-c .chq header{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  html.ui-c .chq header b{font-size:14px;margin-right:auto}
+  html.ui-c .chq-do{margin:0;font-size:13px;line-height:1.45;color:var(--ink);font-weight:550}
+  html.ui-c .chq-in,html.ui-c .chq-to{margin:0;font-size:11.5px;line-height:1.45;color:var(--t3)}
+  html.ui-c .chq-in span,html.ui-c .chq-to span{display:block;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--t4)}
+  html.ui-c .chq footer{margin-top:auto;padding-top:7px;border-top:1px solid var(--rule);font-size:11.5px}
+
+  /* the evidence ladder: four steps, one honest word each, dated */
+  html.ui-c .chev{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+  html.ui-c .chev li{display:flex;flex-direction:column;gap:3px;min-width:0}
+  html.ui-c .chev i{height:4px;border-radius:2px;background:var(--rule);display:block}
+  html.ui-c .chev span{font-size:9.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--t4);line-height:1.2}
+  html.ui-c .chev em{font-style:normal;font-size:11px;color:var(--t2);line-height:1.3}
+  html.ui-c :is(.chev li,.chcell).e-yes i{background:var(--k-live)}
+  html.ui-c :is(.chev li,.chcell).e-part i{background:linear-gradient(90deg,var(--k-live) 50%,var(--rule) 50%)}
+  html.ui-c :is(.chev li,.chcell).e-wait i{background:repeating-linear-gradient(90deg,var(--k-owner) 0 3px,transparent 3px 5px)}
+  html.ui-c :is(.chev li,.chcell).e-conflict i{background:repeating-linear-gradient(90deg,var(--k-live) 0 3px,var(--bad) 3px 6px)}
+  html.ui-c :is(.chev li,.chcell).e-na i{background:transparent;box-shadow:inset 0 0 0 1px var(--rule)}
+  html.ui-c :is(.chev li,.chcell).e-conflict em,html.ui-c .chcell.e-conflict span{color:var(--bad);font-weight:600}
+
+  /* the blocker, always whole: dependency, who holds it, what it needs, which side */
+  html.ui-c .chblk{margin:0;display:grid;gap:3px;font-size:11.5px;line-height:1.4;
+    border-left:3px solid var(--k-owner);padding:6px 0 6px 9px;background:transparent}
+  html.ui-c .chblk.ext{border-left-style:dashed}
+  html.ui-c .chblk.chnext{border-left-color:var(--k-live)}
+  html.ui-c .chblk{min-width:0;white-space:normal}
+  html.ui-c .chblk div{display:grid;grid-template-columns:5.2em minmax(0,1fr);gap:8px;min-width:0}
+  html.ui-c .chblk dt{color:var(--t4);font-size:10px;letter-spacing:.05em;text-transform:uppercase;padding-top:1px}
+  html.ui-c .chblk dd{margin:0;color:var(--t2);overflow-wrap:anywhere}
+  html.ui-c .chgate{margin:0;font-size:11px;color:var(--t3);line-height:1.45}
+  html.ui-c .chconf{border:1px solid var(--bad);border-radius:9px;padding:8px 10px;font-size:11.5px;line-height:1.45;color:var(--t2)}
+  html.ui-c .chconf ul{margin:5px 0;padding:0;list-style:none;display:grid;gap:3px}
+  html.ui-c .chconf li span{display:block;font-size:10px;color:var(--t4);letter-spacing:.03em}
+  html.ui-c .chconf p{margin:4px 0 0}
+  html.ui-c .chnote{border-left:3px solid var(--k-live);padding:4px 0 4px 9px;font-size:11.5px;line-height:1.45;color:var(--t2);display:grid;gap:4px}
+  html.ui-c .chnote p{margin:0}
+  html.ui-c .chmb{list-style:none;margin:0;padding:0;display:grid;gap:3px}
+  html.ui-c .chmb li span{margin-left:6px;font-weight:600}
+  html.ui-c .chmb li.m-live span{color:var(--k-live)}
+  html.ui-c .chmb li.m-not_connected span{color:var(--t4)}
+  html.ui-c .chmb small{display:block;color:var(--t4);font-size:10.5px}
+
+  /* ---- B: the lifecycle strip, the ledger, the inspector */
+  html.ui-c .chflow{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px;font-size:11.5px}
+  html.ui-c .chflow li{position:relative;padding:5px 12px 5px 10px;border-radius:7px;border:1px solid var(--rule);color:var(--t4)}
+  html.ui-c .chflow li.ours{color:var(--ink);background:var(--card);font-weight:600;
+    box-shadow:0 2px 0 var(--rule)}
+  html.ui-c[data-theme="dark"] .chflow li.ours{background:var(--glass);box-shadow:0 2px 0 #08182e}
+  html.ui-c .chflow li:first-child{border-color:var(--k-live);color:var(--k-live)}
+  html.ui-c .chflow li+li::before{content:"\2192";position:absolute;left:-10px;top:5px;color:var(--t4);font-weight:400}
+  html.ui-c .chflow li.down{border-style:dashed}
+  html.ui-c .chledger{display:grid;grid-template-columns:minmax(0,1fr) minmax(250px,300px);gap:16px;align-items:start}
+  html.ui-c .chmx th[scope=row]{text-align:left;font-weight:400;text-transform:none;letter-spacing:0;font-size:13px;color:var(--ink)}
+  html.ui-c .chmx td,html.ui-c .chmx th{padding-left:8px;padding-right:8px}
+  html.ui-c .chmx .chk{white-space:normal}
+  html.ui-c .chmx thead th{white-space:normal;vertical-align:bottom}
+  html.ui-c .chmx tr.on{background:var(--surface-2);box-shadow:inset 3px 0 0 var(--k-live)}
+  html.ui-c .chmx tbody tr{cursor:pointer}
+  html.ui-c .chcell{min-width:62px}
+  html.ui-c .chcell i{display:block;height:4px;border-radius:2px;background:var(--rule);margin-bottom:4px}
+  html.ui-c .chcell span{font-size:12px;color:var(--t2)}
+  html.ui-c .chcell small{display:block;font-size:10px;color:var(--t4)}
+  html.ui-c .chloc,html.ui-c .chloc-h{font-size:10.5px;color:var(--t4);font-style:italic}
+  html.ui-c .chmx tfoot td,html.ui-c .chmx tfoot th{font-size:11.5px;color:var(--t3);border-top:1px solid var(--rule);text-align:left}
+  html.ui-c .chmx tfoot b{font-size:15px;color:var(--ink);font-variant-numeric:tabular-nums}
+  html.ui-c .chinsp{position:sticky;top:12px}
+  html.ui-c .chinsp-in{border:1px solid var(--rule);border-radius:12px;background:var(--card);padding:14px 15px;display:grid;
+    grid-template-columns:minmax(0,1fr);gap:10px;overflow-wrap:anywhere}
+  html.ui-c .chq{overflow-wrap:anywhere}
+  html.ui-c[data-theme="dark"] .chinsp-in{background:var(--glass);border-color:var(--glass-line)}
+  html.ui-c .chinsp h2{margin:0;font-size:15px;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  html.ui-c .chinsp h3{margin:4px 0 0;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--t4);font-weight:600}
+  html.ui-c .chinsp .c-ev{margin:0}
+  html.ui-c .chsrc{list-style:none;margin:0;padding:0;display:grid;gap:6px;font-size:11.5px;color:var(--t2)}
+  html.ui-c .chsrc small{display:block;font-size:10.5px;color:var(--t4);line-height:1.4;overflow-wrap:anywhere}
+  html.ui-c .chinsp .btn{justify-self:start}
+
+  /* THE TWO SCENES per variant (KB 08 P5: at most two, once, slower not faster, no
+     scaling of any mark). A: the slots fill one by one, then the lanes rise in.
+     B: the proofs travel left to right across the ledger, then the inspector arrives. */
+  html.ui-c .chv-a .chslots rect{animation:ch-fade .5s ease-out backwards;animation-delay:calc(var(--i,0) * 70ms + 120ms)}
+  html.ui-c .chv-a .chlane{animation:ch-lift .6s cubic-bezier(.22,.9,.3,1) backwards;animation-delay:calc(var(--l,0) * 110ms + 700ms)}
+  html.ui-c .chv-b .chcell{animation:ch-lift .55s cubic-bezier(.22,.9,.3,1) backwards;animation-delay:calc(var(--j,0) * 160ms + 100ms)}
+  html.ui-c .chv-b .chinsp,html.ui-c .chv-b .chinsp.arrive{animation:ch-lift .5s cubic-bezier(.22,.9,.3,1) backwards}
+  html.ui-c .chv-b .chinsp{animation-delay:800ms}
+  html.ui-c .chv-b .chinsp.arrive{animation-delay:0ms}
+  @keyframes ch-fade{from{opacity:0}to{opacity:1}}
+  @keyframes ch-lift{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @media(prefers-reduced-motion:reduce){
+    html.ui-c .chv-a .chslots rect,html.ui-c .chv-a .chlane,html.ui-c .chv-b .chcell,html.ui-c .chv-b .chinsp{animation:none}
+  }
+
+  /* phone width: the ledger becomes one card per channel, each proof labelled */
+  @media (max-width:1100px){ html.ui-c .chledger{grid-template-columns:minmax(0,1fr)} html.ui-c .chinsp{position:static} }
+  @media (max-width:720px){
+    html.ui-c .chmx thead{display:none}
+    html.ui-c .chmx,html.ui-c .chmx tbody,html.ui-c .chmx tfoot{display:block;min-width:0;width:100%}
+    html.ui-c .chmx tr{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;padding:10px 4px;border-bottom:1px solid var(--rule)}
+    html.ui-c .chmx tr > *{border:0;padding:0}
+    html.ui-c .chmx th[scope=row],html.ui-c .chmx tfoot th{grid-column:1 / -1}
+    html.ui-c .chmx td[data-label]::before{content:attr(data-label);display:block;font-size:9.5px;letter-spacing:.05em;
+      text-transform:uppercase;color:var(--t4);font-style:normal}
+    html.ui-c .chev{grid-template-columns:repeat(2,minmax(0,1fr))}
+    html.ui-c .chdeck-in{padding:14px}
+    html.ui-c .chfig b{font-size:24px}
+  }
+
+  /* Not current, and downstream: present, quiet, and not work */
   html.ui-c .chshelf{margin:26px 0 0;padding-top:14px;border-top:1px solid var(--rule)}
   html.ui-c .chshelf h2{margin:0 0 8px;font-size:12.5px;font-weight:650;color:var(--t3)}
   html.ui-c .chshelf h2 small{font-weight:400;color:var(--t4)}
   html.ui-c .chshelf ul{list-style:none;margin:0;padding:0;display:grid;gap:7px}
   html.ui-c .chshelf li{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:12px}
   html.ui-c .chshelf li small{flex:1 1 20em;min-width:0;font-size:11px;color:var(--t4);line-height:1.45}
-  html.ui-c .chlife{font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;
-    border:1px solid var(--rule);border-radius:4px;padding:1px 5px;color:var(--t4)}
   /* Admissions second axis: dormant or declined. Two choices, each saying what it means,
      because "cold" and "reject" are Admissions own words and not everyone's. */
   html.ui-c .cltags{display:grid;gap:7px;margin-top:2px}
@@ -1563,6 +1685,57 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   @media(prefers-reduced-motion:reduce){
     html.ui-c .kseg,html.ui-c .kwall{animation:none}
   }
+  /* APPLICATIONS (Reports, 02.10.2026). The chapter is a FRAME with depth: the locked sea,
+     radial-gradient(120% 80% at 50% 0%, <glow> 0%, transparent 60%) over the vertical deepening,
+     the same values as the page (#fbfcfd light, #17456e dark), and a soft shadow. The marks
+     inside stay flat and exact (KB 08 P5, depth belongs to the frame, never the mark).
+     Two sources, two colours: web traffic in the data mustard #E0A526, the SIS in logo blue. */
+  html.ui-c{--v-web:#E0A526}
+  html.ui-c .c-apps{position:relative;margin-top:26px;padding:18px 18px 6px;border-radius:18px;border:1px solid var(--rule);
+    background:radial-gradient(120% 80% at 50% 0%,#fbfcfd 0%,rgba(251,252,253,0) 60%),linear-gradient(180deg,#f7f9fb 0%,#f5f7fa 45%,#e7ebf0 100%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 16px 36px rgba(10,36,99,.08),0 2px 6px rgba(10,36,99,.05)}
+  html.ui-c[data-theme="dark"] .c-apps{border-color:var(--glass-line);
+    background:radial-gradient(120% 80% at 50% 0%,#17456e 0%,rgba(23,69,110,0) 60%),linear-gradient(180deg,#0f2f4f 0%,#0f2f4f 45%,#08182e 100%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 18px 40px rgba(3,12,26,.34)}
+  html.ui-c .c-apps > .ksec{margin-bottom:14px}
+  html.ui-c .c-apps-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin:0 0 8px}
+  html.ui-c .c-apps-head h2{margin:0;font-size:20px;font-weight:650;letter-spacing:-.01em}
+  html.ui-c .c-apps-path{font-size:12.5px;color:var(--t3)}
+  html.ui-c .c-apps-path i{font-style:normal;color:var(--t4);margin:0 3px}
+  html.ui-c .c-appstate{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin:0 0 14px;font-size:12.5px;color:var(--t3)}
+  html.ui-c .c-appstate b{color:var(--ink);font-weight:650;font-variant-numeric:tabular-nums}
+  html.ui-c .c-appchip{display:inline-block;padding:2px 9px;border-radius:999px;font-weight:650;font-size:12px;color:var(--ink);border:1px solid var(--v-adm)}
+  html.ui-c .c-appchip.is-live{background:var(--v-adm);color:#08182e;border-color:var(--v-adm)}
+  html.ui-c .c-appchip.is-off{border-color:var(--v-np);color:var(--t3)}
+  html.ui-c .c-appempty{padding:6px 0}
+  html.ui-c .c-fsteps{display:grid;gap:6px;margin:6px 0 8px}
+  html.ui-c .c-fsteps[role="link"]{cursor:pointer}
+  html.ui-c .c-fgroup{display:grid;gap:6px}
+  html.ui-c .c-fgroup + .c-fgroup{padding-top:10px;margin-top:4px;border-top:1px solid var(--rule)}
+  html.ui-c .c-fgroup h3{margin:0;font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--t3)}
+  html.ui-c .c-fghead th{font-size:11px;font-weight:600;color:var(--t3);text-align:left;border-bottom:1px solid var(--rule)}
+  html.ui-c .c-fstep{display:grid;grid-template-columns:minmax(0,9em) minmax(40px,1fr) 3em;align-items:center;gap:10px;font-size:13px}
+  html.ui-c .c-fstep b{text-align:right;font-variant-numeric:tabular-nums}
+  html.ui-c .c-fbar{display:block;height:12px;border-radius:3px;background:var(--v-grid)}
+  html.ui-c .c-fbar i{display:block;height:100%;border-radius:3px;background:var(--v-adm);transform-origin:left}
+  html.ui-c .c-fapart{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12.5px;color:var(--t3);margin:0 0 12px}
+  html.ui-c .c-fapart b{color:var(--ink);font-variant-numeric:tabular-nums}
+  html.ui-c .c-ftable{overflow-x:auto;margin:0 0 12px;-webkit-overflow-scrolling:touch}
+  html.ui-c .c-fgrid{min-width:620px}
+  html.ui-c .c-fgrid caption{text-align:left;font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--t3);padding:0 0 6px}
+  html.ui-c .c-fgrid th[scope="row"]{white-space:nowrap;font-weight:650}
+  html.ui-c .c-fgrid th[scope="row"] small{display:block;font-weight:400;font-size:11px;color:var(--t4)}
+  html.ui-c .c-fgrid td{white-space:nowrap}
+  html.ui-c .c-fgrid td b{font-variant-numeric:tabular-nums;margin-left:6px}
+  html.ui-c .c-fcell{display:inline-block;vertical-align:middle;width:44px;height:6px;border-radius:2px;background:var(--v-grid)}
+  html.ui-c .c-fcell i{display:block;height:100%;border-radius:2px;background:var(--v-adm)}
+  html.ui-c .c-fcell i.np{background:var(--v-np)}
+  /* the chapter's ONE scene: the step bars draw from the left, once, in order */
+  html.ui-c .c-apps:not(.is-in) .c-fbar i{transform:scaleX(0)}
+  html.ui-c .c-apps.is-in .c-fbar i{transition:transform .7s cubic-bezier(.22,.9,.3,1)}
+  html.ui-c .c-apps.is-in .c-fstep .c-fbar i{transition-delay:calc(var(--i,0) * 90ms)}
+  @media(prefers-reduced-motion:reduce){ html.ui-c .c-apps:not(.is-in) .c-fbar i{transform:none} html.ui-c .c-apps.is-in .c-fbar i{transition:none} }
+  @media(max-width:640px){ html.ui-c .c-apps{padding:14px 12px 4px;border-radius:14px} html.ui-c .c-fstep{grid-template-columns:minmax(0,7.5em) minmax(30px,1fr) 2.6em} }
   html.ui-c .c-reasons{margin:0 0 14px}
   html.ui-c .c-reasons h3{margin:0 0 7px;font-size:13px;font-weight:650;display:flex;align-items:baseline;gap:8px}
   html.ui-c .c-reasons h3 b{font-weight:500;font-size:11.5px;color:var(--t4)}
@@ -1953,7 +2126,7 @@ svg .m-flag-mark{transform-origin:0 100%}
     <a class="item" href="#/followup" data-icon="clock" title="What has to happen, and when"><span>Follow-ups</span></a>
     <a class="item" href="#/people" data-icon="people" title="Everybody we hold"><span>People</span></a>
     <a class="item" href="#/reports" data-icon="chart" title="Numbers for a KPI meeting"><span>Reports</span></a>
-    <div class="add"><button class="btn" style="width:100%" onclick="openAdd()">+ Add person</button></div>
+    <div class="add"><button class="btn" style="width:100%" onclick="openAdd()">+ Add lead</button></div>
 
     <div class="navsplit"></div>
     <div class="themes" style="border-top:none;padding-top:0" id="actorBlock">
@@ -2217,7 +2390,9 @@ const C_SIS_HOLDS = ['started', 'submitted', 'admitted', 'matriculated'];
 const cSisHolds = (p) => Boolean(p && p.first_channel === 'sis' && p.sis && C_SIS_HOLDS.includes(p.sis.status));
 const cSisHeld = (p) => `In the SIS: ${esc((p.sis && p.sis.label) || '')}`;
 // /api/people answers { count, rows } and returns every row: no paging, no cap.
-const cPeopleRows = async () => ((await api('/api/people')) || {}).rows || [];
+// Each person's stage as last read, so a dialog opened from any list can offer the steps that fit it.
+const C_STAGE_OF = new Map();
+const cPeopleRows = async () => { const rows = ((await api('/api/people')) || {}).rows || []; rows.forEach((p) => C_STAGE_OF.set(p.id, p.status)); return rows; };
 const C_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 function installCNav() {
@@ -2372,7 +2547,11 @@ async function routeC(page, arg) {
   if (page === 'person') return viewPerson(arg);
   if (page === 'channels') return viewChannels(arg);
   if (page === 'feedback') return viewFeedback();
-  if (place === 'reports') return viewReports();
+  if (place === 'reports') {
+    await viewReports();
+    if (arg === 'applications') { const a = $('#applications'); if (a) a.scrollIntoView({ block: 'start' }); }
+    return;
+  }
   if (place === 'leads') return viewLeadsC();
   // People is two views behind one menu item: Journey is the operational one and opens
   // by default, All people is the whole database. #/journey and #/people both land here;
@@ -2766,7 +2945,7 @@ async function viewTodayC() {
       <div class="c-who"><b>${esc(t.name)}</b><small>${esc(t.programme || 'programme not said')} · ${esc(t.status)}</small>${reach(byId.get(t.person_id))}</div>
       <div class="c-what">${cStepIcon(t.label)}${esc(cTask(t.label))}${said(byId.get(t.person_id))}</div><div class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</div>
       <div class="c-acts"><button class="btn sm" onclick="event.stopPropagation();openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, ${
-        C_TERMINAL.includes((byId.get(t.person_id) || {}).status)})">Done</button></div></div>`;
+        C_TERMINAL.includes((byId.get(t.person_id) || {}).status)}, '${esc(t.person_id)}')">Done</button></div></div>`;
   const pRow = (p) => `<div class="c-line" tabindex="0" onclick="location.hash='#/person/${esc(p.id)}'">
       <div class="c-who"><b>${esc(p.name)}</b><small>${esc(p.programme || 'programme not said')} · ${esc(p.status)}</small>${reach(p)}</div>
       <div class="c-what none">No next step${said(p)}</div><div class="c-when"></div>
@@ -2794,6 +2973,9 @@ async function viewTodayC() {
 }
 
 // -------------------------------------------------------------------- OUTCOMES
+// Cold or reject, the SECOND axis on Not proceeding (Admissions, 30.09.2026). Empty when
+// the person carries no tag, so a close from before the tag existed reads as it always did.
+const cTagLabel = (p) => ((CFG.closedTags || []).find((t) => t.id === p.closed_tag) || {}).label || '';
 // Two destinations. A reason is a detail of Not proceeding, never a place of its own.
 let C_OUTCOME = 'Admitted';
 // Cold / reject, Admissions 30.09: a filter on Not proceeding only, so the cold ones can be picked
@@ -2987,8 +3169,7 @@ async function viewLeadsC() {
     </div>`;
   };
   $('#view').innerHTML = `<p class="c-crumb">Admissions</p>
-    <div class="c-head"><div><h1>Inbox</h1></div>
-      <div class="act"><button class="btn" onclick="openAdd()">Add lead</button></div></div>
+    <div class="c-head"><div><h1>Inbox</h1></div></div>
     ${receipt}
     <div class="c-sheet">${rows.length ? rows.map((r) => `<div class="c-line row c-lead${C_LOPEN === r.id ? ' is-open' : ''}" tabindex="0" onclick="C_LOPEN=${C_LOPEN === r.id ? 'null' : Number(r.id)};viewLeadsC()">
         <div class="c-who"><b class="c-reach">${esc(r.contact_name || r.contact_handle || '') || cTelLink({ phone: r.contact_phone }) || 'Unknown'}</b><small>${esc(channelLabel(r.channel))} · ${fmtDateTime(r.received_at)}${r.aged ? ' · <span class="c-late">late</span>' : ''}</small></div>
@@ -3013,7 +3194,7 @@ let C_PF = C_PF_EMPTY(); let C_PQ = ''; let C_PEDIT = null; let C_PMSG = ''; let
 const cStage = (id) => ((CFG.stages || []).find((s) => s.id === id) || {}).label || id || '';
 const cClosedStage = () => (CFG.stageRoles || {}).closed;
 // Journey's Edit opens the same person in People, unfiltered, scrolled to the row.
-function cEditFromJourney(id) { C_PF = C_PF_EMPTY(); C_PQ = ''; C_PEDIT = id; C_PMSG = ''; C_PSCROLL = true; location.hash = '#/people'; }
+function cEditFromJourney(id) { C_PF = C_PF_EMPTY(); C_PQ = ''; C_PEDIT = id; C_PMSG = ''; C_PSCROLL = true; C_PTAB = 'all'; if (location.hash === '#/people/all') viewPeopleC(); else location.hash = '#/people/all'; }
 async function viewPeopleC() {
   const [people, tasks] = await Promise.all([cPeopleRows(), api('/api/tasks?scope=open')]);
   const taskOf = new Map(); tasks.forEach((t) => { if (!taskOf.has(t.person_id)) taskOf.set(t.person_id, t); });
@@ -3037,7 +3218,7 @@ function cDrawPeople() {
       <td>${t ? `<span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span>` : ''}</td></tr>
       ${C_PEDIT === p.id ? `<tr class="c-edit"><td colspan="5">${cEditForm(p, t)}</td></tr>` : ''}`; };
   $('#view').innerHTML = `<div class="c-head"><div><h1>People</h1></div>
-      <div class="act"><input class="c-search" id="cPQ" placeholder="Search name, email or phone" value="${esc(C_PQ)}" aria-label="Search people"><button class="btn" onclick="openAdd()">Add person</button></div></div>
+      <div class="act"><input class="c-search" id="cPQ" placeholder="Search name, email or phone" value="${esc(C_PQ)}" aria-label="Search people"><button class="btn" onclick="openAdd()">Add lead</button></div></div>
     ${cPeopleTabs('all')}
     ${cPeopleFilters(people)}
     <p class="c-explain">${explain}</p>
@@ -3053,7 +3234,10 @@ const C_PF_DATA = [['nocontact', 'No email or phone'], ['odd', 'Programme not in
 function cPeopleMatch(p, t, f, known) {
   const open = !C_TERMINAL.includes(p.status);
   if (f.stage === 'open' && !open) return false;
-  if (f.stage && f.stage !== 'open' && p.status !== f.stage) return false;
+  // "Not proceeding · Cold": the cold ones, for marketing (Admissions 30.09, the owner's MVP 02.10)
+  if (f.stage && f.stage.startsWith('tag:')) {
+    if (p.status !== ((CFG.stageRoles || {}).closed || 'Not proceeding') || p.closed_tag !== f.stage.slice(4)) return false;
+  } else if (f.stage && f.stage !== 'open' && p.status !== f.stage) return false;
   if (f.due === 'none') { if (!open || t || cSisHolds(p)) return false; }
   else if (f.due && !(t && cWhenClass(t.due_at) === f.due)) return false;
   if (f.data === 'nocontact' && (p.email || p.phone)) return false;
@@ -3071,7 +3255,9 @@ function cPeopleFilters(people) {
   const progs = distinct('programme').sort((a, b) => (known.indexOf(a) + 1 || 99) - (known.indexOf(b) + 1 || 99) || a.localeCompare(b));
   const owners = [...new Set([...(CFG.owners || []), ...distinct('owner')])];
   const sources = distinct('source_channel').sort((a, b) => a.localeCompare(b));
-  const stages = [['open', 'Open'], ...(CFG.stages || []).map((s) => [s.id, s.label || s.id])];
+  const closed = (CFG.stageRoles || {}).closed || 'Not proceeding';
+  const stages = [['open', 'Open'], ...(CFG.stages || []).map((s) => [s.id, s.label || s.id]),
+    ...(CFG.closedTags || []).map((t) => ['tag:' + t.id, closed + ' · ' + (t.label || t.id)])];
   const name = (k, v) => (v === cNotSaid ? 'not recorded' : k === 'source' ? channelLabel(v) : v);
   const box = (k, label, values) => `<label class="c-jf${C_PF[k] ? ' on' : ''}"><span>${label}</span><select aria-label="${label}" onchange="C_PF.${k}=this.value;cDrawPeople()">
       <option value="">All</option>${values.map(([v, t]) => `<option value="${esc(v)}"${C_PF[k] === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`;
@@ -3098,10 +3284,10 @@ function cEditForm(p, t) {
     <div><label for="pe-phone">Phone</label><input id="pe-phone" value="${esc(p.phone || '')}" placeholder="not recorded"></div>
     <div><label for="pe-programme">Programme</label><select id="pe-programme">${progs.map((x) => `<option value="${esc(x)}" ${x === (p.programme || '') ? 'selected' : ''}>${esc(x || '(not said)')}</option>`).join('')}</select></div>
     <div><label for="pe-status">Stage</label><select id="pe-status" onchange="document.querySelector('#pe-closed').hidden = this.value !== ${esc(JSON.stringify(closed))}">${stages.map((s) => `<option value="${esc(s.id)}" ${s.id === p.status ? 'selected' : ''}>${esc(s.label || s.id)}</option>`).join('')}</select></div>
-    <div id="pe-closed" hidden><label for="pe-reason">Why are we stopping?</label><select id="pe-reason">${(CFG.closedReasons || []).map((r) => `<option>${esc(r)}</option>`).join('')}</select><input id="pe-rnote" placeholder="Explanation (needed for Other)" style="margin-top:6px"></div>
+    <div id="pe-closed" hidden><label for="pe-reason">Why are we stopping?</label><select id="pe-reason">${reasonsForStage(p.status).map((r) => `<option>${esc(r)}</option>`).join('')}</select><input id="pe-rnote" placeholder="Explanation (needed for Other)" style="margin-top:6px"><label style="margin-top:8px">And now?</label><div class="cltags">${(CFG.closedTags || []).map((x, i) => `<label class="cltag"><input type="radio" name="peTag" value="${esc(x.id)}"${i === 0 ? ' checked' : ''}><b>${esc(x.label)}</b><small>${esc(x.what)}</small></label>`).join('')}</div></div>
     <div class="c-wide c-step">${t
-      ? `<label for="pe-due">Next step</label><div class="c-steprow"><span>${esc(cTask(t.label))}</span><input id="pe-due" type="date" value="${esc(cDay(t.due_at))}" aria-label="Due date"><button class="btn sm ghost" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))})">Done…</button></div>`
-      : open ? `<label for="pe-next">Next step</label><div class="c-steprow"><select id="pe-next"><option value="">No next step</option>${nextActionOptions()}</select><input id="pe-ndue" type="date" value="${cTodayIso()}" aria-label="Due date"></div>` : '<label>Next step</label>'}</div>
+      ? `<label for="pe-due">Next step</label><div class="c-steprow"><span>${esc(cTask(t.label))}</span><input id="pe-due" type="date" value="${esc(cDay(t.due_at))}" aria-label="Due date"><button class="btn sm ghost" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, false, '${esc(p.id)}')">Done…</button></div>`
+      : open ? `<label for="pe-next">Next step</label><div class="c-steprow"><select id="pe-next"><option value="">No next step</option>${nextActionOptions(null, p.status)}</select><input id="pe-ndue" type="date" value="${cTodayIso()}" aria-label="Due date"></div>` : '<label>Next step</label>'}</div>
     <div class="c-wide"><label for="pe-notes">Notes</label><textarea id="pe-notes" rows="4" oninput="this.nextElementSibling.textContent=this.value.length+' characters'">${esc(p.notes || '')}</textarea><div class="c-hint">${(p.notes || '').length} characters</div></div>
     <div id="pe-err" class="c-wide"></div>
     <div class="c-wide c-row-acts"><button class="btn" onclick="cSavePerson('${esc(p.id)}')">Save</button><button class="btn ghost" onclick="C_PEDIT=null;cDrawPeople()">Cancel</button><a class="btn ghost" href="#/person/${esc(p.id)}" style="margin-left:auto">Open person details →</a></div>
@@ -3122,7 +3308,7 @@ async function cSavePerson(id) {
     }
     if (Object.keys(patch).length) await post(`/api/people/${id}/edit`, patch);
     const st = v('#pe-status');
-    if (st && st !== p.status) await post(`/api/people/${id}/status`, st === cClosedStage() ? { status: st, reason: v('#pe-reason'), note: v('#pe-rnote') } : { status: st });
+    if (st && st !== p.status) await post(`/api/people/${id}/status`, st === cClosedStage() ? { status: st, reason: v('#pe-reason'), note: v('#pe-rnote'), closedTag: (document.querySelector('input[name="peTag"]:checked') || {}).value || null } : { status: st });
     if (t) { const due = v('#pe-due'); if (due && due !== cDay(t.due_at)) await post(`/api/tasks/${Number(t.id)}/reschedule`, { due }); }
     else { const label = v('#pe-next'); if (label) await post(`/api/people/${id}/task`, { label, due: v('#pe-ndue') }); }
     C_PEDIT = null; C_PMSG = `Saved ${p.name}.`;
@@ -3233,7 +3419,7 @@ function cPersonCard(p, t) {
   const notes = String(p.notes || '');
   return `<aside class="c-card"><h2>${esc(p.name)}</h2> <div class="c-cardsub">${esc(cStage(p.status))} · ${esc(p.programme || 'programme not said')}</div>${cLifeLine(p)}
     <div class="c-next ${open && !t && !cSisHolds(p) ? 'none' : ''}"><b>${open ? 'Next step' : 'Outcome'}</b>${open ? (t ? `${esc(cTask(t.label))} · <span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span>` : cSisHolds(p) ? cSisHeld(p) : 'No next step') : esc(p.status)}
-      ${open ? `<div class="c-row-acts">${t ? `<button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))})">Done</button>` : `<button class="btn sm" onclick="openNewTask('${esc(p.id)}')">Plan a next step</button>`}</div>` : ''}</div>
+      ${open ? `<div class="c-row-acts">${t ? `<button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, false, '${esc(p.id)}')">Done</button>` : `<button class="btn sm" onclick="openNewTask('${esc(p.id)}')">Plan a next step</button>`}</div>` : ''}</div>
     <dl><dt>Email</dt><dd class="${p.email ? 'c-reach' : 'c-gap'}">${cMailLink(p) || 'not recorded'}</dd><dt>Phone</dt><dd class="${p.phone ? 'c-reach' : 'c-gap'}">${cTelLink(p) || 'not recorded'}</dd>
       <dt>Came from</dt><dd>${esc(cChannel(p.source_channel)[0])}</dd><dt>First contact</dt><dd class="${p.created_at ? '' : 'c-gap'}">${p.created_at ? fmtDate(p.created_at) : 'not recorded'}</dd></dl>
     ${cTalkHtml(p)}
@@ -3705,7 +3891,7 @@ function cDrawJourney() {
     cJourneyTalk(sel.id).then(() => { if (C_JTALK.has(sel.id)) cDrawJourney(); });
   }
   $('#view').innerHTML = `
-    <div class="c-head"><div><h1>People</h1></div></div>
+    <div class="c-head"><div><h1>People</h1></div><div class="act"><button class="btn" onclick="openAdd()">Add lead</button></div></div>
     ${cPeopleTabs('journey')}
     ${cJourneySummary(everyone, taskOf, stages)}
     ${cJourneyFilters(everyone)}
@@ -3752,7 +3938,7 @@ const cStamp = (iso) => (/T00:00:00(\.0+)?$/.test(String(iso || '')) ? fmtDate(i
 async function viewPersonC(id) {
   if (!C_PERSON || C_PERSON.id !== id) C_PERSON_EDIT = false;
   const p = await api('/api/people/' + id);
-  C_PERSON = p;
+  C_PERSON = p; C_STAGE_OF.set(p.id, p.status);
   const t = (p.tasks || []).find((x) => !x.done_at);
   const open = !C_TERMINAL.includes(p.status);
   const contact = [p.email, p.phone].filter(Boolean).map(esc).join(' · ');
@@ -3763,12 +3949,12 @@ async function viewPersonC(id) {
       ${e.field ? `<div class="c-evt-diff"><s>${esc(e.old_value ?? '(empty)')}</s> → <b>${esc(e.new_value ?? '(empty)')}</b></div>` : (e.body ? `<div class="c-evt-body">${esc(e.body)}</div>` : '')}</div>`;
   const next = open
     ? (t ? `<div class="c-next"><b>Next step</b><div class="c-next-row"><span>${esc(cTask(t.label))}</span><span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span>${t.owner ? `<span class="c-gap-soft">${esc(t.owner)}</span>` : ''}</div>
-        <div class="c-row-acts"><button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))})">Done</button><button class="btn sm ghost" onclick="openReschedule(${Number(t.id)})">Move the date</button></div></div>`
+        <div class="c-row-acts"><button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, false, '${esc(p.id)}')">Done</button><button class="btn sm ghost" onclick="openReschedule(${Number(t.id)})">Move the date</button></div></div>`
       : cSisHolds(p) ? `<div class="c-next"><b>Next step</b>${cSisHeld(p)}<div class="c-row-acts"><button class="btn sm ghost" onclick="openNewTask('${esc(p.id)}')">Plan a next step</button></div></div>`
       : `<div class="c-next none"><b>Next step</b>No next step<div class="c-row-acts"><button class="btn sm" onclick="openNewTask('${esc(p.id)}')">Plan a next step</button></div></div>`)
-    : `<div class="c-next c-finished"><b>Outcome</b>${p.status === (CFG.stageRoles || {}).closed ? `<span class="c-no">✕</span>${esc(cStage(p.status))}${p.closed_reason ? ' · ' + esc(p.closed_reason) : ' · <span class="c-gap">reason not recorded</span>'}${p.closed_note ? `<div class="c-evt-body">${esc(p.closed_note)}</div>` : ''}` : `<span class="c-ok">✓</span>${esc(cStage(p.status))}${p.admitted_at ? ' on ' + fmtDate(p.admitted_at) : ''}`}${t ? `
+    : `<div class="c-next c-finished"><b>Outcome</b>${p.status === (CFG.stageRoles || {}).closed ? `<span class="c-no">✕</span>${esc(cStage(p.status))}${cTagLabel(p) ? ' · ' + esc(cTagLabel(p)) : ''}${p.closed_reason ? ' · ' + esc(p.closed_reason) : ' · <span class="c-gap">reason not recorded</span>'}${p.closed_note ? `<div class="c-evt-body">${esc(p.closed_note)}</div>` : ''}` : `<span class="c-ok">✓</span>${esc(cStage(p.status))}${p.admitted_at ? ' on ' + fmtDate(p.admitted_at) : ''}`}${t ? `
         <div class="c-still"><b>Still open</b><div class="c-next-row"><span>${esc(cTask(t.label))}</span><span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span></div>
-        <div class="c-row-acts"><button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, true)">Done</button><button class="btn sm ghost" onclick="openReschedule(${Number(t.id)})">Move the date</button></div></div>` : ''}</div>`;
+        <div class="c-row-acts"><button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, true, '${esc(p.id)}')">Done</button><button class="btn sm ghost" onclick="openReschedule(${Number(t.id)})">Move the date</button></div></div>` : ''}</div>`;
   $('#view').innerHTML = `<p class="c-crumb"><a href="#/people">People</a></p>
     <div class="c-head"><div><h1 class="c-pname">${esc(p.name)}</h1><p>${esc(cStage(p.status))} · ${esc(p.programme || 'programme not said')}${p.study_form ? ' · ' + esc(p.study_form) : ''} · ${contact || '<span class="c-gap">no email or phone recorded</span>'}</p></div>${p.first_channel === 'sis' ? `<div class="act"><button class="btn ghost" onclick="openSisMerge('${esc(p.id)}')">Same person as...</button></div>` : ''}</div>
     <div class="c-pgrid">
@@ -3893,7 +4079,7 @@ async function viewReportsC() {
   const cov = r.coverage || {};
   $('#view').innerHTML = `<p class="c-crumb"><a href="#/outcomes">Outcomes</a></p>
     <div class="c-head"><div><h1>Full report</h1><p>${esc(from || '')} to ${esc(to || '')}</p></div>
-      <div class="act"><button class="btn" onclick="openExport()">Download for management review</button></div></div>
+      <div class="act"><a class="btn ghost" href="#/reports/applications">Applications</a><button class="btn" onclick="openExport()">Download for management review</button></div></div>
     ${cSheetNotice()}
     <div class="c-periodbar"><div class="c-seg" role="group" aria-label="Period">${seg('month', 'This month')}${seg('last', 'Last month')}${seg('year', 'This year')}${seg('all', 'Everything')}</div>
       <label class="c-date">From <input type="date" value="${esc(from || '')}" onchange="cReportDates(this.value, RPT.to || '${esc(to || '')}')"></label>
@@ -3926,10 +4112,16 @@ async function viewReportsC() {
       ${sect('lost', 'Why people did not proceed', 'all time')}
       <section class="ksec"><div class="ksh"><h2>From a maritime school</h2></div><p class="c-num">${s.maritimeGraduates ?? 0}</p><p class="c-sub">${cov.education?.filled ?? 0} / ${cov.education?.of ?? 0} have an education recorded</p></section>
     </div>
-    <section class="ksec" id="cWeb" hidden></section>
+    <section class="c-apps" id="applications" aria-labelledby="cAppsH">
+      <div class="c-apps-head"><h2 id="cAppsH">Applications</h2><span class="c-apps-path">Academy Application form <i aria-hidden="true">&rarr;</i> SIS</span></div>
+      <div id="cAppState" class="c-appstate"></div>
+      <section class="ksec" id="cWeb" hidden></section>
+      <section class="ksec" id="cSis" hidden></section>
+    </section>
     <div class="ktip" role="status" aria-live="polite"></div></div>`;
   cWireCharts();
   cWebStats();
+  cApplications();
 }
 
 // apply.novikontas.org, from the SIS's web-stats (the owner's popup A, 01.10.2026: a section on Reports).
@@ -3944,21 +4136,21 @@ async function cWebStats(range) {
   if (!document.body.contains(el)) return;
   el.hidden = false;
   const seg = ['7d', '30d', '90d'].map((k) => `<button aria-pressed="${C_WEB_RANGE === k}" onclick="cWebStats('${k}')">${k.replace('d', ' days')}</button>`).join('');
-  const head = `<div class="ksh"><h2>apply.novikontas.org</h2><div class="c-seg" role="group" aria-label="Days">${seg}</div></div>`;
+  const head = `<div class="ksh"><h2>Academy Application form</h2><div class="c-seg" role="group" aria-label="Days">${seg}</div></div>`;
   if (!d.ok) { el.innerHTML = head + `<p class="c-empty" style="padding:6px 0">The SIS did not answer${d.status ? ' (' + Number(d.status) + ')' : ''}.</p>`; return; }
   const n = (v) => (typeof v === 'number' ? v.toLocaleString('en-GB') : null);
   const tileW = (label, v, prev, unit) => v == null ? '' : `<div><span>${label}</span><b>${n(v)}</b>${prev == null ? '' : `<small>${n(prev)} the ${unit} before</small>`}</div>`;
   const days = (d.daily || []).filter((x) => typeof x.visits === 'number');
   const maxV = Math.max(1, ...days.map((x) => x.visits));
   const chart = days.length ? `<div class="c-webdays" style="display:flex;align-items:flex-end;gap:2px;height:96px;margin:8px 0 4px">${days.map((x) =>
-    `<i title="${esc(x.day)}: ${x.visits} visits${x.pageViews == null ? '' : ', ' + x.pageViews + ' page views'}" style="flex:1;min-width:2px;height:${Math.max(2, (x.visits / maxV) * 100)}%;background:var(--v-adm);border-radius:2px 2px 0 0"></i>`).join('')}</div>
+    `<i title="${esc(x.day)}: ${x.visits} visits${x.pageViews == null ? '' : ', ' + x.pageViews + ' page views'}" style="flex:1;min-width:2px;height:${Math.max(2, (x.visits / maxV) * 100)}%;background:var(--v-web);border-radius:2px 2px 0 0"></i>`).join('')}</div>
     <p class="c-sub">${esc(days[0].day)} to ${esc(days[days.length - 1].day)}</p>` : '';
   const list = (title, rows, valueKey, sub) => {
     const r = (rows || []).filter((x) => typeof x[valueKey] === 'number').slice(0, 6);
     if (!r.length) return '';
     const max = Math.max(...r.map((x) => x[valueKey]));
     return `<section class="ksec"><div class="ksh"><h2>${title}</h2><span class="kt2">${sub}</span></div><div class="kbars">${r.map((x) =>
-      `<div class="kbar c-static" title="${esc(x.name)}${x.detail ? ' · ' + esc(x.detail) : ''}: ${x[valueKey]}"><span class="kbl">${esc(x.name)}${x.detail ? ` <span class="c-gap-soft">${esc(x.detail)}</span>` : ''}</span><span class="kbt"><i style="width:${Math.max(3, (x[valueKey] / max) * 100)}%;background:var(--v-adm)"></i></span><b>${x[valueKey]}</b></div>`).join('')}</div></section>`;
+      `<div class="kbar c-static" title="${esc(x.name)}${x.detail ? ' · ' + esc(x.detail) : ''}: ${x[valueKey]}"><span class="kbl">${esc(x.name)}${x.detail ? ` <span class="c-gap-soft">${esc(x.detail)}</span>` : ''}</span><span class="kbt"><i style="width:${Math.max(3, (x[valueKey] / max) * 100)}%;background:var(--v-web)"></i></span><b>${x[valueKey]}</b></div>`).join('')}</div></section>`;
   };
   const t = d.totals || {}; const pr = d.previous || {};
   const unit = C_WEB_RANGE.replace('d', ' days');
@@ -3968,6 +4160,71 @@ async function cWebStats(range) {
     <div class="c-rgrid">${list('Came from', d.referrers, 'visitors', 'visitors')}${list('Campaign links', d.campaigns, 'visitors', 'visitors')}${list('Device', d.devices, 'visitors', 'visitors')}${list('Pages', d.pages, 'visitors', 'visitors')}</div>
     ${sr ? `<div class="kstrip">${tileW('Google clicks', sr.totals && sr.totals.clicks, sr.previous && sr.previous.clicks, unit)}${tileW('Google impressions', sr.totals && sr.totals.impressions, sr.previous && sr.previous.impressions, unit)}</div>
     <div class="c-rgrid">${list('Searched for', sr.queries, 'clicks', 'clicks')}</div>` : ''}`;
+}
+
+// Applications: the SIS funnel by REGISTRATION WEEK (popup A, 01.10.2026; src/applications.js).
+// The SIS sends each application's CURRENT status and no history, so a week is a cohort: who
+// registered then, and where they stand now. No week is drawn that nobody registered in, a value
+// the SIS did not send is not drawn, and the six team tests a person set aside are not counted.
+// the steps the applicant takes on apply.novikontas.org; the rest are the college's, in the SIS
+const C_APP_SITE = ['registered', 'started', 'submitted'];
+const C_APP_WORD = { 'off': 'Off', 'no-run': 'No run yet', 'no-real-applicant': 'No real applicant yet', 'test': 'Test', 'live': 'Live' };
+async function cApplications() {
+  const box = $('#cSis'); const st = $('#cAppState');
+  if (!box || !st) return;
+  let d;
+  try { d = await api('/api/applications'); } catch { d = null; }
+  if (!document.body.contains(box)) return;
+  box.hidden = false;
+  if (!d) { st.innerHTML = `<span class="c-appchip is-off">SIS</span><span>Intake did not answer</span>`; box.innerHTML = ''; return; }
+  const L = d.labels || {}; const F = d.funnel || []; const A = d.apart || [];
+  const run = d.feed && d.feed.lastRun;
+  const live = d.state === 'live';
+  st.innerHTML = `<span class="c-appchip${live ? ' is-live' : d.state === 'test' ? '' : ' is-off'}">SIS &middot; ${esc(C_APP_WORD[d.state] || d.state)}</span>
+    <span>feed <b>${esc(d.feed.mode)}</b></span>
+    <span>${run ? `last run <b>${esc(fmtDateTime(run.at))}</b>` : 'no run recorded'}</span>
+    <span><b>${d.feed.references}</b> in the SIS store</span>
+    ${d.setAside ? `<span><b>${d.setAside}</b> set aside in the Inbox</span>` : ''}
+    <span><b>${d.people}</b> counted</span>`;
+  const head = `<div class="ksh"><h2>SIS funnel</h2><span class="kt2">by registration week &middot; where each person stands now</span></div>`;
+  if (!d.people) {
+    box.innerHTML = head + `<p class="c-empty c-appempty">${d.state === 'off' ? 'The SIS feed is off.' : d.state === 'no-run' ? 'The SIS feed has not run yet.'
+      : `No real applicant yet.${d.setAside ? ` The SIS holds ${d.setAside} ${d.setAside === 1 ? 'record' : 'records'} a person set aside.` : ''}`}</p>`;
+    return;
+  }
+  const R = d.reached || {}; const top = Math.max(1, R[F[0]] || 0);
+  const linkPeople = d.linked ? ` onclick="cAppPeople()" role="link" tabindex="0" title="Open the people the SIS sent"` : '';
+  // Two groups, as apply.novikontas.org itself describes the journey (the owner, 02.10.2026):
+  // the applicant's own steps on the site, then the college's decision in the SIS. One scale for
+  // all five bars, so a bar in one group compares honestly with a bar in the other.
+  const step = (k, i) => `<div class="c-fstep" style="--i:${i}"><span>${esc(L[k] || k)}</span>
+      <span class="c-fbar"><i style="width:${(R[k] / top) * 100}%"></i></span><b>${R[k]}</b></div>`;
+  const group = (title, keys) => `<div class="c-fgroup"><h3>${title}</h3>${keys.map((k) => step(k, F.indexOf(k))).join('')}</div>`;
+  const steps = `<div class="c-fsteps"${linkPeople}>${group('On the website', C_APP_SITE)}${group('Academy decision', F.filter((k) => !C_APP_SITE.includes(k)))}</div>
+    <div class="c-fapart">${A.map((k) => `<span><b>${d.now[k]}</b> ${esc((L[k] || k).toLowerCase())}</span>`).join('')}${d.undatedRegistration ? `<span><b>${d.undatedRegistration}</b> no registration date sent</span>` : ''}</div>`;
+  const cols = [...F, 'apart'];
+  const cell = (row, k, base) => {
+    const v = k === 'apart' ? A.reduce((a, x) => a + row.now[x], 0) : row.reached[k];
+    const w = base ? (v / base) * 100 : 0;
+    return `<td title="${esc(k === 'apart' ? 'Rejected or withdrawn' : L[k] || k)}: ${v} of ${base}"><span class="c-fcell"><i class="${k === 'apart' ? 'np' : ''}" style="width:${w}%"></i></span><b>${v}</b></td>`;
+  };
+  const thead = `<thead><tr class="c-fghead"><th></th><th colspan="${C_APP_SITE.length}">On the website</th><th colspan="${F.length - C_APP_SITE.length}">Academy decision</th><th></th></tr><tr><th></th>${cols.map((k) => `<th>${esc(k === 'apart' ? 'Rejected / withdrawn' : L[k] || k)}</th>`).join('')}</tr></thead>`;
+  const weekRows = (d.weeks || []).map((w) => `<tr><th scope="row">${esc(w.week.slice(5))}<small>from ${esc(w.monday)}</small></th>${cols.map((k) => cell(w, k, w.reached[F[0]])).join('')}</tr>`).join('');
+  const progRows = (d.programmes || []).map((p) => `<tr><th scope="row">${p.code ? esc(p.code) : '<span class="c-gap">no programme sent</span>'}</th>${cols.map((k) => cell(p, k, p.reached[F[0]])).join('')}</tr>`).join('');
+  box.innerHTML = head + steps
+    + `<div class="c-ftable"><table class="ktable c-fgrid"><caption>People, by the week they registered</caption>${thead}<tbody>${weekRows}</tbody></table></div>`
+    + (progRows ? `<div class="c-ftable"><table class="ktable c-fgrid"><caption>Applications, by programme</caption>${thead}<tbody>${progRows}</tbody></table></div>` : '');
+  cAppScene();
+}
+function cAppPeople() { C_PF = { ...C_PF_EMPTY(), source: 'sis' }; C_PQ = ''; C_PTAB = 'all'; location.hash = '#/people/all'; }
+// The one scene of this chapter: the step bars draw once when the chapter comes into view.
+// The marks end at their exact widths; nothing else on the report moves.
+function cAppScene() {
+  const el = $('#applications');
+  if (!el || el.classList.contains('is-in')) return;
+  if (!('IntersectionObserver' in window)) { el.classList.add('is-in'); return; }
+  const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { el.classList.add('is-in'); io.disconnect(); } }, { threshold: 0.2 });
+  io.observe(el);
 }
 
 // -------------------------------------------------------------------- FEEDBACK
@@ -4597,8 +4854,21 @@ function nextActionOptionsWithSuggestion(suggested) {
     </optgroup>` + rest;
 }
 
-function nextActionOptions(selectedLabel) {
-  const groups = CFG.nextActions || [];
+// THE STEPS FOLLOW THE STAGE (the owner, 02.10.2026: "an algorithm that depends on at what stage the
+// lead is ... shorter list ... the impossible are not shown"). config.stepGroupsByStage names the
+// groups that fit each open stage; anyStage steps fit all; no stage known = everything, as before.
+function stepsForStage(stage) {
+  const fit = stage && (CFG.stepGroupsByStage || {})[stage];
+  return (CFG.nextActions || []).map((g) => ({ group: g.group,
+    items: g.items.filter((i) => !fit || fit.includes(g.group) || i.anyStage) })).filter((g) => g.items.length);
+}
+function nextActionOptions(selectedLabel, stage) {
+  const groups = stepsForStage(stage);
+  // the step already planned is never hidden, whatever the stage says
+  const shown = new Set(groups.flatMap((g) => g.items.map((i) => i.label)));
+  const keep = selectedLabel && !shown.has(selectedLabel)
+    ? (CFG.nextActions || []).flatMap((g) => g.items).filter((i) => i.label === selectedLabel) : [];
+  if (keep.length) groups.unshift({ group: 'Planned now', items: keep });
   const opts = groups.map(g => `<optgroup label="${esc(g.group)}">` +
     g.items.map(i => `<option value="${esc(i.label)}" data-days="${i.days}" data-drives="${esc(i.drives)}"
       ${i.label === selectedLabel ? 'selected' : ''}>${esc(i.label)}</option>`).join('') + '</optgroup>').join('');
@@ -5081,9 +5351,17 @@ async function changeStatus(id, status) {
   viewPerson(id);
 }
 
+// The reasons that can happen when somebody leaves from this stage (the owner, 02.10.2026: "the
+// outcomes impossible are not shown"). config.closedReasonsByStage; stage unknown = all of them.
+function reasonsForStage(stage) {
+  const all = CFG.closedReasons || [];
+  const fit = stage && (CFG.closedReasonsByStage || {})[stage];
+  return fit ? all.filter((r) => fit.includes(r)) : all;
+}
+
 // Decision 8: nobody is closed without a reason, and "Other" is not a reason.
 function openCloseReason(id) {
-  const reasons = CFG.closedReasons || [];
+  const reasons = reasonsForStage(C_STAGE_OF.get(id));
   modal('Stop working with this person', `
     <label>Reason</label>
     <select id="clReason" onchange="onCloseReason()">${reasons.map(r => `<option>${esc(r)}</option>`).join('')}</select>
@@ -5907,199 +6185,390 @@ function chActivity(c, run) {
 //
 // Nothing invented: every word here is the config's own. A channel with no owner
 // recorded says SO, because "nobody is named" is the finding, not a blank cell.
-// ===================================================== the channel model ==
-// 02.10.2026. Rewritten after the reconciliation in
-// docs/CHANNEL_RECONCILIATION_2026-10-02.md.
+// ============================================ CHANNEL MODEL (Session 3, 02.10) ==
+// One model under both layouts. Rewritten after the Session 3 reconciliation: every
+// channel carries a RECORD (config/channels.json -> record) of what was last SEEN
+// about it, with the date and the source. A local checkout has no secrets and no
+// production rows, so it can never READ production; it shows what was seen, and when.
 //
-// TWO THINGS THAT ARE NOT THE SAME. 'readiness' says whether OUR SIDE is ready.
-// 'lifecycle' says whether the product HAS this channel. Reading readiness is what
-// put a dropped Google Form and a parked Open Day on screen as work, with people's
-// names against them. Every screen below reads lifecycle.
+// FOUR STATES, KEPT APART, NEVER INFERRED FROM EACH OTHER:
+//   this machine        process.env here. Shown, labelled local, worth nothing about prod
+//   deployed            the adapter is in the commit proven to be running
+//   production configured  the settings are in Vercel Production, as last seen
+//   live verified       a row a REAL provider sent. Only that proves it. On production
+//                       the screen reads it from the rows; locally it never does.
+//
+// A BLOCKER names its dependency, its owner, the action or input it needs, and whether
+// it is internal or external. A missing local credential is never a blocker.
+const CH_KINDS = {
+  live: { word: 'Live verified', cls: 'k-live' },
+  configured: { word: 'Configured', cls: 'k-conf' },
+  owner: { word: 'Needs owner action', cls: 'k-owner' },
+  provider: { word: 'Blocked by external provider', cls: 'k-prov' },
+  none: { word: 'Not configured', cls: 'k-none' },
+  hand: { word: 'Working by hand', cls: 'k-hand' },
+  parked: { word: 'Parked', cls: 'k-park' },
+  dropped: { word: 'Dropped', cls: 'k-drop' },
+};
+const CH_ORDER = ['live', 'configured', 'provider', 'owner', 'none', 'hand'];
 const chLife = (c) => c.lifecycle || 'active';
 const chActive = (rows) => rows.filter((c) => chLife(c) === 'active' && !c.isIntegration);
-const chShelved = (rows) => rows.filter((c) => chLife(c) !== 'active');
+const chShelved = (rows) => rows.filter((c) => chLife(c) !== 'active' && !c.isIntegration);
+const chRec = (c) => c.record || {};
+const chDay = (d) => (d && /^\d{4}-\d{2}-\d{2}/.test(d) ? d.slice(8, 10) + '.' + d.slice(5, 7) : '');
 
-// A long blocker is cut at a SPACE and kept whole in the title. A cut through the
-// middle of a word reads as a rendering fault, not a deliberate shortening.
+// LIVE VERIFIED. On production the rows answer, and they settle a recorded conflict
+// either way. Anywhere else the local rows say nothing about production, so the
+// record is shown with its date, and a conflict stays a conflict.
+function chLiveOf(c, env) {
+  if (c.direction === 'manual') return { state: 'not_applicable', observed: false };
+  if (env && env.isProduction) {
+    return (c.events || 0) > 0
+      ? { state: 'yes', observed: true, seen: c.lastEventAt || null, detail: c.events + ' from the provider' }
+      : { state: 'no', observed: true, detail: 'No row from a real provider in production' };
+  }
+  const r = chRec(c).liveVerified;
+  return r ? { ...r, observed: false } : { state: 'unknown', observed: false };
+}
+
+function chKind(c, env) {
+  const life = chLife(c);
+  if (life === 'dropped' || life === 'parked') return life;
+  if (c.direction === 'manual') return 'hand';
+  if (chLiveOf(c, env).state === 'yes') return 'live';
+  const b = chRec(c).blocker;
+  if (b && b.side === 'external') return 'provider';
+  const pc = chRec(c).productionConfigured;
+  if ((pc && pc.state === 'yes') || (env && env.isProduction && c.allSettingsPresent)) return 'configured';
+  if (chRec(c).nextAction || b) return 'owner';
+  return 'none';
+}
+
+// A blocker is only ever what the record says, and only whole: without a dependency
+// and a side it is not shown as a blocker at all.
+function chBlocker(c) {
+  const b = chRec(c).blocker;
+  return b && b.dependency && (b.side === 'internal' || b.side === 'external') ? b : null;
+}
+const chAction = (c) => (chLife(c) === 'active' ? chRec(c).nextAction || null : null);
+const chWhoActs = (c) => {
+  if (chLife(c) !== 'active') return null;
+  const a = chAction(c);
+  if (a) return a.owner || null;
+  const b = chBlocker(c);
+  return b ? (b.owner || null) : null;
+};
+
+// The four evidence steps, each with ONE honest answer and the date it was seen.
+function chEvidence(c, env) {
+  const r = chRec(c);
+  const yesNo = (x, yes) => (!x ? 'unknown' : x.state === yes ? 'yes' : x.state);
+  const live = chLiveOf(c, env);
+  return [
+    { key: 'access', label: 'Access', state: !r.access ? 'unknown'
+      : r.access.state === 'granted' || r.access.state === 'not_needed' ? 'yes'
+      : r.access.state === 'requested' ? 'wait' : 'no',
+      word: r.access ? ({ granted: 'Granted', not_needed: 'Not needed', requested: 'Requested', pending: 'Not yet' })[r.access.state] || r.access.state : 'Unknown',
+      seen: r.access && r.access.seen, note: r.access && r.access.detail, src: r.access && r.access.source },
+    { key: 'deployed', label: 'Code deployed', state: yesNo(r.deployed, 'yes') === 'yes' ? 'yes' : r.deployed ? 'part' : 'unknown',
+      word: r.deployed ? (r.deployed.state === 'yes' ? 'Yes' : 'Partly') : 'Unknown',
+      seen: null, note: r.deployed && (r.deployed.detail || 'In ' + r.deployed.commit), src: r.deployed && r.deployed.commit },
+    { key: 'prod', label: 'Production configured',
+      state: !r.productionConfigured ? 'unknown' : r.productionConfigured.state === 'yes' ? 'yes'
+        : r.productionConfigured.state === 'not_needed' ? 'na' : 'no',
+      word: !r.productionConfigured ? 'Unknown' : ({ yes: 'Yes', no: 'No', not_needed: 'Not needed' })[r.productionConfigured.state],
+      seen: r.productionConfigured && r.productionConfigured.seen, note: r.productionConfigured && r.productionConfigured.detail,
+      src: r.productionConfigured && r.productionConfigured.source },
+    { key: 'live', label: 'Live verified',
+      state: live.state === 'yes' ? 'yes' : live.state === 'conflict' ? 'conflict' : live.state === 'not_applicable' ? 'na' : live.state === 'unknown' ? 'unknown' : 'no',
+      word: ({ yes: 'Yes', no: 'No', conflict: 'Unresolved', not_applicable: 'Not applicable', unknown: 'Unknown' })[live.state],
+      seen: live.seen, note: live.detail || (live.state === 'conflict' ? 'Two records disagree' : ''),
+      src: live.observed ? 'read now from production rows' : live.source, observed: live.observed },
+  ];
+}
+
+// THIS MACHINE, said as what it is: local settings, which say nothing about production.
+function chLocal(c, env) {
+  const where = env && env.isProduction ? 'Production now' : 'This machine';
+  if (c.direction === 'manual') return { where, word: 'Nothing to set', state: 'na' };
+  const all = (c.settings || []).length;
+  const have = all - (c.missingSettings || []).length;
+  return { where, word: have + ' of ' + all + ' set', state: have === all && all ? 'yes' : 'no' };
+}
+
+function chCount(rows, env) {
+  const act = chActive(rows);
+  const n = {};
+  for (const c of act) { const k = chKind(c, env); n[k] = (n[k] || 0) + 1; }
+  return { total: act.length, n };
+}
+
+// A long text is cut at a SPACE and kept whole in the title.
 function chCut(t, n) {
   if (!t) return '';
   if (t.length <= n) return t;
   const head = t.slice(0, n);
   const sp = head.lastIndexOf(' ');
-  return (sp > n * 0.6 ? head.slice(0, sp) : head).replace(/[,.;:]$/, '') + '\u2026';
+  return (sp > n * 0.6 ? head.slice(0, sp) : head).replace(/[,.;:]$/, '') + '…';
 }
 
-// THE FOUR STEPS a channel passes through, and the ONE honest answer at each.
-// Nothing is inferred: access comes from the recorded blocker, configured from the
-// settings present IN THIS ENVIRONMENT, tested from the last check, live from a row
-// a real provider actually sent. The last is the only proof of "live".
-// BLOCKED OUTSIDE means somebody outside Novikontas has to answer, and the answer may
-// be no. It is NOT "there are steps nobody has done". config/channels.json draws that
-// line itself in blockerKind, and this reads it rather than treating every recorded
-// blocker as a dependency.
-const chOutside = (c) => Boolean(c.externalBlocker) && c.blockerKind === 'question';
-function chSteps(c) {
-  const manual = c.direction === 'manual';
-  return [
-    { key: 'access', label: 'Access',
-      state: manual ? 'done' : (chOutside(c) ? 'blocked' : 'done') },
-    { key: 'config', label: 'Configured', state: manual ? 'done' : (c.allSettingsPresent ? 'done' : 'todo') },
-    { key: 'tested', label: 'Tested', state: manual ? 'done' : (c.lastCheckOk === true ? 'done' : (c.state === 'ERROR' ? 'failed' : 'todo')) },
-    { key: 'live', label: 'Live', state: manual ? 'done' : (c.state === 'CONNECTED' ? 'done' : 'todo') },
-  ];
-}
-const chDone = (c) => chSteps(c).filter((x) => x.state === 'done').length;
+// ---------------------------------------------------------- shared pieces --
+const chKindTag = (k) => '<span class="chk ' + CH_KINDS[k].cls + '">' + esc(CH_KINDS[k].word) + '</span>';
 
-// The one thing that has to happen NEXT, in the config's own words, or nothing. A
-// manual channel and a receiving one have no next thing and must not be given one.
-function chNext(c) {
-  if (c.direction === 'manual' || c.state === 'CONNECTED') return null;
-  return c.externalBlocker || c.ownerAction || null;
-}
-function chWho(c) {
-  if (c.direction === 'manual' || c.state === 'CONNECTED') return null;
-  return c.ownerPerson || null;
+function chEnvLine(env, prod) {
+  if (!env) return '';
+  if (env.isProduction) return '<p class="c-ev chenv">Production. Live verification is read from real provider rows.</p>';
+  // not env.caveat: that says every channel reads "not configured", which this screen
+  // no longer does. It shows the record, so it says the record is what you see.
+  return '<p class="c-ev chenv"><b>' + esc(env.name) + ', not production.</b> Each state is the record, dated when seen.'
+    + (prod ? ' Running ' + esc(prod.commit) + ', proven ' + esc(chDay(prod.provenOn)) + '.' : '') + '</p>';
 }
 
-// WHICH ENVIRONMENT THIS IS. A local checkout has no secrets, so every channel reads
-// "not configured" there. Printing that without saying so reads as though PRODUCTION
-// were unconfigured. The screen says it once, in one line.
-function chEnvLine(env) {
-  if (!env || env.isProduction) return '';
-  return '<p class="c-ev chenv"><b>' + esc(env.name) + '</b> \u00b7 ' + esc(env.caveat || '') + '</p>';
+function chBlockerHtml(b) {
+  if (!b) return '';
+  return `<dl class="chblk ${b.side === 'external' ? 'ext' : 'int'}">
+    <div><dt>Blocker</dt><dd>${esc(b.dependency)}</dd></div>
+    <div><dt>Held by</dt><dd>${b.owner ? esc(b.owner) : '<span class="c-gap">Nobody named</span>'}</dd></div>
+    <div><dt>Needs</dt><dd>${esc(b.action || '')}</dd></div>
+    <div><dt>Kind</dt><dd>${b.side === 'external' ? 'External' + (b.canRefuse ? ', can be refused' : '') : 'Internal'}</dd></div>
+  </dl>`;
 }
 
-// What is shelved, said once and quietly, so a decision cannot be re-opened by a
-// screen that has forgotten it.
+function chGateHtml(c) {
+  const g = chRec(c).gateAhead;
+  if (!g || chLife(c) !== 'active') return '';
+  return `<p class="chgate"><b>Ahead, not blocking yet:</b> ${esc(g.dependency)} (${esc(g.owner)}${g.canRefuse ? ', can be refused' : ''})</p>`;
+}
+
+function chConflictHtml(c, env) {
+  const l = chLiveOf(c, env);
+  if (l.state !== 'conflict') return '';
+  return `<div class="chconf"><b>Live? Two records disagree. Not settled here.</b>
+    <ul>${(l.claims || []).map((x) => `<li><span>${esc(x.who)}, ${esc(chDay(x.on))}</span> ${esc(x.says)}</li>`).join('')}</ul>
+    <p><b>The check:</b> ${esc(l.check || '')}</p>
+    ${l.why ? `<p class="c-ev">${esc(l.why)}</p>` : ''}</div>`;
+}
+
+// What the live answer settled, what it still does not prove, and, for a channel with
+// several mailboxes, which one it is true of. A conflict stays a conflict; evidence that
+// settled one says so, with what it was, instead of quietly dropping the question.
+function chLiveNoteHtml(c, env) {
+  const l = chLiveOf(c, env);
+  if (l.state === 'conflict') return chConflictHtml(c, env);
+  const parts = [];
+  if (l.settled && !l.observed) {
+    parts.push(`<p><b>Settled on evidence, ${esc(chDay(l.settled.on))}.</b> ${esc(l.settled.outcome || '')}</p>`);
+  }
+  if (l.gap && !l.observed) parts.push(`<p><b>Not proven yet:</b> ${esc(l.gap)}</p>`);
+  const mb = chRec(c).mailboxes;
+  if (mb && mb.length) {
+    parts.push(`<ul class="chmb">${mb.map((m) => `<li class="m-${esc(m.state)}"><b>${esc(m.address)}</b>
+      <span>${m.state === 'live' ? 'Live' : 'Not connected'}</span><small>${esc(m.detail || '')}</small></li>`).join('')}</ul>`);
+  }
+  return parts.length ? '<div class="chnote">' + parts.join('') + '</div>' : '';
+}
+
+// The not-current and the not-a-channel, said once and quietly.
 function chShelvedHtml(rows) {
   const list = chShelved(rows);
   if (!list.length) return '';
   return `<section class="chshelf">
     <h2>Not current</h2>
-    <ul>${list.map((c) => `<li><b>${esc(c.label)}</b>
-      <span class="chlife chlife-${esc(chLife(c))}">${esc(chLife(c))}</span>
+    <ul>${list.map((c) => `<li><b>${esc(c.label)}</b> ${chKindTag(chLife(c))}
       <small>${esc(chCut(c.lifecycleWhy || '', 150))}${c.lifecycleDecidedBy
-        ? ' ' + esc(c.lifecycleDecidedBy + ', ' + (c.lifecycleDecidedOn || '')) : ''}</small>
+        ? ' ' + esc(c.lifecycleDecidedBy + ', ' + chDay(c.lifecycleDecidedOn || '')) : ''}</small>
     </li>`).join('')}</ul>
   </section>`;
 }
 
-// The integrations, which are NOT channels: we pull from them, nothing is delivered
-// to us, they have no adapter, and they sit downstream in the lifecycle. Shown where
-// somebody looks to see whether anything is arriving, never counted as a channel.
-function chIntegrationsHtml(rows, runs) {
-  const list = rows.filter((c) => c.isIntegration);
-  if (!list.length) return '';
-  return `<section class="chshelf chints">
-    <h2>Integrations <small>we pull from these, they are not channels</small></h2>
-    <ul>${list.map((c) => `<li><b>${esc(c.label)}</b>
-      <span class="chstate ${chWord(c).cls}">${esc(chWord(c).word)}</span>
-      <small>${esc(chActivity(c, runs[c.channel]))}${c.ownerPerson ? ' \u00b7 ' + esc(c.ownerPerson) : ''}</small>
-    </li>`).join('')}</ul>
+function chDownstreamHtml(rows, downstream) {
+  const ints = rows.filter((c) => c.isIntegration);
+  const ds = downstream ? Object.entries(downstream).filter(([k]) => !k.startsWith('_')) : [];
+  if (!ints.length && !ds.length) return '';
+  return `<section class="chshelf chds">
+    <h2>Downstream <small>after qualification. Not channels, never counted</small></h2>
+    <ul>${ds.map(([, d]) => `<li><b>${esc(d.label)}</b> <small>${esc(d.why || '')}</small></li>`).join('')}
+    ${ints.map((c) => `<li><b>${esc(c.label)}</b> <small>Integration: we pull from it${c.ownerPerson ? ' · ' + esc(c.ownerPerson) : ''}</small></li>`).join('')}</ul>
   </section>`;
 }
 
-// ======================================================= CHANNEL A, the board ==
-// Optimised for operational scanning: state, progress, credential, owner and next
-// action on one row each, on one axis, so whoever is running the connection work
-// reads the whole picture without opening anything.
-function chViewA(rows, runs) {
-  const order = ['Failed', 'Receiving', 'Ready', 'By hand', 'Not set up'];
-  const sorted = [...chActive(rows)].sort((a, b) =>
-    order.indexOf(chWord(a).word) - order.indexOf(chWord(b).word) || a.label.localeCompare(b.label));
-  return `
-    <div class="tablewrap"><table class="cartable chtable">
-      <thead><tr><th>Channel</th><th>State</th><th>Progress</th><th>Credential</th>
-        <th>Owner</th><th>Next action</th></tr></thead>
-      <tbody>
-      ${sorted.map((c) => `
-        <tr class="row" tabindex="0" style="cursor:pointer" onclick="location.hash='#/channels/${esc(c.channel)}'">
-          <td><b>${esc(c.label)}</b></td>
-          <td><span class="chstate ${chWord(c).cls}">${esc(chWord(c).word)}</span></td>
-          <td>${chPips(c)}</td>
-          <td class="chcred">${esc((c.missingSettings || []).join(', ')
-            || (c.settings || []).map((x) => x.name).join(', ') || '-')}</td>
-          <td>${chWho(c) ? '<b>' + esc(chWho(c)) + '</b>' : '<span class="c-gap">-</span>'}</td>
-          <td class="chnext">${chNext(c)
-            ? '<span title="' + esc(chNext(c)) + '">' + esc(chCut(chNext(c), 86)) + '</span>'
-            : '<span class="c-gap">-</span>'}</td>
-        </tr>`).join('')}
-      </tbody>
-    </table></div>`;
+// THE FRAME. The existing sea (radial glow over the vertical deepening, the same
+// tokens the page uses) plus a uniform rim drawn BELOW the frame. Depth belongs to the
+// frame: the rim is identical along its whole length and no data sits on it.
+function chDeck(inner, cls) {
+  return `<section class="chdeck ${cls || ''}">
+    <svg class="chrim" viewBox="0 0 100 10" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M2 0 H98 Q100 0 100 2 V6 Q100 10 96 10 H4 Q0 10 0 6 V2 Q0 0 2 0 Z"/></svg>
+    ${inner}</section>`;
 }
 
-// Four pips, one per step. A blocked step is marked, never coloured as though it
-// were progress, and a failed check is the one red thing on this screen.
-function chPips(c) {
-  return `<span class="chpips" title="${esc(chSteps(c).map((x) => x.label + ': ' + x.state).join(' \u00b7 '))}">${
-    chSteps(c).map((x) => '<i class="p-' + x.state + '"></i>').join('')}<em>${chDone(c)}/4</em></span>`;
+// THE TWELVE, as twelve equal slots. One slot per channel, never scaled, never tilted:
+// a count is read by counting.
+function chSlots(rows, env) {
+  const act = [...chActive(rows)].sort((a, b) => CH_ORDER.indexOf(chKind(a, env)) - CH_ORDER.indexOf(chKind(b, env))
+    || a.label.localeCompare(b.label));
+  const w = 100 / Math.max(act.length, 1);
+  return `<svg class="chslots" viewBox="0 0 100 6" preserveAspectRatio="none" role="img"
+    aria-label="${esc(act.length + ' active channels by state')}">${act.map((c, i) =>
+      `<rect class="${CH_KINDS[chKind(c, env)].cls}" x="${(i * w + 0.25).toFixed(3)}" y="0" width="${(w - 0.5).toFixed(3)}" height="6"
+        style="--i:${i}"><title>${esc(c.label + ': ' + CH_KINDS[chKind(c, env)].word)}</title></rect>`).join('')}</svg>`;
 }
 
-// ============================================= CHANNEL B, the command centre ==
-// Optimised for health and progression: grouped by how far along a channel is, each
-// one showing its four steps as a track, the contextual detail under it, and the
-// destination it opens.
-function chViewB(rows, runs) {
-  const act = chActive(rows);
-  const groups = [
-    ['Receiving', 'Live, and proved by a real message', (c) => c.state === 'CONNECTED'],
-    ['Working by hand', 'No connection to make. This is the design', (c) => c.direction === 'manual'],
-    ['Ready to switch on', 'Configured here, waiting only for the switch', (c) => c.state === 'CONFIGURED'],
-    ['Waiting on an answer', 'Somebody outside has to answer, and the answer may be no', chOutside],
-    ['Steps known, not done', 'Nothing is blocking it. Nobody has done the steps yet', () => true],
-  ];
-  const seen = new Set();
-  const out = [];
-  for (const [title, why, test] of groups) {
-    const list = act.filter((c) => !seen.has(c.channel) && test(c));
-    for (const c of list) seen.add(c.channel);
-    if (!list.length) continue;
-    out.push(`<section class="chc">
-      <h2>${esc(title)}<span class="chc-n">${list.length}</span><small>${esc(why)}</small></h2>
-      <div class="chc-grid">${list.map(chCard).join('')}</div>
-    </section>`);
-  }
-  return out.join('');
+function chFigures(rows, env) {
+  const { total, n } = chCount(rows, env);
+  const fig = (k) => `<div class="chfig"><small>${esc(CH_KINDS[k].word)}</small><b>${n[k] || 0}</b><i class="sw ${CH_KINDS[k].cls}"></i></div>`;
+  return `<div class="chfigs">
+    <div class="chfig chfig-total"><small>Active channels</small><b>${total}</b></div>
+    ${['live', 'configured', 'owner', 'provider', 'hand'].map(fig).join('')}${n.none ? fig('none') : ''}</div>`;
 }
 
-function chCard(c) {
-  const next = chNext(c);
-  const who = chWho(c);
-  return `<article class="chcard" tabindex="0" onclick="location.hash='#/channels/${esc(c.channel)}'">
-    <header><b>${esc(c.label)}</b>
-      <span class="chstate ${chWord(c).cls}">${esc(chWord(c).word)}</span></header>
-    <div class="chtrack">${chSteps(c).map((x) =>
-      '<span class="t-' + x.state + '"><i></i><u>' + esc(x.label) + '</u></span>').join('')}</div>
-    ${who || next ? `<p class="chcard-n">${who ? '<b>' + esc(who) + '</b>' : ''}${
-      next ? '<span title="' + esc(next) + '">' + esc(chCut(next, 110)) + '</span>' : ''}</p>` : ''}
-    <footer>Open ${esc(c.label)} &rarr;</footer>
+// ================================================ CHANNEL A, who acts next ==
+// The OPERATIONAL model: the screen is a work queue. One lane per person who has to
+// act next, their channels as cards with the one action, the input it needs, the
+// blocker if any, where the channel delivers, and the evidence ladder underneath.
+// Answers "who do I chase today, and for what".
+function chEvRow(c, env) {
+  return `<ol class="chev">${chEvidence(c, env).map((e) =>
+    `<li class="e-${e.state}" title="${esc(e.label + ': ' + e.word + (e.seen ? ', seen ' + chDay(e.seen) : '') + (e.src ? ' - ' + e.src : ''))}">
+      <i></i><span>${esc(e.label)}</span><em>${esc(e.word)}${e.seen ? ' · ' + esc(chDay(e.seen)) : ''}</em></li>`).join('')}</ol>`;
+}
+
+function chCardA(c, env) {
+  const k = chKind(c, env);
+  const a = chAction(c);
+  return `<article class="chq" style="--i:0">
+    <header><b>${esc(c.label)}</b>${chKindTag(k)}</header>
+    ${a ? `<p class="chq-do">${esc(a.action)}</p>${a.input ? `<p class="chq-in"><span>Input</span>${esc(a.input)}</p>` : ''}` : ''}
+    ${chBlockerHtml(chBlocker(c))}
+    ${chLiveNoteHtml(c, env)}
+    ${chGateHtml(c)}
+    ${chEvRow(c, env)}
+    <p class="chq-to"><span>Delivers to</span>${esc(chRec(c).destination || '-')}</p>
+    <footer><a href="#/channels/${esc(c.channel)}">Settings and check &rarr;</a></footer>
   </article>`;
 }
 
+function chViewA(rows, env) {
+  const act = chActive(rows);
+  const lanes = new Map();
+  // the lane is whoever acts NEXT; a blocker nobody holds is its own lane, and a channel
+  // with no action and no blocker (by hand, or live with nothing to do) asks nobody
+  for (const c of act) {
+    const a = chAction(c);
+    const b = chBlocker(c);
+    const key = a ? a.owner || '~nobody' : b ? b.owner || '~nobody' : '~none';
+    if (!lanes.has(key)) lanes.set(key, []);
+    lanes.get(key).push(c);
+  }
+  // people first, busiest first; then the decision nobody holds; then nothing to do, last
+  const rank = (k) => (k === '~none' ? 2 : k === '~nobody' ? 1 : 0);
+  const keys = [...lanes.keys()].sort((x, y) => rank(x) - rank(y) || lanes.get(y).length - lanes.get(x).length || x.localeCompare(y));
+  const title = (k) => k === '~none' ? 'Nobody has to act' : k === '~nobody' ? 'Needs a decision, nobody named' : k;
+  return chDeck(`<div class="chdeck-in">${chFigures(rows, env)}${chSlots(rows, env)}</div>`, 'chdeck-a')
+    + keys.map((k, li) => `<section class="chlane" style="--l:${li}">
+      <h2>${esc(title(k))}<span class="chc-n">${lanes.get(k).length}</span></h2>
+      <div class="chlane-grid">${lanes.get(k).sort((a, b) => a.label.localeCompare(b.label)).map((c) => chCardA(c, env)).join('')}</div>
+    </section>`).join('');
+}
+
+// ============================================== CHANNEL B, what is proven ==
+// The EVIDENCE model: the screen is a ledger. Every channel is a row that travels from
+// source to destination through the four proofs, left to right, each cell carrying
+// the date it was seen. Select a row and the inspector holds the blocker, the next
+// action and the sources. Answers "what do we actually know, and how".
+let CH_PICK = null;
+
+function chFlow() {
+  // the lifecycle as decided 02.10. An illustration with no values, so it may have depth.
+  const steps = [['Channels', 1], ['Intake', 1], ['Qualification', 1], ['apply.novikontas.org', 0], ['Payment', 0], ['SIS', 0]];
+  return `<ol class="chflow" aria-label="Where a channel sits in the lifecycle">${steps.map(([s, ours]) =>
+    `<li class="${ours ? 'ours' : 'down'}">${esc(s)}</li>`).join('')}</ol>`;
+}
+
+function chViewB(rows, env) {
+  const act = [...chActive(rows)].sort((a, b) => CH_ORDER.indexOf(chKind(a, env)) - CH_ORDER.indexOf(chKind(b, env))
+    || a.label.localeCompare(b.label));
+  if (!CH_PICK || !act.some((c) => c.channel === CH_PICK)) {
+    // open on the most open question: a conflict, then a proof with a stated gap, then a blocker
+    const first = act.find((c) => chLiveOf(c, env).state === 'conflict')
+      || act.find((c) => chLiveOf(c, env).gap) || act.find((c) => chBlocker(c)) || act[0];
+    CH_PICK = first ? first.channel : null;
+  }
+  const cols = ['Access', 'Code deployed', 'Production configured', 'Live verified'];
+  const tot = (key) => act.filter((c) => chEvidence(c, env).find((e) => e.key === key).state === 'yes').length;
+  const cell = (e, j) => `<td class="chcell e-${e.state}" data-label="${esc(e.label)}" style="--j:${j}"
+      title="${esc((e.note || '') + (e.src ? ' - ' + e.src : ''))}"><i></i><span>${esc(e.word)}</span>${e.seen
+        ? '<small>' + (e.observed ? 'now' : 'seen ' + esc(chDay(e.seen))) + '</small>' : ''}</td>`;
+  const sel = act.find((c) => c.channel === CH_PICK);
+  return chDeck(`<div class="chdeck-in">${chFlow()}${chFigures(rows, env)}</div>`, 'chdeck-b')
+    + `<div class="chledger">
+    <div class="tablewrap"><table class="cartable chmx">
+      <thead><tr><th>Channel</th><th class="chloc-h">${esc(env && env.isProduction ? 'Production now' : 'This machine')}</th>${cols.map((h) => '<th>' + esc(h) + '</th>').join('')}<th>State</th></tr></thead>
+      <tbody>${act.map((c) => `<tr class="row${c.channel === CH_PICK ? ' on' : ''}" tabindex="0"
+          onclick="chPick('${esc(c.channel)}')" onkeydown="if(event.key==='Enter')chPick('${esc(c.channel)}')">
+        <th scope="row"><b>${esc(c.label)}</b></th>
+        <td class="chloc" data-label="This machine">${esc(chLocal(c, env).word)}</td>
+        ${chEvidence(c, env).map(cell).join('')}
+        <td data-label="State">${chKindTag(chKind(c, env))}</td></tr>`).join('')}</tbody>
+      <tfoot><tr><th>Proven</th><td class="chloc">local, not counted</td>
+        ${['access', 'deployed', 'prod', 'live'].map((k) => `<td><b>${tot(k)}</b> of ${act.length}</td>`).join('')}<td></td></tr></tfoot>
+    </table></div>
+    <aside class="chinsp" aria-live="polite">${sel ? chInspector(sel, env) : ''}</aside>
+  </div>`;
+}
+
+function chInspector(c, env) {
+  const a = chAction(c);
+  return `<div class="chinsp-in">
+    <h2>${esc(c.label)} ${chKindTag(chKind(c, env))}</h2>
+    <p class="chq-to"><span>Delivers to</span>${esc(chRec(c).destination || '-')}</p>
+    ${chLiveNoteHtml(c, env)}
+    ${chBlockerHtml(chBlocker(c)) || '<p class="c-ev">No blocker.</p>'}
+    ${a ? `<dl class="chblk chnext"><div><dt>Next</dt><dd>${esc(a.action)}</dd></div>
+      <div><dt>Who</dt><dd>${a.owner ? esc(a.owner) : '<span class="c-gap">Nobody named</span>'}</dd></div>
+      ${a.input ? `<div><dt>Input</dt><dd>${esc(a.input)}</dd></div>` : ''}</dl>` : ''}
+    ${chGateHtml(c)}
+    <h3>Where each answer comes from</h3>
+    <ul class="chsrc">${chEvidence(c, env).map((e) => `<li><b>${esc(e.label)}</b> ${esc(e.word)}${
+      e.seen ? ', ' + (e.observed ? 'read now' : 'seen ' + esc(chDay(e.seen))) : ''}<small>${esc([e.note, e.src].filter(Boolean).join(' - '))}</small></li>`).join('')}
+      <li><b>${esc(chLocal(c, env).where)}</b> ${esc(chLocal(c, env).word)}<small>${env && env.isProduction
+        ? 'Settings present in production, read now.' : 'Local settings. They say nothing about production.'}</small></li></ul>
+    <a class="btn ghost sm" href="#/channels/${esc(c.channel)}">Settings and check &rarr;</a>
+  </div>`;
+}
+
+// Picking a row swaps the inspector in place. The ledger is not rebuilt, so its
+// arrival does not play again: motion plays once per visit.
+let CH_LAST = null;
+function chPick(id) {
+  CH_PICK = id;
+  const view = document.querySelector('.chv-b');
+  const c = CH_LAST && CH_LAST.rows.find((x) => x.channel === id);
+  if (!view || !c) return viewChannels();
+  view.querySelectorAll('.chmx tbody tr').forEach((tr) => tr.classList.toggle('on', tr.getAttribute('onclick').includes("'" + id + "'")));
+  const aside = view.querySelector('.chinsp');
+  aside.innerHTML = chInspector(c, CH_LAST.env);
+  aside.classList.remove('arrive'); void aside.offsetWidth; aside.classList.add('arrive');
+}
+
 // ------------------------------------------------------------ the A/B switch --
-// A REVIEW CONTROL, not product furniture. Two structures are built and neither is
-// chosen; this is how somebody tells them apart without a rebuild. It goes when C is
-// settled.
+// A REVIEW control, not product furniture. Two structures are built and neither is
+// chosen; this is how somebody tells them apart without a rebuild. It goes when one
+// is picked. ?chv=a or ?chv=b in the address opens one directly.
 function chVariant() {
-  try { return localStorage.getItem('chvariant') === 'b' ? 'b' : 'a'; } catch (e) { return 'a'; }
+  try {
+    const q = new URLSearchParams(location.search).get('chv');
+    if (q === 'a' || q === 'b') return q;
+    return localStorage.getItem('chvariant') === 'b' ? 'b' : 'a';
+  } catch (e) { return 'a'; }
 }
 function chSetVariant(v) {
   try { localStorage.setItem('chvariant', v); } catch (e) { /* private window: this turn only */ }
+  try {
+    const u = new URL(location.href);
+    if (u.searchParams.has('chv')) { u.searchParams.set('chv', v); history.replaceState(null, '', u); }
+  } catch (e) { /* no history API: the stored choice still works */ }
   viewChannels();
-}
-
-// The count, from the ACTIVE channels only. Never "14 of 15": that counted a dropped
-// channel, a parked one, and an integration that is not a channel.
-function chCount(act) {
-  if (!act.length) return '';
-  const live = act.filter((c) => c.state === 'CONNECTED').length;
-  const hand = act.filter((c) => c.direction === 'manual').length;
-  const blocked = act.filter(chOutside).length;
-  const bits = [act.length + ' channels'];
-  if (live) bits.push(live + ' receiving');
-  if (hand) bits.push(hand + ' by hand');
-  if (blocked) bits.push(blocked + ' waiting on an answer');
-  return '<p class="c-ev chcount">' + esc(bits.join(' \u00b7 ')) + '.</p>';
 }
 
 async function viewChannels(which) {
@@ -6111,24 +6580,25 @@ async function viewChannels(which) {
   if (which) return viewChannel(which);
 
   const d = await api('/api/admin/channels');
-  const runs = d.runs || {};
   const rows = d.channels || [];
+  const env = d.environment || null;
   const v = chVariant();
+  CH_LAST = { rows, env };
 
   $('#view').innerHTML = `
     <div class="chhead">
       <h1>Channels</h1>
       <div class="chab" role="group" aria-label="Which layout">
-        <button class="${v === 'a' ? 'on' : ''}" onclick="chSetVariant('a')">A &middot; Board</button>
-        <button class="${v === 'b' ? 'on' : ''}" onclick="chSetVariant('b')">B &middot; Command centre</button>
+        <button class="${v === 'a' ? 'on' : ''}" onclick="chSetVariant('a')">A &middot; Who acts next</button>
+        <button class="${v === 'b' ? 'on' : ''}" onclick="chSetVariant('b')">B &middot; What is proven</button>
       </div>
     </div>
-    ${chEnvLine(d.environment)}
-    ${chCount(chActive(rows))}
-    ${v === 'b' ? chViewB(rows, runs) : chViewA(rows, runs)}
-    ${chIntegrationsHtml(rows, runs)}
+    ${chEnvLine(env, d.production)}
+    <div class="chv chv-${v}">${v === 'b' ? chViewB(rows, env) : chViewA(rows, env)}</div>
+    ${chDownstreamHtml(rows, d.downstream)}
     ${chShelvedHtml(rows)}`;
 }
+// ================================================== end of the channel model ==
 
 
 async function viewChannel(id) {
@@ -6370,7 +6840,7 @@ function renderHistoryRefusal(message) {
 function openAdd() {
   const d = CFG.quickAddDefaults || {};
   ADD_CONFIRMED_NEW = false;
-  modal('Add person', `
+  modal('Add a lead', `
     <div class="row2">
       <div><label>Full name *</label><input id="aName" oninput="checkDup()"></div>
       <div><label>Phone</label><input id="aPhone" oninput="checkDup()"></div>
@@ -6385,7 +6855,7 @@ function openAdd() {
     </div>
     <div class="row2">
       <div><label>Next step (required)</label>
-        <select id="aNext" onchange="document.querySelector('#aDays').value = daysForAction(this.value)">${nextActionOptions(d.nextAction)}</select></div>
+        <select id="aNext" onchange="document.querySelector('#aDays').value = daysForAction(this.value)">${nextActionOptions(d.nextAction, d.status)}</select></div>
       <div><label>In how many days</label><input id="aDays" type="number" value="${d.nextActionDays ?? 1}"></div>
     </div>
     <label>Note</label><textarea id="aNote" rows="2"></textarea>
@@ -6453,7 +6923,7 @@ function showDuplicateBlock(data) {
 // `finished` is passed in, never guessed from C_PERSON: that variable holds whichever person page
 // was opened last, so on Next Steps it would answer about the wrong person. The only caller that
 // passes true is the "Still open" block, which is drawn only for somebody already finished.
-function openComplete(taskId, label, finished) {
+function openComplete(taskId, label, finished, personId) {
   const done = Boolean(finished);
   modal('Complete: ' + label, `
     <label>Outcome</label>
@@ -6461,7 +6931,7 @@ function openComplete(taskId, label, finished) {
     <label>Note</label><textarea id="cNote" rows="2"></textarea>
     ${done ? '' : `<div class="row2">
       <div><label>Next step (required)</label>
-        <select id="cNext" onchange="onNextActionChange('cNext','cDate','cHint')">${nextActionOptions()}</select>
+        <select id="cNext" onchange="onNextActionChange('cNext','cDate','cHint')">${nextActionOptions(null, C_STAGE_OF.get(personId))}</select>
         <div class="muted" id="cHint" style="font-size:12px;margin-top:4px"></div></div>
       <div><label>When</label><input id="cDate" type="date" value="${todayStr()}"></div>
     </div>`}
@@ -6491,7 +6961,7 @@ async function doReschedule(id) { await post(`/api/tasks/${id}/reschedule`, { du
 
 function openNewTask(personId) {
   modal('Add an action', `<label>Next step</label>
-    <select id="tLabel" onchange="onNextActionChange('tLabel','tDate','tHint')">${nextActionOptions()}</select>
+    <select id="tLabel" onchange="onNextActionChange('tLabel','tDate','tHint')">${nextActionOptions(null, C_STAGE_OF.get(personId))}</select>
     <div class="muted" id="tHint" style="font-size:12px;margin-top:4px"></div>
     <label>Due</label><input id="tDate" type="date" value="${todayStr()}">
     <div style="margin-top:14px;display:flex;gap:8px"><button class="btn" onclick="doNewTask('${personId}')">Save</button>
@@ -6499,7 +6969,8 @@ function openNewTask(personId) {
 }
 async function doNewTask(personId) {
   await post(`/api/people/${personId}/task`, { label: $('#tLabel').value, due: $('#tDate').value });
-  closeModal(); viewPerson(personId);
+  closeModal();
+  if (String(location.hash).startsWith('#/person/')) viewPerson(personId); else route();   // stay where it was planned
 }
 
 // A note carries a type so it can be read and reported on, and it stays in the
@@ -6534,7 +7005,11 @@ async function doNote(personId) {
   const subject = type === 'call' ? `Call: ${$('#nOutcome').value}` : label;
   await post(`/api/people/${personId}/note`, { kind: type === 'call' ? 'call' : 'note',
     noteType: type, subject, body: $('#nBody').value });
-  closeModal(); viewPerson(personId);
+  // Stay where it was written: the Journey card's thread and Today redraw in place, so the
+  // note is seen landing and the address stays true. Only the person page redraws itself.
+  closeModal();
+  if (typeof C_JTALK !== 'undefined') C_JTALK.delete(personId);   // the Journey thread reads it again
+  if (String(location.hash).startsWith('#/person/')) viewPerson(personId); else route();
 }
 
 // ------------------------------------------------------------------ boot --

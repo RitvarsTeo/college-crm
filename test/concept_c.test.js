@@ -89,8 +89,12 @@ test('dark C is the sign-in sea: its gradient, the bright amber, glass panels, o
   assert.ok(sky, 'the sign-in sky colours are where they were');
   const body = APP.match(/html\.ui-c\[data-theme="dark"\] body\{background:([^}]*)\}/);
   assert.ok(body, 'dark C paints the page');
-  for (const c of sky.slice(1)) assert.ok(body[1].includes(c), `the dark page uses the sign-in colour ${c}`);
   const dark = [...APP.matchAll(/html\.ui-c\[data-theme="dark"\]\{([^}]*)\}/g)].map((m) => m[1]);
+  // the page's sea is named --sea since 02.10, so a frame can carry the same sea; it is
+  // defined in the one dark palette, and resolved here before the colours are read
+  const sea = (dark[0] || '').match(/--sea:([^;]*)/);
+  const paint = body[1].replace('var(--sea)', sea ? sea[1] : '');
+  for (const c of sky.slice(1)) assert.ok(paint.includes(c), `the dark page uses the sign-in colour ${c}`);
   assert.equal(dark.length, 1, 'one dark palette, so a later block cannot quietly override it');
   assert.match(dark[0], /--v-open:#E0A526/);   // the data mustard (02.10.2026), not the signal amber
   assert.match(dark[0], /--c-warn:#F7C04F/);
