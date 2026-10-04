@@ -48,6 +48,18 @@ no text edge, shadow or pills. **White on #53a7db measures 2.65:1, under the 4.5
 while looking at it.** His note "align the logo to the text": the file's symbol starts 162.49/1500 in, 17.12px at 158px,
 so the image moves left by that; measured at 1440: symbol x 20.01px, "Intake · v1.0" and the slogan x 20px. The form
 controls keep navy words on their white surfaces. Dark unchanged. BUILT, next patch, not deployed.
+**SUPERSEDED the same day:** after seeing white, Ritvars chose navy again ("actually the navy looks better"); `612297f` is replaced.
+
+**PICKED 04.10: navy text, white logo, v1.0 line removed, logo aligned.** On #53a7db: navy #0a2463 words, icons, counts and
+hairline (as `b3083f0`); the official WHITE logo file as it is; the "Intake · v1.0" line removed in light and dark (the
+slogan stays); the logo's left edge on the slogan's: measured at 1440, symbol x 20.01px, slogan x 20px.
+
+**PICKED 04.10: immersive menu 3** (his pick of three, desktop menu, light only, no pills): the locked gradient recipe
+extended (a #8fcbef glow at the top over #5aaedf -> #53a7db -> #4497cf), the official white logo file as a faint watermark
+low in the menu (opacity .13, 1000px from -40px, only the symbol shows, never clickable), the menu lifting off the page
+(white inner edge, soft navy shadow), the active spine line white 3 with a soft glow. The frame, never a data mark.
+**Navy measured on every gradient stop: 8.27:1 at the glow, 5.92 on #5aaedf, 5.48 on #53a7db, 4.55:1 on the deepest
+foot #4497cf - all pass 4.5:1, the foot by a hair.** Dark unchanged (checked). BUILT, next patch, not deployed.
 
 ## 02.10.2026 - DECIDED (popup): the person card, the menu, black, shadows
 

@@ -916,38 +916,46 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-themebar{display:block;margin-top:12px;padding:12px 20px 0;border-top:1px solid var(--rule2)}
   /* ---- THE LIGHT MENU IS SOLID BRANDBOOK BLUE (the owner picked B of Q5, 04.10.2026, after seeing
      A and B side by side at 1440 px). #53a7db is the SURFACE, so the "never text" rule is untouched.
-     What sits on it is version 3 below (his pick the same day): white. Dark is unchanged. ---- */
-  html.ui-c:not([data-theme="dark"]) .shell > nav{background:#53a7db;border-right:1px solid rgba(10,36,99,.18)}
-  /* VERSION 3, the owner's pick of four mockups, 04.10.2026: WHITE on the brandbook blue. Every
-     word, count, icon and hairline in the menu is white at full opacity; the links bigger and
-     heavier; no text edge, no shadow, no pills. White on #53a7db measures 2.65:1, under the 4.5:1
-     guideline: that is HIS decision, taken while looking at it, and it is recorded in BACKLOG.md.
-     The form controls keep their own white surfaces, so their words stay dark and readable. */
-  html.ui-c:not([data-theme="dark"]) .shell > nav{color:#ffffff;--t2:#ffffff;--t3:#ffffff;--t4:#ffffff;--ink:#ffffff;--c-warn:#ffffff;
-    --rule:rgba(255,255,255,.55);--rule2:rgba(255,255,255,.55)}
-  /* the logo: the official WHITE file as it is (no recolour, outline, shadow or plate) */
+     What sits on it is the FINAL brief below (navy words, white logo). Dark is unchanged. ---- */
+  /* FINAL, the owner 04.10.2026 (after seeing navy and white side by side: "actually the navy looks
+     better"): NAVY words, icons, counts and hairline on the blue (5.48:1), the official WHITE logo
+     file as it is, no "Intake · v1.0" line, and the logo's left edge on the slogan's left edge. */
+  html.ui-c:not([data-theme="dark"]) .shell > nav{background:#53a7db;border-right:1px solid rgba(10,36,99,.18);color:#0a2463;
+    --t2:#0a2463;--t3:#0a2463;--t4:#0a2463;--ink:#0a2463;--rule:rgba(10,36,99,.22);--rule2:rgba(10,36,99,.22);--c-sunk:rgba(255,255,255,.28);--c-warn:#0a2463;--control-line:rgba(10,36,99,.35)}
   html.ui-c:not([data-theme="dark"]) nav .brand .logo.light{display:none}
   html.ui-c:not([data-theme="dark"]) nav .brand .logo.dark{display:block}
-  /* ALIGNED TO THE TEXT (his note): the file's symbol starts 162.49 of 1500 units in, which is 17.12px
-     at the logo's 158px. The image moves left by exactly that, so the symbol's left edge sits on the
-     same x as "Intake · v1.0" and the slogan. The file itself is untouched. Desktop menu only: on a
-     phone the logo is 104px in a top bar. */
+  /* ALIGNED TO THE SLOGAN: the file's symbol starts 162.49 of 1500 units in, 17.12px at the logo's
+     158px, so the image moves left by exactly that and the symbol's left edge lands on the slogan's.
+     The file itself is untouched. Desktop menu only: on a phone the logo is 104px in a top bar. */
   @media (min-width:901px){ html.ui-c:not([data-theme="dark"]) nav .brand .logo.dark{margin-left:-17.12px} }
-  html.ui-c:not([data-theme="dark"]) .shell > nav #ver, html.ui-c:not([data-theme="dark"]) .shell > nav #tagline{color:#ffffff;opacity:1}
-  html.ui-c:not([data-theme="dark"]) .cnav a{color:#ffffff;font-size:15.5px;font-weight:800;letter-spacing:.01em}
-  html.ui-c:not([data-theme="dark"]) .cnav .kids a{font-size:15.5px}
-  html.ui-c:not([data-theme="dark"]) .cnav a svg{color:#ffffff;opacity:1}
-  html.ui-c:not([data-theme="dark"]) .cnav a:hover{background:rgba(255,255,255,.16);color:#ffffff}
-  html.ui-c:not([data-theme="dark"]) .cnav a.on{background:transparent;color:#ffffff;font-weight:800}
-  html.ui-c:not([data-theme="dark"]) .cnav a.on svg{color:#ffffff}
-  html.ui-c:not([data-theme="dark"]) .cnav .n, html.ui-c:not([data-theme="dark"]) .cnav .n.warn{color:#ffffff;font-weight:800;opacity:1}
-  html.ui-c:not([data-theme="dark"]) .cnav .kids{border-left:1.5px solid #ffffff}
-  html.ui-c:not([data-theme="dark"]) .cnav .c-spine line{stroke:#ffffff;stroke-width:1.5}
-  html.ui-c:not([data-theme="dark"]) .cnav .c-spine line.on{stroke:#ffffff;stroke-width:3}
-  html.ui-c:not([data-theme="dark"]) .shell > nav .c-foot, html.ui-c:not([data-theme="dark"]) .shell > nav .c-foot a{color:#ffffff}
-  html.ui-c:not([data-theme="dark"]) .shell > nav label{color:#ffffff}
+  html.ui-c:not([data-theme="dark"]) .cnav a{color:#0a2463}
+  html.ui-c:not([data-theme="dark"]) .cnav a svg{opacity:1}
+  html.ui-c:not([data-theme="dark"]) .cnav a:hover{background:rgba(255,255,255,.28);color:#0a2463}
+  html.ui-c:not([data-theme="dark"]) .cnav a.on{background:rgba(255,255,255,.34);color:#0a2463;font-weight:650}
+  html.ui-c:not([data-theme="dark"]) .cnav a.on svg{color:#0a2463}
+  html.ui-c:not([data-theme="dark"]) .cnav .n.warn{color:#0a2463;font-weight:700}
+  html.ui-c:not([data-theme="dark"]) .cnav .kids{border-left-color:rgba(10,36,99,.35)}
+  html.ui-c:not([data-theme="dark"]) .cnav .c-spine line{stroke:rgba(10,36,99,.35)}
+  html.ui-c:not([data-theme="dark"]) .cnav .c-spine line.on{stroke:#0a2463}
+  html.ui-c:not([data-theme="dark"]) .shell > nav .c-foot a{color:#0a2463}
+  /* IMMERSIVE MENU 3 (his pick of three, 04.10.2026), the desktop menu in light. The FRAME, never a data
+     mark, so the depth rule holds:
+       - the locked gradient recipe extended: a light glow at the top over a vertical deepening of the
+         same blue (navy measured 8.27:1 at the glow, 5.48:1 on #53a7db, 4.55:1 on the deepest foot #4497cf)
+       - the brand pattern: the official WHITE logo file as a faint watermark low in the menu, wide
+         enough that only the symbol shows; the file as it is, behind the items, never clickable
+       - the menu lifts off the page: a white inner edge and a soft navy shadow
+       - the active spine line white, 3 wide, with a soft white glow */
+  @media (min-width:901px){
+    html.ui-c:not([data-theme="dark"]) .shell > nav{position:relative;overflow:hidden;z-index:2;
+      background:radial-gradient(120% 60% at 50% 0%,#8fcbef 0%,rgba(143,203,239,0) 60%),linear-gradient(180deg,#5aaedf 0%,#53a7db 45%,#4497cf 100%);
+      box-shadow:inset -1px 0 0 rgba(255,255,255,.35),6px 0 24px rgba(10,36,99,.18)}
+    html.ui-c:not([data-theme="dark"]) .shell > nav::after{content:"";position:absolute;z-index:-1;left:-40px;top:560px;width:1000px;height:330px;
+      background:url(/assets/NoAca_logo_whitehor.svg) no-repeat left top/1000px auto;opacity:.13;pointer-events:none}
+    html.ui-c:not([data-theme="dark"]) .shell > nav > *{position:relative;z-index:1}
+    html.ui-c:not([data-theme="dark"]) .cnav .c-spine line.on{stroke:#ffffff;stroke-width:3;filter:drop-shadow(0 0 4px rgba(255,255,255,.9))} }
+  /* the form controls keep their own white surfaces, so their words stay navy and readable */
   html.ui-c:not([data-theme="dark"]) .shell > nav select{color:#0a2463}
-  html.ui-c:not([data-theme="dark"]) .shell > nav .theme-switch button{color:#ffffff}
   html.ui-c:not([data-theme="dark"]) .shell > nav .theme-switch button[aria-checked="true"]{color:#0a2463}
   html.ui-c .c-foot{display:flex;flex-wrap:wrap;gap:2px 10px;padding:10px 20px 0;font-size:11.5px;color:var(--t3)}
   html.ui-c .c-foot > *{white-space:nowrap}
@@ -1875,7 +1883,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   /* the version under the logo reads "Intake · v1.0" exactly, lowercase v (the owner, 28.09.2026;
      renamed from CRM 30.09.2026). The logo above it already says NOVIKONTAS, so the name does not
      repeat it. */
-  html.ui-c #ver{text-transform:none}
+  html.ui-c #ver{display:none}   /* the owner 04.10.2026: "Delete Intake v1.0". The slogan stays */
   /* THE ONE SENTENCE THE APP IS ALLOWED. The owner chose it on 30.09.2026 knowing it goes against
      his own rule that a screen never explains itself; it was offered to him as breaking that rule
      and he took it. It is the product's line, not an instruction, so it is quiet: sentence case,

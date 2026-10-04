@@ -44,10 +44,10 @@ test('label, number and note line up across the strip even when a label wraps', 
 // the pattern that day: a one-word name that says what the tool does, and one line that says the
 // value it gives. He chose the slogan knowing it goes against his own rule that a screen never
 // explains itself, and took it anyway, so it must not be deleted as a helper sentence.
-test('the line under the logo reads "Intake · v1.0", lowercase v, with the slogan under it', () => {
-  assert.equal(CONFIG.version, 'v1.0');
-  assert.match(APP, /\$\('#ver'\)\.innerHTML = 'Intake &middot; ' \+ \(CFG\.version/);
-  assert.match(APP, /html\.ui-c #ver\{text-transform:none\}/, 'not forced to capitals');
+// 04.10.2026 the owner: "Delete Intake v1.0". The line is gone from the menu (light and dark);
+// the slogan stays under the logo.
+test('no "Intake · v1.0" line in the menu, and the slogan stays under the logo', () => {
+  assert.match(APP, /html\.ui-c #ver\{display:none\}/, 'the version line is not shown');
 
   assert.match(APP, /<span id="tagline">Every first contact, in one place<\/span>/,
     'the slogan is in the markup, so it renders before any script runs');
