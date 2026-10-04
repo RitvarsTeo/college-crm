@@ -124,7 +124,9 @@ test('IEVA-4: the last task of a finished person can be closed with no next step
   await fetch(`${base}/api/people/${id}/task`, { method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ label: 'confirm the payment', due: yesterday() }) });
-  const stray = (await fetch(`${base}/api/tasks?scope=open`).then((r) => r.json())).find((x) => x.person_id === id);
+  // read from the person page, where a finished person's leftover lives ("Still open"); the
+  // lists leave finished people out since 02.10 (Ieva 30.09 10:23)
+  const stray = ((await fetch(`${base}/api/people/${id}`).then((r) => r.json())).tasks || []).find((x) => !x.done_at);
   assert.ok(stray, 'the stray task exists');
 
   const done = await fetch(`${base}/api/tasks/${stray.id}/complete`, { method: 'POST',
@@ -132,8 +134,8 @@ test('IEVA-4: the last task of a finished person can be closed with no next step
     body: JSON.stringify({ outcome: 'Done', note: '' }) });          // no nextLabel at all
   assert.equal(done.status, 200, 'it closes without a next step');
 
-  const after = await fetch(`${base}/api/tasks?scope=open`).then((r) => r.json());
-  assert.ok(!after.some((x) => x.person_id === id), 'and no new task was created in its place');
+  const after = ((await fetch(`${base}/api/people/${id}`).then((r) => r.json())).tasks || []).filter((x) => !x.done_at);
+  assert.equal(after.length, 0, 'and no new task was created in its place');
   assert.ok(taskId, 'the first task id was read');
 });
 
@@ -233,4 +235,24 @@ test('IEVA-4 on Today: a finished person is not asked for a next step they canno
   const dlg = APP.slice(APP.indexOf('function openComplete('), APP.indexOf('\n}\n', APP.indexOf('function openComplete(')));
   assert.match(dlg, /const done = Boolean\(finished\)/);
   assert.match(dlg, /\$\{done \? '' : `<div class="row2">/, 'the whole row goes, rather than an option that lies');
+});
+
+// Ieva 30.09 10:23, the full message (pasted 02.10): "I changed the status, but he still shows for me
+// under Next Steps as overdue". On production the one such person (02.10 backup) was admitted at
+// 07:21 and the step was created at 07:24, AFTER the admission. Closing steps at the moment of the
+// status change cannot catch that; the list has to leave a finished person out, the same rule the
+// counts already use.
+test('a step added after somebody is admitted never reaches Next Steps', async () => {
+  const { child, port } = await startServer();
+  try {
+    const base = `http://localhost:${port}`;
+    const { id } = await personWithOverdueTask(base, 'Admitted Then Planned');
+    await setStatus(base, id, 'Admitted');
+    await fetch(`${base}/api/people/${id}/task`, { method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ label: 'confirm the payment', due: yesterday() }) });
+    const open = await fetch(`${base}/api/tasks?scope=open`).then((r) => r.json());
+    assert.ok(!open.some((t) => t.person_id === id), 'an admitted person has no row in the open list');
+    const over = await fetch(`${base}/api/tasks?scope=overdue`).then((r) => r.json());
+    assert.ok(!over.some((t) => t.person_id === id), 'nor in overdue');
+  } finally { child.kill(); }
 });

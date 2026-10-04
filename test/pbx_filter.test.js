@@ -107,3 +107,35 @@ test('phone filter: a withheld number still only counts, and a known number stil
   assert.equal(r.noNumber, 1);
   assert.equal(r.inbox + r.again + r.filtered, 0);
 });
+
+// Ritvars 02.10.2026: "If they have numbers with names to them (existing leads) they get recorded for
+// needs action which is today". A known lead who rang and nobody answered must reach Today as a step,
+// not only a line on their history that nobody is asked to read.
+test('a missed call from a known lead puts a Call back step in their Today', async () => {
+  const db = await openDb(':memory:');
+  await db.prepare('INSERT INTO people (id, name, phone, status) VALUES (?,?,?,?)').run('p1', 'Jonas', '+37129111222', 'Contacted');
+  const r = await run(db, [call({ state: 'NOANSWER' })]);
+  assert.equal(r.logged, 1, 'still logged on the person');
+  const open = await db.prepare('SELECT * FROM tasks WHERE person_id = ? AND done_at IS NULL').all('p1');
+  assert.equal(open.length, 1, 'one step');
+  assert.equal(open[0].label, 'Call back');
+  assert.ok(CONFIG.nextActions.some((g) => g.items.some((i) => i.label === 'Call back')), 'a configured step, not a word in the code');
+  assert.equal(open[0].due_at, new Date('2026-10-01T08:58:00Z').toISOString(), 'due when they rang: they have waited since then');
+});
+
+test('a second missed call does not stack a second Call back', async () => {
+  const db = await openDb(':memory:');
+  await db.prepare('INSERT INTO people (id, name, phone, status) VALUES (?,?,?,?)').run('p1', 'Jonas', '+37129111222', 'Contacted');
+  await run(db, [call({ state: 'NOANSWER' }), call({ uniqueid: 'c2', state: 'NOANSWER', created_at: '2026-10-01 12:03:00' })]);
+  const open = await db.prepare("SELECT * FROM tasks WHERE person_id = ? AND done_at IS NULL AND label = 'Call back'").all('p1');
+  assert.equal(open.length, 1);
+});
+
+test('an answered call, or a finished person, adds no step', async () => {
+  const db = await openDb(':memory:');
+  await db.prepare('INSERT INTO people (id, name, phone, status) VALUES (?,?,?,?)').run('p1', 'Jonas', '+37129111222', 'Contacted');
+  await db.prepare('INSERT INTO people (id, name, phone, status) VALUES (?,?,?,?)').run('p2', 'Anna', '+37129333444', 'Admitted');
+  await run(db, [call(), call({ uniqueid: 'c2', caller_num: '+37129333444', state: 'NOANSWER' })]);
+  const n = (await db.prepare('SELECT COUNT(*) n FROM tasks').get()).n;
+  assert.equal(Number(n), 0);
+});

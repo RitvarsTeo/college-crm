@@ -11,8 +11,15 @@ const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
 const view = (name) => { const i = APP.indexOf(name); assert.ok(i >= 0, name); return APP.slice(i, APP.indexOf('\n}\n', i)); };
 
-test('New Leads has Add lead, opening the same add form as People', () => {
-  assert.match(view('async function viewLeadsC()'), /<button class="btn" onclick="openAdd\(\)">Add lead<\/button>/);
+// MOVED 02.10.2026 (the owner): "in inbox the channel automation results only. Leads are leads ... if we
+// manually add a person, this means its a lead already". The Inbox holds only what the channels brought
+// in for a person to review; Add lead lives with the leads, on both People tabs.
+test('Add lead lives with the leads, and the Inbox holds only what the channels brought in', () => {
+  assert.ok(!/openAdd\(\)/.test(view('async function viewLeadsC()')), 'no add button on the Inbox');
+  const add = /<button class="btn" onclick="openAdd\(\)">Add lead<\/button>/;
+  assert.match(view('function cDrawJourney('), add, 'on the Journey');
+  assert.match(view('function cDrawPeople('), add, 'on All people');
+  assert.ok(!APP.includes('>Add person</button>'), 'one name for one action');
 });
 
 test('every Next Steps row carries the phone and email as call / write links, and one line of what was said', () => {

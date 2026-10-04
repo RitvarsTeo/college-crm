@@ -150,6 +150,48 @@ the window. The kit itself is unchanged. **[DECIDE, Ritvars]** whether the kit s
   1,615 of 1,667 px at 1920. Nothing new built there.
 - Merge: a trial merge with `audit/2026-10-02-feedback-closure-s5` is clean and 971/971; the
   Outcomes tag display is owned by this branch, agreed through QA.
+## 02.10.2026 - Ritvars's answers to the feedback list, in his words
+
+Given against the closure list. Each line: what he said, and what it now means. **DECIDED** unless
+marked.
+
+| Item | His words (short) | Now |
+|---|---|---|
+| Ieva 10:23, cut off | pasted in full: an admitted lead still shows in Next Steps as overdue | the bug; see the build below |
+| Stage names | "Isnt this already inside of a tab that we have a name for?" | Yes: the Journey's five stages are named. **The current names stand**; Ieva can rename later, it is a config edit |
+| Outcome reasons | "an algorithm that depends on persons journey. There can be groups. The goal is for shorter list ... the outcomes impossible are not shown ... lets create mvp" | **DECIDED: the reasons offered depend on the stage the person leaves.** MVP, config, Ieva tunes it by using it |
+| Next steps | "an algorithm that depends on at what stage the lead is! There can be groups ... shorter list ... lets create mvp" | **DECIDED: the steps offered depend on the lead's stage, by group.** MVP, config |
+| Human filter before Intake | "we answered this by decision to have filter. Its wider filter to let in more messages ... All of that should come in. The Income is all the personal info ... in neat identical (sql) tables: Name, Surname, Email, Tel Ph., you decide" | Matches 1a (01.10): only spam, our own addresses and automatic senders are set aside; everything else comes in. One `inbound` table holds every channel with the same contact columns |
+| D-C2 "not clear yet" | "huh???" | There is no "not clear yet" pile any more. **Closed, nothing to decide** |
+| Lifecycle facts | "I dont really see how this needs my decision" | Correct: it waits on the first real SIS applicant, not on him |
+| Aigars item 5 | "if there is none, there is none. you may delete" | **Deleted** |
+| Journey summary | "ship" | **DECIDED: ship** |
+| Add lead | "in inbox the channel automation results only. Leads are leads ... if we manually add a person, this means its a lead already ... walked-in (default in the drop-down) ... Lead is in the loop, we cant let them out without a reason" | **DECIDED: the Inbox holds only what the channels brought in.** Add lead lives with the leads, walk-in is the default. A lead leaves only with a reason (already enforced) |
+| Unanswered calls | "unanswered calls go into inbox, if they are new callers. If they have numbers with names to them (existing leads) they get recorded for needs action which is today" | New callers: Inbox (already so). **DECIDED: a missed call from a known lead puts them in Today** |
+| Cold / reject screen | "i just need to view which one i like more, yes?" | Yes. The UI/UX lane shows the versions, he picks |
+| Marketing to cold | "kind of out of scope ... if you can autonomously think of and implement some mvp idea, ok, go for it" | **MVP allowed**, kept small |
+| Aigars | "We will status Aigars when everything is done" | One update at the end |
+
+## 02.10.2026 - Session 5: Ieva and Aigars feedback closure
+
+Branch **`audit/2026-10-02-feedback-closure-s5`**, cut from `561bce2`. **944/944. COMMITTED,
+NOT DEPLOYED.** The full matrix, every item DONE or BLOCKED with its owner:
+[`FEEDBACK_CLOSURE_2026-10-02.md`](FEEDBACK_CLOSURE_2026-10-02.md).
+
+| What was found by clicking, and fixed | Commit |
+|---|---|
+| **`closed_tag` had no migration.** Deployed as it stood, every status change on production would fail on a missing column. Now one `ALTER TABLE` at boot. **Schema change on release** | `0e1da1d` |
+| Cold / reject skipped on the People quick edit; stored but shown nowhere. Now offered there too and named on the person page. The Outcomes display (counts, filter, row chip) is the UI/UX lane's (`ui/2026-10-02-main-ab`), agreed through QA S6 after a merge collision | `1345cd7`, `7cce0f8` |
+| The Journey card's **Edit** button did nothing | `7c3f30a` |
+| A note written on the Journey card jumped to the person page under a `#/journey` address, and the thread stayed stale until reload | `a6a290f` |
+| Plan a next step from Today jumped the same way | `80710a6` |
+
+**Correcting the record.** The 01.10 tables below say of the Journey stages "the screen says they
+are provisional". It does not: that tag was removed on purpose on 29.09 (`6b25ce7`). The caveat
+lives in DECISIONS.md and `config/prototype.json` only.
+
+**Owed:** the MVP map says the cold / reject field and screen go to Ritvars as an A/B first. Neither
+`b5f3a4c` nor `1345cd7` had one. The Outcomes form is now the UI/UX lane's to put in front of him.
 
 ## 02.10.2026 - HANDOFF: where this run stopped
 

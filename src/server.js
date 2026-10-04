@@ -2022,7 +2022,10 @@ export const handle = async (req, res) => {
     // ------------------------------------------------------------- tasks ---
     if (req.method === 'GET' && p === '/api/tasks') {
       const scope = url.searchParams.get('scope') || 'open';
-      let sql = `SELECT t.*, pe.name, pe.programme, pe.status, pe.phone, pe.source_channel FROM tasks t JOIN people pe ON pe.id = t.person_id WHERE t.done_at IS NULL`;
+      // STILL_OPEN_SQL here too (Ieva 30.09 10:23: "I changed the status, but he still shows under
+      // Next Steps as overdue"). A step added AFTER the admission slips past the close-on-status
+      // rule; a finished person's leftover is on their own page under "Still open", never in a list.
+      let sql = `SELECT t.*, pe.name, pe.programme, pe.status, pe.phone, pe.source_channel FROM tasks t JOIN people pe ON pe.id = t.person_id WHERE t.done_at IS NULL AND ${STILL_OPEN_SQL}`;
       const args = [];
       if (scope === 'overdue') { sql += ' AND t.due_at < ?'; args.push(dayStart()); }
       if (scope === 'today') { sql += ' AND t.due_at >= ? AND t.due_at < ?'; args.push(dayStart(), dayEnd()); }
