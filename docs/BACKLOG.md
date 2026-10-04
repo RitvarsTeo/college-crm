@@ -14,6 +14,13 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - The tab you are in is white
+
+Ritvars, 05.10.2026, with a screenshot of the light menu: "also lets 'white up' the tab we are in". The deepest lit
+item (the page itself: Today, not Admissions above it; Journey, not People) is a solid white tab with navy words; its
+parent keeps the soft pill. Light mode. Release branch `release/2026-10-04-intake-2` (51290c4) merged in first
+(`15a8965`, clean). Seen at 1440 on Today, Journey and Home. BUILT, next patch, not deployed.
+
 ## 04.10.2026 - THE A/B BATCH (run by MASTER CONTROL, Ritvars picks)
 
 **PICKED 04.10: header 4, blue glow** (step 1b, light only): one Novikontas Blue glow from the top-left corner,

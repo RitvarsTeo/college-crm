@@ -70,3 +70,11 @@ test('the form controls stay readable, the A/B is gone, dark is unchanged', () =
   assert.doesNotMatch(APP, /menu-a|menu-b|menuVariant|menuSetVariant|c-menuab|cMenuAb/);
   assert.match(APP, /html\.ui-c\[data-theme="dark"\] \.shell > nav\{background:linear-gradient\(180deg,rgba\(8,24,46,\.78\) 0%,rgba\(8,24,46,\.92\) 100%\)/);
 });
+
+// "lets white up the tab we are in" (the owner, 05.10.2026): the page you are on is a white tab
+test('the page you are on is a white tab; only the deepest lit item gets it', () => {
+  assert.match(APP, /html\.ui-c:not\(\[data-theme="dark"\]\) \.cnav a\.on\.here\{background:#ffffff;color:#0a2463;/);
+  const m = APP.slice(APP.indexOf('function markCNav('), APP.indexOf('cSpine();', APP.indexOf('function markCNav(')));
+  assert.match(m, /const lastLit = \[\.\.\.document\.querySelectorAll\('\.cnav a\.on'\)\]\.pop\(\);/);
+  assert.match(m, /a\.classList\.toggle\('here', a === lastLit\)/);
+});

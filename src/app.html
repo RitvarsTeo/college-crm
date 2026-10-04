@@ -937,6 +937,8 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c:not([data-theme="dark"]) .cnav a:hover{background:rgba(255,255,255,.28);color:#0a2463}
   html.ui-c:not([data-theme="dark"]) .cnav a.on{background:rgba(255,255,255,.34);color:#0a2463;font-weight:650}
   html.ui-c:not([data-theme="dark"]) .cnav a.on svg{color:#0a2463}
+  /* the page you are on: a white tab with navy words (the owner, 05.10.2026); its parent keeps the soft pill */
+  html.ui-c:not([data-theme="dark"]) .cnav a.on.here{background:#ffffff;color:#0a2463;box-shadow:0 1px 2px rgba(10,36,99,.14)}
   html.ui-c:not([data-theme="dark"]) .cnav .n.warn{color:#0a2463;font-weight:700}
   html.ui-c:not([data-theme="dark"]) .cnav .kids{border-left-color:rgba(10,36,99,.35)}
   html.ui-c:not([data-theme="dark"]) .cnav .c-spine line{stroke:rgba(10,36,99,.35)}
@@ -2307,6 +2309,10 @@ function markCNav(page) {
     : null;
   const lit = [parent, child].filter(Boolean);
   document.querySelectorAll('.cnav a').forEach((a) => a.classList.toggle('on', lit.includes(a.dataset.c)));
+  // THE PAGE YOU ARE ON IS THE WHITE TAB (the owner, 05.10.2026: "lets white up the tab we are in"): the
+  // deepest lit item, so on Today it is Today and not Admissions above it.
+  const lastLit = [...document.querySelectorAll('.cnav a.on')].pop();
+  document.querySelectorAll('.cnav a').forEach((a) => a.classList.toggle('here', a === lastLit));
   // on a phone the menu is one sideways row: bring the place you are in into view (the deepest one lit)
   setTimeout(() => { const here = [...document.querySelectorAll('.cnav a.on')].pop(); const row = document.querySelector('.cnav');
     if (here && row && row.scrollWidth > row.clientWidth) row.scrollLeft = Math.max(0, here.offsetLeft - row.offsetLeft - 24); }, 60);
