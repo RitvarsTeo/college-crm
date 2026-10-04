@@ -167,3 +167,40 @@ Note on Q2: the apply site colours that word `#53a7db` (brandbook blue). KB 08 P
 - Tilda novikontas.org > Forms: webhook `crm-novikontas.vercel.app/api/inbound/website`, HEADER `x-crm-secret`, Send cookies, **Active**. **Not yet ticked on any form block**, deliberately, until Q3 ships.
 - **The LV college pages have NO enquiry form**; their only route is the apply.novikontas.org link. Site-wide `email`-only and `Textarea`-only forms are a newsletter box and a widget, not enquiries. `page31435098.html` holds an old `amission_form_test` form.
 - State: **Configured** (was Needs owner action). Live verified only after a real submission lands.
+
+## 04.10.2026 - RELEASE DECISION: cut ONE patch now, deploy on Ritvars's GO behind four gates
+
+### What was gathered [seen 04.10]
+
+| Session | Branch @ tip | Since 561bce2 | Notes |
+|---|---|---|---|
+| S2 MAIN | `ui/2026-10-02-main-ab` @ `bea0556` | 15 | Home = B **decided** (`17d1a4d`), Journey band, spine, mustard donut, tab opening + count-up |
+| S3 CHANNELS | `ui/2026-10-02-channels-s3` @ `f388dcc` | 4 | A/B still open; config lifecycle (Google Form dropped, Open Day parked); 2 of 12 live verified |
+| S4 APPLICATIONS | `ui/2026-10-02-applications-s4` @ `eca5ddc` | 5 | Applications chapter in Reports, "Academy decision", Q1 name |
+| S5 CLOSURE | `audit/2026-10-02-feedback-closure-s5` @ `cf6b112` | 18 | Ieva/Aigars bugs fixed; **`0e1da1d` closed_tag migration - mandatory with MAIN** |
+| S6 QA | `qa/2026-10-02-final-control-s6` @ `8cd82b2` | 1 | A/B review package (docs) |
+| S1 CONTROL | `control/2026-10-02-s1` | docs | this file |
+
+All worktrees clean. **Combined scratch merge of all six tips** (`scratchpad/merge-0410`, not a real branch):
+- one code conflict, `src/app.html` menu/background: MAIN's light menu tint + Channels' dark body via `--sea` (the identical locked recipe) - both kept. BACKLOG conflicts: both sides kept.
+- **1026 / 1026** tests (`node --test test/*.test.js`).
+- Running build, synthetic data: every menu route renders, 0 page errors, no `undefined/NaN`. Channels B, Reports > Applications, Inbox, Feedback checked by text. Width/dark mode NOT re-checked (pane hidden); S6 did both on 02.10.
+
+### Decision: patch now, do not keep building first
+
+- **Users are waiting on fixes, not on features.** S5 fixed things Ieva hits daily (Edit did nothing, notes jumped away, admitted leads shown overdue, missed calls not in Today, the cold list for marketing). Holding them back has a daily cost.
+- **The branches are already drifting.** Clean on 02.10, one code conflict on 04.10. Every day adds conflicts.
+- **Production still shows a wrong channel config** (Google Form and Open Day active).
+- What stays open (Channels A/B, funnel basis, glass/solid, Meta wording, cold/reject A/B) does not block: Channels is admin-only and ships with its A/B switch as the review surface; nothing else changes what Admissions does.
+
+### The four gates before the deploy (in order)
+
+1. **Fresh production backup.** The nightly has **not run since 02.10 01:17Z** (no 03.10, 04.10 entries in `Projects/Backups/nightly.log`), and the 04.10 offsite copy **failed**: rclone remote `novidrive` is missing from the config. The patch runs a schema change at boot (`closed_tag`), so a backup taken minutes before is required. Ritvars: run `Projects\Backups\run_nightly.cmd` once and confirm VERIFIED. Offsite: reconfigure `novidrive` (separate item).
+2. **GO + a named release owner** (Ritvars). Nothing deploys without it.
+3. **Release branch from the real tips**, cut fresh with the real identity (the scratch merge is evidence, not the release), full suite on a clean checkout, release-contents check of the whole range.
+4. **Release-day record updates in the same branch:** `config/channels.json` `production.commit` says `292b4f9` in 10 places and the Channels screen prints "Running 292b4f9" - must name the new commit, or the screen lies the moment it ships. Website state -> Configured (secret + mode set 04.10). Then: byte check, 401 on private routes, signed-in look at Home, Journey, Channels, Reports.
+
+### Not in this patch
+
+- **Q3** (website field names) - not built yet; the Tilda webhook stays unticked, so nothing is lost by waiting. Next patch.
+- Q2 two-colour titles - waits for its A/B.
