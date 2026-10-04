@@ -861,7 +861,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
      one Novikontas Blue #53a7db glow from the top-left corner laid OVER the locked sea, on the page only.
      The sea itself is not forked: frames that carry --sea keep it unchanged. */
   html.ui-c:not([data-theme="dark"]) body{background:radial-gradient(70% 45% at 0% 0%,rgba(83,167,219,.22) 0%,rgba(83,167,219,0) 70%),var(--sea) fixed #f5f7fa}
-  html.ui-c:not([data-theme="dark"]) #view h1{font-size:24px;color:#0a2463}   /* page titles navy 24px (header 4); the weight stays */
+  html.ui-c:not([data-theme="dark"]) #view h1{color:#0a2463}   /* page titles navy (header 4); size and weight are the type tokens below */
   html.ui-c[data-theme="dark"] body{background:var(--sea) fixed #0f2f4f}
   html.ui-c[data-theme="dark"] .shell > nav{background:linear-gradient(180deg,rgba(8,24,46,.78) 0%,rgba(8,24,46,.92) 100%);border-right:1px solid rgba(194,211,222,.10)}
   html.ui-c[data-theme="dark"] :is(.c-health,.c-sheet,.c-seg,.c-said,.c-card,.c-jp,.c-folded,.c-next.c-finished,.kstrip,.ksec){
@@ -1850,6 +1850,27 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-todaystrip b a{color:inherit;text-decoration:none}
   html.ui-c .c-todaystrip b a:hover{text-decoration:underline}
   html.ui-c .c-todaystrip span{font-size:11px;color:var(--t3)}
+  /* ---- TYPE 3, STRONG HIERARCHY (the owner's pick, A/B batch step 2a, 04.10.2026). App-wide TOKENS,
+     not per screen. Four steps, and each step is one size everywhere it appears:
+       title    30px / 750   page titles
+       figure   30px / 750   headline figures (Today's strip and planned %, Home's figure cards). The
+                             focal figures above them (Home's Needs-you sheet, the one hero card) stay
+                             bigger: the hierarchy is the point. Red stays red where it means overdue
+       name     17px / 700   a person's name in a list or on a card
+       detail   13px         programme · stage, phone · email, the note under a step (slate, as before)
+       label    11.5px / 600 the small word under a figure
+       chip     13.5px       "3 d. overdue", "Today"
+     Names and figures are navy #0a2463 instead of the near-black, in light; dark keeps its own ink. */
+  html.ui-c{--type-title:30px;--type-figure:30px;--type-name:17px;--type-detail:13px;--type-label:11.5px;--type-chip:13.5px;--ink-strong:var(--ink)}
+  html.ui-c:not([data-theme="dark"]){--ink-strong:#0a2463}
+  html.ui-c #view h1, html.ui-c #view .c-head h1{font-size:var(--type-title);font-weight:750;color:var(--ink-strong);letter-spacing:-.02em}
+  html.ui-c #view .c-todaystrip b, html.ui-c #view .c-planned b, html.ui-c #view .kstrip > div:not(.khero) > b{font-size:var(--type-figure);font-weight:750;color:var(--ink-strong)}
+  html.ui-c #view .c-todaystrip b.c-od{color:var(--c-bad)}
+  html.ui-c #view .kneed b, html.ui-c #view .kstrip .khero b{font-weight:750;color:var(--ink-strong)}
+  html.ui-c #view .c-who b, html.ui-c #view .c-jp > b, html.ui-c #view .c-card h2{font-size:var(--type-name);font-weight:700;color:var(--ink-strong)}
+  html.ui-c #view .c-who small, html.ui-c #view .c-nnote, html.ui-c #view .c-cardsub, html.ui-c #view .c-jp small.c-jnote{font-size:var(--type-detail)}
+  html.ui-c #view .c-todaystrip span, html.ui-c #view .c-planned small, html.ui-c #view .kstrip > div > small, html.ui-c #view .kneed span{font-size:var(--type-label);font-weight:600}
+  html.ui-c #view .c-when, html.ui-c #view .c-jp small.c-jdue{font-size:var(--type-chip)}
   /* Settings is not one of the four. It sits at the foot, behind a rule, for admins. */
   html.ui-c .cnav a.c-navfoot{margin-top:auto;border-top:1px solid var(--rule2);padding-top:10px}
   html.ui-c .c-jfilters{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-6px 0 14px}
