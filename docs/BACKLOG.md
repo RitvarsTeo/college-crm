@@ -1350,6 +1350,8 @@ screen on the real-data snapshot (local, in memory) at 1440 / 900 / 390 px, ligh
 
 ## Pin
 
+**02.10.2026 control state: `docs/INTAKE_CONTROL_2026-10-02.md` is the authoritative current state for this run. The product is INTAKE.**
+
 **PIN: ACADEMY CRM V1 IS DEPLOYED AND IN USE. CHANNELS ARE NOT CONNECTED.**
 
 Rewritten 30.09.2026. It said "NOT RELEASED, NOT DEPLOYED, NOT CONNECTED" until then, which had
@@ -1369,9 +1371,10 @@ below, dated, as the record of where the project was.
   (`docs/CHANNEL_RECONCILIATION_2026-10-02.md`): Google Form is **dropped**, Open Day is **parked**,
   apply.novikontas.org is **downstream and not a channel**, and SIS is an **integration**. The old
   counts of 14 and 15 included those. Every adapter is written and tested and every one is switched off.
-  `inbound` holds 15 rows, all `source=simulated` from test-mode runs of the phone and SIS jobs,
-  and **0 from a real provider**. That is the single largest gap between what this file describes
-  and what the CRM does for its users today.
+  ~~`inbound` holds 15 rows, all `source=simulated`, and 0 from a real provider.~~ **Stale since
+  01.10 05:27Z** [seen 02.10, production backup `2026-10-02T01-17-43Z`]: **44 provider rows**, Phone 4
+  (TeleGroup daily pull) and Gmail 40 (option B, edu@novikontas.org). Phone and Gmail(edu@) are
+  **live verified**; all 44 still sit at `state=new`. See `docs/INTAKE_CONTROL_2026-10-02.md`.
 - **Scope: NOT LOCKED.** It changes daily on owner feedback, and Ieva has not validated the
   workflow, so treat every row below as provisional until she has.
 - **Release line:** `v0.9`, pushed to GitHub (`origin/v0.9` at `52e2232`, one doc commit above
@@ -1389,6 +1392,8 @@ below, dated, as the record of where the project was.
   (Tetiana's spam words, which agent partner to start with); connecting the channels. **Open owner
   decisions, none blocking code:** the KPI strip (hairline or cards, and it reaches kit part 2),
   Home A (journey first) or B (today first), rebuilt 02.10 on `ui/2026-10-02-main-ab`, Channels A or B, Ieva's Journey stage names, and whether Meta's APP REVIEW is a
+  decisions, none blocking code:** ~~the KPI strip~~ (CARDS, decided 30.09 in KB 08 P5, not open -
+  corrected 02.10), Home A or B, Channels A or B, Ieva's Journey stage names, and whether Meta's APP REVIEW is a
   `question` or `work` in `blockerKind`.
 
 Decisions and the open D-C questions are in [DECISIONS.md](DECISIONS.md).
