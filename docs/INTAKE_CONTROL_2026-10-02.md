@@ -295,3 +295,6 @@ MAIN `ac4c207` (0021888 dark cards: solid #133a60, 3px #53a7db top, amber Needs-
 ### 04.10 late - the white pills were a misread (Ritvars, angry)
 
 "white up the tab we are in" meant the TEXT, not a white tab background. Ritvars on production: "why are there white pills? fix that immediately" / "IT JUST NEEDS TO whiten up the TEXT". Fix -> S2: no white backgrounds; lit item + its parent get white bold text, icon and count; the soft highlight as before `bd45f42`. Deploy as soon as it lands. Lesson: when a short instruction can mean two things (text vs tab), show one picture before building.
+
+## 04.10 - SIXTH PATCH LIVE: `47def9d` (white text on the lit tab, no pills), pushed
+MAIN `c3cf6f3`. 1071/1071 clean checkout. Today seen on the release build. `dpl_BwMsKVGvLTD9XtTGxadVy4i1op9i`: byte-identical, 77/77, 0 leaks. Pushed. Inbox font fix (2-line clamp, 13px) is next, queued at MAIN.
