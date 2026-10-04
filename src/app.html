@@ -857,11 +857,11 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
      page (Session 3, 02.10) instead of inventing a second one. Same values as before. */
   html.ui-c{--sea:radial-gradient(120% 80% at 50% 0%,#fbfcfd 0%,rgba(251,252,253,0) 60%),
       linear-gradient(180deg,#f7f9fb 0%,#f5f7fa 45%,#e7ebf0 100%)}
-  html.ui-c:not([data-theme="dark"]) body{background:var(--sea) fixed #f5f7fa}
-  /* the menu takes the same treatment it takes in dark: a quiet vertical fall, so the
-     two modes are the same design and not two designs */
-  html.ui-c:not([data-theme="dark"]) .shell > nav{
-    background:linear-gradient(180deg,#ffffff 0%,#ffffff 40%,#e5f2fa 100%);border-right:1px solid var(--rule)}   /* white into a soft Novikontas Blue #53a7db tint (15% on white), the owner 02.10.2026 */
+  /* HEADER 4, the owner's pick 04.10.2026 ("the menu's blue glow flows into the page top"), light only:
+     one Novikontas Blue #53a7db glow from the top-left corner laid OVER the locked sea, on the page only.
+     The sea itself is not forked: frames that carry --sea keep it unchanged. */
+  html.ui-c:not([data-theme="dark"]) body{background:radial-gradient(70% 45% at 0% 0%,rgba(83,167,219,.22) 0%,rgba(83,167,219,0) 70%),var(--sea) fixed #f5f7fa}
+  html.ui-c:not([data-theme="dark"]) #view h1{font-size:24px;color:#0a2463}   /* page titles navy 24px (header 4); the weight stays */
   html.ui-c[data-theme="dark"] body{background:var(--sea) fixed #0f2f4f}
   html.ui-c[data-theme="dark"] .shell > nav{background:linear-gradient(180deg,rgba(8,24,46,.78) 0%,rgba(8,24,46,.92) 100%);border-right:1px solid rgba(194,211,222,.10)}
   html.ui-c[data-theme="dark"] :is(.c-health,.c-sheet,.c-seg,.c-said,.c-card,.c-jp,.c-folded,.c-next.c-finished,.kstrip,.ksec){
@@ -918,6 +918,63 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   .c-themebar, .c-foot, .c-pagefoot{display:none}
   html.ui-c #themeBlock{display:none}
   html.ui-c .c-themebar{display:block;margin-top:12px;padding:12px 20px 0;border-top:1px solid var(--rule2)}
+  /* ---- THE LIGHT MENU IS SOLID BRANDBOOK BLUE (the owner picked B of Q5, 04.10.2026, after seeing
+     A and B side by side at 1440 px). #53a7db is the SURFACE, so the "never text" rule is untouched.
+     What sits on it is the FINAL brief below (navy words, white logo). Dark is unchanged. ---- */
+  /* FINAL, the owner 04.10.2026 (after seeing navy and white side by side: "actually the navy looks
+     better"): NAVY words, icons, counts and hairline on the blue (5.48:1), the official WHITE logo
+     file as it is, no "Intake · v1.0" line, and the logo's left edge on the slogan's left edge. */
+  html.ui-c:not([data-theme="dark"]) .shell > nav{background:#53a7db;border-right:1px solid rgba(10,36,99,.18);color:#0a2463;
+    --t2:#0a2463;--t3:#0a2463;--t4:#0a2463;--ink:#0a2463;--rule:rgba(10,36,99,.22);--rule2:rgba(10,36,99,.22);--c-sunk:rgba(255,255,255,.28);--c-warn:#0a2463;--control-line:rgba(10,36,99,.35)}
+  html.ui-c:not([data-theme="dark"]) nav .brand .logo.light{display:none}
+  html.ui-c:not([data-theme="dark"]) nav .brand .logo.dark{display:block}
+  /* ALIGNED TO THE SLOGAN: the file's symbol starts 162.49 of 1500 units in, 17.12px at the logo's
+     158px, so the image moves left by exactly that and the symbol's left edge lands on the slogan's.
+     The file itself is untouched. Desktop menu only: on a phone the logo is 104px in a top bar. */
+  @media (min-width:901px){ html.ui-c:not([data-theme="dark"]) nav .brand .logo.dark{margin-left:-17.12px} }
+  html.ui-c:not([data-theme="dark"]) .cnav a{color:#0a2463}
+  html.ui-c:not([data-theme="dark"]) .cnav a svg{opacity:1}
+  html.ui-c:not([data-theme="dark"]) .cnav a:hover{background:rgba(255,255,255,.28);color:#0a2463}
+  html.ui-c:not([data-theme="dark"]) .cnav a.on{background:rgba(255,255,255,.34);color:#0a2463;font-weight:650}
+  html.ui-c:not([data-theme="dark"]) .cnav a.on svg{color:#0a2463}
+  html.ui-c:not([data-theme="dark"]) .cnav .n.warn{color:#0a2463;font-weight:700}
+  html.ui-c:not([data-theme="dark"]) .cnav .kids{border-left-color:rgba(10,36,99,.35)}
+  html.ui-c:not([data-theme="dark"]) .cnav .c-spine line{stroke:rgba(10,36,99,.35)}
+  html.ui-c:not([data-theme="dark"]) .cnav .c-spine line.on{stroke:#0a2463}
+  html.ui-c:not([data-theme="dark"]) .shell > nav .c-foot a{color:#0a2463}
+  /* IMMERSIVE MENU 3 (his pick of three, 04.10.2026), the desktop menu, in light AND dark (his follow-up
+     the same day: "dark mode doesnt have the same effects, nor the na logo underneath"). The FRAME, never
+     a data mark, so the depth rule holds:
+       - the locked gradient recipe extended: a glow at the top over a vertical deepening. Light: #8fcbef
+         over #5aaedf -> #53a7db -> #4497cf (navy measured 8.27 / 5.92 / 5.48 / 4.55:1). Dark: the sea's own
+         #17456e glow over #0c2745 -> #0a2140 -> #08182e
+       - ONE VIEWPORT TALL, never stretched: the menu is as tall as the page (1,144px on Home, 3,493px on
+         Today), so a gradient sized to the menu changed shade on every tab ("it changes the shade of the
+         left card when switching"). It is drawn 100vh tall and the foot colour continues below it
+       - the brand pattern: the official WHITE logo file as a faint watermark low in the menu, only the
+         symbol showing; the file as it is, behind the items, never clickable
+       - the menu lifts off the page: an inner edge and a soft shadow
+       - the progress line (the spine to where you are) 3 wide with a soft glow: white on the blue, the
+         dark menu's light blue in dark */
+  @media (min-width:901px){
+    html.ui-c .shell > nav{position:relative;overflow:hidden;z-index:2}
+    html.ui-c:not([data-theme="dark"]) .shell > nav{background-color:#4497cf;background-size:100% 100vh;background-repeat:no-repeat;
+      background-image:radial-gradient(120% 60% at 50% 0%,#8fcbef 0%,rgba(143,203,239,0) 60%),linear-gradient(180deg,#5aaedf 0%,#53a7db 45%,#4497cf 100%);
+      box-shadow:inset -1px 0 0 rgba(255,255,255,.35),6px 0 24px rgba(10,36,99,.18)}
+    html.ui-c[data-theme="dark"] .shell > nav{background-color:#08182e;background-size:100% 100vh;background-repeat:no-repeat;
+      background-image:radial-gradient(120% 60% at 50% 0%,rgba(23,69,110,.9) 0%,rgba(23,69,110,0) 60%),linear-gradient(180deg,#0c2745 0%,#0a2140 45%,#08182e 100%);
+      box-shadow:inset -1px 0 0 rgba(194,211,222,.12),6px 0 24px rgba(0,0,0,.35)}
+    html.ui-c .shell > nav::after{content:"";position:absolute;z-index:-1;left:-40px;top:560px;width:1000px;height:330px;
+      background:url(/assets/NoAca_logo_whitehor.svg) no-repeat left top/1000px auto;opacity:.13;pointer-events:none}
+    html.ui-c[data-theme="dark"] .shell > nav::after{opacity:.07}   /* white reads stronger on the dark sea */
+    html.ui-c .shell > nav > *{position:relative;z-index:1}
+    html.ui-c:not([data-theme="dark"]) .cnav .c-spine line.on{stroke:#ffffff;stroke-width:3;filter:drop-shadow(0 0 4px rgba(255,255,255,.9))}
+    html.ui-c[data-theme="dark"] .cnav .c-spine line.on{stroke:#8fcbef;stroke-width:3;filter:drop-shadow(0 0 4px rgba(143,203,239,.85))}
+    /* the same white logo file in dark: lined up with the slogan there too */
+    html.ui-c[data-theme="dark"] nav .brand .logo.dark{margin-left:-17.12px} }
+  /* the form controls keep their own white surfaces, so their words stay navy and readable */
+  html.ui-c:not([data-theme="dark"]) .shell > nav select{color:#0a2463}
+  html.ui-c:not([data-theme="dark"]) .shell > nav .theme-switch button[aria-checked="true"]{color:#0a2463}
   html.ui-c .c-foot{display:flex;flex-wrap:wrap;gap:2px 10px;padding:10px 20px 0;font-size:11.5px;color:var(--t3)}
   html.ui-c .c-foot > *{white-space:nowrap}
   html.ui-c .c-foot a{color:var(--t2);text-decoration:underline;text-underline-offset:2px}
@@ -1471,31 +1528,6 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .chk.k-owner::before{background:var(--k-owner)}
   html.ui-c .chk.k-prov::before{background:transparent;box-shadow:inset 0 0 0 2px var(--k-owner)}
   html.ui-c .chk.k-hand::before{background:var(--k-hand)}
-  /* ------------------------------------------------ THE CALL POP-UP (Q6) -- */
-  /* B: a corner card above everything; A: a slim line saying why the screen moved. The
-     only motion is the arrival, once; the dot is still. Off for reduced motion. */
-  #callpop .cp-card{position:fixed;right:16px;bottom:16px;z-index:300;width:330px;max-width:calc(100vw - 32px);
-    background:var(--card,#fff);color:var(--ink);border:1px solid var(--rule);border-radius:14px;padding:12px 14px 12px;
-    box-shadow:0 14px 40px rgba(3,12,26,.22);display:grid;gap:7px;animation:cp-in .45s cubic-bezier(.22,.9,.3,1) backwards}
-  #callpop .cp-strip{position:fixed;left:50%;top:12px;transform:translateX(-50%);z-index:300;max-width:calc(100vw - 32px);
-    display:flex;align-items:center;gap:9px;flex-wrap:wrap;background:var(--card,#fff);color:var(--ink);
-    border:1px solid var(--rule);border-radius:999px;padding:6px 8px 6px 14px;box-shadow:0 8px 24px rgba(3,12,26,.18);
-    animation:cp-fade .45s ease-out backwards}
-  #callpop header{display:flex;align-items:center;gap:7px}
-  #callpop header small,#callpop .cp-strip small{color:var(--t3);font-size:11.5px}
-  #callpop .cp-dot{width:9px;height:9px;border-radius:50%;background:#29a8df;flex:0 0 auto}
-  #callpop .cp-x{margin-left:auto;appearance:none;border:0;background:transparent;color:var(--t3);font-size:18px;line-height:1;cursor:pointer;padding:2px 6px}
-  #callpop .cp-name{font-size:18px;line-height:1.2}
-  #callpop .cp-tag{justify-self:start;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;border:1px solid var(--rule);color:var(--t2)}
-  #callpop .cp-tag.new{border-color:#E0A526}
-  #callpop dl{margin:0;display:grid;gap:5px;font-size:12px}
-  #callpop dl div{display:grid;grid-template-columns:5.6em minmax(0,1fr);gap:8px}
-  #callpop dt{color:var(--t4);font-size:10px;letter-spacing:.05em;text-transform:uppercase;padding-top:2px}
-  #callpop dd{margin:0;color:var(--t2);overflow-wrap:anywhere}
-  #callpop footer{display:flex;align-items:center;gap:8px;margin-top:3px}
-  @keyframes cp-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-  @keyframes cp-fade{from{opacity:0}to{opacity:1}}
-  @media(prefers-reduced-motion:reduce){#callpop .cp-card,#callpop .cp-strip{animation:none}}
   /* Admissions second axis: dormant or declined. Two choices, each saying what it means,
      because "cold" and "reject" are Admissions own words and not everyone's. */
   html.ui-c .cltags{display:grid;gap:7px;margin-top:2px}
@@ -1704,7 +1736,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   /* the version under the logo reads "Intake · v1.0" exactly, lowercase v (the owner, 28.09.2026;
      renamed from CRM 30.09.2026). The logo above it already says NOVIKONTAS, so the name does not
      repeat it. */
-  html.ui-c #ver{text-transform:none}
+  html.ui-c #ver{display:none}   /* the owner 04.10.2026: "Delete Intake v1.0". The slogan stays */
   /* THE ONE SENTENCE THE APP IS ALLOWED. The owner chose it on 30.09.2026 knowing it goes against
      his own rule that a screen never explains itself; it was offered to him as breaking that rule
      and he took it. It is the product's line, not an instruction, so it is quiet: sentence case,
@@ -2179,6 +2211,8 @@ const UI = (() => {
   } catch { return q === 'classic' ? 'classic' : 'c'; }
 })();
 document.documentElement.classList.toggle('ui-c', UI === 'c');
+// The menu A/B (Q5) is settled: B. A choice remembered from the review control is cleared once.
+try { localStorage.removeItem('menuvariant'); } catch (e) { /* private window: nothing stored */ }
 
 const C_ICON = {
   home: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 10.2 10 4l7 6.2"/><path d="M5 8.8V16h10V8.8"/></svg>',
@@ -2242,7 +2276,15 @@ function cPlace(page) {
 }
 function markCNav(page) {
   const place = cPlace(page);
-  const lit = [place];
+  // THE PROGRESS LINE RUNS TO THE PAGE YOU ARE ON (the owner, 04.10.2026: "it stops at people"). The
+  // child is lit with its parent, so the spine reaches Journey or All people, not only People; Today
+  // and Inbox light Admissions above them the same way.
+  const parent = { today: 'admissions', leads: 'admissions' }[place] || place;
+  const child = place === 'today' || place === 'leads' ? place
+    : page === 'journey' ? 'journey'
+    : page === 'people' ? (/^#\/people\/all/.test(location.hash) ? 'all' : (typeof C_PTAB !== 'undefined' && C_PTAB === 'all' ? 'all' : 'journey'))
+    : null;
+  const lit = [parent, child].filter(Boolean);
   document.querySelectorAll('.cnav a').forEach((a) => a.classList.toggle('on', lit.includes(a.dataset.c)));
   // on a phone the menu is one sideways row: bring the place you are in into view (the deepest one lit)
   setTimeout(() => { const here = [...document.querySelectorAll('.cnav a.on')].pop(); const row = document.querySelector('.cnav');
@@ -6865,123 +6907,6 @@ function fbZoom(id) {
   document.body.appendChild(box);
 }
 
-// ===================================================== THE CALL POP-UP (Q6) ==
-// 04.10.2026, first said 30.09. When the phone rings, whoever answers sees who is calling and
-// is one click from the comment thread on the person page. The phone system pushes its call
-// events to Intake; the open, signed-in app asks /api/calls/events every few seconds for the
-// ones newer than the last it saw (our database, never TeleGroup). Two screens, no C:
-//   A  the person page itself opens
-//   B  a small corner card: name, new or existing, last note, next step, Open
-//
-// NEW EVENTS ONLY. The first ask after the app opens returns the newest id and no events, so a
-// load or a reload pops nothing. One call pops once: "answered" updates the card "ringing" opened.
-const CP_EVERY_MS = 3000;
-let CP_TIMER = null;
-let CP_LAST = null;
-const CP_SHOWN = new Set();
-
-// A REVIEW control, not product furniture: ?cp=a or ?cp=b in the address. It goes when one
-// is picked.
-function cpVariant() {
-  try {
-    const q = new URLSearchParams(location.search).get('cp');
-    if (q === 'a' || q === 'b') { try { localStorage.setItem('callpopVariant', q); } catch (e) { /* this page only */ } return q; }
-    return localStorage.getItem('callpopVariant') === 'b' ? 'b' : 'a';
-  } catch (e) { return 'a'; }
-}
-
-function callPopStart() {
-  if (CP_TIMER) return;
-  cpTick();
-  CP_TIMER = setInterval(cpTick, CP_EVERY_MS);
-}
-
-async function cpTick() {
-  let d;
-  try {
-    // not api(): a poll every few seconds must not flash the busy bar or throw the login up
-    const q = CP_LAST === null ? '' : '?after=' + encodeURIComponent(CP_LAST);
-    const r = await fetch('/api/calls/events' + q, { headers: { 'x-acting-as': ACTOR } });
-    if (!r.ok) return;
-    d = await r.json();
-  } catch (e) { return; }
-  if (!d) return;
-  const baseline = CP_LAST === null;
-  CP_LAST = d.last;
-  if (baseline) return;
-  for (const ev of d.events || []) cpHandle(ev);
-}
-
-// What one event does on this screen. Returns what it did, so it can be tested on its own.
-function cpHandle(ev) {
-  const open = document.querySelector('#callpop') && document.querySelector('#callpop').dataset.call;
-  if (ev.taken) {                       // a colleague answered it: their call, not ours
-    if (open === ev.callId) cpClose();
-    return 'closed';
-  }
-  if (ev.event === 'ringing') {
-    if (CP_SHOWN.has(ev.callId)) return 'already';
-    CP_SHOWN.add(ev.callId);
-    cpShow(ev);
-    return 'shown';
-  }
-  if (ev.event === 'answered') {
-    if (ev.forYou || open === ev.callId || !CP_SHOWN.has(ev.callId)) {
-      CP_SHOWN.add(ev.callId);
-      cpShow({ ...ev, answered: true });
-      return 'shown';
-    }
-    return 'already';
-  }
-  return 'ignored';                     // "ended" changes nothing on screen
-}
-
-const cpWho = (w) => w.kind === 'person' ? (w.name || 'A person in Intake')
-  : w.kind === 'lead' ? (w.name || 'A lead waiting in the Inbox')
-  : 'New caller' + (w.last4 ? ' ···' + w.last4 : '');
-const cpWhere = (w) => w.kind === 'person' ? '#/person/' + encodeURIComponent(w.id) : w.kind === 'lead' ? '#/inbox' : null;
-
-// KB 08 P5 "Apps are work tools": name, new or existing, last note, next step, Open. Nothing more.
-// A missing note or step is left out, not announced. The A/B is chosen by ?cp=a / ?cp=b only.
-function cpCardHtml(call) {
-  const w = call.who || {};
-  const href = cpWhere(w);
-  const tag = w.kind === 'person' ? 'Existing' + (w.status ? ' · ' + w.status : '') : 'New';
-  return `<div class="cp-card" role="dialog" aria-live="assertive" aria-label="Incoming call">
-    <header><span class="cp-dot" aria-hidden="true"></span><b class="cp-name">${esc(cpWho(w))}</b>
-      <button class="cp-x" onclick="cpClose()" aria-label="Close">&times;</button></header>
-    <span class="cp-tag ${w.isNew ? 'new' : 'old'}">${esc(tag)}</span>
-    ${w.lastNote || w.nextStep ? `<dl>
-      ${w.lastNote ? `<div><dt>Last note</dt><dd>${esc(w.lastNote)}</dd></div>` : ''}
-      ${w.nextStep ? `<div><dt>Next step</dt><dd>${esc(w.nextStep)}${w.nextStepAt ? ' · ' + esc(fmtDate(w.nextStepAt)) : ''}</dd></div>` : ''}
-    </dl>` : ''}
-    ${href ? `<footer><a class="btn sm" href="${href}" onclick="cpClose()">Open</a></footer>` : ''}
-  </div>`;
-}
-
-function cpShow(call) {
-  const v = cpVariant();
-  const w = call.who || {};
-  let box = document.querySelector('#callpop');
-  if (!box) { box = document.createElement('div'); box.id = 'callpop'; document.body.appendChild(box); }
-  box.dataset.variant = v;
-  box.dataset.call = call.callId || call.id || '';
-  // A: the page itself opens FOR WHOEVER ANSWERED, with a slim line saying why the screen moved.
-  // Everybody else (a ring nobody has picked up yet) gets the slim line with Open, so one ring does
-  // not move every screen in the office. A new caller has no page, so A shows the card for them.
-  const href = cpWhere(w);
-  if (v === 'a' && href) {
-    if (call.forYou && location.hash !== href) location.hash = href;
-    box.innerHTML = `<div class="cp-strip" role="status"><span class="cp-dot" aria-hidden="true"></span>
-      <b>${esc(cpWho(w))}</b>
-      ${call.forYou ? '' : `<a class="btn sm" href="${href}">Open</a>`}
-      <button class="cp-x" onclick="cpClose()" aria-label="Close">&times;</button></div>`;
-    return;
-  }
-  box.innerHTML = cpCardHtml(call);
-}
-function cpClose() { const box = document.querySelector('#callpop'); if (box) { box.innerHTML = ''; box.dataset.call = ''; } }
-
 (async () => {
   // WHO ARE YOU, BEFORE ANYTHING ELSE IS FETCHED.
   //
@@ -7048,7 +6973,6 @@ async function startShell() {
   // sign-in off, where who you are is still a setting.
   if (AUTH.user) ACTOR = AUTH.user.name;
   drawActorPicker();
-  callPopStart();   // Q6: whoever answers the phone sees who is calling
   await route();
 }
 </script>

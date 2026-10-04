@@ -14,6 +14,22 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 04.10.2026 - THE A/B BATCH (run by MASTER CONTROL, Ritvars picks)
+
+**PICKED 04.10: header 4, blue glow** (step 1b, light only): one Novikontas Blue glow from the top-left corner,
+`radial-gradient(70% 45% at 0% 0%, rgba(83,167,219,.22) 0%, transparent 70%)`, laid OVER the locked sea on the page body
+(the sea is not forked; frames that carry --sea keep it); page titles navy #0a2463, 24px, weight unchanged. Home has no
+visible h1, left for step 4. Measured at 1440 on Today, Journey and Reports: h1 24px / 650 / rgb(10,36,99), the glow is
+the body's first layer. BUILT, next patch, not deployed.
+
+## 04.10.2026 - RELEASED: Q4 is LIVE in production 62f8178
+
+MASTER CONTROL cut `release/2026-10-04-intake` (2d4963a; deployed code `62f8178`, `dpl_uTzfeGw6PZNSgxUGoQUinLP41utH`),
+verified live by that session: page byte-identical, 401 on private routes, 0 leaks, the closed_tag column present.
+It contains `4d13f96` (Q4), so **Q4 is LIVE** (verified by MASTER CONTROL, not by this session). Merged into this
+branch at `64669ce`, no conflicts, **1034/1034**, seen running on a restarted preview. **Q5 (`32232ce`) and everything
+after it goes in the NEXT patch.**
+
 ## 04.10.2026 - Q4: "Acting as" shows User and Admin, no names
 
 Ritvars, 04.10.2026: "No need to show all users!" (MASTER CONTROL queue Q4). On a test copy with nobody
@@ -23,9 +39,45 @@ before. A name remembered from the old picker lands on its own side. Signed in (
 stays hidden and #whoBlock shows who you are, unchanged. **BUILT**, seen running: Admin opens Channels,
 User gets "Admins only". NOT DEPLOYED; MASTER CONTROL cuts the release at this commit.
 
-**Q5 (next, NOT in this patch):** left menu A/B, light mode only. A = the blue tint arrives by about 50%
-and holds; B = solid brandbook blue #53a7db with navy #0a2463 words and icons. Dark unchanged. A real
-switch, no C. SAID.
+**Q5, BUILT after the Q4 release commit (NOT in that patch):** left menu A/B, light mode only, switch
+`?menu=a|b` plus "Menu A B" in the menu foot (light only). A = white into the 15% tint by 50%, held to the
+foot. B = solid brandbook blue #53a7db, every word and icon navy #0a2463 (5.48:1; white is 2.65:1 and
+fails), the Today count navy instead of amber, the official black logo file on it. Dark identical in both.
+Seen running in Chrome and measured in the pane. **PICKED: B, 04.10** (Ritvars, after seeing A and B side by side at 1440 px, relayed by MASTER CONTROL). B is now the only light menu: A, the `?menu=` switch, the "Menu A B" control and the stored choice are removed. Dark unchanged. NEXT PATCH, not deployed.
+**ON HOLD, 04.10 (relayed by MASTER CONTROL):** on the live look Ritvars said the contrast is not enough (navy words,
+black logo, 35% navy hairline on #53a7db); he wants white on the blue. Two mockups are with him: A = white bold letters
+with a thin navy edge and a white hairline; B = white letters on navy pills, the open page in white. Both put the logo
+on a white plate in its official two-tone colours (the brandbook forbids outlining or shadowing the logo). The #53a7db
+surface stays. Letters, logo and hairline are NOT changed until his pick arrives. SAID.
+**PICKED: version 3, white logo aligned, 04.10** (Ritvars, from four mockups, relayed by MASTER CONTROL). On the
+#53a7db surface: the official WHITE logo file as it is (no recolour, outline, shadow or plate); every menu word, the
+Today count, icons and the spine hairline white at full opacity (lines 1.5, the active one 3); links 15.5px weight 800;
+no text edge, shadow or pills. **White on #53a7db measures 2.65:1, under the 4.5:1 guideline: it is his decision, made
+while looking at it.** His note "align the logo to the text": the file's symbol starts 162.49/1500 in, 17.12px at 158px,
+so the image moves left by that; measured at 1440: symbol x 20.01px, "Intake · v1.0" and the slogan x 20px. The form
+controls keep navy words on their white surfaces. Dark unchanged. BUILT, next patch, not deployed.
+**SUPERSEDED the same day:** after seeing white, Ritvars chose navy again ("actually the navy looks better"); `612297f` is replaced.
+
+**PICKED 04.10: navy text, white logo, v1.0 line removed, logo aligned.** On #53a7db: navy #0a2463 words, icons, counts and
+hairline (as `b3083f0`); the official WHITE logo file as it is; the "Intake · v1.0" line removed in light and dark (the
+slogan stays); the logo's left edge on the slogan's: measured at 1440, symbol x 20.01px, slogan x 20px.
+
+**PICKED 04.10: immersive menu 3** (his pick of three, desktop menu, light only, no pills): the locked gradient recipe
+extended (a #8fcbef glow at the top over #5aaedf -> #53a7db -> #4497cf), the official white logo file as a faint watermark
+low in the menu (opacity .13, 1000px from -40px, only the symbol shows, never clickable), the menu lifting off the page
+(white inner edge, soft navy shadow), the active spine line white 3 with a soft glow. The frame, never a data mark.
+**Navy measured on every gradient stop: 8.27:1 at the glow, 5.92 on #5aaedf, 5.48 on #53a7db, 4.55:1 on the deepest
+foot #4497cf - all pass 4.5:1, the foot by a hair.** Dark unchanged (checked). BUILT, next patch, not deployed.
+
+**Follow-up, Ritvars 04.10 (on 07be370):** "dark mode doesnt have the same effects, nor the na logo underneath. Also dont
+have the hairline progress. but also light doesnt have it completely correct, it stops a people. also it changes the shade
+of the left card when switching through the cards tabs". Fixed, measured at 1440 in both modes:
+- dark gets immersive menu 3 too: the sea's own #17456e glow over #0c2745 -> #08182e, the white logo watermark (.07, white
+  reads stronger on dark), the lift, the logo aligned to the slogan, the progress line #8fcbef 3 wide with a glow
+- the progress line reaches the PAGE: Journey and All people light with People, Today and Inbox with Admissions; the line
+  now ends on the child (Journey 193px, All people 222px, Today 88px = each lit item's centre)
+- the shade no longer changes: the menu is as tall as the page (1,144px Home, 3,493px Today), so the gradient is drawn
+  one viewport tall (100vh) in both modes, with the foot colour below. BUILT, next patch, not deployed.
 
 ## 02.10.2026 - DECIDED (popup): the person card, the menu, black, shadows
 
@@ -210,12 +262,10 @@ Branch `ui/2026-10-02-channels-s3`. **COMMITTED, NOT DEPLOYED.** Both for the NE
 |---|---|---|
 | Q3 Website adapter reads the live college forms' own field names; programme and "Source" answer stored | BUILT | `4bf9921` |
 | Website record: CONFIGURED 04.10 (secret + mode=test in Production, Tilda webhook Active, not ticked on a form) | BUILT | `4bf9921` |
-| Q6 first build (poll TeleGroup every 10 s) | REPLACED the same day | `625e108` |
-| Q6 rebuilt as a PUSH (Ritvars 04.10: "as if they notify us on each call"): `POST /api/inbound/phone-event` (ringing / answered / ended, `PHONE_EVENT_SECRET`, idempotent on call id + event), `call_events` table; on ended the call is stored by the daily pull's own `storeCall`, so push and pull never double; the app reads `GET /api/calls/events` from our database every 3 s; DEV CONTROL simulates a call | BUILT | see below |
-| Q6 screens for review: **A** the page opens for whoever answered (a ring elsewhere is a line with Open), **B** a corner card (`?cp=a` / `?cp=b`, or the switch on it) | BUILT | see below |
-| Ask TeleGroup to push events in the documented shape (05-phone-telegroup.md) | PARKED (email not sent) | - |
+| Q6 Call pop-up: `GET /api/calls/now` for every signed-in user, TeleGroup read shared 8 s, caller matched to a person / waiting lead / new caller, shown to the operator who answered (else everyone) | BUILT | see below |
+| Q6 screens for review: **A** the person page opens, **B** a corner card (`?cp=a` / `?cp=b`, or the switch on the card) | BUILT | see below |
 | training@ mailbox | PARKED (next scope, 04.10) | - |
-| Can TeleGroup push call events at all, and in what format? (Replaces the ringing-vs-hang-up test of the poll design) | SAID, open | - |
+| Does TeleGroup list a call while it RINGS, or only after hang-up? One test call to +371 23111114 (press 1) after deploy | SAID, open | - |
 | Every other adapter's `extracted` (programme, intent) still dropped in toIntake | SAID, reported to control | - |
 | Desktop notification when the app is not open (30.09 spec) | SAID, not in this build | - |
 
@@ -1376,6 +1426,8 @@ screen on the real-data snapshot (local, in memory) at 1440 / 900 / 390 px, ligh
 - The production database moves to Aigars' paid Supabase later; not started, by instruction.
 
 ## Pin
+
+**04.10.2026 (second patch) - LIVE: `0078bff` (release/2026-10-04-intake-2), dpl_E56YxQrYhFY5GXkGssK9uUMpXxG4, verified by MASTER CONTROL. Menu final + immersive (light and dark), header glow + navy titles, Channels one line per channel, website field names (Q3), Website temporary, Admissions reads all History. NOT in it: the call pop-up (unpicked A/B, polls every 3 s), type 2a and cards 2c (not built yet).**
 
 **04.10.2026 - LIVE: `62f8178` (release/2026-10-04-intake), dpl_uTzfeGw6PZNSgxUGoQUinLP41utH, verified by MASTER CONTROL; record in docs/INTAKE_CONTROL_2026-10-02.md (control/2026-10-02-s1). Production was 292b4f9 until today.**
 
