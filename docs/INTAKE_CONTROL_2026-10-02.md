@@ -259,3 +259,15 @@ Order: 1 frame (menu, page background, headers) -> 2 language (type sizes, colou
 | 1b Page header + background | **4 - the menu's blue glow flows into the page top**: page body gets `radial-gradient(70% 45% at 0% 0%, rgba(83,167,219,.22) 0%, rgba(83,167,219,0) 70%)` laid over the locked light sea; page titles navy `#0a2463`, 24px. Light mode | PICKED 04.10 -> S2 |
 | 2a Text sizes | **3 - strong hierarchy** (suggested by MASTER CONTROL, picked by Ritvars): page titles 30/750 navy, headline figures 30/750 navy (red stays red), people's names 17/700 navy, secondary details stay small (13, slate), small labels 11.5/600, status chips 13.5. Ink for names and figures = navy `#0a2463` instead of near-black `#011111`. Applies app-wide | PICKED 04.10 -> S2 |
 | 2c Card style | **3 - one card + thin brand-blue top edge** (Ritvars; MASTER CONTROL had suggested 2): every card white, radius 14, border 1px rgba(10,36,99,.07), shadow 0 1px 2px rgba(10,36,99,.06) + 0 10px 24px rgba(10,36,99,.08), **3px `#53a7db` top edge** as the family mark; the Needs-you card keeps its amber top (signal); no boxes inside cards (Needs-you tiles become columns split by 1px hairlines). App-wide, belongs in kit part 2 (`kit-panel`) too | PICKED 04.10 -> S2 |
+
+## 04.10.2026 21:0x - SECOND PATCH RELEASED: `0078bff` LIVE, pushed to GitHub
+
+| | |
+|---|---|
+| Branch | `release/2026-10-04-intake-2` (from `2d4963a`), **pushed to origin** (github.com/RitvarsTeo/college-crm), tip `3da59ab` (docs) |
+| Contents | MAIN `370b411` (menu final, immersive light+dark, line to child, gradient per viewport, header 4 glow + navy titles) · CLOSURE `ccc7985` (Admissions reads the full History - Ritvars to S5) · CHANNELS `b3da18a` (Q7 one line per channel, Q3 website field names + Company fix, Website temporary) · CONTROL `6faff11` |
+| Taken OUT | the call pop-up (`625e108`, `87ff839`, `368a77f` reverted): its A/B is unpicked AND the app polled `/api/calls/events` every 3 s from every open window even unconfigured (constant Vercel + Neon load). The revert also took training@'s "parked" record; restored (`f96eb86`) |
+| Not built yet | type 2a, cards 2c (MAIN, tomorrow) |
+| Checks | contents: no DB / sql / vercel.json / package.json change · 1034/1034 in the worktree and on the clean deploy checkout · release build seen at 1440: Today, Channels (12 lines, Admin), Home dark · fresh backup `2026-10-04T19-01-36Z` VERIFIED 1083 rows |
+| Deploy | `dpl_E56YxQrYhFY5GXkGssK9uUMpXxG4`: live page byte-identical, 72/72 files identical, 8 private routes 401, 0/23 leaks, health 200/302 |
+| NOT yet seen | signed in |
