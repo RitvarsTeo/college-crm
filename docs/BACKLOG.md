@@ -245,6 +245,18 @@ lives in DECISIONS.md and `config/prototype.json` only.
 **Owed:** the MVP map says the cold / reject field and screen go to Ritvars as an A/B first. Neither
 `b5f3a4c` nor `1345cd7` had one. The Outcomes form is now the UI/UX lane's to put in front of him.
 
+## 04.10.2026 - Phone channel to the finish line ("we will migrate")
+
+Ritvars, 04.10: *"we will migrate, how many times i have to tell you. so lets create the channel
+till the finish line!"* Plan limits and load are not a reason to hold anything back.
+
+| Item | Status |
+|---|---|
+| Call pop-up to his pick: on screen -> page for whoever answered, ring -> corner card; not on screen -> desktop notification. Poll only while calls can arrive. The pull writes call events, so no push is needed | BUILT `4c2fa64` |
+| **TeleGroup pull every minute** (`vercel.json` `* * * * *`). **Needs the paid Vercel account: Hobby refuses the deployment.** Ship with the account move, never before | BUILT, held for the move |
+| Web Push: the notification also reaches a colleague whose Intake is closed | next |
+| Ask TeleGroup for the push (ringing before answer) | PARKED (email not sent) |
+
 ## 04.10.2026 - DECIDED: the Website channel is temporary
 
 **Ritvars, 04.10.2026:** the Website connection is **only for the forms still live** on the English
