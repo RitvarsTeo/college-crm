@@ -240,3 +240,9 @@ All worktrees clean. **Combined scratch merge of all six tips** (`scratchpad/mer
 | Migration verified | post-deploy backup `_backups/2026-10-04T18-07-33Z` VERIFIED: `people.closed_tag text` present; 192 people, 1083 rows, same as the pre-deploy backup |
 | NOT yet seen | **signed in.** Ritvars: one look at Home, Journey, Channels, Reports |
 | Not pushed | the release branch is local; GitHub push only when Ritvars asks |
+
+### 04.10 - Release rules after the Channels screen (Ritvars, angry, 04.10)
+
+- **An A/B Ritvars has not picked never reaches production.** It stays on a branch and is shown to him there. (The 04.10 release shipped the Channels A/B "as the review surface" - that was MASTER CONTROL's call and it was wrong.)
+- **Before every release, every changed screen is read for one thing: cut every line that is not a state or an action.** Notes, evidence, provenance and to-dos live in docs.
+- Next-patch tips so far: MAIN `1071321` (release merged, Q5 menu A/B waits on his pick) · CHANNELS: Q7 strip first, then Q6 push.
