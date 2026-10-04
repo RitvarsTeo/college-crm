@@ -23,9 +23,11 @@ before. A name remembered from the old picker lands on its own side. Signed in (
 stays hidden and #whoBlock shows who you are, unchanged. **BUILT**, seen running: Admin opens Channels,
 User gets "Admins only". NOT DEPLOYED; MASTER CONTROL cuts the release at this commit.
 
-**Q5 (next, NOT in this patch):** left menu A/B, light mode only. A = the blue tint arrives by about 50%
-and holds; B = solid brandbook blue #53a7db with navy #0a2463 words and icons. Dark unchanged. A real
-switch, no C. SAID.
+**Q5, BUILT after the Q4 release commit (NOT in that patch):** left menu A/B, light mode only, switch
+`?menu=a|b` plus "Menu A B" in the menu foot (light only). A = white into the 15% tint by 50%, held to the
+foot. B = solid brandbook blue #53a7db, every word and icon navy #0a2463 (5.48:1; white is 2.65:1 and
+fails), the Today count navy instead of amber, the official black logo file on it. Dark identical in both.
+Seen running in Chrome and measured in the pane. **[DECIDE, Ritvars] A or B.** No C.
 
 ## 02.10.2026 - DECIDED (popup): the person card, the menu, black, shadows
 
