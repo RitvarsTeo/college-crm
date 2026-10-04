@@ -271,3 +271,9 @@ Order: 1 frame (menu, page background, headers) -> 2 language (type sizes, colou
 | Checks | contents: no DB / sql / vercel.json / package.json change · 1034/1034 in the worktree and on the clean deploy checkout · release build seen at 1440: Today, Channels (12 lines, Admin), Home dark · fresh backup `2026-10-04T19-01-36Z` VERIFIED 1083 rows |
 | Deploy | `dpl_E56YxQrYhFY5GXkGssK9uUMpXxG4`: live page byte-identical, 72/72 files identical, 8 private routes 401, 0/23 leaks, health 200/302 |
 | NOT yet seen | signed in |
+
+## 04.10.2026 - THIRD PATCH LIVE: `51290c4` (type 3 + feedback email), pushed
+
+Ritvars: "include the last corrections ... one commit, one deployment". Added to `release/2026-10-04-intake-2`: MAIN `ec0ab80` (type 3 strong hierarchy) and CLOSURE `bc76b17` (every new feedback item emailed to Ritvars from his own address; reuses the existing Google OAuth client, no new env; a failed email never fails the save). 1040/1040 in the worktree and on the clean deploy checkout. Backup `2026-10-04T19-09-41Z` VERIFIED. `dpl_wVRzijszSBfE5krkAqBJcmgxxJdU`: byte-identical page, 73/73 files, 8 private routes 401, 0 leaks. Pushed to origin.
+**Ritvars, once:** open `/api/admin/notify/connect` signed in and press Allow, or no email goes out. If Google refuses the send permission, gmail.send must be added on the OAuth consent screen.
+Not in it: cards 2c (not started), the call pop-up (S3 building to the finish line).
