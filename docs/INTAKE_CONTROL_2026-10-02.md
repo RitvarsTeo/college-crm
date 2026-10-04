@@ -222,3 +222,19 @@ All worktrees clean. **Combined scratch merge of all six tips** (`scratchpad/mer
 - **Decided by MASTER CONTROL: this session (S1) cuts the release and deploys.** It holds the merge evidence and the gates. MAIN builds Q4 in its own lane.
 - Sent 04.10, both delivered: MAIN -> Q4 first, report the commit, then Q5 (not in this patch). CHANNELS -> Q3 + the Website record (next patch).
 - The release is cut at MAIN's reported Q4 commit, together with the tips of S3, S4, S5, S6 and S1 as gathered. Anything committed after that waits for the next patch.
+
+## 04.10.2026 - RELEASED: `62f8178` is LIVE (MASTER CONTROL)
+
+| | |
+|---|---|
+| Branch | `release/2026-10-04-intake` (worktree `crm-release-0410`), cut from `561bce2` |
+| Contents | MAIN `4d13f96` (incl. Q4) · CLOSURE `cf6b112` (incl. `0e1da1d` migration) · CHANNELS `f388dcc` · APPLICATIONS `eca5ddc` · QA `8cd82b2` · CONTROL `8bb1406`; then `6151c28` record (production = code `c3ab3e4`, Website configured) and `62f8178` two Channels tests read the record instead of hard-coding 292b4f9 |
+| Not in it | Q3 (`4bf9921`, S3), Q5, Q6 - next patch |
+| Conflicts | one code conflict, `src/app.html` menu/background: MAIN's light tint + Channels' `--sea` (same locked recipe) |
+| Contents check | 292b4f9 is an ancestor (nothing live dropped); no new SQL file, no vercel.json / package.json change; DB change = `people.closed_tag TEXT` added at boot (nullable); PBX sync now opens a "Call back" task for a known lead's missed call (Ritvars 02.10) |
+| Tests | 1030/1030 in the release worktree; on the clean deploy checkout the first run had 2 spawn-tests time out under load (other sessions' servers on 8853/8854/8860), the next two runs 1030/1030 |
+| Deploy | `dpl_uTzfeGw6PZNSgxUGoQUinLP41utH`, via `_crm-v1-lane-tools/deploy_verify.sh 62f8178` |
+| Verified live | `/` byte-identical to the commit + sign-in script · 72/72 uploaded files identical, none outside git, no risky names · 8 private routes 401 · 23 source/config probes, 0 leaks · `/`, logo, robots, auth/me 200, Google start 302 |
+| Migration verified | post-deploy backup `_backups/2026-10-04T18-07-33Z` VERIFIED: `people.closed_tag text` present; 192 people, 1083 rows, same as the pre-deploy backup |
+| NOT yet seen | **signed in.** Ritvars: one look at Home, Journey, Channels, Reports |
+| Not pushed | the release branch is local; GitHub push only when Ritvars asks |
