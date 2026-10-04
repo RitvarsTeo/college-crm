@@ -220,8 +220,8 @@
           },
           {
             "address": "training@novikontas.org",
-            "state": "parked",
-            "detail": "Parked for the next scope (MASTER CONTROL, 04.10). Not to be connected now."
+            "state": "not_connected",
+            "detail": "Not authorised. Whether it should be is not recorded in this repository."
           }
         ]
       }
@@ -805,13 +805,7 @@
           "input": null
         },
         "blocker": null,
-        "destination": "A call is logged on the caller's profile. Unknown callers land in the Inbox; numbers archived as Spam, Supplier or Internal are filtered with the reason kept.",
-        "callPopUp": {
-          "state": "built, not deployed",
-          "seen": "2026-10-04",
-          "open": "Does TeleGroup list a call while it RINGS, or only after hang-up? One test call to +371 23111114 (press 1) after deploy answers it. Not known yet.",
-          "source": "Q6, docs/INTAKE_CONTROL_2026-10-02.md"
-        }
+        "destination": "A call is logged on the caller's profile. Unknown callers land in the Inbox; numbers archived as Spam, Supplier or Internal are filtered with the reason kept."
       }
     },
     "agent": {
