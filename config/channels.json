@@ -805,7 +805,14 @@
           "input": null
         },
         "blocker": null,
-        "destination": "A call is logged on the caller's profile. Unknown callers land in the Inbox; numbers archived as Spam, Supplier or Internal are filtered with the reason kept."
+        "destination": "A call is logged on the caller's profile. Unknown callers land in the Inbox; numbers archived as Spam, Supplier or Internal are filtered with the reason kept.",
+        "callPopUp": {
+          "state": "built, not deployed",
+          "seen": "2026-10-04",
+          "how": "Owner pick 04.10: Intake on screen -> the caller page opens for whoever answered (a ring is a corner card); not on screen -> a desktop notification. Events come from the push (POST /api/inbound/phone-event) and from the TeleGroup pull, which writes answered/ended events for every call it stores. The app polls /api/calls/events every 3 s only while the phone channel is on and has a source.",
+          "open": "Ringing reaches the pop-up only with the push. The pull gives answered/ended: within a minute once the pull runs every minute, which needs the paid Vercel plan (the account move).",
+          "source": "Q6, docs/INTAKE_CONTROL_2026-10-02.md"
+        }
       }
     },
     "agent": {

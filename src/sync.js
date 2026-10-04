@@ -15,6 +15,7 @@
 
 import { receive, confirmedBySystem, CONFIG, newPersonId, ownerFor, emailFilterWhy, purgeLineBodies } from './intake.js';
 import { findMatches, isStrong, normEmail, normPhone } from './identity.js';
+import { knock } from './webpush.js';
 import { logEvent, AUTOMATIC, MANUAL } from './history.js';
 import { fetchCalls, rowsFrom, WINDOW_MINUTES, toRigaStamp, ZONE } from '../lib/pbx.js';
 import { fetchChanged, toSisRow } from '../lib/sis.js';
@@ -108,7 +109,9 @@ const phoneThread = (num) => {
   return d.length > 5 ? 'phone:' + d.slice(-8) : null;
 };
 
-async function storeCall(db, r, mode, at, out) {
+// Exported for the pushed call events (src/phoneevent.js): one function stores a call, whichever
+// path saw it first, so the two can never make two leads for one call.
+export async function storeCall(db, r, mode, at, out) {
   // the pieces overlap on purpose; a call already here was handled last time
   const had = await db.prepare('SELECT uniqueid FROM pbx_calls WHERE uniqueid = ?').get(r.uniqueid);
   if (had) { out.seen++; return; }
@@ -170,6 +173,26 @@ async function storeCall(db, r, mode, at, out) {
     operator_name, person_id, inbound_id, inserted_at) VALUES (?,?,?,?,?,?,?,?,?)`).run(
     r.uniqueid, r.created_at, r.queue, r.caller_num, r.picked_up ? 1 : 0, r.operator_name,
     personId, inboundId, at);
+  await callEventsFromPull(db, r, mode, at);
+}
+
+// A call the PULL found becomes call events too (Q6, 04.10.2026), so the pop-up works without
+// TeleGroup's push: "answered" for whoever picked up, then "ended". The same call id + event as a
+// push, so whichever came first is the one stored; the other is a repeat.
+async function callEventsFromPull(db, r, mode, at) {
+  const source = mode === 'live' ? 'provider' : 'simulated';
+  const rows = [];
+  if (r.picked_up) rows.push(['answered', r.operator_name || null]);
+  rows.push(['ended', r.operator_name || null]);
+  for (const [event, operator] of rows) {
+    try {
+      await db.prepare(`INSERT INTO call_events (call_id, event, at, queue, caller_num, operator, extension, source, received_at)
+        VALUES (?,?,?,?,?,?,?,?,?)`).run(r.uniqueid, event, r.created_at, r.queue, r.caller_num, operator, null, source, at);
+      await knock(db, { event, operator });   // a new event only: a repeat never knocks twice
+    } catch (err) {
+      if (!/UNIQUE|duplicate key|unique constraint/i.test(String(err && err.message))) throw err;
+    }
+  }
 }
 
 export async function syncPbx(db, { now = new Date(), minutes = WINDOW_MINUTES,
@@ -218,6 +241,7 @@ export async function syncPbx(db, { now = new Date(), minutes = WINDOW_MINUTES,
   // newer one with it. The line stays and says when its body went: a deletion nobody
   // can see is not auditable.
   result.purgedLines = await purgeLineBodies(db, retentionCutoff(now));
+  result.purgedEvents = await purgeOld(db, 'call_events', 'at', now);   // the same 13 months
   return result;
 }
 
