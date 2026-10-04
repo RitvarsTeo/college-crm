@@ -291,3 +291,7 @@ Ritvars's "wait for MAIN's dark mode" arrived after the deploy had finished; dar
 ## 04.10 - FIFTH PATCH LIVE: `05ba51f` (dark cards match light), pushed
 
 MAIN `ac4c207` (0021888 dark cards: solid #133a60, 3px #53a7db top, amber Needs-you; plus the <760px Conversion padding fix). Only change vs patch 4: 17 lines of CSS + a test. 1071/1071. Dark Home seen on the release build. Backup `2026-10-04T19-29-00Z` VERIFIED. `dpl_BoSkMnWhNyDrrX8utaRaGhmAFoLH`: byte-identical, 77/77, 8 private 401, 0 leaks. Pushed to origin.
+
+### 04.10 late - the white pills were a misread (Ritvars, angry)
+
+"white up the tab we are in" meant the TEXT, not a white tab background. Ritvars on production: "why are there white pills? fix that immediately" / "IT JUST NEEDS TO whiten up the TEXT". Fix -> S2: no white backgrounds; lit item + its parent get white bold text, icon and count; the soft highlight as before `bd45f42`. Deploy as soon as it lands. Lesson: when a short instruction can mean two things (text vs tab), show one picture before building.
