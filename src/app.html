@@ -938,22 +938,36 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c:not([data-theme="dark"]) .cnav .c-spine line{stroke:rgba(10,36,99,.35)}
   html.ui-c:not([data-theme="dark"]) .cnav .c-spine line.on{stroke:#0a2463}
   html.ui-c:not([data-theme="dark"]) .shell > nav .c-foot a{color:#0a2463}
-  /* IMMERSIVE MENU 3 (his pick of three, 04.10.2026), the desktop menu in light. The FRAME, never a data
-     mark, so the depth rule holds:
-       - the locked gradient recipe extended: a light glow at the top over a vertical deepening of the
-         same blue (navy measured 8.27:1 at the glow, 5.48:1 on #53a7db, 4.55:1 on the deepest foot #4497cf)
-       - the brand pattern: the official WHITE logo file as a faint watermark low in the menu, wide
-         enough that only the symbol shows; the file as it is, behind the items, never clickable
-       - the menu lifts off the page: a white inner edge and a soft navy shadow
-       - the active spine line white, 3 wide, with a soft white glow */
+  /* IMMERSIVE MENU 3 (his pick of three, 04.10.2026), the desktop menu, in light AND dark (his follow-up
+     the same day: "dark mode doesnt have the same effects, nor the na logo underneath"). The FRAME, never
+     a data mark, so the depth rule holds:
+       - the locked gradient recipe extended: a glow at the top over a vertical deepening. Light: #8fcbef
+         over #5aaedf -> #53a7db -> #4497cf (navy measured 8.27 / 5.92 / 5.48 / 4.55:1). Dark: the sea's own
+         #17456e glow over #0c2745 -> #0a2140 -> #08182e
+       - ONE VIEWPORT TALL, never stretched: the menu is as tall as the page (1,144px on Home, 3,493px on
+         Today), so a gradient sized to the menu changed shade on every tab ("it changes the shade of the
+         left card when switching"). It is drawn 100vh tall and the foot colour continues below it
+       - the brand pattern: the official WHITE logo file as a faint watermark low in the menu, only the
+         symbol showing; the file as it is, behind the items, never clickable
+       - the menu lifts off the page: an inner edge and a soft shadow
+       - the progress line (the spine to where you are) 3 wide with a soft glow: white on the blue, the
+         dark menu's light blue in dark */
   @media (min-width:901px){
-    html.ui-c:not([data-theme="dark"]) .shell > nav{position:relative;overflow:hidden;z-index:2;
-      background:radial-gradient(120% 60% at 50% 0%,#8fcbef 0%,rgba(143,203,239,0) 60%),linear-gradient(180deg,#5aaedf 0%,#53a7db 45%,#4497cf 100%);
+    html.ui-c .shell > nav{position:relative;overflow:hidden;z-index:2}
+    html.ui-c:not([data-theme="dark"]) .shell > nav{background-color:#4497cf;background-size:100% 100vh;background-repeat:no-repeat;
+      background-image:radial-gradient(120% 60% at 50% 0%,#8fcbef 0%,rgba(143,203,239,0) 60%),linear-gradient(180deg,#5aaedf 0%,#53a7db 45%,#4497cf 100%);
       box-shadow:inset -1px 0 0 rgba(255,255,255,.35),6px 0 24px rgba(10,36,99,.18)}
-    html.ui-c:not([data-theme="dark"]) .shell > nav::after{content:"";position:absolute;z-index:-1;left:-40px;top:560px;width:1000px;height:330px;
+    html.ui-c[data-theme="dark"] .shell > nav{background-color:#08182e;background-size:100% 100vh;background-repeat:no-repeat;
+      background-image:radial-gradient(120% 60% at 50% 0%,rgba(23,69,110,.9) 0%,rgba(23,69,110,0) 60%),linear-gradient(180deg,#0c2745 0%,#0a2140 45%,#08182e 100%);
+      box-shadow:inset -1px 0 0 rgba(194,211,222,.12),6px 0 24px rgba(0,0,0,.35)}
+    html.ui-c .shell > nav::after{content:"";position:absolute;z-index:-1;left:-40px;top:560px;width:1000px;height:330px;
       background:url(/assets/NoAca_logo_whitehor.svg) no-repeat left top/1000px auto;opacity:.13;pointer-events:none}
-    html.ui-c:not([data-theme="dark"]) .shell > nav > *{position:relative;z-index:1}
-    html.ui-c:not([data-theme="dark"]) .cnav .c-spine line.on{stroke:#ffffff;stroke-width:3;filter:drop-shadow(0 0 4px rgba(255,255,255,.9))} }
+    html.ui-c[data-theme="dark"] .shell > nav::after{opacity:.07}   /* white reads stronger on the dark sea */
+    html.ui-c .shell > nav > *{position:relative;z-index:1}
+    html.ui-c:not([data-theme="dark"]) .cnav .c-spine line.on{stroke:#ffffff;stroke-width:3;filter:drop-shadow(0 0 4px rgba(255,255,255,.9))}
+    html.ui-c[data-theme="dark"] .cnav .c-spine line.on{stroke:#8fcbef;stroke-width:3;filter:drop-shadow(0 0 4px rgba(143,203,239,.85))}
+    /* the same white logo file in dark: lined up with the slogan there too */
+    html.ui-c[data-theme="dark"] nav .brand .logo.dark{margin-left:-17.12px} }
   /* the form controls keep their own white surfaces, so their words stay navy and readable */
   html.ui-c:not([data-theme="dark"]) .shell > nav select{color:#0a2463}
   html.ui-c:not([data-theme="dark"]) .shell > nav .theme-switch button[aria-checked="true"]{color:#0a2463}
@@ -2423,7 +2437,15 @@ function cPlace(page) {
 }
 function markCNav(page) {
   const place = cPlace(page);
-  const lit = [place];
+  // THE PROGRESS LINE RUNS TO THE PAGE YOU ARE ON (the owner, 04.10.2026: "it stops at people"). The
+  // child is lit with its parent, so the spine reaches Journey or All people, not only People; Today
+  // and Inbox light Admissions above them the same way.
+  const parent = { today: 'admissions', leads: 'admissions' }[place] || place;
+  const child = place === 'today' || place === 'leads' ? place
+    : page === 'journey' ? 'journey'
+    : page === 'people' ? (/^#\/people\/all/.test(location.hash) ? 'all' : (typeof C_PTAB !== 'undefined' && C_PTAB === 'all' ? 'all' : 'journey'))
+    : null;
+  const lit = [parent, child].filter(Boolean);
   document.querySelectorAll('.cnav a').forEach((a) => a.classList.toggle('on', lit.includes(a.dataset.c)));
   // on a phone the menu is one sideways row: bring the place you are in into view (the deepest one lit)
   setTimeout(() => { const here = [...document.querySelectorAll('.cnav a.on')].pop(); const row = document.querySelector('.cnav');

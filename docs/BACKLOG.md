@@ -61,6 +61,16 @@ low in the menu (opacity .13, 1000px from -40px, only the symbol shows, never cl
 **Navy measured on every gradient stop: 8.27:1 at the glow, 5.92 on #5aaedf, 5.48 on #53a7db, 4.55:1 on the deepest
 foot #4497cf - all pass 4.5:1, the foot by a hair.** Dark unchanged (checked). BUILT, next patch, not deployed.
 
+**Follow-up, Ritvars 04.10 (on 07be370):** "dark mode doesnt have the same effects, nor the na logo underneath. Also dont
+have the hairline progress. but also light doesnt have it completely correct, it stops a people. also it changes the shade
+of the left card when switching through the cards tabs". Fixed, measured at 1440 in both modes:
+- dark gets immersive menu 3 too: the sea's own #17456e glow over #0c2745 -> #08182e, the white logo watermark (.07, white
+  reads stronger on dark), the lift, the logo aligned to the slogan, the progress line #8fcbef 3 wide with a glow
+- the progress line reaches the PAGE: Journey and All people light with People, Today and Inbox with Admissions; the line
+  now ends on the child (Journey 193px, All people 222px, Today 88px = each lit item's centre)
+- the shade no longer changes: the menu is as tall as the page (1,144px Home, 3,493px Today), so the gradient is drawn
+  one viewport tall (100vh) in both modes, with the foot colour below. BUILT, next patch, not deployed.
+
 ## 02.10.2026 - DECIDED (popup): the person card, the menu, black, shadows
 
 | Decision (Ritvars, 02.10.2026) | Status |

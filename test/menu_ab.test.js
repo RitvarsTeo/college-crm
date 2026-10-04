@@ -38,15 +38,31 @@ test('"Intake · v1.0" is gone in both modes; the slogan stays', () => {
   assert.match(APP, /<span id="tagline">Every first contact, in one place<\/span>/);
 });
 
-test('immersive menu 3: glow, watermark, lift, glowing active line; desktop light only, a frame', () => {
+test('immersive menu 3 in BOTH modes: glow, watermark, lift, glowing progress line; a frame', () => {
   const block = APP.slice(APP.indexOf('IMMERSIVE MENU 3'), APP.indexOf('the form controls keep their own white surfaces'));
-  assert.match(block, /radial-gradient\(120% 60% at 50% 0%,#8fcbef 0%,rgba\(143,203,239,0\) 60%\),linear-gradient\(180deg,#5aaedf 0%,#53a7db 45%,#4497cf 100%\)/);
-  assert.match(block, /box-shadow:inset -1px 0 0 rgba\(255,255,255,\.35\),6px 0 24px rgba\(10,36,99,\.18\)/);
-  assert.match(block, /::after\{content:"";position:absolute;z-index:-1;left:-40px;top:560px;width:1000px;[^}]*url\(\/assets\/NoAca_logo_whitehor\.svg\)[^}]*opacity:\.13;pointer-events:none\}/,
-    'the official white file as a faint watermark, never clickable');
-  assert.match(block, /\.c-spine line\.on\{stroke:#ffffff;stroke-width:3;filter:drop-shadow\(0 0 4px rgba\(255,255,255,\.9\)\)\}/);
-  assert.match(APP, /@media \(min-width:901px\)\{\s*html\.ui-c:not\(\[data-theme="dark"\]\) \.shell > nav\{position:relative;overflow:hidden;z-index:2;/);
+  assert.match(block, /radial-gradient\(120% 60% at 50% 0%,#8fcbef 0%,rgba\(143,203,239,0\) 60%\),linear-gradient\(180deg,#5aaedf 0%,#53a7db 45%,#4497cf 100%\)/, 'light');
+  assert.match(block, /html\.ui-c\[data-theme="dark"\] \.shell > nav\{background-color:#08182e;[^}]*radial-gradient\(120% 60% at 50% 0%,rgba\(23,69,110,\.9\) 0%/, 'dark, from the sea\'s own glow');
+  assert.match(block, /html\.ui-c \.shell > nav::after\{content:"";position:absolute;z-index:-1;left:-40px;top:560px;width:1000px;[^}]*url\(\/assets\/NoAca_logo_whitehor\.svg\)[^}]*pointer-events:none\}/,
+    'the official white logo watermark, both modes, never clickable');
+  assert.match(block, /html\.ui-c\[data-theme="dark"\] \.cnav \.c-spine line\.on\{stroke:#8fcbef;stroke-width:3;filter:drop-shadow/, 'the dark progress line glows too');
+  assert.match(block, /html\.ui-c:not\(\[data-theme="dark"\]\) \.cnav \.c-spine line\.on\{stroke:#ffffff;stroke-width:3;filter:drop-shadow/);
   assert.doesNotMatch(block, /border-radius/, 'no pills');
+});
+
+// "it changes the shade of the left card when switching through the tabs": the menu is as tall as
+// the page, so a gradient sized to it stretched differently on every tab. One viewport tall, always.
+test('the menu gradient is one viewport tall in both modes, so its shade never changes between tabs', () => {
+  for (const mode of ['html\\.ui-c:not\\(\\[data-theme="dark"\\]\\)', 'html\\.ui-c\\[data-theme="dark"\\]']) {
+    assert.match(APP, new RegExp(mode + ' \\.shell > nav\\{background-color:#[0-9a-f]{6};background-size:100% 100vh;background-repeat:no-repeat;'));
+  }
+});
+
+// "it stops at people": the progress line runs to the PAGE you are on, so the child is lit with its parent
+test('the progress line reaches the page: Journey, All people, Today and Inbox light with their parent', () => {
+  const m = APP.slice(APP.indexOf('function markCNav('), APP.indexOf("document.querySelectorAll('.cnav a').forEach((a) => a.classList.toggle('on'", APP.indexOf('function markCNav(')));
+  assert.match(m, /const parent = \{ today: 'admissions', leads: 'admissions' \}\[place\] \|\| place;/);
+  assert.match(m, /page === 'journey' \? 'journey'/);
+  assert.match(m, /const lit = \[parent, child\]\.filter\(Boolean\);/);
 });
 
 test('the form controls stay readable, the A/B is gone, dark is unchanged', () => {
