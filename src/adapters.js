@@ -56,15 +56,12 @@ function pickFrom(raw) {
   };
 }
 
-// The person's name. The college enquiry form sends one field, "Name Surname"; the contact form
-// on college/en/contacts sends two, Name and Name_2, which are joined. Fields are never renamed
-// in Tilda: two Make webhooks read the same forms (Q3, 04.10.2026).
+// The person's name. The college enquiry form sends one field, "Name Surname" (placeholder "Name,
+// Surname"); the contact form on college/en/contacts sends Name (placeholder "Name, Surname") and
+// Name_2, which is COMPANY - seen on the live page 04.10, so it is never joined onto the name.
+// Fields are never renamed in Tilda: two Make webhooks read the same forms (Q3, 04.10.2026).
 function nameFrom(f) {
-  const whole = f('name surname', 'full_name', 'vards uzvards', 'vārds uzvārds');
-  if (whole) return str(whole);
-  const first = f('name', 'vards', 'vārds');
-  const second = f('name_2', 'surname', 'uzvards', 'uzvārds');
-  return str([first, second].filter((x) => x != null && String(x).trim() !== '').map((x) => String(x).trim()).join(' '));
+  return str(f('name surname', 'full_name', 'vards uzvards', 'vārds uzvārds', 'name', 'vards', 'vārds'));
 }
 
 // Tilda's COOKIES field carries TILDAUTM=utm_source%3D...%7C%7C%7Cutm_medium%3D...; read the
@@ -98,7 +95,8 @@ export const ADAPTERS = {
       // "Source" on the college form is the person's own answer to "where did you hear about
       // us". It is an answer, not advert tracking, so it never becomes the utm source.
       extracted: { programme: str(f('programme', 'program', 'study program', 'study programme', 'programma')),
-        study_form: str(f('study_form')), heard_from: str(f('source')) },
+        study_form: str(f('study_form')), heard_from: str(f('source')),
+        company: str(f('company', 'name_2')) },
       attribution: { utm_source: str(utm.utm_source), utm_medium: str(utm.utm_medium),
         utm_campaign: str(utm.utm_campaign), gclid: str(utm.gclid) },
       consent: { admissions: truthy(f('consent_admissions')), marketing: truthy(f('consent_marketing')) },
@@ -482,7 +480,7 @@ export function toIntake(ev) {
   };
 }
 
-const WEBSITE_ANSWERS = { programme: 'form_programme', study_form: 'form_study_form', heard_from: 'heard_from' };
+const WEBSITE_ANSWERS = { programme: 'form_programme', study_form: 'form_study_form', heard_from: 'heard_from', company: 'form_company' };
 function websiteAnswers(x) {
   const out = {};
   for (const [k, field] of Object.entries(WEBSITE_ANSWERS)) if (x && x[k]) out[field] = String(x[k]);

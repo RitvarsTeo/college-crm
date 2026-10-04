@@ -109,7 +109,7 @@ const ENQUIRY = {
   tranid: '1111111:2222222', formid: 'form-enquiry',
 };
 const CONTACT = {
-  Name: 'Liga', Name_2: 'Kalnina', Phone: '+371 20000002', Email: 'liga@example.com',
+  Name: 'Liga Kalnina', Name_2: 'Novikontas Test SIA', Phone: '+371 20000002', Email: 'liga@example.com',
   Textarea: 'Please call me', tranid: '3333333:4444444', formid: 'form-contacts',
 };
 
@@ -133,11 +133,12 @@ test('Q3: the same form with underscores instead of spaces reads the same', () =
   assert.equal(e.messageBody, 'When does it start?');
 });
 
-test('Q3: the contacts form joins Name and Name_2, and Textarea is the message', () => {
+test('Q3: the contacts form - Name is the name, Name_2 is COMPANY and never joined onto it', () => {
+  // seen on the live page 04.10: Name has the placeholder "Name, Surname", Name_2 has "Company"
   const e = ADAPTERS.website(CONTACT);
   assert.equal(e.senderName, 'Liga Kalnina');
+  assert.equal(e.extracted.company, 'Novikontas Test SIA');
   assert.equal(e.messageBody, 'Please call me');
-  assert.equal(ADAPTERS.website({ ...CONTACT, Name_2: '' }).senderName, 'Liga', 'an empty surname adds nothing');
 });
 
 test('Q3: utm tags from COOKIES still win the source, alongside the "Source" answer', () => {
