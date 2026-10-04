@@ -858,10 +858,6 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c{--sea:radial-gradient(120% 80% at 50% 0%,#fbfcfd 0%,rgba(251,252,253,0) 60%),
       linear-gradient(180deg,#f7f9fb 0%,#f5f7fa 45%,#e7ebf0 100%)}
   html.ui-c:not([data-theme="dark"]) body{background:var(--sea) fixed #f5f7fa}
-  /* the menu takes the same treatment it takes in dark: a quiet vertical fall, so the
-     two modes are the same design and not two designs */
-  html.ui-c:not([data-theme="dark"]) .shell > nav{
-    background:linear-gradient(180deg,#ffffff 0%,#ffffff 40%,#e5f2fa 100%);border-right:1px solid var(--rule)}   /* white into a soft Novikontas Blue #53a7db tint (15% on white), the owner 02.10.2026 */
   html.ui-c[data-theme="dark"] body{background:var(--sea) fixed #0f2f4f}
   html.ui-c[data-theme="dark"] .shell > nav{background:linear-gradient(180deg,rgba(8,24,46,.78) 0%,rgba(8,24,46,.92) 100%);border-right:1px solid rgba(194,211,222,.10)}
   html.ui-c[data-theme="dark"] :is(.c-health,.c-sheet,.c-seg,.c-said,.c-card,.c-jp,.c-folded,.c-next.c-finished,.kstrip,.ksec){
@@ -918,31 +914,25 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   .c-themebar, .c-foot, .c-pagefoot{display:none}
   html.ui-c #themeBlock{display:none}
   html.ui-c .c-themebar{display:block;margin-top:12px;padding:12px 20px 0;border-top:1px solid var(--rule2)}
-  /* ---- Q5 MENU A/B, light only (see menuVariant). Dark is untouched by both. ---- */
+  /* ---- THE LIGHT MENU IS SOLID BRANDBOOK BLUE (the owner picked B of Q5, 04.10.2026, after seeing
+     A and B side by side at 1440 px). #53a7db is the SURFACE, so the "never text" rule is untouched;
+     everything on it is navy #0a2463 (5.48:1; white would be 2.65:1 and fails), the amber count turns
+     navy (amber on the blue fails), and the official black logo file sits on it. Dark is unchanged. ---- */
   nav .brand .logo.onblue{display:none}
-  html.ui-c .c-menuab{display:none}
-  html.ui-c:not([data-theme="dark"]) .c-menuab{display:flex;align-items:center;gap:4px;padding:10px 20px 0;font-size:11.5px;color:var(--t3)}
-  html.ui-c .c-menuab span{margin-right:4px}
-  html.ui-c .c-menuab button{appearance:none;min-width:26px;padding:2px 7px;border:1px solid var(--rule);border-radius:6px;background:transparent;font:inherit;font-size:11.5px;color:var(--t2);cursor:pointer}
-  html.ui-c .c-menuab button.on{background:#0a2463;border-color:#0a2463;color:#ffffff;font-weight:600}
-  @media (max-width:900px){ html.ui-c .c-menuab{display:none!important} }
-  /* A: white at the top, the 15% Novikontas Blue tint by half way, held to the foot */
-  html.ui-c.menu-a:not([data-theme="dark"]) .shell > nav{background:linear-gradient(180deg,#ffffff 0%,#e5f2fa 50%,#e5f2fa 100%)}
-  /* B: the brandbook blue as the surface; everything on it navy, nothing on it white or amber */
-  html.ui-c.menu-b:not([data-theme="dark"]) .shell > nav{background:#53a7db;border-right-color:rgba(10,36,99,.18);color:#0a2463;
+  html.ui-c:not([data-theme="dark"]) .shell > nav{background:#53a7db;border-right:1px solid rgba(10,36,99,.18);color:#0a2463;
     --t2:#0a2463;--t3:#0a2463;--t4:#0a2463;--ink:#0a2463;--rule:rgba(10,36,99,.22);--rule2:rgba(10,36,99,.22);--c-sunk:rgba(255,255,255,.28);--c-warn:#0a2463;--control-line:rgba(10,36,99,.35)}
-  html.ui-c.menu-b:not([data-theme="dark"]) nav .brand .logo.light{display:none}
-  html.ui-c.menu-b:not([data-theme="dark"]) nav .brand .logo.onblue{display:block}
-  html.ui-c.menu-b:not([data-theme="dark"]) .cnav a{color:#0a2463}
-  html.ui-c.menu-b:not([data-theme="dark"]) .cnav a svg{opacity:1}
-  html.ui-c.menu-b:not([data-theme="dark"]) .cnav a:hover{background:rgba(255,255,255,.28);color:#0a2463}
-  html.ui-c.menu-b:not([data-theme="dark"]) .cnav a.on{background:rgba(255,255,255,.34);color:#0a2463;font-weight:650}
-  html.ui-c.menu-b:not([data-theme="dark"]) .cnav a.on svg{color:#0a2463}
-  html.ui-c.menu-b:not([data-theme="dark"]) .cnav .n.warn{color:#0a2463;font-weight:700}
-  html.ui-c.menu-b:not([data-theme="dark"]) .cnav .kids{border-left-color:rgba(10,36,99,.35)}
-  html.ui-c.menu-b:not([data-theme="dark"]) .cnav .c-spine line{stroke:rgba(10,36,99,.35)}
-  html.ui-c.menu-b:not([data-theme="dark"]) .cnav .c-spine line.on{stroke:#0a2463}
-  html.ui-c.menu-b:not([data-theme="dark"]) .shell > nav .c-foot a{color:#0a2463}
+  html.ui-c:not([data-theme="dark"]) nav .brand .logo.light{display:none}
+  html.ui-c:not([data-theme="dark"]) nav .brand .logo.onblue{display:block}
+  html.ui-c:not([data-theme="dark"]) .cnav a{color:#0a2463}
+  html.ui-c:not([data-theme="dark"]) .cnav a svg{opacity:1}
+  html.ui-c:not([data-theme="dark"]) .cnav a:hover{background:rgba(255,255,255,.28);color:#0a2463}
+  html.ui-c:not([data-theme="dark"]) .cnav a.on{background:rgba(255,255,255,.34);color:#0a2463;font-weight:650}
+  html.ui-c:not([data-theme="dark"]) .cnav a.on svg{color:#0a2463}
+  html.ui-c:not([data-theme="dark"]) .cnav .n.warn{color:#0a2463;font-weight:700}
+  html.ui-c:not([data-theme="dark"]) .cnav .kids{border-left-color:rgba(10,36,99,.35)}
+  html.ui-c:not([data-theme="dark"]) .cnav .c-spine line{stroke:rgba(10,36,99,.35)}
+  html.ui-c:not([data-theme="dark"]) .cnav .c-spine line.on{stroke:#0a2463}
+  html.ui-c:not([data-theme="dark"]) .shell > nav .c-foot a{color:#0a2463}
   html.ui-c .c-foot{display:flex;flex-wrap:wrap;gap:2px 10px;padding:10px 20px 0;font-size:11.5px;color:var(--t3)}
   html.ui-c .c-foot > *{white-space:nowrap}
   html.ui-c .c-foot a{color:var(--t2);text-decoration:underline;text-underline-offset:2px}
@@ -2152,7 +2142,6 @@ svg .m-flag-mark{transform-origin:0 100%}
       </select></div>
     <!-- Concept C: the light/dark switch and the footer line. Filled by installCNav(). -->
     <div class="c-themebar" id="cThemeBar"></div>
-    <div class="c-menuab" id="cMenuAb"></div>
     <div class="c-foot"><span>&copy; Novikontas Academy</span> <a href="#/help">Help center</a></div>
   </nav>
   <main id="view"><div class="empty">Loading...</div></main>
@@ -2346,32 +2335,8 @@ const UI = (() => {
   } catch { return q === 'classic' ? 'classic' : 'c'; }
 })();
 document.documentElement.classList.toggle('ui-c', UI === 'c');
-// Q5, LEFT MENU A/B, LIGHT MODE ONLY (the owner, 04.10.2026). Both built, neither chosen; a review
-// control like ?home= was, and it goes when the menu is settled. Dark mode is the same in both.
-//   A - the blue tint arrives by about half way down and holds to the foot
-//   B - solid brandbook Novikontas Blue #53a7db as the SURFACE, with navy #0a2463 words and icons
-//       (white on it is about 2.65:1 and fails; navy is 5.48:1) and the black logo on it
-function menuVariant() {
-  let q = null;
-  try { q = new URLSearchParams(location.search).get('menu'); } catch (e) { /* no URL */ }
-  try {
-    if (q === 'a' || q === 'b') localStorage.setItem('menuvariant', q);
-    return localStorage.getItem('menuvariant') === 'b' ? 'b' : 'a';
-  } catch (e) { return q === 'b' ? 'b' : 'a'; }
-}
-function applyMenuVariant(v) {
-  document.documentElement.classList.toggle('menu-a', v === 'a');
-  document.documentElement.classList.toggle('menu-b', v === 'b');
-  const box = document.querySelector('#cMenuAb');
-  if (box) box.innerHTML = `<span>Menu</span><button type="button" class="${v === 'a' ? 'on' : ''}" aria-pressed="${v === 'a'}" onclick="menuSetVariant('a')">A</button><button type="button" class="${v === 'b' ? 'on' : ''}" aria-pressed="${v === 'b'}" onclick="menuSetVariant('b')">B</button>`;
-}
-function menuSetVariant(v) {
-  try { localStorage.setItem('menuvariant', v); } catch (e) { /* private window: this turn only */ }
-  // the click is the newer choice: drop a ?menu= left in the address so a reload keeps it
-  try { const u = new URL(location.href); if (u.searchParams.has('menu')) { u.searchParams.delete('menu'); history.replaceState(history.state, '', u.toString()); } } catch (e) { /* old browser */ }
-  applyMenuVariant(v);
-}
-applyMenuVariant(menuVariant());
+// The menu A/B (Q5) is settled: B. A choice remembered from the review control is cleared once.
+try { localStorage.removeItem('menuvariant'); } catch (e) { /* private window: nothing stored */ }
 
 const C_ICON = {
   home: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 10.2 10 4l7 6.2"/><path d="M5 8.8V16h10V8.8"/></svg>',
@@ -2400,7 +2365,6 @@ function installCNav() {
   if (!brand || document.querySelector('.cnav')) return;
   brand.setAttribute('href', '#/home');
   for (const bar of document.querySelectorAll('#cThemeBar, #cThemeBar2')) bar.innerHTML = themeSwitchHtml();
-  applyMenuVariant(menuVariant());
   brand.insertAdjacentHTML('afterend', `<div class="cnav" role="navigation" aria-label="Main">
     <a href="#/home" data-c="home" title="How admissions is performing">${C_ICON.home}<span>Home</span></a>
     <a href="#/admissions" data-c="admissions" title="The work and what has arrived">${C_ICON.adm}<span>Admissions</span></a>

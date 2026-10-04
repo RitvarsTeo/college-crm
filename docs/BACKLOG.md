@@ -35,7 +35,7 @@ User gets "Admins only". NOT DEPLOYED; MASTER CONTROL cuts the release at this c
 `?menu=a|b` plus "Menu A B" in the menu foot (light only). A = white into the 15% tint by 50%, held to the
 foot. B = solid brandbook blue #53a7db, every word and icon navy #0a2463 (5.48:1; white is 2.65:1 and
 fails), the Today count navy instead of amber, the official black logo file on it. Dark identical in both.
-Seen running in Chrome and measured in the pane. **[DECIDE, Ritvars] A or B.** No C.
+Seen running in Chrome and measured in the pane. **PICKED: B, 04.10** (Ritvars, after seeing A and B side by side at 1440 px, relayed by MASTER CONTROL). B is now the only light menu: A, the `?menu=` switch, the "Menu A B" control and the stored choice are removed. Dark unchanged. NEXT PATCH, not deployed.
 
 ## 02.10.2026 - DECIDED (popup): the person card, the menu, black, shadows
 
