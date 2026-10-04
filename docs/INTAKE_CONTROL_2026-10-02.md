@@ -246,3 +246,12 @@ All worktrees clean. **Combined scratch merge of all six tips** (`scratchpad/mer
 - **An A/B Ritvars has not picked never reaches production.** It stays on a branch and is shown to him there. (The 04.10 release shipped the Channels A/B "as the review surface" - that was MASTER CONTROL's call and it was wrong.)
 - **Before every release, every changed screen is read for one thing: cut every line that is not a state or an action.** Notes, evidence, provenance and to-dos live in docs.
 - Next-patch tips so far: MAIN `1071321` (release merged, Q5 menu A/B waits on his pick) · CHANNELS: Q7 strip first, then Q6 push.
+
+## 04.10 - THE A/B BATCH: one visual language, biggest impact first (Ritvars: "start")
+
+Order: 1 frame (menu, page background, headers) -> 2 language (type sizes, colour roles, one card style) -> 3 shared parts (number cards, lists/tables, buttons, status word + dot, fields) -> 4 screens by use (Today, Home, Journey, person page, Inbox, Reports, Channels, Settings), each audited for notes first -> 5 details (empty states, hover/click, motion, small text). Each step: real mockups on the app with real-shaped data, 2-4 side by side in his browser, he picks, PICKED recorded here, MAIN builds, nothing to production unpicked.
+
+| Step | Pick | Status |
+|---|---|---|
+| 1a Menu | navy text, white logo, v1.0 removed, logo aligned, immersive 3 | PICKED 04.10 (see Q5) |
+| 1b Page header + background | **4 - the menu's blue glow flows into the page top**: page body gets `radial-gradient(70% 45% at 0% 0%, rgba(83,167,219,.22) 0%, rgba(83,167,219,0) 70%)` laid over the locked light sea; page titles navy `#0a2463`, 24px. Light mode | PICKED 04.10 -> S2 |
