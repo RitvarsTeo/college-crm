@@ -1550,6 +1550,9 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   #callpop dt{color:var(--t4);font-size:10px;letter-spacing:.05em;text-transform:uppercase;padding-top:2px}
   #callpop dd{margin:0;color:var(--t2);overflow-wrap:anywhere}
   #callpop footer{display:flex;align-items:center;gap:8px;margin-top:3px}
+  #callpop .cp-ab{margin-left:auto;display:flex;border:1px solid var(--rule);border-radius:7px;overflow:hidden}
+  #callpop .cp-ab button{appearance:none;border:0;background:transparent;font:inherit;font-size:10.5px;color:var(--t3);padding:3px 7px;cursor:pointer}
+  #callpop .cp-ab button.on{background:var(--surface-2);color:var(--ink);font-weight:600}
   @keyframes cp-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
   @keyframes cp-fade{from{opacity:0}to{opacity:1}}
   @media(prefers-reduced-motion:reduce){#callpop .cp-card,#callpop .cp-strip{animation:none}}
@@ -6947,14 +6950,20 @@ let CP_TIMER = null;
 let CP_LAST = null;
 const CP_SHOWN = new Set();
 
-// A REVIEW control, not product furniture: ?cp=a or ?cp=b in the address. It goes when one
-// is picked.
+// A REVIEW control, not product furniture: ?cp=a or ?cp=b, or the switch on the card. It goes
+// when one is picked.
 function cpVariant() {
   try {
     const q = new URLSearchParams(location.search).get('cp');
-    if (q === 'a' || q === 'b') { try { localStorage.setItem('callpopVariant', q); } catch (e) { /* this page only */ } return q; }
+    if (q === 'a' || q === 'b') return q;
     return localStorage.getItem('callpopVariant') === 'b' ? 'b' : 'a';
   } catch (e) { return 'a'; }
+}
+function cpSetVariant(v) {
+  try { localStorage.setItem('callpopVariant', v); } catch (e) { /* this page only */ }
+  const box = document.querySelector('#callpop');
+  if (box) box.dataset.variant = v;
+  document.querySelectorAll('.cp-ab button').forEach((b) => b.classList.toggle('on', b.dataset.v === v));
 }
 
 function callPopStart() {
@@ -7007,22 +7016,29 @@ const cpWho = (w) => w.kind === 'person' ? (w.name || 'A person in Intake')
   : w.kind === 'lead' ? (w.name || 'A lead waiting in the Inbox')
   : 'New caller' + (w.last4 ? ' ···' + w.last4 : '');
 const cpWhere = (w) => w.kind === 'person' ? '#/person/' + encodeURIComponent(w.id) : w.kind === 'lead' ? '#/inbox' : null;
+function cpLine(call) {
+  if (call.forYou) return 'You answered';
+  if (call.answered && call.operator) return 'Answered by ' + call.operator;
+  return 'Ringing on the college line';
+}
 
-// KB 08 P5 "Apps are work tools": name, new or existing, last note, next step, Open. Nothing more.
-// A missing note or step is left out, not announced. The A/B is chosen by ?cp=a / ?cp=b only.
 function cpCardHtml(call) {
   const w = call.who || {};
   const href = cpWhere(w);
-  const tag = w.kind === 'person' ? 'Existing' + (w.status ? ' · ' + w.status : '') : 'New';
+  const tag = w.kind === 'person' ? 'In Intake' + (w.status ? ' · ' + w.status : '') : w.kind === 'lead' ? 'New lead, not confirmed' : 'New, not in Intake';
   return `<div class="cp-card" role="dialog" aria-live="assertive" aria-label="Incoming call">
-    <header><span class="cp-dot" aria-hidden="true"></span><b class="cp-name">${esc(cpWho(w))}</b>
+    <header><span class="cp-dot" aria-hidden="true"></span><small>${esc(cpLine(call))}</small>
       <button class="cp-x" onclick="cpClose()" aria-label="Close">&times;</button></header>
+    <b class="cp-name">${esc(cpWho(w))}</b>
     <span class="cp-tag ${w.isNew ? 'new' : 'old'}">${esc(tag)}</span>
-    ${w.lastNote || w.nextStep ? `<dl>
-      ${w.lastNote ? `<div><dt>Last note</dt><dd>${esc(w.lastNote)}</dd></div>` : ''}
-      ${w.nextStep ? `<div><dt>Next step</dt><dd>${esc(w.nextStep)}${w.nextStepAt ? ' · ' + esc(fmtDate(w.nextStepAt)) : ''}</dd></div>` : ''}
+    ${w.kind === 'person' ? `<dl>
+      <div><dt>Last note</dt><dd>${w.lastNote ? esc(w.lastNote) : '<span class="c-gap">None written</span>'}</dd></div>
+      <div><dt>Next step</dt><dd>${w.nextStep ? esc(w.nextStep) + (w.nextStepAt ? ' · ' + esc(fmtDate(w.nextStepAt)) : '') : '<span class="c-gap">None set</span>'}</dd></div>
     </dl>` : ''}
-    ${href ? `<footer><a class="btn sm" href="${href}" onclick="cpClose()">Open</a></footer>` : ''}
+    <footer>${href ? `<a class="btn sm" href="${href}" onclick="cpClose()">Open</a>` : ''}
+      <span class="cp-ab" role="group" aria-label="Review: which pop-up">
+        <button data-v="a" class="${cpVariant() === 'a' ? 'on' : ''}" onclick="cpSetVariant('a')">A page</button>
+        <button data-v="b" class="${cpVariant() === 'b' ? 'on' : ''}" onclick="cpSetVariant('b')">B card</button></span></footer>
   </div>`;
 }
 
@@ -7040,8 +7056,11 @@ function cpShow(call) {
   if (v === 'a' && href) {
     if (call.forYou && location.hash !== href) location.hash = href;
     box.innerHTML = `<div class="cp-strip" role="status"><span class="cp-dot" aria-hidden="true"></span>
-      <b>${esc(cpWho(w))}</b>
+      <b>${esc(cpWho(w))}</b><small>${esc(cpLine(call))}</small>
       ${call.forYou ? '' : `<a class="btn sm" href="${href}">Open</a>`}
+      <span class="cp-ab" role="group" aria-label="Review: which pop-up">
+        <button data-v="a" class="on" onclick="cpSetVariant('a')">A page</button>
+        <button data-v="b" onclick="cpSetVariant('b')">B card</button></span>
       <button class="cp-x" onclick="cpClose()" aria-label="Close">&times;</button></div>`;
     return;
   }
