@@ -282,3 +282,8 @@ Not in it: cards 2c (not started), the call pop-up (S3 building to the finish li
 ### 04.10 late - GO for patch 4 given in advance (Ritvars)
 
 "As soon as the last work arrives, go to push to github and deploy to vercel production." Patch 4 = MAIN up to cards 2c (after `1eb53a5`) + CHANNELS `dbb4546`, NOT `account-move/pbx-every-minute`. MASTER CONTROL drives it to the end: merge, tests, look, fresh backup, deploy_verify, push, tell the sessions.
+
+## 04.10 - FOURTH PATCH LIVE: `644bfa9` (cards 3, white tabs, phone channel), pushed
+
+MAIN `801bef2` + CHANNELS `dbb4546` (pop-up to his pick, poll gate, pull writes call events, Web Push off until VAPID keys) + CONTROL `956013c`. Per-minute cron NOT in (all crons daily). 1070/1070 worktree + clean checkout. Release build seen: Home, Today, Journey light, Home + Today dark. Backup before `2026-10-04T19-25-55Z` VERIFIED. `dpl_CMx11wFuYa8R3xR6vptaYv7UWPTx`: byte-identical, 77/77 files, 8 private 401, 0 leaks. Backup after `2026-10-04T19-27-22Z`: 26 tables, `call_events` and `push_subscriptions` created, 192 people unchanged. Pushed.
+Ritvars's "wait for MAIN's dark mode" arrived after the deploy had finished; dark-mode match = patch 5, same GO.
