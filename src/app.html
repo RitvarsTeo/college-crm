@@ -935,8 +935,12 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c:not([data-theme="dark"]) .cnav a{color:#0a2463}
   html.ui-c:not([data-theme="dark"]) .cnav a svg{opacity:1}
   html.ui-c:not([data-theme="dark"]) .cnav a:hover{background:rgba(255,255,255,.28);color:#0a2463}
-  html.ui-c:not([data-theme="dark"]) .cnav a.on{background:#ffffff;color:#0a2463;font-weight:650;box-shadow:0 1px 2px rgba(10,36,99,.14)}   /* every lit tab is white: the page AND its parent (the owner, 05.10.2026) */
-  html.ui-c:not([data-theme="dark"]) .cnav a.on svg{color:#0a2463}
+  /* THE LIT ITEMS: WHITE TEXT, not a white tab (the owner, 05.10.2026: "why are there white pills? fix that
+     immediately ... IT JUST NEEDS TO whiten up the TEXT"). The page you are on AND its parent keep the soft
+     highlight they always had, and their words, icon and count turn white and bold. No pill on any item. */
+  html.ui-c:not([data-theme="dark"]) .cnav a.on{background:rgba(255,255,255,.34);color:#ffffff;font-weight:700}
+  html.ui-c:not([data-theme="dark"]) .cnav a.on .n, html.ui-c:not([data-theme="dark"]) .cnav a.on .n.warn{color:#ffffff;font-weight:700}
+  html.ui-c:not([data-theme="dark"]) .cnav a.on svg{color:#ffffff}
   html.ui-c:not([data-theme="dark"]) .cnav .n.warn{color:#0a2463;font-weight:700}
   html.ui-c:not([data-theme="dark"]) .cnav .kids{border-left-color:rgba(10,36,99,.35)}
   html.ui-c:not([data-theme="dark"]) .cnav .c-spine line{stroke:rgba(10,36,99,.35)}

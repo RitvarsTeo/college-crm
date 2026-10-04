@@ -14,6 +14,14 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - CORRECTED: white TEXT, not white tabs
+
+Ritvars on production: "why are there white pills? fix that immediately" and "IT JUST NEEDS TO whiten up the TEXT".
+"White up the tab" was misread twice (bd45f42, 1eb53a5). Now, light mode: NO white pill on any item; the lit items
+(the page AND its parent) keep the soft highlight they always had (rgba(255,255,255,.34)) and their words, icon and
+count are white and bold (700); every other item navy; the spine unchanged; dark unchanged. Measured at 1440 on Today
+(Admissions + Today) and Journey (People + Journey). The two sections below are SUPERSEDED by this one.
+
 ## 05.10.2026 - The tab you are in is white
 
 Ritvars, 05.10.2026, with a screenshot of the light menu: "also lets 'white up' the tab we are in". The deepest lit
