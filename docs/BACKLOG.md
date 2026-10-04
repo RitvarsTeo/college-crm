@@ -14,6 +14,14 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 04.10.2026 - THE A/B BATCH (run by MASTER CONTROL, Ritvars picks)
+
+**PICKED 04.10: header 4, blue glow** (step 1b, light only): one Novikontas Blue glow from the top-left corner,
+`radial-gradient(70% 45% at 0% 0%, rgba(83,167,219,.22) 0%, transparent 70%)`, laid OVER the locked sea on the page body
+(the sea is not forked; frames that carry --sea keep it); page titles navy #0a2463, 24px, weight unchanged. Home has no
+visible h1, left for step 4. Measured at 1440 on Today, Journey and Reports: h1 24px / 650 / rgb(10,36,99), the glow is
+the body's first layer. BUILT, next patch, not deployed.
+
 ## 04.10.2026 - RELEASED: Q4 is LIVE in production 62f8178
 
 MASTER CONTROL cut `release/2026-10-04-intake` (2d4963a; deployed code `62f8178`, `dpl_uTzfeGw6PZNSgxUGoQUinLP41utH`),

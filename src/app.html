@@ -857,7 +857,11 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
      page (Session 3, 02.10) instead of inventing a second one. Same values as before. */
   html.ui-c{--sea:radial-gradient(120% 80% at 50% 0%,#fbfcfd 0%,rgba(251,252,253,0) 60%),
       linear-gradient(180deg,#f7f9fb 0%,#f5f7fa 45%,#e7ebf0 100%)}
-  html.ui-c:not([data-theme="dark"]) body{background:var(--sea) fixed #f5f7fa}
+  /* HEADER 4, the owner's pick 04.10.2026 ("the menu's blue glow flows into the page top"), light only:
+     one Novikontas Blue #53a7db glow from the top-left corner laid OVER the locked sea, on the page only.
+     The sea itself is not forked: frames that carry --sea keep it unchanged. */
+  html.ui-c:not([data-theme="dark"]) body{background:radial-gradient(70% 45% at 0% 0%,rgba(83,167,219,.22) 0%,rgba(83,167,219,0) 70%),var(--sea) fixed #f5f7fa}
+  html.ui-c:not([data-theme="dark"]) #view h1{font-size:24px;color:#0a2463}   /* page titles navy 24px (header 4); the weight stays */
   html.ui-c[data-theme="dark"] body{background:var(--sea) fixed #0f2f4f}
   html.ui-c[data-theme="dark"] .shell > nav{background:linear-gradient(180deg,rgba(8,24,46,.78) 0%,rgba(8,24,46,.92) 100%);border-right:1px solid rgba(194,211,222,.10)}
   html.ui-c[data-theme="dark"] :is(.c-health,.c-sheet,.c-seg,.c-said,.c-card,.c-jp,.c-folded,.c-next.c-finished,.kstrip,.ksec){
