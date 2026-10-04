@@ -46,7 +46,7 @@
         "Test filtering and routing"
       ],
       "ownerPerson": "Ritvars",
-      "ownerAction": "Set WEBSITE_FORM_SECRET and CHANNEL_MODE_WEBSITE in Vercel, then add the webhook to the Tilda forms",
+      "ownerAction": "Tick the Tilda webhook on the two college form blocks after the field-name patch ships",
       "reliability": "Shared-secret header, compared in constant time. A submission without a submission_id is refused. A repeat submission_id is dropped.",
       "reconciliation": "None built. Depends on whether the website keeps its own copy of submissions - UNKNOWN.",
       "_ownerNote": "Oksana gave access; Ritvars sets it up himself, he has Tilda access (01.10.2026, docs/channel-writeups/03-website-form-oksana.md). This is the ENQUIRY form on the Tilda site, NOT apply.novikontas.org, which is downstream.",
@@ -76,12 +76,19 @@
         },
         "nextAction": {
           "owner": "Ritvars",
-          "action": "Set WEBSITE_FORM_SECRET and CHANNEL_MODE_WEBSITE in Vercel, then add the webhook to the Tilda forms",
-          "input": null
+          "action": "After the field-name patch is released on your GO, tick the webhook on the two college form blocks (college/en, college/en/contacts)",
+          "input": "Never rename the Tilda fields: two Make webhooks read the same forms"
         },
         "blocker": null,
-        "destination": "A new enquiry in the Inbox. NOT apply.novikontas.org."
-      }
+        "destination": "A new enquiry in the Inbox, with the programme picked and the \"Source\" answer kept as the person's own answers. The only enquiry forms are EN (college/en, college/en/contacts). NOT apply.novikontas.org.",
+        "until": {
+          "event": "website relaunch, next version, which has no forms",
+          "then": "drop this channel (lifecycle dropped), like Google Form",
+          "decidedBy": "Ritvars",
+          "decidedOn": "2026-10-04"
+        }
+      },
+      "scope": "TEMPORARY. Ritvars, 04.10.2026: the Website connection exists ONLY for the forms still live on the English college pages (the enquiry form on college/en and college/en/contacts, and the contact form on college/en/contacts). The website is relaunched in its next version WITH NO FORMS; from then on apply.novikontas.org does all the work and this channel is dropped. The Latvian pages already have no form."
     },
     "google_form": {
       "label": "Google Form",
@@ -213,8 +220,8 @@
           },
           {
             "address": "training@novikontas.org",
-            "state": "not_connected",
-            "detail": "Not authorised. Whether it should be is not recorded in this repository."
+            "state": "parked",
+            "detail": "Parked for the next scope (MASTER CONTROL, 04.10). Not to be connected now."
           }
         ]
       }
@@ -798,7 +805,14 @@
           "input": null
         },
         "blocker": null,
-        "destination": "A call is logged on the caller's profile. Unknown callers land in the Inbox; numbers archived as Spam, Supplier or Internal are filtered with the reason kept."
+        "destination": "A call is logged on the caller's profile. Unknown callers land in the Inbox; numbers archived as Spam, Supplier or Internal are filtered with the reason kept.",
+        "callPopUp": {
+          "state": "built, not deployed",
+          "seen": "2026-10-04",
+          "how": "Built as if TeleGroup pushes every call (Ritvars 04.10): POST /api/inbound/phone-event (ringing, answered, ended; PHONE_EVENT_SECRET), stored in call_events; the open app reads our own database every 3 s. The daily pull stays as the safety net.",
+          "open": "Can TeleGroup push call events at all, and in which format? The shape we will ask for is in docs/channel-writeups/05-phone-telegroup.md. The email to them is PARKED. Until they push, the daily pull is the only source and the pop-up stays quiet.",
+          "source": "Q6, docs/INTAKE_CONTROL_2026-10-02.md"
+        }
       }
     },
     "agent": {

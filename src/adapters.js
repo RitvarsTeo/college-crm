@@ -45,12 +45,23 @@ function need(id, channel, what) {
 }
 
 // A field by any of its names, whatever the case: a form author on Tilda names fields freely.
+// Spaces, underscores and hyphens count as the same thing (04.10.2026): the live college form's
+// "Name Surname" can arrive as "Name Surname" or "Name_Surname" depending on how it is encoded.
+const fieldKey = (k) => String(k).trim().toLowerCase().replace(/[\s_-]+/g, '_');
 function pickFrom(raw) {
-  const lower = new Map(Object.keys(raw || {}).map((k) => [k.toLowerCase(), k]));
+  const lower = new Map(Object.keys(raw || {}).map((k) => [fieldKey(k), k]));
   return (...names) => {
-    for (const n of names) { const k = lower.get(n.toLowerCase()); if (k && raw[k] !== '' && raw[k] != null) return raw[k]; }
+    for (const n of names) { const k = lower.get(fieldKey(n)); if (k && raw[k] !== '' && raw[k] != null) return raw[k]; }
     return null;
   };
+}
+
+// The person's name. The college enquiry form sends one field, "Name Surname" (placeholder "Name,
+// Surname"); the contact form on college/en/contacts sends Name (placeholder "Name, Surname") and
+// Name_2, which is COMPANY - seen on the live page 04.10, so it is never joined onto the name.
+// Fields are never renamed in Tilda: two Make webhooks read the same forms (Q3, 04.10.2026).
+function nameFrom(f) {
+  return str(f('name surname', 'full_name', 'vards uzvards', 'vārds uzvārds', 'name', 'vards', 'vārds'));
 }
 
 // Tilda's COOKIES field carries TILDAUTM=utm_source%3D...%7C%7C%7Cutm_medium%3D...; read the
@@ -77,11 +88,15 @@ export const ADAPTERS = {
       externalEventId: need(raw.submission_id || raw.idempotency_key || (raw.tranid && 'tilda-' + raw.tranid), 'website', 'submission_id'),
       receivedAt: iso(raw.submitted_at) || now(),
       source: str(utm.utm_source) || 'website',
-      senderName: str(f('name', 'full_name', 'vards', 'vārds')),
+      senderName: nameFrom(f),
       senderEmail: str(f('email', 'e-mail', 'epasts', 'e-pasts')),
       senderPhone: str(f('phone', 'telefons', 'tel')),
-      messageBody: str(f('message', 'comments', 'comment', 'textarea', 'jautajums', 'jautājums')),
-      extracted: { programme: str(f('programme', 'program', 'programma')), study_form: str(f('study_form')) },
+      messageBody: str(f('message', 'additional comments', 'comments', 'comment', 'textarea', 'jautajums', 'jautājums')),
+      // "Source" on the college form is the person's own answer to "where did you hear about
+      // us". It is an answer, not advert tracking, so it never becomes the utm source.
+      extracted: { programme: str(f('programme', 'program', 'study program', 'study programme', 'programma')),
+        study_form: str(f('study_form')), heard_from: str(f('source')),
+        company: str(f('company', 'name_2')) },
       attribution: { utm_source: str(utm.utm_source), utm_medium: str(utm.utm_medium),
         utm_campaign: str(utm.utm_campaign), gclid: str(utm.gclid) },
       consent: { admissions: truthy(f('consent_admissions')), marketing: truthy(f('consent_marketing')) },
@@ -457,7 +472,19 @@ export function toIntake(ev) {
     // The consent the person gave on the form, read by truthy() above. It stopped here too,
     // so a ticked box never reached the person's consent record (found 28.09.2026).
     consent: ev.consent && Object.keys(ev.consent).length ? ev.consent : null,
+    // What the person ANSWERED on the website form (Q3, 04.10.2026): the programme they picked
+    // and where they heard of us. Stored as their own answers, provider provenance, never as
+    // the confirmed interest or as advert tracking. Website only for now: every other adapter's
+    // `extracted` still stops here, which is a known gap, not a decision.
+    answers: ev.channel === 'website' ? websiteAnswers(ev.extracted) : null,
   };
+}
+
+const WEBSITE_ANSWERS = { programme: 'form_programme', study_form: 'form_study_form', heard_from: 'heard_from', company: 'form_company' };
+function websiteAnswers(x) {
+  const out = {};
+  for (const [k, field] of Object.entries(WEBSITE_ANSWERS)) if (x && x[k]) out[field] = String(x[k]);
+  return Object.keys(out).length ? out : null;
 }
 
 export const adapterIds = () => Object.keys(ADAPTERS);

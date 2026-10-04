@@ -42,3 +42,10 @@ cookies or from fields called `utm_source`, `utm_medium`, `utm_campaign`; `conse
 
 Nothing changes for the visitor. In Intake the enquiry appears in **New Leads** labelled Website,
 with the name, email, phone, message and where they came from.
+
+## DECIDED 04.10.2026 - temporary, until the relaunch
+
+Ritvars: the Website connection is only for the forms still live on the English college pages
+(enquiry form on college/en and college/en/contacts; contact form on college/en/contacts, whose
+second field is Company). The next website version has NO forms; when it goes live,
+apply.novikontas.org does all the work and this channel is dropped.

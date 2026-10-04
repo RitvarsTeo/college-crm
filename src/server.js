@@ -29,6 +29,8 @@ import * as sheets from './sheets.js';
 import * as snapshot from './snapshot.js';
 import { buildDemo } from './demo.js';
 import * as gate from './gate.js';
+import * as callpop from './callpop.js';
+import { receivePhoneEvent, PHONE_EVENT_SECRET_ENV } from './phoneevent.js';
 import { verifyRequest, channelDef, channelIds, integrationIds, integrationDef, allChannelStatus, BadInbound,
          parseInboundBody, handshake, CHANNELS } from './inbound.js';
 import * as auth from './auth.js';
@@ -286,6 +288,7 @@ function openBeforeSignIn(pathname) {
   const inbound = /^\/api\/inbound\/([a-z_]+)$/.exec(pathname);
   if (inbound && channelDef(inbound[1])) return true;
   if (pathname === '/api/intake/application') return true;   // its own secret header is its auth
+  if (pathname === '/api/inbound/phone-event') return true;   // PHONE_EVENT_SECRET is its auth (Q6)
   return false;
 }
 
@@ -1048,6 +1051,36 @@ export const handle = async (req, res) => {
     if (req.method === 'GET' && p === '/api/admin/pbx/live') {
       if (!(await adminOf(req))) return refuseNotAdmin(res);
       return json(res, 200, await pbxLive());
+    }
+
+    // THE CALL POP-UP (Q6, 04.10.2026). Every signed-in user, not only admins: whoever answers
+    // the phone. The open app asks every few seconds for call events newer than the last it saw.
+    // It reads OUR call_events, never TeleGroup, and never gets the caller's number (src/callpop.js).
+    if (req.method === 'GET' && p === '/api/calls/events') {
+      const viewer = await viewerOf(req, url);
+      const users = AUTH_ON
+        ? (await db.prepare('SELECT display_name FROM crm_users WHERE active = 1').all()).map((u) => u.display_name).filter(Boolean)
+        : USER_NAMES;
+      const after = url.searchParams.has('after') ? url.searchParams.get('after') : null;
+      return json(res, 200, await callpop.callFeed(db, { after, viewer, users }));
+    }
+
+    // THE PHONE SYSTEM PUSHES CALL EVENTS HERE (Q6, 04.10.2026): ringing, answered, ended.
+    // A shared secret in x-crm-secret, compared in constant time; the phone channel's mode decides
+    // whether it is accepted at all, as for every channel. src/phoneevent.js is the adapter.
+    if (req.method === 'POST' && p === '/api/inbound/phone-event') {
+      const want = Buffer.from(String(process.env[PHONE_EVENT_SECRET_ENV] || ''));
+      const got = Buffer.from(String(req.headers['x-crm-secret'] || ''));
+      if (!want.length) return json(res, 503, { error: 'phone events are not configured here', missing: PHONE_EVENT_SECRET_ENV });
+      if (want.length !== got.length || !crypto.timingSafeEqual(want, got)) return json(res, 401, { error: 'shared secret did not match' });
+      const mode = await channelMode(db, 'phone');
+      if (mode === 'off') return json(res, 409, { error: 'the phone channel is off' });
+      let raw;
+      try { raw = JSON.parse(await rawText(req, 16384) || '{}'); } catch { return json(res, 400, { error: 'the body is not JSON' }); }
+      try { return json(res, 200, await receivePhoneEvent(db, raw, { mode })); } catch (err) {
+        if (err instanceof BadInbound) return json(res, 400, { error: err.message });
+        throw err;
+      }
     }
 
     if (req.method === 'GET' && p === '/api/admin/sis/first-look') {
@@ -2456,6 +2489,30 @@ export const handle = async (req, res) => {
         metaGroup: META_GROUP,
         scenarios: allScenarios(),
       });
+    }
+
+    // DEV CONTROL: one simulated call, event by event, through the same receivePhoneEvent the
+    // webhook uses (Q6). A number we already have, or a new one; the same call id for its three
+    // events, and the same event again is a retry.
+    if (req.method === 'POST' && p === '/api/console/phone-event') {
+      const b = await body(req);
+      const event = String(b.event || 'ringing');
+      let caller = '+3712' + String(Math.floor(1000000 + Math.random() * 8999999));
+      if (b.person === 'existing') {
+        const p0 = await db.prepare(`SELECT phone FROM people WHERE phone IS NOT NULL ORDER BY created_at DESC LIMIT 1`).get();
+        if (!p0) return json(res, 409, { error: 'there is nobody with a phone number yet', how: 'load some demo data first' });
+        caller = p0.phone;
+      } else if (b.caller) caller = String(b.caller);
+      const callId = String(b.callId || ('sim-' + Date.now().toString(36)));
+      const payload = { call_id: callId, event, at: new Date().toISOString(), caller, queue: '1001*Q-ADMISSION',
+        operator: event === 'ringing' ? null : (b.operator || null) };
+      try {
+        const r = await receivePhoneEvent(db, payload, { mode: 'test' });
+        return json(res, 200, { ...r, callId, caller });
+      } catch (err) {
+        if (err instanceof BadInbound) return json(res, 400, { error: err.message });
+        throw err;
+      }
     }
 
     if (req.method === 'POST' && p === '/api/console/send') {

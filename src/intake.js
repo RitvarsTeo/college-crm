@@ -257,6 +257,8 @@ export async function receive(db, item) {
     (person_id, inbound_id, field, value, provenance, recorded_at, recorded_by)
     VALUES (NULL,?,?,?,?,?,'machine')`);
   for (const f of read.fields) await stamp.run(id, f.field, f.value, f.provenance, at);
+  // a form's own answers (the website, Q3): what the person picked, kept as they said it
+  for (const [field, value] of Object.entries(item.answers || {})) await stamp.run(id, field, value, 'provider', at);
 
   return { id, suggested: read.suggested, why: read.why, missing: read.missing,
     fields: read.fields, filtered: Boolean(read.junk || filterWhy) };
