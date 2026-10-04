@@ -239,13 +239,17 @@ test('B, the card: who, new or existing, last note, next step, Open; never the n
   const { ctx } = client({ stored: { callpopVariant: 'b' } });
   const html = ctx.card({ callId: 'c1', forYou: true, answered: true, who: { kind: 'person', isNew: false, id: 'p1', name: 'Anna Ozola',
     status: 'Contacted', lastNote: 'Wants Navigation', nextStep: 'Send the brochure', nextStepAt: '2026-10-06T08:00:00Z' } });
-  for (const want of ['You answered', 'Anna Ozola', 'In Intake · Contacted', 'Last note', 'Wants Navigation', 'Next step', 'Send the brochure', 'href="#/person/p1"', '>Open<']) {
+  for (const want of ['Anna Ozola', 'Existing · Contacted', 'Last note', 'Wants Navigation', 'Next step', 'Send the brochure', 'href="#/person/p1"', '>Open<']) {
     assert.ok(html.includes(want), want);
+  }
+  // KB 08 P5, 04.10: nothing more than name, new or existing, last note, next step, Open
+  for (const gone of ['You answered', 'Ringing', 'A page', 'B card', 'None written', 'None set', '<button data-v']) {
+    assert.ok(!html.includes(gone), 'not on the card: ' + gone);
   }
   const fresh = ctx.card({ callId: 'c3', who: { kind: 'unknown', isNew: true, last4: '0003' } });
   assert.match(fresh, /New caller ···0003/);
-  assert.match(fresh, /Ringing on the college line/);
-  assert.doesNotMatch(fresh, />Open</);
+  assert.match(fresh, />New</);
+  assert.doesNotMatch(fresh, /Last note|Next step|>Open</, 'nothing to show, nothing shown');
 });
 
 test('A or B by address or stored choice, A by default, no C; the poll is quiet and starts with the shell', () => {
