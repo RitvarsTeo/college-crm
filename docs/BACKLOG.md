@@ -24,6 +24,18 @@ parent keeps the soft pill. Light mode. Release branch `release/2026-10-04-intak
 both Admissions and Today, on Journey both People and Journey. Measured at 1440 on Today, Journey, All people, Reports,
 Settings: every lit tab rgb(255,255,255) with rgb(10,36,99) words. Dark unchanged. BUILT, next patch.
 
+**PICKED 04.10: cards 3, blue top edge** (step 2c, light mode). ONE rule names every card (Home figure cards, the
+journey-now card, the Needs-you sheet, Today's strip and list cards, every `.c-sheet` incl. the person page panels,
+Reports' `.c-apps`, the Journey band): white, 14px corner, 1px rgba(10,36,99,.07) border, shadow 0 1px 2px + 0 10px
+24px navy, a 3px #53a7db top edge. Needs-you keeps its amber top (a repeated class outranks the shared rule's :is()).
+No boxes inside a card: the Needs-you tiles and the band's Arrived / Admitted / Not proceeding boxes became plain
+figures split by 1px #e3e9ef hairlines. The person page's light-blue "Next step" callout stays a callout. Measured at
+1440 on Home, Today, Journey and a person page. BUILT, next patch, not deployed.
+**Kit part 2 (kit-panel) must follow later for the other apps; not touched here.** SAID.
+**Dark, proposed, NOT built:** the kit's solid dark card (#133a60, never glass), border rgba(194,211,222,.12), the same
+3px #53a7db top edge (about 3.9:1 against #133a60, enough for a non-text edge), shadow 0 10px 24px rgba(0,0,0,.35),
+inner hairlines rgba(194,211,222,.14); Needs-you stays amber. Waiting for Ritvars.
+
 ## 04.10.2026 - THE A/B BATCH (run by MASTER CONTROL, Ritvars picks)
 
 **PICKED 04.10: header 4, blue glow** (step 1b, light only): one Novikontas Blue glow from the top-left corner,
