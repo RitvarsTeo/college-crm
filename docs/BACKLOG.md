@@ -14,6 +14,14 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 04.10.2026 - RELEASED: Q4 is LIVE in production 62f8178
+
+MASTER CONTROL cut `release/2026-10-04-intake` (2d4963a; deployed code `62f8178`, `dpl_uTzfeGw6PZNSgxUGoQUinLP41utH`),
+verified live by that session: page byte-identical, 401 on private routes, 0 leaks, the closed_tag column present.
+It contains `4d13f96` (Q4), so **Q4 is LIVE** (verified by MASTER CONTROL, not by this session). Merged into this
+branch at `64669ce`, no conflicts, **1034/1034**, seen running on a restarted preview. **Q5 (`32232ce`) and everything
+after it goes in the NEXT patch.**
+
 ## 04.10.2026 - Q4: "Acting as" shows User and Admin, no names
 
 Ritvars, 04.10.2026: "No need to show all users!" (MASTER CONTROL queue Q4). On a test copy with nobody
