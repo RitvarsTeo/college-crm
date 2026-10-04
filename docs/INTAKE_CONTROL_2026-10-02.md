@@ -298,3 +298,6 @@ MAIN `ac4c207` (0021888 dark cards: solid #133a60, 3px #53a7db top, amber Needs-
 
 ## 04.10 - SIXTH PATCH LIVE: `47def9d` (white text on the lit tab, no pills), pushed
 MAIN `c3cf6f3`. 1071/1071 clean checkout. Today seen on the release build. `dpl_BwMsKVGvLTD9XtTGxadVy4i1op9i`: byte-identical, 77/77, 0 leaks. Pushed. Inbox font fix (2-line clamp, 13px) is next, queued at MAIN.
+
+## 04.10 - SEVENTH PATCH LIVE: `e9343d3` (Inbox message + Today step note: 13px slate, 2 lines), pushed
+MAIN `cdef806`. Person-page history keeps the full text (one click away). Open, flagged by MAIN: the amber "NO LOGIN" pill is hard to read on the blue menu (test copies only).
