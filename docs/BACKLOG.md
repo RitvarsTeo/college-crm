@@ -1427,6 +1427,8 @@ screen on the real-data snapshot (local, in memory) at 1440 / 900 / 390 px, ligh
 
 ## Pin
 
+**04.10.2026 (second patch) - LIVE: `0078bff` (release/2026-10-04-intake-2), dpl_E56YxQrYhFY5GXkGssK9uUMpXxG4, verified by MASTER CONTROL. Menu final + immersive (light and dark), header glow + navy titles, Channels one line per channel, website field names (Q3), Website temporary, Admissions reads all History. NOT in it: the call pop-up (unpicked A/B, polls every 3 s), type 2a and cards 2c (not built yet).**
+
 **04.10.2026 - LIVE: `62f8178` (release/2026-10-04-intake), dpl_uTzfeGw6PZNSgxUGoQUinLP41utH, verified by MASTER CONTROL; record in docs/INTAKE_CONTROL_2026-10-02.md (control/2026-10-02-s1). Production was 292b4f9 until today.**
 
 **02.10.2026 control state: `docs/INTAKE_CONTROL_2026-10-02.md` is the authoritative current state for this run. The product is INTAKE.**
