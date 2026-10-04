@@ -909,6 +909,8 @@
     "_note": "The caller presses 1, 2 or 3 and the PBX puts them on the matching queue. Those three queue names are exactly what lib/pbx.js keeps and everything else it drops, so the menu and the logger are one fact in one place.",
     "_answered": "The PBX event carries a `queue` field and the queue IS the button. This was in the original TeleGroup brief and was mapped here on 23.09.2026. Nobody needs to ask TeleGroup whether the button is included - it is. What is still needed is an API token."
   },
+  "historyReaders": ["Admissions", "Ieva"],
+  "_historyReaders": "Ritvars 04.10.2026: 'Ieva is the main user, she needs to see the full picture.' She signs in as edu@novikontas.org, named Admissions; Ieva is her seat on a copy without sign-in. These see the whole log and every correction, like an admin, without being admins. Everybody else not an admin still sees only their own actions (23.09).",
   "feedbackReaders": [
     "Aigars",
     "Ritvars"

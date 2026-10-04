@@ -518,6 +518,9 @@ const isAdmin = (who) => ADMINS.includes(String(who || ''));
 // derived from it. Marina is an admin and must not see it, so this is its own
 // list. Without a login it can only check the name that was selected.
 const FEEDBACK_READERS = CONFIG.feedbackReaders || [];
+// The whole history, without being an admin (04.10.2026: Admissions needs the full picture).
+const HISTORY_READERS = CONFIG.historyReaders || [];
+const readsAllHistory = (who) => isAdmin(who) || HISTORY_READERS.includes(String(who || ''));
 const canReadFeedback = (who) => FEEDBACK_READERS.includes(String(who || ''));
 const isKnownPerson = (who) => USER_NAMES.includes(String(who || '')) || isAdmin(who);
 const roleOf = (who) => (USERS.find((u) => u.name === who) || {}).role || null;
@@ -563,7 +566,7 @@ const refuseNotAdmin = (res) => json(res, 403, {
 //   - an internal correction: "Programme NAV -> ENG, by Laura". This is audit,
 //     and a normal user sees only their own. Admins see all of them.
 function visibleTimeline(rows, viewer) {
-  if (isAdmin(viewer)) return rows;
+  if (readsAllHistory(viewer)) return rows;
   return rows.filter((e) => e.kind !== 'edit' || e.actor === viewer);
 }
 const ACTIVITY = [];
@@ -2009,14 +2012,16 @@ export const handle = async (req, res) => {
       // Decided 23.09.2026: an admin sees the whole log. Anybody else sees the
       // history of their own actions and nothing else.
       const admin = isAdmin(who);
-      const scope = admin ? '' : who;
+      const all = readsAllHistory(who);
+      const scope = all ? '' : who;
       return json(res, 200, {
         actor: who, isAdmin: admin,
-        scope: admin ? 'everything' : 'own actions only',
+        scope: all ? 'everything' : 'own actions only',
         scopeNote: admin
           ? 'You are an admin, so the whole log is shown: every person, both origins.'
+          : all ? 'Admissions sees the whole log: every person, both origins.'
           : 'You are not an admin, so this is the history of your own actions. Everything else in the log is admin-only.',
-        roleWarning: admin ? null
+        roleWarning: all ? null
           : 'Identity is a setting, not a login: this shows everything recorded under the name "' + who + '". Nothing stops somebody else picking that name in the sidebar.',
         admins: ADMINS,
         honesty: CONFIG.historyHonesty || '',
