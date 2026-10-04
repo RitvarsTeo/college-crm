@@ -335,24 +335,6 @@ CREATE TABLE IF NOT EXISTS pbx_calls (
   inserted_at TEXT NOT NULL
 );
 
--- CALL EVENTS the phone system pushes (Q6, 04.10.2026): ringing, answered, ended. One row per
--- call id + event, so a retry is stored once. The open app reads these, never TeleGroup, to pop
--- up the caller for whoever answered. The CALL itself still lands in pbx_calls, written by the
--- same storeCall the daily pull uses. Personal data (a number); the same 13-month retention.
-CREATE TABLE IF NOT EXISTS call_events (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  call_id TEXT NOT NULL,
-  event TEXT NOT NULL,           -- ringing | answered | ended
-  at TEXT NOT NULL,              -- when it happened, as the phone system says
-  queue TEXT,
-  caller_num TEXT,
-  operator TEXT,                 -- who answered, as the phone system names them
-  extension TEXT,
-  source TEXT NOT NULL,          -- provider | simulated
-  received_at TEXT NOT NULL,
-  UNIQUE (call_id, event)
-);
-
 -- The SIS applicant feed, one row per application (a person can apply to more than
 -- one programme; a person who has only registered has no application yet, stored
 -- as ''). The SIS resends a record whenever it changes and the latest version wins.

@@ -6936,19 +6936,31 @@ function fbZoom(id) {
 }
 
 // ===================================================== THE CALL POP-UP (Q6) ==
-// 04.10.2026, first said 30.09. When the phone rings, whoever answers sees who is calling and
-// is one click from the comment thread on the person page. The phone system pushes its call
-// events to Intake; the open, signed-in app asks /api/calls/events every few seconds for the
-// ones newer than the last it saw (our database, never TeleGroup). Two screens, no C:
+// 04.10.2026, first said 30.09. When the phone rings, whoever answers sees who is calling
+// and is one click from the comment thread on the person page. The open, signed-in app asks
+// /api/calls/now every ~10 s; the server reads TeleGroup and says only what this viewer
+// should see (src/callpop.js). Two screens for review, no C:
 //   A  the person page itself opens
 //   B  a small corner card: name, new or existing, last note, next step, Open
 //
-// NEW EVENTS ONLY. The first ask after the app opens returns the newest id and no events, so a
-// load or a reload pops nothing. One call pops once: "answered" updates the card "ringing" opened.
-const CP_EVERY_MS = 3000;
+// NEW CALLS ONLY. A call pops once: its id is remembered in this browser for ten minutes,
+// and the first answer after the app opens is a baseline, so a reload never pops what was
+// already ringing.
+const CP_EVERY_MS = 10000;
+const CP_KEEP_MS = 10 * 60 * 1000;
 let CP_TIMER = null;
-let CP_LAST = null;
-const CP_SHOWN = new Set();
+let CP_PRIMED = false;
+
+function cpSeen() {
+  try { return JSON.parse(localStorage.getItem('callpopSeen') || '{}') || {}; } catch (e) { return {}; }
+}
+function cpRemember(ids, now = Date.now()) {
+  const seen = cpSeen();
+  for (const id of ids) seen[id] = now;
+  for (const k of Object.keys(seen)) if (now - seen[k] > CP_KEEP_MS) delete seen[k];
+  try { localStorage.setItem('callpopSeen', JSON.stringify(seen)); } catch (e) { /* private window: this page only */ }
+  return seen;
+}
 
 // A REVIEW control, not product furniture: ?cp=a or ?cp=b, or the switch on the card. It goes
 // when one is picked.
@@ -6966,6 +6978,12 @@ function cpSetVariant(v) {
   document.querySelectorAll('.cp-ab button').forEach((b) => b.classList.toggle('on', b.dataset.v === v));
 }
 
+// Which of the calls just read are new to this browser. The first read is the baseline.
+function cpFresh(calls, seen, primed) {
+  if (!primed) return [];
+  return (calls || []).filter((c) => c && c.id && !seen[c.id]);
+}
+
 function callPopStart() {
   if (CP_TIMER) return;
   cpTick();
@@ -6975,41 +6993,20 @@ function callPopStart() {
 async function cpTick() {
   let d;
   try {
-    // not api(): a poll every few seconds must not flash the busy bar or throw the login up
-    const q = CP_LAST === null ? '' : '?after=' + encodeURIComponent(CP_LAST);
-    const r = await fetch('/api/calls/events' + q, { headers: { 'x-acting-as': ACTOR } });
+    // not api(): a poll every ten seconds must not flash the busy bar or throw the login up
+    const r = await fetch('/api/calls/now', { headers: { 'x-acting-as': ACTOR } });
     if (!r.ok) return;
     d = await r.json();
   } catch (e) { return; }
-  if (!d) return;
-  const baseline = CP_LAST === null;
-  CP_LAST = d.last;
-  if (baseline) return;
-  for (const ev of d.events || []) cpHandle(ev);
-}
-
-// What one event does on this screen. Returns what it did, so it can be tested on its own.
-function cpHandle(ev) {
-  const open = document.querySelector('#callpop') && document.querySelector('#callpop').dataset.call;
-  if (ev.taken) {                       // a colleague answered it: their call, not ours
-    if (open === ev.callId) cpClose();
-    return 'closed';
-  }
-  if (ev.event === 'ringing') {
-    if (CP_SHOWN.has(ev.callId)) return 'already';
-    CP_SHOWN.add(ev.callId);
-    cpShow(ev);
-    return 'shown';
-  }
-  if (ev.event === 'answered') {
-    if (ev.forYou || open === ev.callId || !CP_SHOWN.has(ev.callId)) {
-      CP_SHOWN.add(ev.callId);
-      cpShow({ ...ev, answered: true });
-      return 'shown';
-    }
-    return 'already';
-  }
-  return 'ignored';                     // "ended" changes nothing on screen
+  if (!d || !d.available) return;
+  const calls = d.calls || [];
+  const fresh = cpFresh(calls, cpSeen(), CP_PRIMED);
+  cpRemember(calls.map((c) => c.id));
+  CP_PRIMED = true;
+  if (!fresh.length) return;
+  // the newest is the one somebody is holding; anything older in the same read is already over
+  const call = fresh.sort((a, b) => String(b.at || '').localeCompare(String(a.at || '')))[0];
+  cpShow(call);
 }
 
 const cpWho = (w) => w.kind === 'person' ? (w.name || 'A person in Intake')
@@ -7025,7 +7022,7 @@ function cpLine(call) {
 function cpCardHtml(call) {
   const w = call.who || {};
   const href = cpWhere(w);
-  const tag = w.kind === 'person' ? 'In Intake' + (w.status ? ' · ' + w.status : '') : w.kind === 'lead' ? 'New lead, not confirmed' : 'New, not in Intake';
+  const tag = w.kind === 'person' ? (w.status || 'Existing') : w.kind === 'lead' ? 'New lead, not confirmed' : 'New, not in Intake';
   return `<div class="cp-card" role="dialog" aria-live="assertive" aria-label="Incoming call">
     <header><span class="cp-dot" aria-hidden="true"></span><small>${esc(cpLine(call))}</small>
       <button class="cp-x" onclick="cpClose()" aria-label="Close">&times;</button></header>
@@ -7048,16 +7045,13 @@ function cpShow(call) {
   let box = document.querySelector('#callpop');
   if (!box) { box = document.createElement('div'); box.id = 'callpop'; document.body.appendChild(box); }
   box.dataset.variant = v;
-  box.dataset.call = call.callId || call.id || '';
-  // A: the page itself opens FOR WHOEVER ANSWERED, with a slim line saying why the screen moved.
-  // Everybody else (a ring nobody has picked up yet) gets the slim line with Open, so one ring does
-  // not move every screen in the office. A new caller has no page, so A shows the card for them.
+  // A: the page itself opens, and the card stays only as a slim line saying why the screen moved.
+  // A new caller has no page to open, so A shows the card for them too.
   const href = cpWhere(w);
   if (v === 'a' && href) {
-    if (call.forYou && location.hash !== href) location.hash = href;
+    if (location.hash !== href) location.hash = href;
     box.innerHTML = `<div class="cp-strip" role="status"><span class="cp-dot" aria-hidden="true"></span>
       <b>${esc(cpWho(w))}</b><small>${esc(cpLine(call))}</small>
-      ${call.forYou ? '' : `<a class="btn sm" href="${href}">Open</a>`}
       <span class="cp-ab" role="group" aria-label="Review: which pop-up">
         <button data-v="a" class="on" onclick="cpSetVariant('a')">A page</button>
         <button data-v="b" onclick="cpSetVariant('b')">B card</button></span>
@@ -7066,7 +7060,7 @@ function cpShow(call) {
   }
   box.innerHTML = cpCardHtml(call);
 }
-function cpClose() { const box = document.querySelector('#callpop'); if (box) { box.innerHTML = ''; box.dataset.call = ''; } }
+function cpClose() { const box = document.querySelector('#callpop'); if (box) box.innerHTML = ''; }
 
 (async () => {
   // WHO ARE YOU, BEFORE ANYTHING ELSE IS FETCHED.

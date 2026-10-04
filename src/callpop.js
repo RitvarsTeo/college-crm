@@ -1,20 +1,27 @@
 // THE CALL POP-UP (Q6, 04.10.2026; first said 30.09).
 //
-// When the phone rings, whoever answers should see who is calling and where things stand, and be
-// one click from adding a comment. The phone system PUSHES its call events to us (src/phoneevent.js
-// stores them in call_events). Vercel has no websockets, so the open, signed-in app asks OUR
-// database every few seconds for events newer than the last one it saw. It never asks TeleGroup.
+// When the phone rings, whoever answers should see who is calling and where things stand,
+// and be one click from adding a comment. TeleGroup has no push to us, so this is the
+// version that works whatever TeleGroup can do: the open, signed-in app asks Intake every
+// ~10 seconds for the calls of the last two minutes. Whether a call is in TeleGroup's list
+// WHILE it rings, or only after hang-up, is not known yet; one test call after deploy
+// answers it, and this code is right either way.
 //
-// THE CALLER'S NUMBER NEVER LEAVES THE SERVER: the app is told who the caller IS (a person, a lead
-// waiting in the Inbox, or a new caller with the last four digits), never the number.
+// THE TOKEN NEVER LEAVES THE SERVER, and neither does the caller's number: the app is told
+// who the caller IS (a person, a lead waiting in the Inbox, or a new caller with the last
+// four digits), never the number itself.
 //
-// WHO SEES A CALL. "Ringing" with no operator yet goes to everybody signed in: it is the college's
-// queue. "Answered" goes to the colleague who answered (TeleGroup's operator name matched to an
-// Intake user); the others are told only that it was taken, so their card can close. Answered by
-// a name Intake does not know, it stays with everybody.
+// WHO SEES A CALL. The operator TeleGroup names is matched to an Intake user. A call answered
+// by a known colleague goes to that colleague only. A call nobody has answered yet, or answered
+// by a name Intake does not know, goes to everybody signed in: it is the college's queue.
 
-// An app that was closed does not catch up on old calls: only events from the last few minutes.
-export const FEED_MINUTES = 5;
+import { fetchCalls, isOurs } from '../lib/pbx.js';
+import { fromRigaStamp } from '../lib/riga.js';
+
+export const POP_MINUTES = 2;
+// Every open app asks every ~10 s. One TeleGroup read serves them all for this long, per
+// server instance, so five colleagues do not make five calls to TeleGroup.
+export const CACHE_MS = 8000;
 const PHONE_TAIL = 8;
 
 const digits = (v) => String(v || '').replace(/\D/g, '');
@@ -32,6 +39,32 @@ export function isOperator(operator, viewer) {
   if (!o || !v) return false;
   if (o === v) return true;
   return !v.includes(' ') && o.split(' ')[0] === v;
+}
+
+// ------------------------------------------------------------- the read --
+let cache = null;
+export function clearCache() { cache = null; }
+
+export async function liveCalls({ env = process.env, now = new Date(), fetchImpl = fetch } = {}) {
+  if (cache && now.getTime() - cache.at < CACHE_MS) return cache.value;
+  let value;
+  try {
+    const got = await fetchCalls({ now, minutes: POP_MINUTES, env, fetchImpl });
+    const calls = [];
+    for (const c of got.calls) {
+      if (!isOurs(c) || !c.uniqueid) continue;
+      let at = null;
+      try { at = c.created_at ? fromRigaStamp(c.created_at).toISOString() : null; } catch { at = null; }
+      calls.push({ id: String(c.uniqueid), at, queue: String(c.queue), state: c.state ?? null,
+        operator: c.operator_name ? String(c.operator_name) : null, callerNum: c.caller_num ? String(c.caller_num) : null });
+    }
+    value = { ok: true, calls };
+  } catch (err) {
+    // the message from fetchCalls is already redacted; the pop-up only needs to know it failed
+    value = { ok: false, calls: [], error: 'The phone system could not be read just now.' };
+  }
+  cache = { at: now.getTime(), value };
+  return value;
 }
 
 // ------------------------------------------------------------ the caller --
@@ -67,24 +100,16 @@ const cut = (s, n = 140) => {
 };
 
 // --------------------------------------------------------- who sees what --
-// No `after`: the app has just opened. It gets the newest id and NO events, so nothing pops on
-// a load or a reload. With `after`: every newer event this viewer should see.
-export async function callFeed(db, { after = null, viewer = '', users = [], now = new Date() } = {}) {
-  const top = await db.prepare('SELECT MAX(id) n FROM call_events').get();
-  const last = Number((top && top.n) || 0);
-  if (after === null || after === undefined || after === '' || !Number.isFinite(Number(after))) return { last, events: [] };
-  const since = new Date(now.getTime() - FEED_MINUTES * 60000).toISOString();
-  const rows = await db.prepare(`SELECT id, call_id, event, at, caller_num, operator FROM call_events
-    WHERE id > ? AND received_at >= ? ORDER BY id LIMIT 50`).all(Number(after), since);
-  const events = [];
-  for (const r of rows) {
-    const op = r.operator || null;
+// `users` is every name Intake knows a colleague by. Only what the pop-up needs goes out.
+export async function popsFor(db, { calls, viewer, users = [] }) {
+  const out = [];
+  for (const c of calls || []) {
+    const op = c.operator || null;
     const mine = op ? isOperator(op, viewer) : false;
-    const someoneElse = Boolean(op && !mine && users.some((u) => isOperator(op, u)));
-    // a known colleague took it: the others learn that, and nothing about the caller
-    if (someoneElse) { events.push({ id: Number(r.id), callId: r.call_id, event: r.event, at: r.at, taken: true }); continue; }
-    events.push({ id: Number(r.id), callId: r.call_id, event: r.event, at: r.at, operator: op, forYou: mine,
-      taken: false, who: await whoIsCalling(db, r.caller_num) });
+    const someoneElse = op && !mine && users.some((u) => isOperator(op, u));
+    if (someoneElse) continue;            // a known colleague answered it: it is theirs
+    out.push({ id: c.id, at: c.at, answered: c.state === 'ANSWER', state: c.state,
+      operator: op, forYou: mine, who: await whoIsCalling(db, c.callerNum) });
   }
-  return { last: Math.max(last, Number(after)), events };
+  return out;
 }
