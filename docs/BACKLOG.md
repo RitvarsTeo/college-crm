@@ -22,6 +22,16 @@ this is a local prototype" stood here until 30.09.2026, from the weeks before th
 visible h1, left for step 4. Measured at 1440 on Today, Journey and Reports: h1 24px / 650 / rgb(10,36,99), the glow is
 the body's first layer. BUILT, next patch, not deployed.
 
+**PICKED 04.10: type 3 strong hierarchy** (step 2a), app-wide tokens: title 30/750, headline figure 30/750 (Today's
+strip and planned %, Home's figure cards), name 17/700, detail 13px slate, label under a figure 11.5/600, status chip
+13.5px; names and figures navy #0a2463 in light (dark keeps its ink); red stays red for overdue. Header 4's 24px title
+gave way to 30px; its glow and navy stay. **Kept bigger on purpose:** Home's Needs-you figures (44px) and the one hero
+card (40px) stay above the 30px step, because they are the focal points (KB 08 P5); they take the weight and navy.
+Measured at 1440 on Today: h1 30/750 navy, figures 30/750 navy, overdue 30/750 red, names 17/700 navy, details 13px,
+labels 11.5/600, chips 13.5px. At 1440 and 390 on Today, Home, Journey, All people and a person page: no page sideways
+scroll, nothing clipped, no chip on two lines, no Journey name wrapping. All people's table already scrolls inside its
+own box at 390 (699px wide before and after this change). BUILT, next patch, not deployed.
+
 ## 04.10.2026 - RELEASED: Q4 is LIVE in production 62f8178
 
 MASTER CONTROL cut `release/2026-10-04-intake` (2d4963a; deployed code `62f8178`, `dpl_uTzfeGw6PZNSgxUGoQUinLP41utH`),
