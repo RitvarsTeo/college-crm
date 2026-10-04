@@ -193,6 +193,15 @@ lives in DECISIONS.md and `config/prototype.json` only.
 **Owed:** the MVP map says the cold / reject field and screen go to Ritvars as an A/B first. Neither
 `b5f3a4c` nor `1345cd7` had one. The Outcomes form is now the UI/UX lane's to put in front of him.
 
+## 04.10.2026 - DECIDED: the Website channel is temporary
+
+**Ritvars, 04.10.2026:** the Website connection is **only for the forms still live** on the English
+college pages - the enquiry form (college/en, college/en/contacts) and the contact form
+(college/en/contacts). **The website is relaunched in its next version with NO forms.** From then
+on apply.novikontas.org does all the work and the Website channel is **dropped**, like Google Form.
+The Latvian pages already have no form. Recorded in `config/channels.json` (website `scope` and
+`record.until`). | DECIDED |
+
 ## 04.10.2026 - SESSION 3: Q3 website field names, Q6 call pop-up
 
 Branch `ui/2026-10-02-channels-s3`. **COMMITTED, NOT DEPLOYED.** Both for the NEXT patch (MASTER CONTROL).

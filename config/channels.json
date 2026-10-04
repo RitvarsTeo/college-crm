@@ -80,8 +80,15 @@
           "input": "Never rename the Tilda fields: two Make webhooks read the same forms"
         },
         "blocker": null,
-        "destination": "A new enquiry in the Inbox, with the programme picked and the \"Source\" answer kept as the person's own answers. The only enquiry forms are EN (college/en, college/en/contacts). NOT apply.novikontas.org."
-      }
+        "destination": "A new enquiry in the Inbox, with the programme picked and the \"Source\" answer kept as the person's own answers. The only enquiry forms are EN (college/en, college/en/contacts). NOT apply.novikontas.org.",
+        "until": {
+          "event": "website relaunch, next version, which has no forms",
+          "then": "drop this channel (lifecycle dropped), like Google Form",
+          "decidedBy": "Ritvars",
+          "decidedOn": "2026-10-04"
+        }
+      },
+      "scope": "TEMPORARY. Ritvars, 04.10.2026: the Website connection exists ONLY for the forms still live on the English college pages (the enquiry form on college/en and college/en/contacts, and the contact form on college/en/contacts). The website is relaunched in its next version WITH NO FORMS; from then on apply.novikontas.org does all the work and this channel is dropped. The Latvian pages already have no form."
     },
     "google_form": {
       "label": "Google Form",
