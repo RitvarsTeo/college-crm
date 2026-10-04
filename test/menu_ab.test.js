@@ -1,5 +1,7 @@
-// THE LIGHT MENU IS SOLID BRANDBOOK BLUE (the owner picked B of Q5, 04.10.2026). The A/B is
-// gone: no A, no ?menu= switch, no "Menu A B" control, no remembered choice. Dark is unchanged.
+// THE LIGHT MENU (the owner, 04.10.2026): solid brandbook blue #53a7db (B of Q5), and on it
+// VERSION 3 of four mockups: everything white, the official white logo file aligned to the text.
+// White on #53a7db is 2.65:1, under 4.5:1: his decision, taken while looking at it (BACKLOG.md).
+// The A/B is gone. Dark is unchanged.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -8,29 +10,44 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
+const L = 'html\\.ui-c:not\\(\\[data-theme="dark"\\]\\) ';
 
-const lum = (h) => { const c = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
-const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
-
-test('B is the light menu: the brandbook blue as the surface, navy on it', () => {
-  const navs = [...APP.matchAll(/html\.ui-c:not\(\[data-theme="dark"\]\) \.shell > nav\{([^}]*)\}/g)].map((m) => m[1]);
-  assert.equal(navs.length, 1, 'one light menu rule, no second one fighting it');
-  assert.match(navs[0], /background:#53a7db;/);
-  assert.ok(ratio('#0a2463', '#53a7db') >= 4.5, 'navy on the blue: ' + ratio('#0a2463', '#53a7db').toFixed(2));
-  assert.ok(ratio('#ffffff', '#53a7db') < 4.5, 'white would fail, which is why it is not used');
-  assert.match(APP, /html\.ui-c:not\(\[data-theme="dark"\]\) \.cnav a\{color:#0a2463\}/);
-  assert.match(APP, /html\.ui-c:not\(\[data-theme="dark"\]\) \.cnav \.n\.warn\{color:#0a2463/, 'the amber count turns navy');
-  assert.match(APP, /html\.ui-c:not\(\[data-theme="dark"\]\) nav \.brand \.logo\.onblue\{display:block\}/, 'the black logo on it');
-  assert.match(APP, /src="\/assets\/NoAca_logo_blackhor\.svg"/, 'the official file, never a recoloured one');
+test('the surface is the brandbook blue, one rule', () => {
+  const navs = [...APP.matchAll(/html\.ui-c:not\(\[data-theme="dark"\]\) \.shell > nav\{background:([^;]*);/g)].map((m) => m[1]);
+  assert.deepEqual(navs, ['#53a7db']);
 });
 
-test('the A/B is gone: no A, no switch, no control, and the stored choice is cleared', () => {
+test('version 3: words, counts, icons and hairlines white at full opacity; links 15.5px weight 800', () => {
+  assert.match(APP, new RegExp(L + '\\.cnav a\\{color:#ffffff;font-size:15\\.5px;font-weight:800;'));
+  assert.match(APP, new RegExp(L + '\\.cnav a svg\\{color:#ffffff;opacity:1\\}'));
+  assert.match(APP, new RegExp(L + '\\.cnav \\.n, ' + L + '\\.cnav \\.n\\.warn\\{color:#ffffff;font-weight:800;opacity:1\\}'), 'the Today count too');
+  assert.match(APP, new RegExp(L + '\\.shell > nav #ver, ' + L + '\\.shell > nav #tagline\\{color:#ffffff;opacity:1\\}'));
+  assert.match(APP, new RegExp(L + '\\.cnav \\.c-spine line\\{stroke:#ffffff;stroke-width:1\\.5\\}'));
+  assert.match(APP, new RegExp(L + '\\.cnav \\.c-spine line\\.on\\{stroke:#ffffff;stroke-width:3\\}'));
+  assert.match(APP, new RegExp(L + '\\.cnav \\.kids\\{border-left:1\\.5px solid #ffffff\\}'));
+  const block = APP.slice(APP.indexOf('VERSION 3, the owner'), APP.indexOf('.theme-switch button[aria-checked="true"]{color:#0a2463}'));
+  assert.doesNotMatch(block, /text-shadow|-webkit-text-stroke|border-radius/, 'no text edge, no shadow, no pills');
+});
+
+test('the logo is the official white file, as it is, lined up with the text', () => {
+  assert.match(APP, new RegExp(L + 'nav \\.brand \\.logo\\.light\\{display:none\\}'));
+  assert.match(APP, new RegExp(L + 'nav \\.brand \\.logo\\.dark\\{display:block\\}'));
+  assert.match(APP, /<img class="logo dark" src="\/assets\/NoAca_logo_whitehor\.svg"/);
+  assert.doesNotMatch(APP, /blackhor\.svg" alt/, 'the black logo is no longer on the page');
+  // the symbol starts 162.49 of 1500 units into the file; at 158px that is 17.12px
+  const svg = fs.readFileSync(path.join(ROOT, 'src', 'assets', 'NoAca_logo_whitehor.svg'), 'utf8');
+  assert.match(svg, /viewBox="0 0 1500 568\.72"/, 'the file is the one the offset was measured on');
+  assert.ok(Math.abs((162.49 / 1500) * 158 - 17.12) < 0.01);
+  assert.match(APP, /@media \(min-width:901px\)\{ html\.ui-c:not\(\[data-theme="dark"\]\) nav \.brand \.logo\.dark\{margin-left:-17\.12px\} \}/);
+});
+
+test('the form controls keep readable words on their own white surfaces', () => {
+  assert.match(APP, new RegExp(L + '\\.shell > nav select\\{color:#0a2463\\}'));
+  assert.match(APP, new RegExp(L + '\\.shell > nav \\.theme-switch button\\[aria-checked="true"\\]\\{color:#0a2463\\}'));
+});
+
+test('the A/B is gone and dark is unchanged', () => {
   assert.doesNotMatch(APP, /menu-a|menu-b|menuVariant|menuSetVariant|c-menuab|cMenuAb/);
-  assert.doesNotMatch(APP, /get\('menu'\)/, 'nothing reads ?menu= any more');
-  assert.doesNotMatch(APP, /#e5f2fa/, 'the tint of A and of the earlier gradient is gone');
   assert.match(APP, /localStorage\.removeItem\('menuvariant'\)/);
-});
-
-test('dark mode is unchanged', () => {
   assert.match(APP, /html\.ui-c\[data-theme="dark"\] \.shell > nav\{background:linear-gradient\(180deg,rgba\(8,24,46,\.78\) 0%,rgba\(8,24,46,\.92\) 100%\)/);
 });

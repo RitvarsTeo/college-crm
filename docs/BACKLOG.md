@@ -41,6 +41,13 @@ black logo, 35% navy hairline on #53a7db); he wants white on the blue. Two mocku
 with a thin navy edge and a white hairline; B = white letters on navy pills, the open page in white. Both put the logo
 on a white plate in its official two-tone colours (the brandbook forbids outlining or shadowing the logo). The #53a7db
 surface stays. Letters, logo and hairline are NOT changed until his pick arrives. SAID.
+**PICKED: version 3, white logo aligned, 04.10** (Ritvars, from four mockups, relayed by MASTER CONTROL). On the
+#53a7db surface: the official WHITE logo file as it is (no recolour, outline, shadow or plate); every menu word, the
+Today count, icons and the spine hairline white at full opacity (lines 1.5, the active one 3); links 15.5px weight 800;
+no text edge, shadow or pills. **White on #53a7db measures 2.65:1, under the 4.5:1 guideline: it is his decision, made
+while looking at it.** His note "align the logo to the text": the file's symbol starts 162.49/1500 in, 17.12px at 158px,
+so the image moves left by that; measured at 1440: symbol x 20.01px, "Intake · v1.0" and the slogan x 20px. The form
+controls keep navy words on their white surfaces. Dark unchanged. BUILT, next patch, not deployed.
 
 ## 02.10.2026 - DECIDED (popup): the person card, the menu, black, shadows
 
