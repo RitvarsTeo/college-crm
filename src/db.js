@@ -416,6 +416,7 @@ const ADDED_COLUMNS = [
   ['inbound', 'source', 'TEXT'],
   ['inbound', 'attribution', 'TEXT'],
   ['inbound', 'consent', 'TEXT'],
+  ['people', 'closed_tag', 'TEXT'],     // 02.10.2026, cold | reject: production's people table predates it
 ];
 
 // ---------------------------------------------------------- the async layer --

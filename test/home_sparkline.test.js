@@ -55,10 +55,11 @@ test('it says what it is for a screen reader, and the dot marks the latest month
   assert.match(html, /<circle cx="100\.0"/, 'the dot is on the newest month');
 });
 
-test('both trend KPIs carry one, and only the two that have a trend', () => {
-  const home = fn('async function viewHomeC(');
-  assert.match(home, /\$\{cSpark\(months\.map\(\(m\) => m\.admitted\), 'adm'\)\}/, 'Admitted');
-  assert.match(home, /\$\{cSpark\(months\.map\(\(m\) => m\.newLeads\), 'lead'\)\}/, 'Leads');
+// Home is B since 02.10.2026 (locked). The sparklines were decided 01.10 as shared work.
+for (const v of ['B']) test(`Home ${v}: both trend KPIs carry one, and only the two that have a trend`, () => {
+  const home = fn(`function cHome${v}(`);
+  assert.match(home, /cSpark\(D\.months\.map\(\(m\) => m\.admitted\), 'adm'\)/, 'Admitted');
+  assert.match(home, /cSpark\(D\.months\.map\(\(m\) => m\.newLeads\), 'lead'\)/, 'Leads');
   // Conversion and median days are single values for the period, not a monthly series:
   // giving them a line would be drawing a shape the data does not have.
   assert.equal((home.match(/cSpark\(/g) || []).length, 2, 'only the two with a real monthly series');

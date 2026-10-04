@@ -839,7 +839,8 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
 
     --amb:#F7C04F;--ambink:#F7C04F;--late:#ffb0a8;--warn:#F7C04F;
     --c-sis:#29a8df;--c-ok:#9be0bd;--c-warn:#F7C04F;--c-bad:#ffb0a8;--c-accent-bg:#1a4670;--c-sunk:#0b2542;--c-sel:#163f66;
-    --v-adm:#29a8df;--v-lead:#e7ebf0;--v-open:#F7C04F;--v-np:#93A5B8;--v-grid:#24507a;
+    --v-adm:#29a8df;--v-lead:#e7ebf0;--v-open:#E0A526;--v-np:#93A5B8;--v-grid:#24507a;
+    --k-plinth:#0b2542;   /* the donut's plinth: a frame colour, the dark card well, never a data colour */
     --j-from:#1d4d7a;--j-to:#8fcbef;   /* the Journey's stage line in dark (the review #2) */
     --glass:linear-gradient(180deg,rgba(255,255,255,.06) 0%,rgba(255,255,255,.035) 100%);
     --glass-line:rgba(194,211,222,.18);
@@ -860,7 +861,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   /* the menu takes the same treatment it takes in dark: a quiet vertical fall, so the
      two modes are the same design and not two designs */
   html.ui-c:not([data-theme="dark"]) .shell > nav{
-    background:linear-gradient(180deg,#ffffff 0%,#fafbfc 100%);border-right:1px solid var(--rule)}
+    background:linear-gradient(180deg,#ffffff 0%,#ffffff 40%,#e5f2fa 100%);border-right:1px solid var(--rule)}   /* white into a soft Novikontas Blue #53a7db tint (15% on white), the owner 02.10.2026 */
   html.ui-c[data-theme="dark"] body{background:var(--sea) fixed #0f2f4f}
   html.ui-c[data-theme="dark"] .shell > nav{background:linear-gradient(180deg,rgba(8,24,46,.78) 0%,rgba(8,24,46,.92) 100%);border-right:1px solid rgba(194,211,222,.10)}
   html.ui-c[data-theme="dark"] :is(.c-health,.c-sheet,.c-seg,.c-said,.c-card,.c-jp,.c-folded,.c-next.c-finished,.kstrip,.ksec){
@@ -898,6 +899,21 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .cnav .kids{margin:1px 0 6px 18px;padding-left:10px;border-left:1px solid var(--rule)}
   html.ui-c[data-theme="dark"] .cnav .kids{border-left-color:rgba(194,211,222,.28)}   /* kit 13: 2.05:1 on the sea */
   html.ui-c .cnav .kids a{padding:5px 10px;font-size:13px}
+  /* THE SPINE (the owner, 02.10.2026: "a hairline BEHIND the logos of the menu tabs, with a flow
+     to it"). Not a new line: the children's hairline sits at x=18px and the top-level icon centres at
+     x=18.5px, so this is that same hairline carried up through the icons. It stops short of every icon
+     so it reads as running behind them, and it is drawn in the logo blue from Home down to the place
+     you are in: the menu order IS the lead's journey, so the line says how far along it you are.
+     Frame, not data (KB 08 P5 Depth): it carries no value. Drawn by cSpine(); hidden on a phone,
+     where the menu is one sideways row. */
+  html.ui-c .cnav{position:relative}
+  html.ui-c .cnav > a, html.ui-c .cnav .kids{position:relative}
+  html.ui-c .cnav .c-spine{position:absolute;left:0;top:0;width:40px;height:100%;pointer-events:none;overflow:visible}
+  html.ui-c .cnav .c-spine line{stroke:#bcdcf1;stroke-width:1;shape-rendering:crispEdges}
+  html.ui-c .cnav .c-spine line.on{stroke:#29a8df}
+  html.ui-c[data-theme="dark"] .cnav .c-spine line{stroke:rgba(194,211,222,.28)}
+  html.ui-c[data-theme="dark"] .cnav .c-spine line.on{stroke:#8fcbef}
+  @media (max-width:900px){ html.ui-c .cnav .c-spine{display:none} }
   /* The theme switch and the footer line replace the old Theme select in C only. */
   .c-themebar, .c-foot, .c-pagefoot{display:none}
   html.ui-c #themeBlock{display:none}
@@ -941,7 +957,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
     html.ui-c .cnav .kids{display:contents}
     html.ui-c .cnav a, html.ui-c .cnav .kids a{flex:0 0 auto;white-space:nowrap;padding:8px 10px;font-size:13.5px;min-height:36px}
     html.ui-c .cnav .n{margin-left:4px}
-    html.ui-c .c-journey > .c-card{scroll-margin-top:130px}
+    html.ui-c .c-jexp{scroll-margin-top:130px}
     html.ui-c[data-theme="dark"] .shell > nav{background:#08182e}   /* pinned over the work: solid, never see-through */ }
   @media (max-width:900px){ html.ui-c nav .c-themebar, html.ui-c nav .c-foot{display:none}
     html.ui-c .c-pagefoot{display:block;padding:18px 0 88px;border-top:1px solid var(--rule2);margin:0 16px}
@@ -1043,7 +1059,8 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   /* Home: the Admissions KPI page. Hairlines and whitespace, no cards. Chart colours
      validated with the dataviz validator: teal = admitted, sand = leads / still open,
      slate = not proceeding or not recorded (always with its word). */
-  html.ui-c{--v-adm:#29a8df;--v-lead:#0a2463;--v-open:#F7C04F;--v-np:#98a4b3;--v-grid:#e7ebf0}
+  html.ui-c{--v-adm:#29a8df;--v-lead:#0a2463;--v-open:#E0A526;--v-np:#98a4b3;--v-grid:#e7ebf0}
+  html.ui-c:not([data-theme="dark"]){--k-plinth:#d6dee7}   /* the donut's plinth in light: a frame grey, not a data colour */
   /* dark chart colours: with the rest of the dark sea palette, near the top of CONCEPT C */
   /* No page cap of its own (29.09.2026). Home and Reports were held at 1080px inside a main that
      allows 1320, and main is left-aligned, so on a 1920 screen 576px sat empty down the right while
@@ -1079,6 +1096,11 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .ksec{margin:0 0 26px;min-width:0}
   html.ui-c .ksh{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid var(--rule2)}
   html.ui-c .ksh h2{margin:0;font-family:inherit;font-size:13.5px;font-weight:650;letter-spacing:-.005em}
+  /* PITCH BLACK #011111, the brandbook's black, as the strong accent (the owner, 02.10.2026: "novikontas
+     blue with black looks especially good"): a short bar before each section heading. In dark the same
+     bar takes the dark-mode ink, because black on the navy sea would disappear. */
+  html.ui-c .ksh h2::before{content:"";display:inline-block;width:3px;height:.95em;margin-right:8px;vertical-align:-.1em;border-radius:1px;background:#011111}
+  html.ui-c[data-theme="dark"] .ksh h2::before{background:var(--ink)}
   html.ui-c .kt2{font-size:12px;color:var(--t3)}
   html.ui-c .kchart{width:100%;height:auto;display:block;max-width:900px}
   /* the same 1500 px step the drawing uses, so the cap and the viewBox never disagree */
@@ -1157,6 +1179,18 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-steprow select{flex:1 1 240px;width:auto}
   html.ui-c .c-steprow input[type=date]{width:auto}
   html.ui-c .c-journey{display:grid;grid-template-columns:minmax(260px,320px) minmax(0,1fr);gap:18px;align-items:start}
+  html.ui-c .c-journey.c-nosel{grid-template-columns:minmax(0,1fr)}
+  /* the quick view, opened in place: above a veil that darkens everything else a little */
+  html.ui-c .c-jveil{position:fixed;inset:0;z-index:40;background:rgba(1,17,17,.18);animation:jveil-in .45s ease both}
+  html.ui-c[data-theme="dark"] .c-jveil{background:rgba(1,10,20,.38)}
+  @keyframes jveil-in{from{opacity:0}to{opacity:1}}
+  html.ui-c .c-jexp{position:relative;z-index:41;margin:0 0 8px}
+  html.ui-c .c-jexp > .c-card{position:relative;top:auto;box-shadow:0 18px 44px -18px rgba(1,17,17,.45)}
+  html.ui-c .c-jexp-x{position:absolute;z-index:2;top:8px;right:8px;width:28px;height:28px;padding:0;border:0;border-radius:50%;
+    background:var(--c-sunk);color:var(--t2);font:inherit;font-size:13px;cursor:pointer}
+  html.ui-c .c-jexp-x:hover{color:var(--ink)}
+  html.ui-c .c-jexp-x:focus-visible{outline:2px solid var(--pet);outline-offset:1px}
+  @media (prefers-reduced-motion:reduce){ html.ui-c .c-jveil{animation:none} }
   html.ui-c .c-card{background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:18px 18px 16px;position:sticky;top:12px}
   html.ui-c .c-card h2{margin:0;font-family:inherit;font-size:19px;font-weight:650;letter-spacing:-.01em;overflow-wrap:anywhere}
   html.ui-c .c-cardsub{font-size:13px;color:var(--t3);margin:3px 0 12px}
@@ -1194,6 +1228,10 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
      with the next-step mark directly above it. */
   html.ui-c .c-jp small.c-jnote::before{content:"\201C";margin-right:2px;font-size:15px;line-height:0;vertical-align:-4px}
   html.ui-c .c-jp:hover{border-color:var(--control-line)}
+  html.ui-c .c-jmore{display:block;width:100%;margin:6px 0 0;padding:6px 8px;border:1px dashed var(--rule);border-radius:8px;
+    background:transparent;color:var(--t2);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;text-align:center}
+  html.ui-c .c-jmore:hover{border-style:solid;border-color:var(--control-line);color:var(--ink)}
+  html.ui-c .c-jmore:focus-visible{outline:2px solid var(--pet);outline-offset:1px}
   html.ui-c .c-jp.c-sel{border-color:var(--pet);box-shadow:0 0 0 1px var(--pet)}
   /* Journey filters: compact labelled dropdowns in one row; a set filter is Navy-edged and bold */
   /* the summary reads as one thing: a count, a bar, a label, and the bar is the button */
@@ -1261,6 +1299,112 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .kthree.kthree-b{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:26px}
   @media (max-width:980px){ html.ui-c .kthree.kthree-b{grid-template-columns:minmax(0,1fr)} }
   html.ui-c .kgapn{color:var(--t4);font-weight:400}
+  /* ---- HOME A and B (02.10.2026). Both extend the LOCKED gradient recipe, never a new one:
+     radial-gradient(120% 80% at 50% 0%, <glow> 0%, transparent 60%) over the vertical deepening,
+     glow #fbfcfd in light and #17456e in dark, exactly the page's own sea. Here it lights a FRAME
+     (a well the cards sit in), so the depth is the frame's and every mark stays flat. */
+  html.ui-c{--k-well:radial-gradient(120% 80% at 50% 0%,#fbfcfd 0%,rgba(251,252,253,0) 60%),linear-gradient(180deg,#f7f9fb 0%,#eef2f6 55%,#e7ebf0 100%);
+    --k-well-line:rgba(10,36,99,.08)}
+  html.ui-c[data-theme="dark"] .kpage{--k-well:radial-gradient(120% 80% at 50% 0%,#17456e 0%,rgba(23,69,110,0) 60%),linear-gradient(180deg,#0f2f4f 0%,#0f2f4f 45%,#08182e 100%);
+    --k-well-line:rgba(194,211,222,.14)}
+  html.ui-c .khead{display:flex;align-items:flex-start;gap:12px}
+  html.ui-c .kpeak{fill:var(--ink);font-size:11.5px;font-weight:650;font-family:var(--sans,Inter),system-ui,sans-serif}
+  html.ui-c .kfl-tag{display:inline-flex;align-items:center;gap:4px;padding:1px 7px;border-radius:99px;font-size:11.5px;font-weight:600;
+    color:var(--t2);background:var(--c-sunk);border:1px solid var(--rule);text-decoration:none}
+  html.ui-c .kfl-tag b{color:var(--ink)}
+  html.ui-c .kfl-tag.t-cold{border-left:3px solid var(--v-lead)}     /* dormant, expected back */
+  html.ui-c .kfl-tag.t-reject{border-left:3px solid var(--v-np)}     /* declined, often for now */
+  html.ui-c a.kfl-tag:hover{border-color:var(--control-line)}
+  html.ui-c .c-tagseg{margin:-4px 0 14px}
+
+  /* THE FRAME: a lit well with the locked glow (shared by the Journey band) */
+  html.ui-c .kflow{position:relative;margin:0 0 18px;padding:16px 16px 12px;border-radius:18px;
+    background:var(--k-well);border:1px solid var(--k-well-line);box-shadow:inset 0 1px 0 rgba(255,255,255,.5)}
+  html.ui-c[data-theme="dark"] .kflow{box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+  html.ui-c[data-theme="dark"] .c-summary{--k-well:radial-gradient(120% 80% at 50% 0%,#17456e 0%,rgba(23,69,110,0) 60%),linear-gradient(180deg,#0f2f4f 0%,#0f2f4f 45%,#08182e 100%);
+    --k-well-line:rgba(194,211,222,.14)}
+  html.ui-c .kfl-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+
+  /* THE JOURNEY BAND: Arrived | the stages on ONE baseline and ONE scale | the outcomes */
+  html.ui-c .jband-row{display:grid;grid-template-columns:120px minmax(0,1fr) 170px;gap:14px;align-items:end}
+  html.ui-c .jb-end{display:flex;flex-direction:column;gap:1px;padding:10px 12px;border-radius:12px;text-decoration:none;color:var(--ink);
+    background:var(--surface);border:1px solid var(--c-card-line);box-shadow:0 3px 0 var(--k-plinth),0 10px 24px -18px rgba(3,12,26,.35)}
+  html.ui-c .jb-end:hover{border-color:var(--control-line)}
+  html.ui-c .jb-end > span{font-size:12px;font-weight:600;color:var(--t3)}
+  html.ui-c .jb-end > b{font-size:26px;font-weight:650;letter-spacing:-.02em;line-height:1.1;font-variant-numeric:tabular-nums}
+  html.ui-c .jb-end > small{font-size:11.5px;color:var(--t3)}
+  html.ui-c .jb-outs{display:flex;flex-direction:column;gap:10px}
+  html.ui-c .jb-cols{position:relative;display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:8px}
+  /* the shared baseline is drawn once under every column: the spine laid on its side */
+  html.ui-c .jb-base{position:absolute;left:0;top:132px;width:100%;height:2px;overflow:visible;pointer-events:none}
+  html.ui-c .jb-base line{stroke:#29a8df;stroke-width:1.5;vector-effect:non-scaling-stroke}
+  html.ui-c[data-theme="dark"] .jb-base line{stroke:#8fcbef}
+  html.ui-c .jb-cell{display:flex;flex-direction:column;align-items:stretch;min-width:0}
+  html.ui-c .jb-col{appearance:none;display:flex;flex-direction:column;align-items:stretch;gap:6px;margin:0;padding:0 0 4px;border:0;border-radius:10px;
+    background:transparent;font:inherit;color:inherit;cursor:pointer;min-width:0}
+  html.ui-c .jb-col:hover .jb-l,html.ui-c .jb-col.on .jb-l{color:var(--ink)}
+  html.ui-c .jb-col.on{background:var(--c-sunk)}
+  html.ui-c .jb-col:focus-visible{outline:2px solid var(--pet);outline-offset:1px}
+  /* the plot: a fixed height, bars grow from its floor; the top 22px is room for the count */
+  html.ui-c .jb-plot{position:relative;display:flex;align-items:flex-end;justify-content:center;height:133px;padding-top:22px;box-sizing:border-box}
+  html.ui-c .jb-bar{position:relative;display:block;width:min(56px,60%);min-height:2px;background:var(--v-open);border-radius:4px 4px 0 0}
+  html.ui-c .jb-over{position:absolute;left:0;right:0;bottom:0;display:block;background:var(--j-alarm)}   /* late work, on the same baseline */
+  html.ui-c .jb-n{position:absolute;left:50%;bottom:100%;transform:translateX(-50%);padding-bottom:3px;display:flex;align-items:baseline;gap:4px;
+    font-size:18px;font-weight:650;line-height:1;color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums}
+  html.ui-c .jb-n em{font-style:normal;font-size:11px;font-weight:700;padding:1px 5px;border-radius:5px;background:var(--j-alarm);color:var(--j-on-alarm)}
+  html.ui-c .jb-l{display:flex;align-items:center;justify-content:center;gap:5px;font-size:12px;font-weight:600;color:var(--t2);text-align:center;overflow-wrap:anywhere}
+  html.ui-c .jb-cell .c-exit{align-self:center;margin-top:2px}
+  @media (max-width:900px){
+    html.ui-c .jband-row{grid-template-columns:1fr 1fr}
+    html.ui-c .jb-cols{grid-column:1 / -1;order:-1}
+    html.ui-c .jb-outs{flex-direction:row}
+    html.ui-c .jb-outs > *{flex:1 1 0;min-width:0} }
+  @media (max-width:520px){
+    html.ui-c .jb-cols{gap:4px}
+    html.ui-c .jb-n{font-size:15px}
+    html.ui-c .jb-l .c-jn{display:none}
+    html.ui-c .jb-l{font-size:11px}
+    html.ui-c .jband-row{grid-template-columns:1fr}
+    html.ui-c .jb-outs{flex-direction:column} }
+
+  /* B - the day: a stacked sheet. Two sheets behind it, a CONSTANT offset identical for every
+     figure, so the stack says "work waiting" and no number gains weight from it. Signal amber
+     marks the sheet (never amber text on white, KB 08 P5) because today / needs you is its meaning. */
+  html.ui-c .kday{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:22px;margin:0 0 30px;align-items:start;--m-delay:.1s}
+  html.ui-c .kday-sheet{position:relative;z-index:0;padding:16px 20px 18px;border-radius:16px;background:var(--surface);
+    border:1px solid var(--c-card-line);border-top:3px solid #F7C04F;box-shadow:0 12px 30px -22px rgba(3,12,26,.45)}
+  html.ui-c .kday-sheet::before,html.ui-c .kday-sheet::after{content:"";position:absolute;z-index:-1;left:14px;right:14px;bottom:-7px;height:20px;
+    border-radius:0 0 14px 14px;background:var(--k-well);border:1px solid var(--k-well-line);border-top:0}
+  html.ui-c .kday-sheet::after{left:28px;right:28px;bottom:-13px;z-index:-2;opacity:.8}
+  html.ui-c .kday h2{margin:0 0 10px;font-family:inherit;font-size:12px;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--t3)}
+  html.ui-c .kday-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+  html.ui-c .kneed{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:12px;text-decoration:none;color:var(--ink);
+    background:var(--k-well);border:1px solid var(--k-well-line)}
+  html.ui-c .kneed:hover{border-color:var(--control-line)}
+  html.ui-c .kneed span{font-size:12.5px;color:var(--t2);font-weight:600}
+  html.ui-c .kneed b{font-size:44px;font-weight:650;letter-spacing:-.035em;line-height:1;font-variant-numeric:tabular-nums}
+  html.ui-c .kday-side{display:flex;flex-direction:column;gap:2px;padding:14px 14px 12px;border-radius:16px;background:var(--surface);border:1px solid var(--c-card-line)}
+  html.ui-c .kday-side h3{margin:0 0 6px;font-size:11.5px;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--t3)}
+  html.ui-c .kday-st{display:grid;grid-template-columns:22px minmax(0,1fr) auto;align-items:center;gap:6px;padding:5px 4px;border-radius:7px;color:var(--t2);text-decoration:none;font-size:13px}
+  html.ui-c .kday-st:hover{background:var(--c-sunk);color:var(--ink)}
+  html.ui-c .kday-st b{color:var(--ink);font-variant-numeric:tabular-nums}
+  html.ui-c .kdelta{display:block;margin-top:6px;font-size:12px;color:var(--t3)}
+  html.ui-c .kdelta b{color:var(--ink);font-weight:650}
+  html.ui-c .kb-strip{grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:none}
+  html.ui-c .kb-strip > div{display:flex;flex-direction:column;grid-row:auto;grid-template-rows:none}
+  html.ui-c .kb-strip > div > .kgo{margin-top:auto;padding-top:6px}
+  /* the cards ARE the frame here; the old dark glass on the strip itself would box them twice */
+  html.ui-c[data-theme="dark"] .kstrip.kb-strip{background:none;border:0;padding:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+  html.ui-c .kstrip .kdelta b{display:inline;font-size:12px;margin:0;letter-spacing:0;line-height:inherit}
+  html.ui-c .kb-top{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:30px;align-items:start}
+  html.ui-c .kb-charts .kthree{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:26px}
+  @media (max-width:1100px){ html.ui-c .kb-top{grid-template-columns:minmax(0,1fr)} }
+  html.ui-c .ktags{display:flex;flex-wrap:wrap;gap:5px;margin:10px 0 0}
+  @media (max-width:1100px){ html.ui-c .kday{grid-template-columns:minmax(0,1fr)} html.ui-c .kb-charts .kthree{grid-template-columns:minmax(0,1fr) minmax(0,1fr)} }
+  @media (max-width:760px){ html.ui-c .kb-strip{grid-template-columns:1fr 1fr} html.ui-c .kb-charts .kthree{grid-template-columns:1fr} html.ui-c .kneed b{font-size:34px} }
+  /* the kit's per-scene knobs (part 9): when a scene starts and how far apart its pieces are */
+  html.ui-c .kflow{--m-delay:.2s;--m-step:90ms}
+  html.ui-c .jb-base line{--m-dur:1.6s}
   html.ui-c .kgap-note{margin:0;font-size:11.5px;color:var(--t4);line-height:1.5;max-width:40ch}
   html.ui-c .kgrp-go{display:block;margin-top:8px;padding-top:8px;border-top:1px solid var(--rule2);
     font-size:12px;color:var(--petink);text-decoration:none}
@@ -1271,6 +1415,16 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .kspark circle{fill:var(--v-adm)}
   html.ui-c .kspark.lead path,html.ui-c .kspark.lead circle{stroke:var(--t3);fill:var(--t3)}
   html.ui-c .kspark.lead path{stroke-dasharray:none}
+  /* THE CIRCLE'S SHADOW ON HOME'S OTHER VISUALS (the owner, 02.10.2026: "almost every visual that is
+     dynamic can gain from a shadow like on the circle"). The same solid plinth colour as the donut, no
+     blur, and the SAME offset for every mark, so no value can gain weight from it. The offset runs only
+     ACROSS the value axis, never along it: a bar's shadow drops straight down so its length is untouched,
+     a column's shadow steps sideways so its height is untouched, a line's drops below it. Home only:
+     Reports keeps its flat charts. KB 08 P5, Depth and 3D. */
+  html.ui-c .kpage.kb .kbt i{box-shadow:0 3px 0 var(--k-plinth)}
+  html.ui-c .kpage.kb .kchart .kcol path{filter:drop-shadow(3px 0 0 var(--k-plinth))}
+  html.ui-c .kpage.kb .kchart .kline{filter:drop-shadow(0 3px 0 var(--k-plinth))}
+  html.ui-c .kpage.kb .kspark path{filter:drop-shadow(0 2px 0 var(--k-plinth))}
   html.ui-c .kgo{display:inline-block;margin-top:5px;font-size:11.5px;color:var(--petink);
     text-decoration:none;opacity:.8}
   html.ui-c .kgo:hover{opacity:1;text-decoration:underline}
@@ -1522,14 +1676,69 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .cltag:has(input:checked){border-color:var(--v-adm);background:var(--c-accent-bg)}
   /* the ring arrives as one scene: each segment lifts into place, back to front.
      KB 08 P5: one sequence, plays once, slower rather than faster, off for reduced motion. */
-  html.ui-c .kseg{transform-origin:70px 62px;animation:kseg-in .63s cubic-bezier(.22,.9,.3,1) backwards;
-    animation-delay:calc(var(--i,0) * 90ms)}
-  html.ui-c .kwall{animation:kwall-in .63s ease-out backwards;animation-delay:60ms}
+  /* The ring's arrival belongs to the charts SCENE now (KB 08 P5: at most two per tab), so it
+     plays when the charts reach mid-screen, not at render, off-screen. A lift and a fade, never a
+     scale: a scaled slice reads as a different share while it moves. */
+  html.ui-c.m-on .m-scene:not(.in) :is(.kseg,.kwall){opacity:0}
+  html.ui-c .m-scene.in .kseg{transform-origin:70px 62px;animation:kseg-in .63s cubic-bezier(.22,.9,.3,1) backwards;
+    animation-delay:calc(.4s + var(--i,0) * 90ms)}
+  html.ui-c .m-scene.in .kwall{animation:kwall-in .63s ease-out backwards;animation-delay:.4s}
   @keyframes kseg-in{from{opacity:0;transform:translateY(-11px)}to{opacity:1;transform:none}}
   @keyframes kwall-in{from{opacity:0}to{opacity:1}}
   @media(prefers-reduced-motion:reduce){
     html.ui-c .kseg,html.ui-c .kwall{animation:none}
   }
+  /* APPLICATIONS (Reports, 02.10.2026). The chapter is a FRAME with depth: the locked sea,
+     radial-gradient(120% 80% at 50% 0%, <glow> 0%, transparent 60%) over the vertical deepening,
+     the same values as the page (#fbfcfd light, #17456e dark), and a soft shadow. The marks
+     inside stay flat and exact (KB 08 P5, depth belongs to the frame, never the mark).
+     Two sources, two colours: web traffic in the data mustard #E0A526, the SIS in logo blue. */
+  html.ui-c{--v-web:#E0A526}
+  html.ui-c .c-apps{position:relative;margin-top:26px;padding:18px 18px 6px;border-radius:18px;border:1px solid var(--rule);
+    background:radial-gradient(120% 80% at 50% 0%,#fbfcfd 0%,rgba(251,252,253,0) 60%),linear-gradient(180deg,#f7f9fb 0%,#f5f7fa 45%,#e7ebf0 100%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 16px 36px rgba(10,36,99,.08),0 2px 6px rgba(10,36,99,.05)}
+  html.ui-c[data-theme="dark"] .c-apps{border-color:var(--glass-line);
+    background:radial-gradient(120% 80% at 50% 0%,#17456e 0%,rgba(23,69,110,0) 60%),linear-gradient(180deg,#0f2f4f 0%,#0f2f4f 45%,#08182e 100%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 18px 40px rgba(3,12,26,.34)}
+  html.ui-c .c-apps > .ksec{margin-bottom:14px}
+  html.ui-c .c-apps-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin:0 0 8px}
+  html.ui-c .c-apps-head h2{margin:0;font-size:20px;font-weight:650;letter-spacing:-.01em}
+  html.ui-c .c-apps-path{font-size:12.5px;color:var(--t3)}
+  html.ui-c .c-apps-path i{font-style:normal;color:var(--t4);margin:0 3px}
+  html.ui-c .c-appstate{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin:0 0 14px;font-size:12.5px;color:var(--t3)}
+  html.ui-c .c-appstate b{color:var(--ink);font-weight:650;font-variant-numeric:tabular-nums}
+  html.ui-c .c-appchip{display:inline-block;padding:2px 9px;border-radius:999px;font-weight:650;font-size:12px;color:var(--ink);border:1px solid var(--v-adm)}
+  html.ui-c .c-appchip.is-live{background:var(--v-adm);color:#08182e;border-color:var(--v-adm)}
+  html.ui-c .c-appchip.is-off{border-color:var(--v-np);color:var(--t3)}
+  html.ui-c .c-appempty{padding:6px 0}
+  html.ui-c .c-fsteps{display:grid;gap:6px;margin:6px 0 8px}
+  html.ui-c .c-fsteps[role="link"]{cursor:pointer}
+  html.ui-c .c-fgroup{display:grid;gap:6px}
+  html.ui-c .c-fgroup + .c-fgroup{padding-top:10px;margin-top:4px;border-top:1px solid var(--rule)}
+  html.ui-c .c-fgroup h3{margin:0;font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--t3)}
+  html.ui-c .c-fghead th{font-size:11px;font-weight:600;color:var(--t3);text-align:left;border-bottom:1px solid var(--rule)}
+  html.ui-c .c-fstep{display:grid;grid-template-columns:minmax(0,9em) minmax(40px,1fr) 3em;align-items:center;gap:10px;font-size:13px}
+  html.ui-c .c-fstep b{text-align:right;font-variant-numeric:tabular-nums}
+  html.ui-c .c-fbar{display:block;height:12px;border-radius:3px;background:var(--v-grid)}
+  html.ui-c .c-fbar i{display:block;height:100%;border-radius:3px;background:var(--v-adm);transform-origin:left}
+  html.ui-c .c-fapart{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12.5px;color:var(--t3);margin:0 0 12px}
+  html.ui-c .c-fapart b{color:var(--ink);font-variant-numeric:tabular-nums}
+  html.ui-c .c-ftable{overflow-x:auto;margin:0 0 12px;-webkit-overflow-scrolling:touch}
+  html.ui-c .c-fgrid{min-width:620px}
+  html.ui-c .c-fgrid caption{text-align:left;font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--t3);padding:0 0 6px}
+  html.ui-c .c-fgrid th[scope="row"]{white-space:nowrap;font-weight:650}
+  html.ui-c .c-fgrid th[scope="row"] small{display:block;font-weight:400;font-size:11px;color:var(--t4)}
+  html.ui-c .c-fgrid td{white-space:nowrap}
+  html.ui-c .c-fgrid td b{font-variant-numeric:tabular-nums;margin-left:6px}
+  html.ui-c .c-fcell{display:inline-block;vertical-align:middle;width:44px;height:6px;border-radius:2px;background:var(--v-grid)}
+  html.ui-c .c-fcell i{display:block;height:100%;border-radius:2px;background:var(--v-adm)}
+  html.ui-c .c-fcell i.np{background:var(--v-np)}
+  /* the chapter's ONE scene: the step bars draw from the left, once, in order */
+  html.ui-c .c-apps:not(.is-in) .c-fbar i{transform:scaleX(0)}
+  html.ui-c .c-apps.is-in .c-fbar i{transition:transform .7s cubic-bezier(.22,.9,.3,1)}
+  html.ui-c .c-apps.is-in .c-fstep .c-fbar i{transition-delay:calc(var(--i,0) * 90ms)}
+  @media(prefers-reduced-motion:reduce){ html.ui-c .c-apps:not(.is-in) .c-fbar i{transform:none} html.ui-c .c-apps.is-in .c-fbar i{transition:none} }
+  @media(max-width:640px){ html.ui-c .c-apps{padding:14px 12px 4px;border-radius:14px} html.ui-c .c-fstep{grid-template-columns:minmax(0,7.5em) minmax(30px,1fr) 2.6em} }
   html.ui-c .c-reasons{margin:0 0 14px}
   html.ui-c .c-reasons h3{margin:0 0 7px;font-size:13px;font-weight:650;display:flex;align-items:baseline;gap:8px}
   html.ui-c .c-reasons h3 b{font-weight:500;font-size:11.5px;color:var(--t4)}
@@ -1822,6 +2031,86 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-fb-kind.question{color:var(--pet);border-color:var(--pet)}
   html.ui-c .c-fb-body{margin-top:6px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}
   html.ui-c .c-fb-shot{display:block;margin-top:8px;max-width:min(420px,100%);border:1px solid var(--rule);border-radius:8px;cursor:zoom-in}
+/* ===== KIT PART 9, REPORT MOTION: copied verbatim from Dev kits to share/Component library/9 Report motion/motion.css
+   (the rule: take it, never hand-write motion). Intake is one file with no build step, so it is inlined, not linked.
+   Change it in the kit first, then copy it here again. ===== */
+/* Part 9 - Report motion. Motion building blocks for report and presentation pages.
+   One choreographed sequence per screen (.m-scene), played once when the screen reaches mid-screen.
+   Nothing here runs unless motion.js has set html.m-on, so a page without the script, with reduced motion,
+   or in print always shows its finished state.
+   Pace = the Piemeri report v88 (the owner: "Nothing faster. Make everything slower by 25%"). */
+
+:root{
+  --m-pop:.47s; --m-drop:.63s; --m-bar:.63s; --m-grow:1s; --m-draw:1.4s;
+  --m-slide:.5s; --m-fade:.5s; --m-race:1.44s; --m-step:30ms;
+  --m-accent:#29a8df;                 /* pulse colour */
+  --m-glow:rgba(191,149,52,.28);      /* card glow */
+  --m-shine:rgba(191,149,52,.95);     /* total shine */
+  --m-typing:rgba(191,149,52,.1);     /* row being typed */
+}
+
+@keyframes m-pop  {0%{opacity:0;transform:scale(0)}70%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(1)}}
+@keyframes m-drop {0%{opacity:0;transform:translateY(-16px)}70%{opacity:1;transform:translateY(2px)}100%{opacity:1;transform:none}}
+@keyframes m-bar  {0%{transform:scaleY(0)}75%{transform:scaleY(1.08)}100%{transform:scaleY(1)}}
+@keyframes m-grow {from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes m-draw {from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+@keyframes m-slide{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:none}}
+@keyframes m-fade {from{opacity:0}to{opacity:1}}
+@keyframes m-race {from{left:0;opacity:0}to{opacity:1}}
+@keyframes m-pulse{0%{stroke-width:1.5}35%{stroke-width:5;stroke:var(--m-accent)}100%{stroke-width:1.5}}
+@keyframes m-glow {0%{box-shadow:0 0 0 0 transparent}45%{box-shadow:0 0 0 6px var(--m-glow)}100%{box-shadow:0 0 0 0 transparent}}
+@keyframes m-shine{0%{text-shadow:none}40%{text-shadow:0 0 18px var(--m-shine)}100%{text-shadow:none}}
+@keyframes m-bump {0%{transform:scale(1)}40%{transform:scale(1.22)}100%{transform:scale(1)}}
+@keyframes m-drift{from{transform:translateX(-7px)}to{transform:translateX(9px)}}
+@keyframes m-flag {0%{transform:scale(1)}40%{transform:scale(1.5) rotate(-8deg)}100%{transform:scale(1)}}
+
+/* SVG pieces scale and grow around their own box */
+svg .m-pop,svg .m-drop,svg .m-bar,svg .m-grow,svg .m-bump,svg .m-flag-mark{transform-box:fill-box}
+.m-pop,.m-bump{transform-origin:50% 50%}
+.m-bar{transform-origin:50% 100%}
+.m-grow{transform-origin:0 50%}
+.m-bump{display:inline-block}
+svg .m-flag-mark{transform-origin:0 100%}
+
+/* start state (only when motion is on) */
+.m-on .m-scene .m-pop,.m-on .m-scene .m-drop,.m-on .m-scene .m-slide,
+.m-on .m-scene .m-fade,.m-on .m-scene .m-race,.m-on .m-scene .m-flow,.m-on .m-scene .m-after{opacity:0}
+.m-on .m-scene .m-bar{transform:scaleY(0)}
+.m-on .m-scene .m-grow{transform:scaleX(0)}
+.m-on .m-scene .m-draw{stroke-dasharray:1;stroke-dashoffset:1}
+
+/* play: start time = --m-delay + --i x --m-step (set --i with data-stagger, or inline) */
+.m-on .m-scene.in .m-pop  {animation:m-pop   var(--m-dur,var(--m-pop))   cubic-bezier(.3,1.6,.5,1) both;animation-delay:calc(var(--m-delay,0s) + var(--i,0) * var(--m-step))}
+.m-on .m-scene.in .m-drop {animation:m-drop  var(--m-dur,var(--m-drop))  cubic-bezier(.3,1.3,.5,1) both;animation-delay:calc(var(--m-delay,0s) + var(--i,0) * var(--m-step))}
+.m-on .m-scene.in .m-bar  {animation:m-bar   var(--m-dur,var(--m-bar))   cubic-bezier(.3,1.3,.5,1) both;animation-delay:calc(var(--m-delay,0s) + var(--i,0) * var(--m-step))}
+.m-on .m-scene.in .m-grow {animation:m-grow  var(--m-dur,var(--m-grow))  cubic-bezier(.2,.9,.25,1) both;animation-delay:calc(var(--m-delay,0s) + var(--i,0) * var(--m-step))}
+.m-on .m-scene.in .m-draw {animation:m-draw  var(--m-dur,var(--m-draw))  cubic-bezier(.5,0,.25,1) both;animation-delay:calc(var(--m-delay,0s) + var(--i,0) * var(--m-step))}
+.m-on .m-scene.in .m-slide{animation:m-slide var(--m-dur,var(--m-slide)) ease both;animation-delay:calc(var(--m-delay,0s) + var(--i,0) * var(--m-step))}
+.m-on .m-scene.in .m-fade {animation:m-fade  var(--m-dur,var(--m-fade))  ease both;animation-delay:calc(var(--m-delay,0s) + var(--i,0) * var(--m-step))}
+.m-on .m-scene.in .m-race {animation:m-race  var(--m-dur,var(--m-race))  cubic-bezier(.3,1.35,.45,1) both;animation-delay:calc(var(--m-delay,0s) + var(--i,0) * var(--m-step))}
+.m-on .m-scene.in .m-flow {animation:m-fade .75s ease both;animation-delay:var(--m-delay,2.4s)}
+.m-on .m-scene.in .m-pulse{animation:m-pulse 1.13s ease both;animation-delay:var(--m-delay,0s)}
+.m-on .m-scene.in .m-glow {animation:m-glow 1.75s ease both;animation-delay:var(--m-delay,0s)}
+.m-on .m-drift{animation:m-drift 7.5s ease-in-out infinite alternate}
+.m-on .m-shine.m-shone{animation:m-shine 1.63s ease both}
+.m-on .m-bumped{animation:m-bump .63s cubic-bezier(.3,1.6,.5,1)}
+.m-on .m-flag-mark.m-hit{animation:m-flag .69s cubic-bezier(.3,1.6,.5,1) both}
+.m-on .m-after.m-shown{opacity:1;transition:opacity .75s}
+
+/* typewriter */
+.m-tw{position:relative}
+.m-tg{visibility:hidden}
+.m-typing{background:var(--m-typing);transition:background .31s}
+.m-twa:not(.m-twd) .m-tw::after{content:"";position:absolute;right:-3px;top:.08em;bottom:.08em;width:2px;background:currentColor;opacity:.7}
+
+/* the finished state, always, for print */
+@media print{.m-on *{animation:none!important;opacity:1!important;transform:none!important;stroke-dashoffset:0!important}}
+/* ===== end of kit part 9 ===== */
+  /* the tab opening (see cOpenView): a fade and a 10px lift per block, never a scale */
+  html.ui-c{--vi:0}   /* each block's place in the opening; cOpenView() sets it per block */
+  @keyframes v-open{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  html.ui-c.m-on .v-open{animation:v-open .63s cubic-bezier(.22,.9,.3,1) both;animation-delay:calc(var(--vi,0) * 70ms)}
+  @media (prefers-reduced-motion:reduce){ html.ui-c .v-open{animation:none} }
 </style>
 </head>
 <body>
@@ -1839,7 +2128,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
     <a class="item" href="#/followup" data-icon="clock" title="What has to happen, and when"><span>Follow-ups</span></a>
     <a class="item" href="#/people" data-icon="people" title="Everybody we hold"><span>People</span></a>
     <a class="item" href="#/reports" data-icon="chart" title="Numbers for a KPI meeting"><span>Reports</span></a>
-    <div class="add"><button class="btn" style="width:100%" onclick="openAdd()">+ Add person</button></div>
+    <div class="add"><button class="btn" style="width:100%" onclick="openAdd()">+ Add lead</button></div>
 
     <div class="navsplit"></div>
     <div class="themes" style="border-top:none;padding-top:0" id="actorBlock">
@@ -1877,6 +2166,170 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
 <div id="modal"></div>
 
 <script>
+// ===== KIT PART 9, REPORT MOTION: motion.js copied verbatim from the kit (see the stylesheet note). =====
+/* Part 9 - Report motion engine.
+   Plays every .m-scene once, when its top reaches mid-screen, then never again.
+   Refuses to move for anybody who asked for stillness (reduced motion), and leaves the page finished
+   when it cannot run. Timing runs on setTimeout + performance.now, so it also finishes in hidden tabs
+   and headless browsers (requestAnimationFrame stalls there).
+
+   API (window.Motion):
+     Motion.scene(name, fn)   register a custom sequence: <section class="m-scene" data-scene="name">
+     Motion.count(el, opts)   count the first number in el up from 0 ({ms, delay, done})
+     Motion.fire(el)          play a scene now (once only)
+   Markup:
+     .m-scene                 a screen that plays once
+     data-count[="ms"]        number counts up; data-count-delay="ms"
+     data-type                cell types itself; data-type-order="n" (optional); .m-shine gets .m-shone after
+     data-stagger="selector"  gives each match --i (0,1,2...); data-stagger-var="--c" to use another variable
+     climb scene              data-scene="climb": .m-climb path (pathLength="1"), .m-rider circle,
+                              [data-climb-count] number, .m-flag-mark[data-x], .m-route-clip[data-w], .m-mark[data-dx], .m-after
+*/
+(function () {
+  "use strict";
+  var M = window.Motion = { on: false, hooks: {} };
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduce || !("IntersectionObserver" in window)) return;          // still page; nothing is hidden
+  var root = document.documentElement;
+  root.classList.add("m-on"); M.on = true;
+
+  var tick = M.tick = function (f) { return setTimeout(function () { f(performance.now()); }, 16); };
+  var ease = function (t) { return t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; };
+  var out3 = function (t) { return 1 - Math.pow(1 - t, 3); };
+  var all = function (sel, el) { return [].slice.call((el || document).querySelectorAll(sel)); };
+
+  /* ---------- numbers ---------- */
+  function firstNumberNode(el) {
+    var w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null), n;
+    while ((n = w.nextNode())) if (/\d/.test(n.nodeValue)) return n;
+    return null;
+  }
+  function parse(s) {
+    var m = /^([\s\S]*?)(\d[\d,]*(?:\.\d+)?)([\s\S]*)$/.exec(s); if (!m) return null;
+    var raw = m[2], plain = raw.replace(/,/g, "");
+    return { pre: m[1], suf: m[3], n: parseFloat(plain), dec: (plain.split(".")[1] || "").length, comma: raw.indexOf(",") > -1 };
+  }
+  function fmt(v, p) {
+    var s = v.toFixed(p.dec);
+    if (p.comma) { var a = s.split("."); a[0] = a[0].replace(/\B(?=(\d{3})+(?!\d))/g, ","); s = a.join("."); }
+    return s;
+  }
+  function prepCount(el) {
+    if (el._m) return el._m;
+    var tn = firstNumberNode(el); if (!tn) return null;
+    var p = parse(tn.nodeValue); if (!p) return null;
+    el._m = { tn: tn, orig: tn.nodeValue, p: p };
+    tn.nodeValue = p.pre + fmt(0, p) + p.suf;
+    return el._m;
+  }
+  M.count = function (el, o) {
+    o = o || {}; var c = prepCount(el); if (!c) return;
+    var ms = o.ms || 1125, delay = o.delay || 0;
+    setTimeout(function () {
+      var t0 = performance.now();
+      (function f(t) {
+        var q = Math.min(1, (t - t0) / ms);
+        c.tn.nodeValue = q < 1 ? c.p.pre + fmt(c.p.n * out3(q), c.p) + c.p.suf : c.orig;   // lands on the exact original text
+        if (q < 1) tick(f); else { el.classList.add("m-bumped"); if (o.done) o.done(); }
+      })(performance.now());
+    }, delay);
+  };
+
+  /* ---------- typewriter ---------- */
+  function prepType(el) {
+    if (el._t != null || el.children.length) return;           // only plain-text cells
+    el._t = el.textContent;
+    el.innerHTML = '<span class="m-tw"></span><span class="m-tg"></span>';
+    el.lastChild.textContent = el._t;
+  }
+  function typeScene(sec) {
+    var cells = all("[data-type]", sec).filter(function (c) { return c._t != null; });
+    if (!cells.length) return;
+    var gap = +(sec.getAttribute("data-type-gap") || 100), per = +(sec.getAttribute("data-type-char") || 28);
+    cells.forEach(function (c, k) {
+      var t = c._t, n = 0, tr = c.closest("tr");
+      setTimeout(function step() {
+        if (!n) { c.classList.add("m-twa"); if (tr) tr.classList.add("m-typing"); }
+        n++; c.firstChild.textContent = t.slice(0, n); c.lastChild.textContent = t.slice(n);
+        if (n < t.length) { setTimeout(step, per); return; }
+        c.classList.add("m-twd"); if (tr) setTimeout(function () { tr.classList.remove("m-typing"); }, 150);
+        if (k === cells.length - 1) setTimeout(function () { all(".m-shine", sec).forEach(function (s) { s.classList.add("m-shone"); }); }, 100);
+      }, k * gap);
+    });
+  }
+
+  /* ---------- climb: a rider follows the drawn path, the number climbs with it ---------- */
+  M.hooks.climb = function (sec) {
+    var path = sec.querySelector(".m-climb"), rider = sec.querySelector(".m-rider"); if (!path || !rider) return;
+    var ms = +(sec.getAttribute("data-climb-ms") || 2500), num = sec.querySelector("[data-climb-count]");
+    var flags = all(".m-flag-mark", sec), marks = all(".m-mark", sec), clip = sec.querySelector(".m-route-clip");
+    var cw = clip ? +clip.getAttribute("data-w") : 0, x0 = clip ? +clip.getAttribute("x") : 0;
+    var L = path.getTotalLength(), cx = +rider.getAttribute("cx"), cy = +rider.getAttribute("cy");
+    var c = num ? prepCount(num) : null;
+    if (clip) clip.setAttribute("width", 0);
+    path.style.strokeDasharray = 1; path.style.strokeDashoffset = 1;
+    function place(e) { var p = path.getPointAtLength(e * L); rider.setAttribute("transform", "translate(" + (p.x - cx).toFixed(1) + "," + (p.y - cy).toFixed(1) + ")"); return p; }
+    place(0); rider.style.opacity = 1;
+    var t0 = performance.now();
+    (function f(t) {
+      var q = Math.min(1, (t - t0) / ms), e = ease(q), p = place(e);
+      path.style.strokeDashoffset = 1 - e;
+      if (c) c.tn.nodeValue = q < 1 ? c.p.pre + fmt(c.p.n * e, c.p) + c.p.suf : c.orig;
+      flags.forEach(function (g) { if (!g.classList.contains("m-hit") && p.x >= +g.getAttribute("data-x") - 2) g.classList.add("m-hit"); });
+      if (q < 1) { tick(f); return; }
+      rider.removeAttribute("transform"); rider.classList.add("m-bumped");
+      all(".m-after", sec).forEach(function (a) { a.classList.add("m-shown"); });
+      if (!clip) return;
+      setTimeout(function () {
+        var t1 = performance.now(), ms2 = +(sec.getAttribute("data-route-ms") || 1563);
+        (function g(t) {
+          var q2 = Math.min(1, (t - t1) / ms2), w = cw * out3(q2);
+          clip.setAttribute("width", w.toFixed(1));
+          marks.forEach(function (m) { if (!m.classList.contains("m-hit") && w >= +m.getAttribute("data-dx")) { m.classList.add("m-hit"); m.style.opacity = 1; m.classList.add("m-bumped"); } });
+          flags.forEach(function (fl) { if (!fl.classList.contains("m-hit") && x0 + w >= +fl.getAttribute("data-x")) fl.classList.add("m-hit"); });
+          if (q2 < 1) tick(g);
+        })(performance.now());
+      }, 313);
+    })(t0);
+  };
+
+  /* ---------- scenes ---------- */
+  M.scene = function (name, fn) { M.hooks[name] = fn; };
+  M.fire = function (sec) {
+    if (!sec || sec.classList.contains("in")) return;            // once only, ever
+    sec.classList.add("in");
+    all("[data-count]", sec).forEach(function (el) {
+      if (el.hasAttribute("data-climb-count")) return;
+      M.count(el, { ms: +el.getAttribute("data-count") || 1125, delay: +(el.getAttribute("data-count-delay") || 0) });
+    });
+    typeScene(sec);
+    var h = sec.getAttribute("data-scene"); if (h && M.hooks[h]) M.hooks[h](sec);
+  };
+
+  function init() {
+    all("[data-stagger]").forEach(function (box) {
+      var v = box.getAttribute("data-stagger-var") || "--i";
+      all(box.getAttribute("data-stagger"), box).forEach(function (e, i) { e.style.setProperty(v, i); });
+    });
+    all(".m-scene [data-count], .m-scene [data-climb-count]").forEach(prepCount);   // start from 0, not from the answer
+    all(".m-scene [data-type]").forEach(prepType);
+    all(".m-scene[data-scene=climb] .m-rider, .m-scene .m-mark").forEach(function (r) { r.style.opacity = 0; });
+    var scenes = all(".m-scene");
+    if (/[?&]motion=all\b/.test(location.search)) { scenes.forEach(M.fire); return; }   // tests and thumbnails
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (e) { if (e.isIntersecting) { M.fire(e.target); io.unobserve(e.target); } });
+    }, { rootMargin: "0px 0px -55% 0px" });
+    scenes.forEach(function (s) { io.observe(s); });
+    function sweep() {                                           // a hidden pane stalls the observer; scrolling still fires
+      var h = window.innerHeight;
+      scenes.forEach(function (s) { var r = s.getBoundingClientRect(); if (r.top < h * .45 && r.bottom > 0) M.fire(s); });
+    }
+    window.addEventListener("scroll", sweep, { passive: true }); setTimeout(sweep, 60);
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
+})();
+// ===== end of kit part 9 =====
+
 const $ = (s, r = document) => r.querySelector(s);
 
 // ======================================================================= CONCEPT C
@@ -1912,7 +2365,9 @@ const C_SIS_HOLDS = ['started', 'submitted', 'admitted', 'matriculated'];
 const cSisHolds = (p) => Boolean(p && p.first_channel === 'sis' && p.sis && C_SIS_HOLDS.includes(p.sis.status));
 const cSisHeld = (p) => `In the SIS: ${esc((p.sis && p.sis.label) || '')}`;
 // /api/people answers { count, rows } and returns every row: no paging, no cap.
-const cPeopleRows = async () => ((await api('/api/people')) || {}).rows || [];
+// Each person's stage as last read, so a dialog opened from any list can offer the steps that fit it.
+const C_STAGE_OF = new Map();
+const cPeopleRows = async () => { const rows = ((await api('/api/people')) || {}).rows || []; rows.forEach((p) => C_STAGE_OF.set(p.id, p.status)); return rows; };
 const C_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 function installCNav() {
@@ -1963,8 +2418,37 @@ function markCNav(page) {
   // Settings is for everybody since 28.09.2026: the theme and the Help center live there.
   // Only its admin section is for admins.
   const s = document.querySelector('#cnSettings'); if (s) s.style.display = '';
+  cSpine();
   cNavCounts();
 }
+// THE SPINE, measured from the menu as drawn, never from fixed offsets: a longer label, a
+// count arriving or a font swap moves the icons and the line must still meet them. One
+// segment between each pair of top-level icons, stopping GAP short of each so it runs
+// BEHIND them; the part above the place you are in is drawn again in blue.
+function cSpine() {
+  const nav = document.querySelector('.cnav');
+  if (!nav || !nav.getBoundingClientRect) return;
+  let svg = nav.querySelector('.c-spine');
+  if (!svg) { nav.insertAdjacentHTML('afterbegin', '<svg class="c-spine" aria-hidden="true"></svg>'); svg = nav.querySelector('.c-spine'); }
+  const box = nav.getBoundingClientRect();
+  // Settings sits apart at the foot of the menu, so it is not on the journey
+  const icons = [...nav.querySelectorAll(':scope > a:not(.c-navfoot) > svg')].map((i) => i.getBoundingClientRect());
+  if (icons.length < 2 || !icons[0].height) { svg.innerHTML = ''; return; }
+  const x = (icons[0].left + icons[0].width / 2 - box.left).toFixed(1);
+  const here = [...nav.querySelectorAll('a.on:not(.c-navfoot)')].pop();
+  const hereY = here ? here.getBoundingClientRect().top + here.getBoundingClientRect().height / 2 - box.top : -1;
+  const GAP = 3;
+  const segs = [];
+  for (let k = 0; k < icons.length - 1; k++) {
+    const y1 = icons[k].bottom - box.top + GAP, y2 = icons[k + 1].top - box.top - GAP;
+    if (y2 <= y1) continue;
+    segs.push(`<line x1="${x}" x2="${x}" y1="${y1.toFixed(1)}" y2="${y2.toFixed(1)}"/>`);
+    const end = Math.min(y2, hereY);
+    if (end > y1) segs.push(`<line class="on" x1="${x}" x2="${x}" y1="${y1.toFixed(1)}" y2="${end.toFixed(1)}"/>`);
+  }
+  svg.innerHTML = segs.join('');
+}
+if (typeof window !== 'undefined' && window.addEventListener) window.addEventListener('resize', () => cSpine());
 async function cNavCounts() {
   try {
     const [i, t] = await Promise.all([api('/api/intake'), api('/api/tasks?scope=open')]);
@@ -1991,12 +2475,57 @@ const cChannel = (c) => (!c || c === 'unknown' ? ['Not recorded', 'no source was
 // Which of the two People views is showing. Journey by default: it is the operational
 // one. Remembered across a redraw so an action does not throw you back to the other tab.
 let C_PTAB = 'journey';
+// EVERY TAB OPENS LIKE A SLIDE, AND EVERY FIGURE COUNTS (the owner, 02.10.2026: "when switching
+// between tabs to have a very minimalistic opening animation for all data ... like a presentation
+// slide opening", and "Make them count, remove the shakey thingy ... shakey will only be for any
+// data changed ... and this is the first time viewing this number").
+//
+// Called once per tab change from the router, never on a redraw inside the tab, so a filter
+// click does not replay it. Three things, all from kit part 9's pace:
+//   1. the opening: each block of the screen fades in and lifts 10px, in reading order, 70ms apart.
+//      A lift and a fade, never a scale, so no chart reads as a different size while it arrives
+//   2. every figure counts up to its exact value (Motion.count lands on the original text)
+//   3. the BUMP only for a figure that is DIFFERENT from the last time this viewer saw it. The
+//      last-seen values live in this browser only (a per-viewer convenience); the first visit
+//      bumps nothing, because nothing has changed yet
+// Reduced motion: the kit never turns on, nothing moves, every figure is already final.
+const C_METRICS = ['.kneed b', '.kstrip > div > b', '.kday-st b', '.klegend b', '.kbar > b', '.jb-end > b', '.jb-n',
+  '.c-col h3 > b', '.kbig', '.c-sum > b', '.kgrow b', '.c-out b'].join(',');
+const cMetricKey = (el, i) => {
+  const holder = el.closest('[data-v],[data-kgo],[data-tip]');
+  const label = holder ? (holder.dataset.v || holder.dataset.kgo || holder.dataset.tip) : ((el.parentElement && el.parentElement.querySelector('span')) || {}).textContent;
+  return `${location.hash.split('?')[0] || '#/home'}|${String(label || i).trim().slice(0, 60)}`;
+};
+function cOpenView() {
+  const M = window.Motion, view = $('#view');
+  if (!view || !M || !M.on) return;
+  let blocks = [...view.children];
+  if (blocks.length === 1 && blocks[0].children.length > 1) blocks = [...blocks[0].children];
+  blocks.forEach((b, i) => { b.style.setProperty('--vi', Math.min(i, 8)); b.classList.add('v-open'); });
+  let seen = {};
+  try { seen = JSON.parse(localStorage.getItem('intakeSeen') || '{}') || {}; } catch (e) { seen = {}; }
+  const now = {};
+  view.querySelectorAll(C_METRICS).forEach((el, i) => {
+    if (!/\d/.test(el.textContent)) return;               // a dash for a failed read stays a dash
+    const key = cMetricKey(el, i), value = el.textContent.trim();
+    now[key] = value;
+    const changed = Object.prototype.hasOwnProperty.call(seen, key) && seen[key] !== value;
+    M.count(el, { ms: 1125, delay: 120 + Math.min(i, 12) * 40,
+      done: () => { if (!changed) el.classList.remove('m-bumped'); } });
+  });
+  try { localStorage.setItem('intakeSeen', JSON.stringify({ ...seen, ...now })); } catch (e) { /* private window */ }
+}
+
 async function routeC(page, arg) {
   const place = cPlace(page);
   if (page === 'person') return viewPerson(arg);
   if (page === 'channels') return viewChannels(arg);
   if (page === 'feedback') return viewFeedback();
-  if (place === 'reports') return viewReports();
+  if (place === 'reports') {
+    await viewReports();
+    if (arg === 'applications') { const a = $('#applications'); if (a) a.scrollIntoView({ block: 'start' }); }
+    return;
+  }
   if (place === 'leads') return viewLeadsC();
   // People is two views behind one menu item: Journey is the operational one and opens
   // by default, All people is the whole database. #/journey and #/people both land here;
@@ -2020,27 +2549,25 @@ async function routeC(page, arg) {
 }
 
 // ------------------------------------------------------------------------ HOME
-// HOME IS THE FIRST PAGE AGAIN (the owner, 01.10.2026). Two screens, two jobs:
-// Home is the visual dashboard, Today is the work.
+// HOME IS THE FIRST PAGE (the owner, 01.10.2026), and the metrics on it are Admissions'
+// own ask (29.09: very good that the home page has a place for current statistics straight
+// away; docs/IEVA_AIGARS_FEEDBACK_VERBATIM.md). Two screens, two jobs: Home is the visual dashboard, Today is the work.
 //
-// VARIANT B - VISUAL COMMAND CENTER. One strong headline figure and a large visual
-// main column, with the rest of the numbers in CONTEXTUAL GROUPS down the right,
-// each ending in the action that opens it. Information architecture reference:
-// DoorDash Merchant on Mobbin (free tier) - headline metrics, a visual main column,
-// right-hand metric groups, explicit "View ... insights" destinations and honest
-// zero states. Pattern only; none of their colours or branding.
-//
-// The KPI strip keeps the CARD treatment the shared kit carries (kit part 2,
-// 30.09.2026). That is B's half of the strip A/B; A is the hairline row.
-//
-// Nothing here invents a number. Every figure is read from /api/report or
-// /api/summary; when a read fails the figure says so instead of showing a stale one.
-async function viewHomeC() {
+// HOME IS B, TODAY FIRST (locked by the owner, 02.10.2026, "B for home"). Its job is one
+// question: what needs me today? So it opens with the work waiting (Overdue, Due today, the
+// Inbox), then how admissions is performing, each trend figure with its comparison and the
+// basis named. "The journey now" is the way into the Journey, where the stages are compared.
+// The former A (journey first) lives on as the Journey band: cJourneyBand().
+// Reference: Remote's dashboard (to-do first, groups ending in "View all") and Square's
+// figure-first stack with a delta row (Mobbin, free tier). Every figure is read live from
+// /api/report, /api/summary, /api/people and /api/intake; a failed read says so.
+async function cHomeData() {
   const year = Number(cTodayIso().slice(0, 4));
-  const [rep, people, sum] = await Promise.all([
+  const [rep, people, sum, intake] = await Promise.all([
     api(`/api/report?from=${year}-01-01&to=${year}-12-31`),
     cPeopleRows(),
     api('/api/summary').catch(() => null),
+    api('/api/intake').catch(() => null),
   ]);
   const s = rep.summary || {};
   const thisMonth = cTodayIso().slice(0, 7);
@@ -2050,65 +2577,124 @@ async function viewHomeC() {
   const undated = people.filter((p) => p.status === 'Admitted' && !p.admitted_at).length;
   const count = (arr, key) => { const m = new Map(); arr.forEach((p) => { const k = key(p); m.set(k, (m.get(k) || 0) + 1); }); return [...m.entries()].sort((a, b) => b[1] - a[1]); };
   const known = new Set(CFG.programmes || []);
-  const progs = count(admitted, (p) => p.programme || '(not recorded)').map(([k, n]) => [k, n, known.has(k) ? '' : (k === '(not recorded)' ? 'no programme recorded' : 'not one of the list')]);
+  const progs = count(admitted, (p) => p.programme || '(not recorded)').map(([k, n]) => [k, n, known.has(k) ? '' : (k === '(not recorded)' ? 'no programme recorded' : 'not one of the list'), k]);
   const chans = count(admitted, (p) => p.source_channel || 'unknown').map(([k, n]) => { const [label, why] = cChannel(k); return [label, n, why, k]; });
-  const nowOpen = people.filter((p) => !C_TERMINAL.includes(p.status)).length;
-  const now = [['Open', nowOpen, 'open', 'journey'], ['Admitted', people.filter((p) => p.status === 'Admitted').length, 'adm', 'Admitted'], ['Not proceeding', people.filter((p) => p.status === 'Not proceeding').length, 'np', 'Not proceeding']];
-  const asOf = new Intl.DateTimeFormat('en-GB', { timeZone: TZ, day: 'numeric', month: 'long' }).format(new Date());
   const stages = (CFG.stages || []).filter((st) => !C_TERMINAL.includes(st.id));
+  const open = people.filter((p) => !C_TERMINAL.includes(p.status));
+  const closed = people.filter((p) => p.status === 'Not proceeding');
+  // NEVER A REMEMBERED FIGURE. Read live; a failed read is null and is said out loud.
+  const overdueRows = sum && Array.isArray(sum.overdue) ? sum.overdue : null;
+  const todayRows = sum && Array.isArray(sum.today) ? sum.today : null;
+  return {
+    year, s, months, people, admitted, undated, progs, chans, stages, open, closed,
+    allAdmitted: people.filter((p) => p.status === 'Admitted').length,
+    // Admissions, 30.09: cold and reject, for statistics and to aim marketing at the cold ones
+    tags: (CFG.closedTags || []).map((t) => [t.id, t.label || t.id, closed.filter((p) => p.closed_tag === t.id).length]),
+    overdue: overdueRows ? new Set(overdueRows.map((t) => t.person_id)).size : null,
+    dueToday: todayRows ? new Set(todayRows.map((t) => t.person_id)).size : null,
+    noNext: sum && typeof sum.noNextAction === 'number' ? sum.noNextAction : null,
+    inbox: intake && intake.counts && typeof intake.counts.new === 'number' ? intake.counts.new : null,
+    asOf: new Intl.DateTimeFormat('en-GB', { timeZone: TZ, day: 'numeric', month: 'long' }).format(new Date()),
+  };
+}
 
-  // NEVER A REMEMBERED FIGURE. Read live; a failed read is said out loud.
-  const noNext = sum && typeof sum.noNextAction === 'number' ? sum.noNextAction : null;
-  const overdue = sum && Array.isArray(sum.overdue) ? sum.overdue.length : null;
-  const fig = (n) => (n === null ? '<span class="kgapn" title="not available">—</span>' : n);
+const cFig = (n) => (n === null ? '<span class="kgapn" title="not available">—</span>' : n);
 
-  // A contextual group: a few numbers that belong together, then the way in.
-  const group = (title, rows, href, action) => `<section class="kgrp">
-    <h3>${esc(title)}</h3>
-    ${rows.map(([label, value, hint]) => `<div class="kgrow"><span>${esc(label)}</span><b>${value}</b>${
-      hint ? `<small>${esc(hint)}</small>` : ''}</div>`).join('')}
-    <a class="kgrp-go" href="${href}">${esc(action)} →</a></section>`;
-
+async function viewHomeC() {
+  const D = await cHomeData();
   $('#view').innerHTML = `<div class="kpage kb">
-    <div class="khead"><div><h1 class="c-sr">Home</h1><p class="c-crumb" style="margin:0">Admissions ${year} · to ${esc(asOf)}</p></div></div>
-
-    <div class="kcmd">
-      <div class="kcmd-main">
-        <div class="kstrip">
-          <div class="khero"><span>Admitted</span><b>${admitted.length}</b><small>${year}${undated ? ` \u00b7 +${undated} undated` : ''}</small>${cSpark(months.map((m) => m.admitted), 'adm')}<a class="kgo" href="#/outcomes">Outcomes →</a></div>
-          <div><span>Leads</span><b>${s.newLeads ?? 0}</b><small>${year}</small>${cSpark(months.map((m) => m.newLeads), 'lead')}<a class="kgo" href="#/leads">Inbox →</a></div>
-          <div><span>Conversion</span><b>${s.conversionPct == null ? '-' : s.conversionPct + '%'}</b><small>${s.conversionA ?? 0} / ${s.conversionB ?? 0} who arrived</small><a class="kgo" href="#/reports">Reports →</a></div>
-          <div><span>Median time to admission</span><b>${s.medianDaysToAdmission == null ? '-' : s.medianDaysToAdmission} <em>days</em></b><small>first contact to admission</small><a class="kgo" href="#/reports">Reports →</a></div>
-        </div>
-
-        <section class="ksec">
-          <div class="ksh"><h2>Admissions by month</h2>
-            <ul class="klegend inline"><li><i style="background:var(--v-adm)"></i><span>Admitted</span></li><li><i class="ln" style="background:var(--v-lead)"></i><span>New leads</span></li></ul>
-            <span class="ksrc">from Reports · click a month → Inbox</span></div>
-          ${cMonthChart(months, year)}
-          <details class="kdet"><summary>Show as a table</summary><table class="ktable"><thead><tr><th>Month</th><th>Admitted</th><th>New leads</th></tr></thead><tbody>${months.map((m) => `<tr><td>${C_MONTHS[Number(m.month.slice(5)) - 1]}</td><td>${m.admitted}</td><td>${m.newLeads}</td></tr>`).join('')}</tbody></table></details>
-        </section>
-
-        <div class="kthree kthree-b">
-          <section class="ksec"><div class="ksh"><h2>Where everyone is now</h2><span class="ksrc">click a slice</span></div>${cDonut(now)}</section>
-          <section class="ksec"><div class="ksh"><h2>Admitted by programme</h2><span class="kt2">${admitted.length} in ${year}</span><span class="ksrc">click a bar → Outcomes</span></div>${cBars(progs.map((r) => [...r, r[0]]), 'prog')}</section>
-          <section class="ksec"><div class="ksh"><h2>Where admitted people came from</h2><span class="kt2">${admitted.length} in ${year}</span><span class="ksrc">click a bar → Outcomes</span></div>${cBars(chans, 'chan')}</section>
-        </div>
-      </div>
-
-      <aside class="kcmd-rail">
-        ${group('The journey', stages.map((st) => [st.label || st.id, people.filter((p) => p.status === st.id).length]),
-          '#/journey', 'Open the Journey')}
-        ${group('Needs attention', [
-          ['Overdue', fig(overdue)],
-          ['No next step', fig(noNext)],
-        ], '#/today', 'Open Today')}
-        ${noNext === null || overdue === null
-          ? `<p class="kgap-note">A dash means the summary did not answer. Nothing here is filled in from an earlier session.</p>` : ''}
-      </aside>
-    </div>
+    <div class="khead"><div><h1 class="c-sr">Home</h1><p class="c-crumb" style="margin:0">Admissions ${D.year} · to ${esc(D.asOf)}</p></div></div>
+    ${cHomeB(D)}
+    ${D.noNext === null || D.overdue === null || D.inbox === null
+      ? '<p class="kgap-note">A dash means that figure did not answer. Nothing here is filled in from an earlier session.</p>' : ''}
     <div class="ktip" role="status" aria-live="polite"></div></div>`;
   cWireCharts();
+  cScenes($('#view'));
+}
+
+// The month chart and its table, the same in both: one chart, one source.
+function cHomeMonths(D, extraCls = '') {
+  return `<section class="ksec ${extraCls}">
+    <div class="ksh"><h2>Admissions by month</h2>
+      <ul class="klegend inline"><li><i style="background:var(--v-adm)"></i><span>Admitted</span></li><li><i class="ln" style="background:var(--v-lead)"></i><span>New leads</span></li></ul>
+      <span class="ksrc">from Reports · click a month → Outcomes</span></div>
+    ${cMonthChart(D.months, D.year)}
+    <details class="kdet"><summary>Show as a table</summary><table class="ktable"><thead><tr><th>Month</th><th>Admitted</th><th>New leads</th></tr></thead><tbody>${D.months.map((m) => `<tr><td>${C_MONTHS[Number(m.month.slice(5)) - 1]}</td><td>${m.admitted}</td><td>${m.newLeads}</td></tr>`).join('')}</tbody></table></details>
+  </section>`;
+}
+const cHomeProg = (D) => `<section class="ksec"><div class="ksh"><h2>Admitted by programme</h2><span class="kt2">${D.admitted.length} in ${D.year}</span><span class="ksrc">click a bar → Outcomes</span></div>${cBars(D.progs, 'prog')}</section>`;
+const cHomeChan = (D) => `<section class="ksec"><div class="ksh"><h2>Where admitted people came from</h2><span class="kt2">${D.admitted.length} in ${D.year}</span><span class="ksrc">click a bar → Outcomes</span></div>${cBars(D.chans, 'chan')}</section>`;
+
+// ---- B: TODAY FIRST ------------------------------------------------------------
+// The working day first. The figures that need a person now sit on a stacked frame - a
+// sheet with two sheets behind it, a constant offset identical for every figure, so the
+// stack says "work waiting" and cannot make one number heavier than another. Signal
+// amber is the focus colour here because that is its one meaning: today / needs you.
+//
+// Then performance, each figure with its comparison as its own delta row and the basis
+// named (Square). The comparison is the last COMPLETE month against the one before it,
+// never the month in progress against a whole one.
+//
+// SCENE 1 (of two): the figures that need you count up. SCENE 2: the charts.
+function cHomeB(D) {
+  const s = D.s;
+  const now = cTodayIso().slice(0, 7);
+  const done = D.months.filter((m) => m.month < now);
+  const [prev, last] = done.slice(-2);
+  const mo = (m) => C_MONTHS[Number(m.month.slice(5)) - 1];
+  const delta = (key) => {
+    if (!prev || !last) return '';
+    const d = last[key] - prev[key];
+    return `<span class="kdelta${d > 0 ? ' up' : d < 0 ? ' down' : ''}">${mo(last)} <b>${last[key]}</b> · vs ${mo(prev)} ${prev[key]} · ${d > 0 ? '+' : ''}${d}</span>`;
+  };
+  const need = (label, n, go, href, k) => `<a class="kneed" href="${href}" style="--i:${k}" ${go ? `onclick="${go};return false"` : ''}>
+      <span>${esc(label)}</span><b>${cFig(n)}</b></a>`;
+  const allDots = D.stages.map((st) => [st, D.open.filter((p) => p.status === st.id).length]);
+  return `<section class="kday m-scene" aria-label="Needs you">
+      <div class="kday-sheet">
+        <h2>Needs you</h2>
+        <div class="kday-row">
+          ${need('Overdue', D.overdue, '', '#/today', 0)}
+          ${need('Due today', D.dueToday, '', '#/today', 1)}
+          ${need('In the Inbox', D.inbox, '', '#/leads', 2)}
+          ${D.noNext ? need('No next step', D.noNext, '', '#/today', 3) : ''}
+        </div>
+      </div>
+      <aside class="kday-side">
+        <h3>The journey now</h3>
+        ${allDots.map(([st, n], i) => `<a class="kday-st" href="#/journey" onclick="cGoStage('${esc(st.id)}');return false"><span class="c-jn">${i + 1}</span><span>${esc(st.label || st.id)}</span><b>${n}</b></a>`).join('')}
+        <a class="kgrp-go" href="#/journey">Open the Journey →</a>
+      </aside>
+    </section>
+    <div class="kstrip kb-strip">
+      <div class="khero"><span>Admitted</span><b>${D.admitted.length}</b><small>${D.year}${D.undated ? ` · +${D.undated} undated` : ''}</small>${cSpark(D.months.map((m) => m.admitted), 'adm')}${delta('admitted')}<a class="kgo" href="#/outcomes">Outcomes →</a></div>
+      <div><span>Leads</span><b>${s.newLeads ?? 0}</b><small>${D.year}</small>${cSpark(D.months.map((m) => m.newLeads), 'lead')}${delta('newLeads')}<a class="kgo" href="#/leads">Inbox →</a></div>
+      <div><span>Conversion</span><b>${s.conversionPct == null ? '-' : s.conversionPct + '%'}</b><small>${s.conversionA ?? 0} / ${s.conversionB ?? 0} who arrived</small><a class="kgo" href="#/reports">Reports →</a></div>
+      <div><span>Median time to admission</span><b>${s.medianDaysToAdmission == null ? '-' : s.medianDaysToAdmission} <em>days</em></b><small>first contact to admission</small><a class="kgo" href="#/reports">Reports →</a></div>
+    </div>
+    <div class="m-scene kb-charts">
+      <div class="kb-top">
+      ${cHomeMonths(D)}
+        <section class="ksec"><div class="ksh"><h2>Where everyone is now</h2><span class="ksrc">click a slice</span></div>${cDonut([
+          ['Open', D.open.length, 'open', 'journey'], ['Admitted', D.allAdmitted, 'adm', 'Admitted'], ['Not proceeding', D.closed.length, 'np', 'Not proceeding']])}
+          ${D.tags.some(([, , n]) => n > 0) ? `<p class="ktags">${D.tags.filter(([, , n]) => n > 0).map(([id, label, n]) =>
+            `<a href="#/outcomes" onclick="cGoClosedTag('${esc(id)}');return false" class="kfl-tag t-${esc(id)}">${esc(label)} <b>${n}</b></a>`).join('')}</p>` : ''}</section>
+      </div>
+      <div class="kthree">${cHomeProg(D)}${cHomeChan(D)}</div>
+    </div>`;
+}
+
+// A stage on Home opens the Journey on exactly that stage: the filter the Journey already
+// has (C_JF.stage), set and then shown. Nothing else the reader had chosen is kept, so
+// the count on Home and the count on the Journey are the same people.
+function cGoStage(id) {
+  C_JF = C_JF_EMPTY(); C_JF.stage = [id]; C_PTAB = 'journey';
+  if (location.hash === '#/journey') viewJourneyC(); else location.hash = '#/journey';
+}
+// Cold / reject on Home opens Not proceeding with exactly that tag.
+function cGoClosedTag(id) {
+  C_OUTCOME = 'Not proceeding'; C_OUT_FILTER = null; C_OUT_TAG = id;
+  if (location.hash === '#/outcomes') viewOutcomesC(); else location.hash = '#/outcomes';
 }
 
 function cProgBars(rows) {
@@ -2170,34 +2756,42 @@ function cMonthChart(months, year) {
   // aria-label and its tooltip, so no month loses its name - only its printed tick.
   const every = narrow ? Math.max(1, Math.ceil(n / 6)) : 1;
   const labelled = (k) => every === 1 || k === n - 1 || (n - 1 - k) % every === 0;
+  const best = Math.max(0, ...months.map((m) => m.admitted));
+  const peakAt = best > 0 ? months.map((m) => m.admitted).lastIndexOf(best) : -1;
   const cols = months.map((m, k) => { const cx = L + band * k + band / 2, t = y(m.admitted), mo = C_MONTHS[Number(m.month.slice(5)) - 1];
-    const bar = m.admitted ? `<path d="M${cx - bw / 2},${y(0)} V${Math.min(t + 4, y(0))} q0,-4 4,-4 h${bw - 8} q4,0 4,4 V${y(0)} Z" style="fill:var(--v-adm)"/>` : '';
-    return `<g class="kcol" tabindex="0" role="button" aria-label="${mo} ${m.month.slice(0, 4)}: ${m.admitted} admitted, ${m.newLeads} new leads" data-tip="${mo} ${m.month.slice(0, 4)}|${m.admitted} admitted|${m.newLeads} new leads" data-kgo="month|${m.month}|${mo} ${m.month.slice(0, 4)}"><rect x="${cx - band / 2}" y="${T}" width="${band}" height="${H - T - B}" class="khit"/>${bar}${labelled(k) ? `<text x="${cx}" y="${H - 8}" class="kt" text-anchor="middle">${mo}</text>` : ''}</g>`; }).join('');
+    const bar = m.admitted ? `<path d="M${cx - bw / 2},${y(0)} V${Math.min(t + 4, y(0))} q0,-4 4,-4 h${bw - 8} q4,0 4,4 V${y(0)} Z" style="fill:var(--v-adm);--i:${k}" class="m-fade"/>` : '';
+    // THE PEAK SAYS ITSELF, in place (Square on Mobbin): the best month carries its own figure above
+    // its bar, so the answer is on the mark and not in a legend. The latest of equal peaks wins.
+    const peak = k === peakAt ? `<text x="${cx}" y="${t - 7}" class="kpeak m-fade" text-anchor="middle" style="--i:${n}">${m.admitted} admitted</text>` : '';
+    return `<g class="kcol" tabindex="0" role="button" aria-label="${mo} ${m.month.slice(0, 4)}: ${m.admitted} admitted, ${m.newLeads} new leads" data-tip="${mo} ${m.month.slice(0, 4)}|${m.admitted} admitted|${m.newLeads} new leads" data-kgo="month|${m.month}|${mo} ${m.month.slice(0, 4)}"><rect x="${cx - band / 2}" y="${T}" width="${band}" height="${H - T - B}" class="khit"/>${bar}${labelled(k) ? `<text x="${cx}" y="${H - 8}" class="kt" text-anchor="middle">${mo}</text>` : ''}${peak}</g>`; }).join('');
   const pts = months.map((m, k) => [L + band * k + band / 2, y(m.newLeads)]);
-  return `<svg viewBox="0 0 ${W} ${H}" class="kchart${narrow ? ' narrow' : ''}" role="img" aria-label="Admissions and new leads per month, ${year}">${grid}${cols}<path d="M${pts.map((p) => p.join(',')).join(' L')}" class="kline"/>${pts.map(([x, yy]) => `<circle cx="${x}" cy="${yy}" r="4" class="kdot"/>`).join('')}</svg>`;
+  return `<svg viewBox="0 0 ${W} ${H}" class="kchart${narrow ? ' narrow' : ''}" role="img" aria-label="Admissions and new leads per month, ${year}">${grid}${cols}<path d="M${pts.map((p) => p.join(',')).join(' L')}" class="kline m-draw" pathLength="1"/>${pts.map(([x, yy], k) => `<circle cx="${x}" cy="${yy}" r="4" class="kdot m-fade" style="--i:${k}"/>`).join('')}</svg>`;
 }
 
 // PRESENCE WITHOUT DISTORTION (the owner, 02.10.2026).
 //
 // The rule: 3D geometry gives the object physical presence, and depth must NEVER
-// change the reader's ability to compare the underlying values.
+// change the reader's ability to compare the underlying values. DEPTH BELONGS TO THE
+// FRAME, NEVER TO THE MARK.
 //
-// The first version broke it. It tilted the ring (ry = rx * 0.58), so a segment at the
-// side covered more visual arc than the same number at the top, and only the front
-// segments carried a side wall, so they gained weight from WHERE THEY SAT rather than
-// from what they counted. That is the 3D pie-chart fault.
+// It took two goes to get right, and both are kept in the history:
+//   - 606d41b tilted the ring (ry = rx * 0.58): a segment at the side covered more
+//     visual arc than the same number at the top, and only the front segments carried
+//     a wall. The 3D pie-chart fault
+//   - 074d141 made the top a true circle but kept a rim drawn in EACH SEGMENT'S OWN
+//     colour, dropped straight down. A slice at six o'clock then showed a full wall and a
+//     slice at three or nine o'clock almost none, so a slice still gained coloured ink
+//     from WHERE IT SAT (found by the QA session, 02.10.2026)
 //
 // What this does instead:
 //   - the top face is a TRUE CIRCLE. Every angle and arc length is exactly proportional
 //     to its value, the same as a flat ring. Nothing is foreshortened
-//   - the solid is the SAME ring drawn once more, DEPTH lower, in each segment's own
-//     colour darkened. The top covers it completely on the upper half and it shows as a
-//     rim below. Uniform thickness, identical for every segment
-//   - so depth lives entirely BELOW the reading surface. The value is read from the top
-//     face, which is undistorted, and the legend carries the counts besides
+//   - the solid under it is ONE neutral ring, the whole annulus, in the frame token
+//     --k-plinth. It belongs to the object, not to any value: no slice has a wall of its
+//     own colour, so no slice can gain weight from its position
 //
-// Drawn bottom first, top second. No visibility maths: the top face hides what should
-// be hidden because it is painted last and is exactly the same shape.
+// Drawn plinth first, faces second. No visibility maths: the faces hide what should be
+// hidden because they are painted last and are exactly the same shape.
 function cDonut(rows) {
   const total = rows.reduce((a, r) => a + r[1], 0) || 1;
   const R = 54, r0 = 37, c = 70, cy = 62, gap = 0.035, DEPTH = 11;
@@ -2218,8 +2812,10 @@ function cDonut(rows) {
   const ring = (g, dy) => `M${p(g.a0, R, dy)} A${R},${R} 0 ${g.big} 1 ${p(g.a1, R, dy)}
     L${p(g.a1, r0, dy)} A${r0},${r0} 0 ${g.big} 0 ${p(g.a0, r0, dy)} Z`;
 
-  const base = (g) => `<path d="${ring(g, DEPTH)}"
-    style="fill:var(--v-${g.v});filter:brightness(.6)" class="kwall"/>`;
+  // the plinth: the whole annulus, once, dropped by DEPTH, in a frame colour
+  const plinth = `<path d="M${p(-Math.PI / 2, R, DEPTH)} A${R},${R} 0 1 1 ${p(Math.PI / 2, R, DEPTH)} A${R},${R} 0 1 1 ${p(-Math.PI / 2, R, DEPTH)}
+    M${p(-Math.PI / 2, r0, DEPTH)} A${r0},${r0} 0 1 0 ${p(Math.PI / 2, r0, DEPTH)} A${r0},${r0} 0 1 0 ${p(-Math.PI / 2, r0, DEPTH)} Z"
+    style="fill:var(--k-plinth)" fill-rule="evenodd" class="kwall"/>`;
 
   const face = (g, i) => `<path d="${ring(g, 0)}"
     style="fill:var(--v-${g.v});--i:${i}" class="kseg" tabindex="0" role="button"
@@ -2228,7 +2824,7 @@ function cDonut(rows) {
     data-kgo="${g.go === 'journey' ? 'journey' : 'outcome|' + g.go}"/>`;
 
   return `<div class="kdonut"><svg viewBox="0 0 140 140" role="img" aria-label="Where everyone is now">
-    <g class="kring">${segs.map(base).join('')}${segs.map(face).join('')}</g>
+    <g class="kring">${segs.length ? plinth : ''}${segs.map(face).join('')}</g>
     <text x="${c}" y="${cy + 4}" text-anchor="middle" class="kbig">${total}</text>
     <text x="${c}" y="${cy + 22}" text-anchor="middle" class="kt">people</text></svg>
     <ul class="klegend">${rows.map(([k, n, v]) => `<li><i style="background:var(--v-${v})"></i><span>${esc(k)}</span><b>${n}</b></li>`).join('')}</ul></div>`;
@@ -2246,6 +2842,8 @@ let C_OUT_FILTER = null;
 function cChartGo(spec) {
   const [kind, key, label] = String(spec || '').split('|');
   if (kind === 'journey') { location.hash = '#/journey'; return; }
+  if (kind === 'stage') { cGoStage(key); return; }
+  if (kind === 'inbox') { location.hash = '#/leads'; return; }
   if (kind === 'outcome') { C_OUTCOME = key; C_OUT_FILTER = null; location.hash = '#/outcomes'; return; }
   C_OUTCOME = 'Admitted';
   C_OUT_FILTER = { kind, key, label };
@@ -2271,6 +2869,37 @@ function cWireCharts() {
 
 
 
+// THE KIT'S SCENES IN A PAGE THAT NEVER RELOADS. Kit part 9 looks for its .m-scene sections
+// once, at load, which suits a report and misses every screen this app draws later. So each
+// view that carries a scene calls this after it renders: stagger is applied, then every scene
+// plays once when it reaches the middle of the window, exactly as the kit does it (the same
+// observer margin, the same scroll sweep). AT MOST TWO SCENES PER TAB (KB 08 P5, 02.10.2026),
+// and a test counts them. With reduced motion the kit never sets html.m-on, nothing is hidden
+// and this does nothing.
+function cScenes(root) {
+  const M = window.Motion;
+  if (!M || !M.on || !root) return;
+  root.querySelectorAll('[data-stagger]').forEach((box) => {
+    const v = box.getAttribute('data-stagger-var') || '--i';
+    box.querySelectorAll(box.getAttribute('data-stagger')).forEach((e, i) => e.style.setProperty(v, i));
+  });
+  const scenes = [...root.querySelectorAll('.m-scene:not(.in)')];
+  if (!scenes.length) return;
+  // ONE DEPARTURE FROM THE KIT, on purpose: a report scrolls a chapter into the middle of the
+  // window, a dashboard OPENS with its charts already in view. At the kit's mid-screen line a
+  // chart sitting at 50-60% of the height stayed an empty axis until somebody scrolled, which
+  // reads as a broken chart. Here a scene plays once its top is in the upper 85% of the window.
+  const io = new IntersectionObserver((es) => es.forEach((e) => {
+    if (e.isIntersecting) { M.fire(e.target); io.unobserve(e.target); }
+  }), { rootMargin: '0px 0px -15% 0px' });
+  scenes.forEach((sc) => io.observe(sc));
+  // a hidden pane stalls the observer, so look once now and on every scroll, as the kit does
+  const sweep = () => { const h = window.innerHeight;
+    scenes.forEach((sc) => { const r = sc.getBoundingClientRect(); if (r.top < h * 0.85 && r.bottom > 0) M.fire(sc); }); };
+  setTimeout(sweep, 60);
+  window.addEventListener('scroll', sweep, { passive: true });
+}
+
 // ------------------------------------------------------------------ NEXT STEPS
 // Four states, and every open person is in exactly one of them. No "Waiting on us":
 // a message is a New Lead, a promise is a Next Step. No row limit.
@@ -2290,7 +2919,7 @@ async function viewTodayC() {
       <div class="c-who"><b>${esc(t.name)}</b><small>${esc(t.programme || 'programme not said')} · ${esc(t.status)}</small>${reach(byId.get(t.person_id))}</div>
       <div class="c-what">${cStepIcon(t.label)}${esc(cTask(t.label))}${said(byId.get(t.person_id))}</div><div class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</div>
       <div class="c-acts"><button class="btn sm" onclick="event.stopPropagation();openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, ${
-        C_TERMINAL.includes((byId.get(t.person_id) || {}).status)})">Done</button></div></div>`;
+        C_TERMINAL.includes((byId.get(t.person_id) || {}).status)}, '${esc(t.person_id)}')">Done</button></div></div>`;
   const pRow = (p) => `<div class="c-line" tabindex="0" onclick="location.hash='#/person/${esc(p.id)}'">
       <div class="c-who"><b>${esc(p.name)}</b><small>${esc(p.programme || 'programme not said')} · ${esc(p.status)}</small>${reach(p)}</div>
       <div class="c-what none">No next step${said(p)}</div><div class="c-when"></div>
@@ -2318,8 +2947,14 @@ async function viewTodayC() {
 }
 
 // -------------------------------------------------------------------- OUTCOMES
+// Cold or reject, the SECOND axis on Not proceeding (Admissions, 30.09.2026). Empty when
+// the person carries no tag, so a close from before the tag existed reads as it always did.
+const cTagLabel = (p) => ((CFG.closedTags || []).find((t) => t.id === p.closed_tag) || {}).label || '';
 // Two destinations. A reason is a detail of Not proceeding, never a place of its own.
 let C_OUTCOME = 'Admitted';
+// Cold / reject, Admissions 30.09: a filter on Not proceeding only, so the cold ones can be picked
+// out for marketing. null = everybody not proceeding.
+let C_OUT_TAG = null;
 // WHY PEOPLE STOP, AGAINST THE LIST WE ACTUALLY ENFORCE (Admissions, open since
 // 29.09.2026). The reason model was never missing: config.closedReasons holds ten, the
 // status route refuses a close without one of them, and the picker is built from it.
@@ -2353,6 +2988,24 @@ function cReasonBreakdown(np, noReason) {
     + '</div>';
 }
 
+// COLD AND REJECT ON OUTCOMES (Admissions, 30.09: easier for statistics, and extra marketing
+// aimed at the cold ones specifically; the verbatim words are in the feedback doc). The tag
+// could be SET since b5f3a4c; nothing counted it or picked the cold ones out.
+// This screen has ONE owner for it, this branch (agreed with the feedback closure session
+// through QA, 02.10.2026), so the tag is drawn once per row and summarised once:
+//   - each Not proceeding row carries its tag
+//   - one split, Everybody / Cold n / Reject n, where every count is the filter for its people.
+//     Home's Cold / Reject links open the same filter. A tag nobody carries is not drawn
+//     (KB 08 P5: gaps never shown)
+const cTagChip = (id) => { const t = (CFG.closedTags || []).find((x) => x.id === id); return t ? `<span class="kfl-tag t-${esc(id)}">${esc(t.label || id)}</span> ` : ''; };
+function cTagSplit(np) {
+  const tags = (CFG.closedTags || []).map((t) => [t.id, t.label || t.id, np.filter((p) => p.closed_tag === t.id).length]).filter(([, , n]) => n > 0);
+  if (!tags.length) return '';
+  const pick = (id) => `C_OUT_TAG=${id ? `'${esc(id)}'` : 'null'};viewOutcomesC()`;
+  return `<div class="c-seg c-tagseg" role="group" aria-label="Cold or reject">
+    <button aria-pressed="${!C_OUT_TAG}" onclick="${pick(null)}">Everybody ${np.length}</button>${tags.map(([id, label, n]) =>
+    `<button aria-pressed="${C_OUT_TAG === id}" onclick="${pick(id)}">${esc(label)} ${n}</button>`).join('')}</div>`;
+}
 async function viewOutcomesC() {
   const people = await cPeopleRows();
   const adm = people.filter((p) => p.status === 'Admitted'); const np = people.filter((p) => p.status === 'Not proceeding');
@@ -2366,6 +3019,7 @@ async function viewOutcomesC() {
     if (f.kind === 'prog') list = list.filter((p) => (p.programme || '(not recorded)') === f.key);
     if (f.kind === 'chan') list = list.filter((p) => (p.source_channel || 'unknown') === f.key);
   }
+  if (C_OUTCOME !== 'Admitted' && C_OUT_TAG) list = list.filter((p) => p.closed_tag === C_OUT_TAG);
   const noReason = np.filter((p) => !p.closed_reason).length;
   const fLabel = f ? ({ month: 'admitted in ', prog: 'programme ', chan: 'came from ' }[f.kind] || '') + f.label : '';
   $('#view').innerHTML = `<p class="c-crumb"><a href="#/journey">People</a></p>
@@ -2373,10 +3027,11 @@ async function viewOutcomesC() {
       <div class="act"><button class="btn" onclick="openExport()">Download for management review</button><button class="btn ghost" onclick="location.hash='#/reports'">Full report</button></div></div>
     <div class="c-seg" role="group" aria-label="Outcome"><button aria-pressed="${C_OUTCOME === 'Admitted'}" onclick="C_OUTCOME='Admitted';viewOutcomesC()"><span class="c-ok">✓</span>Admitted ${adm.length}</button><button aria-pressed="${C_OUTCOME !== 'Admitted'}" onclick="C_OUTCOME='Not proceeding';viewOutcomesC()"><span class="c-no">✕</span>Not proceeding ${np.length}</button></div>
     ${f ? `<div class="c-filter">Showing <b>${list.length}</b> ${list.length === 1 ? 'admitted person' : 'admitted people'}, ${esc(fLabel)} <button class="btn sm ghost" onclick="C_OUT_FILTER=null;viewOutcomesC()">Show all admitted ✕</button></div>` : ''}
+    ${C_OUTCOME !== 'Admitted' ? cTagSplit(np) : ''}
     ${C_OUTCOME !== 'Admitted' ? cReasonBreakdown(np, noReason) : ''}
     <div class="c-sheet">${list.map((p) => `<div class="c-line" tabindex="0" onclick="location.hash='#/person/${esc(p.id)}'" style="grid-template-columns:minmax(0,1.2fr) minmax(0,1.4fr) 110px">
         <div class="c-who"><b>${esc(p.name)}</b><small>${esc(p.programme || 'programme not said')} · came from ${esc(cChannel(p.source_channel)[0])}</small></div>
-        <div class="c-what">${C_OUTCOME === 'Admitted' ? `Admitted${p.matriculated_at ? ` · <span class="c-lifefact" title="From the SIS: it happened on or before this day">Matriculated <time>by ${esc(cDay(p.matriculated_at))}</time></span>` : ''}` : (p.closed_reason ? esc(p.closed_reason) : '<span class="c-gap">reason not recorded</span>')}</div>
+        <div class="c-what">${C_OUTCOME !== 'Admitted' && p.closed_tag ? cTagChip(p.closed_tag) : ''}${C_OUTCOME === 'Admitted' ? `Admitted${p.matriculated_at ? ` · <span class="c-lifefact" title="From the SIS: it happened on or before this day">Matriculated <time>by ${esc(cDay(p.matriculated_at))}</time></span>` : ''}` : (p.closed_reason ? esc(p.closed_reason) : '<span class="c-gap">reason not recorded</span>')}</div>
         <div class="c-when">${p.admitted_at ? fmtDate(p.admitted_at) : ''}</div></div>`).join('') || '<div class="c-empty">Nobody here.</div>'}</div>`;
 }
 
@@ -2488,8 +3143,7 @@ async function viewLeadsC() {
     </div>`;
   };
   $('#view').innerHTML = `<p class="c-crumb">Admissions</p>
-    <div class="c-head"><div><h1>Inbox</h1></div>
-      <div class="act"><button class="btn" onclick="openAdd()">Add lead</button></div></div>
+    <div class="c-head"><div><h1>Inbox</h1></div></div>
     ${receipt}
     <div class="c-sheet">${rows.length ? rows.map((r) => `<div class="c-line row c-lead${C_LOPEN === r.id ? ' is-open' : ''}" tabindex="0" onclick="C_LOPEN=${C_LOPEN === r.id ? 'null' : Number(r.id)};viewLeadsC()">
         <div class="c-who"><b class="c-reach">${esc(r.contact_name || r.contact_handle || '') || cTelLink({ phone: r.contact_phone }) || 'Unknown'}</b><small>${esc(channelLabel(r.channel))} · ${fmtDateTime(r.received_at)}${r.aged ? ' · <span class="c-late">late</span>' : ''}</small></div>
@@ -2514,7 +3168,7 @@ let C_PF = C_PF_EMPTY(); let C_PQ = ''; let C_PEDIT = null; let C_PMSG = ''; let
 const cStage = (id) => ((CFG.stages || []).find((s) => s.id === id) || {}).label || id || '';
 const cClosedStage = () => (CFG.stageRoles || {}).closed;
 // Journey's Edit opens the same person in People, unfiltered, scrolled to the row.
-function cEditFromJourney(id) { C_PF = C_PF_EMPTY(); C_PQ = ''; C_PEDIT = id; C_PMSG = ''; C_PSCROLL = true; location.hash = '#/people'; }
+function cEditFromJourney(id) { C_PF = C_PF_EMPTY(); C_PQ = ''; C_PEDIT = id; C_PMSG = ''; C_PSCROLL = true; C_PTAB = 'all'; if (location.hash === '#/people/all') viewPeopleC(); else location.hash = '#/people/all'; }
 async function viewPeopleC() {
   const [people, tasks] = await Promise.all([cPeopleRows(), api('/api/tasks?scope=open')]);
   const taskOf = new Map(); tasks.forEach((t) => { if (!taskOf.has(t.person_id)) taskOf.set(t.person_id, t); });
@@ -2538,7 +3192,7 @@ function cDrawPeople() {
       <td>${t ? `<span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span>` : ''}</td></tr>
       ${C_PEDIT === p.id ? `<tr class="c-edit"><td colspan="5">${cEditForm(p, t)}</td></tr>` : ''}`; };
   $('#view').innerHTML = `<div class="c-head"><div><h1>People</h1></div>
-      <div class="act"><input class="c-search" id="cPQ" placeholder="Search name, email or phone" value="${esc(C_PQ)}" aria-label="Search people"><button class="btn" onclick="openAdd()">Add person</button></div></div>
+      <div class="act"><input class="c-search" id="cPQ" placeholder="Search name, email or phone" value="${esc(C_PQ)}" aria-label="Search people"><button class="btn" onclick="openAdd()">Add lead</button></div></div>
     ${cPeopleTabs('all')}
     ${cPeopleFilters(people)}
     <p class="c-explain">${explain}</p>
@@ -2554,7 +3208,10 @@ const C_PF_DATA = [['nocontact', 'No email or phone'], ['odd', 'Programme not in
 function cPeopleMatch(p, t, f, known) {
   const open = !C_TERMINAL.includes(p.status);
   if (f.stage === 'open' && !open) return false;
-  if (f.stage && f.stage !== 'open' && p.status !== f.stage) return false;
+  // "Not proceeding · Cold": the cold ones, for marketing (Admissions 30.09, the owner's MVP 02.10)
+  if (f.stage && f.stage.startsWith('tag:')) {
+    if (p.status !== ((CFG.stageRoles || {}).closed || 'Not proceeding') || p.closed_tag !== f.stage.slice(4)) return false;
+  } else if (f.stage && f.stage !== 'open' && p.status !== f.stage) return false;
   if (f.due === 'none') { if (!open || t || cSisHolds(p)) return false; }
   else if (f.due && !(t && cWhenClass(t.due_at) === f.due)) return false;
   if (f.data === 'nocontact' && (p.email || p.phone)) return false;
@@ -2572,7 +3229,9 @@ function cPeopleFilters(people) {
   const progs = distinct('programme').sort((a, b) => (known.indexOf(a) + 1 || 99) - (known.indexOf(b) + 1 || 99) || a.localeCompare(b));
   const owners = [...new Set([...(CFG.owners || []), ...distinct('owner')])];
   const sources = distinct('source_channel').sort((a, b) => a.localeCompare(b));
-  const stages = [['open', 'Open'], ...(CFG.stages || []).map((s) => [s.id, s.label || s.id])];
+  const closed = (CFG.stageRoles || {}).closed || 'Not proceeding';
+  const stages = [['open', 'Open'], ...(CFG.stages || []).map((s) => [s.id, s.label || s.id]),
+    ...(CFG.closedTags || []).map((t) => ['tag:' + t.id, closed + ' · ' + (t.label || t.id)])];
   const name = (k, v) => (v === cNotSaid ? 'not recorded' : k === 'source' ? channelLabel(v) : v);
   const box = (k, label, values) => `<label class="c-jf${C_PF[k] ? ' on' : ''}"><span>${label}</span><select aria-label="${label}" onchange="C_PF.${k}=this.value;cDrawPeople()">
       <option value="">All</option>${values.map(([v, t]) => `<option value="${esc(v)}"${C_PF[k] === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`;
@@ -2599,10 +3258,10 @@ function cEditForm(p, t) {
     <div><label for="pe-phone">Phone</label><input id="pe-phone" value="${esc(p.phone || '')}" placeholder="not recorded"></div>
     <div><label for="pe-programme">Programme</label><select id="pe-programme">${progs.map((x) => `<option value="${esc(x)}" ${x === (p.programme || '') ? 'selected' : ''}>${esc(x || '(not said)')}</option>`).join('')}</select></div>
     <div><label for="pe-status">Stage</label><select id="pe-status" onchange="document.querySelector('#pe-closed').hidden = this.value !== ${esc(JSON.stringify(closed))}">${stages.map((s) => `<option value="${esc(s.id)}" ${s.id === p.status ? 'selected' : ''}>${esc(s.label || s.id)}</option>`).join('')}</select></div>
-    <div id="pe-closed" hidden><label for="pe-reason">Why are we stopping?</label><select id="pe-reason">${(CFG.closedReasons || []).map((r) => `<option>${esc(r)}</option>`).join('')}</select><input id="pe-rnote" placeholder="Explanation (needed for Other)" style="margin-top:6px"></div>
+    <div id="pe-closed" hidden><label for="pe-reason">Why are we stopping?</label><select id="pe-reason">${reasonsForStage(p.status).map((r) => `<option>${esc(r)}</option>`).join('')}</select><input id="pe-rnote" placeholder="Explanation (needed for Other)" style="margin-top:6px"><label style="margin-top:8px">And now?</label><div class="cltags">${(CFG.closedTags || []).map((x, i) => `<label class="cltag"><input type="radio" name="peTag" value="${esc(x.id)}"${i === 0 ? ' checked' : ''}><b>${esc(x.label)}</b><small>${esc(x.what)}</small></label>`).join('')}</div></div>
     <div class="c-wide c-step">${t
-      ? `<label for="pe-due">Next step</label><div class="c-steprow"><span>${esc(cTask(t.label))}</span><input id="pe-due" type="date" value="${esc(cDay(t.due_at))}" aria-label="Due date"><button class="btn sm ghost" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))})">Done…</button></div>`
-      : open ? `<label for="pe-next">Next step</label><div class="c-steprow"><select id="pe-next"><option value="">No next step</option>${nextActionOptions()}</select><input id="pe-ndue" type="date" value="${cTodayIso()}" aria-label="Due date"></div>` : '<label>Next step</label>'}</div>
+      ? `<label for="pe-due">Next step</label><div class="c-steprow"><span>${esc(cTask(t.label))}</span><input id="pe-due" type="date" value="${esc(cDay(t.due_at))}" aria-label="Due date"><button class="btn sm ghost" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, false, '${esc(p.id)}')">Done…</button></div>`
+      : open ? `<label for="pe-next">Next step</label><div class="c-steprow"><select id="pe-next"><option value="">No next step</option>${nextActionOptions(null, p.status)}</select><input id="pe-ndue" type="date" value="${cTodayIso()}" aria-label="Due date"></div>` : '<label>Next step</label>'}</div>
     <div class="c-wide"><label for="pe-notes">Notes</label><textarea id="pe-notes" rows="4" oninput="this.nextElementSibling.textContent=this.value.length+' characters'">${esc(p.notes || '')}</textarea><div class="c-hint">${(p.notes || '').length} characters</div></div>
     <div id="pe-err" class="c-wide"></div>
     <div class="c-wide c-row-acts"><button class="btn" onclick="cSavePerson('${esc(p.id)}')">Save</button><button class="btn ghost" onclick="C_PEDIT=null;cDrawPeople()">Cancel</button><a class="btn ghost" href="#/person/${esc(p.id)}" style="margin-left:auto">Open person details →</a></div>
@@ -2623,7 +3282,7 @@ async function cSavePerson(id) {
     }
     if (Object.keys(patch).length) await post(`/api/people/${id}/edit`, patch);
     const st = v('#pe-status');
-    if (st && st !== p.status) await post(`/api/people/${id}/status`, st === cClosedStage() ? { status: st, reason: v('#pe-reason'), note: v('#pe-rnote') } : { status: st });
+    if (st && st !== p.status) await post(`/api/people/${id}/status`, st === cClosedStage() ? { status: st, reason: v('#pe-reason'), note: v('#pe-rnote'), closedTag: (document.querySelector('input[name="peTag"]:checked') || {}).value || null } : { status: st });
     if (t) { const due = v('#pe-due'); if (due && due !== cDay(t.due_at)) await post(`/api/tasks/${Number(t.id)}/reschedule`, { due }); }
     else { const label = v('#pe-next'); if (label) await post(`/api/people/${id}/task`, { label, due: v('#pe-ndue') }); }
     C_PEDIT = null; C_PMSG = `Saved ${p.name}.`;
@@ -2642,12 +3301,20 @@ let C_JSEL = null; let C_JDATA = null;
 // carries no trace of the stage they left in their current row.
 let C_JEXITS = null;
 async function viewJourneyC() {
-  const [people, tasks, exits] = await Promise.all([cPeopleRows(), api('/api/tasks?scope=open'),
-    api('/api/journey/exits').catch(() => null)]);
+  const year = Number(cTodayIso().slice(0, 4));
+  const [people, tasks, exits, rep] = await Promise.all([cPeopleRows(), api('/api/tasks?scope=open'),
+    api('/api/journey/exits').catch(() => null),
+    // Arrived is the SAME figure Home's Leads card reads, from the same report, so the two
+    // screens cannot disagree. A failed read is a dash, never a number from earlier.
+    api(`/api/report?from=${year}-01-01&to=${year}-12-31`).catch(() => null)]);
   C_JEXITS = exits;
   const taskOf = new Map(); tasks.forEach((t) => { if (!taskOf.has(t.person_id)) taskOf.set(t.person_id, t); });
-  C_JDATA = { people, taskOf };
+  const arrived = rep && rep.summary && typeof rep.summary.newLeads === 'number' ? rep.summary.newLeads : null;
+  // play: the band's ONE scene runs on arrival only. A filter click redraws the board, and a
+  // band that re-animated on every click would be motion for its own sake.
+  C_JDATA = { people, taskOf, arrived, year, play: true };
   cDrawJourney();
+  C_JDATA.play = false;
 }
 // LIFECYCLE FACTS (src/lifecycle.js): "Application form started" and "Matriculated", dated, from the
 // SIS. Not stages. Shown only when the SIS has said so; a person with none shows nothing.
@@ -2726,7 +3393,7 @@ function cPersonCard(p, t) {
   const notes = String(p.notes || '');
   return `<aside class="c-card"><h2>${esc(p.name)}</h2> <div class="c-cardsub">${esc(cStage(p.status))} · ${esc(p.programme || 'programme not said')}</div>${cLifeLine(p)}
     <div class="c-next ${open && !t && !cSisHolds(p) ? 'none' : ''}"><b>${open ? 'Next step' : 'Outcome'}</b>${open ? (t ? `${esc(cTask(t.label))} · <span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span>` : cSisHolds(p) ? cSisHeld(p) : 'No next step') : esc(p.status)}
-      ${open ? `<div class="c-row-acts">${t ? `<button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))})">Done</button>` : `<button class="btn sm" onclick="openNewTask('${esc(p.id)}')">Plan a next step</button>`}</div>` : ''}</div>
+      ${open ? `<div class="c-row-acts">${t ? `<button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, false, '${esc(p.id)}')">Done</button>` : `<button class="btn sm" onclick="openNewTask('${esc(p.id)}')">Plan a next step</button>`}</div>` : ''}</div>
     <dl><dt>Email</dt><dd class="${p.email ? 'c-reach' : 'c-gap'}">${cMailLink(p) || 'not recorded'}</dd><dt>Phone</dt><dd class="${p.phone ? 'c-reach' : 'c-gap'}">${cTelLink(p) || 'not recorded'}</dd>
       <dt>Came from</dt><dd>${esc(cChannel(p.source_channel)[0])}</dd><dt>First contact</dt><dd class="${p.created_at ? '' : 'c-gap'}">${p.created_at ? fmtDate(p.created_at) : 'not recorded'}</dd></dl>
     ${cTalkHtml(p)}
@@ -2860,7 +3527,7 @@ function cJourneyCard(p, t, sel) {
   const cls = ['c-jp', 'row', sel && p.id === sel.id ? 'c-sel' : '', w === 'over' ? 'is-over' : '', w === 'today' ? 'is-today' : ''].filter(Boolean).join(' ');
   const life = p.sis ? `<small class="c-jlife" title="In the SIS${p.sis.since ? ', by ' + esc(cDay(p.sis.since)) : ''}">SIS: ${esc(p.sis.label)}</small>`
     : cLifeFacts(p).map(([, at, short]) => `<small class="c-jlife" title="From the SIS, by ${esc(cDay(at))}">${esc(short)}</small>`).join('');
-  return `<div class="${cls}" draggable="true" data-id="${esc(p.id)}" tabindex="0" onclick="C_JSEL='${esc(p.id)}';cDrawJourney()"><b>${esc(p.name)}</b>${life}${t
+  return `<div class="${cls}" draggable="true" data-id="${esc(p.id)}" tabindex="0" onclick="cJOpen('${esc(p.id)}')" onkeydown="if(event.key==='Enter')cJOpen('${esc(p.id)}')"><b>${esc(p.name)}</b>${life}${t
     ? `<span class="c-jnext">${cStepIcon(t.label)}<span>${esc(cTask(t.label))}</span></span><small class="c-jdue${w ? ' ' + w : ''}">${due}</small>`
     : cSisHolds(p) ? '' : '<small class="none">No next step</small>'}${cComment(p) ? `<small class="c-jnote" title="${esc(p.last_comment || p.notes)}">${esc(cComment(p))}</small>` : ''}</div>`;
 }
@@ -2957,6 +3624,60 @@ let C_JMORE = false;
 // function inside an onclick puts a > inside the tag, which closes it early for
 // anything that parses the markup.
 function cJMore(el) { setTimeout(() => { C_JMORE = Boolean(el.parentElement && el.parentElement.open); }, 0); }
+// THE JOURNEY BAND (the owner, 02.10.2026: "B for home. Then the journey displayed like the ui
+// from A", then "Dots per person is not very portraying visual. Cant count them really").
+//
+// THE TASK FIRST (KB 08 P5 rule 12): compare stage against stage, to see where people pile up
+// and where the late work sits. Comparison is easiest on ONE baseline and ONE scale, so:
+//   - one column per active stage, every column on the same baseline and the same scale
+//     (the biggest stage sets it; no stage is normalised on its own)
+//   - the count above the column is the only text on it
+//   - overdue is the RED BASE of the column, always drawn, never hover-only. It sits on the
+//     baseline too, so overdue is comparable stage to stage on the same scale as the totals
+//   - the exit mark under each stage stays: who left the journey from there
+// Arrived and the two outcomes are the bookends, figures and not columns: Arrived counts
+// this year's new leads and the outcomes count the whole database, so putting them on the
+// stages' scale would mix three different bases in one comparison.
+//
+// One operational surface: a column IS the stage filter the board already has (cJfPick), so
+// clicking it filters the board right under it and clicking it again clears it.
+// Depth is the FRAME's (the lit well, the locked gradient); every column is flat, one colour,
+// no light on it, so no stage can look bigger than it counts (KB 08 P5 Depth and 3D).
+function cJourneyBand(everyone, taskOf, stages, exitMark, out) {
+  const on = (v) => (C_JF.stage || []).includes(v);
+  const late = (p) => { const t = taskOf.get(p.id); return Boolean(t && cWhenClass(t.due_at) === 'over'); };
+  const cols = stages.map((st) => {
+    const ps = everyone.filter((p) => p.status === st.id);
+    return { id: st.id, label: st.label || st.id, n: ps.length, over: ps.filter(late).length };
+  });
+  const max = Math.max(1, ...cols.map((c) => c.n));
+  const pct = (n) => ((n / max) * 100).toFixed(2);
+  const col = (c, i) => `<div class="jb-cell"><button type="button" class="jb-col${on(c.id) ? ' on' : ''} m-fade" style="--i:${i}"
+      aria-pressed="${on(c.id)}" data-v="${esc(c.id)}" onclick="cJfPick('stage', this.dataset.v, !${on(c.id)})"
+      title="${esc(c.label)}: ${c.n} ${c.n === 1 ? 'person' : 'people'}${c.over ? `, ${c.over} overdue` : ''}"
+      aria-label="${esc(c.label)}: ${c.n}${c.over ? `, ${c.over} overdue` : ''}">
+      <span class="jb-plot"><span class="jb-bar" style="height:${pct(c.n)}%"><b class="jb-n">${c.n}${c.over ? `<em>${c.over}</em>` : ''}</b>${
+        c.over ? `<i class="jb-over" style="height:${((c.over / c.n) * 100).toFixed(2)}%"></i>` : ''}</span></span>
+      <span class="jb-l"><span class="c-jn">${i + 1}</span>${esc(c.label)}</span>
+    </button>${exitMark(c.id)}</div>`;
+  const tags = (out.tags || []).filter(([, , n]) => n > 0);
+  return `<section class="kflow jband${out.play ? ' m-scene' : ''}" aria-label="The journey">
+    <div class="jband-row">
+      <a class="jb-end" href="#/leads"><span>Arrived</span><b>${out.arrived === null ? '<span class="kgapn" title="not available">—</span>' : out.arrived}</b><small>${out.year}</small></a>
+      <div class="jb-cols" style="--n:${cols.length}">
+        <svg class="jb-base" viewBox="0 0 100 2" preserveAspectRatio="none" aria-hidden="true"><line x1="0" y1="1" x2="100" y2="1" pathLength="1" class="m-draw"/></svg>
+        ${cols.map(col).join('')}
+      </div>
+      <div class="jb-outs">
+        <a class="jb-end good" href="#/outcomes" onclick="C_OUTCOME='Admitted';C_OUT_FILTER=null"><span>${esc(out.admLabel)}</span><b>${out.adm}</b></a>
+        <a class="jb-end" href="#/outcomes" onclick="C_OUTCOME='Not proceeding';C_OUT_TAG=null"><span>${esc(out.npLabel)}</span><b>${out.np}</b>${
+          tags.length ? `<span class="kfl-tags">${tags.map(([id, label, n]) =>
+            `<span role="link" tabindex="0" class="kfl-tag t-${esc(id)}" onclick="event.preventDefault();event.stopPropagation();cGoClosedTag('${esc(id)}')" onkeydown="if(event.key==='Enter'){event.preventDefault();event.stopPropagation();cGoClosedTag('${esc(id)}')}">${esc(label)} <b>${n}</b></span>`).join('')}</span>` : ''}${
+          out.unrecorded ? `<small>${out.np - out.unrecorded} with a recorded stage, ${out.unrecorded} without</small>` : ''}</a>
+      </div>
+    </div></section>`;
+}
+
 function cJourneySummary(everyone, taskOf, stages) {
   const on = (k, v) => (C_JF[k] || []).includes(v);
   const byStage = stages.map((st) => [st.id, st.label || st.id,
@@ -3016,13 +3737,14 @@ function cJourneySummary(everyone, taskOf, stages) {
   const all = (C_JDATA && C_JDATA.people) || [];
   const adm = all.filter((p) => p.status === roles.admitted).length;
   const np = all.filter((p) => p.status === roles.closed).length;
-  const outcomes = `<div class="c-outcomes">
-    <h4>Outcomes <small>${adm + np} ${adm + np === 1 ? 'person whose journey has ended' : 'people whose journey has ended'}</small></h4>
-    <div class="c-outrow">
-      <a class="c-out good" href="#/outcomes"><b>${adm}</b><span>${esc(roles.admitted || 'Admitted')}</span><small>finished the journey</small></a>
-      <a class="c-out" href="#/outcomes"><b>${np}</b><span>${esc(roles.closed || 'Not proceeding')}</span><small>${
-        exits.unrecorded ? `${np - exits.unrecorded} with a recorded stage, ${exits.unrecorded} without` : 'left from the stages above'}</small></a>
-    </div></div>`;
+  // The outcomes are the band's right-hand bookends now (02.10.2026), so they are not drawn
+  // a second time behind the disclosure line: each fact once.
+  const closedTags = (CFG.closedTags || []).map((t) => [t.id, t.label || t.id, all.filter((p) => p.status === roles.closed && p.closed_tag === t.id).length]);
+  const band = cJourneyBand(everyone, taskOf, stages, exitMark, {
+    adm, np, admLabel: roles.admitted || 'Admitted', npLabel: roles.closed || 'Not proceeding',
+    unrecorded: exits.unrecorded || 0, tags: closedTags,
+    arrived: C_JDATA && typeof C_JDATA.arrived === 'number' ? C_JDATA.arrived : null,
+    year: C_JDATA && C_JDATA.year ? C_JDATA.year : '', play: Boolean(C_JDATA && C_JDATA.play) });
 
   // PROGRESSIVE DISCLOSURE (the owner, 01.10.2026: "all together is just tooooo much").
   // The screen used to open with two full bar rows, the exit marks, the outcomes band,
@@ -3033,17 +3755,16 @@ function cJourneySummary(everyone, taskOf, stages) {
   // same people, and what happened to the ones who finished, are answers to questions
   // you have to ask - so they wait behind one line that says what is in them, and the
   // line carries the counts so opening it is a choice and not a lottery.
-  const moreLabel = `What comes next, and ${adm + np} finished`;
+  const moreLabel = 'What comes next';
   return `<div class="c-summary">
     <h4>Active journey <small>${everyone.length} ${everyone.length === 1 ? 'person you are still working with' : 'people you are still working with'}</small></h4>
-    ${row('stage', byStage, exitMark)}
+    ${band}
     <details class="c-more"${C_JMORE ? ' open' : ''}>
       <summary onclick="cJMore(this)">${esc(moreLabel)}</summary>
       <h4>What comes next <small>the same ${everyone.length} people, by the kind of step they are waiting on</small></h4>
       ${row('group', byKind)}
       <h4>Step by step <small>the ${byStep.length} ${byStep.length === 1 ? 'step' : 'steps'} somebody is waiting on right now</small></h4>
       ${row('step', byStep)}
-      ${outcomes}
     </details></div>`;
 }
 
@@ -3057,13 +3778,85 @@ function cPeopleTabs(which) {
     tab('journey', '#/journey', 'Journey')}${tab('all', '#/people/all', 'All people')}</div>`;
 }
 
+// SCREEN 3, THE BOARD, ONE LEVEL AT A TIME (the owner, 01.10.2026: "all together is just
+// tooooo much"). The summary above was re-levelled on 01.10; the five columns below still
+// printed every card, so Application and Contract ran the page to about 1,460 px.
+//
+// Each column now opens with its C_JCOL_SHOW most urgent people and one line for the rest.
+// MOST URGENT FIRST, or a cap would hide exactly the people somebody is late for:
+// most days overdue, then due today, then the next date, then nobody's next step. The
+// line carries its count, so opening it is a choice, not a lottery, and a column that is
+// open stays open across a redraw. The person whose card is open is always shown.
+const C_JCOL_SHOW = 5;
+const C_JCOLOPEN = new Set();
+function cJUrgency(t) {
+  if (!t || !t.due_at) return [3, 0];
+  const w = cWhenClass(t.due_at);
+  return w === 'over' ? [0, -cDaysLate(t.due_at)] : w === 'today' ? [1, 0] : [2, Date.parse(cDay(t.due_at)) || 0];
+}
+function cJSort(ps, taskOf) {
+  return ps.map((p, i) => [p, cJUrgency(taskOf.get(p.id)), i])
+    .sort((a, b) => a[1][0] - b[1][0] || a[1][1] - b[1][1] || a[2] - b[2]).map((x) => x[0]);
+}
+function cJColumn(stageId, ps, taskOf, sel) {
+  const sorted = cJSort(ps, taskOf);
+  const open = C_JCOLOPEN.has(stageId);
+  let shown = open ? sorted : sorted.slice(0, C_JCOL_SHOW);
+  if (!open && sel && sorted.includes(sel) && !shown.includes(sel)) shown = [...shown, sel];
+  const rest = sorted.length - shown.length;
+  const cards = shown.map((p) => (sel && p.id === sel.id
+    ? `<div class="c-jexp" data-id="${esc(p.id)}"><button type="button" class="c-jexp-x" aria-label="Close" onclick="event.stopPropagation();cJClose()">✕</button>${cPersonCard(p, taskOf.get(p.id))}</div>`
+    : cJourneyCard(p, taskOf.get(p.id), sel))).join('');
+  const more = rest > 0
+    ? `<button type="button" class="c-jmore" onclick="event.stopPropagation();cJColToggle('${esc(stageId)}')">${rest} more</button>`
+    : open && sorted.length > C_JCOL_SHOW
+      ? `<button type="button" class="c-jmore" onclick="event.stopPropagation();cJColToggle('${esc(stageId)}')">Show fewer</button>` : '';
+  return cards + more;
+}
+function cJColToggle(id) { if (C_JCOLOPEN.has(id)) C_JCOLOPEN.delete(id); else C_JCOLOPEN.add(id); cDrawJourney(); }
+
+// THE QUICK VIEW OPENS WHERE YOU CLICKED (the owner, 02.10.2026: "it expands exactly from the spot
+// you clicked it, pushed other around it away and slightly making darker the everything around
+// that card"). FLIP: every card's box is measured before the redraw and after it, and each one is
+// moved back to where it was and let go, so the clicked card grows out of its own spot and its
+// neighbours slide out of the way. A veil darkens the rest; the veil, Escape or the cross closes it.
+// This is the tab's second motion scene (the band's arrival is the first): KB 08 P5 allows two.
+// Reduced motion: the card simply appears.
+let C_JFLIP = null;
+function cJFlipMeasure() {
+  const m = new Map();
+  document.querySelectorAll('.c-cols [data-id]').forEach((el) => m.set(el.dataset.id, el.getBoundingClientRect()));
+  return m;
+}
+function cJOpen(id) { C_JFLIP = cJFlipMeasure(); C_JSEL = id; cDrawJourney(); }
+function cJClose() { if (!C_JSEL) return; C_JFLIP = cJFlipMeasure(); C_JSEL = null; cDrawJourney(); }
+function cJFlipPlay() {
+  const before = C_JFLIP; C_JFLIP = null;
+  const still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!before || still) return;
+  document.querySelectorAll('.c-cols [data-id]').forEach((el) => {
+    const a = before.get(el.dataset.id); if (!a || !el.animate) return;
+    const b = el.getBoundingClientRect(); if (!b.width || !b.height) return;
+    // only the quick view itself grows out of the clicked card; every other card SLIDES, never
+    // stretches, because a stretched card stretches its words (seen running, 02.10.2026)
+    const grow = el.classList.contains('c-jexp');
+    const dx = a.left - b.left, dy = a.top - b.top, sx = grow ? a.width / b.width : 1, sy = grow ? a.height / b.height : 1;
+    if (Math.abs(dx) < 1 && Math.abs(dy) < 1 && Math.abs(sx - 1) < 0.01 && Math.abs(sy - 1) < 0.01) return;
+    el.animate([{ transformOrigin: '0 0', transform: `translate(${dx}px,${dy}px) scale(${sx},${sy})` }, { transformOrigin: '0 0', transform: 'none' }],
+      { duration: 563, easing: 'cubic-bezier(.22,.9,.3,1)' });   // the kit's pace, 25% slower than 450
+  });
+}
+if (typeof document !== 'undefined' && document.addEventListener) document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && C_JSEL && !C_JFOPEN) cJClose(); });
+
 function cDrawJourney() {
   const { people, taskOf } = C_JDATA;
   const stages = (CFG.stages || []).filter((s) => !C_TERMINAL.includes(s.id));
   const everyone = people.filter((p) => !C_TERMINAL.includes(p.status));
   const open = everyone.filter((p) => cJourneyMatch(p, taskOf.get(p.id), C_JF));
   const narrow = window.matchMedia && window.matchMedia('(max-width:900px)').matches;
-  const sel = open.find((p) => p.id === C_JSEL) || (narrow ? null : open[0]);
+  // NO PERSON UNTIL ONE IS CLICKED (the owner, 02.10.2026). The board used to pick the first
+  // person on its own, so a random lead sat on the left like a hero and took 320px from the board.
+  const sel = open.find((p) => p.id === C_JSEL) || null;
   // fetch the selected person's conversation once, then redraw with it
   // Redraw only if the answer actually arrived. Without the check, anything that
   // resolves without filling the map - a stub, a future refactor - redraws, asks again,
@@ -3072,16 +3865,18 @@ function cDrawJourney() {
     cJourneyTalk(sel.id).then(() => { if (C_JTALK.has(sel.id)) cDrawJourney(); });
   }
   $('#view').innerHTML = `
-    <div class="c-head"><div><h1>People</h1></div></div>
+    <div class="c-head"><div><h1>People</h1></div><div class="act"><button class="btn" onclick="openAdd()">Add lead</button></div></div>
     ${cPeopleTabs('journey')}
     ${cJourneySummary(everyone, taskOf, stages)}
     ${cJourneyFilters(everyone)}
-    <div class="c-journey">${sel ? cPersonCard(sel, taskOf.get(sel.id)) : '<div></div>'}<div style="min-width:0">
-      <div class="c-cols" style="grid-template-columns:repeat(${stages.length}, minmax(150px, 1fr))">${stages.map((s, i) => { const ps = open.filter((p) => p.status === s.id);
+    <div class="c-journey c-nosel">${sel ? '<div class="c-jveil" onclick="cJClose()"></div>' : ''}<div style="min-width:0">
+      <div class="c-cols" style="grid-template-columns:${stages.map((s) => (sel && sel.status === s.id ? 'minmax(330px, 2.4fr)' : 'minmax(150px, 1fr)')).join(' ')}">${stages.map((s, i) => { const ps = open.filter((p) => p.status === s.id);
         const over = ps.filter((p) => { const t = taskOf.get(p.id); return t && cWhenClass(t.due_at) === 'over'; }).length;
-        return `<div class="c-col" style="--jt:${((i + 1) / stages.length).toFixed(3)}"><h3><span class="c-jn">${i + 1}</span>${esc(s.label || s.id)} <b>${ps.length}</b>${over ? `<em class="c-jover">${over} overdue</em>` : ''}</h3><div class="c-drop" data-stage="${esc(s.id)}">${ps.map((p) => cJourneyCard(p, taskOf.get(p.id), sel)).join('') || '<div class="c-empty" style="padding:8px">empty</div>'}</div></div>`; }).join('')}</div>
+        return `<div class="c-col" style="--jt:${((i + 1) / stages.length).toFixed(3)}"><h3><span class="c-jn">${i + 1}</span>${esc(s.label || s.id)} <b>${ps.length}</b>${over ? `<em class="c-jover">${over} overdue</em>` : ''}</h3><div class="c-drop" data-stage="${esc(s.id)}">${cJColumn(s.id, ps, taskOf, sel) || '<div class="c-empty" style="padding:8px">empty</div>'}</div></div>`; }).join('')}</div>
     </div></div>`;
-  if (narrow && sel && C_JSEL === sel.id) { const card = document.querySelector('.c-journey > .c-card'); if (card && card.scrollIntoView) card.scrollIntoView({ block: 'start' }); }
+  if (C_JDATA.play) cScenes($('#view'));
+  if (narrow && sel && C_JSEL === sel.id) { const card = document.querySelector('.c-jexp'); if (card && card.scrollIntoView) card.scrollIntoView({ block: 'nearest', inline: 'center' }); }
+  cJFlipPlay();
   // one pair of listeners for the life of the page, not one per redraw: a click anywhere outside a
   // filter closes the open tick list, and so does Escape.
   if (!window.__cJfWired) {
@@ -3117,7 +3912,7 @@ const cStamp = (iso) => (/T00:00:00(\.0+)?$/.test(String(iso || '')) ? fmtDate(i
 async function viewPersonC(id) {
   if (!C_PERSON || C_PERSON.id !== id) C_PERSON_EDIT = false;
   const p = await api('/api/people/' + id);
-  C_PERSON = p;
+  C_PERSON = p; C_STAGE_OF.set(p.id, p.status);
   const t = (p.tasks || []).find((x) => !x.done_at);
   const open = !C_TERMINAL.includes(p.status);
   const contact = [p.email, p.phone].filter(Boolean).map(esc).join(' · ');
@@ -3128,12 +3923,12 @@ async function viewPersonC(id) {
       ${e.field ? `<div class="c-evt-diff"><s>${esc(e.old_value ?? '(empty)')}</s> → <b>${esc(e.new_value ?? '(empty)')}</b></div>` : (e.body ? `<div class="c-evt-body">${esc(e.body)}</div>` : '')}</div>`;
   const next = open
     ? (t ? `<div class="c-next"><b>Next step</b><div class="c-next-row"><span>${esc(cTask(t.label))}</span><span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span>${t.owner ? `<span class="c-gap-soft">${esc(t.owner)}</span>` : ''}</div>
-        <div class="c-row-acts"><button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))})">Done</button><button class="btn sm ghost" onclick="openReschedule(${Number(t.id)})">Move the date</button></div></div>`
+        <div class="c-row-acts"><button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, false, '${esc(p.id)}')">Done</button><button class="btn sm ghost" onclick="openReschedule(${Number(t.id)})">Move the date</button></div></div>`
       : cSisHolds(p) ? `<div class="c-next"><b>Next step</b>${cSisHeld(p)}<div class="c-row-acts"><button class="btn sm ghost" onclick="openNewTask('${esc(p.id)}')">Plan a next step</button></div></div>`
       : `<div class="c-next none"><b>Next step</b>No next step<div class="c-row-acts"><button class="btn sm" onclick="openNewTask('${esc(p.id)}')">Plan a next step</button></div></div>`)
-    : `<div class="c-next c-finished"><b>Outcome</b>${p.status === (CFG.stageRoles || {}).closed ? `<span class="c-no">✕</span>${esc(cStage(p.status))}${p.closed_reason ? ' · ' + esc(p.closed_reason) : ' · <span class="c-gap">reason not recorded</span>'}${p.closed_note ? `<div class="c-evt-body">${esc(p.closed_note)}</div>` : ''}` : `<span class="c-ok">✓</span>${esc(cStage(p.status))}${p.admitted_at ? ' on ' + fmtDate(p.admitted_at) : ''}`}${t ? `
+    : `<div class="c-next c-finished"><b>Outcome</b>${p.status === (CFG.stageRoles || {}).closed ? `<span class="c-no">✕</span>${esc(cStage(p.status))}${cTagLabel(p) ? ' · ' + esc(cTagLabel(p)) : ''}${p.closed_reason ? ' · ' + esc(p.closed_reason) : ' · <span class="c-gap">reason not recorded</span>'}${p.closed_note ? `<div class="c-evt-body">${esc(p.closed_note)}</div>` : ''}` : `<span class="c-ok">✓</span>${esc(cStage(p.status))}${p.admitted_at ? ' on ' + fmtDate(p.admitted_at) : ''}`}${t ? `
         <div class="c-still"><b>Still open</b><div class="c-next-row"><span>${esc(cTask(t.label))}</span><span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span></div>
-        <div class="c-row-acts"><button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, true)">Done</button><button class="btn sm ghost" onclick="openReschedule(${Number(t.id)})">Move the date</button></div></div>` : ''}</div>`;
+        <div class="c-row-acts"><button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, true, '${esc(p.id)}')">Done</button><button class="btn sm ghost" onclick="openReschedule(${Number(t.id)})">Move the date</button></div></div>` : ''}</div>`;
   $('#view').innerHTML = `<p class="c-crumb"><a href="#/people">People</a></p>
     <div class="c-head"><div><h1 class="c-pname">${esc(p.name)}</h1><p>${esc(cStage(p.status))} · ${esc(p.programme || 'programme not said')}${p.study_form ? ' · ' + esc(p.study_form) : ''} · ${contact || '<span class="c-gap">no email or phone recorded</span>'}</p></div>${p.first_channel === 'sis' ? `<div class="act"><button class="btn ghost" onclick="openSisMerge('${esc(p.id)}')">Same person as...</button></div>` : ''}</div>
     <div class="c-pgrid">
@@ -3258,7 +4053,7 @@ async function viewReportsC() {
   const cov = r.coverage || {};
   $('#view').innerHTML = `<p class="c-crumb"><a href="#/outcomes">Outcomes</a></p>
     <div class="c-head"><div><h1>Full report</h1><p>${esc(from || '')} to ${esc(to || '')}</p></div>
-      <div class="act"><button class="btn" onclick="openExport()">Download for management review</button></div></div>
+      <div class="act"><a class="btn ghost" href="#/reports/applications">Applications</a><button class="btn" onclick="openExport()">Download for management review</button></div></div>
     ${cSheetNotice()}
     <div class="c-periodbar"><div class="c-seg" role="group" aria-label="Period">${seg('month', 'This month')}${seg('last', 'Last month')}${seg('year', 'This year')}${seg('all', 'Everything')}</div>
       <label class="c-date">From <input type="date" value="${esc(from || '')}" onchange="cReportDates(this.value, RPT.to || '${esc(to || '')}')"></label>
@@ -3291,10 +4086,16 @@ async function viewReportsC() {
       ${sect('lost', 'Why people did not proceed', 'all time')}
       <section class="ksec"><div class="ksh"><h2>From a maritime school</h2></div><p class="c-num">${s.maritimeGraduates ?? 0}</p><p class="c-sub">${cov.education?.filled ?? 0} / ${cov.education?.of ?? 0} have an education recorded</p></section>
     </div>
-    <section class="ksec" id="cWeb" hidden></section>
+    <section class="c-apps" id="applications" aria-labelledby="cAppsH">
+      <div class="c-apps-head"><h2 id="cAppsH">Applications</h2><span class="c-apps-path">Academy Application form <i aria-hidden="true">&rarr;</i> SIS</span></div>
+      <div id="cAppState" class="c-appstate"></div>
+      <section class="ksec" id="cWeb" hidden></section>
+      <section class="ksec" id="cSis" hidden></section>
+    </section>
     <div class="ktip" role="status" aria-live="polite"></div></div>`;
   cWireCharts();
   cWebStats();
+  cApplications();
 }
 
 // apply.novikontas.org, from the SIS's web-stats (the owner's popup A, 01.10.2026: a section on Reports).
@@ -3309,21 +4110,21 @@ async function cWebStats(range) {
   if (!document.body.contains(el)) return;
   el.hidden = false;
   const seg = ['7d', '30d', '90d'].map((k) => `<button aria-pressed="${C_WEB_RANGE === k}" onclick="cWebStats('${k}')">${k.replace('d', ' days')}</button>`).join('');
-  const head = `<div class="ksh"><h2>apply.novikontas.org</h2><div class="c-seg" role="group" aria-label="Days">${seg}</div></div>`;
+  const head = `<div class="ksh"><h2>Academy Application form</h2><div class="c-seg" role="group" aria-label="Days">${seg}</div></div>`;
   if (!d.ok) { el.innerHTML = head + `<p class="c-empty" style="padding:6px 0">The SIS did not answer${d.status ? ' (' + Number(d.status) + ')' : ''}.</p>`; return; }
   const n = (v) => (typeof v === 'number' ? v.toLocaleString('en-GB') : null);
   const tileW = (label, v, prev, unit) => v == null ? '' : `<div><span>${label}</span><b>${n(v)}</b>${prev == null ? '' : `<small>${n(prev)} the ${unit} before</small>`}</div>`;
   const days = (d.daily || []).filter((x) => typeof x.visits === 'number');
   const maxV = Math.max(1, ...days.map((x) => x.visits));
   const chart = days.length ? `<div class="c-webdays" style="display:flex;align-items:flex-end;gap:2px;height:96px;margin:8px 0 4px">${days.map((x) =>
-    `<i title="${esc(x.day)}: ${x.visits} visits${x.pageViews == null ? '' : ', ' + x.pageViews + ' page views'}" style="flex:1;min-width:2px;height:${Math.max(2, (x.visits / maxV) * 100)}%;background:var(--v-adm);border-radius:2px 2px 0 0"></i>`).join('')}</div>
+    `<i title="${esc(x.day)}: ${x.visits} visits${x.pageViews == null ? '' : ', ' + x.pageViews + ' page views'}" style="flex:1;min-width:2px;height:${Math.max(2, (x.visits / maxV) * 100)}%;background:var(--v-web);border-radius:2px 2px 0 0"></i>`).join('')}</div>
     <p class="c-sub">${esc(days[0].day)} to ${esc(days[days.length - 1].day)}</p>` : '';
   const list = (title, rows, valueKey, sub) => {
     const r = (rows || []).filter((x) => typeof x[valueKey] === 'number').slice(0, 6);
     if (!r.length) return '';
     const max = Math.max(...r.map((x) => x[valueKey]));
     return `<section class="ksec"><div class="ksh"><h2>${title}</h2><span class="kt2">${sub}</span></div><div class="kbars">${r.map((x) =>
-      `<div class="kbar c-static" title="${esc(x.name)}${x.detail ? ' · ' + esc(x.detail) : ''}: ${x[valueKey]}"><span class="kbl">${esc(x.name)}${x.detail ? ` <span class="c-gap-soft">${esc(x.detail)}</span>` : ''}</span><span class="kbt"><i style="width:${Math.max(3, (x[valueKey] / max) * 100)}%;background:var(--v-adm)"></i></span><b>${x[valueKey]}</b></div>`).join('')}</div></section>`;
+      `<div class="kbar c-static" title="${esc(x.name)}${x.detail ? ' · ' + esc(x.detail) : ''}: ${x[valueKey]}"><span class="kbl">${esc(x.name)}${x.detail ? ` <span class="c-gap-soft">${esc(x.detail)}</span>` : ''}</span><span class="kbt"><i style="width:${Math.max(3, (x[valueKey] / max) * 100)}%;background:var(--v-web)"></i></span><b>${x[valueKey]}</b></div>`).join('')}</div></section>`;
   };
   const t = d.totals || {}; const pr = d.previous || {};
   const unit = C_WEB_RANGE.replace('d', ' days');
@@ -3333,6 +4134,71 @@ async function cWebStats(range) {
     <div class="c-rgrid">${list('Came from', d.referrers, 'visitors', 'visitors')}${list('Campaign links', d.campaigns, 'visitors', 'visitors')}${list('Device', d.devices, 'visitors', 'visitors')}${list('Pages', d.pages, 'visitors', 'visitors')}</div>
     ${sr ? `<div class="kstrip">${tileW('Google clicks', sr.totals && sr.totals.clicks, sr.previous && sr.previous.clicks, unit)}${tileW('Google impressions', sr.totals && sr.totals.impressions, sr.previous && sr.previous.impressions, unit)}</div>
     <div class="c-rgrid">${list('Searched for', sr.queries, 'clicks', 'clicks')}</div>` : ''}`;
+}
+
+// Applications: the SIS funnel by REGISTRATION WEEK (popup A, 01.10.2026; src/applications.js).
+// The SIS sends each application's CURRENT status and no history, so a week is a cohort: who
+// registered then, and where they stand now. No week is drawn that nobody registered in, a value
+// the SIS did not send is not drawn, and the six team tests a person set aside are not counted.
+// the steps the applicant takes on apply.novikontas.org; the rest are the college's, in the SIS
+const C_APP_SITE = ['registered', 'started', 'submitted'];
+const C_APP_WORD = { 'off': 'Off', 'no-run': 'No run yet', 'no-real-applicant': 'No real applicant yet', 'test': 'Test', 'live': 'Live' };
+async function cApplications() {
+  const box = $('#cSis'); const st = $('#cAppState');
+  if (!box || !st) return;
+  let d;
+  try { d = await api('/api/applications'); } catch { d = null; }
+  if (!document.body.contains(box)) return;
+  box.hidden = false;
+  if (!d) { st.innerHTML = `<span class="c-appchip is-off">SIS</span><span>Intake did not answer</span>`; box.innerHTML = ''; return; }
+  const L = d.labels || {}; const F = d.funnel || []; const A = d.apart || [];
+  const run = d.feed && d.feed.lastRun;
+  const live = d.state === 'live';
+  st.innerHTML = `<span class="c-appchip${live ? ' is-live' : d.state === 'test' ? '' : ' is-off'}">SIS &middot; ${esc(C_APP_WORD[d.state] || d.state)}</span>
+    <span>feed <b>${esc(d.feed.mode)}</b></span>
+    <span>${run ? `last run <b>${esc(fmtDateTime(run.at))}</b>` : 'no run recorded'}</span>
+    <span><b>${d.feed.references}</b> in the SIS store</span>
+    ${d.setAside ? `<span><b>${d.setAside}</b> set aside in the Inbox</span>` : ''}
+    <span><b>${d.people}</b> counted</span>`;
+  const head = `<div class="ksh"><h2>SIS funnel</h2><span class="kt2">by registration week &middot; where each person stands now</span></div>`;
+  if (!d.people) {
+    box.innerHTML = head + `<p class="c-empty c-appempty">${d.state === 'off' ? 'The SIS feed is off.' : d.state === 'no-run' ? 'The SIS feed has not run yet.'
+      : `No real applicant yet.${d.setAside ? ` The SIS holds ${d.setAside} ${d.setAside === 1 ? 'record' : 'records'} a person set aside.` : ''}`}</p>`;
+    return;
+  }
+  const R = d.reached || {}; const top = Math.max(1, R[F[0]] || 0);
+  const linkPeople = d.linked ? ` onclick="cAppPeople()" role="link" tabindex="0" title="Open the people the SIS sent"` : '';
+  // Two groups, as apply.novikontas.org itself describes the journey (the owner, 02.10.2026):
+  // the applicant's own steps on the site, then the college's decision in the SIS. One scale for
+  // all five bars, so a bar in one group compares honestly with a bar in the other.
+  const step = (k, i) => `<div class="c-fstep" style="--i:${i}"><span>${esc(L[k] || k)}</span>
+      <span class="c-fbar"><i style="width:${(R[k] / top) * 100}%"></i></span><b>${R[k]}</b></div>`;
+  const group = (title, keys) => `<div class="c-fgroup"><h3>${title}</h3>${keys.map((k) => step(k, F.indexOf(k))).join('')}</div>`;
+  const steps = `<div class="c-fsteps"${linkPeople}>${group('On the website', C_APP_SITE)}${group('Academy decision', F.filter((k) => !C_APP_SITE.includes(k)))}</div>
+    <div class="c-fapart">${A.map((k) => `<span><b>${d.now[k]}</b> ${esc((L[k] || k).toLowerCase())}</span>`).join('')}${d.undatedRegistration ? `<span><b>${d.undatedRegistration}</b> no registration date sent</span>` : ''}</div>`;
+  const cols = [...F, 'apart'];
+  const cell = (row, k, base) => {
+    const v = k === 'apart' ? A.reduce((a, x) => a + row.now[x], 0) : row.reached[k];
+    const w = base ? (v / base) * 100 : 0;
+    return `<td title="${esc(k === 'apart' ? 'Rejected or withdrawn' : L[k] || k)}: ${v} of ${base}"><span class="c-fcell"><i class="${k === 'apart' ? 'np' : ''}" style="width:${w}%"></i></span><b>${v}</b></td>`;
+  };
+  const thead = `<thead><tr class="c-fghead"><th></th><th colspan="${C_APP_SITE.length}">On the website</th><th colspan="${F.length - C_APP_SITE.length}">Academy decision</th><th></th></tr><tr><th></th>${cols.map((k) => `<th>${esc(k === 'apart' ? 'Rejected / withdrawn' : L[k] || k)}</th>`).join('')}</tr></thead>`;
+  const weekRows = (d.weeks || []).map((w) => `<tr><th scope="row">${esc(w.week.slice(5))}<small>from ${esc(w.monday)}</small></th>${cols.map((k) => cell(w, k, w.reached[F[0]])).join('')}</tr>`).join('');
+  const progRows = (d.programmes || []).map((p) => `<tr><th scope="row">${p.code ? esc(p.code) : '<span class="c-gap">no programme sent</span>'}</th>${cols.map((k) => cell(p, k, p.reached[F[0]])).join('')}</tr>`).join('');
+  box.innerHTML = head + steps
+    + `<div class="c-ftable"><table class="ktable c-fgrid"><caption>People, by the week they registered</caption>${thead}<tbody>${weekRows}</tbody></table></div>`
+    + (progRows ? `<div class="c-ftable"><table class="ktable c-fgrid"><caption>Applications, by programme</caption>${thead}<tbody>${progRows}</tbody></table></div>` : '');
+  cAppScene();
+}
+function cAppPeople() { C_PF = { ...C_PF_EMPTY(), source: 'sis' }; C_PQ = ''; C_PTAB = 'all'; location.hash = '#/people/all'; }
+// The one scene of this chapter: the step bars draw once when the chapter comes into view.
+// The marks end at their exact widths; nothing else on the report moves.
+function cAppScene() {
+  const el = $('#applications');
+  if (!el || el.classList.contains('is-in')) return;
+  if (!('IntersectionObserver' in window)) { el.classList.add('is-in'); return; }
+  const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { el.classList.add('is-in'); io.disconnect(); } }, { threshold: 0.2 });
+  io.observe(el);
 }
 
 // -------------------------------------------------------------------- FEEDBACK
@@ -3815,14 +4681,21 @@ async function signOut() {
   location.reload();
 }
 
+// TWO CHOICES, NO NAMES (the owner, 04.10.2026: "No need to show all users!"). The picker only
+// exists on a test copy with nobody signed in (a signed-in copy hides #actorBlock and shows
+// #whoBlock, unchanged). It used to list every user and admin by name. Now it says User or Admin,
+// and behind each stands one real configured person, so isAdmin(), Channels, feedback and the
+// `by` written on every change keep working exactly as before:
+//   User  = the Admissions user (the first configured user if no role is Admissions), not an admin
+//   Admin = the first configured admin
+const cActorUser = () => { const u = CFG.users || []; return ((u.find((x) => x.role === 'Admissions') || u[0]) || {}).name || ''; };
+const cActorAdmin = () => (CFG.admins || [])[0] || '';
+// a name remembered from the old picker lands on the side it belonged to
+const cActorSide = (who) => ((CFG.admins || []).includes(who) ? cActorAdmin() : cActorUser());
 function drawActorPicker() {
   const sel = document.querySelector('#actor');
   if (!sel) return;
-  // A ROLE is not a PERSON. You act as a person; a record is owned by a role.
-  const users = (CFG.users || []).map(u =>
-    `<option value="${esc(u.name)}">${esc(u.name)} - ${esc(u.title || u.role)}</option>`).join('');
-  const admins = (CFG.admins || []).map(a => `<option value="${esc(a)}">${esc(a)} - admin</option>`).join('');
-  sel.innerHTML = `<optgroup label="Intake users">${users}</optgroup><optgroup label="Admins">${admins}</optgroup>`;
+  sel.innerHTML = `<option value="${esc(cActorUser())}">User</option><option value="${esc(cActorAdmin())}">Admin</option>`;
   sel.value = ACTOR;
 }
 const myRole = () => ((CFG.users || []).find(u => u.name === ACTOR) || {}).role || null;
@@ -3855,7 +4728,7 @@ async function route() {
   try {
     // Concept C is the main UI: its router draws every screen, borrowing the classic
     // ones where C has not replaced them yet. ?ui=classic skips this entirely.
-    if (UI === 'c') { markCNav(page); await routeC(page, arg); refreshBadge(); drawFeedbackBadge(); return; }
+    if (UI === 'c') { markCNav(page); await routeC(page, arg); cOpenView(); refreshBadge(); drawFeedbackBadge(); return; }
     // The names people use. The old ones still resolve so a link in a note,
     // a feedback report or somebody's bookmark does not break.
     // The Console is a separate page at /console and is deliberately unreachable
@@ -3955,8 +4828,21 @@ function nextActionOptionsWithSuggestion(suggested) {
     </optgroup>` + rest;
 }
 
-function nextActionOptions(selectedLabel) {
-  const groups = CFG.nextActions || [];
+// THE STEPS FOLLOW THE STAGE (the owner, 02.10.2026: "an algorithm that depends on at what stage the
+// lead is ... shorter list ... the impossible are not shown"). config.stepGroupsByStage names the
+// groups that fit each open stage; anyStage steps fit all; no stage known = everything, as before.
+function stepsForStage(stage) {
+  const fit = stage && (CFG.stepGroupsByStage || {})[stage];
+  return (CFG.nextActions || []).map((g) => ({ group: g.group,
+    items: g.items.filter((i) => !fit || fit.includes(g.group) || i.anyStage) })).filter((g) => g.items.length);
+}
+function nextActionOptions(selectedLabel, stage) {
+  const groups = stepsForStage(stage);
+  // the step already planned is never hidden, whatever the stage says
+  const shown = new Set(groups.flatMap((g) => g.items.map((i) => i.label)));
+  const keep = selectedLabel && !shown.has(selectedLabel)
+    ? (CFG.nextActions || []).flatMap((g) => g.items).filter((i) => i.label === selectedLabel) : [];
+  if (keep.length) groups.unshift({ group: 'Planned now', items: keep });
   const opts = groups.map(g => `<optgroup label="${esc(g.group)}">` +
     g.items.map(i => `<option value="${esc(i.label)}" data-days="${i.days}" data-drives="${esc(i.drives)}"
       ${i.label === selectedLabel ? 'selected' : ''}>${esc(i.label)}</option>`).join('') + '</optgroup>').join('');
@@ -4439,9 +5325,17 @@ async function changeStatus(id, status) {
   viewPerson(id);
 }
 
+// The reasons that can happen when somebody leaves from this stage (the owner, 02.10.2026: "the
+// outcomes impossible are not shown"). config.closedReasonsByStage; stage unknown = all of them.
+function reasonsForStage(stage) {
+  const all = CFG.closedReasons || [];
+  const fit = stage && (CFG.closedReasonsByStage || {})[stage];
+  return fit ? all.filter((r) => fit.includes(r)) : all;
+}
+
 // Decision 8: nobody is closed without a reason, and "Other" is not a reason.
 function openCloseReason(id) {
-  const reasons = CFG.closedReasons || [];
+  const reasons = reasonsForStage(C_STAGE_OF.get(id));
   modal('Stop working with this person', `
     <label>Reason</label>
     <select id="clReason" onchange="onCloseReason()">${reasons.map(r => `<option>${esc(r)}</option>`).join('')}</select>
@@ -5920,7 +6814,7 @@ function renderHistoryRefusal(message) {
 function openAdd() {
   const d = CFG.quickAddDefaults || {};
   ADD_CONFIRMED_NEW = false;
-  modal('Add person', `
+  modal('Add a lead', `
     <div class="row2">
       <div><label>Full name *</label><input id="aName" oninput="checkDup()"></div>
       <div><label>Phone</label><input id="aPhone" oninput="checkDup()"></div>
@@ -5935,7 +6829,7 @@ function openAdd() {
     </div>
     <div class="row2">
       <div><label>Next step (required)</label>
-        <select id="aNext" onchange="document.querySelector('#aDays').value = daysForAction(this.value)">${nextActionOptions(d.nextAction)}</select></div>
+        <select id="aNext" onchange="document.querySelector('#aDays').value = daysForAction(this.value)">${nextActionOptions(d.nextAction, d.status)}</select></div>
       <div><label>In how many days</label><input id="aDays" type="number" value="${d.nextActionDays ?? 1}"></div>
     </div>
     <label>Note</label><textarea id="aNote" rows="2"></textarea>
@@ -6003,7 +6897,7 @@ function showDuplicateBlock(data) {
 // `finished` is passed in, never guessed from C_PERSON: that variable holds whichever person page
 // was opened last, so on Next Steps it would answer about the wrong person. The only caller that
 // passes true is the "Still open" block, which is drawn only for somebody already finished.
-function openComplete(taskId, label, finished) {
+function openComplete(taskId, label, finished, personId) {
   const done = Boolean(finished);
   modal('Complete: ' + label, `
     <label>Outcome</label>
@@ -6011,7 +6905,7 @@ function openComplete(taskId, label, finished) {
     <label>Note</label><textarea id="cNote" rows="2"></textarea>
     ${done ? '' : `<div class="row2">
       <div><label>Next step (required)</label>
-        <select id="cNext" onchange="onNextActionChange('cNext','cDate','cHint')">${nextActionOptions()}</select>
+        <select id="cNext" onchange="onNextActionChange('cNext','cDate','cHint')">${nextActionOptions(null, C_STAGE_OF.get(personId))}</select>
         <div class="muted" id="cHint" style="font-size:12px;margin-top:4px"></div></div>
       <div><label>When</label><input id="cDate" type="date" value="${todayStr()}"></div>
     </div>`}
@@ -6041,7 +6935,7 @@ async function doReschedule(id) { await post(`/api/tasks/${id}/reschedule`, { du
 
 function openNewTask(personId) {
   modal('Add an action', `<label>Next step</label>
-    <select id="tLabel" onchange="onNextActionChange('tLabel','tDate','tHint')">${nextActionOptions()}</select>
+    <select id="tLabel" onchange="onNextActionChange('tLabel','tDate','tHint')">${nextActionOptions(null, C_STAGE_OF.get(personId))}</select>
     <div class="muted" id="tHint" style="font-size:12px;margin-top:4px"></div>
     <label>Due</label><input id="tDate" type="date" value="${todayStr()}">
     <div style="margin-top:14px;display:flex;gap:8px"><button class="btn" onclick="doNewTask('${personId}')">Save</button>
@@ -6049,7 +6943,8 @@ function openNewTask(personId) {
 }
 async function doNewTask(personId) {
   await post(`/api/people/${personId}/task`, { label: $('#tLabel').value, due: $('#tDate').value });
-  closeModal(); viewPerson(personId);
+  closeModal();
+  if (String(location.hash).startsWith('#/person/')) viewPerson(personId); else route();   // stay where it was planned
 }
 
 // A note carries a type so it can be read and reported on, and it stays in the
@@ -6084,7 +6979,11 @@ async function doNote(personId) {
   const subject = type === 'call' ? `Call: ${$('#nOutcome').value}` : label;
   await post(`/api/people/${personId}/note`, { kind: type === 'call' ? 'call' : 'note',
     noteType: type, subject, body: $('#nBody').value });
-  closeModal(); viewPerson(personId);
+  // Stay where it was written: the Journey card's thread and Today redraw in place, so the
+  // note is seen landing and the address stays true. Only the person page redraws itself.
+  closeModal();
+  if (typeof C_JTALK !== 'undefined') C_JTALK.delete(personId);   // the Journey thread reads it again
+  if (String(location.hash).startsWith('#/person/')) viewPerson(personId); else route();
 }
 
 // ------------------------------------------------------------------ boot --
@@ -6654,6 +7553,7 @@ async function startShell() {
   try { ACTOR = localStorage.getItem('crmActor') || ''; } catch {}
   const known = (CFG.users || []).map(u => u.name).concat(CFG.admins || []);
   if (!known.includes(ACTOR)) ACTOR = known[0] || '';
+  ACTOR = cActorSide(ACTOR);   // only two choices on a test copy; sign-in below overrides it
   // With sign-in ON, loadAuth already set ACTOR from the proved identity, and the
   // dropdown above is not on screen. This line only matters on a copy with
   // sign-in off, where who you are is still a setting.

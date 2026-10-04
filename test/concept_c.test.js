@@ -96,7 +96,7 @@ test('dark C is the sign-in sea: its gradient, the bright amber, glass panels, o
   const paint = body[1].replace('var(--sea)', sea ? sea[1] : '');
   for (const c of sky.slice(1)) assert.ok(paint.includes(c), `the dark page uses the sign-in colour ${c}`);
   assert.equal(dark.length, 1, 'one dark palette, so a later block cannot quietly override it');
-  assert.match(dark[0], /--v-open:#F7C04F/);
+  assert.match(dark[0], /--v-open:#E0A526/);   // the data mustard (02.10.2026), not the signal amber
   assert.match(dark[0], /--c-warn:#F7C04F/);
   assert.match(APP, /html\.ui-c\[data-theme="dark"\] :is\([^)]*\.c-sheet[^)]*\.ksec[^)]*\)\{\s*background:var\(--glass\)/);
 });

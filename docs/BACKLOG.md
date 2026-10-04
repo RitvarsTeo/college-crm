@@ -14,6 +14,185 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 04.10.2026 - Q4: "Acting as" shows User and Admin, no names
+
+Ritvars, 04.10.2026: "No need to show all users!" (MASTER CONTROL queue Q4). On a test copy with nobody
+signed in, the picker offers **User** and **Admin** only. User acts as the configured Admissions user (not
+an admin), Admin as the first configured admin, so isAdmin(), Channels, feedback and the `by` field work as
+before. A name remembered from the old picker lands on its own side. Signed in (production), the picker
+stays hidden and #whoBlock shows who you are, unchanged. **BUILT**, seen running: Admin opens Channels,
+User gets "Admins only". NOT DEPLOYED; MASTER CONTROL cuts the release at this commit.
+
+**Q5 (next, NOT in this patch):** left menu A/B, light mode only. A = the blue tint arrives by about 50%
+and holds; B = solid brandbook blue #53a7db with navy #0a2463 words and icons. Dark unchanged. A real
+switch, no C. SAID.
+
+## 02.10.2026 - DECIDED (popup): the person card, the menu, black, shadows
+
+| Decision (Ritvars, 02.10.2026) | Status |
+|---|---|
+| Home B: every moving visual gets the circle's shadow (same plinth, offset only across the value axis) | BUILT `449f35a` |
+| Journey person card: **only after a click**, and "it expands exactly from the spot you clicked it, pushed other around it away and slightly making darker the everything around that card". The automatic first person (the "hero") is gone | BUILT |
+| Menu in light: **white into a soft Novikontas Blue tint** (#53a7db at 15%) | BUILT |
+| Pitch Black #011111 as the strong accent: **a short bar before each section heading** (dark mode uses its own ink, black would vanish on the sea) | BUILT |
+| Motion: **every metric counts up**; the bump only when a number changed since you last saw it; a soft "presentation slide" opening for all data when a tab opens | BUILT, see the commit |
+| **Two-colour sentences in subtle places** (Ritvars via MASTER CONTROL, 02.10, Q2): the apply.novikontas.org hero pattern, first word in brand blue bold, the rest plain; sparingly (a section title or an empty state), never on data, at most one per screen; Intake would use #29a8df because KB 08 P5 keeps #53a7db off text. Where it goes is a UI choice: A/B to Ritvars first | SAID |
+
+## 02.10.2026 - DECIDED: Home is B, the Journey takes A's band
+
+Ritvars, 02.10.2026: **"B for home. Then the journey displayed like the ui from A."**
+
+| What | Status |
+|---|---|
+| Home = **B, Today first** (Needs you, KPI cards with the delta row, charts + donut) | DECIDED |
+| People > Journey opens with **A's band** (Arrived -> the five stages -> Admitted / Not proceeding), in the lit well | BUILT `3235467` |
+| The band takes the place of the stage row (screen 2) and of the outcomes strip behind the disclosure line; filters, board, 5 most urgent + "n more" unchanged | BUILT `3235467` |
+| Home = B only: the switch, `cHomeA` and the remembered `?home=` choice are removed | BUILT `3235467` |
+| **The band's stage visual = columns from one shared baseline**, the count on top, overdue the darker stacked part (hover gives its number); the words "now" and "n overdue" go. One dot per person is OUT: "cant count them really". Rule: the task picks the visual, comparison wins (KB 08 P5 rule 12) | BUILT `3235467` |
+
+**Merge note from the feedback closure session (02.10, `audit/2026-10-02-feedback-closure-s5` at `cf6b112`):**
+trial merge with `cd6b7f0` is code-clean, 994/994; only this file conflicts (both add sections at the top, keep both).
+It brings to MAIN screens: "Add lead" on the Journey head (the Inbox lost its button, channel results only, his decision),
+Today without finished people's leftover steps (server filter in /api/tasks), stage-fitted step and close-reason pickers,
+and "Not proceeding · Cold / · Reject" in the All people Stage filter. Outcomes stays MAIN's.
+**RELEASE RULE: `0e1da1d` (the closed_tag migration) must ship with anything that carries cold/reject.**
+
+**Built 02.10 (`3235467`), 968/968, NOT DEPLOYED.** Columns on one baseline and ONE scale (the biggest
+stage sets it), the count above, overdue the red base drawn at rest (on the same scale, so overdue
+compares across stages too). A column IS the board's stage filter: click filters the board in place,
+click again clears. Arrived and the outcomes are bookends, not columns, because they count other bases
+(this year's leads, the whole database). One scene on arrival only. Seen at 1440 light and dark, and
+at 390 with no sideways page scroll. **Stage names unchanged: still BLOCKED on Ieva's wording.**
+
+## 02.10.2026 - MAIN A and B of this run: BUILT, COMMITTED, NOT DEPLOYED
+
+Branch **`ui/2026-10-02-main-ab`**, own worktree `crm-main-ab`, cut from `561bce2`
+(`ui/2026-10-02-journey`). **963/963. NOTHING DEPLOYED.** Production is still `292b4f9`.
+Design prototype on the real data model: every figure is read live from `/api/report`,
+`/api/summary`, `/api/people` and `/api/intake`; nothing is hardcoded.
+
+| What | Status | Commit |
+|---|---|---|
+| Home donut Open slice was the signal amber `#F7C04F`; now the data mustard `#E0A526`, both modes. Donut not redesigned | BUILT | `1bc018d` |
+| **The spine**: the children's hairline carried up behind the top-level menu icons, measured from the menu as drawn, blue from Home down to where you are. Settings is off it; hidden on a phone | BUILT | `5e20aad` |
+| Donut solid = ONE neutral plinth ring (`--k-plinth`), not each slice again in its own colour. The per-slice rim gave a slice at six o'clock more coloured ink than one at three (found by the QA session) | BUILT | `0401016` |
+| **Home A and B**, switch on the page and `?home=a|b` | BUILT | `714302b` |
+| Kit part 9 motion inlined verbatim (no build step), `cScenes()` plays it per view, two scenes per tab | BUILT | `714302b` |
+| Month chart: the peak annotates itself in place; its source line said a click opens the Inbox, it opens Outcomes | BUILT | `714302b` |
+| **Screen 3**: each Journey column shows its 5 most urgent people, then "n more" | BUILT | `80d7e63` |
+| **Cold / reject counted**: Home counts, Outcomes split with a filter per tag, the tag on each Not proceeding row | BUILT | `714302b`, `07bac8b` |
+| QA truth fixes: switch dead while `?home=` was in the address; A's "20.9% of 115" printed under 25 now shows "24 / 115" | BUILT | `07bac8b` |
+
+### A vs B - what materially differs
+
+Neither is the winner. Both read the same data, use the same cards, colours, spine and motion kit.
+**The difference is what the page is organised around.**
+
+| | **A - Journey first** | **B - Today first** |
+|---|---|---|
+| Axis | where the people are in the lead's flow | what needs a person now, then how we are doing |
+| Opens with | one band: Arrived → New, Contacted, Follow-up, Application, Contract → Admitted / Not proceeding | "Needs you": Overdue, Due today, In the Inbox (No next step when there is one) |
+| Countable | one dot per person in every stage | figures only |
+| Overdue | on the stage it belongs to ("9 overdue" on Application) | one total, first thing on the page |
+| Comparison | none on the cards | delta row on Admitted and Leads, last COMPLETE month vs the one before, basis named ("Sep 4 · vs Aug 1 · +3") |
+| Donut | none: the band already says where everyone is | yes, beside the month chart |
+| Depth (frame only) | a lit well with the locked glow, cards on one plinth, the spine laid on its side behind them | a stacked sheet (two sheets behind, constant offset), amber top rule for "needs you" |
+| Scene 1 | the spine draws and the cards arrive along it | the needs-you figures count up |
+| Scene 2 | the charts: line draws, bars and dots fade | the charts, and the ring lifts in |
+| Every figure opens | its stage on the Journey (filter set), the Inbox, Outcomes | Today, the Inbox, a Journey stage, Outcomes |
+| Reference | Admissions' own words (statistics first, the sequential order) | Remote dashboard (to-do first, groups ending in "View all"), Square (figure first, delta row) |
+
+**Research, 02.10, Mobbin free tier in his Chrome:** Dashboard category shows Cake Equity (a
+vertical figure stack beside one hero visual, "Last 30 days vs Previous"), Quicken (a labelled
+donut beside the accounts rail), Remote (things to do first, side cards ending in "View all").
+Square's recorded finding (zero depth, hierarchy wins) still governs depth. Pattern only.
+
+**What can break, and the check that catches it:** a figure that differs between A and B, or
+between Home and the screen it opens. Checked: stage overdue counts sum to the Today overdue
+total (21 = 1+1+2+9+8 on the synthetic set); the Journey filter Home sets is the only filter
+on (`cGoStage` resets the rest); conversion prints its a / b on A, B and Reports.
+
+**Seen running:** both at 1440 in light and dark (headless Edge for the finished state, Chrome
+for the motion landing), the Journey at 1440, and A, B and the Journey at 390 measured with no
+sideways overflow. Screenshots: `College CRM/For review/MAIN A-B 2026-10-02/`.
+
+### One departure from the kit, on purpose
+
+Kit part 9 plays a scene when it reaches **mid-screen**. A report scrolls into the middle; a
+dashboard OPENS with its charts in view, and at the mid line the month chart sat as an empty
+axis until somebody scrolled. `cScenes()` plays a scene once its top is in the upper 85% of
+the window. The kit itself is unchanged. **[DECIDE, Ritvars]** whether the kit should carry an
+"app" trigger beside the "report" one.
+
+### Ieva and Aigars, item by item (from `docs/IEVA_AIGARS_FEEDBACK_VERBATIM.md`)
+
+| Item | Status | Proof |
+|---|---|---|
+| Ieva 29.09: statistics on the home page | **DONE** | Both A and B open on live metrics; `test/home_ab.test.js` |
+| Ieva 29.09: how to add a new lead | **DONE** 30.09 | She confirmed it 30.09 09:59 |
+| Ieva 29.09: the sequential order, overdue and due today at once | **DONE** | A follows the order; Journey columns now sort most-late first (`test/journey_disclosure.test.js`) |
+| Ieva 29.09: contact info and notes on the row | **DONE** 30.09 | She confirmed it 30.09 09:59 |
+| Ieva 30.09: cold / reject on Not proceeding | **DONE** (set) `b5f3a4c`; the closure branch fixed a production-breaking fault in it (`0e1da1d`) and added the tag to both close paths |
+| Ieva 30.09: cold / reject "for statistics", marketing to the cold ones | **DONE on this branch** | Counted on Home, a filter per tag on Outcomes, the tag on every row. Run end to end on the preview: tagged 2 cold + 1 reject, Home showed Cold 2 · Reject 1, the Cold chip opened exactly those 2 |
+| Ieva 30.09: where do unanswered calls in New Leads come from | **BLOCKED** - the PBX filter is CHANNELS work - owner: the Channels session / Ritvars - needs: the call-filter rule, and whether PBX is live (see the open PBX check) |
+| Ieva 30.09 10:23: "one lead who is already admitted..." | **BLOCKED** - the rest of the message is not in the record - owner: Ritvars - needs: the full text from the chat |
+| Ieva: the real Journey stage names | **BLOCKED** - only she can name them - owner: Ieva - needs: her names for the five stages |
+| Aigars 30.09: an update when the real channels are connected | **BLOCKED** - not MAIN UI - owner: Ritvars / Channels - needs: the channels connected |
+| Aigars 30.09: how far from V1 real use | **BLOCKED** - a project-control report, not a screen - owner: Ritvars |
+| Aigars 30.09: connect the domain when ready | **BLOCKED** - release, waits for his go - owner: Ritvars / Aigars |
+| Aigars: per-person comment thread, phone chart readability | **DONE** 01.10 | Unchanged; both Home variants use the same thinned-label month chart |
+
+### Still open on MAIN
+
+- **[DECIDE, Ritvars] A or B.** Then C is built from his pick. Not C in this run.
+- The A/B switch is a review control and goes when C is settled.
+- Screen 2 (the Journey stage row) was fixed 01.10 (`d93938a`) and measured again today:
+  1,615 of 1,667 px at 1920. Nothing new built there.
+- Merge: a trial merge with `audit/2026-10-02-feedback-closure-s5` is clean and 971/971; the
+  Outcomes tag display is owned by this branch, agreed through QA.
+## 02.10.2026 - Ritvars's answers to the feedback list, in his words
+
+Given against the closure list. Each line: what he said, and what it now means. **DECIDED** unless
+marked.
+
+| Item | His words (short) | Now |
+|---|---|---|
+| Ieva 10:23, cut off | pasted in full: an admitted lead still shows in Next Steps as overdue | the bug; see the build below |
+| Stage names | "Isnt this already inside of a tab that we have a name for?" | Yes: the Journey's five stages are named. **The current names stand**; Ieva can rename later, it is a config edit |
+| Outcome reasons | "an algorithm that depends on persons journey. There can be groups. The goal is for shorter list ... the outcomes impossible are not shown ... lets create mvp" | **DECIDED: the reasons offered depend on the stage the person leaves.** MVP, config, Ieva tunes it by using it |
+| Next steps | "an algorithm that depends on at what stage the lead is! There can be groups ... shorter list ... lets create mvp" | **DECIDED: the steps offered depend on the lead's stage, by group.** MVP, config |
+| Human filter before Intake | "we answered this by decision to have filter. Its wider filter to let in more messages ... All of that should come in. The Income is all the personal info ... in neat identical (sql) tables: Name, Surname, Email, Tel Ph., you decide" | Matches 1a (01.10): only spam, our own addresses and automatic senders are set aside; everything else comes in. One `inbound` table holds every channel with the same contact columns |
+| D-C2 "not clear yet" | "huh???" | There is no "not clear yet" pile any more. **Closed, nothing to decide** |
+| Lifecycle facts | "I dont really see how this needs my decision" | Correct: it waits on the first real SIS applicant, not on him |
+| Aigars item 5 | "if there is none, there is none. you may delete" | **Deleted** |
+| Journey summary | "ship" | **DECIDED: ship** |
+| Add lead | "in inbox the channel automation results only. Leads are leads ... if we manually add a person, this means its a lead already ... walked-in (default in the drop-down) ... Lead is in the loop, we cant let them out without a reason" | **DECIDED: the Inbox holds only what the channels brought in.** Add lead lives with the leads, walk-in is the default. A lead leaves only with a reason (already enforced) |
+| Unanswered calls | "unanswered calls go into inbox, if they are new callers. If they have numbers with names to them (existing leads) they get recorded for needs action which is today" | New callers: Inbox (already so). **DECIDED: a missed call from a known lead puts them in Today** |
+| Cold / reject screen | "i just need to view which one i like more, yes?" | Yes. The UI/UX lane shows the versions, he picks |
+| Marketing to cold | "kind of out of scope ... if you can autonomously think of and implement some mvp idea, ok, go for it" | **MVP allowed**, kept small |
+| Aigars | "We will status Aigars when everything is done" | One update at the end |
+
+## 02.10.2026 - Session 5: Ieva and Aigars feedback closure
+
+Branch **`audit/2026-10-02-feedback-closure-s5`**, cut from `561bce2`. **944/944. COMMITTED,
+NOT DEPLOYED.** The full matrix, every item DONE or BLOCKED with its owner:
+[`FEEDBACK_CLOSURE_2026-10-02.md`](FEEDBACK_CLOSURE_2026-10-02.md).
+
+| What was found by clicking, and fixed | Commit |
+|---|---|
+| **`closed_tag` had no migration.** Deployed as it stood, every status change on production would fail on a missing column. Now one `ALTER TABLE` at boot. **Schema change on release** | `0e1da1d` |
+| Cold / reject skipped on the People quick edit; stored but shown nowhere. Now offered there too and named on the person page. The Outcomes display (counts, filter, row chip) is the UI/UX lane's (`ui/2026-10-02-main-ab`), agreed through QA S6 after a merge collision | `1345cd7`, `7cce0f8` |
+| The Journey card's **Edit** button did nothing | `7c3f30a` |
+| A note written on the Journey card jumped to the person page under a `#/journey` address, and the thread stayed stale until reload | `a6a290f` |
+| Plan a next step from Today jumped the same way | `80710a6` |
+
+**Correcting the record.** The 01.10 tables below say of the Journey stages "the screen says they
+are provisional". It does not: that tag was removed on purpose on 29.09 (`6b25ce7`). The caveat
+lives in DECISIONS.md and `config/prototype.json` only.
+
+**Owed:** the MVP map says the cold / reject field and screen go to Ritvars as an A/B first. Neither
+`b5f3a4c` nor `1345cd7` had one. The Outcomes form is now the UI/UX lane's to put in front of him.
+
 ## 04.10.2026 - SESSION 3: Q3 website field names, Q6 call pop-up
 
 Branch `ui/2026-10-02-channels-s3`. **COMMITTED, NOT DEPLOYED.** Both for the NEXT patch (MASTER CONTROL).
@@ -61,6 +240,30 @@ gap is continuity after 01.10. Email is live for edu@ only. Live verified: 2 of 
 **Still open, not taken here:** Phone continuity past 01.10; Meta App Review work / question /
 approval; which agent partner first (nobody named); LinkedIn = Ritvars and TikTok = Oksana to
 be confirmed by him (derived from his 02.10 messages, not stated as an owner change).
+## 02.10.2026 - SESSION 4: Applications inside Reports (COMMITTED, NOT DEPLOYED)
+
+Worktree `crm-applications-s4`, branch `ui/2026-10-02-applications-s4`, cut from `561bce2`.
+Technical prototype (P4) on the existing shell. Production untouched: no deploy, env, sync or rollback.
+
+| What | Status |
+|---|---|
+| `GET /api/applications` (src/applications.js): the SIS funnel from rows already in Intake. SELECTs only, never calls the SIS, counts only | BUILT |
+| Basis: **registration-week cohort**, where each person stands NOW. No status history is made up: the SIS sends current status only | BUILT |
+| A later status counts as passing the earlier ones (SIS order, already accepted 29.09 "by submit date"); rejected / withdrawn kept apart, the SIS does not say at which step | BUILT |
+| The records a person archived in the Inbox (production's 6 team tests) are **set aside**, never counted | BUILT |
+| One truthful state: Off / No run yet / No real applicant yet / Test / Live. A webhook record before any pull is still counted | BUILT |
+| Reports / Full report: one **Applications** chapter holding apply.novikontas.org web stats and the SIS funnel, in journey order; header link + `#/reports/applications`; no menu item | BUILT |
+| Funnel bars open People filtered to Came from = SIS (when anyone is linked) | BUILT |
+| Frame: the locked sea gradient (#fbfcfd / #17456e) + shadow; marks flat. Web traffic in mustard #E0A526, SIS in blue. One scene (step bars draw once) | BUILT |
+| **DECIDED 02.10 (Ritvars, "Ok"):** the funnel is split the way apply.novikontas.org describes it: **On the website** (Registered, Form started, Submitted) and **Academy decision** (Admitted, Matriculated). One scale for both. Ritvars renamed it: "Academy decision", not College | BUILT |
+| **SAID 02.10 (Ritvars, via MASTER CONTROL QUEUE Q1):** apply.novikontas.org may be called **"Academy Application form"** in Intake, wherever Intake names it (Reports > Applications, the lifecycle line). It stays downstream, never a channel. Source: `crm-control-s1/docs/INTAKE_CONTROL_2026-10-02.md` Q1, commit `599a369`, branch `control/2026-10-02-s1`. BUILT 02.10 on his GO: the lifecycle line and the web-statistics heading in Reports > Applications. Code comments and channel notes keep the domain | BUILT |
+
+**What production will show today** (from the 01.10 evidence, not re-read): SIS live, 6 records in the
+store, 6 set aside, **0 counted -> "No real applicant yet"**. That is the true blocked state.
+
+**Data gaps:** no date for `started` / `admitted`, so no event-by-week view; a person with two
+applications counts once by week and twice by programme (both labelled); traffic and applications
+are different bases, so no visit-to-application conversion is drawn.
 
 ## 02.10.2026 - HANDOFF: where this run stopped
 
@@ -78,6 +281,9 @@ NOTHING DEPLOYED.** Production is still `292b4f9`, proven today by byte comparis
 | **Cold / reject** on Not proceeding - her clearest request | `b5f3a4c` |
 
 ### The exact next action
+
+**DONE 02.10 on `ui/2026-10-02-main-ab`**, see the section above: the spine, metrics Home in blue and
+mustard, depth on the frame, two scenes per tab, A and B. Kept below as the brief it was.
 
 Build **A and B of this run** on top of this branch. He called it "a relaunch of that same
 task, properly this time", so the earlier A/B is not the deliverable.
@@ -118,7 +324,11 @@ Pattern only, never their colours, type or branding.
 
 ### Open, and not ours to take
 
-- **[VERIFY] Is PBX live?** He told the team "PBX ir live" on 01.10; this file says 0 rows from
+- **SETTLED 02.10 later, on evidence:** PBX is live verified (daily pull), Gmail edu@ too - 44
+  provider rows in the production backup `2026-10-02T01-17-43Z`. Continuity after 01.10 is the
+  only open part. See `docs/INTAKE_CONTROL_2026-10-02.md` and `docs/AB_REVIEW_PACKAGE_2026-10-02.md`.
+  The line below is kept as the record.
+- ~~**[VERIFY] Is PBX live?**~~ He told the team "PBX ir live" on 01.10; this file says 0 rows from
   a real provider. Production answers 401 everywhere and the read-only checker
   (`scripts/crm-check.ps1`, branch `feat/checker-gate-2026-09-30`) is committed but **not
   deployed**, so no Claude session can settle it. The cheap check: open `#/channels` signed in
@@ -1158,6 +1368,10 @@ screen on the real-data snapshot (local, in memory) at 1440 / 900 / 390 px, ligh
 
 ## Pin
 
+**04.10.2026 - LIVE: `62f8178` (release/2026-10-04-intake), dpl_uTzfeGw6PZNSgxUGoQUinLP41utH, verified by MASTER CONTROL; record in docs/INTAKE_CONTROL_2026-10-02.md (control/2026-10-02-s1). Production was 292b4f9 until today.**
+
+**02.10.2026 control state: `docs/INTAKE_CONTROL_2026-10-02.md` is the authoritative current state for this run. The product is INTAKE.**
+
 **PIN: ACADEMY CRM V1 IS DEPLOYED AND IN USE. CHANNELS ARE NOT CONNECTED.**
 
 Rewritten 30.09.2026. It said "NOT RELEASED, NOT DEPLOYED, NOT CONNECTED" until then, which had
@@ -1177,9 +1391,10 @@ below, dated, as the record of where the project was.
   (`docs/CHANNEL_RECONCILIATION_2026-10-02.md`): Google Form is **dropped**, Open Day is **parked**,
   apply.novikontas.org is **downstream and not a channel**, and SIS is an **integration**. The old
   counts of 14 and 15 included those. Every adapter is written and tested and every one is switched off.
-  `inbound` holds 15 rows, all `source=simulated` from test-mode runs of the phone and SIS jobs,
-  and **0 from a real provider**. That is the single largest gap between what this file describes
-  and what the CRM does for its users today.
+  ~~`inbound` holds 15 rows, all `source=simulated`, and 0 from a real provider.~~ **Stale since
+  01.10 05:27Z** [seen 02.10, production backup `2026-10-02T01-17-43Z`]: **44 provider rows**, Phone 4
+  (TeleGroup daily pull) and Gmail 40 (option B, edu@novikontas.org). Phone and Gmail(edu@) are
+  **live verified**; all 44 still sit at `state=new`. See `docs/INTAKE_CONTROL_2026-10-02.md`.
 - **Scope: NOT LOCKED.** It changes daily on owner feedback, and Ieva has not validated the
   workflow, so treat every row below as provisional until she has.
 - **Release line:** `v0.9`, pushed to GitHub (`origin/v0.9` at `52e2232`, one doc commit above
@@ -1196,7 +1411,9 @@ below, dated, as the record of where the project was.
 - **Blockers:** rows 46, 50, 51 (all Ieva); the 2 open questions in `config/prototype.json`
   (Tetiana's spam words, which agent partner to start with); connecting the channels. **Open owner
   decisions, none blocking code:** the KPI strip (hairline or cards, and it reaches kit part 2),
-  Home A or B, Channels A or B, Ieva's Journey stage names, and whether Meta's APP REVIEW is a
+  Home A (journey first) or B (today first), rebuilt 02.10 on `ui/2026-10-02-main-ab`, Channels A or B, Ieva's Journey stage names, and whether Meta's APP REVIEW is a
+  decisions, none blocking code:** ~~the KPI strip~~ (CARDS, decided 30.09 in KB 08 P5, not open -
+  corrected 02.10), Home A or B, Channels A or B, Ieva's Journey stage names, and whether Meta's APP REVIEW is a
   `question` or `work` in `blockerKind`.
 
 Decisions and the open D-C questions are in [DECISIONS.md](DECISIONS.md).

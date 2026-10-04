@@ -17,6 +17,7 @@ import { findMatches as matchPeople, duplicateCheck, isStrong as isStrongMatch }
 import { lifecycleOf, sisProgress, sisProgressByPerson, SIS_HOLDS_SQL } from './lifecycle.js';
 import { firstLook } from './sisfirstlook.js';
 import { redactSis, fetchWebStats, WEB_RANGES } from '../lib/sis.js';
+import { applicationFunnel } from './applications.js';
 import { sisLiveCheck } from './sischeck.js';
 import { pbxLive } from '../lib/pbx.js';
 import { adapt, adaptAll, toIntake, hasAdapter, adapterIds } from './adapters.js';
@@ -1121,6 +1122,13 @@ export const handle = async (req, res) => {
       }
     }
 
+    // Applications in Reports (popup A, 01.10.2026): the SIS funnel by registration week, from the
+    // rows already stored here. Counts only and SELECTs only: it never calls the SIS, never runs a
+    // sync and never writes, so any signed-in user may read it, like the web stats beside it.
+    if (req.method === 'GET' && p === '/api/applications') {
+      return json(res, 200, await applicationFunnel(db));
+    }
+
     if (p === '/api/admin/channels' || p.startsWith('/api/admin/channels/')) {
       const me = await adminOf(req);
       if (!me) return refuseNotAdmin(res);
@@ -2058,7 +2066,10 @@ export const handle = async (req, res) => {
     // ------------------------------------------------------------- tasks ---
     if (req.method === 'GET' && p === '/api/tasks') {
       const scope = url.searchParams.get('scope') || 'open';
-      let sql = `SELECT t.*, pe.name, pe.programme, pe.status, pe.phone, pe.source_channel FROM tasks t JOIN people pe ON pe.id = t.person_id WHERE t.done_at IS NULL`;
+      // STILL_OPEN_SQL here too (Ieva 30.09 10:23: "I changed the status, but he still shows under
+      // Next Steps as overdue"). A step added AFTER the admission slips past the close-on-status
+      // rule; a finished person's leftover is on their own page under "Still open", never in a list.
+      let sql = `SELECT t.*, pe.name, pe.programme, pe.status, pe.phone, pe.source_channel FROM tasks t JOIN people pe ON pe.id = t.person_id WHERE t.done_at IS NULL AND ${STILL_OPEN_SQL}`;
       const args = [];
       if (scope === 'overdue') { sql += ' AND t.due_at < ?'; args.push(dayStart()); }
       if (scope === 'today') { sql += ' AND t.due_at >= ? AND t.due_at < ?'; args.push(dayStart(), dayEnd()); }

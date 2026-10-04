@@ -196,7 +196,7 @@ test('the four states stay apart, each dated, and this machine is labelled as lo
   assert.equal(s.local(mc, LOCAL).where, 'This machine');
   assert.equal(s.local(mc, LOCAL).word, '0 of 1 set');
   assert.equal(s.local(mc, PROD).where, 'Production now', 'and on production it says so');
-  assert.match(s.env(LOCAL, CFG._production), /not production[\s\S]*292b4f9/);
+  assert.match(s.env(LOCAL, CFG._production), new RegExp('not production[\\s\\S]*' + CFG._production.commit));
   assert.match(s.env(PROD, CFG._production), /read from real provider rows/);
 });
 
