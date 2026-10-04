@@ -214,3 +214,10 @@ All worktrees clean. **Combined scratch merge of all six tips** (`scratchpad/mer
 - **Gmail edu@ keeps flowing daily:** provider rows 30.09-04.10, last poll 04.10 05:35Z.
 - **SIS: 1 provider row dated 03.10** - possibly the first real applicant. Not opened here (personal data); S4 checks it signed in.
 - **110 real provider rows: 86 at `state=new`, 24 auto-filtered. Nobody has worked the Inbox since the channels went live.** Operational, for Admissions, not a release gate.
+
+### 04.10 - Gate 2: GO given, release owner decided
+
+- **Ritvars: "go after q4"**. He left the release owner to MASTER CONTROL.
+- **Decided by MASTER CONTROL: this session (S1) cuts the release and deploys.** It holds the merge evidence and the gates. MAIN builds Q4 in its own lane.
+- Sent 04.10, both delivered: MAIN -> Q4 first, report the commit, then Q5 (not in this patch). CHANNELS -> Q3 + the Website record (next patch).
+- The release is cut at MAIN's reported Q4 commit, together with the tips of S3, S4, S5, S6 and S1 as gathered. Anything committed after that waits for the next patch.
