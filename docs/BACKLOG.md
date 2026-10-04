@@ -14,6 +14,15 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - Inbox message text is a detail, two lines
+
+Ritvars on the production Inbox: "this is too much of font size! fix it!" Whole email bodies (Google Chat notices, long
+reply threads) filled the screen. The Inbox message text now takes the detail size (13px, slate, 400) and stops at 2
+lines with an ellipsis; the row opens the whole item; the sender keeps the 17px name size. The note under a step (Today,
+lists) takes the same 2-line rule. The person page history stays in full: it is where the whole message is read.
+Measured at 1440 on the real Inbox renderer fed one 1,122-character email (in the browser only, nothing written): 2
+lines, 38px, row 68px. A 1,000-character Today note stops at 2 lines (39px). BUILT, next patch.
+
 ## 05.10.2026 - CORRECTED: white TEXT, not white tabs
 
 Ritvars on production: "why are there white pills? fix that immediately" and "IT JUST NEEDS TO whiten up the TEXT".
