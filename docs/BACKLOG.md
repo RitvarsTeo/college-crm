@@ -14,6 +14,19 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 04.10.2026 - Q4: "Acting as" shows User and Admin, no names
+
+Ritvars, 04.10.2026: "No need to show all users!" (MASTER CONTROL queue Q4). On a test copy with nobody
+signed in, the picker offers **User** and **Admin** only. User acts as the configured Admissions user (not
+an admin), Admin as the first configured admin, so isAdmin(), Channels, feedback and the `by` field work as
+before. A name remembered from the old picker lands on its own side. Signed in (production), the picker
+stays hidden and #whoBlock shows who you are, unchanged. **BUILT**, seen running: Admin opens Channels,
+User gets "Admins only". NOT DEPLOYED; MASTER CONTROL cuts the release at this commit.
+
+**Q5 (next, NOT in this patch):** left menu A/B, light mode only. A = the blue tint arrives by about 50%
+and holds; B = solid brandbook blue #53a7db with navy #0a2463 words and icons. Dark unchanged. A real
+switch, no C. SAID.
+
 ## 02.10.2026 - DECIDED (popup): the person card, the menu, black, shadows
 
 | Decision (Ritvars, 02.10.2026) | Status |

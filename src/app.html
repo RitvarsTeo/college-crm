@@ -4396,14 +4396,21 @@ async function signOut() {
   location.reload();
 }
 
+// TWO CHOICES, NO NAMES (the owner, 04.10.2026: "No need to show all users!"). The picker only
+// exists on a test copy with nobody signed in (a signed-in copy hides #actorBlock and shows
+// #whoBlock, unchanged). It used to list every user and admin by name. Now it says User or Admin,
+// and behind each stands one real configured person, so isAdmin(), Channels, feedback and the
+// `by` written on every change keep working exactly as before:
+//   User  = the Admissions user (the first configured user if no role is Admissions), not an admin
+//   Admin = the first configured admin
+const cActorUser = () => { const u = CFG.users || []; return ((u.find((x) => x.role === 'Admissions') || u[0]) || {}).name || ''; };
+const cActorAdmin = () => (CFG.admins || [])[0] || '';
+// a name remembered from the old picker lands on the side it belonged to
+const cActorSide = (who) => ((CFG.admins || []).includes(who) ? cActorAdmin() : cActorUser());
 function drawActorPicker() {
   const sel = document.querySelector('#actor');
   if (!sel) return;
-  // A ROLE is not a PERSON. You act as a person; a record is owned by a role.
-  const users = (CFG.users || []).map(u =>
-    `<option value="${esc(u.name)}">${esc(u.name)} - ${esc(u.title || u.role)}</option>`).join('');
-  const admins = (CFG.admins || []).map(a => `<option value="${esc(a)}">${esc(a)} - admin</option>`).join('');
-  sel.innerHTML = `<optgroup label="Intake users">${users}</optgroup><optgroup label="Admins">${admins}</optgroup>`;
+  sel.innerHTML = `<option value="${esc(cActorUser())}">User</option><option value="${esc(cActorAdmin())}">Admin</option>`;
   sel.value = ACTOR;
 }
 const myRole = () => ((CFG.users || []).find(u => u.name === ACTOR) || {}).role || null;
@@ -6910,6 +6917,7 @@ async function startShell() {
   try { ACTOR = localStorage.getItem('crmActor') || ''; } catch {}
   const known = (CFG.users || []).map(u => u.name).concat(CFG.admins || []);
   if (!known.includes(ACTOR)) ACTOR = known[0] || '';
+  ACTOR = cActorSide(ACTOR);   // only two choices on a test copy; sign-in below overrides it
   // With sign-in ON, loadAuth already set ACTOR from the proved identity, and the
   // dropdown above is not on screen. This line only matters on a copy with
   // sign-in off, where who you are is still a setting.
