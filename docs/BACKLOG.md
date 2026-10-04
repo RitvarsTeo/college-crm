@@ -20,6 +20,9 @@ Ritvars, 05.10.2026, with a screenshot of the light menu: "also lets 'white up' 
 item (the page itself: Today, not Admissions above it; Journey, not People) is a solid white tab with navy words; its
 parent keeps the soft pill. Light mode. Release branch `release/2026-10-04-intake-2` (51290c4) merged in first
 (`15a8965`, clean). Seen at 1440 on Today, Journey and Home. BUILT, next patch, not deployed.
+**Then the parent too** (Ritvars via MASTER CONTROL, 05.10): every lit tab is solid white with navy words, so on Today
+both Admissions and Today, on Journey both People and Journey. Measured at 1440 on Today, Journey, All people, Reports,
+Settings: every lit tab rgb(255,255,255) with rgb(10,36,99) words. Dark unchanged. BUILT, next patch.
 
 ## 04.10.2026 - THE A/B BATCH (run by MASTER CONTROL, Ritvars picks)
 

@@ -71,10 +71,9 @@ test('the form controls stay readable, the A/B is gone, dark is unchanged', () =
   assert.match(APP, /html\.ui-c\[data-theme="dark"\] \.shell > nav\{background:linear-gradient\(180deg,rgba\(8,24,46,\.78\) 0%,rgba\(8,24,46,\.92\) 100%\)/);
 });
 
-// "lets white up the tab we are in" (the owner, 05.10.2026): the page you are on is a white tab
-test('the page you are on is a white tab; only the deepest lit item gets it', () => {
-  assert.match(APP, /html\.ui-c:not\(\[data-theme="dark"\]\) \.cnav a\.on\.here\{background:#ffffff;color:#0a2463;/);
-  const m = APP.slice(APP.indexOf('function markCNav('), APP.indexOf('cSpine();', APP.indexOf('function markCNav(')));
-  assert.match(m, /const lastLit = \[\.\.\.document\.querySelectorAll\('\.cnav a\.on'\)\]\.pop\(\);/);
-  assert.match(m, /a\.classList\.toggle\('here', a === lastLit\)/);
+// "lets white up the tab we are in", then the parent too (the owner, 05.10.2026): every lit tab is white
+test('every lit tab is white with navy words: the page and its parent', () => {
+  assert.match(APP, /html\.ui-c:not\(\[data-theme="dark"\]\) \.cnav a\.on\{background:#ffffff;color:#0a2463;/);
+  assert.doesNotMatch(APP, /a\.on\.here|classList\.toggle\('here'/, 'no separate rule for the deepest one any more');
+  assert.match(APP, /const lit = \[parent, child\]\.filter\(Boolean\);/, 'parent and child are both lit');
 });
