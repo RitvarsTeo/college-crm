@@ -306,7 +306,11 @@ Pattern only, never their colours, type or branding.
 
 ### Open, and not ours to take
 
-- **[VERIFY] Is PBX live?** He told the team "PBX ir live" on 01.10; this file says 0 rows from
+- **SETTLED 02.10 later, on evidence:** PBX is live verified (daily pull), Gmail edu@ too - 44
+  provider rows in the production backup `2026-10-02T01-17-43Z`. Continuity after 01.10 is the
+  only open part. See `docs/INTAKE_CONTROL_2026-10-02.md` and `docs/AB_REVIEW_PACKAGE_2026-10-02.md`.
+  The line below is kept as the record.
+- ~~**[VERIFY] Is PBX live?**~~ He told the team "PBX ir live" on 01.10; this file says 0 rows from
   a real provider. Production answers 401 everywhere and the read-only checker
   (`scripts/crm-check.ps1`, branch `feat/checker-gate-2026-09-30`) is committed but **not
   deployed**, so no Claude session can settle it. The cheap check: open `#/channels` signed in
