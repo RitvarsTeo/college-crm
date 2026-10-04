@@ -46,7 +46,7 @@
         "Test filtering and routing"
       ],
       "ownerPerson": "Ritvars",
-      "ownerAction": "Set WEBSITE_FORM_SECRET and CHANNEL_MODE_WEBSITE in Vercel, then add the webhook to the Tilda forms",
+      "ownerAction": "Tick the Tilda webhook on the two college form blocks after the field-name patch ships",
       "reliability": "Shared-secret header, compared in constant time. A submission without a submission_id is refused. A repeat submission_id is dropped.",
       "reconciliation": "None built. Depends on whether the website keeps its own copy of submissions - UNKNOWN.",
       "_ownerNote": "Oksana gave access; Ritvars sets it up himself, he has Tilda access (01.10.2026, docs/channel-writeups/03-website-form-oksana.md). This is the ENQUIRY form on the Tilda site, NOT apply.novikontas.org, which is downstream.",
@@ -59,7 +59,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "c3ab3e4",
+          "commit": "8405731",
           "detail": null
         },
         "productionConfigured": {
@@ -76,12 +76,19 @@
         },
         "nextAction": {
           "owner": "Ritvars",
-          "action": "Set WEBSITE_FORM_SECRET and CHANNEL_MODE_WEBSITE in Vercel, then add the webhook to the Tilda forms",
-          "input": null
+          "action": "After the field-name patch is released on your GO, tick the webhook on the two college form blocks (college/en, college/en/contacts)",
+          "input": "Never rename the Tilda fields: two Make webhooks read the same forms"
         },
         "blocker": null,
-        "destination": "A new enquiry in the Inbox. NOT apply.novikontas.org."
-      }
+        "destination": "A new enquiry in the Inbox, with the programme picked and the \"Source\" answer kept as the person's own answers. The only enquiry forms are EN (college/en, college/en/contacts). NOT apply.novikontas.org.",
+        "until": {
+          "event": "website relaunch, next version, which has no forms",
+          "then": "drop this channel (lifecycle dropped), like Google Form",
+          "decidedBy": "Ritvars",
+          "decidedOn": "2026-10-04"
+        }
+      },
+      "scope": "TEMPORARY. Ritvars, 04.10.2026: the Website connection exists ONLY for the forms still live on the English college pages (the enquiry form on college/en and college/en/contacts, and the contact form on college/en/contacts). The website is relaunched in its next version WITH NO FORMS; from then on apply.novikontas.org does all the work and this channel is dropped. The Latvian pages already have no form."
     },
     "google_form": {
       "label": "Google Form",
@@ -187,7 +194,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "c3ab3e4",
+          "commit": "8405731",
           "detail": "The option-B link (/api/admin/gmail/link) is in the running commit."
         },
         "productionConfigured": {
@@ -213,8 +220,8 @@
           },
           {
             "address": "training@novikontas.org",
-            "state": "not_connected",
-            "detail": "Not authorised. Whether it should be is not recorded in this repository."
+            "state": "parked",
+            "detail": "Parked for the next scope (MASTER CONTROL, 04.10). Not to be connected now."
           }
         ]
       }
@@ -277,7 +284,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "c3ab3e4",
+          "commit": "8405731",
           "detail": null
         },
         "productionConfigured": {
@@ -365,7 +372,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "c3ab3e4",
+          "commit": "8405731",
           "detail": null
         },
         "productionConfigured": {
@@ -453,7 +460,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "c3ab3e4",
+          "commit": "8405731",
           "detail": null
         },
         "productionConfigured": {
@@ -545,7 +552,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "c3ab3e4",
+          "commit": "8405731",
           "detail": null
         },
         "productionConfigured": {
@@ -626,7 +633,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "c3ab3e4",
+          "commit": "8405731",
           "detail": null
         },
         "productionConfigured": {
@@ -760,7 +767,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "c3ab3e4",
+          "commit": "8405731",
           "detail": null
         },
         "productionConfigured": {
@@ -851,7 +858,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "c3ab3e4",
+          "commit": "8405731",
           "detail": null
         },
         "productionConfigured": {
@@ -918,7 +925,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "c3ab3e4",
+          "commit": "8405731",
           "detail": null
         },
         "productionConfigured": {
@@ -986,7 +993,7 @@
         },
         "deployed": {
           "state": "partial",
-          "commit": "c3ab3e4",
+          "commit": "8405731",
           "detail": "The webhook receiver is deployed. The Lead Sync fetch that turns a notification into a name and email is NOT built."
         },
         "productionConfigured": {
@@ -1068,7 +1075,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "c3ab3e4",
+          "commit": "8405731",
           "detail": null
         },
         "productionConfigured": {
@@ -1146,9 +1153,9 @@
   "_lifecycle": "Added 02.10.2026. readiness says whether OUR SIDE is technically ready. lifecycle says whether the PRODUCT HAS THIS CHANNEL AT ALL, which is a decision and not an engineering fact. active = a channel we intend to connect. parked = decided, prepared, deliberately not connected yet; it is not work and nobody holds it. dropped = decided out of the product; the adapter may stay in the repository, the channel does not exist. Anything without this field is active. A screen MUST read lifecycle, never readiness, to decide whether a channel is current work.",
   "_record": "Added 02.10.2026 (Session 3, Channels). The reconciled state of every ACTIVE channel, each fact with the date it was seen and where. It exists because a local checkout has no secrets and no production rows, so the screen can never READ production from here: it must show what was last SEEN, and say when. Four states are kept apart and never inferred from each other: deployed (the code is in the running commit), productionConfigured (the settings are in Vercel Production), liveVerified (a row a real provider sent exists), and access (we hold what we need from the people outside). A blocker names its dependency, its owner, the action or input needed, and whether it is internal or external; local credentials being absent is NEVER a blocker. On production the screen reads live verification from real provider rows and ignores the recorded value; locally it never does.",
   "_production": {
-    "commit": "c3ab3e4",
+    "commit": "8405731",
     "provenOn": "2026-10-04",
-    "how": "deployed 04.10.2026 by MASTER CONTROL with _crm-v1-lane-tools/deploy_verify.sh: live page byte-compared with the commit (+ its sign-in script). This record is the only change on top of c3ab3e4",
+    "how": "deployed 04.10.2026 (third patch: type 3 + feedback email) by MASTER CONTROL with _crm-v1-lane-tools/deploy_verify.sh: live page byte-compared with the commit (+ its sign-in script). This record is the only change on top of 8405731",
     "allAdaptersDeployed": true
   },
   "downstream": {

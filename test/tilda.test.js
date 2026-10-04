@@ -96,3 +96,71 @@ test('Tilda: with the channel off, even a correct post is refused (409), so noth
   t.after(() => s.child.kill());
   assert.equal((await post(s, form(TILDA), { 'x-crm-secret': SECRET })).status, 409);
 });
+
+// ------------------------------------------- the live college forms, 04.10.2026 (Q3) --
+// Read off the live site on 04.10: the only college enquiry form is EN-only (college/en and
+// college/en/contacts). Its fields are named by the form author and are NOT renamed in Tilda,
+// because two Make webhooks read the same forms. The adapter learns the names instead.
+import { ADAPTERS } from '../src/adapters.js';
+
+const ENQUIRY = {
+  'Name Surname': 'Janis Berzins', Email: 'janis@example.com', Phone: '+371 20000001',
+  'Study Program': 'Navigation', Source: 'Instagram', 'Additional Comments': 'When does it start?',
+  tranid: '1111111:2222222', formid: 'form-enquiry',
+};
+const CONTACT = {
+  Name: 'Liga Kalnina', Name_2: 'Novikontas Test SIA', Phone: '+371 20000002', Email: 'liga@example.com',
+  Textarea: 'Please call me', tranid: '3333333:4444444', formid: 'form-contacts',
+};
+
+test('Q3: the college enquiry form keeps the name, programme, message and the "Source" answer', () => {
+  const e = ADAPTERS.website(ENQUIRY);
+  assert.equal(e.senderName, 'Janis Berzins');
+  assert.equal(e.senderEmail, 'janis@example.com');
+  assert.equal(e.senderPhone, '+371 20000001');
+  assert.equal(e.messageBody, 'When does it start?');
+  assert.equal(e.extracted.programme, 'Navigation');
+  assert.equal(e.extracted.heard_from, 'Instagram', 'the person\'s own answer, kept');
+  assert.equal(e.attribution.utm_source, null, '"Source" is an answer, never advert tracking');
+  assert.equal(e.source, 'website');
+});
+
+test('Q3: the same form with underscores instead of spaces reads the same', () => {
+  const under = Object.fromEntries(Object.entries(ENQUIRY).map(([k, v]) => [k.replace(/ /g, '_'), v]));
+  const e = ADAPTERS.website(under);
+  assert.equal(e.senderName, 'Janis Berzins');
+  assert.equal(e.extracted.programme, 'Navigation');
+  assert.equal(e.messageBody, 'When does it start?');
+});
+
+test('Q3: the contacts form - Name is the name, Name_2 is COMPANY and never joined onto it', () => {
+  // seen on the live page 04.10: Name has the placeholder "Name, Surname", Name_2 has "Company"
+  const e = ADAPTERS.website(CONTACT);
+  assert.equal(e.senderName, 'Liga Kalnina');
+  assert.equal(e.extracted.company, 'Novikontas Test SIA');
+  assert.equal(e.messageBody, 'Please call me');
+});
+
+test('Q3: utm tags from COOKIES still win the source, alongside the "Source" answer', () => {
+  const e = ADAPTERS.website({ ...ENQUIRY, COOKIES: TILDA.COOKIES });
+  assert.equal(e.source, 'facebook');
+  assert.equal(e.extracted.heard_from, 'Instagram');
+});
+
+test('Q3: the real enquiry form, posted the way Tilda posts it, lands whole', async (t) => {
+  const s = await start();
+  t.after(() => s.child.kill());
+  const r = await post(s, form(ENQUIRY), { 'x-crm-secret': SECRET });
+  assert.equal(r.status, 200);
+  assert.equal(await r.text(), 'ok');
+  const [item] = await newLeads(s);
+  assert.equal(item.contact_name, 'Janis Berzins');
+  assert.equal(item.contact_email, 'janis@example.com');
+  assert.match(item.body, /When does it start\?/);
+  const field = (n) => (item.fields || []).find((x) => x.field === n);
+  assert.equal(field('form_programme').value, 'Navigation', 'the programme they picked reaches the stored row');
+  assert.equal(field('form_programme').provenance, 'provider', 'as their own answer');
+  assert.equal(field('heard_from').value, 'Instagram', 'and the "Source" answer');
+  assert.ok(!field('interest') || field('interest').provenance !== 'provider', 'never as a confirmed interest');
+  assert.equal(JSON.parse(item.attribution).utm_source, null, 'and never as advert tracking');
+});

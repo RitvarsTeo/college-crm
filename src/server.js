@@ -11,6 +11,7 @@ import { logEvent, applyEdit, readHistory, MANUAL, AUTOMATIC, EDITABLE_FIELDS, I
 import { stampOpenDay, registerOpenDay, refilterOpenEmail } from './intake.js';
 import { queueLeadAnswers } from './leadanswers.js';
 import * as gmailB from '../lib/gmail.js';
+import * as notify from '../lib/notify.js';
 import { receive, listInbound, qualify, archive, funnel, agedCount, handoffToSis, ownerFor, notifiedFor, handoverGap, canReach, surfaceAt, waitingFor, waitingByRole } from './intake.js';
 import { readScreenshot, readKind, readBody, readPath, saveFeedback, listFeedback, getScreenshot, setHandled, BadScreenshot, helpOpened, helpCounts } from './feedback.js';
 import { findMatches as matchPeople, duplicateCheck, isStrong as isStrongMatch } from './identity.js';
@@ -224,6 +225,18 @@ async function finishGmail(req, res, url, code) {
   }
   await gmailB.saveGmailRefreshToken(db, got.refreshToken, process.env);
   return gmailPage(res, 200, true, `${mailbox} is connected to Intake, read-only. You can close this page.`);
+}
+
+// The feedback email's one-time Allow (04.10.2026). Only the sending account is kept.
+async function finishNotify(req, res, url, code) {
+  if (url.searchParams.get('error') || !code) return gmailPage(res, 400, false, 'Access was not given. Open the link again and press Allow.');
+  const got = await notify.exchangeCode({ env: process.env, code, redirectUri: process.env.GOOGLE_REDIRECT_URI });
+  if (!got.ok) return gmailPage(res, 400, false, `Google did not finish: ${got.why}. Open the link again.`);
+  if (got.mailbox !== notify.SENDER) {
+    return gmailPage(res, 400, false, `You signed in as ${got.mailbox || 'another account'}. Open the link again and choose ${notify.SENDER}.`);
+  }
+  await notify.saveToken(db, got.refreshToken, process.env);
+  return gmailPage(res, 200, true, `New feedback will be emailed to ${notify.SENDER}. You can close this page.`);
 }
 
 async function finishSheet(req, res, url, flow, code) {
@@ -518,6 +531,9 @@ const isAdmin = (who) => ADMINS.includes(String(who || ''));
 // derived from it. Marina is an admin and must not see it, so this is its own
 // list. Without a login it can only check the name that was selected.
 const FEEDBACK_READERS = CONFIG.feedbackReaders || [];
+// The whole history, without being an admin (04.10.2026: Admissions needs the full picture).
+const HISTORY_READERS = CONFIG.historyReaders || [];
+const readsAllHistory = (who) => isAdmin(who) || HISTORY_READERS.includes(String(who || ''));
 const canReadFeedback = (who) => FEEDBACK_READERS.includes(String(who || ''));
 const isKnownPerson = (who) => USER_NAMES.includes(String(who || '')) || isAdmin(who);
 const roleOf = (who) => (USERS.find((u) => u.name === who) || {}).role || null;
@@ -563,7 +579,7 @@ const refuseNotAdmin = (res) => json(res, 403, {
 //   - an internal correction: "Programme NAV -> ENG, by Laura". This is audit,
 //     and a normal user sees only their own. Admins see all of them.
 function visibleTimeline(rows, viewer) {
-  if (isAdmin(viewer)) return rows;
+  if (readsAllHistory(viewer)) return rows;
   return rows.filter((e) => e.kind !== 'edit' || e.actor === viewer);
 }
 const ACTIVITY = [];
@@ -941,6 +957,7 @@ export const handle = async (req, res) => {
         const gf = readFlow(auth.readCookie(req.headers.cookie, FLOW_COOKIE), process.env.CRM_SESSION_SECRET);
         const gs = url.searchParams.get('state');
         if (gf && gf.purpose === 'gmail' && gs && gs === gf.state) return finishGmail(req, res, url, url.searchParams.get('code'));
+        if (gf && gf.purpose === 'notify' && gs && gs === gf.state) return finishNotify(req, res, url, url.searchParams.get('code'));
       }
       if (!AUTH_ON) return json(res, 400, { error: 'Sign-in is not switched on for this copy.' });
       const cfg = google.googleConfigured(process.env);
@@ -1862,6 +1879,18 @@ export const handle = async (req, res) => {
       return gmailPage(res, 200, true, `Link for ${gmailB.MAILBOX}, valid until ${until} (Riga):<br><br>`
         + `<input readonly style="width:100%;font:14px monospace;padding:8px" onclick="this.select()" value="${link}">`, 'Gmail link');
     }
+    // GET /api/admin/notify/connect - opened once, signed in as an admin, to let Intake email new
+    // feedback from ritvars.vilcins@novikontas.org (04.10.2026). Google asks to Allow "send email".
+    if (req.method === 'GET' && p === '/api/admin/notify/connect') {
+      if (!(await adminOf(req))) return refuseNotAdmin(res);
+      if (!process.env.CRM_SESSION_SECRET || !process.env.GOOGLE_REDIRECT_URI) return gmailPage(res, 503, false, 'Email cannot be connected on this copy yet.');
+      const state = crypto.randomBytes(24).toString('base64url');
+      const flow = signFlow({ state, purpose: 'notify', exp: Date.now() + FLOW_MINUTES * 60 * 1000 }, process.env.CRM_SESSION_SECRET);
+      const to = notify.consentUrl({ env: process.env, state, redirectUri: process.env.GOOGLE_REDIRECT_URI });
+      if (!to) return gmailPage(res, 503, false, 'The Google client is not set on this copy.');
+      res.writeHead(302, { location: to, 'cache-control': 'no-store', 'set-cookie': flowCookie(flow, FLOW_MINUTES) });
+      return res.end();
+    }
     // The email filter over what already waits in the Inbox (popup A, 01.10.2026). Admins only.
     if (req.method === 'POST' && p === '/api/admin/gmail/refilter') {
       if (!(await adminOf(req))) return refuseNotAdmin(res);
@@ -2009,14 +2038,16 @@ export const handle = async (req, res) => {
       // Decided 23.09.2026: an admin sees the whole log. Anybody else sees the
       // history of their own actions and nothing else.
       const admin = isAdmin(who);
-      const scope = admin ? '' : who;
+      const all = readsAllHistory(who);
+      const scope = all ? '' : who;
       return json(res, 200, {
         actor: who, isAdmin: admin,
-        scope: admin ? 'everything' : 'own actions only',
+        scope: all ? 'everything' : 'own actions only',
         scopeNote: admin
           ? 'You are an admin, so the whole log is shown: every person, both origins.'
+          : all ? 'Admissions sees the whole log: every person, both origins.'
           : 'You are not an admin, so this is the history of your own actions. Everything else in the log is admin-only.',
-        roleWarning: admin ? null
+        roleWarning: all ? null
           : 'Identity is a setting, not a login: this shows everything recorded under the name "' + who + '". Nothing stops somebody else picking that name in the sidebar.',
         admins: ADMINS,
         honesty: CONFIG.historyHonesty || '',
@@ -2557,7 +2588,10 @@ export const handle = async (req, res) => {
         by: await actorOf(req, b),
         at: nowIso(),
       });
-      return json(res, 200, { ok: true, ...saved });
+      // Saved first; the email is after it and can never fail the feedback (04.10.2026).
+      const mailed = await notify.sendFeedbackEmail(db, { id: saved.id, kind: readKind(b.kind), body: readBody(b.body),
+        path: readPath(b.path), by: await actorOf(req, b), at: nowIso(), screenshot: saved.screenshot, origin: originOf(req) });
+      return json(res, 200, { ok: true, ...saved, emailed: mailed.ok });
     }
 
     // The Help center's questions (dev kit part 3): anybody signed in counts one open of a
