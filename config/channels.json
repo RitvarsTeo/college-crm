@@ -46,16 +46,16 @@
         "Test filtering and routing"
       ],
       "ownerPerson": "Ritvars",
-      "ownerAction": "Set WEBSITE_FORM_SECRET and CHANNEL_MODE_WEBSITE in Vercel, then add the webhook to the Tilda forms",
+      "ownerAction": "Tick the Tilda webhook on the two college form blocks after the field-name patch ships",
       "reliability": "Shared-secret header, compared in constant time. A submission without a submission_id is refused. A repeat submission_id is dropped.",
       "reconciliation": "None built. Depends on whether the website keeps its own copy of submissions - UNKNOWN.",
       "_ownerNote": "Oksana gave access; Ritvars sets it up himself, he has Tilda access (01.10.2026, docs/channel-writeups/03-website-form-oksana.md). This is the ENQUIRY form on the Tilda site, NOT apply.novikontas.org, which is downstream.",
       "record": {
         "access": {
           "state": "granted",
-          "seen": "2026-10-01",
-          "detail": "Oksana gave Tilda access; Ritvars sets it up himself.",
-          "source": "docs/channel-writeups/03-website-form-oksana.md"
+          "seen": "2026-10-04",
+          "source": "MASTER CONTROL, 04.10 (docs/INTAKE_CONTROL_2026-10-02.md, Website channel state 04.10, control/2026-10-02-s1)",
+          "detail": "Tilda webhook to /api/inbound/website is Active (header x-crm-secret, cookies on), deliberately NOT ticked on any form block until the field names ship."
         },
         "deployed": {
           "state": "yes",
@@ -63,10 +63,10 @@
           "detail": null
         },
         "productionConfigured": {
-          "state": "no",
-          "seen": "2026-10-01",
-          "source": "vercel env ls, read in the CHANNELS lane",
-          "detail": "WEBSITE_FORM_SECRET is not set."
+          "state": "yes",
+          "seen": "2026-10-04",
+          "source": "MASTER CONTROL, 04.10 (docs/INTAKE_CONTROL_2026-10-02.md, Website channel state 04.10, control/2026-10-02-s1)",
+          "detail": "WEBSITE_FORM_SECRET and CHANNEL_MODE_WEBSITE=test set in Production by Ritvars and redeployed; the endpoint answers 401 to a caller without the key. Mode is TEST, not live."
         },
         "liveVerified": {
           "state": "no",
@@ -76,11 +76,11 @@
         },
         "nextAction": {
           "owner": "Ritvars",
-          "action": "Set WEBSITE_FORM_SECRET and CHANNEL_MODE_WEBSITE in Vercel, then add the webhook to the Tilda forms",
-          "input": null
+          "action": "After the field-name patch is released on your GO, tick the webhook on the two college form blocks (college/en, college/en/contacts)",
+          "input": "Never rename the Tilda fields: two Make webhooks read the same forms"
         },
         "blocker": null,
-        "destination": "A new enquiry in the Inbox. NOT apply.novikontas.org."
+        "destination": "A new enquiry in the Inbox, with the programme picked and the \"Source\" answer kept as the person's own answers. The only enquiry forms are EN (college/en, college/en/contacts). NOT apply.novikontas.org."
       }
     },
     "google_form": {

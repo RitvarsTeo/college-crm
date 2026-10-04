@@ -117,7 +117,7 @@ test('each channel lands in exactly one lifecycle state, read from the record', 
   const rows = apiRows();
   const got = Object.fromEntries(rows.filter((r) => !r.isIntegration).map((r) => [r.channel, s.kind(r, LOCAL)]));
   assert.deepEqual({ ...got }, {
-    website: 'owner', google_form: 'dropped', gmail: 'live', facebook: 'owner', messenger: 'owner',
+    website: 'configured', google_form: 'dropped', gmail: 'live', facebook: 'owner', messenger: 'owner',
     instagram: 'owner', whatsapp: 'owner', mailchimp: 'configured', open_day: 'parked', phone: 'live',
     agent: 'owner', in_person: 'hand', linkedin: 'provider', tiktok: 'owner',
   });
