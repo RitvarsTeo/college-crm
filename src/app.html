@@ -843,7 +843,8 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
     --k-plinth:#0b2542;   /* the donut's plinth: a frame colour, the dark card well, never a data colour */
     --j-from:#1d4d7a;--j-to:#8fcbef;   /* the Journey's stage line in dark (the review #2) */
     --glass:linear-gradient(180deg,rgba(255,255,255,.06) 0%,rgba(255,255,255,.035) 100%);
-    --glass-line:rgba(194,211,222,.18)}
+    --glass-line:rgba(194,211,222,.18);
+    --sea:radial-gradient(120% 80% at 50% 0%,#17456e 0%,rgba(23,69,110,0) 60%),linear-gradient(180deg,#0f2f4f 0%,#0f2f4f 45%,#08182e 100%)}
   /* THE LIGHT SEA (the owner, 01.10.2026: "same way we have a gradient for the dark mode,
      lets have a gradient for the light version"). Dark takes the sign-in screen's sea:
      a glow from the top centre over a vertical deepening, #17456e -> #0f2f4f -> #08182e.
@@ -852,15 +853,16 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
      --shell at the foot, exactly as dark deepens to its own.
      The whole range is #fbfcfd -> #e7ebf0, about 3% of lightness, so no text contrast
      anywhere on the page moves. `fixed` so it is one sea, not a sea per scroll. */
-  html.ui-c:not([data-theme="dark"]) body{
-    background:radial-gradient(120% 80% at 50% 0%,#fbfcfd 0%,rgba(251,252,253,0) 60%),
-      linear-gradient(180deg,#f7f9fb 0%,#f5f7fa 45%,#e7ebf0 100%) fixed #f5f7fa}
+  /* --sea is the ONE gradient system (dark's is in the dark palette below), named so a frame can carry the same sea as the
+     page (Session 3, 02.10) instead of inventing a second one. Same values as before. */
+  html.ui-c{--sea:radial-gradient(120% 80% at 50% 0%,#fbfcfd 0%,rgba(251,252,253,0) 60%),
+      linear-gradient(180deg,#f7f9fb 0%,#f5f7fa 45%,#e7ebf0 100%)}
+  html.ui-c:not([data-theme="dark"]) body{background:var(--sea) fixed #f5f7fa}
   /* the menu takes the same treatment it takes in dark: a quiet vertical fall, so the
      two modes are the same design and not two designs */
   html.ui-c:not([data-theme="dark"]) .shell > nav{
     background:linear-gradient(180deg,#ffffff 0%,#ffffff 40%,#e5f2fa 100%);border-right:1px solid var(--rule)}   /* white into a soft Novikontas Blue #53a7db tint (15% on white), the owner 02.10.2026 */
-  html.ui-c[data-theme="dark"] body{background:radial-gradient(120% 80% at 50% 0%,#17456e 0%,rgba(23,69,110,0) 60%),
-      linear-gradient(180deg,#0f2f4f 0%,#0f2f4f 45%,#08182e 100%) fixed #0f2f4f}
+  html.ui-c[data-theme="dark"] body{background:var(--sea) fixed #0f2f4f}
   html.ui-c[data-theme="dark"] .shell > nav{background:linear-gradient(180deg,rgba(8,24,46,.78) 0%,rgba(8,24,46,.92) 100%);border-right:1px solid rgba(194,211,222,.10)}
   html.ui-c[data-theme="dark"] :is(.c-health,.c-sheet,.c-seg,.c-said,.c-card,.c-jp,.c-folded,.c-next.c-finished,.kstrip,.ksec){
     background:var(--glass);border:1px solid var(--glass-line);
@@ -1452,9 +1454,9 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   /* WHAT WAS SAID, on the Journey card (the review, #3). The conversation, not the history:
      notes and calls a person wrote, newest first, three at a time. */
   /* why people stop, against the list the server actually enforces */
-  /* ------------------------------------------------ Channels, A and B -- */
+  /* ------------------------------------------ Channels, A and B (Session 3) -- */
   /* The A/B switch is a REVIEW control. It is deliberately plain, so it cannot be
-     mistaken for part of the product, and it goes when C is settled. */
+     mistaken for part of the product, and it goes when one is picked. */
   html.ui-c .chhead{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
   html.ui-c .chhead h1{margin:0}
   html.ui-c .chab{margin-left:auto;display:flex;border:1px solid var(--rule);border-radius:8px;overflow:hidden}
@@ -1462,58 +1464,178 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
     font:inherit;font-size:12px;color:var(--t3);padding:5px 11px}
   html.ui-c .chab button+button{border-left:1px solid var(--rule)}
   html.ui-c .chab button.on{background:var(--surface-2);color:var(--ink);font-weight:600}
-  html.ui-c .chenv,html.ui-c .chcount{margin:10px 0 0}
-  html.ui-c .chcount{margin-bottom:14px}
+  html.ui-c .chenv{margin:10px 0 16px}
 
-  /* A: four pips, one per step. Blue is progress, the hairline is not-yet, and a
-     failed check is the only red on the screen. A blocked step is hollow with a ring,
-     never coloured as though it were progress. */
-  html.ui-c .chpips{display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
-  html.ui-c .chpips i{width:7px;height:7px;border-radius:50%;background:var(--rule);display:block}
-  html.ui-c .chpips i.p-done{background:var(--v-adm)}
-  html.ui-c .chpips i.p-blocked{background:transparent;box-shadow:inset 0 0 0 1.5px var(--t4)}
-  html.ui-c .chpips i.p-failed{background:var(--bad)}
-  html.ui-c .chpips em{font-style:normal;font-size:10.5px;color:var(--t4);margin-left:5px}
-  html.ui-c .chtable .chcred{font-size:11px;color:var(--t4);font-variant-ligatures:none;overflow-wrap:anywhere}
-  html.ui-c .chtable .chnext{font-size:11.5px;color:var(--t3);line-height:1.45;max-width:30em;overflow-wrap:anywhere}
-  html.ui-c .chtable .chstate{white-space:nowrap}
+  /* STATE COLOURS. Data blue and the data mustard (KB 08 P5), the existing --v-lead
+     for configured, grey for by hand. Blocked by a provider is mustard HATCHED: it is
+     the same "somebody must act" family, and the hatch says the somebody is outside.
+     Every mark also carries its word, so colour never carries a state alone. */
+  html.ui-c{--k-live:#29a8df;--k-conf:var(--v-lead);--k-owner:#E0A526;--k-hand:var(--v-np);--k-none:var(--rule)}
+  html.ui-c .chk{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;
+    color:var(--t2);white-space:nowrap}
+  html.ui-c .chk::before{content:"";width:8px;height:8px;border-radius:2px;background:var(--k-none)}
+  html.ui-c .chk.k-live::before{background:var(--k-live)}
+  html.ui-c .chk.k-conf::before{background:var(--k-conf)}
+  html.ui-c .chk.k-owner::before{background:var(--k-owner)}
+  html.ui-c .chk.k-prov::before{background:repeating-linear-gradient(135deg,var(--k-owner) 0 2px,transparent 2px 4px);box-shadow:inset 0 0 0 1px var(--k-owner)}
+  html.ui-c .chk.k-hand::before{background:var(--k-hand)}
+  html.ui-c .chk.k-park::before,html.ui-c .chk.k-drop::before{background:transparent;box-shadow:inset 0 0 0 1px var(--t4)}
+  html.ui-c .chk.k-park,html.ui-c .chk.k-drop{color:var(--t4);font-weight:500}
 
-  /* B: grouped by how far along, each channel a card with its four steps as a track */
-  html.ui-c .chc{margin:0 0 22px}
-  html.ui-c .chc h2{display:flex;align-items:baseline;gap:9px;margin:0 0 10px;font-size:14px;font-weight:650}
-  html.ui-c .chc h2 small{font-size:11.5px;font-weight:400;color:var(--t4)}
-  html.ui-c .chc-n{font-size:11px;font-weight:600;color:var(--t3);background:var(--surface-2);
-    border-radius:20px;padding:1px 8px}
-  html.ui-c .chc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:12px}
-  html.ui-c .chcard{border:1px solid var(--rule);border-radius:12px;background:var(--card);
-    padding:13px 15px 10px;cursor:pointer;display:flex;flex-direction:column;gap:9px}
-  html.ui-c .chcard:hover,html.ui-c .chcard:focus-visible{background:var(--surface-2)}
-  html.ui-c .chcard header{display:flex;align-items:center;gap:8px}
-  html.ui-c .chcard header b{font-size:13.5px}
-  html.ui-c .chcard header .chstate{margin-left:auto;white-space:nowrap}
-  html.ui-c .chtrack{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
-  html.ui-c .chtrack span{display:flex;flex-direction:column;gap:4px;min-width:0}
-  html.ui-c .chtrack i{height:3px;border-radius:2px;background:var(--rule);display:block}
-  html.ui-c .chtrack u{text-decoration:none;font-size:9.5px;letter-spacing:.03em;
-    color:var(--t4);text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  html.ui-c .chtrack .t-done i{background:var(--v-adm)}
-  html.ui-c .chtrack .t-done u{color:var(--t3)}
-  html.ui-c .chtrack .t-blocked i{background:repeating-linear-gradient(90deg,var(--t4) 0 2px,transparent 2px 4px)}
-  html.ui-c .chtrack .t-failed i{background:var(--bad)}
-  html.ui-c .chcard-n{margin:0;font-size:11.5px;line-height:1.5;color:var(--t3);overflow-wrap:anywhere}
-  html.ui-c .chcard-n b{display:block;color:var(--ink);font-size:12px}
-  html.ui-c .chcard footer{margin-top:auto;padding-top:7px;border-top:1px solid var(--rule);
-    font-size:11px;color:var(--t4)}
+  /* THE FRAME: the page's own sea (--sea), and a rim BELOW it drawn once in SVG,
+     uniform along its whole length. Depth belongs to the frame; nothing on it is data. */
+  html.ui-c .chdeck{position:relative;isolation:isolate;margin:0 0 30px;border-radius:16px;
+    background:var(--sea);border:1px solid var(--rule)}
+  html.ui-c .chdeck .chrim{position:absolute;left:0;right:0;bottom:-7px;width:100%;height:16px;z-index:-1}
+  html.ui-c .chdeck .chrim path{fill:#d3dce6}
+  html.ui-c[data-theme="dark"] .chdeck{border-color:var(--glass-line);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.07)}
+  html.ui-c[data-theme="dark"] .chdeck .chrim path{fill:#08182e}
+  html.ui-c .chdeck-in{padding:18px 20px 20px;display:grid;gap:16px;border-radius:16px;overflow:hidden}
 
-  /* Shelved and integrations: present, quiet, and not work */
+  /* the figures, Square-style: a small label above, the number at display size */
+  html.ui-c .chfigs{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:10px}
+  html.ui-c .chfig{display:grid;grid-template-columns:1fr auto;align-items:end;gap:2px 8px;
+    background:var(--card);border:1px solid var(--rule);border-radius:12px;padding:10px 12px}
+  html.ui-c[data-theme="dark"] .chfig{background:var(--glass);border-color:var(--glass-line)}
+  html.ui-c .chfig small{grid-column:1 / -1;font-size:11px;color:var(--t3);line-height:1.3}
+  html.ui-c .chfig b{font-size:30px;line-height:1;font-weight:650;font-variant-numeric:tabular-nums;color:var(--ink)}
+  html.ui-c .chfig .sw{width:10px;height:10px;border-radius:2px;margin-bottom:5px}
+  html.ui-c .chfig .sw.k-live{background:var(--k-live)} html.ui-c .chfig .sw.k-conf{background:var(--k-conf)}
+  html.ui-c .chfig .sw.k-owner{background:var(--k-owner)} html.ui-c .chfig .sw.k-hand{background:var(--k-hand)}
+  html.ui-c .chfig .sw.k-none{background:var(--k-none)}
+  html.ui-c .chfig .sw.k-prov{background:repeating-linear-gradient(135deg,var(--k-owner) 0 2px,transparent 2px 4px);box-shadow:inset 0 0 0 1px var(--k-owner)}
+  html.ui-c .chfig-total b{color:var(--k-live)}
+
+  /* the twelve slots: equal, flat, counted */
+  html.ui-c .chslots{display:block;width:100%;height:14px}
+  html.ui-c .chslots rect{fill:var(--k-none)}
+  html.ui-c .chslots rect.k-live{fill:var(--k-live)} html.ui-c .chslots rect.k-conf{fill:var(--k-conf)}
+  html.ui-c .chslots rect.k-owner{fill:var(--k-owner)} html.ui-c .chslots rect.k-hand{fill:var(--k-hand)}
+  html.ui-c .chslots rect.k-prov{fill:transparent;stroke:var(--k-owner);stroke-width:.35;stroke-dasharray:.6 .4}
+
+  /* ---- A: lanes of people, cards of work */
+  html.ui-c .chlane{margin:0 0 26px}
+  html.ui-c .chlane h2{display:flex;align-items:baseline;gap:9px;margin:0 0 10px;font-size:14px;font-weight:650}
+  html.ui-c .chc-n{font-size:11px;font-weight:600;color:var(--t3);background:var(--surface-2);border-radius:20px;padding:1px 8px}
+  html.ui-c .chlane-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,310px),1fr));gap:12px}
+  html.ui-c .chq{border:1px solid var(--rule);border-radius:12px;background:var(--card);padding:13px 15px 10px;
+    display:flex;flex-direction:column;gap:9px;min-width:0}
+  html.ui-c[data-theme="dark"] .chq{background:var(--glass);border-color:var(--glass-line)}
+  html.ui-c .chq header{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  html.ui-c .chq header b{font-size:14px;margin-right:auto}
+  html.ui-c .chq-do{margin:0;font-size:13px;line-height:1.45;color:var(--ink);font-weight:550}
+  html.ui-c .chq-in,html.ui-c .chq-to{margin:0;font-size:11.5px;line-height:1.45;color:var(--t3)}
+  html.ui-c .chq-in span,html.ui-c .chq-to span{display:block;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--t4)}
+  html.ui-c .chq footer{margin-top:auto;padding-top:7px;border-top:1px solid var(--rule);font-size:11.5px}
+
+  /* the evidence ladder: four steps, one honest word each, dated */
+  html.ui-c .chev{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+  html.ui-c .chev li{display:flex;flex-direction:column;gap:3px;min-width:0}
+  html.ui-c .chev i{height:4px;border-radius:2px;background:var(--rule);display:block}
+  html.ui-c .chev span{font-size:9.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--t4);line-height:1.2}
+  html.ui-c .chev em{font-style:normal;font-size:11px;color:var(--t2);line-height:1.3}
+  html.ui-c :is(.chev li,.chcell).e-yes i{background:var(--k-live)}
+  html.ui-c :is(.chev li,.chcell).e-part i{background:linear-gradient(90deg,var(--k-live) 50%,var(--rule) 50%)}
+  html.ui-c :is(.chev li,.chcell).e-wait i{background:repeating-linear-gradient(90deg,var(--k-owner) 0 3px,transparent 3px 5px)}
+  html.ui-c :is(.chev li,.chcell).e-conflict i{background:repeating-linear-gradient(90deg,var(--k-live) 0 3px,var(--bad) 3px 6px)}
+  html.ui-c :is(.chev li,.chcell).e-na i{background:transparent;box-shadow:inset 0 0 0 1px var(--rule)}
+  html.ui-c :is(.chev li,.chcell).e-conflict em,html.ui-c .chcell.e-conflict span{color:var(--bad);font-weight:600}
+
+  /* the blocker, always whole: dependency, who holds it, what it needs, which side */
+  html.ui-c .chblk{margin:0;display:grid;gap:3px;font-size:11.5px;line-height:1.4;
+    border-left:3px solid var(--k-owner);padding:6px 0 6px 9px;background:transparent}
+  html.ui-c .chblk.ext{border-left-style:dashed}
+  html.ui-c .chblk.chnext{border-left-color:var(--k-live)}
+  html.ui-c .chblk{min-width:0;white-space:normal}
+  html.ui-c .chblk div{display:grid;grid-template-columns:5.2em minmax(0,1fr);gap:8px;min-width:0}
+  html.ui-c .chblk dt{color:var(--t4);font-size:10px;letter-spacing:.05em;text-transform:uppercase;padding-top:1px}
+  html.ui-c .chblk dd{margin:0;color:var(--t2);overflow-wrap:anywhere}
+  html.ui-c .chgate{margin:0;font-size:11px;color:var(--t3);line-height:1.45}
+  html.ui-c .chconf{border:1px solid var(--bad);border-radius:9px;padding:8px 10px;font-size:11.5px;line-height:1.45;color:var(--t2)}
+  html.ui-c .chconf ul{margin:5px 0;padding:0;list-style:none;display:grid;gap:3px}
+  html.ui-c .chconf li span{display:block;font-size:10px;color:var(--t4);letter-spacing:.03em}
+  html.ui-c .chconf p{margin:4px 0 0}
+  html.ui-c .chnote{border-left:3px solid var(--k-live);padding:4px 0 4px 9px;font-size:11.5px;line-height:1.45;color:var(--t2);display:grid;gap:4px}
+  html.ui-c .chnote p{margin:0}
+  html.ui-c .chmb{list-style:none;margin:0;padding:0;display:grid;gap:3px}
+  html.ui-c .chmb li span{margin-left:6px;font-weight:600}
+  html.ui-c .chmb li.m-live span{color:var(--k-live)}
+  html.ui-c .chmb li.m-not_connected span{color:var(--t4)}
+  html.ui-c .chmb small{display:block;color:var(--t4);font-size:10.5px}
+
+  /* ---- B: the lifecycle strip, the ledger, the inspector */
+  html.ui-c .chflow{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px;font-size:11.5px}
+  html.ui-c .chflow li{position:relative;padding:5px 12px 5px 10px;border-radius:7px;border:1px solid var(--rule);color:var(--t4)}
+  html.ui-c .chflow li.ours{color:var(--ink);background:var(--card);font-weight:600;
+    box-shadow:0 2px 0 var(--rule)}
+  html.ui-c[data-theme="dark"] .chflow li.ours{background:var(--glass);box-shadow:0 2px 0 #08182e}
+  html.ui-c .chflow li:first-child{border-color:var(--k-live);color:var(--k-live)}
+  html.ui-c .chflow li+li::before{content:"\2192";position:absolute;left:-10px;top:5px;color:var(--t4);font-weight:400}
+  html.ui-c .chflow li.down{border-style:dashed}
+  html.ui-c .chledger{display:grid;grid-template-columns:minmax(0,1fr) minmax(250px,300px);gap:16px;align-items:start}
+  html.ui-c .chmx th[scope=row]{text-align:left;font-weight:400;text-transform:none;letter-spacing:0;font-size:13px;color:var(--ink)}
+  html.ui-c .chmx td,html.ui-c .chmx th{padding-left:8px;padding-right:8px}
+  html.ui-c .chmx .chk{white-space:normal}
+  html.ui-c .chmx thead th{white-space:normal;vertical-align:bottom}
+  html.ui-c .chmx tr.on{background:var(--surface-2);box-shadow:inset 3px 0 0 var(--k-live)}
+  html.ui-c .chmx tbody tr{cursor:pointer}
+  html.ui-c .chcell{min-width:62px}
+  html.ui-c .chcell i{display:block;height:4px;border-radius:2px;background:var(--rule);margin-bottom:4px}
+  html.ui-c .chcell span{font-size:12px;color:var(--t2)}
+  html.ui-c .chcell small{display:block;font-size:10px;color:var(--t4)}
+  html.ui-c .chloc,html.ui-c .chloc-h{font-size:10.5px;color:var(--t4);font-style:italic}
+  html.ui-c .chmx tfoot td,html.ui-c .chmx tfoot th{font-size:11.5px;color:var(--t3);border-top:1px solid var(--rule);text-align:left}
+  html.ui-c .chmx tfoot b{font-size:15px;color:var(--ink);font-variant-numeric:tabular-nums}
+  html.ui-c .chinsp{position:sticky;top:12px}
+  html.ui-c .chinsp-in{border:1px solid var(--rule);border-radius:12px;background:var(--card);padding:14px 15px;display:grid;
+    grid-template-columns:minmax(0,1fr);gap:10px;overflow-wrap:anywhere}
+  html.ui-c .chq{overflow-wrap:anywhere}
+  html.ui-c[data-theme="dark"] .chinsp-in{background:var(--glass);border-color:var(--glass-line)}
+  html.ui-c .chinsp h2{margin:0;font-size:15px;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  html.ui-c .chinsp h3{margin:4px 0 0;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--t4);font-weight:600}
+  html.ui-c .chinsp .c-ev{margin:0}
+  html.ui-c .chsrc{list-style:none;margin:0;padding:0;display:grid;gap:6px;font-size:11.5px;color:var(--t2)}
+  html.ui-c .chsrc small{display:block;font-size:10.5px;color:var(--t4);line-height:1.4;overflow-wrap:anywhere}
+  html.ui-c .chinsp .btn{justify-self:start}
+
+  /* THE TWO SCENES per variant (KB 08 P5: at most two, once, slower not faster, no
+     scaling of any mark). A: the slots fill one by one, then the lanes rise in.
+     B: the proofs travel left to right across the ledger, then the inspector arrives. */
+  html.ui-c .chv-a .chslots rect{animation:ch-fade .5s ease-out backwards;animation-delay:calc(var(--i,0) * 70ms + 120ms)}
+  html.ui-c .chv-a .chlane{animation:ch-lift .6s cubic-bezier(.22,.9,.3,1) backwards;animation-delay:calc(var(--l,0) * 110ms + 700ms)}
+  html.ui-c .chv-b .chcell{animation:ch-lift .55s cubic-bezier(.22,.9,.3,1) backwards;animation-delay:calc(var(--j,0) * 160ms + 100ms)}
+  html.ui-c .chv-b .chinsp,html.ui-c .chv-b .chinsp.arrive{animation:ch-lift .5s cubic-bezier(.22,.9,.3,1) backwards}
+  html.ui-c .chv-b .chinsp{animation-delay:800ms}
+  html.ui-c .chv-b .chinsp.arrive{animation-delay:0ms}
+  @keyframes ch-fade{from{opacity:0}to{opacity:1}}
+  @keyframes ch-lift{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @media(prefers-reduced-motion:reduce){
+    html.ui-c .chv-a .chslots rect,html.ui-c .chv-a .chlane,html.ui-c .chv-b .chcell,html.ui-c .chv-b .chinsp{animation:none}
+  }
+
+  /* phone width: the ledger becomes one card per channel, each proof labelled */
+  @media (max-width:1100px){ html.ui-c .chledger{grid-template-columns:minmax(0,1fr)} html.ui-c .chinsp{position:static} }
+  @media (max-width:720px){
+    html.ui-c .chmx thead{display:none}
+    html.ui-c .chmx,html.ui-c .chmx tbody,html.ui-c .chmx tfoot{display:block;min-width:0;width:100%}
+    html.ui-c .chmx tr{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;padding:10px 4px;border-bottom:1px solid var(--rule)}
+    html.ui-c .chmx tr > *{border:0;padding:0}
+    html.ui-c .chmx th[scope=row],html.ui-c .chmx tfoot th{grid-column:1 / -1}
+    html.ui-c .chmx td[data-label]::before{content:attr(data-label);display:block;font-size:9.5px;letter-spacing:.05em;
+      text-transform:uppercase;color:var(--t4);font-style:normal}
+    html.ui-c .chev{grid-template-columns:repeat(2,minmax(0,1fr))}
+    html.ui-c .chdeck-in{padding:14px}
+    html.ui-c .chfig b{font-size:24px}
+  }
+
+  /* Not current, and downstream: present, quiet, and not work */
   html.ui-c .chshelf{margin:26px 0 0;padding-top:14px;border-top:1px solid var(--rule)}
   html.ui-c .chshelf h2{margin:0 0 8px;font-size:12.5px;font-weight:650;color:var(--t3)}
   html.ui-c .chshelf h2 small{font-weight:400;color:var(--t4)}
   html.ui-c .chshelf ul{list-style:none;margin:0;padding:0;display:grid;gap:7px}
   html.ui-c .chshelf li{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:12px}
   html.ui-c .chshelf li small{flex:1 1 20em;min-width:0;font-size:11px;color:var(--t4);line-height:1.45}
-  html.ui-c .chlife{font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;
-    border:1px solid var(--rule);border-radius:4px;padding:1px 5px;color:var(--t4)}
   /* Admissions second axis: dormant or declined. Two choices, each saying what it means,
      because "cold" and "reject" are Admissions own words and not everyone's. */
   html.ui-c .cltags{display:grid;gap:7px;margin-top:2px}
@@ -5883,199 +6005,390 @@ function chActivity(c, run) {
 //
 // Nothing invented: every word here is the config's own. A channel with no owner
 // recorded says SO, because "nobody is named" is the finding, not a blank cell.
-// ===================================================== the channel model ==
-// 02.10.2026. Rewritten after the reconciliation in
-// docs/CHANNEL_RECONCILIATION_2026-10-02.md.
+// ============================================ CHANNEL MODEL (Session 3, 02.10) ==
+// One model under both layouts. Rewritten after the Session 3 reconciliation: every
+// channel carries a RECORD (config/channels.json -> record) of what was last SEEN
+// about it, with the date and the source. A local checkout has no secrets and no
+// production rows, so it can never READ production; it shows what was seen, and when.
 //
-// TWO THINGS THAT ARE NOT THE SAME. 'readiness' says whether OUR SIDE is ready.
-// 'lifecycle' says whether the product HAS this channel. Reading readiness is what
-// put a dropped Google Form and a parked Open Day on screen as work, with people's
-// names against them. Every screen below reads lifecycle.
+// FOUR STATES, KEPT APART, NEVER INFERRED FROM EACH OTHER:
+//   this machine        process.env here. Shown, labelled local, worth nothing about prod
+//   deployed            the adapter is in the commit proven to be running
+//   production configured  the settings are in Vercel Production, as last seen
+//   live verified       a row a REAL provider sent. Only that proves it. On production
+//                       the screen reads it from the rows; locally it never does.
+//
+// A BLOCKER names its dependency, its owner, the action or input it needs, and whether
+// it is internal or external. A missing local credential is never a blocker.
+const CH_KINDS = {
+  live: { word: 'Live verified', cls: 'k-live' },
+  configured: { word: 'Configured', cls: 'k-conf' },
+  owner: { word: 'Needs owner action', cls: 'k-owner' },
+  provider: { word: 'Blocked by external provider', cls: 'k-prov' },
+  none: { word: 'Not configured', cls: 'k-none' },
+  hand: { word: 'Working by hand', cls: 'k-hand' },
+  parked: { word: 'Parked', cls: 'k-park' },
+  dropped: { word: 'Dropped', cls: 'k-drop' },
+};
+const CH_ORDER = ['live', 'configured', 'provider', 'owner', 'none', 'hand'];
 const chLife = (c) => c.lifecycle || 'active';
 const chActive = (rows) => rows.filter((c) => chLife(c) === 'active' && !c.isIntegration);
-const chShelved = (rows) => rows.filter((c) => chLife(c) !== 'active');
+const chShelved = (rows) => rows.filter((c) => chLife(c) !== 'active' && !c.isIntegration);
+const chRec = (c) => c.record || {};
+const chDay = (d) => (d && /^\d{4}-\d{2}-\d{2}/.test(d) ? d.slice(8, 10) + '.' + d.slice(5, 7) : '');
 
-// A long blocker is cut at a SPACE and kept whole in the title. A cut through the
-// middle of a word reads as a rendering fault, not a deliberate shortening.
+// LIVE VERIFIED. On production the rows answer, and they settle a recorded conflict
+// either way. Anywhere else the local rows say nothing about production, so the
+// record is shown with its date, and a conflict stays a conflict.
+function chLiveOf(c, env) {
+  if (c.direction === 'manual') return { state: 'not_applicable', observed: false };
+  if (env && env.isProduction) {
+    return (c.events || 0) > 0
+      ? { state: 'yes', observed: true, seen: c.lastEventAt || null, detail: c.events + ' from the provider' }
+      : { state: 'no', observed: true, detail: 'No row from a real provider in production' };
+  }
+  const r = chRec(c).liveVerified;
+  return r ? { ...r, observed: false } : { state: 'unknown', observed: false };
+}
+
+function chKind(c, env) {
+  const life = chLife(c);
+  if (life === 'dropped' || life === 'parked') return life;
+  if (c.direction === 'manual') return 'hand';
+  if (chLiveOf(c, env).state === 'yes') return 'live';
+  const b = chRec(c).blocker;
+  if (b && b.side === 'external') return 'provider';
+  const pc = chRec(c).productionConfigured;
+  if ((pc && pc.state === 'yes') || (env && env.isProduction && c.allSettingsPresent)) return 'configured';
+  if (chRec(c).nextAction || b) return 'owner';
+  return 'none';
+}
+
+// A blocker is only ever what the record says, and only whole: without a dependency
+// and a side it is not shown as a blocker at all.
+function chBlocker(c) {
+  const b = chRec(c).blocker;
+  return b && b.dependency && (b.side === 'internal' || b.side === 'external') ? b : null;
+}
+const chAction = (c) => (chLife(c) === 'active' ? chRec(c).nextAction || null : null);
+const chWhoActs = (c) => {
+  if (chLife(c) !== 'active') return null;
+  const a = chAction(c);
+  if (a) return a.owner || null;
+  const b = chBlocker(c);
+  return b ? (b.owner || null) : null;
+};
+
+// The four evidence steps, each with ONE honest answer and the date it was seen.
+function chEvidence(c, env) {
+  const r = chRec(c);
+  const yesNo = (x, yes) => (!x ? 'unknown' : x.state === yes ? 'yes' : x.state);
+  const live = chLiveOf(c, env);
+  return [
+    { key: 'access', label: 'Access', state: !r.access ? 'unknown'
+      : r.access.state === 'granted' || r.access.state === 'not_needed' ? 'yes'
+      : r.access.state === 'requested' ? 'wait' : 'no',
+      word: r.access ? ({ granted: 'Granted', not_needed: 'Not needed', requested: 'Requested', pending: 'Not yet' })[r.access.state] || r.access.state : 'Unknown',
+      seen: r.access && r.access.seen, note: r.access && r.access.detail, src: r.access && r.access.source },
+    { key: 'deployed', label: 'Code deployed', state: yesNo(r.deployed, 'yes') === 'yes' ? 'yes' : r.deployed ? 'part' : 'unknown',
+      word: r.deployed ? (r.deployed.state === 'yes' ? 'Yes' : 'Partly') : 'Unknown',
+      seen: null, note: r.deployed && (r.deployed.detail || 'In ' + r.deployed.commit), src: r.deployed && r.deployed.commit },
+    { key: 'prod', label: 'Production configured',
+      state: !r.productionConfigured ? 'unknown' : r.productionConfigured.state === 'yes' ? 'yes'
+        : r.productionConfigured.state === 'not_needed' ? 'na' : 'no',
+      word: !r.productionConfigured ? 'Unknown' : ({ yes: 'Yes', no: 'No', not_needed: 'Not needed' })[r.productionConfigured.state],
+      seen: r.productionConfigured && r.productionConfigured.seen, note: r.productionConfigured && r.productionConfigured.detail,
+      src: r.productionConfigured && r.productionConfigured.source },
+    { key: 'live', label: 'Live verified',
+      state: live.state === 'yes' ? 'yes' : live.state === 'conflict' ? 'conflict' : live.state === 'not_applicable' ? 'na' : live.state === 'unknown' ? 'unknown' : 'no',
+      word: ({ yes: 'Yes', no: 'No', conflict: 'Unresolved', not_applicable: 'Not applicable', unknown: 'Unknown' })[live.state],
+      seen: live.seen, note: live.detail || (live.state === 'conflict' ? 'Two records disagree' : ''),
+      src: live.observed ? 'read now from production rows' : live.source, observed: live.observed },
+  ];
+}
+
+// THIS MACHINE, said as what it is: local settings, which say nothing about production.
+function chLocal(c, env) {
+  const where = env && env.isProduction ? 'Production now' : 'This machine';
+  if (c.direction === 'manual') return { where, word: 'Nothing to set', state: 'na' };
+  const all = (c.settings || []).length;
+  const have = all - (c.missingSettings || []).length;
+  return { where, word: have + ' of ' + all + ' set', state: have === all && all ? 'yes' : 'no' };
+}
+
+function chCount(rows, env) {
+  const act = chActive(rows);
+  const n = {};
+  for (const c of act) { const k = chKind(c, env); n[k] = (n[k] || 0) + 1; }
+  return { total: act.length, n };
+}
+
+// A long text is cut at a SPACE and kept whole in the title.
 function chCut(t, n) {
   if (!t) return '';
   if (t.length <= n) return t;
   const head = t.slice(0, n);
   const sp = head.lastIndexOf(' ');
-  return (sp > n * 0.6 ? head.slice(0, sp) : head).replace(/[,.;:]$/, '') + '\u2026';
+  return (sp > n * 0.6 ? head.slice(0, sp) : head).replace(/[,.;:]$/, '') + '…';
 }
 
-// THE FOUR STEPS a channel passes through, and the ONE honest answer at each.
-// Nothing is inferred: access comes from the recorded blocker, configured from the
-// settings present IN THIS ENVIRONMENT, tested from the last check, live from a row
-// a real provider actually sent. The last is the only proof of "live".
-// BLOCKED OUTSIDE means somebody outside Novikontas has to answer, and the answer may
-// be no. It is NOT "there are steps nobody has done". config/channels.json draws that
-// line itself in blockerKind, and this reads it rather than treating every recorded
-// blocker as a dependency.
-const chOutside = (c) => Boolean(c.externalBlocker) && c.blockerKind === 'question';
-function chSteps(c) {
-  const manual = c.direction === 'manual';
-  return [
-    { key: 'access', label: 'Access',
-      state: manual ? 'done' : (chOutside(c) ? 'blocked' : 'done') },
-    { key: 'config', label: 'Configured', state: manual ? 'done' : (c.allSettingsPresent ? 'done' : 'todo') },
-    { key: 'tested', label: 'Tested', state: manual ? 'done' : (c.lastCheckOk === true ? 'done' : (c.state === 'ERROR' ? 'failed' : 'todo')) },
-    { key: 'live', label: 'Live', state: manual ? 'done' : (c.state === 'CONNECTED' ? 'done' : 'todo') },
-  ];
-}
-const chDone = (c) => chSteps(c).filter((x) => x.state === 'done').length;
+// ---------------------------------------------------------- shared pieces --
+const chKindTag = (k) => '<span class="chk ' + CH_KINDS[k].cls + '">' + esc(CH_KINDS[k].word) + '</span>';
 
-// The one thing that has to happen NEXT, in the config's own words, or nothing. A
-// manual channel and a receiving one have no next thing and must not be given one.
-function chNext(c) {
-  if (c.direction === 'manual' || c.state === 'CONNECTED') return null;
-  return c.externalBlocker || c.ownerAction || null;
-}
-function chWho(c) {
-  if (c.direction === 'manual' || c.state === 'CONNECTED') return null;
-  return c.ownerPerson || null;
+function chEnvLine(env, prod) {
+  if (!env) return '';
+  if (env.isProduction) return '<p class="c-ev chenv">Production. Live verification is read from real provider rows.</p>';
+  // not env.caveat: that says every channel reads "not configured", which this screen
+  // no longer does. It shows the record, so it says the record is what you see.
+  return '<p class="c-ev chenv"><b>' + esc(env.name) + ', not production.</b> Each state is the record, dated when seen.'
+    + (prod ? ' Running ' + esc(prod.commit) + ', proven ' + esc(chDay(prod.provenOn)) + '.' : '') + '</p>';
 }
 
-// WHICH ENVIRONMENT THIS IS. A local checkout has no secrets, so every channel reads
-// "not configured" there. Printing that without saying so reads as though PRODUCTION
-// were unconfigured. The screen says it once, in one line.
-function chEnvLine(env) {
-  if (!env || env.isProduction) return '';
-  return '<p class="c-ev chenv"><b>' + esc(env.name) + '</b> \u00b7 ' + esc(env.caveat || '') + '</p>';
+function chBlockerHtml(b) {
+  if (!b) return '';
+  return `<dl class="chblk ${b.side === 'external' ? 'ext' : 'int'}">
+    <div><dt>Blocker</dt><dd>${esc(b.dependency)}</dd></div>
+    <div><dt>Held by</dt><dd>${b.owner ? esc(b.owner) : '<span class="c-gap">Nobody named</span>'}</dd></div>
+    <div><dt>Needs</dt><dd>${esc(b.action || '')}</dd></div>
+    <div><dt>Kind</dt><dd>${b.side === 'external' ? 'External' + (b.canRefuse ? ', can be refused' : '') : 'Internal'}</dd></div>
+  </dl>`;
 }
 
-// What is shelved, said once and quietly, so a decision cannot be re-opened by a
-// screen that has forgotten it.
+function chGateHtml(c) {
+  const g = chRec(c).gateAhead;
+  if (!g || chLife(c) !== 'active') return '';
+  return `<p class="chgate"><b>Ahead, not blocking yet:</b> ${esc(g.dependency)} (${esc(g.owner)}${g.canRefuse ? ', can be refused' : ''})</p>`;
+}
+
+function chConflictHtml(c, env) {
+  const l = chLiveOf(c, env);
+  if (l.state !== 'conflict') return '';
+  return `<div class="chconf"><b>Live? Two records disagree. Not settled here.</b>
+    <ul>${(l.claims || []).map((x) => `<li><span>${esc(x.who)}, ${esc(chDay(x.on))}</span> ${esc(x.says)}</li>`).join('')}</ul>
+    <p><b>The check:</b> ${esc(l.check || '')}</p>
+    ${l.why ? `<p class="c-ev">${esc(l.why)}</p>` : ''}</div>`;
+}
+
+// What the live answer settled, what it still does not prove, and, for a channel with
+// several mailboxes, which one it is true of. A conflict stays a conflict; evidence that
+// settled one says so, with what it was, instead of quietly dropping the question.
+function chLiveNoteHtml(c, env) {
+  const l = chLiveOf(c, env);
+  if (l.state === 'conflict') return chConflictHtml(c, env);
+  const parts = [];
+  if (l.settled && !l.observed) {
+    parts.push(`<p><b>Settled on evidence, ${esc(chDay(l.settled.on))}.</b> ${esc(l.settled.outcome || '')}</p>`);
+  }
+  if (l.gap && !l.observed) parts.push(`<p><b>Not proven yet:</b> ${esc(l.gap)}</p>`);
+  const mb = chRec(c).mailboxes;
+  if (mb && mb.length) {
+    parts.push(`<ul class="chmb">${mb.map((m) => `<li class="m-${esc(m.state)}"><b>${esc(m.address)}</b>
+      <span>${m.state === 'live' ? 'Live' : 'Not connected'}</span><small>${esc(m.detail || '')}</small></li>`).join('')}</ul>`);
+  }
+  return parts.length ? '<div class="chnote">' + parts.join('') + '</div>' : '';
+}
+
+// The not-current and the not-a-channel, said once and quietly.
 function chShelvedHtml(rows) {
   const list = chShelved(rows);
   if (!list.length) return '';
   return `<section class="chshelf">
     <h2>Not current</h2>
-    <ul>${list.map((c) => `<li><b>${esc(c.label)}</b>
-      <span class="chlife chlife-${esc(chLife(c))}">${esc(chLife(c))}</span>
+    <ul>${list.map((c) => `<li><b>${esc(c.label)}</b> ${chKindTag(chLife(c))}
       <small>${esc(chCut(c.lifecycleWhy || '', 150))}${c.lifecycleDecidedBy
-        ? ' ' + esc(c.lifecycleDecidedBy + ', ' + (c.lifecycleDecidedOn || '')) : ''}</small>
+        ? ' ' + esc(c.lifecycleDecidedBy + ', ' + chDay(c.lifecycleDecidedOn || '')) : ''}</small>
     </li>`).join('')}</ul>
   </section>`;
 }
 
-// The integrations, which are NOT channels: we pull from them, nothing is delivered
-// to us, they have no adapter, and they sit downstream in the lifecycle. Shown where
-// somebody looks to see whether anything is arriving, never counted as a channel.
-function chIntegrationsHtml(rows, runs) {
-  const list = rows.filter((c) => c.isIntegration);
-  if (!list.length) return '';
-  return `<section class="chshelf chints">
-    <h2>Integrations <small>we pull from these, they are not channels</small></h2>
-    <ul>${list.map((c) => `<li><b>${esc(c.label)}</b>
-      <span class="chstate ${chWord(c).cls}">${esc(chWord(c).word)}</span>
-      <small>${esc(chActivity(c, runs[c.channel]))}${c.ownerPerson ? ' \u00b7 ' + esc(c.ownerPerson) : ''}</small>
-    </li>`).join('')}</ul>
+function chDownstreamHtml(rows, downstream) {
+  const ints = rows.filter((c) => c.isIntegration);
+  const ds = downstream ? Object.entries(downstream).filter(([k]) => !k.startsWith('_')) : [];
+  if (!ints.length && !ds.length) return '';
+  return `<section class="chshelf chds">
+    <h2>Downstream <small>after qualification. Not channels, never counted</small></h2>
+    <ul>${ds.map(([, d]) => `<li><b>${esc(d.label)}</b> <small>${esc(d.why || '')}</small></li>`).join('')}
+    ${ints.map((c) => `<li><b>${esc(c.label)}</b> <small>Integration: we pull from it${c.ownerPerson ? ' · ' + esc(c.ownerPerson) : ''}</small></li>`).join('')}</ul>
   </section>`;
 }
 
-// ======================================================= CHANNEL A, the board ==
-// Optimised for operational scanning: state, progress, credential, owner and next
-// action on one row each, on one axis, so whoever is running the connection work
-// reads the whole picture without opening anything.
-function chViewA(rows, runs) {
-  const order = ['Failed', 'Receiving', 'Ready', 'By hand', 'Not set up'];
-  const sorted = [...chActive(rows)].sort((a, b) =>
-    order.indexOf(chWord(a).word) - order.indexOf(chWord(b).word) || a.label.localeCompare(b.label));
-  return `
-    <div class="tablewrap"><table class="cartable chtable">
-      <thead><tr><th>Channel</th><th>State</th><th>Progress</th><th>Credential</th>
-        <th>Owner</th><th>Next action</th></tr></thead>
-      <tbody>
-      ${sorted.map((c) => `
-        <tr class="row" tabindex="0" style="cursor:pointer" onclick="location.hash='#/channels/${esc(c.channel)}'">
-          <td><b>${esc(c.label)}</b></td>
-          <td><span class="chstate ${chWord(c).cls}">${esc(chWord(c).word)}</span></td>
-          <td>${chPips(c)}</td>
-          <td class="chcred">${esc((c.missingSettings || []).join(', ')
-            || (c.settings || []).map((x) => x.name).join(', ') || '-')}</td>
-          <td>${chWho(c) ? '<b>' + esc(chWho(c)) + '</b>' : '<span class="c-gap">-</span>'}</td>
-          <td class="chnext">${chNext(c)
-            ? '<span title="' + esc(chNext(c)) + '">' + esc(chCut(chNext(c), 86)) + '</span>'
-            : '<span class="c-gap">-</span>'}</td>
-        </tr>`).join('')}
-      </tbody>
-    </table></div>`;
+// THE FRAME. The existing sea (radial glow over the vertical deepening, the same
+// tokens the page uses) plus a uniform rim drawn BELOW the frame. Depth belongs to the
+// frame: the rim is identical along its whole length and no data sits on it.
+function chDeck(inner, cls) {
+  return `<section class="chdeck ${cls || ''}">
+    <svg class="chrim" viewBox="0 0 100 10" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M2 0 H98 Q100 0 100 2 V6 Q100 10 96 10 H4 Q0 10 0 6 V2 Q0 0 2 0 Z"/></svg>
+    ${inner}</section>`;
 }
 
-// Four pips, one per step. A blocked step is marked, never coloured as though it
-// were progress, and a failed check is the one red thing on this screen.
-function chPips(c) {
-  return `<span class="chpips" title="${esc(chSteps(c).map((x) => x.label + ': ' + x.state).join(' \u00b7 '))}">${
-    chSteps(c).map((x) => '<i class="p-' + x.state + '"></i>').join('')}<em>${chDone(c)}/4</em></span>`;
+// THE TWELVE, as twelve equal slots. One slot per channel, never scaled, never tilted:
+// a count is read by counting.
+function chSlots(rows, env) {
+  const act = [...chActive(rows)].sort((a, b) => CH_ORDER.indexOf(chKind(a, env)) - CH_ORDER.indexOf(chKind(b, env))
+    || a.label.localeCompare(b.label));
+  const w = 100 / Math.max(act.length, 1);
+  return `<svg class="chslots" viewBox="0 0 100 6" preserveAspectRatio="none" role="img"
+    aria-label="${esc(act.length + ' active channels by state')}">${act.map((c, i) =>
+      `<rect class="${CH_KINDS[chKind(c, env)].cls}" x="${(i * w + 0.25).toFixed(3)}" y="0" width="${(w - 0.5).toFixed(3)}" height="6"
+        style="--i:${i}"><title>${esc(c.label + ': ' + CH_KINDS[chKind(c, env)].word)}</title></rect>`).join('')}</svg>`;
 }
 
-// ============================================= CHANNEL B, the command centre ==
-// Optimised for health and progression: grouped by how far along a channel is, each
-// one showing its four steps as a track, the contextual detail under it, and the
-// destination it opens.
-function chViewB(rows, runs) {
-  const act = chActive(rows);
-  const groups = [
-    ['Receiving', 'Live, and proved by a real message', (c) => c.state === 'CONNECTED'],
-    ['Working by hand', 'No connection to make. This is the design', (c) => c.direction === 'manual'],
-    ['Ready to switch on', 'Configured here, waiting only for the switch', (c) => c.state === 'CONFIGURED'],
-    ['Waiting on an answer', 'Somebody outside has to answer, and the answer may be no', chOutside],
-    ['Steps known, not done', 'Nothing is blocking it. Nobody has done the steps yet', () => true],
-  ];
-  const seen = new Set();
-  const out = [];
-  for (const [title, why, test] of groups) {
-    const list = act.filter((c) => !seen.has(c.channel) && test(c));
-    for (const c of list) seen.add(c.channel);
-    if (!list.length) continue;
-    out.push(`<section class="chc">
-      <h2>${esc(title)}<span class="chc-n">${list.length}</span><small>${esc(why)}</small></h2>
-      <div class="chc-grid">${list.map(chCard).join('')}</div>
-    </section>`);
-  }
-  return out.join('');
+function chFigures(rows, env) {
+  const { total, n } = chCount(rows, env);
+  const fig = (k) => `<div class="chfig"><small>${esc(CH_KINDS[k].word)}</small><b>${n[k] || 0}</b><i class="sw ${CH_KINDS[k].cls}"></i></div>`;
+  return `<div class="chfigs">
+    <div class="chfig chfig-total"><small>Active channels</small><b>${total}</b></div>
+    ${['live', 'configured', 'owner', 'provider', 'hand'].map(fig).join('')}${n.none ? fig('none') : ''}</div>`;
 }
 
-function chCard(c) {
-  const next = chNext(c);
-  const who = chWho(c);
-  return `<article class="chcard" tabindex="0" onclick="location.hash='#/channels/${esc(c.channel)}'">
-    <header><b>${esc(c.label)}</b>
-      <span class="chstate ${chWord(c).cls}">${esc(chWord(c).word)}</span></header>
-    <div class="chtrack">${chSteps(c).map((x) =>
-      '<span class="t-' + x.state + '"><i></i><u>' + esc(x.label) + '</u></span>').join('')}</div>
-    ${who || next ? `<p class="chcard-n">${who ? '<b>' + esc(who) + '</b>' : ''}${
-      next ? '<span title="' + esc(next) + '">' + esc(chCut(next, 110)) + '</span>' : ''}</p>` : ''}
-    <footer>Open ${esc(c.label)} &rarr;</footer>
+// ================================================ CHANNEL A, who acts next ==
+// The OPERATIONAL model: the screen is a work queue. One lane per person who has to
+// act next, their channels as cards with the one action, the input it needs, the
+// blocker if any, where the channel delivers, and the evidence ladder underneath.
+// Answers "who do I chase today, and for what".
+function chEvRow(c, env) {
+  return `<ol class="chev">${chEvidence(c, env).map((e) =>
+    `<li class="e-${e.state}" title="${esc(e.label + ': ' + e.word + (e.seen ? ', seen ' + chDay(e.seen) : '') + (e.src ? ' - ' + e.src : ''))}">
+      <i></i><span>${esc(e.label)}</span><em>${esc(e.word)}${e.seen ? ' · ' + esc(chDay(e.seen)) : ''}</em></li>`).join('')}</ol>`;
+}
+
+function chCardA(c, env) {
+  const k = chKind(c, env);
+  const a = chAction(c);
+  return `<article class="chq" style="--i:0">
+    <header><b>${esc(c.label)}</b>${chKindTag(k)}</header>
+    ${a ? `<p class="chq-do">${esc(a.action)}</p>${a.input ? `<p class="chq-in"><span>Input</span>${esc(a.input)}</p>` : ''}` : ''}
+    ${chBlockerHtml(chBlocker(c))}
+    ${chLiveNoteHtml(c, env)}
+    ${chGateHtml(c)}
+    ${chEvRow(c, env)}
+    <p class="chq-to"><span>Delivers to</span>${esc(chRec(c).destination || '-')}</p>
+    <footer><a href="#/channels/${esc(c.channel)}">Settings and check &rarr;</a></footer>
   </article>`;
 }
 
+function chViewA(rows, env) {
+  const act = chActive(rows);
+  const lanes = new Map();
+  // the lane is whoever acts NEXT; a blocker nobody holds is its own lane, and a channel
+  // with no action and no blocker (by hand, or live with nothing to do) asks nobody
+  for (const c of act) {
+    const a = chAction(c);
+    const b = chBlocker(c);
+    const key = a ? a.owner || '~nobody' : b ? b.owner || '~nobody' : '~none';
+    if (!lanes.has(key)) lanes.set(key, []);
+    lanes.get(key).push(c);
+  }
+  // people first, busiest first; then the decision nobody holds; then nothing to do, last
+  const rank = (k) => (k === '~none' ? 2 : k === '~nobody' ? 1 : 0);
+  const keys = [...lanes.keys()].sort((x, y) => rank(x) - rank(y) || lanes.get(y).length - lanes.get(x).length || x.localeCompare(y));
+  const title = (k) => k === '~none' ? 'Nobody has to act' : k === '~nobody' ? 'Needs a decision, nobody named' : k;
+  return chDeck(`<div class="chdeck-in">${chFigures(rows, env)}${chSlots(rows, env)}</div>`, 'chdeck-a')
+    + keys.map((k, li) => `<section class="chlane" style="--l:${li}">
+      <h2>${esc(title(k))}<span class="chc-n">${lanes.get(k).length}</span></h2>
+      <div class="chlane-grid">${lanes.get(k).sort((a, b) => a.label.localeCompare(b.label)).map((c) => chCardA(c, env)).join('')}</div>
+    </section>`).join('');
+}
+
+// ============================================== CHANNEL B, what is proven ==
+// The EVIDENCE model: the screen is a ledger. Every channel is a row that travels from
+// source to destination through the four proofs, left to right, each cell carrying
+// the date it was seen. Select a row and the inspector holds the blocker, the next
+// action and the sources. Answers "what do we actually know, and how".
+let CH_PICK = null;
+
+function chFlow() {
+  // the lifecycle as decided 02.10. An illustration with no values, so it may have depth.
+  const steps = [['Channels', 1], ['Intake', 1], ['Qualification', 1], ['apply.novikontas.org', 0], ['Payment', 0], ['SIS', 0]];
+  return `<ol class="chflow" aria-label="Where a channel sits in the lifecycle">${steps.map(([s, ours]) =>
+    `<li class="${ours ? 'ours' : 'down'}">${esc(s)}</li>`).join('')}</ol>`;
+}
+
+function chViewB(rows, env) {
+  const act = [...chActive(rows)].sort((a, b) => CH_ORDER.indexOf(chKind(a, env)) - CH_ORDER.indexOf(chKind(b, env))
+    || a.label.localeCompare(b.label));
+  if (!CH_PICK || !act.some((c) => c.channel === CH_PICK)) {
+    // open on the most open question: a conflict, then a proof with a stated gap, then a blocker
+    const first = act.find((c) => chLiveOf(c, env).state === 'conflict')
+      || act.find((c) => chLiveOf(c, env).gap) || act.find((c) => chBlocker(c)) || act[0];
+    CH_PICK = first ? first.channel : null;
+  }
+  const cols = ['Access', 'Code deployed', 'Production configured', 'Live verified'];
+  const tot = (key) => act.filter((c) => chEvidence(c, env).find((e) => e.key === key).state === 'yes').length;
+  const cell = (e, j) => `<td class="chcell e-${e.state}" data-label="${esc(e.label)}" style="--j:${j}"
+      title="${esc((e.note || '') + (e.src ? ' - ' + e.src : ''))}"><i></i><span>${esc(e.word)}</span>${e.seen
+        ? '<small>' + (e.observed ? 'now' : 'seen ' + esc(chDay(e.seen))) + '</small>' : ''}</td>`;
+  const sel = act.find((c) => c.channel === CH_PICK);
+  return chDeck(`<div class="chdeck-in">${chFlow()}${chFigures(rows, env)}</div>`, 'chdeck-b')
+    + `<div class="chledger">
+    <div class="tablewrap"><table class="cartable chmx">
+      <thead><tr><th>Channel</th><th class="chloc-h">${esc(env && env.isProduction ? 'Production now' : 'This machine')}</th>${cols.map((h) => '<th>' + esc(h) + '</th>').join('')}<th>State</th></tr></thead>
+      <tbody>${act.map((c) => `<tr class="row${c.channel === CH_PICK ? ' on' : ''}" tabindex="0"
+          onclick="chPick('${esc(c.channel)}')" onkeydown="if(event.key==='Enter')chPick('${esc(c.channel)}')">
+        <th scope="row"><b>${esc(c.label)}</b></th>
+        <td class="chloc" data-label="This machine">${esc(chLocal(c, env).word)}</td>
+        ${chEvidence(c, env).map(cell).join('')}
+        <td data-label="State">${chKindTag(chKind(c, env))}</td></tr>`).join('')}</tbody>
+      <tfoot><tr><th>Proven</th><td class="chloc">local, not counted</td>
+        ${['access', 'deployed', 'prod', 'live'].map((k) => `<td><b>${tot(k)}</b> of ${act.length}</td>`).join('')}<td></td></tr></tfoot>
+    </table></div>
+    <aside class="chinsp" aria-live="polite">${sel ? chInspector(sel, env) : ''}</aside>
+  </div>`;
+}
+
+function chInspector(c, env) {
+  const a = chAction(c);
+  return `<div class="chinsp-in">
+    <h2>${esc(c.label)} ${chKindTag(chKind(c, env))}</h2>
+    <p class="chq-to"><span>Delivers to</span>${esc(chRec(c).destination || '-')}</p>
+    ${chLiveNoteHtml(c, env)}
+    ${chBlockerHtml(chBlocker(c)) || '<p class="c-ev">No blocker.</p>'}
+    ${a ? `<dl class="chblk chnext"><div><dt>Next</dt><dd>${esc(a.action)}</dd></div>
+      <div><dt>Who</dt><dd>${a.owner ? esc(a.owner) : '<span class="c-gap">Nobody named</span>'}</dd></div>
+      ${a.input ? `<div><dt>Input</dt><dd>${esc(a.input)}</dd></div>` : ''}</dl>` : ''}
+    ${chGateHtml(c)}
+    <h3>Where each answer comes from</h3>
+    <ul class="chsrc">${chEvidence(c, env).map((e) => `<li><b>${esc(e.label)}</b> ${esc(e.word)}${
+      e.seen ? ', ' + (e.observed ? 'read now' : 'seen ' + esc(chDay(e.seen))) : ''}<small>${esc([e.note, e.src].filter(Boolean).join(' - '))}</small></li>`).join('')}
+      <li><b>${esc(chLocal(c, env).where)}</b> ${esc(chLocal(c, env).word)}<small>${env && env.isProduction
+        ? 'Settings present in production, read now.' : 'Local settings. They say nothing about production.'}</small></li></ul>
+    <a class="btn ghost sm" href="#/channels/${esc(c.channel)}">Settings and check &rarr;</a>
+  </div>`;
+}
+
+// Picking a row swaps the inspector in place. The ledger is not rebuilt, so its
+// arrival does not play again: motion plays once per visit.
+let CH_LAST = null;
+function chPick(id) {
+  CH_PICK = id;
+  const view = document.querySelector('.chv-b');
+  const c = CH_LAST && CH_LAST.rows.find((x) => x.channel === id);
+  if (!view || !c) return viewChannels();
+  view.querySelectorAll('.chmx tbody tr').forEach((tr) => tr.classList.toggle('on', tr.getAttribute('onclick').includes("'" + id + "'")));
+  const aside = view.querySelector('.chinsp');
+  aside.innerHTML = chInspector(c, CH_LAST.env);
+  aside.classList.remove('arrive'); void aside.offsetWidth; aside.classList.add('arrive');
+}
+
 // ------------------------------------------------------------ the A/B switch --
-// A REVIEW CONTROL, not product furniture. Two structures are built and neither is
-// chosen; this is how somebody tells them apart without a rebuild. It goes when C is
-// settled.
+// A REVIEW control, not product furniture. Two structures are built and neither is
+// chosen; this is how somebody tells them apart without a rebuild. It goes when one
+// is picked. ?chv=a or ?chv=b in the address opens one directly.
 function chVariant() {
-  try { return localStorage.getItem('chvariant') === 'b' ? 'b' : 'a'; } catch (e) { return 'a'; }
+  try {
+    const q = new URLSearchParams(location.search).get('chv');
+    if (q === 'a' || q === 'b') return q;
+    return localStorage.getItem('chvariant') === 'b' ? 'b' : 'a';
+  } catch (e) { return 'a'; }
 }
 function chSetVariant(v) {
   try { localStorage.setItem('chvariant', v); } catch (e) { /* private window: this turn only */ }
+  try {
+    const u = new URL(location.href);
+    if (u.searchParams.has('chv')) { u.searchParams.set('chv', v); history.replaceState(null, '', u); }
+  } catch (e) { /* no history API: the stored choice still works */ }
   viewChannels();
-}
-
-// The count, from the ACTIVE channels only. Never "14 of 15": that counted a dropped
-// channel, a parked one, and an integration that is not a channel.
-function chCount(act) {
-  if (!act.length) return '';
-  const live = act.filter((c) => c.state === 'CONNECTED').length;
-  const hand = act.filter((c) => c.direction === 'manual').length;
-  const blocked = act.filter(chOutside).length;
-  const bits = [act.length + ' channels'];
-  if (live) bits.push(live + ' receiving');
-  if (hand) bits.push(hand + ' by hand');
-  if (blocked) bits.push(blocked + ' waiting on an answer');
-  return '<p class="c-ev chcount">' + esc(bits.join(' \u00b7 ')) + '.</p>';
 }
 
 async function viewChannels(which) {
@@ -6087,24 +6400,25 @@ async function viewChannels(which) {
   if (which) return viewChannel(which);
 
   const d = await api('/api/admin/channels');
-  const runs = d.runs || {};
   const rows = d.channels || [];
+  const env = d.environment || null;
   const v = chVariant();
+  CH_LAST = { rows, env };
 
   $('#view').innerHTML = `
     <div class="chhead">
       <h1>Channels</h1>
       <div class="chab" role="group" aria-label="Which layout">
-        <button class="${v === 'a' ? 'on' : ''}" onclick="chSetVariant('a')">A &middot; Board</button>
-        <button class="${v === 'b' ? 'on' : ''}" onclick="chSetVariant('b')">B &middot; Command centre</button>
+        <button class="${v === 'a' ? 'on' : ''}" onclick="chSetVariant('a')">A &middot; Who acts next</button>
+        <button class="${v === 'b' ? 'on' : ''}" onclick="chSetVariant('b')">B &middot; What is proven</button>
       </div>
     </div>
-    ${chEnvLine(d.environment)}
-    ${chCount(chActive(rows))}
-    ${v === 'b' ? chViewB(rows, runs) : chViewA(rows, runs)}
-    ${chIntegrationsHtml(rows, runs)}
+    ${chEnvLine(env, d.production)}
+    <div class="chv chv-${v}">${v === 'b' ? chViewB(rows, env) : chViewA(rows, env)}</div>
+    ${chDownstreamHtml(rows, d.downstream)}
     ${chShelvedHtml(rows)}`;
 }
+// ================================================== end of the channel model ==
 
 
 async function viewChannel(id) {

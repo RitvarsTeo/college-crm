@@ -155,3 +155,55 @@ and it changes what four channels claim. For Ritvars:
    can say no.
 3. **A third kind, `approval`** - the steps are known AND an outsider can still refuse. More
    honest than either, and it is a change to the vocabulary, so it is a decision not a fix.
+
+## SESSION 3 - reconciled again, same day (02.10.2026, branch `ui/2026-10-02-channels-s3`)
+
+Re-read against the PIN, KB 08, the backlog, this document, `channels.json`, the channel code
+and the owner's latest decisions (recorded in memory on 02.10, never in this repository until
+now). **The universe is still 12.** What changed:
+
+| Channel | Was | Now | Source |
+|---|---|---|---|
+| LinkedIn | Tetiana; "developer app, then approval" | **Ritvars**. Page Super Admin (Oksana, 02.10), developer app "Novikontas Intake" created and verified with the Page, Lead Sync API access **submitted 02.10**. **Blocked by an external provider**: LinkedIn decides, and can refuse. Still missing: Campaign Manager account manager role, asked through Oksana (Natalija grants) | Ritvars, 02.10 |
+| TikTok | Tetiana | **Oksana** gives access: the business account is on her email. TikTok's app approval is AHEAD, not blocking yet | Ritvars, 02.10 |
+| Email | "Twenty minutes of Marina's time" (option A) | **Option B**: Ritvars verifies the link on production, then Marina authorises edu@ through the 48-hour link. Option A cannot work: domain-wide delegation needs Super Admin, which Marina does not have | decided 01.10; Marina's attempt, 02.10 |
+| Meta four | blocker = APP REVIEW | today's step is **Oksana's access** ("šonedēļ", 30.09). APP REVIEW is recorded as a gate AHEAD, not today's blocker. The work / question / approval call above is **still open** | Oksana 30.09 |
+| Phone | production configured, not live verified | **Unchanged and unresolved.** Both records are on the screen side by side, with the check | see the PBX section in BACKLOG |
+
+**Where this lives now.** `config/channels.json -> channels.<id>.record` holds, per active
+channel: access, deployed, productionConfigured, liveVerified, nextAction, blocker, gateAhead,
+destination. Every state carries the date it was seen and its source. A blocker carries its
+dependency, owner, action and side (internal / external) and whether it can be refused. A missing
+local credential is never a blocker. `_production` records the proven running commit; `downstream`
+records apply.novikontas.org, which is never counted.
+
+**On production the screen reads live verification from real provider rows, and that reading
+outranks the record**, so the PBX question settles itself the first time the screen is opened
+signed in on production. Locally it never does.
+
+Counts from the record: Live verified 0 · Configured 2 (Mailchimp, Phone) · Needs owner action 8 ·
+Blocked by external provider 1 (LinkedIn) · Working by hand 1 (In person) = 12. Parked 1, Dropped 1.
+
+### Session 3 correction, later on 02.10: production already had real provider rows
+
+The QA session pointed to the production backup `_backups/2026-10-02T01-17-43Z` (status VERIFIED)
+and `docs/INTAKE_CONTROL_2026-10-02.md` (branch `control/2026-10-02-s1`, `1a09a87`). **Read
+again here, counts only:** `inbound` holds **44 rows with source=provider**: phone 4 (calls of
+30.09), gmail 40 (4 dated 30.09, 36 dated 01.10), all still state `new`. `sync_state`: `pbx_until`
+ran 01.10 05:27Z; `gmail_oauth` connected **edu@novikontas.org** at 01.10 13:27Z; last Gmail poll
+01.10 17:00Z. `source='provider'` is written only in live mode.
+
+So **everything above that says "live verified: nothing" and "0 from a real provider" was stale
+from 01.10 05:27Z**, and so was this session's first record (`80de328`). Corrected:
+
+- **Phone: Live verified** (daily pull). "PBX ir live" was right. **Gap still open:** continuity
+  after 01.10 is not proven by one backup.
+- **Email: Live verified for edu@** (option B). No other mailbox is connected.
+- Every other channel: 0 provider rows, now cited to the 02.10 backup instead of the 30.09 Pin.
+- Count: **2 live verified**, 1 configured (Mailchimp), 7 need owner action, 1 blocked by an
+  external provider (LinkedIn), 1 by hand = 12.
+
+Not taken from the control table: it files the Meta four and TikTok as "Blocked by external
+provider"; here today's step is the access Oksana gives, and review is a gate ahead, not yet
+submitted. Its owners for LinkedIn / TikTok (Tetiana) predate Ritvars's 02.10 changes; for him
+to confirm.
