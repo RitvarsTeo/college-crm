@@ -287,3 +287,7 @@ Not in it: cards 2c (not started), the call pop-up (S3 building to the finish li
 
 MAIN `801bef2` + CHANNELS `dbb4546` (pop-up to his pick, poll gate, pull writes call events, Web Push off until VAPID keys) + CONTROL `956013c`. Per-minute cron NOT in (all crons daily). 1070/1070 worktree + clean checkout. Release build seen: Home, Today, Journey light, Home + Today dark. Backup before `2026-10-04T19-25-55Z` VERIFIED. `dpl_CMx11wFuYa8R3xR6vptaYv7UWPTx`: byte-identical, 77/77 files, 8 private 401, 0 leaks. Backup after `2026-10-04T19-27-22Z`: 26 tables, `call_events` and `push_subscriptions` created, 192 people unchanged. Pushed.
 Ritvars's "wait for MAIN's dark mode" arrived after the deploy had finished; dark-mode match = patch 5, same GO.
+
+## 04.10 - FIFTH PATCH LIVE: `05ba51f` (dark cards match light), pushed
+
+MAIN `ac4c207` (0021888 dark cards: solid #133a60, 3px #53a7db top, amber Needs-you; plus the <760px Conversion padding fix). Only change vs patch 4: 17 lines of CSS + a test. 1071/1071. Dark Home seen on the release build. Backup `2026-10-04T19-29-00Z` VERIFIED. `dpl_BoSkMnWhNyDrrX8utaRaGhmAFoLH`: byte-identical, 77/77, 8 private 401, 0 leaks. Pushed to origin.
