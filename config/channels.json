@@ -59,7 +59,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "8405731",
+          "commit": "3f3e917",
           "detail": null
         },
         "productionConfigured": {
@@ -194,7 +194,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "8405731",
+          "commit": "3f3e917",
           "detail": "The option-B link (/api/admin/gmail/link) is in the running commit."
         },
         "productionConfigured": {
@@ -284,7 +284,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "8405731",
+          "commit": "3f3e917",
           "detail": null
         },
         "productionConfigured": {
@@ -372,7 +372,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "8405731",
+          "commit": "3f3e917",
           "detail": null
         },
         "productionConfigured": {
@@ -460,7 +460,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "8405731",
+          "commit": "3f3e917",
           "detail": null
         },
         "productionConfigured": {
@@ -552,7 +552,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "8405731",
+          "commit": "3f3e917",
           "detail": null
         },
         "productionConfigured": {
@@ -633,7 +633,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "8405731",
+          "commit": "3f3e917",
           "detail": null
         },
         "productionConfigured": {
@@ -767,7 +767,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "8405731",
+          "commit": "3f3e917",
           "detail": null
         },
         "productionConfigured": {
@@ -805,7 +805,14 @@
           "input": null
         },
         "blocker": null,
-        "destination": "A call is logged on the caller's profile. Unknown callers land in the Inbox; numbers archived as Spam, Supplier or Internal are filtered with the reason kept."
+        "destination": "A call is logged on the caller's profile. Unknown callers land in the Inbox; numbers archived as Spam, Supplier or Internal are filtered with the reason kept.",
+        "callPopUp": {
+          "state": "built, not deployed",
+          "seen": "2026-10-04",
+          "how": "Owner pick 04.10: Intake on screen -> the caller page opens for whoever answered (a ring is a corner card); not on screen -> a desktop notification. Events come from the push (POST /api/inbound/phone-event) and from the TeleGroup pull, which writes answered/ended events for every call it stores. The app polls /api/calls/events every 3 s only while the phone channel is on and has a source.",
+          "open": "Ringing reaches the pop-up only with the push. The pull gives answered/ended: within a minute once the pull runs every minute, which needs the paid Vercel plan (the account move).",
+          "source": "Q6, docs/INTAKE_CONTROL_2026-10-02.md"
+        }
       }
     },
     "agent": {
@@ -858,7 +865,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "8405731",
+          "commit": "3f3e917",
           "detail": null
         },
         "productionConfigured": {
@@ -925,7 +932,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "8405731",
+          "commit": "3f3e917",
           "detail": null
         },
         "productionConfigured": {
@@ -993,7 +1000,7 @@
         },
         "deployed": {
           "state": "partial",
-          "commit": "8405731",
+          "commit": "3f3e917",
           "detail": "The webhook receiver is deployed. The Lead Sync fetch that turns a notification into a name and email is NOT built."
         },
         "productionConfigured": {
@@ -1075,7 +1082,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "8405731",
+          "commit": "3f3e917",
           "detail": null
         },
         "productionConfigured": {
@@ -1153,9 +1160,9 @@
   "_lifecycle": "Added 02.10.2026. readiness says whether OUR SIDE is technically ready. lifecycle says whether the PRODUCT HAS THIS CHANNEL AT ALL, which is a decision and not an engineering fact. active = a channel we intend to connect. parked = decided, prepared, deliberately not connected yet; it is not work and nobody holds it. dropped = decided out of the product; the adapter may stay in the repository, the channel does not exist. Anything without this field is active. A screen MUST read lifecycle, never readiness, to decide whether a channel is current work.",
   "_record": "Added 02.10.2026 (Session 3, Channels). The reconciled state of every ACTIVE channel, each fact with the date it was seen and where. It exists because a local checkout has no secrets and no production rows, so the screen can never READ production from here: it must show what was last SEEN, and say when. Four states are kept apart and never inferred from each other: deployed (the code is in the running commit), productionConfigured (the settings are in Vercel Production), liveVerified (a row a real provider sent exists), and access (we hold what we need from the people outside). A blocker names its dependency, its owner, the action or input needed, and whether it is internal or external; local credentials being absent is NEVER a blocker. On production the screen reads live verification from real provider rows and ignores the recorded value; locally it never does.",
   "_production": {
-    "commit": "8405731",
+    "commit": "3f3e917",
     "provenOn": "2026-10-04",
-    "how": "deployed 04.10.2026 (third patch: type 3 + feedback email) by MASTER CONTROL with _crm-v1-lane-tools/deploy_verify.sh: live page byte-compared with the commit (+ its sign-in script). This record is the only change on top of 8405731",
+    "how": "deployed 04.10.2026 (fourth patch: cards 3, white tabs, phone channel) by MASTER CONTROL with _crm-v1-lane-tools/deploy_verify.sh: live page byte-compared with the commit (+ its sign-in script). This record is the only change on top of 3f3e917",
     "allAdaptersDeployed": true
   },
   "downstream": {

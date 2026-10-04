@@ -93,6 +93,12 @@ td{padding:8px;border-bottom:1px solid var(--rule2);vertical-align:top}
           filter, identity matching, and then the Inbox. Nothing is written straight into a table.</p>
         <div id="send"></div>
       </div>
+      <div class="card">
+        <h2>A phone call, as the phone system would push it</h2>
+        <p class="hint">Ringing, answered, ended: the same webhook path TeleGroup will use. Open Intake in
+          another tab to see the pop-up. Ended stores the call exactly as the daily pull does.</p>
+        <div id="callsim"></div>
+      </div>
     </div>
     <div>
       <div class="card">
@@ -209,6 +215,43 @@ async function drawSend() {
 
 function pick(key, value) { PICK[key] = value; drawSend(); }
 
+// ------------------------------------------------------- a pushed phone call (Q6) --
+let CALL = { person: 'new', callId: null, operator: 'Ritvars' };
+function drawCallSim(out = '') {
+  $('#callsim').innerHTML = `
+    <div class="row2">
+      <div><label class="f">Who is calling?</label>
+        <select onchange="CALL.person = this.value; CALL.callId = null; drawCallSim()">
+          <option value="new" ${CALL.person === 'new' ? 'selected' : ''}>A new number</option>
+          <option value="existing" ${CALL.person === 'existing' ? 'selected' : ''}>Somebody we already have</option>
+        </select></div>
+      <div><label class="f">Answered by (Intake name)</label>
+        <input value="${esc(CALL.operator)}" oninput="CALL.operator = this.value"></div>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" onclick="callEvent('ringing')">Ring</button>
+      <button class="btn" onclick="callEvent('answered')" ${CALL.callId ? '' : 'disabled'}>Answer</button>
+      <button class="btn" onclick="callEvent('ended')" ${CALL.callId ? '' : 'disabled'}>End</button>
+      <button class="btn ghost" onclick="callEvent('again')" ${CALL.last ? '' : 'disabled'}>Send the last event again (a retry)</button>
+    </div>
+    ${out}`;
+}
+async function callEvent(event) {
+  if (event === 'ringing') { CALL.callId = null; CALL.caller = null; }
+  const ev = event === 'again' ? CALL.last : event;
+  try {
+    const r = await post('/api/console/phone-event', { event: ev, person: CALL.person, callId: CALL.callId,
+      caller: CALL.caller, operator: CALL.operator || null });
+    CALL.callId = r.callId; CALL.caller = r.caller; CALL.last = ev;
+    const what = r.duplicate ? 'The same event again - stored once'
+      : r.call ? (r.call.inbox ? 'Ended: a new lead is waiting in the Inbox' : r.call.again ? 'Ended: joined the open Inbox item for this number'
+        : r.call.logged ? 'Ended: logged on the person' : r.call.seen ? 'Ended: the daily pull had already stored it' : 'Ended')
+      : 'Stored: ' + r.event;
+    drawCallSim(`<div class="out"><b>${esc(what)}</b><br><span class="mono">${esc(r.callId)}</span></div>`);
+    drawArrived();
+  } catch (e) { drawCallSim(`<div class="out bad">${esc(e.message)}</div>`); }
+}
+
 async function send() {
   const out = $('#sendOut');
   out.innerHTML = '<div class="out">Sending...</div>';
@@ -317,6 +360,7 @@ async function drawArrived() {
 (async () => {
   await drawMode();
   await drawSend();
+  drawCallSim();
   await drawData();
   await drawConns();
   await drawArrived();

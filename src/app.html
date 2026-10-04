@@ -1530,6 +1530,26 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .chk.k-owner::before{background:var(--k-owner)}
   html.ui-c .chk.k-prov::before{background:transparent;box-shadow:inset 0 0 0 2px var(--k-owner)}
   html.ui-c .chk.k-hand::before{background:var(--k-hand)}
+  /* ------------------------------------------------ THE CALL POP-UP (Q6) -- */
+  /* B: a corner card above everything; A: a slim line saying why the screen moved. The
+     only motion is the arrival, once; the dot is still. Off for reduced motion. */
+  #callpop .cp-card{position:fixed;right:16px;bottom:16px;z-index:300;width:330px;max-width:calc(100vw - 32px);
+    background:var(--card,#fff);color:var(--ink);border:1px solid var(--rule);border-radius:14px;padding:12px 14px 12px;
+    box-shadow:0 14px 40px rgba(3,12,26,.22);display:grid;gap:7px;animation:cp-in .45s cubic-bezier(.22,.9,.3,1) backwards}
+  #callpop header{display:flex;align-items:center;gap:7px}
+  #callpop a,#callpop a:hover{text-decoration:none}   /* the owner, 04.10: no underlines */
+  #callpop .cp-dot{width:9px;height:9px;border-radius:50%;background:#29a8df;flex:0 0 auto}
+  #callpop .cp-x{margin-left:auto;appearance:none;border:0;background:transparent;color:var(--t3);font-size:18px;line-height:1;cursor:pointer;padding:2px 6px}
+  #callpop .cp-name{font-size:18px;line-height:1.2}
+  #callpop .cp-tag{justify-self:start;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;border:1px solid var(--rule);color:var(--t2)}
+  #callpop .cp-tag.new{border-color:#E0A526}
+  #callpop dl{margin:0;display:grid;gap:5px;font-size:12px}
+  #callpop dl div{display:grid;grid-template-columns:5.6em minmax(0,1fr);gap:8px}
+  #callpop dt{color:var(--t4);font-size:10px;letter-spacing:.05em;text-transform:uppercase;padding-top:2px}
+  #callpop dd{margin:0;color:var(--t2);overflow-wrap:anywhere}
+  #callpop footer{display:flex;align-items:center;gap:8px;margin-top:3px}
+  @keyframes cp-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  @media(prefers-reduced-motion:reduce){#callpop .cp-card{animation:none}}
   /* Admissions second axis: dormant or declined. Two choices, each saying what it means,
      because "cold" and "reject" are Admissions own words and not everyone's. */
   html.ui-c .cltags{display:grid;gap:7px;margin-top:2px}
@@ -6961,6 +6981,186 @@ function fbZoom(id) {
   document.body.appendChild(box);
 }
 
+// ===================================================== THE CALL POP-UP (Q6) ==
+// 04.10.2026, first said 30.09. When the phone rings, whoever answers sees who is calling and is
+// one click from the comment thread on the person page. Call events reach Intake by push from the
+// phone system, or by the TeleGroup pull; the open, signed-in app asks /api/calls/events for the
+// ones newer than the last it saw (our database, never TeleGroup).
+//
+// DECIDED by the owner 04.10, after seeing both live: "Corner card without the underlines pls, if
+// no app is open. If app is open, than to the page. BUT i mean by open if its directly on the
+// desktop, not somewhere in background." So:
+//   Intake ON SCREEN (the visible tab of a focused window)
+//     - the colleague who answered: the caller's page opens
+//     - a ring nobody has answered yet, or a caller with no page: the corner card
+//   Intake NOT on screen (minimised, a background tab, a window behind another)
+//     - a desktop notification in the corner of the screen; clicking it opens the page
+//
+// NEW EVENTS ONLY. The first ask after the app opens returns the newest id and no events, so a load
+// or a reload pops nothing. One call pops once. The app asks every 3 s only while the server says
+// calls can arrive at all; otherwise it looks again every 5 minutes.
+const CP_EVERY_MS = 3000;
+const CP_IDLE_MS = 5 * 60 * 1000;
+let CP_TIMER = null;
+let CP_LAST = null;
+let CP_ENABLED = false;
+const CP_SHOWN = new Set();
+
+function callPopStart() {
+  if (CP_TIMER) return;
+  cpTick();
+}
+
+function cpSchedule() {
+  clearTimeout(CP_TIMER);
+  CP_TIMER = setTimeout(cpTick, CP_ENABLED ? CP_EVERY_MS : CP_IDLE_MS);
+}
+
+async function cpTick() {
+  let d = null;
+  try {
+    // not api(): a poll every few seconds must not flash the busy bar or throw the login up
+    const q = CP_LAST === null ? '' : '?after=' + encodeURIComponent(CP_LAST);
+    const r = await fetch('/api/calls/events' + q, { headers: { 'x-acting-as': ACTOR } });
+    if (r.ok) d = await r.json();
+  } catch (e) { d = null; }
+  if (d) {
+    const was = CP_ENABLED;
+    CP_ENABLED = Boolean(d.enabled);
+    if (CP_ENABLED && !was) cpAskOnce();
+    const baseline = CP_LAST === null;
+    CP_LAST = d.last;
+    if (!baseline) for (const ev of d.events || []) cpHandle(ev);
+  }
+  cpSchedule();
+}
+
+// Is Intake on this person's screen right now? Visible AND the window has focus: a tab that is
+// shown but behind another window does not count (the owner: "directly on the desktop").
+function cpOnScreen() {
+  try { return document.visibilityState === 'visible' && document.hasFocus(); } catch (e) { return false; }
+}
+
+// What one event does. Returns what it did, so it can be tested on its own.
+function cpHandle(ev) {
+  const box = document.querySelector('#callpop');
+  const open = box && box.dataset.call;
+  if (ev.taken) {                       // a colleague answered it: their call, not ours
+    if (open === ev.callId) cpClose();
+    return 'closed';
+  }
+  if (ev.event === 'ringing') {
+    if (CP_SHOWN.has(ev.callId)) return 'already';
+    CP_SHOWN.add(ev.callId);
+    return cpShow(ev);
+  }
+  if (ev.event === 'answered' && (ev.forYou || !CP_SHOWN.has(ev.callId))) {
+    const first = !CP_SHOWN.has(ev.callId);
+    CP_SHOWN.add(ev.callId);
+    return cpShow({ ...ev, answered: true }, { notifyAgain: first });
+  }
+  return 'ignored';                     // "ended", or an answer that is not ours to act on
+}
+
+const cpWho = (w) => w.kind === 'person' ? (w.name || 'A person in Intake')
+  : w.kind === 'lead' ? (w.name || 'A lead waiting in the Inbox')
+  : 'New caller' + (w.last4 ? ' ···' + w.last4 : '');
+const cpWhere = (w) => w.kind === 'person' ? '#/person/' + encodeURIComponent(w.id) : w.kind === 'lead' ? '#/inbox' : null;
+const cpTag = (w) => w.kind === 'person' ? 'Existing' + (w.status ? ' · ' + w.status : '') : 'New';
+
+function cpShow(call, { notifyAgain = true } = {}) {
+  const w = call.who || {};
+  const href = cpWhere(w);
+  if (!cpOnScreen()) {
+    if (notifyAgain) cpNotify(call);
+    return 'notified';
+  }
+  if (call.forYou && href) {            // on screen, and you answered: the page itself
+    cpClose();
+    if (location.hash !== href) location.hash = href;
+    return 'page';
+  }
+  let box = document.querySelector('#callpop');
+  if (!box) { box = document.createElement('div'); box.id = 'callpop'; document.body.appendChild(box); }
+  box.dataset.call = call.callId || '';
+  box.innerHTML = cpCardHtml(call);
+  return 'card';
+}
+
+// The card: name, new or existing, last note, next step, Open. Nothing more (KB 08 P5). A missing
+// note or step is left out, not announced. No underlines.
+function cpCardHtml(call) {
+  const w = call.who || {};
+  const href = cpWhere(w);
+  return `<div class="cp-card" role="dialog" aria-live="assertive" aria-label="Incoming call">
+    <header><span class="cp-dot" aria-hidden="true"></span><b class="cp-name">${esc(cpWho(w))}</b>
+      <button class="cp-x" onclick="cpClose()" aria-label="Close">&times;</button></header>
+    <span class="cp-tag ${w.isNew ? 'new' : 'old'}">${esc(cpTag(w))}</span>
+    ${w.lastNote || w.nextStep ? `<dl>
+      ${w.lastNote ? `<div><dt>Last note</dt><dd>${esc(w.lastNote)}</dd></div>` : ''}
+      ${w.nextStep ? `<div><dt>Next step</dt><dd>${esc(w.nextStep)}${w.nextStepAt ? ' · ' + esc(fmtDate(w.nextStepAt)) : ''}</dd></div>` : ''}
+    </dl>` : ''}
+    ${href ? `<footer><a class="btn sm" href="${href}" onclick="cpClose()">Open</a></footer>` : ''}
+  </div>`;
+}
+function cpClose() { const box = document.querySelector('#callpop'); if (box) { box.innerHTML = ''; box.dataset.call = ''; } }
+
+// The text of the desktop notification: the same four things as the card.
+function cpNoteText(call) {
+  const w = call.who || {};
+  const lines = [cpTag(w)];
+  if (w.lastNote) lines.push('Last note: ' + w.lastNote);
+  if (w.nextStep) lines.push('Next step: ' + w.nextStep);
+  return { title: cpWho(w), body: lines.join('\n') };
+}
+
+// A desktop notification in the corner of the screen. Clicking it brings Intake forward on the
+// caller. Shown by the service worker when there is one (it survives the tab being in the
+// background), otherwise by the page.
+function cpNotify(call) {
+  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return false;
+  const t = cpNoteText(call);
+  const href = cpWhere(call.who || {});
+  const opts = { body: t.body, tag: 'call-' + (call.callId || ''), requireInteraction: true,
+    icon: '/assets/icon-192.png', data: { href: href || '#/inbox' } };
+  try {
+    const n = new Notification(t.title, opts);
+    n.onclick = () => { try { window.focus(); } catch (e) { /* nothing to focus */ } if (href) location.hash = href; n.close(); };
+    return true;
+  } catch (e) { return false; }
+}
+
+// The browser asks each colleague ONCE whether Intake may show notifications. Browsers only allow
+// the question after a click, so it is asked on the first click once calls can arrive.
+function cpAskOnce() {
+  if (typeof Notification === 'undefined') return;
+  if (Notification.permission === 'granted') { cpPushSetup(); return; }
+  if (Notification.permission !== 'default') return;
+  const ask = async () => {
+    try { if ((await Notification.requestPermission()) === 'granted') cpPushSetup(); } catch (e) { /* older browser */ }
+  };
+  document.addEventListener('click', ask, { once: true });
+}
+
+// So the notification also reaches a colleague whose Intake is CLOSED: the browser subscribes to
+// Intake's push once (src/sw.js shows the notification). Only when the server has push keys.
+let CP_PUSH = false;
+async function cpPushSetup() {
+  if (CP_PUSH || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  CP_PUSH = true;
+  try {
+    const k = await fetch('/api/push/key', { headers: { 'x-acting-as': ACTOR } }).then((r) => r.json());
+    if (!k.publicKey) return;
+    const reg = await navigator.serviceWorker.register('/sw.js');
+    const b = k.publicKey.replace(/-/g, '+').replace(/_/g, '/');
+    const key = Uint8Array.from(atob(b + '='.repeat((4 - b.length % 4) % 4)), (c) => c.charCodeAt(0));
+    const sub = (await reg.pushManager.getSubscription())
+      || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
+    await fetch('/api/push/subscribe', { method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-acting-as': ACTOR }, body: JSON.stringify({ endpoint: sub.endpoint }) });
+  } catch (e) { CP_PUSH = false; }
+}
+
 (async () => {
   // WHO ARE YOU, BEFORE ANYTHING ELSE IS FETCHED.
   //
@@ -7027,6 +7227,7 @@ async function startShell() {
   // sign-in off, where who you are is still a setting.
   if (AUTH.user) ACTOR = AUTH.user.name;
   drawActorPicker();
+  callPopStart();   // Q6: whoever answers the phone sees who is calling
   await route();
 }
 </script>
