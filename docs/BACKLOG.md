@@ -14,6 +14,21 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 04.10.2026 - SESSION 3: Q3 website field names, Q6 call pop-up
+
+Branch `ui/2026-10-02-channels-s3`. **COMMITTED, NOT DEPLOYED.** Both for the NEXT patch (MASTER CONTROL).
+
+| Item | Status | Commit |
+|---|---|---|
+| Q3 Website adapter reads the live college forms' own field names; programme and "Source" answer stored | BUILT | `4bf9921` |
+| Website record: CONFIGURED 04.10 (secret + mode=test in Production, Tilda webhook Active, not ticked on a form) | BUILT | `4bf9921` |
+| Q6 Call pop-up: `GET /api/calls/now` for every signed-in user, TeleGroup read shared 8 s, caller matched to a person / waiting lead / new caller, shown to the operator who answered (else everyone) | BUILT | see below |
+| Q6 screens for review: **A** the person page opens, **B** a corner card (`?cp=a` / `?cp=b`, or the switch on the card) | BUILT | see below |
+| training@ mailbox | PARKED (next scope, 04.10) | - |
+| Does TeleGroup list a call while it RINGS, or only after hang-up? One test call to +371 23111114 (press 1) after deploy | SAID, open | - |
+| Every other adapter's `extracted` (programme, intent) still dropped in toIntake | SAID, reported to control | - |
+| Desktop notification when the app is not open (30.09 spec) | SAID, not in this build | - |
+
 ## 02.10.2026 - SESSION 3, Channels: reconciled again, A and B rebuilt
 
 Worktree `crm-channels-s3`, branch **`ui/2026-10-02-channels-s3`**, cut from `561bce2`.

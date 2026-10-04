@@ -274,7 +274,7 @@ test('Email is told per mailbox: edu@ live, nothing else connected', () => {
   assert.equal(s.kind(g, LOCAL), 'live');
   const out = s.insp(g, LOCAL);
   assert.match(out, /edu@novikontas\.org<\/b>\s*<span>Live/);
-  assert.match(out, /training@novikontas\.org<\/b>\s*<span>Not connected/);
+  assert.match(out, /training@novikontas\.org<\/b>\s*<span>Parked/, 'parked for the next scope, 04.10');
   assert.match(CFG.channels.gmail.record.liveVerified.detail, /40 rows from a real provider/);
 });
 

@@ -28,6 +28,7 @@ import * as sheets from './sheets.js';
 import * as snapshot from './snapshot.js';
 import { buildDemo } from './demo.js';
 import * as gate from './gate.js';
+import * as callpop from './callpop.js';
 import { verifyRequest, channelDef, channelIds, integrationIds, integrationDef, allChannelStatus, BadInbound,
          parseInboundBody, handshake, CHANNELS } from './inbound.js';
 import * as auth from './auth.js';
@@ -1044,6 +1045,21 @@ export const handle = async (req, res) => {
     if (req.method === 'GET' && p === '/api/admin/pbx/live') {
       if (!(await adminOf(req))) return refuseNotAdmin(res);
       return json(res, 200, await pbxLive());
+    }
+
+    // THE CALL POP-UP (Q6, 04.10.2026). Every signed-in user, not only admins: whoever answers
+    // the phone. The open app asks every ~10 s; the server reads TeleGroup (one read per 8 s,
+    // shared), never hands out the token or the caller's number, and answers only the calls
+    // this viewer should see (src/callpop.js). Without the token there is nothing to read.
+    if (req.method === 'GET' && p === '/api/calls/now') {
+      if (!process.env.PBX_API_TOKEN) return json(res, 200, { ok: true, available: false, calls: [] });
+      const viewer = await viewerOf(req, url);
+      const users = AUTH_ON
+        ? (await db.prepare('SELECT display_name FROM crm_users WHERE active = 1').all()).map((u) => u.display_name).filter(Boolean)
+        : USER_NAMES;
+      const live = await callpop.liveCalls();
+      return json(res, 200, { ok: live.ok, available: true, error: live.error || null,
+        calls: await callpop.popsFor(db, { calls: live.calls, viewer, users }) });
     }
 
     if (req.method === 'GET' && p === '/api/admin/sis/first-look') {
