@@ -220,8 +220,8 @@
           },
           {
             "address": "training@novikontas.org",
-            "state": "not_connected",
-            "detail": "Not authorised. Whether it should be is not recorded in this repository."
+            "state": "parked",
+            "detail": "Parked for the next scope (MASTER CONTROL, 04.10). Not to be connected now."
           }
         ]
       }
