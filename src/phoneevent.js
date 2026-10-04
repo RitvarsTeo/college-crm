@@ -21,6 +21,7 @@ import { BadInbound } from './inbound.js';
 import { storeCall } from './sync.js';
 import { QUEUES } from '../lib/pbx.js';
 import { fromRigaStamp } from '../lib/riga.js';
+import { knock } from './webpush.js';
 
 export const PHONE_EVENT_SECRET_ENV = 'PHONE_EVENT_SECRET';
 export const EVENTS = ['ringing', 'answered', 'ended'];
@@ -82,9 +83,11 @@ export async function receivePhoneEvent(db, raw, { mode = 'test', now = new Date
     if (!/UNIQUE|duplicate key|unique constraint/i.test(String(err && err.message))) throw err;
     return { ok: true, duplicate: true, event: ev.event, callId: ev.callId };
   }
+  // knock on the browsers that should hear about it (src/webpush.js); never fails the store
+  const pushed = await knock(db, { event: ev.event, operator: ev.operator });
   let call = null;
   if (ev.event === 'ended') call = await settleCall(db, ev, mode, at);
-  return { ok: true, stored: true, event: ev.event, callId: ev.callId, call };
+  return { ok: true, stored: true, event: ev.event, callId: ev.callId, call, pushed };
 }
 
 // The call, as the daily pull would have stored it: when it started ringing, whether anybody

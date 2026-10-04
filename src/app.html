@@ -7079,9 +7079,32 @@ function cpNotify(call) {
 // The browser asks each colleague ONCE whether Intake may show notifications. Browsers only allow
 // the question after a click, so it is asked on the first click once calls can arrive.
 function cpAskOnce() {
-  if (typeof Notification === 'undefined' || Notification.permission !== 'default') return;
-  const ask = () => { try { Notification.requestPermission(); } catch (e) { /* older browser */ } };
+  if (typeof Notification === 'undefined') return;
+  if (Notification.permission === 'granted') { cpPushSetup(); return; }
+  if (Notification.permission !== 'default') return;
+  const ask = async () => {
+    try { if ((await Notification.requestPermission()) === 'granted') cpPushSetup(); } catch (e) { /* older browser */ }
+  };
   document.addEventListener('click', ask, { once: true });
+}
+
+// So the notification also reaches a colleague whose Intake is CLOSED: the browser subscribes to
+// Intake's push once (src/sw.js shows the notification). Only when the server has push keys.
+let CP_PUSH = false;
+async function cpPushSetup() {
+  if (CP_PUSH || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  CP_PUSH = true;
+  try {
+    const k = await fetch('/api/push/key', { headers: { 'x-acting-as': ACTOR } }).then((r) => r.json());
+    if (!k.publicKey) return;
+    const reg = await navigator.serviceWorker.register('/sw.js');
+    const b = k.publicKey.replace(/-/g, '+').replace(/_/g, '/');
+    const key = Uint8Array.from(atob(b + '='.repeat((4 - b.length % 4) % 4)), (c) => c.charCodeAt(0));
+    const sub = (await reg.pushManager.getSubscription())
+      || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
+    await fetch('/api/push/subscribe', { method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-acting-as': ACTOR }, body: JSON.stringify({ endpoint: sub.endpoint }) });
+  } catch (e) { CP_PUSH = false; }
 }
 
 (async () => {

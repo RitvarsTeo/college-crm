@@ -353,6 +353,16 @@ CREATE TABLE IF NOT EXISTS call_events (
   UNIQUE (call_id, event)
 );
 
+-- WEB PUSH subscriptions (Q6, 04.10.2026): one row per colleague's browser that allowed Intake's
+-- call notifications. The endpoint is the push service's address for that browser; nothing else
+-- is kept, because the knock carries no payload. A gone endpoint (404/410) is deleted.
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  endpoint TEXT NOT NULL UNIQUE,
+  user_name TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
 -- The SIS applicant feed, one row per application (a person can apply to more than
 -- one programme; a person who has only registered has no application yet, stored
 -- as ''). The SIS resends a record whenever it changes and the latest version wins.

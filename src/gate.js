@@ -95,7 +95,7 @@ export function cookieHeader(ticket, { secure = true } = {}) {
 }
 
 // Paths that work before the door, and only these.
-export const OPEN_PATHS = new Set(['/access', '/favicon.ico', '/healthz']);
+export const OPEN_PATHS = new Set(['/access', '/favicon.ico', '/healthz', '/sw.js']);   // sw.js: no data, Q6
 
 export function allows(pathname, env = process.env) {
   if (!isPublic(env)) return true;              // on a laptop there is no door

@@ -88,3 +88,32 @@ export async function callFeed(db, { after = null, viewer = '', users = [], now 
   }
   return { last: Math.max(last, Number(after)), events };
 }
+
+// ------------------------------------------------- the notification's words --
+// The same four things as the app's corner card: name, new or existing, last note, next step.
+// Used by the service worker (src/sw.js), which asks for it after a push knock.
+export function noteFor(ev) {
+  const w = ev.who || {};
+  const title = w.kind === 'person' ? (w.name || 'A person in Intake')
+    : w.kind === 'lead' ? (w.name || 'A lead waiting in the Inbox')
+    : 'New caller' + (w.last4 ? ' ···' + w.last4 : '');
+  const lines = [w.kind === 'person' ? 'Existing' + (w.status ? ' · ' + w.status : '') : 'New'];
+  if (w.lastNote) lines.push('Last note: ' + w.lastNote);
+  if (w.nextStep) lines.push('Next step: ' + w.nextStep);
+  const href = w.kind === 'person' ? '#/person/' + encodeURIComponent(w.id) : w.kind === 'lead' ? '#/inbox' : '#/inbox';
+  return { title, body: lines.join('\n'), tag: 'call-' + ev.callId, href };
+}
+
+// The call a knock was about: this viewer's newest answered call, else the newest ring, from the
+// last two minutes. Nothing taken by a colleague, nothing ended.
+export async function latestNote(db, { viewer = '', users = [], now = new Date() } = {}) {
+  const top = await db.prepare('SELECT MAX(id) n FROM call_events').get();
+  const last = Number((top && top.n) || 0);
+  const feed = await callFeed(db, { after: Math.max(0, last - 50), viewer, users, now });
+  const since = now.getTime() - 2 * 60000;
+  const fresh = feed.events.filter((e) => !e.taken && e.event !== 'ended' && Date.parse(e.at || 0) >= since - 60000);
+  const pick = [...fresh].reverse().find((e) => e.event === 'answered' && e.forYou)
+    || [...fresh].reverse().find((e) => e.event === 'ringing')
+    || [...fresh].reverse()[0];
+  return pick ? noteFor(pick) : null;
+}

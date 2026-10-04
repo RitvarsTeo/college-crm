@@ -15,6 +15,7 @@
 
 import { receive, confirmedBySystem, CONFIG, newPersonId, ownerFor, emailFilterWhy, purgeLineBodies } from './intake.js';
 import { findMatches, isStrong, normEmail, normPhone } from './identity.js';
+import { knock } from './webpush.js';
 import { logEvent, AUTOMATIC, MANUAL } from './history.js';
 import { fetchCalls, rowsFrom, WINDOW_MINUTES, toRigaStamp, ZONE } from '../lib/pbx.js';
 import { fetchChanged, toSisRow } from '../lib/sis.js';
@@ -187,6 +188,7 @@ async function callEventsFromPull(db, r, mode, at) {
     try {
       await db.prepare(`INSERT INTO call_events (call_id, event, at, queue, caller_num, operator, extension, source, received_at)
         VALUES (?,?,?,?,?,?,?,?,?)`).run(r.uniqueid, event, r.created_at, r.queue, r.caller_num, operator, null, source, at);
+      await knock(db, { event, operator });   // a new event only: a repeat never knocks twice
     } catch (err) {
       if (!/UNIQUE|duplicate key|unique constraint/i.test(String(err && err.message))) throw err;
     }
