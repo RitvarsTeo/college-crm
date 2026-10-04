@@ -1103,6 +1103,15 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-who b{display:block;font-weight:600;overflow-wrap:anywhere}
   html.ui-c .c-who small{display:block;color:var(--t3);font-size:12.5px}
   html.ui-c .c-what{color:var(--t2)} html.ui-c .c-what.none{color:var(--c-warn)}
+  /* THE INBOX MESSAGE IS A DETAIL, NOT A NAME (the owner on production, 05.10.2026: "this is too much of font size!
+     fix it!"): a whole email body, Google Chat notices and long reply threads filled the screen at full size. The
+     message text takes the detail size (13px, slate, normal weight) and stops at two lines; the row opens the whole
+     item. The sender keeps the name size. Both modes. */
+  html.ui-c #view .c-lead .c-what{font-size:var(--type-detail);font-weight:400;color:var(--t3);line-height:1.45;white-space:normal;overflow-wrap:anywhere;
+    display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden}
+  /* the same rule for the note under a step on Today and in lists: detail size, two lines at most */
+  html.ui-c #view .c-nnote{font-size:var(--type-detail);white-space:normal;overflow-wrap:anywhere;
+    display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden}
   html.ui-c .c-when{font-size:13px;font-variant-numeric:tabular-nums;color:var(--t2)}
   html.ui-c .c-when.over{color:var(--c-bad);font-weight:600} html.ui-c .c-when.today{color:var(--c-warn);font-weight:600}
   html.ui-c .c-acts{display:flex;gap:6px;justify-content:flex-end}
