@@ -1,4 +1,4 @@
-// Vercel Cron target (every minute since 04.10.2026; needs the paid plan, Hobby allows once a day): every PBX call
+// Vercel Cron target (once a day on Hobby, every 5 minutes on Pro): every PBX call
 // since the last run, fetched in 15-minute pieces (src/sync.js). A call already
 // stored is skipped by its uniqueid. What happens to each call is in
 // src/sync.js: a known caller is logged on the person, an unknown one goes to the

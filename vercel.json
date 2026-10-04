@@ -56,7 +56,7 @@
     },
     {
       "path": "/api/cron/pbx-calls",
-      "schedule": "* * * * *"
+      "schedule": "15 5 * * *"
     },
     {
       "path": "/api/cron/gmail-poll",
