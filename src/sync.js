@@ -108,7 +108,9 @@ const phoneThread = (num) => {
   return d.length > 5 ? 'phone:' + d.slice(-8) : null;
 };
 
-async function storeCall(db, r, mode, at, out) {
+// Exported for the pushed call events (src/phoneevent.js): one function stores a call, whichever
+// path saw it first, so the two can never make two leads for one call.
+export async function storeCall(db, r, mode, at, out) {
   // the pieces overlap on purpose; a call already here was handled last time
   const had = await db.prepare('SELECT uniqueid FROM pbx_calls WHERE uniqueid = ?').get(r.uniqueid);
   if (had) { out.seen++; return; }
@@ -206,6 +208,7 @@ export async function syncPbx(db, { now = new Date(), minutes = WINDOW_MINUTES,
   // newer one with it. The line stays and says when its body went: a deletion nobody
   // can see is not auditable.
   result.purgedLines = await purgeLineBodies(db, retentionCutoff(now));
+  result.purgedEvents = await purgeOld(db, 'call_events', 'at', now);   // the same 13 months
   return result;
 }
 

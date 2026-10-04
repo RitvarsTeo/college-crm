@@ -802,7 +802,8 @@
         "callPopUp": {
           "state": "built, not deployed",
           "seen": "2026-10-04",
-          "open": "Does TeleGroup list a call while it RINGS, or only after hang-up? One test call to +371 23111114 (press 1) after deploy answers it. Not known yet.",
+          "how": "Built as if TeleGroup pushes every call (Ritvars 04.10): POST /api/inbound/phone-event (ringing, answered, ended; PHONE_EVENT_SECRET), stored in call_events; the open app reads our own database every 3 s. The daily pull stays as the safety net.",
+          "open": "Can TeleGroup push call events at all, and in which format? The shape we will ask for is in docs/channel-writeups/05-phone-telegroup.md. The email to them is PARKED. Until they push, the daily pull is the only source and the pop-up stays quiet.",
           "source": "Q6, docs/INTAKE_CONTROL_2026-10-02.md"
         }
       }
