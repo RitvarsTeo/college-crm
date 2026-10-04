@@ -36,6 +36,11 @@ User gets "Admins only". NOT DEPLOYED; MASTER CONTROL cuts the release at this c
 foot. B = solid brandbook blue #53a7db, every word and icon navy #0a2463 (5.48:1; white is 2.65:1 and
 fails), the Today count navy instead of amber, the official black logo file on it. Dark identical in both.
 Seen running in Chrome and measured in the pane. **PICKED: B, 04.10** (Ritvars, after seeing A and B side by side at 1440 px, relayed by MASTER CONTROL). B is now the only light menu: A, the `?menu=` switch, the "Menu A B" control and the stored choice are removed. Dark unchanged. NEXT PATCH, not deployed.
+**ON HOLD, 04.10 (relayed by MASTER CONTROL):** on the live look Ritvars said the contrast is not enough (navy words,
+black logo, 35% navy hairline on #53a7db); he wants white on the blue. Two mockups are with him: A = white bold letters
+with a thin navy edge and a white hairline; B = white letters on navy pills, the open page in white. Both put the logo
+on a white plate in its official two-tone colours (the brandbook forbids outlining or shadowing the logo). The #53a7db
+surface stays. Letters, logo and hairline are NOT changed until his pick arrives. SAID.
 
 ## 02.10.2026 - DECIDED (popup): the person card, the menu, black, shadows
 
