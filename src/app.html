@@ -1199,7 +1199,9 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-planned{font-size:13px;color:var(--t2)} html.ui-c .c-planned b{font-size:18px;color:var(--ink);margin-right:3px} html.ui-c .c-planned small{display:block;color:var(--t3);font-size:12px}
   html.ui-c .c-filter{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--c-accent-bg);border:1px solid var(--rule);border-radius:9px;padding:8px 12px;margin:0 0 14px;font-size:13.5px}
   @media (max-width:1100px){ html.ui-c .kthree{grid-template-columns:minmax(0,1fr) minmax(0,1fr)} }
-  @media (max-width:760px){ html.ui-c .kstrip{grid-template-columns:1fr 1fr} html.ui-c .kstrip > div:nth-child(3){border-left:0;padding-left:0} html.ui-c .kthree{grid-template-columns:1fr} }
+  /* the strip's figures are cards (30.09): the old hairline-row rule that took the third figure's left padding away on a
+     phone is gone, it left "Conversion" touching its card's edge (seen 05.10.2026) */
+  @media (max-width:760px){ html.ui-c .kstrip{grid-template-columns:1fr 1fr} html.ui-c .kthree{grid-template-columns:1fr} }
 
   /* Inbox, People and Journey in C. Same hairline sheets as Next Steps. */
   html.ui-c .c-lead.is-open{background:var(--c-sel)}
@@ -1934,6 +1936,19 @@ html.ui-c:not([data-theme="dark"]) #view .kneed:first-child{border-left:0;paddin
 html.ui-c:not([data-theme="dark"]) #view .jb-end{background:transparent;border:0;border-radius:0;box-shadow:none;padding:6px 12px}
 html.ui-c:not([data-theme="dark"]) #view .jband-row > .jb-end{border-right:1px solid #e3e9ef}
 html.ui-c:not([data-theme="dark"]) #view .jb-outs{border-left:1px solid #e3e9ef;gap:6px}
+/* DARK, matched (the owner, 05.10.2026: "Match the dark, obviously!"): the same one card on the kit's SOLID dark
+   surface (never glass), the same 3px Novikontas Blue top edge (#53a7db on #133a60 is about 3.9:1, enough for a
+   non-text edge), a deeper shadow, the same plain insides with a light hairline; Needs-you stays amber. */
+html.ui-c[data-theme="dark"] #view :is(.kstrip > div, .kday-sheet, .kday-side, .c-todaystrip, .c-sheet, .c-apps, .kflow.jband){
+  background:#133a60;border:1px solid rgba(194,211,222,.12);border-top:3px solid #53a7db;border-radius:14px;
+  box-shadow:0 1px 2px rgba(0,0,0,.25),0 10px 24px rgba(0,0,0,.35);-webkit-backdrop-filter:none;backdrop-filter:none}
+html.ui-c[data-theme="dark"] #view .kday-sheet.kday-sheet.kday-sheet{border-top-color:#F7C04F}
+html.ui-c[data-theme="dark"] #view .kday-row{gap:0}
+html.ui-c[data-theme="dark"] #view .kneed{background:transparent;border:0;border-left:1px solid rgba(194,211,222,.14);border-radius:0;box-shadow:none;padding:4px 16px}
+html.ui-c[data-theme="dark"] #view .kneed:first-child{border-left:0;padding-left:0}
+html.ui-c[data-theme="dark"] #view .jb-end{background:transparent;border:0;border-radius:0;box-shadow:none;padding:6px 12px}
+html.ui-c[data-theme="dark"] #view .jband-row > .jb-end{border-right:1px solid rgba(194,211,222,.14)}
+html.ui-c[data-theme="dark"] #view .jb-outs{border-left:1px solid rgba(194,211,222,.14);gap:6px}
 /* ===== KIT PART 9, REPORT MOTION: copied verbatim from Dev kits to share/Component library/9 Report motion/motion.css
    (the rule: take it, never hand-write motion). Intake is one file with no build step, so it is inlined, not linked.
    Change it in the kit first, then copy it here again. ===== */

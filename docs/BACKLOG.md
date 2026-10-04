@@ -34,7 +34,11 @@ figures split by 1px #e3e9ef hairlines. The person page's light-blue "Next step"
 **Kit part 2 (kit-panel) must follow later for the other apps; not touched here.** SAID.
 **Dark, proposed, NOT built:** the kit's solid dark card (#133a60, never glass), border rgba(194,211,222,.12), the same
 3px #53a7db top edge (about 3.9:1 against #133a60, enough for a non-text edge), shadow 0 10px 24px rgba(0,0,0,.35),
-inner hairlines rgba(194,211,222,.14); Needs-you stays amber. Waiting for Ritvars.
+inner hairlines rgba(194,211,222,.14); Needs-you stays amber. 
+**BUILT 05.10, Ritvars: "Match the dark, obviously!"** Exactly as proposed above. Measured in dark on Home, Today and
+Journey: every card rgb(19,58,96) solid (no backdrop blur), 3px rgb(83,167,219) top, Needs-you rgb(247,192,79). Also
+fixed while looking: below 760px an old hairline-strip rule removed the third figure card's left padding ("Conversion"
+touched its card edge); all four strip cards now 18px. Next patch, not deployed.
 
 ## 04.10.2026 - THE A/B BATCH (run by MASTER CONTROL, Ritvars picks)
 
