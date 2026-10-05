@@ -476,8 +476,10 @@ test('the report counts rows, separates Meta channels and says what it cannot me
 
   const r = await fetch(`${base}/api/report?from=2020-01-01`).then((x) => x.json());
   assert.ok(r.summary.newLeads > 0);
-  assert.equal(typeof r.summary.conversionPct, 'number');
-  assert.ok(r.summary.conversionOf.includes('who arrived'), 'conversion names its population');
+  // conversion counts only MATURED people (the owner, 05.10.2026): the demo's leads arrived today, so none is in it yet
+  assert.equal(r.summary.conversionB, 0, 'a lead added today is not in the denominator');
+  assert.equal(r.summary.conversionPct, null);
+  assert.ok(r.summary.conversionOf.includes('who arrived 60+ days ago'), 'conversion names its population');
   assert.equal(r.trend.length, 12, 'twelve months of trend');
 
   // Facebook, Instagram, Messenger and WhatsApp are never added together

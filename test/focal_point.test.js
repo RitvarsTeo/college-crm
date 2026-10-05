@@ -32,11 +32,12 @@ test('Home and Reports each have exactly one hero figure', () => {
 });
 
 test('conversion shows its sum, not a sentence about it', () => {
-  assert.match(REPORTS, /conversionA: admittedFromPeriod/, 'the report carries a');
-  assert.match(REPORTS, /conversionB: newLeads/, 'and b');
+  assert.match(REPORTS, /conversionA: conv\.admitted/, 'the report carries a');
+  assert.match(REPORTS, /conversionB: conv\.of/, 'and b');
+  assert.match(REPORTS, /conversionWho: conv\.who/, 'and the basis in words');
   // Reports and Home (B, locked 02.10.2026) print the same a / b from the same report fields
-  assert.equal(APP.split('${s.conversionA ?? 0} / ${s.conversionB ?? 0} who arrived').length - 1, 1, 'Home shows a / b');
-  assert.ok(APP.includes('${cRepGo(C.won)} / ${cRepGo(C.base)} who arrived'), 'and Reports the same a / b, each a click to its people');
+  assert.equal(APP.split("${s.conversionA ?? 0} / ${s.conversionB ?? 0} ${esc(s.conversionWho || 'who arrived')}").length - 1, 1, 'Home shows a / b and its basis');
+  assert.ok(APP.includes('${cRepGo(C.won)} / ${cRepGo(C.base)} ${esc(C.who)}'), 'and Reports the same a / b, each a click to its people');
   assert.ok(!APP.includes('esc(s.conversionOf || \'\')'), 'the sentence is off both screens');
   assert.match(REPORTS, /conversionOf: conversion === null/, 'and stays for the export');
 });

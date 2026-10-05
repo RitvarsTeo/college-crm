@@ -24,7 +24,7 @@ import { pbxLive } from '../lib/pbx.js';
 import { adapt, adaptAll, toIntake, hasAdapter, adapterIds } from './adapters.js';
 import { fixtureFor } from './fixtures.js';
 import { buildPayload, scenariosFor, allScenarios, CHANNEL_LABELS, META_GROUP } from './scenarios.js';
-import { report as buildReport, reportRows, boldRowsOf, periodOf, EXPORT_SECTIONS, DEFAULT_SECTIONS } from './reports.js';
+import { report as buildReport, reportRows, boldRowsOf, periodOf, maturedConversion, EXPORT_SECTIONS, DEFAULT_SECTIONS } from './reports.js';
 import { rowsToXlsx, XLSX_TYPE } from './xlsx.js';
 import * as sheets from './sheets.js';
 import * as snapshot from './snapshot.js';
@@ -1561,17 +1561,16 @@ export const handle = async (req, res) => {
       const monthStart = new Date().toISOString().slice(0, 8) + '01T00:00:00.000Z';
       const newLeads = (await db.prepare('SELECT COUNT(*) n FROM people WHERE created_at >= ?').get(monthStart)).n;
       const admitted = (await db.prepare('SELECT COUNT(*) n FROM people WHERE admitted_at >= ?').get(monthStart)).n;
-      // Conversion of THIS month's arrivals, which is not the same as admissions
-      // this month - somebody admitted today may have arrived in March.
-      const cohort = (await db.prepare('SELECT COUNT(*) n FROM people WHERE created_at >= ?').get(monthStart)).n;
-      const cohortAdmitted = (await db.prepare("SELECT COUNT(*) n FROM people WHERE created_at >= ? AND status = 'Admitted'").get(monthStart)).n;
+      // Conversion: the ONE definition (src/reports.js maturedConversion, the owner 05.10.2026), over this month's
+      // arrivals - so it stays empty until they are matured, which is the point.
+      const conv = await maturedConversion(db, periodOf());
       return json(res, 200, {
         month: monthStart.slice(0, 7),
         newLeadsThisMonth: newLeads,
         admissionsThisMonth: admitted,
-        conversionPct: cohort ? Math.round((cohortAdmitted / cohort) * 1000) / 10 : null,
-        conversionOf: `${cohortAdmitted} of ${cohort} people who arrived this month`,
-        caution: 'Admissions this month and conversion this month count different populations: somebody admitted today may have arrived months ago. The conversion figure follows this month\'s arrivals.',
+        conversionPct: conv.pct,
+        conversionOf: `${conv.admitted} of ${conv.of} people ${conv.who}`,
+        caution: `Admissions this month and conversion count different populations: somebody admitted today may have arrived months ago. Conversion counts only people who arrived ${conv.days}+ days before the end of the period.`,
       });
     }
 

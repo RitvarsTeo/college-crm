@@ -29,6 +29,30 @@ export function periodOf(from, to) {
 
 const count = async (db, sql, ...args) => (await db.prepare(sql).get(...args)).n;
 
+// ---------------------------------------------------------- conversion, MATURED --
+// THE ONE DEFINITION (the owner, 05.10.2026: "Conversion counts only MATURED people, everywhere"). Conversion =
+// admitted / the people who arrived in the period at least N days (config conversion.maturedDays) before its end, or
+// before today when the period has not ended yet. Somebody who arrived last week has not had time to be admitted, so
+// counting them made the figure read low and impossible to compare with a benchmark. Home's card, Reports' tab and the
+// export all read this; the screen draws the same people from `cutoff`, never its own rule.
+export const MATURED_DAYS = Number(CFG.conversion && CFG.conversion.maturedDays) || 60;
+export function maturedBasis(p, { now = new Date(), days = MATURED_DAYS } = {}) {
+  const end = Math.min(Date.parse(p.to) - 1, now.getTime());
+  const [y, m, d] = localDate(new Date(end)).split('-').map(Number);
+  const lastDay = new Date(Date.UTC(y, m - 1, d - days)).toISOString().slice(0, 10);   // the last Riga day that is matured
+  const toNow = Date.parse(p.to) > now.getTime();
+  return { days, cutoff: dayAfterStartOf(lastDay), lastDay,
+    who: toNow ? `who arrived ${days}+ days ago` : `who arrived ${days}+ days before ${localDate(new Date(end))}` };
+}
+export async function maturedConversion(db, p, opts) {
+  const basis = maturedBasis(p, opts);
+  const until = basis.cutoff < p.to ? basis.cutoff : p.to;
+  const of = await count(db, 'SELECT COUNT(*) n FROM people WHERE created_at >= ? AND created_at < ?', p.from, until);
+  const admitted = await count(db, `SELECT COUNT(*) n FROM people
+    WHERE created_at >= ? AND created_at < ? AND admitted_at IS NOT NULL`, p.from, until);
+  return { ...basis, admitted, of, pct: of ? Math.round((admitted / of) * 1000) / 10 : null };
+}
+
 // A breakdown is always a count per value, plus an explicit "not recorded" row,
 // because a blank in a report reads as zero when it really means unknown.
 async function breakdown(db, column, { from, to, where = '', args = [] } = {}) {
@@ -47,8 +71,6 @@ export async function report(db, { from, to } = {}) {
   const applications = await count(db, `SELECT COUNT(*) n FROM people
     WHERE created_at >= ? AND created_at < ? AND status IN ('Application','Contract','Admitted')`, ...A);
   const admitted = await count(db, 'SELECT COUNT(*) n FROM people WHERE admitted_at >= ? AND admitted_at < ?', ...A);
-  const admittedFromPeriod = await count(db, `SELECT COUNT(*) n FROM people
-    WHERE created_at >= ? AND created_at < ? AND admitted_at IS NOT NULL`, ...A);
 
   const activeApplicants = await count(db, `SELECT COUNT(*) n FROM people
     WHERE status NOT IN ('Admitted','Not proceeding')`);
@@ -59,9 +81,10 @@ export async function report(db, { from, to } = {}) {
     WHERE pe.status NOT IN ('Admitted','Not proceeding') AND NOT ${SIS_HOLDS_SQL}
       AND NOT EXISTS (SELECT 1 FROM tasks t WHERE t.person_id = pe.id AND t.done_at IS NULL)`);
 
-  // Conversion follows the people who ARRIVED in the period, so the two numbers
+  // Conversion follows the MATURED people who arrived in the period (maturedConversion above), so the two numbers
   // describe one population. Admitted-this-month counts a different one and says so.
-  const conversion = newLeads ? Math.round((admittedFromPeriod / newLeads) * 1000) / 10 : null;
+  const conv = await maturedConversion(db, p);
+  const conversion = conv.pct;
 
   // How long admission actually took, as a median of real durations.
   const durations = (await db.prepare(`SELECT created_at, admitted_at FROM people
@@ -120,11 +143,14 @@ export async function report(db, { from, to } = {}) {
       newLeads, applications, admitted, activeApplicants, overdue, noNextAction,
       conversionPct: conversion,
       maritimeGraduates: maritime,
-      conversionOf: conversion === null ? 'nobody arrived in this period'
-        : `${admittedFromPeriod} of ${newLeads} people who arrived in this period`,
-      // the working, for the screen: a calculated number sits next to its sum
-      conversionA: admittedFromPeriod,
-      conversionB: newLeads,
+      conversionOf: conversion === null ? `no one ${conv.who} in this period`
+        : `${conv.admitted} of ${conv.of} people ${conv.who}`,
+      // the working, for the screen: a calculated number sits next to its sum, and the basis in words
+      conversionA: conv.admitted,
+      conversionB: conv.of,
+      conversionWho: conv.who,
+      conversionDays: conv.days,
+      conversionCutoff: conv.cutoff,
       medianDaysToAdmission: median,
     },
     trend: months,
@@ -151,7 +177,7 @@ export async function report(db, { from, to } = {}) {
     notMeasured: await notMeasured(db, p),
     honesty: [
       'Every figure is a count of rows in this database over the chosen period. Nothing is estimated.',
-      'Conversion follows the people who ARRIVED in the period. Somebody admitted this month may have arrived last year, so "admitted" and "conversion" deliberately count different populations.',
+      `Conversion follows the people who ARRIVED in the period at least ${conv.days} days before its end (or before today): a newer lead has not had time to be admitted. Somebody admitted this month may have arrived last year, so "admitted" and "conversion" deliberately count different populations.`,
       'A breakdown always shows a "(not recorded)" row. A gap in the data is not a zero.',
     ],
   };
