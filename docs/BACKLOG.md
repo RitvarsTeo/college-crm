@@ -22,7 +22,7 @@ Technical prototype (P4) on the existing shell. Production untouched: no deploy,
 | What | Status |
 |---|---|
 | `GET /api/applications` (src/applications.js): the SIS funnel from rows already in Intake. SELECTs only, never calls the SIS, counts only | BUILT |
-| Basis: **registration-week cohort**, where each person stands NOW. No status history is made up: the SIS sends current status only | BUILT |
+| Basis: **registration-week cohort**, where each person stands NOW. No status history is made up: the SIS sends current status only. **DECIDED 05.10 (Ritvars, popup "Yes, keep it"):** the metric reads "registered that week, current status now", never a history of when anyone moved. The SIS funnel subtitle now says exactly that (was "by registration week · where each person stands now") | BUILT |
 | A later status counts as passing the earlier ones (SIS order, already accepted 29.09 "by submit date"); rejected / withdrawn kept apart, the SIS does not say at which step | BUILT |
 | The records a person archived in the Inbox (production's 6 team tests) are **set aside**, never counted | BUILT |
 | One truthful state: Off / No run yet / No real applicant yet / Test / Live. A webhook record before any pull is still counted | BUILT |
@@ -32,7 +32,20 @@ Technical prototype (P4) on the existing shell. Production untouched: no deploy,
 | **DECIDED 02.10 (Ritvars, "Ok"):** the funnel is split the way apply.novikontas.org describes it: **On the website** (Registered, Form started, Submitted) and **Academy decision** (Admitted, Matriculated). One scale for both. Ritvars renamed it: "Academy decision", not College | BUILT |
 | **SAID 02.10 (Ritvars, via MASTER CONTROL QUEUE Q1):** apply.novikontas.org may be called **"Academy Application form"** in Intake, wherever Intake names it (Reports > Applications, the lifecycle line). It stays downstream, never a channel. Source: `crm-control-s1/docs/INTAKE_CONTROL_2026-10-02.md` Q1, commit `599a369`, branch `control/2026-10-02-s1`. BUILT 02.10 on his GO: the lifecycle line and the web-statistics heading in Reports > Applications. Code comments and channel notes keep the domain | BUILT |
 
-**What production will show today** (from the 01.10 evidence, not re-read): SIS live, 6 records in the
+**05.10.2026 - in production, served code proven, not seen signed in.** Every S4 commit up to `eca5ddc`
+is inside production `6d7ca1d` (dpl_4qFa1gBwxjUa8fo9mc68Y3trCegZ, created 05.10 09:25): live `/` is
+byte-identical to 6d7ca1d's app.html + sign-in script, and the deployed `src/applications.js` and
+`src/lifecycle.js` hash-match `eca5ddc` (read-only `vercel api` files list). Reports > Applications has
+not been opened signed in on production.
+
+**SIS, backup 04.10 19:29 (field presence only, no personal data read out):** 8 rows. The 6 from 25-27.09
+are the archived team tests (source `simulated`, archived "Internal"). **2 new rows** registered
+02.10, pulled 03.10 05:31, source `provider`, external email domains, not Intake users, no "test" in
+name/email: `01a0fce8-…` (submitted) is a new Inbox row 176, state new, unprocessed; `01a0fc98-…`
+(started) joined existing person r0014 (status Application, came by email 21.09). Likely real, NOT
+verified: someone with SIS access must confirm both references are real applicants.
+
+**What production showed on 01.10** (from the 01.10 evidence, superseded by the block above): SIS live, 6 records in the
 store, 6 set aside, **0 counted -> "No real applicant yet"**. That is the true blocked state.
 
 **Data gaps:** no date for `started` / `admitted`, so no event-by-week view; a person with two
