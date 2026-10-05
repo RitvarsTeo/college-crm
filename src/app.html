@@ -1502,7 +1502,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   /* B - the day: one card. Signal amber marks it (never amber text on white, KB 08 P5) because
      today / needs you is its meaning. The two sheets once stacked behind it are gone (the owner,
      05.10.2026: under cards 3 they read as a broken grey / dark strip); the card's own shadow is its depth. */
-  html.ui-c .kday{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:22px;margin:0 0 30px;align-items:start;--m-delay:.1s}
+  html.ui-c .kday{display:grid;grid-template-columns:minmax(0,1fr);gap:22px;margin:0 0 30px;align-items:start;--m-delay:.1s}
   html.ui-c .kday-sheet{position:relative;z-index:0;padding:16px 20px 18px;border-radius:16px;background:var(--surface);
     border:1px solid var(--c-card-line);border-top:3px solid #F7C04F;box-shadow:0 12px 30px -22px rgba(3,12,26,.45)}
   html.ui-c .kday h2{margin:0 0 10px;font-family:inherit;font-size:12px;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--t3)}
@@ -1512,11 +1512,6 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .kneed:hover{border-color:var(--control-line)}
   html.ui-c .kneed span{font-size:12.5px;color:var(--t2);font-weight:600}
   html.ui-c .kneed b{font-size:44px;font-weight:650;letter-spacing:-.035em;line-height:1;font-variant-numeric:tabular-nums}
-  html.ui-c .kday-side{display:flex;flex-direction:column;gap:2px;padding:14px 14px 12px;border-radius:16px;background:var(--surface);border:1px solid var(--c-card-line)}
-  html.ui-c .kday-side h3{margin:0 0 6px;font-size:11.5px;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--t3)}
-  html.ui-c .kday-st{display:grid;grid-template-columns:22px minmax(0,1fr) auto;align-items:center;gap:6px;padding:5px 4px;border-radius:7px;color:var(--t2);text-decoration:none;font-size:13px}
-  html.ui-c .kday-st:hover{background:var(--c-sunk);color:var(--ink)}
-  html.ui-c .kday-st b{color:var(--ink);font-variant-numeric:tabular-nums}
   html.ui-c .kdelta{display:block;margin-top:6px;font-size:12px;color:var(--t3)}
   html.ui-c .kdelta b{color:var(--ink);font-weight:650}
   html.ui-c .kb-strip{grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:none}
@@ -1546,27 +1541,16 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .kstrip .ktgt-n .ktgt-who{display:inline;font-size:12px;font-weight:600;letter-spacing:.02em;color:var(--t3)}
   html.ui-c .ktgt-n strong{font-weight:700;color:var(--ink)}
   html.ui-c .ktgt-n strong.ktgt-goal{color:var(--ink);box-shadow:inset 0 -2px 0 var(--v-tgt)}
-  /* THE EMPTY BAND UNDER NEEDS YOU (Q20, the owner 05.10.2026: option 1, "buuuut ... open journey goes after
-     application (below)"): The journey now lays its stages in two columns and "Open the Journey" takes the free
-     cell after the last stage, so no row is spent on the link and both cards end on one line. */
-  html.ui-c .kday.kday-fit{align-items:stretch;grid-template-columns:minmax(0,1fr) 340px}   /* two columns of stages need the room */
-  html.ui-c .kday-fit .kday-side{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:10px;align-content:start;padding:12px 14px 10px}
-  html.ui-c .kday-fit .kday-side h3{grid-column:1 / -1}
-  html.ui-c .kday-fit .kday-st{padding:3px 4px}
-  html.ui-c .kday-fit .kgrp-go{display:flex;align-items:center;margin:0;padding:3px 4px;border-top:0}
   html.ui-c .kb-top{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:30px;align-items:start}
   html.ui-c .kb-charts .kthree{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:26px}
   @media (max-width:1100px){ html.ui-c .kb-top{grid-template-columns:minmax(0,1fr)} }
   html.ui-c .ktags{display:flex;flex-wrap:wrap;gap:5px;margin:10px 0 0}
-  @media (max-width:1100px){ html.ui-c .kday,html.ui-c .kday.kday-fit{grid-template-columns:minmax(0,1fr)} html.ui-c .kb-charts .kthree{grid-template-columns:minmax(0,1fr) minmax(0,1fr)} }
+  @media (max-width:1100px){ html.ui-c .kb-charts .kthree{grid-template-columns:minmax(0,1fr) minmax(0,1fr)} }
   @media (max-width:760px){ html.ui-c .kb-strip{grid-template-columns:1fr 1fr} html.ui-c .kb-charts .kthree{grid-template-columns:1fr} html.ui-c .kneed b{font-size:34px} }
   /* the kit's per-scene knobs (part 9): when a scene starts and how far apart its pieces are */
   html.ui-c .kflow{--m-delay:.2s;--m-step:90ms}
   html.ui-c .jb-base line{--m-dur:1.6s}
   html.ui-c .kgap-note{margin:0;font-size:11.5px;color:var(--t4);line-height:1.5;max-width:40ch}
-  html.ui-c .kgrp-go{display:block;margin-top:8px;padding-top:8px;border-top:1px solid var(--rule2);
-    font-size:12px;color:var(--petink);text-decoration:none}
-  html.ui-c .kgrp-go:hover{text-decoration:underline}
   /* the sparkline under a KPI: its own series, quiet, never competing with the figure */
   html.ui-c .kspark{display:block;width:100%;height:22px;margin:5px 0 2px;overflow:visible}
   html.ui-c .kspark path{fill:none;stroke:var(--v-adm);stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke}
@@ -2058,7 +2042,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
    The Needs-you sheet keeps its amber top: that is the signal. NO BOXES INSIDE A CARD: what sat in a card as
    its own box becomes a plain column split by a 1px hairline (#e3e9ef). Kit part 2 (kit-panel) follows later
    for the other apps; it is not touched here. Dark mode is unchanged until it is decided. ---- */
-html.ui-c:not([data-theme="dark"]) #view :is(.kstrip > div, .kday-sheet, .kday-side, .c-todaystrip, .c-sheet, .c-apps, .kflow.jband){
+html.ui-c:not([data-theme="dark"]) #view :is(.kstrip > div, .kday-sheet, .c-todaystrip, .c-sheet, .c-apps, .kflow.jband){
   background:#ffffff;border:1px solid rgba(10,36,99,.07);border-top:3px solid #53a7db;border-radius:14px;
   box-shadow:0 1px 2px rgba(10,36,99,.06),0 10px 24px rgba(10,36,99,.08)}
 html.ui-c:not([data-theme="dark"]) #view .kday-sheet.kday-sheet.kday-sheet{border-top-color:#F7C04F}   /* the signal stays amber; repeated class so it outranks the shared rule's :is() */
@@ -2073,7 +2057,7 @@ html.ui-c:not([data-theme="dark"]) #view .jb-outs{border-left:1px solid #e3e9ef;
 /* DARK, matched (the owner, 05.10.2026: "Match the dark, obviously!"): the same one card on the kit's SOLID dark
    surface (never glass), the same 3px Novikontas Blue top edge (#53a7db on #133a60 is about 3.9:1, enough for a
    non-text edge), a deeper shadow, the same plain insides with a light hairline; Needs-you stays amber. */
-html.ui-c[data-theme="dark"] #view :is(.kstrip > div, .kday-sheet, .kday-side, .c-todaystrip, .c-sheet, .c-apps, .kflow.jband){
+html.ui-c[data-theme="dark"] #view :is(.kstrip > div, .kday-sheet, .c-todaystrip, .c-sheet, .c-apps, .kflow.jband){
   background:#133a60;border:1px solid rgba(194,211,222,.12);border-top:3px solid #53a7db;border-radius:14px;
   box-shadow:0 1px 2px rgba(0,0,0,.25),0 10px 24px rgba(0,0,0,.35);-webkit-backdrop-filter:none;backdrop-filter:none}
 html.ui-c[data-theme="dark"] #view .kday-sheet.kday-sheet.kday-sheet{border-top-color:#F7C04F}
@@ -2603,7 +2587,7 @@ let C_PTAB = 'journey';
 //      last-seen values live in this browser only (a per-viewer convenience); the first visit
 //      bumps nothing, because nothing has changed yet
 // Reduced motion: the kit never turns on, nothing moves, every figure is already final.
-const C_METRICS = ['.kneed b', '.kstrip > div > b', '.kday-st b', '.klegend b', '.kbar > b', '.jb-end > b', '.jb-n',
+const C_METRICS = ['.kneed b', '.kstrip > div > b', '.klegend b', '.kbar > b', '.jb-end > b', '.jb-n',
   '.c-col h3 > b', '.kbig', '.c-sum > b', '.kgrow b', '.c-out b'].join(',');
 const cMetricKey = (el, i) => {
   const holder = el.closest('[data-v],[data-kgo],[data-tip]');
@@ -2782,9 +2766,9 @@ function cHomeB(D) {
   };
   const need = (label, n, go, href, k) => `<a class="kneed" href="${href}" style="--i:${k}" ${go ? `onclick="${go};return false"` : ''}>
       <span>${esc(label)}</span><b>${cFig(n)}</b></a>`;
-  const allDots = D.stages.map((st) => [st, D.open.filter((p) => p.status === st.id).length]);
-  // kday-fit: no empty band under Needs you (Q20, picked 05.10.2026); the journey in two columns, see the CSS
-  return `<section class="kday kday-fit m-scene" aria-label="Needs you">
+  // Needs you is the whole row: "The journey now" left Home on 05.10.2026 (the owner: "The journey now. Do we need it on
+  // home?" - dropped; the Journey page's band has the stage counts, and the donut's Open opens the Journey).
+  return `<section class="kday m-scene" aria-label="Needs you">
       <div class="kday-sheet">
         <h2>Needs you</h2>
         <div class="kday-row">
@@ -2794,11 +2778,6 @@ function cHomeB(D) {
           ${D.noNext ? need('No next step', D.noNext, "cGoPeople({ due: 'none' })", '#/people', 3) : ''}
         </div>
       </div>
-      <aside class="kday-side">
-        <h3>The journey now</h3>
-        ${allDots.map(([st, n], i) => `<a class="kday-st" href="#/journey" onclick="cGoStage('${esc(st.id)}');return false"><span class="c-jn">${i + 1}</span><span>${esc(st.label || st.id)}</span><b>${n}</b></a>`).join('')}
-        <a class="kgrp-go" href="#/journey">Open the Journey →</a>
-      </aside>
     </section>
     <div class="kstrip kb-strip">
       <div class="khero"><span>Admitted</span><b>${D.admitted.length}</b><small>${D.year}${D.undated ? ` · +${D.undated} undated` : ''}</small>${goal ? cTargetMeter(goal) : ''}${cSpark(D.months.map((m) => m.admitted), 'adm')}${delta('admitted')}<a class="kgo" href="#/outcomes" onclick="cGoAdmittedYear(${D.year});return false">Outcomes →</a></div>

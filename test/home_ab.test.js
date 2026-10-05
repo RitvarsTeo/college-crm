@@ -92,7 +92,7 @@ test('B: what needs a person comes first, and every figure links to where the pe
   assert.match(html, /<span>Due today<\/span><b>1<\/b>/);
   assert.match(html, /href="#\/leads"[^>]*>\s*<span>In the Inbox<\/span><b>6<\/b>/);
   assert.match(html, /<span>No next step<\/span><b>3<\/b>/);
-  assert.match(html, /cGoStage\('Application'\)/, 'the journey list opens the Journey on a stage');
+  assert.doesNotMatch(html, /The journey now|kday-side/, 'the journey card left Home on 05.10.2026 (Q37)');
   assert.match(html, /kdonut">Open=6,Admitted=2,Not proceeding=4/, 'the donut counts the same people');
 });
 

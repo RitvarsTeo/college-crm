@@ -14,6 +14,14 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - Q37: "The journey now" leaves Home
+
+Ritvars 05.10 (via MASTER CONTROL): "The journey now. Do we need it on home?" Picked: drop it - its stage counts
+duplicate the Journey page's band, and the donut's Open slice already opens the Journey. Needs you is the whole row
+(desktop and phone; the phone row of three still fits). The two-column journey layout and the link-in-the-free-cell
+(55e4a8f) went with it: their CSS, the card's entry in the shared CARDS 3 list, its count-up selector and their tests.
+1168/1168. Shots: `For review/2026-10-05 finals/Q37-*`. BUILT, next patch.
+
 ## 05.10.2026 - Q36: every figure opens the people it counts; Today drops its strip
 
 Ritvars 05.10 (via MASTER CONTROL), on the Today strip: "when we click on these metrics they actually have to point to

@@ -20,7 +20,6 @@ test('every Home figure is a click to where it comes from', () => {
   assert.match(HOME, /need\('Due today', D\.dueToday, "cGoToday\('cTodayDue'\)", '#\/today', 1\)/);
   assert.match(HOME, /need\('In the Inbox', D\.inbox, '', '#\/leads', 2\)/);
   assert.match(HOME, /need\('No next step', D\.noNext, "cGoPeople\(\{ due: 'none' \}\)", '#\/people', 3\)/);
-  assert.match(HOME, /class="kday-st" href="#\/journey" onclick="cGoStage\(/);
   // the four cards: Admitted -> the year's admitted in Outcomes; the other three -> Reports on This year
   assert.match(HOME, /<div class="khero"><span>Admitted<\/span>[^\n]*onclick="cGoAdmittedYear\(\$\{D\.year\}\);return false">Outcomes →<\/a><\/div>/);
   for (const label of ['Leads', 'Conversion', 'Median time to admission'])
