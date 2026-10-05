@@ -1610,6 +1610,10 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .chlist a:hover,html.ui-c .chlist a:focus-visible{background:var(--surface-2)}
   html.ui-c .chlist b{font-weight:550;font-size:14px}
   html.ui-c .chlist .chk{margin-left:auto}
+  html.ui-c .c-sheet.c-chcard{max-width:640px;margin:0 auto 16px}
+  html.ui-c .c-chcard .chlist{margin:0;max-width:none;border-top:0}
+  html.ui-c .c-chcard .chlist a{padding:12px 18px}
+  html.ui-c .c-chcard .chlist li:last-child a{border-bottom:0}
   html.ui-c .chk{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--t2);white-space:nowrap}
   html.ui-c .chk::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--rule)}
   html.ui-c .chk.k-live::before{background:var(--k-live)}
@@ -1617,6 +1621,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .chk.k-owner::before{background:var(--k-owner)}
   html.ui-c .chk.k-prov::before{background:transparent;box-shadow:inset 0 0 0 2px var(--k-owner)}
   html.ui-c .chk.k-hand::before{background:var(--k-hand)}
+  html.ui-c .chk.k-none::before{background:transparent;box-shadow:inset 0 0 0 2px var(--rule)}
   /* ------------------------------------------------ THE CALL POP-UP (Q6) -- */
   /* B: a corner card above everything; A: a slim line saying why the screen moved. The
      only motion is the arrival, once; the dot is still. Off for reduced motion. */
@@ -6410,6 +6415,10 @@ function chKind(c, env) {
   const life = chLife(c);
   if (life === 'dropped' || life === 'parked') return life;
   if (c.direction === 'manual') return 'hand';
+  // The owner's word is the record (the owner, 05.10.2026, in record.ownerSays). It outranks a
+  // provider-row count that has not caught up yet; the count stays in liveVerified as data.
+  const says = chRec(c).ownerSays;
+  if (says && says.state === 'live') return 'live';
   if (chLiveOf(c, env).state === 'yes') return 'live';
   const b = chRec(c).blocker;
   if (b && b.side === 'external') return 'provider';
@@ -6445,9 +6454,17 @@ function chState(c, env) {
   if (k === 'live') return { word: 'Live', cls: 'k-live' };
   if (k === 'configured') return { word: 'Configured', cls: 'k-conf' };
   if (k === 'hand') return { word: 'By hand', cls: 'k-hand' };
-  if (k === 'provider') return { word: 'Blocked', cls: 'k-prov' };
+  // Blocked means an outside party SAID NO, and only that (Q24, 05.10.2026: "why some channels
+  // show blocked, when they are not???"). Waiting on an outside answer is waiting, named by the
+  // party the record gives; nobody named and nothing outside is not decided.
+  if (k === 'provider') {
+    const b = chRec(c).blocker;
+    if (b.refused === true) return { word: 'Blocked', cls: 'k-prov' };
+    const party = b.party || b.owner;
+    return party ? { word: 'Waiting on ' + party, cls: 'k-owner' } : { word: 'Not decided', cls: 'k-none' };
+  }
   const who = chWhoActs(c);
-  return who ? { word: 'Waiting on ' + who, cls: 'k-owner' } : { word: 'Blocked', cls: 'k-prov' };
+  return who ? { word: 'Waiting on ' + who, cls: 'k-owner' } : { word: 'Not decided', cls: 'k-none' };
 }
 
 function chListHtml(rows, env) {
@@ -6467,7 +6484,10 @@ async function viewChannels(which) {
   }
   if (which) return viewChannel(which);
   const d = await api('/api/admin/channels');
-  $('#view').innerHTML = `<h1>Channels</h1>${chListHtml(d.channels || [], d.environment || null)}`;
+  // Q28 (05.10.2026): the list sits centred on one white card, the shared cards rule (.c-sheet);
+  // the title sits where every other page has it.
+  $('#view').innerHTML = `<p class="c-crumb">Settings</p><div class="c-head"><div><h1>Channels</h1></div></div>
+    <div class="c-sheet c-chcard">${chListHtml(d.channels || [], d.environment || null)}</div>`;
 }
 // ================================================== end of the channel model ==
 
