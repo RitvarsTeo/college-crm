@@ -13,7 +13,7 @@
     },
     {
       "title": "People",
-      "body": "Everyone you are working with. Journey shows where they are, stage by stage, and what happened to the ones who finished. All people is the whole database.",
+      "body": "Everyone you are working with: search, add a lead, filter by stage. Journey shows where they are, stage by stage; Outcomes shows what happened to the ones who finished.",
       "target": ".cnav a[data-c=\"people\"]"
     },
     {

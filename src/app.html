@@ -2420,10 +2420,9 @@ function installCNav() {
     <a href="#/admissions" data-c="admissions" title="The work and what has arrived">${C_ICON.adm}<span>Admissions</span></a>
     <div class="kids"><a href="#/leads" data-c="leads" title="What arrived and needs a person to look at it"><span>Inbox</span><span class="n" id="cnLeads"></span></a>
       <a href="#/today" data-c="today" title="What needs my attention"><span>Next steps</span><span class="n" id="cnNext"></span></a></div>
-    <a href="#/people" data-c="people" title="Who we are working with, and where they are">${C_ICON.ppl}<span>People</span></a>
+    <a href="#/people" data-c="people" title="Everyone: search, add a lead, filter by stage">${C_ICON.ppl}<span>People</span></a>
     <div class="kids"><a href="#/journey" data-c="journey"><span>Journey</span></a>
-      <a href="#/outcomes" data-c="outcomes" title="Where finished journeys end: admitted or not proceeding"><span>Outcomes</span></a>
-      <a href="#/people/all" data-c="all"><span>All people</span></a></div>
+      <a href="#/outcomes" data-c="outcomes" title="Where finished journeys end: admitted or not proceeding"><span>Outcomes</span></a></div>
     <a href="#/reports" data-c="reports" title="What is happening">${C_ICON.rep}<span>Reports</span></a>
     <a href="#/settings" data-c="settings" id="cnSettings" class="c-navfoot">${C_ICON.set}<span>Settings</span></a>
   </div>`);
@@ -2447,7 +2446,7 @@ function installCTabs() {
     <button type="button" data-t="more" aria-haspopup="dialog" aria-expanded="false" onclick="cMoreOpen()">${C_ICON.more}<span>More</span></button></div>
   <div class="cmore" id="cMore" hidden><div class="cmore-back" onclick="cMoreClose()"></div>
     <div class="cmore-sheet" role="dialog" aria-modal="true" aria-label="More">
-      ${row('#/journey', C_ICON.journey, 'Journey')}${row('#/outcomes', C_ICON.out, 'Outcomes')}${row('#/people/all', C_ICON.all, 'All people')}
+      ${row('#/journey', C_ICON.journey, 'Journey')}${row('#/outcomes', C_ICON.out, 'Outcomes')}
       ${row('#/reports', C_ICON.rep, 'Reports')}${row('#/settings', C_ICON.set, 'Settings')}${row('#/help', C_ICON.help, 'Help')}</div></div>`);
   // the counts are the left card's own: copied whenever it changes, so the two can never disagree
   for (const [from, to] of [['#cnLeads', '#ctLeads'], ['#cnNext', '#ctNext']]) {
@@ -2484,14 +2483,13 @@ function cPlace(page) {
 function markCNav(page) {
   const place = cPlace(page);
   // THE PROGRESS LINE RUNS TO THE PAGE YOU ARE ON (the owner, 04.10.2026: "it stops at people"). The
-  // child is lit with its parent, so the spine reaches Journey or All people, not only People; Today
+  // child is lit with its parent, so the spine reaches Journey or Outcomes, not only People; Today
   // and Inbox light Admissions above them the same way.
   const parent = { today: 'admissions', leads: 'admissions' }[place] || place;
   const child = place === 'today' || place === 'leads' ? place
     : page === 'journey' ? 'journey'
     : page === 'outcomes' ? 'outcomes'   // back in the menu after Journey (the owner, 05.10.2026), People lit with it
-    : page === 'people' ? (/^#\/people\/all/.test(location.hash) ? 'all' : (typeof C_PTAB !== 'undefined' && C_PTAB === 'all' ? 'all' : 'journey'))
-    : null;
+    : null;   // People itself is everyone (the owner, 05.10.2026): People lights alone
   const lit = [parent, child].filter(Boolean);
   document.querySelectorAll('.cnav a').forEach((a) => a.classList.toggle('on', lit.includes(a.dataset.c)));
   const t = cTabOf(place);
@@ -2612,20 +2610,15 @@ async function routeC(page, arg) {
     return;
   }
   if (place === 'leads') return viewLeadsC();
-  // People is two views behind one menu item: Journey is the operational one and opens
-  // by default, All people is the whole database. #/journey and #/people both land here;
-  // the tab decides which is drawn. #/outcomes still resolves, into the Journey, because
-  // that is where outcomes live now.
-  // The Outcomes LIST is not in the menu any more, but it is not gone: the Journey's
-  // outcomes band links to it, a Reports chart click still drills into it through
-  // cChartGo, and it is the only place carrying the closed REASONS and the matriculated
-  // dates. Routing #/outcomes back to the Journey would have made the band link to
-  // itself and silently broken the chart drill-down.
+  // Outcomes is its own page, in the menu again under People (05.10.2026): the Journey's outcomes band, a
+  // Reports chart click (cChartGo) and Home's Cold / Reject all land on it.
   if (page === 'outcomes') return viewOutcomesC();
+  // PEOPLE IS EVERYONE (the owner, 05.10.2026: "All people can show up, when we click ON the People tab
+  // itself. Than we can click Journey and Outcomes."). #/people and the old #/people/all both open everyone.
   if (place === 'people') {
-    if (page === 'journey') C_PTAB = 'journey';
-    else if (page === 'people' && arg === 'all') C_PTAB = 'all';
-    return C_PTAB === 'all' ? viewPeopleC() : viewJourneyC();
+    if (page === 'journey') { C_PTAB = 'journey'; return viewJourneyC(); }
+    C_PTAB = 'all';
+    return viewPeopleC();
   }
   if (place === 'today') return viewTodayC();
   if (page === 'help') return viewHelpC();
@@ -3441,7 +3434,6 @@ function cDrawPeople() {
       ${C_PEDIT === p.id ? `<tr class="c-edit"><td colspan="5">${cEditForm(p, taskOf.get(p.id))}</td></tr>` : ''}`;
   $('#view').innerHTML = `<div class="c-head"><div><h1>People</h1></div>
       <div class="act"><input class="c-search" id="cPQ" placeholder="Search name, email or phone" value="${esc(C_PQ)}" aria-label="Search people"><button class="btn" onclick="openAdd()">Add lead</button></div></div>
-    ${cPeopleTabs('all')}
     ${cPeopleFilters(people)}
     <p class="c-explain">${explain}</p>
     ${C_PMSG ? `<div class="c-filter">${esc(C_PMSG)}</div>` : ''}
@@ -4016,16 +4008,6 @@ function cJourneySummary(everyone, taskOf, stages) {
     </details></div>`;
 }
 
-// People is one place with two views (the owner, 01.10.2026). Journey is the operational
-// one and opens by default; All people is the whole database, admitted and closed
-// included. One person, one record: the tab changes what you see, never where they live.
-function cPeopleTabs(which) {
-  const tab = (id, href, label) => `<a class="c-ptab${which === id ? ' on' : ''}" href="${href}"${
-    which === id ? ' aria-current="page"' : ''}>${label}</a>`;
-  return `<div class="c-ptabs" role="navigation" aria-label="People">${
-    tab('journey', '#/journey', 'Journey')}${tab('all', '#/people/all', 'All people')}</div>`;
-}
-
 // SCREEN 3, THE BOARD, ONE LEVEL AT A TIME (the owner, 01.10.2026: "all together is just
 // tooooo much"). The summary above was re-levelled on 01.10; the five columns below still
 // printed every card, so Application and Contract ran the page to about 1,460 px.
@@ -4113,8 +4095,8 @@ function cDrawJourney() {
     cJourneyTalk(sel.id).then(() => { if (C_JTALK.has(sel.id)) cDrawJourney(); });
   }
   $('#view').innerHTML = `
-    <div class="c-head"><div><h1>People</h1></div><div class="act"><button class="btn" onclick="openAdd()">Add lead</button></div></div>
-    ${cPeopleTabs('journey')}
+    <p class="c-crumb"><a href="#/people">People</a></p>
+    <div class="c-head"><div><h1>Journey</h1></div><div class="act"><button class="btn" onclick="openAdd()">Add lead</button></div></div>
     ${cJourneySummary(everyone, taskOf, stages)}
     ${cJourneyFilters(everyone)}
     <div class="c-journey c-nosel">${sel ? '<div class="c-jveil" onclick="cJClose()"></div>' : ''}<div style="min-width:0">

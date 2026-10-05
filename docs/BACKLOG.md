@@ -14,6 +14,17 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - People is everyone; Journey and Outcomes are its children (Q21)
+
+Ritvars 05.10 (via MASTER CONTROL): "All people can show up, when we click ON the People tab itself. Than we can click
+Journey and Outcomes." Picked: People (everyone, search, Add lead) > Journey, Outcomes. Menu: Home > Admissions (Inbox,
+Next steps) > People (Journey, Outcomes) > Reports > Settings; Reports keeps its place ("No, keep its place").
+Clicking People opens the whole list with search, Add lead and every filter (Stage Cold / Reject included). The "All
+people" menu item and the Journey | All people tab row are gone; #/people and the old #/people/all both open everyone.
+People lights alone on everyone, People + Journey / Outcomes on those. Without the tab row the Journey screen is titled
+Journey under a "People" crumb, like Outcomes (a consequence, flagged). Phone More: Journey, Outcomes, Reports,
+Settings, Help. The tour's People step says it. Order and tab tests updated. 1111/1111. BUILT, next patch.
+
 ## 05.10.2026 - The phone menu is a bottom tab bar (Q16)
 
 Ritvars 05.10: "The Menu is scrollable. First idea is to make a burger icon with the tabs inside, but maybe you have a

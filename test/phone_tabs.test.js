@@ -19,7 +19,7 @@ test('five tabs in his order, More last; the sheet holds the rest of the menu', 
   assert.deepEqual(tabs, ['Home #/home', 'Inbox #/leads', 'Next steps #/today', 'People #/people']);
   assert.match(f, /data-t="more"[^>]*onclick="cMoreOpen\(\)">\$\{C_ICON\.more\}<span>More<\/span><\/button><\/div>/);
   const rows = [...f.matchAll(/row\('(#\/[a-z/]+)', C_ICON\.[a-z]+, '([A-Za-z ]+)'\)/g)].map((m) => m[2] + ' ' + m[1]);
-  assert.deepEqual(rows, ['Journey #/journey', 'Outcomes #/outcomes', 'All people #/people/all', 'Reports #/reports', 'Settings #/settings', 'Help #/help']);
+  assert.deepEqual(rows, ['Journey #/journey', 'Outcomes #/outcomes', 'Reports #/reports', 'Settings #/settings', 'Help #/help']);
   assert.match(f, /<div class="ctabs" role="navigation"/, 'a div: the generic nav rules (sticky, top:0) never reach it');
 });
 
