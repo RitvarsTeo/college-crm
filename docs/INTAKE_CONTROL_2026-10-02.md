@@ -380,3 +380,7 @@ MAIN order: Q17 -> Q18 -> Q16 build -> Q19 A/B -> Q15 A/B. Q14 pick still to ask
 | Deploy | `dpl_Ak6K2vW3qFFFMQHAH5kBsikwo7G1`: live page byte-identical, 78/78 files identical, none outside git, 8 private routes 401, 0/23 leaks, health 200/302 |
 | NOT yet seen | signed in on production |
 **New base for every lane: `release/2026-10-05-intake-9` @ `aa6259b`. Merge it before your next commit.**
+
+## 05.10 - TENTH PATCH LIVE: `caf4de9` - functions in Frankfurt (speed), pushed
+Ritvars: "signed in, all works, BUT ITS veery slow" / "it was slow for a while. i dont think is explicitly patch 9". [seen] patch 8 and patch 9 make the same 11 API calls per Home and render in ~0.1 s locally, so not the page. [seen] every function ran in `iad1` (Washington, X-Vercel-Id arn1::iad1) while Neon is `eu-central-1` (Frankfurt, host read without the secret): each query crossed the Atlantic twice. Ritvars GO: "Yes, move + deploy". Change: `vercel.json` `"regions": ["fra1"]`, nothing else. 1134/1134. `dpl_4PYxPSArLexgHHRJkecRwYCZhNMp`: byte-identical page, 78/78 files, 8 private 401, 0 leaks; all 5 functions [fra1]; a no-database request 0.23-0.27 s -> 0.12-0.14 s from Riga. Database queries now stay inside Frankfurt. Undo = remove the line. Not yet felt by Ritvars signed in.
+**New base for every lane: `release/2026-10-05-intake-9` @ `caf4de9`.**
