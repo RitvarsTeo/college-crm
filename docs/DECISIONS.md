@@ -316,7 +316,9 @@ each as a working version and says so on screen.
   Officer Programs)". Form: MAIN (UI/UX) shows A/B, Ritvars picks.
 - **D-C8 - the Cold list goes to MAIN as A/B** ("For Cold list, also send it to uiux session, and lets
   see visual A/B's"). Marketing's own needs beyond it stay with Aigars + Tetiana.
-- D-C7 still open (the guardian question explained to Ritvars 05.10).
+- **D-C7 DECIDED - no guardian field for now** (Ritvars, popup "Leave out for now"): applicants come after
+  secondary or maritime school, so most are adults. Parked; one optional box if Ieva asks for it.
+  Education, study form and nationality stay as built.
 
 D-C1 to D-C4 are the ones C's screens wait on. They replace, in C's words, backlog rows 46, 50
 ("the real process after To look at"), 51 and 108, which say so.
