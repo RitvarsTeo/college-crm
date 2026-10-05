@@ -128,6 +128,20 @@ received to vote on those". No such variant is recorded (his 02.10 vote was Jour
 - `?first=kpi` - the four KPI cards above Needs you, so he can vote on it with a picture.
 No switch = Home as before. Superseded as a QUESTION by Q19 (Home = vitals only, MASTER CONTROL 05.10); kept until the
 Q19 pick says what to drop. 1103/1103. Shots: `For review/2026-10-05 Q13 target A-B/`.
+## 05.10.2026 - Q15: a note on every stage move, PICKED B (the dialog)
+
+Ritvars 05.10: "Going back and in overall moving stages should be documented, so notes box its for this.
+How could we in the best way make it work and not to annoy the user?" Brief Q15 via MASTER CONTROL.
+Worktree `crm-q15`, branch `ui/2026-10-05-stage-note-ab`, cut from MAIN `59f429e`.
+
+| What | Status |
+|---|---|
+| **DECIDED 05.10 (Ritvars):** a move back needs a note before it saves; a move forward asks and can be skipped. A note or logged call on that person in the last few minutes counts as the note (his popup); `config.stageMoveNote.recentMinutes` = 10 | BUILT |
+| Stage order = Journey order (`config.stages`); leaving Not proceeding for any stage = back; a move INTO Not proceeding keeps its own reason dialog | BUILT |
+| Server: 400 on a back move with no note and no recent manual note/call. `config.stageMoveNote.enforce` = **true** since the pick; false puts back the old behaviour. `GET /api/people/:id/move-check?to=` reads only. src/stagemove.js | BUILT |
+| **PICKED B 05.10 (Ritvars, via MASTER CONTROL):** the small dialog, always on, no switch. Back: Save + Cancel, a note required. Forward: Save + Skip. Reasons are one-click. Same on Journey drag, People quick edit, person page, the old board. A (the inline line) and `?movenote` removed | BUILT |
+| Reasons: 3 neutral per direction in `config.stageMoveNote.reasons`, for Ieva to tune | SAID |
+| Screens: `For review/2026-10-05 Q15 stage-move note A-B/`: shots 1-5 the A/B; 6 B back 1440 light, 7 B back phone 375 | BUILT |
 
 ## 05.10.2026 - A/B: the cold list for Marketing (D-C8), NOT PICKED
 

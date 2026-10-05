@@ -31,6 +31,7 @@ import * as snapshot from './snapshot.js';
 import { buildDemo } from './demo.js';
 import * as gate from './gate.js';
 import * as callpop from './callpop.js';
+import { moveCheck } from './stagemove.js';
 import { receivePhoneEvent, PHONE_EVENT_SECRET_ENV } from './phoneevent.js';
 import * as webpush from './webpush.js';
 import { verifyRequest, channelDef, channelIds, integrationIds, integrationDef, allChannelStatus, BadInbound,
@@ -1724,6 +1725,14 @@ export const handle = async (req, res) => {
       return json(res, 200, { ok: true, changes: r.changes, person: await personRow(id, await actorOf(req, b)) });
     }
 
+    // Q15: what a stage move would need, asked before the page shows any note box. Reads only.
+    if (req.method === 'GET' && /^\/api\/people\/[^/]+\/move-check$/.test(p)) {
+      const id = p.split('/')[3];
+      const before = await db.prepare('SELECT status FROM people WHERE id = ?').get(id);
+      if (!before) return json(res, 404, { error: 'not found' });
+      return json(res, 200, await moveCheck(db, CONFIG, id, before.status, url.searchParams.get('to') || '', nowIso()));
+    }
+
     if (req.method === 'POST' && /^\/api\/people\/[^/]+\/status$/.test(p)) {
       const id = p.split('/')[3];
       const b = await body(req);
@@ -1738,6 +1747,15 @@ export const handle = async (req, res) => {
         }
         if ((CONFIG.closedReasonNeedsNote || []).includes(b.reason) && !String(b.note || '').trim()) {
           return json(res, 400, { error: `"${b.reason}" needs an explanation.`, reasons: allowed, needsNote: true });
+        }
+      }
+      // Q15 (the owner 05.10.2026): a move back is not saved without a note, or a note or logged call
+      // from the last few minutes. config.stageMoveNote.enforce (on since the owner picked the
+      // dialog, 05.10.2026); turned off, the move saves exactly as it did before Q15.
+      if ((CONFIG.stageMoveNote || {}).enforce === true) {
+        const chk = await moveCheck(db, CONFIG, id, before.status, b.status, nowIso());
+        if (chk.direction === 'back' && !String(b.note || '').trim() && !chk.covered) {
+          return json(res, 400, { error: `A note is needed to move back to ${b.status}.`, needsMoveNote: true, ...chk });
         }
       }
       const now = nowIso();
