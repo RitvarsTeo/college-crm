@@ -14,6 +14,18 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - Q32: the page is TODAY again, first under Admissions (Q29 superseded)
+
+Ritvars 05.10 (via MASTER CONTROL): "Wait, next steps dont make sense for me anymore, as journey should nudge for next
+steps, right? So what if when we click admissions, first is todays work ..., then inbox goes as next step." Picked: keep
+the page, rename it back to TODAY, first under Admissions; Admissions opens Today; Inbox second. This SUPERSEDES the
+"Next steps" name locked earlier the same day and Q29 (Admissions -> Inbox, held, never committed).
+Menu: Home > Admissions (Today [count], Inbox) > People (Journey, Outcomes) > Reports > Settings. "Today" wherever a
+person reads the page name: menu, page title, the reload notice ("Back to Today"), Help boxes 01 Today / 02 Inbox /
+03 Outcomes, the tour step, the phone tab bar (Home, Today, Inbox, People, More). Route #/today; #/admissions opens
+Today. A person's next step (the thing) keeps its words. Order tests and no_crm_word updated. 1142/1142.
+Shots: `For review/2026-10-05 finals/Q32-*`. BUILT, next patch.
+
 ## 05.10.2026 - Q23: every Home figure a traced click; bigger donut and card figures; no peak label
 
 Ritvars to MAIN, 05.10, with a screenshot of production Home: "why doesnt it occupy the whole page? ALso, not all

@@ -48,19 +48,22 @@ test('the tour opens on the left card, in his words', () => {
   assert.ok(!/menu/i.test(tour[0].title + tour[0].body));
 });
 
-// LOCKED 05.10.2026: Home > Inbox > Next steps > Journey > All people > Reports > Settings; "Today" reads "Next steps"
-// and, the same day, Outcomes back after Journey ("we lost the outcomes tab ... cant open it from the left card")
-test('the menu order and the Next steps name', () => {
+// LOCKED 05.10.2026, the last word that day: Home > Admissions (Today, Inbox) > People (Journey, Outcomes) > Reports >
+// Settings. The page reads TODAY again and comes first ("when we click admissions, first is todays work ..., then inbox
+// goes as next step"); "Next steps" as the page name is gone, a person's next step keeps its words.
+test('the menu order and the Today name', () => {
   const APP = read('src', 'app.html');
   const nav = APP.slice(APP.indexOf('<div class="cnav" role="navigation"'), APP.indexOf('</div>`);', APP.indexOf('<div class="cnav" role="navigation"')));
   const order = [...nav.matchAll(/data-c="(\w+)"/g)].map((m) => m[1]);
-  assert.deepEqual(order, ['home', 'admissions', 'leads', 'today', 'people', 'journey', 'outcomes', 'reports', 'settings']);
-  assert.match(nav, /<span>Next steps<\/span><span class="n" id="cnNext"><\/span>/, 'the count badge stays on Next steps');
-  assert.doesNotMatch(nav, /<span>Today<\/span>/);
-  assert.match(APP, /<h1>Next steps<\/h1>/);
+  assert.deepEqual(order, ['home', 'admissions', 'today', 'leads', 'people', 'journey', 'outcomes', 'reports', 'settings']);
+  assert.match(nav, /<span>Today<\/span><span class="n" id="cnNext"><\/span>/, 'the count badge stays on Today');
+  assert.doesNotMatch(nav, /<span>Next steps<\/span>/);
+  assert.match(APP, /<h1>Today<\/h1>/);
+  assert.doesNotMatch(APP, /<h1>Next steps<\/h1>|Back to Next steps/);
   assert.match(APP, /cPlace\(page\)[\s\S]{0,400}today: 'today'/, 'the #/today route still works');
   const help = APP.slice(APP.indexOf('class="c-step-n">01'), APP.indexOf('class="c-step-n">03') + 60);
-  assert.match(help, /01<\/span><b>Inbox<\/b>[\s\S]*02<\/span><b>Next steps<\/b>[\s\S]*03<\/span><b>Outcomes<\/b>/);
+  assert.match(help, /01<\/span><b>Today<\/b>[\s\S]*02<\/span><b>Inbox<\/b>[\s\S]*03<\/span><b>Outcomes<\/b>/);
+  assert.match(APP, /<a class="c-step" href="#\/today"><span class="c-step-n">01<\/span><b>Today<\/b>/, 'box 01 opens Today');
 });
 test('the lines Intake writes on a person\'s History say Intake', () => {
   assert.match(read('src', 'intake.js'), /body: 'The Intake admissions journey ends here\. The record stays for reporting\.'/);

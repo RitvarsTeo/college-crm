@@ -7,7 +7,7 @@
       "target": ".cnav"
     },
     {
-      "title": "Next steps",
+      "title": "Today",
       "body": "What needs your attention: overdue first, then today, then coming up, and how many are waiting in the Inbox. Press Done, say how it went and choose the next step.",
       "target": ".cnav a[data-c=\"today\"]"
     },

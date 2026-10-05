@@ -22,7 +22,7 @@ test('"late" is asked about the Inbox, and the rule is unchanged', () => {
   assert.equal(late.a, 'The lead arrived before today, it is past 09:00 Riga time, and nobody has handled it yet.');
   assert.ok(!HELP.faq.some((f) => /New Leads/.test(f.q + f.a)), 'no answer says New Leads');
 });
-test('the Next steps tour step points at Next steps in the menu, not at Home', () => {
-  const step = HELP.tour.find((s) => s.title === 'Next steps');
+test('the Today tour step points at Today in the menu, not at Home', () => {
+  const step = HELP.tour.find((s) => s.title === 'Today');
   assert.equal(step.target, '.cnav a[data-c="today"]');
 });

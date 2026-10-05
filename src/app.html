@@ -1070,7 +1070,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-faq summary:focus-visible{outline:2px solid var(--pet);outline-offset:-2px}
   html.ui-c .c-faq > div{padding:0 16px 14px 32px;color:var(--t2);font-size:14px;line-height:1.55;max-width:75ch}
   /* THE (c) LINE IS THE FOOT OF EVERY PAGE, not of the menu (the owner, 05.10.2026; it replaces "the (c) line at the
-     bottom of the menu"). One shared foot, drawn by #view itself, so it is on Home, Next steps, the Inbox, Journey, All
+     bottom of the menu"). One shared foot, drawn by #view itself, so it is on Home, Today, the Inbox, Journey, All
      people, a person page, Reports, Settings and Help alike, and no redraw inside a page can drop it. The menu card keeps
      the logo, the watermark and the name, and its Help center link. */
   html.ui-c #view::after{content:"© Novikontas Academy";display:block;clear:both;margin:40px 0 0;padding:14px 0 4px;
@@ -2409,7 +2409,7 @@ const C_ICON = {
   // iconed, and marked here so nobody mistakes it for an agreed glyph.
   rep: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 16V8.5M7.7 16V4.8M12.3 16v-5.4M17 16V7"/></svg>',
   set: '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="2.6"/><path d="M10 2.5v2M10 15.5v2M2.5 10h2M15.5 10h2M4.7 4.7l1.4 1.4M13.9 13.9l1.4 1.4M4.7 15.3l1.4-1.4M13.9 6.1l1.4-1.4"/></svg>',
-  // PROVISIONAL (05.10.2026), for the phone tab bar only: Inbox, Next steps, More and Help had no icon. Drawn in
+  // PROVISIONAL (05.10.2026), for the phone tab bar only: Inbox, Today, More and Help had no icon. Drawn in
   // the same stroke language as the locked set; not an agreed glyph.
   inbox: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 11.5 5 4.5h10l2 7"/><path d="M3 11.5V16h14v-4.5h-4.2l-1 2h-3.6l-1-2z"/></svg>',
   next: '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7"/><path d="M10 6v4.3l2.8 1.7"/></svg>',
@@ -2437,8 +2437,10 @@ function installCNav() {
   brand.insertAdjacentHTML('afterend', `<div class="cnav" role="navigation" aria-label="Main">
     <a href="#/home" data-c="home" title="How admissions is performing">${C_ICON.home}<span>Home</span></a>
     <a href="#/admissions" data-c="admissions" title="The work and what has arrived">${C_ICON.adm}<span>Admissions</span></a>
-    <div class="kids"><a href="#/leads" data-c="leads" title="What arrived and needs a person to look at it"><span>Inbox</span><span class="n" id="cnLeads"></span></a>
-      <a href="#/today" data-c="today" title="What needs my attention"><span>Next steps</span><span class="n" id="cnNext"></span></a></div>
+    <!-- TODAY first, then the Inbox (the owner, 05.10.2026: "when we click admissions, first is todays work ...,
+         then inbox goes as next step"); the page reads Today again -->
+    <div class="kids"><a href="#/today" data-c="today" title="What needs my attention today"><span>Today</span><span class="n" id="cnNext"></span></a>
+      <a href="#/leads" data-c="leads" title="What arrived and needs a person to look at it"><span>Inbox</span><span class="n" id="cnLeads"></span></a></div>
     <a href="#/people" data-c="people" title="Everyone: search, add a lead, filter by stage">${C_ICON.ppl}<span>People</span></a>
     <div class="kids"><a href="#/journey" data-c="journey"><span>Journey</span></a>
       <a href="#/outcomes" data-c="outcomes" title="Where finished journeys end: admitted or not proceeding"><span>Outcomes</span></a></div>
@@ -2452,14 +2454,14 @@ function installCNav() {
 
 // THE PHONE TAB BAR (the owner, 05.10.2026: "The Menu is scrollable ... maybe you have a better idea?", then "OK,
 // lets do bottom card!"). On a phone the side menu's sideways-scrolling row gives way to five fixed tabs at the
-// bottom - Home, Inbox, Next steps, People, More - one tap each, the counts always in sight; More opens a sheet
+// bottom - Home, Today, Inbox, People, More - one tap each, the counts always in sight; More opens a sheet
 // with the rest of the menu. The same places and the same counts as the left card; a wide screen is unchanged.
 function installCTabs() {
   if (document.querySelector('.ctabs')) return;
   const tab = (href, t, icon, label, count) => `<a href="${href}" data-t="${t}">${icon}<span>${label}</span>${count ? `<span class="n" id="${count}"></span>` : ''}</a>`;
   const row = (href, icon, label) => `<a href="${href}" onclick="cMoreClose()">${icon}<span>${label}</span></a>`;
   document.body.insertAdjacentHTML('beforeend', `<div class="ctabs" role="navigation" aria-label="Phone menu">
-    ${tab('#/home', 'home', C_ICON.home, 'Home')}${tab('#/leads', 'leads', C_ICON.inbox, 'Inbox', 'ctLeads')}${tab('#/today', 'today', C_ICON.next, 'Next steps', 'ctNext')}${tab('#/people', 'people', C_ICON.ppl, 'People')}
+    ${tab('#/home', 'home', C_ICON.home, 'Home')}${tab('#/today', 'today', C_ICON.next, 'Today', 'ctNext')}${tab('#/leads', 'leads', C_ICON.inbox, 'Inbox', 'ctLeads')}${tab('#/people', 'people', C_ICON.ppl, 'People')}
     <button type="button" data-t="more" aria-haspopup="dialog" aria-expanded="false" onclick="cMoreOpen()">${C_ICON.more}<span>More</span></button></div>
   <div class="cmore" id="cMore" hidden><div class="cmore-back" onclick="cMoreClose()"></div>
     <div class="cmore-sheet" role="dialog" aria-modal="true" aria-label="More">
@@ -3071,7 +3073,7 @@ async function viewTodayC() {
   const waiting = (await api('/api/intake').catch(() => ({}))).counts || {};
   const fig = (n, label, tone = '') => `<div><b${tone ? ` class="${tone}"` : ''}>${n}</b><span>${label}</span></div>`;
   $('#view').innerHTML = `
-    <div class="c-head"><div><h1>Next steps</h1></div>
+    <div class="c-head"><div><h1>Today</h1></div>
       <div class="act"><span class="c-planned"><b>${pct}%</b> planned <small>${open.length - none.length} of ${open.length} open people have a next step</small></span></div></div>
     <div class="c-todaystrip">${fig(open.length, 'open')}${fig(over.length, 'overdue', over.length ? 'c-od' : '')}${fig(none.length, 'no next step')}${
       fig(`<a href="#/leads">${waiting.new || 0}</a>`, 'waiting in the Inbox')}</div>
@@ -3222,8 +3224,8 @@ function viewHelpC() {
       <div class="act"><button class="btn ghost" id="helpTourBtn" onclick="cStartTour(this)">Take the tour</button>
       <button class="btn" onclick="fbOpen('BUG')">Report a problem</button></div></div>
     <div class="c-steps">
-      <a class="c-step" href="#/leads"><span class="c-step-n">01</span><b>Inbox</b><small>Everything that arrives lands here first. Say what they want to study and the next step, and they move into Admissions. Junk is marked not relevant, never deleted.</small></a>
-      <a class="c-step" href="#/next"><span class="c-step-n">02</span><b>Next steps</b><small>What the team has to do: overdue, due today, coming up. Press Done, say how it went and choose the next step. Everyone always keeps a next step.</small></a>
+      <a class="c-step" href="#/today"><span class="c-step-n">01</span><b>Today</b><small>What the team has to do: overdue, due today, coming up. Press Done, say how it went and choose the next step. Everyone always keeps a next step.</small></a>
+      <a class="c-step" href="#/leads"><span class="c-step-n">02</span><b>Inbox</b><small>Everything that arrives lands here first. Say what they want to study and the next step, and they move into Admissions. Junk is marked not relevant, never deleted.</small></a>
       <a class="c-step" href="#/outcomes"><span class="c-step-n">03</span><b>Outcomes</b><small>Where finished journeys end: admitted or not proceeding. The download for management review is here.</small></a>
     </div>
     <h2 class="c-set-h">Questions and answers</h2>
@@ -4917,8 +4919,8 @@ async function route() {
     $('#view').innerHTML = e.message === 'not found'
       ? `<h1>Not here any more</h1>
          <div class="prov">This record is not in the database any more. This page may have been
-         open since before the data changed. Going back to Next steps will reload it.</div>
-         <button class="btn" onclick="location.hash='#/today'">Back to Next steps</button>`
+         open since before the data changed. Going back to Today will reload it.</div>
+         <button class="btn" onclick="location.hash='#/today'">Back to Today</button>`
       : `<div class="err">Failed to load: ${esc(e.message)}</div>`;
   }
   refreshBadge();
