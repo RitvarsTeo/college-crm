@@ -1600,6 +1600,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .chk.k-owner::before{background:var(--k-owner)}
   html.ui-c .chk.k-prov::before{background:transparent;box-shadow:inset 0 0 0 2px var(--k-owner)}
   html.ui-c .chk.k-hand::before{background:var(--k-hand)}
+  html.ui-c .chk.k-none::before{background:transparent;box-shadow:inset 0 0 0 2px var(--rule)}
   /* ------------------------------------------------ THE CALL POP-UP (Q6) -- */
   /* B: a corner card above everything; A: a slim line saying why the screen moved. The
      only motion is the arrival, once; the dot is still. Off for reduced motion. */
@@ -6380,6 +6381,10 @@ function chKind(c, env) {
   const life = chLife(c);
   if (life === 'dropped' || life === 'parked') return life;
   if (c.direction === 'manual') return 'hand';
+  // The owner's word is the record (the owner, 05.10.2026, in record.ownerSays). It outranks a
+  // provider-row count that has not caught up yet; the count stays in liveVerified as data.
+  const says = chRec(c).ownerSays;
+  if (says && says.state === 'live') return 'live';
   if (chLiveOf(c, env).state === 'yes') return 'live';
   const b = chRec(c).blocker;
   if (b && b.side === 'external') return 'provider';
@@ -6415,9 +6420,17 @@ function chState(c, env) {
   if (k === 'live') return { word: 'Live', cls: 'k-live' };
   if (k === 'configured') return { word: 'Configured', cls: 'k-conf' };
   if (k === 'hand') return { word: 'By hand', cls: 'k-hand' };
-  if (k === 'provider') return { word: 'Blocked', cls: 'k-prov' };
+  // Blocked means an outside party SAID NO, and only that (Q24, 05.10.2026: "why some channels
+  // show blocked, when they are not???"). Waiting on an outside answer is waiting, named by the
+  // party the record gives; nobody named and nothing outside is not decided.
+  if (k === 'provider') {
+    const b = chRec(c).blocker;
+    if (b.refused === true) return { word: 'Blocked', cls: 'k-prov' };
+    const party = b.party || b.owner;
+    return party ? { word: 'Waiting on ' + party, cls: 'k-owner' } : { word: 'Not decided', cls: 'k-none' };
+  }
   const who = chWhoActs(c);
-  return who ? { word: 'Waiting on ' + who, cls: 'k-owner' } : { word: 'Blocked', cls: 'k-prov' };
+  return who ? { word: 'Waiting on ' + who, cls: 'k-owner' } : { word: 'Not decided', cls: 'k-none' };
 }
 
 function chListHtml(rows, env) {
