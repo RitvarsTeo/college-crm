@@ -61,9 +61,8 @@ function harness({ summary = 'ok', intake = 'ok' } = {}) {
   vm.runInContext([
     line('const esc = '), line('const channelLabel = '), line('const cChannel = '),
     line('const cFig = '),
-    fn('async function cHomeData('), fn('function cHomeMonths('), line('const cHomeProg = '), line('const cHomeChan = '),
-    // the year's target (D-C6 A/B, test/home_target.test.js): loaded so cHomeB can call it; with no
-    // ?target= in location.search it draws nothing, so every test here reads the default Home
+    fn('async function cHomeData('), fn('function cHomeMonths('),
+    // the year's target on the Admitted card (test/home_target.test.js): loaded so cHomeB can call it
     APP.slice(APP.indexOf("// ---- THE YEAR'S TARGET (D-C6"), APP.indexOf('// ---- B: TODAY FIRST')),
     fn('function cHomeB('),
   ].join('\n') + '\nthis.data = cHomeData; this.B = cHomeB;', ctx);
@@ -117,8 +116,7 @@ test('at most TWO scenes on Home (KB 08 P5), and no mark is scaled on arrival', 
 // product, and an old ?home=a link cannot bring A back.
 test('Home is B, always: no switch, no A, and ?home= changes nothing', () => {
   const home = fn('async function viewHomeC(');
-  // Q19 (05.10.2026, not picked): ?home2=a|b draws the vitals instead; without it Home draws B
-  assert.match(home, /\$\{cHome2Mode\(\) \? cHomeVitals\(D, cHome2Mode\(\)\) : cHomeB\(D\)\}/, 'Home draws B');
+  assert.match(home, /\$\{cHomeB\(D\)\}/, 'Home draws B');
   assert.doesNotMatch(home, /cHomeA|homeVariant|chab|Journey first|Today first/, 'and nothing else, with no switch');
   assert.doesNotMatch(APP, /function cHomeA\(|function homeVariant\(|function homeSetVariant\(|homevariant/, 'the A code and the remembered choice are gone');
   assert.doesNotMatch(APP, /get\('home'\)/, 'nothing reads ?home= any more');

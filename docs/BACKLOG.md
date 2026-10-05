@@ -14,6 +14,21 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - PICKED: the final Home (Q20); the gap under Needs you is an A/B (?gap=1|2)
+
+Ritvars 05.10 (via MASTER CONTROL): "Todays, but without the admitted by programme. So nothing after Admissions by
+months below it. AAAAANd lets have a fix for the black space below needs you card." Target bars: "Yes, keep them".
+- Home = today's Home + the two target meters on the Admitted card (140 / NAV + ENG 98, from config). Nothing after
+  the Admissions by month row: Admitted by programme and Where admitted people came from leave Home; the donut stays.
+- Nothing lost: By programme is in Reports; **Where admitted people came from** is now in Reports for good (it
+  follows the period chosen there). The Q19 "Cold or reject" Reports section is dropped: that lives in Outcomes.
+- Every losing switch is removed: ?target=a|b|c|d, ?first=kpi, ?home2=a|b and Reports-under-Home. Reports keeps its
+  place. The Q13 and Q19 A/B entries below are CLOSED by this.
+- **Gap A/B, NOT PICKED:** `?gap=1` - The journey now compacts into two columns (the card widens to 340px) and both
+  cards end on one line; `?gap=2` - Needs you stretches to The journey now's height, its figures centred. No switch =
+  the gap as today. Cleanup commit after his pick.
+test/home_final.test.js; home_target rewritten; home_vitals removed. 1108/1108. Shots: `For review/2026-10-05 finals/`.
+
 ## 05.10.2026 - PICKED: the cold and reject lists live in Outcomes (D-C8 / Q14 = A)
 
 Ritvars 05.10 (via MASTER CONTROL): "Colds and Rejects to outcomes. Also these statuses are available just in the all
