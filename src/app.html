@@ -1590,6 +1590,22 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   @media(prefers-reduced-motion:reduce){#callpop .cp-card{animation:none}}
   /* Admissions second axis: dormant or declined. Two choices, each saying what it means,
      because "cold" and "reject" are Admissions own words and not everyone's. */
+  /* Q15 stage-move note (?movenote=a|b). A: one line under the card that moved. B: the small dialog. */
+  .c-mvline{display:grid;gap:7px;margin:6px 0 2px;padding:9px 10px;border:1px solid var(--rule);border-left:3px solid var(--brand-blue);
+    border-radius:8px;background:var(--surface);box-shadow:var(--shadow);font-size:13px;cursor:default}
+  .c-mvline.is-back{border-left-color:var(--warn)}
+  .c-mvline b,.c-mvbox b.c-mvq{font-size:13px;color:var(--ink)}
+  .c-mvchips{display:flex;flex-wrap:wrap;gap:6px}
+  .c-mvchips button{font:inherit;font-size:12px;padding:4px 9px;border-radius:999px;border:1px solid var(--rule);
+    background:var(--surface-2);color:var(--ink);cursor:pointer}
+  .c-mvchips button:hover,.c-mvchips button:focus-visible{border-color:var(--brand-blue)}
+  .c-mvline input,.c-mvbox textarea{font:inherit;font-size:13px;width:100%;box-sizing:border-box;padding:6px 8px;
+    border:1px solid var(--control-line, var(--rule));border-radius:6px;background:var(--field, var(--surface));color:var(--ink)}
+  .c-mvline input[aria-invalid="true"],.c-mvbox textarea[aria-invalid="true"]{border-color:var(--bad)}
+  .c-mvbox{display:grid;gap:10px;margin-top:10px}
+  .c-mvacts{display:flex;gap:8px}
+  @media(prefers-reduced-motion:no-preference){.c-mvline{animation:c-mvin .18s var(--ease-standard, ease-out)}}
+  @keyframes c-mvin{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
   html.ui-c .cltags{display:grid;gap:7px;margin-top:2px}
   html.ui-c .cltag{display:grid;grid-template-columns:auto 1fr;gap:3px 9px;align-items:baseline;
     border:1px solid var(--rule);border-radius:9px;padding:9px 11px;cursor:pointer}
@@ -3366,9 +3382,12 @@ async function cSavePerson(id) {
     for (const [f, sel] of [['name', '#pe-name'], ['email', '#pe-email'], ['phone', '#pe-phone'], ['programme', '#pe-programme'], ['notes', '#pe-notes']]) {
       const now = v(sel); if (now !== null && now !== (p[f] || '')) patch[f] = now;
     }
-    if (Object.keys(patch).length) await post(`/api/people/${id}/edit`, patch);
     const st = v('#pe-status');
-    if (st && st !== p.status) await post(`/api/people/${id}/status`, st === cClosedStage() ? { status: st, reason: v('#pe-reason'), note: v('#pe-rnote'), closedTag: (document.querySelector('input[name="peTag"]:checked') || {}).value || null } : { status: st });
+    // Q15: asked BEFORE anything is saved, so a back move that is put back saves nothing at all
+    const ask = st && st !== p.status && st !== cClosedStage() ? await cAskMoveNote(id, p.status, st, document.querySelector('#pe-status')) : { flag: false };
+    if (!ask) return;
+    if (Object.keys(patch).length) await post(`/api/people/${id}/edit`, patch);
+    if (st && st !== p.status) await post(`/api/people/${id}/status`, st === cClosedStage() ? { status: st, reason: v('#pe-reason'), note: v('#pe-rnote'), closedTag: (document.querySelector('input[name="peTag"]:checked') || {}).value || null } : cMoveBody(st, ask));
     if (t) { const due = v('#pe-due'); if (due && due !== cDay(t.due_at)) await post(`/api/tasks/${Number(t.id)}/reschedule`, { due }); }
     else { const label = v('#pe-next'); if (label) await post(`/api/people/${id}/task`, { label, due: v('#pe-ndue') }); }
     C_PEDIT = null; C_PMSG = `Saved ${p.name}.`;
@@ -3976,7 +3995,17 @@ function cDrawJourney() {
     col.addEventListener('dragleave', () => col.classList.remove('over'));
     col.addEventListener('drop', async (e) => { e.preventDefault(); col.classList.remove('over');
       const id = e.dataTransfer.getData('text/plain'); const p = C_JDATA.people.find((x) => x.id === id); if (!p || p.status === col.dataset.stage) return;
-      try { await post(`/api/people/${id}/status`, { status: col.dataset.stage }); C_JSEL = id; await viewJourneyC(); cNavCounts(); } catch (err) { alert(err.message); } });
+      try {
+        // Q15: the card lands at once; with ?movenote= it may wait in its new column for the note
+        let ask = { flag: false };
+        if (cMoveNoteMode()) {
+          const card = document.querySelector(`.c-jp[data-id="${CSS.escape(id)}"], .c-jexp[data-id="${CSS.escape(id)}"]`);
+          if (card) { col.querySelectorAll('.c-empty').forEach((x) => x.remove()); col.prepend(card); }
+          ask = await cAskMoveNote(id, p.status, col.dataset.stage, card);
+          if (!ask) { await viewJourneyC(); return; }
+        }
+        await post(`/api/people/${id}/status`, cMoveBody(col.dataset.stage, ask)); C_JSEL = id; await viewJourneyC(); cNavCounts();
+      } catch (err) { alert(err.message); } });
   });
 }
 
@@ -5409,9 +5438,117 @@ async function doSisHandoff(id) {
   catch (e) { alert(e.message); }
 }
 
+// A NOTE ON EVERY STAGE MOVE (Q15, the owner 05.10.2026): "Going back and in overall moving stages
+// should be documented, so notes box its for this." A move back is not saved without a note; a move
+// forward asks and can be skipped; a note or logged call in the last few minutes counts (the server
+// says so through /move-check). The rule is his; the A/B is the FORM only:
+//   ?movenote=a  inline: the card lands at once and one line opens under it, cursor in it.
+//                Back: Esc or a click away puts it back. Forward: Esc or a click away skips.
+//   ?movenote=b  a small dialog like the Not proceeding one. Back: required. Forward: Skip.
+//   no switch    today exactly: nothing is asked and no moveNote goes to the server.
+// The same on the Journey drag, the People quick edit and the person page. src/stagemove.js holds
+// the server's copy of cMoveDir(); test/stage_move_note.test.js keeps the two the same.
+function cMoveNoteMode() {
+  let m = '';
+  try { m = new URLSearchParams(location.search).get('movenote') || ''; } catch {}
+  return m === 'a' || m === 'b' ? m : '';
+}
+function cMoveDir(from, to) {
+  const closed = (CFG.stageRoles || {}).closed || 'Not proceeding';
+  if (!to || from === to) return 'none';
+  if (to === closed) return 'close';
+  if (from === closed) return 'back';
+  const order = (CFG.stages || []).map((s) => s.id).filter((s) => s !== closed);
+  const a = order.indexOf(from); const b = order.indexOf(to);
+  if (a < 0 || b < 0) return 'forward';
+  return b < a ? 'back' : 'forward';
+}
+const cMoveQ = (dir, to) => (dir === 'back' ? `Why back to ${to}?` : `Why on to ${to}?`);
+const cMoveReasons = (dir) => (((CFG.stageMoveNote || {}).reasons || {})[dir] || []);
+const cMoveText = (reason, typed) => [reason, String(typed || '').trim()].filter(Boolean).join(' - ');
+// What to post for a move. A null ask means a back move was put back: post nothing.
+const cMoveBody = (to, ask) => (ask && ask.flag ? { status: to, moveNote: true, ...(ask.note ? { note: ask.note } : {}) } : { status: to });
+
+// Resolves to { flag, note } to save with, or null when a back move was put back.
+async function cAskMoveNote(id, from, to, anchor) {
+  const mode = cMoveNoteMode();
+  if (!mode) return { flag: false };
+  const dir = cMoveDir(from, to);
+  if (dir !== 'back' && dir !== 'forward') return { flag: false };
+  let chk = null;
+  try { chk = await api(`/api/people/${encodeURIComponent(id)}/move-check?to=${encodeURIComponent(to)}`); } catch {}
+  if (chk && chk.covered) return { flag: true, note: '' };
+  const note = await (mode === 'a' && anchor ? cMoveLine(dir, to, anchor) : cMoveDialog(dir, to));
+  return note === null ? null : { flag: true, note };
+}
+
+// A: one line, under the card (or the stage field) that moved.
+function cMoveLine(dir, to, anchor) {
+  return new Promise((resolve) => {
+    document.querySelectorAll('.c-mvline').forEach((x) => x.remove());
+    const el = document.createElement('div');
+    el.className = 'c-mvline' + (dir === 'back' ? ' is-back' : '');
+    el.setAttribute('role', 'group'); el.setAttribute('aria-label', cMoveQ(dir, to));
+    el.innerHTML = `<b>${esc(cMoveQ(dir, to))}</b>
+      <span class="c-mvchips">${cMoveReasons(dir).map((r) => `<button type="button" data-r="${esc(r)}">${esc(r)}</button>`).join('')}</span>
+      <input type="text" aria-label="Note" placeholder="Note"${dir === 'back' ? ' required' : ''}>`;
+    anchor.insertAdjacentElement('afterend', el);
+    const input = el.querySelector('input');
+    let done = false;
+    const away = (e) => { if (!el.contains(e.target)) finish(dir === 'back' ? null : ''); };
+    const finish = (v) => { if (done) return; done = true; document.removeEventListener('mousedown', away, true); el.remove(); resolve(v); };
+    ['click', 'mousedown', 'dragstart'].forEach((t) => el.addEventListener(t, (e) => e.stopPropagation()));
+    el.querySelectorAll('button[data-r]').forEach((b) => b.addEventListener('click', () => finish(cMoveText(b.dataset.r, input.value))));
+    input.addEventListener('keydown', (e) => {
+      e.stopPropagation();
+      if (e.key === 'Escape') { e.preventDefault(); finish(dir === 'back' ? null : ''); }
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (input.value.trim()) finish(input.value.trim());
+        else if (dir === 'back') input.setAttribute('aria-invalid', 'true');
+        else finish('');
+      }
+    });
+    input.addEventListener('input', () => input.removeAttribute('aria-invalid'));
+    setTimeout(() => document.addEventListener('mousedown', away, true), 0);
+    input.focus();
+  });
+}
+
+// B: the small dialog, built like modal() so it looks like the Not proceeding one.
+function cMoveDialog(dir, to) {
+  return new Promise((resolve) => {
+    const root = $('#modal');
+    const out = dir === 'back' ? 'Cancel' : 'Skip';
+    root.innerHTML = `<div class="modal"><div class="box" role="dialog" aria-modal="true" aria-label="${esc(cMoveQ(dir, to))}">
+      <h3 style="margin:0">${esc(cMoveQ(dir, to))}</h3>
+      <div class="c-mvbox"><span class="c-mvchips">${cMoveReasons(dir).map((r) => `<button type="button" data-r="${esc(r)}">${esc(r)}</button>`).join('')}</span>
+      <textarea rows="2" aria-label="Note" placeholder="Note"></textarea>
+      <div class="c-mvacts"><button class="btn" data-ok="1">Save</button><button class="btn ghost" data-x="1">${out}</button></div></div></div></div>`;
+    const box = root.querySelector('.modal'); const ta = root.querySelector('textarea');
+    let done = false;
+    const key = (e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); skip(); } };
+    const finish = (v) => { if (done) return; done = true; document.removeEventListener('keydown', key, true); root.innerHTML = ''; resolve(v); };
+    const skip = () => finish(dir === 'back' ? null : '');
+    document.addEventListener('keydown', key, true);
+    box.addEventListener('click', (e) => { if (e.target === box) skip(); });
+    root.querySelectorAll('[data-x]').forEach((b) => b.addEventListener('click', skip));
+    root.querySelectorAll('button[data-r]').forEach((b) => b.addEventListener('click', () => finish(cMoveText(b.dataset.r, ta.value))));
+    root.querySelector('[data-ok]').addEventListener('click', () => {
+      if (ta.value.trim()) finish(ta.value.trim());
+      else if (dir === 'back') ta.setAttribute('aria-invalid', 'true');
+      else finish('');
+    });
+    ta.addEventListener('input', () => ta.removeAttribute('aria-invalid'));
+    ta.focus();
+  });
+}
+
 async function changeStatus(id, status) {
   if (status === 'Not proceeding') return openCloseReason(id);
-  await post(`/api/people/${id}/status`, { status });
+  const ask = await cAskMoveNote(id, C_STAGE_OF.get(id), status, document.querySelector('#cStage') || document.querySelector('#stg'));
+  if (!ask) return viewPerson(id);
+  await post(`/api/people/${id}/status`, cMoveBody(status, ask));
   viewPerson(id);
 }
 
@@ -6824,7 +6961,8 @@ async function pDrop(e, stage) {
     return openCloseReason(id);
   }
   try {
-    await post(`/api/people/${id}/status`, { status: stage });
+    const ask = await cAskMoveNote(id, C_STAGE_OF.get(id), stage, null);
+    if (ask) await post(`/api/people/${id}/status`, cMoveBody(stage, ask));
   } catch (err) {
     alert(err.message);
   }

@@ -1142,6 +1142,15 @@
     "confirmedOn": "25.09.2026",
     "_note": "Only Marina can grant domain-wide delegation. Our side is built: the poll route, the JWT assertion with sub=edu@novikontas.org, read-only scope, multipart flattening and watch expiry. What is left is twenty minutes of her time and the key file, which comes by password manager or in person and never by chat or email."
   },
+  "_stageMoveNote": "Q15, Ritvars 05.10.2026: 'Going back and in overall moving stages should be documented, so notes box its for this.' A move back needs a note, a move forward asks and can be skipped; a note or logged call in the last recentMinutes counts (his popup). enforce stays false until he picks A or B; the ?movenote=a|b switch sends the rule itself. Reasons are neutral placeholders for Ieva to tune.",
+  "stageMoveNote": {
+    "enforce": false,
+    "recentMinutes": 10,
+    "reasons": {
+      "back": ["Moved too early", "Waiting on them", "Needs another talk"],
+      "forward": ["Spoke with them", "They replied", "Documents in"]
+    }
+  },
   "_closedTags": "Ieva, 30.09.2026, in her own words: 'pie not proceeding katram ir iespeja pievienot, piemeram, tag - cold, reject'. This is a SECOND axis and not a second reason list. closedReason says WHY we stopped. closedTag says WHAT NOW: is this person dormant and expected back, or declined. She needs it for statistics and to aim marketing at the cold ones.",
   "closedTags": [
     {

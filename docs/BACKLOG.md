@@ -14,6 +14,21 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - Q15 A/B: a note on every stage move, NOT PICKED
+
+Ritvars 05.10: "Going back and in overall moving stages should be documented, so notes box its for this.
+How could we in the best way make it work and not to annoy the user?" Brief Q15 via MASTER CONTROL.
+Worktree `crm-q15`, branch `ui/2026-10-05-stage-note-ab`, cut from MAIN `59f429e`.
+
+| What | Status |
+|---|---|
+| **DECIDED 05.10 (Ritvars):** a move back needs a note before it saves; a move forward asks and can be skipped. A note or logged call on that person in the last few minutes counts as the note (his popup); `config.stageMoveNote.recentMinutes` = 10 | BUILT |
+| Stage order = Journey order (`config.stages`); leaving Not proceeding for any stage = back; a move INTO Not proceeding keeps its own reason dialog | BUILT |
+| Server: 400 on a back move with no note and no recent manual note/call, only when the page sends `moveNote` or `stageMoveNote.enforce` is on (false). `GET /api/people/:id/move-check?to=` reads only. src/stagemove.js | BUILT |
+| The A/B, the FORM only, `?movenote=a` inline line under the card / `?movenote=b` small dialog. Same on Journey drag, People quick edit, person page, the old board. No switch = today exactly, page and server | BUILT, NOT PICKED |
+| Reasons: 3 neutral per direction in `config.stageMoveNote.reasons`, for Ieva to tune | SAID |
+| Screens: `For review/2026-10-05 Q15 stage-move note A-B/` (A back, A forward, B back, B forward, A dark), 1440 | BUILT |
+
 ## 05.10.2026 - A/B: the cold list for Marketing (D-C8), NOT PICKED
 
 Ritvars 05.10: "For Cold list, also send it to uiux session, and lets see visual A/B's." Brief Q14 via MASTER CONTROL:
