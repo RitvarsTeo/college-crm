@@ -320,3 +320,14 @@ Note: patch 8 deploy_verify said MISMATCH on the first fetch; a re-fetch a minut
 Reconciled: MAIN `ui/2026-10-02-main-ab` held `6accf01` (© line = page foot) and `70f1f38` (menu Inbox > Next steps, "CRM" sweep), both BUILT, not live. New: `f560fc9` - Help: sign-in + time-zone questions deleted, delete answer adds the 13 months, "late" asks about the Inbox (id kept, rule unchanged); tour step 2 now lights Next steps (it lit Home); Needs-you shelf (`.kday-sheet::before/::after`) removed, light + dark seen; two History lines say Intake. 1090/1090. Still "CRM", not on any menu screen: simulator / inspector texts (SAID).
 Production [seen 05.10 ~10:45 by GET of the bare address]: the served page = `5eba1a6` src/app.html byte for byte apart from the server-injected sign-in return script. So prod = patch 8; `6accf01`, `70f1f38`, `f560fc9` are NOT live. Next patch = those three, on his GO only.
 Website channel: the 04.10 record says `WEBSITE_FORM_SECRET` IS set and the Tilda webhook is Active but not ticked on any form block (waits for Q3). The "missing secret" blocker in the handoff is out of date.
+
+## 05.10 ~10:45 - ONE MASTER CONTROL again, one writer per branch (Ritvars)
+Ritvars: this session (9bfb7d, account marketing@) is the one Intake MASTER CONTROL. Found after the account move: two sessions had written on `ui/2026-10-02-main-ab`, and a lane session wrote this file (`c4c3aac`, kept). Fixed, briefs sent 05.10:
+| Session | Role | Writes only in |
+|---|---|---|
+| MAIN UI UX A/B INTAKE [97f022] | MAIN | `crm-main-ab` (tip `f560fc9`, 1090/1090 re-run by control on a clean export) |
+| QA / INTEGRATION / FINAL CONTROL [c87e4d] | QA, read-only; reports to control, briefs nobody | nothing (wrote `f560fc9` + `c4c3aac` before this) |
+| CHANNELS A/B INTAKE [3827a1] | CHANNELS, Q8 in progress | `crm-programme` (`fix/2026-10-05-programme`, uncommitted), `crm-channels-s3` |
+| INTAKE FEEDBACK CLOSURE AUDIT [372b40] | CLOSURE | `crm-closure-s5` (tip `71c3a83`) |
+| APPLICATIONS / REPORTS/ SIS [119d4c] | APPLICATIONS, finished per Ritvars; report asked | `crm-applications-s4` (tip `cd42945`) |
+Next patch so far (not live, prod = `5eba1a6`): MAIN `6accf01` + `70f1f38` + `f560fc9`. Queue from QA's kit part 3 read: Help sorted by most opened breaks the 01.10 "not a popularity system" rule (`src/assets/help-center.js` order(), owner MAIN, SAID); kit part 2 still has the © line in the menu card (owner kit, SAID).
