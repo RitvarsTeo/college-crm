@@ -70,3 +70,13 @@ test('the form controls stay readable, the A/B is gone, dark is unchanged', () =
   assert.doesNotMatch(APP, /menu-a|menu-b|menuVariant|menuSetVariant|c-menuab|cMenuAb/);
   assert.match(APP, /html\.ui-c\[data-theme="dark"\] \.shell > nav\{background:linear-gradient\(180deg,rgba\(8,24,46,\.78\) 0%,rgba\(8,24,46,\.92\) 100%\)/);
 });
+
+// "IT JUST NEEDS TO whiten up the TEXT" (the owner, 05.10.2026): no white pill anywhere; the lit items (the
+// page and its parent) keep the soft highlight and get white, bold words, icon and count
+test('lit items get white bold text, icon and count on the soft highlight; no white pill', () => {
+  assert.match(APP, /html\.ui-c:not\(\[data-theme="dark"\]\) \.cnav a\.on\{background:rgba\(255,255,255,\.34\);color:#ffffff;font-weight:700\}/);
+  assert.match(APP, /html\.ui-c:not\(\[data-theme="dark"\]\) \.cnav a\.on svg\{color:#ffffff\}/);
+  assert.match(APP, /\.cnav a\.on \.n, html\.ui-c:not\(\[data-theme="dark"\]\) \.cnav a\.on \.n\.warn\{color:#ffffff;font-weight:700\}/);
+  assert.doesNotMatch(APP, /\.cnav a\.on[^{]*\{background:#ffffff/, 'no white pill on any lit item');
+  assert.match(APP, /const lit = \[parent, child\]\.filter\(Boolean\);/, 'the page and its parent are both lit');
+});

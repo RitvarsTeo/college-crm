@@ -95,7 +95,7 @@ export function cookieHeader(ticket, { secure = true } = {}) {
 }
 
 // Paths that work before the door, and only these.
-export const OPEN_PATHS = new Set(['/access', '/favicon.ico', '/healthz']);
+export const OPEN_PATHS = new Set(['/access', '/favicon.ico', '/healthz', '/sw.js']);   // sw.js: no data, Q6
 
 export function allows(pathname, env = process.env) {
   if (!isPublic(env)) return true;              // on a laptop there is no door
@@ -112,6 +112,8 @@ export function allows(pathname, env = process.env) {
   const inbound = /^\/api\/inbound\/([a-z_]+)$/.exec(pathname);
   if (inbound && channelDef(inbound[1])) return true;
   if (pathname.startsWith('/api/cron/')) return true;
+  // the pushed call events (Q6): their own shared secret is their auth, like a channel's
+  if (pathname === '/api/inbound/phone-event') return true;
   return false;
 }
 

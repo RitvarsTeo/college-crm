@@ -935,8 +935,12 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c:not([data-theme="dark"]) .cnav a{color:#0a2463}
   html.ui-c:not([data-theme="dark"]) .cnav a svg{opacity:1}
   html.ui-c:not([data-theme="dark"]) .cnav a:hover{background:rgba(255,255,255,.28);color:#0a2463}
-  html.ui-c:not([data-theme="dark"]) .cnav a.on{background:rgba(255,255,255,.34);color:#0a2463;font-weight:650}
-  html.ui-c:not([data-theme="dark"]) .cnav a.on svg{color:#0a2463}
+  /* THE LIT ITEMS: WHITE TEXT, not a white tab (the owner, 05.10.2026: "why are there white pills? fix that
+     immediately ... IT JUST NEEDS TO whiten up the TEXT"). The page you are on AND its parent keep the soft
+     highlight they always had, and their words, icon and count turn white and bold. No pill on any item. */
+  html.ui-c:not([data-theme="dark"]) .cnav a.on{background:rgba(255,255,255,.34);color:#ffffff;font-weight:700}
+  html.ui-c:not([data-theme="dark"]) .cnav a.on .n, html.ui-c:not([data-theme="dark"]) .cnav a.on .n.warn{color:#ffffff;font-weight:700}
+  html.ui-c:not([data-theme="dark"]) .cnav a.on svg{color:#ffffff}
   html.ui-c:not([data-theme="dark"]) .cnav .n.warn{color:#0a2463;font-weight:700}
   html.ui-c:not([data-theme="dark"]) .cnav .kids{border-left-color:rgba(10,36,99,.35)}
   html.ui-c:not([data-theme="dark"]) .cnav .c-spine line{stroke:rgba(10,36,99,.35)}
@@ -1099,6 +1103,15 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-who b{display:block;font-weight:600;overflow-wrap:anywhere}
   html.ui-c .c-who small{display:block;color:var(--t3);font-size:12.5px}
   html.ui-c .c-what{color:var(--t2)} html.ui-c .c-what.none{color:var(--c-warn)}
+  /* THE INBOX MESSAGE IS A DETAIL, NOT A NAME (the owner on production, 05.10.2026: "this is too much of font size!
+     fix it!"): a whole email body, Google Chat notices and long reply threads filled the screen at full size. The
+     message text takes the detail size (13px, slate, normal weight) and stops at two lines; the row opens the whole
+     item. The sender keeps the name size. Both modes. */
+  html.ui-c #view .c-lead .c-what{font-size:var(--type-detail);font-weight:400;color:var(--t3);line-height:1.45;white-space:normal;overflow-wrap:anywhere;
+    display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden}
+  /* the same rule for the note under a step on Today and in lists: detail size, two lines at most */
+  html.ui-c #view .c-nnote{font-size:var(--type-detail);white-space:normal;overflow-wrap:anywhere;
+    display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden}
   html.ui-c .c-when{font-size:13px;font-variant-numeric:tabular-nums;color:var(--t2)}
   html.ui-c .c-when.over{color:var(--c-bad);font-weight:600} html.ui-c .c-when.today{color:var(--c-warn);font-weight:600}
   html.ui-c .c-acts{display:flex;gap:6px;justify-content:flex-end}
@@ -1199,7 +1212,9 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-planned{font-size:13px;color:var(--t2)} html.ui-c .c-planned b{font-size:18px;color:var(--ink);margin-right:3px} html.ui-c .c-planned small{display:block;color:var(--t3);font-size:12px}
   html.ui-c .c-filter{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--c-accent-bg);border:1px solid var(--rule);border-radius:9px;padding:8px 12px;margin:0 0 14px;font-size:13.5px}
   @media (max-width:1100px){ html.ui-c .kthree{grid-template-columns:minmax(0,1fr) minmax(0,1fr)} }
-  @media (max-width:760px){ html.ui-c .kstrip{grid-template-columns:1fr 1fr} html.ui-c .kstrip > div:nth-child(3){border-left:0;padding-left:0} html.ui-c .kthree{grid-template-columns:1fr} }
+  /* the strip's figures are cards (30.09): the old hairline-row rule that took the third figure's left padding away on a
+     phone is gone, it left "Conversion" touching its card's edge (seen 05.10.2026) */
+  @media (max-width:760px){ html.ui-c .kstrip{grid-template-columns:1fr 1fr} html.ui-c .kthree{grid-template-columns:1fr} }
 
   /* Inbox, People and Journey in C. Same hairline sheets as Next Steps. */
   html.ui-c .c-lead.is-open{background:var(--c-sel)}
@@ -1528,6 +1543,26 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .chk.k-owner::before{background:var(--k-owner)}
   html.ui-c .chk.k-prov::before{background:transparent;box-shadow:inset 0 0 0 2px var(--k-owner)}
   html.ui-c .chk.k-hand::before{background:var(--k-hand)}
+  /* ------------------------------------------------ THE CALL POP-UP (Q6) -- */
+  /* B: a corner card above everything; A: a slim line saying why the screen moved. The
+     only motion is the arrival, once; the dot is still. Off for reduced motion. */
+  #callpop .cp-card{position:fixed;right:16px;bottom:16px;z-index:300;width:330px;max-width:calc(100vw - 32px);
+    background:var(--card,#fff);color:var(--ink);border:1px solid var(--rule);border-radius:14px;padding:12px 14px 12px;
+    box-shadow:0 14px 40px rgba(3,12,26,.22);display:grid;gap:7px;animation:cp-in .45s cubic-bezier(.22,.9,.3,1) backwards}
+  #callpop header{display:flex;align-items:center;gap:7px}
+  #callpop a,#callpop a:hover{text-decoration:none}   /* the owner, 04.10: no underlines */
+  #callpop .cp-dot{width:9px;height:9px;border-radius:50%;background:#29a8df;flex:0 0 auto}
+  #callpop .cp-x{margin-left:auto;appearance:none;border:0;background:transparent;color:var(--t3);font-size:18px;line-height:1;cursor:pointer;padding:2px 6px}
+  #callpop .cp-name{font-size:18px;line-height:1.2}
+  #callpop .cp-tag{justify-self:start;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;border:1px solid var(--rule);color:var(--t2)}
+  #callpop .cp-tag.new{border-color:#E0A526}
+  #callpop dl{margin:0;display:grid;gap:5px;font-size:12px}
+  #callpop dl div{display:grid;grid-template-columns:5.6em minmax(0,1fr);gap:8px}
+  #callpop dt{color:var(--t4);font-size:10px;letter-spacing:.05em;text-transform:uppercase;padding-top:2px}
+  #callpop dd{margin:0;color:var(--t2);overflow-wrap:anywhere}
+  #callpop footer{display:flex;align-items:center;gap:8px;margin-top:3px}
+  @keyframes cp-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  @media(prefers-reduced-motion:reduce){#callpop .cp-card{animation:none}}
   /* Admissions second axis: dormant or declined. Two choices, each saying what it means,
      because "cold" and "reject" are Admissions own words and not everyone's. */
   html.ui-c .cltags{display:grid;gap:7px;margin-top:2px}
@@ -1916,6 +1951,37 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-fb-kind.question{color:var(--pet);border-color:var(--pet)}
   html.ui-c .c-fb-body{margin-top:6px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}
   html.ui-c .c-fb-shot{display:block;margin-top:8px;max-width:min(420px,100%);border:1px solid var(--rule);border-radius:8px;cursor:zoom-in}
+/* ---- CARDS 3: ONE CARD + A THIN BRAND-BLUE TOP EDGE (the owner's pick, A/B batch step 2c, 05.10.2026),
+   light mode. ONE rule for every card in the app, not one per screen: the list below names what IS a card.
+   White, 14px corner, a hairline border, a soft two-step shadow, and a 3px Novikontas Blue #53a7db top edge.
+   The Needs-you sheet keeps its amber top: that is the signal. NO BOXES INSIDE A CARD: what sat in a card as
+   its own box becomes a plain column split by a 1px hairline (#e3e9ef). Kit part 2 (kit-panel) follows later
+   for the other apps; it is not touched here. Dark mode is unchanged until it is decided. ---- */
+html.ui-c:not([data-theme="dark"]) #view :is(.kstrip > div, .kday-sheet, .kday-side, .c-todaystrip, .c-sheet, .c-apps, .kflow.jband){
+  background:#ffffff;border:1px solid rgba(10,36,99,.07);border-top:3px solid #53a7db;border-radius:14px;
+  box-shadow:0 1px 2px rgba(10,36,99,.06),0 10px 24px rgba(10,36,99,.08)}
+html.ui-c:not([data-theme="dark"]) #view .kday-sheet.kday-sheet.kday-sheet{border-top-color:#F7C04F}   /* the signal stays amber; repeated class so it outranks the shared rule's :is() */
+/* the Needs-you tiles: plain columns split by hairlines */
+html.ui-c:not([data-theme="dark"]) #view .kday-row{gap:0}
+html.ui-c:not([data-theme="dark"]) #view .kneed{background:transparent;border:0;border-left:1px solid #e3e9ef;border-radius:0;box-shadow:none;padding:4px 16px}
+html.ui-c:not([data-theme="dark"]) #view .kneed:first-child{border-left:0;padding-left:0}
+/* the Journey band's Arrived / Admitted / Not proceeding: plain figures, a hairline from the columns */
+html.ui-c:not([data-theme="dark"]) #view .jb-end{background:transparent;border:0;border-radius:0;box-shadow:none;padding:6px 12px}
+html.ui-c:not([data-theme="dark"]) #view .jband-row > .jb-end{border-right:1px solid #e3e9ef}
+html.ui-c:not([data-theme="dark"]) #view .jb-outs{border-left:1px solid #e3e9ef;gap:6px}
+/* DARK, matched (the owner, 05.10.2026: "Match the dark, obviously!"): the same one card on the kit's SOLID dark
+   surface (never glass), the same 3px Novikontas Blue top edge (#53a7db on #133a60 is about 3.9:1, enough for a
+   non-text edge), a deeper shadow, the same plain insides with a light hairline; Needs-you stays amber. */
+html.ui-c[data-theme="dark"] #view :is(.kstrip > div, .kday-sheet, .kday-side, .c-todaystrip, .c-sheet, .c-apps, .kflow.jband){
+  background:#133a60;border:1px solid rgba(194,211,222,.12);border-top:3px solid #53a7db;border-radius:14px;
+  box-shadow:0 1px 2px rgba(0,0,0,.25),0 10px 24px rgba(0,0,0,.35);-webkit-backdrop-filter:none;backdrop-filter:none}
+html.ui-c[data-theme="dark"] #view .kday-sheet.kday-sheet.kday-sheet{border-top-color:#F7C04F}
+html.ui-c[data-theme="dark"] #view .kday-row{gap:0}
+html.ui-c[data-theme="dark"] #view .kneed{background:transparent;border:0;border-left:1px solid rgba(194,211,222,.14);border-radius:0;box-shadow:none;padding:4px 16px}
+html.ui-c[data-theme="dark"] #view .kneed:first-child{border-left:0;padding-left:0}
+html.ui-c[data-theme="dark"] #view .jb-end{background:transparent;border:0;border-radius:0;box-shadow:none;padding:6px 12px}
+html.ui-c[data-theme="dark"] #view .jband-row > .jb-end{border-right:1px solid rgba(194,211,222,.14)}
+html.ui-c[data-theme="dark"] #view .jb-outs{border-left:1px solid rgba(194,211,222,.14);gap:6px}
 /* ===== KIT PART 9, REPORT MOTION: copied verbatim from Dev kits to share/Component library/9 Report motion/motion.css
    (the rule: take it, never hand-write motion). Intake is one file with no build step, so it is inlined, not linked.
    Change it in the kit first, then copy it here again. ===== */
@@ -4609,8 +4675,12 @@ const dueText = (d) => {
 
 
 // ---------------------------------------------------------------- routing --
+// THE APP OPENS ON HOME (the owner, 05.10.2026: opening it landed on Admissions / Today). An empty address is
+// Home, the metrics page, since Home came back on 01.10; '#/today' was V1's start page, left behind. The hidden
+// classic view has no Home, so it keeps Today.
+const START = () => (UI === 'c' ? '#/home' : '#/today');
 async function route() {
-  const hash = location.hash || '#/today';
+  const hash = location.hash || START();
   drawIcons();
   const here = hash.split('/').slice(0, 2).join('/');
   // Only the two renames. The technical screens are not in the navigation at all,
@@ -6758,7 +6828,7 @@ function fbSync() {
   if (send) send.disabled = FB.busy || FB.sending || (FB.text || '').trim().length < 4;
 }
 
-const fbPath = () => location.hash || '#/today';
+const fbPath = () => location.hash || START();   // feedback is filed against the page actually shown
 // Named, not implied. Somebody about to report a problem should know who reads it.
 // The page a feedback came from, as a link only when it is an address INSIDE the app.
 // Anything else is shown as text: a planted "javascript:" must never become a link
@@ -6928,6 +6998,186 @@ function fbZoom(id) {
   document.body.appendChild(box);
 }
 
+// ===================================================== THE CALL POP-UP (Q6) ==
+// 04.10.2026, first said 30.09. When the phone rings, whoever answers sees who is calling and is
+// one click from the comment thread on the person page. Call events reach Intake by push from the
+// phone system, or by the TeleGroup pull; the open, signed-in app asks /api/calls/events for the
+// ones newer than the last it saw (our database, never TeleGroup).
+//
+// DECIDED by the owner 04.10, after seeing both live: "Corner card without the underlines pls, if
+// no app is open. If app is open, than to the page. BUT i mean by open if its directly on the
+// desktop, not somewhere in background." So:
+//   Intake ON SCREEN (the visible tab of a focused window)
+//     - the colleague who answered: the caller's page opens
+//     - a ring nobody has answered yet, or a caller with no page: the corner card
+//   Intake NOT on screen (minimised, a background tab, a window behind another)
+//     - a desktop notification in the corner of the screen; clicking it opens the page
+//
+// NEW EVENTS ONLY. The first ask after the app opens returns the newest id and no events, so a load
+// or a reload pops nothing. One call pops once. The app asks every 3 s only while the server says
+// calls can arrive at all; otherwise it looks again every 5 minutes.
+const CP_EVERY_MS = 3000;
+const CP_IDLE_MS = 5 * 60 * 1000;
+let CP_TIMER = null;
+let CP_LAST = null;
+let CP_ENABLED = false;
+const CP_SHOWN = new Set();
+
+function callPopStart() {
+  if (CP_TIMER) return;
+  cpTick();
+}
+
+function cpSchedule() {
+  clearTimeout(CP_TIMER);
+  CP_TIMER = setTimeout(cpTick, CP_ENABLED ? CP_EVERY_MS : CP_IDLE_MS);
+}
+
+async function cpTick() {
+  let d = null;
+  try {
+    // not api(): a poll every few seconds must not flash the busy bar or throw the login up
+    const q = CP_LAST === null ? '' : '?after=' + encodeURIComponent(CP_LAST);
+    const r = await fetch('/api/calls/events' + q, { headers: { 'x-acting-as': ACTOR } });
+    if (r.ok) d = await r.json();
+  } catch (e) { d = null; }
+  if (d) {
+    const was = CP_ENABLED;
+    CP_ENABLED = Boolean(d.enabled);
+    if (CP_ENABLED && !was) cpAskOnce();
+    const baseline = CP_LAST === null;
+    CP_LAST = d.last;
+    if (!baseline) for (const ev of d.events || []) cpHandle(ev);
+  }
+  cpSchedule();
+}
+
+// Is Intake on this person's screen right now? Visible AND the window has focus: a tab that is
+// shown but behind another window does not count (the owner: "directly on the desktop").
+function cpOnScreen() {
+  try { return document.visibilityState === 'visible' && document.hasFocus(); } catch (e) { return false; }
+}
+
+// What one event does. Returns what it did, so it can be tested on its own.
+function cpHandle(ev) {
+  const box = document.querySelector('#callpop');
+  const open = box && box.dataset.call;
+  if (ev.taken) {                       // a colleague answered it: their call, not ours
+    if (open === ev.callId) cpClose();
+    return 'closed';
+  }
+  if (ev.event === 'ringing') {
+    if (CP_SHOWN.has(ev.callId)) return 'already';
+    CP_SHOWN.add(ev.callId);
+    return cpShow(ev);
+  }
+  if (ev.event === 'answered' && (ev.forYou || !CP_SHOWN.has(ev.callId))) {
+    const first = !CP_SHOWN.has(ev.callId);
+    CP_SHOWN.add(ev.callId);
+    return cpShow({ ...ev, answered: true }, { notifyAgain: first });
+  }
+  return 'ignored';                     // "ended", or an answer that is not ours to act on
+}
+
+const cpWho = (w) => w.kind === 'person' ? (w.name || 'A person in Intake')
+  : w.kind === 'lead' ? (w.name || 'A lead waiting in the Inbox')
+  : 'New caller' + (w.last4 ? ' ···' + w.last4 : '');
+const cpWhere = (w) => w.kind === 'person' ? '#/person/' + encodeURIComponent(w.id) : w.kind === 'lead' ? '#/inbox' : null;
+const cpTag = (w) => w.kind === 'person' ? 'Existing' + (w.status ? ' · ' + w.status : '') : 'New';
+
+function cpShow(call, { notifyAgain = true } = {}) {
+  const w = call.who || {};
+  const href = cpWhere(w);
+  if (!cpOnScreen()) {
+    if (notifyAgain) cpNotify(call);
+    return 'notified';
+  }
+  if (call.forYou && href) {            // on screen, and you answered: the page itself
+    cpClose();
+    if (location.hash !== href) location.hash = href;
+    return 'page';
+  }
+  let box = document.querySelector('#callpop');
+  if (!box) { box = document.createElement('div'); box.id = 'callpop'; document.body.appendChild(box); }
+  box.dataset.call = call.callId || '';
+  box.innerHTML = cpCardHtml(call);
+  return 'card';
+}
+
+// The card: name, new or existing, last note, next step, Open. Nothing more (KB 08 P5). A missing
+// note or step is left out, not announced. No underlines.
+function cpCardHtml(call) {
+  const w = call.who || {};
+  const href = cpWhere(w);
+  return `<div class="cp-card" role="dialog" aria-live="assertive" aria-label="Incoming call">
+    <header><span class="cp-dot" aria-hidden="true"></span><b class="cp-name">${esc(cpWho(w))}</b>
+      <button class="cp-x" onclick="cpClose()" aria-label="Close">&times;</button></header>
+    <span class="cp-tag ${w.isNew ? 'new' : 'old'}">${esc(cpTag(w))}</span>
+    ${w.lastNote || w.nextStep ? `<dl>
+      ${w.lastNote ? `<div><dt>Last note</dt><dd>${esc(w.lastNote)}</dd></div>` : ''}
+      ${w.nextStep ? `<div><dt>Next step</dt><dd>${esc(w.nextStep)}${w.nextStepAt ? ' · ' + esc(fmtDate(w.nextStepAt)) : ''}</dd></div>` : ''}
+    </dl>` : ''}
+    ${href ? `<footer><a class="btn sm" href="${href}" onclick="cpClose()">Open</a></footer>` : ''}
+  </div>`;
+}
+function cpClose() { const box = document.querySelector('#callpop'); if (box) { box.innerHTML = ''; box.dataset.call = ''; } }
+
+// The text of the desktop notification: the same four things as the card.
+function cpNoteText(call) {
+  const w = call.who || {};
+  const lines = [cpTag(w)];
+  if (w.lastNote) lines.push('Last note: ' + w.lastNote);
+  if (w.nextStep) lines.push('Next step: ' + w.nextStep);
+  return { title: cpWho(w), body: lines.join('\n') };
+}
+
+// A desktop notification in the corner of the screen. Clicking it brings Intake forward on the
+// caller. Shown by the service worker when there is one (it survives the tab being in the
+// background), otherwise by the page.
+function cpNotify(call) {
+  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return false;
+  const t = cpNoteText(call);
+  const href = cpWhere(call.who || {});
+  const opts = { body: t.body, tag: 'call-' + (call.callId || ''), requireInteraction: true,
+    icon: '/assets/icon-192.png', data: { href: href || '#/inbox' } };
+  try {
+    const n = new Notification(t.title, opts);
+    n.onclick = () => { try { window.focus(); } catch (e) { /* nothing to focus */ } if (href) location.hash = href; n.close(); };
+    return true;
+  } catch (e) { return false; }
+}
+
+// The browser asks each colleague ONCE whether Intake may show notifications. Browsers only allow
+// the question after a click, so it is asked on the first click once calls can arrive.
+function cpAskOnce() {
+  if (typeof Notification === 'undefined') return;
+  if (Notification.permission === 'granted') { cpPushSetup(); return; }
+  if (Notification.permission !== 'default') return;
+  const ask = async () => {
+    try { if ((await Notification.requestPermission()) === 'granted') cpPushSetup(); } catch (e) { /* older browser */ }
+  };
+  document.addEventListener('click', ask, { once: true });
+}
+
+// So the notification also reaches a colleague whose Intake is CLOSED: the browser subscribes to
+// Intake's push once (src/sw.js shows the notification). Only when the server has push keys.
+let CP_PUSH = false;
+async function cpPushSetup() {
+  if (CP_PUSH || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  CP_PUSH = true;
+  try {
+    const k = await fetch('/api/push/key', { headers: { 'x-acting-as': ACTOR } }).then((r) => r.json());
+    if (!k.publicKey) return;
+    const reg = await navigator.serviceWorker.register('/sw.js');
+    const b = k.publicKey.replace(/-/g, '+').replace(/_/g, '/');
+    const key = Uint8Array.from(atob(b + '='.repeat((4 - b.length % 4) % 4)), (c) => c.charCodeAt(0));
+    const sub = (await reg.pushManager.getSubscription())
+      || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
+    await fetch('/api/push/subscribe', { method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-acting-as': ACTOR }, body: JSON.stringify({ endpoint: sub.endpoint }) });
+  } catch (e) { CP_PUSH = false; }
+}
+
 (async () => {
   // WHO ARE YOU, BEFORE ANYTHING ELSE IS FETCHED.
   //
@@ -6994,6 +7244,7 @@ async function startShell() {
   // sign-in off, where who you are is still a setting.
   if (AUTH.user) ACTOR = AUTH.user.name;
   drawActorPicker();
+  callPopStart();   // Q6: whoever answers the phone sees who is calling
   await route();
 }
 </script>

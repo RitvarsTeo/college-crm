@@ -14,6 +14,58 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - The app opens on Home
+
+Ritvars: opening the app landed on Admissions / Today, not on Home (the metrics). Cause: route() and fbPath() still
+defaulted an empty address to '#/today', V1's start page. Both now use START(): '#/home' in the app, '#/today' only in
+the hidden classic view, which has no Home. Checked: the server sends a signed-in user to '/' or '/?auth=google', and the
+sign-in return script never remembers '#/home', so nothing else sends a plain open to Today. Seen on the preview: the
+address with no '#' renders Home (the Needs-you sheet) and lights Home in the menu. Release branch merged in first.
+BUILT, next patch.
+
+## 05.10.2026 - Inbox message text is a detail, two lines
+
+Ritvars on the production Inbox: "this is too much of font size! fix it!" Whole email bodies (Google Chat notices, long
+reply threads) filled the screen. The Inbox message text now takes the detail size (13px, slate, 400) and stops at 2
+lines with an ellipsis; the row opens the whole item; the sender keeps the 17px name size. The note under a step (Today,
+lists) takes the same 2-line rule. The person page history stays in full: it is where the whole message is read.
+Measured at 1440 on the real Inbox renderer fed one 1,122-character email (in the browser only, nothing written): 2
+lines, 38px, row 68px. A 1,000-character Today note stops at 2 lines (39px). BUILT, next patch.
+
+## 05.10.2026 - CORRECTED: white TEXT, not white tabs
+
+Ritvars on production: "why are there white pills? fix that immediately" and "IT JUST NEEDS TO whiten up the TEXT".
+"White up the tab" was misread twice (bd45f42, 1eb53a5). Now, light mode: NO white pill on any item; the lit items
+(the page AND its parent) keep the soft highlight they always had (rgba(255,255,255,.34)) and their words, icon and
+count are white and bold (700); every other item navy; the spine unchanged; dark unchanged. Measured at 1440 on Today
+(Admissions + Today) and Journey (People + Journey). The two sections below are SUPERSEDED by this one.
+
+## 05.10.2026 - The tab you are in is white
+
+Ritvars, 05.10.2026, with a screenshot of the light menu: "also lets 'white up' the tab we are in". The deepest lit
+item (the page itself: Today, not Admissions above it; Journey, not People) is a solid white tab with navy words; its
+parent keeps the soft pill. Light mode. Release branch `release/2026-10-04-intake-2` (51290c4) merged in first
+(`15a8965`, clean). Seen at 1440 on Today, Journey and Home. BUILT, next patch, not deployed.
+**Then the parent too** (Ritvars via MASTER CONTROL, 05.10): every lit tab is solid white with navy words, so on Today
+both Admissions and Today, on Journey both People and Journey. Measured at 1440 on Today, Journey, All people, Reports,
+Settings: every lit tab rgb(255,255,255) with rgb(10,36,99) words. Dark unchanged. BUILT, next patch.
+
+**PICKED 04.10: cards 3, blue top edge** (step 2c, light mode). ONE rule names every card (Home figure cards, the
+journey-now card, the Needs-you sheet, Today's strip and list cards, every `.c-sheet` incl. the person page panels,
+Reports' `.c-apps`, the Journey band): white, 14px corner, 1px rgba(10,36,99,.07) border, shadow 0 1px 2px + 0 10px
+24px navy, a 3px #53a7db top edge. Needs-you keeps its amber top (a repeated class outranks the shared rule's :is()).
+No boxes inside a card: the Needs-you tiles and the band's Arrived / Admitted / Not proceeding boxes became plain
+figures split by 1px #e3e9ef hairlines. The person page's light-blue "Next step" callout stays a callout. Measured at
+1440 on Home, Today, Journey and a person page. BUILT, next patch, not deployed.
+**Kit part 2 (kit-panel) must follow later for the other apps; not touched here.** SAID.
+**Dark, proposed, NOT built:** the kit's solid dark card (#133a60, never glass), border rgba(194,211,222,.12), the same
+3px #53a7db top edge (about 3.9:1 against #133a60, enough for a non-text edge), shadow 0 10px 24px rgba(0,0,0,.35),
+inner hairlines rgba(194,211,222,.14); Needs-you stays amber. 
+**BUILT 05.10, Ritvars: "Match the dark, obviously!"** Exactly as proposed above. Measured in dark on Home, Today and
+Journey: every card rgb(19,58,96) solid (no backdrop blur), 3px rgb(83,167,219) top, Needs-you rgb(247,192,79). Also
+fixed while looking: below 760px an old hairline-strip rule removed the third figure card's left padding ("Conversion"
+touched its card edge); all four strip cards now 18px. Next patch, not deployed.
+
 ## 04.10.2026 - THE A/B BATCH (run by MASTER CONTROL, Ritvars picks)
 
 **PICKED 04.10: header 4, blue glow** (step 1b, light only): one Novikontas Blue glow from the top-left corner,
@@ -255,6 +307,19 @@ lives in DECISIONS.md and `config/prototype.json` only.
 **Owed:** the MVP map says the cold / reject field and screen go to Ritvars as an A/B first. Neither
 `b5f3a4c` nor `1345cd7` had one. The Outcomes form is now the UI/UX lane's to put in front of him.
 
+## 04.10.2026 - Phone channel to the finish line ("we will migrate")
+
+Ritvars, 04.10: *"we will migrate, how many times i have to tell you. so lets create the channel
+till the finish line!"* Plan limits and load are not a reason to hold anything back.
+
+| Item | Status |
+|---|---|
+| Call pop-up to his pick: on screen -> page for whoever answered, ring -> corner card; not on screen -> desktop notification. Poll only while calls can arrive. The pull writes call events, so no push is needed | BUILT `4c2fa64` |
+| **TeleGroup pull every minute** (`vercel.json` `* * * * *`). **Needs the paid Vercel account: Hobby refuses the deployment**, so it is NOT on this branch: it waits, ready, on branch `account-move/pbx-every-minute`. Merge that branch with the account move, never before | BUILT, held for the move |
+| Web Push: the notification also reaches a colleague whose Intake is closed (service worker `/sw.js`, data-free VAPID knock, Node crypto only, `push_subscriptions` table) | BUILT |
+| **To switch push on:** run `node scripts/vapid-keys.mjs` once on your own machine and put `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` (Sensitive), `VAPID_SUBJECT` into Vercel Production. Without them push stays off and the open app still pops up | needs Ritvars, env |
+| Ask TeleGroup for the push (ringing before answer) | PARKED (email not sent) |
+
 ## 04.10.2026 - DECIDED: the Website channel is temporary
 
 **Ritvars, 04.10.2026:** the Website connection is **only for the forms still live** on the English
@@ -272,10 +337,12 @@ Branch `ui/2026-10-02-channels-s3`. **COMMITTED, NOT DEPLOYED.** Both for the NE
 |---|---|---|
 | Q3 Website adapter reads the live college forms' own field names; programme and "Source" answer stored | BUILT | `4bf9921` |
 | Website record: CONFIGURED 04.10 (secret + mode=test in Production, Tilda webhook Active, not ticked on a form) | BUILT | `4bf9921` |
-| Q6 Call pop-up: `GET /api/calls/now` for every signed-in user, TeleGroup read shared 8 s, caller matched to a person / waiting lead / new caller, shown to the operator who answered (else everyone) | BUILT | see below |
-| Q6 screens for review: **A** the person page opens, **B** a corner card (`?cp=a` / `?cp=b`, or the switch on the card) | BUILT | see below |
+| Q6 first build (poll TeleGroup every 10 s) | REPLACED the same day | `625e108` |
+| Q6 rebuilt as a PUSH (Ritvars 04.10: "as if they notify us on each call"): `POST /api/inbound/phone-event` (ringing / answered / ended, `PHONE_EVENT_SECRET`, idempotent on call id + event), `call_events` table; on ended the call is stored by the daily pull's own `storeCall`, so push and pull never double; the app reads `GET /api/calls/events` from our database every 3 s; DEV CONTROL simulates a call | BUILT | see below |
+| Q6 screens for review: **A** the page opens for whoever answered (a ring elsewhere is a line with Open), **B** a corner card (`?cp=a` / `?cp=b`, or the switch on it) | BUILT | see below |
+| Ask TeleGroup to push events in the documented shape (05-phone-telegroup.md) | PARKED (email not sent) | - |
 | training@ mailbox | PARKED (next scope, 04.10) | - |
-| Does TeleGroup list a call while it RINGS, or only after hang-up? One test call to +371 23111114 (press 1) after deploy | SAID, open | - |
+| Can TeleGroup push call events at all, and in what format? (Replaces the ringing-vs-hang-up test of the poll design) | SAID, open | - |
 | Every other adapter's `extracted` (programme, intent) still dropped in toIntake | SAID, reported to control | - |
 | Desktop notification when the app is not open (30.09 spec) | SAID, not in this build | - |
 
