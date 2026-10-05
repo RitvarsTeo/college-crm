@@ -23,21 +23,12 @@ test('Home ends with the Admissions by month row; the donut stays, the bar secti
 });
 
 test('nothing lost: Reports has By programme and, for good, Where admitted people came from; no Cold or reject there', () => {
-  const rep = fnBody('async function viewReportsC() {');
-  assert.match(rep, /<h2>By programme<\/h2>/);
-  assert.match(rep, /\$\{cAdmittedFrom\(everyone, r\.period, bars\)\}/);
+  // Q35 (B): both live on the Admitted tab, following the period chosen there
+  const body = fnBody('function cRepBody(id, M) {');
+  const adm = body.slice(body.indexOf("if (id === 'admitted')"), body.indexOf("if (id === 'leads')"));
+  assert.match(adm, /cRepBlock\('By programme', [^\n]*cRepBars\(A\.byProgramme,/);
+  assert.match(adm, /cRepBlock\('By channel', `\$\{pw\} · where they came from`, cRepBars\(A\.byChannel,/);
   assert.doesNotMatch(APP, /<h2>Cold or reject<\/h2>|cReportHome2/, 'cold / reject lives in Outcomes');
-  const ctx = {};
-  vm.runInNewContext(fnBody('function cAdmittedFrom(').replace(/^function /, 'var cAdmittedFrom = function '), ctx);
-  const bars = (key, rows) => `[${key}:${rows.map((r) => r.value + '=' + r.count).join(',')}]`;
-  const people = [
-    { status: 'Admitted', admitted_at: '2026-03-01T10:00:00.000Z', source_channel: 'phone' },
-    { status: 'Admitted', admitted_at: '2026-05-01T10:00:00.000Z', source_channel: 'phone' },
-    { status: 'Admitted', admitted_at: '2026-05-02T10:00:00.000Z' },
-    { status: 'Admitted', admitted_at: '2025-05-01T10:00:00.000Z', source_channel: 'website' },   // before the period
-    { status: 'New', source_channel: 'phone' }];
-  const out = ctx.cAdmittedFrom(people, { from: '2025-12-31T22:00:00.000Z', to: '2026-12-31T22:00:00.000Z' }, bars);
-  assert.match(out, /<h2>Where admitted people came from<\/h2>.*\[source:phone=2,\(not recorded\)=1\]/s, 'admitted in the period, by channel, a gap said as a gap');
 });
 
 test('Needs you is the whole row; the journey card and its two-column layout are gone (Q37)', () => {

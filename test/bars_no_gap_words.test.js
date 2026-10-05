@@ -13,7 +13,7 @@ const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
 test('no why text inside a bar label', () => {
   const bars = [
     APP.slice(APP.indexOf('function cBars('), APP.indexOf('function cWireCharts(')),
-    APP.slice(APP.indexOf('  const bars = (key, rows) =>'), APP.indexOf('  const sect = (key, title, note)')),
+    APP.slice(APP.indexOf('function cRepBars('), APP.indexOf('function cRepRates(')),
   ];
   for (const b of bars) {
     assert.ok(b.includes('class="kbl"'), 'the label is still there');
@@ -27,7 +27,8 @@ test('a gap reads slate, and the reason is on hover', () => {
   assert.match(home, /\$\{why \? `<span class="c-gap">\$\{esc\(label\)\}<\/span>` : esc\(label\)\}/, 'slate label');
   assert.match(home, /data-tip="\$\{esc\(label\)\}\|\$\{n\} admitted\$\{why \? '\|' \+ esc\(why\) : ''\}"/, 'reason on hover');
 
-  const rep = APP.slice(APP.indexOf('  const bars = (key, rows) =>'), APP.indexOf('  const sect = (key, title, note)'));
-  assert.match(rep, /\$\{why \? `<span class="c-gap">\$\{esc\(l\)\}<\/span>` : esc\(l\)\}/, 'slate label');
-  assert.match(rep, /\$\{why && why !== 'gap' \? ' \u00b7 ' \+ esc\(why\) : ''\}"/, 'reason in the title');
+  // Reports (Q35): the same slate label, and the reason on hover beside the basis
+  const rep = APP.slice(APP.indexOf('function cRepBars('), APP.indexOf('function cRepRates('));
+  assert.match(rep, /\$\{gap \? `<span class="c-gap">\$\{esc\(l\)\}<\/span>` : esc\(l\)\}/, 'slate label');
+  assert.match(rep, /\$\{esc\(basis\)\}\$\{why \? ' · ' \+ esc\(why\) : ''\}"/, 'reason on hover');
 });

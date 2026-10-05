@@ -32,8 +32,11 @@ test('chart colours: admitted Novikontas Blue, new leads a Navy line, open yello
 // colours it shared with the report are unchanged, and are what this now guards.
 test('every bar is the admitted blue, and not proceeding is the grey', () => {
   const bars = APP.match(/background:var\(--v-\$\{why \? 'np' : '(\w+)'\}\)/g) || [];
-  assert.equal(bars.length, 2, 'both report bar groups');
+  assert.equal(bars.length, 1, 'the Home bar group');
   for (const b of bars) assert.match(b, /'adm'/);
+  // Reports (Q35): the same two, in its own rules
+  assert.match(APP, /html\.ui-c \.rp \.kbt i\{background:var\(--v-adm\)\}/);
+  assert.match(APP, /html\.ui-c \.rp \.kbt i\.gap\{background:var\(--v-np\)\}/);
 });
 
 test('light menu: the active item keeps the blue text and icon, with no block behind it', () => {

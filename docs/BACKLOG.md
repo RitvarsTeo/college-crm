@@ -120,6 +120,45 @@ Q28 `23713e5`: the list is a .c-sheet (the shared cards rule), 640px, centred; c
 dpl_6B4kc9WCMxRfq1auqSLvrzzbeCCE, released by MASTER CONTROL. Seen on the local build at 1440 light and dark (Admin):
 6 Live, 5 Waiting on Oksana, In person By hand, no Blocked.
 Q26 (the Mailchimp URL check recorded only with the secret) `8ee1c5b` is HELD, on its own branch.
+## 05.10.2026 - PICKED: Reports = B, one tab per Home figure (Q35)
+
+Ritvars 05.10 (via MASTER CONTROL): B, the tabs. A, the `?rep=` switch and the earlier Full report are removed; B is
+Reports. The A/B entry below is CLOSED by this.
+- Titled **Reports** like the menu, no "Outcomes" crumb; the Settings item says Reports too (Outcomes' own "Full
+  report" button is MAIN's screen, left as it is).
+- **All four Home cards open their Reports tab** on This year, Admitted included (it opened Outcomes): Home card ->
+  the tab's breakdowns -> the people. `#/reports/<chapter>` opens that tab (`#/reports/applications` too).
+- The time axis follows the chosen period: a year = January to this month; up to 31 days = days; up to 92 = weeks;
+  longer = months; never past today. The chart's basis label reads the same as the header ("2026 · admission date").
+- The period is read in one function, `cRepPeriod()`, so the app-wide year scope (Home's 2025 / 2026 / All years
+  switch, MAIN builds it) can feed it later. No new period control.
+- NOT changed: Admitted and Median still count people admitted in the period; the arrival-year basis waits for
+  Ritvars with the year scope.
+test/reports_depth.test.js pins B; applications_report, bars_no_gap_words, focal_point, frame_drifts, home_final,
+home_links, metrics_colours, reports_pictures follow. Shots: `For review/2026-10-05 Q35 Reports B final/`. BUILT, not
+deployed.
+
+## 05.10.2026 - A/B: Full report = Home's figures, one level deeper (Q35), CLOSED: B picked (above)
+
+Ritvars 05.10 (via MASTER CONTROL): "we have the same metrics that are in the home. Lets not be redundant ok, but
+smartly make it obvious that full report page is going deeper on the metrics that are on home ... Hard to comprehend
+what is what, comes from where and why is that there". Then: "path to path to path" and "Nothing should be duplicated".
+- Behind `?rep=a|b`; no switch = Reports byte for byte as release 5c3236a (a test pins the hash).
+- One chapter per Home figure, in Home's order: Admitted (target meters 140 / NAV + ENG 98, by month, by programme, by
+  channel), Leads (by month, channel, programme, study form, education + maritime school, nationality), Conversion
+  (reached Application or beyond, where the rest are now, share by programme and by channel), Median time to admission
+  (spread, median by programme), Where everyone is now (stage by programme), then Applications (SIS) as today.
+- Each chapter opens with its Home card (same label, same figure) and only the breakdowns behind it; every block says
+  its basis ("2026 · people added", "2026 · admission date"). A lead = a person added, not an Inbox row.
+- **A**: chapters stacked, a sticky index of Home's cards on top. **B**: one tab per Home figure, the tabs are Home's
+  cards in miniature. With no period chosen both open on This year, so the figures are Home's.
+- Every figure, bar, column and cell opens exactly its people in People (a cohort chip, "Show everyone"), count on
+  arrival = the figure; Admitted / Not proceeding (everybody) open Outcomes. Shares and medians open the people they
+  are computed over.
+- Gone from A/B on purpose: open / overdue / no next step (Today's), Why people did not proceed (Outcomes', one click
+  from Not proceeding), Stage right now (Home + Journey; stage by programme instead), the duplicate Programme block.
+- Home's Leads / Conversion / Median cards land on their chapter (cGoReportYear('leads'|'conversion'|'median')).
+test/reports_depth.test.js; home_links updated. Shots: `For review/2026-10-05 Q35 Reports A-B/`. BUILT, not deployed.
 
 ## 05.10.2026 - Q23: every Home figure a traced click; bigger donut and card figures; no peak label
 

@@ -10,10 +10,9 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
 const REPORTS = fs.readFileSync(path.join(ROOT, 'src', 'reports.js'), 'utf8');
-// the Reports view only: from its own declaration to whatever top-level function follows it
-const rStart = APP.indexOf('async function viewReportsC');
-const rEnd = APP.slice(rStart + 10).search(/\n(async )?function /) + rStart + 10;
-const screen = APP.slice(rStart, rEnd);
+// the Reports screen: its own block (Q35, B), up to the Applications chapter's loaders
+const screen = APP.slice(APP.indexOf('// ---------------------------------------------------- FULL REPORT, ONE LEVEL DEEPER (Q35)'),
+  APP.indexOf('// apply.novikontas.org, from the SIS'));
 
 test('none of those sentences is on the screen', () => {
   for (const s of [
@@ -33,27 +32,21 @@ test('the export still carries both', () => {
   assert.match(REPORTS, /Every figure above is a count of rows in Intake/, 'and the honesty line');
 });
 
-test('"Right now" is three badges, and the count is bigger than its label', () => {
-  assert.match(screen, /<a class="c-nowbar" href="#\/next">/);
-  for (const w of ['>open<', '>overdue<', '>no next step<']) assert.ok(screen.includes(w), w);
-  assert.match(APP, /html\.ui-c \.c-nowbar b\{font-size:24px/, 'the number leads');
-  assert.match(APP, /html\.ui-c \.c-nowbar span\{[^}]*font-size:12px/, 'the label follows');
-  assert.match(APP, /html\.ui-c \.c-nowbar span\.is-late b\{color:var\(--c-bad\)\}/, 'late is the one red');
+test('"Right now" is not on Reports: Today owns open / overdue / no next step (Q35)', () => {
+  assert.ok(!screen.includes('c-nowbar') && !screen.includes('activeApplicants'));
 });
 
-test('By programme is paired bars on one blue ramp, each with its own number', () => {
-  assert.match(screen, /\$\{cProgBars\(r\.programmes \|\| \[\]\)\}/);
-  assert.ok(!screen.includes('<th>New leads</th><th>Admitted</th>'), 'the two-number table is gone');
-  const fn = APP.slice(APP.indexOf('function cProgBars('), APP.indexOf('function cMonthChart('));
-  assert.match(fn, /i class="lead"/);
-  assert.match(fn, /i class="adm"/);
-  assert.match(fn, /<em>\$\{Number\(x\.newLeads\) \|\| 0\}<\/em>/, 'the value sits beside its own bar');
-  assert.match(APP, /html\.ui-c \.c-pbar i\.lead\{background:var\(--c-accent-bg\)\}/, 'one ramp, light');
-  assert.match(APP, /html\.ui-c \.c-pbar i\.adm\{background:var\(--v-adm\)\}/, 'one ramp, solid');
+test('By programme is bars on one scale, each with its own number and its own people', () => {
+  const body = screen.slice(screen.indexOf('function cRepBody('));
+  assert.match(body, /cRepBars\(A\.byProgramme, 'programme'/, 'admitted, on the Admitted tab');
+  assert.match(body, /cRepBars\(L\.byProgramme, 'programme'/, 'people added, on the Leads tab');
+  const bars = screen.slice(screen.indexOf('function cRepBars('), screen.indexOf('function cRepRates('));
+  assert.match(bars, /const max = Math\.max\(1, \.\.\.list\.map\(\(x\) => x\.n\)\);/, 'one scale per block');
+  assert.match(bars, /<b>\$\{x\.n\}<\/b>/, 'the value beside its own bar');
+  assert.match(bars, /data-coh="\$\{x\.k\}"/, 'and the click to its people');
 });
 
-test('the maritime figure is a normal number with its coverage as a / b', () => {
-  assert.ok(!screen.includes('<p class="c-big">${s.maritimeGraduates'), 'no longer hero sized');
-  assert.match(screen, /<p class="c-num">\$\{s\.maritimeGraduates \?\? 0\}<\/p>/);
-  assert.match(screen, /\$\{cov\.education\?\.filled \?\? 0\} \/ \$\{cov\.education\?\.of \?\? 0\} have an education recorded/);
+test('the maritime figure is a number with its people, beside the education coverage', () => {
+  assert.match(screen, /<span class="rp-chip">maritime school \$\{cRepGo\(L\.maritime\)\}<\/span>/);
+  assert.match(screen, /`\$\{pw\} · \$\{cRepGo\(L\.eduRecorded\)\} recorded`/);
 });

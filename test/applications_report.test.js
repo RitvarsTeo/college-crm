@@ -164,13 +164,14 @@ test('placement: Applications lives inside Reports, beside the web statistics, w
   const nav = APP.slice(APP.indexOf('<a href="#/reports" data-c="reports"') - 2000, APP.indexOf('<a href="#/reports" data-c="reports"') + 400);
   assert.ok(!/href="#\/applications"/.test(APP), 'no #/applications route or menu link');
   assert.ok(!/data-c="applications"/.test(nav), 'no Applications item in the menu');
-  const rep = APP.slice(APP.indexOf('async function viewReportsC'), APP.indexOf('// apply.novikontas.org, from the SIS'));
+  const rep = APP.slice(APP.indexOf('// ---------------------------------------------------- FULL REPORT, ONE LEVEL DEEPER (Q35)'), APP.indexOf('// apply.novikontas.org, from the SIS'));
   const ch = rep.slice(rep.indexOf('<section class="c-apps" id="applications"'), rep.indexOf('</section>\n', rep.indexOf('id="cSis"')) + 10);
   assert.ok(ch.includes('id="cWeb"') && ch.includes('id="cSis"'), 'web statistics and the SIS funnel are one chapter');
   assert.ok(ch.indexOf('id="cWeb"') < ch.indexOf('id="cSis"'), 'in the order of the journey: the site, then the SIS');
   assert.match(rep, /cWebStats\(\);\n\s*cApplications\(\);/);
-  assert.ok(rep.includes('href="#/reports/applications"'), 'the report opens at the chapter from its own header');
-  assert.match(APP, /arg === 'applications'\) \{ const a = \$\('#applications'\)/, '#/reports/applications scrolls to the chapter');
+  // Q35 (B picked 05.10.2026): Applications is the last tab; #/reports/applications opens it
+  assert.ok(rep.includes("['applications', 'Applications']"), 'Applications is a tab of Reports');
+  assert.match(APP, /if \(arg\) C_REP_CH = arg;/, '#/reports/applications opens that tab');
 });
 
 test('design: the frame carries the locked sea, the marks stay flat, one scene, mustard for traffic', () => {
@@ -218,7 +219,7 @@ test('split: the funnel is two groups, the site steps then the college decision,
 });
 
 test('name: Intake calls apply.novikontas.org the Academy Application form, and it is never a channel', () => {
-  const rep = APP.slice(APP.indexOf('async function viewReportsC'), APP.indexOf('// -------------------------------------------------------------------- FEEDBACK'));
+  const rep = APP.slice(APP.indexOf('// ---------------------------------------------------- FULL REPORT, ONE LEVEL DEEPER (Q35)'), APP.indexOf('// -------------------------------------------------------------------- FEEDBACK'));
   assert.match(rep, /<span class="c-apps-path">Academy Application form <i aria-hidden="true">&rarr;<\/i> SIS<\/span>/, 'the lifecycle line');
   assert.ok(rep.includes('<h2>Academy Application form</h2>'), 'the web statistics heading');
   assert.ok(!/>apply\.novikontas\.org</.test(rep), 'the domain is no longer the visible name');
