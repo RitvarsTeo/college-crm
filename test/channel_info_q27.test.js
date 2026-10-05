@@ -23,7 +23,7 @@ const BLOCK = APP.slice(APP.indexOf(START), APP.indexOf(END));
 function sandbox() {
   const ctx = { esc: (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;') };
   vm.runInNewContext(BLOCK + `
-    this.riga = chRiga; this.when = chWhen; this.facts = chFacts; this.sis = chSisFacts; this.info = chInfoHtml;
+    this.riga = chRiga; this.when = chWhen; this.facts = chFacts; this.sis = chSisFacts; this.sisHtml = chSisHtml;
     this.list = chListHtml;`, ctx);
   return ctx;
 }
@@ -99,26 +99,27 @@ test('Q27: SIS stands apart: the chain to apply, how its statuses map, and all g
   assert.equal(s.sis(apiRows({ sis: { mode: 'off' } }), PROD, CTX({ runs: { sis: { at: fresh } } })).ok, false);
 });
 
-test('Q27: A and B carry the twelve channels and SIS, in figures and labels, never a paragraph', () => {
+test('Q27 (A picked): every line uncovers its card; closed it is the name and one word; never a paragraph', () => {
   const s = sandbox();
-  for (const v of ['a', 'b']) {
-    const out = s.info(apiRows(), LOCAL, CTX(), v);
-    assert.equal((out.match(/<li>/g) || []).length, 12, v);
-    assert.match(out, /apply\.novikontas\.org/, v);
-    assert.match(out, />SIS</, v);
-    assert.match(out, /Sales pitches &middot; every channel/, v);
-    assert.doesNotMatch(out, /<p[\s>]/, v + ': no paragraphs');
-    const texts = out.replace(/<[^>]+>/g, '\n').replace(/&[a-z]+;/g, '·').split('\n').map((x) => x.trim()).filter(Boolean);
-    for (const t of texts) assert.ok(t.length <= 45, v + ' says too much in one place: ' + t);
-    assert.doesNotMatch(out, /Blocked/, v);
+  const out = s.list(apiRows(), LOCAL, CTX());
+  assert.equal((out.match(/<details>/g) || []).length, 12, 'twelve uncovering lines');
+  for (const m of out.matchAll(/<summary>([\s\S]*?)<\/summary>/g)) {
+    const t = m[1].replace(/<[^>]+>/g, '|').split('|').map((x) => x.trim()).filter(Boolean);
+    assert.equal(t.length, 2, 'name + one word: ' + t.join(' / '));
   }
-  assert.match(s.info(apiRows(), LOCAL, CTX(), 'a'), /<details>/, 'A: each line opens its small card');
-  const b = s.info(apiRows(), LOCAL, CTX(), 'b');
-  assert.ok(b.indexOf('chsis') < b.indexOf('chinfo'), 'B: the SIS strip sits on top');
+  assert.match(out, /Sales pitches/, 'the rule for every channel shows inside each card');
+  const sisOut = s.sisHtml(s.sis(apiRows(), LOCAL, CTX()));
+  assert.match(sisOut, /<summary><b>SIS<\/b><span class="chk k-live">All good<\/span><\/summary>/, 'SIS: one line, SIS and All good');
+  assert.match(sisOut, /apply\.novikontas\.org/);
+  for (const html of [out, sisOut]) {
+    assert.doesNotMatch(html, /<p[\s>]/, 'no paragraphs');
+    const texts = html.replace(/<[^>]+>/g, '\n').replace(/&[a-z]+;/g, '·').split('\n').map((x) => x.trim()).filter(Boolean);
+    for (const t of texts) assert.ok(t.length <= 45, 'too much in one place: ' + t);
+    assert.doesNotMatch(html, /Blocked/);
+  }
 });
 
-test('Q27: without ?chinfo the screen is the one-line list, as before', () => {
-  const view = APP.slice(APP.indexOf('async function viewChannels('), APP.indexOf(END));
-  assert.match(view, /if \(info === 'a' \|\| info === 'b'\)/);
-  assert.match(view, /<div class="c-sheet c-chcard">\$\{chListHtml\(/);
+test('Q27: one layout only: B and ?chinfo are gone', () => {
+  assert.ok(!APP.includes('chinfo='), 'no switch left');
+  assert.ok(!APP.includes('is-strip') && !APP.includes('chInfoHtml') && !APP.includes('.is-b'));
 });
