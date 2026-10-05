@@ -367,3 +367,16 @@ MAIN order: Q17 -> Q18 -> Q16 build -> Q19 A/B -> Q15 A/B. Q14 pick still to ask
 05.10: **GO given in advance** (Ritvars: "ok, show me when ready" / "Then we commit and deploy."): after he picks the gap fix and sees the finals, control cuts the ninth patch, deploys with deploy_verify, pushes. Contents: MAIN tip, APPLICATIONS `cd42945` + Q15 final, CLOSURE tip, CHANNELS `1ea73ae`.
 05.10: Q15 FINAL B `539c6ed` (APPLICATIONS, enforce=true, 1107/1107). Channel record `66c457b` (CHANNELS: phone continuity proven through 04.10, Gmail 98, SIS 1; counts only). Control trial merge of all tips (MAIN 7fecb67, Q15 539c6ed, Q8 1ea73ae, APPS cd42945, CLOSURE 6eba278) onto release/2026-10-04-intake-2: docs-only conflicts, 1135/1136; the 1 fail = CLOSURE test/cold_reject_server.test.js:56 reopens without a note (refused under Q15). Fix sent to CLOSURE.
 05.10: MAIN Q21 `7fecb67` (People = everyone), Q14 A `129585f`, Q20 `52bfcee`+`41ac9cf` (Home final, gap switch); control clean export `41ac9cf`: 1108/1108. Ritvars **PICKED gap 1** (journey in two columns) and gave MAIN Journey fixes directly (asked MAIN for his words). GO for patch 9 stands; release is cut after MAIN's last report.
+
+## 05.10.2026 - NINTH PATCH LIVE: `aa6259b` (code `29e1792`), pushed
+| | |
+|---|---|
+| Branch | `release/2026-10-05-intake-9` (worktree `crm-release-0510`), cut from prod `5eba1a6`, **pushed to origin** |
+| Contents | MAIN `55e4a8f` (Q9 Help fixed order, Q12 labels, Q17 white tab icon, Q18/Q21 menu People = everyone > Journey, Outcomes, Q16 phone tab bar, Q14 Cold/Reject in Outcomes by programme, Q20 Home: target bars, nothing below the month row, gap fix 1 + Journey card link in the free cell, phone Needs-you row; Reports "Where admitted people came from") · Q15 B `539c6ed` (APPLICATIONS: stage-move note pop-up, back needs a note, server enforces, a note/call in the last 10 min counts) · CHANNELS `66c457b` (Q8 form answers on every channel + channel record through 04.10) · APPLICATIONS `cd42945` · CLOSURE `6eba278` · release fix `29e1792` (closure test sends a note on its back move) · record `aa6259b` |
+| Contents check | `5eba1a6` is an ancestor; no sql / vercel.json / package.json / api / lib / db.js change; no schema change; all A/B switches removed, nothing unpicked |
+| Tests | 1134/1134 in the release worktree and on the clean deploy checkout |
+| Seen | release build, synthetic: Home (target, no programme section), People, Journey, Outcomes, Next steps, Inbox, Reports, Settings, Help: titles right, 0 errors, no "CRM"; phone 375: tab bar Home / Inbox / Next steps 23 / People / More, no sideways scroll |
+| Backup before | `_backups/2026-10-05T09-44-18Z` VERIFIED, 26 tables, 1175 rows |
+| Deploy | `dpl_Ak6K2vW3qFFFMQHAH5kBsikwo7G1`: live page byte-identical, 78/78 files identical, none outside git, 8 private routes 401, 0/23 leaks, health 200/302 |
+| NOT yet seen | signed in on production |
+**New base for every lane: `release/2026-10-05-intake-9` @ `aa6259b`. Merge it before your next commit.**
