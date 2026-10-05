@@ -14,6 +14,20 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - Q33: Outcomes > Not proceeding shows the people first; a "same person" mark
+
+Ritvars 05.10 (via MASTER CONTROL): "In peoples tab, the outcomes, we have only admitted, we dont see the not
+proceeding. , ok, we dont have the reasons, but we dont have the people also! SO we have only a number. And cant find
+them even to check if they match someone in the app being ina different stage maybe falsely." Picked in a popup:
+- The people list comes first, under the Admitted / Not proceeding toggle and the Cold / Reject split.
+- "Why they stopped" moves below the list and shows only reasons with at least one person; with none recorded it shows
+  nothing. Both sentences ("... no recorded reason yet ..." and "These are the 10 reasons ...") are gone.
+- A Not proceeding row carries "Same person · name · stage" when its email (trimmed, lower case) or phone (last 8
+  digits) - the duplicate rule of src/identity.js - matches a person in a DIFFERENT stage; the mark opens that person.
+  On the Not proceeding lists only (Everybody, Cold, Reject). Name-only matches are not marked (he said phone or email).
+outcome_reasons tests rewritten to the new rule; test/outcomes_not_proceeding.test.js. 1145/1145.
+Shot: `For review/2026-10-05 finals/Q33-Outcomes-Not-proceeding-people-first-1440-light.png`. BUILT, next patch.
+
 ## 05.10.2026 - Q32: the page is TODAY again, first under Admissions (Q29 superseded)
 
 Ritvars 05.10 (via MASTER CONTROL): "Wait, next steps dont make sense for me anymore, as journey should nudge for next

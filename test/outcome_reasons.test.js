@@ -36,12 +36,15 @@ test('the model is real: a taxonomy, enforced by the server, driving the picker'
   assert.match(APP, /const all = CFG\.closedReasons \|\| \[\];/, 'which reads the same list');
 });
 
-test('every configured reason is shown, including the ones nobody has used', () => {
+// Q33, the owner 05.10.2026 (picked): a list of ten zeros pushed the people below the fold, so only the reasons
+// somebody has are drawn, and nothing at all when no reason is recorded.
+test('only the reasons somebody has are shown; a reason at zero is not drawn', () => {
   const html = breakdown([closed('No response'), closed('No response'), closed('Not eligible')], 0);
-  for (const r of CONFIG.closedReasons) {
-    assert.ok(html.includes('>' + r), r + ' is listed');
-  }
-  assert.match(html, /class="c-reasonbar none"/, 'an unused reason is listed quietly, at zero');
+  assert.ok(html.includes('>No response') && html.includes('>Not eligible'));
+  for (const r of CONFIG.closedReasons.filter((x) => !['No response', 'Not eligible'].includes(x)))
+    assert.ok(!html.includes('>' + r + '<'), r + ' (nobody) is not listed');
+  assert.doesNotMatch(html, /class="c-reasonbar none"/);
+  assert.equal(breakdown([closed(null), closed(null)], 2), '', 'no reason recorded for anybody: nothing is drawn');
 });
 
 test('the counts are the real ones, biggest bar to the most used', () => {
@@ -62,10 +65,10 @@ test('a recorded reason that is NOT in the list is shown and marked', () => {
   assert.match(html, /Some reason from an older list <em>not in the list<\/em>/);
 });
 
-test('it says how many have no reason at all, without pretending they have one', () => {
+test('it counts how many have a reason, without pretending the others have one, and without a sentence', () => {
   const html = breakdown([closed('No response'), closed(null)], 1);
   assert.match(html, /1 of 2 recorded/);
-  assert.match(html, /1 person has no recorded reason yet/);
+  assert.doesNotMatch(html, /no recorded reason yet/, 'the sentence is gone (Q33)');
   assert.ok(!html.includes('<b>2</b>'), 'the missing one is not quietly added to a reason');
 });
 
@@ -73,10 +76,9 @@ test('nobody has stopped, nothing is drawn', () => {
   assert.equal(breakdown([], 0), '');
 });
 
-test('it states what the list is for, and that changing it is a config change', () => {
+test('no explaining sentences under the reasons (Q33)', () => {
   const html = breakdown([closed('No response')], 0);
-  assert.match(html, new RegExp('These are the ' + CONFIG.closedReasons.length + ' reasons Intake accepts today'));
-  assert.match(html, /config change, not a rebuild/);
+  assert.doesNotMatch(html, /reasons Intake accepts today|config change, not a rebuild|<p /);
   // and the stale tag that said the list was still to agree is gone
   assert.ok(!APP.includes('reasons list to agree'),
     'the screen no longer says the list is unsettled while the server enforces it');
