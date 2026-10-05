@@ -53,7 +53,7 @@ test('Cold and Reject are both kept, read back, and cleared when the person is a
   assert.equal(byId[cold].closed_tag, 'cold', 'the list (Outcomes, Home, All people) sees Cold');
   assert.equal(byId[rej].closed_tag, 'reject', 'the list sees Reject');
 
-  await post(`/api/people/${rej}/status`, { status: 'New' });
+  await post(`/api/people/${rej}/status`, { status: 'New', note: 'Back in touch' });  // a back move needs a note (Q15, 05.10.2026)
   assert.equal(await tagOf(rej), null, 'back to an active stage: the tag goes');
   assert.equal(await tagOf(cold), 'cold', 'the other person is untouched');
 });
