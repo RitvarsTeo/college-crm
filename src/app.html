@@ -3041,8 +3041,8 @@ function viewHelpC() {
     </div>
     <h2 class="c-set-h">Questions and answers</h2>
     <div id="helpFaq" class="c-helpfaq"></div>`;
-  // dev kit part 3: search, the most opened first (counted on the server), "Ask a question" into the
-  // SAME feedback box on A question, with what was searched already in it
+  // dev kit part 3: search, the questions in the order of config/help.json (never by opens), "Ask a
+  // question" into the SAME feedback box on A question, with what was searched already in it
   if (window.HelpCenter) HelpCenter.mount(document.getElementById('helpFaq'), {
     faq: (CFG.help && CFG.help.faq) || [], onAsk: (text) => fbOpen('QUESTION', text) });
 }

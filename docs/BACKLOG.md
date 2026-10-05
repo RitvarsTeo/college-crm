@@ -14,6 +14,20 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - Help questions in ONE fixed order, never by most opened
+
+Ritvars's rule of 01.10 (dev kit part 3 README: "THE HELP CENTER IS NOT A POPULARITY SYSTEM"), brief Q9 via MASTER
+CONTROL: Intake still put the most opened question first. `src/assets/help-center.js` is now the kit's own file, taken
+unchanged from `Dev kits to share/Component library/3 Help and feedback/ui/help-center.js`: the questions show in the
+order of config/help.json, search keeps that order, the page no longer fetches /api/help/counts. The kit file also
+brings the kit's `fetch: null` = no server calls fix (Intake passes no fetch, so nothing changes for it). Opens are still
+recorded per id (`help_faq_opens`, POST /api/help/opened); the counts route stays as it is (a separate decision; the kit
+README says only the feedback readers may read it, Intake still answers anybody signed in - SAID, not changed). The
+server.js and app.html comments no longer say "most opened first". test/help_center.test.js fails if the order follows
+the counts or the page asks for them (it failed on the old file: the most opened question came first).
+Seen on a fresh preview (port 8862): one question opened 5 times on the server stays last; no counts request; light and
+dark at 1440 and at 375 wide. BUILT, next patch.
+
 ## 05.10.2026 - Help questions trimmed, the Needs-you shelf removed
 
 Ritvars, 05.10 (via MASTER CONTROL, control commits 31b28fe + ec7aaff):

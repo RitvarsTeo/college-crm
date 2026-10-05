@@ -2682,7 +2682,9 @@ export const handle = async (req, res) => {
     }
 
     // The Help center's questions (dev kit part 3): anybody signed in counts one open of a
-    // question, and reads the counts so the most opened come first. Behind the sign-in door above.
+    // question. The counts are background analytics for the builders: the Help center shows the
+    // questions in the order of config/help.json and never reads them (the owner, 01.10.2026: Help is
+    // not a popularity system). Behind the sign-in door above.
     if (req.method === 'POST' && p === '/api/help/opened') {
       const b = await body(req, 4096);
       await helpOpened(db, b.id, nowIso());
