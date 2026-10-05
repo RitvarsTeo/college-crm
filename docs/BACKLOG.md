@@ -2012,6 +2012,8 @@ screen on the real-data snapshot (local, in memory) at 1440 / 900 / 390 px, ligh
 
 ## Pin
 
+**PIN 05.10.2026 - INTAKE, THIRTEENTH PATCH LIVE: `0b4f06c` (code `e4ef1cc`), release/2026-10-05-intake-9 pushed, dpl_2MQPLQnKokiGmwLm2VyPMs7YC5Ye, verified by MASTER CONTROL (page byte-identical, 78/78 files, 8 private routes 401, 0 leaks, functions fra1; backup before 2026-10-05T12-53-49Z VERIFIED 1176 rows; 1211/1211 on the clean deploy checkout). In it: ONE pool frame (frozen cohort band + one filter row) for Inbox, Today and Journey; Journey = People + Journey + Outcomes; flat menu Home · Inbox · Today · Journey · Reports · Settings with new / total counts; every Home and Reports figure opens its people; Aigars 05.10 (Source filters, edit in place on Journey List + Board); Conversion counts matured people only (60+ days); taller month chart with the donut balanced. NEXT: Q50 Inbox answer-now / late by working hours, Q45 year scope, then the move to Aigars's Vercel Pro + Supabase (checklist https://claude.ai/artifact/5qSKprtCQsTpv3zgiLzQL7). Database: Neon Free, Frankfurt, until the move.**
+
 **04.10.2026 (second patch) - LIVE: `0078bff` (release/2026-10-04-intake-2), dpl_E56YxQrYhFY5GXkGssK9uUMpXxG4, verified by MASTER CONTROL. Menu final + immersive (light and dark), header glow + navy titles, Channels one line per channel, website field names (Q3), Website temporary, Admissions reads all History. NOT in it: the call pop-up (unpicked A/B, polls every 3 s), type 2a and cards 2c (not built yet).**
 
 **04.10.2026 - LIVE: `62f8178` (release/2026-10-04-intake), dpl_uTzfeGw6PZNSgxUGoQUinLP41utH, verified by MASTER CONTROL; record in docs/INTAKE_CONTROL_2026-10-02.md (control/2026-10-02-s1). Production was 292b4f9 until today.**
