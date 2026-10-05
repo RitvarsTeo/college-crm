@@ -49,11 +49,12 @@ test('the tour opens on the left card, in his words', () => {
 });
 
 // LOCKED 05.10.2026: Home > Inbox > Next steps > Journey > All people > Reports > Settings; "Today" reads "Next steps"
+// and, the same day, Outcomes back after Journey ("we lost the outcomes tab ... cant open it from the left card")
 test('the menu order and the Next steps name', () => {
   const APP = read('src', 'app.html');
   const nav = APP.slice(APP.indexOf('<div class="cnav" role="navigation"'), APP.indexOf('</div>`);', APP.indexOf('<div class="cnav" role="navigation"')));
   const order = [...nav.matchAll(/data-c="(\w+)"/g)].map((m) => m[1]);
-  assert.deepEqual(order, ['home', 'admissions', 'leads', 'today', 'people', 'journey', 'all', 'reports', 'settings']);
+  assert.deepEqual(order, ['home', 'admissions', 'leads', 'today', 'people', 'journey', 'outcomes', 'all', 'reports', 'settings']);
   assert.match(nav, /<span>Next steps<\/span><span class="n" id="cnNext"><\/span>/, 'the count badge stays on Next steps');
   assert.doesNotMatch(nav, /<span>Today<\/span>/);
   assert.match(APP, /<h1>Next steps<\/h1>/);

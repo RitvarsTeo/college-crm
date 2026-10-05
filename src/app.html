@@ -2376,6 +2376,7 @@ function installCNav() {
       <a href="#/today" data-c="today" title="What needs my attention"><span>Next steps</span><span class="n" id="cnNext"></span></a></div>
     <a href="#/people" data-c="people" title="Who we are working with, and where they are">${C_ICON.ppl}<span>People</span></a>
     <div class="kids"><a href="#/journey" data-c="journey"><span>Journey</span></a>
+      <a href="#/outcomes" data-c="outcomes" title="Where finished journeys end: admitted or not proceeding"><span>Outcomes</span></a>
       <a href="#/people/all" data-c="all"><span>All people</span></a></div>
     <a href="#/reports" data-c="reports" title="What is happening">${C_ICON.rep}<span>Reports</span></a>
     <a href="#/settings" data-c="settings" id="cnSettings" class="c-navfoot">${C_ICON.set}<span>Settings</span></a>
@@ -2410,6 +2411,7 @@ function markCNav(page) {
   const parent = { today: 'admissions', leads: 'admissions' }[place] || place;
   const child = place === 'today' || place === 'leads' ? place
     : page === 'journey' ? 'journey'
+    : page === 'outcomes' ? 'outcomes'   // back in the menu after Journey (the owner, 05.10.2026), People lit with it
     : page === 'people' ? (/^#\/people\/all/.test(location.hash) ? 'all' : (typeof C_PTAB !== 'undefined' && C_PTAB === 'all' ? 'all' : 'journey'))
     : null;
   const lit = [parent, child].filter(Boolean);

@@ -14,6 +14,14 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - Outcomes is back in the menu, after Journey
+
+Ritvars 05.10 (via MASTER CONTROL): "we lost the outcomes tab ... cant open it from the left card"; picked "after
+Journey" to keep the chronology. Menu: Home > Admissions (Inbox, Next steps) > People (Journey, Outcomes, All people) >
+Reports > Settings. The link is #/outcomes; on Outcomes the menu lights People + Outcomes. Help boxes 01 Inbox / 02 Next
+steps / 03 Outcomes unchanged. Menu-order checks updated (no_crm_word, nav_and_home). Seen on the preview: the order, and
+Outcomes / Journey / All people each light with People. 1103/1103. BUILT, next patch.
+
 ## 05.10.2026 - The browser tab icon is the white tile in light AND dark
 
 Ritvars 05.10 (via MASTER CONTROL), annoyed: "also the icons dont match?! I want the white on also on the broswers tab."

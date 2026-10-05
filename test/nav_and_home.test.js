@@ -30,7 +30,7 @@ const place = (() => {
 test('the menu is grouped, and the hairline is the established pattern', () => {
   const nav = APP.slice(APP.indexOf('<div class="cnav"'), APP.indexOf('</div>`);', APP.indexOf('<div class="cnav"')));
   const labels = [...nav.matchAll(/<span>([A-Za-z ]+)<\/span>/g)].map((m) => m[1]);
-  assert.deepEqual(labels, ['Home', 'Admissions', 'Inbox', 'Next steps', 'People', 'Journey', 'All people', 'Reports', 'Settings']);   // locked 05.10.2026
+  assert.deepEqual(labels, ['Home', 'Admissions', 'Inbox', 'Next steps', 'People', 'Journey', 'Outcomes', 'All people', 'Reports', 'Settings']);   // locked 05.10.2026; Outcomes back after Journey the same day
   assert.equal((nav.match(/class="kids"/g) || []).length, 2, 'two groups: Admissions and People');
   // the hairline itself, unchanged from the established rule
   assert.match(APP, /html\.ui-c \.cnav \.kids\{margin:1px 0 6px 18px;padding-left:10px;border-left:1px solid var\(--rule\)\}/,
