@@ -331,3 +331,7 @@ Ritvars: this session (9bfb7d, account marketing@) is the one Intake MASTER CONT
 | INTAKE FEEDBACK CLOSURE AUDIT [372b40] | CLOSURE | `crm-closure-s5` (tip `71c3a83`) |
 | APPLICATIONS / REPORTS/ SIS [119d4c] | APPLICATIONS, finished per Ritvars; report asked | `crm-applications-s4` (tip `cd42945`) |
 Next patch so far (not live, prod = `5eba1a6`): MAIN `6accf01` + `70f1f38` + `f560fc9`. Queue from QA's kit part 3 read: Help sorted by most opened breaks the 01.10 "not a popularity system" rule (`src/assets/help-center.js` order(), owner MAIN, SAID); kit part 2 still has the © line in the menu card (owner kit, SAID).
+Reports in, 05.10 ~11:00: MAIN [97f022] confirms tip `f560fc9`, clean. APPLICATIONS `cd42945` (funnel subtitle "registered that week, current status now", DECIDED 05.10), 946/946 re-run by control on a clean export; 2 provider SIS rows in the 04.10 backup, likely real, not verified. CLOSURE `71c3a83` (merged patch 8 + 4 tests), 1082/1082 per S5; feedback email waits on Ritvars signing in. QA: kit part 3 clean (55/55); A and D below. CHANNELS: Q8 in progress.
+| Q9 | Help center questions in ONE fixed order (help.json), never by most opened (Ritvars 01.10 rule, kit part 3 README:89) | MAIN | SENT 05.10 |
+| Q10 | Kit part 2 demo still has © in the menu card; Intake moved it to the page foot (`6accf01`) | kit part 2 | SAID |
+| Q11 | `config/prototype.json` feedbackReaders names reach every signed-in browser via /api/config (not on screen) | - | PARKED, low risk |
