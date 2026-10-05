@@ -14,6 +14,25 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - Q51: Home, Admissions (Inbox, Today, Journey), Reports; the new / total badge
+
+Ritvars 05.10 on production, after the flat menu (Q47) shipped and upset him: "I had Home then Admissions (under that
+inbox, today, journey) Then big Reports." And on the count: "The count is now one blur. Where is the only new count?
+new vs all?? with different size of font?" - his Q39 spec: "new / total. New is bigger and with a icon of new, total
+is little bit smaller font. Just like the new bmw m350i sign."
+- Left card: Home - Admissions (a group: Inbox, Today, Journey, each with its count) - Reports (top level) - Settings.
+  #/admissions opens its first child, the Inbox. A child lights itself and Admissions. The spine runs Home > Admissions
+  > under the children > Reports, nothing else (the children carry no icon). Phone tabs unchanged: Home, Inbox, Today,
+  Journey, More.
+- Badge: a small NEW mark (amber, navy letters: the signal colour on the mark only), the new figure bold 14px, then
+  "/ total" at 10px (about 70%), weight 500, lighter. Nothing new: the total alone, small. A screen reader hears
+  "7 new of 64". The overdue Today count no longer turns its figures amber in dark (navy already in light).
+- New = arrived since this browser last opened that pool; a browser that never opened it sees nothing new. Today:
+  a step is new when its due day began after the last visit, or it was planned since.
+Tests: test/menu_badge_q51.test.js (order, Admissions opens the Inbox, lit states, spine, badge markup, first visit);
+order assertions updated in nav_and_home, no_crm_word, menu_ab, figures_to_people; no_dashed_tags drops the menu count
+from the amber list. Shots: `For review/2026-10-05 Q51 menu/`. **BUILT, next patch.**
+
 ## 05.10.2026 - Conversion counts only MATURED people, everywhere (Q49)
 
 Ritvars 05.10 (via MASTER CONTROL): conversion counted everyone who arrived in the period, last week's leads included,

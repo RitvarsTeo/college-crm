@@ -27,13 +27,13 @@ const place = (() => {
   return ctx.place;
 })();
 
-test('the menu is flat, in his order', () => {
+test('the menu is grouped: Admissions holds the three pools, and the hairline is the established pattern', () => {
   const nav = APP.slice(APP.indexOf('<div class="cnav"'), APP.indexOf('</div>`);', APP.indexOf('<div class="cnav"')));
   const labels = [...nav.matchAll(/<span>([A-Za-z ]+)<\/span>/g)].map((m) => m[1]);
-  // Q47 (the owner, 05.10.2026: "Make it Inbox> today> Journey> ..."): no groups; Journey is People + Journey +
-  // Outcomes in one, Outcomes its last two columns
-  assert.deepEqual(labels, ['Home', 'Inbox', 'Today', 'Journey', 'Reports', 'Settings']);
-  assert.equal((nav.match(/class="kids"/g) || []).length, 0, 'no groups');
+  // Q51 (the owner, 05.10.2026: "I had Home then Admissions (under that inbox, today, journey) Then big Reports."):
+  // Journey is People + Journey + Outcomes in one (Q47)
+  assert.deepEqual(labels, ['Home', 'Admissions', 'Inbox', 'Today', 'Journey', 'Reports', 'Settings']);
+  assert.equal((nav.match(/class="kids"/g) || []).length, 1, 'one group: Admissions');
   // the hairline itself, unchanged from the established rule
   assert.match(APP, /html\.ui-c \.cnav \.kids\{margin:1px 0 6px 18px;padding-left:10px;border-left:1px solid var\(--rule\)\}/,
     'the established INTAKE hairline, not a new one');
@@ -41,7 +41,7 @@ test('the menu is flat, in his order', () => {
 
 test('every menu item carries its locked icon', () => {
   const nav = APP.slice(APP.indexOf('<div class="cnav"'), APP.indexOf('</div>`);', APP.indexOf('<div class="cnav"')));
-  for (const k of ['C_ICON.home', 'C_ICON.inbox', 'C_ICON.next', 'C_ICON.journey', 'C_ICON.rep', 'C_ICON.set']) {
+  for (const k of ['C_ICON.home', 'C_ICON.adm', 'C_ICON.rep', 'C_ICON.set']) {
     assert.ok(nav.includes('${' + k + '}'), k + ' is on its menu item');
   }
   // the five locked ones are untouched; Reports is marked provisional where it is defined
@@ -52,8 +52,8 @@ test('every menu item carries its locked icon', () => {
 test('every old hash still resolves, and lands in the right place', () => {
   const expected = {
     '': 'home', home: 'home',
-    today: 'today', next: 'today', followup: 'today', admissions: 'today',
-    leads: 'leads', inbox: 'leads', car: 'leads',
+    today: 'today', next: 'today', followup: 'today',
+    leads: 'leads', inbox: 'leads', car: 'leads', admissions: 'leads',   // Q51: Admissions opens its first child, the Inbox
     people: 'people', person: 'people', journey: 'people', outcomes: 'people',
     reports: 'reports', funnel: 'reports', metrics: 'reports',
     settings: 'settings', help: 'settings', channels: 'settings', feedback: 'settings',

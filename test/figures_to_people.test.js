@@ -40,8 +40,8 @@ const FIGURES = [
   ['Outcomes', 'Admitted / Not proceeding columns', 'function cDrawJourneyPool() {', /\{ id: admitted, label: admitted, n: base\.filter\(\(p\) => p\.status === admitted\)\.length, tone: 'good', sep: true \}/],
   ['Outcomes', 'Everybody / Cold / Reject', 'function cDrawJourneyPool() {', /cPoolSelect\('Cold \/ Reject', C_OUT_TAG \|\| '', tags, 'C_OUT_TAG=this\.value/],
   ['Outcomes', 'Why they stopped bars', 'function cReasonBreakdown(', /onclick="C_OUT_REASON=this\.dataset\.r;viewOutcomesC\(\)/],
-  ['Menu', 'Today and Inbox badges', 'function installCNav() {', /<a href="#\/today" data-c="today"[^>]*>\$\{C_ICON\.next\}<span>Today<\/span><span class="n" id="cnNext">/],
-  ['Menu', 'Journey badge', 'function installCNav() {', /<a href="#\/journey" data-c="people"[^>]*>\$\{C_ICON\.journey\}<span>Journey<\/span><span class="n" id="cnJourney">/],
+  ['Menu', 'Today and Inbox badges', 'function installCNav() {', /<a href="#\/today" data-c="today"[^>]*><span>Today<\/span><span class="n" id="cnNext">/],
+  ['Menu', 'Journey badge', 'function installCNav() {', /<a href="#\/journey" data-c="people"[^>]*><span>Journey<\/span><span class="n" id="cnJourney">/],
 ];
 
 for (const [screen, figure, where, target] of FIGURES) {

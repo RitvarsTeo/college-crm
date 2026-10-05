@@ -26,7 +26,7 @@ test('"not in list" reads in slate, with a solid border', () => {
 
 test('amber is only ever today, a count, or needs-you', () => {
   const allowed = [
-    '.cnav .n.warn',            // the sidebar count
+    // '.cnav .n.warn' left the list with Q51: the menu count's signal colour is on its NEW mark only, never the figures
     'button[data-t="light"]',   // the light-theme sun
     '.c-what.none',             // no next step: needs you
     '.c-when.today',            // today
@@ -41,7 +41,7 @@ test('amber is only ever today, a count, or needs-you', () => {
   for (const l of lines) {
     assert.ok(allowed.some((a) => l.includes(a)), 'amber used somewhere new: ' + l.trim().slice(0, 90));
   }
-  assert.ok(lines.length >= 5, 'the real amber signals are still there');
+  assert.ok(lines.length >= 4, 'the real amber signals are still there');
 });
 
 // EVERY TOKEN IS A REAL TOKEN (01.10.2026). I wrote background:var(--hover) into the

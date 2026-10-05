@@ -55,8 +55,8 @@ test('the menu order and the Today name', () => {
   const APP = read('src', 'app.html');
   const nav = APP.slice(APP.indexOf('<div class="cnav" role="navigation"'), APP.indexOf('</div>`);', APP.indexOf('<div class="cnav" role="navigation"')));
   const order = [...nav.matchAll(/data-c="(\w+)"/g)].map((m) => m[1]);
-  // Q47 (the owner, 05.10.2026: "Make it Inbox> today> Journey> ..."): flat; Journey's place id stays 'people'
-  assert.deepEqual(order, ['home', 'leads', 'today', 'people', 'reports', 'settings']);
+  // Q51: Home, Admissions (Inbox, Today, Journey), Reports, Settings; Journey's place id stays 'people'
+  assert.deepEqual(order, ['home', 'admissions', 'leads', 'today', 'people', 'reports', 'settings']);
   assert.match(nav, /<span>Today<\/span><span class="n" id="cnNext"><\/span>/, 'the count badge stays on Today');
   assert.doesNotMatch(nav, /<span>Next steps<\/span>/);
   assert.match(APP, /title: 'Today',/);

@@ -895,7 +895,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c[data-theme="dark"] .cnav a.on svg{color:#8fcbef;opacity:1}
   html.ui-c .cnav a:focus-visible{outline:2px solid var(--pet);outline-offset:1px}
   html.ui-c .cnav .n{margin-left:auto;font-size:12px;font-variant-numeric:tabular-nums;color:var(--t3)}
-  html.ui-c .cnav .n.warn{color:var(--c-warn);font-weight:600}
+  html.ui-c .cnav .n.warn{color:var(--t3);font-weight:600}   /* Q51: the signal colour is on the NEW mark only, never on the figures */
   html.ui-c .cnav .kids{margin:1px 0 6px 18px;padding-left:10px;border-left:1px solid var(--rule)}
   html.ui-c[data-theme="dark"] .cnav .kids{border-left-color:rgba(194,211,222,.28)}   /* kit 13: 2.05:1 on the sea */
   html.ui-c .cnav .kids a{padding:5px 10px;font-size:13px}
@@ -1045,6 +1045,8 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
     html.ui-c .ctabs .n{position:absolute;top:3px;left:calc(50% + 6px);min-width:18px;height:18px;padding:0 5px;border-radius:9px;
       background:#53a7db;color:#ffffff;font-size:11px;font-weight:700;line-height:18px;text-align:center}
     html.ui-c .ctabs .n.warn{background:#F7C04F;color:#0a2463}
+    html.ui-c .ctabs .n{width:auto;display:inline-flex;align-items:center;gap:2px}
+    html.ui-c .ctabs .n .nn{font-size:11.5px} html.ui-c .ctabs .n .nt{font-size:9px} html.ui-c .ctabs .n .nw{font-size:7px;padding:1px 3px}
     html.ui-c .cmore:not([hidden]){display:block;position:fixed;inset:0;z-index:39}
     html.ui-c .cmore-back{position:absolute;inset:0;background:rgba(3,12,26,.35)}
     html.ui-c .cmore-sheet{position:absolute;left:8px;right:8px;bottom:calc(68px + env(safe-area-inset-bottom));display:grid;
@@ -1551,9 +1553,11 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-jedit .c-form{grid-template-columns:minmax(0,1fr)}   /* the board's opened card is narrow: one field per line */
   html.ui-c .p-rows .c-line.c-sel{background:var(--c-sunk)}
   /* Q39: new / total in the menu, the new figure bold with its small mark */
-  html.ui-c .n .nn{font-weight:750;color:inherit}
-  html.ui-c .n .nw{font-style:normal;font-size:9.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin:0 3px 0 2px;vertical-align:1px}
-  html.ui-c .n small{font-size:11px;opacity:.8}
+  html.ui-c .n{display:inline-flex;align-items:baseline;gap:3px;white-space:nowrap}
+  html.ui-c .n .nw{font-style:normal;font-size:8.5px;font-weight:800;letter-spacing:.06em;line-height:1;padding:2px 4px 1px;border-radius:4px;
+    background:#F7C04F;color:#0a2463;align-self:center}   /* the mark carries the signal colour; the words on it stay navy */
+  html.ui-c .n .nn{font-size:14px;font-weight:800;line-height:1;color:inherit}
+  html.ui-c .n .nt{font-size:10px;font-weight:500;line-height:1;opacity:.78}
   @media (max-width:760px){ html.ui-c .pband .jb-plot{height:92px;padding-top:26px} html.ui-c .pband .jb-l{font-size:10.5px} }
   @media (max-width:900px){
     html.ui-c .jband-row{grid-template-columns:1fr 1fr}
@@ -2563,11 +2567,13 @@ function installCNav() {
   for (const bar of document.querySelectorAll('#cThemeBar, #cThemeBar2')) bar.innerHTML = themeSwitchHtml();
   brand.insertAdjacentHTML('afterend', `<div class="cnav" role="navigation" aria-label="Main">
     <a href="#/home" data-c="home" title="How admissions is performing">${C_ICON.home}<span>Home</span></a>
-    <!-- ONE SYSTEM (Q47, the owner 05.10.2026): the menu is flat, in his order - "Make it Inbox> today> Journey> ...".
-         No Admissions group. Journey is People + Journey + Outcomes in one; Outcomes are its last two columns. -->
-    <a href="#/leads" data-c="leads" title="What arrived and needs a person to look at it">${C_ICON.inbox}<span>Inbox</span><span class="n" id="cnLeads"></span></a>
-    <a href="#/today" data-c="today" title="What needs my attention today">${C_ICON.next}<span>Today</span><span class="n" id="cnNext"></span></a>
-    <a href="#/journey" data-c="people" title="Everyone, by where they are in the journey">${C_ICON.journey}<span>Journey</span><span class="n" id="cnJourney"></span></a>
+    <!-- Q51 (the owner, 05.10.2026, on production: "I had Home then Admissions (under that inbox, today, journey) Then
+         big Reports."): Admissions is the group again, its three pools under it with their counts; clicking it opens
+         its first child, the Inbox. Journey is People + Journey + Outcomes in one (Q47). -->
+    <a href="#/admissions" data-c="admissions" title="The work: what arrived, what is due, everyone">${C_ICON.adm}<span>Admissions</span></a>
+    <div class="kids"><a href="#/leads" data-c="leads" title="What arrived and needs a person to look at it"><span>Inbox</span><span class="n" id="cnLeads"></span></a>
+      <a href="#/today" data-c="today" title="What needs my attention today"><span>Today</span><span class="n" id="cnNext"></span></a>
+      <a href="#/journey" data-c="people" title="Everyone, by where they are in the journey"><span>Journey</span><span class="n" id="cnJourney"></span></a></div>
     <a href="#/reports" data-c="reports" title="What is happening">${C_ICON.rep}<span>Reports</span></a>
     <a href="#/settings" data-c="settings" id="cnSettings" class="c-navfoot">${C_ICON.set}<span>Settings</span></a>
   </div>`);
@@ -2611,14 +2617,14 @@ const cTabOf = (place) => (['home', 'leads', 'today', 'people'].includes(place) 
 // Every old link still resolves and nothing is redirected: people have these in
 // bookmarks and in each other's messages.
 //   #/next, #/followup          -> Today, which absorbed Next Steps
-//   #/admissions                -> Today (the work is what Admissions opens on)
+//   #/admissions                -> the Inbox, its first child (Q51)
 //   #/inbox, #/car              -> the Inbox
 //   #/journey, #/outcomes       -> People, where the lifecycle lives
 //   #/funnel, #/metrics         -> Reports
 function cPlace(page) {
   return ({ '': 'home', home: 'home',
-    today: 'today', next: 'today', followup: 'today', admissions: 'today',
-    leads: 'leads', inbox: 'leads', car: 'leads',
+    today: 'today', next: 'today', followup: 'today',
+    leads: 'leads', inbox: 'leads', car: 'leads', admissions: 'leads',   // Admissions opens its first child, the Inbox (Q51)
     people: 'people', person: 'people', journey: 'people', outcomes: 'people',
     reports: 'reports', funnel: 'reports', metrics: 'reports',
     settings: 'settings', help: 'settings', channels: 'settings', feedback: 'settings' })[page || ''];
@@ -2628,11 +2634,9 @@ function markCNav(page) {
   // THE PROGRESS LINE RUNS TO THE PAGE YOU ARE ON (the owner, 04.10.2026: "it stops at people"). The
   // child is lit with its parent, so the spine reaches Journey or Outcomes, not only People; Today
   // and Inbox light Admissions above them the same way.
-  const parent = place;   // flat since Q47: no group parent
-  const child = place === 'today' || place === 'leads' ? place
-    : page === 'journey' ? 'journey'
-    : page === 'outcomes' ? 'outcomes'   // back in the menu after Journey (the owner, 05.10.2026), People lit with it
-    : null;   // People itself is everyone (the owner, 05.10.2026): People lights alone
+  // Q51: Inbox, Today and Journey are Admissions' children again; a child lights itself and Admissions
+  const parent = ['leads', 'today', 'people'].includes(place) ? 'admissions' : place;
+  const child = ['leads', 'today', 'people'].includes(place) ? place : null;
   const lit = [parent, child].filter(Boolean);
   document.querySelectorAll('.cnav a').forEach((a) => a.classList.toggle('on', lit.includes(a.dataset.c)));
   const t = cTabOf(place);
@@ -3527,7 +3531,11 @@ const cSeenKey = (k) => 'crmSeen:' + k;
 function cSeen(k) { try { return localStorage.getItem(cSeenKey(k)) || ''; } catch { return ''; } }
 function cSeeNow(k) { try { localStorage.setItem(cSeenKey(k), new Date().toISOString()); } catch {} }
 // "3 new / 41", the new figure bold with its mark; only the total when nothing is new
-const cBadge = (fresh, total) => (fresh ? `<b class="nn">${fresh}</b><i class="nw">new</i><small>/ ${total}</small>` : total ? String(total) : '');
+// Q51, the owner on production: "The count is now one blur. Where is the only new count?" - so like the car badge: the
+// NEW mark first (the signal colour on the mark only), the new figure bold and larger, then "/ total" clearly smaller
+// and lighter. Nothing new: only the total, in the small style.
+const cBadge = (fresh, total) => (fresh ? `<i class="nw" aria-hidden="true">NEW</i><b class="nn">${fresh}</b><small class="nt"><span class="c-sr"> new of </span><span aria-hidden="true">/</span>${total}</small>`
+  : total ? `<small class="nt">${total}</small>` : '');
 async function cPoolCounts() {
   try {
     const [i, t, ppl] = await Promise.all([api('/api/intake'), api('/api/tasks?scope=open'), api('/api/people')]);
@@ -3540,7 +3548,11 @@ async function cPoolCounts() {
     // 05.10.2026), which is exactly the set Today opens on; Coming up is a click away and not counted.
     const none = people.filter((p) => !C_TERMINAL.includes(p.status) && !p.next_action_at && !cSisHolds(p));
     put('#cnLeads', cBadge(inbox.filter((r) => after('leads', r.received_at)).length, inbox.length));
-    put('#cnNext', cBadge(dueNow.filter((g) => g.some((x) => after('today', x.due_at) || after('today', x.created_at))).length
+    // a step is new on Today when its due DAY began after the last visit (it entered Today since), or it was planned
+    // since; a step due later today is not new the moment Today has been opened
+    const seenDay = cSeen('today') ? cDay(cSeen('today')) : '';
+    const becameDue = (x) => Boolean(seenDay && cDay(x.due_at) > seenDay);
+    put('#cnNext', cBadge(dueNow.filter((g) => g.some((x) => becameDue(x) || after('today', x.created_at))).length
       + none.filter((p) => after('today', p.created_at)).length, dueNow.length + none.length),
       t.some((x) => cWhenClass(x.due_at) === 'over'));
     put('#cnJourney', cBadge(people.filter((p) => after('journey', p.created_at)).length, people.length));
