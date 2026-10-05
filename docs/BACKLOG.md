@@ -14,6 +14,15 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - PICKED: the cold and reject lists live in Outcomes (D-C8 / Q14 = A)
+
+Ritvars 05.10 (via MASTER CONTROL): "Colds and Rejects to outcomes. Also these statuses are available just in the all
+people tab of course." The A/B below is closed: A is the product, B and the `?cold=` switch are removed. Outcomes > Not
+proceeding > Cold or Reject shows one card per programme (name + phone + email, why, came from, last contact); the
+"why they stopped" breakdown shows on Everybody only. Home's Cold / Reject open it. People (everyone) still filters by
+Stage Cold / Reject. Marketing consent: still parked, nothing built. test/cold_list.test.js rewritten. 1111/1111.
+Shots: `For review/2026-10-05 finals/`. BUILT, next patch.
+
 ## 05.10.2026 - People is everyone; Journey and Outcomes are its children (Q21)
 
 Ritvars 05.10 (via MASTER CONTROL): "All people can show up, when we click ON the People tab itself. Than we can click

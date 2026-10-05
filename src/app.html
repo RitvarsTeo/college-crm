@@ -1158,7 +1158,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-ok{color:var(--c-ok);font-weight:700;margin-right:6px} html.ui-c .c-no{color:var(--c-bad);font-weight:700;margin-right:6px}
   html.ui-c .c-gap{color:var(--t3);font-style:italic}
   html.ui-c .c-set .c-line{grid-template-columns:minmax(0,1fr) auto}
-  /* D-C8 A (?cold=a): the cold ones, one card per programme: who + how to reach them, why, from where, last contact */
+  /* D-C8: Outcomes > Cold / Reject, one card per programme: who + how to reach them, why, from where, last contact */
   html.ui-c .c-cold .c-line{grid-template-columns:minmax(0,1.3fr) minmax(0,1.4fr) minmax(0,.8fr) 110px}
   html.ui-c .c-cold .c-what small{display:block;color:var(--t3);font-size:12.5px}
   html.ui-c .c-tag{font-size:10.5px;font-weight:600;letter-spacing:.04em;color:var(--t3);border:1px solid var(--rule);border-radius:4px;padding:0 5px;white-space:nowrap}
@@ -2895,12 +2895,6 @@ function cGoStage(id) {
 }
 // Cold / reject on Home opens Not proceeding with exactly that tag.
 function cGoClosedTag(id) {
-  // D-C8 B: the cold list lives in All people, so Home's Cold opens it there
-  if (id === 'cold' && cColdMode() === 'b') {
-    C_PF = C_PF_EMPTY(); C_PF.stage = 'tag:cold'; C_PQ = ''; C_PEDIT = null; C_PTAB = 'all';
-    if (location.hash === '#/people/all') viewPeopleC(); else location.hash = '#/people/all';
-    return;
-  }
   C_OUTCOME = 'Not proceeding'; C_OUT_FILTER = null; C_OUT_TAG = id;
   if (location.hash === '#/outcomes') viewOutcomesC(); else location.hash = '#/outcomes';
 }
@@ -3214,18 +3208,11 @@ function cTagSplit(np) {
     <button aria-pressed="${!C_OUT_TAG}" onclick="${pick(null)}">Everybody ${np.length}</button>${tags.map(([id, label, n]) =>
     `<button aria-pressed="${C_OUT_TAG === id}" onclick="${pick(id)}">${esc(label)} ${n}</button>`).join('')}</div>`;
 }
-// THE COLD LIST FOR MARKETING (D-C8, the owner 05.10.2026: "lets see visual A/B's"). Marketing (the marketing owners)
-// finds and reads the cold ones; nothing is sent, exported or campaigned from Intake. HOW they read it is an
-// A/B he has not picked, so both screens are unchanged until he does:
-//   ?cold=a - Outcomes > Not proceeding > Cold, one card per programme (what a campaign is aimed at); the
-//             "why they stopped" breakdown, which counts every Not proceeding and not only the cold, stays out
-//   ?cold=b - All people, Stage "Not proceeding · Cold": the columns a cold person never fills (next step,
-//             when) give way to why, where they came from and the last contact. Home's Cold opens it.
-function cColdMode() {
-  let m = '';
-  try { m = new URLSearchParams(location.search).get('cold') || ''; } catch {}
-  return m === 'a' || m === 'b' ? m : '';
-}
+// THE COLD AND REJECT LISTS (D-C8, the owner 05.10.2026: "Colds and Rejects to outcomes. Also these statuses are
+// available just in the all people tab of course."). Marketing finds them in Outcomes > Not proceeding > Cold or
+// Reject, one card per programme (what a campaign is aimed at): name and how to reach them, why, where they came
+// from, the last contact. The "why they stopped" breakdown, which counts every Not proceeding, stays out of a tag's
+// list. Nothing is sent, exported or campaigned from Intake. People still filters by Stage Cold / Reject.
 const cColdWhy = (p) => (p.closed_reason ? esc(p.closed_reason) + (p.closed_note ? ` <small>${esc(p.closed_note)}</small>` : '') : '<span class="c-gap">reason not recorded</span>');
 function cColdGroups(list) {
   const order = CFG.programmes || [];
@@ -3261,8 +3248,8 @@ async function viewOutcomesC() {
     <div class="c-seg" role="group" aria-label="Outcome"><button aria-pressed="${C_OUTCOME === 'Admitted'}" onclick="C_OUTCOME='Admitted';viewOutcomesC()"><span class="c-ok">✓</span>Admitted ${adm.length}</button><button aria-pressed="${C_OUTCOME !== 'Admitted'}" onclick="C_OUTCOME='Not proceeding';viewOutcomesC()"><span class="c-no">✕</span>Not proceeding ${np.length}</button></div>
     ${f ? `<div class="c-filter">Showing <b>${list.length}</b> ${list.length === 1 ? 'admitted person' : 'admitted people'}, ${esc(fLabel)} <button class="btn sm ghost" onclick="C_OUT_FILTER=null;viewOutcomesC()">Show all admitted ✕</button></div>` : ''}
     ${C_OUTCOME !== 'Admitted' ? cTagSplit(np) : ''}
-    ${C_OUTCOME !== 'Admitted' && !(C_OUT_TAG === 'cold' && cColdMode() === 'a') ? cReasonBreakdown(np, noReason) : ''}
-    ${C_OUTCOME !== 'Admitted' && C_OUT_TAG === 'cold' && cColdMode() === 'a' ? cColdGroups(list) : `<div class="c-sheet">${list.map((p) => `<div class="c-line" tabindex="0" onclick="location.hash='#/person/${esc(p.id)}'" style="grid-template-columns:minmax(0,1.2fr) minmax(0,1.4fr) 110px">
+    ${C_OUTCOME !== 'Admitted' && !C_OUT_TAG ? cReasonBreakdown(np, noReason) : ''}
+    ${C_OUTCOME !== 'Admitted' && C_OUT_TAG ? cColdGroups(list) : `<div class="c-sheet">${list.map((p) => `<div class="c-line" tabindex="0" onclick="location.hash='#/person/${esc(p.id)}'" style="grid-template-columns:minmax(0,1.2fr) minmax(0,1.4fr) 110px">
         <div class="c-who"><b>${esc(p.name)}</b><small>${esc(p.programme || 'programme not said')} · came from ${esc(cChannel(p.source_channel)[0])}</small></div>
         <div class="c-what">${C_OUTCOME !== 'Admitted' && p.closed_tag ? cTagChip(p.closed_tag) : ''}${C_OUTCOME === 'Admitted' ? `Admitted${p.matriculated_at ? ` · <span class="c-lifefact" title="From the SIS: it happened on or before this day">Matriculated <time>by ${esc(cDay(p.matriculated_at))}</time></span>` : ''}` : (p.closed_reason ? esc(p.closed_reason) : '<span class="c-gap">reason not recorded</span>')}</div>
         <div class="c-when">${p.admitted_at ? fmtDate(p.admitted_at) : ''}</div></div>`).join('') || '<div class="c-empty">Nobody here.</div>'}</div>`}`;
@@ -3423,22 +3410,13 @@ function cDrawPeople() {
       <td class="${t || cSisHolds(p) ? '' : 'c-gap'}">${t ? cStepIcon(t.label) + esc(cTask(t.label)) : (open ? (cSisHolds(p) ? cSisHeld(p) : 'No next step') : '-')}</td>
       <td>${t ? `<span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span>` : ''}</td></tr>
       ${C_PEDIT === p.id ? `<tr class="c-edit"><td colspan="5">${cEditForm(p, t)}</td></tr>` : ''}`; };
-  // D-C8 B (?cold=b): a cold person never has a next step, so the cold list reads why, from where, and when last
-  const coldB = cColdMode() === 'b' && C_PF.stage === 'tag:cold';
-  const coldRow = (p) => `<tr class="row${C_PEDIT === p.id ? ' c-sel' : ''}" tabindex="0" onclick="C_PEDIT=${C_PEDIT === p.id ? 'null' : `'${esc(p.id)}'`};C_PMSG='';cDrawPeople()">
-      <td class="c-name"><b>${esc(p.name)}</b><small class="c-reach ${contact(p) ? '' : 'c-gap'}">${contact(p) ? cReach(p) : 'no contact details'}</small></td>
-      <td>${esc(p.programme || '-')}</td>
-      <td>${cColdWhy(p)}</td>
-      <td>${esc(cChannel(p.source_channel)[0])}</td>
-      <td>${p.last_contact_at ? fmtDate(p.last_contact_at) : ''}</td></tr>
-      ${C_PEDIT === p.id ? `<tr class="c-edit"><td colspan="5">${cEditForm(p, taskOf.get(p.id))}</td></tr>` : ''}`;
   $('#view').innerHTML = `<div class="c-head"><div><h1>People</h1></div>
       <div class="act"><input class="c-search" id="cPQ" placeholder="Search name, email or phone" value="${esc(C_PQ)}" aria-label="Search people"><button class="btn" onclick="openAdd()">Add lead</button></div></div>
     ${cPeopleFilters(people)}
     <p class="c-explain">${explain}</p>
     ${C_PMSG ? `<div class="c-filter">${esc(C_PMSG)}</div>` : ''}
-    <div class="c-sheet c-scroll"><table class="c-pt"><thead><tr>${coldB ? '<th>Name</th><th>Programme</th><th>Why not proceeding</th><th>Came from</th><th>Last contact</th>' : '<th>Name</th><th>Programme</th><th>Stage</th><th>Next step</th><th>When</th>'}</tr></thead>
-      <tbody>${ps.map(coldB ? coldRow : row).join('') || '<tr><td colspan="5" class="c-empty">Nobody matches. Remove a filter to widen the list.</td></tr>'}</tbody></table></div>`;
+    <div class="c-sheet c-scroll"><table class="c-pt"><thead><tr><th>Name</th><th>Programme</th><th>Stage</th><th>Next step</th><th>When</th></tr></thead>
+      <tbody>${ps.map(row).join('') || '<tr><td colspan="5" class="c-empty">Nobody matches. Remove a filter to widen the list.</td></tr>'}</tbody></table></div>`;
   if (C_PSCROLL) { C_PSCROLL = false; const r = document.querySelector('tr.c-sel'); if (r) r.scrollIntoView({ block: 'center' }); }
   const s = $('#cPQ'); if (s) s.addEventListener('input', () => { const pos = s.selectionStart; C_PQ = s.value; cDrawPeople(); const n = $('#cPQ'); n.focus(); n.setSelectionRange(pos, pos); });
 }
