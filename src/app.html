@@ -2029,6 +2029,72 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-thin p{margin:3px 0 0;font-size:13px;color:var(--t2)}
   @media (max-width:900px){ html.ui-c .kstrip.c-five{grid-template-columns:1fr 1fr} html.ui-c .kstrip.c-five > div{border-left:0;padding-left:0} html.ui-c .c-rgrid{grid-template-columns:1fr} }
 
+  /* FULL REPORT, ONE LEVEL DEEPER (Q35, ?rep=a|b). No new card: Home's cards are .kstrip > div and the depth is
+     .c-sheet, both drawn by CARDS 3. Blue = people counted, mustard = a rate or a goal. Every figure is a link. */
+  html.ui-c .rp .kbar{grid-template-columns:minmax(0,9.5em) minmax(40px,1fr) 44px}
+  html.ui-c .rp .kbar > b{text-align:right;font-variant-numeric:tabular-nums}
+  html.ui-c .rp .kbt i{background:var(--v-adm)}
+  html.ui-c .rp .kbt i.gap{background:var(--v-np)}
+  html.ui-c .rp .rp-rate .kbt i{background:var(--v-tgt)}
+  html.ui-c .rp .rp-track{background:var(--c-sunk);border-radius:0 3px 3px 0}
+  html.ui-c .rp-go{color:inherit;text-decoration:none;border-radius:3px}
+  html.ui-c .rp-go:hover,html.ui-c .rp-go:focus-visible{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px;text-decoration-color:var(--v-adm)}
+  html.ui-c .rp-sheet{padding:16px 20px 2px}
+  html.ui-c .rp-sheet .ksec{margin-bottom:20px}
+  html.ui-c .rp-chip{margin-left:auto;font-size:12px;color:var(--t3)} html.ui-c .rp-chip .rp-go{font-weight:650;color:var(--ink)}
+  html.ui-c .rp .kt2 .rp-go{font-weight:650;color:var(--ink)}
+  html.ui-c .rp-none{padding:6px 0}
+  html.ui-c .rp-cols{display:flex;align-items:stretch;gap:6px;height:150px;border-bottom:1px solid var(--rule2)}
+  html.ui-c .rp-col{flex:1;display:flex;flex-direction:column;min-width:0;cursor:pointer;outline:none;border-radius:6px}
+  html.ui-c .rp-colt{flex:1;display:flex;align-items:flex-end;justify-content:center}
+  html.ui-c .rp-colt i{display:block;width:min(26px,70%);background:var(--v-adm);border-radius:3px 3px 0 0}
+  html.ui-c .rp-col small{text-align:center;font-size:11.5px;color:var(--t3);padding:5px 0 3px}
+  html.ui-c .rp-col:hover,html.ui-c .rp-col.hot,html.ui-c .rp-col:focus-visible{background:var(--c-sunk)}
+  html.ui-c .rp-grid td{cursor:pointer;padding-right:18px} html.ui-c .rp-grid td:hover{background:var(--c-sunk)}
+  html.ui-c .rp-grid th{font-weight:600}
+  html.ui-c .rp-cell{display:grid;grid-template-columns:46px auto;gap:7px;align-items:center}
+  html.ui-c .rp-cell i{display:block;height:8px;background:var(--v-adm);border-radius:0 2px 2px 0}
+  html.ui-c .rp-cell b{font-weight:650;font-variant-numeric:tabular-nums}
+  html.ui-c .kstrip .rp-split{display:inline-flex;align-items:center;gap:5px;margin:0 12px 0 0;font-size:12.5px;font-weight:500;letter-spacing:0}
+  html.ui-c .rp-split i{width:9px;height:9px;border-radius:2px} html.ui-c .rp-split i.o{background:var(--v-open)} html.ui-c .rp-split i.a{background:var(--v-adm)} html.ui-c .rp-split i.n{background:var(--v-np)}
+  html.ui-c .rp-split .rp-go{font-weight:650;color:var(--ink)}
+  /* A: the index mirrors Home's cards (the labels; the figures are the chapters'), sticky */
+  html.ui-c .kstrip.rp-index{position:sticky;top:0;z-index:6;grid-template-columns:repeat(6,minmax(0,1fr));grid-template-rows:auto;gap:8px;margin:0 0 16px;padding:8px 0;background:var(--paper)}
+  html.ui-c .kstrip.rp-index > div{display:block;grid-row:auto;padding:0}
+  html.ui-c .rp-index a{display:flex;align-items:center;gap:8px;padding:9px 12px;text-decoration:none;color:var(--ink)}
+  html.ui-c .kstrip.rp-index a span{font-size:12.5px;font-weight:600;color:var(--ink);letter-spacing:0}
+  html.ui-c .rp-index > div:hover{background:var(--c-sunk)}
+  html.ui-c .rp-index i,html.ui-c .rp-echo .rp-n{display:inline-grid;place-items:center;flex:none;width:20px;height:20px;border-radius:50%;border:1px solid var(--rule);font-size:11px;font-style:normal;font-weight:600;color:var(--t3)}
+  html.ui-c .rp-a .rp-ch{display:grid;grid-template-columns:minmax(240px,300px) minmax(0,1fr);gap:16px;align-items:start;margin-bottom:10px;scroll-margin-top:76px}
+  html.ui-c .rp-a .rp-ch > .c-apps{grid-column:1 / -1;margin-top:0}
+  html.ui-c .kstrip.rp-echo{display:block;margin:0;position:sticky;top:76px}
+  html.ui-c .kstrip.rp-echo > div{display:block;grid-row:auto}
+  html.ui-c .rp-echo .rp-n{float:right}
+  html.ui-c #view .kstrip.rp-echo > div > b{font-size:42px}
+  html.ui-c #view .rp-a #rep-admitted .kstrip.rp-echo > div > b{font-size:54px}
+  html.ui-c .rp-echo small{margin-top:2px}
+  /* B: the tab row is Home's cards in miniature; the open one is ringed in the logo blue */
+  html.ui-c .kstrip.rp-tabs{grid-template-columns:1.2fr 1fr 1fr 1.2fr 1.3fr 1fr;gap:10px;margin-bottom:16px}
+  html.ui-c .kstrip.rp-tabs > div{cursor:pointer;padding:12px 14px;outline:none}
+  html.ui-c #view .kstrip.rp-tabs > div > b{font-size:26px}
+  html.ui-c #view .kstrip.rp-tabs > div[aria-selected="true"]{outline:2px solid #29a8df;outline-offset:-2px}
+  html.ui-c .rp-tab[aria-selected="false"] .rp-go{pointer-events:none}
+  html.ui-c .rp-tab[aria-selected="false"] > span{color:var(--t4)}
+  html.ui-c .rp-tab:focus-visible{box-shadow:0 0 0 3px rgba(41,168,223,.35)}
+  html.ui-c .rp-more{max-width:440px;margin:0 0 14px}
+  html.ui-c .rp-more .ktgt-n{display:block;margin-top:5px;font-size:12.5px;color:var(--t3)}
+  html.ui-c .rp-more .ktgt-who{font-size:12px;font-weight:600;color:var(--t3)}
+  html.ui-c .rp-b .rp-ch > .c-apps{margin-top:0}
+  /* dark: the strips and the blocks are not panels of their own (as Home's kb-strip); only the cards are */
+  html.ui-c[data-theme="dark"] .kstrip.rp-echo,html.ui-c[data-theme="dark"] .kstrip.rp-tabs,html.ui-c[data-theme="dark"] .rp-sheet .ksec{background:none;border:0;padding:0;border-radius:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+  html.ui-c[data-theme="dark"] .kstrip.rp-index{background:var(--paper);border:0;padding:8px 0;border-radius:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+  @media (max-width:900px){
+    html.ui-c .rp-a .rp-ch{grid-template-columns:1fr}
+    html.ui-c .kstrip.rp-echo{position:static}
+    html.ui-c .kstrip.rp-index{grid-template-columns:repeat(6,minmax(130px,1fr));overflow-x:auto}
+    html.ui-c .kstrip.rp-tabs{grid-template-columns:1fr 1fr}
+  }
+
   /* Feedback in C: one sheet, open first. */
   html.ui-c .c-fb{padding:12px 16px;border-top:1px solid var(--rule2)}
   html.ui-c .c-sheet > .c-fb:first-child{border-top:0}
@@ -2621,7 +2687,9 @@ async function routeC(page, arg) {
   if (page === 'person') return viewPerson(arg);
   if (page === 'channels') return viewChannels(arg);
   if (page === 'feedback') return viewFeedback();
+  if (!(place === 'people' && page !== 'journey')) C_PCOHORT = null;   // a Reports cohort lives only on People
   if (place === 'reports') {
+    if (arg) C_REP_CH = arg;   // #/reports/<chapter>, read only under ?rep=a|b
     await viewReports();
     if (arg === 'applications') { const a = $('#applications'); if (a) a.scrollIntoView({ block: 'start' }); }
     return;
@@ -2788,9 +2856,9 @@ function cHomeB(D) {
     </section>
     <div class="kstrip kb-strip">
       <div class="khero"><span>Admitted</span><b>${D.admitted.length}</b><small>${D.year}${D.undated ? ` · +${D.undated} undated` : ''}</small>${goal ? cTargetMeter(goal) : ''}${cSpark(D.months.map((m) => m.admitted), 'adm')}${delta('admitted')}<a class="kgo" href="#/outcomes" onclick="cGoAdmittedYear(${D.year});return false">Outcomes →</a></div>
-      <div><span>Leads</span><b>${s.newLeads ?? 0}</b><small>${D.year}</small>${cSpark(D.months.map((m) => m.newLeads), 'lead')}${delta('newLeads')}<a class="kgo" href="#/reports" onclick="cGoReportYear();return false">Reports →</a></div>
-      <div><span>Conversion</span><b>${s.conversionPct == null ? '-' : s.conversionPct + '%'}</b><small>${s.conversionA ?? 0} / ${s.conversionB ?? 0} who arrived</small><a class="kgo" href="#/reports" onclick="cGoReportYear();return false">Reports →</a></div>
-      <div><span>Median time to admission</span><b>${s.medianDaysToAdmission == null ? '-' : s.medianDaysToAdmission} <em>days</em></b><small>first contact to admission</small><a class="kgo" href="#/reports" onclick="cGoReportYear();return false">Reports →</a></div>
+      <div><span>Leads</span><b>${s.newLeads ?? 0}</b><small>${D.year}</small>${cSpark(D.months.map((m) => m.newLeads), 'lead')}${delta('newLeads')}<a class="kgo" href="#/reports" onclick="cGoReportYear('leads');return false">Reports →</a></div>
+      <div><span>Conversion</span><b>${s.conversionPct == null ? '-' : s.conversionPct + '%'}</b><small>${s.conversionA ?? 0} / ${s.conversionB ?? 0} who arrived</small><a class="kgo" href="#/reports" onclick="cGoReportYear('conversion');return false">Reports →</a></div>
+      <div><span>Median time to admission</span><b>${s.medianDaysToAdmission == null ? '-' : s.medianDaysToAdmission} <em>days</em></b><small>first contact to admission</small><a class="kgo" href="#/reports" onclick="cGoReportYear('median');return false">Reports →</a></div>
     </div>
     <div class="m-scene kb-charts">
       <div class="kb-top">
@@ -2811,8 +2879,9 @@ function cGoAdmittedYear(year) {
   C_OUTCOME = 'Admitted'; C_OUT_TAG = null; C_OUT_FILTER = { kind: 'year', key: String(year), label: 'admitted in ' + year };
   if (location.hash === '#/outcomes') viewOutcomesC(); else location.hash = '#/outcomes';
 }
-function cGoReportYear() {
+function cGoReportYear(chapter) {
   C_RPT_PRESET = 'year'; RPT = { from: cTodayIso().slice(0, 4) + '-01-01', to: '' };
+  C_REP_CH = chapter || null;   // under ?rep=a|b the card lands on its own chapter; without it nothing reads this
   if (location.hash === '#/reports') viewReportsC(); else location.hash = '#/reports';
 }
 // A stage on Home opens the Journey on exactly that stage: the filter the Journey already
@@ -2976,6 +3045,7 @@ function cChartGo(spec) {
   if (kind === 'people') { location.hash = '#/people'; return; }
   if (kind === 'stage') { cGoStage(key); return; }
   if (kind === 'inbox') { location.hash = '#/leads'; return; }
+  if (kind === 'cohort') { cGoCohort(key); return; }   // a Reports figure: exactly its people (Q35)
   if (kind === 'outcome') { C_OUTCOME = key; C_OUT_FILTER = null; location.hash = '#/outcomes'; return; }
   C_OUTCOME = 'Admitted';
   C_OUT_FILTER = { kind, key, label };
@@ -3311,6 +3381,7 @@ async function viewLeadsC() {
 // stop working with somebody, and a next step can be moved or done but not renamed.
 // People filters (the review: real filters, not one-choice pills): the Journey's dropdowns, combined.
 const C_PF_EMPTY = () => ({ stage: '', programme: '', due: '', owner: '', source: '', data: '' });
+let C_PCOHORT = null;   // { label, ids }: the people one Reports figure counts (Q35), set by cGoCohort
 let C_PF = C_PF_EMPTY(); let C_PQ = ''; let C_PEDIT = null; let C_PMSG = ''; let C_PDATA = null; let C_PSCROLL = false;
 // Stage names come from config (they are still a working version): the label a person
 // reads, and the stage that plays the "closed" role, which needs a reason.
@@ -3328,8 +3399,9 @@ function cDrawPeople() {
   const { people, taskOf } = C_PDATA;
   const known = new Set(CFG.programmes || []);
   let ps = people.filter((p) => cPeopleMatch(p, taskOf.get(p.id), C_PF, known));
+  if (C_PCOHORT) ps = ps.filter((p) => C_PCOHORT.ids.has(p.id));
   if (C_PQ) { const q = C_PQ.toLowerCase(); ps = ps.filter((p) => [p.name, p.email, p.phone].some((v) => String(v || '').toLowerCase().includes(q))); }
-  const narrowed = Object.values(C_PF).some(Boolean) || C_PQ;
+  const narrowed = Object.values(C_PF).some(Boolean) || C_PQ || C_PCOHORT;
   const explain = narrowed ? `${ps.length} of ${people.length} people` : `All ${people.length} people.`;
   const contact = (p) => [p.email, p.phone].filter(Boolean).join(' · ');
   const row = (p) => { const t = taskOf.get(p.id); const open = !C_TERMINAL.includes(p.status);
@@ -3343,6 +3415,7 @@ function cDrawPeople() {
   $('#view').innerHTML = `<div class="c-head"><div><h1>People</h1></div>
       <div class="act"><input class="c-search" id="cPQ" placeholder="Search name, email or phone" value="${esc(C_PQ)}" aria-label="Search people"><button class="btn" onclick="openAdd()">Add lead</button></div></div>
     ${cPeopleFilters(people)}
+    ${C_PCOHORT ? `<div class="c-filter c-cohort">${esc(C_PCOHORT.label)} <button class="btn sm ghost" onclick="C_PCOHORT=null;cDrawPeople()">Show everyone ✕</button></div>` : ''}
     <p class="c-explain">${explain}</p>
     ${C_PMSG ? `<div class="c-filter">${esc(C_PMSG)}</div>` : ''}
     <div class="c-sheet c-scroll"><table class="c-pt"><thead><tr><th>Name</th><th>Programme</th><th>Stage</th><th>Next step</th><th>When</th></tr></thead>
@@ -4171,6 +4244,7 @@ function cSheetNotice() {
 function cReportPreset(which) { C_RPT_PRESET = which; return setPeriodPreset(which); }
 function cReportDates(from, to) { C_RPT_PRESET = null; setPeriod(from, to); }
 async function viewReportsC() {
+  const rep = cRepMode(); if (rep) return viewReportsDepth(rep);   // Q35 A/B; no switch = as before
   const qs = new URLSearchParams();
   if (RPT.from) qs.set('from', RPT.from);
   if (RPT.to) qs.set('to', RPT.to);
@@ -4357,6 +4431,299 @@ function cAppScene() {
   if (!('IntersectionObserver' in window)) { el.classList.add('is-in'); return; }
   const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { el.classList.add('is-in'); io.disconnect(); } }, { threshold: 0.2 });
   io.observe(el);
+}
+
+// ---------------------------------------------------- FULL REPORT, ONE LEVEL DEEPER (Q35)
+// The owner, 05.10.2026: "we have the same metrics that are in the home. Lets not be redundant ok, but smartly make it
+// obvious that full report page is going deeper on the metrics that are on home". Behind ?rep=a|b; with no switch the
+// report above is drawn exactly as before.
+//   A: the chapters stacked, a sticky index on top that mirrors Home's cards (click = jump)
+//   B: one tab per Home figure, the tab row Home's cards in miniature
+// One chapter per Home figure, in Home's order. A chapter opens with the SAME figure and label as its Home card (the
+// one allowed echo: it is the link back), then only the breakdowns that say where it comes from. No figure twice.
+// EVERY FIGURE IS A PATH TO ITS PEOPLE (the owner, 05.10.2026: "path to path to path", KB 08 P5): every count opens
+// exactly the people it counts in People (or Outcomes), and the count on arrival is the figure. The cohorts are built
+// here from the same people rows People lists, so the two cannot disagree. Open / overdue / no next step are Today's
+// and are not repeated here; why people did not proceed is Outcomes' and is one click from Not proceeding.
+const cRepMode = () => { let v = ''; try { v = new URLSearchParams(location.search).get('rep') || ''; } catch {} return v === 'a' || v === 'b' ? v : null; };
+let C_REP_CH = null;          // the chapter a Home card or a link asked for
+let C_REP_COH = {};           // q-key -> { name, label, ids }, the people behind every figure on the page
+const C_REP_CHAPTERS = [['admitted', 'Admitted'], ['leads', 'Leads'], ['conversion', 'Conversion'],
+  ['median', 'Median time to admission'], ['now', 'Where everyone is now'], ['applications', 'Applications']];
+const C_REP_SPREAD = [[0, 14], [15, 30], [31, 60], [61, 90], [91, 180], [181, Infinity]];
+
+// The period in words, for the basis labels: a calendar year (or This year, to date) is "2026", as on Home; a
+// calendar month is "Oct 2026".
+function cRepPeriodWord(label, today = '') {
+  const [a, b] = String(label || '').split(' to ');
+  if (!a || !b) return '';
+  const d = (x) => `${Number(x.slice(8))} ${C_MONTHS[Number(x.slice(5, 7)) - 1]}`;
+  const last = new Date(Date.UTC(Number(b.slice(0, 4)), Number(b.slice(5, 7)), 0)).getUTCDate();
+  if (a.slice(5) === '01-01' && a.slice(0, 4) === b.slice(0, 4) && (b.slice(5) === '12-31' || (today && b >= today))) return a.slice(0, 4);
+  if (a.slice(0, 7) === b.slice(0, 7) && a.slice(8) === '01' && Number(b.slice(8)) === last) return `${C_MONTHS[Number(a.slice(5, 7)) - 1]} ${a.slice(0, 4)}`;
+  return a.slice(0, 4) === b.slice(0, 4) ? `${d(a)} to ${d(b)} ${b.slice(0, 4)}` : `${d(a)} ${a.slice(0, 4)} to ${d(b)} ${b.slice(0, 4)}`;
+}
+
+// THE MODEL: every figure on the page, each with the people it counts. Pure: the report r (/api/report, for the
+// period and the twelve months), the people rows, the config, today. Definitions are the report's own (src/reports.js)
+// except Admitted, which is Home's card: admitted people with an admission date in the period.
+function cRepModel(r, people, cfg, today) {
+  const t0 = Date.parse(r.period.from), t1 = Date.parse(r.period.to);
+  const inP = (d) => { const t = d ? Date.parse(d) : NaN; return t >= t0 && t < t1; };
+  const pw = cRepPeriodWord(r.period.label, today);
+  const coh = {}; let seq = 0;
+  const fig = (name, label, list) => { const k = 'q' + (++seq); coh[k] = { name, label, ids: list.map((p) => p.id) }; return { k, n: list.length }; };
+  const val = (v) => (v == null || String(v).trim() === '' ? '(not recorded)' : String(v).trim());
+  const said = (v) => (v === '(not recorded)' ? 'not recorded' : v);
+  const groups = (list, keyOf) => { const m = new Map(); list.forEach((p) => { const k = keyOf(p); if (!m.has(k)) m.set(k, []); m.get(k).push(p); }); return m; };
+  // a breakdown: one row per value, biggest first; `keep` lists values that stay even at zero (the programmes)
+  const rows = (name, what, list, keyOf, keep = []) => {
+    const m = groups(list, keyOf);
+    keep.forEach((k) => { if (!m.has(k)) m.set(k, []); });
+    return [...m.entries()].sort((x, y) => y[1].length - x[1].length || (keep.indexOf(x[0]) + 1 || 99) - (keep.indexOf(y[0]) + 1 || 99))
+      .map(([value, ps]) => ({ value, ...fig(`${name}:${value}`, `${what} · ${said(value)}`, ps) }));
+  };
+  const progs = cfg.programmes || [];
+  const month = (iso) => cDay(iso).slice(0, 7);
+  const months = (r.trend || []).map((m) => m.month).filter((m) => m <= today.slice(0, 7));
+  const monthWord = (m) => `${C_MONTHS[Number(m.slice(5)) - 1]} ${m.slice(0, 4)}`;
+  const span = months.length ? `${monthWord(months[0])} to ${monthWord(months[months.length - 1])}` : '';
+
+  // 1 ADMITTED (Home's card: admitted, with the admission date in the period)
+  const adm = people.filter((p) => p.status === 'Admitted' && inP(p.admitted_at));
+  const yr = /^\d{4}$/.test(pw) ? pw : null;
+  const t = yr && cfg.targets && cfg.targets[yr];
+  const offP = t && Array.isArray(t.officerProgrammes) ? t.officerProgrammes : [];
+  const admitted = {
+    all: fig('admitted', `Admitted · ${pw}`, adm),
+    undated: fig('admitted:undated', 'Admitted · no admission date', people.filter((p) => p.status === 'Admitted' && !p.admitted_at)),
+    target: t && Number(t.admitted) > 0 ? { goal: Number(t.admitted),
+      off: offP.length && Number(t.officerPct) > 0 ? { label: offP.join(' + '), goal: Math.round(Number(t.admitted) * Number(t.officerPct) / 100),
+        ...fig('admitted:officer', `Admitted · ${pw} · ${offP.join(' + ')}`, adm.filter((p) => offP.includes(p.programme))) } : null } : null,
+    byMonth: months.map((m) => ({ value: m, ...fig(`admitted:month:${m}`, `Admitted in ${monthWord(m)}`,
+      people.filter((p) => p.status === 'Admitted' && p.admitted_at && month(p.admitted_at) === m)) })),
+    byProgramme: rows('admitted:programme', `Admitted · ${pw}`, adm, (p) => val(p.programme), progs),
+    byChannel: rows('admitted:channel', `Admitted · ${pw} · came from`, adm, (p) => val(p.source_channel)),
+  };
+
+  // 2 LEADS (a lead is a PERSON added to Intake in the period, never an Inbox row)
+  const arr = people.filter((p) => inP(p.created_at));
+  const sea = cfg.maritimeEducations || [];
+  const leads = {
+    all: fig('leads', `Leads · ${pw} · people added`, arr),
+    byMonth: months.map((m) => ({ value: m, ...fig(`leads:month:${m}`, `Leads · people added in ${monthWord(m)}`,
+      people.filter((p) => p.created_at && month(p.created_at) === m)) })),
+    byChannel: rows('leads:channel', `Leads · ${pw} · came from`, arr, (p) => val(p.source_channel)),
+    byProgramme: rows('leads:programme', `Leads · ${pw}`, arr, (p) => val(p.programme), progs),
+    byStudyForm: rows('leads:studyForm', `Leads · ${pw}`, arr, (p) => val(p.study_form)),
+    byEducation: rows('leads:education', `Leads · ${pw}`, arr, (p) => val(p.education)),
+    byNationality: rows('leads:nationality', `Leads · ${pw}`, arr, (p) => val(p.nationality)),
+    eduRecorded: fig('leads:education:recorded', `Leads · ${pw} · education recorded`, arr.filter((p) => val(p.education) !== '(not recorded)')),
+    natRecorded: fig('leads:nationality:recorded', `Leads · ${pw} · nationality recorded`, arr.filter((p) => val(p.nationality) !== '(not recorded)')),
+    maritime: fig('leads:maritime', `Leads · ${pw} · from a maritime school`, arr.filter((p) => sea.includes(p.education))),
+  };
+
+  // 3 CONVERSION (the people who ARRIVED in the period, and which of them are admitted)
+  const won = arr.filter((p) => p.admitted_at);
+  const pct = (a, b) => (b ? Math.round((a / b) * 1000) / 10 : null);
+  const rate = (name, what, list, keyOf) => [...groups(list, keyOf).entries()].map(([value, ps]) => { const w = ps.filter((p) => p.admitted_at);
+    return { value, pct: pct(w.length, ps.length), a: w.length, b: ps.length, ...fig(`${name}:${value}`, `${what} · ${said(value)} · admitted`, w) }; })
+    .sort((x, y) => y.pct - x.pct || y.b - x.b);
+  const stops = (cfg.stages || []).map((s) => s.id).filter((id) => id !== 'Admitted');
+  const conversion = {
+    pct: pct(won.length, arr.length), won: fig('conversion:admitted', `Leads · ${pw} · admitted`, won), base: leads.all,
+    reachedApplication: fig('conversion:application', `Leads · ${pw} · reached Application or beyond`, arr.filter((p) => ['Application', 'Contract', 'Admitted'].includes(p.status))),
+    stoppedAt: stops.map((id) => ({ value: id, ...fig(`conversion:now:${id}`, `Leads · ${pw} · now ${cStage(id)}`, arr.filter((p) => p.status === id && !p.admitted_at)) })).filter((x) => x.n),
+    byProgramme: rate('conversion:programme', `Leads · ${pw}`, arr, (p) => val(p.programme)),
+    byChannel: rate('conversion:channel', `Leads · ${pw} · came from`, arr, (p) => val(p.source_channel)),
+  };
+
+  // 4 MEDIAN TIME TO ADMISSION (first contact to admitted, for the people admitted in the period)
+  const durs = people.filter((p) => p.admitted_at && inP(p.admitted_at))
+    .map((p) => ({ p, d: Math.round((Date.parse(p.admitted_at) - Date.parse(p.created_at)) / 86400000) }))
+    .filter((x) => Number.isFinite(x.d) && x.d >= 0).sort((a, b) => a.d - b.d);
+  const med = (xs) => (xs.length ? xs[Math.floor(xs.length / 2)].d : null);
+  const median = {
+    days: med(durs), over: fig('median', `Admitted · ${pw} · with both dates`, durs.map((x) => x.p)),
+    spread: C_REP_SPREAD.map(([lo, hi]) => ({ lo, hi, ...fig(`median:spread:${lo}`, `Admitted · ${pw} · ${hi === Infinity ? lo + '+ days' : lo + '-' + hi + ' days'} to admission`,
+      durs.filter((x) => x.d >= lo && x.d <= hi).map((x) => x.p)) })),
+    byProgramme: [...groups(durs, (x) => val(x.p.programme)).entries()].map(([value, xs]) => ({ value, days: med(xs), people: xs.length,
+      ...fig(`median:programme:${value}`, `Admitted · ${pw} · ${said(value)} · with both dates`, xs.map((x) => x.p)) }))
+      .sort((a, b) => a.days - b.days),
+  };
+
+  // 5 WHERE EVERYONE IS NOW (everybody, whatever the period: Home's donut, then stage by programme)
+  const open = people.filter((p) => !C_TERMINAL.includes(p.status));
+  const stages = (cfg.stages || []).map((s) => s.id);
+  const cols = [...progs, ...[...new Set(people.map((p) => val(p.programme)))].filter((v) => !progs.includes(v))]
+    .filter((c) => people.some((p) => val(p.programme) === c));
+  const now = {
+    everyone: fig('now', 'Everybody', people),
+    open: fig('now:open', 'Open', open),
+    admitted: { n: people.filter((p) => p.status === 'Admitted').length, go: 'outcome|Admitted' },
+    closed: { n: people.filter((p) => p.status === 'Not proceeding').length, go: 'outcome|Not proceeding' },
+    cols,
+    grid: stages.map((st) => ({ stage: st, cells: cols.map((c) => { const ps = people.filter((p) => p.status === st && val(p.programme) === c);
+      return ps.length ? { col: c, ...fig(`now:${st}:${c}`, `${cStage(st)} · ${c === '(not recorded)' ? 'programme not recorded' : c}`, ps) } : { col: c, n: 0 }; }) })),
+  };
+  return { pw, span, coh, admitted, leads, conversion, median, now };
+}
+
+// One figure, drawn as the click to its people. `v` is shown instead of the count when the figure is a value
+// (a share, a median) computed over those people. An Outcomes figure (`go`) opens Outcomes on that outcome.
+const cRepGo = (f, v) => (f.go ? `<a class="rp-go" href="#/outcomes" data-n="${f.n}" data-kgo="${f.go}" onclick="cChartGo('${f.go}');return false">${f.n}</a>`
+  : `<a class="rp-go" href="#/people" ${v === undefined ? `data-n="${f.n}"` : `data-v="${esc(v)}"`} data-coh="${f.k}" onclick="cGoCohort('${f.k}');return false">${v === undefined ? f.n : v}</a>`);
+// A label for a breakdown value, in the same words today's report uses.
+function cRepLabel(kind, v) {
+  if (v === '(not recorded)') return ['not recorded', true];
+  if (kind === 'channel') { const [l, why] = cChannel(v); return [l, !!why]; }
+  if (kind === 'stage') return [cStage(v), false];
+  return [v, false];
+}
+// Bars on ONE scale per block, each row the click to its people.
+function cRepBars(rows, kind, basis) {
+  const list = rows.filter((x) => x.n || kind === 'programme' || kind === 'spread');
+  if (!list.length) return '<p class="c-empty rp-none">Nobody in this period.</p>';
+  const max = Math.max(1, ...list.map((x) => x.n));
+  return `<div class="kbars">${list.map((x) => { const [l, gap] = cRepLabel(kind, x.value);
+    return `<div class="kbar" tabindex="0" role="button" data-n="${x.n}" data-coh="${x.k}" data-tip="${esc(l)}|${x.n} people|${esc(basis)}" data-kgo="cohort|${x.k}"><span class="kbl">${gap ? `<span class="c-gap">${esc(l)}</span>` : esc(l)}</span><span class="kbt"><i style="width:${x.n ? Math.max(3, (x.n / max) * 100) : 0}%" class="${gap ? 'gap' : ''}"></i></span><b>${x.n}</b></div>`; }).join('')}</div>`;
+}
+// Shares on one 0-100% scale, in the data mustard (a rate, never a count). The share opens the admitted ones.
+function cRepRates(rows, kind) {
+  if (!rows.length) return '<p class="c-empty rp-none">Nobody in this period.</p>';
+  return `<div class="kbars">${rows.map((x) => { const [l, gap] = cRepLabel(kind, x.value);
+    return `<div class="kbar rp-rate" tabindex="0" role="button" data-v="${x.pct}" data-coh="${x.k}" data-tip="${esc(l)}|${x.pct}%|${x.a} of ${x.b} admitted" data-kgo="cohort|${x.k}"><span class="kbl">${gap ? `<span class="c-gap">${esc(l)}</span>` : esc(l)}</span><span class="kbt"><i style="width:${x.pct}%"></i></span><b>${x.pct}%</b></div>`; }).join('')}</div>`;
+}
+// Twelve months as columns on one scale; every column opens its month's people, its figure on hover (as on Home).
+function cRepCols(rows, what) {
+  if (!rows.length) return '<p class="c-empty rp-none">Nothing yet.</p>';
+  const max = Math.max(1, ...rows.map((x) => x.n));
+  return `<div class="rp-cols">${rows.map((x) => { const mo = C_MONTHS[Number(x.value.slice(5)) - 1];
+    return `<div class="rp-col" tabindex="0" role="button" aria-label="${mo} ${x.value.slice(0, 4)}: ${x.n} ${what}" data-n="${x.n}" data-coh="${x.k}" data-tip="${mo} ${x.value.slice(0, 4)}|${x.n} ${what}" data-kgo="cohort|${x.k}"><span class="rp-colt"><i style="height:${x.n ? Math.max(2, (x.n / max) * 100) : 0}%"></i></span><small>${mo}</small></div>`; }).join('')}</div>
+    <details class="kdet"><summary>Show as a table</summary><table class="ktable"><tbody>${rows.map((x) => `<tr><td>${C_MONTHS[Number(x.value.slice(5)) - 1]} ${x.value.slice(0, 4)}</td><td>${cRepGo(x)}</td></tr>`).join('')}</tbody></table></details>`;
+}
+const cRepBlock = (title, basis, body, extra = '') => `<section class="ksec rp-block"><div class="ksh"><h2>${title}</h2><span class="kt2">${basis}</span>${extra}</div>${body}</section>`;
+
+// THE ECHO: the Home card, the same label and figure, as the chapter's head (and in B, the tab).
+function cRepEcho(id, M) {
+  const A = M.admitted, L = M.leads, C = M.conversion, D = M.median, N = M.now;
+  const meter = (n, goal, label, cls, f) => `<div class="ktgt ${cls}" role="img" aria-label="${n} admitted${label ? ' in ' + esc(label) : ''} of the ${goal} target">
+    <div class="ktgt-track"><i style="width:${Math.min(100, (n / goal) * 100).toFixed(2)}%"></i><s></s></div>
+    <div class="ktgt-n">${label ? `<span class="ktgt-who">${esc(label)}</span> <strong>${cRepGo(f)}</strong> · ` : ''}<strong>${cRepGo(f, Math.round((n / goal) * 100) + '%')}</strong> of <strong class="ktgt-goal">${goal}</strong></div></div>`;
+  if (id === 'admitted') return { label: 'Admitted', fig: cRepGo(A.all), small: `${esc(M.pw)} · admission date${A.undated.n ? ` · +${cRepGo(A.undated)} undated` : ''}`,
+    more: A.target ? meter(A.all.n, A.target.goal, '', 'all', A.all) + (A.target.off ? meter(A.target.off.n, A.target.off.goal, A.target.off.label, 'off', A.target.off) : '') : '' };
+  if (id === 'leads') return { label: 'Leads', fig: cRepGo(L.all), small: `${esc(M.pw)} · people added` };
+  if (id === 'conversion') return { label: 'Conversion', fig: C.pct == null ? '-' : cRepGo(C.won, C.pct + '%'), small: `${cRepGo(C.won)} / ${cRepGo(C.base)} who arrived` };
+  if (id === 'median') return { label: 'Median time to admission', fig: D.days == null ? '-' : `${cRepGo(D.over, D.days)} <em>days</em>`, small: 'first contact to admission' };
+  if (id === 'now') return { label: 'Where everyone is now', fig: `${cRepGo(N.everyone)} <em>people</em>`,
+    small: `<span class="rp-split"><i class="o"></i>Open ${cRepGo(N.open)}</span><span class="rp-split"><i class="a"></i>Admitted ${cRepGo(N.admitted)}</span><span class="rp-split"><i class="n"></i>Not proceeding ${cRepGo(N.closed)}</span>` };
+  return { label: 'Applications', fig: '', small: 'Academy Application form → SIS' };
+}
+
+// THE DEPTH: only the breakdowns that say where the chapter's figure comes from.
+function cRepBody(id, M) {
+  const A = M.admitted, L = M.leads, C = M.conversion, D = M.median, N = M.now, pw = esc(M.pw);
+  if (id === 'admitted') return `${cRepBlock('By month', `${esc(M.span)} · admission date`, cRepCols(A.byMonth, 'admitted'))}
+    <div class="c-rgrid">${cRepBlock('By programme', `${pw} · admission date`, cRepBars(A.byProgramme, 'programme', 'admitted ' + M.pw))}
+    ${cRepBlock('By channel', `${pw} · where they came from`, cRepBars(A.byChannel, 'channel', 'admitted ' + M.pw))}</div>`;
+  if (id === 'leads') return `${cRepBlock('By month', `${esc(M.span)} · people added`, cRepCols(L.byMonth, 'people added'))}
+    <div class="c-rgrid">${cRepBlock('By channel', `${pw} · people added`, cRepBars(L.byChannel, 'channel', 'added ' + M.pw))}
+    ${cRepBlock('By programme', `${pw} · people added`, cRepBars(L.byProgramme, 'programme', 'added ' + M.pw))}
+    ${cRepBlock('Study form', `${pw} · people added`, cRepBars(L.byStudyForm, 'studyForm', 'added ' + M.pw))}
+    ${cRepBlock('Education', `${pw} · ${cRepGo(L.eduRecorded)} recorded`, cRepBars(L.byEducation, 'education', 'added ' + M.pw), `<span class="rp-chip">maritime school ${cRepGo(L.maritime)}</span>`)}
+    ${cRepBlock('Nationality', `${pw} · ${cRepGo(L.natRecorded)} recorded`, cRepBars(L.byNationality, 'nationality', 'added ' + M.pw))}</div>`;
+  if (id === 'conversion') {
+    const base = Math.max(1, C.base.n), R = C.reachedApplication;
+    const reach = `<div class="kbars"><div class="kbar" tabindex="0" role="button" data-n="${R.n}" data-coh="${R.k}" data-tip="Application or beyond|${R.n} people|added ${esc(M.pw)}" data-kgo="cohort|${R.k}"><span class="kbl">Application or beyond</span><span class="kbt rp-track"><i style="width:${(R.n / base) * 100}%"></i></span><b>${R.n}</b></div></div>`;
+    return `<div class="c-rgrid">${cRepBlock('Reached', `of the people added · ${pw}`, reach)}
+      ${cRepBlock('Where the rest are now', `people added · ${pw}`, cRepBars(C.stoppedAt, 'stage', 'added ' + M.pw))}
+      ${cRepBlock('By programme', `admitted of added · ${pw}`, cRepRates(C.byProgramme, 'programme'))}
+      ${cRepBlock('By channel', `admitted of added · ${pw}`, cRepRates(C.byChannel, 'channel'))}</div>`;
+  }
+  if (id === 'median') {
+    const rows = D.spread.map((x) => ({ value: x.hi === Infinity ? `${x.lo}+ days` : `${x.lo}-${x.hi} days`, k: x.k, n: x.n }));
+    const top = Math.max(1, ...D.byProgramme.map((x) => x.days));
+    const prog = D.byProgramme.length ? `<div class="kbars">${D.byProgramme.map((x) => { const [l, gap] = cRepLabel('programme', x.value);
+      return `<div class="kbar rp-rate" tabindex="0" role="button" data-v="${x.days}" data-coh="${x.k}" data-tip="${esc(l)}|${x.days} days|median of ${x.people}" data-kgo="cohort|${x.k}"><span class="kbl">${gap ? `<span class="c-gap">${esc(l)}</span>` : esc(l)}</span><span class="kbt"><i style="width:${Math.max(3, (x.days / top) * 100)}%"></i></span><b>${x.days}</b></div>`; }).join('')}</div>` : '<p class="c-empty rp-none">Nobody in this period.</p>';
+    return `<div class="c-rgrid">${cRepBlock('Spread', `days to admission · admitted ${pw}`, cRepBars(rows, 'spread', 'admitted ' + M.pw))}
+      ${cRepBlock('By programme', `median days · admitted ${pw}`, prog)}</div>`;
+  }
+  if (id === 'now') {
+    const max = Math.max(1, ...N.grid.flatMap((r) => r.cells.map((c) => c.n)));
+    return cRepBlock('Stage by programme', 'everybody · today', `<div class="c-ftable"><table class="ktable rp-grid"><thead><tr><th></th>${N.cols.map((c) => `<th>${c === '(not recorded)' ? '<span class="c-gap">not recorded</span>' : esc(c)}</th>`).join('')}</tr></thead>
+      <tbody>${N.grid.map((r) => `<tr><th scope="row">${esc(cStage(r.stage))}</th>${r.cells.map((c) => (c.n
+        ? `<td tabindex="0" role="button" data-n="${c.n}" data-coh="${c.k}" data-tip="${esc(cStage(r.stage))} · ${esc(c.col)}|${c.n} people|everybody, today" data-kgo="cohort|${c.k}"><span class="rp-cell"><i style="width:${((c.n / max) * 100).toFixed(1)}%"></i><b>${c.n}</b></span></td>` : '<td></td>')).join('')}</tr>`).join('')}</tbody></table></div>`);
+  }
+  return `<section class="c-apps" id="applications" aria-labelledby="cAppsH">
+      <div class="c-apps-head"><h2 id="cAppsH">Applications</h2><span class="c-apps-path">Academy Application form <i aria-hidden="true">&rarr;</i> SIS</span></div>
+      <div id="cAppState" class="c-appstate"></div>
+      <section class="ksec" id="cWeb" hidden></section>
+      <section class="ksec" id="cSis" hidden></section>
+    </section>`;
+}
+
+// The page: the same head, period presets and download as today, then A or B.
+function cRepHtml(mode, M, from, to) {
+  const seg = (k, l) => `<button aria-pressed="${C_RPT_PRESET === k}" onclick="cReportPreset('${k}')">${l}</button>`;
+  const head = `<p class="c-crumb"><a href="#/outcomes">Outcomes</a></p>
+    <div class="c-head"><div><h1>Full report</h1><p>${esc(from || '')} to ${esc(to || '')}</p></div>
+      <div class="act"><button class="btn" onclick="openExport()">Download for management review</button></div></div>
+    ${cSheetNotice()}
+    <div class="c-periodbar"><div class="c-seg" role="group" aria-label="Period">${seg('month', 'This month')}${seg('last', 'Last month')}${seg('year', 'This year')}${seg('all', 'Everything')}</div>
+      <label class="c-date">From <input type="date" value="${esc(from || '')}" onchange="cReportDates(this.value, RPT.to || '${esc(to || '')}')"></label>
+      <label class="c-date">To <input type="date" value="${esc(to || '')}" onchange="cReportDates(RPT.from || '${esc(from || '')}', this.value)"></label></div>`;
+  const card = (id, withMore) => { const e = cRepEcho(id, M);
+    return `<span>${esc(e.label)}</span><b${e.fig ? '' : ' class="rp-nofig"'}>${e.fig}</b><small>${e.small}</small>${withMore ? e.more || '' : ''}`; };
+  if (mode === 'b') {
+    const cur = C_REP_CHAPTERS.some(([id]) => id === C_REP_CH) ? C_REP_CH : 'admitted';
+    return `${head}<div class="kpage rp rp-b">
+      <div class="kstrip rp-tabs" role="tablist" aria-label="Chapters">${C_REP_CHAPTERS.map(([id]) => `<div class="rp-tab" role="tab" id="rep-tab-${id}" tabindex="0" aria-selected="${id === cur}" aria-controls="rep-${id}" onclick="cRepTab('${id}')" onkeydown="if(event.key==='Enter'){cRepTab('${id}')}">${card(id, false)}</div>`).join('')}</div>
+      ${C_REP_CHAPTERS.map(([id]) => { const e = cRepEcho(id, M);
+        return `<section class="rp-ch" id="rep-${id}" role="tabpanel" aria-labelledby="rep-tab-${id}" data-ch="${id}"${id === cur ? '' : ' hidden'}>${id === 'applications' ? cRepBody(id, M)
+          : `<div class="c-sheet rp-sheet">${e.more ? `<div class="rp-more">${e.more}</div>` : ''}${cRepBody(id, M)}</div>`}</section>`; }).join('')}
+      <div class="ktip" role="status" aria-live="polite"></div></div>`;
+  }
+  return `${head}<div class="kpage rp rp-a">
+    <nav class="kstrip rp-index" aria-label="Chapters">${C_REP_CHAPTERS.map(([id, label], i) => `<div><a href="#/reports/${id}" onclick="cRepJump('${id}');return false"><i>${i + 1}</i><span>${esc(label)}</span></a></div>`).join('')}</nav>
+    ${C_REP_CHAPTERS.map(([id], i) => `<section class="rp-ch" id="rep-${id}" data-ch="${id}">${id === 'applications' ? cRepBody(id, M)
+      : `<div class="kstrip rp-echo"><div><span class="rp-n">${i + 1}</span>${card(id, true)}</div></div><div class="c-sheet rp-sheet">${cRepBody(id, M)}</div>`}</section>`).join('')}
+    <div class="ktip" role="status" aria-live="polite"></div></div>`;
+}
+
+async function viewReportsDepth(mode) {
+  // the chapters echo Home, and Home counts the year: with no period chosen yet, the year
+  if (!RPT.from && !RPT.to) { C_RPT_PRESET = 'year'; RPT = { from: cTodayIso().slice(0, 4) + '-01-01', to: '' }; }
+  const qs = new URLSearchParams();
+  if (RPT.from) qs.set('from', RPT.from);
+  if (RPT.to) qs.set('to', RPT.to);
+  const [r, people] = await Promise.all([api('/api/report' + (qs.toString() ? '?' + qs : '')), cPeopleRows()]);
+  const [from, to] = String(r.period.label || '').split(' to ');
+  const M = cRepModel(r, people, CFG, cTodayIso());
+  C_REP_COH = M.coh;
+  $('#view').innerHTML = cRepHtml(mode, M, from, to);
+  cWireCharts();
+  cWebStats();
+  cApplications();
+  if (mode === 'b') { if (C_REP_CH) cRepTab(C_REP_CH); }
+  else if (C_REP_CH) { const ch = C_REP_CH; C_REP_CH = null; cRepJump(ch); }
+}
+function cRepJump(id) { const el = document.getElementById('rep-' + id); if (el) el.scrollIntoView({ block: 'start' }); }
+// B: a tab opens its chapter. On the open tab a figure is the click to its people; on a closed tab the figures do
+// not take the click (pointer-events, in the CSS), so the whole card opens the chapter.
+function cRepTab(id) {
+  if (!C_REP_CHAPTERS.some(([x]) => x === id)) return;
+  C_REP_CH = id;
+  document.querySelectorAll('.rp-tab').forEach((t) => t.setAttribute('aria-selected', String(t.id === 'rep-tab-' + id)));
+  document.querySelectorAll('.rp-b > .rp-ch').forEach((s) => { s.hidden = s.dataset.ch !== id; });
+  if (id === 'applications') cAppScene();
+}
+// A figure opens exactly its people: People, every other filter cleared, the cohort set.
+function cGoCohort(k) {
+  const c = C_REP_COH[k];
+  if (!c) return;
+  C_PCOHORT = { label: c.label, ids: new Set(c.ids) };
+  C_PF = C_PF_EMPTY(); C_PQ = ''; C_PEDIT = null; C_PMSG = ''; C_PTAB = 'all';
+  if (location.hash === '#/people') viewPeopleC(); else location.hash = '#/people';
 }
 
 // -------------------------------------------------------------------- FEEDBACK

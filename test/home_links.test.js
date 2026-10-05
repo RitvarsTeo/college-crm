@@ -22,8 +22,9 @@ test('every Home figure is a click to where it comes from', () => {
   assert.match(HOME, /class="kday-st" href="#\/journey" onclick="cGoStage\(/);
   // the four cards: Admitted -> the year's admitted in Outcomes; the other three -> Reports on This year
   assert.match(HOME, /<div class="khero"><span>Admitted<\/span>[^\n]*onclick="cGoAdmittedYear\(\$\{D\.year\}\);return false">Outcomes →<\/a><\/div>/);
-  for (const label of ['Leads', 'Conversion', 'Median time to admission'])
-    assert.match(HOME, new RegExp(`<div><span>${label}</span>[^\\n]*onclick="cGoReportYear\\(\\);return false">Reports →</a></div>`), label);
+  // Q35: each card names the Reports chapter it lands on (read only under ?rep=a|b)
+  for (const [label, ch] of [['Leads', 'leads'], ['Conversion', 'conversion'], ['Median time to admission', 'median']])
+    assert.match(HOME, new RegExp(`<div><span>${label}</span>[^\\n]*onclick="cGoReportYear\\('${ch}'\\);return false">Reports →</a></div>`), label);
   assert.doesNotMatch(HOME, /href="#\/leads">Inbox →/, 'Leads no longer opens the Inbox, which is not where its figure comes from');
   // the whole card is the click
   assert.match(APP, /html\.ui-c \.kb-strip > div > \.kgo::after\{content:"";position:absolute;inset:0;border-radius:inherit\}/);
@@ -36,8 +37,8 @@ test('every Home figure is a click to where it comes from', () => {
 });
 
 test('the link helpers open the same period as the figure', () => {
-  const ctx = { location: { hash: '#/home' }, cTodayIso: () => '2026-10-05', viewOutcomesC() {}, viewReportsC() {}, C_OUTCOME: '', C_OUT_TAG: 'cold', C_OUT_FILTER: null, C_RPT_PRESET: 'month', RPT: {} };
-  vm.runInNewContext(fnBody('function cGoAdmittedYear(year) {') + fnBody('function cGoReportYear() {'), ctx);
+  const ctx = { location: { hash: '#/home' }, cTodayIso: () => '2026-10-05', viewOutcomesC() {}, viewReportsC() {}, C_OUTCOME: '', C_OUT_TAG: 'cold', C_OUT_FILTER: null, C_RPT_PRESET: 'month', RPT: {}, C_REP_CH: null };
+  vm.runInNewContext(fnBody('function cGoAdmittedYear(year) {') + fnBody('function cGoReportYear(chapter) {'), ctx);
   ctx.cGoAdmittedYear(2026);
   assert.equal(ctx.location.hash, '#/outcomes');
   assert.equal(ctx.C_OUTCOME, 'Admitted');

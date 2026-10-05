@@ -14,6 +14,28 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - A/B: Full report = Home's figures, one level deeper (Q35), NOT PICKED
+
+Ritvars 05.10 (via MASTER CONTROL): "we have the same metrics that are in the home. Lets not be redundant ok, but
+smartly make it obvious that full report page is going deeper on the metrics that are on home ... Hard to comprehend
+what is what, comes from where and why is that there". Then: "path to path to path" and "Nothing should be duplicated".
+- Behind `?rep=a|b`; no switch = Reports byte for byte as release 5c3236a (a test pins the hash).
+- One chapter per Home figure, in Home's order: Admitted (target meters 140 / NAV + ENG 98, by month, by programme, by
+  channel), Leads (by month, channel, programme, study form, education + maritime school, nationality), Conversion
+  (reached Application or beyond, where the rest are now, share by programme and by channel), Median time to admission
+  (spread, median by programme), Where everyone is now (stage by programme), then Applications (SIS) as today.
+- Each chapter opens with its Home card (same label, same figure) and only the breakdowns behind it; every block says
+  its basis ("2026 · people added", "2026 · admission date"). A lead = a person added, not an Inbox row.
+- **A**: chapters stacked, a sticky index of Home's cards on top. **B**: one tab per Home figure, the tabs are Home's
+  cards in miniature. With no period chosen both open on This year, so the figures are Home's.
+- Every figure, bar, column and cell opens exactly its people in People (a cohort chip, "Show everyone"), count on
+  arrival = the figure; Admitted / Not proceeding (everybody) open Outcomes. Shares and medians open the people they
+  are computed over.
+- Gone from A/B on purpose: open / overdue / no next step (Today's), Why people did not proceed (Outcomes', one click
+  from Not proceeding), Stage right now (Home + Journey; stage by programme instead), the duplicate Programme block.
+- Home's Leads / Conversion / Median cards land on their chapter (cGoReportYear('leads'|'conversion'|'median')).
+test/reports_depth.test.js; home_links updated. Shots: `For review/2026-10-05 Q35 Reports A-B/`. BUILT, not deployed.
+
 ## 05.10.2026 - Q23: every Home figure a traced click; bigger donut and card figures; no peak label
 
 Ritvars to MAIN, 05.10, with a screenshot of production Home: "why doesnt it occupy the whole page? ALso, not all
