@@ -462,3 +462,4 @@ Migration tool `restore_crm.mjs` + test (MIGRATION lane, Backups folder): 12/13 
 
 ## 05.10 - FOURTEENTH PATCH LIVE: `ba83b87` (code `ebd8bd4`), pushed
 Q51 (takeover helper finished the crashed MAIN work): Home · Admissions (Inbox, Today, Journey) · Reports · Settings, Admissions opens Inbox, one spine, NEW n / total badge (first visit = nothing new); dark overdue badge no longer amber text. 1216/1216 helper + 1216/1216 deploy gate. Backup `2026-10-05T13-29-34Z` VERIFIED 1176 rows. `dpl_FssyLMwPEKGhG5dgJrYa8z2xwsGD`: byte-identical, 78/78, 8 private 401, 0 leaks, fra1. New base: release @ `ba83b87`.
+| Q52 | Menu counts: drop the total; show only the NEW count per user (Ritvars on patch 14: "Now the item count. Either we drop it or we do it properly. Lets drop it for now. And just new to each user count we show."); last-seen keyed by the signed-in user; nothing when 0 | MAIN helper | SENT 05.10, ships when committed |
