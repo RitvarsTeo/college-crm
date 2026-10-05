@@ -844,7 +844,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
     --j-from:#1d4d7a;--j-to:#8fcbef;   /* the Journey's stage line in dark (the review #2) */
     --glass:linear-gradient(180deg,rgba(255,255,255,.06) 0%,rgba(255,255,255,.035) 100%);
     --glass-line:rgba(194,211,222,.18);
-    --sea:radial-gradient(120% 80% at 50% 0%,#17456e 0%,rgba(23,69,110,0) 60%),linear-gradient(180deg,#0f2f4f 0%,#0f2f4f 45%,#08182e 100%)}
+    --sea:radial-gradient(120% 80% at 50% 0%,#17456e 0%,rgba(23,69,110,0) 60%),linear-gradient(180deg,#0f2f4f 0%,#0f2f4f 45%,#08182e 100%);--v-off:#bfe3f6}
   /* THE LIGHT SEA (the owner, 01.10.2026: "same way we have a gradient for the dark mode,
      lets have a gradient for the light version"). Dark takes the sign-in screen's sea:
      a glow from the top centre over a vertical deepening, #17456e -> #0f2f4f -> #08182e.
@@ -1470,6 +1470,26 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   /* the cards ARE the frame here; the old dark glass on the strip itself would box them twice */
   html.ui-c[data-theme="dark"] .kstrip.kb-strip{background:none;border:0;padding:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
   html.ui-c .kstrip .kdelta b{display:inline;font-size:12px;margin:0;letter-spacing:0;line-height:inherit}
+  /* THE YEAR'S TARGET (D-C6 A/B, ?target=a|b): blue = admitted, mustard = the target. The sunk track
+     and the card are the frame and carry the depth; the fill, the columns and the line stay flat. */
+  html.ui-c{--v-tgt:#E0A526;--v-off:#0a2463}
+  html.ui-c .ktgt{margin:8px 0 6px}
+  html.ui-c .ktgt-track{position:relative;height:10px;border-radius:5px;background:var(--c-sunk);box-shadow:inset 0 1px 2px rgba(3,12,26,.22)}
+  html.ui-c .ktgt-track i{position:absolute;left:0;top:0;bottom:0;border-radius:5px;background:var(--v-adm)}
+  html.ui-c .ktgt-track s{position:absolute;right:-1px;top:-4px;bottom:-4px;width:3px;border-radius:2px;background:var(--v-tgt)}
+  html.ui-c .kstrip .ktgt-n{display:block;margin-top:5px;font-size:12.5px;color:var(--t3)}
+  html.ui-c .ktgt-n strong{font-weight:700;color:var(--ink)}
+  html.ui-c .ktgt-n strong.ktgt-goal{color:var(--ink);box-shadow:inset 0 -2px 0 var(--v-tgt)}
+  html.ui-c .ktgt-sec{padding:16px 18px 10px}   /* a c-sheet: the card is the shared CARDS 3 rule. No scene of its own: Home keeps two (KB 08 P5) */
+  html.ui-c .ktgt-chart .ktgt-col{fill:var(--v-adm)}
+  html.ui-c .ktgt-chart .ktgt-line{stroke:var(--v-tgt);stroke-width:2.5}
+  html.ui-c .ktgt-chart .ktgt-line.off{stroke-dasharray:7 5}
+  html.ui-c .ktgt-chart .ktgt-col.off{fill:var(--v-off)}
+  html.ui-c .ktgt + .ktgt{margin-top:2px}
+  html.ui-c .ktgt.off .ktgt-track{height:7px}
+  html.ui-c .ktgt.off .ktgt-track i{background:var(--v-off)}
+  html.ui-c .kstrip .ktgt-n .ktgt-who{display:inline;font-size:12px;font-weight:600;letter-spacing:.02em;color:var(--t3)}
+  html.ui-c .ktgt-chart .ktgt-lab{fill:var(--ink);font-size:12.5px;font-weight:700;font-family:var(--sans,Inter),system-ui,sans-serif}
   html.ui-c .kb-top{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:30px;align-items:start}
   html.ui-c .kb-charts .kthree{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:26px}
   @media (max-width:1100px){ html.ui-c .kb-top{grid-template-columns:minmax(0,1fr)} }
@@ -2588,6 +2608,65 @@ function cHomeMonths(D, extraCls = '') {
 const cHomeProg = (D) => `<section class="ksec"><div class="ksh"><h2>Admitted by programme</h2><span class="kt2">${D.admitted.length} in ${D.year}</span><span class="ksrc">click a bar → Outcomes</span></div>${cBars(D.progs, 'prog')}</section>`;
 const cHomeChan = (D) => `<section class="ksec"><div class="ksh"><h2>Where admitted people came from</h2><span class="kt2">${D.admitted.length} in ${D.year}</span><span class="ksrc">click a bar → Outcomes</span></div>${cBars(D.chans, 'chan')}</section>`;
 
+// ---- THE YEAR'S TARGET (D-C6, the owner 05.10.2026: "Yes, Home should show that") ----------
+// The figures are config (prototype.json targets[year]: admitted, officerPct, officerProgrammes),
+// never written here. Officer programmes = NAV + ENG (the owner, 05.10.2026). HOW the target sits
+// next to Admitted is an A/B he has not picked, so Home is unchanged until he does: ?target=a puts it
+// in the Admitted card, ?target=b draws the year against it.
+// Blue is the admitted figure, mustard the target. Depth belongs to the frame (the meter's sunk
+// track, the section card), never to the mark; each pair shares one baseline and one exact scale.
+function cTarget(D) {
+  const t = CFG.targets && CFG.targets[String(D.year)];
+  if (!t || !(Number(t.admitted) > 0)) return null;
+  const progs = Array.isArray(t.officerProgrammes) ? t.officerProgrammes : [];
+  const pct = Number(t.officerPct);
+  const off = progs.length && pct > 0 ? {
+    goal: Math.round((Number(t.admitted) * pct) / 100), pct, label: progs.join(' + '),
+    rows: D.admitted.filter((p) => progs.includes(p.programme)) } : null;
+  return { goal: Number(t.admitted), rows: D.admitted, off };
+}
+function cTargetMode() {
+  let m = '';
+  try { m = new URLSearchParams(location.search).get('target') || ''; } catch {}
+  return m === 'a' || m === 'b' ? m : '';
+}
+// A: in the card. One track per figure from 0 to its target, the admitted share filled, the target its end.
+function cTargetMeter(G) {
+  const bar = (n, goal, label, cls) => `<div class="ktgt ${cls}" role="img" aria-label="${n} admitted${label ? ' in ' + esc(label) : ''} of the ${goal} target">
+    <div class="ktgt-track"><i style="width:${Math.min(100, (n / goal) * 100).toFixed(2)}%"></i><s></s></div>
+    <div class="ktgt-n">${label ? `<span class="ktgt-who">${esc(label)}</span> <strong>${n}</strong> · ` : ''}<strong>${Math.round((n / goal) * 100)}%</strong> of <strong class="ktgt-goal">${goal}</strong></div></div>`;
+  return bar(G.rows.length, G.goal, '', 'all') + (G.off ? bar(G.off.rows.length, G.off.goal, G.off.label, 'off') : '');
+}
+// B: the year so far, cumulative, against the target lines. All twelve months on the axis, so the
+// months still to come are visible as room; only the months that have happened carry columns. Each
+// month: all admitted (blue) and NAV + ENG (navy) side by side on the one baseline.
+function cTargetYear(D, G) {
+  const narrow = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width:760px)').matches;
+  const W = narrow ? 360 : 900, H = narrow ? 210 : 190, L = 30, R = narrow ? 70 : 96, T = 14, B = 24;
+  const upTo = Number(cTodayIso().slice(5, 7));
+  const cumOf = (rows) => { let run = 0; return Array.from({ length: upTo }, (_, k) => (run += rows.filter((p) => Number(cDay(p.admitted_at).slice(5, 7)) === k + 1).length)); };
+  const all = cumOf(G.rows), off = G.off ? cumOf(G.off.rows) : null;
+  const top = Math.max(G.goal, all[all.length - 1] || 0);
+  const step = [5, 10, 20, 25, 50, 100, 200, 250, 500].find((x) => top / x <= 5) || Math.ceil(top / 5);
+  const max = Math.ceil(top / step) * step, band = (W - L - R) / 12, bw = Math.min(off ? 13 : 26, band * (off ? 0.3 : 0.5));
+  const y = (v) => T + (H - T - B) * (1 - v / max);
+  const ticks = Array.from({ length: max / step + 1 }, (_, k) => k * step);
+  const grid = ticks.map((v) => `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" class="kg"/><text x="${L - 8}" y="${y(v) + 4}" class="kt" text-anchor="end">${v}</text>`).join('');
+  const labels = C_MONTHS.map((mo, k) => (narrow && k % 2 && k !== upTo - 1) ? '' : `<text x="${L + band * k + band / 2}" y="${H - 7}" class="kt" text-anchor="middle">${mo}</text>`).join('');
+  const col = (v, x, cls, k, what) => v ? `<rect x="${x}" y="${y(v)}" width="${bw}" height="${y(0) - y(v)}" rx="2.5" class="${cls}"><title>${C_MONTHS[k]}: ${v} ${what} so far</title></rect>` : '';
+  const cols = all.map((v, k) => { const cx = L + band * k + band / 2;
+    return off ? col(v, cx - bw - 1, 'ktgt-col', k, 'admitted') + col(off[k], cx + 1, 'ktgt-col off', k, 'admitted in ' + G.off.label)
+      : col(v, cx - bw / 2, 'ktgt-col', k, 'admitted'); }).join('');
+  const lx = L + band * (upTo - 1) + band / 2;
+  const nowAll = all.length ? `<text x="${off ? lx - bw / 2 - 1 : lx}" y="${y(all[upTo - 1]) - 6}" class="kpeak" text-anchor="middle">${all[upTo - 1]}</text>` : '';
+  const nowOff = off && off.length ? `<text x="${lx + bw / 2 + 1}" y="${y(off[upTo - 1]) - 6}" class="kpeak" text-anchor="middle">${off[upTo - 1]}</text>` : '';
+  const line = (v, cls, lab) => `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" class="ktgt-line ${cls}"/><text x="${W - R + 6}" y="${y(v) + 4}" class="ktgt-lab">${lab}</text>`;
+  const lines = line(G.goal, '', String(G.goal)) + (G.off ? line(G.off.goal, 'off', `${G.off.goal} ${esc(G.off.label)}`) : '');
+  const legend = `<ul class="klegend inline"><li><i style="background:var(--v-adm)"></i><span>Admitted</span></li>${G.off ? `<li><i style="background:var(--v-off)"></i><span>${esc(G.off.label)}</span></li>` : ''}<li><i class="ln" style="background:var(--v-tgt)"></i><span>Target</span></li></ul>`;
+  return `<section class="ksec c-sheet ktgt-sec"><div class="ksh"><h2>Admitted against the target</h2><span class="kt2">${G.rows.length} of ${G.goal}${G.off ? ` · ${esc(G.off.label)} ${G.off.rows.length} of ${G.off.goal}` : ''} · ${D.year}</span>${legend}</div>
+    <svg viewBox="0 0 ${W} ${H}" class="kchart ktgt-chart${narrow ? ' narrow' : ''}" role="img" aria-label="${G.rows.length} admitted so far in ${D.year} of the ${G.goal} target${G.off ? `; ${G.off.rows.length} in ${esc(G.off.label)} of ${G.off.goal}` : ''}">${grid}${lines}${cols}${nowAll}${nowOff}${labels}</svg></section>`;
+}
+
 // ---- B: TODAY FIRST ------------------------------------------------------------
 // The working day first. The figures that need a person now sit on one card (the sheets
 // once stacked behind it were removed 05.10.2026), so nothing can make one number heavier
@@ -2601,6 +2680,7 @@ const cHomeChan = (D) => `<section class="ksec"><div class="ksh"><h2>Where admit
 // SCENE 1 (of two): the figures that need you count up. SCENE 2: the charts.
 function cHomeB(D) {
   const s = D.s;
+  const goal = cTarget(D), tmode = cTargetMode();   // goal: the year's target, or null
   const now = cTodayIso().slice(0, 7);
   const done = D.months.filter((m) => m.month < now);
   const [prev, last] = done.slice(-2);
@@ -2630,11 +2710,12 @@ function cHomeB(D) {
       </aside>
     </section>
     <div class="kstrip kb-strip">
-      <div class="khero"><span>Admitted</span><b>${D.admitted.length}</b><small>${D.year}${D.undated ? ` · +${D.undated} undated` : ''}</small>${cSpark(D.months.map((m) => m.admitted), 'adm')}${delta('admitted')}<a class="kgo" href="#/outcomes">Outcomes →</a></div>
+      <div class="khero"><span>Admitted</span><b>${D.admitted.length}</b><small>${D.year}${D.undated ? ` · +${D.undated} undated` : ''}</small>${tmode === 'a' && goal ? cTargetMeter(goal) : ''}${cSpark(D.months.map((m) => m.admitted), 'adm')}${delta('admitted')}<a class="kgo" href="#/outcomes">Outcomes →</a></div>
       <div><span>Leads</span><b>${s.newLeads ?? 0}</b><small>${D.year}</small>${cSpark(D.months.map((m) => m.newLeads), 'lead')}${delta('newLeads')}<a class="kgo" href="#/leads">Inbox →</a></div>
       <div><span>Conversion</span><b>${s.conversionPct == null ? '-' : s.conversionPct + '%'}</b><small>${s.conversionA ?? 0} / ${s.conversionB ?? 0} who arrived</small><a class="kgo" href="#/reports">Reports →</a></div>
       <div><span>Median time to admission</span><b>${s.medianDaysToAdmission == null ? '-' : s.medianDaysToAdmission} <em>days</em></b><small>first contact to admission</small><a class="kgo" href="#/reports">Reports →</a></div>
     </div>
+    ${tmode === 'b' && goal ? cTargetYear(D, goal) : ''}
     <div class="m-scene kb-charts">
       <div class="kb-top">
       ${cHomeMonths(D)}

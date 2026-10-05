@@ -44,7 +44,7 @@ function harness({ summary = 'ok', intake = 'ok' } = {}) {
     throw new Error('unexpected ' + url);
   };
   const ctx = {
-    api, Promise, Map, Set, Math, Number, String, Array, Intl, Date,
+    api, Promise, Map, Set, Math, Number, String, Array, Intl, Date, URLSearchParams, location: { search: '' },
     TZ: 'Europe/Riga',
     CFG: { stages: [...STAGES, { id: 'Admitted' }, { id: 'Not proceeding' }], programmes: ['ENG'], channels: { phone: 'Phone' },
       closedTags: [{ id: 'cold', label: 'Cold' }, { id: 'reject', label: 'Reject' }] },
@@ -62,6 +62,9 @@ function harness({ summary = 'ok', intake = 'ok' } = {}) {
     line('const esc = '), line('const channelLabel = '), line('const cChannel = '),
     line('const cFig = '),
     fn('async function cHomeData('), fn('function cHomeMonths('), line('const cHomeProg = '), line('const cHomeChan = '),
+    // the year's target (D-C6 A/B, test/home_target.test.js): loaded so cHomeB can call it; with no
+    // ?target= in location.search it draws nothing, so every test here reads the default Home
+    APP.slice(APP.indexOf("// ---- THE YEAR'S TARGET (D-C6"), APP.indexOf('// ---- B: TODAY FIRST')),
     fn('function cHomeB('),
   ].join('\n') + '\nthis.data = cHomeData; this.B = cHomeB;', ctx);
   return ctx;

@@ -14,6 +14,25 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - A/B: the year's target on Home (D-C6), NOT PICKED
+
+Ritvars DECIDED 05.10 that Home shows the target ("Yes, Home should show that, but the UIUX has to be decided on its
+session, give it A/B tests"). Brief Q13 via MASTER CONTROL. The target is config, `config/prototype.json` ->
+`targets["2026"]`: admitted 140, officerPct 70, officerProgrammes NAV + ENG (source: "0. NJK KPI 2026.xlsx", sheet
+Admissions, B2, checked; NAV + ENG = Ritvars 05.10). 70% of 140 = 98. Counted from the people admitted in the year.
+- **A - in the card** (`?target=a`): the Admitted card gains two meters, one track each from 0 to its target: all
+  admitted (blue) "9% of 140" and NAV + ENG (navy) "NAV + ENG 7 · 7% of 98"; the target is the mustard end of the track.
+- **B - the year against it** (`?target=b`): a card under the KPI cards, "Admitted against the target": cumulative
+  admitted per month (blue) and NAV + ENG (navy) side by side on one baseline, all twelve months on the axis, the 140
+  line (mustard) and the 98 line (mustard, dashed) on the same scale.
+- No switch = Home exactly as before (no meter, no card). Recommended: A (the answer sits on the figure, no new
+  surface; B's columns are near the floor until the season fills them).
+Depth on the frame only (the sunk track, the card); fills, columns and lines flat. B is a `c-sheet` (the shared CARDS 3
+rule) and adds no scene, so Home keeps two. Flag: mustard is also the donut's "Open" on the same screen.
+test/home_target.test.js (config values, nothing hard-coded, the switch, exact meter widths, one baseline);
+test/home_ab.test.js's harness now loads the target block. 1098/1098. Shots: `For review/2026-10-05 Q13 target A-B/`.
+BUILT behind a switch, waits for his pick.
+
 ## 05.10.2026 - Form answers read as words on the person page
 
 Brief Q12 via MASTER CONTROL (found by CHANNELS while fixing Q8, 1ea73ae): the chips under "From their first message"
