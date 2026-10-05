@@ -4675,8 +4675,12 @@ const dueText = (d) => {
 
 
 // ---------------------------------------------------------------- routing --
+// THE APP OPENS ON HOME (the owner, 05.10.2026: opening it landed on Admissions / Today). An empty address is
+// Home, the metrics page, since Home came back on 01.10; '#/today' was V1's start page, left behind. The hidden
+// classic view has no Home, so it keeps Today.
+const START = () => (UI === 'c' ? '#/home' : '#/today');
 async function route() {
-  const hash = location.hash || '#/today';
+  const hash = location.hash || START();
   drawIcons();
   const here = hash.split('/').slice(0, 2).join('/');
   // Only the two renames. The technical screens are not in the navigation at all,
@@ -6824,7 +6828,7 @@ function fbSync() {
   if (send) send.disabled = FB.busy || FB.sending || (FB.text || '').trim().length < 4;
 }
 
-const fbPath = () => location.hash || '#/today';
+const fbPath = () => location.hash || START();   // feedback is filed against the page actually shown
 // Named, not implied. Somebody about to report a problem should know who reads it.
 // The page a feedback came from, as a link only when it is an address INSIDE the app.
 // Anything else is shown as text: a planted "javascript:" must never become a link

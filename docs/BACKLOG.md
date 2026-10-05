@@ -14,6 +14,15 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - The app opens on Home
+
+Ritvars: opening the app landed on Admissions / Today, not on Home (the metrics). Cause: route() and fbPath() still
+defaulted an empty address to '#/today', V1's start page. Both now use START(): '#/home' in the app, '#/today' only in
+the hidden classic view, which has no Home. Checked: the server sends a signed-in user to '/' or '/?auth=google', and the
+sign-in return script never remembers '#/home', so nothing else sends a plain open to Today. Seen on the preview: the
+address with no '#' renders Home (the Needs-you sheet) and lights Home in the menu. Release branch merged in first.
+BUILT, next patch.
+
 ## 05.10.2026 - Inbox message text is a detail, two lines
 
 Ritvars on the production Inbox: "this is too much of font size! fix it!" Whole email bodies (Google Chat notices, long
