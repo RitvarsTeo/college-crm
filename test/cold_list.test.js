@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
 const BLOCK = APP.slice(APP.indexOf('// THE COLD AND REJECT LISTS (D-C8'), APP.indexOf('async function viewOutcomesC() {'));
+const POOL = (() => { const i = APP.indexOf('function cDrawJourneyPool('); return APP.slice(i, APP.indexOf('\n}\n', i) + 2); })();
 const fnBody = (name) => { const i = APP.indexOf(name); assert.ok(i >= 0, name); return APP.slice(i, APP.indexOf('\n}\n', i) + 2); };
 
 function load() {
@@ -23,14 +24,16 @@ const cold = (id, programme, extra = {}) => ({ id, name: 'P ' + id, programme, p
   closed_reason: 'No response', closed_tag: 'cold', source_channel: 'phone', last_contact_at: '2026-09-20T10:00:00Z', ...extra });
 
 test('the pick is the default: a tag in Outcomes is grouped by programme; no switch, no B left', () => {
-  const out = fnBody('async function viewOutcomesC() {');
-  assert.match(out, /\$\{C_OUTCOME !== 'Admitted' && C_OUT_TAG \? cColdGroups\(list, people\) :/, 'Cold and Reject both');
-  assert.match(out, /\$\{C_OUTCOME !== 'Admitted' && !C_OUT_TAG \? cReasonBreakdown\(np, noReason\) : ''\}/, 'the breakdown on Everybody only');
+  // Q47 (the owner, 05.10.2026: "Yes, ship it"): Outcomes are the Journey's last two columns. Cold / Reject is the
+  // filter on Not proceeding, its rows the Journey's one row style; Why they stopped stays under Everybody only.
+  assert.match(fnBody('async function viewOutcomesC() {'), /return viewJourneyPool\(\);/, 'Outcomes open the Journey');
+  assert.match(POOL, /if \(isNp && C_OUT_TAG\) list = list\.filter\(\(p\) => p\.closed_tag === C_OUT_TAG\);/, 'Cold and Reject both');
+  assert.match(POOL, /\(isNp && !C_OUT_TAG \? cReasonBreakdown\(np, np\.filter\(\(p\) => !p\.closed_reason\)\.length\) : ''\)/, 'the breakdown on Everybody only');
   assert.doesNotMatch(APP, /cColdMode|\?cold=|coldB|coldRow/, 'the A/B switch and option B are gone');
   const go = fnBody('function cGoClosedTag(id) {');
   assert.match(go, /C_OUTCOME = 'Not proceeding'; C_OUT_FILTER = null; C_OUT_TAG = id;/, "Home's Cold / Reject open Outcomes on that tag");
   assert.doesNotMatch(go, /people\/all/);
-  assert.match(fnBody('function cPeopleFilters('), /'tag:' \+ t\.id/, 'People still filters by Stage Cold / Reject');
+  assert.match(POOL, /cPoolSelect\('Cold \/ Reject'/, 'the Journey still filters Not proceeding by Cold / Reject');
 });
 
 test('one card per programme, in the configured order, unknown and not-said last, each row reachable', () => {

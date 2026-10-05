@@ -38,6 +38,36 @@ Tests: 1199/1199 (outcomes_not_proceeding counts the pool's Not proceeding-only 
 `For review/2026-10-05 Q47 pool frame/`. BUILT behind ?pool=1, NOT the default. Open: Home and Reports figures to
 the right pool + column (item 6 of the brief), Today's badge basis (due now vs the whole list), the year scope (Q45).
 
+**THE DEFAULT since the owner saw the pictures ("Yes, ship it", 05.10.2026).** ?pool is gone; the old People and
+Outcomes pages are gone (#/people, #/people/all, #/outcomes, #/journey still resolve, into the Journey on the right
+column). Decided with it:
+- Menu FLAT, in his order (the owner: "Make it Inbox> today> Journey> ..."): Home · Inbox · Today · Journey · Reports ·
+  Settings, no Admissions group; phone tabs Home, Inbox, Today, Journey, More (More = Reports, Settings, Help).
+- TODAY = Home's Needs you card, one level deeper (the owner: "The today tab can have the exactly as the home to
+  reports connection"): the band is Home's card, same look and labels, plus Coming up. It OPENS on what needs an action
+  now - Overdue, Due today and No next step lit together - and the menu count is exactly those people (MASTER CONTROL's
+  call). A card narrows to itself, a second click goes back to the three. Coming up is a calm slate, not yellow.
+- INBOX band = AGE, one sequential ramp of the data blue (the owner: "inbox needs different colours than we have for
+  today"): light #29a8df, #1f7dbb, #175597, #0a2463; dark #c4ebfc, #6fcaf1, #29a8df, #3b80bd. No mustard, no red.
+  Measured (no palette validator exists in the kit or the skills, so by WCAG ratio): neighbours light 1.65 / 1.69 /
+  1.93:1, dark 1.46 / 1.47 / 1.55:1; light Today #29a8df is 2.71:1 on white - under 3:1, the count above each bar says it.
+- Every Home and Reports figure opens the right pool AND column: Needs you -> its Today card (No next step too), In
+  the Inbox -> the Inbox; a stage -> its Journey column; the donut's Open -> everyone open, its centre -> everyone; a
+  month bar -> Admitted with that month; a Reports figure -> its people, on their column when they share one stage.
+- The Journey filter row is one line at 1440: Programme, Next step, Came from; Owner, Details, Arrived behind "More
+  filters" (open by itself while one is set). Cold / Reject on Not proceeding, each with its count, an unused one not
+  offered; with one chosen, the list is the Cold / Reject cards per programme (D-C8).
+- **Aigars 05.10** ("Inbox - prasas filtri / atlasit pec source / tas pats ari pie today noteikti / Pie Journey / kad
+  editoju cilveku aizmet uz people lapu / uztaisi ta lai turpat journey page ari var editot"): the Inbox filter row
+  starts with Source (then Kind, Show); Today has Source next to Programme and Stage; a person is edited IN PLACE on
+  the Journey - a List row opens People's edit form under it, and on the Board the opened card becomes the same form.
+  Save stays on the view you were in; the person page is one more click ("Open person details").
+- Found by the tests on the way: Edit from #/people/all went nowhere (no hashchange), and a Reports figure lost its
+  cohort on arrival; both fixed.
+Tests: 35 that asserted the separate People / Outcomes pages or the grouped menu rewritten to the new rules, 2 new.
+channels_admin's restart test ("never started") fails on this machine on the clean release f3de6ee too: not Q47.
+BUILT, next patch (with HOME's Q46).
+
 ## 05.10.2026 - Q44: "No next step" is an amber edge and a "Choose next step" button
 
 Ritvars 05.10 (via MASTER CONTROL), on the Journey board cards: "the no next step prmopt is tooo soft". The soft

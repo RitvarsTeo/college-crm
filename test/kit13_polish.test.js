@@ -57,8 +57,10 @@ test('the screen texts are gone entirely, and the one that carries a count stays
     'All 12 people. Each filter narrows the list, and this sentence says exactly what is left.',
   ]) assert.ok(!APP.includes(gone), 'still on the screen: ' + gone.slice(0, 48));
 
-  // the one that is a COUNT, not a sentence, stays
-  assert.ok(APP.includes(': `All ${people.length} people.`;'), 'the row count is a value');
+  // the one that is a COUNT, not a sentence, stays - since Q47 (People became the Journey) the counts are the frozen
+  // band's: every column prints its figure, and the menu's Journey count is everyone
+  assert.ok(APP.includes('<b class="jb-n">${c.n}'), 'the row count is a value');
+  assert.ok(APP.includes("put('#cnJourney', cBadge("), 'and everyone is the menu count');
 });
 
 test('panels are the kit card, and the card in dark is solid', () => {

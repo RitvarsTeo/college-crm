@@ -15,7 +15,7 @@ const line = (start) => { const i = APP.indexOf(start); assert.ok(i >= 0, start)
 
 const TODAY = '2026-10-02';
 const ctx = {
-  esc: (s) => String(s ?? ''), Date, Math, Set, Map,
+  esc: (s) => String(s ?? ''), Date, Math, Set, Map, C_PEDIT: null,   // Q47: the board's opened card can be the edit form
   cTodayIso: () => TODAY,
   cDay: (iso) => (iso ? String(iso).slice(0, 10) : ''),
   // the card is stubbed to its id so the order can be read straight off the output

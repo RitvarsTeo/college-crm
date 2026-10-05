@@ -133,6 +133,7 @@ test('every Journey stage still appears, in the same order, with its own label',
   ctx.C_JEXITS = null;                            // no exit data: every mark reads zero
   ctx.cPeopleTabs = (which) => `<tabs ${which}>`; // the tabs have their own test
   ctx.cJourneySummary = () => '';                 // and so does the summary
+  ctx.cPoolViewSwitch = () => '<switch>';        // Q47: List | Board, its own test
   vm.runInNewContext(`${line('const cWhenClass =')}\n${line('const cTask =')}\n${line('const cNotePreview =')}\n${line('const cComment =')}\n${APP.slice(iconStart, APP.indexOf('\n};', iconStart) + 3)}\n${fn('function groupForAction(')}\n${line('const cStepIcon =')}\n${fn('function cLifeFacts(')}\n${line('const C_SIS_HOLDS =')}
 ${line('const cSisHolds =')}
 ${line('const cSisHeld =')}
@@ -169,7 +170,8 @@ test('no sentence explaining the Journey: the screen says it itself', () => {
   // is titled People and the tab says which view you are on. Still no explaining sentence.
   // the title carries no <p>; since 02.10.2026 Add lead sits beside it (leads are added with the leads)
   // 05.10.2026: People is everyone and Journey its child, so the screen is titled Journey under a People crumb
-  assert.match(fn('function cDrawJourney('), /<div class="c-head"><div><h1>Journey<\/h1><\/div><div class="act"><button class="btn" onclick="openAdd\(\)">Add lead<\/button><\/div><\/div>/);
+  // Q47: the Journey is everyone; the board carries the List | Board switch beside Add lead, no crumb
+  assert.match(fn('function cDrawJourney('), /<div class="c-head"><div><h1>Journey<\/h1><\/div><div class="act">\$\{cPoolViewSwitch\(\)\}<button class="btn" onclick="openAdd\(\)">Add lead<\/button><\/div><\/div>/);
 });
 
 test('warnings look like warnings: overdue is a SOLID red badge with white words, 4.5:1 or more', () => {

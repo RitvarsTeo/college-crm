@@ -60,7 +60,8 @@ test('the menu gradient is one viewport tall in both modes, so its shade never c
 // "it stops at people": the progress line runs to the PAGE you are on, so the child is lit with its parent
 test('the progress line reaches the page: Journey, All people, Today and Inbox light with their parent', () => {
   const m = APP.slice(APP.indexOf('function markCNav('), APP.indexOf("document.querySelectorAll('.cnav a').forEach((a) => a.classList.toggle('on'", APP.indexOf('function markCNav(')));
-  assert.match(m, /const parent = \{ today: 'admissions', leads: 'admissions' \}\[place\] \|\| place;/);
+  // Q47: the menu is flat (the owner, 05.10.2026: "Make it Inbox> today> Journey> ..."), so the page lights alone
+  assert.match(m, /const parent = place;   \/\/ flat since Q47: no group parent/);
   assert.match(m, /page === 'journey' \? 'journey'/);
   assert.match(m, /const lit = \[parent, child\]\.filter\(Boolean\);/);
 });

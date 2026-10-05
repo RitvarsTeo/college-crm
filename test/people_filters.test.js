@@ -18,8 +18,8 @@ function sandbox() {
     esc: (s) => String(s ?? ''), channelLabel: (c) => c, CFG: { programmes: ['NAV', 'ENG'], owners: ['Admissions', 'Student Coordinator'],
       stages: [{ id: 'New', label: 'New' }, { id: 'Admitted', label: 'Admitted' }] } };
   vm.runInNewContext([line('const cWhenClass ='), line('const cNotSaid ='), line('const cTask ='), fn('function groupForAction('), fn('function cJourneyMatch('), line('const C_PF_EMPTY ='),
-    line('const C_PF_DUE ='), line('const C_PF_DATA ='), line('const C_SIS_HOLDS ='), line('const cSisHolds ='), fn('function cPeopleMatch('), 'let C_PF = C_PF_EMPTY();', fn('function cPeopleFilters('),
-    'this.m = cPeopleMatch; this.f = (x) => { C_PF = { ...C_PF_EMPTY(), ...x }; return cPeopleFilters; }; this.draw = (ps) => cPeopleFilters(ps);'].join('\n'), ctx);
+    line('const C_PF_DUE ='), line('const C_PF_DATA ='), line('const C_SIS_HOLDS ='), line('const cSisHolds ='), fn('function cPeopleMatch('), 'let C_PF = C_PF_EMPTY();',
+    'this.m = cPeopleMatch;'].join('\n'), ctx);
   return ctx;
 }
 const known = new Set(['NAV', 'ENG']);
@@ -43,13 +43,18 @@ test('every old pill is still a filter, now in a dropdown, and they combine', ()
   assert.equal(m(P({}), T('2026-09-20'), f({ stage: 'New', due: 'over', owner: 'Student Coordinator' }), known), false);
 });
 
-test('the pills are gone; seven compact dropdowns in the Journey look, with Clear', () => {
+test('the pills are gone; compact dropdowns in the Journey look, with Clear, on one line (Q47)', () => {
   assert.doesNotMatch(APP, /class="c-chip" aria-pressed/);
-  const { draw } = sandbox();
-  const html = draw([P({}), P({ id: 'y', programme: null, owner: null })]);
-  const labels = [...html.matchAll(/<span>([^<]+)<\/span><select aria-label="\1"/g)].map((x) => x[1]);
-  assert.deepEqual(labels, ['Stage', 'Programme', 'Next step', 'Owner', 'Came from', 'Details', 'Arrived']);   // Arrived: Q36, the Journey's Arrived cohort
-  assert.match(html, /class="c-jfilters" role="group" aria-label="Filter people"/);
-  assert.match(html, /<option value="—">not recorded<\/option>/);
-  assert.match(html, /<option value="Student Coordinator">Student Coordinator<\/option>/, 'every configured owner');
+  // Q47: People is the Journey; the stage is its column, so the filter row is the rest. Three on show (one line at
+  // 1440), Owner, Details and Arrived behind More filters, which opens by itself while one of them is set.
+  const pool = fn('function cDrawJourneyPool(');
+  const labels = [...pool.matchAll(/box\('(\w+)', '([^']+)'/g)].map((x) => x[2]);
+  assert.deepEqual(labels, ['Programme', 'Next step', 'Came from', 'Owner', 'Details', 'Arrived']);   // Arrived: Q36
+  assert.match(pool, /const more = C_JPMORE \|\| Boolean\(C_PF\.owner \|\| C_PF\.data \|\| C_PF\.arrived\);/);
+  assert.match(pool, /more \? box\('owner', 'Owner', owners\.map/);
+  assert.match(pool, /\$\{more \? 'Fewer filters' : 'More filters'\}/);
+  assert.match(APP, /<div class="c-jfilters p-filters" role="group" aria-label="Filter \$\{esc\(name\)\}">/);
+  assert.match(pool, /const name = \(k, v\) => \(v === cNotSaid \? 'not recorded' :/);
+  assert.match(pool, /const owners = \[\.\.\.new Set\(\[\.\.\.\(CFG\.owners \|\| \[\]\), \.\.\.distinct\('owner'\)\]\)\];/, 'every configured owner');
+  assert.match(pool, /any \? "C_PF=C_PF_EMPTY\(\);C_OUT_TAG=null;cDrawJourneyPool\(\)" : ''/, 'with Clear');
 });

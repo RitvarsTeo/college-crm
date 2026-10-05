@@ -19,7 +19,7 @@ test('every Home figure is a click to where it comes from', () => {
   assert.match(HOME, /need\('Overdue', D\.overdue, "cGoToday\('cTodayOver'\)", '#\/today', 0\)/);
   assert.match(HOME, /need\('Due today', D\.dueToday, "cGoToday\('cTodayDue'\)", '#\/today', 1\)/);
   assert.match(HOME, /need\('In the Inbox', D\.inbox, '', '#\/leads', 2\)/);
-  assert.match(HOME, /need\('No next step', D\.noNext, "cGoPeople\(\{ due: 'none' \}\)", '#\/people', 3\)/);
+  assert.match(HOME, /need\('No next step', D\.noNext, "cGoPeople\(\{ due: 'none' \}\)", '#\/today', 3\)/, 'Q47: the No next step card on Today');
   // the four cards: ALL FOUR open their own Reports tab on This year (Q35, the owner 05.10.2026), Admitted included
   assert.match(HOME, /<div class="khero"><span>Admitted<\/span>[^\n]*href="#\/reports" onclick="cGoReportYear\('admitted'\);return false">Reports →<\/a><\/div>/);
   assert.doesNotMatch(APP, /cGoAdmittedYear/, 'Admitted no longer skips the breakdowns');
@@ -32,7 +32,8 @@ test('every Home figure is a click to where it comes from', () => {
   const donut = fnBody('function cDonut(rows) {');
   assert.match(donut, /class="khole"[^>]*data-kgo="people"/, 'the centre opens People');
   assert.match(donut, /<li tabindex="0" role="button" data-tip="[^"]*"\s*data-kgo="\$\{go === 'journey' \? 'journey' : 'outcome\|' \+ go\}"/, 'legend rows go where their slice goes');
-  assert.match(fnBody('function cChartGo(spec) {'), /if \(kind === 'people'\) \{ location\.hash = '#\/people'; return; \}/);
+  assert.match(fnBody('function cChartGo(spec) {'), /if \(kind === 'people'\) \{ cGoPeople\(\{\}\); return; \}/, 'Q47: the centre opens the Journey, everyone');
+  assert.match(fnBody('function cChartGo(spec) {'), /if \(kind === 'journey'\) \{ cGoPeople\(\{ stage: 'open' \}\); return; \}/, 'the Open slice: everyone still on the journey');
   assert.doesNotMatch(HOME, /cGoClosedTag/, 'Cold / Reject live in Outcomes only (Q43)');
 });
 

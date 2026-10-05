@@ -123,10 +123,13 @@ test('Home is B, always: no switch, no A, and ?home= changes nothing', () => {
 });
 
 test('a Home stage click lands on the Journey filtered to exactly that stage', () => {
-  const ctx = { C_JF: { programme: ['ENG'], stage: [] }, C_PTAB: 'all', location: { hash: '#/home' }, viewJourneyC: () => {} };
+  const ctx = { C_JF: { programme: ['ENG'], stage: [] }, C_PTAB: 'all', location: { hash: '#/home' }, viewJourneyC: () => {}, viewJourneyPool: () => {},
+    C_JP: { col: null, view: 'board' } };
   vm.runInNewContext(line('const C_JF_EMPTY = ') + fn('function cGoStage(') + '\nthis.go = cGoStage;', ctx);
   ctx.go('Application');
-  assert.equal(JSON.stringify(ctx.C_JF.stage), '["Application"]');
+  // Q47: the stage is the Journey's column, the list on show
+  assert.equal(ctx.C_JP.col, 'Application');
+  assert.equal(ctx.C_JP.view, 'list');
   assert.equal(JSON.stringify(ctx.C_JF.programme), '[]', 'an earlier programme filter does not hide anybody Home counted');
   assert.equal(ctx.C_PTAB, 'journey');
   assert.equal(ctx.location.hash, '#/journey');
@@ -136,18 +139,11 @@ test('a Home stage click lands on the Journey filtered to exactly that stage', (
 // One owner on Outcomes (agreed through QA, 02.10): the tag on each row, and one split whose
 // counts are the filters.
 test('Outcomes: Not proceeding splits by cold and reject, each a filter, and an unused tag is not drawn', () => {
-  const ctx = { esc: (s) => String(s ?? ''), C_OUT_TAG: null,
-    CFG: { closedTags: [{ id: 'cold', label: 'Cold' }, { id: 'reject', label: 'Reject' }] } };
-  vm.runInNewContext(fn('function cTagSplit(') + '\nthis.split = cTagSplit;', ctx);
-  const np = PEOPLE.filter((p) => p.status === 'Not proceeding');
-  const html = ctx.split(np);
-  assert.match(html, /Everybody 4/);
-  assert.match(html, /onclick="C_OUT_TAG='cold';viewOutcomesC\(\)">Cold 2</);
-  assert.match(html, /Reject 1/);
-  assert.doesNotMatch(ctx.split(np.filter((p) => p.closed_tag !== 'reject')), /Reject/, 'nobody rejected, no Reject button');
-  assert.equal(ctx.split(np.filter((p) => !p.closed_tag)), '', 'nobody tagged, nothing drawn');
-  const view = fn('async function viewOutcomesC(');
-  assert.match(view, /if \(C_OUTCOME !== 'Admitted' && C_OUT_TAG\) list = list\.filter\(\(p\) => p\.closed_tag === C_OUT_TAG\);/);
-  assert.match(view, /C_OUTCOME !== 'Admitted' && p\.closed_tag \? cTagChip\(p\.closed_tag\)/, 'the tag on every Not proceeding row');
+  // Q47: on the Journey's Not proceeding column, Cold / Reject is the filter; each tag says its count, an unused one
+  // is not offered; every Not proceeding row carries its tag, drawn by one helper
+  const view = fn('function cDrawJourneyPool(');
+  assert.match(view, /\.filter\(\(\[, , n\]\) => n > 0\)\.map\(\(\[id, label, n\]\) => \[id, `\$\{label\} \$\{n\}`\]\);/, 'counted; nobody tagged, not offered');
+  assert.match(view, /if \(isNp && C_OUT_TAG\) list = list\.filter\(\(p\) => p\.closed_tag === C_OUT_TAG\);/);
+  assert.match(view, /p\.status === closed \? `\$\{p\.closed_tag \? cTagChip\(p\.closed_tag\) : ''\}/, 'the tag on every Not proceeding row');
   assert.equal((view.match(/cTagChip\(|cTagLabel\(/g) || []).length, 1, 'drawn once per row, by one helper');
 });

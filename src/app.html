@@ -1507,8 +1507,28 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .pband.is-mini .jb-cols{display:none}
   html.ui-c .pband.is-mini .p-mini{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
   html.ui-c .jb-cell.p-sep{border-left:1px solid var(--rule2);padding-left:8px}
+  html.ui-c .pband.pcards{margin:0 0 14px;display:block}
+  html.ui-c .pcards .p-card{appearance:none;font:inherit;text-align:left;cursor:pointer;margin:0}
+  html.ui-c #view .pcards .p-card.on{background:var(--c-sunk);border-radius:10px;box-shadow:inset 0 -3px 0 var(--j-to)}
+  html.ui-c #view .pcards .p-card:focus-visible{outline:2px solid var(--pet);outline-offset:1px}
+  html.ui-c .pcards.is-mini .kday-row, html.ui-c .pcards.is-mini h2{display:none}
+  html.ui-c .pband.pcards.is-mini{padding:0}   /* the sheet is the card here: no see-through strip above it */
+  html.ui-c .pcards.is-mini .kday-sheet{padding-top:8px;padding-bottom:8px}
   html.ui-c .jb-bar.t-over{background:var(--j-alarm)}
   html.ui-c .jb-bar.t-today{background:#F7C04F}
+  html.ui-c .jb-bar.t-later{background:#6f8aa5}
+  /* the Inbox band is AGE: one sequential ramp of the data blue, newest the brightest (MASTER CONTROL for the owner,
+     05.10.2026: "inbox needs different colours than we have for today"); no mustard, no red - the rows carry urgency.
+     Measured: light neighbours 1.65 / 1.69 / 1.93:1, dark 1.46 / 1.47 / 1.55:1; every bar carries its count above it */
+  html.ui-c .jb-bar.t-age-today{background:#29a8df} html.ui-c .jb-bar.t-age-yesterday{background:#1f7dbb}
+  html.ui-c .jb-bar.t-age-week{background:#175597} html.ui-c .jb-bar.t-age-older{background:#0a2463}
+  html.ui-c[data-theme="dark"] .jb-bar.t-age-today{background:#c4ebfc} html.ui-c[data-theme="dark"] .jb-bar.t-age-yesterday{background:#6fcaf1}
+  html.ui-c[data-theme="dark"] .jb-bar.t-age-week{background:#29a8df} html.ui-c[data-theme="dark"] .jb-bar.t-age-older{background:#3b80bd}
+  html.ui-c .p-chip.t-age-today i{background:#29a8df} html.ui-c .p-chip.t-age-yesterday i{background:#1f7dbb}
+  html.ui-c .p-chip.t-age-week i{background:#175597} html.ui-c .p-chip.t-age-older i{background:#0a2463}
+  html.ui-c[data-theme="dark"] .p-chip.t-age-today i{background:#c4ebfc} html.ui-c[data-theme="dark"] .p-chip.t-age-yesterday i{background:#6fcaf1}
+  html.ui-c[data-theme="dark"] .p-chip.t-age-week i{background:#29a8df} html.ui-c[data-theme="dark"] .p-chip.t-age-older i{background:#3b80bd}
+  html.ui-c .p-chip.t-later i{background:#6f8aa5}
   html.ui-c .jb-bar.t-none{background:var(--t3)}
   html.ui-c .jb-bar.t-good{background:var(--v-adm)}
   html.ui-c .jb-bar.t-np{background:var(--t3)}
@@ -1516,7 +1536,8 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
     border-radius:8px;background:var(--field);font:inherit;font-size:12.5px;font-weight:600;color:var(--t2);cursor:pointer}
   html.ui-c .p-chip i{width:8px;height:8px;border-radius:2px;background:var(--v-open)}
   html.ui-c .p-chip.t-over i{background:var(--j-alarm)} html.ui-c .p-chip.t-today i{background:#F7C04F}
-  html.ui-c .p-chip.t-none i, html.ui-c .p-chip.t-np i{background:var(--t3)} html.ui-c .p-chip.t-good i{background:var(--v-adm)}
+  html.ui-c .p-chip.t-np i{background:var(--t3)} html.ui-c .p-chip.t-good i{background:var(--v-adm)}
+  html.ui-c .p-chip.t-none i{background:#F7C04F}
   html.ui-c .p-chip b{font-variant-numeric:tabular-nums;color:var(--ink)}
   html.ui-c .p-chip.p-sep{margin-left:10px}
   html.ui-c .p-chip.on{border-color:var(--j-to);box-shadow:inset 0 0 0 1px var(--j-to);color:var(--ink)}
@@ -1525,6 +1546,10 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .p-step{display:block;color:var(--t3);margin-top:2px}
   html.ui-c .p-stage{font-weight:600;color:var(--ink)}
   html.ui-c .p-view{margin:0}
+  html.ui-c .p-filters .c-jf select{max-width:10.5em}
+  html.ui-c .p-edit{padding:4px 16px 16px;border-top:1px solid var(--rule2)}
+  html.ui-c .c-jedit .c-form{grid-template-columns:minmax(0,1fr)}   /* the board's opened card is narrow: one field per line */
+  html.ui-c .p-rows .c-line.c-sel{background:var(--c-sunk)}
   /* Q39: new / total in the menu, the new figure bold with its small mark */
   html.ui-c .n .nn{font-weight:750;color:inherit}
   html.ui-c .n .nw{font-style:normal;font-size:9.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin:0 3px 0 2px;vertical-align:1px}
@@ -2530,19 +2555,15 @@ function installCNav() {
   for (const bar of document.querySelectorAll('#cThemeBar, #cThemeBar2')) bar.innerHTML = themeSwitchHtml();
   brand.insertAdjacentHTML('afterend', `<div class="cnav" role="navigation" aria-label="Main">
     <a href="#/home" data-c="home" title="How admissions is performing">${C_ICON.home}<span>Home</span></a>
-    <a href="#/admissions" data-c="admissions" title="The work and what has arrived">${C_ICON.adm}<span>Admissions</span></a>
-    <!-- TODAY first, then the Inbox (the owner, 05.10.2026: "when we click admissions, first is todays work ...,
-         then inbox goes as next step"); the page reads Today again -->
-    <div class="kids"><a href="#/today" data-c="today" title="What needs my attention today"><span>Today</span><span class="n" id="cnNext"></span></a>
-      <a href="#/leads" data-c="leads" title="What arrived and needs a person to look at it"><span>Inbox</span><span class="n" id="cnLeads"></span></a></div>
-    <a href="#/people" data-c="people" title="Everyone: search, add a lead, filter by stage">${C_ICON.ppl}<span>People</span></a>
-    <div class="kids"><a href="#/journey" data-c="journey"><span>Journey</span></a>
-      <a href="#/outcomes" data-c="outcomes" title="Where finished journeys end: admitted or not proceeding"><span>Outcomes</span></a></div>
+    <!-- ONE SYSTEM (Q47, the owner 05.10.2026): the menu is flat, in his order - "Make it Inbox> today> Journey> ...".
+         No Admissions group. Journey is People + Journey + Outcomes in one; Outcomes are its last two columns. -->
+    <a href="#/leads" data-c="leads" title="What arrived and needs a person to look at it">${C_ICON.inbox}<span>Inbox</span><span class="n" id="cnLeads"></span></a>
+    <a href="#/today" data-c="today" title="What needs my attention today">${C_ICON.next}<span>Today</span><span class="n" id="cnNext"></span></a>
+    <a href="#/journey" data-c="people" title="Everyone, by where they are in the journey">${C_ICON.journey}<span>Journey</span><span class="n" id="cnJourney"></span></a>
     <a href="#/reports" data-c="reports" title="What is happening">${C_ICON.rep}<span>Reports</span></a>
     <a href="#/settings" data-c="settings" id="cnSettings" class="c-navfoot">${C_ICON.set}<span>Settings</span></a>
   </div>`);
   installCTabs();
-  if (globalThis.C_POOL) cPoolMenu();
   // No "Open the classic view" link: C is the normal product, and the classic view is a
   // hidden fallback reached only by the address ?ui=classic (the owner, 28.09.2026).
 }
@@ -2556,17 +2577,17 @@ function installCTabs() {
   const tab = (href, t, icon, label, count) => `<a href="${href}" data-t="${t}">${icon}<span>${label}</span>${count ? `<span class="n" id="${count}"></span>` : ''}</a>`;
   const row = (href, icon, label) => `<a href="${href}" onclick="cMoreClose()">${icon}<span>${label}</span></a>`;
   document.body.insertAdjacentHTML('beforeend', `<div class="ctabs" role="navigation" aria-label="Phone menu">
-    ${tab('#/home', 'home', C_ICON.home, 'Home')}${tab('#/today', 'today', C_ICON.next, 'Today', 'ctNext')}${tab('#/leads', 'leads', C_ICON.inbox, 'Inbox', 'ctLeads')}${tab('#/people', 'people', C_ICON.ppl, 'People')}
+    ${tab('#/home', 'home', C_ICON.home, 'Home')}${tab('#/leads', 'leads', C_ICON.inbox, 'Inbox', 'ctLeads')}${tab('#/today', 'today', C_ICON.next, 'Today', 'ctNext')}${tab('#/journey', 'people', C_ICON.journey, 'Journey', 'ctJourney')}
     <button type="button" data-t="more" aria-haspopup="dialog" aria-expanded="false" onclick="cMoreOpen()">${C_ICON.more}<span>More</span></button></div>
   <div class="cmore" id="cMore" hidden><div class="cmore-back" onclick="cMoreClose()"></div>
     <div class="cmore-sheet" role="dialog" aria-modal="true" aria-label="More">
-      ${row('#/journey', C_ICON.journey, 'Journey')}${row('#/outcomes', C_ICON.out, 'Outcomes')}
       ${row('#/reports', C_ICON.rep, 'Reports')}${row('#/settings', C_ICON.set, 'Settings')}${row('#/help', C_ICON.help, 'Help')}</div></div>`);
-  // the counts are the left card's own: copied whenever it changes, so the two can never disagree
-  for (const [from, to] of [['#cnLeads', '#ctLeads'], ['#cnNext', '#ctNext']]) {
+  // the counts are the left card's own: copied whenever it changes, so the two can never disagree. innerHTML, because
+  // a count is "N new / total" (Q39)
+  for (const [from, to] of [['#cnLeads', '#ctLeads'], ['#cnNext', '#ctNext'], ['#cnJourney', '#ctJourney']]) {
     const a = document.querySelector(from), b = document.querySelector(to);
     if (!a || !b) continue;
-    const copy = () => { b.textContent = a.textContent; b.className = a.className; };
+    const copy = () => { b.innerHTML = a.innerHTML; b.className = a.className; };
     copy(); new MutationObserver(copy).observe(a, { childList: true, characterData: true, subtree: true, attributes: true });
   }
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') cMoreClose(); });
@@ -2599,7 +2620,7 @@ function markCNav(page) {
   // THE PROGRESS LINE RUNS TO THE PAGE YOU ARE ON (the owner, 04.10.2026: "it stops at people"). The
   // child is lit with its parent, so the spine reaches Journey or Outcomes, not only People; Today
   // and Inbox light Admissions above them the same way.
-  const parent = { today: 'admissions', leads: 'admissions' }[place] || place;
+  const parent = place;   // flat since Q47: no group parent
   const child = place === 'today' || place === 'leads' ? place
     : page === 'journey' ? 'journey'
     : page === 'outcomes' ? 'outcomes'   // back in the menu after Journey (the owner, 05.10.2026), People lit with it
@@ -2646,15 +2667,7 @@ function cSpine() {
   svg.innerHTML = segs.join('');
 }
 if (typeof window !== 'undefined' && window.addEventListener) window.addEventListener('resize', () => cSpine());
-async function cNavCounts() {
-  if (globalThis.C_POOL) return cPoolCounts();
-  try {
-    const [i, t] = await Promise.all([api('/api/intake'), api('/api/tasks?scope=open')]);
-    const leads = (i.counts || {}).new || 0; const due = cDueNow(t).length;
-    const L = document.querySelector('#cnLeads'); if (L) L.textContent = leads || '';
-    const N = document.querySelector('#cnNext'); if (N) { N.textContent = due || ''; N.classList.toggle('warn', t.some((x) => cWhenClass(x.due_at) === 'over')); }
-  } catch {}
-}
+async function cNavCounts() { return cPoolCounts(); }
 // The RIGA calendar day of an instant. Slicing the ISO string gave the UTC day, one
 // day early for anything stored between 21:00 and 24:00 UTC.
 const cDay = (iso) => (iso ? fmtDate(iso) : '');
@@ -2726,17 +2739,8 @@ async function routeC(page, arg) {
     return;
   }
   if (place === 'leads') return viewLeadsC();
-  if (globalThis.C_POOL && place === 'people') return cPoolRouteJourney(page);
-  // Outcomes is its own page, in the menu again under People (05.10.2026): the Journey's outcomes band, a
-  // Reports chart click (cChartGo) and Home's Cold / Reject all land on it.
-  if (page === 'outcomes') return viewOutcomesC();
-  // PEOPLE IS EVERYONE (the owner, 05.10.2026: "All people can show up, when we click ON the People tab
-  // itself. Than we can click Journey and Outcomes."). #/people and the old #/people/all both open everyone.
-  if (place === 'people') {
-    if (page === 'journey') { C_PTAB = 'journey'; return viewJourneyC(); }
-    C_PTAB = 'all';
-    return viewPeopleC();
-  }
+  // ONE JOURNEY (Q47): #/people, #/people/all, #/journey and #/outcomes all open the Journey, on the right column.
+  if (place === 'people') return cPoolRouteJourney(page);
   if (place === 'today') return viewTodayC();
   if (page === 'help') return viewHelpC();
   if (place === 'settings') return viewSettingsC();
@@ -2904,7 +2908,7 @@ function cHomeB(D) {
           ${need('Overdue', D.overdue, "cGoToday('cTodayOver')", '#/today', 0)}
           ${need('Due today', D.dueToday, "cGoToday('cTodayDue')", '#/today', 1)}
           ${need('In the Inbox', D.inbox, '', '#/leads', 2)}
-          ${D.noNext ? need('No next step', D.noNext, "cGoPeople({ due: 'none' })", '#/people', 3) : ''}
+          ${D.noNext ? need('No next step', D.noNext, "cGoPeople({ due: 'none' })", '#/today', 3) : ''}
         </div>
       </div>
     </section>
@@ -2937,8 +2941,8 @@ function cGoReportYear(chapter) {
 // the count on Home and the count on the Journey are the same people.
 function cGoStage(id) {
   C_JF = C_JF_EMPTY(); C_JF.stage = [id]; C_PTAB = 'journey';
-  if (globalThis.C_POOL) { C_JF = C_JF_EMPTY(); C_JP.col = id; C_JP.view = 'list'; if (location.hash === '#/journey') viewJourneyPool(); else location.hash = '#/journey'; return; }
-  if (location.hash === '#/journey') viewJourneyC(); else location.hash = '#/journey';
+  C_JF = C_JF_EMPTY(); C_JP.col = id; C_JP.view = 'list';
+  if (location.hash === '#/journey') viewJourneyPool(); else location.hash = '#/journey';
 }
 // Cold / reject on Home opens Not proceeding with exactly that tag.
 function cGoClosedTag(id) {
@@ -3084,12 +3088,12 @@ function cBars(rows, kind) {
 let C_OUT_FILTER = null;
 function cChartGo(spec) {
   const [kind, key, label] = String(spec || '').split('|');
-  if (kind === 'journey') { location.hash = '#/journey'; return; }
-  if (kind === 'people') { location.hash = '#/people'; return; }
+  if (kind === 'journey') { cGoPeople({ stage: 'open' }); return; }   // the donut's Open: everyone still on the journey
+  if (kind === 'people') { cGoPeople({}); return; }
   if (kind === 'stage') { cGoStage(key); return; }
   if (kind === 'inbox') { location.hash = '#/leads'; return; }
   if (kind === 'cohort') { cGoCohort(key); return; }   // a Reports figure: exactly its people (Q35)
-  if (kind === 'outcome') { C_OUTCOME = key; C_OUT_FILTER = null; location.hash = '#/outcomes'; return; }
+  if (kind === 'outcome') { C_OUTCOME = key; C_OUT_FILTER = null; C_OUT_TAG = null; C_OUT_REASON = null; if (location.hash === '#/outcomes') viewOutcomesC(); else location.hash = '#/outcomes'; return; }
   C_OUTCOME = 'Admitted';
   C_OUT_FILTER = { kind, key, label };
   if (location.hash === '#/outcomes') viewOutcomesC(); else location.hash = '#/outcomes';
@@ -3177,8 +3181,6 @@ async function viewTodayC() {
       <div class="c-who"><b>${esc(p.name)}</b><small>${esc(p.programme || 'programme not said')} · ${esc(p.status)}</small>${reach(p)}</div>
       <div class="c-what">${said(p)}</div><div class="c-when"></div>
       <div class="c-acts">${cChooseNext(p.id)}</div></div>`;
-  // the Overdue and Due today counts carry the urgency badges when there is something in them
-  const sect = (title, rows, fn, tone = '', id = '') => `<div class="c-sheet c-nextsheet"${id ? ` id="${id}"` : ''}><h3>${title}<b${tone && rows.length ? ` class="c-count ${tone}"` : ''}>${rows.length}</b></h3>${rows.map(fn).join('') || '<div class="c-empty">None.</div>'}</div>`;
 
   // TODAY ANSWERS ONE QUESTION: what needs my attention? (the owner, 01.10.2026.) This was
   // two screens - a Home of KPIs and a Next Steps of work - and the KPIs went to Reports,
@@ -3189,12 +3191,9 @@ async function viewTodayC() {
   // NO STRIP ABOVE THE SECTIONS (the owner, 05.10.2026: "Nothing should be duplicated. Its confusing." - "you see in
   // needs you, we already have"): open / overdue / no next step / waiting in the Inbox are Home's Needs you, and each
   // of Home's figures opens its people here or in People. The sections keep their own counts in their headings.
-  if (globalThis.C_POOL) { C_TPD = { over, today, later, none, pTasks, pRow, byId, people, pct, open }; if (C_TODAY_AT) { C_TP.col = { cTodayOver: 'over', cTodayDue: 'today' }[C_TODAY_AT] || null; C_TODAY_AT = ''; } return cTodayPool(); }
-  $('#view').innerHTML = `
-    <div class="c-head"><div><h1>Today</h1></div>
-      <div class="act"><a class="c-planned" href="#/people" onclick="cGoPeople({ stage: 'open' });return false"><b>${pct}%</b> planned <small>${open.length - none.length} of ${open.length} open people have a next step</small></a></div></div>
-    ${sect('Overdue', cByPerson(over), pTasks, 'over', 'cTodayOver')}${sect('Due today', cByPerson(today), pTasks, 'today', 'cTodayDue')}${sect('Coming up', later, tRow)}${sect('No next step', none, pRow)}`;
-  if (C_TODAY_AT) { const a = document.getElementById(C_TODAY_AT); C_TODAY_AT = ''; if (a) a.scrollIntoView({ block: 'start' }); }
+  C_TPD = { over, today, later, none, pTasks, pRow, byId, people, pct, open };
+  if (C_TODAY_AT) { C_TP.col = { cTodayOver: 'over', cTodayDue: 'today', cTodayNone: 'none' }[C_TODAY_AT] || null; C_TODAY_AT = ''; }
+  return cTodayPool();
 }
 // A person's tasks together, in the order they came: one entry per person (Q43).
 function cByPerson(tasks) {
@@ -3257,14 +3256,6 @@ function cReasonBreakdown(np, noReason) {
 //     Home's Cold / Reject links open the same filter. A tag nobody carries is not drawn
 //     (KB 08 P5: gaps never shown)
 const cTagChip = (id) => { const t = (CFG.closedTags || []).find((x) => x.id === id); return t ? `<span class="kfl-tag t-${esc(id)}">${esc(t.label || id)}</span> ` : ''; };
-function cTagSplit(np) {
-  const tags = (CFG.closedTags || []).map((t) => [t.id, t.label || t.id, np.filter((p) => p.closed_tag === t.id).length]).filter(([, , n]) => n > 0);
-  if (!tags.length) return '';
-  const pick = (id) => `C_OUT_TAG=${id ? `'${esc(id)}'` : 'null'};viewOutcomesC()`;
-  return `<div class="c-seg c-tagseg" role="group" aria-label="Cold or reject">
-    <button aria-pressed="${!C_OUT_TAG}" onclick="${pick(null)}">Everybody ${np.length}</button>${tags.map(([id, label, n]) =>
-    `<button aria-pressed="${C_OUT_TAG === id}" onclick="${pick(id)}">${esc(label)} ${n}</button>`).join('')}</div>`;
-}
 // THE COLD AND REJECT LISTS (D-C8, the owner 05.10.2026: "Colds and Rejects to outcomes. Also these statuses are
 // available just in the all people tab of course."). Marketing finds them in Outcomes > Not proceeding > Cold or
 // Reject, one card per programme (what a campaign is aimed at): name and how to reach them, why, where they came
@@ -3298,35 +3289,9 @@ function cColdGroups(list, people) {
       <div class="c-when">${p.last_contact_at ? fmtDate(p.last_contact_at) : ''}</div></div>`).join('')}</div>`; }).join('');
 }
 async function viewOutcomesC() {
-  if (globalThis.C_POOL) { C_JP.col = C_OUT_REASON ? ((CFG.stageRoles || {}).closed || 'Not proceeding') : C_OUTCOME; return viewJourneyPool(); }
-  const people = await cPeopleRows();
-  const adm = people.filter((p) => p.status === 'Admitted'); const np = people.filter((p) => p.status === 'Not proceeding');
-  let list = C_OUTCOME === 'Admitted' ? adm : np;
-  const f = C_OUTCOME === 'Admitted' ? C_OUT_FILTER : null;
-  if (f) {
-    const year = Number(cTodayIso().slice(0, 4));
-    // a month key names its own year; programme and channel come from Home, which is this year
-    if (f.kind === 'month') list = list.filter((p) => cDay(p.admitted_at).startsWith(f.key));
-    else list = list.filter((p) => cDay(p.admitted_at).startsWith(String(year)));
-    if (f.kind === 'prog') list = list.filter((p) => (p.programme || '(not recorded)') === f.key);
-    if (f.kind === 'chan') list = list.filter((p) => (p.source_channel || 'unknown') === f.key);
-  }
-  if (C_OUTCOME !== 'Admitted' && C_OUT_TAG) list = list.filter((p) => p.closed_tag === C_OUT_TAG);
-  if (C_OUTCOME !== 'Admitted' && !C_OUT_TAG && C_OUT_REASON) list = list.filter((p) => p.closed_reason === C_OUT_REASON);
-  const noReason = np.filter((p) => !p.closed_reason).length;
-  const fLabel = f ? ({ month: 'admitted in ', prog: 'programme ', chan: 'came from ' }[f.kind] || '') + f.label : '';
-  $('#view').innerHTML = `<p class="c-crumb"><a href="#/journey">People</a></p>
-    <div class="c-head"><div><h1>Outcomes</h1></div>
-      <div class="act"><button class="btn" onclick="openExport()">Download for management review</button><button class="btn ghost" onclick="location.hash='#/reports'">Full report</button></div></div>
-    <div class="c-seg" role="group" aria-label="Outcome"><button aria-pressed="${C_OUTCOME === 'Admitted'}" onclick="C_OUTCOME='Admitted';viewOutcomesC()"><span class="c-ok">✓</span>Admitted ${adm.length}</button><button aria-pressed="${C_OUTCOME !== 'Admitted'}" onclick="C_OUTCOME='Not proceeding';viewOutcomesC()"><span class="c-no">✕</span>Not proceeding ${np.length}</button></div>
-    ${f ? `<div class="c-filter">Showing <b>${list.length}</b> ${list.length === 1 ? 'admitted person' : 'admitted people'}, ${esc(fLabel)} <button class="btn sm ghost" onclick="C_OUT_FILTER=null;viewOutcomesC()">Show all admitted ✕</button></div>` : ''}
-    ${C_OUTCOME !== 'Admitted' ? cTagSplit(np) : ''}
-    ${C_OUTCOME !== 'Admitted' && !C_OUT_TAG && C_OUT_REASON ? `<div class="c-filter">Showing <b>${list.length}</b> · ${esc(C_OUT_REASON)} <button class="btn sm ghost" onclick="C_OUT_REASON=null;viewOutcomesC()">Every reason ✕</button></div>` : ''}
-    ${C_OUTCOME !== 'Admitted' && C_OUT_TAG ? cColdGroups(list, people) : `<div class="c-sheet">${list.map((p) => `<div class="c-line" tabindex="0" onclick="location.hash='#/person/${esc(p.id)}'" style="grid-template-columns:minmax(0,1.2fr) minmax(0,1.4fr) 110px">
-        <div class="c-who"><b>${esc(p.name)}</b><small>${esc(p.programme || 'programme not said')} · came from ${esc(cChannel(p.source_channel)[0])}</small>${C_OUTCOME !== 'Admitted' ? cSameMark(p, people) : ''}</div>
-        <div class="c-what">${C_OUTCOME !== 'Admitted' && p.closed_tag ? cTagChip(p.closed_tag) : ''}${C_OUTCOME === 'Admitted' ? `Admitted${p.matriculated_at ? ` · <span class="c-lifefact" title="From the SIS: it happened on or before this day">Matriculated <time>by ${esc(cDay(p.matriculated_at))}</time></span>` : ''}` : (p.closed_reason ? esc(p.closed_reason) : '<span class="c-gap">reason not recorded</span>')}</div>
-        <div class="c-when">${p.admitted_at ? fmtDate(p.admitted_at) : ''}</div></div>`).join('') || '<div class="c-empty">Nobody here.</div>'}</div>`}
-    ${C_OUTCOME !== 'Admitted' && !C_OUT_TAG ? cReasonBreakdown(np, noReason) : ''}`;
+  C_JP.col = C_OUT_REASON ? ((CFG.stageRoles || {}).closed || 'Not proceeding') : C_OUTCOME;
+  C_JP.view = 'list';
+  return viewJourneyPool();
 }
 
 // -------------------------------------------------------------------- SETTINGS
@@ -3409,7 +3374,7 @@ function cCallLine(body) {
 
 
 async function viewLeadsC() {
-  const d = await api('/api/intake?state=' + (globalThis.C_POOL ? C_IP.show : 'new'));
+  const d = await api('/api/intake?state=' + C_IP.show);
   const rows = d.rows || [];
   if (C_LOPEN && !rows.some((r) => r.id === C_LOPEN)) C_LOPEN = null;
   const L = LAST_RESULT; LAST_RESULT = null;
@@ -3440,41 +3405,18 @@ async function viewLeadsC() {
         <div class="c-what">${esc(r.channel === 'phone' ? cCallLine(r.body) : (r.body || val(r, 'question') || ''))}</div>
         <div class="c-when">${esc(val(r, 'interest') || '')}</div><div></div></div>
         ${C_LOPEN === r.id && withPanel ? panel(r) : ''}`;
-  if (globalThis.C_POOL) { C_IPD = { rows, receipt, leadRow }; cInboxPool(); if (L) cNavCounts(); return; }
-  $('#view').innerHTML = `<p class="c-crumb">Admissions</p>
-    <div class="c-head"><div><h1>Inbox</h1></div></div>
-    ${receipt}
-    <div class="c-sheet">${rows.length ? rows.map((r) => leadRow(r)).join('')
-      : '<div class="c-empty">Nothing waiting. This queue is clear.</div>'}</div>`;
-  if (C_LOPEN) { const s = $('#qInterest'); if (s) s.focus(); }
+  C_IPD = { rows, receipt, leadRow };
+  cInboxPool();
   if (L) cNavCounts();                    // a lead was just saved or set aside: the menu count moves too
 }
 
 // ---------------------------------------------------------------- THE POOL FRAME (Q47)
 // The owner, 05.10.2026 on production: "They are completely separate lists, its not one system, its 4 different
-// lists. No frozen navigation anywehre". MASTER CONTROL's answer, built here behind ?pool=1 (the default is unchanged
-// until he has seen it): ONE frame for every pool. The page title; a FROZEN band of the pool's cohorts drawn as the
+// lists. No frozen navigation anywehre". MASTER CONTROL's answer: ONE frame for every pool. The page title; a FROZEN band of the pool's cohorts drawn as the
 // Journey band (columns on one baseline, one scale, the count on each; a click narrows the list, a second click shows
 // all again); ONE filter row in the app's dropdown look; the rows in ONE row style. Scrolled, the band folds into one
-// compact frozen row of the same cohorts with their counts. Today, the Inbox and the Journey use it.
-globalThis.C_POOL = (() => { try { return new URLSearchParams(location.search).get('pool') === '1'; } catch { return false; } })();
-// Menu: Home · Admissions (Today, Inbox) · Journey · Reports · Settings. Phone: Home, Today, Inbox, Journey, More.
-// The counts carry new / total, so the tab bar takes its own copies (innerHTML) under new ids.
-function cPoolMenu() {
-  const nav = document.querySelector('.cnav');
-  if (!nav || nav.dataset.pool) return;
-  nav.dataset.pool = '1';
-  const ppl = nav.querySelector('a[data-c="people"]');
-  if (ppl) {
-    ppl.setAttribute('href', '#/journey'); ppl.title = 'Everyone, by where they are in the journey';
-    ppl.innerHTML = `${C_ICON.journey}<span>Journey</span><span class="n" id="cnJourney"></span>`;
-    const kids = ppl.nextElementSibling; if (kids && kids.classList.contains('kids')) kids.remove();
-  }
-  const tp = document.querySelector('.ctabs [data-t="people"]');
-  if (tp) { tp.setAttribute('href', '#/journey'); tp.innerHTML = `${C_ICON.journey}<span>Journey</span><span class="n" id="ctJourney"></span>`; }
-  for (const id of ['ctLeads', 'ctNext']) { const el = document.getElementById(id); if (el) { const n = el.cloneNode(false); n.id = id + 'P'; el.replaceWith(n); } }
-  document.querySelectorAll('#cMore a[href="#/journey"], #cMore a[href="#/outcomes"]').forEach((a) => a.remove());
-}
+// compact frozen row of the same cohorts with their counts. Today, the Inbox and the Journey use it. Behind ?pool=1 for
+// the pictures; the owner: "Yes, ship it", so it is THE app since (the old People and Outcomes pages went).
 // cols: [{ id, label, n, over, tone, sep }]: sep draws the rule before Admitted (the journey | what happened to it)
 function cPoolBand(name, cols, on, pick) {
   const max = Math.max(1, ...cols.map((c) => c.n));
@@ -3490,6 +3432,21 @@ function cPoolBand(name, cols, on, pick) {
     <section class="kflow jband pband" aria-label="${esc(name)}">
       <div class="jb-cols" style="--n:${cols.length}">${cols.map(col).join('')}</div>
       <div class="p-mini" role="group" aria-label="${esc(name)}">${cols.map(chip).join('')}</div>
+    </section>`;
+}
+// THE SAME CARD, ONE LEVEL DEEPER (the owner, 05.10.2026: "The today tab can have the exactly as the home to reports
+// connection. so the same cards about need you today and we go into today, and its deeper, right?"). Today's band is
+// Home's Needs you card, the same look and the same labels, with Today's own Coming up; a Home figure opens Today on
+// that card, and the people are below it. Frozen and folded like the column band.
+function cPoolCards(name, title, cols, on, pick) {
+  const card = (c, i) => `<button type="button" class="kneed p-card${on === c.id || c.lit ? ' on' : ''}" style="--i:${i}" aria-pressed="${on === c.id || Boolean(c.lit)}"
+      data-v="${esc(c.id)}" onclick="${pick}(this.dataset.v)"><span>${esc(c.label)}</span><b>${c.n}</b></button>`;
+  const chip = (c) => `<button type="button" class="p-chip${on === c.id || c.lit ? ' on' : ''}${c.tone ? ' t-' + c.tone : ''}" aria-pressed="${on === c.id || Boolean(c.lit)}"
+      data-v="${esc(c.id)}" onclick="${pick}(this.dataset.v)"><i></i><span>${esc(c.label)}</span><b>${c.n}</b></button>`;
+  return `<div class="p-sentinel" aria-hidden="true"></div>
+    <section class="kday pband pcards" aria-label="${esc(name)}">
+      <div class="kday-sheet"><h2>${esc(title)}</h2><div class="kday-row">${cols.map(card).join('')}</div>
+        <div class="p-mini" role="group" aria-label="${esc(name)}">${cols.map(chip).join('')}</div></div>
     </section>`;
 }
 // One dropdown of the filter row: the People filters' look (c-jf), "All" first.
@@ -3540,10 +3497,13 @@ async function cPoolCounts() {
     const inbox = (i.rows || []);
     const dueNow = cByPerson(cDueNow(t));
     const people = (ppl && ppl.rows) || [];
-    const put = (sel, html, warn) => { for (const el of document.querySelectorAll(`${sel}, ${sel.replace('#cn', '#ct')}${sel === '#cnJourney' ? '' : 'P'}`)) {
-      el.innerHTML = html; el.classList.toggle('warn', Boolean(warn)); } };
+    const put = (sel, html, warn) => { const el = document.querySelector(sel); if (!el) return; el.innerHTML = html; el.classList.toggle('warn', Boolean(warn)); };
+    // Today = everyone who needs an action NOW: Overdue + Due today + No next step (MASTER CONTROL for the owner,
+    // 05.10.2026), which is exactly the set Today opens on; Coming up is a click away and not counted.
+    const none = people.filter((p) => !C_TERMINAL.includes(p.status) && !p.next_action_at && !cSisHolds(p));
     put('#cnLeads', cBadge(inbox.filter((r) => after('leads', r.received_at)).length, inbox.length));
-    put('#cnNext', cBadge(dueNow.filter((g) => g.some((x) => after('today', x.due_at) || after('today', x.created_at))).length, dueNow.length),
+    put('#cnNext', cBadge(dueNow.filter((g) => g.some((x) => after('today', x.due_at) || after('today', x.created_at))).length
+      + none.filter((p) => after('today', p.created_at)).length, dueNow.length + none.length),
       t.some((x) => cWhenClass(x.due_at) === 'over'));
     put('#cnJourney', cBadge(people.filter((p) => after('journey', p.created_at)).length, people.length));
   } catch {}
@@ -3553,30 +3513,36 @@ const C_POOL_T = {};
 function cPoolOpened(k) { const now = Date.now(); if (C_POOL_T[k] && now - C_POOL_T[k] < 4000) return; C_POOL_T[k] = now; cSeeNow(k); cNavCounts(); }
 
 // ---- TODAY: Overdue · Due today · Coming up · No next step, one row per person
-let C_TP = { col: null, programme: '', stage: '' };
+let C_TP = { col: null, programme: '', stage: '', source: '' };
 let C_TPD = null;
 function cTodayPick(v) { C_TP.col = C_TP.col === v ? null : v; cTodayPool(); }
 function cTodayPool() {
   const D = C_TPD; if (!D) return;
-  const okP = (p) => Boolean(p) && (!C_TP.programme || (p.programme || cNotSaid) === C_TP.programme) && (!C_TP.stage || p.status === C_TP.stage);
+  const okP = (p) => Boolean(p) && (!C_TP.programme || (p.programme || cNotSaid) === C_TP.programme) && (!C_TP.stage || p.status === C_TP.stage)
+    && (!C_TP.source || (p.source_channel || cNotSaid) === C_TP.source);
   const okG = (g) => okP(D.byId.get(g[0].person_id));
   const groups = [
     { id: 'over', label: 'Overdue', rows: cByPerson(D.over).filter(okG), fn: D.pTasks, tone: 'over' },
     { id: 'today', label: 'Due today', rows: cByPerson(D.today).filter(okG), fn: D.pTasks, tone: 'today' },
-    { id: 'later', label: 'Coming up', rows: cByPerson(D.later).filter(okG), fn: D.pTasks },
+    { id: 'later', label: 'Coming up', rows: cByPerson(D.later).filter(okG), fn: D.pTasks, tone: 'later' },
     { id: 'none', label: 'No next step', rows: D.none.filter(okP), fn: D.pRow, tone: 'none' }];
-  const shown = C_TP.col ? groups.filter((g) => g.id === C_TP.col) : groups;
+  // NO CARD CHOSEN = what needs an action now: Overdue, Due today and No next step, lit together - the menu's count is
+  // these people. Coming up is a click away. A card narrows to itself; a second click goes back to the three.
+  const NOW = ['over', 'today', 'none'];
+  const shown = C_TP.col ? groups.filter((g) => g.id === C_TP.col) : groups.filter((g) => NOW.includes(g.id));
   const open = D.people.filter((p) => !C_TERMINAL.includes(p.status));
   const progs = [...new Set(open.map((p) => p.programme || cNotSaid))].sort();
   const stages = (CFG.stages || []).filter((st) => !C_TERMINAL.includes(st.id));
+  const sources = [...new Set(open.map((p) => p.source_channel || cNotSaid))].sort().map((v) => [v, v === cNotSaid ? 'not recorded' : channelLabel(v)]);
   $('#view').innerHTML = cPoolFrame({
-    title: 'Today', crumb: 'Admissions',
+    title: 'Today',
     act: `<a class="c-planned" href="#/journey" onclick="cGoPeople({ stage: 'open' });return false"><b>${D.pct}%</b> planned <small>${D.open.length - D.none.length} of ${D.open.length} open people have a next step</small></a>`,
-    band: cPoolBand('Today', groups.map((g) => ({ id: g.id, label: g.label, n: g.rows.length, tone: g.tone })), C_TP.col, 'cTodayPick'),
+    band: cPoolCards('Today', 'Needs you', groups.map((g) => ({ id: g.id, label: g.label, n: g.rows.length, tone: g.tone, lit: !C_TP.col && NOW.includes(g.id) })), C_TP.col, 'cTodayPick'),
     filters: cPoolFilters('today', [
       cPoolSelect('Programme', C_TP.programme, progs.map((v) => [v, v === cNotSaid ? 'not recorded' : v]), 'C_TP.programme=this.value;cTodayPool()'),
-      cPoolSelect('Stage', C_TP.stage, stages.map((st) => [st.id, st.label || st.id]), 'C_TP.stage=this.value;cTodayPool()')],
-      C_TP.programme || C_TP.stage ? "C_TP.programme='';C_TP.stage='';cTodayPool()" : ''),
+      cPoolSelect('Stage', C_TP.stage, stages.map((st) => [st.id, st.label || st.id]), 'C_TP.stage=this.value;cTodayPool()'),
+      cPoolSelect('Source', C_TP.source, sources, 'C_TP.source=this.value;cTodayPool()')],   // Admissions 05.10: Source on Today too
+      C_TP.programme || C_TP.stage || C_TP.source ? "C_TP.programme='';C_TP.stage='';C_TP.source='';cTodayPool()" : ''),
     body: shown.map((g) => `<div class="c-sheet c-nextsheet p-rows" id="p-${g.id}"><h3>${g.label}<b${g.tone && g.rows.length && g.tone !== 'none' ? ` class="c-count ${g.tone}"` : ''}>${g.rows.length}</b></h3>${
       g.rows.map(g.fn).join('') || '<div class="c-empty">Nobody here.</div>'}</div>`).join(''),
   });
@@ -3600,15 +3566,15 @@ function cInboxPool() {
   const ok = (r) => (!C_IP.channel || r.channel === C_IP.channel) && (!C_IP.kind || r.senderKind === C_IP.kind);
   const rows = D.rows.filter(ok);
   const cols = [['today', 'Today'], ['yesterday', 'Yesterday'], ['week', 'This week'], ['older', 'Older']]
-    .map(([id, label]) => ({ id, label, n: rows.filter((r) => cInboxAge(r.received_at) === id).length }));
+    .map(([id, label]) => ({ id, label, n: rows.filter((r) => cInboxAge(r.received_at) === id).length, tone: 'age-' + id }));
   const shown = C_IP.col ? rows.filter((r) => cInboxAge(r.received_at) === C_IP.col) : rows;
   const chans = [...new Set(D.rows.map((r) => r.channel))].sort().map((c) => [c, channelLabel(c)]);
   const row = (r) => D.leadRow(r, 'cInboxPool()', C_IP.show === 'new');
   $('#view').innerHTML = cPoolFrame({
-    title: 'Inbox', crumb: 'Admissions',
+    title: 'Inbox',
     band: cPoolBand('Inbox', cols, C_IP.col, 'cInboxPick'),
     filters: cPoolFilters('the inbox', [
-      cPoolSelect('Channel', C_IP.channel, chans, 'C_IP.channel=this.value;cInboxPool()'),
+      cPoolSelect('Source', C_IP.channel, chans, 'C_IP.channel=this.value;cInboxPool()'),   // Admissions 05.10: filter by source
       cPoolSelect('Kind', C_IP.kind, C_IP_KIND, 'C_IP.kind=this.value;cInboxPool()'),
       `<label class="c-jf${C_IP.show !== 'new' ? ' on' : ''}"><span>Show</span><select aria-label="Show" onchange="C_IP.show=this.value;C_LOPEN=null;viewLeadsC()">${
         C_IP_SHOW.map(([v, t]) => `<option value="${v}"${C_IP.show === v ? ' selected' : ''}>${t}</option>`).join('')}</select></label>`],
@@ -3624,6 +3590,7 @@ function cInboxPool() {
 // Not proceeding. No column chosen = everyone (search and Add lead). List is the default view; Board is the stage
 // board the Journey had.
 let C_JP = { col: null, view: 'list' };
+let C_JPMORE = false;
 let C_JPD = null;
 function cPoolViewSwitch() {
   return `<div class="c-seg p-view" role="group" aria-label="View"><button aria-pressed="${C_JP.view === 'list'}" onclick="C_JP.view='list';viewJourneyPool()">List</button><button aria-pressed="${C_JP.view === 'board'}" onclick="C_JP.view='board';viewJourneyC()">Board</button></div>`;
@@ -3635,6 +3602,7 @@ function cPoolRouteJourney(page) {
   if (page === 'outcomes') C_JP.col = C_OUTCOME;
   if (page === 'journey' && (C_JF.stage || []).length === 1) { C_JP.col = C_JF.stage[0]; C_JF = C_JF_EMPTY(); C_JP.view = 'list'; }
   const st = C_PF.stage || '';
+  if (page === 'people' && !st && !C_PCOHORT && location.hash !== '#/journey') C_JP.col = null;
   if (st && st !== 'open') {
     if (st.startsWith('tag:')) { C_JP.col = roles.closed || 'Not proceeding'; C_OUT_TAG = st.slice(4); } else C_JP.col = st;
     C_PF.stage = '';
@@ -3687,15 +3655,19 @@ function cDrawJourneyPool() {
   const sources = distinct('source_channel').sort((a, b) => a.localeCompare(b));
   const name = (k, v) => (v === cNotSaid ? 'not recorded' : k === 'source' ? channelLabel(v) : v);
   const box = (k, label, values) => cPoolSelect(label, C_PF[k], values, `C_PF.${k}=this.value;cDrawJourneyPool()`);
-  const tags = (CFG.closedTags || []).map((t) => [t.id, t.label || t.id]);
+  const tags = (CFG.closedTags || []).map((t) => [t.id, t.label || t.id, people.filter((p) => p.status === closed && p.closed_tag === t.id).length])
+    .filter(([, , n]) => n > 0).map(([id, label, n]) => [id, `${label} ${n}`]);   // a tag nobody carries is not offered
+  // ONE LINE at 1440: three on show, the rest behind More filters (open by itself while one of them is set)
+  const more = C_JPMORE || Boolean(C_PF.owner || C_PF.data || C_PF.arrived);
   const boxes = [
     box('programme', 'Programme', progs.map((v) => [v, name('programme', v)])),
     box('due', 'Next step', C_PF_DUE),
-    box('owner', 'Owner', owners.map((v) => [v, name('owner', v)])),
     box('source', 'Came from', sources.map((v) => [v, name('source', v)])),
-    box('data', 'Details', C_PF_DATA),
-    box('arrived', 'Arrived', [...new Set(people.map((p) => cDay(p.created_at).slice(0, 4)).filter(Boolean))].sort().reverse().map((y) => [y, y])),
-    isNp && tags.length ? cPoolSelect('Cold / Reject', C_OUT_TAG || '', tags, 'C_OUT_TAG=this.value||null;C_OUT_REASON=null;cDrawJourneyPool()') : ''];
+    isNp && tags.length ? cPoolSelect('Cold / Reject', C_OUT_TAG || '', tags, 'C_OUT_TAG=this.value||null;C_OUT_REASON=null;cDrawJourneyPool()') : '',
+    more ? box('owner', 'Owner', owners.map((v) => [v, name('owner', v)])) : '',
+    more ? box('data', 'Details', C_PF_DATA) : '',
+    more ? box('arrived', 'Arrived', [...new Set(people.map((p) => cDay(p.created_at).slice(0, 4)).filter(Boolean))].sort().reverse().map((y) => [y, y])) : '',
+    `<button type="button" class="btn sm ghost p-more" aria-expanded="${more}" onclick="C_JPMORE=!${more};cDrawJourneyPool()">${more ? 'Fewer filters' : 'More filters'}</button>`];
   const any = Object.entries(C_PF).some(([k, v]) => k !== 'stage' && v) || (isNp && C_OUT_TAG);
   const chips = [
     C_PF.stage === 'open' ? `<div class="c-filter">Open people only <button class="btn sm ghost" onclick="C_PF.stage='';cDrawJourneyPool()">Everyone ✕</button></div>` : '',
@@ -3706,21 +3678,26 @@ function cDrawJourneyPool() {
     const step = p.status === closed ? `${p.closed_tag ? cTagChip(p.closed_tag) : ''}${cColdWhy(p)}`
       : p.status === admitted ? `Admitted${p.admitted_at ? ' ' + fmtDate(p.admitted_at) : ''}`
       : t ? cStepIcon(t.label) + esc(cTask(t.label)) : cSisHolds(p) ? cSisHeld(p) : '';
-    return `<div class="c-line${open && !t && !cSisHolds(p) ? ' is-none' : ''}" tabindex="0" onclick="location.hash='#/person/${esc(p.id)}'">
+    // a click opens the row in place, People's edit (name, contact, programme, stage, next step, notes); the person
+    // page is one more click from there
+    return `<div class="c-line${open && !t && !cSisHolds(p) ? ' is-none' : ''}${C_PEDIT === p.id ? ' c-sel' : ''}" tabindex="0" onclick="C_PEDIT=${C_PEDIT === p.id ? 'null' : `'${esc(p.id)}'`};C_PMSG='';cDrawJourneyPool()">
       <div class="c-who"><b>${esc(p.name)}</b><small class="c-reach ${p.email || p.phone ? '' : 'c-gap'}">${p.email || p.phone ? cReach(p) : 'no contact details'}</small>${p.status === closed ? cSameMark(p, people) : ''}</div>
       <div class="c-what"><span class="p-stage">${esc(cStage(p.status))}</span> · ${esc(p.programme || 'programme not said')}<small class="p-step">${step}</small></div>
       <div class="c-when">${t ? `<span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span>` : ''}</div>
-      <div class="c-acts">${open && !t && !cSisHolds(p) ? cChooseNext(p.id) : ''}</div></div>`; };
+      <div class="c-acts">${open && !t && !cSisHolds(p) ? cChooseNext(p.id) : ''}</div></div>
+      ${C_PEDIT === p.id ? `<div class="c-edit p-edit">${cEditForm(p, t)}</div>` : ''}`; };
   const np = people.filter((p) => p.status === closed);
   $('#view').innerHTML = cPoolFrame({
     title: 'Journey',
     act: `${cPoolViewSwitch()}<input class="c-search" id="cPQ" placeholder="Search name, email or phone" value="${esc(C_PQ)}" aria-label="Search people"><button class="btn" onclick="openAdd()">Add lead</button><button class="btn ghost" onclick="openExport()">Download</button>`,
     band: cPoolBand('The journey', cols, C_JP.col, 'cJourneyPick'),
-    filters: cPoolFilters('people', boxes, any ? "C_PF=C_PF_EMPTY();C_OUT_TAG=null;cDrawJourneyPool()" : '') + chips,
-    body: cPoolRows(list, row, 'Nobody matches. Remove a filter to widen the list.')
+    filters: cPoolFilters('people', boxes, any ? "C_PF=C_PF_EMPTY();C_OUT_TAG=null;cDrawJourneyPool()" : '') + chips + (C_PMSG ? `<div class="c-filter">${esc(C_PMSG)}</div>` : ''),
+    // Cold or Reject: one card per programme, what a campaign is aimed at (D-C8, the owner's pick 05.10.2026)
+    body: (isNp && C_OUT_TAG ? cColdGroups(list, people) : cPoolRows(list, row, 'Nobody matches. Remove a filter to widen the list.'))
       + (isNp && !C_OUT_TAG ? cReasonBreakdown(np, np.filter((p) => !p.closed_reason).length) : ''),
   });
   const q = $('#cPQ'); if (q) q.addEventListener('input', () => { const pos = q.selectionStart; C_PQ = q.value; cDrawJourneyPool(); const n = $('#cPQ'); n.focus(); n.setSelectionRange(pos, pos); });
+  if (C_PSCROLL) { C_PSCROLL = false; const r = document.querySelector('.p-rows .c-sel'); if (r) r.scrollIntoView({ block: 'center' }); }
   cPoolWire();
   cPoolOpened('journey');
 }
@@ -3743,45 +3720,18 @@ const cClosedStage = () => (CFG.stageRoles || {}).closed;
 // exactly the filter that counts it, so the count on arrival is the figure.
 function cGoPeople(filter) {
   C_PF = { ...C_PF_EMPTY(), ...filter }; C_PQ = ''; C_PEDIT = null; C_PMSG = ''; C_PTAB = 'all';
-  if (globalThis.C_POOL) { C_JP.col = null; C_JP.view = 'list'; if (location.hash === '#/journey') cPoolRouteJourney('people'); else location.hash = '#/journey'; return; }
-  if (location.hash === '#/people' && C_PDATA) cDrawPeople(); else location.hash = '#/people';
+  if (filter && filter.due === 'none' && Object.keys(filter).length === 1) {   // Home's No next step: the Today card
+    C_PF = C_PF_EMPTY(); C_TP.col = 'none'; if (location.hash === '#/today') viewTodayC(); else location.hash = '#/today'; return;
+  }
+  C_JP.col = null; C_JP.view = 'list';
+  if (location.hash === '#/journey') cPoolRouteJourney('people'); else location.hash = '#/journey';
 }
 // Journey's Edit opens the same person in People, unfiltered, scrolled to the row.
-function cEditFromJourney(id) { C_PF = C_PF_EMPTY(); C_PQ = ''; C_PEDIT = id; C_PMSG = ''; C_PSCROLL = true; C_PTAB = 'all'; if (location.hash === '#/people/all') viewPeopleC(); else location.hash = '#/people/all'; }
-async function viewPeopleC() {
-  const [people, tasks] = await Promise.all([cPeopleRows(), api('/api/tasks?scope=open')]);
-  const taskOf = new Map(); tasks.forEach((t) => { if (!taskOf.has(t.person_id)) taskOf.set(t.person_id, t); });
-  C_PDATA = { people, taskOf };
-  cDrawPeople();
-}
-function cDrawPeople() {
-  const { people, taskOf } = C_PDATA;
-  const known = new Set(CFG.programmes || []);
-  let ps = people.filter((p) => cPeopleMatch(p, taskOf.get(p.id), C_PF, known));
-  if (C_PCOHORT) ps = ps.filter((p) => C_PCOHORT.ids.has(p.id));
-  if (C_PQ) { const q = C_PQ.toLowerCase(); ps = ps.filter((p) => [p.name, p.email, p.phone].some((v) => String(v || '').toLowerCase().includes(q))); }
-  const narrowed = Object.values(C_PF).some(Boolean) || C_PQ || C_PCOHORT;
-  const explain = narrowed ? `${ps.length} of ${people.length} people` : `All ${people.length} people.`;
-  const contact = (p) => [p.email, p.phone].filter(Boolean).join(' · ');
-  const row = (p) => { const t = taskOf.get(p.id); const open = !C_TERMINAL.includes(p.status);
-    return `<tr class="row${C_PEDIT === p.id ? ' c-sel' : ''}" tabindex="0" onclick="C_PEDIT=${C_PEDIT === p.id ? 'null' : `'${esc(p.id)}'`};C_PMSG='';cDrawPeople()">
-      <td class="c-name"><b>${esc(p.name)}</b><small class="c-reach ${contact(p) ? '' : 'c-gap'}">${contact(p) ? cReach(p) : 'no contact details'}</small></td>
-      <td>${esc(p.programme || '-')}${p.programme && !known.has(p.programme) ? ' <span class="c-tag">not in list</span>' : ''}</td>
-      <td>${esc(cStage(p.status))}</td>
-      <td class="${t || cSisHolds(p) ? '' : 'c-gap'}">${t ? cStepIcon(t.label) + esc(cTask(t.label)) : (open ? (cSisHolds(p) ? cSisHeld(p) : 'No next step') : '-')}</td>
-      <td>${t ? `<span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span>` : ''}</td></tr>
-      ${C_PEDIT === p.id ? `<tr class="c-edit"><td colspan="5">${cEditForm(p, t)}</td></tr>` : ''}`; };
-  $('#view').innerHTML = `<div class="c-head"><div><h1>People</h1></div>
-      <div class="act"><input class="c-search" id="cPQ" placeholder="Search name, email or phone" value="${esc(C_PQ)}" aria-label="Search people"><button class="btn" onclick="openAdd()">Add lead</button></div></div>
-    ${cPeopleFilters(people)}
-    ${C_PCOHORT ? `<div class="c-filter c-cohort">${esc(C_PCOHORT.label)} <button class="btn sm ghost" onclick="C_PCOHORT=null;cDrawPeople()">Show everyone ✕</button></div>` : ''}
-    <p class="c-explain">${explain}</p>
-    ${C_PMSG ? `<div class="c-filter">${esc(C_PMSG)}</div>` : ''}
-    <div class="c-sheet c-scroll"><table class="c-pt"><thead><tr><th>Name</th><th>Programme</th><th>Stage</th><th>Next step</th><th>When</th></tr></thead>
-      <tbody>${ps.map(row).join('') || '<tr><td colspan="5" class="c-empty">Nobody matches. Remove a filter to widen the list.</td></tr>'}</tbody></table></div>`;
-  if (C_PSCROLL) { C_PSCROLL = false; const r = document.querySelector('tr.c-sel'); if (r) r.scrollIntoView({ block: 'center' }); }
-  const s = $('#cPQ'); if (s) s.addEventListener('input', () => { const pos = s.selectionStart; C_PQ = s.value; cDrawPeople(); const n = $('#cPQ'); n.focus(); n.setSelectionRange(pos, pos); });
-}
+// EDIT IN PLACE (Admissions 05.10: editing a person threw them to the People page; edit right on the Journey). On the
+// Board the opened card turns into the same edit form, right there; on the List the row opens it.
+function cEditRedraw() { if (C_JP.view === 'board' && C_JDATA) cDrawJourney(); else cDrawJourneyPool(); }
+function cEditFromJourney(id) { if (C_JP.view === 'board' && C_JDATA) { C_PEDIT = id; C_PMSG = ''; C_JSEL = id; return cDrawJourney(); }
+  C_PF = C_PF_EMPTY(); C_PQ = ''; C_PEDIT = id; C_PMSG = ''; C_PSCROLL = true; C_PTAB = 'all'; C_JP.col = null; C_JP.view = 'list'; if (location.hash === '#/journey') viewJourneyPool(); else location.hash = '#/journey'; }
 // The People filters: the Journey's compact dropdowns (same look, same Clear), and they combine.
 const C_PF_DUE = [['over', 'Overdue'], ['today', 'Today'], ['none', 'No next step']];
 const C_PF_DATA = [['nocontact', 'No email or phone'], ['odd', 'Programme not in the list']];
@@ -3804,31 +3754,6 @@ function cPeopleMatch(p, t, f, known) {
   const one = (v) => (v ? [v] : []);
   return cJourneyMatch(p, t, { programme: one(f.programme), due: [], owner: one(f.owner), source: one(f.source) });
 }
-function cPeopleFilters(people) {
-  const distinct = (key) => [...new Set(people.map((p) => p[key] || cNotSaid))];
-  const known = CFG.programmes || [];
-  const progs = distinct('programme').sort((a, b) => (known.indexOf(a) + 1 || 99) - (known.indexOf(b) + 1 || 99) || a.localeCompare(b));
-  const owners = [...new Set([...(CFG.owners || []), ...distinct('owner')])];
-  const sources = distinct('source_channel').sort((a, b) => a.localeCompare(b));
-  const closed = (CFG.stageRoles || {}).closed || 'Not proceeding';
-  const stages = [['open', 'Open'], ...(CFG.stages || []).map((s) => [s.id, s.label || s.id]),
-    ...(CFG.closedTags || []).map((t) => ['tag:' + t.id, closed + ' · ' + (t.label || t.id)])];
-  const name = (k, v) => (v === cNotSaid ? 'not recorded' : k === 'source' ? channelLabel(v) : v);
-  const box = (k, label, values) => `<label class="c-jf${C_PF[k] ? ' on' : ''}"><span>${label}</span><select aria-label="${label}" onchange="C_PF.${k}=this.value;cDrawPeople()">
-      <option value="">All</option>${values.map(([v, t]) => `<option value="${esc(v)}"${C_PF[k] === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`;
-  const any = Object.values(C_PF).some(Boolean);
-  return `<div class="c-jfilters" role="group" aria-label="Filter people">
-    <svg class="c-jf-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3.5h11l-4.2 5v4l-2.6 1.2V8.5z"/></svg>
-    ${box('stage', 'Stage', stages)}
-    ${box('programme', 'Programme', progs.map((v) => [v, name('programme', v)]))}
-    ${box('due', 'Next step', C_PF_DUE)}
-    ${box('owner', 'Owner', owners.map((v) => [v, name('owner', v)]))}
-    ${box('source', 'Came from', sources.map((v) => [v, name('source', v)]))}
-    ${box('data', 'Details', C_PF_DATA)}
-    ${box('arrived', 'Arrived', [...new Set(people.map((p) => cDay(p.created_at).slice(0, 4)).filter(Boolean))].sort().reverse().map((y) => [y, y]))}
-    ${any ? `<button class="btn sm ghost c-jf-clear" onclick="C_PF=C_PF_EMPTY();cDrawPeople()">Clear</button>` : ''}
-  </div>`;
-}
 function cEditForm(p, t) {
   const progs = ['', ...(CFG.programmes || [])]; if (p.programme && !progs.includes(p.programme)) progs.push(p.programme);
   const stages = CFG.stages || [];
@@ -3846,7 +3771,7 @@ function cEditForm(p, t) {
       : open ? `<label for="pe-next">Next step</label><div class="c-steprow"><select id="pe-next"><option value="">No next step</option>${nextActionOptions(null, p.status)}</select><input id="pe-ndue" type="date" value="${cTodayIso()}" aria-label="Due date"></div>` : '<label>Next step</label>'}</div>
     <div class="c-wide"><label for="pe-notes">Notes</label><textarea id="pe-notes" rows="4" oninput="this.nextElementSibling.textContent=this.value.length+' characters'">${esc(p.notes || '')}</textarea><div class="c-hint">${(p.notes || '').length} characters</div></div>
     <div id="pe-err" class="c-wide"></div>
-    <div class="c-wide c-row-acts"><button class="btn" onclick="cSavePerson('${esc(p.id)}')">Save</button><button class="btn ghost" onclick="C_PEDIT=null;cDrawPeople()">Cancel</button><a class="btn ghost" href="#/person/${esc(p.id)}" style="margin-left:auto">Open person details →</a></div>
+    <div class="c-wide c-row-acts"><button class="btn" onclick="cSavePerson('${esc(p.id)}')">Save</button><button class="btn ghost" onclick="C_PEDIT=null;cEditRedraw()">Cancel</button><a class="btn ghost" href="#/person/${esc(p.id)}" style="margin-left:auto">Open person details →</a></div>
   </div>`;
 }
 async function cSavePerson(id) {
@@ -3871,7 +3796,8 @@ async function cSavePerson(id) {
     if (t) { const due = v('#pe-due'); if (due && due !== cDay(t.due_at)) await post(`/api/tasks/${Number(t.id)}/reschedule`, { due }); }
     else { const label = v('#pe-next'); if (label) await post(`/api/people/${id}/task`, { label, due: v('#pe-ndue') }); }
     C_PEDIT = null; C_PMSG = `Saved ${p.name}.`;
-    await viewPeopleC(); cNavCounts();
+    if (C_JP.view === 'board') await viewJourneyC(); else await viewJourneyPool();
+    cNavCounts();
   } catch (e) { err(e.message); }
 }
 
@@ -3898,6 +3824,7 @@ async function viewJourneyC() {
   // play: the band's ONE scene runs on arrival only. A filter click redraws the board, and a
   // band that re-animated on every click would be motion for its own sake.
   C_JDATA = { people, taskOf, arrived, year, play: true };
+  C_PDATA = { people, taskOf };   // what the in-place edit saves against (Admissions 05.10)
   cDrawJourney();
   C_JDATA.play = false;
 }
@@ -4383,7 +4310,7 @@ function cJColumn(stageId, ps, taskOf, sel) {
   if (!open && sel && sorted.includes(sel) && !shown.includes(sel)) shown = [...shown, sel];
   const rest = sorted.length - shown.length;
   const cards = shown.map((p) => (sel && p.id === sel.id
-    ? `<div class="c-jexp" data-id="${esc(p.id)}"><button type="button" class="c-jexp-x" aria-label="Close" onclick="event.stopPropagation();cJClose()">✕</button>${cPersonCard(p, taskOf.get(p.id))}</div>`
+    ? `<div class="c-jexp" data-id="${esc(p.id)}"><button type="button" class="c-jexp-x" aria-label="Close" onclick="event.stopPropagation();cJClose()">✕</button>${C_PEDIT === p.id ? `<div class="c-card c-jedit">${cEditForm(p, taskOf.get(p.id))}</div>` : cPersonCard(p, taskOf.get(p.id))}</div>`
     : cJourneyCard(p, taskOf.get(p.id), sel))).join('');
   const more = rest > 0
     ? `<button type="button" class="c-jmore" onclick="event.stopPropagation();cJColToggle('${esc(stageId)}')">${rest} more</button>`
@@ -4407,7 +4334,7 @@ function cJFlipMeasure() {
   return m;
 }
 function cJOpen(id) { C_JFLIP = cJFlipMeasure(); C_JSEL = id; cDrawJourney(); }
-function cJClose() { if (!C_JSEL) return; C_JFLIP = cJFlipMeasure(); C_JSEL = null; cDrawJourney(); }
+function cJClose() { if (!C_JSEL) return; C_PEDIT = null; C_JFLIP = cJFlipMeasure(); C_JSEL = null; cDrawJourney(); }
 function cJFlipPlay() {
   const before = C_JFLIP; C_JFLIP = null;
   const still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -4443,8 +4370,7 @@ function cDrawJourney() {
     cJourneyTalk(sel.id).then(() => { if (C_JTALK.has(sel.id)) cDrawJourney(); });
   }
   $('#view').innerHTML = `
-    ${globalThis.C_POOL ? `<div class="c-head"><div><h1>Journey</h1></div><div class="act">${cPoolViewSwitch()}<button class="btn" onclick="openAdd()">Add lead</button></div></div>` : `<p class="c-crumb"><a href="#/people">People</a></p>
-    <div class="c-head"><div><h1>Journey</h1></div><div class="act"><button class="btn" onclick="openAdd()">Add lead</button></div></div>`}
+    <div class="c-head"><div><h1>Journey</h1></div><div class="act">${cPoolViewSwitch()}<button class="btn" onclick="openAdd()">Add lead</button></div></div>
     ${cJourneySummary(everyone, taskOf, stages)}
     ${cJourneyFilters(everyone)}
     <div class="c-journey c-nosel">${sel ? '<div class="c-jveil" onclick="cJClose()"></div>' : ''}<div style="min-width:0">
@@ -4922,7 +4848,11 @@ function cGoCohort(k) {
   if (!c) return;
   C_PCOHORT = { label: c.label, ids: new Set(c.ids) };
   C_PF = C_PF_EMPTY(); C_PQ = ''; C_PEDIT = null; C_PMSG = ''; C_PTAB = 'all';
-  if (location.hash === '#/people') viewPeopleC(); else location.hash = '#/people';
+  // the right column too: a cohort whose people all stand in one stage opens on that column (Q47)
+  const st = [...new Set(c.ids.map((id) => C_STAGE_OF.get(id)).filter(Boolean))];
+  C_JP.col = st.length === 1 ? st[0] : null; C_JP.view = 'list'; C_OUT_TAG = null; C_OUT_REASON = null; C_OUT_FILTER = null;
+  // through #/people: the route keeps a cohort there, and a menu click to #/journey lets it go
+  if (location.hash === '#/people') viewJourneyPool(); else location.hash = '#/people';
 }
 
 // apply.novikontas.org, from the SIS's web-stats (the owner's popup A, 01.10.2026: a section on Reports).

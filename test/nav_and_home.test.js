@@ -27,11 +27,13 @@ const place = (() => {
   return ctx.place;
 })();
 
-test('the menu is grouped, and the hairline is the established pattern', () => {
+test('the menu is flat, in his order', () => {
   const nav = APP.slice(APP.indexOf('<div class="cnav"'), APP.indexOf('</div>`);', APP.indexOf('<div class="cnav"')));
   const labels = [...nav.matchAll(/<span>([A-Za-z ]+)<\/span>/g)].map((m) => m[1]);
-  assert.deepEqual(labels, ['Home', 'Admissions', 'Today', 'Inbox', 'People', 'Journey', 'Outcomes', 'Reports', 'Settings']);   // locked 05.10.2026: Outcomes back after Journey; People itself is everyone
-  assert.equal((nav.match(/class="kids"/g) || []).length, 2, 'two groups: Admissions and People');
+  // Q47 (the owner, 05.10.2026: "Make it Inbox> today> Journey> ..."): no groups; Journey is People + Journey +
+  // Outcomes in one, Outcomes its last two columns
+  assert.deepEqual(labels, ['Home', 'Inbox', 'Today', 'Journey', 'Reports', 'Settings']);
+  assert.equal((nav.match(/class="kids"/g) || []).length, 0, 'no groups');
   // the hairline itself, unchanged from the established rule
   assert.match(APP, /html\.ui-c \.cnav \.kids\{margin:1px 0 6px 18px;padding-left:10px;border-left:1px solid var\(--rule\)\}/,
     'the established INTAKE hairline, not a new one');
@@ -39,7 +41,7 @@ test('the menu is grouped, and the hairline is the established pattern', () => {
 
 test('every menu item carries its locked icon', () => {
   const nav = APP.slice(APP.indexOf('<div class="cnav"'), APP.indexOf('</div>`);', APP.indexOf('<div class="cnav"')));
-  for (const k of ['C_ICON.home', 'C_ICON.adm', 'C_ICON.ppl', 'C_ICON.rep', 'C_ICON.set']) {
+  for (const k of ['C_ICON.home', 'C_ICON.inbox', 'C_ICON.next', 'C_ICON.journey', 'C_ICON.rep', 'C_ICON.set']) {
     assert.ok(nav.includes('${' + k + '}'), k + ' is on its menu item');
   }
   // the five locked ones are untouched; Reports is marked provisional where it is defined
@@ -65,13 +67,13 @@ test('every old hash still resolves, and lands in the right place', () => {
 test('Home is the metrics page and Today is the work; neither does the other job', () => {
   // Home is viewHomeC, its loader and B, the locked Home (02.10.2026)
   const home = ['async function viewHomeC(', 'async function cHomeData(', 'function cHomeB('].map(fn).join('\n');
-  const today = fn('async function viewTodayC(');
+  const today = fn('async function viewTodayC(') + fn('function cTodayPool(');
 
   assert.match(home, /\/api\/report\?from=/, 'Home reads the report');
   assert.match(fn('function cHomeB('), /kstrip/, 'B carries the KPI strip as cards');
   assert.ok(!home.includes("sect('Overdue'"), 'Home does not list the work');
 
-  assert.match(today, /<h1>Today<\/h1>/);
+  assert.match(today, /title: 'Today'/, 'the frame titles it Today (Q47)');
   for (const section of ['Overdue', 'Due today', 'Coming up', 'No next step']) {
     assert.ok(today.includes(`'${section}'`), section + ' is still a section on Today');
   }
@@ -82,18 +84,22 @@ test('Home is the metrics page and Today is the work; neither does the other job
 // cChartGo is how a chart click opens the people behind the number. Removing Outcomes
 // from the MENU must not take the screen away, or that drill-down breaks silently.
 test('the Outcomes screen is still reachable, though it is not in the menu', () => {
-  assert.match(fn('async function routeC('), /if \(page === 'outcomes'\) return viewOutcomesC\(\);/);
+  // Q47: #/outcomes opens the Journey on the outcome asked for
+  assert.match(fn('async function routeC('), /if \(place === 'people'\) return cPoolRouteJourney\(page\);/);
+  assert.match(fn('function cPoolRouteJourney('), /if \(page === 'outcomes'\) C_JP\.col = C_OUTCOME;/);
   assert.match(fn('function cChartGo('), /location\.hash = '#\/outcomes'/);
 });
 
 // The owner, 05.10.2026: "All people can show up, when we click ON the People tab itself. Than we can click
 // Journey and Outcomes." People is everyone; Journey and Outcomes are its two children; no tab row.
-test('People is everyone, Journey and Outcomes are its children, and there is no tab row', () => {
-  const route = fn('async function routeC(');
-  assert.match(route, /if \(page === 'journey'\) \{ C_PTAB = 'journey'; return viewJourneyC\(\); \}\s*C_PTAB = 'all';\s*return viewPeopleC\(\);/,
-    '#/people and #/people/all open everyone, #/journey the Journey');
+test('Journey is everyone: People, Journey and Outcomes are one screen, and there is no tab row', () => {
+  // Q47 (the owner, 05.10.2026: "maybe we can combine, the people with Journey? Just call it Journey then??")
+  const route = fn('function cPoolRouteJourney(');
+  assert.match(route, /if \(page === 'people' && !st && !C_PCOHORT && location\.hash !== '#\/journey'\) C_JP\.col = null;/,
+    '#/people and #/people/all open everyone');
+  assert.match(route, /if \(C_JP\.view === 'board' && page === 'journey'\) return viewJourneyC\(\);\s*return viewJourneyPool\(\);/, 'List, or the Board');
   assert.doesNotMatch(APP, /cPeopleTabs|class="c-ptabs"/, 'the Journey | All people tab row is gone');
-  assert.match(fn('function cDrawJourney('), /<p class="c-crumb"><a href="#\/people">People<\/a><\/p>\s*<div class="c-head"><div><h1>Journey<\/h1>/);
+  assert.doesNotMatch(APP, /function viewPeopleC\(|function cDrawPeople\(/, 'the separate People page is gone');
 });
 
 // Q38, the owner 05.10.2026: "center the help center." In the menu foot the link sits on the theme switch's centre line.
