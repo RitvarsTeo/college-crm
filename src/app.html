@@ -1517,22 +1517,18 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .kstrip .ktgt-n .ktgt-who{display:inline;font-size:12px;font-weight:600;letter-spacing:.02em;color:var(--t3)}
   html.ui-c .ktgt-n strong{font-weight:700;color:var(--ink)}
   html.ui-c .ktgt-n strong.ktgt-goal{color:var(--ink);box-shadow:inset 0 -2px 0 var(--v-tgt)}
-  /* THE EMPTY BAND UNDER NEEDS YOU (Q20 A/B, ?gap=1|2): Needs you is shorter than The journey now, which left an
-     empty band above the KPI cards. 1: the journey compacts into two columns and both cards end on one line.
-     2: Needs you stretches to the journey's height, its figures centred in it. */
-  html.ui-c .kday.gap-1,html.ui-c .kday.gap-2{align-items:stretch}
-  html.ui-c .kday.gap-1{grid-template-columns:minmax(0,1fr) 340px}   /* two columns of stages need the room */
-  html.ui-c .kday.gap-1 .kday-side{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:10px;align-content:start;padding:12px 14px 10px}
-  html.ui-c .kday.gap-1 .kday-side h3,html.ui-c .kday.gap-1 .kgrp-go{grid-column:1 / -1}
-  html.ui-c .kday.gap-1 .kday-st{padding:3px 4px}
-  html.ui-c .kday.gap-1 .kgrp-go{margin-top:4px;padding-top:6px}
-  html.ui-c .kday.gap-2 .kday-sheet{display:flex;flex-direction:column}
-  html.ui-c .kday.gap-2 .kday-row{flex:1;align-items:center}
+  /* THE EMPTY BAND UNDER NEEDS YOU (Q20, the owner 05.10.2026 picked option 1): The journey now lays its stages
+     in two columns so both cards end on one line. */
+  html.ui-c .kday.kday-fit{align-items:stretch;grid-template-columns:minmax(0,1fr) 340px}   /* two columns of stages need the room */
+  html.ui-c .kday-fit .kday-side{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:10px;align-content:start;padding:12px 14px 10px}
+  html.ui-c .kday-fit .kday-side h3,html.ui-c .kday-fit .kgrp-go{grid-column:1 / -1}
+  html.ui-c .kday-fit .kday-st{padding:3px 4px}
+  html.ui-c .kday-fit .kgrp-go{margin-top:4px;padding-top:6px}
   html.ui-c .kb-top{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:30px;align-items:start}
   html.ui-c .kb-charts .kthree{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:26px}
   @media (max-width:1100px){ html.ui-c .kb-top{grid-template-columns:minmax(0,1fr)} }
   html.ui-c .ktags{display:flex;flex-wrap:wrap;gap:5px;margin:10px 0 0}
-  @media (max-width:1100px){ html.ui-c .kday,html.ui-c .kday.gap-1{grid-template-columns:minmax(0,1fr)} html.ui-c .kb-charts .kthree{grid-template-columns:minmax(0,1fr) minmax(0,1fr)} }
+  @media (max-width:1100px){ html.ui-c .kday,html.ui-c .kday.kday-fit{grid-template-columns:minmax(0,1fr)} html.ui-c .kb-charts .kthree{grid-template-columns:minmax(0,1fr) minmax(0,1fr)} }
   @media (max-width:760px){ html.ui-c .kb-strip{grid-template-columns:1fr 1fr} html.ui-c .kb-charts .kthree{grid-template-columns:1fr} html.ui-c .kneed b{font-size:34px} }
   /* the kit's per-scene knobs (part 9): when a scene starts and how far apart its pieces are */
   html.ui-c .kflow{--m-delay:.2s;--m-step:90ms}
@@ -2731,11 +2727,8 @@ function cHomeB(D) {
   const need = (label, n, go, href, k) => `<a class="kneed" href="${href}" style="--i:${k}" ${go ? `onclick="${go};return false"` : ''}>
       <span>${esc(label)}</span><b>${cFig(n)}</b></a>`;
   const allDots = D.stages.map((st) => [st, D.open.filter((p) => p.status === st.id).length]);
-  // THE EMPTY BAND UNDER NEEDS YOU (Q20 A/B, ?gap=1|2, the owner 05.10.2026: "lets have a fix for the black space
-  // below needs you card"): 1 compacts The journey now so both cards end on one line, 2 stretches Needs you to it.
-  let gap = '';
-  try { gap = new URLSearchParams(location.search).get('gap') || ''; } catch {}
-  return `<section class="kday m-scene${gap === '1' || gap === '2' ? ' gap-' + gap : ''}" aria-label="Needs you">
+  // kday-fit: no empty band under Needs you (Q20, picked 05.10.2026); the journey in two columns, see the CSS
+  return `<section class="kday kday-fit m-scene" aria-label="Needs you">
       <div class="kday-sheet">
         <h2>Needs you</h2>
         <div class="kday-row">

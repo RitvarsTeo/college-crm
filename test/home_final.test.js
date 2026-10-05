@@ -1,7 +1,7 @@
 // Q20, the owner 05.10.2026: "Todays, but without the admitted by programme. So nothing after Admissions by months
 // below it. AAAAANd lets have a fix for the black space below needs you card." Home ends with the Admissions by
 // month row (the donut stays beside it). Nothing is lost: by programme and where admitted people came from live in
-// Reports. The gap under Needs you is an A/B (?gap=1|2) he picks from pictures.
+// Reports. The gap under Needs you: he picked option 1, the journey in two columns.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -40,13 +40,13 @@ test('nothing lost: Reports has By programme and, for good, Where admitted peopl
   assert.match(out, /<h2>Where admitted people came from<\/h2>.*\[source:phone=2,\(not recorded\)=1\]/s, 'admitted in the period, by channel, a gap said as a gap');
 });
 
-test('the gap under Needs you: ?gap=1 compacts the journey, ?gap=2 stretches Needs you; none = as today', () => {
+test('no empty band under Needs you: the journey in two columns; no switch left', () => {
   const home = fnBody('function cHomeB(D) {');
-  assert.match(home, /get\('gap'\)/);
-  assert.match(home, /<section class="kday m-scene\$\{gap === '1' \|\| gap === '2' \? ' gap-' \+ gap : ''\}"/);
-  assert.match(APP, /html\.ui-c \.kday\.gap-1,html\.ui-c \.kday\.gap-2\{align-items:stretch\}/, 'both end the two cards on one line');
-  assert.match(APP, /html\.ui-c \.kday\.gap-1 \.kday-side\{display:grid;grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\)/, '1: the journey in two columns');
-  assert.match(APP, /html\.ui-c \.kday\.gap-2 \.kday-row\{flex:1;align-items:center\}/, '2: the figures centred in the taller card');
+  assert.match(home, /<section class="kday kday-fit m-scene" aria-label="Needs you">/);
+  assert.doesNotMatch(APP, /get\('gap'\)|\.gap-1|\.gap-2/, 'the A/B switch and option 2 are gone');
+  assert.match(APP, /html\.ui-c \.kday\.kday-fit\{align-items:stretch;grid-template-columns:minmax\(0,1fr\) 340px\}/, 'both cards end on one line');
+  assert.match(APP, /html\.ui-c \.kday-fit \.kday-side\{display:grid;grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\)/, 'two columns of stages');
+  assert.match(APP, /@media \(max-width:1100px\)\{ html\.ui-c \.kday,html\.ui-c \.kday\.kday-fit\{grid-template-columns:minmax\(0,1fr\)\}/, 'one column on a narrow screen');
 });
 
 test('Reports keeps its place in the menu; no switch moves it', () => {

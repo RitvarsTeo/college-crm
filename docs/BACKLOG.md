@@ -14,6 +14,12 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - PICKED: the gap under Needs you = option 1
+
+Ritvars 05.10: "Option 1 for the first" (to MAIN) / "1, but the journey has fixes to do" (to MASTER CONTROL). The Home
+journey card lays its stages in two columns (card 340px) and both top cards end on one line; this is the only layout
+now. `?gap=` and option 2 (Needs you stretched) are removed. 1108/1108. BUILT, next patch.
+
 ## 05.10.2026 - PICKED: the final Home (Q20); the gap under Needs you is an A/B (?gap=1|2)
 
 Ritvars 05.10 (via MASTER CONTROL): "Todays, but without the admitted by programme. So nothing after Admissions by
