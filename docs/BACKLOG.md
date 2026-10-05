@@ -14,6 +14,18 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - Q13 C, D and KPI-first, behind switches (his own ideas), NOT PICKED
+
+Ritvars to MAIN directly, 05.10, after seeing B: "the admissions by month looks way better, so lets have the KPI below
+it, oooooor change this design of displayeing info which is highly horizontal, and put it in the empty space below the
+needs you?" and "I somewhere saw ... a different home view, where the needs you was below the 4 cards ... but i never
+received to vote on those". No such variant is recorded (his 02.10 vote was Journey first vs Today first: "B for home").
+- `?target=c` - the B year card under Admissions by month. `?target=d` - a compact card "Target 2026" in the empty space
+  under Needs you (beside the taller Journey card): Admitted 12 / 140 and NAV + ENG 7 / 98, a meter each.
+- `?first=kpi` - the four KPI cards above Needs you, so he can vote on it with a picture.
+No switch = Home as before. Superseded as a QUESTION by Q19 (Home = vitals only, MASTER CONTROL 05.10); kept until the
+Q19 pick says what to drop. 1103/1103. Shots: `For review/2026-10-05 Q13 target A-B/`.
+
 ## 05.10.2026 - A/B: the cold list for Marketing (D-C8), NOT PICKED
 
 Ritvars 05.10: "For Cold list, also send it to uiux session, and lets see visual A/B's." Brief Q14 via MASTER CONTROL:

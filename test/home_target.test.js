@@ -43,15 +43,19 @@ test('cTarget: 140, and 70% of it = 98 in NAV + ENG, counted from the admitted p
   assert.equal(load().cTarget({ ...D, year: 2027 }), null, 'no target for a year the config does not name');
 });
 
-test('the switch: only ?target=a or ?target=b; with none Home is unchanged', () => {
+test('the switch: only ?target=a|b|c|d; with none Home is unchanged', () => {
   assert.equal(load('').cTargetMode(), '');
   assert.equal(load('?target=a').cTargetMode(), 'a');
   assert.equal(load('?target=b').cTargetMode(), 'b');
-  assert.equal(load('?target=c').cTargetMode(), '');
+  assert.equal(load('?target=c').cTargetMode(), 'c');
+  assert.equal(load('?target=d').cTargetMode(), 'd');
+  assert.equal(load('?target=e').cTargetMode(), '');
   const home = APP.slice(APP.indexOf('function cHomeB(D) {'), APP.indexOf('// A stage on Home opens the Journey'));
   assert.match(home, /\$\{tmode === 'a' && goal \? cTargetMeter\(goal\) : ''\}/);
   assert.match(home, /\$\{tmode === 'b' && goal \? cTargetYear\(D, goal\) : ''\}/);
-  assert.equal((home.match(/cTargetMeter\(|cTargetYear\(/g) || []).length, 2, 'drawn nowhere else on Home');
+  assert.match(home, /\$\{tmode === 'c' && goal \? cTargetYear\(D, goal\) : ''\}\s*<div class="kthree">/, 'C: the year card under Admissions by month');
+  assert.match(home, /\$\{tmode === 'd' && goal \? cTargetMini\(goal, D\.year\) : ''\}/, 'D: the compact card under Needs you');
+  assert.equal((home.match(/cTargetMeter\(|cTargetYear\(|cTargetMini\(/g) || []).length, 4, 'drawn nowhere else on Home');
 });
 
 test('A: each meter fills exactly its share of its own target', () => {
@@ -78,4 +82,18 @@ test('B: cumulative columns on ONE baseline, both target lines on the same scale
   assert.doesNotMatch(svg, /Nov: |Dec: /, 'no column for a month that has not happened');
   assert.doesNotMatch(svg, /\bm-scene\b/, 'no third scene on Home (KB 08 P5: two per tab)');
   assert.match(svg, /<section class="ksec c-sheet ktgt-sec">/, 'a card through the shared CARDS 3 rule, not a rule of its own');
+});
+
+test('D: compact, one column per target, the share filled exactly', () => {
+  const html = load('?target=d').cTargetMini(load().cTarget(D), 2026);
+  assert.match(html, /<h2>Target 2026<\/h2>/);
+  assert.match(html, /<span>Admitted<\/span>\s*<b>4<em> \/ 140<\/em><\/b>/);
+  assert.match(html, /<span>NAV \+ ENG<\/span>\s*<b>3<em> \/ 98<\/em><\/b>/);
+  const widths = [...html.matchAll(/width:([\d.]+)%/g)].map((m) => Number(m[1]));
+  assert.deepEqual(widths, [Number((4 / 140 * 100).toFixed(2)), Number((3 / 98 * 100).toFixed(2))]);
+});
+
+test('?first=kpi puts the four cards above Needs you; without it Needs you stays first (his 02.10 pick)', () => {
+  const home = APP.slice(APP.indexOf('function cHomeB(D) {'), APP.indexOf('// A stage on Home opens the Journey'));
+  assert.match(home, /\$\{first === 'kpi' \? kpis \+ needsYou : needsYou \+ kpis\}/);
 });

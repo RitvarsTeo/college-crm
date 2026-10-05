@@ -1470,6 +1470,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .kb-strip{grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:none}
   html.ui-c .kb-strip > div{display:flex;flex-direction:column;grid-row:auto;grid-template-rows:none}
   html.ui-c .kb-strip > div > .kgo{margin-top:auto;padding-top:6px}
+  html.ui-c .kb-strip.kb-first{margin-bottom:30px}
   /* the cards ARE the frame here; the old dark glass on the strip itself would box them twice */
   html.ui-c[data-theme="dark"] .kstrip.kb-strip{background:none;border:0;padding:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
   html.ui-c .kstrip .kdelta b{display:inline;font-size:12px;margin:0;letter-spacing:0;line-height:inherit}
@@ -1485,6 +1486,21 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .ktgt-n strong.ktgt-goal{color:var(--ink);box-shadow:inset 0 -2px 0 var(--v-tgt)}
   html.ui-c .ktgt-sec{padding:16px 18px 10px}   /* a c-sheet: the card is the shared CARDS 3 rule. No scene of its own: Home keeps two (KB 08 P5) */
   html.ui-c .ktgt-chart .ktgt-col{fill:var(--v-adm)}
+  /* D: the compact card under Needs you, beside the taller Journey card */
+  html.ui-c .kday.has-tgt .kday-sheet{grid-column:1;grid-row:1}
+  html.ui-c .kday.has-tgt .ktgt-mini{grid-column:1;grid-row:2}
+  html.ui-c .kday.has-tgt .kday-side{grid-column:2;grid-row:1 / span 2}
+  html.ui-c .ktgt-mini{margin:0;padding:12px 20px 14px;overflow:visible}
+  html.ui-c .ktgt-mini h2{margin:0 0 8px;font-family:inherit;font-size:12px;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--t3)}
+  html.ui-c .ktm-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  html.ui-c .ktm-col{padding:0 16px;border-left:1px solid #e3e9ef}
+  html.ui-c[data-theme="dark"] .ktm-col{border-left-color:rgba(194,211,222,.14)}
+  html.ui-c .ktm-col:first-child{border-left:0;padding-left:0}
+  html.ui-c .ktm-col > span{display:block;font-size:12.5px;font-weight:600;color:var(--t3)}
+  html.ui-c .ktm-col > b{display:block;font-size:26px;font-weight:750;letter-spacing:-.02em;line-height:1.15;margin:2px 0 6px;color:var(--ink-strong)}
+  html.ui-c .ktm-col > b em{font-style:normal;font-size:15px;font-weight:600;color:var(--t3);letter-spacing:0;box-shadow:inset 0 -2px 0 var(--v-tgt)}
+  html.ui-c .ktm-col.off .ktgt-track i{background:var(--v-off)}
+  html.ui-c .ktm-col > small{display:block;margin-top:5px;font-size:12.5px;font-weight:650;color:var(--ink)}
   html.ui-c .ktgt-chart .ktgt-line{stroke:var(--v-tgt);stroke-width:2.5}
   html.ui-c .ktgt-chart .ktgt-line.off{stroke-dasharray:7 5}
   html.ui-c .ktgt-chart .ktgt-col.off{fill:var(--v-off)}
@@ -1497,7 +1513,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .kb-charts .kthree{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:26px}
   @media (max-width:1100px){ html.ui-c .kb-top{grid-template-columns:minmax(0,1fr)} }
   html.ui-c .ktags{display:flex;flex-wrap:wrap;gap:5px;margin:10px 0 0}
-  @media (max-width:1100px){ html.ui-c .kday{grid-template-columns:minmax(0,1fr)} html.ui-c .kb-charts .kthree{grid-template-columns:minmax(0,1fr) minmax(0,1fr)} }
+  @media (max-width:1100px){ html.ui-c .kday{grid-template-columns:minmax(0,1fr)} html.ui-c .kday.has-tgt :is(.kday-sheet,.ktgt-mini,.kday-side){grid-column:auto;grid-row:auto} html.ui-c .kb-charts .kthree{grid-template-columns:minmax(0,1fr) minmax(0,1fr)} }
   @media (max-width:760px){ html.ui-c .kb-strip{grid-template-columns:1fr 1fr} html.ui-c .kb-charts .kthree{grid-template-columns:1fr} html.ui-c .kneed b{font-size:34px} }
   /* the kit's per-scene knobs (part 9): when a scene starts and how far apart its pieces are */
   html.ui-c .kflow{--m-delay:.2s;--m-step:90ms}
@@ -2615,7 +2631,10 @@ const cHomeChan = (D) => `<section class="ksec"><div class="ksh"><h2>Where admit
 // The figures are config (prototype.json targets[year]: admitted, officerPct, officerProgrammes),
 // never written here. Officer programmes = NAV + ENG (the owner, 05.10.2026). HOW the target sits
 // next to Admitted is an A/B he has not picked, so Home is unchanged until he does: ?target=a puts it
-// in the Admitted card, ?target=b draws the year against it.
+// in the Admitted card, ?target=b draws the year against it under the KPI cards, ?target=c draws the same
+// card under Admissions by month (the owner, 05.10.2026: "the admissions by month looks way better, so lets have
+// the KPI below it"), ?target=d is a compact card in the empty space under Needs you ("or change this design
+// ... which is highly horizontal, and put it in the empty space below the needs you").
 // Blue is the admitted figure, mustard the target. Depth belongs to the frame (the meter's sunk
 // track, the section card), never to the mark; each pair shares one baseline and one exact scale.
 function cTarget(D) {
@@ -2631,7 +2650,7 @@ function cTarget(D) {
 function cTargetMode() {
   let m = '';
   try { m = new URLSearchParams(location.search).get('target') || ''; } catch {}
-  return m === 'a' || m === 'b' ? m : '';
+  return ['a', 'b', 'c', 'd'].includes(m) ? m : '';
 }
 // A: in the card. One track per figure from 0 to its target, the admitted share filled, the target its end.
 function cTargetMeter(G) {
@@ -2639,6 +2658,16 @@ function cTargetMeter(G) {
     <div class="ktgt-track"><i style="width:${Math.min(100, (n / goal) * 100).toFixed(2)}%"></i><s></s></div>
     <div class="ktgt-n">${label ? `<span class="ktgt-who">${esc(label)}</span> <strong>${n}</strong> · ` : ''}<strong>${Math.round((n / goal) * 100)}%</strong> of <strong class="ktgt-goal">${goal}</strong></div></div>`;
   return bar(G.rows.length, G.goal, '', 'all') + (G.off ? bar(G.off.rows.length, G.off.goal, G.off.label, 'off') : '');
+}
+// D: compact, under Needs you. One column per target, split by a hairline like the Needs-you tiles: the
+// figure over its target, the meter, the share.
+function cTargetMini(G, year) {
+  const col = (label, n, goal, cls) => `<div class="ktm-col ${cls}"><span>${esc(label)}</span>
+    <b>${n}<em> / ${goal}</em></b>
+    <div class="ktgt-track"><i style="width:${Math.min(100, (n / goal) * 100).toFixed(2)}%"></i><s></s></div>
+    <small>${Math.round((n / goal) * 100)}%</small></div>`;
+  return `<div class="c-sheet ktgt-mini" role="group" aria-label="Target ${year}"><h2>Target ${year}</h2><div class="ktm-row">
+    ${col('Admitted', G.rows.length, G.goal, 'all')}${G.off ? col(G.off.label, G.off.rows.length, G.off.goal, 'off') : ''}</div></div>`;
 }
 // B: the year so far, cumulative, against the target lines. All twelve months on the axis, so the
 // months still to come are visible as room; only the months that have happened carry columns. Each
@@ -2696,7 +2725,11 @@ function cHomeB(D) {
   const need = (label, n, go, href, k) => `<a class="kneed" href="${href}" style="--i:${k}" ${go ? `onclick="${go};return false"` : ''}>
       <span>${esc(label)}</span><b>${cFig(n)}</b></a>`;
   const allDots = D.stages.map((st) => [st, D.open.filter((p) => p.status === st.id).length]);
-  return `<section class="kday m-scene" aria-label="Needs you">
+  // ?first=kpi (the owner, 05.10.2026, asked to vote on it): the four KPI cards above Needs you. Not picked;
+  // without it Home is the order he picked on 02.10 (Needs you first).
+  let first = '';
+  try { first = new URLSearchParams(location.search).get('first') || ''; } catch {}
+  const needsYou = `<section class="kday m-scene${tmode === 'd' && goal ? ' has-tgt' : ''}" aria-label="Needs you">
       <div class="kday-sheet">
         <h2>Needs you</h2>
         <div class="kday-row">
@@ -2706,18 +2739,20 @@ function cHomeB(D) {
           ${D.noNext ? need('No next step', D.noNext, '', '#/today', 3) : ''}
         </div>
       </div>
+      ${tmode === 'd' && goal ? cTargetMini(goal, D.year) : ''}
       <aside class="kday-side">
         <h3>The journey now</h3>
         ${allDots.map(([st, n], i) => `<a class="kday-st" href="#/journey" onclick="cGoStage('${esc(st.id)}');return false"><span class="c-jn">${i + 1}</span><span>${esc(st.label || st.id)}</span><b>${n}</b></a>`).join('')}
         <a class="kgrp-go" href="#/journey">Open the Journey →</a>
       </aside>
-    </section>
-    <div class="kstrip kb-strip">
+    </section>`;
+  const kpis = `<div class="kstrip kb-strip${first === 'kpi' ? ' kb-first' : ''}">
       <div class="khero"><span>Admitted</span><b>${D.admitted.length}</b><small>${D.year}${D.undated ? ` · +${D.undated} undated` : ''}</small>${tmode === 'a' && goal ? cTargetMeter(goal) : ''}${cSpark(D.months.map((m) => m.admitted), 'adm')}${delta('admitted')}<a class="kgo" href="#/outcomes">Outcomes →</a></div>
       <div><span>Leads</span><b>${s.newLeads ?? 0}</b><small>${D.year}</small>${cSpark(D.months.map((m) => m.newLeads), 'lead')}${delta('newLeads')}<a class="kgo" href="#/leads">Inbox →</a></div>
       <div><span>Conversion</span><b>${s.conversionPct == null ? '-' : s.conversionPct + '%'}</b><small>${s.conversionA ?? 0} / ${s.conversionB ?? 0} who arrived</small><a class="kgo" href="#/reports">Reports →</a></div>
       <div><span>Median time to admission</span><b>${s.medianDaysToAdmission == null ? '-' : s.medianDaysToAdmission} <em>days</em></b><small>first contact to admission</small><a class="kgo" href="#/reports">Reports →</a></div>
-    </div>
+    </div>`;
+  return `${first === 'kpi' ? kpis + needsYou : needsYou + kpis}
     ${tmode === 'b' && goal ? cTargetYear(D, goal) : ''}
     <div class="m-scene kb-charts">
       <div class="kb-top">
@@ -2727,6 +2762,7 @@ function cHomeB(D) {
           ${D.tags.some(([, , n]) => n > 0) ? `<p class="ktags">${D.tags.filter(([, , n]) => n > 0).map(([id, label, n]) =>
             `<a href="#/outcomes" onclick="cGoClosedTag('${esc(id)}');return false" class="kfl-tag t-${esc(id)}">${esc(label)} <b>${n}</b></a>`).join('')}</p>` : ''}</section>
       </div>
+      ${tmode === 'c' && goal ? cTargetYear(D, goal) : ''}
       <div class="kthree">${cHomeProg(D)}${cHomeChan(D)}</div>
     </div>`;
 }
