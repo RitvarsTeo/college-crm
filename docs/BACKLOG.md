@@ -14,6 +14,223 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - Home: "Open the Journey" in the free cell; Needs you in one row on a phone
+
+Ritvars to MAIN, 05.10, with two screenshots: "less space taken - better. Option 1 for the first, buuuut see screenshot
+open journey goes after application (below) (screenshot 2) the dead space is occupied now." And for the phone: "smaller
+font, make them all 3 fit side by side." Then: "Rest accpeted."
+- The journey card's "Open the Journey ->" is no longer a row of its own: it takes the free cell after the last stage
+  (beside Contract, under Application), so the card is one row shorter.
+- Phone (<=760px): Overdue, Due today and In the Inbox sit side by side in one row (one column per figure, so No next
+  step fits too when shown), figures 28px, labels 11.5px.
+test/home_final.test.js. 1109/1109. Shots: `For review/2026-10-05 finals/Home-final-1440-light.png`,
+`Home-final-phone-375-light.png`. BUILT, next patch.
+
+## 05.10.2026 - PICKED: the gap under Needs you = option 1
+
+Ritvars 05.10: "Option 1 for the first" (to MAIN) / "1, but the journey has fixes to do" (to MASTER CONTROL). The Home
+journey card lays its stages in two columns (card 340px) and both top cards end on one line; this is the only layout
+now. `?gap=` and option 2 (Needs you stretched) are removed. 1108/1108. BUILT, next patch.
+
+## 05.10.2026 - PICKED: the final Home (Q20); the gap under Needs you is an A/B (?gap=1|2)
+
+Ritvars 05.10 (via MASTER CONTROL): "Todays, but without the admitted by programme. So nothing after Admissions by
+months below it. AAAAANd lets have a fix for the black space below needs you card." Target bars: "Yes, keep them".
+- Home = today's Home + the two target meters on the Admitted card (140 / NAV + ENG 98, from config). Nothing after
+  the Admissions by month row: Admitted by programme and Where admitted people came from leave Home; the donut stays.
+- Nothing lost: By programme is in Reports; **Where admitted people came from** is now in Reports for good (it
+  follows the period chosen there). The Q19 "Cold or reject" Reports section is dropped: that lives in Outcomes.
+- Every losing switch is removed: ?target=a|b|c|d, ?first=kpi, ?home2=a|b and Reports-under-Home. Reports keeps its
+  place. The Q13 and Q19 A/B entries below are CLOSED by this.
+- **Gap A/B, NOT PICKED:** `?gap=1` - The journey now compacts into two columns (the card widens to 340px) and both
+  cards end on one line; `?gap=2` - Needs you stretches to The journey now's height, its figures centred. No switch =
+  the gap as today. Cleanup commit after his pick.
+test/home_final.test.js; home_target rewritten; home_vitals removed. 1108/1108. Shots: `For review/2026-10-05 finals/`.
+
+## 05.10.2026 - PICKED: the cold and reject lists live in Outcomes (D-C8 / Q14 = A)
+
+Ritvars 05.10 (via MASTER CONTROL): "Colds and Rejects to outcomes. Also these statuses are available just in the all
+people tab of course." The A/B below is closed: A is the product, B and the `?cold=` switch are removed. Outcomes > Not
+proceeding > Cold or Reject shows one card per programme (name + phone + email, why, came from, last contact); the
+"why they stopped" breakdown shows on Everybody only. Home's Cold / Reject open it. People (everyone) still filters by
+Stage Cold / Reject. Marketing consent: still parked, nothing built. test/cold_list.test.js rewritten. 1111/1111.
+Shots: `For review/2026-10-05 finals/`. BUILT, next patch.
+
+## 05.10.2026 - People is everyone; Journey and Outcomes are its children (Q21)
+
+Ritvars 05.10 (via MASTER CONTROL): "All people can show up, when we click ON the People tab itself. Than we can click
+Journey and Outcomes." Picked: People (everyone, search, Add lead) > Journey, Outcomes. Menu: Home > Admissions (Inbox,
+Next steps) > People (Journey, Outcomes) > Reports > Settings; Reports keeps its place ("No, keep its place").
+Clicking People opens the whole list with search, Add lead and every filter (Stage Cold / Reject included). The "All
+people" menu item and the Journey | All people tab row are gone; #/people and the old #/people/all both open everyone.
+People lights alone on everyone, People + Journey / Outcomes on those. Without the tab row the Journey screen is titled
+Journey under a "People" crumb, like Outcomes (a consequence, flagged). Phone More: Journey, Outcomes, Reports,
+Settings, Help. The tour's People step says it. Order and tab tests updated. 1111/1111. BUILT, next patch.
+
+## 05.10.2026 - The phone menu is a bottom tab bar (Q16)
+
+Ritvars 05.10: "The Menu is scrollable. First idea is to make a burger icon with the tabs inside, but maybe you have a
+better idea?", then picked the bottom tab bar ("OK, lets do bottom card!", confirmed in a popup via MASTER CONTROL).
+Kit part 2 (App frame) has no phone menu of its own - on a narrow screen its side menu just stacks on top - so this is
+app code; the kit may take it later (SAID). On a phone (<=760px) the sideways-scrolling row in the header is hidden and
+five tabs sit fixed at the bottom: Home, Inbox (its count), Next steps (its count), People, More. More opens a sheet:
+Journey, Outcomes, All people, Reports, Settings, Help. The counts are copied from the left card's own, so they never
+disagree; the tab lights with the place (Journey / Outcomes / All people light People; Reports, Settings, Help light
+More); Esc or a tap outside closes the sheet; clear of the phone's home bar (safe area); Feedback moves above the bar.
+Inbox, Next steps, More, Help, Journey and All people icons are PROVISIONAL (the same stroke language). Wide screens
+(and 761-900px, which keeps the sideways row) are unchanged. test/phone_tabs.test.js. 1111/1111. Shots 375 light + dark:
+`For review/2026-10-05 Q16 phone tab bar/`. BUILT, next patch.
+
+## 05.10.2026 - A/B: Home = the vitals, Reports = the depth (Q19), NOT PICKED
+
+Ritvars 05.10 (via MASTER CONTROL): "In HOME, only the most visible CORE, VITALLY NEEDED metrics to go on about the
+day, make it look simple and nice. And under it, have the reports tab, that goes in deeper data. Anything that HOME
+has, can be clicked and lead to this deeper data tab". Supersedes the Q13 placement question.
+- **A - vitals only** (`?home2=a`): Needs you (Overdue, Due today, In the Inbox; No next step only when somebody has
+  none) and, in the space under it beside the Journey card, Admitted 2026 with both target meters (140, NAV + ENG 98)
+  and Leads this month. The journey now on the right. Nothing else; one scene.
+- **B** (`?home2=b`): A plus Admissions by month. Two scenes.
+- In both, Reports sits right under Home in the menu (moved after the menu is drawn; the menu as written is unchanged).
+- Clicks: Overdue / Due today -> Next steps, In the Inbox -> Inbox, a stage -> the Journey on it, Admitted -> Outcomes,
+  the target -> Reports (This year, By programme), Leads -> Reports (This month).
+- **Nothing lost:** Conversion, Median, Leads for the year, the sparklines and deltas, the month chart, Open, the stage
+  split and admitted by programme were already in Reports; the two it lacked - **Where admitted people came from** and
+  **Cold or reject** - are added to Reports under the same switch, computed in app.html from the people rows Home used
+  (src/reports.js untouched).
+No switch = Home, menu and Reports as before. test/home_vitals.test.js; focal_point, home_ab updated for the
+alternative Home. 1107/1107. Shots: `For review/2026-10-05 Q19 Home vitals A-B/`. BUILT behind a switch.
+
+## 05.10.2026 - Outcomes is back in the menu, after Journey
+
+Ritvars 05.10 (via MASTER CONTROL): "we lost the outcomes tab ... cant open it from the left card"; picked "after
+Journey" to keep the chronology. Menu: Home > Admissions (Inbox, Next steps) > People (Journey, Outcomes, All people) >
+Reports > Settings. The link is #/outcomes; on Outcomes the menu lights People + Outcomes. Help boxes 01 Inbox / 02 Next
+steps / 03 Outcomes unchanged. Menu-order checks updated (no_crm_word, nav_and_home). Seen on the preview: the order, and
+Outcomes / Journey / All people each light with People. 1103/1103. BUILT, next patch.
+
+## 05.10.2026 - The browser tab icon is the white tile in light AND dark
+
+Ritvars 05.10 (via MASTER CONTROL), annoyed: "also the icons dont match?! I want the white on also on the broswers tab."
+The tab icon (`src/assets/favicon.svg`) turned into a dark tile with white letters in dark mode, while the installed
+app, the taskbar and "Open in app" use `icon-192.png`: white tile, black letters, blue leg. The dark block is gone, so
+the tab is that same white tile in both themes. **SUPERSEDES the 30.09.2026 dark-favicon rule** ("for dark mode only turn
+the text into white"); that entry below keeps its words and is no longer the rule. Brandbook shapes unchanged.
+test/app_chrome.test.js now fails if the icon gets a dark variant again. 1103/1103. BUILT, next patch.
+
+## 05.10.2026 - Q13 C, D and KPI-first, behind switches (his own ideas), NOT PICKED
+
+Ritvars to MAIN directly, 05.10, after seeing B: "the admissions by month looks way better, so lets have the KPI below
+it, oooooor change this design of displayeing info which is highly horizontal, and put it in the empty space below the
+needs you?" and "I somewhere saw ... a different home view, where the needs you was below the 4 cards ... but i never
+received to vote on those". No such variant is recorded (his 02.10 vote was Journey first vs Today first: "B for home").
+- `?target=c` - the B year card under Admissions by month. `?target=d` - a compact card "Target 2026" in the empty space
+  under Needs you (beside the taller Journey card): Admitted 12 / 140 and NAV + ENG 7 / 98, a meter each.
+- `?first=kpi` - the four KPI cards above Needs you, so he can vote on it with a picture.
+No switch = Home as before. Superseded as a QUESTION by Q19 (Home = vitals only, MASTER CONTROL 05.10); kept until the
+Q19 pick says what to drop. 1103/1103. Shots: `For review/2026-10-05 Q13 target A-B/`.
+
+## 05.10.2026 - A/B: the cold list for Marketing (D-C8), NOT PICKED
+
+Ritvars 05.10: "For Cold list, also send it to uiux session, and lets see visual A/B's." Brief Q14 via MASTER CONTROL:
+how Marketing finds and reads the cold ones; two layouts of what exists, NO export, send or campaign.
+- **A - Outcomes, by programme** (`?cold=a`): Home's Cold -> Outcomes > Not proceeding > Cold, one card per programme
+  (config order, then others, then "Programme not said") with its count; each row: name + phone + email, why, came
+  from, last contact. The "why they stopped" breakdown (it counts every Not proceeding, not only the cold) stays out.
+- **B - All people, cold columns** (`?cold=b`): Home's Cold -> All people with Stage "Not proceeding · Cold"; the
+  columns a cold person never fills (Next step, When) become Why not proceeding, Came from, Last contact. The existing
+  Programme / Came from filters still work. Recommended: B (one dense list, the filters Marketing needs already there).
+- No switch = both screens as before. Flag, NOT built: marketing consent is stored (table `consents`, the form's
+  consent) but `/api/people` does not carry it, so neither list can show who agreed to marketing - a decision for him.
+test/cold_list.test.js. 1101/1101. Shots: `For review/2026-10-05 Q14 cold list A-B/` (the cold tags in them were set
+on the local in-memory preview only). BUILT behind a switch, waits for his pick.
+
+## 05.10.2026 - A/B: the year's target on Home (D-C6), NOT PICKED
+
+Ritvars DECIDED 05.10 that Home shows the target ("Yes, Home should show that, but the UIUX has to be decided on its
+session, give it A/B tests"). Brief Q13 via MASTER CONTROL. The target is config, `config/prototype.json` ->
+`targets["2026"]`: admitted 140, officerPct 70, officerProgrammes NAV + ENG (source: "0. NJK KPI 2026.xlsx", sheet
+Admissions, B2, checked; NAV + ENG = Ritvars 05.10). 70% of 140 = 98. Counted from the people admitted in the year.
+- **A - in the card** (`?target=a`): the Admitted card gains two meters, one track each from 0 to its target: all
+  admitted (blue) "9% of 140" and NAV + ENG (navy) "NAV + ENG 7 · 7% of 98"; the target is the mustard end of the track.
+- **B - the year against it** (`?target=b`): a card under the KPI cards, "Admitted against the target": cumulative
+  admitted per month (blue) and NAV + ENG (navy) side by side on one baseline, all twelve months on the axis, the 140
+  line (mustard) and the 98 line (mustard, dashed) on the same scale.
+- No switch = Home exactly as before (no meter, no card). Recommended: A (the answer sits on the figure, no new
+  surface; B's columns are near the floor until the season fills them).
+Depth on the frame only (the sunk track, the card); fills, columns and lines flat. B is a `c-sheet` (the shared CARDS 3
+rule) and adds no scene, so Home keeps two. Flag: mustard is also the donut's "Open" on the same screen.
+test/home_target.test.js (config values, nothing hard-coded, the switch, exact meter widths, one baseline);
+test/home_ab.test.js's harness now loads the target block. 1098/1098. Shots: `For review/2026-10-05 Q13 target A-B/`.
+BUILT behind a switch, waits for his pick.
+
+## 05.10.2026 - Form answers read as words on the person page
+
+Brief Q12 via MASTER CONTROL (found by CHANNELS while fixing Q8, 1ea73ae): the chips under "From their first message"
+showed the stored key when FIELD_LABEL had no words for it. The four form answers (src/adapters.js WEBSITE_ANSWERS) now
+read: programme picked, study form, heard about us from, company (the chip draws its label in capitals). How answers
+are stored or extracted is unchanged (CHANNELS owns it). test/field_labels.test.js reads the keys from adapters.js and
+fails if any of them shows a snake_case key (it failed on the old app.html). Seen on a fresh preview (8862): a simulated
+website lead carrying all four answers, added to Admissions, shows PROGRAMME PICKED Navigation, STUDY FORM Full time,
+HEARD ABOUT US FROM Instagram, COMPANY Example Shipping; no key on the page. BUILT, next patch.
+
+## 05.10.2026 - Help questions in ONE fixed order, never by most opened
+
+Ritvars's rule of 01.10 (dev kit part 3 README: "THE HELP CENTER IS NOT A POPULARITY SYSTEM"), brief Q9 via MASTER
+CONTROL: Intake still put the most opened question first. `src/assets/help-center.js` is now the kit's own file, taken
+unchanged from `Dev kits to share/Component library/3 Help and feedback/ui/help-center.js`: the questions show in the
+order of config/help.json, search keeps that order, the page no longer fetches /api/help/counts. The kit file also
+brings the kit's `fetch: null` = no server calls fix (Intake passes no fetch, so nothing changes for it). Opens are still
+recorded per id (`help_faq_opens`, POST /api/help/opened); the counts route stays as it is (a separate decision; the kit
+README says only the feedback readers may read it, Intake still answers anybody signed in - SAID, not changed). The
+server.js and app.html comments no longer say "most opened first". test/help_center.test.js fails if the order follows
+the counts or the page asks for them (it failed on the old file: the most opened question came first).
+Seen on a fresh preview (port 8862): one question opened 5 times on the server stays last; no counts request; light and
+dark at 1440 and at 375 wide. BUILT, next patch.
+
+## 05.10.2026 - Help questions trimmed, the Needs-you shelf removed
+
+Ritvars, 05.10 (via MASTER CONTROL, control commits 31b28fe + ec7aaff):
+- **Help:** "How do I sign in?" deleted (whoever can read Help is already in) and "Which time zone is used?" deleted.
+  "Can I delete a person?" now ends: "The original messages and call records behind them are kept for 13 months."
+  The "late" question says the Inbox, not New Leads; its id stays `late-in-new-leads` (ids never change, the open
+  counts are kept per id). The late RULE is unchanged (arrived before today, past 09:00 Riga, nobody handled it).
+- **Tour step 2 "Next steps"** pointed at Home in the menu while describing the Next steps page; it now lights up
+  Next steps. The other answers were checked against the running app (Journey drag, Outcomes download, theme switch,
+  Report a problem, Feedback button) and still hold.
+- **Needs-you shelf:** the two stacked sheets drawn under the card (`.kday-sheet::before/::after`) read as a broken
+  grey strip in light and a dark strip in dark under cards 3. Removed; the card, its amber top and its shadow stay.
+- **"CRM" leftovers:** two lines Intake writes on a person's History (SIS hand-over, an SIS closing status) said "CRM";
+  they say Intake now (new rows only; old rows keep their words). Still saying CRM, not reachable from the menu: the
+  integration simulator / inspector texts (src/simulator.js, config/providers.json) - SAID, not swept.
+test/help_answers.test.js, a shelf check in test/cards_blue_edge.test.js and a History check in test/no_crm_word.test.js.
+Seen on a restarted preview at 1440, light and dark: Home (no strip), Help list, the delete answer, tour step 2.
+1090/1090. BUILT, next patch.
+
+## 05.10.2026 - LOCKED: menu order, "Next steps", and "Intake" never "CRM"
+
+Ritvars, locked 05.10 (via MASTER CONTROL):
+- **Menu:** Home > Inbox > Next steps > Journey > All people > Reports > Settings, groups unchanged (Admissions holds Inbox
+  then Next steps; People holds Journey then All people). "Today" reads **Next steps** wherever a person reads it: the
+  menu (the count badge stays on it), the page title, the reload notice. The route stays #/today; old links work.
+  "Due today" / "Today" as a DUE STATE (chips, filters) is not the page name and stays.
+- **Help center boxes:** 01 Inbox, 02 Next steps, 03 Outcomes.
+- **Tour step 1:** "The left card" / "Everything in Intake is one click away here. The numbers show what is waiting." No
+  "menu", no "CRM". Tour step 2 reads Next steps.
+- **"CRM" sweep, user-facing only:** help.json (tour and answers), channels.json values (connect steps and notes), the
+  Console page (title and words), the Excel file's author and application (Novikontas Intake). The install name was
+  already Intake. Comments, identifiers, env names (CRM_AUTH ...) and repo or folder names keep their words.
+  test/no_crm_word.test.js fails if CRM comes back anywhere a person reads it, and checks the menu order.
+Seen at 1440 on a restarted preview: the menu, Next steps with its count, the Help boxes, tour step 1; no "CRM" on the
+page. BUILT, next patch.
+
+## 05.10.2026 - The (c) line is the foot of every page
+
+Decided by Ritvars 05.10 (via MASTER CONTROL), replacing "the (c) line at the bottom of the menu": "© Novikontas Academy"
+leaves the menu card (light and dark, desktop and the phone foot) and is the foot of EVERY page, drawn once by
+`#view::after`, so no redraw inside a page can drop it. Help's own (c) line removed so it is not there twice. The menu-foot
+Help center link stays. Checked on Home, Today, Inbox, Journey, All people, a person page, Reports, Settings and Help:
+the foot is on each, the menu carries no (c), in light and dark. BUILT, next patch.
+
 ## 05.10.2026 - The app opens on Home
 
 Ritvars: opening the app landed on Admissions / Today, not on Home (the metrics). Cause: route() and fbPath() still

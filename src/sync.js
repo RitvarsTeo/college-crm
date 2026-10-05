@@ -504,7 +504,7 @@ async function storeSisRow(db, r, at, stats) {
   // a closing status on a person we already know goes on their timeline
   if (old && old.person_id && old.status !== r.status && !SIS_STAGE[r.status]) {
     await logEvent(db, { personId: old.person_id, kind: 'status', direction: 'note', at, origin: AUTOMATIC,
-      actor: 'SIS', subject: sisSentence(r), body: 'The CRM stage is unchanged.' });
+      actor: 'SIS', subject: sisSentence(r), body: 'The Intake stage is unchanged.' });
     stats.noted++;
   }
   return true;

@@ -2,51 +2,41 @@
   "_about": "THE CRM'S OWN HELP (dev kit part 3): the tour steps and the questions in the Help center. When the same question arrives in the feedback inbox twice (kind 'A question'), add it here with its answer. ids are lower-case words and hyphens and NEVER change once used: the open counts are kept per id (table help_faq_opens). Answers are plain text, and every answer must say what the CRM really does.",
   "tour": [
     {
-      "title": "The menu",
-      "body": "Everything in the CRM is one click from here. The numbers show what is waiting.",
+      "title": "The left card",
+      "body": "Everything in Intake is one click away here. The numbers show what is waiting.",
       "target": ".cnav"
     },
     {
-      "title": "Today",
+      "title": "Next steps",
       "body": "What needs your attention: overdue first, then today, then coming up, and how many are waiting in the Inbox. Press Done, say how it went and choose the next step.",
-      "target": ".cnav a[data-c=\"home\"]"
+      "target": ".cnav a[data-c=\"today\"]"
     },
     {
       "title": "People",
-      "body": "Everyone you are working with. Journey shows where they are, stage by stage, and what happened to the ones who finished. All people is the whole database.",
+      "body": "Everyone you are working with: search, add a lead, filter by stage. Journey shows where they are, stage by stage; Outcomes shows what happened to the ones who finished.",
       "target": ".cnav a[data-c=\"people\"]"
     },
     {
       "title": "Light, System or Dark",
-      "body": "Choose how the CRM looks. System follows your computer.",
+      "body": "Choose how Intake looks. System follows your computer.",
       "target": "@theme-switch"
     },
     {
       "title": "Stuck, or have an idea?",
-      "body": "The Feedback button is on every screen. The Help center has this tour and the answers to questions about the CRM.",
+      "body": "The Feedback button is on every screen. The Help center has this tour and the answers to questions about Intake.",
       "target": "#helpBtn"
     }
   ],
   "faq": [
     {
-      "id": "how-do-i-sign-in",
-      "q": "How do I sign in?",
-      "a": "With Continue with Google, using your @novikontas.org account. If Google signs you in and the CRM still says you are not authorised, you are not on its list yet: ask an admin to add you."
-    },
-    {
       "id": "delete-a-person",
       "q": "Can I delete a person?",
-      "a": "No. Nobody is deleted. When someone is not going ahead, close them as Not proceeding with a reason. They stay on record in Outcomes."
+      "a": "No. Nobody is deleted. When someone is not going ahead, close them as Not proceeding with a reason. They stay on record in Outcomes. The original messages and call records behind them are kept for 13 months."
     },
     {
       "id": "late-in-new-leads",
-      "q": "What does \"late\" mean in New Leads?",
+      "q": "What does \"late\" mean in the Inbox?",
       "a": "The lead arrived before today, it is past 09:00 Riga time, and nobody has handled it yet."
-    },
-    {
-      "id": "time-zone",
-      "q": "Which time zone is used?",
-      "a": "Riga. Every day and time in the CRM is Latvian time, in summer and in winter."
     },
     {
       "id": "move-someone-along",
@@ -56,12 +46,12 @@
     {
       "id": "home-numbers",
       "q": "Where do the Home numbers come from?",
-      "a": "From the people in the CRM, counted for this year. Download for management review on Outcomes gives the figures as Excel, Google Sheets or CSV."
+      "a": "From the people in Intake, counted for this year. Download for management review on Outcomes gives the figures as Excel, Google Sheets or CSV."
     },
     {
       "id": "share-a-link",
       "q": "Can I send someone a link to a person?",
-      "a": "Yes. Copy the address from the browser and send it. Anyone with a CRM account opens it; if they are signed out, they sign in first and then land on it."
+      "a": "Yes. Copy the address from the browser and send it. Anyone with an Intake account opens it; if they are signed out, they sign in first and then land on it."
     },
     {
       "id": "light-dark-system",
@@ -71,12 +61,12 @@
     {
       "id": "install-as-app",
       "q": "Can I install it as an app?",
-      "a": "Yes. In Chrome or Edge, click the install icon at the right end of the address bar. Academy CRM then opens in its own window, with the Academy logo on the desktop and the taskbar."
+      "a": "Yes. In Chrome or Edge, click the install icon at the right end of the address bar. Intake then opens in its own window, with the Academy logo on the desktop and the taskbar."
     },
     {
       "id": "something-wrong",
       "q": "Something is wrong or missing",
-      "a": "Press Report a problem above, or the Feedback button in the corner. You can add a screenshot. It reaches the people who build the CRM."
+      "a": "Press Report a problem above, or the Feedback button in the corner. You can add a screenshot. It reaches the people who build Intake."
     }
   ]
 }

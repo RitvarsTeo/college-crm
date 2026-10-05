@@ -1,7 +1,8 @@
 // Unified audit 29.09.2026 item 1 (dev kit part 3): the Help center carries the tour and the
-// questions and answers - search, the most opened first counted on the server (help_faq_opens: a
-// count per question id and nothing about who), heading "Questions and answers", and "Ask a
-// question" opening the same feedback box on A question.
+// questions and answers - search, the questions in the order of config/help.json (opens are still
+// counted on the server, help_faq_opens: a count per question id and nothing about who, but the
+// screen never reads them), heading "Questions and answers", and "Ask a question" opening the same
+// feedback box on A question.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -130,4 +131,36 @@ test('the tour rings the switch where it is on screen: the menu on a wide screen
   };
   assert.equal(run(false), '#cThemeBar .theme-switch');
   assert.equal(run(true), '#cThemeBar2 .theme-switch');
+});
+
+// THE HELP CENTER IS NOT A POPULARITY SYSTEM (the owner, 01.10.2026, dev kit part 3 README): the
+// questions show in the order of config/help.json, whatever other people opened. The fake page
+// answers every fetch with counts that would put the LAST question first, so any ordering by opens
+// shows up as a changed order, and any read of the counts shows up as a call.
+test('the Help center shows the questions in the order of help.json, never by most opened', async () => {
+  const faq = HELP.faq;
+  const last = faq[faq.length - 1].id;
+  const calls = [];
+  const fakeFetch = (url) => { calls.push(url);
+    return Promise.resolve({ ok: true, json: () => Promise.resolve({ counts: { [last]: 999, [faq[1].id]: 50 } }) }); };
+  const list = { innerHTML: '' };
+  let onInput = null;
+  const input = { value: '', addEventListener: (e, fn) => { if (e === 'input') onInput = fn; } };
+  const el = { innerHTML: '', addEventListener() {},
+    querySelector: (s) => (s === '.hc-list' ? list : s === 'input' ? input : { addEventListener() {} }) };
+  const ctx = { fetch: fakeFetch };
+  vm.runInNewContext(fs.readFileSync(path.join(ROOT, 'src', 'assets', 'help-center.js'), 'utf8'), ctx);
+  ctx.HelpCenter.mount(el, { faq, fetch: fakeFetch });
+  await new Promise((r) => setTimeout(r, 20));
+  const ids = () => [...list.innerHTML.matchAll(/data-id="([a-z0-9-]+)"/g)].map((m) => m[1]);
+  assert.deepEqual(ids(), faq.map((f) => f.id), 'the order of config/help.json');
+  assert.deepEqual(calls, [], 'mounting reads no counts and asks the server nothing');
+  input.value = ''; onInput();
+  assert.deepEqual(ids(), faq.map((f) => f.id), 'a cleared search keeps the same order');
+  const src = fs.readFileSync(path.join(ROOT, 'src', 'assets', 'help-center.js'), 'utf8');
+  assert.ok(!/help\/counts|countsUrl|\.sort\(/.test(src), 'the Help center never fetches counts and never sorts');
+  assert.doesNotMatch(APP, /help\/counts/, 'the app page never asks for the counts');
+  assert.doesNotMatch(SERVER, /most opened come first/, 'the server no longer says the most opened come first');
+  // the opens are still recorded per id, and the counts route stays (a separate decision)
+  assert.ok(SERVER.includes("p === '/api/help/opened'") && SERVER.includes("p === '/api/help/counts'"));
 });

@@ -43,6 +43,14 @@
       "colour": "#8b5b5b"
     }
   ],
+  "targets": {
+    "2026": {
+      "admitted": 140,
+      "officerPct": 70,
+      "officerProgrammes": ["NAV", "ENG"],
+      "source": "0. NJK KPI 2026.xlsx, sheet Admissions, B2: \"140 new students (70% in Officer Programs)\". Officer Programs = NAV + ENG: Ritvars, 05.10.2026 (via MASTER CONTROL)."
+    }
+  },
   "programmes": [
     "NAV",
     "ENG",

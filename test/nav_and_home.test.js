@@ -30,7 +30,7 @@ const place = (() => {
 test('the menu is grouped, and the hairline is the established pattern', () => {
   const nav = APP.slice(APP.indexOf('<div class="cnav"'), APP.indexOf('</div>`);', APP.indexOf('<div class="cnav"')));
   const labels = [...nav.matchAll(/<span>([A-Za-z ]+)<\/span>/g)].map((m) => m[1]);
-  assert.deepEqual(labels, ['Home', 'Admissions', 'Today', 'Inbox', 'People', 'Journey', 'All people', 'Reports', 'Settings']);
+  assert.deepEqual(labels, ['Home', 'Admissions', 'Inbox', 'Next steps', 'People', 'Journey', 'Outcomes', 'Reports', 'Settings']);   // locked 05.10.2026: Outcomes back after Journey; People itself is everyone
   assert.equal((nav.match(/class="kids"/g) || []).length, 2, 'two groups: Admissions and People');
   // the hairline itself, unchanged from the established rule
   assert.match(APP, /html\.ui-c \.cnav \.kids\{margin:1px 0 6px 18px;padding-left:10px;border-left:1px solid var\(--rule\)\}/,
@@ -71,7 +71,7 @@ test('Home is the metrics page and Today is the work; neither does the other job
   assert.match(fn('function cHomeB('), /kstrip/, 'B carries the KPI strip as cards');
   assert.ok(!home.includes("sect('Overdue'"), 'Home does not list the work');
 
-  assert.match(today, /<h1>Today<\/h1>/);
+  assert.match(today, /<h1>Next steps<\/h1>/);
   for (const section of ['Overdue', 'Due today', 'Coming up', 'No next step']) {
     assert.ok(today.includes(`'${section}'`), section + ' is still a section on Today');
   }
@@ -86,10 +86,12 @@ test('the Outcomes screen is still reachable, though it is not in the menu', () 
   assert.match(fn('function cChartGo('), /location\.hash = '#\/outcomes'/);
 });
 
-test('People is one place with two tabs, and one person has one record', () => {
-  const tabs = fn('function cPeopleTabs(');
-  assert.match(tabs, /#\/journey/);
-  assert.match(tabs, /#\/people\/all/);
-  assert.match(fn('function cDrawJourney('), /cPeopleTabs\('journey'\)/);
-  assert.match(fn('function cDrawPeople('), /cPeopleTabs\('all'\)/);
+// The owner, 05.10.2026: "All people can show up, when we click ON the People tab itself. Than we can click
+// Journey and Outcomes." People is everyone; Journey and Outcomes are its two children; no tab row.
+test('People is everyone, Journey and Outcomes are its children, and there is no tab row', () => {
+  const route = fn('async function routeC(');
+  assert.match(route, /if \(page === 'journey'\) \{ C_PTAB = 'journey'; return viewJourneyC\(\); \}\s*C_PTAB = 'all';\s*return viewPeopleC\(\);/,
+    '#/people and #/people/all open everyone, #/journey the Journey');
+  assert.doesNotMatch(APP, /cPeopleTabs|class="c-ptabs"/, 'the Journey | All people tab row is gone');
+  assert.match(fn('function cDrawJourney('), /<p class="c-crumb"><a href="#\/people">People<\/a><\/p>\s*<div class="c-head"><div><h1>Journey<\/h1>/);
 });

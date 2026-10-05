@@ -30,3 +30,9 @@ test('dark matches: the same cards, solid (never glass), the same blue top, ambe
   assert.match(APP, /html\.ui-c\[data-theme="dark"\] #view \.kneed\{background:transparent;border:0;border-left:1px solid rgba\(194,211,222,\.14\)/);
   assert.match(APP, /html\.ui-c\[data-theme="dark"\] #view \.jb-end\{background:transparent;border:0;/);
 });
+
+// The owner, 05.10.2026: the old stacked sheets under the Needs-you card read as a broken grey (light) / dark
+// strip under cards 3. They are gone in both modes; the card's own shadow is its depth.
+test('the Needs-you card has no shelf under it', () => {
+  assert.doesNotMatch(APP, /\.kday-sheet::(before|after)/);
+});

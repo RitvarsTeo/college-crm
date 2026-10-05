@@ -111,8 +111,13 @@ test('Settings is for everybody and holds the Help center; its admin rows are st
   assert.match(APP, /help: 'settings'/, 'the Help center lights Settings in the menu');
 });
 
-test('the (c) Novikontas Academy line with the Help center link is in the menu', () => {
-  assert.match(APP, /<div class="c-foot"><span>&copy; Novikontas Academy<\/span> <a href="#\/help">Help center<\/a><\/div>/);
+// 05.10.2026 the owner: the (c) line leaves the menu card and becomes the foot of EVERY page; the Help center
+// link stays in the menu foot
+test('the menu foot keeps only the Help center link; the (c) line is the foot of every page', () => {
+  assert.match(APP, /<div class="c-foot"><a href="#\/help">Help center<\/a><\/div>/);
+  assert.doesNotMatch(APP, /<span>&copy; Novikontas Academy<\/span>/, 'no (c) line in the menu card, light or dark, desktop or phone');
+  assert.match(APP, /html\.ui-c #view::after\{content:"© Novikontas Academy";display:block;/, 'one shared page foot, drawn by #view itself');
+  assert.doesNotMatch(APP, /class="c-help-foot"/, 'Help no longer carries its own, so it is not there twice');
 });
 
 test('the corner button is the feedback box, says so, and opens solid', () => {
@@ -124,28 +129,14 @@ test('the corner button is the feedback box, says so, and opens solid', () => {
   assert.doesNotMatch(panel, /background:var\(--card\)/);
 });
 
-// 30.09.2026, Ritvars: on a dark tab strip the icon showed as a white square, because the tile is
-// white and the letters are black. His words: "take the white tile coloured logo and for dark mode
-// only turn the text into white and let the logo stay colourful". So the letters and the tile
-// follow the theme and the Novikontas blue leg does not.
-test('the tab icon turns its letters white in dark, and keeps the blue leg in both', () => {
+// 05.10.2026, Ritvars: "also the icons dont match?! I want the white on also on the broswers tab." The tab icon
+// is the same white tile as the installed app, the taskbar and "Open in app" (icon-192.png) in light AND dark.
+// This replaces the 30.09.2026 dark variant (dark tile, white letters), which made the tab and the app differ.
+test('the tab icon is the white tile in light and dark, like the installed app', () => {
   const svg = fs.readFileSync(path.join(ROOT, 'src', 'assets', 'favicon.svg'), 'utf8');
-
-  // his 28.09 pick is untouched in light
-  assert.match(svg, /\.tile \{ fill: #ffffff/, 'light: the white tile stays');
-  assert.match(svg, /\.mark \{ fill: #011111 \}/, 'light: black letters stay');
-
-  // only the media block, not the rest of the file: the blue path sits after </style>
-  const from = svg.indexOf('@media (prefers-color-scheme: dark)');
-  assert.ok(from > 0, 'there is a dark block at all');
-  const dark = svg.slice(from, svg.indexOf('</style>', from));
-  assert.match(dark, /\.mark \{ fill: #ffffff \}/, 'dark: the letters turn white');
-  assert.match(dark, /\.tile \{ fill: #0[0-9a-f]{5}/, 'dark: the tile goes dark with them');
-
-  // the blue leg is NOT in the media query: it is the same colour in both themes
-  assert.ok(!/29a8df/i.test(dark), 'the Novikontas blue leg is never restated for dark');
-  assert.equal((svg.match(/#29a8df/gi) || []).length, 1, 'it is declared once, on the shape itself');
-
-  // and the brandbook shapes were not redrawn
+  assert.match(svg, /\.tile \{ fill: #ffffff/, 'the white tile');
+  assert.match(svg, /\.mark \{ fill: #011111 \}/, 'black letters');
+  assert.doesNotMatch(svg, /prefers-color-scheme/, 'no dark variant: the tab never turns dark');
+  assert.equal((svg.match(/#29a8df/gi) || []).length, 1, 'the Novikontas blue leg, declared once on the shape');
   assert.match(svg, /viewBox="155\.18 59\.40 589\.35 589\.35"/, 'the symbol geometry is unchanged');
 });
