@@ -14,6 +14,20 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - The phone menu is a bottom tab bar (Q16)
+
+Ritvars 05.10: "The Menu is scrollable. First idea is to make a burger icon with the tabs inside, but maybe you have a
+better idea?", then picked the bottom tab bar ("OK, lets do bottom card!", confirmed in a popup via MASTER CONTROL).
+Kit part 2 (App frame) has no phone menu of its own - on a narrow screen its side menu just stacks on top - so this is
+app code; the kit may take it later (SAID). On a phone (<=760px) the sideways-scrolling row in the header is hidden and
+five tabs sit fixed at the bottom: Home, Inbox (its count), Next steps (its count), People, More. More opens a sheet:
+Journey, Outcomes, All people, Reports, Settings, Help. The counts are copied from the left card's own, so they never
+disagree; the tab lights with the place (Journey / Outcomes / All people light People; Reports, Settings, Help light
+More); Esc or a tap outside closes the sheet; clear of the phone's home bar (safe area); Feedback moves above the bar.
+Inbox, Next steps, More, Help, Journey and All people icons are PROVISIONAL (the same stroke language). Wide screens
+(and 761-900px, which keeps the sideways row) are unchanged. test/phone_tabs.test.js. 1111/1111. Shots 375 light + dark:
+`For review/2026-10-05 Q16 phone tab bar/`. BUILT, next patch.
+
 ## 05.10.2026 - A/B: Home = the vitals, Reports = the depth (Q19), NOT PICKED
 
 Ritvars 05.10 (via MASTER CONTROL): "In HOME, only the most visible CORE, VITALLY NEEDED metrics to go on about the
