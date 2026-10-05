@@ -240,3 +240,15 @@ test('one card style, the two data colours, light and dark', () => {
   assert.match(APP, /html\.ui-c\{--v-tgt:#E0A526;/);
   assert.match(css, /html\.ui-c\[data-theme="dark"\] \.kstrip\.rp-echo/, 'dark: no panel inside a panel');
 });
+
+test('the period is read in one function, so the app-wide year scope can feed it later', () => {
+  const depth = fnBody('async function viewReportsDepth(mode) {');
+  assert.match(depth, /const P = cRepPeriod\(\);/);
+  assert.doesNotMatch(depth, /RPT\./, 'nothing else in the view reads the presets');
+  const ctx = { RPT: { from: '', to: '' }, C_RPT_PRESET: 'month', cTodayIso: () => '2026-10-05' };
+  vm.runInNewContext(fnBody('function cRepPeriod() {'), ctx);
+  assert.deepEqual(JSON.parse(JSON.stringify(ctx.cRepPeriod())), { from: '2026-01-01', to: '' }, 'no period chosen: the year, as Home');
+  assert.equal(ctx.C_RPT_PRESET, 'year');
+  ctx.RPT = { from: '2026-09-01', to: '2026-09-30' };
+  assert.deepEqual(JSON.parse(JSON.stringify(ctx.cRepPeriod())), { from: '2026-09-01', to: '2026-09-30' }, 'a chosen preset is kept');
+});

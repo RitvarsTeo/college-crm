@@ -4690,12 +4690,18 @@ function cRepHtml(mode, M, from, to) {
     <div class="ktip" role="status" aria-live="polite"></div></div>`;
 }
 
-async function viewReportsDepth(mode) {
-  // the chapters echo Home, and Home counts the year: with no period chosen yet, the year
+// THE PERIOD, IN ONE PLACE. Today it is the report's own presets (RPT); the app-wide year scope (Home's 2025 / 2026 /
+// All years switch, decided 05.10.2026, MAIN builds it) will be read here and nowhere else. The chapters echo Home,
+// and Home counts the year: with no period chosen yet, the year.
+function cRepPeriod() {
   if (!RPT.from && !RPT.to) { C_RPT_PRESET = 'year'; RPT = { from: cTodayIso().slice(0, 4) + '-01-01', to: '' }; }
+  return { from: RPT.from || '', to: RPT.to || '' };
+}
+async function viewReportsDepth(mode) {
+  const P = cRepPeriod();
   const qs = new URLSearchParams();
-  if (RPT.from) qs.set('from', RPT.from);
-  if (RPT.to) qs.set('to', RPT.to);
+  if (P.from) qs.set('from', P.from);
+  if (P.to) qs.set('to', P.to);
   const [r, people] = await Promise.all([api('/api/report' + (qs.toString() ? '?' + qs : '')), cPeopleRows()]);
   const [from, to] = String(r.period.label || '').split(' to ');
   const M = cRepModel(r, people, CFG, cTodayIso());
