@@ -14,6 +14,18 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - Q41: the Journey band has one baseline and every bar stands on it
+
+Ritvars 05.10 (via MASTER CONTROL), screenshot of the production band: "also the journey has broken line underneath,
+they are all not aligned to the bars." Not reproducible in MAIN's build at 375 / 1000 / 1440 / 1920 (bars' bottoms equal
+the line, tallest label inside), but the construction was fragile: a separate SVG line at a fixed 132px under the
+columns, 22px of headroom. Now each column's plot draws its piece of the line at its own bottom (the bar's bottom IS
+the line), reaching half the gap each side so the pieces meet (0px at every join, measured), and 36px of headroom
+keep the tallest figure and badge inside (34px clear at 1440 with 35/15, 60, 6/2, 5/1, 0). 0 is a flat mark with its
+0 above. Light and dark, 1440 and phone. The kit motion knob --m-dur, set only on the removed line, is declared unset
+at :root so every recipe keeps its own duration. test/journey_band.test.js. 1170/1170.
+Shots (after, production-like counts): `For review/2026-10-05 finals/Q41-*`. BUILT, next patch.
+
 ## 05.10.2026 - Q38: the Help center link is centred under the theme switch
 
 Ritvars 05.10 (via MASTER CONTROL), on the menu foot: "center the help center." The link's box is the switch's (the

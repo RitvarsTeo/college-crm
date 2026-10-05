@@ -146,3 +146,18 @@ test('the layout reflows for a phone instead of scrolling sideways', () => {
   assert.match(APP, /@media \(max-width:520px\)\{[^@]*html\.ui-c \.jband-row\{grid-template-columns:1fr\}/);
   assert.match(css('  html.ui-c .jb-cols{'), /repeat\(var\(--n\),minmax\(0,1fr\)\)/, 'columns shrink, they never force width');
 });
+
+// Q41, a defect on production 05.10.2026: "the journey has broken line underneath, they are all not aligned to the
+// bars." The line was a separate SVG at a fixed 132px; now each plot draws its piece at its own bottom, so the bar's
+// bottom IS the line, the pieces meet across the gaps, and the tallest figure keeps headroom inside the band.
+test('one baseline, every bar on it, the tallest label inside the band', () => {
+  assert.doesNotMatch(APP, /class="jb-base"|\.jb-base\{|top:132px/, 'no separate line laid under the columns');
+  assert.match(APP, /html\.ui-c \.jb-plot\{[^}]*align-items:flex-end;[^}]*height:147px;padding-top:36px;box-sizing:border-box;--jb-half-gap:4px\}/,
+    'the bars stand on the plot floor, with 36px of headroom for the figure and badge');
+  assert.match(APP, /html\.ui-c \.jb-plot::after\{content:"";position:absolute;left:calc\(-1 \* var\(--jb-half-gap\)\);right:calc\(-1 \* var\(--jb-half-gap\)\);bottom:0;height:0;\s*border-top:1\.5px solid #29a8df;/,
+    'the line is the plot floor, reaching half the 8px gap each side, so the pieces meet');
+  assert.match(APP, /html\.ui-c \.jb-cols\{position:relative;display:grid;grid-template-columns:repeat\(var\(--n\),minmax\(0,1fr\)\);gap:8px\}/, 'the 8px gap it bridges');
+  assert.match(APP, /html\.ui-c \.jb-cols\{gap:4px\}\s*html\.ui-c \.jb-plot\{--jb-half-gap:2px\}/, 'and on a phone the 4px gap');
+  assert.match(APP, /html\.ui-c\[data-theme="dark"\] \.jb-plot::after\{border-top-color:#8fcbef\}/, 'dark');
+  assert.match(APP, /html\.ui-c \.jb-bar\{position:relative;z-index:1;display:block;width:min\(56px,60%\);min-height:2px;/, 'over the line, and 0 is a flat mark on it');
+});

@@ -1471,9 +1471,6 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .jb-outs{display:flex;flex-direction:column;gap:10px}
   html.ui-c .jb-cols{position:relative;display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:8px}
   /* the shared baseline is drawn once under every column: the spine laid on its side */
-  html.ui-c .jb-base{position:absolute;left:0;top:132px;width:100%;height:2px;overflow:visible;pointer-events:none}
-  html.ui-c .jb-base line{stroke:#29a8df;stroke-width:1.5;vector-effect:non-scaling-stroke}
-  html.ui-c[data-theme="dark"] .jb-base line{stroke:#8fcbef}
   html.ui-c .jb-cell{display:flex;flex-direction:column;align-items:stretch;min-width:0}
   html.ui-c .jb-col{appearance:none;display:flex;flex-direction:column;align-items:stretch;gap:6px;margin:0;padding:0 0 4px;border:0;border-radius:10px;
     background:transparent;font:inherit;color:inherit;cursor:pointer;min-width:0}
@@ -1481,8 +1478,16 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .jb-col.on{background:var(--c-sunk)}
   html.ui-c .jb-col:focus-visible{outline:2px solid var(--pet);outline-offset:1px}
   /* the plot: a fixed height, bars grow from its floor; the top 22px is room for the count */
-  html.ui-c .jb-plot{position:relative;display:flex;align-items:flex-end;justify-content:center;height:133px;padding-top:22px;box-sizing:border-box}
-  html.ui-c .jb-bar{position:relative;display:block;width:min(56px,60%);min-height:2px;background:var(--v-open);border-radius:4px 4px 0 0}
+  /* THE BASELINE IS THE PLOT'S OWN FLOOR (Q41, a defect on production 05.10.2026: "the journey has broken line
+     underneath, they are all not aligned to the bars"). It was a separate line laid at a fixed 132px under the columns,
+     so anything that moved one of them left the bars floating and the line in pieces. Now each plot draws its part of
+     the line at its own bottom, reaching across half the gap on each side, so the line is one piece and every bar
+     stands on it (the bar's bottom IS the line). 36px of headroom keep the tallest bar's figure and badge inside. */
+  html.ui-c .jb-plot{position:relative;display:flex;align-items:flex-end;justify-content:center;height:147px;padding-top:36px;box-sizing:border-box;--jb-half-gap:4px}
+  html.ui-c .jb-plot::after{content:"";position:absolute;left:calc(-1 * var(--jb-half-gap));right:calc(-1 * var(--jb-half-gap));bottom:0;height:0;
+    border-top:1.5px solid #29a8df;pointer-events:none}
+  html.ui-c[data-theme="dark"] .jb-plot::after{border-top-color:#8fcbef}
+  html.ui-c .jb-bar{position:relative;z-index:1;display:block;width:min(56px,60%);min-height:2px;background:var(--v-open);border-radius:4px 4px 0 0}   /* z-index: the bar stands on the line, over it */
   html.ui-c .jb-over{position:absolute;left:0;right:0;bottom:0;display:block;background:var(--j-alarm)}   /* late work, on the same baseline */
   html.ui-c .jb-n{position:absolute;left:50%;bottom:100%;transform:translateX(-50%);padding-bottom:3px;display:flex;align-items:baseline;gap:4px;
     font-size:18px;font-weight:650;line-height:1;color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums}
@@ -1496,6 +1501,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
     html.ui-c .jb-outs > *{flex:1 1 0;min-width:0} }
   @media (max-width:520px){
     html.ui-c .jb-cols{gap:4px}
+    html.ui-c .jb-plot{--jb-half-gap:2px}
     html.ui-c .jb-n{font-size:15px}
     html.ui-c .jb-l .c-jn{display:none}
     html.ui-c .jb-l{font-size:11px}
@@ -1552,7 +1558,6 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   @media (max-width:760px){ html.ui-c .kb-strip{grid-template-columns:1fr 1fr} html.ui-c .kb-charts .kthree{grid-template-columns:1fr} html.ui-c .kneed b{font-size:34px} }
   /* the kit's per-scene knobs (part 9): when a scene starts and how far apart its pieces are */
   html.ui-c .kflow{--m-delay:.2s;--m-step:90ms}
-  html.ui-c .jb-base line{--m-dur:1.6s}
   html.ui-c .kgap-note{margin:0;font-size:11.5px;color:var(--t4);line-height:1.5;max-width:40ch}
   /* the sparkline under a KPI: its own series, quiet, never competing with the figure */
   html.ui-c .kspark{display:block;width:100%;height:22px;margin:5px 0 2px;overflow:visible}
@@ -2128,6 +2133,7 @@ svg .m-flag-mark{transform-origin:0 100%}
 .m-on .m-scene .m-draw{stroke-dasharray:1;stroke-dashoffset:1}
 
 /* play: start time = --m-delay + --i x --m-step (set --i with data-stagger, or inline) */
+:root{--m-dur:initial}   /* the kit's per-element duration knob, unset by default: each recipe keeps its own (the band's line, its only user, went with Q41) */
 .m-on .m-scene.in .m-pop  {animation:m-pop   var(--m-dur,var(--m-pop))   cubic-bezier(.3,1.6,.5,1) both;animation-delay:calc(var(--m-delay,0s) + var(--i,0) * var(--m-step))}
 .m-on .m-scene.in .m-drop {animation:m-drop  var(--m-dur,var(--m-drop))  cubic-bezier(.3,1.3,.5,1) both;animation-delay:calc(var(--m-delay,0s) + var(--i,0) * var(--m-step))}
 .m-on .m-scene.in .m-bar  {animation:m-bar   var(--m-dur,var(--m-bar))   cubic-bezier(.3,1.3,.5,1) both;animation-delay:calc(var(--m-delay,0s) + var(--i,0) * var(--m-step))}
@@ -3839,7 +3845,6 @@ function cJourneyBand(everyone, taskOf, stages, exitMark, out) {
     <div class="jband-row">
       <a class="jb-end" href="#/people" onclick="cGoPeople({ arrived: '${out.year}' });return false"><span>Arrived</span><b>${out.arrived === null ? '<span class="kgapn" title="not available">—</span>' : out.arrived}</b><small>${out.year}</small></a>
       <div class="jb-cols" style="--n:${cols.length}">
-        <svg class="jb-base" viewBox="0 0 100 2" preserveAspectRatio="none" aria-hidden="true"><line x1="0" y1="1" x2="100" y2="1" pathLength="1" class="m-draw"/></svg>
         ${cols.map(col).join('')}
       </div>
       <div class="jb-outs">
