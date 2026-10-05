@@ -307,3 +307,4 @@ Cause: route() default `location.hash || '#/today'`, unchanged since V1 (`afea42
 
 ## 05.10 - EIGHTH PATCH LIVE: `5eba1a6` (the app opens on Home), pushed
 MAIN `6d7ca1d`. Bare address checked on the release build: Home renders, only Home lit. 1078/1078.
+Note: patch 8 deploy_verify said MISMATCH on the first fetch; a re-fetch a minute later was byte-identical (496774 = 496774). CDN switch-over timing, not a fault. The tool should retry the page fetch before declaring a mismatch.
