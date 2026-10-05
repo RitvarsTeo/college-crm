@@ -438,3 +438,4 @@ Ritvars: "WE have to ship everything into final". Contents: MAIN `b0099e5` (Q32 
 05.10 order (Ritvars: "no year selector" ... "Make the first one that can be deployed!"): Q46 -> Q45 -> Q47; each shipped as soon as it is deployable.
 05.10 GO in advance (Ritvars: "Make the first one that can be deployed!" / "Then the next and deploy"): control ships Q46, then Q45, then Q47 as each is ready, with the usual checks; Q47 still shows him the pictures from the build before it becomes the default.
 05.10 Q46 widened (Ritvars, screenshot: "The pie needs to be balanced with admission graph"): donut row = chart plot height, ring scales with it and is centred on the plot, legend beside the ring.
+05.10 Q39 unparked into Q47 (Ritvars: "also there is no counts for the tabs."): every pool in the menu shows new / total (BMW-badge style), following the year scope.
