@@ -8,7 +8,7 @@ import { seed } from './seed.js';
 import { hasRealData, loadReal } from './real.js';
 import { PROVIDERS, runScenario, runOutbound, runFullDemo, listEvents, getEvent, consentFor, consentSummary, DEMO_SEQUENCE } from './simulator.js';
 import { logEvent, applyEdit, readHistory, MANUAL, AUTOMATIC, EDITABLE_FIELDS, IMMUTABLE_FIELDS, FIELD_LABELS } from './history.js';
-import { stampOpenDay, registerOpenDay, refilterOpenEmail, refilterOpen } from './intake.js';
+import { stampOpenDay, registerOpenDay, refilterOpen } from './intake.js';
 import { queueLeadAnswers } from './leadanswers.js';
 import * as gmailB from '../lib/gmail.js';
 import * as notify from '../lib/notify.js';
@@ -1987,9 +1987,10 @@ export const handle = async (req, res) => {
       const b = req.method === 'POST' ? await body(req) : {};
       return json(res, 200, { ok: true, ...(await refilterOpen(db, { apply: req.method === 'POST' && b.apply === true })) });
     }
+    // Retired 05.10.2026 (Q31): it moved rows without saying first what it would move.
     if (req.method === 'POST' && p === '/api/admin/gmail/refilter') {
-      if (!(await adminOf(req))) return refuseNotAdmin(res);
-      return json(res, 200, { ok: true, ...(await refilterOpenEmail(db)) });
+      return json(res, 410, { error: 'retired: it moved rows without a preview',
+        use: 'GET /api/admin/inbox/refilter to see what would move, then POST it with {"apply": true}' });
     }
     if (req.method === 'POST' && p === '/api/admin/gmail/disconnect') {
       if (!(await adminOf(req))) return refuseNotAdmin(res);

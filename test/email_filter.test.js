@@ -107,10 +107,13 @@ test('channel switch: a webhook follows the Channels screen switch, not only the
   assert.equal((await post()).status, 200, 'the switch reached the webhook');
 });
 
-test('refilter route: admins only', async (t) => {
+// Retired 05.10.2026 (Q31): the old route moved rows with no preview. It answers 410 and names the new one.
+test('the old refilter route is retired and points at the preview-first one', async (t) => {
   const s = await start();
   t.after(() => s.child.kill());
-  assert.equal((await fetch(s.base + '/api/admin/gmail/refilter', { method: 'POST', headers: { 'x-acting-as': 'Ieva' } })).status, 403);
-  const ok = await fetch(s.base + '/api/admin/gmail/refilter', { method: 'POST', headers: { 'x-acting-as': 'Ritvars' } }).then((r) => r.json());
-  assert.deepEqual(ok, { ok: true, checked: 0, setAside: 0, left: 0 });
+  for (const who of ['Ieva', 'Ritvars']) {
+    const r = await fetch(s.base + '/api/admin/gmail/refilter', { method: 'POST', headers: { 'x-acting-as': who } });
+    assert.equal(r.status, 410, who);
+    assert.match((await r.json()).use, /\/api\/admin\/inbox\/refilter/);
+  }
 });
