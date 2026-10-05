@@ -322,6 +322,9 @@ each as a working version and says so on screen.
   text, so the required note is quick. Who / from / to / when stay recorded as today. The form
   (inline line under the card vs a pop-up) is MAIN's A/B. Today no stage move asks for anything
   except Not proceeding (`src/app.html` 3246, 3854, 5289, 6700; History says "changed by hand").
+- **DECIDED 05.10 (Ritvars, relayed by MASTER CONTROL, recorded in its control file as Q13 / Q15):**
+  "Officer Programs" in the 140 target = **NAV + ENG**. A note or call saved on that person shortly
+  before a stage move **does count** as the move's note. Routed to MAIN with the A/Bs (Q13, Q14, Q15).
 - **D-C7 DECIDED - no guardian field for now** (Ritvars, popup "Leave out for now"): applicants come after
   secondary or maritime school, so most are adults. Parked; one optional box if Ieva asks for it.
   Education, study form and nationality stay as built.
