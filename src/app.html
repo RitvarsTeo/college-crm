@@ -1638,6 +1638,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .chinfo li:last-child details:not([open]) summary{border-bottom:0}
   html.ui-c .chinfo li:last-child .chcard-in{border-bottom:0}
   html.ui-c .chinfo .chasof{align-self:flex-end}
+  html.ui-c .chfilter .btn{align-self:flex-start}
   html.ui-c .c-chcard .chlist a.chgo{display:inline;align-self:flex-start;padding:0;border:0;font-size:12.5px;font-weight:650;color:var(--k-live);background:none}
   html.ui-c .chchain{display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap}
   html.ui-c .chchain b{font-size:13.5px;font-weight:650;color:var(--ink);border:1px solid var(--rule);border-radius:8px;padding:4px 10px;background:var(--surface)}
@@ -6597,6 +6598,41 @@ function chSisHtml(f) {
   return `<div class="c-sheet c-chcard chinfo chsis"><ul class="chlist">${chOpen(`<b>SIS</b>${word}`, chain + map + figs)}</ul></div>`;
 }
 
+// Q31 (05.10.2026): the filter over what already waits in the Inbox. One line that uncovers two
+// steps: "Check waiting rows" says how many it WOULD move and why, and moves nothing; only "Move N"
+// moves them, and only those. Admins only (the server refuses everyone else).
+function chFilterHtml() {
+  return `<div class="c-sheet c-chcard chinfo chfilter"><ul class="chlist">${chOpen('<b>Inbox filter</b><span class="chk k-hand">Waiting rows</span>',
+    '<div id="chFilterOut"></div><button class="btn ghost" type="button" onclick="chFilterCheck()">Check waiting rows</button>')}</ul></div>`;
+}
+function chFilterResult(r) {
+  const why = Object.entries(r.byReason || {}).map(([k, n]) => chFig(n, k, 'is-out')).join('');
+  return `<span class="chfigs">${chFig(r.checked, 'waiting', 'is-in')}${why}${chFig(r.left, 'stay')}</span>`;
+}
+async function chFilterCheck() {
+  const box = document.querySelector('#chFilterOut');
+  const r = await api('/api/admin/inbox/refilter');
+  const btn = box.parentElement.querySelector('button');
+  box.innerHTML = chFilterResult(r);
+  if (r.wouldMove > 0) {
+    btn.textContent = 'Move ' + r.wouldMove;
+    btn.className = 'btn';
+    btn.onclick = () => chFilterMove(r.wouldMove);
+  } else {
+    btn.textContent = 'Nothing to move';
+    btn.disabled = true;
+  }
+}
+async function chFilterMove(n) {
+  const box = document.querySelector('#chFilterOut');
+  const btn = box.parentElement.querySelector('button');
+  btn.disabled = true;
+  const r = await api('/api/admin/inbox/refilter', { method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ apply: true }) });
+  box.innerHTML = chFilterResult({ ...r, byReason: {} }) + `<span class="chfigs">${chFig(r.moved, 'moved', 'is-out')}</span>`;
+  btn.textContent = r.moved === n ? 'Done' : 'Moved ' + r.moved;
+}
+
 async function viewChannels(which) {
   if (!isAdmin()) {
     $('#view').innerHTML = `<h1>Channels</h1>
@@ -6610,7 +6646,8 @@ async function viewChannels(which) {
   // Q28 (05.10.2026): centred white cards, the shared cards rule (.c-sheet); the title where every page has it.
   $('#view').innerHTML = `<p class="c-crumb">Settings</p><div class="c-head"><div><h1>Channels</h1></div></div>
     <div class="c-sheet c-chcard chinfo">${chListHtml(d.channels || [], env, ctx)}</div>
-    ${chSisHtml(chSisFacts(d.channels || [], env, ctx))}`;
+    ${chSisHtml(chSisFacts(d.channels || [], env, ctx))}
+    ${chFilterHtml()}`;
 }
 // ================================================== end of the channel model ==
 

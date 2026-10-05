@@ -140,3 +140,18 @@ test('Q31: the action is admins only; GET previews, POST without apply:true move
   const a = await fetch(url, { method: 'POST', headers: { 'x-acting-as': 'Ritvars', 'content-type': 'application/json' }, body: '{"apply":true}' }).then((r) => r.json());
   assert.equal(a.applied, true);
 });
+
+// Q31 (a): Ritvars cannot call an API, so the two steps are a control on Settings > Channels.
+test('Q31: the Inbox filter control checks first and moves only on the second click', async () => {
+  const fs = await import('node:fs');
+  const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
+  const fn = (name) => { const i = APP.indexOf('async function ' + name + '(') >= 0 ? APP.indexOf('async function ' + name + '(') : APP.indexOf('function ' + name + '(');
+    return APP.slice(i, APP.indexOf('\n}\n', i)); };
+  assert.match(fn('chFilterHtml'), /Check waiting rows/);
+  assert.match(fn('chFilterHtml'), /onclick="chFilterCheck\(\)"/, 'the first click only checks');
+  assert.doesNotMatch(fn('chFilterCheck'), /method|apply/, 'the check is a GET and moves nothing');
+  assert.match(fn('chFilterCheck'), /'Move ' \+ r\.wouldMove/, 'the second button names how many');
+  assert.match(fn('chFilterMove'), /apply: true/, 'only the second click moves');
+  assert.equal((APP.match(/apply: true/g) || []).length, 1, 'nowhere else in the page moves rows');
+  assert.match(APP, /\$\{chFilterHtml\(\)\}/, 'it is on the Channels page, which is admins only');
+});
