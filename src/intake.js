@@ -273,12 +273,16 @@ export async function receive(db, item) {
 // real contacts and a sales pitch was never one.
 const STATE_SETS = { notrelevant: ['archived', 'filtered'] };
 
-export async function listInbound(db, { state = 'new', now = nowIso() } = {}) {
+// `range` is the year scope (Q45): [from, to) on the message's own arrival, received_at.
+export async function listInbound(db, { state = 'new', now = nowIso(), range = null } = {}) {
   const wanted = STATE_SETS[state] || (state ? [state] : []);
-  const where = wanted.length ? `WHERE i.state IN (${wanted.map(() => '?').join(',')})` : '';
+  const conds = [];
+  if (wanted.length) conds.push(`i.state IN (${wanted.map(() => '?').join(',')})`);
+  if (range) conds.push('i.received_at >= ? AND i.received_at < ?');
+  const where = conds.length ? `WHERE ${conds.join(' AND ')}` : '';
   const rows = await db.prepare(`SELECT i.*, pe.name AS person_name FROM inbound i
     LEFT JOIN people pe ON pe.id = i.person_id
-    ${where} ORDER BY i.received_at DESC`).all(...wanted);
+    ${where} ORDER BY i.received_at DESC`).all(...wanted, ...(range || []));
   const known = await currentStudentIndex(db);
   for (const r of rows) {
     r.fields = await db.prepare('SELECT * FROM field_values WHERE inbound_id = ? ORDER BY id').all(r.id);
@@ -327,7 +331,8 @@ export function missingFor(fields) {
   return (CFG.qualification.completionFields || []).filter((f) => !present.has(f));
 }
 
-export async function agedCount(db, now = nowIso()) {
+export async function agedCount(db, now = nowIso(), range = null) {
+  if (range) return (await db.prepare("SELECT COUNT(*) n FROM inbound WHERE state = 'new' AND surface_at <= ? AND received_at >= ? AND received_at < ?").get(now, ...range)).n;
   return (await db.prepare("SELECT COUNT(*) n FROM inbound WHERE state = 'new' AND surface_at <= ?").get(now)).n;
 }
 
