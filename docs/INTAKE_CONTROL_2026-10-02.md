@@ -364,3 +364,4 @@ MAIN order: Q17 -> Q18 -> Q16 build -> Q19 A/B -> Q15 A/B. Q14 pick still to ask
 - **Q21 People = everyone** (Ritvars asked "whats the point of the all people tab?"; picked): menu People (everyone, search, Add lead) > Journey, Outcomes; no All people item.
 - Stage-move note (Q15): **B pop-up**, rule live (enforce on), APPLICATIONS finalizes.
 - Q16 phone tab bar BUILT `5fff65d` (MAIN).
+05.10: **GO given in advance** (Ritvars: "ok, show me when ready" / "Then we commit and deploy."): after he picks the gap fix and sees the finals, control cuts the ninth patch, deploys with deploy_verify, pushes. Contents: MAIN tip, APPLICATIONS `cd42945` + Q15 final, CLOSURE tip, CHANNELS `1ea73ae`.
