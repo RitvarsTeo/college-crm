@@ -4283,7 +4283,7 @@ async function cApplications() {
     <span><b>${d.feed.references}</b> in the SIS store</span>
     ${d.setAside ? `<span><b>${d.setAside}</b> set aside in the Inbox</span>` : ''}
     <span><b>${d.people}</b> counted</span>`;
-  const head = `<div class="ksh"><h2>SIS funnel</h2><span class="kt2">by registration week &middot; where each person stands now</span></div>`;
+  const head = `<div class="ksh"><h2>SIS funnel</h2><span class="kt2">registered that week, current status now</span></div>`;
   if (!d.people) {
     box.innerHTML = head + `<p class="c-empty c-appempty">${d.state === 'off' ? 'The SIS feed is off.' : d.state === 'no-run' ? 'The SIS feed has not run yet.'
       : `No real applicant yet.${d.setAside ? ` The SIS holds ${d.setAside} ${d.setAside === 1 ? 'record' : 'records'} a person set aside.` : ''}`}</p>`;
