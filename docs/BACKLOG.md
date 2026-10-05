@@ -14,6 +14,23 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - LOCKED: menu order, "Next steps", and "Intake" never "CRM"
+
+Ritvars, locked 05.10 (via MASTER CONTROL):
+- **Menu:** Home > Inbox > Next steps > Journey > All people > Reports > Settings, groups unchanged (Admissions holds Inbox
+  then Next steps; People holds Journey then All people). "Today" reads **Next steps** wherever a person reads it: the
+  menu (the count badge stays on it), the page title, the reload notice. The route stays #/today; old links work.
+  "Due today" / "Today" as a DUE STATE (chips, filters) is not the page name and stays.
+- **Help center boxes:** 01 Inbox, 02 Next steps, 03 Outcomes.
+- **Tour step 1:** "The left card" / "Everything in Intake is one click away here. The numbers show what is waiting." No
+  "menu", no "CRM". Tour step 2 reads Next steps.
+- **"CRM" sweep, user-facing only:** help.json (tour and answers), channels.json values (connect steps and notes), the
+  Console page (title and words), the Excel file's author and application (Novikontas Intake). The install name was
+  already Intake. Comments, identifiers, env names (CRM_AUTH ...) and repo or folder names keep their words.
+  test/no_crm_word.test.js fails if CRM comes back anywhere a person reads it, and checks the menu order.
+Seen at 1440 on a restarted preview: the menu, Next steps with its count, the Help boxes, tour step 1; no "CRM" on the
+page. BUILT, next patch.
+
 ## 05.10.2026 - The (c) line is the foot of every page
 
 Decided by Ritvars 05.10 (via MASTER CONTROL), replacing "the (c) line at the bottom of the menu": "© Novikontas Academy"

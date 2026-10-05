@@ -40,7 +40,7 @@
       "howWeGoLive": "Deploy, set the secret both sides, send one real submission, check it appears in CAR, switch mode to live.",
       "howWeDisable": "Set the channel mode to off. The endpoint then refuses and says so.",
       "connectSteps": [
-        "Connect the production website form to the CRM endpoint",
+        "Connect the production website form to the Intake endpoint",
         "Test a new person",
         "Test an existing person",
         "Test filtering and routing"
@@ -123,7 +123,7 @@
       "_note": "A second architecture exists - the Forms API with a Cloud project and Pub/Sub. It is heavier and needs a Cloud project. The Apps Script route is what this contract assumes. EXTERNAL CONFIRMATION REQUIRED on which one Novikontas wants.",
       "blockerKind": "question",
       "connectSteps": [
-        "Connect the actual form submission to the CRM",
+        "Connect the actual form submission to Intake",
         "Configure the Apps Script integration",
         "Test a new and an existing person",
         "Test Inbox routing"
@@ -260,10 +260,10 @@
       "howWeTest": "Simulate from DEV CONTROL with a Meta-shaped webhook body, signed with a test secret.",
       "howWeGoLive": "Deploy, set the callback URL and verify token at Meta, pass the handshake, send one real message, switch to live.",
       "howWeDisable": "Unsubscribe the page at Meta, or set the mode to off here.",
-      "operationalNote": "Facebook and Instagram are worked through the shared Meta Business Suite inbox. The channel is Facebook; who owns the person in the CRM is decided after qualification and is not the same question.",
+      "operationalNote": "Facebook and Instagram are worked through the shared Meta Business Suite inbox. The channel is Facebook; who owns the person in Intake is decided after qualification and is not the same question.",
       "blockerKind": "work",
       "connectSteps": [
-        "Connect the real Facebook Page to the CRM",
+        "Connect the real Facebook Page to Intake",
         "Configure webhook and API permissions",
         "Test a Facebook message and a lead",
         "Test identity resolution into the Inbox"
@@ -529,7 +529,7 @@
       "blockerKind": "work",
       "connectSteps": [
         "Configure the real WhatsApp Business account (WABA) for **+371 23111114**",
-        "Connect Meta app -> WhatsApp -> webhook -> CRM",
+        "Connect Meta app -> WhatsApp -> webhook -> Intake",
         "Configure verification and signature checking",
         "Test an inbound WhatsApp message",
         "Test that an existing person is matched, not duplicated",
@@ -615,7 +615,7 @@
       "identityNote": "A Mailchimp event is ACTIVITY about somebody, not automatically a new person. It matches on the member id or the email. A newsletter subscriber is not a lead.",
       "connectSteps": [
         "Configure the webhook - capability already confirmed",
-        "Connect the account to the CRM",
+        "Connect the account to Intake",
         "Map the relevant events",
         "Test through to the Inbox and the Person"
       ],
@@ -748,7 +748,7 @@
         "Paste the token Ritvars holds into the server setting `PBX_API_TOKEN`. Never into a document, a chat or this repository",
         "Connect the production PBX polling schedule",
         "Use the existing confirmed button and queue mapping",
-        "Store calls in the CRM",
+        "Store calls in Intake",
         "Match the caller to a Person",
         "Unknown caller -> Inbox",
         "Test buttons 1, 2 and 3"
@@ -843,10 +843,10 @@
       "howWeTest": "Simulate from DEV CONTROL.",
       "howWeGoLive": "Issue a token to one partner, take one real referral, switch to live.",
       "howWeDisable": "Revoke the token.",
-      "identityNote": "The agent is a SOURCE and an attribution. It is never automatically the CRM owner.",
+      "identityNote": "The agent is a SOURCE and an attribution. It is never automatically the Intake owner.",
       "_note": "No public agent API exists to integrate with. This is a contract we define, not one we discover.",
       "connectSteps": [
-        "Connect the agent referral form to the CRM",
+        "Connect the agent referral form to Intake",
         "Validate the agent token",
         "Test a new and a duplicate submission"
       ],
@@ -855,7 +855,7 @@
       "blockerKind": "question",
       "reliability": "A token per partner, checked server-side. A repeat partner id + partner reference is dropped.",
       "reconciliation": "None built.",
-      "review_27_09": "The review suggests the simplest version needs no partner system at all: the agent hands out a unique referral link to OUR website form, the form carries the token, and the CRM records source = agent and which agent. Worth choosing before anybody builds a partner-side webhook.",
+      "review_27_09": "The review suggests the simplest version needs no partner system at all: the agent hands out a unique referral link to OUR website form, the form carries the token, and Intake records source = agent and which agent. Worth choosing before anybody builds a partner-side webhook.",
       "record": {
         "access": {
           "state": "pending",
@@ -917,7 +917,7 @@
       "howWeDisable": "Not applicable.",
       "identityNote": "Manual entry runs the SAME duplicate check as every automated channel. It is not a way around the rule.",
       "connectSteps": [
-        "No external integration needed. Final acceptance test in the CRM."
+        "No external integration needed. Final acceptance test in Intake."
       ],
       "ownerPerson": null,
       "ownerAction": "Nothing to do. Already working",

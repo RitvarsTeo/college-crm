@@ -185,7 +185,7 @@ test('the Console is a separate page, and the CRM has no way into it', async (t)
   assert.equal(console_.status, 200);
   const consoleHtml = await console_.text();
 
-  assert.match(consoleHtml, /<title>Academy CRM - Console<\/title>/);
+  assert.match(consoleHtml, /<title>Intake - Console<\/title>/);   // "Intake" wherever a person reads it (05.10.2026)
   // Renamed 30.09.2026, Ritvars: "its now called intake". The tab said
   // "Academy CRM - prototype" while it was live, in daily use, holding 192 real people.
   assert.match(crm, /<title>Novikontas Intake<\/title>/);

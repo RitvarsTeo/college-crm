@@ -54,8 +54,9 @@ test('Today and the Inbox keep their own counts in C\'s navigation', () => {
   assert.doesNotMatch(APP, /<span>New Leads<\/span>/, 'nothing calls the queue New Leads');
   // Next Steps was folded INTO Today (the owner, 01.10.2026), so the due count it carried
   // is now the Today badge: same id, same number, one screen fewer to visit.
-  assert.match(APP, /<span>Today<\/span><span class="n" id="cnNext">/);
-  assert.doesNotMatch(APP, /<span>Next Steps<\/span>/, 'Next Steps is not a menu item any more');
+  // 05.10.2026 (the owner, locked): the menu item reads "Next steps" again and the badge stays on it
+  assert.match(APP, /<span>Next steps<\/span><span class="n" id="cnNext">/);
+  assert.doesNotMatch(APP, /<span>Today<\/span><span class="n" id="cnNext">/, 'not Today any more');
   const start = APP.indexOf('async function cNavCounts(');
   const src = APP.slice(start, APP.indexOf('\n}\n', start));
   assert.match(src, /\(i\.counts \|\| \{\}\)\.new/, 'the Inbox counts new arrivals');

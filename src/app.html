@@ -2336,8 +2336,8 @@ function installCNav() {
   brand.insertAdjacentHTML('afterend', `<div class="cnav" role="navigation" aria-label="Main">
     <a href="#/home" data-c="home" title="How admissions is performing">${C_ICON.home}<span>Home</span></a>
     <a href="#/admissions" data-c="admissions" title="The work and what has arrived">${C_ICON.adm}<span>Admissions</span></a>
-    <div class="kids"><a href="#/today" data-c="today" title="What needs my attention"><span>Today</span><span class="n" id="cnNext"></span></a>
-      <a href="#/leads" data-c="leads" title="What arrived and needs a person to look at it"><span>Inbox</span><span class="n" id="cnLeads"></span></a></div>
+    <div class="kids"><a href="#/leads" data-c="leads" title="What arrived and needs a person to look at it"><span>Inbox</span><span class="n" id="cnLeads"></span></a>
+      <a href="#/today" data-c="today" title="What needs my attention"><span>Next steps</span><span class="n" id="cnNext"></span></a></div>
     <a href="#/people" data-c="people" title="Who we are working with, and where they are">${C_ICON.ppl}<span>People</span></a>
     <div class="kids"><a href="#/journey" data-c="journey"><span>Journey</span></a>
       <a href="#/people/all" data-c="all"><span>All people</span></a></div>
@@ -2905,7 +2905,7 @@ async function viewTodayC() {
   const waiting = (await api('/api/intake').catch(() => ({}))).counts || {};
   const fig = (n, label, tone = '') => `<div><b${tone ? ` class="${tone}"` : ''}>${n}</b><span>${label}</span></div>`;
   $('#view').innerHTML = `
-    <div class="c-head"><div><h1>Today</h1></div>
+    <div class="c-head"><div><h1>Next steps</h1></div>
       <div class="act"><span class="c-planned"><b>${pct}%</b> planned <small>${open.length - none.length} of ${open.length} open people have a next step</small></span></div></div>
     <div class="c-todaystrip">${fig(open.length, 'open')}${fig(over.length, 'overdue', over.length ? 'c-od' : '')}${fig(none.length, 'no next step')}${
       fig(`<a href="#/leads">${waiting.new || 0}</a>`, 'waiting in the Inbox')}</div>
@@ -3039,7 +3039,7 @@ function viewHelpC() {
       <button class="btn" onclick="fbOpen('BUG')">Report a problem</button></div></div>
     <div class="c-steps">
       <a class="c-step" href="#/leads"><span class="c-step-n">01</span><b>Inbox</b><small>Everything that arrives lands here first. Say what they want to study and the next step, and they move into Admissions. Junk is marked not relevant, never deleted.</small></a>
-      <a class="c-step" href="#/next"><span class="c-step-n">02</span><b>Next Steps</b><small>What the team has to do: overdue, due today, coming up. Press Done, say how it went and choose the next step. Everyone always keeps a next step.</small></a>
+      <a class="c-step" href="#/next"><span class="c-step-n">02</span><b>Next steps</b><small>What the team has to do: overdue, due today, coming up. Press Done, say how it went and choose the next step. Everyone always keeps a next step.</small></a>
       <a class="c-step" href="#/outcomes"><span class="c-step-n">03</span><b>Outcomes</b><small>Where finished journeys end: admitted or not proceeding. The download for management review is here.</small></a>
     </div>
     <h2 class="c-set-h">Questions and answers</h2>
@@ -4724,8 +4724,8 @@ async function route() {
     $('#view').innerHTML = e.message === 'not found'
       ? `<h1>Not here any more</h1>
          <div class="prov">This record is not in the database any more. This page may have been
-         open since before the data changed. Going back to Today will reload it.</div>
-         <button class="btn" onclick="location.hash='#/today'">Back to Today</button>`
+         open since before the data changed. Going back to Next steps will reload it.</div>
+         <button class="btn" onclick="location.hash='#/today'">Back to Next steps</button>`
       : `<div class="err">Failed to load: ${esc(e.message)}</div>`;
   }
   refreshBadge();
