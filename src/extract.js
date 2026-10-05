@@ -90,6 +90,13 @@ export function signalsIn(text) {
   };
 }
 
+export function programmeFromAnswer(answer) {
+  const a = String(answer || '').trim().toLowerCase();
+  if (!a) return null;
+  const code = Object.keys(PROGRAMME_WORDS).find((c) => c.toLowerCase() === a);
+  return code || signalsIn(a).programmeValue;
+}
+
 function matchedStart(t) {
   for (const w of START_WORDS) if (t.includes(w)) return w;
   return null;
@@ -126,8 +133,18 @@ export function looksLikeJunk(text, cfg = CFG.intakeFilter) {
 // number, a lead-ad field). Those are `provider`. Anything read out of the
 // message text is `extracted`. A field that is not there is not invented: it
 // comes back in `missing`.
-export function extractFrom({ channel, text, provided = {} }) {
+//
+// `answeredProgramme` is the programme a person picked on a form, as they gave it (Q8,
+// 05.10.2026). It is stored verbatim elsewhere; here it only feeds the SUGGESTION, so a form
+// lead that never typed the programme into a message still reads as a lead with its
+// interest preselected. Read with the same words as a message, or by its code. A value
+// that names none of our programmes suggests nothing: it is never guessed into one.
+export function extractFrom({ channel, text, provided = {}, answeredProgramme = null }) {
   const sig = signalsIn(text);
+  if (!sig.programmeValue && answeredProgramme) {
+    const code = programmeFromAnswer(answeredProgramme);
+    if (code) { sig.programme = true; sig.programmeValue = code; }
+  }
   const fields = [];
   const add = (field, value, provenance) => {
     if (value === undefined || value === null || value === '') return;

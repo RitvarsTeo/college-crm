@@ -163,12 +163,15 @@ test('every blocker in the record names its dependency, owner, action and side',
   assert.ok(PROTO.openQuestions.agentPartnerOwner && PROTO.openQuestions.linkedinLeadSync);
 });
 
-test('the record: PBX settled on the 02.10 backup with its gap; Email live for edu@ only, training@ parked', () => {
+test('the record: PBX settled on the 02.10 backup, its continuity gap closed by the 04.10 one; Email live for edu@ only, training@ parked', () => {
   const ph = CFG.channels.phone.record.liveVerified;
   assert.equal(ph.state, 'yes');
-  assert.match(ph.source, /2026-10-02T01-17-43Z/);
+  assert.match(ph.source, /2026-10-04T19-29-00Z/);
   assert.equal(ph.settled.was.length, 2);
-  assert.ok(ph.gap);
+  assert.ok(!ph.gap && ph.gapClosed && ph.gapClosed.was, 'the gap is closed, and what it was is kept');
+  assert.equal(CFG.channels.phone.record.nextAction, null, 'nothing left to prove');
+  // the SIS row is not served to the screen; its record is data only
+  assert.equal(CFG.integrations.sis.record.liveVerified.state, 'yes');
   const mb = CFG.channels.gmail.record.mailboxes;
   assert.equal(mb.find((m) => m.address.startsWith('edu@')).state, 'live');
   assert.equal(mb.find((m) => m.address.startsWith('training@')).state, 'parked');

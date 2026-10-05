@@ -244,6 +244,26 @@ leaves the menu card (light and dark, desktop and the phone foot) and is the foo
 `#view::after`, so no redraw inside a page can drop it. Help's own (c) line removed so it is not there twice. The menu-foot
 Help center link stays. Checked on Home, Today, Inbox, Journey, All people, a person page, Reports, Settings and Help:
 the foot is on each, the menu carries no (c), in light and dark. BUILT, next patch.
+## 05.10.2026 - Q8: the programme a person picked reaches the Inbox on every channel
+
+Where it was lost: `toIntake()` (src/adapters.js) passed the adapter's `extracted` on for the website only (Q3), so
+the programme from an agent lead, a Meta lead form (Facebook, Instagram, Messenger), a typed-in contact (in_person),
+an Open Day booking (PARKED) and the apply sheet (DROPPED) stopped there and never reached the database. The website
+was only half kept: its answer was stored as `form_programme`, but the suggestion read the message text only, so a
+form lead with no programme in "Additional Comments" read "nothing about studying was mentioned", the Inbox column
+was empty and "What do they want to study?" was not preselected.
+Fixed at the shared boundary: `toIntake()` passes the form answers (programme, study form, heard from, company) for
+every channel, stored as before as the person's own answer, `provider`, verbatim. `extractFrom()` also reads the
+picked programme for the SUGGESTION: by its code or the same words as a message, an `extracted` interest a person
+confirms, never a fact. A value naming none of our programmes ("Hotel management") is kept and suggests nothing.
+What the message says still wins. `intent` is NOT carried (the adapter's reading of the channel, not an answer):
+phone queue choice, Mailchimp, Open Day, lead form stay as they were, parked. No schema change.
+LinkedIn and TikTok are not in this: their webhooks carry ids only and the answers come through leadanswers.js,
+which already stores the programme (as a `provider` interest - a different rule from the website's, not changed here).
+Real Meta lead webhooks also carry ids only; the inline `programme` the adapter reads is the simulator's shape.
+Tests: test/programme_q8.test.js, 15 (11 of them fail on production 5eba1a6, website included); suite 1093/1093.
+Seen locally on 4 simulated leads: Inbox shows NAV / ENG / MT WTT, the unmapped one blank, the open row preselects NAV.
+BUILT, not deployed.
 
 ## 05.10.2026 - The app opens on Home
 
