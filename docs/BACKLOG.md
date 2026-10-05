@@ -14,6 +14,20 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - Q24 + Q28: Channels say Blocked only on a refusal; the list is one centred card
+
+The owner: "why some channels show blocked, when they are not???", then "Website form is live, agent is live (it comes
+into edu email). Linkedin is live. We jsut waiting on the leads extra option!! not the channel connection itself!
+Mailchimp is live", then "Make the things that are this small, as this table, be in the center if the page on a white card."
+Q24 `12b4c4c`: record.ownerSays live outranks a provider count that has not caught up (the count stays as data);
+an outside party reads "Waiting on <party>", nobody named "Not decided", "Blocked" only when the record says refused.
+Website, Agent (arrives through edu@), LinkedIn (Lead Sync is a pending extra) and Mailchimp are Live by his word.
+Q28 `23713e5`: the list is a .c-sheet (the shared cards rule), 640px, centred; crumb Settings + title as on other pages.
+**LIVE 05.10.2026** in the eleventh patch: production 25cb27e (release/2026-10-05-intake-9, record 5c3236a),
+dpl_6B4kc9WCMxRfq1auqSLvrzzbeCCE, released by MASTER CONTROL. Seen on the local build at 1440 light and dark (Admin):
+6 Live, 5 Waiting on Oksana, In person By hand, no Blocked.
+Q26 (the Mailchimp URL check recorded only with the secret) `8ee1c5b` is HELD, on its own branch.
+
 ## 05.10.2026 - Q23: every Home figure a traced click; bigger donut and card figures; no peak label
 
 Ritvars to MAIN, 05.10, with a screenshot of production Home: "why doesnt it occupy the whole page? ALso, not all
