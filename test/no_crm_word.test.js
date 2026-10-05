@@ -61,3 +61,7 @@ test('the menu order and the Next steps name', () => {
   const help = APP.slice(APP.indexOf('class="c-step-n">01'), APP.indexOf('class="c-step-n">03') + 60);
   assert.match(help, /01<\/span><b>Inbox<\/b>[\s\S]*02<\/span><b>Next steps<\/b>[\s\S]*03<\/span><b>Outcomes<\/b>/);
 });
+test('the lines Intake writes on a person\'s History say Intake', () => {
+  assert.match(read('src', 'intake.js'), /body: 'The Intake admissions journey ends here\. The record stays for reporting\.'/);
+  assert.match(read('src', 'sync.js'), /body: 'The Intake stage is unchanged\.'/);
+});

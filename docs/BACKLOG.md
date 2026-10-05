@@ -14,6 +14,25 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - Help questions trimmed, the Needs-you shelf removed
+
+Ritvars, 05.10 (via MASTER CONTROL, control commits 31b28fe + ec7aaff):
+- **Help:** "How do I sign in?" deleted (whoever can read Help is already in) and "Which time zone is used?" deleted.
+  "Can I delete a person?" now ends: "The original messages and call records behind them are kept for 13 months."
+  The "late" question says the Inbox, not New Leads; its id stays `late-in-new-leads` (ids never change, the open
+  counts are kept per id). The late RULE is unchanged (arrived before today, past 09:00 Riga, nobody handled it).
+- **Tour step 2 "Next steps"** pointed at Home in the menu while describing the Next steps page; it now lights up
+  Next steps. The other answers were checked against the running app (Journey drag, Outcomes download, theme switch,
+  Report a problem, Feedback button) and still hold.
+- **Needs-you shelf:** the two stacked sheets drawn under the card (`.kday-sheet::before/::after`) read as a broken
+  grey strip in light and a dark strip in dark under cards 3. Removed; the card, its amber top and its shadow stay.
+- **"CRM" leftovers:** two lines Intake writes on a person's History (SIS hand-over, an SIS closing status) said "CRM";
+  they say Intake now (new rows only; old rows keep their words). Still saying CRM, not reachable from the menu: the
+  integration simulator / inspector texts (src/simulator.js, config/providers.json) - SAID, not swept.
+test/help_answers.test.js, a shelf check in test/cards_blue_edge.test.js and a History check in test/no_crm_word.test.js.
+Seen on a restarted preview at 1440, light and dark: Home (no strip), Help list, the delete answer, tour step 2.
+1090/1090. BUILT, next patch.
+
 ## 05.10.2026 - LOCKED: menu order, "Next steps", and "Intake" never "CRM"
 
 Ritvars, locked 05.10 (via MASTER CONTROL):

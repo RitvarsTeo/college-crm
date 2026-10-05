@@ -9,7 +9,7 @@
     {
       "title": "Next steps",
       "body": "What needs your attention: overdue first, then today, then coming up, and how many are waiting in the Inbox. Press Done, say how it went and choose the next step.",
-      "target": ".cnav a[data-c=\"home\"]"
+      "target": ".cnav a[data-c=\"today\"]"
     },
     {
       "title": "People",
@@ -29,24 +29,14 @@
   ],
   "faq": [
     {
-      "id": "how-do-i-sign-in",
-      "q": "How do I sign in?",
-      "a": "With Continue with Google, using your @novikontas.org account. If Google signs you in and Intake still says you are not authorised, you are not on its list yet: ask an admin to add you."
-    },
-    {
       "id": "delete-a-person",
       "q": "Can I delete a person?",
-      "a": "No. Nobody is deleted. When someone is not going ahead, close them as Not proceeding with a reason. They stay on record in Outcomes."
+      "a": "No. Nobody is deleted. When someone is not going ahead, close them as Not proceeding with a reason. They stay on record in Outcomes. The original messages and call records behind them are kept for 13 months."
     },
     {
       "id": "late-in-new-leads",
-      "q": "What does \"late\" mean in New Leads?",
+      "q": "What does \"late\" mean in the Inbox?",
       "a": "The lead arrived before today, it is past 09:00 Riga time, and nobody has handled it yet."
-    },
-    {
-      "id": "time-zone",
-      "q": "Which time zone is used?",
-      "a": "Riga. Every day and time in Intake is Latvian time, in summer and in winter."
     },
     {
       "id": "move-someone-along",

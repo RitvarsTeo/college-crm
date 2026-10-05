@@ -713,7 +713,7 @@ export async function handoffToSis(db, personId, by) {
   await db.prepare('UPDATE people SET sis_handoff_at = ? WHERE id = ?').run(at, personId);
   await logEvent(db, { personId, kind: 'status', direction: 'note', at, origin: MANUAL, actor: by,
     subject: 'Handed over to the SIS',
-    body: 'The CRM admissions journey ends here. The record stays for reporting.',
+    body: 'The Intake admissions journey ends here. The record stays for reporting.',
     field: 'sis_handoff_at', oldValue: null, newValue: at });
   return { ok: true, at };
 }

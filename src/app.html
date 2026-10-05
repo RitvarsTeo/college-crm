@@ -1444,15 +1444,12 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
     html.ui-c .jband-row{grid-template-columns:1fr}
     html.ui-c .jb-outs{flex-direction:column} }
 
-  /* B - the day: a stacked sheet. Two sheets behind it, a CONSTANT offset identical for every
-     figure, so the stack says "work waiting" and no number gains weight from it. Signal amber
-     marks the sheet (never amber text on white, KB 08 P5) because today / needs you is its meaning. */
+  /* B - the day: one card. Signal amber marks it (never amber text on white, KB 08 P5) because
+     today / needs you is its meaning. The two sheets once stacked behind it are gone (the owner,
+     05.10.2026: under cards 3 they read as a broken grey / dark strip); the card's own shadow is its depth. */
   html.ui-c .kday{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:22px;margin:0 0 30px;align-items:start;--m-delay:.1s}
   html.ui-c .kday-sheet{position:relative;z-index:0;padding:16px 20px 18px;border-radius:16px;background:var(--surface);
     border:1px solid var(--c-card-line);border-top:3px solid #F7C04F;box-shadow:0 12px 30px -22px rgba(3,12,26,.45)}
-  html.ui-c .kday-sheet::before,html.ui-c .kday-sheet::after{content:"";position:absolute;z-index:-1;left:14px;right:14px;bottom:-7px;height:20px;
-    border-radius:0 0 14px 14px;background:var(--k-well);border:1px solid var(--k-well-line);border-top:0}
-  html.ui-c .kday-sheet::after{left:28px;right:28px;bottom:-13px;z-index:-2;opacity:.8}
   html.ui-c .kday h2{margin:0 0 10px;font-family:inherit;font-size:12px;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--t3)}
   html.ui-c .kday-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
   html.ui-c .kneed{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:12px;text-decoration:none;color:var(--ink);
@@ -2592,10 +2589,10 @@ const cHomeProg = (D) => `<section class="ksec"><div class="ksh"><h2>Admitted by
 const cHomeChan = (D) => `<section class="ksec"><div class="ksh"><h2>Where admitted people came from</h2><span class="kt2">${D.admitted.length} in ${D.year}</span><span class="ksrc">click a bar → Outcomes</span></div>${cBars(D.chans, 'chan')}</section>`;
 
 // ---- B: TODAY FIRST ------------------------------------------------------------
-// The working day first. The figures that need a person now sit on a stacked frame - a
-// sheet with two sheets behind it, a constant offset identical for every figure, so the
-// stack says "work waiting" and cannot make one number heavier than another. Signal
-// amber is the focus colour here because that is its one meaning: today / needs you.
+// The working day first. The figures that need a person now sit on one card (the sheets
+// once stacked behind it were removed 05.10.2026), so nothing can make one number heavier
+// than another. Signal amber is the focus colour here because that is its one meaning:
+// today / needs you.
 //
 // Then performance, each figure with its comparison as its own delta row and the basis
 // named (Square). The comparison is the last COMPLETE month against the one before it,
