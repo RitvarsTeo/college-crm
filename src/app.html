@@ -1593,6 +1593,10 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .chlist a:hover,html.ui-c .chlist a:focus-visible{background:var(--surface-2)}
   html.ui-c .chlist b{font-weight:550;font-size:14px}
   html.ui-c .chlist .chk{margin-left:auto}
+  html.ui-c .c-sheet.c-chcard{max-width:640px;margin:0 auto 16px}
+  html.ui-c .c-chcard .chlist{margin:0;max-width:none;border-top:0}
+  html.ui-c .c-chcard .chlist a{padding:12px 18px}
+  html.ui-c .c-chcard .chlist li:last-child a{border-bottom:0}
   html.ui-c .chk{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--t2);white-space:nowrap}
   html.ui-c .chk::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--rule)}
   html.ui-c .chk.k-live::before{background:var(--k-live)}
@@ -6450,7 +6454,10 @@ async function viewChannels(which) {
   }
   if (which) return viewChannel(which);
   const d = await api('/api/admin/channels');
-  $('#view').innerHTML = `<h1>Channels</h1>${chListHtml(d.channels || [], d.environment || null)}`;
+  // Q28 (05.10.2026): the list sits centred on one white card, the shared cards rule (.c-sheet);
+  // the title sits where every other page has it.
+  $('#view').innerHTML = `<p class="c-crumb">Settings</p><div class="c-head"><div><h1>Channels</h1></div></div>
+    <div class="c-sheet c-chcard">${chListHtml(d.channels || [], d.environment || null)}</div>`;
 }
 // ================================================== end of the channel model ==
 

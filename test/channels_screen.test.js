@@ -164,7 +164,8 @@ test('no notes, evidence, dates, counts, environment talk or A/B on the screen',
     assert.ok(!APP.includes(gone), 'gone: ' + gone);
   }
   const view = APP.slice(APP.indexOf('async function viewChannels('), APP.indexOf(END));
-  assert.match(view, /\$\('#view'\)\.innerHTML = `<h1>Channels<\/h1>\$\{chListHtml\(/, 'a heading and the list, nothing else');
+  assert.match(view, /\$\('#view'\)\.innerHTML = `<p class="c-crumb">Settings<\/p><div class="c-head"><div><h1>Channels<\/h1><\/div><\/div>\s*<div class="c-sheet c-chcard">\$\{chListHtml\([^`]*\)\}<\/div>`;/,
+    'a heading and the list on one card, nothing else');
 });
 
 test('on production the state reads the real provider rows; locally it takes the record', () => {
@@ -238,4 +239,15 @@ test('every row the Channels API returns can say who owns it, and carries the re
   assert.match(fs.readFileSync(path.join(ROOT, 'src', 'channeladmin.js'), 'utf8'), /record: def\.record \|\| null/);
   assert.match(src, /production: CHANNELS\._production \|\| null/);
   assert.match(src, /downstream: CHANNELS\.downstream \|\| null/);
+});
+
+// Q28 (05.10.2026, the owner: "Make the things that are this small, as this table, be in the center if
+// the page on a white card. Match the overall design.")
+test('Q28: the Channels list is one centred card under the shared cards rule, light and dark', () => {
+  assert.match(APP, /html\.ui-c \.c-sheet\.c-chcard\{max-width:640px;margin:0 auto 16px\}/, 'centred');
+  for (const theme of [':not([data-theme="dark"])', '[data-theme="dark"]']) {
+    const i = APP.indexOf('html.ui-c' + theme + ' #view :is(');
+    assert.ok(i > 0 && APP.slice(i, APP.indexOf('{', i)).includes('.c-sheet'), 'the cards rule covers it: ' + theme);
+  }
+  assert.doesNotMatch(APP, /\.c-chcard\{[^}]*(background|box-shadow|border-radius)/, 'no card rule of its own');
 });
