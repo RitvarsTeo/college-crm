@@ -14,6 +14,14 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - The (c) line is the foot of every page
+
+Decided by Ritvars 05.10 (via MASTER CONTROL), replacing "the (c) line at the bottom of the menu": "© Novikontas Academy"
+leaves the menu card (light and dark, desktop and the phone foot) and is the foot of EVERY page, drawn once by
+`#view::after`, so no redraw inside a page can drop it. Help's own (c) line removed so it is not there twice. The menu-foot
+Help center link stays. Checked on Home, Today, Inbox, Journey, All people, a person page, Reports, Settings and Help:
+the foot is on each, the menu carries no (c), in light and dark. BUILT, next patch.
+
 ## 05.10.2026 - The app opens on Home
 
 Ritvars: opening the app landed on Admissions / Today, not on Home (the metrics). Cause: route() and fbPath() still

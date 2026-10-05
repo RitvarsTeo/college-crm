@@ -111,8 +111,13 @@ test('Settings is for everybody and holds the Help center; its admin rows are st
   assert.match(APP, /help: 'settings'/, 'the Help center lights Settings in the menu');
 });
 
-test('the (c) Novikontas Academy line with the Help center link is in the menu', () => {
-  assert.match(APP, /<div class="c-foot"><span>&copy; Novikontas Academy<\/span> <a href="#\/help">Help center<\/a><\/div>/);
+// 05.10.2026 the owner: the (c) line leaves the menu card and becomes the foot of EVERY page; the Help center
+// link stays in the menu foot
+test('the menu foot keeps only the Help center link; the (c) line is the foot of every page', () => {
+  assert.match(APP, /<div class="c-foot"><a href="#\/help">Help center<\/a><\/div>/);
+  assert.doesNotMatch(APP, /<span>&copy; Novikontas Academy<\/span>/, 'no (c) line in the menu card, light or dark, desktop or phone');
+  assert.match(APP, /html\.ui-c #view::after\{content:"© Novikontas Academy";display:block;/, 'one shared page foot, drawn by #view itself');
+  assert.doesNotMatch(APP, /class="c-help-foot"/, 'Help no longer carries its own, so it is not there twice');
 });
 
 test('the corner button is the feedback box, says so, and opens solid', () => {

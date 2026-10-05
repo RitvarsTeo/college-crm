@@ -14,8 +14,9 @@ const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
 const L = (h) => { const c = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
 const ratio = (a, b) => { const x = L(a), y = L(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
 
-test('phone: the switch and the (c) line sit at the bottom of the page, not gone', () => {
-  assert.match(APP, /<main id="view">[\s\S]{0,80}<\/main>\s*<div class="c-pagefoot"><div class="c-themebar" id="cThemeBar2"><\/div>\s*<div class="c-foot"><span>&copy; Novikontas Academy<\/span> <a href="#\/help">Help center<\/a><\/div><\/div>/);
+// 05.10.2026: the (c) line itself is now the shared foot of every page (#view::after, test/app_chrome.test.js)
+test('phone: the switch and the Help center link sit at the bottom of the page, not gone', () => {
+  assert.match(APP, /<main id="view">[\s\S]{0,80}<\/main>\s*<div class="c-pagefoot"><div class="c-themebar" id="cThemeBar2"><\/div>\s*<div class="c-foot"><a href="#\/help">Help center<\/a><\/div><\/div>/);
   // <= 900 px: every width where the menu is a top bar (Aigars UX pass, 28.09.2026)
   assert.match(APP, /@media \(max-width:900px\)\{ html\.ui-c nav \.c-themebar, html\.ui-c nav \.c-foot\{display:none\}\s*html\.ui-c \.c-pagefoot\{display:block/);
   assert.match(APP, /\.c-themebar, \.c-foot, \.c-pagefoot\{display:none\}/, 'hidden on desktop and in classic');
