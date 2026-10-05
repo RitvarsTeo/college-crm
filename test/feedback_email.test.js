@@ -54,3 +54,35 @@ test('the id_token says who signed in, and only his account is kept', async () =
     json: async () => ({ refresh_token: 'rt', id_token: idt }) }) });
   assert.equal(r.mailbox, 'ritvars.vilcins@novikontas.org');
 });
+
+// Failure handling (05.10.2026): every way Google can say no comes back as { ok:false, why } and never throws,
+// so the route that saved the feedback first still answers 200.
+test('Google refuses the stored sign-in: not sent, a reason, no throw', async () => {
+  const db = await openDb(':memory:');
+  await notify.saveToken(db, 'refresh-abc', ENV);
+  let sends = 0;
+  const r = await notify.sendFeedbackEmail(db, item, { env: ENV, fetchImpl: async (url) => {
+    if (url === 'https://token.test') return { ok: false, status: 400, json: async () => ({ error: 'invalid_grant' }) };
+    sends++; return { ok: true };
+  } });
+  assert.equal(r.ok, false);
+  assert.match(r.why, /connect again/);
+  assert.equal(sends, 0);
+});
+
+test('Gmail refuses the send: not sent, the status is in the reason, no throw', async () => {
+  const db = await openDb(':memory:');
+  await notify.saveToken(db, 'refresh-abc', ENV);
+  const r = await notify.sendFeedbackEmail(db, item, { env: ENV, fetchImpl: async (url) =>
+    url === 'https://token.test' ? { ok: true, json: async () => ({ access_token: 'at' }) } : { ok: false, status: 403 } });
+  assert.equal(r.ok, false);
+  assert.match(r.why, /403/);
+});
+
+test('the network fails: not sent, no throw', async () => {
+  const db = await openDb(':memory:');
+  await notify.saveToken(db, 'refresh-abc', ENV);
+  const r = await notify.sendFeedbackEmail(db, item, { env: ENV, fetchImpl: async () => { throw new Error('ECONNRESET'); } });
+  assert.equal(r.ok, false);
+  assert.match(r.why, /ECONNRESET/);
+});
