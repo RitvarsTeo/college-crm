@@ -14,6 +14,16 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - Form answers read as words on the person page
+
+Brief Q12 via MASTER CONTROL (found by CHANNELS while fixing Q8, 1ea73ae): the chips under "From their first message"
+showed the stored key when FIELD_LABEL had no words for it. The four form answers (src/adapters.js WEBSITE_ANSWERS) now
+read: programme picked, study form, heard about us from, company (the chip draws its label in capitals). How answers
+are stored or extracted is unchanged (CHANNELS owns it). test/field_labels.test.js reads the keys from adapters.js and
+fails if any of them shows a snake_case key (it failed on the old app.html). Seen on a fresh preview (8862): a simulated
+website lead carrying all four answers, added to Admissions, shows PROGRAMME PICKED Navigation, STUDY FORM Full time,
+HEARD ABOUT US FROM Instagram, COMPANY Example Shipping; no key on the page. BUILT, next patch.
+
 ## 05.10.2026 - Help questions in ONE fixed order, never by most opened
 
 Ritvars's rule of 01.10 (dev kit part 3 README: "THE HELP CENTER IS NOT A POPULARITY SYSTEM"), brief Q9 via MASTER

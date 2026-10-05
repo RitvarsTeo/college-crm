@@ -5354,7 +5354,9 @@ const PROV_TITLE = {
 // with "fieldChip is not defined" - 4 of 12 in the demo, and 4 of 5 of the open
 // links in CAR Done. Present since the V1 commit and found by the 24.09 audit.
 const FIELD_LABEL = { interest: 'wants to study', education: 'education', question: 'asked about',
-  email: 'email', phone: 'phone', start: 'wants to start' };
+  email: 'email', phone: 'phone', start: 'wants to start',
+  // a form's own answers (src/adapters.js WEBSITE_ANSWERS): a person never reads the stored key (Q12, 05.10.2026)
+  form_programme: 'programme picked', form_study_form: 'study form', heard_from: 'heard about us from', form_company: 'company' };
 const fieldChip = (f) => `<span class="chipf ${esc(f.provenance)}"
   title="${esc(PROV_TITLE[f.provenance] || '')}"><i>${esc(FIELD_LABEL[f.field] || f.field)}</i>
   ${esc(f.value)}</span>`;
