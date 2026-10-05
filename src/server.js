@@ -8,7 +8,7 @@ import { seed } from './seed.js';
 import { hasRealData, loadReal } from './real.js';
 import { PROVIDERS, runScenario, runOutbound, runFullDemo, listEvents, getEvent, consentFor, consentSummary, DEMO_SEQUENCE } from './simulator.js';
 import { logEvent, applyEdit, readHistory, MANUAL, AUTOMATIC, EDITABLE_FIELDS, IMMUTABLE_FIELDS, FIELD_LABELS } from './history.js';
-import { stampOpenDay, registerOpenDay, refilterOpenEmail } from './intake.js';
+import { stampOpenDay, registerOpenDay, refilterOpen } from './intake.js';
 import { queueLeadAnswers } from './leadanswers.js';
 import * as gmailB from '../lib/gmail.js';
 import * as notify from '../lib/notify.js';
@@ -42,7 +42,7 @@ import { signInFirst, withReturnScript } from './signinfirst.js';
 import { bootstrapIfAuthOn } from './bootstrap.js';
 import * as channeladmin from './channeladmin.js';
 import { todayStart, tomorrowStart, localDate } from './bizday.js';
-import { receiveSisApplication, mergeSisDuplicate, syncSis, channelMode } from './sync.js';
+import { receiveSisApplication, mergeSisDuplicate, syncSis, channelMode, SIS_STAGE } from './sync.js';
 
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -783,9 +783,11 @@ async function channelCounts() {
   // ONLY rows a real provider posted. The demo builder and the simulator write
   // through this same table deliberately, so counting everything here would make
   // every channel on the demo copy read as CONNECTED.
-  for (const r of await db.prepare(`SELECT channel, COUNT(*) n, MAX(received_at) last FROM inbound
+  // `filtered` (Q27, 05.10.2026): how many of them a rule set aside, for the Channels figures.
+  for (const r of await db.prepare(`SELECT channel, COUNT(*) n, MAX(received_at) last,
+                              SUM(CASE WHEN state = 'filtered' THEN 1 ELSE 0 END) f FROM inbound
                               WHERE source = 'provider' GROUP BY channel`).all()) {
-    out[r.channel] = { events: r.n, lastEventAt: r.last, lastSuccessAt: r.last };
+    out[r.channel] = { events: Number(r.n), lastEventAt: r.last, lastSuccessAt: r.last, filtered: Number(r.f || 0) };
   }
   return out;
 }
@@ -1197,6 +1199,11 @@ export const handle = async (req, res) => {
             env: process.env, checks: await latestChecks(), handshakes: await handshakeRows(),
             countsByChannel: await channelCounts() }).concat(integrationStatuses()),
           runs: await syncRuns(),
+          // Q27 (05.10.2026): the pull times and the SIS chain for the Channels figures. Data only.
+          schedule: CHANNELS.schedule || null,
+          filtersAll: CHANNELS.filtersAll || [],
+          sis: { stages: SIS_STAGE, ...((await channelCounts()).sis || { events: 0 }),
+            record: (CHANNELS.integrations && CHANNELS.integrations.sis && CHANNELS.integrations.sis.record) || null },
 
           // WHICH ENVIRONMENT THIS IS (02.10.2026). The Channels screen was printing
           // "Not set up" for every channel on a local checkout, where no secret exists,
@@ -1973,9 +1980,17 @@ export const handle = async (req, res) => {
       return res.end();
     }
     // The email filter over what already waits in the Inbox (popup A, 01.10.2026). Admins only.
-    if (req.method === 'POST' && p === '/api/admin/gmail/refilter') {
+    // Q31: the widened filter over every channel's waiting rows. GET says what it WOULD move and moves
+    // nothing; POST with {"apply": true} moves them. On production only on the owner's yes.
+    if (p === '/api/admin/inbox/refilter' && (req.method === 'GET' || req.method === 'POST')) {
       if (!(await adminOf(req))) return refuseNotAdmin(res);
-      return json(res, 200, { ok: true, ...(await refilterOpenEmail(db)) });
+      const b = req.method === 'POST' ? await body(req) : {};
+      return json(res, 200, { ok: true, ...(await refilterOpen(db, { apply: req.method === 'POST' && b.apply === true })) });
+    }
+    // Retired 05.10.2026 (Q31): it moved rows without saying first what it would move.
+    if (req.method === 'POST' && p === '/api/admin/gmail/refilter') {
+      return json(res, 410, { error: 'retired: it moved rows without a preview',
+        use: 'GET /api/admin/inbox/refilter to see what would move, then POST it with {"apply": true}' });
     }
     if (req.method === 'POST' && p === '/api/admin/gmail/disconnect') {
       if (!(await adminOf(req))) return refuseNotAdmin(res);

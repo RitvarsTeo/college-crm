@@ -146,14 +146,15 @@ test('Q24: an outside party is waited on by name; nobody named reads Not decided
 test('every line is a click to Settings and check, and that is the only control', () => {
   const s = sandbox();
   const out = s.list(apiRows(), LOCAL);
-  const links = [...out.matchAll(/<a href="#\/channels\/([a-z_]+)">/g)].map((m) => m[1]);
+  const links = [...out.matchAll(/<a href="#\/channels\/([a-z_]+)"/g)].map((m) => m[1]);
   assert.equal(links.length, 12);
   assert.doesNotMatch(out, /<button|onclick/);
 });
 
 test('no notes, evidence, dates, counts, environment talk or A/B on the screen', () => {
   const s = sandbox();
-  const out = s.list(apiRows(), LOCAL);
+  // Closed, as the screen opens (Q27, 05.10: every line is an uncovering tab; its figures sit inside)
+  const out = s.list(apiRows(), LOCAL).replace(/<div class="chcard-in">[\s\S]*?<\/div><\/details>/g, '</details>');
   for (const banned of [/seen /i, /source/i, /Input/, /Ahead/, /not blocking/i, /Delivers to/, /local, not production/i,
     /Access/, /Code deployed/i, /Production configured/i, /Live verified/i, /\d{2}\.\d{2}/, /292b4f9|c3ab3e4/,
     /Active channels/, /Not current/, /Downstream/, /Settled on evidence/, /Not proven yet/, /edu@/]) {
@@ -164,8 +165,8 @@ test('no notes, evidence, dates, counts, environment talk or A/B on the screen',
     assert.ok(!APP.includes(gone), 'gone: ' + gone);
   }
   const view = APP.slice(APP.indexOf('async function viewChannels('), APP.indexOf(END));
-  assert.match(view, /\$\('#view'\)\.innerHTML = `<p class="c-crumb">Settings<\/p><div class="c-head"><div><h1>Channels<\/h1><\/div><\/div>\s*<div class="c-sheet c-chcard">\$\{chListHtml\([^`]*\)\}<\/div>`;/,
-    'a heading and the list on one card, nothing else');
+  assert.match(view, /\$\('#view'\)\.innerHTML = `<p class="c-crumb">Settings<\/p><div class="c-head"><div><h1>Channels<\/h1><\/div><\/div>\s*<div class="c-sheet c-chcard chinfo">\$\{chListHtml\([^`]*\)\}<\/div>\s*\$\{chSisHtml\([^`]*\)\}\s*\$\{chFilterHtml\(\)\}`;/,
+    'a heading, the list on one card, SIS on its own and the Inbox filter, nothing else');
 });
 
 test('on production the state reads the real provider rows; locally it takes the record', () => {

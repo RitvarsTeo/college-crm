@@ -65,8 +65,11 @@ test('email filter: the poll sets automatic and internal mail aside, with the re
 
 test('email filter: the items already waiting are set aside by the same rule; nothing else moves', async () => {
   const db = await openDb(':memory:');
+  // rows that arrived BEFORE the rule (since Q31 receive() sets them aside on arrival, so they are
+  // planted here the way production still holds them)
   for (const [i, from] of ['no-reply@zoom.us', 'colleague@novikontas.lv', 'person@m-s-solutions.net', 'anna@gmail.com'].entries()) {
-    await receive(db, { channel: 'gmail', externalId: 'e' + i, email: from, body: 'text ' + i, source: 'provider' });
+    await db.prepare(`INSERT INTO inbound (channel, external_id, received_at, surface_at, contact_email, body, state, source, suggested, suggestion_why)
+      VALUES ('gmail', ?, '2026-10-01T09:00:00Z', '2026-10-01T09:00:00Z', ?, ?, 'new', 'provider', 'unclear', 'planted')`).run('e' + i, from, 'text ' + i);
   }
   await receive(db, { channel: 'phone', externalId: 'c1', phone: '+37120000000', body: 'Missed call', source: 'provider' });
   const r = await refilterOpenEmail(db);
@@ -104,10 +107,13 @@ test('channel switch: a webhook follows the Channels screen switch, not only the
   assert.equal((await post()).status, 200, 'the switch reached the webhook');
 });
 
-test('refilter route: admins only', async (t) => {
+// Retired 05.10.2026 (Q31): the old route moved rows with no preview. It answers 410 and names the new one.
+test('the old refilter route is retired and points at the preview-first one', async (t) => {
   const s = await start();
   t.after(() => s.child.kill());
-  assert.equal((await fetch(s.base + '/api/admin/gmail/refilter', { method: 'POST', headers: { 'x-acting-as': 'Ieva' } })).status, 403);
-  const ok = await fetch(s.base + '/api/admin/gmail/refilter', { method: 'POST', headers: { 'x-acting-as': 'Ritvars' } }).then((r) => r.json());
-  assert.deepEqual(ok, { ok: true, checked: 0, setAside: 0, left: 0 });
+  for (const who of ['Ieva', 'Ritvars']) {
+    const r = await fetch(s.base + '/api/admin/gmail/refilter', { method: 'POST', headers: { 'x-acting-as': who } });
+    assert.equal(r.status, 410, who);
+    assert.match((await r.json()).use, /\/api\/admin\/inbox\/refilter/);
+  }
 });

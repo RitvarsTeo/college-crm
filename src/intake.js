@@ -205,7 +205,8 @@ export async function receive(db, item) {
   // queue and never costs anybody a second. Decided at the visual review.
   // A channel may also filter by a rule of its own (the phone, 01.10.2026: a number staff
   // already archived as spam). Stored the same way, with that rule as the reason.
-  const filterWhy = item.filterWhy || null;
+  // A channel's own rule first (the phone, Mailchimp), then the shared one (Q31).
+  const filterWhy = item.filterWhy || noiseWhy({ email: item.email, name: item.name, body: item.body }) || null;
   const state = read.junk || filterWhy ? 'filtered' : 'new';
   // `source` records HOW this arrived. It defaults to null rather than to
   // 'provider': a row may only claim a real provider sent it when the caller
@@ -278,12 +279,47 @@ export async function listInbound(db, { state = 'new', now = nowIso() } = {}) {
   const rows = await db.prepare(`SELECT i.*, pe.name AS person_name FROM inbound i
     LEFT JOIN people pe ON pe.id = i.person_id
     ${where} ORDER BY i.received_at DESC`).all(...wanted);
+  const known = await currentStudentIndex(db);
   for (const r of rows) {
     r.fields = await db.prepare('SELECT * FROM field_values WHERE inbound_id = ? ORDER BY id').all(r.id);
     r.missing = missingFor(r.fields);
     r.aged = r.state === 'new' && r.surface_at <= now;
+    Object.assign(r, senderKind(r, known));
   }
   return rows;
+}
+
+// ---------------------------------------------------------- sender kind (Q31) --
+// For the Inbox groups (Q30): current_student / possible_student / other, worked out on the server
+// from config.senderKind. A grouping, never a fact about the person, so every row carries its why.
+const normE = (v) => String(v || '').trim().toLowerCase();
+const normP = (v) => String(v || '').replace(/[^\d+]/g, '');
+async function currentStudentIndex(db, cfg = CFG.senderKind || {}) {
+  const emails = new Set(); const phones = new Set(); const ids = new Set();
+  const stages = cfg.currentStages || [];
+  if (stages.length) {
+    const ppl = await db.prepare(`SELECT id, email, phone FROM people WHERE status IN (${stages.map(() => '?').join(',')})`).all(...stages);
+    for (const p of ppl) { ids.add(p.id); if (p.email) emails.add(normE(p.email)); if (normP(p.phone)) phones.add(normP(p.phone)); }
+  }
+  const sis = cfg.currentSisStatuses || [];
+  if (sis.length) {
+    const got = await db.prepare(`SELECT email, phone FROM sis_applicants WHERE status IN (${sis.map(() => '?').join(',')})`).all(...sis);
+    for (const a of got) { if (a.email) emails.add(normE(a.email)); if (normP(a.phone)) phones.add(normP(a.phone)); }
+  }
+  return { emails, phones, ids };
+}
+export function senderKind(r, known = { emails: new Set(), phones: new Set(), ids: new Set() }, cfg = CFG.senderKind || {}) {
+  if (r.state === 'filtered' || r.state === 'archived') {
+    return { senderKind: 'other', senderKindWhy: r.archive_note || r.archive_reason || 'set aside' };
+  }
+  if ((r.person_id && known.ids.has(r.person_id)) || (r.contact_email && known.emails.has(normE(r.contact_email)))
+      || (normP(r.contact_phone) && known.phones.has(normP(r.contact_phone)))) {
+    return { senderKind: 'current_student', senderKindWhy: 'matches somebody already admitted' };
+  }
+  const text = String(r.body || '').toLowerCase();
+  const word = (cfg.studentWords || []).find((w) => text.includes(String(w).toLowerCase()));
+  if (word) return { senderKind: 'current_student', senderKindWhy: `writes "${word}"` };
+  return { senderKind: 'possible_student', senderKindWhy: 'passed the filter' };
 }
 
 export function missingFor(fields) {
@@ -733,8 +769,43 @@ export function emailFilterWhy(address, cfg = CFG.emailFilter) {
   return null;
 }
 
+// Q31 (05.10.2026): the same rule on every channel, plus what the TEXT says it is (a Google Chat
+// "messaged you while you were away", a Google Forms "has new responses"). The owner, on the
+// production Inbox: "collaguese should not be there!", and of noreply / Google Chat / Google Forms:
+// "Yes, filter them". Set aside with the reason, kept, never deleted.
+export function noiseWhy({ email, name, body } = {}, cfg = CFG.emailFilter) {
+  const byAddress = emailFilterWhy(email, cfg);
+  if (byAddress) return byAddress;
+  const text = [name, String(body || '').slice(0, 600)].filter(Boolean).join('\n');
+  for (const p of (cfg && cfg.textPatterns) || []) {
+    if (p && p.match && new RegExp(p.match, 'i').test(text)) return p.why || 'matches a filter rule';
+  }
+  return null;
+}
+
 // The same rule over email items still waiting in the Inbox (the 40 of the first read). Only an item
 // nobody has dealt with; the body stays (decision 1d). Returns how many were set aside.
+// Q31: over EVERY channel's waiting rows (the phone has its own rule), and it says what it would move
+// before it moves anything: apply:false, the default, writes nothing. On production only on the owner's yes.
+export async function refilterOpen(db, { apply = false, at = nowIso() } = {}) {
+  const open = await db.prepare(`SELECT id, channel, contact_email, contact_name, body FROM inbound
+    WHERE state = 'new' AND channel <> 'phone' ORDER BY id`).all();
+  const byReason = {};
+  let n = 0;
+  for (const r of open) {
+    const why = noiseWhy({ email: r.contact_email, name: r.contact_name, body: r.body });
+    if (!why) continue;
+    const key = why.replace(/\s*\([^)]*\)$/, '');
+    byReason[key] = (byReason[key] || 0) + 1;
+    n++;
+    if (apply) {
+      await db.prepare(`UPDATE inbound SET state = 'filtered', archive_reason = 'Filtered automatically',
+        archive_note = ?, processed_by = 'machine', processed_at = ? WHERE id = ? AND state = 'new'`).run(why, at, r.id);
+    }
+  }
+  return { applied: Boolean(apply), checked: open.length, wouldMove: n, moved: apply ? n : 0, left: open.length - n, byReason };
+}
+
 export async function refilterOpenEmail(db, { at = nowIso() } = {}) {
   const open = await db.prepare("SELECT id, contact_email FROM inbound WHERE channel = 'gmail' AND state = 'new'").all();
   let moved = 0;

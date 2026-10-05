@@ -94,9 +94,16 @@
           "source": "Ritvars 05.10 (to MAIN and MASTER CONTROL), word for word",
           "words": "Website form is live, agent is live (it comes into edu email). Linkedin is live. We jsut waiting on the leads extra option!! not the channel connection itself! Mailchimp is live, i am now connecting the webhook.",
           "note": "The screen follows his word. liveVerified keeps the provider-row count of the last backup read."
+        },
+        "counts": {
+          "received": 0,
+          "filtered": 0,
+          "asOf": "2026-10-04",
+          "source": "production backup _backups/2026-10-04T19-29-00Z (status VERIFIED), counts read 05.10"
         }
       },
-      "scope": "TEMPORARY. Ritvars, 04.10.2026: the Website connection exists ONLY for the forms still live on the English college pages (the enquiry form on college/en and college/en/contacts, and the contact form on college/en/contacts). The website is relaunched in its next version WITH NO FORMS; from then on apply.novikontas.org does all the work and this channel is dropped. The Latvian pages already have no form."
+      "scope": "TEMPORARY. Ritvars, 04.10.2026: the Website connection exists ONLY for the forms still live on the English college pages (the enquiry form on college/en and college/en/contacts, and the contact form on college/en/contacts). The website is relaunched in its next version WITH NO FORMS; from then on apply.novikontas.org does all the work and this channel is dropped. The Latvian pages already have no form.",
+      "filters": []
     },
     "google_form": {
       "label": "Google Form",
@@ -231,8 +238,23 @@
             "state": "parked",
             "detail": "Parked for the next scope (MASTER CONTROL, 04.10). Not to be connected now."
           }
-        ]
-      }
+        ],
+        "counts": {
+          "received": 98,
+          "filtered": 24,
+          "asOf": "2026-10-04",
+          "source": "production backup _backups/2026-10-04T19-29-00Z (status VERIFIED), counts read 05.10"
+        },
+        "lastPull": {
+          "at": "2026-10-04T05:35:19Z",
+          "asOf": "2026-10-04",
+          "source": "production backup _backups/2026-10-04T19-29-00Z (status VERIFIED), counts read 05.10"
+        }
+      },
+      "filters": [
+        "Our own addresses",
+        "Automatic senders"
+      ]
     },
     "facebook": {
       "label": "Facebook",
@@ -320,8 +342,15 @@
           "canRefuse": true,
           "detail": "Not submitted yet, so it is not blocking today. Takes weeks and can be refused. Whether this is \"work\" or a \"question\" is still Ritvars's call (three options in CHANNEL_RECONCILIATION_2026-10-02.md)."
         },
-        "destination": "A message or lead form becomes an enquiry in the Inbox."
-      }
+        "destination": "A message or lead form becomes an enquiry in the Inbox.",
+        "counts": {
+          "received": 0,
+          "filtered": 0,
+          "asOf": "2026-10-04",
+          "source": "production backup _backups/2026-10-04T19-29-00Z (status VERIFIED), counts read 05.10"
+        }
+      },
+      "filters": []
     },
     "messenger": {
       "label": "Messenger",
@@ -408,8 +437,15 @@
           "canRefuse": true,
           "detail": "Not submitted yet, so it is not blocking today. Takes weeks and can be refused. Whether this is \"work\" or a \"question\" is still Ritvars's call (three options in CHANNEL_RECONCILIATION_2026-10-02.md)."
         },
-        "destination": "A Messenger conversation becomes an enquiry in the Inbox."
-      }
+        "destination": "A Messenger conversation becomes an enquiry in the Inbox.",
+        "counts": {
+          "received": 0,
+          "filtered": 0,
+          "asOf": "2026-10-04",
+          "source": "production backup _backups/2026-10-04T19-29-00Z (status VERIFIED), counts read 05.10"
+        }
+      },
+      "filters": []
     },
     "instagram": {
       "label": "Instagram",
@@ -496,8 +532,15 @@
           "canRefuse": true,
           "detail": "Not submitted yet, so it is not blocking today. Takes weeks and can be refused. Whether this is \"work\" or a \"question\" is still Ritvars's call (three options in CHANNEL_RECONCILIATION_2026-10-02.md)."
         },
-        "destination": "A DM becomes an enquiry in the Inbox."
-      }
+        "destination": "A DM becomes an enquiry in the Inbox.",
+        "counts": {
+          "received": 0,
+          "filtered": 0,
+          "asOf": "2026-10-04",
+          "source": "production backup _backups/2026-10-04T19-29-00Z (status VERIFIED), counts read 05.10"
+        }
+      },
+      "filters": []
     },
     "whatsapp": {
       "label": "WhatsApp",
@@ -588,8 +631,15 @@
           "canRefuse": true,
           "detail": "Not submitted yet, so it is not blocking today. Takes weeks and can be refused. Whether this is \"work\" or a \"question\" is still Ritvars's call (three options in CHANNEL_RECONCILIATION_2026-10-02.md)."
         },
-        "destination": "A WhatsApp message to +371 23111114 becomes an enquiry in the Inbox."
-      }
+        "destination": "A WhatsApp message to +371 23111114 becomes an enquiry in the Inbox.",
+        "counts": {
+          "received": 0,
+          "filtered": 0,
+          "asOf": "2026-10-04",
+          "source": "production backup _backups/2026-10-04T19-29-00Z (status VERIFIED), counts read 05.10"
+        }
+      },
+      "filters": []
     },
     "mailchimp": {
       "label": "Mailchimp",
@@ -670,8 +720,17 @@
           "source": "Ritvars 05.10 (to MAIN and MASTER CONTROL), word for word",
           "words": "Website form is live, agent is live (it comes into edu email). Linkedin is live. We jsut waiting on the leads extra option!! not the channel connection itself! Mailchimp is live, i am now connecting the webhook.",
           "note": "He is connecting the audience webhook himself on 05.10; the screen follows his word."
+        },
+        "counts": {
+          "received": 0,
+          "filtered": 0,
+          "asOf": "2026-10-04",
+          "source": "production backup _backups/2026-10-04T19-29-00Z (status VERIFIED), counts read 05.10"
         }
-      }
+      },
+      "filters": [
+        "Everything: a subscriber is not a lead"
+      ]
     },
     "open_day": {
       "label": "Open Day",
@@ -828,8 +887,22 @@
           "how": "Owner pick 04.10: Intake on screen -> the caller page opens for whoever answered (a ring is a corner card); not on screen -> a desktop notification. Events come from the push (POST /api/inbound/phone-event) and from the TeleGroup pull, which writes answered/ended events for every call it stores. The app polls /api/calls/events every 3 s only while the phone channel is on and has a source.",
           "open": "Ringing reaches the pop-up only with the push. The pull gives answered/ended: within a minute once the pull runs every minute, which needs the paid Vercel plan (the account move).",
           "source": "Q6, docs/INTAKE_CONTROL_2026-10-02.md"
+        },
+        "counts": {
+          "received": 11,
+          "filtered": 0,
+          "asOf": "2026-10-04",
+          "source": "production backup _backups/2026-10-04T19-29-00Z (status VERIFIED), counts read 05.10"
+        },
+        "lastPull": {
+          "at": "2026-10-04T05:27:20Z",
+          "asOf": "2026-10-04",
+          "source": "production backup _backups/2026-10-04T19-29-00Z (status VERIFIED), counts read 05.10"
         }
-      }
+      },
+      "filters": [
+        "Numbers marked Spam, Supplier or Internal"
+      ]
     },
     "agent": {
       "label": "Agent or partner",
@@ -918,8 +991,15 @@
             "canRefuse": false
           },
           "by": "Ritvars 05.10: agent leads come into edu@, so no partner link has to be named for the channel to work"
+        },
+        "counts": {
+          "received": 0,
+          "filtered": 0,
+          "asOf": "2026-10-04",
+          "source": "production backup _backups/2026-10-04T19-29-00Z (status VERIFIED), counts read 05.10"
         }
-      }
+      },
+      "filters": []
     },
     "in_person": {
       "label": "In person",
@@ -976,7 +1056,8 @@
         "nextAction": null,
         "blocker": null,
         "destination": "Staff add the person; the same duplicate check runs."
-      }
+      },
+      "filters": []
     },
     "linkedin": {
       "label": "LinkedIn",
@@ -1069,8 +1150,15 @@
             "action": "Ask Natalija to give Ritvars the Campaign Manager account manager role",
             "input": "Requests for Natalija go through Oksana, never to Natalija directly"
           }
+        },
+        "counts": {
+          "received": 0,
+          "filtered": 0,
+          "asOf": "2026-10-04",
+          "source": "production backup _backups/2026-10-04T19-29-00Z (status VERIFIED), counts read 05.10"
         }
-      }
+      },
+      "filters": []
     },
     "tiktok": {
       "label": "TikTok",
@@ -1152,8 +1240,15 @@
           "canRefuse": true,
           "detail": "Not applied for yet, so it is not blocking today."
         },
-        "destination": "A lead or message becomes an enquiry in the Inbox."
-      }
+        "destination": "A lead or message becomes an enquiry in the Inbox.",
+        "counts": {
+          "received": 0,
+          "filtered": 0,
+          "asOf": "2026-10-04",
+          "source": "production backup _backups/2026-10-04T19-29-00Z (status VERIFIED), counts read 05.10"
+        }
+      },
+      "filters": []
     }
   },
   "_integrations": "Added 29.09.2026. An INTEGRATION is not a channel. A channel receives a message from a person and needs an adapter; an integration is a system we pull from on a schedule. SIS was briefly put in `channels` and the contract test caught it at once: every channel in the register must have an adapter, and SIS has none because nothing is delivered to us. It appears on the Channels screen beside the channels, because that is where somebody looks to see whether anything is coming in, but it is modelled apart.",
@@ -1176,6 +1271,18 @@
           "seen": "2026-10-05",
           "source": "production backup _backups/2026-10-04T19-29-00Z (status VERIFIED, 26 tables), counts read 05.10",
           "detail": "1 row from the real SIS, of 03.10; the daily pull last ran 04.10 05:31Z"
+        },
+        "counts": {
+          "received": 1,
+          "filtered": 0,
+          "asOf": "2026-10-04",
+          "source": "production backup _backups/2026-10-04T19-29-00Z (status VERIFIED), counts read 05.10"
+        },
+        "lastPull": {
+          "at": "2026-10-04T05:31:42Z",
+          "ok": true,
+          "asOf": "2026-10-04",
+          "source": "production backup _backups/2026-10-04T19-29-00Z (status VERIFIED), counts read 05.10"
         }
       }
     }
@@ -1221,5 +1328,16 @@
       "label": "apply.novikontas.org",
       "why": "The application, after qualification. Owned by the Applications lane. Not the Tilda enquiry form."
     }
-  }
+  },
+  "_schedule": "Q27, 05.10.2026: when each poller runs, as the cron in vercel.json says it (UTC). A test keeps the two the same. The screen shows the time in Riga.",
+  "schedule": {
+    "phone": "15 5 * * *",
+    "gmail": "30 5 * * *",
+    "sis": "0 5 * * *",
+    "lead_answers": "45 5 * * *"
+  },
+  "_filters": "Q27, 05.10.2026: what a rule sets aside, in short labels for the Channels figures. filtersAll applies to every channel (the junk words); filters on a channel are its own rules only. Set aside is kept, never deleted (decision 01.10).",
+  "filtersAll": [
+    "Sales pitches"
+  ]
 }

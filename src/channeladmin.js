@@ -120,12 +120,16 @@ export function statusOf(id, { env = process.env, lastCheck = null, handshakeAt 
     missingSettings: missing,
     allSettingsPresent: allPresent,
 
+    // what a rule sets aside on this channel, short labels (Q27, 05.10.2026)
+    filters: def.filters || [],
+
     // what a provider has actually done
     providerHandshakeAt: handshakeAt,
     providerHandshakeHow: handshakeHow,
     lastEventAt: counts.lastEventAt || null,
     lastSuccessAt: counts.lastSuccessAt || null,
     events: counts.events || 0,
+    filtered: counts.filtered || 0,
 
     // what OUR OWN check found, kept clearly apart from the above
     lastCheckAt: lastCheck ? lastCheck.at : null,
