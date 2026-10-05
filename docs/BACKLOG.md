@@ -79,6 +79,16 @@ column). Decided with it:
 Tests: 35 that asserted the separate People / Outcomes pages or the grouped menu rewritten to the new rules, 2 new.
 channels_admin's restart test ("never started") fails on this machine on the clean release f3de6ee too: not Q47.
 BUILT, next patch (with HOME's Q46).
+## 05.10.2026 - Q46: Home's month chart is taller and the donut is balanced with it
+
+Ritvars 05.10, on production Home: "can be taller" (the Admissions by month chart) and "The pie needs to be balanced
+with admission graph" (at ~1900 px the donut sat high in its column, an empty band under it, the legend at the far
+edge). The month chart takes the height left on the screen, 260-460 px (a phone keeps its height); this replaces the
+30.09 "wider, not bigger" lock. Beside it the donut's row IS the chart's plot (top gridline to the baseline): same top,
+same height; the ring's drawn diameter is 78% of the plot inside the 150-250 px clamp, the ring and the legend are
+centred on the plot, the legend right beside the ring at a fixed 28 px gap. Stacked (narrow window, phone) unchanged.
+Clicks unchanged. Tests: frame_drifts (donut-to-plot test), figures_to_people, home_links.
+Shots: `For review/2026-10-05 Q46 Home chart/`. BUILT, next patch.
 
 ## 05.10.2026 - Q44: "No next step" is an amber edge and a "Choose next step" button
 

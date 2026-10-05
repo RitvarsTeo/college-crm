@@ -1612,8 +1612,16 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .ktgt-n strong{font-weight:700;color:var(--ink)}
   html.ui-c .ktgt-n strong.ktgt-goal{color:var(--ink);box-shadow:inset 0 -2px 0 var(--v-tgt)}
   html.ui-c .kb-top{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:30px;align-items:stretch}
-  html.ui-c .kb-top > .ksec:last-child{display:flex;flex-direction:column}   /* Q46: the donut centred in the taller row */
-  html.ui-c .kb-top > .ksec:last-child > .kdonut{flex:1}
+  /* Q46 (05.10.2026): beside the month chart the donut's row IS the chart's plot: cFitDonut sets its top (--kplot-dy)
+     and height (--kplot-h). The ring's drawn diameter (108 of the 140 drawing) is 78% of that height, inside the
+     150-250 px clamp of the drawing, and never wider than the room the legend's words leave (--kroom), so they do
+     not wrap; only below 150 px of room (a cramped window) do the words wrap, as before. The drawing is nudged down by half its plinth (2.5 of 140) so the ring WITH its plinth sits centred on the plot, and
+     the legend sits right beside it at a fixed gap, centred too. */
+  html.ui-c .kb-top > .ksec:has(> .kdonut.kfit){display:flex;flex-direction:column}   /* no margin collapse with the heading */
+  html.ui-c .kb-top .kdonut{--kplot-h:216px;--kplot-dy:0px;--kroom:250px}   /* fallbacks only: cFitDonut sets the measured ones */
+  html.ui-c .kb-top .kdonut.kfit{--kring:clamp(150px,min(calc(var(--kplot-h) * .78 * 140 / 108),var(--kroom)),250px);height:var(--kplot-h);margin-top:var(--kplot-dy);padding:0;gap:28px;box-sizing:border-box}
+  html.ui-c .kb-top .kdonut.kfit svg{width:var(--kring);flex:0 0 var(--kring);transform:translateY(calc(100% * 2.5 / 140))}
+  html.ui-c .kb-top .kdonut.kfit .klegend{flex:0 1 auto}
   html.ui-c .kb-charts .kthree{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:26px}
   @media (max-width:1100px){ html.ui-c .kb-top{grid-template-columns:minmax(0,1fr)} }
   @media (max-width:1100px){ html.ui-c .kb-charts .kthree{grid-template-columns:minmax(0,1fr) minmax(0,1fr)} }
@@ -2807,6 +2815,7 @@ async function viewHomeC() {
     <div class="ktip" role="status" aria-live="polite"></div></div>`;
   C_HOME_D = D;
   cFitMonthChart(D);
+  cFitDonut();
   cWireCharts();
   cScenes($('#view'));
 }
@@ -2824,8 +2833,11 @@ function cFitMonthChart(D) {
   const spare = window.innerHeight - (page.getBoundingClientRect().bottom + window.scrollY) - 24;
   const want = Math.max(260, Math.min(460, box.height + spare));
   const vb = svg.viewBox.baseVal;
-  const H = Math.round((want * vb.width) / box.width);
-  if (Math.abs(H - vb.height) < 4) return false;
+  // the width the NEW drawing will have (cMonthChart's own 1500 px step): a resize across the step changes it, and a
+  // height worked out for the old width came out short (1440 -> 1920 drew 241 px, under the 260 floor)
+  const W = window.matchMedia('(min-width:1500px)').matches ? 1100 : 640;
+  const H = Math.round((want * W) / box.width);
+  if (W === vb.width && Math.abs(H - vb.height) < 4) return false;
   svg.outerHTML = cMonthChart(D.months, D.year, H);
   return true;
 }
@@ -2835,8 +2847,33 @@ window.addEventListener('resize', () => {
   C_FIT_T = setTimeout(() => {
     if (!C_HOME_D || !document.querySelector('#view .kpage.kb .kchart')) return;
     if (cFitMonthChart(C_HOME_D)) cWireCharts(document.querySelector('#view .kpage.kb .kchart'));
+    cFitDonut();
   }, 150);
 });
+
+// Q46 (the owner 05.10.2026: "The pie needs to be balanced with admission graph"): beside the month chart the
+// donut's row is exactly the chart's PLOT (top gridline to the baseline): the same top, the same height. The ring
+// scales with that height (78% of it, inside the 150-250 px clamp) and it and the legend are centred on the plot.
+// Only when the two sit side by side; stacked (a narrow window, a phone) the donut keeps its own layout.
+function cFitDonut() {
+  const svg = document.querySelector('#view .kpage.kb .kb-top .kchart');
+  const dn = document.querySelector('#view .kpage.kb .kb-top .kdonut');
+  if (!dn) return false;
+  dn.classList.remove('kfit'); ['--kplot-h', '--kplot-dy', '--kroom'].forEach((v) => dn.style.removeProperty(v));
+  if (!svg || svg.classList.contains('narrow') || !svg.dataset.plot) return false;
+  const sb = svg.getBoundingClientRect(), db = dn.getBoundingClientRect();
+  if (!sb.height || db.left < sb.right) return false;   // stacked: one column
+  const [pt, pb] = svg.dataset.plot.split(' ').map(Number), k = sb.height / svg.viewBox.baseVal.height;
+  dn.style.setProperty('--kplot-h', ((pb - pt) * k).toFixed(1) + 'px');
+  dn.style.setProperty('--kplot-dy', (sb.top + pt * k - db.top).toFixed(1) + 'px');
+  // the room the ring may take: the row less the 28 px gap (the CSS's) and the legend at the width of its words
+  const leg = dn.querySelector('.klegend');
+  leg.style.flex = 'none'; leg.style.width = 'max-content';
+  const lw = leg.getBoundingClientRect().width; leg.style.flex = leg.style.width = '';
+  dn.style.setProperty('--kroom', Math.max(0, Math.floor(dn.clientWidth - 28 - lw) - 1) + 'px');
+  dn.classList.add('kfit');
+  return true;
+}
 
 // The month chart and its table, the same in both: one chart, one source.
 function cHomeMonths(D, extraCls = '') {
@@ -3009,7 +3046,8 @@ function cMonthChart(months, year, fitH = 0) {
     // hover over info."): every month shows its figures on hover, the same for each.
     return `<g class="kcol" tabindex="0" role="button" aria-label="${mo} ${m.month.slice(0, 4)}: ${m.admitted} admitted, ${m.newLeads} new leads" data-tip="${mo} ${m.month.slice(0, 4)}|${m.admitted} admitted|${m.newLeads} new leads" data-kgo="month|${m.month}|${mo} ${m.month.slice(0, 4)}"><rect x="${cx - band / 2}" y="${T}" width="${band}" height="${H - T - B}" class="khit"/>${bar}${labelled(k) ? `<text x="${cx}" y="${H - 8}" class="kt" text-anchor="middle">${mo}</text>` : ''}</g>`; }).join('');
   const pts = months.map((m, k) => [L + band * k + band / 2, y(m.newLeads)]);
-  return `<svg viewBox="0 0 ${W} ${H}" class="kchart${narrow ? ' narrow' : ''}" role="img" aria-label="Admissions and new leads per month, ${year}">${grid}${cols}<path d="M${pts.map((p) => p.join(',')).join(' L')}" class="kline m-draw" pathLength="1"/>${pts.map(([x, yy], k) => `<circle cx="${x}" cy="${yy}" r="4" class="kdot m-fade" style="--i:${k}"/>`).join('')}</svg>`;
+  // data-plot: where the plot runs (top gridline to the baseline) in drawing units, so Home's donut can match it (Q46)
+  return `<svg viewBox="0 0 ${W} ${H}" class="kchart${narrow ? ' narrow' : ''}" data-plot="${T} ${H - B}" role="img" aria-label="Admissions and new leads per month, ${year}">${grid}${cols}<path d="M${pts.map((p) => p.join(',')).join(' L')}" class="kline m-draw" pathLength="1"/>${pts.map(([x, yy], k) => `<circle cx="${x}" cy="${yy}" r="4" class="kdot m-fade" style="--i:${k}"/>`).join('')}</svg>`;
 }
 
 // PRESENCE WITHOUT DISTORTION (the owner, 02.10.2026).

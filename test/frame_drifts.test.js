@@ -59,12 +59,63 @@ test('the month chart is drawn wider on a wide screen, and TALLER where Home has
     'wider drawing; the height is the fitted one, a phone keeps 230');
   assert.match(APP, /const want = Math\.max\(260, Math\.min\(460, box\.height \+ spare\)\)/, 'filled to the bottom, 260 to 460 px');
   assert.match(APP, /svg\.classList\.contains\('narrow'\)\) return false/, 'a phone keeps its height');
-  assert.match(APP, /C_HOME_D = D;\n  cFitMonthChart\(D\);\n  cWireCharts\(\);/, 'fitted before the hover is wired');
-  assert.match(APP, /html\.ui-c \.kb-top > \.ksec:last-child > \.kdonut\{flex:1\}/, 'the donut stays centred in the taller row');
+  assert.match(APP, /C_HOME_D = D;\n  cFitMonthChart\(D\);\n  cFitDonut\(\);\n  cWireCharts\(\);/, 'fitted (chart, then donut) before the hover is wired');
 
   // the CSS cap must step at the SAME width, or the two disagree and the chart jumps
   assert.match(APP, /@media \(min-width:1500px\)\{ html\.ui-c \.kchart\{max-width:1500px\} \}/,
     'the cap steps where the drawing does');
+});
+
+// A function's source, from its first line to the closing brace at column 0.
+const fnSrc = (head) => { const i = APP.indexOf(head); assert.ok(i >= 0, head); return APP.slice(i, APP.indexOf('\n}\n', i) + 2); };
+
+test('the donut is balanced with the month chart: its row IS the plot, the ring 78% of it, both centred (Q46)', () => {
+  // 05.10.2026 the owner, on Home at ~1900 px: "The pie needs to be balanced with admission graph" - the donut sat high
+  // in its column with an empty band under it and the legend pushed to the far edge.
+  // 1. The chart says where its plot runs (top gridline to the baseline), in drawing units.
+  assert.match(APP, /class="kchart\$\{narrow \? ' narrow' : ''\}" data-plot="\$\{T\} \$\{H - B\}"/, 'the chart carries its plot');
+  // 2. cFitDonut gives the donut's row the plot's top and height - run here on a stand-in page.
+  const fit = new Function('document', fnSrc('function cFitDonut() {') + '\nreturn cFitDonut;');
+  const page = (donutLeft, narrow = false) => {
+    const props = {}, cls = new Set(), leg = { style: {}, getBoundingClientRect: () => ({ width: 169.4 }) };
+    const svg = { dataset: { plot: '14 210' }, viewBox: { baseVal: { height: 236 } },
+      classList: { contains: (c) => c === 'narrow' && narrow },
+      getBoundingClientRect: () => ({ top: 588, right: 969, height: 260 }) };
+    const dn = { classList: { add: (c) => cls.add(c), remove: (c) => cls.delete(c) },
+      style: { setProperty: (k, v) => { props[k] = v; }, removeProperty: (k) => { delete props[k]; } },
+      getBoundingClientRect: () => ({ top: 594, left: donutLeft }), clientWidth: 415, querySelector: () => leg };
+    const doc = { querySelector: (q) => (q.endsWith('.kchart') ? svg : dn) };
+    return { run: () => fit(doc)(), props, cls };
+  };
+  const side = page(999);   // 1440 x 900 as measured: the chart 705 x 260 px, drawn 640 x 236
+  assert.equal(side.run(), true);
+  assert.ok(side.cls.has('kfit'));
+  assert.equal(side.props['--kplot-h'], '215.9px', "the row is the plot's height: (210 - 14) x 260 / 236");
+  assert.equal(side.props['--kplot-dy'], '9.4px', "and starts at the plot's top: 588 + 14 x 260 / 236 - 594");
+  assert.equal(side.props['--kroom'], '216px', "the ring's room: 415 less the 28 gap less the legend's 169.4, so the words never wrap");
+  const stacked = page(264);   // one column (a narrow window): the donut under the chart keeps its own layout
+  assert.equal(stacked.run(), false); assert.ok(!stacked.cls.has('kfit')); assert.deepEqual(stacked.props, {});
+  const phone = page(999, true);
+  assert.equal(phone.run(), false); assert.ok(!phone.cls.has('kfit'), 'a phone is unchanged');
+  // measured again when the window is resized, after the chart
+  assert.match(APP, /if \(cFitMonthChart\(C_HOME_D\)\) cWireCharts\(document\.querySelector\('#view \.kpage\.kb \.kchart'\)\);\n    cFitDonut\(\);/);
+  // 3. The CSS: the row's top and height; the ring's DRAWN diameter (108 of the 140 drawing) 78% of the plot inside
+  // the 150-250 px clamp; a fixed gap to the legend; the legend as wide as its words, not pushed to the far edge.
+  assert.match(APP, /html\.ui-c \.kb-top \.kdonut\.kfit\{--kring:clamp\(150px,min\(calc\(var\(--kplot-h\) \* \.78 \* 140 \/ 108\),var\(--kroom\)\),250px\);height:var\(--kplot-h\);margin-top:var\(--kplot-dy\);padding:0;gap:28px;/);
+  assert.match(APP, /html\.ui-c \.kb-top \.kdonut\.kfit svg\{width:var\(--kring\);flex:0 0 var\(--kring\);transform:translateY\(calc\(100% \* 2\.5 \/ 140\)\)\}/,
+    'the ring nudged by half its plinth');
+  assert.match(APP, /html\.ui-c \.kb-top \.kdonut\.kfit \.klegend\{flex:0 1 auto\}/);
+  assert.match(APP, /html\.ui-c \.kdonut\{display:flex;align-items:center;/, 'ring and legend centred on the row');
+  assert.match(APP, /html\.ui-c \.kb-top > \.ksec:has\(> \.kdonut\.kfit\)\{display:flex;flex-direction:column\}/, 'its top margin never collapses');
+  // the 108 and the 2.5 are the drawing's own numbers: ring R 54 in a 140 box; ring and plinth together run from
+  // cy - R to cy + R + DEPTH, so their middle is 2.5 above the box's middle
+  const donut = fnSrc('function cDonut(rows) {');
+  const m = donut.match(/const R = (\d+), r0 = \d+, c = 70, cy = (\d+), gap = [\d.]+, DEPTH = (\d+);/);
+  assert.ok(m, 'the donut drawing constants');
+  const [R, cy, DEPTH] = m.slice(1).map(Number);
+  assert.equal(2 * R, 108);
+  assert.equal(70 - (cy - R + cy + R + DEPTH) / 2, 2.5);
+  assert.match(donut, /<svg viewBox="0 0 140 140"/);
 });
 
 test('the open / overdue / no next step strip is not on Reports: Today owns it (Q35)', () => {
