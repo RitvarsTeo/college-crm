@@ -42,7 +42,7 @@ import { signInFirst, withReturnScript } from './signinfirst.js';
 import { bootstrapIfAuthOn } from './bootstrap.js';
 import * as channeladmin from './channeladmin.js';
 import { todayStart, tomorrowStart, localDate } from './bizday.js';
-import { receiveSisApplication, mergeSisDuplicate, syncSis, channelMode } from './sync.js';
+import { receiveSisApplication, mergeSisDuplicate, syncSis, channelMode, SIS_STAGE } from './sync.js';
 
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -783,9 +783,11 @@ async function channelCounts() {
   // ONLY rows a real provider posted. The demo builder and the simulator write
   // through this same table deliberately, so counting everything here would make
   // every channel on the demo copy read as CONNECTED.
-  for (const r of await db.prepare(`SELECT channel, COUNT(*) n, MAX(received_at) last FROM inbound
+  // `filtered` (Q27, 05.10.2026): how many of them a rule set aside, for the Channels figures.
+  for (const r of await db.prepare(`SELECT channel, COUNT(*) n, MAX(received_at) last,
+                              SUM(CASE WHEN state = 'filtered' THEN 1 ELSE 0 END) f FROM inbound
                               WHERE source = 'provider' GROUP BY channel`).all()) {
-    out[r.channel] = { events: r.n, lastEventAt: r.last, lastSuccessAt: r.last };
+    out[r.channel] = { events: Number(r.n), lastEventAt: r.last, lastSuccessAt: r.last, filtered: Number(r.f || 0) };
   }
   return out;
 }
@@ -1197,6 +1199,11 @@ export const handle = async (req, res) => {
             env: process.env, checks: await latestChecks(), handshakes: await handshakeRows(),
             countsByChannel: await channelCounts() }).concat(integrationStatuses()),
           runs: await syncRuns(),
+          // Q27 (05.10.2026): the pull times and the SIS chain for the Channels figures. Data only.
+          schedule: CHANNELS.schedule || null,
+          filtersAll: CHANNELS.filtersAll || [],
+          sis: { stages: SIS_STAGE, ...((await channelCounts()).sis || { events: 0 }),
+            record: (CHANNELS.integrations && CHANNELS.integrations.sis && CHANNELS.integrations.sis.record) || null },
 
           // WHICH ENVIRONMENT THIS IS (02.10.2026). The Channels screen was printing
           // "Not set up" for every channel on a local checkout, where no secret exists,

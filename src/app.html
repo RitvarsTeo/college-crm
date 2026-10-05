@@ -1614,6 +1614,38 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-chcard .chlist{margin:0;max-width:none;border-top:0}
   html.ui-c .c-chcard .chlist a{padding:12px 18px}
   html.ui-c .c-chcard .chlist li:last-child a{border-bottom:0}
+  /* Q27 (picked A, 05.10): every line uncovers its figures; blue in, mustard set aside. */
+  html.ui-c{--ch-in:#29a8df;--ch-out:#E0A526}
+  html.ui-c .chasof{font-size:11.5px;font-weight:600;color:var(--t3)}
+  html.ui-c .chfigs{display:inline-flex;align-items:baseline;gap:18px;flex-wrap:wrap}
+  html.ui-c .chfig{display:inline-flex;flex-direction:column;line-height:1.15}
+  html.ui-c .chfig b{font-size:17px;font-weight:750;color:var(--ink);font-variant-numeric:tabular-nums}
+  html.ui-c .chfig i{font-style:normal;font-size:11px;font-weight:600;color:var(--t3)}
+  html.ui-c .chfig.is-in b{color:var(--ch-in)}
+  html.ui-c .chfig.is-out b{color:var(--ch-out)}
+  html.ui-c .chfig.is-pull b{font-size:13.5px;font-weight:650}
+  html.ui-c .chtags{display:inline-flex;flex-wrap:wrap;gap:6px}
+  html.ui-c .chtags.is-all span{font-size:11px;text-transform:none;letter-spacing:0}
+  html.ui-c .chtags span{font-size:11.5px;font-weight:550;color:var(--t2);background:var(--surface-2);border:1px solid var(--rule);border-radius:999px;padding:2px 9px}
+  html.ui-c .chinfo details summary{list-style:none;display:flex;align-items:center;gap:12px;padding:12px 18px;cursor:pointer;border-bottom:1px solid var(--rule)}
+  html.ui-c .chinfo details summary::-webkit-details-marker{display:none}
+  html.ui-c .chinfo details summary b{font-weight:550;font-size:14px}
+  html.ui-c .chinfo details summary .chk{margin-left:auto}
+  html.ui-c .chinfo details summary::after{content:"\203A";color:var(--t3);font-size:16px;transition:transform .15s}
+  html.ui-c .chinfo details[open] summary::after{transform:rotate(90deg)}
+  html.ui-c .chinfo details summary:hover{background:var(--surface-2)}
+  html.ui-c .chinfo .chcard-in{display:flex;flex-direction:column;gap:10px;padding:12px 18px 14px;background:var(--surface-2);border-bottom:1px solid var(--rule)}
+  html.ui-c .chinfo li:last-child details:not([open]) summary{border-bottom:0}
+  html.ui-c .chinfo li:last-child .chcard-in{border-bottom:0}
+  html.ui-c .chinfo .chasof{align-self:flex-end}
+  html.ui-c .c-chcard .chlist a.chgo{display:inline;align-self:flex-start;padding:0;border:0;font-size:12.5px;font-weight:650;color:var(--k-live);background:none}
+  html.ui-c .chchain{display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap}
+  html.ui-c .chchain b{font-size:13.5px;font-weight:650;color:var(--ink);border:1px solid var(--rule);border-radius:8px;padding:4px 10px;background:var(--surface)}
+  html.ui-c .chchain i,html.ui-c .chmap i{font-style:normal;color:var(--t3)}
+  html.ui-c .chmap{display:inline-flex;flex-wrap:wrap;gap:8px 18px}
+  html.ui-c .chmap span{display:inline-flex;align-items:center;gap:6px;font-size:12.5px}
+  html.ui-c .chmap em{font-style:normal;color:var(--t2)}
+  html.ui-c .chmap b{font-weight:650;color:var(--ink)}
   html.ui-c .chk{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--t2);white-space:nowrap}
   html.ui-c .chk::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--rule)}
   html.ui-c .chk.k-live::before{background:var(--k-live)}
@@ -6467,13 +6499,102 @@ function chState(c, env) {
   return who ? { word: 'Waiting on ' + who, cls: 'k-owner' } : { word: 'Not decided', cls: 'k-none' };
 }
 
-function chListHtml(rows, env) {
+// ------------------------------------------------------- the figures (Q27) --
+// The owner, 05.10.2026, asked for the SIS status apart from the channels and its link to apply,
+// and for the filtering and the pull frequency on the cards: figures and short labels, never
+// paragraphs. On production they come from the rows and the run record; anywhere else from the
+// record's snapshot, which carries its own date. Picked 05.10: A, and "Every should become a
+// uncovering tab :)": closed, a line is the name and one word; open, its figures.
+const CH_ZONE = 'Europe/Riga';
+function chRiga(cron, day = new Date()) {
+  const m = /^(\d{1,2}) (\d{1,2}) \* \* \*$/.exec(String(cron || '').trim());
+  if (!m) return null;
+  const at = new Date(Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate(), Number(m[2]), Number(m[1])));
+  return new Intl.DateTimeFormat('en-GB', { timeZone: CH_ZONE, hour: '2-digit', minute: '2-digit', hour12: false }).format(at);
+}
+function chWhen(iso) {
+  const t = Date.parse(iso || '');
+  if (!t) return null;
+  const f = new Intl.DateTimeFormat('en-GB', { timeZone: CH_ZONE, day: '2-digit', month: '2-digit', hour: '2-digit',
+    minute: '2-digit', hour12: false }).formatToParts(new Date(t)).reduce((o, x) => ({ ...o, [x.type]: x.value }), {});
+  return `${f.day}.${f.month} ${f.hour}:${f.minute}`;
+}
+const chDay = (d) => (/^\d{4}-(\d{2})-(\d{2})/.exec(d || '') || []).slice(1).reverse().join('.') || null;
+// the phone's daily catch-up writes pbx_until; the older 'pbx' row is the first manual run
+const CH_RUN = { phone: ['pbx_until', 'phone'], gmail: ['gmail'], sis: ['sis'] };
+function chFacts(c, env, ctx = {}) {
+  const prod = Boolean(env && env.isProduction);
+  const sched = ctx.schedule || {};
+  const rec = chRec(c);
+  const at = chRiga(sched[c.channel]);
+  const pull = c.direction === 'manual' ? 'By hand'
+    : c.direction === 'inbound_poll' ? (at ? 'Daily ' + at : 'Polled') : 'Instant';
+  let counts = null;
+  if (c.direction !== 'manual') {
+    if (prod) counts = { received: c.events || 0, filtered: c.filtered || 0, asOf: null };
+    else if (rec.counts) counts = { received: rec.counts.received || 0, filtered: rec.counts.filtered || 0, asOf: rec.counts.asOf || null };
+  }
+  if (counts) counts.inbox = Math.max(0, counts.received - counts.filtered);
+  let last = null;
+  if (c.direction === 'inbound_poll') {
+    const runs = ctx.runs || {};
+    const run = prod ? (CH_RUN[c.channel] || []).map((k) => runs[k]).find(Boolean) : rec.lastPull;
+    last = run && run.at ? chWhen(run.at) : null;
+  }
+  const pullSub = c.direction === 'manual' ? null : c.direction === 'inbound_poll' ? (last ? 'last ' + last : 'pull') : 'on arrival';
+  return { pull, pullSub, counts, last, filters: c.filters || [] };
+}
+function chSisFacts(rows, env, ctx = {}) {
+  const prod = Boolean(env && env.isProduction);
+  const row = (rows || []).find((r) => r.isIntegration && r.channel === 'sis') || {};
+  const sis = ctx.sis || {};
+  const rec = sis.record || {};
+  const run = prod ? (ctx.runs || {}).sis : rec.lastPull;
+  const fresh = Boolean(run && run.at && (Date.now() - Date.parse(run.at)) < 26 * 3600e3);
+  const ok = prod
+    ? Boolean(row.allSettingsPresent && row.mode !== 'off' && fresh && !(run.detail && run.detail.ok === false))
+    : Boolean(run && run.ok);
+  const map = {};
+  for (const [from, to] of Object.entries(sis.stages || {})) (map[to] = map[to] || []).push(from);
+  const at = chRiga((ctx.schedule || {}).sis);
+  return {
+    chain: ['apply.novikontas.org', 'SIS', 'Intake'],
+    map: Object.entries(map).map(([to, from]) => ({ to, from })),
+    pull: at ? 'Daily ' + at : null,
+    last: run && run.at ? chWhen(run.at) : null,
+    received: prod ? (sis.events || 0) : ((rec.counts || {}).received ?? null),
+    asOf: prod ? null : ((rec.counts || {}).asOf || null),
+    ok,
+  };
+}
+const chFig = (n, label, cls = '') => `<span class="chfig ${cls}"><b>${esc(String(n))}</b><i>${esc(label)}</i></span>`;
+const chTags = (list) => (list.length ? `<span class="chtags">${list.map((x) => `<span>${esc(x)}</span>`).join('')}</span>` : '');
+const chOpen = (summary, inner) => `<li><details><summary>${summary}</summary><div class="chcard-in">${inner}</div></details></li>`;
+
+// One line per active channel: closed, its name and one word; open, what it brought in, how often it
+// is pulled, what a rule sets aside on it, and the way to its settings.
+function chListHtml(rows, env, ctx = {}) {
   const act = [...chActive(rows)].sort((a, b) => a.label.localeCompare(b.label));
   return `<ul class="chlist">${act.map((c) => {
-    const st = chState(c, env);
-    return `<li><a href="#/channels/${esc(c.channel)}"><b>${esc(c.label)}</b>
-      <span class="chk ${st.cls}">${esc(st.word)}</span></a></li>`;
+    const st = chState(c, env); const f = chFacts(c, env, ctx);
+    const figs = f.counts ? chFig(f.counts.received, 'received', 'is-in') + chFig(f.counts.inbox, 'to the Inbox')
+      + chFig(f.counts.filtered, 'set aside', 'is-out') : '';
+    const asOf = f.counts && f.counts.asOf ? `<span class="chasof">${esc(chDay(f.counts.asOf))}</span>` : '';
+    const rules = c.direction === 'manual' ? f.filters : [...f.filters, ...(ctx.filtersAll || [])];
+    return chOpen(`<b>${esc(c.label)}</b><span class="chk ${st.cls}">${esc(st.word)}</span>`,
+      `<span class="chfigs">${figs}${f.pullSub ? chFig(f.pull, f.pullSub, 'is-pull') : ''}${asOf}</span>${chTags(rules)}
+      <a href="#/channels/${esc(c.channel)}" class="chgo">Settings and check &rsaquo;</a>`);
   }).join('')}</ul>`;
+}
+
+// SIS is not a channel (02.10): its own card, one line that uncovers the chain to apply, how its
+// statuses map onto the journey, and its pull.
+function chSisHtml(f) {
+  const word = f.ok ? '<span class="chk k-live">All good</span>' : '<span class="chk k-owner">Check</span>';
+  const chain = `<span class="chchain">${f.chain.map((x) => `<b>${esc(x)}</b>`).join('<i aria-hidden="true">&rarr;</i>')}</span>`;
+  const map = `<span class="chmap">${f.map.map((m) => `<span><em>${m.from.map(esc).join(' &middot; ')}</em><i aria-hidden="true">&rarr;</i><b>${esc(m.to)}</b></span>`).join('')}</span>`;
+  const figs = `<span class="chfigs">${f.received != null ? chFig(f.received, 'real rows', 'is-in') : ''}${f.pull ? chFig(f.pull, 'pull', 'is-pull') : ''}${f.last ? chFig(f.last, 'last pull', 'is-pull') : ''}${f.asOf ? `<span class="chasof">${esc(chDay(f.asOf))}</span>` : ''}</span>`;
+  return `<div class="c-sheet c-chcard chinfo chsis"><ul class="chlist">${chOpen(`<b>SIS</b>${word}`, chain + map + figs)}</ul></div>`;
 }
 
 async function viewChannels(which) {
@@ -6484,10 +6605,12 @@ async function viewChannels(which) {
   }
   if (which) return viewChannel(which);
   const d = await api('/api/admin/channels');
-  // Q28 (05.10.2026): the list sits centred on one white card, the shared cards rule (.c-sheet);
-  // the title sits where every other page has it.
+  const env = d.environment || null;
+  const ctx = { schedule: d.schedule, runs: d.runs, sis: d.sis, filtersAll: d.filtersAll };
+  // Q28 (05.10.2026): centred white cards, the shared cards rule (.c-sheet); the title where every page has it.
   $('#view').innerHTML = `<p class="c-crumb">Settings</p><div class="c-head"><div><h1>Channels</h1></div></div>
-    <div class="c-sheet c-chcard">${chListHtml(d.channels || [], d.environment || null)}</div>`;
+    <div class="c-sheet c-chcard chinfo">${chListHtml(d.channels || [], env, ctx)}</div>
+    ${chSisHtml(chSisFacts(d.channels || [], env, ctx))}`;
 }
 // ================================================== end of the channel model ==
 
