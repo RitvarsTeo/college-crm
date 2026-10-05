@@ -24,13 +24,13 @@ font, make them all 3 fit side by side." Then: "Rest accpeted."
 - Phone (<=760px): Overdue, Due today and In the Inbox sit side by side in one row (one column per figure, so No next
   step fits too when shown), figures 28px, labels 11.5px.
 test/home_final.test.js. 1109/1109. Shots: `For review/2026-10-05 finals/Home-final-1440-light.png`,
-`Home-final-phone-375-light.png`. BUILT, next patch.
+`Home-final-phone-375-light.png`. LIVE in patch 9 (aa6259b, code 29e1792, release/2026-10-05-intake-9; verified by MASTER CONTROL 05.10, not re-checked by MAIN).
 
 ## 05.10.2026 - PICKED: the gap under Needs you = option 1
 
 Ritvars 05.10: "Option 1 for the first" (to MAIN) / "1, but the journey has fixes to do" (to MASTER CONTROL). The Home
 journey card lays its stages in two columns (card 340px) and both top cards end on one line; this is the only layout
-now. `?gap=` and option 2 (Needs you stretched) are removed. 1108/1108. BUILT, next patch.
+now. `?gap=` and option 2 (Needs you stretched) are removed. 1108/1108. LIVE in patch 9 (aa6259b, code 29e1792, release/2026-10-05-intake-9; verified by MASTER CONTROL 05.10, not re-checked by MAIN).
 
 ## 05.10.2026 - PICKED: the final Home (Q20); the gap under Needs you is an A/B (?gap=1|2)
 
@@ -46,6 +46,7 @@ months below it. AAAAANd lets have a fix for the black space below needs you car
   cards end on one line; `?gap=2` - Needs you stretches to The journey now's height, its figures centred. No switch =
   the gap as today. Cleanup commit after his pick.
 test/home_final.test.js; home_target rewritten; home_vitals removed. 1108/1108. Shots: `For review/2026-10-05 finals/`.
+LIVE in patch 9 (aa6259b, code 29e1792, release/2026-10-05-intake-9; verified by MASTER CONTROL 05.10, not re-checked by MAIN).
 
 ## 05.10.2026 - PICKED: the cold and reject lists live in Outcomes (D-C8 / Q14 = A)
 
@@ -54,7 +55,7 @@ people tab of course." The A/B below is closed: A is the product, B and the `?co
 proceeding > Cold or Reject shows one card per programme (name + phone + email, why, came from, last contact); the
 "why they stopped" breakdown shows on Everybody only. Home's Cold / Reject open it. People (everyone) still filters by
 Stage Cold / Reject. Marketing consent: still parked, nothing built. test/cold_list.test.js rewritten. 1111/1111.
-Shots: `For review/2026-10-05 finals/`. BUILT, next patch.
+Shots: `For review/2026-10-05 finals/`. LIVE in patch 9 (aa6259b, code 29e1792, release/2026-10-05-intake-9; verified by MASTER CONTROL 05.10, not re-checked by MAIN).
 
 ## 05.10.2026 - People is everyone; Journey and Outcomes are its children (Q21)
 
@@ -65,7 +66,7 @@ Clicking People opens the whole list with search, Add lead and every filter (Sta
 people" menu item and the Journey | All people tab row are gone; #/people and the old #/people/all both open everyone.
 People lights alone on everyone, People + Journey / Outcomes on those. Without the tab row the Journey screen is titled
 Journey under a "People" crumb, like Outcomes (a consequence, flagged). Phone More: Journey, Outcomes, Reports,
-Settings, Help. The tour's People step says it. Order and tab tests updated. 1111/1111. BUILT, next patch.
+Settings, Help. The tour's People step says it. Order and tab tests updated. 1111/1111. LIVE in patch 9 (aa6259b, code 29e1792, release/2026-10-05-intake-9; verified by MASTER CONTROL 05.10, not re-checked by MAIN).
 
 ## 05.10.2026 - The phone menu is a bottom tab bar (Q16)
 
@@ -79,7 +80,7 @@ disagree; the tab lights with the place (Journey / Outcomes / All people light P
 More); Esc or a tap outside closes the sheet; clear of the phone's home bar (safe area); Feedback moves above the bar.
 Inbox, Next steps, More, Help, Journey and All people icons are PROVISIONAL (the same stroke language). Wide screens
 (and 761-900px, which keeps the sideways row) are unchanged. test/phone_tabs.test.js. 1111/1111. Shots 375 light + dark:
-`For review/2026-10-05 Q16 phone tab bar/`. BUILT, next patch.
+`For review/2026-10-05 Q16 phone tab bar/`. LIVE in patch 9 (aa6259b, code 29e1792, release/2026-10-05-intake-9; verified by MASTER CONTROL 05.10, not re-checked by MAIN).
 
 ## 05.10.2026 - A/B: Home = the vitals, Reports = the depth (Q19), NOT PICKED
 
@@ -98,7 +99,7 @@ has, can be clicked and lead to this deeper data tab". Supersedes the Q13 placem
   **Cold or reject** - are added to Reports under the same switch, computed in app.html from the people rows Home used
   (src/reports.js untouched).
 No switch = Home, menu and Reports as before. test/home_vitals.test.js; focal_point, home_ab updated for the
-alternative Home. 1107/1107. Shots: `For review/2026-10-05 Q19 Home vitals A-B/`. BUILT behind a switch.
+alternative Home. 1107/1107. Shots: `For review/2026-10-05 Q19 Home vitals A-B/`. CLOSED 05.10: superseded by his picks above; the switch never shipped (not in patch 9).
 
 ## 05.10.2026 - Outcomes is back in the menu, after Journey
 
@@ -106,7 +107,7 @@ Ritvars 05.10 (via MASTER CONTROL): "we lost the outcomes tab ... cant open it f
 Journey" to keep the chronology. Menu: Home > Admissions (Inbox, Next steps) > People (Journey, Outcomes, All people) >
 Reports > Settings. The link is #/outcomes; on Outcomes the menu lights People + Outcomes. Help boxes 01 Inbox / 02 Next
 steps / 03 Outcomes unchanged. Menu-order checks updated (no_crm_word, nav_and_home). Seen on the preview: the order, and
-Outcomes / Journey / All people each light with People. 1103/1103. BUILT, next patch.
+Outcomes / Journey / All people each light with People. 1103/1103. LIVE in patch 9 (aa6259b, code 29e1792, release/2026-10-05-intake-9; verified by MASTER CONTROL 05.10, not re-checked by MAIN).
 
 ## 05.10.2026 - The browser tab icon is the white tile in light AND dark
 
@@ -115,7 +116,7 @@ The tab icon (`src/assets/favicon.svg`) turned into a dark tile with white lette
 app, the taskbar and "Open in app" use `icon-192.png`: white tile, black letters, blue leg. The dark block is gone, so
 the tab is that same white tile in both themes. **SUPERSEDES the 30.09.2026 dark-favicon rule** ("for dark mode only turn
 the text into white"); that entry below keeps its words and is no longer the rule. Brandbook shapes unchanged.
-test/app_chrome.test.js now fails if the icon gets a dark variant again. 1103/1103. BUILT, next patch.
+test/app_chrome.test.js now fails if the icon gets a dark variant again. 1103/1103. LIVE in patch 9 (aa6259b, code 29e1792, release/2026-10-05-intake-9; verified by MASTER CONTROL 05.10, not re-checked by MAIN).
 
 ## 05.10.2026 - Q13 C, D and KPI-first, behind switches (his own ideas), NOT PICKED
 
@@ -128,6 +129,22 @@ received to vote on those". No such variant is recorded (his 02.10 vote was Jour
 - `?first=kpi` - the four KPI cards above Needs you, so he can vote on it with a picture.
 No switch = Home as before. Superseded as a QUESTION by Q19 (Home = vitals only, MASTER CONTROL 05.10); kept until the
 Q19 pick says what to drop. 1103/1103. Shots: `For review/2026-10-05 Q13 target A-B/`.
+CLOSED 05.10: superseded by his picks above; the switch never shipped (not in patch 9).
+
+## 05.10.2026 - Q15: a note on every stage move, PICKED B (the dialog)
+
+Ritvars 05.10: "Going back and in overall moving stages should be documented, so notes box its for this.
+How could we in the best way make it work and not to annoy the user?" Brief Q15 via MASTER CONTROL.
+Worktree `crm-q15`, branch `ui/2026-10-05-stage-note-ab`, cut from MAIN `59f429e`.
+
+| What | Status |
+|---|---|
+| **DECIDED 05.10 (Ritvars):** a move back needs a note before it saves; a move forward asks and can be skipped. A note or logged call on that person in the last few minutes counts as the note (his popup); `config.stageMoveNote.recentMinutes` = 10 | BUILT |
+| Stage order = Journey order (`config.stages`); leaving Not proceeding for any stage = back; a move INTO Not proceeding keeps its own reason dialog | BUILT |
+| Server: 400 on a back move with no note and no recent manual note/call. `config.stageMoveNote.enforce` = **true** since the pick; false puts back the old behaviour. `GET /api/people/:id/move-check?to=` reads only. src/stagemove.js | BUILT |
+| **PICKED B 05.10 (Ritvars, via MASTER CONTROL):** the small dialog, always on, no switch. Back: Save + Cancel, a note required. Forward: Save + Skip. Reasons are one-click. Same on Journey drag, People quick edit, person page, the old board. A (the inline line) and `?movenote` removed | BUILT |
+| Reasons: 3 neutral per direction in `config.stageMoveNote.reasons`, for Ieva to tune | SAID |
+| Screens: `For review/2026-10-05 Q15 stage-move note A-B/`: shots 1-5 the A/B; 6 B back 1440 light, 7 B back phone 375 | BUILT |
 
 ## 05.10.2026 - A/B: the cold list for Marketing (D-C8), NOT PICKED
 
@@ -142,7 +159,7 @@ how Marketing finds and reads the cold ones; two layouts of what exists, NO expo
 - No switch = both screens as before. Flag, NOT built: marketing consent is stored (table `consents`, the form's
   consent) but `/api/people` does not carry it, so neither list can show who agreed to marketing - a decision for him.
 test/cold_list.test.js. 1101/1101. Shots: `For review/2026-10-05 Q14 cold list A-B/` (the cold tags in them were set
-on the local in-memory preview only). BUILT behind a switch, waits for his pick.
+on the local in-memory preview only). CLOSED 05.10: superseded by his picks above; the switch never shipped (not in patch 9).
 
 ## 05.10.2026 - A/B: the year's target on Home (D-C6), NOT PICKED
 
@@ -161,7 +178,7 @@ Depth on the frame only (the sunk track, the card); fills, columns and lines fla
 rule) and adds no scene, so Home keeps two. Flag: mustard is also the donut's "Open" on the same screen.
 test/home_target.test.js (config values, nothing hard-coded, the switch, exact meter widths, one baseline);
 test/home_ab.test.js's harness now loads the target block. 1098/1098. Shots: `For review/2026-10-05 Q13 target A-B/`.
-BUILT behind a switch, waits for his pick.
+CLOSED 05.10: superseded by his picks above; the switch never shipped (not in patch 9).
 
 ## 05.10.2026 - Form answers read as words on the person page
 
@@ -171,7 +188,7 @@ read: programme picked, study form, heard about us from, company (the chip draws
 are stored or extracted is unchanged (CHANNELS owns it). test/field_labels.test.js reads the keys from adapters.js and
 fails if any of them shows a snake_case key (it failed on the old app.html). Seen on a fresh preview (8862): a simulated
 website lead carrying all four answers, added to Admissions, shows PROGRAMME PICKED Navigation, STUDY FORM Full time,
-HEARD ABOUT US FROM Instagram, COMPANY Example Shipping; no key on the page. BUILT, next patch.
+HEARD ABOUT US FROM Instagram, COMPANY Example Shipping; no key on the page. LIVE in patch 9 (aa6259b, code 29e1792, release/2026-10-05-intake-9; verified by MASTER CONTROL 05.10, not re-checked by MAIN).
 
 ## 05.10.2026 - Help questions in ONE fixed order, never by most opened
 
@@ -185,7 +202,7 @@ README says only the feedback readers may read it, Intake still answers anybody 
 server.js and app.html comments no longer say "most opened first". test/help_center.test.js fails if the order follows
 the counts or the page asks for them (it failed on the old file: the most opened question came first).
 Seen on a fresh preview (port 8862): one question opened 5 times on the server stays last; no counts request; light and
-dark at 1440 and at 375 wide. BUILT, next patch.
+dark at 1440 and at 375 wide. LIVE in patch 9 (aa6259b, code 29e1792, release/2026-10-05-intake-9; verified by MASTER CONTROL 05.10, not re-checked by MAIN).
 
 ## 05.10.2026 - Help questions trimmed, the Needs-you shelf removed
 
@@ -204,7 +221,7 @@ Ritvars, 05.10 (via MASTER CONTROL, control commits 31b28fe + ec7aaff):
   integration simulator / inspector texts (src/simulator.js, config/providers.json) - SAID, not swept.
 test/help_answers.test.js, a shelf check in test/cards_blue_edge.test.js and a History check in test/no_crm_word.test.js.
 Seen on a restarted preview at 1440, light and dark: Home (no strip), Help list, the delete answer, tour step 2.
-1090/1090. BUILT, next patch.
+1090/1090. LIVE in patch 9 (aa6259b, code 29e1792, release/2026-10-05-intake-9; verified by MASTER CONTROL 05.10, not re-checked by MAIN).
 
 ## 05.10.2026 - LOCKED: menu order, "Next steps", and "Intake" never "CRM"
 
@@ -221,7 +238,7 @@ Ritvars, locked 05.10 (via MASTER CONTROL):
   already Intake. Comments, identifiers, env names (CRM_AUTH ...) and repo or folder names keep their words.
   test/no_crm_word.test.js fails if CRM comes back anywhere a person reads it, and checks the menu order.
 Seen at 1440 on a restarted preview: the menu, Next steps with its count, the Help boxes, tour step 1; no "CRM" on the
-page. BUILT, next patch.
+page. LIVE in patch 9 (aa6259b, code 29e1792, release/2026-10-05-intake-9; verified by MASTER CONTROL 05.10, not re-checked by MAIN).
 
 ## 05.10.2026 - The (c) line is the foot of every page
 
@@ -229,7 +246,27 @@ Decided by Ritvars 05.10 (via MASTER CONTROL), replacing "the (c) line at the bo
 leaves the menu card (light and dark, desktop and the phone foot) and is the foot of EVERY page, drawn once by
 `#view::after`, so no redraw inside a page can drop it. Help's own (c) line removed so it is not there twice. The menu-foot
 Help center link stays. Checked on Home, Today, Inbox, Journey, All people, a person page, Reports, Settings and Help:
-the foot is on each, the menu carries no (c), in light and dark. BUILT, next patch.
+the foot is on each, the menu carries no (c), in light and dark. LIVE in patch 9 (aa6259b, code 29e1792, release/2026-10-05-intake-9; verified by MASTER CONTROL 05.10, not re-checked by MAIN).
+## 05.10.2026 - Q8: the programme a person picked reaches the Inbox on every channel
+
+Where it was lost: `toIntake()` (src/adapters.js) passed the adapter's `extracted` on for the website only (Q3), so
+the programme from an agent lead, a Meta lead form (Facebook, Instagram, Messenger), a typed-in contact (in_person),
+an Open Day booking (PARKED) and the apply sheet (DROPPED) stopped there and never reached the database. The website
+was only half kept: its answer was stored as `form_programme`, but the suggestion read the message text only, so a
+form lead with no programme in "Additional Comments" read "nothing about studying was mentioned", the Inbox column
+was empty and "What do they want to study?" was not preselected.
+Fixed at the shared boundary: `toIntake()` passes the form answers (programme, study form, heard from, company) for
+every channel, stored as before as the person's own answer, `provider`, verbatim. `extractFrom()` also reads the
+picked programme for the SUGGESTION: by its code or the same words as a message, an `extracted` interest a person
+confirms, never a fact. A value naming none of our programmes ("Hotel management") is kept and suggests nothing.
+What the message says still wins. `intent` is NOT carried (the adapter's reading of the channel, not an answer):
+phone queue choice, Mailchimp, Open Day, lead form stay as they were, parked. No schema change.
+LinkedIn and TikTok are not in this: their webhooks carry ids only and the answers come through leadanswers.js,
+which already stores the programme (as a `provider` interest - a different rule from the website's, not changed here).
+Real Meta lead webhooks also carry ids only; the inline `programme` the adapter reads is the simulator's shape.
+Tests: test/programme_q8.test.js, 15 (11 of them fail on production 5eba1a6, website included); suite 1093/1093.
+Seen locally on 4 simulated leads: Inbox shows NAV / ENG / MT WTT, the unmapped one blank, the open row preselects NAV.
+BUILT, not deployed.
 
 ## 05.10.2026 - The app opens on Home
 
@@ -601,7 +638,7 @@ Technical prototype (P4) on the existing shell. Production untouched: no deploy,
 | What | Status |
 |---|---|
 | `GET /api/applications` (src/applications.js): the SIS funnel from rows already in Intake. SELECTs only, never calls the SIS, counts only | BUILT |
-| Basis: **registration-week cohort**, where each person stands NOW. No status history is made up: the SIS sends current status only | BUILT |
+| Basis: **registration-week cohort**, where each person stands NOW. No status history is made up: the SIS sends current status only. **DECIDED 05.10 (Ritvars, popup "Yes, keep it"):** the metric reads "registered that week, current status now", never a history of when anyone moved. The SIS funnel subtitle now says exactly that (was "by registration week · where each person stands now") | BUILT |
 | A later status counts as passing the earlier ones (SIS order, already accepted 29.09 "by submit date"); rejected / withdrawn kept apart, the SIS does not say at which step | BUILT |
 | The records a person archived in the Inbox (production's 6 team tests) are **set aside**, never counted | BUILT |
 | One truthful state: Off / No run yet / No real applicant yet / Test / Live. A webhook record before any pull is still counted | BUILT |
@@ -611,7 +648,20 @@ Technical prototype (P4) on the existing shell. Production untouched: no deploy,
 | **DECIDED 02.10 (Ritvars, "Ok"):** the funnel is split the way apply.novikontas.org describes it: **On the website** (Registered, Form started, Submitted) and **Academy decision** (Admitted, Matriculated). One scale for both. Ritvars renamed it: "Academy decision", not College | BUILT |
 | **SAID 02.10 (Ritvars, via MASTER CONTROL QUEUE Q1):** apply.novikontas.org may be called **"Academy Application form"** in Intake, wherever Intake names it (Reports > Applications, the lifecycle line). It stays downstream, never a channel. Source: `crm-control-s1/docs/INTAKE_CONTROL_2026-10-02.md` Q1, commit `599a369`, branch `control/2026-10-02-s1`. BUILT 02.10 on his GO: the lifecycle line and the web-statistics heading in Reports > Applications. Code comments and channel notes keep the domain | BUILT |
 
-**What production will show today** (from the 01.10 evidence, not re-read): SIS live, 6 records in the
+**05.10.2026 - in production, served code proven, not seen signed in.** Every S4 commit up to `eca5ddc`
+is inside production `6d7ca1d` (dpl_4qFa1gBwxjUa8fo9mc68Y3trCegZ, created 05.10 09:25): live `/` is
+byte-identical to 6d7ca1d's app.html + sign-in script, and the deployed `src/applications.js` and
+`src/lifecycle.js` hash-match `eca5ddc` (read-only `vercel api` files list). Reports > Applications has
+not been opened signed in on production.
+
+**SIS, backup 04.10 19:29 (field presence only, no personal data read out):** 8 rows. The 6 from 25-27.09
+are the archived team tests (source `simulated`, archived "Internal"). **2 new rows** registered
+02.10, pulled 03.10 05:31, source `provider`, external email domains, not Intake users, no "test" in
+name/email: `01a0fce8-…` (submitted) is a new Inbox row 176, state new, unprocessed; `01a0fc98-…`
+(started) joined existing person r0014 (status Application, came by email 21.09). Likely real, NOT
+verified: someone with SIS access must confirm both references are real applicants.
+
+**What production showed on 01.10** (from the 01.10 evidence, superseded by the block above): SIS live, 6 records in the
 store, 6 set aside, **0 counted -> "No real applicant yet"**. That is the true blocked state.
 
 **Data gaps:** no date for `started` / `admitted`, so no event-by-week view; a person with two

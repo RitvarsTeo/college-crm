@@ -82,7 +82,8 @@ test('somebody who was closed and is working again is not counted as a loss', as
   assert.deepEqual((await exits(base)).byStage, { Contacted: 1 });
 
   // reopened: they are active again, so counting their old exit would show a loss we recovered
-  await setStatus(base, id, 'Follow-up');
+  // (leaving Not proceeding is a move back, which carries its note since Q15, 05.10.2026)
+  await setStatus(base, id, 'Follow-up', { note: 'Called back, ready to go on' });
   const back = await exits(base);
   assert.deepEqual(back.byStage, {});
   assert.equal(back.total, 0);
@@ -95,7 +96,7 @@ test('closed twice counts once, from the stage they left the SECOND time', async
 
   const id = await person(base, 'Twice');
   await setStatus(base, id, 'Not proceeding', { reason: 'Timing / postponed' });
-  await setStatus(base, id, 'Application');
+  await setStatus(base, id, 'Application', { note: 'Came back in spring' });
   await setStatus(base, id, 'Not proceeding', { reason: 'Financial reasons' });
 
   const r = await exits(base);

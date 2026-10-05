@@ -472,18 +472,21 @@ export function toIntake(ev) {
     // The consent the person gave on the form, read by truthy() above. It stopped here too,
     // so a ticked box never reached the person's consent record (found 28.09.2026).
     consent: ev.consent && Object.keys(ev.consent).length ? ev.consent : null,
-    // What the person ANSWERED on the website form (Q3, 04.10.2026): the programme they picked
-    // and where they heard of us. Stored as their own answers, provider provenance, never as
-    // the confirmed interest or as advert tracking. Website only for now: every other adapter's
-    // `extracted` still stops here, which is a known gap, not a decision.
-    answers: ev.channel === 'website' ? websiteAnswers(ev.extracted) : null,
+    // What the person ANSWERED on a form (Q3, 04.10.2026): the programme they picked and where
+    // they heard of us. Stored as their own answers, provider provenance, never as the confirmed
+    // interest or as advert tracking. Every channel since Q8 (05.10.2026): until then only the
+    // website's answers got past this line, and an agent's, a Meta lead form's or a typed-in
+    // programme was lost before the database.
+    answers: formAnswers(ev.extracted),
   };
 }
 
-const WEBSITE_ANSWERS = { programme: 'form_programme', study_form: 'form_study_form', heard_from: 'heard_from', company: 'form_company' };
-function websiteAnswers(x) {
+// `intent` stays out on purpose: it is the adapter's reading of the channel (a lead form, a
+// visit), not something the person answered.
+const FORM_ANSWERS = { programme: 'form_programme', study_form: 'form_study_form', heard_from: 'heard_from', company: 'form_company' };
+function formAnswers(x) {
   const out = {};
-  for (const [k, field] of Object.entries(WEBSITE_ANSWERS)) if (x && x[k]) out[field] = String(x[k]);
+  for (const [k, field] of Object.entries(FORM_ANSWERS)) if (x && x[k]) out[field] = String(x[k]);
   return Object.keys(out).length ? out : null;
 }
 

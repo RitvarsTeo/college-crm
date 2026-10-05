@@ -198,7 +198,8 @@ export async function receive(db, item) {
   const provided = {};
   if (item.email) provided.email = item.email;
   if (item.phone) provided.phone = item.phone;
-  const read = extractFrom({ channel: item.channel, text: item.body, provided });
+  const read = extractFrom({ channel: item.channel, text: item.body, provided,
+    answeredProgramme: item.answers && item.answers.form_programme });
 
   // Obvious junk is stored, so nothing disappears, but it never reaches the
   // queue and never costs anybody a second. Decided at the visual review.

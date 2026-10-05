@@ -59,7 +59,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "6d7ca1d",
+          "commit": "29e1792",
           "detail": null
         },
         "productionConfigured": {
@@ -70,8 +70,8 @@
         },
         "liveVerified": {
           "state": "no",
-          "seen": "2026-10-02",
-          "source": "production backup _backups/2026-10-02T01-17-43Z (status VERIFIED), counts read 02.10; also docs/INTAKE_CONTROL_2026-10-02.md (control/2026-10-02-s1, 1a09a87)",
+          "seen": "2026-10-05",
+          "source": "production backup _backups/2026-10-04T19-29-00Z (status VERIFIED, 26 tables), counts read 05.10",
           "detail": "0 rows from a real provider for this channel"
         },
         "nextAction": {
@@ -194,7 +194,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "6d7ca1d",
+          "commit": "29e1792",
           "detail": "The option-B link (/api/admin/gmail/link) is in the running commit."
         },
         "productionConfigured": {
@@ -205,9 +205,9 @@
         },
         "liveVerified": {
           "state": "yes",
-          "seen": "2026-10-02",
-          "source": "production backup _backups/2026-10-02T01-17-43Z (status VERIFIED), counts read 02.10; also docs/INTAKE_CONTROL_2026-10-02.md (control/2026-10-02-s1, 1a09a87)",
-          "detail": "edu@: 40 rows from a real provider (4 dated 30.09, 36 dated 01.10); last poll 01.10 17:00Z"
+          "seen": "2026-10-05",
+          "source": "production backup _backups/2026-10-04T19-29-00Z (status VERIFIED, 26 tables), counts read 05.10",
+          "detail": "edu@: 98 rows from a real provider, newest 04.10 04:43Z; last poll 04.10 05:35Z"
         },
         "nextAction": null,
         "blocker": null,
@@ -284,7 +284,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "6d7ca1d",
+          "commit": "29e1792",
           "detail": null
         },
         "productionConfigured": {
@@ -295,8 +295,8 @@
         },
         "liveVerified": {
           "state": "no",
-          "seen": "2026-10-02",
-          "source": "production backup _backups/2026-10-02T01-17-43Z (status VERIFIED), counts read 02.10; also docs/INTAKE_CONTROL_2026-10-02.md (control/2026-10-02-s1, 1a09a87)",
+          "seen": "2026-10-05",
+          "source": "production backup _backups/2026-10-04T19-29-00Z (status VERIFIED, 26 tables), counts read 05.10",
           "detail": "0 rows from a real provider for this channel"
         },
         "nextAction": {
@@ -372,7 +372,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "6d7ca1d",
+          "commit": "29e1792",
           "detail": null
         },
         "productionConfigured": {
@@ -383,8 +383,8 @@
         },
         "liveVerified": {
           "state": "no",
-          "seen": "2026-10-02",
-          "source": "production backup _backups/2026-10-02T01-17-43Z (status VERIFIED), counts read 02.10; also docs/INTAKE_CONTROL_2026-10-02.md (control/2026-10-02-s1, 1a09a87)",
+          "seen": "2026-10-05",
+          "source": "production backup _backups/2026-10-04T19-29-00Z (status VERIFIED, 26 tables), counts read 05.10",
           "detail": "0 rows from a real provider for this channel"
         },
         "nextAction": {
@@ -460,7 +460,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "6d7ca1d",
+          "commit": "29e1792",
           "detail": null
         },
         "productionConfigured": {
@@ -471,8 +471,8 @@
         },
         "liveVerified": {
           "state": "no",
-          "seen": "2026-10-02",
-          "source": "production backup _backups/2026-10-02T01-17-43Z (status VERIFIED), counts read 02.10; also docs/INTAKE_CONTROL_2026-10-02.md (control/2026-10-02-s1, 1a09a87)",
+          "seen": "2026-10-05",
+          "source": "production backup _backups/2026-10-04T19-29-00Z (status VERIFIED, 26 tables), counts read 05.10",
           "detail": "0 rows from a real provider for this channel"
         },
         "nextAction": {
@@ -552,7 +552,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "6d7ca1d",
+          "commit": "29e1792",
           "detail": null
         },
         "productionConfigured": {
@@ -563,8 +563,8 @@
         },
         "liveVerified": {
           "state": "no",
-          "seen": "2026-10-02",
-          "source": "production backup _backups/2026-10-02T01-17-43Z (status VERIFIED), counts read 02.10; also docs/INTAKE_CONTROL_2026-10-02.md (control/2026-10-02-s1, 1a09a87)",
+          "seen": "2026-10-05",
+          "source": "production backup _backups/2026-10-04T19-29-00Z (status VERIFIED, 26 tables), counts read 05.10",
           "detail": "0 rows from a real provider for this channel"
         },
         "nextAction": {
@@ -633,7 +633,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "6d7ca1d",
+          "commit": "29e1792",
           "detail": null
         },
         "productionConfigured": {
@@ -644,8 +644,8 @@
         },
         "liveVerified": {
           "state": "no",
-          "seen": "2026-10-02",
-          "source": "production backup _backups/2026-10-02T01-17-43Z (status VERIFIED), counts read 02.10; also docs/INTAKE_CONTROL_2026-10-02.md (control/2026-10-02-s1, 1a09a87)",
+          "seen": "2026-10-05",
+          "source": "production backup _backups/2026-10-04T19-29-00Z (status VERIFIED, 26 tables), counts read 05.10",
           "detail": "0 rows from a real provider. Mailchimp did verify our URL (handshake 30.09 13:40Z), which proves the address, not a lead or a subscriber event"
         },
         "nextAction": {
@@ -754,7 +754,7 @@
         "Test buttons 1, 2 and 3"
       ],
       "ownerPerson": "Ritvars",
-      "ownerAction": "Live since 01.10 05:27Z (daily pull). Continuity past 01.10 not yet proven.",
+      "ownerAction": "Live since 01.10 05:27Z (daily pull), running through 04.10.",
       "reliability": "Poll every 5 minutes for the last 15, so two missed runs lose nothing; upsert on uniqueid absorbs the overlap.",
       "reconciliation": "The overlap window is the reconciliation.",
       "review_27_09": "TWO GAPS, 27.09.2026. (1) NO TRIGGER: the Vercel team is on Hobby, which rejects any cron more frequent than daily, so the 5-minute cron was removed from vercel.json; something else must call /api/cron/pbx-calls every 5 minutes before this channel goes live. (2) Calls are written by lib/pbx.js into its own table, pbx_incoming_calls, through the Supabase REST API. Nothing in src/ reads that table, so no call reaches the Inbox yet. Still worth asking TeleGroup whether a reliable call-event push exists (open question 9); if not, polling stays - it works.",
@@ -767,7 +767,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "6d7ca1d",
+          "commit": "29e1792",
           "detail": null
         },
         "productionConfigured": {
@@ -778,10 +778,9 @@
         },
         "liveVerified": {
           "state": "yes",
-          "seen": "2026-10-02",
-          "source": "production backup _backups/2026-10-02T01-17-43Z (status VERIFIED), counts read 02.10; also docs/INTAKE_CONTROL_2026-10-02.md (control/2026-10-02-s1, 1a09a87)",
-          "detail": "4 rows from a real provider (calls of 30.09), written by the daily TeleGroup pull at 01.10 05:27Z",
-          "gap": "that the daily pull kept running after 01.10. The 02.10 backup holds one pull. One signed-in look at the Phone row, the 03.10 backup, or the checker gate (needs GO) proves it.",
+          "seen": "2026-10-05",
+          "source": "production backup _backups/2026-10-04T19-29-00Z (status VERIFIED, 26 tables), counts read 05.10",
+          "detail": "11 rows from a real provider, newest call 02.10 10:33Z; the daily TeleGroup pull last ran 04.10 05:27Z",
           "settled": {
             "on": "2026-10-02",
             "was": [
@@ -797,13 +796,14 @@
               }
             ],
             "outcome": "The live claim was right. The Pin was stale from 01.10 05:27Z."
+          },
+          "gapClosed": {
+            "on": "2026-10-05",
+            "was": "that the daily pull kept running after 01.10. The 02.10 backup holds one pull. One signed-in look at the Phone row, the 03.10 backup, or the checker gate (needs GO) proves it.",
+            "by": "the 04.10 backup: the daily pull ran every day through 04.10"
           }
         },
-        "nextAction": {
-          "owner": "Ritvars",
-          "action": "Prove the daily pull continues: one signed-in look at the Phone row, or GO for the checker gate",
-          "input": null
-        },
+        "nextAction": null,
         "blocker": null,
         "destination": "A call is logged on the caller's profile. Unknown callers land in the Inbox; numbers archived as Spam, Supplier or Internal are filtered with the reason kept.",
         "callPopUp": {
@@ -865,7 +865,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "6d7ca1d",
+          "commit": "29e1792",
           "detail": null
         },
         "productionConfigured": {
@@ -876,8 +876,8 @@
         },
         "liveVerified": {
           "state": "no",
-          "seen": "2026-10-02",
-          "source": "production backup _backups/2026-10-02T01-17-43Z (status VERIFIED), counts read 02.10; also docs/INTAKE_CONTROL_2026-10-02.md (control/2026-10-02-s1, 1a09a87)",
+          "seen": "2026-10-05",
+          "source": "production backup _backups/2026-10-04T19-29-00Z (status VERIFIED, 26 tables), counts read 05.10",
           "detail": "0 rows from a real provider for this channel"
         },
         "nextAction": null,
@@ -932,7 +932,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "6d7ca1d",
+          "commit": "29e1792",
           "detail": null
         },
         "productionConfigured": {
@@ -1000,7 +1000,7 @@
         },
         "deployed": {
           "state": "partial",
-          "commit": "6d7ca1d",
+          "commit": "29e1792",
           "detail": "The webhook receiver is deployed. The Lead Sync fetch that turns a notification into a name and email is NOT built."
         },
         "productionConfigured": {
@@ -1011,8 +1011,8 @@
         },
         "liveVerified": {
           "state": "no",
-          "seen": "2026-10-02",
-          "source": "production backup _backups/2026-10-02T01-17-43Z (status VERIFIED), counts read 02.10; also docs/INTAKE_CONTROL_2026-10-02.md (control/2026-10-02-s1, 1a09a87)",
+          "seen": "2026-10-05",
+          "source": "production backup _backups/2026-10-04T19-29-00Z (status VERIFIED, 26 tables), counts read 05.10",
           "detail": "0 rows from a real provider for this channel"
         },
         "nextAction": {
@@ -1082,7 +1082,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "6d7ca1d",
+          "commit": "29e1792",
           "detail": null
         },
         "productionConfigured": {
@@ -1093,8 +1093,8 @@
         },
         "liveVerified": {
           "state": "no",
-          "seen": "2026-10-02",
-          "source": "production backup _backups/2026-10-02T01-17-43Z (status VERIFIED), counts read 02.10; also docs/INTAKE_CONTROL_2026-10-02.md (control/2026-10-02-s1, 1a09a87)",
+          "seen": "2026-10-05",
+          "source": "production backup _backups/2026-10-04T19-29-00Z (status VERIFIED, 26 tables), counts read 05.10",
           "detail": "0 rows from a real provider for this channel"
         },
         "nextAction": {
@@ -1127,7 +1127,15 @@
       "externalBlocker": null,
       "ownerPerson": "Ritvars",
       "ownerAction": "SIS_API_TOKEN in the host, then switch from test to live",
-      "reconciliation": "sync_state holds the cursor and what the last run did."
+      "reconciliation": "sync_state holds the cursor and what the last run did.",
+      "record": {
+        "liveVerified": {
+          "state": "yes",
+          "seen": "2026-10-05",
+          "source": "production backup _backups/2026-10-04T19-29-00Z (status VERIFIED, 26 tables), counts read 05.10",
+          "detail": "1 row from the real SIS, of 03.10; the daily pull last ran 04.10 05:31Z"
+        }
+      }
     }
   },
   "_meta": "Facebook, Instagram, Messenger and WhatsApp are reached through ONE Meta Business Suite connection. That is an integration detail. Each remains a SEPARATE channel in the CRM for reporting, filtering, source and history: there is deliberately no combined \"Meta\" number, because it would hide where people actually came from. WhatsApp being inside the same shared inbox is NOT VERIFIED and must not be claimed.",
@@ -1160,9 +1168,9 @@
   "_lifecycle": "Added 02.10.2026. readiness says whether OUR SIDE is technically ready. lifecycle says whether the PRODUCT HAS THIS CHANNEL AT ALL, which is a decision and not an engineering fact. active = a channel we intend to connect. parked = decided, prepared, deliberately not connected yet; it is not work and nobody holds it. dropped = decided out of the product; the adapter may stay in the repository, the channel does not exist. Anything without this field is active. A screen MUST read lifecycle, never readiness, to decide whether a channel is current work.",
   "_record": "Added 02.10.2026 (Session 3, Channels). The reconciled state of every ACTIVE channel, each fact with the date it was seen and where. It exists because a local checkout has no secrets and no production rows, so the screen can never READ production from here: it must show what was last SEEN, and say when. Four states are kept apart and never inferred from each other: deployed (the code is in the running commit), productionConfigured (the settings are in Vercel Production), liveVerified (a row a real provider sent exists), and access (we hold what we need from the people outside). A blocker names its dependency, its owner, the action or input needed, and whether it is internal or external; local credentials being absent is NEVER a blocker. On production the screen reads live verification from real provider rows and ignores the recorded value; locally it never does.",
   "_production": {
-    "commit": "6d7ca1d",
+    "commit": "29e1792",
     "provenOn": "2026-10-05",
-    "how": "deployed 05.10.2026 (eighth patch: the app opens on Home) by MASTER CONTROL with _crm-v1-lane-tools/deploy_verify.sh: live page byte-compared with the commit (+ its sign-in script). This record is the only change on top of 6d7ca1d",
+    "how": "deployed 05.10.2026 (ninth patch: Next steps, People = everyone, phone tab bar, Home target, stage-move note, form answers on every channel) by MASTER CONTROL with _crm-v1-lane-tools/deploy_verify.sh: live page byte-compared with the commit (+ its sign-in script). This record is the only change on top of 29e1792",
     "allAdaptersDeployed": true
   },
   "downstream": {

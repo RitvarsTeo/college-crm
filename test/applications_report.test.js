@@ -65,7 +65,7 @@ test('no fabricated history: nothing in the answer dates a status change, only t
     assert.ok(!text.includes(k), `no ${k} in the funnel`);
   }
   for (const w of f.weeks) assert.deepEqual(Object.keys(w).sort(), ['monday', 'now', 'people', 'reached', 'week']);
-  assert.ok(APP.includes('where each person stands now'), 'the screen names the basis');
+  assert.ok(APP.includes('registered that week, current status now'), 'the screen names the basis (decided 05.10)');
 });
 
 test('set aside: the six archived team tests are held, never counted; the state says so', async () => {
