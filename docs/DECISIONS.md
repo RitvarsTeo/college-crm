@@ -305,6 +305,30 @@ each as a working version and says so on screen.
 | D-C7 | Which facts a person needs (education, nationality, study form, guardian) | Ieva | Person card |
 | D-C8 | Marketing's part, now that all 192 belong to Admissions | Aigars, Tetiana | not shown - no Marketing view in C |
 
+**05.10.2026, Ritvars (Session 5 closure):**
+- **D-C5 DECIDED - yes, a lead can go back to an earlier stage.** His words: "Yes, lead I think can go
+  back." Recommended by Session 5 and kept as built: real cases go backwards (an application stalls and
+  returns to Follow-up; Ieva 30.09 "sometimes a cold one becomes an active lead again"), and every move
+  is already in History with who, from and to. No code change.
+- **D-C6 DECIDED - yes, Home shows targets.** "Yes, Home should show that, but the UIUX has to be
+  decided on its session, give it A/B tests for visual confirming." The one target in the workbook
+  (`Downloads/0. NJK KPI 2026.xlsx`, Admissions!B2): "ADMISSIONS 2026 - 140 new students (70% in
+  Officer Programs)". Form: MAIN (UI/UX) shows A/B, Ritvars picks.
+- **D-C8 - the Cold list goes to MAIN as A/B** ("For Cold list, also send it to uiux session, and lets
+  see visual A/B's"). Marketing's own needs beyond it stay with Aigars + Tetiana.
+- **Stage moves are documented (Ritvars 05.10, extends D-C5).** "Going back and in overall moving stages
+  should be documented, so notes box its for this." Picked: **a move BACK needs a note before it
+  saves; a move FORWARD asks for one but can be skipped.** One-click reasons for the move plus free
+  text, so the required note is quick. Who / from / to / when stay recorded as today. The form
+  (inline line under the card vs a pop-up) is MAIN's A/B. Today no stage move asks for anything
+  except Not proceeding (`src/app.html` 3246, 3854, 5289, 6700; History says "changed by hand").
+- **DECIDED 05.10 (Ritvars, relayed by MASTER CONTROL, recorded in its control file as Q13 / Q15):**
+  "Officer Programs" in the 140 target = **NAV + ENG**. A note or call saved on that person shortly
+  before a stage move **does count** as the move's note. Routed to MAIN with the A/Bs (Q13, Q14, Q15).
+- **D-C7 DECIDED - no guardian field for now** (Ritvars, popup "Leave out for now"): applicants come after
+  secondary or maritime school, so most are adults. Parked; one optional box if Ieva asks for it.
+  Education, study form and nationality stay as built.
+
 D-C1 to D-C4 are the ones C's screens wait on. They replace, in C's words, backlog rows 46, 50
 ("the real process after To look at"), 51 and 108, which say so.
 
