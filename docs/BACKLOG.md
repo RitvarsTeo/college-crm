@@ -14,6 +14,17 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - Q46: Home's month chart is taller and the donut is balanced with it
+
+Ritvars 05.10, on production Home: "can be taller" (the Admissions by month chart) and "The pie needs to be balanced
+with admission graph" (at ~1900 px the donut sat high in its column, an empty band under it, the legend at the far
+edge). The month chart takes the height left on the screen, 260-460 px (a phone keeps its height); this replaces the
+30.09 "wider, not bigger" lock. Beside it the donut's row IS the chart's plot (top gridline to the baseline): same top,
+same height; the ring's drawn diameter is 78% of the plot inside the 150-250 px clamp, the ring and the legend are
+centred on the plot, the legend right beside the ring at a fixed 28 px gap. Stacked (narrow window, phone) unchanged.
+Clicks unchanged. Tests: frame_drifts (donut-to-plot test), figures_to_people, home_links.
+Shots: `For review/2026-10-05 Q46 Home chart/`. BUILT, next patch.
+
 ## 05.10.2026 - Q44: "No next step" is an amber edge and a "Choose next step" button
 
 Ritvars 05.10 (via MASTER CONTROL), on the Journey board cards: "the no next step prmopt is tooo soft". The soft
