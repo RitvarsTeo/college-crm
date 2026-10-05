@@ -1,8 +1,8 @@
 // Q15, Ritvars 05.10.2026: "Going back and in overall moving stages should be documented, so notes
 // box its for this. How could we in the best way make it work and not to annoy the user?"
 // A move back needs a note; a move forward asks and can be skipped; a note or logged call in the
-// last few minutes counts. The A/B is the form only (?movenote=a|b); with no switch nothing changes,
-// on the page AND on the server.
+// last few minutes counts. He picked B, the small dialog, on 05.10; the rule is on (enforce) for
+// every hand move, and the inline line (A) and the ?movenote switch are gone.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -15,10 +15,10 @@ import { moveDirection, recentMinutes } from '../src/stagemove.js';
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
 const CONFIG = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'prototype.json'), 'utf8'));
-const BLOCK = APP.slice(APP.indexOf('// A NOTE ON EVERY STAGE MOVE (Q15'), APP.indexOf('// Resolves to { flag, note }'));
+const BLOCK = APP.slice(APP.indexOf('// A NOTE ON EVERY STAGE MOVE (Q15'), APP.indexOf('// Resolves to { note }'));
 
-function page(search = '') {
-  const ctx = { CFG: CONFIG, location: { search }, URLSearchParams };
+function page() {
+  const ctx = { CFG: CONFIG };
   vm.runInNewContext(BLOCK.replace(/^const /gm, 'var '), ctx);
   return ctx;
 }
@@ -60,23 +60,20 @@ test('direction: Journey order; leaving Not proceeding is back; into it is the r
 });
 
 test('the page and the server give the same direction for every pair of stages', () => {
-  const { cMoveDir } = page('?movenote=a');
+  const { cMoveDir } = page();
   for (const a of STAGES) for (const b of STAGES) assert.equal(cMoveDir(a, b), moveDirection(CONFIG, a, b), `${a} -> ${b}`);
 });
 
-test('the switch: only ?movenote=a or b; with none the page posts exactly what it posted before', () => {
-  assert.equal(page('').cMoveNoteMode(), '');
-  assert.equal(page('?movenote=a').cMoveNoteMode(), 'a');
-  assert.equal(page('?movenote=b').cMoveNoteMode(), 'b');
-  assert.equal(page('?movenote=c').cMoveNoteMode(), '');
-  const { cMoveBody } = page('');
-  assert.deepEqual({ ...cMoveBody('Contacted', { flag: false }) }, { status: 'Contacted' });
-  assert.deepEqual({ ...cMoveBody('Contacted', { flag: true, note: 'Moved too early' }) }, { status: 'Contacted', moveNote: true, note: 'Moved too early' });
-  assert.equal(CONFIG.stageMoveNote.enforce, false, 'the server rule stays off until he picks');
+test('B is the only form, always on: no switch, no inline line, the server rule is on', () => {
+  assert.ok(!/movenote|cMoveNoteMode|cMoveLine|c-mvline/.test(APP), 'A and its switch are gone');
+  assert.equal(CONFIG.stageMoveNote.enforce, true);
+  const { cMoveBody } = page();
+  assert.deepEqual({ ...cMoveBody('Contacted', { note: '' }) }, { status: 'Contacted' });
+  assert.deepEqual({ ...cMoveBody('Contacted', { note: 'Moved too early' }) }, { status: 'Contacted', note: 'Moved too early' });
 });
 
 test('reasons come from the config, 2-3 per direction, joined with typed text', () => {
-  const { cMoveReasons, cMoveText, cMoveQ } = page('?movenote=b');
+  const { cMoveReasons, cMoveText, cMoveQ } = page();
   for (const d of ['back', 'forward']) assert.ok(cMoveReasons(d).length >= 2 && cMoveReasons(d).length <= 3, d);
   assert.equal(cMoveText('Waiting on them', ' docs by Friday '), 'Waiting on them - docs by Friday');
   assert.equal(cMoveText('Waiting on them', ''), 'Waiting on them');
@@ -89,36 +86,37 @@ test('every place that moves a stage by hand goes through the same ask', () => {
   assert.equal((APP.match(/await cAskMoveNote\(id, /g) || []).length, 4, 'Journey drag, quick edit, person page, the old board');
 });
 
-test('server: no flag = today; flag + back without a note = 400; a note or a recent note saves', async (t) => {
+test('server: a back move without a note is refused; a note or a recent note/call saves; forward never asks', async (t) => {
   const { child, port } = await startServer();
   t.after(() => child.kill());
   const base = `http://127.0.0.1:${port}`;
 
-  const a = await person(base, 'Today unchanged');
-  await status(base, a, 'Follow-up');
-  assert.equal((await status(base, a, 'Contacted')).status, 200, 'no flag: a back move saves as before');
-  assert.equal((await lastStatusEvent(base, a)).body, 'changed by hand');
-
   const b = await person(base, 'Needs a note');
-  await status(base, b, 'Follow-up', { moveNote: true });
-  const refused = await status(base, b, 'Contacted', { moveNote: true });
+  await status(base, b, 'Follow-up');
+  const refused = await status(base, b, 'Contacted');
   assert.equal(refused.status, 400);
   const why = await refused.json();
   assert.equal(why.needsMoveNote, true); assert.equal(why.direction, 'back');
   assert.equal((await fetch(`${base}/api/people/${b}`).then((r) => r.json())).status, 'Follow-up', 'nothing saved');
-  assert.equal((await status(base, b, 'Contacted', { moveNote: true, note: 'Moved too early' })).status, 200);
+  assert.equal((await status(base, b, 'Contacted', { note: '   ' })).status, 400, 'blank is not a note');
+  assert.equal((await status(base, b, 'Contacted', { note: 'Moved too early' })).status, 200);
   assert.equal((await lastStatusEvent(base, b)).body, 'Moved too early', 'the note is the why in History');
 
   const c = await person(base, 'Recent call note');
-  await status(base, c, 'Application', { moveNote: true });
+  await status(base, c, 'Application');
   const before = await fetch(`${base}/api/people/${c}/move-check?to=Contacted`).then((r) => r.json());
   assert.deepEqual([before.direction, before.covered], ['back', false]);
   await postJson(base, `/api/people/${c}/note`, { kind: 'call', subject: 'Call note', body: 'Not ready, call in spring' });
   const after = await fetch(`${base}/api/people/${c}/move-check?to=Contacted`).then((r) => r.json());
   assert.deepEqual([after.direction, after.covered], ['back', true], 'a logged call minutes ago counts');
-  assert.equal((await status(base, c, 'Contacted', { moveNote: true })).status, 200);
+  assert.equal((await status(base, c, 'Contacted')).status, 200);
 
   const d = await person(base, 'Forward skip');
-  assert.equal((await status(base, d, 'Contacted', { moveNote: true })).status, 200, 'forward never needs one');
+  assert.equal((await status(base, d, 'Contacted')).status, 200, 'forward never needs one');
   assert.equal((await lastStatusEvent(base, d)).body, 'changed by hand');
+
+  const e = await person(base, 'Back from Not proceeding');
+  await status(base, e, 'Not proceeding', { reason: 'No response' });
+  assert.equal((await status(base, e, 'Contacted')).status, 400, 'leaving Not proceeding is a move back');
+  assert.equal((await status(base, e, 'Contacted', { note: 'Called back, wants to start in spring' })).status, 200);
 });

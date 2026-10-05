@@ -1750,9 +1750,9 @@ export const handle = async (req, res) => {
         }
       }
       // Q15 (the owner 05.10.2026): a move back is not saved without a note, or a note or logged call
-      // from the last few minutes. Only when the page asks for it (?movenote= sends moveNote) or
-      // config.stageMoveNote.enforce turns it on; with neither, the move saves exactly as before.
-      if (b.moveNote === true || (CONFIG.stageMoveNote || {}).enforce === true) {
+      // from the last few minutes. config.stageMoveNote.enforce (on since the owner picked the
+      // dialog, 05.10.2026); turned off, the move saves exactly as it did before Q15.
+      if ((CONFIG.stageMoveNote || {}).enforce === true) {
         const chk = await moveCheck(db, CONFIG, id, before.status, b.status, nowIso());
         if (chk.direction === 'back' && !String(b.note || '').trim() && !chk.covered) {
           return json(res, 400, { error: `A note is needed to move back to ${b.status}.`, needsMoveNote: true, ...chk });

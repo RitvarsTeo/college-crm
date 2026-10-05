@@ -1142,9 +1142,9 @@
     "confirmedOn": "25.09.2026",
     "_note": "Only Marina can grant domain-wide delegation. Our side is built: the poll route, the JWT assertion with sub=edu@novikontas.org, read-only scope, multipart flattening and watch expiry. What is left is twenty minutes of her time and the key file, which comes by password manager or in person and never by chat or email."
   },
-  "_stageMoveNote": "Q15, Ritvars 05.10.2026: 'Going back and in overall moving stages should be documented, so notes box its for this.' A move back needs a note, a move forward asks and can be skipped; a note or logged call in the last recentMinutes counts (his popup). enforce stays false until he picks A or B; the ?movenote=a|b switch sends the rule itself. Reasons are neutral placeholders for Ieva to tune.",
+  "_stageMoveNote": "Q15, Ritvars 05.10.2026: 'Going back and in overall moving stages should be documented, so notes box its for this.' A move back needs a note, a move forward asks and can be skipped; a note or logged call in the last recentMinutes counts (his popup). He picked B (the small dialog) on 05.10, so enforce is true: the server refuses a move back without a note. Reasons are neutral placeholders for Ieva to tune.",
   "stageMoveNote": {
-    "enforce": false,
+    "enforce": true,
     "recentMinutes": 10,
     "reasons": {
       "back": ["Moved too early", "Waiting on them", "Needs another talk"],
