@@ -158,7 +158,7 @@ test('the outcomes count the whole database, not the open set the bars are built
   assert.match(band, /<span>Admitted<\/span><b>2<\/b>/, 'both admitted people');
   assert.match(band, /<span>Not proceeding<\/span><b>1<\/b>/);
   // and the active heading counts only the people still moving
-  assert.match(html, /Active journey <small>3 people you are still working with/);
+  assert.match(html, /Active journey <small><a class="c-jcount"[^>]*>3 people you are still working with/, 'and is a click to those people (Q36)');
 });
 
 // The mark lives INSIDE the stage's cell, not in a parallel row. A second row only lines

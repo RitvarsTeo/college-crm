@@ -20,7 +20,7 @@ const SERVER = fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8');
 const fn = (name) => { const i = APP.indexOf(name); assert.ok(i >= 0, name); return APP.slice(i, APP.indexOf('\n}\n', i) + 2); };
 
 const breakdown = (() => {
-  const ctx = { CFG: CONFIG, esc: (s) => String(s ?? '') };
+  const ctx = { CFG: CONFIG, esc: (s) => String(s ?? ''), C_OUT_REASON: null };   // Q36: the reason filter, none picked
   vm.runInNewContext(fn('function cReasonBreakdown(') + '\nthis.b = cReasonBreakdown;', ctx);
   return ctx.b;
 })();

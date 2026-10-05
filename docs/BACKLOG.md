@@ -14,6 +14,22 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - Q36: every figure opens the people it counts; Today drops its strip
+
+Ritvars 05.10 (via MASTER CONTROL), on the Today strip: "when we click on these metrics they actually have to point to
+the cohorts. YOu see the main of the app is to find people, find who they are, or where they are, whats going on with
+them, how can we help. You know. So everything has to be connected with each other, path to path to path. Get it?"
+Then: "Nothing should be duplicated. Its confusing." / "you see in needs you, we already have" - picked: keep Home's
+Needs you, Today drops its strip (open / overdue / no next step / waiting in the Inbox).
+- Home Needs you: Overdue -> Today's Overdue section; Due today -> Today's Due today section; In the Inbox -> Inbox;
+  No next step -> People "Next step: none". Count on arrival = the figure (checked on the preview: 21, 2, 9, 0).
+- Today: no strip; the sections keep their counts; "planned %" -> People Open (its denominator).
+- Journey: Arrived -> People "Arrived 2026" (new People filter, 63 = 63); "Active journey N people" -> People Open;
+  a board column's "N overdue" -> that stage + Overdue (9 = 9); stage columns, What comes next, the bookends as before.
+- Outcomes: each "Why they stopped" reason narrows the list to its people (No response 12 -> 12 rows).
+- People gains the "Arrived" filter (year of first contact).
+test/figures_to_people.test.js walks every figure and its target. 1168/1168. BUILT, next patch.
+
 ## 05.10.2026 - Q33: Outcomes > Not proceeding shows the people first; a "same person" mark
 
 Ritvars 05.10 (via MASTER CONTROL): "In peoples tab, the outcomes, we have only admitted, we dont see the not
