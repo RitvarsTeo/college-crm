@@ -14,6 +14,21 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - A/B: the cold list for Marketing (D-C8), NOT PICKED
+
+Ritvars 05.10: "For Cold list, also send it to uiux session, and lets see visual A/B's." Brief Q14 via MASTER CONTROL:
+how Marketing finds and reads the cold ones; two layouts of what exists, NO export, send or campaign.
+- **A - Outcomes, by programme** (`?cold=a`): Home's Cold -> Outcomes > Not proceeding > Cold, one card per programme
+  (config order, then others, then "Programme not said") with its count; each row: name + phone + email, why, came
+  from, last contact. The "why they stopped" breakdown (it counts every Not proceeding, not only the cold) stays out.
+- **B - All people, cold columns** (`?cold=b`): Home's Cold -> All people with Stage "Not proceeding · Cold"; the
+  columns a cold person never fills (Next step, When) become Why not proceeding, Came from, Last contact. The existing
+  Programme / Came from filters still work. Recommended: B (one dense list, the filters Marketing needs already there).
+- No switch = both screens as before. Flag, NOT built: marketing consent is stored (table `consents`, the form's
+  consent) but `/api/people` does not carry it, so neither list can show who agreed to marketing - a decision for him.
+test/cold_list.test.js. 1101/1101. Shots: `For review/2026-10-05 Q14 cold list A-B/` (the cold tags in them were set
+on the local in-memory preview only). BUILT behind a switch, waits for his pick.
+
 ## 05.10.2026 - A/B: the year's target on Home (D-C6), NOT PICKED
 
 Ritvars DECIDED 05.10 that Home shows the target ("Yes, Home should show that, but the UIUX has to be decided on its
