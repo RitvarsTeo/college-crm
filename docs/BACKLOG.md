@@ -14,6 +14,18 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - Home: "Open the Journey" in the free cell; Needs you in one row on a phone
+
+Ritvars to MAIN, 05.10, with two screenshots: "less space taken - better. Option 1 for the first, buuuut see screenshot
+open journey goes after application (below) (screenshot 2) the dead space is occupied now." And for the phone: "smaller
+font, make them all 3 fit side by side." Then: "Rest accpeted."
+- The journey card's "Open the Journey ->" is no longer a row of its own: it takes the free cell after the last stage
+  (beside Contract, under Application), so the card is one row shorter.
+- Phone (<=760px): Overdue, Due today and In the Inbox sit side by side in one row (one column per figure, so No next
+  step fits too when shown), figures 28px, labels 11.5px.
+test/home_final.test.js. 1109/1109. Shots: `For review/2026-10-05 finals/Home-final-1440-light.png`,
+`Home-final-phone-375-light.png`. BUILT, next patch.
+
 ## 05.10.2026 - PICKED: the gap under Needs you = option 1
 
 Ritvars 05.10: "Option 1 for the first" (to MAIN) / "1, but the journey has fixes to do" (to MASTER CONTROL). The Home
