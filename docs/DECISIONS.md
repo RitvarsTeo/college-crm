@@ -305,6 +305,19 @@ each as a working version and says so on screen.
 | D-C7 | Which facts a person needs (education, nationality, study form, guardian) | Ieva | Person card |
 | D-C8 | Marketing's part, now that all 192 belong to Admissions | Aigars, Tetiana | not shown - no Marketing view in C |
 
+**05.10.2026, Ritvars (Session 5 closure):**
+- **D-C5 DECIDED - yes, a lead can go back to an earlier stage.** His words: "Yes, lead I think can go
+  back." Recommended by Session 5 and kept as built: real cases go backwards (an application stalls and
+  returns to Follow-up; Ieva 30.09 "sometimes a cold one becomes an active lead again"), and every move
+  is already in History with who, from and to. No code change.
+- **D-C6 DECIDED - yes, Home shows targets.** "Yes, Home should show that, but the UIUX has to be
+  decided on its session, give it A/B tests for visual confirming." The one target in the workbook
+  (`Downloads/0. NJK KPI 2026.xlsx`, Admissions!B2): "ADMISSIONS 2026 - 140 new students (70% in
+  Officer Programs)". Form: MAIN (UI/UX) shows A/B, Ritvars picks.
+- **D-C8 - the Cold list goes to MAIN as A/B** ("For Cold list, also send it to uiux session, and lets
+  see visual A/B's"). Marketing's own needs beyond it stay with Aigars + Tetiana.
+- D-C7 still open (the guardian question explained to Ritvars 05.10).
+
 D-C1 to D-C4 are the ones C's screens wait on. They replace, in C's words, backlog rows 46, 50
 ("the real process after To look at"), 51 and 108, which say so.
 
