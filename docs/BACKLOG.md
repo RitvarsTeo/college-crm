@@ -14,6 +14,15 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - The browser tab icon is the white tile in light AND dark
+
+Ritvars 05.10 (via MASTER CONTROL), annoyed: "also the icons dont match?! I want the white on also on the broswers tab."
+The tab icon (`src/assets/favicon.svg`) turned into a dark tile with white letters in dark mode, while the installed
+app, the taskbar and "Open in app" use `icon-192.png`: white tile, black letters, blue leg. The dark block is gone, so
+the tab is that same white tile in both themes. **SUPERSEDES the 30.09.2026 dark-favicon rule** ("for dark mode only turn
+the text into white"); that entry below keeps its words and is no longer the rule. Brandbook shapes unchanged.
+test/app_chrome.test.js now fails if the icon gets a dark variant again. 1103/1103. BUILT, next patch.
+
 ## 05.10.2026 - Q13 C, D and KPI-first, behind switches (his own ideas), NOT PICKED
 
 Ritvars to MAIN directly, 05.10, after seeing B: "the admissions by month looks way better, so lets have the KPI below

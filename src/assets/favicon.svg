@@ -1,17 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="155.18 59.40 589.35 589.35">
-  <!-- The Academy symbol (brandbook shapes, unchanged) filling 84% of a tile.
-       LIGHT: black letters on a white tile, the A's leg Novikontas blue. Ritvars' pick, 28.09.2026.
-       DARK:  the letters turn white and the tile goes with them, so the mark reads on a dark tab
-              strip instead of showing as a white square. The blue leg stays blue in both
-              (Ritvars, 30.09.2026: "turn the text into white and let the logo stay colourful").
-       The brandbook shapes are untouched; only the two fills change. -->
+  <!-- The Academy symbol (brandbook shapes, unchanged) filling 84% of a tile: black letters on a white
+       tile, the A's leg Novikontas blue. Ritvars' pick, 28.09.2026. The SAME tile in light and dark
+       (Ritvars, 05.10.2026: "I want the white on also on the broswers tab"), so the tab matches the
+       installed app, the taskbar and "Open in app" (icon-192.png). This replaces the 30.09.2026 dark
+       variant (dark tile, white letters). -->
   <style>
     .tile { fill: #ffffff; stroke: #c9d2de }
     .mark { fill: #011111 }
-    @media (prefers-color-scheme: dark) {
-      .tile { fill: #08182e; stroke: #1d4266 }
-      .mark { fill: #ffffff }
-    }
   </style>
   <rect class="tile" x="155.18" y="59.40" width="589.35" height="589.35" rx="106.08" stroke-width="7.07"/>
   <path fill="#29a8df" d="M638.47,391.18h0l-71.42-138.3-83.75-50.56,95.21,185.91s-.02,0-.03.01l60.28,117.57h58.91s-59.2-114.64-59.2-114.64Z"/>
