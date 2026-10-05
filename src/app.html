@@ -1229,6 +1229,17 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .kthree{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr) minmax(0,1.25fr);gap:34px}
   html.ui-c .kdonut{display:flex;align-items:center;gap:14px;min-width:0}
   html.ui-c .kdonut svg{width:124px;height:124px;flex:0 0 124px}
+  /* Q23 (the owner, 05.10.2026): on Home the donut fills its space: the ring as big as the row allows, the legend
+     beside it at reading size; every legend row and the centre are clicks like the slices */
+  html.ui-c .kb-top .kdonut{gap:clamp(14px,2.2vw,40px);justify-content:center;padding:6px 0}
+  html.ui-c .kb-top .kdonut svg{width:clamp(150px,13vw,250px);height:auto;flex:0 0 clamp(150px,13vw,250px)}
+  html.ui-c .kb-top .klegend{font-size:15px;gap:12px;flex:0 1 15em;min-width:0}
+  html.ui-c .kb-top .klegend li span{flex:1 1 auto;min-width:0}
+  html.ui-c .kb-top .klegend b{font-size:18px}
+  html.ui-c .klegend li[data-kgo]{cursor:pointer;border-radius:6px;padding:2px 6px;margin:0 -6px}
+  html.ui-c .klegend li[data-kgo]:hover,html.ui-c .klegend li[data-kgo].hot{background:var(--c-sunk)}
+  html.ui-c .kdonut .khole{fill:transparent;cursor:pointer}
+  html.ui-c .kdonut .khole:focus-visible{outline:2px solid var(--pet)}
   html.ui-c .kseg{cursor:pointer;outline:none;transition:opacity .12s}
   html.ui-c .kdonut:hover .kseg:not(:hover):not(.hot){opacity:.55}
   html.ui-c .kseg:focus-visible{stroke:var(--pet);stroke-width:2}
@@ -1418,7 +1429,6 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c[data-theme="dark"] .kpage{--k-well:radial-gradient(120% 80% at 50% 0%,#17456e 0%,rgba(23,69,110,0) 60%),linear-gradient(180deg,#0f2f4f 0%,#0f2f4f 45%,#08182e 100%);
     --k-well-line:rgba(194,211,222,.14)}
   html.ui-c .khead{display:flex;align-items:flex-start;gap:12px}
-  html.ui-c .kpeak{fill:var(--ink);font-size:11.5px;font-weight:650;font-family:var(--sans,Inter),system-ui,sans-serif}
   html.ui-c .kfl-tag{display:inline-flex;align-items:center;gap:4px;padding:1px 7px;border-radius:99px;font-size:11.5px;font-weight:600;
     color:var(--t2);background:var(--c-sunk);border:1px solid var(--rule);text-decoration:none}
   html.ui-c .kfl-tag b{color:var(--ink)}
@@ -1500,6 +1510,13 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .kb-strip{grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:none}
   html.ui-c .kb-strip > div{display:flex;flex-direction:column;grid-row:auto;grid-template-rows:none}
   html.ui-c .kb-strip > div > .kgo{margin-top:auto;padding-top:6px}
+  /* Q23: the whole card is the click (its "Reports ->" / "Outcomes ->" link stretched over it), and the figures are
+     bigger; the Admitted figure stays the one focal point */
+  html.ui-c .kb-strip > div{position:relative;cursor:pointer}
+  html.ui-c .kb-strip > div > .kgo::after{content:"";position:absolute;inset:0;border-radius:inherit}
+  html.ui-c .kb-strip > div:hover{box-shadow:0 1px 2px rgba(10,36,99,.08),0 14px 30px rgba(10,36,99,.14)}
+  html.ui-c #view .kstrip.kb-strip > div:not(.khero) > b{font-size:42px}   /* .kstrip.kb-strip: outranks the type-token rule further down */
+  html.ui-c #view .kstrip.kb-strip > .khero > b{font-size:54px}
   /* the cards ARE the frame here; the old dark glass on the strip itself would box them twice */
   html.ui-c[data-theme="dark"] .kstrip.kb-strip{background:none;border:0;padding:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
   html.ui-c .kstrip .kdelta b{display:inline;font-size:12px;margin:0;letter-spacing:0;line-height:inherit}
@@ -2765,10 +2782,10 @@ function cHomeB(D) {
       </aside>
     </section>
     <div class="kstrip kb-strip">
-      <div class="khero"><span>Admitted</span><b>${D.admitted.length}</b><small>${D.year}${D.undated ? ` · +${D.undated} undated` : ''}</small>${goal ? cTargetMeter(goal) : ''}${cSpark(D.months.map((m) => m.admitted), 'adm')}${delta('admitted')}<a class="kgo" href="#/outcomes">Outcomes →</a></div>
-      <div><span>Leads</span><b>${s.newLeads ?? 0}</b><small>${D.year}</small>${cSpark(D.months.map((m) => m.newLeads), 'lead')}${delta('newLeads')}<a class="kgo" href="#/leads">Inbox →</a></div>
-      <div><span>Conversion</span><b>${s.conversionPct == null ? '-' : s.conversionPct + '%'}</b><small>${s.conversionA ?? 0} / ${s.conversionB ?? 0} who arrived</small><a class="kgo" href="#/reports">Reports →</a></div>
-      <div><span>Median time to admission</span><b>${s.medianDaysToAdmission == null ? '-' : s.medianDaysToAdmission} <em>days</em></b><small>first contact to admission</small><a class="kgo" href="#/reports">Reports →</a></div>
+      <div class="khero"><span>Admitted</span><b>${D.admitted.length}</b><small>${D.year}${D.undated ? ` · +${D.undated} undated` : ''}</small>${goal ? cTargetMeter(goal) : ''}${cSpark(D.months.map((m) => m.admitted), 'adm')}${delta('admitted')}<a class="kgo" href="#/outcomes" onclick="cGoAdmittedYear(${D.year});return false">Outcomes →</a></div>
+      <div><span>Leads</span><b>${s.newLeads ?? 0}</b><small>${D.year}</small>${cSpark(D.months.map((m) => m.newLeads), 'lead')}${delta('newLeads')}<a class="kgo" href="#/reports" onclick="cGoReportYear();return false">Reports →</a></div>
+      <div><span>Conversion</span><b>${s.conversionPct == null ? '-' : s.conversionPct + '%'}</b><small>${s.conversionA ?? 0} / ${s.conversionB ?? 0} who arrived</small><a class="kgo" href="#/reports" onclick="cGoReportYear();return false">Reports →</a></div>
+      <div><span>Median time to admission</span><b>${s.medianDaysToAdmission == null ? '-' : s.medianDaysToAdmission} <em>days</em></b><small>first contact to admission</small><a class="kgo" href="#/reports" onclick="cGoReportYear();return false">Reports →</a></div>
     </div>
     <div class="m-scene kb-charts">
       <div class="kb-top">
@@ -2781,6 +2798,18 @@ function cHomeB(D) {
     </div>`;
 }
 
+// EVERY HOME FIGURE IS A CLICK TO WHERE IT COMES FROM (the owner, 05.10.2026: "not all metrics are clickable with
+// traced links to according tab, where it came from"). Home counts the year, so its links open the year: Admitted
+// -> Outcomes, the people admitted this year; Leads, Conversion and Median -> Reports on This year, where the same
+// figure is (Reports opens on This month by default, which would show a different number).
+function cGoAdmittedYear(year) {
+  C_OUTCOME = 'Admitted'; C_OUT_TAG = null; C_OUT_FILTER = { kind: 'year', key: String(year), label: 'admitted in ' + year };
+  if (location.hash === '#/outcomes') viewOutcomesC(); else location.hash = '#/outcomes';
+}
+function cGoReportYear() {
+  C_RPT_PRESET = 'year'; RPT = { from: cTodayIso().slice(0, 4) + '-01-01', to: '' };
+  if (location.hash === '#/reports') viewReportsC(); else location.hash = '#/reports';
+}
 // A stage on Home opens the Journey on exactly that stage: the filter the Journey already
 // has (C_JF.stage), set and then shown. Nothing else the reader had chosen is kept, so
 // the count on Home and the count on the Journey are the same people.
@@ -2853,14 +2882,11 @@ function cMonthChart(months, year) {
   // aria-label and its tooltip, so no month loses its name - only its printed tick.
   const every = narrow ? Math.max(1, Math.ceil(n / 6)) : 1;
   const labelled = (k) => every === 1 || k === n - 1 || (n - 1 - k) % every === 0;
-  const best = Math.max(0, ...months.map((m) => m.admitted));
-  const peakAt = best > 0 ? months.map((m) => m.admitted).lastIndexOf(best) : -1;
   const cols = months.map((m, k) => { const cx = L + band * k + band / 2, t = y(m.admitted), mo = C_MONTHS[Number(m.month.slice(5)) - 1];
     const bar = m.admitted ? `<path d="M${cx - bw / 2},${y(0)} V${Math.min(t + 4, y(0))} q0,-4 4,-4 h${bw - 8} q4,0 4,4 V${y(0)} Z" style="fill:var(--v-adm);--i:${k}" class="m-fade"/>` : '';
-    // THE PEAK SAYS ITSELF, in place (Square on Mobbin): the best month carries its own figure above
-    // its bar, so the answer is on the mark and not in a legend. The latest of equal peaks wins.
-    const peak = k === peakAt ? `<text x="${cx}" y="${t - 7}" class="kpeak m-fade" text-anchor="middle" style="--i:${n}">${m.admitted} admitted</text>` : '';
-    return `<g class="kcol" tabindex="0" role="button" aria-label="${mo} ${m.month.slice(0, 4)}: ${m.admitted} admitted, ${m.newLeads} new leads" data-tip="${mo} ${m.month.slice(0, 4)}|${m.admitted} admitted|${m.newLeads} new leads" data-kgo="month|${m.month}|${mo} ${m.month.slice(0, 4)}"><rect x="${cx - band / 2}" y="${T}" width="${band}" height="${H - T - B}" class="khit"/>${bar}${labelled(k) ? `<text x="${cx}" y="${H - 8}" class="kt" text-anchor="middle">${mo}</text>` : ''}${peak}</g>`; }).join('');
+    // No figure printed on any one month (the owner, 05.10.2026: "Delete that above the graph 16 admitted. It is
+    // hover over info."): every month shows its figures on hover, the same for each.
+    return `<g class="kcol" tabindex="0" role="button" aria-label="${mo} ${m.month.slice(0, 4)}: ${m.admitted} admitted, ${m.newLeads} new leads" data-tip="${mo} ${m.month.slice(0, 4)}|${m.admitted} admitted|${m.newLeads} new leads" data-kgo="month|${m.month}|${mo} ${m.month.slice(0, 4)}"><rect x="${cx - band / 2}" y="${T}" width="${band}" height="${H - T - B}" class="khit"/>${bar}${labelled(k) ? `<text x="${cx}" y="${H - 8}" class="kt" text-anchor="middle">${mo}</text>` : ''}</g>`; }).join('');
   const pts = months.map((m, k) => [L + band * k + band / 2, y(m.newLeads)]);
   return `<svg viewBox="0 0 ${W} ${H}" class="kchart${narrow ? ' narrow' : ''}" role="img" aria-label="Admissions and new leads per month, ${year}">${grid}${cols}<path d="M${pts.map((p) => p.join(',')).join(' L')}" class="kline m-draw" pathLength="1"/>${pts.map(([x, yy], k) => `<circle cx="${x}" cy="${yy}" r="4" class="kdot m-fade" style="--i:${k}"/>`).join('')}</svg>`;
 }
@@ -2922,9 +2948,12 @@ function cDonut(rows) {
 
   return `<div class="kdonut"><svg viewBox="0 0 140 140" role="img" aria-label="Where everyone is now">
     <g class="kring">${segs.length ? plinth : ''}${segs.map(face).join('')}</g>
+    <circle cx="${c}" cy="${cy}" r="${r0 - 2}" class="khole" tabindex="0" role="button" aria-label="Everybody: ${total}"
+      data-tip="Everybody|${total} people|open People" data-kgo="people"/>
     <text x="${c}" y="${cy + 4}" text-anchor="middle" class="kbig">${total}</text>
     <text x="${c}" y="${cy + 22}" text-anchor="middle" class="kt">people</text></svg>
-    <ul class="klegend">${rows.map(([k, n, v]) => `<li><i style="background:var(--v-${v})"></i><span>${esc(k)}</span><b>${n}</b></li>`).join('')}</ul></div>`;
+    <ul class="klegend">${rows.map(([k, n, v, go]) => `<li tabindex="0" role="button" data-tip="${esc(k)}|${n} people|${Math.round((n / total) * 100)}% of ${total}"
+      data-kgo="${go === 'journey' ? 'journey' : 'outcome|' + go}"><i style="background:var(--v-${v})"></i><span>${esc(k)}</span><b>${n}</b></li>`).join('')}</ul></div>`;
 }
 
 function cBars(rows, kind) {
@@ -2939,6 +2968,7 @@ let C_OUT_FILTER = null;
 function cChartGo(spec) {
   const [kind, key, label] = String(spec || '').split('|');
   if (kind === 'journey') { location.hash = '#/journey'; return; }
+  if (kind === 'people') { location.hash = '#/people'; return; }
   if (kind === 'stage') { cGoStage(key); return; }
   if (kind === 'inbox') { location.hash = '#/leads'; return; }
   if (kind === 'outcome') { C_OUTCOME = key; C_OUT_FILTER = null; location.hash = '#/outcomes'; return; }
