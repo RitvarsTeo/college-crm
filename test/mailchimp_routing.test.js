@@ -58,3 +58,22 @@ test('Mailchimp: an event about somebody we know goes on their timeline', async 
   const evs = JSON.stringify(person);
   assert.match(evs, /Mailchimp: unsubscribe/);
 });
+
+// Q26 (05.10.2026): an open GET answered the URL check AND overwrote the proof that Mailchimp checked
+// our address, so anybody could fake it. It still answers (Mailchimp must keep saving); it records
+// only when the address carries our secret, as the callback URL does.
+test('Q26: the URL check always answers, and is recorded only with the matching secret', async (t) => {
+  const s = await start();
+  t.after(() => s.child.kill());
+  const at = async () => (await fetch(`${s.base}/api/admin/channels`, { headers: as }).then((r) => r.json()))
+    .channels.find((c) => c.channel === 'mailchimp').providerHandshakeAt;
+  for (const q of ['', '?s=wrong-secret-of-the-same-size!', '?s=']) {
+    const r = await fetch(`${s.base}/api/inbound/mailchimp${q}`);
+    assert.equal(r.status, 200, 'Mailchimp would refuse to save a URL whose check fails: ' + q);
+    assert.equal(await r.text(), 'ok');
+  }
+  assert.equal(await at(), null, 'no proof written without the secret');
+  const ok = await fetch(`${s.base}/api/inbound/mailchimp?s=${SECRET}`);
+  assert.equal(ok.status, 200);
+  assert.ok(await at(), 'the real check, with our secret, is recorded');
+});

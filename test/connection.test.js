@@ -421,3 +421,15 @@ async function startServer(env) {
   child.kill();
   throw new Error('the server never started. stderr: ' + err.slice(0, 500));
 }
+
+test('Q26: the Mailchimp URL check is proof only with our secret in the address', () => {
+  const env = { MAILCHIMP_WEBHOOK_SECRET: 'mc-secret' };
+  const u = (q) => new URL('https://x/api/inbound/mailchimp' + q);
+  assert.equal(handshake('mailchimp', u('?s=mc-secret'), env).record, true);
+  for (const q of ['', '?s=mc-secreX', '?s=mc-secret-longer']) {
+    const h = handshake('mailchimp', u(q), env);
+    assert.equal(h.status, 200, 'it still answers: ' + q);
+    assert.equal(h.record, false, 'but proves nothing: ' + q);
+  }
+  assert.equal(handshake('mailchimp', u('?s='), {}).record, false, 'no secret set: never recorded');
+});

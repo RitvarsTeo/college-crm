@@ -2290,7 +2290,7 @@ export const handle = async (req, res) => {
       const channel = p.split('/')[3];
       const h = handshake(channel, url, process.env);
       if (h.ok) {
-        await db.prepare(`INSERT INTO channel_handshake (channel, verified_at, how, remote)
+        if (h.record !== false) await db.prepare(`INSERT INTO channel_handshake (channel, verified_at, how, remote)
                     VALUES (?, ?, ?, ?)
                     ON CONFLICT(channel) DO UPDATE SET verified_at = excluded.verified_at,
                       how = excluded.how, remote = excluded.remote`)

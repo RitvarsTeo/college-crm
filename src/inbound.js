@@ -330,9 +330,15 @@ export function handshake(channel, url, env = process.env) {
 
   // Mailchimp GETs the URL when somebody adds it in the audience settings, and
   // refuses to save it unless that GET succeeds. It sends no challenge.
+  // It always answers, or Mailchimp would refuse to save. But it is RECORDED as proof only when the
+  // address carries our secret (Q26, 05.10.2026): an open GET used to overwrite the proof, so anybody
+  // could fake "Mailchimp checked our URL". Our callback URL carries ?s=, so Mailchimp's GET does too.
   if (channel === 'mailchimp') {
-    return { ok: true, status: 200, body: 'ok', contentType: 'text/plain',
-      how: 'Mailchimp URL check answered' };
+    const secret = env[def.secretEnv];
+    const got = String(url.searchParams.get('s') || '');
+    const record = Boolean(secret) && got.length === String(secret).length && got === String(secret);
+    return { ok: true, status: 200, body: 'ok', contentType: 'text/plain', record,
+      how: record ? 'Mailchimp URL check answered' : 'URL check answered, not recorded: no matching secret' };
   }
 
   return { ok: false, status: 405, how: 'this channel does not use a GET handshake' };
