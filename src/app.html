@@ -1498,6 +1498,38 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .jb-n em{font-style:normal;font-size:11px;font-weight:700;padding:1px 5px;border-radius:5px;background:var(--j-alarm);color:var(--j-on-alarm)}
   html.ui-c .jb-l{display:flex;align-items:center;justify-content:center;gap:5px;font-size:12px;font-weight:600;color:var(--t2);text-align:center;overflow-wrap:anywhere}
   html.ui-c .jb-cell .c-exit{align-self:center;margin-top:2px}
+  /* Q47 THE POOL FRAME: the Journey band's look, frozen; folded to one row of the same cohorts once scrolled */
+  :root{--p-top:0px}   /* what is pinned above the band: the phone's top bar, measured by cPoolWire */
+  html.ui-c .pband{position:sticky;top:var(--p-top,0px);z-index:20;margin:0 0 14px}
+  html.ui-c .pband .jb-plot{height:118px;padding-top:30px}
+  html.ui-c .pband .p-mini{display:none}
+  html.ui-c .pband.is-mini{padding-top:8px;padding-bottom:8px}
+  html.ui-c .pband.is-mini .jb-cols{display:none}
+  html.ui-c .pband.is-mini .p-mini{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  html.ui-c .jb-cell.p-sep{border-left:1px solid var(--rule2);padding-left:8px}
+  html.ui-c .jb-bar.t-over{background:var(--j-alarm)}
+  html.ui-c .jb-bar.t-today{background:#F7C04F}
+  html.ui-c .jb-bar.t-none{background:var(--t3)}
+  html.ui-c .jb-bar.t-good{background:var(--v-adm)}
+  html.ui-c .jb-bar.t-np{background:var(--t3)}
+  html.ui-c .p-chip{appearance:none;display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;margin:0;border:1px solid var(--control-line);
+    border-radius:8px;background:var(--field);font:inherit;font-size:12.5px;font-weight:600;color:var(--t2);cursor:pointer}
+  html.ui-c .p-chip i{width:8px;height:8px;border-radius:2px;background:var(--v-open)}
+  html.ui-c .p-chip.t-over i{background:var(--j-alarm)} html.ui-c .p-chip.t-today i{background:#F7C04F}
+  html.ui-c .p-chip.t-none i, html.ui-c .p-chip.t-np i{background:var(--t3)} html.ui-c .p-chip.t-good i{background:var(--v-adm)}
+  html.ui-c .p-chip b{font-variant-numeric:tabular-nums;color:var(--ink)}
+  html.ui-c .p-chip.p-sep{margin-left:10px}
+  html.ui-c .p-chip.on{border-color:var(--j-to);box-shadow:inset 0 0 0 1px var(--j-to);color:var(--ink)}
+  html.ui-c .p-chip:focus-visible{outline:2px solid var(--pet);outline-offset:1px}
+  html.ui-c .p-body > .c-sheet + .c-sheet{margin-top:14px}
+  html.ui-c .p-step{display:block;color:var(--t3);margin-top:2px}
+  html.ui-c .p-stage{font-weight:600;color:var(--ink)}
+  html.ui-c .p-view{margin:0}
+  /* Q39: new / total in the menu, the new figure bold with its small mark */
+  html.ui-c .n .nn{font-weight:750;color:inherit}
+  html.ui-c .n .nw{font-style:normal;font-size:9.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin:0 3px 0 2px;vertical-align:1px}
+  html.ui-c .n small{font-size:11px;opacity:.8}
+  @media (max-width:760px){ html.ui-c .pband .jb-plot{height:92px;padding-top:26px} html.ui-c .pband .jb-l{font-size:10.5px} }
   @media (max-width:900px){
     html.ui-c .jband-row{grid-template-columns:1fr 1fr}
     html.ui-c .jb-cols{grid-column:1 / -1;order:-1}
@@ -2510,6 +2542,7 @@ function installCNav() {
     <a href="#/settings" data-c="settings" id="cnSettings" class="c-navfoot">${C_ICON.set}<span>Settings</span></a>
   </div>`);
   installCTabs();
+  if (globalThis.C_POOL) cPoolMenu();
   // No "Open the classic view" link: C is the normal product, and the classic view is a
   // hidden fallback reached only by the address ?ui=classic (the owner, 28.09.2026).
 }
@@ -2614,6 +2647,7 @@ function cSpine() {
 }
 if (typeof window !== 'undefined' && window.addEventListener) window.addEventListener('resize', () => cSpine());
 async function cNavCounts() {
+  if (globalThis.C_POOL) return cPoolCounts();
   try {
     const [i, t] = await Promise.all([api('/api/intake'), api('/api/tasks?scope=open')]);
     const leads = (i.counts || {}).new || 0; const due = cDueNow(t).length;
@@ -2692,6 +2726,7 @@ async function routeC(page, arg) {
     return;
   }
   if (place === 'leads') return viewLeadsC();
+  if (globalThis.C_POOL && place === 'people') return cPoolRouteJourney(page);
   // Outcomes is its own page, in the menu again under People (05.10.2026): the Journey's outcomes band, a
   // Reports chart click (cChartGo) and Home's Cold / Reject all land on it.
   if (page === 'outcomes') return viewOutcomesC();
@@ -2902,6 +2937,7 @@ function cGoReportYear(chapter) {
 // the count on Home and the count on the Journey are the same people.
 function cGoStage(id) {
   C_JF = C_JF_EMPTY(); C_JF.stage = [id]; C_PTAB = 'journey';
+  if (globalThis.C_POOL) { C_JF = C_JF_EMPTY(); C_JP.col = id; C_JP.view = 'list'; if (location.hash === '#/journey') viewJourneyPool(); else location.hash = '#/journey'; return; }
   if (location.hash === '#/journey') viewJourneyC(); else location.hash = '#/journey';
 }
 // Cold / reject on Home opens Not proceeding with exactly that tag.
@@ -3153,6 +3189,7 @@ async function viewTodayC() {
   // NO STRIP ABOVE THE SECTIONS (the owner, 05.10.2026: "Nothing should be duplicated. Its confusing." - "you see in
   // needs you, we already have"): open / overdue / no next step / waiting in the Inbox are Home's Needs you, and each
   // of Home's figures opens its people here or in People. The sections keep their own counts in their headings.
+  if (globalThis.C_POOL) { C_TPD = { over, today, later, none, pTasks, pRow, byId, people, pct, open }; if (C_TODAY_AT) { C_TP.col = { cTodayOver: 'over', cTodayDue: 'today' }[C_TODAY_AT] || null; C_TODAY_AT = ''; } return cTodayPool(); }
   $('#view').innerHTML = `
     <div class="c-head"><div><h1>Today</h1></div>
       <div class="act"><a class="c-planned" href="#/people" onclick="cGoPeople({ stage: 'open' });return false"><b>${pct}%</b> planned <small>${open.length - none.length} of ${open.length} open people have a next step</small></a></div></div>
@@ -3261,6 +3298,7 @@ function cColdGroups(list, people) {
       <div class="c-when">${p.last_contact_at ? fmtDate(p.last_contact_at) : ''}</div></div>`).join('')}</div>`; }).join('');
 }
 async function viewOutcomesC() {
+  if (globalThis.C_POOL) { C_JP.col = C_OUT_REASON ? ((CFG.stageRoles || {}).closed || 'Not proceeding') : C_OUTCOME; return viewJourneyPool(); }
   const people = await cPeopleRows();
   const adm = people.filter((p) => p.status === 'Admitted'); const np = people.filter((p) => p.status === 'Not proceeding');
   let list = C_OUTCOME === 'Admitted' ? adm : np;
@@ -3371,7 +3409,7 @@ function cCallLine(body) {
 
 
 async function viewLeadsC() {
-  const d = await api('/api/intake?state=new');
+  const d = await api('/api/intake?state=' + (globalThis.C_POOL ? C_IP.show : 'new'));
   const rows = d.rows || [];
   if (C_LOPEN && !rows.some((r) => r.id === C_LOPEN)) C_LOPEN = null;
   const L = LAST_RESULT; LAST_RESULT = null;
@@ -3397,17 +3435,294 @@ async function viewLeadsC() {
       <div class="c-row-acts"><button class="btn" onclick="doQualify(${Number(r.id)})">Add to Admissions</button><button class="btn ghost" onclick="openArchive(${Number(r.id)})">Not relevant</button><button class="btn ghost" onclick="C_LOPEN=null;viewLeadsC()">Cancel</button></div>
     </div>`;
   };
-  $('#view').innerHTML = `<p class="c-crumb">Admissions</p>
-    <div class="c-head"><div><h1>Inbox</h1></div></div>
-    ${receipt}
-    <div class="c-sheet">${rows.length ? rows.map((r) => `<div class="c-line row c-lead${C_LOPEN === r.id ? ' is-open' : ''}" tabindex="0" onclick="C_LOPEN=${C_LOPEN === r.id ? 'null' : Number(r.id)};viewLeadsC()">
+  const leadRow = (r, redraw = 'viewLeadsC()', withPanel = true) => `<div class="c-line row c-lead${C_LOPEN === r.id ? ' is-open' : ''}" tabindex="0" onclick="C_LOPEN=${C_LOPEN === r.id ? 'null' : Number(r.id)};${redraw}">
         <div class="c-who"><b class="c-reach">${esc(r.contact_name || r.contact_handle || '') || cTelLink({ phone: r.contact_phone }) || 'Unknown'}</b><small>${esc(channelLabel(r.channel))} · ${fmtDateTime(r.received_at)}${r.aged ? ' · <span class="c-late">late</span>' : ''}</small></div>
         <div class="c-what">${esc(r.channel === 'phone' ? cCallLine(r.body) : (r.body || val(r, 'question') || ''))}</div>
         <div class="c-when">${esc(val(r, 'interest') || '')}</div><div></div></div>
-        ${C_LOPEN === r.id ? panel(r) : ''}`).join('')
+        ${C_LOPEN === r.id && withPanel ? panel(r) : ''}`;
+  if (globalThis.C_POOL) { C_IPD = { rows, receipt, leadRow }; cInboxPool(); if (L) cNavCounts(); return; }
+  $('#view').innerHTML = `<p class="c-crumb">Admissions</p>
+    <div class="c-head"><div><h1>Inbox</h1></div></div>
+    ${receipt}
+    <div class="c-sheet">${rows.length ? rows.map((r) => leadRow(r)).join('')
       : '<div class="c-empty">Nothing waiting. This queue is clear.</div>'}</div>`;
   if (C_LOPEN) { const s = $('#qInterest'); if (s) s.focus(); }
   if (L) cNavCounts();                    // a lead was just saved or set aside: the menu count moves too
+}
+
+// ---------------------------------------------------------------- THE POOL FRAME (Q47)
+// The owner, 05.10.2026 on production: "They are completely separate lists, its not one system, its 4 different
+// lists. No frozen navigation anywehre". MASTER CONTROL's answer, built here behind ?pool=1 (the default is unchanged
+// until he has seen it): ONE frame for every pool. The page title; a FROZEN band of the pool's cohorts drawn as the
+// Journey band (columns on one baseline, one scale, the count on each; a click narrows the list, a second click shows
+// all again); ONE filter row in the app's dropdown look; the rows in ONE row style. Scrolled, the band folds into one
+// compact frozen row of the same cohorts with their counts. Today, the Inbox and the Journey use it.
+globalThis.C_POOL = (() => { try { return new URLSearchParams(location.search).get('pool') === '1'; } catch { return false; } })();
+// Menu: Home · Admissions (Today, Inbox) · Journey · Reports · Settings. Phone: Home, Today, Inbox, Journey, More.
+// The counts carry new / total, so the tab bar takes its own copies (innerHTML) under new ids.
+function cPoolMenu() {
+  const nav = document.querySelector('.cnav');
+  if (!nav || nav.dataset.pool) return;
+  nav.dataset.pool = '1';
+  const ppl = nav.querySelector('a[data-c="people"]');
+  if (ppl) {
+    ppl.setAttribute('href', '#/journey'); ppl.title = 'Everyone, by where they are in the journey';
+    ppl.innerHTML = `${C_ICON.journey}<span>Journey</span><span class="n" id="cnJourney"></span>`;
+    const kids = ppl.nextElementSibling; if (kids && kids.classList.contains('kids')) kids.remove();
+  }
+  const tp = document.querySelector('.ctabs [data-t="people"]');
+  if (tp) { tp.setAttribute('href', '#/journey'); tp.innerHTML = `${C_ICON.journey}<span>Journey</span><span class="n" id="ctJourney"></span>`; }
+  for (const id of ['ctLeads', 'ctNext']) { const el = document.getElementById(id); if (el) { const n = el.cloneNode(false); n.id = id + 'P'; el.replaceWith(n); } }
+  document.querySelectorAll('#cMore a[href="#/journey"], #cMore a[href="#/outcomes"]').forEach((a) => a.remove());
+}
+// cols: [{ id, label, n, over, tone, sep }]: sep draws the rule before Admitted (the journey | what happened to it)
+function cPoolBand(name, cols, on, pick) {
+  const max = Math.max(1, ...cols.map((c) => c.n));
+  const pct = (n) => ((n / max) * 100).toFixed(2);
+  const col = (c, i) => `<div class="jb-cell${c.sep ? ' p-sep' : ''}"><button type="button" class="jb-col${on === c.id ? ' on' : ''}" style="--i:${i}"
+      aria-pressed="${on === c.id}" data-v="${esc(c.id)}" onclick="${pick}(this.dataset.v)" aria-label="${esc(c.label)}: ${c.n}${c.over ? `, ${c.over} overdue` : ''}">
+      <span class="jb-plot"><span class="jb-bar${c.tone ? ' t-' + c.tone : ''}" style="height:${pct(c.n)}%"><b class="jb-n">${c.n}${c.over ? `<em>${c.over}</em>` : ''}</b>${
+        c.over ? `<i class="jb-over" style="height:${((c.over / Math.max(1, c.n)) * 100).toFixed(2)}%"></i>` : ''}</span></span>
+      <span class="jb-l">${esc(c.label)}</span></button></div>`;
+  const chip = (c) => `<button type="button" class="p-chip${on === c.id ? ' on' : ''}${c.sep ? ' p-sep' : ''}${c.tone ? ' t-' + c.tone : ''}" aria-pressed="${on === c.id}"
+      data-v="${esc(c.id)}" onclick="${pick}(this.dataset.v)"><i></i><span>${esc(c.label)}</span><b>${c.n}</b></button>`;
+  return `<div class="p-sentinel" aria-hidden="true"></div>
+    <section class="kflow jband pband" aria-label="${esc(name)}">
+      <div class="jb-cols" style="--n:${cols.length}">${cols.map(col).join('')}</div>
+      <div class="p-mini" role="group" aria-label="${esc(name)}">${cols.map(chip).join('')}</div>
+    </section>`;
+}
+// One dropdown of the filter row: the People filters' look (c-jf), "All" first.
+const cPoolSelect = (label, value, values, set) => `<label class="c-jf${value ? ' on' : ''}"><span>${esc(label)}</span><select aria-label="${esc(label)}" onchange="${set}">
+    <option value="">All</option>${values.map(([v, t]) => `<option value="${esc(v)}"${value === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`;
+const cPoolFilters = (name, boxes, clear) => `<div class="c-jfilters p-filters" role="group" aria-label="Filter ${esc(name)}">
+    <svg class="c-jf-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3.5h11l-4.2 5v4l-2.6 1.2V8.5z"/></svg>${boxes.join('')}${clear ? `<button class="btn sm ghost c-jf-clear" onclick="${clear}">Clear</button>` : ''}</div>`;
+function cPoolFrame({ title, crumb = '', act = '', band, filters, body }) {
+  return `${crumb ? `<p class="c-crumb">${crumb}</p>` : ''}<div class="c-head"><div><h1>${esc(title)}</h1></div>${act ? `<div class="act">${act}</div>` : ''}</div>
+    ${band}${filters}<div class="p-body">${body}</div>`;
+}
+// The band is sticky under whatever is pinned above it (the phone's top bar); scrolled past, it folds to its row.
+function cPoolWire() {
+  const nav = document.querySelector('.shell > nav');
+  // only a TOP bar counts (a phone); the wide screen's side menu is sticky too, but beside the page, not above it
+  const box = nav ? nav.getBoundingClientRect() : null;
+  const pinned = box && box.width > window.innerWidth * 0.8 && ['sticky', 'fixed'].includes(getComputedStyle(nav).position) ? box.height : 0;
+  document.documentElement.style.setProperty('--p-top', Math.round(pinned) + 'px');
+  if (!window.__cPoolScroll) {
+    window.__cPoolScroll = 1;
+    window.addEventListener('scroll', cPoolMini, { passive: true });
+    window.addEventListener('resize', () => { cPoolMiniTop = null; cPoolMini(); });
+  }
+  cPoolMini();
+}
+let cPoolMiniTop = null;
+function cPoolMini() {
+  const s = document.querySelector('.p-sentinel'), b = document.querySelector('.pband');
+  if (!s || !b) return;
+  const top = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--p-top')) || 0;
+  const y = s.getBoundingClientRect().top - top;
+  // two lines, so a page that is just long enough cannot flicker between the two at one scroll position
+  b.classList.toggle('is-mini', b.classList.contains('is-mini') ? y < -8 : y < -48);
+}
+const cPoolRows = (rows, fn, empty = 'Nobody here.') => `<div class="c-sheet p-rows">${rows.length ? rows.map(fn).join('') : `<div class="c-empty">${empty}</div>`}</div>`;
+
+// SEEN, FOR THE MENU'S NEW (Q39, the owner: "new / total ... Just like the new bmw m350i sign"). The moment this
+// browser last opened each pool; what arrived after it is new. The first visit marks nothing new.
+const cSeenKey = (k) => 'crmSeen:' + k;
+function cSeen(k) { try { return localStorage.getItem(cSeenKey(k)) || ''; } catch { return ''; } }
+function cSeeNow(k) { try { localStorage.setItem(cSeenKey(k), new Date().toISOString()); } catch {} }
+// "3 new / 41", the new figure bold with its mark; only the total when nothing is new
+const cBadge = (fresh, total) => (fresh ? `<b class="nn">${fresh}</b><i class="nw">new</i><small>/ ${total}</small>` : total ? String(total) : '');
+async function cPoolCounts() {
+  try {
+    const [i, t, ppl] = await Promise.all([api('/api/intake'), api('/api/tasks?scope=open'), api('/api/people')]);
+    const after = (k, at) => { const s = cSeen(k); return Boolean(s && at && at > s); };
+    const inbox = (i.rows || []);
+    const dueNow = cByPerson(cDueNow(t));
+    const people = (ppl && ppl.rows) || [];
+    const put = (sel, html, warn) => { for (const el of document.querySelectorAll(`${sel}, ${sel.replace('#cn', '#ct')}${sel === '#cnJourney' ? '' : 'P'}`)) {
+      el.innerHTML = html; el.classList.toggle('warn', Boolean(warn)); } };
+    put('#cnLeads', cBadge(inbox.filter((r) => after('leads', r.received_at)).length, inbox.length));
+    put('#cnNext', cBadge(dueNow.filter((g) => g.some((x) => after('today', x.due_at) || after('today', x.created_at))).length, dueNow.length),
+      t.some((x) => cWhenClass(x.due_at) === 'over'));
+    put('#cnJourney', cBadge(people.filter((p) => after('journey', p.created_at)).length, people.length));
+  } catch {}
+}
+// Opening a pool marks it seen and refreshes the menu's counts; a click inside the pool is not a new opening.
+const C_POOL_T = {};
+function cPoolOpened(k) { const now = Date.now(); if (C_POOL_T[k] && now - C_POOL_T[k] < 4000) return; C_POOL_T[k] = now; cSeeNow(k); cNavCounts(); }
+
+// ---- TODAY: Overdue · Due today · Coming up · No next step, one row per person
+let C_TP = { col: null, programme: '', stage: '' };
+let C_TPD = null;
+function cTodayPick(v) { C_TP.col = C_TP.col === v ? null : v; cTodayPool(); }
+function cTodayPool() {
+  const D = C_TPD; if (!D) return;
+  const okP = (p) => Boolean(p) && (!C_TP.programme || (p.programme || cNotSaid) === C_TP.programme) && (!C_TP.stage || p.status === C_TP.stage);
+  const okG = (g) => okP(D.byId.get(g[0].person_id));
+  const groups = [
+    { id: 'over', label: 'Overdue', rows: cByPerson(D.over).filter(okG), fn: D.pTasks, tone: 'over' },
+    { id: 'today', label: 'Due today', rows: cByPerson(D.today).filter(okG), fn: D.pTasks, tone: 'today' },
+    { id: 'later', label: 'Coming up', rows: cByPerson(D.later).filter(okG), fn: D.pTasks },
+    { id: 'none', label: 'No next step', rows: D.none.filter(okP), fn: D.pRow, tone: 'none' }];
+  const shown = C_TP.col ? groups.filter((g) => g.id === C_TP.col) : groups;
+  const open = D.people.filter((p) => !C_TERMINAL.includes(p.status));
+  const progs = [...new Set(open.map((p) => p.programme || cNotSaid))].sort();
+  const stages = (CFG.stages || []).filter((st) => !C_TERMINAL.includes(st.id));
+  $('#view').innerHTML = cPoolFrame({
+    title: 'Today', crumb: 'Admissions',
+    act: `<a class="c-planned" href="#/journey" onclick="cGoPeople({ stage: 'open' });return false"><b>${D.pct}%</b> planned <small>${D.open.length - D.none.length} of ${D.open.length} open people have a next step</small></a>`,
+    band: cPoolBand('Today', groups.map((g) => ({ id: g.id, label: g.label, n: g.rows.length, tone: g.tone })), C_TP.col, 'cTodayPick'),
+    filters: cPoolFilters('today', [
+      cPoolSelect('Programme', C_TP.programme, progs.map((v) => [v, v === cNotSaid ? 'not recorded' : v]), 'C_TP.programme=this.value;cTodayPool()'),
+      cPoolSelect('Stage', C_TP.stage, stages.map((st) => [st.id, st.label || st.id]), 'C_TP.stage=this.value;cTodayPool()')],
+      C_TP.programme || C_TP.stage ? "C_TP.programme='';C_TP.stage='';cTodayPool()" : ''),
+    body: shown.map((g) => `<div class="c-sheet c-nextsheet p-rows" id="p-${g.id}"><h3>${g.label}<b${g.tone && g.rows.length && g.tone !== 'none' ? ` class="c-count ${g.tone}"` : ''}>${g.rows.length}</b></h3>${
+      g.rows.map(g.fn).join('') || '<div class="c-empty">Nobody here.</div>'}</div>`).join(''),
+  });
+  cPoolWire();
+  cPoolOpened('today');
+}
+
+// ---- INBOX: Today · Yesterday · This week · Older, by when the message arrived
+let C_IP = { col: null, channel: '', kind: '', show: 'new' };
+let C_IPD = null;
+function cInboxPick(v) { C_IP.col = C_IP.col === v ? null : v; cInboxPool(); }
+const C_IP_KIND = [['possible_student', 'Possible student'], ['current_student', 'Current student'], ['other', 'Other']];
+const C_IP_SHOW = [['new', 'Waiting'], ['filtered', 'Filtered out'], ['archived', 'Not relevant']];
+function cInboxAge(iso) {
+  const day = cDay(iso), today = cTodayIso();
+  const back = (n) => new Date(Date.parse(today) - n * 86400000).toISOString().slice(0, 10);
+  return day === today ? 'today' : day === back(1) ? 'yesterday' : day >= back(6) ? 'week' : 'older';
+}
+function cInboxPool() {
+  const D = C_IPD; if (!D) return;
+  const ok = (r) => (!C_IP.channel || r.channel === C_IP.channel) && (!C_IP.kind || r.senderKind === C_IP.kind);
+  const rows = D.rows.filter(ok);
+  const cols = [['today', 'Today'], ['yesterday', 'Yesterday'], ['week', 'This week'], ['older', 'Older']]
+    .map(([id, label]) => ({ id, label, n: rows.filter((r) => cInboxAge(r.received_at) === id).length }));
+  const shown = C_IP.col ? rows.filter((r) => cInboxAge(r.received_at) === C_IP.col) : rows;
+  const chans = [...new Set(D.rows.map((r) => r.channel))].sort().map((c) => [c, channelLabel(c)]);
+  const row = (r) => D.leadRow(r, 'cInboxPool()', C_IP.show === 'new');
+  $('#view').innerHTML = cPoolFrame({
+    title: 'Inbox', crumb: 'Admissions',
+    band: cPoolBand('Inbox', cols, C_IP.col, 'cInboxPick'),
+    filters: cPoolFilters('the inbox', [
+      cPoolSelect('Channel', C_IP.channel, chans, 'C_IP.channel=this.value;cInboxPool()'),
+      cPoolSelect('Kind', C_IP.kind, C_IP_KIND, 'C_IP.kind=this.value;cInboxPool()'),
+      `<label class="c-jf${C_IP.show !== 'new' ? ' on' : ''}"><span>Show</span><select aria-label="Show" onchange="C_IP.show=this.value;C_LOPEN=null;viewLeadsC()">${
+        C_IP_SHOW.map(([v, t]) => `<option value="${v}"${C_IP.show === v ? ' selected' : ''}>${t}</option>`).join('')}</select></label>`],
+      C_IP.channel || C_IP.kind ? "C_IP.channel='';C_IP.kind='';cInboxPool()" : ''),
+    body: D.receipt + cPoolRows(shown, row, C_IP.show === 'new' ? 'Nothing waiting. This queue is clear.' : 'Nothing here.'),
+  });
+  if (C_LOPEN) { const sel = $('#qInterest'); if (sel) sel.focus(); }
+  cPoolWire();
+  cPoolOpened('leads');
+}
+
+// ---- JOURNEY: People + Journey + Outcomes in one. New · Contacted · Follow-up · Application · Contract | Admitted ·
+// Not proceeding. No column chosen = everyone (search and Add lead). List is the default view; Board is the stage
+// board the Journey had.
+let C_JP = { col: null, view: 'list' };
+let C_JPD = null;
+function cPoolViewSwitch() {
+  return `<div class="c-seg p-view" role="group" aria-label="View"><button aria-pressed="${C_JP.view === 'list'}" onclick="C_JP.view='list';viewJourneyPool()">List</button><button aria-pressed="${C_JP.view === 'board'}" onclick="C_JP.view='board';viewJourneyC()">Board</button></div>`;
+}
+// The old addresses land here, on the right column: #/people and #/people/all are everyone, #/outcomes the outcome
+// last asked for, a stage link (cGoStage) its stage, a People filter its column.
+function cPoolRouteJourney(page) {
+  const roles = CFG.stageRoles || {};
+  if (page === 'outcomes') C_JP.col = C_OUTCOME;
+  if (page === 'journey' && (C_JF.stage || []).length === 1) { C_JP.col = C_JF.stage[0]; C_JF = C_JF_EMPTY(); C_JP.view = 'list'; }
+  const st = C_PF.stage || '';
+  if (st && st !== 'open') {
+    if (st.startsWith('tag:')) { C_JP.col = roles.closed || 'Not proceeding'; C_OUT_TAG = st.slice(4); } else C_JP.col = st;
+    C_PF.stage = '';
+  }
+  if (C_JP.view === 'board' && page === 'journey') return viewJourneyC();
+  return viewJourneyPool();
+}
+function cJourneyPick(v) {
+  C_JP.col = C_JP.col === v ? null : v;
+  if (C_TERMINAL.includes(C_JP.col)) C_OUTCOME = C_JP.col;
+  C_OUT_TAG = null; C_OUT_REASON = null; C_OUT_FILTER = null;
+  cDrawJourneyPool();
+}
+async function viewJourneyPool() {
+  const [people, tasks] = await Promise.all([cPeopleRows(), api('/api/tasks?scope=open')]);
+  const taskOf = new Map(); tasks.forEach((t) => { if (!taskOf.has(t.person_id)) taskOf.set(t.person_id, t); });
+  C_JPD = { people, taskOf };
+  C_PDATA = { people, taskOf };   // the same rows People's edit and save read
+  cDrawJourneyPool();
+}
+function cDrawJourneyPool() {
+  const { people, taskOf } = C_JPD;
+  const roles = CFG.stageRoles || {};
+  const closed = roles.closed || 'Not proceeding', admitted = roles.admitted || 'Admitted';
+  const known = new Set(CFG.programmes || []);
+  // every filter but the stage: the column is the stage
+  const f = { ...C_PF, stage: C_PF.stage === 'open' ? 'open' : '' };
+  let base = people.filter((p) => cPeopleMatch(p, taskOf.get(p.id), f, known));
+  if (C_PCOHORT) base = base.filter((p) => C_PCOHORT.ids.has(p.id));
+  if (C_PQ) { const q = C_PQ.toLowerCase(); base = base.filter((p) => [p.name, p.email, p.phone].some((v) => String(v || '').toLowerCase().includes(q))); }
+  const late = (p) => { const t = taskOf.get(p.id); return Boolean(t && cWhenClass(t.due_at) === 'over'); };
+  const stages = (CFG.stages || []).filter((st) => !C_TERMINAL.includes(st.id));
+  const cols = [...stages.map((st) => { const ps = base.filter((p) => p.status === st.id); return { id: st.id, label: st.label || st.id, n: ps.length, over: ps.filter(late).length }; }),
+    { id: admitted, label: admitted, n: base.filter((p) => p.status === admitted).length, tone: 'good', sep: true },
+    { id: closed, label: closed, n: base.filter((p) => p.status === closed).length, tone: 'np' }];
+  let list = C_JP.col ? base.filter((p) => p.status === C_JP.col) : base;
+  const isNp = C_JP.col === closed, isAdm = C_JP.col === admitted;
+  if (isNp && C_OUT_TAG) list = list.filter((p) => p.closed_tag === C_OUT_TAG);
+  if (isNp && C_OUT_REASON) list = list.filter((p) => p.closed_reason === C_OUT_REASON);
+  const oF = isAdm ? C_OUT_FILTER : null;
+  if (oF) {
+    if (oF.kind === 'month') list = list.filter((p) => cDay(p.admitted_at).startsWith(oF.key));
+    else if (oF.kind === 'year') list = list.filter((p) => cDay(p.admitted_at).startsWith(oF.key));
+    if (oF.kind === 'prog') list = list.filter((p) => (p.programme || '(not recorded)') === oF.key);
+    if (oF.kind === 'chan') list = list.filter((p) => (p.source_channel || 'unknown') === oF.key);
+  }
+  const distinct = (key) => [...new Set(people.map((p) => p[key] || cNotSaid))];
+  const progs = distinct('programme').sort((a, b) => ((CFG.programmes || []).indexOf(a) + 1 || 99) - ((CFG.programmes || []).indexOf(b) + 1 || 99) || a.localeCompare(b));
+  const owners = [...new Set([...(CFG.owners || []), ...distinct('owner')])];
+  const sources = distinct('source_channel').sort((a, b) => a.localeCompare(b));
+  const name = (k, v) => (v === cNotSaid ? 'not recorded' : k === 'source' ? channelLabel(v) : v);
+  const box = (k, label, values) => cPoolSelect(label, C_PF[k], values, `C_PF.${k}=this.value;cDrawJourneyPool()`);
+  const tags = (CFG.closedTags || []).map((t) => [t.id, t.label || t.id]);
+  const boxes = [
+    box('programme', 'Programme', progs.map((v) => [v, name('programme', v)])),
+    box('due', 'Next step', C_PF_DUE),
+    box('owner', 'Owner', owners.map((v) => [v, name('owner', v)])),
+    box('source', 'Came from', sources.map((v) => [v, name('source', v)])),
+    box('data', 'Details', C_PF_DATA),
+    box('arrived', 'Arrived', [...new Set(people.map((p) => cDay(p.created_at).slice(0, 4)).filter(Boolean))].sort().reverse().map((y) => [y, y])),
+    isNp && tags.length ? cPoolSelect('Cold / Reject', C_OUT_TAG || '', tags, 'C_OUT_TAG=this.value||null;C_OUT_REASON=null;cDrawJourneyPool()') : ''];
+  const any = Object.entries(C_PF).some(([k, v]) => k !== 'stage' && v) || (isNp && C_OUT_TAG);
+  const chips = [
+    C_PF.stage === 'open' ? `<div class="c-filter">Open people only <button class="btn sm ghost" onclick="C_PF.stage='';cDrawJourneyPool()">Everyone ✕</button></div>` : '',
+    C_PCOHORT ? `<div class="c-filter c-cohort">${esc(C_PCOHORT.label)} <button class="btn sm ghost" onclick="C_PCOHORT=null;cDrawJourneyPool()">Show everyone ✕</button></div>` : '',
+    oF ? `<div class="c-filter">${esc(oF.label || '')} <button class="btn sm ghost" onclick="C_OUT_FILTER=null;cDrawJourneyPool()">All admitted ✕</button></div>` : '',
+    isNp && C_OUT_REASON ? `<div class="c-filter">${esc(C_OUT_REASON)} <button class="btn sm ghost" onclick="C_OUT_REASON=null;cDrawJourneyPool()">Every reason ✕</button></div>` : ''].join('');
+  const row = (p) => { const t = taskOf.get(p.id); const open = !C_TERMINAL.includes(p.status);
+    const step = p.status === closed ? `${p.closed_tag ? cTagChip(p.closed_tag) : ''}${cColdWhy(p)}`
+      : p.status === admitted ? `Admitted${p.admitted_at ? ' ' + fmtDate(p.admitted_at) : ''}`
+      : t ? cStepIcon(t.label) + esc(cTask(t.label)) : cSisHolds(p) ? cSisHeld(p) : '';
+    return `<div class="c-line${open && !t && !cSisHolds(p) ? ' is-none' : ''}" tabindex="0" onclick="location.hash='#/person/${esc(p.id)}'">
+      <div class="c-who"><b>${esc(p.name)}</b><small class="c-reach ${p.email || p.phone ? '' : 'c-gap'}">${p.email || p.phone ? cReach(p) : 'no contact details'}</small>${p.status === closed ? cSameMark(p, people) : ''}</div>
+      <div class="c-what"><span class="p-stage">${esc(cStage(p.status))}</span> · ${esc(p.programme || 'programme not said')}<small class="p-step">${step}</small></div>
+      <div class="c-when">${t ? `<span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span>` : ''}</div>
+      <div class="c-acts">${open && !t && !cSisHolds(p) ? cChooseNext(p.id) : ''}</div></div>`; };
+  const np = people.filter((p) => p.status === closed);
+  $('#view').innerHTML = cPoolFrame({
+    title: 'Journey',
+    act: `${cPoolViewSwitch()}<input class="c-search" id="cPQ" placeholder="Search name, email or phone" value="${esc(C_PQ)}" aria-label="Search people"><button class="btn" onclick="openAdd()">Add lead</button><button class="btn ghost" onclick="openExport()">Download</button>`,
+    band: cPoolBand('The journey', cols, C_JP.col, 'cJourneyPick'),
+    filters: cPoolFilters('people', boxes, any ? "C_PF=C_PF_EMPTY();C_OUT_TAG=null;cDrawJourneyPool()" : '') + chips,
+    body: cPoolRows(list, row, 'Nobody matches. Remove a filter to widen the list.')
+      + (isNp && !C_OUT_TAG ? cReasonBreakdown(np, np.filter((p) => !p.closed_reason).length) : ''),
+  });
+  const q = $('#cPQ'); if (q) q.addEventListener('input', () => { const pos = q.selectionStart; C_PQ = q.value; cDrawJourneyPool(); const n = $('#cPQ'); n.focus(); n.setSelectionRange(pos, pos); });
+  cPoolWire();
+  cPoolOpened('journey');
 }
 
 // --------------------------------------------------------------------- PEOPLE
@@ -3428,6 +3743,7 @@ const cClosedStage = () => (CFG.stageRoles || {}).closed;
 // exactly the filter that counts it, so the count on arrival is the figure.
 function cGoPeople(filter) {
   C_PF = { ...C_PF_EMPTY(), ...filter }; C_PQ = ''; C_PEDIT = null; C_PMSG = ''; C_PTAB = 'all';
+  if (globalThis.C_POOL) { C_JP.col = null; C_JP.view = 'list'; if (location.hash === '#/journey') cPoolRouteJourney('people'); else location.hash = '#/journey'; return; }
   if (location.hash === '#/people' && C_PDATA) cDrawPeople(); else location.hash = '#/people';
 }
 // Journey's Edit opens the same person in People, unfiltered, scrolled to the row.
@@ -4127,8 +4443,8 @@ function cDrawJourney() {
     cJourneyTalk(sel.id).then(() => { if (C_JTALK.has(sel.id)) cDrawJourney(); });
   }
   $('#view').innerHTML = `
-    <p class="c-crumb"><a href="#/people">People</a></p>
-    <div class="c-head"><div><h1>Journey</h1></div><div class="act"><button class="btn" onclick="openAdd()">Add lead</button></div></div>
+    ${globalThis.C_POOL ? `<div class="c-head"><div><h1>Journey</h1></div><div class="act">${cPoolViewSwitch()}<button class="btn" onclick="openAdd()">Add lead</button></div></div>` : `<p class="c-crumb"><a href="#/people">People</a></p>
+    <div class="c-head"><div><h1>Journey</h1></div><div class="act"><button class="btn" onclick="openAdd()">Add lead</button></div></div>`}
     ${cJourneySummary(everyone, taskOf, stages)}
     ${cJourneyFilters(everyone)}
     <div class="c-journey c-nosel">${sel ? '<div class="c-jveil" onclick="cJClose()"></div>' : ''}<div style="min-width:0">

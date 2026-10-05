@@ -14,6 +14,30 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - Q47: ONE pool frame for Today, the Inbox and the Journey (behind ?pool=1); Q39 counts folded in
+
+Ritvars 05.10 on production (via MASTER CONTROL): "They are completely separate lists, its not one system, its 4
+different lists. No frozen navigation anywehre", and "maybe we can combine, the people with Journey? Just call it
+Journey then??". MASTER CONTROL's system, built behind `?pool=1` (the default is unchanged until he has seen it):
+- ONE frame, shared code (`cPoolBand` / `cPoolFilters` / `cPoolFrame` / `cPoolWire`): the title, a FROZEN band of the
+  pool's cohorts drawn as the Journey band (columns on one baseline and one scale, the count on each; a click narrows
+  the list, a second click shows all), ONE filter row in the app's dropdown look, the rows in one row style. Scrolled,
+  the band folds into one compact frozen row of the same cohorts with their counts (under the phone's top bar).
+- TODAY: Overdue · Due today · Coming up · No next step, one row per person (Coming up too now); Programme, Stage.
+- INBOX: Today · Yesterday · This week · Older by the message's arrival; Channel, Kind (the server's senderKind),
+  Show = Waiting / Filtered out / Not relevant (the Filtered view is a filter value). The row is the Inbox's own.
+- JOURNEY = People + Journey + Outcomes: New · Contacted · Follow-up · Application · Contract | Admitted · Not
+  proceeding. No column = everyone (search, Add lead, Download). Cold / Reject is a filter on Not proceeding; the
+  same-person mark and Why they stopped (below the list) stay. List | Board: Board is the stage board as it was.
+  #/people, #/people/all, #/outcomes, #/journey, cGoPeople, cGoStage and the reasons click land on the right column.
+- Menu: Home · Admissions (Today, Inbox) · Journey · Reports · Settings; phone tabs Home, Today, Inbox, Journey, More.
+- Q39 (unparked into Q47): menu and tab counts are "N new / total", the new figure bold with a small "new" mark; only
+  the total when nothing is new. New = arrived since this browser last opened that pool (localStorage `crmSeen:*`).
+  Today = people with a step overdue or due today; Inbox = waiting messages; Journey = everyone.
+Tests: 1199/1199 (outcomes_not_proceeding counts the pool's Not proceeding-only same-person mark). Shots:
+`For review/2026-10-05 Q47 pool frame/`. BUILT behind ?pool=1, NOT the default. Open: Home and Reports figures to
+the right pool + column (item 6 of the brief), Today's badge basis (due now vs the whole list), the year scope (Q45).
+
 ## 05.10.2026 - Q44: "No next step" is an amber edge and a "Choose next step" button
 
 Ritvars 05.10 (via MASTER CONTROL), on the Journey board cards: "the no next step prmopt is tooo soft". The soft

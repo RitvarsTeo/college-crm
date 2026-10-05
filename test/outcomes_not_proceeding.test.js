@@ -54,6 +54,8 @@ test('the mark is shown on Not proceeding rows only', () => {
   const out = fnBody('async function viewOutcomesC() {');
   assert.match(out, /\$\{C_OUTCOME !== 'Admitted' \? cSameMark\(p, people\) : ''\}/, 'not on the Admitted list');
   assert.match(fnBody('function cColdGroups(list, people) {'), /cSameMark\(p, people\)/, 'the Cold / Reject lists are Not proceeding too');
+  // Q47 (behind ?pool=1): the Journey pool's list is the third place, and there it is shown on Not proceeding rows only
+  assert.match(APP, /\$\{p\.status === closed \? cSameMark\(p, people\) : ''\}/, 'the Journey pool: Not proceeding rows only');
   const uses = (APP.match(/cSameMark\(/g) || []).length;
-  assert.equal(uses, 2, 'used on the two Not proceeding lists and nowhere else');
+  assert.equal(uses, 3, 'used on the Not proceeding lists and nowhere else');
 });
