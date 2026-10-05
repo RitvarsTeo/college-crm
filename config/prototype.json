@@ -43,6 +43,10 @@
       "colour": "#8b5b5b"
     }
   ],
+  "conversion": {
+    "maturedDays": 60,
+    "_maturedDays": "Conversion counts only MATURED people (the owner, 05.10.2026): admitted / people who arrived at least this many days before the end of the period (or today, if the period has not ended). A lead added last week has not had time to be admitted, so counting it made conversion read low and impossible to compare with any benchmark. 60 to start; change the number here, nothing else."
+  },
   "targets": {
     "2026": {
       "admitted": 140,

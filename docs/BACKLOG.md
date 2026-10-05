@@ -14,6 +14,19 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - Conversion counts only MATURED people, everywhere (Q49)
+
+Ritvars 05.10 (via MASTER CONTROL): conversion counted everyone who arrived in the period, last week's leads included,
+so it read low and could not be compared with any benchmark. Now: admitted / the people who arrived at least N days
+before the end of the period (before today if it has not ended). N = `config conversion.maturedDays`, 60 to start, its
+reason beside it. ONE definition, `maturedConversion` in src/reports.js: the report summary (Home's card, the export),
+`/api/metrics/core` and the Reports Conversion tab (it takes the server's cutoff, never its own rule). The label says the
+basis: "8 / 33 who arrived 60+ days ago"; a past period says "60+ days before <its last day>". Home: only the card's
+small label changed. Reached and Where the rest are now stay over all people added; the shares by programme / channel
+follow the matured people. Synthetic data, This year: before 19% (12 / 63), after 24.2% (8 / 33).
+test/conversion_matured.test.js; adapters, focal_point follow. Shots: `For review/2026-10-05 Q49 Conversion matured/`.
+BUILT, not deployed.
+
 ## 05.10.2026 - Q44: "No next step" is an amber edge and a "Choose next step" button
 
 Ritvars 05.10 (via MASTER CONTROL), on the Journey board cards: "the no next step prmopt is tooo soft". The soft
