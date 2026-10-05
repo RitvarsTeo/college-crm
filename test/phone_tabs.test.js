@@ -27,7 +27,7 @@ test('five tabs in his order, More last; the sheet holds the rest of the menu', 
 test('the counts are the left card\'s own, copied whenever they change', () => {
   const f = fnBody('function installCTabs() {');
   assert.match(f, /\[\['#cnLeads', '#ctLeads'\], \['#cnNext', '#ctNext'\], \['#cnJourney', '#ctJourney'\]\]/);
-  assert.match(f, /const copy = \(\) => \{ b\.innerHTML = a\.innerHTML; b\.className = a\.className; \};/, 'new / total is markup (Q39)');
+  assert.match(f, /const copy = \(\) => \{ b\.innerHTML = a\.innerHTML; b\.className = a\.className; \};/, 'the NEW badge is markup (Q39, Q52)');
   assert.match(f, /new MutationObserver\(copy\)\.observe\(a,/);
 });
 

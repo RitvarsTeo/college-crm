@@ -1046,7 +1046,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
       background:#53a7db;color:#ffffff;font-size:11px;font-weight:700;line-height:18px;text-align:center}
     html.ui-c .ctabs .n.warn{background:#F7C04F;color:#0a2463}
     html.ui-c .ctabs .n{width:auto;display:inline-flex;align-items:center;gap:2px}
-    html.ui-c .ctabs .n .nn{font-size:11.5px} html.ui-c .ctabs .n .nt{font-size:9px} html.ui-c .ctabs .n .nw{font-size:7px;padding:1px 3px}
+    html.ui-c .ctabs .n .nn{font-size:11.5px} html.ui-c .ctabs .n .nw{font-size:7px;padding:1px 3px}
     html.ui-c .cmore:not([hidden]){display:block;position:fixed;inset:0;z-index:39}
     html.ui-c .cmore-back{position:absolute;inset:0;background:rgba(3,12,26,.35)}
     html.ui-c .cmore-sheet{position:absolute;left:8px;right:8px;bottom:calc(68px + env(safe-area-inset-bottom));display:grid;
@@ -1552,12 +1552,11 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .p-edit{padding:4px 16px 16px;border-top:1px solid var(--rule2)}
   html.ui-c .c-jedit .c-form{grid-template-columns:minmax(0,1fr)}   /* the board's opened card is narrow: one field per line */
   html.ui-c .p-rows .c-line.c-sel{background:var(--c-sunk)}
-  /* Q39: new / total in the menu, the new figure bold with its small mark */
+  /* Q52: only the user's NEW count in the menu - the small mark and the bold figure; no total */
   html.ui-c .n{display:inline-flex;align-items:baseline;gap:3px;white-space:nowrap}
   html.ui-c .n .nw{font-style:normal;font-size:8.5px;font-weight:800;letter-spacing:.06em;line-height:1;padding:2px 4px 1px;border-radius:4px;
     background:#F7C04F;color:#0a2463;align-self:center}   /* the mark carries the signal colour; the words on it stay navy */
   html.ui-c .n .nn{font-size:14px;font-weight:800;line-height:1;color:inherit}
-  html.ui-c .n .nt{font-size:10px;font-weight:500;line-height:1;opacity:.78}
   @media (max-width:760px){ html.ui-c .pband .jb-plot{height:92px;padding-top:26px} html.ui-c .pband .jb-l{font-size:10.5px} }
   @media (max-width:900px){
     html.ui-c .jband-row{grid-template-columns:1fr 1fr}
@@ -3525,17 +3524,17 @@ function cPoolMini() {
 }
 const cPoolRows = (rows, fn, empty = 'Nobody here.') => `<div class="c-sheet p-rows">${rows.length ? rows.map(fn).join('') : `<div class="c-empty">${empty}</div>`}</div>`;
 
-// SEEN, FOR THE MENU'S NEW (Q39, the owner: "new / total ... Just like the new bmw m350i sign"). The moment this
-// browser last opened each pool; what arrived after it is new. The first visit marks nothing new.
-const cSeenKey = (k) => 'crmSeen:' + k;
+// SEEN, FOR THE MENU'S NEW. The moment THIS USER last opened each pool; what arrived after it is new. The first visit
+// marks nothing new. Q52, the owner 05.10.2026: "just new to each user count we show" - so the store is keyed by the
+// signed-in user (the acting-as user when nobody is signed in), and two colleagues on one PC never clear each other's.
+const cSeenWho = () => String((AUTH.user && (AUTH.user.email || AUTH.user.name)) || ACTOR || '').trim().toLowerCase();
+const cSeenKey = (k) => 'crmSeen:' + cSeenWho() + ':' + k;
 function cSeen(k) { try { return localStorage.getItem(cSeenKey(k)) || ''; } catch { return ''; } }
 function cSeeNow(k) { try { localStorage.setItem(cSeenKey(k), new Date().toISOString()); } catch {} }
-// "3 new / 41", the new figure bold with its mark; only the total when nothing is new
-// Q51, the owner on production: "The count is now one blur. Where is the only new count?" - so like the car badge: the
-// NEW mark first (the signal colour on the mark only), the new figure bold and larger, then "/ total" clearly smaller
-// and lighter. Nothing new: only the total, in the small style.
-const cBadge = (fresh, total) => (fresh ? `<i class="nw" aria-hidden="true">NEW</i><b class="nn">${fresh}</b><small class="nt"><span class="c-sr"> new of </span><span aria-hidden="true">/</span>${total}</small>`
-  : total ? `<small class="nt">${total}</small>` : '');
+// Q52, the owner 05.10.2026 on patch 14: "Now the item count. Either we drop it or we do it properly. Lets drop it for
+// now. And just new to each user count we show." - the NEW mark and the bold figure, and NOTHING when nothing is new.
+// No total anywhere in the menu or the tab bar; the pools keep their own counts in their bands.
+const cBadge = (fresh) => (fresh ? `<i class="nw" aria-hidden="true">NEW</i><b class="nn">${fresh}</b><span class="c-sr"> new</span>` : '');
 async function cPoolCounts() {
   try {
     const [i, t, ppl] = await Promise.all([api('/api/intake'), api('/api/tasks?scope=open'), api('/api/people')]);
@@ -3543,19 +3542,18 @@ async function cPoolCounts() {
     const inbox = (i.rows || []);
     const dueNow = cByPerson(cDueNow(t));
     const people = (ppl && ppl.rows) || [];
-    const put = (sel, html, warn) => { const el = document.querySelector(sel); if (!el) return; el.innerHTML = html; el.classList.toggle('warn', Boolean(warn)); };
+    const put = (sel, html) => { const el = document.querySelector(sel); if (el) el.innerHTML = html; };
     // Today = everyone who needs an action NOW: Overdue + Due today + No next step (MASTER CONTROL for the owner,
     // 05.10.2026), which is exactly the set Today opens on; Coming up is a click away and not counted.
     const none = people.filter((p) => !C_TERMINAL.includes(p.status) && !p.next_action_at && !cSisHolds(p));
-    put('#cnLeads', cBadge(inbox.filter((r) => after('leads', r.received_at)).length, inbox.length));
+    put('#cnLeads', cBadge(inbox.filter((r) => after('leads', r.received_at)).length));
     // a step is new on Today when its due DAY began after the last visit (it entered Today since), or it was planned
     // since; a step due later today is not new the moment Today has been opened
     const seenDay = cSeen('today') ? cDay(cSeen('today')) : '';
     const becameDue = (x) => Boolean(seenDay && cDay(x.due_at) > seenDay);
     put('#cnNext', cBadge(dueNow.filter((g) => g.some((x) => becameDue(x) || after('today', x.created_at))).length
-      + none.filter((p) => after('today', p.created_at)).length, dueNow.length + none.length),
-      t.some((x) => cWhenClass(x.due_at) === 'over'));
-    put('#cnJourney', cBadge(people.filter((p) => after('journey', p.created_at)).length, people.length));
+      + none.filter((p) => after('today', p.created_at)).length));
+    put('#cnJourney', cBadge(people.filter((p) => after('journey', p.created_at)).length));
   } catch {}
 }
 // Opening a pool marks it seen and refreshes the menu's counts; a click inside the pool is not a new opening.

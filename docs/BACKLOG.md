@@ -14,6 +14,20 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - Q52: the menu shows only the user's NEW count
+
+Ritvars 05.10 on production patch 14, about the menu counts "NEW 7 /64": "Now the item count. Either we drop it or
+we do it properly. Lets drop it for now. And just new to each user count we show."
+- Menu (Inbox, Today, Journey) and the phone tab bar: only the amber NEW mark + the bold figure, when something is new.
+  No "/ total" anywhere in the menu or tab bar; nothing at all when nothing is new (the Today overdue amber is gone
+  with it). The pools keep their own counts in their bands. Replaces the Q51 "/ total" half.
+- "New" is per user: the last-seen store is keyed `crmSeen:<user>:<pool>` - the signed-in user's email (else name),
+  the acting-as user when nobody is signed in. Two colleagues on one PC no longer clear each other's new. A first
+  visit for a user = nothing new. Today keeps the Q51 rule (newly needs action since that user last opened Today).
+- Old per-browser keys `crmSeen:<pool>` are simply no longer read, so everyone starts at nothing new once.
+- Tests: test/menu_badge_q51.test.js (no total in markup or style, badge absent at 0, per-user keys, A's visit keeps
+  B's new, first visit = 0). **BUILT, next patch.**
+
 ## 05.10.2026 - Q51: Home, Admissions (Inbox, Today, Journey), Reports; the new / total badge
 
 Ritvars 05.10 on production, after the flat menu (Q47) shipped and upset him: "I had Home then Admissions (under that
