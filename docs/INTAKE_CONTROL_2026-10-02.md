@@ -345,3 +345,8 @@ Next patch so far: MAIN `f560fc9` (+Q9, Q12) · APPLICATIONS `cd42945` · CLOSUR
 D-C5 DECIDED 05.10: a lead can go back to an earlier stage, kept as built (CLOSURE `010d453`).
 | Q15 | Stage moves are documented: BACK needs a note before it saves, FORWARD asks but can be skipped (Ritvars 05.10); a note or call on that person in the last few minutes COUNTS (Ritvars, popup 05.10); server enforces; reasons = config list. A/B of the form: A inline line under the card, B small pop-up (CLOSURE `ecd38f8`) | MAIN, after Q14 | SENT 05.10, A/B for Ritvars |
 05.10: MAIN `7f13077` fixes the Q12 test (either map name). Control trial merge `7f13077` + Q8 `1ea73ae`: **1108/1108**. Feedback sign-in: Ritvars had no page open; control opened https://crm-novikontas.vercel.app/ in his Chrome.
+05.10: Q13 BUILT `757832d` (1098/1098 control re-run) -> **PICKED A** (bars on the Admitted card). Feedback email (row 10d) DONE: Ritvars sent the TEST himself and saw the email in his inbox.
+| Q16 | Phone menu scrolls sideways. A/B: A burger drawer, B bottom tab bar (Home, Inbox, Next steps, People, More); control recommends B | MAIN | SENT 05.10, A/B for Ritvars |
+| Q17 | Browser-tab favicon = the same WHITE tile as the app icon, light and dark (Ritvars: "I want the white on also on the broswers tab"); supersedes the 30.09 dark favicon | MAIN | SENT 05.10 |
+| Q18 | Outcomes back in the menu, AFTER Journey (chronology): People = Journey, Outcomes, All people (Ritvars picked 05.10) | MAIN | SENT 05.10 |
+MAIN order: Q14 -> Q17 -> Q18 -> Q13 A default -> Q16 A/B -> Q15 A/B. Flag for Ritvars: mustard is the target AND the donut's Open on Home.
