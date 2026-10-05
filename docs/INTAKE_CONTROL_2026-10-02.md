@@ -344,3 +344,4 @@ Next patch so far: MAIN `f560fc9` (+Q9, Q12) · APPLICATIONS `cd42945` · CLOSUR
 | Q14 | Cold list for Marketing: two layouts of what exists today, no export/send (D-C8; owners Aigars + Tetiana) | MAIN | SENT 05.10, A/B for Ritvars |
 D-C5 DECIDED 05.10: a lead can go back to an earlier stage, kept as built (CLOSURE `010d453`).
 | Q15 | Stage moves are documented: BACK needs a note before it saves, FORWARD asks but can be skipped (Ritvars 05.10); a note or call on that person in the last few minutes COUNTS (Ritvars, popup 05.10); server enforces; reasons = config list. A/B of the form: A inline line under the card, B small pop-up (CLOSURE `ecd38f8`) | MAIN, after Q14 | SENT 05.10, A/B for Ritvars |
+05.10: MAIN `7f13077` fixes the Q12 test (either map name). Control trial merge `7f13077` + Q8 `1ea73ae`: **1108/1108**. Feedback sign-in: Ritvars had no page open; control opened https://crm-novikontas.vercel.app/ in his Chrome.
