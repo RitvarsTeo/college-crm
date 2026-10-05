@@ -26,15 +26,17 @@ test('the hero number is bigger than the other three', () => {
 // range and the download. Home became Today, the work screen, and has no hero figure -
 // its biggest thing is the overdue list, which is the point of it.
 test('Home and Reports each have exactly one hero figure', () => {
-  assert.equal(APP.split('class="khero"').length - 1, 2, 'Home and Reports, one each; Today is work and has none');
+  // Reports (Q35, B): its focal point is the open tab, ringed in the logo blue; Home keeps the one hero card
+  assert.equal(APP.split('class="khero"').length - 1, 1, 'Home has the one hero; Today is work and has none');
+  assert.match(APP, /html\.ui-c #view \.kstrip\.rp-tabs > div\[aria-selected="true"\]\{outline:2px solid #29a8df/);
 });
 
 test('conversion shows its sum, not a sentence about it', () => {
   assert.match(REPORTS, /conversionA: admittedFromPeriod/, 'the report carries a');
   assert.match(REPORTS, /conversionB: newLeads/, 'and b');
   // Reports and Home (B, locked 02.10.2026) print the same a / b from the same report fields
-  assert.equal(APP.split('${s.conversionA ?? 0} / ${s.conversionB ?? 0} who arrived').length - 1, 2,
-    'Reports and Home show a / b');
+  assert.equal(APP.split('${s.conversionA ?? 0} / ${s.conversionB ?? 0} who arrived').length - 1, 1, 'Home shows a / b');
+  assert.ok(APP.includes('${cRepGo(C.won)} / ${cRepGo(C.base)} who arrived'), 'and Reports the same a / b, each a click to its people');
   assert.ok(!APP.includes('esc(s.conversionOf || \'\')'), 'the sentence is off both screens');
   assert.match(REPORTS, /conversionOf: conversion === null/, 'and stays for the export');
 });

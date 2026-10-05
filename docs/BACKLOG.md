@@ -14,7 +14,25 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
-## 05.10.2026 - A/B: Full report = Home's figures, one level deeper (Q35), NOT PICKED
+## 05.10.2026 - PICKED: Reports = B, one tab per Home figure (Q35)
+
+Ritvars 05.10 (via MASTER CONTROL): B, the tabs. A, the `?rep=` switch and the earlier Full report are removed; B is
+Reports. The A/B entry below is CLOSED by this.
+- Titled **Reports** like the menu, no "Outcomes" crumb; the Settings item says Reports too (Outcomes' own "Full
+  report" button is MAIN's screen, left as it is).
+- **All four Home cards open their Reports tab** on This year, Admitted included (it opened Outcomes): Home card ->
+  the tab's breakdowns -> the people. `#/reports/<chapter>` opens that tab (`#/reports/applications` too).
+- The time axis follows the chosen period: a year = January to this month; up to 31 days = days; up to 92 = weeks;
+  longer = months; never past today. The chart's basis label reads the same as the header ("2026 · admission date").
+- The period is read in one function, `cRepPeriod()`, so the app-wide year scope (Home's 2025 / 2026 / All years
+  switch, MAIN builds it) can feed it later. No new period control.
+- NOT changed: Admitted and Median still count people admitted in the period; the arrival-year basis waits for
+  Ritvars with the year scope.
+test/reports_depth.test.js pins B; applications_report, bars_no_gap_words, focal_point, frame_drifts, home_final,
+home_links, metrics_colours, reports_pictures follow. Shots: `For review/2026-10-05 Q35 Reports B final/`. BUILT, not
+deployed.
+
+## 05.10.2026 - A/B: Full report = Home's figures, one level deeper (Q35), CLOSED: B picked (above)
 
 Ritvars 05.10 (via MASTER CONTROL): "we have the same metrics that are in the home. Lets not be redundant ok, but
 smartly make it obvious that full report page is going deeper on the metrics that are on home ... Hard to comprehend

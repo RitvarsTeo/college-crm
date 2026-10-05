@@ -20,9 +20,9 @@ test('every Home figure is a click to where it comes from', () => {
   assert.match(HOME, /need\('In the Inbox', D\.inbox, '', '#\/leads', 2\)/);
   assert.match(HOME, /need\('No next step', D\.noNext, '', '#\/today', 3\)/);
   assert.match(HOME, /class="kday-st" href="#\/journey" onclick="cGoStage\(/);
-  // the four cards: Admitted -> the year's admitted in Outcomes; the other three -> Reports on This year
-  assert.match(HOME, /<div class="khero"><span>Admitted<\/span>[^\n]*onclick="cGoAdmittedYear\(\$\{D\.year\}\);return false">Outcomes →<\/a><\/div>/);
-  // Q35: each card names the Reports chapter it lands on (read only under ?rep=a|b)
+  // the four cards: ALL FOUR open their own Reports tab on This year (Q35, the owner 05.10.2026), Admitted included
+  assert.match(HOME, /<div class="khero"><span>Admitted<\/span>[^\n]*href="#\/reports" onclick="cGoReportYear\('admitted'\);return false">Reports →<\/a><\/div>/);
+  assert.doesNotMatch(APP, /cGoAdmittedYear/, 'Admitted no longer skips the breakdowns');
   for (const [label, ch] of [['Leads', 'leads'], ['Conversion', 'conversion'], ['Median time to admission', 'median']])
     assert.match(HOME, new RegExp(`<div><span>${label}</span>[^\\n]*onclick="cGoReportYear\\('${ch}'\\);return false">Reports →</a></div>`), label);
   assert.doesNotMatch(HOME, /href="#\/leads">Inbox →/, 'Leads no longer opens the Inbox, which is not where its figure comes from');
@@ -38,14 +38,9 @@ test('every Home figure is a click to where it comes from', () => {
 
 test('the link helpers open the same period as the figure', () => {
   const ctx = { location: { hash: '#/home' }, cTodayIso: () => '2026-10-05', viewOutcomesC() {}, viewReportsC() {}, C_OUTCOME: '', C_OUT_TAG: 'cold', C_OUT_FILTER: null, C_RPT_PRESET: 'month', RPT: {}, C_REP_CH: null };
-  vm.runInNewContext(fnBody('function cGoAdmittedYear(year) {') + fnBody('function cGoReportYear(chapter) {'), ctx);
-  ctx.cGoAdmittedYear(2026);
-  assert.equal(ctx.location.hash, '#/outcomes');
-  assert.equal(ctx.C_OUTCOME, 'Admitted');
-  assert.equal(ctx.C_OUT_TAG, null);
-  assert.deepEqual(JSON.parse(JSON.stringify(ctx.C_OUT_FILTER)), { kind: 'year', key: '2026', label: 'admitted in 2026' });
-  ctx.location.hash = '#/home';
-  ctx.cGoReportYear();
+  vm.runInNewContext(fnBody('function cGoReportYear(chapter) {'), ctx);
+  ctx.cGoReportYear('admitted');
+  assert.equal(ctx.C_REP_CH, 'admitted', 'the Admitted card opens the Admitted tab');
   assert.equal(ctx.location.hash, '#/reports');
   assert.equal(ctx.C_RPT_PRESET, 'year');
   assert.deepEqual(JSON.parse(JSON.stringify(ctx.RPT)), { from: '2026-01-01', to: '' });

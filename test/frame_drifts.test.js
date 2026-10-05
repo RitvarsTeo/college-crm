@@ -63,20 +63,7 @@ test('the month chart is drawn WIDER on a wide screen, not bigger', () => {
     'the cap steps where the drawing does');
 });
 
-test('the three figures light up one at a time, not all together', () => {
-  // 30.09.2026: all three are inside ONE <a href="#/next">, and the rule was .c-nowbar:hover b,
-  // so hovering any of them underlined all three. The owner: "all get underlined. I want only the
-  // one i hover over. but not underline, but make it dynamic in different way."
-  assert.doesNotMatch(APP, /\.c-nowbar:hover b\{text-decoration:underline\}/,
-    'the whole-link underline is gone');
-  assert.match(APP, /html\.ui-c \.c-nowbar span:hover\{/, 'the hover is on the figure, not the link');
-
-  // and it is colour with meaning, not decoration: amber for what is waiting, red for what is late
-  const warm = APP.slice(APP.indexOf('html.ui-c .c-nowbar span:hover{'), APP.indexOf('html.ui-c .c-nowbar span.is-late:hover{'));
-  assert.match(warm, /rgba\(247,192,79/, 'amber #F7C04F for open and waiting');
-  const late = APP.slice(APP.indexOf('html.ui-c .c-nowbar span.is-late:hover{'));
-  assert.match(late.slice(0, 200), /rgba\(179,38,30/, 'red #b3261e for late');
-
-  assert.match(APP, /@media \(prefers-reduced-motion:reduce\)\{ html\.ui-c \.c-nowbar span\{transition:none\}/,
-    'the lift respects reduced motion');
+test('the open / overdue / no next step strip is not on Reports: Today owns it (Q35)', () => {
+  // 30.09.2026 it lit up one figure at a time; 05.10.2026 the owner: "Nothing should be duplicated", so it left Reports
+  assert.doesNotMatch(APP, /c-nowbar/);
 });
