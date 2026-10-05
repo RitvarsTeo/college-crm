@@ -304,3 +304,6 @@ MAIN `cdef806`. Person-page history keeps the full text (one click away). Open, 
 
 ### 05.10 - the app opened on Today, not Home (Ritvars)
 Cause: route() default `location.hash || '#/today'`, unchanged since V1 (`afea424`); Home became the metrics landing later (Ieva 29.09) and the default was never moved. Not caught by 1074 tests or any release look, because every check opened a named route. Fix -> S2 (default #/home + a test that an empty address opens Home). Lesson for the release check: open the bare address, the way a person does.
+
+## 05.10 - EIGHTH PATCH LIVE: `5eba1a6` (the app opens on Home), pushed
+MAIN `6d7ca1d`. Bare address checked on the release build: Home renders, only Home lit. 1078/1078.
