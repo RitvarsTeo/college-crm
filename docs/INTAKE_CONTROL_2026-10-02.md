@@ -335,3 +335,7 @@ Reports in, 05.10 ~11:00: MAIN [97f022] confirms tip `f560fc9`, clean. APPLICATI
 | Q9 | Help center questions in ONE fixed order (help.json), never by most opened (Ritvars 01.10 rule, kit part 3 README:89) | MAIN | SENT 05.10 |
 | Q10 | Kit part 2 demo still has © in the menu card; Intake moved it to the page foot (`6accf01`) | kit part 2 | SAID |
 | Q11 | `config/prototype.json` feedbackReaders names reach every signed-in browser via /api/config (not on screen) | - | PARKED, low risk |
+CLOSURE `71c3a83` re-run by control on a clean export: 1082/1082.
+Q8 BUILT `1ea73ae` (CHANNELS, `fix/2026-10-05-programme` from `5eba1a6`): the form answers (programme, study form, heard from, company) reach the DB on every channel, and the website programme now reaches the Inbox as a suggested interest. Clean export 1093/1093; trial merge with MAIN `f560fc9` conflicts only in docs/BACKLOG.md (keep both). Parked: LinkedIn/TikTok/Meta store interest as PROVIDER via leadanswers.js (different rule from Q3's suggestion); intent carry-through.
+| Q12 | Person page shows raw "form_programme" etc.; plain labels in FIELD_LABEL (found by CHANNELS in Q8) | MAIN, after Q9 | SENT 05.10 |
+Next patch so far: MAIN `f560fc9` (+Q9, Q12) · APPLICATIONS `cd42945` · CLOSURE `71c3a83` · CHANNELS `1ea73ae`. On Ritvars's GO only.
