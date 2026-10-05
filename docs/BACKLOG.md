@@ -14,6 +14,25 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - Q23: every Home figure a traced click; bigger donut and card figures; no peak label
+
+Ritvars to MAIN, 05.10, with a screenshot of production Home: "why doesnt it occupy the whole page? ALso, not all
+metrics are clickable with traced links to according tab, where it came from. The pie can be much bigger, to take up
+its space. The metrics in the cards admitted, leads, conversion, median time, can be bigger. Why does the time change
+from 38 days to 52 days? Ive seen both today. Also, in admissions we still have 16 admitted, but only for september we
+have this text. WHY? Delete that above the graph 16 admitted. It is hover over info." Shots seen, "Yes, ship it" (via
+MASTER CONTROL).
+- Every Home figure is a click to where it comes from: Overdue / Due today / No next step -> Next steps; In the Inbox
+  -> Inbox; each stage -> the Journey on it; the whole Admitted card -> Outcomes, admitted in the year; the whole Leads,
+  Conversion and Median cards -> Reports on This year (Leads went to the Inbox and Conversion / Median to This month,
+  where the number differs); month band -> Outcomes for that month; donut slices AND legend rows -> Journey / Outcomes;
+  the donut centre -> People; Cold / Reject -> Outcomes on the tag.
+- The donut fills its column (clamp 150-250px, legend 15px / 18px figures); card figures 42px, Admitted 54px.
+- The always-on peak label ("16 admitted") is gone from the month chart (Home and Reports): every month on hover.
+- 38 vs 52 days: 38 is the synthetic test data in MAIN's pictures, 52 his real data; the median moves as people are
+  admitted. The chart is not drawn taller: frame_drifts locks "wider on a wide screen, not bigger" (30.09).
+test/home_links.test.js. 1138/1138. Shots: `For review/2026-10-05 Q23 Home/`. BUILT, next patch (11).
+
 ## 05.10.2026 - Home: "Open the Journey" in the free cell; Needs you in one row on a phone
 
 Ritvars to MAIN, 05.10, with two screenshots: "less space taken - better. Option 1 for the first, buuuut see screenshot
