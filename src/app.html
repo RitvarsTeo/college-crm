@@ -1614,6 +1614,49 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-chcard .chlist{margin:0;max-width:none;border-top:0}
   html.ui-c .c-chcard .chlist a{padding:12px 18px}
   html.ui-c .c-chcard .chlist li:last-child a{border-bottom:0}
+  /* Q27 A/B (?chinfo=a|b): figures and short labels on the Channels cards; blue in, mustard set aside. */
+  html.ui-c{--ch-in:#29a8df;--ch-out:#E0A526}
+  html.ui-c .c-chcard h3{display:flex;align-items:center}
+  html.ui-c .c-chcard .chh3r{margin-left:auto;display:inline-flex;align-items:center;gap:12px;text-transform:none;letter-spacing:0}
+  html.ui-c .chasof{font-size:11.5px;font-weight:600;color:var(--t3)}
+  html.ui-c .chfigs{display:inline-flex;align-items:baseline;gap:18px;flex-wrap:wrap}
+  html.ui-c .chfig{display:inline-flex;flex-direction:column;line-height:1.15}
+  html.ui-c .chfig b{font-size:17px;font-weight:750;color:var(--ink);font-variant-numeric:tabular-nums}
+  html.ui-c .chfig i{font-style:normal;font-size:11px;font-weight:600;color:var(--t3)}
+  html.ui-c .chfig.is-in b{color:var(--ch-in)}
+  html.ui-c .chfig.is-out b{color:var(--ch-out)}
+  html.ui-c .chfig.is-pull b{font-size:13.5px;font-weight:650}
+  html.ui-c .chtags{display:inline-flex;flex-wrap:wrap;gap:6px}
+  html.ui-c .chtags.is-all span{font-size:11px;text-transform:none;letter-spacing:0}
+  html.ui-c .chtags span{font-size:11.5px;font-weight:550;color:var(--t2);background:var(--surface-2);border:1px solid var(--rule);border-radius:999px;padding:2px 9px}
+  html.ui-c .chinfo.is-a details summary{list-style:none;display:flex;align-items:center;gap:12px;padding:12px 18px;cursor:pointer;border-bottom:1px solid var(--rule)}
+  html.ui-c .chinfo.is-a details summary::-webkit-details-marker{display:none}
+  html.ui-c .chinfo.is-a details summary b{font-weight:550;font-size:14px}
+  html.ui-c .chinfo.is-a details summary .chk{margin-left:auto}
+  html.ui-c .chinfo.is-a details summary::after{content:"\203A";color:var(--t3);font-size:16px;transition:transform .15s}
+  html.ui-c .chinfo.is-a details[open] summary::after{transform:rotate(90deg)}
+  html.ui-c .chinfo.is-a details summary:hover{background:var(--surface-2)}
+  html.ui-c .chinfo.is-a .chcard-in{display:flex;flex-direction:column;gap:10px;padding:12px 18px 14px;background:var(--surface-2);border-bottom:1px solid var(--rule)}
+  html.ui-c .chinfo.is-a li:last-child details:not([open]) summary{border-bottom:0}
+  html.ui-c .c-chcard .chlist a.chgo{display:inline;align-self:flex-start;padding:0;border:0;font-size:12.5px;font-weight:650;color:var(--k-live);background:none}
+  html.ui-c .chinfo.is-b .chlist a{display:grid;grid-template-columns:minmax(0,1fr) 250px 140px;gap:14px;align-items:center}
+  html.ui-c .chinfo.is-b .chlist .chfigs{display:grid;grid-template-columns:44px 70px 1fr;gap:0 12px;align-items:baseline}
+  html.ui-c .chinfo.is-b .chname{display:flex;flex-direction:column;gap:5px;min-width:0}
+  html.ui-c .chinfo.is-b .chlist .chk{margin-left:0;justify-self:end}
+  html.ui-c .c-sheet.c-chcard.chinfo.is-b,html.ui-c .c-sheet.c-chcard.chsis.is-strip{max-width:860px}
+  html.ui-c .chsis-body{display:flex;flex-direction:column;gap:12px;padding:14px 18px 16px}
+  html.ui-c .chchain{display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap}
+  html.ui-c .chchain b{font-size:13.5px;font-weight:650;color:var(--ink);border:1px solid var(--rule);border-radius:8px;padding:4px 10px;background:var(--surface)}
+  html.ui-c .chchain i,html.ui-c .chmap i{font-style:normal;color:var(--t3)}
+  html.ui-c .chmap{display:inline-flex;flex-wrap:wrap;gap:8px 18px}
+  html.ui-c .chmap span{display:inline-flex;align-items:center;gap:6px;font-size:12.5px}
+  html.ui-c .chmap em{font-style:normal;color:var(--t2)}
+  html.ui-c .chmap b{font-weight:650;color:var(--ink)}
+  html.ui-c .chsis.is-strip .chsis-row{display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding:12px 18px}
+  html.ui-c .chsis.is-strip .chsis-row.is-map{padding-top:0;justify-content:space-between}
+  html.ui-c .chsis.is-strip .chsis-t{font-size:14px;font-weight:700}
+  html.ui-c .chsis.is-strip .chk{margin-left:auto}
+  @media (max-width:760px){ html.ui-c .chinfo.is-b .chlist a{grid-template-columns:minmax(0,1fr) auto} html.ui-c .chinfo.is-b .chlist .chfigs{grid-column:1 / -1;order:3} }
   html.ui-c .chk{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--t2);white-space:nowrap}
   html.ui-c .chk::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--rule)}
   html.ui-c .chk.k-live::before{background:var(--k-live)}
@@ -6476,6 +6519,115 @@ function chListHtml(rows, env) {
   }).join('')}</ul>`;
 }
 
+// ------------------------------------------------------- the figures (Q27) --
+// The owner, 05.10.2026, asked for the SIS status apart from the channels and its link to apply,
+// and for the filtering and the pull frequency on the cards: figures and short labels, never
+// paragraphs. On production they come from the rows and the run record; anywhere else from the
+// record's snapshot, which carries its own date. Shown only with ?chinfo=a or ?chinfo=b (an A/B).
+const CH_ZONE = 'Europe/Riga';
+function chRiga(cron, day = new Date()) {
+  const m = /^(\d{1,2}) (\d{1,2}) \* \* \*$/.exec(String(cron || '').trim());
+  if (!m) return null;
+  const at = new Date(Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate(), Number(m[2]), Number(m[1])));
+  return new Intl.DateTimeFormat('en-GB', { timeZone: CH_ZONE, hour: '2-digit', minute: '2-digit', hour12: false }).format(at);
+}
+function chWhen(iso) {
+  const t = Date.parse(iso || '');
+  if (!t) return null;
+  const f = new Intl.DateTimeFormat('en-GB', { timeZone: CH_ZONE, day: '2-digit', month: '2-digit', hour: '2-digit',
+    minute: '2-digit', hour12: false }).formatToParts(new Date(t)).reduce((o, x) => ({ ...o, [x.type]: x.value }), {});
+  return `${f.day}.${f.month} ${f.hour}:${f.minute}`;
+}
+const chDay = (d) => (/^\d{4}-(\d{2})-(\d{2})/.exec(d || '') || []).slice(1).reverse().join('.') || null;
+// the phone's daily catch-up writes pbx_until; the older 'pbx' row is the first manual run
+const CH_RUN = { phone: ['pbx_until', 'phone'], gmail: ['gmail'], sis: ['sis'] };
+function chFacts(c, env, ctx = {}) {
+  const prod = Boolean(env && env.isProduction);
+  const sched = ctx.schedule || {};
+  const rec = chRec(c);
+  const at = chRiga(sched[c.channel]);
+  const pull = c.direction === 'manual' ? 'By hand'
+    : c.direction === 'inbound_poll' ? (at ? 'Daily ' + at : 'Polled') : 'Instant';
+  let counts = null;
+  if (c.direction !== 'manual') {
+    if (prod) counts = { received: c.events || 0, filtered: c.filtered || 0, asOf: null };
+    else if (rec.counts) counts = { received: rec.counts.received || 0, filtered: rec.counts.filtered || 0, asOf: rec.counts.asOf || null };
+  }
+  if (counts) counts.inbox = Math.max(0, counts.received - counts.filtered);
+  let last = null;
+  if (c.direction === 'inbound_poll') {
+    const runs = ctx.runs || {};
+    const run = prod ? (CH_RUN[c.channel] || []).map((k) => runs[k]).find(Boolean) : rec.lastPull;
+    last = run && run.at ? chWhen(run.at) : null;
+  }
+  const pullSub = c.direction === 'manual' ? null : c.direction === 'inbound_poll' ? (last ? 'last ' + last : 'pull') : 'on arrival';
+  return { pull, pullSub, counts, last, filters: c.filters || [] };
+}
+function chSisFacts(rows, env, ctx = {}) {
+  const prod = Boolean(env && env.isProduction);
+  const row = (rows || []).find((r) => r.isIntegration && r.channel === 'sis') || {};
+  const sis = ctx.sis || {};
+  const rec = sis.record || {};
+  const run = prod ? (ctx.runs || {}).sis : rec.lastPull;
+  const fresh = Boolean(run && run.at && (Date.now() - Date.parse(run.at)) < 26 * 3600e3);
+  const ok = prod
+    ? Boolean(row.allSettingsPresent && row.mode !== 'off' && fresh && !(run.detail && run.detail.ok === false))
+    : Boolean(run && run.ok);
+  const map = {};
+  for (const [from, to] of Object.entries(sis.stages || {})) (map[to] = map[to] || []).push(from);
+  const at = chRiga((ctx.schedule || {}).sis);
+  return {
+    chain: ['apply.novikontas.org', 'SIS', 'Intake'],
+    map: Object.entries(map).map(([to, from]) => ({ to, from })),
+    pull: at ? 'Daily ' + at : null,
+    last: run && run.at ? chWhen(run.at) : null,
+    received: prod ? (sis.events || 0) : ((rec.counts || {}).received ?? null),
+    asOf: prod ? null : ((rec.counts || {}).asOf || null),
+    ok,
+  };
+}
+const chFig = (n, label, cls = '') => `<span class="chfig ${cls}"><b>${esc(String(n))}</b><i>${esc(label)}</i></span>`;
+const chAsOf = (asOf) => `<span class="chasof">${asOf ? esc(chDay(asOf)) : 'now'}</span>`;
+const chTags = (f) => (f.filters.length ? `<span class="chtags">${f.filters.map((x) => `<span>${esc(x)}</span>`).join('')}</span>` : '');
+function chSisHtml(f, strip) {
+  const word = f.ok ? '<span class="chk k-live">All good</span>' : '<span class="chk k-owner">Check</span>';
+  const chain = `<span class="chchain">${f.chain.map((x) => `<b>${esc(x)}</b>`).join('<i aria-hidden="true">&rarr;</i>')}</span>`;
+  const map = `<span class="chmap">${f.map.map((m) => `<span><em>${m.from.map(esc).join(' &middot; ')}</em><i aria-hidden="true">&rarr;</i><b>${esc(m.to)}</b></span>`).join('')}</span>`;
+  const figs = `<span class="chfigs">${f.received != null ? chFig(f.received, 'real rows', 'is-in') : ''}${f.pull ? chFig(f.pull, 'pull', 'is-pull') : ''}${f.last ? chFig(f.last, 'last pull', 'is-pull') : ''}</span>`;
+  if (strip) {
+    return `<div class="c-sheet c-chcard chsis is-strip"><div class="chsis-row"><b class="chsis-t">SIS</b>${chain}${figs}${word}</div>
+      <div class="chsis-row is-map">${map}${chAsOf(f.asOf)}</div></div>`;
+  }
+  return `<div class="c-sheet c-chcard chsis"><h3>SIS<span class="chh3r">${chAsOf(f.asOf)}${word}</span></h3>
+    <div class="chsis-body">${chain}${map}${figs}</div></div>`;
+}
+function chInfoHtml(rows, env, ctx, variant) {
+  const act = [...chActive(rows)].sort((a, b) => a.label.localeCompare(b.label));
+  const prod = Boolean(env && env.isProduction);
+  const asOf = prod ? null : ((act.map((c) => chFacts(c, env, ctx).counts).find((x) => x && x.asOf) || {}).asOf || null);
+  const sis = chSisHtml(chSisFacts(rows, env, ctx), variant === 'b');
+  const all = (ctx.filtersAll || []).length ? `<span class="chtags is-all">${ctx.filtersAll.map((x) => `<span>${esc(x)} &middot; every channel</span>`).join('')}</span>` : '';
+  if (variant === 'b') {
+    return `${sis}<div class="c-sheet c-chcard chinfo is-b"><h3>Channels<span class="chh3r">${all}${chAsOf(asOf)}</span></h3>
+      <ul class="chlist">${act.map((c) => {
+        const st = chState(c, env); const f = chFacts(c, env, ctx);
+        const figs = f.counts ? chFig(f.counts.received, 'in', 'is-in') + chFig(f.counts.filtered, 'set aside', 'is-out') : '';
+        return `<li><a href="#/channels/${esc(c.channel)}"><span class="chname"><b>${esc(c.label)}</b>${chTags(f)}</span>
+          <span class="chfigs">${figs}${f.pullSub ? chFig(f.pull, f.pullSub, 'is-pull') : ''}</span>
+          <span class="chk ${st.cls}">${esc(st.word)}</span></a></li>`;
+      }).join('')}</ul></div>`;
+  }
+  return `<div class="c-sheet c-chcard chinfo is-a"><h3>Channels<span class="chh3r">${all}${chAsOf(asOf)}</span></h3>
+    <ul class="chlist">${act.map((c) => {
+      const st = chState(c, env); const f = chFacts(c, env, ctx);
+      const figs = f.counts ? chFig(f.counts.received, 'received', 'is-in') + chFig(f.counts.inbox, 'to the Inbox')
+        + chFig(f.counts.filtered, 'set aside', 'is-out') : '';
+      return `<li><details><summary><b>${esc(c.label)}</b><span class="chk ${st.cls}">${esc(st.word)}</span></summary>
+        <div class="chcard-in"><span class="chfigs">${figs}${f.pullSub ? chFig(f.pull, f.pullSub, 'is-pull') : ''}</span>${chTags(f)}
+        <a class="chgo" href="#/channels/${esc(c.channel)}">Settings and check &rsaquo;</a></div></details></li>`;
+    }).join('')}</ul></div>${sis}`;
+}
+
 async function viewChannels(which) {
   if (!isAdmin()) {
     $('#view').innerHTML = `<h1>Channels</h1>
@@ -6486,6 +6638,13 @@ async function viewChannels(which) {
   const d = await api('/api/admin/channels');
   // Q28 (05.10.2026): the list sits centred on one white card, the shared cards rule (.c-sheet);
   // the title sits where every other page has it.
+  let info = null;
+  try { info = new URLSearchParams(location.search).get('chinfo'); } catch {}
+  if (info === 'a' || info === 'b') {
+    $('#view').innerHTML = `<p class="c-crumb">Settings</p><div class="c-head"><div><h1>Channels</h1></div></div>
+      ${chInfoHtml(d.channels || [], d.environment || null, { schedule: d.schedule, runs: d.runs, sis: d.sis, filtersAll: d.filtersAll }, info)}`;
+    return;
+  }
   $('#view').innerHTML = `<p class="c-crumb">Settings</p><div class="c-head"><div><h1>Channels</h1></div></div>
     <div class="c-sheet c-chcard">${chListHtml(d.channels || [], d.environment || null)}</div>`;
 }
