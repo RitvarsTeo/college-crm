@@ -131,6 +131,7 @@ test('All people can list exactly the cold ones, for marketing', () => {
   assert.equal(ctx.m({ status: 'Not proceeding', closed_tag: 'reject' }, null, f, known), false);
   assert.equal(ctx.m({ status: 'Not proceeding', closed_tag: null }, null, f, known), false);
   assert.equal(ctx.m({ status: 'New', closed_tag: null }, null, f, known), false);
-  const j = APP.indexOf('function cPeopleFilters(');
-  assert.match(APP.slice(j, j + 1500), /CFG\.closedTags/, 'the choices come from config.closedTags');
+  // Q47: People is the Journey now; Cold / Reject is the filter on its Not proceeding column
+  const j = APP.indexOf('function cDrawJourneyPool(');
+  assert.match(APP.slice(j, APP.indexOf('\n}\n', j)), /const tags = \(CFG\.closedTags \|\| \[\]\)/, 'the choices come from config.closedTags');
 });

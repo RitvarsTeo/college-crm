@@ -17,8 +17,8 @@ const view = (name) => { const i = APP.indexOf(name); assert.ok(i >= 0, name); r
 test('Add lead lives with the leads, and the Inbox holds only what the channels brought in', () => {
   assert.ok(!/openAdd\(\)/.test(view('async function viewLeadsC()')), 'no add button on the Inbox');
   const add = /<button class="btn" onclick="openAdd\(\)">Add lead<\/button>/;
-  assert.match(view('function cDrawJourney('), add, 'on the Journey');
-  assert.match(view('function cDrawPeople('), add, 'on All people');
+  assert.match(view('function cDrawJourney('), add, 'on the Journey board');
+  assert.match(view('function cDrawJourneyPool('), add, 'on the Journey list, which is everyone since Q47');
   assert.ok(!APP.includes('>Add person</button>'), 'one name for one action');
 });
 
@@ -47,8 +47,8 @@ test('the same call / write links are on the People row and the Journey person c
   // 29.09.2026: tel: and mailto: existed in exactly ONE place in the whole app, the Next Steps row.
   // People and the person card printed the same phone and email as dead text, so "piezvanīt vai
   // uzrakstīt" only worked on one of the three screens Ieva actually works in.
-  // cDrawPeople, not viewPeopleC: the view only loads the data, the row is drawn here
-  const people = view('function cDrawPeople()');
+  // Q47: People is the Journey list; cDrawJourneyPool draws the row
+  const people = view('function cDrawJourneyPool()');
   assert.match(people, /cReach\(p\)/, 'the People row calls or writes without opening the profile');
   assert.match(people, /no contact details/, 'and still says so when there is nothing to call');
 

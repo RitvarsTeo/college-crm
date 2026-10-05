@@ -26,7 +26,9 @@ function load() {
   const riga = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Riga', year: 'numeric', month: '2-digit', day: '2-digit' });
   const ctx = {
     CFG, location: { hash: '#/reports' }, C_RPT_PRESET: 'year', RPT: { from: '', to: '' }, C_PCOHORT: null, C_PF: { stage: 'x' }, C_PQ: 'q', C_PEDIT: 'p', C_PMSG: 'm', C_PTAB: 'journey',
-    C_PF_EMPTY: () => ({ stage: '', programme: '', due: '', owner: '', source: '', data: '' }), viewPeopleC() { ctx.drew = true; },
+    C_PF_EMPTY: () => ({ stage: '', programme: '', due: '', owner: '', source: '', data: '' }), viewJourneyPool() { ctx.drew = true; },
+    C_JP: { col: null, view: 'board' }, C_STAGE_OF: new Map([['a', 'Application'], ['b', 'Application'], ['c', 'Application']]),
+    C_OUT_TAG: null, C_OUT_REASON: null, C_OUT_FILTER: null,
     esc: (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])),
     cDay: (iso) => (iso ? riga.format(new Date(iso)) : ''),
     cStage: (id) => ((CFG.stages || []).find((s) => s.id === id) || {}).label || id || '',
@@ -170,9 +172,12 @@ test('a figure opens People on exactly its people, every other filter cleared', 
   assert.deepEqual([...ctx.C_PCOHORT.ids], ['a', 'b', 'c']);
   assert.equal(ctx.C_PQ, '');
   assert.deepEqual(JSON.parse(JSON.stringify(ctx.C_PF)), ctx.C_PF_EMPTY());
-  const draw = fnBody('function cDrawPeople() {');
-  assert.match(draw, /if \(C_PCOHORT\) ps = ps\.filter\(\(p\) => C_PCOHORT\.ids\.has\(p\.id\)\);/, 'People lists only the cohort');
-  assert.match(draw, /C_PCOHORT=null;cDrawPeople\(\)">Show everyone ✕/, 'and one click shows everyone again');
+  // Q47: the Journey lists the cohort, on its column when all of them stand in one stage
+  assert.equal(ctx.C_JP.col, 'Application', 'three people in Application: that column');
+  assert.equal(ctx.C_JP.view, 'list');
+  const draw = fnBody('function cDrawJourneyPool() {');
+  assert.match(draw, /if \(C_PCOHORT\) base = base\.filter\(\(p\) => C_PCOHORT\.ids\.has\(p\.id\)\);/, 'the Journey lists only the cohort');
+  assert.match(draw, /C_PCOHORT=null;cDrawJourneyPool\(\)">Show everyone ✕/, 'and one click shows everyone again');
   assert.match(fnBody('function cChartGo(spec) {'), /if \(kind === 'cohort'\) \{ cGoCohort\(key\); return; \}/, 'bars and columns route through the same door');
   assert.match(fnBody('async function routeC(page, arg) {'), /if \(!\(place === 'people' && page !== 'journey'\)\) C_PCOHORT = null;/, 'a cohort never follows you elsewhere');
 });

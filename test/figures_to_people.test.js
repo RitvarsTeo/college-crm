@@ -23,18 +23,25 @@ const FIGURES = [
   ['Home', 'Leads / Conversion / Median cards', 'function cHomeB(D) {', /onclick="cGoReportYear\('(?:leads|conversion|median)'\);return false">Reports →/],
   ['Home', 'Donut slices and legend', 'function cDonut(rows) {', /data-kgo="\$\{go === 'journey' \? 'journey' : 'outcome\|' \+ go\}"/],
   ['Home', 'Donut centre', 'function cDonut(rows) {', /data-kgo="people"/],
-  ['Home', 'Month bands', 'function cMonthChart(months, year) {', /data-kgo="month\|\$\{m\.month\}\|/],
-  ['Today', 'planned %', 'async function viewTodayC() {', /<a class="c-planned" href="#\/people" onclick="cGoPeople\(\{ stage: 'open' \}\);return false">/],
+  ['Home', 'Month bands', 'function cMonthChart(months, year, fitH = 0) {', /data-kgo="month\|\$\{m\.month\}\|/],
+  ['Today', 'planned %', 'function cTodayPool() {', /<a class="c-planned" href="#\/journey" onclick="cGoPeople\(\{ stage: 'open' \}\);return false">/],
+  // Q47: the same card one level deeper - Home's Needs you is Today's band, each card the click to its people
+  ['Today', 'Needs you cards', 'function cTodayPool() {', /band: cPoolCards\('Today', 'Needs you', groups\.map/],
+  ['Today', 'a card narrows the list', 'function cPoolCards(', /onclick="\$\{pick\}\(this\.dataset\.v\)"><span>\$\{esc\(c\.label\)\}<\/span><b>\$\{c\.n\}<\/b>/],
+  ['Inbox', 'age columns', 'function cInboxPool() {', /band: cPoolBand\('Inbox', cols, C_IP\.col, 'cInboxPick'\)/],
+  ['Journey', 'pool columns', 'function cDrawJourneyPool() {', /band: cPoolBand\('The journey', cols, C_JP\.col, 'cJourneyPick'\)/],
   ['Journey', 'Active journey count', 'function cJourneySummary(', /class="c-jcount" href="#\/people" onclick="cGoPeople\(\{ stage: 'open' \}\)/],
   ['Journey', 'What comes next cells', 'function cJourneySummary(', /onclick="cJfPick\('\$\{key\}', this\.dataset\.v/],
   ['Journey', 'Arrived', 'function cJourneyBand(', /onclick="cGoPeople\(\{ arrived: '\$\{out\.year\}' \}\);return false"><span>Arrived/],
   ['Journey', 'Stage columns', 'function cJourneyBand(', /onclick="cJfPick\('stage', this\.dataset\.v/],
   ['Journey', 'Admitted / Not proceeding', 'function cJourneyBand(', /onclick="C_OUTCOME='Not proceeding';C_OUT_TAG=null"/],
   ['Journey', 'Board column "N overdue"', 'function cDrawJourney() {', /<button type="button" class="c-jover" onclick="cJfOverdue\('\$\{esc\(s\.id\)\}'\)">/],
-  ['Outcomes', 'Admitted / Not proceeding toggle', 'async function viewOutcomesC() {', /onclick="C_OUTCOME='Admitted';viewOutcomesC\(\)"/],
-  ['Outcomes', 'Everybody / Cold / Reject', 'function cTagSplit(', /C_OUT_TAG=/],
+  // Q47: Outcomes are the Journey's last two columns, Cold / Reject the filter on Not proceeding
+  ['Outcomes', 'Admitted / Not proceeding columns', 'function cDrawJourneyPool() {', /\{ id: admitted, label: admitted, n: base\.filter\(\(p\) => p\.status === admitted\)\.length, tone: 'good', sep: true \}/],
+  ['Outcomes', 'Everybody / Cold / Reject', 'function cDrawJourneyPool() {', /cPoolSelect\('Cold \/ Reject', C_OUT_TAG \|\| '', tags, 'C_OUT_TAG=this\.value/],
   ['Outcomes', 'Why they stopped bars', 'function cReasonBreakdown(', /onclick="C_OUT_REASON=this\.dataset\.r;viewOutcomesC\(\)/],
-  ['Menu', 'Today and Inbox badges', 'function installCNav() {', /<a href="#\/today" data-c="today"[^>]*><span>Today<\/span><span class="n" id="cnNext">/],
+  ['Menu', 'Today and Inbox badges', 'function installCNav() {', /<a href="#\/today" data-c="today"[^>]*>\$\{C_ICON\.next\}<span>Today<\/span><span class="n" id="cnNext">/],
+  ['Menu', 'Journey badge', 'function installCNav() {', /<a href="#\/journey" data-c="people"[^>]*>\$\{C_ICON\.journey\}<span>Journey<\/span><span class="n" id="cnJourney">/],
 ];
 
 for (const [screen, figure, where, target] of FIGURES) {
@@ -44,21 +51,30 @@ for (const [screen, figure, where, target] of FIGURES) {
 }
 
 test('Today drops its strip: Home\'s Needs you already says it (no duplicate)', () => {
-  const today = fnBody('async function viewTodayC() {');
+  const today = fnBody('async function viewTodayC() {') + fnBody('function cTodayPool() {');
   assert.doesNotMatch(today.replace(/\/\/[^\n]*/g, ''), /c-todaystrip|waiting in the Inbox/);
-  assert.match(today, /sect\('Overdue', cByPerson\(over\), pTasks, 'over', 'cTodayOver'\)\}\$\{sect\('Due today', cByPerson\(today\), pTasks, 'today', 'cTodayDue'\)\}/, 'the sections keep their counts (people) and carry the anchors');
+  // Q47: Home's figures land on their card, and a section heading keeps its count (people)
+  assert.match(today, /C_TP\.col = \{ cTodayOver: 'over', cTodayDue: 'today', cTodayNone: 'none' \}\[C_TODAY_AT\] \|\| null;/, 'Home lands on the card');
+  assert.match(today, /<h3>\$\{g\.label\}<b\$\{g\.tone && g\.rows\.length && g\.tone !== 'none' \? ` class="c-count \$\{g\.tone\}"` : ''\}>\$\{g\.rows\.length\}<\/b><\/h3>/, 'the sections keep their counts');
 });
 
 test('the helpers land on exactly the cohort', () => {
-  const ctx = { location: { hash: '#/home' }, C_PDATA: null, cDrawPeople() {}, viewTodayC() {}, cDrawJourney() {},
-    C_PF: null, C_PQ: 'x', C_PEDIT: 'p1', C_PMSG: 'x', C_PTAB: 'journey', C_JF: null, C_JFOPEN: 'y' };
+  const ctx = { location: { hash: '#/home' }, C_PDATA: null, viewTodayC() {}, cDrawJourney() {}, cPoolRouteJourney() {},
+    C_PF: null, C_PQ: 'x', C_PEDIT: 'p1', C_PMSG: 'x', C_PTAB: 'journey', C_JF: null, C_JFOPEN: 'y',
+    C_TP: { col: null }, C_JP: { col: 'Application', view: 'board' } };
   vm.runInNewContext([APP.match(/const C_PF_EMPTY = [^\n]*/)[0].replace('const ', 'var '), APP.match(/const C_JF_EMPTY = [^\n]*/)[0].replace('const ', 'var '),
     fnBody('function cGoPeople(filter) {'), APP.match(/function cGoToday\(section\) [^\n]*/)[0], 'var C_TODAY_AT = "";',
     APP.match(/function cJfOverdue\(stage\) [^\n]*/)[0]].join('\n'), ctx);
+  // Q47: Home's No next step opens Today on that card; any other People filter opens the Journey, everyone, as a list
   ctx.cGoPeople({ due: 'none' });
-  assert.equal(ctx.location.hash, '#/people');
-  assert.equal(ctx.C_PF.due, 'none');
+  assert.equal(ctx.location.hash, '#/today');
+  assert.equal(ctx.C_TP.col, 'none');
+  ctx.location.hash = '#/home';
+  ctx.cGoPeople({ arrived: '2026' });
+  assert.equal(ctx.location.hash, '#/journey');
+  assert.equal(ctx.C_PF.arrived, '2026');
   assert.equal(ctx.C_PF.stage, '', 'nothing else narrows it');
+  assert.equal(ctx.C_JP.col, null); assert.equal(ctx.C_JP.view, 'list');
   assert.equal(ctx.C_PQ, '');
   ctx.location.hash = '#/home'; ctx.cGoToday('cTodayOver');
   assert.equal(ctx.location.hash, '#/today'); assert.equal(ctx.C_TODAY_AT, 'cTodayOver');
@@ -87,7 +103,7 @@ test('Cold / Reject only in Outcomes, the donut without Admitted, the board head
   const home = fnBody('function cHomeB(D) {');
   assert.doesNotMatch(home, /cGoClosedTag|ktags/, 'no Cold / Reject on Home');
   assert.doesNotMatch(fnBody('function cJourneyBand('), /cGoClosedTag|kfl-tags/, 'none on the Journey band');
-  assert.match(fnBody('async function viewOutcomesC() {'), /cTagSplit\(np\)/, 'they are in Outcomes');
+  assert.match(fnBody('function cDrawJourneyPool() {'), /isNp && tags\.length \? cPoolSelect\('Cold \/ Reject'/, 'they are on the Journey\'s Not proceeding (Outcomes)');
   assert.match(home, /\['Open', D\.open\.length, 'open', 'journey'\], \['Not proceeding', D\.closed\.length, 'np', 'Not proceeding'\]\]/);
   assert.doesNotMatch(home, /'Admitted', D\.allAdmitted/);
   assert.doesNotMatch(fnBody('function cDrawJourney() {'), /\$\{esc\(s\.label \|\| s\.id\)\} <b>\$\{ps\.length\}<\/b>/, 'the band keeps the stage counts');

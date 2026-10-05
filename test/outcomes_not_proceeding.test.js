@@ -22,11 +22,12 @@ function load() {
 const p = (id, status, extra = {}) => ({ id, name: 'P' + id, status, ...extra });
 
 test('the people come first, the reasons under them', () => {
-  const out = fnBody('async function viewOutcomesC() {');
-  const list = out.indexOf("C_OUTCOME !== 'Admitted' && C_OUT_TAG ? cColdGroups(list, people)");
-  const reasons = out.indexOf('cReasonBreakdown(np, noReason)');
-  const split = out.indexOf('cTagSplit(np)');
-  assert.ok(split > 0 && list > split && reasons > list, 'toggle, Cold / Reject split, the people, then Why they stopped');
+  // Q47: Not proceeding is the Journey's last column; the Cold / Reject filter, the people, then Why they stopped
+  const out = fnBody('function cDrawJourneyPool() {');
+  const split = out.indexOf("cPoolSelect('Cold / Reject'");
+  const list = out.indexOf('body: (isNp && C_OUT_TAG ? cColdGroups(list, people) : cPoolRows(list, row,');
+  const reasons = out.indexOf('cReasonBreakdown(np, np.filter((p) => !p.closed_reason).length)');
+  assert.ok(split > 0 && list > split && reasons > list, 'Cold / Reject filter, the people, then Why they stopped');
 });
 
 test('same person: the duplicate rule (email lower case, phone on its last 8 digits), a different stage only', () => {
@@ -51,9 +52,9 @@ test('same person: the duplicate rule (email lower case, phone on its last 8 dig
 });
 
 test('the mark is shown on Not proceeding rows only', () => {
-  const out = fnBody('async function viewOutcomesC() {');
-  assert.match(out, /\$\{C_OUTCOME !== 'Admitted' \? cSameMark\(p, people\) : ''\}/, 'not on the Admitted list');
+  // Q47: the Journey's rows show it on Not proceeding only (never on Admitted), and so do the Cold / Reject cards
+  assert.match(fnBody('function cDrawJourneyPool() {'), /\$\{p\.status === closed \? cSameMark\(p, people\) : ''\}/, 'not on the Admitted list');
   assert.match(fnBody('function cColdGroups(list, people) {'), /cSameMark\(p, people\)/, 'the Cold / Reject lists are Not proceeding too');
   const uses = (APP.match(/cSameMark\(/g) || []).length;
-  assert.equal(uses, 2, 'used on the two Not proceeding lists and nowhere else');
+  assert.equal(uses, 2, 'used on the Not proceeding lists and nowhere else');
 });

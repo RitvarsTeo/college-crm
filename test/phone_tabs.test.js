@@ -16,16 +16,18 @@ const CSS = APP.slice(APP.indexOf('/* THE PHONE TAB BAR (05.10.2026)'), APP.inde
 test('five tabs in his order, More last; the sheet holds the rest of the menu', () => {
   const f = fnBody('function installCTabs() {');
   const tabs = [...f.matchAll(/tab\('(#\/[a-z/]+)', '([a-z]+)', C_ICON\.[a-z]+, '([A-Za-z ]+)'/g)].map((m) => m[3] + ' ' + m[1]);
-  assert.deepEqual(tabs, ['Home #/home', 'Today #/today', 'Inbox #/leads', 'People #/people']);
+  // Q47 (the owner, 05.10.2026): Home, Inbox, Today, Journey, More
+  assert.deepEqual(tabs, ['Home #/home', 'Inbox #/leads', 'Today #/today', 'Journey #/journey']);
   assert.match(f, /data-t="more"[^>]*onclick="cMoreOpen\(\)">\$\{C_ICON\.more\}<span>More<\/span><\/button><\/div>/);
   const rows = [...f.matchAll(/row\('(#\/[a-z/]+)', C_ICON\.[a-z]+, '([A-Za-z ]+)'\)/g)].map((m) => m[2] + ' ' + m[1]);
-  assert.deepEqual(rows, ['Journey #/journey', 'Outcomes #/outcomes', 'Reports #/reports', 'Settings #/settings', 'Help #/help']);
+  assert.deepEqual(rows, ['Reports #/reports', 'Settings #/settings', 'Help #/help']);
   assert.match(f, /<div class="ctabs" role="navigation"/, 'a div: the generic nav rules (sticky, top:0) never reach it');
 });
 
 test('the counts are the left card\'s own, copied whenever they change', () => {
   const f = fnBody('function installCTabs() {');
-  assert.match(f, /\[\['#cnLeads', '#ctLeads'\], \['#cnNext', '#ctNext'\]\]/);
+  assert.match(f, /\[\['#cnLeads', '#ctLeads'\], \['#cnNext', '#ctNext'\], \['#cnJourney', '#ctJourney'\]\]/);
+  assert.match(f, /const copy = \(\) => \{ b\.innerHTML = a\.innerHTML; b\.className = a\.className; \};/, 'new / total is markup (Q39)');
   assert.match(f, /new MutationObserver\(copy\)\.observe\(a,/);
 });
 
