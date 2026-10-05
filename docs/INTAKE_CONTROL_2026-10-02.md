@@ -301,3 +301,6 @@ MAIN `c3cf6f3`. 1071/1071 clean checkout. Today seen on the release build. `dpl_
 
 ## 04.10 - SEVENTH PATCH LIVE: `e9343d3` (Inbox message + Today step note: 13px slate, 2 lines), pushed
 MAIN `cdef806`. Person-page history keeps the full text (one click away). Open, flagged by MAIN: the amber "NO LOGIN" pill is hard to read on the blue menu (test copies only).
+
+### 05.10 - the app opened on Today, not Home (Ritvars)
+Cause: route() default `location.hash || '#/today'`, unchanged since V1 (`afea424`); Home became the metrics landing later (Ieva 29.09) and the default was never moved. Not caught by 1074 tests or any release look, because every check opened a named route. Fix -> S2 (default #/home + a test that an empty address opens Home). Lesson for the release check: open the bare address, the way a person does.
