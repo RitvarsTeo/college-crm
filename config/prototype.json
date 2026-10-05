@@ -876,11 +876,25 @@
   },
   "emailFilter": {
     "decided": "Ritvars 01.10.2026 (popup A, after the first real edu@ read: 40 emails, most automatic or internal): automatic senders and our own domains are set aside with the reason, kept, never deleted; everyone else goes to the Inbox.",
-    "automaticSender": "^(no-?reply|noreply|do-?not-?reply|mailer-daemon|postmaster)|notification",
+    "widened": "Q31, 05.10.2026, Ritvars on the production Inbox: \"collaguese should not be there!\" and, asked about noreply / Google Chat / Google Forms: \"Yes, filter them\". Applies on arrival on every channel, not only email.",
+    "automaticSender": "no-?reply|do-?not-?reply|mailer-daemon|postmaster|notification",
+    "_automaticSender": "Read anywhere in the part before @. It was anchored at the start until 05.10, so chat-noreply@google.com, forms-receipts-noreply@google.com and novikontas-noreply@m-s-solutions.net got through.",
     "internalDomains": [
       "novikontas.org",
       "novikontas.lv"
-    ]
+    ],
+    "textPatterns": [
+      { "match": "messaged you .{0,120}while you were away", "why": "a Google Chat notification" },
+      { "match": "has new responses", "why": "a Google Forms response notification" }
+    ],
+    "_textPatterns": "Read over the sender name and the start of the message, case-insensitive. Admissions can add a line: match is a regular expression, why is the reason shown in the Filtered view."
+  },
+  "senderKind": {
+    "decided": "Q31, 05.10.2026, for the Inbox groups (Q30): current student = matches a person already admitted, or admitted in the SIS, or writes like a student on a course; possible student = everything else that passes the filter; other = set aside by a rule. A grouping, never a fact about the person: every row says why.",
+    "currentStages": ["Admitted"],
+    "currentSisStatuses": ["admitted", "matriculated"],
+    "studentWords": ["my group", "my course", "my lecturer", "my timetable", "our group", "mana grupa", "manai grupai", "mans kurss", "mūsu grupa", "mūsu grupai", "моя группа"],
+    "_studentWords": "Only words a person already on a course writes about it. Not 'exam' or 'classes': somebody applying asks about the entrance exam (iestājeksāmens) and when classes start."
   },
   "phoneFilter": {
     "decided": "Ritvars 01.10.2026: there will be filtration before calls become New Leads; build it now. An unknown caller still goes to New Leads, where staff assess interest; nobody is a lead until a person qualifies them.",

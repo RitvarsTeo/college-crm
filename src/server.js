@@ -8,7 +8,7 @@ import { seed } from './seed.js';
 import { hasRealData, loadReal } from './real.js';
 import { PROVIDERS, runScenario, runOutbound, runFullDemo, listEvents, getEvent, consentFor, consentSummary, DEMO_SEQUENCE } from './simulator.js';
 import { logEvent, applyEdit, readHistory, MANUAL, AUTOMATIC, EDITABLE_FIELDS, IMMUTABLE_FIELDS, FIELD_LABELS } from './history.js';
-import { stampOpenDay, registerOpenDay, refilterOpenEmail } from './intake.js';
+import { stampOpenDay, registerOpenDay, refilterOpenEmail, refilterOpen } from './intake.js';
 import { queueLeadAnswers } from './leadanswers.js';
 import * as gmailB from '../lib/gmail.js';
 import * as notify from '../lib/notify.js';
@@ -1973,6 +1973,13 @@ export const handle = async (req, res) => {
       return res.end();
     }
     // The email filter over what already waits in the Inbox (popup A, 01.10.2026). Admins only.
+    // Q31: the widened filter over every channel's waiting rows. GET says what it WOULD move and moves
+    // nothing; POST with {"apply": true} moves them. On production only on the owner's yes.
+    if (p === '/api/admin/inbox/refilter' && (req.method === 'GET' || req.method === 'POST')) {
+      if (!(await adminOf(req))) return refuseNotAdmin(res);
+      const b = req.method === 'POST' ? await body(req) : {};
+      return json(res, 200, { ok: true, ...(await refilterOpen(db, { apply: req.method === 'POST' && b.apply === true })) });
+    }
     if (req.method === 'POST' && p === '/api/admin/gmail/refilter') {
       if (!(await adminOf(req))) return refuseNotAdmin(res);
       return json(res, 200, { ok: true, ...(await refilterOpenEmail(db)) });

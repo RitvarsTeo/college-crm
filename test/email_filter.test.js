@@ -65,8 +65,11 @@ test('email filter: the poll sets automatic and internal mail aside, with the re
 
 test('email filter: the items already waiting are set aside by the same rule; nothing else moves', async () => {
   const db = await openDb(':memory:');
+  // rows that arrived BEFORE the rule (since Q31 receive() sets them aside on arrival, so they are
+  // planted here the way production still holds them)
   for (const [i, from] of ['no-reply@zoom.us', 'colleague@novikontas.lv', 'person@m-s-solutions.net', 'anna@gmail.com'].entries()) {
-    await receive(db, { channel: 'gmail', externalId: 'e' + i, email: from, body: 'text ' + i, source: 'provider' });
+    await db.prepare(`INSERT INTO inbound (channel, external_id, received_at, surface_at, contact_email, body, state, source, suggested, suggestion_why)
+      VALUES ('gmail', ?, '2026-10-01T09:00:00Z', '2026-10-01T09:00:00Z', ?, ?, 'new', 'provider', 'unclear', 'planted')`).run('e' + i, from, 'text ' + i);
   }
   await receive(db, { channel: 'phone', externalId: 'c1', phone: '+37120000000', body: 'Missed call', source: 'provider' });
   const r = await refilterOpenEmail(db);
