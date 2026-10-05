@@ -19,8 +19,8 @@ const FIGURES = [
   ['Home', 'Due today', 'function cHomeB(D) {', /need\('Due today', D\.dueToday, "cGoToday\('cTodayDue'\)"/],
   ['Home', 'In the Inbox', 'function cHomeB(D) {', /need\('In the Inbox', D\.inbox, '', '#\/leads'/],
   ['Home', 'No next step', 'function cHomeB(D) {', /need\('No next step', D\.noNext, "cGoPeople\(\{ due: 'none' \}\)"/],
-  ['Home', 'Admitted card', 'function cHomeB(D) {', /onclick="cGoAdmittedYear\(\$\{D\.year\}\);return false">Outcomes →/],
-  ['Home', 'Leads / Conversion / Median cards', 'function cHomeB(D) {', /onclick="cGoReportYear\(\);return false">Reports →/],
+  ['Home', 'Admitted card', 'function cHomeB(D) {', /onclick="cGoReportYear\('admitted'\);return false">Reports →/],   // Q35: all four cards open their Reports tab
+  ['Home', 'Leads / Conversion / Median cards', 'function cHomeB(D) {', /onclick="cGoReportYear\('(?:leads|conversion|median)'\);return false">Reports →/],
   ['Home', 'Donut slices and legend', 'function cDonut(rows) {', /data-kgo="\$\{go === 'journey' \? 'journey' : 'outcome\|' \+ go\}"/],
   ['Home', 'Donut centre', 'function cDonut(rows) {', /data-kgo="people"/],
   ['Home', 'Month bands', 'function cMonthChart(months, year) {', /data-kgo="month\|\$\{m\.month\}\|/],
