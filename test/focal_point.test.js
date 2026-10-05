@@ -26,7 +26,10 @@ test('the hero number is bigger than the other three', () => {
 // range and the download. Home became Today, the work screen, and has no hero figure -
 // its biggest thing is the overdue list, which is the point of it.
 test('Home and Reports each have exactly one hero figure', () => {
-  assert.equal(APP.split('class="khero"').length - 1, 2, 'Home and Reports, one each; Today is work and has none');
+  // Q19 (05.10.2026, not picked): the vitals Home is an ALTERNATIVE Home with its own single hero
+  const vitals = APP.slice(APP.indexOf('function cHomeVitals('), APP.indexOf('\n}\n', APP.indexOf('function cHomeVitals(')));
+  assert.equal(vitals.split('class="khero"').length - 1, 1, 'the vitals Home has one');
+  assert.equal(APP.split('class="khero"').length - 1 - 1, 2, 'Home and Reports, one each; Today is work and has none');
 });
 
 test('conversion shows its sum, not a sentence about it', () => {

@@ -1486,6 +1486,14 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .ktgt-n strong.ktgt-goal{color:var(--ink);box-shadow:inset 0 -2px 0 var(--v-tgt)}
   html.ui-c .ktgt-sec{padding:16px 18px 10px}   /* a c-sheet: the card is the shared CARDS 3 rule. No scene of its own: Home keeps two (KB 08 P5) */
   html.ui-c .ktgt-chart .ktgt-col{fill:var(--v-adm)}
+  /* Q19 (?home2=a|b): the vitals. Needs you and, under it in the space beside the Journey card, Admitted with
+     its target and Leads this month; each card is one click into its depth */
+  html.ui-c .kday.kvitals .kday-sheet{grid-column:1;grid-row:1}
+  html.ui-c .kday.kvitals .kv-row{grid-column:1;grid-row:2;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);margin:0}
+  html.ui-c .kday.kvitals .kday-side{grid-column:2;grid-row:1 / span 2}
+  html.ui-c .kv-go,html.ui-c .kv-tgt{display:block;color:inherit;text-decoration:none}
+  html.ui-c #view .kv-row .kv-go > b{font-weight:750;color:var(--ink-strong)}
+  html.ui-c .kv-go:hover b,html.ui-c .kv-go:focus-visible b{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:4px}
   /* D: the compact card under Needs you, beside the taller Journey card */
   html.ui-c .kday.has-tgt .kday-sheet{grid-column:1;grid-row:1}
   html.ui-c .kday.has-tgt .ktgt-mini{grid-column:1;grid-row:2}
@@ -1513,7 +1521,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .kb-charts .kthree{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:26px}
   @media (max-width:1100px){ html.ui-c .kb-top{grid-template-columns:minmax(0,1fr)} }
   html.ui-c .ktags{display:flex;flex-wrap:wrap;gap:5px;margin:10px 0 0}
-  @media (max-width:1100px){ html.ui-c .kday{grid-template-columns:minmax(0,1fr)} html.ui-c .kday.has-tgt :is(.kday-sheet,.ktgt-mini,.kday-side){grid-column:auto;grid-row:auto} html.ui-c .kb-charts .kthree{grid-template-columns:minmax(0,1fr) minmax(0,1fr)} }
+  @media (max-width:1100px){ html.ui-c .kday{grid-template-columns:minmax(0,1fr)} html.ui-c .kday.has-tgt :is(.kday-sheet,.ktgt-mini,.kday-side){grid-column:auto;grid-row:auto} html.ui-c .kday.kvitals :is(.kday-sheet,.kv-row,.kday-side){grid-column:auto;grid-row:auto} html.ui-c .kb-charts .kthree{grid-template-columns:minmax(0,1fr) minmax(0,1fr)} }
   @media (max-width:760px){ html.ui-c .kb-strip{grid-template-columns:1fr 1fr} html.ui-c .kb-charts .kthree{grid-template-columns:1fr} html.ui-c .kneed b{font-size:34px} }
   /* the kit's per-scene knobs (part 9): when a scene starts and how far apart its pieces are */
   html.ui-c .kflow{--m-delay:.2s;--m-step:90ms}
@@ -2381,6 +2389,8 @@ function installCNav() {
     <a href="#/reports" data-c="reports" title="What is happening">${C_ICON.rep}<span>Reports</span></a>
     <a href="#/settings" data-c="settings" id="cnSettings" class="c-navfoot">${C_ICON.set}<span>Settings</span></a>
   </div>`);
+  // Q19 A/B (?home2=a|b): Reports sits right under Home, Home being the vitals and Reports the depth
+  if (cHome2Mode()) { const nav = document.querySelector('.cnav'); nav.querySelector('a[data-c="home"]').after(nav.querySelector('a[data-c="reports"]')); }
   // No "Open the classic view" link: C is the normal product, and the classic view is a
   // hidden fallback reached only by the address ?ui=classic (the owner, 28.09.2026).
 }
@@ -2493,7 +2503,7 @@ let C_PTAB = 'journey';
 //      last-seen values live in this browser only (a per-viewer convenience); the first visit
 //      bumps nothing, because nothing has changed yet
 // Reduced motion: the kit never turns on, nothing moves, every figure is already final.
-const C_METRICS = ['.kneed b', '.kstrip > div > b', '.kday-st b', '.klegend b', '.kbar > b', '.jb-end > b', '.jb-n',
+const C_METRICS = ['.kneed b', '.kv-go > b', '.kstrip > div > b', '.kday-st b', '.klegend b', '.kbar > b', '.jb-end > b', '.jb-n',
   '.c-col h3 > b', '.kbig', '.c-sum > b', '.kgrow b', '.c-out b'].join(',');
 const cMetricKey = (el, i) => {
   const holder = el.closest('[data-v],[data-kgo],[data-tip]');
@@ -2608,7 +2618,7 @@ async function viewHomeC() {
   const D = await cHomeData();
   $('#view').innerHTML = `<div class="kpage kb">
     <div class="khead"><div><h1 class="c-sr">Home</h1><p class="c-crumb" style="margin:0">Admissions ${D.year} · to ${esc(D.asOf)}</p></div></div>
-    ${cHomeB(D)}
+    ${cHome2Mode() ? cHomeVitals(D, cHome2Mode()) : cHomeB(D)}
     ${D.noNext === null || D.overdue === null || D.inbox === null
       ? '<p class="kgap-note">A dash means that figure did not answer. Nothing here is filled in from an earlier session.</p>' : ''}
     <div class="ktip" role="status" aria-live="polite"></div></div>`;
@@ -2699,6 +2709,49 @@ function cTargetYear(D, G) {
   const legend = `<ul class="klegend inline"><li><i style="background:var(--v-adm)"></i><span>Admitted</span></li>${G.off ? `<li><i style="background:var(--v-off)"></i><span>${esc(G.off.label)}</span></li>` : ''}<li><i class="ln" style="background:var(--v-tgt)"></i><span>Target</span></li></ul>`;
   return `<section class="ksec c-sheet ktgt-sec"><div class="ksh"><h2>Admitted against the target</h2><span class="kt2">${G.rows.length} of ${G.goal}${G.off ? ` · ${esc(G.off.label)} ${G.off.rows.length} of ${G.off.goal}` : ''} · ${D.year}</span>${legend}</div>
     <svg viewBox="0 0 ${W} ${H}" class="kchart ktgt-chart${narrow ? ' narrow' : ''}" role="img" aria-label="${G.rows.length} admitted so far in ${D.year} of the ${G.goal} target${G.off ? `; ${G.off.rows.length} in ${esc(G.off.label)} of ${G.off.goal}` : ''}">${grid}${lines}${cols}${nowAll}${nowOff}${labels}</svg></section>`;
+}
+
+// ---- HOME = THE VITALS (Q19, the owner 05.10.2026) ------------------------------------------------
+// "In HOME, only the most visible CORE, VITALLY NEEDED metrics to go on about the day, make it look simple
+// and nice. And under it, have the reports tab, that goes in deeper data. Anything that HOME has, can be
+// clicked and lead to this deeper data." An A/B he has not picked, so Home is unchanged until he does:
+// ?home2=a the vitals only, ?home2=b the vitals and Admissions by month; in both Reports sits under Home in
+// the menu. Nothing that leaves Home is lost: every figure is in Reports, and the two Reports lacked
+// (admitted by channel, cold / reject) are added there under the same switch.
+function cHome2Mode() {
+  let m = '';
+  try { m = new URLSearchParams(location.search).get('home2') || ''; } catch {}
+  return m === 'a' || m === 'b' ? m : '';
+}
+let C_RPT_ANCHOR = '';
+// Open Reports on a period and scroll to the section that holds the figure clicked on Home.
+function cGoReport(which, anchor) {
+  const y = cTodayIso().slice(0, 4);
+  C_RPT_PRESET = which;
+  RPT = which === 'month' ? { from: cTodayIso().slice(0, 7) + '-01', to: '' } : { from: y + '-01-01', to: '' };
+  C_RPT_ANCHOR = anchor || '';
+  if (location.hash === '#/reports') viewReportsC(); else location.hash = '#/reports';
+}
+function cHomeVitals(D, mode) {
+  const G = cTarget(D);
+  const need = (label, n, href, k) => `<a class="kneed" href="${href}" style="--i:${k}"><span>${esc(label)}</span><b>${cFig(n)}</b></a>`;
+  const now = D.months[D.months.length - 1] || { newLeads: 0, month: cTodayIso().slice(0, 7) };
+  const mo = C_MONTHS[Number(now.month.slice(5)) - 1];
+  const stages = D.stages.map((st) => [st, D.open.filter((p) => p.status === st.id).length]);
+  return `<section class="kday kvitals m-scene" aria-label="Needs you">
+      <div class="kday-sheet"><h2>Needs you</h2><div class="kday-row">
+        ${need('Overdue', D.overdue, '#/today', 0)}${need('Due today', D.dueToday, '#/today', 1)}${need('In the Inbox', D.inbox, '#/leads', 2)}
+        ${D.noNext ? need('No next step', D.noNext, '#/today', 3) : ''}</div></div>
+      <div class="kstrip kb-strip kv-row">
+        <div class="khero"><a class="kv-go" href="#/outcomes" onclick="C_OUTCOME='Admitted';C_OUT_FILTER=null"><span>Admitted</span><b>${D.admitted.length}</b><small>${D.year}</small></a>
+          ${G ? `<a class="kv-tgt" href="#/reports" onclick="cGoReport('year','r-prog');return false">${cTargetMeter(G)}</a>` : ''}</div>
+        <div><a class="kv-go" href="#/reports" onclick="cGoReport('month','r-top');return false"><span>Leads</span><b>${now.newLeads}</b><small>${mo} ${D.year}</small></a></div>
+      </div>
+      <aside class="kday-side"><h3>The journey now</h3>
+        ${stages.map(([st, n], i) => `<a class="kday-st" href="#/journey" onclick="cGoStage('${esc(st.id)}');return false"><span class="c-jn">${i + 1}</span><span>${esc(st.label || st.id)}</span><b>${n}</b></a>`).join('')}
+        <a class="kgrp-go" href="#/journey">Open the Journey →</a></aside>
+    </section>
+    ${mode === 'b' ? `<div class="m-scene kb-charts">${cHomeMonths(D)}</div>` : ''}`;
 }
 
 // ---- B: TODAY FIRST ------------------------------------------------------------
@@ -4153,6 +4206,8 @@ async function viewReportsC() {
   if (RPT.from) qs.set('from', RPT.from);
   if (RPT.to) qs.set('to', RPT.to);
   const r = await api('/api/report' + (qs.toString() ? '?' + qs : ''));
+  // Q19 (?home2=a|b): what leaves Home and Reports did not have yet, from the same people rows Home reads
+  const home2 = cHome2Mode() ? await cPeopleRows() : null;
   const s = r.summary || {};
   const [from, to] = String(r.period.label || '').split(' to ');
   const thisMonth = cTodayIso().slice(0, 7);
@@ -4183,7 +4238,7 @@ async function viewReportsC() {
       <label class="c-date">From <input type="date" value="${esc(from || '')}" onchange="cReportDates(this.value, RPT.to || '${esc(to || '')}')"></label>
       <label class="c-date">To <input type="date" value="${esc(to || '')}" onchange="cReportDates(RPT.from || '${esc(from || '')}', this.value)"></label></div>
     <div class="kpage">
-    <div class="kstrip c-five">
+    <div class="kstrip c-five" id="r-top">
       <div class="khero"><span>New leads</span><b>${s.newLeads ?? 0}</b><small>first contact in these days</small></div>
       <div><span>Applications</span><b>${s.applications ?? 0}</b><small>reached Application or beyond</small></div>
       <div><span>Admitted</span><b>${s.admitted ?? 0}</b><small>in these days</small></div>
@@ -4198,7 +4253,7 @@ async function viewReportsC() {
     <section class="ksec"><div class="ksh"><h2>Twelve months</h2><ul class="klegend inline"><li><i style="background:var(--v-adm)"></i><span>Admitted</span></li><li><i class="ln" style="background:var(--v-lead)"></i><span>New leads</span></li></ul></div>
       ${cMonthChart(months, to ? to.slice(0, 4) : '')}
       <details class="kdet"><summary>Show as a table</summary><table class="ktable"><thead><tr><th>Month</th><th>Admitted</th><th>New leads</th></tr></thead><tbody>${months.map((m) => `<tr><td>${esc(m.month)}</td><td>${m.admitted}</td><td>${m.newLeads}</td></tr>`).join('')}</tbody></table></details></section>
-    <section class="ksec"><div class="ksh"><h2>By programme</h2><span class="kt2">the programmes the KPI sheet reports on</span></div>
+    <section class="ksec" id="r-prog"><div class="ksh"><h2>By programme</h2><span class="kt2">the programmes the KPI sheet reports on</span></div>
       ${cProgBars(r.programmes || [])}</section>
     <div class="c-rgrid">
       ${sect('source', 'Where they came from', 'people who arrived')}
@@ -4208,6 +4263,7 @@ async function viewReportsC() {
       ${sect('nationality', 'Nationality', `recorded for ${cov.nationality?.filled ?? 0} of ${cov.nationality?.of ?? 0}`)}
       ${sect('stage', 'Stage right now', 'everybody, not only these days')}
       ${sect('lost', 'Why people did not proceed', 'all time')}
+      ${home2 ? cReportHome2(home2, r.period, bars) : ''}
       <section class="ksec"><div class="ksh"><h2>From a maritime school</h2></div><p class="c-num">${s.maritimeGraduates ?? 0}</p><p class="c-sub">${cov.education?.filled ?? 0} / ${cov.education?.of ?? 0} have an education recorded</p></section>
     </div>
     <section class="c-apps" id="applications" aria-labelledby="cAppsH">
@@ -4220,6 +4276,18 @@ async function viewReportsC() {
   cWireCharts();
   cWebStats();
   cApplications();
+  if (C_RPT_ANCHOR) { const a = document.getElementById(C_RPT_ANCHOR); C_RPT_ANCHOR = ''; if (a) a.scrollIntoView({ block: 'start' }); }
+}
+// Q19: the two Home figures Reports lacked. Admitted in the period by where they came from (Home showed
+// it for the year), and the cold / reject split of everybody not proceeding (Home showed it under the donut).
+function cReportHome2(people, period, bars) {
+  const inP = (d) => d && d >= period.from && d < period.to;
+  const count = (rows, key) => { const m = new Map(); rows.forEach((p) => { const k = key(p); m.set(k, (m.get(k) || 0) + 1); }); return [...m.entries()].sort((a, b) => b[1] - a[1]).map(([value, n]) => ({ value, count: n })); };
+  const adm = people.filter((p) => p.status === 'Admitted' && inP(p.admitted_at));
+  const np = people.filter((p) => p.status === 'Not proceeding');
+  const tags = (CFG.closedTags || []).map((t) => ({ value: t.label || t.id, count: np.filter((p) => p.closed_tag === t.id).length })).filter((x) => x.count);
+  return `<section class="ksec" id="r-adm-src"><div class="ksh"><h2>Where admitted people came from</h2><span class="kt2">admitted in these days</span></div>${bars('source', count(adm, (p) => p.source_channel || '(not recorded)'))}</section>
+      <section class="ksec" id="r-tags"><div class="ksh"><h2>Cold or reject</h2><span class="kt2">everybody not proceeding</span></div>${bars('tag', tags)}</section>`;
 }
 
 // apply.novikontas.org, from the SIS's web-stats (the owner's popup A, 01.10.2026: a section on Reports).

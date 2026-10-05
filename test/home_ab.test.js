@@ -117,7 +117,8 @@ test('at most TWO scenes on Home (KB 08 P5), and no mark is scaled on arrival', 
 // product, and an old ?home=a link cannot bring A back.
 test('Home is B, always: no switch, no A, and ?home= changes nothing', () => {
   const home = fn('async function viewHomeC(');
-  assert.match(home, /\$\{cHomeB\(D\)\}/, 'Home draws B');
+  // Q19 (05.10.2026, not picked): ?home2=a|b draws the vitals instead; without it Home draws B
+  assert.match(home, /\$\{cHome2Mode\(\) \? cHomeVitals\(D, cHome2Mode\(\)\) : cHomeB\(D\)\}/, 'Home draws B');
   assert.doesNotMatch(home, /cHomeA|homeVariant|chab|Journey first|Today first/, 'and nothing else, with no switch');
   assert.doesNotMatch(APP, /function cHomeA\(|function homeVariant\(|function homeSetVariant\(|homevariant/, 'the A code and the remembered choice are gone');
   assert.doesNotMatch(APP, /get\('home'\)/, 'nothing reads ?home= any more');

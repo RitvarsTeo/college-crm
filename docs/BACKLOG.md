@@ -14,6 +14,25 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - A/B: Home = the vitals, Reports = the depth (Q19), NOT PICKED
+
+Ritvars 05.10 (via MASTER CONTROL): "In HOME, only the most visible CORE, VITALLY NEEDED metrics to go on about the
+day, make it look simple and nice. And under it, have the reports tab, that goes in deeper data. Anything that HOME
+has, can be clicked and lead to this deeper data tab". Supersedes the Q13 placement question.
+- **A - vitals only** (`?home2=a`): Needs you (Overdue, Due today, In the Inbox; No next step only when somebody has
+  none) and, in the space under it beside the Journey card, Admitted 2026 with both target meters (140, NAV + ENG 98)
+  and Leads this month. The journey now on the right. Nothing else; one scene.
+- **B** (`?home2=b`): A plus Admissions by month. Two scenes.
+- In both, Reports sits right under Home in the menu (moved after the menu is drawn; the menu as written is unchanged).
+- Clicks: Overdue / Due today -> Next steps, In the Inbox -> Inbox, a stage -> the Journey on it, Admitted -> Outcomes,
+  the target -> Reports (This year, By programme), Leads -> Reports (This month).
+- **Nothing lost:** Conversion, Median, Leads for the year, the sparklines and deltas, the month chart, Open, the stage
+  split and admitted by programme were already in Reports; the two it lacked - **Where admitted people came from** and
+  **Cold or reject** - are added to Reports under the same switch, computed in app.html from the people rows Home used
+  (src/reports.js untouched).
+No switch = Home, menu and Reports as before. test/home_vitals.test.js; focal_point, home_ab updated for the
+alternative Home. 1107/1107. Shots: `For review/2026-10-05 Q19 Home vitals A-B/`. BUILT behind a switch.
+
 ## 05.10.2026 - Outcomes is back in the menu, after Journey
 
 Ritvars 05.10 (via MASTER CONTROL): "we lost the outcomes tab ... cant open it from the left card"; picked "after
