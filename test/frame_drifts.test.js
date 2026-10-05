@@ -50,13 +50,17 @@ test('Home and Reports are as wide as every other screen: no page cap of their o
     'main carries no cap either: the window is the width');
 });
 
-test('the month chart is drawn WIDER on a wide screen, not bigger', () => {
-  // The viewBox locks height to width, so uncapping a 640x210 chart into a 1600px panel would
-  // make it 525px tall. Drawn 1100 wide at the same height it stays about 290px and spends the
-  // room on the months. Measured at 1890: 1500x286, against 900x295 before.
+test('the month chart is drawn wider on a wide screen, and TALLER where Home has room (Q46)', () => {
+  // 30.09: drawn 1100 wide on a wide screen, so the type kept its size. 05.10.2026 the owner, on Home's empty
+  // space under it: "can be taller" - his newer word replaces the 30.09 "wider, not bigger" lock. The width stays
+  // the drawing's (so the type keeps its size) and the HEIGHT is measured for the screen, 260 to 460 px.
   assert.match(APP, /matchMedia\('\(min-width:1500px\)'\)/, 'there is a wide branch');
-  assert.match(APP, /const W = narrow \? 360 : wide \? 1100 : 640, H = narrow \? 230 : 210/,
-    'wider drawing, same height');
+  assert.match(APP, /const W = narrow \? 360 : wide \? 1100 : 640, H = narrow \? 230 : fitH \|\| 210/,
+    'wider drawing; the height is the fitted one, a phone keeps 230');
+  assert.match(APP, /const want = Math\.max\(260, Math\.min\(460, box\.height \+ spare\)\)/, 'filled to the bottom, 260 to 460 px');
+  assert.match(APP, /svg\.classList\.contains\('narrow'\)\) return false/, 'a phone keeps its height');
+  assert.match(APP, /C_HOME_D = D;\n  cFitMonthChart\(D\);\n  cWireCharts\(\);/, 'fitted before the hover is wired');
+  assert.match(APP, /html\.ui-c \.kb-top > \.ksec:last-child > \.kdonut\{flex:1\}/, 'the donut stays centred in the taller row');
 
   // the CSS cap must step at the SAME width, or the two disagree and the chart jumps
   assert.match(APP, /@media \(min-width:1500px\)\{ html\.ui-c \.kchart\{max-width:1500px\} \}/,

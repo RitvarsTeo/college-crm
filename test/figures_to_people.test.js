@@ -23,7 +23,7 @@ const FIGURES = [
   ['Home', 'Leads / Conversion / Median cards', 'function cHomeB(D) {', /onclick="cGoReportYear\('(?:leads|conversion|median)'\);return false">Reports →/],
   ['Home', 'Donut slices and legend', 'function cDonut(rows) {', /data-kgo="\$\{go === 'journey' \? 'journey' : 'outcome\|' \+ go\}"/],
   ['Home', 'Donut centre', 'function cDonut(rows) {', /data-kgo="people"/],
-  ['Home', 'Month bands', 'function cMonthChart(months, year) {', /data-kgo="month\|\$\{m\.month\}\|/],
+  ['Home', 'Month bands', 'function cMonthChart(months, year, fitH = 0) {', /data-kgo="month\|\$\{m\.month\}\|/],
   ['Today', 'planned %', 'async function viewTodayC() {', /<a class="c-planned" href="#\/people" onclick="cGoPeople\(\{ stage: 'open' \}\);return false">/],
   ['Journey', 'Active journey count', 'function cJourneySummary(', /class="c-jcount" href="#\/people" onclick="cGoPeople\(\{ stage: 'open' \}\)/],
   ['Journey', 'What comes next cells', 'function cJourneySummary(', /onclick="cJfPick\('\$\{key\}', this\.dataset\.v/],

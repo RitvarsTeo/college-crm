@@ -1554,7 +1554,9 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .kstrip .ktgt-n .ktgt-who{display:inline;font-size:12px;font-weight:600;letter-spacing:.02em;color:var(--t3)}
   html.ui-c .ktgt-n strong{font-weight:700;color:var(--ink)}
   html.ui-c .ktgt-n strong.ktgt-goal{color:var(--ink);box-shadow:inset 0 -2px 0 var(--v-tgt)}
-  html.ui-c .kb-top{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:30px;align-items:start}
+  html.ui-c .kb-top{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:30px;align-items:stretch}
+  html.ui-c .kb-top > .ksec:last-child{display:flex;flex-direction:column}   /* Q46: the donut centred in the taller row */
+  html.ui-c .kb-top > .ksec:last-child > .kdonut{flex:1}
   html.ui-c .kb-charts .kthree{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:26px}
   @media (max-width:1100px){ html.ui-c .kb-top{grid-template-columns:minmax(0,1fr)} }
   @media (max-width:1100px){ html.ui-c .kb-charts .kthree{grid-template-columns:minmax(0,1fr) minmax(0,1fr)} }
@@ -2764,9 +2766,38 @@ async function viewHomeC() {
     ${D.noNext === null || D.overdue === null || D.inbox === null
       ? '<p class="kgap-note">A dash means that figure did not answer. Nothing here is filled in from an earlier session.</p>' : ''}
     <div class="ktip" role="status" aria-live="polite"></div></div>`;
+  C_HOME_D = D;
+  cFitMonthChart(D);
   cWireCharts();
   cScenes($('#view'));
 }
+
+// Q46: Home ends near the bottom of the screen. The month chart takes the height left under the page, between
+// 260 and 460 px drawn, at the width it already has; one shared baseline, the bars and the line on one plot as
+// before. On a phone (the narrow drawing) it keeps its height. Measured again when the window is resized.
+let C_HOME_D = null;
+function cFitMonthChart(D) {
+  const svg = document.querySelector('#view .kpage.kb .kchart');
+  const page = document.querySelector('#view .kpage.kb');
+  if (!svg || !page || svg.classList.contains('narrow')) return false;
+  const box = svg.getBoundingClientRect();
+  if (!box.width || !box.height) return false;
+  const spare = window.innerHeight - (page.getBoundingClientRect().bottom + window.scrollY) - 24;
+  const want = Math.max(260, Math.min(460, box.height + spare));
+  const vb = svg.viewBox.baseVal;
+  const H = Math.round((want * vb.width) / box.width);
+  if (Math.abs(H - vb.height) < 4) return false;
+  svg.outerHTML = cMonthChart(D.months, D.year, H);
+  return true;
+}
+let C_FIT_T = 0;
+window.addEventListener('resize', () => {
+  clearTimeout(C_FIT_T);
+  C_FIT_T = setTimeout(() => {
+    if (!C_HOME_D || !document.querySelector('#view .kpage.kb .kchart')) return;
+    if (cFitMonthChart(C_HOME_D)) cWireCharts(document.querySelector('#view .kpage.kb .kchart'));
+  }, 150);
+});
 
 // The month chart and its table, the same in both: one chart, one source.
 function cHomeMonths(D, extraCls = '') {
@@ -2904,7 +2935,7 @@ function cSpark(values, kind) {
     <path d="${d}"/><circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="2.2"/></svg>`;
 }
 
-function cMonthChart(months, year) {
+function cMonthChart(months, year, fitH = 0) {
   if (!months.length) return '<p class="c-empty">No admissions recorded this year yet.</p>';
   // On a phone the chart is drawn for a phone (the review UX pass, 29.09.2026): drawn 640 wide and shrunk to
   // ~330 px, its labels came out at 5-6 px. Drawn 360 wide, they stay about the size they are written.
@@ -2914,7 +2945,10 @@ function cMonthChart(months, year) {
   // the rendered height where it was (about 290 px) and spends the new room on the months instead.
   // The CSS cap steps at the same 1500 px, so the two never disagree.
   const wide = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(min-width:1500px)').matches;
-  const W = narrow ? 360 : wide ? 1100 : 640, H = narrow ? 230 : 210, L = narrow ? 28 : 30, R = 8, T = 14, B = 26, n = months.length;
+  // TALLER WHERE THERE IS ROOM (Q46, the owner 05.10.2026 on Home's empty space under it: "can be taller"; this
+  // replaces the 30.09 "wider, not bigger" lock). fitH is a taller drawing height cFitMonthChart measured for the
+  // screen: the same width, so the type keeps its size and only the plot grows. A phone keeps its height.
+  const W = narrow ? 360 : wide ? 1100 : 640, H = narrow ? 230 : fitH || 210, L = narrow ? 28 : 30, R = 8, T = 14, B = 26, n = months.length;
   const top = Math.max(10, ...months.map((m) => Math.max(m.admitted, m.newLeads)));
   // Gridlines on round numbers (0, 10, 20, 30), never quarters of the top (0, 8, 15, 23).
   const step = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000].find((s) => top / s <= 5) || Math.ceil(top / 5);
@@ -3025,14 +3059,14 @@ function cChartGo(spec) {
   if (location.hash === '#/outcomes') viewOutcomesC(); else location.hash = '#/outcomes';
 }
 
-function cWireCharts() {
+function cWireCharts(only) {
   const page = $('.kpage'); const tip = $('.ktip');
   if (!page || !tip) return;
   const show = (el, x, y) => { const [a, b, c] = el.dataset.tip.split('|'); tip.textContent = '';
     const v = document.createElement('b'); v.textContent = b; tip.appendChild(v);
     const l = document.createElement('span'); l.textContent = a + (c ? ' · ' + c : ''); tip.appendChild(l);
     const box = page.getBoundingClientRect(); tip.style.left = (x - box.left + 14) + 'px'; tip.style.top = (y - box.top + 14) + 'px'; tip.classList.add('on'); el.classList.add('hot'); };
-  page.querySelectorAll('[data-tip]').forEach((el) => {
+  (only || page).querySelectorAll('[data-tip]').forEach((el) => {
     el.addEventListener('pointermove', (e) => show(el, e.clientX, e.clientY));
     el.addEventListener('focus', () => { const r = el.getBoundingClientRect(); show(el, r.left + r.width / 2, r.top); });
     const hide = () => { tip.classList.remove('on'); el.classList.remove('hot'); };

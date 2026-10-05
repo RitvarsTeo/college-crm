@@ -56,7 +56,7 @@ test('bigger figures on the cards, Admitted still the focal point; a bigger donu
 });
 
 test('no figure is printed on one month: every month shows its figures on hover, the same', () => {
-  const chart = fnBody('function cMonthChart(months, year) {');
+  const chart = fnBody('function cMonthChart(months, year, fitH = 0) {');
   assert.doesNotMatch(chart, /kpeak|peakAt| admitted<\/text>/);
   assert.match(chart, /data-tip="\$\{mo\} \$\{m\.month\.slice\(0, 4\)\}\|\$\{m\.admitted\} admitted\|\$\{m\.newLeads\} new leads"/, 'the hover says it');
   assert.doesNotMatch(APP, /\.kpeak\{/);
