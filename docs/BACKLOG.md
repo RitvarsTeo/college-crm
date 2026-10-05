@@ -14,6 +14,18 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - Q44: "No next step" is an amber edge and a "Choose next step" button
+
+Ritvars 05.10 (via MASTER CONTROL), on the Journey board cards: "the no next step prmopt is tooo soft". The soft
+amber-ish TEXT (which KB 08 P5 forbids anyway) is gone everywhere it was: the Journey card, the Today "No next step"
+rows and the person pages (the Journey's side card and the full page). A person with no next step gets the signal
+amber #F7C04F as a MARK - a 3px left edge, like overdue's red (light and dark) - and, in place of the line, the action:
+"Choose next step" (the app's primary button, compact), which opens the existing next-step dialog for that person
+right there, no page change. The counts of such people stay where they were. SIS-held people keep their SIS line.
+Tests: journey_visual (edge, button opens openNewTask for that person, no amber text rule), one_word_per_state,
+sis_holds, aigars_ux_pass. 1171/1171. Shots: `For review/2026-10-05 finals/Q44-*` (3 such cards, made by hiding
+their steps on the page only). BUILT, next patch.
+
 ## 05.10.2026 - Q43: no duplicated figures (his picks from the Q36 list); Today one row per person
 
 Ritvars 05.10 (popup via MASTER CONTROL), from MAIN's duplicates list:

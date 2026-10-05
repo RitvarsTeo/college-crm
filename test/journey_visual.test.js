@@ -27,7 +27,7 @@ function sandbox(today = '2026-09-28') {
   vm.runInNewContext(`${line('const cWhenClass =')}\n${line('const cTask =')}\n${line('const cNotePreview =')}\n${line('const cComment =')}\n${icons}\n${fn('function groupForAction(')}\n${line('const cStepIcon =')}\n${fn('function cLifeFacts(')}\n${line('const C_SIS_HOLDS =')}
 ${line('const cSisHolds =')}
 ${line('const cSisHeld =')}
-${fn('function cJourneyCard(')}\nthis.card = cJourneyCard;`, ctx);
+${line('const cChooseNext =')}\n${fn('function cJourneyCard(')}\nthis.card = cJourneyCard;`, ctx);
   return ctx;
 }
 const person = { id: 'p1', name: 'Example Person' };
@@ -60,7 +60,12 @@ test('the next step is the clearest line: its own element with an arrow, before 
   assert.match(html, /<span class="c-jnext"><svg[^>]*>.*<\/svg><span>Send the invoice<\/span><\/span>/s);
   assert.match(APP, /html\.ui-c \.c-jnext\{[^}]*color:var\(--ink\)/, 'in full ink, not the quiet grey');
   const none = sandbox().card(person, undefined, null);
-  assert.match(none, /<small class="none">No next step<\/small>/, 'no step stays the amber warning it was');
+  // Q44, the owner 05.10.2026: "the no next step prmopt is tooo soft" - the amber is the card's edge, and the line is
+  // the action that fixes it, opening the next-step dialog for that person right there
+  assert.match(none, /class="c-jp row is-none"/, 'the amber edge marks the card');
+  assert.match(none, /<button type="button" class="btn sm c-choose" onclick="event\.stopPropagation\(\);openNewTask\('p1'\)"[^>]*>Choose next step<\/button>/);
+  assert.doesNotMatch(none, /<small class="none">/, 'no soft amber text');
+  assert.doesNotMatch(APP, /\.c-jp small\.none\{color|\.c-what\.none\{color|\.c-next\.none\{[^}]*color:var\(--c-warn\)/, 'amber is never a text colour for no next step');
 });
 
 test('a next step says what KIND it is: one mark per group, and no new colour', () => {
@@ -131,7 +136,7 @@ test('every Journey stage still appears, in the same order, with its own label',
   vm.runInNewContext(`${line('const cWhenClass =')}\n${line('const cTask =')}\n${line('const cNotePreview =')}\n${line('const cComment =')}\n${APP.slice(iconStart, APP.indexOf('\n};', iconStart) + 3)}\n${fn('function groupForAction(')}\n${line('const cStepIcon =')}\n${fn('function cLifeFacts(')}\n${line('const C_SIS_HOLDS =')}
 ${line('const cSisHolds =')}
 ${line('const cSisHeld =')}
-${cardSrc}\n${filters}\n${draw}\ncDrawJourney();`, ctx);
+${line('const cChooseNext =')}\n${cardSrc}\n${filters}\n${draw}\ncDrawJourney();`, ctx);
   // Q43: the header is the stage's number and name; its count is the band's (no <b>count</b> here any more)
   const heads = [...html.matchAll(/<h3><span class="c-jn">(\d+)<\/span>([^<]+?)(?:<button|<\/h3>)/g)].map((m) => [Number(m[1]), m[2]]);
   assert.doesNotMatch(html, /<h3><span class="c-jn">\d+<\/span>[^<]+ <b>\d+<\/b>/, 'no stage count in the board header');

@@ -1140,7 +1140,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-line:focus-visible{outline:2px solid var(--pet);outline-offset:-2px}
   html.ui-c .c-who b{display:block;font-weight:600;overflow-wrap:anywhere}
   html.ui-c .c-who small{display:block;color:var(--t3);font-size:12.5px}
-  html.ui-c .c-what{color:var(--t2)} html.ui-c .c-what.none{color:var(--c-warn)}
+  html.ui-c .c-what{color:var(--t2)}
   /* THE INBOX MESSAGE IS A DETAIL, NOT A NAME (the owner on production, 05.10.2026: "this is too much of font size!
      fix it!"): a whole email body, Google Chat notices and long reply threads filled the screen at full size. The
      message text takes the detail size (13px, slate, normal weight) and stops at two lines; the row opens the whole
@@ -1335,7 +1335,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-cardsub{font-size:13px;color:var(--t3);margin:3px 0 12px}
   html.ui-c .c-next{background:var(--c-accent-bg);border-radius:9px;padding:10px 12px;font-size:13.5px;margin-bottom:12px}
   html.ui-c .c-next b{display:block;font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--t3);margin-bottom:3px}
-  html.ui-c .c-next.none{background:var(--c-sunk);color:var(--c-warn)}
+  html.ui-c .c-next.none{background:var(--c-sunk);box-shadow:inset 3px 0 0 #F7C04F}   /* Q44: the amber is the edge, the words stay ink */
   html.ui-c .c-next .c-row-acts{margin-top:8px}
   html.ui-c .c-card dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:5px 12px;margin:0 0 10px;font-size:13px}
   html.ui-c .c-card dt{color:var(--t3)} html.ui-c .c-card dd{margin:0;overflow-wrap:anywhere}
@@ -1349,7 +1349,9 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-jp{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:8px 10px;cursor:grab;font-size:13px}
   html.ui-c .c-jp b{display:block;font-weight:600;overflow-wrap:anywhere}
   html.ui-c .c-jp small{display:block;color:var(--t3);font-size:12px;margin-top:2px}
-  html.ui-c .c-jp small.none{color:var(--c-warn)}
+  html.ui-c .c-jp.is-none,html.ui-c[data-theme="dark"] .c-jp.is-none{border-left:3px solid #F7C04F;padding-left:8px}   /* Q44: no next step, the signal amber edge (dark named too, as for overdue) */
+  html.ui-c .c-line.is-none{box-shadow:inset 3px 0 0 #F7C04F}
+  html.ui-c .c-choose{margin-top:6px;padding:3px 10px;font-size:12px}
   /* lifecycle facts from the SIS: quiet, one line, the brand blue edge - facts, not warnings */
   html.ui-c .c-life{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
   html.ui-c .c-lifefact{font-size:12.5px;font-weight:600;color:var(--ink);border:1px solid var(--rule);border-left:3px solid var(--c-sis);border-radius:6px;padding:3px 9px;background:var(--surface)}
@@ -3060,10 +3062,10 @@ async function viewTodayC() {
       <div class="c-what">${cStepIcon(t.label)}${esc(cTask(t.label))}${said(byId.get(t.person_id))}</div><div class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</div>
       <div class="c-acts"><button class="btn sm" onclick="event.stopPropagation();openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, ${
         C_TERMINAL.includes((byId.get(t.person_id) || {}).status)}, '${esc(t.person_id)}')">Done</button></div></div>`;
-  const pRow = (p) => `<div class="c-line" tabindex="0" onclick="location.hash='#/person/${esc(p.id)}'">
+  const pRow = (p) => `<div class="c-line is-none" tabindex="0" onclick="location.hash='#/person/${esc(p.id)}'">
       <div class="c-who"><b>${esc(p.name)}</b><small>${esc(p.programme || 'programme not said')} · ${esc(p.status)}</small>${reach(p)}</div>
-      <div class="c-what none">No next step${said(p)}</div><div class="c-when"></div>
-      <div class="c-acts"><button class="btn sm" onclick="event.stopPropagation();openNewTask('${esc(p.id)}')">Plan a next step</button></div></div>`;
+      <div class="c-what">${said(p)}</div><div class="c-when"></div>
+      <div class="c-acts">${cChooseNext(p.id)}</div></div>`;
   // the Overdue and Due today counts carry the urgency badges when there is something in them
   const sect = (title, rows, fn, tone = '', id = '') => `<div class="c-sheet c-nextsheet"${id ? ` id="${id}"` : ''}><h3>${title}<b${tone && rows.length ? ` class="c-count ${tone}"` : ''}>${rows.length}</b></h3>${rows.map(fn).join('') || '<div class="c-empty">None.</div>'}</div>`;
 
@@ -3582,17 +3584,22 @@ function cPersonCard(p, t) {
   const notes = String(p.notes || '');
   return `<aside class="c-card"><h2>${esc(p.name)}</h2> <div class="c-cardsub">${esc(cStage(p.status))} · ${esc(p.programme || 'programme not said')}</div>${cLifeLine(p)}
     <div class="c-next ${open && !t && !cSisHolds(p) ? 'none' : ''}"><b>${open ? 'Next step' : 'Outcome'}</b>${open ? (t ? `${esc(cTask(t.label))} · <span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span>` : cSisHolds(p) ? cSisHeld(p) : 'No next step') : esc(p.status)}
-      ${open ? `<div class="c-row-acts">${t ? `<button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, false, '${esc(p.id)}')">Done</button>` : `<button class="btn sm" onclick="openNewTask('${esc(p.id)}')">Plan a next step</button>`}</div>` : ''}</div>
+      ${open ? `<div class="c-row-acts">${t ? `<button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, false, '${esc(p.id)}')">Done</button>` : `${cChooseNext(p.id)}`}</div>` : ''}</div>
     <dl><dt>Email</dt><dd class="${p.email ? 'c-reach' : 'c-gap'}">${cMailLink(p) || 'not recorded'}</dd><dt>Phone</dt><dd class="${p.phone ? 'c-reach' : 'c-gap'}">${cTelLink(p) || 'not recorded'}</dd>
       <dt>Came from</dt><dd>${esc(cChannel(p.source_channel)[0])}</dd><dt>First contact</dt><dd class="${p.created_at ? '' : 'c-gap'}">${p.created_at ? fmtDate(p.created_at) : 'not recorded'}</dd></dl>
     ${cTalkHtml(p)}
     ${notes ? `<div class="c-notes">${esc(notes.length > 260 ? notes.slice(0, 260) + '…' : notes)}</div>` : ''}
     <div class="c-row-acts"><button class="btn sm ghost" onclick="cEditFromJourney('${esc(p.id)}')">Edit</button><a class="btn sm ghost" href="#/person/${esc(p.id)}">Details →</a></div></aside>`;
 }
+// NO NEXT STEP IS A MARK AND AN ACTION (Q44, the owner 05.10.2026: "the no next step prmopt is tooo soft"). Signal
+// amber is the card's EDGE, never the text colour (KB 08 P5), and in place of the soft line there is the action itself:
+// "Choose next step" opens the next-step dialog right there for that person. The same on the Journey, Today and the
+// person page; the counts of such people stay where they are.
+const cChooseNext = (id) => `<button type="button" class="btn sm c-choose" onclick="event.stopPropagation();openNewTask('${esc(id)}')" onkeydown="event.stopPropagation()">Choose next step</button>`;
 // JOURNEY CARD (the review' feedback #2, 28.09.2026): the name first, then the NEXT STEP as the clearest
 // line on the card - an arrow, ink, with its due day under it. Overdue is red and gives the card a
-// red edge; today is amber text only; an ordinary day is quiet. No next step stays the amber
-// warning it was. The stages, their order and the drag-to-move workflow are unchanged.
+// red edge; today is amber text only; an ordinary day is quiet. No next step has the amber EDGE and the button to
+// choose one (Q44). The stages, their order and the drag-to-move workflow are unchanged.
 const C_JICON = {
   next: '<svg class="c-tico" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9M8.5 4.5 12 8l-3.5 3.5"/></svg>',
   over: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="M8 4.8v3.6M8 10.9v.1"/></svg>',
@@ -3713,12 +3720,13 @@ function cJourneyCard(p, t, sel) {
   const late = w === 'over' ? Math.round((Date.parse(cTodayIso()) - Date.parse(cDay(t.due_at))) / 86400000) : 0;
   const due = !t ? '' : w === 'over' ? `${C_JICON.over}${late} d. overdue`
     : w === 'today' ? `${C_JICON.today}Today` : esc(cDay(t.due_at));
-  const cls = ['c-jp', 'row', sel && p.id === sel.id ? 'c-sel' : '', w === 'over' ? 'is-over' : '', w === 'today' ? 'is-today' : ''].filter(Boolean).join(' ');
+  const none = !t && !cSisHolds(p);
+  const cls = ['c-jp', 'row', sel && p.id === sel.id ? 'c-sel' : '', w === 'over' ? 'is-over' : '', w === 'today' ? 'is-today' : '', none ? 'is-none' : ''].filter(Boolean).join(' ');
   const life = p.sis ? `<small class="c-jlife" title="In the SIS${p.sis.since ? ', by ' + esc(cDay(p.sis.since)) : ''}">SIS: ${esc(p.sis.label)}</small>`
     : cLifeFacts(p).map(([, at, short]) => `<small class="c-jlife" title="From the SIS, by ${esc(cDay(at))}">${esc(short)}</small>`).join('');
   return `<div class="${cls}" draggable="true" data-id="${esc(p.id)}" tabindex="0" onclick="cJOpen('${esc(p.id)}')" onkeydown="if(event.key==='Enter')cJOpen('${esc(p.id)}')"><b>${esc(p.name)}</b>${life}${t
     ? `<span class="c-jnext">${cStepIcon(t.label)}<span>${esc(cTask(t.label))}</span></span><small class="c-jdue${w ? ' ' + w : ''}">${due}</small>`
-    : cSisHolds(p) ? '' : '<small class="none">No next step</small>'}${cComment(p) ? `<small class="c-jnote" title="${esc(p.last_comment || p.notes)}">${esc(cComment(p))}</small>` : ''}</div>`;
+    : cSisHolds(p) ? '' : cChooseNext(p.id)}${cComment(p) ? `<small class="c-jnote" title="${esc(p.last_comment || p.notes)}">${esc(cComment(p))}</small>` : ''}</div>`;
 }
 // JOURNEY FILTERS (the review' feedback 2A, 28.09.2026: real filters, not one-choice pills). Four
 // compact dropdowns - Programme, Overdue / Today, Owner, Came from - offering only the values the
@@ -4106,7 +4114,7 @@ async function viewPersonC(id) {
     ? (t ? `<div class="c-next"><b>Next step</b><div class="c-next-row"><span>${esc(cTask(t.label))}</span><span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span>${t.owner ? `<span class="c-gap-soft">${esc(t.owner)}</span>` : ''}</div>
         <div class="c-row-acts"><button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, false, '${esc(p.id)}')">Done</button><button class="btn sm ghost" onclick="openReschedule(${Number(t.id)})">Move the date</button></div></div>`
       : cSisHolds(p) ? `<div class="c-next"><b>Next step</b>${cSisHeld(p)}<div class="c-row-acts"><button class="btn sm ghost" onclick="openNewTask('${esc(p.id)}')">Plan a next step</button></div></div>`
-      : `<div class="c-next none"><b>Next step</b>No next step<div class="c-row-acts"><button class="btn sm" onclick="openNewTask('${esc(p.id)}')">Plan a next step</button></div></div>`)
+      : `<div class="c-next none"><b>Next step</b>No next step<div class="c-row-acts">${cChooseNext(p.id)}</div></div>`)
     : `<div class="c-next c-finished"><b>Outcome</b>${p.status === (CFG.stageRoles || {}).closed ? `<span class="c-no">✕</span>${esc(cStage(p.status))}${cTagLabel(p) ? ' · ' + esc(cTagLabel(p)) : ''}${p.closed_reason ? ' · ' + esc(p.closed_reason) : ' · <span class="c-gap">reason not recorded</span>'}${p.closed_note ? `<div class="c-evt-body">${esc(p.closed_note)}</div>` : ''}` : `<span class="c-ok">✓</span>${esc(cStage(p.status))}${p.admitted_at ? ' on ' + fmtDate(p.admitted_at) : ''}`}${t ? `
         <div class="c-still"><b>Still open</b><div class="c-next-row"><span>${esc(cTask(t.label))}</span><span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span></div>
         <div class="c-row-acts"><button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, true, '${esc(p.id)}')">Done</button><button class="btn sm ghost" onclick="openReschedule(${Number(t.id)})">Move the date</button></div></div>` : ''}</div>`;
