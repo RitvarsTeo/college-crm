@@ -1,7 +1,7 @@
 // Q12, 05.10.2026: a person never reads a code name. The answers a form carries (src/adapters.js
-// WEBSITE_ANSWERS) are stored under keys like form_programme; the chip on a person's page shows
-// FIELD_LABEL's words for them, never the key. The keys are read from adapters.js itself, so an
-// answer added there without a label fails here.
+// WEBSITE_ANSWERS, renamed FORM_ANSWERS by CHANNELS Q8) are stored under keys like form_programme;
+// the chip on a person's page shows FIELD_LABEL's words for them, never the key. The keys are read
+// from adapters.js itself, so an answer added there without a label fails here.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -16,9 +16,12 @@ const ADAPTERS = fs.readFileSync(path.join(ROOT, 'src', 'adapters.js'), 'utf8');
 const block = APP.slice(APP.indexOf('const FIELD_LABEL = {'), APP.indexOf('const fieldCell ='));
 const ctx = { esc: (s) => String(s), PROV_TITLE: {} };
 vm.runInNewContext(block.replace(/^const /gm, 'var '), ctx);
-const keys = Object.values(vm.runInNewContext('(' + ADAPTERS.match(/const WEBSITE_ANSWERS = (\{[^}]*\})/)[1] + ')'));
+// The map is WEBSITE_ANSWERS here and FORM_ANSWERS once CHANNELS Q8 (1ea73ae) lands: either name is read.
+const MAP = ADAPTERS.match(/const (?:WEBSITE|FORM)_ANSWERS = (\{[^}]*\})/);
+const keys = MAP ? Object.values(vm.runInNewContext('(' + MAP[1] + ')')) : null;
 
 test('every form answer has a plain label on the person page, never its snake_case key', () => {
+  assert.ok(keys, 'src/adapters.js has no const WEBSITE_ANSWERS or FORM_ANSWERS map: the form answers moved, so this test must be pointed at them');
   assert.deepEqual(keys.sort(), ['form_company', 'form_programme', 'form_study_form', 'heard_from']);
   for (const k of keys) {
     const label = ctx.FIELD_LABEL[k];
