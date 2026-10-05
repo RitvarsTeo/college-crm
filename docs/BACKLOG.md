@@ -14,6 +14,13 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - Q38: the Help center link is centred under the theme switch
+
+Ritvars 05.10 (via MASTER CONTROL), on the menu foot: "center the help center." The link's box is the switch's (the
+same 20px start, capped at the switch's 240px) and the link is centred in it, so both share one centre line at any
+menu width. Measured at 1440: switch 118.5px, link 118.5px, light and dark. The phone page foot is unchanged.
+test/nav_and_home.test.js. 1169/1169. BUILT, next patch.
+
 ## 05.10.2026 - Q37: "The journey now" leaves Home
 
 Ritvars 05.10 (via MASTER CONTROL): "The journey now. Do we need it on home?" Picked: drop it - its stage counts

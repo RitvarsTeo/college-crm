@@ -95,3 +95,11 @@ test('People is everyone, Journey and Outcomes are its children, and there is no
   assert.doesNotMatch(APP, /cPeopleTabs|class="c-ptabs"/, 'the Journey | All people tab row is gone');
   assert.match(fn('function cDrawJourney('), /<p class="c-crumb"><a href="#\/people">People<\/a><\/p>\s*<div class="c-head"><div><h1>Journey<\/h1>/);
 });
+
+// Q38, the owner 05.10.2026: "center the help center." In the menu foot the link sits on the theme switch's centre line.
+test('the Help center link is centred under the theme switch', () => {
+  assert.match(APP, /html\.ui-c \.shell > nav \.c-foot\{max-width:240px;box-sizing:content-box;justify-content:center\}/,
+    'the same box as the switch (20px start, 240px cap), the link centred in it');
+  assert.match(APP, /html\.ui-c \.theme-switch\{[^}]*width:100%;max-width:240px;/, 'the switch it lines up with');
+  assert.match(APP, /html\.ui-c \.c-themebar\{display:block;margin-top:12px;padding:12px 20px 0;/, 'and its 20px start');
+});
