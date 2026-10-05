@@ -316,6 +316,12 @@ each as a working version and says so on screen.
   Officer Programs)". Form: MAIN (UI/UX) shows A/B, Ritvars picks.
 - **D-C8 - the Cold list goes to MAIN as A/B** ("For Cold list, also send it to uiux session, and lets
   see visual A/B's"). Marketing's own needs beyond it stay with Aigars + Tetiana.
+- **Stage moves are documented (Ritvars 05.10, extends D-C5).** "Going back and in overall moving stages
+  should be documented, so notes box its for this." Picked: **a move BACK needs a note before it
+  saves; a move FORWARD asks for one but can be skipped.** One-click reasons for the move plus free
+  text, so the required note is quick. Who / from / to / when stay recorded as today. The form
+  (inline line under the card vs a pop-up) is MAIN's A/B. Today no stage move asks for anything
+  except Not proceeding (`src/app.html` 3246, 3854, 5289, 6700; History says "changed by hand").
 - **D-C7 DECIDED - no guardian field for now** (Ritvars, popup "Leave out for now"): applicants come after
   secondary or maritime school, so most are adults. Parked; one optional box if Ieva asks for it.
   Education, study form and nationality stay as built.
