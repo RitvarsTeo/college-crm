@@ -132,7 +132,9 @@ test('every Journey stage still appears, in the same order, with its own label',
 ${line('const cSisHolds =')}
 ${line('const cSisHeld =')}
 ${cardSrc}\n${filters}\n${draw}\ncDrawJourney();`, ctx);
-  const heads = [...html.matchAll(/<h3><span class="c-jn">(\d+)<\/span>([^<]+) <b>/g)].map((m) => [Number(m[1]), m[2]]);
+  // Q43: the header is the stage's number and name; its count is the band's (no <b>count</b> here any more)
+  const heads = [...html.matchAll(/<h3><span class="c-jn">(\d+)<\/span>([^<]+?)(?:<button|<\/h3>)/g)].map((m) => [Number(m[1]), m[2]]);
+  assert.doesNotMatch(html, /<h3><span class="c-jn">\d+<\/span>[^<]+ <b>\d+<\/b>/, 'no stage count in the board header');
   assert.deepEqual(heads, open.map((s, i) => [i + 1, s.label || s.id]), 'numbered 1..n, labels exactly as configured');
 });
 

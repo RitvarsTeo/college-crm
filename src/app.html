@@ -1171,6 +1171,9 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   /* Q36: the figures that are clicks to their people */
   html.ui-c a.c-planned{color:inherit;text-decoration:none}
   html.ui-c a.c-jcount{color:inherit;text-decoration:none}
+  /* Q43: a person's several tasks inside one Today row, each with its own when and Done */
+  html.ui-c .c-tline{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px}
+  html.ui-c .c-tline + .c-tline{margin-top:6px;padding-top:6px;border-top:1px dashed var(--rule2)}
   html.ui-c a.c-jcount:hover{text-decoration:underline}
   html.ui-c a.c-planned:hover b{text-decoration:underline}
   html.ui-c button.c-jover{font:inherit;cursor:pointer;border:0}
@@ -1458,7 +1461,6 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c[data-theme="dark"] .kflow{box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
   html.ui-c[data-theme="dark"] .c-summary{--k-well:radial-gradient(120% 80% at 50% 0%,#17456e 0%,rgba(23,69,110,0) 60%),linear-gradient(180deg,#0f2f4f 0%,#0f2f4f 45%,#08182e 100%);
     --k-well-line:rgba(194,211,222,.14)}
-  html.ui-c .kfl-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
 
   /* THE JOURNEY BAND: Arrived | the stages on ONE baseline and ONE scale | the outcomes */
   html.ui-c .jband-row{display:grid;grid-template-columns:120px minmax(0,1fr) 170px;gap:14px;align-items:end}
@@ -1553,7 +1555,6 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .kb-top{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:30px;align-items:start}
   html.ui-c .kb-charts .kthree{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:26px}
   @media (max-width:1100px){ html.ui-c .kb-top{grid-template-columns:minmax(0,1fr)} }
-  html.ui-c .ktags{display:flex;flex-wrap:wrap;gap:5px;margin:10px 0 0}
   @media (max-width:1100px){ html.ui-c .kb-charts .kthree{grid-template-columns:minmax(0,1fr) minmax(0,1fr)} }
   @media (max-width:760px){ html.ui-c .kb-strip{grid-template-columns:1fr 1fr} html.ui-c .kb-charts .kthree{grid-template-columns:1fr} html.ui-c .kneed b{font-size:34px} }
   /* the kit's per-scene knobs (part 9): when a scene starts and how far apart its pieces are */
@@ -2689,9 +2690,7 @@ async function cHomeData() {
   const todayRows = sum && Array.isArray(sum.today) ? sum.today : null;
   return {
     year, s, months, people, admitted, undated, progs, chans, stages, open, closed,
-    allAdmitted: people.filter((p) => p.status === 'Admitted').length,
     // Admissions, 30.09: cold and reject, for statistics and to aim marketing at the cold ones
-    tags: (CFG.closedTags || []).map((t) => [t.id, t.label || t.id, closed.filter((p) => p.closed_tag === t.id).length]),
     overdue: overdueRows ? new Set(overdueRows.map((t) => t.person_id)).size : null,
     dueToday: todayRows ? new Set(todayRows.map((t) => t.person_id)).size : null,
     noNext: sum && typeof sum.noNextAction === 'number' ? sum.noNextAction : null,
@@ -2798,9 +2797,7 @@ function cHomeB(D) {
       <div class="kb-top">
       ${cHomeMonths(D)}
         <section class="ksec"><div class="ksh"><h2>Where everyone is now</h2><span class="ksrc">click a slice</span></div>${cDonut([
-          ['Open', D.open.length, 'open', 'journey'], ['Admitted', D.allAdmitted, 'adm', 'Admitted'], ['Not proceeding', D.closed.length, 'np', 'Not proceeding']])}
-          ${D.tags.some(([, , n]) => n > 0) ? `<p class="ktags">${D.tags.filter(([, , n]) => n > 0).map(([id, label, n]) =>
-            `<a href="#/outcomes" onclick="cGoClosedTag('${esc(id)}');return false" class="kfl-tag t-${esc(id)}">${esc(label)} <b>${n}</b></a>`).join('')}</p>` : ''}</section>
+          ['Open', D.open.length, 'open', 'journey'], ['Not proceeding', D.closed.length, 'np', 'Not proceeding']])}</section>
       </div>
     </div>`;
 }
@@ -3050,6 +3047,14 @@ async function viewTodayC() {
   const byId = new Map(people.map((p) => [p.id, p]));
   const reach = (p) => (!p ? '' : `<small class="c-reach">${cReach(p) || '<span class="c-gap">no email or phone</span>'}</small>`);
   const said = (p) => (p && cComment(p) ? `<small class="c-nnote" title="${esc(p.last_comment || p.notes)}">${esc(cComment(p))}</small>` : '');
+  const done = (t) => `<button class="btn sm" onclick="event.stopPropagation();openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, ${
+        C_TERMINAL.includes((byId.get(t.person_id) || {}).status)}, '${esc(t.person_id)}')">Done</button>`;
+  // ONE ROW PER PERSON (Q43, the owner 05.10.2026: the app is about finding people), so Home's Overdue / Due today -
+  // a count of people - is the number of rows that open. Somebody with several tasks keeps them all inside the row.
+  const pTasks = (ts) => ts.length === 1 ? tRow(ts[0]) : `<div class="c-line" tabindex="0" onclick="location.hash='#/person/${esc(ts[0].person_id)}'">
+      <div class="c-who"><b>${esc(ts[0].name)}</b><small>${esc(ts[0].programme || 'programme not said')} · ${esc(ts[0].status)}</small>${reach(byId.get(ts[0].person_id))}</div>
+      <div class="c-what">${ts.map((t) => `<div class="c-tline">${cStepIcon(t.label)}${esc(cTask(t.label))} <span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span>${done(t)}</div>`).join('')}${said(byId.get(ts[0].person_id))}</div>
+      <div class="c-when"></div><div class="c-acts"></div></div>`;
   const tRow = (t) => `<div class="c-line" tabindex="0" onclick="location.hash='#/person/${esc(t.person_id)}'">
       <div class="c-who"><b>${esc(t.name)}</b><small>${esc(t.programme || 'programme not said')} · ${esc(t.status)}</small>${reach(byId.get(t.person_id))}</div>
       <div class="c-what">${cStepIcon(t.label)}${esc(cTask(t.label))}${said(byId.get(t.person_id))}</div><div class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</div>
@@ -3074,8 +3079,14 @@ async function viewTodayC() {
   $('#view').innerHTML = `
     <div class="c-head"><div><h1>Today</h1></div>
       <div class="act"><a class="c-planned" href="#/people" onclick="cGoPeople({ stage: 'open' });return false"><b>${pct}%</b> planned <small>${open.length - none.length} of ${open.length} open people have a next step</small></a></div></div>
-    ${sect('Overdue', over, tRow, 'over', 'cTodayOver')}${sect('Due today', today, tRow, 'today', 'cTodayDue')}${sect('Coming up', later, tRow)}${sect('No next step', none, pRow)}`;
+    ${sect('Overdue', cByPerson(over), pTasks, 'over', 'cTodayOver')}${sect('Due today', cByPerson(today), pTasks, 'today', 'cTodayDue')}${sect('Coming up', later, tRow)}${sect('No next step', none, pRow)}`;
   if (C_TODAY_AT) { const a = document.getElementById(C_TODAY_AT); C_TODAY_AT = ''; if (a) a.scrollIntoView({ block: 'start' }); }
+}
+// A person's tasks together, in the order they came: one entry per person (Q43).
+function cByPerson(tasks) {
+  const m = new Map();
+  for (const t of tasks || []) { if (!m.has(t.person_id)) m.set(t.person_id, []); m.get(t.person_id).push(t); }
+  return [...m.values()];
 }
 // Home's Overdue and Due today open Today on exactly that section (Q36).
 let C_TODAY_AT = '';
@@ -3840,7 +3851,6 @@ function cJourneyBand(everyone, taskOf, stages, exitMark, out) {
         c.over ? `<i class="jb-over" style="height:${((c.over / c.n) * 100).toFixed(2)}%"></i>` : ''}</span></span>
       <span class="jb-l"><span class="c-jn">${i + 1}</span>${esc(c.label)}</span>
     </button>${exitMark(c.id)}</div>`;
-  const tags = (out.tags || []).filter(([, , n]) => n > 0);
   return `<section class="kflow jband${out.play ? ' m-scene' : ''}" aria-label="The journey">
     <div class="jband-row">
       <a class="jb-end" href="#/people" onclick="cGoPeople({ arrived: '${out.year}' });return false"><span>Arrived</span><b>${out.arrived === null ? '<span class="kgapn" title="not available">—</span>' : out.arrived}</b><small>${out.year}</small></a>
@@ -3850,8 +3860,6 @@ function cJourneyBand(everyone, taskOf, stages, exitMark, out) {
       <div class="jb-outs">
         <a class="jb-end good" href="#/outcomes" onclick="C_OUTCOME='Admitted';C_OUT_FILTER=null"><span>${esc(out.admLabel)}</span><b>${out.adm}</b></a>
         <a class="jb-end" href="#/outcomes" onclick="C_OUTCOME='Not proceeding';C_OUT_TAG=null"><span>${esc(out.npLabel)}</span><b>${out.np}</b>${
-          tags.length ? `<span class="kfl-tags">${tags.map(([id, label, n]) =>
-            `<span role="link" tabindex="0" class="kfl-tag t-${esc(id)}" onclick="event.preventDefault();event.stopPropagation();cGoClosedTag('${esc(id)}')" onkeydown="if(event.key==='Enter'){event.preventDefault();event.stopPropagation();cGoClosedTag('${esc(id)}')}">${esc(label)} <b>${n}</b></span>`).join('')}</span>` : ''}${
           out.unrecorded ? `<small>${out.np - out.unrecorded} with a recorded stage, ${out.unrecorded} without</small>` : ''}</a>
       </div>
     </div></section>`;
@@ -3918,10 +3926,9 @@ function cJourneySummary(everyone, taskOf, stages) {
   const np = all.filter((p) => p.status === roles.closed).length;
   // The outcomes are the band's right-hand bookends now (02.10.2026), so they are not drawn
   // a second time behind the disclosure line: each fact once.
-  const closedTags = (CFG.closedTags || []).map((t) => [t.id, t.label || t.id, all.filter((p) => p.status === roles.closed && p.closed_tag === t.id).length]);
   const band = cJourneyBand(everyone, taskOf, stages, exitMark, {
     adm, np, admLabel: roles.admitted || 'Admitted', npLabel: roles.closed || 'Not proceeding',
-    unrecorded: exits.unrecorded || 0, tags: closedTags,
+    unrecorded: exits.unrecorded || 0,
     arrived: C_JDATA && typeof C_JDATA.arrived === 'number' ? C_JDATA.arrived : null,
     year: C_JDATA && C_JDATA.year ? C_JDATA.year : '', play: Boolean(C_JDATA && C_JDATA.play) });
 
@@ -4041,7 +4048,7 @@ function cDrawJourney() {
     <div class="c-journey c-nosel">${sel ? '<div class="c-jveil" onclick="cJClose()"></div>' : ''}<div style="min-width:0">
       <div class="c-cols" style="grid-template-columns:${stages.map((s) => (sel && sel.status === s.id ? 'minmax(330px, 2.4fr)' : 'minmax(150px, 1fr)')).join(' ')}">${stages.map((s, i) => { const ps = open.filter((p) => p.status === s.id);
         const over = ps.filter((p) => { const t = taskOf.get(p.id); return t && cWhenClass(t.due_at) === 'over'; }).length;
-        return `<div class="c-col" style="--jt:${((i + 1) / stages.length).toFixed(3)}"><h3><span class="c-jn">${i + 1}</span>${esc(s.label || s.id)} <b>${ps.length}</b>${over ? `<button type="button" class="c-jover" onclick="cJfOverdue('${esc(s.id)}')">${over} overdue</button>` : ''}</h3><div class="c-drop" data-stage="${esc(s.id)}">${cJColumn(s.id, ps, taskOf, sel) || '<div class="c-empty" style="padding:8px">empty</div>'}</div></div>`; }).join('')}</div>
+        return `<div class="c-col" style="--jt:${((i + 1) / stages.length).toFixed(3)}"><h3><span class="c-jn">${i + 1}</span>${esc(s.label || s.id)}${over ? `<button type="button" class="c-jover" onclick="cJfOverdue('${esc(s.id)}')">${over} overdue</button>` : ''}</h3><div class="c-drop" data-stage="${esc(s.id)}">${cJColumn(s.id, ps, taskOf, sel) || '<div class="c-empty" style="padding:8px">empty</div>'}</div></div>`; }).join('')}</div>
     </div></div>`;
   if (C_JDATA.play) cScenes($('#view'));
   if (narrow && sel && C_JSEL === sel.id) { const card = document.querySelector('.c-jexp'); if (card && card.scrollIntoView) card.scrollIntoView({ block: 'nearest', inline: 'center' }); }

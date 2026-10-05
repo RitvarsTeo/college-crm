@@ -116,11 +116,11 @@ test('Arrived and the outcomes are the real figures, a failed read is a dash', (
   assert.match(fn('async function viewJourneyC('), /rep\.summary\.newLeads/, 'Arrived is the same report figure Home reads');
 });
 
-test('Cold / Reject keep their exact destination, and a tag nobody carries is not drawn', () => {
+// Q43, the owner 05.10.2026: Cold / Reject only in Outcomes; the band keeps the Not proceeding total.
+test('the band shows no Cold / Reject chips; Not proceeding opens Outcomes, where the split is', () => {
   const html = draw();
-  assert.match(html, /cGoClosedTag\('cold'\)/, 'Cold opens Not proceeding filtered to cold');
-  assert.match(html, /Cold <b>2<\/b>/);
-  assert.doesNotMatch(html, /cGoClosedTag\('reject'\)/, 'nobody rejected, no Reject chip');
+  assert.doesNotMatch(html, /cGoClosedTag|kfl-tags|Cold <b>/, 'no chips on the band');
+  assert.match(html, /onclick="C_OUTCOME='Not proceeding';C_OUT_TAG=null"/);
   assert.match(fn('function cGoClosedTag('), /C_OUTCOME = 'Not proceeding'; C_OUT_FILTER = null; C_OUT_TAG = id;/);
 });
 

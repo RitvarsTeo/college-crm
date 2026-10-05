@@ -75,7 +75,7 @@ test('the loader counts PEOPLE, not tasks: two late tasks on one person are one 
   assert.equal(D.dueToday, 1);
   assert.equal(D.inbox, 6);
   assert.equal(D.admitted.length, 2, 'admitted this year, by their date');
-  assert.deepEqual(D.tags.map((t) => [t[0], t[2]]), [['cold', 2], ['reject', 1]], 'cold and reject counted from closed_tag');
+  assert.equal(D.tags, undefined, 'cold / reject are counted in Outcomes only since 05.10.2026 (Q43)');
 });
 
 test('a read that fails is null, never a remembered figure, and Home says so', async () => {
@@ -93,7 +93,7 @@ test('B: what needs a person comes first, and every figure links to where the pe
   assert.match(html, /href="#\/leads"[^>]*>\s*<span>In the Inbox<\/span><b>6<\/b>/);
   assert.match(html, /<span>No next step<\/span><b>3<\/b>/);
   assert.doesNotMatch(html, /The journey now|kday-side/, 'the journey card left Home on 05.10.2026 (Q37)');
-  assert.match(html, /kdonut">Open=6,Admitted=2,Not proceeding=4/, 'the donut counts the same people');
+  assert.match(html, /kdonut">Open=6,Not proceeding=4/, 'the donut counts the same people: Open and Not proceeding (Q43)');
 });
 
 test('B: the comparison is the last COMPLETE month against the one before, with its basis named', async () => {

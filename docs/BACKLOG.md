@@ -14,6 +14,19 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - Q43: no duplicated figures (his picks from the Q36 list); Today one row per person
+
+Ritvars 05.10 (popup via MASTER CONTROL), from MAIN's duplicates list:
+- YES: Cold / Reject chips only in Outcomes; Home and the Journey band keep only the Not proceeding total.
+- YES: the Journey board's column headers lose their stage number (the band keeps the counts; "N overdue" stays).
+- YES: the Home donut is Open + Not proceeding (centre = their total); Admitted (all years) leaves it, the Admitted
+  card says this year. Slices and legend still open the Journey / Outcomes.
+- NO: Today's "planned %" stays. No change: Open on the Journey and the donut; Arrived stays as the band's start.
+- Today's Overdue and Due today list ONE row per PERSON, their tasks inside it (each with its when and Done), so
+  Home's figure (people) is the rows on arrival: with a second overdue task on one person, Home 21 = Today 21 rows.
+figures_to_people, home_ab, home_links, journey_band, journey_visual follow. 1171/1171.
+Shots: `For review/2026-10-05 finals/Q43-*`. BUILT, next patch.
+
 ## 05.10.2026 - Q41: the Journey band has one baseline and every bar stands on it
 
 Ritvars 05.10 (via MASTER CONTROL), screenshot of the production band: "also the journey has broken line underneath,

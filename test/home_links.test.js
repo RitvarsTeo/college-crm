@@ -32,7 +32,7 @@ test('every Home figure is a click to where it comes from', () => {
   assert.match(donut, /class="khole"[^>]*data-kgo="people"/, 'the centre opens People');
   assert.match(donut, /<li tabindex="0" role="button" data-tip="[^"]*"\s*data-kgo="\$\{go === 'journey' \? 'journey' : 'outcome\|' \+ go\}"/, 'legend rows go where their slice goes');
   assert.match(fnBody('function cChartGo(spec) {'), /if \(kind === 'people'\) \{ location\.hash = '#\/people'; return; \}/);
-  assert.match(HOME, /cGoClosedTag\('\$\{esc\(id\)\}'\)/, 'Cold / Reject open Outcomes on the tag');
+  assert.doesNotMatch(HOME, /cGoClosedTag/, 'Cold / Reject live in Outcomes only (Q43)');
 });
 
 test('the link helpers open the same period as the figure', () => {

@@ -23,7 +23,6 @@ const FIGURES = [
   ['Home', 'Leads / Conversion / Median cards', 'function cHomeB(D) {', /onclick="cGoReportYear\(\);return false">Reports →/],
   ['Home', 'Donut slices and legend', 'function cDonut(rows) {', /data-kgo="\$\{go === 'journey' \? 'journey' : 'outcome\|' \+ go\}"/],
   ['Home', 'Donut centre', 'function cDonut(rows) {', /data-kgo="people"/],
-  ['Home', 'Cold / Reject', 'function cHomeB(D) {', /cGoClosedTag\('\$\{esc\(id\)\}'\)/],
   ['Home', 'Month bands', 'function cMonthChart(months, year) {', /data-kgo="month\|\$\{m\.month\}\|/],
   ['Today', 'planned %', 'async function viewTodayC() {', /<a class="c-planned" href="#\/people" onclick="cGoPeople\(\{ stage: 'open' \}\);return false">/],
   ['Journey', 'Active journey count', 'function cJourneySummary(', /class="c-jcount" href="#\/people" onclick="cGoPeople\(\{ stage: 'open' \}\)/],
@@ -47,7 +46,7 @@ for (const [screen, figure, where, target] of FIGURES) {
 test('Today drops its strip: Home\'s Needs you already says it (no duplicate)', () => {
   const today = fnBody('async function viewTodayC() {');
   assert.doesNotMatch(today.replace(/\/\/[^\n]*/g, ''), /c-todaystrip|waiting in the Inbox/);
-  assert.match(today, /sect\('Overdue', over, tRow, 'over', 'cTodayOver'\)\}\$\{sect\('Due today', today, tRow, 'today', 'cTodayDue'\)\}/, 'the sections keep their counts and carry the anchors');
+  assert.match(today, /sect\('Overdue', cByPerson\(over\), pTasks, 'over', 'cTodayOver'\)\}\$\{sect\('Due today', cByPerson\(today\), pTasks, 'today', 'cTodayDue'\)\}/, 'the sections keep their counts (people) and carry the anchors');
 });
 
 test('the helpers land on exactly the cohort', () => {
@@ -67,4 +66,29 @@ test('the helpers land on exactly the cohort', () => {
   assert.deepEqual(JSON.parse(JSON.stringify(ctx.C_JF.stage)), ['Application']);
   assert.deepEqual(JSON.parse(JSON.stringify(ctx.C_JF.due)), ['over']);
   assert.match(fnBody('function cPeopleMatch('), /if \(f\.arrived && !cDay\(p\.created_at\)\.startsWith\(f\.arrived\)\) return false;/, 'People can count who arrived in a year');
+});
+
+// Q43, the owner 05.10.2026: Today lists ONE row per PERSON in Overdue and Due today, so Home's figure (people) is the
+// number of rows that open, even when somebody has two overdue tasks.
+test('Home\'s Overdue equals Today\'s rows when a person has two overdue tasks', () => {
+  const ctx = {};
+  vm.runInNewContext(fnBody('function cByPerson(tasks) {'), ctx);
+  const over = [{ id: 1, person_id: 'a' }, { id: 2, person_id: 'a' }, { id: 3, person_id: 'b' }, { id: 4, person_id: 'c' }];
+  const rows = ctx.cByPerson(over);
+  const homeOverdue = new Set(over.map((t) => t.person_id)).size;   // how Home counts it (cHomeData)
+  assert.equal(rows.length, homeOverdue, 'three people, three rows');
+  assert.deepEqual(JSON.parse(JSON.stringify(rows.map((r) => r.map((t) => t.id)))), [[1, 2], [3], [4]], 'a person keeps both tasks, in order');
+  assert.match(fnBody('async function cHomeData() {'), /overdueRows \? new Set\(overdueRows\.map\(\(t\) => t\.person_id\)\)\.size : null/);
+  assert.match(fnBody('async function viewTodayC() {'), /const pTasks = \(ts\) => ts\.length === 1 \? tRow\(ts\[0\]\) :/, 'one task: the row as before; several: all inside the row');
+});
+
+// Q43 picks: Cold / Reject only in Outcomes; the donut is Open + Not proceeding; the board headers carry no stage number.
+test('Cold / Reject only in Outcomes, the donut without Admitted, the board headers without their number', () => {
+  const home = fnBody('function cHomeB(D) {');
+  assert.doesNotMatch(home, /cGoClosedTag|ktags/, 'no Cold / Reject on Home');
+  assert.doesNotMatch(fnBody('function cJourneyBand('), /cGoClosedTag|kfl-tags/, 'none on the Journey band');
+  assert.match(fnBody('async function viewOutcomesC() {'), /cTagSplit\(np\)/, 'they are in Outcomes');
+  assert.match(home, /\['Open', D\.open\.length, 'open', 'journey'\], \['Not proceeding', D\.closed\.length, 'np', 'Not proceeding'\]\]/);
+  assert.doesNotMatch(home, /'Admitted', D\.allAdmitted/);
+  assert.doesNotMatch(fnBody('function cDrawJourney() {'), /\$\{esc\(s\.label \|\| s\.id\)\} <b>\$\{ps\.length\}<\/b>/, 'the band keeps the stage counts');
 });
