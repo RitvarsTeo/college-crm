@@ -15,11 +15,11 @@ const HOME = fnBody('function cHomeB(D) {');
 
 test('every Home figure is a click to where it comes from', () => {
   // Needs you and the journey
-  assert.match(HOME, /need\('Overdue', D\.overdue, '', '#\/today', 0\)/);
-  assert.match(HOME, /need\('Due today', D\.dueToday, '', '#\/today', 1\)/);
+  // Q36: Overdue / Due today open exactly that section of Today; No next step opens People on that filter
+  assert.match(HOME, /need\('Overdue', D\.overdue, "cGoToday\('cTodayOver'\)", '#\/today', 0\)/);
+  assert.match(HOME, /need\('Due today', D\.dueToday, "cGoToday\('cTodayDue'\)", '#\/today', 1\)/);
   assert.match(HOME, /need\('In the Inbox', D\.inbox, '', '#\/leads', 2\)/);
-  assert.match(HOME, /need\('No next step', D\.noNext, '', '#\/today', 3\)/);
-  assert.match(HOME, /class="kday-st" href="#\/journey" onclick="cGoStage\(/);
+  assert.match(HOME, /need\('No next step', D\.noNext, "cGoPeople\(\{ due: 'none' \}\)", '#\/people', 3\)/);
   // the four cards: Admitted -> the year's admitted in Outcomes; the other three -> Reports on This year
   assert.match(HOME, /<div class="khero"><span>Admitted<\/span>[^\n]*onclick="cGoAdmittedYear\(\$\{D\.year\}\);return false">Outcomes →<\/a><\/div>/);
   for (const label of ['Leads', 'Conversion', 'Median time to admission'])
@@ -32,7 +32,7 @@ test('every Home figure is a click to where it comes from', () => {
   assert.match(donut, /class="khole"[^>]*data-kgo="people"/, 'the centre opens People');
   assert.match(donut, /<li tabindex="0" role="button" data-tip="[^"]*"\s*data-kgo="\$\{go === 'journey' \? 'journey' : 'outcome\|' \+ go\}"/, 'legend rows go where their slice goes');
   assert.match(fnBody('function cChartGo(spec) {'), /if \(kind === 'people'\) \{ location\.hash = '#\/people'; return; \}/);
-  assert.match(HOME, /cGoClosedTag\('\$\{esc\(id\)\}'\)/, 'Cold / Reject open Outcomes on the tag');
+  assert.doesNotMatch(HOME, /cGoClosedTag/, 'Cold / Reject live in Outcomes only (Q43)');
 });
 
 test('the link helpers open the same period as the figure', () => {

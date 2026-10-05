@@ -40,15 +40,11 @@ test('nothing lost: Reports has By programme and, for good, Where admitted peopl
   assert.match(out, /<h2>Where admitted people came from<\/h2>.*\[source:phone=2,\(not recorded\)=1\]/s, 'admitted in the period, by channel, a gap said as a gap');
 });
 
-test('no empty band under Needs you: the journey in two columns, its link in the free cell; no switch left', () => {
+test('Needs you is the whole row; the journey card and its two-column layout are gone (Q37)', () => {
   const home = fnBody('function cHomeB(D) {');
-  assert.match(home, /<section class="kday kday-fit m-scene" aria-label="Needs you">/);
-  assert.doesNotMatch(APP, /get\('gap'\)|\.gap-1|\.gap-2/, 'the A/B switch and option 2 are gone');
-  assert.match(APP, /html\.ui-c \.kday\.kday-fit\{align-items:stretch;grid-template-columns:minmax\(0,1fr\) 340px\}/, 'both cards end on one line');
-  assert.match(APP, /html\.ui-c \.kday-fit \.kday-side\{display:grid;grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\)/, 'two columns of stages');
-  assert.match(APP, /html\.ui-c \.kday-fit \.kgrp-go\{display:flex;align-items:center;margin:0;padding:3px 4px;border-top:0\}/, 'the link is a cell, not a row of its own');
-  assert.doesNotMatch(APP, /\.kday-fit \.kgrp-go\{grid-column/, 'it is not stretched across both columns');
-  assert.match(APP, /@media \(max-width:1100px\)\{ html\.ui-c \.kday,html\.ui-c \.kday\.kday-fit\{grid-template-columns:minmax\(0,1fr\)\}/, 'one column on a narrow screen');
+  assert.match(home, /<section class="kday m-scene" aria-label="Needs you">/);
+  assert.doesNotMatch(APP, /kday-side|kday-st|kday-fit|kgrp-go|The journey now<\/h3>/, 'nothing of it is left');
+  assert.match(APP, /html\.ui-c \.kday\{display:grid;grid-template-columns:minmax\(0,1fr\);/, 'one column');
 });
 
 test('Reports keeps its place in the menu; no switch moves it', () => {

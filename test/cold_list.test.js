@@ -24,7 +24,7 @@ const cold = (id, programme, extra = {}) => ({ id, name: 'P ' + id, programme, p
 
 test('the pick is the default: a tag in Outcomes is grouped by programme; no switch, no B left', () => {
   const out = fnBody('async function viewOutcomesC() {');
-  assert.match(out, /\$\{C_OUTCOME !== 'Admitted' && C_OUT_TAG \? cColdGroups\(list\) :/, 'Cold and Reject both');
+  assert.match(out, /\$\{C_OUTCOME !== 'Admitted' && C_OUT_TAG \? cColdGroups\(list, people\) :/, 'Cold and Reject both');
   assert.match(out, /\$\{C_OUTCOME !== 'Admitted' && !C_OUT_TAG \? cReasonBreakdown\(np, noReason\) : ''\}/, 'the breakdown on Everybody only');
   assert.doesNotMatch(APP, /cColdMode|\?cold=|coldB|coldRow/, 'the A/B switch and option B are gone');
   const go = fnBody('function cGoClosedTag(id) {');

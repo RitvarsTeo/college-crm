@@ -30,7 +30,7 @@ const place = (() => {
 test('the menu is grouped, and the hairline is the established pattern', () => {
   const nav = APP.slice(APP.indexOf('<div class="cnav"'), APP.indexOf('</div>`);', APP.indexOf('<div class="cnav"')));
   const labels = [...nav.matchAll(/<span>([A-Za-z ]+)<\/span>/g)].map((m) => m[1]);
-  assert.deepEqual(labels, ['Home', 'Admissions', 'Inbox', 'Next steps', 'People', 'Journey', 'Outcomes', 'Reports', 'Settings']);   // locked 05.10.2026: Outcomes back after Journey; People itself is everyone
+  assert.deepEqual(labels, ['Home', 'Admissions', 'Today', 'Inbox', 'People', 'Journey', 'Outcomes', 'Reports', 'Settings']);   // locked 05.10.2026: Outcomes back after Journey; People itself is everyone
   assert.equal((nav.match(/class="kids"/g) || []).length, 2, 'two groups: Admissions and People');
   // the hairline itself, unchanged from the established rule
   assert.match(APP, /html\.ui-c \.cnav \.kids\{margin:1px 0 6px 18px;padding-left:10px;border-left:1px solid var\(--rule\)\}/,
@@ -71,7 +71,7 @@ test('Home is the metrics page and Today is the work; neither does the other job
   assert.match(fn('function cHomeB('), /kstrip/, 'B carries the KPI strip as cards');
   assert.ok(!home.includes("sect('Overdue'"), 'Home does not list the work');
 
-  assert.match(today, /<h1>Next steps<\/h1>/);
+  assert.match(today, /<h1>Today<\/h1>/);
   for (const section of ['Overdue', 'Due today', 'Coming up', 'No next step']) {
     assert.ok(today.includes(`'${section}'`), section + ' is still a section on Today');
   }
@@ -94,4 +94,12 @@ test('People is everyone, Journey and Outcomes are its children, and there is no
     '#/people and #/people/all open everyone, #/journey the Journey');
   assert.doesNotMatch(APP, /cPeopleTabs|class="c-ptabs"/, 'the Journey | All people tab row is gone');
   assert.match(fn('function cDrawJourney('), /<p class="c-crumb"><a href="#\/people">People<\/a><\/p>\s*<div class="c-head"><div><h1>Journey<\/h1>/);
+});
+
+// Q38, the owner 05.10.2026: "center the help center." In the menu foot the link sits on the theme switch's centre line.
+test('the Help center link is centred under the theme switch', () => {
+  assert.match(APP, /html\.ui-c \.shell > nav \.c-foot\{max-width:240px;box-sizing:content-box;justify-content:center\}/,
+    'the same box as the switch (20px start, 240px cap), the link centred in it');
+  assert.match(APP, /html\.ui-c \.theme-switch\{[^}]*width:100%;max-width:240px;/, 'the switch it lines up with');
+  assert.match(APP, /html\.ui-c \.c-themebar\{display:block;margin-top:12px;padding:12px 20px 0;/, 'and its 20px start');
 });

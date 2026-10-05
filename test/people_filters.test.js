@@ -43,12 +43,12 @@ test('every old pill is still a filter, now in a dropdown, and they combine', ()
   assert.equal(m(P({}), T('2026-09-20'), f({ stage: 'New', due: 'over', owner: 'Student Coordinator' }), known), false);
 });
 
-test('the pills are gone; six compact dropdowns in the Journey look, with Clear', () => {
+test('the pills are gone; seven compact dropdowns in the Journey look, with Clear', () => {
   assert.doesNotMatch(APP, /class="c-chip" aria-pressed/);
   const { draw } = sandbox();
   const html = draw([P({}), P({ id: 'y', programme: null, owner: null })]);
   const labels = [...html.matchAll(/<span>([^<]+)<\/span><select aria-label="\1"/g)].map((x) => x[1]);
-  assert.deepEqual(labels, ['Stage', 'Programme', 'Next step', 'Owner', 'Came from', 'Details']);
+  assert.deepEqual(labels, ['Stage', 'Programme', 'Next step', 'Owner', 'Came from', 'Details', 'Arrived']);   // Arrived: Q36, the Journey's Arrived cohort
   assert.match(html, /class="c-jfilters" role="group" aria-label="Filter people"/);
   assert.match(html, /<option value="—">not recorded<\/option>/);
   assert.match(html, /<option value="Student Coordinator">Student Coordinator<\/option>/, 'every configured owner');

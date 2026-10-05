@@ -1,5 +1,5 @@
 // Q16, the owner 05.10.2026: "The Menu is scrollable ..." then "OK, lets do bottom card!" (the phone tab bar).
-// On a phone the sideways-scrolling menu row gives way to five fixed tabs - Home, Inbox, Next steps, People, More -
+// On a phone the sideways-scrolling menu row gives way to five fixed tabs - Home, Today, Inbox, People, More -
 // and More opens a sheet with the rest. A wide screen keeps the left card, unchanged.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -16,7 +16,7 @@ const CSS = APP.slice(APP.indexOf('/* THE PHONE TAB BAR (05.10.2026)'), APP.inde
 test('five tabs in his order, More last; the sheet holds the rest of the menu', () => {
   const f = fnBody('function installCTabs() {');
   const tabs = [...f.matchAll(/tab\('(#\/[a-z/]+)', '([a-z]+)', C_ICON\.[a-z]+, '([A-Za-z ]+)'/g)].map((m) => m[3] + ' ' + m[1]);
-  assert.deepEqual(tabs, ['Home #/home', 'Inbox #/leads', 'Next steps #/today', 'People #/people']);
+  assert.deepEqual(tabs, ['Home #/home', 'Today #/today', 'Inbox #/leads', 'People #/people']);
   assert.match(f, /data-t="more"[^>]*onclick="cMoreOpen\(\)">\$\{C_ICON\.more\}<span>More<\/span><\/button><\/div>/);
   const rows = [...f.matchAll(/row\('(#\/[a-z/]+)', C_ICON\.[a-z]+, '([A-Za-z ]+)'\)/g)].map((m) => m[2] + ' ' + m[1]);
   assert.deepEqual(rows, ['Journey #/journey', 'Outcomes #/outcomes', 'Reports #/reports', 'Settings #/settings', 'Help #/help']);

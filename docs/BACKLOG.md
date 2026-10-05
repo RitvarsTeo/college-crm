@@ -14,6 +14,100 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - Q44: "No next step" is an amber edge and a "Choose next step" button
+
+Ritvars 05.10 (via MASTER CONTROL), on the Journey board cards: "the no next step prmopt is tooo soft". The soft
+amber-ish TEXT (which KB 08 P5 forbids anyway) is gone everywhere it was: the Journey card, the Today "No next step"
+rows and the person pages (the Journey's side card and the full page). A person with no next step gets the signal
+amber #F7C04F as a MARK - a 3px left edge, like overdue's red (light and dark) - and, in place of the line, the action:
+"Choose next step" (the app's primary button, compact), which opens the existing next-step dialog for that person
+right there, no page change. The counts of such people stay where they were. SIS-held people keep their SIS line.
+Tests: journey_visual (edge, button opens openNewTask for that person, no amber text rule), one_word_per_state,
+sis_holds, aigars_ux_pass. 1171/1171. Shots: `For review/2026-10-05 finals/Q44-*` (3 such cards, made by hiding
+their steps on the page only). BUILT, next patch.
+
+## 05.10.2026 - Q43: no duplicated figures (his picks from the Q36 list); Today one row per person
+
+Ritvars 05.10 (popup via MASTER CONTROL), from MAIN's duplicates list:
+- YES: Cold / Reject chips only in Outcomes; Home and the Journey band keep only the Not proceeding total.
+- YES: the Journey board's column headers lose their stage number (the band keeps the counts; "N overdue" stays).
+- YES: the Home donut is Open + Not proceeding (centre = their total); Admitted (all years) leaves it, the Admitted
+  card says this year. Slices and legend still open the Journey / Outcomes.
+- NO: Today's "planned %" stays. No change: Open on the Journey and the donut; Arrived stays as the band's start.
+- Today's Overdue and Due today list ONE row per PERSON, their tasks inside it (each with its when and Done), so
+  Home's figure (people) is the rows on arrival: with a second overdue task on one person, Home 21 = Today 21 rows.
+figures_to_people, home_ab, home_links, journey_band, journey_visual follow. 1171/1171.
+Shots: `For review/2026-10-05 finals/Q43-*`. BUILT, next patch.
+
+## 05.10.2026 - Q41: the Journey band has one baseline and every bar stands on it
+
+Ritvars 05.10 (via MASTER CONTROL), screenshot of the production band: "also the journey has broken line underneath,
+they are all not aligned to the bars." Not reproducible in MAIN's build at 375 / 1000 / 1440 / 1920 (bars' bottoms equal
+the line, tallest label inside), but the construction was fragile: a separate SVG line at a fixed 132px under the
+columns, 22px of headroom. Now each column's plot draws its piece of the line at its own bottom (the bar's bottom IS
+the line), reaching half the gap each side so the pieces meet (0px at every join, measured), and 36px of headroom
+keep the tallest figure and badge inside (34px clear at 1440 with 35/15, 60, 6/2, 5/1, 0). 0 is a flat mark with its
+0 above. Light and dark, 1440 and phone. The kit motion knob --m-dur, set only on the removed line, is declared unset
+at :root so every recipe keeps its own duration. test/journey_band.test.js. 1170/1170.
+Shots (after, production-like counts): `For review/2026-10-05 finals/Q41-*`. BUILT, next patch.
+
+## 05.10.2026 - Q38: the Help center link is centred under the theme switch
+
+Ritvars 05.10 (via MASTER CONTROL), on the menu foot: "center the help center." The link's box is the switch's (the
+same 20px start, capped at the switch's 240px) and the link is centred in it, so both share one centre line at any
+menu width. Measured at 1440: switch 118.5px, link 118.5px, light and dark. The phone page foot is unchanged.
+test/nav_and_home.test.js. 1169/1169. BUILT, next patch.
+
+## 05.10.2026 - Q37: "The journey now" leaves Home
+
+Ritvars 05.10 (via MASTER CONTROL): "The journey now. Do we need it on home?" Picked: drop it - its stage counts
+duplicate the Journey page's band, and the donut's Open slice already opens the Journey. Needs you is the whole row
+(desktop and phone; the phone row of three still fits). The two-column journey layout and the link-in-the-free-cell
+(55e4a8f) went with it: their CSS, the card's entry in the shared CARDS 3 list, its count-up selector and their tests.
+1168/1168. Shots: `For review/2026-10-05 finals/Q37-*`. BUILT, next patch.
+
+## 05.10.2026 - Q36: every figure opens the people it counts; Today drops its strip
+
+Ritvars 05.10 (via MASTER CONTROL), on the Today strip: "when we click on these metrics they actually have to point to
+the cohorts. YOu see the main of the app is to find people, find who they are, or where they are, whats going on with
+them, how can we help. You know. So everything has to be connected with each other, path to path to path. Get it?"
+Then: "Nothing should be duplicated. Its confusing." / "you see in needs you, we already have" - picked: keep Home's
+Needs you, Today drops its strip (open / overdue / no next step / waiting in the Inbox).
+- Home Needs you: Overdue -> Today's Overdue section; Due today -> Today's Due today section; In the Inbox -> Inbox;
+  No next step -> People "Next step: none". Count on arrival = the figure (checked on the preview: 21, 2, 9, 0).
+- Today: no strip; the sections keep their counts; "planned %" -> People Open (its denominator).
+- Journey: Arrived -> People "Arrived 2026" (new People filter, 63 = 63); "Active journey N people" -> People Open;
+  a board column's "N overdue" -> that stage + Overdue (9 = 9); stage columns, What comes next, the bookends as before.
+- Outcomes: each "Why they stopped" reason narrows the list to its people (No response 12 -> 12 rows).
+- People gains the "Arrived" filter (year of first contact).
+test/figures_to_people.test.js walks every figure and its target. 1168/1168. BUILT, next patch.
+
+## 05.10.2026 - Q33: Outcomes > Not proceeding shows the people first; a "same person" mark
+
+Ritvars 05.10 (via MASTER CONTROL): "In peoples tab, the outcomes, we have only admitted, we dont see the not
+proceeding. , ok, we dont have the reasons, but we dont have the people also! SO we have only a number. And cant find
+them even to check if they match someone in the app being ina different stage maybe falsely." Picked in a popup:
+- The people list comes first, under the Admitted / Not proceeding toggle and the Cold / Reject split.
+- "Why they stopped" moves below the list and shows only reasons with at least one person; with none recorded it shows
+  nothing. Both sentences ("... no recorded reason yet ..." and "These are the 10 reasons ...") are gone.
+- A Not proceeding row carries "Same person · name · stage" when its email (trimmed, lower case) or phone (last 8
+  digits) - the duplicate rule of src/identity.js - matches a person in a DIFFERENT stage; the mark opens that person.
+  On the Not proceeding lists only (Everybody, Cold, Reject). Name-only matches are not marked (he said phone or email).
+outcome_reasons tests rewritten to the new rule; test/outcomes_not_proceeding.test.js. 1145/1145.
+Shot: `For review/2026-10-05 finals/Q33-Outcomes-Not-proceeding-people-first-1440-light.png`. BUILT, next patch.
+
+## 05.10.2026 - Q32: the page is TODAY again, first under Admissions (Q29 superseded)
+
+Ritvars 05.10 (via MASTER CONTROL): "Wait, next steps dont make sense for me anymore, as journey should nudge for next
+steps, right? So what if when we click admissions, first is todays work ..., then inbox goes as next step." Picked: keep
+the page, rename it back to TODAY, first under Admissions; Admissions opens Today; Inbox second. This SUPERSEDES the
+"Next steps" name locked earlier the same day and Q29 (Admissions -> Inbox, held, never committed).
+Menu: Home > Admissions (Today [count], Inbox) > People (Journey, Outcomes) > Reports > Settings. "Today" wherever a
+person reads the page name: menu, page title, the reload notice ("Back to Today"), Help boxes 01 Today / 02 Inbox /
+03 Outcomes, the tour step, the phone tab bar (Home, Today, Inbox, People, More). Route #/today; #/admissions opens
+Today. A person's next step (the thing) keeps its words. Order tests and no_crm_word updated. 1142/1142.
+Shots: `For review/2026-10-05 finals/Q32-*`. BUILT, next patch.
+
 ## 05.10.2026 - Q23: every Home figure a traced click; bigger donut and card figures; no peak label
 
 Ritvars to MAIN, 05.10, with a screenshot of production Home: "why doesnt it occupy the whole page? ALso, not all
@@ -31,7 +125,7 @@ MASTER CONTROL).
 - The always-on peak label ("16 admitted") is gone from the month chart (Home and Reports): every month on hover.
 - 38 vs 52 days: 38 is the synthetic test data in MAIN's pictures, 52 his real data; the median moves as people are
   admitted. The chart is not drawn taller: frame_drifts locks "wider on a wide screen, not bigger" (30.09).
-test/home_links.test.js. 1138/1138. Shots: `For review/2026-10-05 Q23 Home/`. BUILT, next patch (11).
+test/home_links.test.js. 1138/1138. Shots: `For review/2026-10-05 Q23 Home/`. LIVE in patch 11 (5c3236a, code 25cb27e, release/2026-10-05-intake-9; verified by MASTER CONTROL 05.10, not re-checked by MAIN).
 
 ## 05.10.2026 - Home: "Open the Journey" in the free cell; Needs you in one row on a phone
 
