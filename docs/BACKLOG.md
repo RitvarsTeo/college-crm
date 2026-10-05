@@ -31,7 +31,7 @@ MASTER CONTROL).
 - The always-on peak label ("16 admitted") is gone from the month chart (Home and Reports): every month on hover.
 - 38 vs 52 days: 38 is the synthetic test data in MAIN's pictures, 52 his real data; the median moves as people are
   admitted. The chart is not drawn taller: frame_drifts locks "wider on a wide screen, not bigger" (30.09).
-test/home_links.test.js. 1138/1138. Shots: `For review/2026-10-05 Q23 Home/`. BUILT, next patch (11).
+test/home_links.test.js. 1138/1138. Shots: `For review/2026-10-05 Q23 Home/`. LIVE in patch 11 (5c3236a, code 25cb27e, release/2026-10-05-intake-9; verified by MASTER CONTROL 05.10, not re-checked by MAIN).
 
 ## 05.10.2026 - Home: "Open the Journey" in the free cell; Needs you in one row on a phone
 

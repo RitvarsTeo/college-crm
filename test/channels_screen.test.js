@@ -100,10 +100,47 @@ test('each line is the channel name and one state word, read from the record', (
   const s = sandbox();
   const words = Object.fromEntries(s.active(apiRows()).map((c) => [c.channel, s.state(c, LOCAL).word]));
   assert.deepEqual({ ...words }, {
-    website: 'Configured', gmail: 'Live', facebook: 'Waiting on Oksana', messenger: 'Waiting on Oksana',
-    instagram: 'Waiting on Oksana', whatsapp: 'Waiting on Oksana', mailchimp: 'Configured', phone: 'Live',
-    agent: 'Blocked', in_person: 'By hand', linkedin: 'Blocked', tiktok: 'Waiting on Oksana',
+    website: 'Live', gmail: 'Live', facebook: 'Waiting on Oksana', messenger: 'Waiting on Oksana',
+    instagram: 'Waiting on Oksana', whatsapp: 'Waiting on Oksana', mailchimp: 'Live', phone: 'Live',
+    agent: 'Live', in_person: 'By hand', linkedin: 'Live', tiktok: 'Waiting on Oksana',
   });
+});
+
+// Q24 (05.10.2026, Ritvars: "why some channels show blocked, when they are not???")
+test('Q24: today no channel reads Blocked, and every word is one of the five', () => {
+  const s = sandbox();
+  for (const env of [LOCAL, PROD]) {
+    for (const c of s.active(apiRows())) {
+      const w = s.state(c, env).word;
+      assert.ok(/^(Live|Configured|By hand|Not decided|Waiting on \S.*)$/.test(w), c.channel + ': ' + w);
+    }
+  }
+});
+
+test('Q24: the owner saying live is live, on production too, with the provider count kept as data', () => {
+  const s = sandbox();
+  for (const id of ['website', 'agent', 'linkedin', 'mailchimp']) {
+    assert.equal(CFG.channels[id].record.ownerSays.state, 'live', id);
+    assert.equal(s.state(byId(apiRows(), id), PROD).word, 'Live', id);
+    assert.ok(CFG.channels[id].record.liveVerified, id + ' keeps its count');
+  }
+  assert.equal(CFG.channels.linkedin.record.blocker, null, 'the leads option is an extra, not a blocker');
+  assert.ok(CFG.channels.linkedin.record.pendingExtra.dependency);
+  assert.equal(CFG.channels.agent.record.blocker, null);
+  assert.match(CFG.channels.agent.record.arrives, /edu@/);
+});
+
+test('Q24: an outside party is waited on by name; nobody named reads Not decided; only a refusal is Blocked', () => {
+  const s = sandbox();
+  const ch = (record) => ({ channel: 'x', label: 'X', direction: 'inbound_webhook', lifecycle: 'active', record });
+  const ext = { dependency: 'their decision', owner: 'LinkedIn / Microsoft vetting', party: 'LinkedIn', action: 'wait', side: 'external', canRefuse: true };
+  assert.deepEqual({ ...s.state(ch({ blocker: ext }), LOCAL) }, { word: 'Waiting on LinkedIn', cls: 'k-owner' });
+  assert.equal(s.state(ch({ blocker: { ...ext, party: undefined } }), LOCAL).word, 'Waiting on LinkedIn / Microsoft vetting');
+  assert.deepEqual({ ...s.state(ch({ blocker: { ...ext, refused: true } }), LOCAL) }, { word: 'Blocked', cls: 'k-prov' });
+  const question = { dependency: 'name the first partner', owner: null, action: 'decide', side: 'internal', canRefuse: false };
+  const nd = s.state(ch({ blocker: question }), LOCAL);
+  assert.deepEqual({ ...nd }, { word: 'Not decided', cls: 'k-none' });
+  assert.deepEqual({ ...s.state(ch({}), LOCAL) }, { word: 'Not decided', cls: 'k-none' }, 'never the provider class');
 });
 
 test('every line is a click to Settings and check, and that is the only control', () => {
@@ -127,12 +164,15 @@ test('no notes, evidence, dates, counts, environment talk or A/B on the screen',
     assert.ok(!APP.includes(gone), 'gone: ' + gone);
   }
   const view = APP.slice(APP.indexOf('async function viewChannels('), APP.indexOf(END));
-  assert.match(view, /\$\('#view'\)\.innerHTML = `<h1>Channels<\/h1>\$\{chListHtml\(/, 'a heading and the list, nothing else');
+  assert.match(view, /\$\('#view'\)\.innerHTML = `<p class="c-crumb">Settings<\/p><div class="c-head"><div><h1>Channels<\/h1><\/div><\/div>\s*<div class="c-sheet c-chcard">\$\{chListHtml\([^`]*\)\}<\/div>`;/,
+    'a heading and the list on one card, nothing else');
 });
 
 test('on production the state reads the real provider rows; locally it takes the record', () => {
   const s = sandbox();
-  const mc = byId(apiRows({ mailchimp: { events: 3, lastEventAt: '2026-10-04T08:00:00Z' } }), 'mailchimp');
+  // a configured channel the owner has NOT called live (Mailchimp's record before 05.10)
+  const base = byId(apiRows({ mailchimp: { events: 3, lastEventAt: '2026-10-04T08:00:00Z' } }), 'mailchimp');
+  const mc = { ...base, record: { ...base.record, ownerSays: undefined } };
   assert.equal(s.state(mc, LOCAL).word, 'Configured', 'a row on this machine proves nothing about production');
   assert.equal(s.state(mc, PROD).word, 'Live');
   assert.equal(s.state(byId(apiRows(), 'phone'), PROD).word, 'Configured', 'no provider row on production: not live');
@@ -199,4 +239,15 @@ test('every row the Channels API returns can say who owns it, and carries the re
   assert.match(fs.readFileSync(path.join(ROOT, 'src', 'channeladmin.js'), 'utf8'), /record: def\.record \|\| null/);
   assert.match(src, /production: CHANNELS\._production \|\| null/);
   assert.match(src, /downstream: CHANNELS\.downstream \|\| null/);
+});
+
+// Q28 (05.10.2026, the owner: "Make the things that are this small, as this table, be in the center if
+// the page on a white card. Match the overall design.")
+test('Q28: the Channels list is one centred card under the shared cards rule, light and dark', () => {
+  assert.match(APP, /html\.ui-c \.c-sheet\.c-chcard\{max-width:640px;margin:0 auto 16px\}/, 'centred');
+  for (const theme of [':not([data-theme="dark"])', '[data-theme="dark"]']) {
+    const i = APP.indexOf('html.ui-c' + theme + ' #view :is(');
+    assert.ok(i > 0 && APP.slice(i, APP.indexOf('{', i)).includes('.c-sheet'), 'the cards rule covers it: ' + theme);
+  }
+  assert.doesNotMatch(APP, /\.c-chcard\{[^}]*(background|box-shadow|border-radius)/, 'no card rule of its own');
 });

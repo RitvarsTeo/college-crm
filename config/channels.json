@@ -59,7 +59,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "29e1792",
+          "commit": "25cb27e",
           "detail": null
         },
         "productionConfigured": {
@@ -86,6 +86,14 @@
           "then": "drop this channel (lifecycle dropped), like Google Form",
           "decidedBy": "Ritvars",
           "decidedOn": "2026-10-04"
+        },
+        "ownerSays": {
+          "state": "live",
+          "by": "Ritvars",
+          "on": "2026-10-05",
+          "source": "Ritvars 05.10 (to MAIN and MASTER CONTROL), word for word",
+          "words": "Website form is live, agent is live (it comes into edu email). Linkedin is live. We jsut waiting on the leads extra option!! not the channel connection itself! Mailchimp is live, i am now connecting the webhook.",
+          "note": "The screen follows his word. liveVerified keeps the provider-row count of the last backup read."
         }
       },
       "scope": "TEMPORARY. Ritvars, 04.10.2026: the Website connection exists ONLY for the forms still live on the English college pages (the enquiry form on college/en and college/en/contacts, and the contact form on college/en/contacts). The website is relaunched in its next version WITH NO FORMS; from then on apply.novikontas.org does all the work and this channel is dropped. The Latvian pages already have no form."
@@ -194,7 +202,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "29e1792",
+          "commit": "25cb27e",
           "detail": "The option-B link (/api/admin/gmail/link) is in the running commit."
         },
         "productionConfigured": {
@@ -284,7 +292,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "29e1792",
+          "commit": "25cb27e",
           "detail": null
         },
         "productionConfigured": {
@@ -372,7 +380,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "29e1792",
+          "commit": "25cb27e",
           "detail": null
         },
         "productionConfigured": {
@@ -460,7 +468,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "29e1792",
+          "commit": "25cb27e",
           "detail": null
         },
         "productionConfigured": {
@@ -552,7 +560,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "29e1792",
+          "commit": "25cb27e",
           "detail": null
         },
         "productionConfigured": {
@@ -633,7 +641,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "29e1792",
+          "commit": "25cb27e",
           "detail": null
         },
         "productionConfigured": {
@@ -654,7 +662,15 @@
           "input": null
         },
         "blocker": null,
-        "destination": "Updates consent on a person we already have. A newsletter subscriber is NOT a lead (rule 24.09)."
+        "destination": "Updates consent on a person we already have. A newsletter subscriber is NOT a lead (rule 24.09).",
+        "ownerSays": {
+          "state": "live",
+          "by": "Ritvars",
+          "on": "2026-10-05",
+          "source": "Ritvars 05.10 (to MAIN and MASTER CONTROL), word for word",
+          "words": "Website form is live, agent is live (it comes into edu email). Linkedin is live. We jsut waiting on the leads extra option!! not the channel connection itself! Mailchimp is live, i am now connecting the webhook.",
+          "note": "He is connecting the audience webhook himself on 05.10; the screen follows his word."
+        }
       }
     },
     "open_day": {
@@ -767,7 +783,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "29e1792",
+          "commit": "25cb27e",
           "detail": null
         },
         "productionConfigured": {
@@ -865,7 +881,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "29e1792",
+          "commit": "25cb27e",
           "detail": null
         },
         "productionConfigured": {
@@ -881,14 +897,28 @@
           "detail": "0 rows from a real provider for this channel"
         },
         "nextAction": null,
-        "blocker": {
-          "dependency": "A decision: which agent or partner we start with, and who at their end sets up the link",
-          "owner": null,
-          "action": "Somebody inside Novikontas names the first partner",
-          "side": "internal",
-          "canRefuse": false
+        "blocker": null,
+        "destination": "A partner submission becomes an enquiry, the agent recorded as the SOURCE, never the owner.",
+        "ownerSays": {
+          "state": "live",
+          "by": "Ritvars",
+          "on": "2026-10-05",
+          "source": "Ritvars 05.10 (to MAIN and MASTER CONTROL), word for word",
+          "words": "Website form is live, agent is live (it comes into edu email). Linkedin is live. We jsut waiting on the leads extra option!! not the channel connection itself! Mailchimp is live, i am now connecting the webhook.",
+          "note": "Partner leads arrive as email in the edu@ mailbox, so they reach Intake on the Email channel, not through the partner webhook."
         },
-        "destination": "A partner submission becomes an enquiry, the agent recorded as the SOURCE, never the owner."
+        "arrives": "As email in the edu@ mailbox: Intake reads them on the Email (Gmail) channel. The partner webhook (/api/inbound/agent) is not in use.",
+        "blockerClosed": {
+          "on": "2026-10-05",
+          "was": {
+            "dependency": "A decision: which agent or partner we start with, and who at their end sets up the link",
+            "owner": null,
+            "action": "Somebody inside Novikontas names the first partner",
+            "side": "internal",
+            "canRefuse": false
+          },
+          "by": "Ritvars 05.10: agent leads come into edu@, so no partner link has to be named for the channel to work"
+        }
       }
     },
     "in_person": {
@@ -932,7 +962,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "29e1792",
+          "commit": "25cb27e",
           "detail": null
         },
         "productionConfigured": {
@@ -1000,7 +1030,7 @@
         },
         "deployed": {
           "state": "partial",
-          "commit": "29e1792",
+          "commit": "25cb27e",
           "detail": "The webhook receiver is deployed. The Lead Sync fetch that turns a notification into a name and email is NOT built."
         },
         "productionConfigured": {
@@ -1015,19 +1045,31 @@
           "source": "production backup _backups/2026-10-04T19-29-00Z (status VERIFIED, 26 tables), counts read 05.10",
           "detail": "0 rows from a real provider for this channel"
         },
-        "nextAction": {
-          "owner": "Oksana",
-          "action": "Ask Natalija to give Ritvars the Campaign Manager account manager role",
-          "input": "Requests for Natalija go through Oksana, never to Natalija directly"
+        "nextAction": null,
+        "blocker": null,
+        "destination": "A Lead Gen Form response becomes an enquiry in the Inbox.",
+        "ownerSays": {
+          "state": "live",
+          "by": "Ritvars",
+          "on": "2026-10-05",
+          "source": "Ritvars 05.10 (to MAIN and MASTER CONTROL), word for word",
+          "words": "Website form is live, agent is live (it comes into edu email). Linkedin is live. We jsut waiting on the leads extra option!! not the channel connection itself! Mailchimp is live, i am now connecting the webhook.",
+          "note": "The Lead Sync API (the leads option) is a pending EXTRA, not the channel connection; it does not change the state."
         },
-        "blocker": {
+        "pendingExtra": {
           "dependency": "LinkedIn's decision on Lead Sync API access (submitted 02.10)",
           "owner": "LinkedIn / Microsoft vetting",
           "action": "Wait for their email at ritvars.vilcins@; answer any vetting questions",
           "side": "external",
-          "canRefuse": true
-        },
-        "destination": "A Lead Gen Form response becomes an enquiry in the Inbox."
+          "canRefuse": true,
+          "party": "LinkedIn",
+          "what": "The leads option: Lead Sync API access, so a lead-form notification becomes a name and email in Intake",
+          "nextAction": {
+            "owner": "Oksana",
+            "action": "Ask Natalija to give Ritvars the Campaign Manager account manager role",
+            "input": "Requests for Natalija go through Oksana, never to Natalija directly"
+          }
+        }
       }
     },
     "tiktok": {
@@ -1082,7 +1124,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "29e1792",
+          "commit": "25cb27e",
           "detail": null
         },
         "productionConfigured": {
@@ -1168,9 +1210,9 @@
   "_lifecycle": "Added 02.10.2026. readiness says whether OUR SIDE is technically ready. lifecycle says whether the PRODUCT HAS THIS CHANNEL AT ALL, which is a decision and not an engineering fact. active = a channel we intend to connect. parked = decided, prepared, deliberately not connected yet; it is not work and nobody holds it. dropped = decided out of the product; the adapter may stay in the repository, the channel does not exist. Anything without this field is active. A screen MUST read lifecycle, never readiness, to decide whether a channel is current work.",
   "_record": "Added 02.10.2026 (Session 3, Channels). The reconciled state of every ACTIVE channel, each fact with the date it was seen and where. It exists because a local checkout has no secrets and no production rows, so the screen can never READ production from here: it must show what was last SEEN, and say when. Four states are kept apart and never inferred from each other: deployed (the code is in the running commit), productionConfigured (the settings are in Vercel Production), liveVerified (a row a real provider sent exists), and access (we hold what we need from the people outside). A blocker names its dependency, its owner, the action or input needed, and whether it is internal or external; local credentials being absent is NEVER a blocker. On production the screen reads live verification from real provider rows and ignores the recorded value; locally it never does.",
   "_production": {
-    "commit": "29e1792",
+    "commit": "25cb27e",
     "provenOn": "2026-10-05",
-    "how": "deployed 05.10.2026 (ninth patch: Next steps, People = everyone, phone tab bar, Home target, stage-move note, form answers on every channel) by MASTER CONTROL with _crm-v1-lane-tools/deploy_verify.sh: live page byte-compared with the commit (+ its sign-in script). This record is the only change on top of 29e1792",
+    "how": "deployed 05.10.2026 (eleventh patch: Home figures traced and bigger, Channels words and card) by MASTER CONTROL with _crm-v1-lane-tools/deploy_verify.sh: live page byte-compared with the commit (+ its sign-in script). This record is the only change on top of 25cb27e",
     "allAdaptersDeployed": true
   },
   "downstream": {
