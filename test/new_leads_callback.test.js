@@ -17,19 +17,18 @@ const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
 const SYNC = fs.readFileSync(path.join(ROOT, 'src', 'sync.js'), 'utf8');
 
-test('a New Leads row with no name shows the number, as a call link', () => {
-  // the New Leads row specifically: seven places build a .c-who, and the Next Steps one comes
-  // first in the file, so a looser anchor reads the wrong row and passes or fails for the wrong reason
-  const anchor = '<div class="c-who"><b class="c-reach">';
-  assert.equal(APP.split(anchor).length - 1, 1, 'exactly one row falls back to the number');
+test('an Inbox card with no name shows the number, as a call link', () => {
+  // Q62 (06.10.2026): the Inbox is a board of cards; the card's name slot is built in ONE place, who(r)
+  const anchor = "const who = (r) => esc(r.contact_name || r.contact_handle || '')";
+  assert.equal(APP.split(anchor).length - 1, 1, 'exactly one place falls back to the number');
   const i = APP.indexOf(anchor);
-  const row = APP.slice(i, i + 260);
+  const row = APP.slice(i, i + 160);
   assert.match(row, /cTelLink\(\{ phone: r\.contact_phone \}\)/,
     'the number falls into the name slot when there is no name and no handle');
   assert.match(row, /\|\| 'Unknown'/, 'and Unknown is only the last resort, when there is no number either');
   assert.ok(row.indexOf('cTelLink') < row.indexOf("'Unknown'"),
     'the number comes BEFORE Unknown, otherwise it could never be reached');
-  assert.match(row, /<b class="c-reach">/, 'so the link takes the one call / write look');
+  assert.match(APP, /<b class="c-reach">\$\{who\(r\)\}<\/b>/, 'so the link takes the one call / write look, on the card');
 });
 
 test('the number really is on the inbound row, not only in pbx_calls', () => {
@@ -76,8 +75,8 @@ test('the count is applied to phone rows only', () => {
   // the Inbox row, not the Next Steps one: both build a .c-what and Next Steps comes
   // first in the file, which is the trap this file was written about
   const i = APP.indexOf('cCallLine(r.body)');
-  assert.ok(i >= 0, 'the Inbox row calls cCallLine');
-  const row = APP.slice(APP.lastIndexOf('<div class="c-what">', i), i + 90);
+  assert.ok(i >= 0, 'the Inbox card calls cCallLine');
+  const row = APP.slice(APP.lastIndexOf('<div class="ib-msg">', i), i + 90);   // Q62: the card's message line
   assert.match(row, /r\.channel === 'phone' \? cCallLine\(r\.body\)/);
-  assert.match(row, /: \(r\.body \|\| val\(r, 'question'\) \|\| ''\)/);
+  assert.match(row, /: \(r\.body \|\| D\.val\(r, 'question'\) \|\| ''\)/);
 });

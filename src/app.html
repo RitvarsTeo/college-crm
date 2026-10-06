@@ -1194,8 +1194,6 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
      fix it!"): a whole email body, Google Chat notices and long reply threads filled the screen at full size. The
      message text takes the detail size (13px, slate, normal weight) and stops at two lines; the row opens the whole
      item. The sender keeps the name size. Both modes. */
-  html.ui-c #view .c-lead .c-what{font-size:var(--type-detail);font-weight:400;color:var(--t3);line-height:1.45;white-space:normal;overflow-wrap:anywhere;
-    display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden}
   /* the same rule for the note under a step on Today and in lists: detail size, two lines at most */
   html.ui-c #view .c-nnote{font-size:var(--type-detail);white-space:normal;overflow-wrap:anywhere;
     display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden}
@@ -1333,9 +1331,6 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   @media (max-width:760px){ html.ui-c .kstrip{grid-template-columns:1fr 1fr} html.ui-c .kthree{grid-template-columns:1fr} }
 
   /* Inbox, People and Journey in C. Same hairline sheets as Next Steps. */
-  html.ui-c .c-lead.is-open{background:var(--c-sel)}
-  html.ui-c .c-open{padding:2px 16px 16px;background:var(--c-sel)}
-  html.ui-c .c-open select,html.ui-c .c-open textarea{width:100%;max-width:520px}
   html.ui-c .c-said{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:10px 12px;margin:6px 0 4px;white-space:pre-wrap;overflow-wrap:anywhere;max-width:70ch;font-size:13.5px}
   html.ui-c .c-q{display:block;font-size:12.5px;font-weight:600;color:var(--t2);margin:12px 0 4px}
   html.ui-c .c-hint{font-size:12px;color:var(--t3);margin-top:4px}
@@ -1553,6 +1548,31 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .t-pick{margin-top:8px;padding-top:8px;border-top:1px solid var(--rule2);cursor:default;display:grid;gap:6px}
   html.ui-c .t-pick label{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--t3)}
   html.ui-c .t-pick .c-row-acts{display:flex;gap:6px}
+  /* THE INBOX BOARD (Q62, the owner's pick A): the Journey board's columns and cards, the action on the card */
+  html.ui-c .ib-board{margin:0 0 16px;align-items:start}
+  html.ui-c .ib-card{cursor:pointer;display:flex;flex-direction:column;gap:5px}
+  html.ui-c .ib-card.is-open{cursor:default;border-color:#29a8df;box-shadow:0 0 0 1px #29a8df}
+  html.ui-c .ib-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+  html.ui-c .ib-top b{font-size:14px;overflow-wrap:anywhere}
+  html.ui-c .ib-top small{margin:0;white-space:nowrap;font-variant-numeric:tabular-nums}
+  html.ui-c .ib-ch{display:flex;align-items:center;gap:6px;margin:0}
+  html.ui-c .ib-ch i{width:7px;height:7px;border-radius:50%;background:#29a8df;flex:0 0 7px}
+  /* the message is a detail (the owner, 05.10.2026: "this is too much of font size!"): 13px, slate, three lines on the
+     card as pictured; the open card shows it whole */
+  html.ui-c #view .ib-card .ib-msg{font-size:var(--type-detail);font-weight:400;color:var(--t3);line-height:1.45;white-space:normal;overflow-wrap:anywhere;
+    display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  html.ui-c #view .ib-card.is-open .ib-msg{-webkit-line-clamp:unset;color:var(--ink)}
+  html.ui-c .ib-tags{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  html.ui-c .ib-prog{font-size:11.5px;font-weight:700;padding:1px 6px;border-radius:5px;background:var(--c-sunk);color:var(--ink)}
+  html.ui-c .ib-kind{font-size:11.5px;font-weight:600;padding:1px 6px;border-radius:5px;border:1px solid var(--rule);color:var(--t2)}
+  html.ui-c .ib-acts{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:2px;padding-top:7px;border-top:1px solid var(--rule2)}
+  html.ui-c .ib-aside{border:0;background:none;padding:0;font:inherit;font-size:12px;color:var(--t3);cursor:pointer;text-decoration:underline}
+  html.ui-c .ib-aside:hover{color:var(--ink)}
+  html.ui-c .ib-form{display:grid;gap:6px;margin-top:4px;padding-top:8px;border-top:1px solid var(--rule2);cursor:default}
+  html.ui-c .ib-form > label:not(.c-tick){font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--t3)}
+  html.ui-c .ib-form select{width:100%}
+  html.ui-c .ib-form .c-row-acts{margin-top:4px}
+  @media (max-width:760px){ html.ui-c .ib-board{grid-template-columns:1fr !important} }
   @media (max-width:760px){ html.ui-c .t-board{grid-template-columns:1fr !important}
     html.ui-c .t-fold{flex-direction:row;justify-content:space-between;min-height:0;padding:12px 14px}
     html.ui-c .t-foldl{writing-mode:horizontal-tb;transform:none} }
@@ -3620,33 +3640,28 @@ async function viewLeadsC() {
   if (C_LOPEN && !rows.some((r) => r.id === C_LOPEN)) C_LOPEN = null;
   const L = LAST_RESULT; LAST_RESULT = null;
   const receipt = !L ? '' : L.archived
-    ? `<div class="c-filter">Marked not relevant: <b>${esc(L.who)}</b>${L.reason ? ' · ' + esc(L.reason) : ''}. Nothing is deleted.</div>`
+    ? `<div class="c-filter">Set aside: <b>${esc(L.who)}</b>${L.reason ? ' · ' + esc(L.reason) : ''}. Nothing is deleted.</div>`
     : `<div class="c-filter"><b>${esc(L.name)}</b> is now in Admissions${L.status ? ' at ' + esc(L.status) : ''}${L.programme ? ' · ' + esc(L.programme) : ''}.${L.next ? ` Next: ${esc(L.next)}${L.dueAt ? ' by ' + fmtDate(L.dueAt) : ''}.` : ''} <a href="#/person/${esc(L.id)}">Open</a></div>`;
   const val = (r, f) => { const x = (r.fields || []).find((y) => y.field === f); return x ? x.value : ''; };
-  const panel = (r) => {
+  // THE FORM ON THE CARD (Q62, the owner's pick A, 06.10.2026): Programme and Next step, then "Make a lead". The same
+  // field ids the classic dialog used (qInterest, qConfirm, qNext, qErr), so doQualify(), its duplicate check ("This
+  // is them" / "a different person") and its rules run unchanged.
+  const form = (r) => {
     const extracted = (r.fields || []).filter((f) => f.provenance === 'extracted');
     const read = (extracted.find((f) => f.field === 'interest') || {}).value || '';
     const others = extracted.filter((f) => f.field !== 'interest');
     const sugg = suggestNextAction(r, read);
-    return `<div class="c-open" onclick="event.stopPropagation()">
-      ${r.body ? `<div class="c-said">${esc(r.body)}</div>` : ''}
-      <label class="c-q" for="qInterest">What do they want to study?</label>
+    return `<div class="ib-form" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter')event.stopPropagation()">
+      <label for="qInterest">Programme</label>
       <select id="qInterest"><option value="">they have not said yet</option>${(CFG.programmes || []).map((pr) => `<option ${pr === read ? 'selected' : ''}>${esc(pr)}</option>`).join('')}</select>
-      ${others.length ? `<div class="c-q">Tick what else is right</div>${others.map((f) => `<label class="c-tick"><input type="checkbox" class="qConfirm" value="${esc(f.field)}" checked> <b>${esc(f.field)}</b> ${esc(f.value)}</label>`).join('')}` : ''}
-      <label class="c-q" for="qNext">What is the next step?</label>
+      ${others.length ? `<label>Tick what else is right</label>${others.map((f) => `<label class="c-tick"><input type="checkbox" class="qConfirm" value="${esc(f.field)}" checked> <b>${esc(f.field)}</b> ${esc(f.value)}</label>`).join('')}` : ''}
+      <label for="qNext">Next step</label>
       <select id="qNext">${nextActionOptionsWithSuggestion(sugg)}</select>
-      <label class="c-q" for="qNote">Note (optional)</label>
-      <textarea id="qNote" rows="2" placeholder="Anything you know that the message does not say"></textarea>
       <div id="qErr"></div>
-      <div class="c-row-acts"><button class="btn" onclick="doQualify(${Number(r.id)})">Add to Admissions</button><button class="btn ghost" onclick="openArchive(${Number(r.id)})">Not relevant</button><button class="btn ghost" onclick="C_LOPEN=null;viewLeadsC()">Cancel</button></div>
+      <div class="c-row-acts"><button class="btn sm" onclick="doQualify(${Number(r.id)})">Make a lead</button><button class="btn sm ghost" onclick="C_LOPEN=null;cInboxPool()">Cancel</button></div>
     </div>`;
   };
-  const leadRow = (r, redraw = 'viewLeadsC()', withPanel = true) => `<div class="c-line row c-lead${C_LOPEN === r.id ? ' is-open' : ''}" tabindex="0" onclick="C_LOPEN=${C_LOPEN === r.id ? 'null' : Number(r.id)};${redraw}">
-        <div class="c-who"><b class="c-reach">${esc(r.contact_name || r.contact_handle || '') || cTelLink({ phone: r.contact_phone }) || 'Unknown'}</b><small>${esc(channelLabel(r.channel))} · ${fmtDateTime(r.received_at)}${r.aged ? ' · <span class="c-late">late</span>' : r.answerNow ? ' · <span class="c-answer">answer now</span>' : ''}</small></div>
-        <div class="c-what">${esc(r.channel === 'phone' ? cCallLine(r.body) : (r.body || val(r, 'question') || ''))}</div>
-        <div class="c-when">${esc(val(r, 'interest') || '')}</div><div></div></div>
-        ${C_LOPEN === r.id && withPanel ? panel(r) : ''}`;
-  C_IPD = { rows, receipt, leadRow };
+  C_IPD = { rows, receipt, form, val };
   cInboxPool();
   if (L) cNavCounts();                    // a lead was just saved or set aside: the menu count moves too
 }
@@ -3871,35 +3886,60 @@ async function cTodayMoveTo(pid, from, day) {
 }
 
 // ---- INBOX: Today · Yesterday · This week · Older, by when the message arrived
+// THE INBOX BOARD (Q62, the owner's pick A from the pictures, 06.10.2026; on the first board's columns: "Not relevant is
+// not even needed there, that garbage! And what is the cohorts like new, new lead and later? thats silly. But overall
+// the cards are good choice!"). Columns by arrival day, in his order "By dates first, then by channels. Then by kind of
+// senders": the band's four ages are the columns, Source and Kind are the filters. One card per message, the Journey
+// board's card style, the action ON the card: "Make a lead" opens the small form on it, "Set aside" is the quiet link
+// (the reason dialog as before; nothing is deleted). No New lead, Not relevant or Later column. A message set aside
+// is still reachable by address (#/leads?show=archived), without the actions.
 let C_IP = { col: null, channel: '', kind: '', show: 'new' };
 let C_IPD = null;
 function cInboxPick(v) { C_IP.col = C_IP.col === v ? null : v; cInboxPool(); }
 const C_IP_KIND = [['possible_student', 'Possible student'], ['current_student', 'Current student'], ['other', 'Other']];
-const C_IP_SHOW = [['new', 'Waiting'], ['filtered', 'Filtered out'], ['archived', 'Not relevant']];
 function cInboxAge(iso) {
   const day = cDay(iso), today = cTodayIso();
   const back = (n) => new Date(Date.parse(today) - n * 86400000).toISOString().slice(0, 10);
   return day === today ? 'today' : day === back(1) ? 'yesterday' : day >= back(6) ? 'week' : 'older';
 }
+// how long ago, as a person says it: "10 min", "3 h", "2 d"
+const cAgo = (iso) => { const m = Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 60000)); return m < 60 ? `${m} min` : m < 1440 ? `${Math.round(m / 60)} h` : `${Math.round(m / 1440)} d`; };
 function cInboxPool() {
   const D = C_IPD; if (!D) return;
   const ok = (r) => (!C_IP.channel || r.channel === C_IP.channel) && (!C_IP.kind || r.senderKind === C_IP.kind);
   const rows = D.rows.filter(ok);
-  const cols = [['today', 'Today'], ['yesterday', 'Yesterday'], ['week', 'This week'], ['older', 'Older']]
-    .map(([id, label]) => ({ id, label, n: rows.filter((r) => cInboxAge(r.received_at) === id).length, tone: 'age-' + id }));
-  const shown = C_IP.col ? rows.filter((r) => cInboxAge(r.received_at) === C_IP.col) : rows;
+  const AGES = [['today', 'Today'], ['yesterday', 'Yesterday'], ['week', 'This week'], ['older', 'Older']];
+  const cols = AGES.map(([id, label]) => ({ id, label, n: rows.filter((r) => cInboxAge(r.received_at) === id).length, tone: 'age-' + id }));
   const chans = [...new Set(D.rows.map((r) => r.channel))].sort().map((c) => [c, channelLabel(c)]);
-  const row = (r) => D.leadRow(r, 'cInboxPool()', C_IP.show === 'new');
+  const live = C_IP.show === 'new';   // a message set aside keeps its card, without the actions
+  const who = (r) => esc(r.contact_name || r.contact_handle || '') || cTelLink({ phone: r.contact_phone }) || 'Unknown';
+  const card = (r) => {
+    const open = C_LOPEN === r.id; const prog = D.val(r, 'interest');
+    const tag = r.aged ? '<span class="c-late">late</span>' : r.answerNow ? '<span class="c-answer">answer now</span>' : '';
+    const kind = r.senderKind === 'current_student' ? `<span class="ib-kind" title="${esc(r.senderKindWhy || '')}">Current student</span>` : '';
+    const toggle = `C_LOPEN=${open ? 'null' : Number(r.id)};cInboxPool()`;
+    return `<div class="c-jp row ib-card${open ? ' is-open' : ''}" data-id="${Number(r.id)}" tabindex="0" onclick="${toggle}" onkeydown="if(event.key==='Enter'){${toggle}}">
+      <div class="ib-top"><b class="c-reach">${who(r)}</b><small title="${esc(fmtDateTime(r.received_at))}">${cAgo(r.received_at)}</small></div>
+      <small class="ib-ch"><i></i>${esc(channelLabel(r.channel))}</small>
+      <div class="ib-msg">${esc(r.channel === 'phone' ? cCallLine(r.body) : (r.body || D.val(r, 'question') || ''))}</div>
+      ${prog || kind || tag ? `<div class="ib-tags">${prog ? `<span class="ib-prog">${esc(prog)}</span>` : ''}${kind}${tag}</div>` : ''}
+      ${!live ? '' : open ? D.form(r) : `<div class="ib-acts"><button class="btn sm" onclick="event.stopPropagation();C_LOPEN=${Number(r.id)};cInboxPool()">Make a lead</button><button type="button" class="ib-aside" onclick="event.stopPropagation();openArchive(${Number(r.id)})">Set aside</button></div>`}</div>`;
+  };
+  // a band click narrows the board to that day's column; a second click shows all four again
+  const shownCols = cols.filter((c) => !C_IP.col || c.id === C_IP.col);
+  const column = (c, i) => `<div class="c-col ib-col" style="--jt:${((i + 1) / shownCols.length).toFixed(3)}"><h3><span class="c-jn">${i + 1}</span>${esc(c.label)}<b>${c.n}</b></h3>
+      <div class="c-drop">${rows.filter((r) => cInboxAge(r.received_at) === c.id).map(card).join('') || '<div class="c-empty">Nothing here.</div>'}</div></div>`;
+  const board = rows.length
+    ? `<div class="c-cols ib-board" style="grid-template-columns:repeat(${shownCols.length},minmax(0,1fr))">${shownCols.map(column).join('')}</div>`
+    : `<div class="c-sheet"><div class="c-empty">${live ? 'Nothing waiting. This queue is clear.' : 'Nothing here.'}</div></div>`;
   $('#view').innerHTML = cPoolFrame({
     title: 'Inbox',
     band: cPoolBand('Inbox', cols, C_IP.col, 'cInboxPick'),
     filters: cPoolFilters('the inbox', [
       cPoolSelect('Source', C_IP.channel, chans, 'C_IP.channel=this.value;cInboxPool()'),   // Admissions 05.10: filter by source
-      cPoolSelect('Kind', C_IP.kind, C_IP_KIND, 'C_IP.kind=this.value;cInboxPool()'),
-      `<label class="c-jf${C_IP.show !== 'new' ? ' on' : ''}"><span>Show</span><select aria-label="Show" onchange="C_IP.show=this.value;C_LOPEN=null;viewLeadsC()">${
-        C_IP_SHOW.map(([v, t]) => `<option value="${v}"${C_IP.show === v ? ' selected' : ''}>${t}</option>`).join('')}</select></label>`],
+      cPoolSelect('Kind', C_IP.kind, C_IP_KIND, 'C_IP.kind=this.value;cInboxPool()')],
       C_IP.channel || C_IP.kind ? "C_IP.channel='';C_IP.kind='';cInboxPool()" : ''),
-    body: D.receipt + cPoolRows(shown, row, C_IP.show === 'new' ? 'Nothing waiting. This queue is clear.' : 'Nothing here.'),
+    body: D.receipt + board,
   });
   if (C_LOPEN) { const sel = $('#qInterest'); if (sel) sel.focus(); }
   cPoolWire();
@@ -5925,7 +5965,7 @@ function cSyncView() {
   const place = cPlace(page);
   if (!place || page === 'person') { C_LAST_PATH = path; C_LAST_LABEL = cPageLabel(); cBackLink(); return; }
   const qs = cViewState(place).toString();
-  const want = cViewPath(place, path) + (['people', 'today', 'leads'].includes(place) ? '?' + qs : '');
+  const want = cViewPath(place, path) + (['people', 'today', 'leads'].includes(place) && qs ? '?' + qs : '');   // no bare '?' on a fresh view
   if (want !== full) history.replaceState(history.state, '', location.pathname + location.search + want);
   C_LAST_PATH = want.split('?')[0]; C_LAST_LABEL = cPageLabel();
   cBackLink();
@@ -5987,7 +6027,7 @@ function cShortcut(e) {
 // Esc: whatever is open on the page, one thing at a time. The board's own card and filter menus keep their own Esc.
 function cEscClose() {
   if (C_TP.pick) { C_TP.pick = null; cTodayPool(); return true; }
-  if (C_LOPEN && document.querySelector('#view .c-lead.is-open, #view .ib-card.is-open')) { C_LOPEN = null; cInboxPool(); return true; }
+  if (C_LOPEN && document.querySelector('#view .ib-card.is-open')) { C_LOPEN = null; cInboxPool(); return true; }
   if (C_PEDIT && C_JP.view === 'list' && document.querySelector('#view .p-edit')) { C_PEDIT = null; cDrawJourneyPool(); return true; }
   return false;
 }
@@ -6928,7 +6968,7 @@ function showDuplicate(id, detail, kept) {
 
 async function openArchive(id) {
   const d = await api('/api/intake?state=new');
-  modal('Not relevant', `
+  modal('Set aside', `
     <label>Why</label>
     <select id="aReason">${(d.archiveReasons || []).map(r => `<option>${esc(r)}</option>`).join('')}</select>
     <label style="margin-top:10px">Note</label>
