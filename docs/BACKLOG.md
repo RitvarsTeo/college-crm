@@ -14,6 +14,81 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 06.10.2026 - Q45: the year scope - one Period dropdown, frozen top-right, on every screen
+
+MASTER CONTROL's GO for C (05.10.2026) with the owner's words: "the switch is a frozen item just on top for the whole
+app ... always be sure, that we are checking the right year", "its a small detail on top right corner", "dont use this
+color!", and of "Period · Whole year": "this is good" / "this is enough!". Built on the parked WIP (dd4bf54, merged).
+- ONE small labelled dropdown, "Period", in the app's filter look, frozen in the window's top-right corner on every
+  page (the page heads leave it room); on a phone a row of its own at the right of the frozen top bar. Options: All
+  years, then each year that has people (newest first), its months grouped under it (no month that has not begun).
+- Every open starts on the current year. Any other choice is the dropdown's own text on a navy fill: no bar, no chip.
+- STRICT on every screen, by ONE server filter (?y= and ?m= on /api/people, /api/tasks, /api/summary, /api/intake,
+  /api/journey/exits): a person belongs to a period by ARRIVAL (created_at) - EXCEPT the Admitted, who belong to the
+  period of their ADMISSION (admitted_at; the owner's popup 05.10.2026: "Admitted 2026" = everyone admitted in 2026,
+  arrived in 2025 or not), or of the arrival when the admission has no date. The Median time to admission follows the
+  Admitted (the report's own admission-date basis). Not proceeding stays by arrival. The Inbox counts by the message's
+  own arrival. Today, the Journey (board and list), Home, Reports and the NEW badges all read the same rows.
+- Reports lost its own period buttons and From / To (decided A, 05.10.2026): the Period dropdown is the only period,
+  and the download for management review follows it. The Reports head says the period ("2025 · 2025-01-01 to ...").
+- Home: "Admissions 2025", the Admitted / Leads cards and the month chart read the period; the year's target shows on
+  a whole year only (a year's target against one month would mislead).
+- Checked in the browser: 2025 on the synthetic data shows its one person everywhere (Home, Needs you, the band).
+Tests: test/year_scope_q45.test.js (a real server: every person in a year belongs by arrival, the Admitted by
+admission, nobody missing; a month; tasks and summary inside the year; an empty year borrows nothing; the dropdown's
+options, the navy past, the query each read gets; the look; Home / Journey / Reports reading the period);
+home_ab, reports_depth and sis_real_dates follow. Shots: `For review/2026-10-06 patch 18/`. **BUILT, next patch.**
+
+## 06.10.2026 - The Journey band's labels never break inside a word (375 px)
+
+Seen on the Q47 shots, MASTER CONTROL for the owner: at 375 px the band read "Contac/ted", "Applic/ation". Measured
+in the browser: each stage column is 55 px there and "Application" needs 61 px at 11 px. A label now wraps only
+between words, and its size follows its column (17cqi of the cell, 8.5-12 px): 9.3 px on a 375 px phone, every label
+on one line; 12 px at 1440 as before. The Inbox's age band keeps its 10.5 px, already whole words.
+Tests: test/band_labels_whole_words.test.js. **BUILT, next patch.**
+
+## 06.10.2026 - Q50: Inbox rows say "answer now" after one working hour, "late" at the end of that working day
+
+DECIDED 05.10.2026 (the owner picked MASTER CONTROL's suggestion), replacing 23.09's "late = next calendar day 09:00".
+- Working hours are config (`ageing`): Mon-Fri, 09:00-17:00, Europe/Riga, answer within 60 working minutes.
+- A message still waiting one WORKING hour after it arrived carries a solid amber "answer now" chip (navy words);
+  still waiting at the end of the working day that hour ends in, the solid red "late" chip. Nights and weekends wait
+  for the next working morning: Friday 16:30 -> answer now Monday 09:30, late Monday 17:00; Saturday -> Monday 10:00
+  and 17:00; 16:00 on a weekday -> 17:00, both at once, late wins. Riga hours hold across the 25.10 clock change.
+- **"Answered" = handled in the Inbox** (the message is no longer `new`: added to Admissions, set aside, filtered).
+  There is no first-reply time yet; when a channel can tell us the first reply, that becomes "answered" instead.
+- Worked out from received_at on every read (src/intake.js answerDeadlines), so rows stored under the old rule
+  follow the new one; surface_at still stores the late moment on arrival. Public holidays are not in the rule yet.
+- The "Late" figure in the management download and the classic view's tooltips say "not answered in the working day".
+Tests: test/inbox_answer_q50.test.js (config; the hour boundary 15:59 / 16:00 / 16:30; Friday 16:30 -> Monday;
+weekend and night arrivals; the clock change; rows going nothing -> answer now -> late; a handled message is neither;
+the chips), intake.test.js and qualification.test.js follow the new rule. **BUILT, next patch.**
+
+## 06.10.2026 - Q57: the Journey opens on the drag-and-drop board again
+
+Ritvars 06.10 (urgent): "I didnt ask you to turn journey's drag and drop into a list! what i explicitly remember is
+saying you that journey tab is the mosst advanced of them all listss!" The Q47 frame (05.10) made the List the Journey's
+default and sent every Home / Reports / Help link to it.
+- The BOARD is the Journey: the default view and the first option of the switch (Board | List). Every way in opens it:
+  the menu, Home's stage clicks, the donut, Home's month bars, Reports figures, Arrived, Cold / Reject, the Help flow,
+  Edit from the person page, the old #/people, #/people/all and #/outcomes. The List is the switch's second option and
+  is never remembered: the next way in is the Board again.
+- The column a way in targets is the board's stage filter, exactly as a band click sets it. What else it targets (a
+  Reports cohort, Arrived in a year, a month of Admitted, Cold / Reject, a reason) narrows the board to exactly those
+  people and shows one chip with "Show everyone x". Moving List -> Board carries the List's Programme / Owner / Came from
+  / Overdue into the board's own ticks.
+- Admitted / Not proceeding are the band's bookends, as before the 05.10 frame. A bookend click (or a way in that
+  targets it) filters the board like a stage click and draws that end column at the board's end: name, the date
+  admitted, or the Cold / Reject tag and the reason. An end column is not a drop target (a close needs its reason; the
+  edit form asks it). Drag and drop is unchanged: a drop posts the status move, a back move asks its note first.
+- Edit in place on the board card stays (the opened card becomes the edit form; Save stays on the board).
+- Help flow (behind ?helpflow=1): step 2 is "New lead" (his pick, 06.10), was "Becomes a person".
+- Found on the way: the paused helper's reason-bar click was a JS syntax error (quotes inside a quoted string), which
+  broke the whole script; fixed (the reasons live on the List, the click redraws the List).
+Tests: test/journey_board_default_q57.test.js (Board default; 15 ways in all land on the Board, never the List; the
+targeted column; end columns; cohort / Arrived narrowing; drag posts the move, a back move sends its note, a cancel
+saves nothing; Help step 2); 9 older tests that asserted the List default follow. **BUILT, next patch.**
+
 ## 06.10.2026 - SIS students carry their real SIS date, never the day of the pull
 
 What happened (production backup 2026-10-06T06-15-05Z, counts only): on 05.10 the SIS bulk-loaded its existing
@@ -44,6 +119,20 @@ Built (branch fix/2026-10-06-sis-real-dates, src/sisdates.js):
 - Tests: test/sis_real_dates.test.js (11); sync + application_first now expect the SIS date. 1232 green.
 - How to run it on production: docs/PBX_SIS_SYNC.md, "Re-dating the 06.10 SIS people". **BUILT, next patch.**
   The apply runs only after Ritvars's yes.
+
+## 06.10.2026 - Q56: the Help center shows the flow through Intake (behind ?helpflow=1)
+
+Ritvars 06.10, on the live "Where things are" card grid: "whats the point of just showing replicated cards on help
+center???". The cards repeated the menu; what he asked for (05.10) was "how to where to, for what".
+- With `?helpflow=1` the card grid is replaced by ONE flow on the Journey band's card: 1 Inbox, 2 New lead (renamed 06.10 by the owner),
+  3 Today, 4 Journey (New, Contacted, Follow-up, Application, Contract), 5 The end (Admitted, Not proceeding),
+  6 Reports. Icon, short label, at most one short line; circles on one line in #29a8df, the end in mustard #E0A526.
+  Every stop is a click to its place; every stage and end chip opens the Journey on that column. Phone: the same
+  line stands up. How to stays below. Words in config/help.json `flow`; the chips are read from the stages.
+- Without the flag the page is unchanged (Q54 grid). Open: the "three steps" cards now repeat the flow - drop them
+  when the flow ships? (his y/n)
+- Tests: test/help_center.test.js (six stops in order with their routes, the chips, the grid not drawn with the flag).
+  Shots: `For review/2026-10-06 Q56 Help flow/`. **BUILT behind the flag, waiting for his look.**
 
 ## 05.10.2026 - Q54: the Help center carries the map of the app and how-to links
 

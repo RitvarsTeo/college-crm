@@ -28,12 +28,14 @@ function load() {
     CFG, location: { hash: '#/reports' }, C_RPT_PRESET: 'year', RPT: { from: '', to: '' }, C_PCOHORT: null, C_PF: { stage: 'x' }, C_PQ: 'q', C_PEDIT: 'p', C_PMSG: 'm', C_PTAB: 'journey',
     C_PF_EMPTY: () => ({ stage: '', programme: '', due: '', owner: '', source: '', data: '' }), viewJourneyPool() { ctx.drew = true; },
     C_JP: { col: null, view: 'board' }, C_STAGE_OF: new Map([['a', 'Application'], ['b', 'Application'], ['c', 'Application']]),
-    C_OUT_TAG: null, C_OUT_REASON: null, C_OUT_FILTER: null,
+    C_OUT_TAG: null, C_OUT_REASON: null, C_OUT_FILTER: null, C_JF_EMPTY: () => ({ stage: [] }), cPoolRouteJourney() { ctx.drew = true; },
     esc: (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])),
     cDay: (iso) => (iso ? riga.format(new Date(iso)) : ''),
     cStage: (id) => ((CFG.stages || []).find((s) => s.id === id) || {}).label || id || '',
     cChannel: (c) => (!c || c === 'unknown' ? ['Not recorded', 'no source was kept'] : [c, '']),
     cSheetNotice: () => '', cTodayIso: () => localDate(),
+    // the year scope (Q45) is the only period: the current year, as on every open
+    cScopeWord: () => localDate().slice(0, 4), cScopeDates: () => [localDate().slice(0, 4) + '-01-01', ''],
   };
   vm.runInNewContext([line('const C_MONTHS ='), line('const C_TERMINAL ='), BLOCK,
     'this.X = { cRepModel, cRepHtml, cRepBuckets, cRepPeriodWord, cRepPeriod, cGoCohort, setCoh: (c) => { C_REP_COH = c; }, setCh: (c) => { C_REP_CH = c; } };'].join('\n'), ctx);
@@ -172,9 +174,11 @@ test('a figure opens People on exactly its people, every other filter cleared', 
   assert.deepEqual([...ctx.C_PCOHORT.ids], ['a', 'b', 'c']);
   assert.equal(ctx.C_PQ, '');
   assert.deepEqual(JSON.parse(JSON.stringify(ctx.C_PF)), ctx.C_PF_EMPTY());
-  // Q47: the Journey lists the cohort, on its column when all of them stand in one stage
+  // Q47: the Journey shows the cohort, on its column when all of them stand in one stage; Q57: on the Board
   assert.equal(ctx.C_JP.col, 'Application', 'three people in Application: that column');
-  assert.equal(ctx.C_JP.view, 'list');
+  assert.equal(ctx.C_JP.view, 'board');
+  assert.match(fnBody('function cJTargetKeep('), /if \(C_PCOHORT && !C_PCOHORT\.ids\.has\(p\.id\)\) return false;/, 'the Board shows only the cohort');
+  assert.match(fnBody('function cJTargetChips('), /C_PCOHORT \? x\(C_PCOHORT\.label, 'C_PCOHORT=null'\)/, 'and one click shows everyone again');
   const draw = fnBody('function cDrawJourneyPool() {');
   assert.match(draw, /if \(C_PCOHORT\) base = base\.filter\(\(p\) => C_PCOHORT\.ids\.has\(p\.id\)\);/, 'the Journey lists only the cohort');
   assert.match(draw, /C_PCOHORT=null;cDrawJourneyPool\(\)">Show everyone ✕/, 'and one click shows everyone again');
@@ -241,7 +245,8 @@ test('nothing lost: every block of the earlier report has its tab', async () => 
     ['Target meters', 'admitted', 'class="ktgt all"'],
   ];
   for (const [what, id, mark] of MAP) assert.ok(chapter(id).includes(mark), `${what} -> ${id}`);
-  for (const k of ['month', 'last', 'year', 'all']) assert.ok(html.includes(`cReportPreset('${k}')`), 'preset ' + k);
+  // Q45: the presets left with the period bar; every period they offered is in the corner's Period dropdown
+  assert.ok(!html.includes('cReportPreset('), 'no period bar of its own');
   assert.ok(html.includes('onclick="openExport()">Download for management review'), 'the download');
   assert.match(fnBody('async function viewReportsC() {'), /cWebStats\(\);\n  cApplications\(\);/, 'Applications fills as before');
 });
@@ -270,14 +275,17 @@ test('one card style, the two data colours, light and dark', () => {
   assert.match(css, /html\.ui-c\[data-theme="dark"\] \.kstrip\.rp-tabs/, 'dark: no panel inside a panel');
 });
 
-test('the period is read in one function, so the app-wide year scope can feed it later', () => {
+test('the period is read in one function, and it is the year scope (Q45): no buttons, no From / To of its own', () => {
   const view = fnBody('async function viewReportsC() {');
   assert.match(view, /const P = cRepPeriod\(\);/);
   assert.doesNotMatch(view, /RPT\./, 'nothing else in the view reads the presets');
-  const ctx = { RPT: { from: '', to: '' }, C_RPT_PRESET: 'month', cTodayIso: () => '2026-10-05' };
+  let dates = ['2026-01-01', ''];
+  const ctx = { RPT: { from: 'x', to: 'y' }, cScopeDates: () => dates };
   vm.runInNewContext(fnBody('function cRepPeriod() {'), ctx);
-  assert.deepEqual(JSON.parse(JSON.stringify(ctx.cRepPeriod())), { from: '2026-01-01', to: '' }, 'no period chosen: the year, as Home');
-  assert.equal(ctx.C_RPT_PRESET, 'year');
-  ctx.RPT = { from: '2026-09-01', to: '2026-09-30' };
-  assert.deepEqual(JSON.parse(JSON.stringify(ctx.cRepPeriod())), { from: '2026-09-01', to: '2026-09-30' }, 'a chosen preset is kept');
+  assert.deepEqual(JSON.parse(JSON.stringify(ctx.cRepPeriod())), { from: '2026-01-01', to: '' }, 'the current year, as on every open');
+  dates = ['2025-03-01', '2025-03-31'];
+  assert.deepEqual(JSON.parse(JSON.stringify(ctx.cRepPeriod())), { from: '2025-03-01', to: '2025-03-31' }, 'March 2025 in the corner = March 2025 here');
+  assert.deepEqual(JSON.parse(JSON.stringify(ctx.RPT)), { from: '2025-03-01', to: '2025-03-31' }, 'and the download follows it');
+  const html = fnBody('function cRepHtml(');
+  assert.doesNotMatch(html, /c-periodbar|cReportPreset|cReportDates|type="date"/, 'the period bar is gone');
 });

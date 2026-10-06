@@ -26,7 +26,7 @@ const cold = (id, programme, extra = {}) => ({ id, name: 'P ' + id, programme, p
 test('the pick is the default: a tag in Outcomes is grouped by programme; no switch, no B left', () => {
   // Q47 (the owner, 05.10.2026: "Yes, ship it"): Outcomes are the Journey's last two columns. Cold / Reject is the
   // filter on Not proceeding, its rows the Journey's one row style; Why they stopped stays under Everybody only.
-  assert.match(fnBody('async function viewOutcomesC() {'), /return viewJourneyPool\(\);/, 'Outcomes open the Journey');
+  assert.match(fnBody('async function viewOutcomesC() {'), /C_JP\.view = 'board';\s*return cPoolRouteJourney\('journey'\);/, 'Outcomes open the Journey (Q57: its Board)');
   assert.match(POOL, /if \(isNp && C_OUT_TAG\) list = list\.filter\(\(p\) => p\.closed_tag === C_OUT_TAG\);/, 'Cold and Reject both');
   assert.match(POOL, /\(isNp && !C_OUT_TAG \? cReasonBreakdown\(np, np\.filter\(\(p\) => !p\.closed_reason\)\.length\) : ''\)/, 'the breakdown on Everybody only');
   assert.doesNotMatch(APP, /cColdMode|\?cold=|coldB|coldRow/, 'the A/B switch and option B are gone');

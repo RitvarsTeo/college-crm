@@ -118,9 +118,11 @@ test('every Journey stage still appears, in the same order, with its own label',
   const open = (CONFIG.stages || []).filter((s) => !['Admitted', 'Not proceeding'].includes(s.id));
   assert.ok(open.length >= 3);
   const draw = fn('function cDrawJourney(');
-  assert.match(draw, /const stages = \(CFG\.stages \|\| \[\]\)\.filter\(\(s\) => !C_TERMINAL\.includes\(s\.id\)\);/, 'the same stage list as before');
+  // Q57: the five stages as before; an end column joins them only when a way in targets it
+  assert.match(draw, /const stages = \(CFG\.stages \|\| \[\]\)\.filter\(\(s\) => !C_TERMINAL\.includes\(s\.id\) \|\| ends\.includes\(s\.id\)\);/, 'the same stage list as before');
   let html = '';
   const ctx = { ...sandbox(), CFG: CONFIG, C_TERMINAL: ['Admitted', 'Not proceeding'], C_JSEL: null,
+    C_PCOHORT: null, C_PF: {}, C_OUT_TAG: null, C_OUT_REASON: null, C_OUT_FILTER: null,
     C_JDATA: { people: [{ id: 'a', name: 'A', status: open[0].id }], taskOf: new Map() },
     cPersonCard: () => '', channelLabel: (c) => c, $: () => ({ set innerHTML(v) { html = v; } }), document: { querySelectorAll: () => [], querySelector: () => null, addEventListener: () => {} }, window: {} };
   const cardSrc = fn('function cJourneyCard(');

@@ -41,7 +41,7 @@ import * as google from './google.js';
 import { signInFirst, withReturnScript } from './signinfirst.js';
 import { bootstrapIfAuthOn } from './bootstrap.js';
 import * as channeladmin from './channeladmin.js';
-import { todayStart, tomorrowStart, localDate } from './bizday.js';
+import { todayStart, tomorrowStart, localDate, localMidnight } from './bizday.js';
 import { receiveSisApplication, mergeSisDuplicate, syncSis, channelMode, SIS_STAGE } from './sync.js';
 import { redateSisAdmissions } from './sisdates.js';
 
@@ -522,6 +522,28 @@ function recordInbound(channel, externalId, outcome, how) {
 // night a task due yesterday counted as due today and was not overdue.
 const dayStart = () => todayStart();
 const dayEnd = () => tomorrowStart();
+
+// THE YEAR SCOPE (Q45, the owner 05.10.2026: "always be sure, that we are checking the right year"). ONE filter
+// for every list and count the app reads: ?y=YYYY (and ?m=1..12 inside it) keeps the people who ARRIVED then
+// (people.created_at, a Riga year or month), and the Inbox's messages that arrived then (inbound.received_at).
+// EXCEPT the Admitted (the owner, 05.10.2026, popup: "Admitted 2026" is everyone admitted in 2026, arrived in 2025
+// or not): an Admitted person belongs to the year of the ADMISSION (admitted_at), or of the arrival when the
+// admission carries no date. Not proceeding stays by arrival. The Median time to admission follows the Admitted.
+// No y = every year, which is also what any caller that never heard of the scope gets.
+function scopeRange(url) {
+  const y = Number(url.searchParams.get('y'));
+  if (!Number.isInteger(y) || y < 2000 || y > 2100) return null;
+  const m = Number(url.searchParams.get('m'));
+  return m >= 1 && m <= 12 ? [localMidnight(y, m, 1), localMidnight(y, m + 1, 1)] : [localMidnight(y, 1, 1), localMidnight(y + 1, 1, 1)];
+}
+// The same filter as SQL on people (alias pe), with its two arguments; '' and [] when every year.
+const scopeSql = (range, alias = 'pe') => (range ? [` AND ${alias}.created_at >= ? AND ${alias}.created_at < ?`, range] : ['', []]);
+// The people list's own: by arrival, the Admitted by their admission (see above).
+const scopePeopleSql = (range, alias = 'pe') => (range
+  ? [` AND ((${alias}.status <> 'Admitted' AND ${alias}.created_at >= ? AND ${alias}.created_at < ?)
+      OR (${alias}.status = 'Admitted' AND ${alias}.admitted_at IS NOT NULL AND ${alias}.admitted_at >= ? AND ${alias}.admitted_at < ?)
+      OR (${alias}.status = 'Admitted' AND ${alias}.admitted_at IS NULL AND ${alias}.created_at >= ? AND ${alias}.created_at < ?))`, [...range, ...range, ...range]]
+  : ['', []]);
 const newId = () => 'p' + Math.random().toString(36).slice(2, 7);
 
 // There is no login in the prototype. The caller says who it is, the server
@@ -1377,7 +1399,7 @@ export const handle = async (req, res) => {
       return res.end(fs.readFileSync(path.join(ROOT, 'src', 'assets', name)));
     }
 
-    if (req.method === 'GET' && p === '/api/config') return json(res, 200, { ...CONFIG, dataset: DATASET, help: { map: HELP.map, howto: HELP.howto, tour: HELP.tour, faq: HELP.faq } });
+    if (req.method === 'GET' && p === '/api/config') return json(res, 200, { ...CONFIG, dataset: DATASET, help: { map: HELP.map, flow: HELP.flow, howto: HELP.howto, tour: HELP.tour, faq: HELP.faq } });
 
     // --------------------------------------------------------- the database -
     if (req.method === 'POST' && p === '/api/dataset') {
@@ -1606,7 +1628,8 @@ export const handle = async (req, res) => {
 
       // Only people who are not proceeding NOW. Somebody closed in March and reopened in
       // May is working again, and counting their old exit would show a loss we recovered.
-      const nowClosed = new Set((await db.prepare('SELECT id FROM people WHERE status = ?').all(closed)).map((x) => x.id));
+      const [inScope, scopeArgs] = scopeSql(scopeRange(url));
+      const nowClosed = new Set((await db.prepare(`SELECT id FROM people pe WHERE status = ?${inScope}`).all(closed, ...scopeArgs)).map((x) => x.id));
       const byStage = {};
       for (const [personId, stage] of lastPerStage) {
         if (!stage || !nowClosed.has(personId)) continue;
@@ -1618,28 +1641,36 @@ export const handle = async (req, res) => {
       return json(res, 200, { byStage, total: nowClosed.size, unrecorded: nowClosed.size - counted });
     }
 
+    // The years the Year dropdown offers (Q45): every Riga year somebody arrived in, newest first.
+    if (req.method === 'GET' && p === '/api/scope/years') {
+      const years = new Set((await db.prepare('SELECT created_at FROM people WHERE created_at IS NOT NULL').all())
+        .map((r) => Number(localDate(r.created_at).slice(0, 4))).filter(Boolean));
+      return json(res, 200, { years: [...years].sort((a, b) => b - a) });
+    }
+
     if (req.method === 'GET' && p === '/api/summary') {
       const q = async (sql, ...a) => await db.prepare(sql).get(...a);
       const since7 = new Date(Date.now() - 7 * 86400000).toISOString();
       const since30 = new Date(Date.now() - 30 * 86400000).toISOString();
+      const [inScope, scopeArgs] = scopeSql(scopeRange(url));
       // STILL_OPEN_SQL, not a bare task query: a finished person's leftover task used to appear
       // here as overdue while openPeople and noNextAction below already counted them out.
       const overdue = await db.prepare(`SELECT t.*, pe.name, pe.programme, pe.status FROM tasks t JOIN people pe ON pe.id = t.person_id
-        WHERE t.done_at IS NULL AND ${STILL_OPEN_SQL} AND t.due_at < ? ORDER BY t.due_at ASC`).all(dayStart());
+        WHERE t.done_at IS NULL AND ${STILL_OPEN_SQL}${inScope} AND t.due_at < ? ORDER BY t.due_at ASC`).all(...scopeArgs, dayStart());
       const today = await db.prepare(`SELECT t.*, pe.name, pe.programme, pe.status FROM tasks t JOIN people pe ON pe.id = t.person_id
-        WHERE t.done_at IS NULL AND ${STILL_OPEN_SQL} AND t.due_at >= ? AND t.due_at < ? ORDER BY t.due_at ASC`).all(dayStart(), dayEnd());
+        WHERE t.done_at IS NULL AND ${STILL_OPEN_SQL}${inScope} AND t.due_at >= ? AND t.due_at < ? ORDER BY t.due_at ASC`).all(...scopeArgs, dayStart(), dayEnd());
       return json(res, 200, {
         newLeads7: (await q('SELECT COUNT(*) n FROM people WHERE created_at >= ?', since7)).n,
         newLeadsToday: (await q('SELECT COUNT(*) n FROM people WHERE created_at >= ?', dayStart())).n,
-        openPeople: (await q(`SELECT COUNT(*) n FROM people pe WHERE ${STILL_OPEN_SQL}`)).n,
-        noNextAction: (await q(`SELECT COUNT(*) n FROM people pe WHERE ${STILL_OPEN_SQL} AND NOT ${SIS_HOLDS_SQL}
-          AND NOT EXISTS (SELECT 1 FROM tasks t WHERE t.person_id = pe.id AND t.done_at IS NULL)`)).n,
+        openPeople: (await q(`SELECT COUNT(*) n FROM people pe WHERE ${STILL_OPEN_SQL}${inScope}`, ...scopeArgs)).n,
+        noNextAction: (await q(`SELECT COUNT(*) n FROM people pe WHERE ${STILL_OPEN_SQL}${inScope} AND NOT ${SIS_HOLDS_SQL}
+          AND NOT EXISTS (SELECT 1 FROM tasks t WHERE t.person_id = pe.id AND t.done_at IS NULL)`, ...scopeArgs)).n,
         admitted30: (await q('SELECT COUNT(*) n FROM people WHERE admitted_at >= ?', since30)).n,
         admittedTotal: (await q('SELECT COUNT(*) n FROM people WHERE status = ?', 'Admitted')).n,
         overdue, today,
         recent: await db.prepare(`SELECT e.*, pe.name FROM events e JOIN people pe ON pe.id = e.person_id
           ORDER BY e.occurred_at DESC LIMIT 12`).all(),
-        byStage: await db.prepare('SELECT status, COUNT(*) n FROM people GROUP BY status').all(),
+        byStage: await db.prepare(`SELECT status, COUNT(*) n FROM people pe WHERE 1 = 1${inScope} GROUP BY status`).all(...scopeArgs),
       });
     }
 
@@ -1658,7 +1689,7 @@ export const handle = async (req, res) => {
         -- the newest comment somebody wrote (Add a note / Log a call), for the Journey card's one-line preview
         (SELECT body FROM events e WHERE e.person_id = pe.id AND e.origin = 'manual' AND e.kind IN ('note', 'call')
           AND COALESCE(e.body, '') <> '' ORDER BY e.occurred_at DESC, e.id DESC LIMIT 1) AS last_comment
-        FROM people pe ORDER BY ${orderBy} ${dir} NULLS LAST`).all();
+        FROM people pe WHERE 1 = 1${scopePeopleSql(scopeRange(url))[0]} ORDER BY ${orderBy} ${dir} NULLS LAST`).all(...scopePeopleSql(scopeRange(url))[1]);
       // Decision 10: findable by whatever the operator remembers, including the
       // channel's plain name, so "instagram" finds it without knowing the id.
       if (q) {
@@ -1821,15 +1852,17 @@ export const handle = async (req, res) => {
     // pushed in from a fixture file so the flow can be walked through on screen.
     if (req.method === 'GET' && p === '/api/intake') {
       const state = url.searchParams.get('state') || 'new';
-      const rows = await listInbound(db, { state });
+      const range = scopeRange(url);   // the Inbox by the MESSAGE's arrival (Q45)
+      const rows = await listInbound(db, { state, range });
+      const inState = async (st) => (await db.prepare(`SELECT COUNT(*) n FROM inbound WHERE state = ?${range ? ' AND received_at >= ? AND received_at < ?' : ''}`).get(st, ...(range || []))).n;
       return json(res, 200, {
         rows, state,
         counts: {
-          new: (await db.prepare("SELECT COUNT(*) n FROM inbound WHERE state = 'new'").get()).n,
-          qualified: (await db.prepare("SELECT COUNT(*) n FROM inbound WHERE state = 'qualified'").get()).n,
-          archived: (await db.prepare("SELECT COUNT(*) n FROM inbound WHERE state = 'archived'").get()).n,
-          filtered: (await db.prepare("SELECT COUNT(*) n FROM inbound WHERE state = 'filtered'").get()).n,
-          aged: await agedCount(db),
+          new: await inState('new'),
+          qualified: await inState('qualified'),
+          archived: await inState('archived'),
+          filtered: await inState('filtered'),
+          aged: await agedCount(db, undefined, range),
         },
         levels: CONFIG.qualification.levels,
         routing: CONFIG.routing,
@@ -2078,7 +2111,7 @@ export const handle = async (req, res) => {
         ...f.byChannel.map((x) => ['Channel contacts', channelLabel(x.channel), x.contacts]),
         ...f.byChannel.map((x) => ['Channel leads', channelLabel(x.channel), x.leads]),
         ...f.dropOut.map((x) => ['Why people left', x.reason, x.n]),
-        ['Attention', 'Waiting since yesterday', f.agedInbound],
+        ['Attention', 'Late: not answered in the working day', f.agedInbound],
         ['Attention', 'Overdue actions', f.overdueActions],
         ['Attention', 'Active with no next step', f.noNextAction],
         ['Filtered', 'Obvious sales pitches never shown', f.filtered],
@@ -2176,8 +2209,9 @@ export const handle = async (req, res) => {
       // STILL_OPEN_SQL here too (Ieva 30.09 10:23: "I changed the status, but he still shows under
       // Next Steps as overdue"). A step added AFTER the admission slips past the close-on-status
       // rule; a finished person's leftover is on their own page under "Still open", never in a list.
-      let sql = `SELECT t.*, pe.name, pe.programme, pe.status, pe.phone, pe.source_channel FROM tasks t JOIN people pe ON pe.id = t.person_id WHERE t.done_at IS NULL AND ${STILL_OPEN_SQL}`;
-      const args = [];
+      const [inScope, scopeArgs] = scopeSql(scopeRange(url));
+      let sql = `SELECT t.*, pe.name, pe.programme, pe.status, pe.phone, pe.source_channel FROM tasks t JOIN people pe ON pe.id = t.person_id WHERE t.done_at IS NULL AND ${STILL_OPEN_SQL}${inScope}`;
+      const args = [...scopeArgs];
       if (scope === 'overdue') { sql += ' AND t.due_at < ?'; args.push(dayStart()); }
       if (scope === 'today') { sql += ' AND t.due_at >= ? AND t.due_at < ?'; args.push(dayStart(), dayEnd()); }
       if (scope === 'week') { sql += ' AND t.due_at < ?'; args.push(new Date(Date.now() + 7 * 86400000).toISOString()); }

@@ -82,10 +82,14 @@ test('the pipeline stage list has not been quietly rewritten as the ladder', asy
   assert.match(CONFIG.qualification._note, /separate from the pipeline stage list/i);
 });
 
-test('the ageing rule is the decided one: next day at 09:00', async () => {
-  assert.equal(CONFIG.ageing.rule, 'next calendar day at 09:00');
-  assert.equal(CONFIG.ageing.hour, 9);
+test('the ageing rule is the decided one: working hours, answer within one, late at the end of that day (Q50)', async () => {
+  assert.equal(CONFIG.ageing.rule, 'answer within 1 working hour, late at the end of that working day');
+  assert.deepEqual(CONFIG.ageing.workdays, [1, 2, 3, 4, 5]);
+  assert.equal(CONFIG.ageing.start, '09:00');
+  assert.equal(CONFIG.ageing.end, '17:00');
+  assert.equal(CONFIG.ageing.answerWithinMinutes, 60);
   assert.ok(CONFIG.ageing.timezone, 'it needs a timezone or 09:00 means nothing');
+  assert.match(CONFIG.ageing._note, /'answered' = the Inbox has handled it/, 'what answered means, until a first-reply time exists');
 });
 
 // ------------------------------------------------- notifications, the point --

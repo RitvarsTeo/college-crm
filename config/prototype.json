@@ -671,13 +671,16 @@
   ],
   "_stageRoles": "The stage VOCABULARY is provisional and will be replaced. The code never writes a stage name; it asks for the stage that plays a role (admitted, closed, ...). Changing config.stages and these four pointers changes the whole product, with no architectural rework. A test fails if a stage role points at a stage that does not exist.",
   "ageing": {
-    "rule": "next calendar day at 09:00",
-    "hour": 9,
+    "rule": "answer within 1 working hour, late at the end of that working day",
     "timezone": "Europe/Riga",
+    "workdays": [1, 2, 3, 4, 5],
+    "start": "09:00",
+    "end": "17:00",
+    "answerWithinMinutes": 60,
     "appliesTo": [
       "raw"
     ],
-    "_note": "DECIDED 23.09.2026. An untouched raw contact surfaces the NEXT DAY at 09:00 local. Inbound Monday 21:30 surfaces Tuesday 09:00. Deterministic, computed once on arrival and stored on the row, so it can be tested without waiting for a clock."
+    "_note": "DECIDED 05.10.2026 (Q50, the owner picked MASTER CONTROL's suggestion; replaces 23.09's 'next calendar day at 09:00'). Working hours Mon-Fri 09:00-17:00 Riga. A message still waiting after 1 WORKING hour is amber 'answer now'; still waiting at the end of the working day that hour ends in, it is red 'late'. Friday 16:30 -> answer now Monday 09:30, late Monday 17:00. Until a real first-reply time exists, 'answered' = the Inbox has handled it (its state is no longer new). Public holidays are not in the rule yet. Worked out from received_at on every read, so rows from before the change follow it too."
   },
   "intake": {
     "states": [

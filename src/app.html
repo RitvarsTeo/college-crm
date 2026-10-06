@@ -1079,6 +1079,47 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-hhow{color:var(--ink);text-decoration:none} html.ui-c .c-hhow small{display:block;color:var(--t3)}
   html.ui-c[data-theme="dark"] .c-hmap-c{background:var(--glass);border-color:var(--glass-line)}
   @media (max-width:760px){ html.ui-c .c-hmap, html.ui-c .c-hmap-kids{grid-template-columns:1fr} }
+  /* Q56: the flow through Intake on the Help center (behind ?helpflow=1): six stops on ONE line, the Journey band's
+     card; every stop is a click to its place, the Journey's stages and the two ends a click to their column */
+  html.ui-c .c-hflow{padding:20px 12px 18px}
+  html.ui-c .hf-row{--hf-line:#29a8df;list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr 1fr 1.9fr 1.3fr 1fr}
+  html.ui-c[data-theme="dark"] .hf-row{--hf-line:#8fcbef}
+  html.ui-c .hf-step{position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;padding:0 6px;min-width:0;text-align:center}
+  html.ui-c .hf-step::before{content:"";position:absolute;top:22px;left:0;right:0;height:0;border-top:2px solid var(--hf-line);pointer-events:none}
+  html.ui-c .hf-step:first-child::before{left:50%} html.ui-c .hf-step:last-child::before{right:50%}
+  html.ui-c .hf-node{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink);text-decoration:none;border-radius:12px;padding:0 4px 4px;min-width:0}
+  html.ui-c .hf-node:focus-visible,html.ui-c .hf-chip:focus-visible{outline:2px solid var(--pet);outline-offset:2px}
+  html.ui-c .hf-ico{position:relative;z-index:1;display:grid;place-items:center;width:44px;height:44px;margin-bottom:4px;border-radius:50%;
+    background:var(--surface);border:2px solid var(--hf-line);color:var(--pet);box-sizing:border-box}
+  html.ui-c .hf-step.end .hf-ico{border-color:#E0A526}
+  html.ui-c .hf-node:hover .hf-ico{background:var(--c-sunk)}
+  html.ui-c .hf-ico svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+  html.ui-c .hf-ico i{position:absolute;top:-6px;right:-8px;min-width:18px;height:18px;padding:0 4px;box-sizing:border-box;border-radius:9px;
+    background:#29a8df;color:#0a2463;font-style:normal;font-size:11px;font-weight:800;line-height:18px;text-align:center}
+  html.ui-c .hf-step.end .hf-ico i{background:#E0A526}
+  html.ui-c .hf-node b{font-size:14px;font-weight:650}
+  html.ui-c .hf-node small{font-size:12px;line-height:1.35;color:var(--t2)}
+  html.ui-c .hf-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
+  html.ui-c .hf-chip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 9px;border:1px solid var(--control-line);border-radius:8px;
+    background:var(--field);color:var(--ink);font-size:12px;font-weight:600;text-decoration:none;white-space:nowrap}
+  html.ui-c .hf-chip:hover{border-color:#29a8df;background:var(--c-sunk)}
+  html.ui-c .hf-chip i{width:8px;height:8px;border-radius:2px;background:#29a8df}
+  html.ui-c .hf-chip.t-adm i{background:#E0A526} html.ui-c .hf-chip.t-np i{background:var(--t3)}
+  html.ui-c[data-theme="dark"] .hf-ico{background:#133a60;color:var(--ink)}
+  html.ui-c[data-theme="dark"] .hf-step.end .hf-ico{border-color:#E0A526}
+  /* PHONE: the same line, standing up - the stops one under another, the line down through the circles */
+  @media (max-width:760px){
+    html.ui-c .hf-row{grid-template-columns:1fr;row-gap:18px}
+    html.ui-c .hf-step{align-items:stretch;padding:0;text-align:left}
+    html.ui-c .hf-step::before{top:0;bottom:-18px;left:21px;right:auto;height:auto;border-top:0;border-left:2px solid var(--hf-line)}
+    html.ui-c .hf-step:first-child::before{top:22px;left:21px}
+    html.ui-c .hf-step:last-child::before{right:auto;bottom:auto;height:22px}
+    html.ui-c .hf-node{display:grid;grid-template-columns:44px minmax(0,1fr);column-gap:14px;row-gap:1px;align-items:center;padding:0}
+    html.ui-c .hf-ico{grid-row:1 / span 2;margin:0}
+    html.ui-c .hf-node b{grid-column:2;align-self:end}
+    html.ui-c .hf-node small{grid-column:2;align-self:start}
+    html.ui-c .hf-node b:last-child{grid-row:1 / span 2;align-self:center}
+    html.ui-c .hf-chips{margin-left:58px;justify-content:flex-start} }
   html.ui-c .c-step{display:block;padding:16px 16px 14px;border:1px solid var(--rule);border-radius:12px;background:var(--surface);color:var(--ink);text-decoration:none}
   html.ui-c .c-step:hover{border-color:var(--control-line)}
   html.ui-c .c-step:focus-visible{outline:2px solid var(--pet);outline-offset:2px}
@@ -1492,7 +1533,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .jb-outs{display:flex;flex-direction:column;gap:10px}
   html.ui-c .jb-cols{position:relative;display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:8px}
   /* the shared baseline is drawn once under every column: the spine laid on its side */
-  html.ui-c .jb-cell{display:flex;flex-direction:column;align-items:stretch;min-width:0}
+  html.ui-c .jb-cell{display:flex;flex-direction:column;align-items:stretch;min-width:0;container-type:inline-size}
   html.ui-c .jb-col{appearance:none;display:flex;flex-direction:column;align-items:stretch;gap:6px;margin:0;padding:0 0 4px;border:0;border-radius:10px;
     background:transparent;font:inherit;color:inherit;cursor:pointer;min-width:0}
   html.ui-c .jb-col:hover .jb-l,html.ui-c .jb-col.on .jb-l{color:var(--ink)}
@@ -1513,7 +1554,11 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .jb-n{position:absolute;left:50%;bottom:100%;transform:translateX(-50%);padding-bottom:3px;display:flex;align-items:baseline;gap:4px;
     font-size:18px;font-weight:650;line-height:1;color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums}
   html.ui-c .jb-n em{font-style:normal;font-size:11px;font-weight:700;padding:1px 5px;border-radius:5px;background:var(--j-alarm);color:var(--j-on-alarm)}
-  html.ui-c .jb-l{display:flex;align-items:center;justify-content:center;gap:5px;font-size:12px;font-weight:600;color:var(--t2);text-align:center;overflow-wrap:anywhere}
+  /* A LABEL NEVER BREAKS INSIDE A WORD (MASTER CONTROL for the owner, 06.10.2026: "Contac/ted", "Applic/ation" at 375 px).
+     It wraps only between words ("Not / proceeding"); on a narrow column its size follows the column (17cqi of the
+     cell, between 8.5 and 12 px), so the longest stage word fits: "Application" needs 61 px at 11 px, a 375 px phone
+     gives each column 55 px. */
+  html.ui-c .jb-l{display:flex;align-items:center;justify-content:center;gap:5px;font-size:clamp(8.5px,17cqi,12px);font-weight:600;color:var(--t2);text-align:center;overflow-wrap:normal;word-break:normal;hyphens:manual}
   html.ui-c .jb-cell .c-exit{align-self:center;margin-top:2px}
   /* Q47 THE POOL FRAME: the Journey band's look, frozen; folded to one row of the same cohorts once scrolled */
   :root{--p-top:0px}   /* what is pinned above the band: the phone's top bar, measured by cPoolWire */
@@ -1583,7 +1628,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
     html.ui-c .jb-plot{--jb-half-gap:2px}
     html.ui-c .jb-n{font-size:15px}
     html.ui-c .jb-l .c-jn{display:none}
-    html.ui-c .jb-l{font-size:11px}
+    html.ui-c .jb-l{font-size:clamp(8.5px,17cqi,11px)}
     html.ui-c .jband-row{grid-template-columns:1fr}
     html.ui-c .jb-outs{flex-direction:column} }
 
@@ -2049,6 +2094,8 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
     border-radius:5px;padding:1px 7px;white-space:nowrap;display:inline-block;line-height:1.5;width:max-content}
   html.ui-c h3 b.c-count{border-radius:99px;padding:0 7px;letter-spacing:0;font-weight:700}
   html.ui-c h3 b.c-count.over{background:var(--j-alarm);color:var(--j-on-alarm)} html.ui-c h3 b.c-count.today{background:var(--j-soon);color:var(--j-on-soon)}
+  /* Q50: "answer now" - a message a working hour old; the same solid amber as Today, the urgency on the row */
+  html.ui-c .c-answer{background:var(--j-soon);color:var(--j-on-soon);font-weight:700;border-radius:5px;padding:1px 7px;white-space:nowrap;display:inline-block;line-height:1.5}
   html.ui-c .c-when.today{background:var(--j-soon);color:var(--j-on-soon);font-weight:700;
     border-radius:5px;padding:1px 7px;white-space:nowrap;display:inline-block;line-height:1.5;width:max-content}
   html.ui-c .c-jover{font-style:normal;font-size:10.5px;font-weight:700;letter-spacing:.02em;text-transform:none;margin-left:auto;
@@ -2113,8 +2160,19 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   @media (max-width:760px){ html.ui-c .c-form.c-form1{grid-template-columns:1fr} }
 
   /* The full report in C: Home's hairline sheet, a period bar, then the breakdowns. */
-  html.ui-c .c-periodbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:0 0 18px}
-  html.ui-c .c-periodbar .c-seg{margin:0}
+  /* Q45: the Period dropdown, frozen in the corner. The filter look; the current whole year plain, anything else on
+     navy with white words (no bar, no chip, no amber). Desktop: the window's top-right corner, the page heads leave it
+     room (--scope-w). Phone: a row of its own at the right of the frozen top bar. */
+  html.ui-c .c-scope{position:fixed;top:14px;right:20px;z-index:30}
+  html.ui-c .c-scope .c-jf{margin:0;background:var(--field);box-shadow:0 4px 14px -8px rgba(10,36,99,.35)}
+  html.ui-c .c-scope .c-jf select{max-width:none}
+  html.ui-c .c-scope .c-jf.past{background:#0a2463;border-color:#0a2463}
+  html.ui-c .c-scope .c-jf.past > span, html.ui-c .c-scope .c-jf.past select{color:#ffffff}
+  html.ui-c .c-scope .c-jf.past select option, html.ui-c .c-scope .c-jf.past select optgroup{color:#0a2463;background:#ffffff}
+  html.ui-c[data-theme="dark"] .c-scope .c-jf.past{border-color:#8fcbef}
+  @media (min-width:901px){ html.ui-c #view .c-head, html.ui-c #view .khead{padding-right:var(--scope-w,0px)} }
+  @media (max-width:900px){ html.ui-c .shell > nav > .c-scope{position:static;order:3;flex:1 0 100%;display:flex;justify-content:flex-end;margin:2px 0 2px} }
+  :root{--scope-w:0px}
   html.ui-c .c-date{display:flex;align-items:center;gap:6px;margin:0;font-size:12.5px;color:var(--t3)}
   html.ui-c .c-date input{width:auto}
   html.ui-c .c-rgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 34px}
@@ -2224,6 +2282,11 @@ html.ui-c[data-theme="dark"] #view .kneed:first-child{border-left:0;padding-left
 }
 html.ui-c[data-theme="dark"] #view .jb-end{background:transparent;border:0;border-radius:0;box-shadow:none;padding:6px 12px}
 html.ui-c[data-theme="dark"] #view .jband-row > .jb-end{border-right:1px solid rgba(194,211,222,.14)}
+/* Q57: a bookend picked filters the board to its end column, lit like a picked stage column */
+html.ui-c #view .jb-outs > .jb-end.on{background:var(--c-sunk);border-radius:10px}
+html.ui-c .c-col.c-col-end::after{width:100%;background:var(--v-np)}
+html.ui-c .c-col.c-col-end.good::after{background:var(--v-adm)}
+html.ui-c .c-jp .c-jout{display:block;margin-top:4px;font-size:12px;line-height:1.35;color:var(--t2);white-space:normal;overflow-wrap:break-word}
 html.ui-c[data-theme="dark"] #view .jb-outs{border-left:1px solid rgba(194,211,222,.14);gap:6px}
 /* ===== KIT PART 9, REPORT MOTION: copied verbatim from Dev kits to share/Component library/9 Report motion/motion.css
    (the rule: take it, never hand-write motion). Intake is one file with no build step, so it is inlined, not linked.
@@ -2594,8 +2657,92 @@ function installCNav() {
     <a href="#/help" data-c="help" id="cnHelp" class="c-navfoot c-navhelp">${C_ICON.help}<span>Help center</span></a>
   </div>`);
   installCTabs();
+  installCScope();
   // No "Open the classic view" link: C is the normal product, and the classic view is a
   // hidden fallback reached only by the address ?ui=classic (the owner, 28.09.2026).
+}
+
+// ---- THE YEAR SCOPE (Q45, MASTER CONTROL's GO 05.10.2026 for C) ---------------------------------------------
+// The owner: "the switch is a frozen item just on top for the whole app, so we can switch quickly. And always be
+// sure, that we are checking the right year", then "its a small detail on top right corner", "dont use this
+// color!" and, of "Period · Whole year", "this is good" / "this is enough!". So: ONE small labelled dropdown in the
+// app's filter look (c-jf), "Period", frozen in the top-right corner of every page: All years, then each year that
+// has people with its months grouped under it. STRICT: every screen counts the people who ARRIVED in the period
+// (people.created_at), Today and the menu badges too; the Inbox by the message's own arrival; the Admitted (and the
+// Median) by their admission date (server: scopePeopleSql). Every open starts on the current year; any other choice
+// is the dropdown's own text on a navy fill - no bar, no extra chip.
+// ONE filter, on the server (scopeRange in src/server.js): api() adds ?y= and ?m= to the reads below and nothing
+// else, so a count on arrival is the same figure as the list it opens.
+const C_SCOPED = /^\/api\/(people|tasks|summary|intake|journey\/exits)(\?|$)/;
+const C_MONTHS_LONG = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const cNowYear = () => Number(cTodayIso().slice(0, 4));
+let C_SCOPE = { year: null, month: 0 };   // year: a number or 'all' (null = the current year); month 0 = the whole year
+let C_SCOPE_YEARS = [];
+const cScopeYear = () => (C_SCOPE.year == null ? cNowYear() : C_SCOPE.year);
+function cScopeQs() {
+  const y = cScopeYear();
+  return y === 'all' ? '' : 'y=' + y + (C_SCOPE.month ? '&m=' + C_SCOPE.month : '');
+}
+function cScoped(path) {
+  if (UI !== 'c' || !C_SCOPED.test(path)) return path;
+  const q = cScopeQs();
+  return q ? path + (path.includes('?') ? '&' : '?') + q : path;
+}
+// The scope as dates, for what reads a period (Reports): [from, to] as Riga days, to '' = up to today.
+function cScopeDates() {
+  const y = cScopeYear(), now = cTodayIso();
+  if (y === 'all') return [String(Math.min(cNowYear(), ...C_SCOPE_YEARS)) + '-01-01', ''];
+  const mm = String(C_SCOPE.month).padStart(2, '0');
+  if (C_SCOPE.month) {
+    const last = new Date(Date.UTC(y, C_SCOPE.month, 0)).getUTCDate();
+    return now.startsWith(`${y}-${mm}`) ? [`${y}-${mm}-01`, ''] : [`${y}-${mm}-01`, `${y}-${mm}-${last}`];
+  }
+  return y === cNowYear() ? [`${y}-01-01`, ''] : [`${y}-01-01`, `${y}-12-31`];
+}
+// The scope in words: "2026", "March 2025", "All years".
+function cScopeWord() {
+  const y = cScopeYear();
+  return y === 'all' ? 'All years' : C_SCOPE.month ? `${C_MONTHS_LONG[C_SCOPE.month - 1]} ${y}` : String(y);
+}
+function cScopeHtml() {
+  const y = cScopeYear(), now = cNowYear();
+  const years = [...new Set([now, ...C_SCOPE_YEARS])].sort((a, b) => b - a);
+  const sel = (v) => (v === `${y}-${C_SCOPE.month}` ? ' selected' : '');
+  const group = (yr) => { const last = yr === now ? Number(cTodayIso().slice(5, 7)) : 12;   // no month that has not begun
+    return `<optgroup label="${yr}"><option value="${yr}-0"${sel(`${yr}-0`)}>${yr} · Whole year</option>${
+      C_MONTHS_LONG.slice(0, last).map((n, k) => `<option value="${yr}-${k + 1}"${sel(`${yr}-${k + 1}`)}>${n} ${yr}</option>`).join('')}</optgroup>`; };
+  const past = !(y === now && !C_SCOPE.month);   // anything but the current whole year: navy, so nobody misreads it
+  return `<label class="c-jf c-scope-jf${past ? ' past' : ''}"><span>Period</span><select aria-label="Period" onchange="cPickScope(this.value)">
+    <option value="all"${y === 'all' ? ' selected' : ''}>All years</option>${years.map(group).join('')}</select></label>`;
+}
+function cPickScope(v) { if (v === 'all') return cSetScope('all', 0); const [yr, m] = v.split('-').map(Number); cSetScope(yr, m); }
+// Desktop: the corner of the window, beside every page's head (which leaves it room, --scope-w). Phone: a row of
+// its own in the frozen top bar, so it never sits on the "Acting as" box or a page's own buttons.
+function cPlaceScope() {
+  const el = document.querySelector('#cScope'); if (!el) return;
+  const narrow = window.matchMedia && window.matchMedia('(max-width:900px)').matches;
+  const nav = document.querySelector('.shell > nav');
+  const home = narrow && nav ? nav : document.body;
+  if (el.parentElement !== home) home.appendChild(el);
+  const w = narrow ? 0 : Math.ceil(el.getBoundingClientRect().width) + 24;
+  document.documentElement.style.setProperty('--scope-w', w + 'px');
+}
+function cDrawScope() { const el = document.querySelector('#cScope'); if (el) { el.innerHTML = cScopeHtml(); cPlaceScope(); } }
+function installCScope() {
+  if (document.querySelector('#cScope')) return;
+  document.body.insertAdjacentHTML('beforeend', '<div id="cScope" class="c-scope" role="group" aria-label="Which period"></div>');
+  cDrawScope();
+  if (window.addEventListener) window.addEventListener('resize', cPlaceScope);
+  api('/api/scope/years').then((r) => { C_SCOPE_YEARS = (r && r.years) || []; cDrawScope(); }).catch(() => {});
+}
+// A change redraws the page you are on and the menu's counts, under the new scope. A Reports cohort was counted
+// under the old one, so it goes.
+function cSetScope(year, month) {
+  C_SCOPE = { year: year === 'all' ? 'all' : Number(year), month: year === 'all' ? 0 : Number(month) || 0 };
+  C_PCOHORT = null;
+  cDrawScope();
+  route();
+  cNavCounts();
 }
 
 // THE PHONE TAB BAR (the owner, 05.10.2026: "The Menu is scrollable ... maybe you have a better idea?", then "OK,
@@ -2790,18 +2937,21 @@ async function routeC(page, arg) {
 // figure-first stack with a delta row (Mobbin, free tier). Every figure is read live from
 // /api/report, /api/summary, /api/people and /api/intake; a failed read says so.
 async function cHomeData() {
-  const year = Number(cTodayIso().slice(0, 4));
+  // THE PERIOD (Q45): the year scope, never the calendar year on its own. 'all' has no year: no target, the last
+  // twelve months on the chart.
+  const year = cScopeYear() === 'all' ? 'all' : cScopeYear();
+  const [from, to] = cScopeDates();
   const [rep, people, sum, intake] = await Promise.all([
-    api(`/api/report?from=${year}-01-01&to=${year}-12-31`),
+    api(`/api/report?from=${from}${to ? '&to=' + to : ''}`),
     cPeopleRows(),
     api('/api/summary').catch(() => null),
     api('/api/intake').catch(() => null),
   ]);
   const s = rep.summary || {};
   const thisMonth = cTodayIso().slice(0, 7);
-  const months = (rep.trend || []).filter((m) => m.month.startsWith(String(year)) && m.month <= thisMonth);
-  const inYear = (d) => cDay(d).startsWith(String(year));
-  const admitted = people.filter((p) => p.status === 'Admitted' && inYear(p.admitted_at));
+  const months = (rep.trend || []).filter((m) => (year === 'all' || m.month.startsWith(String(year))) && m.month <= thisMonth);
+  // the rows ARE the period: the Admitted among them were admitted in it (server, scopePeopleSql)
+  const admitted = people.filter((p) => p.status === 'Admitted' && p.admitted_at);
   const undated = people.filter((p) => p.status === 'Admitted' && !p.admitted_at).length;
   const count = (arr, key) => { const m = new Map(); arr.forEach((p) => { const k = key(p); m.set(k, (m.get(k) || 0) + 1); }); return [...m.entries()].sort((a, b) => b[1] - a[1]); };
   const known = new Set(CFG.programmes || []);
@@ -2829,7 +2979,7 @@ const cFig = (n) => (n === null ? '<span class="kgapn" title="not available">—
 async function viewHomeC() {
   const D = await cHomeData();
   $('#view').innerHTML = `<div class="kpage kb">
-    <div class="khead"><div><h1 class="c-sr">Home</h1><p class="c-crumb" style="margin:0">Admissions ${D.year} · to ${esc(D.asOf)}</p></div></div>
+    <div class="khead"><div><h1 class="c-sr">Home</h1><p class="c-crumb" style="margin:0">Admissions ${esc(cScopeWord())}${D.year === cNowYear() && !C_SCOPE.month ? ` · to ${esc(D.asOf)}` : ''}</p></div></div>
     ${cHomeB(D)}
     ${D.noNext === null || D.overdue === null || D.inbox === null
       ? '<p class="kgap-note">A dash means that figure did not answer. Nothing here is filled in from an earlier session.</p>' : ''}
@@ -2915,6 +3065,7 @@ function cHomeMonths(D, extraCls = '') {
 // Blue is the admitted figure, mustard the target. Depth belongs to the frame (the meter's sunk track), never
 // to the mark.
 function cTarget(D) {
+  if (typeof C_SCOPE !== 'undefined' && C_SCOPE.month) return null;   // a year's target against one month would mislead (Q45)
   const t = CFG.targets && CFG.targets[String(D.year)];
   if (!t || !(Number(t.admitted) > 0)) return null;
   const progs = Array.isArray(t.officerProgrammes) ? t.officerProgrammes : [];
@@ -2971,8 +3122,8 @@ function cHomeB(D) {
       </div>
     </section>
     <div class="kstrip kb-strip">
-      <div class="khero"><span>Admitted</span><b>${D.admitted.length}</b><small>${D.year}${D.undated ? ` · +${D.undated} undated` : ''}</small>${goal ? cTargetMeter(goal) : ''}${cSpark(D.months.map((m) => m.admitted), 'adm')}${delta('admitted')}<a class="kgo" href="#/reports" onclick="cGoReportYear('admitted');return false">Reports →</a></div>
-      <div><span>Leads</span><b>${s.newLeads ?? 0}</b><small>${D.year}</small>${cSpark(D.months.map((m) => m.newLeads), 'lead')}${delta('newLeads')}<a class="kgo" href="#/reports" onclick="cGoReportYear('leads');return false">Reports →</a></div>
+      <div class="khero"><span>Admitted</span><b>${D.admitted.length}</b><small>${esc(cScopeWord())}${D.undated ? ` · +${D.undated} undated` : ''}</small>${goal ? cTargetMeter(goal) : ''}${cSpark(D.months.map((m) => m.admitted), 'adm')}${delta('admitted')}<a class="kgo" href="#/reports" onclick="cGoReportYear('admitted');return false">Reports →</a></div>
+      <div><span>Leads</span><b>${s.newLeads ?? 0}</b><small>${esc(cScopeWord())}</small>${cSpark(D.months.map((m) => m.newLeads), 'lead')}${delta('newLeads')}<a class="kgo" href="#/reports" onclick="cGoReportYear('leads');return false">Reports →</a></div>
       <div><span>Conversion</span><b>${s.conversionPct == null ? '-' : s.conversionPct + '%'}</b><small>${s.conversionA ?? 0} / ${s.conversionB ?? 0} ${esc(s.conversionWho || 'who arrived')}</small><a class="kgo" href="#/reports" onclick="cGoReportYear('conversion');return false">Reports →</a></div>
       <div><span>Median time to admission</span><b>${s.medianDaysToAdmission == null ? '-' : s.medianDaysToAdmission} <em>days</em></b><small>first contact to admission</small><a class="kgo" href="#/reports" onclick="cGoReportYear('median');return false">Reports →</a></div>
     </div>
@@ -2998,13 +3149,15 @@ function cGoReportYear(chapter) {
 // has (C_JF.stage), set and then shown. Nothing else the reader had chosen is kept, so
 // the count on Home and the count on the Journey are the same people.
 function cGoStage(id) {
-  C_JF = C_JF_EMPTY(); C_JF.stage = [id]; C_PTAB = 'journey';
-  C_JF = C_JF_EMPTY(); C_JP.col = id; C_JP.view = 'list';
-  if (location.hash === '#/journey') viewJourneyPool(); else location.hash = '#/journey';
+  // Q57: the Board, on that column, exactly as the band click sets it; nothing an earlier visit chose narrows it
+  C_PTAB = 'journey'; C_PF = C_PF_EMPTY(); C_PCOHORT = null; C_JSEL = null;
+  if (!C_TERMINAL.includes(id)) { C_OUT_TAG = null; C_OUT_REASON = null; C_OUT_FILTER = null; }
+  C_JF = C_JF_EMPTY(); C_JP.col = id; C_JP.view = 'board';
+  if (location.hash === '#/journey') cPoolRouteJourney('journey'); else location.hash = '#/journey';
 }
 // Cold / reject on Home opens Not proceeding with exactly that tag.
 function cGoClosedTag(id) {
-  C_OUT_REASON = null;
+  C_OUT_REASON = null; C_PF = C_PF_EMPTY(); C_PCOHORT = null; C_JF = C_JF_EMPTY();
   C_OUTCOME = 'Not proceeding'; C_OUT_FILTER = null; C_OUT_TAG = id;
   if (location.hash === '#/outcomes') viewOutcomesC(); else location.hash = '#/outcomes';
 }
@@ -3152,6 +3305,7 @@ function cChartGo(spec) {
   if (kind === 'stage') { cGoStage(key); return; }
   if (kind === 'inbox') { location.hash = '#/leads'; return; }
   if (kind === 'cohort') { cGoCohort(key); return; }   // a Reports figure: exactly its people (Q35)
+  C_PF = C_PF_EMPTY(); C_PCOHORT = null; C_JF = C_JF_EMPTY();   // Q57: the board shows exactly what the figure counts
   if (kind === 'outcome') { C_OUTCOME = key; C_OUT_FILTER = null; C_OUT_TAG = null; C_OUT_REASON = null; if (location.hash === '#/outcomes') viewOutcomesC(); else location.hash = '#/outcomes'; return; }
   C_OUTCOME = 'Admitted';
   C_OUT_FILTER = { kind, key, label };
@@ -3296,7 +3450,7 @@ function cReasonBreakdown(np, noReason) {
   if (!rows.length) return '';
   const top = Math.max(1, ...rows.map((r) => r[1]));
   const bars = rows.map(([label, n, odd]) => '<div class="c-reasonbar' + (C_OUT_REASON === label ? ' on' : '') + '" role="button" tabindex="0"'
-    + ' data-r="' + esc(label) + '" onclick="C_OUT_REASON=this.dataset.r;viewOutcomesC();window.scrollTo(0,0)">'
+    + ' data-r="' + esc(label) + '" onclick="C_OUT_REASON=this.dataset.r;cDrawJourneyPool();window.scrollTo(0,0)">'
     + '<span>' + esc(label) + (odd ? ' <em>not in the list</em>' : '') + '</span>'
     + '<i style="width:' + Math.max(2, (n / top) * 100) + '%"></i><b>' + n + '</b></div>').join('');
   return '<div class="c-reasons">'
@@ -3349,8 +3503,8 @@ function cColdGroups(list, people) {
 }
 async function viewOutcomesC() {
   C_JP.col = C_OUT_REASON ? ((CFG.stageRoles || {}).closed || 'Not proceeding') : C_OUTCOME;
-  C_JP.view = 'list';
-  return viewJourneyPool();
+  C_JF = C_JF_EMPTY(); C_JP.view = 'board';
+  return cPoolRouteJourney('journey');
 }
 
 // -------------------------------------------------------------------- SETTINGS
@@ -3397,15 +3551,45 @@ function cHelpMap() {
   const map = groups.map((g) => (g.group
     ? `<div class="c-hmap-g"><span class="c-hmap-gl">${C_ICON.adm}${esc(g.group)}</span><div class="c-hmap-kids">${g.items.map(card).join('')}</div></div>`
     : g.items.map(card).join(''))).join('');
-  const how = (H.howto || []).map((h) => `<a class="c-line c-hhow" href="${esc(h.href)}"><div class="c-who"><b>${esc(h.do)}</b><small>${esc(h.where)}</small></div><div class="c-when">›</div></a>`).join('');
-  return `<h2 class="c-set-h">Where things are</h2><div class="c-hmap">${map}</div>
-    <h2 class="c-set-h">How to</h2><div class="c-sheet c-set">${how}</div>`;
+  return `<h2 class="c-set-h">Where things are</h2><div class="c-hmap">${map}</div>${cHelpHowTo()}`;
+}
+// Q56 (the owner, 06.10.2026, on the card grid above: "whats the point of just showing replicated cards on help
+// center???"). Instead of repeating the menu, ONE line through Intake in the order a person moves through it:
+// Inbox, New lead, Today, the Journey's stages, the end, Reports. Every stop is a click to its place; the
+// stages and the two ends are a click to their own column (cGoStage), read from CFG.stages, so they never drift.
+// Behind ?helpflow=1 until he has seen it; the words live in config/help.json "flow".
+const cHelpFlowOn = () => { try { return new URLSearchParams(location.search).get('helpflow') === '1'; } catch { return false; } };
+function cHelpGo(id) {
+  C_PF = C_PF_EMPTY(); C_PQ = ''; C_PCOHORT = null;
+  if (C_TERMINAL.includes(id)) { C_OUTCOME = id; C_OUT_TAG = null; C_OUT_REASON = null; C_OUT_FILTER = null; }
+  cGoStage(id);
+}
+function cHelpFlow() {
+  const flow = (CFG.help && CFG.help.flow) || [];
+  const stages = CFG.stages || [];
+  const roles = CFG.stageRoles || {};
+  const ends = [roles.admitted || 'Admitted', roles.closed || 'Not proceeding'];
+  const chipsOf = (kind) => stages.filter((s) => (kind === 'end') === ends.includes(s.id));
+  const chip = (s) => `<a class="hf-chip${s.id === ends[0] ? ' t-adm' : s.id === ends[1] ? ' t-np' : ''}" href="#/journey" data-stage="${esc(s.id)}"
+      onclick="cHelpGo(this.dataset.stage);return false"><i></i>${esc(s.label || s.id)}</a>`;
+  // a stop's own click: New lead opens everyone on the Journey, the rest their place
+  const go = (m) => (m.icon === 'ppl' ? ` onclick="cGoPeople({});return false"` : '');
+  const step = (m, i) => `<li class="hf-step${m.stages === 'end' ? ' end' : ''} m-fade" style="--i:${i}" data-step="${i + 1}">
+      <a class="hf-node" href="${esc(m.href)}"${go(m)}><span class="hf-ico">${C_ICON[m.icon] || ''}<i>${i + 1}</i></span><b>${esc(m.name)}</b>${
+        m.for ? `<small>${esc(m.for)}</small>` : ''}</a>${
+      m.stages ? `<div class="hf-chips">${chipsOf(m.stages).map(chip).join('')}</div>` : ''}</li>`;
+  return `<section class="kflow jband c-hflow m-scene" aria-label="How a person moves through Intake"><ol class="hf-row">${flow.map(step).join('')}</ol></section>`;
+}
+function cHelpHowTo() {
+  const how = ((CFG.help || {}).howto || []).map((h) => `<a class="c-line c-hhow" href="${esc(h.href)}"><div class="c-who"><b>${esc(h.do)}</b><small>${esc(h.where)}</small></div><div class="c-when">›</div></a>`).join('');
+  return `<h2 class="c-set-h">How to</h2><div class="c-sheet c-set">${how}</div>`;
 }
 function viewHelpC() {
+  const flow = cHelpFlowOn();
   $('#view').innerHTML = `<div class="c-head"><div><h1>Help center</h1></div>
       <div class="act"><button class="btn ghost" id="helpTourBtn" onclick="cStartTour(this)">Take the tour</button>
       <button class="btn" onclick="fbOpen('BUG')">Report a problem</button></div></div>
-    ${cHelpMap()}
+    ${flow ? `${cHelpFlow()}${cHelpHowTo()}` : cHelpMap()}
     <h2 class="c-set-h">The work, in three steps</h2>
     <div class="c-steps">
       <a class="c-step" href="#/leads"><span class="c-step-n">01</span><b>Inbox</b><small>Everything that arrives lands here first. Say what they want to study and the next step, and they become a person. Junk is marked not relevant, never deleted.</small></a>
@@ -3418,6 +3602,7 @@ function viewHelpC() {
   // question" into the SAME feedback box on A question, with what was searched already in it
   if (window.HelpCenter) HelpCenter.mount(document.getElementById('helpFaq'), {
     faq: (CFG.help && CFG.help.faq) || [], onAsk: (text) => fbOpen('QUESTION', text) });
+  if (flow) cScenes($('#view'));
 }
 // The tour (dev kit part 3): every step rings the real thing on screen. The theme switch is in the
 // menu on a wide screen and at the bottom of the page on a narrow one, so its target is chosen now.
@@ -3478,7 +3663,7 @@ async function viewLeadsC() {
     </div>`;
   };
   const leadRow = (r, redraw = 'viewLeadsC()', withPanel = true) => `<div class="c-line row c-lead${C_LOPEN === r.id ? ' is-open' : ''}" tabindex="0" onclick="C_LOPEN=${C_LOPEN === r.id ? 'null' : Number(r.id)};${redraw}">
-        <div class="c-who"><b class="c-reach">${esc(r.contact_name || r.contact_handle || '') || cTelLink({ phone: r.contact_phone }) || 'Unknown'}</b><small>${esc(channelLabel(r.channel))} · ${fmtDateTime(r.received_at)}${r.aged ? ' · <span class="c-late">late</span>' : ''}</small></div>
+        <div class="c-who"><b class="c-reach">${esc(r.contact_name || r.contact_handle || '') || cTelLink({ phone: r.contact_phone }) || 'Unknown'}</b><small>${esc(channelLabel(r.channel))} · ${fmtDateTime(r.received_at)}${r.aged ? ' · <span class="c-late">late</span>' : r.answerNow ? ' · <span class="c-answer">answer now</span>' : ''}</small></div>
         <div class="c-what">${esc(r.channel === 'phone' ? cCallLine(r.body) : (r.body || val(r, 'question') || ''))}</div>
         <div class="c-when">${esc(val(r, 'interest') || '')}</div><div></div></div>
         ${C_LOPEN === r.id && withPanel ? panel(r) : ''}`;
@@ -3671,28 +3856,41 @@ function cInboxPool() {
 }
 
 // ---- JOURNEY: People + Journey + Outcomes in one. New · Contacted · Follow-up · Application · Contract | Admitted ·
-// Not proceeding. No column chosen = everyone (search and Add lead). List is the default view; Board is the stage
-// board the Journey had.
-let C_JP = { col: null, view: 'list' };
+// Not proceeding. No column chosen = everyone (search and Add lead).
+// Q57 (the owner, 06.10.2026: "I didnt ask you to turn journey's drag and drop into a list! ... journey tab is the mosst
+// advanced of them all"). The drag-and-drop BOARD is the Journey: the first and default view, and every way in opens
+// it (menu, Home, Reports, the old #/people and #/outcomes). List is the second option of the switch, never remembered.
+let C_JP = { col: null, view: 'board' };
 let C_JPMORE = false;
 let C_JPD = null;
 function cPoolViewSwitch() {
-  return `<div class="c-seg p-view" role="group" aria-label="View"><button aria-pressed="${C_JP.view === 'list'}" onclick="C_JP.view='list';viewJourneyPool()">List</button><button aria-pressed="${C_JP.view === 'board'}" onclick="C_JP.view='board';viewJourneyC()">Board</button></div>`;
+  return `<div class="c-seg p-view" role="group" aria-label="View"><button aria-pressed="${C_JP.view === 'board'}" onclick="C_JP.view='board';cJColToBoard();viewJourneyC()">Board</button><button aria-pressed="${C_JP.view === 'list'}" onclick="C_JP.view='list';cJBoardToCol();viewJourneyPool()">List</button></div>`;
 }
+// The column a link targets is the board's stage filter, exactly as a band click sets it; the List reads it back.
+function cJColToBoard() {
+  if (C_JP.col) { C_JF = { ...C_JF_EMPTY(), stage: [C_JP.col] }; C_JP.col = null; }
+  // the List's one-value filters become the board's own ticks; what the board has no filter for is let go
+  for (const k of ['programme', 'owner', 'source']) if (C_PF[k]) { C_JF[k] = [C_PF[k]]; C_PF[k] = ''; }
+  if (C_PF.due === 'over' || C_PF.due === 'today') C_JF.due = [C_PF.due];
+  C_PF.due = ''; C_PF.data = '';
+}
+function cJBoardToCol() { const st = C_JF.stage || []; C_JP.col = st.length === 1 ? st[0] : null; if (C_TERMINAL.includes(C_JP.col)) C_OUTCOME = C_JP.col; }
 // The old addresses land here, on the right column: #/people and #/people/all are everyone, #/outcomes the outcome
 // last asked for, a stage link (cGoStage) its stage, a People filter its column.
 function cPoolRouteJourney(page) {
   const roles = CFG.stageRoles || {};
   if (page === 'outcomes') C_JP.col = C_OUTCOME;
-  if (page === 'journey' && (C_JF.stage || []).length === 1) { C_JP.col = C_JF.stage[0]; C_JF = C_JF_EMPTY(); C_JP.view = 'list'; }
   const st = C_PF.stage || '';
   if (page === 'people' && !st && !C_PCOHORT && location.hash !== '#/journey') C_JP.col = null;
   if (st && st !== 'open') {
     if (st.startsWith('tag:')) { C_JP.col = roles.closed || 'Not proceeding'; C_OUT_TAG = st.slice(4); } else C_JP.col = st;
     C_PF.stage = '';
   }
-  if (C_JP.view === 'board' && page === 'journey') return viewJourneyC();
-  return viewJourneyPool();
+  // Q57: every way in opens the Board, on the column it targets; "everyone open" is what the board is already
+  if (C_PF.stage === 'open') C_PF.stage = '';
+  C_JP.view = 'board';
+  cJColToBoard();
+  return viewJourneyC();
 }
 function cJourneyPick(v) {
   C_JP.col = C_JP.col === v ? null : v;
@@ -3807,7 +4005,7 @@ function cGoPeople(filter) {
   if (filter && filter.due === 'none' && Object.keys(filter).length === 1) {   // Home's No next step: the Today card
     C_PF = C_PF_EMPTY(); C_TP.col = 'none'; if (location.hash === '#/today') viewTodayC(); else location.hash = '#/today'; return;
   }
-  C_JP.col = null; C_JP.view = 'list';
+  C_JP.col = null; C_JP.view = 'board'; C_JF = C_JF_EMPTY(); C_OUT_TAG = null; C_OUT_REASON = null; C_OUT_FILTER = null;
   if (location.hash === '#/journey') cPoolRouteJourney('people'); else location.hash = '#/journey';
 }
 // Journey's Edit opens the same person in People, unfiltered, scrolled to the row.
@@ -3815,7 +4013,9 @@ function cGoPeople(filter) {
 // Board the opened card turns into the same edit form, right there; on the List the row opens it.
 function cEditRedraw() { if (C_JP.view === 'board' && C_JDATA) cDrawJourney(); else cDrawJourneyPool(); }
 function cEditFromJourney(id) { if (C_JP.view === 'board' && C_JDATA) { C_PEDIT = id; C_PMSG = ''; C_JSEL = id; return cDrawJourney(); }
-  C_PF = C_PF_EMPTY(); C_PQ = ''; C_PEDIT = id; C_PMSG = ''; C_PSCROLL = true; C_PTAB = 'all'; C_JP.col = null; C_JP.view = 'list'; if (location.hash === '#/journey') viewJourneyPool(); else location.hash = '#/journey'; }
+  C_PF = C_PF_EMPTY(); C_PQ = ''; C_PEDIT = id; C_PMSG = ''; C_PSCROLL = true; C_PTAB = 'all'; C_JP.col = null; C_JP.view = 'board'; C_JF = C_JF_EMPTY(); C_JSEL = id;
+  const p = ((C_PDATA && C_PDATA.people) || []).find((x) => x.id === id); if (p && C_TERMINAL.includes(p.status)) C_JF.stage = [p.status];
+  if (location.hash === '#/journey') cPoolRouteJourney('journey'); else location.hash = '#/journey'; }
 // The People filters: the Journey's compact dropdowns (same look, same Clear), and they combine.
 const C_PF_DUE = [['over', 'Overdue'], ['today', 'Today'], ['none', 'No next step']];
 const C_PF_DATA = [['nocontact', 'No email or phone'], ['odd', 'Programme not in the list']];
@@ -3896,12 +4096,13 @@ let C_JSEL = null; let C_JDATA = null;
 // carries no trace of the stage they left in their current row.
 let C_JEXITS = null;
 async function viewJourneyC() {
-  const year = Number(cTodayIso().slice(0, 4));
+  const year = cScopeYear() === 'all' ? '' : cScopeYear();   // the band's Arrived: the period's arrivals (Q45)
+  const [pFrom, pTo] = cScopeDates();
   const [people, tasks, exits, rep] = await Promise.all([cPeopleRows(), api('/api/tasks?scope=open'),
     api('/api/journey/exits').catch(() => null),
     // Arrived is the SAME figure Home's Leads card reads, from the same report, so the two
     // screens cannot disagree. A failed read is a dash, never a number from earlier.
-    api(`/api/report?from=${year}-01-01&to=${year}-12-31`).catch(() => null)]);
+    api(`/api/report?from=${pFrom}${pTo ? '&to=' + pTo : ''}`).catch(() => null)]);
   C_JEXITS = exits;
   const taskOf = new Map(); tasks.forEach((t) => { if (!taskOf.has(t.person_id)) taskOf.set(t.person_id, t); });
   const arrived = rep && rep.summary && typeof rep.summary.newLeads === 'number' ? rep.summary.newLeads : null;
@@ -4271,8 +4472,8 @@ function cJourneyBand(everyone, taskOf, stages, exitMark, out) {
         ${cols.map(col).join('')}
       </div>
       <div class="jb-outs">
-        <a class="jb-end good" href="#/outcomes" onclick="C_OUTCOME='Admitted';C_OUT_FILTER=null"><span>${esc(out.admLabel)}</span><b>${out.adm}</b></a>
-        <a class="jb-end" href="#/outcomes" onclick="C_OUTCOME='Not proceeding';C_OUT_TAG=null"><span>${esc(out.npLabel)}</span><b>${out.np}</b>${
+        <a class="jb-end good${on(out.admLabel) ? ' on' : ''}" href="#/outcomes" aria-pressed="${on(out.admLabel)}" data-v="${esc(out.admLabel)}" onclick="C_OUTCOME='Admitted';C_OUT_FILTER=null;cJfPick('stage', this.dataset.v, !${on(out.admLabel)});return false"><span>${esc(out.admLabel)}</span><b>${out.adm}</b></a>
+        <a class="jb-end${on(out.npLabel) ? ' on' : ''}" href="#/outcomes" aria-pressed="${on(out.npLabel)}" data-v="${esc(out.npLabel)}" onclick="C_OUTCOME='Not proceeding';C_OUT_TAG=null;cJfPick('stage', this.dataset.v, !${on(out.npLabel)});return false"><span>${esc(out.npLabel)}</span><b>${out.np}</b>${
           out.unrecorded ? `<small>${out.np - out.unrecorded} with a recorded stage, ${out.unrecorded} without</small>` : ''}</a>
       </div>
     </div></section>`;
@@ -4395,12 +4596,19 @@ function cJColumn(stageId, ps, taskOf, sel) {
   const rest = sorted.length - shown.length;
   const cards = shown.map((p) => (sel && p.id === sel.id
     ? `<div class="c-jexp" data-id="${esc(p.id)}"><button type="button" class="c-jexp-x" aria-label="Close" onclick="event.stopPropagation();cJClose()">✕</button>${C_PEDIT === p.id ? `<div class="c-card c-jedit">${cEditForm(p, taskOf.get(p.id))}</div>` : cPersonCard(p, taskOf.get(p.id))}</div>`
-    : cJourneyCard(p, taskOf.get(p.id), sel))).join('');
+    : C_TERMINAL.includes(p.status) ? cJEndCard(p, sel) : cJourneyCard(p, taskOf.get(p.id), sel))).join('');
   const more = rest > 0
     ? `<button type="button" class="c-jmore" onclick="event.stopPropagation();cJColToggle('${esc(stageId)}')">${rest} more</button>`
     : open && sorted.length > C_JCOL_SHOW
       ? `<button type="button" class="c-jmore" onclick="event.stopPropagation();cJColToggle('${esc(stageId)}')">Show fewer</button>` : '';
   return cards + more;
+}
+// An end-column card (Q57) says how the journey ended - the date admitted, or the tag and the reason - never "Choose
+// next step". It still opens and edits in place; it is dragged back only through a stage's own column (a note asked).
+function cJEndCard(p, sel) {
+  const closed = p.status === ((CFG.stageRoles || {}).closed || 'Not proceeding');
+  return `<div class="c-jp row c-jend${sel && p.id === sel.id ? ' c-sel' : ''}" draggable="true" data-id="${esc(p.id)}" tabindex="0" onclick="cJOpen('${esc(p.id)}')" onkeydown="if(event.key==='Enter')cJOpen('${esc(p.id)}')"><b>${esc(p.name)}</b><small class="c-jout">${closed
+    ? `${p.closed_tag ? cTagChip(p.closed_tag) : ''}${cColdWhy(p)}` : `Admitted${p.admitted_at ? ' ' + esc(fmtDate(p.admitted_at)) : ''}`}</small></div>`;
 }
 function cJColToggle(id) { if (C_JCOLOPEN.has(id)) C_JCOLOPEN.delete(id); else C_JCOLOPEN.add(id); cDrawJourney(); }
 
@@ -4437,11 +4645,44 @@ function cJFlipPlay() {
 }
 if (typeof document !== 'undefined' && document.addEventListener) document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && C_JSEL && !C_JFOPEN) cJClose(); });
 
+// Q57: WHAT A WAY IN TARGETED, ON THE BOARD. Home, Reports and the Help flow send more than a column: a Reports
+// figure's people (C_PCOHORT), Home's Arrived (C_PF.arrived), a Cold / Reject tag or a reason on Not proceeding, a
+// month on Admitted (C_OUT_FILTER). The board narrows to exactly those people, says so in one chip each, and the
+// chip's cross lets it go - so the count on arrival is the figure, as it was on the List.
+function cJTargetKeep(p, taskOf) {
+  const roles = CFG.stageRoles || {};
+  const closed = roles.closed || 'Not proceeding', admitted = roles.admitted || 'Admitted';
+  if (C_PCOHORT && !C_PCOHORT.ids.has(p.id)) return false;
+  if (C_PF.arrived && !cDay(p.created_at).startsWith(C_PF.arrived)) return false;   // the year of first contact (Q36)
+  if (p.status === closed && C_OUT_TAG && p.closed_tag !== C_OUT_TAG) return false;
+  if (p.status === closed && C_OUT_REASON && p.closed_reason !== C_OUT_REASON) return false;
+  const oF = C_OUT_FILTER;
+  if (p.status === admitted && oF) {
+    if ((oF.kind === 'month' || oF.kind === 'year') && !cDay(p.admitted_at).startsWith(oF.key)) return false;
+    if (oF.kind === 'prog' && (p.programme || '(not recorded)') !== oF.key) return false;
+    if (oF.kind === 'chan' && (p.source_channel || 'unknown') !== oF.key) return false;
+  }
+  return true;
+}
+const cJTargeted = () => Boolean(C_PCOHORT || C_PF.arrived);
+function cJTargetChips() {
+  const x = (label, clear) => `<div class="c-filter">${esc(label)} <button class="btn sm ghost" onclick="${clear};cDrawJourney()">Show everyone ✕</button></div>`;
+  return [C_PCOHORT ? x(C_PCOHORT.label, 'C_PCOHORT=null') : '',
+    C_PF.arrived ? x('Arrived in ' + C_PF.arrived, "C_PF.arrived=''") : '',
+    C_OUT_FILTER ? x(C_OUT_FILTER.label || '', 'C_OUT_FILTER=null') : '',
+    C_OUT_TAG ? x(cTagLabel({ closed_tag: C_OUT_TAG }) || C_OUT_TAG, 'C_OUT_TAG=null') : '',
+    C_OUT_REASON ? x(C_OUT_REASON, 'C_OUT_REASON=null') : ''].join('');
+}
 function cDrawJourney() {
-  const { people, taskOf } = C_JDATA;
-  const stages = (CFG.stages || []).filter((s) => !C_TERMINAL.includes(s.id));
+  const { taskOf } = C_JDATA;
+  const people = C_JDATA.people.filter((p) => cJTargetKeep(p, taskOf));
+  // THE END COLUMNS (Q57): Admitted and Not proceeding are the band's bookends, as before the 05.10 frame. A click on
+  // one - or any way in that targets it - filters the board to it exactly as a stage click does, and its column is
+  // drawn at the end of the board; a figure that counts finished people (a Reports cohort, Arrived) draws theirs too.
+  const ends = C_TERMINAL.filter((id) => (C_JF.stage || []).includes(id) || (cJTargeted() && people.some((p) => p.status === id)));
+  const stages = (CFG.stages || []).filter((s) => !C_TERMINAL.includes(s.id) || ends.includes(s.id));
   const everyone = people.filter((p) => !C_TERMINAL.includes(p.status));
-  const open = everyone.filter((p) => cJourneyMatch(p, taskOf.get(p.id), C_JF));
+  const open = people.filter((p) => !C_TERMINAL.includes(p.status) || ends.includes(p.status)).filter((p) => cJourneyMatch(p, taskOf.get(p.id), C_JF));
   const narrow = window.matchMedia && window.matchMedia('(max-width:900px)').matches;
   // NO PERSON UNTIL ONE IS CLICKED (the owner, 02.10.2026). The board used to pick the first
   // person on its own, so a random lead sat on the left like a hero and took 320px from the board.
@@ -4455,11 +4696,13 @@ function cDrawJourney() {
   }
   $('#view').innerHTML = `
     <div class="c-head"><div><h1>Journey</h1></div><div class="act">${cPoolViewSwitch()}<button class="btn" onclick="openAdd()">Add lead</button></div></div>
-    ${cJourneySummary(everyone, taskOf, stages)}
-    ${cJourneyFilters(everyone)}
+    ${cJourneySummary(everyone, taskOf, stages.filter((s) => !C_TERMINAL.includes(s.id)))}
+    ${cJourneyFilters(everyone)}${cJTargetChips()}
     <div class="c-journey c-nosel">${sel ? '<div class="c-jveil" onclick="cJClose()"></div>' : ''}<div style="min-width:0">
       <div class="c-cols" style="grid-template-columns:${stages.map((s) => (sel && sel.status === s.id ? 'minmax(330px, 2.4fr)' : 'minmax(150px, 1fr)')).join(' ')}">${stages.map((s, i) => { const ps = open.filter((p) => p.status === s.id);
         const over = ps.filter((p) => { const t = taskOf.get(p.id); return t && cWhenClass(t.due_at) === 'over'; }).length;
+        // an end column is a place to look, not a drop target: a close needs its reason (the edit form asks it)
+        if (C_TERMINAL.includes(s.id)) return `<div class="c-col c-col-end${s.id === (CFG.stageRoles || {}).admitted ? ' good' : ''}" style="--jt:1"><h3>${esc(s.label || s.id)}</h3><div class="c-endcol" data-stage="${esc(s.id)}">${cJColumn(s.id, ps, taskOf, sel) || '<div class="c-empty" style="padding:8px">empty</div>'}</div></div>`;
         return `<div class="c-col" style="--jt:${((i + 1) / stages.length).toFixed(3)}"><h3><span class="c-jn">${i + 1}</span>${esc(s.label || s.id)}${over ? `<button type="button" class="c-jover" onclick="cJfOverdue('${esc(s.id)}')">${over} overdue</button>` : ''}</h3><div class="c-drop" data-stage="${esc(s.id)}">${cJColumn(s.id, ps, taskOf, sel) || '<div class="c-empty" style="padding:8px">empty</div>'}</div></div>`; }).join('')}</div>
     </div></div>`;
   if (C_JDATA.play) cScenes($('#view'));
@@ -4613,8 +4856,6 @@ function cSheetNotice() {
   try { const u = new URL(location.href); u.searchParams.delete('sheet'); history.replaceState(null, '', u.pathname + u.search + u.hash); } catch {}
   return `<div class="c-filter">${esc(C_SHEET_TEXT[why] || C_SHEET_TEXT.failed)}</div>`;
 }
-function cReportPreset(which) { C_RPT_PRESET = which; return setPeriodPreset(which); }
-function cReportDates(from, to) { C_RPT_PRESET = null; setPeriod(from, to); }
 // ---------------------------------------------------- FULL REPORT, ONE LEVEL DEEPER (Q35)
 // The owner, 05.10.2026: "we have the same metrics that are in the home. Lets not be redundant ok, but smartly make it
 // obvious that full report page is going deeper on the metrics that are on home". Two ways were built behind a switch
@@ -4884,13 +5125,11 @@ function cRepBody(id, M) {
 
 // The page: the period presets and the download, then the tab row and the open chapter.
 function cRepHtml(M, from, to) {
-  const seg = (k, l) => `<button aria-pressed="${C_RPT_PRESET === k}" onclick="cReportPreset('${k}')">${l}</button>`;
-  const head = `<div class="c-head"><div><h1>Reports</h1><p>${esc(from || '')} to ${esc(to || '')}</p></div>
+  // NO PERIOD BAR (Q45, decided A 05.10.2026; the owner: "Nothing should be duplicated. Its confusing."): the
+  // Period dropdown in the corner is the only period; the download follows it (cRepPeriod sets RPT).
+  const head = `<div class="c-head"><div><h1>Reports</h1><p>${esc(cScopeWord())} · ${esc(from || '')} to ${esc(to || '')}</p></div>
       <div class="act"><button class="btn" onclick="openExport()">Download for management review</button></div></div>
-    ${cSheetNotice()}
-    <div class="c-periodbar"><div class="c-seg" role="group" aria-label="Period">${seg('month', 'This month')}${seg('last', 'Last month')}${seg('year', 'This year')}${seg('all', 'Everything')}</div>
-      <label class="c-date">From <input type="date" value="${esc(from || '')}" onchange="cReportDates(this.value, RPT.to || '${esc(to || '')}')"></label>
-      <label class="c-date">To <input type="date" value="${esc(to || '')}" onchange="cReportDates(RPT.from || '${esc(from || '')}', this.value)"></label></div>`;
+    ${cSheetNotice()}`;
   const card = (id) => { const e = cRepEcho(id, M);
     return `<span>${esc(e.label)}</span><b${e.fig ? '' : ' class="rp-nofig"'}>${e.fig}</b><small>${e.small}</small>`; };
   const cur = C_REP_CHAPTERS.some(([id]) => id === C_REP_CH) ? C_REP_CH : 'admitted';
@@ -4902,12 +5141,12 @@ function cRepHtml(M, from, to) {
     <div class="ktip" role="status" aria-live="polite"></div></div>`;
 }
 
-// THE PERIOD, IN ONE PLACE. Today it is the report's own presets (RPT); the app-wide year scope (Home's 2025 / 2026 /
-// All years switch, decided 05.10.2026, MAIN builds it) will be read here and nowhere else. The chapters echo Home,
-// and Home counts the year: with no period chosen yet, the year.
+// THE PERIOD, IN ONE PLACE: the app-wide year scope (Q45), the Year and Period in the corner, read here and nowhere
+// else. RPT follows it, so the download for management review is the same period as the page.
 function cRepPeriod() {
-  if (!RPT.from && !RPT.to) { C_RPT_PRESET = 'year'; RPT = { from: cTodayIso().slice(0, 4) + '-01-01', to: '' }; }
-  return { from: RPT.from || '', to: RPT.to || '' };
+  const [from, to] = cScopeDates();
+  RPT = { from, to };
+  return { from, to };
 }
 async function viewReportsC() {
   const P = cRepPeriod();
@@ -4941,9 +5180,9 @@ function cGoCohort(k) {
   C_PF = C_PF_EMPTY(); C_PQ = ''; C_PEDIT = null; C_PMSG = ''; C_PTAB = 'all';
   // the right column too: a cohort whose people all stand in one stage opens on that column (Q47)
   const st = [...new Set(c.ids.map((id) => C_STAGE_OF.get(id)).filter(Boolean))];
-  C_JP.col = st.length === 1 ? st[0] : null; C_JP.view = 'list'; C_OUT_TAG = null; C_OUT_REASON = null; C_OUT_FILTER = null;
+  C_JP.col = st.length === 1 ? st[0] : null; C_JP.view = 'board'; C_JF = C_JF_EMPTY(); C_OUT_TAG = null; C_OUT_REASON = null; C_OUT_FILTER = null;
   // through #/people: the route keeps a cohort there, and a menu click to #/journey lets it go
-  if (location.hash === '#/people') viewJourneyPool(); else location.hash = '#/people';
+  if (location.hash === '#/people') cPoolRouteJourney('people'); else location.hash = '#/people';
 }
 
 // apply.novikontas.org, from the SIS's web-stats (the owner's popup A, 01.10.2026: a section on Reports).
@@ -5183,7 +5422,7 @@ async function drawWaiting() {
 }
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 // Times are stored as UTC instants and shown where the college actually is, so
-// the 09:00 ageing rule reads as 09:00 on the screen and not as 06:00.
+// the working hours (09:00-17:00) read as Riga hours on the screen and not as UTC.
 const TZ = 'Europe/Riga';
 const fmtDate = (s) => {
   if (!s) return '';
@@ -5246,6 +5485,9 @@ const api = async (path, opts) => {
   // remember to add it to the query string and quietly get refused
   const o = { ...(opts || {}) };
   o.headers = { ...(o.headers || {}), 'x-acting-as': ACTOR };
+  const scoped = o.scope !== false && !(o.method && o.method !== 'GET');
+  delete o.scope;
+  if (scoped) path = cScoped(path);   // the year scope (Q45): one filter on every list and count
   busy(1);
   try {
     const r = await fetch(path, o);
@@ -5640,7 +5882,7 @@ async function refreshBadge() {
     if (i.counts.new && ownsIntake) {
       el.textContent = i.counts.new;
       el.className = 'pill ' + (i.counts.aged ? 'late' : 'warn');
-      el.title = i.counts.aged ? `${i.counts.aged} waiting since yesterday` : 'waiting to be looked at';
+      el.title = i.counts.aged ? `${i.counts.aged} not answered in the working day` : 'waiting to be looked at';
       el.style.display = '';
     } else el.style.display = 'none';
   } catch {}
@@ -6347,7 +6589,7 @@ async function viewInbox() {
     <td title="${esc(r.suggestion_why || '')}">${val(r, 'interest')}</td>
     <td>${val(r, 'question')}</td>
     <td>${fmtDateTime(r.received_at)}
-      ${r.aged ? '<div class="sub2 late" title="waiting since 09:00 yesterday">late</div>' : ''}</td>
+      ${r.aged ? '<div class="sub2 late" title="not answered by the end of the working day">late</div>' : ''}</td>
   </tr>`;
 
   // What used to be the Done board. It answers the three things the review could not

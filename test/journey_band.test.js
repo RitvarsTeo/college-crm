@@ -120,7 +120,7 @@ test('Arrived and the outcomes are the real figures, a failed read is a dash', (
 test('the band shows no Cold / Reject chips; Not proceeding opens Outcomes, where the split is', () => {
   const html = draw();
   assert.doesNotMatch(html, /cGoClosedTag|kfl-tags|Cold <b>/, 'no chips on the band');
-  assert.match(html, /onclick="C_OUTCOME='Not proceeding';C_OUT_TAG=null"/);
+  assert.match(html, /onclick="C_OUTCOME='Not proceeding';C_OUT_TAG=null;cJfPick\('stage', this\.dataset\.v, !false\);return false"/, 'Q57: the board, on its end column');
   assert.match(fn('function cGoClosedTag('), /C_OUTCOME = 'Not proceeding'; C_OUT_FILTER = null; C_OUT_TAG = id;/);
 });
 

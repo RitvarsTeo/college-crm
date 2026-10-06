@@ -90,15 +90,17 @@ test('an incomplete message is not blocked, it names what is missing', async () 
 
 // ----------------------------------------------------------------- the ageing --
 
-test('inbound Monday 21:30 surfaces Tuesday at 09:00 local', async () => {
+// Q50 (05.10.2026) replaced "next day at 09:00": the stored surface_at is now the LATE moment, the end of the
+// working day the first working hour ends in. The edges are in test/inbox_answer_q50.test.js.
+test('inbound Monday 21:30 is late at the end of Tuesday\'s working day, 17:00 local', async () => {
   // 2026-09-21 is a Monday. 21:30 Riga in September is UTC+3, so 18:30Z.
   const out = await surfaceAt('2026-09-21T18:30:00.000Z');
   const local = new Intl.DateTimeFormat('en-CA', {
     timeZone: CONFIG.ageing.timezone, year: 'numeric', month: '2-digit', day: '2-digit',
     hour: '2-digit', minute: '2-digit', hour12: false,
   }).format(new Date(out));
-  assert.match(local, /2026-09-22/, 'the next calendar day');
-  assert.match(local, /09:00/, 'at 09:00 local, not 09:00 UTC');
+  assert.match(local, /2026-09-22/, 'the next working day');
+  assert.match(local, /17:00/, 'at 17:00 local, not 17:00 UTC');
 });
 
 test('the rule holds across the summer time boundary', async () => {
@@ -106,17 +108,17 @@ test('the rule holds across the summer time boundary', async () => {
     const local = new Intl.DateTimeFormat('en-CA', {
       timeZone: CONFIG.ageing.timezone, hour: '2-digit', minute: '2-digit', hour12: false,
     }).format(new Date(await surfaceAt(iso)));
-    assert.match(local, /09:00/, iso + ' must still surface at 09:00 local');
+    assert.match(local, /17:00/, iso + ' must still be late at 17:00 local');
   }
 });
 
-test('a contact that arrived yesterday is aged today, one that just arrived is not', async () => {
+test('a contact from last Thursday is late now, one from a minute ago is not', async () => {
   const db = await openDb();
-  await receive(db, { channel: 'instagram', body: HI, name: 'Old', externalId: 'a',
-    receivedAt: new Date(Date.now() - 40 * 3600000).toISOString() });
-  await receive(db, { channel: 'instagram', body: HI, name: 'New', externalId: 'b' });
-  assert.equal(await agedCount(db), 1);
-  const rows = await listInbound(db);
+  const now = '2026-10-06T08:00:00.000Z';                                         // Tue 06.10 11:00 Riga
+  await receive(db, { channel: 'instagram', body: HI, name: 'Old', externalId: 'a', receivedAt: '2026-10-01T07:00:00.000Z' });
+  await receive(db, { channel: 'instagram', body: HI, name: 'New', externalId: 'b', receivedAt: '2026-10-06T07:59:00.000Z' });
+  assert.equal(await agedCount(db, now), 1);
+  const rows = await listInbound(db, { now });
   assert.equal(rows.filter((r) => r.aged).length, 1);
   assert.equal(rows.find((r) => r.aged).contact_name, 'Old');
 });

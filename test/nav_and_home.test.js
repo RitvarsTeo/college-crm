@@ -99,7 +99,7 @@ test('Journey is everyone: People, Journey and Outcomes are one screen, and ther
   const route = fn('function cPoolRouteJourney(');
   assert.match(route, /if \(page === 'people' && !st && !C_PCOHORT && location\.hash !== '#\/journey'\) C_JP\.col = null;/,
     '#/people and #/people/all open everyone');
-  assert.match(route, /if \(C_JP\.view === 'board' && page === 'journey'\) return viewJourneyC\(\);\s*return viewJourneyPool\(\);/, 'List, or the Board');
+  assert.match(route, /C_JP\.view = 'board';\s*cJColToBoard\(\);\s*return viewJourneyC\(\);/, 'Q57: every way in opens the Board');
   assert.doesNotMatch(APP, /cPeopleTabs|class="c-ptabs"/, 'the Journey | All people tab row is gone');
   assert.doesNotMatch(APP, /function viewPeopleC\(|function cDrawPeople\(/, 'the separate People page is gone');
 });
