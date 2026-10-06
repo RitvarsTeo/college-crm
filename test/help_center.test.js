@@ -210,7 +210,8 @@ const helpCtx = (search) => {
     C_ICON: new Proxy({}, { get: (t, k) => `<svg data-i="${String(k)}"></svg>` }), location: { search }, URLSearchParams,
     $: () => view, view, window: {}, scenes: 0 };
   ctx.cScenes = () => { ctx.scenes += 1; };
-  vm.runInNewContext(['esc', 'cHelpFlow', 'cHelpHowTo', 'viewHelpC'].map(fnSrc).join('\n')
+  ctx.C_KEYS = [['?', 'This list']];   // Q61: the shortcuts listed under How to
+  vm.runInNewContext(['esc', 'cHelpFlow', 'cHelpHowTo', 'cKeysRows', 'cKeysHelp', 'viewHelpC'].map(fnSrc).join('\n')
     .replace(/^const (esc) = /gm, 'var $1 = '), ctx);
   return ctx;
 };
