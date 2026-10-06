@@ -2646,8 +2646,77 @@ function installCNav() {
     <a href="#/help" data-c="help" id="cnHelp" class="c-navfoot c-navhelp">${C_ICON.help}<span>Help center</span></a>
   </div>`);
   installCTabs();
+  installCScope();
   // No "Open the classic view" link: C is the normal product, and the classic view is a
   // hidden fallback reached only by the address ?ui=classic (the owner, 28.09.2026).
+}
+
+// ---- THE YEAR SCOPE (Q45, MASTER CONTROL's GO 05.10.2026 for C) ---------------------------------------------
+// The owner: "the switch is a frozen item just on top for the whole app, so we can switch quickly. And always be
+// sure, that we are checking the right year", then "its a small detail on top right corner" and "dont use this
+// color!". So: two small dropdowns in the app's own filter look (c-jf), Year and Period, fixed in the top-right
+// corner of every page. STRICT: every screen counts the people who ARRIVED in the year (people.created_at), Today
+// and the menu badges too; the Inbox by the message's own arrival. Every open starts on the current year; a year
+// that is not the current one, or a month, wears the filter's "on" look, the same as any filter that is set.
+// ONE filter, on the server (scopeRange in src/server.js): api() adds ?y= and ?m= to the reads below and nothing
+// else, so a count on arrival is the same figure as the list it opens.
+const C_SCOPED = /^\/api\/(people|tasks|summary|intake|journey\/exits)(\?|$)/;
+const C_MONTHS_LONG = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const cNowYear = () => Number(cTodayIso().slice(0, 4));
+let C_SCOPE = { year: null, month: 0 };   // year: a number or 'all' (null = the current year); month 0 = the whole year
+let C_SCOPE_YEARS = [];
+const cScopeYear = () => (C_SCOPE.year == null ? cNowYear() : C_SCOPE.year);
+function cScopeQs() {
+  const y = cScopeYear();
+  return y === 'all' ? '' : 'y=' + y + (C_SCOPE.month ? '&m=' + C_SCOPE.month : '');
+}
+function cScoped(path) {
+  if (UI !== 'c' || !C_SCOPED.test(path)) return path;
+  const q = cScopeQs();
+  return q ? path + (path.includes('?') ? '&' : '?') + q : path;
+}
+// The scope as dates, for what reads a period (Reports): [from, to] as Riga days, to '' = up to today.
+function cScopeDates() {
+  const y = cScopeYear(), now = cTodayIso();
+  if (y === 'all') return [String(Math.min(cNowYear(), ...C_SCOPE_YEARS)) + '-01-01', ''];
+  const mm = String(C_SCOPE.month).padStart(2, '0');
+  if (C_SCOPE.month) {
+    const last = new Date(Date.UTC(y, C_SCOPE.month, 0)).getUTCDate();
+    return now.startsWith(`${y}-${mm}`) ? [`${y}-${mm}-01`, ''] : [`${y}-${mm}-01`, `${y}-${mm}-${last}`];
+  }
+  return y === cNowYear() ? [`${y}-01-01`, ''] : [`${y}-01-01`, `${y}-12-31`];
+}
+// The scope in words: "2026", "March 2025", "All years".
+function cScopeWord() {
+  const y = cScopeYear();
+  return y === 'all' ? 'All years' : C_SCOPE.month ? `${C_MONTHS_LONG[C_SCOPE.month - 1]} ${y}` : String(y);
+}
+function cScopeHtml() {
+  const y = cScopeYear(), now = cNowYear();
+  const years = [...new Set([now, ...C_SCOPE_YEARS])].sort((a, b) => b - a);
+  const yo = [`<option value="all"${y === 'all' ? ' selected' : ''}>All years</option>`]
+    .concat(years.map((v) => `<option value="${v}"${v === y ? ' selected' : ''}>${v}</option>`)).join('');
+  const last = y === now ? Number(cTodayIso().slice(5, 7)) : 12;   // no month that has not begun
+  const mo = ['<option value="0">Whole year</option>']
+    .concat(C_MONTHS_LONG.slice(0, last).map((n, k) => `<option value="${k + 1}"${C_SCOPE.month === k + 1 ? ' selected' : ''}>${n}</option>`)).join('');
+  return `<label class="c-jf${y !== now ? ' on' : ''}"><span>Year</span><select onchange="cSetScope(this.value, 0)">${yo}</select></label>`
+    + (y === 'all' ? '' : `<label class="c-jf${C_SCOPE.month ? ' on' : ''}"><span>Period</span><select onchange="cSetScope(cScopeYear(), Number(this.value))">${mo}</select></label>`);
+}
+function cDrawScope() { const el = document.querySelector('#cScope'); if (el) el.innerHTML = cScopeHtml(); }
+function installCScope() {
+  if (document.querySelector('#cScope')) return;
+  document.body.insertAdjacentHTML('beforeend', '<div id="cScope" class="c-scope" role="group" aria-label="Which year"></div>');
+  cDrawScope();
+  api('/api/scope/years').then((r) => { C_SCOPE_YEARS = (r && r.years) || []; cDrawScope(); }).catch(() => {});
+}
+// A change redraws the page you are on and the menu's counts, under the new scope. A Reports cohort was counted
+// under the old one, so it goes.
+function cSetScope(year, month) {
+  C_SCOPE = { year: year === 'all' ? 'all' : Number(year), month: year === 'all' ? 0 : Number(month) || 0 };
+  C_PCOHORT = null;
+  cDrawScope();
+  route();
+  cNavCounts();
 }
 
 // THE PHONE TAB BAR (the owner, 05.10.2026: "The Menu is scrollable ... maybe you have a better idea?", then "OK,
@@ -5045,12 +5114,12 @@ function cRepHtml(M, from, to) {
     <div class="ktip" role="status" aria-live="polite"></div></div>`;
 }
 
-// THE PERIOD, IN ONE PLACE. Today it is the report's own presets (RPT); the app-wide year scope (Home's 2025 / 2026 /
-// All years switch, decided 05.10.2026, MAIN builds it) will be read here and nowhere else. The chapters echo Home,
-// and Home counts the year: with no period chosen yet, the year.
+// THE PERIOD, IN ONE PLACE: the app-wide year scope (Q45), the Year and Period in the corner, read here and nowhere
+// else. RPT follows it, so the download for management review is the same period as the page.
 function cRepPeriod() {
-  if (!RPT.from && !RPT.to) { C_RPT_PRESET = 'year'; RPT = { from: cTodayIso().slice(0, 4) + '-01-01', to: '' }; }
-  return { from: RPT.from || '', to: RPT.to || '' };
+  const [from, to] = cScopeDates();
+  RPT = { from, to };
+  return { from, to };
 }
 async function viewReportsC() {
   const P = cRepPeriod();
@@ -5389,6 +5458,9 @@ const api = async (path, opts) => {
   // remember to add it to the query string and quietly get refused
   const o = { ...(opts || {}) };
   o.headers = { ...(o.headers || {}), 'x-acting-as': ACTOR };
+  const scoped = o.scope !== false && !(o.method && o.method !== 'GET');
+  delete o.scope;
+  if (scoped) path = cScoped(path);   // the year scope (Q45): one filter on every list and count
   busy(1);
   try {
     const r = await fetch(path, o);
