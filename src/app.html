@@ -1525,6 +1525,23 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .pband.is-mini .jb-cols{display:none}
   html.ui-c .pband.is-mini .p-mini{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
   html.ui-c .jb-cell.p-sep{border-left:1px solid var(--rule2);padding-left:8px}
+  /* THE TODAY BOARD: the Journey board's columns and cards; Coming up folded to a narrow column with its count */
+  html.ui-c .t-board{margin:0 0 16px;align-items:start}
+  html.ui-c .t-card{cursor:grab}
+  html.ui-c .t-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:3px}
+  html.ui-c .t-foot .btn{flex:0 0 auto}
+  html.ui-c .t-fold{display:flex;flex-direction:column;align-items:center;gap:12px;padding:16px 6px;cursor:pointer;min-height:180px;align-self:stretch}
+  html.ui-c .t-fold:hover{outline:1px solid var(--control-line)}
+  html.ui-c .t-fold:focus-visible{outline:2px solid var(--pet);outline-offset:2px}
+  html.ui-c .t-foldl{writing-mode:vertical-rl;transform:rotate(180deg);font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--t3)}
+  html.ui-c .t-fold b{font-size:26px;font-weight:700;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums}
+  html.ui-c .t-foldx{margin-left:auto;border:0;background:none;padding:0 2px;font:inherit;font-size:11px;font-weight:600;letter-spacing:0;text-transform:none;color:var(--petink);cursor:pointer;text-decoration:underline}
+  html.ui-c .t-pick{margin-top:8px;padding-top:8px;border-top:1px solid var(--rule2);cursor:default;display:grid;gap:6px}
+  html.ui-c .t-pick label{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--t3)}
+  html.ui-c .t-pick .c-row-acts{display:flex;gap:6px}
+  @media (max-width:760px){ html.ui-c .t-board{grid-template-columns:1fr !important}
+    html.ui-c .t-fold{flex-direction:row;justify-content:space-between;min-height:0;padding:12px 14px}
+    html.ui-c .t-foldl{writing-mode:horizontal-tb;transform:none} }
   html.ui-c .pband.pcards{margin:0 0 14px;display:block}
   html.ui-c .pcards .p-card{appearance:none;font:inherit;text-align:left;cursor:pointer;margin:0}
   html.ui-c #view .pcards .p-card.on{background:var(--c-sunk);border-radius:10px;box-shadow:inset 0 -3px 0 var(--j-to)}
@@ -3350,7 +3367,7 @@ async function viewTodayC() {
   // NO STRIP ABOVE THE SECTIONS (the owner, 05.10.2026: "Nothing should be duplicated. Its confusing." - "you see in
   // needs you, we already have"): open / overdue / no next step / waiting in the Inbox are Home's Needs you, and each
   // of Home's figures opens its people here or in People. The sections keep their own counts in their headings.
-  C_TPD = { over, today, later, none, pTasks, pRow, byId, people, pct, open };
+  C_TPD = { over, today, later, none, pTasks, pRow, byId, people, pct, open, done };
   if (C_TODAY_AT) { C_TP.col = { cTodayOver: 'over', cTodayDue: 'today', cTodayNone: 'none' }[C_TODAY_AT] || null; C_TODAY_AT = ''; }
   return cTodayPool();
 }
@@ -3705,7 +3722,7 @@ const C_POOL_T = {};
 function cPoolOpened(k) { const now = Date.now(); if (C_POOL_T[k] && now - C_POOL_T[k] < 4000) return; C_POOL_T[k] = now; cSeeNow(k); cNavCounts(); }
 
 // ---- TODAY: Overdue · Due today · Coming up · No next step, one row per person
-let C_TP = { col: null, programme: '', stage: '', source: '' };
+let C_TP = { col: null, programme: '', stage: '', source: '', upOpen: false, more: {}, pick: null };
 let C_TPD = null;
 function cTodayPick(v) { C_TP.col = C_TP.col === v ? null : v; cTodayPool(); }
 function cTodayPool() {
@@ -3735,11 +3752,83 @@ function cTodayPool() {
       cPoolSelect('Stage', C_TP.stage, stages.map((st) => [st.id, st.label || st.id]), 'C_TP.stage=this.value;cTodayPool()'),
       cPoolSelect('Source', C_TP.source, sources, 'C_TP.source=this.value;cTodayPool()')],   // Admissions 05.10: Source on Today too
       C_TP.programme || C_TP.stage || C_TP.source ? "C_TP.programme='';C_TP.stage='';C_TP.source='';cTodayPool()" : ''),
-    body: shown.map((g) => `<div class="c-sheet c-nextsheet p-rows" id="p-${g.id}"><h3>${g.label}<b${g.tone && g.rows.length && g.tone !== 'none' ? ` class="c-count ${g.tone}"` : ''}>${g.rows.length}</b></h3>${
-      g.rows.map(g.fn).join('') || '<div class="c-empty">Nobody here.</div>'}</div>`).join(''),
+    body: cTodayBoard(D, groups) + (!C_TP.col || C_TP.col === 'none' ? groups.filter((g) => g.id === 'none').map((g) => `<div class="c-sheet c-nextsheet p-rows" id="p-${g.id}"><h3>${g.label}<b>${g.rows.length}</b></h3>${
+      g.rows.map(g.fn).join('') || '<div class="c-empty">Nobody here.</div>'}</div>`).join('') : ''),
   });
+  cTodayWire();
   cPoolWire();
   cPoolOpened('today');
+}
+
+// THE TODAY BOARD (the owner's pick B from the A/B pictures, 06.10.2026): Overdue and Due today are columns of cards in
+// the Journey board's card style, Coming up is FOLDED to its count (a click unfolds it), No next step stays the list
+// below with "Choose next step". Drag a card to reschedule its step(s): onto Due today = due today; onto Coming up = a
+// small date picker opens on the card. Nothing is dragged INTO Overdue (that would be a date in the past), and no stage
+// moves here: the Journey board keeps those (and their back-move note).
+const C_TCOL_SHOW = 7;
+function cTodayBoard(D, groups) {
+  if (C_TP.col === 'none') return '';
+  const cols = groups.filter((g) => g.id !== 'none' && (!C_TP.col || C_TP.col === g.id));
+  if (!cols.length) return '';
+  const folded = (g) => g.id === 'later' && !C_TP.col && !C_TP.upOpen;
+  const tomorrow = new Date(Date.parse(cTodayIso() + 'T12:00:00Z') + 86400000).toISOString().slice(0, 10);
+  const due = (t) => { const w = cWhenClass(t.due_at);
+    return w === 'over' ? `${C_JICON.over}${cDaysLate(t.due_at)} d. overdue` : w === 'today' ? `${C_JICON.today}Today` : esc(fmtDate(t.due_at)); };
+  const pick = (pid, col) => (C_TP.pick && C_TP.pick.pid === pid && C_TP.pick.from === col
+    ? `<div class="t-pick" onclick="event.stopPropagation()" ondragstart="event.preventDefault()">
+        <label for="tPickDate">New date</label><input id="tPickDate" type="date" min="${tomorrow}" value="${tomorrow}">
+        <div class="c-row-acts"><button class="btn sm" onclick="cTodayMoveTo('${esc(pid)}', '${col}', document.getElementById('tPickDate').value)">Save</button>
+        <button class="btn sm ghost" onclick="C_TP.pick=null;cTodayPool()">Cancel</button></div></div>` : '');
+  const card = (ts, col) => { const t0 = ts[0]; const pid = t0.person_id;
+    const w = col === 'over' ? ' is-over' : col === 'today' ? ' is-today' : '';
+    return `<div class="c-jp row t-card${w}" draggable="true" data-pid="${esc(pid)}" data-col="${col}" tabindex="0"
+      onclick="location.hash='#/person/${esc(pid)}'" onkeydown="if(event.key==='Enter')location.hash='#/person/${esc(pid)}'">
+      <b>${esc(t0.name)}</b><small>${esc(t0.programme || 'programme not said')} · ${esc(cStage(t0.status))}</small>
+      ${ts.map((t) => `<span class="c-jnext">${cStepIcon(t.label)}<span>${esc(cTask(t.label))}</span></span>
+        <div class="t-foot"><small class="c-jdue ${cWhenClass(t.due_at)}">${due(t)}</small>${D.done(t)}</div>`).join('')}${pick(pid, col)}</div>`; };
+  const column = (g, i) => {
+    if (folded(g)) return `<div class="c-col t-col t-fold c-drop t-drop" data-col="later" role="button" tabindex="0" aria-label="Coming up: ${g.rows.length}, open"
+      onclick="C_TP.upOpen=true;cTodayPool()" onkeydown="if(event.key==='Enter'){C_TP.upOpen=true;cTodayPool()}"><span class="t-foldl">Coming up</span><b>${g.rows.length}</b></div>`;
+    const open = C_TP.more[g.id] || (C_TP.pick && g.rows.some((ts) => ts[0].person_id === C_TP.pick.pid));
+    const shown = open ? g.rows : g.rows.slice(0, C_TCOL_SHOW);
+    const rest = g.rows.length - shown.length;
+    const more = rest > 0 ? `<button type="button" class="c-jmore" onclick="event.stopPropagation();C_TP.more['${g.id}']=true;cTodayPool()">${rest} more</button>`
+      : C_TP.more[g.id] && g.rows.length > C_TCOL_SHOW ? `<button type="button" class="c-jmore" onclick="event.stopPropagation();C_TP.more['${g.id}']=false;cTodayPool()">Show fewer</button>` : '';
+    const fold = g.id === 'later' && !C_TP.col ? `<button type="button" class="t-foldx" onclick="C_TP.upOpen=false;cTodayPool()">Fold</button>` : '';
+    return `<div class="c-col t-col" style="--jt:${((i + 1) / cols.length).toFixed(3)}"><h3><span class="c-jn">${i + 1}</span>${esc(g.label)}<b class="c-count ${g.tone}">${g.rows.length}</b>${fold}</h3>
+      <div class="c-drop t-drop" data-col="${g.id}">${shown.map((ts) => card(ts, g.id)).join('') || '<div class="c-empty">Nobody here.</div>'}${more}</div></div>`;
+  };
+  const widths = cols.map((g) => (folded(g) ? '92px' : 'minmax(0,1fr)')).join(' ');
+  return `<div class="c-cols t-board" style="grid-template-columns:${widths}">${cols.map(column).join('')}</div>`;
+}
+function cTodayWire() {
+  document.querySelectorAll('.t-card[draggable]').forEach((c) => c.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', c.dataset.pid + '|' + c.dataset.col)));
+  document.querySelectorAll('.t-drop').forEach((z) => {
+    const to = z.dataset.col;
+    if (to === 'over') return;   // nothing is moved into the past
+    z.addEventListener('dragover', (e) => { e.preventDefault(); z.classList.add('over'); });
+    z.addEventListener('dragleave', () => z.classList.remove('over'));
+    z.addEventListener('drop', (e) => { e.preventDefault(); z.classList.remove('over');
+      const [pid, from] = String(e.dataTransfer.getData('text/plain') || '').split('|');
+      if (pid && from && from !== to) cTodayDrop(pid, from, to); });
+  });
+  const d = document.getElementById('tPickDate'); if (d) d.focus();
+}
+// Onto Due today: the step(s) are due today. Onto Coming up: the date is asked on the card first.
+function cTodayDrop(pid, from, to) {
+  if (to === 'today') return cTodayMoveTo(pid, from, cTodayIso());
+  if (to === 'later') { C_TP.pick = { pid, from }; return cTodayPool(); }
+}
+async function cTodayMoveTo(pid, from, day) {
+  if (!day || day < cTodayIso()) return;   // never into the past
+  const D = C_TPD; if (!D) return;
+  const ts = (D[from] || []).filter((t) => t.person_id === pid);
+  try {
+    for (const t of ts) await post(`/api/tasks/${Number(t.id)}/reschedule`, { due: day });
+    C_TP.pick = null;
+    await viewTodayC();
+    cNavCounts();
+  } catch (err) { alert(err.message); }
 }
 
 // ---- INBOX: Today · Yesterday · This week · Older, by when the message arrived
