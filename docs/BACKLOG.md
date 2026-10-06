@@ -31,6 +31,7 @@ look at many years combined! Any years combined!" Brief Q59 via MASTER CONTROL. 
 | Old links: `?y=2025&m=3` opens 2025 with March 2025 on Reports; the server still reads `?y=YYYY&m=M` as that month | BUILT |
 | Home with several years: no year target (a target is one year's); the month chart keeps the twelve months up to today that fall in the chosen years | BUILT |
 | Shots 1440 light: `For review/2026-10-06 Q59 year/` (Year open with 2024 + 2026 ticked; Reports with September 2026). Shot data = synthetic with every fourth person moved two years back, local only | BUILT |
+| Help center keeps up (the owner's rule, 06.10.2026): FAQ "Where do the Home numbers come from?" names the Year filter (any years together) and the Whole year box on Reports; How to gains "Look at other years" and "See one month" | BUILT |
 
 ## 06.10.2026 - Benchmarks on Reports > Conversion, variant A (PICKED)
 
