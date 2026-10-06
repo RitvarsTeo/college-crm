@@ -14,6 +14,19 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 06.10.2026 - Help center = B, the one flow, is the default
+
+The owner's pick from the A/B pictures (06.10.2026): "B - one flow, but becomes a person needs to be polished!"
+- The flow through Intake (Inbox, New lead, Today, Journey with its stages, The end, Reports) is the Help center, with
+  no switch: ?helpflow is gone. Under it the How-to links, then the questions.
+- The Q54 card grid of the menu's places is gone (code, styles and config/help.json "map"; /api/config no longer sends
+  it), and so are the "The work, in three steps" cards that repeated the flow.
+- Step 2 reads "New lead" everywhere: the flow ("New lead · In Admissions, with a first step"), the tour's Inbox step
+  ("... and they become a new lead."); nothing on the page or in the help file says "becomes a person" any more.
+  Checked on screen. Tests: help_center.test.js (no switch, no grid, no step cards, the order on the page, step 2's
+  words everywhere), no_crm_word.test.js. Shot: `For review/2026-10-06 patch 19/1-Help-center-flow-1440-light.png`.
+  **BUILT, next patch.**
+
 ## 06.10.2026 - Q45: the year scope - one Period dropdown, frozen top-right, on every screen
 
 MASTER CONTROL's GO for C (05.10.2026) with the owner's words: "the switch is a frozen item just on top for the whole

@@ -63,10 +63,10 @@ test('the menu order and the Today name', () => {
   assert.match(APP, /title: 'Today',/);
   assert.doesNotMatch(APP, /<h1>Next steps<\/h1>|Back to Next steps/);
   assert.match(APP, /cPlace\(page\)[\s\S]{0,400}today: 'today'/, 'the #/today route still works');
-  const help = APP.slice(APP.indexOf('class="c-step-n">01'), APP.indexOf('class="c-step-n">03') + 60);
-  // Q54: the three steps follow the work as the menu does: 01 Inbox, 02 Today, 03 Journey
-  assert.match(help, /01<\/span><b>Inbox<\/b>[\s\S]*02<\/span><b>Today<\/b>[\s\S]*03<\/span><b>Journey<\/b>/);
-  assert.match(APP, /<a class="c-step" href="#\/today"><span class="c-step-n">02<\/span><b>Today<\/b>/, 'box 02 opens Today');
+  // the Help center's flow follows the work as the menu does: Inbox, New lead, Today, Journey (the three step cards
+  // that repeated it left on 06.10.2026, the owner's pick B)
+  const flow = JSON.parse(read('config', 'help.json')).flow.map((m) => [m.name, m.href]);
+  assert.deepEqual(flow.slice(0, 4), [['Inbox', '#/leads'], ['New lead', '#/journey'], ['Today', '#/today'], ['Journey', '#/journey']]);
 });
 test('the lines Intake writes on a person\'s History say Intake', () => {
   assert.match(read('src', 'intake.js'), /body: 'The Intake admissions journey ends here\. The record stays for reporting\.'/);

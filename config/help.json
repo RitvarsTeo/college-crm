@@ -1,52 +1,5 @@
 {
   "_about": "THE CRM'S OWN HELP (dev kit part 3): the tour steps and the questions in the Help center. When the same question arrives in the feedback inbox twice (kind 'A question'), add it here with its answer. ids are lower-case words and hyphens and NEVER change once used: the open counts are kept per id (table help_faq_opens). Answers are plain text, and every answer must say what the CRM really does.",
-  "map": [
-    {
-      "name": "Home",
-      "href": "#/home",
-      "icon": "home",
-      "for": "The day and the year at a glance"
-    },
-    {
-      "group": "Admissions",
-      "name": "Inbox",
-      "href": "#/leads",
-      "icon": "inbox",
-      "for": "Every new message; decide who becomes a person"
-    },
-    {
-      "group": "Admissions",
-      "name": "Today",
-      "href": "#/today",
-      "icon": "next",
-      "for": "Who needs an action now"
-    },
-    {
-      "group": "Admissions",
-      "name": "Journey",
-      "href": "#/journey",
-      "icon": "journey",
-      "for": "Everyone by stage, to admitted or not proceeding"
-    },
-    {
-      "name": "Reports",
-      "href": "#/reports",
-      "icon": "rep",
-      "for": "Each Home figure, one level deeper"
-    },
-    {
-      "name": "Settings",
-      "href": "#/settings",
-      "icon": "set",
-      "for": "Light or dark; admin tools for admins"
-    },
-    {
-      "name": "Help center",
-      "href": "#/help",
-      "icon": "help",
-      "for": "This page: where things are, how to"
-    }
-  ],
   "flow": [
     {
       "name": "Inbox",
@@ -58,7 +11,7 @@
       "name": "New lead",
       "href": "#/journey",
       "icon": "ppl",
-      "for": "Programme and next step said"
+      "for": "In Admissions, with a first step"
     },
     {
       "name": "Today",
@@ -125,7 +78,7 @@
     },
     {
       "title": "Inbox",
-      "body": "Every new message from every channel lands here first. Say what they want to study and the next step, and they become a person. Junk is marked not relevant, never deleted.",
+      "body": "Every new message from every channel lands here first. Say what they want to study and the next step, and they become a new lead. Junk is marked not relevant, never deleted.",
       "target": ".cnav a[data-c=\"leads\"]"
     },
     {
