@@ -223,7 +223,9 @@ test('re-date: Admitted for the year counts by the corrected date (Reports and H
   assert.equal((await report(db, year(2014))).summary.admitted, 2);
   // Home counts the people list by the same column, so it moves with it
   const home = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
-  assert.match(home, /const admitted = people\.filter\(\(p\) => p\.status === 'Admitted' && inYear\(p\.admitted_at\)\);/);
+  // Q45: the people rows are the period, the Admitted in it by their admission date (server, scopePeopleSql)
+  assert.match(home, /const admitted = people\.filter\(\(p\) => p\.status === 'Admitted' && p\.admitted_at\);/);
+  assert.match(fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8'), /OR \(\$\{alias\}\.status = 'Admitted' AND \$\{alias\}\.admitted_at IS NOT NULL AND \$\{alias\}\.admitted_at >= \? AND \$\{alias\}\.admitted_at < \?\)/);
   const people = await db.prepare('SELECT status, admitted_at FROM people').all();
   assert.equal(people.filter((p) => p.status === 'Admitted' && String(p.admitted_at || '').startsWith('2026')).length, 6);
 });

@@ -14,6 +14,31 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 06.10.2026 - Q45: the year scope - one Period dropdown, frozen top-right, on every screen
+
+MASTER CONTROL's GO for C (05.10.2026) with the owner's words: "the switch is a frozen item just on top for the whole
+app ... always be sure, that we are checking the right year", "its a small detail on top right corner", "dont use this
+color!", and of "Period · Whole year": "this is good" / "this is enough!". Built on the parked WIP (dd4bf54, merged).
+- ONE small labelled dropdown, "Period", in the app's filter look, frozen in the window's top-right corner on every
+  page (the page heads leave it room); on a phone a row of its own at the right of the frozen top bar. Options: All
+  years, then each year that has people (newest first), its months grouped under it (no month that has not begun).
+- Every open starts on the current year. Any other choice is the dropdown's own text on a navy fill: no bar, no chip.
+- STRICT on every screen, by ONE server filter (?y= and ?m= on /api/people, /api/tasks, /api/summary, /api/intake,
+  /api/journey/exits): a person belongs to a period by ARRIVAL (created_at) - EXCEPT the Admitted, who belong to the
+  period of their ADMISSION (admitted_at; the owner's popup 05.10.2026: "Admitted 2026" = everyone admitted in 2026,
+  arrived in 2025 or not), or of the arrival when the admission has no date. The Median time to admission follows the
+  Admitted (the report's own admission-date basis). Not proceeding stays by arrival. The Inbox counts by the message's
+  own arrival. Today, the Journey (board and list), Home, Reports and the NEW badges all read the same rows.
+- Reports lost its own period buttons and From / To (decided A, 05.10.2026): the Period dropdown is the only period,
+  and the download for management review follows it. The Reports head says the period ("2025 · 2025-01-01 to ...").
+- Home: "Admissions 2025", the Admitted / Leads cards and the month chart read the period; the year's target shows on
+  a whole year only (a year's target against one month would mislead).
+- Checked in the browser: 2025 on the synthetic data shows its one person everywhere (Home, Needs you, the band).
+Tests: test/year_scope_q45.test.js (a real server: every person in a year belongs by arrival, the Admitted by
+admission, nobody missing; a month; tasks and summary inside the year; an empty year borrows nothing; the dropdown's
+options, the navy past, the query each read gets; the look; Home / Journey / Reports reading the period);
+home_ab, reports_depth and sis_real_dates follow. Shots: `For review/2026-10-06 patch 18/`. **BUILT, next patch.**
+
 ## 06.10.2026 - The Journey band's labels never break inside a word (375 px)
 
 Seen on the Q47 shots, MASTER CONTROL for the owner: at 375 px the band read "Contac/ted", "Applic/ation". Measured

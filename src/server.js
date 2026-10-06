@@ -526,6 +526,9 @@ const dayEnd = () => tomorrowStart();
 // THE YEAR SCOPE (Q45, the owner 05.10.2026: "always be sure, that we are checking the right year"). ONE filter
 // for every list and count the app reads: ?y=YYYY (and ?m=1..12 inside it) keeps the people who ARRIVED then
 // (people.created_at, a Riga year or month), and the Inbox's messages that arrived then (inbound.received_at).
+// EXCEPT the Admitted (the owner, 05.10.2026, popup: "Admitted 2026" is everyone admitted in 2026, arrived in 2025
+// or not): an Admitted person belongs to the year of the ADMISSION (admitted_at), or of the arrival when the
+// admission carries no date. Not proceeding stays by arrival. The Median time to admission follows the Admitted.
 // No y = every year, which is also what any caller that never heard of the scope gets.
 function scopeRange(url) {
   const y = Number(url.searchParams.get('y'));
@@ -535,6 +538,12 @@ function scopeRange(url) {
 }
 // The same filter as SQL on people (alias pe), with its two arguments; '' and [] when every year.
 const scopeSql = (range, alias = 'pe') => (range ? [` AND ${alias}.created_at >= ? AND ${alias}.created_at < ?`, range] : ['', []]);
+// The people list's own: by arrival, the Admitted by their admission (see above).
+const scopePeopleSql = (range, alias = 'pe') => (range
+  ? [` AND ((${alias}.status <> 'Admitted' AND ${alias}.created_at >= ? AND ${alias}.created_at < ?)
+      OR (${alias}.status = 'Admitted' AND ${alias}.admitted_at IS NOT NULL AND ${alias}.admitted_at >= ? AND ${alias}.admitted_at < ?)
+      OR (${alias}.status = 'Admitted' AND ${alias}.admitted_at IS NULL AND ${alias}.created_at >= ? AND ${alias}.created_at < ?))`, [...range, ...range, ...range]]
+  : ['', []]);
 const newId = () => 'p' + Math.random().toString(36).slice(2, 7);
 
 // There is no login in the prototype. The caller says who it is, the server
@@ -1680,7 +1689,7 @@ export const handle = async (req, res) => {
         -- the newest comment somebody wrote (Add a note / Log a call), for the Journey card's one-line preview
         (SELECT body FROM events e WHERE e.person_id = pe.id AND e.origin = 'manual' AND e.kind IN ('note', 'call')
           AND COALESCE(e.body, '') <> '' ORDER BY e.occurred_at DESC, e.id DESC LIMIT 1) AS last_comment
-        FROM people pe WHERE 1 = 1${scopeSql(scopeRange(url))[0]} ORDER BY ${orderBy} ${dir} NULLS LAST`).all(...scopeSql(scopeRange(url))[1]);
+        FROM people pe WHERE 1 = 1${scopePeopleSql(scopeRange(url))[0]} ORDER BY ${orderBy} ${dir} NULLS LAST`).all(...scopePeopleSql(scopeRange(url))[1]);
       // Decision 10: findable by whatever the operator remembers, including the
       // channel's plain name, so "instagram" finds it without knowing the id.
       if (q) {
