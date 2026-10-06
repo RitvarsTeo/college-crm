@@ -1063,6 +1063,22 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-set-theme{cursor:default}
   html.ui-c .c-crumb a{color:inherit}
   html.ui-c .c-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:4px 0 8px}
+  /* Q54: the map of the app on the Help center - one card per place, in menu order; Admissions holds its three */
+  html.ui-c .c-hmap{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:4px 0 8px;align-items:start}
+  html.ui-c .c-hmap-c{display:grid;grid-template-columns:20px 1fr;column-gap:10px;row-gap:2px;padding:14px;border:1px solid var(--rule);border-radius:12px;
+    background:var(--surface);color:var(--ink);text-decoration:none}
+  html.ui-c .c-hmap-c:hover{border-color:var(--control-line)}
+  html.ui-c .c-hmap-c:focus-visible{outline:2px solid var(--pet);outline-offset:2px}
+  html.ui-c .c-hmap-c svg,html.ui-c .c-hmap-gl svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+  html.ui-c .c-hmap-c svg{grid-row:1 / span 2;color:var(--pet)}
+  html.ui-c .c-hmap-c b{font-size:14px} html.ui-c .c-hmap-c small{font-size:12.5px;line-height:1.4;color:var(--t2)}
+  html.ui-c .c-hmap-g{grid-column:1 / -1;display:grid;gap:8px}
+  html.ui-c .c-hmap-gl{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;color:var(--ink)}
+  html.ui-c .c-hmap-gl svg{color:var(--pet)}
+  html.ui-c .c-hmap-kids{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-left:9px;padding-left:18px;border-left:1px solid var(--rule)}
+  html.ui-c .c-hhow{color:var(--ink);text-decoration:none} html.ui-c .c-hhow small{display:block;color:var(--t3)}
+  html.ui-c[data-theme="dark"] .c-hmap-c{background:var(--glass);border-color:var(--glass-line)}
+  @media (max-width:760px){ html.ui-c .c-hmap, html.ui-c .c-hmap-kids{grid-template-columns:1fr} }
   html.ui-c .c-step{display:block;padding:16px 16px 14px;border:1px solid var(--rule);border-radius:12px;background:var(--surface);color:var(--ink);text-decoration:none}
   html.ui-c .c-step:hover{border-color:var(--control-line)}
   html.ui-c .c-step:focus-visible{outline:2px solid var(--pet);outline-offset:2px}
@@ -3367,14 +3383,34 @@ async function viewSettingsC() {
 // 28.09.2026: "a help center under the settings or in the settings". Built on the
 // hierarchy of apply.novikontas.org, which the owner likes: one clear action, three
 // numbered steps, then short questions. Every answer describes what the CRM really does.
+// Q54 (the owner, 05.10.2026): "Also put in the help center the navigation of the app. Have a like a helper, how to
+// where to, for what." The map of the app in menu order, one card per place (a click to it), then the how-to links;
+// both are config/help.json, so the words change without code.
+function cHelpMap() {
+  const H = CFG.help || {};
+  const card = (m) => `<a class="c-hmap-c" href="${esc(m.href)}">${C_ICON[m.icon] || ''}<b>${esc(m.name)}</b><small>${esc(m.for)}</small></a>`;
+  const groups = [];
+  for (const m of H.map || []) {
+    const last = groups[groups.length - 1];
+    if (m.group && last && last.group === m.group) last.items.push(m); else groups.push({ group: m.group || '', items: [m] });
+  }
+  const map = groups.map((g) => (g.group
+    ? `<div class="c-hmap-g"><span class="c-hmap-gl">${C_ICON.adm}${esc(g.group)}</span><div class="c-hmap-kids">${g.items.map(card).join('')}</div></div>`
+    : g.items.map(card).join(''))).join('');
+  const how = (H.howto || []).map((h) => `<a class="c-line c-hhow" href="${esc(h.href)}"><div class="c-who"><b>${esc(h.do)}</b><small>${esc(h.where)}</small></div><div class="c-when">›</div></a>`).join('');
+  return `<h2 class="c-set-h">Where things are</h2><div class="c-hmap">${map}</div>
+    <h2 class="c-set-h">How to</h2><div class="c-sheet c-set">${how}</div>`;
+}
 function viewHelpC() {
   $('#view').innerHTML = `<div class="c-head"><div><h1>Help center</h1></div>
       <div class="act"><button class="btn ghost" id="helpTourBtn" onclick="cStartTour(this)">Take the tour</button>
       <button class="btn" onclick="fbOpen('BUG')">Report a problem</button></div></div>
+    ${cHelpMap()}
+    <h2 class="c-set-h">The work, in three steps</h2>
     <div class="c-steps">
-      <a class="c-step" href="#/today"><span class="c-step-n">01</span><b>Today</b><small>What the team has to do: overdue, due today, coming up. Press Done, say how it went and choose the next step. Everyone always keeps a next step.</small></a>
-      <a class="c-step" href="#/leads"><span class="c-step-n">02</span><b>Inbox</b><small>Everything that arrives lands here first. Say what they want to study and the next step, and they move into Admissions. Junk is marked not relevant, never deleted.</small></a>
-      <a class="c-step" href="#/outcomes"><span class="c-step-n">03</span><b>Outcomes</b><small>Where finished journeys end: admitted or not proceeding. The download for management review is here.</small></a>
+      <a class="c-step" href="#/leads"><span class="c-step-n">01</span><b>Inbox</b><small>Everything that arrives lands here first. Say what they want to study and the next step, and they become a person. Junk is marked not relevant, never deleted.</small></a>
+      <a class="c-step" href="#/today"><span class="c-step-n">02</span><b>Today</b><small>Who needs an action now. Press Done, say how it went and choose the next step. Everyone always keeps a next step.</small></a>
+      <a class="c-step" href="#/journey"><span class="c-step-n">03</span><b>Journey</b><small>Everyone, stage by stage, up to Admitted or Not proceeding. Search, add a lead, and download the figures for management review.</small></a>
     </div>
     <h2 class="c-set-h">Questions and answers</h2>
     <div id="helpFaq" class="c-helpfaq"></div>`;

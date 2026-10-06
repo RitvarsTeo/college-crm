@@ -13,8 +13,9 @@ test('no sign-in question (whoever reads Help is already in) and no time-zone qu
   assert.equal(faq('how-do-i-sign-in'), undefined);
   assert.equal(faq('time-zone'), undefined);
 });
-test('nobody is deleted: Not proceeding with a reason, on record in Outcomes, sources kept 13 months', () => {
-  assert.equal(faq('delete-a-person').a, 'No. Nobody is deleted. When someone is not going ahead, close them as Not proceeding with a reason. They stay on record in Outcomes. The original messages and call records behind them are kept for 13 months.');
+// Q54: Outcomes is no longer a menu place; the person stays on the Journey, under Not proceeding
+test('nobody is deleted: Not proceeding with a reason, on record on the Journey, sources kept 13 months', () => {
+  assert.equal(faq('delete-a-person').a, 'No. Nobody is deleted. When someone is not going ahead, close them as Not proceeding with a reason. They stay on record on the Journey, under Not proceeding. The original messages and call records behind them are kept for 13 months.');
 });
 test('"late" is asked about the Inbox, and the rule is unchanged', () => {
   const late = faq('late-in-new-leads');

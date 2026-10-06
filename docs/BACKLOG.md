@@ -14,6 +14,19 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - Q54: the Help center carries the map of the app and how-to links
+
+Ritvars 05.10: "Also put in the help center the navigation of the app. Have a like a helper, how to where to, for
+what. Update it in other words".
+- Where things are: one card per place in menu order (Home; Admissions: Inbox, Today, Journey; Reports; Settings;
+  Help center), icon + name + one short line, each card a click to the place. Data in config/help.json `map`.
+- How to: find a person, add a lead, act on today's work, move someone back a stage (a note is needed), see who
+  came from a channel, see a Home number in depth; each opens the right place. config/help.json `howto`.
+- Rewritten: the three steps are now 01 Inbox, 02 Today, 03 Journey; the tour walks Inbox, Today, Journey (his
+  left-card line kept word for word); FAQ answers no longer name Outcomes. FAQ ids unchanged.
+- Tests: test/help_center.test.js (map = the menu places in order with their routes, how-to links real, no
+  tour/answer names a menu place that is gone). Shot: `For review/2026-10-05 Q52 badge/`. **BUILT, next patch.**
+
 ## 05.10.2026 - Q53: Help center is its own menu item, under Settings
 
 Ritvars 05.10: "Now, Help Center, lets move the tab of it out of settings and under the settings."

@@ -43,6 +43,6 @@ test('the status lines that carry a value are still there', () => {
 });
 
 test('the Help center still explains itself', () => {
-  assert.match(APP, /<b>Today<\/b><small>What the team has to do: overdue, due today, coming up/,
+  assert.match(APP, /<b>Today<\/b><small>Who needs an action now\. Press Done, say how it went/,
     'explaining is what a help page is for');
 });

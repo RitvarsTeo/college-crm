@@ -77,7 +77,7 @@ test('the routes sit behind the sign-in door, and the config carries the help fi
     assert.ok(SERVER.indexOf(r) > door, r + ' comes after the door');
     assert.doesNotMatch(fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8').match(/function openBeforeSignIn[\s\S]*?\n}\n/)[0], /api\/help/, 'not opened before sign-in');
   }
-  assert.match(SERVER, /help: \{ tour: HELP\.tour, faq: HELP\.faq \}/);
+  assert.match(SERVER, /help: \{ map: HELP\.map, howto: HELP\.howto, tour: HELP\.tour, faq: HELP\.faq \}/, 'Q54: the map and how-to travel with it');
   for (const f of ['help-tour.js', 'help-center.js', 'help-center.css']) {
     assert.match(SERVER, new RegExp(`'${f.replace('.', '\\.')}': 'text/`), f + ' is served');
     assert.ok(fs.existsSync(path.join(ROOT, 'src', 'assets', f)), f);
@@ -163,4 +163,41 @@ test('the Help center shows the questions in the order of help.json, never by mo
   assert.doesNotMatch(SERVER, /most opened come first/, 'the server no longer says the most opened come first');
   // the opens are still recorded per id, and the counts route stays (a separate decision)
   assert.ok(SERVER.includes("p === '/api/help/opened'") && SERVER.includes("p === '/api/help/counts'"));
+});
+
+// Q54 (the owner, 05.10.2026): "Also put in the help center the navigation of the app. Have a like a helper, how to
+// where to, for what. Update it in other words".
+test('Q54 the map lists exactly the menu places, in menu order, each a link to its route', () => {
+  const nav = APP.slice(APP.indexOf('<div class="cnav"'), APP.indexOf('</div>`);', APP.indexOf('<div class="cnav"')));
+  const menu = [...nav.matchAll(/<a href="(#\/[a-z]+)"[^>]*>(?:\$\{C_ICON\.[a-z]+\})?<span>([A-Za-z ]+)<\/span>/g)]
+    .map((m) => [m[2], m[1]]).filter(([name]) => name !== 'Admissions');   // Admissions is the group, its three are the cards
+  assert.deepEqual(HELP.map.map((m) => [m.name, m.href]), menu.map(([n, h]) => [n, h === '#/admissions' ? '#/leads' : h]));
+  assert.deepEqual(HELP.map.map((m) => m.name), ['Home', 'Inbox', 'Today', 'Journey', 'Reports', 'Settings', 'Help center']);
+  assert.deepEqual(HELP.map.filter((m) => m.group === 'Admissions').map((m) => m.name), ['Inbox', 'Today', 'Journey']);
+  for (const m of HELP.map) {
+    assert.ok(m.for && m.for.split(/\s+/).length <= 8, 'one short line, at most 8 words: ' + m.name);
+    assert.ok(APP.includes(`  ${m.icon}: '<svg`), 'a real icon: ' + m.icon);
+  }
+  const view = APP.slice(APP.indexOf('function cHelpMap() {'), APP.indexOf('function cStartTour('));
+  assert.match(view, /<a class="c-hmap-c" href="\$\{esc\(m\.href\)\}">/, 'every card is a click to its place');
+  assert.match(view, /\$\{cHelpMap\(\)\}/, 'the map is on the Help center page');
+});
+
+test('Q54 how to: short task links, each opens a real place', () => {
+  const places = ['#/home', '#/leads', '#/today', '#/journey', '#/reports', '#/settings'];
+  assert.deepEqual(HELP.howto.map((h) => h.do), ['Find a person', 'Add a lead', "Act on today's work", 'Move someone back a stage',
+    'See who came from a channel', 'See a Home number in depth']);
+  for (const h of HELP.howto) assert.ok(places.includes(h.href) && h.where, h.do);
+  assert.ok(APP.includes('placeholder="Search name, email or phone"') && APP.includes('>Add lead</button>') && APP.includes("'Came from'"),
+    'what the how-to names exists on screen');
+  assert.doesNotMatch(JSON.stringify(HELP.howto), /year switch|year picker/i, 'nothing about features not built');
+});
+
+test('Q54 no tour or answer names a menu place that no longer exists', () => {
+  const text = JSON.stringify({ tour: HELP.tour, faq: HELP.faq, map: HELP.map, howto: HELP.howto });
+  for (const gone of ['Next steps', 'All people', 'Outcomes', 'New Leads', /\bPeople\b/]) {
+    assert.doesNotMatch(text, gone instanceof RegExp ? gone : new RegExp(gone), 'still named: ' + gone);
+  }
+  const view = APP.slice(APP.indexOf('function viewHelpC() {'), APP.indexOf('function cStartTour('));
+  assert.doesNotMatch(view, /<b>Outcomes<\/b>|<b>People<\/b>|href="#\/outcomes"/);
 });

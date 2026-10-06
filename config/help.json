@@ -1,5 +1,84 @@
 {
   "_about": "THE CRM'S OWN HELP (dev kit part 3): the tour steps and the questions in the Help center. When the same question arrives in the feedback inbox twice (kind 'A question'), add it here with its answer. ids are lower-case words and hyphens and NEVER change once used: the open counts are kept per id (table help_faq_opens). Answers are plain text, and every answer must say what the CRM really does.",
+  "map": [
+    {
+      "name": "Home",
+      "href": "#/home",
+      "icon": "home",
+      "for": "The day and the year at a glance"
+    },
+    {
+      "group": "Admissions",
+      "name": "Inbox",
+      "href": "#/leads",
+      "icon": "inbox",
+      "for": "Every new message; decide who becomes a person"
+    },
+    {
+      "group": "Admissions",
+      "name": "Today",
+      "href": "#/today",
+      "icon": "next",
+      "for": "Who needs an action now"
+    },
+    {
+      "group": "Admissions",
+      "name": "Journey",
+      "href": "#/journey",
+      "icon": "journey",
+      "for": "Everyone by stage, to admitted or not proceeding"
+    },
+    {
+      "name": "Reports",
+      "href": "#/reports",
+      "icon": "rep",
+      "for": "Each Home figure, one level deeper"
+    },
+    {
+      "name": "Settings",
+      "href": "#/settings",
+      "icon": "set",
+      "for": "Light or dark; admin tools for admins"
+    },
+    {
+      "name": "Help center",
+      "href": "#/help",
+      "icon": "help",
+      "for": "This page: where things are, how to"
+    }
+  ],
+  "howto": [
+    {
+      "do": "Find a person",
+      "where": "Journey, the search box",
+      "href": "#/journey"
+    },
+    {
+      "do": "Add a lead",
+      "where": "Journey, Add lead",
+      "href": "#/journey"
+    },
+    {
+      "do": "Act on today's work",
+      "where": "Today, Done or Choose next step",
+      "href": "#/today"
+    },
+    {
+      "do": "Move someone back a stage",
+      "where": "Journey, open the person, pick the stage, add a note",
+      "href": "#/journey"
+    },
+    {
+      "do": "See who came from a channel",
+      "where": "Journey, the Came from filter",
+      "href": "#/journey"
+    },
+    {
+      "do": "See a Home number in depth",
+      "where": "Home, click the number",
+      "href": "#/home"
+    }
+  ],
   "tour": [
     {
       "title": "The left card",
@@ -7,13 +86,18 @@
       "target": ".cnav"
     },
     {
+      "title": "Inbox",
+      "body": "Every new message from every channel lands here first. Say what they want to study and the next step, and they become a person. Junk is marked not relevant, never deleted.",
+      "target": ".cnav a[data-c=\"leads\"]"
+    },
+    {
       "title": "Today",
-      "body": "What needs your attention: overdue first, then today, then coming up, and how many are waiting in the Inbox. Press Done, say how it went and choose the next step.",
+      "body": "Who needs an action now: overdue, due today, and people with no next step. Press Done, say how it went and choose the next step.",
       "target": ".cnav a[data-c=\"today\"]"
     },
     {
-      "title": "People",
-      "body": "Everyone you are working with: search, add a lead, filter by stage. Journey shows where they are, stage by stage; Outcomes shows what happened to the ones who finished.",
+      "title": "Journey",
+      "body": "Everyone you are working with, stage by stage, up to Admitted or Not proceeding. Search, add a lead, filter by where they came from.",
       "target": ".cnav a[data-c=\"people\"]"
     },
     {
@@ -31,7 +115,7 @@
     {
       "id": "delete-a-person",
       "q": "Can I delete a person?",
-      "a": "No. Nobody is deleted. When someone is not going ahead, close them as Not proceeding with a reason. They stay on record in Outcomes. The original messages and call records behind them are kept for 13 months."
+      "a": "No. Nobody is deleted. When someone is not going ahead, close them as Not proceeding with a reason. They stay on record on the Journey, under Not proceeding. The original messages and call records behind them are kept for 13 months."
     },
     {
       "id": "late-in-new-leads",
@@ -46,7 +130,7 @@
     {
       "id": "home-numbers",
       "q": "Where do the Home numbers come from?",
-      "a": "From the people in Intake, counted for this year. Download for management review on Outcomes gives the figures as Excel, Google Sheets or CSV."
+      "a": "From the people in Intake, counted for this year. Click a Home number to see it one level deeper, and the people it counts. Download on the Journey gives the figures as Excel, Google Sheets or CSV."
     },
     {
       "id": "share-a-link",
