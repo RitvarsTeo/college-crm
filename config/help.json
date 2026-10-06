@@ -68,6 +68,16 @@
       "do": "See a Home number in depth",
       "where": "Home, click the number",
       "href": "#/home"
+    },
+    {
+      "do": "Look at other years",
+      "where": "The Year filter, top right: tick any years",
+      "href": "#/home"
+    },
+    {
+      "do": "See one month",
+      "where": "Reports, the Whole year box",
+      "href": "#/reports"
     }
   ],
   "tour": [
@@ -121,7 +131,7 @@
     {
       "id": "home-numbers",
       "q": "Where do the Home numbers come from?",
-      "a": "From the people in Intake, counted for this year. Click a Home number to see it one level deeper, and the people it counts. Download on the Journey gives the figures as Excel, Google Sheets or CSV."
+      "a": "From the people in Intake, counted for the years ticked in the Year filter, top right: this year when you open Intake, or any years together. Click a Home number to see it one level deeper, and the people it counts. On Reports, the Whole year box shows one month of those years instead. Download on the Journey or on Reports gives the figures as Excel, Google Sheets or CSV."
     },
     {
       "id": "share-a-link",

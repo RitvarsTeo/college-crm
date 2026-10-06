@@ -203,3 +203,18 @@ test('an old link with a month still lands: ?y=2025&m=3 opens 2025 with March 20
   assert.ok(rows.length > 0);
   for (const p of rows) assert.ok(riga.format(new Date(p.status === 'Admitted' && p.admitted_at ? p.admitted_at : p.created_at)).startsWith(ym), `${p.id} in ${ym}`);
 });
+
+test('the Help center keeps up (the owner, 06.10.2026): the Year filter and the month on Reports, never a Period with months', () => {
+  const HELP = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'help.json'), 'utf8'));
+  const home = HELP.faq.find((f) => f.q === 'Where do the Home numbers come from?');
+  assert.match(home.a, /Year filter, top right/);
+  assert.match(home.a, /any years together/);
+  assert.match(home.a, /On Reports, the Whole year box shows one month/);
+  assert.deepEqual(HELP.howto.slice(-2).map((h) => [h.do, h.where, h.href]), [
+    ['Look at other years', 'The Year filter, top right: tick any years', '#/home'],
+    ['See one month', 'Reports, the Whole year box', '#/reports']]);
+  assert.doesNotMatch(JSON.stringify(HELP), /\bPeriod\b|counted for this year/, 'no Period, no "this year" only');
+  // what the help names is on the screen
+  assert.match(APP, /<span>Year<\/span><button type="button" class="c-jfb"/);
+  assert.match(APP, /\$\{several \? 'Whole years' : 'Whole year'\}/);
+});

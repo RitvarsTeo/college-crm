@@ -178,7 +178,7 @@ test('Q54 -> Q56: no card grid of the menu, no "three steps" cards repeating the
 test('Q54 how to: short task links, each opens a real place', () => {
   const places = ['#/home', '#/leads', '#/today', '#/journey', '#/reports', '#/settings'];
   assert.deepEqual(HELP.howto.map((h) => h.do), ['Find a person', 'Add a lead', "Act on today's work", 'Move someone back a stage',
-    'See who came from a channel', 'See a Home number in depth']);
+    'See who came from a channel', 'See a Home number in depth', 'Look at other years', 'See one month']);
   for (const h of HELP.howto) assert.ok(places.includes(h.href) && h.where, h.do);
   assert.ok(APP.includes('placeholder="Search name, email or phone"') && APP.includes('>Add lead</button>') && APP.includes("'Came from'"),
     'what the how-to names exists on screen');

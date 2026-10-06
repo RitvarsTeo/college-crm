@@ -55,6 +55,7 @@ priority would be back one step, especially useful when jumping between tabs and
   every G shortcut, "/", "?", Esc; G then H typed into the search did nothing.
 Tests: test/back_and_keys_q61.test.js; start_page, nav_and_home, journey_board_default_q57, help_center follow.
 Shots: `For review/2026-10-06 Q61 back and keys/`. **BUILT, next patch.**
+| Help center keeps up (the owner's rule, 06.10.2026): FAQ "Where do the Home numbers come from?" names the Year filter (any years together) and the Whole year box on Reports; How to gains "Look at other years" and "See one month" | BUILT |
 
 ## 06.10.2026 - Benchmarks on Reports > Conversion, variant A (PICKED)
 
