@@ -114,8 +114,10 @@ test('holds: every "No next step" on the page asks the rule first', () => {
   }
 });
 
-test('holds: the Journey summary bar and its filter leave the held person out of "No next step"', () => {
-  for (const where of ['const kindOf = (p) =>', "if (!kept('group', t ?"]) {
+test('holds: the Journey filter leaves the held person out of "No next step"', () => {
+  // the summary's step-kind bars left on 06.10.2026 (the owner's pick); the board's filter rule stays
+  assert.ok(!APP.includes('const kindOf = (p) =>'), 'the step-kind bars are gone');
+  for (const where of ["if (!kept('group', t ?"]) {
     const i = APP.indexOf(where);
     assert.ok(i >= 0, where);
     assert.match(APP.slice(i, APP.indexOf('\n', i)), /cSisHolds\(p\) \? null : 'No next step'/, where);

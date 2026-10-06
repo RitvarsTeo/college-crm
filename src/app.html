@@ -1415,27 +1415,6 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   /* A grid, not flex-wrap: every track is the same minmax, so every box is the same width on
      every line. Flex-wrap stretched whatever landed on the last line, which put a wider bar
      under a smaller number. */
-  /* THE ROW FILLS THE WIDTH (the owner, 01.10.2026: "we have twice as much almost space
-     horizontally"). The tracks were CAPPED at 160px, so five stages used 800px of a
-     1400px page and left the rest empty. 1fr fills it. The tracks stay EQUAL, which is
-     the thing the note below is about: boxes sized by their label made two equal counts
-     draw different amounts of ink. */
-  html.ui-c .c-sumrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));
-    gap:8px;justify-content:stretch;align-items:end}
-  /* min-width:0 so the box takes the track's width and not its label's. The bar inside is
-     width:100%, so a box sized by its label made "Application and documents" (1) draw 2.4x the
-     ink of "Visit on site" (1): two equal numbers, two different-looking bars. Equal boxes
-     leave the height as the only thing that varies, which is the number. */
-  html.ui-c .c-sum{display:flex;flex-direction:column;align-items:flex-start;gap:3px;
-    min-width:0;padding:6px 8px 7px;border:1px solid var(--rule2);border-radius:8px;
-    background:var(--surface);cursor:pointer;font:inherit;text-align:left}
-  html.ui-c .c-sum:hover{border-color:var(--control-line)}
-  html.ui-c .c-sum.on{border-color:var(--j-to);box-shadow:inset 0 0 0 1px var(--j-to)}
-  html.ui-c .c-sum b{font-size:17px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums}
-  html.ui-c .c-sum i{display:block;width:100%;border-radius:2px;background:var(--j-from);min-height:3px}
-  html.ui-c .c-sum.on i{background:var(--j-to)}
-  html.ui-c .c-sum span{font-size:11px;color:var(--t3);line-height:1.25;overflow-wrap:anywhere}
-  @media (max-width:760px){ html.ui-c .c-sumrow{grid-template-columns:repeat(auto-fit,minmax(88px,1fr))} }
   /* PEOPLE IS TWO VIEWS (the owner, 01.10.2026). Tabs, not menu items: one place, two ways
      of looking at the same people. The active one carries the underline and the ink; the
      other is quiet, so the pair reads as a choice and not as two links. */
@@ -1902,15 +1881,6 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-talk-more{margin-top:7px;background:none;border:0;padding:2px 0;font:inherit;
     font-size:12px;color:var(--petink);cursor:pointer;text-decoration:underline}
   html.ui-c .c-more{margin-top:10px;border-top:1px solid var(--rule2);padding-top:4px}
-  html.ui-c .c-more > summary{cursor:pointer;list-style:none;padding:6px 2px;font-size:12px;
-    color:var(--t3);display:flex;align-items:center;gap:7px;border-radius:6px}
-  html.ui-c .c-more > summary::-webkit-details-marker{display:none}
-  html.ui-c .c-more > summary::before{content:"";width:0;height:0;flex:0 0 auto;
-    border-left:5px solid currentColor;border-top:4px solid transparent;border-bottom:4px solid transparent;
-    transition:transform .15s}
-  html.ui-c .c-more[open] > summary::before{transform:rotate(90deg)}
-  html.ui-c .c-more > summary:hover{color:var(--ink);background:var(--c-sunk)}
-  html.ui-c .c-more > summary:focus-visible{outline:2px solid var(--pet);outline-offset:1px}
   html.ui-c .c-summary h4,html.ui-c .c-outcomes h4{margin:0;font:inherit;font-size:11px;
     letter-spacing:.07em;text-transform:uppercase;color:var(--t3);font-weight:600}
   html.ui-c .c-summary h4 small,html.ui-c .c-outcomes h4 small{margin-left:8px;font-size:11px;
@@ -1919,7 +1889,6 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
      each count sits under the stage it belongs to. Leaving is possible from any of them; a
      single box after Contract would say the opposite. A stage nobody left from keeps its mark
      and reads zero - a missing mark would look like missing data. */
-  html.ui-c .c-sumcell{display:flex;flex-direction:column;gap:3px;min-width:0}
   html.ui-c .c-exit{display:flex;align-items:center;justify-content:center;gap:5px;
     min-width:0;padding:1px 8px;color:var(--t4);font-size:12px;
     font-variant-numeric:tabular-nums;font-weight:600}
@@ -2854,7 +2823,7 @@ let C_PTAB = 'journey';
 //      bumps nothing, because nothing has changed yet
 // Reduced motion: the kit never turns on, nothing moves, every figure is already final.
 const C_METRICS = ['.kneed b', '.kstrip > div > b', '.klegend b', '.kbar > b', '.jb-end > b', '.jb-n',
-  '.c-col h3 > b', '.kbig', '.c-sum > b', '.kgrow b', '.c-out b'].join(',');
+  '.c-col h3 > b', '.kbig', '.kgrow b', '.c-out b'].join(',');
 const cMetricKey = (el, i) => {
   const holder = el.closest('[data-v],[data-kgo],[data-tip]');
   const label = holder ? (holder.dataset.v || holder.dataset.kgo || holder.dataset.tip) : ((el.parentElement && el.parentElement.querySelector('span')) || {}).textContent;
@@ -4376,13 +4345,6 @@ function cJourneyFilters(open) {
 // open, before the filters - so a bar can never disagree with the board. Clicking a
 // bar filters the board by exactly what that bar counted, and clicking it again clears
 // it, so the summary is also the control.
-// Whether the second half of the summary is open. Remembered across a redraw, so
-// filtering or moving somebody does not slam it shut under the reader.
-let C_JMORE = false;
-// Remembers the disclosure across a redraw. A NAMED handler on purpose: an arrow
-// function inside an onclick puts a > inside the tag, which closes it early for
-// anything that parses the markup.
-function cJMore(el) { setTimeout(() => { C_JMORE = Boolean(el.parentElement && el.parentElement.open); }, 0); }
 // THE JOURNEY BAND (the owner, 02.10.2026: "B for home. Then the journey displayed like the ui
 // from A", then "Dots per person is not very portraying visual. Cant count them really").
 //
@@ -4434,39 +4396,10 @@ function cJourneyBand(everyone, taskOf, stages, exitMark, out) {
 }
 
 function cJourneySummary(everyone, taskOf, stages) {
-  const on = (k, v) => (C_JF[k] || []).includes(v);
-  const byStage = stages.map((st) => [st.id, st.label || st.id,
-    everyone.filter((p) => p.status === st.id).length]);
-
-  const groups = (CFG.nextActions || []).map((g) => g.group);
-  const kindOf = (p) => { const t = taskOf.get(p.id); if (!t) return cSisHolds(p) ? null : 'No next step';
-    return groupForAction(cTask(t.label)) || 'No group'; };
-  const byKind = [...groups, 'No group', 'No next step']
-    .map((g) => [g, g, everyone.filter((p) => kindOf(p) === g).length])
-    .filter(([, , n]) => n > 0);
-
-  // ITEM BY ITEM, NOT ONLY BY GROUP (Admissions, open since 29.09.2026). The row above counts
-  // the four GROUPS, which is the summary; this counts the STEPS people are actually
-  // waiting on, which is the work. Nineteen steps are configured; only the ones somebody
-  // is actually waiting on are listed, so the list is the real queue and not the catalogue.
-  const byStep = [...new Map(everyone.map((p) => {
-    const t = taskOf.get(p.id);
-    return [t ? cTask(t.label) : (cSisHolds(p) ? null : 'No next step'), null];
-  })).keys()].filter(Boolean)
-    .map((label) => [label, label, everyone.filter((p) => {
-      const t = taskOf.get(p.id);
-      return (t ? cTask(t.label) : (cSisHolds(p) ? null : 'No next step')) === label;
-    }).length])
-    .sort((a, b) => b[2] - a[2]);
-
-  const row = (key, rows, mark) => {
-    const top = Math.max(1, ...rows.map((r) => r[2]));
-    return `<div class="c-sumrow">${rows.map(([v, label, n]) => `<div class="c-sumcell"><button type="button"
-      class="c-sum${on(key, v) ? ' on' : ''}" aria-pressed="${on(key, v)}"
-      onclick="cJfPick('${key}', this.dataset.v, !${on(key, v)})" data-v="${esc(v)}">
-      <b>${n}</b><i style="height:${Math.max(3, (n / top) * 34)}px"></i><span>${esc(label)}</span>
-    </button>${mark ? mark(v) : ''}</div>`).join('')}</div>`;
-  };
+  // "WHAT COMES NEXT" IS GONE (the owner, 06.10.2026, of the two bar rows behind it: "why? What is the purpose of
+  // this?", then his pick "Remove it"). It cut the same open people by the KIND of step they wait on and by the step
+  // itself; on the real data it read "No group" (the default step "Get in touch" is in no configured kind) and "No next
+  // step", which Today already shows. The board and its filters are unchanged.
   // ACTIVE JOURNEY above the line, OUTCOMES below it (the owner, 01.10.2026). The five
   // stages are a track somebody is still moving along. Admitted and Not proceeding are
   // what HAPPENED to that journey, not two more stages, so they sit under a rule, in
@@ -4492,34 +4425,16 @@ function cJourneySummary(everyone, taskOf, stages) {
   const all = (C_JDATA && C_JDATA.people) || [];
   const adm = all.filter((p) => p.status === roles.admitted).length;
   const np = all.filter((p) => p.status === roles.closed).length;
-  // The outcomes are the band's right-hand bookends now (02.10.2026), so they are not drawn
-  // a second time behind the disclosure line: each fact once.
+  // The outcomes are the band's right-hand bookends (02.10.2026): each fact once.
   const band = cJourneyBand(everyone, taskOf, stages, exitMark, {
     adm, np, admLabel: roles.admitted || 'Admitted', npLabel: roles.closed || 'Not proceeding',
     unrecorded: exits.unrecorded || 0,
     arrived: C_JDATA && typeof C_JDATA.arrived === 'number' ? C_JDATA.arrived : null,
     year: C_JDATA && C_JDATA.year ? C_JDATA.year : '', play: Boolean(C_JDATA && C_JDATA.play) });
 
-  // PROGRESSIVE DISCLOSURE (the owner, 01.10.2026: "all together is just tooooo much").
-  // The screen used to open with two full bar rows, the exit marks, the outcomes band,
-  // four filters, the person card and five columns, all at once and all at level one.
-  //
-  // What you need BEFORE you have asked a question is one thing: where the people you
-  // are working with are standing right now. That stays open. The second cut of the
-  // same people, and what happened to the ones who finished, are answers to questions
-  // you have to ask - so they wait behind one line that says what is in them, and the
-  // line carries the counts so opening it is a choice and not a lottery.
-  const moreLabel = 'What comes next';
   return `<div class="c-summary">
     <h4>Active journey <small><a class="c-jcount" href="#/people" onclick="cGoPeople({ stage: 'open' });return false">${everyone.length} ${everyone.length === 1 ? 'person you are still working with' : 'people you are still working with'}</a></small></h4>
-    ${band}
-    <details class="c-more"${C_JMORE ? ' open' : ''}>
-      <summary onclick="cJMore(this)">${esc(moreLabel)}</summary>
-      <h4>What comes next <small>the same ${everyone.length} people, by the kind of step they are waiting on</small></h4>
-      ${row('group', byKind)}
-      <h4>Step by step <small>the ${byStep.length} ${byStep.length === 1 ? 'step' : 'steps'} somebody is waiting on right now</small></h4>
-      ${row('step', byStep)}
-    </details></div>`;
+    ${band}</div>`;
 }
 
 // SCREEN 3, THE BOARD, ONE LEVEL AT A TIME (the owner, 01.10.2026: "all together is just
