@@ -71,7 +71,7 @@ test('Home is the metrics page and Today is the work; neither does the other job
   const home = ['async function viewHomeC(', 'async function cHomeData(', 'function cHomeB('].map(fn).join('\n');
   const today = fn('async function viewTodayC(') + fn('function cTodayPool(');
 
-  assert.match(home, /\/api\/report\?from=/, 'Home reads the report');
+  assert.match(home, /api\('\/api\/report\?' \+ cScopeReportQs\(\)\)/, 'Home reads the report, for the chosen years (Q59)');
   assert.match(fn('function cHomeB('), /kstrip/, 'B carries the KPI strip as cards');
   assert.ok(!home.includes("sect('Overdue'"), 'Home does not list the work');
 

@@ -36,6 +36,9 @@ function load() {
     cSheetNotice: () => '', cTodayIso: () => localDate(),
     // the year scope (Q45) is the only period: the current year, as on every open
     cScopeWord: () => localDate().slice(0, 4), cScopeDates: () => [localDate().slice(0, 4) + '-01-01', ''],
+    // Q59: the corner's set of years (here the current year alone) and the month list Reports builds from it
+    cScopeList: () => [Number(localDate().slice(0, 4))], cScopeAllYears: () => [Number(localDate().slice(0, 4))], cNowYear: () => Number(localDate().slice(0, 4)),
+    C_SCOPE_YEARS: [], C_MONTHS_LONG: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
   };
   vm.runInNewContext([line('const C_MONTHS ='), line('const C_TERMINAL ='), BLOCK,
     'this.X = { cRepModel, cRepHtml, cRepBuckets, cRepPeriodWord, cRepPeriod, cGoCohort, setCoh: (c) => { C_REP_COH = c; }, setCh: (c) => { C_REP_CH = c; } };'].join('\n'), ctx);
@@ -276,17 +279,22 @@ test('one card style, the two data colours, light and dark', () => {
   assert.match(css, /html\.ui-c\[data-theme="dark"\] \.kstrip\.rp-tabs/, 'dark: no panel inside a panel');
 });
 
-test('the period is read in one function, and it is the year scope (Q45): no buttons, no From / To of its own', () => {
+test('the period is read in one function: the corner years, or one month of them chosen here (Q45, Q59); no From / To of its own', () => {
   const view = fnBody('async function viewReportsC() {');
   assert.match(view, /const P = cRepPeriod\(\);/);
   assert.doesNotMatch(view, /RPT\./, 'nothing else in the view reads the presets');
-  let dates = ['2026-01-01', ''];
-  const ctx = { RPT: { from: 'x', to: 'y' }, cScopeDates: () => dates };
-  vm.runInNewContext(fnBody('function cRepPeriod() {'), ctx);
-  assert.deepEqual(JSON.parse(JSON.stringify(ctx.cRepPeriod())), { from: '2026-01-01', to: '' }, 'the current year, as on every open');
-  dates = ['2025-03-01', '2025-03-31'];
-  assert.deepEqual(JSON.parse(JSON.stringify(ctx.cRepPeriod())), { from: '2025-03-01', to: '2025-03-31' }, 'March 2025 in the corner = March 2025 here');
-  assert.deepEqual(JSON.parse(JSON.stringify(ctx.RPT)), { from: '2025-03-01', to: '2025-03-31' }, 'and the download follows it');
+  // the period entry and its month list, as the page has them (Q59 tests the choice itself: year_scope_q59)
+  const block = APP.slice(APP.indexOf("let C_REP_MONTH = '';"), APP.indexOf('// The in-page choice:'));
+  let years = [2026];
+  const ctx = { RPT: { from: 'x', to: 'y' }, cTodayIso: () => '2026-10-06', cScopeList: () => years, cScopeAllYears: () => [2026, 2025],
+    cScopeWord: () => (years === 'all' ? 'All years' : years.join(', ')), cNowYear: () => 2026, C_SCOPE_YEARS: [2026, 2025],
+    C_MONTHS_LONG: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] };
+  vm.runInNewContext(block.replace(/^let /gm, 'var '), ctx);
+  assert.deepEqual(JSON.parse(JSON.stringify(ctx.cRepPeriod())), { years: [2026], word: '2026' }, 'the current year, whole, as on every open');
+  assert.deepEqual(JSON.parse(JSON.stringify(ctx.RPT)), { from: '', to: '', years: [2026] }, 'and the download follows it');
+  years = [2025, 2026]; ctx.C_REP_MONTH = '2025-03';
+  assert.deepEqual(JSON.parse(JSON.stringify(ctx.cRepPeriod())), { from: '2025-03-01', to: '2025-03-31', month: '2025-03', word: 'March 2025' }, 'March 2025 chosen here');
+  assert.deepEqual(JSON.parse(JSON.stringify(ctx.RPT)), { from: '2025-03-01', to: '2025-03-31', years: [] }, 'and the download follows it');
   const html = fnBody('function cRepHtml(');
   assert.doesNotMatch(html, /c-periodbar|cReportPreset|cReportDates|type="date"/, 'the period bar is gone');
 });

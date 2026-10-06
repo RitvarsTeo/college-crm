@@ -32,6 +32,9 @@ function load(cfg = CFG) {
     cStage: (id) => ((CFG.stages || []).find((s) => s.id === id) || {}).label || id || '',
     cChannel: (c) => [c || 'Not recorded', ''], cSheetNotice: () => '', cTodayIso: () => localDate(),
     cScopeWord: () => localDate().slice(0, 4), cScopeDates: () => [localDate().slice(0, 4) + '-01-01', ''],
+    // Q59: the corner's set of years (here the current year alone) and the month list Reports builds from it
+    cScopeList: () => [Number(localDate().slice(0, 4))], cScopeAllYears: () => [Number(localDate().slice(0, 4))], cNowYear: () => Number(localDate().slice(0, 4)),
+    C_SCOPE_YEARS: [], C_MONTHS_LONG: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
   };
   vm.runInNewContext([line('const C_MONTHS ='), line('const C_TERMINAL ='), BLOCK,
     'this.X = { cRepModel, cRepHtml, cRepBench, cRepBenchRows, getCoh: () => C_REP_COH, setCoh: (c) => { C_REP_COH = c; } };'].join('\n'), ctx);

@@ -225,7 +225,8 @@ test('re-date: Admitted for the year counts by the corrected date (Reports and H
   const home = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
   // Q45: the people rows are the period, the Admitted in it by their admission date (server, scopePeopleSql)
   assert.match(home, /const admitted = people\.filter\(\(p\) => p\.status === 'Admitted' && p\.admitted_at\);/);
-  assert.match(fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8'), /OR \(\$\{alias\}\.status = 'Admitted' AND \$\{alias\}\.admitted_at IS NOT NULL AND \$\{alias\}\.admitted_at >= \? AND \$\{alias\}\.admitted_at < \?\)/);
+  // (Q59: the same rule over a set of years, src/yearscope.js rangesSql)
+  assert.match(fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8'), /const \[adm, a2\] = rangesSql\(`\$\{alias\}\.admitted_at`, ranges\);[\s\S]*OR \(\$\{alias\}\.status = 'Admitted' AND \$\{alias\}\.admitted_at IS NOT NULL AND \$\{adm\}\)/);
   const people = await db.prepare('SELECT status, admitted_at FROM people').all();
   assert.equal(people.filter((p) => p.status === 'Admitted' && String(p.admitted_at || '').startsWith('2026')).length, 6);
 });

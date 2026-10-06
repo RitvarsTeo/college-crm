@@ -70,53 +70,25 @@ test('the server: a year keeps who ARRIVED in it, the Admitted by their ADMISSIO
   assert.equal((await get('/api/intake?y=2001')).rows.length, 0, 'the Inbox by the message\'s own arrival');
 });
 
-test('the control: ONE labelled dropdown, All years then each year with its months under it; the current year is plain, anything else navy', () => {
-  const ctx = { cTodayIso: () => '2026-10-06', esc: (s) => String(s), UI: 'c', C_PCOHORT: null };
-  vm.runInNewContext(APP.slice(APP.indexOf('const C_SCOPED = '), APP.indexOf('function cDrawScope(')).replace(/^(const|let) /gm, 'var '), ctx);
-  ctx.C_SCOPE_YEARS = [2026, 2025];
-  let html = ctx.cScopeHtml();
-  assert.equal((html.match(/<select/g) || []).length, 1, 'one dropdown');
-  assert.match(html, /<label class="c-jf c-scope-jf"><span>Period<\/span>/, 'labelled Period, the filter look, plain on the current year');
-  assert.match(html, /<option value="all">All years<\/option><optgroup label="2026"><option value="2026-0" selected>2026 · Whole year<\/option><option value="2026-1">January 2026<\/option>/);
-  assert.match(html, /<option value="2026-10">October 2026<\/option><\/optgroup><optgroup label="2025">/, 'no month that has not begun');
-  assert.match(html, /<option value="2025-12">December 2025<\/option><\/optgroup>/);
-  ctx.C_SCOPE = { year: 2025, month: 3 };
-  html = ctx.cScopeHtml();
-  assert.match(html, /class="c-jf c-scope-jf past"/, 'a past period: navy');
-  assert.match(html, /<option value="2025-3" selected>March 2025<\/option>/);
-  assert.equal(ctx.cScopeQs(), 'y=2025&m=3');
-  assert.deepEqual([...ctx.cScopeDates()], ['2025-03-01', '2025-03-31']);
-  assert.equal(ctx.cScopeWord(), 'March 2025');
-  ctx.C_SCOPE = { year: 'all', month: 0 };
-  assert.equal(ctx.cScopeQs(), '', 'All years: no filter');
-  assert.deepEqual([...ctx.cScopeDates()], ['2025-01-01', '']);
-  ctx.C_SCOPE = { year: null, month: 0 };
-  assert.equal(ctx.cScopeQs(), 'y=2026', 'every open: the current year');
-  assert.equal(ctx.cScoped('/api/people'), '/api/people?y=2026');
-  assert.equal(ctx.cScoped('/api/tasks?scope=open'), '/api/tasks?scope=open&y=2026');
-  assert.equal(ctx.cScoped('/api/people/p1'), '/api/people/p1', 'one person is never scoped');
-  assert.equal(ctx.cScoped('/api/report?from=x'), '/api/report?from=x', 'Reports takes its period as dates');
-});
+// The control itself is Q59's now (a set of whole years, no months): test/year_scope_q59.test.js.
 
 test('the look: frozen top-right on a wide screen, a row of its own in the phone top bar; the heads leave it room; no amber, no bar', () => {
   assert.match(APP, /html\.ui-c \.c-scope\{position:fixed;top:14px;right:20px;z-index:30\}/);
   assert.match(APP, /html\.ui-c \.c-scope \.c-jf\.past\{background:#0a2463;border-color:#0a2463\}/);
   assert.match(APP, /@media \(min-width:901px\)\{ html\.ui-c #view \.c-head, html\.ui-c #view \.khead\{padding-right:var\(--scope-w,0px\)\} \}/);
   assert.match(APP, /html\.ui-c \.shell > nav > \.c-scope\{position:static;order:3;flex:1 0 100%;/);
-  const css = APP.slice(APP.indexOf('/* Q45: the Period dropdown'), APP.indexOf(':root{--scope-w:0px}')).replace(/\/\*[\s\S]*?\*\//g, '');
+  const css = APP.slice(APP.indexOf('/* Q45, Q59: the Year filter'), APP.indexOf(':root{--scope-w:0px}')).replace(/\/\*[\s\S]*?\*\//g, '');
   assert.doesNotMatch(css, /#F7C04F|#fff8e6|#E0A526/i, 'no amber, no cream');
 });
 
-test('Home, the Journey band and Reports read the period; Reports has no period bar; the download follows it', () => {
+test('Home, the Journey band and Reports read the years; Reports has no period bar; the download follows it', () => {
   const home = fnBody('async function cHomeData() {');
-  assert.match(home, /const \[from, to\] = cScopeDates\(\);/);
-  assert.match(home, /api\(`\/api\/report\?from=\$\{from\}\$\{to \? '&to=' \+ to : ''\}`\)/);
+  assert.match(home, /api\('\/api\/report\?' \+ cScopeReportQs\(\)\)/);
   assert.match(home, /const admitted = people\.filter\(\(p\) => p\.status === 'Admitted' && p\.admitted_at\);/, 'the Admitted of the period, by admission');
-  assert.match(fnBody('async function viewJourneyC() {'), /const \[pFrom, pTo\] = cScopeDates\(\);/);
-  assert.match(fnBody('function cRepPeriod() {'), /const \[from, to\] = cScopeDates\(\);\s*RPT = \{ from, to \};/);
+  assert.match(fnBody('async function viewJourneyC() {'), /api\('\/api\/report\?' \+ cScopeReportQs\(\)\)/);
+  assert.match(fnBody('function cRepPeriod() {'), /RPT = \{ from: '', to: '', years: \[\.\.\.l\] \};/);
   assert.doesNotMatch(fnBody('function cRepHtml('), /c-periodbar|type="date"/);
-  assert.match(fnBody('function cTarget(D) {'), /C_SCOPE\.month\) return null;/, 'no year target against one month');
-  // a change redraws the page and the NEW badges under the new period
-  const set = fnBody('function cSetScope(year, month) {');
+  // a change redraws the page and the NEW badges under the new years
+  const set = fnBody('function cSetScope(years) {');
   assert.match(set, /route\(\);\s*cNavCounts\(\);/);
 });

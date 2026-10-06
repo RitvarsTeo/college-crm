@@ -10,7 +10,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SIS_HOLDS_SQL } from './lifecycle.js';
-import { localDate, localDateTime, localMidnight, dayStartOf, dayAfterStartOf, todayStart } from './bizday.js';
+import { localDate, localDateTime, localMidnight, dayStartOf, dayAfterStartOf, todayStart, tomorrowStart } from './bizday.js';
+import { yearsOf, yearRanges, rangesSql } from './yearscope.js';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const CFG = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'prototype.json'), 'utf8'));
@@ -24,8 +25,23 @@ export function periodOf(from, to) {
   const start = from ? dayStartOf(from) : localMidnight(y, m, 1);
   const end = to ? dayAfterStartOf(to) : localMidnight(y, m + 1, 1);
   const lastDay = localDate(new Date(Date.parse(end) - 1));
-  return { from: start, to: end, label: `${localDate(start)} to ${lastDay}` };
+  const label = `${localDate(start)} to ${lastDay}`;
+  return { from: start, to: end, label, span: label, ranges: [[start, end]] };
 }
+// A SET of whole calendar years (Q59, the owner 06.10.2026: "Any years combined!"): its ranges (neighbours joined), the
+// current year up to today. `from` / `to` are the first and the last instant; `span` says them as days, for the time
+// axis; `label` names every range, so 2024 + 2026 never reads as the three years between.
+export function periodOfYears(years) {
+  const ranges = yearRanges(years);
+  const now = tomorrowStart();
+  for (const r of ranges) if (r[1] > now) r[1] = now;
+  const live = ranges.filter(([a, b]) => a < b);
+  const day = (a, b) => `${localDate(a)} to ${localDate(new Date(Date.parse(b) - 1))}`;
+  const from = live[0][0], to = live[live.length - 1][1];
+  return { from, to, ranges: live, years: yearsOf(years), span: day(from, to), label: live.map(([a, b]) => day(a, b)).join(', ') };
+}
+// `col` inside the period's ranges, as SQL and its arguments.
+const inP = (col, p) => rangesSql(col, p.ranges || [[p.from, p.to]]);
 
 const count = async (db, sql, ...args) => (await db.prepare(sql).get(...args)).n;
 
@@ -47,9 +63,10 @@ export function maturedBasis(p, { now = new Date(), days = MATURED_DAYS } = {}) 
 export async function maturedConversion(db, p, opts) {
   const basis = maturedBasis(p, opts);
   const until = basis.cutoff < p.to ? basis.cutoff : p.to;
-  const of = await count(db, 'SELECT COUNT(*) n FROM people WHERE created_at >= ? AND created_at < ?', p.from, until);
+  const [inR, rArgs] = inP('created_at', p);
+  const of = await count(db, `SELECT COUNT(*) n FROM people WHERE ${inR} AND created_at < ?`, ...rArgs, until);
   const admitted = await count(db, `SELECT COUNT(*) n FROM people
-    WHERE created_at >= ? AND created_at < ? AND admitted_at IS NOT NULL`, p.from, until);
+    WHERE ${inR} AND created_at < ? AND admitted_at IS NOT NULL`, ...rArgs, until);
   return { ...basis, admitted, of, pct: of ? Math.round((admitted / of) * 1000) / 10 : null };
 }
 
@@ -69,12 +86,13 @@ export const STEPS = [
 export async function maturedSteps(db, p, opts) {
   const basis = maturedBasis(p, opts);
   const until = basis.cutoff < p.to ? basis.cutoff : p.to;
-  const ripe = await db.prepare('SELECT id, status, admitted_at FROM people WHERE created_at >= ? AND created_at < ? ORDER BY id')
-    .all(p.from, until);
+  const [inR, rArgs] = inP('created_at', p);
+  const ripe = await db.prepare(`SELECT id, status, admitted_at FROM people WHERE ${inR} AND created_at < ? ORDER BY id`)
+    .all(...rArgs, until);
   const ever = new Map();
   if (ripe.length) {
     const rows = await db.prepare(`SELECT DISTINCT person_id, new_value FROM events WHERE kind = 'status' AND new_value IS NOT NULL
-      AND person_id IN (SELECT id FROM people WHERE created_at >= ? AND created_at < ?)`).all(p.from, until);
+      AND person_id IN (SELECT id FROM people WHERE ${inR} AND created_at < ?)`).all(...rArgs, until);
     for (const r of rows) { if (!ever.has(r.person_id)) ever.set(r.person_id, new Set()); ever.get(r.person_id).add(r.new_value); }
   }
   const reached = (pp, stage) => {
@@ -95,22 +113,25 @@ export async function maturedSteps(db, p, opts) {
 
 // A breakdown is always a count per value, plus an explicit "not recorded" row,
 // because a blank in a report reads as zero when it really means unknown.
-async function breakdown(db, column, { from, to, where = '', args = [] } = {}) {
+async function breakdown(db, column, { where = '', args = [], ...p } = {}) {
+  const [inR, rArgs] = inP('created_at', p);
   const rows = await db.prepare(`SELECT COALESCE(NULLIF(TRIM(${column}), ''), '(not recorded)') k,
       COUNT(*) n FROM people
-    WHERE created_at >= ? AND created_at < ? ${where}
-    GROUP BY k ORDER BY n DESC`).all(from, to, ...args);
+    WHERE ${inR} ${where}
+    GROUP BY k ORDER BY n DESC`).all(...rArgs, ...args);
   return rows.map((r) => ({ value: r.k, count: r.n }));
 }
 
-export async function report(db, { from, to } = {}) {
-  const p = periodOf(from, to);
-  const A = [p.from, p.to];
+export async function report(db, { from, to, years } = {}) {
+  // a set of whole years (Q59), or a run of days (a month chosen on Reports, an export, an older caller)
+  const p = yearsOf(years).length ? periodOfYears(years) : periodOf(from, to);
+  const [ARR, A] = inP('created_at', p);     // arrived in the period
+  const [ADM] = inP('admitted_at', p);        // admitted in it (the same arguments, A)
 
-  const newLeads = await count(db, 'SELECT COUNT(*) n FROM people WHERE created_at >= ? AND created_at < ?', ...A);
+  const newLeads = await count(db, `SELECT COUNT(*) n FROM people WHERE ${ARR}`, ...A);
   const applications = await count(db, `SELECT COUNT(*) n FROM people
-    WHERE created_at >= ? AND created_at < ? AND status IN ('Application','Contract','Admitted')`, ...A);
-  const admitted = await count(db, 'SELECT COUNT(*) n FROM people WHERE admitted_at >= ? AND admitted_at < ?', ...A);
+    WHERE ${ARR} AND status IN ('Application','Contract','Admitted')`, ...A);
+  const admitted = await count(db, `SELECT COUNT(*) n FROM people WHERE ${ADM}`, ...A);
 
   const activeApplicants = await count(db, `SELECT COUNT(*) n FROM people
     WHERE status NOT IN ('Admitted','Not proceeding')`);
@@ -129,7 +150,7 @@ export async function report(db, { from, to } = {}) {
 
   // How long admission actually took, as a median of real durations.
   const durations = (await db.prepare(`SELECT created_at, admitted_at FROM people
-    WHERE admitted_at IS NOT NULL AND admitted_at >= ? AND admitted_at < ?`).all(...A))
+    WHERE admitted_at IS NOT NULL AND ${ADM}`).all(...A))
     .map((r) => Math.round((Date.parse(r.admitted_at) - Date.parse(r.created_at)) / 86400000))
     .filter((d) => Number.isFinite(d) && d >= 0)
     .sort((a, b) => a - b);
@@ -156,9 +177,9 @@ export async function report(db, { from, to } = {}) {
   const programmes = await Promise.all((CFG.programmes || []).map(async (code) => ({
     programme: code,
     newLeads: await count(db, `SELECT COUNT(*) n FROM people
-      WHERE created_at >= ? AND created_at < ? AND programme = ?`, ...A, code),
+      WHERE ${ARR} AND programme = ?`, ...A, code),
     admitted: await count(db, `SELECT COUNT(*) n FROM people
-      WHERE admitted_at >= ? AND admitted_at < ? AND programme = ?`, ...A, code),
+      WHERE ${ADM} AND programme = ?`, ...A, code),
   })));
 
   // Maritime school graduates. This is a real count, not a gap: the education field
@@ -166,12 +187,12 @@ export async function report(db, { from, to } = {}) {
   // reported next to the number instead of the number being withheld.
   const maritimeList = CFG.maritimeEducations || [];
   const maritime = maritimeList.length ? await count(db, `SELECT COUNT(*) n FROM people
-    WHERE created_at >= ? AND created_at < ?
+    WHERE ${ARR}
       AND education IN (${maritimeList.map(() => '?').join(',')})`, ...A, ...maritimeList) : 0;
   const withEducation = await count(db, `SELECT COUNT(*) n FROM people
-    WHERE created_at >= ? AND created_at < ? AND education IS NOT NULL AND TRIM(education) != ''`, ...A);
+    WHERE ${ARR} AND education IS NOT NULL AND TRIM(education) != ''`, ...A);
   const withNationality = await count(db, `SELECT COUNT(*) n FROM people
-    WHERE created_at >= ? AND created_at < ? AND nationality IS NOT NULL AND TRIM(nationality) != ''`, ...A);
+    WHERE ${ARR} AND nationality IS NOT NULL AND TRIM(nationality) != ''`, ...A);
 
   const lost = (await db.prepare(`SELECT COALESCE(NULLIF(TRIM(closed_reason), ''), '(no reason recorded)') k,
       COUNT(*) n FROM people
@@ -229,7 +250,7 @@ export async function report(db, { from, to } = {}) {
 // Structured so they can be filled the moment the source or the definition exists.
 async function notMeasured(db, p) {
   const out = [];
-  const A = [p.from, p.to];
+  const [ARR, A] = inP('created_at', p);
   const has = async (col) => (await db.prepare(
     `SELECT COUNT(*) n FROM pragma_table_info('people') WHERE name = ?`).get(col)).n > 0;
 
@@ -238,8 +259,8 @@ async function notMeasured(db, p) {
   // two things need completely different work, so they are never listed together.
   const cover = async (col) => {
     const filled = (await db.prepare(`SELECT COUNT(*) n FROM people
-      WHERE created_at >= ? AND created_at < ? AND ${col} IS NOT NULL AND TRIM(${col}) != ''`).get(...A)).n;
-    const total = (await db.prepare('SELECT COUNT(*) n FROM people WHERE created_at >= ? AND created_at < ?').get(...A)).n;
+      WHERE ${ARR} AND ${col} IS NOT NULL AND TRIM(${col}) != ''`).get(...A)).n;
+    const total = (await db.prepare(`SELECT COUNT(*) n FROM people WHERE ${ARR}`).get(...A)).n;
     return { filled, total };
   };
 

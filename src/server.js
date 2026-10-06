@@ -32,6 +32,7 @@ import { buildDemo } from './demo.js';
 import * as gate from './gate.js';
 import * as callpop from './callpop.js';
 import { moveCheck } from './stagemove.js';
+import { scopeRanges, rangesSql, yearsOf } from './yearscope.js';
 import { receivePhoneEvent, PHONE_EVENT_SECRET_ENV } from './phoneevent.js';
 import * as webpush from './webpush.js';
 import { verifyRequest, channelDef, channelIds, integrationIds, integrationDef, allChannelStatus, BadInbound,
@@ -185,6 +186,7 @@ const reportParams = (url) => {
   const day = (v) => (/^\d{4}-\d{2}-\d{2}$/.test(String(v || '')) ? String(v) : '');
   const known = new Set(EXPORT_SECTIONS.map((x) => x.id));
   return { from: day(url.searchParams.get('from')), to: day(url.searchParams.get('to')),
+    ...(yearsOf(url.searchParams.get('years')).length ? { years: yearsOf(url.searchParams.get('years')) } : {}),   // whole years (Q59)
     sections: (url.searchParams.get('sections') || '').split(',').filter((x) => known.has(x)) };
 };
 
@@ -523,27 +525,31 @@ function recordInbound(channel, externalId, outcome, how) {
 const dayStart = () => todayStart();
 const dayEnd = () => tomorrowStart();
 
-// THE YEAR SCOPE (Q45, the owner 05.10.2026: "always be sure, that we are checking the right year"). ONE filter
-// for every list and count the app reads: ?y=YYYY (and ?m=1..12 inside it) keeps the people who ARRIVED then
-// (people.created_at, a Riga year or month), and the Inbox's messages that arrived then (inbound.received_at).
-// EXCEPT the Admitted (the owner, 05.10.2026, popup: "Admitted 2026" is everyone admitted in 2026, arrived in 2025
-// or not): an Admitted person belongs to the year of the ADMISSION (admitted_at), or of the arrival when the
-// admission carries no date. Not proceeding stays by arrival. The Median time to admission follows the Admitted.
-// No y = every year, which is also what any caller that never heard of the scope gets.
-function scopeRange(url) {
-  const y = Number(url.searchParams.get('y'));
-  if (!Number.isInteger(y) || y < 2000 || y > 2100) return null;
-  const m = Number(url.searchParams.get('m'));
-  return m >= 1 && m <= 12 ? [localMidnight(y, m, 1), localMidnight(y, m + 1, 1)] : [localMidnight(y, 1, 1), localMidnight(y + 1, 1, 1)];
-}
-// The same filter as SQL on people (alias pe), with its two arguments; '' and [] when every year.
-const scopeSql = (range, alias = 'pe') => (range ? [` AND ${alias}.created_at >= ? AND ${alias}.created_at < ?`, range] : ['', []]);
+// THE YEAR SCOPE (Q45, the owner 05.10.2026: "always be sure, that we are checking the right year"), a SET of whole
+// years since Q59 (06.10.2026: "Whole calendar year from start to finish ... look at many years combined! Any years
+// combined!"). ONE filter for every list and count the app reads: ?y=2024,2026 keeps the people who ARRIVED in those
+// years (people.created_at, Riga years), and the Inbox's messages that arrived then (inbound.received_at); src/yearscope.js
+// turns the set into ranges. EXCEPT the Admitted (the owner, 05.10.2026, popup: "Admitted 2026" is everyone admitted in
+// 2026, arrived in 2025 or not): an Admitted person belongs to the year of the ADMISSION (admitted_at), or of the arrival
+// when the admission carries no date. Not proceeding stays by arrival. The Median time to admission follows the Admitted.
+// No y = every year, which is also what any caller that never heard of the scope gets. The old ?y=YYYY&m=M still
+// means that month.
+const scopeRange = (url) => scopeRanges(url.searchParams);
+// The same filter as SQL on people (alias pe), with its arguments; '' and [] when every year.
+const scopeSql = (ranges, alias = 'pe') => {
+  if (!ranges) return ['', []];
+  const [sql, args] = rangesSql(`${alias}.created_at`, ranges);
+  return [` AND ${sql}`, args];
+};
 // The people list's own: by arrival, the Admitted by their admission (see above).
-const scopePeopleSql = (range, alias = 'pe') => (range
-  ? [` AND ((${alias}.status <> 'Admitted' AND ${alias}.created_at >= ? AND ${alias}.created_at < ?)
-      OR (${alias}.status = 'Admitted' AND ${alias}.admitted_at IS NOT NULL AND ${alias}.admitted_at >= ? AND ${alias}.admitted_at < ?)
-      OR (${alias}.status = 'Admitted' AND ${alias}.admitted_at IS NULL AND ${alias}.created_at >= ? AND ${alias}.created_at < ?))`, [...range, ...range, ...range]]
-  : ['', []]);
+const scopePeopleSql = (ranges, alias = 'pe') => {
+  if (!ranges) return ['', []];
+  const [arr, a1] = rangesSql(`${alias}.created_at`, ranges);
+  const [adm, a2] = rangesSql(`${alias}.admitted_at`, ranges);
+  return [` AND ((${alias}.status <> 'Admitted' AND ${arr})
+      OR (${alias}.status = 'Admitted' AND ${alias}.admitted_at IS NOT NULL AND ${adm})
+      OR (${alias}.status = 'Admitted' AND ${alias}.admitted_at IS NULL AND ${arr}))`, [...a1, ...a2, ...a1]];
+};
 const newId = () => 'p' + Math.random().toString(36).slice(2, 7);
 
 // There is no login in the prototype. The caller says who it is, the server
@@ -1641,10 +1647,12 @@ export const handle = async (req, res) => {
       return json(res, 200, { byStage, total: nowClosed.size, unrecorded: nowClosed.size - counted });
     }
 
-    // The years the Year dropdown offers (Q45): every Riga year somebody arrived in, newest first.
+    // The years the Year dropdown offers (Q45, Q59): every Riga year somebody arrived in, newest first.
     if (req.method === 'GET' && p === '/api/scope/years') {
-      const years = new Set((await db.prepare('SELECT created_at FROM people WHERE created_at IS NOT NULL').all())
-        .map((r) => Number(localDate(r.created_at).slice(0, 4))).filter(Boolean));
+      // and every year somebody was ADMITTED in, since the Admitted belong to the year of their admission (Q59)
+      const years = new Set((await db.prepare(`SELECT created_at d FROM people WHERE created_at IS NOT NULL
+        UNION ALL SELECT admitted_at d FROM people WHERE admitted_at IS NOT NULL`).all())
+        .map((r) => Number(localDate(r.d).slice(0, 4))).filter(Boolean));
       return json(res, 200, { years: [...years].sort((a, b) => b - a) });
     }
 
@@ -1852,9 +1860,10 @@ export const handle = async (req, res) => {
     // pushed in from a fixture file so the flow can be walked through on screen.
     if (req.method === 'GET' && p === '/api/intake') {
       const state = url.searchParams.get('state') || 'new';
-      const range = scopeRange(url);   // the Inbox by the MESSAGE's arrival (Q45)
-      const rows = await listInbound(db, { state, range });
-      const inState = async (st) => (await db.prepare(`SELECT COUNT(*) n FROM inbound WHERE state = ?${range ? ' AND received_at >= ? AND received_at < ?' : ''}`).get(st, ...(range || []))).n;
+      const ranges = scopeRange(url);   // the Inbox by the MESSAGE's arrival (Q45), a set of years (Q59)
+      const rows = await listInbound(db, { state, ranges });
+      const [inRx, rxArgs] = ranges ? rangesSql('received_at', ranges) : ['1 = 1', []];
+      const inState = async (st) => (await db.prepare(`SELECT COUNT(*) n FROM inbound WHERE state = ? AND ${inRx}`).get(st, ...rxArgs)).n;
       return json(res, 200, {
         rows, state,
         counts: {
@@ -1862,7 +1871,7 @@ export const handle = async (req, res) => {
           qualified: await inState('qualified'),
           archived: await inState('archived'),
           filtered: await inState('filtered'),
-          aged: await agedCount(db, undefined, range),
+          aged: await agedCount(db, undefined, ranges),
         },
         levels: CONFIG.qualification.levels,
         routing: CONFIG.routing,
@@ -2505,7 +2514,7 @@ export const handle = async (req, res) => {
     // The KPI report. One period, chosen by whoever is running the meeting.
     if (req.method === 'GET' && p === '/api/report') {
       return json(res, 200, await buildReport(db, {
-        from: url.searchParams.get('from'), to: url.searchParams.get('to') }));
+        from: url.searchParams.get('from'), to: url.searchParams.get('to'), years: yearsOf(url.searchParams.get('years')) }));
     }
 
     if (req.method === 'GET' && p === '/api/report/sections') {
