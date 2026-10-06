@@ -45,6 +45,20 @@ Built (branch fix/2026-10-06-sis-real-dates, src/sisdates.js):
 - How to run it on production: docs/PBX_SIS_SYNC.md, "Re-dating the 06.10 SIS people". **BUILT, next patch.**
   The apply runs only after Ritvars's yes.
 
+## 06.10.2026 - Q56: the Help center shows the flow through Intake (behind ?helpflow=1)
+
+Ritvars 06.10, on the live "Where things are" card grid: "whats the point of just showing replicated cards on help
+center???". The cards repeated the menu; what he asked for (05.10) was "how to where to, for what".
+- With `?helpflow=1` the card grid is replaced by ONE flow on the Journey band's card: 1 Inbox, 2 Becomes a person,
+  3 Today, 4 Journey (New, Contacted, Follow-up, Application, Contract), 5 The end (Admitted, Not proceeding),
+  6 Reports. Icon, short label, at most one short line; circles on one line in #29a8df, the end in mustard #E0A526.
+  Every stop is a click to its place; every stage and end chip opens the Journey on that column. Phone: the same
+  line stands up. How to stays below. Words in config/help.json `flow`; the chips are read from the stages.
+- Without the flag the page is unchanged (Q54 grid). Open: the "three steps" cards now repeat the flow - drop them
+  when the flow ships? (his y/n)
+- Tests: test/help_center.test.js (six stops in order with their routes, the chips, the grid not drawn with the flag).
+  Shots: `For review/2026-10-06 Q56 Help flow/`. **BUILT behind the flag, waiting for his look.**
+
 ## 05.10.2026 - Q54: the Help center carries the map of the app and how-to links
 
 Ritvars 05.10: "Also put in the help center the navigation of the app. Have a like a helper, how to where to, for

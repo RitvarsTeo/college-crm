@@ -47,6 +47,44 @@
       "for": "This page: where things are, how to"
     }
   ],
+  "flow": [
+    {
+      "name": "Inbox",
+      "href": "#/leads",
+      "icon": "inbox",
+      "for": "A message, from any channel"
+    },
+    {
+      "name": "Becomes a person",
+      "href": "#/journey",
+      "icon": "ppl",
+      "for": "Programme and next step said"
+    },
+    {
+      "name": "Today",
+      "href": "#/today",
+      "icon": "next",
+      "for": "Call, documents, next step"
+    },
+    {
+      "name": "Journey",
+      "href": "#/journey",
+      "icon": "journey",
+      "stages": "open"
+    },
+    {
+      "name": "The end",
+      "href": "#/journey",
+      "icon": "out",
+      "stages": "end"
+    },
+    {
+      "name": "Reports",
+      "href": "#/reports",
+      "icon": "rep",
+      "for": "Every number, one level deeper"
+    }
+  ],
   "howto": [
     {
       "do": "Find a person",

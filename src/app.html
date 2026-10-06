@@ -1079,6 +1079,47 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-hhow{color:var(--ink);text-decoration:none} html.ui-c .c-hhow small{display:block;color:var(--t3)}
   html.ui-c[data-theme="dark"] .c-hmap-c{background:var(--glass);border-color:var(--glass-line)}
   @media (max-width:760px){ html.ui-c .c-hmap, html.ui-c .c-hmap-kids{grid-template-columns:1fr} }
+  /* Q56: the flow through Intake on the Help center (behind ?helpflow=1): six stops on ONE line, the Journey band's
+     card; every stop is a click to its place, the Journey's stages and the two ends a click to their column */
+  html.ui-c .c-hflow{padding:20px 12px 18px}
+  html.ui-c .hf-row{--hf-line:#29a8df;list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr 1fr 1.9fr 1.3fr 1fr}
+  html.ui-c[data-theme="dark"] .hf-row{--hf-line:#8fcbef}
+  html.ui-c .hf-step{position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;padding:0 6px;min-width:0;text-align:center}
+  html.ui-c .hf-step::before{content:"";position:absolute;top:22px;left:0;right:0;height:0;border-top:2px solid var(--hf-line);pointer-events:none}
+  html.ui-c .hf-step:first-child::before{left:50%} html.ui-c .hf-step:last-child::before{right:50%}
+  html.ui-c .hf-node{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink);text-decoration:none;border-radius:12px;padding:0 4px 4px;min-width:0}
+  html.ui-c .hf-node:focus-visible,html.ui-c .hf-chip:focus-visible{outline:2px solid var(--pet);outline-offset:2px}
+  html.ui-c .hf-ico{position:relative;z-index:1;display:grid;place-items:center;width:44px;height:44px;margin-bottom:4px;border-radius:50%;
+    background:var(--surface);border:2px solid var(--hf-line);color:var(--pet);box-sizing:border-box}
+  html.ui-c .hf-step.end .hf-ico{border-color:#E0A526}
+  html.ui-c .hf-node:hover .hf-ico{background:var(--c-sunk)}
+  html.ui-c .hf-ico svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+  html.ui-c .hf-ico i{position:absolute;top:-6px;right:-8px;min-width:18px;height:18px;padding:0 4px;box-sizing:border-box;border-radius:9px;
+    background:#29a8df;color:#0a2463;font-style:normal;font-size:11px;font-weight:800;line-height:18px;text-align:center}
+  html.ui-c .hf-step.end .hf-ico i{background:#E0A526}
+  html.ui-c .hf-node b{font-size:14px;font-weight:650}
+  html.ui-c .hf-node small{font-size:12px;line-height:1.35;color:var(--t2)}
+  html.ui-c .hf-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
+  html.ui-c .hf-chip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 9px;border:1px solid var(--control-line);border-radius:8px;
+    background:var(--field);color:var(--ink);font-size:12px;font-weight:600;text-decoration:none;white-space:nowrap}
+  html.ui-c .hf-chip:hover{border-color:#29a8df;background:var(--c-sunk)}
+  html.ui-c .hf-chip i{width:8px;height:8px;border-radius:2px;background:#29a8df}
+  html.ui-c .hf-chip.t-adm i{background:#E0A526} html.ui-c .hf-chip.t-np i{background:var(--t3)}
+  html.ui-c[data-theme="dark"] .hf-ico{background:#133a60;color:var(--ink)}
+  html.ui-c[data-theme="dark"] .hf-step.end .hf-ico{border-color:#E0A526}
+  /* PHONE: the same line, standing up - the stops one under another, the line down through the circles */
+  @media (max-width:760px){
+    html.ui-c .hf-row{grid-template-columns:1fr;row-gap:18px}
+    html.ui-c .hf-step{align-items:stretch;padding:0;text-align:left}
+    html.ui-c .hf-step::before{top:0;bottom:-18px;left:21px;right:auto;height:auto;border-top:0;border-left:2px solid var(--hf-line)}
+    html.ui-c .hf-step:first-child::before{top:22px;left:21px}
+    html.ui-c .hf-step:last-child::before{right:auto;bottom:auto;height:22px}
+    html.ui-c .hf-node{display:grid;grid-template-columns:44px minmax(0,1fr);column-gap:14px;row-gap:1px;align-items:center;padding:0}
+    html.ui-c .hf-ico{grid-row:1 / span 2;margin:0}
+    html.ui-c .hf-node b{grid-column:2;align-self:end}
+    html.ui-c .hf-node small{grid-column:2;align-self:start}
+    html.ui-c .hf-node b:last-child{grid-row:1 / span 2;align-self:center}
+    html.ui-c .hf-chips{margin-left:58px;justify-content:flex-start} }
   html.ui-c .c-step{display:block;padding:16px 16px 14px;border:1px solid var(--rule);border-radius:12px;background:var(--surface);color:var(--ink);text-decoration:none}
   html.ui-c .c-step:hover{border-color:var(--control-line)}
   html.ui-c .c-step:focus-visible{outline:2px solid var(--pet);outline-offset:2px}
@@ -3397,15 +3438,45 @@ function cHelpMap() {
   const map = groups.map((g) => (g.group
     ? `<div class="c-hmap-g"><span class="c-hmap-gl">${C_ICON.adm}${esc(g.group)}</span><div class="c-hmap-kids">${g.items.map(card).join('')}</div></div>`
     : g.items.map(card).join(''))).join('');
-  const how = (H.howto || []).map((h) => `<a class="c-line c-hhow" href="${esc(h.href)}"><div class="c-who"><b>${esc(h.do)}</b><small>${esc(h.where)}</small></div><div class="c-when">›</div></a>`).join('');
-  return `<h2 class="c-set-h">Where things are</h2><div class="c-hmap">${map}</div>
-    <h2 class="c-set-h">How to</h2><div class="c-sheet c-set">${how}</div>`;
+  return `<h2 class="c-set-h">Where things are</h2><div class="c-hmap">${map}</div>${cHelpHowTo()}`;
+}
+// Q56 (the owner, 06.10.2026, on the card grid above: "whats the point of just showing replicated cards on help
+// center???"). Instead of repeating the menu, ONE line through Intake in the order a person moves through it:
+// Inbox, becomes a person, Today, the Journey's stages, the end, Reports. Every stop is a click to its place; the
+// stages and the two ends are a click to their own column (cGoStage), read from CFG.stages, so they never drift.
+// Behind ?helpflow=1 until he has seen it; the words live in config/help.json "flow".
+const cHelpFlowOn = () => { try { return new URLSearchParams(location.search).get('helpflow') === '1'; } catch { return false; } };
+function cHelpGo(id) {
+  C_PF = C_PF_EMPTY(); C_PQ = ''; C_PCOHORT = null;
+  if (C_TERMINAL.includes(id)) { C_OUTCOME = id; C_OUT_TAG = null; C_OUT_REASON = null; C_OUT_FILTER = null; }
+  cGoStage(id);
+}
+function cHelpFlow() {
+  const flow = (CFG.help && CFG.help.flow) || [];
+  const stages = CFG.stages || [];
+  const roles = CFG.stageRoles || {};
+  const ends = [roles.admitted || 'Admitted', roles.closed || 'Not proceeding'];
+  const chipsOf = (kind) => stages.filter((s) => (kind === 'end') === ends.includes(s.id));
+  const chip = (s) => `<a class="hf-chip${s.id === ends[0] ? ' t-adm' : s.id === ends[1] ? ' t-np' : ''}" href="#/journey" data-stage="${esc(s.id)}"
+      onclick="cHelpGo(this.dataset.stage);return false"><i></i>${esc(s.label || s.id)}</a>`;
+  // a stop's own click: Becomes a person opens everyone on the Journey, the rest their place
+  const go = (m) => (m.icon === 'ppl' ? ` onclick="cGoPeople({});return false"` : '');
+  const step = (m, i) => `<li class="hf-step${m.stages === 'end' ? ' end' : ''} m-fade" style="--i:${i}" data-step="${i + 1}">
+      <a class="hf-node" href="${esc(m.href)}"${go(m)}><span class="hf-ico">${C_ICON[m.icon] || ''}<i>${i + 1}</i></span><b>${esc(m.name)}</b>${
+        m.for ? `<small>${esc(m.for)}</small>` : ''}</a>${
+      m.stages ? `<div class="hf-chips">${chipsOf(m.stages).map(chip).join('')}</div>` : ''}</li>`;
+  return `<section class="kflow jband c-hflow m-scene" aria-label="How a person moves through Intake"><ol class="hf-row">${flow.map(step).join('')}</ol></section>`;
+}
+function cHelpHowTo() {
+  const how = ((CFG.help || {}).howto || []).map((h) => `<a class="c-line c-hhow" href="${esc(h.href)}"><div class="c-who"><b>${esc(h.do)}</b><small>${esc(h.where)}</small></div><div class="c-when">›</div></a>`).join('');
+  return `<h2 class="c-set-h">How to</h2><div class="c-sheet c-set">${how}</div>`;
 }
 function viewHelpC() {
+  const flow = cHelpFlowOn();
   $('#view').innerHTML = `<div class="c-head"><div><h1>Help center</h1></div>
       <div class="act"><button class="btn ghost" id="helpTourBtn" onclick="cStartTour(this)">Take the tour</button>
       <button class="btn" onclick="fbOpen('BUG')">Report a problem</button></div></div>
-    ${cHelpMap()}
+    ${flow ? `${cHelpFlow()}${cHelpHowTo()}` : cHelpMap()}
     <h2 class="c-set-h">The work, in three steps</h2>
     <div class="c-steps">
       <a class="c-step" href="#/leads"><span class="c-step-n">01</span><b>Inbox</b><small>Everything that arrives lands here first. Say what they want to study and the next step, and they become a person. Junk is marked not relevant, never deleted.</small></a>
@@ -3418,6 +3489,7 @@ function viewHelpC() {
   // question" into the SAME feedback box on A question, with what was searched already in it
   if (window.HelpCenter) HelpCenter.mount(document.getElementById('helpFaq'), {
     faq: (CFG.help && CFG.help.faq) || [], onAsk: (text) => fbOpen('QUESTION', text) });
+  if (flow) cScenes($('#view'));
 }
 // The tour (dev kit part 3): every step rings the real thing on screen. The theme switch is in the
 // menu on a wide screen and at the bottom of the page on a narrow one, so its target is chosen now.

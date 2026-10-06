@@ -1377,7 +1377,7 @@ export const handle = async (req, res) => {
       return res.end(fs.readFileSync(path.join(ROOT, 'src', 'assets', name)));
     }
 
-    if (req.method === 'GET' && p === '/api/config') return json(res, 200, { ...CONFIG, dataset: DATASET, help: { map: HELP.map, howto: HELP.howto, tour: HELP.tour, faq: HELP.faq } });
+    if (req.method === 'GET' && p === '/api/config') return json(res, 200, { ...CONFIG, dataset: DATASET, help: { map: HELP.map, flow: HELP.flow, howto: HELP.howto, tour: HELP.tour, faq: HELP.faq } });
 
     // --------------------------------------------------------- the database -
     if (req.method === 'POST' && p === '/api/dataset') {
