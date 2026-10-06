@@ -31,6 +31,31 @@ look at many years combined! Any years combined!" Brief Q59 via MASTER CONTROL. 
 | Old links: `?y=2025&m=3` opens 2025 with March 2025 on Reports; the server still reads `?y=YYYY&m=M` as that month | BUILT |
 | Home with several years: no year target (a target is one year's); the month chart keeps the twelve months up to today that fall in the chosen years | BUILT |
 | Shots 1440 light: `For review/2026-10-06 Q59 year/` (Year open with 2024 + 2026 ticked; Reports with September 2026). Shot data = synthetic with every fourth person moved two years back, local only | BUILT |
+## 06.10.2026 - Q62: the Inbox is a board, columns by arrival day (the owner's pick A)
+
+Ritvars 06.10 on the first Inbox board picture: "Not relevant is not even needed there, that garbage! And what is the
+cohorts like new, new lead and later? thats silly. But overall the cards are good choice! jUST HAVE TO POLISH." Then
+his pick from the two v2 pictures (For review/2026-10-06 Inbox board v2/): **A**, columns by arrival day.
+- Columns Today · Yesterday · This week · Older (his 05.10 order "By dates first, then by channels. Then by kind of
+  senders"): the band's four ages are the columns; a band click narrows to that day. Filter row: Source + Kind, nothing
+  else (the "Show: Waiting / Filtered out / Not relevant" dropdown is gone with the columns it served).
+- One card per message, the Journey board's card style: name (or the number as a call link), how long ago, the channel,
+  the message (13px slate, three lines as pictured; the open card shows it whole), the programme and "Current student"
+  tags, the Q50 "answer now" / "late" chip.
+- The action is ON the card. "Make a lead" opens the small form on it: Programme, Next step (the suggested one first),
+  the "tick what else is right" lines when the channel extracted more, then Make a lead / Cancel. The same field ids
+  the dialog used, so doQualify, its duplicate check ("This is them" / "a different person") and its rules run
+  unchanged; after the save the board redraws with the receipt ("X is now in Admissions at New · NAV ...").
+  "Set aside" is the quiet link: the reason dialog as before (now titled Set aside), nothing deleted.
+- No New lead, Not relevant or Later column. A message set aside is still reachable by address
+  (#/leads?show=archived; the Q61 layer carries it), drawn as a card without the actions. Nothing on screen leads
+  there - his words; say if a quiet link is wanted.
+- Checked in the browser (synthetic data + 9 made-up messages): 3 / 2 / 2 / 2 by day; Make a lead on Ilze -> a
+  person at New · NAV, people 64 -> 65, the card gone, the receipt shown, no errors; Set aside -> the reason dialog.
+- Found on the way: the Q61 address layer left a bare "?" on a fresh view (#/leads?); fixed.
+Tests: test/inbox_board_a.test.js; inbox_message_size, inbox_answer_q50, new_leads_callback follow.
+Shots: `For review/2026-10-06 Inbox board A built/`. **BUILT, next patch.**
+
 ## 06.10.2026 - Q61: Back returns to exactly the view you left; keyboard shortcuts
 
 Ritvars 06.10 (via MASTER CONTROL): "could benefit from hot keys (shortcuts) for faster navigation, right? First

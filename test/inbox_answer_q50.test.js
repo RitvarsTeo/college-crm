@@ -71,7 +71,8 @@ test('the Inbox rows: nothing yet, then answer now, then late; a handled message
   assert.equal(rows.find((r) => r.contact_name === 'Hour').answerNow, false);
 });
 
-test('on the row: "answer now" is a solid amber chip with navy words, "late" the solid red one; never amber text', () => {
-  assert.match(APP, /\$\{r\.aged \? ' · <span class="c-late">late<\/span>' : r\.answerNow \? ' · <span class="c-answer">answer now<\/span>' : ''\}/);
+test('on the card: "answer now" is a solid amber chip with navy words, "late" the solid red one; never amber text', () => {
+  // Q62: the Inbox is a board of cards; the chip sits in the card's tag row
+  assert.match(APP, /const tag = r\.aged \? '<span class="c-late">late<\/span>' : r\.answerNow \? '<span class="c-answer">answer now<\/span>' : '';/);
   assert.match(APP, /html\.ui-c \.c-answer\{background:var\(--j-soon\);color:var\(--j-on-soon\);font-weight:700;/);
 });
