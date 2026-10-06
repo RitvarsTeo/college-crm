@@ -1062,24 +1062,9 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-set-h{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);margin:22px 0 8px}
   html.ui-c .c-set-theme{cursor:default}
   html.ui-c .c-crumb a{color:inherit}
-  html.ui-c .c-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:4px 0 8px}
   /* Q54: the map of the app on the Help center - one card per place, in menu order; Admissions holds its three */
-  html.ui-c .c-hmap{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:4px 0 8px;align-items:start}
-  html.ui-c .c-hmap-c{display:grid;grid-template-columns:20px 1fr;column-gap:10px;row-gap:2px;padding:14px;border:1px solid var(--rule);border-radius:12px;
-    background:var(--surface);color:var(--ink);text-decoration:none}
-  html.ui-c .c-hmap-c:hover{border-color:var(--control-line)}
-  html.ui-c .c-hmap-c:focus-visible{outline:2px solid var(--pet);outline-offset:2px}
-  html.ui-c .c-hmap-c svg,html.ui-c .c-hmap-gl svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-  html.ui-c .c-hmap-c svg{grid-row:1 / span 2;color:var(--pet)}
-  html.ui-c .c-hmap-c b{font-size:14px} html.ui-c .c-hmap-c small{font-size:12.5px;line-height:1.4;color:var(--t2)}
-  html.ui-c .c-hmap-g{grid-column:1 / -1;display:grid;gap:8px}
-  html.ui-c .c-hmap-gl{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;color:var(--ink)}
-  html.ui-c .c-hmap-gl svg{color:var(--pet)}
-  html.ui-c .c-hmap-kids{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-left:9px;padding-left:18px;border-left:1px solid var(--rule)}
   html.ui-c .c-hhow{color:var(--ink);text-decoration:none} html.ui-c .c-hhow small{display:block;color:var(--t3)}
-  html.ui-c[data-theme="dark"] .c-hmap-c{background:var(--glass);border-color:var(--glass-line)}
-  @media (max-width:760px){ html.ui-c .c-hmap, html.ui-c .c-hmap-kids{grid-template-columns:1fr} }
-  /* Q56: the flow through Intake on the Help center (behind ?helpflow=1): six stops on ONE line, the Journey band's
+  /* Q56: the flow through Intake on the Help center (the default since 06.10.2026): six stops on ONE line, the Journey band's
      card; every stop is a click to its place, the Journey's stages and the two ends a click to their column */
   html.ui-c .c-hflow{padding:20px 12px 18px}
   html.ui-c .hf-row{--hf-line:#29a8df;list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr 1fr 1.9fr 1.3fr 1fr}
@@ -1120,12 +1105,6 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
     html.ui-c .hf-node small{grid-column:2;align-self:start}
     html.ui-c .hf-node b:last-child{grid-row:1 / span 2;align-self:center}
     html.ui-c .hf-chips{margin-left:58px;justify-content:flex-start} }
-  html.ui-c .c-step{display:block;padding:16px 16px 14px;border:1px solid var(--rule);border-radius:12px;background:var(--surface);color:var(--ink);text-decoration:none}
-  html.ui-c .c-step:hover{border-color:var(--control-line)}
-  html.ui-c .c-step:focus-visible{outline:2px solid var(--pet);outline-offset:2px}
-  html.ui-c .c-step-n{display:block;font-size:12px;font-weight:600;letter-spacing:.08em;color:var(--pet);margin-bottom:6px}
-  html.ui-c .c-step b{display:block;font-size:15px;margin-bottom:4px}
-  html.ui-c .c-step small{display:block;font-size:13px;line-height:1.5;color:var(--t2)}
   html.ui-c .c-faq{border-top:1px solid var(--rule2)} html.ui-c .c-faq:first-child{border-top:0}
   html.ui-c .c-faq summary{cursor:pointer;padding:12px 16px;font-weight:600;font-size:14px;list-style-position:inside}
   html.ui-c .c-faq summary:focus-visible{outline:2px solid var(--pet);outline-offset:-2px}
@@ -1153,8 +1132,6 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .help-faq > div{padding:0 16px 14px 32px;color:var(--t2);font-size:14px;line-height:1.55;max-width:75ch}
   html.ui-c .hc-search input{max-width:520px}
   html.ui-c .helppanel h4{font-family:inherit;font-weight:650;font-size:15px}
-  @media (max-width:760px){ html.ui-c .c-steps{grid-template-columns:1fr} }
-  html.ui-c[data-theme="dark"] .c-step{background:var(--glass);border-color:var(--glass-line);box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 10px 28px rgba(3,12,26,.22)}
   /* C's own screens */
   html.ui-c .c-crumb{font-size:12.5px;color:var(--t3);margin:0 0 6px}
   html.ui-c .c-sentence{font-family:inherit;font-size:27px;line-height:1.3;font-weight:500;letter-spacing:-.01em;margin:0 0 4px;max-width:34ch}
@@ -3559,30 +3536,14 @@ async function viewSettingsC() {
 
 // ------------------------------------------------------------------ HELP CENTER
 // 28.09.2026: "a help center under the settings or in the settings". Built on the
-// hierarchy of apply.novikontas.org, which the owner likes: one clear action, three
-// numbered steps, then short questions. Every answer describes what the CRM really does.
-// Q54 (the owner, 05.10.2026): "Also put in the help center the navigation of the app. Have a like a helper, how to
-// where to, for what." The map of the app in menu order, one card per place (a click to it), then the how-to links;
-// both are config/help.json, so the words change without code.
-function cHelpMap() {
-  const H = CFG.help || {};
-  const card = (m) => `<a class="c-hmap-c" href="${esc(m.href)}">${C_ICON[m.icon] || ''}<b>${esc(m.name)}</b><small>${esc(m.for)}</small></a>`;
-  const groups = [];
-  for (const m of H.map || []) {
-    const last = groups[groups.length - 1];
-    if (m.group && last && last.group === m.group) last.items.push(m); else groups.push({ group: m.group || '', items: [m] });
-  }
-  const map = groups.map((g) => (g.group
-    ? `<div class="c-hmap-g"><span class="c-hmap-gl">${C_ICON.adm}${esc(g.group)}</span><div class="c-hmap-kids">${g.items.map(card).join('')}</div></div>`
-    : g.items.map(card).join(''))).join('');
-  return `<h2 class="c-set-h">Where things are</h2><div class="c-hmap">${map}</div>${cHelpHowTo()}`;
-}
-// Q56 (the owner, 06.10.2026, on the card grid above: "whats the point of just showing replicated cards on help
-// center???"). Instead of repeating the menu, ONE line through Intake in the order a person moves through it:
-// Inbox, New lead, Today, the Journey's stages, the end, Reports. Every stop is a click to its place; the
+// hierarchy of apply.novikontas.org, which the owner likes: one clear action, the flow
+// through Intake, then short questions. Every answer describes what the CRM really does.
+// Q56 (the owner, 06.10.2026, on the Q54 card grid of the menu's places: "whats the point of just showing replicated
+// cards on help center???"). Instead of repeating the menu, ONE line through Intake in the order a person moves
+// through it: Inbox, New lead, Today, the Journey's stages, the end, Reports. Every stop is a click to its place; the
 // stages and the two ends are a click to their own column (cGoStage), read from CFG.stages, so they never drift.
-// Behind ?helpflow=1 until he has seen it; the words live in config/help.json "flow".
-const cHelpFlowOn = () => { try { return new URLSearchParams(location.search).get('helpflow') === '1'; } catch { return false; } };
+// THE DEFAULT since his pick (06.10.2026: "B - one flow, but becomes a person needs to be polished!"): no switch, no
+// card grid, no "three steps" cards repeating the flow. The words live in config/help.json "flow".
 function cHelpGo(id) {
   C_PF = C_PF_EMPTY(); C_PQ = ''; C_PCOHORT = null;
   if (C_TERMINAL.includes(id)) { C_OUTCOME = id; C_OUT_TAG = null; C_OUT_REASON = null; C_OUT_FILTER = null; }
@@ -3609,24 +3570,17 @@ function cHelpHowTo() {
   return `<h2 class="c-set-h">How to</h2><div class="c-sheet c-set">${how}</div>`;
 }
 function viewHelpC() {
-  const flow = cHelpFlowOn();
   $('#view').innerHTML = `<div class="c-head"><div><h1>Help center</h1></div>
       <div class="act"><button class="btn ghost" id="helpTourBtn" onclick="cStartTour(this)">Take the tour</button>
       <button class="btn" onclick="fbOpen('BUG')">Report a problem</button></div></div>
-    ${flow ? `${cHelpFlow()}${cHelpHowTo()}` : cHelpMap()}
-    <h2 class="c-set-h">The work, in three steps</h2>
-    <div class="c-steps">
-      <a class="c-step" href="#/leads"><span class="c-step-n">01</span><b>Inbox</b><small>Everything that arrives lands here first. Say what they want to study and the next step, and they become a person. Junk is marked not relevant, never deleted.</small></a>
-      <a class="c-step" href="#/today"><span class="c-step-n">02</span><b>Today</b><small>Who needs an action now. Press Done, say how it went and choose the next step. Everyone always keeps a next step.</small></a>
-      <a class="c-step" href="#/journey"><span class="c-step-n">03</span><b>Journey</b><small>Everyone, stage by stage, up to Admitted or Not proceeding. Search, add a lead, and download the figures for management review.</small></a>
-    </div>
+    ${cHelpFlow()}${cHelpHowTo()}
     <h2 class="c-set-h">Questions and answers</h2>
     <div id="helpFaq" class="c-helpfaq"></div>`;
   // dev kit part 3: search, the questions in the order of config/help.json (never by opens), "Ask a
   // question" into the SAME feedback box on A question, with what was searched already in it
   if (window.HelpCenter) HelpCenter.mount(document.getElementById('helpFaq'), {
     faq: (CFG.help && CFG.help.faq) || [], onAsk: (text) => fbOpen('QUESTION', text) });
-  if (flow) cScenes($('#view'));
+  cScenes($('#view'));
 }
 // The tour (dev kit part 3): every step rings the real thing on screen. The theme switch is in the
 // menu on a wide screen and at the bottom of the page on a narrow one, so its target is chosen now.

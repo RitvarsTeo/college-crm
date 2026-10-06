@@ -43,6 +43,10 @@ test('the status lines that carry a value are still there', () => {
 });
 
 test('the Help center still explains itself', () => {
-  assert.match(APP, /<b>Today<\/b><small>Who needs an action now\. Press Done, say how it went/,
-    'explaining is what a help page is for');
+  // since 06.10.2026 (the owner's pick B) it explains through the flow, the how-to links and the questions; the three
+  // step cards that repeated the flow left
+  const help = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'help.json'), 'utf8'));
+  assert.ok(help.flow.every((m) => m.name) && help.flow.filter((m) => m.for).length >= 4, 'every stop named, the plain ones said in a line');
+  assert.ok(help.howto.length >= 5 && help.faq.length >= 5, 'how-to links and answers');
+  assert.match(help.tour.find((t) => t.title === 'Today').body, /Press Done, say how it went/, 'explaining is what a help page is for');
 });

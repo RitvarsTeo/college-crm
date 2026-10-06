@@ -77,7 +77,7 @@ test('the routes sit behind the sign-in door, and the config carries the help fi
     assert.ok(SERVER.indexOf(r) > door, r + ' comes after the door');
     assert.doesNotMatch(fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8').match(/function openBeforeSignIn[\s\S]*?\n}\n/)[0], /api\/help/, 'not opened before sign-in');
   }
-  assert.match(SERVER, /help: \{ map: HELP\.map, flow: HELP\.flow, howto: HELP\.howto, tour: HELP\.tour, faq: HELP\.faq \}/, 'Q54: the map and how-to travel with it');
+  assert.match(SERVER, /help: \{ flow: HELP\.flow, howto: HELP\.howto, tour: HELP\.tour, faq: HELP\.faq \}/, 'the flow and how-to travel with it (no map since 06.10)');
   for (const f of ['help-tour.js', 'help-center.js', 'help-center.css']) {
     assert.match(SERVER, new RegExp(`'${f.replace('.', '\\.')}': 'text/`), f + ' is served');
     assert.ok(fs.existsSync(path.join(ROOT, 'src', 'assets', f)), f);
@@ -167,20 +167,12 @@ test('the Help center shows the questions in the order of help.json, never by mo
 
 // Q54 (the owner, 05.10.2026): "Also put in the help center the navigation of the app. Have a like a helper, how to
 // where to, for what. Update it in other words".
-test('Q54 the map lists exactly the menu places, in menu order, each a link to its route', () => {
-  const nav = APP.slice(APP.indexOf('<div class="cnav"'), APP.indexOf('</div>`);', APP.indexOf('<div class="cnav"')));
-  const menu = [...nav.matchAll(/<a href="(#\/[a-z]+)"[^>]*>(?:\$\{C_ICON\.[a-z]+\})?<span>([A-Za-z ]+)<\/span>/g)]
-    .map((m) => [m[2], m[1]]).filter(([name]) => name !== 'Admissions');   // Admissions is the group, its three are the cards
-  assert.deepEqual(HELP.map.map((m) => [m.name, m.href]), menu.map(([n, h]) => [n, h === '#/admissions' ? '#/leads' : h]));
-  assert.deepEqual(HELP.map.map((m) => m.name), ['Home', 'Inbox', 'Today', 'Journey', 'Reports', 'Settings', 'Help center']);
-  assert.deepEqual(HELP.map.filter((m) => m.group === 'Admissions').map((m) => m.name), ['Inbox', 'Today', 'Journey']);
-  for (const m of HELP.map) {
-    assert.ok(m.for && m.for.split(/\s+/).length <= 8, 'one short line, at most 8 words: ' + m.name);
-    assert.ok(APP.includes(`  ${m.icon}: '<svg`), 'a real icon: ' + m.icon);
-  }
-  const view = APP.slice(APP.indexOf('function cHelpMap() {'), APP.indexOf('function cStartTour('));
-  assert.match(view, /<a class="c-hmap-c" href="\$\{esc\(m\.href\)\}">/, 'every card is a click to its place');
-  assert.match(view, /: cHelpMap\(\)\}/, 'the map is on the Help center page (Q56: unless ?helpflow=1)');
+// Q54's card grid of the menu's places left with the owner's pick of the flow (06.10.2026: "B - one flow"): the
+// flow below names every place a person passes, each a click to it; the menu itself is the map of the rest.
+test('Q54 -> Q56: no card grid of the menu, no "three steps" cards repeating the flow', () => {
+  assert.equal(HELP.map, undefined, 'config/help.json has no map any more');
+  assert.doesNotMatch(APP, /cHelpMap|c-hmap|Where things are|The work, in three steps|class="c-steps"/);
+  assert.doesNotMatch(fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8'), /map: HELP\.map/, '/api/config does not send it');
 });
 
 test('Q54 how to: short task links, each opens a real place', () => {
@@ -194,7 +186,7 @@ test('Q54 how to: short task links, each opens a real place', () => {
 });
 
 test('Q54 no tour or answer names a menu place that no longer exists', () => {
-  const text = JSON.stringify({ tour: HELP.tour, faq: HELP.faq, map: HELP.map, howto: HELP.howto });
+  const text = JSON.stringify({ tour: HELP.tour, faq: HELP.faq, flow: HELP.flow, howto: HELP.howto });
   for (const gone of ['Next steps', 'All people', 'Outcomes', 'New Leads', /\bPeople\b/]) {
     assert.doesNotMatch(text, gone instanceof RegExp ? gone : new RegExp(gone), 'still named: ' + gone);
   }
@@ -203,7 +195,8 @@ test('Q54 no tour or answer names a menu place that no longer exists', () => {
 });
 
 // Q56 (the owner, 06.10.2026, on the Q54 card grid: "whats the point of just showing replicated cards on help
-// center???"). Behind ?helpflow=1: ONE flow of how a person moves through Intake, every stop a click to its place.
+// center???"): ONE flow of how a person moves through Intake, every stop a click to its place. The default since his
+// pick, 06.10.2026: "B - one flow, but becomes a person needs to be polished!"
 const PROTO = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'prototype.json'), 'utf8'));
 const fnSrc = (name) => {
   const at = APP.indexOf(`function ${name}(`);
@@ -217,10 +210,21 @@ const helpCtx = (search) => {
     C_ICON: new Proxy({}, { get: (t, k) => `<svg data-i="${String(k)}"></svg>` }), location: { search }, URLSearchParams,
     $: () => view, view, window: {}, scenes: 0 };
   ctx.cScenes = () => { ctx.scenes += 1; };
-  vm.runInNewContext(['esc', 'cHelpFlowOn', 'cHelpMap', 'cHelpFlow', 'cHelpHowTo', 'viewHelpC'].map(fnSrc).join('\n')
-    .replace(/^const (esc|cHelpFlowOn) = /gm, 'var $1 = '), ctx);
+  vm.runInNewContext(['esc', 'cHelpFlow', 'cHelpHowTo', 'viewHelpC'].map(fnSrc).join('\n')
+    .replace(/^const (esc) = /gm, 'var $1 = '), ctx);
   return ctx;
 };
+
+test('step 2 reads "New lead" everywhere, short and plain; nothing says "becomes a person" any more', () => {
+  // the owner, 06.10.2026: "becomes a person needs to be polished!"
+  const two = HELP.flow[1];
+  assert.equal(two.name, 'New lead');
+  assert.equal(two.for, 'In Admissions, with a first step');
+  const code = APP.replace(/\/\*[\s\S]*?\*\//g, '').split('\n').filter((l) => !l.trim().startsWith('//')).join('\n');   // his own words in comments stay
+  const all = JSON.stringify(HELP) + code;
+  assert.doesNotMatch(all, /becomes? a person|Becomes a person/i, 'flow, tour, questions and the page');
+  assert.match(HELP.tour.find((t) => t.title === 'Inbox').body, /they become a new lead\./);
+});
 
 test('Q56 the flow: six stops in order, each a link to the right route, stages and ends a click to their column', () => {
   assert.deepEqual(HELP.flow.map((m) => [m.name, m.href]), [['Inbox', '#/leads'], ['New lead', '#/journey'], ['Today', '#/today'],
@@ -230,7 +234,7 @@ test('Q56 the flow: six stops in order, each a link to the right route, stages a
     assert.ok(!m.for || m.for.split(/\s+/).length <= 6, 'at most one short line: ' + m.name);
     assert.ok(APP.includes(`  ${m.icon}: '<svg`), 'a real icon: ' + m.icon);
   }
-  const html = helpCtx('?helpflow=1').cHelpFlow();
+  const html = helpCtx('').cHelpFlow();
   const steps = [...html.matchAll(/<li class="hf-step[^"]*"[^>]*data-step="(\d)">\s*<a class="hf-node" href="([^"]+)"[^>]*>.*?<b>([^<]+)<\/b>/gs)]
     .map((m) => [Number(m[1]), m[2], m[3]]);
   assert.deepEqual(steps, HELP.flow.map((m, i) => [i + 1, m.href, m.name]), 'drawn in order, each a click to its place');
@@ -248,17 +252,17 @@ test('Q56 the flow: six stops in order, each a link to the right route, stages a
   assert.match(APP, /function cGoStage\(id\) \{[\s\S]*?C_JP\.col = id;[\s\S]*?location\.hash = '#\/journey'/, 'cGoStage opens that column');
 });
 
-test('Q56 with ?helpflow=1 the old card grid is not drawn; without it the page is unchanged', () => {
-  const on = helpCtx('?helpflow=1'); on.viewHelpC();
-  assert.match(on.view.innerHTML, /class="kflow jband c-hflow m-scene"/);
-  assert.doesNotMatch(on.view.innerHTML, /c-hmap|Where things are/, 'no card grid');
-  assert.match(on.view.innerHTML, /<h2 class="c-set-h">How to<\/h2>/, 'the how-to links stay');
-  assert.ok(on.view.innerHTML.indexOf('c-hflow') < on.view.innerHTML.indexOf('>How to<'), 'below the flow');
-  assert.equal(on.scenes, 1, 'the flow plays its one entrance');
-  const off = helpCtx(''); off.viewHelpC();
-  assert.match(off.view.innerHTML, /Where things are<\/h2><div class="c-hmap">/);
-  assert.doesNotMatch(off.view.innerHTML, /c-hflow/);
-  assert.match(off.view.innerHTML, /<h2 class="c-set-h">How to<\/h2>/);
+test('Q56 the flow is THE Help center: no switch, no card grid, no three steps; how-to and questions below it', () => {
+  assert.doesNotMatch(APP.replace(/\/\*[\s\S]*?\*\//g, '').split('\n').filter((l) => !l.trim().startsWith('//')).join('\n'), /helpflow/, 'no ?helpflow switch left');
+  for (const search of ['', '?helpflow=1', '?helpflow=0']) {
+    const on = helpCtx(search); on.viewHelpC();
+    assert.match(on.view.innerHTML, /class="kflow jband c-hflow m-scene"/, 'the flow, whatever the address says');
+    assert.doesNotMatch(on.view.innerHTML, /c-hmap|Where things are|three steps|c-step/, 'no card grid, no step cards');
+    assert.match(on.view.innerHTML, /<h2 class="c-set-h">How to<\/h2>/, 'the how-to links stay');
+    assert.ok(on.view.innerHTML.indexOf('c-hflow') < on.view.innerHTML.indexOf('>How to<'), 'below the flow');
+    assert.ok(on.view.innerHTML.indexOf('>How to<') < on.view.innerHTML.indexOf('>Questions and answers<'), 'then the questions');
+    assert.equal(on.scenes, 1, 'the flow plays its one entrance');
+  }
   // phone: the same line stands up
   assert.match(APP, /@media \(max-width:760px\)\{\s*html\.ui-c \.hf-row\{grid-template-columns:1fr/);
 });
