@@ -59,7 +59,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "af2b5a3",
+          "commit": "17e97e3",
           "detail": null
         },
         "productionConfigured": {
@@ -209,7 +209,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "af2b5a3",
+          "commit": "17e97e3",
           "detail": "The option-B link (/api/admin/gmail/link) is in the running commit."
         },
         "productionConfigured": {
@@ -314,7 +314,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "af2b5a3",
+          "commit": "17e97e3",
           "detail": null
         },
         "productionConfigured": {
@@ -409,7 +409,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "af2b5a3",
+          "commit": "17e97e3",
           "detail": null
         },
         "productionConfigured": {
@@ -504,7 +504,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "af2b5a3",
+          "commit": "17e97e3",
           "detail": null
         },
         "productionConfigured": {
@@ -603,7 +603,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "af2b5a3",
+          "commit": "17e97e3",
           "detail": null
         },
         "productionConfigured": {
@@ -691,7 +691,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "af2b5a3",
+          "commit": "17e97e3",
           "detail": null
         },
         "productionConfigured": {
@@ -842,7 +842,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "af2b5a3",
+          "commit": "17e97e3",
           "detail": null
         },
         "productionConfigured": {
@@ -954,7 +954,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "af2b5a3",
+          "commit": "17e97e3",
           "detail": null
         },
         "productionConfigured": {
@@ -1042,7 +1042,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "af2b5a3",
+          "commit": "17e97e3",
           "detail": null
         },
         "productionConfigured": {
@@ -1111,7 +1111,7 @@
         },
         "deployed": {
           "state": "partial",
-          "commit": "af2b5a3",
+          "commit": "17e97e3",
           "detail": "The webhook receiver is deployed. The Lead Sync fetch that turns a notification into a name and email is NOT built."
         },
         "productionConfigured": {
@@ -1212,7 +1212,7 @@
         },
         "deployed": {
           "state": "yes",
-          "commit": "af2b5a3",
+          "commit": "17e97e3",
           "detail": null
         },
         "productionConfigured": {
@@ -1317,9 +1317,9 @@
   "_lifecycle": "Added 02.10.2026. readiness says whether OUR SIDE is technically ready. lifecycle says whether the PRODUCT HAS THIS CHANNEL AT ALL, which is a decision and not an engineering fact. active = a channel we intend to connect. parked = decided, prepared, deliberately not connected yet; it is not work and nobody holds it. dropped = decided out of the product; the adapter may stay in the repository, the channel does not exist. Anything without this field is active. A screen MUST read lifecycle, never readiness, to decide whether a channel is current work.",
   "_record": "Added 02.10.2026 (Session 3, Channels). The reconciled state of every ACTIVE channel, each fact with the date it was seen and where. It exists because a local checkout has no secrets and no production rows, so the screen can never READ production from here: it must show what was last SEEN, and say when. Four states are kept apart and never inferred from each other: deployed (the code is in the running commit), productionConfigured (the settings are in Vercel Production), liveVerified (a row a real provider sent exists), and access (we hold what we need from the people outside). A blocker names its dependency, its owner, the action or input needed, and whether it is internal or external; local credentials being absent is NEVER a blocker. On production the screen reads live verification from real provider rows and ignores the recorded value; locally it never does.",
   "_production": {
-    "commit": "af2b5a3",
+    "commit": "17e97e3",
     "provenOn": "2026-10-05",
-    "how": "deployed 06.10.2026 (twenty-third patch: Help center matches the Inbox cards, Today drag, keyboard) by MASTER CONTROL with _crm-v1-lane-tools/deploy_verify.sh: live page byte-compared with the commit (+ its sign-in script). This record is the only change on top of af2b5a3",
+    "how": "deployed 06.10.2026 (twenty-third patch: Help center matches the Inbox cards, Today drag, keyboard) by MASTER CONTROL with _crm-v1-lane-tools/deploy_verify.sh: live page byte-compared with the commit (+ its sign-in script). This record is the only change on top of 17e97e3",
     "allAdaptersDeployed": true
   },
   "downstream": {
