@@ -208,7 +208,7 @@ const helpCtx = (search) => {
   const view = { innerHTML: '' };
   const ctx = { CFG: { help: HELP, stages: PROTO.stages, stageRoles: PROTO.stageRoles }, C_TERMINAL: ['Admitted', 'Not proceeding'],
     C_ICON: new Proxy({}, { get: (t, k) => `<svg data-i="${String(k)}"></svg>` }), location: { search }, URLSearchParams,
-    $: () => view, view, window: {}, scenes: 0 };
+    $: () => view, view, window: {}, scenes: 0, cHelpAdmin: () => {} };
   ctx.cScenes = () => { ctx.scenes += 1; };
   vm.runInNewContext(['esc', 'cHelpFlow', 'cHelpHowTo', 'viewHelpC'].map(fnSrc).join('\n')
     .replace(/^const (esc) = /gm, 'var $1 = '), ctx);
@@ -265,4 +265,14 @@ test('Q56 the flow is THE Help center: no switch, no card grid, no three steps; 
   }
   // phone: the same line stands up
   assert.match(APP, /@media \(max-width:760px\)\{\s*html\.ui-c \.hf-row\{grid-template-columns:1fr/);
+});
+
+// 06.10.2026, the owner: "the help center must always keep up with any changes in the app". Settings left the app
+// that day: no flow stop, how-to, tour step or answer may send anybody there again.
+test('the Help center never names Settings as a place; light or dark points to the left card', () => {
+  assert.doesNotMatch(JSON.stringify(HELP), /\bsettings\b/i, 'flow, how-to, tour and answers');
+  assert.match(HELP.faq.find((q) => q.id === 'light-dark-system').a, /left card/);
+  const code = APP.replace(/\/\*[\s\S]*?\*\//g, '').replace(/<!--[\s\S]*?-->/g, '')
+    .split('\n').filter((l) => !l.trim().startsWith('//')).join('\n');
+  assert.doesNotMatch(code, /href="#\/settings"|<span>Settings<\/span>|\bin Settings\b|'Settings'\)/, 'and the app shows no way there');
 });

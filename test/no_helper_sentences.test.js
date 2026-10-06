@@ -38,7 +38,7 @@ test('every helper sentence is gone, named one by one', () => {
 test('the status lines that carry a value are still there', () => {
   assert.match(APP, /\$\{\(p\.notes \|\| ''\)\.length\} characters/, 'the note counter is a value');
   assert.match(APP, /Handed to the SIS on \$\{fmtDate\(p\.sis_handoff_at\)\}/, 'the handoff date is a value');
-  assert.match(APP, /'Data to tidy', `\$\{odd\} not in the list`/, 'the count stays, the sentence went');
+  assert.match(APP, /Data to tidy\$\{odd \? ` <b>\$\{odd\}<\/b>` : ''\}/, 'the count stays, the sentence went');
   assert.match(APP, /Admins only\./, 'a refusal still says no');
 });
 
