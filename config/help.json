@@ -50,8 +50,23 @@
       "href": "#/journey"
     },
     {
+      "do": "Make a lead from a message",
+      "where": "Inbox, Make a lead on the card",
+      "href": "#/leads"
+    },
+    {
+      "do": "Set a message aside",
+      "where": "Inbox, Set aside on the card; nothing is deleted",
+      "href": "#/leads"
+    },
+    {
       "do": "Act on today's work",
       "where": "Today, Done or Choose next step",
+      "href": "#/today"
+    },
+    {
+      "do": "Move a step to another day",
+      "where": "Today, drag the card to Due today or Coming up",
       "href": "#/today"
     },
     {
@@ -68,6 +83,11 @@
       "do": "See a Home number in depth",
       "where": "Home, click the number",
       "href": "#/home"
+    },
+    {
+      "do": "Use the keyboard",
+      "where": "Press ? for the shortcuts",
+      "href": "#/help"
     },
     {
       "do": "Look at other years",
@@ -88,12 +108,12 @@
     },
     {
       "title": "Inbox",
-      "body": "Every new message from every channel lands here first. Say what they want to study and the next step, and they become a new lead. Junk is marked not relevant, never deleted.",
+      "body": "Every new message from every channel lands here first, in the column of the day it arrived. Make a lead: say the programme and the next step on the card. Anything else: Set aside. Kept, never deleted.",
       "target": ".cnav a[data-c=\"leads\"]"
     },
     {
       "title": "Today",
-      "body": "Who needs an action now: overdue, due today, and people with no next step. Press Done, say how it went and choose the next step.",
+      "body": "Who needs an action now: overdue, due today, and people with no next step. Press Done, say how it went and choose the next step. Drag a card to Due today or Coming up to move its step to another day.",
       "target": ".cnav a[data-c=\"today\"]"
     },
     {
@@ -121,7 +141,7 @@
     {
       "id": "late-in-new-leads",
       "q": "What does \"late\" mean in the Inbox?",
-      "a": "The lead arrived before today, it is past 09:00 Riga time, and nobody has handled it yet."
+      "a": "Nobody has handled the message by the end of the working day it should have been answered in. Working hours are Monday to Friday, 09:00 to 17:00 Riga time. One working hour after it arrived the card first says \"answer now\"; a message that arrives in the evening or at the weekend counts from the next working morning."
     },
     {
       "id": "move-someone-along",

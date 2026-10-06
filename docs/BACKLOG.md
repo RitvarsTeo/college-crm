@@ -49,7 +49,12 @@ his pick from the two v2 pictures (For review/2026-10-06 Inbox board v2/): **A**
   "Set aside" is the quiet link: the reason dialog as before (now titled Set aside), nothing deleted.
 - No New lead, Not relevant or Later column. A message set aside is still reachable by address
   (#/leads?show=archived; the Q61 layer carries it), drawn as a card without the actions. Nothing on screen leads
-  there - his words; say if a quiet link is wanted.
+  there. **SAID 06.10 (MASTER CONTROL for the owner): leave it as is, his "that garbage".**
+- The Help center follows (the standing rule, 06.10.2026: "the help center must always keep up with any changes in the
+  app"): the Inbox tour step says the columns by day, Make a lead and Set aside ("Kept, never deleted"); How to has
+  "Make a lead from a message", "Set a message aside", "Move a step to another day" (Today's drag) and "Use the
+  keyboard"; the "late" answer says the Q50 working-hours rule; Today's tour step names the drag. A help test fails on
+  "not relevant" as an Inbox action.
 - Checked in the browser (synthetic data + 9 made-up messages): 3 / 2 / 2 / 2 by day; Make a lead on Ilze -> a
   person at New · NAV, people 64 -> 65, the card gone, the receipt shown, no errors; Set aside -> the reason dialog.
 - Found on the way: the Q61 address layer left a bare "?" on a fresh view (#/leads?); fixed.
