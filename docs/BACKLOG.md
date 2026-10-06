@@ -28,6 +28,25 @@ above, the working underneath in word order. Worktree `crm-bench`, branch `ui/20
 | Page: dot = the server figure; the track (band, scale, dot) opens the people who reached; the working `a -> b` opens both sides; hollow dot and "~" under 20 people; source label small under the band; a row without full provenance is never drawn | BUILT |
 | Shots 1440 light + dark, 375 light (rows stack, no sideways scroll): `For review/2026-10-06 Benchmarks A/` | BUILT |
 | **DECIDED 06.10 (via MASTER CONTROL, the owner's rule "Nothing should be duplicated. Its confusing"):** the old "Reached - Application or beyond" block (everyone added, by where they are now) is removed; the matured Lead to application row is the one figure. "Where the rest are now" stays | BUILT |
+## 06.10.2026 - Today is a board (the owner's pick B: Coming up folded)
+
+His pick from the A/B pictures (For review/2026-10-06 AB for Ritvars/2B), via MASTER CONTROL.
+- Under the Needs you cards and the filter row: Overdue and Due today are columns of cards, in the Journey board's
+  card style (name, programme · stage, the step, its date chip, Done). Coming up is FOLDED to a narrow column with its
+  count; a click unfolds it into a column with a "Fold". No next step stays the list below, with "Choose next step".
+  A column shows its first 7 people, then "N more". One card per person; somebody with several steps in a column
+  keeps them all on the card. A Needs you card still narrows to its own column (Coming up unfolded; No next step =
+  the list only).
+- Drag to reschedule: a card dropped on Due today makes that person's step(s) in that column due today; dropped on
+  Coming up (folded or not) it opens a small date picker ON the card ("New date", earliest tomorrow; Save / Cancel).
+  Nothing can be dropped into Overdue (a date in the past). No stage moves here: the Journey board keeps those and
+  their back-move note. The reschedule is the existing route (POST /api/tasks/:id/reschedule).
+- Checked in the browser on synthetic data: Overdue -> Due today moved 20/2 to 19/3; Due today -> Coming up opened
+  the picker (min 07.10), Save set 12.10 and moved 2/12 to 2/13; a drop on Overdue changed nothing.
+- On a phone the columns stack and Coming up is a row with its count (drag is a mouse gesture; Done stays a button).
+Tests: test/today_board.test.js, figures_to_people.test.js. Shots: `For review/2026-10-06 patch 19/3..6`.
+**BUILT, next patch.**
+
 ## 06.10.2026 - The Journey's "What comes next" section is gone (DECIDED by the owner)
 
 The owner 06.10.2026, of the folded section under the Journey band: "in the journey we have this part.. why? What is

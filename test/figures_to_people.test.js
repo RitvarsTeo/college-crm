@@ -55,7 +55,12 @@ test('Today drops its strip: Home\'s Needs you already says it (no duplicate)', 
   assert.doesNotMatch(today.replace(/\/\/[^\n]*/g, ''), /c-todaystrip|waiting in the Inbox/);
   // Q47: Home's figures land on their card, and a section heading keeps its count (people)
   assert.match(today, /C_TP\.col = \{ cTodayOver: 'over', cTodayDue: 'today', cTodayNone: 'none' \}\[C_TODAY_AT\] \|\| null;/, 'Home lands on the card');
-  assert.match(today, /<h3>\$\{g\.label\}<b\$\{g\.tone && g\.rows\.length && g\.tone !== 'none' \? ` class="c-count \$\{g\.tone\}"` : ''\}>\$\{g\.rows\.length\}<\/b><\/h3>/, 'the sections keep their counts');
+  // the Today board (06.10.2026): every column heading and the folded Coming up carry their count (people), and so
+  // does the No next step list
+  const board = fnBody('function cTodayBoard(D, groups) {');
+  assert.match(board, /\$\{esc\(g\.label\)\}<b class="c-count \$\{g\.tone\}">\$\{g\.rows\.length\}<\/b>/, 'the columns keep their counts');
+  assert.match(board, /<span class="t-foldl">Coming up<\/span><b>\$\{g\.rows\.length\}<\/b>/, 'folded Coming up shows its count');
+  assert.match(today, /<h3>\$\{g\.label\}<b>\$\{g\.rows\.length\}<\/b><\/h3>/, 'and the No next step list');
 });
 
 test('the helpers land on exactly the cohort', () => {
