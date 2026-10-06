@@ -22,6 +22,8 @@ const ctx = {
   cJourneyCard: (p) => `[${p.id}]`,
   // the opened person is drawn as the quick view in place (02.10.2026), stubbed the same way
   cPersonCard: (p) => `[${p.id}]`,
+  // Q57: an end column's card (Admitted / Not proceeding) has its own drawing; nobody here is finished
+  C_TERMINAL: ['Admitted', 'Not proceeding'], cJEndCard: (p) => `[${p.id}]`,
 };
 vm.createContext(ctx);
 vm.runInContext([

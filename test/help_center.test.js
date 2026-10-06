@@ -223,7 +223,7 @@ const helpCtx = (search) => {
 };
 
 test('Q56 the flow: six stops in order, each a link to the right route, stages and ends a click to their column', () => {
-  assert.deepEqual(HELP.flow.map((m) => [m.name, m.href]), [['Inbox', '#/leads'], ['Becomes a person', '#/journey'], ['Today', '#/today'],
+  assert.deepEqual(HELP.flow.map((m) => [m.name, m.href]), [['Inbox', '#/leads'], ['New lead', '#/journey'], ['Today', '#/today'],
     ['Journey', '#/journey'], ['The end', '#/journey'], ['Reports', '#/reports']]);
   for (const m of HELP.flow) {
     assert.ok(m.name.split(/\s+/).length <= 4, 'a short label: ' + m.name);
@@ -238,7 +238,7 @@ test('Q56 the flow: six stops in order, each a link to the right route, stages a
   assert.deepEqual(chips, ['New', 'Contacted', 'Follow-up', 'Application', 'Contract', 'Admitted', 'Not proceeding'], 'the stages, then the two ends');
   const journey = html.slice(html.indexOf('data-step="4"'), html.indexOf('data-step="5"'));
   assert.doesNotMatch(journey, /data-stage="(Admitted|Not proceeding)"/, 'the ends are their own stop');
-  assert.match(html, /data-step="2">\s*<a class="hf-node" href="#\/journey" onclick="cGoPeople\(\{\}\);return false">/, 'Becomes a person opens everyone');
+  assert.match(html, /data-step="2">\s*<a class="hf-node" href="#\/journey" onclick="cGoPeople\(\{\}\);return false">/, 'New lead opens everyone');
   assert.doesNotMatch(html, /<p[ >]/, 'no paragraphs');
   // a stage click lands on the Journey, on that column; an end also sets the outcome it shows
   const go = vm.runInNewContext(fnSrc('cHelpGo') + `; const seen = []; cGoStage = (id) => seen.push(id); cHelpGo('Contract'); cHelpGo('Admitted'); ({ seen, C_OUTCOME })`,

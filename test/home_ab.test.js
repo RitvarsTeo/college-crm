@@ -124,12 +124,13 @@ test('Home is B, always: no switch, no A, and ?home= changes nothing', () => {
 
 test('a Home stage click lands on the Journey filtered to exactly that stage', () => {
   const ctx = { C_JF: { programme: ['ENG'], stage: [] }, C_PTAB: 'all', location: { hash: '#/home' }, viewJourneyC: () => {}, viewJourneyPool: () => {},
-    C_JP: { col: null, view: 'board' } };
-  vm.runInNewContext(line('const C_JF_EMPTY = ') + fn('function cGoStage(') + '\nthis.go = cGoStage;', ctx);
+    C_JP: { col: null, view: 'list' }, C_TERMINAL: ['Admitted', 'Not proceeding'], C_PF: { programme: 'NAV' }, C_PCOHORT: { ids: new Set() } };
+  vm.runInNewContext(line('const C_JF_EMPTY = ') + line('const C_PF_EMPTY = ') + fn('function cGoStage(') + '\nthis.go = cGoStage;', ctx);
   ctx.go('Application');
-  // Q47: the stage is the Journey's column, the list on show
+  // Q47: the stage is the Journey's column; Q57: on the drag-and-drop Board
   assert.equal(ctx.C_JP.col, 'Application');
-  assert.equal(ctx.C_JP.view, 'list');
+  assert.equal(ctx.C_JP.view, 'board');
+  assert.equal(ctx.C_PF.programme, '', 'nor does a List filter'); assert.equal(ctx.C_PCOHORT, null, 'nor a Reports cohort');
   assert.equal(JSON.stringify(ctx.C_JF.programme), '[]', 'an earlier programme filter does not hide anybody Home counted');
   assert.equal(ctx.C_PTAB, 'journey');
   assert.equal(ctx.location.hash, '#/journey');

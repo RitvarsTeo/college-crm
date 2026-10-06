@@ -34,12 +34,13 @@ const FIGURES = [
   ['Journey', 'What comes next cells', 'function cJourneySummary(', /onclick="cJfPick\('\$\{key\}', this\.dataset\.v/],
   ['Journey', 'Arrived', 'function cJourneyBand(', /onclick="cGoPeople\(\{ arrived: '\$\{out\.year\}' \}\);return false"><span>Arrived/],
   ['Journey', 'Stage columns', 'function cJourneyBand(', /onclick="cJfPick\('stage', this\.dataset\.v/],
-  ['Journey', 'Admitted / Not proceeding', 'function cJourneyBand(', /onclick="C_OUTCOME='Not proceeding';C_OUT_TAG=null"/],
+  // Q57: a bookend filters the board to its end column, as a stage column does
+  ['Journey', 'Admitted / Not proceeding', 'function cJourneyBand(', /onclick="C_OUTCOME='Not proceeding';C_OUT_TAG=null;cJfPick\('stage', this\.dataset\.v, /],
   ['Journey', 'Board column "N overdue"', 'function cDrawJourney() {', /<button type="button" class="c-jover" onclick="cJfOverdue\('\$\{esc\(s\.id\)\}'\)">/],
   // Q47: Outcomes are the Journey's last two columns, Cold / Reject the filter on Not proceeding
   ['Outcomes', 'Admitted / Not proceeding columns', 'function cDrawJourneyPool() {', /\{ id: admitted, label: admitted, n: base\.filter\(\(p\) => p\.status === admitted\)\.length, tone: 'good', sep: true \}/],
   ['Outcomes', 'Everybody / Cold / Reject', 'function cDrawJourneyPool() {', /cPoolSelect\('Cold \/ Reject', C_OUT_TAG \|\| '', tags, 'C_OUT_TAG=this\.value/],
-  ['Outcomes', 'Why they stopped bars', 'function cReasonBreakdown(', /onclick="C_OUT_REASON=this\.dataset\.r;viewOutcomesC\(\)/],
+  ['Outcomes', 'Why they stopped bars', 'function cReasonBreakdown(', /onclick="C_OUT_REASON=this\.dataset\.r;cDrawJourneyPool\(\)/],
   ['Menu', 'Today and Inbox badges', 'function installCNav() {', /<a href="#\/today" data-c="today"[^>]*><span>Today<\/span><span class="n" id="cnNext">/],
   ['Menu', 'Journey badge', 'function installCNav() {', /<a href="#\/journey" data-c="people"[^>]*><span>Journey<\/span><span class="n" id="cnJourney">/],
 ];
@@ -65,7 +66,7 @@ test('the helpers land on exactly the cohort', () => {
   vm.runInNewContext([APP.match(/const C_PF_EMPTY = [^\n]*/)[0].replace('const ', 'var '), APP.match(/const C_JF_EMPTY = [^\n]*/)[0].replace('const ', 'var '),
     fnBody('function cGoPeople(filter) {'), APP.match(/function cGoToday\(section\) [^\n]*/)[0], 'var C_TODAY_AT = "";',
     APP.match(/function cJfOverdue\(stage\) [^\n]*/)[0]].join('\n'), ctx);
-  // Q47: Home's No next step opens Today on that card; any other People filter opens the Journey, everyone, as a list
+  // Q47: Home's No next step opens Today on that card; any other People filter opens the Journey, everyone (Q57: the Board)
   ctx.cGoPeople({ due: 'none' });
   assert.equal(ctx.location.hash, '#/today');
   assert.equal(ctx.C_TP.col, 'none');
@@ -74,7 +75,7 @@ test('the helpers land on exactly the cohort', () => {
   assert.equal(ctx.location.hash, '#/journey');
   assert.equal(ctx.C_PF.arrived, '2026');
   assert.equal(ctx.C_PF.stage, '', 'nothing else narrows it');
-  assert.equal(ctx.C_JP.col, null); assert.equal(ctx.C_JP.view, 'list');
+  assert.equal(ctx.C_JP.col, null); assert.equal(ctx.C_JP.view, 'board', 'Q57: the Board, never the List');
   assert.equal(ctx.C_PQ, '');
   ctx.location.hash = '#/home'; ctx.cGoToday('cTodayOver');
   assert.equal(ctx.location.hash, '#/today'); assert.equal(ctx.C_TODAY_AT, 'cTodayOver');

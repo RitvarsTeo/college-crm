@@ -14,6 +14,31 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 06.10.2026 - Q57: the Journey opens on the drag-and-drop board again
+
+Ritvars 06.10 (urgent): "I didnt ask you to turn journey's drag and drop into a list! what i explicitly remember is
+saying you that journey tab is the mosst advanced of them all listss!" The Q47 frame (05.10) made the List the Journey's
+default and sent every Home / Reports / Help link to it.
+- The BOARD is the Journey: the default view and the first option of the switch (Board | List). Every way in opens it:
+  the menu, Home's stage clicks, the donut, Home's month bars, Reports figures, Arrived, Cold / Reject, the Help flow,
+  Edit from the person page, the old #/people, #/people/all and #/outcomes. The List is the switch's second option and
+  is never remembered: the next way in is the Board again.
+- The column a way in targets is the board's stage filter, exactly as a band click sets it. What else it targets (a
+  Reports cohort, Arrived in a year, a month of Admitted, Cold / Reject, a reason) narrows the board to exactly those
+  people and shows one chip with "Show everyone x". Moving List -> Board carries the List's Programme / Owner / Came from
+  / Overdue into the board's own ticks.
+- Admitted / Not proceeding are the band's bookends, as before the 05.10 frame. A bookend click (or a way in that
+  targets it) filters the board like a stage click and draws that end column at the board's end: name, the date
+  admitted, or the Cold / Reject tag and the reason. An end column is not a drop target (a close needs its reason; the
+  edit form asks it). Drag and drop is unchanged: a drop posts the status move, a back move asks its note first.
+- Edit in place on the board card stays (the opened card becomes the edit form; Save stays on the board).
+- Help flow (behind ?helpflow=1): step 2 is "New lead" (his pick, 06.10), was "Becomes a person".
+- Found on the way: the paused helper's reason-bar click was a JS syntax error (quotes inside a quoted string), which
+  broke the whole script; fixed (the reasons live on the List, the click redraws the List).
+Tests: test/journey_board_default_q57.test.js (Board default; 15 ways in all land on the Board, never the List; the
+targeted column; end columns; cohort / Arrived narrowing; drag posts the move, a back move sends its note, a cancel
+saves nothing; Help step 2); 9 older tests that asserted the List default follow. **BUILT, next patch.**
+
 ## 06.10.2026 - SIS students carry their real SIS date, never the day of the pull
 
 What happened (production backup 2026-10-06T06-15-05Z, counts only): on 05.10 the SIS bulk-loaded its existing
@@ -49,7 +74,7 @@ Built (branch fix/2026-10-06-sis-real-dates, src/sisdates.js):
 
 Ritvars 06.10, on the live "Where things are" card grid: "whats the point of just showing replicated cards on help
 center???". The cards repeated the menu; what he asked for (05.10) was "how to where to, for what".
-- With `?helpflow=1` the card grid is replaced by ONE flow on the Journey band's card: 1 Inbox, 2 Becomes a person,
+- With `?helpflow=1` the card grid is replaced by ONE flow on the Journey band's card: 1 Inbox, 2 New lead (renamed 06.10 by the owner),
   3 Today, 4 Journey (New, Contacted, Follow-up, Application, Contract), 5 The end (Admitted, Not proceeding),
   6 Reports. Icon, short label, at most one short line; circles on one line in #29a8df, the end in mustard #E0A526.
   Every stop is a click to its place; every stage and end chip opens the Journey on that column. Phone: the same

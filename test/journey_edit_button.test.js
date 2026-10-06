@@ -21,7 +21,8 @@ function run(startHash) {
   const src = APP.slice(i, APP.indexOf('\n}\n', i) + 2);
   const drawn = [];
   const ctx = { location: { hash: startHash }, C_PF: null, C_PQ: 'x', C_PEDIT: null, C_PMSG: 'x',
-    C_PSCROLL: false, C_PTAB: 'journey', C_PF_EMPTY: () => ({}), viewJourneyPool: () => drawn.push('all'), C_JP: { col: 'Contract', view: 'list' }, C_JDATA: null };
+    C_PSCROLL: false, C_PTAB: 'journey', C_PF_EMPTY: () => ({}), viewJourneyPool: () => drawn.push('all'), C_JP: { col: 'Contract', view: 'list' }, C_JDATA: null,
+    C_JF_EMPTY: () => ({ stage: [] }), C_TERMINAL: ['Admitted', 'Not proceeding'], C_PDATA: null, cPoolRouteJourney: () => drawn.push('board') };
   vm.runInNewContext(src + '\ncEditFromJourney("p1");', ctx);
   return { ctx, drawn };
 }
@@ -45,8 +46,8 @@ for (const start of ['#/people', '#/journey', '#/people/all']) {
     const { ctx, drawn } = run(start);
     assert.equal(ctx.C_PEDIT, 'p1', 'the person to edit is set');
     assert.equal(ctx.C_PTAB, 'all', 'the All people tab is the one drawn');
-    // Q47: everyone, as the list, where the row opens in place
-    assert.equal(ctx.C_JP.col, null); assert.equal(ctx.C_JP.view, 'list');
+    // Q57: the Board, the person's card open as the edit form
+    assert.equal(ctx.C_JP.col, null); assert.equal(ctx.C_JP.view, 'board'); assert.equal(ctx.C_JSEL, 'p1');
     const moved = ctx.location.hash !== start;
     assert.ok(moved || drawn.length === 1, 'either the hash changes, or the list is drawn directly');
   });
