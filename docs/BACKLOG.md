@@ -2097,6 +2097,26 @@ screen on the real-data snapshot (local, in memory) at 1440 / 900 / 390 px, ligh
 - Queued: reconcile the Admissions numbers against "0. NJK KPI 2026.xlsx" and Ieva's slides.
 - The production database moves to Aigars' paid Supabase later; not started, by instruction.
 
+## OPEN QUEUE 06.10.2026 (MASTER CONTROL; the full log is crm-control-s1/docs/INTAKE_CONTROL_2026-10-02.md)
+
+Production: `071e594` (patch 17) + the SIS re-date data fix (06.10 08:12Z, Admitted 2026 = 122). Work PAUSED by Ritvars 06.10.
+
+| # | Item | Owner | State |
+|---|---|---|---|
+| Q57 | Journey opens on the drag-and-drop BOARD again by default, every entry route; List only the second option (Ritvars: "I didnt ask you to turn journey's drag and drop into a list!") | MAIN | IN PROGRESS, paused, uncommitted in crm-main-ab |
+| Q56 | Help center: one flow (Inbox -> New lead -> Today -> Journey -> Admitted / Not proceeding -> Reports) instead of the card grid; step 2 named "New lead" (his pick) | MAIN | BUILT behind ?helpflow=1 (`a22dc88`), his look owed; open: drop the "three steps" cards that repeat it? |
+| Q58 | Board mechanism for Inbox (New -> New lead -> Not relevant -> Later) and Today (Overdue -> Due today -> Coming up) | MAIN | SAID: PICTURES FIRST, nothing built before his OK |
+| Q50 | Inbox "answer now" amber after 1 working hour, red "late" at the end of that working day, Mon-Fri 09-17 Riga | MAIN | DECIDED, not built |
+| Q45 | Year scope: one small Year/Period dropdown top-right, strict arrival year everywhere (Admitted + Median by admission date), Reports' own period goes | MAIN | WIP `dd4bf54` on wip/2026-10-05-q45-scope |
+| - | Journey band labels break mid-word at 375 | MAIN | SAID |
+| Q48 | Benchmarks: a sourced benchmarks block in config + the Piemeri benchmark row; Reports step funnel; record the first-reply time so Inbox speed can be measured | Reports lane | PROPOSED (For review/2026-10-05 Benchmarks), his OK owed |
+| - | Inbox clean-up run on production: Check waiting rows, then Move (42 of 75 on the 04.10 backup) | Ritvars's yes | WAITING |
+| - | Mailchimp: audience webhook saved + one test contact -> first provider row | Ritvars | WAITING |
+| - | The move to Aigars's Vercel Pro + Supabase (checklist https://claude.ai/artifact/5qSKprtCQsTpv3zgiLzQL7; restore tool ready, dry runs PASS on Postgres 15/17/18) | Aigars + Ritvars | WAITING on Aigars (Vercel invite, Supabase project) |
+| - | 1 person already in Intake moved to Admitted by the 06.10 SIS pull, SIS date 2014: re-date or leave | Ritvars | OPEN |
+| D-C7 | Guardian field | Ieva | OPEN |
+| Q10 | Kit part 2 demo still has the (c) line in the menu card | kit | SAID |
+
 ## Pin
 
 **PIN 05.10.2026 - INTAKE, THIRTEENTH PATCH LIVE: `0b4f06c` (code `e4ef1cc`), release/2026-10-05-intake-9 pushed, dpl_2MQPLQnKokiGmwLm2VyPMs7YC5Ye, verified by MASTER CONTROL (page byte-identical, 78/78 files, 8 private routes 401, 0 leaks, functions fra1; backup before 2026-10-05T12-53-49Z VERIFIED 1176 rows; 1211/1211 on the clean deploy checkout). In it: ONE pool frame (frozen cohort band + one filter row) for Inbox, Today and Journey; Journey = People + Journey + Outcomes; flat menu Home · Inbox · Today · Journey · Reports · Settings with new / total counts; every Home and Reports figure opens its people; Aigars 05.10 (Source filters, edit in place on Journey List + Board); Conversion counts matured people only (60+ days); taller month chart with the donut balanced. NEXT: Q50 Inbox answer-now / late by working hours, Q45 year scope, then the move to Aigars's Vercel Pro + Supabase (checklist https://claude.ai/artifact/5qSKprtCQsTpv3zgiLzQL7). Database: Neon Free, Frankfurt, until the move.**
