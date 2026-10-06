@@ -1544,7 +1544,13 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
     html.ui-c .t-foldl{writing-mode:horizontal-tb;transform:none} }
   html.ui-c .pband.pcards{margin:0 0 14px;display:block}
   html.ui-c .pcards .p-card{appearance:none;font:inherit;text-align:left;cursor:pointer;margin:0}
-  html.ui-c #view .pcards .p-card.on{background:var(--c-sunk);border-radius:10px;box-shadow:inset 0 -3px 0 var(--j-to)}
+  /* 06.10.2026, the owner: "Today has a fucked up error" - the lit columns were grey boxes with a thick navy line and
+     Coming up was not, so the band looked broken. Every column is now Home's Needs you tile (transparent, hairline
+     between); lit is only a thin line under it in the band's signal amber, so the tile keeps its shape and size. */
+  html.ui-c #view .pcards .p-card{position:relative;padding-bottom:10px}
+  html.ui-c #view .pcards .p-card.on{background:transparent;border-radius:0;box-shadow:none}
+  html.ui-c #view .pcards .p-card.on::after{content:"";position:absolute;left:16px;right:16px;bottom:0;height:3px;border-radius:2px;background:#F7C04F}
+  html.ui-c #view .pcards .p-card.on:first-child::after{left:0}
   html.ui-c #view .pcards .p-card:focus-visible{outline:2px solid var(--pet);outline-offset:1px}
   html.ui-c .pcards.is-mini .kday-row, html.ui-c .pcards.is-mini h2{display:none}
   html.ui-c .pband.pcards.is-mini{padding:0}   /* the sheet is the card here: no see-through strip above it */
