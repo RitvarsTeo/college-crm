@@ -176,12 +176,16 @@ test('Q54 -> Q56: no card grid of the menu, no "three steps" cards repeating the
 });
 
 test('Q54 how to: short task links, each opens a real place', () => {
-  const places = ['#/home', '#/leads', '#/today', '#/journey', '#/reports', '#/settings'];
-  assert.deepEqual(HELP.howto.map((h) => h.do), ['Find a person', 'Add a lead', "Act on today's work", 'Move someone back a stage',
-    'See who came from a channel', 'See a Home number in depth']);
+  const places = ['#/home', '#/leads', '#/today', '#/journey', '#/reports', '#/settings', '#/help'];
+  // 06.10.2026, the standing rule "the help center must always keep up with any changes in the app": the Inbox board's
+  // two actions, Today's drag to another day and the keyboard are here the day they shipped
+  assert.deepEqual(HELP.howto.map((h) => h.do), ['Find a person', 'Add a lead', 'Make a lead from a message', 'Set a message aside',
+    "Act on today's work", 'Move a step to another day', 'Move someone back a stage', 'See who came from a channel', 'See a Home number in depth', 'Use the keyboard']);
   for (const h of HELP.howto) assert.ok(places.includes(h.href) && h.where, h.do);
   assert.ok(APP.includes('placeholder="Search name, email or phone"') && APP.includes('>Add lead</button>') && APP.includes("'Came from'"),
     'what the how-to names exists on screen');
+  assert.ok(APP.includes('>Make a lead</button>') && APP.includes('>Set aside</button>') && APP.includes("data-col=\"later\"") && APP.includes("if (k === '?')"),
+    'and so do the Inbox card actions, Today\'s drop columns and the ? key');
   assert.doesNotMatch(JSON.stringify(HELP.howto), /year switch|year picker/i, 'nothing about features not built');
 });
 
@@ -224,7 +228,7 @@ test('step 2 reads "New lead" everywhere, short and plain; nothing says "becomes
   const code = APP.replace(/\/\*[\s\S]*?\*\//g, '').split('\n').filter((l) => !l.trim().startsWith('//')).join('\n');   // his own words in comments stay
   const all = JSON.stringify(HELP) + code;
   assert.doesNotMatch(all, /becomes? a person|Becomes a person/i, 'flow, tour, questions and the page');
-  assert.match(HELP.tour.find((t) => t.title === 'Inbox').body, /they become a new lead\./);
+  assert.match(HELP.tour.find((t) => t.title === 'Inbox').body, /Make a lead: say the programme and the next step on the card\. Anything else: Set aside\. Kept, never deleted\./);
 });
 
 test('Q56 the flow: six stops in order, each a link to the right route, stages and ends a click to their column', () => {
@@ -266,4 +270,22 @@ test('Q56 the flow is THE Help center: no switch, no card grid, no three steps; 
   }
   // phone: the same line stands up
   assert.match(APP, /@media \(max-width:760px\)\{\s*html\.ui-c \.hf-row\{grid-template-columns:1fr/);
+});
+
+// THE STANDING RULE (Ritvars, 06.10.2026: "the help center must always keep up with any changes in the app"). The Inbox
+// is a board of cards (Q62): its actions are "Make a lead" and "Set aside"; "not relevant" is not an action anybody sees.
+test('the Help center follows the Inbox board: Make a lead and Set aside, never "not relevant" as an action', () => {
+  const words = JSON.stringify(HELP).toLowerCase();
+  assert.ok(!words.includes('not relevant'), 'help.json names no "not relevant" action');
+  const inbox = HELP.tour.find((t) => t.title === 'Inbox').body;
+  assert.match(inbox, /column of the day it arrived/, 'the columns by arrival day');
+  assert.match(inbox, /Make a lead/); assert.match(inbox, /Set aside/); assert.match(inbox, /never deleted/);
+  assert.deepEqual(HELP.howto.filter((h) => h.href === '#/leads').map((h) => h.do), ['Make a lead from a message', 'Set a message aside']);
+  // "late" says the Q50 rule, not the 23.09 one
+  const late = HELP.faq.find((q) => q.id === 'late-in-new-leads').a;
+  assert.match(late, /end of the working day/); assert.match(late, /09:00 to 17:00 Riga/); assert.match(late, /"answer now"/);
+  assert.doesNotMatch(late, /before today|past 09:00 Riga time, and nobody/, 'the old rule is gone');
+  // Today's drag and the keyboard
+  assert.match(HELP.tour.find((t) => t.title === 'Today').body, /Drag a card to Due today or Coming up/);
+  assert.equal(HELP.howto.find((h) => h.do === 'Use the keyboard').where, 'Press ? for the shortcuts');
 });
