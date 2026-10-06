@@ -14,6 +14,23 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 06.10.2026 - Q50: Inbox rows say "answer now" after one working hour, "late" at the end of that working day
+
+DECIDED 05.10.2026 (the owner picked MASTER CONTROL's suggestion), replacing 23.09's "late = next calendar day 09:00".
+- Working hours are config (`ageing`): Mon-Fri, 09:00-17:00, Europe/Riga, answer within 60 working minutes.
+- A message still waiting one WORKING hour after it arrived carries a solid amber "answer now" chip (navy words);
+  still waiting at the end of the working day that hour ends in, the solid red "late" chip. Nights and weekends wait
+  for the next working morning: Friday 16:30 -> answer now Monday 09:30, late Monday 17:00; Saturday -> Monday 10:00
+  and 17:00; 16:00 on a weekday -> 17:00, both at once, late wins. Riga hours hold across the 25.10 clock change.
+- **"Answered" = handled in the Inbox** (the message is no longer `new`: added to Admissions, set aside, filtered).
+  There is no first-reply time yet; when a channel can tell us the first reply, that becomes "answered" instead.
+- Worked out from received_at on every read (src/intake.js answerDeadlines), so rows stored under the old rule
+  follow the new one; surface_at still stores the late moment on arrival. Public holidays are not in the rule yet.
+- The "Late" figure in the management download and the classic view's tooltips say "not answered in the working day".
+Tests: test/inbox_answer_q50.test.js (config; the hour boundary 15:59 / 16:00 / 16:30; Friday 16:30 -> Monday;
+weekend and night arrivals; the clock change; rows going nothing -> answer now -> late; a handled message is neither;
+the chips), intake.test.js and qualification.test.js follow the new rule. **BUILT, next patch.**
+
 ## 06.10.2026 - Q57: the Journey opens on the drag-and-drop board again
 
 Ritvars 06.10 (urgent): "I didnt ask you to turn journey's drag and drop into a list! what i explicitly remember is

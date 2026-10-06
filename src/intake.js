@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url';
 import { extractFrom, looksLikeJunk } from './extract.js';
 import { logEvent, MANUAL, AUTOMATIC } from './history.js';
 import { duplicateCheck } from './identity.js';
-import { localDate } from './bizday.js';
+import { localDate, localMidnight } from './bizday.js';
 import { SIS_HOLDS_SQL } from './lifecycle.js';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -24,34 +24,37 @@ const nowIso = () => new Date().toISOString();
 export const newPersonId = () => 'p' + Math.random().toString(36).slice(2, 7);
 
 // ------------------------------------------------------------- the ageing --
-// "Inbound Monday 21:30, still untouched, surfaces Tuesday 09:00."
-// Computed once on arrival and stored on the row, so a test can assert it
-// without waiting for a clock, and so the rule cannot drift between readers.
-export async function surfaceAt(receivedIso, cfg = CFG.ageing) {
+// WORKING HOURS (Q50, decided 05.10.2026; config.ageing). A message still waiting after one WORKING hour is
+// "answer now" (amber); still waiting at the end of the working day that hour ends in, it is "late" (red).
+// Mon-Fri 09:00-17:00 Riga: Friday 16:30 -> answer now Monday 09:30, late Monday 17:00; Saturday -> Monday 10:00
+// and 17:00. "Answered" = the Inbox has handled it (state no longer new), until a real first-reply time exists.
+// Pure and worked out from received_at, so a test asserts it without a clock and old rows follow the new rule.
+const hm = (v, dflt) => { const m = /^(\d{1,2}):(\d{2})$/.exec(String(v || dflt)); return m ? Number(m[1]) * 60 + Number(m[2]) : 0; };
+export function answerDeadlines(receivedIso, cfg = CFG.ageing) {
   const tz = cfg?.timezone || 'Europe/Riga';
-  const hour = cfg?.hour ?? 9;
+  const days = cfg?.workdays || [1, 2, 3, 4, 5];
+  const start = hm(cfg?.start, '09:00'), end = hm(cfg?.end, '17:00');
+  const within = cfg?.answerWithinMinutes ?? 60;
   const received = new Date(receivedIso);
-
-  // what calendar day is it where the college is?
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit',
-  }).formatToParts(received);
-  const get = (t) => Number(parts.find((p) => p.type === t).value);
-  const next = new Date(Date.UTC(get('year'), get('month') - 1, get('day') + 1, hour, 0, 0));
-
-  // that was built as if the college were on UTC. Correct it by the real offset
-  // on that day, so summer time cannot move the rule by an hour.
-  return new Date(next.getTime() - offsetMinutes(next, tz) * 60000).toISOString();
+  let ymd = localDate(received, tz);
+  const [y0, m0, d0] = ymd.split('-').map(Number);
+  let min = Math.floor((received.getTime() - Date.parse(localMidnight(y0, m0, d0, tz))) / 60000);
+  const weekday = (d) => { const w = new Date(d + 'T12:00:00Z').getUTCDay(); return w === 0 ? 7 : w; };   // Monday 1 .. Sunday 7
+  const nextDay = (d) => { const [y, m, dd] = d.split('-').map(Number); return new Date(Date.UTC(y, m - 1, dd + 1)).toISOString().slice(0, 10); };
+  const working = (d) => days.includes(weekday(d));
+  // the first working moment at or after arrival
+  if (!working(ymd) || min >= end) { do ymd = nextDay(ymd); while (!working(ymd)); min = start; } else if (min < start) min = start;
+  // then the working minutes, carried over the evening and the weekend
+  let left = within;
+  while (left > end - min) { left -= end - min; do ymd = nextDay(ymd); while (!working(ymd)); min = start; }
+  min += left;
+  const at = (d, m) => { const [y, mo, dd] = d.split('-').map(Number); return new Date(Date.parse(localMidnight(y, mo, dd, tz)) + m * 60000).toISOString(); };
+  return { answerBy: at(ymd, min), lateAt: at(ymd, end) };
 }
-
-function offsetMinutes(at, tz) {
-  const f = new Intl.DateTimeFormat('en-US', {
-    timeZone: tz, hour12: false, year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit', second: '2-digit',
-  }).formatToParts(at);
-  const g = (t) => Number(f.find((p) => p.type === t).value);
-  const asUtc = Date.UTC(g('year'), g('month') - 1, g('day'), g('hour') % 24, g('minute'), g('second'));
-  return Math.round((asUtc - at.getTime()) / 60000);
+// The late moment, stored on the row on arrival (surface_at) as before; every reader works it out again from
+// received_at (answerDeadlines), so rows stored under the 23.09 rule read the new one.
+export async function surfaceAt(receivedIso, cfg = CFG.ageing) {
+  return answerDeadlines(receivedIso, cfg).lateAt;
 }
 
 // ------------------------------------------------------------ the routing --
@@ -283,7 +286,10 @@ export async function listInbound(db, { state = 'new', now = nowIso() } = {}) {
   for (const r of rows) {
     r.fields = await db.prepare('SELECT * FROM field_values WHERE inbound_id = ? ORDER BY id').all(r.id);
     r.missing = missingFor(r.fields);
-    r.aged = r.state === 'new' && r.surface_at <= now;
+    const due = answerDeadlines(r.received_at);
+    r.answer_by = due.answerBy; r.late_at = due.lateAt;
+    r.aged = r.state === 'new' && due.lateAt <= now;                    // late: red (Q50)
+    r.answerNow = r.state === 'new' && !r.aged && due.answerBy <= now;  // answer now: amber
     Object.assign(r, senderKind(r, known));
   }
   return rows;
@@ -328,7 +334,8 @@ export function missingFor(fields) {
 }
 
 export async function agedCount(db, now = nowIso()) {
-  return (await db.prepare("SELECT COUNT(*) n FROM inbound WHERE state = 'new' AND surface_at <= ?").get(now)).n;
+  const rows = await db.prepare("SELECT received_at FROM inbound WHERE state = 'new'").all();
+  return rows.filter((r) => answerDeadlines(r.received_at).lateAt <= now).length;
 }
 
 // What each person has waiting for them right now. This is the whole of the

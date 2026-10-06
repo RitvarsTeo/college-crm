@@ -2090,6 +2090,8 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
     border-radius:5px;padding:1px 7px;white-space:nowrap;display:inline-block;line-height:1.5;width:max-content}
   html.ui-c h3 b.c-count{border-radius:99px;padding:0 7px;letter-spacing:0;font-weight:700}
   html.ui-c h3 b.c-count.over{background:var(--j-alarm);color:var(--j-on-alarm)} html.ui-c h3 b.c-count.today{background:var(--j-soon);color:var(--j-on-soon)}
+  /* Q50: "answer now" - a message a working hour old; the same solid amber as Today, the urgency on the row */
+  html.ui-c .c-answer{background:var(--j-soon);color:var(--j-on-soon);font-weight:700;border-radius:5px;padding:1px 7px;white-space:nowrap;display:inline-block;line-height:1.5}
   html.ui-c .c-when.today{background:var(--j-soon);color:var(--j-on-soon);font-weight:700;
     border-radius:5px;padding:1px 7px;white-space:nowrap;display:inline-block;line-height:1.5;width:max-content}
   html.ui-c .c-jover{font-style:normal;font-size:10.5px;font-weight:700;letter-spacing:.02em;text-transform:none;margin-left:auto;
@@ -3558,7 +3560,7 @@ async function viewLeadsC() {
     </div>`;
   };
   const leadRow = (r, redraw = 'viewLeadsC()', withPanel = true) => `<div class="c-line row c-lead${C_LOPEN === r.id ? ' is-open' : ''}" tabindex="0" onclick="C_LOPEN=${C_LOPEN === r.id ? 'null' : Number(r.id)};${redraw}">
-        <div class="c-who"><b class="c-reach">${esc(r.contact_name || r.contact_handle || '') || cTelLink({ phone: r.contact_phone }) || 'Unknown'}</b><small>${esc(channelLabel(r.channel))} · ${fmtDateTime(r.received_at)}${r.aged ? ' · <span class="c-late">late</span>' : ''}</small></div>
+        <div class="c-who"><b class="c-reach">${esc(r.contact_name || r.contact_handle || '') || cTelLink({ phone: r.contact_phone }) || 'Unknown'}</b><small>${esc(channelLabel(r.channel))} · ${fmtDateTime(r.received_at)}${r.aged ? ' · <span class="c-late">late</span>' : r.answerNow ? ' · <span class="c-answer">answer now</span>' : ''}</small></div>
         <div class="c-what">${esc(r.channel === 'phone' ? cCallLine(r.body) : (r.body || val(r, 'question') || ''))}</div>
         <div class="c-when">${esc(val(r, 'interest') || '')}</div><div></div></div>
         ${C_LOPEN === r.id && withPanel ? panel(r) : ''}`;
@@ -5320,7 +5322,7 @@ async function drawWaiting() {
 }
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 // Times are stored as UTC instants and shown where the college actually is, so
-// the 09:00 ageing rule reads as 09:00 on the screen and not as 06:00.
+// the working hours (09:00-17:00) read as Riga hours on the screen and not as UTC.
 const TZ = 'Europe/Riga';
 const fmtDate = (s) => {
   if (!s) return '';
@@ -5777,7 +5779,7 @@ async function refreshBadge() {
     if (i.counts.new && ownsIntake) {
       el.textContent = i.counts.new;
       el.className = 'pill ' + (i.counts.aged ? 'late' : 'warn');
-      el.title = i.counts.aged ? `${i.counts.aged} waiting since yesterday` : 'waiting to be looked at';
+      el.title = i.counts.aged ? `${i.counts.aged} not answered in the working day` : 'waiting to be looked at';
       el.style.display = '';
     } else el.style.display = 'none';
   } catch {}
@@ -6484,7 +6486,7 @@ async function viewInbox() {
     <td title="${esc(r.suggestion_why || '')}">${val(r, 'interest')}</td>
     <td>${val(r, 'question')}</td>
     <td>${fmtDateTime(r.received_at)}
-      ${r.aged ? '<div class="sub2 late" title="waiting since 09:00 yesterday">late</div>' : ''}</td>
+      ${r.aged ? '<div class="sub2 late" title="not answered by the end of the working day">late</div>' : ''}</td>
   </tr>`;
 
   // What used to be the Done board. It answers the three things the review could not

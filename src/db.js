@@ -124,7 +124,7 @@ CREATE TABLE IF NOT EXISTS inbound (
   thread_key TEXT,               -- how a later message finds this conversation again
   external_id TEXT,              -- the provider's own id, for exact-repeat detection
   received_at TEXT NOT NULL,
-  surface_at TEXT NOT NULL,      -- the next-day 09:00 ageing rule, computed once on arrival
+  surface_at TEXT NOT NULL,      -- the late moment on arrival (Q50 working hours); readers recompute it from received_at
   contact_name TEXT,
   contact_handle TEXT,
   contact_email TEXT,

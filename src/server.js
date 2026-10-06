@@ -2078,7 +2078,7 @@ export const handle = async (req, res) => {
         ...f.byChannel.map((x) => ['Channel contacts', channelLabel(x.channel), x.contacts]),
         ...f.byChannel.map((x) => ['Channel leads', channelLabel(x.channel), x.leads]),
         ...f.dropOut.map((x) => ['Why people left', x.reason, x.n]),
-        ['Attention', 'Waiting since yesterday', f.agedInbound],
+        ['Attention', 'Late: not answered in the working day', f.agedInbound],
         ['Attention', 'Overdue actions', f.overdueActions],
         ['Attention', 'Active with no next step', f.noNextAction],
         ['Filtered', 'Obvious sales pitches never shown', f.filtered],
