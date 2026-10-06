@@ -32,8 +32,8 @@ test('the menu is grouped: Admissions holds the three pools, and the hairline is
   const labels = [...nav.matchAll(/<span>([A-Za-z ]+)<\/span>/g)].map((m) => m[1]);
   // Q51 (the owner, 05.10.2026: "I had Home then Admissions (under that inbox, today, journey) Then big Reports."):
   // Journey is People + Journey + Outcomes in one (Q47)
-  // Q53: Help center is its own item directly under Settings
-  assert.deepEqual(labels, ['Home', 'Admissions', 'Inbox', 'Today', 'Journey', 'Reports', 'Settings', 'Help center']);
+  // 06.10.2026: Settings left; the Help center is the foot of the menu
+  assert.deepEqual(labels, ['Home', 'Admissions', 'Inbox', 'Today', 'Journey', 'Reports', 'Help center']);
   assert.equal((nav.match(/class="kids"/g) || []).length, 1, 'one group: Admissions');
   // the hairline itself, unchanged from the established rule
   assert.match(APP, /html\.ui-c \.cnav \.kids\{margin:1px 0 6px 18px;padding-left:10px;border-left:1px solid var\(--rule\)\}/,
@@ -42,7 +42,7 @@ test('the menu is grouped: Admissions holds the three pools, and the hairline is
 
 test('every menu item carries its locked icon', () => {
   const nav = APP.slice(APP.indexOf('<div class="cnav"'), APP.indexOf('</div>`);', APP.indexOf('<div class="cnav"')));
-  for (const k of ['C_ICON.home', 'C_ICON.adm', 'C_ICON.rep', 'C_ICON.set']) {
+  for (const k of ['C_ICON.home', 'C_ICON.adm', 'C_ICON.rep', 'C_ICON.help']) {
     assert.ok(nav.includes('${' + k + '}'), k + ' is on its menu item');
   }
   // the five locked ones are untouched; Reports is marked provisional where it is defined
@@ -57,8 +57,8 @@ test('every old hash still resolves, and lands in the right place', () => {
     leads: 'leads', inbox: 'leads', car: 'leads', admissions: 'leads',   // Q51: Admissions opens its first child, the Inbox
     people: 'people', person: 'people', journey: 'people', outcomes: 'people',
     reports: 'reports', funnel: 'reports', metrics: 'reports',
-    settings: 'settings', channels: 'settings', feedback: 'settings',
-    help: 'help',   // Q53: the Help center is its own item, under Settings
+    settings: 'help', channels: 'help', feedback: 'help',   // 06.10.2026: no Settings page; the Help center holds them
+    help: 'help',
   };
   for (const [page, want] of Object.entries(expected)) {
     assert.equal(place(page), want, `#/${page} lands in ${want}`);
@@ -106,9 +106,9 @@ test('Journey is everyone: People, Journey and Outcomes are one screen, and ther
 
 // Q38 centred the Help center link under the theme switch; Q53 (the owner, 05.10.2026: "Now, Help Center, lets move the
 // tab of it out of settings and under the settings.") makes it a menu item, so the small link in the menu foot is gone.
-test('Q53: no Help center link in the menu foot; it is a menu item under Settings', () => {
+test('Q53: no Help center link in the menu foot; it is the menu item at the foot (Settings left 06.10.2026)', () => {
   const nav = APP.slice(APP.indexOf('<nav'), APP.indexOf('</nav>'));
   assert.doesNotMatch(nav, /<div class="c-foot">/, 'not there twice');
   assert.doesNotMatch(APP, /html\.ui-c \.shell > nav \.c-foot\{max-width/, 'its menu-foot style went with it');
-  assert.match(APP, /<a href="#\/help" data-c="help" id="cnHelp" class="c-navfoot c-navhelp">\$\{C_ICON\.help\}<span>Help center<\/span><\/a>/);
+  assert.match(APP, /<a href="#\/help" data-c="help" id="cnHelp" class="c-navfoot">\$\{C_ICON\.help\}<span>Help center<\/span><\/a>/);
 });

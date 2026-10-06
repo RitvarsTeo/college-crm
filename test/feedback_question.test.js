@@ -32,8 +32,8 @@ test('both inboxes name a question as a question', () => {
   assert.equal((APP.match(/\$\{FB_KIND_LABEL\[r\.kind\] \|\| 'An idea'\}/g) || []).length, 2);
 });
 
-test('"Report a problem" opens the box on Something broken, in Settings and in the Help center', () => {
-  assert.match(APP, /onclick="fbOpen\('BUG'\)"><div class="c-who"><b>Report a problem or an idea<\/b>/);
+test('"Report a problem" opens the box on Something broken, in the Help center (Settings left on 06.10.2026)', () => {
+  assert.doesNotMatch(APP, /<b>Report a problem or an idea<\/b>/, 'no second entry: the Help center has the one');
   assert.match(APP, /onclick="fbOpen\('BUG'\)">Report a problem<\/button>/);
   assert.match(APP, /function fbOpen\(kind, text\) \{\s*FB\.open = true; FB\.view = 'form';/);
 });

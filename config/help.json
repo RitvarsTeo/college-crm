@@ -131,7 +131,7 @@
     {
       "id": "light-dark-system",
       "q": "Light, dark or system?",
-      "a": "Use the switch at the bottom of the menu, or in Settings. System follows your computer, and changes when it does. The choice is remembered on this device."
+      "a": "Use the switch at the bottom of the menu. System follows your computer, and changes when it does. The choice is remembered on this device."
     },
     {
       "id": "install-as-app",

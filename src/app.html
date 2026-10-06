@@ -1059,6 +1059,11 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
     html.ui-c .c-pagefoot{padding-bottom:150px}
   }
   /* Settings sections and the Help center */
+  html.ui-c .c-helpadmin{display:flex;flex-wrap:wrap;gap:8px}
+  html.ui-c .c-helpadmin a{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border:1px solid var(--rule);border-radius:999px;
+    background:var(--surface);color:var(--ink);font-size:13px;font-weight:600;text-decoration:none}
+  html.ui-c .c-helpadmin a:hover{border-color:var(--control-line)}
+  html.ui-c .c-helpadmin b{font-size:11.5px;font-weight:700;color:var(--t2)}
   html.ui-c .c-set-h{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);margin:22px 0 8px}
   html.ui-c .c-set-theme{cursor:default}
   html.ui-c .c-crumb a{color:inherit}
@@ -1969,9 +1974,8 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c #view .c-who small, html.ui-c #view .c-nnote, html.ui-c #view .c-cardsub, html.ui-c #view .c-jp small.c-jnote{font-size:var(--type-detail)}
   html.ui-c #view .c-todaystrip span, html.ui-c #view .c-planned small, html.ui-c #view .kstrip > div > small, html.ui-c #view .kneed span{font-size:var(--type-label);font-weight:600}
   html.ui-c #view .c-when, html.ui-c #view .c-jp small.c-jdue{font-size:var(--type-chip)}
-  /* Settings is not one of the four. It sits at the foot, behind a rule, for admins. */
+  /* The Help center is not one of the four. It sits at the foot, behind a rule. */
   html.ui-c .cnav a.c-navfoot{margin-top:auto;border-top:1px solid var(--rule2);padding-top:10px}
-  html.ui-c .cnav a.c-navfoot.c-navhelp{margin-top:0;border-top:0;padding-top:7px}   /* Q53: Help center sits right under Settings, the same style, one rule above both */
   html.ui-c .c-jfilters{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-6px 0 14px}
   html.ui-c .c-jf-ico{width:16px;height:16px;flex:0 0 16px;fill:none;stroke:var(--t3);stroke-width:1.6;stroke-linejoin:round}
   html.ui-c .c-jf{display:inline-flex;align-items:center;gap:4px;height:32px;padding:0 0 0 10px;border:1px solid var(--control-line);
@@ -2645,9 +2649,10 @@ function installCNav() {
       <a href="#/today" data-c="today" title="What needs my attention today"><span>Today</span><span class="n" id="cnNext"></span></a>
       <a href="#/journey" data-c="people" title="Everyone, by where they are in the journey"><span>Journey</span><span class="n" id="cnJourney"></span></a></div>
     <a href="#/reports" data-c="reports" title="What is happening">${C_ICON.rep}<span>Reports</span></a>
-    <a href="#/settings" data-c="settings" id="cnSettings" class="c-navfoot">${C_ICON.set}<span>Settings</span></a>
-    <!-- Q53 (the owner, 05.10.2026): "Now, Help Center, lets move the tab of it out of settings and under the settings." -->
-    <a href="#/help" data-c="help" id="cnHelp" class="c-navfoot c-navhelp">${C_ICON.help}<span>Help center</span></a>
+    <!-- No Settings (the owner, 06.10.2026: "whats the point of settings please tell me!?!! ... the light switch is
+         already on the card and tell about problem is helps job"). The Help center is the foot of the menu; its
+         admin items moved there. -->
+    <a href="#/help" data-c="help" id="cnHelp" class="c-navfoot">${C_ICON.help}<span>Help center</span></a>
   </div>`);
   installCTabs();
   installCScope();
@@ -2751,7 +2756,7 @@ function installCTabs() {
     <button type="button" data-t="more" aria-haspopup="dialog" aria-expanded="false" onclick="cMoreOpen()">${C_ICON.more}<span>More</span></button></div>
   <div class="cmore" id="cMore" hidden><div class="cmore-back" onclick="cMoreClose()"></div>
     <div class="cmore-sheet" role="dialog" aria-modal="true" aria-label="More">
-      ${row('#/reports', C_ICON.rep, 'Reports')}${row('#/settings', C_ICON.set, 'Settings')}${row('#/help', C_ICON.help, 'Help')}</div></div>`);
+      ${row('#/reports', C_ICON.rep, 'Reports')}${row('#/help', C_ICON.help, 'Help')}</div></div>`);
   // the counts are the left card's own: copied whenever it changes, so the two can never disagree. innerHTML, because
   // a count is "N new / total" (Q39)
   for (const [from, to] of [['#cnLeads', '#ctLeads'], ['#cnNext', '#ctNext'], ['#cnJourney', '#ctJourney']]) {
@@ -2783,8 +2788,9 @@ function cPlace(page) {
     leads: 'leads', inbox: 'leads', car: 'leads', admissions: 'leads',   // Admissions opens its first child, the Inbox (Q51)
     people: 'people', person: 'people', journey: 'people', outcomes: 'people',
     reports: 'reports', funnel: 'reports', metrics: 'reports',
-    settings: 'settings', channels: 'settings', feedback: 'settings',
-    help: 'help' })[page || ''];   // Q53: the Help center is its own place, under Settings, no longer inside it
+    // 06.10.2026: Settings is gone; an old #/settings link opens the Help center, which holds the admin items
+    settings: 'help', channels: 'help', feedback: 'help',
+    help: 'help' })[page || ''];
 }
 function markCNav(page) {
   const place = cPlace(page);
@@ -2802,9 +2808,6 @@ function markCNav(page) {
   // on a phone the menu is one sideways row: bring the place you are in into view (the deepest one lit)
   setTimeout(() => { const here = [...document.querySelectorAll('.cnav a.on')].pop(); const row = document.querySelector('.cnav');
     if (here && row && row.scrollWidth > row.clientWidth) row.scrollLeft = Math.max(0, here.offsetLeft - row.offsetLeft - 24); }, 60);
-  // Settings is for everybody since 28.09.2026: the theme lives there (the Help center has its own item under it, Q53).
-  // Only its admin section is for admins.
-  const s = document.querySelector('#cnSettings'); if (s) s.style.display = '';
   cSpine();
   cNavCounts();
 }
@@ -2911,8 +2914,7 @@ async function routeC(page, arg) {
   // ONE JOURNEY (Q47): #/people, #/people/all, #/journey and #/outcomes all open the Journey, on the right column.
   if (place === 'people') return cPoolRouteJourney(page);
   if (place === 'today') return viewTodayC();
-  if (page === 'help') return viewHelpC();
-  if (place === 'settings') return viewSettingsC();
+  if (place === 'help') return viewHelpC();
   return viewHomeC();                      // Home, and anything unknown
 }
 
@@ -3500,30 +3502,19 @@ async function viewOutcomesC() {
   return cPoolRouteJourney('journey');
 }
 
-// -------------------------------------------------------------------- SETTINGS
-async function viewSettingsC() {
-  const item = (href, t, d, right = '›') => `<div class="c-line" tabindex="0" onclick="location.href='${href}'"><div class="c-who"><b>${t}</b>${d ? `<small>${d}</small>` : ''}</div><div class="c-when">${right}</div></div>`;
-  let admin = '';
-  if (isAdmin()) {
-    const people = await cPeopleRows();
-    const known = new Set(CFG.programmes || []);
-    const odd = people.filter((p) => p.programme && !known.has(p.programme)).length;
-    admin = `<h2 class="c-set-h">For admins</h2>
-    <div class="c-sheet c-set">
-      ${item('#/channels', 'Channels', '')}
-      ${item('#/feedback', 'Feedback received', '')}
-      ${item('#/reports', 'Reports', '')}
-      ${item('#/people', 'Data to tidy', `${odd} not in the list`)}
-    </div>`;
-  }
-  $('#view').innerHTML = `<div class="c-head"><div><h1>Settings</h1></div></div>
-    <h2 class="c-set-h">Appearance</h2>
-    <div class="c-sheet c-set"><div class="c-line c-set-theme"><div class="c-who"><b>Light or dark</b></div><div>${themeSwitchHtml()}</div></div></div>
-    <h2 class="c-set-h">Help</h2>
-    <div class="c-sheet c-set">
-      <div class="c-line" tabindex="0" onclick="fbOpen('BUG')"><div class="c-who"><b>Report a problem or an idea</b></div><div class="c-when">›</div></div>
-    </div>
-    ${admin}`;
+// -------------------------------------------------------------------- FOR ADMINS
+// Settings was dropped on 06.10.2026 (the owner: "whats the point of settings ... plus whtf is this layout mega
+// horizontal cards for few words?"). Light or dark is the switch on the left card; reporting a problem is the Help
+// center's; the three admin items are a small group at the foot of the Help center, for admins only.
+async function cHelpAdmin() {
+  const box = document.querySelector('#helpAdmin');
+  if (!box || !isAdmin()) return;
+  const people = await cPeopleRows();
+  const known = new Set(CFG.programmes || []);
+  const odd = people.filter((p) => p.programme && !known.has(p.programme)).length;
+  box.innerHTML = `<h2 class="c-set-h">For admins</h2><div class="c-helpadmin">
+    <a href="#/channels">Channels</a><a href="#/feedback">Feedback received</a>
+    <a href="#/people">Data to tidy${odd ? ` <b>${odd}</b>` : ''}</a></div>`;
 }
 
 // ------------------------------------------------------------------ HELP CENTER
@@ -3567,7 +3558,9 @@ function viewHelpC() {
       <button class="btn" onclick="fbOpen('BUG')">Report a problem</button></div></div>
     ${cHelpFlow()}${cHelpHowTo()}
     <h2 class="c-set-h">Questions and answers</h2>
-    <div id="helpFaq" class="c-helpfaq"></div>`;
+    <div id="helpFaq" class="c-helpfaq"></div>
+    <div id="helpAdmin"></div>`;
+  cHelpAdmin();
   // dev kit part 3: search, the questions in the order of config/help.json (never by opens), "Ask a
   // question" into the SAME feedback box on A question, with what was searched already in it
   if (window.HelpCenter) HelpCenter.mount(document.getElementById('helpFaq'), {
@@ -5311,7 +5304,7 @@ function cAppScene() {
 let C_FB_SHOW = 'open';
 async function viewFeedbackC() {
   if (!mayReadFeedback()) {
-    $('#view').innerHTML = `<p class="c-crumb"><a href="#/settings">Settings</a></p><div class="c-head"><div><h1>Feedback</h1>
+    $('#view').innerHTML = `<p class="c-crumb"><a href="#/help">Help center</a></p><div class="c-head"><div><h1>Feedback</h1>
       <p>This inbox is read by ${esc(fbReaders())} and by nobody else. ${AUTH.user ? `You are signed in as ${esc(AUTH.user.name)}` : `You are acting as ${esc(ACTOR)}`}, so it is not shown. Being an admin is not enough: feedback has its own shorter list.</p></div></div>`;
     return;
   }
@@ -5326,7 +5319,7 @@ async function viewFeedbackC() {
       <div class="c-fb-body">${esc(r.body)}</div>
       ${r.screenshot ? `<img class="c-fb-shot" src="/api/admin/feedback/${Number(r.id)}/screenshot?as=${encodeURIComponent(ACTOR)}" alt="Screenshot sent with this feedback" onclick="fbZoom(${Number(r.id)})">` : ''}
     </div>`;
-  $('#view').innerHTML = `<p class="c-crumb"><a href="#/settings">Settings</a></p>
+  $('#view').innerHTML = `<p class="c-crumb"><a href="#/help">Help center</a></p>
     <div class="c-head"><div><h1>Feedback</h1></div></div>
     <div class="c-seg" role="group" aria-label="Show"><button aria-pressed="${C_FB_SHOW === 'open'}" onclick="C_FB_SHOW='open';viewFeedbackC()">Open ${open.length}</button><button aria-pressed="${C_FB_SHOW !== 'open'}" onclick="C_FB_SHOW='handled';viewFeedbackC()">Handled ${done.length}</button></div>
     <div class="c-sheet">${list.map(item).join('') || `<div class="c-empty">${C_FB_SHOW === 'open' ? (rows.length ? 'Nothing open. Everything sent has been handled.' : 'Nothing has been sent yet.') : 'Nothing handled yet.'}</div>`}</div>`;
@@ -7559,7 +7552,7 @@ async function viewChannels(which) {
   const env = d.environment || null;
   const ctx = { schedule: d.schedule, runs: d.runs, sis: d.sis, filtersAll: d.filtersAll };
   // Q28 (05.10.2026): centred white cards, the shared cards rule (.c-sheet); the title where every page has it.
-  $('#view').innerHTML = `<p class="c-crumb">Settings</p><div class="c-head"><div><h1>Channels</h1></div></div>
+  $('#view').innerHTML = `<p class="c-crumb"><a href="#/help">Help center</a></p><div class="c-head"><div><h1>Channels</h1></div></div>
     <div class="c-sheet c-chcard chinfo">${chListHtml(d.channels || [], env, ctx)}</div>
     ${chSisHtml(chSisFacts(d.channels || [], env, ctx))}
     ${chFilterHtml()}`;

@@ -90,7 +90,7 @@ test('the menu: Home, Admissions (Inbox, Today, Journey with their counts), Repo
   assert.deepEqual([...tabs.matchAll(/tab\('(#\/[a-z]+)', '[a-z]+', C_ICON\.[a-z]+, '([A-Za-z]+)'/g)].map((m) => m[2]), ['Home', 'Inbox', 'Today', 'Journey']);
 });
 
-test('lit: a child lights itself and Admissions; Home, Reports, Settings and Help center light alone', () => {
+test('lit: a child lights itself and Admissions; Home, Reports and the Help center light alone', () => {
   const ctx = {};
   vm.runInNewContext(fnBody('function cPlace(') + `
     var litFor = (page) => { const place = cPlace(page); ` +
@@ -103,8 +103,9 @@ test('lit: a child lights itself and Admissions; Home, Reports, Settings and Hel
   assert.deepEqual([...ctx.litFor('outcomes')], ['admissions', 'people']);
   assert.deepEqual([...ctx.litFor('home')], ['home']);
   assert.deepEqual([...ctx.litFor('reports')], ['reports']);
-  assert.deepEqual([...ctx.litFor('settings')], ['settings']);
-  assert.deepEqual([...ctx.litFor('help')], ['help'], 'Q53: the Help center lights itself, not Settings');
+  assert.deepEqual([...ctx.litFor('settings')], ['help'], 'an old #/settings lights the Help center (06.10.2026)');
+  assert.deepEqual([...ctx.litFor('channels')], ['help'], 'the admin pages sit under the Help center');
+  assert.deepEqual([...ctx.litFor('help')], ['help']);
 });
 
 test('the spine: only Home, Admissions and Reports carry icons, so it runs Home > Admissions > (under the children) > Reports and nowhere else', () => {
@@ -112,8 +113,8 @@ test('the spine: only Home, Admissions and Reports carry icons, so it runs Home 
   const kids = nav.slice(nav.indexOf('<div class="kids">'), nav.indexOf('</div>', nav.indexOf('<div class="kids">')));
   assert.doesNotMatch(kids, /\$\{C_ICON\./, 'the children carry no icon, so no spine piece starts or stops between them');
   const top = [...nav.replace(kids, '').matchAll(/<a href="(#\/[a-z]+)"[^>]*>\$\{C_ICON\.[a-z]+\}/g)].map((m) => m[1]);
-  assert.deepEqual(top, ['#/home', '#/admissions', '#/reports', '#/settings', '#/help'], 'Q53: Help center directly under Settings');
+  assert.deepEqual(top, ['#/home', '#/admissions', '#/reports', '#/help'], 'the Help center is the foot (Settings left on 06.10.2026)');
   const spine = fnBody('function cSpine(');
-  assert.match(spine, /nav\.querySelectorAll\(':scope > a:not\(\.c-navfoot\) > svg'\)/, 'top-level icons only, Settings off the line');
+  assert.match(spine, /nav\.querySelectorAll\(':scope > a:not\(\.c-navfoot\) > svg'\)/, 'top-level icons only, the foot off the line');
   assert.match(spine, /for \(let k = 0; k < icons\.length - 1; k\+\+\)/, 'one segment per consecutive pair, nothing more');
 });
