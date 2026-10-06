@@ -265,13 +265,15 @@ test('sis: one matching person by email moves forward by themselves', async () =
   assert.equal(move.origin, 'automatic');
 });
 
-test('sis: admitted moves the person to Admitted and stamps the day', async () => {
+// Ritvars, 06.10.2026: the admission is dated by the SIS record itself (its submit date), never the run.
+test('sis: admitted moves the person to Admitted and stamps the date of the SIS record, not of the run', async () => {
   const db = await fresh();
   const p = await person(db, { phone: '20000000', status: 'Contract' });
   await syncSis(db, { now: NOW, env: ON, fetchImpl: fakeSis([[app({ status: 'admitted' })]]).fetchImpl });
   const row = await db.prepare('SELECT status, admitted_at FROM people WHERE id = ?').get(p.id);
   assert.equal(row.status, 'Admitted');
-  assert.equal(row.admitted_at, NOW.toISOString());
+  assert.equal(row.admitted_at, '2026-09-28T07:58:02.000Z');
+  assert.notEqual(row.admitted_at, NOW.toISOString());
 });
 
 test('sis: a stage never moves backwards, and a closed person is never reopened', async () => {

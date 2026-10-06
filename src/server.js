@@ -43,6 +43,7 @@ import { bootstrapIfAuthOn } from './bootstrap.js';
 import * as channeladmin from './channeladmin.js';
 import { todayStart, tomorrowStart, localDate } from './bizday.js';
 import { receiveSisApplication, mergeSisDuplicate, syncSis, channelMode, SIS_STAGE } from './sync.js';
+import { redateSisAdmissions } from './sisdates.js';
 
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -1141,6 +1142,19 @@ export const handle = async (req, res) => {
         return json(res, 200, { ok: false, ran: true, channel: 'sis', status: err && err.status || null,
           error: redactSis(err && err.message ? err.message : 'the SIS run failed', process.env.SIS_API_TOKEN) });
       }
+    }
+    // THE ONE-OFF RE-DATE (Ritvars, 06.10.2026): the people the SIS pull made Admitted on the day it ran
+    // get their real SIS admission date (src/sisdates.js). Admins only. GET is the DRY RUN and writes
+    // nothing; POST writes only with {"apply": true}. Both answer counts by year, never a person.
+    // ?day=YYYY-MM-DD (repeatable) or {"days": [...]} names the pull days; 2026-10-06 when not given.
+    if (p === '/api/admin/sis/redate' && (req.method === 'GET' || req.method === 'POST')) {
+      const me = await adminOf(req);
+      if (!me) return refuseNotAdmin(res);
+      const b = req.method === 'POST' ? await body(req) : {};
+      const days = Array.isArray(b.days) ? b.days : url.searchParams.getAll('day');
+      const r = await redateSisAdmissions(db, { apply: req.method === 'POST' && b.apply === true,
+        by: me.name || me.email || 'admin', days: days.length ? days : undefined });
+      return json(res, r.ok ? 200 : 400, r);
     }
     // The live check against the real SIS: pages, since, refusals, web stats (src/sischeck.js).
     if (req.method === 'GET' && p === '/api/admin/sis/check') {

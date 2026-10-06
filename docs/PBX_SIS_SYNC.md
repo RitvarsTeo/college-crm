@@ -58,3 +58,44 @@ each run of their job. What reached a person's timeline stays with the person.
   schema like every other; the sync SQL itself has not run against Postgres until step 3.
 - `config/channels.json` still describes the old phone destination and has no SIS entry; that file
   carries another session's uncommitted edits, so it is updated after they land.
+
+## The SIS's own date (06.10.2026)
+
+Decided by Ritvars 06.10.2026. When the pull sets or moves a person to Admitted from an SIS status (admitted,
+matriculated), `admitted_at` is the SIS record's own date: an admission/matriculation date if the SIS ever sends
+one (`matriculatedAt` or `admittedAt`, stored in `sis_applicants.admitted_on`), else `submittedAt`. Never
+`changedAt` and never the time of the run. A person the SIS creates arrives (`created_at`) on the earliest SIS
+date and never after the admission. An admitted/matriculated record with no usable date makes no person and no
+Inbox item: it stays in `sis_applicants` and the run detail (`sync_state`, name `sis`) counts it as `undated`.
+The code is `src/sisdates.js` and `src/sync.js`; the tests are `test/sis_real_dates.test.js`.
+
+## Re-dating the 06.10 SIS people (production, one-off)
+
+The pull of 06.10.2026 made 489 people Admitted on its own clock. The re-date gives them their SIS date. It only
+touches a person who has ALL of: `first_channel = 'sis'`, status Admitted, `admitted_at` on the pull day (Riga),
+`admitted_at` equal to the `recorded_at` of one of their own SIS lifecycle facts (the old pull's fingerprint), and
+an admitted/matriculated SIS row. Nobody else, ever. Answers are counts only.
+
+Steps, in this order (MASTER CONTROL, after the release that carries this code is deployed):
+
+1. Backup first: the usual backup into `_backups/` (it must say VERIFIED).
+2. DRY RUN, writes nothing. Signed in as an admin, open in the browser:
+   `https://crm-novikontas.vercel.app/api/admin/sis/redate`
+   Expect (from the 06.10 backup): `found` 489, `byYear` 2012..2026, `stayThisYear` 46, `moveToEarlierYears`
+   443, `noDateLeft` 0, `notTouchedExistingPeople.count` 1, `changed` 0. If the old code ran the daily pull
+   again before the deploy and made more people, name every pull day:
+   `.../api/admin/sis/redate?day=2026-10-06&day=2026-10-07`.
+3. Show Ritvars the dry-run counts. The real run ONLY after his yes.
+4. APPLY. In the same signed-in browser tab, developer console:
+   ```js
+   await fetch('/api/admin/sis/redate', { method: 'POST', headers: { 'content-type': 'application/json' },
+     body: JSON.stringify({ apply: true }) }).then((r) => r.json())
+   ```
+   (add `days: ['2026-10-06', '2026-10-07']` to the body if step 2 needed a second day).
+   Expect `changed` = `found` - `noDateLeft`. A POST without `"apply": true` is still a dry run.
+5. Check: open the GET of step 2 again: `found` 0 (or only the no-date ones), `changed` 0. Home "Admitted 2026"
+   drops by `moveToEarlierYears` (backup: 565 -> 122). A re-dated person's History shows
+   "Admission date set from SIS: <date>", by the admin who ran it.
+
+Undo: the History line of each person holds the old and the new date (field `admitted_at`); the backup of step 1
+is the full way back.

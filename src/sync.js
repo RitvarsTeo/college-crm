@@ -22,6 +22,8 @@ import { fetchChanged, toSisRow } from '../lib/sis.js';
 import { runPoll as gmailPoll, loadGmailRefreshToken } from '../lib/gmail.js';
 import { adapt, toIntake } from './adapters.js';
 import { recordSisLifecycle } from './lifecycle.js';
+import { sisAdmissionDate } from './sisdates.js';
+import { localDate } from './bizday.js';
 
 const nowIso = () => new Date().toISOString();
 
@@ -260,7 +262,10 @@ export const SIS_STAGE = {
 
 const STAGE_ORDER = () => CONFIG.stageOrder || ['New', 'Contacted', 'Follow-up', 'Application', 'Contract', 'Admitted'];
 
-async function advanceTo(db, personId, target, at, why) {
+// admittedAt is the SIS's own admission date (src/sisdates.js), never the time of the run (Ritvars,
+// 06.10.2026). When the SIS does not date it, the stage still moves and admitted_at stays empty: Home
+// shows that person as "no admission date" rather than in the year the pull happened to run.
+async function advanceTo(db, personId, target, at, why, admittedAt = null) {
   const person = await db.prepare('SELECT status FROM people WHERE id = ?').get(personId);
   if (!person || !target) return null;
   const order = STAGE_ORDER();
@@ -268,11 +273,13 @@ async function advanceTo(db, personId, target, at, why) {
   const to = order.indexOf(target);
   if (person.status === 'Not proceeding' || to < 0 || (from >= 0 && to <= from)) return null;
   await db.prepare('UPDATE people SET status = ? WHERE id = ?').run(target, personId);
-  if (target === 'Admitted') {
-    await db.prepare('UPDATE people SET admitted_at = COALESCE(admitted_at, ?) WHERE id = ?').run(at, personId);
+  if (target === 'Admitted' && admittedAt) {
+    await db.prepare('UPDATE people SET admitted_at = COALESCE(admitted_at, ?) WHERE id = ?').run(admittedAt, personId);
   }
+  const dated = target === 'Admitted' ? (admittedAt ? `; admission date from the SIS: ${localDate(admittedAt)}`
+    : '; the SIS gives no admission date') : '';
   await logEvent(db, { personId, kind: 'status', direction: 'note', at, origin: AUTOMATIC, actor: 'SIS',
-    subject: `Status: ${person.status} -> ${target}`, body: why,
+    subject: `Status: ${person.status} -> ${target}`, body: why + dated,
     field: 'status', oldValue: person.status, newValue: target });
   return { from: person.status, to: target };
 }
@@ -305,8 +312,10 @@ async function applyToPerson(db, reference, personId, at, stats) {
     const t = SIS_STAGE[r.status];
     if (t && (target === null || order.indexOf(t) > order.indexOf(target))) target = t;
   }
-  const moved = await advanceTo(db, personId, target, at, 'from the SIS: ' + rows.map(sisSentence).join('; '));
+  const admittedAt = target === 'Admitted' ? sisAdmissionDate(rows) : null;
+  const moved = await advanceTo(db, personId, target, at, 'from the SIS: ' + rows.map(sisSentence).join('; '), admittedAt);
   if (moved) stats.moved++;
+  if (moved && target === 'Admitted' && !admittedAt) stats.undated = (stats.undated || 0) + 1;
   // The lifecycle facts ("Application form started", "Matriculated") each row states, dated and
   // written once (src/lifecycle.js holds the PROVISIONAL mapping; docs/LIFECYCLE.md). Facts, not stages.
   for (const r of rows) stats.facts += await recordSisLifecycle(db, personId, r, { now: new Date(at) });
@@ -341,6 +350,11 @@ async function createFromSis(db, reference, rows, at, mode, stats) {
     if (t && order.indexOf(t) > order.indexOf(stage)) { stage = t; lead = r; }
   }
   const latest = rows[0];
+  // NO DATE, NO PERSON (Ritvars, 06.10.2026: "have to be sure, which one to not make a recycle bin").
+  // An admitted or matriculated record the SIS does not date stays in sis_applicants, counted as
+  // undated in the run's detail; nothing else is written, so a later record with a date still can.
+  const admittedAt = stage === CONFIG.stageRoles.admitted ? sisAdmissionDate(rows) : null;
+  if (stage === CONFIG.stageRoles.admitted && !admittedAt) { stats.undated = (stats.undated || 0) + 1; return null; }
   // The door is claimed first: the unique (channel, external_id) index makes a second run, or the
   // webhook racing the daily pull, a repeat rather than a second person.
   const item = await receive(db, { channel: 'sis', externalId: 'sis:' + reference, receivedAt: at,
@@ -348,12 +362,15 @@ async function createFromSis(db, reference, rows, at, mode, stats) {
     body: rows.map(sisSentence).join('; '), source: mode === 'live' ? 'provider' : 'simulated' });
   if (item.duplicate) return null;
 
-  const firstSeen = rows.map((r) => r.registered_at || r.changed_at).filter(Boolean).sort()[0] || at;
+  // Arrival is the SIS's own date, never the run's: the earliest the SIS shows them, and never after
+  // their admission (a student the SIS loaded in 2026 but admitted in 2015 arrived by 2015).
+  const firstSeen = [...rows.map((r) => r.registered_at || r.changed_at), admittedAt]
+    .filter((v) => v && !Number.isNaN(Date.parse(v))).map((v) => new Date(v).toISOString()).sort()[0] || at;
   const id = newPersonId();
   await db.prepare(`INSERT INTO people (id, name, email, phone, programme, status, owner, source_channel,
     created_at, last_contact_at, admitted_at, qualification, first_channel) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(
     id, fullName(latest) || 'Unknown contact', latest.email, latest.phone, lead.programme_code, stage,
-    ownerFor('lead'), 'sis', firstSeen, latest.changed_at, stage === CONFIG.stageRoles.admitted ? at : null,
+    ownerFor('lead'), 'sis', firstSeen, latest.changed_at, admittedAt,
     'lead', 'sis');
   await logEvent(db, { personId: id, kind: 'create', channel: 'sis', direction: 'in', at, origin: AUTOMATIC,
     actor: 'SIS', subject: 'Created from the SIS', body: rows.map(sisSentence).join('; ') });
@@ -491,15 +508,15 @@ async function storeSisRow(db, r, at, stats) {
     .get(r.reference, r.application_id);
   if (old && old.changed_at >= r.changed_at) return false;
   await db.prepare(`INSERT INTO sis_applicants (reference, application_id, given_name, family_name, email,
-    phone, programme_code, status, registered_at, submitted_at, changed_at, synced_at)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+    phone, programme_code, status, registered_at, submitted_at, changed_at, admitted_on, synced_at)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
     ON CONFLICT (reference, application_id) DO UPDATE SET given_name = excluded.given_name,
     family_name = excluded.family_name, email = excluded.email, phone = excluded.phone,
     programme_code = excluded.programme_code, status = excluded.status,
     registered_at = excluded.registered_at, submitted_at = excluded.submitted_at,
-    changed_at = excluded.changed_at, synced_at = excluded.synced_at`).run(
+    changed_at = excluded.changed_at, admitted_on = excluded.admitted_on, synced_at = excluded.synced_at`).run(
     r.reference, r.application_id, r.given_name, r.family_name, r.email, r.phone, r.programme_code,
-    r.status, r.registered_at, r.submitted_at, r.changed_at, at);
+    r.status, r.registered_at, r.submitted_at, r.changed_at, r.admitted_on || null, at);
   stats.stored++;
   // a closing status on a person we already know goes on their timeline
   if (old && old.person_id && old.status !== r.status && !SIS_STAGE[r.status]) {
@@ -520,10 +537,11 @@ export async function receiveSisApplication(db, raw, { now = new Date(), env = p
   let r;
   try { r = toSisRow(raw); } catch (err) { return { ok: false, status: 400, error: err.message }; }
   const at = now.toISOString();
-  const stats = { stored: 0, linked: 0, moved: 0, inbox: 0, created: 0, noted: 0, facts: 0 };
+  const stats = { stored: 0, linked: 0, moved: 0, inbox: 0, created: 0, noted: 0, facts: 0, undated: 0 };
   if (!(await storeSisRow(db, r, at, stats))) return { ok: true, outcome: 'repeat', mode };
   await placeSisReference(db, r.reference, { at, mode, stats });
   const outcome = stats.created ? 'created'
+    : stats.undated && !stats.linked && !stats.moved ? 'undated'
     : stats.linked || stats.moved || stats.facts || stats.noted ? 'linked'
       : stats.inbox ? 'waiting' : 'repeat';
   return { ok: true, outcome, mode };
@@ -537,8 +555,9 @@ export async function syncSis(db, { now = new Date(), env = process.env, fetchIm
   const state = await db.prepare("SELECT value FROM sync_state WHERE name = 'sis'").get();
   const since = state && state.value ? state.value : null;
   const got = await fetchChanged({ since, env, fetchImpl });
+  // undated: SIS records held with no usable admission date, so no person was made (06.10.2026)
   const stats = { fetched: got.applicants.length, stored: 0, unusable: 0, linked: 0, moved: 0, inbox: 0,
-    created: 0, noted: 0, facts: 0, pages: got.pages };
+    created: 0, noted: 0, facts: 0, undated: 0, pages: got.pages };
   let newest = since;
   const touched = new Set();
 

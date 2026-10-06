@@ -96,7 +96,8 @@ test('application-first: matriculated straight away -> Admitted, both facts', as
   await run(db, [app({ status: 'matriculated', submittedAt: '2026-09-20T10:00:00.000Z' })]);
   const [p] = await people(db);
   assert.equal(p.status, 'Admitted');
-  assert.equal(p.admitted_at, NOW.toISOString());
+  assert.equal(p.admitted_at, '2026-09-20T10:00:00.000Z', 'the SIS date, never the run (06.10.2026)');
+  assert.equal(p.created_at, '2026-09-20T10:00:00.000Z', 'arrival is never after the admission');
   assert.deepEqual((await lifecycleOf(db, p.id)).map((f) => f.fact), ['form_started', 'matriculated']);
 });
 

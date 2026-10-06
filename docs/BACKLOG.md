@@ -14,6 +14,37 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 06.10.2026 - SIS students carry their real SIS date, never the day of the pull
+
+What happened (production backup 2026-10-06T06-15-05Z, counts only): on 05.10 the SIS bulk-loaded its existing
+students (status matriculated, real SIS submit dates 2012..2026). The pull of 06.10 05:31Z made 489 Intake people
+out of them, all Admitted with admitted_at = the pull's own clock, so Home's "Admitted 2026" read 565-569 against 140.
+
+Ritvars 06.10, decided:
+- "Re-date the 489 to their real SIS date. The 49 whose SIS date is in 2026 count as 2026 admissions."
+- "From now on the pull uses the record's real date, never the day the pull ran."
+- "Have to be sure, which one to not make a recycle bin": only a record the SIS clearly dates becomes a person.
+
+Built (branch fix/2026-10-06-sis-real-dates, src/sisdates.js):
+- The pull: admitted_at = the SIS's own admission/matriculation date if it ever sends one (new column
+  sis_applicants.admitted_on, from matriculatedAt/admittedAt), else submittedAt. Never changedAt, never the run.
+  A person the SIS creates arrives (created_at) on the earliest SIS date, never after the admission.
+- No usable date: an admitted/matriculated record makes NO person and NO Inbox item; the row stays in
+  sis_applicants and the run detail counts it as `undated`. A person Intake already had still moves to
+  Admitted, with admitted_at left empty (Home's "no admission date"), and the History line says so.
+- The one-off re-date, admins only: GET /api/admin/sis/redate = dry run (writes nothing, counts by year);
+  POST {"apply": true} = the real run. Touches only people the SIS created whose admitted_at is the old pull's
+  own clock on 2026-10-06 (it equals the recorded_at of their own SIS lifecycle fact). One History line each:
+  "Admission date set from SIS: <date>". Idempotent: a second apply finds nobody.
+- Dry run on the production backup, in memory: 489 found; by year 2012 10, 2013 10, 2014 12, 2015 13, 2016 31,
+  2017 25, 2018 31, 2019 18, 2020 33, 2021 34, 2022 31, 2023 56, 2024 80, 2025 59, 2026 46; 443 move to
+  earlier years, 46 stay 2026, 0 without a date. After apply: Admitted 2026 = 122 (was 565); apply again = 0.
+- NOT touched, for his decision: 1 person Intake already had, moved to Admitted by the same pull (SIS date 2014).
+- Lifecycle facts keep their own dates (Matriculated stays "by 05.10", the SIS's changedAt).
+- Tests: test/sis_real_dates.test.js (11); sync + application_first now expect the SIS date. 1232 green.
+- How to run it on production: docs/PBX_SIS_SYNC.md, "Re-dating the 06.10 SIS people". **BUILT, next patch.**
+  The apply runs only after Ritvars's yes.
+
 ## 05.10.2026 - Q54: the Help center carries the map of the app and how-to links
 
 Ritvars 05.10: "Also put in the help center the navigation of the app. Have a like a helper, how to where to, for

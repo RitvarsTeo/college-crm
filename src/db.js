@@ -378,6 +378,7 @@ CREATE TABLE IF NOT EXISTS sis_applicants (
   registered_at TEXT,
   submitted_at TEXT,
   changed_at TEXT NOT NULL,
+  admitted_on TEXT,              -- the SIS's own admission/matriculation date, if it ever sends one
   person_id TEXT,                -- the CRM person, once linked
   inbound_id INTEGER,            -- the Inbox item raised while nobody was linked
   synced_at TEXT NOT NULL,
@@ -427,6 +428,7 @@ const ADDED_COLUMNS = [
   ['inbound', 'attribution', 'TEXT'],
   ['inbound', 'consent', 'TEXT'],
   ['people', 'closed_tag', 'TEXT'],     // 02.10.2026, cold | reject: production's people table predates it
+  ['sis_applicants', 'admitted_on', 'TEXT'],   // 06.10.2026, the SIS's own admission date (src/sisdates.js)
 ];
 
 // ---------------------------------------------------------- the async layer --
