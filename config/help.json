@@ -96,7 +96,7 @@
     },
     {
       "do": "See one month",
-      "where": "Reports, the Whole year box",
+      "where": "Reports, the month choice beside the download",
       "href": "#/reports"
     }
   ],
@@ -151,7 +151,7 @@
     {
       "id": "home-numbers",
       "q": "Where do the Home numbers come from?",
-      "a": "From the people in Intake, counted for the years ticked in the Year filter, top right: this year when you open Intake, or any years together. Click a Home number to see it one level deeper, and the people it counts. On Reports, the Whole year box shows one month of those years instead. Download on the Journey or on Reports gives the figures as Excel, Google Sheets or CSV."
+      "a": "From the people in Intake, counted for the years ticked in the Year filter, top right: one or several whole years, and this year when you open Intake. Admitted counts by the admission date, everything else by the day someone arrived. Click a Home number to see it one level deeper, and the people it counts. A single month is chosen on Reports, in the month choice beside the download. Download on the Journey or on Reports gives the figures as Excel, Google Sheets or CSV."
     },
     {
       "id": "share-a-link",
