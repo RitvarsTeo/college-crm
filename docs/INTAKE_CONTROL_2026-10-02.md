@@ -493,3 +493,4 @@ MAIN `7086534`: Q57 Journey opens on the drag-and-drop board again (every route)
 
 ## 06.10 - NINETEENTH PATCH LIVE: `ee74c90` (code `107202b` merged), pushed
 Help center = the one flow (picked B), step 2 "New lead", card grid and three-steps cards removed. 1257/1257. `dpl_2WoWdUJGBhvVtKaztX57XqHSj3Bi`: byte-identical, 79/79, 8 private 401, 0 leaks.
+06.10: MAIN `c8bb304` removed the Journey "What comes next" section (Ritvars asked MAIN directly: "in the journey we have this part.. why? What is the purpose of this?" -> picked "Remove it"; 33 in "No group" on the default step label, 56 in "No next step" already on Today). Ships with Q59 + benchmarks A. Q59 re-sent to MAIN as NOW.
