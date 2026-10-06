@@ -844,7 +844,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
     --j-from:#1d4d7a;--j-to:#8fcbef;   /* the Journey's stage line in dark (the review #2) */
     --glass:linear-gradient(180deg,rgba(255,255,255,.06) 0%,rgba(255,255,255,.035) 100%);
     --glass-line:rgba(194,211,222,.18);
-    --sea:radial-gradient(120% 80% at 50% 0%,#17456e 0%,rgba(23,69,110,0) 60%),linear-gradient(180deg,#0f2f4f 0%,#0f2f4f 45%,#08182e 100%);--v-off:#bfe3f6}
+    --sea:radial-gradient(120% 80% at 50% 0%,#17456e 0%,rgba(23,69,110,0) 60%),linear-gradient(180deg,#0f2f4f 0%,#0f2f4f 45%,#08182e 100%);--v-off:#bfe3f6;--bm-band:#3f5f80;--bm-ring:var(--surface)}
   /* THE LIGHT SEA (the owner, 01.10.2026: "same way we have a gradient for the dark mode,
      lets have a gradient for the light version"). Dark takes the sign-in screen's sea:
      a glow from the top centre over a vertical deepening, #17456e -> #0f2f4f -> #08182e.
@@ -2169,6 +2169,30 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .rp .kbt i{background:var(--v-adm)}
   html.ui-c .rp .kbt i.gap{background:var(--v-np)}
   html.ui-c .rp .rp-rate .kbt i{background:var(--v-tgt)}
+  /* BENCHMARKS on Reports > Conversion (variant A, picked 06.10.2026): our matured step rate as a blue dot on the grey
+     "typical" band, the value above it, the working under the name, the source small under the band. Flat marks on a
+     hairline with 0 and 100% at its ends. Hollow dot and "~" under config benchmarks.minN people. */
+  html.ui-c{--bm-band:#c9d3de;--bm-ring:#fff}
+  html.ui-c .bm{padding:4px 2px 14px;margin-bottom:12px;border-bottom:1px solid var(--rule2)}
+  html.ui-c .bm-row{display:grid;grid-template-columns:200px minmax(0,1fr);gap:22px;align-items:center;padding:16px 0 10px}
+  html.ui-c .bm-row + .bm-row{border-top:1px solid var(--rule2)}
+  html.ui-c .bm-name b{display:block;font-size:14.5px;color:var(--ink)}
+  html.ui-c .bm-name small{display:block;margin-top:3px;color:var(--t3);font-size:12.5px;font-variant-numeric:tabular-nums}
+  html.ui-c .bm-trackbox{position:relative;height:74px;margin:0 48px 0 22px}
+  html.ui-c .bm-track{position:absolute;left:0;right:0;top:34px;height:2px;background:var(--bm-band)}
+  html.ui-c .bm-end{position:absolute;top:28px;font-size:11px;color:var(--t3);font-variant-numeric:tabular-nums}
+  html.ui-c .bm-0{left:-16px}
+  html.ui-c .bm-100{right:-42px}
+  html.ui-c .bm-band{position:absolute;top:27px;height:16px;min-width:3px;background:var(--bm-band);border-radius:3px}
+  html.ui-c .bm-bandl{position:absolute;top:47px;transform:translateX(-50%);white-space:nowrap;text-align:center;font-size:11.5px;color:var(--ink)}
+  html.ui-c .bm-bandl small{display:block;color:var(--t3);font-size:10.5px}
+  html.ui-c .bm-trackbox{cursor:pointer;outline:none;border-radius:6px}
+  html.ui-c .bm-dot{position:absolute;top:0;bottom:0;width:0;color:var(--ink)}
+  html.ui-c .bm-dot b{position:absolute;top:0;left:0;transform:translateX(-50%);font-weight:700;font-size:15px;white-space:nowrap;font-variant-numeric:tabular-nums}
+  html.ui-c .bm-dot i{position:absolute;top:26px;left:-9px;width:18px;height:18px;box-sizing:border-box;border-radius:99px;background:#29a8df;box-shadow:0 0 0 3px var(--bm-ring),0 1px 4px rgba(10,36,99,.3)}
+  html.ui-c .bm-dot.few i{background:var(--bm-ring);border:2.5px solid #29a8df}
+  html.ui-c .bm-trackbox:hover .bm-dot i,html.ui-c .bm-trackbox:focus-visible .bm-dot i,html.ui-c .bm-trackbox.hot .bm-dot i{box-shadow:0 0 0 3px var(--bm-ring),0 0 0 5px #29a8df}
+  @media (max-width:700px){ html.ui-c .bm-row{grid-template-columns:1fr;gap:6px} html.ui-c .bm-trackbox{margin:0 44px 0 18px} }
   html.ui-c .rp .rp-track{background:var(--c-sunk);border-radius:0 3px 3px 0}
   html.ui-c .rp-go{color:inherit;text-decoration:none;border-radius:3px}
   html.ui-c .rp-go:hover,html.ui-c .rp-go:focus-visible{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px;text-decoration-color:var(--v-adm)}
@@ -4944,10 +4968,15 @@ function cRepModel(r, people, cfg, today) {
   const conversion = {
     pct: pct(won.length, ripe.length), who, days: S.conversionDays,
     won: fig('conversion:admitted', `Leads · ${pw} · ${who} · admitted`, won), base: fig('conversion:matured', `Leads · ${pw} · ${who}`, ripe),
-    reachedApplication: fig('conversion:application', `Leads · ${pw} · reached Application or beyond`, arr.filter((p) => ['Application', 'Contract', 'Admitted'].includes(p.status))),
     stoppedAt: stops.map((id) => ({ value: id, ...fig(`conversion:now:${id}`, `Leads · ${pw} · now ${cStage(id)}`, arr.filter((p) => p.status === id && !p.admitted_at)) })).filter((x) => x.n),
     byProgramme: rate('conversion:programme', `Leads · ${pw} · ${who}`, ripe, (p) => val(p.programme)),
     byChannel: rate('conversion:channel', `Leads · ${pw} · ${who} · came from`, ripe, (p) => val(p.source_channel)),
+    // BENCHMARKS (variant A, the owner 06.10.2026). Each row is a config.benchmarks row WITH its source, set against the
+    // server's matured step rate (src/reports.js maturedSteps): the dot is the server's figure, and the dot and the
+    // working open exactly the ids the server counted. A row without a source, or without its step, is never drawn.
+    bench: cRepBenchRows(r.steps, cfg.benchmarks).map(({ b, s, few }) => ({ b, few, pct: s.pct,
+      base: fig(`conversion:step:${b.step}:of`, `Leads · ${pw} · ${who}${s.from === 'Lead' ? '' : ' · reached ' + cStage(s.from)}`, s.ofIds.map((id) => ({ id }))),
+      won: fig(`conversion:step:${b.step}:reached`, `Leads · ${pw} · ${who} · reached ${cStage(s.to)}`, s.reachedIds.map((id) => ({ id }))) })),
   };
 
   // 4 MEDIAN TIME TO ADMISSION (first contact to admitted, for the people admitted in the period)
@@ -4981,6 +5010,30 @@ function cRepModel(r, people, cfg, today) {
   return { pw, grain: T.grain, coh, admitted, leads, conversion, median, now };
 }
 
+// The benchmark rows that may be drawn: in config, with every provenance field, and with the server's step present.
+const C_BENCH_NEEDS = ['definition', 'source', 'url', 'year', 'region', 'confidence'];
+function cRepBenchRows(steps, bench) {
+  const minN = Number((bench || {}).minN) || 20;
+  return ((bench || {}).rows || []).filter((b) => C_BENCH_NEEDS.every((f) => b[f] != null && String(b[f]).trim() !== '') && steps && steps[b.step])
+    .map((b) => ({ b, s: steps[b.step], few: steps[b.step].of < minN }));
+}
+// Variant A: one bullet row per benchmark. Name and the working (a -> b, both open their people) on the left; the
+// hairline 0..100% with the grey band, its label and source under it, and our dot with the value above. The whole
+// track is ONE click: it opens the people the dot counts (a benchmark opens our people, never its source).
+function cRepBench(rows) {
+  if (!rows || !rows.length) return '';
+  const clamp = (n) => Math.max(0, Math.min(100, Number(n)));
+  return `<section class="bm" aria-label="Benchmarks">${rows.map((x) => { const b = x.b;
+    const lo = clamp(b.show === 'tick' ? b.value : b.low), hi = Math.max(lo, clamp(b.show === 'tick' ? b.value : b.high));
+    const band = b.show === 'tick' ? `${lo}%` : `${lo}-${hi}%`;
+    const val = x.pct == null ? null : `${x.few ? '~' : ''}${x.pct}%`;
+    return `<div class="bm-row" data-bench="${esc(b.id)}"><div class="bm-name"><b>${esc(b.name)}</b><small>${cRepGo(x.base)} &rarr; ${cRepGo(x.won)}</small></div>
+      <div class="bm-trackbox" tabindex="0" role="button" data-coh="${x.won.k}" data-kgo="cohort|${x.won.k}" data-tip="${esc(b.name)}|${val == null ? '-' : esc(val)}|${band} ${esc(b.label || 'typical')} · ${esc(b.sourceLabel || b.source)}"><span class="bm-track"></span><span class="bm-end bm-0">0</span><span class="bm-end bm-100">100%</span>
+        <span class="bm-band" style="left:${lo}%;width:${hi - lo}%"></span>
+        <span class="bm-bandl" style="left:${(lo + hi) / 2}%">${band} ${esc(b.label || 'typical')}<small>${esc(b.sourceLabel || b.source)}</small></span>
+        ${val == null ? '' : `<span class="bm-dot${x.few ? ' few' : ''}" style="left:${clamp(x.pct)}%" data-v="${esc(val)}"><b>${esc(val)}</b><i></i></span>`}
+      </div></div>`; }).join('')}</section>`;
+}
 // One figure, drawn as the click to its people. `v` is shown instead of the count when the figure is a value
 // (a share, a median) computed over those people. An Outcomes figure (`go`) opens Outcomes on that outcome.
 const cRepGo = (f, v) => (f.go ? `<a class="rp-go" href="#/outcomes" data-n="${f.n}" data-kgo="${f.go}" onclick="cChartGo('${f.go}');return false">${f.n}</a>`
@@ -5048,10 +5101,9 @@ function cRepBody(id, M) {
     ${cRepBlock('Education', `${pw} · ${cRepGo(L.eduRecorded)} recorded`, cRepBars(L.byEducation, 'education', 'added ' + M.pw), `<span class="rp-chip">maritime school ${cRepGo(L.maritime)}</span>`)}
     ${cRepBlock('Nationality', `${pw} · ${cRepGo(L.natRecorded)} recorded`, cRepBars(L.byNationality, 'nationality', 'added ' + M.pw))}</div>`;
   if (id === 'conversion') {
-    const base = Math.max(1, L.all.n), R = C.reachedApplication;
-    const reach = `<div class="kbars"><div class="kbar" tabindex="0" role="button" data-n="${R.n}" data-coh="${R.k}" data-tip="Application or beyond|${R.n} people|added ${esc(M.pw)}" data-kgo="cohort|${R.k}"><span class="kbl">Application or beyond</span><span class="kbt rp-track"><i style="width:${(R.n / base) * 100}%"></i></span><b>${R.n}</b></div></div>`;
-    return `<div class="c-rgrid">${cRepBlock('Reached', `of the people added · ${pw}`, reach)}
-      ${cRepBlock('Where the rest are now', `people added · ${pw}`, cRepBars(C.stoppedAt, 'stage', 'added ' + M.pw))}
+    // "Reached - Application or beyond" (everyone added, by where they are NOW) is gone: the matured Lead to application
+    // row above is the one figure for it (the owner's rule, "Nothing should be duplicated. Its confusing", 06.10.2026).
+    return `${cRepBench(C.bench)}<div class="c-rgrid">${cRepBlock('Where the rest are now', `people added · ${pw}`, cRepBars(C.stoppedAt, 'stage', 'added ' + M.pw))}
       ${cRepBlock('By programme', `admitted · ${esc(C.who)} · ${pw}`, cRepRates(C.byProgramme, 'programme'))}
       ${cRepBlock('By channel', `admitted · ${esc(C.who)} · ${pw}`, cRepRates(C.byChannel, 'channel'))}</div>`;
   }

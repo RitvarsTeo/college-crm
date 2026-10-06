@@ -14,6 +14,21 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 06.10.2026 - Benchmarks on Reports > Conversion, variant A (PICKED)
+
+Ritvars PICKED 06.10 (via MASTER CONTROL) benchmarks variant A: our value as a dot on the grey "typical" band, value
+above, the working underneath in word order. Worktree `crm-bench`, branch `ui/2026-10-06-benchmarks`, cut from release
+`4d86a3e`. Research and proposal: `For review/2026-10-05 Benchmarks/`.
+
+| What | Status |
+|---|---|
+| **DECIDED 06.10 (Ritvars):** variant A, bullet rows on Reports > Conversion | BUILT |
+| `config.benchmarks` beside `targets`: minN 20 + rows with value/range, definition, source, url, year, region, confidence, step. Lead to application 15-35%, contract to admitted 88-93% (Noel-Levitz 2010, US four-year colleges, medium) | BUILT |
+| Server `maturedSteps` (src/reports.js), in `/api/report` as `steps`: the Q49 matured people (60+ days), who EVER reached the stage (where they are now, History status events, or admitted), with the ids | BUILT |
+| Page: dot = the server figure; the track (band, scale, dot) opens the people who reached; the working `a -> b` opens both sides; hollow dot and "~" under 20 people; source label small under the band; a row without full provenance is never drawn | BUILT |
+| Shots 1440 light + dark, 375 light (rows stack, no sideways scroll): `For review/2026-10-06 Benchmarks A/` | BUILT |
+| **DECIDED 06.10 (via MASTER CONTROL, the owner's rule "Nothing should be duplicated. Its confusing"):** the old "Reached - Application or beyond" block (everyone added, by where they are now) is removed; the matured Lead to application row is the one figure. "Where the rest are now" stays | BUILT |
+
 ## 06.10.2026 - Help center = B, the one flow, is the default
 
 The owner's pick from the A/B pictures (06.10.2026): "B - one flow, but becomes a person needs to be polished!"

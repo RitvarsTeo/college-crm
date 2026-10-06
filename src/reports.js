@@ -53,6 +53,46 @@ export async function maturedConversion(db, p, opts) {
   return { ...basis, admitted, of, pct: of ? Math.round((admitted / of) * 1000) / 10 : null };
 }
 
+// ---------------------------------------------------------- steps, MATURED --
+// BENCHMARKS on Reports > Conversion (the owner picked variant A, 06.10.2026). A benchmark is a stage rate, so ours
+// is one too, over the SAME matured people as Conversion: of the people who arrived in the period at least N days
+// ago, how many ever REACHED the next stage. Reached = where they are now is that stage or later, they were ever moved
+// to it (History: a status event with that new value), or they are admitted. Somebody who reached Application and
+// later stopped still reached it: that is what a funnel step counts. Stage order = config.stageOrder.
+// Each step carries the ids, so the screen opens exactly the people the dot counts.
+const ORDER = CFG.stageOrder || (CFG.stages || []).map((s) => s.id);
+const fromStage = (id) => ORDER.slice(Math.max(0, ORDER.indexOf(id)));
+export const STEPS = [
+  { id: 'leadToApplication', from: null, to: 'Application' },
+  { id: 'contractToAdmitted', from: 'Contract', to: 'Admitted' },
+];
+export async function maturedSteps(db, p, opts) {
+  const basis = maturedBasis(p, opts);
+  const until = basis.cutoff < p.to ? basis.cutoff : p.to;
+  const ripe = await db.prepare('SELECT id, status, admitted_at FROM people WHERE created_at >= ? AND created_at < ? ORDER BY id')
+    .all(p.from, until);
+  const ever = new Map();
+  if (ripe.length) {
+    const rows = await db.prepare(`SELECT DISTINCT person_id, new_value FROM events WHERE kind = 'status' AND new_value IS NOT NULL
+      AND person_id IN (SELECT id FROM people WHERE created_at >= ? AND created_at < ?)`).all(p.from, until);
+    for (const r of rows) { if (!ever.has(r.person_id)) ever.set(r.person_id, new Set()); ever.get(r.person_id).add(r.new_value); }
+  }
+  const reached = (pp, stage) => {
+    if (stage === 'Admitted' && pp.admitted_at) return true;
+    const later = fromStage(stage);
+    return later.includes(pp.status) || !!pp.admitted_at || [...(ever.get(pp.id) || [])].some((s) => later.includes(s));
+  };
+  const steps = {};
+  for (const s of STEPS) {
+    const base = s.from ? ripe.filter((pp) => reached(pp, s.from)) : ripe;
+    const won = base.filter((pp) => reached(pp, s.to));
+    steps[s.id] = { from: s.from || 'Lead', to: s.to, of: base.length, reached: won.length,
+      pct: base.length ? Math.round((won.length / base.length) * 1000) / 10 : null,
+      ofIds: base.map((pp) => pp.id), reachedIds: won.map((pp) => pp.id) };
+  }
+  return { ...basis, steps };
+}
+
 // A breakdown is always a count per value, plus an explicit "not recorded" row,
 // because a blank in a report reads as zero when it really means unknown.
 async function breakdown(db, column, { from, to, where = '', args = [] } = {}) {
@@ -85,6 +125,7 @@ export async function report(db, { from, to } = {}) {
   // describe one population. Admitted-this-month counts a different one and says so.
   const conv = await maturedConversion(db, p);
   const conversion = conv.pct;
+  const stepRates = (await maturedSteps(db, p)).steps;   // the two stage rates the benchmarks compare with
 
   // How long admission actually took, as a median of real durations.
   const durations = (await db.prepare(`SELECT created_at, admitted_at FROM people
@@ -153,6 +194,7 @@ export async function report(db, { from, to } = {}) {
       conversionCutoff: conv.cutoff,
       medianDaysToAdmission: median,
     },
+    steps: stepRates,
     trend: months,
     programmes,
     breakdowns: {

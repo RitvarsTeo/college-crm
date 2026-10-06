@@ -55,6 +55,34 @@
       "source": "0. NJK KPI 2026.xlsx, sheet Admissions, B2: \"140 new students (70% in Officer Programs)\". Officer Programs = NAV + ENG: Ritvars, 05.10.2026 (via MASTER CONTROL)."
     }
   },
+  "_benchmarks": "Reports > Conversion, variant A picked by Ritvars 06.10.2026: our matured step rate as a dot on the grey 'typical' band. A benchmark is never hard-coded in the page: every drawn row comes from here and must carry definition, source, url, year, region and confidence (test/benchmarks.test.js). step = the server's figure it is compared with (src/reports.js maturedSteps). Under minN people the dot is hollow and the value carries '~'. Research: 'For review/2026-10-05 Benchmarks/BENCHMARKS.md'.",
+  "benchmarks": {
+    "minN": 20,
+    "rows": [
+      {
+        "id": "lead_to_application",
+        "step": "leadToApplication",
+        "name": "Lead to application",
+        "show": "range", "low": 15, "high": 35, "unit": "%", "label": "typical",
+        "sourceLabel": "US 4-year colleges, 2010",
+        "definition": "Inquiry to application, median, first-year students. Inquiry = a student who contacted the institution through any source (phone, e-mail, inquiry card, web site contact, campus visit, application as first contact). Range = private 15% (quartiles 9.4-22.0) to public 35% (quartiles 24.7-42.8).",
+        "source": "Noel-Levitz, 2010 Admissions Funnel Benchmarks for Four-Year Public and Private Institutions, Tables 1-2",
+        "url": "https://files.eric.ed.gov/fulltext/ED537553.pdf",
+        "year": 2010, "region": "US, four-year colleges", "confidence": "medium"
+      },
+      {
+        "id": "contract_to_admitted",
+        "step": "contractToAdmitted",
+        "name": "Contract to admitted",
+        "show": "range", "low": 88, "high": 93, "unit": "%", "label": "typical",
+        "sourceLabel": "US 4-year colleges, 2010",
+        "definition": "Deposited / confirmed to enrol, to enrolled, median, first-year students (melt 7-12%). Contract (signed) is our closest stage to a US deposit.",
+        "source": "Noel-Levitz, 2010 Admissions Funnel Benchmarks for Four-Year Public and Private Institutions, Tables 1-2",
+        "url": "https://files.eric.ed.gov/fulltext/ED537553.pdf",
+        "year": 2010, "region": "US, four-year colleges", "confidence": "medium"
+      }
+    ]
+  },
   "programmes": [
     "NAV",
     "ENG",
