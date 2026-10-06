@@ -14,6 +14,21 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 06.10.2026 - Benchmarks on Reports > Conversion, variant A (PICKED)
+
+Ritvars PICKED 06.10 (via MASTER CONTROL) benchmarks variant A: our value as a dot on the grey "typical" band, value
+above, the working underneath in word order. Worktree `crm-bench`, branch `ui/2026-10-06-benchmarks`, cut from release
+`4d86a3e`. Research and proposal: `For review/2026-10-05 Benchmarks/`.
+
+| What | Status |
+|---|---|
+| **DECIDED 06.10 (Ritvars):** variant A, bullet rows on Reports > Conversion | BUILT |
+| `config.benchmarks` beside `targets`: minN 20 + rows with value/range, definition, source, url, year, region, confidence, step. Lead to application 15-35%, contract to admitted 88-93% (Noel-Levitz 2010, US four-year colleges, medium) | BUILT |
+| Server `maturedSteps` (src/reports.js), in `/api/report` as `steps`: the Q49 matured people (60+ days), who EVER reached the stage (where they are now, History status events, or admitted), with the ids | BUILT |
+| Page: dot = the server figure; the track (band, scale, dot) opens the people who reached; the working `a -> b` opens both sides; hollow dot and "~" under 20 people; source label small under the band; a row without full provenance is never drawn | BUILT |
+| Shots 1440 light + dark: `For review/2026-10-06 Benchmarks A/` | BUILT |
+| Note: the older "Reached - Application or beyond" block counts everyone added by where they are NOW, so its figure differs from the matured step rate above it. Not changed (not asked) | SAID |
+
 ## 06.10.2026 - Q45: the year scope - one Period dropdown, frozen top-right, on every screen
 
 MASTER CONTROL's GO for C (05.10.2026) with the owner's words: "the switch is a frozen item just on top for the whole
