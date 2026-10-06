@@ -267,3 +267,13 @@ test('Q56 the flow is THE Help center: no switch, no card grid, no three steps; 
   // phone: the same line stands up
   assert.match(APP, /@media \(max-width:760px\)\{\s*html\.ui-c \.hf-row\{grid-template-columns:1fr/);
 });
+
+// 06.10.2026, the owner: "the help center must always keep up with any changes in the app". Settings left the app
+// that day: no flow stop, how-to, tour step or answer may send anybody there again.
+test('the Help center never names Settings as a place; light or dark points to the left card', () => {
+  assert.doesNotMatch(JSON.stringify(HELP), /\bsettings\b/i, 'flow, how-to, tour and answers');
+  assert.match(HELP.faq.find((q) => q.id === 'light-dark-system').a, /left card/);
+  const code = APP.replace(/\/\*[\s\S]*?\*\//g, '').replace(/<!--[\s\S]*?-->/g, '')
+    .split('\n').filter((l) => !l.trim().startsWith('//')).join('\n');
+  assert.doesNotMatch(code, /href="#\/settings"|<span>Settings<\/span>|\bin Settings\b|'Settings'\)/, 'and the app shows no way there');
+});

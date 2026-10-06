@@ -2432,7 +2432,7 @@ svg .m-flag-mark{transform-origin:0 100%}
     <div class="c-foot"><a href="#/help">Help center</a></div></div>
 </div>
 <!-- It is the feedback box, so it says Feedback (28.09.2026: "for some reason written as help,
-     but its feedback box"). Help is the Help center, under Settings in the menu (Q53). -->
+     but its feedback box"). Help is the Help center, the foot of the menu (Settings left on 06.10.2026). -->
 <button class="helpbtn" id="helpBtn" onclick="fbToggle()" title="Send feedback: something broken, or an idea">FEEDBACK</button>
 <div id="modal"></div>
 
@@ -2858,7 +2858,7 @@ function cSpine() {
   let svg = nav.querySelector('.c-spine');
   if (!svg) { nav.insertAdjacentHTML('afterbegin', '<svg class="c-spine" aria-hidden="true"></svg>'); svg = nav.querySelector('.c-spine'); }
   const box = nav.getBoundingClientRect();
-  // Settings sits apart at the foot of the menu, so it is not on the journey
+  // the Help center sits apart at the foot of the menu, so it is not on the journey
   const icons = [...nav.querySelectorAll(':scope > a:not(.c-navfoot) > svg')].map((i) => i.getBoundingClientRect());
   if (icons.length < 2 || !icons[0].height) { svg.innerHTML = ''; return; }
   const x = (icons[0].left + icons[0].width / 2 - box.left).toFixed(1);
