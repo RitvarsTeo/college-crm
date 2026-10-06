@@ -4218,6 +4218,9 @@ async function viewJourneyC() {
     api('/api/report?' + cScopeReportQs()).catch(() => null)]);
   C_JEXITS = exits;
   const taskOf = new Map(); tasks.forEach((t) => { if (!taskOf.has(t.person_id)) taskOf.set(t.person_id, t); });
+  // The year under the band's Arrived, and the year its click filters People by: one chosen year names itself; several
+  // or all years leave it blank, People is already those years (Q59). Patch 22 lost this line and the Journey failed to open.
+  const one = cScopeYear(); const year = typeof one === 'number' ? String(one) : '';
   const arrived = rep && rep.summary && typeof rep.summary.newLeads === 'number' ? rep.summary.newLeads : null;
   // play: the band's ONE scene runs on arrival only. A filter click redraws the board, and a
   // band that re-animated on every click would be motion for its own sake.
