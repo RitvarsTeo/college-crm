@@ -165,7 +165,7 @@ test('no notes, evidence, dates, counts, environment talk or A/B on the screen',
     assert.ok(!APP.includes(gone), 'gone: ' + gone);
   }
   const view = APP.slice(APP.indexOf('async function viewChannels('), APP.indexOf(END));
-  assert.match(view, /\$\('#view'\)\.innerHTML = `<p class="c-crumb">Settings<\/p><div class="c-head"><div><h1>Channels<\/h1><\/div><\/div>\s*<div class="c-sheet c-chcard chinfo">\$\{chListHtml\([^`]*\)\}<\/div>\s*\$\{chSisHtml\([^`]*\)\}\s*\$\{chFilterHtml\(\)\}`;/,
+  assert.match(view, /\$\('#view'\)\.innerHTML = `<p class="c-crumb"><a href="#\/help">Help center<\/a><\/p><div class="c-head"><div><h1>Channels<\/h1><\/div><\/div>\s*<div class="c-sheet c-chcard chinfo">\$\{chListHtml\([^`]*\)\}<\/div>\s*\$\{chSisHtml\([^`]*\)\}\s*\$\{chFilterHtml\(\)\}`;/,
     'a heading, the list on one card, SIS on its own and the Inbox filter, nothing else');
 });
 

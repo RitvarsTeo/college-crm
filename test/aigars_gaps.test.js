@@ -71,7 +71,7 @@ test('explaining sentences removed; data warnings kept', () => {
     'It stays on this machine and is never emailed.', 'Everything everybody has sent.', 'Every figure is a count of rows in the CRM',
     "It is kept in the CRM's own database and is never sent anywhere."]) assert.ok(!APP.includes(s), s);
   // 30.09: the sentence went, the COUNT is the value and stays
-  assert.match(APP, /'Data to tidy', `\$\{odd\} not in the list`/, 'the data-to-tidy count stays');
+  assert.match(APP, /Data to tidy\$\{odd \? ` <b>\$\{odd\}<\/b>` : ''\}/, 'the data-to-tidy count stays');
   assert.ok(!APP.includes('a programme that is not one of the list.'), 'and it no longer explains itself');
   // 30.09: the gaps block left the SCREEN and stayed in the export, which is where
   // somebody reconciling the figures needs it.

@@ -56,8 +56,8 @@ test('the menu order and the Today name', () => {
   const nav = APP.slice(APP.indexOf('<div class="cnav" role="navigation"'), APP.indexOf('</div>`);', APP.indexOf('<div class="cnav" role="navigation"')));
   const order = [...nav.matchAll(/data-c="(\w+)"/g)].map((m) => m[1]);
   // Q51: Home, Admissions (Inbox, Today, Journey), Reports, Settings; Journey's place id stays 'people'
-  // Q53: Help center is its own item directly under Settings
-  assert.deepEqual(order, ['home', 'admissions', 'leads', 'today', 'people', 'reports', 'settings', 'help']);
+  // 06.10.2026: Settings left; the Help center is the foot
+  assert.deepEqual(order, ['home', 'admissions', 'leads', 'today', 'people', 'reports', 'help']);
   assert.match(nav, /<span>Today<\/span><span class="n" id="cnNext"><\/span>/, 'the count badge stays on Today');
   assert.doesNotMatch(nav, /<span>Next steps<\/span>/);
   assert.match(APP, /title: 'Today',/);
