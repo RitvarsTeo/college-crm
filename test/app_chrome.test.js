@@ -100,21 +100,22 @@ test('the theme switch has Light, System and Dark, says which is on, and System 
   assert.match(APP, /if \(!\['light', 'dark', 'system'\]\.includes\(saved\)\) saved = 'light';/, 'a saved System survives a reload');
 });
 
-test('Settings is for everybody and holds the Help center; its admin rows are still for admins', () => {
+test('Settings is for everybody; the Help center moved out of it (Q53); its admin rows are still for admins', () => {
   assert.match(APP, /const s = document\.querySelector\('#cnSettings'\); if \(s\) s\.style\.display = '';/);
   const i = APP.indexOf('async function viewSettingsC()');
   const settings = APP.slice(i, APP.indexOf('\n}\n', i));
-  assert.match(settings, /\$\{item\('#\/help', 'Help center'/);
+  assert.doesNotMatch(settings, /item\('#\/help'/, 'Q53: the Help center is no longer a row in Settings');
   const guard = settings.indexOf('if (isAdmin()) {');
   assert.ok(guard > 0 && settings.indexOf("'#/channels'") > guard && settings.indexOf("'#/feedback'") > guard, 'Channels and Feedback stay behind the admin check');
   assert.match(APP, /if \(page === 'help'\) return viewHelpC\(\);/);
-  assert.match(APP, /help: 'settings'/, 'the Help center lights Settings in the menu');
+  assert.match(APP, /help: 'help' \}\)\[page \|\| ''\]/, 'Q53: the Help center lights itself, no longer Settings');
+  assert.doesNotMatch(APP, /<p class="c-crumb"><a href="#\/settings">Settings<\/a><\/p>\s*<div class="c-head"><div><h1>Help center/, 'and no Settings crumb above it');
 });
 
 // 05.10.2026 the owner: the (c) line leaves the menu card and becomes the foot of EVERY page; the Help center
-// link stays in the menu foot
-test('the menu foot keeps only the Help center link; the (c) line is the foot of every page', () => {
-  assert.match(APP, /<div class="c-foot"><a href="#\/help">Help center<\/a><\/div>/);
+// link stayed in the menu foot until Q53 made it a menu item; the phone's page foot keeps it
+test('the (c) line is the foot of every page; the phone page foot keeps the Help center link', () => {
+  assert.match(APP, /<div class="c-pagefoot">[^\n]*\n\s*<div class="c-foot"><a href="#\/help">Help center<\/a><\/div><\/div>/);
   assert.doesNotMatch(APP, /<span>&copy; Novikontas Academy<\/span>/, 'no (c) line in the menu card, light or dark, desktop or phone');
   assert.match(APP, /html\.ui-c #view::after\{content:"© Novikontas Academy";display:block;/, 'one shared page foot, drawn by #view itself');
   assert.doesNotMatch(APP, /class="c-help-foot"/, 'Help no longer carries its own, so it is not there twice');

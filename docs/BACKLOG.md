@@ -14,6 +14,16 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 05.10.2026 - Q53: Help center is its own menu item, under Settings
+
+Ritvars 05.10: "Now, Help Center, lets move the tab of it out of settings and under the settings."
+- Left card: Help center is a top-level item directly under Settings, the same style, with the help icon; #/help
+  lights Help center itself, no longer Settings. The small "Help center" link in the menu foot is gone (not there
+  twice); the Settings page no longer lists it, and the Help page has no Settings crumb. Phone: Help stays in More,
+  and the phone page foot keeps its link.
+- Tests: menu order + labels, lit state, no menu-foot link (nav_and_home, no_crm_word, menu_badge_q51,
+  app_chrome). **BUILT, next patch.**
+
 ## 05.10.2026 - Q52: the menu shows only the user's NEW count
 
 Ritvars 05.10 on production patch 14, about the menu counts "NEW 7 /64": "Now the item count. Either we drop it or

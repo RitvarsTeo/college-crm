@@ -32,7 +32,8 @@ test('the menu is grouped: Admissions holds the three pools, and the hairline is
   const labels = [...nav.matchAll(/<span>([A-Za-z ]+)<\/span>/g)].map((m) => m[1]);
   // Q51 (the owner, 05.10.2026: "I had Home then Admissions (under that inbox, today, journey) Then big Reports."):
   // Journey is People + Journey + Outcomes in one (Q47)
-  assert.deepEqual(labels, ['Home', 'Admissions', 'Inbox', 'Today', 'Journey', 'Reports', 'Settings']);
+  // Q53: Help center is its own item directly under Settings
+  assert.deepEqual(labels, ['Home', 'Admissions', 'Inbox', 'Today', 'Journey', 'Reports', 'Settings', 'Help center']);
   assert.equal((nav.match(/class="kids"/g) || []).length, 1, 'one group: Admissions');
   // the hairline itself, unchanged from the established rule
   assert.match(APP, /html\.ui-c \.cnav \.kids\{margin:1px 0 6px 18px;padding-left:10px;border-left:1px solid var\(--rule\)\}/,
@@ -56,7 +57,8 @@ test('every old hash still resolves, and lands in the right place', () => {
     leads: 'leads', inbox: 'leads', car: 'leads', admissions: 'leads',   // Q51: Admissions opens its first child, the Inbox
     people: 'people', person: 'people', journey: 'people', outcomes: 'people',
     reports: 'reports', funnel: 'reports', metrics: 'reports',
-    settings: 'settings', help: 'settings', channels: 'settings', feedback: 'settings',
+    settings: 'settings', channels: 'settings', feedback: 'settings',
+    help: 'help',   // Q53: the Help center is its own item, under Settings
   };
   for (const [page, want] of Object.entries(expected)) {
     assert.equal(place(page), want, `#/${page} lands in ${want}`);
@@ -102,10 +104,11 @@ test('Journey is everyone: People, Journey and Outcomes are one screen, and ther
   assert.doesNotMatch(APP, /function viewPeopleC\(|function cDrawPeople\(/, 'the separate People page is gone');
 });
 
-// Q38, the owner 05.10.2026: "center the help center." In the menu foot the link sits on the theme switch's centre line.
-test('the Help center link is centred under the theme switch', () => {
-  assert.match(APP, /html\.ui-c \.shell > nav \.c-foot\{max-width:240px;box-sizing:content-box;justify-content:center\}/,
-    'the same box as the switch (20px start, 240px cap), the link centred in it');
-  assert.match(APP, /html\.ui-c \.theme-switch\{[^}]*width:100%;max-width:240px;/, 'the switch it lines up with');
-  assert.match(APP, /html\.ui-c \.c-themebar\{display:block;margin-top:12px;padding:12px 20px 0;/, 'and its 20px start');
+// Q38 centred the Help center link under the theme switch; Q53 (the owner, 05.10.2026: "Now, Help Center, lets move the
+// tab of it out of settings and under the settings.") makes it a menu item, so the small link in the menu foot is gone.
+test('Q53: no Help center link in the menu foot; it is a menu item under Settings', () => {
+  const nav = APP.slice(APP.indexOf('<nav'), APP.indexOf('</nav>'));
+  assert.doesNotMatch(nav, /<div class="c-foot">/, 'not there twice');
+  assert.doesNotMatch(APP, /html\.ui-c \.shell > nav \.c-foot\{max-width/, 'its menu-foot style went with it');
+  assert.match(APP, /<a href="#\/help" data-c="help" id="cnHelp" class="c-navfoot c-navhelp">\$\{C_ICON\.help\}<span>Help center<\/span><\/a>/);
 });

@@ -984,7 +984,6 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-foot a{color:var(--t2);text-decoration:underline;text-underline-offset:2px}
   /* Q38 (the owner, 05.10.2026: "center the help center"): in the menu foot the link sits on the theme switch's centre
      line - its box is the switch's width (the same 20px start, capped at the switch's 240px) and it is centred in it */
-  html.ui-c .shell > nav .c-foot{max-width:240px;box-sizing:content-box;justify-content:center}
   html.ui-c .theme-switch{position:relative;display:grid;grid-template-columns:repeat(3,1fr);width:100%;max-width:240px;padding:3px;
     border-radius:99px;background:var(--c-sunk);border:1px solid var(--control-line)}
   html.ui-c .theme-switch button{position:relative;z-index:1;display:inline-flex;align-items:center;justify-content:center;gap:4px;
@@ -1942,6 +1941,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c #view .c-when, html.ui-c #view .c-jp small.c-jdue{font-size:var(--type-chip)}
   /* Settings is not one of the four. It sits at the foot, behind a rule, for admins. */
   html.ui-c .cnav a.c-navfoot{margin-top:auto;border-top:1px solid var(--rule2);padding-top:10px}
+  html.ui-c .cnav a.c-navfoot.c-navhelp{margin-top:0;border-top:0;padding-top:7px}   /* Q53: Help center sits right under Settings, the same style, one rule above both */
   html.ui-c .c-jfilters{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-6px 0 14px}
   html.ui-c .c-jf-ico{width:16px;height:16px;flex:0 0 16px;fill:none;stroke:var(--t3);stroke-width:1.6;stroke-linejoin:round}
   html.ui-c .c-jf{display:inline-flex;align-items:center;gap:4px;height:32px;padding:0 0 0 10px;border:1px solid var(--control-line);
@@ -2333,14 +2333,13 @@ svg .m-flag-mark{transform-origin:0 100%}
       </select></div>
     <!-- Concept C: the light/dark switch and the footer line. Filled by installCNav(). -->
     <div class="c-themebar" id="cThemeBar"></div>
-    <div class="c-foot"><a href="#/help">Help center</a></div>
   </nav>
   <main id="view"><div class="empty">Loading...</div></main>
   <div class="c-pagefoot"><div class="c-themebar" id="cThemeBar2"></div>
     <div class="c-foot"><a href="#/help">Help center</a></div></div>
 </div>
 <!-- It is the feedback box, so it says Feedback (28.09.2026: "for some reason written as help,
-     but its feedback box"). Help is the Help center, in Settings. -->
+     but its feedback box"). Help is the Help center, under Settings in the menu (Q53). -->
 <button class="helpbtn" id="helpBtn" onclick="fbToggle()" title="Send feedback: something broken, or an idea">FEEDBACK</button>
 <div id="modal"></div>
 
@@ -2575,6 +2574,8 @@ function installCNav() {
       <a href="#/journey" data-c="people" title="Everyone, by where they are in the journey"><span>Journey</span><span class="n" id="cnJourney"></span></a></div>
     <a href="#/reports" data-c="reports" title="What is happening">${C_ICON.rep}<span>Reports</span></a>
     <a href="#/settings" data-c="settings" id="cnSettings" class="c-navfoot">${C_ICON.set}<span>Settings</span></a>
+    <!-- Q53 (the owner, 05.10.2026): "Now, Help Center, lets move the tab of it out of settings and under the settings." -->
+    <a href="#/help" data-c="help" id="cnHelp" class="c-navfoot c-navhelp">${C_ICON.help}<span>Help center</span></a>
   </div>`);
   installCTabs();
   // No "Open the classic view" link: C is the normal product, and the classic view is a
@@ -2626,7 +2627,8 @@ function cPlace(page) {
     leads: 'leads', inbox: 'leads', car: 'leads', admissions: 'leads',   // Admissions opens its first child, the Inbox (Q51)
     people: 'people', person: 'people', journey: 'people', outcomes: 'people',
     reports: 'reports', funnel: 'reports', metrics: 'reports',
-    settings: 'settings', help: 'settings', channels: 'settings', feedback: 'settings' })[page || ''];
+    settings: 'settings', channels: 'settings', feedback: 'settings',
+    help: 'help' })[page || ''];   // Q53: the Help center is its own place, under Settings, no longer inside it
 }
 function markCNav(page) {
   const place = cPlace(page);
@@ -2644,7 +2646,7 @@ function markCNav(page) {
   // on a phone the menu is one sideways row: bring the place you are in into view (the deepest one lit)
   setTimeout(() => { const here = [...document.querySelectorAll('.cnav a.on')].pop(); const row = document.querySelector('.cnav');
     if (here && row && row.scrollWidth > row.clientWidth) row.scrollLeft = Math.max(0, here.offsetLeft - row.offsetLeft - 24); }, 60);
-  // Settings is for everybody since 28.09.2026: the theme and the Help center live there.
+  // Settings is for everybody since 28.09.2026: the theme lives there (the Help center has its own item under it, Q53).
   // Only its admin section is for admins.
   const s = document.querySelector('#cnSettings'); if (s) s.style.display = '';
   cSpine();
@@ -3356,7 +3358,6 @@ async function viewSettingsC() {
     <div class="c-sheet c-set"><div class="c-line c-set-theme"><div class="c-who"><b>Light or dark</b></div><div>${themeSwitchHtml()}</div></div></div>
     <h2 class="c-set-h">Help</h2>
     <div class="c-sheet c-set">
-      ${item('#/help', 'Help center', '')}
       <div class="c-line" tabindex="0" onclick="fbOpen('BUG')"><div class="c-who"><b>Report a problem or an idea</b></div><div class="c-when">›</div></div>
     </div>
     ${admin}`;
@@ -3367,8 +3368,7 @@ async function viewSettingsC() {
 // hierarchy of apply.novikontas.org, which the owner likes: one clear action, three
 // numbered steps, then short questions. Every answer describes what the CRM really does.
 function viewHelpC() {
-  $('#view').innerHTML = `<p class="c-crumb"><a href="#/settings">Settings</a></p>
-    <div class="c-head"><div><h1>Help center</h1></div>
+  $('#view').innerHTML = `<div class="c-head"><div><h1>Help center</h1></div>
       <div class="act"><button class="btn ghost" id="helpTourBtn" onclick="cStartTour(this)">Take the tour</button>
       <button class="btn" onclick="fbOpen('BUG')">Report a problem</button></div></div>
     <div class="c-steps">
