@@ -16,6 +16,7 @@ import { logEvent, MANUAL, AUTOMATIC } from './history.js';
 import { duplicateCheck } from './identity.js';
 import { localDate, localMidnight } from './bizday.js';
 import { SIS_HOLDS_SQL } from './lifecycle.js';
+import { rangesSql } from './yearscope.js';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const CFG = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'prototype.json'), 'utf8'));
@@ -276,16 +277,18 @@ export async function receive(db, item) {
 // real contacts and a sales pitch was never one.
 const STATE_SETS = { notrelevant: ['archived', 'filtered'] };
 
-// `range` is the year scope (Q45): [from, to) on the message's own arrival, received_at.
-export async function listInbound(db, { state = 'new', now = nowIso(), range = null } = {}) {
+// `ranges` is the year scope (Q45), a set of years since Q59 (src/yearscope.js): [from, to) pairs on the message's own
+// arrival, received_at. `range`, one pair, is still read for a caller of the Q45 shape.
+export async function listInbound(db, { state = 'new', now = nowIso(), range = null, ranges = range ? [range] : null } = {}) {
   const wanted = STATE_SETS[state] || (state ? [state] : []);
   const conds = [];
   if (wanted.length) conds.push(`i.state IN (${wanted.map(() => '?').join(',')})`);
-  if (range) conds.push('i.received_at >= ? AND i.received_at < ?');
+  const [inRx, rxArgs] = ranges ? rangesSql('i.received_at', ranges) : ['', []];
+  if (ranges) conds.push(inRx);
   const where = conds.length ? `WHERE ${conds.join(' AND ')}` : '';
   const rows = await db.prepare(`SELECT i.*, pe.name AS person_name FROM inbound i
     LEFT JOIN people pe ON pe.id = i.person_id
-    ${where} ORDER BY i.received_at DESC`).all(...wanted, ...(range || []));
+    ${where} ORDER BY i.received_at DESC`).all(...wanted, ...rxArgs);
   const known = await currentStudentIndex(db);
   for (const r of rows) {
     r.fields = await db.prepare('SELECT * FROM field_values WHERE inbound_id = ? ORDER BY id').all(r.id);
@@ -338,10 +341,11 @@ export function missingFor(fields) {
 }
 
 // the late ones (Q50), within the year scope (Q45) when one is asked for: by the message's own arrival
-export async function agedCount(db, now = nowIso(), range = null) {
-  const rows = range
-    ? await db.prepare("SELECT received_at FROM inbound WHERE state = 'new' AND received_at >= ? AND received_at < ?").all(...range)
-    : await db.prepare("SELECT received_at FROM inbound WHERE state = 'new'").all();
+// (`ranges`: a set of [from, to) pairs, Q59; one pair of the Q45 shape is read too)
+export async function agedCount(db, now = nowIso(), ranges = null) {
+  const set = ranges && typeof ranges[0] === 'string' ? [ranges] : ranges;
+  const [inRx, rxArgs] = set ? rangesSql('received_at', set) : ['1 = 1', []];
+  const rows = await db.prepare(`SELECT received_at FROM inbound WHERE state = 'new' AND ${inRx}`).all(...rxArgs);
   return rows.filter((r) => answerDeadlines(r.received_at).lateAt <= now).length;
 }
 

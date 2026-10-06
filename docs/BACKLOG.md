@@ -14,6 +14,24 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 06.10.2026 - Q59: the corner is a Year filter - whole years, ticked in any combination; months live on Reports
+
+Ritvars 06.10, of the live Q45 Period dropdown (All years, each year with its months): "nnoononono, periods need to be
+just a whole year! I told you this explicitly, and inside this year we can in app choose the periods we need. In the drop
+down, its only a year choice! Whole calendar year from start to finish, one year. GET IT? It can be clickable, so as to
+look at many years combined! Any years combined!" Brief Q59 via MASTER CONTROL. Branch `fix/2026-10-06-year-dropdown`
+(worktree `crm-bench`) from release `3f46b83`. Replaces the Q45 dropdown below; Q45's strict scope rules stay.
+
+| What | Status |
+|---|---|
+| **DECIDED 06.10 (Ritvars):** the corner holds whole calendar years only (1 Jan-31 Dec, the current year to today), NO months, no "Period" wording | BUILT |
+| "Year" filter with ticks (the Journey filters' tick list): All years, then every year that has people (arrived or admitted), newest first. Any combination; All years ticks all, unticked goes back to the current year; the last year can not be unticked. Closed: "2026", "2024, 2026", "All years". Every open = the current year alone, plain; anything else navy. Frozen top-right; on a phone the same row in the top bar | BUILT |
+| Server: `?y=2024,2026` is a SET (src/yearscope.js: neighbours join into one range, a gap makes two). People by arrival, the Admitted (and the Median) by admission year, Not proceeding by arrival, the Inbox and its late count by the message's arrival, Today's tasks, the summary and the journey exits; NEW badges follow. `/api/report?years=` and the export take the set; the label names each range | BUILT |
+| Reports only: "Whole year" (or "Whole years") or ONE month of the chosen years, beside the download; the download follows it; the month goes when its year is unticked; a Home card opens the whole years. No period picker anywhere else | BUILT |
+| Old links: `?y=2025&m=3` opens 2025 with March 2025 on Reports; the server still reads `?y=YYYY&m=M` as that month | BUILT |
+| Home with several years: no year target (a target is one year's); the month chart keeps the twelve months up to today that fall in the chosen years | BUILT |
+| Shots 1440 light: `For review/2026-10-06 Q59 year/` (Year open with 2024 + 2026 ticked; Reports with September 2026). Shot data = synthetic with every fourth person moved two years back, local only | BUILT |
+
 ## 06.10.2026 - Benchmarks on Reports > Conversion, variant A (PICKED)
 
 Ritvars PICKED 06.10 (via MASTER CONTROL) benchmarks variant A: our value as a dot on the grey "typical" band, value

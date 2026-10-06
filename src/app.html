@@ -2123,12 +2123,15 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   @media (max-width:760px){ html.ui-c .c-form.c-form1{grid-template-columns:1fr} }
 
   /* The full report in C: Home's hairline sheet, a period bar, then the breakdowns. */
-  /* Q45: the Period dropdown, frozen in the corner. The filter look; the current whole year plain, anything else on
+  /* Q45, Q59: the Year filter (ticks, whole years), frozen in the corner. The filter look; the current whole year plain, anything else on
      navy with white words (no bar, no chip, no amber). Desktop: the window's top-right corner, the page heads leave it
      room (--scope-w). Phone: a row of its own at the right of the frozen top bar. */
   html.ui-c .c-scope{position:fixed;top:14px;right:20px;z-index:30}
   html.ui-c .c-scope .c-jf{margin:0;background:var(--field);box-shadow:0 4px 14px -8px rgba(10,36,99,.35)}
   html.ui-c .c-scope .c-jf select{max-width:none}
+  html.ui-c .c-scope .c-jfb{max-width:none}
+  html.ui-c .c-scope .c-jfmenu{left:auto;right:0}
+  html.ui-c .c-scope .c-jf.past .c-jfb{color:#ffffff}
   html.ui-c .c-scope .c-jf.past{background:#0a2463;border-color:#0a2463}
   html.ui-c .c-scope .c-jf.past > span, html.ui-c .c-scope .c-jf.past select{color:#ffffff}
   html.ui-c .c-scope .c-jf.past select option, html.ui-c .c-scope .c-jf.past select optgroup{color:#0a2463;background:#ffffff}
@@ -2621,7 +2624,7 @@ const cSisHeld = (p) => `In the SIS: ${esc((p.sis && p.sis.label) || '')}`;
 // /api/people answers { count, rows } and returns every row: no paging, no cap.
 // Each person's stage as last read, so a dialog opened from any list can offer the steps that fit it.
 const C_STAGE_OF = new Map();
-const cPeopleRows = async () => { const rows = ((await api('/api/people')) || {}).rows || []; rows.forEach((p) => C_STAGE_OF.set(p.id, p.status)); return rows; };
+const cPeopleRows = async (qs = '') => { const rows = ((await api('/api/people' + (qs ? '?' + qs : ''))) || {}).rows || []; rows.forEach((p) => C_STAGE_OF.set(p.id, p.status)); return rows; };
 const C_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 function installCNav() {
@@ -2649,60 +2652,64 @@ function installCNav() {
   // hidden fallback reached only by the address ?ui=classic (the owner, 28.09.2026).
 }
 
-// ---- THE YEAR SCOPE (Q45, MASTER CONTROL's GO 05.10.2026 for C) ---------------------------------------------
-// The owner: "the switch is a frozen item just on top for the whole app, so we can switch quickly. And always be
-// sure, that we are checking the right year", then "its a small detail on top right corner", "dont use this
-// color!" and, of "Period · Whole year", "this is good" / "this is enough!". So: ONE small labelled dropdown in the
-// app's filter look (c-jf), "Period", frozen in the top-right corner of every page: All years, then each year that
-// has people with its months grouped under it. STRICT: every screen counts the people who ARRIVED in the period
-// (people.created_at), Today and the menu badges too; the Inbox by the message's own arrival; the Admitted (and the
-// Median) by their admission date (server: scopePeopleSql). Every open starts on the current year; any other choice
-// is the dropdown's own text on a navy fill - no bar, no extra chip.
-// ONE filter, on the server (scopeRange in src/server.js): api() adds ?y= and ?m= to the reads below and nothing
-// else, so a count on arrival is the same figure as the list it opens.
+// ---- THE YEAR SCOPE (Q45), A SET OF WHOLE YEARS (Q59) -----------------------------------------------------------
+// Q45 (05.10.2026): "the switch is a frozen item just on top for the whole app, so we can switch quickly. And always be
+// sure, that we are checking the right year", "its a small detail on top right corner", "dont use this color!".
+// Q59 (06.10.2026): "periods need to be just a whole year! ... In the drop down, its only a year choice! Whole calendar
+// year from start to finish, one year. GET IT? It can be clickable, so as to look at many years combined! Any years
+// combined!". So: ONE small "Year" filter in the app's filter look, frozen in the top-right corner of every page, with
+// ticks: All years, then each year that has people, newest first. Any combination; closed it reads "2026",
+// "2025, 2026" or "All years". Every open starts on the current year alone; anything else is navy. NO months here:
+// a month is chosen inside the app, on Reports only (cRepPeriod). STRICT: every screen counts the people who ARRIVED in
+// the chosen years (people.created_at), Today and the menu badges too; the Inbox by the message's own arrival; the
+// Admitted (and the Median) by their admission date (server: scopePeopleSql).
+// ONE filter, on the server (src/yearscope.js): api() adds ?y=2025,2026 to the reads below and nothing else, so a count
+// on arrival is the same figure as the list it opens.
 const C_SCOPED = /^\/api\/(people|tasks|summary|intake|journey\/exits)(\?|$)/;
 const C_MONTHS_LONG = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const cNowYear = () => Number(cTodayIso().slice(0, 4));
-let C_SCOPE = { year: null, month: 0 };   // year: a number or 'all' (null = the current year); month 0 = the whole year
+let C_SCOPE = { years: null };   // null = the current year alone (every open); 'all' = every year; else a list of years
 let C_SCOPE_YEARS = [];
-const cScopeYear = () => (C_SCOPE.year == null ? cNowYear() : C_SCOPE.year);
-function cScopeQs() {
-  const y = cScopeYear();
-  return y === 'all' ? '' : 'y=' + y + (C_SCOPE.month ? '&m=' + C_SCOPE.month : '');
-}
+let C_SCOPE_OPEN = false;
+const cScopeAllYears = () => [...new Set([cNowYear(), ...C_SCOPE_YEARS])].sort((a, b) => b - a);
+function cScopeList() { return C_SCOPE.years == null ? [cNowYear()] : C_SCOPE.years === 'all' ? 'all' : C_SCOPE.years; }
+// One year: that year. Several: 'multi'. Every year: 'all'. (Home's target and trend read this.)
+function cScopeYear() { const l = cScopeList(); return l === 'all' ? 'all' : l.length === 1 ? l[0] : 'multi'; }
+function cScopeQs() { const l = cScopeList(); return l === 'all' ? '' : 'y=' + l.join(','); }
 function cScoped(path) {
-  if (UI !== 'c' || !C_SCOPED.test(path)) return path;
+  if (UI !== 'c' || !C_SCOPED.test(path) || /[?&]y=/.test(path)) return path;   // a read that names its own year keeps it
   const q = cScopeQs();
   return q ? path + (path.includes('?') ? '&' : '?') + q : path;
 }
-// The scope as dates, for what reads a period (Reports): [from, to] as Riga days, to '' = up to today.
-function cScopeDates() {
-  const y = cScopeYear(), now = cTodayIso();
-  if (y === 'all') return [String(Math.min(cNowYear(), ...C_SCOPE_YEARS)) + '-01-01', ''];
-  const mm = String(C_SCOPE.month).padStart(2, '0');
-  if (C_SCOPE.month) {
-    const last = new Date(Date.UTC(y, C_SCOPE.month, 0)).getUTCDate();
-    return now.startsWith(`${y}-${mm}`) ? [`${y}-${mm}-01`, ''] : [`${y}-${mm}-01`, `${y}-${mm}-${last}`];
-  }
-  return y === cNowYear() ? [`${y}-01-01`, ''] : [`${y}-01-01`, `${y}-12-31`];
+// The same years for /api/report: years=2024,2026, or every year as days from the first one.
+function cScopeReportQs() {
+  const l = cScopeList();
+  return l === 'all' ? 'from=' + Math.min(cNowYear(), ...C_SCOPE_YEARS) + '-01-01' : 'years=' + l.join(',');
 }
-// The scope in words: "2026", "March 2025", "All years".
-function cScopeWord() {
-  const y = cScopeYear();
-  return y === 'all' ? 'All years' : C_SCOPE.month ? `${C_MONTHS_LONG[C_SCOPE.month - 1]} ${y}` : String(y);
-}
+// The years in words: "2026", "2025, 2026", "All years".
+function cScopeWord() { const l = cScopeList(); return l === 'all' ? 'All years' : [...l].sort((x, y) => x - y).join(', '); }
 function cScopeHtml() {
-  const y = cScopeYear(), now = cNowYear();
-  const years = [...new Set([now, ...C_SCOPE_YEARS])].sort((a, b) => b - a);
-  const sel = (v) => (v === `${y}-${C_SCOPE.month}` ? ' selected' : '');
-  const group = (yr) => { const last = yr === now ? Number(cTodayIso().slice(5, 7)) : 12;   // no month that has not begun
-    return `<optgroup label="${yr}"><option value="${yr}-0"${sel(`${yr}-0`)}>${yr} · Whole year</option>${
-      C_MONTHS_LONG.slice(0, last).map((n, k) => `<option value="${yr}-${k + 1}"${sel(`${yr}-${k + 1}`)}>${n} ${yr}</option>`).join('')}</optgroup>`; };
-  const past = !(y === now && !C_SCOPE.month);   // anything but the current whole year: navy, so nobody misreads it
-  return `<label class="c-jf c-scope-jf${past ? ' past' : ''}"><span>Period</span><select aria-label="Period" onchange="cPickScope(this.value)">
-    <option value="all"${y === 'all' ? ' selected' : ''}>All years</option>${years.map(group).join('')}</select></label>`;
+  const l = cScopeList();
+  const on = (y) => l === 'all' || l.includes(y);
+  const past = !(l !== 'all' && l.length === 1 && l[0] === cNowYear());   // anything but the current year alone: navy
+  return `<div class="c-jf c-jfm c-scope-jf${past ? ' past' : ''}"><span>Year</span><button type="button" class="c-jfb"
+    aria-expanded="${C_SCOPE_OPEN}" aria-haspopup="true" aria-label="Year" onclick="event.stopPropagation();cScopeToggle()">${esc(cScopeWord())}</button>${C_SCOPE_OPEN
+    ? `<div class="c-jfmenu" role="group" aria-label="Year" onclick="event.stopPropagation()"><label><input type="checkbox" value="all"${l === 'all' ? ' checked' : ''}
+      onchange="cPickScope('all', this.checked)"><span>All years</span></label>${cScopeAllYears().map((y) => `<label><input type="checkbox" value="${y}"${on(y) ? ' checked' : ''}
+      onchange="cPickScope(${y}, this.checked)"><span>${y}</span></label>`).join('')}</div>` : ''}</div>`;
 }
-function cPickScope(v) { if (v === 'all') return cSetScope('all', 0); const [yr, m] = v.split('-').map(Number); cSetScope(yr, m); }
+function cScopeToggle(open = !C_SCOPE_OPEN) { if (C_SCOPE_OPEN === open) return; C_SCOPE_OPEN = open; cDrawScope(); }
+// A tick adds or takes away one whole year; "All years" ticks every year, and unticked goes back to the current year.
+// The last year can not be unticked: a choice of no year is no choice.
+function cPickScope(v, on) {
+  const every = cScopeAllYears();
+  if (v === 'all') return cSetScope(on ? 'all' : [cNowYear()]);
+  const l = cScopeList();
+  const now = l === 'all' ? [...every] : [...l];
+  const next = on ? [...new Set([...now, Number(v)])] : now.filter((y) => y !== Number(v));
+  if (!next.length) return cDrawScope();
+  return cSetScope(next.length === every.length && every.every((y) => next.includes(y)) ? 'all' : next);
+}
 // Desktop: the corner of the window, beside every page's head (which leaves it room, --scope-w). Phone: a row of
 // its own in the frozen top bar, so it never sits on the "Acting as" box or a page's own buttons.
 function cPlaceScope() {
@@ -2717,16 +2724,31 @@ function cPlaceScope() {
 function cDrawScope() { const el = document.querySelector('#cScope'); if (el) { el.innerHTML = cScopeHtml(); cPlaceScope(); } }
 function installCScope() {
   if (document.querySelector('#cScope')) return;
-  document.body.insertAdjacentHTML('beforeend', '<div id="cScope" class="c-scope" role="group" aria-label="Which period"></div>');
+  document.body.insertAdjacentHTML('beforeend', '<div id="cScope" class="c-scope" role="group" aria-label="Which years"></div>');
+  cScopeFromUrl();
   cDrawScope();
   if (window.addEventListener) window.addEventListener('resize', cPlaceScope);
+  document.addEventListener('click', () => cScopeToggle(false));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') cScopeToggle(false); });
   api('/api/scope/years').then((r) => { C_SCOPE_YEARS = (r && r.years) || []; cDrawScope(); }).catch(() => {});
 }
-// A change redraws the page you are on and the menu's counts, under the new scope. A Reports cohort was counted
-// under the old one, so it goes.
-function cSetScope(year, month) {
-  C_SCOPE = { year: year === 'all' ? 'all' : Number(year), month: year === 'all' ? 0 : Number(month) || 0 };
+// AN OLD LINK STILL LANDS (Q59): ?y=2025&m=3 (the Q45 shape) opens 2025 with March 2025 chosen on Reports; ?y=2024,2026
+// opens those years. Read once, on open.
+function cScopeFromUrl() {
+  let q; try { q = new URLSearchParams(location.search); } catch { return; }
+  const ys = String(q.get('y') || '').split(',').map(Number).filter((y) => Number.isInteger(y) && y >= 2000 && y <= 2100);
+  if (!ys.length) return;
+  C_SCOPE = { years: ys.length === 1 && ys[0] === cNowYear() ? null : [...new Set(ys)].sort((a, b) => a - b) };
+  const m = Number(q.get('m'));
+  if (ys.length === 1 && m >= 1 && m <= 12) C_REP_MONTH = `${ys[0]}-${String(m).padStart(2, '0')}`;
+}
+// A change redraws the page you are on and the menu's counts, under the new years. A Reports cohort was counted
+// under the old ones, so it goes; a month chosen on Reports stays only while its year is still chosen.
+function cSetScope(years) {
+  const now = cNowYear();
+  C_SCOPE = { years: years === 'all' ? 'all' : (years.length === 1 && Number(years[0]) === now ? null : [...new Set(years.map(Number))].sort((a, b) => a - b)) };
   C_PCOHORT = null;
+  if (C_REP_MONTH && !cRepMonths().includes(C_REP_MONTH)) C_REP_MONTH = '';
   cDrawScope();
   route();
   cNavCounts();
@@ -2926,17 +2948,17 @@ async function routeC(page, arg) {
 async function cHomeData() {
   // THE PERIOD (Q45): the year scope, never the calendar year on its own. 'all' has no year: no target, the last
   // twelve months on the chart.
-  const year = cScopeYear() === 'all' ? 'all' : cScopeYear();
-  const [from, to] = cScopeDates();
+  const year = cScopeYear();   // one year, 'multi' or 'all' (Q59): a year's target only for one year
   const [rep, people, sum, intake] = await Promise.all([
-    api(`/api/report?from=${from}${to ? '&to=' + to : ''}`),
+    api('/api/report?' + cScopeReportQs()),
     cPeopleRows(),
     api('/api/summary').catch(() => null),
     api('/api/intake').catch(() => null),
   ]);
   const s = rep.summary || {};
   const thisMonth = cTodayIso().slice(0, 7);
-  const months = (rep.trend || []).filter((m) => (year === 'all' || m.month.startsWith(String(year))) && m.month <= thisMonth);
+  const picked = cScopeList();
+  const months = (rep.trend || []).filter((m) => (picked === 'all' || picked.includes(Number(m.month.slice(0, 4)))) && m.month <= thisMonth);
   // the rows ARE the period: the Admitted among them were admitted in it (server, scopePeopleSql)
   const admitted = people.filter((p) => p.status === 'Admitted' && p.admitted_at);
   const undated = people.filter((p) => p.status === 'Admitted' && !p.admitted_at).length;
@@ -2966,7 +2988,7 @@ const cFig = (n) => (n === null ? '<span class="kgapn" title="not available">—
 async function viewHomeC() {
   const D = await cHomeData();
   $('#view').innerHTML = `<div class="kpage kb">
-    <div class="khead"><div><h1 class="c-sr">Home</h1><p class="c-crumb" style="margin:0">Admissions ${esc(cScopeWord())}${D.year === cNowYear() && !C_SCOPE.month ? ` · to ${esc(D.asOf)}` : ''}</p></div></div>
+    <div class="khead"><div><h1 class="c-sr">Home</h1><p class="c-crumb" style="margin:0">Admissions ${esc(cScopeWord())}${D.year === cNowYear() ? ` · to ${esc(D.asOf)}` : ''}</p></div></div>
     ${cHomeB(D)}
     ${D.noNext === null || D.overdue === null || D.inbox === null
       ? '<p class="kgap-note">A dash means that figure did not answer. Nothing here is filled in from an earlier session.</p>' : ''}
@@ -3052,7 +3074,7 @@ function cHomeMonths(D, extraCls = '') {
 // Blue is the admitted figure, mustard the target. Depth belongs to the frame (the meter's sunk track), never
 // to the mark.
 function cTarget(D) {
-  if (typeof C_SCOPE !== 'undefined' && C_SCOPE.month) return null;   // a year's target against one month would mislead (Q45)
+  // a year's target only against that one year (Q59): never against several years together
   const t = CFG.targets && CFG.targets[String(D.year)];
   if (!t || !(Number(t.admitted) > 0)) return null;
   const progs = Array.isArray(t.officerProgrammes) ? t.officerProgrammes : [];
@@ -3128,7 +3150,7 @@ function cHomeB(D) {
 // (Admitted, Leads, Conversion, Median) open their own Reports tab on This year (the owner, 05.10.2026): Home card ->
 // the tab's breakdowns -> the people, whose header figure and every bar open them.
 function cGoReportYear(chapter) {
-  C_RPT_PRESET = 'year'; RPT = { from: cTodayIso().slice(0, 4) + '-01-01', to: '' };
+  C_RPT_PRESET = 'year'; RPT = { from: cTodayIso().slice(0, 4) + '-01-01', to: '' }; C_REP_MONTH = '';   // a Home card is the whole years
   C_REP_CH = chapter || null;   // the card lands on its own tab
   if (location.hash === '#/reports') viewReportsC(); else location.hash = '#/reports';
 }
@@ -4132,13 +4154,12 @@ let C_JSEL = null; let C_JDATA = null;
 // carries no trace of the stage they left in their current row.
 let C_JEXITS = null;
 async function viewJourneyC() {
-  const year = cScopeYear() === 'all' ? '' : cScopeYear();   // the band's Arrived: the period's arrivals (Q45)
-  const [pFrom, pTo] = cScopeDates();
+  // the band's Arrived: the arrivals of the chosen years (Q45, Q59)
   const [people, tasks, exits, rep] = await Promise.all([cPeopleRows(), api('/api/tasks?scope=open'),
     api('/api/journey/exits').catch(() => null),
     // Arrived is the SAME figure Home's Leads card reads, from the same report, so the two
     // screens cannot disagree. A failed read is a dash, never a number from earlier.
-    api(`/api/report?from=${pFrom}${pTo ? '&to=' + pTo : ''}`).catch(() => null)]);
+    api('/api/report?' + cScopeReportQs()).catch(() => null)]);
   C_JEXITS = exits;
   const taskOf = new Map(); tasks.forEach((t) => { if (!taskOf.has(t.person_id)) taskOf.set(t.person_id, t); });
   const arrived = rep && rep.summary && typeof rep.summary.newLeads === 'number' ? rep.summary.newLeads : null;
@@ -4903,9 +4924,11 @@ function cRepBuckets(label, today) {
 // period and the twelve months), the people rows, the config, today. Definitions are the report's own (src/reports.js)
 // except Admitted, which is Home's card: admitted people with an admission date in the period.
 function cRepModel(r, people, cfg, today) {
-  const t0 = Date.parse(r.period.from), t1 = Date.parse(r.period.to);
-  const inP = (d) => { const t = d ? Date.parse(d) : NaN; return t >= t0 && t < t1; };
-  const pw = cRepPeriodWord(r.period.label, today);
+  // the period's ranges (Q59: a set of years can be 2024 + 2026, two ranges), the axis over its span cut to them
+  const R = (r.period.ranges || [[r.period.from, r.period.to]]).map(([a, b]) => [Date.parse(a), Date.parse(b)]);
+  const inP = (d) => { const t = d ? Date.parse(d) : NaN; return R.some(([a, b]) => t >= a && t < b); };
+  const span = r.period.span || r.period.label;
+  const pw = r.period.years && r.period.years.length > 1 ? r.period.years.join(', ') : cRepPeriodWord(span, today);
   const coh = {}; let seq = 0;
   const fig = (name, label, list) => { const k = 'q' + (++seq); coh[k] = { name, label, ids: list.map((p) => p.id) }; return { k, n: list.length }; };
   const val = (v) => (v == null || String(v).trim() === '' ? '(not recorded)' : String(v).trim());
@@ -4919,7 +4942,10 @@ function cRepModel(r, people, cfg, today) {
       .map(([value, ps]) => ({ value, ...fig(`${name}:${value}`, `${what} · ${said(value)}`, ps) }));
   };
   const progs = cfg.programmes || [];
-  const T = cRepBuckets(r.period.label, today);
+  // the buckets over the span, kept only where they meet a chosen range (2024 + 2026 has no 2025 months)
+  const T0 = cRepBuckets(span, today);
+  const days = R.map(([a, b]) => [cDay(new Date(a).toISOString()), cDay(new Date(b - 1).toISOString())]);   // Riga days
+  const T = { ...T0, list: T0.list.filter((x) => days.some(([d0, d1]) => x.to >= d0 && x.from <= d1)) };
   const inB = (iso, x) => { const d = cDay(iso); return !!d && d >= x.from && d <= x.to; };
 
   // 1 ADMITTED (Home's card: admitted, with the admission date in the period)
@@ -5135,10 +5161,11 @@ function cRepBody(id, M) {
 
 // The page: the period presets and the download, then the tab row and the open chapter.
 function cRepHtml(M, from, to) {
-  // NO PERIOD BAR (Q45, decided A 05.10.2026; the owner: "Nothing should be duplicated. Its confusing."): the
-  // Period dropdown in the corner is the only period; the download follows it (cRepPeriod sets RPT).
-  const head = `<div class="c-head"><div><h1>Reports</h1><p>${esc(cScopeWord())} · ${esc(from || '')} to ${esc(to || '')}</p></div>
-      <div class="act"><button class="btn" onclick="openExport()">Download for management review</button></div></div>
+  // NO PERIOD BAR (Q45, decided A 05.10.2026; the owner: "Nothing should be duplicated. Its confusing."): the years
+  // are the corner's; inside them, "Whole year" or one month is chosen here (Q59). The download follows it (RPT).
+  const P = typeof C_REP_MONTH !== 'undefined' && C_REP_MONTH ? `${C_MONTHS_LONG[Number(C_REP_MONTH.slice(5)) - 1]} ${C_REP_MONTH.slice(0, 4)}` : cScopeWord();
+  const head = `<div class="c-head"><div><h1>Reports</h1><p>${esc(P)} · ${esc(from || '')} to ${esc(to || '')}</p></div>
+      <div class="act">${cRepMonthHtml()}<button class="btn" onclick="openExport()">Download for management review</button></div></div>
     ${cSheetNotice()}`;
   const card = (id) => { const e = cRepEcho(id, M);
     return `<span>${esc(e.label)}</span><b${e.fig ? '' : ' class="rp-nofig"'}>${e.fig}</b><small>${e.small}</small>`; };
@@ -5153,18 +5180,47 @@ function cRepHtml(M, from, to) {
 
 // THE PERIOD, IN ONE PLACE: the app-wide year scope (Q45), the Year and Period in the corner, read here and nowhere
 // else. RPT follows it, so the download for management review is the same period as the page.
-function cRepPeriod() {
-  const [from, to] = cScopeDates();
-  RPT = { from, to };
-  return { from, to };
+// Q59: the chosen years, whole; or ONE month of them, chosen here on Reports only ("inside this year we can in app
+// choose the periods we need"). The month goes when its year is no longer chosen.
+let C_REP_MONTH = '';   // '' = the whole of the chosen years; 'YYYY-MM' = one month inside them
+// The months of the chosen years that have begun, newest first.
+function cRepMonths() {
+  const l = cScopeList(), now = cTodayIso().slice(0, 7);
+  const ys = l === 'all' ? cScopeAllYears() : [...l].sort((a, b) => b - a);
+  return ys.flatMap((y) => C_MONTHS_LONG.map((n, k) => `${y}-${String(k + 1).padStart(2, '0')}`).filter((ym) => ym <= now).reverse());
 }
+function cRepPeriod() {
+  if (C_REP_MONTH && !cRepMonths().includes(C_REP_MONTH)) C_REP_MONTH = '';
+  if (C_REP_MONTH) {
+    const [y, m] = C_REP_MONTH.split('-').map(Number);
+    const from = `${C_REP_MONTH}-01`, to = cTodayIso().startsWith(C_REP_MONTH) ? '' : `${C_REP_MONTH}-${new Date(Date.UTC(y, m, 0)).getUTCDate()}`;
+    RPT = { from, to, years: [] };
+    return { from, to, month: C_REP_MONTH, word: `${C_MONTHS_LONG[m - 1]} ${y}` };
+  }
+  const l = cScopeList();
+  if (l === 'all') { const from = Math.min(cNowYear(), ...C_SCOPE_YEARS) + '-01-01'; RPT = { from, to: '', years: [] }; return { from, to: '', word: cScopeWord() }; }
+  RPT = { from: '', to: '', years: [...l] };
+  return { years: [...l], word: cScopeWord() };
+}
+// The in-page choice: "Whole year" or one month of the chosen years. Reports only; the download follows it.
+function cRepMonthHtml() {
+  const l = cScopeList(), several = l === 'all' || l.length > 1;
+  const byYear = new Map(); cRepMonths().forEach((ym) => { const y = ym.slice(0, 4); if (!byYear.has(y)) byYear.set(y, []); byYear.get(y).push(ym); });
+  return `<label class="c-jf rp-month"><select aria-label="Month" onchange="cRepPickMonth(this.value)"><option value=""${C_REP_MONTH ? '' : ' selected'}>${several ? 'Whole years' : 'Whole year'}</option>${
+    [...byYear.entries()].map(([y, ms]) => `<optgroup label="${y}">${ms.map((ym) => `<option value="${ym}"${ym === C_REP_MONTH ? ' selected' : ''}>${C_MONTHS_LONG[Number(ym.slice(5)) - 1]} ${y}</option>`).join('')}</optgroup>`).join('')}</select></label>`;
+}
+function cRepPickMonth(v) { C_REP_MONTH = cRepMonths().includes(v) ? v : ''; viewReportsC(); }
 async function viewReportsC() {
   const P = cRepPeriod();
   const qs = new URLSearchParams();
+  if (P.years) qs.set('years', P.years.join(','));
   if (P.from) qs.set('from', P.from);
   if (P.to) qs.set('to', P.to);
-  const [r, people] = await Promise.all([api('/api/report' + (qs.toString() ? '?' + qs : '')), cPeopleRows()]);
-  const [from, to] = String(r.period.label || '').split(' to ');
+  // a month chosen here: its people only (the server's own filter, the Q45 month shape)
+  const [r, people] = await Promise.all([api('/api/report' + (qs.toString() ? '?' + qs : '')),
+    cPeopleRows(P.month ? `y=${Number(P.month.slice(0, 4))}&m=${Number(P.month.slice(5))}` : '')]);
+  const lbl = String(r.period.label || ''), cut = lbl.indexOf(' to ');
+  const [from, to] = cut < 0 ? [lbl, ''] : [lbl.slice(0, cut), lbl.slice(cut + 4)];
   const M = cRepModel(r, people, CFG, cTodayIso());
   C_REP_COH = M.coh;
   $('#view').innerHTML = cRepHtml(M, from, to);
@@ -6863,7 +6919,7 @@ async function openExport() {
   // most recent excel extension and google sheets file").
   const sheetsOk = AUTH.on && AUTH.google;
   modal('Download for management review', `
-    <p class="sub" style="margin:0 0 10px">${esc(RPT.from || 'The start of this month')} to ${esc(RPT.to || 'the end of this month')}</p>
+    <p class="sub" style="margin:0 0 10px">${RPT.years && RPT.years.length ? esc(RPT.years.join(', ')) : `${esc(RPT.from || 'The start of this month')} to ${esc(RPT.to || 'the end of this month')}`}</p>
     ${d.sections.map(row).join('')}
     <div id="xErr"></div>
     <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
@@ -6880,6 +6936,7 @@ function doExport(fmt = 'csv') {
   if (!picked.length) { const e = $('#xErr'); if (e) e.innerHTML = '<div class="err">Tick at least one section.</div>'; return; }
   RPT_PICK = new Set(picked);
   const qs = new URLSearchParams();
+  if (RPT.years && RPT.years.length) qs.set('years', RPT.years.join(','));   // the chosen years (Q59), else a run of days
   if (RPT.from) qs.set('from', RPT.from);
   if (RPT.to) qs.set('to', RPT.to);
   qs.set('sections', picked.join(','));
@@ -6912,6 +6969,7 @@ async function setPeriodPreset(which) {
 
 async function viewReports() {
   const qs = new URLSearchParams();
+  if (RPT.years && RPT.years.length) qs.set('years', RPT.years.join(','));
   if (RPT.from) qs.set('from', RPT.from);
   if (RPT.to) qs.set('to', RPT.to);
   const r = await api('/api/report' + (qs.toString() ? '?' + qs : ''));
