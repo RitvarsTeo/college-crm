@@ -26,8 +26,8 @@ above, the working underneath in word order. Worktree `crm-bench`, branch `ui/20
 | `config.benchmarks` beside `targets`: minN 20 + rows with value/range, definition, source, url, year, region, confidence, step. Lead to application 15-35%, contract to admitted 88-93% (Noel-Levitz 2010, US four-year colleges, medium) | BUILT |
 | Server `maturedSteps` (src/reports.js), in `/api/report` as `steps`: the Q49 matured people (60+ days), who EVER reached the stage (where they are now, History status events, or admitted), with the ids | BUILT |
 | Page: dot = the server figure; the track (band, scale, dot) opens the people who reached; the working `a -> b` opens both sides; hollow dot and "~" under 20 people; source label small under the band; a row without full provenance is never drawn | BUILT |
-| Shots 1440 light + dark: `For review/2026-10-06 Benchmarks A/` | BUILT |
-| Note: the older "Reached - Application or beyond" block counts everyone added by where they are NOW, so its figure differs from the matured step rate above it. Not changed (not asked) | SAID |
+| Shots 1440 light + dark, 375 light (rows stack, no sideways scroll): `For review/2026-10-06 Benchmarks A/` | BUILT |
+| **DECIDED 06.10 (via MASTER CONTROL, the owner's rule "Nothing should be duplicated. Its confusing"):** the old "Reached - Application or beyond" block (everyone added, by where they are now) is removed; the matured Lead to application row is the one figure. "Where the rest are now" stays | BUILT |
 
 ## 06.10.2026 - Help center = B, the one flow, is the default
 

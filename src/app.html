@@ -4968,7 +4968,6 @@ function cRepModel(r, people, cfg, today) {
   const conversion = {
     pct: pct(won.length, ripe.length), who, days: S.conversionDays,
     won: fig('conversion:admitted', `Leads · ${pw} · ${who} · admitted`, won), base: fig('conversion:matured', `Leads · ${pw} · ${who}`, ripe),
-    reachedApplication: fig('conversion:application', `Leads · ${pw} · reached Application or beyond`, arr.filter((p) => ['Application', 'Contract', 'Admitted'].includes(p.status))),
     stoppedAt: stops.map((id) => ({ value: id, ...fig(`conversion:now:${id}`, `Leads · ${pw} · now ${cStage(id)}`, arr.filter((p) => p.status === id && !p.admitted_at)) })).filter((x) => x.n),
     byProgramme: rate('conversion:programme', `Leads · ${pw} · ${who}`, ripe, (p) => val(p.programme)),
     byChannel: rate('conversion:channel', `Leads · ${pw} · ${who} · came from`, ripe, (p) => val(p.source_channel)),
@@ -5102,10 +5101,9 @@ function cRepBody(id, M) {
     ${cRepBlock('Education', `${pw} · ${cRepGo(L.eduRecorded)} recorded`, cRepBars(L.byEducation, 'education', 'added ' + M.pw), `<span class="rp-chip">maritime school ${cRepGo(L.maritime)}</span>`)}
     ${cRepBlock('Nationality', `${pw} · ${cRepGo(L.natRecorded)} recorded`, cRepBars(L.byNationality, 'nationality', 'added ' + M.pw))}</div>`;
   if (id === 'conversion') {
-    const base = Math.max(1, L.all.n), R = C.reachedApplication;
-    const reach = `<div class="kbars"><div class="kbar" tabindex="0" role="button" data-n="${R.n}" data-coh="${R.k}" data-tip="Application or beyond|${R.n} people|added ${esc(M.pw)}" data-kgo="cohort|${R.k}"><span class="kbl">Application or beyond</span><span class="kbt rp-track"><i style="width:${(R.n / base) * 100}%"></i></span><b>${R.n}</b></div></div>`;
-    return `${cRepBench(C.bench)}<div class="c-rgrid">${cRepBlock('Reached', `of the people added · ${pw}`, reach)}
-      ${cRepBlock('Where the rest are now', `people added · ${pw}`, cRepBars(C.stoppedAt, 'stage', 'added ' + M.pw))}
+    // "Reached - Application or beyond" (everyone added, by where they are NOW) is gone: the matured Lead to application
+    // row above is the one figure for it (the owner's rule, "Nothing should be duplicated. Its confusing", 06.10.2026).
+    return `${cRepBench(C.bench)}<div class="c-rgrid">${cRepBlock('Where the rest are now', `people added · ${pw}`, cRepBars(C.stoppedAt, 'stage', 'added ' + M.pw))}
       ${cRepBlock('By programme', `admitted · ${esc(C.who)} · ${pw}`, cRepRates(C.byProgramme, 'programme'))}
       ${cRepBlock('By channel', `admitted · ${esc(C.who)} · ${pw}`, cRepRates(C.byChannel, 'channel'))}</div>`;
   }

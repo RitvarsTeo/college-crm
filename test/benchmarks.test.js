@@ -141,8 +141,9 @@ test('the page: our dot is the server figure; the track (dot) and the working op
   assert.ok(!none.includes('bm-dot') && none.includes('bm-band'));
 });
 
-test('on Reports > Conversion, above the existing blocks; colours from the metric palette, light and dark', async () => {
-  assert.match(APP, /return `\$\{cRepBench\(C\.bench\)\}<div class="c-rgrid">\$\{cRepBlock\('Reached'/);
+test('on Reports > Conversion, above Where the rest are now, the old Reached block gone; colours from the metric palette, light and dark', async () => {
+  assert.match(APP, /return `\$\{cRepBench\(C\.bench\)\}<div class="c-rgrid">\$\{cRepBlock\('Where the rest are now'/);
+  assert.ok(!APP.includes("cRepBlock('Reached'") && !APP.includes('reachedApplication'), 'the old Reached block is gone: one figure, not two (06.10)');
   const css = APP.slice(APP.indexOf('/* BENCHMARKS on Reports > Conversion'), APP.indexOf('@media (max-width:700px){ html.ui-c .bm-row'));
   assert.match(css, /\.bm-dot i\{[^}]*background:#29a8df/);
   assert.match(css, /html\.ui-c\{--bm-band:#c9d3de;--bm-ring:#fff\}/);
