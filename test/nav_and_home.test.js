@@ -97,7 +97,7 @@ test('the Outcomes screen is still reachable, though it is not in the menu', () 
 test('Journey is everyone: People, Journey and Outcomes are one screen, and there is no tab row', () => {
   // Q47 (the owner, 05.10.2026: "maybe we can combine, the people with Journey? Just call it Journey then??")
   const route = fn('function cPoolRouteJourney(');
-  assert.match(route, /if \(page === 'people' && !st && !C_PCOHORT && location\.hash !== '#\/journey'\) C_JP\.col = null;/,
+  assert.match(route, /if \(page === 'people' && !st && !C_PCOHORT && location\.hash\.split\('\?'\)\[0\] !== '#\/journey'\) C_JP\.col = null;/,
     '#/people and #/people/all open everyone');
   assert.match(route, /C_JP\.view = 'board';\s*cJColToBoard\(\);\s*return viewJourneyC\(\);/, 'Q57: every way in opens the Board');
   assert.doesNotMatch(APP, /cPeopleTabs|class="c-ptabs"/, 'the Journey | All people tab row is gone');

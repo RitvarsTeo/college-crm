@@ -18,7 +18,7 @@ test('an empty address routes to Home and lights Home in the menu', () => {
   assert.equal(hash, '#/home');
   const [, page] = hash.split('/');
   assert.equal(ctx.place(page), 'home', 'the page is Home, so markCNav lights the Home item');
-  assert.match(fn('async function route('), /const hash = location\.hash \|\| START\(\);/);
+  assert.match(fn('async function route('), /const full = location\.hash \|\| START\(\);\s*const \[hash, qs\] = full\.split\('\?'\);/, 'Q61: the page part, then the view state');
   assert.doesNotMatch(APP, /location\.hash \|\| '#\/today'/, 'nothing defaults to Today any more');
 });
 test('the hidden classic view keeps Today, it has no Home', () => {

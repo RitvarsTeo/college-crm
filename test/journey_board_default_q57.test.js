@@ -43,11 +43,11 @@ function app() {
       ctx.cPoolRouteJourney(page);
     },
   };
-  const src = [line('const C_JF_EMPTY = '), line('const C_PF_EMPTY = '), 'var C_JF = C_JF_EMPTY(); var C_PF = C_PF_EMPTY();',
+  const src = [line('const C_JF_EMPTY = '), line('const C_PF_EMPTY = '), 'var C_JF = C_JF_EMPTY(); var C_PF = C_PF_EMPTY(); var C_STATE_FROM_HASH = false;',
     line('let C_JP = ').replace('let ', 'var '),
     fn('function cGoStage('), fn('function cGoClosedTag('), fn('function cChartGo('), fn('function cGoPeople('), fn('function cHelpGo('),
     fn('async function viewOutcomesC('), fn('function cPoolRouteJourney('), fn('function cJColToBoard('), line('function cJBoardToCol('),
-    APP.slice(APP.indexOf('function cEditFromJourney('), APP.indexOf('\n', APP.indexOf("if (location.hash === '#/journey') cPoolRouteJourney('journey'); else location.hash = '#/journey'; }", APP.indexOf('function cEditFromJourney('))) + 1),
+    APP.slice(APP.indexOf('function cEditFromJourney('), APP.indexOf('\n', APP.indexOf("if (location.hash.split('?')[0] === '#/journey') cPoolRouteJourney('journey'); else location.hash = '#/journey'; }", APP.indexOf('function cEditFromJourney('))) + 1),
     fn('function cGoCohort('),
   ].join('\n');
   vm.runInNewContext(src + '\nthis.X = { cGoStage, cGoClosedTag, cChartGo, cGoPeople, cHelpGo, viewOutcomesC, cPoolRouteJourney, cEditFromJourney, cGoCohort, get JP() { return C_JP; }, get JF() { return C_JF; }, get PF() { return C_PF; }, set JP(v) { C_JP = v; } };', ctx);

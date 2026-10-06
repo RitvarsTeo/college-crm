@@ -1139,6 +1139,20 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .helppanel h4{font-family:inherit;font-weight:650;font-size:15px}
   /* C's own screens */
   html.ui-c .c-crumb{font-size:12.5px;color:var(--t3);margin:0 0 6px}
+  /* Q61: where a page reached through a link came from; a click is Back */
+  html.ui-c .c-back{margin:0 0 6px;font-size:12.5px}
+  html.ui-c .c-back a{color:var(--petink);text-decoration:none;font-weight:600}
+  html.ui-c .c-back a:hover{text-decoration:underline}
+  html.ui-c .c-back a:focus-visible{outline:2px solid var(--pet);outline-offset:2px;border-radius:3px}
+  html.ui-c kbd{display:inline-block;min-width:1.6em;padding:1px 7px;border:1px solid var(--control-line);border-bottom-width:2px;border-radius:6px;
+    background:var(--surface);font:inherit;font-size:12.5px;font-weight:700;color:var(--ink);text-align:center;white-space:nowrap}
+  html.ui-c .c-keyrow{grid-template-columns:150px minmax(0,1fr);cursor:default}
+  html.ui-c .c-keyrow .c-what{text-align:left;color:var(--ink)}
+  html.ui-c dialog.c-keys{border:0;border-radius:14px;padding:16px 18px;max-width:440px;width:calc(100vw - 32px);background:var(--surface);color:var(--ink);
+    box-shadow:0 18px 50px -12px rgba(10,36,99,.45)}
+  html.ui-c dialog.c-keys::backdrop{background:rgba(10,36,99,.28)}
+  html.ui-c .c-keys-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px}
+  html.ui-c .c-keys-head h2{margin:0;font-size:16px}
   html.ui-c .c-sentence{font-family:inherit;font-size:27px;line-height:1.3;font-weight:500;letter-spacing:-.01em;margin:0 0 4px;max-width:34ch}
   html.ui-c .c-sentence em{font-style:normal;color:var(--pet)}
   html.ui-c .c-health{display:grid;grid-template-columns:auto 1fr;gap:26px;align-items:center;background:var(--surface);border:1px solid var(--rule);border-radius:14px;padding:26px 28px;margin:22px 0 16px;max-width:760px}
@@ -2659,6 +2673,7 @@ function installCNav() {
   </div>`);
   installCTabs();
   installCScope();
+  installCViewState();
   // No "Open the classic view" link: C is the normal product, and the classic view is a
   // hidden fallback reached only by the address ?ui=classic (the owner, 28.09.2026).
 }
@@ -3160,7 +3175,7 @@ function cHomeB(D) {
 function cGoReportYear(chapter) {
   C_RPT_PRESET = 'year'; RPT = { from: cTodayIso().slice(0, 4) + '-01-01', to: '' }; C_REP_MONTH = '';   // a Home card is the whole years
   C_REP_CH = chapter || null;   // the card lands on its own tab
-  if (location.hash === '#/reports') viewReportsC(); else location.hash = '#/reports';
+  if (location.hash.split('?')[0] === '#/reports') viewReportsC(); else location.hash = '#/reports';
 }
 // A stage on Home opens the Journey on exactly that stage: the filter the Journey already
 // has (C_JF.stage), set and then shown. Nothing else the reader had chosen is kept, so
@@ -3170,13 +3185,13 @@ function cGoStage(id) {
   C_PTAB = 'journey'; C_PF = C_PF_EMPTY(); C_PCOHORT = null; C_JSEL = null;
   if (!C_TERMINAL.includes(id)) { C_OUT_TAG = null; C_OUT_REASON = null; C_OUT_FILTER = null; }
   C_JF = C_JF_EMPTY(); C_JP.col = id; C_JP.view = 'board';
-  if (location.hash === '#/journey') cPoolRouteJourney('journey'); else location.hash = '#/journey';
+  if (location.hash.split('?')[0] === '#/journey') cPoolRouteJourney('journey'); else location.hash = '#/journey';
 }
 // Cold / reject on Home opens Not proceeding with exactly that tag.
 function cGoClosedTag(id) {
   C_OUT_REASON = null; C_PF = C_PF_EMPTY(); C_PCOHORT = null; C_JF = C_JF_EMPTY();
   C_OUTCOME = 'Not proceeding'; C_OUT_FILTER = null; C_OUT_TAG = id;
-  if (location.hash === '#/outcomes') viewOutcomesC(); else location.hash = '#/outcomes';
+  if (location.hash.split('?')[0] === '#/outcomes') viewOutcomesC(); else location.hash = '#/outcomes';
 }
 
 
@@ -3323,10 +3338,10 @@ function cChartGo(spec) {
   if (kind === 'inbox') { location.hash = '#/leads'; return; }
   if (kind === 'cohort') { cGoCohort(key); return; }   // a Reports figure: exactly its people (Q35)
   C_PF = C_PF_EMPTY(); C_PCOHORT = null; C_JF = C_JF_EMPTY();   // Q57: the board shows exactly what the figure counts
-  if (kind === 'outcome') { C_OUTCOME = key; C_OUT_FILTER = null; C_OUT_TAG = null; C_OUT_REASON = null; if (location.hash === '#/outcomes') viewOutcomesC(); else location.hash = '#/outcomes'; return; }
+  if (kind === 'outcome') { C_OUTCOME = key; C_OUT_FILTER = null; C_OUT_TAG = null; C_OUT_REASON = null; if (location.hash.split('?')[0] === '#/outcomes') viewOutcomesC(); else location.hash = '#/outcomes'; return; }
   C_OUTCOME = 'Admitted';
   C_OUT_FILTER = { kind, key, label };
-  if (location.hash === '#/outcomes') viewOutcomesC(); else location.hash = '#/outcomes';
+  if (location.hash.split('?')[0] === '#/outcomes') viewOutcomesC(); else location.hash = '#/outcomes';
 }
 
 function cWireCharts(only) {
@@ -3433,7 +3448,7 @@ function cByPerson(tasks) {
 }
 // Home's Overdue and Due today open Today on exactly that section (Q36).
 let C_TODAY_AT = '';
-function cGoToday(section) { C_TODAY_AT = section; if (location.hash === '#/today') viewTodayC(); else location.hash = '#/today'; }
+function cGoToday(section) { C_TODAY_AT = section; if (location.hash.split('?')[0] === '#/today') viewTodayC(); else location.hash = '#/today'; }
 
 // -------------------------------------------------------------------- OUTCOMES
 // Cold or reject, the SECOND axis on Not proceeding (Admissions, 30.09.2026). Empty when
@@ -3578,7 +3593,7 @@ function viewHelpC() {
   $('#view').innerHTML = `<div class="c-head"><div><h1>Help center</h1></div>
       <div class="act"><button class="btn ghost" id="helpTourBtn" onclick="cStartTour(this)">Take the tour</button>
       <button class="btn" onclick="fbOpen('BUG')">Report a problem</button></div></div>
-    ${cHelpFlow()}${cHelpHowTo()}
+    ${cHelpFlow()}${cHelpHowTo()}${cKeysHelp()}
     <h2 class="c-set-h">Questions and answers</h2>
     <div id="helpFaq" class="c-helpfaq"></div>
     <div id="helpAdmin"></div>`;
@@ -3935,10 +3950,12 @@ function cJBoardToCol() { const st = C_JF.stage || []; C_JP.col = st.length === 
 // The old addresses land here, on the right column: #/people and #/people/all are everyone, #/outcomes the outcome
 // last asked for, a stage link (cGoStage) its stage, a People filter its column.
 function cPoolRouteJourney(page) {
+  // Q61: Back (or a link carrying the state) returns to exactly the view it names, the List included
+  if (C_STATE_FROM_HASH) { C_STATE_FROM_HASH = false; return C_JP.view === 'list' ? viewJourneyPool() : viewJourneyC(); }
   const roles = CFG.stageRoles || {};
   if (page === 'outcomes') C_JP.col = C_OUTCOME;
   const st = C_PF.stage || '';
-  if (page === 'people' && !st && !C_PCOHORT && location.hash !== '#/journey') C_JP.col = null;
+  if (page === 'people' && !st && !C_PCOHORT && location.hash.split('?')[0] !== '#/journey') C_JP.col = null;
   if (st && st !== 'open') {
     if (st.startsWith('tag:')) { C_JP.col = roles.closed || 'Not proceeding'; C_OUT_TAG = st.slice(4); } else C_JP.col = st;
     C_PF.stage = '';
@@ -4060,10 +4077,10 @@ const cClosedStage = () => (CFG.stageRoles || {}).closed;
 function cGoPeople(filter) {
   C_PF = { ...C_PF_EMPTY(), ...filter }; C_PQ = ''; C_PEDIT = null; C_PMSG = ''; C_PTAB = 'all';
   if (filter && filter.due === 'none' && Object.keys(filter).length === 1) {   // Home's No next step: the Today card
-    C_PF = C_PF_EMPTY(); C_TP.col = 'none'; if (location.hash === '#/today') viewTodayC(); else location.hash = '#/today'; return;
+    C_PF = C_PF_EMPTY(); C_TP.col = 'none'; if (location.hash.split('?')[0] === '#/today') viewTodayC(); else location.hash = '#/today'; return;
   }
   C_JP.col = null; C_JP.view = 'board'; C_JF = C_JF_EMPTY(); C_OUT_TAG = null; C_OUT_REASON = null; C_OUT_FILTER = null;
-  if (location.hash === '#/journey') cPoolRouteJourney('people'); else location.hash = '#/journey';
+  if (location.hash.split('?')[0] === '#/journey') cPoolRouteJourney('people'); else location.hash = '#/journey';
 }
 // Journey's Edit opens the same person in People, unfiltered, scrolled to the row.
 // EDIT IN PLACE (Admissions 05.10: editing a person threw them to the People page; edit right on the Journey). On the
@@ -4072,7 +4089,7 @@ function cEditRedraw() { if (C_JP.view === 'board' && C_JDATA) cDrawJourney(); e
 function cEditFromJourney(id) { if (C_JP.view === 'board' && C_JDATA) { C_PEDIT = id; C_PMSG = ''; C_JSEL = id; return cDrawJourney(); }
   C_PF = C_PF_EMPTY(); C_PQ = ''; C_PEDIT = id; C_PMSG = ''; C_PSCROLL = true; C_PTAB = 'all'; C_JP.col = null; C_JP.view = 'board'; C_JF = C_JF_EMPTY(); C_JSEL = id;
   const p = ((C_PDATA && C_PDATA.people) || []).find((x) => x.id === id); if (p && C_TERMINAL.includes(p.status)) C_JF.stage = [p.status];
-  if (location.hash === '#/journey') cPoolRouteJourney('journey'); else location.hash = '#/journey'; }
+  if (location.hash.split('?')[0] === '#/journey') cPoolRouteJourney('journey'); else location.hash = '#/journey'; }
 // The People filters: the Journey's compact dropdowns (same look, same Clear), and they combine.
 const C_PF_DUE = [['over', 'Overdue'], ['today', 'Today'], ['none', 'No next step']];
 const C_PF_DATA = [['nocontact', 'No email or phone'], ['odd', 'Programme not in the list']];
@@ -5247,7 +5264,7 @@ function cGoCohort(k) {
   const st = [...new Set(c.ids.map((id) => C_STAGE_OF.get(id)).filter(Boolean))];
   C_JP.col = st.length === 1 ? st[0] : null; C_JP.view = 'board'; C_JF = C_JF_EMPTY(); C_OUT_TAG = null; C_OUT_REASON = null; C_OUT_FILTER = null;
   // through #/people: the route keeps a cohort there, and a menu click to #/journey lets it go
-  if (location.hash === '#/people') cPoolRouteJourney('people'); else location.hash = '#/people';
+  if (location.hash.split('?')[0] === '#/people') cPoolRouteJourney('people'); else location.hash = '#/people';
 }
 
 // apply.novikontas.org, from the SIS's web-stats (the owner's popup A, 01.10.2026: a section on Reports).
@@ -5747,7 +5764,7 @@ function readReturnFromGoogle() {
   const error = q.get('error');
   const ok = q.get('auth') === 'google';
   if (error || ok) {
-    history.replaceState(null, '', location.pathname + location.hash);
+    history.replaceState(history.state, '', location.pathname + location.hash);
   }
   return { refused: error === 'not_authorised', signedIn: ok };
 }
@@ -5873,8 +5890,181 @@ const dueText = (d) => {
 // Home, the metrics page, since Home came back on 01.10; '#/today' was V1's start page, left behind. The hidden
 // classic view has no Home, so it keeps Today.
 const START = () => (UI === 'c' ? '#/home' : '#/today');
+// ---------------------------------------------------------------- BACK ONE STEP (Q61)
+// The owner, 06.10.2026: "could benefit from hot keys (shortcuts) for faster navigation, right? First priority would
+// be back one step, especially useful when jumping between tabs and links to tabs especially." The column, the
+// filters, the open tab and a Reports figure's people lived only in variables, so Back reached the right PAGE but a
+// reset VIEW. Now every view writes what it shows into the address after the page (#/journey?v=board&st=Application),
+// so Alt+Left, the mouse's back button and a phone's back gesture return to exactly that view. A change inside a page
+// replaces the address (no extra steps to click through); moving to another page is a step. A page reached through a
+// link (not the menu) says where it came from: "<- Home", a click is Back. Not in the address: the year, which is
+// the Period dropdown's (its own lane).
+let C_STATE_FROM_HASH = false;
+let C_VIA_MENU = false;
+const cHashIs = (path) => (location.hash || '').split('?')[0] === path;
+const cList = (v) => (v ? String(v).split(',').filter(Boolean) : []);
+// A Reports figure's people are a list of ids: kept in this tab under a short token, so the address stays short
+function cCohortToken(c) {
+  if (!c) return '';
+  if (!c.tok) { c.tok = 'c' + Date.now().toString(36);
+    try { sessionStorage.setItem('crmCoh:' + c.tok, JSON.stringify({ label: c.label, ids: [...c.ids] })); } catch {} }
+  return c.tok;
+}
+function cCohortFrom(tok) {
+  if (!tok) return null;
+  try { const c = JSON.parse(sessionStorage.getItem('crmCoh:' + tok) || 'null'); return c ? { label: c.label, ids: new Set(c.ids), tok } : null; } catch { return null; }
+}
+// What the page in front of you shows, as words for the address. Only what differs from a fresh view is written.
+function cViewState(place) {
+  const q = new URLSearchParams();
+  const put = (k, v) => { if (v !== undefined && v !== null && v !== '' && !(Array.isArray(v) && !v.length)) q.set(k, Array.isArray(v) ? v.join(',') : String(v)); };
+  if (place === 'people') {
+    put('v', C_JP.view);
+    put('col', C_JP.col);
+    for (const k of ['stage', 'programme', 'due', 'owner', 'source']) put('j' + k[0] + (k === 'source' ? 'r' : ''), C_JF[k]);
+    for (const k of ['programme', 'due', 'owner', 'source', 'data', 'arrived', 'stage']) put('p_' + k, C_PF[k]);
+    put('q', C_PQ); put('tag', C_OUT_TAG); put('reason', C_OUT_REASON);
+    if (C_OUT_FILTER) put('of', [C_OUT_FILTER.kind, C_OUT_FILTER.key, C_OUT_FILTER.label].join('|'));
+    put('coh', cCohortToken(C_PCOHORT));
+  } else if (place === 'today') {
+    put('card', C_TP.col); put('prog', C_TP.programme); put('stage', C_TP.stage); put('src', C_TP.source); if (C_TP.upOpen) put('up', 1);
+  } else if (place === 'leads') {
+    put('age', C_IP.col); put('src', C_IP.channel); put('kind', C_IP.kind); if (C_IP.show !== 'new') put('show', C_IP.show);
+  }
+  return q;
+}
+// The other way: an address with a '?' names the whole view; anything it does not say is the fresh view's value.
+function cApplyViewState(place, q) {
+  const g = (k) => q.get(k) || '';
+  if (place === 'people') {
+    C_JP.view = g('v') === 'list' ? 'list' : 'board';
+    C_JP.col = g('col') || null;
+    C_JF = { ...C_JF_EMPTY(), stage: cList(g('js')), programme: cList(g('jp')), due: cList(g('jd')), owner: cList(g('jo')), source: cList(g('jsr')) };
+    C_PF = { ...C_PF_EMPTY() };
+    for (const k of ['programme', 'due', 'owner', 'source', 'data', 'arrived', 'stage']) C_PF[k] = g('p_' + k);
+    C_PQ = g('q'); C_OUT_TAG = g('tag') || null; C_OUT_REASON = g('reason') || null;
+    const of = g('of').split('|'); C_OUT_FILTER = of[0] ? { kind: of[0], key: of[1] || '', label: of.slice(2).join('|') } : null;
+    C_PCOHORT = cCohortFrom(g('coh'));
+    if (C_TERMINAL.includes(C_JP.col)) C_OUTCOME = C_JP.col;
+    C_STATE_FROM_HASH = true;
+  } else if (place === 'today') {
+    C_TP = { ...C_TP, col: g('card') || null, programme: g('prog'), stage: g('stage'), source: g('src'), upOpen: g('up') === '1', pick: null };
+  } else if (place === 'leads') {
+    C_IP = { ...C_IP, col: g('age') || null, channel: g('src'), kind: g('kind'), show: g('show') || 'new' };
+  }
+}
+// The page part of the address for the view on screen (the old names land on their page: #/people is the Journey).
+function cViewPath(place, path) {
+  return ({ people: '#/journey', today: '#/today', leads: '#/leads', home: '#/home' })[place]
+    || (place === 'reports' ? '#/reports' + (C_REP_CH ? '/' + C_REP_CH : '') : path);
+}
+const cPageLabel = () => { const h = document.querySelector('#view h1'); return h ? h.textContent.trim().slice(0, 40) : ''; };
+function cRouteState(path, qs) {
+  const page = path.split('/')[1] || '';
+  const place = cPlace(page);
+  if (qs !== undefined) cApplyViewState(place, new URLSearchParams(qs));
+  // a new step (not Back or Forward, which carry their own record): remember where it came from, unless the menu
+  // or a G shortcut took it there - a menu is not a link inside a page
+  if (!history.state) {
+    const from = C_VIA_MENU ? '' : (C_LAST_PATH && C_LAST_PATH !== path ? C_LAST_LABEL : '');
+    history.replaceState({ from }, '', location.href);
+  }
+  C_VIA_MENU = false;
+}
+let C_LAST_PATH = '', C_LAST_LABEL = '';
+// After every draw: the address says the view (replaced, never a new step) and the "<- origin" link is on top.
+function cSyncView() {
+  const full = location.hash || '';
+  const [path] = full.split('?');
+  const page = path.split('/')[1] || '';
+  const place = cPlace(page);
+  if (!place || page === 'person') { C_LAST_PATH = path; C_LAST_LABEL = cPageLabel(); cBackLink(); return; }
+  const qs = cViewState(place).toString();
+  const want = cViewPath(place, path) + (['people', 'today', 'leads'].includes(place) ? '?' + qs : '');
+  if (want !== full) history.replaceState(history.state, '', location.pathname + location.search + want);
+  C_LAST_PATH = want.split('?')[0]; C_LAST_LABEL = cPageLabel();
+  cBackLink();
+}
+function cBackLink() {
+  const view = document.querySelector('#view');
+  const from = history.state && history.state.from;
+  if (!view || !from || view.querySelector('.c-back')) return;
+  view.insertAdjacentHTML('afterbegin', `<p class="c-back"><a href="#" onclick="history.back();return false" title="Back one step (Alt+Left)">← ${esc(from)}</a></p>`);
+}
+function installCViewState() {
+  const view = document.querySelector('#view');
+  if (!view || view.dataset.state) return;
+  view.dataset.state = '1';
+  let queued = false;
+  new MutationObserver(() => { if (queued) return; queued = true; queueMicrotask(() => { queued = false; cSyncView(); }); })
+    .observe(view, { childList: true });
+  // the menu and the tab bar: a way in, not a link inside a page; the current page again is not a new step
+  document.addEventListener('click', (e) => {
+    const a = e.target && e.target.closest ? e.target.closest('a[href^="#/"]') : null;
+    if (!a) return;
+    if (a.closest('.cnav, .ctabs, .cmore, .shell > nav')) C_VIA_MENU = true;
+    const href = a.getAttribute('href');
+    if (!href.includes('?') && cHashIs(href) && !e.defaultPrevented) { e.preventDefault(); C_VIA_MENU = false; }
+  }, true);
+  document.addEventListener('keydown', cShortcut);
+}
+
+// ---------------------------------------------------------------- SHORTCUTS (Q61)
+// Ignored while typing in a field. G then a letter goes to a place; "/" puts the cursor in the page's search; Esc
+// closes the open dialog or editor; "?" lists them. Alt+Left is the browser's own Back, which now lands exactly.
+const C_KEYS = [['Alt + ←', 'Back one step, to the view you came from'], ['G then H', 'Home'], ['G then I', 'Inbox'],
+  ['G then T', 'Today'], ['G then J', 'Journey'], ['G then R', 'Reports'], ['/', 'Search on this page'],
+  ['Esc', 'Close the open dialog or editor'], ['?', 'This list']];
+const C_GO = { h: '#/home', i: '#/leads', t: '#/today', j: '#/journey', r: '#/reports' };
+let C_G_AT = 0;
+const cTyping = (el) => Boolean(el && el.closest && el.closest('input, textarea, select, [contenteditable=""], [contenteditable="true"]'));
+function cShortcut(e) {
+  if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey || cTyping(e.target)) return;
+  const k = e.key;
+  if (document.querySelector('dialog[open]')) return;   // a dialog takes the keys (Esc closes it, natively)
+  if (k === 'Escape') { if (cEscClose()) e.preventDefault(); return; }
+  if (k === '?') { e.preventDefault(); return cKeysOpen(); }
+  if (k === '/') {
+    const box = document.querySelector('#cPQ, #view input.c-search, #helpFaq input, #view input[type="search"]');
+    if (box) { e.preventDefault(); box.focus(); box.select && box.select(); }
+    return;
+  }
+  const low = k.toLowerCase();
+  if (low === 'g') { C_G_AT = Date.now(); return; }
+  if (C_G_AT && Date.now() - C_G_AT < 1500 && C_GO[low]) {
+    e.preventDefault(); C_G_AT = 0;
+    if (cHashIs(C_GO[low])) return;
+    C_VIA_MENU = true; location.hash = C_GO[low];
+    return;
+  }
+  C_G_AT = 0;
+}
+// Esc: whatever is open on the page, one thing at a time. The board's own card and filter menus keep their own Esc.
+function cEscClose() {
+  if (C_TP.pick) { C_TP.pick = null; cTodayPool(); return true; }
+  if (C_LOPEN && document.querySelector('#view .c-lead.is-open, #view .ib-card.is-open')) { C_LOPEN = null; cInboxPool(); return true; }
+  if (C_PEDIT && C_JP.view === 'list' && document.querySelector('#view .p-edit')) { C_PEDIT = null; cDrawJourneyPool(); return true; }
+  return false;
+}
+function cKeysRows() {
+  return C_KEYS.map(([key, what]) => `<div class="c-line c-keyrow"><div class="c-who"><kbd>${esc(key)}</kbd></div><div class="c-what">${esc(what)}</div></div>`).join('');
+}
+function cKeysOpen() {
+  let d = document.getElementById('cKeys');
+  if (!d) {
+    document.body.insertAdjacentHTML('beforeend', `<dialog id="cKeys" class="c-keys" aria-labelledby="cKeysH"><div class="c-keys-head"><h2 id="cKeysH">Keyboard shortcuts</h2>
+      <button type="button" class="btn sm ghost" onclick="this.closest('dialog').close()">Close</button></div><div class="c-sheet c-set">${cKeysRows()}</div></dialog>`);
+    d = document.getElementById('cKeys');
+    d.addEventListener('click', (e) => { if (e.target === d) d.close(); });   // a click outside closes it
+  }
+  if (!d.open) d.showModal();
+}
+const cKeysHelp = () => `<h2 class="c-set-h">Keyboard</h2><div class="c-sheet c-set c-keylist">${cKeysRows()}</div>`;
+
 async function route() {
-  const hash = location.hash || START();
+  const full = location.hash || START();
+  const [hash, qs] = full.split('?');
+  if (UI === 'c') cRouteState(hash, qs);   // Q61: the view comes back exactly as it was left
   drawIcons();
   const here = hash.split('/').slice(0, 2).join('/');
   // Only the two renames. The technical screens are not in the navigation at all,

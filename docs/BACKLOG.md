@@ -31,6 +31,30 @@ look at many years combined! Any years combined!" Brief Q59 via MASTER CONTROL. 
 | Old links: `?y=2025&m=3` opens 2025 with March 2025 on Reports; the server still reads `?y=YYYY&m=M` as that month | BUILT |
 | Home with several years: no year target (a target is one year's); the month chart keeps the twelve months up to today that fall in the chosen years | BUILT |
 | Shots 1440 light: `For review/2026-10-06 Q59 year/` (Year open with 2024 + 2026 ticked; Reports with September 2026). Shot data = synthetic with every fourth person moved two years back, local only | BUILT |
+## 06.10.2026 - Q61: Back returns to exactly the view you left; keyboard shortcuts
+
+Ritvars 06.10 (via MASTER CONTROL): "could benefit from hot keys (shortcuts) for faster navigation, right? First
+priority would be back one step, especially useful when jumping between tabs and links to tabs especially."
+- Every view writes what it shows into the address after the page: the Journey's Board or List, its column, its
+  filters, search, Cold / Reject, reason, month and a Reports figure's people (a short token kept in this browser tab),
+  e.g. `#/journey?v=board&js=Application&jp=NAV`; Today's card, filters and Coming up fold (`#/today?card=over&up=1`);
+  the Inbox's age column and filters; Reports' open tab stays in its path (`#/reports/conversion`). A change inside a
+  page replaces the address (no extra steps to click back through); going to another page is a step. So Alt+Left, the
+  mouse's back button and a phone's back gesture land on exactly that view; Forward and a reload too. The old names
+  still land: #/people, #/outcomes -> the Journey. The page you are already on is never a new step.
+- A page reached through a link inside a page (not the menu, not a shortcut) says where it came from at the top:
+  "← Home", "← Journey"; a click is Back.
+- Shortcuts, never while typing in a field: Alt+Left back; G then H / I / T / J / R = Home, Inbox, Today, Journey,
+  Reports; "/" puts the cursor in the page's search; Esc closes the open dialog or editor (the date picker on Today,
+  an open Inbox card, the List's edit form; the board card and filter menus keep their own Esc); "?" opens the list
+  (a dialog). The same list is in the Help center, under How to ("Keyboard").
+- Not in the address: the year (the Period dropdown is the Reports session's, Q59).
+- Checked in the browser: Home -> a stage -> a programme filter -> a person -> Back = the same column and filter,
+  "← Journey" on the person and "← Home" on the Journey; Back again = Home; Forward = the filtered Journey; Today's
+  Overdue card + filter + unfolded Coming up came back after a trip via the menu; the List came back as the List;
+  every G shortcut, "/", "?", Esc; G then H typed into the search did nothing.
+Tests: test/back_and_keys_q61.test.js; start_page, nav_and_home, journey_board_default_q57, help_center follow.
+Shots: `For review/2026-10-06 Q61 back and keys/`. **BUILT, next patch.**
 
 ## 06.10.2026 - Benchmarks on Reports > Conversion, variant A (PICKED)
 
