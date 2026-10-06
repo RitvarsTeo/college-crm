@@ -14,6 +14,14 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 06.10.2026 - The Journey band's labels never break inside a word (375 px)
+
+Seen on the Q47 shots, MASTER CONTROL for the owner: at 375 px the band read "Contac/ted", "Applic/ation". Measured
+in the browser: each stage column is 55 px there and "Application" needs 61 px at 11 px. A label now wraps only
+between words, and its size follows its column (17cqi of the cell, 8.5-12 px): 9.3 px on a 375 px phone, every label
+on one line; 12 px at 1440 as before. The Inbox's age band keeps its 10.5 px, already whole words.
+Tests: test/band_labels_whole_words.test.js. **BUILT, next patch.**
+
 ## 06.10.2026 - Q50: Inbox rows say "answer now" after one working hour, "late" at the end of that working day
 
 DECIDED 05.10.2026 (the owner picked MASTER CONTROL's suggestion), replacing 23.09's "late = next calendar day 09:00".

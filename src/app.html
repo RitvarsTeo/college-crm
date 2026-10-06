@@ -1533,7 +1533,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .jb-outs{display:flex;flex-direction:column;gap:10px}
   html.ui-c .jb-cols{position:relative;display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:8px}
   /* the shared baseline is drawn once under every column: the spine laid on its side */
-  html.ui-c .jb-cell{display:flex;flex-direction:column;align-items:stretch;min-width:0}
+  html.ui-c .jb-cell{display:flex;flex-direction:column;align-items:stretch;min-width:0;container-type:inline-size}
   html.ui-c .jb-col{appearance:none;display:flex;flex-direction:column;align-items:stretch;gap:6px;margin:0;padding:0 0 4px;border:0;border-radius:10px;
     background:transparent;font:inherit;color:inherit;cursor:pointer;min-width:0}
   html.ui-c .jb-col:hover .jb-l,html.ui-c .jb-col.on .jb-l{color:var(--ink)}
@@ -1554,7 +1554,11 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .jb-n{position:absolute;left:50%;bottom:100%;transform:translateX(-50%);padding-bottom:3px;display:flex;align-items:baseline;gap:4px;
     font-size:18px;font-weight:650;line-height:1;color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums}
   html.ui-c .jb-n em{font-style:normal;font-size:11px;font-weight:700;padding:1px 5px;border-radius:5px;background:var(--j-alarm);color:var(--j-on-alarm)}
-  html.ui-c .jb-l{display:flex;align-items:center;justify-content:center;gap:5px;font-size:12px;font-weight:600;color:var(--t2);text-align:center;overflow-wrap:anywhere}
+  /* A LABEL NEVER BREAKS INSIDE A WORD (MASTER CONTROL for the owner, 06.10.2026: "Contac/ted", "Applic/ation" at 375 px).
+     It wraps only between words ("Not / proceeding"); on a narrow column its size follows the column (17cqi of the
+     cell, between 8.5 and 12 px), so the longest stage word fits: "Application" needs 61 px at 11 px, a 375 px phone
+     gives each column 55 px. */
+  html.ui-c .jb-l{display:flex;align-items:center;justify-content:center;gap:5px;font-size:clamp(8.5px,17cqi,12px);font-weight:600;color:var(--t2);text-align:center;overflow-wrap:normal;word-break:normal;hyphens:manual}
   html.ui-c .jb-cell .c-exit{align-self:center;margin-top:2px}
   /* Q47 THE POOL FRAME: the Journey band's look, frozen; folded to one row of the same cohorts once scrolled */
   :root{--p-top:0px}   /* what is pinned above the band: the phone's top bar, measured by cPoolWire */
@@ -1624,7 +1628,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
     html.ui-c .jb-plot{--jb-half-gap:2px}
     html.ui-c .jb-n{font-size:15px}
     html.ui-c .jb-l .c-jn{display:none}
-    html.ui-c .jb-l{font-size:11px}
+    html.ui-c .jb-l{font-size:clamp(8.5px,17cqi,11px)}
     html.ui-c .jband-row{grid-template-columns:1fr}
     html.ui-c .jb-outs{flex-direction:column} }
 
