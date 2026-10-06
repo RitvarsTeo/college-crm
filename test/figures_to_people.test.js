@@ -31,7 +31,6 @@ const FIGURES = [
   ['Inbox', 'age columns', 'function cInboxPool() {', /band: cPoolBand\('Inbox', cols, C_IP\.col, 'cInboxPick'\)/],
   ['Journey', 'pool columns', 'function cDrawJourneyPool() {', /band: cPoolBand\('The journey', cols, C_JP\.col, 'cJourneyPick'\)/],
   ['Journey', 'Active journey count', 'function cJourneySummary(', /class="c-jcount" href="#\/people" onclick="cGoPeople\(\{ stage: 'open' \}\)/],
-  ['Journey', 'What comes next cells', 'function cJourneySummary(', /onclick="cJfPick\('\$\{key\}', this\.dataset\.v/],
   ['Journey', 'Arrived', 'function cJourneyBand(', /onclick="cGoPeople\(\{ arrived: '\$\{out\.year\}' \}\);return false"><span>Arrived/],
   ['Journey', 'Stage columns', 'function cJourneyBand(', /onclick="cJfPick\('stage', this\.dataset\.v/],
   // Q57: a bookend filters the board to its end column, as a stage column does

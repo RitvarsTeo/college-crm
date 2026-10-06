@@ -28,6 +28,17 @@ above, the working underneath in word order. Worktree `crm-bench`, branch `ui/20
 | Page: dot = the server figure; the track (band, scale, dot) opens the people who reached; the working `a -> b` opens both sides; hollow dot and "~" under 20 people; source label small under the band; a row without full provenance is never drawn | BUILT |
 | Shots 1440 light + dark, 375 light (rows stack, no sideways scroll): `For review/2026-10-06 Benchmarks A/` | BUILT |
 | **DECIDED 06.10 (via MASTER CONTROL, the owner's rule "Nothing should be duplicated. Its confusing"):** the old "Reached - Application or beyond" block (everyone added, by where they are now) is removed; the matured Lead to application row is the one figure. "Where the rest are now" stays | BUILT |
+## 06.10.2026 - The Journey's "What comes next" section is gone (DECIDED by the owner)
+
+The owner 06.10.2026, of the folded section under the Journey band: "in the journey we have this part.. why? What is
+the purpose of this?" It cut the open people a second time, by the kind of step they wait on and step by step (an
+Admissions ask of 29.09, folded away on 01.10). On the real data it read "No group" 33 - they all wait on "Get in
+touch", the label the server gives a step nobody chose, which is in none of the four configured kinds - and
+"No next step" 56, which Today already shows. Asked in a popup: **"Remove it"** (DECIDED, his pick).
+Removed: the section, its open/closed memory, its styles. The band, the exit marks, the outcomes and the board's
+filters are unchanged. Open, not asked: "Get in touch" still belongs to no step kind (only matters if step kinds come
+back). Tests: journey_summary.test.js (gone, band stays), figures_to_people.test.js.
+Shot: `For review/2026-10-06 patch 19/2-Journey-without-What-comes-next-1440-light.png`. **BUILT, next patch.**
 
 ## 06.10.2026 - Help center = B, the one flow, is the default
 
