@@ -14,6 +14,20 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 07.10.2026 - Q65 MOTION: A everywhere (LOCKED 07.10: "A, yes, lock in")
+
+Ritvars picked A (SKOLA-expressive) for every part, one by one on the demo (demo/2026-10-07-motion-ab, port 8879):
+page moves, board actions, charts, and last the small signals ("but A, yes, lock in"). Fixed on the way, at his word:
+smoother page changes (the arriving page eases out into place), never two page titles at once (the old page leaves
+first, ~110 ms, then the new one, ~300 ms), and the leaving page keeps its real tiles (no grey boxes).
+Release branch `motion/2026-10-07-release` from patch 27 (99d9302): src/assets/motion.js + motion.css (the engine),
+motion-charts.js/.css, motion-boards.js/.css, three script lines in app.html, the /assets motion*.js|css route
+(no-cache). Always on, no switch, no stamp; prefers-reduced-motion or a hidden tab = nothing moves; one moment at
+most 1.2 s; any click finishes it; data marks are uncovered, never scaled. Follows Due (Q67), the Q66 cards and the
+Q68 phone bar (bar taps push like the menu, the flight lands on the bar's Journey tab, its counts ring).
+Seen at 1440 and 474 on a preview (frames in `For review/2026-10-07 Q65 motion release A/`). **BUILT, its own patch
+after the rc, once he has seen it on its port.**
+
 ## 07.10.2026 - The industry benchmarks are parked: Reports shows none (one switch)
 
 Ritvars, 07.10.2026 (via MASTER CONTROL): "from full reports lets just keep it very far backlog the industry benchmarks,
