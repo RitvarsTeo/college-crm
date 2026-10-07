@@ -191,6 +191,18 @@ export const VERIFY = {
   service_account_with_domain_delegation: () => ({ ok: true, how: 'we call them; they do not call us' }),
 };
 
+// AUDIT C1 (07.10.2026). These mechanisms mean WE fetch from the provider (or staff type it in),
+// so no outside party ever has a reason to POST to the channel's address. Their VERIFY entries
+// answer ok for the channel self-check, which made POST /api/inbound/gmail and /phone accept
+// anybody's body before sign-in. The HTTP route asks this instead and refuses them.
+const PULL_AUTH = new Set(['token_in_query', 'none_needed', 'service_account_with_domain_delegation']);
+
+/** True only for a channel a provider delivers to over HTTP with its own proof. */
+export function acceptsWebhook(channel) {
+  const def = channelDef(channel);
+  return Boolean(def) && !PULL_AUTH.has(def.auth);
+}
+
 export function verifyRequest(channel, req, { secret, rawBody, url } = {}) {
   const def = channelDef(channel);
   if (!def) return { ok: false, how: 'unknown channel' };

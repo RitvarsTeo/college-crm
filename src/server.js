@@ -36,7 +36,7 @@ import { moveCheck } from './stagemove.js';
 import { scopeRanges, rangesSql, yearsOf } from './yearscope.js';
 import { receivePhoneEvent, PHONE_EVENT_SECRET_ENV } from './phoneevent.js';
 import * as webpush from './webpush.js';
-import { verifyRequest, channelDef, channelIds, integrationIds, integrationDef, allChannelStatus, BadInbound,
+import { verifyRequest, acceptsWebhook, channelDef, channelIds, integrationIds, integrationDef, allChannelStatus, BadInbound,
          parseInboundBody, handshake, CHANNELS } from './inbound.js';
 import * as auth from './auth.js';
 import * as google from './google.js';
@@ -305,7 +305,8 @@ function openBeforeSignIn(pathname) {
   if (pathname.startsWith('/api/cron/')) return true;        // CRON_SECRET is its auth
   // A REAL CHANNEL only. Never a prefix match - see the comment at the door.
   const inbound = /^\/api\/inbound\/([a-z_]+)$/.exec(pathname);
-  if (inbound && channelDef(inbound[1])) return true;
+  // A pull channel (Gmail, phone, in person) is never delivered to over HTTP: audit C1.
+  if (inbound && channelDef(inbound[1]) && acceptsWebhook(inbound[1])) return true;
   if (pathname === '/api/intake/application') return true;   // its own secret header is its auth
   if (pathname === '/api/inbound/phone-event') return true;   // PHONE_EVENT_SECRET is its auth (Q6)
   return false;
@@ -2455,6 +2456,11 @@ export const handle = async (req, res) => {
       // and the off switch and put a lead into New Leads (found 28.09.2026). Anybody else
       // takes the real path: off answers 409, on needs the provider's own signature.
       const simulated = req.headers['x-crm-simulated'] === '1' && (!AUTH_ON || Boolean(await adminOf(req)));
+      // AUDIT C1: a pull channel has no signature to check, so a real (not simulated) POST to it
+      // is refused outright. Its data only ever arrives through our own scheduled fetch.
+      if (!simulated && !acceptsWebhook(channel)) {
+        return json(res, 404, { error: 'the ' + channel + ' channel is not delivered over HTTP' });
+      }
       if (mode === 'off' && !simulated) {
         return json(res, 409, { error: `the ${channel} channel is off`,
           how: 'set CHANNEL_MODE_' + channel.toUpperCase() + ' to test or live, or send a simulated event' });
