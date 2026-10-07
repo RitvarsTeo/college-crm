@@ -29,6 +29,42 @@ DECIDED by Ritvars 07.10 (Q75, KISS list), via MASTER CONTROL. Branch `feat/2026
 | **DECIDED 07.10 (Ritvars, popup "Only submitted"):** only a real SIS submission moves a person to Submitted application. `registered` and `started` leave the stage where it is ("Application form started" is still recorded as a fact); rejected / withdrawn still go on the timeline only. Supersedes the 29-30.09 rule | BUILT |
 | ~~"Nobody is moved back"~~ came from MASTER CONTROL's own brief, NOT from Ritvars (MASTER CONTROL's correction, 07.10). **SUPERSEDED the same day:** Ritvars, asked directly: "WE HAVE TO KNOW WHEN THIS HAPPEN, they could have the need a next action, calling checking in, if they completed the form actually", confirmed by popup "Yes, both". Help center updated in the same change. Benchmark row stays `on: false` (not dropped) | SUPERSEDED |
 | **DECIDED 07.10 (Ritvars, "Yes, both"):** (1) somebody the SIS says only registered or started gets the step **"Call: did they finish the application form?"** (one open at a time, does not move the stage), and "With the SIS" now covers submitted or later only; (2) a one-time move: a person at Submitted application whose ONLY reason is an SIS registered/started record, and whom no person or completed step moved there, goes back to the stage the SIS moved them from (a person the SIS created straight there: the first stage, New), with the history line "moved: only a submitted application counts (07.10)" and the call step. Runs once (marker in sync_state). Newest backup 2026-10-07T09-01-03Z: **2 people would move, both to New** (count only) | BUILT |
+## 07.10.2026 - Q76: the person's History shows what they wrote - owned by CHANNELS
+
+Ritvars answered the MAIN session's popup "Keep the text" (07.10.2026). MAIN built it in d91039e; CHANNELS had built the
+same in 6ee70bf (ui/2026-10-07-q77). MASTER CONTROL kept the CHANNELS version (inbound data is that lane's, tied to the
+Q74 rules), so d91039e is reverted on ui/2026-10-07-next-steps. The decision and its record live with 6ee70bf.
+
+## 07.10.2026 - Q73: a coloured chip per source on the Inbox card (PICKED 07.10: "B chip")
+
+Pictures A (dot) and B (chip) on the real Inbox at 1440: `For review/2026-10-07 Q73 Inbox source colours/`. Ritvars picked
+"B chip".
+
+| What | Status |
+|---|---|
+| Each Inbox card's source is a tinted chip in its own colour: Email #29a8df, Phone #E0A526, Website #1baf7a, LinkedIn #7b5bd6, WhatsApp #008300, Facebook and Messenger #a0662a, Instagram #d55181; any other source grey #8a94a6. Light and dark | BUILT |
+| Facebook has its own colour (MASTER CONTROL: Email and Facebook can't both be blue). The set passed validate_palette.js (dataviz skill), all pairs: normal-vision floor 15.6 light and dark. CVD separation fails for any 7 hues across all pairs; the word on every chip is the second cue. Chip text is 55% colour + #011111 on its tint: 5.2:1 or better in light, 5.4:1 or better in dark | BUILT |
+| The source colour never reaches the rail, bars or bands: those keep Q69's red / navy | BUILT |
+| Fixes the old dot, which was invisible on production (an empty inline box with no size) | BUILT |
+| Help center: FAQ "Why are the sources on the Inbox cards in colour?" | BUILT |
+| Shots of the build: `Q73 B BUILT - light / dark - Inbox 1440.png` in the same folder | BUILT |
+
+## 07.10.2026 - Q70, Q71, Q72: a step says its deadline, the day can be changed, the Inbox takes a note
+
+The owner's task list through MASTER CONTROL, 07.10.2026 ("keep it stupid simple"). Branch `ui/2026-10-07-next-steps`
+from release `f45340e` (patch 31), worktree `crm-main-steps`.
+
+| What | Status |
+|---|---|
+| Q70: every step in every picker says its default days and the day it lands on: "Call and establish interest · 1 day → 08.10"; a 0-day step (Call back) says "today". The days are config.nextActions, unchanged; the values wait for Ritvars / Ieva to approve them | BUILT |
+| Q71: the Inbox card has a Note under the next step. It goes on the person's History with "Qualified from ...", as the classic dialog's note always did | BUILT |
+| Q72: the Inbox card has a due date beside the step. It starts on the step's default day and follows the step; staff can set any day. Saved at 09:00 like every other date field | BUILT |
+| Q72: Journey quick edit (no step yet): the date follows the step, it used to stay on today | BUILT |
+| Q72: "Choose next step" opens on the first step's default day, it used to open on today. Done (Due, person page) already followed the step | BUILT |
+| Q72 server: qualify() keeps the day sent when it is a real date; none or a broken one = the step's default | BUILT |
+| Help center: FAQ "When is a next step due?" | BUILT |
+| test/step_deadline_q70.test.js runs the pickers, the server and Help | BUILT |
+| Known: on the narrow Inbox card the closed dropdown cuts the words after the step name; the date beside it shows the day. The open list shows the whole line | SAID |
 
 ## 07.10.2026 - The target meters say what they are (DECIDED 07.10: "Yes, label them")
 

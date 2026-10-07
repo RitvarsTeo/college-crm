@@ -1597,8 +1597,10 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .ib-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
   html.ui-c .ib-top b{font-size:14px;overflow-wrap:anywhere}
   html.ui-c .ib-top small{margin:0;white-space:nowrap;font-variant-numeric:tabular-nums}
-  html.ui-c .ib-ch{display:flex;align-items:center;gap:6px;margin:0}
-  html.ui-c .ib-ch i{width:7px;height:7px;border-radius:50%;background:#29a8df;flex:0 0 7px}
+  /* Q73 (the owner's pick 07.10.2026, "B chip"): a tinted chip per source. Never on the rail: the rail keeps Q69's red / navy */
+  html.ui-c #view .ib-ch{display:inline-flex;align-items:center;align-self:flex-start;width:max-content;margin:0;padding:2px 9px 2px 7px;border-radius:999px;font-weight:700;color:color-mix(in srgb,var(--src,#8a94a6) 55%,#011111);background:color-mix(in srgb,var(--src,#8a94a6) 16%,transparent)}
+  html.ui-c[data-theme="dark"] #view .ib-ch{color:color-mix(in srgb,var(--src,#8a94a6) 55%,#ffffff);background:color-mix(in srgb,var(--src,#8a94a6) 26%,transparent)}
+  html.ui-c #view .ib-ch i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;flex:0 0 8px;background:var(--src,#8a94a6)}
   /* the message is a detail (the owner, 05.10.2026: "this is too much of font size!"): 13px, slate, three lines on the
      card as pictured; the open card shows it whole */
   html.ui-c #view .ib-card .ib-msg{font-size:var(--type-detail);font-weight:400;color:var(--t3);line-height:1.45;white-space:normal;overflow-wrap:anywhere;
@@ -3776,7 +3778,9 @@ async function viewLeadsC() {
       ${r.contact_email ? '' : `<label for="qEmail">Email</label><input id="qEmail" type="email" autocomplete="off">`}
       ${r.contact_phone ? '' : `<label for="qPhone">Phone</label><input id="qPhone" type="tel" autocomplete="off">`}
       <label for="qNext">Next step</label>
-      <select id="qNext">${nextActionOptionsWithSuggestion(sugg)}</select>
+      <div class="c-steprow"><select id="qNext" onchange="onNextActionChange('qNext','qDue','')">${nextActionOptionsWithSuggestion(sugg)}</select><input id="qDue" type="date" value="${cStepDue(sugg.label)}" aria-label="Due date"></div>
+      <label for="qNote">Note</label>
+      <textarea id="qNote" rows="2"></textarea>
       <div id="qErr"></div>
       <div class="c-row-acts">${r.joins
         ? `<button class="btn sm" onclick="doQualify(${Number(r.id)}, { personId: ${esc(JSON.stringify(String(r.joins.id ?? '')))}, createPerson: false })">Add to ${esc(r.joins.name)}</button>`
@@ -4058,6 +4062,11 @@ function cInboxPool() {
   const chans = [...new Set(D.rows.map((r) => r.channel))].sort().map((c) => [c, channelLabel(c)]);
   const live = C_IP.show === 'new';   // a message set aside keeps its card, without the actions
   const who = (r) => esc(r.contact_name || r.contact_handle || '') || cTelLink({ phone: r.contact_phone }) || 'Unknown';
+  // Q73 (the owner's pick 07.10.2026, "B chip"): one colour per source on the Inbox card; any other source is grey.
+  // Email and Phone are the brand's blue and mustard; the rest passed the dataviz check (validate_palette.js, all
+  // pairs, light and dark: normal-vision floor >= 15). The word is always on the chip, so colour is never alone.
+  const C_SRC_COLOUR = { email: '#29a8df', phone: '#E0A526', website: '#1baf7a', linkedin: '#7b5bd6', whatsapp: '#008300',
+    facebook: '#a0662a', messenger: '#a0662a', instagram: '#d55181' };
   const card = (r) => {
     const open = C_LOPEN === r.id; const prog = D.val(r, 'interest');
     // the state line (Q66): how long the message has waited and whether that is late (Q50); a card set aside says so
@@ -4066,7 +4075,7 @@ function cInboxPool() {
     const toggle = `C_LOPEN=${open ? 'null' : Number(r.id)};cInboxPool()`;
     return `<div class="c-jp row ib-card c-rail c-rail-${C_ST_RAIL[st]}${open ? ' is-open' : ''}" data-id="${Number(r.id)}" tabindex="0" onclick="${toggle}" onkeydown="if(event.key==='Enter'){${toggle}}">
       <div class="ib-top"><b class="c-reach">${who(r)}</b></div>
-      <small class="ib-ch"><i></i>${esc(channelLabel(r.channel))}</small>
+      <small class="ib-ch" style="--src:${C_SRC_COLOUR[r.channel] || '#8a94a6'}"><i></i>${esc(channelLabel(r.channel))}</small>
       <div class="ib-msg">${esc(r.channel === 'phone' ? cCallLine(r.body) : (r.body || D.val(r, 'question') || ''))}</div>
       ${prog || kind || r.joins ? `<div class="ib-tags">${r.joins ? `<span class="ib-joins">Joins ${esc(r.joins.name)}</span>` : ''}${prog ? `<span class="ib-prog">${esc(prog)}</span>` : ''}${kind}</div>` : ''}
       ${cStateLine(st, cAgo(r.received_at), '', fmtDateTime(r.received_at))}
@@ -4296,7 +4305,7 @@ function cEditForm(p, t) {
     <div id="pe-closed" hidden><label for="pe-reason">Why are we stopping?</label><select id="pe-reason">${reasonsForStage(p.status).map((r) => `<option>${esc(r)}</option>`).join('')}</select><input id="pe-rnote" placeholder="Explanation (needed for Other)" style="margin-top:6px"><label style="margin-top:8px">And now?</label><div class="cltags">${(CFG.closedTags || []).map((x, i) => `<label class="cltag"><input type="radio" name="peTag" value="${esc(x.id)}"${i === 0 ? ' checked' : ''}><b>${esc(x.label)}</b><small>${esc(x.what)}</small></label>`).join('')}</div></div>
     <div class="c-wide c-step">${t
       ? `<label for="pe-due">Next step</label><div class="c-steprow"><span>${esc(cTask(t.label))}</span><input id="pe-due" type="date" value="${esc(cDay(t.due_at))}" aria-label="Due date"><button class="btn sm ghost" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, false, ${esc(JSON.stringify(String(p.id ?? '')))})">Done…</button></div>`
-      : open ? `<label for="pe-next">Next step</label><div class="c-steprow"><select id="pe-next"><option value="">No next step</option>${nextActionOptions(null, p.status)}</select><input id="pe-ndue" type="date" value="${cTodayIso()}" aria-label="Due date"></div>` : '<label>Next step</label>'}</div>
+      : open ? `<label for="pe-next">Next step</label><div class="c-steprow"><select id="pe-next" onchange="onNextActionChange('pe-next','pe-ndue','')"><option value="">No next step</option>${nextActionOptions(null, p.status)}</select><input id="pe-ndue" type="date" value="${cTodayIso()}" aria-label="Due date"></div>` : '<label>Next step</label>'}</div>
     <div class="c-wide"><label for="pe-notes">Notes</label><textarea id="pe-notes" rows="4" oninput="this.nextElementSibling.textContent=this.value.length+' characters'">${esc(p.notes || '')}</textarea><div class="c-hint">${(p.notes || '').length} characters</div></div>
     <div id="pe-err" class="c-wide"></div>
     <div class="c-wide c-row-acts"><button class="btn" onclick="cSavePerson(${esc(JSON.stringify(String(p.id ?? '')))})">Save</button><button class="btn ghost" onclick="C_PEDIT=null;cEditRedraw()">Cancel</button><a class="btn ghost" href="#/person/${esc(p.id)}" style="margin-left:auto">Open person details →</a></div>
@@ -6474,7 +6483,7 @@ function nextActionOptionsWithSuggestion(suggested) {
   const rest = nextActionOptions(null);
   if (!suggested || !suggested.label) return rest;
   return `<optgroup label="Suggested">
-      <option value="${esc(suggested.label)}" selected>${esc(suggested.label)}</option>
+      <option value="${esc(suggested.label)}" selected>${esc(suggested.label)} · ${cStepIn(daysForAction(suggested.label))}</option>
     </optgroup>` + rest;
 }
 
@@ -6495,9 +6504,13 @@ function nextActionOptions(selectedLabel, stage) {
   if (keep.length) groups.unshift({ group: 'Planned now', items: keep });
   const opts = groups.map(g => `<optgroup label="${esc(g.group)}">` +
     g.items.map(i => `<option value="${esc(i.label)}" data-days="${i.days}" data-drives="${esc(i.drives)}"
-      ${i.label === selectedLabel ? 'selected' : ''}>${esc(i.label)}</option>`).join('') + '</optgroup>').join('');
+      ${i.label === selectedLabel ? 'selected' : ''}>${esc(i.label)} · ${cStepIn(i.days)}</option>`).join('') + '</optgroup>').join('');
   return opts;
 }
+// Q70 (07.10.2026): the deadline a step gets is said where it is chosen, "Call and establish interest · 1 day → 08.10"
+const cStepIn = (days) => (days ? `${days} day${days === 1 ? '' : 's'} → ${cDdMm(fmtDate(new Date(Date.now() + days * 86400000)))}` : 'today');
+// Q72: the date field starts at the step's own default; staff can set any other day
+const cStepDue = (label) => fmtDate(new Date(Date.now() + daysForAction(label) * 86400000));
 function daysForAction(label) {
   for (const g of (CFG.nextActions || [])) for (const i of g.items) if (i.label === label) return i.days;
   return 2;
@@ -6510,10 +6523,11 @@ const DRIVES_LABEL = { visit: 'drives towards a visit', application: 'drives tow
 function onNextActionChange(selId, dateId, hintId) {
   const sel = document.querySelector('#' + selId);
   const label = sel.value;
+  if (!label) return;
   const d = new Date(Date.now() + daysForAction(label) * 86400000);
   const date = document.querySelector('#' + dateId);
   if (date) date.value = fmtDate(d);                 // the Riga day, like todayStr()
-  const hint = document.querySelector('#' + hintId);
+  const hint = hintId && document.querySelector('#' + hintId);
   if (hint) hint.textContent = DRIVES_LABEL[drivesFor(label)] || '';
 }
 
@@ -7244,7 +7258,10 @@ async function doQualify(id, opts = {}) {
   const typed = (sel) => ((document.querySelector(sel) || {}).value || '').trim();
   const stated = { ...(interest ? { interest } : {}), ...(typed('#qEmail') ? { email: typed('#qEmail') } : {}),
     ...(typed('#qPhone') ? { phone: typed('#qPhone') } : {}) };
-  const body = { qualification, createPerson: true, note, confirmFields, nextAction, stated, ...opts };
+  // Q72: the day the person set; none = the step's default, worked out by the server
+  const due = (document.querySelector('#qDue') || {}).value || '';
+  const body = { qualification, createPerson: true, note, confirmFields, nextAction,
+    ...(nextAction && due ? { nextActionDue: due + 'T09:00:00.000Z' } : {}), stated, ...opts };
   try {
     const r = await post(`/api/intake/${id}/qualify`, body);
     closeModal();
@@ -8561,6 +8578,7 @@ function openNewTask(personId) {
     <label>Due</label><input id="tDate" type="date" value="${todayStr()}">
     <div style="margin-top:14px;display:flex;gap:8px"><button class="btn" onclick="doNewTask('${personId}')">Save</button>
     <button class="btn ghost" onclick="closeModal()">Cancel</button></div>`);
+  onNextActionChange('tLabel', 'tDate', 'tHint');
 }
 async function doNewTask(personId) {
   await post(`/api/people/${personId}/task`, { label: $('#tLabel').value, due: $('#tDate').value });
