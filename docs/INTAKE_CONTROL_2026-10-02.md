@@ -573,3 +573,4 @@ IN (rc/2026-10-07, QA integrating, I push by 11:00, deploy only after he sees 88
 5. First reply: Gmail thread reply times + PBX destination counts, Reports row OFF - REPORTS cfd36c9
 6. LinkedIn: Subscribe leads, dropdown answers, withdrawn never a row - CHANNELS fea7d7d, 8c0bc76
 OUT (need his pick or not built): Q68 phone boards (A/B being drawn), Q65 motion (his picks), Inbox Reply filter, two-colour titles A/B, set-aside entry point A/B, website form/email duplicate check.
+07.10 10:31 Ritvars: at 11:00 "Pushed + live" -> after QA's rc: fast-forward release/2026-10-05-intake-9 to the rc tip, record, backup, deploy_verify, push.
