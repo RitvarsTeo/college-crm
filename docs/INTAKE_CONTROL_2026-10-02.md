@@ -632,3 +632,10 @@ Checked on arrival: GitHub release/2026-10-05-intake-9 = f45340e; live page byte
 | Q76 | The whole chain of communication with the lead on the profile | to check what the person page shows | MAIN | SAID |
 | Q77 | A caller made into a lead must get a profile with email etc., so a later email joins them and is not a new lead | matching by phone or email; a caller has only a number | CHANNELS | SAID |
 "There is more to fix" - waiting for the rest from him.
+
+## 07.10 - TASK 3: data export for Aigars (after the KISS list, his order)
+His brief: pg_dump the crm schema from Neon (unpooled, --schema=crm --no-owner --no-privileges --format=plain --inserts -> crm-switchover.sql), usual verification + row count per table, put the dump + counts in a new Drive folder shared ONLY with aigars.kluga@novikontas.org (restricted), no chat or email.
+- Neon: PostgreSQL 18.6, 27 tables in crm (read 07.10 via the backup tool's local .env.crm, URL never printed).
+- pg_dump 18.6: no admin rights -> official EDB binaries zip unpacked to C:\Users\ritvarsv\Tools\pgsql18\pgsql\bin (Ritvars chose this).
+- NOT done by MASTER CONTROL: the "text file with all Vercel env values" - against his own rule (no credentials in files) and it would sit beside the encrypted tokens it unlocks. Proposed: he shares the values with Aigars in Bitwarden (shared collection or Send with expiry); MASTER CONTROL gives the list of NAMES. Waiting on his answer.
+- Timing: export at switchover with Ieva paused, so nothing entered after it is lost.
