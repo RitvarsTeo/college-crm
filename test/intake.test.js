@@ -12,7 +12,7 @@ import { openDb } from '../src/db.js';
 import { QUEUES as PBX_QUEUES } from '../lib/pbx.js';
 import { extractFrom } from '../src/extract.js';
 import {
-  receive, listInbound, qualify, archive, funnel, agedCount, purgeLineBodies,
+  receive, listInbound, qualify, archive, funnel, agedCount,
   handoffToSis, ownerFor, notifiedFor, canReach, handoverGap, surfaceAt,
   waitingFor, waitingByRole, personCanReach, whoCanReach,
 } from '../src/intake.js';
@@ -295,8 +295,7 @@ test('an item cannot be dealt with twice', async () => {
 
 // --------------------------------------------------- the message body lifecycle --
 
-// Q76 (07.10.2026, "Keep the text"): the body is no longer deleted on qualification; the retention empties it
-test('the body is kept on qualification, the structured record is made, and the retention empties it', async () => {
+test('the body is deleted on qualification and the structured record survives', async () => {
   const db = await openDb();
   const r = await receive(db, { channel: 'instagram', body: FULL, name: 'Liene', externalId: 'b1' });
   assert.ok((await db.prepare('SELECT body FROM inbound WHERE id = ?').get(r.id)).body, 'it is there while qualifying');
@@ -305,18 +304,10 @@ test('the body is kept on qualification, the structured record is made, and the 
     confirmFields: ['interest', 'education'] });
 
   const row = await db.prepare('SELECT * FROM inbound WHERE id = ?').get(r.id);
-  assert.equal(row.body, FULL, 'the body is kept');
-  assert.equal(row.body_deleted_at, null);
+  assert.equal(row.body, null, 'the body is gone');
+  assert.ok(row.body_deleted_at, 'and when it went is recorded');
   const kept = await db.prepare('SELECT * FROM field_values WHERE inbound_id = ? AND person_id IS NOT NULL').all(r.id);
-  assert.ok(kept.length >= 4, 'the extracted facts are on the person');
-  // 13 months later the retention empties the lead's row and lines like any other kept message
-  await db.prepare("UPDATE inbound SET received_at = '2024-01-01T00:00:00.000Z' WHERE id = ?").run(r.id);
-  await db.prepare("UPDATE inbound_line SET received_at = '2024-01-01T00:00:00.000Z' WHERE inbound_id = ?").run(r.id);
-  await purgeLineBodies(db, '2025-01-01T00:00:00.000Z');
-  const gone = await db.prepare('SELECT body, body_deleted_at FROM inbound WHERE id = ?').get(r.id);
-  assert.equal(gone.body, null, 'gone after the retention');
-  assert.ok(gone.body_deleted_at);
-  assert.equal((await db.prepare('SELECT body FROM inbound_line WHERE inbound_id = ?').get(r.id)).body, null);
+  assert.ok(kept.length >= 4, 'the extracted facts survive the deletion');
 });
 
 // 07.10.2026, the owner asked "Set aside: keep the message text?": "Keep the text". Qualify still deletes it.

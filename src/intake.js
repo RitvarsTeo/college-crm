@@ -144,12 +144,12 @@ export async function purgeLineBodies(db, cutoffIso) {
   const at = new Date().toISOString();
   const r = await db.prepare(`UPDATE inbound_line SET body = NULL, body_deleted_at = ?
     WHERE received_at < ? AND body IS NOT NULL`).run(at, cutoffIso);
-  // and the row's own copy of a kept message (set aside, filtered, or a lead's since Q76), once the ROW and its NEWEST line
+  // and the row's own copy of a message nobody is working on (set aside or filtered), once the ROW and its NEWEST line
   // are both past the cutoff: before 07.10.2026 only the lines were emptied, so a kept row text outlived its 13 months.
   // The row's own age is required too: rows stored before lines existed (30.09-01.10) have NO lines, and "no line is
   // newer" alone would have emptied them at once (caught by MASTER CONTROL at the release check, 07.10.2026).
   await db.prepare(`UPDATE inbound SET body = NULL, body_deleted_at = ?
-    WHERE state IN ('archived', 'filtered', 'qualified') AND body IS NOT NULL AND inbound.received_at < ?
+    WHERE state IN ('archived', 'filtered') AND body IS NOT NULL AND inbound.received_at < ?
       AND NOT EXISTS (SELECT 1 FROM inbound_line l WHERE l.inbound_id = inbound.id AND l.received_at >= ?)`).run(at, cutoffIso, cutoffIso);
   return (r && (r.changes ?? r.rowCount)) || 0;
 }
@@ -579,11 +579,10 @@ export async function qualify(db, id, { qualification, personId, createPerson, b
         `recorded when ${by} added the lead`);
   }
 
-  // Q76 (the owner, 07.10.2026: "Keep the text"): the message stays, so the person's History shows what they wrote;
-  // the 13-month retention (purgeLineBodies) empties it like every other kept message
   await db.prepare(`UPDATE inbound SET state = 'qualified', qualification = ?, person_id = ?,
-    processed_by = ?, processed_at = ? WHERE id = ?`)
-    .run(qualification, pid, by, at, id);
+    processed_by = ?, processed_at = ?, body = NULL, body_deleted_at = ? WHERE id = ?`)
+    .run(qualification, pid, by, at, at, id);
+  await dropLineBodies(db, id, at);
 
   await logEvent(db, { personId: pid, kind: 'note', channel: item.channel, direction: 'in', at,
     origin: MANUAL, actor: by, subject: `Qualified from ${item.channel} as ${qualification}`,
@@ -638,11 +637,10 @@ async function applyToPerson(db, personId, field, value, opts = {}) {
 // A New Leads item another system already settled (the SIS creating an application-first person):
 // done, a lead, linked to the person, nobody pressed anything. Every write to inbound lives in this
 // file, so the pollers never touch the table themselves.
-// Making a lead (qualify) deleted the message body the moment somebody dealt with it (decided 23.09.2026). Set aside
-// kept its text from 07.10.2026 ("Set aside: keep the message text?": "Keep the text"), and so does making a lead from
-// the same day (Q76, asked "keep what the person wrote in their profile history?": "Keep the text"), so the History
-// shows the whole conversation. Every kept text waits for the 13-month retention. dropLineBodies has no caller left;
-// it stays for an explicit deletion.
+// Making a lead (qualify) deletes the message body the moment somebody dealt with it, and the lines go with it:
+// the structured record is what lives on. Set aside did too until 07.10.2026, when the owner decided to keep the
+// text there (asked "Set aside: keep the message text?": "Keep the text"), so a set-aside message can be brought
+// back whole; it now waits for the 13-month retention like a filtered one. Qualify is unchanged.
 export async function dropLineBodies(db, inboundId, at) {
   await db.prepare(`UPDATE inbound_line SET body = NULL, body_deleted_at = ?
     WHERE inbound_id = ? AND body IS NOT NULL`).run(at, inboundId);
@@ -650,7 +648,9 @@ export async function dropLineBodies(db, inboundId, at) {
 
 export async function confirmedBySystem(db, id, { personId, by, at = nowIso() }) {
   await db.prepare(`UPDATE inbound SET state = 'qualified', qualification = 'lead', person_id = ?,
-    processed_by = ?, processed_at = ?, archive_reason = NULL, archive_note = NULL WHERE id = ?`).run(personId, by, at, id);
+    processed_by = ?, processed_at = ?, archive_reason = NULL, archive_note = NULL, body = NULL,
+    body_deleted_at = ? WHERE id = ?`).run(personId, by, at, at, id);
+  await dropLineBodies(db, id, at);
 }
 
 export async function archive(db, id, { reason, note, by }) {

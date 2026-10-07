@@ -752,27 +752,12 @@ function channelLabel(id) {
     || (CONFIG.channelAliases && CONFIG.channelAliases[id]) || id || 'unknown';
 }
 
-// Q76 (the owner, 07.10.2026: "Keep the text"): what the person wrote, from every Inbox message that became theirs, in
-// the same History, at the time it arrived. The text stays on the Inbox line, so the 13-month retention still empties
-// it there; a row stored before lines existed shows its own copy. Read only, built on every open: nothing is copied.
-async function saidByPerson(id) {
-  const lines = await db.prepare(`SELECT l.id, l.inbound_id, l.channel, l.kind, l.received_at, l.body FROM inbound_line l
-    JOIN inbound i ON i.id = l.inbound_id WHERE i.person_id = ? AND l.body IS NOT NULL`).all(id);
-  const rows = await db.prepare(`SELECT i.id, i.channel, i.received_at, i.body FROM inbound i WHERE i.person_id = ?
-    AND i.body IS NOT NULL AND NOT EXISTS (SELECT 1 FROM inbound_line l WHERE l.inbound_id = i.id)`).all(id);
-  const said = (key, channel, kind, at, body) => ({ id: key, person_id: id, kind: 'channel', channel, direction: 'in',
-    occurred_at: at, subject: kind === 'call' ? 'Call' : kind === 'form' ? 'Form' : 'Message', body, origin: 'automatic', said: true });
-  return [...lines.map((l) => said('line-' + l.id, l.channel, l.kind, l.received_at, l.body)),
-    ...rows.map((r) => said('row-' + r.id, r.channel, 'message', r.received_at, r.body))];
-}
-
 async function personRow(id, viewer) {
   const p = await db.prepare('SELECT * FROM people WHERE id = ?').get(id);
   if (!p) return null;
   const all = await db.prepare('SELECT * FROM events WHERE person_id = ? ORDER BY occurred_at DESC, id DESC').all(id);
-  p.hiddenCorrections = all.length - visibleTimeline(all, viewer).length;
-  p.timeline = [...visibleTimeline(all, viewer), ...await saidByPerson(id)]
-    .sort((a, b) => String(b.occurred_at || '').localeCompare(String(a.occurred_at || '')));
+  p.timeline = visibleTimeline(all, viewer);
+  p.hiddenCorrections = all.length - p.timeline.length;
   p.viewer = viewer || null;
   p.viewerIsAdmin = isAdmin(viewer);
   p.tasks = await db.prepare('SELECT * FROM tasks WHERE person_id = ? ORDER BY due_at ASC').all(id);

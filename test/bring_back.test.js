@@ -82,8 +82,7 @@ test('only a set-aside message can come back; a lead made from a message cannot'
 
 // ------------------------------------------------ "Keep the text" (07.10.2026) --
 // The owner, asked "Set aside: keep the message text?": "Keep the text". Qualify is unchanged.
-// Q76 (07.10.2026, "Keep the text"): making a lead keeps it too, for the person's History
-test('set aside keeps the text, lines included; making a lead keeps it as well', async () => {
+test('set aside keeps the text, lines included; making a lead still clears it', async () => {
   const db = await openDb(':memory:');
   const a = await receive(db, { channel: 'gmail', externalId: 'k1', email: 'a@gmail.com', body: 'keep me', source: 'provider' });
   await archive(db, a.id, { reason: 'Spam', by: 'Ieva' });
@@ -94,8 +93,8 @@ test('set aside keeps the text, lines included; making a lead keeps it as well',
   const q = await receive(db, { channel: 'gmail', externalId: 'k2', email: 'q@gmail.com', body: 'I want navigation', source: 'provider' });
   const r = await qualify(db, q.id, { qualification: 'lead', createPerson: true, by: 'Ieva', nextAction: 'Call and establish interest' });
   assert.ok(r.ok, JSON.stringify(r));
-  assert.equal((await db.prepare('SELECT body FROM inbound WHERE id = ?').get(q.id)).body, 'I want navigation', 'qualify keeps the row (Q76)');
-  assert.equal((await db.prepare('SELECT body FROM inbound_line WHERE inbound_id = ?').get(q.id)).body, 'I want navigation', 'and its lines');
+  assert.equal((await db.prepare('SELECT body FROM inbound WHERE id = ?').get(q.id)).body, null, 'qualify still clears the row');
+  assert.equal((await db.prepare('SELECT body FROM inbound_line WHERE inbound_id = ?').get(q.id)).body, null, 'and its lines');
 });
 
 test('a message set aside BEFORE the change lost its text: it comes back with name and channel, nothing invented', async () => {
