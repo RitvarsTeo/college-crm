@@ -1752,6 +1752,18 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .kstrip .ktgt-n .ktgt-who{display:inline;font-size:12px;font-weight:600;letter-spacing:.02em;color:var(--t3)}
   html.ui-c .ktgt-n strong{font-weight:700;color:var(--ink)}
   html.ui-c .ktgt-n strong.ktgt-goal{color:var(--ink);box-shadow:inset 0 -2px 0 var(--v-tgt)}
+  /* the key (07.10.2026, "Yes, label them"): the track's mustard tick, small, before the word "target" */
+  html.ui-c .ktgt-n .ktgt-key{display:inline-block;width:3px;height:.95em;margin:0 4px 0 1px;border-radius:2px;background:var(--v-tgt);vertical-align:-.12em}
+  /* the words break only between their two halves, "Officer (NAV + ENG) 94" and "target 98 · 96%": one line where they
+     fit, two where not, at any width and with any figure. Each half sits 14px left of its own start; the dot between them
+     lives in that gap, so the line box clips it when the second half starts a line. */
+  html.ui-c .ktgt-n{overflow:hidden}
+  html.ui-c .ktgt-n .ktgt-in{display:flex;flex-wrap:wrap;align-items:baseline;margin-left:-14px}
+  html.ui-c .ktgt-n .ktgt-a,html.ui-c .ktgt-n .ktgt-b{position:relative;display:block;padding-left:14px;min-width:0}
+  html.ui-c .ktgt-n .ktgt-b,html.ui-c .ktgt-n .ktgt-nw{white-space:nowrap}
+  html.ui-c .ktgt-n .ktgt-sep{position:absolute;left:0;top:0;width:14px;text-align:center;white-space:pre}
+  html.ui-c .ktgt-n .ktgt-nw{display:inline}
+  html.ui-c .kstrip .ktgt-n :is(.ktgt-in,.ktgt-a,.ktgt-b,.ktgt-sep,.ktgt-nw){font:inherit;letter-spacing:inherit;color:inherit}   /* not the card's label span */
   html.ui-c .kb-top{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:30px;align-items:stretch}
   /* Q46 (05.10.2026): beside the month chart the donut's row IS the chart's plot: cFitDonut sets its top (--kplot-dy)
      and height (--kplot-h). The ring's drawn diameter (108 of the 140 drawing) is 78% of that height, inside the
@@ -3192,14 +3204,12 @@ function cTarget(D) {
   const off = progs.length && pct > 0 ? {
     goal: Math.round((Number(t.admitted) * pct) / 100), pct, label: progs.join(' + '),
     rows: D.admitted.filter((p) => progs.includes(p.programme)) } : null;
-  return { goal: Number(t.admitted), rows: D.admitted, off };
+  return { goal: Number(t.admitted), rows: D.admitted, off, year: D.year, source: t.hover || '' };
 }
-// One track per figure from 0 to its target, the admitted share filled, the target its end.
+// One track per figure from 0 to its target, the admitted share filled, the target its end; the words are Reports'
+// (cTargetBars, 07.10.2026).
 function cTargetMeter(G) {
-  const bar = (n, goal, label, cls) => `<div class="ktgt ${cls}" role="img" aria-label="${n} admitted${label ? ' in ' + esc(label) : ''} of the ${goal} target">
-    <div class="ktgt-track"><i style="width:${Math.min(100, (n / goal) * 100).toFixed(2)}%"></i><s></s></div>
-    <div class="ktgt-n">${label ? `<span class="ktgt-who">${esc(label)}</span> <strong>${n}</strong> · ` : ''}<strong>${Math.round((n / goal) * 100)}%</strong> of <strong class="ktgt-goal">${goal}</strong></div></div>`;
-  return bar(G.rows.length, G.goal, '', 'all') + (G.off ? bar(G.off.rows.length, G.off.goal, G.off.label, 'off') : '');
+  return cTargetBars(G, G.rows.length, G.off ? G.off.rows.length : 0);
 }
 
 // ---- B: TODAY FIRST ------------------------------------------------------------
@@ -5194,8 +5204,8 @@ function cRepModel(r, people, cfg, today) {
   const admitted = {
     all: fig('admitted', `Admitted · ${pw}`, adm),
     undated: fig('admitted:undated', 'Admitted · no admission date', people.filter((p) => p.status === 'Admitted' && !p.admitted_at)),
-    target: t && Number(t.admitted) > 0 ? { goal: Number(t.admitted),
-      off: offP.length && Number(t.officerPct) > 0 ? { label: offP.join(' + '), goal: Math.round(Number(t.admitted) * Number(t.officerPct) / 100),
+    target: t && Number(t.admitted) > 0 ? { goal: Number(t.admitted), year: yr, source: t.hover || '',
+      off: offP.length && Number(t.officerPct) > 0 ? { label: offP.join(' + '), pct: Number(t.officerPct), goal: Math.round(Number(t.admitted) * Number(t.officerPct) / 100),
         ...fig('admitted:officer', `Admitted · ${pw} · ${offP.join(' + ')}`, adm.filter((p) => offP.includes(p.programme))) } : null } : null,
     byTime: T.list.map((x) => ({ ...x, ...fig(`admitted:${T.grain}:${x.key}`, `Admitted · ${x.tip}`,
       people.filter((p) => p.status === 'Admitted' && inB(p.admitted_at, x))) })),
@@ -5292,6 +5302,20 @@ function cReachedWords(step, link) {
   if (!step || !(Number(step.of) > 0)) return '';
   return `<br>${link(step.reached, 'reached')} / ${link(step.of, 'of')} reached Application`;
 }
+// THE TARGET METERS, on Home's Admitted card and on Reports > Admitted word for word (the owner 07.10.2026, "Yes, label
+// them": "86% of 140" had no words and no hover). Each line says what it counts, its figure, the target and the share:
+// "Admitted 120 · target 140 · 86%", "Officer (NAV + ENG) 94 · target 98 · 96%". The mustard tick at the end of the
+// track IS the target; the same tick stands before the word "target" as its key. The hover names the target and its
+// source (config targets[year].hover). link(cls, n, v) makes a figure a click on Reports; Home draws it plain.
+function cTargetBars(G, n, offN, link = (cls, x, v) => (v === undefined ? x : v)) {
+  const src = G.source ? `. Source: ${G.source}` : '';
+  const bar = (who, x, goal, cls, title) => { const pct = Math.round((x / goal) * 100);
+    return `<div class="ktgt ${cls}" title="${esc(title)}"><div class="ktgt-track" aria-hidden="true"><i style="width:${Math.min(100, (x / goal) * 100).toFixed(2)}%"></i><s></s></div>
+    <div class="ktgt-n"><span class="ktgt-in"><span class="ktgt-a"><span class="ktgt-who">${who}</span> <strong>${link(cls, x)}</strong></span><span class="ktgt-b"><span class="ktgt-sep"> · </span><span class="ktgt-key" aria-hidden="true"></span>target <strong class="ktgt-goal">${goal}</strong> · <strong>${link(cls, x, pct + '%')}</strong></span></span></div></div>`; };
+  return bar('Admitted', n, G.goal, 'all', `Target for ${G.year}: ${G.goal} admitted${src}`)
+    + (G.off ? bar(`Officer <span class="ktgt-nw">(${esc(G.off.label)})</span>`, offN, G.off.goal, 'off',
+      `Target for ${G.year}: ${G.off.pct}% of ${G.goal} = ${G.off.goal} admitted in the officer programmes, ${G.off.label}${src}`) : '');
+}
 // The benchmark rows that may be drawn: in config, with every provenance field, and with the server's step present.
 const C_BENCH_NEEDS = ['definition', 'source', 'url', 'year', 'region', 'confidence'];
 function cRepBenchRows(steps, bench) {
@@ -5375,11 +5399,8 @@ const cRepBlock = (title, basis, body, extra = '') => `<section class="ksec rp-b
 // THE ECHO: the Home card, the same label and figure, as the chapter's head (and in B, the tab).
 function cRepEcho(id, M) {
   const A = M.admitted, L = M.leads, C = M.conversion, D = M.median, N = M.now;
-  const meter = (n, goal, label, cls, f) => `<div class="ktgt ${cls}" role="img" aria-label="${n} admitted${label ? ' in ' + esc(label) : ''} of the ${goal} target">
-    <div class="ktgt-track"><i style="width:${Math.min(100, (n / goal) * 100).toFixed(2)}%"></i><s></s></div>
-    <div class="ktgt-n">${label ? `<span class="ktgt-who">${esc(label)}</span> <strong>${cRepGo(f)}</strong> · ` : ''}<strong>${cRepGo(f, Math.round((n / goal) * 100) + '%')}</strong> of <strong class="ktgt-goal">${goal}</strong></div></div>`;
   if (id === 'admitted') return { label: 'Admitted', fig: cRepGo(A.all), small: `${esc(M.pw)} · admission date${A.undated.n ? ` · +${cRepGo(A.undated)} undated` : ''}`,
-    more: A.target ? meter(A.all.n, A.target.goal, '', 'all', A.all) + (A.target.off ? meter(A.target.off.n, A.target.off.goal, A.target.off.label, 'off', A.target.off) : '') : '' };
+    more: A.target ? cTargetBars(A.target, A.all.n, A.target.off ? A.target.off.n : 0, (cls, x, v) => cRepGo(cls === 'all' ? A.all : A.target.off, v)) : '' };
   if (id === 'leads') return { label: 'Leads', fig: cRepGo(L.all), small: `${esc(M.pw)} · people added` };
   if (id === 'conversion') return { label: 'Conversion', fig: C.pct == null ? '-' : cRepGo(C.won, C.pct + '%'),
     small: `${cRepGo(C.won)} / ${cRepGo(C.base)} ${esc(C.who)}${C.reached ? cReachedWords(C.reached.step, (n, which) => cRepGo(which === 'reached' ? C.reached.won : C.reached.of)) : ''}` };

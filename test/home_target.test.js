@@ -12,10 +12,12 @@ const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
 const CONFIG = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'prototype.json'), 'utf8'));
 const BLOCK = APP.slice(APP.indexOf("// ---- THE YEAR'S TARGET (D-C6"), APP.indexOf('// ---- B: TODAY FIRST'));
+// the words are shared with Reports (07.10.2026, "Yes, label them"): test/target_labels.test.js runs both cards
+const WORDS = (() => { const i = APP.indexOf('function cTargetBars('); return APP.slice(i, APP.indexOf('\n}\n', i) + 2); })();
 
 function load() {
   const ctx = { CFG: CONFIG, esc: (s) => String(s) };
-  vm.runInNewContext(BLOCK.replace(/^const /gm, 'var '), ctx);
+  vm.runInNewContext(BLOCK.replace(/^const /gm, 'var ') + WORDS, ctx);
   return ctx;
 }
 const person = (programme, at) => ({ programme, admitted_at: at, status: 'Admitted' });
@@ -44,8 +46,11 @@ test('each meter fills exactly its share of its own target', () => {
   const html = load().cTargetMeter(load().cTarget(D));
   const widths = [...html.matchAll(/width:([\d.]+)%/g)].map((m) => Number(m[1]));
   assert.deepEqual(widths, [Number((4 / 140 * 100).toFixed(2)), Number((3 / 98 * 100).toFixed(2))]);
-  assert.match(html, /<strong>3%<\/strong> of <strong class="ktgt-goal">140</);
-  assert.match(html, /NAV \+ ENG<\/span> <strong>3<\/strong> · <strong>3%<\/strong> of <strong class="ktgt-goal">98</);
+  const words = (h) => h.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+  const [all, off] = html.split('<div class="ktgt off"');
+  assert.equal(words(all), 'Admitted 4 · target 140 · 3%');
+  assert.equal(words(off.slice(off.indexOf('>') + 1)), 'Officer (NAV + ENG) 3 · target 98 · 3%');
+  assert.match(html, /<span class="ktgt-key" aria-hidden="true"><\/span>target <strong class="ktgt-goal">140<\/strong>/, 'the tick is the key of "target"');
 });
 
 test('the bars are on the Admitted card, always; every target switch is gone', () => {

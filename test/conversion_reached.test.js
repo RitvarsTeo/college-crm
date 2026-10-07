@@ -52,7 +52,7 @@ function home(r, people) {
     APP.slice(APP.indexOf('const C_SCOPED = '), APP.indexOf('function cScopeHtml(')),
     fn('async function cHomeData('), fn('function cHomeMonths('),
     APP.slice(APP.indexOf("// ---- THE YEAR'S TARGET (D-C6"), APP.indexOf('// ---- B: TODAY FIRST')),
-    fn('function cReachedWords('), fn('function cHomeB('), fn('function cGoHomeReached('),
+    fn('function cReachedWords('), fn('function cTargetBars('), fn('function cHomeB('), fn('function cGoHomeReached('),
   ].join('\n') + '\nthis.data = cHomeData; this.B = cHomeB; this.go = cGoHomeReached; this.setD = (d) => { C_HOME_D = d; }; var C_HOME_D = null;', ctx);
   return ctx;
 }

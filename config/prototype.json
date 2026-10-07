@@ -52,7 +52,9 @@
       "admitted": 140,
       "officerPct": 70,
       "officerProgrammes": ["NAV", "ENG"],
-      "source": "0. NJK KPI 2026.xlsx, sheet Admissions, B2: \"140 new students (70% in Officer Programs)\". Officer Programs = NAV + ENG: Ritvars, 05.10.2026 (via MASTER CONTROL)."
+      "source": "0. NJK KPI 2026.xlsx, sheet Admissions, B2: \"140 new students (70% in Officer Programs)\". Officer Programs = NAV + ENG: Ritvars, 05.10.2026 (via MASTER CONTROL).",
+      "hover": "0. NJK KPI 2026.xlsx, sheet Admissions (entered 05.10.2026)",
+      "_hover": "The meters' hover on Home and Reports names this as the target's source (07.10.2026, \"Yes, label them\")."
     }
   },
   "_benchmarks": "Reports > Conversion, variant A picked by Ritvars 06.10.2026: our matured step rate as a dot on the grey 'typical' band. A benchmark is never hard-coded in the page: every drawn row comes from here and must carry definition, source, url, year, region and confidence (test/benchmarks.test.js). step = the server's figure it is compared with (src/reports.js maturedSteps). Under minN people the dot is hollow and the value carries '~'. Research: 'For review/2026-10-05 Benchmarks/BENCHMARKS.md'.",
