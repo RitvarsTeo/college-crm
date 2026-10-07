@@ -2328,14 +2328,17 @@ export const handle = async (req, res) => {
     }
 
     if (req.method === 'GET' && p === '/api/history') {
-      const who = url.searchParams.get('as') || req.headers['x-acting-as'] || '';
+      // With sign-in on, the SESSION says who is asking, never ?as= or x-acting-as (security review
+      // 07.10.2026, M2): any signed-in user could ask "as Ritvars" and be shown an admin's scope.
+      const who = await viewerOf(req, url);
       if (!who) {
         return json(res, 400, { error: 'Nobody is selected in "Acting as".' });
       }
       // Decided 23.09.2026: an admin sees the whole log. Anybody else sees the
-      // history of their own actions and nothing else.
-      const admin = isAdmin(who);
-      const all = readsAllHistory(who);
+      // history of their own actions and nothing else. Signed in, admin is the role in crm_users.
+      const me = await currentUser(req);
+      const admin = me ? me.role === 'admin' : isAdmin(who);
+      const all = admin || readsAllHistory(who);
       const scope = all ? '' : who;
       return json(res, 200, {
         actor: who, isAdmin: admin,
