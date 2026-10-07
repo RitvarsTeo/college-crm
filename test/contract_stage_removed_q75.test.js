@@ -81,7 +81,8 @@ test('the figures still add up: "reached Application" and the stage list count t
 });
 
 test('boot: the server folds Contract on start and says how many', async (t) => {
-  const file = path.join(ROOT, 'test', '.q75-' + process.pid + '.db');
+  // in the system temp folder, never in the repository: SQLite can hold the file a moment after the server exits
+  const file = path.join((await import('node:os')).tmpdir(), 'intake-q75-' + process.pid + '-' + Date.now() + '.db');
   t.after(() => { try { fs.unlinkSync(file); } catch {} });
   const db = await openDb(file);
   await person(db, 'k1', 'Contract'); await person(db, 'k2', 'Contract');
