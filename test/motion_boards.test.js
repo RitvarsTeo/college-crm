@@ -39,7 +39,7 @@ test('it wraps the app\'s own functions, each still there under that name; it ne
 });
 test('the marks the wraps read are in the app\'s markup (a rename here breaks a moment, not the app)', () => {
   for (const mark of ['class="c-drop" data-stage=', 'class="c-jexp" data-id=', 'draggable="true" data-id=', 'draggable="true" data-pid=',
-    'class="c-col t-col t-fold c-drop t-drop" data-col="later"', 'class="t-foldx"', 'class="c-drop t-drop" data-col=', 'ib-card', 'class="ib-aside"',
+    "class=\"c-col t-col t-fold${g.id === 'later' ? ' c-drop t-drop' : ''}\" data-col=\"${g.id}\"", 'class="t-foldx"', 'class="c-drop t-drop" data-col=', 'ib-card', 'class="ib-aside"',
     'id="arErr"', 'class="hf-step', 'class="hf-ico"', 'class="hf-node"', 'class="hf-chips"']) assert.ok(APP.includes(mark), mark);
 });
 test('1. the Journey: lift, room, the copy travels into the column BEFORE the note dialog, a cancel brings it home', () => {
@@ -55,7 +55,9 @@ test('2. Today: into Due today the copy travels, into a folded Coming up it shri
   assert.match(JS, /var folded = Boolean\(target && target\.classList\.contains\('t-fold'\)\);/);
   assert.match(JS, /await travel\(ghost, target, \{ dx: 0, shrink: folded \}\);/);
   assert.match(JS, /if \(n\) \{ M\.count\(n\); M\.ping\(n\); \}/);
-  assert.match(JS, /var wasFolded = Boolean\(document\.querySelector\('#view \.t-fold'\)\);/, 'the page is the witness, not C_TP (the click sets it first)');
+  // Q68: on a phone every column can fold, so the count and the witness name Coming up itself
+  assert.match(JS, /document\.querySelector\('#view \.t-fold\[data-col="later"\] b'\)/);
+  assert.match(JS, /var wasFolded = Boolean\(document\.querySelector\('#view \.t-fold\[data-col="later"\]'\)\);/, 'the page is the witness, not C_TP (the click sets it first)');
   assert.match(JS, /clipPath: 'inset\(0 100% 0 0\)'/);
 });
 test('3. the Inbox: Set aside slides the copy out only after the save worked; Make a lead stays the engine\'s moment', () => {

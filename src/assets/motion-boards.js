@@ -238,7 +238,7 @@
         var r = await moveTo.apply(this, arguments);  // the app saves and redraws
         if (ghost) {
           if (folded) {
-            var n = document.querySelector('#view .t-fold b');
+            var n = document.querySelector('#view .t-fold[data-col="later"] b');   // on a phone (Q68) other columns fold too: only Coming up's count
             drop(ghost); if (n) { M.count(n); M.ping(n); }
           } else {
             var fresh = document.querySelector('#view .t-card[data-pid="' + CSS.escape(String(pid)) + '"]');
@@ -255,7 +255,7 @@
       cTodayPool = function () {
         // the fold's click sets C_TP.upOpen BEFORE it calls here, so the state is no witness: the page is. Folded
         // before the redraw (.t-fold), open after it (.t-foldx) = Coming up unfolded now.
-        var wasFolded = Boolean(document.querySelector('#view .t-fold'));
+        var wasFolded = Boolean(document.querySelector('#view .t-fold[data-col="later"]'));   // Coming up itself, not any folded column (Q68)
         var r = todayPool.apply(this, arguments);
         var isOpen = Boolean(document.querySelector('#view .t-foldx'));
         if (wasFolded && isOpen && byClick() && M.live()) {   // Coming up unfolds: a drawer opens
