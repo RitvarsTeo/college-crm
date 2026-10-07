@@ -615,3 +615,6 @@ REPORTS fb6eae6 target labels ("Admitted 120 · target 140 · 86%", Officer NAV+
 07.10 Q2 two-colour titles: pictures A (Help hero on navy) / B (section heads, new text blue) shown; Ritvars "[No preference]" -> PARKED, nothing built (nothing unpicked ships). Artifact watch on the migration checklist ended (connection lost).
 07.10 TILDA (Ritvars "Yes, do it"): 3 x 301 redirects saved (/college/lv -> /academy/lv, /college/en -> /academy/en, /college/en/contacts -> /academy/en/contacts), live (CDN spreading for /college/en). Homepage card rec356151973 li_link -> /academy/lv (saved), site Header page 21685644 menu item "Novikontas Academy" -> /academy/lv (saved). Publishing from a background tab does not take: Ritvars clicks Publish on Home (page 21684222). Other pages pick up the header on their next publish; the redirect covers them meanwhile. NOT "Publish all pages" (would push unfinished drafts live).
 07.10 Tilda Home published by MASTER CONTROL (a real click on Publish worked): live homepage menu + card link /academy/lv. Done.
+
+## 07.10 - NEW MASTER CONTROL session takes over (handoff HANDOFF_MASTER_CONTROL_2026-10-07.md)
+Checked on arrival: GitHub release/2026-10-05-intake-9 = f45340e; live page byte-identical to f45340e (+ sign-in script); the three /college 301s all answer 301 -> /academy/... (CDN spread done, open item 1 closed).
