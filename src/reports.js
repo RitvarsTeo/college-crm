@@ -111,6 +111,32 @@ export async function maturedSteps(db, p, opts) {
   return { ...basis, steps };
 }
 
+// ---------------------------------------------------------- first reply --
+// FIRST-REPLY TIME (the owner, 07.10.2026; benchmark: UPCEA 2025, median 3 h 18 min). Over the REAL enquiries of the
+// period (Inbox rows a provider sent: email to edu@ and calls; not filtered, not set aside) that arrived at least
+// REPLY_MATURED_HOURS ago: the time from the enquiry's own arrival to its first reply. A call's reply is its first
+// ANSWERED call (pbx_calls, 0 min when the call itself was answered); an email's is the first message edu@ sent in its
+// thread (inbound.first_reply_at, src/sync.js syncReplies). An email enquiry whose thread has not been read yet is
+// left OUT, never counted as "no reply". Nothing known = null, and nothing is drawn (missing values are never shown).
+export const REPLY_MATURED_HOURS = 24;
+export async function firstReply(db, p, { now = new Date() } = {}) {
+  const [inR, rArgs] = inP('i.received_at', p);
+  const cutoff = new Date(now.getTime() - REPLY_MATURED_HOURS * 3600000).toISOString();
+  const rows = await db.prepare(`SELECT i.id, i.channel, i.received_at, i.first_reply_at, i.reply_checked_at,
+      (SELECT MIN(c.called_at) FROM pbx_calls c WHERE c.inbound_id = i.id AND c.picked_up = 1) AS answered_at
+    FROM inbound i WHERE i.source = 'provider' AND i.channel IN ('gmail', 'phone') AND i.state IN ('new', 'qualified')
+      AND ${inR} AND i.received_at < ? ORDER BY i.id`).all(...rArgs, cutoff);
+  const known = rows.filter((r) => r.channel === 'phone' || r.first_reply_at || r.reply_checked_at);
+  if (!known.length) return null;
+  const replyAt = (r) => (r.channel === 'phone' ? r.answered_at : r.first_reply_at);
+  const done = known.filter(replyAt);
+  const mins = done.map((r) => Math.max(0, Math.round((Date.parse(replyAt(r)) - Date.parse(r.received_at)) / 60000))).sort((a, b) => a - b);
+  const median = mins.length ? (mins.length % 2 ? mins[(mins.length - 1) / 2] : Math.round((mins[mins.length / 2 - 1] + mins[mins.length / 2]) / 2)) : null;
+  return { kind: 'inbox', from: 'Enquiry', to: 'First reply', of: known.length, reached: done.length, median,
+    noReply: known.length - done.length, unread: rows.length - known.length,
+    ofIds: known.map((r) => r.id), reachedIds: done.map((r) => r.id) };
+}
+
 // A breakdown is always a count per value, plus an explicit "not recorded" row,
 // because a blank in a report reads as zero when it really means unknown.
 async function breakdown(db, column, { where = '', args = [], ...p } = {}) {
@@ -147,6 +173,8 @@ export async function report(db, { from, to, years } = {}) {
   const conv = await maturedConversion(db, p);
   const conversion = conv.pct;
   const stepRates = (await maturedSteps(db, p)).steps;   // the two stage rates the benchmarks compare with
+  const reply = await firstReply(db, p);                    // and the first-reply time, when anything is known
+  if (reply) stepRates.firstReply = reply;
 
   // How long admission actually took, as a median of real durations.
   const durations = (await db.prepare(`SELECT created_at, admitted_at FROM people

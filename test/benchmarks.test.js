@@ -75,14 +75,16 @@ test('config: every benchmark carries its value, definition and full source, nex
   assert.equal(keys.indexOf('benchmarks'), keys.indexOf('targets') + 2, 'beside targets (after its _note)');
   assert.equal(CFG.benchmarks.minN, 20);
   const rows = CFG.benchmarks.rows;
-  assert.deepEqual(rows.map((b) => [b.id, b.step, b.low, b.high]), [
-    ['lead_to_application', 'leadToApplication', 15, 35], ['contract_to_admitted', 'contractToAdmitted', 88, 93]]);
+  assert.deepEqual(rows.map((b) => [b.id, b.step, b.low ?? b.value, b.high ?? b.unit]), [
+    ['lead_to_application', 'leadToApplication', 15, 35], ['contract_to_admitted', 'contractToAdmitted', 88, 93],
+    ['first_reply', 'firstReply', 198, 'min']], 'the first-reply row (07.10.2026): 3 h 18 min, on a 24 h track');
   for (const b of rows) {
     for (const f of NEEDS) assert.ok(b[f] != null && String(b[f]).trim(), `${b.id}: ${f}`);
     assert.match(b.url, /^https:\/\//, b.id);
-    assert.match(b.source, /Noel-Levitz, 2010/);
-    assert.equal(b.year, 2010);
   }
+  for (const b of rows.slice(0, 2)) { assert.match(b.source, /Noel-Levitz, 2010/); assert.equal(b.year, 2010); }
+  assert.match(rows[2].source, /UPCEA, Secret Shopper Benchmarking Study 2025/);
+  assert.deepEqual([rows[2].year, rows[2].scale.max], [2025, 1440]);
 });
 
 test('a benchmark without its source is never drawn, and the page holds no benchmark value of its own', () => {

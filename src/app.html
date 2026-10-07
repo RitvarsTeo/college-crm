@@ -2211,11 +2211,11 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .bm-row + .bm-row{border-top:1px solid var(--rule2)}
   html.ui-c .bm-name b{display:block;font-size:14.5px;color:var(--ink)}
   html.ui-c .bm-name small{display:block;margin-top:3px;color:var(--t3);font-size:12.5px;font-variant-numeric:tabular-nums}
-  html.ui-c .bm-trackbox{position:relative;height:74px;margin:0 48px 0 22px}
+  html.ui-c .bm-trackbox{position:relative;height:74px;margin:0 56px 0 28px}
   html.ui-c .bm-track{position:absolute;left:0;right:0;top:34px;height:2px;background:var(--bm-band)}
   html.ui-c .bm-end{position:absolute;top:28px;font-size:11px;color:var(--t3);font-variant-numeric:tabular-nums}
-  html.ui-c .bm-0{left:-16px}
-  html.ui-c .bm-100{right:-42px}
+  html.ui-c .bm-0{left:-24px}      /* clear of a dot at 0 (its 18 px circle reaches 9 px out) */
+  html.ui-c .bm-100{right:-54px}   /* and of a dot at the end */
   html.ui-c .bm-band{position:absolute;top:27px;height:16px;min-width:3px;background:var(--bm-band);border-radius:3px}
   html.ui-c .bm-bandl{position:absolute;top:47px;transform:translateX(-50%);white-space:nowrap;text-align:center;font-size:11.5px;color:var(--ink)}
   html.ui-c .bm-bandl small{display:block;color:var(--t3);font-size:10.5px}
@@ -2225,7 +2225,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .bm-dot i{position:absolute;top:26px;left:-9px;width:18px;height:18px;box-sizing:border-box;border-radius:99px;background:#29a8df;box-shadow:0 0 0 3px var(--bm-ring),0 1px 4px rgba(10,36,99,.3)}
   html.ui-c .bm-dot.few i{background:var(--bm-ring);border:2.5px solid #29a8df}
   html.ui-c .bm-trackbox:hover .bm-dot i,html.ui-c .bm-trackbox:focus-visible .bm-dot i,html.ui-c .bm-trackbox.hot .bm-dot i{box-shadow:0 0 0 3px var(--bm-ring),0 0 0 5px #29a8df}
-  @media (max-width:700px){ html.ui-c .bm-row{grid-template-columns:1fr;gap:6px} html.ui-c .bm-trackbox{margin:0 44px 0 18px} }
+  @media (max-width:700px){ html.ui-c .bm-row{grid-template-columns:1fr;gap:6px} html.ui-c .bm-trackbox{margin:0 56px 0 28px} }
   html.ui-c .rp .rp-track{background:var(--c-sunk);border-radius:0 3px 3px 0}
   html.ui-c .rp-go{color:inherit;text-decoration:none;border-radius:3px}
   html.ui-c .rp-go:hover,html.ui-c .rp-go:focus-visible{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px;text-decoration-color:var(--v-adm)}
@@ -5063,9 +5063,12 @@ function cRepModel(r, people, cfg, today) {
     // BENCHMARKS (variant A, the owner 06.10.2026). Each row is a config.benchmarks row WITH its source, set against the
     // server's matured step rate (src/reports.js maturedSteps): the dot is the server's figure, and the dot and the
     // working open exactly the ids the server counted. A row without a source, or without its step, is never drawn.
-    bench: cRepBenchRows(r.steps, cfg.benchmarks).map(({ b, s, few }) => ({ b, few, pct: s.pct,
-      base: fig(`conversion:step:${b.step}:of`, `Leads · ${pw} · ${who}${s.from === 'Lead' ? '' : ' · reached ' + cStage(s.from)}`, s.ofIds.map((id) => ({ id }))),
-      won: fig(`conversion:step:${b.step}:reached`, `Leads · ${pw} · ${who} · reached ${cStage(s.to)}`, s.reachedIds.map((id) => ({ id }))) })),
+    bench: cRepBenchRows(r.steps, cfg.benchmarks).map(({ b, s, few }) => (s.kind === 'inbox'
+      // FIRST REPLY (07.10.2026): enquiries in the Inbox, most not people yet, so its figures open the Inbox
+      ? { b, few, pct: null, minutes: s.median, base: { n: s.of, go: 'inbox' }, won: { n: s.reached, go: 'inbox' } }
+      : { b, few, pct: s.pct,
+        base: fig(`conversion:step:${b.step}:of`, `Leads · ${pw} · ${who}${s.from === 'Lead' ? '' : ' · reached ' + cStage(s.from)}`, s.ofIds.map((id) => ({ id }))),
+        won: fig(`conversion:step:${b.step}:reached`, `Leads · ${pw} · ${who} · reached ${cStage(s.to)}`, s.reachedIds.map((id) => ({ id }))) })),
   };
 
   // 4 MEDIAN TIME TO ADMISSION (first contact to admitted, for the people admitted in the period)
@@ -5103,24 +5106,40 @@ function cRepModel(r, people, cfg, today) {
 const C_BENCH_NEEDS = ['definition', 'source', 'url', 'year', 'region', 'confidence'];
 function cRepBenchRows(steps, bench) {
   const minN = Number((bench || {}).minN) || 20;
-  return ((bench || {}).rows || []).filter((b) => C_BENCH_NEEDS.every((f) => b[f] != null && String(b[f]).trim() !== '') && steps && steps[b.step])
+  // a row switched off in config is not drawn; a figure that is still missing values (an unread email thread) is not
+  // drawn either: the owner's rule, missing values are never shown
+  return ((bench || {}).rows || []).filter((b) => b.on !== false && C_BENCH_NEEDS.every((f) => b[f] != null && String(b[f]).trim() !== '')
+    && steps && steps[b.step] && !(steps[b.step].unread > 0))
     .map((b) => ({ b, s: steps[b.step], few: steps[b.step].of < minN }));
 }
 // Variant A: one bullet row per benchmark. Name and the working (a -> b, both open their people) on the left; the
 // hairline 0..100% with the grey band, its label and source under it, and our dot with the value above. The whole
 // track is ONE click: it opens the people the dot counts (a benchmark opens our people, never its source).
+// minutes in words: "45 min", "3 h 18 min", "26 h"
+function cMinWord(m) {
+  m = Math.round(Number(m));
+  if (m < 60) return `${m} min`;
+  const h = Math.floor(m / 60), r = m % 60;
+  return m < 1440 && r ? `${h} h ${r} min` : `${h} h`;
+}
 function cRepBench(rows) {
   if (!rows || !rows.length) return '';
   const clamp = (n) => Math.max(0, Math.min(100, Number(n)));
   return `<section class="bm" aria-label="Benchmarks">${rows.map((x) => { const b = x.b;
-    const lo = clamp(b.show === 'tick' ? b.value : b.low), hi = Math.max(lo, clamp(b.show === 'tick' ? b.value : b.high));
-    const band = b.show === 'tick' ? `${lo}%` : `${lo}-${hi}%`;
-    const val = x.pct == null ? null : `${x.few ? '~' : ''}${x.pct}%`;
+    // a time row (unit min) runs 0 to config scale.max (24 h); a value past the end sits at the end and says itself
+    const time = b.unit === 'min', max = time ? Number((b.scale || {}).max) || 1440 : 100;
+    const at = (v) => Math.round(clamp((Number(v) / max) * 100) * 100) / 100;
+    const word = (v) => (time ? cMinWord(v) : `${v}%`);
+    const lo = at(b.show === 'tick' ? b.value : b.low), hi = Math.max(lo, at(b.show === 'tick' ? b.value : b.high));
+    const band = b.show === 'tick' ? word(b.value) : `${b.low}-${b.high}%`;
+    const v = time ? x.minutes : x.pct;
+    const val = v == null ? null : `${x.few ? '~' : ''}${word(v)}`;
+    const kgo = x.won.go || `cohort|${x.won.k}`, coh = x.won.k ? ` data-coh="${x.won.k}"` : '';
     return `<div class="bm-row" data-bench="${esc(b.id)}"><div class="bm-name"><b>${esc(b.name)}</b><small>${cRepGo(x.base)} &rarr; ${cRepGo(x.won)}</small></div>
-      <div class="bm-trackbox" tabindex="0" role="button" data-coh="${x.won.k}" data-kgo="cohort|${x.won.k}" data-tip="${esc(b.name)}|${val == null ? '-' : esc(val)}|${band} ${esc(b.label || 'typical')} · ${esc(b.sourceLabel || b.source)}"><span class="bm-track"></span><span class="bm-end bm-0">0</span><span class="bm-end bm-100">100%</span>
+      <div class="bm-trackbox" tabindex="0" role="button"${coh} data-kgo="${kgo}" data-tip="${esc(b.name)}|${val == null ? '-' : esc(val)}|${band} ${esc(b.label || 'typical')} · ${esc(b.sourceLabel || b.source)}"><span class="bm-track"></span><span class="bm-end bm-0">0</span><span class="bm-end bm-100">${time ? cMinWord(max) : '100%'}</span>
         <span class="bm-band" style="left:${lo}%;width:${hi - lo}%"></span>
         <span class="bm-bandl" style="left:${(lo + hi) / 2}%">${band} ${esc(b.label || 'typical')}<small>${esc(b.sourceLabel || b.source)}</small></span>
-        ${val == null ? '' : `<span class="bm-dot${x.few ? ' few' : ''}" style="left:${clamp(x.pct)}%" data-v="${esc(val)}"><b>${esc(val)}</b><i></i></span>`}
+        ${val == null ? '' : `<span class="bm-dot${x.few ? ' few' : ''}" style="left:${at(v)}%" data-v="${esc(val)}"><b>${esc(val)}</b><i></i></span>`}
       </div></div>`; }).join('')}</section>`;
 }
 // One figure, drawn as the click to its people. `v` is shown instead of the count when the figure is a value

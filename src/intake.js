@@ -340,6 +340,20 @@ export function missingFor(fields) {
   return (CFG.qualification.completionFields || []).filter((f) => !present.has(f));
 }
 
+// FIRST REPLY (07.10.2026): one thread read for an email enquiry. intake.js owns every write to inbound. sentAt = the
+// Date of the first message edu@ sent after the enquiry, or null when there is none yet; the read is stamped either
+// way. A reply on a row that is already a person goes into their History as an automatic outgoing email: the time
+// only, no subject, no body, no recipients.
+export async function recordReplyRead(db, { id, sentAt = null, checkedAt, personId = null }) {
+  if (sentAt) {
+    await db.prepare('UPDATE inbound SET first_reply_at = ?, reply_checked_at = ? WHERE id = ? AND first_reply_at IS NULL').run(sentAt, checkedAt, id);
+    if (personId) await logEvent(db, { personId, kind: 'email', channel: 'email', direction: 'out', at: sentAt,
+      origin: AUTOMATIC, actor: 'edu@', subject: 'Email reply sent' });
+  } else {
+    await db.prepare('UPDATE inbound SET reply_checked_at = ? WHERE id = ?').run(checkedAt, id);
+  }
+}
+
 // the late ones (Q50), within the year scope (Q45) when one is asked for: by the message's own arrival
 // (`ranges`: a set of [from, to) pairs, Q59; one pair of the Q45 shape is read too)
 export async function agedCount(db, now = nowIso(), ranges = null) {

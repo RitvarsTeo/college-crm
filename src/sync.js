@@ -13,13 +13,13 @@
 //
 // Neither poller runs while its channel is off, and off is the default.
 
-import { receive, confirmedBySystem, CONFIG, newPersonId, ownerFor, emailFilterWhy, purgeLineBodies } from './intake.js';
+import { receive, confirmedBySystem, CONFIG, newPersonId, ownerFor, emailFilterWhy, purgeLineBodies, recordReplyRead } from './intake.js';
 import { findMatches, isStrong, normEmail, normPhone } from './identity.js';
 import { knock } from './webpush.js';
 import { logEvent, AUTOMATIC, MANUAL } from './history.js';
 import { fetchCalls, rowsFrom, WINDOW_MINUTES, toRigaStamp, ZONE } from '../lib/pbx.js';
 import { fetchChanged, toSisRow } from '../lib/sis.js';
-import { runPoll as gmailPoll, loadGmailRefreshToken } from '../lib/gmail.js';
+import { runPoll as gmailPoll, runReplies as gmailReplies, loadGmailRefreshToken } from '../lib/gmail.js';
 import { adapt, toIntake } from './adapters.js';
 import { recordSisLifecycle } from './lifecycle.js';
 import { sisAdmissionDate } from './sisdates.js';
@@ -213,6 +213,7 @@ export async function syncPbx(db, { now = new Date(), minutes = WINDOW_MINUTES,
   const startedAt = clock();
   const out = { logged: 0, inbox: 0, again: 0, filtered: 0, seen: 0, noNumber: 0, callBack: 0 };
   const skipped = { notIncoming: 0, otherQueue: 0, unusable: 0, duplicateInBatch: 0 };
+  const destinations = {};   // counts per destination the list returned (lib/pbx.js rowsFrom), saved with the run
   let fetched = 0, kept = 0, pieces = 0, safeUrl = null, reached = from;
 
   while (from < nowMs) {
@@ -220,8 +221,9 @@ export async function syncPbx(db, { now = new Date(), minutes = WINDOW_MINUTES,
     const to = Math.min(from + minutes * 60000, nowMs);
     const got = await fetchCalls({ now: new Date(to), minutes: (to - from) / 60000, env, fetchImpl });
     safeUrl = got.safeUrl;
-    const { rows, skipped: sk } = rowsFrom(got.calls);
+    const { rows, skipped: sk, destinations: ds } = rowsFrom(got.calls);
     for (const k of Object.keys(skipped)) skipped[k] += sk[k] || 0;
+    for (const [d, n] of Object.entries(ds || {})) destinations[d] = (destinations[d] || 0) + n;
     fetched += got.calls.length;
     kept += rows.length;
     for (const r of rows) await storeCall(db, r, mode, at, out);
@@ -229,7 +231,7 @@ export async function syncPbx(db, { now = new Date(), minutes = WINDOW_MINUTES,
     reached = to;
     // saved after every piece, so a run that dies half way loses nothing
     await saveState(db, PBX_BOOKMARK, new Date(reached).toISOString(),
-      { pieces, fetched, kept, ...out }, at);
+      { pieces, fetched, kept, skipped, destinations, ...out }, at);
     from = to;
   }
 
@@ -237,7 +239,7 @@ export async function syncPbx(db, { now = new Date(), minutes = WINDOW_MINUTES,
   const result = { ok: true, ran: true, channel: 'phone', mode,
     window: { from: toRigaStamp(new Date(firstFrom)), to: toRigaStamp(new Date(reached)), zone: ZONE,
       minutes: Math.round((reached - firstFrom) / 60000) },
-    pieces, caughtUp, fetched, kept, skipped, ...out, safeUrl };
+    pieces, caughtUp, fetched, kept, skipped, destinations, ...out, safeUrl };
   result.purged = await purgeOld(db, 'pbx_calls', 'called_at', now);
   // 13 months PER LINE, each from its own received_at, so an old call never takes a
   // newer one with it. The line stays and says when its body went: a deletion nobody
@@ -497,8 +499,45 @@ export async function syncGmail(db, { now = new Date(), env = process.env, fetch
 
   // more:true means Gmail had another page. Say so rather than report a clean run.
   // A run that had to stop with pages left keeps the old bookmark, so the rest is asked again.
-  await saveState(db, 'gmail', got.more ? last : at, { ...out, query: got.query, more: Boolean(got.more) }, at);
-  return { ok: true, ran: true, channel: 'gmail', mode, ...out, more: Boolean(got.more), query: got.query };
+  // the same run reads the enquiries' threads for the first reply (first-reply time, 07.10.2026)
+  // a failure here never costs the poll its result: the threads are simply read again next run
+  let replies;
+  try { replies = await syncReplies(db, { now, env, fetchImpl, refreshToken }); } catch (err) { replies = { ok: false, why: 'the reply read failed' }; }
+  await saveState(db, 'gmail', got.more ? last : at, { ...out, query: got.query, more: Boolean(got.more), replies }, at);
+  return { ok: true, ran: true, channel: 'gmail', mode, ...out, more: Boolean(got.more), query: got.query, replies };
+}
+
+// FIRST-REPLY TIME (the owner, 07.10.2026; replies go out from edu@). For the email enquiries of the last REPLY_DAYS
+// that have no first reply yet, read each thread and keep ONLY the time of the first message edu@ sent after the
+// enquiry (lib/gmail.js runReplies: the Date header, nothing else). The enquiries are the Inbox's REAL ones (source
+// provider, so a test-mode copy never asks Gmail for a thread): not
+// filtered, not set aside. A reply found goes on the Inbox row (first_reply_at) and, when the row is already a person,
+// into their History as an automatic outgoing email with no subject and no body. Every thread read is stamped
+// (reply_checked_at), so "no reply yet" is a fact about a read thread, never a guess about an unread one.
+export const REPLY_DAYS = 30;
+export const REPLY_MAX = 40;
+export async function syncReplies(db, { now = new Date(), env = process.env, fetchImpl = fetch, refreshToken = undefined, max = REPLY_MAX } = {}) {
+  const at = now.toISOString();
+  const since = new Date(now.getTime() - REPLY_DAYS * 86400000).toISOString();
+  // least recently read first, so a long list is walked through over several runs
+  const rows = await db.prepare(`SELECT id, thread_key, received_at, person_id FROM inbound
+    WHERE channel = 'gmail' AND source = 'provider' AND thread_key IS NOT NULL AND first_reply_at IS NULL AND state IN ('new', 'qualified')
+      AND received_at >= ? ORDER BY reply_checked_at IS NOT NULL, reply_checked_at, received_at DESC LIMIT ?`).all(since, max);
+  if (!rows.length) return { ok: true, read: 0, replied: 0, refused: 0 };
+  const token = refreshToken === undefined ? await loadGmailRefreshToken(db, env) : refreshToken;
+  const got = await gmailReplies({ env, now, fetchImpl, refreshToken: token,
+    threads: rows.map((r) => ({ threadId: r.thread_key, after: r.received_at })) });
+  if (!got.ok) return { ok: false, read: 0, replied: 0, refused: rows.length, why: got.why };
+  let read = 0, replied = 0, refused = 0;
+  for (const r of rows) {
+    // Gmail did not answer: not stamped, read again next run, and COUNTED here so a thread that keeps refusing shows
+    if (!Object.prototype.hasOwnProperty.call(got.found, r.thread_key)) { refused++; continue; }
+    read++;
+    const sent = got.found[r.thread_key];
+    if (sent) replied++;
+    await recordReplyRead(db, { id: r.id, sentAt: sent, checkedAt: at, personId: r.person_id });   // intake.js owns the write
+  }
+  return { ok: true, read, replied, refused };
 }
 
 // One SIS record into sis_applicants. False when an older or equal copy arrives after the one we

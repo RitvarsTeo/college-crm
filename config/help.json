@@ -149,6 +149,11 @@
       "a": "On Journey, drag the person to the next stage when something real has happened. Click a person to see their details and their next step."
     },
     {
+      "id": "first-reply",
+      "q": "What is \"Email reply sent\" in a person's History?",
+      "a": "Intake reads when edu@ first replied to an email enquiry: only the time of the first reply sent from edu@ in that conversation, never its text. For a call, the reply is the first answered call. These times become the First reply figure on Reports once every email conversation has been read."
+    },
+    {
       "id": "home-numbers",
       "q": "Where do the Home numbers come from?",
       "a": "From the people in Intake, counted for the years ticked in the Year filter, top right: one or several whole years, and this year when you open Intake. Admitted counts by the admission date, everything else by the day someone arrived. Click a Home number to see it one level deeper, and the people it counts. A single month is chosen on Reports, in the month choice beside the download. Download on the Journey or on Reports gives the figures as Excel, Google Sheets or CSV."

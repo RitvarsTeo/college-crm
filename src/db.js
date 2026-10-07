@@ -140,6 +140,12 @@ CREATE TABLE IF NOT EXISTS inbound (
   archive_note TEXT,
   processed_by TEXT,
   processed_at TEXT,
+  -- FIRST REPLY (07.10.2026, the owner: "First-reply time", replies are sent from edu@): the Date of the first message
+  -- edu@ SENT in this email thread after the enquiry, and when the thread was last read for it (src/sync.js
+  -- syncReplies). Only the time is kept: never the body, the subject or the recipients. A phone enquiry's first reply
+  -- is its first answered call, read from pbx_calls.
+  first_reply_at TEXT,
+  reply_checked_at TEXT,
   -- HOW this arrived. 'provider' means a real provider posted it to the real
   -- endpoint, and it is the ONLY value the admin Channels panel accepts as
   -- evidence that a channel is connected. The demo builder and the simulator
@@ -429,6 +435,8 @@ const ADDED_COLUMNS = [
   ['inbound', 'consent', 'TEXT'],
   ['people', 'closed_tag', 'TEXT'],     // 02.10.2026, cold | reject: production's people table predates it
   ['sis_applicants', 'admitted_on', 'TEXT'],   // 06.10.2026, the SIS's own admission date (src/sisdates.js)
+  ['inbound', 'first_reply_at', 'TEXT'],       // 07.10.2026, first-reply time: the first sent email in the thread
+  ['inbound', 'reply_checked_at', 'TEXT'],     // 07.10.2026, when the thread was last read for it
 ];
 
 // ---------------------------------------------------------- the async layer --
