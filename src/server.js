@@ -323,6 +323,17 @@ function isDemoWrite(pathname) {
     || /^\/api\/inbound\/[a-z_]+\/simulate$/.test(pathname);
 }
 
+// AUDIT M1: did this browser request come from our own page? Sec-Fetch-Site is the browser's own
+// answer; Origin compared with the host it was sent to is the fallback for older browsers.
+function sameOrigin(req) {
+  const site = req.headers['sec-fetch-site'];
+  if (site) return site === 'same-origin';
+  const origin = req.headers.origin;
+  if (!origin) return true;
+  const host = String(req.headers['x-forwarded-host'] || req.headers.host || '').split(',')[0].trim();
+  try { return new URL(origin).host === host; } catch { return false; }
+}
+
 // Guessing at a password should cost something. Per email, in memory, and it is
 // deliberately not per IP as well: everybody here shares one office address.
 const LOGIN_TRIES = new Map();
@@ -913,6 +924,16 @@ export const handle = async (req, res) => {
       const back = signInFirst(req, p);
       if (back) { res.writeHead(302, { location: back, 'cache-control': 'no-store' }); return res.end(); }
       return json(res, 401, { error: 'not signed in', how: 'Open / and sign in.' });
+    }
+
+    // ---------------------------------------------- same origin only --
+    // AUDIT M1 (07.10.2026). The session cookie is SameSite=Lax, which stops other SITES, but
+    // every *.novikontas.org app is the same site as intake.novikontas.org. So a browser write
+    // must come from this origin. Webhooks, crons and sign-in are exempt (they carry their own
+    // proof), and a request with neither header is not a browser, so it holds no staff cookie.
+    if (AUTH_ON && p.startsWith('/api/') && !['GET', 'HEAD', 'OPTIONS'].includes(req.method)
+        && !openBeforeSignIn(p) && !sameOrigin(req)) {
+      return json(res, 403, { error: 'cross-origin request refused' });
     }
 
     // ---------------------------------------------- the production lock --

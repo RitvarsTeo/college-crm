@@ -231,3 +231,27 @@ test('H2: no inline handler builds a JavaScript string from esc() alone', () => 
   assert.deepEqual(bad, []);
   assert.ok((APP.match(/\$\{esc\(JSON\.stringify\(String\(/g) || []).length >= 45, 'the safe form is in place');
 });
+
+// ------------------------------------------------------------------ M1 ----
+// Without the guard: a page on any other *.novikontas.org app could POST to the CRM with a
+// staff member's cookie (SameSite=Lax treats sibling subdomains as the same site).
+test('M1: a signed-in write from another origin is refused; our own page and webhooks still work', async (t) => {
+  const s = await startHosted();
+  t.after(() => s.child.kill());
+  const cookie = adminCookie();
+  const body = JSON.stringify({ name: 'Origin Test', phone: '+37120000000' });
+  const evil = await request(s.port, 'POST', '/api/people',
+    { raw: body, headers: { cookie, origin: 'https://b2b.novikontas.org', 'sec-fetch-site': 'same-site' } });
+  assert.equal(evil.status, 403, 'a sibling subdomain could write');
+  const evilOld = await request(s.port, 'POST', '/api/people',
+    { raw: body, headers: { cookie, origin: 'https://b2b.novikontas.org' } });
+  assert.equal(evilOld.status, 403, 'an older browser (Origin only) from a sibling could write');
+
+  const own = await request(s.port, 'POST', '/api/people',
+    { raw: body, headers: { cookie, origin: 'http://127.0.0.1:' + s.port, 'sec-fetch-site': 'same-origin' } });
+  assert.notEqual(own.status, 403, 'our own page was refused');
+
+  const hook = await request(s.port, 'POST', '/api/inbound/website',
+    { raw: '{}', headers: { origin: 'https://tilda.cc', 'sec-fetch-site': 'cross-site' } });
+  assert.notEqual(hook.status, 403, 'a webhook must not be judged by origin');
+});
