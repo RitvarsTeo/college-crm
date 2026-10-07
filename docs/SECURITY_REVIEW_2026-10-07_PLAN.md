@@ -6,7 +6,8 @@ Verified by MASTER CONTROL in the live code (f45340e): C1 (openBeforeSignIn open
 token_in_query / none_needed / service_account_with_domain_delegation return ok:true) and H1
 (GET challengeCode answers any string).
 
-## Patch S1 - live risks, now (security worker, branch fix/2026-10-07-security-s1 from f45340e)
+## Patch S1 - live risks, now (branch fix/2026-10-07-security-s1 from f45340e)
+STATUS 07.10: 15 commits cc86992..c6b8fc6 built by a background worker MASTER CONTROL started OUTSIDE the lane mechanism (P9 broken; Ritvars called it out; worker stopped). Handed to the QA / INTEGRATION / FINAL CONTROL lane session: independent review of all 15 + item 12 security_guards test + run-through, then report. Not deployed; C1 and H1 still live until it ships.
 C1, H1, H2, H3, M1, M2, M3, M7 (Gmail never advances past a failed fetch), M11, C2 (fail closed on
 Vercel without CRM_AUTH=1; listen 127.0.0.1 locally), H4 boot assertion (current_schema() must equal
 CRM_PG_SCHEMA or refuse), L1, L2, L4, L7, L8. Each with a test that fails before the fix.
