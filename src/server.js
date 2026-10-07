@@ -47,6 +47,7 @@ import * as channeladmin from './channeladmin.js';
 import { todayStart, tomorrowStart, localDate, localMidnight } from './bizday.js';
 import { receiveSisApplication, mergeSisDuplicate, syncSis, channelMode, SIS_STAGE } from './sync.js';
 import { redateSisAdmissions } from './sisdates.js';
+import { htmlEscape, inviteOrigin } from './systempages.js';
 
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -228,9 +229,10 @@ async function finishGmail(req, res, url, code) {
   const mailbox = gmailB.MAILBOX;
   if (url.searchParams.get('error') || !code) return gmailPage(res, 400, false, `Access was not given. Open the link again and press Allow.`);
   const got = await gmailB.exchangeCode({ env: process.env, code, redirectUri: process.env.GOOGLE_REDIRECT_URI });
-  if (!got.ok) return gmailPage(res, 400, false, `Google did not finish: ${got.why}. Open the link again.`);
+  // Google's words and the account name are TEXT on this page (L8, 07.10.2026).
+  if (!got.ok) return gmailPage(res, 400, false, `Google did not finish: ${htmlEscape(got.why)}. Open the link again.`);
   if (got.mailbox !== mailbox) {
-    return gmailPage(res, 400, false, `You signed in as ${got.mailbox || 'another account'}. Only ${mailbox} can be connected. Open the link again and choose ${mailbox}.`);
+    return gmailPage(res, 400, false, `You signed in as ${htmlEscape(got.mailbox || 'another account')}. Only ${mailbox} can be connected. Open the link again and choose ${mailbox}.`);
   }
   await gmailB.saveGmailRefreshToken(db, got.refreshToken, process.env);
   return gmailPage(res, 200, true, `${mailbox} is connected to Intake, read-only. You can close this page.`);
@@ -240,9 +242,9 @@ async function finishGmail(req, res, url, code) {
 async function finishNotify(req, res, url, code) {
   if (url.searchParams.get('error') || !code) return gmailPage(res, 400, false, 'Access was not given. Open the link again and press Allow.');
   const got = await notify.exchangeCode({ env: process.env, code, redirectUri: process.env.GOOGLE_REDIRECT_URI });
-  if (!got.ok) return gmailPage(res, 400, false, `Google did not finish: ${got.why}. Open the link again.`);
+  if (!got.ok) return gmailPage(res, 400, false, `Google did not finish: ${htmlEscape(got.why)}. Open the link again.`);
   if (got.mailbox !== notify.SENDER) {
-    return gmailPage(res, 400, false, `You signed in as ${got.mailbox || 'another account'}. Open the link again and choose ${notify.SENDER}.`);
+    return gmailPage(res, 400, false, `You signed in as ${htmlEscape(got.mailbox || 'another account')}. Open the link again and choose ${notify.SENDER}.`);
   }
   await notify.saveToken(db, got.refreshToken, process.env);
   return gmailPage(res, 200, true, `New feedback will be emailed to ${notify.SENDER}. You can close this page.`);
@@ -2160,13 +2162,16 @@ export const handle = async (req, res) => {
       }
       const exp = Date.now() + GMAIL_INVITE_HOURS * 3600 * 1000;
       const invite = signFlow({ purpose: 'gmail-invite', exp }, process.env.CRM_SESSION_SECRET);
-      const link = `${originOf(req)}/api/auth/gmail/connect?invite=${invite}`;
+      // From PUBLIC_BASE_URL, never the Host header the caller sent (L8, 07.10.2026; src/systempages.js).
+      const base = inviteOrigin(req);
+      if (!base) return json(res, 503, { error: 'PUBLIC_BASE_URL is not set' });
+      const link = `${base}/api/auth/gmail/connect?invite=${invite}`;
       if (url.searchParams.get('format') === 'json') {
         return json(res, 200, { mailbox: gmailB.MAILBOX, link, expires: new Date(exp).toISOString() });
       }
       const until = new Date(exp).toLocaleString('en-GB', { timeZone: 'Europe/Riga', dateStyle: 'medium', timeStyle: 'short' });
       return gmailPage(res, 200, true, `Link for ${gmailB.MAILBOX}, valid until ${until} (Riga):<br><br>`
-        + `<input readonly style="width:100%;font:14px monospace;padding:8px" onclick="this.select()" value="${link}">`, 'Gmail link');
+        + `<input readonly style="width:100%;font:14px monospace;padding:8px" onclick="this.select()" value="${htmlEscape(link)}">`, 'Gmail link');
     }
     // GET /api/admin/notify/connect - opened once, signed in as an admin, to let Intake email new
     // feedback from ritvars.vilcins@novikontas.org (04.10.2026). Google asks to Allow "send email".
