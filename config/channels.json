@@ -81,12 +81,7 @@
         },
         "blocker": null,
         "destination": "A new enquiry in the Inbox, with the programme picked and the \"Source\" answer kept as the person's own answers. The only enquiry forms are EN (college/en, college/en/contacts). NOT apply.novikontas.org.",
-        "until": {
-          "event": "website relaunch, next version, which has no forms",
-          "then": "drop this channel (lifecycle dropped), like Google Form",
-          "decidedBy": "Ritvars",
-          "decidedOn": "2026-10-04"
-        },
+        "until": null,
         "ownerSays": {
           "state": "live",
           "by": "Ritvars",
@@ -100,10 +95,24 @@
           "filtered": 0,
           "asOf": "2026-10-04",
           "source": "production backup _backups/2026-10-04T19-29-00Z (status VERIFIED), counts read 05.10"
-        }
+        },
+        "_until": "Was {event: website relaunch with no forms, then drop}; withdrawn 07.10.2026: the website keeps a form for good (scope)."
       },
-      "scope": "TEMPORARY. Ritvars, 04.10.2026: the Website connection exists ONLY for the forms still live on the English college pages (the enquiry form on college/en and college/en/contacts, and the contact form on college/en/contacts). The website is relaunched in its next version WITH NO FORMS; from then on apply.novikontas.org does all the work and this channel is dropped. The Latvian pages already have no form.",
-      "filters": []
+      "scope": "PERMANENT. Ritvars, 07.10.2026 (via MASTER CONTROL): the website keeps a form for good. At the relaunch every page gets \"Apply\" (to apply.novikontas.org) as the main button and a small \"Ask us a question\" form beside it; his words: \"Its still to be developed that way\". This supersedes 04.10.2026 (\"the Website connection is temporary; the next version has no forms\"). Today the forms are the enquiry form on college/en and college/en/contacts and the contact form on college/en/contacts.",
+      "filters": [],
+      "_scopeHistory": [
+        {
+          "on": "2026-10-04",
+          "said": "TEMPORARY: only the forms still live on the English college pages; the next website version has no forms, then the channel is dropped",
+          "by": "Ritvars"
+        },
+        {
+          "on": "2026-10-07",
+          "said": "PERMANENT: Apply as the main button plus a small Ask us a question form on every page",
+          "by": "Ritvars",
+          "words": "Its still to be developed that way"
+        }
+      ]
     },
     "google_form": {
       "label": "Google Form",

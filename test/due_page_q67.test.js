@@ -62,7 +62,7 @@ test('RUN the Inbox: short day words on one scale - Today, Yesterday, Earlier th
     C_IPD: { rows, receipt: '', val: () => '', form: () => '' }, channelLabel: (c) => c, cTelLink: () => '', fmtDateTime: (iso) => iso, cCallLine: (b) => b, esc: (s) => String(s ?? ''),
     cPoolFrame: (o) => o.body, cPoolBand: (name, cols) => { band = cols.map((c) => c.label); return ''; }, cPoolCards: (name, title, cols) => { band = cols.map((c) => c.label); return ''; },
     cPoolSelect: () => '', cPoolFilters: () => '', $: () => view, cPoolWire() {}, cPoolOpened() {} };
-  vm.runInNewContext([line('const C_IP_KIND = '), fn('function cInboxAge(iso) {'), line('const cAgo = '), line('const C_ST = '), line('const C_ST_RAIL = '), fn('function cStateLine('),
+  vm.runInNewContext([line('const cPhone = '), line('const C_IP_KIND = '), fn('function cInboxAge(iso) {'), line('const cAgo = '), line('const C_ST = '), line('const C_ST_RAIL = '), fn('function cStateLine('),
     fn('function cInboxPool() {'), 'cInboxPool();'].join('\n'), ctx);
   const heads = [...view.innerHTML.matchAll(/<h3><span class="c-jn">\d<\/span>([^<]+)<b>(\d+)<\/b><\/h3>/g)].map((m) => [m[1], Number(m[2])]);
   assert.deepEqual(heads, [['Today', 1], ['Yesterday', 1], ['Earlier this week', 1], ['Older', 1]]);

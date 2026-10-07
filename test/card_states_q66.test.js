@@ -18,7 +18,7 @@ const HELP = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'help.json'), 
 const fn = (name) => { const i = APP.indexOf(name); assert.ok(i >= 0, name); return APP.slice(i, APP.indexOf('\n}\n', i) + 2); };
 const line = (start) => { const i = APP.indexOf(start); assert.ok(i >= 0, start); return APP.slice(i, APP.indexOf('\n', i)); };
 const TODAY = '2026-10-07';
-const helpers = () => [line('const cWhenClass = '), line('const cDaysLate = '), line('const C_SIS_HOLDS = '), line('const cSisHolds = '),
+const helpers = () => [line('const cPhone = '), line('const cWhenClass = '), line('const cDaysLate = '), line('const C_SIS_HOLDS = '), line('const cSisHolds = '),
   line('const C_ST = '), line('const C_ST_RAIL = '), fn('function cStateLine('), line('const cDdMm = '), fn('function cStepState('),
   line('const cStepGroup = '), line('const cChooseOnCard = '), line('const C_GRP = '), line('const cGroupBand = ')].join('\n');
 const base = () => ({
