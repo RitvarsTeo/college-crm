@@ -28,6 +28,9 @@ const ctx = {
 vm.createContext(ctx);
 vm.runInContext([
   line('const cWhenClass = '), line('const cDaysLate = '),
+  // Q66: the column groups its cards by state and heads each group with a band
+  line('const C_SIS_HOLDS = '), line('const cSisHolds = '), line('const cDdMm = '), fn('function cStepState('),
+  line('const cStepGroup = '), line('const C_GRP = '), line('const cGroupBand = '),
   line('const C_JCOL_SHOW = '), line('const C_JCOLOPEN = '),
   fn('function cJUrgency('), fn('function cJSort('), fn('function cJColumn('),
 ].join('\n') + '\nthis.col = cJColumn; this.open = C_JCOLOPEN; this.SHOW = C_JCOL_SHOW;', ctx);

@@ -72,7 +72,11 @@ test('the Inbox rows: nothing yet, then answer now, then late; a handled message
 });
 
 test('on the card: "answer now" is a solid amber chip with navy words, "late" the solid red one; never amber text', () => {
-  // Q62: the Inbox is a board of cards; the chip sits in the card's tag row
-  assert.match(APP, /const tag = r\.aged \? '<span class="c-late">late<\/span>' : r\.answerNow \? '<span class="c-answer">answer now<\/span>' : '';/);
-  assert.match(APP, /html\.ui-c \.c-answer\{background:var\(--j-soon\);color:var\(--j-on-soon\);font-weight:700;/);
+  // Q62: the Inbox is a board of cards; Q66 (07.10): the card's state line says New, Answer now or Late, and the rail
+  // carries the colour - amber for answer now, red for late; the word itself is never amber text
+  assert.match(APP, /const st = !live \? 'aside' : r\.aged \? 'late' : r\.answerNow \? 'now' : 'new';/);
+  assert.match(APP, /const C_ST_RAIL = \{[^}]*late: 'over', now: 'today', new: 'due', aside: 'none' \};/);
+  assert.match(APP, /html\.ui-c \.c-jp\.c-rail-today\{border-left-color:var\(--j-soon\)\}/);
+  assert.match(APP, /html\.ui-c \.c-st-late \.c-st-w\{color:var\(--j-alarm\)\}/);
+  assert.doesNotMatch(APP, /\.c-st-now \.c-st-w\{color:var\(--j-soon\)/, 'never amber text');
 });

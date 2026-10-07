@@ -22,7 +22,9 @@ test('the state is written one way only', () => {
 test('and that one way is on every screen that shows it', () => {
   // the Journey card, the Next Steps row, the People cell, the person page, the picker
   assert.ok(APP.split(/No next step/g).length - 1 >= 6, 'the one wording is used throughout');
-  // Q44: on the Journey card and the Today row the words gave way to the action itself
-  assert.match(APP, /cSisHolds\(p\) \? '' : cChooseNext\(p\.id\)\}/, 'the Journey card: Choose next step');
+  // Q44: on the Today row the words gave way to the action itself; Q66: the Journey card's state line says the one
+  // wording and carries the action (Choose) beside it
+  assert.match(APP, /none: 'No next step'/, 'the state line');
+  assert.match(APP, /cStateLine\(st, detail, st === 'none' \? cChooseOnCard\(p\.id\) : ''\)/, 'the Journey card: Choose on the line');
   assert.match(APP, /<option value="">No next step<\/option>/, 'the picker');
 });

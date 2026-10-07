@@ -20,7 +20,7 @@ function card(p, t) {
   vm.runInNewContext(`${line('const cWhenClass =')}\n${line('const cTask =')}\n${line('const cNotePreview =')}\n${line('const cComment =')}\n${APP.slice(i, APP.indexOf('\n};', i) + 3)}\n${fn('function groupForAction(')}\n${line('const cStepIcon =')}\n${fn('function cLifeFacts(')}\n${line('const C_SIS_HOLDS =')}
 ${line('const cSisHolds =')}
 ${line('const cSisHeld =')}
-${line('const cChooseNext =')}\n${fn('function cJourneyCard(')}\nthis.card = cJourneyCard;`, ctx);
+${line('const cChooseNext =')}\n${[line('const cDaysLate ='), line('const C_ST ='), line('const C_ST_RAIL ='), fn('function cStateLine('), line('const cDdMm ='), fn('function cStepState('), line('const cChooseOnCard =')].join('\n')}\n${fn('function cJourneyCard(')}\nthis.card = cJourneyCard;`, ctx);
   return ctx.card(p, t, null);
 }
 

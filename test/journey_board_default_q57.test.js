@@ -134,6 +134,7 @@ function board(people, setup = {}) {
   };
   const filtersSrc = APP.slice(APP.indexOf('let C_JF = {'), APP.indexOf('// FOR MANAGEMENT (30.09.2026)'));
   vm.runInNewContext([line('const C_JCOL_SHOW = '), line('const C_JCOLOPEN = '), fn('function cJUrgency('), fn('function cJSort('),
+    line('const C_ST = '), line('const C_ST_RAIL = '), fn('function cStateLine('), line('const cDdMm = '), fn('function cStepState('), line('const cStepGroup = '), line('const C_GRP = '), line('const cGroupBand = '),   // Q66
     fn('function cJColumn('), fn('function cJEndCard('), filtersSrc.replace('let C_JF = {', 'var C_JF = {'),
     fn('function cJTargetKeep('), line('const cJTargeted = '), line('const cMoveBody = '), fn('function cJTargetChips('), fn('function cDrawJourney('),
     'this.draw = cDrawJourney; this.setJF = (v) => { C_JF = v; };'].join('\n'), ctx);

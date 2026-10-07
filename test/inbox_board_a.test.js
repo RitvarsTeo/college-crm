@@ -39,7 +39,8 @@ function board(ip = {}, { rows = ROWS, open = null, show = 'new' } = {}) {
     cPoolFilters: (name, boxes, clear) => `<filters ${name} clear="${clear}">${boxes.join('')}</filters>`,
     $: (q) => (q === '#qInterest' ? { focus() {} } : view), view, cPoolWire: () => {}, cPoolOpened: () => {},
   };
-  vm.runInNewContext([line('const C_IP_KIND = '), fnBody('function cInboxAge(iso) {'), line('const cAgo = '), fnBody('function cInboxPool() {'), 'cInboxPool();'].join('\n'), ctx);
+  vm.runInNewContext([line('const C_IP_KIND = '), fnBody('function cInboxAge(iso) {'), line('const cAgo = '), line('const C_ST = '), line('const C_ST_RAIL = '), fnBody('function cStateLine('),
+    fnBody('function cInboxPool() {'), 'cInboxPool();'].join('\n'), ctx);
   return ctx;
 }
 
@@ -52,17 +53,22 @@ test('four columns by arrival day, in his order, each with its count; the band k
   assert.doesNotMatch(html, /New lead|Not relevant|Later/, 'no such columns');
 });
 
-test('a card: name, how long ago, the channel, the message, the programme and kind tags, the late or answer-now chip', () => {
+test('a card: name, the channel, the message, the programme and kind tags, and the state line: New, Answer now or Late, with how long ago', () => {
   const html = board().view.innerHTML;
   const card = (id) => { const i = html.indexOf(`data-id="${id}"`); return html.slice(i, html.indexOf('data-id=', i + 10) < 0 ? undefined : html.indexOf('data-id=', i + 10)); };
-  assert.match(card(1), /<b class="c-reach">Kaspars Lapins<\/b><small title="2026-10-06 05:40">9 h<\/small>/);
+  assert.match(card(1), /<b class="c-reach">Kaspars Lapins<\/b><\/div>/, 'the age moved to the state line (Q66)');
+  assert.match(card(1), /<div class="c-st c-st-new" title="2026-10-06 05:40"><span class="c-st-w">New<\/span><span class="c-st-d">· 9 h<\/span><\/div>/);
+  assert.match(html, /class="c-jp row ib-card c-rail c-rail-due" data-id="1"/, 'new: the navy rail');
   assert.match(card(1), /<small class="ib-ch"><i><\/i>Website<\/small>/);
   assert.match(card(1), /<div class="ib-msg">Is there still a place in the marine engineering group\?<\/div>/);
   assert.match(card(1), /<span class="ib-prog">ENG<\/span>/);
-  assert.match(card(2), /<span class="c-answer">answer now<\/span>/);
-  assert.match(card(3), /<span class="c-late">late<\/span>/);
+  assert.match(html, /class="c-jp row ib-card c-rail c-rail-today" data-id="2"/, 'answer now: the amber rail');
+  assert.match(card(2), /<div class="c-st c-st-now" title="[^"]+"><span class="c-st-w">Answer now<\/span>/);
+  assert.match(html, /class="c-jp row ib-card c-rail c-rail-over" data-id="3"/, 'late: the red rail');
+  assert.match(card(3), /<div class="c-st c-st-late" title="[^"]+"><span class="c-st-w">Late<\/span>/);
+  assert.doesNotMatch(html, /c-late|c-answer/, 'no chip: the state line says it once');
   assert.match(card(4), /<span class="ib-kind" title="writes &quot;my group&quot;|<span class="ib-kind" title="writes "my group"">Current student<\/span>/);
-  assert.match(card(6), /<small title="2026-09-28 10:00">8 d<\/small>/);
+  assert.match(card(6), /<div class="c-st c-st-late" title="2026-09-28 10:00"><span class="c-st-w">Late<\/span><span class="c-st-d">· 8 d<\/span><\/div>/);
   assert.match(APP, /class="c-jp row ib-card/, 'the Journey board\'s card');
 });
 
@@ -71,7 +77,7 @@ test('the action is on the card: "Make a lead" opens the small form, "Set aside"
   assert.match(closed, /<div class="ib-acts"><button class="btn sm" onclick="event\.stopPropagation\(\);C_LOPEN=2;cInboxPool\(\)">Make a lead<\/button><button type="button" class="ib-aside" onclick="event\.stopPropagation\(\);openArchive\(2\)">Set aside<\/button><\/div>/);
   assert.doesNotMatch(closed, /form-for-/, 'no form until a card is opened');
   const open = board({}, { open: 2 }).view.innerHTML;
-  assert.match(open, /class="c-jp row ib-card is-open" data-id="2"/);
+  assert.match(open, /class="c-jp row ib-card c-rail c-rail-today is-open" data-id="2"/);
   assert.match(open, /<form-for-2>/, 'the form on that card');
   assert.doesNotMatch(open, /form-for-1|form-for-3/, 'and only that card');
   assert.match(open, /data-id="2" tabindex="0" onclick="C_LOPEN=null;cInboxPool\(\)"/, 'a click on the open card closes it');
@@ -98,6 +104,7 @@ test('the filter row is Source + Kind, nothing else; a band click narrows to tha
   assert.deepEqual([...filtered.matchAll(/<h3>[^<]*<span class="c-jn">\d<\/span>([^<]+)<b>(\d+)<\/b>/g)].map((m) => m[2]), ['1', '1', '0', '1']);
   assert.match(filtered, /clear="C_IP\.channel='';C_IP\.kind='';cInboxPool\(\)"/);
   const aside = board({ show: 'archived' }, { show: 'archived' }).view.innerHTML;
-  assert.doesNotMatch(aside, /Make a lead|Set aside/, 'a message set aside keeps its card, without the actions');
+  assert.doesNotMatch(aside, /Make a lead|ib-aside/, 'a message set aside keeps its card, without the actions');
+  assert.match(aside, /class="c-jp row ib-card c-rail c-rail-none"[\s\S]*<span class="c-st-w">Set aside<\/span>/, 'its state line says so, on the grey rail');
   assert.match(board({}, { rows: [] }).view.innerHTML, /Nothing waiting\. This queue is clear\./);
 });
