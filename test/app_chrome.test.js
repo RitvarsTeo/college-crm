@@ -110,7 +110,7 @@ test('no Settings page: #/settings opens the Help center, which holds the admin 
   const i = APP.indexOf('async function cHelpAdmin()');
   const admin = APP.slice(i, APP.indexOf('\n}\n', i));
   assert.match(admin, /if \(!box \|\| !isAdmin\(\)\) return;/, 'admins only');
-  for (const h of ['#/channels', '#/feedback', '#/people']) assert.ok(admin.indexOf(h) > admin.indexOf('isAdmin()'), h + ' behind the admin check');
+  for (const h of ['#/channels', '#/feedback', '#/journey?v=list&amp;p_data=odd']) assert.ok(admin.indexOf(h) > admin.indexOf('isAdmin()'), h + ' behind the admin check');
   assert.match(admin, /class="c-helpadmin"/, 'a small group, not wide rows');
   assert.doesNotMatch(admin, /c-line|c-sheet c-set/, 'no mega horizontal cards');
   assert.match(APP, /<p class="c-crumb"><a href="#\/help">Help center<\/a><\/p><div class="c-head"><div><h1>Channels/, 'Channels sits under the Help center');
