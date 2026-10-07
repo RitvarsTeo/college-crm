@@ -1597,8 +1597,10 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .ib-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
   html.ui-c .ib-top b{font-size:14px;overflow-wrap:anywhere}
   html.ui-c .ib-top small{margin:0;white-space:nowrap;font-variant-numeric:tabular-nums}
-  html.ui-c .ib-ch{display:flex;align-items:center;gap:6px;margin:0}
-  html.ui-c .ib-ch i{width:7px;height:7px;border-radius:50%;background:#29a8df;flex:0 0 7px}
+  /* Q73 (the owner's pick 07.10.2026, "B chip"): a tinted chip per source. Never on the rail: the rail keeps Q69's red / navy */
+  html.ui-c #view .ib-ch{display:inline-flex;align-items:center;align-self:flex-start;width:max-content;margin:0;padding:2px 9px 2px 7px;border-radius:999px;font-weight:700;color:color-mix(in srgb,var(--src,#8a94a6) 72%,#011111);background:color-mix(in srgb,var(--src,#8a94a6) 16%,transparent)}
+  html.ui-c[data-theme="dark"] #view .ib-ch{color:color-mix(in srgb,var(--src,#8a94a6) 55%,#ffffff);background:color-mix(in srgb,var(--src,#8a94a6) 26%,transparent)}
+  html.ui-c #view .ib-ch i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;flex:0 0 8px;background:var(--src,#8a94a6)}
   /* the message is a detail (the owner, 05.10.2026: "this is too much of font size!"): 13px, slate, three lines on the
      card as pictured; the open card shows it whole */
   html.ui-c #view .ib-card .ib-msg{font-size:var(--type-detail);font-weight:400;color:var(--t3);line-height:1.45;white-space:normal;overflow-wrap:anywhere;
@@ -4049,6 +4051,9 @@ function cInboxPool() {
   const chans = [...new Set(D.rows.map((r) => r.channel))].sort().map((c) => [c, channelLabel(c)]);
   const live = C_IP.show === 'new';   // a message set aside keeps its card, without the actions
   const who = (r) => esc(r.contact_name || r.contact_handle || '') || cTelLink({ phone: r.contact_phone }) || 'Unknown';
+  // Q73 (the owner's pick 07.10.2026, "B chip"): one colour per source on the Inbox card; any other source is grey
+  const C_SRC_COLOUR = { email: '#29a8df', phone: '#E0A526', website: '#2a9d8f', linkedin: '#6f5bd3', whatsapp: '#3fae5a',
+    facebook: '#3b5bdb', messenger: '#3b5bdb', instagram: '#c2569b' };
   const card = (r) => {
     const open = C_LOPEN === r.id; const prog = D.val(r, 'interest');
     // the state line (Q66): how long the message has waited and whether that is late (Q50); a card set aside says so
@@ -4057,7 +4062,7 @@ function cInboxPool() {
     const toggle = `C_LOPEN=${open ? 'null' : Number(r.id)};cInboxPool()`;
     return `<div class="c-jp row ib-card c-rail c-rail-${C_ST_RAIL[st]}${open ? ' is-open' : ''}" data-id="${Number(r.id)}" tabindex="0" onclick="${toggle}" onkeydown="if(event.key==='Enter'){${toggle}}">
       <div class="ib-top"><b class="c-reach">${who(r)}</b></div>
-      <small class="ib-ch"><i></i>${esc(channelLabel(r.channel))}</small>
+      <small class="ib-ch" style="--src:${C_SRC_COLOUR[r.channel] || '#8a94a6'}"><i></i>${esc(channelLabel(r.channel))}</small>
       <div class="ib-msg">${esc(r.channel === 'phone' ? cCallLine(r.body) : (r.body || D.val(r, 'question') || ''))}</div>
       ${prog || kind ? `<div class="ib-tags">${prog ? `<span class="ib-prog">${esc(prog)}</span>` : ''}${kind}</div>` : ''}
       ${cStateLine(st, cAgo(r.received_at), '', fmtDateTime(r.received_at))}

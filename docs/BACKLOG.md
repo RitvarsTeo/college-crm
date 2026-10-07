@@ -14,6 +14,19 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 07.10.2026 - Q73: a coloured chip per source on the Inbox card (PICKED 07.10: "B chip")
+
+Pictures A (dot) and B (chip) on the real Inbox at 1440: `For review/2026-10-07 Q73 Inbox source colours/`. Ritvars picked
+"B chip".
+
+| What | Status |
+|---|---|
+| Each Inbox card's source is a tinted chip in its own colour: Email #29a8df, Phone #E0A526, Website #2a9d8f, LinkedIn #6f5bd3, WhatsApp #3fae5a, Facebook and Messenger #3b5bdb, Instagram #c2569b; any other source grey #8a94a6. Light and dark | BUILT |
+| The source colour never reaches the rail, bars or bands: those keep Q69's red / navy | BUILT |
+| Fixes the old dot, which was invisible on production (an empty inline box with no size) | BUILT |
+| Help center: FAQ "Why are the sources on the Inbox cards in colour?" | BUILT |
+| Shots of the build: `Q73 B BUILT - light / dark - Inbox 1440.png` in the same folder | BUILT |
+
 ## 07.10.2026 - Q70, Q71, Q72: a step says its deadline, the day can be changed, the Inbox takes a note
 
 The owner's task list through MASTER CONTROL, 07.10.2026 ("keep it stupid simple"). Branch `ui/2026-10-07-next-steps`
