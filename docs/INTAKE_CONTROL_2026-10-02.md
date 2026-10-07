@@ -563,3 +563,13 @@ Sent to MAIN to build from 6e3dc39, with Help in the same commits and tests that
 07.10: MAIN Q66 graph 88a33a8 (band bars stack the five states, one CSS source, segments open their people, badge gone; ALSO the Journey filter "Overdue / Today" became "State" with the five values - unasked rename, consistent with Q66; show it to Ritvars in the rc review). ui/2026-10-02-main-ab 1299/1299. rc/2026-10-07 complete on QA: 88a33a8 + ce892a5 + cfd36c9 + 90a06b5 + 8c0bc76.
 07.10 WEBSITE DIRECTION (Ritvars): "maybe website forms we will use in form of ask us a quesiton, and near them will be apply button to apply.novikontas.org" -> "Its still to be developed that way. suggest what we do". Supersedes 4 Oct "website channel temporary": website channel stays. Suggested: Apply = main button, a small Ask-a-question form beside it (name, email or phone, programme, question) -> Intake; now: CHANNELS checks form+edu@ duplicates and first-reply linkage (read-only), then Ritvars ticks the Tilda webhook on the 2 current forms.
 07.10 Q68 PHONE BOARDS (Ritvars, phone screenshot of the Journey board: "mobile versions scrolling doesnt work like that"): sideways scroll inside the page with a desktop scrollbar, narrow columns, cards clipped. MAIN draws A (swipe full-width snapping columns, stage strip = band bars, long-press drag to the edge + Move) / B (MAIN alternative; if it is a per-stage list, captioned as "not a board on the phone" against his never-flatten rule), Journey + Due + Inbox frame, before the Reply filter.
+
+## 07.10 10:29 - PATCH 26 SCOPE (Ritvars: "Scope everything together. We have to have a commit pushed into github at 11.00 done.")
+IN (rc/2026-10-07, QA integrating, I push by 11:00, deploy only after he sees 8880):
+1. Q66 cards B + Journey graph in the card colours + "State" filter - MAIN caaa7b8, 88a33a8
+2. Q67 the work page is "Due" - MAIN 7f95046
+3. Reports: no empty half - REPORTS ce892a5
+4. Set aside: Bring back + keep the text + retention fix - CHANNELS 9bed85b..90a06b5
+5. First reply: Gmail thread reply times + PBX destination counts, Reports row OFF - REPORTS cfd36c9
+6. LinkedIn: Subscribe leads, dropdown answers, withdrawn never a row - CHANNELS fea7d7d, 8c0bc76
+OUT (need his pick or not built): Q68 phone boards (A/B being drawn), Q65 motion (his picks), Inbox Reply filter, two-colour titles A/B, set-aside entry point A/B, website form/email duplicate check.
