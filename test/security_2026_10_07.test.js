@@ -255,3 +255,28 @@ test('M1: a signed-in write from another origin is refused; our own page and web
     { raw: '{}', headers: { origin: 'https://tilda.cc', 'sec-fetch-site': 'cross-site' } });
   assert.notEqual(hook.status, 403, 'a webhook must not be judged by origin');
 });
+
+// ------------------------------------------------------- H4, M6, M11 ----
+// Proved live against the Supabase project on 07.10.2026 as well (schema crm, verified TLS, a
+// connection without Supabase's root refused, nothing in public). These hold without a database.
+import { pgSsl, openDb } from '../src/db.js';
+
+test('M6: Postgres certificates are verified; Supabase hosts use the Supabase root', () => {
+  const sb = pgSsl('postgresql://u:p@aws-1-eu-central-1.pooler.supabase.com:5432/postgres');
+  assert.equal(sb.rejectUnauthorized, true);
+  assert.match(sb.ca, /BEGIN CERTIFICATE/);
+  assert.deepEqual(pgSsl('postgresql://u:p@ep-x.eu-central-1.aws.neon.tech/db'), { rejectUnauthorized: true });
+  assert.equal(pgSsl('postgresql://u:p@localhost/db?sslmode=disable'), false);
+});
+
+test('M11: the web server refuses Postgres without CRM_PG_SCHEMA, before connecting', async () => {
+  const keep = { url: process.env.DATABASE_URL, schema: process.env.CRM_PG_SCHEMA };
+  process.env.DATABASE_URL = 'postgresql://nobody:nothing@127.0.0.1:1/none?sslmode=disable';
+  delete process.env.CRM_PG_SCHEMA;
+  try {
+    await assert.rejects(() => openDb('data/crm.db'), /CRM_PG_SCHEMA/);
+  } finally {
+    if (keep.url === undefined) delete process.env.DATABASE_URL; else process.env.DATABASE_URL = keep.url;
+    if (keep.schema !== undefined) process.env.CRM_PG_SCHEMA = keep.schema;
+  }
+});
