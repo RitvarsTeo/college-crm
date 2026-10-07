@@ -1,34 +1,27 @@
-/* INTAKE MOTION ENGINE (demo/2026-10-07-motion-ab, 06-07.10.2026; MASTER CONTROL for the owner, Q65).
- *
- * ?motion=a  A, SKOLA-expressive: iris out of the clicked thing, draw-on lines, pop in reading order, curved flights,
- *            marching dashes, highlighter, sliding pill, ping. One moment <= 1.2 s.
- * ?motion=b  B, calm: opacity + an 8-12 px slide, 200-300 ms, no flights (a fade-and-settle at the target), an
- *            underline instead of the highlighter, no marching dashes. One moment <= 1 s.
- * ?motion=off or nothing ever chosen: today's app, untouched. ?motion=1 = A. The choice lives in sessionStorage.
+/* INTAKE MOTION (Q65; the owner picked A everywhere, 07.10.2026: page moves, board actions, charts and the small
+ * signals: "A, yes, lock in"). One engine, always on; it learned from his SKOLA deck: the arriving thing decelerates
+ * into place, things arrive in reading order, every motion means something.
  *
  * Rules (docs/MOTION_API.md): once per arrival by a click, never on a reload or a redraw; a click / key / wheel
- * finishes everything at once; a data mark is uncovered, never scaled; reduced motion or a hidden tab = nothing.
- * The SKOLA ease cubic-bezier(.65,0,.25,1) for travel, a soft settle for B. Every animation is Web Animations, so the
- * engine can finish all of them at once.
+ * finishes everything at once; one moment at most 1.2 s; a data mark is uncovered, never scaled; one page at a time;
+ * prefers-reduced-motion or a hidden tab = nothing moves. Every animation is Web Animations, so the engine can finish
+ * all of them at once. motion-charts.js and motion-boards.js add their areas through this API.
  */
 (function () {
   'use strict';
-  // RELEASE (the owner picked A for page moves, board actions and charts, 07.10.2026): A only, always on; no switch,
-  // no stamp. prefers-reduced-motion or a hidden tab still means nothing moves (M.live).
-  var M = window.motion = { mode: 'a' };
+  var M = window.motion = { mode: 'a' };            // 'a' stays for the area files that read it
   var root = document.documentElement;
   var EASE = 'cubic-bezier(.65,0,.25,1)', SOFT = 'cubic-bezier(.22,.9,.3,1)';
-  // A's page changes (the owner picked A 07.10.2026, "if the transition was smoother"): the arriving page decelerates
+  // page changes (the owner picked A 07.10.2026, "if the transition was smoother"): the arriving page decelerates
   // into place (ease-out quint), the leaving one only fades and drifts a little, so no two pages fight on screen
   var OUT = 'cubic-bezier(.22,1,.36,1)', LEAVE = 'cubic-bezier(.4,0,1,1)';
   var reduced = function () { return window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches; };
-  var A = function () { return M.mode === 'a'; };
   M.live = function () { return !reduced() && !document.hidden && typeof Element.prototype.animate === 'function'; };
   root.classList.add('mo-a');
 
   // ---- the clock: every animation is registered, capped, and finished by any click ------------------------------
   var running = new Set();
-  var cap = function () { return A() ? 1200 : 1000; };
+  var cap = function () { return 1200; };
   function run(el, frames, o, pseudo) {
     if (!el || !el.animate) return null;
     var opts = { duration: 300, easing: EASE, fill: 'backwards' };
@@ -70,28 +63,24 @@
     var radius = getComputedStyle(el).borderRadius;
     ring.style.cssText = 'left:' + r.left + 'px;top:' + r.top + 'px;width:' + r.width + 'px;height:' + r.height + 'px;border-radius:' + (radius && radius !== '0px' ? radius : '10px');
     document.body.appendChild(ring);
-    var a = A()
-      ? run(ring, [{ boxShadow: '0 0 0 2px rgba(41,168,223,1)', opacity: 1 }, { boxShadow: '0 0 0 14px rgba(41,168,223,0)', opacity: 0 }], { duration: 420, fill: 'both' })
-      : run(ring, [{ boxShadow: '0 0 0 2px rgba(41,168,223,.75)', opacity: 1 }, { boxShadow: '0 0 0 2px rgba(41,168,223,0)', opacity: 0 }], { duration: 320, easing: SOFT, fill: 'both' });
+    var a = run(ring, [{ boxShadow: '0 0 0 2px rgba(41,168,223,1)', opacity: 1 }, { boxShadow: '0 0 0 14px rgba(41,168,223,0)', opacity: 0 }], { duration: 420, fill: 'both' });
     return all(a).then(function () { ring.remove(); });
   };
 
   // ---- count: the kit's count-up (part 9), landing on the exact text -------------------------------------------
   M.count = function (el) {
     if (!M.live() || !el || !window.Motion || !window.Motion.count) return done;
-    return new Promise(function (res) { window.Motion.count(el, { ms: A() ? 900 : 600, done: res }); setTimeout(res, cap()); });
+    return new Promise(function (res) { window.Motion.count(el, { ms: 900, done: res }); setTimeout(res, cap()); });
   };
 
-  // ---- drawBaseline: a line draws left to right (A), or fades in (B) -------------------------------------------
+  // ---- drawBaseline: a line draws left to right ------------------------------------------------------------------
   M.drawBaseline = function (els, o) {
     o = o || {}; els = list(els);
     if (!M.live() || !els.length) return done;
     var total = o.total || 300, seg = total / els.length, delay = o.delay || 0;
     return all(els.map(function (el, i) {
-      return A()
-        ? run(el, [{ transform: 'scaleX(0)', transformOrigin: 'left center' }, { transform: 'scaleX(1)', transformOrigin: 'left center' }],
-          { duration: seg, delay: delay + i * seg, easing: 'linear' }, o.pseudo)
-        : run(el, [{ opacity: 0 }, { opacity: 1 }], { duration: 200, delay: delay, easing: SOFT }, o.pseudo);
+      return run(el, [{ transform: 'scaleX(0)', transformOrigin: 'left center' }, { transform: 'scaleX(1)', transformOrigin: 'left center' }],
+        { duration: seg, delay: delay + i * seg, easing: 'linear' }, o.pseudo);
     }));
   };
 
@@ -101,10 +90,6 @@
     if (!M.live() || !els.length) return done;
     var kind = o.kind || 'fade', delay = o.delay || 0;
     return all(els.map(function (el, i) {
-      if (!A()) {
-        var f = kind === 'pop' ? [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }] : [{ opacity: 0 }, { opacity: 1 }];
-        return run(el, f, { duration: 220, delay: delay + i * (o.step || 30), easing: SOFT });
-      }
       if (kind === 'rise') {
         return run(el, [{ clipPath: 'inset(100% -60px 0 -60px)' }, { clipPath: 'inset(-60px -60px 0 -60px)' }],
           { duration: 280, delay: delay + i * (o.step || 50), easing: OUT });
@@ -119,18 +104,16 @@
 
   // ---- mark: a number that changed since the last visit (replaces the shake) -----------------------------------
   M.mark = function (el) {
-    if (M.mode === 'off' || reduced() || !el) return done;
+    if (reduced() || !el) return done;
     var tn = null;
     (function find(n) { for (var c = n.firstChild; c && !tn; c = c.nextSibling) { if (c.nodeType === 3 && /\d/.test(c.nodeValue)) tn = c; else if (c.nodeType === 1 && !c.classList.contains('mo-mark')) find(c); } })(el);
     if (!tn) return done;
     var span = tn.parentNode.classList && tn.parentNode.classList.contains('mo-mark') ? tn.parentNode : null;
     if (!span) { span = document.createElement('mo-mark'); span.className = 'mo-mark';   // its own tag: no app style for spans (the card labels) reaches it
       tn.parentNode.insertBefore(span, tn); span.appendChild(tn); }
-    span.classList.add(A() ? 'mo-mark-a' : 'mo-mark-b');
+    span.classList.add('mo-mark-a');
     if (document.hidden) return done;
-    var a = A()
-      ? run(span, [{ backgroundSize: '0% 100%' }, { backgroundSize: '100% 100%' }], { duration: 450 })
-      : run(span, [{ backgroundSize: '0% 2px' }, { backgroundSize: '100% 2px' }], { duration: 300, easing: SOFT });
+    var a = run(span, [{ backgroundSize: '0% 100%' }, { backgroundSize: '100% 100%' }], { duration: 450 });
     return all(a);
   };
 
@@ -150,18 +133,14 @@
       { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(' + sx + ',' + sy + ')', transformOrigin: '0 0', opacity: 1 },
       { transform: 'none', transformOrigin: '0 0', opacity: 1, offset: 0.75 },
       { transform: 'none', transformOrigin: '0 0', opacity: 0 }],
-      { duration: A() ? 460 : 300, easing: A() ? OUT : SOFT, fill: 'both' });
+      { duration: 460, easing: OUT, fill: 'both' });
     return all(a).then(function () { pill.remove(); });
   };
 
-  // ---- flight: A = a copy travels on a curve onto the target, which pings; B = the target fades and settles ----
+  // ---- flight: a copy travels on a curve onto the target, which pings ----------------------------------------------
   M.flight = function (src, to) {
     if (!M.live() || !to) return done;
     var t = to.getBoundingClientRect();
-    if (!A()) {
-      var b = run(to, [{ opacity: 0.35, transform: 'translateY(4px)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: SOFT });
-      return all(b).then(function () { return M.ping(to); });
-    }
     var r = src && (src.rect || rectOf(src)), node = src && (src.node || (src.cloneNode ? src.cloneNode(true) : null));
     if (!r || !node || !t.width) return M.ping(to);
     node.removeAttribute('id'); node.removeAttribute('onclick'); node.removeAttribute('tabindex');
@@ -177,11 +156,11 @@
     return all(a).then(function () { node.remove(); return M.ping(to); });
   };
 
-  // ---- march: marching dashes on a dashed SVG stroke (A only), until switched off ------------------------------
+  // ---- march: marching dashes on a dashed SVG stroke, until switched off ------------------------------------------
   M.march = function (el, on) {
     if (!el) return;
     if (el._moMarch) { el._moMarch.cancel(); el._moMarch = null; }
-    if (on === false || !A() || !M.live() || !el.animate) return;
+    if (on === false || !M.live() || !el.animate) return;
     if (!el.getAttribute('stroke-dasharray') && !el.style.strokeDasharray) el.style.strokeDasharray = '6 6';
     el._moMarch = el.animate([{ strokeDashoffset: 0 }, { strokeDashoffset: -12 }], { duration: 700, iterations: Infinity });
   };
@@ -191,12 +170,12 @@
   // and it seems laggy"). The page being left is held as a copy while the next one is drawn INVISIBLE underneath; on
   // arrival the copy leaves first and fast (about 110 ms), and only then does the new page come in (about 300 ms), so
   // no frame ever shows two pages. The whole change stays at or under about 420 ms.
-  var held = null;                                   // A: the page being left, and the view hidden until it arrives
+  var held = null;                                   // the page being left, and the view hidden until it arrives
   function dropHeld() { if (held) { held.wrap.remove(); if (held.view) held.view.style.opacity = ''; held = null; } }
   M.hold = function () {                             // the engine calls this when a place is being left
     dropHeld();
     var view = document.getElementById('view');
-    if (!view || !A() || !M.live()) return;
+    if (!view || !M.live()) return;
     var r = view.getBoundingClientRect();
     var wrap = document.createElement('div'); wrap.className = 'mo-held'; wrap.setAttribute('aria-hidden', 'true');
     wrap.style.cssText = 'left:' + r.left + 'px;width:' + r.width + 'px';
@@ -238,7 +217,7 @@
     var r = rectOf(from), dir = o.dir || (r ? 'deeper' : null);
     view.querySelectorAll('.v-open').forEach(function (b) { b.classList.remove('v-open'); });   // the engine carries this opening
     var anims = [];
-    if (A()) {
+    {
       view.classList.add('mo-front');
       view.style.willChange = 'transform, opacity';
       if (dir === 'deeper' && r && r.width) {
@@ -254,35 +233,10 @@
         anims.push(leave(old, 110, 0));
         anims.push(run(view, [{ opacity: 0, transform: 'translate3d(0,10px,0)' }, { opacity: 1, transform: 'none' }], { duration: 300, delay: old ? 110 : 0, easing: OUT }));
       }
-    } else {
-      var from0 = dir === 'forward' ? 'translateX(10px)' : dir === 'back' ? 'translateX(-10px)' : dir === 'deeper' ? 'translateY(8px)' : 'none';
-      anims.push(run(view, [{ opacity: 0, transform: from0 }, { opacity: 1, transform: 'none' }], { duration: dir ? 260 : 220, easing: SOFT }));
     }
     show();                                          // the arrival's own first frame (opacity 0 or the clip) takes over now
     return all(anims).then(function () { view.classList.remove('mo-front'); view.style.willChange = ''; if (old) old.wrap.remove(); });
   };
-
-  // ---- the demo toggle: Motion A | B | off, bottom-left, once a choice was made in this tab ---------------------
-  function drawToggle() {
-    return;                                          // release: no demo toggle
-    var t = document.getElementById('moToggle');
-    if (!t) { t = document.createElement('div'); t.id = 'moToggle'; t.setAttribute('role', 'group'); t.setAttribute('aria-label', 'Motion'); document.body.appendChild(t); }
-    t.innerHTML = '<span>Motion</span>' + [['a', 'A'], ['b', 'B'], ['off', 'off']].map(function (m) {
-      return '<button type="button" data-m="' + m[0] + '" aria-pressed="' + (M.mode === m[0]) + '">' + m[1] + '</button>';
-    }).join('') + (M.build ? '<small class="mo-build" title="The demo build you are looking at">' + M.build + '</small>' : '');
-  }
-  document.addEventListener('click', function (ev) {
-    var b = ev.target.closest && ev.target.closest('#moToggle button');
-    if (!b) return;
-    var was = document.querySelector('#moToggle [aria-pressed="true"]'), wr = was && was.getBoundingClientRect();
-    setMode(b.getAttribute('data-m')); drawToggle();
-    try {                                            // the address says the choice too, so a reload keeps it
-      var u = new URL(location.href); u.searchParams.set('motion', M.mode); history.replaceState(history.state, '', u.toString());
-    } catch (e) { /* old browser */ }
-    var now = document.querySelector('#moToggle [aria-pressed="true"]');
-    if (wr) M.pill(document.getElementById('moToggle'), now, wr);
-  });
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', drawToggle); else drawToggle();
 
   // =================================================================================================================
   // INTAKE WIRING: the moments the engine plays by itself. Runs once the app's own scripts exist; does nothing when
@@ -303,7 +257,7 @@
     addEventListener('pointerdown', function (ev) {
       var el = ev.target.closest ? ev.target : null; if (!el) return;
       var card = el.closest('#view .kb-strip > div, #view .kneed, #view .rp-tab, #view [data-kgo], #view .kbar, #view .jb-col, #view .c-line, #view a, #view button');
-      gesture = { at: performance.now(), inNav: Boolean(el.closest('.cnav, nav')), card: card, rect: card ? card.getBoundingClientRect() : null,
+      gesture = { at: performance.now(), inNav: Boolean(el.closest('.cnav, nav, .ctabs'))   /* .ctabs: the phone's bottom bar (Q68) */, card: card, rect: card ? card.getBoundingClientRect() : null,
         back: Boolean(el.closest('[data-back], .c-back, [aria-label^="Back"], [title^="Back"]')) };
       var group = el.closest(PILLS);
       if (group) {
@@ -320,9 +274,9 @@
       var v = box.value;
       setTimeout(function () { var b = document.querySelector('.c-jfmenu input[value="' + v + '"]'); if (b && b.checked) M.ping(b.closest('label') || b); }, 60);
     }, true);
-    // the page being left is held (A) BEFORE the router draws the next one: a capture listener runs first
+    // the page being left is held BEFORE the router draws the next one: a capture listener runs first
     var stack = [location.hash];
-    addEventListener('hashchange', function () { if (M.live() && A()) M.hold(); }, true);
+    addEventListener('hashchange', function () { if (M.live()) M.hold(); }, true);
 
     // pills: after any redraw, a group whose choice was just pressed slides its pill
     var view0 = document.getElementById('view');
@@ -371,7 +325,7 @@
 
     // a number that changed since this viewer's last visit: the mark replaces the shake (counts land first)
     function marks(view, before) {
-      if (M.mode === 'off' || !view || typeof C_METRICS === 'undefined' || typeof cMetricKey !== 'function') return;
+      if (!view || typeof C_METRICS === 'undefined' || typeof cMetricKey !== 'function') return;
       var after = {};
       try { after = JSON.parse(localStorage.getItem('intakeSeen') || '{}') || {}; } catch (e) { return; }
       view.querySelectorAll(C_METRICS).forEach(function (el, i) {
@@ -388,20 +342,15 @@
       if (held) {
         var old = held; held = null; after = 100;
         leave(old, 100, 0);
-        if (A()) run(view, [{ opacity: 0 }, { opacity: 1 }], { duration: 160, delay: after, easing: OUT });
+        run(view, [{ opacity: 0 }, { opacity: 1 }], { duration: 160, delay: after, easing: OUT });
         view.style.opacity = '';
       }
       view.querySelectorAll('.v-open').forEach(function (b) { if (b.contains(band)) b.classList.remove('v-open'); });
-      if (A()) {
-        M.drawBaseline(plots, { pseudo: '::after', total: 300, delay: after });
-        M.stagger(bars, { kind: 'rise', delay: 260 + after, step: 50 });
-      } else {
-        M.drawBaseline(plots, { pseudo: '::after' });
-        M.stagger(bars, { kind: 'fade', delay: 80, step: 30 });
-      }
+      M.drawBaseline(plots, { pseudo: '::after', total: 300, delay: after });
+      M.stagger(bars, { kind: 'rise', delay: 260 + after, step: 50 });
     }
 
-    // INBOX "ADD TO ADMISSIONS": the message travels to the Journey (A), or the Journey settles (B). Only after the
+    // INBOX "MAKE A LEAD": the message travels to the Journey's menu item, which rings. Only after the
     // save worked: a refusal or a possible duplicate moves nothing.
     if (typeof doQualify === 'function') {
       var qualify = doQualify;
@@ -412,22 +361,26 @@
         await qualify.apply(this, arguments);
         var err = document.getElementById('qErr');
         if (err && err.innerHTML.trim()) return;
-        M.flight(src, document.querySelector('.cnav a[href="#/journey"]'));
+        // the Journey link that can be seen: the left card, or the phone's bottom bar
+        var to = Array.prototype.filter.call(document.querySelectorAll('.cnav a[href="#/journey"], .ctabs a[href="#/journey"]'),
+          function (a) { return a.getBoundingClientRect().width > 0; })[0];
+        M.flight(src, to || null);
       };
     }
 
     // a menu badge whose number GREW pings once; an incoming-call card pings once
     var badges = {};
     var readBadges = function (quiet) {
-      document.querySelectorAll('.cnav .n[id]').forEach(function (b) {
+      document.querySelectorAll('.cnav .n[id], .ctabs .n[id]').forEach(function (b) {   // the phone bar's counts too
         var n = parseInt(b.textContent, 10) || 0, was = badges[b.id];
         badges[b.id] = n;
         if (!quiet && was !== undefined && n > was) M.ping(b.textContent.trim() ? b : b.parentNode);
       });
     };
     readBadges(true);
-    var nav = document.querySelector('.cnav');
-    if (nav && window.MutationObserver) new MutationObserver(function () { readBadges(false); }).observe(nav, { childList: true, subtree: true, characterData: true });
+    if (window.MutationObserver) document.querySelectorAll('.cnav, .ctabs').forEach(function (nav) {
+      new MutationObserver(function () { readBadges(false); }).observe(nav, { childList: true, subtree: true, characterData: true });
+    });
     var lastCall = null;                             // one look per batch of changes, not one per added node
     if (window.MutationObserver) {
       new MutationObserver(function () {

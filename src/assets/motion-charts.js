@@ -1,6 +1,6 @@
 /* INTAKE MOTION - THE CHARTS (Q65, MASTER CONTROL for the owner, 07.10.2026; branch motion/2026-10-07-charts).
- * Runs on the engine (src/assets/motion.js, docs/MOTION_API.md): ?motion=a (SKOLA-expressive) | b (calm) | off.
- * The owner picks A, B or a hybrid; nothing here changes the app's code, it wraps three of its functions.
+ * Runs on the engine (src/assets/motion.js, docs/MOTION_API.md). The owner picked A everywhere (07.10.2026); the engine
+ * is always A, so the B lines below never run. Nothing here changes the app's code, it wraps three of its functions.
  *
  * THE MOMENTS, each in A and B:
  *   Home         the month chart: the bars are uncovered from the baseline in month order, then the leads line draws
