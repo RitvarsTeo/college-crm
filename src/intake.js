@@ -144,12 +144,12 @@ export async function purgeLineBodies(db, cutoffIso) {
   const at = new Date().toISOString();
   const r = await db.prepare(`UPDATE inbound_line SET body = NULL, body_deleted_at = ?
     WHERE received_at < ? AND body IS NOT NULL`).run(at, cutoffIso);
-  // and the row's own copy of a message nobody is working on (set aside or filtered), once the ROW and its NEWEST line
+  // and the row's own copy (set aside, filtered, and since Q76 a lead's message too), once the ROW and its NEWEST line
   // are both past the cutoff: before 07.10.2026 only the lines were emptied, so a kept row text outlived its 13 months.
   // The row's own age is required too: rows stored before lines existed (30.09-01.10) have NO lines, and "no line is
   // newer" alone would have emptied them at once (caught by MASTER CONTROL at the release check, 07.10.2026).
   await db.prepare(`UPDATE inbound SET body = NULL, body_deleted_at = ?
-    WHERE state IN ('archived', 'filtered') AND body IS NOT NULL AND inbound.received_at < ?
+    WHERE state IN ('archived', 'filtered', 'qualified') AND body IS NOT NULL AND inbound.received_at < ?
       AND NOT EXISTS (SELECT 1 FROM inbound_line l WHERE l.inbound_id = inbound.id AND l.received_at >= ?)`).run(at, cutoffIso, cutoffIso);
   return (r && (r.changes ?? r.rowCount)) || 0;
 }
@@ -308,9 +308,7 @@ export async function receive(db, item) {
     if (p) {
       await db.prepare(`UPDATE inbound SET state = 'qualified', person_id = ?, processed_by = 'machine', processed_at = ?
         WHERE id = ?`).run(p.id, at, id);
-      await logEvent(db, { personId: p.id, kind: 'email', channel: item.channel, direction: 'in', at,
-        origin: AUTOMATIC, actor: item.email || item.channel, subject: 'Email received',
-        body: String(item.body || '').slice(0, 2000) });
+      // no event: the message itself is the History entry (messagesFor, Q76), so its text keeps the 13-month clock
       await db.prepare('UPDATE people SET last_contact_at = ? WHERE id = ? AND (last_contact_at IS NULL OR last_contact_at < ?)')
         .run(at, p.id, at);
       const open = await db.prepare("SELECT COUNT(*) n FROM tasks WHERE person_id = ? AND label = 'Answer the question' AND done_at IS NULL").get(p.id);
@@ -643,10 +641,12 @@ export async function qualify(db, id, { qualification, personId, createPerson, b
         `recorded when ${by} added the lead`);
   }
 
+  // Q76 (07.10.2026, Aigars: "chain of communication with the lead jabut pieejamai profila"): making a lead KEEPS the
+  // text, on the row and its lines, and the person's History shows it (messagesFor). The 13-month retention empties
+  // it on time (purgeLineBodies). Reverses the 23.09 rule that deleted it the moment somebody made the lead.
   await db.prepare(`UPDATE inbound SET state = 'qualified', qualification = ?, person_id = ?,
-    processed_by = ?, processed_at = ?, body = NULL, body_deleted_at = ? WHERE id = ?`)
-    .run(qualification, pid, by, at, at, id);
-  await dropLineBodies(db, id, at);
+    processed_by = ?, processed_at = ? WHERE id = ?`)
+    .run(qualification, pid, by, at, id);
 
   await logEvent(db, { personId: pid, kind: 'note', channel: item.channel, direction: 'in', at,
     origin: MANUAL, actor: by, subject: `Qualified from ${item.channel} as ${qualification}`,
@@ -699,10 +699,29 @@ async function applyToPerson(db, personId, field, value, opts = {}) {
 // A New Leads item another system already settled (the SIS creating an application-first person):
 // done, a lead, linked to the person, nobody pressed anything. Every write to inbound lives in this
 // file, so the pollers never touch the table themselves.
-// Making a lead (qualify) deletes the message body the moment somebody dealt with it, and the lines go with it:
-// the structured record is what lives on. Set aside did too until 07.10.2026, when the owner decided to keep the
-// text there (asked "Set aside: keep the message text?": "Keep the text"), so a set-aside message can be brought
-// back whole; it now waits for the 13-month retention like a filtered one. Qualify is unchanged.
+// Since 07.10.2026 nothing a person decides empties a message: set aside keeps it ("Keep the text") and so does
+// Make a lead (Q76, the History shows it). Only the SIS confirming an item still empties it here (confirmedBySystem:
+// system text, not a conversation). Everything else waits for the 13-month retention (purgeLineBodies).
+// WHAT THE PERSON WROTE (Q76): every message of theirs, one History entry each, newest first, read from the message
+// rows themselves - never copied into events, which are kept for ever - so the 13-month retention empties it on time.
+// A row with lines gives one entry per line (each arrival, with its own time); a row stored before lines existed
+// gives its own text once.
+export async function messagesFor(db, personId) {
+  const rows = await db.prepare(`SELECT id, channel, received_at, body FROM inbound WHERE person_id = ?`).all(personId);
+  const out = [];
+  for (const r of rows) {
+    const lines = await db.prepare(`SELECT id, received_at, body FROM inbound_line WHERE inbound_id = ? ORDER BY seq`).all(r.id);
+    const parts = lines.length ? lines.map((l) => ({ key: 'line-' + l.id, at: l.received_at, body: l.body }))
+      : [{ key: 'msg-' + r.id, at: r.received_at, body: r.body }];
+    for (const x of parts) {
+      if (!String(x.body || '').trim()) continue;
+      out.push({ id: x.key, kind: 'message', channel: r.channel, direction: 'in', origin: 'inbound',   // what a person wrote, not 'automatic'
+        occurred_at: x.at, subject: 'Wrote', body: x.body, inbound_id: Number(r.id) });
+    }
+  }
+  return out.sort((a, b) => String(b.occurred_at).localeCompare(String(a.occurred_at)));
+}
+
 export async function dropLineBodies(db, inboundId, at) {
   await db.prepare(`UPDATE inbound_line SET body = NULL, body_deleted_at = ?
     WHERE inbound_id = ? AND body IS NOT NULL`).run(at, inboundId);

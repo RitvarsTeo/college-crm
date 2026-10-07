@@ -113,7 +113,7 @@
     },
     {
       "title": "Inbox",
-      "body": "Every new message from every channel lands here first, in the column of the day it arrived. Make a lead: say the programme and the next step on the card, and add the email or phone the message did not bring, so their next message finds them. A message from somebody already in Intake says Joins and their name: Add to them. Anything else: Set aside. It is kept, and can be brought back. On a phone the days stack: tap a bar or a folded day to open it. Email: a message from somebody you are already working with goes on their history with Answer the question for today; the same new sender again joins their card; a newsletter is set aside.",
+      "body": "Every new message from every channel lands here first, in the column of the day it arrived. Make a lead: say the programme and the next step on the card, and add the email or phone the message did not bring, so their next message finds them. What they wrote stays on their History. A message from somebody already in Intake says Joins and their name: Add to them. Anything else: Set aside. It is kept, and can be brought back. On a phone the days stack: tap a bar or a folded day to open it. Email: a message from somebody you are already working with goes on their history with Answer the question for today; the same new sender again joins their card; a newsletter is set aside.",
       "target": ".cnav a[data-c=\"leads\"]"
     },
     {

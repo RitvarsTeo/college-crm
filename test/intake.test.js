@@ -295,7 +295,8 @@ test('an item cannot be dealt with twice', async () => {
 
 // --------------------------------------------------- the message body lifecycle --
 
-test('the body is deleted on qualification and the structured record survives', async () => {
+// Q76, 07.10.2026: reversed - the body now stays after qualification (History), the 13-month retention empties it
+test('the body is kept on qualification and the structured record is made as well', async () => {
   const db = await openDb();
   const r = await receive(db, { channel: 'instagram', body: FULL, name: 'Liene', externalId: 'b1' });
   assert.ok((await db.prepare('SELECT body FROM inbound WHERE id = ?').get(r.id)).body, 'it is there while qualifying');
@@ -304,13 +305,13 @@ test('the body is deleted on qualification and the structured record survives', 
     confirmFields: ['interest', 'education'] });
 
   const row = await db.prepare('SELECT * FROM inbound WHERE id = ?').get(r.id);
-  assert.equal(row.body, null, 'the body is gone');
-  assert.ok(row.body_deleted_at, 'and when it went is recorded');
+  assert.equal(row.body, FULL, 'Q76: the body stays');
+  assert.equal(row.body_deleted_at, null);
   const kept = await db.prepare('SELECT * FROM field_values WHERE inbound_id = ? AND person_id IS NOT NULL').all(r.id);
   assert.ok(kept.length >= 4, 'the extracted facts survive the deletion');
 });
 
-// 07.10.2026, the owner asked "Set aside: keep the message text?": "Keep the text". Qualify still deletes it.
+// 07.10.2026, the owner asked "Set aside: keep the message text?": "Keep the text". Since Q76 qualify keeps it too.
 test('set aside keeps the text (until retention), and the row is kept forever', async () => {
   const db = await openDb();
   const r = await receive(db, { channel: 'instagram', body: 'hello there', name: 'Spam', externalId: 'b2' });

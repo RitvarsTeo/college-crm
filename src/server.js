@@ -14,7 +14,7 @@ import { connectConfig, finishConnect, WhatsAppConnectError } from '../lib/whats
 import { subscribeLinkedInLeads, LeadFetchError } from '../lib/leads.js';
 import * as gmailB from '../lib/gmail.js';
 import * as notify from '../lib/notify.js';
-import { receive, listInbound, recordWhatsAppEcho, qualify, archive, bringBack, funnel, agedCount, handoffToSis, ownerFor, notifiedFor, handoverGap, canReach, surfaceAt, waitingFor, waitingByRole } from './intake.js';
+import { receive, listInbound, messagesFor, recordWhatsAppEcho, qualify, archive, bringBack, funnel, agedCount, handoffToSis, ownerFor, notifiedFor, handoverGap, canReach, surfaceAt, waitingFor, waitingByRole } from './intake.js';
 import { readScreenshot, readKind, readBody, readPath, saveFeedback, listFeedback, getScreenshot, setHandled, BadScreenshot, helpOpened, helpCounts } from './feedback.js';
 import { findMatches as matchPeople, duplicateCheck, isStrong as isStrongMatch } from './identity.js';
 import { lifecycleOf, sisProgress, sisProgressByPerson, SIS_HOLDS_SQL } from './lifecycle.js';
@@ -733,8 +733,11 @@ async function personRow(id, viewer) {
   const p = await db.prepare('SELECT * FROM people WHERE id = ?').get(id);
   if (!p) return null;
   const all = await db.prepare('SELECT * FROM events WHERE person_id = ? ORDER BY occurred_at DESC, id DESC').all(id);
-  p.timeline = visibleTimeline(all, viewer);
-  p.hiddenCorrections = all.length - p.timeline.length;
+  // Q76: what they wrote sits in their History, newest first among everything else that happened
+  const shown = visibleTimeline(all, viewer);
+  p.hiddenCorrections = all.length - shown.length;   // events only: the messages below are not events
+  p.timeline = [...shown, ...(await messagesFor(db, id))]
+    .sort((a, b) => String(b.occurred_at).localeCompare(String(a.occurred_at)));
   p.viewer = viewer || null;
   p.viewerIsAdmin = isAdmin(viewer);
   p.tasks = await db.prepare('SELECT * FROM tasks WHERE person_id = ? ORDER BY due_at ASC').all(id);

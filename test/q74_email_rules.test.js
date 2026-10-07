@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { openDb } from '../src/db.js';
-import { receive, qualify, listInbound, activePersonFor, noiseWhy } from '../src/intake.js';
+import { receive, qualify, listInbound, activePersonFor, noiseWhy, messagesFor } from '../src/intake.js';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const at = (h) => `2026-10-07T${String(h).padStart(2, '0')}:00:00Z`;
@@ -34,9 +34,8 @@ test('rule 1: an email from somebody already in Intake goes on their history wit
   assert.equal((await inbox(db)).length, 0, 'not in the Inbox');
   const row = await db.prepare('SELECT state, person_id, processed_by FROM inbound WHERE id = ?').get(r.id);
   assert.deepEqual({ ...row }, { state: 'qualified', person_id: pid, processed_by: 'machine' }, 'kept and counted');
-  const ev = await db.prepare(`SELECT kind, direction, body FROM events WHERE person_id = ? AND kind = 'email'`).get(pid);
-  assert.equal(ev.direction, 'in');
-  assert.match(ev.body, /Can I still apply/, 'the conversation is on their profile');
+  const wrote = (await messagesFor(db, pid)).find((m) => /Can I still apply/.test(m.body));
+  assert.ok(wrote, 'the conversation is on their profile (Q76: read from the message, never copied into events)');
   const task = await db.prepare(`SELECT label, due_at FROM tasks WHERE person_id = ? AND label = 'Answer the question'`).get(pid);
   assert.equal(task.due_at, at(9), 'due today, from when they wrote');
   await email(db, 'm2', 'anna@example.com', 'And one more thing', 10);
