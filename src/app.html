@@ -8102,12 +8102,67 @@ async function viewChannel(id) {
     <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
       ${c.canTest ? `<button class="btn ghost" id="chCheck" onclick="runChannelCheck('${esc(c.channel)}')">Check</button>` : ''}
       ${c.channel === 'linkedin' ? `<button class="btn ghost" id="liSub" onclick="chLinkedInSubscribe()">Subscribe leads</button>` : ''}
+      ${c.channel === 'whatsapp' ? `<button class="btn ghost" id="waConnect" onclick="chWhatsAppConnect()">Connect WhatsApp</button>` : ''}
       ${c.live
         ? `<button class="btn ghost" onclick="setChannelMode('${esc(c.channel)}','off')">Switch off</button>`
         : `<button class="btn" ${canSwitchOn ? '' : 'disabled'} onclick="setChannelMode('${esc(c.channel)}','live')">Switch on</button>`}
     </div>
-    <div id="chResult" style="margin-top:10px">${c.channel === 'linkedin' ? chLinkedInLine((d.runs || {}).linkedin_subscription) : ''}</div>
+    <div id="chResult" style="margin-top:10px">${c.channel === 'linkedin' ? chLinkedInLine((d.runs || {}).linkedin_subscription)
+      : c.channel === 'whatsapp' ? chLinkedInLine((d.runs || {}).whatsapp_connect) : ''}</div>
     <div id="chMode" style="margin-top:8px"></div>`;
+}
+
+// CONNECT WHATSAPP (coexistence, 07.10.2026): Meta's Embedded Signup in its "I already use the WhatsApp Business app"
+// form. The admin signs in to Meta in a popup and scans a code in WhatsApp Business on the academy phone; Meta hands
+// this page a one-time code and the account id, the server does the rest (lib/whatsapp.js). Nothing secret is here:
+// the app id and the configuration id come from the server, which says what is missing instead when they are not set.
+// The answer shows in the same one line as LinkedIn's.
+function cLoadFacebookSdk(cfg) {
+  return new Promise((resolve, reject) => {
+    const init = () => { window.FB.init({ appId: cfg.appId, autoLogAppEvents: true, xfbml: false, version: cfg.graphVersion }); resolve(); };
+    if (window.FB) return init();
+    window.fbAsyncInit = init;
+    const s = document.createElement('script');
+    s.src = 'https://connect.facebook.net/en_US/sdk.js';
+    s.async = true; s.defer = true; s.crossOrigin = 'anonymous';
+    s.onerror = () => reject(new Error('Meta sign-in could not load'));
+    document.head.appendChild(s);
+  });
+}
+async function chWhatsAppConnect() {
+  const btn = $('#waConnect'); const out = $('#chResult');
+  const show = (detail, at) => { out.innerHTML = chLinkedInLine({ at, detail }); };
+  btn.disabled = true;
+  const session = {};
+  const onMsg = (ev) => {
+    let host = '';
+    try { host = new URL(ev.origin).hostname; } catch { return; }
+    if (!/(^|\.)facebook\.com$/.test(host)) return;
+    try {
+      const d = typeof ev.data === 'string' ? JSON.parse(ev.data) : ev.data;
+      if (d && d.type === 'WA_EMBEDDED_SIGNUP') { session.event = d.event; Object.assign(session, d.data || {}); }
+    } catch { /* not Meta's sign-up message */ }
+  };
+  try {
+    const cfg = await api('/api/admin/channels/whatsapp/connect');
+    if (cfg.missing && cfg.missing.length) { show({ ok: false, line: 'Missing: ' + cfg.missing.join(', ') }); return; }
+    await cLoadFacebookSdk(cfg);
+    window.addEventListener('message', onMsg);
+    const code = await new Promise((resolve) => window.FB.login((r) => resolve(r && r.authResponse && r.authResponse.code), {
+      config_id: cfg.configId, response_type: 'code', override_default_response_type: true,
+      extras: { setup: {}, featureType: 'whatsapp_business_app_onboarding', sessionInfoVersion: '3' } }));
+    if (!code || (session.event && session.event !== 'FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING')) {
+      show({ ok: false, line: 'Not connected: the Meta sign-up was not finished' });
+      return;
+    }
+    const r = await post('/api/admin/channels/whatsapp/connect', { code, wabaId: session.waba_id, phoneNumberId: session.phone_number_id });
+    show(r, r.at);
+  } catch (e) {
+    show({ ok: false, line: (e.detail && (e.detail.line || e.detail.error)) || e.message });
+  } finally {
+    window.removeEventListener('message', onMsg);
+    btn.disabled = false;
+  }
 }
 
 // B1 (07.10.2026): LinkedIn Lead Sync is subscribed by our server, per owner; LinkedIn's answer shows in one line.
