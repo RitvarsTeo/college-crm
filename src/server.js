@@ -46,7 +46,7 @@ import { bootstrapIfAuthOn } from './bootstrap.js';
 import * as channeladmin from './channeladmin.js';
 import { todayStart, tomorrowStart, localDate, localMidnight } from './bizday.js';
 import { receiveSisApplication, mergeSisDuplicate, syncSis, channelMode, SIS_STAGE } from './sync.js';
-import { foldContractStage } from './stagefold.js';
+import { foldContractStage, foldSisOnlyApplication } from './stagefold.js';
 import { redateSisAdmissions } from './sisdates.js';
 
 
@@ -470,6 +470,9 @@ const PUBLIC = gate.isPublic();
   const into = (CONFIG.stages || []).find((s) => s.id === 'Application');
   const folded = await foldContractStage(db, { intoLabel: into ? into.label : 'Application' });
   if (folded.moved) console.log(`Contract stage removed: ${folded.moved} moved to Submitted application`);
+  const label = (id) => ((CONFIG.stages || []).find((s) => s.id === id) || {}).label || id;
+  const back = await foldSisOnlyApplication(db, { labelOf: label, first: (CONFIG.stageRoles || {}).first || 'New' });
+  if (back.moved) console.log(`Only a submitted application counts: ${back.moved} moved back, each with a call step`);
 }
 // THE ACCOUNTS, AFTER THE DATA AND BEFORE THE DOOR OPENS.
 //

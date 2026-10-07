@@ -151,7 +151,7 @@
     {
       "id": "card-states",
       "q": "What do the colours on the cards mean?",
-      "a": "Two colours. Red means the person needs you: Overdue, with the days late, and No next step - press Choose on the card to set one. Navy means on track: Due today, Due with the date, and With the SIS, the student information system holds the person. The last line of the card says which. In the Inbox red is Late or Answer now, navy is New, with how long the message has waited. Inside a column the bands group the cards by state and count everyone in that state, the people behind N more too. The Journey's graph stacks the same two colours per stage, red at the bottom; a click on a colour opens those people, and the State filter offers the five states."
+      "a": "Two colours. Red means the person needs you: Overdue, with the days late, and No next step - press Choose on the card to set one. Navy means on track: Due today, Due with the date, and With the SIS, the student information system holds the person once their application form is submitted. Somebody the SIS says only made an account or started the form gets the step Call: did they finish the application form? The last line of the card says which. In the Inbox red is Late or Answer now, navy is New, with how long the message has waited. Inside a column the bands group the cards by state and count everyone in that state, the people behind N more too. The Journey's graph stacks the same two colours per stage, red at the bottom; a click on a colour opens those people, and the State filter offers the five states."
     },
     {
       "id": "move-someone-along",

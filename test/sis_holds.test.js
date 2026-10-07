@@ -46,7 +46,7 @@ function start(env) {
   });
 }
 
-test('holds: the Home count leaves out the person the SIS holds, and keeps the registered-only one', async (t) => {
+test('holds: the Home count leaves out the person the SIS holds; the registered-only one has the call step', async (t) => {
   const s = await start({ CHANNEL_MODE_SIS: 'test', SIS_APPLICATION_SECRET: SECRET });
   t.after(() => s.child.kill());
   for (const a of [app(), registeredOnly]) {
@@ -56,14 +56,14 @@ test('holds: the Home count leaves out the person the SIS holds, and keeps the r
   }
   const sum = await fetch(s.base + '/api/summary', { headers: { 'x-acting-as': 'Ieva' } }).then((r) => r.json());
   assert.equal(sum.openPeople, 2);
-  assert.equal(sum.noNextAction, 1, 'only the registered-only person needs a step from Admissions');
+  assert.equal(sum.noNextAction, 0, 'the registered-only person has the call step now (07.10), the submitted one is held');
 });
 
 test('holds: the funnel and the report count the same way', async () => {
   const db = await openDb(':memory:');
   await syncSis(db, { now: new Date('2026-09-30T07:00:00Z'), env: ENV, fetchImpl: feed([app(), registeredOnly]) });
-  assert.equal((await funnel(db)).noNextAction, 1);
-  assert.equal((await report(db, {})).summary.noNextAction, 1);
+  assert.equal((await funnel(db)).noNextAction, 0, 'the registered-only person has the call step (07.10)');
+  assert.equal((await report(db, {})).summary.noNextAction, 0);
 });
 
 test('holds: a known lead who reaches the SIS is NOT held, and still needs her step', async () => {
@@ -96,7 +96,7 @@ test('holds: the page uses the same rule as the server', () => {
   const holds = pageRule();
   const sis = (status) => ({ status, label: status });
   assert.equal(holds({ first_channel: 'sis', sis: sis('submitted') }), true);
-  assert.equal(holds({ first_channel: 'sis', sis: sis('started') }), true);
+  assert.equal(holds({ first_channel: 'sis', sis: sis('started') }), false, 'a form only started needs a call (07.10)');
   assert.equal(holds({ first_channel: 'sis', sis: sis('registered') }), false);
   assert.equal(holds({ first_channel: 'sis', sis: sis('withdrawn') }), false);
   assert.equal(holds({ first_channel: 'phone', sis: sis('submitted') }), false);

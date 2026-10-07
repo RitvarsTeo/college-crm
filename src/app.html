@@ -2738,7 +2738,8 @@ const C_ICON = {
 const C_TERMINAL = ['Admitted', 'Not proceeding'];
 // Held by the SIS (the owner, 01.10.2026): an SIS-created person at started or later is never "No next
 // step"; the SIS line says where they are. The same rule as SIS_HOLDS_SQL in src/lifecycle.js.
-const C_SIS_HOLDS = ['started', 'submitted', 'admitted', 'matriculated'];
+// 07.10.2026: a form only started needs a call, not the SIS
+const C_SIS_HOLDS = ['submitted', 'admitted', 'matriculated'];
 const cSisHolds = (p) => Boolean(p && p.first_channel === 'sis' && p.sis && C_SIS_HOLDS.includes(p.sis.status));
 const cSisHeld = (p) => `In the SIS: ${esc((p.sis && p.sis.label) || '')}`;
 // /api/people answers { count, rows } and returns every row: no paging, no cap.

@@ -95,7 +95,8 @@ export const SIS_ORDER = ['registered', 'started', 'submitted', 'admitted', 'mat
 // counted in "No next step". Registered-only is still a lead with a step; a known lead who reaches
 // the SIS stays as before; rejected or withdrawn is a human's to close, so they count again.
 // One rule, used by every count (this) and by the page (cSisHolds in src/app.html).
-export const SIS_HOLDS = ['started', 'submitted', 'admitted', 'matriculated'];
+// 07.10.2026 (Ritvars): 'started' is out. A form only started is a call to check, not something the SIS holds.
+export const SIS_HOLDS = ['submitted', 'admitted', 'matriculated'];
 export const SIS_HOLDS_SQL = `(pe.first_channel = 'sis' AND EXISTS (SELECT 1 FROM sis_applicants sa
   WHERE sa.person_id = pe.id AND sa.status IN ('${SIS_HOLDS.join("','")}')))`;
 export const SIS_WORD = { registered: 'Registered', started: 'Form started', submitted: 'Submitted', admitted: 'Admitted',

@@ -266,6 +266,23 @@ export const SIS_STAGE = {
 // the two statuses only a human may turn into a closing: they go on the timeline instead
 export const SIS_CLOSING = ['rejected', 'withdrawn'];
 
+// "WE HAVE TO KNOW WHEN THIS HAPPEN" (Ritvars 07.10.2026, popup "Yes, both"): somebody the SIS says only
+// registered or started gets a step to call and check whether they finished the form. One open at a
+// time, none for a finished person, and none once any of their applications is submitted or further.
+export const FORM_CHECK = 'Call: did they finish the application form?';
+const FORM_CHECK_FOR = ['registered', 'started'];
+export async function planFormCheck(db, personId, at) {
+  const p = await db.prepare('SELECT status, owner FROM people WHERE id = ?').get(personId);
+  if (!p || (CONFIG.terminalStages || []).includes(p.status)) return false;
+  const rows = await db.prepare('SELECT status FROM sis_applicants WHERE person_id = ?').all(personId);
+  if (!rows.length || rows.some((r) => SIS_STAGE[r.status]) || !rows.some((r) => FORM_CHECK_FOR.includes(r.status))) return false;
+  const open = await db.prepare('SELECT COUNT(*) n FROM tasks WHERE person_id = ? AND label = ? AND done_at IS NULL').get(personId, FORM_CHECK);
+  if (Number(open.n)) return false;
+  await db.prepare('INSERT INTO tasks (person_id,label,due_at,owner,created_at) VALUES (?,?,?,?,?)')
+    .run(personId, FORM_CHECK, at, p.owner || 'Admissions', at);
+  return true;
+}
+
 const STAGE_ORDER = () => CONFIG.stageOrder || ['New', 'Contacted', 'Follow-up', 'Application', 'Admitted'];
 
 // admittedAt is the SIS's own admission date (src/sisdates.js), never the time of the run (Ritvars,
@@ -325,6 +342,7 @@ async function applyToPerson(db, reference, personId, at, stats) {
   // The lifecycle facts ("Application form started", "Matriculated") each row states, dated and
   // written once (src/lifecycle.js holds the PROVISIONAL mapping; docs/LIFECYCLE.md). Facts, not stages.
   for (const r of rows) stats.facts += await recordSisLifecycle(db, personId, r, { now: new Date(at) });
+  if (await planFormCheck(db, personId, at)) stats.formCheck = (stats.formCheck || 0) + 1;
 }
 
 // APPLICATION-FIRST (CRM TEST CASE, SAID + decided by Ritvars 30.09.2026, docs/BACKLOG.md).
@@ -392,6 +410,7 @@ async function createFromSis(db, reference, rows, at, mode, stats) {
   }
   for (const r of rows) stats.facts += await recordSisLifecycle(db, id, r, { now: new Date(at) });
   stats.created++;
+  if (await planFormCheck(db, id, at)) stats.formCheck = (stats.formCheck || 0) + 1;
   return id;
 }
 
