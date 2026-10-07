@@ -90,6 +90,15 @@ export function makeInbound(channel, parts) {
 // and we hold the secret, it is checked. Where we do not yet hold the secret, the
 // adapter says so out loud instead of pretending the check happened.
 
+// A secret given in the address (Mailchimp's ?s=), compared in constant time with a length check first,
+// so a wrong guess cannot be narrowed one character at a time (KB 08 P11 rule 8, 07.10.2026).
+export function sameSecret(given, secret) {
+  if (!secret) return false;
+  const a = Buffer.from(String(given || ''), 'utf8');
+  const b = Buffer.from(String(secret), 'utf8');
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
 export const VERIFY = {
   none: () => ({ ok: true, how: 'no verification: this channel carries no signature' }),
 
@@ -155,7 +164,7 @@ export const VERIFY = {
   secret_in_url: (req, secret, _raw, url) => {
     if (!secret) return { ok: false, how: 'no secret configured', missingSecret: true };
     const got = String((url && url.searchParams.get('s')) || '');
-    const ok = got.length === String(secret).length && got === String(secret);
+    const ok = sameSecret(got, secret);
     return { ok, how: ok ? 'url secret matched (weak: this provider does not sign)' : 'url secret did not match' };
   },
 
@@ -198,10 +207,18 @@ export const VERIFY = {
 const PULL_AUTH = new Set(['token_in_query', 'none_needed', 'service_account_with_domain_delegation',
   'bearer_token']);   // inbound_poll: we send the bearer token, nobody sends one to us
 
-/** True only for a channel a provider delivers to over HTTP with its own proof. */
+// A channel is ACTIVE unless config/channels.json says otherwise: no lifecycle means active, and a
+// dropped (Google Form) or parked (Open Day) channel takes no deliveries at all, so to a caller it has
+// no address (KB 08 P11 rule 1, 07.10.2026: a door nobody uses is still a door).
+export function isActiveChannel(channel) {
+  const def = channelDef(channel);
+  return Boolean(def) && (def.lifecycle == null || def.lifecycle === 'active');
+}
+
+/** True only for an ACTIVE channel a provider delivers to over HTTP with its own proof. */
 export function acceptsWebhook(channel) {
   const def = channelDef(channel);
-  return Boolean(def) && !PULL_AUTH.has(def.auth);
+  return Boolean(def) && isActiveChannel(channel) && !PULL_AUTH.has(def.auth);
 }
 
 export function verifyRequest(channel, req, { secret, rawBody, url } = {}) {
@@ -355,7 +372,7 @@ export function handshake(channel, url, env = process.env) {
   if (channel === 'mailchimp') {
     const secret = env[def.secretEnv];
     const got = String(url.searchParams.get('s') || '');
-    const record = Boolean(secret) && got.length === String(secret).length && got === String(secret);
+    const record = sameSecret(got, secret);
     return { ok: true, status: 200, body: 'ok', contentType: 'text/plain', record,
       how: record ? 'Mailchimp URL check answered' : 'URL check answered, not recorded: no matching secret' };
   }

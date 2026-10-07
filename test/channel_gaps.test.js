@@ -298,19 +298,15 @@ test('C6: the script sends each response with the secret from Script Properties,
     /CRM_SECRET is not set/);
 });
 
-test('C6 over the wire: what the script sends lands in New Leads, and resendAll repeats nothing', async (t) => {
+test('C6 over the wire: Google Form is DROPPED, so what the script sends finds no door and lands nowhere', async (t) => {
+  // Google Form was dropped from the product (Ritvars, 01.10 and 02.10.2026; config/channels.json lifecycle), and
+  // a channel that is not active has no inbound address (KB 08 P11 rule 1, security review 07.10.2026). The
+  // script above is kept as the record of how it worked; a real delivery, even with the right secret, is a 404.
   const s = await start({ CHANNEL_MODE_GOOGLE_FORM: 'test', GOOGLE_FORM_SECRET: FORM_SECRET });
   t.after(() => s.child.kill());
   const r = runScript((ctx) => ctx.resendAll(), { responses: 2 });
   const post = (x) => fetch(s.base + '/api/inbound/google_form', { method: 'POST',
     headers: { 'content-type': x.o.contentType, ...x.o.headers }, body: x.o.payload }).then((res) => res.status);
-  for (const x of r.sent) assert.equal(await post(x), 200);
-  for (const x of r.sent) assert.equal(await post(x), 200, 'a repeat is fine');
-  const items = await newLeads(s.base);
-  assert.equal(items.length, 2);
-  const one = items.find((i) => i.contact_name === 'Līga Bērza 0');
-  assert.equal(one.contact_email, 'liga0@example.com', 'the collected respondent email is used');
-  const bad = await fetch(s.base + '/api/inbound/google_form', { method: 'POST',
-    headers: { 'content-type': 'application/json', 'x-crm-secret': 'wrong' }, body: r.sent[0].o.payload });
-  assert.equal(bad.status, 401);
+  for (const x of r.sent) assert.equal(await post(x), 404, 'a dropped channel takes no deliveries');
+  assert.equal((await newLeads(s.base)).length, 0, 'nothing landed in New Leads');
 });
