@@ -161,7 +161,7 @@
     {
       "id": "first-reply",
       "q": "What is \"Email reply sent\" in a person's History?",
-      "a": "Intake reads when edu@ first replied to an email enquiry: only the time of the first reply sent from edu@ in that conversation, never its text. For a call, the reply is the first answered call. These times become the First reply figure on Reports once every email conversation has been read."
+      "a": "Intake reads when edu@ first replied to an email enquiry: only the time of the first reply sent from edu@ in that conversation, never its text. For a call, the reply is the first answered call."
     },
     {
       "id": "home-numbers",

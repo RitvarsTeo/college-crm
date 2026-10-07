@@ -57,6 +57,8 @@
   },
   "_benchmarks": "Reports > Conversion, variant A picked by Ritvars 06.10.2026: our matured step rate as a dot on the grey 'typical' band. A benchmark is never hard-coded in the page: every drawn row comes from here and must carry definition, source, url, year, region and confidence (test/benchmarks.test.js). step = the server's figure it is compared with (src/reports.js maturedSteps). Under minN people the dot is hollow and the value carries '~'. Research: 'For review/2026-10-05 Benchmarks/BENCHMARKS.md'.",
   "benchmarks": {
+    "on": false,
+    "_on": "PARKED by the owner, 07.10.2026: \"from full reports lets just keep it very far backlog the industry benchmarks, they will not be in the final github push for quite a time.\" One switch: off = Reports draws no benchmark row on any tab; the rows, their values and sources stay here (and in For review/2026-10-05 Benchmarks/BENCHMARKS.md), parked, not dropped. The first-reply RECORDING stays on.",
     "minN": 20,
     "rows": [
       {
