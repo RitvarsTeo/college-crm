@@ -130,6 +130,23 @@ test('the 13-month retention still empties an old set-aside message, line AND ro
   assert.equal((await row(recent.id)).body, 'from last week', 'a recent one keeps its text');
 });
 
+test('retention never empties a row by its missing lines: a 7-day-old filtered row with NO lines keeps its text; 14 months old it goes', async () => {
+  // production holds 28 filtered rows with text and no inbound_line (stored 30.09-01.10, before lines existed)
+  const db = await openDb(':memory:');
+  const plant = (ext, at) => db.prepare(`INSERT INTO inbound (channel, external_id, received_at, surface_at, contact_email, body,
+    state, source, suggested, suggestion_why, archive_reason) VALUES ('gmail', ?, ?, ?, 'x@novikontas.org', 'old text', 'filtered',
+    'provider', 'unclear', 'planted', 'Filtered automatically')`).run(ext, at, at);
+  const young = Number((await plant('n1', '2026-09-30T09:00:00.000Z')).lastInsertRowid);
+  const old = Number((await plant('n2', '2025-08-01T09:00:00.000Z')).lastInsertRowid);
+  assert.equal((await db.prepare('SELECT COUNT(*) n FROM inbound_line').get()).n, 0, 'no lines at all');
+  await purgeLineBodies(db, '2025-09-07T00:00:00.000Z');
+  const body = async (id) => (await db.prepare('SELECT body FROM inbound WHERE id = ?').get(id)).body;
+  assert.equal(await body(young), 'old text', 'one week old: kept');
+  assert.equal(await body(old), null, '14 months old: emptied');
+  const b = await bringBack(db, young, { by: 'Ieva' });
+  assert.equal(b.textKept, true, 'and it can still come back whole');
+});
+
 // ---------------------------------------------------------------- the route --
 function start() {
   return new Promise((resolve, reject) => {

@@ -144,11 +144,13 @@ export async function purgeLineBodies(db, cutoffIso) {
   const at = new Date().toISOString();
   const r = await db.prepare(`UPDATE inbound_line SET body = NULL, body_deleted_at = ?
     WHERE received_at < ? AND body IS NOT NULL`).run(at, cutoffIso);
-  // and the row's own copy of a message nobody is working on (set aside or filtered), once its NEWEST line is past
-  // the cutoff: before 07.10.2026 only the lines were emptied, so a kept row text outlived its 13 months
+  // and the row's own copy of a message nobody is working on (set aside or filtered), once the ROW and its NEWEST line
+  // are both past the cutoff: before 07.10.2026 only the lines were emptied, so a kept row text outlived its 13 months.
+  // The row's own age is required too: rows stored before lines existed (30.09-01.10) have NO lines, and "no line is
+  // newer" alone would have emptied them at once (caught by MASTER CONTROL at the release check, 07.10.2026).
   await db.prepare(`UPDATE inbound SET body = NULL, body_deleted_at = ?
-    WHERE state IN ('archived', 'filtered') AND body IS NOT NULL
-      AND NOT EXISTS (SELECT 1 FROM inbound_line l WHERE l.inbound_id = inbound.id AND l.received_at >= ?)`).run(at, cutoffIso);
+    WHERE state IN ('archived', 'filtered') AND body IS NOT NULL AND inbound.received_at < ?
+      AND NOT EXISTS (SELECT 1 FROM inbound_line l WHERE l.inbound_id = inbound.id AND l.received_at >= ?)`).run(at, cutoffIso, cutoffIso);
   return (r && (r.changes ?? r.rowCount)) || 0;
 }
 
