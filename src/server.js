@@ -10,6 +10,7 @@ import { PROVIDERS, runScenario, runOutbound, runFullDemo, listEvents, getEvent,
 import { logEvent, applyEdit, readHistory, MANUAL, AUTOMATIC, EDITABLE_FIELDS, IMMUTABLE_FIELDS, FIELD_LABELS } from './history.js';
 import { stampOpenDay, registerOpenDay, refilterOpen } from './intake.js';
 import { queueLeadAnswers } from './leadanswers.js';
+import { subscribeLinkedInLeads, LeadFetchError } from '../lib/leads.js';
 import * as gmailB from '../lib/gmail.js';
 import * as notify from '../lib/notify.js';
 import { receive, listInbound, qualify, archive, bringBack, funnel, agedCount, handoffToSis, ownerFor, notifiedFor, handoverGap, canReach, surfaceAt, waitingFor, waitingByRole } from './intake.js';
@@ -807,6 +808,28 @@ function integrationStatuses(env = process.env) {
     };
   });
 }
+// B3: a withdrawn LinkedIn lead. The lead's own URN is the thread key of the row it first made.
+async function linkedInWithdrawn(ev) {
+  const row = await db.prepare(`SELECT person_id FROM inbound WHERE channel = 'linkedin' AND thread_key = ?
+    AND person_id IS NOT NULL ORDER BY id DESC`).get(ev.externalContactId);
+  const subject = 'LinkedIn: they withdrew their lead form';
+  let noted = false;
+  if (row && row.person_id) {
+    const seen = await db.prepare('SELECT id FROM events WHERE person_id = ? AND subject = ? AND occurred_at = ?').get(row.person_id, subject, ev.receivedAt);
+    if (!seen) await logEvent(db, { personId: row.person_id, kind: 'channel', channel: 'linkedin', direction: 'in',
+      at: ev.receivedAt, origin: AUTOMATIC, actor: 'LinkedIn', subject, body: '' });
+    noted = true;
+  }
+  const was = await db.prepare("SELECT detail FROM sync_state WHERE name = 'linkedin_withdrawn'").get();
+  let d = { noted: 0, skipped: 0 };
+  try { d = { ...d, ...JSON.parse((was && was.detail) || '{}') }; } catch { /* a broken record starts again */ }
+  d[noted ? 'noted' : 'skipped'] += 1;
+  await db.prepare(`INSERT INTO sync_state (name, value, ran_at, detail) VALUES ('linkedin_withdrawn', ?, ?, ?)
+    ON CONFLICT(name) DO UPDATE SET value = excluded.value, ran_at = excluded.ran_at, detail = excluded.detail`)
+    .run(String(d.noted + d.skipped), nowIso(), JSON.stringify(d));
+  return noted ? 'withdrawn: noted on the person' : 'withdrawn: nobody known, skipped';
+}
+
 async function channelCounts() {
   const out = {};
   // ONLY rows a real provider posted. The demo builder and the simulator write
@@ -1308,6 +1331,34 @@ export const handle = async (req, res) => {
         const payload = { ...r, channel: id, at: nowIso(), by: me.name };
         channeladmin.assertNoSecretValues(payload, process.env);
         return json(res, 200, payload);
+      }
+
+      // B1 (07.10.2026): LinkedIn Lead Sync is subscribed by an API call, per owner, never in LinkedIn's own screens.
+      // Admins only. The ad account only (SPONSORED): no company-page subscription (MASTER CONTROL's GO, 07.10.2026;
+      // Novikontas has no LinkedIn lead forms yet). The answer is kept in one line for the Channels screen; the token
+      // never leaves the server.
+      if (req.method === 'POST' && id === 'linkedin' && action === 'subscribe') {
+        if (!auth.canEnableChannel(me.role)) return refuseNotAdmin(res);
+        const acct = String(process.env.LINKEDIN_AD_ACCOUNT_ID || '').replace(/\D/g, '');
+        if (!acct) return json(res, 409, { error: 'LINKEDIN_AD_ACCOUNT_ID is not set: the ad account number from Campaign Manager' });
+        const owners = [{ owner: { sponsoredAccount: 'urn:li:sponsoredAccount:' + acct }, leadType: 'SPONSORED' }];
+        const webhook = CHANNELS.channels.linkedin.publicWebhook;
+        let results = null, line, ok;
+        try {
+          results = await subscribeLinkedInLeads({ webhook, owners });
+          ok = true;
+          line = results.every((r) => r.already) ? 'Already subscribed' : 'Subscribed';
+        } catch (err) {
+          ok = false;
+          line = err instanceof LeadFetchError ? err.message : 'The subscription failed';
+        }
+        const at = nowIso();
+        await db.prepare(`INSERT INTO sync_state (name, value, ran_at, detail) VALUES ('linkedin_subscription', ?, ?, ?)
+          ON CONFLICT(name) DO UPDATE SET value = excluded.value, ran_at = excluded.ran_at, detail = excluded.detail`)
+          .run(ok ? 'subscribed' : 'failed', at, JSON.stringify({ ok, line, by: me.name, results }));
+        const payload = { ok, line, results, at };
+        channeladmin.assertNoSecretValues(payload, process.env);
+        return json(res, ok ? 200 : 502, payload);
       }
 
       // Switch a channel ON or OFF. Never automatic, and it refuses unless the
@@ -2450,6 +2501,12 @@ export const handle = async (req, res) => {
         const done = [];
         for (const ev of evs) {
           if (ev.attribution && channel === 'agent') ev.attribution = { ...ev.attribution, verified: Boolean(check.partner) };
+          // B3 (07.10.2026): LinkedIn says DELETED when somebody withdraws (an event they unregistered from). That is
+          // never a new lead: a note on the person if we know them, otherwise skipped and counted.
+          if (channel === 'linkedin' && String((ev.raw && ev.raw.leadAction) || '').toUpperCase() === 'DELETED') {
+            done.push({ externalEventId: ev.externalEventId, inboundId: null, outcome: await linkedInWithdrawn(ev) });
+            continue;
+          }
           // Idempotency: await receive() returns {duplicate:true} when it has already
           // seen this channel + external id. A provider retry is normal.
           // Mailchimp is activity about somebody, never an enquiry (config mailchimp._note,

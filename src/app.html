@@ -1827,6 +1827,8 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .chinfo li:last-child details:not([open]) summary{border-bottom:0}
   html.ui-c .chinfo li:last-child .chcard-in{border-bottom:0}
   html.ui-c .chinfo .chasof{align-self:flex-end}
+  html.ui-c .chline{font-size:12.5px;font-weight:600;color:var(--t2)}
+  html.ui-c .chline.is-fail{color:var(--bad)}
   html.ui-c .chfilter .btn{align-self:flex-start}
   html.ui-c .c-chcard .chlist a.chgo{display:inline;align-self:flex-start;padding:0;border:0;font-size:12.5px;font-weight:650;color:var(--k-live);background:none}
   html.ui-c .chchain{display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -7868,10 +7870,18 @@ function chListHtml(rows, env, ctx = {}) {
       + chFig(f.counts.filtered, 'set aside', 'is-out') : '';
     const asOf = f.counts && f.counts.asOf ? `<span class="chasof">${esc(chDay(f.counts.asOf))}</span>` : '';
     const rules = c.direction === 'manual' ? f.filters : [...f.filters, ...(ctx.filtersAll || [])];
+    // LinkedIn's answer to Subscribe leads (07.10.2026), one line; the button is on its Settings and check page
+    const sub = c.channel === 'linkedin' ? chLinkedInLine((ctx.runs || {}).linkedin_subscription) : '';
     return chOpen(`<b>${esc(c.label)}</b><span class="chk ${st.cls}">${esc(st.word)}</span>`,
-      `<span class="chfigs">${figs}${f.pullSub ? chFig(f.pull, f.pullSub, 'is-pull') : ''}${asOf}</span>${chTags(rules)}
+      `<span class="chfigs">${figs}${f.pullSub ? chFig(f.pull, f.pullSub, 'is-pull') : ''}${asOf}</span>${chTags(rules)}${sub}
       <a href="#/channels/${esc(c.channel)}" class="chgo">Settings and check &rsaquo;</a>`);
   }).join('')}</ul>`;
+}
+
+// What LinkedIn answered the last time an admin pressed Subscribe leads, in one line, or nothing before the first press.
+function chLinkedInLine(run) {
+  const d = run && run.detail;
+  return d && d.line ? `<span class="chline${d.ok ? '' : ' is-fail'}">${esc(d.line)}${run.at ? ' &middot; ' + esc(chWhen(run.at) || '') : ''}</span>` : '';
 }
 
 // SIS is not a channel (02.10): its own card, one line that uncovers the chain to apply, how its
@@ -7955,12 +7965,25 @@ async function viewChannel(id) {
     ${row('Settings', chSettings(c.settings))}
     <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
       ${c.canTest ? `<button class="btn ghost" id="chCheck" onclick="runChannelCheck('${esc(c.channel)}')">Check</button>` : ''}
+      ${c.channel === 'linkedin' ? `<button class="btn ghost" id="liSub" onclick="chLinkedInSubscribe()">Subscribe leads</button>` : ''}
       ${c.live
         ? `<button class="btn ghost" onclick="setChannelMode('${esc(c.channel)}','off')">Switch off</button>`
         : `<button class="btn" ${canSwitchOn ? '' : 'disabled'} onclick="setChannelMode('${esc(c.channel)}','live')">Switch on</button>`}
     </div>
-    <div id="chResult" style="margin-top:10px"></div>
+    <div id="chResult" style="margin-top:10px">${c.channel === 'linkedin' ? chLinkedInLine((d.runs || {}).linkedin_subscription) : ''}</div>
     <div id="chMode" style="margin-top:8px"></div>`;
+}
+
+// B1 (07.10.2026): LinkedIn Lead Sync is subscribed by our server, per owner; LinkedIn's answer shows in one line.
+async function chLinkedInSubscribe() {
+  const btn = $('#liSub'); const out = $('#chResult');
+  btn.disabled = true;
+  try {
+    const r = await post('/api/admin/channels/linkedin/subscribe');
+    out.innerHTML = chLinkedInLine({ at: r.at, detail: r });
+  } catch (e) {
+    out.innerHTML = chLinkedInLine({ detail: { ok: false, line: (e.detail && (e.detail.line || e.detail.error)) || e.message } });
+  } finally { btn.disabled = false; }
 }
 
 

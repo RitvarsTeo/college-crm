@@ -169,6 +169,11 @@
       "a": "Yes. Copy the address from the browser and send it. Anyone with an Intake account opens it; if they are signed out, they sign in first and then land on it."
     },
     {
+      "id": "linkedin-leads",
+      "q": "Where do LinkedIn leads come from?",
+      "a": "From LinkedIn lead forms, once an admin has pressed Subscribe leads on the LinkedIn channel (Channels, LinkedIn). Each lead lands in the Inbox as LinkedIn, and its answers fill in a few seconds later, dropdowns included. A lead withdrawn on LinkedIn is never added: if we already know the person, it is noted on their history."
+    },
+    {
       "id": "light-dark-system",
       "q": "Light, dark or system?",
       "a": "Use the Light, System, Dark switch at the bottom of the left card (on a phone, at the bottom of the page). System follows your computer, and changes when it does. The choice is remembered on this device."

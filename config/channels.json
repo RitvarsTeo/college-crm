@@ -1089,7 +1089,7 @@
       "howWeTest": "Simulate from DEV CONTROL, or post a signed fixture to the endpoint with the test secret.",
       "howWeGoLive": "Set LINKEDIN_CLIENT_SECRET in Vercel, register the address with LinkedIn, receive one real event, check it lands in the Inbox, switch mode to live.",
       "howWeDisable": "Set the channel mode to off. The endpoint then refuses and says so.",
-      "operationalNote": "A social page with the same rules as the Meta pages (Ritvars, 27.09.2026): an automated integration, not a person re-typing what arrived. The Lead Sync API fetch that turns a notification into a name and email is NOT built yet.",
+      "operationalNote": "A social page with the same rules as the Meta pages (Ritvars, 27.09.2026): an automated integration, not a person re-typing what arrived. Lead Sync approved 07.10.2026; the answers fetch (lib/leads.js) is built, dropdowns included, and the subscription is the Subscribe leads action.",
       "blockerKind": "question",
       "connectSteps": [
         "Create the developer app",
@@ -1138,12 +1138,12 @@
           "note": "The Lead Sync API (the leads option) is a pending EXTRA, not the channel connection; it does not change the state."
         },
         "pendingExtra": {
-          "dependency": "LinkedIn's decision on Lead Sync API access (submitted 02.10)",
-          "owner": "LinkedIn / Microsoft vetting",
-          "action": "Wait for their email at ritvars.vilcins@; answer any vetting questions",
-          "side": "external",
-          "canRefuse": true,
-          "party": "LinkedIn",
+          "dependency": "The first LinkedIn lead form (none exist yet, Ritvars 07.10.2026), then LINKEDIN_CLIENT_SECRET, LINKEDIN_ACCESS_TOKEN and LINKEDIN_AD_ACCOUNT_ID in Vercel, then Subscribe leads",
+          "owner": "Ritvars (Super Admin of the Novikontas page since 02.10.2026); the token also needs a Campaign Manager role on the ad account",
+          "action": "After Subscribe leads, dropdown answers and withdrawn leads are live: paste the secret and the token into Vercel (Sensitive), redeploy, press Subscribe leads",
+          "side": "internal",
+          "canRefuse": false,
+          "party": "Ritvars",
           "what": "The leads option: Lead Sync API access, so a lead-form notification becomes a name and email in Intake",
           "nextAction": {
             "owner": "Oksana",
@@ -1156,9 +1156,24 @@
           "filtered": 0,
           "asOf": "2026-10-04",
           "source": "production backup _backups/2026-10-04T19-29-00Z (status VERIFIED), counts read 05.10"
+        },
+        "approved": {
+          "on": "2026-10-07",
+          "app": "264939930",
+          "tier": "Standard",
+          "source": "LinkedIn's email of 07.10.2026 02:15, his screenshot via MASTER CONTROL: \"We have provisioned your app with id - 264939930, for Standard Tier access to our Lead Sync API.\""
+        },
+        "tokenGenerated": null,
+        "_tokenGenerated": "The day the LinkedIn access token is generated (it lives 60 days; scope r_marketing_leadgen_automation). Filled when it happens; a reminder is set 7 days before day 60 unless LinkedIn issues a refresh token.",
+        "leadForms": {
+          "count": 0,
+          "seen": "2026-10-07",
+          "source": "Ritvars, via MASTER CONTROL, 07.10.2026: no LinkedIn lead forms exist yet; go-live waits for the first form"
         }
       },
-      "filters": []
+      "filters": [],
+      "publicWebhook": "https://crm-novikontas.vercel.app/api/inbound/linkedin",
+      "_publicWebhook": "07.10.2026: the address the Subscribe leads action registers with LinkedIn (POST /rest/leadNotifications). It is never entered in LinkedIn's own screens: for Lead Sync the subscription is API-only."
     },
     "tiktok": {
       "label": "TikTok",
