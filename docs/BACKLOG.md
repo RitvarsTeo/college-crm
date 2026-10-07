@@ -77,6 +77,24 @@ from release `6e3dc39`.
 | Checked headless at 1440 on every chapter for one year, two years and one month: no row with a lone block narrower than the grid. test/reports_full_row.test.js runs cRepBody on the synthetic data (blocks 2 / 5 / 3 / 2) and pins the rule | BUILT |
 | Shots: `For review/2026-10-07 Reports full row/` (before, after) | BUILT |
 
+## 07.10.2026 - Q69: two colours - red needs you, navy on track (PICKED 07.10: "B two colours")
+
+Ritvars 07.10, of the live New bar (grey on navy on red): "absolutely not acceptable as these are russian flag colours
+almost"; of the first two redraws (five colours): "LESS colours. This is too complicated." MASTER CONTROL's three- and
+two-colour sketches (For review/2026-10-07 Q69 less colours); he picked **B two colours**.
+- RED = needs you: Overdue and No next step (in the Inbox: Late and Answer now). NAVY = on track: Due today, Due,
+  With the SIS (in the Inbox: New and Set aside). Nothing else: no amber, green, grey, light blue, lilac or hatching in
+  rails, bars or bands. The five state names stay as the WORDS on the cards.
+- One CSS source: `--st-need` and `--st-track`; the five state tokens are these two values, so rails, state words,
+  bands and the graph cannot show a third colour. Dark: needs you keeps the alarm red, on track is the readable blue.
+- The Journey graph stacks two segments per stage: red (overdue + no next step) on the baseline, then navy; each
+  segment opens that stage filtered to its states (cJfStates). The column bands stay text headers; only the red groups
+  (Overdue, No next step) are tinted. The State filter keeps its five values.
+- Help: the card-colours question says "red needs you, navy on track"; the Journey tour step follows.
+Tests: test/journey_band_states.test.js renders the band with both colours; the colour readers updated.
+Shots: `For review/2026-10-07 Q69 two colours build/` (Journey 1440 + 375, Due 1440, Inbox 1440). **BUILT, next patch.**
+The earlier five-colour pictures (For review/2026-10-07 Q69 state colours AB) are superseded.
+
 ## 07.10.2026 - Q68: the boards on a phone - stacked stages (PICKED 07.10: "B stacked stages")
 
 Ritvars 07.10, with a phone shot of the Journey board: "mobile versions scrolling doesnt work like that" (the board

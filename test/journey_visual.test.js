@@ -49,8 +49,8 @@ test('today: "Due today" on an amber rail - distinct from overdue without more c
   assert.match(html, /class="c-jp row c-rail c-rail-today is-today"/);
   assert.match(html, /<div class="c-st c-st-today"><span class="c-st-w">Due today<\/span><\/div>/);
   assert.doesNotMatch(html, /is-over|Overdue/);
-  assert.match(APP, /html\.ui-c \.c-jp\.c-rail-today\{border-left-color:var\(--st-today\)\}/, 'the signal amber, on the rail only');
-  assert.match(APP, /--st-today:var\(--j-soon\)/);
+  assert.match(APP, /html\.ui-c \.c-jp\.c-rail-today\{border-left-color:var\(--st-today\)\}/, 'on the rail only');
+  assert.match(APP, /--st-today:var\(--st-track\)/, 'Q69: due today is on track, navy');
   assert.doesNotMatch(APP, /\.c-st-today \.c-st-w\{color:var\(--j-soon\)/, 'never amber text');
 });
 
@@ -165,7 +165,7 @@ test('how far: one brandbook hue getting darker per stage, a faint tint only - n
 test('dark mode keeps the rail (the glass border would hide it) and the numbers', () => {
   assert.match(APP, /html\.ui-c \.c-jp\.c-rail,html\.ui-c\[data-theme="dark"\] \.c-jp\.c-rail\{border-left:3px solid var\(--rule\);padding-left:8px\}/, 'dark named too');
   assert.match(APP, /html\.ui-c \.c-jp\.c-rail-over\{border-left-color:var\(--st-over\)\}/, 'the alarm rail, both themes');
-  assert.match(APP, /--st-over:var\(--j-alarm\)/);
+  assert.match(APP, /--st-need:var\(--j-alarm\)/, 'Q69: needs you is the alarm red');
   assert.match(APP, /html\.ui-c\[data-theme="dark"\] \.c-col\{background:color-mix\(in srgb,rgba\(1,17,17,\.55\)/, 'dark columns deeper than their cards');
   assert.match(APP, /--j-from:#1d4d7a;--j-to:#8fcbef;   \/\* the Journey/, 'inside the one dark palette block');
 });
@@ -198,9 +198,9 @@ test('warnings look like warnings: overdue is a SOLID red badge with white words
   assert.ok(cr(alarm[1], alarm[2]) >= 4.5, `badge words ${cr(alarm[1], alarm[2]).toFixed(2)}:1`);
   // Q66: the alarm is the card's rail, its state word and the Overdue band inside the column; the header pill is gone
   assert.match(APP, /html\.ui-c \.c-jp\.c-rail-over\{border-left-color:var\(--st-over\)\}/, 'the card rail');
-  assert.match(APP, /html\.ui-c \.c-st-over \.c-st-w,html\.ui-c \.c-st-late \.c-st-w\{color:var\(--st-over\)\}/, 'the state word');
-  assert.match(APP, /html\.ui-c \.c-grp-over\{background:color-mix\(in srgb,var\(--st-over\),transparent 86%\);color:var\(--st-over\)/, 'the Overdue band');
-  assert.match(APP, /html\.ui-c \.jb-s-over\{background:var\(--st-over\)\}/, 'and the graph, from the same token');
+  assert.match(APP, /html\.ui-c \.c-st-over \.c-st-w,html\.ui-c \.c-st-late \.c-st-w,html\.ui-c \.c-st-none \.c-st-w,html\.ui-c \.c-st-now \.c-st-w\{color:var\(--st-need\)\}/, 'the state word');
+  assert.match(APP, /html\.ui-c \.c-grp-over,html\.ui-c \.c-grp-none\{[^}]*background:color-mix\(in srgb,var\(--st-need\),transparent 86%\);color:var\(--st-need\)/, 'the red bands');
+  assert.match(APP, /html\.ui-c \.jb-s-need\{background:var\(--st-need\)\}/, 'and the graph, from the same token');
   assert.doesNotMatch(APP, /c-jover/, 'the header pill is gone: the band says it once');
-  assert.match(APP, /html\.ui-c \.c-jp\.c-rail-today\{border-left-color:var\(--st-today\)\}/, 'today is the SOLID amber rail');
+  assert.match(APP, /html\.ui-c \.c-jp\.c-rail-today\{border-left-color:var\(--st-today\)\}/, 'today is on the rail (navy since Q69)');
 });
