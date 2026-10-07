@@ -2852,6 +2852,11 @@ function installCScope() {
   if (window.addEventListener) window.addEventListener('resize', cPlaceScope);
   document.addEventListener('click', () => cScopeToggle(false));
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') cScopeToggle(false); });
+  // Not before sign-in (07.10.2026). This runs from installCNav, which the boot calls BEFORE the login
+  // check, so the fetch was refused with 401 and api() took that for an expired session: a first visit
+  // showed "Your session has ended" under the login. Signing in with Google reloads the page, and the
+  // reload arrives here signed in.
+  if (AUTH.on && !AUTH.user) return;
   api('/api/scope/years').then((r) => { C_SCOPE_YEARS = (r && r.years) || []; cDrawScope(); }).catch(() => {});
 }
 // AN OLD LINK STILL LANDS (Q59): ?y=2025&m=3 (the Q45 shape) opens 2025 with March 2025 chosen on Reports; ?y=2024,2026

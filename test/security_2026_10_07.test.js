@@ -280,3 +280,13 @@ test('M11: the web server refuses Postgres without CRM_PG_SCHEMA, before connect
     if (keep.schema !== undefined) process.env.CRM_PG_SCHEMA = keep.schema;
   }
 });
+
+// ------------------------------------------------- first visit, 07.10 ----
+// Without the guard: the year scope fetched /api/scope/years before sign-in, the 401 was read as an
+// expired session, and every first visit showed "Your session has ended" under the login.
+test('a first visit fetches nothing behind sign-in: the year scope waits for a signed-in user', () => {
+  const fn = APP.match(/function installCScope\(\) \{[\s\S]*?\n\}/)[0];
+  const guard = fn.indexOf('if (AUTH.on && !AUTH.user) return;');
+  assert.ok(guard > 0, 'the guard is gone');
+  assert.ok(guard < fn.indexOf("api('/api/scope/years')"), 'the guard must come before the fetch');
+});
