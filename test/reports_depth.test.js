@@ -214,9 +214,11 @@ test('no figure twice on the page', async () => {
   const seen = {};
   const outside = html.replace(/<details[^]*?<\/details>/g, '');        // "Show as a table" is the same chart, read as rows
   for (const m of outside.matchAll(/data-n="\d+"[^>]*data-coh="(q\d+)"/g)) seen[m[1]] = (seen[m[1]] || 0) + 1;
-  const twice = Object.entries(seen).filter(([k, n]) => n > (k === M.leads.all.k ? 2 : 1)).map(([k]) => M.coh[k].label);
+  // the allowed repeats: the working of a share, exactly as on Home's card - the leads under Conversion's 12 / 63, and
+  // the admitted on the target meter, "Admitted 120 · target 140 · 86%" (07.10.2026, "Yes, label them")
+  const working = [M.leads.all.k, M.admitted.target && M.admitted.all.k];
+  const twice = Object.entries(seen).filter(([k, n]) => n > (working.includes(k) ? 2 : 1)).map(([k]) => M.coh[k].label);
   assert.deepEqual(twice, [], 'shown twice');
-  // the one allowed repeat: the leads under Conversion's 12 / 63, the working of the share, exactly as on Home's card
   assert.ok((seen[M.leads.all.k] || 0) <= 2);
   // open / overdue / no next step are Today's; why people stopped is Outcomes'
   assert.doesNotMatch(html, /c-nowbar|>overdue<|no next step|Why people did not proceed/);

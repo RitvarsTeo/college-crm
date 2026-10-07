@@ -14,6 +14,24 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 07.10.2026 - The target meters say what they are (DECIDED 07.10: "Yes, label them")
+
+Ritvars, about the two meters on the Admitted card ("86% of 140", "NAV + ENG 94 · 96% of 98"): "what is this? Has no
+explanation when i hover over". Then "Yes, label them" (via MASTER CONTROL). Branch `fix/2026-10-07-target-labels` from
+release `3ed52cf` (patch 30).
+
+| What | Status |
+|---|---|
+| Each line says what it counts, its figure, the target and the share: "Admitted 120 · target 140 · 86%", "Officer (NAV + ENG) 94 · target 98 · 96%" | BUILT |
+| The mustard tick at the end of the track IS the target; the same tick stands before the word "target" as its key | BUILT |
+| Hover (title) names the target and its source: "Target for 2026: 140 admitted. Source: 0. NJK KPI 2026.xlsx, sheet Admissions (entered 05.10.2026)"; the officer line adds "70% of 140 = 98 admitted in the officer programmes, NAV + ENG". The source is config `targets[year].hover`, nothing in code | BUILT |
+| Home's Admitted card and Reports > Admitted say it word for word: one function, `cTargetBars`; on Reports the figure and the share open their people | BUILT |
+| The words break only between their two halves (who + figure / target + share), one line where they fit, two where not; a dot never starts a line. Checked with 120 and 94 at 1440, 1280 and 375 | BUILT |
+| Reports' "no figure twice" rule: the admitted on the meter is the working of its share, allowed like the leads under Conversion | BUILT |
+| Help center: FAQ "What are the two bars on the Admitted card?" (no figure in it, so it never goes stale) | BUILT |
+| test/target_labels.test.js RUNS Home's card and the Reports chapter on one seeded database: same words, same hover, the key, the clicks, no meter for another year / two years / a month | BUILT |
+| Shots: `For review/2026-10-07 Target labels/` (Home and Reports, 1440 and 375, light and dark; 9-11 = the meters with 120 and 94 drawn in) | BUILT |
+
 ## 07.10.2026 - Q65 MOTION: A everywhere (LOCKED 07.10: "A, yes, lock in")
 
 Ritvars picked A (SKOLA-expressive) for every part, one by one on the demo (demo/2026-10-07-motion-ab, port 8879):

@@ -10,10 +10,11 @@ import { PROVIDERS, runScenario, runOutbound, runFullDemo, listEvents, getEvent,
 import { logEvent, applyEdit, readHistory, MANUAL, AUTOMATIC, EDITABLE_FIELDS, IMMUTABLE_FIELDS, FIELD_LABELS } from './history.js';
 import { stampOpenDay, registerOpenDay, refilterOpen } from './intake.js';
 import { queueLeadAnswers } from './leadanswers.js';
+import { connectConfig, finishConnect, WhatsAppConnectError } from '../lib/whatsapp.js';
 import { subscribeLinkedInLeads, LeadFetchError } from '../lib/leads.js';
 import * as gmailB from '../lib/gmail.js';
 import * as notify from '../lib/notify.js';
-import { receive, listInbound, qualify, archive, bringBack, funnel, agedCount, handoffToSis, ownerFor, notifiedFor, handoverGap, canReach, surfaceAt, waitingFor, waitingByRole } from './intake.js';
+import { receive, listInbound, recordWhatsAppEcho, qualify, archive, bringBack, funnel, agedCount, handoffToSis, ownerFor, notifiedFor, handoverGap, canReach, surfaceAt, waitingFor, waitingByRole } from './intake.js';
 import { readScreenshot, readKind, readBody, readPath, saveFeedback, listFeedback, getScreenshot, setHandled, BadScreenshot, helpOpened, helpCounts } from './feedback.js';
 import { findMatches as matchPeople, duplicateCheck, isStrong as isStrongMatch } from './identity.js';
 import { lifecycleOf, sisProgress, sisProgressByPerson, SIS_HOLDS_SQL } from './lifecycle.js';
@@ -22,7 +23,7 @@ import { redactSis, fetchWebStats, WEB_RANGES } from '../lib/sis.js';
 import { applicationFunnel } from './applications.js';
 import { sisLiveCheck } from './sischeck.js';
 import { pbxLive } from '../lib/pbx.js';
-import { adapt, adaptAll, toIntake, hasAdapter, adapterIds } from './adapters.js';
+import { adapt, adaptAll, toIntake, hasAdapter, adapterIds, whatsappEchoes } from './adapters.js';
 import { fixtureFor } from './fixtures.js';
 import { buildPayload, scenariosFor, allScenarios, CHANNEL_LABELS, META_GROUP } from './scenarios.js';
 import { report as buildReport, reportRows, boldRowsOf, periodOf, maturedConversion, EXPORT_SECTIONS, DEFAULT_SECTIONS } from './reports.js';
@@ -853,6 +854,17 @@ async function linkedInWithdrawn(ev) {
   return noted ? 'withdrawn: noted on the person' : 'withdrawn: nobody known, skipped';
 }
 
+// How many phone replies matched somebody Intake knows, and how many did not (coexistence, 07.10.2026).
+async function countEcho(matched) {
+  const was = await db.prepare("SELECT detail FROM sync_state WHERE name = 'whatsapp_echoes'").get();
+  let d = { matched: 0, unmatched: 0 };
+  try { d = { ...d, ...JSON.parse((was && was.detail) || '{}') }; } catch { /* a broken record starts again */ }
+  d[matched ? 'matched' : 'unmatched'] += 1;
+  await db.prepare(`INSERT INTO sync_state (name, value, ran_at, detail) VALUES ('whatsapp_echoes', ?, ?, ?)
+    ON CONFLICT(name) DO UPDATE SET value = excluded.value, ran_at = excluded.ran_at, detail = excluded.detail`)
+    .run(String(d.matched + d.unmatched), nowIso(), JSON.stringify(d));
+}
+
 async function channelCounts() {
   const out = {};
   // ONLY rows a real provider posted. The demo builder and the simulator write
@@ -1400,6 +1412,30 @@ export const handle = async (req, res) => {
           ON CONFLICT(name) DO UPDATE SET value = excluded.value, ran_at = excluded.ran_at, detail = excluded.detail`)
           .run(ok ? 'subscribed' : 'failed', at, JSON.stringify({ ok, line, by: me.name, results }));
         const payload = { ok, line, results, at };
+        channeladmin.assertNoSecretValues(payload, process.env);
+        return json(res, ok ? 200 : 502, payload);
+      }
+
+      // CONNECT WHATSAPP (coexistence, 07.10.2026). GET: the ids Meta's sign-up needs in the browser, and what is
+      // missing. POST: Meta's one-time code -> lib/whatsapp.js finishes on the server. Admins only; one line kept.
+      if (id === 'whatsapp' && action === 'connect' && (req.method === 'GET' || req.method === 'POST')) {
+        if (!auth.canEnableChannel(me.role)) return refuseNotAdmin(res);
+        if (req.method === 'GET') return json(res, 200, connectConfig(process.env));
+        const b = await body(req);
+        let ok, line, done = null;
+        try {
+          done = await finishConnect(db, { code: b.code, wabaId: b.wabaId, phoneNumberId: b.phoneNumberId || null,
+            number: CHANNELS.channels.whatsapp.number || null });
+          ok = true; line = 'Connected, syncs started';
+        } catch (err) {
+          ok = false;
+          line = err instanceof WhatsAppConnectError ? err.message : 'The connection failed';
+        }
+        const at = nowIso();
+        await db.prepare(`INSERT INTO sync_state (name, value, ran_at, detail) VALUES ('whatsapp_connect', ?, ?, ?)
+          ON CONFLICT(name) DO UPDATE SET value = excluded.value, ran_at = excluded.ran_at, detail = excluded.detail`)
+          .run(ok ? 'connected' : 'failed', at, JSON.stringify({ ok, line, by: me.name, ...(done || {}) }));
+        const payload = { ok, line, at, ...(done || {}) };
         channeladmin.assertNoSecretValues(payload, process.env);
         return json(res, ok ? 200 : 502, payload);
       }
@@ -2553,6 +2589,11 @@ export const handle = async (req, res) => {
         // one envelope, several changes in an entry, several messaging events in a
         // change, and WhatsApp several messages in one value; all of those used to be
         // read as [0] and the rest dropped, with a 200 going back to the provider.
+        // Coexistence (07.10.2026): replies staff sent from the academy phone. Their time only; never an Inbox row.
+        let echoes = 0;
+        if (channel === 'whatsapp') {
+          for (const e of whatsappEchoes(payload)) { await countEcho((await recordWhatsAppEcho(db, e)).matched); echoes++; }
+        }
         const evs = adaptAll(channel, payload);
         const done = [];
         for (const ev of evs) {
@@ -2595,6 +2636,8 @@ export const handle = async (req, res) => {
             outcome: r.duplicate && attendance ? 'attendance recorded'
               : r.duplicate ? 'already had it' : r.filtered ? 'filtered out before the queue' : 'waiting to be looked at' });
         }
+        // a delivery of replies, history or contact sync only: nothing for the Inbox, and Meta still gets its 200
+        if (!done.length) return json(res, 200, { ok: true, channel, messages: 0, echoes, verified: check.how, read: read.as });
         const first = done[0];
         // Tilda reads only the word "ok" and retries otherwise (help.tilda.cc/formswebhook).
         if (tilda) { res.writeHead(200, { 'content-type': 'text/plain' }); return res.end('ok'); }

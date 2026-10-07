@@ -362,6 +362,32 @@ export async function recordReplyRead(db, { id, sentAt = null, checkedAt, person
   }
 }
 
+// A WHATSAPP REPLY FROM THE PHONE (coexistence, 07.10.2026): staff answered on the academy phone, Meta sent an
+// smb_message_echoes copy. Its TIME becomes the first reply of that person's newest WhatsApp Inbox row asked before it,
+// and a sent WhatsApp on their History when they are already a person; never its text, never an Inbox row.
+const digitsOf = (v) => String(v || '').replace(/\D/g, '');
+const samePhone = (a, b) => Boolean(a && b) && (a === b || (a.length >= 8 && b.endsWith(a)) || (b.length >= 8 && a.endsWith(b)));
+export async function recordWhatsAppEcho(db, { to, at }) {
+  const d = digitsOf(to);
+  if (!d || !at) return { matched: false };
+  const rows = await db.prepare(`SELECT id, person_id, contact_phone FROM inbound WHERE channel = 'whatsapp' AND received_at <= ?
+    ORDER BY received_at DESC`).all(at);
+  const row = rows.find((r) => samePhone(digitsOf(r.contact_phone), d)) || null;
+  if (row) await db.prepare('UPDATE inbound SET first_reply_at = ?, reply_checked_at = ? WHERE id = ? AND first_reply_at IS NULL').run(at, at, row.id);
+  let personId = row && row.person_id;
+  if (!personId) {
+    const ppl = await db.prepare('SELECT id, phone FROM people WHERE phone IS NOT NULL').all();
+    personId = (ppl.find((p) => samePhone(digitsOf(p.phone), d)) || {}).id || null;
+  }
+  if (personId) {
+    const subject = 'WhatsApp reply sent';
+    const seen = await db.prepare('SELECT id FROM events WHERE person_id = ? AND subject = ? AND occurred_at = ?').get(personId, subject, at);
+    if (!seen) await logEvent(db, { personId, kind: 'channel', channel: 'whatsapp', direction: 'out', at,
+      origin: AUTOMATIC, actor: 'Academy WhatsApp', subject });
+  }
+  return { matched: Boolean(row || personId), inboundId: row ? row.id : null, personId: personId || null };
+}
+
 // the late ones (Q50), within the year scope (Q45) when one is asked for: by the message's own arrival
 // (`ranges`: a set of [from, to) pairs, Q59; one pair of the Q45 shape is read too)
 export async function agedCount(db, now = nowIso(), ranges = null) {

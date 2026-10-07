@@ -169,6 +169,11 @@
       "a": "From the people in Intake, counted for the years ticked in the Year filter, top right: one or several whole years, and this year when you open Intake. Admitted counts by the admission date, everything else by the day someone arrived. Click a Home number to see it one level deeper, and the people it counts. A single month is chosen on Reports, in the month choice beside the download. Download on the Journey or on Reports gives the figures as Excel, Google Sheets or CSV."
     },
     {
+      "id": "target-bars",
+      "q": "What are the two bars on the Admitted card?",
+      "a": "The year's admission target. The first bar counts everyone admitted in the year against the target; the second counts the officer programmes against their share of it. Each line says the figure, the target and how far along it is. The orange tick at the end of a bar is the target. Hover a bar to see the target and where it comes from. The bars show when one year is ticked in the Year filter, on Home and on the Admitted tab of Reports."
+    },
+    {
       "id": "share-a-link",
       "q": "Can I send someone a link to a person?",
       "a": "Yes. Copy the address from the browser and send it. Anyone with an Intake account opens it; if they are signed out, they sign in first and then land on it."
@@ -177,6 +182,11 @@
       "id": "linkedin-leads",
       "q": "Where do LinkedIn leads come from?",
       "a": "From LinkedIn lead forms, once an admin has pressed Subscribe leads on the LinkedIn channel (Channels, LinkedIn). Each lead lands in the Inbox as LinkedIn, and its answers fill in a few seconds later, dropdowns included. A lead withdrawn on LinkedIn is never added: if we already know the person, it is noted on their history."
+    },
+    {
+      "id": "whatsapp-academy",
+      "q": "How does the academy WhatsApp reach Intake?",
+      "a": "The number stays on the academy phone and staff keep answering there. Once an admin has pressed Connect WhatsApp (Channels, WhatsApp) and scanned the code in WhatsApp Business, every message also lands in the Inbox as WhatsApp. A reply sent from the phone is counted as the reply time; its text stays on the phone. Old chats are not brought in."
     },
     {
       "id": "light-dark-system",
