@@ -134,7 +134,7 @@ test('the machine filter empties the ROW body and KEEPS the line, so it stays ch
   assert.equal(l.body_deleted_at, null);
 });
 
-test('making a lead deletes the bodies, lines included; set aside keeps them (07.10.2026: "Keep the text")', async () => {
+test('making a lead and set aside both keep the bodies, lines included (07.10.2026: "Keep the text", both times)', async () => {
   const db = await openDb();
   const a = await receive(db, { channel: 'instagram', externalId: 'q1',
     body: 'Hi, I want to study Navigation, I finished secondary school' });
@@ -142,8 +142,8 @@ test('making a lead deletes the bodies, lines included; set aside keeps them (07
     by: 'Admissions', nextAction: 'Call and establish interest' });
   assert.ok(!q.error, JSON.stringify(q));
   const ls = await lines(db, a.id);
-  assert.equal(ls[0].body, null, 'qualify has always deleted the message body; the line goes with it');
-  assert.ok(ls[0].body_deleted_at);
+  assert.equal(ls[0].body, 'Hi, I want to study Navigation, I finished secondary school', 'qualify keeps it since Q76 (it deleted it until 07.10.2026)');
+  assert.equal(ls[0].body_deleted_at, null);
 
   const b = await receive(db, { channel: 'instagram', externalId: 'r1', body: 'Not for me' });
   await archive(db, b.id, { reason: 'Not a prospective student', by: 'Admissions' });

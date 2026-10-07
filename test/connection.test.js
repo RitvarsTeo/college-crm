@@ -304,7 +304,8 @@ test('a provider retrying the same event stores it once', async () => {
   assert.equal((await db.prepare('SELECT COUNT(*) n FROM inbound').get()).n, 1);
 });
 
-test('the message body is used to qualify and then not kept', async () => {
+// Q76 (07.10.2026, "Keep the text"): until then the body went once it was a record; now it stays for the History
+test('the message body is used to qualify and then kept, for the person\'s History', async () => {
   const db = await fresh();
   const r = await arrive(db, 'gmail', { id: 'gm-1', sender: 'Liga <liga@inbox.lv>',
     subject: 'Par studijām', plaintextBody: 'Sveiki, es vēlos studēt navigāciju.' });
@@ -314,7 +315,7 @@ test('the message body is used to qualify and then not kept', async () => {
   await qualify(db, r.id, { qualification: 'lead', createPerson: true, by: ADMISSIONS,
     nextAction: 'Send the programme description', differentPerson: true });
   const after = await db.prepare('SELECT body FROM inbound WHERE id = ?').get(r.id);
-  assert.equal(after.body, null, 'and gone once it has been turned into a record');
+  assert.equal(after.body, before.body, 'and still there once it is a record, until the 13-month retention');
 });
 
 // ------------------------------------------------- the channels end to end --

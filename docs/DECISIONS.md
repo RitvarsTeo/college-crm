@@ -361,7 +361,18 @@ D-C1 to D-C4 are the ones C's screens wait on. They replace, in C's words, backl
 | | |
 |---|---|
 | **Decided** | Asked "Set aside: keep the message text?", the owner answered **"Keep the text"** (07.10.2026, via MASTER CONTROL). A message a person sets aside keeps its text (the row's body and every line's body), exactly as a filtered message already did, until the 13-month retention empties it. Bring back then returns it whole. |
-| **Supersedes** | The 23.09.2026 rule "held only until somebody qualifies or archives the item, then deleted", **for archive (Set aside) only**. Qualify (making a lead) still deletes the body as before; nothing about qualify changed. |
+| **Supersedes** | The 23.09.2026 rule "held only until somebody qualifies or archives the item, then deleted", **for archive (Set aside) only**. Qualify (making a lead) still deleted the body; that changed the same day, see "Making a lead keeps the message text" below. |
 | **Not recovered** | Messages set aside before this change already lost their text. Nothing is recovered or invented: Bring back returns them with name and channel and says `textKept: false`. |
 | **Retention made true** | Until now the 13-month retention emptied only the line bodies, so a filtered row's own text outlived it. From this change it also empties the row text of a set-aside or filtered message once its newest line is past the cutoff (`purgeLineBodies`). |
 | **Waiting messages: no time limit** | Asked "Messages still waiting in the Inbox keep their text forever. Apply the 13-month rule to them too?", the owner answered **"Keep as is"** (07.10.2026). A message still waiting in the Inbox keeps its text until somebody acts on it; the 13-month retention empties text only of set-aside and filtered messages (and every line, as before). |
+
+### Making a lead keeps the message text (Q76)
+
+| | |
+|---|---|
+| **Decided** | Asked "Q76: when a message becomes a lead, keep what the person wrote in their profile history? Today it is deleted (decided 23.09)", the owner answered **"Keep the text"** (07.10.2026, in the MAIN session). |
+| **Supersedes** | The 23.09.2026 rule "held only until somebody qualifies the item, then deleted", for qualify. Together with the Set aside decision above, no action deletes a message's text any more; only the 13-month retention does. |
+| **What it does** | Making a lead (and the SIS settling a row, `confirmedBySystem`) keeps the row's body and every line's body. The person's History shows each message that became theirs, at the time it arrived (`saidByPerson` in server.js, read only, nothing is copied). |
+| **Retention made true** | `purgeLineBodies` also empties the row text of a lead's message ('qualified') once its newest line is past the 13-month cutoff. |
+| **Not recovered** | Leads made before this change already lost their text. Nothing is recovered or invented. |
+| **Still not shown** | Emails WE sent show only the time ("Email reply sent"): no subject, body or recipients. Not asked; it stays as it is. |

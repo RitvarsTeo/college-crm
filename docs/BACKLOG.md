@@ -14,6 +14,20 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 07.10.2026 - Q76: the person's History shows what they wrote (DECIDED 07.10: "Keep the text")
+
+Asked in the MAIN session: "when a message becomes a lead, keep what the person wrote in their profile history? Today it
+is deleted (decided 23.09)". Answer: "Keep the text". Record in DECISIONS.md, 07.10.2026.
+
+| What | Status |
+|---|---|
+| Making a lead and the SIS settling a row keep the message text (row and lines); before, it was deleted at that moment | BUILT |
+| The History shows every message that became the person's, at its own time, among the calls, notes and steps | BUILT |
+| The 13-month retention empties a lead's text like any other kept message | BUILT |
+| Leads made before this change lost their text; nothing is recovered | SAID |
+| Emails we sent still show only the time ("Email reply sent"); not asked | SAID |
+| test/history_keeps_text_q76.test.js runs the server: Make a lead, a second message attached, the History, the retention | BUILT |
+
 ## 07.10.2026 - Q73: a coloured chip per source on the Inbox card (PICKED 07.10: "B chip")
 
 Pictures A (dot) and B (chip) on the real Inbox at 1440: `For review/2026-10-07 Q73 Inbox source colours/`. Ritvars picked
