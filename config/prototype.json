@@ -941,7 +941,9 @@
       { "match": "messaged you .{0,120}while you were away", "why": "a Google Chat notification" },
       { "match": "has new responses", "why": "a Google Forms response notification" }
     ],
-    "_textPatterns": "Read over the sender name and the start of the message, case-insensitive. Admissions can add a line: match is a regular expression, why is the reason shown in the Filtered view."
+    "_textPatterns": "Read over the sender name and the start of the message, case-insensitive. Admissions can add a line: match is a regular expression, why is the reason shown in the Filtered view.",
+    "newsletter": "unsubscribe|atrakst[iī]t(ies|os|ieties)|izrakst[iī]t(ies|os|ieties)|atteikties no (jaunum|e-?pasta|vēstk)|view (this email )?in (your )?browser",
+    "_newsletter": "Q74 rule 3, 07.10.2026 (Ritvars yes, against Aigars 07.10 'email kkadu automatizaciju'): a newsletter carries an unsubscribe link, usually at the END, so the whole message is read. Set aside with the reason, kept, can be brought back. The sender address is NOT widened on a guess: info@ / support@ / team@ can be a real school or partner."
   },
   "senderKind": {
     "decided": "Q31, 05.10.2026, for the Inbox groups (Q30): current student = matches a person already admitted, or admitted in the SIS, or writes like a student on a course; possible student = everything else that passes the filter; other = set aside by a rule. A grouping, never a fact about the person: every row says why.",

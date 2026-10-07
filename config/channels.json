@@ -195,7 +195,7 @@
       "howWeTest": "Simulate from DEV CONTROL with a Gmail-shaped message fixture.",
       "howWeGoLive": "Deploy, add the key, poll once by hand, check CAR, then enable the schedule.",
       "howWeDisable": "Disable the schedule. The key can also be revoked at Google.",
-      "bodyRetention": "The message body is held only until somebody qualifies or archives the item, then deleted. What survives is the structured record. Decided 23.09.2026.",
+      "bodyRetention": "The message text is kept: on the row and its lines while it waits, when it is set aside (07.10.2026, the owner: \"Keep the text\") and, since Q76 on 07.10.2026, when somebody makes a lead of it - the person's History shows what they wrote (Aigars's KISS list: the whole chain of communication on the profile). The 13-month retention empties every message text on time, whatever its state. Reverses the 23.09.2026 rule that deleted it on qualify.",
       "blockerKind": null,
       "connectSteps": [
         "**Identify the Google Workspace administrator** - the one thing still unknown",

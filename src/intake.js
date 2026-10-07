@@ -13,7 +13,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { extractFrom, looksLikeJunk } from './extract.js';
 import { logEvent, MANUAL, AUTOMATIC } from './history.js';
-import { duplicateCheck } from './identity.js';
+import { duplicateCheck, contactMatcher, onlyStrong } from './identity.js';
 import { localDate, localMidnight } from './bizday.js';
 import { SIS_HOLDS_SQL } from './lifecycle.js';
 import { rangesSql } from './yearscope.js';
@@ -144,18 +144,28 @@ export async function purgeLineBodies(db, cutoffIso) {
   const at = new Date().toISOString();
   const r = await db.prepare(`UPDATE inbound_line SET body = NULL, body_deleted_at = ?
     WHERE received_at < ? AND body IS NOT NULL`).run(at, cutoffIso);
-  // and the row's own copy of a message nobody is working on (set aside or filtered), once the ROW and its NEWEST line
+  // and the row's own copy (set aside, filtered, and since Q76 a lead's message too), once the ROW and its NEWEST line
   // are both past the cutoff: before 07.10.2026 only the lines were emptied, so a kept row text outlived its 13 months.
   // The row's own age is required too: rows stored before lines existed (30.09-01.10) have NO lines, and "no line is
   // newer" alone would have emptied them at once (caught by MASTER CONTROL at the release check, 07.10.2026).
   await db.prepare(`UPDATE inbound SET body = NULL, body_deleted_at = ?
-    WHERE state IN ('archived', 'filtered') AND body IS NOT NULL AND inbound.received_at < ?
+    WHERE state IN ('archived', 'filtered', 'qualified') AND body IS NOT NULL AND inbound.received_at < ?
       AND NOT EXISTS (SELECT 1 FROM inbound_line l WHERE l.inbound_id = inbound.id AND l.received_at >= ?)`).run(at, cutoffIso, cutoffIso);
   return (r && (r.changes ?? r.rowCount)) || 0;
 }
 
 // ------------------------------------------------------------- arrival ----
 // Nothing here decides anything. It stores, extracts and suggests.
+// Q74: the one person an address points at, when they are still being worked with (not in a finished
+// stage: an admitted student's email stays in the Inbox, grouped as a current student). Every email the
+// person has counts (Q77). Two strong matches: nobody - a person decides.
+export async function activePersonFor(db, email) {
+  if (!email) return null;
+  const one = onlyStrong((await contactMatcher(db))({ email }));
+  if (!one) return null;
+  return (CFG.terminalStages || []).includes(one.status) ? null : one.id;
+}
+
 export async function receive(db, item) {
   const at = item.receivedAt || nowIso();
 
@@ -201,6 +211,22 @@ export async function receive(db, item) {
       // THE LINE CARRIES ITS OWN CLOCK. `at` is this arrival's time, not the row's, so
       // retention can delete this line 13 months after IT arrived without touching an
       // older or newer one. That is the whole reason the table exists.
+      const seq = await addLine(db, open.id, { channel: item.channel, externalId: item.externalId,
+        receivedAt: at, kind: item.kind, body: line });
+      return { joined: true, id: open.id, seq };
+    }
+  }
+
+  // Q74 RULE 2 (07.10.2026, Aigars: "email kkadu automatizaciju, sobrid visi emaili ienak inboxa"): the SAME
+  // SENDER writing again while their first message still waits joins that card, so the Inbox holds one card per
+  // person. The same join as a thread (a line with its own clock); only a row nobody has dealt with absorbs it.
+  if (item.joinOpenSender && item.email) {
+    const open = await db.prepare(`SELECT id, body FROM inbound WHERE channel = ? AND state = 'new'
+      AND lower(contact_email) = ? ORDER BY id DESC`).get(item.channel, String(item.email).trim().toLowerCase());
+    if (open) {
+      const line = item.body || '';
+      const joined = [open.body || '', line].filter(Boolean).join('\n');
+      await db.prepare('UPDATE inbound SET body = ? WHERE id = ?').run(joined, open.id);
       const seq = await addLine(db, open.id, { channel: item.channel, externalId: item.externalId,
         receivedAt: at, kind: item.kind, body: line });
       return { joined: true, id: open.id, seq };
@@ -274,6 +300,27 @@ export async function receive(db, item) {
   // a form's own answers (the website, Q3): what the person picked, kept as they said it
   for (const [field, value] of Object.entries(item.answers || {})) await stamp.run(id, field, value, 'provider', at);
 
+  // Q74 RULE 1: from somebody already in Intake (and still being worked with) it goes on THEIR history with a
+  // "Answer the question" step for today, not into the Inbox - the same as a known lead's missed call (02.10.2026). Kept as a row
+  // (state qualified, by the machine), so it is counted, its first reply is read, and nothing is lost.
+  if (item.attachTo && !read.junk && !filterWhy) {
+    const p = await db.prepare('SELECT id, owner, status FROM people WHERE id = ?').get(item.attachTo);
+    if (p) {
+      await db.prepare(`UPDATE inbound SET state = 'qualified', person_id = ?, processed_by = 'machine', processed_at = ?
+        WHERE id = ?`).run(p.id, at, id);
+      // no event: the message itself is the History entry (messagesFor, Q76), so its text keeps the 13-month clock
+      await db.prepare('UPDATE people SET last_contact_at = ? WHERE id = ? AND (last_contact_at IS NULL OR last_contact_at < ?)')
+        .run(at, p.id, at);
+      const open = await db.prepare("SELECT COUNT(*) n FROM tasks WHERE person_id = ? AND label = 'Answer the question' AND done_at IS NULL").get(p.id);
+      if (!Number(open.n)) {
+        await db.prepare('INSERT INTO tasks (person_id,label,due_at,owner,created_at) VALUES (?,?,?,?,?)')
+          .run(p.id, 'Answer the question', at, p.owner || 'Admissions', at);
+      }
+      return { id, attached: true, personId: p.id, suggested: read.suggested, why: read.why,
+        missing: read.missing, fields: read.fields, filtered: false };
+    }
+  }
+
   return { id, suggested: read.suggested, why: read.why, missing: read.missing,
     fields: read.fields, filtered: Boolean(read.junk || filterWhy) };
 }
@@ -298,7 +345,15 @@ export async function listInbound(db, { state = 'new', now = nowIso(), range = n
     LEFT JOIN people pe ON pe.id = i.person_id
     ${where} ORDER BY i.received_at DESC`).all(...wanted, ...rxArgs);
   const known = await currentStudentIndex(db);
+  // Q77: a waiting message from somebody already in Intake JOINS them. Every email and phone the
+  // person has counts, so a caller whose email was added when they became a lead is found again the
+  // day they write. Only one strong match counts; two is a question for a person.
+  const match = rows.some((r) => r.state === 'new' && !r.person_id) ? await contactMatcher(db) : null;
   for (const r of rows) {
+    if (match && r.state === 'new' && !r.person_id) {
+      const one = onlyStrong(match({ email: r.contact_email, phone: r.contact_phone }));
+      r.joins = one ? { id: one.id, name: one.name } : null;
+    }
     r.fields = await db.prepare('SELECT * FROM field_values WHERE inbound_id = ? ORDER BY id').all(r.id);
     r.missing = missingFor(r.fields);
     const due = answerDeadlines(r.received_at);
@@ -473,6 +528,11 @@ export async function qualify(db, id, { qualification, personId, createPerson, b
     return { error: 'an interest was stated, so this is a lead' };
   }
 
+  // Q77: the email or phone a colleague typed when making the lead. Checked, never guessed at.
+  for (const k of ['email', 'phone']) stated[k] = String(stated[k] ?? '').trim() || undefined;
+  if (stated.email && !/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(stated.email)) return { error: 'that email does not look right' };
+  if (stated.phone && String(stated.phone).replace(/\D/g, '').length < 7) return { error: 'that phone number looks too short' };
+
   // The request has to make sense before the business gates are worth applying,
   // otherwise a malformed call is reported as a missing next step.
   if (!personId && !createPerson) return { error: 'link this to a person, or create one' };
@@ -499,7 +559,7 @@ export async function qualify(db, id, { qualification, personId, createPerson, b
   // from a channel therefore created twins in silence.
   if (!personId && createPerson && !differentPerson) {
     const dup = await duplicateCheck(db, {
-      email: item.contact_email, phone: item.contact_phone, name: item.contact_name });
+      email: item.contact_email || stated.email, phone: item.contact_phone || stated.phone, name: item.contact_name });
     if (dup.blocked) {
       return { error: 'this looks like somebody we already have', duplicate: true,
         matches: dup.matches, strong: dup.strong.length > 0 };
@@ -561,7 +621,9 @@ export async function qualify(db, id, { qualification, personId, createPerson, b
       VALUES (?,?,?,?,'operator',?,?,?,?)`).run(pid, id, field, value, at, by, at, by);
     // A person saying it outranks a machine guessing it, so this one overwrites,
     // and the change is written into the history like any other edit.
-    await applyToPerson(db, pid, field, value, { by, at, force: true });
+    // An email or phone is the exception (Q77): it fills an EMPTY one and never replaces the one the
+    // person has; kept on the person as a field, it still finds them (src/identity.js).
+    await applyToPerson(db, pid, field, value, { by, at, force: !['email', 'phone'].includes(field) });
   }
 
   // Consent the person GAVE on the form becomes part of their consent record, whether they
@@ -579,10 +641,12 @@ export async function qualify(db, id, { qualification, personId, createPerson, b
         `recorded when ${by} added the lead`);
   }
 
+  // Q76 (07.10.2026, Aigars: "chain of communication with the lead jabut pieejamai profila"): making a lead KEEPS the
+  // text, on the row and its lines, and the person's History shows it (messagesFor). The 13-month retention empties
+  // it on time (purgeLineBodies). Reverses the 23.09 rule that deleted it the moment somebody made the lead.
   await db.prepare(`UPDATE inbound SET state = 'qualified', qualification = ?, person_id = ?,
-    processed_by = ?, processed_at = ?, body = NULL, body_deleted_at = ? WHERE id = ?`)
-    .run(qualification, pid, by, at, at, id);
-  await dropLineBodies(db, id, at);
+    processed_by = ?, processed_at = ? WHERE id = ?`)
+    .run(qualification, pid, by, at, id);
 
   await logEvent(db, { personId: pid, kind: 'note', channel: item.channel, direction: 'in', at,
     origin: MANUAL, actor: by, subject: `Qualified from ${item.channel} as ${qualification}`,
@@ -635,10 +699,29 @@ async function applyToPerson(db, personId, field, value, opts = {}) {
 // A New Leads item another system already settled (the SIS creating an application-first person):
 // done, a lead, linked to the person, nobody pressed anything. Every write to inbound lives in this
 // file, so the pollers never touch the table themselves.
-// Making a lead (qualify) deletes the message body the moment somebody dealt with it, and the lines go with it:
-// the structured record is what lives on. Set aside did too until 07.10.2026, when the owner decided to keep the
-// text there (asked "Set aside: keep the message text?": "Keep the text"), so a set-aside message can be brought
-// back whole; it now waits for the 13-month retention like a filtered one. Qualify is unchanged.
+// Since 07.10.2026 nothing a person decides empties a message: set aside keeps it ("Keep the text") and so does
+// Make a lead (Q76, the History shows it). Only the SIS confirming an item still empties it here (confirmedBySystem:
+// system text, not a conversation). Everything else waits for the 13-month retention (purgeLineBodies).
+// WHAT THE PERSON WROTE (Q76): every message of theirs, one History entry each, newest first, read from the message
+// rows themselves - never copied into events, which are kept for ever - so the 13-month retention empties it on time.
+// A row with lines gives one entry per line (each arrival, with its own time); a row stored before lines existed
+// gives its own text once.
+export async function messagesFor(db, personId) {
+  const rows = await db.prepare(`SELECT id, channel, received_at, body FROM inbound WHERE person_id = ?`).all(personId);
+  const out = [];
+  for (const r of rows) {
+    const lines = await db.prepare(`SELECT id, received_at, body FROM inbound_line WHERE inbound_id = ? ORDER BY seq`).all(r.id);
+    const parts = lines.length ? lines.map((l) => ({ key: 'line-' + l.id, at: l.received_at, body: l.body }))
+      : [{ key: 'msg-' + r.id, at: r.received_at, body: r.body }];
+    for (const x of parts) {
+      if (!String(x.body || '').trim()) continue;
+      out.push({ id: x.key, kind: 'message', channel: r.channel, direction: 'in', origin: 'inbound',   // what a person wrote, not 'automatic'
+        occurred_at: x.at, subject: 'Wrote', body: x.body, inbound_id: Number(r.id) });
+    }
+  }
+  return out.sort((a, b) => String(b.occurred_at).localeCompare(String(a.occurred_at)));
+}
+
 export async function dropLineBodies(db, inboundId, at) {
   await db.prepare(`UPDATE inbound_line SET body = NULL, body_deleted_at = ?
     WHERE inbound_id = ? AND body IS NOT NULL`).run(at, inboundId);
@@ -882,6 +965,8 @@ export function noiseWhy({ email, name, body } = {}, cfg = CFG.emailFilter) {
   for (const p of (cfg && cfg.textPatterns) || []) {
     if (p && p.match && new RegExp(p.match, 'i').test(text)) return p.why || 'matches a filter rule';
   }
+  // Q74 RULE 3: a newsletter. Its unsubscribe link sits at the END, so the whole message is read for it.
+  if (cfg && cfg.newsletter && new RegExp(cfg.newsletter, 'i').test(String(body || ''))) return 'a newsletter (has an unsubscribe link)';
   return null;
 }
 

@@ -228,7 +228,7 @@ test('step 2 reads "New lead" everywhere, short and plain; nothing says "becomes
   const code = APP.replace(/\/\*[\s\S]*?\*\//g, '').split('\n').filter((l) => !l.trim().startsWith('//')).join('\n');   // his own words in comments stay
   const all = JSON.stringify(HELP) + code;
   assert.doesNotMatch(all, /becomes? a person|Becomes a person/i, 'flow, tour, questions and the page');
-  assert.match(HELP.tour.find((t) => t.title === 'Inbox').body, /Make a lead: say the programme and the next step on the card\. Anything else: Set aside\. It is kept, and can be brought back\./);
+  assert.match(HELP.tour.find((t) => t.title === 'Inbox').body, /Make a lead: say the programme and the next step on the card, and add the email or phone the message did not bring, so their next message finds them\. What they wrote stays on their History\. A message from somebody already in Intake says Joins and their name: Add to them\. Anything else: Set aside\. It is kept, and can be brought back\./);
 });
 
 test('Q56 the flow: six stops in order, each a link to the right route, stages and ends a click to their column', () => {

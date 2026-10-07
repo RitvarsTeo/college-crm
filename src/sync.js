@@ -13,7 +13,7 @@
 //
 // Neither poller runs while its channel is off, and off is the default.
 
-import { receive, confirmedBySystem, CONFIG, newPersonId, ownerFor, emailFilterWhy, purgeLineBodies, recordReplyRead } from './intake.js';
+import { receive, activePersonFor, confirmedBySystem, CONFIG, newPersonId, ownerFor, emailFilterWhy, purgeLineBodies, recordReplyRead } from './intake.js';
 import { findMatches, isStrong, normEmail, normPhone } from './identity.js';
 import { knock } from './webpush.js';
 import { logEvent, AUTOMATIC, MANUAL } from './history.js';
@@ -513,10 +513,14 @@ export async function syncGmail(db, { now = new Date(), env = process.env, fetch
     let ev;
     try { ev = adapt('gmail', shaped); } catch { out.unusable++; continue; }
     const it = toIntake(ev);
+    // Q74 (07.10.2026): a known person's email goes on their history (rule 1); the same sender again
+    // joins their waiting card (rule 2); a newsletter is set aside like other automatic mail (rule 3).
     const r = await receive(db, { ...it, source: mode === 'live' ? 'provider' : 'simulated',
-      filterWhy: emailFilterWhy(it.email) });
+      filterWhy: emailFilterWhy(it.email), attachTo: await activePersonFor(db, it.email), joinOpenSender: true });
     if (r.duplicate) out.repeat++;
     else if (r.filtered) out.filtered++;
+    else if (r.attached) out.toPerson = (out.toPerson || 0) + 1;
+    else if (r.joined) out.joined = (out.joined || 0) + 1;
     else out.inbox++;
   }
 
