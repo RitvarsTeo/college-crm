@@ -129,7 +129,8 @@ CREATE TABLE IF NOT EXISTS inbound (
   contact_handle TEXT,
   contact_email TEXT,
   contact_phone TEXT,
-  body TEXT,                     -- TEMPORARY. Deleted on qualify or archive.
+  body TEXT,                     -- Deleted on qualify. Kept on set aside (07.10.2026, the owner: "Keep the text") and
+                                 -- on filter, until the 13-month retention (purgeLineBodies) empties it.
   body_deleted_at TEXT,
   suggested TEXT NOT NULL,       -- raw | warm | hot, the machine's SUGGESTION only
   suggestion_why TEXT,

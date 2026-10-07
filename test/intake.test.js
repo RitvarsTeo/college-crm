@@ -310,12 +310,14 @@ test('the body is deleted on qualification and the structured record survives', 
   assert.ok(kept.length >= 4, 'the extracted facts survive the deletion');
 });
 
-test('the body is deleted on archive too, and the row is kept forever', async () => {
+// 07.10.2026, the owner asked "Set aside: keep the message text?": "Keep the text". Qualify still deletes it.
+test('set aside keeps the text (until retention), and the row is kept forever', async () => {
   const db = await openDb();
   const r = await receive(db, { channel: 'instagram', body: 'hello there', name: 'Spam', externalId: 'b2' });
   await archive(db, r.id, { reason: 'Spam', by: 'Tetiana' });
   const row = await db.prepare('SELECT * FROM inbound WHERE id = ?').get(r.id);
-  assert.equal(row.body, null);
+  assert.equal(row.body, 'hello there');
+  assert.equal(row.body_deleted_at, null);
   assert.equal(row.state, 'archived');
   assert.equal(row.archive_reason, 'Spam');
   assert.equal(row.contact_name, 'Spam', 'archived is not deleted: the contact is still findable');

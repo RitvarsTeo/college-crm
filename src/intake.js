@@ -141,8 +141,14 @@ export const linesOf = (db, inboundId) =>
 // that day, which is what makes a deletion auditable rather than invisible. An old line
 // can never take a newer one with it, because every line is compared to its own clock.
 export async function purgeLineBodies(db, cutoffIso) {
+  const at = new Date().toISOString();
   const r = await db.prepare(`UPDATE inbound_line SET body = NULL, body_deleted_at = ?
-    WHERE received_at < ? AND body IS NOT NULL`).run(new Date().toISOString(), cutoffIso);
+    WHERE received_at < ? AND body IS NOT NULL`).run(at, cutoffIso);
+  // and the row's own copy of a message nobody is working on (set aside or filtered), once its NEWEST line is past
+  // the cutoff: before 07.10.2026 only the lines were emptied, so a kept row text outlived its 13 months
+  await db.prepare(`UPDATE inbound SET body = NULL, body_deleted_at = ?
+    WHERE state IN ('archived', 'filtered') AND body IS NOT NULL
+      AND NOT EXISTS (SELECT 1 FROM inbound_line l WHERE l.inbound_id = inbound.id AND l.received_at >= ?)`).run(at, cutoffIso);
   return (r && (r.changes ?? r.rowCount)) || 0;
 }
 
@@ -587,12 +593,10 @@ async function applyToPerson(db, personId, field, value, opts = {}) {
 // A New Leads item another system already settled (the SIS creating an application-first person):
 // done, a lead, linked to the person, nobody pressed anything. Every write to inbound lives in this
 // file, so the pollers never touch the table themselves.
-// A PERSON deciding is not the machine filtering. Qualify and archive have always
-// deleted the message body the moment somebody dealt with it - that is a privacy
-// promise, not an implementation detail - so the lines go with it. Only the MACHINE's
-// own filter keeps its lines, because a filtered item has to stay checkable by a human
-// who never saw it. Extending retention on the human path would be the wrong direction
-// to be wrong in.
+// Making a lead (qualify) deletes the message body the moment somebody dealt with it, and the lines go with it:
+// the structured record is what lives on. Set aside did too until 07.10.2026, when the owner decided to keep the
+// text there (asked "Set aside: keep the message text?": "Keep the text"), so a set-aside message can be brought
+// back whole; it now waits for the 13-month retention like a filtered one. Qualify is unchanged.
 export async function dropLineBodies(db, inboundId, at) {
   await db.prepare(`UPDATE inbound_line SET body = NULL, body_deleted_at = ?
     WHERE inbound_id = ? AND body IS NOT NULL`).run(at, inboundId);
@@ -616,22 +620,24 @@ export async function archive(db, id, { reason, note, by }) {
     return { error: `"${reason}" needs an explanation`, reasons: allowed, needsNote: true };
   }
   const at = nowIso();
+  // The text STAYS (the owner, 07.10.2026, asked "Set aside: keep the message text?": "Keep the text"): set aside by a person
+  // is kept like a filtered message, until the 13-month retention takes it, so Bring back returns it whole.
   await db.prepare(`UPDATE inbound SET state = 'archived', archive_reason = ?, archive_note = ?,
-    processed_by = ?, processed_at = ?, body = NULL, body_deleted_at = ? WHERE id = ?`)
-    .run(reason, note || null, by, at, at, id);
-  await dropLineBodies(db, id, at);
+    processed_by = ?, processed_at = ? WHERE id = ?`)
+    .run(reason, note || null, by, at, id);
   await db.prepare(`INSERT INTO inbound_history (inbound_id, action, at, actor, reason, note)
     VALUES (?, 'set_aside', ?, ?, ?, ?)`).run(id, at, by, reason, note || null);
   // archived is not deleted: the row, the contact and the reason stay searchable
-  return { ok: true, id, reason, bodyDeleted: true };
+  return { ok: true, id, reason, bodyDeleted: false };
 }
 
 // ------------------------------------------------------------ bring back --
 // "Set aside: a way back" (the owner, 07.10.2026, on the finish line). A message a person set aside, or a rule
 // filtered (a filter mistake is the likeliest case), returns to the Inbox as new, in its arrival-day column: the
 // arrival time is never touched. Every user may, the same as Set aside. Logged in inbound_history with who, when and
-// what the set-aside had said. Nothing is deleted. What CANNOT come back: the text of a message a person set aside,
-// which Set aside deletes on purpose; a filtered message kept its text (decision 1d) and gets it back.
+// what the set-aside had said. Nothing is deleted. Since 07.10.2026 Set aside keeps the text, so it comes back whole;
+// only messages set aside BEFORE that lost their text, and those return with name and channel (textKept:false).
+// Nothing is recovered or invented.
 // Asking again for a message already back is harmless: it says so and writes nothing.
 export async function bringBack(db, id, { by, at = nowIso() } = {}) {
   const item = await db.prepare('SELECT * FROM inbound WHERE id = ?').get(id);

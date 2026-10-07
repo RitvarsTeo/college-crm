@@ -11,7 +11,7 @@ import vm from 'node:vm';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { openDb } from '../src/db.js';
-import { receive, listInbound, archive, bringBack, inboundHistory, refilterOpen } from '../src/intake.js';
+import { receive, listInbound, archive, qualify, bringBack, inboundHistory, refilterOpen, purgeLineBodies } from '../src/intake.js';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
@@ -32,7 +32,8 @@ test('set aside -> bring back -> in the Inbox again, both steps in the history, 
   assert.equal(back.id, r.id, 'in the Inbox again');
   assert.equal(back.received_at, '2026-10-03T08:00:00.000Z', 'its arrival day, so its own column');
   assert.equal(back.archive_reason, null);
-  assert.equal(b.textKept, false, 'Set aside deletes the text on purpose; it cannot come back, and says so');
+  assert.equal(b.textKept, true, '07.10.2026, "Keep the text": set aside keeps it, so it comes back whole');
+  assert.equal(back.body, 'I want to study navigation');
 
   const h = await inboundHistory(db, r.id);
   assert.deepEqual(h.map((x) => [x.action, x.actor]), [['set_aside', 'Ieva'], ['brought_back', 'Laura']]);
@@ -77,6 +78,56 @@ test('only a set-aside message can come back; a lead made from a message cannot'
   await db.prepare("UPDATE inbound SET state = 'qualified' WHERE id = ?").run(r.id);
   assert.match((await bringBack(db, r.id, { by: 'Ieva' })).error, /only a message set aside/);
   assert.match((await bringBack(db, r.id, {})).error || '', /who|only/);
+});
+
+// ------------------------------------------------ "Keep the text" (07.10.2026) --
+// The owner, asked "Set aside: keep the message text?": "Keep the text". Qualify is unchanged.
+test('set aside keeps the text, lines included; making a lead still clears it', async () => {
+  const db = await openDb(':memory:');
+  const a = await receive(db, { channel: 'gmail', externalId: 'k1', email: 'a@gmail.com', body: 'keep me', source: 'provider' });
+  await archive(db, a.id, { reason: 'Spam', by: 'Ieva' });
+  const row = await db.prepare('SELECT body, body_deleted_at FROM inbound WHERE id = ?').get(a.id);
+  assert.deepEqual({ ...row }, { body: 'keep me', body_deleted_at: null });
+  const [line] = await db.prepare('SELECT body FROM inbound_line WHERE inbound_id = ?').all(a.id);
+  assert.equal(line.body, 'keep me');
+  const q = await receive(db, { channel: 'gmail', externalId: 'k2', email: 'q@gmail.com', body: 'I want navigation', source: 'provider' });
+  const r = await qualify(db, q.id, { qualification: 'lead', createPerson: true, by: 'Ieva', nextAction: 'Call and establish interest' });
+  assert.ok(r.ok, JSON.stringify(r));
+  assert.equal((await db.prepare('SELECT body FROM inbound WHERE id = ?').get(q.id)).body, null, 'qualify still clears the row');
+  assert.equal((await db.prepare('SELECT body FROM inbound_line WHERE inbound_id = ?').get(q.id)).body, null, 'and its lines');
+});
+
+test('a message set aside BEFORE the change lost its text: it comes back with name and channel, nothing invented', async () => {
+  const db = await openDb(':memory:');
+  const r = await receive(db, { channel: 'gmail', externalId: 'k3', email: 'old@gmail.com', name: 'Old', body: 'gone', source: 'provider' });
+  await archive(db, r.id, { reason: 'Spam', by: 'Ieva' });
+  // what the old Set aside did to it
+  await db.prepare("UPDATE inbound SET body = NULL, body_deleted_at = '2026-10-01T00:00:00Z' WHERE id = ?").run(r.id);
+  await db.prepare("UPDATE inbound_line SET body = NULL, body_deleted_at = '2026-10-01T00:00:00Z' WHERE inbound_id = ?").run(r.id);
+  const b = await bringBack(db, r.id, { by: 'Ieva' });
+  assert.equal(b.textKept, false);
+  const [back] = await listInbound(db, { state: 'new' });
+  assert.equal(back.body, null);
+  assert.equal(back.contact_name, 'Old');
+  assert.equal(back.channel, 'gmail');
+  assert.equal(back.body_deleted_at, '2026-10-01T00:00:00Z', 'when it went stays on record');
+});
+
+test('the 13-month retention still empties an old set-aside message, line AND row; a recent one stays', async () => {
+  const db = await openDb(':memory:');
+  const old = await receive(db, { channel: 'gmail', externalId: 'k4', email: 'o@gmail.com', body: 'from long ago',
+    receivedAt: '2025-08-01T09:00:00.000Z', source: 'provider' });
+  const recent = await receive(db, { channel: 'gmail', externalId: 'k5', email: 'r@gmail.com', body: 'from last week',
+    receivedAt: '2026-10-01T09:00:00.000Z', source: 'provider' });
+  for (const x of [old, recent]) await archive(db, x.id, { reason: 'Spam', by: 'Ieva' });
+  await purgeLineBodies(db, '2025-09-07T00:00:00.000Z');
+  const row = (id) => db.prepare('SELECT body, body_deleted_at FROM inbound WHERE id = ?').get(id);
+  const line = (id) => db.prepare('SELECT body FROM inbound_line WHERE inbound_id = ?').get(id);
+  assert.equal((await line(old.id)).body, null, 'the old line is emptied');
+  assert.equal((await row(old.id)).body, null, 'and the row text with it');
+  assert.ok((await row(old.id)).body_deleted_at);
+  assert.equal((await line(recent.id)).body, 'from last week');
+  assert.equal((await row(recent.id)).body, 'from last week', 'a recent one keeps its text');
 });
 
 // ---------------------------------------------------------------- the route --
