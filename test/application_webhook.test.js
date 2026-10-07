@@ -61,7 +61,7 @@ test('webhook: no secret configured refuses everything, and a wrong or missing h
   assert.equal(list(await people(s.base)).length, 0, 'nothing was stored');
 });
 
-test('webhook: the right secret creates an application-first person at Application, once', async (t) => {
+test('webhook: the right secret creates an application-first person once; a form only started is at New (07.10)', async (t) => {
   const s = await start({ CHANNEL_MODE_SIS: 'test', SIS_APPLICATION_SECRET: SECRET });
   t.after(() => s.child.kill());
   const h = { 'x-crm-application-secret': SECRET };
@@ -74,7 +74,7 @@ test('webhook: the right secret creates an application-first person at Applicati
   assert.equal(JSON.parse(r2.text).outcome, 'repeat');
   const all = list(await people(s.base));
   assert.equal(all.length, 1);
-  assert.equal(all[0].status, 'Application');
+  assert.equal(all[0].status, 'New', 'started is not a submitted application');
   assert.equal(all[0].name, 'Liene Kalna');
 });
 

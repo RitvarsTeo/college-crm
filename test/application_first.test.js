@@ -35,13 +35,13 @@ const run = (db, apps, now = NOW) => syncSis(db, { now, env: ON, fetchImpl: sis(
 const people = (db) => db.prepare('SELECT * FROM people ORDER BY created_at').all();
 const waiting = async (db) => (await db.prepare("SELECT COUNT(*) n FROM inbound WHERE state = 'new'").get()).n;
 
-test('application-first: SIS started -> a person at Application, form started dated, nothing waits', async () => {
+test('application-first: SIS started -> a person at New (only a submission is "Submitted application", 07.10), form started dated, nothing waits', async () => {
   const db = await openDb(':memory:');
   const r = await run(db, [app()]);
   const all = await people(db);
   assert.equal(all.length, 1, 'one person');
   const [p] = all;
-  assert.equal(p.status, 'Application');
+  assert.equal(p.status, 'New');
   assert.equal(p.name, 'Anna Ozola');
   assert.equal(p.email, 'anna.ozola@example.com');
   assert.equal(p.programme, 'NAV');
@@ -79,7 +79,7 @@ test('application-first: the funnel counts them from the top (done item, lead, a
   assert.equal(step('Contacted us'), 1);
   assert.equal(step('Waiting to be looked at'), 0);
   assert.equal(step('Became a lead'), 1);
-  assert.equal(step('Application'), 1);
+  assert.equal(step('Application'), 0, 'a form only started is not a submitted application (07.10)');
 });
 
 test('application-first: submitted is at Application too, form started by its submit date', async () => {
@@ -113,13 +113,17 @@ test('application-first: registered only -> a person at New, no fact; started la
     changedAt: '2026-09-29T11:00:00.000Z' })]);
   [p] = await people(db);
   assert.equal(p.status, 'New');
-  // the application starts
+  // the application starts: the fact is recorded, the stage stays (07.10: only a submission moves it)
   await run(db, [app({ changedAt: '2026-09-30T04:00:00.000Z' })]);
-  const all = await people(db);
+  let all = await people(db);
   assert.equal(all.length, 1, 'still one person');
-  assert.equal(all[0].status, 'Application');
+  assert.equal(all[0].status, 'New');
   assert.deepEqual((await lifecycleOf(db, p.id)).map((f) => [f.fact, f.at]),
     [['form_started', '2026-09-30T04:00:00.000Z']]);
+  // and it is submitted: now they move on
+  await run(db, [app({ status: 'submitted', submittedAt: '2026-10-01T04:00:00.000Z', changedAt: '2026-10-01T04:00:00.000Z' })]);
+  all = await people(db);
+  assert.equal(all[0].status, 'Application');
 });
 
 test('application-first: the same application twice is one person and one item', async () => {
@@ -136,20 +140,23 @@ test('application-first: somebody who was already a lead keeps the existing path
   await db.prepare(`INSERT INTO people (id, name, email, status, owner, source_channel, created_at)
     VALUES ('p-lead', 'Anna O.', 'ANNA.OZOLA@example.com', 'Contacted', 'Admissions', 'phone', '2026-09-01')`).run();
   const r = await run(db, [app()]);
-  const all = await people(db);
+  let all = await people(db);
   assert.equal(all.length, 1, 'no second person');
-  assert.equal(all[0].status, 'Application');
+  assert.equal(all[0].status, 'Contacted', 'a form only started leaves their stage (07.10)');
+  await run(db, [app({ status: 'submitted', submittedAt: '2026-09-29T12:00:00.000Z', changedAt: '2026-09-29T12:00:00.000Z' })]);
+  all = await people(db);
+  assert.equal(all[0].status, 'Application', 'the submission moves them on');
   assert.equal(all[0].source_channel, 'phone', 'first source kept');
   assert.equal(r.linked, 1);
   assert.equal(r.created, 0);
   assert.equal((await db.prepare("SELECT COUNT(*) n FROM inbound WHERE channel = 'sis'").get()).n, 0);
 });
 
-test('application-first: a known lead at New still moves on registered (the 29.09 path)', async () => {
+test('application-first: a known lead at New stays at New on registered (07.10, superseding the 29.09 path)', async () => {
   const db = await openDb(':memory:');
   await db.prepare(`INSERT INTO people (id, name, phone, status) VALUES ('p-new', 'Anna', '29990001', 'New')`).run();
   await run(db, [app({ status: 'registered', applicationId: null, email: null })]);
-  assert.equal((await db.prepare("SELECT status FROM people WHERE id = 'p-new'").get()).status, 'Application');
+  assert.equal((await db.prepare("SELECT status FROM people WHERE id = 'p-new'").get()).status, 'New', 'an account is not a submitted application');
 });
 
 test('application-first: a call still waiting in New Leads with the same number is not application-first', async () => {

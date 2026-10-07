@@ -254,13 +254,17 @@ export async function syncPbx(db, { now = new Date(), minutes = WINDOW_MINUTES,
 // Where an SIS status puts a person on the CRM journey. rejected and withdrawn are
 // not here on purpose: closing a person needs a reason from a human, so the SIS
 // status is written on the timeline and the stage is left alone.
+// ONLY A REAL SUBMISSION MOVES THE STAGE (Ritvars, 07.10.2026, Q75 follow-up): the stage reads
+// "Submitted application" now, so an account (registered) or a form begun (started) leaves the person
+// where they are. "Application form started" is still recorded as a lifecycle fact. Supersedes the
+// 29-30.09 rule that started (and a known lead's registered) moved them to the application stage.
 export const SIS_STAGE = {
-  registered: 'Application',
-  started: 'Application',
   submitted: 'Application',
   admitted: 'Admitted',
   matriculated: 'Admitted',
 };
+// the two statuses only a human may turn into a closing: they go on the timeline instead
+export const SIS_CLOSING = ['rejected', 'withdrawn'];
 
 const STAGE_ORDER = () => CONFIG.stageOrder || ['New', 'Contacted', 'Follow-up', 'Application', 'Admitted'];
 
@@ -327,8 +331,8 @@ async function applyToPerson(db, reference, personId, at, stats) {
 // Somebody whose first appearance anywhere is apply.novikontas.org is not a lead waiting in New
 // Leads: the SIS already knows they applied. So when nobody in people AND nothing waiting in New
 // Leads shares their email or the last 8 digits of their phone, the SIS creates the person:
-//   started or later -> the application stage, "Application form started" dated as the SIS dates it
-//   registered only  -> the first stage, no fact, until the SIS says started
+//   submitted or later -> the submitted-application stage (07.10.2026: a form only started stays at the first stage, its "Application form started" fact dated as the SIS dates it)
+//   registered or started -> the first stage; registered has no fact until the SIS says started
 // New Leads gets a DONE item, confirmed by the SIS, so the funnel counts them from the top.
 // Somebody who called or wrote and is still waiting to be confirmed is NOT application-first: that
 // item is a human's to confirm, and a second record for one person is exactly what this avoids.
@@ -558,7 +562,7 @@ async function storeSisRow(db, r, at, stats) {
     r.status, r.registered_at, r.submitted_at, r.changed_at, r.admitted_on || null, at);
   stats.stored++;
   // a closing status on a person we already know goes on their timeline
-  if (old && old.person_id && old.status !== r.status && !SIS_STAGE[r.status]) {
+  if (old && old.person_id && old.status !== r.status && SIS_CLOSING.includes(r.status)) {
     await logEvent(db, { personId: old.person_id, kind: 'status', direction: 'note', at, origin: AUTOMATIC,
       actor: 'SIS', subject: sisSentence(r), body: 'The Intake stage is unchanged.' });
     stats.noted++;

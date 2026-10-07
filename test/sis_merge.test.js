@@ -39,7 +39,7 @@ test('merge: the SIS twin folds into the real person, and the next run links to 
   assert.equal(r.ok, true, JSON.stringify(r));
   assert.equal((await db.prepare('SELECT COUNT(*) n FROM people').get()).n, 1, 'the extra record is gone');
   const real = await db.prepare("SELECT * FROM people WHERE id = 'p-real'").get();
-  assert.equal(real.status, 'Application', 'the SIS stage moves her on, forwards only');
+  assert.equal(real.status, 'Contacted', 'a form only started leaves her stage (07.10: only a submission moves it)');
   assert.equal(real.email, 'anna.old@example.com', 'her own email is kept');
   assert.equal(real.phone, '+371 29990009', 'an empty field is filled from the SIS');
   assert.equal(real.source_channel, 'phone', 'her first source is kept');

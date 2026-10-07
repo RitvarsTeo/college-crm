@@ -26,7 +26,8 @@ DECIDED by Ritvars 07.10 (Q75, KISS list), via MASTER CONTROL. Branch `feat/2026
 | Newest backup 2026-10-07T09-01-03Z: **0 of 682 people at Contract**, so the move touches nobody in production today | CHECKED |
 | "reached Application" wording on Home, Reports and the export now says "reached Submitted application" | BUILT |
 | The Contract -> Admitted benchmark row is parked (`on: false`): the nearest step left, Submitted application -> Admitted, is not a deposit, so the US band would compare unlike things | BUILT |
-| **[DECISION] SIS mapping:** SIS `registered` (a known lead) and `started` still move a person to the Application key, which now READS "Submitted application" although they have not submitted. Kept as decided 29-30.09 until Ritvars says otherwise; the honest fix is one line in src/sync.js SIS_STAGE (only `submitted` moves the stage) | OPEN |
+| **DECIDED 07.10 (Ritvars, popup "Only submitted"):** only a real SIS submission moves a person to Submitted application. `registered` and `started` leave the stage where it is ("Application form started" is still recorded as a fact); rejected / withdrawn still go on the timeline only. Supersedes the 29-30.09 rule | BUILT |
+| **[DECISION] The 2 people already at Submitted application in production only because the SIS said registered / started** (backup 2026-10-07T09-01-03Z, count only). The new rule never moves anyone backwards, so they keep reading "Submitted application" unless they are moved back by hand or by a one-time move | OPEN |
 
 ## 07.10.2026 - The target meters say what they are (DECIDED 07.10: "Yes, label them")
 

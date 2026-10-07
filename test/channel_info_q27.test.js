@@ -89,7 +89,7 @@ test('Q27: SIS stands apart: the chain to apply, how its statuses map, and all g
   const f = s.sis(apiRows(), LOCAL, CTX());
   assert.deepEqual([...f.chain], ['apply.novikontas.org', 'SIS', 'Intake']);
   const map = Object.fromEntries(f.map.map((m) => [m.to, [...m.from]]));
-  assert.deepEqual(map, { Application: ['registered', 'started', 'submitted'], Admitted: ['admitted', 'matriculated'] });
+  assert.deepEqual(map, { Application: ['submitted'], Admitted: ['admitted', 'matriculated'] }, 'only a submission is a submitted application (07.10)');
   assert.equal(f.pull, 'Daily 08:00');
   assert.equal(f.ok, true, 'the recorded pull was fine');
   const fresh = new Date(Date.now() - 3600e3).toISOString();

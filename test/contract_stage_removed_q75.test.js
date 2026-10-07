@@ -101,3 +101,9 @@ test('boot: the server folds Contract on start and says how many', async (t) => 
   assert.equal((await again.prepare("SELECT COUNT(*) n FROM people WHERE status = 'Contract'").get()).n, 0);
   if (again.close) await again.close();
 });
+
+test('SIS: only a real submission moves the stage (Ritvars 07.10); registered and started leave it, rejected and withdrawn go on the timeline', async () => {
+  const { SIS_STAGE, SIS_CLOSING } = await import('../src/sync.js');
+  assert.deepEqual({ ...SIS_STAGE }, { submitted: 'Application', admitted: 'Admitted', matriculated: 'Admitted' });
+  assert.deepEqual(SIS_CLOSING, ['rejected', 'withdrawn']);
+});
