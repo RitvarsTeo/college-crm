@@ -1,6 +1,8 @@
 import { DatabaseSync } from 'node:sqlite';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
+import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 // Prototype schema. Deliberately small and readable: this is here to test the
 // workflow visually, not to be a production database design.
@@ -712,6 +714,23 @@ class PgDb {
 
 let schemaCounter = 0;
 
+// AUDIT M6 (07.10.2026): the server's certificate is VERIFIED. It used to be
+// rejectUnauthorized: false, which encrypts but accepts anybody who answers. Supabase signs its
+// database and pooler certificates with its own root (config/supabase-root-2021-ca.crt, the file
+// Supabase publishes, fingerprint checked against the chain the pooler presents on 07.10.2026);
+// any other host is checked against the public authorities Node already trusts.
+const SUPABASE_CA = path.join(path.dirname(path.dirname(fileURLToPath(import.meta.url))),
+  'config', 'supabase-root-2021-ca.crt');
+export function pgSsl(url = pgUrl()) {
+  if (/sslmode=disable/.test(url)) return false;
+  let host = '';
+  try { host = new URL(url).hostname; } catch {}
+  if (/\.supabase\.(com|co)$/.test(host)) {
+    return { ca: fs.readFileSync(SUPABASE_CA, 'utf8'), rejectUnauthorized: true };
+  }
+  return { rejectUnauthorized: true };
+}
+
 async function openPg(file) {
   const pg = await loadPg();
   // WHICH SCHEMA. CRM_PG_SCHEMA names it outright, and every real deployment sets it.
@@ -722,6 +741,12 @@ async function openPg(file) {
   // ':memory:' is ALWAYS a throwaway schema, even with CRM_PG_SCHEMA set. Production sets
   // CRM_PG_SCHEMA=crm, and a test run that inherited it must never write into the real rows.
   const temporary = file === ':memory:';
+  // AUDIT M11: the web server used to fall back to a schema named after a file path while the
+  // crons refused without CRM_PG_SCHEMA, so a missing setting split them across two schemas and
+  // staff saw an empty CRM. Now both refuse.
+  if (!temporary && !process.env.CRM_PG_SCHEMA) {
+    throw new Error('Missing required environment variable CRM_PG_SCHEMA (the Postgres schema, normally crm)');
+  }
   const schema = temporary
     ? `crm_t_${process.pid}_${Date.now().toString(36)}_${(++schemaCounter).toString(36)}`
     : (process.env.CRM_PG_SCHEMA
@@ -732,11 +757,20 @@ async function openPg(file) {
     max: temporary ? 2 : Number(process.env.CRM_PG_POOL || 3),
     idleTimeoutMillis: temporary ? 500 : 10000,
     allowExitOnIdle: true,
-    ssl: /sslmode=disable/.test(pgUrl()) ? false : { rejectUnauthorized: false },
+    ssl: pgSsl(),
   });
   pool.on('error', () => {});             // an idle connection dropped by the server is not fatal
   const db = new PgDb(pool, pool, schema);
   await db.query(`CREATE SCHEMA IF NOT EXISTS ${schema}`);
+  // AUDIT H4 (07.10.2026): prove the schema took BEFORE creating anything. The schema rides on
+  // the connection's startup options; a pooler that dropped them would leave search_path at
+  // public, and every table below would be created where Supabase's Data API publishes it.
+  const { rows: [where] } = await db.query('SELECT current_schema() AS s');
+  if (!where || where.s !== schema) {
+    await pool.end().catch(() => {});
+    throw new Error(`REFUSING TO START: the connection is in schema "${where && where.s}", not "${schema}". `
+      + 'The pooler did not apply the search_path option; nothing was created.');
+  }
   // One round trip for the whole schema, and the same statements every boot.
   await db.query(pgSchemaSql());
   // Only where it is still off. ALTER TABLE takes an exclusive lock even when it changes

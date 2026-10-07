@@ -104,7 +104,7 @@ test('the board shows nobody until a click, widens the opened column, darkens th
   assert.match(draw, /cJFlipPlay\(\);/);
   assert.match(fn('function cJOpen('), /C_JFLIP = cJFlipMeasure\(\); C_JSEL = id; cDrawJourney\(\);/, 'measured BEFORE the redraw');
   assert.match(fn('function cJFlipPlay('), /prefers-reduced-motion/, 'reduced motion: it just appears');
-  assert.match(APP, /onclick="cJOpen\('\$\{esc\(p\.id\)\}'\)"/, 'a board card opens it');
+  assert.match(APP, /onclick="cJOpen\(\$\{esc\(JSON\.stringify\(String\(p\.id \?\? ''\)\)\)\}\)"/, 'a board card opens it');
 });
 test('only the quick view scales; every other card slides, so no words are stretched', () => {
   assert.match(fn('function cJFlipPlay('), /sx = grow \? a\.width \/ b\.width : 1, sy = grow \? a\.height \/ b\.height : 1/);

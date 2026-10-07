@@ -191,6 +191,19 @@ export const VERIFY = {
   service_account_with_domain_delegation: () => ({ ok: true, how: 'we call them; they do not call us' }),
 };
 
+// AUDIT C1 (07.10.2026). These mechanisms mean WE fetch from the provider (or staff type it in),
+// so no outside party ever has a reason to POST to the channel's address. Their VERIFY entries
+// answer ok for the channel self-check, which made POST /api/inbound/gmail and /phone accept
+// anybody's body before sign-in. The HTTP route asks this instead and refuses them.
+const PULL_AUTH = new Set(['token_in_query', 'none_needed', 'service_account_with_domain_delegation',
+  'bearer_token']);   // inbound_poll: we send the bearer token, nobody sends one to us
+
+/** True only for a channel a provider delivers to over HTTP with its own proof. */
+export function acceptsWebhook(channel) {
+  const def = channelDef(channel);
+  return Boolean(def) && !PULL_AUTH.has(def.auth);
+}
+
 export function verifyRequest(channel, req, { secret, rawBody, url } = {}) {
   const def = channelDef(channel);
   if (!def) return { ok: false, how: 'unknown channel' };
@@ -323,6 +336,12 @@ export function handshake(channel, url, env = process.env) {
     const secret = env[def.secretEnv];
     if (!secret) return { ok: false, status: 503, how: def.secretEnv + ' is not set', missingSecret: true };
     if (!code) return { ok: false, status: 400, how: 'no challengeCode to answer' };
+    // AUDIT H1 (07.10.2026): a UUID and nothing else. The POST check is HMAC(secret,
+    // "hmacsha256=" + body), so answering any text turned this GET into a signing service:
+    // ?challengeCode=hmacsha256=<forged body> handed back a valid signature for that body.
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(code)) {
+      return { ok: false, status: 400, how: 'the challengeCode is not a UUID' };
+    }
     const challengeResponse = crypto.createHmac('sha256', String(secret)).update(code).digest('hex');
     return { ok: true, status: 200, body: JSON.stringify({ challengeCode: code, challengeResponse }),
       contentType: 'application/json', how: 'LinkedIn challenge answered' };

@@ -35,7 +35,7 @@ const FIGURES = [
   ['Journey', 'Stage columns', 'function cJourneyBand(', /onclick="cJBarTap\(this\.dataset\.v/],   // Q68: a phone opens the stage, a wide screen filters
   // Q57: a bookend filters the board to its end column, as a stage column does
   ['Journey', 'Admitted / Not proceeding', 'function cJourneyBand(', /onclick="C_OUTCOME='Not proceeding';C_OUT_TAG=null;cJfPick\('stage', this\.dataset\.v, /],
-  ['Journey', 'Overdue band inside a column (Q66; the header pill before it)', 'const cGroupBand = ', /onclick="event\.stopPropagation\(\);cJfOverdue\('\$\{esc\(stage\)\}'\)"/],
+  ['Journey', 'Overdue band inside a column (Q66; the header pill before it)', 'const cGroupBand = ', /onclick="event\.stopPropagation\(\);cJfOverdue\(\$\{esc\(JSON\.stringify\(String\(stage \?\? ''\)\)\)\}\)"/],
   // Q47: Outcomes are the Journey's last two columns, Cold / Reject the filter on Not proceeding
   ['Outcomes', 'Admitted / Not proceeding columns', 'function cDrawJourneyPool() {', /\{ id: admitted, label: admitted, n: base\.filter\(\(p\) => p\.status === admitted\)\.length, tone: 'good', sep: true \}/],
   ['Outcomes', 'Everybody / Cold / Reject', 'function cDrawJourneyPool() {', /cPoolSelect\('Cold \/ Reject', C_OUT_TAG \|\| '', tags, 'C_OUT_TAG=this\.value/],

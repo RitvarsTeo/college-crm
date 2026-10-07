@@ -71,7 +71,7 @@ test('the next step is the clearest line: its own element with an arrow, before 
   // state line "No next step" carrying its action, Choose, which opens the next-step dialog for that person right there.
   // He was told the grey is quieter than the amber and chose it.
   assert.match(none, /class="c-jp row c-rail c-rail-none is-none"/, 'the grey rail marks the card');
-  assert.match(none, /<div class="c-st c-st-none"><span class="c-st-w">No next step<\/span><button type="button" class="c-st-act" onclick="event\.stopPropagation\(\);openNewTask\('p1'\)"[^>]*>Choose ›<\/button><\/div>/);
+  assert.match(none, /<div class="c-st c-st-none"><span class="c-st-w">No next step<\/span><button type="button" class="c-st-act" onclick="event\.stopPropagation\(\);openNewTask\((?:"|&#34;|&quot;)p1(?:"|&#34;|&quot;)\)"[^>]*>Choose ›<\/button><\/div>/);
   assert.doesNotMatch(none, /<small class="none">|c-choose/, 'no soft amber text, no button');
   assert.doesNotMatch(APP, /\.c-jp\.is-none[^{]*\{[^}]*#F7C04F/, 'the amber edge is gone from the cards');
   assert.doesNotMatch(APP, /\.c-jp small\.none\{color|\.c-what\.none\{color|\.c-next\.none\{[^}]*color:var\(--c-warn\)/, 'amber is never a text colour for no next step');

@@ -94,7 +94,7 @@ test('drag onto Coming up: the date picker opens on the card, earliest tomorrow;
   const d2 = D([], [task(20, 'q1', 'Due One', TODAY + 'T09:00:00Z')], []);
   const html = board({ pick: { pid: 'q1', from: 'today' } }).cTodayBoard(d2, groupsOf(d2));
   assert.match(html, /<div class="t-pick"[^>]*>[\s\S]*<input id="tPickDate" type="date" min="2026-10-07" value="2026-10-07">/);
-  assert.match(html, /onclick="cTodayMoveTo\('q1', 'today', document\.getElementById\('tPickDate'\)\.value\)">Save<\/button>/);
+  assert.match(html, /onclick="cTodayMoveTo\((?:"|&#34;|&quot;)q1(?:"|&#34;|&quot;), 'today', document\.getElementById\('tPickDate'\)\.value\)">Save<\/button>/);
   const m = board({}, DATA);
   await m.cTodayMoveTo('r1', 'later', '2026-10-15');
   assert.deepEqual(JSON.parse(JSON.stringify(m.posted)), [['/api/tasks/30/reschedule', { due: '2026-10-15' }], ['/api/tasks/31/reschedule', { due: '2026-10-15' }]]);

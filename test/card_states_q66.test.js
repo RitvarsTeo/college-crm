@@ -60,7 +60,7 @@ test('every card ends with ONE state line in the same form, and carries the rail
   assert.match(stateOf(html, 'late2'), /Overdue<\/span><span class="c-st-d">· 2 d<\/span>/);
   assert.match(stateOf(html, 'today'), /c-st-today"><span class="c-st-w">Due today<\/span><\/div>$/);
   assert.match(stateOf(html, 'soon'), /c-st-due"><span class="c-st-w">Due<\/span><span class="c-st-d">· 09\.10<\/span>/, 'dd.mm');
-  assert.match(stateOf(html, 'none1'), /c-st-none"><span class="c-st-w">No next step<\/span><button type="button" class="c-st-act" onclick="event\.stopPropagation\(\);openNewTask\('none1'\)"[^>]*>Choose ›<\/button>/, 'the action on the line');
+  assert.match(stateOf(html, 'none1'), /c-st-none"><span class="c-st-w">No next step<\/span><button type="button" class="c-st-act" onclick="event\.stopPropagation\(\);openNewTask\((?:"|&#34;|&quot;)none1(?:"|&#34;|&quot;)\)"[^>]*>Choose ›<\/button>/, 'the action on the line');
   assert.match(stateOf(html, 'sis'), /c-st-sis"><span class="c-st-w">With the SIS<\/span><span class="c-st-d">· Form submitted<\/span>/);
   assert.doesNotMatch(html, /c-jdue|c-choose"|Choose next step|c-jover/, 'the badges, the button and the header pill are gone');
 });
@@ -77,7 +77,7 @@ test('the bands inside a column: one per state, in order, counting everyone in t
   // the order on the board follows the bands: overdue first, then planned, no next step, then the SIS-held
   const ids = cardsOf(open).map(([id]) => id);
   assert.deepEqual(ids, ['late9', 'late2', 'today', 'soon', 'later', 'x1', 'x2', 'none1', 'none2', 'sis']);
-  assert.match(open, /<div class="c-grp c-grp-over" role="button" tabindex="0" onclick="event\.stopPropagation\(\);cJfOverdue\('Contacted'\)"/, 'the Overdue band opens the stage\'s overdue people, as the header pill did');
+  assert.match(open, /<div class="c-grp c-grp-over" role="button" tabindex="0" onclick="event\.stopPropagation\(\);cJfOverdue\((?:"|&#34;|&quot;)Contacted(?:"|&#34;|&quot;)\)"/, 'the Overdue band opens the stage\'s overdue people, as the header pill did');
   // the opened person keeps the board's order (no second band for their group)
   const withSel = column(PEOPLE.find((p) => p.id === 'none2'));
   assert.equal((withSel.match(/c-grp-none/g) || []).length, 1);
