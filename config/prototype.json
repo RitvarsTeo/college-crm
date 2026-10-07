@@ -24,13 +24,8 @@
     },
     {
       "id": "Application",
-      "label": "Application",
+      "label": "Submitted application",
       "colour": "#b06f00"
-    },
-    {
-      "id": "Contract",
-      "label": "Contract",
-      "colour": "#7a3cb0"
     },
     {
       "id": "Admitted",
@@ -76,7 +71,9 @@
       },
       {
         "id": "contract_to_admitted",
-        "step": "contractToAdmitted",
+        "on": false,
+        "_on": "OFF since the Contract stage was removed (Q75, 07.10.2026). This row compared OUR Contract -> Admitted with a US deposit -> enrolled rate; the nearest step left is Submitted application -> Admitted, which is not a deposit, so drawing it against this band would compare unlike things. Flip on only with a benchmark that matches the step.",
+        "step": "applicationToAdmitted",
         "name": "Contract to admitted",
         "show": "range", "low": 88, "high": 93, "unit": "%", "label": "typical",
         "sourceLabel": "US 4-year colleges, 2010",
@@ -304,28 +301,28 @@
           "label": "Prepare the study contract",
           "days": 2,
           "drives": "payment",
-          "advancesTo": "Contract"
+          "advancesTo": "Application"
         },
         {
           "id": "sign_contract",
           "label": "Sign the contract",
           "days": 3,
           "drives": "payment",
-          "advancesTo": "Contract"
+          "advancesTo": "Application"
         },
         {
           "id": "send_invoice",
           "label": "Send the invoice",
           "days": 1,
           "drives": "payment",
-          "advancesTo": "Contract"
+          "advancesTo": "Application"
         },
         {
           "id": "chase_payment",
           "label": "Chase the payment",
           "days": 5,
           "drives": "payment",
-          "advancesTo": "Contract"
+          "advancesTo": "Application"
         },
         {
           "id": "confirm_payment",
@@ -342,8 +339,7 @@
     "New": ["Conversation and information", "Visit on site"],
     "Contacted": ["Conversation and information", "Visit on site", "Application and documents"],
     "Follow-up": ["Visit on site", "Application and documents"],
-    "Application": ["Application and documents", "Contract and payment"],
-    "Contract": ["Contract and payment"]
+    "Application": ["Application and documents", "Contract and payment"]
   },
   "_stepGroupsByStage": "Ritvars 02.10.2026: the steps offered depend on the lead's stage, by group, so the list is shorter and what cannot happen yet is not shown. A step marked anyStage fits every stage. The step already planned is always kept. MVP: Admissions tunes it here by using it, a config edit and never code.",
   "_nextActions": "Next action is mandatory everywhere. Every option drives towards one of: a visit on site, an application in SIS with documents, or payment. Provisional wording until Admissions confirms it.",
@@ -352,7 +348,6 @@
     "Contacted",
     "Follow-up",
     "Application",
-    "Contract",
     "Admitted"
   ],
   "statusFollowsEvents": true,
@@ -489,8 +484,7 @@
     "New": ["No response", "Not eligible", "Programme not suitable", "Chose another institution", "Duplicate", "Other"],
     "Contacted": ["No response", "Chose another institution", "Changed study plans", "Programme not suitable", "Not eligible", "Timing / postponed", "Duplicate", "Other"],
     "Follow-up": ["No response", "Chose another institution", "Changed study plans", "Financial reasons", "Timing / postponed", "Programme not suitable", "Not eligible", "Other"],
-    "Application": ["No response", "Requirements not met", "Not eligible", "Financial reasons", "Chose another institution", "Timing / postponed", "Changed study plans", "Other"],
-    "Contract": ["Financial reasons", "Chose another institution", "Timing / postponed", "Changed study plans", "Requirements not met", "No response", "Other"]
+    "Application": ["No response", "Requirements not met", "Not eligible", "Financial reasons", "Chose another institution", "Timing / postponed", "Changed study plans", "Other"]
   },
   "_closedReasonsByStage": "Ritvars 02.10.2026: the reasons offered depend on the stage the person leaves, so the list is shorter and what cannot have happened yet is not offered. Every entry is one of closedReasons, which the server still enforces whole. MVP, provisional until Admissions has used it.",
   "closedReasonNeedsNote": [

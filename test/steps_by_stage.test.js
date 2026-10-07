@@ -38,10 +38,13 @@ test('each stage offers a SHORTER list than everything', () => {
   }
 });
 
-test('a new lead is not offered the contract; a lead at Contract is not offered a first visit', () => {
+test('a new lead is not offered the contract; a submitted application is not offered a first visit, and keeps the contract steps', () => {
   assert.ok(!labels(ctx.f(null, 'New')).includes('Prepare the study contract'));
-  assert.ok(!labels(ctx.f(null, 'Contract')).includes('Invite to a visit on site'));
-  assert.ok(labels(ctx.f(null, 'Contract')).includes('Confirm the payment'));
+  assert.ok(!labels(ctx.f(null, 'Application')).includes('Invite to a visit on site'));
+  for (const l of ['Prepare the study contract', 'Sign the contract', 'Send the invoice', 'Chase the payment', 'Confirm the payment']) {
+    assert.ok(labels(ctx.f(null, 'Application')).includes(l), 'the Contract stage folded in (Q75): ' + l);
+  }
+  assert.equal(CFG.stepGroupsByStage.Contract, undefined);
 });
 
 test('answering a question and calling back fit every stage', () => {
@@ -52,7 +55,7 @@ test('answering a question and calling back fit every stage', () => {
 });
 
 test('the step already planned is never hidden', () => {
-  const l = labels(ctx.f('Invite to a visit on site', 'Contract'));
+  const l = labels(ctx.f('Invite to a visit on site', 'Application'));
   assert.ok(l.includes('Invite to a visit on site'));
 });
 

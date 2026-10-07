@@ -52,7 +52,7 @@ test('a phone: the stages stack, the first with people open, the rest folded to 
   const J = journey(true, PEOPLE);
   const html = J.draw();
   assert.deepEqual(opens(html), [STAGES[1].id], 'New is empty, so Contacted opens');
-  assert.deepEqual(folds(html), [[STAGES[0].id, STAGES[0].label || STAGES[0].id, 0], [STAGES[2].id, STAGES[2].label || STAGES[2].id, 1], [STAGES[3].id, STAGES[3].label || STAGES[3].id, 3], [STAGES[4].id, STAGES[4].label || STAGES[4].id, 0]]);
+  assert.deepEqual(folds(html), [[STAGES[0].id, STAGES[0].label || STAGES[0].id, 0], [STAGES[2].id, STAGES[2].label || STAGES[2].id, 1], [STAGES[3].id, STAGES[3].label || STAGES[3].id, 3]], 'four stages since Contract was removed (Q75)');
   assert.match(html, /\[c1\]/); assert.doesNotMatch(html, /\[a1\]/, 'a folded stage shows no card');
   assert.match(html, /<div class="j-sentinel" aria-hidden="true"><\/div><summary>/, 'the band has its sentinel: the strip goes compact once scrolled');
   const W = journey(false, PEOPLE);

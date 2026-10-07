@@ -262,7 +262,7 @@ export const SIS_STAGE = {
   matriculated: 'Admitted',
 };
 
-const STAGE_ORDER = () => CONFIG.stageOrder || ['New', 'Contacted', 'Follow-up', 'Application', 'Contract', 'Admitted'];
+const STAGE_ORDER = () => CONFIG.stageOrder || ['New', 'Contacted', 'Follow-up', 'Application', 'Admitted'];
 
 // admittedAt is the SIS's own admission date (src/sisdates.js), never the time of the run (Ritvars,
 // 06.10.2026). When the SIS does not date it, the stage still moves and admitted_at stays empty: Home

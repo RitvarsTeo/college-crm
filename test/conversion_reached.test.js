@@ -82,7 +82,7 @@ test('Home and Reports say the same words, from the server figure, in one year, 
     const M = R.X.cRepModel(r, people, CFG, localDate());
     const tab = text(R.X.cRepEcho('conversion', M).small);
     if (!(st.of > 0)) { assert.doesNotMatch(tab, /reached Application/, 'nobody matured: no line'); continue; }
-    assert.equal(tab.split('\n')[1], `${st.reached} / ${st.of} reached Application`, 'Reports: the server figure');
+    assert.equal(tab.split('\n')[1], `${st.reached} / ${st.of} reached Submitted application`, 'Reports: the server figure');
     assert.equal(M.coh[M.conversion.reached.won.k].ids.join(), st.reachedIds.join(), 'the 23 opens the people who reached Application');
     assert.equal(M.coh[M.conversion.reached.of.k].ids.join(), st.ofIds.join(), 'the 33 opens the matured people');
     assert.deepEqual([...M.coh[M.conversion.reached.of.k].ids].sort(), [...M.coh[M.conversion.base.k].ids].sort(), 'the same 33 as "8 / 33" above it');
@@ -91,7 +91,7 @@ test('Home and Reports say the same words, from the server figure, in one year, 
     const D = await H.data();
     const card = text(homeCard(H.B(D)));
     assert.equal(card, tab.replace(/^.*?(\d+ \/ \d+ who arrived)/, '$1').replace(/^/, ''), 'Home says what the tab says');
-    assert.equal(card, `${r.summary.conversionA} / ${r.summary.conversionB} ${r.summary.conversionWho}\n${st.reached} / ${st.of} reached Application`);
+    assert.equal(card, `${r.summary.conversionA} / ${r.summary.conversionB} ${r.summary.conversionWho}\n${st.reached} / ${st.of} reached Submitted application`);
     H.setD(D); H.go('reached');
     assert.equal(H.opened.ids.join(), st.reachedIds.join(), 'Home: the 23 opens exactly them');
     H.go('of');

@@ -14,6 +14,20 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 07.10.2026 - Q75: the Contract stage is removed (COMMITTED, NOT DEPLOYED)
+
+DECIDED by Ritvars 07.10 (Q75, KISS list), via MASTER CONTROL. Branch `feat/2026-10-07-no-contract-s4`, cut from `f45340e`.
+
+| What | Status |
+|---|---|
+| Stages: New, Contacted, Follow-up, **Submitted application**, then Admitted / Not proceeding. The KEY stays `Application` (label only), so stored people, events, reports and the SIS mapping keep their meaning | BUILT |
+| Contract's steps (prepare / sign contract, invoice, chase payment) keep the person at Submitted application; Confirm the payment still admits. Contract's step groups and closing reasons fold into Submitted application | BUILT |
+| One-time, idempotent move at boot: everybody at Contract goes to Submitted application with the timeline line "moved: Contract stage removed (07.10)"; `contract_at` kept as history (src/stagefold.js) | BUILT |
+| Newest backup 2026-10-07T09-01-03Z: **0 of 682 people at Contract**, so the move touches nobody in production today | CHECKED |
+| "reached Application" wording on Home, Reports and the export now says "reached Submitted application" | BUILT |
+| The Contract -> Admitted benchmark row is parked (`on: false`): the nearest step left, Submitted application -> Admitted, is not a deposit, so the US band would compare unlike things | BUILT |
+| **[DECISION] SIS mapping:** SIS `registered` (a known lead) and `started` still move a person to the Application key, which now READS "Submitted application" although they have not submitted. Kept as decided 29-30.09 until Ritvars says otherwise; the honest fix is one line in src/sync.js SIS_STAGE (only `submitted` moves the stage) | OPEN |
+
 ## 07.10.2026 - The target meters say what they are (DECIDED 07.10: "Yes, label them")
 
 Ritvars, about the two meters on the Admitted card ("86% of 140", "NAV + ENG 94 · 96% of 98"): "what is this? Has no

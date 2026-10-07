@@ -81,7 +81,7 @@ const ORDER = CFG.stageOrder || (CFG.stages || []).map((s) => s.id);
 const fromStage = (id) => ORDER.slice(Math.max(0, ORDER.indexOf(id)));
 export const STEPS = [
   { id: 'leadToApplication', from: null, to: 'Application' },
-  { id: 'contractToAdmitted', from: 'Contract', to: 'Admitted' },
+  { id: 'applicationToAdmitted', from: 'Application', to: 'Admitted' },
 ];
 export async function maturedSteps(db, p, opts) {
   const basis = maturedBasis(p, opts);
@@ -156,7 +156,7 @@ export async function report(db, { from, to, years } = {}) {
 
   const newLeads = await count(db, `SELECT COUNT(*) n FROM people WHERE ${ARR}`, ...A);
   const applications = await count(db, `SELECT COUNT(*) n FROM people
-    WHERE ${ARR} AND status IN ('Application','Contract','Admitted')`, ...A);
+    WHERE ${ARR} AND status IN ('Application','Admitted')`, ...A);
   const admitted = await count(db, `SELECT COUNT(*) n FROM people WHERE ${ADM}`, ...A);
 
   const activeApplicants = await count(db, `SELECT COUNT(*) n FROM people
@@ -376,7 +376,7 @@ export async function reportRows(db, opts = {}) {
     head('The headline figures');
     rows.push(['Metric', 'Value', 'Note']);
     rows.push(['New leads', r.summary.newLeads, 'arrived in the period']);
-    rows.push(['Applications', r.summary.applications, 'reached Application or beyond']);
+    rows.push(['Applications', r.summary.applications, 'reached Submitted application or beyond']);
     rows.push(['Admitted', r.summary.admitted, 'admitted in the period, whenever they arrived']);
     rows.push(['Conversion %', r.summary.conversionPct ?? 'n/a', r.summary.conversionOf]);
     rows.push(['Active applicants', r.summary.activeApplicants, 'not admitted and not closed']);

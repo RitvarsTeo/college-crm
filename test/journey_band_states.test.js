@@ -30,7 +30,7 @@ const S = STAGES[3].id;   // Application: all five states in one stage
 const PEOPLE = [
   { id: 'o1', status: S }, { id: 'o2', status: S }, { id: 't1', status: S }, { id: 'd1', status: S }, { id: 'd2', status: S }, { id: 'd3', status: S },
   { id: 'n1', status: S }, { id: 's1', status: S, first_channel: 'sis', sis: { status: 'submitted', label: 'Form submitted' } },
-  { id: 'c1', status: STAGES[4].id }, { id: 'c2', status: STAGES[4].id },
+  { id: 'c1', status: STAGES[2].id }, { id: 'c2', status: STAGES[2].id },
 ];
 const TASKS = new Map([['o1', { due_at: '2026-09-30T09:00:00Z' }], ['o2', { due_at: '2026-10-05T09:00:00Z' }], ['t1', { due_at: TODAY + 'T09:00:00Z' }],
   ['d1', { due_at: '2026-10-12T09:00:00Z' }], ['d2', { due_at: '2026-10-13T09:00:00Z' }], ['d3', { due_at: '2026-10-14T09:00:00Z' }], ['c1', { due_at: '2026-09-01T09:00:00Z' }]]);
@@ -50,14 +50,14 @@ test('a stage bar is TWO segments: red needs you (overdue + no next step) on the
   assert.match(app, /<b class="jb-n">8<\/b>/, 'the total, and nothing beside it');
   assert.doesNotMatch(app, /<em>|jb-over|jb-s-(over|today|due|none|sis)"/, 'the badge, the overlay and the five-colour segments are gone');
   assert.deepEqual(segs.map((s) => s.title), ['Needs you: 3 (2 overdue, 1 no next step)', 'On track: 5 (1 due today, 3 due, 1 with the sis)'], 'the words still say which states');
-  assert.match(app, /title="Application: 8 people \(2 overdue, 1 due today, 3 due, 1 no next step, 1 with the sis\)"/);
+  assert.match(app, /title="Submitted application: 8 people \(2 overdue, 1 due today, 3 due, 1 no next step, 1 with the sis\)"/);
 });
 
 test('a stage with one colour is one segment; an empty stage has none; the scale stays the stage total', () => {
   const html = draw(PEOPLE, TASKS);
-  const contract = segsOf(cellOf(html, 4));
-  assert.deepEqual(contract.map((s) => [s.st, s.bottom, s.height]), [['need', 0, 100]], 'Contract: an overdue and a no next step, both red: one red bar');
-  assert.match(cellOf(html, 4), /class="jb-bar" style="height:25\.00%"/, '2 of 8');
+  const contract = segsOf(cellOf(html, 2));   // Follow-up since the Contract stage was removed (Q75)
+  assert.deepEqual(contract.map((s) => [s.st, s.bottom, s.height]), [['need', 0, 100]], 'Follow-up: an overdue and a no next step, both red: one red bar');
+  assert.match(cellOf(html, 2), /class="jb-bar" style="height:25\.00%"/, '2 of 8');
   assert.equal(segsOf(cellOf(html, 0)).length, 0, 'nobody: no segment, the 2px grey mark only');
   assert.match(cellOf(html, 0), /class="jb-bar" style="height:0\.00%"><b class="jb-n">0<\/b><\/span>/);
 });

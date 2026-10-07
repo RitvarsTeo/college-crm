@@ -27,8 +27,8 @@ function app() {
     CFG: CONFIG, C_TERMINAL: ['Admitted', 'Not proceeding'],
     C_PCOHORT: null, C_PQ: '', C_PEDIT: null, C_PMSG: '', C_PTAB: 'all', C_PSCROLL: false, C_JSEL: null, C_PDATA: null, C_JDATA: null,
     C_OUTCOME: 'Admitted', C_OUT_TAG: null, C_OUT_REASON: null, C_OUT_FILTER: null, C_TP: { col: null },
-    C_STAGE_OF: new Map([['a', 'Contract'], ['b', 'Contract'], ['c', 'Admitted'], ['d', 'New']]),
-    C_REP_COH: { q1: { label: 'Leads · 2026 · Contract', ids: ['a', 'b'] }, q2: { label: 'Leads · 2026', ids: ['a', 'c', 'd'] } },
+    C_STAGE_OF: new Map([['a', 'Application'], ['b', 'Application'], ['c', 'Admitted'], ['d', 'New']]),
+    C_REP_COH: { q1: { label: 'Leads · 2026 · Submitted application', ids: ['a', 'b'] }, q2: { label: 'Leads · 2026', ids: ['a', 'c', 'd'] } },
     viewJourneyC: () => drawn.push('board'), viewJourneyPool: () => drawn.push('list'), cDrawJourneyPool: () => drawn.push('list'),
     viewTodayC: () => drawn.push('today'), cDrawJourney: () => drawn.push('board'),
   };
@@ -76,7 +76,7 @@ test('every way in opens the Board, never the List', () => {
     ['a Reports figure', (A) => A.X.cGoCohort('q1')],
     ['Cold / Reject', (A) => A.X.cGoClosedTag('cold')],
     ['the Help flow end chip', (A) => A.X.cHelpGo('Admitted')],
-    ['the Help flow stage chip', (A) => A.X.cHelpGo('Contract')],
+    ['the Help flow stage chip', (A) => A.X.cHelpGo('Application')],
     ['Edit from the person page', (A) => A.X.cEditFromJourney('p1')],
   ];
   for (const [name, way] of ways) {
@@ -92,7 +92,7 @@ test('every way in opens the Board, never the List', () => {
 test('the targeted column is the board filter, as a band click sets it', () => {
   const stageOf = (way) => { const A = app(); way(A); return [plain(A.X.JF.stage), A]; };
   assert.deepEqual(stageOf((A) => A.X.cGoStage('Application'))[0], ['Application'], 'Home stage');
-  assert.deepEqual(stageOf((A) => A.X.cHelpGo('Contract'))[0], ['Contract'], 'Help flow stage');
+  assert.deepEqual(stageOf((A) => A.X.cHelpGo('Application'))[0], ['Application'], 'Help flow stage');
   assert.deepEqual(stageOf((A) => A.X.cHelpGo('Admitted'))[0], ['Admitted'], 'Help flow end');
   assert.deepEqual(stageOf((A) => A.X.cChartGo('outcome|Not proceeding'))[0], ['Not proceeding'], 'donut slice');
   const [month, M] = stageOf((A) => A.X.cChartGo('month|2026-09|September 2026'));
@@ -100,7 +100,7 @@ test('the targeted column is the board filter, as a band click sets it', () => {
   const [cold, C] = stageOf((A) => A.X.cGoClosedTag('cold'));
   assert.deepEqual(cold, ['Not proceeding']); assert.equal(C.ctx.C_OUT_TAG, 'cold', 'with that tag');
   const [one, R] = stageOf((A) => A.X.cGoCohort('q1'));
-  assert.deepEqual(one, ['Contract'], 'a cohort in one stage: that column'); assert.deepEqual([...R.ctx.C_PCOHORT.ids], ['a', 'b']);
+  assert.deepEqual(one, ['Application'], 'a cohort in one stage: that column'); assert.deepEqual([...R.ctx.C_PCOHORT.ids], ['a', 'b']);
   const [mixed] = stageOf((A) => A.X.cGoCohort('q2'));
   assert.deepEqual(mixed, [], 'a cohort across stages: the whole board, narrowed to the cohort');
   // a stage click from Home forgets what an earlier visit narrowed
@@ -142,7 +142,7 @@ function board(people, setup = {}) {
 }
 const JF = (stage) => ({ programme: [], due: [], owner: [], source: [], stage, group: [], step: [] });
 const P = (id, status, extra = {}) => ({ id, name: 'P ' + id, status, created_at: '2026-03-01T10:00:00Z', ...extra });
-const PEOPLE = [P('n1', 'New'), P('c1', 'Contacted'), P('k1', 'Contract'), P('a1', 'Admitted', { admitted_at: '2026-09-10' }),
+const PEOPLE = [P('n1', 'New'), P('c1', 'Contacted'), P('k1', 'Application'), P('a1', 'Admitted', { admitted_at: '2026-09-10' }),
   P('a2', 'Admitted', { admitted_at: '2026-08-01' }), P('x1', 'Not proceeding', { closed_tag: 'cold', closed_reason: 'No response' }),
   P('x2', 'Not proceeding', { closed_tag: 'reject', closed_reason: 'Chose another school', created_at: '2025-05-01T10:00:00Z' })];
 
@@ -188,9 +188,9 @@ test('drag and drop posts the status move; a back move asks its note first and s
   const B = board(PEOPLE);
   B.draw();
   const drop = (stage, id) => B.handlers[stage + ':drop']({ preventDefault() {}, dataTransfer: { getData: () => id } });
-  await drop('Contract', 'c1');
-  assert.deepEqual(plain(B.asked[0]), ['c1', 'Contacted', 'Contract']);
-  assert.deepEqual(plain(B.posts[0]), ['/api/people/c1/status', { status: 'Contract' }], 'forward: the move');
+  await drop('Application', 'c1');
+  assert.deepEqual(plain(B.asked[0]), ['c1', 'Contacted', 'Application']);
+  assert.deepEqual(plain(B.posts[0]), ['/api/people/c1/status', { status: 'Application' }], 'forward: the move');
   await drop('New', 'k1');
   assert.deepEqual(plain(B.posts[1]), ['/api/people/k1/status', { status: 'New', note: 'back to the start' }], 'back: the move with its note');
   B.ctx.cAskMoveNote = async () => null;

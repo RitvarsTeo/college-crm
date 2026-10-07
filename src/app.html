@@ -3275,7 +3275,7 @@ function cGoHomeReached(which) {
   if (!st) return;
   const who = (C_HOME_D.s && C_HOME_D.s.conversionWho) || 'who arrived';
   C_REP_COH = { ...C_REP_COH, home_reached: { name: 'home:reached:' + which,
-    label: `Leads · ${cScopeWord()} · ${who}${which === 'reached' ? ' · reached Application' : ''}`, ids: which === 'reached' ? st.reachedIds : st.ofIds } };
+    label: `Leads · ${cScopeWord()} · ${who}${which === 'reached' ? ' · reached Submitted application' : ''}`, ids: which === 'reached' ? st.reachedIds : st.ofIds } };
   cGoCohort('home_reached');
 }
 function cGoReportYear(chapter) {
@@ -5251,7 +5251,7 @@ function cRepModel(r, people, cfg, today) {
     // Reached Application on the card (B, 07.10.2026): the server's step, its own ids
     reached: r.steps && r.steps.leadToApplication && r.steps.leadToApplication.of > 0 ? { step: r.steps.leadToApplication,
       of: fig('conversion:reached:of', `Leads · ${pw} · ${who}`, r.steps.leadToApplication.ofIds.map((id) => ({ id }))),
-      won: fig('conversion:reached', `Leads · ${pw} · ${who} · reached Application`, r.steps.leadToApplication.reachedIds.map((id) => ({ id }))) } : null,
+      won: fig('conversion:reached', `Leads · ${pw} · ${who} · reached Submitted application`, r.steps.leadToApplication.reachedIds.map((id) => ({ id }))) } : null,
     stoppedAt: stops.map((id) => ({ value: id, ...fig(`conversion:now:${id}`, `Leads · ${pw} · now ${cStage(id)}`, arr.filter((p) => p.status === id && !p.admitted_at)) })).filter((x) => x.n),
     byProgramme: rate('conversion:programme', `Leads · ${pw} · ${who}`, ripe, (p) => val(p.programme)),
     byChannel: rate('conversion:channel', `Leads · ${pw} · ${who} · came from`, ripe, (p) => val(p.source_channel)),
@@ -5302,7 +5302,7 @@ function cRepModel(r, people, cfg, today) {
 // ever reached Application - the server's steps.leadToApplication (src/reports.js maturedSteps). Missing = nothing drawn.
 function cReachedWords(step, link) {
   if (!step || !(Number(step.of) > 0)) return '';
-  return `<br>${link(step.reached, 'reached')} / ${link(step.of, 'of')} reached Application`;
+  return `<br>${link(step.reached, 'reached')} / ${link(step.of, 'of')} reached Submitted application`;
 }
 // THE TARGET METERS, on Home's Admitted card and on Reports > Admitted word for word (the owner 07.10.2026, "Yes, label
 // them": "86% of 140" had no words and no hover). Each line says what it counts, its figure, the target and the share:
@@ -7492,7 +7492,7 @@ async function viewReports() {
 
   <div class="tiles">
     ${tile(s.newLeads, 'new leads', 'People whose first contact falls in this period.')}
-    ${tile(s.applications, 'applications', 'Arrived in this period and reached Application or beyond.')}
+    ${tile(s.applications, 'applications', 'Arrived in this period and reached Submitted application or beyond.')}
     ${tile(s.admitted, 'admitted', 'Admitted during this period, whenever they first arrived.')}
     ${tile(s.conversionPct === null ? '-' : s.conversionPct + '%', 'conversion', s.conversionOf)}
     ${tile(s.activeApplicants, 'active now', 'Not admitted and not closed. Not limited to the period.')}

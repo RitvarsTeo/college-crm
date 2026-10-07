@@ -139,14 +139,15 @@ test('the row stays OFF (config on:false) and, even on, waits until no enquiry o
   vm.runInNewContext(block.replace(/^const /gm, 'var '), ctx);
   const b = CFG.benchmarks.rows.find((r) => r.id === 'first_reply');
   assert.equal(b.on, false, 'off in config until the email is read and the Inbox can open the exact enquiries');
-  const steps = { leadToApplication: { of: 30, pct: 40 }, contractToAdmitted: { of: 5, pct: 80 }, firstReply: { kind: 'inbox', of: 15, reached: 10, median: 0, unread: 0 } };
+  const steps = { leadToApplication: { of: 30, pct: 40 }, applicationToAdmitted: { of: 5, pct: 80 }, firstReply: { kind: 'inbox', of: 15, reached: 10, median: 0, unread: 0 } };
   // all benchmarks are parked since 07.10 (benchmarks.on false); with the switch on, this row's own rules still hold
   const parked = { ...CFG.benchmarks, on: true };
-  assert.deepEqual(ctx.cRepBenchRows(steps, parked).map((x) => x.b.id), ['lead_to_application', 'contract_to_admitted'], 'absent while on:false');
+  // the contract row is parked too since the Contract stage was removed (Q75, 07.10.2026)
+  assert.deepEqual(ctx.cRepBenchRows(steps, parked).map((x) => x.b.id), ['lead_to_application'], 'absent while on:false');
   const on = { ...parked, rows: parked.rows.map((r) => (r.id === 'first_reply' ? { ...r, on: true } : r)) };
-  assert.deepEqual(ctx.cRepBenchRows(steps, on).map((x) => x.b.id), ['lead_to_application', 'contract_to_admitted', 'first_reply'], 'switched on and complete: drawn');
+  assert.deepEqual(ctx.cRepBenchRows(steps, on).map((x) => x.b.id), ['lead_to_application', 'first_reply'], 'switched on and complete: drawn');
   assert.deepEqual(ctx.cRepBenchRows({ ...steps, firstReply: { ...steps.firstReply, unread: 57 } }, on).map((x) => x.b.id),
-    ['lead_to_application', 'contract_to_admitted'], 'an unread thread in the period: not drawn (missing values are never shown)');
+    ['lead_to_application'], 'an unread thread in the period: not drawn (missing values are never shown)');
 });
 
 test('the Gmail run saves its reply read with the run, refused threads included', async () => {

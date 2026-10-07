@@ -31,9 +31,9 @@ function band(stageFilter = []) {
   return ctx.band;
 }
 const P = (id, status, due) => ({ id, status, due });
-// Application 4 (3 late), Contract 2 (0 late), New 1 (1 late), the rest 0
+// Application 4 (3 late), Follow-up 2 (0 late), New 1 (1 late), the rest 0 (Contract removed, Q75)
 const OPEN = [P('a1', STAGES[3].id, 'over'), P('a2', STAGES[3].id, 'over'), P('a3', STAGES[3].id, 'over'), P('a4', STAGES[3].id, 'today'),
-  P('c1', STAGES[4].id, 'later'), P('c2', STAGES[4].id), P('n1', STAGES[0].id, 'over')];
+  P('c1', STAGES[2].id, 'later'), P('c2', STAGES[2].id), P('n1', STAGES[0].id, 'over')];
 const TASKS = new Map(OPEN.filter((p) => p.due).map((p) => [p.id, { due_at: p.due }]));
 const OUT = { adm: 12, np: 17, admLabel: 'Admitted', npLabel: 'Not proceeding', unrecorded: 0, arrived: 63, year: 2026,
   tags: [['cold', 'Cold', 2], ['reject', 'Reject', 0]], play: true };
@@ -64,14 +64,14 @@ test('ONE scale for every stage: heights are count / the biggest stage, never pe
   const max = Math.max(...c.map((x) => x.n));
   for (const x of c) assert.ok(Math.abs(x.height - (x.n / max) * 100) < 0.01, `${x.label}: ${x.height}% for ${x.n} of ${max}`);
   assert.equal(c[3].height, 100, 'the biggest stage sets the scale');
-  assert.equal(c[4].height, 50, 'half the people, half the column');
+  assert.equal(c[2].height, 50, 'half the people, half the column');
 });
 
 test('overdue is the red base of the column, on the SAME scale, counted from the late tasks', () => {
   const c = cols(draw());
   assert.equal(c[3].over, 3, 'three late in Application; due today is not overdue');
   assert.equal(c[0].over, 1);
-  assert.equal(c[4].over, 0, 'nobody late in Contract, so no red and no number');
+  assert.equal(c[2].over, 0, 'nobody late in Follow-up, so no red and no number');
   // the segment is a share of its own column, so on the band's scale it is over / max
   assert.ok(Math.abs((c[3].overHeight / 100) * c[3].height - (3 / 4) * 100) < 0.01, 'Application: 3 of the band max 4');
   assert.ok(Math.abs((c[0].overHeight / 100) * c[0].height - (1 / 4) * 100) < 0.01, 'New: 1 of 4, comparable with Application');
@@ -103,7 +103,7 @@ test('the board keeps exactly the chosen stage, and the other filters still comb
     line('const cDaysLate ='), line('const cDdMm ='), fn('function cStepState('),   // Q66: the filter reads the card's state
     fn('function cJourneyMatch('), 'this.match = cJourneyMatch;'].join('\n'), ctx);
   const people = [{ id: 1, status: 'Application', programme: 'ENG' }, { id: 2, status: 'Application', programme: 'NAV' },
-    { id: 3, status: 'Contract', programme: 'ENG' }];
+    { id: 3, status: 'Follow-up', programme: 'ENG' }];
   const f = { programme: [], due: [], owner: [], source: [], stage: ['Application'], group: [], step: [] };
   assert.deepEqual(people.filter((p) => ctx.match(p, null, f)).map((p) => p.id), [1, 2], 'the stage the column chose');
   f.programme = ['ENG'];

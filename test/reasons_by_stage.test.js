@@ -32,7 +32,8 @@ test('every open stage has its reasons, each one from the enforced list, Other a
 
 test('the impossible ones are not offered', () => {
   assert.ok(!ctx.r('New').includes('Requirements not met'), 'nothing has been checked yet at New');
-  assert.ok(!ctx.r('Contract').includes('Duplicate'), 'a duplicate is found long before a contract');
+  assert.ok(!ctx.r('Application').includes('Duplicate'), 'a duplicate is found long before a submitted application');
+  assert.equal(CFG.closedReasonsByStage.Contract, undefined, 'no reasons for a stage that was removed (Q75)');
 });
 
 test('stage unknown: the whole list, as before', () => {

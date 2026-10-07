@@ -268,7 +268,7 @@ test('sis: one matching person by email moves forward by themselves', async () =
 // Ritvars, 06.10.2026: the admission is dated by the SIS record itself (its submit date), never the run.
 test('sis: admitted moves the person to Admitted and stamps the date of the SIS record, not of the run', async () => {
   const db = await fresh();
-  const p = await person(db, { phone: '20000000', status: 'Contract' });
+  const p = await person(db, { phone: '20000000', status: 'Application' });
   await syncSis(db, { now: NOW, env: ON, fetchImpl: fakeSis([[app({ status: 'admitted' })]]).fetchImpl });
   const row = await db.prepare('SELECT status, admitted_at FROM people WHERE id = ?').get(p.id);
   assert.equal(row.status, 'Admitted');
@@ -278,12 +278,12 @@ test('sis: admitted moves the person to Admitted and stamps the date of the SIS 
 
 test('sis: a stage never moves backwards, and a closed person is never reopened', async () => {
   const db = await fresh();
-  const ahead = await person(db, { email: 'jonas@example.com', status: 'Contract' });
+  const ahead = await person(db, { email: 'jonas@example.com', status: 'Admitted' });
   const closed = await person(db, { name: 'Anna', email: 'anna@example.com', status: 'Not proceeding' });
   await syncSis(db, { now: NOW, env: ON, fetchImpl: fakeSis([[
     app(), app({ reference: 'ref-2', applicationId: 'app-2', email: 'anna@example.com', status: 'admitted' }),
   ]]).fetchImpl });
-  assert.equal((await db.prepare('SELECT status FROM people WHERE id = ?').get(ahead.id)).status, 'Contract');
+  assert.equal((await db.prepare('SELECT status FROM people WHERE id = ?').get(ahead.id)).status, 'Admitted', 'a submitted SIS record never pulls an admitted person back');
   assert.equal((await db.prepare('SELECT status FROM people WHERE id = ?').get(closed.id)).status, 'Not proceeding');
 });
 

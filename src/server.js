@@ -46,6 +46,7 @@ import { bootstrapIfAuthOn } from './bootstrap.js';
 import * as channeladmin from './channeladmin.js';
 import { todayStart, tomorrowStart, localDate, localMidnight } from './bizday.js';
 import { receiveSisApplication, mergeSisDuplicate, syncSis, channelMode, SIS_STAGE } from './sync.js';
+import { foldContractStage } from './stagefold.js';
 import { redateSisAdmissions } from './sisdates.js';
 
 
@@ -463,6 +464,13 @@ const PUBLIC = gate.isPublic();
     await loadDataset(CONFIG.startWith || 'empty');
   }
 }
+// Q75 (07.10.2026): the Contract stage is gone; anybody still at it moves into Submitted application,
+// once, with a line on their timeline (src/stagefold.js). Nobody left there = nothing happens.
+{
+  const into = (CONFIG.stages || []).find((s) => s.id === 'Application');
+  const folded = await foldContractStage(db, { intoLabel: into ? into.label : 'Application' });
+  if (folded.moved) console.log(`Contract stage removed: ${folded.moved} moved to Submitted application`);
+}
 // THE ACCOUNTS, AFTER THE DATA AND BEFORE THE DOOR OPENS.
 //
 // The order matters and it is: database exists -> demo data -> accounts ->
@@ -655,7 +663,7 @@ async function finishOpenTasks(personId, at, why) {
 // The status follows the events. A completed step moves the person to the stage
 // that step belongs to, forwards only, and the move is recorded like any other
 // event so nothing changes silently.
-const STAGE_ORDER = () => CONFIG.stageOrder || ['New', 'Contacted', 'Follow-up', 'Application', 'Contract', 'Admitted'];
+const STAGE_ORDER = () => CONFIG.stageOrder || ['New', 'Contacted', 'Follow-up', 'Application', 'Admitted'];
 function stageOf(label) {
   for (const g of (CONFIG.nextActions || [])) {
     for (const i of g.items) if (i.label === label) return i.advancesTo || null;
@@ -2040,7 +2048,7 @@ export const handle = async (req, res) => {
       // one person carried the whole way, so the funnel has an end as well as a start
       const hot = await db.prepare("SELECT id FROM people WHERE qualification = 'lead' ORDER BY id LIMIT 1").get();
       if (hot) {
-        for (const st of [CONFIG.stageRoles.application, 'Contract', CONFIG.stageRoles.admitted]) {
+        for (const st of [CONFIG.stageRoles.application, CONFIG.stageRoles.admitted]) {
           const before = (await db.prepare('SELECT status FROM people WHERE id = ?').get(hot.id)).status;
           await db.prepare('UPDATE people SET status = ? WHERE id = ?').run(st, hot.id);
           await logEvent(db, { personId: hot.id, kind: 'status', direction: 'note', at: nowIso(),
@@ -2394,7 +2402,7 @@ export const handle = async (req, res) => {
         d.registrations = await db.prepare(`SELECT r.*, pe.name, pe.status, pe.programme FROM registrations r JOIN people pe ON pe.id = r.person_id
           WHERE r.open_day_id = ? ORDER BY r.slot`).all(d.id);
         d.came = d.registrations.filter((r) => r.attended === 1).length;
-        d.applied = d.registrations.filter((r) => ['Application', 'Contract', 'Admitted'].includes(r.status)).length;
+        d.applied = d.registrations.filter((r) => ['Application', 'Admitted'].includes(r.status)).length;
       }
       return json(res, 200, days);
     }

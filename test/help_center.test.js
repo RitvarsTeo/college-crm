@@ -244,15 +244,15 @@ test('Q56 the flow: six stops in order, each a link to the right route, stages a
     .map((m) => [Number(m[1]), m[2], m[3]]);
   assert.deepEqual(steps, HELP.flow.map((m, i) => [i + 1, m.href, m.name]), 'drawn in order, each a click to its place');
   const chips = [...html.matchAll(/<a class="hf-chip[^"]*" href="#\/journey" data-stage="([^"]+)"\s+onclick="cHelpGo\(this\.dataset\.stage\);return false">/g)].map((m) => m[1]);
-  assert.deepEqual(chips, ['New', 'Contacted', 'Follow-up', 'Application', 'Contract', 'Admitted', 'Not proceeding'], 'the stages, then the two ends');
+  assert.deepEqual(chips, ['New', 'Contacted', 'Follow-up', 'Application', 'Admitted', 'Not proceeding'], 'the stages, then the two ends (Contract removed, Q75)');
   const journey = html.slice(html.indexOf('data-step="4"'), html.indexOf('data-step="5"'));
   assert.doesNotMatch(journey, /data-stage="(Admitted|Not proceeding)"/, 'the ends are their own stop');
   assert.match(html, /data-step="2">\s*<a class="hf-node" href="#\/journey" onclick="cGoPeople\(\{\}\);return false">/, 'New lead opens everyone');
   assert.doesNotMatch(html, /<p[ >]/, 'no paragraphs');
   // a stage click lands on the Journey, on that column; an end also sets the outcome it shows
-  const go = vm.runInNewContext(fnSrc('cHelpGo') + `; const seen = []; cGoStage = (id) => seen.push(id); cHelpGo('Contract'); cHelpGo('Admitted'); ({ seen, C_OUTCOME })`,
+  const go = vm.runInNewContext(fnSrc('cHelpGo') + `; const seen = []; cGoStage = (id) => seen.push(id); cHelpGo('Application'); cHelpGo('Admitted'); ({ seen, C_OUTCOME })`,
     { C_PF: { stage: 'x' }, C_PF_EMPTY: () => ({}), C_PQ: 'q', C_PCOHORT: {}, C_TERMINAL: ['Admitted', 'Not proceeding'], C_OUTCOME: null, cGoStage: null });
-  assert.deepEqual([...go.seen], ['Contract', 'Admitted']);
+  assert.deepEqual([...go.seen], ['Application', 'Admitted']);
   assert.equal(go.C_OUTCOME, 'Admitted');
   assert.match(APP, /function cGoStage\(id\) \{[\s\S]*?C_JP\.col = id;[\s\S]*?location\.hash = '#\/journey'/, 'cGoStage opens that column');
 });

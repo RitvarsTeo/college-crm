@@ -66,7 +66,7 @@ const ROWS = [
   ['m2', 150, 'Not proceeding', false, ['Application', 'Contract', 'Not proceeding']],   // reached Contract, then stopped
   ['m3', 120, 'Not proceeding', false, ['Contacted', 'Application', 'Not proceeding']],   // reached Application only
   ['m4', 100, 'Contacted', false, ['Contacted']],
-  ['m5', 90, 'Contract', false, ['Application', 'Contract']],
+  ['m5', 90, 'Application', false, ['Application', 'Contract', 'Application']],   // moved back when Contract was removed
   ['m6', 70, 'New', false],
   // too young to count
   ['y1', 20, 'Application', false, ['Application']],
@@ -79,7 +79,7 @@ test('config: every benchmark carries its value, definition and full source, nex
   assert.equal(CFG.benchmarks.minN, 20);
   const rows = CFG.benchmarks.rows;
   assert.deepEqual(rows.map((b) => [b.id, b.step, b.low ?? b.value, b.high ?? b.unit]), [
-    ['lead_to_application', 'leadToApplication', 15, 35], ['contract_to_admitted', 'contractToAdmitted', 88, 93],
+    ['lead_to_application', 'leadToApplication', 15, 35], ['contract_to_admitted', 'applicationToAdmitted', 88, 93],
     ['first_reply', 'firstReply', 198, 'min']], 'the first-reply row (07.10.2026): 3 h 18 min, on a 24 h track');
   for (const b of rows) {
     for (const f of NEEDS) assert.ok(b[f] != null && String(b[f]).trim(), `${b.id}: ${f}`);
@@ -92,10 +92,14 @@ test('config: every benchmark carries its value, definition and full source, nex
 
 test('a benchmark without its source is never drawn, and the page holds no benchmark value of its own', () => {
   const { X } = load(ON);
-  const steps = { leadToApplication: { of: 30, pct: 40, ofIds: [], reachedIds: [] }, contractToAdmitted: { of: 5, pct: 80, ofIds: [], reachedIds: [] } };
-  assert.equal(X.cRepBenchRows(steps, ON.benchmarks).length, 2);
+  // the contract row is OFF since the Contract stage was removed (Q75, 07.10.2026); switched on here to test the rule
+  const rows = ON.benchmarks.rows.map((b) => (b.id === 'contract_to_admitted' ? { ...b, on: true } : b));
+  const BON = { ...ON.benchmarks, rows };
+  const steps = { leadToApplication: { of: 30, pct: 40, ofIds: [], reachedIds: [] }, applicationToAdmitted: { of: 5, pct: 80, ofIds: [], reachedIds: [] } };
+  assert.equal(X.cRepBenchRows(steps, BON).length, 2);
+  assert.equal(X.cRepBenchRows(steps, ON.benchmarks).length, 1, 'the parked contract row is not drawn');
   for (const f of NEEDS) {
-    const bad = { ...ON.benchmarks, rows: ON.benchmarks.rows.map((b, i) => (i === 0 ? { ...b, [f]: '' } : b)) };
+    const bad = { ...BON, rows: rows.map((b, i) => (i === 0 ? { ...b, [f]: '' } : b)) };
     assert.deepEqual(X.cRepBenchRows(steps, bad).map((x) => x.b.id), ['contract_to_admitted'], `no ${f}: not drawn`);
   }
   assert.equal(X.cRepBenchRows({}, ON.benchmarks).length, 0, 'no server figure: not drawn');
@@ -110,8 +114,10 @@ test('server: the step rates count matured people who EVER reached the stage, fr
   assert.deepEqual([s.leadToApplication.of, s.leadToApplication.reached, s.leadToApplication.pct], [6, 4, 66.7],
     'm1 m2 m3 m5 reached Application (m2 m3 stopped later); y1 y2 are too young');
   assert.deepEqual(s.leadToApplication.reachedIds, ['m1', 'm2', 'm3', 'm5']);
-  assert.deepEqual([s.contractToAdmitted.of, s.contractToAdmitted.reached, s.contractToAdmitted.pct], [3, 1, 33.3], 'm1 m2 m5 reached Contract; m1 admitted');
-  assert.deepEqual(s.contractToAdmitted.ofIds, ['m1', 'm2', 'm5']);
+  assert.deepEqual([s.applicationToAdmitted.of, s.applicationToAdmitted.reached, s.applicationToAdmitted.pct], [4, 1, 25],
+    'm1 m2 m3 m5 reached Submitted application; m1 admitted');
+  assert.deepEqual(s.applicationToAdmitted.ofIds, ['m1', 'm2', 'm3', 'm5']);
+  assert.equal(s.contractToAdmitted, undefined, 'no step from a stage that no longer exists');
   const r = await report(db, YEAR_TO_TODAY());
   assert.deepEqual(r.steps.leadToApplication.reachedIds, s.leadToApplication.reachedIds, 'the report carries the same figure');
 });
@@ -123,7 +129,7 @@ test('the page: our dot is the server figure; the track (dot) and the working op
   const ctx = load(ON);
   const M = ctx.X.cRepModel(r, people, ON, localDate());
   const B = M.conversion.bench;
-  assert.deepEqual(B.map((x) => [x.b.id, x.pct, x.few]), [['lead_to_application', 66.7, true], ['contract_to_admitted', 33.3, true]]);
+  assert.deepEqual(B.map((x) => [x.b.id, x.pct, x.few]), [['lead_to_application', 66.7, true]], 'the parked contract row is not drawn');
   for (const x of B) {
     const s = r.steps[x.b.step];
     assert.equal(x.pct, s.pct, 'dot = server');

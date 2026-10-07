@@ -52,7 +52,7 @@ const slug = (s) => s.toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '').re
 
 export async function seed(db, { people = 64 } = {}) {
   const now = Date.now();
-  const STAGES = ['New', 'Contacted', 'Follow-up', 'Application', 'Contract', 'Admitted', 'Not proceeding'];
+  const STAGES = ['New', 'Contacted', 'Follow-up', 'Application', 'Admitted', 'Not proceeding'];
   const ins = db.prepare(`INSERT INTO people (id,name,email,phone,programme,study_form,education,status,owner,
     source_channel,source_campaign,source_detail,created_at,last_contact_at,contract_at,admitted_at,student_no,notes)
     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`);
@@ -87,7 +87,7 @@ export async function seed(db, { people = 64 } = {}) {
       status = 'Not proceeding';
     } else {
       const progress = ageDays / typical;
-      if (progress > 1.1 && rnd() < 0.5) { status = 'Contract'; contractAt = daysAgo(int(1, 15), now); }
+      if (progress > 1.1 && rnd() < 0.5) { status = 'Application'; contractAt = daysAgo(int(1, 15), now); }
       else if (progress > 0.7) status = 'Application';
       else if (progress > 0.35) status = 'Follow-up';
       else if (progress > 0.12) status = 'Contacted';
@@ -131,7 +131,7 @@ export async function seed(db, { people = 64 } = {}) {
       else await insEv.run(id, 'channel', pick(['email', 'whatsapp', 'website']), 'in', when, 'Message', pick(['Thank you for the reply!', 'When are the documents due?', 'Can I change the programme?']), null, 'automatic');
     }
 
-    if (['Application', 'Contract', 'Admitted'].includes(status)) {
+    if (['Application', 'Admitted'].includes(status)) {
       for (const d of ['Passport or ID', 'Education certificate', 'Medical certificate', 'Photo']) {
         await insDoc.run(id, d, rnd() < (status === 'Admitted' ? 0.95 : 0.6) ? 'received' : rnd() < 0.5 ? 'missing' : 'expired');
       }
@@ -142,7 +142,7 @@ export async function seed(db, { people = 64 } = {}) {
 
     // the open next action, which is the whole point of the follow-up screen
     if (!['Admitted', 'Not proceeding'].includes(status)) {
-      const label = { New: 'First call', Contacted: 'Follow-up call', 'Follow-up': 'Establish the decision', Application: 'Check the documents', Contract: 'Prepare the contract' }[status] || 'Get in touch';
+      const label = { New: 'First call', Contacted: 'Follow-up call', 'Follow-up': 'Establish the decision', Application: 'Check the documents' }[status] || 'Get in touch';
       const due = daysAgo(int(-9, 14), now); // some overdue, some today, some ahead
       await insTask.run(id, label, due, owner, null, null, created);
     }
