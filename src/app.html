@@ -3767,7 +3767,9 @@ async function viewLeadsC() {
       <select id="qInterest"><option value="">they have not said yet</option>${(CFG.programmes || []).map((pr) => `<option ${pr === read ? 'selected' : ''}>${esc(pr)}</option>`).join('')}</select>
       ${others.length ? `<label>Tick what else is right</label>${others.map((f) => `<label class="c-tick"><input type="checkbox" class="qConfirm" value="${esc(f.field)}" checked> <b>${esc(f.field)}</b> ${esc(f.value)}</label>`).join('')}` : ''}
       <label for="qNext">Next step</label>
-      <select id="qNext">${nextActionOptionsWithSuggestion(sugg)}</select>
+      <div class="c-steprow"><select id="qNext" onchange="onNextActionChange('qNext','qDue','')">${nextActionOptionsWithSuggestion(sugg)}</select><input id="qDue" type="date" value="${cStepDue(sugg.label)}" aria-label="Due date"></div>
+      <label for="qNote">Note</label>
+      <textarea id="qNote" rows="2"></textarea>
       <div id="qErr"></div>
       <div class="c-row-acts"><button class="btn sm" onclick="doQualify(${Number(r.id)})">Make a lead</button><button class="btn sm ghost" onclick="C_LOPEN=null;cInboxPool()">Cancel</button></div>
     </div>`;
@@ -4285,7 +4287,7 @@ function cEditForm(p, t) {
     <div id="pe-closed" hidden><label for="pe-reason">Why are we stopping?</label><select id="pe-reason">${reasonsForStage(p.status).map((r) => `<option>${esc(r)}</option>`).join('')}</select><input id="pe-rnote" placeholder="Explanation (needed for Other)" style="margin-top:6px"><label style="margin-top:8px">And now?</label><div class="cltags">${(CFG.closedTags || []).map((x, i) => `<label class="cltag"><input type="radio" name="peTag" value="${esc(x.id)}"${i === 0 ? ' checked' : ''}><b>${esc(x.label)}</b><small>${esc(x.what)}</small></label>`).join('')}</div></div>
     <div class="c-wide c-step">${t
       ? `<label for="pe-due">Next step</label><div class="c-steprow"><span>${esc(cTask(t.label))}</span><input id="pe-due" type="date" value="${esc(cDay(t.due_at))}" aria-label="Due date"><button class="btn sm ghost" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, false, '${esc(p.id)}')">Done…</button></div>`
-      : open ? `<label for="pe-next">Next step</label><div class="c-steprow"><select id="pe-next"><option value="">No next step</option>${nextActionOptions(null, p.status)}</select><input id="pe-ndue" type="date" value="${cTodayIso()}" aria-label="Due date"></div>` : '<label>Next step</label>'}</div>
+      : open ? `<label for="pe-next">Next step</label><div class="c-steprow"><select id="pe-next" onchange="onNextActionChange('pe-next','pe-ndue','')"><option value="">No next step</option>${nextActionOptions(null, p.status)}</select><input id="pe-ndue" type="date" value="${cTodayIso()}" aria-label="Due date"></div>` : '<label>Next step</label>'}</div>
     <div class="c-wide"><label for="pe-notes">Notes</label><textarea id="pe-notes" rows="4" oninput="this.nextElementSibling.textContent=this.value.length+' characters'">${esc(p.notes || '')}</textarea><div class="c-hint">${(p.notes || '').length} characters</div></div>
     <div id="pe-err" class="c-wide"></div>
     <div class="c-wide c-row-acts"><button class="btn" onclick="cSavePerson('${esc(p.id)}')">Save</button><button class="btn ghost" onclick="C_PEDIT=null;cEditRedraw()">Cancel</button><a class="btn ghost" href="#/person/${esc(p.id)}" style="margin-left:auto">Open person details →</a></div>
@@ -6456,7 +6458,7 @@ function nextActionOptionsWithSuggestion(suggested) {
   const rest = nextActionOptions(null);
   if (!suggested || !suggested.label) return rest;
   return `<optgroup label="Suggested">
-      <option value="${esc(suggested.label)}" selected>${esc(suggested.label)}</option>
+      <option value="${esc(suggested.label)}" selected>${esc(suggested.label)} · ${cStepIn(daysForAction(suggested.label))}</option>
     </optgroup>` + rest;
 }
 
@@ -6477,9 +6479,13 @@ function nextActionOptions(selectedLabel, stage) {
   if (keep.length) groups.unshift({ group: 'Planned now', items: keep });
   const opts = groups.map(g => `<optgroup label="${esc(g.group)}">` +
     g.items.map(i => `<option value="${esc(i.label)}" data-days="${i.days}" data-drives="${esc(i.drives)}"
-      ${i.label === selectedLabel ? 'selected' : ''}>${esc(i.label)}</option>`).join('') + '</optgroup>').join('');
+      ${i.label === selectedLabel ? 'selected' : ''}>${esc(i.label)} · ${cStepIn(i.days)}</option>`).join('') + '</optgroup>').join('');
   return opts;
 }
+// Q70 (07.10.2026): the deadline a step gets is said where it is chosen, "Call and establish interest · 1 day → 08.10"
+const cStepIn = (days) => (days ? `${days} day${days === 1 ? '' : 's'} → ${cDdMm(fmtDate(new Date(Date.now() + days * 86400000)))}` : 'today');
+// Q72: the date field starts at the step's own default; staff can set any other day
+const cStepDue = (label) => fmtDate(new Date(Date.now() + daysForAction(label) * 86400000));
 function daysForAction(label) {
   for (const g of (CFG.nextActions || [])) for (const i of g.items) if (i.label === label) return i.days;
   return 2;
@@ -6492,10 +6498,11 @@ const DRIVES_LABEL = { visit: 'drives towards a visit', application: 'drives tow
 function onNextActionChange(selId, dateId, hintId) {
   const sel = document.querySelector('#' + selId);
   const label = sel.value;
+  if (!label) return;
   const d = new Date(Date.now() + daysForAction(label) * 86400000);
   const date = document.querySelector('#' + dateId);
   if (date) date.value = fmtDate(d);                 // the Riga day, like todayStr()
-  const hint = document.querySelector('#' + hintId);
+  const hint = hintId && document.querySelector('#' + hintId);
   if (hint) hint.textContent = DRIVES_LABEL[drivesFor(label)] || '';
 }
 
@@ -7222,7 +7229,10 @@ async function doQualify(id, opts = {}) {
   const nextAction = (document.querySelector('#qNext') || {}).value || '';
   const qualification = interest ? 'lead' : 'unclear';
   const note = (document.querySelector('#qNote') || {}).value || '';
+  // Q72: the day the person set; none = the step's default, worked out by the server
+  const due = (document.querySelector('#qDue') || {}).value || '';
   const body = { qualification, createPerson: true, note, confirmFields, nextAction,
+    ...(nextAction && due ? { nextActionDue: due + 'T09:00:00.000Z' } : {}),
     stated: interest ? { interest } : {}, ...opts };
   try {
     const r = await post(`/api/intake/${id}/qualify`, body);
@@ -8540,6 +8550,7 @@ function openNewTask(personId) {
     <label>Due</label><input id="tDate" type="date" value="${todayStr()}">
     <div style="margin-top:14px;display:flex;gap:8px"><button class="btn" onclick="doNewTask('${personId}')">Save</button>
     <button class="btn ghost" onclick="closeModal()">Cancel</button></div>`);
+  onNextActionChange('tLabel', 'tDate', 'tHint');
 }
 async function doNewTask(personId) {
   await post(`/api/people/${personId}/task`, { label: $('#tLabel').value, due: $('#tDate').value });

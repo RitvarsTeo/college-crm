@@ -18,7 +18,7 @@ const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
 const CFG = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'prototype.json'), 'utf8'));
 const fn = (name) => { const i = APP.indexOf(name); assert.ok(i >= 0, name); return APP.slice(i, APP.indexOf('\n}\n', i) + 2); };
 
-const ctx = { CFG, esc: (s) => String(s ?? '') };
+const ctx = { CFG, esc: (s) => String(s ?? ''), cStepIn: (d) => d + ' days' };   // Q70: the deadline words, stubbed
 vm.runInNewContext(fn('function stepsForStage(') + fn('function nextActionOptions(') + '\nthis.f = nextActionOptions; this.s = stepsForStage;', ctx);
 const labels = (html) => [...html.matchAll(/<option value="([^"]*)"/g)].map((m) => m[1]);
 const all = CFG.nextActions.flatMap((g) => g.items.map((i) => i.label));

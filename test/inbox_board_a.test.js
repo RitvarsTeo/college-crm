@@ -85,7 +85,7 @@ test('the action is on the card: "Make a lead" opens the small form, "Set aside"
   const form = fnBody('async function viewLeadsC() {');
   assert.match(form, /<div class="ib-form" onclick="event\.stopPropagation\(\)"/);
   assert.match(form, /<label for="qInterest">Programme<\/label>\s*<select id="qInterest">/);
-  assert.match(form, /<label for="qNext">Next step<\/label>\s*<select id="qNext">/);
+  assert.match(form, /<label for="qNext">Next step<\/label>\s*<div class="c-steprow"><select id="qNext" onchange="onNextActionChange\('qNext','qDue',''\)">/);
   assert.match(form, /<div id="qErr"><\/div>/);
   assert.match(form, /<button class="btn sm" onclick="doQualify\(\$\{Number\(r\.id\)\}\)">Make a lead<\/button><button class="btn sm ghost" onclick="C_LOPEN=null;cInboxPool\(\)">Cancel<\/button>/);
   assert.match(fnBody('async function openArchive(id) {'), /Nothing is deleted\./, 'set aside: the reason dialog, nothing deleted');

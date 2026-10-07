@@ -14,6 +14,23 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 07.10.2026 - Q70, Q71, Q72: a step says its deadline, the day can be changed, the Inbox takes a note
+
+The owner's task list through MASTER CONTROL, 07.10.2026 ("keep it stupid simple"). Branch `ui/2026-10-07-next-steps`
+from release `f45340e` (patch 31), worktree `crm-main-steps`.
+
+| What | Status |
+|---|---|
+| Q70: every step in every picker says its default days and the day it lands on: "Call and establish interest · 1 day → 08.10"; a 0-day step (Call back) says "today". The days are config.nextActions, unchanged; the values wait for Ritvars / Ieva to approve them | BUILT |
+| Q71: the Inbox card has a Note under the next step. It goes on the person's History with "Qualified from ...", as the classic dialog's note always did | BUILT |
+| Q72: the Inbox card has a due date beside the step. It starts on the step's default day and follows the step; staff can set any day. Saved at 09:00 like every other date field | BUILT |
+| Q72: Journey quick edit (no step yet): the date follows the step, it used to stay on today | BUILT |
+| Q72: "Choose next step" opens on the first step's default day, it used to open on today. Done (Due, person page) already followed the step | BUILT |
+| Q72 server: qualify() keeps the day sent when it is a real date; none or a broken one = the step's default | BUILT |
+| Help center: FAQ "When is a next step due?" | BUILT |
+| test/step_deadline_q70.test.js runs the pickers, the server and Help | BUILT |
+| Known: on the narrow Inbox card the closed dropdown cuts the words after the step name; the date beside it shows the day. The open list shows the whole line | SAID |
+
 ## 07.10.2026 - The target meters say what they are (DECIDED 07.10: "Yes, label them")
 
 Ritvars, about the two meters on the Admitted card ("86% of 140", "NAV + ENG 94 · 96% of 98"): "what is this? Has no

@@ -590,7 +590,9 @@ export async function qualify(db, id, { qualification, personId, createPerson, b
 
   // The next step, with an owner and a due date, so nobody can come to rest here.
   if (String(nextAction || '').trim()) {
-    const due = nextActionDue || defaultDueFor(nextAction, at);
+    // Q72: the day staff set, when it is a real date; otherwise the step's own default
+    const set = Date.parse(nextActionDue || '');
+    const due = Number.isFinite(set) ? new Date(set).toISOString() : defaultDueFor(nextAction, at);
     await db.prepare('INSERT INTO tasks (person_id,label,due_at,owner,created_at) VALUES (?,?,?,?,?)')
       .run(pid, String(nextAction).trim(), due, ownerFor(qualification), at);
     await logEvent(db, { personId: pid, kind: 'task', direction: 'note', at, origin: MANUAL, actor: by,

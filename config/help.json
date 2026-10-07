@@ -159,6 +159,11 @@
       "a": "On Journey, drag the person to the next stage when something real has happened. Click a person to see their details and their next step."
     },
     {
+      "id": "step-due",
+      "q": "When is a next step due?",
+      "a": "Each step has its own number of days, shown where you choose it, for example Call and establish interest · 1 day → 08.10. The date starts on that day; pick another day if you need to. In the Inbox you can add a note too."
+    },
+    {
       "id": "first-reply",
       "q": "What is \"Email reply sent\" in a person's History?",
       "a": "Intake reads when edu@ first replied to an email enquiry: only the time of the first reply sent from edu@ in that conversation, never its text. For a call, the reply is the first answered call."
