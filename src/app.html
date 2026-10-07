@@ -3506,7 +3506,7 @@ async function viewTodayC() {
   const reach = (p) => (!p ? '' : `<small class="c-reach">${cReach(p) || '<span class="c-gap">no email or phone</span>'}</small>`);
   const said = (p) => (p && cComment(p) ? `<small class="c-nnote" title="${esc(p.last_comment || p.notes)}">${esc(cComment(p))}</small>` : '');
   const done = (t) => `<button class="btn sm" onclick="event.stopPropagation();openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, ${
-        C_TERMINAL.includes((byId.get(t.person_id) || {}).status)}, '${esc(t.person_id)}')">Done</button>`;
+        C_TERMINAL.includes((byId.get(t.person_id) || {}).status)}, ${esc(JSON.stringify(String(t.person_id ?? '')))})">Done</button>`;
   // ONE ROW PER PERSON (Q43, the owner 05.10.2026: the app is about finding people), so Home's Overdue / Due today -
   // a count of people - is the number of rows that open. Somebody with several tasks keeps them all inside the row.
   const pTasks = (ts) => ts.length === 1 ? tRow(ts[0]) : `<div class="c-line" tabindex="0" onclick="location.hash='#/person/${esc(ts[0].person_id)}'">
@@ -3517,7 +3517,7 @@ async function viewTodayC() {
       <div class="c-who"><b>${esc(t.name)}</b><small>${esc(t.programme || 'programme not said')} · ${esc(t.status)}</small>${reach(byId.get(t.person_id))}</div>
       <div class="c-what">${cStepIcon(t.label)}${esc(cTask(t.label))}${said(byId.get(t.person_id))}</div><div class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</div>
       <div class="c-acts"><button class="btn sm" onclick="event.stopPropagation();openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, ${
-        C_TERMINAL.includes((byId.get(t.person_id) || {}).status)}, '${esc(t.person_id)}')">Done</button></div></div>`;
+        C_TERMINAL.includes((byId.get(t.person_id) || {}).status)}, ${esc(JSON.stringify(String(t.person_id ?? '')))})">Done</button></div></div>`;
   const pRow = (p) => `<div class="c-line is-none" tabindex="0" onclick="location.hash='#/person/${esc(p.id)}'">
       <div class="c-who"><b>${esc(p.name)}</b><small>${esc(p.programme || 'programme not said')} · ${esc(p.status)}</small>${reach(p)}</div>
       <div class="c-what">${said(p)}</div><div class="c-when"></div>
@@ -3943,7 +3943,7 @@ function cTodayBoard(D, groups) {
   const pick = (pid, col) => (C_TP.pick && C_TP.pick.pid === pid && C_TP.pick.from === col
     ? `<div class="t-pick" onclick="event.stopPropagation()" ondragstart="event.preventDefault()">
         <label for="tPickDate">New date</label><input id="tPickDate" type="date" min="${tomorrow}" value="${tomorrow}">
-        <div class="c-row-acts"><button class="btn sm" onclick="cTodayMoveTo('${esc(pid)}', '${col}', document.getElementById('tPickDate').value)">Save</button>
+        <div class="c-row-acts"><button class="btn sm" onclick="cTodayMoveTo(${esc(JSON.stringify(String(pid ?? '')))}, '${col}', document.getElementById('tPickDate').value)">Save</button>
         <button class="btn sm ghost" onclick="C_TP.pick=null;cTodayPool()">Cancel</button></div></div>` : '');
   const card = (ts, col) => { const t0 = ts[0]; const pid = t0.person_id;
     const w = col === 'over' ? ' is-over' : col === 'today' ? ' is-today' : '';
@@ -4183,7 +4183,7 @@ function cDrawJourneyPool() {
       : t ? cStepIcon(t.label) + esc(cTask(t.label)) : cSisHolds(p) ? cSisHeld(p) : '';
     // a click opens the row in place, People's edit (name, contact, programme, stage, next step, notes); the person
     // page is one more click from there
-    return `<div class="c-line${open && !t && !cSisHolds(p) ? ' is-none' : ''}${C_PEDIT === p.id ? ' c-sel' : ''}" tabindex="0" onclick="C_PEDIT=${C_PEDIT === p.id ? 'null' : `'${esc(p.id)}'`};C_PMSG='';cDrawJourneyPool()">
+    return `<div class="c-line${open && !t && !cSisHolds(p) ? ' is-none' : ''}${C_PEDIT === p.id ? ' c-sel' : ''}" tabindex="0" onclick="C_PEDIT=${C_PEDIT === p.id ? 'null' : `${esc(JSON.stringify(String(p.id ?? '')))}`};C_PMSG='';cDrawJourneyPool()">
       <div class="c-who"><b>${esc(p.name)}</b><small class="c-reach ${p.email || p.phone ? '' : 'c-gap'}">${p.email || p.phone ? cReach(p) : 'no contact details'}</small>${p.status === closed ? cSameMark(p, people) : ''}</div>
       <div class="c-what"><span class="p-stage">${esc(cStage(p.status))}</span> · ${esc(p.programme || 'programme not said')}<small class="p-step">${step}</small></div>
       <div class="c-when">${t ? `<span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span>` : ''}</div>
@@ -4272,11 +4272,11 @@ function cEditForm(p, t) {
     <div><label for="pe-status">Stage</label><select id="pe-status" onchange="document.querySelector('#pe-closed').hidden = this.value !== ${esc(JSON.stringify(closed))}">${stages.map((s) => `<option value="${esc(s.id)}" ${s.id === p.status ? 'selected' : ''}>${esc(s.label || s.id)}</option>`).join('')}</select></div>
     <div id="pe-closed" hidden><label for="pe-reason">Why are we stopping?</label><select id="pe-reason">${reasonsForStage(p.status).map((r) => `<option>${esc(r)}</option>`).join('')}</select><input id="pe-rnote" placeholder="Explanation (needed for Other)" style="margin-top:6px"><label style="margin-top:8px">And now?</label><div class="cltags">${(CFG.closedTags || []).map((x, i) => `<label class="cltag"><input type="radio" name="peTag" value="${esc(x.id)}"${i === 0 ? ' checked' : ''}><b>${esc(x.label)}</b><small>${esc(x.what)}</small></label>`).join('')}</div></div>
     <div class="c-wide c-step">${t
-      ? `<label for="pe-due">Next step</label><div class="c-steprow"><span>${esc(cTask(t.label))}</span><input id="pe-due" type="date" value="${esc(cDay(t.due_at))}" aria-label="Due date"><button class="btn sm ghost" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, false, '${esc(p.id)}')">Done…</button></div>`
+      ? `<label for="pe-due">Next step</label><div class="c-steprow"><span>${esc(cTask(t.label))}</span><input id="pe-due" type="date" value="${esc(cDay(t.due_at))}" aria-label="Due date"><button class="btn sm ghost" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, false, ${esc(JSON.stringify(String(p.id ?? '')))})">Done…</button></div>`
       : open ? `<label for="pe-next">Next step</label><div class="c-steprow"><select id="pe-next"><option value="">No next step</option>${nextActionOptions(null, p.status)}</select><input id="pe-ndue" type="date" value="${cTodayIso()}" aria-label="Due date"></div>` : '<label>Next step</label>'}</div>
     <div class="c-wide"><label for="pe-notes">Notes</label><textarea id="pe-notes" rows="4" oninput="this.nextElementSibling.textContent=this.value.length+' characters'">${esc(p.notes || '')}</textarea><div class="c-hint">${(p.notes || '').length} characters</div></div>
     <div id="pe-err" class="c-wide"></div>
-    <div class="c-wide c-row-acts"><button class="btn" onclick="cSavePerson('${esc(p.id)}')">Save</button><button class="btn ghost" onclick="C_PEDIT=null;cEditRedraw()">Cancel</button><a class="btn ghost" href="#/person/${esc(p.id)}" style="margin-left:auto">Open person details →</a></div>
+    <div class="c-wide c-row-acts"><button class="btn" onclick="cSavePerson(${esc(JSON.stringify(String(p.id ?? '')))})">Save</button><button class="btn ghost" onclick="C_PEDIT=null;cEditRedraw()">Cancel</button><a class="btn ghost" href="#/person/${esc(p.id)}" style="margin-left:auto">Open person details →</a></div>
   </div>`;
 }
 async function cSavePerson(id) {
@@ -4397,7 +4397,7 @@ function cTalkHtml(p) {
   const more = rows.length - shown.length;
   return `<div class="c-talk">
     <h4>What was said<b>${rows.length}</b>
-      <span class="c-talk-acts"><button class="btn sm ghost" onclick="event.stopPropagation();openNote('${esc(p.id)}','call')">Log a call</button><button class="btn sm ghost" onclick="event.stopPropagation();openNote('${esc(p.id)}','note')">Add a note</button></span></h4>
+      <span class="c-talk-acts"><button class="btn sm ghost" onclick="event.stopPropagation();openNote(${esc(JSON.stringify(String(p.id ?? '')))},'call')">Log a call</button><button class="btn sm ghost" onclick="event.stopPropagation();openNote(${esc(JSON.stringify(String(p.id ?? '')))},'note')">Add a note</button></span></h4>
     ${shown.length ? shown.map((e) => `<div class="c-talkrow">
         <div class="c-talk-when">${cStamp(e.occurred_at)}${e.actor ? ' · ' + esc(actorName(e.actor)) : ''}${e.kind === 'call' ? ' · call' : ''}</div>
         <div class="c-talk-what">${esc(e.body || e.subject || '')}</div>
@@ -4413,18 +4413,18 @@ function cPersonCard(p, t) {
   const notes = String(p.notes || '');
   return `<aside class="c-card"><h2>${esc(p.name)}</h2> <div class="c-cardsub">${esc(cStage(p.status))} · ${esc(p.programme || 'programme not said')}</div>${cLifeLine(p)}
     <div class="c-next ${open && !t && !cSisHolds(p) ? 'none' : ''}"><b>${open ? 'Next step' : 'Outcome'}</b>${open ? (t ? `${esc(cTask(t.label))} · <span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span>` : cSisHolds(p) ? cSisHeld(p) : 'No next step') : esc(p.status)}
-      ${open ? `<div class="c-row-acts">${t ? `<button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, false, '${esc(p.id)}')">Done</button>` : `${cChooseNext(p.id)}`}</div>` : ''}</div>
+      ${open ? `<div class="c-row-acts">${t ? `<button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, false, ${esc(JSON.stringify(String(p.id ?? '')))})">Done</button>` : `${cChooseNext(p.id)}`}</div>` : ''}</div>
     <dl><dt>Email</dt><dd class="${p.email ? 'c-reach' : 'c-gap'}">${cMailLink(p) || 'not recorded'}</dd><dt>Phone</dt><dd class="${p.phone ? 'c-reach' : 'c-gap'}">${cTelLink(p) || 'not recorded'}</dd>
       <dt>Came from</dt><dd>${esc(cChannel(p.source_channel)[0])}</dd><dt>First contact</dt><dd class="${p.created_at ? '' : 'c-gap'}">${p.created_at ? fmtDate(p.created_at) : 'not recorded'}</dd></dl>
     ${cTalkHtml(p)}
     ${notes ? `<div class="c-notes">${esc(notes.length > 260 ? notes.slice(0, 260) + '…' : notes)}</div>` : ''}
-    <div class="c-row-acts">${open ? `<button class="btn sm ghost c-move" onclick="cEditFromJourney('${esc(p.id)}')">Move</button>` : ''}<button class="btn sm ghost" onclick="cEditFromJourney('${esc(p.id)}')">Edit</button><a class="btn sm ghost" href="#/person/${esc(p.id)}">Details →</a></div></aside>`;
+    <div class="c-row-acts">${open ? `<button class="btn sm ghost c-move" onclick="cEditFromJourney(${esc(JSON.stringify(String(p.id ?? '')))})">Move</button>` : ''}<button class="btn sm ghost" onclick="cEditFromJourney(${esc(JSON.stringify(String(p.id ?? '')))})">Edit</button><a class="btn sm ghost" href="#/person/${esc(p.id)}">Details →</a></div></aside>`;
 }
 // NO NEXT STEP IS A MARK AND AN ACTION (Q44, the owner 05.10.2026: "the no next step prmopt is tooo soft"). Signal
 // amber is the card's EDGE, never the text colour (KB 08 P5), and in place of the soft line there is the action itself:
 // "Choose next step" opens the next-step dialog right there for that person. The same on the Journey, Today and the
 // person page; the counts of such people stay where they are.
-const cChooseNext = (id) => `<button type="button" class="btn sm c-choose" onclick="event.stopPropagation();openNewTask('${esc(id)}')" onkeydown="event.stopPropagation()">Choose next step</button>`;
+const cChooseNext = (id) => `<button type="button" class="btn sm c-choose" onclick="event.stopPropagation();openNewTask(${esc(JSON.stringify(String(id ?? '')))})" onkeydown="event.stopPropagation()">Choose next step</button>`;
 // JOURNEY CARD (the review' feedback #2, 28.09.2026): the name first, then the NEXT STEP as the clearest
 // line on the card - an arrow, ink, with its due day under it. Overdue is red and gives the card a
 // red edge; today is amber text only; an ordinary day is quiet. No next step has the amber EDGE and the button to
@@ -4564,18 +4564,18 @@ function cStepState(p, t) {
   return ['none', ''];
 }
 const cStepGroup = (p, t) => { const st = cStepState(p, t)[0]; return st === 'today' || st === 'due' ? 'plan' : st; };
-const cChooseOnCard = (id) => `<button type="button" class="c-st-act" onclick="event.stopPropagation();openNewTask('${esc(id)}')" onkeydown="event.stopPropagation()">Choose ›</button>`;
+const cChooseOnCard = (id) => `<button type="button" class="c-st-act" onclick="event.stopPropagation();openNewTask(${esc(JSON.stringify(String(id ?? '')))})" onkeydown="event.stopPropagation()">Choose ›</button>`;
 const C_GRP = { over: 'Overdue', plan: 'Planned', none: 'No next step', sis: 'With the SIS' };
 // the band over a group inside a column: its name and how many of the column's people are in that state; the Overdue
 // band opens the stage's overdue filter, as the header's red pill did before it
-const cGroupBand = (g, n, stage) => `<div class="c-grp c-grp-${g}"${g === 'over' ? ` role="button" tabindex="0" onclick="event.stopPropagation();cJfOverdue('${esc(stage)}')" onkeydown="if(event.key==='Enter')cJfOverdue('${esc(stage)}')"` : ''}><span>${C_GRP[g]}</span><b>${n}</b></div>`;
+const cGroupBand = (g, n, stage) => `<div class="c-grp c-grp-${g}"${g === 'over' ? ` role="button" tabindex="0" onclick="event.stopPropagation();cJfOverdue(${esc(JSON.stringify(String(stage ?? '')))})" onkeydown="if(event.key==='Enter')cJfOverdue(${esc(JSON.stringify(String(stage ?? '')))})"` : ''}><span>${C_GRP[g]}</span><b>${n}</b></div>`;
 function cJourneyCard(p, t, sel) {
   const [st, detail] = cStepState(p, t);
   const cls = ['c-jp', 'row', 'c-rail', 'c-rail-' + C_ST_RAIL[st], sel && p.id === sel.id ? 'c-sel' : '', st === 'over' ? 'is-over' : '', st === 'today' ? 'is-today' : '', st === 'none' ? 'is-none' : ''].filter(Boolean).join(' ');
   // the SIS facts stay on a card that has a step; a card the SIS holds says so on its state line instead
   const life = st === 'sis' ? '' : p.sis ? `<small class="c-jlife" title="In the SIS${p.sis.since ? ', by ' + esc(cDay(p.sis.since)) : ''}">SIS: ${esc(p.sis.label)}</small>`
     : cLifeFacts(p).map(([, at, short]) => `<small class="c-jlife" title="From the SIS, by ${esc(cDay(at))}">${esc(short)}</small>`).join('');
-  return `<div class="${cls}" draggable="true" data-id="${esc(p.id)}" tabindex="0" onclick="cJOpen('${esc(p.id)}')" onkeydown="if(event.key==='Enter')cJOpen('${esc(p.id)}')"><b>${esc(p.name)}</b>${life}${t
+  return `<div class="${cls}" draggable="true" data-id="${esc(p.id)}" tabindex="0" onclick="cJOpen(${esc(JSON.stringify(String(p.id ?? '')))})" onkeydown="if(event.key==='Enter')cJOpen(${esc(JSON.stringify(String(p.id ?? '')))})"><b>${esc(p.name)}</b>${life}${t
     ? `<span class="c-jnext">${cStepIcon(t.label)}<span>${esc(cTask(t.label))}</span></span>` : ''}${cComment(p) ? `<small class="c-jnote" title="${esc(p.last_comment || p.notes)}">${esc(cComment(p))}</small>` : ''}${
     cStateLine(st, detail, st === 'none' ? cChooseOnCard(p.id) : '')}</div>`;
 }
@@ -4834,16 +4834,16 @@ function cJColumn(stageId, ps, taskOf, sel) {
     ? `<div class="c-jexp" data-id="${esc(p.id)}"><button type="button" class="c-jexp-x" aria-label="Close" onclick="event.stopPropagation();cJClose()">✕</button>${C_PEDIT === p.id ? `<div class="c-card c-jedit">${cEditForm(p, taskOf.get(p.id))}</div>` : cPersonCard(p, taskOf.get(p.id))}</div>`
     : C_TERMINAL.includes(p.status) ? cJEndCard(p, sel) : cJourneyCard(p, taskOf.get(p.id), sel)); }).join('');
   const more = rest > 0
-    ? `<button type="button" class="c-jmore" onclick="event.stopPropagation();cJColToggle('${esc(stageId)}')">${rest} more</button>`
+    ? `<button type="button" class="c-jmore" onclick="event.stopPropagation();cJColToggle(${esc(JSON.stringify(String(stageId ?? '')))})">${rest} more</button>`
     : open && sorted.length > C_JCOL_SHOW
-      ? `<button type="button" class="c-jmore" onclick="event.stopPropagation();cJColToggle('${esc(stageId)}')">Show fewer</button>` : '';
+      ? `<button type="button" class="c-jmore" onclick="event.stopPropagation();cJColToggle(${esc(JSON.stringify(String(stageId ?? '')))})">Show fewer</button>` : '';
   return cards + more;
 }
 // An end-column card (Q57) says how the journey ended - the date admitted, or the tag and the reason - never "Choose
 // next step". It still opens and edits in place; it is dragged back only through a stage's own column (a note asked).
 function cJEndCard(p, sel) {
   const closed = p.status === ((CFG.stageRoles || {}).closed || 'Not proceeding');
-  return `<div class="c-jp row c-jend${sel && p.id === sel.id ? ' c-sel' : ''}" draggable="true" data-id="${esc(p.id)}" tabindex="0" onclick="cJOpen('${esc(p.id)}')" onkeydown="if(event.key==='Enter')cJOpen('${esc(p.id)}')"><b>${esc(p.name)}</b><small class="c-jout">${closed
+  return `<div class="c-jp row c-jend${sel && p.id === sel.id ? ' c-sel' : ''}" draggable="true" data-id="${esc(p.id)}" tabindex="0" onclick="cJOpen(${esc(JSON.stringify(String(p.id ?? '')))})" onkeydown="if(event.key==='Enter')cJOpen(${esc(JSON.stringify(String(p.id ?? '')))})"><b>${esc(p.name)}</b><small class="c-jout">${closed
     ? `${p.closed_tag ? cTagChip(p.closed_tag) : ''}${cColdWhy(p)}` : `Admitted${p.admitted_at ? ' ' + esc(fmtDate(p.admitted_at)) : ''}`}</small></div>`;
 }
 function cJColToggle(id) { if (C_JCOLOPEN.has(id)) C_JCOLOPEN.delete(id); else C_JCOLOPEN.add(id); cDrawJourney(); }
@@ -4941,7 +4941,7 @@ function cDrawJourney() {
       <div class="c-cols" style="grid-template-columns:${stages.map((s) => (sel && sel.status === s.id ? 'minmax(330px, 2.4fr)' : 'minmax(150px, 1fr)')).join(' ')}">${stages.map((s, i) => { const ps = open.filter((p) => p.status === s.id);
         // an end column is a place to look, not a drop target: a close needs its reason (the edit form asks it)
         if (C_TERMINAL.includes(s.id)) return `<div class="c-col c-col-end${s.id === (CFG.stageRoles || {}).admitted ? ' good' : ''}" style="--jt:1"><h3>${esc(s.label || s.id)}</h3><div class="c-endcol" data-stage="${esc(s.id)}">${cJColumn(s.id, ps, taskOf, sel) || '<div class="c-empty" style="padding:8px">empty</div>'}</div></div>`;
-        if (phone && s.id !== openStage) return `<div class="c-col is-fold" style="--jt:${((i + 1) / stages.length).toFixed(3)}"><button type="button" class="c-foldrow" onclick="cJStageTap('${esc(s.id)}')"><span class="c-jn">${i + 1}</span>${esc(s.label || s.id)}<b>${ps.length}</b></button></div>`;
+        if (phone && s.id !== openStage) return `<div class="c-col is-fold" style="--jt:${((i + 1) / stages.length).toFixed(3)}"><button type="button" class="c-foldrow" onclick="cJStageTap(${esc(JSON.stringify(String(s.id ?? '')))})"><span class="c-jn">${i + 1}</span>${esc(s.label || s.id)}<b>${ps.length}</b></button></div>`;
         return `<div class="c-col" style="--jt:${((i + 1) / stages.length).toFixed(3)}"><h3><span class="c-jn">${i + 1}</span>${esc(s.label || s.id)}</h3><div class="c-drop" data-stage="${esc(s.id)}">${cJColumn(s.id, ps, taskOf, sel) || '<div class="c-empty" style="padding:8px">empty</div>'}</div></div>`; }).join('')}</div>
     </div></div>`;
   if (C_JDATA.play) cScenes($('#view'));
@@ -5000,18 +5000,18 @@ async function viewPersonC(id) {
       ${e.field ? `<div class="c-evt-diff"><s>${esc(e.old_value ?? '(empty)')}</s> → <b>${esc(e.new_value ?? '(empty)')}</b></div>` : (e.body ? `<div class="c-evt-body">${esc(e.body)}</div>` : '')}</div>`;
   const next = open
     ? (t ? `<div class="c-next"><b>Next step</b><div class="c-next-row"><span>${esc(cTask(t.label))}</span><span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span>${t.owner ? `<span class="c-gap-soft">${esc(t.owner)}</span>` : ''}</div>
-        <div class="c-row-acts"><button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, false, '${esc(p.id)}')">Done</button><button class="btn sm ghost" onclick="openReschedule(${Number(t.id)})">Move the date</button></div></div>`
-      : cSisHolds(p) ? `<div class="c-next"><b>Next step</b>${cSisHeld(p)}<div class="c-row-acts"><button class="btn sm ghost" onclick="openNewTask('${esc(p.id)}')">Plan a next step</button></div></div>`
+        <div class="c-row-acts"><button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, false, ${esc(JSON.stringify(String(p.id ?? '')))})">Done</button><button class="btn sm ghost" onclick="openReschedule(${Number(t.id)})">Move the date</button></div></div>`
+      : cSisHolds(p) ? `<div class="c-next"><b>Next step</b>${cSisHeld(p)}<div class="c-row-acts"><button class="btn sm ghost" onclick="openNewTask(${esc(JSON.stringify(String(p.id ?? '')))})">Plan a next step</button></div></div>`
       : `<div class="c-next none"><b>Next step</b>No next step<div class="c-row-acts">${cChooseNext(p.id)}</div></div>`)
     : `<div class="c-next c-finished"><b>Outcome</b>${p.status === (CFG.stageRoles || {}).closed ? `<span class="c-no">✕</span>${esc(cStage(p.status))}${cTagLabel(p) ? ' · ' + esc(cTagLabel(p)) : ''}${p.closed_reason ? ' · ' + esc(p.closed_reason) : ' · <span class="c-gap">reason not recorded</span>'}${p.closed_note ? `<div class="c-evt-body">${esc(p.closed_note)}</div>` : ''}` : `<span class="c-ok">✓</span>${esc(cStage(p.status))}${p.admitted_at ? ' on ' + fmtDate(p.admitted_at) : ''}`}${t ? `
         <div class="c-still"><b>Still open</b><div class="c-next-row"><span>${esc(cTask(t.label))}</span><span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span></div>
-        <div class="c-row-acts"><button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, true, '${esc(p.id)}')">Done</button><button class="btn sm ghost" onclick="openReschedule(${Number(t.id)})">Move the date</button></div></div>` : ''}</div>`;
+        <div class="c-row-acts"><button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, true, ${esc(JSON.stringify(String(p.id ?? '')))})">Done</button><button class="btn sm ghost" onclick="openReschedule(${Number(t.id)})">Move the date</button></div></div>` : ''}</div>`;
   $('#view').innerHTML = `<p class="c-crumb"><a href="#/people">People</a></p>
-    <div class="c-head"><div><h1 class="c-pname">${esc(p.name)}</h1><p>${esc(cStage(p.status))} · ${esc(p.programme || 'programme not said')}${p.study_form ? ' · ' + esc(p.study_form) : ''} · ${contact || '<span class="c-gap">no email or phone recorded</span>'}</p></div>${p.first_channel === 'sis' ? `<div class="act"><button class="btn ghost" onclick="openSisMerge('${esc(p.id)}')">Same person as...</button></div>` : ''}</div>
+    <div class="c-head"><div><h1 class="c-pname">${esc(p.name)}</h1><p>${esc(cStage(p.status))} · ${esc(p.programme || 'programme not said')}${p.study_form ? ' · ' + esc(p.study_form) : ''} · ${contact || '<span class="c-gap">no email or phone recorded</span>'}</p></div>${p.first_channel === 'sis' ? `<div class="act"><button class="btn ghost" onclick="openSisMerge(${esc(JSON.stringify(String(p.id ?? '')))})">Same person as...</button></div>` : ''}</div>
     <div class="c-pgrid">
       <div class="c-pmain">
         ${cLifeLine(p)}${next}
-        <div class="c-sheet"><h3>History<b>${tl.length}</b><span class="c-h3acts"><button class="btn sm ghost" onclick="openNote('${esc(p.id)}','call')">Log a call</button><button class="btn sm ghost" onclick="openNote('${esc(p.id)}','note')">Add a note</button></span></h3>
+        <div class="c-sheet"><h3>History<b>${tl.length}</b><span class="c-h3acts"><button class="btn sm ghost" onclick="openNote(${esc(JSON.stringify(String(p.id ?? '')))},'call')">Log a call</button><button class="btn sm ghost" onclick="openNote(${esc(JSON.stringify(String(p.id ?? '')))},'note')">Add a note</button></span></h3>
           ${p.hiddenCorrections ? `<p class="c-ev" style="margin:10px 16px 0">${p.hiddenCorrections} ${p.hiddenCorrections === 1 ? 'correction made by a colleague is' : 'corrections made by colleagues are'} not shown. Corrections are private to whoever made them; admins see all of them.</p>` : ''}
           ${tl.map(ev).join('') || '<div class="c-empty">Nothing has happened yet.</div>'}</div>
       </div>
@@ -5024,7 +5024,7 @@ function cPersonFacts(p) {
   const row = (k, v, gap) => `<dt>${k}</dt><dd>${v ? v : `<span class="c-gap">${gap || 'not recorded'}</span>`}</dd>`;
   if (C_PERSON_EDIT) return cPersonForm(p);
   const stages = CFG.stages || [];
-  return `<div class="c-sheet c-facts"><h3>Details<span class="c-h3acts"><button class="btn sm ghost" onclick="C_PERSON_EDIT=true;viewPersonC('${esc(p.id)}')">Edit</button></span></h3><dl>
+  return `<div class="c-sheet c-facts"><h3>Details<span class="c-h3acts"><button class="btn sm ghost" onclick="C_PERSON_EDIT=true;viewPersonC(${esc(JSON.stringify(String(p.id ?? '')))})">Edit</button></span></h3><dl>
       ${row('Email', esc(p.email || ''))}${row('Phone', esc(p.phone || ''))}
       ${row('Programme', p.programme ? esc(p.programme) + (known.has(p.programme) ? '' : ' <span class="c-tag">not in list</span>') : '', 'not said')}
       ${row('Study form', esc(p.study_form || ''))}${row('Education', esc(p.education || ''))}${row('Nationality', esc(p.nationality || ''))}
@@ -5038,8 +5038,8 @@ function cPersonFacts(p) {
     </dl>
     ${p.notes ? `<div class="c-notes${p.notes.length > 240 ? ' c-clamp' : ''}">${esc(p.notes)}</div>${p.notes.length > 240 ? `<button class="c-more" onclick="const n=this.previousElementSibling;n.classList.toggle('c-clamp');this.textContent=n.classList.contains('c-clamp')?'Show all ${p.notes.length} characters':'Show less'">Show all ${p.notes.length} characters</button>` : ''}` : ''}</div>
     <div class="c-sheet c-facts"><h3>Stage</h3><div class="c-pad">
-      <select id="cStage" aria-label="Stage" onchange="changeStatus('${esc(p.id)}', this.value)">${stages.map((s) => `<option value="${esc(s.id)}" ${s.id === p.status ? 'selected' : ''}>${esc(s.label || s.id)}</option>`).join('')}</select>
-      ${p.status === (CFG.stageRoles || {}).admitted ? (p.sis_handoff_at ? `<p class="c-hint">Handed to the SIS on ${fmtDate(p.sis_handoff_at)}</p>` : `<button class="btn sm ghost" onclick="doSisHandoff('${esc(p.id)}')">Hand over to SIS</button>`) : ''}
+      <select id="cStage" aria-label="Stage" onchange="changeStatus(${esc(JSON.stringify(String(p.id ?? '')))}, this.value)">${stages.map((s) => `<option value="${esc(s.id)}" ${s.id === p.status ? 'selected' : ''}>${esc(s.label || s.id)}</option>`).join('')}</select>
+      ${p.status === (CFG.stageRoles || {}).admitted ? (p.sis_handoff_at ? `<p class="c-hint">Handed to the SIS on ${fmtDate(p.sis_handoff_at)}</p>` : `<button class="btn sm ghost" onclick="doSisHandoff(${esc(JSON.stringify(String(p.id ?? '')))})">Hand over to SIS</button>`) : ''}
     </div></div>
     ${p.qualification || (p.fields || []).length ? `<div class="c-sheet c-facts"><h3>From their first message</h3><div class="c-pad">
       ${p.qualification ? `<p class="c-line2">${qualChip(p.qualification)} ${p.routedTo ? 'routed to <b>' + esc(p.routedTo) + '</b>' : ''} · arrived on ${esc(channelLabel(p.first_channel || p.source_channel))}</p>` : ''}
@@ -5062,7 +5062,7 @@ function cPersonForm(p) {
   };
   return `<div class="c-sheet c-facts"><h3>Edit details</h3><div class="c-pad"><div class="c-form c-form1">${EDIT_FIELDS.map(field).join('')}
       <div id="pfErr" class="c-wide"></div>
-      <div class="c-wide c-row-acts" style="margin-top:4px"><button class="btn" onclick="cSavePersonPage('${esc(p.id)}')">Save</button><button class="btn ghost" onclick="C_PERSON_EDIT=false;viewPersonC('${esc(p.id)}')">Cancel</button></div>
+      <div class="c-wide c-row-acts" style="margin-top:4px"><button class="btn" onclick="cSavePersonPage(${esc(JSON.stringify(String(p.id ?? '')))})">Save</button><button class="btn ghost" onclick="C_PERSON_EDIT=false;viewPersonC(${esc(JSON.stringify(String(p.id ?? '')))})">Cancel</button></div>
       <p class="c-hint c-wide">Where they came from and the first contact date are locked. Every change is written to the history with the old value, the new value and ${AUTH.user ? 'your name' : 'the name picked in the sidebar'}.</p></div></div></div>`;
 }
 async function cSavePersonPage(id) {
@@ -5758,7 +5758,11 @@ async function drawWaiting() {
     }
   } catch { box.innerHTML = ''; }
 }
-const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// AUDIT H2 (07.10.2026): a value handed to JavaScript inside an on...="" attribute is written
+// ${esc(JSON.stringify(String(value ?? '')))}, never '${esc(value)}'. The browser decodes HTML
+// entities BEFORE it runs the handler, so esc() alone let a task label like ');reset();// break
+// out. JSON.stringify makes a safe JS string, and esc() then makes that safe inside the attribute.
 // Times are stored as UTC instants and shown where the college actually is, so
 // the working hours (09:00-17:00) read as Riga hours on the screen and not as UTC.
 const TZ = 'Europe/Riga';
@@ -5885,8 +5889,11 @@ function syncThemeSwitches(p) {
   });
   const sel = document.querySelector('#theme'); if (sel) sel.value = p;
 }
+// AUDIT H2: the fallback is the raw stored value, and the server accepts any source_channel, so a
+// planted '<img onerror=...>' reached the Today card as HTML. Unknown values keep only plain
+// word characters; the labels from the config are ours and pass unchanged.
 const channelLabel = (c) => (CFG.channels && CFG.channels[c])
-  || (CFG.channelAliases && CFG.channelAliases[c]) || c || '-';
+  || (CFG.channelAliases && CFG.channelAliases[c]) || String(c || '').replace(/[^\w .:/-]/g, '') || '-';
 
 // -------------------------------------------------------------- acting as --
 // There is no authentication. This is a setting, and every screen that depends
@@ -6540,10 +6547,10 @@ function todayCard(g, item) {
           : wrote ? tag('they wrote', 'They sent this and nothing has gone back yet.')
           : tag('we planned this', 'A next step somebody planned, now due.')),
       meta: planned ? dueText(item.due_at)
-        : `${channelLabel(item.channel || item.source_channel)} &middot; ${fmtDateTime(item.occurred_at)}`,
+        : `${esc(channelLabel(item.channel || item.source_channel))} &middot; ${fmtDateTime(item.occurred_at)}`,
       open: `#/person/${item.person_id}`,
       action: planned
-        ? `<button class="btn" onclick="event.stopPropagation();openComplete(${item.taskId},'${esc(item.label)}')">Mark done</button>`
+        ? `<button class="btn" onclick="event.stopPropagation();openComplete(${item.taskId},${esc(JSON.stringify(String(item.label ?? '')))})">Mark done</button>`
         : `<button class="btn" onclick="event.stopPropagation();openNote('${item.person_id}','note')">Write what happened</button>`,
     };
   }
@@ -6551,7 +6558,7 @@ function todayCard(g, item) {
     return {
       name: item.name,
       line: item.programme ? `Wants ${esc(item.programme)}` : 'Has not said what they want yet',
-      meta: `${channelLabel(item.source_channel)} &middot; arrived ${fmtDate(item.created_at)}`,
+      meta: `${esc(channelLabel(item.source_channel))} &middot; arrived ${fmtDate(item.created_at)}`,
       open: `#/person/${item.id}`,
       action: `<button class="btn" onclick="event.stopPropagation();openNote('${item.id}','call')">Log a call</button>`,
     };
@@ -6559,7 +6566,7 @@ function todayCard(g, item) {
   return {
     name: item.name,
     line: 'Nobody has planned the next step',
-    meta: `${esc(item.status || '')} &middot; ${channelLabel(item.source_channel)}`,
+    meta: `${esc(item.status || '')} &middot; ${esc(channelLabel(item.source_channel))}`,
     open: `#/person/${item.id}`,
     action: `<button class="btn" onclick="event.stopPropagation();openNewTask('${item.id}')">Plan the next step</button>`,
   };
@@ -6719,7 +6726,7 @@ async function viewPeople() {
       <textarea id="q_note" rows="2" placeholder="What happened, in one line"></textarea></div>
     <div id="qeErr"></div>
     <div class="qeact">
-      <button class="btn sm" onclick="event.stopPropagation();quickSave('${esc(r.id)}')">Save</button>
+      <button class="btn sm" onclick="event.stopPropagation();quickSave(${esc(JSON.stringify(String(r.id ?? '')))})">Save</button>
       <button class="btn sm ghost" onclick="event.stopPropagation();setQuickEdit(null)">Cancel</button>
       <a class="tilelink" href="#/person/${esc(r.id)}">Open the full record &rarr;</a>
       <span class="sub2" style="margin-left:auto">Saved as ${esc(ACTOR)}. Every change is written to the history.</span>
@@ -6758,7 +6765,7 @@ async function viewPeople() {
     <td>${stageChip(r.status)}</td><td>${esc(r.owner || '')}</td><td>${fmtDate(r.last_contact_at)}</td>
     <td>${r.next_action ? esc(r.next_action) + '<br>' + dueText(r.next_action_at) : '<span class="pill calm">none</span>'}</td>
     <td class="act"><button class="btn sm ghost" title="change what we know without leaving this list"
-      onclick="event.stopPropagation();setQuickEdit('${esc(r.id)}')">Edit</button></td></tr>
+      onclick="event.stopPropagation();setQuickEdit(${esc(JSON.stringify(String(r.id ?? '')))})">Edit</button></td></tr>
     ${QUICK_EDIT === r.id ? quickRow(r) : ''}`).join('')}</tbody></table>`
   : '<div class="empty">No record matches the filters. <a href="#" onclick="clearFilters();return false">Clear the filters</a></div>'}
   </div>`;
@@ -6815,7 +6822,7 @@ async function viewPerson(id) {
         ${openTask ? `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
           <div><b>${esc(openTask.label)}</b><div>${dueText(openTask.due_at)} &middot; ${esc(openTask.owner || '')}</div></div>
           <div style="display:flex;gap:6px">
-            <button class="btn sm" onclick="openComplete(${openTask.id},'${esc(openTask.label)}')">Mark as done</button>
+            <button class="btn sm" onclick="openComplete(${openTask.id},${esc(JSON.stringify(String(openTask.label ?? '')))})">Mark as done</button>
             <button class="btn sm ghost" onclick="openReschedule(${openTask.id})">Reschedule</button>
           </div></div>`
         : `<div class="empty">No next step is scheduled.</div>
@@ -6913,7 +6920,7 @@ function cDrawMerge() {
   $('#mList').innerHTML = rows.map((m) => `<div class="dupe"><div><b>${esc(m.name)}</b>
       <div class="sub2">${[m.email, m.phone].filter(Boolean).map(esc).join(' &middot; ')}</div>
       <div class="sub2">${esc(cStage(m.status))}</div></div>
-    <div><button class="btn sm" onclick="doSisMerge('${esc(m.id)}')">This is them</button></div></div>`).join('')
+    <div><button class="btn sm" onclick="doSisMerge(${esc(JSON.stringify(String(m.id ?? '')))})">This is them</button></div></div>`).join('')
     || '<div class="c-empty">Nobody matches.</div>';
 }
 async function doSisMerge(targetId) {
@@ -7224,7 +7231,7 @@ function showDuplicate(id, detail, kept) {
       <div class="sub2">${esc(m.status || '')}${m.owner ? ' &middot; ' + esc(m.owner) : ''}
         &middot; matched on ${m.matchedOn.map(esc).join(' and ')}</div></div>
     <div style="display:flex;gap:6px;flex-wrap:wrap">
-      <button class="btn sm" onclick="doQualify(${id}, { personId: '${esc(m.id)}', createPerson: false })">
+      <button class="btn sm" onclick="doQualify(${id}, { personId: ${esc(JSON.stringify(String(m.id ?? '')))}, createPerson: false })">
         This is them</button>
       <a class="btn sm ghost" href="#/person/${esc(m.id)}" onclick="closeModal()">Open</a>
     </div></div>`;
@@ -7289,7 +7296,7 @@ async function viewFollowup() {
       <td>${esc(t.programme || '')}<div>${stageChip(t.status)}</div></td>
       <td>${esc(t.label)}</td><td>${dueText(t.due_at)}</td><td>${esc(t.owner || '')}</td>
       <td onclick="event.stopPropagation()" style="white-space:nowrap">
-        <button class="btn sm" onclick="openComplete(${t.id},'${esc(t.label)}')">Complete</button>
+        <button class="btn sm" onclick="openComplete(${t.id},${esc(JSON.stringify(String(t.label ?? '')))})">Complete</button>
         <button class="btn sm ghost" onclick="openReschedule(${t.id})">Reschedule</button></td></tr>`).join('')}</tbody></table>`
   : '<div class="empty">Nothing is waiting in this view.</div>'}
   </div>`;
@@ -8100,11 +8107,11 @@ async function viewChannel(id) {
     ${run && run.at ? row('Came in', chActivity(c, run)) : ''}
     ${row('Settings', chSettings(c.settings))}
     <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
-      ${c.canTest ? `<button class="btn ghost" id="chCheck" onclick="runChannelCheck('${esc(c.channel)}')">Check</button>` : ''}
+      ${c.canTest ? `<button class="btn ghost" id="chCheck" onclick="runChannelCheck(${esc(JSON.stringify(String(c.channel ?? '')))})">Check</button>` : ''}
       ${c.channel === 'linkedin' ? `<button class="btn ghost" id="liSub" onclick="chLinkedInSubscribe()">Subscribe leads</button>` : ''}
       ${c.live
-        ? `<button class="btn ghost" onclick="setChannelMode('${esc(c.channel)}','off')">Switch off</button>`
-        : `<button class="btn" ${canSwitchOn ? '' : 'disabled'} onclick="setChannelMode('${esc(c.channel)}','live')">Switch on</button>`}
+        ? `<button class="btn ghost" onclick="setChannelMode(${esc(JSON.stringify(String(c.channel ?? '')))},'off')">Switch off</button>`
+        : `<button class="btn" ${canSwitchOn ? '' : 'disabled'} onclick="setChannelMode(${esc(JSON.stringify(String(c.channel ?? '')))},'live')">Switch on</button>`}
     </div>
     <div id="chResult" style="margin-top:10px">${c.channel === 'linkedin' ? chLinkedInLine((d.runs || {}).linkedin_subscription) : ''}</div>
     <div id="chMode" style="margin-top:8px"></div>`;
@@ -8527,7 +8534,7 @@ async function viewAdmissions() {
   for (const r of data.rows) (byStage[r.status] ||= []).push(r);
 
   const card = (r) => `<div class="pcard" draggable="true" data-id="${esc(r.id)}"
-      ondragstart="pDragStart(event,'${esc(r.id)}')" ondragend="pDragEnd(event)"
+      ondragstart="pDragStart(event,${esc(JSON.stringify(String(r.id ?? '')))})" ondragend="pDragEnd(event)"
       onclick="location.hash='#/person/${esc(r.id)}'">
     <div class="pname">${esc(r.name)}</div>
     ${r.programme ? `<div class="pmeta">${esc(r.programme)}</div>` : ''}
@@ -8539,7 +8546,7 @@ async function viewAdmissions() {
   const column = (st) => {
     const rows = byStage[st.id] || [];
     return `<div class="pcol" data-stage="${esc(st.id)}"
-        ondragover="pDragOver(event)" ondragleave="pDragLeave(event)" ondrop="pDrop(event,'${esc(st.id)}')">
+        ondragover="pDragOver(event)" ondragleave="pDragLeave(event)" ondrop="pDrop(event,${esc(JSON.stringify(String(st.id ?? '')))})">
       <div class="pcolhead">
         <span class="pdot" style="background:${esc(st.colour)}"></span>
         <span class="pcolname" title="${esc(st.label)}">${esc(st.label)}</span>

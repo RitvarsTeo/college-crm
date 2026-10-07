@@ -193,3 +193,41 @@ test('H3 + M3: on the live copy a signed-in admin cannot reset, swap data or wri
     { raw: '{"submission_id":"s-1","name":"Forged"}', headers: { cookie, 'x-crm-simulated': '1' } });
   assert.notEqual(sim.status, 200, 'a simulated delivery was accepted on the live copy');
 });
+
+// ------------------------------------------------------------------ H2 ----
+// Without these guards: a task label or a planted source_channel ran as script in whoever
+// opened Today, including an admin, who could then be made to export or wipe the CRM.
+import fs from 'node:fs';
+const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
+const lineOf = (re) => { const m = APP.match(re); assert.ok(m, 'not found: ' + re); return m[0]; };
+const helpers = new Function('CFG', [lineOf(/^const esc = .*$/m),
+  "const jsq = (s) => esc(JSON.stringify(String(s ?? '')));",   // the form every handler now writes inline
+  APP.match(/^const channelLabel = [\s\S]*?;$/m)[0], 'return { esc, jsq, channelLabel };'].join('\n'));
+const decode = (s) => s.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<')
+  .replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+
+test('H2: a hostile value inside an onclick attribute stays one string argument', () => {
+  const { jsq } = helpers({});
+  for (const evil of ["');fetch('/api/reset',{method:'POST'});//", '");alert(1);//', "\');x();//", '</b><img src=x onerror=1>']) {
+    const attr = `f(1,${jsq(evil)})`;                       // what goes between onclick=" and "
+    assert.equal(attr.includes('"'), false, 'a raw double quote would end the attribute');
+    let got;
+    new Function('f', decode(attr))((id, label) => { got = label; });   // what the browser runs
+    assert.equal(got, evil);
+  }
+});
+
+test('H2: an unknown source_channel cannot carry HTML, and the Today card escapes it', () => {
+  const { channelLabel } = helpers({ channels: { website: 'Website' } });
+  assert.equal(channelLabel('website'), 'Website');
+  assert.equal(/[<>"'=()]/.test(channelLabel('<img src=x onerror=alert(1)>')), false);
+  assert.equal(channelLabel('agent_partner'), 'agent_partner', 'a plain unknown id still reads');
+  assert.equal(/\$\{channelLabel\(item\.(channel \|\||source_channel)/.test(APP), false,
+    'a Today card meta line still interpolates channelLabel without esc()');
+});
+
+test('H2: no inline handler builds a JavaScript string from esc() alone', () => {
+  const bad = [...APP.matchAll(/on[a-z]+="[^"]*'\$\{esc\(/g)].map((m) => m[0].slice(0, 80));
+  assert.deepEqual(bad, []);
+  assert.ok((APP.match(/\$\{esc\(JSON\.stringify\(String\(/g) || []).length >= 45, 'the safe form is in place');
+});
