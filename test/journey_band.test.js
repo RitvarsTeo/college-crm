@@ -88,11 +88,11 @@ test('overdue is visible without hovering: the red segment and its number are al
 
 test('clicking a column IS the board stage filter, and clicking again clears it', () => {
   const off = draw();
-  assert.match(off, /data-v="Application" onclick="cJfPick\('stage', this\.dataset\.v, !false\)"/);
+  assert.match(off, /data-v="Application" onclick="cJBarTap\(this\.dataset\.v, false\)"/, 'Q68: cJBarTap filters on a wide screen, opens the stage on a phone');
   const on = draw(['Application']);
   assert.match(on, /class="jb-col on /, 'the chosen stage says so');
   assert.match(on, /aria-pressed="true"[^>]*data-v="Application"/);
-  assert.match(on, /data-v="Application" onclick="cJfPick\('stage', this\.dataset\.v, !true\)"/, 'a second click clears it');
+  assert.match(on, /data-v="Application" onclick="cJBarTap\(this\.dataset\.v, true\)"/, 'a second click clears it');
 });
 
 test('the board keeps exactly the chosen stage, and the other filters still combine with it', () => {

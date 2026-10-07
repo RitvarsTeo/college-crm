@@ -1615,6 +1615,29 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   @media (max-width:760px){ html.ui-c .t-board{grid-template-columns:1fr !important}
     html.ui-c .t-fold{flex-direction:row;justify-content:space-between;min-height:0;padding:12px 14px}
     html.ui-c .t-foldl{writing-mode:horizontal-tb;transform:none} }
+  /* Q68 THE BOARDS ON A PHONE (the owner's pick "B stacked stages", 07.10.2026, of a phone shot of the Journey: "mobile
+     versions scrolling doesnt work like that"). At phone width every board stacks its columns one under the other, ONE
+     open at a time, the rest folded to a row with their count; the band on top is the strip (sticky; compact once the
+     page has scrolled); a tap on a bar or on a folded row opens that column. Nothing scrolls sideways. On the Journey
+     the opened card carries Move (no drag on a phone). A wide screen is unchanged: every rule is inside this query. */
+  html.ui-c .c-move{display:none}
+  @media (max-width:760px){
+    html.ui-c .c-cols{display:block!important;overflow:visible;padding-bottom:0}
+    html.ui-c .c-col{margin:0 0 8px;min-width:0}
+    html.ui-c .c-col.is-fold{padding:0}
+    html.ui-c .c-foldrow{appearance:none;display:flex;align-items:center;gap:8px;width:100%;margin:0;padding:11px 12px;border:0;border-radius:10px;background:transparent;
+      font:inherit;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--t3);text-align:left;cursor:pointer}
+    html.ui-c .c-foldrow b{margin-left:auto;font-size:13px;letter-spacing:0;text-transform:none;color:var(--ink)}
+    html.ui-c .c-foldrow:focus-visible{outline:2px solid var(--pet);outline-offset:1px}
+    html.ui-c .c-summary{position:sticky;top:var(--p-top,0px);z-index:19;background:var(--paper);padding-top:6px}
+    html.ui-c .c-summary.is-mini h4,html.ui-c .c-summary.is-mini .jb-end,html.ui-c .c-summary.is-mini .jb-outs,html.ui-c .c-summary.is-mini .c-exit{display:none}
+    html.ui-c .c-summary.is-mini .jb-plot{height:58px;padding-top:20px}
+    html.ui-c .c-summary.is-mini .jb-n{font-size:12px}
+    html.ui-c .c-move{display:inline-flex}
+    html.ui-c .ib-board{display:block!important}
+    html.ui-c .ib-col.is-fold .c-drop{display:none}
+    html.ui-c .t-fold{cursor:pointer}
+  }
   html.ui-c .pband.pcards{margin:0 0 14px;display:block}
   html.ui-c .pcards .p-card{appearance:none;font:inherit;text-align:left;cursor:pointer;margin:0}
   /* 06.10.2026, the owner: "Today has a fucked up error" - the lit columns were grey boxes with a thick navy line and
@@ -3837,9 +3860,23 @@ const C_POOL_T = {};
 function cPoolOpened(k) { const now = Date.now(); if (C_POOL_T[k] && now - C_POOL_T[k] < 4000) return; C_POOL_T[k] = now; cSeeNow(k); cNavCounts(); }
 
 // ---- TODAY: Overdue · Due today · Coming up · No next step, one row per person
-let C_TP = { col: null, programme: '', stage: '', source: '', upOpen: false, more: {}, pick: null };
+// THE BOARDS ON A PHONE (Q68, the owner's pick "B stacked stages", 07.10.2026): at phone width a board stacks its columns,
+// one open at a time (C_TP.open, C_IP.open, C_JP.open), the rest folded to their count; the band's bars, cards or days
+// open a column, so does a folded row. On a wide screen nothing changes.
+const cPhone = () => typeof window !== 'undefined' && Boolean(window.matchMedia && window.matchMedia('(max-width:760px)').matches);
+let C_TP = { col: null, programme: '', stage: '', source: '', upOpen: false, more: {}, pick: null, open: 'over' };
 let C_TPD = null;
-function cTodayPick(v) { C_TP.col = C_TP.col === v ? null : v; cTodayPool(); }
+function cTodayPick(v) {
+  if (cPhone()) { C_TP.col = null; C_TP.open = v; if (v === 'later') C_TP.upOpen = true; }   // Q68: a card opens its column
+  else C_TP.col = C_TP.col === v ? null : v;
+  cTodayPool();
+}
+// a folded column's row (Q68, a phone), or Coming up's fold on a wide screen
+function cTodayTap(id) {
+  if (cPhone()) C_TP.open = id;
+  if (id === 'later') C_TP.upOpen = true;
+  cTodayPool();
+}
 function cTodayPool() {
   const D = C_TPD; if (!D) return;
   const okP = (p) => Boolean(p) && (!C_TP.programme || (p.programme || cNotSaid) === C_TP.programme) && (!C_TP.stage || p.status === C_TP.stage)
@@ -3885,7 +3922,8 @@ function cTodayBoard(D, groups) {
   if (C_TP.col === 'none') return '';
   const cols = groups.filter((g) => g.id !== 'none' && (!C_TP.col || C_TP.col === g.id));
   if (!cols.length) return '';
-  const folded = (g) => g.id === 'later' && !C_TP.col && !C_TP.upOpen;
+  const phone = cPhone();   // Q68: one column open, the rest folded to their count (a narrowed card shows its column alone)
+  const folded = (g) => (phone ? !C_TP.col && g.id !== C_TP.open : g.id === 'later' && !C_TP.col && !C_TP.upOpen);
   const tomorrow = new Date(Date.parse(cTodayIso() + 'T12:00:00Z') + 86400000).toISOString().slice(0, 10);
   const pick = (pid, col) => (C_TP.pick && C_TP.pick.pid === pid && C_TP.pick.from === col
     ? `<div class="t-pick" onclick="event.stopPropagation()" ondragstart="event.preventDefault()">
@@ -3901,8 +3939,8 @@ function cTodayBoard(D, groups) {
       ${ts.map((t) => `<span class="c-jnext">${cStepIcon(t.label)}<span>${esc(cTask(t.label))}</span></span>
         <div class="t-foot">${cStateLine(...cStepState(D.byId.get(pid), t))}${D.done(t)}</div>`).join('')}${pick(pid, col)}</div>`; };
   const column = (g, i) => {
-    if (folded(g)) return `<div class="c-col t-col t-fold c-drop t-drop" data-col="later" role="button" tabindex="0" aria-label="Coming up: ${g.rows.length}, open"
-      onclick="C_TP.upOpen=true;cTodayPool()" onkeydown="if(event.key==='Enter'){C_TP.upOpen=true;cTodayPool()}"><span class="t-foldl">Coming up</span><b>${g.rows.length}</b></div>`;
+    if (folded(g)) return `<div class="c-col t-col t-fold${g.id === 'later' ? ' c-drop t-drop' : ''}" data-col="${g.id}" role="button" tabindex="0" aria-label="${esc(g.label)}: ${g.rows.length}, open"
+      onclick="cTodayTap('${g.id}')" onkeydown="if(event.key==='Enter')cTodayTap('${g.id}')"><span class="t-foldl">${esc(g.label)}</span><b>${g.rows.length}</b></div>`;
     const open = C_TP.more[g.id] || (C_TP.pick && g.rows.some((ts) => ts[0].person_id === C_TP.pick.pid));
     const shown = open ? g.rows : g.rows.slice(0, C_TCOL_SHOW);
     const rest = g.rows.length - shown.length;
@@ -3954,9 +3992,17 @@ async function cTodayMoveTo(pid, from, day) {
 // (the reason dialog as before; nothing is deleted). No New lead, Not relevant or Later column. A message set aside
 // is still reachable by address (#/leads?show=archived; ?show=notrelevant adds what a rule filtered), and since
 // 07.10.2026 ("Set aside: a way back") each of its cards has one action, Bring back.
-let C_IP = { col: null, channel: '', kind: '', show: 'new' };
+let C_IP = { col: null, channel: '', kind: '', show: 'new', open: 'today' };   // open: the day open on a phone (Q68)
 let C_IPD = null;
-function cInboxPick(v) { C_IP.col = C_IP.col === v ? null : v; cInboxPool(); }
+function cInboxPick(v) {
+  if (cPhone()) { C_IP.col = null; C_IP.open = v; }   // Q68: a bar opens its day
+  else C_IP.col = C_IP.col === v ? null : v;
+  cInboxPool();
+}
+function cInboxTap(id) {
+  if (cPhone()) C_IP.open = id;
+  cInboxPool();
+}
 const C_IP_KIND = [['possible_student', 'Possible student'], ['current_student', 'Current student'], ['other', 'Other']];
 function cInboxAge(iso) {
   const day = cDay(iso), today = cTodayIso();
@@ -3990,8 +4036,12 @@ function cInboxPool() {
   };
   // a band click narrows the board to that day's column; a second click shows all four again
   const shownCols = cols.filter((c) => !C_IP.col || c.id === C_IP.col);
-  const column = (c, i) => `<div class="c-col ib-col" style="--jt:${((i + 1) / shownCols.length).toFixed(3)}"><h3><span class="c-jn">${i + 1}</span>${esc(c.label)}<b>${c.n}</b></h3>
-      <div class="c-drop">${rows.filter((r) => cInboxAge(r.received_at) === c.id).map(card).join('') || '<div class="c-empty">Nothing here.</div>'}</div></div>`;
+  // Q68, a phone: one day open (the chosen one, else the first with a message), the rest folded to their count
+  const openId = cPhone() && !C_IP.col ? (cols.some((c) => c.id === C_IP.open && c.n) ? C_IP.open : (cols.find((c) => c.n) || cols[0]).id) : null;
+  const column = (c, i) => (openId && c.id !== openId
+    ? `<div class="c-col ib-col is-fold"><button type="button" class="c-foldrow" onclick="cInboxTap('${c.id}')"><span class="c-jn">${i + 1}</span>${esc(c.label)}<b>${c.n}</b></button></div>`
+    : `<div class="c-col ib-col" style="--jt:${((i + 1) / shownCols.length).toFixed(3)}"><h3><span class="c-jn">${i + 1}</span>${esc(c.label)}<b>${c.n}</b></h3>
+      <div class="c-drop">${rows.filter((r) => cInboxAge(r.received_at) === c.id).map(card).join('') || '<div class="c-empty">Nothing here.</div>'}</div></div>`);
   const board = rows.length
     ? `<div class="c-cols ib-board" style="grid-template-columns:repeat(${shownCols.length},minmax(0,1fr))">${shownCols.map(column).join('')}</div>`
     : `<div class="c-sheet"><div class="c-empty">${live ? 'Nothing waiting. This queue is clear.' : 'Nothing here.'}</div></div>`;
@@ -4014,7 +4064,7 @@ function cInboxPool() {
 // Q57 (the owner, 06.10.2026: "I didnt ask you to turn journey's drag and drop into a list! ... journey tab is the mosst
 // advanced of them all"). The drag-and-drop BOARD is the Journey: the first and default view, and every way in opens
 // it (menu, Home, Reports, the old #/people and #/outcomes). List is the second option of the switch, never remembered.
-let C_JP = { col: null, view: 'board' };
+let C_JP = { col: null, view: 'board', open: null };   // open: the stage open on a phone (Q68)
 let C_JPMORE = false;
 let C_JPD = null;
 function cPoolViewSwitch() {
@@ -4353,7 +4403,7 @@ function cPersonCard(p, t) {
       <dt>Came from</dt><dd>${esc(cChannel(p.source_channel)[0])}</dd><dt>First contact</dt><dd class="${p.created_at ? '' : 'c-gap'}">${p.created_at ? fmtDate(p.created_at) : 'not recorded'}</dd></dl>
     ${cTalkHtml(p)}
     ${notes ? `<div class="c-notes">${esc(notes.length > 260 ? notes.slice(0, 260) + '…' : notes)}</div>` : ''}
-    <div class="c-row-acts"><button class="btn sm ghost" onclick="cEditFromJourney('${esc(p.id)}')">Edit</button><a class="btn sm ghost" href="#/person/${esc(p.id)}">Details →</a></div></aside>`;
+    <div class="c-row-acts">${open ? `<button class="btn sm ghost c-move" onclick="cEditFromJourney('${esc(p.id)}')">Move</button>` : ''}<button class="btn sm ghost" onclick="cEditFromJourney('${esc(p.id)}')">Edit</button><a class="btn sm ghost" href="#/person/${esc(p.id)}">Details →</a></div></aside>`;
 }
 // NO NEXT STEP IS A MARK AND AN ACTION (Q44, the owner 05.10.2026: "the no next step prmopt is tooo soft"). Signal
 // amber is the card's EDGE, never the text colour (KB 08 P5), and in place of the soft line there is the action itself:
@@ -4529,6 +4579,26 @@ let C_JF = { programme: [], due: [], owner: [], source: [], stage: [], group: []
 let C_JFOPEN = null;
 const C_JF_EMPTY = () => ({ programme: [], due: [], owner: [], source: [], stage: [], group: [], step: [] });
 function cJfToggle(k) { C_JFOPEN = C_JFOPEN === k ? null : k; cDrawJourney(); }
+// a bar of the band (Q68): on a phone it opens that stage; on a wide screen it is the stage filter, as before
+function cJBarTap(id, on) {
+  if (cPhone()) return cJStageTap(id);
+  cJfPick('stage', id, !on);
+}
+function cJStageTap(id) {
+  if (!cPhone()) return;
+  C_JP.open = id; cDrawJourney();
+  const col = document.querySelector('#view .c-col:not(.is-fold)'), band = document.querySelector('#view .c-summary');
+  if (col && col.getBoundingClientRect) window.scrollBy(0, col.getBoundingClientRect().top - ((band ? band.offsetHeight : 0) + (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--p-top')) || 0) + 8));
+}
+// the band compact once the page has scrolled (a phone): the bars stay, the figures beside them wait at the top
+function cJourneyMini() {
+  const s = document.querySelector('.j-sentinel'), b = document.querySelector('#view .c-summary');
+  if (!s || !b) return;
+  if (!cPhone()) { b.classList.remove('is-mini'); return; }
+  const top = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--p-top')) || 0;
+  const y = s.getBoundingClientRect().top - top;
+  b.classList.toggle('is-mini', b.classList.contains('is-mini') ? y < -8 : y < -48);
+}
 function cJfPick(k, value, on) {
   const set = new Set(C_JF[k] || []);
   if (on) set.add(value); else set.delete(value);
@@ -4644,7 +4714,7 @@ function cJourneyBand(everyone, taskOf, stages, exitMark, out) {
     return `<i class="jb-seg jb-s-${k}" style="bottom:${((b / c.n) * 100).toFixed(2)}%;height:${((c.by[k] / c.n) * 100).toFixed(2)}%" title="${C_ST[k]}: ${c.by[k]}" data-v="${esc(c.id)}" data-st="${k}" onclick="event.stopPropagation();cJfState(this.dataset.v, this.dataset.st)"></i>`; }).join(''); };
   const says = (c) => ST.filter((k) => c.by[k]).map((k) => `${c.by[k]} ${C_ST[k].toLowerCase()}`).join(', ');
   const col = (c, i) => `<div class="jb-cell"><button type="button" class="jb-col${on(c.id) ? ' on' : ''} m-fade" style="--i:${i}"
-      aria-pressed="${on(c.id)}" data-v="${esc(c.id)}" onclick="cJfPick('stage', this.dataset.v, !${on(c.id)})"
+      aria-pressed="${on(c.id)}" data-v="${esc(c.id)}" onclick="cJBarTap(this.dataset.v, ${on(c.id)})"
       title="${esc(c.label)}: ${c.n} ${c.n === 1 ? 'person' : 'people'}${c.n ? ` (${says(c)})` : ''}"
       aria-label="${esc(c.label)}: ${c.n}${c.n ? `, ${says(c)}` : ''}">
       <span class="jb-plot"><span class="jb-bar" style="height:${pct(c.n)}%"><b class="jb-n">${c.n}</b>${segs(c)}</span></span>
@@ -4828,6 +4898,9 @@ function cDrawJourney() {
   const everyone = people.filter((p) => !C_TERMINAL.includes(p.status));
   const open = people.filter((p) => !C_TERMINAL.includes(p.status) || ends.includes(p.status)).filter((p) => cJourneyMatch(p, taskOf.get(p.id), C_JF));
   const narrow = window.matchMedia && window.matchMedia('(max-width:900px)').matches;
+  // Q68, a phone: one stage open (the chosen one, else the first with people), the rest folded to a row with their count
+  const phone = cPhone();
+  const openStage = phone ? (stages.some((s) => s.id === C_JP.open) ? C_JP.open : (stages.find((s) => open.some((p) => p.status === s.id)) || stages[0] || {}).id) : null;
   // NO PERSON UNTIL ONE IS CLICKED (the owner, 02.10.2026). The board used to pick the first
   // person on its own, so a random lead sat on the left like a hero and took 320px from the board.
   const sel = open.find((p) => p.id === C_JSEL) || null;
@@ -4840,15 +4913,17 @@ function cDrawJourney() {
   }
   $('#view').innerHTML = `
     <div class="c-head"><div><h1>Journey</h1></div><div class="act">${cPoolViewSwitch()}<button class="btn" onclick="openAdd()">Add lead</button></div></div>
-    ${cJourneySummary(everyone, taskOf, stages.filter((s) => !C_TERMINAL.includes(s.id)))}
+    <div class="j-sentinel" aria-hidden="true"></div>${cJourneySummary(everyone, taskOf, stages.filter((s) => !C_TERMINAL.includes(s.id)))}
     ${cJourneyFilters(everyone)}${cJTargetChips()}
     <div class="c-journey c-nosel">${sel ? '<div class="c-jveil" onclick="cJClose()"></div>' : ''}<div style="min-width:0">
       <div class="c-cols" style="grid-template-columns:${stages.map((s) => (sel && sel.status === s.id ? 'minmax(330px, 2.4fr)' : 'minmax(150px, 1fr)')).join(' ')}">${stages.map((s, i) => { const ps = open.filter((p) => p.status === s.id);
         // an end column is a place to look, not a drop target: a close needs its reason (the edit form asks it)
         if (C_TERMINAL.includes(s.id)) return `<div class="c-col c-col-end${s.id === (CFG.stageRoles || {}).admitted ? ' good' : ''}" style="--jt:1"><h3>${esc(s.label || s.id)}</h3><div class="c-endcol" data-stage="${esc(s.id)}">${cJColumn(s.id, ps, taskOf, sel) || '<div class="c-empty" style="padding:8px">empty</div>'}</div></div>`;
+        if (phone && s.id !== openStage) return `<div class="c-col is-fold" style="--jt:${((i + 1) / stages.length).toFixed(3)}"><button type="button" class="c-foldrow" onclick="cJStageTap('${esc(s.id)}')"><span class="c-jn">${i + 1}</span>${esc(s.label || s.id)}<b>${ps.length}</b></button></div>`;
         return `<div class="c-col" style="--jt:${((i + 1) / stages.length).toFixed(3)}"><h3><span class="c-jn">${i + 1}</span>${esc(s.label || s.id)}</h3><div class="c-drop" data-stage="${esc(s.id)}">${cJColumn(s.id, ps, taskOf, sel) || '<div class="c-empty" style="padding:8px">empty</div>'}</div></div>`; }).join('')}</div>
     </div></div>`;
   if (C_JDATA.play) cScenes($('#view'));
+  cPoolWire(); cJourneyMini();   // Q68: the band is the strip on a phone, compact once the page has scrolled
   if (narrow && sel && C_JSEL === sel.id) { const card = document.querySelector('.c-jexp'); if (card && card.scrollIntoView) card.scrollIntoView({ block: 'nearest', inline: 'center' }); }
   cJFlipPlay();
   // one pair of listeners for the life of the page, not one per redraw: a click anywhere outside a
@@ -4856,6 +4931,7 @@ function cDrawJourney() {
   if (!window.__cJfWired) {
     window.__cJfWired = 1;
     document.addEventListener('click', () => { if (C_JFOPEN) { C_JFOPEN = null; cDrawJourney(); } });
+    document.addEventListener('scroll', cJourneyMini, { passive: true });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && C_JFOPEN) { C_JFOPEN = null; cDrawJourney(); } });
   }
   document.querySelectorAll('.c-jp[draggable]').forEach((c) => c.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', c.dataset.id)));
@@ -6064,6 +6140,7 @@ function cViewState(place) {
   if (place === 'people') {
     put('v', C_JP.view);
     put('col', C_JP.col);
+    put('open', C_JP.open);
     for (const k of ['stage', 'programme', 'due', 'owner', 'source']) put('j' + k[0] + (k === 'source' ? 'r' : ''), C_JF[k]);
     for (const k of ['programme', 'due', 'owner', 'source', 'data', 'arrived', 'stage']) put('p_' + k, C_PF[k]);
     put('q', C_PQ); put('tag', C_OUT_TAG); put('reason', C_OUT_REASON);
@@ -6071,8 +6148,10 @@ function cViewState(place) {
     put('coh', cCohortToken(C_PCOHORT));
   } else if (place === 'today') {
     put('card', C_TP.col); put('prog', C_TP.programme); put('stage', C_TP.stage); put('src', C_TP.source); if (C_TP.upOpen) put('up', 1);
+    if (C_TP.open !== 'over') put('open', C_TP.open);
   } else if (place === 'leads') {
     put('age', C_IP.col); put('src', C_IP.channel); put('kind', C_IP.kind); if (C_IP.show !== 'new') put('show', C_IP.show);
+    if (C_IP.open !== 'today') put('open', C_IP.open);
   }
   return q;
 }
@@ -6082,6 +6161,7 @@ function cApplyViewState(place, q) {
   if (place === 'people') {
     C_JP.view = g('v') === 'list' ? 'list' : 'board';
     C_JP.col = g('col') || null;
+    C_JP.open = g('open') || null;
     C_JF = { ...C_JF_EMPTY(), stage: cList(g('js')), programme: cList(g('jp')), due: cList(g('jd')), owner: cList(g('jo')), source: cList(g('jsr')) };
     C_PF = { ...C_PF_EMPTY() };
     for (const k of ['programme', 'due', 'owner', 'source', 'data', 'arrived', 'stage']) C_PF[k] = g('p_' + k);
@@ -6091,9 +6171,9 @@ function cApplyViewState(place, q) {
     if (C_TERMINAL.includes(C_JP.col)) C_OUTCOME = C_JP.col;
     C_STATE_FROM_HASH = true;
   } else if (place === 'today') {
-    C_TP = { ...C_TP, col: g('card') || null, programme: g('prog'), stage: g('stage'), source: g('src'), upOpen: g('up') === '1', pick: null };
+    C_TP = { ...C_TP, col: g('card') || null, programme: g('prog'), stage: g('stage'), source: g('src'), upOpen: g('up') === '1', pick: null, open: g('open') || 'over' };
   } else if (place === 'leads') {
-    C_IP = { ...C_IP, col: g('age') || null, channel: g('src'), kind: g('kind'), show: g('show') || 'new' };
+    C_IP = { ...C_IP, col: g('age') || null, channel: g('src'), kind: g('kind'), show: g('show') || 'new', open: g('open') || 'today' };
   }
 }
 // The page part of the address for the view on screen (the old names land on their page: #/people is the Journey).

@@ -32,7 +32,7 @@ const FIGURES = [
   ['Journey', 'pool columns', 'function cDrawJourneyPool() {', /band: cPoolBand\('The journey', cols, C_JP\.col, 'cJourneyPick'\)/],
   ['Journey', 'Active journey count', 'function cJourneySummary(', /class="c-jcount" href="#\/people" onclick="cGoPeople\(\{ stage: 'open' \}\)/],
   ['Journey', 'Arrived', 'function cJourneyBand(', /onclick="cGoPeople\(\{ arrived: '\$\{out\.year\}' \}\);return false"><span>Arrived/],
-  ['Journey', 'Stage columns', 'function cJourneyBand(', /onclick="cJfPick\('stage', this\.dataset\.v/],
+  ['Journey', 'Stage columns', 'function cJourneyBand(', /onclick="cJBarTap\(this\.dataset\.v/],   // Q68: a phone opens the stage, a wide screen filters
   // Q57: a bookend filters the board to its end column, as a stage column does
   ['Journey', 'Admitted / Not proceeding', 'function cJourneyBand(', /onclick="C_OUTCOME='Not proceeding';C_OUT_TAG=null;cJfPick\('stage', this\.dataset\.v, /],
   ['Journey', 'Overdue band inside a column (Q66; the header pill before it)', 'const cGroupBand = ', /onclick="event\.stopPropagation\(\);cJfOverdue\('\$\{esc\(stage\)\}'\)"/],
@@ -59,7 +59,7 @@ test('Today drops its strip: Home\'s Needs you already says it (no duplicate)', 
   // does the No next step list
   const board = fnBody('function cTodayBoard(D, groups) {');
   assert.match(board, /\$\{esc\(g\.label\)\}<b class="c-count \$\{g\.tone\}">\$\{g\.rows\.length\}<\/b>/, 'the columns keep their counts');
-  assert.match(board, /<span class="t-foldl">Coming up<\/span><b>\$\{g\.rows\.length\}<\/b>/, 'folded Coming up shows its count');
+  assert.match(board, /<span class="t-foldl">\$\{esc\(g\.label\)\}<\/span><b>\$\{g\.rows\.length\}<\/b>/, 'a folded column shows its count (Coming up; every column on a phone, Q68)');
   assert.match(today, /<h3>\$\{g\.label\}<b>\$\{g\.rows\.length\}<\/b><\/h3>/, 'and the No next step list');
 });
 

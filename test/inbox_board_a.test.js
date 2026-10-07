@@ -39,7 +39,7 @@ function board(ip = {}, { rows = ROWS, open = null, show = 'new' } = {}) {
     cPoolFilters: (name, boxes, clear) => `<filters ${name} clear="${clear}">${boxes.join('')}</filters>`,
     $: (q) => (q === '#qInterest' ? { focus() {} } : view), view, cPoolWire: () => {}, cPoolOpened: () => {},
   };
-  vm.runInNewContext([line('const C_IP_KIND = '), fnBody('function cInboxAge(iso) {'), line('const cAgo = '), line('const C_ST = '), line('const C_ST_RAIL = '), fnBody('function cStateLine('),
+  vm.runInNewContext([line('const cPhone = '), line('const C_IP_KIND = '), fnBody('function cInboxAge(iso) {'), line('const cAgo = '), line('const C_ST = '), line('const C_ST_RAIL = '), fnBody('function cStateLine('),
     fnBody('function cInboxPool() {'), 'cInboxPool();'].join('\n'), ctx);
   return ctx;
 }
