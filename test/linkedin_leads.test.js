@@ -116,19 +116,19 @@ test('B1: Subscribe leads makes the owner-level call once, admins only, and the 
   assert.doesNotMatch(JSON.stringify(ch), new RegExp(TOKEN), 'the token never comes back');
 });
 
-test('B1: the company page is subscribed only when its id is set; no ad account says what is missing', async (t) => {
+test('B1: the ad account only, never the company page; no ad account says what is missing', async (t) => {
   const li = await fakeLinkedIn();
-  const s = await start({ LINKEDIN_API_BASE: li.base, LINKEDIN_AD_ACCOUNT_ID: '', LINKEDIN_ORGANIZATION_ID: '' });
+  const s = await start({ LINKEDIN_API_BASE: li.base, LINKEDIN_AD_ACCOUNT_ID: '', LINKEDIN_ORGANIZATION_ID: '5622087' });
   t.after(() => { s.child.kill(); li.server.close(); });
   const r = await fetch(s.base + '/api/admin/channels/linkedin/subscribe', { method: 'POST', headers: ADMIN, body: '{}' });
   assert.equal(r.status, 409);
   assert.match((await r.json()).error, /LINKEDIN_AD_ACCOUNT_ID/);
-  assert.equal(li.seen.posts.length, 0);
+  assert.equal(li.seen.posts.length, 0, 'an organization id alone subscribes nothing');
   const li2 = await fakeLinkedIn();
   const s2 = await start({ LINKEDIN_API_BASE: li2.base, LINKEDIN_AD_ACCOUNT_ID: '520866471', LINKEDIN_ORGANIZATION_ID: '5622087' });
   t.after(() => { s2.child.kill(); li2.server.close(); });
   await fetch(s2.base + '/api/admin/channels/linkedin/subscribe', { method: 'POST', headers: ADMIN, body: '{}' });
-  assert.deepEqual(li2.seen.posts.map((p) => [Object.keys(p.owner)[0], p.leadType]), [['sponsoredAccount', 'SPONSORED'], ['organization', 'COMPANY']]);
+  assert.deepEqual(li2.seen.posts.map((p) => [Object.keys(p.owner)[0], p.leadType]), [['sponsoredAccount', 'SPONSORED']]);
 });
 
 // -------------------------------------------------------------------------- B2 --

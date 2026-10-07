@@ -1138,8 +1138,8 @@
           "note": "The Lead Sync API (the leads option) is a pending EXTRA, not the channel connection; it does not change the state."
         },
         "pendingExtra": {
-          "dependency": "LINKEDIN_CLIENT_SECRET, LINKEDIN_ACCESS_TOKEN and LINKEDIN_AD_ACCOUNT_ID in Vercel, then Subscribe leads",
-          "owner": "Ritvars, with whoever holds an ad account role AND a Novikontas page role",
+          "dependency": "The first LinkedIn lead form (none exist yet, Ritvars 07.10.2026), then LINKEDIN_CLIENT_SECRET, LINKEDIN_ACCESS_TOKEN and LINKEDIN_AD_ACCOUNT_ID in Vercel, then Subscribe leads",
+          "owner": "Ritvars (Super Admin of the Novikontas page since 02.10.2026); the token also needs a Campaign Manager role on the ad account",
           "action": "After Subscribe leads, dropdown answers and withdrawn leads are live: paste the secret and the token into Vercel (Sensitive), redeploy, press Subscribe leads",
           "side": "internal",
           "canRefuse": false,
@@ -1164,7 +1164,12 @@
           "source": "LinkedIn's email of 07.10.2026 02:15, his screenshot via MASTER CONTROL: \"We have provisioned your app with id - 264939930, for Standard Tier access to our Lead Sync API.\""
         },
         "tokenGenerated": null,
-        "_tokenGenerated": "The day the LinkedIn access token is generated (it lives 60 days; scope r_marketing_leadgen_automation). Filled when it happens; a reminder is set 7 days before day 60 unless LinkedIn issues a refresh token."
+        "_tokenGenerated": "The day the LinkedIn access token is generated (it lives 60 days; scope r_marketing_leadgen_automation). Filled when it happens; a reminder is set 7 days before day 60 unless LinkedIn issues a refresh token.",
+        "leadForms": {
+          "count": 0,
+          "seen": "2026-10-07",
+          "source": "Ritvars, via MASTER CONTROL, 07.10.2026: no LinkedIn lead forms exist yet; go-live waits for the first form"
+        }
       },
       "filters": [],
       "publicWebhook": "https://crm-novikontas.vercel.app/api/inbound/linkedin",

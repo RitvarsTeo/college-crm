@@ -1334,22 +1334,20 @@ export const handle = async (req, res) => {
       }
 
       // B1 (07.10.2026): LinkedIn Lead Sync is subscribed by an API call, per owner, never in LinkedIn's own screens.
-      // Admins only. The ad account always (SPONSORED); the company page only when its id is set (COMPANY). The answer
-      // is kept in one line for the Channels screen; the token never leaves the server.
+      // Admins only. The ad account only (SPONSORED): no company-page subscription (MASTER CONTROL's GO, 07.10.2026;
+      // Novikontas has no LinkedIn lead forms yet). The answer is kept in one line for the Channels screen; the token
+      // never leaves the server.
       if (req.method === 'POST' && id === 'linkedin' && action === 'subscribe') {
         if (!auth.canEnableChannel(me.role)) return refuseNotAdmin(res);
         const acct = String(process.env.LINKEDIN_AD_ACCOUNT_ID || '').replace(/\D/g, '');
-        const org = String(process.env.LINKEDIN_ORGANIZATION_ID || '').replace(/\D/g, '');
         if (!acct) return json(res, 409, { error: 'LINKEDIN_AD_ACCOUNT_ID is not set: the ad account number from Campaign Manager' });
         const owners = [{ owner: { sponsoredAccount: 'urn:li:sponsoredAccount:' + acct }, leadType: 'SPONSORED' }];
-        if (org) owners.push({ owner: { organization: 'urn:li:organization:' + org }, leadType: 'COMPANY' });
         const webhook = CHANNELS.channels.linkedin.publicWebhook;
         let results = null, line, ok;
         try {
           results = await subscribeLinkedInLeads({ webhook, owners });
           ok = true;
-          line = results.every((r) => r.already) ? 'Already subscribed'
-            : 'Subscribed' + (results.length > 1 ? ' (ad account and page)' : '');
+          line = results.every((r) => r.already) ? 'Already subscribed' : 'Subscribed';
         } catch (err) {
           ok = false;
           line = err instanceof LeadFetchError ? err.message : 'The subscription failed';
