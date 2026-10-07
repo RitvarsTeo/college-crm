@@ -195,7 +195,8 @@ export const VERIFY = {
 // so no outside party ever has a reason to POST to the channel's address. Their VERIFY entries
 // answer ok for the channel self-check, which made POST /api/inbound/gmail and /phone accept
 // anybody's body before sign-in. The HTTP route asks this instead and refuses them.
-const PULL_AUTH = new Set(['token_in_query', 'none_needed', 'service_account_with_domain_delegation']);
+const PULL_AUTH = new Set(['token_in_query', 'none_needed', 'service_account_with_domain_delegation',
+  'bearer_token']);   // inbound_poll: we send the bearer token, nobody sends one to us
 
 /** True only for a channel a provider delivers to over HTTP with its own proof. */
 export function acceptsWebhook(channel) {
