@@ -839,7 +839,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
 
     --amb:#F7C04F;--ambink:#F7C04F;--late:#ffb0a8;--warn:#F7C04F;
     --c-sis:#29a8df;--c-ok:#9be0bd;--c-warn:#F7C04F;--c-bad:#ffb0a8;--c-accent-bg:#1a4670;--c-sunk:#0b2542;--c-sel:#163f66;
-    --st-due:#8fb4e8;--st-none:#5b7391;   /* the five state colours in the dark (Q66); the light ones stand beside --j-alarm */
+    --st-track:#8fb4e8;   /* on track in the dark (Q69): the readable blue on the sea; needs you keeps the alarm red */
     --v-adm:#29a8df;--v-lead:#e7ebf0;--v-open:#E0A526;--v-np:#93A5B8;--v-grid:#24507a;
     --k-plinth:#0b2542;   /* the donut's plinth: a frame colour, the dark card well, never a data colour */
     --j-from:#1d4d7a;--j-to:#8fcbef;   /* the Journey's stage line in dark (the review #2) */
@@ -1411,22 +1411,23 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-st{display:flex;align-items:center;flex-wrap:wrap;gap:3px 6px;margin-top:7px;font-weight:600;color:var(--t3);line-height:1.3}
   html.ui-c .c-st-w{font-weight:700;white-space:nowrap;color:var(--ink)}
   html.ui-c .c-st-d{font-weight:500;color:var(--t3);font-variant-numeric:tabular-nums}
-  html.ui-c .c-st-over .c-st-w,html.ui-c .c-st-late .c-st-w{color:var(--st-over)}
-  html.ui-c .c-st-due .c-st-w{color:var(--st-due)}
-  html.ui-c .c-st-none .c-st-w,html.ui-c .c-st-aside .c-st-w{color:var(--t3)}
-  html.ui-c .c-st-sis .c-st-w{color:var(--st-sis)}
-  html.ui-c[data-theme="dark"] .c-st-over .c-st-w,html.ui-c[data-theme="dark"] .c-st-late .c-st-w{color:var(--c-bad)}   /* red words on the sea: the readable red */
+  html.ui-c .c-st-over .c-st-w,html.ui-c .c-st-late .c-st-w,html.ui-c .c-st-none .c-st-w,html.ui-c .c-st-now .c-st-w{color:var(--st-need)}
+  html.ui-c .c-st-due .c-st-w,html.ui-c .c-st-today .c-st-w,html.ui-c .c-st-sis .c-st-w{color:var(--st-track)}
+  html.ui-c .c-st-aside .c-st-w{color:var(--t3)}
+  html.ui-c[data-theme="dark"] .c-st-over .c-st-w,html.ui-c[data-theme="dark"] .c-st-late .c-st-w,html.ui-c[data-theme="dark"] .c-st-none .c-st-w,html.ui-c[data-theme="dark"] .c-st-now .c-st-w{color:var(--c-bad)}   /* red words on the sea: the readable red */
   html.ui-c .c-st-act{margin-left:auto;border:0;background:none;padding:0;font:inherit;font-size:11.5px;font-weight:600;color:var(--st-due);text-decoration:underline;cursor:pointer}
   html.ui-c .t-foot .c-st{margin-top:7px}
   html.ui-c .ib-card .c-st{margin-top:0}
   /* the groups inside a column: a band with the count of everyone in that state, the people behind "N more" too */
-  html.ui-c .c-grp{display:flex;align-items:center;gap:6px;margin:8px -2px 0;padding:4px 8px;border-radius:6px;background:color-mix(in srgb,var(--c-sunk),#0a2463 9%);font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink)}
+  html.ui-c .c-grp{display:flex;align-items:center;gap:6px;margin:8px 2px 0;padding:4px 4px 3px;border-bottom:1px solid var(--rule);font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--t3)}
   html.ui-c .c-grp:first-child{margin-top:0}
-  html.ui-c .c-grp b{margin-left:auto;font-size:11px;color:inherit}
-  html.ui-c .c-grp-over{background:color-mix(in srgb,var(--st-over),transparent 86%);color:var(--st-over);cursor:pointer}
-  html.ui-c .c-grp-over:hover{background:color-mix(in srgb,var(--st-over),transparent 78%)}
-  html.ui-c[data-theme="dark"] .c-grp{background:color-mix(in srgb,var(--c-sunk),#ffffff 10%)}
-  html.ui-c[data-theme="dark"] .c-grp-over{background:color-mix(in srgb,var(--st-over),transparent 70%);color:var(--c-bad)}
+  html.ui-c .c-grp b{margin-left:auto;font-size:11px;color:var(--ink)}
+  /* Q69: only the red groups (needs you) are tinted; the on-track groups are text headers */
+  html.ui-c .c-grp-over,html.ui-c .c-grp-none{margin-left:-2px;margin-right:-2px;padding:4px 8px;border-bottom:0;border-radius:6px;background:color-mix(in srgb,var(--st-need),transparent 86%);color:var(--st-need)}
+  html.ui-c .c-grp-over b,html.ui-c .c-grp-none b{color:inherit}
+  html.ui-c .c-grp-over{cursor:pointer}
+  html.ui-c .c-grp-over:hover{background:color-mix(in srgb,var(--st-need),transparent 78%)}
+  html.ui-c[data-theme="dark"] .c-grp-over,html.ui-c[data-theme="dark"] .c-grp-none{background:color-mix(in srgb,var(--st-need),transparent 70%);color:var(--c-bad)}
   html.ui-c .c-line.is-none{box-shadow:inset 3px 0 0 #F7C04F}
   html.ui-c .c-choose{margin-top:6px;padding:3px 10px;font-size:12px}
   /* lifecycle facts from the SIS: quiet, one line, the brand blue edge - facts, not warnings */
@@ -1554,8 +1555,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .jb-seg{position:absolute;left:0;right:0;display:block;cursor:pointer}
   html.ui-c .jb-seg:last-of-type{border-radius:4px 4px 0 0}
   html.ui-c .jb-seg:hover{opacity:.82}
-  html.ui-c .jb-s-over{background:var(--st-over)} html.ui-c .jb-s-today{background:var(--st-today)} html.ui-c .jb-s-due{background:var(--st-due)}
-  html.ui-c .jb-s-none{background:var(--st-none)} html.ui-c .jb-s-sis{background:var(--st-sis)}
+  html.ui-c .jb-s-need{background:var(--st-need)} html.ui-c .jb-s-track{background:var(--st-track)}
   html.ui-c .jb-n{position:absolute;left:50%;bottom:100%;transform:translateX(-50%);padding-bottom:3px;display:flex;align-items:baseline;gap:4px;
     font-size:18px;font-weight:650;line-height:1;color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums}
   /* A LABEL NEVER BREAKS INSIDE A WORD (MASTER CONTROL for the owner, 06.10.2026: "Contac/ted", "Applic/ation" at 375 px).
@@ -2152,10 +2152,12 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
      with white words (6.5:1),
      in both themes - not the soft pink text it was. Today stays amber text: distinct, calmer. */
   html.ui-c{--j-alarm:#b3261e;--j-on-alarm:#ffffff;--j-soon:#F7C04F;--j-on-soon:#011111}
-  /* THE FIVE STATE COLOURS, ONCE (Q66, 07.10.2026): the card rails, the state words, the column bands and the Journey
-     graph all read these, so the graph and the cards can never drift apart. Red = the alarm (overdue / late), amber =
-     the signal (due today / answer now), navy = planned, grey = no next step, blue = the SIS holds the person. */
-  html.ui-c{--st-over:var(--j-alarm);--st-today:var(--j-soon);--st-due:#0a2463;--st-none:#b9c2cc;--st-sis:var(--c-sis)}
+  /* TWO COLOURS, ONCE (Q69, the owner's pick "B two colours", 07.10.2026, after "LESS colours. This is too complicated."
+     and the five-colour stack reading as a flag): RED = needs you (overdue, no next step; in the Inbox late and answer
+     now), NAVY = on track (due today, planned, with the SIS; in the Inbox new and set aside). The five state names stay
+     as WORDS on the cards; their five tokens are these two values, so the rails, the state words, the column bands and
+     the Journey graph can never show a third colour. */
+  html.ui-c{--st-need:var(--j-alarm);--st-track:#0a2463;--st-over:var(--st-need);--st-none:var(--st-need);--st-today:var(--st-track);--st-due:var(--st-track);--st-sis:var(--st-track)}
   /* ONE URGENCY RULE for the whole of C (the owner, 28.09.2026, on Next Steps and New Leads: "these
      colours also are not urgent colors", "again, doesnt feel urgent enough"). Overdue and late: a
      SOLID red badge with white words. Today: a SOLID amber badge with Pitch Black words. Same in
@@ -4546,7 +4548,7 @@ const cReach = (p) => [cTelLink(p), cMailLink(p)].filter(Boolean).join(' · ');
 // A card with no next step carries its action on that line ("Choose"); the dark button left the cards. Real dates are
 // never touched: an old sheet date stays overdue by as many days as it is.
 const C_ST = { over: 'Overdue', today: 'Due today', due: 'Due', none: 'No next step', sis: 'With the SIS', late: 'Late', now: 'Answer now', new: 'New', aside: 'Set aside' };
-const C_ST_RAIL = { over: 'over', today: 'today', due: 'due', none: 'none', sis: 'sis', late: 'over', now: 'today', new: 'due', aside: 'none' };
+const C_ST_RAIL = { over: 'over', today: 'today', due: 'due', none: 'none', sis: 'sis', late: 'over', now: 'over', new: 'due', aside: 'due' };   // Q69: red needs you, navy on track
 function cStateLine(st, detail, act, title) {
   return `<div class="c-st c-st-${st}"${title ? ` title="${esc(title)}"` : ''}><span class="c-st-w">${C_ST[st] || esc(st)}</span>${
     detail ? `<span class="c-st-d">· ${esc(detail)}</span>` : ''}${act || ''}</div>`;
@@ -4617,8 +4619,12 @@ function cJfPick(k, value, on) {
 }
 // Q36: a column's "N overdue" shows exactly those people: the stage and the overdue filter, together.
 function cJfOverdue(stage) { C_JF = { ...C_JF_EMPTY(), stage: [stage], due: ['over'] }; C_JFOPEN = null; cDrawJourney(); }
-// a stage's people in one state (Q66): the graph's segments land here
-function cJfState(stage, st) { C_JF = { ...C_JF_EMPTY(), stage: [stage], due: [st] }; C_JFOPEN = null; cDrawJourney(); }
+// the two colours of the graph (Q69): a segment opens the stage filtered to the states it stacks
+const C_ST_GROUPS = [['need', ['over', 'none'], 'Needs you'], ['track', ['today', 'due', 'sis'], 'On track']];
+function cJfStates(stage, k) {
+  const g = C_ST_GROUPS.find((x) => x[0] === k);
+  C_JF = { ...C_JF_EMPTY(), stage: [stage], due: g ? [...g[1]] : [k] }; C_JFOPEN = null; cDrawJourney();
+}
 function cJfClear() { C_JF = C_JF_EMPTY(); C_JFOPEN = null; cDrawJourney(); }
 // the State filter (Q66): the five states of the cards; "Overdue or today" was dropped earlier, it was just the two together
 const C_JF_DUE = [['over', 'Overdue'], ['today', 'Due today'], ['due', 'Planned'], ['none', 'No next step'], ['sis', 'With the SIS']];
@@ -4720,8 +4726,11 @@ function cJourneyBand(everyone, taskOf, stages, exitMark, out) {
   });
   const max = Math.max(1, ...cols.map((c) => c.n));
   const pct = (n) => ((n / max) * 100).toFixed(2);
-  const segs = (c) => { let below = 0; return ST.filter((k) => c.by[k]).map((k) => { const b = below; below += c.by[k];
-    return `<i class="jb-seg jb-s-${k}" style="bottom:${((b / c.n) * 100).toFixed(2)}%;height:${((c.by[k] / c.n) * 100).toFixed(2)}%" title="${C_ST[k]}: ${c.by[k]}" data-v="${esc(c.id)}" data-st="${k}" onclick="event.stopPropagation();cJfState(this.dataset.v, this.dataset.st)"></i>`; }).join(''); };
+  // TWO COLOURS (Q69, the owner's pick "B two colours"): red = needs you (overdue + no next step) on the baseline, then
+  // navy = on track (due today, planned, with the SIS). A segment opens the stage filtered to its states.
+  const segs = (c) => { let below = 0; return C_ST_GROUPS.map(([k, sts, word]) => { const n = sts.reduce((a, s) => a + c.by[s], 0); if (!n) return ''; const b = below; below += n;
+    const detail = sts.filter((s) => c.by[s]).map((s) => `${c.by[s]} ${C_ST[s].toLowerCase()}`).join(', ');
+    return `<i class="jb-seg jb-s-${k}" style="bottom:${((b / c.n) * 100).toFixed(2)}%;height:${((n / c.n) * 100).toFixed(2)}%" title="${word}: ${n} (${detail})" data-v="${esc(c.id)}" data-st="${k}" onclick="event.stopPropagation();cJfStates(this.dataset.v, this.dataset.st)"></i>`; }).join(''); };
   const says = (c) => ST.filter((k) => c.by[k]).map((k) => `${c.by[k]} ${C_ST[k].toLowerCase()}`).join(', ');
   const col = (c, i) => `<div class="jb-cell"><button type="button" class="jb-col${on(c.id) ? ' on' : ''} m-fade" style="--i:${i}"
       aria-pressed="${on(c.id)}" data-v="${esc(c.id)}" onclick="cJBarTap(this.dataset.v, ${on(c.id)})"
