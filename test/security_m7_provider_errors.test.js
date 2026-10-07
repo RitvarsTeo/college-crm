@@ -54,7 +54,9 @@ test('M7: syncGmail keeps the bookmark when a message failed, so the next run as
   } });
   const after = Number(/after:(\d+)/.exec(asked[0])[1]) * 1000;
   assert.ok(after <= t1.getTime(), 'the day with the failed message is asked for again');
-  assert.equal((await db.prepare("SELECT COUNT(*) n FROM inbound WHERE channel = 'gmail'").get()).n, 2, 'm2 arrived on the retry');
+  // Q74 rule 2: the same sender's second message joins the waiting card as a second LINE, so the
+  // proof that m2 arrived is its own message line, not a second card.
+  assert.equal((await db.prepare("SELECT COUNT(*) n FROM inbound_line WHERE channel = 'gmail'").get()).n, 2, 'm2 arrived on the retry');
 });
 
 test('M7: an SIS error carries a redacted slice of what the SIS said, never the token', async () => {
