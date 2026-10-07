@@ -648,7 +648,8 @@
           "source": "production backup _backups/2026-10-04T19-29-00Z (status VERIFIED), counts read 05.10"
         }
       },
-      "filters": []
+      "filters": [],
+      "number": "+371 23111114"
     },
     "mailchimp": {
       "label": "Mailchimp",

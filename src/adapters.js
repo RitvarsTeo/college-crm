@@ -329,8 +329,29 @@ function whatsappAll(raw) {
       }
     }
   }
-  // an empty delivery is still a bad payload, and need() is what says so
-  if (!out.length) need(null, 'whatsapp', 'message id');
+  // an empty delivery is still a bad payload, and need() is what says so - unless it is one of the coexistence
+  // notifications (07.10.2026), which carry no message: staff replies, history and contact sync, delivery statuses
+  if (!out.length && !whatsappOther(raw)) need(null, 'whatsapp', 'message id');
+  return out;
+}
+
+const WA_OTHER = new Set(['smb_message_echoes', 'history', 'smb_app_state_sync']);
+function whatsappOther(raw) {
+  return (raw.entry || []).some((e) => (e.changes || []).some((c) => WA_OTHER.has(c.field)
+    || (c.value && (c.value.message_echoes || c.value.statuses))));
+}
+
+// A reply staff sent FROM THE PHONE (coexistence, 07.10.2026): field smb_message_echoes, value.message_echoes[]
+// { from: our number, to: the person, id, timestamp }. Only who it went to and when: the text is never read.
+export function whatsappEchoes(raw) {
+  const out = [];
+  for (const entry of (raw && raw.entry) || []) {
+    for (const change of entry.changes || []) {
+      for (const m of (change.value && change.value.message_echoes) || []) {
+        if (m && m.to && m.timestamp) out.push({ id: str(m.id), to: String(m.to), at: iso(Number(m.timestamp)) });
+      }
+    }
+  }
   return out;
 }
 
