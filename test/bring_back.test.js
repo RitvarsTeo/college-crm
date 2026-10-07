@@ -195,7 +195,8 @@ function board(show) {
     cPoolFrame: (o) => o.body, cPoolBand: () => '', cPoolSelect: () => '', cPoolFilters: () => '',
     $: () => view, view, cPoolWire: () => {}, cPoolOpened: () => {},
   };
-  vm.runInNewContext([line('const C_IP_KIND = '), fnBody('function cInboxAge(iso) {'), line('const cAgo = '), fnBody('function cInboxPool() {'), 'cInboxPool();'].join('\n'), ctx);
+  // + Q66's state line (merged with this in rc/2026-10-07): the card's foot is drawn by cStateLine
+  vm.runInNewContext([line('const C_ST = '), line('const C_ST_RAIL = '), fnBody('function cStateLine(st, detail, act, title) {'), line('const C_IP_KIND = '), fnBody('function cInboxAge(iso) {'), line('const cAgo = '), fnBody('function cInboxPool() {'), 'cInboxPool();'].join('\n'), ctx);
   return view.innerHTML;
 }
 
@@ -203,7 +204,8 @@ test('the set-aside view: each card has one action, Bring back; the Inbox itself
   for (const show of ['archived', 'filtered', 'notrelevant']) {
     const html = board(show);
     assert.match(html, /onclick="event\.stopPropagation\(\);cBringBack\(7, this\)">Bring back<\/button>/, show);
-    assert.doesNotMatch(html, /Make a lead|Set aside/, show + ': still none of the Inbox actions');
+    // the Set aside BUTTON (class ib-aside); since Q66 the card's state line itself reads "Set aside"
+    assert.doesNotMatch(html, /Make a lead|class="ib-aside"/, show + ': still none of the Inbox actions');
   }
   assert.doesNotMatch(board('new'), /Bring back/, 'no new entry point on the Inbox (MAIN draws that as an A/B)');
   const f = fnBody('async function cBringBack(id, btn) {');

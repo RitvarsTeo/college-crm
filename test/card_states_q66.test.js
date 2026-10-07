@@ -128,7 +128,10 @@ test('an Inbox card: the state line says New, Answer now, Late or Set aside and 
   assert.doesNotMatch(html, /c-late|c-answer|<small title=/, 'no chip and no second age: the state line says it once');
   const aside = run('archived');
   assert.match(aside, /class="c-jp row ib-card c-rail c-rail-none" data-id="1"[\s\S]*?<span class="c-st-w">Set aside<\/span>/);
-  assert.doesNotMatch(aside, /ib-acts/);
+  // with Bring back (CHANNELS 9bed85b, merged in rc/2026-10-07 as MASTER CONTROL approved): a set-aside card's one
+  // action is Bring back; none of the Inbox's own actions
+  assert.match(aside, /<div class="ib-acts"><button class="btn sm" onclick="event\.stopPropagation\(\);cBringBack\(1, this\)">Bring back<\/button><\/div>/);
+  assert.doesNotMatch(aside, /Make a lead|class="ib-aside"/);
 });
 
 // ---- the look, and the Help center keeps up ---------------------------------------------------------------------
