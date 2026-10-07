@@ -612,3 +612,4 @@ QA motion/2026-10-07-release 3074f5a (A only, no switch/stamp) + MASTER CONTROL 
 
 ## 07.10 - THIRTY-FIRST PATCH LIVE: `f45340e` (code `8903491`), pushed
 REPORTS fb6eae6 target labels ("Admitted 120 · target 140 · 86%", Officer NAV+ENG target 98, hover with source) + MASTER CONTROL e6b921b Data to tidy -> the filtered List + CHANNELS 228eb30 WhatsApp coexistence (dormant until Meta env). 1376/1376, dpl_64zco5EkkAeyZ7LbTHKEq2XhKLHZ byte-identical 87/87, 8 private 401, 0 leaks. GitHub release/2026-10-05-intake-9 = f45340e (default branch).
+07.10 Q2 two-colour titles: pictures A (Help hero on navy) / B (section heads, new text blue) shown; Ritvars "[No preference]" -> PARKED, nothing built (nothing unpicked ships). Artifact watch on the migration checklist ended (connection lost).
