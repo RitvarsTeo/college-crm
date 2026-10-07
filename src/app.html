@@ -3641,6 +3641,8 @@ async function viewOutcomesC() {
 // Settings was dropped on 06.10.2026 (the owner: "whats the point of settings ... plus whtf is this layout mega
 // horizontal cards for few words?"). Light or dark is the switch on the left card; reporting a problem is the Help
 // center's; the three admin items are a small group at the foot of the Help center, for admins only.
+// "Data to tidy" opens exactly the people it counts (the owner, 07.10.2026: "Fix the link"): the Journey List with the
+// Details filter "Programme not in the list", which is the same test as the count below (cPeopleMatch, f.data === 'odd').
 async function cHelpAdmin() {
   const box = document.querySelector('#helpAdmin');
   if (!box || !isAdmin()) return;
@@ -3649,7 +3651,7 @@ async function cHelpAdmin() {
   const odd = people.filter((p) => p.programme && !known.has(p.programme)).length;
   box.innerHTML = `<h2 class="c-set-h">For admins</h2><div class="c-helpadmin">
     <a href="#/channels">Channels</a><a href="#/feedback">Feedback received</a>
-    <a href="#/people">Data to tidy${odd ? ` <b>${odd}</b>` : ''}</a></div>`;
+    <a href="#/journey?v=list&amp;p_data=odd" title="People whose programme is not one of the official ones">Data to tidy${odd ? ` <b>${odd}</b>` : ''}</a></div>`;
 }
 
 // ------------------------------------------------------------------ HELP CENTER
