@@ -20,6 +20,9 @@ const BLOCK = APP.slice(APP.indexOf('// ----------------------------------------
   APP.indexOf('// apply.novikontas.org, from the SIS'));
 const DAY = 86400000;
 const ago = (d) => new Date(Date.now() - d * DAY).toISOString();
+// PARKED 07.10.2026 (config benchmarks.on false): the machinery below is tested with the switch ON, so it still works when
+// the owner brings the benchmarks back; test/benchmarks_parked.test.js holds that Reports shows none today.
+const ON = { ...CFG, benchmarks: { ...CFG.benchmarks, on: true } };
 const NEEDS = ['definition', 'source', 'url', 'year', 'region', 'confidence'];
 
 function load(cfg = CFG) {
@@ -88,14 +91,14 @@ test('config: every benchmark carries its value, definition and full source, nex
 });
 
 test('a benchmark without its source is never drawn, and the page holds no benchmark value of its own', () => {
-  const { X } = load();
+  const { X } = load(ON);
   const steps = { leadToApplication: { of: 30, pct: 40, ofIds: [], reachedIds: [] }, contractToAdmitted: { of: 5, pct: 80, ofIds: [], reachedIds: [] } };
-  assert.equal(X.cRepBenchRows(steps, CFG.benchmarks).length, 2);
+  assert.equal(X.cRepBenchRows(steps, ON.benchmarks).length, 2);
   for (const f of NEEDS) {
-    const bad = { ...CFG.benchmarks, rows: CFG.benchmarks.rows.map((b, i) => (i === 0 ? { ...b, [f]: '' } : b)) };
+    const bad = { ...ON.benchmarks, rows: ON.benchmarks.rows.map((b, i) => (i === 0 ? { ...b, [f]: '' } : b)) };
     assert.deepEqual(X.cRepBenchRows(steps, bad).map((x) => x.b.id), ['contract_to_admitted'], `no ${f}: not drawn`);
   }
-  assert.equal(X.cRepBenchRows({}, CFG.benchmarks).length, 0, 'no server figure: not drawn');
+  assert.equal(X.cRepBenchRows({}, ON.benchmarks).length, 0, 'no server figure: not drawn');
   // values live in config only
   const page = APP.slice(APP.indexOf('const C_BENCH_NEEDS'), APP.indexOf('// One figure, drawn as the click to its people.'));
   for (const hard of ['15', '35', '88', '93', 'Noel', '2010', 'typical colleges']) assert.ok(!page.includes(hard), 'hard-coded: ' + hard);
@@ -117,8 +120,8 @@ test('the page: our dot is the server figure; the track (dot) and the working op
   const db = await dataset(ROWS);
   const r = await report(db, YEAR_TO_TODAY());
   const people = await db.prepare('SELECT * FROM people').all();
-  const ctx = load();
-  const M = ctx.X.cRepModel(r, people, CFG, localDate());
+  const ctx = load(ON);
+  const M = ctx.X.cRepModel(r, people, ON, localDate());
   const B = M.conversion.bench;
   assert.deepEqual(B.map((x) => [x.b.id, x.pct, x.few]), [['lead_to_application', 66.7, true], ['contract_to_admitted', 33.3, true]]);
   for (const x of B) {

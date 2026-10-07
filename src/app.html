@@ -5186,6 +5186,9 @@ function cRepModel(r, people, cfg, today) {
 // The benchmark rows that may be drawn: in config, with every provenance field, and with the server's step present.
 const C_BENCH_NEEDS = ['definition', 'source', 'url', 'year', 'region', 'confidence'];
 function cRepBenchRows(steps, bench) {
+  // PARKED (the owner, 07.10.2026: "keep it very far backlog the industry benchmarks"): config benchmarks.on false =
+  // no benchmark row anywhere; the code, the values and the sources are kept for later
+  if ((bench || {}).on === false) return [];
   const minN = Number((bench || {}).minN) || 20;
   // a row switched off in config is not drawn; a figure that is still missing values (an unread email thread) is not
   // drawn either: the owner's rule, missing values are never shown

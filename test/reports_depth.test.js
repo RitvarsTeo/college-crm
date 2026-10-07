@@ -113,7 +113,7 @@ test('every figure counts the same people the server report counts, in every pre
     const s = r.summary;
     assert.equal(M.leads.all.n, s.newLeads, 'leads');
     assert.equal(M.conversion.reachedApplication, undefined, 'one figure for reaching Application: the matured step (06.10)');
-    if (r.steps.leadToApplication.pct != null) assert.equal(M.conversion.bench[0].won.n, r.steps.leadToApplication.reached, 'reached Application, matured');
+    assert.equal(M.conversion.bench.length, 0, 'the benchmark rows are parked (the owner, 07.10.2026): none on Reports');
     assert.equal(M.conversion.won.n, s.conversionA, 'conversion a');
     assert.equal(M.conversion.base.n, s.conversionB, 'conversion b');
     assert.equal(M.conversion.pct, s.conversionPct, 'conversion %');
@@ -229,7 +229,8 @@ test('nothing lost: every block of the earlier report has its tab', async () => 
   const chapter = (id) => { const i = html.indexOf(`<section class="rp-ch" id="rep-${id}"`); const j = html.indexOf('<section class="rp-ch"', i + 10); return tabOf(id) + html.slice(i, j < 0 ? undefined : j); };
   const MAP = [
     ['New leads', 'leads', '<span>Leads</span>'],
-    ['Applications (reached Application or beyond): the matured step since 06.10', 'conversion', 'data-bench="lead_to_application"'],
+    // 'Applications (reached Application or beyond)' was the matured Lead to application benchmark row from 06.10; it is
+    // PARKED with the benchmarks (the owner, 07.10.2026, "very far backlog"), so Reports has no such figure for now
     ['Admitted', 'admitted', '<span>Admitted</span>'],
     ['Conversion', 'conversion', '<span>Conversion</span>'],
     ['Median time to admission', 'median', '<span>Median time to admission</span>'],
