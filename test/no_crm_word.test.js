@@ -58,15 +58,15 @@ test('the menu order and the Today name', () => {
   // Q51: Home, Admissions (Inbox, Today, Journey), Reports, Settings; Journey's place id stays 'people'
   // 06.10.2026: Settings left; the Help center is the foot
   assert.deepEqual(order, ['home', 'admissions', 'leads', 'today', 'people', 'reports', 'help']);
-  assert.match(nav, /<span>Today<\/span><span class="n" id="cnNext"><\/span>/, 'the count badge stays on Today');
+  assert.match(nav, /<span>Due<\/span><span class="n" id="cnNext"><\/span>/, 'the count badge stays on Due (Q67)');
   assert.doesNotMatch(nav, /<span>Next steps<\/span>/);
-  assert.match(APP, /title: 'Today',/);
+  assert.match(APP, /title: 'Due',/);
   assert.doesNotMatch(APP, /<h1>Next steps<\/h1>|Back to Next steps/);
   assert.match(APP, /cPlace\(page\)[\s\S]{0,400}today: 'today'/, 'the #/today route still works');
   // the Help center's flow follows the work as the menu does: Inbox, New lead, Today, Journey (the three step cards
   // that repeated it left on 06.10.2026, the owner's pick B)
   const flow = JSON.parse(read('config', 'help.json')).flow.map((m) => [m.name, m.href]);
-  assert.deepEqual(flow.slice(0, 4), [['Inbox', '#/leads'], ['New lead', '#/journey'], ['Today', '#/today'], ['Journey', '#/journey']]);
+  assert.deepEqual(flow.slice(0, 4), [['Inbox', '#/leads'], ['New lead', '#/journey'], ['Due', '#/due'], ['Journey', '#/journey']]);
 });
 test('the lines Intake writes on a person\'s History say Intake', () => {
   assert.match(read('src', 'intake.js'), /body: 'The Intake admissions journey ends here\. The record stays for reporting\.'/);

@@ -2433,13 +2433,13 @@ svg .m-flag-mark{transform-origin:0 100%}
 <body>
 <div class="shell">
   <nav>
-    <a class="brand" href="#/today" title="Home" aria-label="Novikontas Academy - Home">
+    <a class="brand" href="#/due" title="Home" aria-label="Novikontas Academy - Home">
       <img class="logo light" src="/assets/NoAca_logo_twotonehor.svg" alt="" width="1500" height="569">
       <img class="logo dark" src="/assets/NoAca_logo_whitehor.svg" alt="" width="1500" height="569">
       <span id="ver">Intake</span>
       <span id="tagline">Every first contact, in one place</span>
     </a>
-    <a class="item" href="#/today" data-icon="today"><span>Today</span><span class="pill late" id="navOverdue" style="display:none"></span></a>
+    <a class="item" href="#/due" data-icon="today"><span>Due</span><span class="pill late" id="navOverdue" style="display:none"></span></a>
     <a class="item" href="#/inbox" data-icon="inbox" title="Things that have come in and need a person to look at them"><span>Inbox</span><span class="pill warn" id="navIntake" style="display:none"></span></a>
     <a class="item" href="#/admissions" data-icon="board" title="Where each applicant is in the journey"><span>Admissions</span></a>
     <a class="item" href="#/followup" data-icon="clock" title="What has to happen, and when"><span>Follow-ups</span></a>
@@ -2708,7 +2708,7 @@ function installCNav() {
          its first child, the Inbox. Journey is People + Journey + Outcomes in one (Q47). -->
     <a href="#/admissions" data-c="admissions" title="The work: what arrived, what is due, everyone">${C_ICON.adm}<span>Admissions</span></a>
     <div class="kids"><a href="#/leads" data-c="leads" title="What arrived and needs a person to look at it"><span>Inbox</span><span class="n" id="cnLeads"></span></a>
-      <a href="#/today" data-c="today" title="What needs my attention today"><span>Today</span><span class="n" id="cnNext"></span></a>
+      <a href="#/due" data-c="today" title="What is due: overdue, due today, coming up"><span>Due</span><span class="n" id="cnNext"></span></a>
       <a href="#/journey" data-c="people" title="Everyone, by where they are in the journey"><span>Journey</span><span class="n" id="cnJourney"></span></a></div>
     <a href="#/reports" data-c="reports" title="What is happening">${C_ICON.rep}<span>Reports</span></a>
     <!-- No Settings (the owner, 06.10.2026: "whats the point of settings please tell me!?!! ... the light switch is
@@ -2834,7 +2834,7 @@ function installCTabs() {
   const tab = (href, t, icon, label, count) => `<a href="${href}" data-t="${t}">${icon}<span>${label}</span>${count ? `<span class="n" id="${count}"></span>` : ''}</a>`;
   const row = (href, icon, label) => `<a href="${href}" onclick="cMoreClose()">${icon}<span>${label}</span></a>`;
   document.body.insertAdjacentHTML('beforeend', `<div class="ctabs" role="navigation" aria-label="Phone menu">
-    ${tab('#/home', 'home', C_ICON.home, 'Home')}${tab('#/leads', 'leads', C_ICON.inbox, 'Inbox', 'ctLeads')}${tab('#/today', 'today', C_ICON.next, 'Today', 'ctNext')}${tab('#/journey', 'people', C_ICON.journey, 'Journey', 'ctJourney')}
+    ${tab('#/home', 'home', C_ICON.home, 'Home')}${tab('#/leads', 'leads', C_ICON.inbox, 'Inbox', 'ctLeads')}${tab('#/due', 'today', C_ICON.next, 'Due', 'ctNext')}${tab('#/journey', 'people', C_ICON.journey, 'Journey', 'ctJourney')}
     <button type="button" data-t="more" aria-haspopup="dialog" aria-expanded="false" onclick="cMoreOpen()">${C_ICON.more}<span>More</span></button></div>
   <div class="cmore" id="cMore" hidden><div class="cmore-back" onclick="cMoreClose()"></div>
     <div class="cmore-sheet" role="dialog" aria-modal="true" aria-label="More">
@@ -2866,7 +2866,9 @@ const cTabOf = (place) => (['home', 'leads', 'today', 'people'].includes(place) 
 //   #/funnel, #/metrics         -> Reports
 function cPlace(page) {
   return ({ '': 'home', home: 'home',
-    today: 'today', next: 'today', followup: 'today',
+    // Q67 (the owner's pick "B Due page", 07.10.2026): the work page is "Due" and lives at #/due; #/today stays an
+    // alias, so old links and the Back history still land. Its internal id stays 'today' (state, counts, menus).
+    due: 'today', today: 'today', next: 'today', followup: 'today',
     leads: 'leads', inbox: 'leads', car: 'leads', admissions: 'leads',   // Admissions opens its first child, the Inbox (Q51)
     people: 'people', person: 'people', journey: 'people', outcomes: 'people',
     reports: 'reports', funnel: 'reports', metrics: 'reports',
@@ -3191,10 +3193,10 @@ function cHomeB(D) {
       <div class="kday-sheet">
         <h2>Needs you</h2>
         <div class="kday-row">
-          ${need('Overdue', D.overdue, "cGoToday('cTodayOver')", '#/today', 0)}
-          ${need('Due today', D.dueToday, "cGoToday('cTodayDue')", '#/today', 1)}
+          ${need('Overdue', D.overdue, "cGoToday('cTodayOver')", '#/due', 0)}
+          ${need('Due today', D.dueToday, "cGoToday('cTodayDue')", '#/due', 1)}
           ${need('In the Inbox', D.inbox, '', '#/leads', 2)}
-          ${D.noNext ? need('No next step', D.noNext, "cGoPeople({ due: 'none' })", '#/today', 3) : ''}
+          ${D.noNext ? need('No next step', D.noNext, "cGoPeople({ due: 'none' })", '#/due', 3) : ''}
         </div>
       </div>
     </section>
@@ -3491,9 +3493,11 @@ function cByPerson(tasks) {
   for (const t of tasks || []) { if (!m.has(t.person_id)) m.set(t.person_id, []); m.get(t.person_id).push(t); }
   return [...m.values()];
 }
-// Home's Overdue and Due today open Today on exactly that section (Q36).
+// Home's Overdue and Due today open the Due page on exactly that section (Q36).
 let C_TODAY_AT = '';
-function cGoToday(section) { C_TODAY_AT = section; if (location.hash.split('?')[0] === '#/today') viewTodayC(); else location.hash = '#/today'; }
+function cGoToday(section) { C_TODAY_AT = section; if (cOnDue()) viewTodayC(); else location.hash = '#/due'; }
+// the Due page under either of its addresses (Q67: #/due, and #/today as the alias)
+const cOnDue = () => /^#\/(due|today)$/.test((location.hash || '').split('?')[0]);
 
 // -------------------------------------------------------------------- OUTCOMES
 // Cold or reject, the SECOND axis on Not proceeding (Admissions, 30.09.2026). Empty when
@@ -3844,9 +3848,9 @@ function cTodayPool() {
   const stages = (CFG.stages || []).filter((st) => !C_TERMINAL.includes(st.id));
   const sources = [...new Set(open.map((p) => p.source_channel || cNotSaid))].sort().map((v) => [v, v === cNotSaid ? 'not recorded' : channelLabel(v)]);
   $('#view').innerHTML = cPoolFrame({
-    title: 'Today',
+    title: 'Due',
     act: `<a class="c-planned" href="#/journey" onclick="cGoPeople({ stage: 'open' });return false"><b>${D.pct}%</b> planned <small>${D.open.length - D.none.length} of ${D.open.length} open people have a next step</small></a>`,
-    band: cPoolCards('Today', 'Needs you', groups.map((g) => ({ id: g.id, label: g.label, n: g.rows.length, tone: g.tone, lit: !C_TP.col && NOW.includes(g.id) })), C_TP.col, 'cTodayPick'),
+    band: cPoolCards('Due', 'Needs you', groups.map((g) => ({ id: g.id, label: g.label, n: g.rows.length, tone: g.tone, lit: !C_TP.col && NOW.includes(g.id) })), C_TP.col, 'cTodayPick'),
     filters: cPoolFilters('today', [
       cPoolSelect('Programme', C_TP.programme, progs.map((v) => [v, v === cNotSaid ? 'not recorded' : v]), 'C_TP.programme=this.value;cTodayPool()'),
       cPoolSelect('Stage', C_TP.stage, stages.map((st) => [st.id, st.label || st.id]), 'C_TP.stage=this.value;cTodayPool()'),
@@ -3930,7 +3934,7 @@ async function cTodayMoveTo(pid, from, day) {
   } catch (err) { alert(err.message); }
 }
 
-// ---- INBOX: Today · Yesterday · This week · Older, by when the message arrived
+// ---- INBOX: Today · Yesterday · Earlier this week · Older, by when the message arrived (Q67: one scale, 07.10.2026)
 // THE INBOX BOARD (Q62, the owner's pick A from the pictures, 06.10.2026; on the first board's columns: "Not relevant is
 // not even needed there, that garbage! And what is the cohorts like new, new lead and later? thats silly. But overall
 // the cards are good choice!"). Columns by arrival day, in his order "By dates first, then by channels. Then by kind of
@@ -3953,7 +3957,7 @@ function cInboxPool() {
   const D = C_IPD; if (!D) return;
   const ok = (r) => (!C_IP.channel || r.channel === C_IP.channel) && (!C_IP.kind || r.senderKind === C_IP.kind);
   const rows = D.rows.filter(ok);
-  const AGES = [['today', 'Today'], ['yesterday', 'Yesterday'], ['week', 'This week'], ['older', 'Older']];
+  const AGES = [['today', 'Today'], ['yesterday', 'Yesterday'], ['week', 'Earlier this week'], ['older', 'Older']];
   const cols = AGES.map(([id, label]) => ({ id, label, n: rows.filter((r) => cInboxAge(r.received_at) === id).length, tone: 'age-' + id }));
   const chans = [...new Set(D.rows.map((r) => r.channel))].sort().map((c) => [c, channelLabel(c)]);
   const live = C_IP.show === 'new';   // a message set aside keeps its card, without the actions
@@ -4143,7 +4147,7 @@ const cClosedStage = () => (CFG.stageRoles || {}).closed;
 function cGoPeople(filter) {
   C_PF = { ...C_PF_EMPTY(), ...filter }; C_PQ = ''; C_PEDIT = null; C_PMSG = ''; C_PTAB = 'all';
   if (filter && filter.due === 'none' && Object.keys(filter).length === 1) {   // Home's No next step: the Today card
-    C_PF = C_PF_EMPTY(); C_TP.col = 'none'; if (location.hash.split('?')[0] === '#/today') viewTodayC(); else location.hash = '#/today'; return;
+    C_PF = C_PF_EMPTY(); C_TP.col = 'none'; if (cOnDue()) viewTodayC(); else location.hash = '#/due'; return;
   }
   C_JP.col = null; C_JP.view = 'board'; C_JF = C_JF_EMPTY(); C_OUT_TAG = null; C_OUT_REASON = null; C_OUT_FILTER = null;
   if (location.hash.split('?')[0] === '#/journey') cPoolRouteJourney('people'); else location.hash = '#/journey';
@@ -5576,7 +5580,7 @@ async function drawWaiting() {
   try {
     const w = await api('/api/waiting?as=' + encodeURIComponent(ACTOR));
     if (w.isAdmin) {
-      box.innerHTML = w.byRole.map(r => `<a href="${r.role === 'Marketing' ? '#/car' : '#/today'}"
+      box.innerHTML = w.byRole.map(r => `<a href="${r.role === 'Marketing' ? '#/car' : '#/due'}"
         class="wrow"><span>${esc(r.role)}</span><b class="${r.overdue || r.aged ? 'late' : ''}">${r.total}</b></a>`).join('')
         + '<div class="whint">waiting, per role</div>';
     } else if (w.mine.total) {
@@ -5586,7 +5590,7 @@ async function drawWaiting() {
       // reason a reader could see. They are now two lines, each saying what it is.
       const needs = w.mine.intake + w.mine.overdue;
       box.innerHTML =
-        `<a href="${w.mine.intake ? '#/car' : '#/today'}" class="wrow big"
+        `<a href="${w.mine.intake ? '#/car' : '#/due'}" class="wrow big"
             title="Messages to look at, and next steps that are late. These are the things Today asks you to do.">
           <span>needs you today</span>
           <b class="${w.mine.overdue || w.mine.aged ? 'late' : ''}">${needs}</b></a>`
@@ -5983,9 +5987,9 @@ const dueText = (d) => {
 
 // ---------------------------------------------------------------- routing --
 // THE APP OPENS ON HOME (the owner, 05.10.2026: opening it landed on Admissions / Today). An empty address is
-// Home, the metrics page, since Home came back on 01.10; '#/today' was V1's start page, left behind. The hidden
+// Home, the metrics page, since Home came back on 01.10; '#/due' was V1's start page, left behind. The hidden
 // classic view has no Home, so it keeps Today.
-const START = () => (UI === 'c' ? '#/home' : '#/today');
+const START = () => (UI === 'c' ? '#/home' : '#/due');
 // ---------------------------------------------------------------- BACK ONE STEP (Q61)
 // The owner, 06.10.2026: "could benefit from hot keys (shortcuts) for faster navigation, right? First priority would
 // be back one step, especially useful when jumping between tabs and links to tabs especially." The column, the
@@ -6051,7 +6055,7 @@ function cApplyViewState(place, q) {
 }
 // The page part of the address for the view on screen (the old names land on their page: #/people is the Journey).
 function cViewPath(place, path) {
-  return ({ people: '#/journey', today: '#/today', leads: '#/leads', home: '#/home' })[place]
+  return ({ people: '#/journey', today: '#/due', leads: '#/leads', home: '#/home' })[place]
     || (place === 'reports' ? '#/reports' + (C_REP_CH ? '/' + C_REP_CH : '') : path);
 }
 const cPageLabel = () => { const h = document.querySelector('#view h1'); return h ? h.textContent.trim().slice(0, 40) : ''; };
@@ -6109,9 +6113,9 @@ function installCViewState() {
 // Ignored while typing in a field. G then a letter goes to a place; "/" puts the cursor in the page's search; Esc
 // closes the open dialog or editor; "?" lists them. Alt+Left is the browser's own Back, which now lands exactly.
 const C_KEYS = [['Alt + ←', 'Back one step, to the view you came from'], ['G then H', 'Home'], ['G then I', 'Inbox'],
-  ['G then T', 'Today'], ['G then J', 'Journey'], ['G then R', 'Reports'], ['/', 'Search on this page'],
+  ['G then D', 'Due'], ['G then J', 'Journey'], ['G then R', 'Reports'], ['/', 'Search on this page'],
   ['Esc', 'Close the open dialog or editor'], ['?', 'This list']];
-const C_GO = { h: '#/home', i: '#/leads', t: '#/today', j: '#/journey', r: '#/reports' };
+const C_GO = { h: '#/home', i: '#/leads', d: '#/due', j: '#/journey', r: '#/reports' };
 let C_G_AT = 0;
 const cTyping = (el) => Boolean(el && el.closest && el.closest('input, textarea, select, [contenteditable=""], [contenteditable="true"]'));
 function cShortcut(e) {
@@ -6200,8 +6204,8 @@ async function route() {
     $('#view').innerHTML = e.message === 'not found'
       ? `<h1>Not here any more</h1>
          <div class="prov">This record is not in the database any more. This page may have been
-         open since before the data changed. Going back to Today will reload it.</div>
-         <button class="btn" onclick="location.hash='#/today'">Back to Today</button>`
+         open since before the data changed. Going back to Due will reload it.</div>
+         <button class="btn" onclick="location.hash='#/due'">Back to Due</button>`
       : `<div class="err">Failed to load: ${esc(e.message)}</div>`;
   }
   refreshBadge();

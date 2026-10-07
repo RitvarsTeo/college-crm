@@ -26,7 +26,7 @@ const FIGURES = [
   ['Home', 'Month bands', 'function cMonthChart(months, year, fitH = 0) {', /data-kgo="month\|\$\{m\.month\}\|/],
   ['Today', 'planned %', 'function cTodayPool() {', /<a class="c-planned" href="#\/journey" onclick="cGoPeople\(\{ stage: 'open' \}\);return false">/],
   // Q47: the same card one level deeper - Home's Needs you is Today's band, each card the click to its people
-  ['Today', 'Needs you cards', 'function cTodayPool() {', /band: cPoolCards\('Today', 'Needs you', groups\.map/],
+  ['Due', 'Needs you cards', 'function cTodayPool() {', /band: cPoolCards\('Due', 'Needs you', groups\.map/],
   ['Today', 'a card narrows the list', 'function cPoolCards(', /onclick="\$\{pick\}\(this\.dataset\.v\)"><span>\$\{esc\(c\.label\)\}<\/span><b>\$\{c\.n\}<\/b>/],
   ['Inbox', 'age columns', 'function cInboxPool() {', /band: cPoolBand\('Inbox', cols, C_IP\.col, 'cInboxPick'\)/],
   ['Journey', 'pool columns', 'function cDrawJourneyPool() {', /band: cPoolBand\('The journey', cols, C_JP\.col, 'cJourneyPick'\)/],
@@ -40,7 +40,7 @@ const FIGURES = [
   ['Outcomes', 'Admitted / Not proceeding columns', 'function cDrawJourneyPool() {', /\{ id: admitted, label: admitted, n: base\.filter\(\(p\) => p\.status === admitted\)\.length, tone: 'good', sep: true \}/],
   ['Outcomes', 'Everybody / Cold / Reject', 'function cDrawJourneyPool() {', /cPoolSelect\('Cold \/ Reject', C_OUT_TAG \|\| '', tags, 'C_OUT_TAG=this\.value/],
   ['Outcomes', 'Why they stopped bars', 'function cReasonBreakdown(', /onclick="C_OUT_REASON=this\.dataset\.r;cDrawJourneyPool\(\)/],
-  ['Menu', 'Today and Inbox badges', 'function installCNav() {', /<a href="#\/today" data-c="today"[^>]*><span>Today<\/span><span class="n" id="cnNext">/],
+  ['Menu', 'Due and Inbox badges', 'function installCNav() {', /<a href="#\/due" data-c="today"[^>]*><span>Due<\/span><span class="n" id="cnNext">/],
   ['Menu', 'Journey badge', 'function installCNav() {', /<a href="#\/journey" data-c="people"[^>]*><span>Journey<\/span><span class="n" id="cnJourney">/],
 ];
 
@@ -68,11 +68,11 @@ test('the helpers land on exactly the cohort', () => {
     C_PF: null, C_PQ: 'x', C_PEDIT: 'p1', C_PMSG: 'x', C_PTAB: 'journey', C_JF: null, C_JFOPEN: 'y',
     C_TP: { col: null }, C_JP: { col: 'Application', view: 'board' } };
   vm.runInNewContext([APP.match(/const C_PF_EMPTY = [^\n]*/)[0].replace('const ', 'var '), APP.match(/const C_JF_EMPTY = [^\n]*/)[0].replace('const ', 'var '),
-    fnBody('function cGoPeople(filter) {'), APP.match(/function cGoToday\(section\) [^\n]*/)[0], 'var C_TODAY_AT = "";',
+    fnBody('function cGoPeople(filter) {'), APP.match(/function cGoToday\(section\) [^\n]*/)[0], APP.match(/const cOnDue = [^\n]*/)[0], 'var C_TODAY_AT = "";',
     APP.match(/function cJfOverdue\(stage\) [^\n]*/)[0]].join('\n'), ctx);
   // Q47: Home's No next step opens Today on that card; any other People filter opens the Journey, everyone (Q57: the Board)
   ctx.cGoPeople({ due: 'none' });
-  assert.equal(ctx.location.hash, '#/today');
+  assert.equal(ctx.location.hash, '#/due');
   assert.equal(ctx.C_TP.col, 'none');
   ctx.location.hash = '#/home';
   ctx.cGoPeople({ arrived: '2026' });
@@ -82,7 +82,7 @@ test('the helpers land on exactly the cohort', () => {
   assert.equal(ctx.C_JP.col, null); assert.equal(ctx.C_JP.view, 'board', 'Q57: the Board, never the List');
   assert.equal(ctx.C_PQ, '');
   ctx.location.hash = '#/home'; ctx.cGoToday('cTodayOver');
-  assert.equal(ctx.location.hash, '#/today'); assert.equal(ctx.C_TODAY_AT, 'cTodayOver');
+  assert.equal(ctx.location.hash, '#/due'); assert.equal(ctx.C_TODAY_AT, 'cTodayOver');
   ctx.cJfOverdue('Application');
   assert.deepEqual(JSON.parse(JSON.stringify(ctx.C_JF.stage)), ['Application']);
   assert.deepEqual(JSON.parse(JSON.stringify(ctx.C_JF.due)), ['over']);

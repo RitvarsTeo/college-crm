@@ -47,7 +47,7 @@ function board(ip = {}, { rows = ROWS, open = null, show = 'new' } = {}) {
 test('four columns by arrival day, in his order, each with its count; the band keeps the same four', () => {
   const html = board().view.innerHTML;
   const heads = [...html.matchAll(/<h3><span class="c-jn">(\d)<\/span>([^<]+)<b>(\d+)<\/b><\/h3>/g)].map((m) => [m[1], m[2], Number(m[3])]);
-  assert.deepEqual(heads, [['1', 'Today', 2], ['2', 'Yesterday', 2], ['3', 'This week', 1], ['4', 'Older', 1]]);
+  assert.deepEqual(heads, [['1', 'Today', 2], ['2', 'Yesterday', 2], ['3', 'Earlier this week', 1], ['4', 'Older', 1]]);
   assert.match(html, /<band Inbox on=null pick=cInboxPick>today:2:age-today,yesterday:2:age-yesterday,week:1:age-week,older:1:age-older<\/band>/);
   assert.match(html, /grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
   assert.doesNotMatch(html, /New lead|Not relevant|Later/, 'no such columns');

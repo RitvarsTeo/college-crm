@@ -87,7 +87,7 @@ test('the menu: Home, Admissions (Inbox, Today, Journey with their counts), Repo
   assert.match(APP, /leads: 'leads', inbox: 'leads', car: 'leads', admissions: 'leads',/, '#/admissions opens the Inbox');
   // the phone tab bar stays Home, Inbox, Today, Journey, More
   const tabs = fnBody('function installCTabs() {');
-  assert.deepEqual([...tabs.matchAll(/tab\('(#\/[a-z]+)', '[a-z]+', C_ICON\.[a-z]+, '([A-Za-z]+)'/g)].map((m) => m[2]), ['Home', 'Inbox', 'Today', 'Journey']);
+  assert.deepEqual([...tabs.matchAll(/tab\('(#\/[a-z]+)', '[a-z]+', C_ICON\.[a-z]+, '([A-Za-z]+)'/g)].map((m) => m[2]), ['Home', 'Inbox', 'Due', 'Journey']);
 });
 
 test('lit: a child lights itself and Admissions; Home, Reports and the Help center light alone', () => {

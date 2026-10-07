@@ -24,7 +24,7 @@ test('an empty address routes to Home and lights Home in the menu', () => {
 test('the hidden classic view keeps Today, it has no Home', () => {
   const ctx = { UI: 'classic' };
   vm.runInNewContext(line('const START = ') + '\nthis.start = START;', ctx);
-  assert.equal(ctx.start(), '#/today');
+  assert.equal(ctx.start(), '#/due');
 });
 test('feedback is filed against the page actually shown', () => {
   assert.match(APP, /const fbPath = \(\) => location\.hash \|\| START\(\);/);

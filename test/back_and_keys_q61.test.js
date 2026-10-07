@@ -114,8 +114,8 @@ test('the router reads the page before "?", the exact comparisons too, and a cha
 test('shortcuts: G then a letter goes to the place; nothing happens while typing; "?" and "/" do their job', () => {
   const s = sandbox('#/home');
   const ev = (key, target = { closest: () => null }, extra = {}) => ({ key, target, defaultPrevented: false, preventDefault() { this.defaultPrevented = true; }, ...extra });
-  s.L.cShortcut(ev('g')); s.L.cShortcut(ev('t'));
-  assert.equal(s.location.hash, '#/today');
+  s.L.cShortcut(ev('g')); s.L.cShortcut(ev('d'));   // Q67: the page is Due, G then D
+  assert.equal(s.location.hash, '#/due');
   s.L.cShortcut(ev('g')); s.L.cShortcut(ev('J'));
   assert.equal(s.location.hash, '#/journey', 'either case');
   for (const [k, where] of [['h', '#/home'], ['i', '#/leads'], ['r', '#/reports']]) { s.L.cShortcut(ev('g')); s.L.cShortcut(ev(k)); assert.equal(s.location.hash, where); }
@@ -132,7 +132,7 @@ test('shortcuts: G then a letter goes to the place; nothing happens while typing
 
 test('the shortcut list: one source for the dialog and the Help center, under How to', () => {
   const keys = vm.runInNewContext(LAYER.slice(LAYER.indexOf('const C_KEYS = '), LAYER.indexOf('const C_GO = ')).replace('const ', 'var ') + '; C_KEYS');
-  assert.deepEqual(JSON.parse(JSON.stringify(keys.map((k) => k[0]))), ['Alt + ←', 'G then H', 'G then I', 'G then T', 'G then J', 'G then R', '/', 'Esc', '?']);
+  assert.deepEqual(JSON.parse(JSON.stringify(keys.map((k) => k[0]))), ['Alt + ←', 'G then H', 'G then I', 'G then D', 'G then J', 'G then R', '/', 'Esc', '?']);
   assert.match(APP, /\$\{cHelpFlow\(\)\}\$\{cHelpHowTo\(\)\}\$\{cKeysHelp\(\)\}/, 'Help center: How to, then Keyboard');
   assert.match(LAYER, /<dialog id="cKeys" class="c-keys" aria-labelledby="cKeysH">/, 'a dialog, not a page');
 });

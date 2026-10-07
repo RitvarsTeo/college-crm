@@ -48,5 +48,5 @@ test('the Help center still explains itself', () => {
   const help = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'help.json'), 'utf8'));
   assert.ok(help.flow.every((m) => m.name) && help.flow.filter((m) => m.for).length >= 4, 'every stop named, the plain ones said in a line');
   assert.ok(help.howto.length >= 5 && help.faq.length >= 5, 'how-to links and answers');
-  assert.match(help.tour.find((t) => t.title === 'Today').body, /Press Done, say how it went/, 'explaining is what a help page is for');
+  assert.match(help.tour.find((t) => t.title === 'Due').body, /Press Done, say how it went/, 'explaining is what a help page is for');
 });

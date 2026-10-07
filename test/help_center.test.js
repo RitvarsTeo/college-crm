@@ -176,10 +176,10 @@ test('Q54 -> Q56: no card grid of the menu, no "three steps" cards repeating the
 });
 
 test('Q54 how to: short task links, each opens a real place', () => {
-  const places = ['#/home', '#/leads', '#/today', '#/journey', '#/reports', '#/settings', '#/help'];
+  const places = ['#/home', '#/leads', '#/due', '#/journey', '#/reports', '#/settings', '#/help'];
   // 06.10.2026, the standing rule "the help center must always keep up with any changes in the app"
   assert.deepEqual(HELP.howto.map((h) => h.do), ['Find a person', 'Add a lead', 'Make a lead from a message', 'Set a message aside',
-    "Act on today's work", 'Move a step to another day', 'Move someone back a stage', 'See who came from a channel', 'See a Home number in depth',
+    'Act on what is due', 'Move a step to another day', 'Move someone back a stage', 'See who came from a channel', 'See a Home number in depth',
     'Use the keyboard', 'Look at other years', 'See one month']);
   for (const h of HELP.howto) assert.ok(places.includes(h.href) && h.where, h.do);
   assert.ok(APP.includes('placeholder="Search name, email or phone"') && APP.includes('>Add lead</button>') && APP.includes("'Came from'"),
@@ -232,7 +232,7 @@ test('step 2 reads "New lead" everywhere, short and plain; nothing says "becomes
 });
 
 test('Q56 the flow: six stops in order, each a link to the right route, stages and ends a click to their column', () => {
-  assert.deepEqual(HELP.flow.map((m) => [m.name, m.href]), [['Inbox', '#/leads'], ['New lead', '#/journey'], ['Today', '#/today'],
+  assert.deepEqual(HELP.flow.map((m) => [m.name, m.href]), [['Inbox', '#/leads'], ['New lead', '#/journey'], ['Due', '#/due'],
     ['Journey', '#/journey'], ['The end', '#/journey'], ['Reports', '#/reports']]);
   for (const m of HELP.flow) {
     assert.ok(m.name.split(/\s+/).length <= 4, 'a short label: ' + m.name);
@@ -296,6 +296,6 @@ test('the Help center follows the Inbox board: Make a lead and Set aside, never 
   assert.match(late, /end of the working day/); assert.match(late, /09:00 to 17:00 Riga/); assert.match(late, /"answer now"/);
   assert.doesNotMatch(late, /before today|past 09:00 Riga time, and nobody/, 'the old rule is gone');
   // Today's drag and the keyboard
-  assert.match(HELP.tour.find((t) => t.title === 'Today').body, /Drag a card to Due today or Coming up/);
+  assert.match(HELP.tour.find((t) => t.title === 'Due').body, /Drag a card to Due today or Coming up/);
   assert.equal(HELP.howto.find((h) => h.do === 'Use the keyboard').where, 'Press ? for the shortcuts');
 });

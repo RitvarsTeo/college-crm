@@ -16,10 +16,10 @@ const HOME = fnBody('function cHomeB(D) {');
 test('every Home figure is a click to where it comes from', () => {
   // Needs you and the journey
   // Q36: Overdue / Due today open exactly that section of Today; No next step opens People on that filter
-  assert.match(HOME, /need\('Overdue', D\.overdue, "cGoToday\('cTodayOver'\)", '#\/today', 0\)/);
-  assert.match(HOME, /need\('Due today', D\.dueToday, "cGoToday\('cTodayDue'\)", '#\/today', 1\)/);
+  assert.match(HOME, /need\('Overdue', D\.overdue, "cGoToday\('cTodayOver'\)", '#\/due', 0\)/);
+  assert.match(HOME, /need\('Due today', D\.dueToday, "cGoToday\('cTodayDue'\)", '#\/due', 1\)/);
   assert.match(HOME, /need\('In the Inbox', D\.inbox, '', '#\/leads', 2\)/);
-  assert.match(HOME, /need\('No next step', D\.noNext, "cGoPeople\(\{ due: 'none' \}\)", '#\/today', 3\)/, 'Q47: the No next step card on Today');
+  assert.match(HOME, /need\('No next step', D\.noNext, "cGoPeople\(\{ due: 'none' \}\)", '#\/due', 3\)/, 'Q47: the No next step card on Today');
   // the four cards: ALL FOUR open their own Reports tab on This year (Q35, the owner 05.10.2026), Admitted included
   assert.match(HOME, /<div class="khero"><span>Admitted<\/span>[^\n]*href="#\/reports" onclick="cGoReportYear\('admitted'\);return false">Reports →<\/a><\/div>/);
   assert.doesNotMatch(APP, /cGoAdmittedYear/, 'Admitted no longer skips the breakdowns');

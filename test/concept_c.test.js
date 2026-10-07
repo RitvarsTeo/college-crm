@@ -55,7 +55,7 @@ test('Today and the Inbox keep their own counts in C\'s navigation', () => {
   // Next Steps was folded INTO Today (the owner, 01.10.2026), so the due count it carried
   // is now the Today badge: same id, same number, one screen fewer to visit.
   // 05.10.2026 (the owner, the last word that day): the menu item reads "Today" and the badge stays on it
-  assert.match(APP, /<span>Today<\/span><span class="n" id="cnNext">/);
+  assert.match(APP, /<span>Due<\/span><span class="n" id="cnNext">/);   // Q67: the page is Due
   // Q47 + Q52: the counts are cPoolCounts', the user's NEW only
   const start = APP.indexOf('async function cPoolCounts(');
   const src = APP.slice(start, APP.indexOf('\n}\n', start));
