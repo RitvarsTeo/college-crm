@@ -55,7 +55,7 @@ function app() {
 }
 
 test('the Board is the default view, before anything is clicked', () => {
-  assert.match(APP, /let C_JP = \{ col: null, view: 'board' \};/);
+  assert.match(APP, /let C_JP = \{ col: null, view: 'board', open: null \};/);
   const sw = fn('function cPoolViewSwitch(');
   assert.ok(sw.indexOf('>Board</button>') < sw.indexOf('>List</button>'), 'Board is the first option of the switch, List the second');
   assert.doesNotMatch(APP, /localStorage\.setItem\([^)]*(jview|journeyView|C_JP)/i, 'the view is never remembered');
@@ -122,7 +122,7 @@ function board(people, setup = {}) {
     C_PCOHORT: null, C_PF: { stage: '', arrived: '' }, C_OUT_TAG: null, C_OUT_REASON: null, C_OUT_FILTER: null,
     C_JDATA: { people, taskOf: new Map(), play: false }, cSisHolds: () => false, C_JTALK: new Map(), C_JTALK_BUSY: new Set(),
     esc: (s) => String(s ?? ''), cDay: (d) => String(d || '').slice(0, 10), fmtDate: (d) => String(d || '').slice(0, 10), cWhenClass: () => '',
-    cJourneySummary: () => '<summary>', cJourneyFilters: () => '<filters>', cPoolViewSwitch: () => '<switch>', cScenes() {}, cJFlipPlay() {},
+    cJourneySummary: () => '<summary>', cJourneyFilters: () => '<filters>', cPoolViewSwitch: () => '<switch>', cScenes() {}, cJFlipPlay() {}, cPoolWire() {}, cJourneyMini() {},
     cJourneyCard: (p) => `<div class="c-jp" draggable="true" data-id="${p.id}">[${p.id}]</div>`, cPersonCard: (p) => `[open ${p.id}]`,
     cJourneyTalk: async () => {}, cTagChip: (t) => `<tag ${t}>`, cColdWhy: (p) => p.closed_reason || 'reason not recorded',
     cTagLabel: (p) => p.closed_tag,
@@ -133,7 +133,7 @@ function board(people, setup = {}) {
     ...setup,
   };
   const filtersSrc = APP.slice(APP.indexOf('let C_JF = {'), APP.indexOf('// FOR MANAGEMENT (30.09.2026)'));
-  vm.runInNewContext([line('const C_JCOL_SHOW = '), line('const C_JCOLOPEN = '), fn('function cJUrgency('), fn('function cJSort('),
+  vm.runInNewContext([line('const cPhone = '), line('const C_JCOL_SHOW = '), line('const C_JCOLOPEN = '), fn('function cJUrgency('), fn('function cJSort('),
     line('const C_ST = '), line('const C_ST_RAIL = '), fn('function cStateLine('), line('const cDdMm = '), fn('function cStepState('), line('const cStepGroup = '), line('const C_GRP = '), line('const cGroupBand = '),   // Q66
     fn('function cJColumn('), fn('function cJEndCard('), filtersSrc.replace('let C_JF = {', 'var C_JF = {'),
     fn('function cJTargetKeep('), line('const cJTargeted = '), line('const cMoveBody = '), fn('function cJTargetChips('), fn('function cDrawJourney('),

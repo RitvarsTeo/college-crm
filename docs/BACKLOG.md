@@ -77,6 +77,33 @@ from release `6e3dc39`.
 | Checked headless at 1440 on every chapter for one year, two years and one month: no row with a lone block narrower than the grid. test/reports_full_row.test.js runs cRepBody on the synthetic data (blocks 2 / 5 / 3 / 2) and pins the rule | BUILT |
 | Shots: `For review/2026-10-07 Reports full row/` (before, after) | BUILT |
 
+## 07.10.2026 - Q68: the boards on a phone - stacked stages (PICKED 07.10: "B stacked stages")
+
+Ritvars 07.10, with a phone shot of the Journey board: "mobile versions scrolling doesnt work like that" (the board
+scrolled sideways inside the page with a grey scrollbar, narrow columns, cards cut at the right, no sense of where you
+are). Two pictures at 375 (For review/2026-10-07 Q69 phone board AB: A swipe columns, B stacked stages); he picked
+**B stacked stages**, told in the caption that on the phone it is no longer a sideways board and that Move replaces drag.
+- At phone width (760 px and under) every board stacks its columns one under the other: the Journey's stages, Due's
+  Overdue / Due today / Coming up, the Inbox's days. ONE column is open at a time, the others fold to a row with their
+  name and count; a tap on a folded row opens it. The band on top is the strip: a tap on a Journey bar, a Needs-you
+  card or an Inbox bar opens that column (on a wide screen those taps filter / narrow, as before). The Journey band is
+  sticky and goes compact once the page has scrolled (bars only), as the pool bands already do.
+- Nothing scrolls sideways: the Journey's columns are a block, not a grid, at phone width.
+- Move on the opened Journey card (phone only) opens the person's form, where the stage is picked; a wide screen drags.
+- The open column travels in the address (open=...), so Back lands on it (Q61).
+- Help center: the Journey, Due and Inbox tour steps carry the phone sentence.
+Tests: test/phone_boards_q68.test.js (runs the Journey board, the Due board and the Inbox board at phone width and at
+desktop width). Shots: `For review/2026-10-07 Q68 phone boards build/` (375, before and after). **BUILT, next patch.**
+
+## FAR BACKLOG - 07.10.2026 - the Inbox Reply filter (built, parked with Reports' First-reply row)
+
+Built on ui/2026-10-02-main-ab (3a71727 merge of REPORTS' feat/2026-10-07-first-reply, 56a06f1 the filter and the
+address #/leads?reply=yes|none&from&to, 02ec7e3 test rows never "no reply yet"). The owner parked every industry
+benchmark "very far backlog" on 07.10, the First-reply row with it, and the filter was built only to serve that row:
+MASTER CONTROL parked it too. Not in a patch; the commits stay on that branch; patch 27 is built from release 8af99b8
+without them. The words agreed with REPORTS for the day it comes back: reply=yes|none|known, state new + qualified and
+source provider when reply is set, to = the day before yesterday for maturing.
+
 ## 07.10.2026 - First-reply time (on the finish line): the replies are recorded; the Reports row waits
 
 Ritvars put "First-reply time" on the app's finish line; answers via MASTER CONTROL 07.10: replies go out "from edu@";

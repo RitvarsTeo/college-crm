@@ -184,7 +184,7 @@ test('Q54 how to: short task links, each opens a real place', () => {
   for (const h of HELP.howto) assert.ok(places.includes(h.href.split('?')[0]) && h.where, h.do);
   assert.ok(APP.includes('placeholder="Search name, email or phone"') && APP.includes('>Add lead</button>') && APP.includes("'Came from'"),
     'what the how-to names exists on screen');
-  assert.ok(APP.includes('>Make a lead</button>') && APP.includes('>Set aside</button>') && APP.includes('>Bring back</button>') && APP.includes("data-col=\"later\"") && APP.includes("if (k === '?')"),
+  assert.ok(APP.includes('>Make a lead</button>') && APP.includes('>Set aside</button>') && APP.includes('>Bring back</button>') && APP.includes('class="c-drop t-drop" data-col="${g.id}"') && APP.includes("if (k === '?')"),
     'and so do the Inbox card actions, Today\'s drop columns and the ? key');
   assert.doesNotMatch(JSON.stringify(HELP.howto), /year switch|year picker/i, 'nothing about features not built');
 });

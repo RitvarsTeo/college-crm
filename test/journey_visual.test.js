@@ -145,10 +145,11 @@ test('every Journey stage still appears, in the same order, with its own label',
   ctx.cPeopleTabs = (which) => `<tabs ${which}>`; // the tabs have their own test
   ctx.cJourneySummary = () => '';                 // and so does the summary
   ctx.cPoolViewSwitch = () => '<switch>';        // Q47: List | Board, its own test
+  ctx.cPoolWire = () => {}; ctx.cJourneyMini = () => {};   // Q68: the phone strip, its own test
   vm.runInNewContext(`${line('const cWhenClass =')}\n${line('const cTask =')}\n${line('const cNotePreview =')}\n${line('const cComment =')}\n${APP.slice(iconStart, APP.indexOf('\n};', iconStart) + 3)}\n${fn('function groupForAction(')}\n${line('const cStepIcon =')}\n${fn('function cLifeFacts(')}\n${line('const C_SIS_HOLDS =')}
 ${line('const cSisHolds =')}
 ${line('const cSisHeld =')}
-${line('const cChooseNext =')}\n${stateHelpers()}\n${cardSrc}\n${filters}\n${draw}\ncDrawJourney();`, ctx);
+${line('const cChooseNext =')}\n${line('const cPhone =')}\n${stateHelpers()}\n${cardSrc}\n${filters}\n${draw}\ncDrawJourney();`, ctx);
   // Q43: the header is the stage's number and name; its count is the band's (no <b>count</b> here any more)
   const heads = [...html.matchAll(/<h3><span class="c-jn">(\d+)<\/span>([^<]+?)(?:<button|<\/h3>)/g)].map((m) => [Number(m[1]), m[2]]);
   assert.doesNotMatch(html, /<h3><span class="c-jn">\d+<\/span>[^<]+ <b>\d+<\/b>/, 'no stage count in the board header');

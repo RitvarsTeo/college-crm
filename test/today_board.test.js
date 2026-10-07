@@ -28,7 +28,7 @@ function board(tp = {}, data = null) {
     post: async (url, body) => { posted.push([url, body]); return {}; }, viewTodayC: async () => {}, cNavCounts: () => {}, cTodayPool: () => {},
     alert: () => {}, posted, C_TPD: data,
   };
-  vm.runInNewContext([APP.match(/const C_TCOL_SHOW = \d+;/)[0], line('const C_ST = '), fnBody('function cStateLine('), line('const cDdMm = '), fnBody('function cStepState('),   // Q66
+  vm.runInNewContext([line('const cPhone = '), APP.match(/const C_TCOL_SHOW = \d+;/)[0], line('const C_ST = '), fnBody('function cStateLine('), line('const cDdMm = '), fnBody('function cStepState('),   // Q66, Q68
     fnBody('function cTodayBoard(D, groups) {'),
     fnBody('function cTodayDrop(pid, from, to) {'), fnBody('async function cTodayMoveTo(pid, from, day) {')].join('\n'), ctx);
   return ctx;
