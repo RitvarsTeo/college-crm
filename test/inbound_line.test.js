@@ -134,7 +134,7 @@ test('the machine filter empties the ROW body and KEEPS the line, so it stays ch
   assert.equal(l.body_deleted_at, null);
 });
 
-test('a PERSON dealing with it deletes the bodies, lines included', async () => {
+test('making a lead deletes the bodies, lines included; set aside keeps them (07.10.2026: "Keep the text")', async () => {
   const db = await openDb();
   const a = await receive(db, { channel: 'instagram', externalId: 'q1',
     body: 'Hi, I want to study Navigation, I finished secondary school' });
@@ -148,8 +148,8 @@ test('a PERSON dealing with it deletes the bodies, lines included', async () => 
   const b = await receive(db, { channel: 'instagram', externalId: 'r1', body: 'Not for me' });
   await archive(db, b.id, { reason: 'Not a prospective student', by: 'Admissions' });
   const bl = await lines(db, b.id);
-  assert.equal(bl[0].body, null, 'and so does archive');
-  assert.ok(bl[0].body_deleted_at);
+  assert.equal(bl[0].body, 'Not for me', 'set aside keeps the text now, until the 13-month retention');
+  assert.equal(bl[0].body_deleted_at, null);
 });
 
 test('addLine appends in order and reports the number it used', async () => {

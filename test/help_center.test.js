@@ -179,12 +179,12 @@ test('Q54 how to: short task links, each opens a real place', () => {
   const places = ['#/home', '#/leads', '#/due', '#/journey', '#/reports', '#/settings', '#/help'];
   // 06.10.2026, the standing rule "the help center must always keep up with any changes in the app"
   assert.deepEqual(HELP.howto.map((h) => h.do), ['Find a person', 'Add a lead', 'Make a lead from a message', 'Set a message aside',
-    'Act on what is due', 'Move a step to another day', 'Move someone back a stage', 'See who came from a channel', 'See a Home number in depth',
+    'Bring a set-aside message back', 'Act on what is due', 'Move a step to another day', 'Move someone back a stage', 'See who came from a channel', 'See a Home number in depth',
     'Use the keyboard', 'Look at other years', 'See one month']);
-  for (const h of HELP.howto) assert.ok(places.includes(h.href) && h.where, h.do);
+  for (const h of HELP.howto) assert.ok(places.includes(h.href.split('?')[0]) && h.where, h.do);
   assert.ok(APP.includes('placeholder="Search name, email or phone"') && APP.includes('>Add lead</button>') && APP.includes("'Came from'"),
     'what the how-to names exists on screen');
-  assert.ok(APP.includes('>Make a lead</button>') && APP.includes('>Set aside</button>') && APP.includes("data-col=\"later\"") && APP.includes("if (k === '?')"),
+  assert.ok(APP.includes('>Make a lead</button>') && APP.includes('>Set aside</button>') && APP.includes('>Bring back</button>') && APP.includes("data-col=\"later\"") && APP.includes("if (k === '?')"),
     'and so do the Inbox card actions, Today\'s drop columns and the ? key');
   assert.doesNotMatch(JSON.stringify(HELP.howto), /year switch|year picker/i, 'nothing about features not built');
 });
@@ -228,7 +228,7 @@ test('step 2 reads "New lead" everywhere, short and plain; nothing says "becomes
   const code = APP.replace(/\/\*[\s\S]*?\*\//g, '').split('\n').filter((l) => !l.trim().startsWith('//')).join('\n');   // his own words in comments stay
   const all = JSON.stringify(HELP) + code;
   assert.doesNotMatch(all, /becomes? a person|Becomes a person/i, 'flow, tour, questions and the page');
-  assert.match(HELP.tour.find((t) => t.title === 'Inbox').body, /Make a lead: say the programme and the next step on the card\. Anything else: Set aside\. Kept, never deleted\./);
+  assert.match(HELP.tour.find((t) => t.title === 'Inbox').body, /Make a lead: say the programme and the next step on the card\. Anything else: Set aside\. It is kept, and can be brought back\./);
 });
 
 test('Q56 the flow: six stops in order, each a link to the right route, stages and ends a click to their column', () => {
@@ -289,7 +289,7 @@ test('the Help center follows the Inbox board: Make a lead and Set aside, never 
   assert.ok(!words.includes('not relevant'), 'help.json names no "not relevant" action');
   const inbox = HELP.tour.find((t) => t.title === 'Inbox').body;
   assert.match(inbox, /column of the day it arrived/, 'the columns by arrival day');
-  assert.match(inbox, /Make a lead/); assert.match(inbox, /Set aside/); assert.match(inbox, /never deleted/);
+  assert.match(inbox, /Make a lead/); assert.match(inbox, /Set aside/); assert.match(inbox, /kept, and can be brought back/);   // 07.10.2026, "Keep the text" + Bring back
   assert.deepEqual(HELP.howto.filter((h) => h.href === '#/leads').map((h) => h.do), ['Make a lead from a message', 'Set a message aside']);
   // "late" says the Q50 rule, not the 23.09 one
   const late = HELP.faq.find((q) => q.id === 'late-in-new-leads').a;

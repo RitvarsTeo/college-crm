@@ -56,8 +56,13 @@
     },
     {
       "do": "Set a message aside",
-      "where": "Inbox, Set aside on the card; nothing is deleted",
+      "where": "Inbox, Set aside on the card; the message is kept and can be brought back",
       "href": "#/leads"
+    },
+    {
+      "do": "Bring a set-aside message back",
+      "where": "The set-aside messages, Bring back on the card",
+      "href": "#/leads?show=notrelevant"
     },
     {
       "do": "Act on what is due",
@@ -108,7 +113,7 @@
     },
     {
       "title": "Inbox",
-      "body": "Every new message from every channel lands here first, in the column of the day it arrived. Make a lead: say the programme and the next step on the card. Anything else: Set aside. Kept, never deleted.",
+      "body": "Every new message from every channel lands here first, in the column of the day it arrived. Make a lead: say the programme and the next step on the card. Anything else: Set aside. It is kept, and can be brought back.",
       "target": ".cnav a[data-c=\"leads\"]"
     },
     {

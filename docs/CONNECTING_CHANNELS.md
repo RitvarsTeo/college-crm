@@ -167,7 +167,7 @@ the way in; it never reaches a screen.
 
 Access to the mailbox itself: Ieva, Laura, Marina.
 
-**On the message body:** it is held only until somebody qualifies or archives the item, then deleted.
+**On the message body:** it is held until somebody qualifies the item (makes a lead), then deleted. Set aside keeps it (07.10.2026, the owner: "Keep the text") until the 13-month retention empties it.
 What survives is the structured record. The CRM is not a mail archive.
 
 ### 7. Facebook, Instagram, Messenger, WhatsApp

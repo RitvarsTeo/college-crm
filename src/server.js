@@ -12,7 +12,7 @@ import { stampOpenDay, registerOpenDay, refilterOpen } from './intake.js';
 import { queueLeadAnswers } from './leadanswers.js';
 import * as gmailB from '../lib/gmail.js';
 import * as notify from '../lib/notify.js';
-import { receive, listInbound, qualify, archive, funnel, agedCount, handoffToSis, ownerFor, notifiedFor, handoverGap, canReach, surfaceAt, waitingFor, waitingByRole } from './intake.js';
+import { receive, listInbound, qualify, archive, bringBack, funnel, agedCount, handoffToSis, ownerFor, notifiedFor, handoverGap, canReach, surfaceAt, waitingFor, waitingByRole } from './intake.js';
 import { readScreenshot, readKind, readBody, readPath, saveFeedback, listFeedback, getScreenshot, setHandled, BadScreenshot, helpOpened, helpCounts } from './feedback.js';
 import { findMatches as matchPeople, duplicateCheck, isStrong as isStrongMatch } from './identity.js';
 import { lifecycleOf, sisProgress, sisProgressByPerson, SIS_HOLDS_SQL } from './lifecycle.js';
@@ -2075,6 +2075,15 @@ export const handle = async (req, res) => {
         r.landed = person ? { ...person, next: task ? task.label : null,
           dueAt: task ? task.due_at : null } : null;
       }
+      return json(res, 200, r);
+    }
+
+    // "Set aside: a way back" (07.10.2026). Every user, the same rule as Set aside.
+    if (req.method === 'POST' && /^\/api\/intake\/\d+\/bring-back$/.test(p)) {
+      const id = Number(p.split('/')[3]);
+      const b = await body(req);
+      const r = await bringBack(db, id, { by: await actorOf(req, b) });
+      if (r.error) return json(res, r.error === 'not found' ? 404 : 400, r);
       return json(res, 200, r);
     }
 

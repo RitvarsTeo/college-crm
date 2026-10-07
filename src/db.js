@@ -129,7 +129,8 @@ CREATE TABLE IF NOT EXISTS inbound (
   contact_handle TEXT,
   contact_email TEXT,
   contact_phone TEXT,
-  body TEXT,                     -- TEMPORARY. Deleted on qualify or archive.
+  body TEXT,                     -- Deleted on qualify. Kept on set aside (07.10.2026, the owner: "Keep the text") and
+                                 -- on filter, until the 13-month retention (purgeLineBodies) empties it.
   body_deleted_at TEXT,
   suggested TEXT NOT NULL,       -- raw | warm | hot, the machine's SUGGESTION only
   suggestion_why TEXT,
@@ -178,6 +179,22 @@ CREATE TABLE IF NOT EXISTS inbound_line (
   body_deleted_at TEXT
 );
 CREATE UNIQUE INDEX IF NOT EXISTS inbound_line_seq ON inbound_line (inbound_id, seq);
+-- What a person did to an Inbox message, oldest first (07.10.2026, "Set aside: a way back"). Set aside writes a
+-- line here, and Bring back writes one that also carries what the set-aside had said, because bringing a message
+-- back clears those fields on the row. Nothing is ever deleted from it.
+CREATE TABLE IF NOT EXISTS inbound_history (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  inbound_id INTEGER NOT NULL,
+  action TEXT NOT NULL,          -- set_aside | brought_back
+  at TEXT NOT NULL,
+  actor TEXT NOT NULL,
+  from_state TEXT,               -- brought_back: archived (a person set it aside) | filtered (a rule did)
+  reason TEXT,
+  note TEXT,
+  earlier_actor TEXT,            -- brought_back: who or what had set it aside, and when
+  earlier_at TEXT
+);
+CREATE INDEX IF NOT EXISTS inbound_history_item ON inbound_history (inbound_id, id);
 -- The row-level unique index catches a repeat of the FIRST arrival. Without this one,
 -- a repeat delivery of the second arrival is not caught at all: its external_id was
 -- never written to inbound, only to its line.

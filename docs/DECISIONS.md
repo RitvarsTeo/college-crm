@@ -353,3 +353,15 @@ D-C1 to D-C4 are the ones C's screens wait on. They replace, in C's words, backl
 - **Only `public/` is served as plain files** (it holds `robots.txt`). Everything else reaches the function, which answers 404 for what it does not know. See `test/deploy_boundary.test.js`.
 - **No cron is scheduled on the hosted copy** (`vercel.json` has no `crons`) and `CRON_SECRET` is not set there, so both poll routes refuse every call. That is the channel work's to change.
 
+
+## 07.10.2026
+
+### Set aside keeps the message text
+
+| | |
+|---|---|
+| **Decided** | Asked "Set aside: keep the message text?", the owner answered **"Keep the text"** (07.10.2026, via MASTER CONTROL). A message a person sets aside keeps its text (the row's body and every line's body), exactly as a filtered message already did, until the 13-month retention empties it. Bring back then returns it whole. |
+| **Supersedes** | The 23.09.2026 rule "held only until somebody qualifies or archives the item, then deleted", **for archive (Set aside) only**. Qualify (making a lead) still deletes the body as before; nothing about qualify changed. |
+| **Not recovered** | Messages set aside before this change already lost their text. Nothing is recovered or invented: Bring back returns them with name and channel and says `textKept: false`. |
+| **Retention made true** | Until now the 13-month retention emptied only the line bodies, so a filtered row's own text outlived it. From this change it also empties the row text of a set-aside or filtered message once its newest line is past the cutoff (`purgeLineBodies`). |
+| **Waiting messages: no time limit** | Asked "Messages still waiting in the Inbox keep their text forever. Apply the 13-month rule to them too?", the owner answered **"Keep as is"** (07.10.2026). A message still waiting in the Inbox keeps its text until somebody acts on it; the 13-month retention empties text only of set-aside and filtered messages (and every line, as before). |

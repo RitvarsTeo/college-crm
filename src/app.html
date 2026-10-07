@@ -3944,7 +3944,8 @@ async function cTodayMoveTo(pid, from, day) {
 // senders": the band's four ages are the columns, Source and Kind are the filters. One card per message, the Journey
 // board's card style, the action ON the card: "Make a lead" opens the small form on it, "Set aside" is the quiet link
 // (the reason dialog as before; nothing is deleted). No New lead, Not relevant or Later column. A message set aside
-// is still reachable by address (#/leads?show=archived), without the actions.
+// is still reachable by address (#/leads?show=archived; ?show=notrelevant adds what a rule filtered), and since
+// 07.10.2026 ("Set aside: a way back") each of its cards has one action, Bring back.
 let C_IP = { col: null, channel: '', kind: '', show: 'new' };
 let C_IPD = null;
 function cInboxPick(v) { C_IP.col = C_IP.col === v ? null : v; cInboxPool(); }
@@ -3977,7 +3978,7 @@ function cInboxPool() {
       <div class="ib-msg">${esc(r.channel === 'phone' ? cCallLine(r.body) : (r.body || D.val(r, 'question') || ''))}</div>
       ${prog || kind ? `<div class="ib-tags">${prog ? `<span class="ib-prog">${esc(prog)}</span>` : ''}${kind}</div>` : ''}
       ${cStateLine(st, cAgo(r.received_at), '', fmtDateTime(r.received_at))}
-      ${!live ? '' : open ? D.form(r) : `<div class="ib-acts"><button class="btn sm" onclick="event.stopPropagation();C_LOPEN=${Number(r.id)};cInboxPool()">Make a lead</button><button type="button" class="ib-aside" onclick="event.stopPropagation();openArchive(${Number(r.id)})">Set aside</button></div>`}</div>`;
+      ${!live ? `<div class="ib-acts"><button class="btn sm" onclick="event.stopPropagation();cBringBack(${Number(r.id)}, this)">Bring back</button></div>` : open ? D.form(r) : `<div class="ib-acts"><button class="btn sm" onclick="event.stopPropagation();C_LOPEN=${Number(r.id)};cInboxPool()">Make a lead</button><button type="button" class="ib-aside" onclick="event.stopPropagation();openArchive(${Number(r.id)})">Set aside</button></div>`}</div>`;
   };
   // a band click narrows the board to that day's column; a second click shows all four again
   const shownCols = cols.filter((c) => !C_IP.col || c.id === C_IP.col);
@@ -7082,6 +7083,14 @@ function showDuplicate(id, detail, kept) {
       <button class="btn sm ghost" onclick="doQualify(${id}, { differentPerson: true })">
         No, this is a different person</button>
     </div>`;
+}
+
+// Bring back (07.10.2026): the message returns to the Inbox as new, in its arrival-day column; this view drops it.
+async function cBringBack(id, btn) {
+  if (btn) btn.disabled = true;   // a second click before the answer is harmless anyway: the server says "already"
+  try { await api('/api/intake/' + Number(id) + '/bring-back', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' }); }
+  catch (e) { if (btn) btn.disabled = false; throw e; }
+  await viewLeadsC();
 }
 
 async function openArchive(id) {
