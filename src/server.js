@@ -959,7 +959,9 @@ export const handle = async (req, res) => {
     }
 
     if (req.method === 'GET' && p === '/healthz') {
-      return json(res, 200, { ok: true, people: (await db.prepare('SELECT COUNT(*) n FROM people').get()).n });
+      // Alive, and nothing else (security review 07.10.2026, L4): it is open before sign-in, and it used
+      // to tell anybody how many people the CRM holds. The count is on /api/console/state, signed in.
+      return json(res, 200, { ok: true });
     }
 
     // ------------------------------------------------------------- sign-in --
@@ -2992,7 +2994,10 @@ export const handle = async (req, res) => {
     return json(res, 404, { error: 'not found' });
   } catch (err) {
     if (err instanceof BadScreenshot) return json(res, 400, { error: err.message });
-    return json(res, 500, { error: err.message });
+    // The detail goes to the server log, never to the caller (L4, 07.10.2026): it carried SQL, driver
+    // wording and file paths to whoever made the request.
+    console.error(`500 ${req.method} ${p}: ${err && err.stack ? err.stack : err}`);
+    return json(res, 500, { error: 'Something went wrong on the server. It has been logged.' });
   }
 };
 

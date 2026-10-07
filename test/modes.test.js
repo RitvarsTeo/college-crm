@@ -262,7 +262,7 @@ test('the words on screen are the words in the navigation', async (t) => {
 test('DATASET=demo actually builds the demo', async (t) => {
   const { child, port } = await startServer({ DATASET: 'demo' });
   t.after(() => child.kill());
-  const h = await fetch(`http://127.0.0.1:${port}/healthz`).then((r) => r.json());
+  const h = await fetch(`http://127.0.0.1:${port}/api/console/state`).then((r) => r.json());
   assert.ok(h.people > 0, 'DATASET=demo produced an empty database');
 });
 
@@ -274,7 +274,7 @@ test('every dataset the documentation offers actually works', async (t) => {
     t.after(() => child.kill());
     const st = await fetch(`http://127.0.0.1:${port}/api/console/state`).then((r) => r.json());
     assert.equal(st.mode === 'real', false, `${kind} must not load real data`);
-    const h = await fetch(`http://127.0.0.1:${port}/healthz`).then((r) => r.json());
+    const h = await fetch(`http://127.0.0.1:${port}/api/console/state`).then((r) => r.json());
     if (kind !== 'empty') assert.ok(h.people > 0, `${kind} produced nothing`);
   }
 });
@@ -292,7 +292,7 @@ test('A TYPO OVER HTTP MUST NOT EMPTY THE DATABASE', async (t) => {
   const { child, port } = await startServer({ DATASET: 'synthetic' });
   t.after(() => child.kill());
   const base = `http://127.0.0.1:${port}`;
-  const count = async () => (await fetch(`${base}/healthz`).then((r) => r.json())).people;
+  const count = async () => (await fetch(`${base}/api/console/state`).then((r) => r.json())).people;
 
   const before = await count();
   assert.ok(before > 0, 'nothing to lose means nothing is proved');
