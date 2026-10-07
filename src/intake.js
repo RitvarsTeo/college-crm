@@ -8,6 +8,7 @@
 //      because Ieva has no access to Instagram and the structured record is the
 //      whole handover.
 
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -22,7 +23,10 @@ const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const CFG = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'prototype.json'), 'utf8'));
 
 const nowIso = () => new Date().toISOString();
-export const newPersonId = () => 'p' + Math.random().toString(36).slice(2, 7);
+// 'p' + 32 hex characters from crypto.randomUUID (security review 07.10.2026, L1). It was five characters of
+// Math.random: guessable, and a clash failed the INSERT. Hex stays inside the old [a-z0-9] alphabet and
+// nothing reads the length, so every route, link and hash takes it as it took the old ids.
+export const newPersonId = () => 'p' + crypto.randomUUID().replace(/-/g, '');
 
 // ------------------------------------------------------------- the ageing --
 // WORKING HOURS (Q50, decided 05.10.2026; config.ageing). A message still waiting after one WORKING hour is

@@ -11,6 +11,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import { logEvent, MANUAL, AUTOMATIC } from './history.js';
+import { newPersonId } from './intake.js';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { localDate } from './bizday.js';
@@ -27,7 +28,7 @@ const AGENT_TOKENS = { tok_india_partner_1: 'india-partner-1' };
 
 export const channel = (id) => PROVIDERS.channels.find((c) => c.id === id);
 const nowIso = () => new Date().toISOString();
-const newId = () => 'p' + Math.random().toString(36).slice(2, 7);
+const newId = newPersonId;     // L1, 07.10.2026: one id maker, src/intake.js
 const rid = () => Math.random().toString(36).slice(2, 10);
 
 // ---------------------------------------------------------------- identity --

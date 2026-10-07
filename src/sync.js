@@ -503,7 +503,10 @@ export async function syncGmail(db, { now = new Date(), env = process.env, fetch
     : new Date((last ? Date.parse(last) - 10 * 60000 : now.getTime() - 26 * 3600000)).toISOString();
   const refreshToken = await loadGmailRefreshToken(db, env);     // option B, when connected
   const got = await gmailPoll({ env, now, fetchImpl, max, since, refreshToken, ...(minutes ? { minutes } : {}) });
-  if (!got.ok) {
+  // A run where some messages could not be fetched (got.failed) still files the ones that came, and
+  // then keeps the old bookmark and reports not ok, so the rest are asked for again (M7, 07.10.2026).
+  const partial = !got.ok && got.failed > 0 && Array.isArray(got.items);
+  if (!got.ok && !partial) {
     await saveState(db, 'gmail', last, { ok: false, why: got.why }, at);
     return { ok: false, ran: got.ran, channel: 'gmail', mode, why: got.why, waitingOn: got.waitingOn || null };
   }
@@ -530,8 +533,10 @@ export async function syncGmail(db, { now = new Date(), env = process.env, fetch
   // a failure here never costs the poll its result: the threads are simply read again next run
   let replies;
   try { replies = await syncReplies(db, { now, env, fetchImpl, refreshToken }); } catch (err) { replies = { ok: false, why: 'the reply read failed' }; }
-  await saveState(db, 'gmail', got.more ? last : at, { ...out, query: got.query, more: Boolean(got.more), replies }, at);
-  return { ok: true, ran: true, channel: 'gmail', mode, ...out, more: Boolean(got.more), query: got.query, replies };
+  await saveState(db, 'gmail', got.more || partial ? last : at, { ...out, query: got.query, more: Boolean(got.more), replies,
+    ...(partial ? { ok: false, failed: got.failed, why: got.why } : {}) }, at);
+  return { ok: !partial, ran: true, channel: 'gmail', mode, ...out, more: Boolean(got.more), query: got.query, replies,
+    ...(partial ? { failed: got.failed, why: got.why } : {}) };
 }
 
 // FIRST-REPLY TIME (the owner, 07.10.2026; replies go out from edu@). For the email enquiries of the last REPLY_DAYS

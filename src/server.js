@@ -8,7 +8,7 @@ import { seed } from './seed.js';
 import { hasRealData, loadReal } from './real.js';
 import { PROVIDERS, runScenario, runOutbound, runFullDemo, listEvents, getEvent, consentFor, consentSummary, DEMO_SEQUENCE } from './simulator.js';
 import { logEvent, applyEdit, readHistory, MANUAL, AUTOMATIC, EDITABLE_FIELDS, IMMUTABLE_FIELDS, FIELD_LABELS } from './history.js';
-import { stampOpenDay, registerOpenDay, refilterOpen } from './intake.js';
+import { stampOpenDay, registerOpenDay, refilterOpen, newPersonId } from './intake.js';
 import { queueLeadAnswers } from './leadanswers.js';
 import { connectConfig, finishConnect, WhatsAppConnectError } from '../lib/whatsapp.js';
 import { subscribeLinkedInLeads, LeadFetchError } from '../lib/leads.js';
@@ -48,6 +48,7 @@ import { todayStart, tomorrowStart, localDate, localMidnight } from './bizday.js
 import { receiveSisApplication, mergeSisDuplicate, syncSis, channelMode, SIS_STAGE } from './sync.js';
 import { foldContractStage, foldSisOnlyApplication } from './stagefold.js';
 import { redateSisAdmissions } from './sisdates.js';
+import { htmlEscape, inviteOrigin } from './systempages.js';
 
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -229,9 +230,10 @@ async function finishGmail(req, res, url, code) {
   const mailbox = gmailB.MAILBOX;
   if (url.searchParams.get('error') || !code) return gmailPage(res, 400, false, `Access was not given. Open the link again and press Allow.`);
   const got = await gmailB.exchangeCode({ env: process.env, code, redirectUri: process.env.GOOGLE_REDIRECT_URI });
-  if (!got.ok) return gmailPage(res, 400, false, `Google did not finish: ${got.why}. Open the link again.`);
+  // Google's words and the account name are TEXT on this page (L8, 07.10.2026).
+  if (!got.ok) return gmailPage(res, 400, false, `Google did not finish: ${htmlEscape(got.why)}. Open the link again.`);
   if (got.mailbox !== mailbox) {
-    return gmailPage(res, 400, false, `You signed in as ${got.mailbox || 'another account'}. Only ${mailbox} can be connected. Open the link again and choose ${mailbox}.`);
+    return gmailPage(res, 400, false, `You signed in as ${htmlEscape(got.mailbox || 'another account')}. Only ${mailbox} can be connected. Open the link again and choose ${mailbox}.`);
   }
   await gmailB.saveGmailRefreshToken(db, got.refreshToken, process.env);
   return gmailPage(res, 200, true, `${mailbox} is connected to Intake, read-only. You can close this page.`);
@@ -241,9 +243,9 @@ async function finishGmail(req, res, url, code) {
 async function finishNotify(req, res, url, code) {
   if (url.searchParams.get('error') || !code) return gmailPage(res, 400, false, 'Access was not given. Open the link again and press Allow.');
   const got = await notify.exchangeCode({ env: process.env, code, redirectUri: process.env.GOOGLE_REDIRECT_URI });
-  if (!got.ok) return gmailPage(res, 400, false, `Google did not finish: ${got.why}. Open the link again.`);
+  if (!got.ok) return gmailPage(res, 400, false, `Google did not finish: ${htmlEscape(got.why)}. Open the link again.`);
   if (got.mailbox !== notify.SENDER) {
-    return gmailPage(res, 400, false, `You signed in as ${got.mailbox || 'another account'}. Open the link again and choose ${notify.SENDER}.`);
+    return gmailPage(res, 400, false, `You signed in as ${htmlEscape(got.mailbox || 'another account')}. Open the link again and choose ${notify.SENDER}.`);
   }
   await notify.saveToken(db, got.refreshToken, process.env);
   return gmailPage(res, 200, true, `New feedback will be emailed to ${notify.SENDER}. You can close this page.`);
@@ -586,7 +588,7 @@ const scopePeopleSql = (ranges, alias = 'pe') => {
       OR (${alias}.status = 'Admitted' AND ${alias}.admitted_at IS NOT NULL AND ${adm})
       OR (${alias}.status = 'Admitted' AND ${alias}.admitted_at IS NULL AND ${arr}))`, [...a1, ...a2, ...a1]];
 };
-const newId = () => 'p' + Math.random().toString(36).slice(2, 7);
+const newId = newPersonId;     // L1, 07.10.2026: one id maker, src/intake.js
 
 // There is no login in the prototype. The caller says who it is, the server
 // records that, and nothing is enforced - see /api/whoami for the honest wording.
@@ -973,7 +975,9 @@ export const handle = async (req, res) => {
     }
 
     if (req.method === 'GET' && p === '/healthz') {
-      return json(res, 200, { ok: true, people: (await db.prepare('SELECT COUNT(*) n FROM people').get()).n });
+      // Alive, and nothing else (security review 07.10.2026, L4): it is open before sign-in, and it used
+      // to tell anybody how many people the CRM holds. The count is on /api/console/state, signed in.
+      return json(res, 200, { ok: true });
     }
 
     // ------------------------------------------------------------- sign-in --
@@ -1170,6 +1174,12 @@ export const handle = async (req, res) => {
     }
 
     if (req.method === 'POST' && p === '/api/auth/logout') {
+      // Signing out ENDS the session, not only this browser's copy of it (security review 07.10.2026,
+      // L7): a copied cookie kept working until it expired. session_version is the lever disabling an
+      // account already pulls, so every session of this account ends - on the shared Admissions
+      // account that includes the other person's.
+      const me = await currentUser(req);
+      if (me) await db.prepare('UPDATE crm_users SET session_version = session_version + 1 WHERE id = ?').run(me.id);
       res.writeHead(200, { 'content-type': 'application/json; charset=utf-8',
         'cache-control': 'no-store',
         'set-cookie': auth.clearCookie({ secure: !DEV_INSECURE_COOKIE }) });
@@ -1974,8 +1984,9 @@ export const handle = async (req, res) => {
       // somebody to tidy by hand in Next Steps (Admissions, IEVA-3 and IEVA-5, 30.09.2026).
       if (isFinished(b.status)) await finishOpenTasks(id, now, `the person is ${b.status}`);
       if (b.status === 'Contract') await db.prepare('UPDATE people SET contract_at = ? WHERE id = ? AND contract_at IS NULL').run(now, id);
-      if (b.status === 'Admitted') await db.prepare('UPDATE people SET admitted_at = ?, student_no = COALESCE(student_no, ?) WHERE id = ?')
-        .run(now, '3-5-IM/2026/' + Math.floor(10 + Math.random() * 89), id);
+      // The date only. The matriculation number comes from the student system; one was invented here
+      // ('3-5-IM/2026/' + two random digits) until the security review of 07.10.2026 (L2).
+      if (b.status === 'Admitted') await db.prepare('UPDATE people SET admitted_at = ? WHERE id = ?').run(now, id);
       await logEvent(db, { personId: id, kind: 'status', direction: 'note', at: now, origin: MANUAL,
         actor: await actorOf(req, b),
         subject: `Status: ${before.status} -> ${b.status}` + (b.reason ? ` (${b.reason})` : ''),
@@ -2165,13 +2176,16 @@ export const handle = async (req, res) => {
       }
       const exp = Date.now() + GMAIL_INVITE_HOURS * 3600 * 1000;
       const invite = signFlow({ purpose: 'gmail-invite', exp }, process.env.CRM_SESSION_SECRET);
-      const link = `${originOf(req)}/api/auth/gmail/connect?invite=${invite}`;
+      // From PUBLIC_BASE_URL, never the Host header the caller sent (L8, 07.10.2026; src/systempages.js).
+      const base = inviteOrigin(req);
+      if (!base) return json(res, 503, { error: 'PUBLIC_BASE_URL is not set' });
+      const link = `${base}/api/auth/gmail/connect?invite=${invite}`;
       if (url.searchParams.get('format') === 'json') {
         return json(res, 200, { mailbox: gmailB.MAILBOX, link, expires: new Date(exp).toISOString() });
       }
       const until = new Date(exp).toLocaleString('en-GB', { timeZone: 'Europe/Riga', dateStyle: 'medium', timeStyle: 'short' });
       return gmailPage(res, 200, true, `Link for ${gmailB.MAILBOX}, valid until ${until} (Riga):<br><br>`
-        + `<input readonly style="width:100%;font:14px monospace;padding:8px" onclick="this.select()" value="${link}">`, 'Gmail link');
+        + `<input readonly style="width:100%;font:14px monospace;padding:8px" onclick="this.select()" value="${htmlEscape(link)}">`, 'Gmail link');
     }
     // GET /api/admin/notify/connect - opened once, signed in as an admin, to let Intake email new
     // feedback from ritvars.vilcins@novikontas.org (04.10.2026). Google asks to Allow "send email".
@@ -2342,14 +2356,17 @@ export const handle = async (req, res) => {
     }
 
     if (req.method === 'GET' && p === '/api/history') {
-      const who = url.searchParams.get('as') || req.headers['x-acting-as'] || '';
+      // With sign-in on, the SESSION says who is asking, never ?as= or x-acting-as (security review
+      // 07.10.2026, M2): any signed-in user could ask "as Ritvars" and be shown an admin's scope.
+      const who = await viewerOf(req, url);
       if (!who) {
         return json(res, 400, { error: 'Nobody is selected in "Acting as".' });
       }
       // Decided 23.09.2026: an admin sees the whole log. Anybody else sees the
-      // history of their own actions and nothing else.
-      const admin = isAdmin(who);
-      const all = readsAllHistory(who);
+      // history of their own actions and nothing else. Signed in, admin is the role in crm_users.
+      const me = await currentUser(req);
+      const admin = me ? me.role === 'admin' : isAdmin(who);
+      const all = admin || readsAllHistory(who);
       const scope = all ? '' : who;
       return json(res, 200, {
         actor: who, isAdmin: admin,
@@ -3002,7 +3019,10 @@ export const handle = async (req, res) => {
     return json(res, 404, { error: 'not found' });
   } catch (err) {
     if (err instanceof BadScreenshot) return json(res, 400, { error: err.message });
-    return json(res, 500, { error: err.message });
+    // The detail goes to the server log, never to the caller (L4, 07.10.2026): it carried SQL, driver
+    // wording and file paths to whoever made the request.
+    console.error(`500 ${req.method} ${p}: ${err && err.stack ? err.stack : err}`);
+    return json(res, 500, { error: 'Something went wrong on the server. It has been logged.' });
   }
 };
 

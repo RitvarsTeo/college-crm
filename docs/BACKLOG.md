@@ -65,6 +65,14 @@ from release `f45340e` (patch 31), worktree `crm-main-steps`.
 | Help center: FAQ "When is a next step due?" | BUILT |
 | test/step_deadline_q70.test.js runs the pickers, the server and Help | BUILT |
 | Known: on the narrow Inbox card the closed dropdown cuts the words after the step name; the date beside it shows the day. The open list shows the whole line | SAID |
+## 07.10.2026 - Security patch S1: one item left for later (SAID, not built)
+
+**M7 follow-up: a Gmail message that is refused for good pins the bookmark.** Since `830cebd` the Gmail sync
+keeps its bookmark at the last good point when any message in a run fails, so nothing is skipped. If one
+message is refused PERMANENTLY (not deleted, just always refused), the bookmark never moves past it: nothing
+is lost and repeats are de-duplicated, but every run re-reads the same window. Fix when it is seen: count
+the failures per message id and skip one after N runs, with the reason kept. Found by the QA review of the
+patch, 07.10.2026; parked by MASTER CONTROL.
 
 ## 07.10.2026 - The target meters say what they are (DECIDED 07.10: "Yes, label them")
 
