@@ -1158,6 +1158,12 @@ export const handle = async (req, res) => {
     }
 
     if (req.method === 'POST' && p === '/api/auth/logout') {
+      // Signing out ENDS the session, not only this browser's copy of it (security review 07.10.2026,
+      // L7): a copied cookie kept working until it expired. session_version is the lever disabling an
+      // account already pulls, so every session of this account ends - on the shared Admissions
+      // account that includes the other person's.
+      const me = await currentUser(req);
+      if (me) await db.prepare('UPDATE crm_users SET session_version = session_version + 1 WHERE id = ?').run(me.id);
       res.writeHead(200, { 'content-type': 'application/json; charset=utf-8',
         'cache-control': 'no-store',
         'set-cookie': auth.clearCookie({ secure: !DEV_INSECURE_COOKIE }) });
