@@ -87,7 +87,7 @@ test('the action is on the card: "Make a lead" opens the small form, "Set aside"
   assert.match(form, /<label for="qInterest">Programme<\/label>\s*<select id="qInterest">/);
   assert.match(form, /<label for="qNext">Next step<\/label>\s*<select id="qNext">/);
   assert.match(form, /<div id="qErr"><\/div>/);
-  assert.match(form, /<button class="btn sm" onclick="doQualify\(\$\{Number\(r\.id\)\}\)">Make a lead<\/button><button class="btn sm ghost" onclick="C_LOPEN=null;cInboxPool\(\)">Cancel<\/button>/);
+  assert.match(form, /<button class="btn sm" onclick="doQualify\(\$\{Number\(r\.id\)\}\)">Make a lead<\/button>`\}<button class="btn sm ghost" onclick="C_LOPEN=null;cInboxPool\(\)">Cancel<\/button>/);
   assert.match(fnBody('async function openArchive(id) {'), /Nothing is deleted\./, 'set aside: the reason dialog, nothing deleted');
   assert.match(APP, /viewInbox = \(\) => viewLeadsC\(\);/, 'after a save the board is drawn again');
   assert.match(fnBody('function cEscClose() {'), /#view \.ib-card\.is-open/, 'Esc closes the open card (Q61)');

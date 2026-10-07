@@ -1606,6 +1606,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c #view .ib-card.is-open .ib-msg{-webkit-line-clamp:unset;color:var(--ink)}
   html.ui-c .ib-tags{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
   html.ui-c .ib-prog{font-size:11.5px;font-weight:700;padding:1px 6px;border-radius:5px;background:var(--c-sunk);color:var(--ink)}
+  html.ui-c .ib-joins{font-size:11.5px;font-weight:700;padding:1px 6px;border-radius:5px;border:1px solid #29a8df;color:var(--ink)}   /* Q77: already in Intake */
   html.ui-c .ib-kind{font-size:11.5px;font-weight:600;padding:1px 6px;border-radius:5px;border:1px solid var(--rule);color:var(--t2)}
   html.ui-c .ib-acts{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:2px;padding-top:7px;border-top:1px solid var(--rule2)}
   html.ui-c .ib-aside{border:0;background:none;padding:0;font:inherit;font-size:12px;color:var(--t3);cursor:pointer;text-decoration:underline}
@@ -3766,10 +3767,14 @@ async function viewLeadsC() {
       <label for="qInterest">Programme</label>
       <select id="qInterest"><option value="">they have not said yet</option>${(CFG.programmes || []).map((pr) => `<option ${pr === read ? 'selected' : ''}>${esc(pr)}</option>`).join('')}</select>
       ${others.length ? `<label>Tick what else is right</label>${others.map((f) => `<label class="c-tick"><input type="checkbox" class="qConfirm" value="${esc(f.field)}" checked> <b>${esc(f.field)}</b> ${esc(f.value)}</label>`).join('')}` : ''}
+      ${r.contact_email ? '' : `<label for="qEmail">Email</label><input id="qEmail" type="email" autocomplete="off">`}
+      ${r.contact_phone ? '' : `<label for="qPhone">Phone</label><input id="qPhone" type="tel" autocomplete="off">`}
       <label for="qNext">Next step</label>
       <select id="qNext">${nextActionOptionsWithSuggestion(sugg)}</select>
       <div id="qErr"></div>
-      <div class="c-row-acts"><button class="btn sm" onclick="doQualify(${Number(r.id)})">Make a lead</button><button class="btn sm ghost" onclick="C_LOPEN=null;cInboxPool()">Cancel</button></div>
+      <div class="c-row-acts">${r.joins
+        ? `<button class="btn sm" onclick="doQualify(${Number(r.id)}, { personId: '${esc(r.joins.id)}', createPerson: false })">Add to ${esc(r.joins.name)}</button>`
+        : `<button class="btn sm" onclick="doQualify(${Number(r.id)})">Make a lead</button>`}<button class="btn sm ghost" onclick="C_LOPEN=null;cInboxPool()">Cancel</button></div>
     </div>`;
   };
   C_IPD = { rows, receipt, form, val };
@@ -4057,9 +4062,9 @@ function cInboxPool() {
       <div class="ib-top"><b class="c-reach">${who(r)}</b></div>
       <small class="ib-ch"><i></i>${esc(channelLabel(r.channel))}</small>
       <div class="ib-msg">${esc(r.channel === 'phone' ? cCallLine(r.body) : (r.body || D.val(r, 'question') || ''))}</div>
-      ${prog || kind ? `<div class="ib-tags">${prog ? `<span class="ib-prog">${esc(prog)}</span>` : ''}${kind}</div>` : ''}
+      ${prog || kind || r.joins ? `<div class="ib-tags">${r.joins ? `<span class="ib-joins">Joins ${esc(r.joins.name)}</span>` : ''}${prog ? `<span class="ib-prog">${esc(prog)}</span>` : ''}${kind}</div>` : ''}
       ${cStateLine(st, cAgo(r.received_at), '', fmtDateTime(r.received_at))}
-      ${!live ? `<div class="ib-acts"><button class="btn sm" onclick="event.stopPropagation();cBringBack(${Number(r.id)}, this)">Bring back</button></div>` : open ? D.form(r) : `<div class="ib-acts"><button class="btn sm" onclick="event.stopPropagation();C_LOPEN=${Number(r.id)};cInboxPool()">Make a lead</button><button type="button" class="ib-aside" onclick="event.stopPropagation();openArchive(${Number(r.id)})">Set aside</button></div>`}</div>`;
+      ${!live ? `<div class="ib-acts"><button class="btn sm" onclick="event.stopPropagation();cBringBack(${Number(r.id)}, this)">Bring back</button></div>` : open ? D.form(r) : `<div class="ib-acts"><button class="btn sm" onclick="event.stopPropagation();C_LOPEN=${Number(r.id)};cInboxPool()">${r.joins ? 'Add to ' + esc(r.joins.name) : 'Make a lead'}</button><button type="button" class="ib-aside" onclick="event.stopPropagation();openArchive(${Number(r.id)})">Set aside</button></div>`}</div>`;
   };
   // a band click narrows the board to that day's column; a second click shows all four again
   const shownCols = cols.filter((c) => !C_IP.col || c.id === C_IP.col);
@@ -7222,8 +7227,11 @@ async function doQualify(id, opts = {}) {
   const nextAction = (document.querySelector('#qNext') || {}).value || '';
   const qualification = interest ? 'lead' : 'unclear';
   const note = (document.querySelector('#qNote') || {}).value || '';
-  const body = { qualification, createPerson: true, note, confirmFields, nextAction,
-    stated: interest ? { interest } : {}, ...opts };
+  // Q77: the contact the message did not carry (a caller's email, a writer's phone), typed on the card
+  const typed = (sel) => ((document.querySelector(sel) || {}).value || '').trim();
+  const stated = { ...(interest ? { interest } : {}), ...(typed('#qEmail') ? { email: typed('#qEmail') } : {}),
+    ...(typed('#qPhone') ? { phone: typed('#qPhone') } : {}) };
+  const body = { qualification, createPerson: true, note, confirmFields, nextAction, stated, ...opts };
   try {
     const r = await post(`/api/intake/${id}/qualify`, body);
     closeModal();

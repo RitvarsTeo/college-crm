@@ -13,7 +13,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { extractFrom, looksLikeJunk } from './extract.js';
 import { logEvent, MANUAL, AUTOMATIC } from './history.js';
-import { duplicateCheck } from './identity.js';
+import { duplicateCheck, contactMatcher, onlyStrong } from './identity.js';
 import { localDate, localMidnight } from './bizday.js';
 import { SIS_HOLDS_SQL } from './lifecycle.js';
 import { rangesSql } from './yearscope.js';
@@ -298,7 +298,15 @@ export async function listInbound(db, { state = 'new', now = nowIso(), range = n
     LEFT JOIN people pe ON pe.id = i.person_id
     ${where} ORDER BY i.received_at DESC`).all(...wanted, ...rxArgs);
   const known = await currentStudentIndex(db);
+  // Q77: a waiting message from somebody already in Intake JOINS them. Every email and phone the
+  // person has counts, so a caller whose email was added when they became a lead is found again the
+  // day they write. Only one strong match counts; two is a question for a person.
+  const match = rows.some((r) => r.state === 'new' && !r.person_id) ? await contactMatcher(db) : null;
   for (const r of rows) {
+    if (match && r.state === 'new' && !r.person_id) {
+      const one = onlyStrong(match({ email: r.contact_email, phone: r.contact_phone }));
+      r.joins = one ? { id: one.id, name: one.name } : null;
+    }
     r.fields = await db.prepare('SELECT * FROM field_values WHERE inbound_id = ? ORDER BY id').all(r.id);
     r.missing = missingFor(r.fields);
     const due = answerDeadlines(r.received_at);
@@ -473,6 +481,11 @@ export async function qualify(db, id, { qualification, personId, createPerson, b
     return { error: 'an interest was stated, so this is a lead' };
   }
 
+  // Q77: the email or phone a colleague typed when making the lead. Checked, never guessed at.
+  for (const k of ['email', 'phone']) stated[k] = String(stated[k] ?? '').trim() || undefined;
+  if (stated.email && !/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(stated.email)) return { error: 'that email does not look right' };
+  if (stated.phone && String(stated.phone).replace(/\D/g, '').length < 7) return { error: 'that phone number looks too short' };
+
   // The request has to make sense before the business gates are worth applying,
   // otherwise a malformed call is reported as a missing next step.
   if (!personId && !createPerson) return { error: 'link this to a person, or create one' };
@@ -499,7 +512,7 @@ export async function qualify(db, id, { qualification, personId, createPerson, b
   // from a channel therefore created twins in silence.
   if (!personId && createPerson && !differentPerson) {
     const dup = await duplicateCheck(db, {
-      email: item.contact_email, phone: item.contact_phone, name: item.contact_name });
+      email: item.contact_email || stated.email, phone: item.contact_phone || stated.phone, name: item.contact_name });
     if (dup.blocked) {
       return { error: 'this looks like somebody we already have', duplicate: true,
         matches: dup.matches, strong: dup.strong.length > 0 };
@@ -561,7 +574,9 @@ export async function qualify(db, id, { qualification, personId, createPerson, b
       VALUES (?,?,?,?,'operator',?,?,?,?)`).run(pid, id, field, value, at, by, at, by);
     // A person saying it outranks a machine guessing it, so this one overwrites,
     // and the change is written into the history like any other edit.
-    await applyToPerson(db, pid, field, value, { by, at, force: true });
+    // An email or phone is the exception (Q77): it fills an EMPTY one and never replaces the one the
+    // person has; kept on the person as a field, it still finds them (src/identity.js).
+    await applyToPerson(db, pid, field, value, { by, at, force: !['email', 'phone'].includes(field) });
   }
 
   // Consent the person GAVE on the form becomes part of their consent record, whether they
