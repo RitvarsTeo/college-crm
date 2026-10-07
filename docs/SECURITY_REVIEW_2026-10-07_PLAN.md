@@ -15,7 +15,7 @@ CRM_PG_SCHEMA or refuse), L1, L2, L4, L7, L8. Each with a test that fails before
 H4 role crm_app + role-level search_path + schema-qualified DDL + REVOKE on crm; H5 Supabase backups
 + PITR + scheduled pg_dump -n crm + restore drill; M5 own CRM_TOKEN_KEY + re-connect Gmail/feedback;
 M6 Supabase CA + rejectUnauthorized; M8 pool 1-2 + statement_timeout; M9 migrations folder, delete
-sql/002_feedback.sql; M12 rotate both TeleGroup tokens (Ritvars decides, see below); L5 clear
+sql/002_feedback.sql; L5 clear
 push_subscriptions; L10 PUBLIC_BASE_URL + re-point every webhook; L11 engines node 24.x.
 
 ## Later (backlog)
@@ -25,4 +25,4 @@ L12 personal accounts; foreign keys + CHECKs + timestamptz in the first Supabase
 dead files (_archive copy, _rename2.mjs, render.yaml, password-login code); docs ARCHITECTURE/HANDOFF.
 
 ## Decisions for Ritvars
-- M12: rotate the TeleGroup tokens? (He decided "No" in September; the review says rotate at migration.)
+- M12: DECIDED 07.10 by Ritvars: KEEP the TeleGroup tokens ("I don't want to ask for new ones. Let's just use the old ones"), after being told the risk (anyone with that chat history can read the call list with numbers straight from TeleGroup). ACCEPTED RISK, exception to P11 rule 8; revisit if the chat could have leaked. New tokens would come from TeleGroup (novikontas.tg.lv panel or their support). The test that bans the words "must be rotated" is still to be dropped (review M12).
