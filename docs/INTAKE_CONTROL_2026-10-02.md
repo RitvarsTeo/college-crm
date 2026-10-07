@@ -618,3 +618,4 @@ REPORTS fb6eae6 target labels ("Admitted 120 · target 140 · 86%", Officer NAV+
 
 ## 07.10 - NEW MASTER CONTROL session takes over (handoff HANDOFF_MASTER_CONTROL_2026-10-07.md)
 Checked on arrival: GitHub release/2026-10-05-intake-9 = f45340e; live page byte-identical to f45340e (+ sign-in script); the three /college 301s all answer 301 -> /academy/... (CDN spread done, open item 1 closed).
+07.10 Ritvars: /academy/lv form -> "Yes, connect it". Checked live (page 30633819 + all 7 linked /academy/lv pages): there is NO enquiry form on any Latvian academy page, only the site-wide newsletter box (email) and the one-field widget (Textarea). Nothing to connect; nothing changed in Tilda. Same as 04.10. Open: whether LV gets an enquiry form like EN (the website direction: "Ask us a question" + Apply).
