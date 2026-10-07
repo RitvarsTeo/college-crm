@@ -14,6 +14,15 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 07.10.2026 - Security patch S1: one item left for later (SAID, not built)
+
+**M7 follow-up: a Gmail message that is refused for good pins the bookmark.** Since `830cebd` the Gmail sync
+keeps its bookmark at the last good point when any message in a run fails, so nothing is skipped. If one
+message is refused PERMANENTLY (not deleted, just always refused), the bookmark never moves past it: nothing
+is lost and repeats are de-duplicated, but every run re-reads the same window. Fix when it is seen: count
+the failures per message id and skip one after N runs, with the reason kept. Found by the QA review of the
+patch, 07.10.2026; parked by MASTER CONTROL.
+
 ## 07.10.2026 - The target meters say what they are (DECIDED 07.10: "Yes, label them")
 
 Ritvars, about the two meters on the Admitted card ("86% of 140", "NAV + ENG 94 · 96% of 98"): "what is this? Has no
