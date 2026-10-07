@@ -14,6 +14,30 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 07.10.2026 - Q66: one state line and one rail on every card (PICKED 07.10: "B as drawn")
+
+Ritvars 07.10, with a screenshot of the live Journey board: "Why is everyone so no organized? i see overdue all over the
+place, isee some without next action and some plan next action and they are all over the place". The cards carried
+three unrelated looks for one fact (a red badge, a plain ISO date, a dark button with an amber edge) and an SIS-held
+person showed no state at all. Two pictures were drawn (For review/2026-10-07 Q66 Q67 AB); he picked **B as drawn**,
+told that grey makes "No next step" quieter than the 05.10 amber edge and button, and kept B.
+- Every card on the Journey, Today and the Inbox ends with the same line, in the same place and size: a bold state
+  word and its detail. Journey and Today: Overdue · N d / Due today / Due · dd.mm / No next step / With the SIS · label.
+  Inbox: New / Answer now / Late · how long it has waited (the age left the card's top line), Set aside on an
+  archived card. A card with no next step carries its action on the line: Choose (opens the next-step dialog).
+- The card's 3 px left rail carries the state's colour: red overdue / late, amber due today / answer now, navy
+  planned (due on a date, or a new message), grey no next step / set aside, blue the SIS holds the person. Q44's
+  amber edge and the "Choose next step" button left the cards (the Today list rows and the person page keep theirs).
+- Inside a Journey column the cards are grouped by state under a tinted band with the count of EVERYONE in the
+  column in that state - the people behind "N more" too (Overdue, Planned, No next step, With the SIS; the Overdue
+  band is pink and opens the stage's overdue people, as the header's red pill did). The pill left the header.
+- Real dates are never touched: an old sheet date is overdue by as many days as it is.
+- Help center: the Journey tour step names the state line and the rail, the Today step says "press Choose", the
+  how-to says "Done or Choose on the card", a new question "What do the colours on the cards mean?".
+Tests: test/card_states_q66.test.js (runs the Journey column, the Today board and the Inbox board and reads the
+cards); journey_visual, journey_disclosure, today_board, inbox_board_a, inbox_answer_q50 and the other readers of the
+old marks updated. Shots: `For review/2026-10-07 Q66 Q67 build/` (before and after, 1440 and 375). **BUILT, next patch.**
+
 ## 06.10.2026 - Q59: the corner is a Year filter - whole years, ticked in any combination; months live on Reports
 
 Ritvars 06.10, of the live Q45 Period dropdown (All years, each year with its months): "nnoononono, periods need to be

@@ -61,7 +61,7 @@
     },
     {
       "do": "Act on today's work",
-      "where": "Today, Done or Choose next step",
+      "where": "Today, Done or Choose on the card",
       "href": "#/today"
     },
     {
@@ -113,12 +113,12 @@
     },
     {
       "title": "Today",
-      "body": "Who needs an action now: overdue, due today, and people with no next step. Press Done, say how it went and choose the next step. Drag a card to Due today or Coming up to move its step to another day.",
+      "body": "Who needs an action now: overdue, due today, and people with no next step. Press Done, say how it went and choose the next step; on a card with no next step, press Choose. Drag a card to Due today or Coming up to move its step to another day.",
       "target": ".cnav a[data-c=\"today\"]"
     },
     {
       "title": "Journey",
-      "body": "Everyone you are working with, stage by stage, up to Admitted or Not proceeding. Search, add a lead, filter by where they came from.",
+      "body": "Everyone you are working with, stage by stage, up to Admitted or Not proceeding. The last line of every card is its state - Overdue, Due today, Due, No next step or With the SIS - and the card's left edge has that colour; the bands inside a column group them and count them. Search, add a lead, filter by where they came from.",
       "target": ".cnav a[data-c=\"people\"]"
     },
     {
@@ -142,6 +142,11 @@
       "id": "late-in-new-leads",
       "q": "What does \"late\" mean in the Inbox?",
       "a": "Nobody has handled the message by the end of the working day it should have been answered in. Working hours are Monday to Friday, 09:00 to 17:00 Riga time. One working hour after it arrived the card first says \"answer now\"; a message that arrives in the evening or at the weekend counts from the next working morning."
+    },
+    {
+      "id": "card-states",
+      "q": "What do the colours on the cards mean?",
+      "a": "The left edge and the last line of every card say the same thing. Red: Overdue, with the days late. Amber: Due today. Navy: Due, with the date. Grey: No next step - press Choose on the card to set one. Blue: With the SIS, the student information system holds the person. In the Inbox the same line says New, Answer now or Late, and how long the message has waited. Inside a column the bands group the cards by state and count everyone in that state, the people behind N more too."
     },
     {
       "id": "move-someone-along",

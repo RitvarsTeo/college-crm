@@ -106,7 +106,7 @@ test('holds: the page uses the same rule as the server', () => {
 test('holds: every "No next step" on the page asks the rule first', () => {
   // Next Steps list, People cell and filter, the person card, the person page, the Journey card
   for (const where of ['const none = open.filter(', "if (f.due === 'none')", 'function cPersonCard(',
-    '<div class="c-next none"><b>Next step</b>No next step', "cSisHolds(p) ? '' : cChooseNext(p.id)"]) {
+    '<div class="c-next none"><b>Next step</b>No next step', 'function cStepState(p, t) {']) {
     const i = APP.indexOf(where);
     assert.ok(i >= 0, where);
     const near = APP.slice(Math.max(0, i - 400), i + 900);

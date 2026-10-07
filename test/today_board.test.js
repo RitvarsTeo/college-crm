@@ -12,6 +12,7 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
 const fnBody = (name) => { const i = APP.indexOf(name); assert.ok(i >= 0, name); return APP.slice(i, APP.indexOf('\n}\n', i) + 2); };
+const line = (start) => { const i = APP.indexOf(start); assert.ok(i >= 0, start); return APP.slice(i, APP.indexOf('\n', i)); };
 
 const TODAY = '2026-10-06';
 const task = (id, pid, name, due, label = 'Call back') => ({ id, person_id: pid, name, due_at: due, label, programme: 'NAV', status: 'Application' });
@@ -23,15 +24,17 @@ function board(tp = {}, data = null) {
     cWhenClass: (iso) => (iso.slice(0, 10) < TODAY ? 'over' : iso.slice(0, 10) === TODAY ? 'today' : ''),
     cDaysLate: (iso) => Math.round((Date.parse(TODAY) - Date.parse(iso.slice(0, 10))) / 86400000),
     esc: (s) => String(s ?? ''), fmtDate: (s) => String(s).slice(0, 10), cStage: (s) => s, cTask: (s) => s, cStepIcon: () => '',
+    cDay: (iso) => String(iso).slice(0, 10), cSisHolds: () => false,
     post: async (url, body) => { posted.push([url, body]); return {}; }, viewTodayC: async () => {}, cNavCounts: () => {}, cTodayPool: () => {},
     alert: () => {}, posted, C_TPD: data,
   };
-  vm.runInNewContext([APP.match(/const C_TCOL_SHOW = \d+;/)[0], fnBody('function cTodayBoard(D, groups) {'),
+  vm.runInNewContext([APP.match(/const C_TCOL_SHOW = \d+;/)[0], line('const C_ST = '), fnBody('function cStateLine('), line('const cDdMm = '), fnBody('function cStepState('),   // Q66
+    fnBody('function cTodayBoard(D, groups) {'),
     fnBody('function cTodayDrop(pid, from, to) {'), fnBody('async function cTodayMoveTo(pid, from, day) {')].join('\n'), ctx);
   return ctx;
 }
 const D = (over, today, later) => ({
-  over, today, later, done: (t) => `<button data-done="${t.id}">Done</button>`,
+  over, today, later, byId: new Map(), done: (t) => `<button data-done="${t.id}">Done</button>`,
 });
 const groupsOf = (d) => {
   const byPerson = (ts) => [...ts.reduce((m, t) => m.set(t.person_id, [...(m.get(t.person_id) || []), t]), new Map()).values()];
@@ -55,12 +58,12 @@ test('the board: Overdue and Due today as columns, Coming up folded to its count
 test('cards: the Journey card style, one per person, the step and its date, Done; the first seven, then "N more"', () => {
   const html = board().cTodayBoard(DATA, groupsOf(DATA));
   const over = html.slice(html.indexOf('data-col="over"'), html.indexOf('data-col="today"'));
-  assert.equal((over.match(/class="c-jp row t-card is-over"/g) || []).length, 7, 'seven shown');
+  assert.equal((over.match(/class="c-jp row t-card c-rail c-rail-over is-over"/g) || []).length, 7, 'seven shown, on the red rail (Q66)');
   assert.match(over, /<button type="button" class="c-jmore"[^>]*>2 more<\/button>/);
   assert.match(over, /draggable="true" data-pid="p1" data-col="over"/);
-  assert.match(over, /<small class="c-jdue over"><i-over>16 d\. overdue<\/small><button data-done="1">Done<\/button>/);
+  assert.match(over, /<div class="t-foot"><div class="c-st c-st-over"><span class="c-st-w">Overdue<\/span><span class="c-st-d">· 16 d<\/span><\/div><button data-done="1">Done<\/button>/, 'the same state line as the Journey card');
   const open = board({ more: { over: true } }).cTodayBoard(DATA, groupsOf(DATA));
-  assert.equal((open.match(/class="c-jp row t-card is-over"/g) || []).length, 9, '"2 more" shows them all');
+  assert.equal((open.match(/class="c-jp row t-card c-rail c-rail-over is-over"/g) || []).length, 9, '"2 more" shows them all');
   assert.match(open, />Show fewer<\/button>/);
 });
 
@@ -69,7 +72,7 @@ test('unfolded, Coming up is a column of its own with a Fold; a band card narrow
   assert.match(html, /grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\) minmax\(0,1fr\)/);
   const later = html.slice(html.indexOf('Coming up<b'));
   assert.match(later, /class="t-foldx" onclick="C_TP\.upOpen=false;cTodayPool\(\)">Fold</);
-  assert.equal((later.match(/class="c-jp row t-card"/g) || []).length, 1, 'one card for the person');
+  assert.equal((later.match(/class="c-jp row t-card c-rail c-rail-due"/g) || []).length, 1, 'one card for the person, on the navy rail');
   assert.equal((later.match(/class="c-jnext"/g) || []).length, 2, 'with both of their steps');
   const only = board({ col: 'later' }).cTodayBoard(DATA, groupsOf(DATA));
   assert.doesNotMatch(only, /data-col="over"|t-fold"/, 'the Coming up card shows Coming up, unfolded, alone');

@@ -18,5 +18,5 @@ test('each kind of text takes its token', () => {
   assert.match(APP, /html\.ui-c #view \.c-who b, html\.ui-c #view \.c-jp > b, html\.ui-c #view \.c-card h2\{font-size:var\(--type-name\);font-weight:700;color:var\(--ink-strong\)\}/);
   assert.match(APP, /\{font-size:var\(--type-detail\)\}/);
   assert.match(APP, /\{font-size:var\(--type-label\);font-weight:600\}/);
-  assert.match(APP, /html\.ui-c #view \.c-when, html\.ui-c #view \.c-jp small\.c-jdue\{font-size:var\(--type-chip\)\}/);
+  assert.match(APP, /html\.ui-c #view \.c-when, html\.ui-c #view \.c-jp \.c-st\{font-size:var\(--type-chip\)\}/);
 });
