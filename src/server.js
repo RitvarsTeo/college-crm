@@ -8,7 +8,7 @@ import { seed } from './seed.js';
 import { hasRealData, loadReal } from './real.js';
 import { PROVIDERS, runScenario, runOutbound, runFullDemo, listEvents, getEvent, consentFor, consentSummary, DEMO_SEQUENCE } from './simulator.js';
 import { logEvent, applyEdit, readHistory, MANUAL, AUTOMATIC, EDITABLE_FIELDS, IMMUTABLE_FIELDS, FIELD_LABELS } from './history.js';
-import { stampOpenDay, registerOpenDay, refilterOpen } from './intake.js';
+import { stampOpenDay, registerOpenDay, refilterOpen, newPersonId } from './intake.js';
 import { queueLeadAnswers } from './leadanswers.js';
 import { connectConfig, finishConnect, WhatsAppConnectError } from '../lib/whatsapp.js';
 import { subscribeLinkedInLeads, LeadFetchError } from '../lib/leads.js';
@@ -575,7 +575,7 @@ const scopePeopleSql = (ranges, alias = 'pe') => {
       OR (${alias}.status = 'Admitted' AND ${alias}.admitted_at IS NOT NULL AND ${adm})
       OR (${alias}.status = 'Admitted' AND ${alias}.admitted_at IS NULL AND ${arr}))`, [...a1, ...a2, ...a1]];
 };
-const newId = () => 'p' + Math.random().toString(36).slice(2, 7);
+const newId = newPersonId;     // L1, 07.10.2026: one id maker, src/intake.js
 
 // There is no login in the prototype. The caller says who it is, the server
 // records that, and nothing is enforced - see /api/whoami for the honest wording.
