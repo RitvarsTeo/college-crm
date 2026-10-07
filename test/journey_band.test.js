@@ -23,9 +23,11 @@ const css = (start) => { const i = APP.indexOf(start); assert.ok(i >= 0, start);
 const STAGES = (CONFIG.stages || []).filter((s) => !['Admitted', 'Not proceeding'].includes(s.id));
 
 function band(stageFilter = []) {
-  const ctx = { esc: (s) => String(s ?? ''), Math, C_JF: { stage: stageFilter },
+  const ctx = { esc: (s) => String(s ?? ''), Math, C_JF: { stage: stageFilter }, cTodayIso: () => '2026-10-07', cDay: (iso) => String(iso).slice(0, 10),
     cWhenClass: (iso) => (iso === 'over' ? 'over' : iso === 'today' ? 'today' : '') };
-  vm.runInNewContext(fn('function cJourneyBand(') + '\nthis.band = cJourneyBand;', ctx);
+  // Q66: the bar is a stack of the card states, read with the cards' own helper
+  vm.runInNewContext([line('const cDaysLate = '), line('const C_SIS_HOLDS = '), line('const cSisHolds = '), line('const C_ST = '), line('const cDdMm = '),
+    fn('function cStepState('), fn('function cJourneyBand('), 'this.band = cJourneyBand;'].join('\n'), ctx);
   return ctx.band;
 }
 const P = (id, status, due) => ({ id, status, due });
@@ -40,8 +42,8 @@ const draw = (f, out = OUT) => band(f)(OPEN, TASKS, STAGES, exitMark, out);
 const cols = (html) => html.split('class="jb-cell"').slice(1).map((c) => ({
   n: Number(/class="jb-n">(\d+)/.exec(c)[1]),
   height: Number(/class="jb-bar" style="height:([\d.]+)%"/.exec(c)[1]),
-  over: (/<em>(\d+)<\/em>/.exec(c) || [0, 0])[1] * 1,
-  overHeight: Number((/class="jb-over" style="height:([\d.]+)%"/.exec(c) || [0, 0])[1]),
+  over: (/title="Overdue: (\d+)"/.exec(c) || [0, 0])[1] * 1,
+  overHeight: Number((/class="jb-seg jb-s-over" style="bottom:0\.00%;height:([\d.]+)%"/.exec(c) || [0, 0])[1]),
   label: /class="c-jn">\d+<\/span>([^<]+)</.exec(c)[1],
 }));
 
@@ -78,9 +80,10 @@ test('overdue is the red base of the column, on the SAME scale, counted from the
 test('overdue is visible without hovering: the red segment and its number are always drawn', () => {
   const html = draw();
   const app = html.split('class="jb-cell"')[4];
-  assert.match(app, /class="jb-over"/, 'the segment is in the markup at rest');
-  assert.match(app, /<em>3<\/em>/, 'and its count, beside the total');
-  assert.match(app, /title="[^"]*3 overdue"/, 'hover only adds the words');
+  assert.match(app, /class="jb-seg jb-s-over" style="bottom:0\.00%/, 'the red segment stands on the baseline, at rest');
+  assert.match(app, /title="Overdue: 3"/, 'and its count on it (the badge beside the total went with the column pill, Q66)');
+  assert.doesNotMatch(app, /<em>/);
+  assert.match(app, /title="[^"]*3 overdue/, 'hover only adds the words');
 });
 
 test('clicking a column IS the board stage filter, and clicking again clears it', () => {
@@ -93,10 +96,11 @@ test('clicking a column IS the board stage filter, and clicking again clears it'
 });
 
 test('the board keeps exactly the chosen stage, and the other filters still combine with it', () => {
-  const ctx = { CFG: CONFIG, C_SIS_HOLDS: [] };
+  const ctx = { CFG: CONFIG, C_SIS_HOLDS: [], cTodayIso: () => '2026-10-07', cDay: (iso) => String(iso).slice(0, 10) };
   vm.runInNewContext([line('const cNotSaid = '), line('const cTask ='), fn('function groupForAction('),
     line('const C_SIS_HOLDS ='), line('const cSisHolds ='),
     "const cWhenClass = (iso) => (iso === 'over' ? 'over' : '');",
+    line('const cDaysLate ='), line('const cDdMm ='), fn('function cStepState('),   // Q66: the filter reads the card's state
     fn('function cJourneyMatch('), 'this.match = cJourneyMatch;'].join('\n'), ctx);
   const people = [{ id: 1, status: 'Application', programme: 'ENG' }, { id: 2, status: 'Application', programme: 'NAV' },
     { id: 3, status: 'Contract', programme: 'ENG' }];
@@ -134,9 +138,9 @@ test('one scene, on arrival only; nothing on the columns scales', () => {
 
 test('the columns are honest: flat, one colour, no light, no tilt; depth is the frame only', () => {
   const bar = css('  html.ui-c .jb-bar{');
-  assert.match(bar, /background:var\(--v-open\)/, 'the quantitative mustard');
+  assert.match(bar, /background:var\(--rule\)/, 'the grey floor shows only for nobody; the stack carries the five state colours (Q66)');
   assert.doesNotMatch(bar, /gradient|shadow|transform|filter|perspective/);
-  assert.doesNotMatch(css('  html.ui-c .jb-over{'), /gradient|shadow|transform|filter/);
+  assert.doesNotMatch(css('  html.ui-c .jb-seg{'), /gradient|shadow|transform|filter/);
   assert.match(css('  html.ui-c .kflow{'), /background:var\(--k-well\)/, 'the lit well is the frame');
   assert.match(css('  html.ui-c .jb-plot{'), /align-items:flex-end/, 'every column stands on the same floor');
 });

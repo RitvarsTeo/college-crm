@@ -20,8 +20,9 @@ test('the type marks are ink, not a third accent', () => {
 
 test('the two families that remain still carry their own colour', () => {
   // urgency: red for late, amber for today - since Q66 (07.10.2026) on the card's rail and its state word
-  assert.match(APP, /\.c-jp\.c-rail-over\{border-left-color:var\(--j-alarm\)\}/, 'overdue is the alarm');
-  assert.match(APP, /\.c-jp\.c-rail-today\{border-left-color:var\(--j-soon\)\}/, 'today is its own');
+  assert.match(APP, /--st-over:var\(--j-alarm\);--st-today:var\(--j-soon\)/, 'the tokens: overdue is the alarm, today its own');
+  assert.match(APP, /\.c-jp\.c-rail-over\{border-left-color:var\(--st-over\)\}/, 'on the rail');
+  assert.match(APP, /\.c-jp\.c-rail-today\{border-left-color:var\(--st-today\)\}/);
   // the SIS chips
   assert.match(APP, /border-left:2px solid var\(--c-sis\)/, 'the SIS chip on the card');
   assert.match(APP, /border-left:3px solid var\(--c-sis\)/, 'and on the person page');

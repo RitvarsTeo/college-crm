@@ -19,7 +19,7 @@ const DASH = '—';
 function load(today = '2026-09-28') {
   const ctx = { CFG: CONFIG, esc: (s) => String(s ?? ''), channelLabel: (c) => `label:${c}`, cTodayIso: () => today, cDay: (iso) => String(iso).slice(0, 10) };
   const i = APP.indexOf('let C_JF = {'); const j = APP.indexOf('function cJourneyMatch(');
-  vm.runInNewContext([line('const cWhenClass ='), line('const cTask ='), fn('function groupForAction('), APP.slice(i, j), line('const C_SIS_HOLDS ='), line('const cSisHolds ='), fn('function cJourneyMatch('), fn('function cJourneyFilters('),
+  vm.runInNewContext([line('const cWhenClass ='), line('const cTask ='), fn('function groupForAction('), APP.slice(i, j), line('const C_SIS_HOLDS ='), line('const cSisHolds ='), line('const cDaysLate ='), line('const C_ST ='), line('const cDdMm ='), fn('function cStepState('), fn('function cJourneyMatch('), fn('function cJourneyFilters('),
     'this.match = cJourneyMatch; this.filters = cJourneyFilters; this.setF = (f) => { C_JF = f; };',
     'this.setOpen = (k) => { C_JFOPEN = k; }; this.empty = C_JF_EMPTY;'].join('\n'), ctx);
   return ctx;
@@ -81,7 +81,7 @@ test('the tick lists offer only real values; Owner lists every configured role, 
     return all[label];
   };
   assert.deepEqual(ticks('programme'), ['NAV', 'ENG', DASH], 'no empty "All" option: an empty list already means all');
-  assert.deepEqual(ticks('due'), ['over', 'today']);
+  assert.deepEqual(ticks('due'), ['over', 'today', 'due', 'none', 'sis'], 'the State filter: the five states of the cards (Q66)');
   for (const role of CONFIG.owners) assert.ok(ticks('owner').includes(role), `${role} is offered`);
   assert.ok(ticks('owner').includes('Student Coordinator'));
   assert.deepEqual(ticks('source').sort(), ['phone', 'website', DASH].sort());

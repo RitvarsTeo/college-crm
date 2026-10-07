@@ -52,8 +52,15 @@ told that grey makes "No next step" quieter than the 05.10 amber edge and button
   column in that state - the people behind "N more" too (Overdue, Planned, No next step, With the SIS; the Overdue
   band is pink and opens the stage's overdue people, as the header's red pill did). The pill left the header.
 - Real dates are never touched: an old sheet date is overdue by as many days as it is.
-- Help center: the Journey tour step names the state line and the rail, the Today step says "press Choose", the
-  how-to says "Done or Choose on the card", a new question "What do the colours on the cards mean?".
+- **The Journey's graph matches the cards** (Ritvars 07.10, after the pick: "THen Journey's graph please make it match
+  the journey drag and drop colours"): each stage bar is a stack of the five states in the cards' colours, overdue on
+  the baseline, then due today, planned, no next step, with the SIS (the order of the column bands). The bar's height
+  and the shared baseline stay exact; every segment opens that stage filtered to that state; the red count that sat
+  beside the stage total is gone (the segment says it). The five colours are declared once (`--st-over/today/due/
+  none/sis`) and the rails, state words, bands and graph all read them. The Journey filter "Overdue / Today" became
+  "State" with the same five values.
+- Help center: the Journey tour step names the state line, the rail and the graph, the Today step says "press Choose",
+  the how-to says "Done or Choose on the card", a new question "What do the colours on the cards mean?".
 Tests: test/card_states_q66.test.js (runs the Journey column, the Today board and the Inbox board and reads the
 cards); journey_visual, journey_disclosure, today_board, inbox_board_a, inbox_answer_q50 and the other readers of the
 old marks updated. Shots: `For review/2026-10-07 Q66 Q67 build/` (before and after, 1440 and 375). **BUILT, next patch.**
