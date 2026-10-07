@@ -77,6 +77,25 @@ from release `6e3dc39`.
 | Checked headless at 1440 on every chapter for one year, two years and one month: no row with a lone block narrower than the grid. test/reports_full_row.test.js runs cRepBody on the synthetic data (blocks 2 / 5 / 3 / 2) and pins the rule | BUILT |
 | Shots: `For review/2026-10-07 Reports full row/` (before, after) | BUILT |
 
+## 07.10.2026 - First-reply time (on the finish line): the replies are recorded; the Reports row waits
+
+Ritvars put "First-reply time" on the app's finish line; answers via MASTER CONTROL 07.10: replies go out "from edu@";
+build (a); (b) one read-only proof; (c) a manual "Replied" later, through MAIN; show nothing until it is real (his
+standing rule). Branch `feat/2026-10-07-first-reply` from release `6e3dc39`. Research: 07.10 backup, counts only.
+
+| What | Status |
+|---|---|
+| **DECIDED 07.10:** first reply = an enquiry's own arrival to its first answered call, or the first email edu@ sent in its thread; over real enquiries (not filtered, not set aside) 24 h+ old; "no reply yet" counted; an unread thread never counted | BUILT |
+| The pull (lib/gmail.js runReplies, src/sync.js syncReplies after every Gmail poll): threads/{id}?format=metadata&metadataHeaders=Date only, never the body, the subject or the recipients; keeps the first SENT Date after the enquiry (inbound.first_reply_at), stamps every read (reply_checked_at); a refused thread is not stamped, counted (refused) and saved with the run; a person's History gets "Email reply sent" with no body; intake.js owns the write | BUILT |
+| Report figure src/reports.js firstReply, in /api/report steps.firstReply (of, reached, median, noReply, unread) | BUILT |
+| Config benchmarks.rows first_reply: UPCEA Secret Shopper 2025, median 3 h 18 min, 0-24 h track; **on: false** | BUILT, OFF |
+| **DECIDED 07.10 (MASTER CONTROL):** the row stays OFF until (i) the email threads are read (even on, it is not drawn while any enquiry of the period is unread) and (ii) the Inbox can open exactly the enquiries a figure counts (an Inbox filter, MAIN). Then flipped after the owner sees a shot | SAID |
+| Real data 07.10 (backup, local only): 15 phone enquiries known, 10 answered at once (median 0 min), 57 email threads not read yet | - |
+| End labels moved clear of a dot at 0 or at the end of a benchmark track (all rows) | BUILT |
+| (b) TeleGroup: the phone run saves how many calls of each `destination` the list returned (counts only); one production run shows whether outgoing calls (callbacks) are listed | BUILT |
+| Help center: FAQ "What is "Email reply sent" in a person's History?" (what staff can see now; Reports is named for later) | BUILT |
+| Shots: `For review/2026-10-07 First reply/` | BUILT |
+
 ## 06.10.2026 - Q59: the corner is a Year filter - whole years, ticked in any combination; months live on Reports
 
 Ritvars 06.10, of the live Q45 Period dropdown (All years, each year with its months): "nnoononono, periods need to be

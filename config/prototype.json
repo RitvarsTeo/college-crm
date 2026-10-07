@@ -80,6 +80,19 @@
         "source": "Noel-Levitz, 2010 Admissions Funnel Benchmarks for Four-Year Public and Private Institutions, Tables 1-2",
         "url": "https://files.eric.ed.gov/fulltext/ED537553.pdf",
         "year": 2010, "region": "US, four-year colleges", "confidence": "medium"
+      },
+      {
+        "id": "first_reply",
+        "on": false,
+        "_on": "OFF until both hold (MASTER CONTROL, 07.10.2026): the email threads are read (and even on, the row only shows when no enquiry of the period is unread), and the Inbox can open exactly the enquiries a figure counts (an Inbox filter, MAIN's lane). Then flipped here, after the owner sees a shot.",
+        "step": "firstReply",
+        "name": "First reply",
+        "show": "tick", "value": 198, "unit": "min", "scale": { "max": 1440 }, "label": "typical",
+        "sourceLabel": "US colleges, 2025",
+        "definition": "Median time to the first response among the enquiries that were answered: 1,000 secret-shopper enquiries to member institutions, online and professional learners (average 14 h 23 min; 44% got no response at all). Ours: the real Inbox enquiries (email to edu@, calls) that arrived 24 h+ ago, to the first answered call or the first email edu@ sent in the thread.",
+        "source": "UPCEA, Secret Shopper Benchmarking Study 2025 (04.12.2025)",
+        "url": "https://upcea.edu/secret-shopper-2025/",
+        "year": 2025, "region": "US, online and professional learners", "confidence": "medium-high"
       }
     ]
   },
