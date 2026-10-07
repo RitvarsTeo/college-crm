@@ -113,3 +113,28 @@ test('C2: a laptop copy listens on this machine only', async (t) => {
   });
   assert.equal(reached, false, 'the server answered on ' + lan.address);
 });
+
+// ------------------------------------------------------------------ H1 ----
+// Without the guard: GET ?challengeCode=hmacsha256=<body> returned a valid LinkedIn signature
+// for any body, so anybody could inject fake LinkedIn leads and "withdrew" notes.
+import crypto from 'node:crypto';
+import { handshake, verifyRequest } from '../src/inbound.js';
+
+test('H1: the LinkedIn handshake answers a UUID only, so it cannot sign a forged delivery', () => {
+  const env = { LINKEDIN_CLIENT_SECRET: 'li-secret' };
+  const secretEnv = 'LINKEDIN_CLIENT_SECRET';
+  const body = JSON.stringify({ type: 'LEAD_ACTION', leadGenFormResponse: 'urn:li:forged:1' });
+  const forged = handshake('linkedin', new URL('https://x/api/inbound/linkedin?challengeCode='
+    + encodeURIComponent('hmacsha256=' + body)), { ...env, [secretEnv]: 'li-secret' });
+  assert.equal(forged.ok, false, 'a non-UUID challenge was answered');
+  assert.equal(forged.status, 400);
+
+  const real = handshake('linkedin', new URL('https://x/api/inbound/linkedin?challengeCode=890e4665-4dfe-4ab1-b689-ed553bceeed0'),
+    { ...env, [secretEnv]: 'li-secret' });
+  assert.equal(real.ok, true, 'a real LinkedIn challenge is still answered');
+
+  // and the signature the old oracle would have produced is still refused without the secret's help
+  const sig = crypto.createHmac('sha256', 'li-secret').update('hmacsha256=' + body).digest('hex');
+  assert.equal(verifyRequest('linkedin', { headers: { 'x-li-signature': sig } },
+    { secret: 'li-secret', rawBody: body }).ok, true, 'sanity: this IS a valid signature, which is why the oracle mattered');
+});

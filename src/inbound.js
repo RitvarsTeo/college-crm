@@ -335,6 +335,12 @@ export function handshake(channel, url, env = process.env) {
     const secret = env[def.secretEnv];
     if (!secret) return { ok: false, status: 503, how: def.secretEnv + ' is not set', missingSecret: true };
     if (!code) return { ok: false, status: 400, how: 'no challengeCode to answer' };
+    // AUDIT H1 (07.10.2026): a UUID and nothing else. The POST check is HMAC(secret,
+    // "hmacsha256=" + body), so answering any text turned this GET into a signing service:
+    // ?challengeCode=hmacsha256=<forged body> handed back a valid signature for that body.
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(code)) {
+      return { ok: false, status: 400, how: 'the challengeCode is not a UUID' };
+    }
     const challengeResponse = crypto.createHmac('sha256', String(secret)).update(code).digest('hex');
     return { ok: true, status: 200, body: JSON.stringify({ challengeCode: code, challengeResponse }),
       contentType: 'application/json', how: 'LinkedIn challenge answered' };
