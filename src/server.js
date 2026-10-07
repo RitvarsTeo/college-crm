@@ -312,6 +312,17 @@ function openBeforeSignIn(pathname) {
   return false;
 }
 
+// AUDIT H3 + M3: a hosted copy with real sign-in is the live CRM. C2 guarantees a hosted copy
+// either has sign-in or is the CRM_PUBLIC demo, so this is exactly "the real one".
+const PRODUCTION_LOCK = Boolean(process.env.VERCEL) && AUTH_ON;
+const DEMO_WRITES = new Set(['/api/dataset', '/api/reset', '/api/demo/scenario', '/api/console/mode',
+  '/api/intake/demo', '/api/intake/receive', '/api/console/phone-event', '/api/console/send']);
+function isDemoWrite(pathname) {
+  return DEMO_WRITES.has(pathname)
+    || pathname.startsWith('/api/sim/')
+    || /^\/api\/inbound\/[a-z_]+\/simulate$/.test(pathname);
+}
+
 // Guessing at a password should cost something. Per email, in memory, and it is
 // deliberately not per IP as well: everybody here shares one office address.
 const LOGIN_TRIES = new Map();
@@ -902,6 +913,16 @@ export const handle = async (req, res) => {
       const back = signInFirst(req, p);
       if (back) { res.writeHead(302, { location: back, 'cache-control': 'no-store' }); return res.end(); }
       return json(res, 401, { error: 'not signed in', how: 'Open / and sign in.' });
+    }
+
+    // ---------------------------------------------- the production lock --
+    // AUDIT H3 + M3 (07.10.2026). Demo-era routes that empty the database, swap the dataset,
+    // or write simulated people, calls and messages are refused on a hosted copy with real
+    // sign-in. An admin mis-click, or a script riding an admin's browser, could otherwise
+    // wipe every applicant in one request. Laptops, tests and the CRM_PUBLIC demo keep them.
+    if (PRODUCTION_LOCK && req.method === 'POST' && isDemoWrite(p)) {
+      return json(res, 410, { error: 'switched off on the live copy',
+        how: 'demo, simulation and reset routes only run on a laptop or the shared demo copy' });
     }
 
     if (req.method === 'GET' && p === '/healthz') {
@@ -2455,7 +2476,8 @@ export const handle = async (req, res) => {
       // open before sign-in, so on the hosted copy anyone could skip the signature check
       // and the off switch and put a lead into New Leads (found 28.09.2026). Anybody else
       // takes the real path: off answers 409, on needs the provider's own signature.
-      const simulated = req.headers['x-crm-simulated'] === '1' && (!AUTH_ON || Boolean(await adminOf(req)));
+      const simulated = req.headers['x-crm-simulated'] === '1' && !PRODUCTION_LOCK   // audit M3
+        && (!AUTH_ON || Boolean(await adminOf(req)));
       // AUDIT C1: a pull channel has no signature to check, so a real (not simulated) POST to it
       // is refused outright. Its data only ever arrives through our own scheduled fetch.
       if (!simulated && !acceptsWebhook(channel)) {

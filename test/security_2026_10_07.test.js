@@ -138,3 +138,58 @@ test('H1: the LinkedIn handshake answers a UUID only, so it cannot sign a forged
   assert.equal(verifyRequest('linkedin', { headers: { 'x-li-signature': sig } },
     { secret: 'li-secret', rawBody: body }).ok, true, 'sanity: this IS a valid signature, which is why the oracle mattered');
 });
+
+// ---------------------------------------------------------- H3 + M3 ----
+// A copy the way Vercel runs it: VERCEL set, so server.js does not listen and the platform
+// calls handle(). Here a tiny harness plays the platform. Accounts come from bootstrap, and
+// the admin's cookie is minted with the same secret, exactly as a Google sign-in would.
+import { issueSession, cookieHeader } from '../src/auth.js';
+
+const HOSTED_PW = 'Tq7#vLm2!pZ9wXr4';
+function startHosted(env = {}) {
+  const harness = `
+    const http = await import('node:http');
+    const { pathToFileURL } = await import('node:url');
+    const { handle } = await import(pathToFileURL(${JSON.stringify(path.join(ROOT, 'src', 'server.js'))}).href);
+    const s = http.createServer(handle);
+    s.listen(0, '127.0.0.1', () => console.log('http://localhost:' + s.address().port));`;
+  return new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, ['--input-type=module', '-e', harness],
+      { env: { ...process.env, CRM_DB: ':memory:', PORT: '0', CRM_INSECURE_COOKIE: '1', CRM_PUBLIC: '',
+        DATASET: 'empty', VERCEL: '1', VERCEL_ENV: 'production', ...AUTH_ENV,
+        CRM_RITVARS_PASSWORD: HOSTED_PW, CRM_AIGARS_PASSWORD: HOSTED_PW, CRM_ADMISSIONS_PASSWORD: HOSTED_PW, ...env },
+        stdio: ['ignore', 'pipe', 'pipe'] });
+    let out = '';
+    const timer = setTimeout(() => { child.kill(); reject(new Error('never started: ' + out)); }, 15000);
+    const look = (d) => {
+      out += d;
+      if (/REFUSING TO START/.test(out)) { clearTimeout(timer); child.kill(); return reject(new Error(out)); }
+      const m = out.match(/http:\/\/localhost:(\d+)/);
+      if (m) { clearTimeout(timer); resolve({ child, port: Number(m[1]) }); }
+    };
+    child.stdout.on('data', look); child.stderr.on('data', look);
+    child.on('exit', () => { clearTimeout(timer); reject(new Error('exited: ' + out)); });
+  });
+}
+const adminCookie = () => cookieHeader(issueSession({ email: 'aigars.kluga@novikontas.org', name: 'Aigars',
+  role: 'admin', sessionVersion: 0, authMethod: 'google' }, SECRET), { secure: false }).split(';')[0];
+
+test('H3 + M3: on the live copy a signed-in admin cannot reset, swap data or write demo records', async (t) => {
+  const s = await startHosted();
+  t.after(() => s.child.kill());
+  const cookie = adminCookie();
+  const me = await request(s.port, 'GET', '/api/auth/me', { headers: { cookie } });
+  assert.equal(me.json && me.json.user && me.json.user.role, 'admin', 'sanity: the test admin is signed in');
+
+  for (const p of ['/api/reset', '/api/dataset', '/api/demo/scenario', '/api/console/mode', '/api/intake/demo',
+    '/api/intake/receive', '/api/console/phone-event', '/api/console/send', '/api/sim/demo',
+    '/api/sim/website/run', '/api/inbound/website/simulate']) {
+    const r = await request(s.port, 'POST', p, { raw: '{}', headers: { cookie } });
+    assert.equal(r.status, 410, p + ' answered ' + r.status + ' for an admin on the live copy');
+  }
+
+  // and the x-crm-simulated shortcut no longer skips a channel's signature check
+  const sim = await request(s.port, 'POST', '/api/inbound/website',
+    { raw: '{"submission_id":"s-1","name":"Forged"}', headers: { cookie, 'x-crm-simulated': '1' } });
+  assert.notEqual(sim.status, 200, 'a simulated delivery was accepted on the live copy');
+});
