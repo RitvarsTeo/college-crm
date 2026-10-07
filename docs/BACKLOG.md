@@ -14,6 +14,22 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 07.10.2026 - The industry benchmarks are parked: Reports shows none (one switch)
+
+Ritvars, 07.10.2026 (via MASTER CONTROL): "from full reports lets just keep it very far backlog the industry benchmarks,
+they will not be in the final github push for quite a time." Branch `fix/2026-10-07-park-benchmarks` from release `8af99b8`.
+
+| What | Status |
+|---|---|
+| **DECIDED 07.10 (Ritvars):** no benchmark row on Reports (Lead to application, Contract to admitted, First reply), on any tab, phone or desktop; the download never carried them | BUILT |
+| ONE switch, `config.benchmarks.on: false` (the per-row `on` flags kept). The code, the config values and `For review/2026-10-05 Benchmarks/BENCHMARKS.md` are kept: parked, not dropped. The rows and their history: FAR BACKLOG at the end of this file | BUILT |
+| The first-reply RECORDING stays on: the Gmail thread read and the phone run's destination counts | BUILT |
+| Help center: the "Email reply sent" answer no longer points at a Reports figure | BUILT |
+| Note: the Conversion tab's only "reached Application" figure WAS the benchmark row (the older "Reached" block went on 06.10, "Nothing should be duplicated"), so Reports has no such figure while this is parked | ANSWERED below |
+| **PICKED 07.10 (Ritvars, "B in the card", knowing Home's card changes too, Q35):** the Conversion card on Home AND on Reports gains "23 / 33 reached Application" under "8 / 33 who arrived 60+ days ago": the same matured people, the server's steps.leadToApplication; each number opens its people (Home through the People cohort route); nothing drawn when the figure is missing. Demo A/B and after-shots: `For review/2026-10-07 Reached Application demo/` and `.../2026-10-07 Reached Application B/`. test/conversion_reached.test.js runs Home's card and the Reports tab on one database and checks the same words and ids | BUILT |
+| test/benchmarks_parked.test.js runs cRepBody for Conversion in three periods and finds no benchmark row; the parked machinery stays tested with the switch on | BUILT |
+
+
 ## 07.10.2026 - Q67: the work page is "Due", the Inbox keeps day words on one scale (PICKED 07.10: "B Due page")
 
 Ritvars 07.10: "in inbox i see today V, then yesterday <, then this week <> and then older <<<" and "then again, we
@@ -104,7 +120,7 @@ MASTER CONTROL parked it too. Not in a patch; the commits stay on that branch; p
 without them. The words agreed with REPORTS for the day it comes back: reply=yes|none|known, state new + qualified and
 source provider when reply is set, to = the day before yesterday for maturing.
 
-## 07.10.2026 - First-reply time (on the finish line): the replies are recorded; the Reports row waits
+## 07.10.2026 - First-reply time (on the finish line): the replies are recorded; the Reports row is PARKED (far backlog)
 
 Ritvars put "First-reply time" on the app's finish line; answers via MASTER CONTROL 07.10: replies go out "from edu@";
 build (a); (b) one read-only proof; (c) a manual "Replied" later, through MAIN; show nothing until it is real (his
@@ -115,13 +131,9 @@ standing rule). Branch `feat/2026-10-07-first-reply` from release `6e3dc39`. Res
 | **DECIDED 07.10:** first reply = an enquiry's own arrival to its first answered call, or the first email edu@ sent in its thread; over real enquiries (not filtered, not set aside) 24 h+ old; "no reply yet" counted; an unread thread never counted | BUILT |
 | The pull (lib/gmail.js runReplies, src/sync.js syncReplies after every Gmail poll): threads/{id}?format=metadata&metadataHeaders=Date only, never the body, the subject or the recipients; keeps the first SENT Date after the enquiry (inbound.first_reply_at), stamps every read (reply_checked_at); a refused thread is not stamped, counted (refused) and saved with the run; a person's History gets "Email reply sent" with no body; intake.js owns the write | BUILT |
 | Report figure src/reports.js firstReply, in /api/report steps.firstReply (of, reached, median, noReply, unread) | BUILT |
-| Config benchmarks.rows first_reply: UPCEA Secret Shopper 2025, median 3 h 18 min, 0-24 h track; **on: false** | BUILT, OFF |
-| **DECIDED 07.10 (MASTER CONTROL):** the row stays OFF until (i) the email threads are read (even on, it is not drawn while any enquiry of the period is unread) and (ii) the Inbox can open exactly the enquiries a figure counts (an Inbox filter, MAIN). Then flipped after the owner sees a shot | SAID |
 | Real data 07.10 (backup, local only): 15 phone enquiries known, 10 answered at once (median 0 min), 57 email threads not read yet | - |
-| End labels moved clear of a dot at 0 or at the end of a benchmark track (all rows) | BUILT |
 | (b) TeleGroup: the phone run saves how many calls of each `destination` the list returned (counts only); one production run shows whether outgoing calls (callbacks) are listed | BUILT |
-| Help center: FAQ "What is "Email reply sent" in a person's History?" (what staff can see now; Reports is named for later) | BUILT |
-| Shots: `For review/2026-10-07 First reply/` | BUILT |
+| Help center: FAQ "What is "Email reply sent" in a person's History?" - what staff can see; since 07.10 it names no Reports figure (the row is parked) | BUILT |
 
 ## 06.10.2026 - Q59: the corner is a Year filter - whole years, ticked in any combination; months live on Reports
 
@@ -197,20 +209,6 @@ Shots: `For review/2026-10-06 Q61 back and keys/`. **BUILT, next patch.**
 | Help center keeps up (the owner's rule, 06.10.2026): FAQ "Where do the Home numbers come from?" names the Year filter (any years together) and the Whole year box on Reports; How to gains "Look at other years" and "See one month" | BUILT |
 | 07.10 (MASTER CONTROL): the FAQ adds "Admitted counts by the admission date" and names the month choice beside the download; How to "See one month" reads "Reports, the month choice beside the download" | BUILT |
 
-## 06.10.2026 - Benchmarks on Reports > Conversion, variant A (PICKED)
-
-Ritvars PICKED 06.10 (via MASTER CONTROL) benchmarks variant A: our value as a dot on the grey "typical" band, value
-above, the working underneath in word order. Worktree `crm-bench`, branch `ui/2026-10-06-benchmarks`, cut from release
-`4d86a3e`. Research and proposal: `For review/2026-10-05 Benchmarks/`.
-
-| What | Status |
-|---|---|
-| **DECIDED 06.10 (Ritvars):** variant A, bullet rows on Reports > Conversion | BUILT |
-| `config.benchmarks` beside `targets`: minN 20 + rows with value/range, definition, source, url, year, region, confidence, step. Lead to application 15-35%, contract to admitted 88-93% (Noel-Levitz 2010, US four-year colleges, medium) | BUILT |
-| Server `maturedSteps` (src/reports.js), in `/api/report` as `steps`: the Q49 matured people (60+ days), who EVER reached the stage (where they are now, History status events, or admitted), with the ids | BUILT |
-| Page: dot = the server figure; the track (band, scale, dot) opens the people who reached; the working `a -> b` opens both sides; hollow dot and "~" under 20 people; source label small under the band; a row without full provenance is never drawn | BUILT |
-| Shots 1440 light + dark, 375 light (rows stack, no sideways scroll): `For review/2026-10-06 Benchmarks A/` | BUILT |
-| **DECIDED 06.10 (via MASTER CONTROL, the owner's rule "Nothing should be duplicated. Its confusing"):** the old "Reached - Application or beyond" block (everyone added, by where they are now) is removed; the matured Lead to application row is the one figure. "Where the rest are now" stays | BUILT |
 ## 06.10.2026 - Today is a board (the owner's pick B: Coming up folded)
 
 His pick from the A/B pictures (For review/2026-10-06 AB for Ritvars/2B), via MASTER CONTROL.
@@ -4298,3 +4296,36 @@ code is plain Postgres through `pg`, so the move is a dump and restore of the `c
 **Who does what:** Ritvars creates the Neon database through the Vercel Marketplace (an account is
 his to create). Everything after that is the session's: tests against Postgres, deploy, live check.
 Render stays as it is until Vercel is verified live.
+
+## FAR BACKLOG - parked by the owner 07.10
+
+Ritvars, 07.10.2026: "from full reports lets just keep it very far backlog the industry benchmarks, they will not be
+in the final github push for quite a time." Everything below is built and kept, switched off by `config.benchmarks.on`.
+Nothing here ships until he brings it back.
+
+### 06.10.2026 - Benchmarks on Reports > Conversion, variant A (PICKED)
+
+Ritvars PICKED 06.10 (via MASTER CONTROL) benchmarks variant A: our value as a dot on the grey "typical" band, value
+above, the working underneath in word order. Worktree `crm-bench`, branch `ui/2026-10-06-benchmarks`, cut from release
+`4d86a3e`. Research and proposal: `For review/2026-10-05 Benchmarks/`.
+
+| What | Status |
+|---|---|
+| **DECIDED 06.10 (Ritvars):** variant A, bullet rows on Reports > Conversion | PARKED 07.10 (was BUILT) |
+| `config.benchmarks` beside `targets`: minN 20 + rows with value/range, definition, source, url, year, region, confidence, step. Lead to application 15-35%, contract to admitted 88-93% (Noel-Levitz 2010, US four-year colleges, medium) | PARKED 07.10 (was BUILT) |
+| Server `maturedSteps` (src/reports.js), in `/api/report` as `steps`: the Q49 matured people (60+ days), who EVER reached the stage (where they are now, History status events, or admitted), with the ids | PARKED 07.10 (was BUILT) |
+| Page: dot = the server figure; the track (band, scale, dot) opens the people who reached; the working `a -> b` opens both sides; hollow dot and "~" under 20 people; source label small under the band; a row without full provenance is never drawn | PARKED 07.10 (was BUILT) |
+| Shots 1440 light + dark, 375 light (rows stack, no sideways scroll): `For review/2026-10-06 Benchmarks A/` | PARKED 07.10 (was BUILT) |
+| **DECIDED 06.10 (via MASTER CONTROL, the owner's rule "Nothing should be duplicated. Its confusing"):** the old "Reached - Application or beyond" block (everyone added, by where they are now) is removed; the matured Lead to application row is the one figure. "Where the rest are now" stays | PARKED 07.10 (was BUILT) |
+
+### 07.10.2026 - First-reply time: the Reports row (from the first-reply section above)
+
+| What | Status |
+|---|---|
+| Config benchmarks.rows first_reply: UPCEA Secret Shopper 2025, median 3 h 18 min, 0-24 h track; **on: false** | PARKED 07.10 (was BUILT, OFF) |
+| **DECIDED 07.10 (MASTER CONTROL):** the row stays OFF until (i) the email threads are read (even on, it is not drawn while any enquiry of the period is unread) and (ii) the Inbox can open exactly the enquiries a figure counts (an Inbox filter, MAIN). Then flipped after the owner sees a shot | PARKED 07.10 (was SAID) |
+| End labels moved clear of a dot at 0 or at the end of a benchmark track (all rows) | PARKED 07.10 (was BUILT) |
+| Shots: `For review/2026-10-07 First reply/` | PARKED 07.10 (was BUILT) |
+| The Inbox links for the row, agreed with MAIN 07.10: `#/leads?reply=yes / none / known&from=YYYY-MM-DD&to=YYYY-MM-DD`; to = min(period end, the day before yesterday); MAIN reads state new + qualified, source provider, channel gmail/phone when reply is set. Not wired: parked with the row | PARKED 07.10 |
+| The full proposal, for when the row comes back (REPORTS, 07.10; work STOPPED by MASTER CONTROL the same day). One set S in both places: inbound rows with source = provider, channel gmail or phone, state new or qualified (made a lead stays in; filtered / archived out), arrival in the corner's years (the address carries no years) and inside from / to; MATURED on whole Riga days: counted = arrived on or before the day before yesterday, which replaces firstReply's instant cut (now - 24 h) so the address says it exactly. Words: reply=known (replied + no reply yet, the row's working "N"), yes (replied: "n", the dot and the track), none (no reply yet); to = min(period end, the day before yesterday); from = the Reports month start when a month is chosen. MAIN's side: listInbound({ state: 'new,qualified', source: 'provider', channels: ['gmail','phone'], from, to }) when reply is set. Proof: one test that gives identical id sets for yes / none / known through MAIN's list query and reports.js firstReply on the same database. None of it built | PARKED 07.10 (was SAID) |
+

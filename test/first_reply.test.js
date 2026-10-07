@@ -140,8 +140,10 @@ test('the row stays OFF (config on:false) and, even on, waits until no enquiry o
   const b = CFG.benchmarks.rows.find((r) => r.id === 'first_reply');
   assert.equal(b.on, false, 'off in config until the email is read and the Inbox can open the exact enquiries');
   const steps = { leadToApplication: { of: 30, pct: 40 }, contractToAdmitted: { of: 5, pct: 80 }, firstReply: { kind: 'inbox', of: 15, reached: 10, median: 0, unread: 0 } };
-  assert.deepEqual(ctx.cRepBenchRows(steps, CFG.benchmarks).map((x) => x.b.id), ['lead_to_application', 'contract_to_admitted'], 'absent while on:false');
-  const on = { ...CFG.benchmarks, rows: CFG.benchmarks.rows.map((r) => (r.id === 'first_reply' ? { ...r, on: true } : r)) };
+  // all benchmarks are parked since 07.10 (benchmarks.on false); with the switch on, this row's own rules still hold
+  const parked = { ...CFG.benchmarks, on: true };
+  assert.deepEqual(ctx.cRepBenchRows(steps, parked).map((x) => x.b.id), ['lead_to_application', 'contract_to_admitted'], 'absent while on:false');
+  const on = { ...parked, rows: parked.rows.map((r) => (r.id === 'first_reply' ? { ...r, on: true } : r)) };
   assert.deepEqual(ctx.cRepBenchRows(steps, on).map((x) => x.b.id), ['lead_to_application', 'contract_to_admitted', 'first_reply'], 'switched on and complete: drawn');
   assert.deepEqual(ctx.cRepBenchRows({ ...steps, firstReply: { ...steps.firstReply, unread: 57 } }, on).map((x) => x.b.id),
     ['lead_to_application', 'contract_to_admitted'], 'an unread thread in the period: not drawn (missing values are never shown)');
@@ -189,5 +191,5 @@ test('the Help center says what staff can see now, in the same commit', () => {
   const f = HELP.faq.find((x) => x.id === 'first-reply');
   assert.equal(f.q, "What is \"Email reply sent\" in a person's History?");
   assert.match(f.a, /only the time of the first reply sent from edu@ in that conversation, never its text/);
-  assert.match(f.a, /once every email conversation has been read/);
+  assert.doesNotMatch(f.a, /Reports|First reply figure/, 'the benchmarks are parked (07.10): the Help sends nobody to a row that is not there');
 });
