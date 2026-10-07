@@ -118,7 +118,7 @@
     },
     {
       "title": "Journey",
-      "body": "Everyone you are working with, stage by stage, up to Admitted or Not proceeding. The last line of every card is its state - Overdue, Due today, Due, No next step or With the SIS - and the card's left edge has that colour; the bands inside a column group them and count them. Search, add a lead, filter by where they came from.",
+      "body": "Everyone you are working with, stage by stage, up to Admitted or Not proceeding. The last line of every card is its state - Overdue, Due today, Due, No next step or With the SIS - and the card's left edge has that colour; the bands inside a column group them and count them. The graph above the board stacks the same colours per stage; click a colour to open those people. Search, add a lead, filter by where they came from.",
       "target": ".cnav a[data-c=\"people\"]"
     },
     {
@@ -146,7 +146,7 @@
     {
       "id": "card-states",
       "q": "What do the colours on the cards mean?",
-      "a": "The left edge and the last line of every card say the same thing. Red: Overdue, with the days late. Amber: Due today. Navy: Due, with the date. Grey: No next step - press Choose on the card to set one. Blue: With the SIS, the student information system holds the person. In the Inbox the same line says New, Answer now or Late, and how long the message has waited. Inside a column the bands group the cards by state and count everyone in that state, the people behind N more too."
+      "a": "The left edge and the last line of every card say the same thing. Red: Overdue, with the days late. Amber: Due today. Navy: Due, with the date. Grey: No next step - press Choose on the card to set one. Blue: With the SIS, the student information system holds the person. In the Inbox the same line says New, Answer now or Late, and how long the message has waited. Inside a column the bands group the cards by state and count everyone in that state, the people behind N more too. The Journey's graph stacks the same colours per stage, overdue at the bottom; a click on a colour opens those people, and the State filter offers the same five."
     },
     {
       "id": "move-someone-along",

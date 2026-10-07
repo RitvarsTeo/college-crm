@@ -134,14 +134,11 @@ test('an Inbox card: the state line says New, Answer now, Late or Set aside and 
 // ---- the look, and the Help center keeps up ---------------------------------------------------------------------
 test('the rails and the state words: red alarm, amber signal, navy planned, grey no next step, blue SIS; dark named', () => {
   assert.match(APP, /html\.ui-c \.c-jp\.c-rail,html\.ui-c\[data-theme="dark"\] \.c-jp\.c-rail\{border-left:3px solid var\(--rule\);padding-left:8px\}/);
-  assert.match(APP, /\.c-jp\.c-rail-over\{border-left-color:var\(--j-alarm\)\}/);
-  assert.match(APP, /\.c-jp\.c-rail-today\{border-left-color:var\(--j-soon\)\}/);
-  assert.match(APP, /\.c-jp\.c-rail-due\{border-left-color:#0a2463\}/);
-  assert.match(APP, /\.c-jp\.c-rail-none\{border-left-color:#b9c2cc\}/, 'grey, as drawn - never amber again');
-  assert.match(APP, /\.c-jp\.c-rail-sis\{border-left-color:var\(--c-sis\)\}/);
-  assert.match(APP, /html\.ui-c\[data-theme="dark"\] \.c-jp\.c-rail-none\{border-left-color:#5b7391\}/);
+  for (const k of ['over', 'today', 'due', 'none', 'sis']) assert.match(APP, new RegExp(`\\.c-jp\\.c-rail-${k}\\{border-left-color:var\\(--st-${k}\\)\\}`), k);
+  assert.match(APP, /--st-over:var\(--j-alarm\);--st-today:var\(--j-soon\);--st-due:#0a2463;--st-none:#b9c2cc;--st-sis:var\(--c-sis\)/, 'the five colours once; grey as drawn - never amber again');
+  assert.match(APP, /--st-due:#8fb4e8;--st-none:#5b7391;/, 'dark named');
   assert.doesNotMatch(APP, /\.c-jp\.is-none[^{]*\{[^}]*#F7C04F/, 'Q44\'s amber edge is gone');
-  assert.match(APP, /html\.ui-c \.c-grp-over\{background:color-mix\(in srgb,var\(--j-alarm\),transparent 86%\);color:var\(--j-alarm\);cursor:pointer\}/, 'the Overdue band is pink');
+  assert.match(APP, /html\.ui-c \.c-grp-over\{background:color-mix\(in srgb,var\(--st-over\),transparent 86%\);color:var\(--st-over\);cursor:pointer\}/, 'the Overdue band is pink');
   assert.match(APP, /html\.ui-c #view \.c-when, html\.ui-c #view \.c-jp \.c-st\{font-size:var\(--type-chip\)\}/, 'the chip token');
 });
 

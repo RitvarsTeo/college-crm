@@ -27,7 +27,7 @@ const label = (id) => (CONFIG.nextActions || []).flatMap((g) => g.items).find((i
 // admitted and not-proceeding people are NOT in the open set the bars are built from).
 // Both default to nothing here: a summary with no exit data must still draw.
 function sandbox(filters = {}, { exits = null, all = [] } = {}) {
-  const ctx = { CFG: CONFIG, esc: (s) => String(s ?? '') };
+  const ctx = { CFG: CONFIG, esc: (s) => String(s ?? ''), cTodayIso: () => '2026-10-07', cDay: (iso) => String(iso).slice(0, 10) };
   vm.runInNewContext([
     line('const cTask ='), fn('function groupForAction('),
     'let C_JF = { programme: [], due: [], owner: [], source: [], stage: [], group: [] };',
@@ -37,6 +37,7 @@ function sandbox(filters = {}, { exits = null, all = [] } = {}) {
     'let C_JDATA = { people: ' + JSON.stringify(all) + ' };',
     // the band (02.10.2026): a task due 'over' is overdue here, anything else is not
     "const cWhenClass = (iso) => (iso === 'over' ? 'over' : '');",
+    line('const cDaysLate ='), line('const C_ST ='), line('const cDdMm ='), fn('function cStepState('),   // Q66: the stack
     fn('function cJourneyBand('),
     fn('function cJourneySummary('),
     'this.summary = cJourneySummary;',

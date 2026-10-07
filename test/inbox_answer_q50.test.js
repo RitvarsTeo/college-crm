@@ -76,7 +76,8 @@ test('on the card: "answer now" is a solid amber chip with navy words, "late" th
   // carries the colour - amber for answer now, red for late; the word itself is never amber text
   assert.match(APP, /const st = !live \? 'aside' : r\.aged \? 'late' : r\.answerNow \? 'now' : 'new';/);
   assert.match(APP, /const C_ST_RAIL = \{[^}]*late: 'over', now: 'today', new: 'due', aside: 'none' \};/);
-  assert.match(APP, /html\.ui-c \.c-jp\.c-rail-today\{border-left-color:var\(--j-soon\)\}/);
-  assert.match(APP, /html\.ui-c \.c-st-late \.c-st-w\{color:var\(--j-alarm\)\}/);
+  assert.match(APP, /html\.ui-c \.c-jp\.c-rail-today\{border-left-color:var\(--st-today\)\}/);
+  assert.match(APP, /--st-today:var\(--j-soon\)/, 'the signal amber');
+  assert.match(APP, /html\.ui-c \.c-st-over \.c-st-w,html\.ui-c \.c-st-late \.c-st-w\{color:var\(--st-over\)\}/);
   assert.doesNotMatch(APP, /\.c-st-now \.c-st-w\{color:var\(--j-soon\)/, 'never amber text');
 });
