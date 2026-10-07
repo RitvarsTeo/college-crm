@@ -2211,6 +2211,9 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-date{display:flex;align-items:center;gap:6px;margin:0;font-size:12.5px;color:var(--t3)}
   html.ui-c .c-date input{width:auto}
   html.ui-c .c-rgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 34px}
+  /* NO EMPTY HALF (the owner, 07.10.2026: "Reports: fill the empty half" -> "Yes"): a lone last block, an odd count in
+     the two columns, takes the whole row. Nothing is added to fill the space; every chapter and the web stats alike. */
+  html.ui-c .c-rgrid > :last-child:nth-child(odd){grid-column:1 / -1}
   html.ui-c .kbar.c-static{cursor:default}
   html.ui-c .kbar.c-static:hover{background:none}
   html.ui-c .c-wide-table{min-width:min(420px,100%)}

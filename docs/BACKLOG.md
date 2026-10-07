@@ -58,6 +58,18 @@ Tests: test/card_states_q66.test.js (runs the Journey column, the Today board an
 cards); journey_visual, journey_disclosure, today_board, inbox_board_a, inbox_answer_q50 and the other readers of the
 old marks updated. Shots: `For review/2026-10-07 Q66 Q67 build/` (before and after, 1440 and 375). **BUILT, next patch.**
 
+## 07.10.2026 - Reports: no empty half (PICKED 07.10, "Ship it")
+
+Ritvars marked the empty right half beside Conversion's lone "By channel" on a screenshot: "Reports: fill the empty half"
+-> "Yes", then on the before / after shots "Ship it" (via MASTER CONTROL). Branch `fix/2026-10-07-reports-full-row`
+from release `6e3dc39`.
+
+| What | Status |
+|---|---|
+| **PICKED 07.10 (Ritvars):** a lone last block in a two-column report grid takes the whole row; nothing is added to fill the space. One CSS rule (`.c-rgrid > :last-child:nth-child(odd)`), so Leads (Nationality), Conversion (By channel) and the Applications web-stats lists all follow it | BUILT |
+| Checked headless at 1440 on every chapter for one year, two years and one month: no row with a lone block narrower than the grid. test/reports_full_row.test.js runs cRepBody on the synthetic data (blocks 2 / 5 / 3 / 2) and pins the rule | BUILT |
+| Shots: `For review/2026-10-07 Reports full row/` (before, after) | BUILT |
+
 ## 06.10.2026 - Q59: the corner is a Year filter - whole years, ticked in any combination; months live on Reports
 
 Ritvars 06.10, of the live Q45 Period dropdown (All years, each year with its months): "nnoononono, periods need to be
