@@ -25,7 +25,8 @@ they will not be in the final github push for quite a time." Branch `fix/2026-10
 | ONE switch, `config.benchmarks.on: false` (the per-row `on` flags kept). The code, the config values and `For review/2026-10-05 Benchmarks/BENCHMARKS.md` are kept: parked, not dropped. The rows and their history: FAR BACKLOG at the end of this file | BUILT |
 | The first-reply RECORDING stays on: the Gmail thread read and the phone run's destination counts | BUILT |
 | Help center: the "Email reply sent" answer no longer points at a Reports figure | BUILT |
-| Note: the Conversion tab's only "reached Application" figure WAS the benchmark row (the older "Reached" block went on 06.10, "Nothing should be duplicated"), so Reports has no such figure while this is parked | SAID |
+| Note: the Conversion tab's only "reached Application" figure WAS the benchmark row (the older "Reached" block went on 06.10, "Nothing should be duplicated"), so Reports has no such figure while this is parked | ANSWERED below |
+| **PICKED 07.10 (Ritvars, "B in the card", knowing Home's card changes too, Q35):** the Conversion card on Home AND on Reports gains "23 / 33 reached Application" under "8 / 33 who arrived 60+ days ago": the same matured people, the server's steps.leadToApplication; each number opens its people (Home through the People cohort route); nothing drawn when the figure is missing. Demo A/B and after-shots: `For review/2026-10-07 Reached Application demo/` and `.../2026-10-07 Reached Application B/`. test/conversion_reached.test.js runs Home's card and the Reports tab on one database and checks the same words and ids | BUILT |
 | test/benchmarks_parked.test.js runs cRepBody for Conversion in three periods and finds no benchmark row; the parked machinery stays tested with the switch on | BUILT |
 
 

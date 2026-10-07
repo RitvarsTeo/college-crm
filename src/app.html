@@ -3055,6 +3055,7 @@ async function cHomeData() {
   const todayRows = sum && Array.isArray(sum.today) ? sum.today : null;
   return {
     year, s, months, people, admitted, undated, progs, chans, stages, open, closed,
+    steps: rep.steps || {},   // the server's matured step rates (Reached Application on the Conversion card, 07.10)
     // Admissions, 30.09: cold and reject, for statistics and to aim marketing at the cold ones
     overdue: overdueRows ? new Set(overdueRows.map((t) => t.person_id)).size : null,
     dueToday: todayRows ? new Set(todayRows.map((t) => t.person_id)).size : null,
@@ -3214,7 +3215,7 @@ function cHomeB(D) {
     <div class="kstrip kb-strip">
       <div class="khero"><span>Admitted</span><b>${D.admitted.length}</b><small>${esc(cScopeWord())}${D.undated ? ` · +${D.undated} undated` : ''}</small>${goal ? cTargetMeter(goal) : ''}${cSpark(D.months.map((m) => m.admitted), 'adm')}${delta('admitted')}<a class="kgo" href="#/reports" onclick="cGoReportYear('admitted');return false">Reports →</a></div>
       <div><span>Leads</span><b>${s.newLeads ?? 0}</b><small>${esc(cScopeWord())}</small>${cSpark(D.months.map((m) => m.newLeads), 'lead')}${delta('newLeads')}<a class="kgo" href="#/reports" onclick="cGoReportYear('leads');return false">Reports →</a></div>
-      <div><span>Conversion</span><b>${s.conversionPct == null ? '-' : s.conversionPct + '%'}</b><small>${s.conversionA ?? 0} / ${s.conversionB ?? 0} ${esc(s.conversionWho || 'who arrived')}</small><a class="kgo" href="#/reports" onclick="cGoReportYear('conversion');return false">Reports →</a></div>
+      <div><span>Conversion</span><b>${s.conversionPct == null ? '-' : s.conversionPct + '%'}</b><small>${s.conversionA ?? 0} / ${s.conversionB ?? 0} ${esc(s.conversionWho || 'who arrived')}${cReachedWords(D.steps.leadToApplication, (n, which) => `<a class="rp-go" href="#/people" data-n="${n}" onclick="cGoHomeReached('${which}');return false">${n}</a>`)}</small><a class="kgo" href="#/reports" onclick="cGoReportYear('conversion');return false">Reports →</a></div>
       <div><span>Median time to admission</span><b>${s.medianDaysToAdmission == null ? '-' : s.medianDaysToAdmission} <em>days</em></b><small>first contact to admission</small><a class="kgo" href="#/reports" onclick="cGoReportYear('median');return false">Reports →</a></div>
     </div>
     <div class="m-scene kb-charts">
@@ -3230,6 +3231,15 @@ function cHomeB(D) {
 // traced links to according tab, where it came from"). Home counts the year, so its links open the year. ALL FOUR cards
 // (Admitted, Leads, Conversion, Median) open their own Reports tab on This year (the owner, 05.10.2026): Home card ->
 // the tab's breakdowns -> the people, whose header figure and every bar open them.
+// Home's numbers on the Reached Application line (cReachedWords, in the Reports block below) open their people
+function cGoHomeReached(which) {
+  const st = C_HOME_D && C_HOME_D.steps && C_HOME_D.steps.leadToApplication;
+  if (!st) return;
+  const who = (C_HOME_D.s && C_HOME_D.s.conversionWho) || 'who arrived';
+  C_REP_COH = { ...C_REP_COH, home_reached: { name: 'home:reached:' + which,
+    label: `Leads · ${cScopeWord()} · ${who}${which === 'reached' ? ' · reached Application' : ''}`, ids: which === 'reached' ? st.reachedIds : st.ofIds } };
+  cGoCohort('home_reached');
+}
 function cGoReportYear(chapter) {
   C_RPT_PRESET = 'year'; RPT = { from: cTodayIso().slice(0, 4) + '-01-01', to: '' }; C_REP_MONTH = '';   // a Home card is the whole years
   C_REP_CH = chapter || null;   // the card lands on its own tab
@@ -5138,6 +5148,10 @@ function cRepModel(r, people, cfg, today) {
   const conversion = {
     pct: pct(won.length, ripe.length), who, days: S.conversionDays,
     won: fig('conversion:admitted', `Leads · ${pw} · ${who} · admitted`, won), base: fig('conversion:matured', `Leads · ${pw} · ${who}`, ripe),
+    // Reached Application on the card (B, 07.10.2026): the server's step, its own ids
+    reached: r.steps && r.steps.leadToApplication && r.steps.leadToApplication.of > 0 ? { step: r.steps.leadToApplication,
+      of: fig('conversion:reached:of', `Leads · ${pw} · ${who}`, r.steps.leadToApplication.ofIds.map((id) => ({ id }))),
+      won: fig('conversion:reached', `Leads · ${pw} · ${who} · reached Application`, r.steps.leadToApplication.reachedIds.map((id) => ({ id }))) } : null,
     stoppedAt: stops.map((id) => ({ value: id, ...fig(`conversion:now:${id}`, `Leads · ${pw} · now ${cStage(id)}`, arr.filter((p) => p.status === id && !p.admitted_at)) })).filter((x) => x.n),
     byProgramme: rate('conversion:programme', `Leads · ${pw} · ${who}`, ripe, (p) => val(p.programme)),
     byChannel: rate('conversion:channel', `Leads · ${pw} · ${who} · came from`, ripe, (p) => val(p.source_channel)),
@@ -5183,6 +5197,13 @@ function cRepModel(r, people, cfg, today) {
   return { pw, grain: T.grain, coh, admitted, leads, conversion, median, now };
 }
 
+// REACHED APPLICATION in the Conversion card (the owner picked "B in the card", 07.10.2026), on Home and on Reports word
+// for word (Q35: each tab starts with its Home card): of the same matured people the card's "8 / 33" counts, how many
+// ever reached Application - the server's steps.leadToApplication (src/reports.js maturedSteps). Missing = nothing drawn.
+function cReachedWords(step, link) {
+  if (!step || !(Number(step.of) > 0)) return '';
+  return `<br>${link(step.reached, 'reached')} / ${link(step.of, 'of')} reached Application`;
+}
 // The benchmark rows that may be drawn: in config, with every provenance field, and with the server's step present.
 const C_BENCH_NEEDS = ['definition', 'source', 'url', 'year', 'region', 'confidence'];
 function cRepBenchRows(steps, bench) {
@@ -5272,7 +5293,8 @@ function cRepEcho(id, M) {
   if (id === 'admitted') return { label: 'Admitted', fig: cRepGo(A.all), small: `${esc(M.pw)} · admission date${A.undated.n ? ` · +${cRepGo(A.undated)} undated` : ''}`,
     more: A.target ? meter(A.all.n, A.target.goal, '', 'all', A.all) + (A.target.off ? meter(A.target.off.n, A.target.off.goal, A.target.off.label, 'off', A.target.off) : '') : '' };
   if (id === 'leads') return { label: 'Leads', fig: cRepGo(L.all), small: `${esc(M.pw)} · people added` };
-  if (id === 'conversion') return { label: 'Conversion', fig: C.pct == null ? '-' : cRepGo(C.won, C.pct + '%'), small: `${cRepGo(C.won)} / ${cRepGo(C.base)} ${esc(C.who)}` };
+  if (id === 'conversion') return { label: 'Conversion', fig: C.pct == null ? '-' : cRepGo(C.won, C.pct + '%'),
+    small: `${cRepGo(C.won)} / ${cRepGo(C.base)} ${esc(C.who)}${C.reached ? cReachedWords(C.reached.step, (n, which) => cRepGo(which === 'reached' ? C.reached.won : C.reached.of)) : ''}` };
   if (id === 'median') return { label: 'Median time to admission', fig: D.days == null ? '-' : `${cRepGo(D.over, D.days)} <em>days</em>`, small: 'first contact to admission' };
   if (id === 'now') return { label: 'Where everyone is now', fig: `${cRepGo(N.everyone)} <em>people</em>`,
     small: `<span class="rp-split"><i class="o"></i>Open ${cRepGo(N.open)}</span><span class="rp-split"><i class="a"></i>Admitted ${cRepGo(N.admitted)}</span><span class="rp-split"><i class="n"></i>Not proceeding ${cRepGo(N.closed)}</span>` };
