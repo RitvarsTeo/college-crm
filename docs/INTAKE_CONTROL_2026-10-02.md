@@ -654,3 +654,4 @@ Ritvars: "FIRST CHECK if it collides with Aigars" -> it did: Aigars fixed the sa
 - For switchover (task 3): his handoff wants the backup + env VALUES file in Drive, then he restores into Supabase; MASTER CONTROL makes dump + counts + names-only file, Ritvars pastes values.
 07.10 RULE: one item = ONE owning lane. Q76 collided (two lanes built it). If Ritvars answers a lane on another lane's item, it reports and does not build.
 07.10 CHANNELS on the new base: ui/2026-10-07-q77 tip b38edb7 (1407/1407), merge 641ebac clean, inbound.js + gate.js identical to Aigars; his H2 test caught an unsafe onclick in Q77, fixed b38edb7. Note: lane worktrees need `npm ci` or M11 shows a false red.
+07.10 APPLICATIONS on the new base: feat/2026-10-07-no-contract-s4 tip 76396a9 (1401/1401), merge 9e6f6de clean; 4 synthetic test .db files committed by 14782e2 removed in 76396a9 (0 .db in the tree, checked).
