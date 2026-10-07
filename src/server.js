@@ -37,7 +37,7 @@ import { moveCheck } from './stagemove.js';
 import { scopeRanges, rangesSql, yearsOf } from './yearscope.js';
 import { receivePhoneEvent, PHONE_EVENT_SECRET_ENV } from './phoneevent.js';
 import * as webpush from './webpush.js';
-import { verifyRequest, channelDef, channelIds, integrationIds, integrationDef, allChannelStatus, BadInbound,
+import { verifyRequest, acceptsWebhook, channelDef, channelIds, integrationIds, integrationDef, allChannelStatus, BadInbound,
          parseInboundBody, handshake, CHANNELS } from './inbound.js';
 import * as auth from './auth.js';
 import * as google from './google.js';
@@ -306,10 +306,33 @@ function openBeforeSignIn(pathname) {
   if (pathname.startsWith('/api/cron/')) return true;        // CRON_SECRET is its auth
   // A REAL CHANNEL only. Never a prefix match - see the comment at the door.
   const inbound = /^\/api\/inbound\/([a-z_]+)$/.exec(pathname);
-  if (inbound && channelDef(inbound[1])) return true;
+  // A pull channel (Gmail, phone, in person) is never delivered to over HTTP: audit C1.
+  if (inbound && channelDef(inbound[1]) && acceptsWebhook(inbound[1])) return true;
   if (pathname === '/api/intake/application') return true;   // its own secret header is its auth
   if (pathname === '/api/inbound/phone-event') return true;   // PHONE_EVENT_SECRET is its auth (Q6)
   return false;
+}
+
+// AUDIT H3 + M3: a hosted copy with real sign-in is the live CRM. C2 guarantees a hosted copy
+// either has sign-in or is the CRM_PUBLIC demo, so this is exactly "the real one".
+const PRODUCTION_LOCK = Boolean(process.env.VERCEL) && AUTH_ON;
+const DEMO_WRITES = new Set(['/api/dataset', '/api/reset', '/api/demo/scenario', '/api/console/mode',
+  '/api/intake/demo', '/api/intake/receive', '/api/console/phone-event', '/api/console/send']);
+function isDemoWrite(pathname) {
+  return DEMO_WRITES.has(pathname)
+    || pathname.startsWith('/api/sim/')
+    || /^\/api\/inbound\/[a-z_]+\/simulate$/.test(pathname);
+}
+
+// AUDIT M1: did this browser request come from our own page? Sec-Fetch-Site is the browser's own
+// answer; Origin compared with the host it was sent to is the fallback for older browsers.
+function sameOrigin(req) {
+  const site = req.headers['sec-fetch-site'];
+  if (site) return site === 'same-origin';
+  const origin = req.headers.origin;
+  if (!origin) return true;
+  const host = String(req.headers['x-forwarded-host'] || req.headers.host || '').split(',')[0].trim();
+  try { return new URL(origin).host === host; } catch { return false; }
 }
 
 // Guessing at a password should cost something. Per email, in memory, and it is
@@ -928,6 +951,26 @@ export const handle = async (req, res) => {
       const back = signInFirst(req, p);
       if (back) { res.writeHead(302, { location: back, 'cache-control': 'no-store' }); return res.end(); }
       return json(res, 401, { error: 'not signed in', how: 'Open / and sign in.' });
+    }
+
+    // ---------------------------------------------- same origin only --
+    // AUDIT M1 (07.10.2026). The session cookie is SameSite=Lax, which stops other SITES, but
+    // every *.novikontas.org app is the same site as intake.novikontas.org. So a browser write
+    // must come from this origin. Webhooks, crons and sign-in are exempt (they carry their own
+    // proof), and a request with neither header is not a browser, so it holds no staff cookie.
+    if (AUTH_ON && p.startsWith('/api/') && !['GET', 'HEAD', 'OPTIONS'].includes(req.method)
+        && !openBeforeSignIn(p) && !sameOrigin(req)) {
+      return json(res, 403, { error: 'cross-origin request refused' });
+    }
+
+    // ---------------------------------------------- the production lock --
+    // AUDIT H3 + M3 (07.10.2026). Demo-era routes that empty the database, swap the dataset,
+    // or write simulated people, calls and messages are refused on a hosted copy with real
+    // sign-in. An admin mis-click, or a script riding an admin's browser, could otherwise
+    // wipe every applicant in one request. Laptops, tests and the CRM_PUBLIC demo keep them.
+    if (PRODUCTION_LOCK && req.method === 'POST' && isDemoWrite(p)) {
+      return json(res, 410, { error: 'switched off on the live copy',
+        how: 'demo, simulation and reset routes only run on a laptop or the shared demo copy' });
     }
 
     if (req.method === 'GET' && p === '/healthz') {
@@ -2505,7 +2548,13 @@ export const handle = async (req, res) => {
       // open before sign-in, so on the hosted copy anyone could skip the signature check
       // and the off switch and put a lead into New Leads (found 28.09.2026). Anybody else
       // takes the real path: off answers 409, on needs the provider's own signature.
-      const simulated = req.headers['x-crm-simulated'] === '1' && (!AUTH_ON || Boolean(await adminOf(req)));
+      const simulated = req.headers['x-crm-simulated'] === '1' && !PRODUCTION_LOCK   // audit M3
+        && (!AUTH_ON || Boolean(await adminOf(req)));
+      // AUDIT C1: a pull channel has no signature to check, so a real (not simulated) POST to it
+      // is refused outright. Its data only ever arrives through our own scheduled fetch.
+      if (!simulated && !acceptsWebhook(channel)) {
+        return json(res, 404, { error: 'the ' + channel + ' channel is not delivered over HTTP' });
+      }
       if (mode === 'off' && !simulated) {
         return json(res, 409, { error: `the ${channel} channel is off`,
           how: 'set CHANNEL_MODE_' + channel.toUpperCase() + ' to test or live, or send a simulated event' });
@@ -2972,5 +3021,8 @@ if (!process.env.VERCEL) {
     console.error('REFUSING TO START. ' + err.message);
     process.exit(1);
   });
-  server.listen(PORT, () => console.log(`Intake on http://localhost:${server.address().port}`));
+  // AUDIT C2: this machine only, unless HOST says otherwise. It used to listen on every
+  // interface, so anybody on the same office network could open a laptop copy.
+  server.listen(PORT, process.env.HOST || '127.0.0.1',
+    () => console.log(`Intake on http://localhost:${server.address().port}`));
 }

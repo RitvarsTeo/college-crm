@@ -45,8 +45,8 @@ test('it shows what people wrote, newest first, with who and when', () => {
 
 test('it carries the two ways to add to it, using the route that already exists', () => {
   const html = sandbox([]);
-  assert.match(html, /openNote\('p1','call'\)/, 'Log a call');
-  assert.match(html, /openNote\('p1','note'\)/, 'Add a note');
+  assert.match(html, /openNote\((?:"|&#34;|&quot;)p1(?:"|&#34;|&quot;),'call'\)/, 'Log a call');
+  assert.match(html, /openNote\((?:"|&#34;|&quot;)p1(?:"|&#34;|&quot;),'note'\)/, 'Add a note');
   assert.match(html, /event\.stopPropagation\(\)/, 'and adding one does not also select the card');
 });
 
