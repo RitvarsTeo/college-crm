@@ -1960,8 +1960,9 @@ export const handle = async (req, res) => {
       // somebody to tidy by hand in Next Steps (Admissions, IEVA-3 and IEVA-5, 30.09.2026).
       if (isFinished(b.status)) await finishOpenTasks(id, now, `the person is ${b.status}`);
       if (b.status === 'Contract') await db.prepare('UPDATE people SET contract_at = ? WHERE id = ? AND contract_at IS NULL').run(now, id);
-      if (b.status === 'Admitted') await db.prepare('UPDATE people SET admitted_at = ?, student_no = COALESCE(student_no, ?) WHERE id = ?')
-        .run(now, '3-5-IM/2026/' + Math.floor(10 + Math.random() * 89), id);
+      // The date only. The matriculation number comes from the student system; one was invented here
+      // ('3-5-IM/2026/' + two random digits) until the security review of 07.10.2026 (L2).
+      if (b.status === 'Admitted') await db.prepare('UPDATE people SET admitted_at = ? WHERE id = ?').run(now, id);
       await logEvent(db, { personId: id, kind: 'status', direction: 'note', at: now, origin: MANUAL,
         actor: await actorOf(req, b),
         subject: `Status: ${before.status} -> ${b.status}` + (b.reason ? ` (${b.reason})` : ''),
