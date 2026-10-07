@@ -533,3 +533,4 @@ DECIDED (popup): "Admissions works them" - the sheet's real dates stay, never re
 | Q66 | Card states: ONE system for the state line on every card (Overdue / Due date / No next step / Held by the SIS), groups separated with counts inside a column; Journey board stays the reference; same system on Today + Inbox cards | MAIN | BRIEFED 07.10, pictures only |
 | Q67 | Inbox vs Today naming: Inbox columns are arrival time, Today page is due time, both say "Today"; buckets not one scale. A = "Came in today / Yesterday / Earlier this week / Older", B = MAIN's alternative; each picture shows the whole left card + Inbox + Today title | MAIN | BRIEFED 07.10, pictures only |
 Q65 hybrid picks: ON HOLD by Ritvars ("I will not watch further for now").
+07.10: Ritvars messaged Ieva himself with an update inquiry on the 21 overdue + 57 without a next step (Admissions works them). Waiting on her answer.
