@@ -156,6 +156,16 @@ export async function purgeLineBodies(db, cutoffIso) {
 
 // ------------------------------------------------------------- arrival ----
 // Nothing here decides anything. It stores, extracts and suggests.
+// Q74: the one person an address points at, when they are still being worked with (not in a finished
+// stage: an admitted student's email stays in the Inbox, grouped as a current student). Every email the
+// person has counts (Q77). Two strong matches: nobody - a person decides.
+export async function activePersonFor(db, email) {
+  if (!email) return null;
+  const one = onlyStrong((await contactMatcher(db))({ email }));
+  if (!one) return null;
+  return (CFG.terminalStages || []).includes(one.status) ? null : one.id;
+}
+
 export async function receive(db, item) {
   const at = item.receivedAt || nowIso();
 
@@ -201,6 +211,22 @@ export async function receive(db, item) {
       // THE LINE CARRIES ITS OWN CLOCK. `at` is this arrival's time, not the row's, so
       // retention can delete this line 13 months after IT arrived without touching an
       // older or newer one. That is the whole reason the table exists.
+      const seq = await addLine(db, open.id, { channel: item.channel, externalId: item.externalId,
+        receivedAt: at, kind: item.kind, body: line });
+      return { joined: true, id: open.id, seq };
+    }
+  }
+
+  // Q74 RULE 2 (07.10.2026, Aigars: "email kkadu automatizaciju, sobrid visi emaili ienak inboxa"): the SAME
+  // SENDER writing again while their first message still waits joins that card, so the Inbox holds one card per
+  // person. The same join as a thread (a line with its own clock); only a row nobody has dealt with absorbs it.
+  if (item.joinOpenSender && item.email) {
+    const open = await db.prepare(`SELECT id, body FROM inbound WHERE channel = ? AND state = 'new'
+      AND lower(contact_email) = ? ORDER BY id DESC`).get(item.channel, String(item.email).trim().toLowerCase());
+    if (open) {
+      const line = item.body || '';
+      const joined = [open.body || '', line].filter(Boolean).join('\n');
+      await db.prepare('UPDATE inbound SET body = ? WHERE id = ?').run(joined, open.id);
       const seq = await addLine(db, open.id, { channel: item.channel, externalId: item.externalId,
         receivedAt: at, kind: item.kind, body: line });
       return { joined: true, id: open.id, seq };
@@ -273,6 +299,29 @@ export async function receive(db, item) {
   for (const f of read.fields) await stamp.run(id, f.field, f.value, f.provenance, at);
   // a form's own answers (the website, Q3): what the person picked, kept as they said it
   for (const [field, value] of Object.entries(item.answers || {})) await stamp.run(id, field, value, 'provider', at);
+
+  // Q74 RULE 1: from somebody already in Intake (and still being worked with) it goes on THEIR history with a
+  // "Answer the question" step for today, not into the Inbox - the same as a known lead's missed call (02.10.2026). Kept as a row
+  // (state qualified, by the machine), so it is counted, its first reply is read, and nothing is lost.
+  if (item.attachTo && !read.junk && !filterWhy) {
+    const p = await db.prepare('SELECT id, owner, status FROM people WHERE id = ?').get(item.attachTo);
+    if (p) {
+      await db.prepare(`UPDATE inbound SET state = 'qualified', person_id = ?, processed_by = 'machine', processed_at = ?
+        WHERE id = ?`).run(p.id, at, id);
+      await logEvent(db, { personId: p.id, kind: 'email', channel: item.channel, direction: 'in', at,
+        origin: AUTOMATIC, actor: item.email || item.channel, subject: 'Email received',
+        body: String(item.body || '').slice(0, 2000) });
+      await db.prepare('UPDATE people SET last_contact_at = ? WHERE id = ? AND (last_contact_at IS NULL OR last_contact_at < ?)')
+        .run(at, p.id, at);
+      const open = await db.prepare("SELECT COUNT(*) n FROM tasks WHERE person_id = ? AND label = 'Answer the question' AND done_at IS NULL").get(p.id);
+      if (!Number(open.n)) {
+        await db.prepare('INSERT INTO tasks (person_id,label,due_at,owner,created_at) VALUES (?,?,?,?,?)')
+          .run(p.id, 'Answer the question', at, p.owner || 'Admissions', at);
+      }
+      return { id, attached: true, personId: p.id, suggested: read.suggested, why: read.why,
+        missing: read.missing, fields: read.fields, filtered: false };
+    }
+  }
 
   return { id, suggested: read.suggested, why: read.why, missing: read.missing,
     fields: read.fields, filtered: Boolean(read.junk || filterWhy) };
@@ -897,6 +946,8 @@ export function noiseWhy({ email, name, body } = {}, cfg = CFG.emailFilter) {
   for (const p of (cfg && cfg.textPatterns) || []) {
     if (p && p.match && new RegExp(p.match, 'i').test(text)) return p.why || 'matches a filter rule';
   }
+  // Q74 RULE 3: a newsletter. Its unsubscribe link sits at the END, so the whole message is read for it.
+  if (cfg && cfg.newsletter && new RegExp(cfg.newsletter, 'i').test(String(body || ''))) return 'a newsletter (has an unsubscribe link)';
   return null;
 }
 

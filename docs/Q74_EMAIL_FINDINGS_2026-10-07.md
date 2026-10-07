@@ -39,3 +39,28 @@ The 69 waiting:
 What can break: rule 1 hides a message from the Inbox, so the person's owner must see it - it
 goes on their history and counts as their newest contact. A wrong match (shared family email)
 would file it on the wrong person; only ONE strong match counts, two is a question for a person.
+
+## DECIDED and BUILT, 07.10.2026 - corrected numbers
+
+Ritvars said yes against Aigars's latest list (07.10: "email kkadu automatizaciju, sobrid visi emaili
+ienak inboxa"). Built as:
+
+1. **Somebody already in Intake, still being worked with -> their history + "Answer the question"
+   due today** (the existing step, like a known lead's missed call -> "Call back"). The email text is
+   on their history: Aigars's "chain of communication ... profila". **Finished people (Admitted,
+   Not proceeding) stay in the Inbox**, grouped as current students, so a student's question is
+   never hidden.
+2. **The same new sender again -> joins their waiting card** (one line per message, the wait clock
+   does not restart).
+3. **Newsletter -> set aside** by its unsubscribe link anywhere in the message (`emailFilter.newsletter`).
+
+**Corrections to the estimate above, found by checking the real messages:** the "3 newsletters"
+were mostly NOT newsletters - "izraksts / izrakstu" means a transcript or statement, a real
+enquiry. And "atrakstiet" means "write back to me". The marker is therefore the English
+"unsubscribe" and the REFLEXIVE Latvian forms only ("atrakstīties", "izrakstīties"). The "3 automatic
+senders" were support@ / team@ / info@ addresses, which a real school or partner can use, so the
+sender filter was NOT widened.
+
+**Real effect on the 69 waiting (backup 07.10 09:01Z): 69 cards -> 47.** 7 to a person's history,
+1 newsletter set aside, 14 joined into a waiting card; 7 from admitted people stay in the Inbox.
+Applies to NEW arrivals; the 69 already waiting are not moved.
