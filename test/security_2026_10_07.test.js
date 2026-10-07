@@ -72,3 +72,44 @@ test('C1: the pull channels (gmail, phone, in_person) refuse an outside POST, ev
   const people = await request(s.port, 'GET', '/api/intake?state=new');
   assert.equal(people.status, 401, 'and the queue itself stays behind sign-in');
 });
+
+// ------------------------------------------------------------------ C2 ----
+// Without the guard: a Vercel project created without CRM_AUTH=1 would serve every applicant
+// to anybody with the address, and any web page could POST /api/reset.
+import { requireConfigured } from '../src/auth.js';
+
+test('C2: a hosted copy (VERCEL set) refuses to start without CRM_AUTH=1', () => {
+  assert.equal(requireConfigured({ VERCEL: '1' }).ok, false);
+  assert.equal(requireConfigured({ VERCEL: '1', CRM_AUTH: '0' }).ok, false);
+  assert.equal(requireConfigured({ VERCEL: '1', CRM_AUTH: '1', CRM_SESSION_SECRET: SECRET }).ok, true);
+  assert.equal(requireConfigured({ VERCEL: '1', CRM_PUBLIC: '1' }).ok, true, 'the shared demo door stays possible');
+  assert.equal(requireConfigured({}).ok, true, 'a laptop copy without sign-in still starts');
+});
+
+test('C2: the real boot exits on a hosted copy with sign-in off', async () => {
+  const code = await new Promise((resolve) => {
+    const child = spawn(process.execPath, [path.join(ROOT, 'src', 'server.js')],
+      { env: { ...process.env, CRM_DB: ':memory:', PORT: '0', CRM_AUTH: '', CRM_PUBLIC: '',
+        DATASET: 'empty', VERCEL: '1' }, stdio: 'ignore' });
+    const timer = setTimeout(() => { child.kill(); resolve('still running'); }, 15000);
+    child.on('exit', (c) => { clearTimeout(timer); resolve(c); });
+  });
+  assert.equal(code, 1);
+});
+
+test('C2: a laptop copy listens on this machine only', async (t) => {
+  const s = await startServer(AUTH_ENV);
+  t.after(() => s.child.kill());
+  const net = await import('node:net');
+  const { networkInterfaces } = await import('node:os');
+  const lan = Object.values(networkInterfaces()).flat()
+    .find((i) => i && i.family === 'IPv4' && !i.internal);
+  if (!lan) return t.skip('no non-loopback IPv4 address on this machine');
+  const reached = await new Promise((resolve) => {
+    const sock = net.connect({ host: lan.address, port: s.port });
+    sock.once('connect', () => { sock.destroy(); resolve(true); });
+    sock.once('error', () => resolve(false));
+    sock.setTimeout(3000, () => { sock.destroy(); resolve(false); });
+  });
+  assert.equal(reached, false, 'the server answered on ' + lan.address);
+});

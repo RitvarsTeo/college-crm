@@ -245,6 +245,14 @@ export const authOn = (env = process.env) =>
   || String(env.CRM_AUTH || '').toLowerCase() === 'true';
 
 export function requireConfigured(env = process.env) {
+  // AUDIT C2 (07.10.2026): fail CLOSED on a hosted copy. With CRM_AUTH unset the app used to
+  // start with no login at all, so one setting missed while creating a Vercel project would
+  // publish every applicant. A shared demo copy behind the CRM_PUBLIC door is the one exception.
+  if (!authOn(env) && env.VERCEL && String(env.CRM_PUBLIC || '') !== '1') {
+    return { ok: false, auth: false,
+      why: 'This is a hosted copy (VERCEL is set) and CRM_AUTH is not 1. Refusing to start '
+         + 'rather than serving the CRM with no sign-in.' };
+  }
   if (!authOn(env)) return { ok: true, auth: false };
   if (!env.CRM_SESSION_SECRET) {
     return { ok: false, auth: true,

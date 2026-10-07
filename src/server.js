@@ -2920,5 +2920,8 @@ if (!process.env.VERCEL) {
     console.error('REFUSING TO START. ' + err.message);
     process.exit(1);
   });
-  server.listen(PORT, () => console.log(`Intake on http://localhost:${server.address().port}`));
+  // AUDIT C2: this machine only, unless HOST says otherwise. It used to listen on every
+  // interface, so anybody on the same office network could open a laptop copy.
+  server.listen(PORT, process.env.HOST || '127.0.0.1',
+    () => console.log(`Intake on http://localhost:${server.address().port}`));
 }
