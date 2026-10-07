@@ -35,7 +35,8 @@ Pictures A (dot) and B (chip) on the real Inbox at 1440: `For review/2026-10-07 
 
 | What | Status |
 |---|---|
-| Each Inbox card's source is a tinted chip in its own colour: Email #29a8df, Phone #E0A526, Website #2a9d8f, LinkedIn #6f5bd3, WhatsApp #3fae5a, Facebook and Messenger #3b5bdb, Instagram #c2569b; any other source grey #8a94a6. Light and dark | BUILT |
+| Each Inbox card's source is a tinted chip in its own colour: Email #29a8df, Phone #E0A526, Website #1baf7a, LinkedIn #7b5bd6, WhatsApp #008300, Facebook and Messenger #a0662a, Instagram #d55181; any other source grey #8a94a6. Light and dark | BUILT |
+| Facebook has its own colour (MASTER CONTROL: Email and Facebook can't both be blue). The set passed validate_palette.js (dataviz skill), all pairs: normal-vision floor 15.6 light and dark. CVD separation fails for any 7 hues across all pairs; the word on every chip is the second cue. Chip text is 55% colour + #011111 on its tint: 5.2:1 or better in light, 5.4:1 or better in dark | BUILT |
 | The source colour never reaches the rail, bars or bands: those keep Q69's red / navy | BUILT |
 | Fixes the old dot, which was invisible on production (an empty inline box with no size) | BUILT |
 | Help center: FAQ "Why are the sources on the Inbox cards in colour?" | BUILT |

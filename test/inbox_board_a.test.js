@@ -59,7 +59,7 @@ test('a card: name, the channel, the message, the programme and kind tags, and t
   assert.match(card(1), /<b class="c-reach">Kaspars Lapins<\/b><\/div>/, 'the age moved to the state line (Q66)');
   assert.match(card(1), /<div class="c-st c-st-new" title="2026-10-06 05:40"><span class="c-st-w">New<\/span><span class="c-st-d">· 9 h<\/span><\/div>/);
   assert.match(html, /class="c-jp row ib-card c-rail c-rail-due" data-id="1"/, 'new: the navy rail');
-  assert.match(card(1), /<small class="ib-ch" style="--src:#2a9d8f"><i><\/i>Website<\/small>/);
+  assert.match(card(1), /<small class="ib-ch" style="--src:#1baf7a"><i><\/i>Website<\/small>/);
   assert.match(card(1), /<div class="ib-msg">Is there still a place in the marine engineering group\?<\/div>/);
   assert.match(card(1), /<span class="ib-prog">ENG<\/span>/);
   assert.match(html, /class="c-jp row ib-card c-rail c-rail-over" data-id="2"/, 'answer now: red, it needs you (Q69)');
@@ -114,6 +114,11 @@ test('Q73: a tinted chip per source, light and dark, and the rail keeps its two 
   const ctx = {}; vm.runInNewContext(APP.slice(APP.indexOf('const C_SRC_COLOUR = '), APP.indexOf('};', APP.indexOf('const C_SRC_COLOUR = ')) + 2) + '\nthis.C = C_SRC_COLOUR;', ctx);
   for (const ch of ['email', 'phone', 'website', 'linkedin', 'whatsapp', 'facebook', 'instagram']) assert.match(ctx.C[ch], /^#[0-9a-fA-F]{6}$/, ch);
   assert.equal(new Set(['email', 'phone', 'website', 'linkedin', 'whatsapp', 'facebook', 'instagram'].map((c) => ctx.C[c])).size, 7, 'seven different colours');
+  // MASTER CONTROL, 07.10.2026: Email and Facebook can't both be blue. The set that passed validate_palette.js (all pairs,
+  // light and dark, normal-vision floor 15.6); Email and Phone stay the brand's blue and mustard
+  assert.deepEqual({ ...ctx.C }, { email: '#29a8df', phone: '#E0A526', website: '#1baf7a', linkedin: '#7b5bd6', whatsapp: '#008300',
+    facebook: '#a0662a', messenger: '#a0662a', instagram: '#d55181' });
+  assert.match(APP, /html\.ui-c #view \.ib-ch\{[^}]*color:color-mix\(in srgb,var\(--src,#8a94a6\) 55%,#011111\)/, 'light chip text: 5.2:1 or better');
   assert.match(APP, /html\.ui-c #view \.ib-ch\{display:inline-flex;[^}]*border-radius:999px;[^}]*background:color-mix\(in srgb,var\(--src,#8a94a6\) 16%,transparent\)\}/);
   assert.match(APP, /html\.ui-c\[data-theme="dark"\] #view \.ib-ch\{color:color-mix\(in srgb,var\(--src,#8a94a6\) 55%,#ffffff\)/);
   assert.match(APP, /html\.ui-c #view \.ib-ch i\{display:inline-block;width:8px;height:8px;/, 'the dot has a size (it was an empty inline box, invisible)');
