@@ -3778,7 +3778,7 @@ async function viewLeadsC() {
       <select id="qNext">${nextActionOptionsWithSuggestion(sugg)}</select>
       <div id="qErr"></div>
       <div class="c-row-acts">${r.joins
-        ? `<button class="btn sm" onclick="doQualify(${Number(r.id)}, { personId: '${esc(r.joins.id)}', createPerson: false })">Add to ${esc(r.joins.name)}</button>`
+        ? `<button class="btn sm" onclick="doQualify(${Number(r.id)}, { personId: ${esc(JSON.stringify(String(r.joins.id ?? '')))}, createPerson: false })">Add to ${esc(r.joins.name)}</button>`
         : `<button class="btn sm" onclick="doQualify(${Number(r.id)})">Make a lead</button>`}<button class="btn sm ghost" onclick="C_LOPEN=null;cInboxPool()">Cancel</button></div>
     </div>`;
   };

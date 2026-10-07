@@ -102,7 +102,8 @@ test('the card asks for the missing contact, and says who the message joins', ()
   assert.match(APP, /\$\{r\.contact_email \? '' : `<label for="qEmail">Email<\/label><input id="qEmail" type="email"/);
   assert.match(APP, /\$\{r\.contact_phone \? '' : `<label for="qPhone">Phone<\/label><input id="qPhone" type="tel"/);
   assert.match(APP, /<span class="ib-joins">Joins \$\{esc\(r\.joins\.name\)\}<\/span>/);
-  assert.match(APP, /doQualify\(\$\{Number\(r\.id\)\}, \{ personId: '\$\{esc\(r\.joins\.id\)\}', createPerson: false \}\)">Add to \$\{esc\(r\.joins\.name\)\}/);
+  // H2 (security patch 32): the id is a JSON string, escaped for the attribute, never esc() inside quotes
+  assert.match(APP, /doQualify\(\$\{Number\(r\.id\)\}, \{ personId: \$\{esc\(JSON\.stringify\(String\(r\.joins\.id \?\? ''\)\)\)\}, createPerson: false \}\)">Add to \$\{esc\(r\.joins\.name\)\}/);
   assert.match(APP, /typed\('#qEmail'\) \? \{ email: typed\('#qEmail'\) \}/);
   const help = fs.readFileSync(path.join(ROOT, 'config', 'help.json'), 'utf8');
   assert.match(help, /add the email or phone the message did not bring/, 'Help says it too');
