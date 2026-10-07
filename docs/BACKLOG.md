@@ -27,7 +27,7 @@ DECIDED by Ritvars 07.10 (Q75, KISS list), via MASTER CONTROL. Branch `feat/2026
 | "reached Application" wording on Home, Reports and the export now says "reached Submitted application" | BUILT |
 | The Contract -> Admitted benchmark row is parked (`on: false`): the nearest step left, Submitted application -> Admitted, is not a deposit, so the US band would compare unlike things | BUILT |
 | **DECIDED 07.10 (Ritvars, popup "Only submitted"):** only a real SIS submission moves a person to Submitted application. `registered` and `started` leave the stage where it is ("Application form started" is still recorded as a fact); rejected / withdrawn still go on the timeline only. Supersedes the 29-30.09 rule | BUILT |
-| **[DECISION] The 2 people already at Submitted application in production only because the SIS said registered / started** (backup 2026-10-07T09-01-03Z, count only). The new rule never moves anyone backwards, so they keep reading "Submitted application" unless they are moved back by hand or by a one-time move | OPEN |
+| **DECIDED 07.10 (Ritvars, via MASTER CONTROL): nobody is moved back.** The rule applies from now on; the 2 people already at Submitted application because the SIS said registered / started (backup 2026-10-07T09-01-03Z, count only) stay where they are. Help center has no text on the SIS mapping or stage names, so nothing to change there. Benchmark row stays `on: false` (not dropped) | DECIDED |
 
 ## 07.10.2026 - The target meters say what they are (DECIDED 07.10: "Yes, label them")
 
