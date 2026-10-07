@@ -644,3 +644,4 @@ His brief: pg_dump the crm schema from Neon (unpooled, --schema=crm --no-owner -
 07.10 Ritvars: "Talk to relevant session" -> MASTER CONTROL settles lane follow-ups itself (e.g. the 2 people SIS moved on registered/started go back, with a history line; S4).
 
 07.10 RULE (Ritvars, twice: "according to Aigars latest feedback"): when Aigars's KISS list answers a question, MASTER CONTROL decides by it and does not ask.
+07.10 S1 READY: tip ad8095f (21 commits from f45340e), QA 1435/1435; MASTER CONTROL re-ran 1435/1435 on a clean copy and the review attacks on a running copy with sign-in on: POST /api/inbound/gmail|phone|in_person|google_form without sign-in -> 404 (before: 200 stored); /api/people -> 401. LinkedIn challenge -> 503 locally (no secret set; the UUID-only rule is pinned by the H1 tests). Asking GO to ship S1 ALONE now (live holes), KISS patch after.
