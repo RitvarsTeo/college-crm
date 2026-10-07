@@ -1,0 +1,40 @@
+/* INTAKE MOTION ENGINE, the few styles it needs (motion.js loads this). Nothing here applies unless a motion mode was
+   chosen (html.mo-a / html.mo-b) or the engine itself adds an element. Colours: Novikontas blue #29a8df for rings,
+   pills and lines; signal amber #F7C04F only for "changed". */
+
+/* the page being left, held behind the arriving one (A) */
+.mo-held{position:fixed;top:0;bottom:0;overflow:hidden;pointer-events:none;z-index:1;transform-origin:50% 30%}
+#view.mo-front{position:relative;z-index:2}
+.mo-held *{animation:none !important;transition:none !important}   /* the copy never replays its own opening */
+
+/* ping: one ring where you land */
+.mo-ring{position:fixed;z-index:9998;pointer-events:none;box-sizing:border-box}
+
+/* flight: the copy that travels */
+.mo-ghost{position:fixed !important;z-index:9999;margin:0 !important;pointer-events:none;overflow:hidden;box-sizing:border-box;border-radius:12px;
+  background:var(--surface,#fff);border:1px solid var(--c-card-line,#dbe3ea);box-shadow:0 14px 34px -10px rgba(10,36,99,.35);transform-origin:0 0}
+
+/* pill: slides under the new choice, then melts into the choice's own look */
+.mo-pillg{isolation:isolate}
+.mo-pill{position:absolute;z-index:-1;display:block;pointer-events:none;background:rgba(41,168,223,.2)}
+html.mo-b .mo-pill{background:rgba(41,168,223,.14)}
+
+/* mark: a number that changed since the last visit. A = highlighter, B = underline. It stays for the visit. */
+.mo-mark{display:inline;font:inherit;color:inherit;background-repeat:no-repeat;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.mo-mark.mo-mark-a{background-image:linear-gradient(rgba(247,192,79,.5),rgba(247,192,79,.5));background-size:100% 100%;background-position:0 60%;border-radius:3px;padding:0 .08em;margin:0 -.08em}
+.mo-mark.mo-mark-b{background-image:linear-gradient(#F7C04F,#F7C04F);background-size:100% 2px;background-position:0 100%}
+html[data-theme="dark"] .mo-mark.mo-mark-a{background-image:linear-gradient(rgba(247,192,79,.32),rgba(247,192,79,.32))}
+/* the mark replaces the shake */
+html.mo-a .m-bumped,html.mo-b .m-bumped{animation:none !important}
+
+/* the demo toggle */
+#moToggle{position:fixed;left:16px;bottom:16px;z-index:9997;display:inline-flex;align-items:center;gap:2px;padding:3px;border-radius:10px;
+  background:var(--surface,#fff);border:1px solid var(--c-card-line,#dbe3ea);box-shadow:0 6px 18px -8px rgba(10,36,99,.35);
+  font:600 12px/1 Inter,system-ui,sans-serif;color:var(--t2,#4a5d73)}
+#moToggle span{padding:0 6px 0 5px;letter-spacing:.03em;text-transform:uppercase;font-size:10.5px;color:var(--t3,#6b7c8f)}
+#moToggle button{appearance:none;border:0;background:transparent;font:inherit;color:inherit;padding:6px 10px;border-radius:7px;cursor:pointer}
+#moToggle button[aria-pressed="true"]{background:#29a8df;color:#fff}
+#moToggle .mo-build{padding:0 6px 0 4px;font:500 10.5px/1 ui-monospace,Consolas,monospace;color:var(--t3,#6b7c8f);letter-spacing:0}
+/* phone width: the menu is a bar at the bottom (app.html .ctabs, max-width 760px); the toggle sits above it, at the
+   same height as the Feedback button (.helpbtn), never over the Home and Inbox labels */
+@media (max-width:760px){#moToggle{bottom:calc(74px + env(safe-area-inset-bottom))}}

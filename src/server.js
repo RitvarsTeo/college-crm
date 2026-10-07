@@ -1450,6 +1450,13 @@ export const handle = async (req, res) => {
         'apple-touch-icon.png': 'image/png',
       };
       const name = p.slice('/assets/'.length);
+      // MOTION (Q65, the owner picked A 07.10.2026): src/assets/motion.js, motion.css and motion-<area>.js|css, served
+      // without a whitelist line each. no-cache: a new deployment's page never runs with an older motion file.
+      const mo = /^motion(-[a-z0-9]+)?\.(js|css)$/.exec(name);
+      if (mo) {
+        res.writeHead(200, { 'content-type': mo[2] === 'js' ? 'text/javascript; charset=utf-8' : 'text/css; charset=utf-8', 'cache-control': 'no-cache' });
+        return res.end(fs.readFileSync(path.join(ROOT, 'src', 'assets', name)));
+      }
       const type = ALLOWED[name];
       if (!type) return json(res, 404, { error: 'not found' });
       res.writeHead(200, { 'content-type': type, 'cache-control': 'public, max-age=3600' });

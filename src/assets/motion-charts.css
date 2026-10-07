@@ -1,0 +1,7 @@
+/* INTAKE MOTION - THE CHARTS (Q65, motion-charts.js). In A and B the kit's own chart scene on Home (the m-fade bars
+   and dots, the m-draw line, the donut's kseg-in / kwall-in) gives way to the chart moments, so nothing plays twice;
+   the marks sit at their final state and the moments uncover them on an arrival. With motion off (no mo-a / mo-b on
+   the page) nothing here applies and the app is exactly as it was. */
+html.ui-c:is(.mo-a, .mo-b).m-on .kb-charts.m-scene :is(.m-fade, .kdot) { animation: none; opacity: 1; }
+html.ui-c:is(.mo-a, .mo-b).m-on .kb-charts.m-scene .m-draw { animation: none; stroke-dashoffset: 0; }
+html.ui-c:is(.mo-a, .mo-b).m-on .kb-charts.m-scene :is(.kseg, .kwall) { animation: none; opacity: 1; }

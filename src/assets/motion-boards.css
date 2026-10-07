@@ -1,0 +1,21 @@
+/* INTAKE MOTION, THE BOARDS (Q65): the few styles the board moments need (motion-boards.js loads this). Nothing here
+   applies unless a motion mode was chosen (html.mo-a / html.mo-b) or the file itself adds the class. The copy that
+   travels reuses the engine's .mo-ghost; Novikontas blue #29a8df is the only colour. */
+
+/* 1. the dragged card lifts (A: a lift and a deeper shadow; B: the shadow only) */
+html.mo-a .c-jp.mo-lift{position:relative;z-index:5;transform:translateY(-2px) scale(1.02);box-shadow:0 14px 30px -12px rgba(10,36,99,.45);
+  transition:transform .18s cubic-bezier(.65,0,.25,1),box-shadow .18s}
+html.mo-b .c-jp.mo-lift{position:relative;z-index:5;box-shadow:0 8px 20px -12px rgba(10,36,99,.35);transition:box-shadow .18s}
+
+/* the target column makes room at its top for the card that is coming */
+html.mo-a .c-drop.mo-room{padding-top:56px;transition:padding-top .2s cubic-bezier(.65,0,.25,1)}
+html.mo-b .c-drop.mo-room{padding-top:24px;transition:padding-top .2s}
+html.mo-a .c-drop.mo-room::before,html.mo-b .c-drop.mo-room::before{content:"";display:block;height:0;border-top:2px dashed rgba(41,168,223,.55);margin:-30px 4px 22px}
+html.mo-b .c-drop.mo-room::before{margin:-14px 4px 8px;border-top-style:solid;border-top-color:rgba(41,168,223,.35)}
+
+/* the real card while its copy travels; it comes back if the move is cancelled */
+.c-jp.mo-hidden,.t-card.mo-hidden{opacity:0 !important;transition:none !important}
+
+/* the copy of a card: the engine's .mo-ghost keeps it fixed and in front; a card copy keeps its own look */
+.mo-ghost.mo-ghost-card{border-radius:8px;padding:8px 10px;font-size:13px}
+.mo-ghost.mo-quiet{box-shadow:none}
