@@ -619,3 +619,16 @@ REPORTS fb6eae6 target labels ("Admitted 120 · target 140 · 86%", Officer NAV+
 ## 07.10 - NEW MASTER CONTROL session takes over (handoff HANDOFF_MASTER_CONTROL_2026-10-07.md)
 Checked on arrival: GitHub release/2026-10-05-intake-9 = f45340e; live page byte-identical to f45340e (+ sign-in script); the three /college 301s all answer 301 -> /academy/... (CDN spread done, open item 1 closed).
 07.10 Ritvars: /academy/lv form -> "Yes, connect it". Checked live (page 30633819 + all 7 linked /academy/lv pages): there is NO enquiry form on any Latvian academy page, only the site-wide newsletter box (email) and the one-field widget (Textarea). Nothing to connect; nothing changed in Tilda. Same as 04.10. Open: whether LV gets an enquiry form like EN (the website direction: "Ask us a question" + Apply).
+
+## 07.10 - TASK 2: the KISS fix list (pasted by Ritvars, Latvian; principle "keep it stupid simple")
+| Q | Item (his list) | Fact today (f45340e) | Lane | Status |
+|---|---|---|---|---|
+| Q70 | Next steps: what time each step has, how the deadline is set | every step in config nextActions already has `days` (call 1, consultation 3, ...), never shown to staff | MAIN shows it; values need his/Ieva's yes | SAID |
+| Q71 | Inbox: not only pick from the dropdown, also write a note | to check | MAIN | SAID |
+| Q72 | Due date: staff can set it themselves | a date input exists on the person edit (#pe-due) and "new date" on a task; to check where it is missing | MAIN | SAID |
+| Q73 | Inbox: colour per source | not built | MAIN draws A/B pictures | SAID |
+| Q74 | Email: some automation, today every email lands in the Inbox | Gmail edu@ live; filters exist (set aside automatic senders) | CHANNELS proposes, KISS | SAID |
+| Q75 | Take Contract out of the stages; the last stage is "Submitted application" | stages New, Contacted, Follow-up, Application, Contract, Admitted, Not proceeding | APPLICATIONS + MAIN; where today's Contract people go = his decision | SAID |
+| Q76 | The whole chain of communication with the lead on the profile | to check what the person page shows | MAIN | SAID |
+| Q77 | A caller made into a lead must get a profile with email etc., so a later email joins them and is not a new lead | matching by phone or email; a caller has only a number | CHANNELS | SAID |
+"There is more to fix" - waiting for the rest from him.
