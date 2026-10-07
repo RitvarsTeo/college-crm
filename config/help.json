@@ -14,8 +14,8 @@
       "for": "In Admissions, with a first step"
     },
     {
-      "name": "Today",
-      "href": "#/today",
+      "name": "Due",
+      "href": "#/due",
       "icon": "next",
       "for": "Call, documents, next step"
     },
@@ -60,14 +60,14 @@
       "href": "#/leads"
     },
     {
-      "do": "Act on today's work",
-      "where": "Today, Done or Choose on the card",
-      "href": "#/today"
+      "do": "Act on what is due",
+      "where": "Due, Done or Choose on the card",
+      "href": "#/due"
     },
     {
       "do": "Move a step to another day",
-      "where": "Today, drag the card to Due today or Coming up",
-      "href": "#/today"
+      "where": "Due, drag the card to Due today or Coming up",
+      "href": "#/due"
     },
     {
       "do": "Move someone back a stage",
@@ -112,7 +112,7 @@
       "target": ".cnav a[data-c=\"leads\"]"
     },
     {
-      "title": "Today",
+      "title": "Due",
       "body": "Who needs an action now: overdue, due today, and people with no next step. Press Done, say how it went and choose the next step; on a card with no next step, press Choose. Drag a card to Due today or Coming up to move its step to another day.",
       "target": ".cnav a[data-c=\"today\"]"
     },

@@ -14,6 +14,26 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 07.10.2026 - Q67: the work page is "Due", the Inbox keeps day words on one scale (PICKED 07.10: "B Due page")
+
+Ritvars 07.10: "in inbox i see today V, then yesterday <, then this week <> and then older <<<" and "then again, we
+have todays work. which is kind of confusing with the inboxes today". The Inbox columns are ARRIVAL time, the work page
+is DUE time, and both said "Today"; the four buckets were not one scale either (two single days, then "This week",
+which overlaps them, then "Older"). Two pictures (For review/2026-10-07 Q66 Q67 AB): A renamed the Inbox columns to
+arrival words, B renamed the work page. He picked **B, the Due page**.
+- The work page is "Due" everywhere a user reads it: the left menu card, the phone bottom bar, the classic shell,
+  the page title and its Needs-you band, Home's Overdue / Due today / No next step links, the "Back to Due" button,
+  the keyboard shortcut (G then D) and the "?" list. Its groups stay Overdue / Due today / Coming up / No next step.
+- Its address is #/due. #/today stays an alias (cPlace, cOnDue), so old links and the Back history still land; the
+  address layer (Q61) writes #/due from then on. The internal id 'today' (state, counts, menu marks) is unchanged.
+- The Inbox keeps short day words on ONE scale: Today / Yesterday / Earlier this week / Older, in the band and the
+  column heads. "Today" there is the day messages came in; "Due today" on the Due page is a due date.
+- Help center: the flow stop, the tour step, the how-to lines and their links say Due; no "Today page" is left in
+  help.json. The question list and the "?" list follow the shortcut.
+Tests: test/due_page_q67.test.js (runs the Due page's frame and the Inbox board; the address alias; no user-facing
+"Today" names the page). Shots: `For review/2026-10-07 Q66 Q67 build/` (before and after, 1440 and 375).
+**BUILT, next patch.**
+
 ## 07.10.2026 - Q66: one state line and one rail on every card (PICKED 07.10: "B as drawn")
 
 Ritvars 07.10, with a screenshot of the live Journey board: "Why is everyone so no organized? i see overdue all over the

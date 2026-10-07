@@ -17,7 +17,7 @@ test('five tabs in his order, More last; the sheet holds the rest of the menu', 
   const f = fnBody('function installCTabs() {');
   const tabs = [...f.matchAll(/tab\('(#\/[a-z/]+)', '([a-z]+)', C_ICON\.[a-z]+, '([A-Za-z ]+)'/g)].map((m) => m[3] + ' ' + m[1]);
   // Q47 (the owner, 05.10.2026): Home, Inbox, Today, Journey, More
-  assert.deepEqual(tabs, ['Home #/home', 'Inbox #/leads', 'Today #/today', 'Journey #/journey']);
+  assert.deepEqual(tabs, ['Home #/home', 'Inbox #/leads', 'Due #/due', 'Journey #/journey']);
   assert.match(f, /data-t="more"[^>]*onclick="cMoreOpen\(\)">\$\{C_ICON\.more\}<span>More<\/span><\/button><\/div>/);
   const rows = [...f.matchAll(/row\('(#\/[a-z/]+)', C_ICON\.[a-z]+, '([A-Za-z ]+)'\)/g)].map((m) => m[2] + ' ' + m[1]);
   assert.deepEqual(rows, ['Reports #/reports', 'Help #/help'], 'Settings left the sheet on 06.10.2026');

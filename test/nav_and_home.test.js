@@ -33,7 +33,7 @@ test('the menu is grouped: Admissions holds the three pools, and the hairline is
   // Q51 (the owner, 05.10.2026: "I had Home then Admissions (under that inbox, today, journey) Then big Reports."):
   // Journey is People + Journey + Outcomes in one (Q47)
   // 06.10.2026: Settings left; the Help center is the foot of the menu
-  assert.deepEqual(labels, ['Home', 'Admissions', 'Inbox', 'Today', 'Journey', 'Reports', 'Help center']);
+  assert.deepEqual(labels, ['Home', 'Admissions', 'Inbox', 'Due', 'Journey', 'Reports', 'Help center']);
   assert.equal((nav.match(/class="kids"/g) || []).length, 1, 'one group: Admissions');
   // the hairline itself, unchanged from the established rule
   assert.match(APP, /html\.ui-c \.cnav \.kids\{margin:1px 0 6px 18px;padding-left:10px;border-left:1px solid var\(--rule\)\}/,
@@ -75,7 +75,7 @@ test('Home is the metrics page and Today is the work; neither does the other job
   assert.match(fn('function cHomeB('), /kstrip/, 'B carries the KPI strip as cards');
   assert.ok(!home.includes("sect('Overdue'"), 'Home does not list the work');
 
-  assert.match(today, /title: 'Today'/, 'the frame titles it Today (Q47)');
+  assert.match(today, /title: 'Due'/, 'the frame titles it Due (Q47; Q67 renamed the page)');
   for (const section of ['Overdue', 'Due today', 'Coming up', 'No next step']) {
     assert.ok(today.includes(`'${section}'`), section + ' is still a section on Today');
   }

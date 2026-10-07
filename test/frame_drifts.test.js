@@ -17,7 +17,7 @@ test('manifest: a white splash behind the white icon tile; the window bar stays 
 });
 
 test('the logo is a link to Home that says so, two-tone on light and white on dark', () => {
-  assert.match(APP, /<a class="brand" href="#\/today" title="Home" aria-label="Novikontas Academy - Home">\s*<img class="logo light" src="\/assets\/NoAca_logo_twotonehor\.svg" alt=""[^>]*>\s*<img class="logo dark" src="\/assets\/NoAca_logo_whitehor\.svg" alt=""/);
+  assert.match(APP, /<a class="brand" href="#\/due" title="Home" aria-label="Novikontas Academy - Home">\s*<img class="logo light" src="\/assets\/NoAca_logo_twotonehor\.svg" alt=""[^>]*>\s*<img class="logo dark" src="\/assets\/NoAca_logo_whitehor\.svg" alt=""/);
   assert.match(SERVER, /'NoAca_logo_twotonehor\.svg': 'image\/svg\+xml; charset=utf-8'/, 'the server serves it');
   const svg = fs.readFileSync(path.join(ROOT, 'src', 'assets', 'NoAca_logo_twotonehor.svg'), 'utf8');
   assert.match(svg, /#29a8df/i, 'the A stroke is the logo blue');

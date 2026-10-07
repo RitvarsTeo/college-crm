@@ -210,7 +210,7 @@ test('the Console is a separate page, and the CRM has no way into it', async (t)
       `the CRM still routes to ${gone}`);
   }
   // six tabs, and nothing technical
-  for (const tab of ['Today', 'Inbox', 'Admissions', 'Follow-ups', 'People', 'Reports']) {
+  for (const tab of ['Due', 'Inbox', 'Admissions', 'Follow-ups', 'People', 'Reports']) {
     assert.ok(crm.includes('>' + tab + '<'), 'the CRM is missing the ' + tab + ' tab');
   }
   for (const gone of ['>CAR<', '>Pipeline<', '>Connections<', '>What arrived<']) {
