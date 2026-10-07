@@ -39,7 +39,8 @@ they will not be in the final github push for quite a time." Branch `fix/2026-10
 | ONE switch, `config.benchmarks.on: false` (the per-row `on` flags kept). The code, the config values and `For review/2026-10-05 Benchmarks/BENCHMARKS.md` are kept: parked, not dropped. The rows and their history: FAR BACKLOG at the end of this file | BUILT |
 | The first-reply RECORDING stays on: the Gmail thread read and the phone run's destination counts | BUILT |
 | Help center: the "Email reply sent" answer no longer points at a Reports figure | BUILT |
-| Note: the Conversion tab's only "reached Application" figure WAS the benchmark row (the older "Reached" block went on 06.10, "Nothing should be duplicated"), so Reports has no such figure while this is parked | SAID |
+| Note: the Conversion tab's only "reached Application" figure WAS the benchmark row (the older "Reached" block went on 06.10, "Nothing should be duplicated"), so Reports has no such figure while this is parked | ANSWERED below |
+| **PICKED 07.10 (Ritvars, "B in the card", knowing Home's card changes too, Q35):** the Conversion card on Home AND on Reports gains "23 / 33 reached Application" under "8 / 33 who arrived 60+ days ago": the same matured people, the server's steps.leadToApplication; each number opens its people (Home through the People cohort route); nothing drawn when the figure is missing. Demo A/B and after-shots: `For review/2026-10-07 Reached Application demo/` and `.../2026-10-07 Reached Application B/`. test/conversion_reached.test.js runs Home's card and the Reports tab on one database and checks the same words and ids | BUILT |
 | test/benchmarks_parked.test.js runs cRepBody for Conversion in three periods and finds no benchmark row; the parked machinery stays tested with the switch on | BUILT |
 
 
@@ -105,6 +106,51 @@ from release `6e3dc39`.
 | **PICKED 07.10 (Ritvars):** a lone last block in a two-column report grid takes the whole row; nothing is added to fill the space. One CSS rule (`.c-rgrid > :last-child:nth-child(odd)`), so Leads (Nationality), Conversion (By channel) and the Applications web-stats lists all follow it | BUILT |
 | Checked headless at 1440 on every chapter for one year, two years and one month: no row with a lone block narrower than the grid. test/reports_full_row.test.js runs cRepBody on the synthetic data (blocks 2 / 5 / 3 / 2) and pins the rule | BUILT |
 | Shots: `For review/2026-10-07 Reports full row/` (before, after) | BUILT |
+
+## 07.10.2026 - Q69: two colours - red needs you, navy on track (PICKED 07.10: "B two colours")
+
+Ritvars 07.10, of the live New bar (grey on navy on red): "absolutely not acceptable as these are russian flag colours
+almost"; of the first two redraws (five colours): "LESS colours. This is too complicated." MASTER CONTROL's three- and
+two-colour sketches (For review/2026-10-07 Q69 less colours); he picked **B two colours**.
+- RED = needs you: Overdue and No next step (in the Inbox: Late and Answer now). NAVY = on track: Due today, Due,
+  With the SIS (in the Inbox: New and Set aside). Nothing else: no amber, green, grey, light blue, lilac or hatching in
+  rails, bars or bands. The five state names stay as the WORDS on the cards.
+- One CSS source: `--st-need` and `--st-track`; the five state tokens are these two values, so rails, state words,
+  bands and the graph cannot show a third colour. Dark: needs you keeps the alarm red, on track is the readable blue.
+- The Journey graph stacks two segments per stage: red (overdue + no next step) on the baseline, then navy; each
+  segment opens that stage filtered to its states (cJfStates). The column bands stay text headers; only the red groups
+  (Overdue, No next step) are tinted. The State filter keeps its five values.
+- Help: the card-colours question says "red needs you, navy on track"; the Journey tour step follows.
+Tests: test/journey_band_states.test.js renders the band with both colours; the colour readers updated.
+Shots: `For review/2026-10-07 Q69 two colours build/` (Journey 1440 + 375, Due 1440, Inbox 1440). **BUILT, next patch.**
+The earlier five-colour pictures (For review/2026-10-07 Q69 state colours AB) are superseded.
+
+## 07.10.2026 - Q68: the boards on a phone - stacked stages (PICKED 07.10: "B stacked stages")
+
+Ritvars 07.10, with a phone shot of the Journey board: "mobile versions scrolling doesnt work like that" (the board
+scrolled sideways inside the page with a grey scrollbar, narrow columns, cards cut at the right, no sense of where you
+are). Two pictures at 375 (For review/2026-10-07 Q69 phone board AB: A swipe columns, B stacked stages); he picked
+**B stacked stages**, told in the caption that on the phone it is no longer a sideways board and that Move replaces drag.
+- At phone width (760 px and under) every board stacks its columns one under the other: the Journey's stages, Due's
+  Overdue / Due today / Coming up, the Inbox's days. ONE column is open at a time, the others fold to a row with their
+  name and count; a tap on a folded row opens it. The band on top is the strip: a tap on a Journey bar, a Needs-you
+  card or an Inbox bar opens that column (on a wide screen those taps filter / narrow, as before). The Journey band is
+  sticky and goes compact once the page has scrolled (bars only), as the pool bands already do.
+- Nothing scrolls sideways: the Journey's columns are a block, not a grid, at phone width.
+- Move on the opened Journey card (phone only) opens the person's form, where the stage is picked; a wide screen drags.
+- The open column travels in the address (open=...), so Back lands on it (Q61).
+- Help center: the Journey, Due and Inbox tour steps carry the phone sentence.
+Tests: test/phone_boards_q68.test.js (runs the Journey board, the Due board and the Inbox board at phone width and at
+desktop width). Shots: `For review/2026-10-07 Q68 phone boards build/` (375, before and after). **BUILT, next patch.**
+
+## FAR BACKLOG - 07.10.2026 - the Inbox Reply filter (built, parked with Reports' First-reply row)
+
+Built on ui/2026-10-02-main-ab (3a71727 merge of REPORTS' feat/2026-10-07-first-reply, 56a06f1 the filter and the
+address #/leads?reply=yes|none&from&to, 02ec7e3 test rows never "no reply yet"). The owner parked every industry
+benchmark "very far backlog" on 07.10, the First-reply row with it, and the filter was built only to serve that row:
+MASTER CONTROL parked it too. Not in a patch; the commits stay on that branch; patch 27 is built from release 8af99b8
+without them. The words agreed with REPORTS for the day it comes back: reply=yes|none|known, state new + qualified and
+source provider when reply is set, to = the day before yesterday for maturing.
 
 ## 07.10.2026 - First-reply time (on the finish line): the replies are recorded; the Reports row is PARKED (far backlog)
 

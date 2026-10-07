@@ -66,6 +66,7 @@ function harness({ summary = 'ok', intake = 'ok' } = {}) {
     fn('async function cHomeData('), fn('function cHomeMonths('),
     // the year's target on the Admitted card (test/home_target.test.js): loaded so cHomeB can call it
     APP.slice(APP.indexOf("// ---- THE YEAR'S TARGET (D-C6"), APP.indexOf('// ---- B: TODAY FIRST')),
+    fn('function cReachedWords('),   // Reached Application on the Conversion card (07.10.2026)
     fn('function cHomeB('),
   ].join('\n') + '\nthis.data = cHomeData; this.B = cHomeB;', ctx);
   return ctx;

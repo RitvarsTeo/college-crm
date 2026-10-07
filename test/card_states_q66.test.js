@@ -18,7 +18,7 @@ const HELP = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'help.json'), 
 const fn = (name) => { const i = APP.indexOf(name); assert.ok(i >= 0, name); return APP.slice(i, APP.indexOf('\n}\n', i) + 2); };
 const line = (start) => { const i = APP.indexOf(start); assert.ok(i >= 0, start); return APP.slice(i, APP.indexOf('\n', i)); };
 const TODAY = '2026-10-07';
-const helpers = () => [line('const cWhenClass = '), line('const cDaysLate = '), line('const C_SIS_HOLDS = '), line('const cSisHolds = '),
+const helpers = () => [line('const cPhone = '), line('const cWhenClass = '), line('const cDaysLate = '), line('const C_SIS_HOLDS = '), line('const cSisHolds = '),
   line('const C_ST = '), line('const C_ST_RAIL = '), fn('function cStateLine('), line('const cDdMm = '), fn('function cStepState('),
   line('const cStepGroup = '), line('const cChooseOnCard = '), line('const C_GRP = '), line('const cGroupBand = ')].join('\n');
 const base = () => ({
@@ -123,11 +123,11 @@ test('an Inbox card: the state line says New, Answer now, Late or Set aside and 
   };
   const html = run('new');
   assert.match(html, /class="c-jp row ib-card c-rail c-rail-due" data-id="1"[\s\S]*?<div class="c-st c-st-new" title="[^"]+"><span class="c-st-w">New<\/span><span class="c-st-d">· 20 min<\/span><\/div>\s*<div class="ib-acts">/);
-  assert.match(html, /class="c-jp row ib-card c-rail c-rail-today" data-id="2"[\s\S]*?<span class="c-st-w">Answer now<\/span><span class="c-st-d">· 3 h<\/span>/);
+  assert.match(html, /class="c-jp row ib-card c-rail c-rail-over" data-id="2"[\s\S]*?<span class="c-st-w">Answer now<\/span><span class="c-st-d">· 3 h<\/span>/, 'answer now needs you: red (Q69)');
   assert.match(html, /class="c-jp row ib-card c-rail c-rail-over" data-id="3"[\s\S]*?<span class="c-st-w">Late<\/span><span class="c-st-d">· 1 d<\/span>/);
   assert.doesNotMatch(html, /c-late|c-answer|<small title=/, 'no chip and no second age: the state line says it once');
   const aside = run('archived');
-  assert.match(aside, /class="c-jp row ib-card c-rail c-rail-none" data-id="1"[\s\S]*?<span class="c-st-w">Set aside<\/span>/);
+  assert.match(aside, /class="c-jp row ib-card c-rail c-rail-due" data-id="1"[\s\S]*?<span class="c-st-w">Set aside<\/span>/, 'set aside: nothing to do, navy (Q69)');
   // with Bring back (CHANNELS 9bed85b, merged in rc/2026-10-07 as MASTER CONTROL approved): a set-aside card's one
   // action is Bring back; none of the Inbox's own actions
   assert.match(aside, /<div class="ib-acts"><button class="btn sm" onclick="event\.stopPropagation\(\);cBringBack\(1, this\)">Bring back<\/button><\/div>/);
@@ -138,19 +138,19 @@ test('an Inbox card: the state line says New, Answer now, Late or Set aside and 
 test('the rails and the state words: red alarm, amber signal, navy planned, grey no next step, blue SIS; dark named', () => {
   assert.match(APP, /html\.ui-c \.c-jp\.c-rail,html\.ui-c\[data-theme="dark"\] \.c-jp\.c-rail\{border-left:3px solid var\(--rule\);padding-left:8px\}/);
   for (const k of ['over', 'today', 'due', 'none', 'sis']) assert.match(APP, new RegExp(`\\.c-jp\\.c-rail-${k}\\{border-left-color:var\\(--st-${k}\\)\\}`), k);
-  assert.match(APP, /--st-over:var\(--j-alarm\);--st-today:var\(--j-soon\);--st-due:#0a2463;--st-none:#b9c2cc;--st-sis:var\(--c-sis\)/, 'the five colours once; grey as drawn - never amber again');
-  assert.match(APP, /--st-due:#8fb4e8;--st-none:#5b7391;/, 'dark named');
+  assert.match(APP, /--st-need:var\(--j-alarm\);--st-track:#0a2463;--st-over:var\(--st-need\);--st-none:var\(--st-need\);--st-today:var\(--st-track\);--st-due:var\(--st-track\);--st-sis:var\(--st-track\)/, 'Q69: two colours once - red needs you, navy on track; never amber or grey again');
+  assert.match(APP, /--st-track:#8fb4e8;/, 'dark named');
   assert.doesNotMatch(APP, /\.c-jp\.is-none[^{]*\{[^}]*#F7C04F/, 'Q44\'s amber edge is gone');
-  assert.match(APP, /html\.ui-c \.c-grp-over\{background:color-mix\(in srgb,var\(--st-over\),transparent 86%\);color:var\(--st-over\);cursor:pointer\}/, 'the Overdue band is pink');
+  assert.match(APP, /html\.ui-c \.c-grp-over,html\.ui-c \.c-grp-none\{[^}]*background:color-mix\(in srgb,var\(--st-need\),transparent 86%\);color:var\(--st-need\)\}/, 'the red groups are tinted (Q69)');
   assert.match(APP, /html\.ui-c #view \.c-when, html\.ui-c #view \.c-jp \.c-st\{font-size:var\(--type-chip\)\}/, 'the chip token');
 });
 
 test('the Help center says it: the tour, the how-to and a question', () => {
-  assert.match(HELP.tour.find((t) => t.title === 'Journey').body, /The last line of every card is its state - Overdue, Due today, Due, No next step or With the SIS - and the card's left edge has that colour/);
+  assert.match(HELP.tour.find((t) => t.title === 'Journey').body, /The last line of every card is its state - Overdue, Due today, Due, No next step or With the SIS; the card's left edge is red when it needs you \(Overdue, No next step\) and navy when it is on track/);
   assert.match(HELP.tour.find((t) => t.target === '.cnav a[data-c="today"]').body, /on a card with no next step, press Choose/);
   assert.ok(HELP.howto.some((h) => h.where.includes('Done or Choose on the card')));
   const q = HELP.faq.find((f) => f.id === 'card-states');
   assert.ok(q, 'the question');
-  assert.match(q.a, /Red: Overdue[\s\S]*Amber: Due today[\s\S]*Navy: Due[\s\S]*Grey: No next step[\s\S]*Blue: With the SIS[\s\S]*New, Answer now or Late/);
+  assert.match(q.a, /^Two colours\. Red means the person needs you: Overdue[\s\S]*No next step[\s\S]*Navy means on track: Due today, Due with the date, and With the SIS[\s\S]*red is Late or Answer now, navy is New/);
   assert.doesNotMatch(JSON.stringify(HELP), /Choose next step/, 'the button is gone from the cards, so from the help too');
 });

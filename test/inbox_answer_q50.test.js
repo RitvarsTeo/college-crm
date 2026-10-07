@@ -75,9 +75,9 @@ test('on the card: "answer now" is a solid amber chip with navy words, "late" th
   // Q62: the Inbox is a board of cards; Q66 (07.10): the card's state line says New, Answer now or Late, and the rail
   // carries the colour - amber for answer now, red for late; the word itself is never amber text
   assert.match(APP, /const st = !live \? 'aside' : r\.aged \? 'late' : r\.answerNow \? 'now' : 'new';/);
-  assert.match(APP, /const C_ST_RAIL = \{[^}]*late: 'over', now: 'today', new: 'due', aside: 'none' \};/);
-  assert.match(APP, /html\.ui-c \.c-jp\.c-rail-today\{border-left-color:var\(--st-today\)\}/);
-  assert.match(APP, /--st-today:var\(--j-soon\)/, 'the signal amber');
-  assert.match(APP, /html\.ui-c \.c-st-over \.c-st-w,html\.ui-c \.c-st-late \.c-st-w\{color:var\(--st-over\)\}/);
+  assert.match(APP, /const C_ST_RAIL = \{[^}]*late: 'over', now: 'over', new: 'due', aside: 'due' \};/, 'Q69: late and answer now are red (needs you), new and set aside navy');
+  assert.match(APP, /html\.ui-c \.c-jp\.c-rail-over\{border-left-color:var\(--st-over\)\}/);
+  assert.match(APP, /--st-need:var\(--j-alarm\)/, 'the alarm red');
+  assert.match(APP, /html\.ui-c \.c-st-over \.c-st-w,html\.ui-c \.c-st-late \.c-st-w,html\.ui-c \.c-st-none \.c-st-w,html\.ui-c \.c-st-now \.c-st-w\{color:var\(--st-need\)\}/);
   assert.doesNotMatch(APP, /\.c-st-now \.c-st-w\{color:var\(--j-soon\)/, 'never amber text');
 });

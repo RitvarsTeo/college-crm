@@ -113,17 +113,17 @@
     },
     {
       "title": "Inbox",
-      "body": "Every new message from every channel lands here first, in the column of the day it arrived. Make a lead: say the programme and the next step on the card. Anything else: Set aside. It is kept, and can be brought back.",
+      "body": "Every new message from every channel lands here first, in the column of the day it arrived. Make a lead: say the programme and the next step on the card. Anything else: Set aside. It is kept, and can be brought back. On a phone the days stack: tap a bar or a folded day to open it.",
       "target": ".cnav a[data-c=\"leads\"]"
     },
     {
       "title": "Due",
-      "body": "Who needs an action now: overdue, due today, and people with no next step. Press Done, say how it went and choose the next step; on a card with no next step, press Choose. Drag a card to Due today or Coming up to move its step to another day.",
+      "body": "Who needs an action now: overdue, due today, and people with no next step. Press Done, say how it went and choose the next step; on a card with no next step, press Choose. Drag a card to Due today or Coming up to move its step to another day. On a phone the columns stack: tap a card above or a folded column to open it.",
       "target": ".cnav a[data-c=\"today\"]"
     },
     {
       "title": "Journey",
-      "body": "Everyone you are working with, stage by stage, up to Admitted or Not proceeding. The last line of every card is its state - Overdue, Due today, Due, No next step or With the SIS - and the card's left edge has that colour; the bands inside a column group them and count them. The graph above the board stacks the same colours per stage; click a colour to open those people. Search, add a lead, filter by where they came from.",
+      "body": "Everyone you are working with, stage by stage, up to Admitted or Not proceeding. The last line of every card is its state - Overdue, Due today, Due, No next step or With the SIS; the card's left edge is red when it needs you (Overdue, No next step) and navy when it is on track; the bands inside a column group them and count them. The graph above the board stacks the same two colours per stage; click a colour to open those people. Search, add a lead, filter by where they came from. On a phone the stages stack one under the other, one open at a time: tap a bar or a folded stage to open it, and Move on the opened card changes the stage.",
       "target": ".cnav a[data-c=\"people\"]"
     },
     {
@@ -151,7 +151,7 @@
     {
       "id": "card-states",
       "q": "What do the colours on the cards mean?",
-      "a": "The left edge and the last line of every card say the same thing. Red: Overdue, with the days late. Amber: Due today. Navy: Due, with the date. Grey: No next step - press Choose on the card to set one. Blue: With the SIS, the student information system holds the person. In the Inbox the same line says New, Answer now or Late, and how long the message has waited. Inside a column the bands group the cards by state and count everyone in that state, the people behind N more too. The Journey's graph stacks the same colours per stage, overdue at the bottom; a click on a colour opens those people, and the State filter offers the same five."
+      "a": "Two colours. Red means the person needs you: Overdue, with the days late, and No next step - press Choose on the card to set one. Navy means on track: Due today, Due with the date, and With the SIS, the student information system holds the person. The last line of the card says which. In the Inbox red is Late or Answer now, navy is New, with how long the message has waited. Inside a column the bands group the cards by state and count everyone in that state, the people behind N more too. The Journey's graph stacks the same two colours per stage, red at the bottom; a click on a colour opens those people, and the State filter offers the five states."
     },
     {
       "id": "move-someone-along",

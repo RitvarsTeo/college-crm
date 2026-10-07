@@ -39,7 +39,7 @@ function board(ip = {}, { rows = ROWS, open = null, show = 'new' } = {}) {
     cPoolFilters: (name, boxes, clear) => `<filters ${name} clear="${clear}">${boxes.join('')}</filters>`,
     $: (q) => (q === '#qInterest' ? { focus() {} } : view), view, cPoolWire: () => {}, cPoolOpened: () => {},
   };
-  vm.runInNewContext([line('const C_IP_KIND = '), fnBody('function cInboxAge(iso) {'), line('const cAgo = '), line('const C_ST = '), line('const C_ST_RAIL = '), fnBody('function cStateLine('),
+  vm.runInNewContext([line('const cPhone = '), line('const C_IP_KIND = '), fnBody('function cInboxAge(iso) {'), line('const cAgo = '), line('const C_ST = '), line('const C_ST_RAIL = '), fnBody('function cStateLine('),
     fnBody('function cInboxPool() {'), 'cInboxPool();'].join('\n'), ctx);
   return ctx;
 }
@@ -62,7 +62,7 @@ test('a card: name, the channel, the message, the programme and kind tags, and t
   assert.match(card(1), /<small class="ib-ch"><i><\/i>Website<\/small>/);
   assert.match(card(1), /<div class="ib-msg">Is there still a place in the marine engineering group\?<\/div>/);
   assert.match(card(1), /<span class="ib-prog">ENG<\/span>/);
-  assert.match(html, /class="c-jp row ib-card c-rail c-rail-today" data-id="2"/, 'answer now: the amber rail');
+  assert.match(html, /class="c-jp row ib-card c-rail c-rail-over" data-id="2"/, 'answer now: red, it needs you (Q69)');
   assert.match(card(2), /<div class="c-st c-st-now" title="[^"]+"><span class="c-st-w">Answer now<\/span>/);
   assert.match(html, /class="c-jp row ib-card c-rail c-rail-over" data-id="3"/, 'late: the red rail');
   assert.match(card(3), /<div class="c-st c-st-late" title="[^"]+"><span class="c-st-w">Late<\/span>/);
@@ -77,7 +77,7 @@ test('the action is on the card: "Make a lead" opens the small form, "Set aside"
   assert.match(closed, /<div class="ib-acts"><button class="btn sm" onclick="event\.stopPropagation\(\);C_LOPEN=2;cInboxPool\(\)">Make a lead<\/button><button type="button" class="ib-aside" onclick="event\.stopPropagation\(\);openArchive\(2\)">Set aside<\/button><\/div>/);
   assert.doesNotMatch(closed, /form-for-/, 'no form until a card is opened');
   const open = board({}, { open: 2 }).view.innerHTML;
-  assert.match(open, /class="c-jp row ib-card c-rail c-rail-today is-open" data-id="2"/);
+  assert.match(open, /class="c-jp row ib-card c-rail c-rail-over is-open" data-id="2"/);
   assert.match(open, /<form-for-2>/, 'the form on that card');
   assert.doesNotMatch(open, /form-for-1|form-for-3/, 'and only that card');
   assert.match(open, /data-id="2" tabindex="0" onclick="C_LOPEN=null;cInboxPool\(\)"/, 'a click on the open card closes it');
@@ -105,6 +105,6 @@ test('the filter row is Source + Kind, nothing else; a band click narrows to tha
   assert.match(filtered, /clear="C_IP\.channel='';C_IP\.kind='';cInboxPool\(\)"/);
   const aside = board({ show: 'archived' }, { show: 'archived' }).view.innerHTML;
   assert.doesNotMatch(aside, /Make a lead|ib-aside/, 'a message set aside keeps its card, without the actions');
-  assert.match(aside, /class="c-jp row ib-card c-rail c-rail-none"[\s\S]*<span class="c-st-w">Set aside<\/span>/, 'its state line says so, on the grey rail');
+  assert.match(aside, /class="c-jp row ib-card c-rail c-rail-due"[\s\S]*<span class="c-st-w">Set aside<\/span>/, 'its state line says so, on the navy rail (Q69: nothing to do)');
   assert.match(board({}, { rows: [] }).view.innerHTML, /Nothing waiting\. This queue is clear\./);
 });

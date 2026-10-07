@@ -27,7 +27,7 @@ function band(stageFilter = []) {
     cWhenClass: (iso) => (iso === 'over' ? 'over' : iso === 'today' ? 'today' : '') };
   // Q66: the bar is a stack of the card states, read with the cards' own helper
   vm.runInNewContext([line('const cDaysLate = '), line('const C_SIS_HOLDS = '), line('const cSisHolds = '), line('const C_ST = '), line('const cDdMm = '),
-    fn('function cStepState('), fn('function cJourneyBand('), 'this.band = cJourneyBand;'].join('\n'), ctx);
+    fn('function cStepState('), line('const C_ST_GROUPS = '), fn('function cJourneyBand('), 'this.band = cJourneyBand;'].join('\n'), ctx);
   return ctx.band;
 }
 const P = (id, status, due) => ({ id, status, due });
@@ -42,8 +42,8 @@ const draw = (f, out = OUT) => band(f)(OPEN, TASKS, STAGES, exitMark, out);
 const cols = (html) => html.split('class="jb-cell"').slice(1).map((c) => ({
   n: Number(/class="jb-n">(\d+)/.exec(c)[1]),
   height: Number(/class="jb-bar" style="height:([\d.]+)%"/.exec(c)[1]),
-  over: (/title="Overdue: (\d+)"/.exec(c) || [0, 0])[1] * 1,
-  overHeight: Number((/class="jb-seg jb-s-over" style="bottom:0\.00%;height:([\d.]+)%"/.exec(c) || [0, 0])[1]),
+  over: (/\((\d+) overdue/.exec(c) || [0, 0])[1] * 1,
+  overHeight: Number((/class="jb-seg jb-s-need" style="bottom:0\.00%;height:([\d.]+)%"/.exec(c) || [0, 0])[1]),   // Q69: the red segment = needs you
   label: /class="c-jn">\d+<\/span>([^<]+)</.exec(c)[1],
 }));
 
@@ -80,19 +80,19 @@ test('overdue is the red base of the column, on the SAME scale, counted from the
 test('overdue is visible without hovering: the red segment and its number are always drawn', () => {
   const html = draw();
   const app = html.split('class="jb-cell"')[4];
-  assert.match(app, /class="jb-seg jb-s-over" style="bottom:0\.00%/, 'the red segment stands on the baseline, at rest');
-  assert.match(app, /title="Overdue: 3"/, 'and its count on it (the badge beside the total went with the column pill, Q66)');
+  assert.match(app, /class="jb-seg jb-s-need" style="bottom:0\.00%/, 'the red segment stands on the baseline, at rest');
+  assert.match(app, /title="Needs you: 3 \(3 overdue\)"/, 'and its count on it (the badge beside the total went with the column pill, Q66; red = needs you, Q69)');
   assert.doesNotMatch(app, /<em>/);
   assert.match(app, /title="[^"]*3 overdue/, 'hover only adds the words');
 });
 
 test('clicking a column IS the board stage filter, and clicking again clears it', () => {
   const off = draw();
-  assert.match(off, /data-v="Application" onclick="cJfPick\('stage', this\.dataset\.v, !false\)"/);
+  assert.match(off, /data-v="Application" onclick="cJBarTap\(this\.dataset\.v, false\)"/, 'Q68: cJBarTap filters on a wide screen, opens the stage on a phone');
   const on = draw(['Application']);
   assert.match(on, /class="jb-col on /, 'the chosen stage says so');
   assert.match(on, /aria-pressed="true"[^>]*data-v="Application"/);
-  assert.match(on, /data-v="Application" onclick="cJfPick\('stage', this\.dataset\.v, !true\)"/, 'a second click clears it');
+  assert.match(on, /data-v="Application" onclick="cJBarTap\(this\.dataset\.v, true\)"/, 'a second click clears it');
 });
 
 test('the board keeps exactly the chosen stage, and the other filters still combine with it', () => {

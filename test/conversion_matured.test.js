@@ -66,7 +66,8 @@ test('one definition: the server report, the core metric, Home and Reports all r
   assert.match(SERVER, /const conv = await maturedConversion\(db, periodOf\(\)\);/, '/api/metrics/core');
   assert.doesNotMatch(SERVER, /cohortAdmitted/, 'the old all-arrivals rule is gone');
   // Home: only the small label changed; the figures are the report's a / b and its words
-  assert.match(APP, /<div><span>Conversion<\/span><b>\$\{s\.conversionPct == null \? '-' : s\.conversionPct \+ '%'\}<\/b><small>\$\{s\.conversionA \?\? 0\} \/ \$\{s\.conversionB \?\? 0\} \$\{esc\(s\.conversionWho \|\| 'who arrived'\)\}<\/small>/);
+  // (07.10.2026, the owner's "B in the card": the Reached Application line follows, test/conversion_reached.test.js)
+  assert.match(APP, /<div><span>Conversion<\/span><b>\$\{s\.conversionPct == null \? '-' : s\.conversionPct \+ '%'\}<\/b><small>\$\{s\.conversionA \?\? 0\} \/ \$\{s\.conversionB \?\? 0\} \$\{esc\(s\.conversionWho \|\| 'who arrived'\)\}\$\{cReachedWords\(D\.steps\.leadToApplication, /);
   // Reports: the tab takes the server's cutoff, never its own rule
   const model = APP.slice(APP.indexOf('function cRepModel('), APP.indexOf('// One figure, drawn as the click to its people.'));
   assert.match(model, /const cut = S\.conversionCutoff \? Date\.parse\(S\.conversionCutoff\) : -Infinity;/);

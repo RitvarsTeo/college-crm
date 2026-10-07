@@ -37,7 +37,7 @@ function sandbox(filters = {}, { exits = null, all = [] } = {}) {
     'let C_JDATA = { people: ' + JSON.stringify(all) + ' };',
     // the band (02.10.2026): a task due 'over' is overdue here, anything else is not
     "const cWhenClass = (iso) => (iso === 'over' ? 'over' : '');",
-    line('const cDaysLate ='), line('const C_ST ='), line('const cDdMm ='), fn('function cStepState('),   // Q66: the stack
+    line('const cDaysLate ='), line('const C_ST ='), line('const cDdMm ='), fn('function cStepState('), line('const C_ST_GROUPS ='),   // Q66: the stack; Q69: two colours
     fn('function cJourneyBand('),
     fn('function cJourneySummary('),
     'this.summary = cJourneySummary;',
@@ -83,11 +83,11 @@ test('"What comes next" is gone: no step-kind rows, no step rows, no disclosure 
 
 test('each bar is the filter for what it counted, and toggles', () => {
   const html = sandbox().summary([person(STAGES[0].id, null)], new Map(), STAGES);
-  assert.match(html, /onclick="cJfPick\('stage', this\.dataset\.v, !false\)"/, 'clicking sets the stage filter');
+  assert.match(html, /onclick="cJBarTap\(this\.dataset\.v, false\)"/, 'clicking sets the stage filter (through cJBarTap, which opens the stage on a phone, Q68)');
   const on = sandbox({ stage: [STAGES[0].id] }).summary([person(STAGES[0].id, null)], new Map(), STAGES);
   assert.match(on, /class="jb-col on /, 'a chosen column says so');
   assert.match(on, /aria-pressed="true"/);
-  assert.match(on, /onclick="cJfPick\('stage', this\.dataset\.v, !true\)"/, 'and clicking again clears it');
+  assert.match(on, /onclick="cJBarTap\(this\.dataset\.v, true\)"/, 'and clicking again clears it');
 });
 
 // ============ the active journey, and the outcomes under it (01.10.2026) ============
