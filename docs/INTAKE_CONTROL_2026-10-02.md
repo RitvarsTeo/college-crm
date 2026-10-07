@@ -594,3 +594,9 @@ Post-deploy checks owed: gmail sync_state "replies", pbx_until "destinations" af
 Ritvars, seeing benchmark rows in the motion demo: "i said no industry standars!!!!!!!!!!! benchmarks gone! understood?!" -> REPORTS 842dcc6 + 5496eb5 (one switch benchmarks.on:false; code/config kept, first-reply recording on) fast-forwarded and deployed alone. 1330/1330, backup 08-12-15Z VERIFIED, `dpl_CARMC53bRwH1oLzV8yFCYtb47XZL` byte-identical 80/80, 8 private 401, 0 leaks, pipefail on. He then said "No need to take something off, if we are working on a fresh commit" (it was already live; harmless, contained in the rc).
 Q65 LOCKED: small signals = A ("but A, yes, lock in") -> motion A EVERYWHERE. QA prepares a release-ready motion branch (A only, no switch) as its own patch after the rc.
 rc/2026-10-07b (QA, 8880, 3b3e9db, 1338/1338): Q68 phone boards 089884c + REPORTS 842dcc6..5c4b158 (benchmarks off + reached Application in the card) + CHANNELS fbda3e3; waiting for MAIN's Q69 two-colour commit.
+
+## 07.10 11:25 - PATCHES 28 + 29 LIVE, pushed
+- 28: record c949e75 (code 4950f8a, dpl_6ntJZhpS3jaxiPgsTtx6ithrAH6C, 1338/1338): rc/2026-10-07b = Q68 phone boards B 089884c, reached Application in the Conversion card 5c4b158, website permanent fbda3e3.
+- 29: record fa384c0 (code 27c26ed, dpl_2cFQQenSnrcuhrJy7X4e5ud9sCmT, 1338/1338): Q69 two colours 2a082c2 (checked on 8880 at 1440: only red + navy, no flag). Both byte-identical 80/80, 8 private 401, 0 leaks.
+GitHub: RitvarsTeo/college-crm, branch release/2026-10-05-intake-9 = fa384c0 (verified with ls-remote). The repo default branch is master (afea424, old) - Aigars must deploy from release/2026-10-05-intake-9. Pushes go with this PC's git credentials, not a Claude account.
+Next: motion A release (QA, ~60 min, port 8881), then Aigars.
