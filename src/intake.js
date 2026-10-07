@@ -620,8 +620,44 @@ export async function archive(db, id, { reason, note, by }) {
     processed_by = ?, processed_at = ?, body = NULL, body_deleted_at = ? WHERE id = ?`)
     .run(reason, note || null, by, at, at, id);
   await dropLineBodies(db, id, at);
+  await db.prepare(`INSERT INTO inbound_history (inbound_id, action, at, actor, reason, note)
+    VALUES (?, 'set_aside', ?, ?, ?, ?)`).run(id, at, by, reason, note || null);
   // archived is not deleted: the row, the contact and the reason stay searchable
   return { ok: true, id, reason, bodyDeleted: true };
+}
+
+// ------------------------------------------------------------ bring back --
+// "Set aside: a way back" (the owner, 07.10.2026, on the finish line). A message a person set aside, or a rule
+// filtered (a filter mistake is the likeliest case), returns to the Inbox as new, in its arrival-day column: the
+// arrival time is never touched. Every user may, the same as Set aside. Logged in inbound_history with who, when and
+// what the set-aside had said. Nothing is deleted. What CANNOT come back: the text of a message a person set aside,
+// which Set aside deletes on purpose; a filtered message kept its text (decision 1d) and gets it back.
+// Asking again for a message already back is harmless: it says so and writes nothing.
+export async function bringBack(db, id, { by, at = nowIso() } = {}) {
+  const item = await db.prepare('SELECT * FROM inbound WHERE id = ?').get(id);
+  if (!item) return { error: 'not found' };
+  if (!by) return { error: 'who is bringing this back?' };
+  if (item.state === 'new') return { ok: true, id, already: true };
+  if (item.state !== 'archived' && item.state !== 'filtered') return { error: 'only a message set aside can come back' };
+  let body = item.body;
+  if (!body) {
+    const lines = await db.prepare(`SELECT body FROM inbound_line WHERE inbound_id = ? AND body IS NOT NULL
+      ORDER BY seq`).all(id);
+    body = lines.map((l) => l.body).join('\n') || null;
+  }
+  await db.transaction(async (tx) => {
+    await tx.prepare(`INSERT INTO inbound_history (inbound_id, action, at, actor, from_state, reason, note, earlier_actor, earlier_at)
+      VALUES (?, 'brought_back', ?, ?, ?, ?, ?, ?, ?)`).run(id, at, by, item.state, item.archive_reason, item.archive_note,
+      item.processed_by, item.processed_at);
+    await tx.prepare(`UPDATE inbound SET state = 'new', archive_reason = NULL, archive_note = NULL, processed_by = NULL,
+      processed_at = NULL, body = ?, body_deleted_at = ? WHERE id = ? AND state = ?`)
+      .run(body, body ? null : item.body_deleted_at, id, item.state);
+  });
+  return { ok: true, id, from: item.state, textKept: Boolean(body) };
+}
+
+export async function inboundHistory(db, id) {
+  return db.prepare('SELECT * FROM inbound_history WHERE inbound_id = ? ORDER BY id').all(id);
 }
 
 // ------------------------------------------------------------- the funnel --
@@ -806,8 +842,11 @@ export function noiseWhy({ email, name, body } = {}, cfg = CFG.emailFilter) {
 // Q31: over EVERY channel's waiting rows (the phone has its own rule), and it says what it would move
 // before it moves anything: apply:false, the default, writes nothing. On production only on the owner's yes.
 export async function refilterOpen(db, { apply = false, at = nowIso() } = {}) {
-  const open = await db.prepare(`SELECT id, channel, contact_email, contact_name, body FROM inbound
-    WHERE state = 'new' AND channel <> 'phone' ORDER BY id`).all();
+  // a message a person brought back stays back: the rule already had its say on it
+  const open = await db.prepare(`SELECT id, channel, contact_email, contact_name, body FROM inbound i
+    WHERE state = 'new' AND channel <> 'phone'
+      AND NOT EXISTS (SELECT 1 FROM inbound_history h WHERE h.inbound_id = i.id AND h.action = 'brought_back')
+    ORDER BY id`).all();
   const byReason = {};
   let n = 0;
   for (const r of open) {

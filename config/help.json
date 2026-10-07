@@ -60,6 +60,11 @@
       "href": "#/leads"
     },
     {
+      "do": "Bring a set-aside message back",
+      "where": "The set-aside messages, Bring back on the card",
+      "href": "#/leads?show=notrelevant"
+    },
+    {
       "do": "Act on today's work",
       "where": "Today, Done or Choose next step",
       "href": "#/today"
