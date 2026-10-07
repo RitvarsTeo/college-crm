@@ -653,3 +653,4 @@ Ritvars: "FIRST CHECK if it collides with Aigars" -> it did: Aigars fixed the sa
 - Our S1 (ad8095f) NOT shipped (duplicate). QA ports only what his branch lacks (M2, M7, L1-L8, dropped/parked doors, Mailchimp, security_guards). All lanes told: merge release/2026-10-07-intake-32 before continuing.
 - For switchover (task 3): his handoff wants the backup + env VALUES file in Drive, then he restores into Supabase; MASTER CONTROL makes dump + counts + names-only file, Ritvars pastes values.
 07.10 RULE: one item = ONE owning lane. Q76 collided (two lanes built it). If Ritvars answers a lane on another lane's item, it reports and does not build.
+07.10 CHANNELS on the new base: ui/2026-10-07-q77 tip b38edb7 (1407/1407), merge 641ebac clean, inbound.js + gate.js identical to Aigars; his H2 test caught an unsafe onclick in Q77, fixed b38edb7. Note: lane worktrees need `npm ci` or M11 shows a false red.
