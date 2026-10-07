@@ -45,7 +45,7 @@ function journey(phone, people, setup = {}) {
 }
 const P = (id, status) => ({ id, name: id, status });
 const PEOPLE = [P('c1', STAGES[1].id), P('c2', STAGES[1].id), P('f1', STAGES[2].id), P('a1', STAGES[3].id), P('a2', STAGES[3].id), P('a3', STAGES[3].id)];
-const folds = (html) => [...html.matchAll(/<div class="c-col is-fold"[^>]*><button type="button" class="c-foldrow" onclick="cJStageTap\('([^']+)'\)"><span class="c-jn">(\d)<\/span>([^<]+)<b>(\d+)<\/b><\/button><\/div>/g)].map((m) => [m[1], m[3], Number(m[4])]);
+const folds = (html) => [...html.matchAll(/<div class="c-col is-fold"[^>]*><button type="button" class="c-foldrow" onclick="cJStageTap\((?:"|&#34;|&quot;)([^"&]+)(?:"|&#34;|&quot;)\)"><span class="c-jn">(\d)<\/span>([^<]+)<b>(\d+)<\/b><\/button><\/div>/g)].map((m) => [m[1], m[3], Number(m[4])]);
 const opens = (html) => [...html.matchAll(/<div class="c-col" style="[^"]*"><h3><span class="c-jn">\d<\/span>([^<]+)<\/h3><div class="c-drop" data-stage="([^"]+)">/g)].map((m) => m[2]);
 
 test('a phone: the stages stack, the first with people open, the rest folded to a row with their count; a wide screen is unchanged', () => {
@@ -79,7 +79,7 @@ test('a tap on a bar or a folded row opens that stage on a phone; on a wide scre
 });
 
 test('the opened Journey card carries Move on a phone (the wide screen drags); the address carries the open column', () => {
-  assert.match(fn('function cPersonCard('), /\$\{open \? `<button class="btn sm ghost c-move" onclick="cEditFromJourney\('\$\{esc\(p\.id\)\}'\)">Move<\/button>` : ''\}/);
+  assert.match(fn('function cPersonCard('), /\$\{open \? `<button class="btn sm ghost c-move" onclick="cEditFromJourney\(\$\{esc\(JSON\.stringify\(String\(p\.id \?\? ''\)\)\)\}\)">Move<\/button>` : ''\}/);
   assert.match(APP, /\n  html\.ui-c \.c-move\{display:none\}\n/); assert.match(APP, /@media \(max-width:760px\)\{[\s\S]*?html\.ui-c \.c-move\{display:inline-flex\}/);
   const ctx = { URLSearchParams, C_JP: { col: null, view: 'board', open: 'Contacted' }, C_JF: { stage: [] }, C_PF: {}, C_PQ: '', C_OUT_TAG: null, C_OUT_REASON: null, C_OUT_FILTER: null, C_PCOHORT: null,
     cCohortToken: () => '', C_TP: { col: null, programme: '', stage: '', source: '', upOpen: false, open: 'today' }, C_IP: { col: null, channel: '', kind: '', show: 'new', open: 'older' } };
