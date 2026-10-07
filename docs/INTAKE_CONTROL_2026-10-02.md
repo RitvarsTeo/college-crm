@@ -628,7 +628,7 @@ Checked on arrival: GitHub release/2026-10-05-intake-9 = f45340e; live page byte
 | Q72 | Due date: staff can set it themselves | a date input exists on the person edit (#pe-due) and "new date" on a task; to check where it is missing | MAIN | SAID |
 | Q73 | Inbox: colour per source | not built | MAIN draws A/B pictures | SAID |
 | Q74 | Email: some automation, today every email lands in the Inbox | Gmail edu@ live; filters exist (set aside automatic senders) | CHANNELS proposes, KISS | SAID |
-| Q75 | Take Contract out of the stages; the last stage is "Submitted application" | stages New, Contacted, Follow-up, Application, Contract, Admitted, Not proceeding | APPLICATIONS + MAIN; where today's Contract people go = his decision | SAID |
+| Q75 | Take Contract out of the stages; the last stage is "Submitted application" | **DECIDED 07.10:** "Submitted application" = the Application stage renamed; everyone in Contract moves into it (one-time move with a history line) | APPLICATIONS (config, SIS mapping, data move), MAIN screens follow | SENT; the move ships only with a fresh backup + his GO |
 | Q76 | The whole chain of communication with the lead on the profile | to check what the person page shows | MAIN | SAID |
 | Q77 | A caller made into a lead must get a profile with email etc., so a later email joins them and is not a new lead | matching by phone or email; a caller has only a number | CHANNELS | SAID |
 "There is more to fix" - waiting for the rest from him.
