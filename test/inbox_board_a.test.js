@@ -145,3 +145,20 @@ test('Q73: every real channel id from channels.json has its colour (gmail is Ema
   }
   assert.equal(ctx.C.gmail, ctx.C.email, 'Email is one colour, whatever the id');
 });
+
+// Q82 (08.10.2026, "All in one patch"): a folded strip is still a path to its people - a click opens the column, with
+// exactly the messages its count says (every figure is a path to its people); a strip only ever folds a column of 0
+test('Q82: a click on a folded strip opens that column with exactly the people its count says', () => {
+  const B = board({ channel: 'gmail' });
+  const before = B.view.innerHTML;
+  assert.match(before, /aria-label="Earlier this week: 0, open"/, 'folded, its count 0');
+  assert.match(before, /<band Inbox[^>]*>[^<]*week:0:age-week/, 'the band says the same 0');
+  B.cUnfold('inbox', 'week');
+  const after = B.view.innerHTML;
+  assert.doesNotMatch(after, /aria-label="Earlier this week: 0, open"/, 'opened');
+  assert.match(after, /<h3><span class="c-jn">3<\/span>Earlier this week<b>0<\/b><\/h3>\s*<div class="c-drop"><div class="c-empty">Nothing here\.<\/div><\/div>/, 'its 0 people');
+  // a column with people never folds, so every strip's count is 0 and every card stays one click away
+  const all = board().view.innerHTML;
+  assert.doesNotMatch(all, /c-fold-empty/, 'no empty day, no strip');
+  assert.equal((all.match(/class="c-jp row ib-card/g) || []).length, ROWS.length, 'every message on the board');
+});

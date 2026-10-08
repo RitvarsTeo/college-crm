@@ -3962,7 +3962,7 @@ const cPhone = () => typeof window !== 'undefined' && Boolean(window.matchMedia 
 // to never folds. On the Journey the strip stays a drop target, so a card can still be dragged into an empty stage.
 const C_UNFOLD = new Set();
 const cFoldEmpty = (board, id, n) => !cPhone() && n === 0 && !C_UNFOLD.has(board + ':' + id);
-function cUnfold(board, id) { C_UNFOLD.add(board + ':' + id); ({ inbox: cInboxPool, due: cTodayPool, journey: cDrawJourney })[board](); }
+function cUnfold(board, id) { C_UNFOLD.add(board + ':' + id); ({ inbox: () => cInboxPool(), due: () => cTodayPool(), journey: () => cDrawJourney() })[board](); }
 const cFoldStrip = (board, id, num, label, n, drop = '') => `<div class="c-col t-fold c-fold-empty${drop ? ' c-drop' : ''}"${drop} role="button" tabindex="0"
     aria-label="${esc(label)}: ${n}, open" onclick="cUnfold(${esc(JSON.stringify(String(board)))}, ${esc(JSON.stringify(String(id ?? '')))})" onkeydown="if(event.key==='Enter')cUnfold(${esc(JSON.stringify(String(board)))}, ${esc(JSON.stringify(String(id ?? '')))})"><span class="c-jn">${num}</span><span class="t-foldl">${esc(label)}</span><b>${n}</b></div>`;
 let C_TP = { col: null, programme: '', stage: '', source: '', upOpen: false, more: {}, pick: null, open: 'over' };
