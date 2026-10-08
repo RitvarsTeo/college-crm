@@ -679,4 +679,4 @@ Seen: GitHub - no Aigars commits since 309b10f; crm-novikontas.vercel.app = 1ced
 08.10 Ritvars: freeze STAYS (Ieva off until Aigars's copy is live). Fresh export still taken right before the move (pulls + patch-34 boot keep writing).
 08.10 Ritvars: patch 34 scope = ONLY Q78. Nothing else goes in.
 
-08.10 MAIN reported Q78 0f8caf5 (checked: MC clean suite 1466/1466) + Ritvars's DIRECT answers to MAIN -> Q79-Q82. Conflict with 'patch 34 = only Q78': asked Ritvars whether 34 waits for Q79-Q81.
+08.10 MAIN reported Q78 0f8caf5 (checked: MC clean suite 1466/1466) + Ritvars's DIRECT answers to MAIN -> Q79-Q82. Conflict with 'patch 34 = only Q78': asked Ritvars whether 34 waits for Q79-Q81.08.10 Ritvars: patch 34 WAITS for Q79-Q81 (supersedes 'only Q78'). Patch 34 = Q78 + Q79 + Q80 + Q81. Move + freeze wait for it. Q82 not in.
