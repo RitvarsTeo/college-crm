@@ -15,6 +15,7 @@ import { receive, listInbound, archive, qualify, bringBack, inboundHistory, refi
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
+const FOLD = APP.slice(APP.indexOf('const C_UNFOLD = '), APP.indexOf('let C_TP = ')).replace(/^const /gm, 'var ') + '\n';   // the fold helper (08.10.2026), as vars so two boards can share one context
 
 // ---------------------------------------------------------------- the data --
 test('set aside -> bring back -> in the Inbox again, both steps in the history, the arrival time untouched', async () => {
@@ -196,7 +197,7 @@ function board(show) {
     $: () => view, view, cPoolWire: () => {}, cPoolOpened: () => {},
   };
   // + Q66's state line (merged with this in rc/2026-10-07): the card's foot is drawn by cStateLine
-  vm.runInNewContext([line('const cPhone = '), line('const C_ST = '), line('const C_ST_RAIL = '), fnBody('function cStateLine(st, detail, act, title) {'), line('const C_IP_KIND = '), fnBody('function cInboxAge(iso) {'), line('const cAgo = '), 'var CFG = globalThis.CFG || {};', fnBody('function cInboxPool() {'), 'cInboxPool();'].join('\n'), ctx);
+  vm.runInNewContext([line('const cPhone = '), line('const C_ST = '), line('const C_ST_RAIL = '), fnBody('function cStateLine(st, detail, act, title) {'), line('const C_IP_KIND = '), fnBody('function cInboxAge(iso) {'), line('const cAgo = '), 'var CFG = globalThis.CFG || {};', (FOLD + fnBody('function cInboxPool() {')), 'cInboxPool();'].join('\n'), ctx);
   return view.innerHTML;
 }
 

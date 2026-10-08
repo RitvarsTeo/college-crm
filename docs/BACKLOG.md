@@ -58,7 +58,8 @@ PICKED by Ritvars 08.10 for patch 34 ("We now had Piemeri Profesiju, if utms are
 | "the ones for hover over. I just one it to come forward": no hover anywhere draws an underline; Reports' figures, names, counts and back links come forward 2px instead | BUILT |
 | "3d boxes are the best, both in light and dark, i love em" (08.10.2026, on the pictures) | DECIDED |
 | Real email chips were grey on production: mail arrives as 'gmail', the colour list had only 'email'; fixed (949636b) | BUILT |
-| Folding empty columns on Inbox, Due and Journey: he said "Draw it"; pictures in For review/2026-10-08 Folding empty columns/ (only the Inbox has empty columns in the test data) | SAID |
+| Folding empty columns on Inbox, Due and Journey: he said "Draw it", then on the picture "Build it". On a wide screen a column with nobody in it folds to the strip Coming up uses (number, name, count); a click opens it. Not when the board is narrowed to that column; never Admitted or Not proceeding; the phone keeps its own rows (Q68). On the Journey the strip is still a drop target (a card dropped on it asks "Why on to ...?" as before). The strip comes forward on hover. Help: one sentence in the Inbox, Due and Journey boxes. test/fold_empty_columns.test.js; 6 older tests updated to the new rule | BUILT |
+| Seen running: Inbox folds Yesterday / Earlier this week / Older when empty; a click opens it; Journey with Programme MT MTM folds Contacted; a drop on it opens the move question. Shots: `For review/2026-10-08 Folding empty columns/BUILT - ...` | BUILT |
 
 ## 07.10.2026 - Q75: the Contract stage is removed (COMMITTED, NOT DEPLOYED)
 

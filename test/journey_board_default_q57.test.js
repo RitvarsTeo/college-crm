@@ -15,6 +15,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
+const FOLD = APP.slice(APP.indexOf('const C_UNFOLD = '), APP.indexOf('let C_TP = ')).replace(/^const /gm, 'var ') + '\n';   // the fold helper (08.10.2026), as vars so two boards can share one context
 const CONFIG = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'prototype.json'), 'utf8'));
 const fn = (name) => { const i = APP.indexOf(name); assert.ok(i >= 0, name); return APP.slice(i, APP.indexOf('\n}\n', i) + 2); };
 const line = (start) => { const i = APP.indexOf(start); assert.ok(i >= 0, start); return APP.slice(i, APP.indexOf('\n', i) + 1); };
@@ -136,7 +137,7 @@ function board(people, setup = {}) {
   vm.runInNewContext([line('const cPhone = '), line('const C_JCOL_SHOW = '), line('const C_JCOLOPEN = '), fn('function cJUrgency('), fn('function cJSort('),
     line('const C_ST = '), line('const C_ST_RAIL = '), fn('function cStateLine('), line('const cDdMm = '), fn('function cStepState('), line('const cStepGroup = '), line('const C_GRP = '), line('const cGroupBand = '),   // Q66
     fn('function cJColumn('), fn('function cJEndCard('), filtersSrc.replace('let C_JF = {', 'var C_JF = {'),
-    fn('function cJTargetKeep('), line('const cJTargeted = '), line('const cMoveBody = '), fn('function cJTargetChips('), fn('function cDrawJourney('),
+    fn('function cJTargetKeep('), line('const cJTargeted = '), line('const cMoveBody = '), fn('function cJTargetChips('), (FOLD + fn('function cDrawJourney(')),
     'this.draw = cDrawJourney; this.setJF = (v) => { C_JF = v; };'].join('\n'), ctx);
   return { ctx, draw: () => { ctx.draw(); return html; }, handlers, posts, asked };
 }
@@ -149,7 +150,8 @@ const PEOPLE = [P('n1', 'New'), P('c1', 'Contacted'), P('k1', 'Application'), P(
 test('the board as it was: five stage columns, drop targets, no end columns until one is asked for', () => {
   const B = board(PEOPLE);
   const html = B.draw();
-  const drops = [...html.matchAll(/class="c-drop" data-stage="([^"]+)"/g)].map((m) => m[1]);
+  // an empty stage is folded to its strip (08.10.2026) and is still a drop target
+  const drops = [...html.matchAll(/class="(?:c-drop|c-col t-fold c-fold-empty c-drop)" data-stage="([^"]+)"/g)].map((m) => m[1]);
   assert.deepEqual(drops, CONFIG.stages.filter((s) => !['Admitted', 'Not proceeding'].includes(s.id)).map((s) => s.id));
   assert.doesNotMatch(html, /c-col-end/);
   assert.match(html, /\[n1\]/); assert.doesNotMatch(html, /\[a1\]|\[x1\]/, 'finished people wait behind their bookend');
