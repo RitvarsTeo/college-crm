@@ -636,6 +636,7 @@ Checked on arrival: GitHub release/2026-10-05-intake-9 = f45340e; live page byte
 | Q80 | Hover: item comes forward; click: pops a bit more, then settles slightly out; blue frame like a 3D frame with depth | his motion spec, said to MAIN 08.10 | MAIN | PICKED. Building with Q79. Depth rule: frame, never the mark |
 | Q81 | Graphs (all types) come out and pop when clicked | said to MAIN 08.10 | MAIN (engine = QA's motion-charts.js, reuse, no fork) | PICKED. Bars never leave the baseline at rest |
 | Q82 | Fold empty columns on Inbox, Due, Journey (desktop horizontal; phone already folds) | floated by Ritvars to MAIN 08.10 | MAIN | SAID only. MAIN proposed: empty column folds to a strip, Coming up stays folded. Pictures offered. NOT to build until he picks |
+| Q83 | Reports > Academy Application form > Campaign links in plain names: utm_campaign piemeri2026 -> "Piemēri Profesiju"; source ig + medium social, no campaign -> "Instagram (no campaign name)" (Ritvars 08.10: "We now had Piemeri Profesiju, if utms are from there, then use that name."; then "Yes, patch 34") | today the raw SIS tag "(utm_campaign not set) ig / social" (28); Piemēri links never pointed to apply.novikontas.org (tags piemeri2026 / poster / apliecinajums) so 0 rows are Piemēri today | APPLICATIONS/REPORTS | PICKED. Patch 34. The release-test row is NOT hidden (not asked) |
 "There is more to fix" - waiting for the rest from him.
 
 ## 07.10 - TASK 3: data export for Aigars (after the KISS list, his order)
@@ -680,3 +681,5 @@ Seen: GitHub - no Aigars commits since 309b10f; crm-novikontas.vercel.app = 1ced
 08.10 Ritvars: patch 34 scope = ONLY Q78. Nothing else goes in.
 
 08.10 MAIN reported Q78 0f8caf5 (checked: MC clean suite 1466/1466) + Ritvars's DIRECT answers to MAIN -> Q79-Q82. Conflict with 'patch 34 = only Q78': asked Ritvars whether 34 waits for Q79-Q81.08.10 Ritvars: patch 34 WAITS for Q79-Q81 (supersedes 'only Q78'). Patch 34 = Q78 + Q79 + Q80 + Q81. Move + freeze wait for it. Q82 not in.
+
+08.10 Ritvars asked why Campaign links is in Reports -> it is part of the Academy Application form block (popup A, 01.10, 57d9f69). Q83 picked for patch 34. Patch 34 = Q78-Q81 + Q83.
