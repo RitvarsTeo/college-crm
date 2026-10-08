@@ -46,6 +46,14 @@ and pop when clicked." Branch ui/2026-10-08-chosen-look from release 2d385df.
 | Light and dark; the dark shadows sit in the one dark palette | BUILT |
 | test/chosen_look.test.js, incl. "no column or chart mark ever moves off its baseline" | BUILT |
 | Folding empty columns on Inbox, Due and Journey: floated by Ritvars, answered with one rule; pictures offered, not asked to build | SAID |
+## 08.10.2026 - Q83: campaign links read as plain names (COMMITTED, NOT DEPLOYED)
+
+PICKED by Ritvars 08.10 for patch 34 ("We now had Piemeri Profesiju, if utms are from there, then use that name." / "Yes, patch 34"), via MASTER CONTROL. Branch `feat/2026-10-08-q83-campaign-names`, cut from `2d385df`.
+
+| What | Status |
+|---|---|
+| Reports > Academy Application form > Campaign links: `utm_campaign=piemeri2026` reads "Piemēri Profesiju" (any source/medium, source/medium still shown); `ig / social` with no campaign reads "Instagram (no campaign name)". One table in `config.webCampaignNames`; every other row unchanged; counts unchanged; the raw SIS tag stays in the hover | BUILT |
+| Today 0 rows are Piemēri: its links point at piemeriprofesiju.novikontas.org, not apply. Nothing is relabelled without the tag | FACT |
 
 ## 07.10.2026 - Q75: the Contract stage is removed (COMMITTED, NOT DEPLOYED)
 
