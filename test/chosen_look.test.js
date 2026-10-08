@@ -49,3 +49,11 @@ test('depth belongs to the frame: no column or chart mark ever moves off its bas
 test('dark mode has its own shadows, inside the one dark palette', () => {
   assert.match(APP, /--sel-lift:0 10px 24px rgba\(0,0,0,\.45\),0 2px 6px rgba\(0,0,0,\.30\);--sel-hover:0 6px 14px rgba\(0,0,0,\.35\)\}/);
 });
+
+// "i dont like hovering frame where there is no box" (08.10.2026): a band column and a bar row get no plate on hover
+test('no hover plate where there is no box: a column or bar row only lights its bar', () => {
+  assert.doesNotMatch(BLOCK, /\.jb-col:not\(\.on\):hover\{/, 'no plate on the column');
+  assert.doesNotMatch(BLOCK, /\.kbar:hover\{/, 'no plate on the row');
+  assert.match(BLOCK, /\.jb-col:not\(\.on\):hover \.jb-bar\{filter:brightness\(1\.07\) drop-shadow/);
+  assert.match(BLOCK, /\.kbar:hover \.kbt\{filter:brightness\(1\.07\) drop-shadow/);
+});

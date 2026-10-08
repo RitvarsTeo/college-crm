@@ -2509,8 +2509,10 @@ svg .m-flag-mark{transform-origin:0 100%}
   @keyframes c-sel-settle{0%{transform:translateY(-6px) scale(1.015)}100%{transform:translateY(-3px)}}
   /* the Journey and Inbox columns: the plate comes forward, the bar never leaves its baseline */
   html.ui-c #view .jb-col{position:relative}
-  html.ui-c #view .jb-col:not(.on):hover{background-color:rgba(41,168,223,.06);box-shadow:var(--sel-hover)}
-  html.ui-c #view .jb-col:active{box-shadow:var(--sel-lift)}
+  /* the owner, 08.10.2026: "i dont like hovering frame where there is no box": a column on hover has no plate; its bar lights up */
+  html.ui-c #view .jb-col .jb-bar{transition:filter .16s ease}
+  html.ui-c #view .jb-col:not(.on):hover .jb-bar{filter:brightness(1.07) drop-shadow(0 4px 6px rgba(10,36,99,.28))}
+  html.ui-c #view .jb-col:active .jb-bar{filter:brightness(1.12) drop-shadow(0 7px 10px rgba(10,36,99,.38))}
   html.ui-c #view .jb-col.on{background-color:rgba(41,168,223,.08);box-shadow:var(--sel-lift)}
   html.ui-c #view .p-chip.on{border-color:var(--sel-2);box-shadow:inset 0 0 0 1px var(--sel-2),0 4px 10px rgba(10,36,99,.14);background-color:rgba(41,168,223,.10)}
   /* the cards with people on them: forward on hover, a little more on press */
@@ -2522,9 +2524,10 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c #view :is(.kcol,.kseg,.jb-seg,.rp-col,.rp-split,.ktgt-track,.c-reasonbar[role="button"]){transition:filter .16s ease}
   html.ui-c #view :is(.kcol,.kseg,.rp-col,.rp-split,.ktgt-track):hover{filter:brightness(1.07) drop-shadow(0 4px 6px rgba(10,36,99,.28))}
   html.ui-c #view :is(.kcol,.kseg,.rp-col,.rp-split,.ktgt-track):active{filter:brightness(1.12) drop-shadow(0 7px 10px rgba(10,36,99,.38))}
-  html.ui-c #view .kbar:hover{background-color:rgba(41,168,223,.07);box-shadow:var(--sel-hover)}
-  html.ui-c #view .kbar:active{box-shadow:var(--sel-lift)}
-  html.ui-c #view .klegend li[data-kgo]:hover{background-color:rgba(41,168,223,.08)}
+  html.ui-c #view .kbar .kbt{transition:filter .16s ease}
+  html.ui-c #view .kbar:hover .kbt{filter:brightness(1.07) drop-shadow(0 3px 5px rgba(10,36,99,.28))}
+  html.ui-c #view .kbar:active .kbt{filter:brightness(1.12) drop-shadow(0 5px 8px rgba(10,36,99,.38))}
+  html.ui-c #view .klegend li[data-kgo]:hover{color:var(--ink-strong)}
   @media (prefers-reduced-motion:reduce){ html.ui-c #view :is(.pcards .p-card,.kstrip.rp-tabs > div,.jb-col,.p-chip,.c-jp,.ib-card,.kneed,a.kgo,.khero,.kcol,.kseg,.kbar,.rp-col){transition:none;transform:none!important;animation:none} }
 </style>
 </head>
