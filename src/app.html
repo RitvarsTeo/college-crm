@@ -1127,7 +1127,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   /* Next Steps rows: the contact to call or write, and one line of what was said (Admissions, 29.09) */
   html.ui-c .c-who small.c-reach{margin-top:2px}
   html.ui-c .c-reach a{color:var(--petink);text-decoration:none}
-  html.ui-c .c-reach a:hover{text-decoration:underline}
+  html.ui-c .c-reach a{display:inline-block;transition:transform .16s cubic-bezier(.22,.9,.3,1)} html.ui-c .c-reach a:hover{transform:translateY(-2px)}
   html.ui-c .c-line .c-what{min-width:0}
   html.ui-c .c-nnote{display:block;margin-top:3px;font-size:12.5px;font-weight:400;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   /* dev kit part 3 styles its pieces with part 2's --kit-* tokens: the CRM's own tokens, mapped */
@@ -1146,7 +1146,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   /* Q61: where a page reached through a link came from; a click is Back */
   html.ui-c .c-back{margin:0 0 6px;font-size:12.5px}
   html.ui-c .c-back a{color:var(--petink);text-decoration:none;font-weight:600}
-  html.ui-c .c-back a:hover{text-decoration:underline}
+  html.ui-c .c-back a{display:inline-block;transition:transform .16s cubic-bezier(.22,.9,.3,1)} html.ui-c .c-back a:hover{transform:translateY(-2px)}
   html.ui-c .c-back a:focus-visible{outline:2px solid var(--pet);outline-offset:2px;border-radius:3px}
   html.ui-c kbd{display:inline-block;min-width:1.6em;padding:1px 7px;border:1px solid var(--control-line);border-bottom-width:2px;border-radius:6px;
     background:var(--surface);font:inherit;font-size:12.5px;font-weight:700;color:var(--ink);text-align:center;white-space:nowrap}
@@ -1230,8 +1230,8 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   /* Q43: a person's several tasks inside one Today row, each with its own when and Done */
   html.ui-c .c-tline{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px}
   html.ui-c .c-tline + .c-tline{margin-top:6px;padding-top:6px;border-top:1px dashed var(--rule2)}
-  html.ui-c a.c-jcount:hover{text-decoration:underline}
-  html.ui-c a.c-planned:hover b{text-decoration:underline}
+  html.ui-c a.c-jcount{display:inline-block;transition:transform .16s cubic-bezier(.22,.9,.3,1)} html.ui-c a.c-jcount:hover{transform:translateY(-2px)}
+  html.ui-c a.c-planned b{display:inline-block;transition:transform .16s cubic-bezier(.22,.9,.3,1)} html.ui-c a.c-planned:hover b{transform:translateY(-2px)}
   html.ui-c .c-reasonbar[role="button"]{cursor:pointer;border-radius:6px}
   html.ui-c .c-reasonbar[role="button"]:hover,html.ui-c .c-reasonbar.on{background:var(--c-sunk)}
   html.ui-c .c-tag{font-size:10.5px;font-weight:600;letter-spacing:.04em;color:var(--t3);border:1px solid var(--rule);border-radius:4px;padding:0 5px;white-space:nowrap}
@@ -1803,7 +1803,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .kpage.kb .kspark path{filter:drop-shadow(0 2px 0 var(--k-plinth))}
   html.ui-c .kgo{display:inline-block;margin-top:5px;font-size:11.5px;color:var(--petink);
     text-decoration:none;opacity:.8}
-  html.ui-c .kgo:hover{opacity:1;text-decoration:underline}
+  html.ui-c .kgo:hover{opacity:1;text-decoration:none}
   html.ui-c .ksrc{font-size:11.5px;color:var(--t4);margin-left:auto}
   /* B's strip is two up, so the headline figure stays the biggest thing on the screen */
   html.ui-c .kcmd .kstrip{grid-template-columns:1.35fr 1fr;grid-template-rows:none;margin-bottom:22px}
@@ -2062,7 +2062,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
     font-variant-numeric:tabular-nums}
   html.ui-c .c-todaystrip b.c-od{color:var(--c-bad)}
   html.ui-c .c-todaystrip b a{color:inherit;text-decoration:none}
-  html.ui-c .c-todaystrip b a:hover{text-decoration:underline}
+  html.ui-c .c-todaystrip b a{display:inline-block;transition:transform .16s cubic-bezier(.22,.9,.3,1)} html.ui-c .c-todaystrip b a:hover{transform:translateY(-2px)}
   html.ui-c .c-todaystrip span{font-size:11px;color:var(--t3)}
   /* ---- TYPE 3, STRONG HIERARCHY (the owner's pick, A/B batch step 2a, 04.10.2026). App-wide TOKENS,
      not per screen. Four steps, and each step is one size everywhere it appears:
@@ -2307,7 +2307,8 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   @media (max-width:700px){ html.ui-c .bm-row{grid-template-columns:1fr;gap:6px} html.ui-c .bm-trackbox{margin:0 56px 0 28px} }
   html.ui-c .rp .rp-track{background:var(--c-sunk);border-radius:0 3px 3px 0}
   html.ui-c .rp-go{color:inherit;text-decoration:none;border-radius:3px}
-  html.ui-c .rp-go:hover,html.ui-c .rp-go:focus-visible{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px;text-decoration-color:var(--v-adm)}
+  /* the owner, 08.10.2026: "the ones for hover over. I just one it to come forward": no line on hover, the figure comes forward */
+  html.ui-c .rp-go{display:inline-block;transition:transform .16s cubic-bezier(.22,.9,.3,1)} html.ui-c .rp-go:hover{transform:translateY(-2px)} html.ui-c .rp-go:focus-visible{outline:2px solid var(--sel-2);outline-offset:2px;border-radius:3px}
   html.ui-c .rp-sheet{padding:16px 20px 2px}
   html.ui-c .rp-sheet .ksec{margin-bottom:20px}
   html.ui-c .rp-chip{margin-left:auto;font-size:12px;color:var(--t3)} html.ui-c .rp-chip .rp-go{font-weight:650;color:var(--ink)}

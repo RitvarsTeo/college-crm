@@ -57,3 +57,12 @@ test('no hover plate where there is no box: a column or bar row only lights its 
   assert.match(BLOCK, /\.jb-col:not\(\.on\):hover \.jb-bar\{filter:brightness\(1\.07\) drop-shadow/);
   assert.match(BLOCK, /\.kbar:hover \.kbt\{filter:brightness\(1\.07\) drop-shadow/);
 });
+
+// "the ones for hover over. I just one it to come forward you know." (08.10.2026): no hover draws a line anywhere
+test('hover never draws a line: no underline on hover anywhere in the app; figures and links come forward', () => {
+  const css = APP.slice(0, APP.indexOf('</style>', APP.indexOf('/* CHOSEN AND HOVER')));
+  assert.doesNotMatch(css, /:hover[^{]*\{[^}]*text-decoration:underline/);
+  for (const sel of ['.rp-go:hover', '.c-reach a:hover', 'a.c-jcount:hover', 'a.c-planned:hover b', '.c-todaystrip b a:hover', '.c-back a:hover']) {
+    assert.ok(css.includes(sel + '{transform:translateY(-2px)}'), sel);
+  }
+});

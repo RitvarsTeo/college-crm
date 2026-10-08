@@ -32,7 +32,11 @@ and pop when clicked." Branch ui/2026-10-08-chosen-look from release 2d385df.
 | Every chart mark (Home's month columns and donut, Reports' month bars and splits, the target meters, the bar rows): it lights up and casts a shadow on hover, more on press. It never moves or grows: depth belongs to the frame, never to the mark (KB 08 P5) | BUILT |
 | Light and dark; the dark shadows sit in the one dark palette | BUILT |
 | test/chosen_look.test.js, incl. "no column or chart mark ever moves off its baseline" | BUILT |
-| Folding empty columns on Inbox, Due and Journey: floated by Ritvars, answered with one rule; pictures offered, not asked to build | SAID |
+| "i dont like hovering frame where there is no box": the Journey and Inbox columns and Reports' bar rows get no plate on hover; their bar lights up | BUILT |
+| "the ones for hover over. I just one it to come forward": no hover anywhere draws an underline; Reports' figures, names, counts and back links come forward 2px instead | BUILT |
+| "3d boxes are the best, both in light and dark, i love em" (08.10.2026, on the pictures) | DECIDED |
+| Real email chips were grey on production: mail arrives as 'gmail', the colour list had only 'email'; fixed (949636b) | BUILT |
+| Folding empty columns on Inbox, Due and Journey: he said "Draw it"; pictures in For review/2026-10-08 Folding empty columns/ (only the Inbox has empty columns in the test data) | SAID |
 
 ## 07.10.2026 - Q75: the Contract stage is removed (COMMITTED, NOT DEPLOYED)
 
