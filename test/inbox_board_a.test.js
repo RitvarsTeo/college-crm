@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
+const FOLD = APP.slice(APP.indexOf('const C_UNFOLD = '), APP.indexOf('let C_TP = ')).replace(/^const /gm, 'var ') + '\n';   // the fold helper (08.10.2026), as vars so two boards can share one context
 const fnBody = (name) => { const i = APP.indexOf(name); assert.ok(i >= 0, name); return APP.slice(i, APP.indexOf('\n}\n', i) + 2); };
 const line = (start) => { const i = APP.indexOf(start); assert.ok(i >= 0, start); return APP.slice(i, APP.indexOf('\n', i)); };
 
@@ -40,7 +41,7 @@ function board(ip = {}, { rows = ROWS, open = null, show = 'new' } = {}) {
     $: (q) => (q === '#qInterest' ? { focus() {} } : view), view, cPoolWire: () => {}, cPoolOpened: () => {},
   };
   vm.runInNewContext([line('const cPhone = '), line('const C_IP_KIND = '), fnBody('function cInboxAge(iso) {'), line('const cAgo = '), line('const C_ST = '), line('const C_ST_RAIL = '), fnBody('function cStateLine('),
-    fnBody('function cInboxPool() {'), 'cInboxPool();'].join('\n'), ctx);
+    (FOLD + fnBody('function cInboxPool() {')), 'cInboxPool();'].join('\n'), ctx);
   return ctx;
 }
 
@@ -49,7 +50,7 @@ test('four columns by arrival day, in his order, each with its count; the band k
   const heads = [...html.matchAll(/<h3><span class="c-jn">(\d)<\/span>([^<]+)<b>(\d+)<\/b><\/h3>/g)].map((m) => [m[1], m[2], Number(m[3])]);
   assert.deepEqual(heads, [['1', 'Today', 2], ['2', 'Yesterday', 2], ['3', 'Earlier this week', 1], ['4', 'Older', 1]]);
   assert.match(html, /<band Inbox on=null pick=cInboxPick>today:2:age-today,yesterday:2:age-yesterday,week:1:age-week,older:1:age-older<\/band>/);
-  assert.match(html, /grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
+  assert.match(html, /grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\) minmax\(0,1fr\) minmax\(0,1fr\)"/, 'no day is empty, so none folds');
   assert.doesNotMatch(html, /New lead|Not relevant|Later/, 'no such columns');
 });
 
@@ -101,7 +102,10 @@ test('the filter row is Source + Kind, nothing else; a band click narrows to tha
   assert.equal((narrowed.match(/<h3><span class="c-jn">/g) || []).length, 1, 'one column');
   assert.match(narrowed, /Yesterday<b>2<\/b>/);
   const filtered = board({ channel: 'gmail' }).view.innerHTML;
-  assert.deepEqual([...filtered.matchAll(/<h3>[^<]*<span class="c-jn">\d<\/span>([^<]+)<b>(\d+)<\/b>/g)].map((m) => m[2]), ['1', '1', '0', '1']);
+  assert.deepEqual([...filtered.matchAll(/<h3>[^<]*<span class="c-jn">\d<\/span>([^<]+)<b>(\d+)<\/b>/g)].map((m) => m[2]), ['1', '1', '1']);
+  // the day the filter empties folds to its strip (08.10.2026, "Build it"): number, name, count, and a click opens it
+  assert.match(filtered, /<div class="c-col t-fold c-fold-empty" role="button" tabindex="0"\s+aria-label="Earlier this week: 0, open" onclick="cUnfold\((?:&quot;|")inbox(?:&quot;|"), (?:&quot;|")week(?:&quot;|")\)"[^>]*><span class="c-jn">3<\/span><span class="t-foldl">Earlier this week<\/span><b>0<\/b><\/div>/);
+  assert.match(filtered, /grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\) 92px minmax\(0,1fr\)"/);
   assert.match(filtered, /clear="C_IP\.channel='';C_IP\.kind='';cInboxPool\(\)"/);
   const aside = board({ show: 'archived' }, { show: 'archived' }).view.innerHTML;
   assert.doesNotMatch(aside, /Make a lead|ib-aside/, 'a message set aside keeps its card, without the actions');

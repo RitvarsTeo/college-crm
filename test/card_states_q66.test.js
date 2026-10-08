@@ -13,6 +13,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
+const FOLD = APP.slice(APP.indexOf('const C_UNFOLD = '), APP.indexOf('let C_TP = ')).replace(/^const /gm, 'var ') + '\n';   // the fold helper (08.10.2026), as vars so two boards can share one context
 const CONFIG = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'prototype.json'), 'utf8'));
 const HELP = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'help.json'), 'utf8'));
 const fn = (name) => { const i = APP.indexOf(name); assert.ok(i >= 0, name); return APP.slice(i, APP.indexOf('\n}\n', i) + 2); };
@@ -85,7 +86,7 @@ test('the bands inside a column: one per state, in order, counting everyone in t
 });
 
 test('the board header lost its red pill: the band says the count once', () => {
-  const draw = fn('function cDrawJourney(');
+  const draw = (FOLD + fn('function cDrawJourney('));
   assert.doesNotMatch(draw, /c-jover|overdue<\/button>/);
   assert.doesNotMatch(APP, /c-jover/);
   assert.match(draw, /cJColumn\(s\.id, ps, taskOf, sel\)/);
@@ -100,7 +101,7 @@ test('a Today card: the same state line in its foot, Done beside it, the rail of
   const groups = [{ id: 'over', label: 'Overdue', rows: byPerson(D.over), tone: 'over' }, { id: 'today', label: 'Due today', rows: byPerson(D.today), tone: 'today' },
     { id: 'later', label: 'Coming up', rows: byPerson(D.later), tone: 'later' }, { id: 'none', label: 'No next step', rows: [], tone: 'none' }];
   const ctx = { ...base(), C_TP: { col: null, programme: '', stage: '', source: '', upOpen: true, more: {}, pick: null }, cStage: (s) => s, fmtDate: (s) => String(s).slice(0, 10) };
-  vm.runInNewContext([helpers(), APP.match(/const C_TCOL_SHOW = \d+;/)[0], fn('function cTodayBoard(D, groups) {')].join('\n') + '\nthis.html = cTodayBoard(D, groups);', Object.assign(ctx, { D, groups }));
+  vm.runInNewContext([helpers(), APP.match(/const C_TCOL_SHOW = \d+;/)[0], (FOLD + fn('function cTodayBoard(D, groups) {'))].join('\n') + '\nthis.html = cTodayBoard(D, groups);', Object.assign(ctx, { D, groups }));
   const html = ctx.html;
   assert.match(html, /class="c-jp row t-card c-rail c-rail-over is-over"[\s\S]*?<div class="t-foot"><div class="c-st c-st-over"><span class="c-st-w">Overdue<\/span><span class="c-st-d">· 10 d<\/span><\/div><button data-done="1">Done<\/button><\/div>/);
   assert.match(html, /class="c-jp row t-card c-rail c-rail-today is-today"[\s\S]*?<div class="t-foot"><div class="c-st c-st-today"><span class="c-st-w">Due today<\/span><\/div><button data-done="2">Done<\/button><\/div>/);
@@ -118,7 +119,7 @@ test('an Inbox card: the state line says New, Answer now, Late or Set aside and 
     const ctx = { ...base(), Date: FixedDate, C_IP: { col: null, channel: '', kind: '', show }, C_LOPEN: null,
       C_IPD: { rows, receipt: '', val: () => '', form: () => '' }, channelLabel: (c) => c, cTelLink: () => '', fmtDateTime: (iso) => String(iso).slice(0, 16).replace('T', ' '), cCallLine: (b) => b,
       cPoolFrame: (o) => o.body, cPoolBand: () => '', cPoolSelect: () => '', cPoolFilters: () => '', $: () => view, cPoolWire() {}, cPoolOpened() {} };
-    vm.runInNewContext([helpers(), line('const C_IP_KIND = '), fn('function cInboxAge(iso) {'), line('const cAgo = '), fn('function cInboxPool() {'), 'cInboxPool();'].join('\n'), ctx);
+    vm.runInNewContext([helpers(), line('const C_IP_KIND = '), fn('function cInboxAge(iso) {'), line('const cAgo = '), (FOLD + fn('function cInboxPool() {')), 'cInboxPool();'].join('\n'), ctx);
     return view.innerHTML;
   };
   const html = run('new');

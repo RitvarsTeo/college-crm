@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
+const FOLD = APP.slice(APP.indexOf('const C_UNFOLD = '), APP.indexOf('let C_TP = ')).replace(/^const /gm, 'var ') + '\n';   // the fold helper (08.10.2026), as vars so two boards can share one context
 const fnBody = (name) => { const i = APP.indexOf(name); assert.ok(i >= 0, name); return APP.slice(i, APP.indexOf('\n}\n', i) + 2); };
 const line = (start) => { const i = APP.indexOf(start); assert.ok(i >= 0, start); return APP.slice(i, APP.indexOf('\n', i)); };
 
@@ -29,7 +30,7 @@ function board(tp = {}, data = null) {
     alert: () => {}, posted, C_TPD: data,
   };
   vm.runInNewContext([line('const cPhone = '), APP.match(/const C_TCOL_SHOW = \d+;/)[0], line('const C_ST = '), fnBody('function cStateLine('), line('const cDdMm = '), fnBody('function cStepState('),   // Q66, Q68
-    fnBody('function cTodayBoard(D, groups) {'),
+    (FOLD + fnBody('function cTodayBoard(D, groups) {')),
     fnBody('function cTodayDrop(pid, from, to) {'), fnBody('async function cTodayMoveTo(pid, from, day) {')].join('\n'), ctx);
   return ctx;
 }
@@ -106,7 +107,7 @@ test('drag onto Coming up: the date picker opens on the card, earliest tomorrow;
 test('nothing is dropped into Overdue, and no stage moves on Today', () => {
   const wire = fnBody('function cTodayWire() {');
   assert.match(wire, /if \(to === 'over'\) return;   \/\/ nothing is moved into the past/);
-  const all = fnBody('function cTodayBoard(D, groups) {') + fnBody('async function cTodayMoveTo(pid, from, day) {');
+  const all = (FOLD + fnBody('function cTodayBoard(D, groups) {')) + fnBody('async function cTodayMoveTo(pid, from, day) {');
   assert.doesNotMatch(all, /\/status|cAskMoveNote/, 'stage moves (and their back-move note) stay on the Journey board');
   assert.match(all, /\/api\/tasks\/\$\{Number\(t\.id\)\}\/reschedule/);
 });

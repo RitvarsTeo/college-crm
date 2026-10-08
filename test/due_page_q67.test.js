@@ -12,6 +12,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
+const FOLD = APP.slice(APP.indexOf('const C_UNFOLD = '), APP.indexOf('let C_TP = ')).replace(/^const /gm, 'var ') + '\n';   // the fold helper (08.10.2026), as vars so two boards can share one context
 const CONFIG = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'prototype.json'), 'utf8'));
 const HELP = fs.readFileSync(path.join(ROOT, 'config', 'help.json'), 'utf8');
 const help = JSON.parse(HELP);
@@ -48,7 +49,7 @@ test('RUN the Due page: its title and its band are "Due"; the sections keep thei
     CFG: CONFIG, cNotSaid: 'not said', channelLabel: (c) => c, esc: (s) => String(s ?? ''),
     cPoolFrame: (o) => { frames.push(o); return '<frame>'; }, cPoolCards: (name, title, cols) => { cards.push([name, title, cols.map((c) => c.label)]); return '<band>'; },
     cPoolFilters: () => '', cPoolSelect: () => '', cTodayBoard: () => '<board>', $: () => ({ innerHTML: '' }), cTodayWire() {}, cPoolWire() {}, cPoolOpened() {} };
-  vm.runInNewContext(fn('function cByPerson(') + '\n' + fn('function cTodayPool(') + '\ncTodayPool();', ctx);
+  vm.runInNewContext(fn('function cByPerson(') + '\n' + (FOLD + fn('function cTodayPool(')) + '\ncTodayPool();', ctx);
   assert.equal(frames[0].title, 'Due', 'the page title');
   assert.deepEqual(JSON.parse(JSON.stringify(cards[0])), ['Due', 'Needs you', ['Overdue', 'Due today', 'Coming up', 'No next step']], 'the band is named for the page; its groups as before');
 });
@@ -63,7 +64,7 @@ test('RUN the Inbox: short day words on one scale - Today, Yesterday, Earlier th
     cPoolFrame: (o) => o.body, cPoolBand: (name, cols) => { band = cols.map((c) => c.label); return ''; }, cPoolCards: (name, title, cols) => { band = cols.map((c) => c.label); return ''; },
     cPoolSelect: () => '', cPoolFilters: () => '', $: () => view, cPoolWire() {}, cPoolOpened() {} };
   vm.runInNewContext([line('const cPhone = '), line('const C_IP_KIND = '), fn('function cInboxAge(iso) {'), line('const cAgo = '), line('const C_ST = '), line('const C_ST_RAIL = '), fn('function cStateLine('),
-    fn('function cInboxPool() {'), 'cInboxPool();'].join('\n'), ctx);
+    (FOLD + fn('function cInboxPool() {')), 'cInboxPool();'].join('\n'), ctx);
   const heads = [...view.innerHTML.matchAll(/<h3><span class="c-jn">\d<\/span>([^<]+)<b>(\d+)<\/b><\/h3>/g)].map((m) => [m[1], Number(m[2])]);
   assert.deepEqual(heads, [['Today', 1], ['Yesterday', 1], ['Earlier this week', 1], ['Older', 1]]);
   assert.deepEqual(JSON.parse(JSON.stringify(band)), ['Today', 'Yesterday', 'Earlier this week', 'Older'], 'the band says the same four');

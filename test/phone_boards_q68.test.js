@@ -12,6 +12,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
+const FOLD = APP.slice(APP.indexOf('const C_UNFOLD = '), APP.indexOf('let C_TP = ')).replace(/^const /gm, 'var ') + '\n';   // the fold helper (08.10.2026), as vars so two boards can share one context
 const CONFIG = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'prototype.json'), 'utf8'));
 const HELP = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'help.json'), 'utf8'));
 const fn = (name) => { const i = APP.indexOf(name); assert.ok(i >= 0, name); return APP.slice(i, APP.indexOf('\n}\n', i) + 2); };
@@ -39,7 +40,7 @@ function journey(phone, people, setup = {}) {
   vm.runInNewContext([line('const cPhone = '), 'var C_JP = { col: null, view: "board", open: null };', line('const C_JCOL_SHOW = '), line('const C_JCOLOPEN = '),
     line('const C_ST = '), line('const C_ST_RAIL = '), fn('function cStateLine('), line('const cDdMm = '), fn('function cStepState('), line('const cStepGroup = '), line('const C_GRP = '), line('const cGroupBand = '),
     fn('function cJUrgency('), fn('function cJSort('), fn('function cJColumn('), filtersSrc.replace('let C_JF = {', 'var C_JF = {'),
-    fn('function cJTargetKeep('), line('const cJTargeted = '), line('const cMoveBody = '), fn('function cJTargetChips('), fn('function cJourneyMini('), fn('function cDrawJourney('),
+    fn('function cJTargetKeep('), line('const cJTargeted = '), line('const cMoveBody = '), fn('function cJTargetChips('), fn('function cJourneyMini('), (FOLD + fn('function cDrawJourney(')),
     'this.draw = cDrawJourney; this.tap = cJStageTap; this.bar = cJBarTap; this.JP = () => C_JP; this.JF = () => C_JF; this.setOpen = (v) => { C_JP.open = v; };'].join('\n'), ctx);
   return { ctx, draw: () => { ctx.draw(); return html; }, last: () => html };
 }
@@ -57,8 +58,10 @@ test('a phone: the stages stack, the first with people open, the rest folded to 
   assert.match(html, /<div class="j-sentinel" aria-hidden="true"><\/div><summary>/, 'the band has its sentinel: the strip goes compact once scrolled');
   const W = journey(false, PEOPLE);
   const wide = W.draw();
-  assert.equal(folds(wide).length, 0, 'no fold on a wide screen');
-  assert.equal(opens(wide).length, STAGES.length, 'every column open, as before');
+  assert.equal(folds(wide).length, 0, 'no phone row on a wide screen');
+  // 08.10.2026 ("Build it"): on a wide screen only the EMPTY stage folds, to its strip; the others stay open
+  assert.equal(opens(wide).length, STAGES.length - 1, 'every stage with people open');
+  assert.match(wide, new RegExp(`class="c-col t-fold c-fold-empty c-drop" data-stage="${STAGES[0].id}"`), 'New (empty) is the strip, still a drop target');
 });
 
 test('a tap on a bar or a folded row opens that stage on a phone; on a wide screen the bar is the stage filter, as before', () => {
@@ -106,7 +109,7 @@ test('Due on a phone: Overdue open, Due today and Coming up folded to rows with 
       cTodayIso: () => '2026-10-07', cDay: (iso) => String(iso).slice(0, 10), cWhenClass: () => 'over', cDaysLate: () => 1, esc: (s) => String(s ?? ''), fmtDate: (s) => s, cStage: (s) => s, cTask: (s) => s, cStepIcon: () => '', cSisHolds: () => false,
       cTodayPool() { ctx.redrawn = (ctx.redrawn || 0) + 1; }, redrawn: 0 };
     vm.runInNewContext([line('const cPhone = '), APP.match(/const C_TCOL_SHOW = \d+;/)[0], line('const C_ST = '), fn('function cStateLine('), line('const cDdMm = '), fn('function cStepState('),
-      fn('function cTodayBoard(D, groups) {'), fn('function cTodayPick('), fn('function cTodayTap('), 'this.html = cTodayBoard(D, groups); this.pick = cTodayPick; this.tapRow = cTodayTap; this.TP = () => C_TP;'].join('\n'), Object.assign(ctx, { D, groups }));
+      (FOLD + fn('function cTodayBoard(D, groups) {')), fn('function cTodayPick('), fn('function cTodayTap('), 'this.html = cTodayBoard(D, groups); this.pick = cTodayPick; this.tapRow = cTodayTap; this.TP = () => C_TP;'].join('\n'), Object.assign(ctx, { D, groups }));
     return ctx;
   };
   const p = run(true);
@@ -134,7 +137,7 @@ test('the Inbox on a phone: Today open, the other days folded to rows with their
       C_IPD: { rows, receipt: '', val: () => '', form: () => '' }, channelLabel: (c) => c, cTelLink: () => '', fmtDateTime: (iso) => iso, cCallLine: (b) => b, esc: (s) => String(s ?? ''),
       cPoolFrame: (o) => o.body, cPoolBand: () => '', cPoolSelect: () => '', cPoolFilters: () => '', $: () => view, cPoolWire() {}, cPoolOpened() {} };
     vm.runInNewContext([line('const cPhone = '), line('const C_IP_KIND = '), fn('function cInboxAge(iso) {'), line('const cAgo = '), line('const C_ST = '), line('const C_ST_RAIL = '), fn('function cStateLine('),
-      fn('function cInboxPool() {'), fn('function cInboxPick('), fn('function cInboxTap('), 'cInboxPool(); this.pick = cInboxPick; this.IP = () => C_IP;'].join('\n'), ctx);
+      (FOLD + fn('function cInboxPool() {')), fn('function cInboxPick('), fn('function cInboxTap('), 'cInboxPool(); this.pick = cInboxPick; this.IP = () => C_IP;'].join('\n'), ctx);
     return { html: view.innerHTML, ctx };
   };
   const p = run(true);
@@ -157,7 +160,7 @@ test('nothing sideways at phone width; the band is the sticky strip; the Help ce
   assert.match(block, /html\.ui-c \.c-summary\.is-mini h4,html\.ui-c \.c-summary\.is-mini \.jb-end,html\.ui-c \.c-summary\.is-mini \.jb-outs/, 'compact once scrolled: the bars stay');
   assert.match(block, /html\.ui-c \.ib-board\{display:block!important\}/);
   assert.match(fn('function cJourneyMini('), /if \(!cPhone\(\)\) \{ b\.classList\.remove\('is-mini'\); return; \}/);
-  assert.match(fn('function cDrawJourney('), /cPoolWire\(\); cJourneyMini\(\);/, 'the strip is wired on every draw');
+  assert.match((FOLD + fn('function cDrawJourney(')), /cPoolWire\(\); cJourneyMini\(\);/, 'the strip is wired on every draw');
   assert.match(HELP.tour.find((t) => t.title === 'Journey').body, /On a phone the stages stack one under the other, one open at a time: tap a bar or a folded stage to open it, and Move on the opened card changes the stage\./);
   assert.match(HELP.tour.find((t) => t.title === 'Due').body, /On a phone the columns stack: tap a card above or a folded column to open it\./);
   assert.match(HELP.tour.find((t) => t.title === 'Inbox').body, /On a phone the days stack: tap a bar or a folded day to open it\./);

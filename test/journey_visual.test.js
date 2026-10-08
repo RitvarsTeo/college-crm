@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
+const FOLD = APP.slice(APP.indexOf('const C_UNFOLD = '), APP.indexOf('let C_TP = ')).replace(/^const /gm, 'var ') + '\n';   // the fold helper (08.10.2026), as vars so two boards can share one context
 const CONFIG = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'prototype.json'), 'utf8'));
 const fn = (name) => { const i = APP.indexOf(name); assert.ok(i >= 0, name); return APP.slice(i, APP.indexOf('\n}\n', i) + 2); };
 const line = (start) => { const i = APP.indexOf(start); assert.ok(i >= 0, start); return APP.slice(i, APP.indexOf('\n', i)); };
@@ -126,7 +127,7 @@ test('every next step the demo plans is one of the configured types', () => {
 test('every Journey stage still appears, in the same order, with its own label', () => {
   const open = (CONFIG.stages || []).filter((s) => !['Admitted', 'Not proceeding'].includes(s.id));
   assert.ok(open.length >= 3);
-  const draw = fn('function cDrawJourney(');
+  const draw = (FOLD + fn('function cDrawJourney('));
   // Q57: the five stages as before; an end column joins them only when a way in targets it
   assert.match(draw, /const stages = \(CFG\.stages \|\| \[\]\)\.filter\(\(s\) => !C_TERMINAL\.includes\(s\.id\) \|\| ends\.includes\(s\.id\)\);/, 'the same stage list as before');
   let html = '';
@@ -151,9 +152,12 @@ ${line('const cSisHolds =')}
 ${line('const cSisHeld =')}
 ${line('const cChooseNext =')}\n${line('const cPhone =')}\n${stateHelpers()}\n${cardSrc}\n${filters}\n${draw}\ncDrawJourney();`, ctx);
   // Q43: the header is the stage's number and name; its count is the band's (no <b>count</b> here any more)
-  const heads = [...html.matchAll(/<h3><span class="c-jn">(\d+)<\/span>([^<]+?)(?:<button|<\/h3>)/g)].map((m) => [Number(m[1]), m[2]]);
+  // an empty stage is folded to its strip (08.10.2026, "Build it"): the same number and label, in its place
+  const heads = [...html.matchAll(/<h3><span class="c-jn">(\d+)<\/span>([^<]+?)(?:<button|<\/h3>)|<span class="c-jn">(\d+)<\/span><span class="t-foldl">([^<]+)<\/span>/g)]
+    .map((m) => (m[1] ? [Number(m[1]), m[2]] : [Number(m[3]), m[4]]));
   assert.doesNotMatch(html, /<h3><span class="c-jn">\d+<\/span>[^<]+ <b>\d+<\/b>/, 'no stage count in the board header');
   assert.deepEqual(heads, open.map((s, i) => [i + 1, s.label || s.id]), 'numbered 1..n, labels exactly as configured');
+  assert.equal((html.match(/<h3><span class="c-jn">/g) || []).length, 1, 'only the stage with a person is open');
 });
 
 test('how far: one brandbook hue getting darker per stage, a faint tint only - no rainbow', () => {
@@ -172,7 +176,7 @@ test('dark mode keeps the rail (the glass border would hide it) and the numbers'
 
 test('phone widths: columns keep their minimum and scroll sideways as before; dates never wrap', () => {
   // every column keeps 150px; the column holding the opened person widens to 330px (02.10.2026)
-  assert.match(APP, /sel && sel\.status === s\.id \? 'minmax\(330px, 2\.4fr\)' : 'minmax\(150px, 1fr\)'/);
+  assert.match(APP, /sel && sel\.status === s\.id \? 'minmax\(330px, 2\.4fr\)' : jFold\(s\) \? '92px' : 'minmax\(150px, 1fr\)'/, 'an empty stage folds to 92px (08.10.2026)');
   assert.match(APP, /html\.ui-c \.c-cols\{display:grid;gap:10px;overflow-x:auto/);
   assert.match(APP, /html\.ui-c \.c-st-w\{font-weight:700;white-space:nowrap/, 'the state word never breaks');
 });
@@ -185,7 +189,7 @@ test('no sentence explaining the Journey: the screen says it itself', () => {
   // the title carries no <p>; since 02.10.2026 Add lead sits beside it (leads are added with the leads)
   // 05.10.2026: People is everyone and Journey its child, so the screen is titled Journey under a People crumb
   // Q47: the Journey is everyone; the board carries the List | Board switch beside Add lead, no crumb
-  assert.match(fn('function cDrawJourney('), /<div class="c-head"><div><h1>Journey<\/h1><\/div><div class="act">\$\{cPoolViewSwitch\(\)\}<button class="btn" onclick="openAdd\(\)">Add lead<\/button><\/div><\/div>/);
+  assert.match((FOLD + fn('function cDrawJourney(')), /<div class="c-head"><div><h1>Journey<\/h1><\/div><div class="act">\$\{cPoolViewSwitch\(\)\}<button class="btn" onclick="openAdd\(\)">Add lead<\/button><\/div><\/div>/);
 });
 
 test('warnings look like warnings: overdue is a SOLID red badge with white words, 4.5:1 or more', () => {
