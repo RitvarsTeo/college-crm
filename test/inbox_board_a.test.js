@@ -40,7 +40,7 @@ function board(ip = {}, { rows = ROWS, open = null, show = 'new' } = {}) {
     $: (q) => (q === '#qInterest' ? { focus() {} } : view), view, cPoolWire: () => {}, cPoolOpened: () => {},
   };
   vm.runInNewContext([line('const cPhone = '), line('const C_IP_KIND = '), fnBody('function cInboxAge(iso) {'), line('const cAgo = '), line('const C_ST = '), line('const C_ST_RAIL = '), fnBody('function cStateLine('),
-    fnBody('function cInboxPool() {'), 'cInboxPool();'].join('\n'), ctx);
+    'var CFG = globalThis.CFG || {};', fnBody('function cInboxPool() {'), 'cInboxPool();'].join('\n'), ctx);
   return ctx;
 }
 

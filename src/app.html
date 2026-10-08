@@ -4059,7 +4059,10 @@ function cInboxPool() {
   const rows = D.rows.filter(ok);
   const AGES = [['today', 'Today'], ['yesterday', 'Yesterday'], ['week', 'Earlier this week'], ['older', 'Older']];
   const cols = AGES.map(([id, label]) => ({ id, label, n: rows.filter((r) => cInboxAge(r.received_at) === id).length, tone: 'age-' + id }));
-  const chans = [...new Set(D.rows.map((r) => r.channel))].sort().map((c) => [c, channelLabel(c)]);
+  // Q78: every channel, always (the inboxSources list from channels.json); a channel on the board that is not in that list is
+  // added after it, so no message can ever be left without a way to filter to it
+  const fixed = CFG.inboxSources || [];
+  const chans = [...fixed, ...[...new Set(D.rows.map((r) => r.channel))].filter((c) => !fixed.includes(c)).sort()].map((c) => [c, channelLabel(c)]);
   const live = C_IP.show === 'new';   // a message set aside keeps its card, without the actions
   const who = (r) => esc(r.contact_name || r.contact_handle || '') || cTelLink({ phone: r.contact_phone }) || 'Unknown';
   // Q73 (the owner's pick 07.10.2026, "B chip"): one colour per source on the Inbox card; any other source is grey.

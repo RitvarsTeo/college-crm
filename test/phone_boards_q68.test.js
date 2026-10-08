@@ -134,7 +134,7 @@ test('the Inbox on a phone: Today open, the other days folded to rows with their
       C_IPD: { rows, receipt: '', val: () => '', form: () => '' }, channelLabel: (c) => c, cTelLink: () => '', fmtDateTime: (iso) => iso, cCallLine: (b) => b, esc: (s) => String(s ?? ''),
       cPoolFrame: (o) => o.body, cPoolBand: () => '', cPoolSelect: () => '', cPoolFilters: () => '', $: () => view, cPoolWire() {}, cPoolOpened() {} };
     vm.runInNewContext([line('const cPhone = '), line('const C_IP_KIND = '), fn('function cInboxAge(iso) {'), line('const cAgo = '), line('const C_ST = '), line('const C_ST_RAIL = '), fn('function cStateLine('),
-      fn('function cInboxPool() {'), fn('function cInboxPick('), fn('function cInboxTap('), 'cInboxPool(); this.pick = cInboxPick; this.IP = () => C_IP;'].join('\n'), ctx);
+      'var CFG = globalThis.CFG || {};', fn('function cInboxPool() {'), fn('function cInboxPick('), fn('function cInboxTap('), 'cInboxPool(); this.pick = cInboxPick; this.IP = () => C_IP;'].join('\n'), ctx);
     return { html: view.innerHTML, ctx };
   };
   const p = run(true);

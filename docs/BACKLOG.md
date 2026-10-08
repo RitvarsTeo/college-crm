@@ -14,6 +14,20 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 08.10.2026 - Q78: the Inbox Source list shows every channel (PICKED 08.10: "All but without the count for now.")
+
+Through MASTER CONTROL. Branch ui/2026-10-08-q78-sources from release 2d385df (patch 33). Ships in the first patch after
+the switchover to Aigars's copy; production is frozen until then.
+
+| What | Status |
+|---|---|
+| The Inbox Source dropdown lists every channel in config/channels.json that is not dropped or parked, in its order, plus the SIS (13 today), whether or not a message has come in. /api/config carries the list as inboxSources | BUILT |
+| No counts, nothing greyed. Picking a channel with no messages shows the board's normal empty state | BUILT |
+| A message from a channel outside the list (an old alias) is added after it, so it can still be filtered to | BUILT |
+| The Due page's Source list is untouched | BUILT |
+| Help: nothing to change (no Help text names the Source list) | BUILT |
+| test/inbox_sources_q78.test.js runs /api/config and the list line | BUILT |
+
 ## 07.10.2026 - Q75: the Contract stage is removed (COMMITTED, NOT DEPLOYED)
 
 DECIDED by Ritvars 07.10 (Q75, KISS list), via MASTER CONTROL. Branch `feat/2026-10-07-no-contract-s4`, cut from `f45340e`.

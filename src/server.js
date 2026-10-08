@@ -1566,7 +1566,10 @@ export const handle = async (req, res) => {
       return res.end(fs.readFileSync(path.join(ROOT, 'src', 'assets', name)));
     }
 
-    if (req.method === 'GET' && p === '/api/config') return json(res, 200, { ...CONFIG, dataset: DATASET, help: { flow: HELP.flow, howto: HELP.howto, tour: HELP.tour, faq: HELP.faq } });
+    // Q78 (the owner, 08.10.2026: "All but without the count for now."): the Inbox Source list is every channel that is
+    // not dropped or parked in config/channels.json, in its order, plus the SIS - whether or not a message has come in
+    if (req.method === 'GET' && p === '/api/config') return json(res, 200, { ...CONFIG, dataset: DATASET,
+      inboxSources: [...Object.entries(CHANNELS.channels).filter(([, c]) => !['dropped', 'parked'].includes(c.lifecycle)).map(([id]) => id), 'sis'], help: { flow: HELP.flow, howto: HELP.howto, tour: HELP.tour, faq: HELP.faq } });
 
     // --------------------------------------------------------- the database -
     if (req.method === 'POST' && p === '/api/dataset') {

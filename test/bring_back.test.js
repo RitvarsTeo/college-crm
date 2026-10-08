@@ -196,7 +196,7 @@ function board(show) {
     $: () => view, view, cPoolWire: () => {}, cPoolOpened: () => {},
   };
   // + Q66's state line (merged with this in rc/2026-10-07): the card's foot is drawn by cStateLine
-  vm.runInNewContext([line('const cPhone = '), line('const C_ST = '), line('const C_ST_RAIL = '), fnBody('function cStateLine(st, detail, act, title) {'), line('const C_IP_KIND = '), fnBody('function cInboxAge(iso) {'), line('const cAgo = '), fnBody('function cInboxPool() {'), 'cInboxPool();'].join('\n'), ctx);
+  vm.runInNewContext([line('const cPhone = '), line('const C_ST = '), line('const C_ST_RAIL = '), fnBody('function cStateLine(st, detail, act, title) {'), line('const C_IP_KIND = '), fnBody('function cInboxAge(iso) {'), line('const cAgo = '), 'var CFG = globalThis.CFG || {};', fnBody('function cInboxPool() {'), 'cInboxPool();'].join('\n'), ctx);
   return view.innerHTML;
 }
 
