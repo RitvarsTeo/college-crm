@@ -27,6 +27,25 @@ the switchover to Aigars's copy; production is frozen until then.
 | The Due page's Source list is untouched | BUILT |
 | Help: nothing to change (no Help text names the Source list) | BUILT |
 | test/inbox_sources_q78.test.js runs /api/config and the list line | BUILT |
+## 08.10.2026 - Chosen and hover: one look on every tab (DECIDED 08.10, directly in the MAIN session)
+
+Ritvars, on Due's uneven yellow lines and the missing hover: "All tabs must match similarly." Shown A line / B box /
+C lift on the real Due, Journey and Reports at 1440 (For review/2026-10-08 Selected and hover - one look on every tab/),
+he picked the Reports box, "make the box more bold, so it stands out", and set the motion: "When hover over it to
+choose, it comes forward. when clicked on, it pops even a bit more, than returns to the position 2, slightly out and the
+blue frame is a like a 3d frame, that gives it depth." Then: "For graphs (all types) they also should sort of come out
+and pop when clicked." Branch ui/2026-10-08-chosen-look from release 2d385df.
+
+| What | Status |
+|---|---|
+| Chosen (Due's Needs-you cards, Reports' tabs, the Journey and Inbox columns): a bold 3px blue frame lit from above (#8fd3f2 top, #29a8df, #146f9c bottom), a soft tint and a shadow; cards and tabs rest 3px forward | BUILT |
+| Hover comes forward 2px with a shadow; a press goes 6px; a newly chosen card settles from the pop to 3px (0.32 s). Reduced motion: no movement, the frame stays | BUILT |
+| Due's old yellow line and Reports' thin outline are gone; every chosen card has its own round plate | BUILT |
+| People cards (Due, Journey, Inbox) and Home's cards come forward on hover, a little more on press | BUILT |
+| Every chart mark (Home's month columns and donut, Reports' month bars and splits, the target meters, the bar rows): it lights up and casts a shadow on hover, more on press. It never moves or grows: depth belongs to the frame, never to the mark (KB 08 P5) | BUILT |
+| Light and dark; the dark shadows sit in the one dark palette | BUILT |
+| test/chosen_look.test.js, incl. "no column or chart mark ever moves off its baseline" | BUILT |
+| Folding empty columns on Inbox, Due and Journey: floated by Ritvars, answered with one rule; pictures offered, not asked to build | SAID |
 
 ## 07.10.2026 - Q75: the Contract stage is removed (COMMITTED, NOT DEPLOYED)
 

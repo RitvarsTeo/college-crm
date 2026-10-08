@@ -848,7 +848,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
     --j-from:#1d4d7a;--j-to:#8fcbef;   /* the Journey's stage line in dark (the review #2) */
     --glass:linear-gradient(180deg,rgba(255,255,255,.06) 0%,rgba(255,255,255,.035) 100%);
     --glass-line:rgba(194,211,222,.18);
-    --sea:radial-gradient(120% 80% at 50% 0%,#17456e 0%,rgba(23,69,110,0) 60%),linear-gradient(180deg,#0f2f4f 0%,#0f2f4f 45%,#08182e 100%);--v-off:#bfe3f6;--bm-band:#3f5f80;--bm-ring:var(--surface)}
+    --sea:radial-gradient(120% 80% at 50% 0%,#17456e 0%,rgba(23,69,110,0) 60%),linear-gradient(180deg,#0f2f4f 0%,#0f2f4f 45%,#08182e 100%);--v-off:#bfe3f6;--bm-band:#3f5f80;--bm-ring:var(--surface);--sel-lift:0 10px 24px rgba(0,0,0,.45),0 2px 6px rgba(0,0,0,.30);--sel-hover:0 6px 14px rgba(0,0,0,.35)}
   /* THE LIGHT SEA (the owner, 01.10.2026: "same way we have a gradient for the dark mode,
      lets have a gradient for the light version"). Dark takes the sign-in screen's sea:
      a glow from the top centre over a vertical deepening, #17456e -> #0f2f4f -> #08182e.
@@ -2482,6 +2482,50 @@ svg .m-flag-mark{transform-origin:0 100%}
   @keyframes v-open{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
   html.ui-c.m-on .v-open{animation:v-open .63s cubic-bezier(.22,.9,.3,1) both;animation-delay:calc(var(--vi,0) * 70ms)}
   @media (prefers-reduced-motion:reduce){ html.ui-c .v-open{animation:none} }
+
+  /* CHOSEN AND HOVER, ONE LOOK ON EVERY TAB (the owner, 08.10.2026: "All tabs must match similarly"; the Reports box,
+     "make the box more bold, so it stands out"; "When hover over it to choose, it comes forward. when clicked on, it pops
+     even a bit more, than returns to the position 2, slightly out and the blue frame is a like a 3d frame, that gives it
+     depth"; "For graphs (all types) they also should sort of come out and pop when clicked").
+     Hover = forward 2px. Press = forward 6px. Chosen = rests 3px forward in a bold blue frame lit from above (light top
+     edge, deep bottom edge) with a shadow under it, and settles there from the pop when it is drawn.
+     Depth belongs to the FRAME, never to the MARK: a Journey or Inbox column and every chart mark stay on their baseline;
+     only their plate, frame and shadow come forward. */
+  html.ui-c{--sel-1:#8fd3f2;--sel-2:#29a8df;--sel-3:#146f9c;--sel-lift:0 10px 22px rgba(10,36,99,.18),0 2px 6px rgba(10,36,99,.10);--sel-hover:0 6px 14px rgba(10,36,99,.12)}
+  html.ui-c #view :is(.pcards .p-card,.kstrip.rp-tabs > div,.jb-col,.p-chip,.c-jp,.ib-card,.kneed,a.kgo,.khero){transition:transform .16s cubic-bezier(.22,.9,.3,1),box-shadow .16s ease,background-color .16s ease}
+  /* the cards and tabs that can be chosen */
+  html.ui-c #view .pcards .p-card.on::after{display:none}
+  html.ui-c #view .pcards .p-card, html.ui-c #view .pcards .p-card:first-child, html.ui-c #view .pcards .p-card.on{position:relative;padding:8px 14px 10px;border:0;border-radius:12px}
+  html.ui-c #view .pcards .kday-row{gap:8px}
+  html.ui-c #view .kstrip.rp-tabs > div{position:relative}
+  html.ui-c #view .kstrip.rp-tabs > div[aria-selected="true"]{outline:0}
+  html.ui-c #view :is(.pcards .p-card,.kstrip.rp-tabs > div):not(.on):not([aria-selected="true"]):hover{transform:translateY(-2px);box-shadow:var(--sel-hover)}
+  html.ui-c #view :is(.pcards .p-card,.kstrip.rp-tabs > div):active{transform:translateY(-6px);box-shadow:var(--sel-lift)}
+  html.ui-c #view :is(.pcards .p-card.on,.kstrip.rp-tabs > div[aria-selected="true"]){transform:translateY(-3px);box-shadow:var(--sel-lift);background-color:rgba(41,168,223,.08);animation:c-sel-settle .32s cubic-bezier(.22,.9,.3,1) both}
+  /* the 3D frame: a 3px ring, light at the top, deep at the bottom (a masked gradient, so nothing inside moves) */
+  html.ui-c #view :is(.pcards .p-card.on,.kstrip.rp-tabs > div[aria-selected="true"],.jb-col.on)::before{content:"";position:absolute;inset:0;padding:3px;border-radius:inherit;pointer-events:none;
+    background:linear-gradient(180deg,var(--sel-1) 0%,var(--sel-2) 45%,var(--sel-3) 100%);
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0)}
+  @keyframes c-sel-settle{0%{transform:translateY(-6px) scale(1.015)}100%{transform:translateY(-3px)}}
+  /* the Journey and Inbox columns: the plate comes forward, the bar never leaves its baseline */
+  html.ui-c #view .jb-col{position:relative}
+  html.ui-c #view .jb-col:not(.on):hover{background-color:rgba(41,168,223,.06);box-shadow:var(--sel-hover)}
+  html.ui-c #view .jb-col:active{box-shadow:var(--sel-lift)}
+  html.ui-c #view .jb-col.on{background-color:rgba(41,168,223,.08);box-shadow:var(--sel-lift)}
+  html.ui-c #view .p-chip.on{border-color:var(--sel-2);box-shadow:inset 0 0 0 1px var(--sel-2),0 4px 10px rgba(10,36,99,.14);background-color:rgba(41,168,223,.10)}
+  /* the cards with people on them: forward on hover, a little more on press */
+  html.ui-c #view :is(.c-jp,.ib-card):hover{transform:translateY(-2px);box-shadow:var(--sel-hover)}
+  html.ui-c #view :is(.c-jp,.ib-card):active{transform:translateY(-4px);box-shadow:var(--sel-lift)}
+  html.ui-c #view :is(.kneed:not(.p-card),a.kgo,.khero):hover{transform:translateY(-2px)}
+  html.ui-c #view :is(.kneed:not(.p-card),a.kgo,.khero):active{transform:translateY(-4px)}
+  /* every chart mark: it comes out on hover and pops on press, as light and shadow; its size and baseline never change */
+  html.ui-c #view :is(.kcol,.kseg,.jb-seg,.rp-col,.rp-split,.ktgt-track,.c-reasonbar[role="button"]){transition:filter .16s ease}
+  html.ui-c #view :is(.kcol,.kseg,.rp-col,.rp-split,.ktgt-track):hover{filter:brightness(1.07) drop-shadow(0 4px 6px rgba(10,36,99,.28))}
+  html.ui-c #view :is(.kcol,.kseg,.rp-col,.rp-split,.ktgt-track):active{filter:brightness(1.12) drop-shadow(0 7px 10px rgba(10,36,99,.38))}
+  html.ui-c #view .kbar:hover{background-color:rgba(41,168,223,.07);box-shadow:var(--sel-hover)}
+  html.ui-c #view .kbar:active{box-shadow:var(--sel-lift)}
+  html.ui-c #view .klegend li[data-kgo]:hover{background-color:rgba(41,168,223,.08)}
+  @media (prefers-reduced-motion:reduce){ html.ui-c #view :is(.pcards .p-card,.kstrip.rp-tabs > div,.jb-col,.p-chip,.c-jp,.ib-card,.kneed,a.kgo,.khero,.kcol,.kseg,.kbar,.rp-col){transition:none;transform:none!important;animation:none} }
 </style>
 </head>
 <body>
