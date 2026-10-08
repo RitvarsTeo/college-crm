@@ -54,6 +54,11 @@ PICKED by Ritvars 08.10 for patch 34 ("We now had Piemeri Profesiju, if utms are
 |---|---|
 | Reports > Academy Application form > Campaign links: `utm_campaign=piemeri2026` reads "Piemēri Profesiju" (any source/medium, source/medium still shown); `ig / social` with no campaign reads "Instagram (no campaign name)". One table in `config.webCampaignNames`; every other row unchanged; counts unchanged; the raw SIS tag stays in the hover | BUILT |
 | Today 0 rows are Piemēri: its links point at piemeriprofesiju.novikontas.org, not apply. Nothing is relabelled without the tag | FACT |
+| "i dont like hovering frame where there is no box": the Journey and Inbox columns and Reports' bar rows get no plate on hover; their bar lights up | BUILT |
+| "the ones for hover over. I just one it to come forward": no hover anywhere draws an underline; Reports' figures, names, counts and back links come forward 2px instead | BUILT |
+| "3d boxes are the best, both in light and dark, i love em" (08.10.2026, on the pictures) | DECIDED |
+| Real email chips were grey on production: mail arrives as 'gmail', the colour list had only 'email'; fixed (949636b) | BUILT |
+| Folding empty columns on Inbox, Due and Journey: he said "Draw it"; pictures in For review/2026-10-08 Folding empty columns/ (only the Inbox has empty columns in the test data) | SAID |
 
 ## 07.10.2026 - Q75: the Contract stage is removed (COMMITTED, NOT DEPLOYED)
 

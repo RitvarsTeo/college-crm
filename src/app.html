@@ -1127,7 +1127,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   /* Next Steps rows: the contact to call or write, and one line of what was said (Admissions, 29.09) */
   html.ui-c .c-who small.c-reach{margin-top:2px}
   html.ui-c .c-reach a{color:var(--petink);text-decoration:none}
-  html.ui-c .c-reach a:hover{text-decoration:underline}
+  html.ui-c .c-reach a{display:inline-block;transition:transform .16s cubic-bezier(.22,.9,.3,1)} html.ui-c .c-reach a:hover{transform:translateY(-2px)}
   html.ui-c .c-line .c-what{min-width:0}
   html.ui-c .c-nnote{display:block;margin-top:3px;font-size:12.5px;font-weight:400;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   /* dev kit part 3 styles its pieces with part 2's --kit-* tokens: the CRM's own tokens, mapped */
@@ -1146,7 +1146,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   /* Q61: where a page reached through a link came from; a click is Back */
   html.ui-c .c-back{margin:0 0 6px;font-size:12.5px}
   html.ui-c .c-back a{color:var(--petink);text-decoration:none;font-weight:600}
-  html.ui-c .c-back a:hover{text-decoration:underline}
+  html.ui-c .c-back a{display:inline-block;transition:transform .16s cubic-bezier(.22,.9,.3,1)} html.ui-c .c-back a:hover{transform:translateY(-2px)}
   html.ui-c .c-back a:focus-visible{outline:2px solid var(--pet);outline-offset:2px;border-radius:3px}
   html.ui-c kbd{display:inline-block;min-width:1.6em;padding:1px 7px;border:1px solid var(--control-line);border-bottom-width:2px;border-radius:6px;
     background:var(--surface);font:inherit;font-size:12.5px;font-weight:700;color:var(--ink);text-align:center;white-space:nowrap}
@@ -1230,8 +1230,8 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   /* Q43: a person's several tasks inside one Today row, each with its own when and Done */
   html.ui-c .c-tline{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px}
   html.ui-c .c-tline + .c-tline{margin-top:6px;padding-top:6px;border-top:1px dashed var(--rule2)}
-  html.ui-c a.c-jcount:hover{text-decoration:underline}
-  html.ui-c a.c-planned:hover b{text-decoration:underline}
+  html.ui-c a.c-jcount{display:inline-block;transition:transform .16s cubic-bezier(.22,.9,.3,1)} html.ui-c a.c-jcount:hover{transform:translateY(-2px)}
+  html.ui-c a.c-planned b{display:inline-block;transition:transform .16s cubic-bezier(.22,.9,.3,1)} html.ui-c a.c-planned:hover b{transform:translateY(-2px)}
   html.ui-c .c-reasonbar[role="button"]{cursor:pointer;border-radius:6px}
   html.ui-c .c-reasonbar[role="button"]:hover,html.ui-c .c-reasonbar.on{background:var(--c-sunk)}
   html.ui-c .c-tag{font-size:10.5px;font-weight:600;letter-spacing:.04em;color:var(--t3);border:1px solid var(--rule);border-radius:4px;padding:0 5px;white-space:nowrap}
@@ -1803,7 +1803,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .kpage.kb .kspark path{filter:drop-shadow(0 2px 0 var(--k-plinth))}
   html.ui-c .kgo{display:inline-block;margin-top:5px;font-size:11.5px;color:var(--petink);
     text-decoration:none;opacity:.8}
-  html.ui-c .kgo:hover{opacity:1;text-decoration:underline}
+  html.ui-c .kgo:hover{opacity:1;text-decoration:none}
   html.ui-c .ksrc{font-size:11.5px;color:var(--t4);margin-left:auto}
   /* B's strip is two up, so the headline figure stays the biggest thing on the screen */
   html.ui-c .kcmd .kstrip{grid-template-columns:1.35fr 1fr;grid-template-rows:none;margin-bottom:22px}
@@ -2062,7 +2062,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
     font-variant-numeric:tabular-nums}
   html.ui-c .c-todaystrip b.c-od{color:var(--c-bad)}
   html.ui-c .c-todaystrip b a{color:inherit;text-decoration:none}
-  html.ui-c .c-todaystrip b a:hover{text-decoration:underline}
+  html.ui-c .c-todaystrip b a{display:inline-block;transition:transform .16s cubic-bezier(.22,.9,.3,1)} html.ui-c .c-todaystrip b a:hover{transform:translateY(-2px)}
   html.ui-c .c-todaystrip span{font-size:11px;color:var(--t3)}
   /* ---- TYPE 3, STRONG HIERARCHY (the owner's pick, A/B batch step 2a, 04.10.2026). App-wide TOKENS,
      not per screen. Four steps, and each step is one size everywhere it appears:
@@ -2307,7 +2307,8 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   @media (max-width:700px){ html.ui-c .bm-row{grid-template-columns:1fr;gap:6px} html.ui-c .bm-trackbox{margin:0 56px 0 28px} }
   html.ui-c .rp .rp-track{background:var(--c-sunk);border-radius:0 3px 3px 0}
   html.ui-c .rp-go{color:inherit;text-decoration:none;border-radius:3px}
-  html.ui-c .rp-go:hover,html.ui-c .rp-go:focus-visible{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px;text-decoration-color:var(--v-adm)}
+  /* the owner, 08.10.2026: "the ones for hover over. I just one it to come forward": no line on hover, the figure comes forward */
+  html.ui-c .rp-go{display:inline-block;transition:transform .16s cubic-bezier(.22,.9,.3,1)} html.ui-c .rp-go:hover{transform:translateY(-2px)} html.ui-c .rp-go:focus-visible{outline:2px solid var(--sel-2);outline-offset:2px;border-radius:3px}
   html.ui-c .rp-sheet{padding:16px 20px 2px}
   html.ui-c .rp-sheet .ksec{margin-bottom:20px}
   html.ui-c .rp-chip{margin-left:auto;font-size:12px;color:var(--t3)} html.ui-c .rp-chip .rp-go{font-weight:650;color:var(--ink)}
@@ -2509,8 +2510,10 @@ svg .m-flag-mark{transform-origin:0 100%}
   @keyframes c-sel-settle{0%{transform:translateY(-6px) scale(1.015)}100%{transform:translateY(-3px)}}
   /* the Journey and Inbox columns: the plate comes forward, the bar never leaves its baseline */
   html.ui-c #view .jb-col{position:relative}
-  html.ui-c #view .jb-col:not(.on):hover{background-color:rgba(41,168,223,.06);box-shadow:var(--sel-hover)}
-  html.ui-c #view .jb-col:active{box-shadow:var(--sel-lift)}
+  /* the owner, 08.10.2026: "i dont like hovering frame where there is no box": a column on hover has no plate; its bar lights up */
+  html.ui-c #view .jb-col .jb-bar{transition:filter .16s ease}
+  html.ui-c #view .jb-col:not(.on):hover .jb-bar{filter:brightness(1.07) drop-shadow(0 4px 6px rgba(10,36,99,.28))}
+  html.ui-c #view .jb-col:active .jb-bar{filter:brightness(1.12) drop-shadow(0 7px 10px rgba(10,36,99,.38))}
   html.ui-c #view .jb-col.on{background-color:rgba(41,168,223,.08);box-shadow:var(--sel-lift)}
   html.ui-c #view .p-chip.on{border-color:var(--sel-2);box-shadow:inset 0 0 0 1px var(--sel-2),0 4px 10px rgba(10,36,99,.14);background-color:rgba(41,168,223,.10)}
   /* the cards with people on them: forward on hover, a little more on press */
@@ -2522,9 +2525,10 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c #view :is(.kcol,.kseg,.jb-seg,.rp-col,.rp-split,.ktgt-track,.c-reasonbar[role="button"]){transition:filter .16s ease}
   html.ui-c #view :is(.kcol,.kseg,.rp-col,.rp-split,.ktgt-track):hover{filter:brightness(1.07) drop-shadow(0 4px 6px rgba(10,36,99,.28))}
   html.ui-c #view :is(.kcol,.kseg,.rp-col,.rp-split,.ktgt-track):active{filter:brightness(1.12) drop-shadow(0 7px 10px rgba(10,36,99,.38))}
-  html.ui-c #view .kbar:hover{background-color:rgba(41,168,223,.07);box-shadow:var(--sel-hover)}
-  html.ui-c #view .kbar:active{box-shadow:var(--sel-lift)}
-  html.ui-c #view .klegend li[data-kgo]:hover{background-color:rgba(41,168,223,.08)}
+  html.ui-c #view .kbar .kbt{transition:filter .16s ease}
+  html.ui-c #view .kbar:hover .kbt{filter:brightness(1.07) drop-shadow(0 3px 5px rgba(10,36,99,.28))}
+  html.ui-c #view .kbar:active .kbt{filter:brightness(1.12) drop-shadow(0 5px 8px rgba(10,36,99,.38))}
+  html.ui-c #view .klegend li[data-kgo]:hover{color:var(--ink-strong)}
   @media (prefers-reduced-motion:reduce){ html.ui-c #view :is(.pcards .p-card,.kstrip.rp-tabs > div,.jb-col,.p-chip,.c-jp,.ib-card,.kneed,a.kgo,.khero,.kcol,.kseg,.kbar,.rp-col){transition:none;transform:none!important;animation:none} }
 </style>
 </head>
@@ -4112,7 +4116,8 @@ function cInboxPool() {
   // Q73 (the owner's pick 07.10.2026, "B chip"): one colour per source on the Inbox card; any other source is grey.
   // Email and Phone are the brand's blue and mustard; the rest passed the dataviz check (validate_palette.js, all
   // pairs, light and dark: normal-vision floor >= 15). The word is always on the chip, so colour is never alone.
-  const C_SRC_COLOUR = { email: '#29a8df', phone: '#E0A526', website: '#1baf7a', linkedin: '#7b5bd6', whatsapp: '#008300',
+  // real mail arrives as 'gmail' (the adapter's id, config/channels.json); 'email' is the older and simulated name
+  const C_SRC_COLOUR = { gmail: '#29a8df', email: '#29a8df', website_form: '#1baf7a', phone: '#E0A526', website: '#1baf7a', linkedin: '#7b5bd6', whatsapp: '#008300',
     facebook: '#a0662a', messenger: '#a0662a', instagram: '#d55181' };
   const card = (r) => {
     const open = C_LOPEN === r.id; const prog = D.val(r, 'interest');
