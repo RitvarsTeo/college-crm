@@ -706,6 +706,13 @@
       "research": "NONE. Named 23.09.2026, nothing checked. Kept out of config/providers.json."
     }
   ],
+  "webCampaignNames": {
+    "_note": "Q83, Ritvars 08.10.2026: Reports > Academy Application form > Campaign links shows a plain name instead of the raw SIS tag. One row per rule; a link matches on its utm_campaign (the row's name) and, when given, its utm_source and utm_medium (the row's detail, 'source / medium'). Every other link stays exactly as the SIS sends it. Never relabel a link as Piemeri without its own piemeri2026 tag: Piemeri's links point at piemeriprofesiju.novikontas.org, so none reach this list today.",
+    "rows": [
+      { "campaign": ["piemeri2026"], "label": "Piemēri Profesiju", "keepDetail": true },
+      { "campaign": ["", "(utm_campaign not set)"], "source": "ig", "medium": "social", "label": "Instagram (no campaign name)", "keepDetail": false }
+    ]
+  },
   "stageRoles": {
     "first": "New",
     "application": "Application",

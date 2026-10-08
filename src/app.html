@@ -5587,23 +5587,34 @@ async function cWebStats(range) {
   const chart = days.length ? `<div class="c-webdays" style="display:flex;align-items:flex-end;gap:2px;height:96px;margin:8px 0 4px">${days.map((x) =>
     `<i title="${esc(x.day)}: ${x.visits} visits${x.pageViews == null ? '' : ', ' + x.pageViews + ' page views'}" style="flex:1;min-width:2px;height:${Math.max(2, (x.visits / maxV) * 100)}%;background:var(--v-web);border-radius:2px 2px 0 0"></i>`).join('')}</div>
     <p class="c-sub">${esc(days[0].day)} to ${esc(days[days.length - 1].day)}</p>` : '';
-  const list = (title, rows, valueKey, sub) => {
-    const r = (rows || []).filter((x) => typeof x[valueKey] === 'number').slice(0, 6);
+  const list = (title, rows, valueKey, sub, named = (x) => x) => {
+    const r = (rows || []).filter((x) => typeof x[valueKey] === 'number').slice(0, 6).map((x) => named(x));   // one argument: map's index is not a rule list
     if (!r.length) return '';
     const max = Math.max(...r.map((x) => x[valueKey]));
     return `<section class="ksec"><div class="ksh"><h2>${title}</h2><span class="kt2">${sub}</span></div><div class="kbars">${r.map((x) =>
-      `<div class="kbar c-static" title="${esc(x.name)}${x.detail ? ' · ' + esc(x.detail) : ''}: ${x[valueKey]}"><span class="kbl">${esc(x.name)}${x.detail ? ` <span class="c-gap-soft">${esc(x.detail)}</span>` : ''}</span><span class="kbt"><i style="width:${Math.max(3, (x[valueKey] / max) * 100)}%;background:var(--v-web)"></i></span><b>${x[valueKey]}</b></div>`).join('')}</div></section>`;
+      `<div class="kbar c-static" title="${esc(x.raw || x.name)}${(x.raw ? x.rawDetail : x.detail) ? ' · ' + esc(x.raw ? x.rawDetail : x.detail) : ''}: ${x[valueKey]}"><span class="kbl">${esc(x.name)}${x.detail ? ` <span class="c-gap-soft">${esc(x.detail)}</span>` : ''}</span><span class="kbt"><i style="width:${Math.max(3, (x[valueKey] / max) * 100)}%;background:var(--v-web)"></i></span><b>${x[valueKey]}</b></div>`).join('')}</div></section>`;
   };
   const t = d.totals || {}; const pr = d.previous || {};
   const unit = C_WEB_RANGE.replace('d', ' days');
   const sr = d.search;
   el.innerHTML = head + `<div class="kstrip">${tileW('Visits', t.visits, pr.visits, unit)}${tileW('Page views', t.pageViews, pr.pageViews, unit)}</div>
     ${chart}
-    <div class="c-rgrid">${list('Came from', d.referrers, 'visitors', 'visitors')}${list('Campaign links', d.campaigns, 'visitors', 'visitors')}${list('Device', d.devices, 'visitors', 'visitors')}${list('Pages', d.pages, 'visitors', 'visitors')}</div>
+    <div class="c-rgrid">${list('Came from', d.referrers, 'visitors', 'visitors')}${list('Campaign links', d.campaigns, 'visitors', 'visitors', cCampaignName)}${list('Device', d.devices, 'visitors', 'visitors')}${list('Pages', d.pages, 'visitors', 'visitors')}</div>
     ${sr ? `<div class="kstrip">${tileW('Google clicks', sr.totals && sr.totals.clicks, sr.previous && sr.previous.clicks, unit)}${tileW('Google impressions', sr.totals && sr.totals.impressions, sr.previous && sr.previous.impressions, unit)}</div>
     <div class="c-rgrid">${list('Searched for', sr.queries, 'clicks', 'clicks')}</div>` : ''}`;
 }
 
+// Q83 (the owner, 08.10.2026): a campaign link reads as a plain name, from config.webCampaignNames only.
+// The raw SIS tag stays in the hover, so the figure still leads back to exactly what the SIS sent;
+// the count is never touched. A link no rule matches is returned as it came.
+function cCampaignName(x, rules = (CFG.webCampaignNames || {}).rows || []) {
+  const norm = (v) => String(v == null ? '' : v).trim().toLowerCase();
+  const [src, med] = String(x.detail || '').split('/').map(norm);
+  const hit = rules.find((r) => (r.campaign || []).map(norm).includes(norm(x.name))
+    && (r.source == null || norm(r.source) === src) && (r.medium == null || norm(r.medium) === med));
+  if (!hit) return x;
+  return { ...x, name: hit.label, detail: hit.keepDetail ? x.detail : null, raw: x.name, rawDetail: x.detail };
+}
 // Applications: the SIS funnel by REGISTRATION WEEK (popup A, 01.10.2026; src/applications.js).
 // The SIS sends each application's CURRENT status and no history, so a week is a cohort: who
 // registered then, and where they stand now. No week is drawn that nobody registered in, a value

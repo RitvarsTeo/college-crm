@@ -14,6 +14,15 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 08.10.2026 - Q83: campaign links read as plain names (COMMITTED, NOT DEPLOYED)
+
+PICKED by Ritvars 08.10 for patch 34 ("We now had Piemeri Profesiju, if utms are from there, then use that name." / "Yes, patch 34"), via MASTER CONTROL. Branch `feat/2026-10-08-q83-campaign-names`, cut from `2d385df`.
+
+| What | Status |
+|---|---|
+| Reports > Academy Application form > Campaign links: `utm_campaign=piemeri2026` reads "Piemēri Profesiju" (any source/medium, source/medium still shown); `ig / social` with no campaign reads "Instagram (no campaign name)". One table in `config.webCampaignNames`; every other row unchanged; counts unchanged; the raw SIS tag stays in the hover | BUILT |
+| Today 0 rows are Piemēri: its links point at piemeriprofesiju.novikontas.org, not apply. Nothing is relabelled without the tag | FACT |
+
 ## 07.10.2026 - Q75: the Contract stage is removed (COMMITTED, NOT DEPLOYED)
 
 DECIDED by Ritvars 07.10 (Q75, KISS list), via MASTER CONTROL. Branch `feat/2026-10-07-no-contract-s4`, cut from `f45340e`.
