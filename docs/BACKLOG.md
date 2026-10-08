@@ -16,8 +16,8 @@ this is a local prototype" stood here until 30.09.2026, from the weeks before th
 
 ## 08.10.2026 - Q78: the Inbox Source list shows every channel (PICKED 08.10: "All but without the count for now.")
 
-Through MASTER CONTROL. Branch ui/2026-10-08-q78-sources from release 2d385df (patch 33). Ships in the first patch after
-the switchover to Aigars's copy; production is frozen until then.
+Through MASTER CONTROL. Branch ui/2026-10-08-q78-sources from release 2d385df (patch 33). LIVE in patch 34 (record 7028b11,
+code 8e9be73), before the switchover: Ritvars changed the order on 08.10 (UI/UX first, one patch on our live app, then the move).
 
 | What | Status |
 |---|---|
