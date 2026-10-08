@@ -4112,7 +4112,8 @@ function cInboxPool() {
   // Q73 (the owner's pick 07.10.2026, "B chip"): one colour per source on the Inbox card; any other source is grey.
   // Email and Phone are the brand's blue and mustard; the rest passed the dataviz check (validate_palette.js, all
   // pairs, light and dark: normal-vision floor >= 15). The word is always on the chip, so colour is never alone.
-  const C_SRC_COLOUR = { email: '#29a8df', phone: '#E0A526', website: '#1baf7a', linkedin: '#7b5bd6', whatsapp: '#008300',
+  // real mail arrives as 'gmail' (the adapter's id, config/channels.json); 'email' is the older and simulated name
+  const C_SRC_COLOUR = { gmail: '#29a8df', email: '#29a8df', website_form: '#1baf7a', phone: '#E0A526', website: '#1baf7a', linkedin: '#7b5bd6', whatsapp: '#008300',
     facebook: '#a0662a', messenger: '#a0662a', instagram: '#d55181' };
   const card = (r) => {
     const open = C_LOPEN === r.id; const prog = D.val(r, 'interest');

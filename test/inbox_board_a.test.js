@@ -116,7 +116,7 @@ test('Q73: a tinted chip per source, light and dark, and the rail keeps its two 
   assert.equal(new Set(['email', 'phone', 'website', 'linkedin', 'whatsapp', 'facebook', 'instagram'].map((c) => ctx.C[c])).size, 7, 'seven different colours');
   // MASTER CONTROL, 07.10.2026: Email and Facebook can't both be blue. The set that passed validate_palette.js (all pairs,
   // light and dark, normal-vision floor 15.6); Email and Phone stay the brand's blue and mustard
-  assert.deepEqual({ ...ctx.C }, { email: '#29a8df', phone: '#E0A526', website: '#1baf7a', linkedin: '#7b5bd6', whatsapp: '#008300',
+  assert.deepEqual({ ...ctx.C }, { gmail: '#29a8df', email: '#29a8df', website_form: '#1baf7a', phone: '#E0A526', website: '#1baf7a', linkedin: '#7b5bd6', whatsapp: '#008300',
     facebook: '#a0662a', messenger: '#a0662a', instagram: '#d55181' });
   assert.match(APP, /html\.ui-c #view \.ib-ch\{[^}]*color:color-mix\(in srgb,var\(--src,#8a94a6\) 55%,#011111\)/, 'light chip text: 5.2:1 or better');
   assert.match(APP, /html\.ui-c #view \.ib-ch\{display:inline-flex;[^}]*border-radius:999px;[^}]*background:color-mix\(in srgb,var\(--src,#8a94a6\) 16%,transparent\)\}/);
@@ -129,4 +129,15 @@ test('Q73: the Help center says it in the same commit', () => {
   const q = HELP.faq.find((x) => x.id === 'source-colours');
   assert.match(q.a, /each source has its own colour/);
   assert.match(q.a, /The red or navy edge of the card still says whether it needs you\./);
+});
+
+// 08.10.2026: on production every real email showed a GREY chip - real mail arrives as 'gmail', and the list had only 'email'
+test('Q73: every real channel id from channels.json has its colour (gmail is Email)', () => {
+  const ctx = {}; vm.runInNewContext(APP.slice(APP.indexOf('const C_SRC_COLOUR = '), APP.indexOf('};', APP.indexOf('const C_SRC_COLOUR = ')) + 2) + '\nthis.C = C_SRC_COLOUR;', ctx);
+  const CH = JSON.parse(fs.readFileSync(path.join(path.dirname(path.dirname(fileURLToPath(import.meta.url))), 'config', 'channels.json'), 'utf8'));
+  for (const id of ['gmail', 'website', 'phone', 'linkedin', 'whatsapp', 'facebook', 'messenger', 'instagram']) {
+    assert.ok(CH.channels[id], id + ' is a real channel id');
+    assert.match(ctx.C[id] || '', /^#[0-9a-fA-F]{6}$/, id + ' has its colour');
+  }
+  assert.equal(ctx.C.gmail, ctx.C.email, 'Email is one colour, whatever the id');
 });
