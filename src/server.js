@@ -32,6 +32,7 @@ import * as sheets from './sheets.js';
 import * as snapshot from './snapshot.js';
 import { buildDemo } from './demo.js';
 import * as gate from './gate.js';
+import { redirectTarget } from './apporigin.js';
 import * as callpop from './callpop.js';
 import { moveCheck } from './stagemove.js';
 import { scopeRanges, rangesSql, yearsOf } from './yearscope.js';
@@ -902,6 +903,11 @@ async function openTask(id) {
 export const handle = async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
   const p = url.pathname;
+  // Q84: a PAGE asked for on an older address goes to the app's own address; /api/* never moves
+  // (src/apporigin.js). Before everything else, so sign-in always starts on the host it returns to.
+  const moveTo = redirectTarget({ method: req.method,
+    host: req.headers['x-forwarded-host'] || req.headers.host, url: req.url });
+  if (moveTo) { res.writeHead(308, { location: moveTo, 'cache-control': 'no-store' }); return res.end(); }
   try {
     // ------------------------------------------------------------- the door --
     // On a shared copy every page is behind one password. This is not sign-in:
