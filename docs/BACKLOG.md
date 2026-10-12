@@ -14,6 +14,20 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 12.10.2026 - Q89: the admissions sheet pulled into Intake (COMMITTED, NOT DEPLOYED)
+
+PICKED by Ritvars 12.10 (via MASTER CONTROL): "connect the drive link with the app. check if any new info comes in and update the app accordingly. Until you see that 100% leads are made in the app." Branch `feat/2026-10-12-q89-sheet-pull`, cut from `70ae487`.
+
+| What | Status |
+|---|---|
+| One-way, read-only pull of the "ADMISSIONS DATABASE" sheet (tabs NAV/ENG ADMISSIONS, OS/MTM ADMISSIONS, found by name) into Intake. Daily 06:00 UTC on the current plan + "Pull now" for admins | BUILT |
+| Access: edu@ approves `spreadsheets.readonly` once (same OAuth client, no new secret); refresh token encrypted in `sync_state 'sheet_oauth'`, apart from Gmail; only edu@ is kept | BUILT |
+| Match email -> phone tail -> unique name; ambiguous = counted, nothing written; no match = new person on the sheet's first-contact date, first channel `sheet` | BUILT |
+| Intake wins: a field changed by hand in Intake is never overwritten; notes appended to the timeline; the next action moves only the sheet's own step; stage forwards only, never closed by the pull | BUILT |
+| Admin page `/api/admin/sheet-pull` (Help center > For admins > Admissions sheet): by first-contact week, made in Intake vs sheet only (the pull or the 24.09 import) | BUILT |
+| To switch on: Google Cloud (Intake project) enable Google Sheets API + add `spreadsheets.readonly` to the consent screen; then an admin opens Admissions sheet > Connect and signs in as edu@ | NEXT |
+| Switch off when the weekly share reaches 100%: `config.sheetPull.on` = false | LATER |
+
 ## 08.10.2026 - Q78: the Inbox Source list shows every channel (PICKED 08.10: "All but without the count for now.")
 
 Through MASTER CONTROL. Branch ui/2026-10-08-q78-sources from release 2d385df (patch 33). LIVE in patch 34 (record 7028b11,

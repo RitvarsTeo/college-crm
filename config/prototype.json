@@ -713,6 +713,12 @@
       { "campaign": ["", "(utm_campaign not set)"], "source": "ig", "medium": "social", "label": "Instagram (no campaign name)", "keepDetail": false }
     ]
   },
+  "sheetPull": {
+    "on": true,
+    "spreadsheetId": "1M4fG1DzKlxT1WOxAZKbMy6cIq5PIsppc7EFf-687GP4",
+    "tabs": ["NAV/ENG ADMISSIONS", "OS/MTM ADMISSIONS"],
+    "_note": "Q89, the owner 12.10.2026: the ADMISSIONS DATABASE sheet (owner edu@) is pulled into Intake one way, read only, until 100% of leads are made in Intake; then 'on' goes false and the sheet can go. Only these two tabs are read, found by name without case or punctuation. src/sheetsync.js has the rules."
+  },
   "stageRoles": {
     "first": "New",
     "application": "Application",

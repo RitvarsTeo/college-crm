@@ -330,7 +330,8 @@ test('both poller routes exist and bundle what they need; the schedule waits for
   assert.deepEqual(vercel.crons, [{ path: '/api/cron/sis-sync', schedule: '0 5 * * *' },
     { path: '/api/cron/pbx-calls', schedule: '15 5 * * *' },
     { path: '/api/cron/gmail-poll', schedule: '30 5 * * *' },    // C3, 30.09.2026
-    { path: '/api/cron/lead-answers', schedule: '45 5 * * *' }]); // C2 + C7, 30.09.2026
+    { path: '/api/cron/lead-answers', schedule: '45 5 * * *' },   // C2 + C7, 30.09.2026
+    { path: '/api/cron/sheet-pull', schedule: '0 6 * * *' }]);    // Q89, 12.10.2026: the admissions sheet, once a day on Hobby
   for (const f of ['pbx-calls.js', 'sis-sync.js', 'gmail-poll.js']) {
     assert.ok(fs.existsSync(path.join(ROOT, 'api', 'cron', f)), f + ' must exist');
   }

@@ -66,6 +66,10 @@
     {
       "path": "/api/cron/lead-answers",
       "schedule": "45 5 * * *"
+    },
+    {
+      "path": "/api/cron/sheet-pull",
+      "schedule": "0 6 * * *"
     }
   ]
 }
