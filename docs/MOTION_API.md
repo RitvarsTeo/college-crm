@@ -1,7 +1,7 @@
 # Intake motion engine - the API for other lanes
 
 The owner picked **A everywhere** (07.10.2026: page moves, board actions, charts, and the small signals: "A, yes,
-lock in"). The engine is always A: SKOLA-expressive (the page opens out of the clicked thing, draw-on lines, things
+lock in"). The engine is always A: expressive (the page opens out of the clicked thing, draw-on lines, things
 arrive in reading order, curved flights, highlighter, sliding pill, ping), one moment at most 1.2 s, one page at a
 time. There is no switch. `prefers-reduced-motion: reduce` or a hidden tab = nothing moves. (The A/B demo lived on
 `demo/2026-10-07-motion-ab`; `motion.mode` is still `'a'` for the area files that read it.)

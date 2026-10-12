@@ -1,5 +1,5 @@
 /* INTAKE MOTION (Q65; the owner picked A everywhere, 07.10.2026: page moves, board actions, charts and the small
- * signals: "A, yes, lock in"). One engine, always on; it learned from his SKOLA deck: the arriving thing decelerates
+ * signals: "A, yes, lock in"). One engine, always on; it learned from his presentation deck: the arriving thing decelerates
  * into place, things arrive in reading order, every motion means something.
  *
  * Rules (docs/MOTION_API.md): once per arrival by a click, never on a reload or a redraw; a click / key / wheel
