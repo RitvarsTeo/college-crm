@@ -141,7 +141,7 @@ release `3ed52cf` (patch 30).
 
 ## 07.10.2026 - Q65 MOTION: A everywhere (LOCKED 07.10: "A, yes, lock in")
 
-Ritvars picked A (SKOLA-expressive) for every part, one by one on the demo (demo/2026-10-07-motion-ab, port 8879):
+Ritvars picked A (expressive) for every part, one by one on the demo (demo/2026-10-07-motion-ab, port 8879):
 page moves, board actions, charts, and last the small signals ("but A, yes, lock in"). Fixed on the way, at his word:
 smoother page changes (the arriving page eases out into place), never two page titles at once (the old page leaves
 first, ~110 ms, then the new one, ~300 ms), and the leaving page keeps its real tiles (no grey boxes).
@@ -4494,3 +4494,5 @@ above, the working underneath in word order. Worktree `crm-bench`, branch `ui/20
 | The Inbox links for the row, agreed with MAIN 07.10: `#/leads?reply=yes / none / known&from=YYYY-MM-DD&to=YYYY-MM-DD`; to = min(period end, the day before yesterday); MAIN reads state new + qualified, source provider, channel gmail/phone when reply is set. Not wired: parked with the row | PARKED 07.10 |
 | The full proposal, for when the row comes back (REPORTS, 07.10; work STOPPED by MASTER CONTROL the same day). One set S in both places: inbound rows with source = provider, channel gmail or phone, state new or qualified (made a lead stays in; filtered / archived out), arrival in the corner's years (the address carries no years) and inside from / to; MATURED on whole Riga days: counted = arrived on or before the day before yesterday, which replaces firstReply's instant cut (now - 24 h) so the address says it exactly. Words: reply=known (replied + no reply yet, the row's working "N"), yes (replied: "n", the dot and the track), none (no reply yet); to = min(period end, the day before yesterday); from = the Reports month start when a month is chosen. MAIN's side: listInbound({ state: 'new,qualified', source: 'provider', channels: ['gmail','phone'], from, to }) when reply is set. Proof: one test that gives identical id sets for yes / none / known through MAIN's list query and reports.js firstReply on the same database. None of it built | PARKED 07.10 (was SAID) |
 
+
+- 12.10.2026 (Ritvars, popup "Also the CRM docs"): the motion style "A, SKOLA-expressive" is renamed "A, expressive"; SKOLA was a presentation file name, never a label. Text only (docs/MOTION_API.md, this file, motion.js + motion-boards.js header comments); no behaviour change. Ships with the next release.

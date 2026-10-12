@@ -1,5 +1,5 @@
 /* INTAKE MOTION, THE BOARDS (Q65, MASTER CONTROL for the owner, 06-07.10.2026; branch motion/2026-10-07-boards).
- * Four moments for MAIN's areas, each in A (SKOLA-expressive) and B (calm), on top of src/assets/motion.js (the
+ * Four moments for MAIN's areas, each in A (expressive) and B (calm), on top of src/assets/motion.js (the
  * engine, docs/MOTION_API.md). This file WRAPS app functions; it never edits the app's code.
  *
  *   1. Journey board drag: the card lifts, the target column makes room, on drop the card travels into the column
