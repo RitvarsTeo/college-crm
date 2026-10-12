@@ -1969,7 +1969,8 @@ export const handle = async (req, res) => {
       if (!before) return json(res, 404, { error: 'not found' });
       // Decision 8: a person is never closed without a reason, and "Other" is not
       // a reason on its own.
-      if (b.status === 'Not proceeding') {
+      // Q86 (Admissions, 12.10.2026, "b) cold"): Cold is dormant, not a refusal, so it may go without a reason
+      if (b.status === 'Not proceeding' && !(b.closedTag === 'cold' && !b.reason)) {
         const allowed = CONFIG.closedReasons || [];
         if (!b.reason || !allowed.includes(b.reason)) {
           return json(res, 400, { error: 'A reason is required to stop working with somebody.', reasons: allowed });
@@ -1998,7 +1999,8 @@ export const handle = async (req, res) => {
       if (b.status === 'Admitted') await db.prepare('UPDATE people SET admitted_at = ? WHERE id = ?').run(now, id);
       await logEvent(db, { personId: id, kind: 'status', direction: 'note', at: now, origin: MANUAL,
         actor: await actorOf(req, b),
-        subject: `Status: ${before.status} -> ${b.status}` + (b.reason ? ` (${b.reason})` : ''),
+        subject: `Status: ${before.status} -> ${b.status}` + (b.status === 'Not proceeding' && b.closedTag === 'cold'
+          ? ` (Cold${b.reason ? ', ' + b.reason : ''})` : b.reason ? ` (${b.reason})` : ''),
         body: b.note || (b.reason ? '' : 'changed by hand'),
         field: 'status', oldValue: before.status, newValue: b.status });
       if (b.reason) await db.prepare('UPDATE people SET closed_reason = ?, closed_note = ? WHERE id = ?')

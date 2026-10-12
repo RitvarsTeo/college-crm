@@ -519,7 +519,7 @@ function sourceDetailOf(item) {
 }
 
 export async function qualify(db, id, { qualification, personId, createPerson, by, note,
-  confirmFields = [], stated = {}, nextAction, nextActionDue, differentPerson = false }) {
+  confirmFields = [], stated = {}, nextAction, nextActionDue, differentPerson = false, cold = null }) {
   const item = await db.prepare('SELECT * FROM inbound WHERE id = ?').get(id);
   if (!item) return { error: 'not found' };
   if (item.state !== 'new') return { error: 'this item has already been dealt with' };
@@ -548,7 +548,8 @@ export async function qualify(db, id, { qualification, personId, createPerson, b
   // The rule is that a person ENDS UP with a next step, not that every message
   // adds one. A later message about somebody who already has an open task must
   // not stack a second one, or a chatty applicant collects a pile of duplicates.
-  if (CFG.nextActionRequired && !String(nextAction || '').trim()) {
+  // Q86 (Admissions, 12.10.2026): Cold is the other answer to "what next" - the person is kept, closed as dormant
+  if (CFG.nextActionRequired && !cold && !String(nextAction || '').trim()) {
     const alreadyHasOne = personId
       ? (await db.prepare('SELECT COUNT(*) n FROM tasks WHERE person_id = ? AND done_at IS NULL').get(personId)).n > 0
       : false;
@@ -665,6 +666,18 @@ export async function qualify(db, id, { qualification, personId, createPerson, b
       .run(pid, String(nextAction).trim(), due, ownerFor(qualification), at);
     await logEvent(db, { personId: pid, kind: 'task', direction: 'note', at, origin: MANUAL, actor: by,
       subject: `Next step: ${nextAction}`, body: `due ${localDate(due)}, ${ownerFor(qualification)}` });
+  }
+
+  // Q86: Cold - closed as Not proceeding, tagged cold, a reason only if one of the list was given; what was planned closes
+  if (cold) {
+    const closed = CFG.stageRoles.closed || 'Not proceeding';
+    const reason = (CFG.closedReasons || []).includes(cold.reason) && !(CFG.closedReasonNeedsNote || []).includes(cold.reason) ? cold.reason : null;
+    const was = (await db.prepare('SELECT status FROM people WHERE id = ?').get(pid)).status;
+    await db.prepare('UPDATE people SET status = ?, closed_tag = ?, closed_reason = ? WHERE id = ?').run(closed, 'cold', reason, pid);
+    await db.prepare("UPDATE tasks SET done_at = ?, outcome = ? WHERE person_id = ? AND done_at IS NULL").run(at, `closed: the person is ${closed}`, pid);
+    await logEvent(db, { personId: pid, kind: 'status', direction: 'note', at, origin: MANUAL, actor: by,
+      subject: `Status: ${was} -> ${closed} (Cold${reason ? ', ' + reason : ''})`, body: '',
+      field: 'status', oldValue: was, newValue: closed });
   }
 
   if (item.channel === 'open_day') await registerOpenDay(db, id, { at });

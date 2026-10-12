@@ -14,6 +14,23 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 12.10.2026 - Q86 + Q87: next step = Follow up or Cold; the Journey list runs by date (Admissions feedback)
+
+Admissions, 12.10.2026: "pie next step - vajadzētu maksimāli tos vienkāršot, tīri uz a) follow up + uzlikt datumu, vai
+b) cold" and "Un tur, kur ir list - vajadzētu būt tā, ka tur leadi iet pēc datumiem, lai augšā vistuvākie datumi". The owner:
+"All Ievas feedback to be built and commited and deployed." Branch ui/2026-10-12-q86-q87-ieva from 70ae487 (patch 35).
+
+| What | Status |
+|---|---|
+| Q86: wherever a next step is chosen (the Inbox card, Done on Due and the person page, Choose next step, the Journey quick edit) there are two answers: Follow up, with a date that has to be set; or Cold, with a reason only if there is one | BUILT |
+| Cold = the existing dormant close: Not proceeding, tagged cold, what was planned closes with it; the History says "(Cold)". Make a lead can go straight to Cold. Cold needs no reason; every other close still needs one | BUILT |
+| "Follow up" is a step of every stage in config.nextActions. Steps planned earlier keep their names; nothing is deleted or hidden, the imported New people included | BUILT |
+| Done + Cold: how it went (outcome and note) is written on the close | BUILT |
+| Q87: the Journey List runs by the next-step date: overdue first (most days late on top), then today, then the coming dates; people with no date after them; Admitted and Not proceeding last. The same order as the Journey board's columns | BUILT |
+| Help: Inbox and Due boxes, FAQ "How do I choose a next step?" | BUILT |
+| test/next_step_follow_or_cold_q86.test.js runs the server (Follow up, Cold at Make a lead, Cold without a reason, Reject still needs one) and the list order; 9 older tests moved to the new picker | BUILT |
+| Seen running at 1440 (light, dark) and 375 (light, dark): `For review/2026-10-12 Q86 Q87 next step and list/` | BUILT |
+
 ## 08.10.2026 - Q78: the Inbox Source list shows every channel (PICKED 08.10: "All but without the count for now.")
 
 Through MASTER CONTROL. Branch ui/2026-10-08-q78-sources from release 2d385df (patch 33). LIVE in patch 34 (record 7028b11,
