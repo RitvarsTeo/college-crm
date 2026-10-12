@@ -158,7 +158,7 @@ test('the Done dialog drops the next-step row for a finished person', () => {
   // already finished is a control that does nothing when used: the server ignores nextLabel for
   // them, so she would pick one, press Save and nothing would be planned. The row goes instead.
   const open = APP.slice(APP.indexOf('function openComplete('), APP.indexOf('async function doComplete('));
-  assert.match(open, /\$\{done \? '' : `<div class="row2">/,
+  assert.match(open, /\$\{done \? '' : `<label>Next step<\/label>\$\{cNextPick\('c'\)\}`\}/,
     'the whole Next step / When row is drawn only when the person is NOT finished');
   // "No next step" is a real section name on Next Steps and a People filter value, so this checks
   // the dead OPTION and its constant, not the words.
@@ -167,10 +167,9 @@ test('the Done dialog drops the next-step row for a finished person', () => {
   assert.ok(!/<option value="" selected>/.test(open), 'the dropdown has no empty entry');
 
   const doComplete = APP.slice(APP.indexOf('async function doComplete('), APP.indexOf('function openReschedule('));
-  assert.match(doComplete, /const next = \$\('#cNext'\)/, 'it reads the field that may not be there');
-  assert.ok(!/const nextLabel = \$\('#cNext'\)\.value/.test(doComplete),
-    'never straight off a null element');
-  assert.match(doComplete, /!nextLabel && !finished/, 'an open lead still must keep a next step');
+  // Q86 (12.10.2026): the choice is Follow up or Cold; a finished person's dialog has no choice and nothing is read
+  assert.match(doComplete, /const pick = finished \? \{ kind: '' \} : cNextPickRead\('c'\);/, 'it never reads a choice that is not there');
+  assert.match(doComplete, /if \(!finished && !pick\.kind\)/, 'an open lead still must keep a next step');
 });
 
 // Found by measuring the dialog, not by reading it (30.09.2026). In dark, --card is a 5.5% white
@@ -234,7 +233,7 @@ test('IEVA-4 on Today: a finished person is not asked for a next step they canno
   // and the dialog still honours it
   const dlg = APP.slice(APP.indexOf('function openComplete('), APP.indexOf('\n}\n', APP.indexOf('function openComplete(')));
   assert.match(dlg, /const done = Boolean\(finished\)/);
-  assert.match(dlg, /\$\{done \? '' : `<div class="row2">/, 'the whole row goes, rather than an option that lies');
+  assert.match(dlg, /\$\{done \? '' : `<label>Next step<\/label>\$\{cNextPick\('c'\)\}`\}/, 'the whole row goes, rather than an option that lies');
 });
 
 // Ieva 30.09 10:23, the full message (pasted 02.10): "I changed the status, but he still shows for me

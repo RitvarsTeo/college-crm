@@ -50,23 +50,20 @@ test('Q72: the date field starts at the step\'s own default', () => {
   assert.equal(ctx.due(consult.label).slice(8, 10), ddmm(consult.days).slice(0, 2));
 });
 
-test('Q71 + Q72: the Inbox card has a due date that follows the step, and a note', () => {
+// Q86 (Admissions, 12.10.2026) replaced the step list on the card and in the dialogs with Follow up + a date, or Cold
+test('Q71 + Q72 under Q86: the Inbox card asks Follow up on a date or Cold, and keeps its note', () => {
   const form = fn('async function viewLeadsC(');
-  assert.match(form, /<select id="qNext" onchange="onNextActionChange\('qNext','qDue',''\)">\$\{nextActionOptionsWithSuggestion\(sugg\)\}<\/select><input id="qDue" type="date" value="\$\{cStepDue\(sugg\.label\)\}" aria-label="Due date">/);
+  assert.match(form, /<label>Next step<\/label>\s*\$\{cNextPick\('q'\)\}/);
   assert.match(form, /<label for="qNote">Note<\/label>\s*<textarea id="qNote" rows="2"><\/textarea>/);
   const q = fn('async function doQualify(');
-  assert.match(q, /const due = \(document\.querySelector\('#qDue'\) \|\| \{\}\)\.value \|\| '';/);
   assert.match(q, /\.\.\.\(nextAction && due \? \{ nextActionDue: due \+ 'T09:00:00\.000Z' \} : \{\}\)/, 'the same 09:00 the other date fields save');
   assert.match(q, /const note = \(document\.querySelector\('#qNote'\)/);
 });
 
-test('Q72: every other place a step is chosen has a date that follows the step', () => {
-  assert.match(APP, /<select id="pe-next" onchange="onNextActionChange\('pe-next','pe-ndue',''\)">/, 'Journey quick edit');
-  assert.match(fn('function openComplete('), /onNextActionChange\('cNext', 'cDate', 'cHint'\)/, 'Due and person page "Done"');
-  assert.match(fn('function openNewTask('), /onNextActionChange\('tLabel', 'tDate', 'tHint'\);/, '"Choose next step" opens on the default day');
-  const change = fn('function onNextActionChange(');
-  assert.match(change, /if \(!label\) return;/, '"No next step" leaves the date alone');
-  assert.match(change, /const hint = hintId && document\.querySelector/, 'a picker without a hint line');
+test('Q72 under Q86: every place a step is chosen asks for the date itself', () => {
+  assert.match(APP, /open \? `<label>Next step<\/label>\$\{cNextPick\('pe', true\)\}`/, 'Journey quick edit');
+  assert.match(fn('function openComplete('), /\$\{done \? '' : `<label>Next step<\/label>\$\{cNextPick\('c'\)\}`\}/, 'Due and person page "Done"');
+  assert.match(fn('function openNewTask('), /modal\('Next step', `\$\{cNextPick\('t'\)\}/, '"Choose next step"');
 });
 
 test('Q71 + Q72 on the server: the note is kept and the day staff set is the due day', async () => {
@@ -100,8 +97,7 @@ test('Q72 on the server: no day or a broken one = the step\'s default', async ()
 test('the Help center answers it in the same commit', () => {
   const HELP = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'help.json'), 'utf8'));
   const q = HELP.faq.find((x) => x.id === 'step-due');
-  assert.equal(q.q, 'When is a next step due?');
-  assert.match(q.a, /Call and establish interest · 1 day → /);
-  assert.match(q.a, /pick another day/);
+  assert.equal(q.q, 'How do I choose a next step?');
+  assert.match(q.a, /Follow up: pick the date, it is required\. Cold:/);
   assert.match(q.a, /In the Inbox you can add a note too\./);
 });

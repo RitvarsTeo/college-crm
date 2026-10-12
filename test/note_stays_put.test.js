@@ -52,7 +52,8 @@ async function plan(hash) {
   assert.ok(i > 0);
   const src = APP.slice(i, APP.indexOf('\n}\n', i) + 2);
   const calls = [];
-  const ctx = { location: { hash }, $: () => ({ value: 'x' }), post: async () => ({}),
+  const ctx = { location: { hash }, $: () => ({ value: 'x', innerHTML: '' }), post: async () => ({}), esc: (s) => String(s ?? ''),
+    cNextPickRead: () => ({ kind: 'follow', due: '2026-10-20' }), C_FOLLOW: 'Follow up', cGoCold: async () => ({}),   // Q86
     closeModal: () => {}, viewPerson: (id) => calls.push('person:' + id), route: () => calls.push('route') };
   vm.runInNewContext(src + '\nthis.go = doNewTask;', ctx);
   await ctx.go('p1');

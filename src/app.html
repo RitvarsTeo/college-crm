@@ -1366,6 +1366,12 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-form input,html.ui-c .c-form select,html.ui-c .c-form textarea{width:100%}
   html.ui-c .c-form .c-wide{grid-column:1/-1}
   html.ui-c .c-steprow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  /* Q86: two answers, each on its own row: Follow up + its date, Cold + an optional reason */
+  html.ui-c .c-np{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 12px;align-items:center;margin:4px 0}
+  html.ui-c .c-np-opt{display:flex;align-items:center;gap:8px;margin:0;font-size:14px;cursor:pointer;color:var(--ink)}
+  html.ui-c .c-np-opt input{width:auto;margin:0}
+  html.ui-c .c-np input[type=date],html.ui-c .c-np select{width:100%;margin:0}
+  html.ui-c .c-np input[type=date]:disabled{opacity:.45}
   html.ui-c .c-steprow > span{font-weight:600;color:var(--ink)}
   html.ui-c .c-steprow select{flex:1 1 240px;width:auto}
   html.ui-c .c-steprow input[type=date]{width:auto}
@@ -3811,6 +3817,8 @@ async function viewLeadsC() {
   const L = LAST_RESULT; LAST_RESULT = null;
   const receipt = !L ? '' : L.archived
     ? `<div class="c-filter">Set aside: <b>${esc(L.who)}</b>${L.reason ? ' · ' + esc(L.reason) : ''}. Nothing is deleted.</div>`
+    : L.status === ((CFG.stageRoles || {}).closed || 'Not proceeding')   // Q86: Cold from the card
+    ? `<div class="c-filter"><b>${esc(L.name)}</b> is Cold, kept on record${L.programme ? ' · ' + esc(L.programme) : ''}. <a href="#/person/${esc(L.id)}">Open</a></div>`
     : `<div class="c-filter"><b>${esc(L.name)}</b> is now in Admissions${L.status ? ' at ' + esc(L.status) : ''}${L.programme ? ' · ' + esc(L.programme) : ''}.${L.next ? ` Next: ${esc(L.next)}${L.dueAt ? ' by ' + fmtDate(L.dueAt) : ''}.` : ''} <a href="#/person/${esc(L.id)}">Open</a></div>`;
   const val = (r, f) => { const x = (r.fields || []).find((y) => y.field === f); return x ? x.value : ''; };
   // THE FORM ON THE CARD (Q62, the owner's pick A, 06.10.2026): Programme and Next step, then "Make a lead". The same
@@ -3820,15 +3828,14 @@ async function viewLeadsC() {
     const extracted = (r.fields || []).filter((f) => f.provenance === 'extracted');
     const read = (extracted.find((f) => f.field === 'interest') || {}).value || '';
     const others = extracted.filter((f) => f.field !== 'interest');
-    const sugg = suggestNextAction(r, read);
     return `<div class="ib-form" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter')event.stopPropagation()">
       <label for="qInterest">Programme</label>
       <select id="qInterest"><option value="">they have not said yet</option>${(CFG.programmes || []).map((pr) => `<option ${pr === read ? 'selected' : ''}>${esc(pr)}</option>`).join('')}</select>
       ${others.length ? `<label>Tick what else is right</label>${others.map((f) => `<label class="c-tick"><input type="checkbox" class="qConfirm" value="${esc(f.field)}" checked> <b>${esc(f.field)}</b> ${esc(f.value)}</label>`).join('')}` : ''}
       ${r.contact_email ? '' : `<label for="qEmail">Email</label><input id="qEmail" type="email" autocomplete="off">`}
       ${r.contact_phone ? '' : `<label for="qPhone">Phone</label><input id="qPhone" type="tel" autocomplete="off">`}
-      <label for="qNext">Next step</label>
-      <div class="c-steprow"><select id="qNext" onchange="onNextActionChange('qNext','qDue','')">${nextActionOptionsWithSuggestion(sugg)}</select><input id="qDue" type="date" value="${cStepDue(sugg.label)}" aria-label="Due date"></div>
+      <label>Next step</label>
+      ${cNextPick('q')}
       <label for="qNote">Note</label>
       <textarea id="qNote" rows="2"></textarea>
       <div id="qErr"></div>
@@ -4250,6 +4257,11 @@ function cDrawJourneyPool() {
     if (oF.kind === 'prog') list = list.filter((p) => (p.programme || '(not recorded)') === oF.key);
     if (oF.kind === 'chan') list = list.filter((p) => (p.source_channel || 'unknown') === oF.key);
   }
+  // Q87 (Admissions, 12.10.2026: "tur leadi iet pēc datumiem, lai augšā vistuvākie datumi"): the list runs by the next-step
+  // date - overdue first, then today, then the coming dates; people with no date after them, and the finished last.
+  // The Journey board's own order (cJSort), so the list and the columns never disagree.
+  list = cJSort(list, taskOf);
+  list = [...list.filter((p) => !C_TERMINAL.includes(p.status)), ...list.filter((p) => C_TERMINAL.includes(p.status))];
   const distinct = (key) => [...new Set(people.map((p) => p[key] || cNotSaid))];
   const progs = distinct('programme').sort((a, b) => ((CFG.programmes || []).indexOf(a) + 1 || 99) - ((CFG.programmes || []).indexOf(b) + 1 || 99) || a.localeCompare(b));
   const owners = [...new Set([...(CFG.owners || []), ...distinct('owner')])];
@@ -4371,7 +4383,7 @@ function cEditForm(p, t) {
     <div id="pe-closed" hidden><label for="pe-reason">Why are we stopping?</label><select id="pe-reason">${reasonsForStage(p.status).map((r) => `<option>${esc(r)}</option>`).join('')}</select><input id="pe-rnote" placeholder="Explanation (needed for Other)" style="margin-top:6px"><label style="margin-top:8px">And now?</label><div class="cltags">${(CFG.closedTags || []).map((x, i) => `<label class="cltag"><input type="radio" name="peTag" value="${esc(x.id)}"${i === 0 ? ' checked' : ''}><b>${esc(x.label)}</b><small>${esc(x.what)}</small></label>`).join('')}</div></div>
     <div class="c-wide c-step">${t
       ? `<label for="pe-due">Next step</label><div class="c-steprow"><span>${esc(cTask(t.label))}</span><input id="pe-due" type="date" value="${esc(cDay(t.due_at))}" aria-label="Due date"><button class="btn sm ghost" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, false, ${esc(JSON.stringify(String(p.id ?? '')))})">Done…</button></div>`
-      : open ? `<label for="pe-next">Next step</label><div class="c-steprow"><select id="pe-next" onchange="onNextActionChange('pe-next','pe-ndue','')"><option value="">No next step</option>${nextActionOptions(null, p.status)}</select><input id="pe-ndue" type="date" value="${cTodayIso()}" aria-label="Due date"></div>` : '<label>Next step</label>'}</div>
+      : open ? `<label>Next step</label>${cNextPick('pe', true)}` : '<label>Next step</label>'}</div>
     <div class="c-wide"><label for="pe-notes">Notes</label><textarea id="pe-notes" rows="4" oninput="this.nextElementSibling.textContent=this.value.length+' characters'">${esc(p.notes || '')}</textarea><div class="c-hint">${(p.notes || '').length} characters</div></div>
     <div id="pe-err" class="c-wide"></div>
     <div class="c-wide c-row-acts"><button class="btn" onclick="cSavePerson(${esc(JSON.stringify(String(p.id ?? '')))})">Save</button><button class="btn ghost" onclick="C_PEDIT=null;cEditRedraw()">Cancel</button><a class="btn ghost" href="#/person/${esc(p.id)}" style="margin-left:auto">Open person details →</a></div>
@@ -4394,10 +4406,14 @@ async function cSavePerson(id) {
     // Q15: asked BEFORE anything is saved, so a back move that is put back saves nothing at all
     const ask = st && st !== p.status && st !== cClosedStage() ? await cAskMoveNote(id, p.status, st) : { note: '' };
     if (!ask) return;
+    // Q86: a next step for somebody who had none - Follow up on its date, or Cold (which closes them, so the stage waits)
+    const pick = !t ? cNextPickRead('pe') : { kind: '' };
+    if (pick.error) return err(pick.error);
     if (Object.keys(patch).length) await post(`/api/people/${id}/edit`, patch);
-    if (st && st !== p.status) await post(`/api/people/${id}/status`, st === cClosedStage() ? { status: st, reason: v('#pe-reason'), note: v('#pe-rnote'), closedTag: (document.querySelector('input[name="peTag"]:checked') || {}).value || null } : cMoveBody(st, ask));
+    if (pick.kind === 'cold') await cGoCold(id, pick.reason);
+    else if (st && st !== p.status) await post(`/api/people/${id}/status`, st === cClosedStage() ? { status: st, reason: v('#pe-reason'), note: v('#pe-rnote'), closedTag: (document.querySelector('input[name="peTag"]:checked') || {}).value || null } : cMoveBody(st, ask));
     if (t) { const due = v('#pe-due'); if (due && due !== cDay(t.due_at)) await post(`/api/tasks/${Number(t.id)}/reschedule`, { due }); }
-    else { const label = v('#pe-next'); if (label) await post(`/api/people/${id}/task`, { label, due: v('#pe-ndue') }); }
+    else if (pick.kind === 'follow') await post(`/api/people/${id}/task`, { label: C_FOLLOW, due: pick.due });
     C_PEDIT = null; C_PMSG = `Saved ${p.name}.`;
     if (C_JP.view === 'board') await viewJourneyC(); else await viewJourneyPool();
     cNavCounts();
@@ -6591,6 +6607,37 @@ function nextActionOptions(selectedLabel, stage) {
 const cStepIn = (days) => (days ? `${days} day${days === 1 ? '' : 's'} → ${cDdMm(fmtDate(new Date(Date.now() + days * 86400000)))}` : 'today');
 // Q72: the date field starts at the step's own default; staff can set any other day
 const cStepDue = (label) => fmtDate(new Date(Date.now() + daysForAction(label) * 86400000));
+// Q86 (Admissions, 12.10.2026: "pie next step - vajadzētu maksimāli tos vienkāršot, tīri uz a) follow up + uzlikt datumu, vai
+// b) cold"). Wherever a next step is chosen there are two answers: Follow up, on a date that has to be set; or Cold, the
+// dormant close (Not proceeding, tagged cold) with a reason if there is one. Steps already planned keep their names.
+const C_FOLLOW = 'Follow up';
+const cColdReasons = () => (CFG.closedReasons || []).filter((r) => !(CFG.closedReasonNeedsNote || []).includes(r));
+function cNextPick(pfx, optional = false) {
+  const p = esc(JSON.stringify(String(pfx)));
+  return `<div class="c-np" role="radiogroup" aria-label="Next step">
+    <label class="c-np-opt"><input type="radio" name="${esc(pfx)}-np" value="follow"${optional ? '' : ' checked'} onchange="cNextPickSet(${p})"><b>Follow up</b></label>
+    <input id="${esc(pfx)}-date" type="date" min="${cTodayIso()}" aria-label="Follow-up date"${optional ? ' disabled' : ''}>
+    <label class="c-np-opt"><input type="radio" name="${esc(pfx)}-np" value="cold" onchange="cNextPickSet(${p})"><b>Cold</b></label>
+    <select id="${esc(pfx)}-reason" aria-label="Why cold, if you know" hidden><option value="">No reason</option>${cColdReasons().map((r) => `<option>${esc(r)}</option>`).join('')}</select>
+  </div>`;
+}
+function cNextPickSet(pfx) {
+  const on = document.querySelector(`input[name="${pfx}-np"]:checked`);
+  const date = document.querySelector('#' + pfx + '-date'), why = document.querySelector('#' + pfx + '-reason');
+  if (date) date.disabled = !on || on.value !== 'follow';
+  if (why) why.hidden = !on || on.value !== 'cold';
+}
+// { kind: '' } nothing chosen; { kind: 'follow', due } or an error when the date is missing; { kind: 'cold', reason }
+function cNextPickRead(pfx) {
+  const on = document.querySelector(`input[name="${pfx}-np"]:checked`);
+  if (!on) return { kind: '' };
+  if (on.value === 'cold') return { kind: 'cold', reason: (document.querySelector('#' + pfx + '-reason') || {}).value || '' };
+  const due = (document.querySelector('#' + pfx + '-date') || {}).value || '';
+  return due ? { kind: 'follow', due } : { kind: 'follow', error: 'Set the follow-up date.' };
+}
+// Cold, from any of the four places: the person is closed as Not proceeding, tagged cold; what was planned is closed
+const cGoCold = (personId, reason, note) => post(`/api/people/${personId}/status`,
+  { status: (CFG.stageRoles || {}).closed || 'Not proceeding', closedTag: 'cold', ...(reason ? { reason } : {}), ...(note ? { note } : {}) });
 function daysForAction(label) {
   for (const g of (CFG.nextActions || [])) for (const i of g.items) if (i.label === label) return i.days;
   return 2;
@@ -7331,7 +7378,11 @@ async function openQualify(id) {
 async function doQualify(id, opts = {}) {
   const confirmFields = [...document.querySelectorAll('.qConfirm:checked')].map(c => c.value);
   const interest = (document.querySelector('#qInterest') || {}).value || '';
-  const nextAction = (document.querySelector('#qNext') || {}).value || '';
+  // Q86: Follow up on a date, or Cold. The classic dialog still sends its own step (#qNext).
+  const pick = document.querySelector('input[name="q-np"]') ? cNextPickRead('q') : null;
+  if (pick && !pick.kind) { $('#qErr').innerHTML = '<div class="err">Choose Follow up or Cold.</div>'; return; }
+  if (pick && pick.error) { $('#qErr').innerHTML = `<div class="err">${esc(pick.error)}</div>`; return; }
+  const nextAction = pick ? (pick.kind === 'follow' ? C_FOLLOW : '') : (document.querySelector('#qNext') || {}).value || '';
   const qualification = interest ? 'lead' : 'unclear';
   const note = (document.querySelector('#qNote') || {}).value || '';
   // Q77: the contact the message did not carry (a caller's email, a writer's phone), typed on the card
@@ -7339,9 +7390,10 @@ async function doQualify(id, opts = {}) {
   const stated = { ...(interest ? { interest } : {}), ...(typed('#qEmail') ? { email: typed('#qEmail') } : {}),
     ...(typed('#qPhone') ? { phone: typed('#qPhone') } : {}) };
   // Q72: the day the person set; none = the step's default, worked out by the server
-  const due = (document.querySelector('#qDue') || {}).value || '';
+  const due = pick && pick.kind === 'follow' ? pick.due : (document.querySelector('#qDue') || {}).value || '';
   const body = { qualification, createPerson: true, note, confirmFields, nextAction,
-    ...(nextAction && due ? { nextActionDue: due + 'T09:00:00.000Z' } : {}), stated, ...opts };
+    ...(nextAction && due ? { nextActionDue: due + 'T09:00:00.000Z' } : {}),
+    ...(pick && pick.kind === 'cold' ? { cold: { reason: pick.reason } } : {}), stated, ...opts };
   try {
     const r = await post(`/api/intake/${id}/qualify`, body);
     closeModal();
@@ -8621,26 +8673,23 @@ function openComplete(taskId, label, finished, personId) {
     <label>Outcome</label>
     <select id="cOut">${(CFG.callOutcomes || ['Done']).map(o => `<option>${esc(o)}</option>`).join('')}</select>
     <label>Note</label><textarea id="cNote" rows="2"></textarea>
-    ${done ? '' : `<div class="row2">
-      <div><label>Next step (required)</label>
-        <select id="cNext" onchange="onNextActionChange('cNext','cDate','cHint')">${nextActionOptions(null, C_STAGE_OF.get(personId))}</select>
-        <div class="muted" id="cHint" style="font-size:12px;margin-top:4px"></div></div>
-      <div><label>When</label><input id="cDate" type="date" value="${todayStr()}"></div>
-    </div>`}
+    ${done ? '' : `<label>Next step</label>${cNextPick('c')}`}
     <div id="cErr"></div>
     <div style="margin-top:14px;display:flex;gap:8px"><button class="btn" onclick="doComplete(${taskId}, ${done})">Save</button>
     <button class="btn ghost" onclick="closeModal()">Cancel</button></div>`);
-  // the next-step row is not drawn for a finished person, so there is nothing to prime
-  if (!done) onNextActionChange('cNext', 'cDate', 'cHint');
+  C_DONE_PERSON = personId || null;
 }
+let C_DONE_PERSON = null;   // whose step Done is closing, for Cold
 async function doComplete(id, finished) {
-  // $('#cNext') does not exist for a finished person: the row is not in the dialog at all.
-  const next = $('#cNext');
-  const nextLabel = next ? next.value : '';
-  if (!nextLabel && !finished) { $('#cErr').innerHTML = '<div class="err">The next step is required.</div>'; return; }
+  // the next-step choice is not in the dialog for a finished person
+  const pick = finished ? { kind: '' } : cNextPickRead('c');
+  if (!finished && !pick.kind) { $('#cErr').innerHTML = '<div class="err">Choose Follow up or Cold.</div>'; return; }
+  if (pick.error) { $('#cErr').innerHTML = `<div class="err">${esc(pick.error)}</div>`; return; }
   try {
-    await post(`/api/tasks/${id}/complete`, { outcome: $('#cOut').value, note: $('#cNote').value,
-      ...(nextLabel ? { nextLabel, nextDate: $('#cDate').value } : {}) });
+    // Cold: how it went goes on the close; the step is closed with the person
+    if (pick.kind === 'cold' && C_DONE_PERSON) await cGoCold(C_DONE_PERSON, pick.reason, [$('#cOut').value, $('#cNote').value].filter(Boolean).join(': '));
+    else await post(`/api/tasks/${id}/complete`, { outcome: $('#cOut').value, note: $('#cNote').value,
+      ...(pick.kind === 'follow' ? { nextLabel: C_FOLLOW, nextDate: pick.due } : {}) });
     closeModal(); route();
   } catch (e) { $('#cErr').innerHTML = `<div class="err">${esc(e.message)}</div>`; }
 }
@@ -8652,16 +8701,17 @@ function openReschedule(id) {
 async function doReschedule(id) { await post(`/api/tasks/${id}/reschedule`, { due: $('#rDate').value }); closeModal(); route(); }
 
 function openNewTask(personId) {
-  modal('Add an action', `<label>Next step</label>
-    <select id="tLabel" onchange="onNextActionChange('tLabel','tDate','tHint')">${nextActionOptions(null, C_STAGE_OF.get(personId))}</select>
-    <div class="muted" id="tHint" style="font-size:12px;margin-top:4px"></div>
-    <label>Due</label><input id="tDate" type="date" value="${todayStr()}">
-    <div style="margin-top:14px;display:flex;gap:8px"><button class="btn" onclick="doNewTask('${personId}')">Save</button>
+  modal('Next step', `${cNextPick('t')}<div id="tErr"></div>
+    <div style="margin-top:14px;display:flex;gap:8px"><button class="btn" onclick="doNewTask(${esc(JSON.stringify(String(personId ?? '')))})">Save</button>
     <button class="btn ghost" onclick="closeModal()">Cancel</button></div>`);
-  onNextActionChange('tLabel', 'tDate', 'tHint');
 }
 async function doNewTask(personId) {
-  await post(`/api/people/${personId}/task`, { label: $('#tLabel').value, due: $('#tDate').value });
+  const pick = cNextPickRead('t');
+  if (pick.error || !pick.kind) { $('#tErr').innerHTML = `<div class="err">${esc(pick.error || 'Choose Follow up or Cold.')}</div>`; return; }
+  try {
+    if (pick.kind === 'cold') await cGoCold(personId, pick.reason);
+    else await post(`/api/people/${personId}/task`, { label: C_FOLLOW, due: pick.due });
+  } catch (e) { $('#tErr').innerHTML = `<div class="err">${esc(e.message)}</div>`; return; }
   closeModal();
   if (String(location.hash).startsWith('#/person/')) viewPerson(personId); else route();   // stay where it was planned
 }
