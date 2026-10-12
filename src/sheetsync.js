@@ -21,9 +21,13 @@ import { sheetDay, rowsOf, readTab, accessToken, loadSheetToken, tabTitles, same
 import { rigaWeek } from './applications.js';
 
 export const ACTOR = 'Admissions sheet';
-export const SHEET_TASK = 'Sheet: next action';
-// the step the 24.09 one-time import made; it is the sheet's too
-const SHEET_TASKS = [SHEET_TASK, 'Get in touch (from the sheet)'];
+// The sheet's Next action date is a Follow-up step with that date (Q86, MASTER CONTROL 12.10). The label comes from
+// config.sheetPull.stepLabel; the pull knows ITS step by id (sheet_rows.task_id), never by the label, so a Follow-up
+// somebody made in Intake is never moved.
+export const SHEET_TASK = 'Follow-up';
+const stepLabel = (cfg) => ((cfg && cfg.sheetPull && cfg.sheetPull.stepLabel) || SHEET_TASK);
+// the step the 24.09 one-time import made: the sheet's own, so it is taken over the first time
+const OLD_IMPORT_TASK = 'Get in touch (from the sheet)';
 const TAIL = 8;
 
 // The old import's mapping (import_sheet.py), Contract gone since Q75.
@@ -88,7 +92,13 @@ const ORDER = ['New', 'Contacted', 'Follow-up', 'Application', 'Admitted'];
 
 async function applyToPerson(db, pid, x, before, at, stats, cfg) {
   const p = await db.prepare('SELECT * FROM people WHERE id = ?').get(pid);
-  if (!p) return;
+  let taskId = before ? before.task_id : null;
+  if (!p) return taskId;
+  // the first time a row meets a person who was already here, the timeline says where it came from
+  if (!before) {
+    await logEvent(db, { personId: pid, kind: 'note', direction: 'note', at, origin: AUTOMATIC, actor: ACTOR,
+      subject: 'Linked to the admissions sheet', body: `${x.tab || 'the sheet'}${x.line ? ', row ' + x.line : ''}` });
+  }
   const since = before ? before.seen_at : null;
   const last = before ? JSON.parse(before.applied || '{}') : {};
   const changed = (k) => (x[k] ?? null) !== (last[k] ?? null);
@@ -115,24 +125,32 @@ async function applyToPerson(db, pid, x, before, at, stats, cfg) {
     await logEvent(db, { personId: pid, kind: 'note', direction: 'note', at, origin: AUTOMATIC, actor: ACTOR, subject: 'From the sheet', body });
     stats.notes++;
   }
-  // the next action date moves the sheet's own step only; a step made in Intake is never touched
+  // the next action date moves the sheet's own Follow-up only; a step made in Intake is never touched
   if (x.nextDay && changed('nextDay') && !(cfg.terminalStages || []).includes(p.status)) {
     const open = await db.prepare('SELECT id, label FROM tasks WHERE person_id = ? AND done_at IS NULL').all(pid);
-    const mine = open.find((t) => SHEET_TASKS.includes(t.label));
-    if (mine) { await db.prepare('UPDATE tasks SET due_at = ? WHERE id = ?').run(at9(x.nextDay), mine.id); stats.steps++; }
-    else if (!open.length) {
-      await db.prepare('INSERT INTO tasks (person_id,label,due_at,owner,created_at) VALUES (?,?,?,?,?)')
-        .run(pid, SHEET_TASK, at9(x.nextDay), p.owner || 'Admissions', at);
+    const mine = open.find((t) => taskId != null && Number(t.id) === Number(taskId)) || open.find((t) => t.label === OLD_IMPORT_TASK);
+    if (mine) {
+      await db.prepare('UPDATE tasks SET due_at = ?, label = ? WHERE id = ?').run(at9(x.nextDay), stepLabel(cfg), mine.id);
+      taskId = mine.id; stats.steps++;
+    } else if (!open.length) {
+      taskId = await addStep(db, pid, stepLabel(cfg), at9(x.nextDay), p.owner || 'Admissions', at);
       stats.steps++;
     } else stats.keptIntake++;
   }
+  return taskId;
+}
+
+async function addStep(db, pid, label, due, owner, at) {
+  await db.prepare('INSERT INTO tasks (person_id,label,due_at,owner,created_at) VALUES (?,?,?,?,?)').run(pid, label, due, owner, at);
+  const r = await db.prepare('SELECT id FROM tasks WHERE person_id = ? AND label = ? AND due_at = ? AND done_at IS NULL ORDER BY id DESC').get(pid, label, due);
+  return r ? r.id : null;
 }
 
 const fromOldImport = async (db, pid) => Number((await db.prepare(`SELECT COUNT(*) n FROM events WHERE person_id = ? AND actor = ?`)
   .get(pid, OLD_IMPORT)).n) > 0;
 export const OLD_IMPORT = 'ADMISSIONS DATABASE';
 
-async function createPerson(db, x, at) {
+async function createPerson(db, x, at, cfg) {
   const id = newPersonId();
   const created = at9(x.firstDay);                           // the sheet's own date; no date stays no date
   await db.prepare(`INSERT INTO people (id,name,email,phone,programme,education,status,owner,source_channel,source_detail,
@@ -140,9 +158,8 @@ async function createPerson(db, x, at) {
     x.education, x.stage || 'New', 'Admissions', x.source_channel, x.source_detail, created, 'sheet', 'lead');
   await logEvent(db, { personId: id, kind: 'create', direction: 'in', at: created || at, origin: AUTOMATIC, actor: ACTOR,
     subject: 'Created from the admissions sheet', body: [x.status ? 'Status: ' + x.status : null, x.notes].filter(Boolean).join(' | ') || null });
-  if (x.nextDay) await db.prepare('INSERT INTO tasks (person_id,label,due_at,owner,created_at) VALUES (?,?,?,?,?)')
-    .run(id, SHEET_TASK, at9(x.nextDay), 'Admissions', at);
-  return id;
+  const taskId = x.nextDay ? await addStep(db, id, stepLabel(cfg), at9(x.nextDay), 'Admissions', at) : null;
+  return { id, taskId };
 }
 
 /** One pass over the rows of the sheet's live tabs. Pure on the db; the rows come from the caller. */
@@ -152,7 +169,7 @@ export async function applyRows(db, tabs, { now = new Date(), cfg = {}, edu } = 
   const seen = new Set();
   for (const { tab, rows } of tabs) {
     for (const r of rows) {
-      const x = readRow(r, edu);
+      const x = { ...readRow(r, edu), tab, line: r.line };
       const key = rowKey(x);
       if (seen.has(tab + key)) continue;                     // the same person twice in one tab: the first row
       seen.add(tab + key);
@@ -160,20 +177,22 @@ export async function applyRows(db, tabs, { now = new Date(), cfg = {}, edu } = 
       const before = await db.prepare('SELECT * FROM sheet_rows WHERE tab = ? AND row_key = ?').get(tab, key);
       let pid = before && before.person_id && (await db.prepare('SELECT id FROM people WHERE id = ?').get(before.person_id)) ? before.person_id : null;
       let made = before ? Number(before.created_person) : 0;
+      let taskId = before ? before.task_id : null;
       if (!pid) {
         const m = await match(db, x);
         if (m && m.many) { stats.needsPerson++; continue; }
         // a person the 24.09 one-time import made is a sheet person too, not one made in Intake
         if (m) { pid = m.id; made = (await fromOldImport(db, pid)) ? 1 : 0; stats.linked++; }
-        else { pid = await createPerson(db, x, at); made = 1; stats.created++; }
+        else { const c = await createPerson(db, x, at, cfg); pid = c.id; taskId = c.taskId; made = 1; stats.created++; }
       }
-      const applied = JSON.stringify(x);
+      const { tab: _t, line: _l, ...said } = x;               // the row's place is not what it says
+      const applied = JSON.stringify(said);
       if (before && before.applied === applied && before.person_id === pid) { stats.unchanged++; }
-      else if (!(made && !before)) await applyToPerson(db, pid, x, before, at, stats, cfg);
-      await db.prepare(`INSERT INTO sheet_rows (tab, row_key, person_id, applied, created_person, first_day, seen_at)
-        VALUES (?,?,?,?,?,?,?) ON CONFLICT (tab, row_key) DO UPDATE SET person_id = excluded.person_id, applied = excluded.applied,
-        created_person = excluded.created_person, first_day = excluded.first_day, seen_at = excluded.seen_at`)
-        .run(tab, key, pid, applied, made, x.firstDay, at);
+      else if (!(made && !before)) taskId = await applyToPerson(db, pid, x, before, at, stats, cfg);
+      await db.prepare(`INSERT INTO sheet_rows (tab, row_key, person_id, applied, created_person, first_day, task_id, seen_at)
+        VALUES (?,?,?,?,?,?,?,?) ON CONFLICT (tab, row_key) DO UPDATE SET person_id = excluded.person_id, applied = excluded.applied,
+        created_person = excluded.created_person, first_day = excluded.first_day, task_id = excluded.task_id, seen_at = excluded.seen_at`)
+        .run(tab, key, pid, applied, made, x.firstDay, taskId, at);
     }
   }
   return stats;

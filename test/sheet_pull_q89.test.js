@@ -110,7 +110,7 @@ test('the stage: forwards only, REJECT never closes anybody, a hand move in Inta
   assert.equal((await person(db, 'f')).status, 'Application', 'never backwards');
   assert.equal((await person(db, 'r')).status, 'Contacted', 'REJECT is a person\'s decision with a reason');
   assert.equal((await person(db, 'h')).status, 'New', 'moved by hand in Intake: it stays');
-  const note = await db.prepare("SELECT body FROM events WHERE person_id = 'r' AND kind = 'note'").get();
+  const note = await db.prepare("SELECT body FROM events WHERE person_id = 'r' AND kind = 'note' AND subject = 'From the sheet'").get();
   assert.match(note.body, /Status: REJECTED/, 'but the sheet\'s word is on the timeline');
   assert.equal(stageOf('HOT', 'in process'), 'Application');
   assert.equal(stageOf('whatever'), null);
@@ -123,7 +123,7 @@ test('notes are appended to the timeline, never written over what Intake holds',
   await applyRows(db, [tab([{ name: 'N', email: 'n@x.lv', notes: 'first' }])], opts);
   await applyRows(db, [tab([{ name: 'N', email: 'n@x.lv', notes: 'second' }])], { ...opts, now: new Date('2026-10-12T11:00:00Z') });
   assert.equal((await person(db, 'n')).notes, 'typed in Intake');
-  const notes = await db.prepare("SELECT body FROM events WHERE person_id = 'n' AND kind = 'note' ORDER BY id").all();
+  const notes = await db.prepare("SELECT body FROM events WHERE person_id = 'n' AND kind = 'note' AND subject = 'From the sheet' ORDER BY id").all();
   assert.deepEqual(notes.map((x) => x.body), ['first', 'second']);
 });
 
@@ -207,4 +207,35 @@ test('Help center: the admin group links the sheet page, behind the admin check'
   const i = APP.indexOf('async function cHelpAdmin()');
   const admin = APP.slice(i, APP.indexOf('\n}\n', i));
   assert.ok(admin.indexOf('href="/api/admin/sheet-pull"') > admin.indexOf('isAdmin()'));
+});
+
+test('Q86 alignment: the next action is a Follow-up step; an Intake-made Follow-up (same label) is never moved', async () => {
+  const db = await openDb(':memory:');
+  assert.equal(CFG.sheetPull.stepLabel, 'Follow-up');
+  await add(db, 'mine', { email: 'mine@x.lv' }); await add(db, 'theirs', { email: 'theirs@x.lv' });
+  await db.prepare(`INSERT INTO tasks (person_id,label,due_at,owner,created_at) VALUES ('theirs','Follow-up','2026-10-20T06:00:00.000Z','Admissions','2026-10-10')`).run();
+  await applyRows(db, [tab([{ name: 'M', email: 'mine@x.lv', next: '13/10/2026' }, { name: 'T', email: 'theirs@x.lv', next: '13/10/2026' }])], opts);
+  await applyRows(db, [tab([{ name: 'M', email: 'mine@x.lv', next: '16/10/2026' }, { name: 'T', email: 'theirs@x.lv', next: '16/10/2026' }])], { ...opts, now: new Date('2026-10-12T11:00:00Z') });
+  const t = (id) => db.prepare('SELECT label, due_at FROM tasks WHERE person_id = ? AND done_at IS NULL').all(id);
+  assert.deepEqual((await t('mine')).map((x) => [x.label, x.due_at]), [['Follow-up', '2026-10-16T06:00:00.000Z']], 'its own Follow-up, moved');
+  assert.deepEqual((await t('theirs')).map((x) => [x.label, x.due_at]), [['Follow-up', '2026-10-20T06:00:00.000Z']], 'the Intake one, untouched');
+});
+
+test('the old import\'s step is the sheet\'s: taken over as a Follow-up with the sheet\'s date', async () => {
+  const db = await openDb(':memory:');
+  await add(db, 'o', { email: 'o@x.lv' });
+  await db.prepare(`INSERT INTO tasks (person_id,label,due_at,owner,created_at) VALUES ('o','Get in touch (from the sheet)','2026-03-01T06:00:00.000Z','Admissions','2026-09-24')`).run();
+  await applyRows(db, [tab([{ name: 'O', email: 'o@x.lv', next: '14/10/2026' }])], opts);
+  const t = await db.prepare("SELECT label, due_at FROM tasks WHERE person_id = 'o' AND done_at IS NULL").all();
+  assert.deepEqual(t.map((x) => [x.label, x.due_at]), [['Follow-up', '2026-10-14T06:00:00.000Z']]);
+});
+
+test('the timeline says the row came from the sheet: once, with the tab and the row', async () => {
+  const db = await openDb(':memory:');
+  await add(db, 'l', { email: 'l@x.lv' });
+  await applyRows(db, [tab([{ name: 'L', email: 'l@x.lv' }])], opts);
+  await applyRows(db, [tab([{ name: 'L', email: 'l@x.lv', notes: 'later' }])], { ...opts, now: new Date('2026-10-12T11:00:00Z') });
+  const ev = await db.prepare("SELECT subject, body, actor FROM events WHERE person_id = 'l' AND subject = 'Linked to the admissions sheet'").all();
+  assert.equal(ev.length, 1);
+  assert.deepEqual([ev[0].body, ev[0].actor], ['NAV/ENG ADMISSIONS, row 3', 'Admissions sheet']);
 });

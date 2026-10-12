@@ -448,6 +448,7 @@ CREATE TABLE IF NOT EXISTS sheet_rows (
   applied TEXT,                  -- the row as Intake read it last time (JSON)
   created_person INTEGER NOT NULL DEFAULT 0,  -- 1 = the sheet made this person (the pull or the 24.09 import)
   first_day TEXT,                -- the sheet's first-contact day, YYYY-MM-DD
+  task_id INTEGER,               -- the Follow-up step this row made: the only step the pull ever moves
   seen_at TEXT NOT NULL,
   PRIMARY KEY (tab, row_key)
 );
