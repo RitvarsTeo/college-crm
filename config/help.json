@@ -191,7 +191,7 @@
     {
       "id": "linkedin-leads",
       "q": "Where do LinkedIn leads come from?",
-      "a": "From LinkedIn lead forms, once an admin has pressed Subscribe leads on the LinkedIn channel (Channels, LinkedIn). Each lead lands in the Inbox as LinkedIn, and its answers fill in a few seconds later, dropdowns included. A lead withdrawn on LinkedIn is never added: if we already know the person, it is noted on their history."
+      "a": "From LinkedIn lead forms on the Novikontas Academy page (and ad forms, when an ad account is set), once an admin has pressed Subscribe leads on the LinkedIn channel (Channels, LinkedIn). Each lead lands in the Inbox as LinkedIn, and its answers fill in a few seconds later, dropdowns included. A lead withdrawn on LinkedIn is never added: if we already know the person, it is noted on their history."
     },
     {
       "id": "whatsapp-academy",

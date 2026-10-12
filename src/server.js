@@ -1419,20 +1419,25 @@ export const handle = async (req, res) => {
       }
 
       // B1 (07.10.2026): LinkedIn Lead Sync is subscribed by an API call, per owner, never in LinkedIn's own screens.
-      // Admins only. The ad account only (SPONSORED): no company-page subscription (MASTER CONTROL's GO, 07.10.2026;
-      // Novikontas has no LinkedIn lead forms yet). The answer is kept in one line for the Channels screen; the token
-      // never leaves the server.
+      // Admins only. Q88 (12.10.2026, picked "A: Page forms"): the lead forms live on the Novikontas Academy PAGE, so the
+      // organization owner (LINKEDIN_ORGANIZATION_ID, leadType COMPANY: "leads collected from a company page", Lead Sync
+      // docs) is subscribed; the ad account (LINKEDIN_AD_ACCOUNT_ID, SPONSORED) only when that is set too. The answer is
+      // kept in one line for the Channels screen; the token never leaves the server.
       if (req.method === 'POST' && id === 'linkedin' && action === 'subscribe') {
         if (!auth.canEnableChannel(me.role)) return refuseNotAdmin(res);
+        const org = String(process.env.LINKEDIN_ORGANIZATION_ID || '').replace(/\D/g, '');
         const acct = String(process.env.LINKEDIN_AD_ACCOUNT_ID || '').replace(/\D/g, '');
-        if (!acct) return json(res, 409, { error: 'LINKEDIN_AD_ACCOUNT_ID is not set: the ad account number from Campaign Manager' });
-        const owners = [{ owner: { sponsoredAccount: 'urn:li:sponsoredAccount:' + acct }, leadType: 'SPONSORED' }];
+        if (!org && !acct) return json(res, 409, { error: 'LINKEDIN_ORGANIZATION_ID is not set: the number of the Novikontas Academy page' });
+        const owners = [];
+        if (org) owners.push({ owner: { organization: 'urn:li:organization:' + org }, leadType: 'COMPANY' });
+        if (acct) owners.push({ owner: { sponsoredAccount: 'urn:li:sponsoredAccount:' + acct }, leadType: 'SPONSORED' });
         const webhook = CHANNELS.channels.linkedin.publicWebhook;
         let results = null, line, ok;
         try {
           results = await subscribeLinkedInLeads({ webhook, owners });
           ok = true;
-          line = results.every((r) => r.already) ? 'Already subscribed' : 'Subscribed';
+          line = (results.every((r) => r.already) ? 'Already subscribed' : 'Subscribed')
+            + ' (' + [org && 'page', acct && 'ad account'].filter(Boolean).join(' and ') + ')';
         } catch (err) {
           ok = false;
           line = err instanceof LeadFetchError ? err.message : 'The subscription failed';

@@ -1,6 +1,6 @@
 // LinkedIn Lead Sync, approved 07.10.2026 (app 264939930, Standard Tier). Checked against Microsoft Learn the same day:
 //   B1  a lead webhook is subscribed by an API call, POST /rest/leadNotifications, per OWNER (the ad account, leadType
-//       SPONSORED; a company page, COMPANY) - "webhook subscriptions must be created via the Lead Notification
+//       SPONSORED; the company page, COMPANY - the one Intake uses since Q88, 12.10.2026) - "webhook subscriptions must be created via the Lead Notification
 //       Subscriptions API and cannot be created via the UI". An admin presses Subscribe leads; we make the call.
 //   B2  a multiple-choice answer arrives as option ids; the text is on the form's question.
 //   B3  leadAction DELETED (somebody withdrew) is never a new Inbox row.
@@ -116,19 +116,63 @@ test('B1: Subscribe leads makes the owner-level call once, admins only, and the 
   assert.doesNotMatch(JSON.stringify(ch), new RegExp(TOKEN), 'the token never comes back');
 });
 
-test('B1: the ad account only, never the company page; no ad account says what is missing', async (t) => {
+// Q88 (12.10.2026, picked "A: Page forms"): the forms live on the Novikontas Academy PAGE (urn:li:organization:104299650).
+const PAGE = '104299650';
+const pageLead = (id, action = 'CREATED', at = 1791363600000) => ({ ...lead(id, action, at),
+  owner: { organization: 'urn:li:organization:' + PAGE }, leadType: 'COMPANY' });
+
+test('Q88: the page alone subscribes the organization owner (COMPANY), once; nothing set says what is missing', async (t) => {
   const li = await fakeLinkedIn();
-  const s = await start({ LINKEDIN_API_BASE: li.base, LINKEDIN_AD_ACCOUNT_ID: '', LINKEDIN_ORGANIZATION_ID: '5622087' });
+  const s = await start({ LINKEDIN_API_BASE: li.base, LINKEDIN_AD_ACCOUNT_ID: '', LINKEDIN_ORGANIZATION_ID: PAGE });
   t.after(() => { s.child.kill(); li.server.close(); });
-  const r = await fetch(s.base + '/api/admin/channels/linkedin/subscribe', { method: 'POST', headers: ADMIN, body: '{}' });
-  assert.equal(r.status, 409);
-  assert.match((await r.json()).error, /LINKEDIN_AD_ACCOUNT_ID/);
-  assert.equal(li.seen.posts.length, 0, 'an organization id alone subscribes nothing');
+  const url = s.base + '/api/admin/channels/linkedin/subscribe';
+  assert.equal((await fetch(url, { method: 'POST', headers: USER, body: '{}' })).status, 403, 'admins only');
+  const r = await fetch(url, { method: 'POST', headers: ADMIN, body: '{}' }).then((x) => x.json());
+  assert.equal(r.ok, true, JSON.stringify(r));
+  assert.deepEqual(li.seen.posts, [{ webhook: WEBHOOK, owner: { organization: 'urn:li:organization:' + PAGE }, leadType: 'COMPANY' }]);
+  assert.equal(r.line, 'Subscribed (page)');
+  const again = await fetch(url, { method: 'POST', headers: ADMIN, body: '{}' }).then((x) => x.json());
+  assert.equal(again.line, 'Already subscribed (page)');
+  assert.equal(li.seen.posts.length, 1, 'a second press does not make a second subscription');
+  assert.ok(li.seen.gets.some((g) => g === 'GET /rest/leadNotifications'), 'asked LinkedIn first');
+
   const li2 = await fakeLinkedIn();
-  const s2 = await start({ LINKEDIN_API_BASE: li2.base, LINKEDIN_AD_ACCOUNT_ID: '520866471', LINKEDIN_ORGANIZATION_ID: '5622087' });
+  const s2 = await start({ LINKEDIN_API_BASE: li2.base, LINKEDIN_AD_ACCOUNT_ID: '', LINKEDIN_ORGANIZATION_ID: '' });
   t.after(() => { s2.child.kill(); li2.server.close(); });
-  await fetch(s2.base + '/api/admin/channels/linkedin/subscribe', { method: 'POST', headers: ADMIN, body: '{}' });
-  assert.deepEqual(li2.seen.posts.map((p) => [Object.keys(p.owner)[0], p.leadType]), [['sponsoredAccount', 'SPONSORED']]);
+  const none = await fetch(s2.base + '/api/admin/channels/linkedin/subscribe', { method: 'POST', headers: ADMIN, body: '{}' });
+  assert.equal(none.status, 409);
+  assert.match((await none.json()).error, /LINKEDIN_ORGANIZATION_ID/);
+  assert.equal(li2.seen.posts.length, 0);
+});
+
+test('Q88: page and ad account both set: both owners, each with its own lead type', async (t) => {
+  const li = await fakeLinkedIn();
+  const s = await start({ LINKEDIN_API_BASE: li.base, LINKEDIN_AD_ACCOUNT_ID: '520866471', LINKEDIN_ORGANIZATION_ID: PAGE });
+  t.after(() => { s.child.kill(); li.server.close(); });
+  const r = await fetch(s.base + '/api/admin/channels/linkedin/subscribe', { method: 'POST', headers: ADMIN, body: '{}' }).then((x) => x.json());
+  assert.deepEqual(li.seen.posts.map((p) => [Object.keys(p.owner)[0], p.leadType]), [['organization', 'COMPANY'], ['sponsoredAccount', 'SPONSORED']]);
+  assert.equal(r.line, 'Subscribed (page and ad account)');
+});
+
+test('Q88: a page-form lead lands in the Inbox like an ad lead, dropdowns as text; withdrawn is never a row', async (t) => {
+  const li = await fakeLinkedIn();
+  const s = await start({ LINKEDIN_API_BASE: li.base, LINKEDIN_ORGANIZATION_ID: PAGE });
+  t.after(() => { s.child.kill(); li.server.close(); });
+  const gone = await notify(s, pageLead('pg-0', 'DELETED', 1791363500000));
+  assert.equal(gone.status, 200);
+  assert.equal((await fetch(s.base + '/api/intake?state=new', { headers: USER }).then((x) => x.json())).rows.length, 0, 'DELETED never a row');
+  const r = await notify(s, pageLead('pg-1'));
+  assert.equal(r.status, 200, await r.clone().text());
+  const rows = await fetch(s.base + '/api/intake?state=new', { headers: USER }).then((x) => x.json()).then((j) => j.rows);
+  assert.equal(rows.length, 1);
+  const row = rows[0];
+  assert.equal(row.channel, 'linkedin');
+  assert.equal(row.contact_name, 'Ilze Liepa');
+  assert.equal(row.contact_email, 'ilze.liepa@gmail.com');
+  assert.match(row.body, /programme: Navigation/);
+  assert.match(row.body, /interests: Full time, Part time/);
+  assert.equal((row.fields.find((f) => f.field === 'interest') || {}).value, 'Navigation');
+  assert.ok(li.seen.gets.includes('GET /rest/leadFormResponses/pg-1'), 'fetched by the lead id, the same call as an ad lead');
 });
 
 // -------------------------------------------------------------------------- B2 --

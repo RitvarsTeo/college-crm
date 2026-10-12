@@ -1148,8 +1148,8 @@
           "note": "The Lead Sync API (the leads option) is a pending EXTRA, not the channel connection; it does not change the state."
         },
         "pendingExtra": {
-          "dependency": "The first LinkedIn lead form (none exist yet, Ritvars 07.10.2026), then LINKEDIN_CLIENT_SECRET, LINKEDIN_ACCESS_TOKEN and LINKEDIN_AD_ACCOUNT_ID in Vercel, then Subscribe leads",
-          "owner": "Ritvars (Super Admin of the Novikontas page since 02.10.2026); the token also needs a Campaign Manager role on the ad account",
+          "dependency": "Lead forms on the Novikontas Academy page (Q88, 12.10.2026), LINKEDIN_CLIENT_SECRET, LINKEDIN_ACCESS_TOKEN and LINKEDIN_ORGANIZATION_ID (104299650) in Vercel, then Subscribe leads; LINKEDIN_AD_ACCOUNT_ID only for ad forms",
+          "owner": "Ritvars (ADMINISTRATOR of the Novikontas Academy page, urn:li:organization:104299650); page forms need that page role only, ad forms also a Campaign Manager role",
           "action": "After Subscribe leads, dropdown answers and withdrawn leads are live: paste the secret and the token into Vercel (Sensitive), redeploy, press Subscribe leads",
           "side": "internal",
           "canRefuse": false,
@@ -1157,7 +1157,7 @@
           "what": "The leads option: Lead Sync API access, so a lead-form notification becomes a name and email in Intake",
           "nextAction": {
             "owner": "Oksana",
-            "action": "Ask Natalija to give Ritvars the Campaign Manager account manager role",
+            "action": "Only for ad forms: ask Natalija to give Ritvars the Campaign Manager account manager role",
             "input": "Requests for Natalija go through Oksana, never to Natalija directly"
           }
         },
