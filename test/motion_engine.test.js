@@ -79,7 +79,14 @@ test('every app function the motion files wrap still exists', () => {
   assert.ok(names.length >= 10, 'found the wrapped names: ' + names.join(', '));
   for (const n of names) assert.match(APP, new RegExp(String.raw`(function|const|let|var)\s+${n}\b`), n + ' exists in app.html');
 });
-test('colours: blue for rings and pills, signal amber only for the changed mark, never the data mustard', () => {
+test('colours: blue for rings and pills, never the data mustard', () => {
   assert.ok(!/#E0A526|224,\s*165,\s*38/i.test(JS + CSS));
-  assert.ok(CSS.includes('html.mo-a .m-bumped{animation:none !important}'), 'the mark replaces the shake');
+});
+// Q90 (the owner, 13.10.2026: "Back to the shake"): no highlighter anywhere; the bump is not suppressed
+test('Q90: a changed figure is never painted, and the shake is not switched off', () => {
+  assert.ok(!/mo-mark|M\.mark|backgroundSize/.test(JS), 'no mark in motion.js');
+  assert.ok(!/mo-mark|247,\s*192,\s*79/.test(CSS), 'no highlighter style in motion.css');
+  assert.ok(!/m-bumped\{animation:none/.test(CSS), 'the bump plays');
+  assert.match(APP, /\.m-on \.m-bumped\{animation:m-bump \.63s/, 'the one bump, in the kit');
+  assert.match(APP, /done: \(\) => \{ if \(!changed\) el\.classList\.remove\('m-bumped'\); \}/, 'only a changed figure keeps it');
 });

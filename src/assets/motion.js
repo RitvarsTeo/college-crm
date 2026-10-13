@@ -102,20 +102,8 @@
     }));
   };
 
-  // ---- mark: a number that changed since the last visit (replaces the shake) -----------------------------------
-  M.mark = function (el) {
-    if (reduced() || !el) return done;
-    var tn = null;
-    (function find(n) { for (var c = n.firstChild; c && !tn; c = c.nextSibling) { if (c.nodeType === 3 && /\d/.test(c.nodeValue)) tn = c; else if (c.nodeType === 1 && !c.classList.contains('mo-mark')) find(c); } })(el);
-    if (!tn) return done;
-    var span = tn.parentNode.classList && tn.parentNode.classList.contains('mo-mark') ? tn.parentNode : null;
-    if (!span) { span = document.createElement('mo-mark'); span.className = 'mo-mark';   // its own tag: no app style for spans (the card labels) reaches it
-      tn.parentNode.insertBefore(span, tn); span.appendChild(tn); }
-    span.classList.add('mo-mark-a');
-    if (document.hidden) return done;
-    var a = run(span, [{ backgroundSize: '0% 100%' }, { backgroundSize: '100% 100%' }], { duration: 450 });
-    return all(a);
-  };
+  // Q90 (the owner, 13.10.2026: "Back to the shake"): a changed figure is never painted. The app's own bump (cOpenView,
+  // m-bumped, the 2 Oct rule "shake ONLY when a figure changed since last seen") is the one signal; no highlighter.
 
   // ---- pill: slides from the old choice to the new one, then melts into the choice's own look ------------------
   M.pill = function (group, active, from) {
@@ -297,19 +285,16 @@
       }).observe(view0, { childList: true, subtree: true, attributes: true, attributeFilter: ['aria-pressed', 'aria-selected', 'class'] });
     }
 
-    // every place arriving: one transition with meaning, the Journey's own opening, the landing tab's ping, the marks
+    // every place arriving: one transition with meaning, the Journey's own opening, the landing tab's ping
     var last = placeOf();                            // the place the app opened on: it was drawn before this file ran
     var openView = cOpenView;
     // eslint-disable-next-line no-global-assign
     cOpenView = function () {
-      var seenBefore = {};
-      try { seenBefore = JSON.parse(localStorage.getItem('intakeSeen') || '{}') || {}; } catch (e) { /* private */ }
       openView.apply(this, arguments);
       var place = placeOf(), was = last, g = recent(gesture) ? gesture : null;
       last = place;
       var prevHash = stack[stack.length - 2]; stack.push(location.hash); if (stack.length > 30) stack.shift();
       var view = document.getElementById('view');
-      marks(view, seenBefore);
       if (!g || place === was || !view) { if (held) dropHeld(); return; }   // never on a reload (no click), never on a redraw
       var dir = null, from = null;
       if (g && g.back) dir = 'back';
@@ -322,17 +307,6 @@
         if (place === 'reports') { var tab = view.querySelector('.rp-tabs [aria-selected="true"]'); if (tab && dir === 'deeper') M.ping(tab); }
       });
     };
-
-    // a number that changed since this viewer's last visit: the mark replaces the shake (counts land first)
-    function marks(view, before) {
-      if (!view || typeof C_METRICS === 'undefined' || typeof cMetricKey !== 'function') return;
-      var after = {};
-      try { after = JSON.parse(localStorage.getItem('intakeSeen') || '{}') || {}; } catch (e) { return; }
-      view.querySelectorAll(C_METRICS).forEach(function (el, i) {
-        var k = cMetricKey(el, i);
-        if (Object.prototype.hasOwnProperty.call(before, k) && before[k] !== after[k]) setTimeout(function () { M.mark(el); }, 1250 + Math.min(i, 12) * 40);
-      });
-    }
 
     // THE JOURNEY OPENING: the line draws, the stage columns rise out of it in stage order, the counts land last
     function journeyOpening(view) {
