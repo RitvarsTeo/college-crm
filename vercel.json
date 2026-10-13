@@ -69,7 +69,7 @@
     },
     {
       "path": "/api/cron/sheet-pull",
-      "schedule": "0 6 * * *"
+      "schedule": "0 * * * *"
     }
   ]
 }

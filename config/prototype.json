@@ -724,7 +724,8 @@
     "on": true,
     "spreadsheetId": "1M4fG1DzKlxT1WOxAZKbMy6cIq5PIsppc7EFf-687GP4",
     "tabs": ["NAV/ENG ADMISSIONS", "OS/MTM ADMISSIONS"],
-    "stepLabel": "Follow-up",
+    "stepLabel": "Follow up",
+    "_stepLabelQ86": "Spelled as MAIN's Q86 picker writes it: config.nextActions id follow_up, label \"Follow up\" (aligned 13.10.2026).",
     "_stepLabel": "The sheet's Next action date lands as this step, so it reads as a Follow-up with its date (Q86: a next step is a Follow-up with a date, or Cold). The pull knows its own step by id (sheet_rows.task_id), never by this label, so a Follow-up made in Intake is never moved.",
     "_note": "Q89, the owner 12.10.2026: the ADMISSIONS DATABASE sheet (owner edu@) is pulled into Intake one way, read only, until 100% of leads are made in Intake; then 'on' goes false and the sheet can go. Only these two tabs are read, found by name without case or punctuation. src/sheetsync.js has the rules."
   },

@@ -36,11 +36,11 @@ PICKED by Ritvars 12.10 (via MASTER CONTROL): "connect the drive link with the a
 
 | What | Status |
 |---|---|
-| One-way, read-only pull of the "ADMISSIONS DATABASE" sheet (tabs NAV/ENG ADMISSIONS, OS/MTM ADMISSIONS, found by name) into Intake. Daily 06:00 UTC on the current plan + "Pull now" for admins | BUILT |
+| One-way, read-only pull of the "ADMISSIONS DATABASE" sheet (tabs NAV/ENG ADMISSIONS, OS/MTM ADMISSIONS, found by name) into Intake. Every hour since 13.10 (Pro team) + "Pull now" for admins; was daily 06:00 UTC on Hobby | BUILT |
 | Access: edu@ approves `spreadsheets.readonly` once (same OAuth client, no new secret); refresh token encrypted in `sync_state 'sheet_oauth'`, apart from Gmail; only edu@ is kept | BUILT |
 | Match email -> phone tail -> unique name; ambiguous = counted, nothing written; no match = new person on the sheet's first-contact date, first channel `sheet` | BUILT |
 | Intake wins: a field changed by hand in Intake is never overwritten; notes appended to the timeline; stage forwards only, never closed by the pull | BUILT |
-| Next action date = a **Follow-up** step with that date (aligned with Q86); the pull moves only the step it made itself (by id), never a Follow-up made in Intake; the old import's "Get in touch (from the sheet)" step is taken over. The timeline says "Linked to the admissions sheet" with the tab and row | BUILT |
+| Next action date = a **Follow up** step with that date (the label MAIN's Q86 picker writes, aligned 13.10); the pull moves only the step it made itself (by id), never a Follow-up made in Intake; the old import's "Get in touch (from the sheet)" step is taken over. The timeline says "Linked to the admissions sheet" with the tab and row | BUILT |
 | Admin page `/api/admin/sheet-pull` (Help center > For admins > Admissions sheet): by first-contact week, made in Intake vs sheet only (the pull or the 24.09 import) | BUILT |
 | To switch on: Google Cloud (Intake project) enable Google Sheets API + add `spreadsheets.readonly` to the consent screen; then an admin opens Admissions sheet > Connect and signs in as edu@ | NEXT |
 | Switch off when the weekly share reaches 100%: `config.sheetPull.on` = false | LATER |

@@ -24,7 +24,7 @@ export const ACTOR = 'Admissions sheet';
 // The sheet's Next action date is a Follow-up step with that date (Q86, MASTER CONTROL 12.10). The label comes from
 // config.sheetPull.stepLabel; the pull knows ITS step by id (sheet_rows.task_id), never by the label, so a Follow-up
 // somebody made in Intake is never moved.
-export const SHEET_TASK = 'Follow-up';
+export const SHEET_TASK = 'Follow up';
 const stepLabel = (cfg) => ((cfg && cfg.sheetPull && cfg.sheetPull.stepLabel) || SHEET_TASK);
 // the step the 24.09 one-time import made: the sheet's own, so it is taken over the first time
 const OLD_IMPORT_TASK = 'Get in touch (from the sheet)';
