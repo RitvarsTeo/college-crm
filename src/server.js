@@ -14,6 +14,8 @@ import { connectConfig, finishConnect, WhatsAppConnectError } from '../lib/whats
 import { subscribeLinkedInLeads, LeadFetchError } from '../lib/leads.js';
 import * as gmailB from '../lib/gmail.js';
 import * as notify from '../lib/notify.js';
+import * as sheetB from '../lib/sheetpull.js';
+import { pullSheet, sheetCounts } from './sheetsync.js';
 import { receive, listInbound, messagesFor, recordWhatsAppEcho, qualify, archive, bringBack, funnel, agedCount, handoffToSis, ownerFor, notifiedFor, handoverGap, canReach, surfaceAt, waitingFor, waitingByRole } from './intake.js';
 import { readScreenshot, readKind, readBody, readPath, saveFeedback, listFeedback, getScreenshot, setHandled, BadScreenshot, helpOpened, helpCounts } from './feedback.js';
 import { findMatches as matchPeople, duplicateCheck, isStrong as isStrongMatch } from './identity.js';
@@ -238,6 +240,42 @@ async function finishGmail(req, res, url, code) {
   }
   await gmailB.saveGmailRefreshToken(db, got.refreshToken, process.env);
   return gmailPage(res, 200, true, `${mailbox} is connected to Intake, read-only. You can close this page.`);
+}
+
+// The same school typed two ways is one value (config.educationAliases), as the 24.09 import did.
+const eduAlias = (v) => ((CONFIG.educationAliases || {})[String(v).trim()] || String(v).trim());
+
+// One plain admin page for the sheet pull. Counts only, nobody named. Every value is escaped.
+function sheetPullPage(res, d) {
+  const last = d.lastPull;
+  const pct = (w) => { const n = w.madeInIntake + w.sheetOnly; return n ? Math.round((w.madeInIntake / n) * 100) + '%' : '-'; };
+  const rows = d.weeks.slice(0, 12).map((w) => `<tr><td>${htmlEscape(w.week)}<small> from ${htmlEscape(w.monday)}</small></td>`
+    + `<td>${w.madeInIntake}</td><td>${w.sheetOnly}</td><td><b>${pct(w)}</b></td></tr>`).join('');
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Intake - Admissions sheet</title><style>body{font:15px/1.5 Raleway,system-ui,sans-serif;background:#f5f7fa;color:#14213d;margin:0;padding:24px}
+main{background:#fff;border-radius:12px;padding:24px;max-width:640px;margin:0 auto;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+h1{font-size:20px;margin:0 0 4px}table{border-collapse:collapse;width:100%;margin-top:14px}td,th{text-align:left;padding:6px 8px;border-bottom:1px solid #e7ebf0}
+th{font-size:12px;color:#3a5877}small{color:#6b7c93;margin-left:6px}button,a.b{font:inherit;background:#0a2463;color:#fff;border:0;border-radius:8px;padding:8px 14px;cursor:pointer;text-decoration:none}
+.k{color:#3a5877}</style></head><body><main><h1>Admissions sheet</h1>
+<p class="k">${d.connected ? 'Connected, read only' : `Not connected. <a class="b" href="/api/admin/sheet-pull/connect">Connect ${htmlEscape(d.owner)}</a>`}
+ &middot; ${d.on ? 'pull on' : 'pull switched off'} &middot; last pull ${last ? htmlEscape(String(last.at || '').slice(0, 16).replace('T', ' ')) + ' UTC' : 'never'}</p>
+${d.connected ? '<form method="post" action="/api/admin/sheet-pull/run"><button>Pull now</button></form>' : ''}
+<table><thead><tr><th>First contact week</th><th>Made in Intake</th><th>Sheet only</th><th>In Intake</th></tr></thead><tbody>${rows || '<tr><td colspan="4">No pull yet.</td></tr>'}</tbody></table>
+</main></body></html>`;
+  res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' });
+  return res.end(html);
+}
+
+// The admissions sheet's one-time Allow (Q89, 12.10.2026): read-only, and only edu@, the sheet's owner, is kept.
+async function finishSheetPull(req, res, url, code) {
+  if (url.searchParams.get('error') || !code) return gmailPage(res, 400, false, 'Access was not given. Open the link again and press Allow.');
+  const got = await sheetB.exchangeCode({ env: process.env, code, redirectUri: process.env.GOOGLE_REDIRECT_URI });
+  if (!got.ok) return gmailPage(res, 400, false, `Google did not finish: ${htmlEscape(got.why)}. Open the link again.`);
+  if (got.account !== sheetB.OWNER) {
+    return gmailPage(res, 400, false, `You signed in as ${htmlEscape(got.account || 'another account')}. Only ${sheetB.OWNER} can connect the sheet. Open the link again and choose ${sheetB.OWNER}.`);
+  }
+  await sheetB.saveSheetToken(db, got.refreshToken, process.env);
+  return gmailPage(res, 200, true, `The admissions sheet is connected to Intake, read only. You can close this page.`);
 }
 
 // The feedback email's one-time Allow (04.10.2026). Only the sending account is kept.
@@ -1096,6 +1134,7 @@ export const handle = async (req, res) => {
         const gs = url.searchParams.get('state');
         if (gf && gf.purpose === 'gmail' && gs && gs === gf.state) return finishGmail(req, res, url, url.searchParams.get('code'));
         if (gf && gf.purpose === 'notify' && gs && gs === gf.state) return finishNotify(req, res, url, url.searchParams.get('code'));
+        if (gf && gf.purpose === 'sheetpull' && gs && gs === gf.state) return finishSheetPull(req, res, url, url.searchParams.get('code'));
       }
       if (!AUTH_ON) return json(res, 400, { error: 'Sign-in is not switched on for this copy.' });
       const cfg = google.googleConfigured(process.env);
@@ -2202,6 +2241,35 @@ export const handle = async (req, res) => {
       const until = new Date(exp).toLocaleString('en-GB', { timeZone: 'Europe/Riga', dateStyle: 'medium', timeStyle: 'short' });
       return gmailPage(res, 200, true, `Link for ${gmailB.MAILBOX}, valid until ${until} (Riga):<br><br>`
         + `<input readonly style="width:100%;font:14px monospace;padding:8px" onclick="this.select()" value="${htmlEscape(link)}">`, 'Gmail link');
+    }
+    // THE ADMISSIONS SHEET PULL (Q89, 12.10.2026). Admins only, behind sign-in: no new open route.
+    // GET /api/admin/sheet-pull         the page: connected or not, the last pull, the weekly count, Pull now
+    // GET /api/admin/sheet-pull?format=json   the same as data
+    // GET /api/admin/sheet-pull/connect  edu@ approves read-only access once (Google's account chooser)
+    // POST /api/admin/sheet-pull/run     Pull now. Reads the sheet, never writes to it.
+    if (p === '/api/admin/sheet-pull' || p.startsWith('/api/admin/sheet-pull/')) {
+      if (!(await adminOf(req))) return refuseNotAdmin(res);
+      if (req.method === 'GET' && p === '/api/admin/sheet-pull/connect') {
+        if (!process.env.CRM_SESSION_SECRET || !process.env.GOOGLE_REDIRECT_URI) return gmailPage(res, 503, false, 'The sheet cannot be connected on this copy yet.');
+        const state = crypto.randomBytes(24).toString('base64url');
+        const flow = signFlow({ state, purpose: 'sheetpull', exp: Date.now() + FLOW_MINUTES * 60 * 1000 }, process.env.CRM_SESSION_SECRET);
+        const to = sheetB.consentUrl({ env: process.env, state, redirectUri: process.env.GOOGLE_REDIRECT_URI });
+        if (!to) return gmailPage(res, 503, false, 'The Google client is not set on this copy.');
+        res.writeHead(302, { location: to, 'cache-control': 'no-store', 'set-cookie': flowCookie(flow, FLOW_MINUTES) });
+        return res.end();
+      }
+      if (req.method === 'POST' && p === '/api/admin/sheet-pull/run') {
+        try { return json(res, 200, await pullSheet(db, { env: process.env, cfg: CONFIG, edu: eduAlias })); }
+        catch (err) { return json(res, 200, { ok: false, ran: false, error: 'the pull failed: ' + String(err && err.message || err).slice(0, 200) }); }
+      }
+      if (req.method === 'GET' && p === '/api/admin/sheet-pull') {
+        const connected = Boolean(await sheetB.loadSheetToken(db, process.env));
+        const counts = await sheetCounts(db);
+        const data = { owner: sheetB.OWNER, on: (CONFIG.sheetPull || {}).on !== false, connected, ...counts };
+        if (url.searchParams.get('format') === 'json') return json(res, 200, data);
+        return sheetPullPage(res, data);
+      }
+      return json(res, 404, { error: 'not found' });
     }
     // GET /api/admin/notify/connect - opened once, signed in as an admin, to let Intake email new
     // feedback from ritvars.vilcins@novikontas.org (04.10.2026). Google asks to Allow "send email".

@@ -438,6 +438,20 @@ CREATE TABLE IF NOT EXISTS sync_state (
   ran_at TEXT NOT NULL,
   detail TEXT                    -- what the last run did, never a secret
 );
+
+-- The admissions sheet pull (Q89, src/sheetsync.js): what each sheet row said at the last pull, and who it is.
+-- row_key is the row's email, else phone tail, else name: never the row number, which moves.
+CREATE TABLE IF NOT EXISTS sheet_rows (
+  tab TEXT NOT NULL,
+  row_key TEXT NOT NULL,
+  person_id TEXT,
+  applied TEXT,                  -- the row as Intake read it last time (JSON)
+  created_person INTEGER NOT NULL DEFAULT 0,  -- 1 = the sheet made this person (the pull or the 24.09 import)
+  first_day TEXT,                -- the sheet's first-contact day, YYYY-MM-DD
+  task_id INTEGER,               -- the Follow-up step this row made: the only step the pull ever moves
+  seen_at TEXT NOT NULL,
+  PRIMARY KEY (tab, row_key)
+);
 `;
 
 // A test opens this in memory. The server opens a file, because a prototype that

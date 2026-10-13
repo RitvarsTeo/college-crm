@@ -30,6 +30,20 @@ b) cold" and "Un tur, kur ir list - vajadzētu būt tā, ka tur leadi iet pēc d
 | Help: Inbox and Due boxes, FAQ "How do I choose a next step?" | BUILT |
 | test/next_step_follow_or_cold_q86.test.js runs the server (Follow up, Cold at Make a lead, Cold without a reason, Reject still needs one) and the list order; 9 older tests moved to the new picker | BUILT |
 | Seen running at 1440 (light, dark) and 375 (light, dark): `For review/2026-10-12 Q86 Q87 next step and list/` | BUILT |
+## 12.10.2026 - Q89: the admissions sheet pulled into Intake (COMMITTED, NOT DEPLOYED)
+
+PICKED by Ritvars 12.10 (via MASTER CONTROL): "connect the drive link with the app. check if any new info comes in and update the app accordingly. Until you see that 100% leads are made in the app." Branch `feat/2026-10-12-q89-sheet-pull`, cut from `70ae487`.
+
+| What | Status |
+|---|---|
+| One-way, read-only pull of the "ADMISSIONS DATABASE" sheet (tabs NAV/ENG ADMISSIONS, OS/MTM ADMISSIONS, found by name) into Intake. Daily 06:00 UTC on the current plan + "Pull now" for admins | BUILT |
+| Access: edu@ approves `spreadsheets.readonly` once (same OAuth client, no new secret); refresh token encrypted in `sync_state 'sheet_oauth'`, apart from Gmail; only edu@ is kept | BUILT |
+| Match email -> phone tail -> unique name; ambiguous = counted, nothing written; no match = new person on the sheet's first-contact date, first channel `sheet` | BUILT |
+| Intake wins: a field changed by hand in Intake is never overwritten; notes appended to the timeline; stage forwards only, never closed by the pull | BUILT |
+| Next action date = a **Follow-up** step with that date (aligned with Q86); the pull moves only the step it made itself (by id), never a Follow-up made in Intake; the old import's "Get in touch (from the sheet)" step is taken over. The timeline says "Linked to the admissions sheet" with the tab and row | BUILT |
+| Admin page `/api/admin/sheet-pull` (Help center > For admins > Admissions sheet): by first-contact week, made in Intake vs sheet only (the pull or the 24.09 import) | BUILT |
+| To switch on: Google Cloud (Intake project) enable Google Sheets API + add `spreadsheets.readonly` to the consent screen; then an admin opens Admissions sheet > Connect and signs in as edu@ | NEXT |
+| Switch off when the weekly share reaches 100%: `config.sheetPull.on` = false | LATER |
 
 ## 08.10.2026 - Q78: the Inbox Source list shows every channel (PICKED 08.10: "All but without the count for now.")
 

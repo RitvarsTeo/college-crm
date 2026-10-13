@@ -3726,7 +3726,8 @@ async function cHelpAdmin() {
   const odd = people.filter((p) => p.programme && !known.has(p.programme)).length;
   box.innerHTML = `<h2 class="c-set-h">For admins</h2><div class="c-helpadmin">
     <a href="#/channels">Channels</a><a href="#/feedback">Feedback received</a>
-    <a href="#/journey?v=list&amp;p_data=odd" title="People whose programme is not one of the official ones">Data to tidy${odd ? ` <b>${odd}</b>` : ''}</a></div>`;
+    <a href="#/journey?v=list&amp;p_data=odd" title="People whose programme is not one of the official ones">Data to tidy${odd ? ` <b>${odd}</b>` : ''}</a>
+    <a href="/api/admin/sheet-pull" target="_blank" rel="noopener" title="The admissions sheet pulled into Intake, and how many leads are made in Intake each week">Admissions sheet</a></div>`;
 }
 
 // ------------------------------------------------------------------ HELP CENTER
