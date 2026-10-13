@@ -14,6 +14,15 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 13.10.2026 - Q90: back to the shake; no number is ever painted (PICKED 13.10: "Back to the shake")
+
+| What | Status |
+|---|---|
+| A figure that changed since this viewer's last visit gets the one bump again (the 2 Oct rule: shake ONLY when a figure changed since last seen). The count-up stays; reduced motion moves nothing | BUILT |
+| The highlighter is gone: motion.js M.mark and its call, motion.css .mo-mark and the rule that switched the bump off. No figure is painted on any tab | BUILT |
+| Help: nothing named the highlighter | BUILT |
+| Seen running at 1440, light and dark: Home, In the Inbox 0 to 3 (light) and 3 to 4 (dark) bumped once, the unchanged figures only counted, no paint. `For review/2026-10-13 Q90 shake back/` | BUILT |
+
 ## 12.10.2026 - Q86 + Q87: next step = Follow up or Cold; the Journey list runs by date (Admissions feedback)
 
 Admissions, 12.10.2026: "pie next step - vajadzētu maksimāli tos vienkāršot, tīri uz a) follow up + uzlikt datumu, vai
