@@ -14,6 +14,16 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 13.10.2026 - Q89b: connect the sheet with an admin's own Google account (COMMITTED, NOT DEPLOYED)
+
+PICKED by Ritvars 13.10 (via MASTER CONTROL): "B: my own account". The ADMISSIONS DATABASE sheet is shared with the admins. Branch `feat/2026-10-13-q89b-own-account`, cut from `1adcc25`.
+
+| What | Status |
+|---|---|
+| Connect accepts edu@, the admin who pressed Connect, or any active Intake admin (crm_users role admin); anybody else is refused and nothing is kept | BUILT |
+| Before anything is kept, one read-only GET proves the account can open the sheet; if not, it is refused and nothing is kept | BUILT |
+| The page says "Connected as <account>, read only"; Disconnect deletes the stored sign-in. Same scope, same encrypted storage, no new secret | BUILT |
+
 ## 13.10.2026 - Q90: back to the shake; no number is ever painted (PICKED 13.10: "Back to the shake")
 
 | What | Status |

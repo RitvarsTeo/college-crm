@@ -43,13 +43,14 @@ test('access: read-only scope only, nothing in the code writes to a sheet', () =
   assert.ok(!/\/auth\/spreadsheets['" ]/.test(lib) && !/auth\/drive['" ]/.test(lib), 'no writable scope');
 });
 
-test('the account check: only the account Google names comes back, for the caller to compare with edu@', async () => {
+test('the account check: the account Google names comes back for the caller to check (Q89b: an Intake admin or edu@)', async () => {
   const fetchImpl = async (u) => (String(u).includes('token') ? new Response(JSON.stringify({ access_token: 'a', refresh_token: 'r' }))
     : new Response(JSON.stringify({ email: 'Someone.Else@novikontas.org' })));
   const got = await exchangeCode({ env: { GOOGLE_CLIENT_ID: 'id', GOOGLE_CLIENT_SECRET: 's' }, code: 'c', redirectUri: 'https://x/cb', fetchImpl });
   assert.equal(got.account, 'someone.else@novikontas.org');
   const srv = fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8');
-  assert.match(srv, /if \(got\.account !== sheetB\.OWNER\)/, 'the callback keeps edu@ only');
+  assert.match(srv, /if \(!\(await sheetAccountAllowed\(got\.account, flow\)\)\)/, 'the callback keeps only an admin or edu@ (13.10, "B: my own account")');
+  assert.ok(srv.indexOf('sheetB.tabTitles(') < srv.indexOf('sheetB.saveSheetToken(db, got.refreshToken'), 'the read check comes before anything is kept');
 });
 
 test('a new lead in the sheet becomes a person: the sheet date, first channel sheet, the next action as a step', async () => {

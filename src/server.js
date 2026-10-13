@@ -257,25 +257,40 @@ main{background:#fff;border-radius:12px;padding:24px;max-width:640px;margin:0 au
 h1{font-size:20px;margin:0 0 4px}table{border-collapse:collapse;width:100%;margin-top:14px}td,th{text-align:left;padding:6px 8px;border-bottom:1px solid #e7ebf0}
 th{font-size:12px;color:#3a5877}small{color:#6b7c93;margin-left:6px}button,a.b{font:inherit;background:#0a2463;color:#fff;border:0;border-radius:8px;padding:8px 14px;cursor:pointer;text-decoration:none}
 .k{color:#3a5877}</style></head><body><main><h1>Admissions sheet</h1>
-<p class="k">${d.connected ? 'Connected, read only' : `Not connected. <a class="b" href="/api/admin/sheet-pull/connect">Connect ${htmlEscape(d.owner)}</a>`}
+<p class="k">${d.connected ? `Connected as ${htmlEscape(d.account || 'an admin account')}, read only` : 'Not connected. <a class="b" href="/api/admin/sheet-pull/connect">Connect with my Google account</a>'}
  &middot; ${d.on ? 'pull on' : 'pull switched off'} &middot; last pull ${last ? htmlEscape(String(last.at || '').slice(0, 16).replace('T', ' ')) + ' UTC' : 'never'}</p>
-${d.connected ? '<form method="post" action="/api/admin/sheet-pull/run"><button>Pull now</button></form>' : ''}
+${d.connected ? '<form method="post" action="/api/admin/sheet-pull/run" style="display:inline"><button>Pull now</button></form> <form method="post" action="/api/admin/sheet-pull/disconnect" style="display:inline"><button style="background:#fff;color:#0a2463;border:1px solid #c2d3de">Disconnect</button></form>' : ''}
 <table><thead><tr><th>First contact week</th><th>Made in Intake</th><th>Sheet only</th><th>In Intake</th></tr></thead><tbody>${rows || '<tr><td colspan="4">No pull yet.</td></tr>'}</tbody></table>
 </main></body></html>`;
   res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' });
   return res.end(html);
 }
 
-// The admissions sheet's one-time Allow (Q89, 12.10.2026): read-only, and only edu@, the sheet's owner, is kept.
-async function finishSheetPull(req, res, url, code) {
+// The admissions sheet's one-time Allow (Q89, 12.10.2026; Q89b 13.10.2026, "B: my own account"). Read only. The
+// account may be edu@ (the sheet's owner), the admin who pressed Connect, or any active Intake admin. Before
+// anything is kept, ONE read-only GET proves this account can open the sheet; if not, nothing is kept.
+async function sheetAccountAllowed(account, flow) {
+  if (!account) return false;
+  if (account === sheetB.OWNER) return true;
+  if (flow && flow.who && String(flow.who).toLowerCase() === account) return true;
+  try {
+    const u = await db.prepare('SELECT role, active FROM crm_users WHERE LOWER(email) = ?').get(account);
+    return Boolean(u && Number(u.active) !== 0 && auth.canSeeChannels(u.role));
+  } catch { return false; }
+}
+async function finishSheetPull(req, res, url, code, flow, fetchImpl = fetch) {
   if (url.searchParams.get('error') || !code) return gmailPage(res, 400, false, 'Access was not given. Open the link again and press Allow.');
-  const got = await sheetB.exchangeCode({ env: process.env, code, redirectUri: process.env.GOOGLE_REDIRECT_URI });
+  const got = await sheetB.exchangeCode({ env: process.env, code, redirectUri: process.env.GOOGLE_REDIRECT_URI, fetchImpl });
   if (!got.ok) return gmailPage(res, 400, false, `Google did not finish: ${htmlEscape(got.why)}. Open the link again.`);
-  if (got.account !== sheetB.OWNER) {
-    return gmailPage(res, 400, false, `You signed in as ${htmlEscape(got.account || 'another account')}. Only ${sheetB.OWNER} can connect the sheet. Open the link again and choose ${sheetB.OWNER}.`);
+  if (!(await sheetAccountAllowed(got.account, flow))) {
+    return gmailPage(res, 400, false, `You signed in as ${htmlEscape(got.account || 'another account')}, which is not an Intake admin. Open the link again and choose your own admin account.`);
   }
-  await sheetB.saveSheetToken(db, got.refreshToken, process.env);
-  return gmailPage(res, 200, true, `The admissions sheet is connected to Intake, read only. You can close this page.`);
+  const can = await sheetB.tabTitles({ env: process.env, token: got.accessToken, spreadsheetId: (CONFIG.sheetPull || {}).spreadsheetId, fetchImpl });
+  if (!can.ok) {
+    return gmailPage(res, 400, false, `${htmlEscape(got.account)} cannot open the admissions sheet, so nothing was connected. Ask for the sheet to be shared with this account, then connect again.`);
+  }
+  await sheetB.saveSheetToken(db, got.refreshToken, process.env, got.account);
+  return gmailPage(res, 200, true, `The admissions sheet is connected to Intake as ${htmlEscape(got.account)}, read only. You can close this page.`);
 }
 
 // The feedback email's one-time Allow (04.10.2026). Only the sending account is kept.
@@ -1134,7 +1149,7 @@ export const handle = async (req, res) => {
         const gs = url.searchParams.get('state');
         if (gf && gf.purpose === 'gmail' && gs && gs === gf.state) return finishGmail(req, res, url, url.searchParams.get('code'));
         if (gf && gf.purpose === 'notify' && gs && gs === gf.state) return finishNotify(req, res, url, url.searchParams.get('code'));
-        if (gf && gf.purpose === 'sheetpull' && gs && gs === gf.state) return finishSheetPull(req, res, url, url.searchParams.get('code'));
+        if (gf && gf.purpose === 'sheetpull' && gs && gs === gf.state) return finishSheetPull(req, res, url, url.searchParams.get('code'), gf);
       }
       if (!AUTH_ON) return json(res, 400, { error: 'Sign-in is not switched on for this copy.' });
       const cfg = google.googleConfigured(process.env);
@@ -2245,17 +2260,25 @@ export const handle = async (req, res) => {
     // THE ADMISSIONS SHEET PULL (Q89, 12.10.2026). Admins only, behind sign-in: no new open route.
     // GET /api/admin/sheet-pull         the page: connected or not, the last pull, the weekly count, Pull now
     // GET /api/admin/sheet-pull?format=json   the same as data
-    // GET /api/admin/sheet-pull/connect  edu@ approves read-only access once (Google's account chooser)
+    // GET /api/admin/sheet-pull/connect  an admin approves read-only access once with their own account (Q89b)
+    // POST /api/admin/sheet-pull/disconnect  deletes the stored sign-in
     // POST /api/admin/sheet-pull/run     Pull now. Reads the sheet, never writes to it.
     if (p === '/api/admin/sheet-pull' || p.startsWith('/api/admin/sheet-pull/')) {
-      if (!(await adminOf(req))) return refuseNotAdmin(res);
+      const sheetAdmin = await adminOf(req);
+      if (!sheetAdmin) return refuseNotAdmin(res);
       if (req.method === 'GET' && p === '/api/admin/sheet-pull/connect') {
         if (!process.env.CRM_SESSION_SECRET || !process.env.GOOGLE_REDIRECT_URI) return gmailPage(res, 503, false, 'The sheet cannot be connected on this copy yet.');
         const state = crypto.randomBytes(24).toString('base64url');
-        const flow = signFlow({ state, purpose: 'sheetpull', exp: Date.now() + FLOW_MINUTES * 60 * 1000 }, process.env.CRM_SESSION_SECRET);
-        const to = sheetB.consentUrl({ env: process.env, state, redirectUri: process.env.GOOGLE_REDIRECT_URI });
+        const who = sheetAdmin.email ? String(sheetAdmin.email).toLowerCase() : null;
+        const flow = signFlow({ state, purpose: 'sheetpull', who, exp: Date.now() + FLOW_MINUTES * 60 * 1000 }, process.env.CRM_SESSION_SECRET);
+        const to = sheetB.consentUrl({ env: process.env, state, redirectUri: process.env.GOOGLE_REDIRECT_URI, hint: who || sheetB.OWNER });
         if (!to) return gmailPage(res, 503, false, 'The Google client is not set on this copy.');
         res.writeHead(302, { location: to, 'cache-control': 'no-store', 'set-cookie': flowCookie(flow, FLOW_MINUTES) });
+        return res.end();
+      }
+      if (req.method === 'POST' && p === '/api/admin/sheet-pull/disconnect') {
+        await sheetB.forgetSheetToken(db);
+        res.writeHead(303, { location: '/api/admin/sheet-pull', 'cache-control': 'no-store' });
         return res.end();
       }
       if (req.method === 'POST' && p === '/api/admin/sheet-pull/run') {
@@ -2264,8 +2287,9 @@ export const handle = async (req, res) => {
       }
       if (req.method === 'GET' && p === '/api/admin/sheet-pull') {
         const connected = Boolean(await sheetB.loadSheetToken(db, process.env));
+        const who = connected ? await sheetB.loadSheetAccount(db) : null;
         const counts = await sheetCounts(db);
-        const data = { owner: sheetB.OWNER, on: (CONFIG.sheetPull || {}).on !== false, connected, ...counts };
+        const data = { owner: sheetB.OWNER, on: (CONFIG.sheetPull || {}).on !== false, connected, account: who && who.account, ...counts };
         if (url.searchParams.get('format') === 'json') return json(res, 200, data);
         return sheetPullPage(res, data);
       }
