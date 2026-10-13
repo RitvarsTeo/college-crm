@@ -248,7 +248,10 @@ export async function receive(db, item) {
   // A channel may also filter by a rule of its own (the phone, 01.10.2026: a number staff
   // already archived as spam). Stored the same way, with that rule as the reason.
   // A channel's own rule first (the phone, Mailchimp), then the shared one (Q31).
-  const filterWhy = item.filterWhy || noiseWhy({ email: item.email, name: item.name, body: item.body }) || null;
+  // Q91 (13.10.2026): noFilter (edu@ mail a person gave the Admissions label) skips every filter, junk included:
+  // "they are manually accepted by human. Rest goes through a filter."
+  if (item.noFilter) read.junk = false;
+  const filterWhy = item.noFilter ? null : (item.filterWhy || noiseWhy({ email: item.email, name: item.name, body: item.body }) || null);
   const state = read.junk || filterWhy ? 'filtered' : 'new';
   // `source` records HOW this arrived. It defaults to null rather than to
   // 'provider': a row may only claim a real provider sent it when the caller

@@ -61,7 +61,7 @@
     },
     {
       "path": "/api/cron/gmail-poll",
-      "schedule": "30 5 * * *"
+      "schedule": "*/5 * * * *"
     },
     {
       "path": "/api/cron/lead-answers",
