@@ -13,7 +13,7 @@
 //
 // Neither poller runs while its channel is off, and off is the default.
 
-import { receive, activePersonFor, confirmedBySystem, CONFIG, newPersonId, ownerFor, emailFilterWhy, purgeLineBodies, recordReplyRead } from './intake.js';
+import { receive, bringBack, activePersonFor, confirmedBySystem, CONFIG, newPersonId, ownerFor, emailFilterWhy, purgeLineBodies, recordReplyRead } from './intake.js';
 import { findMatches, isStrong, normEmail, normPhone } from './identity.js';
 import { knock } from './webpush.js';
 import { logEvent, AUTOMATIC, MANUAL } from './history.js';
@@ -502,7 +502,13 @@ export async function syncGmail(db, { now = new Date(), env = process.env, fetch
   const since = minutes ? null
     : new Date((last ? Date.parse(last) - 10 * 60000 : now.getTime() - 26 * 3600000)).toISOString();
   const refreshToken = await loadGmailRefreshToken(db, env);     // option B, when connected
-  const got = await gmailPoll({ env, now, fetchImpl, max, since, refreshToken, ...(minutes ? { minutes } : {}) });
+  // Q91: a labelled message we already hold is not fetched again; the pull only needs to know it is held.
+  const held = async (ids) => {
+    const have = new Set();
+    for (const id of ids) if (await heldGmail(db, id)) have.add(id);
+    return have;
+  };
+  const got = await gmailPoll({ env, now, fetchImpl, max, since, refreshToken, held, ...(minutes ? { minutes } : {}) });
   // A run where some messages could not be fetched (got.failed) still files the ones that came, and
   // then keeps the old bookmark and reports not ok, so the rest are asked for again (M7, 07.10.2026).
   const partial = !got.ok && got.failed > 0 && Array.isArray(got.items);
@@ -518,14 +524,26 @@ export async function syncGmail(db, { now = new Date(), env = process.env, fetch
     const it = toIntake(ev);
     // Q74 (07.10.2026): a known person's email goes on their history (rule 1); the same sender again
     // joins their waiting card (rule 2); a newsletter is set aside like other automatic mail (rule 3).
+    // Q91 (13.10.2026): the Admissions label means a person accepted it: no filter at all, rules 1 and 2 as before.
+    const labelled = Boolean(shaped.admissions);
     const r = await receive(db, { ...it, source: mode === 'live' ? 'provider' : 'simulated',
-      filterWhy: emailFilterWhy(it.email), attachTo: await activePersonFor(db, it.email), joinOpenSender: true });
+      ...(labelled ? { noFilter: true } : { filterWhy: emailFilterWhy(it.email) }),
+      attachTo: await activePersonFor(db, it.email), joinOpenSender: true });
+    if (labelled) out.labelled = (out.labelled || 0) + 1;
+    if (r.duplicate && labelled && await labelBringsBack(db, r.id, at)) out.broughtBack = (out.broughtBack || 0) + 1;
     if (r.duplicate) out.repeat++;
     else if (r.filtered) out.filtered++;
     else if (r.attached) out.toPerson = (out.toPerson || 0) + 1;
     else if (r.joined) out.joined = (out.joined || 0) + 1;
     else out.inbox++;
   }
+
+  // Q91: labelled, already held, not fetched again: a rule had filtered it, a person has since accepted it.
+  for (const id of got.labelledHeld || []) {
+    const row = await heldGmail(db, id);
+    if (row && await labelBringsBack(db, row, at)) out.broughtBack = (out.broughtBack || 0) + 1;
+  }
+  out.labels = got.labels || null;
 
   // more:true means Gmail had another page. Say so rather than report a clean run.
   // A run that had to stop with pages left keeps the old bookmark, so the rest is asked again.
@@ -537,6 +555,23 @@ export async function syncGmail(db, { now = new Date(), env = process.env, fetch
     ...(partial ? { ok: false, failed: got.failed, why: got.why } : {}) }, at);
   return { ok: !partial, ran: true, channel: 'gmail', mode, ...out, more: Boolean(got.more), query: got.query, replies,
     ...(partial ? { failed: got.failed, why: got.why } : {}) };
+}
+
+// Q91: the Inbox row (or the card a line joined) that holds this Gmail message id, or null.
+async function heldGmail(db, externalId) {
+  const row = await db.prepare("SELECT id FROM inbound WHERE channel = 'gmail' AND external_id = ?").get(externalId);
+  if (row) return Number(row.id);
+  const line = await db.prepare("SELECT inbound_id FROM inbound_line WHERE channel = 'gmail' AND external_id = ?").get(externalId);
+  return line ? Number(line.inbound_id) : null;
+}
+
+// Q91: filtered first, labelled later -> back in the Inbox, the same row (never a second one), logged as brought back
+// by the label. Only what a RULE set aside: a message a person set aside stays where the person put it.
+async function labelBringsBack(db, id, at) {
+  const row = await db.prepare('SELECT state FROM inbound WHERE id = ?').get(id);
+  if (!row || row.state !== 'filtered') return false;
+  const r = await bringBack(db, id, { by: 'Admissions label', at });
+  return Boolean(r && r.ok && !r.already);
 }
 
 // FIRST-REPLY TIME (the owner, 07.10.2026; replies go out from edu@). For the email enquiries of the last REPLY_DAYS

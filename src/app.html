@@ -8131,6 +8131,11 @@ function chRiga(cron, day = new Date()) {
   const at = new Date(Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate(), Number(m[2]), Number(m[1])));
   return new Intl.DateTimeFormat('en-GB', { timeZone: CH_ZONE, hour: '2-digit', minute: '2-digit', hour12: false }).format(at);
 }
+// "*/5 * * * *" -> "Every 5 min" (Q91: the email pull, Pro team since 13.10.2026); any other shape is not guessed
+function chEvery(cron) {
+  const m = /^\*\/(\d{1,2}) \* \* \* \*$/.exec(String(cron || '').trim());
+  return m ? `Every ${Number(m[1])} min` : null;
+}
 function chWhen(iso) {
   const t = Date.parse(iso || '');
   if (!t) return null;
@@ -8147,7 +8152,7 @@ function chFacts(c, env, ctx = {}) {
   const rec = chRec(c);
   const at = chRiga(sched[c.channel]);
   const pull = c.direction === 'manual' ? 'By hand'
-    : c.direction === 'inbound_poll' ? (at ? 'Daily ' + at : 'Polled') : 'Instant';
+    : c.direction === 'inbound_poll' ? (at ? 'Daily ' + at : chEvery(sched[c.channel]) || 'Polled') : 'Instant';
   let counts = null;
   if (c.direction !== 'manual') {
     if (prod) counts = { received: c.events || 0, filtered: c.filtered || 0, asOf: null };
@@ -8201,7 +8206,8 @@ function chListHtml(rows, env, ctx = {}) {
     const asOf = f.counts && f.counts.asOf ? `<span class="chasof">${esc(chDay(f.counts.asOf))}</span>` : '';
     const rules = c.direction === 'manual' ? f.filters : [...f.filters, ...(ctx.filtersAll || [])];
     // LinkedIn's answer to Subscribe leads (07.10.2026), one line; the button is on its Settings and check page
-    const sub = c.channel === 'linkedin' ? chLinkedInLine((ctx.runs || {}).linkedin_subscription) : '';
+    const sub = c.channel === 'linkedin' ? chLinkedInLine((ctx.runs || {}).linkedin_subscription)
+      : c.channel === 'gmail' ? chLabelLine((ctx.runs || {}).gmail) : '';
     return chOpen(`<b>${esc(c.label)}</b><span class="chk ${st.cls}">${esc(st.word)}</span>`,
       `<span class="chfigs">${figs}${f.pullSub ? chFig(f.pull, f.pullSub, 'is-pull') : ''}${asOf}</span>${chTags(rules)}${sub}
       <a href="#/channels/${esc(c.channel)}" class="chgo">Settings and check &rsaquo;</a>`);
@@ -8212,6 +8218,15 @@ function chListHtml(rows, env, ctx = {}) {
 function chLinkedInLine(run) {
   const d = run && run.detail;
   return d && d.line ? `<span class="chline${d.ok ? '' : ' is-fail'}">${esc(d.line)}${run.at ? ' &middot; ' + esc(chWhen(run.at) || '') : ''}</span>` : '';
+}
+
+// Q91 (13.10.2026): which edu@ label(s) the last pull took as Admissions (looked up, never guessed), or that none was found.
+function chLabelLine(run) {
+  const l = run && run.detail && run.detail.labels;
+  if (!l) return '';
+  const names = l.names || [];
+  const text = names.length ? 'Admissions label: ' + names.join(', ') : (l.why || 'No admission or admissions label found');
+  return `<span class="chline${names.length && l.ok !== false ? '' : ' is-fail'}">${esc(text)}</span>`;
 }
 
 // SIS is not a channel (02.10): its own card, one line that uncovers the chain to apply, how its

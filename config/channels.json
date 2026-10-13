@@ -1357,7 +1357,7 @@
   "_schedule": "Q27, 05.10.2026: when each poller runs, as the cron in vercel.json says it (UTC). A test keeps the two the same. The screen shows the time in Riga.",
   "schedule": {
     "phone": "15 5 * * *",
-    "gmail": "30 5 * * *",
+    "gmail": "*/5 * * * *",
     "sis": "0 5 * * *",
     "lead_answers": "45 5 * * *"
   },
