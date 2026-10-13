@@ -246,3 +246,85 @@ test('the label is the one MAIN\'s Q86 picker writes: config.nextActions follow_
   assert.equal(CFG.sheetPull.stepLabel, step.label);
   assert.equal(step.label, 'Follow up');
 });
+
+// ---------------------------------------------------------------- Q89c, 13.10.2026: 45 dates, 12 steps --
+const openSteps = (db, id) => db.prepare('SELECT id, label, due_at FROM tasks WHERE person_id = ? AND done_at IS NULL ORDER BY id').all(id);
+
+test('Q89c: a person on two rows (both tabs) gets ONE Follow up, at the earlier date, and counts as sheet only', async () => {
+  const db = await openDb(':memory:');
+  await applyRows(db, [tab([{ name: 'Two Tabs', email: 'two@x.lv', first: '01/10/2026', next: '20/10/2026' }]),
+    tab([{ name: 'Two Tabs', email: 'two@x.lv', first: '01/10/2026', next: '15/10/2026' }], 'OS/MTM ADMISSIONS')], opts);
+  const p = await db.prepare("SELECT id FROM people WHERE email = 'two@x.lv'").get();
+  assert.deepEqual((await openSteps(db, p.id)).map((t) => [t.label, t.due_at]), [['Follow up', '2026-10-15T06:00:00.000Z']]);
+  const rows = await db.prepare('SELECT created_person, task_id FROM sheet_rows WHERE person_id = ?').all(p.id);
+  assert.deepEqual(rows.map((r) => Number(r.created_person)), [1, 1], 'the second row did not make it "made in Intake"');
+  assert.equal(new Set(rows.map((r) => r.task_id)).size, 1, 'both rows point at the same step');
+});
+
+test('Q89c: a new person from the sheet gets the step even for a date already past (overdue is the truth)', async () => {
+  const db = await openDb(':memory:');
+  await applyRows(db, [tab([{ name: 'Late', email: 'late@x.lv', next: '01/10/2026' }])], opts);
+  const p = await db.prepare("SELECT id FROM people WHERE email = 'late@x.lv'").get();
+  assert.deepEqual((await openSteps(db, p.id)).map((t) => t.due_at), ['2026-10-01T06:00:00.000Z']);
+});
+
+test('Q89c: a step open in Intake is reported, never moved; once it is done, the next pull gives the Follow up', async () => {
+  const db = await openDb(':memory:');
+  await add(db, 'b', { email: 'b@x.lv' });
+  await db.prepare(`INSERT INTO tasks (person_id,label,due_at,owner,created_at) VALUES ('b','Call back','2026-10-20T06:00:00.000Z','Admissions','2026-10-10')`).run();
+  const s1 = await applyRows(db, [tab([{ name: 'B', email: 'b@x.lv', next: '14/10/2026' }])], opts);
+  assert.equal(s1.stepIntake, 1);
+  assert.deepEqual((await openSteps(db, 'b')).map((t) => t.label), ['Call back']);
+  const c = await sheetCounts(db);
+  assert.deepEqual([c.steps.withDate, c.steps.intake, c.steps.intakeLabels['Call back']], [1, 1, 1]);
+  await db.prepare("UPDATE tasks SET done_at = '2026-10-12T12:00:00.000Z' WHERE person_id = 'b'").run();
+  await applyRows(db, [tab([{ name: 'B', email: 'b@x.lv', next: '14/10/2026' }])], { ...opts, now: new Date('2026-10-12T13:00:00Z') });
+  assert.deepEqual((await openSteps(db, 'b')).map((t) => [t.label, t.due_at]), [['Follow up', '2026-10-14T06:00:00.000Z']], 'tried again, not only on the first pull');
+  assert.equal((await sheetCounts(db)).steps.open, 1);
+});
+
+test('Q89c: a finished person gets no step and is counted as finished', async () => {
+  const db = await openDb(':memory:');
+  await add(db, 'f', { email: 'f@x.lv', status: 'Admitted' });
+  const s = await applyRows(db, [tab([{ name: 'F', email: 'f@x.lv', next: '14/10/2026' }])], opts);
+  assert.equal(s.stepFinished, 1);
+  assert.equal((await openSteps(db, 'f')).length, 0);
+  assert.equal((await sheetCounts(db)).steps.finished, 1);
+});
+
+test('Q89c: the sheet\'s Follow up done in Intake is not brought back for the same date; a new date makes a new one', async () => {
+  const db = await openDb(':memory:');
+  await add(db, 'd', { email: 'd@x.lv' });
+  await applyRows(db, [tab([{ name: 'D', email: 'd@x.lv', next: '14/10/2026' }])], opts);
+  await db.prepare("UPDATE tasks SET done_at = '2026-10-14T10:00:00.000Z' WHERE person_id = 'd'").run();
+  const again = await applyRows(db, [tab([{ name: 'D', email: 'd@x.lv', next: '14/10/2026' }])], { ...opts, now: new Date('2026-10-14T11:00:00Z') });
+  assert.equal(again.stepDone, 1);
+  assert.equal((await openSteps(db, 'd')).length, 0);
+  assert.equal((await sheetCounts(db)).steps.done, 1);
+  await applyRows(db, [tab([{ name: 'D', email: 'd@x.lv', next: '21/10/2026' }])], { ...opts, now: new Date('2026-10-14T12:00:00Z') });
+  assert.deepEqual((await openSteps(db, 'd')).map((t) => t.due_at), ['2026-10-21T06:00:00.000Z']);
+});
+
+test('Q89c: every row with a date ends with exactly one open Follow up when nothing stands in the way', async () => {
+  const db = await openDb(':memory:');
+  await add(db, 'x1', { email: 'x1@x.lv' }); await add(db, 'x2', { email: 'x2@x.lv' });
+  const rows = [{ name: 'X1', email: 'x1@x.lv', next: '14/10/2026' }, { name: 'X2', email: 'x2@x.lv', next: '15/10/2026' },
+    { name: 'N1', email: 'n1@x.lv', next: '16/10/2026' }, { name: 'N2', email: 'n2@x.lv', next: '17/10/2026' }];
+  await applyRows(db, [tab(rows)], opts);
+  await applyRows(db, [tab(rows)], { ...opts, now: new Date('2026-10-12T11:00:00Z') });   // twice: still one each
+  const c = await sheetCounts(db);
+  assert.deepEqual([c.steps.withDate, c.steps.open, c.steps.none], [4, 4, 0]);
+  const per = await db.prepare("SELECT person_id, COUNT(*) n FROM tasks WHERE done_at IS NULL AND label = 'Follow up' GROUP BY person_id").all();
+  assert.deepEqual(per.map((r) => Number(r.n)), [1, 1, 1, 1]);
+});
+
+test('Q89c: Pull now from the page comes back to the page with the result line; code still gets JSON', () => {
+  const srv = fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8');
+  const i = srv.indexOf("p === '/api/admin/sheet-pull/run'");
+  const block = srv.slice(i, i + 900);
+  assert.ok(block.includes('/text\\/html/.test('), 'a form asks for html');
+  assert.match(block, /res\.writeHead\(303, \{ location: '\/api\/admin\/sheet-pull'/);
+  assert.match(block, /return json\(res, 200, out\)/);
+  assert.match(srv, /Last pull: \$\{n\('rows'\)\} rows/);
+  assert.match(srv, /Next action dates: \$\{st\.withDate\}/);
+});

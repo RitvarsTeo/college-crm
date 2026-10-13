@@ -14,6 +14,19 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 13.10.2026 - Q89c: every Next action date becomes one Follow up (COMMITTED, NOT DEPLOYED)
+
+Found by MASTER CONTROL on the live data after the first pull: 45 rows with a Next action date, 12 with a step. Branch `feat/2026-10-13-q89c-follow-up-steps`, cut from `c7abba0`.
+
+| What | Status |
+|---|---|
+| One Follow up per PERSON, not per row: a person on rows in both tabs shares one step, at the earlier date (it used to count the second row's step as blocked) | BUILT |
+| Tried on every pull, not only when the date changes: a row skipped once gets its step when the way is clear | BUILT |
+| Never forced, and counted live on the page: finished in Intake (Admitted / Not proceeding), another open step (by label), the sheet's step done in Intake for the same date | BUILT |
+| A person the sheet made on another row counts as "sheet only", never "made in Intake" | BUILT |
+| The 24.09 import's step takes the sheet's current date (its own date was stale) | BUILT |
+| "Pull now" comes back to the page with the result line; code asking for JSON still gets JSON | BUILT |
+
 ## 13.10.2026 - Q89b: connect the sheet with an admin's own Google account (COMMITTED, NOT DEPLOYED)
 
 PICKED by Ritvars 13.10 (via MASTER CONTROL): "B: my own account". The ADMISSIONS DATABASE sheet is shared with the admins. Branch `feat/2026-10-13-q89b-own-account`, cut from `1adcc25`.

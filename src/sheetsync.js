@@ -125,19 +125,42 @@ async function applyToPerson(db, pid, x, before, at, stats, cfg) {
     await logEvent(db, { personId: pid, kind: 'note', direction: 'note', at, origin: AUTOMATIC, actor: ACTOR, subject: 'From the sheet', body });
     stats.notes++;
   }
-  // the next action date moves the sheet's own Follow-up only; a step made in Intake is never touched
-  if (x.nextDay && changed('nextDay') && !(cfg.terminalStages || []).includes(p.status)) {
-    const open = await db.prepare('SELECT id, label FROM tasks WHERE person_id = ? AND done_at IS NULL').all(pid);
-    const mine = open.find((t) => taskId != null && Number(t.id) === Number(taskId)) || open.find((t) => t.label === OLD_IMPORT_TASK);
-    if (mine) {
-      await db.prepare('UPDATE tasks SET due_at = ?, label = ? WHERE id = ?').run(at9(x.nextDay), stepLabel(cfg), mine.id);
-      taskId = mine.id; stats.steps++;
-    } else if (!open.length) {
-      taskId = await addStep(db, pid, stepLabel(cfg), at9(x.nextDay), p.owner || 'Admissions', at);
-      stats.steps++;
-    } else stats.keptIntake++;
-  }
   return taskId;
+}
+
+// THE NEXT ACTION DATE (Q89c, 13.10.2026: 45 rows had a date, 12 had a step). Every row with a Next action date ends
+// with exactly ONE open Follow up for its person, due that day, with three exceptions that are reported, never forced:
+//   finished  - the person is Admitted or Not proceeding in Intake: no open step for a finished person
+//   intake    - the person has another open step (made in Intake, or by another channel): it is never moved
+//   done      - the sheet's step was done or closed in Intake and the sheet's date has not changed since
+// One step per PERSON, not per row: a person on two rows (both tabs) shares it, at the earlier date. It is tried on
+// every pull, so a row skipped once (say, while another step was open) gets its step when the way is clear.
+async function planStep(db, pid, x, rowTaskId, dateChanged, at, stats, cfg) {
+  if (!x.nextDay) return rowTaskId;
+  const p = await db.prepare('SELECT status, owner FROM people WHERE id = ?').get(pid);
+  if (!p) return rowTaskId;
+  if ((cfg.terminalStages || []).includes(p.status)) { stats.stepFinished = (stats.stepFinished || 0) + 1; return rowTaskId; }
+  const due = at9(x.nextDay);
+  const open = await db.prepare('SELECT id, label, due_at FROM tasks WHERE person_id = ? AND done_at IS NULL').all(pid);
+  const sheetIds = new Set((await db.prepare('SELECT task_id FROM sheet_rows WHERE person_id = ? AND task_id IS NOT NULL').all(pid))
+    .map((r) => Number(r.task_id)));
+  if (rowTaskId != null) sheetIds.add(Number(rowTaskId));
+  const mine = open.find((t) => sheetIds.has(Number(t.id))) || open.find((t) => t.label === OLD_IMPORT_TASK);
+  if (mine) {
+    // the 24.09 import's step carries a stale date: the sheet's date now is the one that counts
+    const ownRow = (rowTaskId != null && Number(mine.id) === Number(rowTaskId)) || mine.label === OLD_IMPORT_TASK;
+    // this row's own step follows its date; a step another row (or the 24.09 import) made keeps the earlier date
+    const next = ownRow ? (dateChanged || mine.label === OLD_IMPORT_TASK ? due : mine.due_at) : (String(due) < String(mine.due_at) ? due : mine.due_at);
+    if (next !== mine.due_at || mine.label !== stepLabel(cfg)) {
+      await db.prepare('UPDATE tasks SET due_at = ?, label = ? WHERE id = ?').run(next, stepLabel(cfg), mine.id);
+      stats.steps++;
+    }
+    return mine.id;
+  }
+  if (open.length) { stats.keptIntake++; stats.stepIntake = (stats.stepIntake || 0) + 1; return rowTaskId; }
+  if (rowTaskId != null && !dateChanged) { stats.stepDone = (stats.stepDone || 0) + 1; return rowTaskId; }
+  stats.steps++;
+  return addStep(db, pid, stepLabel(cfg), due, p.owner || 'Admissions', at);
 }
 
 async function addStep(db, pid, label, due, owner, at) {
@@ -146,6 +169,11 @@ async function addStep(db, pid, label, due, owner, at) {
   return r ? r.id : null;
 }
 
+// A person the sheet made: by this pull on another row (first_channel 'sheet'), or by the 24.09 one-time import.
+const sheetMade = async (db, pid) => {
+  const p = await db.prepare('SELECT first_channel FROM people WHERE id = ?').get(pid);
+  return (p && p.first_channel === 'sheet') || fromOldImport(db, pid);
+};
 const fromOldImport = async (db, pid) => Number((await db.prepare(`SELECT COUNT(*) n FROM events WHERE person_id = ? AND actor = ?`)
   .get(pid, OLD_IMPORT)).n) > 0;
 export const OLD_IMPORT = 'ADMISSIONS DATABASE';
@@ -158,8 +186,7 @@ async function createPerson(db, x, at, cfg) {
     x.education, x.stage || 'New', 'Admissions', x.source_channel, x.source_detail, created, 'sheet', 'lead');
   await logEvent(db, { personId: id, kind: 'create', direction: 'in', at: created || at, origin: AUTOMATIC, actor: ACTOR,
     subject: 'Created from the admissions sheet', body: [x.status ? 'Status: ' + x.status : null, x.notes].filter(Boolean).join(' | ') || null });
-  const taskId = x.nextDay ? await addStep(db, id, stepLabel(cfg), at9(x.nextDay), 'Admissions', at) : null;
-  return { id, taskId };
+  return { id, taskId: null };
 }
 
 /** One pass over the rows of the sheet's live tabs. Pure on the db; the rows come from the caller. */
@@ -182,13 +209,15 @@ export async function applyRows(db, tabs, { now = new Date(), cfg = {}, edu } = 
         const m = await match(db, x);
         if (m && m.many) { stats.needsPerson++; continue; }
         // a person the 24.09 one-time import made is a sheet person too, not one made in Intake
-        if (m) { pid = m.id; made = (await fromOldImport(db, pid)) ? 1 : 0; stats.linked++; }
+        if (m) { pid = m.id; made = (await sheetMade(db, pid)) ? 1 : 0; stats.linked++; }
         else { const c = await createPerson(db, x, at, cfg); pid = c.id; taskId = c.taskId; made = 1; stats.created++; }
       }
       const { tab: _t, line: _l, ...said } = x;               // the row's place is not what it says
       const applied = JSON.stringify(said);
       if (before && before.applied === applied && before.person_id === pid) { stats.unchanged++; }
       else if (!(made && !before)) taskId = await applyToPerson(db, pid, x, before, at, stats, cfg);
+      const lastDay = before ? (JSON.parse(before.applied || '{}').nextDay ?? null) : null;
+      taskId = await planStep(db, pid, x, taskId, !before || lastDay !== (x.nextDay ?? null), at, stats, cfg);
       await db.prepare(`INSERT INTO sheet_rows (tab, row_key, person_id, applied, created_person, first_day, task_id, seen_at)
         VALUES (?,?,?,?,?,?,?,?) ON CONFLICT (tab, row_key) DO UPDATE SET person_id = excluded.person_id, applied = excluded.applied,
         created_person = excluded.created_person, first_day = excluded.first_day, task_id = excluded.task_id, seen_at = excluded.seen_at`)
@@ -240,7 +269,28 @@ export async function sheetCounts(db) {
     const bucket = w ? (weeks.get(w.week) || weeks.set(w.week, { week: w.week, monday: w.monday, madeInIntake: 0, sheetOnly: 0 }).get(w.week)) : undated;
     if (Number(r.created_person)) bucket.sheetOnly++; else bucket.madeInIntake++;
   }
+  // every row with a Next action date, and where its step stands now (Q89c): counts only
+  const steps = { withDate: 0, open: 0, finished: 0, intake: 0, done: 0, none: 0, intakeLabels: {} };
+  try {
+    const all = await db.prepare('SELECT person_id, task_id, applied FROM sheet_rows').all();
+    const terminal = new Set(['Admitted', 'Not proceeding']);
+    for (const r of all) {
+      let a = {};
+      try { a = JSON.parse(r.applied || '{}'); } catch {}
+      if (!a.nextDay) continue;
+      steps.withDate++;
+      const t = r.task_id != null ? await db.prepare('SELECT done_at FROM tasks WHERE id = ?').get(r.task_id) : null;
+      const p = await db.prepare('SELECT status FROM people WHERE id = ?').get(r.person_id);
+      const open = await db.prepare('SELECT id, label FROM tasks WHERE person_id = ? AND done_at IS NULL').all(r.person_id);
+      const sheetIds = new Set((await db.prepare('SELECT task_id FROM sheet_rows WHERE person_id = ? AND task_id IS NOT NULL').all(r.person_id)).map((x) => Number(x.task_id)));
+      if (open.some((o) => sheetIds.has(Number(o.id)))) steps.open++;
+      else if (p && terminal.has(p.status)) steps.finished++;
+      else if (open.length) { steps.intake++; for (const o of open) steps.intakeLabels[o.label] = (steps.intakeLabels[o.label] || 0) + 1; }
+      else if (t && t.done_at) steps.done++;
+      else steps.none++;
+    }
+  } catch { /* no sheet rows yet */ }
   let last = null;
   if (run) { try { last = { at: run.ran_at, ...JSON.parse(run.detail || '{}') }; } catch { last = { at: run.ran_at }; } }
-  return { lastPull: last, weeks: [...weeks.values()].sort((a, b) => b.week.localeCompare(a.week)), undated };
+  return { lastPull: last, steps, weeks: [...weeks.values()].sort((a, b) => b.week.localeCompare(a.week)), undated };
 }
