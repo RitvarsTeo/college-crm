@@ -745,3 +745,4 @@ Seen: GitHub - no Aigars commits since 309b10f; crm-novikontas.vercel.app = 1ced
 13.10 Ritvars OK -> default branch c7abba0..c0f8c2b (patch 42).
 13.10 PATCH 43 LIVE: release/2026-10-13-intake-43 record 3ab91f0 (code 6115bd9) = patch 42 + CHANNELS b106030 (Q91: edu@ mail with label admission/admissions (looked up via labels.list) skips the filter, archived included, 14-day look-back, filter-set-aside comes back, person set-aside stays (Ritvars confirmed both), gmail-poll */5). 1536/1536. Backup 12-07-19Z VERIFIED. deploy_verify green dpl_EeJ1upAcB7xa9aJcrDtdoXooUPQC. Default branch still c0f8c2b until OK. Check after first 5-min run: Channels > Email shows the label found.
 13.10 Ritvars OK -> default branch c0f8c2b..3ab91f0 (patch 43).
+13.10 Q91 first live run 12:10 UTC: label found = 'ADMISSION'; fetched 47, inbox +5, labelled 1, broughtBack 3 (filtered then labelled), filtered 37, joined 4; replies read 10 / replied 6. Default branch = 3ab91f0.
