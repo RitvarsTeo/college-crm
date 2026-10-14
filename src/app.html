@@ -1702,6 +1702,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .p-stage{font-weight:600;color:var(--ink)}
   html.ui-c .p-view{margin:0}
   html.ui-c .p-filters .c-jf select{max-width:10.5em}
+  html.ui-c .p-filters .c-jf select[aria-label="Line"]{max-width:13em}   /* Q94: "Student coordination" whole */
   html.ui-c .p-edit{padding:4px 16px 16px;border-top:1px solid var(--rule2)}
   html.ui-c .c-jedit .c-form{grid-template-columns:minmax(0,1fr)}   /* the board's opened card is narrow: one field per line */
   html.ui-c .p-rows .c-line.c-sel{background:var(--c-sunk)}
@@ -3169,7 +3170,9 @@ async function cHomeData() {
     overdue: overdueRows ? new Set(overdueRows.map((t) => t.person_id)).size : null,
     dueToday: todayRows ? new Set(todayRows.map((t) => t.person_id)).size : null,
     noNext: sum && typeof sum.noNextAction === 'number' ? sum.noNextAction : null,
-    inbox: intake && intake.counts && typeof intake.counts.new === 'number' ? intake.counts.new : null,
+    // Q94: the messages this person's Inbox shows by default (their own line of calls, and everything that is not a call)
+    inbox: intake && Array.isArray(intake.rows) ? intake.rows.filter((r) => cInLine(r, cLineNow())).length
+      : intake && intake.counts && typeof intake.counts.new === 'number' ? intake.counts.new : null,
     asOf: new Intl.DateTimeFormat('en-GB', { timeZone: TZ, day: 'numeric', month: 'long' }).format(new Date()),
   };
 }
@@ -3836,6 +3839,7 @@ async function cNotAdmissions(id, btn) {
 }
 
 async function viewLeadsC() {
+  if (C_IP.line === undefined) C_IP.line = cLineNow();   // Q94: the person's own line, or the choice they made last
   const d = await api('/api/intake?state=' + C_IP.show);
   const rows = d.rows || [];
   if (C_LOPEN && !rows.some((r) => r.id === C_LOPEN)) C_LOPEN = null;
@@ -3962,7 +3966,8 @@ async function cPoolCounts() {
   try {
     const [i, t, ppl] = await Promise.all([api('/api/intake'), api('/api/tasks?scope=open'), api('/api/people')]);
     const after = (k, at) => { const s = cSeen(k); return Boolean(s && at && at > s); };
-    const inbox = (i.rows || []);
+    const line = cLineNow();
+    const inbox = (i.rows || []).filter((r) => cInLine(r, line));   // Q94: the person's own line
     const dueNow = cByPerson(cDueNow(t));
     const people = (ppl && ppl.rows) || [];
     const put = (sel, html) => { const el = document.querySelector(sel); if (el) el.innerHTML = html; };
@@ -3997,6 +4002,34 @@ const cFoldEmpty = (board, id, n) => !cPhone() && n === 0 && !C_UNFOLD.has(board
 function cUnfold(board, id) { C_UNFOLD.add(board + ':' + id); ({ inbox: () => cInboxPool(), due: () => cTodayPool(), journey: () => cDrawJourney() })[board](); }
 const cFoldStrip = (board, id, num, label, n, drop = '') => `<div class="c-col t-fold c-fold-empty${drop ? ' c-drop' : ''}"${drop} role="button" tabindex="0"
     aria-label="${esc(label)}: ${n}, open" onclick="cUnfold(${esc(JSON.stringify(String(board)))}, ${esc(JSON.stringify(String(id ?? '')))})" onkeydown="if(event.key==='Enter')cUnfold(${esc(JSON.stringify(String(board)))}, ${esc(JSON.stringify(String(id ?? '')))})"><span class="c-jn">${num}</span><span class="t-foldl">${esc(label)}</span><b>${n}</b></div>`;
+// CALLS BY LINE (Q94, the owner, 14.10.2026: all of the call takers use Intake; Admissions is the main priority and its
+// Inbox has to stay clean). Every call carries its menu line (1 Admissions, 2 Student coordination, 3 Other). The
+// Inbox shows a person the calls of THEIR line (config.phoneMenu handledByEmail; on a copy without sign-in, handledBy and
+// the Acting as name); an admin, or anybody not listed, sees every line. The Line filter switches, and the choice is
+// remembered per person in this browser. Everything that is not a call is shown to everyone, as before. Nothing is hidden
+// from the database; a call from a known person still goes to that person's profile, whatever the line.
+const cLines = () => Object.entries(CFG.phoneMenu || {}).filter(([k, m]) => !k.startsWith('_') && m && m.queue);
+// a call's line, from its newest call; null = not a call; '' = a call whose line is not known (everyone sees it)
+// (no call row yet: the PBX queue the phone adapter wrote into the item, if it is there)
+const cLineOf = (r) => { if (r.channel !== 'phone') return null; const c = (r.calls || [])[0];
+  const e = c ? cLines().find(([, m]) => m.role === c.line || m.queue === c.line) : cLines().find(([, m]) => String(r.body || '').includes(m.queue));
+  return e ? e[0] : ''; };
+function cMyLine() {
+  const u = typeof AUTH !== 'undefined' && AUTH && AUTH.user;
+  if (u && u.role === 'admin') return '';
+  if (!u && (CFG.admins || []).includes(ACTOR)) return '';
+  const email = String((u && u.email) || '').trim().toLowerCase();
+  const hit = cLines().find(([, m]) => (email && (m.handledByEmail || []).some((x) => String(x).toLowerCase() === email))
+    || (!u && (m.handledBy || []).includes(ACTOR)));
+  return hit ? hit[0] : '';
+}
+const cLineKey = () => 'intakeLine:' + String(((typeof AUTH !== 'undefined' && AUTH && AUTH.user) || {}).email || ACTOR || '');
+function cLineNow() {
+  if (typeof C_IP !== 'undefined' && C_IP.line !== undefined) return C_IP.line;
+  try { const v = localStorage.getItem(cLineKey()); if (v !== null && (v === '' || cLines().some(([k]) => k === v))) return v; } catch (e) { /* private window */ }
+  return cMyLine();
+}
+const cInLine = (r, line) => { if (!line) return true; const l = cLineOf(r); return l === null || l === '' || l === line; };
 let C_TP = { col: null, programme: '', stage: '', source: '', upOpen: false, more: {}, pick: null, open: 'over' };
 let C_TPD = null;
 function cTodayPick(v) {
@@ -4134,6 +4167,12 @@ function cInboxPick(v) {
   else C_IP.col = C_IP.col === v ? null : v;
   cInboxPool();
 }
+// Q94: the Line filter; the choice is this person's default from now on
+function cInboxLine(v) {
+  C_IP.line = v || '';
+  try { localStorage.setItem(cLineKey(), C_IP.line); } catch (e) { /* private window */ }
+  cInboxPool(); cNavCounts();
+}
 function cInboxTap(id) {
   if (cPhone()) C_IP.open = id;
   cInboxPool();
@@ -4148,7 +4187,7 @@ function cInboxAge(iso) {
 const cAgo = (iso) => { const m = Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 60000)); return m < 60 ? `${m} min` : m < 1440 ? `${Math.round(m / 60)} h` : `${Math.round(m / 1440)} d`; };
 function cInboxPool() {
   const D = C_IPD; if (!D) return;
-  const ok = (r) => (!C_IP.channel || r.channel === C_IP.channel) && (!C_IP.kind || r.senderKind === C_IP.kind);
+  const ok = (r) => (!C_IP.channel || r.channel === C_IP.channel) && (!C_IP.kind || r.senderKind === C_IP.kind) && cInLine(r, C_IP.line);
   const rows = D.rows.filter(ok);
   const AGES = [['today', 'Today'], ['yesterday', 'Yesterday'], ['week', 'Earlier this week'], ['older', 'Older']];
   const cols = AGES.map(([id, label]) => ({ id, label, n: rows.filter((r) => cInboxAge(r.received_at) === id).length, tone: 'age-' + id }));
@@ -4195,7 +4234,9 @@ function cInboxPool() {
     band: cPoolBand('Inbox', cols, C_IP.col, 'cInboxPick'),
     filters: cPoolFilters('the inbox', [
       cPoolSelect('Source', C_IP.channel, chans, 'C_IP.channel=this.value;cInboxPool()'),   // Admissions 05.10: filter by source
-      cPoolSelect('Kind', C_IP.kind, C_IP_KIND, 'C_IP.kind=this.value;cInboxPool()')],
+      cPoolSelect('Kind', C_IP.kind, C_IP_KIND, 'C_IP.kind=this.value;cInboxPool()'),
+      // Q94: the calls of one line, or all; the person's own line is the default
+      cPoolSelect('Line', C_IP.line || '', cLines().map(([k, m]) => [k, m.label || m.role]), 'cInboxLine(this.value)')],
       C_IP.channel || C_IP.kind ? "C_IP.channel='';C_IP.kind='';cInboxPool()" : ''),
     body: D.receipt + board,
   });

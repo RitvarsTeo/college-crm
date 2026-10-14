@@ -990,26 +990,40 @@
   "phoneMenu": {
     "1": {
       "role": "Admissions",
+      "label": "Admissions",
       "queue": "1001*Q-ADMISSION",
       "handledBy": [
         "Ieva"
+      ],
+      "handledByEmail": [
+        "ieva.gudaneca@novikontas.org",
+        "edu@novikontas.org"
       ]
     },
     "2": {
       "role": "Student Coordinator",
+      "label": "Student coordination",
       "queue": "1001*Q-COORDINATORS",
       "handledBy": [
         "Laura"
+      ],
+      "handledByEmail": [
+        "laura.skirmante@novikontas.org"
       ]
     },
     "3": {
       "role": "Other",
+      "label": "Other",
       "queue": "1001*Q-OTHER",
       "handledBy": [
         "Tetiana",
         "Arina"
+      ],
+      "handledByEmail": [
+        "arina.danilevska@novikontas.org"
       ]
     },
+    "_handledByEmail": "Q94 (the owner, 14.10.2026: 'all of these people use Intake as well. Its just Ieva is main priority, we have to keep it clean for her!'). The Inbox shows a signed-in person the calls of the line their email is listed on; an admin, or anybody not listed, sees every line. Anyone can switch with the Line filter. A copy without sign-in uses handledBy (the Acting as name).",
     "_note": "The caller presses 1, 2 or 3 and the PBX puts them on the matching queue. Those three queue names are exactly what lib/pbx.js keeps and everything else it drops, so the menu and the logger are one fact in one place.",
     "_answered": "The PBX event carries a `queue` field and the queue IS the button. This was in the original TeleGroup brief and was mapped here on 23.09.2026. Nobody needs to ask TeleGroup whether the button is included - it is. What is still needed is an API token."
   },
