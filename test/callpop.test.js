@@ -133,7 +133,7 @@ test('who is calling: a person with the last COMMENT and next step; a waiting le
   assert.deepEqual({ ...(await whoIsCalling(db, '+37126660003')) }, { kind: 'unknown', isNew: true, last4: '0003' });
 });
 
-test('the feed: nothing on opening, then only newer events; a ring for its line and admins (Q94), an answer for whoever answered', async () => {
+test('the feed: nothing on opening, then only newer events; a ring for its line only, never an admin (Q94), an answer for whoever answered', async () => {
   const db = await seeded();
   const now = new Date('2026-10-04T08:00:30Z');
   const users = ['Ieva', 'Laura', 'Ritvars'];
@@ -146,10 +146,9 @@ test('the feed: nothing on opening, then only newer events; a ring for its line 
   assert.deepEqual(ieva.events.map((e) => e.event), ['ringing', 'answered']);
   assert.equal(ieva.events[0].who.name, 'Anna Ozola', 'line 1 sees the ring');
   assert.equal(ieva.events[1].forYou, true);
+  // Ritvars 14.10.2026: "not for admins. never for admins." / "Admins dont have phones connected!"
   const admin = await callFeed(db, { after: open.last, viewer: 'Ritvars', users, now });
-  assert.equal(admin.events[0].who.kind, 'person', 'an admin sees every line');
-  assert.deepEqual({ ...admin.events[1] }, { id: admin.events[1].id, callId: 'u7', event: 'answered', at: admin.events[1].at, taken: true },
-    'the others learn it was taken, and nothing about the caller');
+  assert.equal(admin.events.length, 0, 'an admin never gets a call pop-up');
   const laura = await callFeed(db, { after: open.last, viewer: 'Laura', users, now });
   assert.equal(laura.events.length, 0, 'Q94: a button 1 call never pops for line 2 (Laura)');
   const again = await callFeed(db, { after: ieva.last, viewer: 'Ieva', users, now });

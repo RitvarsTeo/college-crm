@@ -191,7 +191,7 @@
     {
       "id": "phone-calls",
       "q": "How do calls reach the Inbox, and what is Not Admissions?",
-      "a": "Intake reads the college phone line every minute, so a call is in the Inbox about a minute after it ends. A call card shows each call: the time, the line it came in on, and Answered by who answered, or Missed. A call from somebody already in Intake goes on their history instead. Not Admissions on a call card sets it aside in one click, and later calls from that number are set aside too. Bring back on any card of that number undoes it. A call pops up in the app for button 1 (Admissions) and button 2 (Coordinator); a button 3 call does not pop up, it only reaches the Inbox or the history. A number set aside as Not Admissions never pops up. A call pops up only for the people of its line (1 Ieva, 2 Laura) and for admins."
+      "a": "Intake reads the college phone line every minute, so a call is in the Inbox about a minute after it ends. A call card shows each call: the time, the line it came in on, and Answered by who answered, or Missed. A call from somebody already in Intake goes on their history instead. Not Admissions on a call card sets it aside in one click, and later calls from that number are set aside too. Bring back on any card of that number undoes it. A call pops up in the app for button 1 (Admissions) and button 2 (Coordinator); a button 3 call does not pop up, it only reaches the Inbox or the history. A number set aside as Not Admissions never pops up. A call pops up only for the people of its line (1 Ieva, 2 Laura), never for admins."
     },
     {
       "id": "linkedin-leads",

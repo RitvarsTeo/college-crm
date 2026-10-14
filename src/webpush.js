@@ -68,7 +68,7 @@ export async function targetsFor(db, ev, users = []) {
   if (ev.event === 'answered' && ev.operator && users.some((u) => isOperator(ev.operator, u))) {
     return subs.filter((s) => isOperator(ev.operator, s.user_name));
   }
-  // Q94: the people of the call's line plus admins, never everybody
+  // Q94: the people of the call's line only; never an admin (Ritvars 14.10.2026)
   const admins = await adminNames(db);
   return subs.filter((s) => seesLine(s.user_name, ev.queue, admins));
 }

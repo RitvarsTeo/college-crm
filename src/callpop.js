@@ -30,10 +30,11 @@ export function popsUp(queue, menu = MENU) {
   return Boolean(m && m.popUp);
 }
 
-// WHO A CALL POPS UP FOR (Q94, 14.10.2026, MASTER CONTROL with Ritvars): the people of that call's line plus admins,
-// never everybody. The line's people are config.phoneMenu[n].handledBy (1 Admissions: Ieva; 2 Coordinator: Laura;
-// 3 Other: Tetiana, Arina). Admins: config.admins and every active crm_users admin. Whoever ANSWERED always sees their
-// own call. An event whose queue we cannot tell goes to everybody, as before.
+// WHO A CALL POPS UP FOR (Q94, 14.10.2026): the people of that call's line, never everybody, and NEVER an admin
+// (Ritvars, 14.10.2026: "not for admins. never for admins."). The line's people are config.phoneMenu[n].handledBy
+// (1 Admissions: Ieva; 2 Coordinator: Laura; 3 Other: Tetiana, Arina). Whoever ANSWERED always sees their own call.
+// An event whose queue we cannot tell goes to everybody on a line, still never to an admin. Admins: config.admins and
+// every active crm_users admin; somebody named on a line who is also an admin gets that line's calls.
 export async function adminNames(db) {
   const names = new Set(CFG.admins || []);
   try {
@@ -45,10 +46,12 @@ export async function adminNames(db) {
 }
 export function seesLine(viewer, queue, admins = [], menu = MENU) {
   if (!viewer) return false;
-  const m = queue ? Object.values(menu).find((x) => x && x.queue === queue) : null;
-  if (!m) return true;
-  if (admins.some((a) => isOperator(a, viewer))) return true;
-  return (m.handledBy || []).some((h) => isOperator(h, viewer));
+  const lines = Object.values(menu).filter((x) => x && x.queue);
+  const m = queue ? lines.find((x) => x.queue === queue) : null;
+  const onLine = (x) => (x.handledBy || []).some((h) => isOperator(h, viewer));
+  if (m) return onLine(m);
+  // a queue we cannot tell: everybody on any line, never an admin who is on none
+  return lines.some(onLine) || !admins.some((a) => isOperator(a, viewer));
 }
 
 // A NUMBER THE PHONE FILTER SETS ASIDE NEVER POPS (Ritvars, 14.10.2026, "Yes, never pop"): Not Admissions, Spam and
