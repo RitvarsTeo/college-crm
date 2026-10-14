@@ -96,7 +96,7 @@ test('the action is on the card: "Make a lead" opens the small form, "Set aside"
 
 test('the filter row is Source + Kind, nothing else; a band click narrows to that day; set-aside messages carry no actions', () => {
   const html = board().view.innerHTML;
-  assert.match(html, /<filters the inbox clear=""><select label="Source" value="" n=3><select label="Kind" value="" n=3><\/filters>/);
+  assert.match(html, /<filters the inbox clear=""><select label="Source" value="" n=3><select label="Kind" value="" n=3><select label="Line" value="" n=\d+><\/filters>/);
   assert.doesNotMatch(APP, /C_IP_SHOW|<span>Show<\/span>/, 'no Show dropdown');
   const narrowed = board({ col: 'yesterday' }).view.innerHTML;
   assert.equal((narrowed.match(/<h3><span class="c-jn">/g) || []).length, 1, 'one column');
