@@ -117,3 +117,52 @@ test('Q94: a button 2 ring reaches Laura in the open app and by push, never Ieva
   const t = await targetsFor(db, { event: 'ringing', queue: '1001*Q-COORDINATORS' }, users);
   assert.deepEqual(t.map((s) => s.user_name), ['Laura']);
 });
+
+// One map with the Inbox's Line filter (14.10.2026): signed in, a person is their EMAIL (phoneMenu handledByEmail;
+// edu@novikontas.org is line 1); only without sign-in are names used. Admins still never pop.
+import { viewerFor } from '../src/callpop.js';
+
+test('signed in: the line is read from the email; edu@ is line 1; an admin is never a line person by role', () => {
+  const ieva = { name: 'Ieva Gudaneca', email: 'IEVA.GUDANECA@novikontas.org' };
+  const edu = { name: 'Admissions desk', email: 'edu@novikontas.org' };
+  const laura = { name: 'Laura', email: 'laura.skirmante@novikontas.org' };
+  const boss = { name: 'Ritvars', email: 'ritvars.vilcins@novikontas.org', isAdmin: true };
+  assert.equal(seesLine(ieva, '1001*Q-ADMISSION'), true, 'case does not matter');
+  assert.equal(seesLine(edu, '1001*Q-ADMISSION'), true, 'edu@ counts as line 1');
+  assert.equal(seesLine(laura, '1001*Q-ADMISSION'), false);
+  assert.equal(seesLine(laura, '1001*Q-COORDINATORS'), true);
+  assert.equal(seesLine({ name: 'Laura', email: 'someone.else@novikontas.org' }, '1001*Q-COORDINATORS'), false, 'signed in, the name alone is not enough');
+  assert.equal(seesLine(boss, '1001*Q-COORDINATORS'), false, 'never an admin');
+  assert.equal(seesLine(boss, null), false, 'never an admin, unknown queue too');
+  assert.equal(seesLine(laura, null), true);
+});
+
+test('push targets follow the same email map: a subscription name is looked up in crm_users', async () => {
+  const db = await openDb(':memory:');
+  const add = (id, email, name, role) => db.prepare(`INSERT INTO crm_users (id, email, display_name, role, active, created_at)
+    VALUES (?,?,?,?,1,'2026-10-14T00:00:00Z')`).run(id, email, name, role);
+  await add('u1', 'edu@novikontas.org', 'Admissions desk', 'user');
+  await add('u2', 'laura.skirmante@novikontas.org', 'Laura Skirmante', 'user');
+  await add('u3', 'ritvars.vilcins@novikontas.org', 'Ritvars', 'admin');
+  for (const n of ['Admissions desk', 'Laura Skirmante', 'Ritvars']) await subscribe(db, { endpoint: 'https://push.example/' + encodeURIComponent(n), userName: n });
+  assert.deepEqual(await viewerFor(db, 'admissions desk'), { name: 'admissions desk', email: 'edu@novikontas.org', isAdmin: false });
+  const one = await targetsFor(db, { event: 'ringing', queue: '1001*Q-ADMISSION' }, []);
+  assert.deepEqual(one.map((s) => s.user_name), ['Admissions desk'], 'edu@ gets line 1');
+  const two = await targetsFor(db, { event: 'ringing', queue: '1001*Q-COORDINATORS' }, []);
+  assert.deepEqual(two.map((s) => s.user_name), ['Laura Skirmante']);
+});
+
+test('the open app: the server passes the signed-in user, and the feed reads the email', async () => {
+  const db = await openDb(':memory:');
+  const now = new Date('2026-10-14T10:00:00Z');
+  await db.prepare(`INSERT INTO call_events (call_id, event, at, queue, caller_num, operator, extension, source, received_at)
+    VALUES (?,?,?,?,?,?,?,?,?)`).run('e1', 'ringing', now.toISOString(), '1001*Q-ADMISSION', '+37126000001', null, null, 'provider', now.toISOString());
+  const feed = (viewer, viewerUser) => callFeed(db, { after: 0, viewer, viewerUser, users: [], now }).then((f) => f.events.length);
+  assert.equal(await feed('Admissions desk', { email: 'edu@novikontas.org', role: 'user' }), 1);
+  assert.equal(await feed('Ieva', { email: 'laura.skirmante@novikontas.org', role: 'user' }), 0, 'the email decides, not the name');
+  assert.equal(await feed('Ritvars', { email: 'ritvars.vilcins@novikontas.org', role: 'admin' }), 0);
+  assert.equal(await feed('Ieva', null), 1, 'no sign-in: the name');
+  const src = fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8');
+  assert.match(src, /callpop\.callFeed\(db, \{ after, viewer, viewerUser: await currentUser\(req\), users \}\)/);
+  assert.match(src, /callpop\.latestNote\(db, \{ viewer, viewerUser: await currentUser\(req\), users \}\)/);
+});

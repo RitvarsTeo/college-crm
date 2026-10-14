@@ -1286,7 +1286,7 @@ export const handle = async (req, res) => {
       // the TeleGroup pull's token. Without one the app asks every 5 minutes, not every 3 seconds.
       const enabled = (await channelMode(db, 'phone')) !== 'off'
         && Boolean(process.env[PHONE_EVENT_SECRET_ENV] || process.env.PBX_API_TOKEN);
-      return json(res, 200, { enabled, ...(await callpop.callFeed(db, { after, viewer, users })) });
+      return json(res, 200, { enabled, ...(await callpop.callFeed(db, { after, viewer, viewerUser: await currentUser(req), users })) });
     }
 
     // WEB PUSH (Q6, 04.10.2026): the browser subscribes once; the service worker asks /api/calls/latest
@@ -1306,7 +1306,7 @@ export const handle = async (req, res) => {
       const users = AUTH_ON
         ? (await db.prepare('SELECT display_name FROM crm_users WHERE active = 1').all()).map((u) => u.display_name).filter(Boolean)
         : USER_NAMES;
-      return json(res, 200, { note: await callpop.latestNote(db, { viewer, users }) });
+      return json(res, 200, { note: await callpop.latestNote(db, { viewer, viewerUser: await currentUser(req), users }) });
     }
 
     // THE PHONE SYSTEM PUSHES CALL EVENTS HERE (Q6, 04.10.2026): ringing, answered, ended.

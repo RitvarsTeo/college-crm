@@ -44,14 +44,34 @@ export async function adminNames(db) {
   } catch { /* no users table yet: the config list */ }
   return [...names];
 }
+// THE VIEWER (14.10.2026, one map with the Inbox's Line filter): signed in, a person is their EMAIL, matched against
+// config.phoneMenu[n].handledByEmail (edu@novikontas.org counts as line 1), and an admin is their crm_users role. Only on a
+// copy without sign-in (no email) are the names used: handledBy and config.admins. `viewer` is a name, or
+// { name, email, isAdmin }.
+const asViewer = (v) => (v && typeof v === 'object' ? v : { name: v || '' });
+const sameEmail = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
 export function seesLine(viewer, queue, admins = [], menu = MENU) {
-  if (!viewer) return false;
+  const v = asViewer(viewer);
+  if (!v.name && !v.email) return false;
   const lines = Object.values(menu).filter((x) => x && x.queue);
   const m = queue ? lines.find((x) => x.queue === queue) : null;
-  const onLine = (x) => (x.handledBy || []).some((h) => isOperator(h, viewer));
+  const onLine = (x) => (v.email
+    ? (x.handledByEmail || []).some((e) => sameEmail(e, v.email))
+    : (x.handledBy || []).some((h) => isOperator(h, v.name)));
   if (m) return onLine(m);
   // a queue we cannot tell: everybody on any line, never an admin who is on none
-  return lines.some(onLine) || !admins.some((a) => isOperator(a, viewer));
+  const admin = v.email ? Boolean(v.isAdmin) : (Boolean(v.isAdmin) || admins.some((a) => isOperator(a, v.name)));
+  return lines.some(onLine) || !admin;
+}
+
+// A pushed subscription knows only its user's name: signed in, that name is looked up in crm_users for the email and
+// the role, so a push follows the same email map as the open app.
+export async function viewerFor(db, name) {
+  try {
+    const u = await db.prepare('SELECT email, role FROM crm_users WHERE active = 1 AND lower(display_name) = lower(?)').get(String(name || ''));
+    if (u && u.email) return { name, email: u.email, isAdmin: u.role === 'admin' };
+  } catch { /* no users table: names */ }
+  return { name };
 }
 
 // A NUMBER THE PHONE FILTER SETS ASIDE NEVER POPS (Ritvars, 14.10.2026, "Yes, never pop"): Spam, Supplier or vendor,
@@ -120,7 +140,7 @@ const cut = (s, n = 140) => {
 // --------------------------------------------------------- who sees what --
 // No `after`: the app has just opened. It gets the newest id and NO events, so nothing pops on
 // a load or a reload. With `after`: every newer event this viewer should see.
-export async function callFeed(db, { after = null, viewer = '', users = [], now = new Date() } = {}) {
+export async function callFeed(db, { after = null, viewer = '', viewerUser = null, users = [], now = new Date() } = {}) {
   const top = await db.prepare('SELECT MAX(id) n FROM call_events').get();
   const last = Number((top && top.n) || 0);
   if (after === null || after === undefined || after === '' || !Number.isFinite(Number(after))) return { last, events: [] };
@@ -133,7 +153,8 @@ export async function callFeed(db, { after = null, viewer = '', users = [], now 
     if (!popsUp(r.queue)) continue;     // button 3: no pop-up (14.10.2026)
     const op = r.operator || null;
     const mine = op ? isOperator(op, viewer) : false;
-    if (!mine && !seesLine(viewer, r.queue, admins)) continue;   // Q94: that line's people and admins only
+    // Q94: that line's people only (signed in: by email), never an admin
+    if (!mine && !seesLine(viewerUser && viewerUser.email ? { name: viewer, email: viewerUser.email, isAdmin: viewerUser.role === 'admin' } : viewer, r.queue, admins)) continue;
     const someoneElse = Boolean(op && !mine && users.some((u) => isOperator(op, u)));
     // a known colleague took it: the others learn that, and nothing about the caller
     if (someoneElse) { events.push({ id: Number(r.id), callId: r.call_id, event: r.event, at: r.at, taken: true }); continue; }
@@ -162,10 +183,10 @@ export function noteFor(ev) {
 
 // The call a knock was about: this viewer's newest answered call, else the newest ring, from the
 // last two minutes. Nothing taken by a colleague, nothing ended.
-export async function latestNote(db, { viewer = '', users = [], now = new Date() } = {}) {
+export async function latestNote(db, { viewer = '', viewerUser = null, users = [], now = new Date() } = {}) {
   const top = await db.prepare('SELECT MAX(id) n FROM call_events').get();
   const last = Number((top && top.n) || 0);
-  const feed = await callFeed(db, { after: Math.max(0, last - 50), viewer, users, now });
+  const feed = await callFeed(db, { after: Math.max(0, last - 50), viewer, viewerUser, users, now });
   const since = now.getTime() - 2 * 60000;
   const fresh = feed.events.filter((e) => !e.taken && e.event !== 'ended' && Date.parse(e.at || 0) >= since - 60000);
   const pick = [...fresh].reverse().find((e) => e.event === 'answered' && e.forYou)
