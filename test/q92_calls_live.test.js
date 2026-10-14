@@ -278,6 +278,16 @@ test('recent: a long answered call, listed only when it ends but stamped with it
   assert.equal(lag[0].lagMin, 20, 'twenty minutes after it started = the moment it ended');
 });
 
+test('fields: the pull keeps the NAMES of the fields TeleGroup sends, never a value (14.10.2026, for the call length)', async () => {
+  const db = await openDb(':memory:');
+  const tg = fakeTeleGroup([call({ created_at: '2026-10-14 08:58:30', billsec: 754, recording: 'https://x.example/rec/1.mp3' })]);
+  await run(db, tg, '2026-10-14T08:59:00Z');
+  const row = await db.prepare("SELECT value, detail FROM sync_state WHERE name = 'pbx_fields'").get();
+  assert.equal(row.value, 'billsec,caller_num,created_at,destination,operator_name,queue,recording,state,uniqueid');
+  const all = row.value + row.detail;
+  for (const secret of ['37129111222', 'Laura', '754', 'x.example', 'c1']) assert.ok(!all.includes(secret), `no value kept: ${secret}`);
+});
+
 test('late: a call TeleGroup lists 3 hours late, with its original time, is still caught by the sweep; recorded how late', async () => {
   const db = await openDb(':memory:');
   const tg = lateTeleGroup([call({ uniqueid: 'late1', created_at: '2026-10-14 06:59:00', listedFrom: '2026-10-14T09:58:00Z' })]);

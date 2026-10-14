@@ -119,6 +119,7 @@ export const SWEEP_PIECES = 6;
 export const LAG_KEEP = 200;
 const PBX_SWEEP = 'pbx_sweep';
 const PBX_LAG = 'pbx_lag';
+const PBX_FIELDS = 'pbx_fields';
 
 // ---------------------------------------------- one number, one thing to look at
 // Ritvars, 01.10.2026: "Leads become those who have some interest. How can we know
@@ -234,6 +235,7 @@ export async function syncPbx(db, { now = new Date(), minutes = WINDOW_MINUTES,
   const out = { logged: 0, inbox: 0, again: 0, filtered: 0, seen: 0, noNumber: 0, callBack: 0 };
   const skipped = { notIncoming: 0, otherQueue: 0, unusable: 0, duplicateInBatch: 0 };
   const destinations = {};   // counts per destination the list returned (lib/pbx.js rowsFrom), saved with the run
+  const fields = new Set();  // the NAMES of the fields TeleGroup sends (14.10.2026: the call length is wanted, its name is unknown); never a value
   let fetched = 0, kept = 0, pieces = 0, safeUrl = null, reached = from, backedOff = null;
 
   const lags = [];           // how late each NEW call was found, in minutes after it happened
@@ -254,6 +256,7 @@ export async function syncPbx(db, { now = new Date(), minutes = WINDOW_MINUTES,
     const { rows, skipped: sk, destinations: ds } = rowsFrom(got.calls);
     for (const k of Object.keys(skipped)) skipped[k] += sk[k] || 0;
     for (const [d, n] of Object.entries(ds || {})) destinations[d] = (destinations[d] || 0) + n;
+    for (const c of got.calls) if (c && typeof c === 'object') for (const k of Object.keys(c)) fields.add(String(k).slice(0, 40));
     fetched += got.calls.length;
     kept += rows.length;
     for (const r of rows) {
@@ -305,6 +308,7 @@ export async function syncPbx(db, { now = new Date(), minutes = WINDOW_MINUTES,
     }
     await saveState(db, PBX_SWEEP, new Date(a).toISOString(), { swept, lateHours: LATE_HOURS }, at);
   }
+  if (fields.size) await saveState(db, PBX_FIELDS, [...fields].sort().join(','), { names: fields.size }, at);
   if (lags.length) {
     const was = await db.prepare('SELECT detail FROM sync_state WHERE name = ?').get(PBX_LAG);
     let list = [];
