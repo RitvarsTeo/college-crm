@@ -26,7 +26,7 @@ test('the open app is fed button 1 and 2 calls only', async () => {
   for (const [id, q] of [['a', '1001*Q-ADMISSION'], ['b', '1001*Q-COORDINATORS'], ['c', '1001*Q-OTHER']]) {
     await ins.run(id, 'ringing', now.toISOString(), q, '+3712911122' + id.charCodeAt(0) % 10, null, null, 'provider', now.toISOString());
   }
-  const feed = await callFeed(db, { after: 0, viewer: 'Laura', users: ['Laura', 'Ieva'], now });
+  const feed = await callFeed(db, { after: 0, viewer: 'Ritvars', users: ['Laura', 'Ieva', 'Ritvars'], now });   // an admin sees every line
   assert.deepEqual(feed.events.map((e) => e.callId), ['a', 'b']);
   assert.equal(feed.last, 3, 'the cursor still moves past the button 3 event');
 });
@@ -80,4 +80,32 @@ test('a Not Admissions number never pops; Bring back makes it pop again; a perso
   const feed = await callFeed(db, { after, viewer: 'Ieva', users, now });
   assert.equal(feed.events.length, 1);
   assert.equal(feed.events[0].who.kind, 'person');
+});
+
+// Q94 (14.10.2026, MASTER CONTROL with Ritvars): a call pops for the people of its line plus admins, never everybody.
+import { seesLine } from '../src/callpop.js';
+import { targetsFor, subscribe } from '../src/webpush.js';
+
+test('Q94: who a line is for - its people (phoneMenu handledBy) and admins; a queue we cannot tell is for everybody', () => {
+  const admins = ['Aigars', 'Ritvars', 'Marina'];
+  assert.equal(seesLine('Ieva', '1001*Q-ADMISSION', admins), true);
+  assert.equal(seesLine('Laura', '1001*Q-ADMISSION', admins), false);
+  assert.equal(seesLine('Laura', '1001*Q-COORDINATORS', admins), true);
+  assert.equal(seesLine('Ieva', '1001*Q-COORDINATORS', admins), false);
+  assert.equal(seesLine('Ritvars', '1001*Q-COORDINATORS', admins), true, 'an admin sees every line');
+  assert.equal(seesLine('Arina', '1001*Q-OTHER', admins), true);
+  assert.equal(seesLine('Laura', null, admins), true, 'unknown queue: everybody, as before');
+});
+
+test('Q94: a button 2 ring reaches Laura and admins in the open app and by push, never Ieva', async () => {
+  const db = await openDb(':memory:');
+  const now = new Date('2026-10-14T10:00:00Z');
+  await db.prepare(`INSERT INTO call_events (call_id, event, at, queue, caller_num, operator, extension, source, received_at)
+    VALUES (?,?,?,?,?,?,?,?,?)`).run('q2', 'ringing', now.toISOString(), '1001*Q-COORDINATORS', '+37126000002', null, null, 'provider', now.toISOString());
+  const users = ['Ieva', 'Laura', 'Ritvars'];
+  const n = async (viewer) => (await callFeed(db, { after: 0, viewer, users, now })).events.length;
+  assert.deepEqual([await n('Laura'), await n('Ritvars'), await n('Ieva')], [1, 1, 0]);
+  for (const u of ['Ieva', 'Laura', 'Ritvars']) await subscribe(db, { endpoint: 'https://push.example/' + u.toLowerCase(), userName: u });
+  const t = await targetsFor(db, { event: 'ringing', queue: '1001*Q-COORDINATORS' }, users);
+  assert.deepEqual(t.map((s) => s.user_name).sort(), ['Laura', 'Ritvars']);
 });

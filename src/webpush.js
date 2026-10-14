@@ -18,7 +18,7 @@
 // Without them push is simply off, and the open app still pops up as before.
 
 import crypto from 'node:crypto';
-import { isOperator, popsUp, filteredCaller } from './callpop.js';
+import { isOperator, popsUp, filteredCaller, seesLine, adminNames } from './callpop.js';
 
 export const VAPID_ENV = ['VAPID_PUBLIC_KEY', 'VAPID_PRIVATE_KEY', 'VAPID_SUBJECT'];
 const b64u = (buf) => Buffer.from(buf).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -68,7 +68,9 @@ export async function targetsFor(db, ev, users = []) {
   if (ev.event === 'answered' && ev.operator && users.some((u) => isOperator(ev.operator, u))) {
     return subs.filter((s) => isOperator(ev.operator, s.user_name));
   }
-  return subs;
+  // Q94: the people of the call's line plus admins, never everybody
+  const admins = await adminNames(db);
+  return subs.filter((s) => seesLine(s.user_name, ev.queue, admins));
 }
 
 // Knock. Never throws: a call event is stored whatever the push services answer. A subscription

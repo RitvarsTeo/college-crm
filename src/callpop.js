@@ -30,6 +30,27 @@ export function popsUp(queue, menu = MENU) {
   return Boolean(m && m.popUp);
 }
 
+// WHO A CALL POPS UP FOR (Q94, 14.10.2026, MASTER CONTROL with Ritvars): the people of that call's line plus admins,
+// never everybody. The line's people are config.phoneMenu[n].handledBy (1 Admissions: Ieva; 2 Coordinator: Laura;
+// 3 Other: Tetiana, Arina). Admins: config.admins and every active crm_users admin. Whoever ANSWERED always sees their
+// own call. An event whose queue we cannot tell goes to everybody, as before.
+export async function adminNames(db) {
+  const names = new Set(CFG.admins || []);
+  try {
+    for (const u of await db.prepare("SELECT display_name FROM crm_users WHERE role = 'admin' AND active = 1").all()) {
+      if (u.display_name) names.add(u.display_name);
+    }
+  } catch { /* no users table yet: the config list */ }
+  return [...names];
+}
+export function seesLine(viewer, queue, admins = [], menu = MENU) {
+  if (!viewer) return false;
+  const m = queue ? Object.values(menu).find((x) => x && x.queue === queue) : null;
+  if (!m) return true;
+  if (admins.some((a) => isOperator(a, viewer))) return true;
+  return (m.handledBy || []).some((h) => isOperator(h, viewer));
+}
+
 // A NUMBER THE PHONE FILTER SETS ASIDE NEVER POPS (Ritvars, 14.10.2026, "Yes, never pop"): Not Admissions, Spam and
 // the other phoneFilter.filterArchivedAs reasons, undone by Bring back exactly as in the pull. A caller who is a person
 // in Intake always pops: the person is looked for first, the same order as storeCall.
@@ -104,10 +125,12 @@ export async function callFeed(db, { after = null, viewer = '', users = [], now 
   const rows = await db.prepare(`SELECT id, call_id, event, at, queue, caller_num, operator FROM call_events
     WHERE id > ? AND received_at >= ? ORDER BY id LIMIT 50`).all(Number(after), since);
   const events = [];
+  const admins = rows.length ? await adminNames(db) : [];
   for (const r of rows) {
     if (!popsUp(r.queue)) continue;     // button 3: no pop-up (14.10.2026)
     const op = r.operator || null;
     const mine = op ? isOperator(op, viewer) : false;
+    if (!mine && !seesLine(viewer, r.queue, admins)) continue;   // Q94: that line's people and admins only
     const someoneElse = Boolean(op && !mine && users.some((u) => isOperator(op, u)));
     // a known colleague took it: the others learn that, and nothing about the caller
     if (someoneElse) { events.push({ id: Number(r.id), callId: r.call_id, event: r.event, at: r.at, taken: true }); continue; }

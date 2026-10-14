@@ -133,7 +133,7 @@ test('who is calling: a person with the last COMMENT and next step; a waiting le
   assert.deepEqual({ ...(await whoIsCalling(db, '+37126660003')) }, { kind: 'unknown', isNew: true, last4: '0003' });
 });
 
-test('the feed: nothing on opening, then only newer events; a ring for everybody, an answer for whoever answered', async () => {
+test('the feed: nothing on opening, then only newer events; a ring for its line and admins (Q94), an answer for whoever answered', async () => {
   const db = await seeded();
   const now = new Date('2026-10-04T08:00:30Z');
   const users = ['Ieva', 'Laura', 'Ritvars'];
@@ -144,12 +144,14 @@ test('the feed: nothing on opening, then only newer events; a ring for everybody
   await receivePhoneEvent(db, ev('u7', 'answered', '+371 29990001', { operator: 'Ieva Kalnina' }), { mode: 'test', now });
   const ieva = await callFeed(db, { after: open.last, viewer: 'Ieva', users, now });
   assert.deepEqual(ieva.events.map((e) => e.event), ['ringing', 'answered']);
-  assert.equal(ieva.events[0].who.name, 'Anna Ozola', 'everybody sees the ring');
+  assert.equal(ieva.events[0].who.name, 'Anna Ozola', 'line 1 sees the ring');
   assert.equal(ieva.events[1].forYou, true);
-  const laura = await callFeed(db, { after: open.last, viewer: 'Laura', users, now });
-  assert.equal(laura.events[0].who.kind, 'person');
-  assert.deepEqual({ ...laura.events[1] }, { id: laura.events[1].id, callId: 'u7', event: 'answered', at: laura.events[1].at, taken: true },
+  const admin = await callFeed(db, { after: open.last, viewer: 'Ritvars', users, now });
+  assert.equal(admin.events[0].who.kind, 'person', 'an admin sees every line');
+  assert.deepEqual({ ...admin.events[1] }, { id: admin.events[1].id, callId: 'u7', event: 'answered', at: admin.events[1].at, taken: true },
     'the others learn it was taken, and nothing about the caller');
+  const laura = await callFeed(db, { after: open.last, viewer: 'Laura', users, now });
+  assert.equal(laura.events.length, 0, 'Q94: a button 1 call never pops for line 2 (Laura)');
   const again = await callFeed(db, { after: ieva.last, viewer: 'Ieva', users, now });
   assert.equal(again.events.length, 0, 'no repeats');
   assert.ok(!JSON.stringify(ieva).includes('29990001'), 'the number never leaves the server');
