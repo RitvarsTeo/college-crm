@@ -365,11 +365,48 @@ export async function listInbound(db, { state = 'new', now = nowIso(), range = n
     r.missing = missingFor(r.fields);
     const due = answerDeadlines(r.received_at);
     r.answer_by = due.answerBy; r.late_at = due.lateAt;
+    // Q92 (14.10.2026): a phone card says each call plainly: when, which line, answered (by whom) or missed
+    if (r.channel === 'phone') r.calls = await callsFor(db, r.id);
     r.aged = r.state === 'new' && due.lateAt <= now;                    // late: red (Q50)
     r.answerNow = r.state === 'new' && !r.aged && due.answerBy <= now;  // answer now: amber
     Object.assign(r, senderKind(r, known));
   }
   return rows;
+}
+
+// The calls an Inbox item holds (the first and every "rang again"), newest first, from pbx_calls: the PBX's own fields.
+// line = the phone menu's role for the queue ("Admissions"), else the queue as the PBX names it.
+export async function callsFor(db, inboundId) {
+  const menu = Object.values(CFG.phoneMenu || {});
+  const rows = await db.prepare(`SELECT called_at, queue, picked_up, operator_name FROM pbx_calls
+    WHERE inbound_id = ? ORDER BY called_at DESC`).all(inboundId);
+  return rows.map((c) => ({ at: c.called_at, line: ((menu.find((m) => m && m.queue === c.queue) || {}).role) || c.queue,
+    answered: Boolean(Number(c.picked_up)), operator: c.operator_name || null }));
+}
+
+// ------------------------------------------------- old calls, set aside once (Q92) --
+// Ritvars, 14.10.2026: calls reached the Inbox a day late until the pull ran every minute, so the phone items that
+// waited from before then are set aside ONCE, by an admin, with one reason. Kept, nothing deleted; each one logged in
+// inbound_history and returned by Bring back like any set-aside. apply:false (the default) only says what it would do.
+export const OLD_CALL_REASON = 'Old call, before calls were live';
+export async function setAsideOldCalls(db, { before, apply = false, by, at = nowIso() } = {}) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(before || ''))) return { error: 'before must be a day, YYYY-MM-DD' };
+  if (apply && !by) return { error: 'who is setting these aside?' };
+  const cutoff = localMidnight(...before.split('-').map(Number));     // midnight in Riga, the start of that day
+  const rows = await db.prepare(`SELECT id FROM inbound WHERE channel = 'phone' AND state = 'new' AND received_at < ?
+    ORDER BY id`).all(cutoff);
+  if (apply) {
+    for (const { id } of rows) {
+      await db.prepare(`UPDATE inbound SET state = 'archived', archive_reason = ?, archive_note = NULL, processed_by = ?,
+        processed_at = ? WHERE id = ? AND state = 'new'`).run(OLD_CALL_REASON, by, at, id);
+      await db.prepare(`INSERT INTO inbound_history (inbound_id, action, at, actor, reason, note)
+        VALUES (?, 'set_aside', ?, ?, ?, ?)`).run(id, at, by, OLD_CALL_REASON, 'one-off admin action, Q92');
+    }
+    await db.prepare(`INSERT INTO sync_state (name, value, ran_at, detail) VALUES ('old_calls_set_aside', ?, ?, ?)
+      ON CONFLICT (name) DO UPDATE SET value = excluded.value, ran_at = excluded.ran_at, detail = excluded.detail`)
+      .run(String(rows.length), at, JSON.stringify({ before, cutoff, by, ids: rows.map((r) => r.id) }));
+  }
+  return { applied: Boolean(apply), before, cutoff, count: rows.length, reason: OLD_CALL_REASON };
 }
 
 // ---------------------------------------------------------- sender kind (Q31) --

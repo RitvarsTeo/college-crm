@@ -764,6 +764,7 @@
       "Supplier or vendor",
       "Internal",
       "Already handled",
+      "Not Admissions",
       "Other"
     ],
     "archiveReasonNeedsNote": [
@@ -980,8 +981,10 @@
     "filterArchivedAs": [
       "Spam",
       "Supplier or vendor",
-      "Internal"
+      "Internal",
+      "Not Admissions"
     ],
+    "_notAdmissions": "Q92, 14.10.2026 (Ieva: many calls to the college number are not ADMISSIONS): one click on a phone card sets it aside as Not Admissions and later calls from that number are set aside too. Bring back on any card of that number undoes it. A number that belongs to a person in Intake is never filtered: the person is found first.",
     "oneOpenItemPerNumber": true
   },
   "phoneMenu": {

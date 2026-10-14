@@ -189,6 +189,11 @@
       "a": "Yes. Copy the address from the browser and send it. Anyone with an Intake account opens it; if they are signed out, they sign in first and then land on it."
     },
     {
+      "id": "phone-calls",
+      "q": "How do calls reach the Inbox, and what is Not Admissions?",
+      "a": "Intake reads the college phone line every minute, so a call is in the Inbox about a minute after it ends. A call card shows each call: the time, the line it came in on, and Answered by who answered, or Missed. A call from somebody already in Intake goes on their history instead. Not Admissions on a call card sets it aside in one click, and later calls from that number are set aside too. Bring back on any card of that number undoes it."
+    },
+    {
       "id": "linkedin-leads",
       "q": "Where do LinkedIn leads come from?",
       "a": "From LinkedIn lead forms on the Novikontas Academy page (and ad forms, when an ad account is set), once an admin has pressed Subscribe leads on the LinkedIn channel (Channels, LinkedIn). Each lead lands in the Inbox as LinkedIn, and its answers fill in a few seconds later, dropdowns included. A lead withdrawn on LinkedIn is never added: if we already know the person, it is noted on their history."

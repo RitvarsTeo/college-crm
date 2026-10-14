@@ -329,7 +329,7 @@ test('both poller routes exist and bundle what they need; the schedule waits for
   // once a day is what Hobby allows (08:00 Riga); it also gives the Vercel Cron Jobs page a Run button that
   // sends CRON_SECRET itself, so a run by hand never needs the secret typed anywhere
   assert.deepEqual(vercel.crons, [{ path: '/api/cron/sis-sync', schedule: '0 5 * * *' },
-    { path: '/api/cron/pbx-calls', schedule: '15 5 * * *' },
+    { path: '/api/cron/pbx-calls', schedule: '* * * * *' },        // Q92, 14.10.2026: every minute (Pro team)
     { path: '/api/cron/gmail-poll', schedule: '*/5 * * * *' },   // C3, 30.09.2026; every 5 minutes since Q91, 13.10.2026
     { path: '/api/cron/lead-answers', schedule: '45 5 * * *' },   // C2 + C7, 30.09.2026
     { path: '/api/cron/sheet-pull', schedule: '0 * * * *' }]);    // Q89: the admissions sheet, every hour (Pro team since 13.10.2026)

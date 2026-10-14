@@ -8,7 +8,7 @@ import { seed } from './seed.js';
 import { hasRealData, loadReal } from './real.js';
 import { PROVIDERS, runScenario, runOutbound, runFullDemo, listEvents, getEvent, consentFor, consentSummary, DEMO_SEQUENCE } from './simulator.js';
 import { logEvent, applyEdit, readHistory, MANUAL, AUTOMATIC, EDITABLE_FIELDS, IMMUTABLE_FIELDS, FIELD_LABELS } from './history.js';
-import { stampOpenDay, registerOpenDay, refilterOpen, newPersonId } from './intake.js';
+import { stampOpenDay, registerOpenDay, refilterOpen, newPersonId, setAsideOldCalls } from './intake.js';
 import { queueLeadAnswers } from './leadanswers.js';
 import { connectConfig, finishConnect, WhatsAppConnectError } from '../lib/whatsapp.js';
 import { subscribeLinkedInLeads, LeadFetchError } from '../lib/leads.js';
@@ -2334,6 +2334,17 @@ export const handle = async (req, res) => {
       const b = req.method === 'POST' ? await body(req) : {};
       return json(res, 200, { ok: true, ...(await refilterOpen(db, { apply: req.method === 'POST' && b.apply === true })) });
     }
+    // Q92 (14.10.2026): the phone items that waited from before calls were live, set aside ONCE. Admins only. GET says how
+    // many it would set aside (?before=YYYY-MM-DD) and moves nothing; POST {"before": "...", "apply": true} does it, logged.
+    if (p === '/api/admin/inbox/old-calls' && (req.method === 'GET' || req.method === 'POST')) {
+      const admin = await adminOf(req);
+      if (!admin) return refuseNotAdmin(res);
+      const b = req.method === 'POST' ? await body(req) : {};
+      const r = await setAsideOldCalls(db, { before: req.method === 'POST' ? b.before : url.searchParams.get('before'),
+        apply: req.method === 'POST' && b.apply === true, by: await actorOf(req, b) });
+      if (r.error) return json(res, 400, r);
+      return json(res, 200, { ok: true, ...r });
+    }
     // Retired 05.10.2026 (Q31): it moved rows without saying first what it would move.
     if (req.method === 'POST' && p === '/api/admin/gmail/refilter') {
       return json(res, 410, { error: 'retired: it moved rows without a preview',
@@ -2384,8 +2395,9 @@ export const handle = async (req, res) => {
       const b = await body(req);
       const r = await archive(db, id, { ...b, by: await actorOf(req, b) });
       if (r.error) return json(res, 400, r);
-      const row = await db.prepare('SELECT contact_name, contact_handle FROM inbound WHERE id = ?').get(id);
-      r.landed = { archived: true, who: row ? (row.contact_name || row.contact_handle || 'it') : 'it',
+      const row = await db.prepare('SELECT contact_name, contact_handle, contact_phone FROM inbound WHERE id = ?').get(id);
+      // a call card has only its number (Q92): the receipt names the number, not "it"
+      r.landed = { archived: true, who: row ? (row.contact_name || row.contact_handle || row.contact_phone || 'it') : 'it',
         reason: b.reason || null };
       return json(res, 200, r);
     }

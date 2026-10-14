@@ -1613,6 +1613,10 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
      card as pictured; the open card shows it whole */
   html.ui-c #view .ib-card .ib-msg{font-size:var(--type-detail);font-weight:400;color:var(--t3);line-height:1.45;white-space:normal;overflow-wrap:anywhere;
     display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  html.ui-c #view .ib-calls{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;font-size:var(--type-detail)}
+  html.ui-c #view .ib-call{display:flex;flex-wrap:wrap;gap:0 8px;color:var(--t3)}
+  html.ui-c #view .ib-call b{font-weight:600;color:var(--ink)}
+  html.ui-c #view .ib-call.is-missed b{color:var(--bad)}
   html.ui-c #view .ib-card.is-open .ib-msg{-webkit-line-clamp:unset;color:var(--ink)}
   html.ui-c .ib-tags{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
   html.ui-c .ib-prog{font-size:11.5px;font-weight:700;padding:1px 6px;border-radius:5px;background:var(--c-sunk);color:var(--ink)}
@@ -3811,6 +3815,26 @@ function cCallLine(body) {
 }
 
 
+// Q92 (14.10.2026): each call on a phone card, one plain line: when, the line it came in on, answered by whom or missed.
+// Newest first; three at most, then how many more. The PBX's own fields, nothing typed by a person.
+function cCallsHtml(calls) {
+  if (!calls || !calls.length) return '';
+  const when = (iso) => { const t = fmtDateTime(iso); return t ? `${t.slice(8, 10)}.${t.slice(5, 7)} ${t.slice(11, 16)}` : ''; };
+  const one = (c) => `<li class="ib-call${c.answered ? '' : ' is-missed'}"><span>${esc(when(c.at))}</span><span>${esc(c.line)}</span>`
+    + `<b>${c.answered ? 'Answered' + (c.operator ? ' by ' + esc(c.operator) : '') : 'Missed'}</b></li>`;
+  const more = calls.length > 3 ? `<li class="ib-call is-more">${calls.length - 3} more</li>` : '';
+  return `<ul class="ib-calls">${calls.slice(0, 3).map(one).join('')}${more}</ul>`;
+}
+// Q92: one click, no dialog: set aside as Not Admissions; later calls from this number are set aside too (Bring back undoes)
+async function cNotAdmissions(id, btn) {
+  if (btn) btn.disabled = true;
+  try {
+    const r = await post(`/api/intake/${Number(id)}/archive`, { reason: 'Not Admissions' });
+    LAST_RESULT = r.landed || null;
+    await viewLeadsC();
+  } catch (err) { if (btn) btn.disabled = false; alert(err.message); }
+}
+
 async function viewLeadsC() {
   const d = await api('/api/intake?state=' + C_IP.show);
   const rows = d.rows || [];
@@ -4149,10 +4173,10 @@ function cInboxPool() {
     return `<div class="c-jp row ib-card c-rail c-rail-${C_ST_RAIL[st]}${open ? ' is-open' : ''}" data-id="${Number(r.id)}" tabindex="0" onclick="${toggle}" onkeydown="if(event.key==='Enter'){${toggle}}">
       <div class="ib-top"><b class="c-reach">${who(r)}</b></div>
       <small class="ib-ch" style="--src:${C_SRC_COLOUR[r.channel] || '#8a94a6'}"><i></i>${esc(channelLabel(r.channel))}</small>
-      <div class="ib-msg">${esc(r.channel === 'phone' ? cCallLine(r.body) : (r.body || D.val(r, 'question') || ''))}</div>
+      ${r.channel === 'phone' && (r.calls || []).length ? cCallsHtml(r.calls) : `<div class="ib-msg">${esc(r.channel === 'phone' ? cCallLine(r.body) : (r.body || D.val(r, 'question') || ''))}</div>`}
       ${prog || kind || r.joins ? `<div class="ib-tags">${r.joins ? `<span class="ib-joins">Joins ${esc(r.joins.name)}</span>` : ''}${prog ? `<span class="ib-prog">${esc(prog)}</span>` : ''}${kind}</div>` : ''}
       ${cStateLine(st, cAgo(r.received_at), '', fmtDateTime(r.received_at))}
-      ${!live ? `<div class="ib-acts"><button class="btn sm" onclick="event.stopPropagation();cBringBack(${Number(r.id)}, this)">Bring back</button></div>` : open ? D.form(r) : `<div class="ib-acts"><button class="btn sm" onclick="event.stopPropagation();C_LOPEN=${Number(r.id)};cInboxPool()">${r.joins ? 'Add to ' + esc(r.joins.name) : 'Make a lead'}</button><button type="button" class="ib-aside" onclick="event.stopPropagation();openArchive(${Number(r.id)})">Set aside</button></div>`}</div>`;
+      ${!live ? `<div class="ib-acts"><button class="btn sm" onclick="event.stopPropagation();cBringBack(${Number(r.id)}, this)">Bring back</button></div>` : open ? D.form(r) : `<div class="ib-acts"><button class="btn sm" onclick="event.stopPropagation();C_LOPEN=${Number(r.id)};cInboxPool()">${r.joins ? 'Add to ' + esc(r.joins.name) : 'Make a lead'}</button>${r.channel === 'phone' && !r.joins ? `<button type="button" class="ib-aside" onclick="event.stopPropagation();cNotAdmissions(${Number(r.id)}, this)">Not Admissions</button>` : ''}<button type="button" class="ib-aside" onclick="event.stopPropagation();openArchive(${Number(r.id)})">Set aside</button></div>`}</div>`;
   };
   // a band click narrows the board to that day's column; a second click shows all four again
   const shownCols = cols.filter((c) => !C_IP.col || c.id === C_IP.col);
@@ -8133,6 +8157,7 @@ function chRiga(cron, day = new Date()) {
 }
 // "*/5 * * * *" -> "Every 5 min" (Q91: the email pull, Pro team since 13.10.2026); any other shape is not guessed
 function chEvery(cron) {
+  if (String(cron || '').trim() === '* * * * *') return 'Every minute';   // Q92: the phone pull, 14.10.2026
   const m = /^\*\/(\d{1,2}) \* \* \* \*$/.exec(String(cron || '').trim());
   return m ? `Every ${Number(m[1])} min` : null;
 }

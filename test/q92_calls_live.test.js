@@ -1,0 +1,208 @@
+// Q92 (14.10.2026, picked by Ritvars after Ieva: "tikko zvanīja, Laura pacēla, bet sistēmā tas nerādās ... uz koledžas
+// numuru arī nāk diezgan daudz zvanu, kas nav ADMISSIONS"):
+//   1. the TeleGroup pull every minute; a 429 makes it wait, never skip;
+//   2. a phone card says each call plainly: when, the line, answered by whom or missed;
+//   3. "Not Admissions": one click sets the card aside and later calls from that number are set aside too; Bring back
+//      undoes it; a number that belongs to a person in Intake is never hidden;
+//   4. a one-off admin action sets aside the phone items from before calls were live, logged, nothing deleted.
+// Everything runs against a fake TeleGroup.
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import vm from 'node:vm';
+import { spawn } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { openDb } from '../src/db.js';
+import { syncPbx } from '../src/sync.js';
+import { listInbound, archive, bringBack, setAsideOldCalls, OLD_CALL_REASON, CONFIG } from '../src/intake.js';
+
+const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+const ON = { PBX_API_TOKEN: 'test-pbx-token-not-real-0000', CHANNEL_MODE_PHONE: 'live' };
+const call = (over = {}) => ({ uniqueid: 'c1', destination: 'incoming', queue: '1001*Q-ADMISSION',
+  caller_num: '+37129111222', state: 'ANSWER', operator_name: 'Laura', created_at: '2026-10-14 11:58:00', ...over });
+// A fake TeleGroup: the calls whose Riga time falls inside the window asked for, like the real list.
+function fakeTeleGroup(calls, { status = 200, retryAfter = null } = {}) {
+  const seen = { requests: 0 };
+  const fetchImpl = async (url) => {
+    seen.requests++;
+    if (seen.status429) return { ok: false, status: 429, headers: { get: (h) => (h === 'retry-after' ? retryAfter : null) }, text: async () => 'slow down' };
+    const u = new URL(url);
+    const from = u.searchParams.get('dateFrom'); const to = u.searchParams.get('dateTo');
+    const inside = calls.filter((c) => c.created_at >= from && c.created_at <= to);
+    return { ok: status === 200, status, headers: { get: () => null }, json: async () => inside, text: async () => '' };
+  };
+  return { fetchImpl, seen };
+}
+const at = (iso) => new Date(iso);
+const run = (db, tg, now) => syncPbx(db, { now: at(now), env: ON, fetchImpl: tg.fetchImpl });
+
+// ---------------------------------------------------------------------------- 1 --
+test('1: the pull runs every minute; a caught-up run asks once and writes nothing new', async () => {
+  const vercel = JSON.parse(fs.readFileSync(path.join(ROOT, 'vercel.json'), 'utf8'));
+  assert.equal(vercel.crons.find((c) => c.path === '/api/cron/pbx-calls').schedule, '* * * * *');
+  assert.match(fs.readFileSync(path.join(ROOT, 'api', 'cron', 'pbx-calls.js'), 'utf8'), /authoriseCron\(/, 'still CRON_SECRET');
+  const db = await openDb(':memory:');
+  const tg = fakeTeleGroup([call({ created_at: '2026-10-14 11:58:30' })]);
+  await run(db, tg, '2026-10-14T08:59:00Z');                 // 11:59 Riga: the call is in
+  assert.equal((await listInbound(db, { state: 'new' })).length, 1);
+  const before = tg.seen.requests;
+  const counts = async () => [(await db.prepare('SELECT COUNT(*) n FROM inbound').get()).n,
+    (await db.prepare('SELECT COUNT(*) n FROM call_events').get()).n, (await db.prepare('SELECT COUNT(*) n FROM pbx_calls').get()).n];
+  const had = await counts();
+  const r = await run(db, tg, '2026-10-14T09:00:00Z');       // one minute later
+  assert.equal(tg.seen.requests - before, 1, 'one request a minute');
+  assert.equal(r.seen, 1, 'the overlap sees the same call again, and knows it');
+  assert.deepEqual(await counts(), had, 'nothing new is written');
+});
+
+test('1: TeleGroup answers 429 -> the pull waits (Retry-After), the bookmark stays, nothing is skipped', async () => {
+  const db = await openDb(':memory:');
+  const tg = fakeTeleGroup([call({ created_at: '2026-10-14 12:00:30' })], { retryAfter: '120' });
+  await run(db, tg, '2026-10-14T08:59:00Z');
+  const mark = (await db.prepare("SELECT value FROM sync_state WHERE name = 'pbx_until'").get()).value;
+  tg.seen.status429 = true;
+  const r = await run(db, tg, '2026-10-14T09:01:00Z');
+  assert.equal(r.backingOff, true);
+  assert.equal((await db.prepare("SELECT value FROM sync_state WHERE name = 'pbx_until'").get()).value, mark, 'bookmark untouched');
+  const n = tg.seen.requests;
+  const waiting = await run(db, tg, '2026-10-14T09:02:00Z');
+  assert.equal(waiting.ran, false);
+  assert.match(waiting.why, /slow down/);
+  assert.equal(tg.seen.requests, n, 'not asked while waiting');
+  tg.seen.status429 = false;
+  const after = await run(db, tg, '2026-10-14T09:03:30Z');   // past the 120 seconds
+  assert.equal(after.ran, true);
+  assert.equal(after.inbox, 1, 'the call from the waiting minutes still arrives');
+});
+
+// ---------------------------------------------------------------------------- 2 --
+test('2: a phone card lists each call: time, line, answered by whom or missed; newest first', async () => {
+  const db = await openDb(':memory:');
+  const tg = fakeTeleGroup([call(), call({ uniqueid: 'c2', state: 'NOANSWER', operator_name: '', created_at: '2026-10-14 12:20:00',
+    queue: '1001*Q-COORDINATORS' })]);
+  await run(db, tg, '2026-10-14T09:30:00Z');
+  const [card] = await listInbound(db, { state: 'new' });
+  assert.deepEqual(card.calls.map((c) => [c.line, c.answered, c.operator]),
+    [['Student Coordinator', false, null], ['Admissions', true, 'Laura']]);
+  assert.equal(card.calls[1].at, '2026-10-14T08:58:00.000Z');
+  // the screen
+  const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
+  const TZ = 'Europe/Riga';
+  const fmt = app.slice(app.indexOf('const fmtDateTime = '), app.indexOf('// Today in RIGA.'));
+  const fn = app.slice(app.indexOf('function cCallsHtml('), app.indexOf('// Q92: one click, no dialog'));
+  const ctx = { esc: (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;'), TZ };
+  vm.runInNewContext(`const TZ = ${JSON.stringify(TZ)};` + fmt + fn + '; this.calls = cCallsHtml;', ctx);
+  const html = ctx.calls(card.calls);
+  assert.match(html, /14\.10 12:20<\/span><span>Student Coordinator<\/span><b>Missed<\/b>/);
+  assert.match(html, /14\.10 11:58<\/span><span>Admissions<\/span><b>Answered by Laura<\/b>/);
+  assert.match(app, /r\.channel === 'phone' && \(r\.calls \|\| \[\]\)\.length \? cCallsHtml\(r\.calls\)/, 'the card uses it');
+});
+
+// ---------------------------------------------------------------------------- 3 --
+test('3: Not Admissions is a reason, and the phone filter remembers it', () => {
+  assert.ok(CONFIG.intake.archiveReasons.includes('Not Admissions'));
+  assert.ok(CONFIG.phoneFilter.filterArchivedAs.includes('Not Admissions'));
+  const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
+  assert.match(app, /cNotAdmissions\(\$\{Number\(r\.id\)\}, this\)">Not Admissions</, 'one click on the card');
+  assert.match(app, /reason: 'Not Admissions'/);
+});
+
+test('3: after Not Admissions, the same number (written any way) is set aside; a person in Intake never is', async () => {
+  const db = await openDb(':memory:');
+  await run(db, fakeTeleGroup([call()]), '2026-10-14T09:00:00Z');
+  const [card] = await listInbound(db, { state: 'new' });
+  assert.equal((await archive(db, card.id, { reason: 'Not Admissions', by: 'Ieva' })).ok, true);
+  const r = await run(db, fakeTeleGroup([call({ uniqueid: 'c2', caller_num: '29111222', created_at: '2026-10-14 12:10:00' })]),
+    '2026-10-14T09:11:00Z');
+  assert.equal(r.filtered, 1);
+  assert.equal((await listInbound(db, { state: 'new' })).length, 0);
+  const why = await db.prepare("SELECT archive_note FROM inbound WHERE state = 'filtered'").get();
+  assert.match(why.archive_note, /Not Admissions/);
+  // the number becomes a person's: their calls go on their history, never filtered
+  await db.prepare(`INSERT INTO people (id, name, phone, status, owner, created_at) VALUES ('p1', 'Anna', '+371 29 111 222', 'new', 'Ieva', '2026-10-14T09:12:00Z')`).run();
+  const k = await run(db, fakeTeleGroup([call({ uniqueid: 'c3', created_at: '2026-10-14 12:15:00' })]), '2026-10-14T09:16:00Z');
+  assert.equal(k.logged, 1);
+  assert.equal(k.filtered, 0);
+});
+
+test('3: Bring back undoes it - on the Not Admissions card, or on a later card of that number', async () => {
+  for (const which of ['the card itself', 'a later filtered card']) {
+    const db = await openDb(':memory:');
+    await run(db, fakeTeleGroup([call()]), '2026-10-14T09:00:00Z');
+    const [card] = await listInbound(db, { state: 'new' });
+    await archive(db, card.id, { reason: 'Not Admissions', by: 'Ieva' });
+    await run(db, fakeTeleGroup([call({ uniqueid: 'c2', created_at: '2026-10-14 12:10:00' })]), '2026-10-14T09:11:00Z');
+    const later = await db.prepare("SELECT id FROM inbound WHERE state = 'filtered'").get();
+    const back = which === 'the card itself' ? card.id : later.id;
+    assert.equal((await bringBack(db, back, { by: 'Ieva', at: '2026-10-14T09:12:00Z' })).ok, true, which);
+    const r = await run(db, fakeTeleGroup([call({ uniqueid: 'c3', created_at: '2026-10-14 12:20:00' })]), '2026-10-14T09:21:00Z');
+    assert.equal(r.filtered, 0, which + ': no longer set aside');
+    assert.equal(r.inbox + r.again, 1, which + ': it reaches the Inbox');
+  }
+});
+
+// ---------------------------------------------------------------------------- 4 --
+test('4: old calls - a preview moves nothing; apply sets aside only phone items from before the day, logged; Bring back works', async () => {
+  const db = await openDb(':memory:');
+  await run(db, fakeTeleGroup([call({ uniqueid: 'o1', caller_num: '+37120000001', created_at: '2026-10-13 23:50:00' }),
+    call({ uniqueid: 'o2', caller_num: '+37120000002', created_at: '2026-10-14 00:10:00' })]), '2026-10-14T06:00:00Z');
+  const ids = Object.fromEntries((await db.prepare('SELECT uniqueid, inbound_id FROM pbx_calls').all()).map((c) => [c.uniqueid, c.inbound_id]));
+  assert.deepEqual((await setAsideOldCalls(db, { before: '14.10' })).error, 'before must be a day, YYYY-MM-DD');
+  const look = await setAsideOldCalls(db, { before: '2026-10-14' });
+  assert.equal(look.applied, false);
+  assert.equal(look.count, 1, '23:50 Riga on 13.10 is before; 00:10 on 14.10 is not');
+  assert.equal((await listInbound(db, { state: 'new' })).length, 2, 'a preview moves nothing');
+  const done = await setAsideOldCalls(db, { before: '2026-10-14', apply: true, by: 'Ritvars' });
+  assert.equal(done.count, 1);
+  const old = await db.prepare('SELECT state, archive_reason, processed_by FROM inbound WHERE id = ?').get(ids.o1);
+  assert.deepEqual([old.state, old.archive_reason, old.processed_by], ['archived', OLD_CALL_REASON, 'Ritvars']);
+  assert.equal((await db.prepare('SELECT state FROM inbound WHERE id = ?').get(ids.o2)).state, 'new');
+  const h = await db.prepare("SELECT action, actor, reason FROM inbound_history WHERE inbound_id = ?").all(ids.o1);
+  assert.deepEqual(h.map((x) => [x.action, x.actor, x.reason]), [['set_aside', 'Ritvars', OLD_CALL_REASON]]);
+  assert.equal((await db.prepare("SELECT value FROM sync_state WHERE name = 'old_calls_set_aside'").get()).value, '1', 'the run is recorded');
+  assert.ok(!CONFIG.phoneFilter.filterArchivedAs.includes(OLD_CALL_REASON), 'an old call never makes its number filtered');
+  assert.equal((await bringBack(db, ids.o1, { by: 'Ieva' })).ok, true);
+  assert.equal((await setAsideOldCalls(db, { before: '2026-10-14', apply: true, by: 'Ritvars' })).count, 1, 'a second run only finds what is waiting');
+});
+
+function start(env = {}) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, [path.join(ROOT, 'src', 'server.js')], { env: { ...process.env,
+      PORT: '0', CRM_DB: ':memory:', DATASET: 'empty', CRM_AUTH: '', CRM_PUBLIC: '', DATABASE_URL: '', CRM_DB_DATABASE_URL_UNPOOLED: '', ...env },
+    stdio: ['ignore', 'pipe', 'pipe'] });
+    let out = '';
+    const look = (d) => { out += d; const m = out.match(/http:\/\/localhost:(\d+)/); if (m) resolve({ child, base: `http://127.0.0.1:${m[1]}` }); };
+    child.stdout.on('data', look); child.stderr.on('data', look);
+    child.on('exit', () => reject(new Error(out)));
+  });
+}
+
+test('4: the old-calls action is for admins only; GET previews, POST applies', async (t) => {
+  const s = await start();
+  t.after(() => s.child.kill());
+  const url = s.base + '/api/admin/inbox/old-calls';
+  const user = { 'x-acting-as': 'Ieva', 'content-type': 'application/json' };
+  const admin = { 'x-acting-as': 'Ritvars', 'content-type': 'application/json' };
+  assert.equal((await fetch(url + '?before=2026-10-14', { headers: user })).status, 403);
+  const look = await fetch(url + '?before=2026-10-14', { headers: admin }).then((r) => r.json());
+  assert.equal(look.applied, false);
+  const bad = await fetch(url, { method: 'POST', headers: admin, body: JSON.stringify({ before: 'x', apply: true }) });
+  assert.equal(bad.status, 400);
+  const done = await fetch(url, { method: 'POST', headers: admin, body: JSON.stringify({ before: '2026-10-14', apply: true }) }).then((r) => r.json());
+  assert.equal(done.applied, true);
+});
+
+test('the Channels screen says "Every minute"; Help says it, in the same change', () => {
+  const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
+  const fn = app.slice(app.indexOf('function chEvery('), app.indexOf('function chWhen('));
+  const ctx = {};
+  vm.runInNewContext(fn + '; this.every = chEvery;', ctx);
+  assert.equal(ctx.every('* * * * *'), 'Every minute');
+  assert.equal(ctx.every('*/5 * * * *'), 'Every 5 min');
+  const help = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'help.json'), 'utf8'));
+  const q = help.faq.find((x) => x.id === 'phone-calls');
+  assert.match(q.a, /every minute/);
+  assert.match(q.a, /Not Admissions/);
+  assert.match(q.a, /Bring back/);
+});

@@ -98,6 +98,11 @@ export const CATCH_UP_HOURS = 24;
 export const OVERLAP_MINUTES = 2;
 export const RUN_BUDGET_MS = 40000;
 const PBX_BOOKMARK = 'pbx_until';
+// Q92 (14.10.2026): the pull runs every minute. TeleGroup publishes no rate limit we have seen; one request a minute
+// (one 15-minute piece) is what a caught-up run makes. If it ever answers 429 the pull waits (its Retry-After, else
+// BACKOFF_MINUTES) before asking again, and says so; the bookmark is untouched, so nothing is skipped.
+export const BACKOFF_MINUTES = 5;
+const PBX_BACKOFF = 'pbx_backoff';
 
 // ---------------------------------------------- one number, one thing to look at
 // Ritvars, 01.10.2026: "Leads become those who have some interest. How can we know
@@ -110,6 +115,24 @@ const phoneThread = (num) => {
   const d = normPhone(num).replace(/[^0-9]/g, '');
   return d.length > 5 ? 'phone:' + d.slice(-8) : null;
 };
+
+// THE NUMBER IS REMEMBERED (01.10.2026; Q92, 14.10.2026 "Not Admissions"): a number a person set aside with one of
+// phoneFilter.filterArchivedAs, matched on the same last-8-digits key as the thread, so +371 29.. and 29.. are one
+// number. A Bring back on ANY card of that number after the set-aside is the undo: from then on its calls reach the
+// Inbox again. Only reached for a caller who is not a person in Intake (storeCall looks for the person first).
+export async function rememberedAs(db, num, reasons) {
+  if (!num || !reasons.length) return null;
+  const key = phoneThread(num);
+  const same = '(contact_phone = ? OR (thread_key IS NOT NULL AND thread_key = ?))';
+  const row = await db.prepare(`SELECT id, archive_reason, processed_at FROM inbound
+    WHERE ${same} AND state = 'archived' AND archive_reason IN (${reasons.map(() => '?').join(',')})
+    ORDER BY processed_at DESC, id DESC LIMIT 1`).get(num, key, ...reasons);
+  if (!row) return null;
+  const undone = await db.prepare(`SELECT 1 AS x FROM inbound_history h JOIN inbound j ON j.id = h.inbound_id
+    WHERE h.action = 'brought_back' AND h.at > ? AND (j.contact_phone = ? OR (j.thread_key IS NOT NULL AND j.thread_key = ?))`)
+    .get(row.processed_at || '', num, key);
+  return undone ? null : row;
+}
 
 // Exported for the pushed call events (src/phoneevent.js): one function stores a call, whichever
 // path saw it first, so the two can never make two leads for one call.
@@ -145,10 +168,7 @@ export async function storeCall(db, r, mode, at, out) {
   } else if (r.caller_num) {
     // The filter before New Leads (Ritvars 01.10.2026, config.phoneFilter). Explicit and counted.
     const rule = CONFIG.phoneFilter || {};
-    const reasons = rule.filterArchivedAs || [];
-    const before = reasons.length ? await db.prepare(`SELECT archive_reason FROM inbound
-      WHERE contact_phone = ? AND state = 'archived' AND archive_reason IN (${reasons.map(() => '?').join(',')})
-      ORDER BY id DESC LIMIT 1`).get(r.caller_num, ...reasons) : null;
+    const before = await rememberedAs(db, r.caller_num, rule.filterArchivedAs || []);
     // receive() owns every write: it joins the open item for this number when there is one (the
     // same caller again while staff have not looked yet), otherwise it stores, filtered or not.
     //
@@ -204,6 +224,11 @@ export async function syncPbx(db, { now = new Date(), minutes = WINDOW_MINUTES,
   if (mode === 'off') return { ok: true, ran: false, channel: 'phone', why: 'the phone channel is off' };
 
   const nowMs = now.getTime();
+  const wait = await db.prepare('SELECT value FROM sync_state WHERE name = ?').get(PBX_BACKOFF);
+  if (wait && Date.parse(wait.value) > nowMs) {
+    return { ok: true, ran: false, channel: 'phone', mode, backingOff: true, until: wait.value,
+      why: 'TeleGroup asked us to slow down; the next pull is after ' + toRigaStamp(new Date(Date.parse(wait.value))).slice(11, 16) };
+  }
   const earliest = nowMs - CATCH_UP_HOURS * 3600000;
   const mark = await db.prepare('SELECT value FROM sync_state WHERE name = ?').get(PBX_BOOKMARK);
   const markMs = mark && mark.value ? Date.parse(mark.value) : NaN;
@@ -214,12 +239,22 @@ export async function syncPbx(db, { now = new Date(), minutes = WINDOW_MINUTES,
   const out = { logged: 0, inbox: 0, again: 0, filtered: 0, seen: 0, noNumber: 0, callBack: 0 };
   const skipped = { notIncoming: 0, otherQueue: 0, unusable: 0, duplicateInBatch: 0 };
   const destinations = {};   // counts per destination the list returned (lib/pbx.js rowsFrom), saved with the run
-  let fetched = 0, kept = 0, pieces = 0, safeUrl = null, reached = from;
+  let fetched = 0, kept = 0, pieces = 0, safeUrl = null, reached = from, backedOff = null;
 
   while (from < nowMs) {
     if (pieces > 0 && clock() - startedAt > budgetMs) break;
     const to = Math.min(from + minutes * 60000, nowMs);
-    const got = await fetchCalls({ now: new Date(to), minutes: (to - from) / 60000, env, fetchImpl });
+    let got;
+    try { got = await fetchCalls({ now: new Date(to), minutes: (to - from) / 60000, env, fetchImpl }); }
+    catch (err) {
+      if (err && err.status === 429) {
+        const until = new Date(nowMs + (err.retryAfterSec ? err.retryAfterSec * 1000 : BACKOFF_MINUTES * 60000)).toISOString();
+        await saveState(db, PBX_BACKOFF, until, { status: 429 }, at);
+        backedOff = until;
+        break;
+      }
+      throw err;
+    }
     safeUrl = got.safeUrl;
     const { rows, skipped: sk, destinations: ds } = rowsFrom(got.calls);
     for (const k of Object.keys(skipped)) skipped[k] += sk[k] || 0;
@@ -239,7 +274,8 @@ export async function syncPbx(db, { now = new Date(), minutes = WINDOW_MINUTES,
   const result = { ok: true, ran: true, channel: 'phone', mode,
     window: { from: toRigaStamp(new Date(firstFrom)), to: toRigaStamp(new Date(reached)), zone: ZONE,
       minutes: Math.round((reached - firstFrom) / 60000) },
-    pieces, caughtUp, fetched, kept, skipped, destinations, ...out, safeUrl };
+    pieces, caughtUp, fetched, kept, skipped, destinations, ...out, safeUrl,
+    ...(backedOff ? { backingOff: true, until: backedOff, why: 'TeleGroup answered 429; waiting before the next pull' } : {}) };
   result.purged = await purgeOld(db, 'pbx_calls', 'called_at', now);
   // 13 months PER LINE, each from its own received_at, so an old call never takes a
   // newer one with it. The line stays and says when its body went: a deletion nobody
