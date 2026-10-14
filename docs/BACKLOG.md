@@ -17,14 +17,15 @@ this is a local prototype" stood here until 30.09.2026, from the weeks before th
 ## 14.10.2026 - One rule for every card, call notes, TeleGroup pop-up (owner's picks)
 
 - `DECIDED` A person **set aside** who contacts again, on any channel, comes back to the Inbox like anyone new,
-  with one line saying they were set aside before (date, who). The second time, the user can mark them so they do
+  with one line saying they were set aside before (date, who, reason). The second time, the user can mark them so they do
   not come back: for scam, pranks or inappropriate contact.
 - `DECIDED` What a call was about = **one line typed after the call** by the person who answered (no AI from the
   recording).
 - `DECIDED` Ask TeleGroup (via Aigars) whether their own incoming-call pop-up can open a link into Intake with the
   caller's number, so the two pop-ups are not duplicated.
-- `DECIDED` One rule on every card, every channel: **Make a lead / Set aside**, one click, no reason list (Ieva finds
-  the 7 reasons too many). **Set aside is the word for all** (owner 14.10: "other way, set aside for all!"): the calls'
+- `DECIDED` One rule on every card, every channel: **Make a lead / Set aside**. Set aside = pick ONE of 4 reasons, kept in
+  the person's history (date, who, reason; owner 14.10: "we need some history with people in our app"): **Not a
+  prospective student** (the usual one), **Supplier or vendor**, **Internal**, **Spam** (7 reasons were too many for Ieva). **Set aside is the word for all** (owner 14.10: "other way, set aside for all!"): the calls'
   separate "Not a lead" button goes; the same folder stays, Bring back stays. Supplier or vendor / Internal / Spam
   become a MARK on the number or address, kept until changed (its contacts never pop and never reach the Inbox).
   "Already handled" goes: a known person's contact lands on their profile.
