@@ -119,7 +119,8 @@ test('an Inbox card: the state line says New, Answer now, Late or Set aside and 
     const ctx = { ...base(), Date: FixedDate, C_IP: { col: null, channel: '', kind: '', show }, C_LOPEN: null,
       C_IPD: { rows, receipt: '', val: () => '', form: () => '' }, channelLabel: (c) => c, cTelLink: () => '', fmtDateTime: (iso) => String(iso).slice(0, 16).replace('T', ' '), cCallLine: (b) => b,
       cPoolFrame: (o) => o.body, cPoolBand: () => '', cPoolSelect: () => '', cPoolFilters: () => '', $: () => view, cPoolWire() {}, cPoolOpened() {} };
-    vm.runInNewContext([helpers(), line('const C_IP_KIND = '), fn('function cInboxAge(iso) {'), line('const cAgo = '), (FOLD + fn('function cInboxPool() {')), 'cInboxPool();'].join('\n'), ctx);
+    vm.runInNewContext([helpers(), line('const C_IP_KIND = '), fn('function cInboxAge(iso) {'), line('const cAgo = '), line('const C_MARK_SHORT = '), line('const cAsideWhen = '), fn('function cMarkCtl('), fn('function cAsideChoice('),
+      (FOLD + fn('function cInboxPool() {')), 'cInboxPool();'].join('\n'), ctx);
     return view.innerHTML;
   };
   const html = run('new');

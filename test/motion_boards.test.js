@@ -28,7 +28,7 @@ test("the engine's clock: capped A 1.2 s / B 1 s, any click, key or wheel finish
   assert.match(JS, /if \(!el \|\| !el\.animate \|\| !M\.live\(\)\) return null;/);
 });
 test('it wraps the app\'s own functions, each still there under that name; it never writes the app\'s markup', () => {
-  const wrapped = ['cAskMoveNote', 'viewJourneyC', 'cTodayMoveTo', 'cTodayPool', 'doArchive', 'viewHelpC'];
+  const wrapped = ['cAskMoveNote', 'viewJourneyC', 'cTodayMoveTo', 'cTodayPool', 'cSetAside', 'viewHelpC'];   // cSetAside: one click since 14.10.2026
   for (const f of wrapped) {
     assert.match(JS, new RegExp(`if \\(typeof ${f} === 'function'`), `${f} is checked before it is wrapped`);
     assert.match(JS, new RegExp(`\\n\\s+${f} = (async )?function \\(`), `${f} is wrapped`);
@@ -40,7 +40,7 @@ test('it wraps the app\'s own functions, each still there under that name; it ne
 test('the marks the wraps read are in the app\'s markup (a rename here breaks a moment, not the app)', () => {
   for (const mark of ['class="c-drop" data-stage=', 'class="c-jexp" data-id=', 'draggable="true" data-id=', 'draggable="true" data-pid=',
     "class=\"c-col t-col t-fold${g.id === 'later' ? ' c-drop t-drop' : ''}\" data-col=\"${g.id}\"", 'class="t-foldx"', 'class="c-drop t-drop" data-col=', 'ib-card', 'class="ib-aside"',
-    'id="arErr"', 'class="hf-step', 'class="hf-ico"', 'class="hf-node"', 'class="hf-chips"']) assert.ok(APP.includes(mark), mark);
+    'class="hf-step', 'class="hf-ico"', 'class="hf-node"', 'class="hf-chips"']) assert.ok(APP.includes(mark), mark);
 });
 test('1. the Journey: lift, room, the copy travels into the column BEFORE the note dialog, a cancel brings it home', () => {
   assert.match(CSS, /\.c-jp\.mo-lift\{/); assert.match(CSS, /\.c-drop\.mo-room\{/);
@@ -61,7 +61,8 @@ test('2. Today: into Due today the copy travels, into a folded Coming up it shri
   assert.match(JS, /clipPath: 'inset\(0 100% 0 0\)'/);
 });
 test('3. the Inbox: Set aside slides the copy out only after the save worked; Make a lead stays the engine\'s moment', () => {
-  assert.match(JS, /var err = document\.getElementById\('arErr'\);\s*if \(err && err\.innerHTML\.trim\(\)\) return r;/);
+  assert.match(JS, /var r = await archive\.apply\(this, arguments\);\s*if \(r !== true\) return r;/);   // one click (14.10.2026): true = saved
+  assert.match(APP, /return true;    \/\/ the save worked/);
   assert.match(JS, /translateX\(-28px\) scale\(\.98\)/);
   assert.doesNotMatch(JS, /\n\s+doQualify = /, 'the flight to the Journey is the engine\'s: no second wrap');
 });

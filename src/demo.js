@@ -81,8 +81,8 @@ const SPAM = [
 ];
 
 const NOT_RELEVANT = [
-  { channel: 'instagram', name: 'Promo Agency', days: 3, reason: 0 },
-  { channel: 'facebook', name: 'Sports Club Riga', days: 5, reason: 0 },
+  { channel: 'instagram', name: 'Promo Agency', days: 3 },
+  { channel: 'facebook', name: 'Sports Club Riga', days: 5 },
 ];
 
 async function send(db, { channel, scenario, name, phone, email, handle, at }) {
@@ -156,12 +156,11 @@ export async function buildDemo(db, CFG) {
     if (r && r.filtered) summary.filtered += 1;
   }
 
-  // 4. things a person looked at and marked not relevant, with a recorded reason
-  const reasons = (CFG.intake && CFG.intake.archiveReasons) || [];
+  // 4. things a person looked at and set aside, with the usual reason (one of four since 14.10.2026)
   for (const n of NOT_RELEVANT) {
     const r = await send(db, { channel: n.channel, scenario: 'unclear', name: n.name, at: ago(n.days, 10) });
     if (!r || r.filtered) continue;
-    const a = await archive(db, r.id, { reason: reasons[n.reason] || reasons[0], by: 'Tetiana' });
+    const a = await archive(db, r.id, { reason: 'Not a prospective student', by: 'Tetiana' });
     if (a && a.ok) summary.notRelevant += 1;
   }
 

@@ -22,8 +22,10 @@ test('set aside -> bring back -> in the Inbox again, both steps in the history, 
   const db = await openDb(':memory:');
   const r = await receive(db, { channel: 'gmail', externalId: 'b1', email: 'anna@gmail.com', name: 'Anna', body: 'I want to study navigation',
     receivedAt: '2026-10-03T08:00:00.000Z', source: 'provider' });
-  const a = await archive(db, r.id, { reason: 'Other', note: 'clicked by mistake', by: 'Ieva' });
+  const a = await archive(db, r.id, { reason: 'Not a prospective student', by: 'Ieva' });   // one of the four reasons (14.10.2026)
   assert.ok(a.ok);
+  // a row set aside BEFORE 14.10.2026 keeps the reason it was given, as history: planted here as such a row
+  await db.prepare("UPDATE inbound SET archive_reason = 'Other', archive_note = 'clicked by mistake' WHERE id = ?").run(r.id);
   assert.equal((await listInbound(db, { state: 'new' })).length, 0);
 
   const b = await bringBack(db, r.id, { by: 'Laura' });
@@ -48,7 +50,7 @@ test('set aside -> bring back -> in the Inbox again, both steps in the history, 
 test('a second Bring back is harmless: it says so and writes nothing', async () => {
   const db = await openDb(':memory:');
   const r = await receive(db, { channel: 'gmail', externalId: 'b2', email: 'b@gmail.com', body: 'hello', source: 'provider' });
-  await archive(db, r.id, { reason: 'Spam', by: 'Ieva' });
+  await archive(db, r.id, { reason: 'Not a prospective student', by: 'Ieva' });
   assert.ok((await bringBack(db, r.id, { by: 'Ieva' })).ok);
   const again = await bringBack(db, r.id, { by: 'Ieva' });
   assert.deepEqual({ ...again }, { ok: true, id: r.id, already: true });
@@ -197,7 +199,8 @@ function board(show) {
     $: () => view, view, cPoolWire: () => {}, cPoolOpened: () => {},
   };
   // + Q66's state line (merged with this in rc/2026-10-07): the card's foot is drawn by cStateLine
-  vm.runInNewContext([line('const cPhone = '), line('const C_ST = '), line('const C_ST_RAIL = '), fnBody('function cStateLine(st, detail, act, title) {'), line('const C_IP_KIND = '), fnBody('function cInboxAge(iso) {'), line('const cAgo = '), 'var CFG = globalThis.CFG || {};', (FOLD + fnBody('function cInboxPool() {')), 'cInboxPool();'].join('\n'), ctx);
+  vm.runInNewContext([line('const cPhone = '), line('const C_ST = '), line('const C_ST_RAIL = '), fnBody('function cStateLine(st, detail, act, title) {'), line('const C_IP_KIND = '),
+    line('const cDdMm = '), line('const C_MARK_SHORT = '), line('const cAsideWhen = '), fnBody('function cMarkCtl('), fnBody('function cAsideChoice('), fnBody('function cInboxAge(iso) {'), line('const cAgo = '), 'var CFG = globalThis.CFG || {};', (FOLD + fnBody('function cInboxPool() {')), 'cInboxPool();'].join('\n'), ctx);
   return view.innerHTML;
 }
 

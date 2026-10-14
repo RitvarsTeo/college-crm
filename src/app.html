@@ -1625,6 +1625,14 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .ib-acts{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:2px;padding-top:7px;border-top:1px solid var(--rule2)}
   html.ui-c .ib-aside{border:0;background:none;padding:0;font:inherit;font-size:12px;color:var(--t3);cursor:pointer;text-decoration:underline}
   html.ui-c .ib-aside:hover{color:var(--ink)}
+  /* one rule (14.10.2026): the call note, the came-back line, the marks - quiet, in the card's own type */
+  html.ui-c .ib-call-note{display:block}
+  html.ui-c .ib-note{width:100%;box-sizing:border-box;margin:0 0 3px;padding:2px 0;border:0;border-bottom:1px dashed var(--rule);border-radius:0;background:none;font:inherit;font-size:12px;color:var(--ink)}
+  html.ui-c .ib-note::placeholder{color:var(--t3)}
+  html.ui-c .ib-note:focus{outline:none;border-bottom:1px solid #29a8df}
+  html.ui-c .ib-before{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px;font-size:12px;color:var(--t3)}
+  html.ui-c .ib-mark{font-size:12px;color:var(--t3)}
+  html.ui-c .ib-why{flex-wrap:wrap;justify-content:flex-start;gap:6px 12px;font-size:12px;color:var(--t3)}
   html.ui-c .ib-form{display:grid;gap:6px;margin-top:4px;padding-top:8px;border-top:1px solid var(--rule2);cursor:default}
   html.ui-c .ib-form > label:not(.c-tick){font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--t3)}
   html.ui-c .ib-form select{width:100%}
@@ -3831,19 +3839,67 @@ function cCallsHtml(calls) {
   const talk = (c) => { const t = len(c.talkSec); return t ? ' · ' + esc(t) : ''; };
   const rang = (c) => { const t = len(c.durationSec); return t ? ' · rang ' + esc(t) : ''; };
   const one = (c) => `<li class="ib-call${c.answered ? '' : ' is-missed'}"><span>${esc(when(c.at))}</span><span>${esc(c.line)}</span>`
-    + `<b>${c.answered ? 'Answered' + (c.operator ? ' by ' + esc(c.operator) : '') + talk(c) : 'Missed' + rang(c)}</b></li>`;
+    + `<b>${c.answered ? 'Answered' + (c.operator ? ' by ' + esc(c.operator) : '') + talk(c) : 'Missed' + rang(c)}</b></li>`
+    + (c.answered && c.id ? `<li class="ib-call-note">${cCallNoteInput(c)}</li>` : '');
   const more = calls.length > 3 ? `<li class="ib-call is-more">${calls.length - 3} more</li>` : '';
   return `<ul class="ib-calls">${calls.slice(0, 3).map(one).join('')}${more}</ul>`;
 }
-// One click, no dialog: THIS call is not a lead (the owner's rethink, 14.10.2026). Only this card is set aside; the number is
-// not remembered, so the next call from it reaches the Inbox. Bring back returns it.
-async function cNotALead(id, btn) {
+// THE CALL NOTE (14.10.2026): under an answered call, one line "What was it about?", typed after the call by whoever
+// answered and saved on that call (Enter, or leaving the field). It goes onto the person's History with Make a lead; on a
+// known person's call it is the same field on their History. 200 characters, the server's CALL_NOTE_MAX.
+function cCallNoteInput(c) {
+  return `<input type="text" class="ib-note" maxlength="200" placeholder="What was it about?" aria-label="What was it about?"`
+    + ` value="${esc(c.note || '')}"${c.noteBy ? ` title="${esc(c.noteBy)}"` : ''} onclick="event.stopPropagation()"`
+    + ` onkeydown="event.stopPropagation();if(event.key==='Enter')this.blur()" onchange="cCallNote(this, ${esc(JSON.stringify(String(c.id)))})">`;
+}
+async function cCallNote(input, id) {
+  input.disabled = true;
+  try {
+    const r = await post(`/api/calls/${encodeURIComponent(id)}/note`, { note: input.value });
+    input.value = r.note || '';
+  } catch (err) { alert(err.message); }
+  input.disabled = false;
+}
+// ONE RULE ON EVERY CARD (the owner, 14.10.2026: seven reasons were too many, and "we need some history with people in
+// our app"): Set aside on every channel's card opens the four reasons on the card itself; picking one sets it aside. Not
+// a prospective student first (the usual one); Supplier or vendor, Internal and Spam also mark the number or address. No
+// dialog, no free text. Nothing is deleted; Bring back returns it. Somebody set aside who gets in touch again comes back
+// like anyone new, with "Set aside before: dd.mm, who, reason" on the card.
+function cAsideChoice(r, reasons) {
+  return `<div class="ib-acts ib-why" onclick="event.stopPropagation()"><span>Set aside as</span>${(reasons || []).map((x, i) =>
+    `<button type="button" class="${i ? 'ib-aside' : 'btn sm'}" onclick="event.stopPropagation();cSetAside(${Number(r.id)}, ${esc(JSON.stringify(x))}, this)">${esc(x)}</button>`).join('')}`
+    + `<button type="button" class="ib-aside" onclick="event.stopPropagation();C_IP.aside=null;cInboxPool()">Cancel</button></div>`;
+}
+async function cSetAside(id, reason, btn) {
   if (btn) btn.disabled = true;
   try {
-    const r = await post(`/api/intake/${Number(id)}/archive`, { reason: 'Not a lead' });
+    const r = await post(`/api/intake/${Number(id)}/archive`, { reason });
+    C_IP.aside = null;
     LAST_RESULT = r.landed || null;
-    await viewLeadsC();
-  } catch (err) { if (btn) btn.disabled = false; alert(err.message); }
+    await viewInbox();
+    return true;    // the save worked (motion-boards.js slides the card out only then)
+  } catch (err) { if (btn) btn.disabled = false; alert(err.message); return false; }
+}
+// MARKS (14.10.2026): Supplier or vendor, Internal, Spam on the card's number and address, kept until somebody removes it;
+// from then on it never pops up and never reaches the Inbox. Offered on a set-aside card and on a card that came back;
+// a marked card shows its mark and Remove mark.
+const C_MARK_SHORT = { 'Supplier or vendor': 'Supplier' };
+// "dd.mm, who, reason" - the history of a set-aside, as the card says it
+const cAsideWhen = (a) => [cDdMm(a.at), a.by, a.reason].filter(Boolean).map(esc).join(', ');
+function cMarkCtl(r, marks) {
+  if (!r.markable) return '';
+  if (r.mark) return `<button type="button" class="ib-aside" onclick="event.stopPropagation();cUnmark(${Number(r.id)}, this)">Remove mark</button>`;
+  return `<span class="ib-mark">Mark: ${(marks || []).map((m) => `<button type="button" class="ib-aside" onclick="event.stopPropagation();cMark(${Number(r.id)}, ${esc(JSON.stringify(m))}, this)">${esc(C_MARK_SHORT[m] || m)}</button>`).join(' · ')}</span>`;
+}
+async function cMark(id, mark, btn) {
+  if (btn) btn.disabled = true;
+  try { await post(`/api/intake/${Number(id)}/mark`, { mark }); await viewInbox(); }
+  catch (err) { if (btn) btn.disabled = false; alert(err.message); }
+}
+async function cUnmark(id, btn) {
+  if (btn) btn.disabled = true;
+  try { await post(`/api/intake/${Number(id)}/unmark`, {}); await viewInbox(); }
+  catch (err) { if (btn) btn.disabled = false; alert(err.message); }
 }
 
 async function viewLeadsC() {
@@ -3881,7 +3937,7 @@ async function viewLeadsC() {
         : `<button class="btn sm" onclick="doQualify(${Number(r.id)})">Make a lead</button>`}<button class="btn sm ghost" onclick="C_LOPEN=null;cInboxPool()">Cancel</button></div>
     </div>`;
   };
-  C_IPD = { rows, receipt, form, val };
+  C_IPD = { rows, receipt, form, val, marks: d.marks || [], reasons: d.archiveReasons || [] };
   cInboxPool();
   if (L) cNavCounts();                    // a lead was just saved or set aside: the menu count moves too
 }
@@ -4167,7 +4223,7 @@ async function cTodayMoveTo(pid, from, day) {
 // the cards are good choice!"). Columns by arrival day, in his order "By dates first, then by channels. Then by kind of
 // senders": the band's four ages are the columns, Source and Kind are the filters. One card per message, the Journey
 // board's card style, the action ON the card: "Make a lead" opens the small form on it, "Set aside" is the quiet link
-// (the reason dialog as before; nothing is deleted). No New lead, Not relevant or Later column. A message set aside
+// (since 14.10.2026 it opens the four reasons on the card; nothing is deleted). No New lead, Not relevant or Later column. A message set aside
 // is still reachable by address (#/leads?show=archived; ?show=notrelevant adds what a rule filtered), and since
 // 07.10.2026 ("Set aside: a way back") each of its cards has one action, Bring back.
 let C_IP = { col: null, channel: '', kind: '', show: 'new', open: 'today' };   // open: the day open on a phone (Q68)
@@ -4223,9 +4279,11 @@ function cInboxPool() {
       <div class="ib-top"><b class="c-reach">${who(r)}</b></div>
       <small class="ib-ch" style="--src:${C_SRC_COLOUR[r.channel] || '#8a94a6'}"><i></i>${esc(channelLabel(r.channel))}</small>
       ${r.channel === 'phone' && (r.calls || []).length ? cCallsHtml(r.calls) : `<div class="ib-msg">${esc(r.channel === 'phone' ? cCallLine(r.body) : (r.body || D.val(r, 'question') || ''))}</div>`}
-      ${prog || kind || r.joins ? `<div class="ib-tags">${r.joins ? `<span class="ib-joins">Joins ${esc(r.joins.name)}</span>` : ''}${prog ? `<span class="ib-prog">${esc(prog)}</span>` : ''}${kind}</div>` : ''}
+      ${prog || kind || r.joins || (!live && r.mark && r.mark !== r.archive_reason) ? `<div class="ib-tags">${r.joins ? `<span class="ib-joins">Joins ${esc(r.joins.name)}</span>` : ''}${prog ? `<span class="ib-prog">${esc(prog)}</span>` : ''}${kind}${!live && r.mark && r.mark !== r.archive_reason ? `<span class="ib-kind ib-marktag">${esc(r.mark)}</span>` : ''}</div>` : ''}
+      ${live && r.setAsideBefore ? `<div class="ib-before"><span>Set aside before: ${cAsideWhen(r.setAsideBefore)}</span>${cMarkCtl(r, D.marks)}</div>` : ''}
+      ${!live && r.state === 'archived' ? `<div class="ib-before"><span>Set aside: ${cAsideWhen({ at: r.processed_at, by: r.processed_by, reason: r.archive_reason })}</span></div>` : ''}
       ${cStateLine(st, cAgo(r.received_at), '', fmtDateTime(r.received_at))}
-      ${!live ? `<div class="ib-acts"><button class="btn sm" onclick="event.stopPropagation();cBringBack(${Number(r.id)}, this)">Bring back</button></div>` : open ? D.form(r) : `<div class="ib-acts"><button class="btn sm" onclick="event.stopPropagation();C_LOPEN=${Number(r.id)};cInboxPool()">${r.joins ? 'Add to ' + esc(r.joins.name) : 'Make a lead'}</button>${r.channel === 'phone' && !r.joins ? `<button type="button" class="ib-aside" onclick="event.stopPropagation();cNotALead(${Number(r.id)}, this)">Not a lead</button>` : ''}<button type="button" class="ib-aside" onclick="event.stopPropagation();openArchive(${Number(r.id)})">Set aside</button></div>`}</div>`;
+      ${!live ? `<div class="ib-acts"><button class="btn sm" onclick="event.stopPropagation();cBringBack(${Number(r.id)}, this)">Bring back</button>${cMarkCtl(r, D.marks)}</div>` : open ? D.form(r) : C_IP.aside === r.id ? cAsideChoice(r, D.reasons) : `<div class="ib-acts"><button class="btn sm" onclick="event.stopPropagation();C_LOPEN=${Number(r.id)};cInboxPool()">${r.joins ? 'Add to ' + esc(r.joins.name) : 'Make a lead'}</button><button type="button" class="ib-aside" onclick="event.stopPropagation();C_IP.aside=${Number(r.id)};cInboxPool()">Set aside</button></div>`}</div>`;
   };
   // a band click narrows the board to that day's column; a second click shows all four again
   const shownCols = cols.filter((c) => !C_IP.col || c.id === C_IP.col);
@@ -5190,7 +5248,7 @@ async function viewPersonC(id) {
   const ev = (e) => `<div class="c-evt">
       <div class="c-evt-when">${cStamp(e.occurred_at)}${e.actor ? ' · ' + esc(actorName(e.actor)) : ''}${e.channel ? ' · ' + esc(channelLabel(e.channel)) : ''}${e.origin === 'automatic' ? ' · <span class="c-auto">automatic</span>' : ''}</div>
       <div class="c-evt-what">${esc(e.subject || e.kind || '')}</div>
-      ${e.field ? `<div class="c-evt-diff"><s>${esc(e.old_value ?? '(empty)')}</s> → <b>${esc(e.new_value ?? '(empty)')}</b></div>` : (e.body ? `<div class="c-evt-body">${esc(e.body)}</div>` : '')}</div>`;
+      ${e.field ? `<div class="c-evt-diff"><s>${esc(e.old_value ?? '(empty)')}</s> → <b>${esc(e.new_value ?? '(empty)')}</b></div>` : (e.body ? `<div class="c-evt-body">${esc(e.body)}</div>` : '')}${e.call && e.call.answered && e.call.id ? `<div class="c-evt-body">${cCallNoteInput(e.call)}</div>` : ''}</div>`;
   const next = open
     ? (t ? `<div class="c-next"><b>Next step</b><div class="c-next-row"><span>${esc(cTask(t.label))}</span><span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span>${t.owner ? `<span class="c-gap-soft">${esc(t.owner)}</span>` : ''}</div>
         <div class="c-row-acts"><button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, false, ${esc(JSON.stringify(String(p.id ?? '')))})">Done</button><button class="btn sm ghost" onclick="openReschedule(${Number(t.id)})">Move the date</button></div></div>`
@@ -5879,7 +5937,7 @@ if (UI === 'c') {
     await post(`/api/people/${personId}/task`, { label: $('#tLabel').value, due: $('#tDate').value });
     closeModal(); route();
   };
-  // doQualify and doArchive end with viewInbox(); in C that is the Inbox screen.
+  // doQualify, cSetAside and the marks end with viewInbox(); in C that is the Inbox screen.
   // eslint-disable-next-line no-func-assign
   viewInbox = () => viewLeadsC();
   // Every classic dialog on a person (edit, note, stage, closing reason, SIS) ends with
@@ -7372,8 +7430,7 @@ async function viewInbox() {
     const L = LAST_RESULT; LAST_RESULT = null;
     if (!L) return '';
     if (L.archived) {
-      return `<div class="done-strip">Marked not relevant: <b>${esc(L.who)}</b>${
-        L.reason ? ' &middot; ' + esc(L.reason) : ''}</div>`;
+      return `<div class="done-strip">Set aside: <b>${esc(L.who)}</b>${L.reason ? ' &middot; ' + esc(L.reason) : ''}</div>`;
     }
     const due = L.dueAt ? fmtDate(L.dueAt) : null;
     return `<div class="done-strip ok">
@@ -7446,7 +7503,7 @@ async function openQualify(id) {
     <div id="qErr"></div>
     <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn" onclick="doQualify(${id})">Save</button>
-      <button class="btn ghost" onclick="openArchive(${id})">Not relevant</button>
+      ${(d.archiveReasons || []).map((x) => `<button class="btn ghost" onclick="closeModal();cSetAside(${id}, ${esc(JSON.stringify(x))})">Set aside: ${esc(x)}</button>`).join('')}
       <button class="btn ghost" onclick="closeModal()">Cancel</button>
     </div>`);
 }
@@ -7518,30 +7575,7 @@ async function cBringBack(id, btn) {
   await viewLeadsC();
 }
 
-async function openArchive(id) {
-  const d = await api('/api/intake?state=new');
-  modal('Set aside', `
-    <label>Why</label>
-    <select id="aReason">${(d.archiveReasons || []).map(r => `<option>${esc(r)}</option>`).join('')}</select>
-    <label style="margin-top:10px">Note</label>
-    <textarea id="aNote" rows="2"></textarea>
-    <div id="arErr"></div>
-    <div style="margin-top:14px;display:flex;gap:8px">
-      <button class="btn" onclick="doArchive(${id})">Save</button>
-      <button class="btn ghost" onclick="closeModal()">Cancel</button></div>
-    <p class="footnote" title="The contact stays in Intake and can still be found by name.">Nothing is deleted.</p>`);
-}
-
-async function doArchive(id) {
-  try {
-    const r = await post(`/api/intake/${id}/archive`, {
-      reason: document.querySelector('#aReason').value,
-      note: document.querySelector('#aNote').value,
-    });
-    LAST_RESULT = r.landed || null;
-    closeModal(); viewInbox();
-  } catch (e) { $('#arErr').innerHTML = `<div class="err">${esc(e.message)}</div>`; }
-}
+// The reason dialog (openArchive, #aReason) went on 14.10.2026: the four reasons are on the card itself (cAsideChoice, cSetAside).
 
 // --------------------------------------------------------------- followup --
 async function viewFollowup() {

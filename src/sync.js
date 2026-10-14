@@ -16,7 +16,7 @@
 import { receive, bringBack, activePersonFor, confirmedBySystem, CONFIG, newPersonId, ownerFor, emailFilterWhy, purgeLineBodies, recordReplyRead } from './intake.js';
 import { findMatches, isStrong, normEmail, normPhone } from './identity.js';
 import { knock } from './webpush.js';
-import { rememberedAs, phoneThread } from './phonefilter.js';
+import { phoneThread } from './phonefilter.js';
 import { logEvent, AUTOMATIC, MANUAL } from './history.js';
 import { fetchCalls, rowsFrom, WINDOW_MINUTES, toRigaStamp, ZONE } from '../lib/pbx.js';
 import { fetchChanged, toSisRow } from '../lib/sis.js';
@@ -162,9 +162,9 @@ export async function storeCall(db, r, mode, at, out) {
     }
     out.logged++;
   } else if (r.caller_num) {
-    // The filter before New Leads (Ritvars 01.10.2026, config.phoneFilter). Explicit and counted.
+    // The filter before New Leads (Ritvars 01.10.2026, config.phoneFilter). Explicit and counted. Since 14.10.2026 (one
+    // rule on every card) it is the MARK on the number, checked by receive() for every channel (src/phonefilter.js).
     const rule = CONFIG.phoneFilter || {};
-    const before = await rememberedAs(db, r.caller_num, rule.filterArchivedAs || []);
     // receive() owns every write: it joins the open item for this number when there is one (the
     // same caller again while staff have not looked yet), otherwise it stores, filtered or not.
     //
@@ -180,8 +180,7 @@ export async function storeCall(db, r, mode, at, out) {
     const got = await receive(db, { channel: 'phone', externalId: r.uniqueid, receivedAt: r.created_at,
       phone: r.caller_num, body: sentence, source: mode === 'live' ? 'provider' : 'simulated',
       threadKey: phoneThread(r.caller_num), joinOpenThread: Boolean(rule.oneOpenItemPerNumber),
-      joinBody: `Rang again ${toRigaStamp(r.created_at).slice(0, 16)}, ${sentence.charAt(0).toLowerCase()}${sentence.slice(1)}`,
-      filterWhy: before ? `this number was archived before as "${before.archive_reason}"` : null });
+      joinBody: `Rang again ${toRigaStamp(r.created_at).slice(0, 16)}, ${sentence.charAt(0).toLowerCase()}${sentence.slice(1)}` });
     inboundId = got.id;
     if (got.joined) out.again++; else if (got.filtered) out.filtered++; else out.inbox++;
   } else {    // a withheld number: kept for the call counts, but nobody can ring it back

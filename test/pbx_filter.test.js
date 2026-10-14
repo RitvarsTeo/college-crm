@@ -4,15 +4,15 @@
 // to New Leads, which is where staff decide whether there is interest; nobody becomes a lead until
 // a person qualifies them; a withheld number is only counted. The filter adds two explicit rules,
 // both in config.phoneFilter, both counted in the run result, and nothing is ever dropped:
-//   1. a number staff already archived as Spam, Supplier or vendor, or Internal is filtered
-//      (stored, kept under "Not relevant" with the reason, never in the queue);
+//   1. a number marked Spam, Supplier or vendor, or Internal is filtered (one rule, 14.10.2026: a mark on the number,
+//      no longer a set-aside reason; stored, kept with the set-aside messages with the mark, never in the queue);
 //   2. a number that already has an open New Leads item adds the call to THAT item, not a new row.
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { openDb } from '../src/db.js';
 import { syncPbx } from '../src/sync.js';
-import { listInbound, archive, CONFIG } from '../src/intake.js';
+import { listInbound, archive, setMark, CONFIG } from '../src/intake.js';
 
 const ON = { PBX_API_TOKEN: 'test-pbx-token-not-real-0000', CHANNEL_MODE_PHONE: 'live' };
 const NOW = new Date('2026-10-01T09:05:00Z');
@@ -27,7 +27,7 @@ const run = (db, calls, now = NOW) => syncPbx(db, { now, env: ON, fetchImpl: pbx
 test('phone filter: the rule is written down in config, where it can be read and changed', () => {
   assert.deepEqual(CONFIG.phoneFilter.filterArchivedAs, ['Spam', 'Supplier or vendor', 'Internal']);   // rethink 14.10.2026: Not Admissions retired
   assert.equal(CONFIG.phoneFilter.oneOpenItemPerNumber, true);
-  for (const r of CONFIG.phoneFilter.filterArchivedAs) assert.ok(CONFIG.intake.archiveReasons.includes(r), r);
+  for (const r of CONFIG.phoneFilter.filterArchivedAs) assert.ok(CONFIG.intake.marks.includes(r), r);   // one rule (14.10.2026): the same three are the marks
 });
 
 test('phone filter: a first-time unknown caller with no notes reaches New Leads, not clear yet, and is nobody yet', async () => {
@@ -68,12 +68,12 @@ test('phone filter: the same unknown number calling again adds to its open item,
   assert.deepEqual(calls.map((c) => c.inbound_id), [open[0].id, open[0].id], 'every call is still kept, both on the item');
 });
 
-test('phone filter: a number archived as Spam, Supplier or vendor, or Internal is filtered next time, with the reason', async () => {
+test('phone filter: a number marked Spam, Supplier or vendor, or Internal is filtered next time, with the mark', async () => {
   for (const reason of ['Spam', 'Supplier or vendor', 'Internal']) {
     const db = await openDb(':memory:');
     await run(db, [call()]);
     const [first] = await listInbound(db, { state: 'new' });
-    assert.equal((await archive(db, first.id, { reason, note: reason === 'Internal' ? 'our own line' : '', by: 'Ieva' })).ok, true);
+    assert.equal((await setMark(db, first.id, { mark: reason, by: 'Ieva' })).ok, true);
     const r = await run(db, [call({ uniqueid: 'c2', created_at: '2026-10-01 09:20:00' })], new Date('2026-10-01T09:30:00Z'));
     assert.equal(r.filtered, 1, reason);
     assert.equal(r.inbox, 0, reason);
@@ -81,7 +81,8 @@ test('phone filter: a number archived as Spam, Supplier or vendor, or Internal i
     const gone = (await listInbound(db, { state: 'notrelevant' })).find((i) => i.external_id === 'c2');
     assert.ok(gone, `${reason}: kept under Not relevant, never dropped`);
     assert.equal(gone.state, 'filtered');
-    assert.match(gone.archive_note, new RegExp(`archived before as "${reason}"`));
+    assert.match(gone.archive_note, new RegExp(`this number is marked "${reason}"`));
+    assert.equal(gone.mark, reason, 'the folder card says its mark');
     assert.equal(gone.contact_phone, '+37129111222', 'the number is still there to look at');
     assert.match(gone.body || '', /Incoming call on button 1/, 'decision 1d: filtering never deletes the body at once');
     const row = await db.prepare('SELECT body_deleted_at FROM inbound WHERE id = ?').get(gone.id);
@@ -89,7 +90,7 @@ test('phone filter: a number archived as Spam, Supplier or vendor, or Internal i
   }
 });
 
-test('phone filter: any other archive reason does not filter the number; the next call is assessed again', async () => {
+test('phone filter: Not a prospective student does not filter the number; the next call is assessed again', async () => {
   const db = await openDb(':memory:');
   await run(db, [call()]);
   const [first] = await listInbound(db, { state: 'new' });

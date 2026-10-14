@@ -759,18 +759,18 @@
       "archived"
     ],
     "archiveReasons": [
-      "Spam",
       "Not a prospective student",
       "Supplier or vendor",
       "Internal",
-      "Already handled",
-      "Not a lead",
-      "Other"
+      "Spam"
     ],
-    "archiveReasonNeedsNote": [
-      "Other"
+    "marks": [
+      "Supplier or vendor",
+      "Internal",
+      "Spam"
     ],
-    "_note": "Every inbound item lands here first. Nothing becomes a lead on its own. Archiving keeps the row forever, searchable, with the reason and who did it."
+    "_oneRule": "The owner, 14.10.2026: seven reasons were too many, and \"we need some history with people in our app\". Every card on every channel has two actions, Make a lead and Set aside. Set aside = pick ONE of archiveReasons (Not a prospective student first, the usual one); no free text, no Other. Supplier or vendor, Internal and Spam also MARK the phone number or email address (contact_marks), kept until somebody removes it: a marked number or address never pops up and never reaches the Inbox. Every set-aside keeps date, who and reason. Rows set aside before keep their old reason text; a number set aside as Spam, Supplier or vendor or Internal before then still counts as marked (phoneFilter.filterArchivedAs) until somebody removes the mark.",
+    "_note": "Every inbound item lands here first. Nothing becomes a lead on its own. Setting aside keeps the row forever, searchable, with the reason, who did it and when."
   },
   "routing": {
     "unclear": "Marketing",
@@ -983,6 +983,7 @@
       "Supplier or vendor",
       "Internal"
     ],
+    "_marks": "Since 14.10.2026 (one rule on every card) these three are MARKS on the number or address (intake.marks, contact_marks); a number set aside with one of them BEFORE then still counts as marked, until somebody removes the mark.",
     "_notALead": "Rethink, Ritvars 14.10.2026 (\"how do you know its 'Not Admissions'?\" -> \"Yes, this system\"): calls run on facts. The button decides whose list; whoever answered decides about THAT call: Make a lead, or Not a lead (this call only, no number remembered); a number that is a person in Intake goes to that person. Only Spam, Supplier or vendor and Internal remember a number. Not Admissions as a remembered reason is retired.",
     "oneOpenItemPerNumber": true
   },

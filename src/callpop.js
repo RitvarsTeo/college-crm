@@ -14,7 +14,7 @@
 // a name Intake does not know, it stays with everybody.
 
 import fs from 'node:fs';
-import { rememberedAs } from './phonefilter.js';
+import { markFor } from './phonefilter.js';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -74,14 +74,15 @@ export async function viewerFor(db, name) {
   return { name };
 }
 
-// A NUMBER THE PHONE FILTER SETS ASIDE NEVER POPS (Ritvars, 14.10.2026, "Yes, never pop"): Spam, Supplier or vendor,
-// Internal - phoneFilter.filterArchivedAs (since the rethink, "Not a lead" is one call and is never remembered), undone by Bring back exactly as in the pull. A caller who is a person
-// in Intake always pops: the person is looked for first, the same order as storeCall.
+// A MARKED NUMBER NEVER POPS (Ritvars, 14.10.2026, "Yes, never pop"; one rule on every card, 14.10.2026): a number
+// marked Supplier or vendor, Internal or Spam (src/phonefilter.js markFor, the same rule as the pull), until somebody
+// removes the mark. Set aside alone remembers nothing, so the next call pops. A caller who is a person in Intake always
+// pops: the person is looked for first, the same order as storeCall.
 export async function filteredCaller(db, callerNum, who = null) {
   if (!callerNum) return false;
   const w = who || await whoIsCalling(db, callerNum);
   if (w.kind === 'person') return false;
-  return Boolean(await rememberedAs(db, callerNum, (CFG.phoneFilter || {}).filterArchivedAs || []));
+  return Boolean(await markFor(db, { phone: callerNum }));
 }
 
 // An app that was closed does not catch up on old calls: only events from the last few minutes.

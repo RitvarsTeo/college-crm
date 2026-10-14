@@ -265,8 +265,9 @@ test('marking not relevant also says what happened', async (t) => {
     body: 'partnership opportunity for your school' });
   const id = (await get(base, '/api/intake?state=new', 'Tetiana')).rows[0].id;
 
-  const r = await send(base, `/api/intake/${id}/archive`, 'Tetiana',
-    { reason: 'Not a prospective student' });
+  const none = await call(base, `/api/intake/${id}/archive`, 'Tetiana', { method: 'POST', body: JSON.stringify({ reason: 'Other' }) });
+  assert.equal(none.status, 400, 'one of the four reasons, nothing else (14.10.2026)');
+  const r = await send(base, `/api/intake/${id}/archive`, 'Tetiana', { reason: 'Not a prospective student' });
   assert.equal(r.ok, true);
   assert.ok(r.landed, 'the screen has to be able to say what it just did');
   assert.equal(r.landed.archived, true);

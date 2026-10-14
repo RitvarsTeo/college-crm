@@ -193,7 +193,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS inbound_line_seq ON inbound_line (inbound_id, 
 CREATE TABLE IF NOT EXISTS inbound_history (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   inbound_id INTEGER NOT NULL,
-  action TEXT NOT NULL,          -- set_aside | brought_back
+  action TEXT NOT NULL,          -- set_aside | brought_back | marked | unmarked (14.10.2026)
   at TEXT NOT NULL,
   actor TEXT NOT NULL,
   from_state TEXT,               -- brought_back: archived (a person set it aside) | filtered (a rule did)
@@ -359,7 +359,23 @@ CREATE TABLE IF NOT EXISTS pbx_calls (
   inbound_id INTEGER,            -- the Inbox item it became, when it was not
   inserted_at TEXT NOT NULL,
   duration_sec INTEGER,          -- 14.10.2026: the whole call in seconds, ringing included (TeleGroup's duration); null = not known
-  talk_sec INTEGER               -- 14.10.2026: the talk time in seconds (TeleGroup's duration_talk); null = not known
+  talk_sec INTEGER,              -- 14.10.2026: the talk time in seconds (TeleGroup's duration_talk); null = not known
+  note TEXT,                     -- 14.10.2026: "What was it about?", one line typed after the call by whoever answered
+  note_by TEXT,
+  note_at TEXT
+);
+
+-- MARKS (14.10.2026, one rule on every card): Supplier or vendor, Internal or Spam on a phone number or an email
+-- address, kept until somebody changes it. A marked number or address never pops up and never reaches the Inbox.
+-- One row per number or address; mark NULL = the mark was removed (it also outranks a number set aside with one of
+-- those reasons before 14.10.2026, which otherwise still counts as marked). Who and when are on the row; every
+-- change is also a line in inbound_history (marked | unmarked) on the card it was made from.
+CREATE TABLE IF NOT EXISTS contact_marks (
+  contact_key TEXT PRIMARY KEY,  -- phone:<last 8 digits> | email:<address in lower case>
+  mark TEXT,
+  set_by TEXT NOT NULL,
+  set_at TEXT NOT NULL,
+  inbound_id INTEGER             -- the card it was set or removed on
 );
 
 -- CALL EVENTS the phone system pushes (Q6, 04.10.2026): ringing, answered, ended. One row per
@@ -474,6 +490,9 @@ const ADDED_COLUMNS = [
   ['inbound', 'reply_checked_at', 'TEXT'],     // 07.10.2026, when the thread was last read for it
   ['pbx_calls', 'duration_sec', 'INTEGER'],    // 14.10.2026, the call's length in seconds (lib/pbx.js toSeconds)
   ['pbx_calls', 'talk_sec', 'INTEGER'],        // 14.10.2026, the talk time in seconds
+  ['pbx_calls', 'note', 'TEXT'],               // 14.10.2026, what the call was about (one line)
+  ['pbx_calls', 'note_by', 'TEXT'],
+  ['pbx_calls', 'note_at', 'TEXT'],
 ];
 
 // ---------------------------------------------------------- the async layer --

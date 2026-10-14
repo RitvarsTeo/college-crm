@@ -274,15 +274,15 @@
     }
 
     // ======================================================== 3. the Inbox card set aside
-    if (typeof doArchive === 'function') {
-      var archive = doArchive;
+    // One click since 14.10.2026 (cSetAside, no reason dialog): it answers true once the save worked.
+    if (typeof cSetAside === 'function') {
+      var archive = cSetAside;
       // eslint-disable-next-line no-global-assign
-      doArchive = async function (id) {
+      cSetAside = async function (id) {
         var card = document.querySelector('#view .ib-card[data-id="' + CSS.escape(String(id)) + '"]');
         var src = card && M.live() ? { node: card.cloneNode(true), rect: rectOf(card) } : null;
         var r = await archive.apply(this, arguments);
-        var err = document.getElementById('arErr');
-        if (err && err.innerHTML.trim()) return r;   // refused: nothing moved
+        if (r !== true) return r;                     // refused: nothing moved
         if (src) {                                    // saved: the copy slides out quietly while the board redraws
           var ghost = ghostOf(src.node, src.rect);
           if (ghost) {

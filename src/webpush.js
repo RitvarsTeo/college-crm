@@ -80,7 +80,7 @@ export async function targetsFor(db, ev, users = []) {
 export async function knock(db, ev, { env = process.env, users = null, fetchImpl = fetch, timeoutMs = 3000 } = {}) {
   if (!pushConfigured(env)) return { sent: 0, skipped: 'push is not configured' };
   if (!popsUp(ev.queue)) return { sent: 0, skipped: 'this button does not pop up' };
-  try { if (await filteredCaller(db, ev.callerNum)) return { sent: 0, skipped: 'a number the phone filter sets aside' }; } catch { /* knock anyway */ }
+  try { if (await filteredCaller(db, ev.callerNum)) return { sent: 0, skipped: 'a marked number (Supplier or vendor, Internal, Spam)' }; } catch { /* knock anyway */ }
   if (!users) {
     try { users = (await db.prepare('SELECT display_name FROM crm_users WHERE active = 1').all()).map((u) => u.display_name).filter(Boolean); } catch { users = []; }
   }

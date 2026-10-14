@@ -49,7 +49,7 @@ test('it is written in config and in Help', () => {
 });
 
 // Ritvars, 14.10.2026, "Yes, never pop": a number the phone filter sets aside (Spam, Supplier or vendor, Internal) never pops up.
-import { receive, archive, bringBack } from '../src/intake.js';
+import { receive, archive, bringBack, setMark, removeMark } from '../src/intake.js';
 
 async function oneRing(db, id, num, now) {
   await db.prepare(`INSERT INTO call_events (call_id, event, at, queue, caller_num, operator, extension, source, received_at)
@@ -58,30 +58,32 @@ async function oneRing(db, id, num, now) {
   return Number(top.n) - 1;
 }
 
-test('a Spam number never pops; Bring back makes it pop again; Not a lead still pops; a person in Intake always pops', async () => {
+// One rule on every card (14.10.2026): a MARKED number never pops; Not a prospective student remembers nothing.
+test('a Spam-marked number never pops; Remove mark makes it pop again; a person in Intake always pops', async () => {
   const db = await openDb(':memory:');
   const now = new Date('2026-10-14T10:00:00Z');
   const card = await receive(db, { channel: 'phone', externalId: 'c0', receivedAt: '2026-10-14T09:00:00Z', phone: '+37129111222',
     body: 'Incoming call', threadKey: 'phone:29111222', source: 'provider' });
-  await archive(db, card.id, { reason: 'Spam', by: 'Ieva' });
+  await archive(db, card.id, { reason: 'Spam', by: 'Ieva' });   // Spam also marks the number
   const users = ['Laura', 'Ieva'];
   let after = await oneRing(db, 'r1', '29111222', now);
-  assert.equal((await callFeed(db, { after, viewer: 'Ieva', users, now })).events.length, 0, 'set aside: no pop-up');
+  assert.equal((await callFeed(db, { after, viewer: 'Ieva', users, now })).events.length, 0, 'marked: no pop-up');
   const env = { VAPID_PUBLIC_KEY: 'x', VAPID_PRIVATE_KEY: 'x', VAPID_SUBJECT: 'mailto:x@example.org' };
   const k = await knock(db, { event: 'ringing', queue: '1001*Q-ADMISSION', callerNum: '+371 29 111 222' }, { env, users: [], fetchImpl: async () => {} });
-  assert.equal(k.skipped, 'a number the phone filter sets aside');
+  assert.equal(k.skipped, 'a marked number (Supplier or vendor, Internal, Spam)');
 
-  await bringBack(db, card.id, { by: 'Ieva', at: '2026-10-14T09:30:00Z' });
+  await removeMark(db, card.id, { by: 'Ieva' });
   after = await oneRing(db, 'r2', '29111222', now);
-  assert.equal((await callFeed(db, { after, viewer: 'Ieva', users, now })).events.length, 1, 'brought back: it pops again');
+  assert.equal((await callFeed(db, { after, viewer: 'Ieva', users, now })).events.length, 1, 'mark removed: it pops again');
 
-  // Not a lead remembers nothing: the next ring pops
-  await archive(db, card.id, { reason: 'Not a lead', by: 'Ieva' });
+  // Not a prospective student remembers nothing: the next ring pops
+  const card2 = await receive(db, { channel: 'phone', externalId: 'c1', receivedAt: '2026-10-14T09:31:00Z', phone: '+37129111222',
+    body: 'Incoming call', threadKey: 'phone:29111222', source: 'provider' });
+  await archive(db, card2.id, { reason: 'Not a prospective student', by: 'Ieva' });
   after = await oneRing(db, 'r2b', '29111222', now);
-  assert.equal((await callFeed(db, { after, viewer: 'Ieva', users, now })).events.length, 1, 'Not a lead: it still pops');
-  await bringBack(db, card.id, { by: 'Ieva', at: '2026-10-14T09:35:00Z' });
-  // Spam again, then the number becomes a person in Intake: a person always pops
-  await archive(db, card.id, { reason: 'Spam', by: 'Ieva' });
+  assert.equal((await callFeed(db, { after, viewer: 'Ieva', users, now })).events.length, 1, 'Not a prospective student: it still pops');
+  // marked again, then the number becomes a person in Intake: a person always pops
+  await setMark(db, card.id, { mark: 'Spam', by: 'Ieva' });
   await db.prepare(`INSERT INTO people (id, name, phone, status, owner, created_at) VALUES ('p1', 'Anna', '+37129111222', 'new', 'Ieva', '2026-10-14T09:40:00Z')`).run();
   after = await oneRing(db, 'r3', '29111222', now);
   const feed = await callFeed(db, { after, viewer: 'Ieva', users, now });

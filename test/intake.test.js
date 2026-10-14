@@ -321,15 +321,26 @@ test('set aside keeps the text (until retention), and the row is kept forever', 
   assert.equal(row.body_deleted_at, null);
   assert.equal(row.state, 'archived');
   assert.equal(row.archive_reason, 'Spam');
+  assert.equal(row.processed_by, 'Tetiana');
   assert.equal(row.contact_name, 'Spam', 'archived is not deleted: the contact is still findable');
 });
 
-test('archiving needs a reason, and "Other" needs an explanation', async () => {
+// ONE RULE ON EVERY CARD (the owner, 14.10.2026): Set aside = one of exactly four reasons, nothing typed.
+test('set aside needs who and one of the four reasons; Other, Already handled and Not a lead are gone', async () => {
   const db = await openDb();
   const r = await receive(db, { channel: 'instagram', body: HI, externalId: 'b3' });
-  assert.match((await archive(db, r.id, { by: 'Tetiana' })).error, /reason is required/);
-  assert.match((await archive(db, r.id, { reason: 'Other', by: 'Tetiana' })).error, /needs an explanation/);
-  assert.equal((await archive(db, r.id, { reason: 'Other', note: 'a supplier', by: 'Tetiana' })).ok, true);
+  assert.deepEqual(CONFIG.intake.archiveReasons, ['Not a prospective student', 'Supplier or vendor', 'Internal', 'Spam']);
+  assert.equal(CONFIG.intake.archiveReasonNeedsNote, undefined, 'no reason needs an explanation');
+  assert.match((await archive(db, r.id, { reason: 'Not a prospective student' })).error, /who/);
+  for (const gone of [undefined, 'Other', 'Already handled', 'Not a lead']) {
+    const e = await archive(db, r.id, { reason: gone, by: 'Tetiana' });
+    assert.match(e.error, /pick why/, String(gone));
+    assert.deepEqual(e.reasons, CONFIG.intake.archiveReasons);
+  }
+  assert.equal((await archive(db, r.id, { reason: 'Not a prospective student', by: 'Tetiana' })).ok, true);
+  const h = await db.prepare('SELECT action, actor, reason, at FROM inbound_history WHERE inbound_id = ?').all(r.id);
+  assert.deepEqual(h.map((x) => [x.action, x.actor, x.reason]), [['set_aside', 'Tetiana', 'Not a prospective student']], 'date, who, reason kept');
+  assert.ok(h[0].at);
 });
 
 // ------------------------------------------- confirmation makes data authoritative --
@@ -410,7 +421,7 @@ test('the funnel counts rows that exist, from raw contact to SIS', async () => {
   const rows = await db.prepare('SELECT id FROM inbound ORDER BY id').all();
   await qualify(db, rows[1].id, { qualification: 'lead', createPerson: true, by: 'Tetiana', confirmFields: ['interest'], nextAction: 'Call and establish interest' });
   await qualify(db, rows[2].id, { qualification: 'lead', createPerson: true, by: 'Tetiana', confirmFields: ['interest'], nextAction: 'Call and establish interest' });
-  await archive(db, rows[3].id, { reason: 'Spam', by: 'Tetiana' });
+  await archive(db, rows[3].id, { reason: 'Not a prospective student', by: 'Tetiana' });
 
   const f = await funnel(db);
   const step = (name) => f.steps.find((s) => s.step === name).count;
@@ -572,7 +583,7 @@ test('the not-relevant screen is one list over two stored states', async () => {
   // a sales pitch the machine drops, and a real message a person marks as not relevant
   const junk = await receive(db, { channel: 'instagram', name: 'Seller', body: 'Hello, we offer social media promotion services, 5000 followers guaranteed' });
   const real = await receive(db, { channel: 'instagram', name: 'Somebody', body: HI });
-  await archive(db, real.id, { reason: CONFIG.intake.archiveReasons[0], by: 'Tetiana' });
+  await archive(db, real.id, { reason: 'Not a prospective student', by: 'Tetiana' });
 
   assert.equal((await db.prepare('SELECT state FROM inbound WHERE id = ?').get(junk.id)).state, 'filtered');
   const shown = (await listInbound(db, { state: 'notrelevant' })).map((r) => r.id).sort();

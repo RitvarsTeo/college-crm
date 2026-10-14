@@ -125,11 +125,11 @@ test('the demo covers the channels and stages somebody needs to see', async () =
   assert.ok(stages.length >= 4, 'several admissions stages are represented, not just New');
   assert.ok(stages.includes('Admitted'), 'and the end of the journey is visible');
 
-  // a reason was recorded for anything marked not relevant
+  // a reason and who set it aside are recorded for anything set aside (one of four since 14.10.2026)
   const archived = await db.prepare("SELECT archive_reason, processed_by FROM inbound WHERE state = 'archived'").all();
   assert.ok(archived.length > 0);
   for (const a of archived) {
-    assert.ok(a.archive_reason, 'not relevant always carries a reason');
+    assert.ok(CONFIG.intake.archiveReasons.includes(a.archive_reason), 'set aside always carries one of the four reasons');
     assert.ok(a.processed_by, 'and who did it');
   }
 });

@@ -16,7 +16,7 @@ import * as gmailB from '../lib/gmail.js';
 import * as notify from '../lib/notify.js';
 import * as sheetB from '../lib/sheetpull.js';
 import { pullSheet, sheetCounts } from './sheetsync.js';
-import { receive, listInbound, messagesFor, recordWhatsAppEcho, qualify, archive, bringBack, funnel, agedCount, handoffToSis, ownerFor, notifiedFor, handoverGap, canReach, surfaceAt, waitingFor, waitingByRole } from './intake.js';
+import { receive, listInbound, messagesFor, recordWhatsAppEcho, qualify, archive, setMark, removeMark, setCallNote, withCallNotes, bringBack, funnel, agedCount, handoffToSis, ownerFor, notifiedFor, handoverGap, canReach, surfaceAt, waitingFor, waitingByRole } from './intake.js';
 import { readScreenshot, readKind, readBody, readPath, saveFeedback, listFeedback, getScreenshot, setHandled, BadScreenshot, helpOpened, helpCounts } from './feedback.js';
 import { findMatches as matchPeople, duplicateCheck, isStrong as isStrongMatch } from './identity.js';
 import { lifecycleOf, sisProgress, sisProgressByPerson, SIS_HOLDS_SQL } from './lifecycle.js';
@@ -837,6 +837,7 @@ async function personRow(id, viewer) {
   // Q76: what they wrote sits in their History, newest first among everything else that happened
   const shown = visibleTimeline(all, viewer);
   p.hiddenCorrections = all.length - shown.length;   // events only: the messages below are not events
+  await withCallNotes(db, id, shown);   // a known person's call: its "What was it about?" line (14.10.2026)
   p.timeline = [...shown, ...(await messagesFor(db, id))]
     .sort((a, b) => String(b.occurred_at).localeCompare(String(a.occurred_at)));
   p.viewer = viewer || null;
@@ -2121,7 +2122,8 @@ export const handle = async (req, res) => {
         },
         levels: CONFIG.qualification.levels,
         routing: CONFIG.routing,
-        archiveReasons: CONFIG.intake.archiveReasons,
+        archiveReasons: CONFIG.intake.archiveReasons,   // one rule (14.10.2026): Set aside = one of these four
+        marks: CONFIG.intake.marks,                     // the three that also mark the number or address
         ageing: CONFIG.ageing,
       });
     }
@@ -2402,15 +2404,37 @@ export const handle = async (req, res) => {
       return json(res, 200, r);
     }
 
+    // Set aside: {"reason": one of config intake.archiveReasons} (one rule on every card, 14.10.2026). No free text.
     if (req.method === 'POST' && /^\/api\/intake\/\d+\/archive$/.test(p)) {
       const id = Number(p.split('/')[3]);
       const b = await body(req);
-      const r = await archive(db, id, { ...b, by: await actorOf(req, b) });
+      const r = await archive(db, id, { reason: b.reason, by: await actorOf(req, b) });
       if (r.error) return json(res, 400, r);
       const row = await db.prepare('SELECT contact_name, contact_handle, contact_phone FROM inbound WHERE id = ?').get(id);
       // a call card has only its number (Q92): the receipt names the number, not "it"
       r.landed = { archived: true, who: row ? (row.contact_name || row.contact_handle || row.contact_phone || 'it') : 'it',
-        reason: b.reason || null };
+        reason: r.reason || null };
+      return json(res, 200, r);
+    }
+
+    // A mark on the card's number and address (14.10.2026): {"mark": "Supplier or vendor" | "Internal" | "Spam"}.
+    // Remove mark: POST .../unmark. Every user, the same rule as Set aside; both logged in inbound_history.
+    if (req.method === 'POST' && /^\/api\/intake\/\d+\/(mark|unmark)$/.test(p)) {
+      const id = Number(p.split('/')[3]);
+      const b = await body(req);
+      const by = await actorOf(req, b);
+      const r = p.endsWith('/unmark') ? await removeMark(db, id, { by }) : await setMark(db, id, { mark: b.mark, by });
+      if (r.error) return json(res, r.error === 'not found' ? 404 : 400, r);
+      return json(res, 200, r);
+    }
+
+    // "What was it about?" on an answered call (14.10.2026): {"note": "one line"}. Behind sign-in like every route here.
+    if (req.method === 'POST' && /^\/api\/calls\/[^/]+\/note$/.test(p)) {
+      let callId = '';
+      try { callId = decodeURIComponent(p.split('/')[3]); } catch { return json(res, 400, { error: 'not a call' }); }
+      const b = await body(req);
+      const r = await setCallNote(db, callId, { note: b.note, by: await actorOf(req, b) });
+      if (r.error) return json(res, r.error === 'not found' ? 404 : 400, r);
       return json(res, 200, r);
     }
 

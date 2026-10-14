@@ -56,12 +56,12 @@
     },
     {
       "do": "Set a message aside",
-      "where": "Inbox, Set aside on the card; the message is kept and can be brought back",
+      "where": "Inbox, Set aside on the card, then pick why; the message is kept and can be brought back",
       "href": "#/leads"
     },
     {
       "do": "Bring a set-aside message back",
-      "where": "The set-aside messages, Bring back on the card",
+      "where": "The set-aside messages, Bring back on the card; Mark there stops a number or address coming back",
       "href": "#/leads?show=notrelevant"
     },
     {
@@ -113,7 +113,7 @@
     },
     {
       "title": "Inbox",
-      "body": "Every new message from every channel lands here first, in the column of the day it arrived. Make a lead: say the programme and the next step on the card - Follow up on a date, or Cold - and add the email or phone the message did not bring, so their next message finds them. What they wrote stays on their History. A message from somebody already in Intake says Joins and their name: Add to them. Anything else: Set aside. It is kept, and can be brought back. Calls show the line you answer (Admissions, Student coordination or Other); the Line filter shows another line or all of them, and remembers your choice. An empty column folds to a thin strip; click it to open it. On a phone the days stack: tap a bar or a folded day to open it. Email: a message from somebody you are already working with goes on their history with Answer the question for today; the same new sender again joins their card; a newsletter is set aside. Email a person gave the Admissions label in edu@ is never filtered, archived or not, and a message a rule had set aside comes back once it has the label. Email is read every 5 minutes.",
+      "body": "Every new message from every channel lands here first, in the column of the day it arrived. Make a lead: say the programme and the next step on the card - Follow up on a date, or Cold - and add the email or phone the message did not bring, so their next message finds them. What they wrote stays on their History. A message from somebody already in Intake says Joins and their name: Add to them. Anything else: Set aside, and pick why: Not a prospective student, Supplier or vendor, Internal or Spam. It is kept, and can be brought back; who, when and why stay on record. Supplier or vendor, Internal and Spam also mark the number or address, so it stays out of the Inbox until Remove mark. Somebody set aside before who gets in touch again comes back, with Set aside before on the card. Calls show the line you answer (Admissions, Student coordination or Other); the Line filter shows another line or all of them, and remembers your choice. An empty column folds to a thin strip; click it to open it. On a phone the days stack: tap a bar or a folded day to open it. Email: a message from somebody you are already working with goes on their history with Answer the question for today; the same new sender again joins their card; a newsletter is set aside. Email a person gave the Admissions label in edu@ is never filtered, archived or not, and a message a rule had set aside comes back once it has the label. Email is read every 5 minutes.",
       "target": ".cnav a[data-c=\"leads\"]"
     },
     {
@@ -190,8 +190,8 @@
     },
     {
       "id": "phone-calls",
-      "q": "How do calls reach the Inbox, and what is Not a lead?",
-      "a": "Intake reads the college phone line every minute, and a call appears as soon as the phone system lists it, which can be later than the call itself. Intake also re-reads the last two days, so a call the phone system lists late is never missed. A call card shows each call: the time, the line it came in on, and Answered by who answered, or Missed. When the phone system gives the length, an answered call also shows how long the talk lasted, and a missed call how long it rang. A call from somebody already in Intake goes on their history instead. Not a lead on a call card sets that one call aside in one click; the next call from the number comes in as usual. Only Spam, Supplier or vendor, or Internal makes later calls from a number be set aside, and Bring back on any card of that number undoes it. A call pops up in the app for button 1 (Admissions) and button 2 (Coordinator); a button 3 call does not pop up, it only reaches the Inbox or the history. A number set aside as Spam, Supplier or vendor, or Internal never pops up. A call pops up only for the people of its line (1 Ieva, 2 Laura), never for admins."
+      "q": "How do calls reach the Inbox, and how do I set one aside?",
+      "a": "Intake reads the college phone line every minute, and a call appears as soon as the phone system lists it, which can be later than the call itself. Intake also re-reads the last two days, so a call the phone system lists late is never missed. A call card shows each call: the time, the line it came in on, and Answered by who answered, or Missed. When the phone system gives the length, an answered call also shows how long the talk lasted, and a missed call how long it rang. A call from somebody already in Intake goes on their history instead. Under an answered call, type one line in What was it about?; it goes onto the person's History with Make a lead. Set aside on a call card, then pick why (Bring back returns it). Not a prospective student sets aside only that card: the next call from the number comes in as usual. Supplier or vendor, Internal or Spam also marks the number: it never reaches the Inbox, until Remove mark. A call pops up in the app for button 1 (Admissions) and button 2 (Coordinator); a button 3 call does not pop up, it only reaches the Inbox or the history. A marked number never pops up. A call pops up only for the people of its line (1 Ieva, 2 Laura), never for admins."
     },
     {
       "id": "linkedin-leads",

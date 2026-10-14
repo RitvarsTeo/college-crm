@@ -2,8 +2,9 @@
 // numuru arī nāk diezgan daudz zvanu, kas nav ADMISSIONS"):
 //   1. the TeleGroup pull every minute; a 429 makes it wait, never skip;
 //   2. a phone card says each call plainly: when, the line, answered by whom or missed;
-//   3. "Not a lead" (rethink 14.10.2026, replaces "Not Admissions"): one click sets THAT call aside, no number is
-//      remembered; only Spam, Supplier or vendor, Internal remember one; a person in Intake is never hidden;
+//   3. one click sets THAT call aside, no number is remembered (since the one rule, 14.10.2026, the same Set aside as
+//      every card; "Not a lead" went); only a mark (Spam, Supplier or vendor, Internal) remembers one; a person in
+//      Intake is never hidden;
 //   4. a one-off admin action sets aside the phone items from before calls were live, logged, nothing deleted.
 // Everything runs against a fake TeleGroup.
 import test from 'node:test';
@@ -15,7 +16,7 @@ import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { openDb } from '../src/db.js';
 import { syncPbx, SWEEP_PIECES, LATE_HOURS } from '../src/sync.js';
-import { listInbound, archive, bringBack, receive, setAsideOldCalls, OLD_CALL_REASON, releaseNotAdmissions, RELEASED_NOTE, CONFIG } from '../src/intake.js';
+import { listInbound, archive, bringBack, receive, setAsideOldCalls, OLD_CALL_REASON, releaseNotAdmissions, RELEASED_NOTE, CONFIG, setMark } from '../src/intake.js';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const ON = { PBX_API_TOKEN: 'test-pbx-token-not-real-0000', CHANNEL_MODE_PHONE: 'live' };
@@ -92,7 +93,7 @@ test('2: a phone card lists each call: time, line, answered by whom or missed; n
   const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
   const TZ = 'Europe/Riga';
   const fmt = app.slice(app.indexOf('const fmtDateTime = '), app.indexOf('// Today in RIGA.'));
-  const fn = app.slice(app.indexOf('function cCallsHtml('), app.indexOf('async function cNotALead('));
+  const fn = app.slice(app.indexOf('function cCallsHtml('), app.indexOf('async function cCallNote('));
   const ctx = { esc: (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;'), TZ };
   vm.runInNewContext(`const TZ = ${JSON.stringify(TZ)};` + fmt + fn + '; this.calls = cCallsHtml;', ctx);
   const html = ctx.calls(card.calls);
@@ -103,28 +104,30 @@ test('2: a phone card lists each call: time, line, answered by whom or missed; n
 
 // ---------------------------------------------------------------------------- 3 --
 // Rethink, Ritvars 14.10.2026 ("how do you know its 'Not Admissions'?" -> "Yes, this system"): calls run on facts.
-test('3: Not a lead is a reason for ONE call; only Spam, Supplier or vendor, Internal remember a number', () => {
-  assert.ok(CONFIG.intake.archiveReasons.includes('Not a lead'));
-  assert.ok(!CONFIG.intake.archiveReasons.includes('Not Admissions'), 'retired');
-  assert.deepEqual(CONFIG.phoneFilter.filterArchivedAs, ['Spam', 'Supplier or vendor', 'Internal']);
+// One rule on every card (14.10.2026): the phone card's own "Not a lead" went; it has the same one-click Set aside as
+// every card, and Supplier or vendor, Internal, Spam are a mark on the number.
+test('3: no Not a lead any more: the phone card has the same Set aside as every card; the marks are the three remembered ones', () => {
+  assert.deepEqual(CONFIG.intake.archiveReasons, ['Not a prospective student', 'Supplier or vendor', 'Internal', 'Spam']);
+  assert.deepEqual(CONFIG.intake.marks, ['Supplier or vendor', 'Internal', 'Spam']);
+  assert.deepEqual(CONFIG.phoneFilter.filterArchivedAs, ['Spam', 'Supplier or vendor', 'Internal'], 'an old set-aside with one of these still counts as marked');
   const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
-  assert.match(app, /cNotALead\(\$\{Number\(r\.id\)\}, this\)">Not a lead</, 'one click on the card');
-  assert.match(app, /reason: 'Not a lead'/);
+  assert.doesNotMatch(app, /cNotALead|>Not a lead<|reason: 'Not a lead'/);
   assert.doesNotMatch(app, /Not Admissions/);
 });
 
-test('3: after Not a lead, the next call from that number reaches the Inbox; Spam sets later calls aside; a person never', async () => {
+test('3: after Set aside, the next call from that number reaches the Inbox; a Spam mark sets later calls aside; a person never', async () => {
   const db = await openDb(':memory:');
   await run(db, fakeTeleGroup([call()]), '2026-10-14T09:00:00Z');
   const [card] = await listInbound(db, { state: 'new' });
-  assert.equal((await archive(db, card.id, { reason: 'Not a lead', by: 'Laura' })).ok, true);
+  assert.equal((await archive(db, card.id, { reason: 'Not a prospective student', by: 'Laura' })).ok, true);
   const r = await run(db, fakeTeleGroup([call({ uniqueid: 'c2', caller_num: '29111222', created_at: '2026-10-14 09:10:00' })]),
     '2026-10-14T09:11:00Z');
   assert.equal(r.filtered, 0, 'no number is remembered');
   assert.equal(r.inbox, 1);
-  // Spam is explicit, and it does remember
+  // the mark is explicit, and it does remember
   const [second] = await listInbound(db, { state: 'new' });
-  await archive(db, second.id, { reason: 'Spam', by: 'Laura' });
+  assert.deepEqual({ ...second.setAsideBefore, at: null }, { at: null, by: 'Laura', reason: 'Not a prospective student' }, 'it came back with "Set aside before"');
+  assert.equal((await setMark(db, second.id, { mark: 'Spam', by: 'Laura' })).ok, true);
   const s2 = await run(db, fakeTeleGroup([call({ uniqueid: 'c3', created_at: '2026-10-14 09:20:00' })]), '2026-10-14T09:21:00Z');
   assert.equal(s2.filtered, 1);
   // the number becomes a person's: their calls go on their profile, whatever the filter says
@@ -134,12 +137,14 @@ test('3: after Not a lead, the next call from that number reaches the Inbox; Spa
   assert.equal(k.filtered, 0);
 });
 
-test('3: Spam - Bring back undoes it, on the Spam card or on a later card of that number', async () => {
+// a number set aside as Spam BEFORE the one rule (14.10.2026) still counts as marked: Bring back undoes that old one
+test('3: an old Spam set-aside - Bring back undoes it, on the Spam card or on a later card of that number', async () => {
   for (const which of ['the card itself', 'a later filtered card']) {
     const db = await openDb(':memory:');
     await run(db, fakeTeleGroup([call()]), '2026-10-14T09:00:00Z');
     const [card] = await listInbound(db, { state: 'new' });
-    await archive(db, card.id, { reason: 'Spam', by: 'Ieva' });
+    await archive(db, card.id, { reason: 'Not a prospective student', by: 'Ieva' });
+    await db.prepare("UPDATE inbound SET archive_reason = 'Spam' WHERE id = ?").run(card.id);   // as the old dialog left it: no mark row
     await run(db, fakeTeleGroup([call({ uniqueid: 'c2', created_at: '2026-10-14 09:10:00' })]), '2026-10-14T09:11:00Z');
     const later = await db.prepare("SELECT id FROM inbound WHERE state = 'filtered'").get();
     const back = which === 'the card itself' ? card.id : later.id;
@@ -240,7 +245,8 @@ test('the Channels screen says "Every minute"; Help says it, in the same change'
   const help = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'help.json'), 'utf8'));
   const q = help.faq.find((x) => x.id === 'phone-calls');
   assert.match(q.a, /every minute/);
-  assert.match(q.a, /Not a lead/);
+  assert.match(q.a, /Set aside on a call card, then pick why/);   // one rule (14.10.2026): no Not a lead
+  assert.doesNotMatch(q.a, /Not a lead/);
   assert.match(q.a, /Bring back/);
 });
 
@@ -343,7 +349,7 @@ test('late: the sweep covers the trailing 48 hours, never re-stores a call, and 
 const cardHtml = (calls) => {
   const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
   const fmt = app.slice(app.indexOf('const fmtDateTime = '), app.indexOf('// Today in RIGA.'));
-  const fn = app.slice(app.indexOf('function cCallsHtml('), app.indexOf('async function cNotALead('));
+  const fn = app.slice(app.indexOf('function cCallsHtml('), app.indexOf('async function cCallNote('));
   const ctx = { esc: (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;') };
   vm.runInNewContext(`const TZ = 'Europe/Riga';` + fmt + fn + '; this.calls = cCallsHtml;', ctx);
   return ctx.calls(calls);

@@ -30,7 +30,8 @@ function board(ip = {}, { rows = ROWS, open = null, show = 'new' } = {}) {
   const view = { innerHTML: '' };
   const ctx = {
     C_IP: { col: null, channel: '', kind: '', show, ...ip }, C_LOPEN: open,
-    C_IPD: { rows, receipt: '', val: (r, f) => ((r.fields || []).find((x) => x.field === f) || {}).value || '', form: (r) => `<form-for-${r.id}>` },
+    C_IPD: { rows, receipt: '', val: (r, f) => ((r.fields || []).find((x) => x.field === f) || {}).value || '', form: (r) => `<form-for-${r.id}>`,
+      reasons: ['Not a prospective student', 'Supplier or vendor', 'Internal', 'Spam'], marks: ['Supplier or vendor', 'Internal', 'Spam'] },
     cTodayIso: () => TODAY, cDay: (iso) => String(iso).slice(0, 10), Date: FixedDate,   // the clock stands at Tue 06.10 15:00Z
     esc: (s) => String(s ?? ''), channelLabel: (c) => ({ gmail: 'Email', website: 'Website', instagram: 'Instagram' })[c] || c,
     cTelLink: () => '', fmtDateTime: (iso) => String(iso).slice(0, 16).replace('T', ' '), cCallLine: (b) => b,
@@ -41,6 +42,7 @@ function board(ip = {}, { rows = ROWS, open = null, show = 'new' } = {}) {
     $: (q) => (q === '#qInterest' ? { focus() {} } : view), view, cPoolWire: () => {}, cPoolOpened: () => {},
   };
   vm.runInNewContext([line('const cPhone = '), line('const C_IP_KIND = '), fnBody('function cInboxAge(iso) {'), line('const cAgo = '), line('const C_ST = '), line('const C_ST_RAIL = '), fnBody('function cStateLine('),
+    line('const cDdMm = '), line('const C_MARK_SHORT = '), line('const cAsideWhen = '), fnBody('function cMarkCtl('), fnBody('function cAsideChoice('),   // one rule (14.10.2026)
     'var CFG = globalThis.CFG || {};', (FOLD + fnBody('function cInboxPool() {')), 'cInboxPool();'].join('\n'), ctx);
   return ctx;
 }
@@ -73,9 +75,18 @@ test('a card: name, the channel, the message, the programme and kind tags, and t
   assert.match(APP, /class="c-jp row ib-card/, 'the Journey board\'s card');
 });
 
-test('the action is on the card: "Make a lead" opens the small form, "Set aside" is the quiet link to the reason dialog', () => {
+// One rule on every card (14.10.2026): Set aside opens the four reasons ON the card; picking one sets it aside.
+test('the action is on the card: "Make a lead" opens the small form, "Set aside" opens the four reasons on the card', () => {
   const closed = board().view.innerHTML;
-  assert.match(closed, /<div class="ib-acts"><button class="btn sm" onclick="event\.stopPropagation\(\);C_LOPEN=2;cInboxPool\(\)">Make a lead<\/button><button type="button" class="ib-aside" onclick="event\.stopPropagation\(\);openArchive\(2\)">Set aside<\/button><\/div>/);
+  assert.match(closed, /<div class="ib-acts"><button class="btn sm" onclick="event\.stopPropagation\(\);C_LOPEN=2;cInboxPool\(\)">Make a lead<\/button><button type="button" class="ib-aside" onclick="event\.stopPropagation\(\);C_IP\.aside=2;cInboxPool\(\)">Set aside<\/button><\/div>/);
+  assert.doesNotMatch(closed, /Set aside as/, 'the reasons only once Set aside is pressed');
+  const why = board({ aside: 2 }).view.innerHTML;
+  const four = ['Not a prospective student', 'Supplier or vendor', 'Internal', 'Spam'];
+  const picks = [...why.matchAll(/cSetAside\(2, "([^"]+)", this\)">([^<]+)<\/button>/g)].map((m) => [m[1], m[2]]);
+  assert.deepEqual(picks, four.map((x) => [x, x]), 'the four, in this order and these words');
+  assert.match(why, /<span>Set aside as<\/span><button type="button" class="btn sm" onclick="event\.stopPropagation\(\);cSetAside\(2, "Not a prospective student", this\)">/, 'the usual one first, as the button');
+  assert.match(why, /C_IP\.aside=null;cInboxPool\(\)">Cancel<\/button>/);
+  assert.equal((why.match(/Set aside as/g) || []).length, 1, 'only on that card');
   assert.doesNotMatch(closed, /form-for-/, 'no form until a card is opened');
   const open = board({}, { open: 2 }).view.innerHTML;
   assert.match(open, /class="c-jp row ib-card c-rail c-rail-over is-open" data-id="2"/);
@@ -89,7 +100,8 @@ test('the action is on the card: "Make a lead" opens the small form, "Set aside"
   assert.match(form, /<label>Next step<\/label>\s*\$\{cNextPick\('q'\)\}/, 'Q86: Follow up on a date, or Cold');
   assert.match(form, /<div id="qErr"><\/div>/);
   assert.match(form, /<button class="btn sm" onclick="doQualify\(\$\{Number\(r\.id\)\}\)">Make a lead<\/button>`\}<button class="btn sm ghost" onclick="C_LOPEN=null;cInboxPool\(\)">Cancel<\/button>/);
-  assert.match(fnBody('async function openArchive(id) {'), /Nothing is deleted\./, 'set aside: the reason dialog, nothing deleted');
+  assert.ok(!APP.includes('async function openArchive(') && !APP.includes('id="aReason"'), 'the reason dialog is gone');
+  assert.match(fnBody('async function cSetAside(id, reason, btn) {'), /post\(`\/api\/intake\/\$\{Number\(id\)\}\/archive`, \{ reason \}\)/, 'the picked reason is the one action');
   assert.match(APP, /viewInbox = \(\) => viewLeadsC\(\);/, 'after a save the board is drawn again');
   assert.match(fnBody('function cEscClose() {'), /#view \.ib-card\.is-open/, 'Esc closes the open card (Q61)');
 });

@@ -18,6 +18,7 @@ import { duplicateCheck, contactMatcher, onlyStrong } from './identity.js';
 import { localDate, localMidnight } from './bizday.js';
 import { SIS_HOLDS_SQL } from './lifecycle.js';
 import { rangesSql } from './yearscope.js';
+import { markFor, markedWhy, contactKeys, MARKS } from './phonefilter.js';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const CFG = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'prototype.json'), 'utf8'));
@@ -251,7 +252,14 @@ export async function receive(db, item) {
   // Q91 (13.10.2026): noFilter (edu@ mail a person gave the Admissions label) skips every filter, junk included:
   // "they are manually accepted by human. Rest goes through a filter."
   if (item.noFilter) read.junk = false;
-  const filterWhy = item.noFilter ? null : (item.filterWhy || noiseWhy({ email: item.email, name: item.name, body: item.body }) || null);
+  let filterWhy = item.noFilter ? null : (item.filterWhy || noiseWhy({ email: item.email, name: item.name, body: item.body }) || null);
+  // A MARKED number or address (14.10.2026, one rule on every card): Supplier or vendor, Internal or Spam never reaches
+  // the Inbox, on any channel. Set aside automatically, kept, with the mark as its reason. A known person's message
+  // (attachTo) goes to them first, the same order as a call.
+  if (!filterWhy && !item.noFilter && !item.attachTo) {
+    const m = await markFor(db, { phone: item.phone, email: item.email });
+    if (m) filterWhy = markedWhy(m);
+  }
   const state = read.junk || filterWhy ? 'filtered' : 'new';
   // `source` records HOW this arrived. It defaults to null rather than to
   // 'provider': a row may only claim a real provider sent it when the caller
@@ -356,7 +364,17 @@ export async function listInbound(db, { state = 'new', now = nowIso(), range = n
   // person has counts, so a caller whose email was added when they became a lead is found again the
   // day they write. Only one strong match counts; two is a question for a person.
   const match = rows.some((r) => r.state === 'new' && !r.person_id) ? await contactMatcher(db) : null;
+  const before = rows.some((r) => r.state === 'new') ? await setAsideIndex(db) : null;
   for (const r of rows) {
+    // ONE RULE (14.10.2026): a card can be marked when it has a number or an address; a set-aside card says its mark;
+    // a waiting card from somebody set aside before says when and by whom ("comes back")
+    r.markable = contactKeys({ phone: r.contact_phone, email: r.contact_email }).length > 0;
+    if (r.state !== 'new') {
+      const m = r.markable ? await markFor(db, { phone: r.contact_phone, email: r.contact_email }) : null;
+      r.mark = m ? m.mark : null;
+    } else if (before) {
+      r.setAsideBefore = before(r);
+    }
     if (match && r.state === 'new' && !r.person_id) {
       const one = onlyStrong(match({ email: r.contact_email, phone: r.contact_phone }));
       r.joins = one ? { id: one.id, name: one.name } : null;
@@ -379,12 +397,36 @@ export async function listInbound(db, { state = 'new', now = nowIso(), range = n
 // talkSec / durationSec (14.10.2026): the talk time and the whole call in seconds, null when not known.
 export async function callsFor(db, inboundId) {
   const menu = Object.values(CFG.phoneMenu || {});
-  const rows = await db.prepare(`SELECT called_at, queue, picked_up, operator_name, duration_sec, talk_sec FROM pbx_calls
-    WHERE inbound_id = ? ORDER BY called_at DESC`).all(inboundId);
+  const rows = await db.prepare(`SELECT uniqueid, called_at, queue, picked_up, operator_name, duration_sec, talk_sec, note, note_by
+    FROM pbx_calls WHERE inbound_id = ? ORDER BY called_at DESC`).all(inboundId);
   const sec = (v) => (v === null || v === undefined || v === '' ? null : Number(v));
-  return rows.map((c) => ({ at: c.called_at, line: ((menu.find((m) => m && m.queue === c.queue) || {}).role) || c.queue,
+  return rows.map((c) => ({ id: c.uniqueid, at: c.called_at, line: ((menu.find((m) => m && m.queue === c.queue) || {}).role) || c.queue,
     answered: Boolean(Number(c.picked_up)), operator: c.operator_name || null,
-    talkSec: sec(c.talk_sec), durationSec: sec(c.duration_sec) }));
+    talkSec: sec(c.talk_sec), durationSec: sec(c.duration_sec), note: c.note || null, noteBy: c.note_by || null }));
+}
+
+// SET ASIDE BEFORE (14.10.2026, "comes back"): somebody set aside earlier who gets in touch again, on any channel, is
+// in the Inbox like anyone new, and the card says "Set aside before: dd.mm, who, reason". Matched on the same keys as a mark
+// (the number's last 8 digits, the address); only what a PERSON set aside counts (state archived), never a filter.
+// Returns a lookup for one waiting row: the newest set-aside of an EARLIER card of the same number or address.
+async function setAsideIndex(db) {
+  const aside = await db.prepare(`SELECT id, contact_phone, contact_email, processed_at, processed_by, archive_reason FROM inbound
+    WHERE state = 'archived' ORDER BY processed_at DESC, id DESC`).all();
+  const byKey = new Map();
+  for (const a of aside) {
+    for (const k of contactKeys({ phone: a.contact_phone, email: a.contact_email })) {
+      if (!byKey.has(k)) byKey.set(k, []);
+      byKey.get(k).push(a);
+    }
+  }
+  return (r) => {
+    let best = null;
+    for (const k of contactKeys({ phone: r.contact_phone, email: r.contact_email })) {
+      const hit = (byKey.get(k) || []).find((a) => Number(a.id) < Number(r.id));
+      if (hit && (!best || String(hit.processed_at) > String(best.processed_at))) best = hit;
+    }
+    return best ? { at: best.processed_at, by: best.processed_by || null, reason: best.archive_reason || null } : null;
+  };
 }
 
 // ------------------------------------------------- old calls, set aside once (Q92) --
@@ -720,6 +762,35 @@ export async function qualify(db, id, { qualification, personId, createPerson, b
     origin: MANUAL, actor: by, subject: `Qualified from ${item.channel} as ${qualification}`,
     body: note || item.suggestion_why });
 
+  // HISTORY WITH PEOPLE (the owner, 14.10.2026: "we need some history with people in our app"): every earlier set-aside
+  // of this number or address goes onto the person's History with its date, who and reason - once, however often the
+  // person is added to.
+  const keys = contactKeys({ phone: item.contact_phone, email: item.contact_email });
+  if (keys.length) {
+    const earlier = (await db.prepare(`SELECT id, channel, contact_phone, contact_email, archive_reason, processed_by, processed_at
+      FROM inbound WHERE state = 'archived' AND id <> ? ORDER BY processed_at`).all(id))
+      .filter((r) => contactKeys({ phone: r.contact_phone, email: r.contact_email }).some((k) => keys.includes(k)));
+    for (const r of earlier) {
+      const subject = 'Set aside' + (r.archive_reason ? ': ' + r.archive_reason : '');
+      const had = await db.prepare(`SELECT 1 AS x FROM events WHERE person_id = ? AND subject = ? AND occurred_at = ?`)
+        .get(pid, subject, r.processed_at || at);
+      if (had) continue;
+      await logEvent(db, { personId: pid, kind: 'note', channel: r.channel, direction: 'note', at: r.processed_at || at,
+        origin: MANUAL, actor: r.processed_by || null, subject, body: '' });
+    }
+  }
+
+  // CALL NOTES TRAVEL (14.10.2026): "What was it about?", typed on a phone card's answered calls, goes onto the person's
+  // History with the lead, at the time of the call, under the name of whoever typed it.
+  if (item.channel === 'phone') {
+    const said = await db.prepare(`SELECT called_at, note, note_by FROM pbx_calls WHERE inbound_id = ?
+      AND note IS NOT NULL AND note <> '' ORDER BY called_at`).all(id);
+    for (const c of said) {
+      await logEvent(db, { personId: pid, kind: 'note', channel: 'phone', direction: 'note', at: c.called_at,
+        origin: MANUAL, actor: c.note_by || by, subject: CALL_NOTE_SUBJECT, body: c.note });
+    }
+  }
+
   // The next step, with an owner and a due date, so nobody can come to rest here.
   if (String(nextAction || '').trim()) {
     // Q72: the day staff set, when it is a real date; otherwise the step's own default
@@ -816,26 +887,118 @@ export async function confirmedBySystem(db, id, { personId, by, at = nowIso() })
   await dropLineBodies(db, id, at);
 }
 
-export async function archive(db, id, { reason, note, by }) {
+// SET ASIDE, ONE OF FOUR REASONS (the owner, 14.10.2026: seven reasons were too many, and "we need some history with
+// people in our app"): Not a prospective student, Supplier or vendor, Internal, Spam (config intake.archiveReasons), the
+// same on every card of every channel. Picking the reason is the one action: no free text, no Other. Supplier or vendor,
+// Internal and Spam also MARK the card's number and address (markContact below). Every set-aside keeps its date, who and
+// reason, on the row and in inbound_history. Rows set aside before keep the reason they were given. `note` is for the
+// code's own callers (a mark says why it set a card aside); nobody types one.
+const REASONS = () => CFG.intake.archiveReasons || [];
+export async function archive(db, id, { reason, note, by, at = nowIso() } = {}) {
   const item = await db.prepare('SELECT * FROM inbound WHERE id = ?').get(id);
   if (!item) return { error: 'not found' };
   if (item.state !== 'new') return { error: 'this item has already been dealt with' };
-  if (!by) return { error: 'who is archiving this?' };
-  const allowed = CFG.intake.archiveReasons || [];
-  if (!reason || !allowed.includes(reason)) return { error: 'a reason is required', reasons: allowed };
-  if ((CFG.intake.archiveReasonNeedsNote || []).includes(reason) && !String(note || '').trim()) {
-    return { error: `"${reason}" needs an explanation`, reasons: allowed, needsNote: true };
-  }
-  const at = nowIso();
-  // The text STAYS (the owner, 07.10.2026, asked "Set aside: keep the message text?": "Keep the text"): set aside by a person
-  // is kept like a filtered message, until the 13-month retention takes it, so Bring back returns it whole.
+  if (!by) return { error: 'who is setting this aside?' };
+  if (!reason || !REASONS().includes(reason)) return { error: 'pick why: ' + REASONS().join(', '), reasons: REASONS() };
+  await setAsideRow(db, id, { reason, note, by, at });
+  const marked = MARKS.includes(reason) ? await markContact(db, item, { mark: reason, by, at }) : null;
+  // archived is not deleted: the row, the contact and the reason stay searchable
+  return { ok: true, id, reason, bodyDeleted: false, ...(marked ? { marked: marked.marked, setAside: marked.setAside } : {}) };
+}
+
+// The text STAYS (the owner, 07.10.2026, asked "Set aside: keep the message text?": "Keep the text"): set aside by a person
+// is kept like a filtered message, until the 13-month retention takes it, so Bring back returns it whole.
+async function setAsideRow(db, id, { reason, note, by, at }) {
   await db.prepare(`UPDATE inbound SET state = 'archived', archive_reason = ?, archive_note = ?,
-    processed_by = ?, processed_at = ? WHERE id = ?`)
+    processed_by = ?, processed_at = ? WHERE id = ? AND state = 'new'`)
     .run(reason, note || null, by, at, id);
   await db.prepare(`INSERT INTO inbound_history (inbound_id, action, at, actor, reason, note)
     VALUES (?, 'set_aside', ?, ?, ?, ?)`).run(id, at, by, reason, note || null);
-  // archived is not deleted: the row, the contact and the reason stay searchable
-  return { ok: true, id, reason, bodyDeleted: false };
+}
+
+// ------------------------------------------------------------------ marks --
+// A MARK (14.10.2026): Supplier or vendor, Internal or Spam on the card's phone number and email address, kept until
+// somebody changes it. From then on that number or address never pops up and never reaches the Inbox (receive() sets
+// it aside, src/callpop.js never pops it), and every card of it still waiting leaves the Inbox now, set aside with the
+// mark as its reason, logged. Set by Set aside with one of those three, or by the Mark control where a set-aside card is
+// listed and on a card that came back. Every user may, the same as Set aside.
+export async function setMark(db, id, { mark, by, at = nowIso() } = {}) {
+  const item = await db.prepare('SELECT * FROM inbound WHERE id = ?').get(id);
+  if (!item) return { error: 'not found' };
+  if (!by) return { error: 'who is marking this?' };
+  if (!MARKS.includes(mark)) return { error: 'a mark is one of: ' + MARKS.join(', '), marks: MARKS };
+  const r = await markContact(db, item, { mark, by, at });
+  if (r.error) return r;
+  return { ok: true, id, mark, ...r };
+}
+
+async function markContact(db, item, { mark, by, at }) {
+  const keys = contactKeys({ phone: item.contact_phone, email: item.contact_email });
+  if (!keys.length) return { error: 'there is no phone number or email address to mark' };
+  for (const k of keys) await putMark(db, k, { mark, by, at, inboundId: item.id });
+  await db.prepare(`INSERT INTO inbound_history (inbound_id, action, at, actor, reason, note)
+    VALUES (?, 'marked', ?, ?, ?, ?)`).run(item.id, at, by, mark, keys.map((k) => k.split(':')[0]).join(', '));
+  // a marked number or address never waits in the Inbox: its waiting cards are set aside with the mark, each logged
+  const waiting = (await db.prepare(`SELECT id, contact_phone, contact_email FROM inbound WHERE state = 'new'`).all())
+    .filter((r) => contactKeys({ phone: r.contact_phone, email: r.contact_email }).some((k) => keys.includes(k)));
+  const setAside = [];
+  for (const w of waiting) {
+    await setAsideRow(db, w.id, { reason: mark, note: `marked "${mark}"`, by, at });
+    setAside.push(Number(w.id));
+  }
+  return { marked: keys.map((k) => k.split(':')[0]), setAside };
+}
+
+// Remove mark: the number or address is ordinary again. Its set-aside cards stay where they are (Bring back is for
+// those); the next contact reaches the Inbox. Also ends a number's old-style mark (set aside as Spam before 14.10).
+export async function removeMark(db, id, { by, at = nowIso() } = {}) {
+  const item = await db.prepare('SELECT * FROM inbound WHERE id = ?').get(id);
+  if (!item) return { error: 'not found' };
+  if (!by) return { error: 'who is removing this mark?' };
+  const was = await markFor(db, { phone: item.contact_phone, email: item.contact_email });
+  if (!was) return { ok: true, id, already: true };
+  const keys = contactKeys({ phone: item.contact_phone, email: item.contact_email });
+  for (const k of keys) await putMark(db, k, { mark: null, by, at, inboundId: id });
+  await db.prepare(`INSERT INTO inbound_history (inbound_id, action, at, actor, reason, note)
+    VALUES (?, 'unmarked', ?, ?, ?, ?)`).run(id, at, by, was.mark, keys.map((k) => k.split(':')[0]).join(', '));
+  return { ok: true, id, removed: was.mark };
+}
+
+async function putMark(db, key, { mark, by, at, inboundId }) {
+  await db.prepare(`INSERT INTO contact_marks (contact_key, mark, set_by, set_at, inbound_id) VALUES (?, ?, ?, ?, ?)
+    ON CONFLICT (contact_key) DO UPDATE SET mark = excluded.mark, set_by = excluded.set_by, set_at = excluded.set_at,
+    inbound_id = excluded.inbound_id`).run(key, mark, by, at, inboundId);
+}
+
+// ------------------------------------------------------------ call notes --
+// "WHAT WAS IT ABOUT?" (14.10.2026): one line, typed after an answered call by whoever answered, saved on that call
+// (pbx_calls). It shows under the call line on the phone card, goes onto the person's History with Make a lead, and on
+// a known person's call it is added on their History's call entry. Plain text, one line, CALL_NOTE_MAX characters;
+// every screen escapes it. An empty line clears it.
+export const CALL_NOTE_MAX = 200;
+// A known person's call is logged on their History by storeCall at the call's own time; that entry carries the call
+// ({ id, answered, note }) so the same line can be read and added there.
+export async function withCallNotes(db, personId, events) {
+  const calls = await db.prepare('SELECT uniqueid, called_at, picked_up, note, note_by FROM pbx_calls WHERE person_id = ?').all(personId);
+  if (!calls.length) return events;
+  for (const e of events) {
+    if (e.kind !== 'call' || e.origin !== 'automatic') continue;
+    const c = calls.find((x) => x.called_at === e.occurred_at);
+    if (c) e.call = { id: c.uniqueid, answered: Boolean(Number(c.picked_up)), note: c.note || null, noteBy: c.note_by || null };
+  }
+  return events;
+}
+export const CALL_NOTE_SUBJECT = 'What the call was about';
+export async function setCallNote(db, callId, { note, by, at = nowIso() } = {}) {
+  const call = await db.prepare('SELECT uniqueid, picked_up FROM pbx_calls WHERE uniqueid = ?').get(String(callId || ''));
+  if (!call) return { error: 'not found' };
+  if (!by) return { error: 'who is writing this?' };
+  if (!Number(call.picked_up)) return { error: 'only an answered call has something to say' };
+  const text = String(note ?? '').replace(/\s+/g, ' ').trim();
+  if (text.length > CALL_NOTE_MAX) return { error: `one line, at most ${CALL_NOTE_MAX} characters` };
+  await db.prepare('UPDATE pbx_calls SET note = ?, note_by = ?, note_at = ? WHERE uniqueid = ?')
+    .run(text || null, text ? by : null, text ? at : null, call.uniqueid);
+  return { ok: true, id: call.uniqueid, note: text || null };
 }
 
 // ------------------------------------------------------------ bring back --
@@ -866,7 +1029,23 @@ export async function bringBack(db, id, { by, at = nowIso() } = {}) {
       processed_at = NULL, body = ?, body_deleted_at = ? WHERE id = ? AND state = ?`)
       .run(body, body ? null : item.body_deleted_at, id, item.state);
   });
-  return { ok: true, id, from: item.state, textKept: Boolean(body) };
+  // A card set aside as Supplier or vendor, Internal or Spam marked its number and address (14.10.2026): bringing THAT
+  // card back undoes the mark it made too (a wrong pick), logged. A mark set from another card stays.
+  let unmarked = null;
+  if (MARKS.includes(item.archive_reason)) {
+    const keys = contactKeys({ phone: item.contact_phone, email: item.contact_email });
+    const made = [];
+    for (const k of keys) {
+      const m = await db.prepare('SELECT mark FROM contact_marks WHERE contact_key = ? AND inbound_id = ? AND mark = ?').get(k, id, item.archive_reason);
+      if (m) { await putMark(db, k, { mark: null, by, at, inboundId: id }); made.push(k.split(':')[0]); }
+    }
+    if (made.length) {
+      unmarked = item.archive_reason;
+      await db.prepare(`INSERT INTO inbound_history (inbound_id, action, at, actor, reason, note)
+        VALUES (?, 'unmarked', ?, ?, ?, ?)`).run(id, at, by, unmarked, made.join(', '));
+    }
+  }
+  return { ok: true, id, from: item.state, textKept: Boolean(body), ...(unmarked ? { unmarked } : {}) };
 }
 
 export async function inboundHistory(db, id) {
