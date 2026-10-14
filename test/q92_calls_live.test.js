@@ -14,7 +14,7 @@ import vm from 'node:vm';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { openDb } from '../src/db.js';
-import { syncPbx } from '../src/sync.js';
+import { syncPbx, SWEEP_PIECES, LATE_HOURS } from '../src/sync.js';
 import { listInbound, archive, bringBack, receive, setAsideOldCalls, OLD_CALL_REASON, releaseNotAdmissions, RELEASED_NOTE, CONFIG } from '../src/intake.js';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -51,7 +51,7 @@ test('1: the pull runs every minute; a caught-up run asks once and writes nothin
     (await db.prepare('SELECT COUNT(*) n FROM call_events').get()).n, (await db.prepare('SELECT COUNT(*) n FROM pbx_calls').get()).n];
   const had = await counts();
   const r = await run(db, tg, '2026-10-14T09:00:00Z');       // one minute later
-  assert.equal(tg.seen.requests - before, 1, 'one request a minute');
+  assert.equal(tg.seen.requests - before, 1 + SWEEP_PIECES, 'its own minute, plus SWEEP_PIECES pieces of the late sweep (14.10.2026)');
   assert.equal(r.seen, 1, 'the overlap sees the same call again, and knows it');
   assert.deepEqual(await counts(), had, 'nothing new is written');
 });
@@ -239,4 +239,70 @@ test('the Channels screen says "Every minute"; Help says it, in the same change'
   assert.match(q.a, /every minute/);
   assert.match(q.a, /Not a lead/);
   assert.match(q.a, /Bring back/);
+});
+
+// ---------------------------------------------------------------- late-listed calls --
+// 14.10.2026, live: TeleGroup's list did not show a 09:59 call for at least 9 minutes; a call listed late keeps its
+// ORIGINAL time. A fake that lists a call only from a given moment on, with its original time.
+function lateTeleGroup(list) {
+  const seen = { requests: 0 };
+  let clockNow = 0;
+  const fetchImpl = async (url) => {
+    seen.requests++;
+    const u = new URL(url);
+    const from = u.searchParams.get('dateFrom'); const to = u.searchParams.get('dateTo');
+    const inside = list.filter((c) => clockNow >= Date.parse(c.listedFrom) && c.created_at >= from && c.created_at <= to)
+      .map(({ listedFrom, ...c }) => c);
+    return { ok: true, status: 200, headers: { get: () => null }, json: async () => inside, text: async () => '' };
+  };
+  return { fetchImpl, seen, at: (iso) => { clockNow = Date.parse(iso); } };
+}
+
+test('late: a call TeleGroup lists 3 hours late, with its original time, is still caught by the sweep; recorded how late', async () => {
+  const db = await openDb(':memory:');
+  const tg = lateTeleGroup([call({ uniqueid: 'late1', created_at: '2026-10-14 09:59:00', listedFrom: '2026-10-14T09:58:00Z' })]);
+  // every minute from 06:55 to 07:05 UTC: the call is not listed yet
+  for (let m = 55; m <= 65; m++) {
+    const now = new Date(Date.UTC(2026, 9, 14, 6, m)).toISOString();
+    tg.at(now);
+    await run(db, tg, now);
+  }
+  assert.equal((await db.prepare('SELECT COUNT(*) n FROM pbx_calls').get()).n, 0, 'not listed yet');
+  // TeleGroup lists it three hours later; the bookmark is long past 06:59. Run on, minute by minute, until the sweep reaches it.
+  let found = null;
+  for (let m = 0; m < 60 && !found; m++) {
+    const now = new Date(Date.UTC(2026, 9, 14, 10, m)).toISOString();
+    tg.at(now);
+    const r = await run(db, tg, now);
+    if (r.late) found = r;
+  }
+  assert.ok(found, 'the sweep found it within an hour of it being listed');
+  assert.equal(found.late, 1);
+  const row = await db.prepare("SELECT called_at, inbound_id FROM pbx_calls WHERE uniqueid = 'late1'").get();
+  assert.equal(row.called_at, '2026-10-14T06:59:00.000Z', 'its own time, not the time it was found');
+  assert.ok(row.inbound_id, 'it reached the Inbox');
+  const lag = JSON.parse((await db.prepare("SELECT detail FROM sync_state WHERE name = 'pbx_lag'").get()).detail).calls;
+  assert.equal(lag.length, 1);
+  assert.equal(lag[0].by, 'sweep');
+  assert.ok(lag[0].lagMin >= 180 && lag[0].lagMin <= 245, 'about three hours: ' + lag[0].lagMin);
+  assert.ok(!JSON.stringify(lag).includes('29111222'), 'no phone number in the lag record');
+});
+
+test('late: the sweep covers the trailing 48 hours, never re-stores a call, and every run stays small', async () => {
+  const db = await openDb(':memory:');
+  const tg = lateTeleGroup([call({ uniqueid: 'old1', created_at: '2026-10-12 18:00:00', listedFrom: '2026-10-12T00:00:00Z' })]);
+  const starts = [];
+  let total = 0;
+  for (let m = 0; m < 40; m++) {
+    const now = new Date(Date.UTC(2026, 9, 14, 12, m)).toISOString();
+    tg.at(now);
+    const before = tg.seen.requests;
+    await run(db, tg, now);
+    if (m > 0) assert.ok(tg.seen.requests - before <= 1 + SWEEP_PIECES, 'after the first catch-up, at most 7 requests a run');
+    starts.push((await db.prepare("SELECT value FROM sync_state WHERE name = 'pbx_sweep'").get()).value);
+    total += tg.seen.requests - before;
+  }
+  assert.equal(LATE_HOURS, 48);
+  assert.equal((await db.prepare("SELECT COUNT(*) n FROM pbx_calls WHERE uniqueid = 'old1'").get()).n, 1, 'found once, kept once');
+  assert.ok(starts.some((s, i) => i > 0 && Date.parse(s) < Date.parse(starts[i - 1])), 'the cursor went round again');
 });

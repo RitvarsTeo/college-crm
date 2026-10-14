@@ -105,6 +105,20 @@ const PBX_BOOKMARK = 'pbx_until';
 export const BACKOFF_MINUTES = 5;
 const PBX_BACKOFF = 'pbx_backoff';
 
+// LATE-LISTED CALLS (14.10.2026, live finding): TeleGroup's list does NOT show a call when it happens. A call at 09:59
+// Riga was not in the list for the next 9 minutes, and nothing yet says how late it appears - only that until now every
+// call was listed within a day (the daily pull at 08:15 Riga found each of the day before's calls). A call listed late
+// keeps its ORIGINAL time, so the bookmark has already moved past it. Every run therefore ALSO re-reads part of the
+// last LATE_HOURS, SWEEP_PIECES pieces of WINDOW_MINUTES at a time, walking a cursor (sync_state pbx_sweep) from
+// LATE_HOURS ago up to where this run's own window starts, then round again: the whole trailing 48 hours are re-read
+// every ~32 minutes, a call already stored is skipped by its uniqueid as always. Each call stored records how late it
+// was found (pbx_lag: the newest LAG_KEEP), which is how TeleGroup's real delay is learned.
+export const LATE_HOURS = 48;
+export const SWEEP_PIECES = 6;
+export const LAG_KEEP = 200;
+const PBX_SWEEP = 'pbx_sweep';
+const PBX_LAG = 'pbx_lag';
+
 // ---------------------------------------------- one number, one thing to look at
 // Ritvars, 01.10.2026: "Leads become those who have some interest. How can we know
 // about a caller with no notes? So a new number called first time sits in to look
@@ -221,17 +235,17 @@ export async function syncPbx(db, { now = new Date(), minutes = WINDOW_MINUTES,
   const destinations = {};   // counts per destination the list returned (lib/pbx.js rowsFrom), saved with the run
   let fetched = 0, kept = 0, pieces = 0, safeUrl = null, reached = from, backedOff = null;
 
-  while (from < nowMs) {
-    if (pieces > 0 && clock() - startedAt > budgetMs) break;
-    const to = Math.min(from + minutes * 60000, nowMs);
+  const lags = [];           // how late each NEW call was found, in minutes after it happened
+  // One piece [a, b): fetched, filtered, stored. false = TeleGroup said 429, stop asking this run.
+  const readPiece = async (a, b, by) => {
     let got;
-    try { got = await fetchCalls({ now: new Date(to), minutes: (to - from) / 60000, env, fetchImpl }); }
+    try { got = await fetchCalls({ now: new Date(b), minutes: (b - a) / 60000, env, fetchImpl }); }
     catch (err) {
       if (err && err.status === 429) {
         const until = new Date(nowMs + (err.retryAfterSec ? err.retryAfterSec * 1000 : BACKOFF_MINUTES * 60000)).toISOString();
         await saveState(db, PBX_BACKOFF, until, { status: 429 }, at);
         backedOff = until;
-        break;
+        return false;
       }
       throw err;
     }
@@ -241,7 +255,21 @@ export async function syncPbx(db, { now = new Date(), minutes = WINDOW_MINUTES,
     for (const [d, n] of Object.entries(ds || {})) destinations[d] = (destinations[d] || 0) + n;
     fetched += got.calls.length;
     kept += rows.length;
-    for (const r of rows) await storeCall(db, r, mode, at, out);
+    for (const r of rows) {
+      const seenBefore = out.seen;
+      await storeCall(db, r, mode, at, out);
+      if (out.seen === seenBefore) {
+        lags.push({ calledAt: r.created_at, foundAt: at, lagMin: Math.max(0, Math.round((nowMs - Date.parse(r.created_at)) / 60000)), by });
+        if (by === 'sweep') out.late = (out.late || 0) + 1;
+      }
+    }
+    return true;
+  };
+
+  while (from < nowMs) {
+    if (pieces > 0 && clock() - startedAt > budgetMs) break;
+    const to = Math.min(from + minutes * 60000, nowMs);
+    if (!(await readPiece(from, to, 'window'))) break;
     pieces++;
     reached = to;
     // saved after every piece, so a run that dies half way loses nothing
@@ -250,11 +278,37 @@ export async function syncPbx(db, { now = new Date(), minutes = WINDOW_MINUTES,
     from = to;
   }
 
+  // THE SWEEP: part of the trailing LATE_HOURS, behind this run's own window, for calls TeleGroup listed late
+  let swept = 0;
+  if (!backedOff) {
+    const floor = nowMs - LATE_HOURS * 3600000;
+    const cur = await db.prepare('SELECT value FROM sync_state WHERE name = ?').get(PBX_SWEEP);
+    let a = cur && Number.isFinite(Date.parse(cur.value)) ? Math.max(floor, Date.parse(cur.value)) : floor;
+    for (let i = 0; i < SWEEP_PIECES; i++) {
+      if (clock() - startedAt > budgetMs) break;
+      if (a >= firstFrom) a = floor;                       // round again
+      const b = Math.min(a + minutes * 60000, firstFrom);
+      if (b <= a) break;
+      if (!(await readPiece(a, b, 'sweep'))) break;
+      swept++;
+      a = b;
+    }
+    await saveState(db, PBX_SWEEP, new Date(a).toISOString(), { swept, lateHours: LATE_HOURS }, at);
+  }
+  if (lags.length) {
+    const was = await db.prepare('SELECT detail FROM sync_state WHERE name = ?').get(PBX_LAG);
+    let list = [];
+    try { list = (JSON.parse((was && was.detail) || '{}').calls) || []; } catch { list = []; }
+    list = [...list, ...lags].slice(-LAG_KEEP);
+    await saveState(db, PBX_LAG, String(Math.max(...lags.map((l) => l.lagMin))), { calls: list }, at);
+  }
+
   const caughtUp = reached >= nowMs;
   const result = { ok: true, ran: true, channel: 'phone', mode,
     window: { from: toRigaStamp(new Date(firstFrom)), to: toRigaStamp(new Date(reached)), zone: ZONE,
       minutes: Math.round((reached - firstFrom) / 60000) },
-    pieces, caughtUp, fetched, kept, skipped, destinations, ...out, safeUrl,
+    pieces, swept, caughtUp, fetched, kept, skipped, destinations, ...out, safeUrl,
+    ...(lags.length ? { lagMinutes: { found: lags.length, min: Math.min(...lags.map((l) => l.lagMin)), max: Math.max(...lags.map((l) => l.lagMin)) } } : {}),
     ...(backedOff ? { backingOff: true, until: backedOff, why: 'TeleGroup answered 429; waiting before the next pull' } : {}) };
   result.purged = await purgeOld(db, 'pbx_calls', 'called_at', now);
   // 13 months PER LINE, each from its own received_at, so an old call never takes a

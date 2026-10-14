@@ -96,7 +96,8 @@ test('phone: the overlapping window never logs a call twice', async () => {
   const calls = [call(), call({ uniqueid: 'x2', caller_num: '+37120000001' })];
   await syncPbx(db, { now: NOW, env: ON, fetchImpl: pbxFetch(calls) });
   const again = await syncPbx(db, { now: new Date(NOW.getTime() + 300000), env: ON, fetchImpl: pbxFetch(calls) });
-  assert.equal(again.seen, 2);
+  // this fake lists the same two calls for EVERY window, so the late sweep (14.10.2026) sees them again too
+  assert.ok(again.seen >= 2);
   assert.equal(again.logged + again.inbox, 0);
   assert.equal((await events(db, p.id)).filter((e) => e.kind === 'call').length, 1);
   assert.equal((await inbox(db)).length, 1);
@@ -155,9 +156,10 @@ test('phone catch-up: the first run reads the last 24 hours in 96 pieces of 15 m
   const r = await syncPbx(db, { now: NOW, env: ON, fetchImpl: pbx.fetchImpl });
   assert.equal(r.pieces, 96);
   assert.equal(r.caughtUp, true);
-  for (let i = 1; i < pbx.seen.length; i++) assert.equal(pbx.seen[i].from, pbx.seen[i - 1].to, 'no gap between pieces');
-  assert.equal(pbx.seen[0].from, '2026-09-27 12:05:00', '24 hours back, in Riga time');
-  assert.equal(pbx.seen.at(-1).to, '2026-09-28 12:05:00');
+  const win = pbx.seen.slice(0, r.pieces);      // the run's own window; the late sweep's pieces come after it
+  for (let i = 1; i < win.length; i++) assert.equal(win[i].from, win[i - 1].to, 'no gap between pieces');
+  assert.equal(win[0].from, '2026-09-27 12:05:00', '24 hours back, in Riga time');
+  assert.equal(win.at(-1).to, '2026-09-28 12:05:00');
 });
 
 test('phone catch-up: the next run starts from the bookmark (2 minutes early), not from 24 hours back', async () => {
@@ -167,7 +169,7 @@ test('phone catch-up: the next run starts from the bookmark (2 minutes early), n
   const later = new Date(NOW.getTime() + 3 * 3600000);
   const r = await syncPbx(db, { now: later, env: ON, fetchImpl: pbx.fetchImpl });
   assert.equal(pbx.seen[0].from, '2026-09-28 12:03:00');
-  assert.equal(pbx.seen.at(-1).to, '2026-09-28 15:05:00');
+  assert.equal(pbx.seen[r.pieces - 1].to, '2026-09-28 15:05:00', 'the window; the late sweep follows it');
   assert.equal(r.pieces, 13, '3 hours and 2 minutes = 12 full pieces and a short one');
 });
 
