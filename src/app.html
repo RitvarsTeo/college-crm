@@ -1575,8 +1575,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .jb-cell .c-exit{align-self:center;margin-top:2px}
   /* Q47 THE POOL FRAME: the Journey band's look, frozen; folded to one row of the same cohorts once scrolled */
   :root{--p-top:0px}   /* what is pinned above the band: the phone's top bar, measured by cPoolWire */
-  html.ui-c .pband{position:sticky;top:var(--p-top,0px);z-index:20;margin:0 0 14px}
-  html.ui-c .pband .jb-plot{height:118px;padding-top:30px}
+  html.ui-c .pband{position:sticky;top:var(--p-top,0px);z-index:20;margin:0 0 14px}  html.ui-c .pband .jb-plot{height:118px;padding-top:30px}
   html.ui-c .pband .p-mini{display:none}
   html.ui-c .pband.is-mini{padding-top:8px;padding-bottom:8px}
   html.ui-c .pband.is-mini .jb-cols{display:none}
@@ -3946,18 +3945,41 @@ function cPoolWire() {
   if (!window.__cPoolScroll) {
     window.__cPoolScroll = 1;
     window.addEventListener('scroll', cPoolMini, { passive: true });
-    window.addEventListener('resize', () => { cPoolMiniTop = null; cPoolMini(); });
+    // a new width can wrap the folded row differently: unfold, so the next fold measures the band again
+    window.addEventListener('resize', () => { document.querySelectorAll('.pband.is-mini, .c-summary.is-mini').forEach((b) => cBandFold(b, 0)); cPoolMini(); });
   }
   cPoolMini();
 }
-let cPoolMiniTop = null;
 function cPoolMini() {
   const s = document.querySelector('.p-sentinel'), b = document.querySelector('.pband');
   if (!s || !b) return;
   const top = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--p-top')) || 0;
-  const y = s.getBoundingClientRect().top - top;
-  // two lines, so a page that is just long enough cannot flicker between the two at one scroll position
-  b.classList.toggle('is-mini', b.classList.contains('is-mini') ? y < -8 : y < -48);
+  cBandFold(b, s.getBoundingClientRect().top - top);
+}
+// FOLDING A FROZEN BAND KEEPS ITS PLACE IN THE PAGE (the owner, 14.10.2026, a photo from a big monitor: the folded row
+// and the big chart on screen at once). Measured at 1920x1080 on a page 140-200 px taller than the window: folding took
+// 128 px off the page, the browser pulled the scroll back to the new end, the band unfolded, scroll anchoring put the
+// scroll back where it was, the band folded again - every frame, about 60 flips a second, for as long as the tab stayed
+// there. Now the height a band gives up when it folds is kept as space above what comes next (the filter row): the page
+// is exactly as long folded as unfolded, nothing under the band moves, the scroll position never changes, so the fold
+// depends on the scroll position alone and cannot feed itself. The space is the NEXT element's margin, not the band's
+// own: a sticky band's own margin counts as part of it, and on a phone the Journey strip was pushed up under the top
+// bar at the end of the page. y = how far the sentinel above the band has gone under the pinned top.
+const cFoldWant = (mini, y) => (mini ? y < -8 : y < -48);   // two lines: folds at 48 px, unfolds at 8 px
+function cBandFold(b, y) {
+  const mini = b.classList.contains('is-mini');
+  const want = cFoldWant(mini, y);
+  if (want === mini) return;
+  const n = b.nextElementSibling;
+  if (!want) { b.classList.remove('is-mini'); if (n) n.style.marginTop = ''; return; }
+  if (!n) { b.classList.add('is-mini'); return; }   // nothing below the band: nothing can move
+  const at = n.offsetTop, full = b.offsetHeight, had = parseFloat(getComputedStyle(n).marginTop) || 0;
+  // the folded height has to be measured, and the page must never be shorter, not even for that one layout (a phone
+  // Journey 383 px taller than the window lost all of its scroll there and jumped to the top): reserve it all first,
+  // fold, then give back exactly what puts the next element where it was
+  n.style.marginTop = (had + full) + 'px';
+  b.classList.add('is-mini');
+  n.style.marginTop = ((had + full) - (n.offsetTop - at)) + 'px';
 }
 const cPoolRows = (rows, fn, empty = 'Nobody here.') => `<div class="c-sheet p-rows">${rows.length ? rows.map(fn).join('') : `<div class="c-empty">${empty}</div>`}</div>`;
 
@@ -4799,10 +4821,9 @@ function cJStageTap(id) {
 function cJourneyMini() {
   const s = document.querySelector('.j-sentinel'), b = document.querySelector('#view .c-summary');
   if (!s || !b) return;
-  if (!cPhone()) { b.classList.remove('is-mini'); return; }
+  if (!cPhone()) { cBandFold(b, 0); return; }
   const top = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--p-top')) || 0;
-  const y = s.getBoundingClientRect().top - top;
-  b.classList.toggle('is-mini', b.classList.contains('is-mini') ? y < -8 : y < -48);
+  cBandFold(b, s.getBoundingClientRect().top - top);   // the same fold as the pool bands: the page keeps its length
 }
 function cJfPick(k, value, on) {
   const set = new Set(C_JF[k] || []);
