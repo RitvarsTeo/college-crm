@@ -14,7 +14,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { extractFrom, looksLikeJunk } from './extract.js';
 import { logEvent, MANUAL, AUTOMATIC } from './history.js';
-import { duplicateCheck, contactMatcher, onlyStrong } from './identity.js';
+import { duplicateCheck, contactMatcher, onlyStrong, onePersonFor } from './identity.js';
 import { localDate, localMidnight } from './bizday.js';
 import { SIS_HOLDS_SQL } from './lifecycle.js';
 import { rangesSql } from './yearscope.js';
@@ -164,9 +164,17 @@ export async function purgeLineBodies(db, cutoffIso) {
 // Q74: the one person an address points at, when they are still being worked with (not in a finished
 // stage: an admitted student's email stays in the Inbox, grouped as a current student). Every email the
 // person has counts (Q77). Two strong matches: nobody - a person decides.
-export async function activePersonFor(db, email) {
-  if (!email) return null;
-  const one = onlyStrong((await contactMatcher(db))({ email }));
+// EVERY CHANNEL (the owner, 14.10.2026: a known person lands on their profile automatically, on every channel): the
+// same question for an email address, a phone number or both (src/identity.js onePersonFor: email exact, phone last
+// 8 digits). The result is what receive() takes as attachTo.
+//   - TWO OR MORE people match: null, so the message KEEPS its Inbox card - the machine cannot choose safely; a person
+//     does, and Make a lead's duplicate check shows who they are.
+//   - A FINISHED person (Admitted, Not proceeding): null, so the message keeps its Inbox card too, which says Joins and
+//     their name (listInbound). Nothing in Intake reopens a finished person by machine, and their message must not sit
+//     on a profile nobody works any more.
+export async function activePersonFor(db, contact) {
+  const { email, phone } = typeof contact === 'string' || contact == null ? { email: contact } : contact;
+  const one = await onePersonFor(db, { email, phone });
   if (!one) return null;
   return (CFG.terminalStages || []).includes(one.status) ? null : one.id;
 }
@@ -254,9 +262,11 @@ export async function receive(db, item) {
   if (item.noFilter) read.junk = false;
   let filterWhy = item.noFilter ? null : (item.filterWhy || noiseWhy({ email: item.email, name: item.name, body: item.body }) || null);
   // A MARKED number or address (14.10.2026, one rule on every card): Supplier or vendor, Internal or Spam never reaches
-  // the Inbox, on any channel. Set aside automatically, kept, with the mark as its reason. A known person's message
-  // (attachTo) goes to them first, the same order as a call.
-  if (!filterWhy && !item.noFilter && !item.attachTo) {
+  // the Inbox, on any channel. Set aside automatically, kept, with the mark as its reason.
+  // THE MARK WINS over a known person (14.10.2026, known person on every channel): a marked address or number is set
+  // aside even when it matches somebody in Intake (attachTo), so it never lands on a profile either. The phone pull
+  // (src/sync.js storeCall) still looks for the person first, as it did before.
+  if (!filterWhy && !item.noFilter) {
     const m = await markFor(db, { phone: item.phone, email: item.email });
     if (m) filterWhy = markedWhy(m);
   }
@@ -315,29 +325,52 @@ export async function receive(db, item) {
   // a form's own answers (the website, Q3): what the person picked, kept as they said it
   for (const [field, value] of Object.entries(item.answers || {})) await stamp.run(id, field, value, 'provider', at);
 
-  // Q74 RULE 1: from somebody already in Intake (and still being worked with) it goes on THEIR history with a
-  // "Answer the question" step for today, not into the Inbox - the same as a known lead's missed call (02.10.2026). Kept as a row
-  // (state qualified, by the machine), so it is counted, its first reply is read, and nothing is lost.
+  // Q74 RULE 1: from somebody already in Intake (and still being worked with) it goes on THEIR history, not into the
+  // Inbox (landOnProfile below). Since 14.10.2026 on every channel: the caller asks activePersonFor and passes the
+  // answer as attachTo. A filter or a mark (above) wins: such a message is set aside, never put on a profile.
   if (item.attachTo && !read.junk && !filterWhy) {
-    const p = await db.prepare('SELECT id, owner, status FROM people WHERE id = ?').get(item.attachTo);
-    if (p) {
-      await db.prepare(`UPDATE inbound SET state = 'qualified', person_id = ?, processed_by = 'machine', processed_at = ?
-        WHERE id = ?`).run(p.id, at, id);
-      // no event: the message itself is the History entry (messagesFor, Q76), so its text keeps the 13-month clock
-      await db.prepare('UPDATE people SET last_contact_at = ? WHERE id = ? AND (last_contact_at IS NULL OR last_contact_at < ?)')
-        .run(at, p.id, at);
-      const open = await db.prepare("SELECT COUNT(*) n FROM tasks WHERE person_id = ? AND label = 'Answer the question' AND done_at IS NULL").get(p.id);
-      if (!Number(open.n)) {
-        await db.prepare('INSERT INTO tasks (person_id,label,due_at,owner,created_at) VALUES (?,?,?,?,?)')
-          .run(p.id, 'Answer the question', at, p.owner || 'Admissions', at);
-      }
-      return { id, attached: true, personId: p.id, suggested: read.suggested, why: read.why,
+    const pid = await landOnProfile(db, id, item.attachTo, { at });
+    if (pid) {
+      return { id, attached: true, personId: pid, suggested: read.suggested, why: read.why,
         missing: read.missing, fields: read.fields, filtered: false };
     }
   }
 
   return { id, suggested: read.suggested, why: read.why, missing: read.missing,
     fields: read.fields, filtered: Boolean(read.junk || filterWhy) };
+}
+
+// A KNOWN PERSON'S MESSAGE LANDS ON THEIR PROFILE (Q74 rule 1, 07.10.2026; every channel since 14.10.2026, the owner:
+// "Already handled" is gone as a reason, so a known person lands on their profile automatically). It goes on THEIR
+// history with an "Answer the question" step, not into the Inbox - the same as a known lead's missed call (02.10.2026):
+// one open step on the person, owned by the person's owner, due when they wrote, so it is on that owner's Today. Kept
+// as a row (state qualified, by the machine), so it is counted, its first reply is read, and nothing is lost.
+// What a form brought reaches the person the way Add to them does: the values read off it stay with the person (a
+// provider's answer fills an empty field only, a guess stays a guess) and a ticked consent box joins their consent
+// record. Only a row still waiting (state new) moves. Returns the person's id, or null when nothing moved.
+// Callers: receive() (attachTo) and a lead form whose answers arrive after it (src/leadanswers.js).
+export async function landOnProfile(db, id, personId, { at = nowIso() } = {}) {
+  const item = await db.prepare('SELECT * FROM inbound WHERE id = ?').get(id);
+  const p = personId ? await db.prepare('SELECT id, owner, status FROM people WHERE id = ?').get(personId) : null;
+  if (!item || !p || item.state !== 'new') return null;
+  const wrote = item.received_at || at;
+  await db.prepare(`UPDATE inbound SET state = 'qualified', person_id = ?, processed_by = 'machine', processed_at = ?
+    WHERE id = ?`).run(p.id, at, id);
+  await db.prepare('UPDATE field_values SET person_id = ? WHERE inbound_id = ? AND person_id IS NULL').run(p.id, id);
+  const given = await db.prepare(`SELECT field, value FROM field_values WHERE inbound_id = ? AND provenance = 'provider'
+    ORDER BY id`).all(id);
+  for (const f of given) await applyToPerson(db, p.id, f.field, f.value);
+  await recordFormConsent(db, p.id, { channel: item.channel, consent: item.consent, inboundId: id, at: wrote,
+    note: 'recorded when the message reached their profile' });
+  // no event: the message itself is the History entry (messagesFor, Q76), so its text keeps the 13-month clock
+  await db.prepare('UPDATE people SET last_contact_at = ? WHERE id = ? AND (last_contact_at IS NULL OR last_contact_at < ?)')
+    .run(wrote, p.id, wrote);
+  const open = await db.prepare("SELECT COUNT(*) n FROM tasks WHERE person_id = ? AND label = 'Answer the question' AND done_at IS NULL").get(p.id);
+  if (!Number(open.n)) {
+    await db.prepare('INSERT INTO tasks (person_id,label,due_at,owner,created_at) VALUES (?,?,?,?,?)')
+      .run(p.id, 'Answer the question', wrote, p.owner || 'Admissions', at);
+  }
+  return p.id;
 }
 
 // ------------------------------------------------------------ what is here --
@@ -742,14 +775,8 @@ export async function qualify(db, id, { qualification, personId, createPerson, b
   // mean the form did not ask - so it stays on the lead row as the form sent it and is not
   // turned into a "withdrawn" on the person. A real withdrawal (a Mailchimp unsubscribe)
   // belongs to the consent route, not to New Leads (backlog, channel audit 28.09.2026).
-  let consent = null;
-  try { consent = item.consent ? JSON.parse(item.consent) : null; } catch { consent = null; }
-  for (const [purpose, value] of Object.entries(consent || {})) {
-    if (value !== true || !['admissions', 'marketing', 'analytics', 'advertising'].includes(purpose)) continue;
-    await db.prepare('INSERT INTO consents (person_id,purpose,state,basis,source,recorded_at,note) VALUES (?,?,?,?,?,?,?)')
-      .run(pid, purpose, 'given', `ticked on the ${item.channel} form`, `inbound #${id}`, item.received_at,
-        `recorded when ${by} added the lead`);
-  }
+  await recordFormConsent(db, pid, { channel: item.channel, consent: item.consent, inboundId: id, at: item.received_at,
+    note: `recorded when ${by} added the lead` });
 
   // Q76 (07.10.2026, Aigars: "chain of communication with the lead jabut pieejamai profila"): making a lead KEEPS the
   // text, on the row and its lines, and the person's History shows it (messagesFor). The 13-month retention empties
@@ -827,6 +854,19 @@ export async function qualify(db, id, { qualification, personId, createPerson, b
     notify: notifiedFor(qualification), bodyDeleted: true,
     missing: missingFor(fields), handoverGap: gap,
   };
+}
+
+// A consent box ticked on a form, onto the person's consent record (added, never replaced). One writer for both ways a
+// message reaches a person: Make a lead / Add to them (qualify) and a known person's message landing on their profile
+// (receive). `consent` is the row's JSON or the object a channel sent.
+async function recordFormConsent(db, pid, { channel, consent, inboundId, at, note }) {
+  let given = consent;
+  if (typeof given === 'string') { try { given = JSON.parse(given); } catch { given = null; } }
+  for (const [purpose, value] of Object.entries(given || {})) {
+    if (value !== true || !['admissions', 'marketing', 'analytics', 'advertising'].includes(purpose)) continue;
+    await db.prepare('INSERT INTO consents (person_id,purpose,state,basis,source,recorded_at,note) VALUES (?,?,?,?,?,?,?)')
+      .run(pid, purpose, 'given', `ticked on the ${channel} form`, `inbound #${inboundId}`, at, note);
+  }
 }
 
 // Only a fact may overwrite the person record. A suggestion never does.

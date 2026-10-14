@@ -106,9 +106,8 @@ test('an agent lead about somebody we already have keeps their first source', as
 
   const a = await post(s.base, '/api/inbound/agent', { ...fixtureFor('agent'), email }, { 'x-partner-token': 'tok-real-partner' });
   assert.equal(a.status, 200, JSON.stringify(a.json));
-  const q2 = await post(s.base, `/api/intake/${a.json.inboundId}/qualify`, { qualification: 'lead', personId: pid,
-    stated: { interest: 'NAV' }, by: 'Ieva' });
-  assert.equal(q2.status, 200, JSON.stringify(q2.json));
+  // since 14.10.2026 a known person's lead lands on their profile by itself (no Inbox card to add them from)
+  assert.match(a.json.outcome, /profile/, JSON.stringify(a.json));
   const after = await fetch(`${s.base}/api/people/${pid}`, { headers: { 'x-acting-as': 'Ieva' } }).then((x) => x.json());
   for (const k of ['source_channel', 'source_detail', 'first_channel', 'created_at']) {
     assert.ok(before[k] != null && before[k] !== '', `${k} is recorded`);

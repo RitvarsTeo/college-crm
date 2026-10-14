@@ -8,6 +8,8 @@
 // What is fetched only FILLS: a value somebody already has on the item or the person is kept.
 
 import { FETCHERS, LeadFetchError, redactLead, TOKEN_ENV } from '../lib/leads.js';
+import { activePersonFor, landOnProfile } from './intake.js';
+import { markFor } from './phonefilter.js';
 
 export const MAX_TRIES = 10;
 const nowIso = () => new Date().toISOString();
@@ -46,6 +48,13 @@ async function fill(db, row, { env, fetchImpl, at }) {
     if (item.person_id) {
       await db.prepare(`UPDATE people SET email = COALESCE(email, ?), phone = COALESCE(phone, ?),
         programme = COALESCE(programme, ?) WHERE id = ?`).run(got.email, got.phone, got.programme, item.person_id);
+    } else if (item.state === 'new') {
+      // A KNOWN PERSON, FOUND BY THE ANSWERS (14.10.2026, every channel): a lead form arrives with ids only, so it could
+      // not be matched on arrival. Now that it has an email or phone, the same question every channel asks; one person
+      // still being worked with -> their profile, off the Inbox. A marked address or number stays where it is.
+      const contact = { email: item.contact_email || got.email, phone: item.contact_phone || got.phone };
+      const pid = await activePersonFor(db, contact);
+      if (pid && !(await markFor(db, contact))) await landOnProfile(db, item.id, pid, { at });
     }
   }
   await db.prepare(`UPDATE lead_answers SET state = 'done', tries = tries + 1, last_error = NULL, updated_at = ?

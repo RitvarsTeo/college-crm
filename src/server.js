@@ -16,9 +16,9 @@ import * as gmailB from '../lib/gmail.js';
 import * as notify from '../lib/notify.js';
 import * as sheetB from '../lib/sheetpull.js';
 import { pullSheet, sheetCounts } from './sheetsync.js';
-import { receive, listInbound, messagesFor, recordWhatsAppEcho, qualify, archive, setMark, removeMark, setCallNote, withCallNotes, bringBack, funnel, agedCount, handoffToSis, ownerFor, notifiedFor, handoverGap, canReach, surfaceAt, waitingFor, waitingByRole } from './intake.js';
+import { receive, activePersonFor, listInbound, messagesFor, recordWhatsAppEcho, qualify, archive, setMark, removeMark, setCallNote, withCallNotes, bringBack, funnel, agedCount, handoffToSis, ownerFor, notifiedFor, handoverGap, canReach, surfaceAt, waitingFor, waitingByRole } from './intake.js';
 import { readScreenshot, readKind, readBody, readPath, saveFeedback, listFeedback, getScreenshot, setHandled, BadScreenshot, helpOpened, helpCounts } from './feedback.js';
-import { findMatches as matchPeople, duplicateCheck, isStrong as isStrongMatch } from './identity.js';
+import { findMatches as matchPeople, duplicateCheck, onePersonFor } from './identity.js';
 import { lifecycleOf, sisProgress, sisProgressByPerson, SIS_HOLDS_SQL } from './lifecycle.js';
 import { firstLook } from './sisfirstlook.js';
 import { redactSis, fetchWebStats, WEB_RANGES } from '../lib/sis.js';
@@ -914,6 +914,18 @@ function integrationStatuses(env = process.env) {
     };
   });
 }
+// A KNOWN PERSON LANDS ON THEIR PROFILE, ON EVERY CHANNEL (the owner, 14.10.2026: "Already handled" is gone as a
+// reason). The one question (src/intake.js activePersonFor, over src/identity.js onePersonFor: email exact, phone last 8
+// digits), asked for every message a channel delivers; the answer is receive()'s attachTo. One person, still being worked
+// with: their profile, no Inbox card. Two or more people, or a finished person: null, so the Inbox card stays (Joins and
+// their name when it is one person). A marked address or number is set aside all the same (receive(): the mark wins).
+// Not asked here: the phone and the SIS ask it themselves before the Inbox (src/sync.js), and Mailchimp is activity
+// about somebody, never an enquiry (set aside, and noted on the person by the webhook below).
+const ON_PROFILE = "on the person's profile, not the Inbox";
+const MATCHED_ELSEWHERE = new Set(['phone', 'sis', 'mailchimp']);
+const knownPersonOf = async (it) => (MATCHED_ELSEWHERE.has(it.channel) ? null
+  : await activePersonFor(db, { email: it.email, phone: it.phone }));
+
 // B3: a withdrawn LinkedIn lead. The lead's own URN is the thread key of the row it first made.
 async function linkedInWithdrawn(ev) {
   const row = await db.prepare(`SELECT person_id FROM inbound WHERE channel = 'linkedin' AND thread_key = ?
@@ -2816,12 +2828,14 @@ export const handle = async (req, res) => {
           // 24.09.2026: "a newsletter subscriber is not a lead"; routed so on 01.10.2026). It is
           // kept, set aside with that reason, and goes on the person's timeline when we know them.
           const mc = channel === 'mailchimp';
-          const r = await receive(db, { ...toIntake(ev), source: simulated ? 'simulated' : 'provider',
-            ...(mc ? { filterWhy: 'Mailchimp audience activity: a newsletter subscriber is not a lead' } : {}) });
+          const it = toIntake(ev);
+          const r = await receive(db, { ...it, source: simulated ? 'simulated' : 'provider',
+            ...(mc ? { filterWhy: 'Mailchimp audience activity: a newsletter subscriber is not a lead' }
+              : { attachTo: await knownPersonOf(it) }) });
           if (mc && !r.duplicate && ev.senderEmail) {
-            const known = [...new Set((await matchPeople(db, { email: ev.senderEmail })).filter(isStrongMatch).map((m) => m.id))];
-            if (known.length === 1) {
-              await logEvent(db, { personId: known[0], kind: 'channel', channel: 'mailchimp', direction: 'in',
+            const known = await onePersonFor(db, { email: ev.senderEmail });
+            if (known) {
+              await logEvent(db, { personId: known.id, kind: 'channel', channel: 'mailchimp', direction: 'in',
                 at: ev.receivedAt, origin: AUTOMATIC, actor: 'Mailchimp', subject: `Mailchimp: ${ev.messageSubject || 'event'}`,
                 body: ev.senderEmail });
             }
@@ -2835,12 +2849,14 @@ export const handle = async (req, res) => {
           let attendance = false;
           if (channel === 'open_day' && r.id) {
             attendance = await stampOpenDay(db, r.id, { slot: ev.raw._slot, attended: ev.raw._attended });
-            if (attendance) await registerOpenDay(db, r.id);
+            // a booking from a known person is linked at once, so it is on the Open Day list at once (as Add to them does)
+            if (attendance || r.attached) await registerOpenDay(db, r.id);
           }
-          recordInbound(channel, ev.externalEventId, r.duplicate ? 'duplicate' : r.filtered ? 'filtered' : 'queued', check.how);
+          recordInbound(channel, ev.externalEventId, r.duplicate ? 'duplicate' : r.filtered ? 'filtered' : r.attached ? 'to person' : 'queued', check.how);
           done.push({ externalEventId: ev.externalEventId, inboundId: r.id,
             outcome: r.duplicate && attendance ? 'attendance recorded'
-              : r.duplicate ? 'already had it' : r.filtered ? 'filtered out before the queue' : 'waiting to be looked at' });
+              : r.duplicate ? 'already had it' : r.filtered ? 'filtered out before the queue'
+                : r.attached ? ON_PROFILE : 'waiting to be looked at' });
         }
         // a delivery of replies, history or contact sync only: nothing for the Inbox, and Meta still gets its 200
         if (!done.length) return json(res, 200, { ok: true, channel, messages: 0, echoes, verified: check.how, read: read.as });
@@ -2868,12 +2884,13 @@ export const handle = async (req, res) => {
       if (!raw) return json(res, 404, { error: 'no fixture for ' + channel });
       try {
         const ev = adapt(channel, raw);
-        const r = await receive(db, { ...toIntake(ev), source: 'simulated' });
+        const it = toIntake(ev);
+        const r = await receive(db, { ...it, source: 'simulated', attachTo: await knownPersonOf(it) });
         recordInbound(channel, ev.externalEventId,
-          r.duplicate ? 'duplicate' : r.filtered ? 'filtered' : 'queued', 'simulated locally');
+          r.duplicate ? 'duplicate' : r.filtered ? 'filtered' : r.attached ? 'to person' : 'queued', 'simulated locally');
         return json(res, 200, { ok: true, channel, externalEventId: ev.externalEventId,
           outcome: r.duplicate ? 'already had it' : r.filtered ? 'filtered out before the queue'
-            : 'waiting to be looked at',
+            : r.attached ? ON_PROFILE : 'waiting to be looked at', personId: r.attached ? r.personId : null,
           inboundId: r.id, verified: 'simulated locally, not signature checked' });
       } catch (err) {
         recordInbound(channel, null, 'error', err.message);
@@ -3052,22 +3069,26 @@ export const handle = async (req, res) => {
         message: typeof b.message === 'string' && b.message.trim() ? b.message.trim() : null });
       try {
         const ev = adapt(channel, payload);
-        const r = await receive(db, toIntake(ev));
+        const it = toIntake(ev);
+        const r = await receive(db, { ...it, attachTo: await knownPersonOf(it) });
         recordInbound(channel, ev.externalEventId,
-          r.duplicate ? 'duplicate' : r.filtered ? 'filtered' : 'queued', 'console');
+          r.duplicate ? 'duplicate' : r.filtered ? 'filtered' : r.attached ? 'to person' : 'queued', 'console');
         const outcome = r.duplicate ? 'The same event again - stored once'
           : r.filtered ? 'Filtered before the Inbox'
+          : r.attached ? 'On their profile'
           : 'Waiting in the Inbox';
         const explain = r.duplicate
           ? 'A provider retry. It matched on the channel and the provider id, so nothing was written twice.'
           : r.filtered
           ? 'A commercial pitch. It is stored and findable, and it is kept out of the funnel, so nobody has to archive it by hand.'
+          : r.attached
+          ? 'It came from somebody already in Intake, so it went on their history with Answer the question for today, not into the Inbox.'
           : existing
           ? `It came in as ${existing.name}, who is already in the database. Qualifying it will offer that person rather than making a second one.`
           : 'Open the Inbox and decide what it is. Nothing becomes an applicant on its own.';
         return json(res, 200, { ok: true, channel: CHANNEL_LABELS[channel] || channel,
           externalEventId: ev.externalEventId, inboundId: r.id, outcome, explain,
-          personId: null, filtered: Boolean(r.filtered), duplicate: Boolean(r.duplicate) });
+          personId: r.attached ? r.personId : null, filtered: Boolean(r.filtered), duplicate: Boolean(r.duplicate) });
       } catch (err) {
         recordInbound(channel, null, 'error', err.message);
         if (err instanceof BadInbound) return json(res, 400, { error: err.message, detail: err.detail });

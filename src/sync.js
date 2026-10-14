@@ -14,7 +14,7 @@
 // Neither poller runs while its channel is off, and off is the default.
 
 import { receive, bringBack, activePersonFor, confirmedBySystem, CONFIG, newPersonId, ownerFor, emailFilterWhy, purgeLineBodies, recordReplyRead } from './intake.js';
-import { findMatches, isStrong, normEmail, normPhone } from './identity.js';
+import { onePersonFor, normEmail, normPhone } from './identity.js';
 import { knock } from './webpush.js';
 import { phoneThread } from './phonefilter.js';
 import { logEvent, AUTOMATIC, MANUAL } from './history.js';
@@ -45,12 +45,10 @@ async function saveState(db, name, value, detail, at) {
 }
 
 // The one person an email or a phone points at, or null. Two strong candidates is
-// a question for a human, never a coin toss.
+// a question for a human, never a coin toss. The same question every channel asks (src/identity.js onePersonFor).
 async function onePerson(db, contact) {
-  if (!contact.email && !contact.phone) return null;
-  const strong = (await findMatches(db, { email: contact.email, phone: contact.phone })).filter(isStrong);
-  const ids = [...new Set(strong.map((m) => m.id))];
-  return ids.length === 1 ? ids[0] : null;
+  const one = await onePersonFor(db, { email: contact.email, phone: contact.phone });
+  return one ? one.id : null;
 }
 
 // ---------------------------------------------------------------- retention --

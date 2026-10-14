@@ -14,6 +14,26 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 14.10.2026 - A known person lands on their profile, on every channel
+
+The owner, 14.10.2026: "Already handled" is gone as a reason, so a message from somebody already in Intake goes to their
+profile automatically on every channel, the way the phone and the SIS already did. Branch feat/2026-10-14-known-person
+from 8577501.
+
+| What | Status |
+|---|---|
+| One question for every channel: src/identity.js onePersonFor (email exact in lower case, phone on its last 8 digits, every contact the person has). The phone and SIS pollers, the email poll, the webhook, the simulate button, the Console and Mailchimp's note all ask it | BUILT |
+| Website, Google Form, WhatsApp, open day, agent, in person, TikTok, email: one person still being worked with -> their History, last contact moved on, Answer the question due when they wrote for the person's owner (the same step a known email has had since Q74); no Inbox card | BUILT |
+| Meta and LinkedIn lead forms arrive with ids only; once their answers name one known person, the card moves to that person the same way | BUILT |
+| What a form brought reaches the person as Add to them does: ticked consent into their consent record, its answers kept on the person (an empty field is filled, nothing replaced) | BUILT |
+| An open day booking from a known person is on the Open Day list at once | BUILT |
+| Two or more people match: the Inbox card stays, a person chooses | BUILT |
+| A marked address or number (Supplier or vendor, Internal, Spam) is set aside even when it matches a person: the mark wins. The phone pull still looks for the person first, as before | BUILT |
+| Admitted or Not proceeding: the Inbox card stays and says Joins and their name (as an admitted student's email has since Q74); nothing reopens a finished person by machine | BUILT |
+| Messenger, Instagram and Facebook direct messages carry a handle only, no email or phone, so they reach the Inbox as before | BUILT |
+| Help: the Inbox box says it in one sentence | BUILT |
+| test/known_person_every_channel.test.js | BUILT |
+
 ## 14.10.2026 - Q95: every tile looks the same at rest; only a clicked tile is framed
 
 The owner, 14.10.2026, on Due's Needs you: Coming up was plain while Overdue, Due today and No next step carried the chosen
