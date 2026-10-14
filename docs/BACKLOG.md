@@ -14,6 +14,19 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 14.10.2026 - Q95: every tile looks the same at rest; only a clicked tile is framed
+
+The owner, 14.10.2026, on Due's Needs you: Coming up was plain while Overdue, Due today and No next step carried the chosen
+frame, because the set the list opens on was drawn as chosen. Branch ui/2026-10-14-q95-tiles-alike from 5678232.
+
+| What | Status |
+|---|---|
+| Due's four Needs you tiles (and their folded chips) are drawn alike at rest: same box, size and type. The frame appears only on the tile a person clicked | BUILT |
+| The list still opens on Overdue + Due today + No next step; the Coming up column on the board still folds | BUILT |
+| Checked the other bands: Home's Needs you, the Inbox band and the Journey band frame only what was clicked; at rest every sibling is alike | BUILT |
+| test/tiles_alike_q95.test.js | BUILT |
+| Seen running at 1440, light and dark: `For review/2026-10-14 Q95 Coming up tile alike/` | BUILT |
+
 ## 13.10.2026 - Q89c: every Next action date becomes one Follow up (COMMITTED, NOT DEPLOYED)
 
 Found by MASTER CONTROL on the live data after the first pull: 45 rows with a Next action date, 12 with a step. Branch `feat/2026-10-13-q89c-follow-up-steps`, cut from `c7abba0`.

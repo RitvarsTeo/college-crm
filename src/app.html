@@ -3903,9 +3903,11 @@ function cPoolBand(name, cols, on, pick) {
 // Home's Needs you card, the same look and the same labels, with Today's own Coming up; a Home figure opens Today on
 // that card, and the people are below it. Frozen and folded like the column band.
 function cPoolCards(name, title, cols, on, pick) {
-  const card = (c, i) => `<button type="button" class="kneed p-card${on === c.id || c.lit ? ' on' : ''}" style="--i:${i}" aria-pressed="${on === c.id || Boolean(c.lit)}"
+  // Q95 (the owner, 14.10.2026: "why the coming up is different?"): every tile looks the same at rest. Only the tile a
+  // person clicked is framed; the default set the list opens on (c.lit) is never drawn differently from its siblings.
+  const card = (c, i) => `<button type="button" class="kneed p-card${on === c.id ? ' on' : ''}" style="--i:${i}" aria-pressed="${on === c.id}"
       data-v="${esc(c.id)}" onclick="${pick}(this.dataset.v)"><span>${esc(c.label)}</span><b>${c.n}</b></button>`;
-  const chip = (c) => `<button type="button" class="p-chip${on === c.id || c.lit ? ' on' : ''}${c.tone ? ' t-' + c.tone : ''}" aria-pressed="${on === c.id || Boolean(c.lit)}"
+  const chip = (c) => `<button type="button" class="p-chip${on === c.id ? ' on' : ''}${c.tone ? ' t-' + c.tone : ''}" aria-pressed="${on === c.id}"
       data-v="${esc(c.id)}" onclick="${pick}(this.dataset.v)"><i></i><span>${esc(c.label)}</span><b>${c.n}</b></button>`;
   return `<div class="p-sentinel" aria-hidden="true"></div>
     <section class="kday pband pcards" aria-label="${esc(name)}">
