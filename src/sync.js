@@ -114,6 +114,7 @@ const PBX_BACKOFF = 'pbx_backoff';
 // every ~32 minutes, a call already stored is skipped by its uniqueid as always. Each call stored records how late it
 // was found (pbx_lag: the newest LAG_KEEP), which is how TeleGroup's real delay is learned.
 export const LATE_HOURS = 48;
+export const RECENT_MINUTES = 60;
 export const SWEEP_PIECES = 6;
 export const LAG_KEEP = 200;
 const PBX_SWEEP = 'pbx_sweep';
@@ -276,6 +277,15 @@ export async function syncPbx(db, { now = new Date(), minutes = WINDOW_MINUTES,
     await saveState(db, PBX_BOOKMARK, new Date(reached).toISOString(),
       { pieces, fetched, kept, skipped, destinations, ...out }, at);
     from = to;
+  }
+
+  // THE LAST HOUR, AGAIN, IN ONE REQUEST (14.10.2026, live finding): TeleGroup lists a call only when it ENDS but stamps
+  // it with the moment it STARTED, so an answered call longer than the overlap is already behind the bookmark when it
+  // appears. Two calls at 11:33 and 11:45 waited for the sweep until 11:53; a 2-minute call at 11:25 was in at 11:27.
+  // Every run re-reads the RECENT_MINUTES behind its own window, so a call is in within a minute of hanging up.
+  if (!backedOff) {
+    const a = Math.max(nowMs - RECENT_MINUTES * 60000, earliest);
+    if (firstFrom > a) await readPiece(a, firstFrom, 'recent');   // a 429 sets backedOff inside
   }
 
   // THE SWEEP: part of the trailing LATE_HOURS, behind this run's own window, for calls TeleGroup listed late
