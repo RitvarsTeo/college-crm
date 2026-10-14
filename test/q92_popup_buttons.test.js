@@ -48,7 +48,7 @@ test('it is written in config and in Help', () => {
   assert.match(fs.readFileSync(path.join(ROOT, 'config', 'help.json'), 'utf8'), /button 3 call does not pop up/);
 });
 
-// Ritvars, 14.10.2026, "Yes, never pop": a number the phone filter sets aside (Not Admissions) never pops up.
+// Ritvars, 14.10.2026, "Yes, never pop": a number the phone filter sets aside (Spam, Supplier or vendor, Internal) never pops up.
 import { receive, archive, bringBack } from '../src/intake.js';
 
 async function oneRing(db, id, num, now) {
@@ -58,12 +58,12 @@ async function oneRing(db, id, num, now) {
   return Number(top.n) - 1;
 }
 
-test('a Not Admissions number never pops; Bring back makes it pop again; a person in Intake always pops', async () => {
+test('a Spam number never pops; Bring back makes it pop again; Not a lead still pops; a person in Intake always pops', async () => {
   const db = await openDb(':memory:');
   const now = new Date('2026-10-14T10:00:00Z');
   const card = await receive(db, { channel: 'phone', externalId: 'c0', receivedAt: '2026-10-14T09:00:00Z', phone: '+37129111222',
     body: 'Incoming call', threadKey: 'phone:29111222', source: 'provider' });
-  await archive(db, card.id, { reason: 'Not Admissions', by: 'Ieva' });
+  await archive(db, card.id, { reason: 'Spam', by: 'Ieva' });
   const users = ['Laura', 'Ieva'];
   let after = await oneRing(db, 'r1', '29111222', now);
   assert.equal((await callFeed(db, { after, viewer: 'Ieva', users, now })).events.length, 0, 'set aside: no pop-up');
@@ -75,8 +75,13 @@ test('a Not Admissions number never pops; Bring back makes it pop again; a perso
   after = await oneRing(db, 'r2', '29111222', now);
   assert.equal((await callFeed(db, { after, viewer: 'Ieva', users, now })).events.length, 1, 'brought back: it pops again');
 
-  // set aside again, then the number becomes a person in Intake: a person always pops
-  await archive(db, card.id, { reason: 'Not Admissions', by: 'Ieva' });
+  // Not a lead remembers nothing: the next ring pops
+  await archive(db, card.id, { reason: 'Not a lead', by: 'Ieva' });
+  after = await oneRing(db, 'r2b', '29111222', now);
+  assert.equal((await callFeed(db, { after, viewer: 'Ieva', users, now })).events.length, 1, 'Not a lead: it still pops');
+  await bringBack(db, card.id, { by: 'Ieva', at: '2026-10-14T09:35:00Z' });
+  // Spam again, then the number becomes a person in Intake: a person always pops
+  await archive(db, card.id, { reason: 'Spam', by: 'Ieva' });
   await db.prepare(`INSERT INTO people (id, name, phone, status, owner, created_at) VALUES ('p1', 'Anna', '+37129111222', 'new', 'Ieva', '2026-10-14T09:40:00Z')`).run();
   after = await oneRing(db, 'r3', '29111222', now);
   const feed = await callFeed(db, { after, viewer: 'Ieva', users, now });

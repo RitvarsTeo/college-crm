@@ -8,7 +8,7 @@ import { seed } from './seed.js';
 import { hasRealData, loadReal } from './real.js';
 import { PROVIDERS, runScenario, runOutbound, runFullDemo, listEvents, getEvent, consentFor, consentSummary, DEMO_SEQUENCE } from './simulator.js';
 import { logEvent, applyEdit, readHistory, MANUAL, AUTOMATIC, EDITABLE_FIELDS, IMMUTABLE_FIELDS, FIELD_LABELS } from './history.js';
-import { stampOpenDay, registerOpenDay, refilterOpen, newPersonId, setAsideOldCalls } from './intake.js';
+import { stampOpenDay, registerOpenDay, refilterOpen, newPersonId, setAsideOldCalls, releaseNotAdmissions } from './intake.js';
 import { queueLeadAnswers } from './leadanswers.js';
 import { connectConfig, finishConnect, WhatsAppConnectError } from '../lib/whatsapp.js';
 import { subscribeLinkedInLeads, LeadFetchError } from '../lib/leads.js';
@@ -2342,6 +2342,15 @@ export const handle = async (req, res) => {
       const b = req.method === 'POST' ? await body(req) : {};
       const r = await setAsideOldCalls(db, { before: req.method === 'POST' ? b.before : url.searchParams.get('before'),
         apply: req.method === 'POST' && b.apply === true, by: await actorOf(req, b) });
+      if (r.error) return json(res, 400, r);
+      return json(res, 200, { ok: true, ...r });
+    }
+    // Rethink (14.10.2026): the calls set aside only because their number was once marked "Not Admissions" come back.
+    // Admins only; GET counts, POST {"apply": true} brings them back, logged.
+    if (p === '/api/admin/inbox/release-not-admissions' && (req.method === 'GET' || req.method === 'POST')) {
+      if (!(await adminOf(req))) return refuseNotAdmin(res);
+      const b = req.method === 'POST' ? await body(req) : {};
+      const r = await releaseNotAdmissions(db, { apply: req.method === 'POST' && b.apply === true, by: await actorOf(req, b) });
       if (r.error) return json(res, 400, r);
       return json(res, 200, { ok: true, ...r });
     }

@@ -54,8 +54,8 @@ export function seesLine(viewer, queue, admins = [], menu = MENU) {
   return lines.some(onLine) || !admins.some((a) => isOperator(a, viewer));
 }
 
-// A NUMBER THE PHONE FILTER SETS ASIDE NEVER POPS (Ritvars, 14.10.2026, "Yes, never pop"): Not Admissions, Spam and
-// the other phoneFilter.filterArchivedAs reasons, undone by Bring back exactly as in the pull. A caller who is a person
+// A NUMBER THE PHONE FILTER SETS ASIDE NEVER POPS (Ritvars, 14.10.2026, "Yes, never pop"): Spam, Supplier or vendor,
+// Internal - phoneFilter.filterArchivedAs (since the rethink, "Not a lead" is one call and is never remembered), undone by Bring back exactly as in the pull. A caller who is a person
 // in Intake always pops: the person is looked for first, the same order as storeCall.
 export async function filteredCaller(db, callerNum, who = null) {
   if (!callerNum) return false;

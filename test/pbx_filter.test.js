@@ -25,7 +25,7 @@ const pbxFetch = (calls) => async () => ({ ok: true, status: 200, json: async ()
 const run = (db, calls, now = NOW) => syncPbx(db, { now, env: ON, fetchImpl: pbxFetch(calls) });
 
 test('phone filter: the rule is written down in config, where it can be read and changed', () => {
-  assert.deepEqual(CONFIG.phoneFilter.filterArchivedAs, ['Spam', 'Supplier or vendor', 'Internal', 'Not Admissions']);   // Q92, 14.10.2026
+  assert.deepEqual(CONFIG.phoneFilter.filterArchivedAs, ['Spam', 'Supplier or vendor', 'Internal']);   // rethink 14.10.2026: Not Admissions retired
   assert.equal(CONFIG.phoneFilter.oneOpenItemPerNumber, true);
   for (const r of CONFIG.phoneFilter.filterArchivedAs) assert.ok(CONFIG.intake.archiveReasons.includes(r), r);
 });

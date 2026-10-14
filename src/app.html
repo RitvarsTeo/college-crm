@@ -3825,11 +3825,12 @@ function cCallsHtml(calls) {
   const more = calls.length > 3 ? `<li class="ib-call is-more">${calls.length - 3} more</li>` : '';
   return `<ul class="ib-calls">${calls.slice(0, 3).map(one).join('')}${more}</ul>`;
 }
-// Q92: one click, no dialog: set aside as Not Admissions; later calls from this number are set aside too (Bring back undoes)
-async function cNotAdmissions(id, btn) {
+// One click, no dialog: THIS call is not a lead (the owner's rethink, 14.10.2026). Only this card is set aside; the number is
+// not remembered, so the next call from it reaches the Inbox. Bring back returns it.
+async function cNotALead(id, btn) {
   if (btn) btn.disabled = true;
   try {
-    const r = await post(`/api/intake/${Number(id)}/archive`, { reason: 'Not Admissions' });
+    const r = await post(`/api/intake/${Number(id)}/archive`, { reason: 'Not a lead' });
     LAST_RESULT = r.landed || null;
     await viewLeadsC();
   } catch (err) { if (btn) btn.disabled = false; alert(err.message); }
@@ -4176,7 +4177,7 @@ function cInboxPool() {
       ${r.channel === 'phone' && (r.calls || []).length ? cCallsHtml(r.calls) : `<div class="ib-msg">${esc(r.channel === 'phone' ? cCallLine(r.body) : (r.body || D.val(r, 'question') || ''))}</div>`}
       ${prog || kind || r.joins ? `<div class="ib-tags">${r.joins ? `<span class="ib-joins">Joins ${esc(r.joins.name)}</span>` : ''}${prog ? `<span class="ib-prog">${esc(prog)}</span>` : ''}${kind}</div>` : ''}
       ${cStateLine(st, cAgo(r.received_at), '', fmtDateTime(r.received_at))}
-      ${!live ? `<div class="ib-acts"><button class="btn sm" onclick="event.stopPropagation();cBringBack(${Number(r.id)}, this)">Bring back</button></div>` : open ? D.form(r) : `<div class="ib-acts"><button class="btn sm" onclick="event.stopPropagation();C_LOPEN=${Number(r.id)};cInboxPool()">${r.joins ? 'Add to ' + esc(r.joins.name) : 'Make a lead'}</button>${r.channel === 'phone' && !r.joins ? `<button type="button" class="ib-aside" onclick="event.stopPropagation();cNotAdmissions(${Number(r.id)}, this)">Not Admissions</button>` : ''}<button type="button" class="ib-aside" onclick="event.stopPropagation();openArchive(${Number(r.id)})">Set aside</button></div>`}</div>`;
+      ${!live ? `<div class="ib-acts"><button class="btn sm" onclick="event.stopPropagation();cBringBack(${Number(r.id)}, this)">Bring back</button></div>` : open ? D.form(r) : `<div class="ib-acts"><button class="btn sm" onclick="event.stopPropagation();C_LOPEN=${Number(r.id)};cInboxPool()">${r.joins ? 'Add to ' + esc(r.joins.name) : 'Make a lead'}</button>${r.channel === 'phone' && !r.joins ? `<button type="button" class="ib-aside" onclick="event.stopPropagation();cNotALead(${Number(r.id)}, this)">Not a lead</button>` : ''}<button type="button" class="ib-aside" onclick="event.stopPropagation();openArchive(${Number(r.id)})">Set aside</button></div>`}</div>`;
   };
   // a band click narrows the board to that day's column; a second click shows all four again
   const shownCols = cols.filter((c) => !C_IP.col || c.id === C_IP.col);

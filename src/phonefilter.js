@@ -7,7 +7,7 @@ export const phoneThread = (num) => {
   return d.length > 5 ? 'phone:' + d.slice(-8) : null;
 };
 
-// THE NUMBER IS REMEMBERED (01.10.2026; Q92, 14.10.2026 "Not Admissions"): a number a person set aside with one of
+// THE NUMBER IS REMEMBERED (01.10.2026; only Spam, Supplier or vendor, Internal since the 14.10.2026 rethink): a number a person set aside with one of
 // phoneFilter.filterArchivedAs, matched on the same last-8-digits key as the thread, so +371 29.. and 29.. are one
 // number. A Bring back on ANY card of that number after the set-aside is the undo: from then on its calls reach the
 // Inbox again. Only reached for a caller who is not a person in Intake (storeCall looks for the person first).

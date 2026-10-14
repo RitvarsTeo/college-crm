@@ -764,7 +764,7 @@
       "Supplier or vendor",
       "Internal",
       "Already handled",
-      "Not Admissions",
+      "Not a lead",
       "Other"
     ],
     "archiveReasonNeedsNote": [
@@ -981,10 +981,9 @@
     "filterArchivedAs": [
       "Spam",
       "Supplier or vendor",
-      "Internal",
-      "Not Admissions"
+      "Internal"
     ],
-    "_notAdmissions": "Q92, 14.10.2026 (Ieva: many calls to the college number are not ADMISSIONS): one click on a phone card sets it aside as Not Admissions and later calls from that number are set aside too. Bring back on any card of that number undoes it. A number that belongs to a person in Intake is never filtered: the person is found first.",
+    "_notALead": "Rethink, Ritvars 14.10.2026 (\"how do you know its 'Not Admissions'?\" -> \"Yes, this system\"): calls run on facts. The button decides whose list; whoever answered decides about THAT call: Make a lead, or Not a lead (this call only, no number remembered); a number that is a person in Intake goes to that person. Only Spam, Supplier or vendor and Internal remember a number. Not Admissions as a remembered reason is retired.",
     "oneOpenItemPerNumber": true
   },
   "phoneMenu": {
