@@ -966,7 +966,10 @@ async function openTask(id) {
 
 export const handle = async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
-  const p = url.pathname;
+  // ONE TRAILING SLASH ON AN API PATH IS THE SAME PATH (14.10.2026): /api/inbound/phone-event/ answered "not signed in"
+  // because only the exact path is open before sign-in, and a provider that adds the slash was locked out. Read the
+  // same way everywhere below, so the slash gets exactly the rules of the path without it: never more, never less.
+  const p = /^\/api\/.+\/$/.test(url.pathname) ? url.pathname.slice(0, -1) : url.pathname;
   // Q84: a PAGE asked for on an older address goes to the app's own address; /api/* never moves
   // (src/apporigin.js). Before everything else, so sign-in always starts on the host it returns to.
   const moveTo = redirectTarget({ method: req.method,
