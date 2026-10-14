@@ -773,3 +773,10 @@ Seen: GitHub - no Aigars commits since 309b10f; crm-novikontas.vercel.app = 1ced
 14.10 PHONE_EVENT_SECRET made (crm-prototype/.env.local, generated unseen) + Bitwarden 'Intake TeleGroup webhook secret' + Vercel prod sensitive (checked) + redeploy. BUG: POST /api/inbound/phone-event with the right token -> 401 'not signed in' (allow-listed in server.js:380 + gate.js:116, still refused) -> CHANNELS urgent fix. Aigars asked for token + URL to give TeleGroup.
 14.10 PHONE_EVENT_SECRET is in Ritvars's Bitwarden under the name 'phone event secret' (not 'Intake TeleGroup webhook secret').
 14.10 PHONE-EVENT VERIFIED LIVE (exact URL, no slash): no token -> 401 'shared secret did not match'; right token + {} -> 400 'no call_id' = handler runs. Earlier 'not signed in' result not reproduced (redeploy window). CHANNELS 34b0552 (trailing-slash tolerance, 1570 green) queued for the next release, not urgent.
+
+## 14.10.2026 ~11:05 - patches 47 + 48 LIVE, production = 3811ac7
+- Patch 47 (record b7afa1b): 34b0552 phone-event path with one trailing slash gets the handler's own secret check. Live: both paths answer 401 "shared secret did not match".
+- FINDING: TeleGroup times are UTC, not Riga. Ritvars's 09:59 test call stored as 06:59; smallest call-to-storage gap over 71 calls = 183 min. Short pull windows pointed 3 h into the future; only the 48 h sweep found calls.
+- Patch 48 (fix 324ddd9, record 3811ac7, dpl_63gek4rhzWinWQxZL87AVvyAYCDD): PBX_ZONE = 'UTC' in lib/pbx.js + src/phoneevent.js; tests moved to the same instants; 1571 green; backup 2026-10-14T08-03-23Z VERIFIED; GitHub production = 3811ac7 (Ritvars OK).
+- Next: Ritvars test call to prove ~1 min arrival; dry-run repair of old call times (+3 h) in _switchover/2026-10-14-call-times/, applied only after review.
+- TeleGroup files for Aigars sent and deleted from the PC.
