@@ -134,8 +134,8 @@ const PBX_FIELDS = 'pbx_fields';
 // path saw it first, so the two can never make two leads for one call.
 export async function storeCall(db, r, mode, at, out) {
   // the pieces overlap on purpose; a call already here was handled last time
-  const had = await db.prepare('SELECT uniqueid FROM pbx_calls WHERE uniqueid = ?').get(r.uniqueid);
-  if (had) { out.seen++; return; }
+  const had = await db.prepare('SELECT uniqueid, duration_sec, talk_sec FROM pbx_calls WHERE uniqueid = ?').get(r.uniqueid);
+  if (had) { await fillLength(db, had, r); out.seen++; return; }
 
   let personId = null;
   let inboundId = null;
@@ -188,10 +188,22 @@ export async function storeCall(db, r, mode, at, out) {
     out.noNumber++;
   }
   await db.prepare(`INSERT INTO pbx_calls (uniqueid, called_at, queue, caller_num, picked_up,
-    operator_name, person_id, inbound_id, inserted_at) VALUES (?,?,?,?,?,?,?,?,?)`).run(
+    operator_name, person_id, inbound_id, inserted_at, duration_sec, talk_sec) VALUES (?,?,?,?,?,?,?,?,?,?,?)`).run(
     r.uniqueid, r.created_at, r.queue, r.caller_num, r.picked_up ? 1 : 0, r.operator_name,
-    personId, inboundId, at);
+    personId, inboundId, at, r.duration_sec ?? null, r.talk_sec ?? null);
   await callEventsFromPull(db, r, mode, at);
+}
+
+// THE LENGTH, FILLED IN LATER (14.10.2026). Calls stored before the length was read have none; the pull, the last-hour
+// re-read and the 48-hour sweep see them again, so a length the stored call lacks is written then - only where it is
+// still NULL, never over a value. Nothing else about a call already stored changes. A row without a length (the
+// pushed call events have none) writes nothing.
+async function fillLength(db, had, r) {
+  const dur = had.duration_sec == null ? (r.duration_sec ?? null) : null;
+  const talk = had.talk_sec == null ? (r.talk_sec ?? null) : null;
+  if (dur === null && talk === null) return;
+  await db.prepare(`UPDATE pbx_calls SET duration_sec = COALESCE(duration_sec, ?), talk_sec = COALESCE(talk_sec, ?)
+    WHERE uniqueid = ?`).run(dur, talk, r.uniqueid);
 }
 
 // A call the PULL found becomes call events too (Q6, 04.10.2026), so the pop-up works without

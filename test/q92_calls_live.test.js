@@ -336,3 +336,130 @@ test('late: the sweep covers the trailing 48 hours, never re-stores a call, and 
   assert.equal((await db.prepare("SELECT COUNT(*) n FROM pbx_calls WHERE uniqueid = 'old1'").get()).n, 1, 'found once, kept once');
   assert.ok(starts.some((s, i) => i > 0 && Date.parse(s) < Date.parse(starts[i - 1])), 'the cursor went round again');
 });
+
+// ------------------------------------------------------------------ the call's length --
+// 14.10.2026, Ritvars: "WE need the length also". TeleGroup's duration (whole call, ringing included) and duration_talk
+// (talk time) are stored in seconds; the card adds the talk time to an answered call and how long it rang to a missed one.
+const cardHtml = (calls) => {
+  const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
+  const fmt = app.slice(app.indexOf('const fmtDateTime = '), app.indexOf('// Today in RIGA.'));
+  const fn = app.slice(app.indexOf('function cCallsHtml('), app.indexOf('async function cNotALead('));
+  const ctx = { esc: (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;') };
+  vm.runInNewContext(`const TZ = 'Europe/Riga';` + fmt + fn + '; this.calls = cCallsHtml;', ctx);
+  return ctx.calls(calls);
+};
+
+test('length: a stored call keeps both values; the card shows the talk time, how long a missed call rang, nothing when unknown', async () => {
+  const db = await openDb(':memory:');
+  const tg = fakeTeleGroup([
+    call({ duration: '12:29', duration_talk: '12:04' }),                                              // 11:58 Riga, answered
+    call({ uniqueid: 'c2', state: 'NOANSWER', operator_name: '', created_at: '2026-10-14 09:20:00', duration: 25, duration_talk: 0 }),
+    call({ uniqueid: 'c3', state: 'NOANSWER', operator_name: '', created_at: '2026-10-14 09:25:00' }),  // no length at all
+    call({ uniqueid: 'c4', created_at: '2026-10-14 09:26:00', operator_name: 'Ieva', duration: 'abc', duration_talk: '' }),
+  ]);
+  await run(db, tg, '2026-10-14T09:30:00Z');
+  const rows = await db.prepare('SELECT uniqueid, duration_sec, talk_sec FROM pbx_calls ORDER BY uniqueid').all();
+  assert.deepEqual(rows.map((r) => [r.uniqueid, r.duration_sec, r.talk_sec]),
+    [['c1', 749, 724], ['c2', 25, 0], ['c3', null, null], ['c4', null, null]]);
+  const [card] = await listInbound(db, { state: 'new' });
+  assert.deepEqual(card.calls.map((c) => [c.talkSec, c.durationSec]), [[null, null], [null, null], [0, 25], [724, 749]], 'newest first');
+  const html = cardHtml(card.calls);   // three at most on the card: the oldest (12:04) is shown on its own below
+  assert.match(cardHtml(card.calls.slice(-1)), /11:58<\/span><span>Admissions<\/span><b>Answered by Laura · 12:04<\/b>/);
+  assert.match(html, /12:20<\/span><span>Admissions<\/span><b>Missed · rang 0:25<\/b>/);
+  assert.match(html, /12:25<\/span><span>Admissions<\/span><b>Missed<\/b>/, 'unknown length: nothing extra');
+  assert.match(html, /12:26<\/span><span>Admissions<\/span><b>Answered by Ieva<\/b>/, 'unreadable length: nothing extra');
+  assert.doesNotMatch(html, /0:00/, 'never a zero placeholder');
+  // from an hour, h:mm:ss; a 0 talk time on an answered call adds nothing
+  const long = cardHtml([{ at: '2026-10-14T08:58:00.000Z', line: 'Admissions', answered: true, operator: 'Ieva', talkSec: 3723, durationSec: 3750 },
+    { at: '2026-10-14T08:50:00.000Z', line: 'Admissions', answered: true, operator: '<i>x</i>', talkSec: 0, durationSec: 10 }]);
+  assert.match(long, /<b>Answered by Ieva · 1:02:03<\/b>/);
+  assert.match(long, /<b>Answered by &lt;i>x&lt;\/i><\/b>/, 'escaped as before, no length for 0');
+});
+
+test('length: the re-read and the 48-hour sweep fill a stored call without a length, and change nothing else', async () => {
+  const db = await openDb(':memory:');
+  // stored before the length was read: TeleGroup's answer then had no duration fields
+  const calls = [call({ uniqueid: 'r1', created_at: '2026-10-14 08:58:00' }),                       // the last hour at 09:30
+    call({ uniqueid: 's1', state: 'NOANSWER', operator_name: '', caller_num: '+37129333444', created_at: '2026-10-13 20:00:00' })];
+  const tg = fakeTeleGroup(calls);
+  await run(db, tg, '2026-10-13T20:01:00Z');
+  await run(db, tg, '2026-10-14T08:59:00Z');
+  const snapshot = async () => ({
+    counts: await Promise.all(['inbound', 'call_events', 'events', 'tasks', 'inbound_history', 'pbx_calls']
+      .map(async (t) => (await db.prepare(`SELECT COUNT(*) n FROM ${t}`).get()).n)),
+    inbound: await db.prepare('SELECT id, state, body, received_at, surface_at FROM inbound ORDER BY id').all(),
+    calls: await db.prepare(`SELECT uniqueid, called_at, queue, caller_num, picked_up, operator_name, person_id, inbound_id, inserted_at
+      FROM pbx_calls ORDER BY uniqueid`).all(),
+  });
+  const len = async () => (await db.prepare('SELECT uniqueid, duration_sec, talk_sec FROM pbx_calls ORDER BY uniqueid').all())
+    .map((r) => [r.uniqueid, r.duration_sec, r.talk_sec]);
+  assert.deepEqual(await len(), [['r1', null, null], ['s1', null, null]]);
+  const before = await snapshot();
+  // TeleGroup now sends the length
+  calls[0] = { ...calls[0], duration: 760, duration_talk: '12:04' };
+  calls[1] = { ...calls[1], duration: '0:25', duration_talk: 0 };
+  const r = await run(db, tg, '2026-10-14T09:30:00Z');
+  assert.deepEqual(await len(), [['r1', 760, 724], ['s1', null, null]], 'the last-hour re-read filled r1; s1 waits for the sweep');
+  for (const k of ['logged', 'inbox', 'again', 'filtered', 'noNumber', 'callBack']) assert.equal(r[k], 0, k);
+  assert.ok(r.seen >= 1);
+  // the sweep walks the trailing 48 hours, minute by minute, until it re-reads 20:00 UTC the day before
+  for (let m = 31; m < 120 && (await len())[1][1] === null; m++) {
+    const out = await run(db, tg, new Date(Date.UTC(2026, 9, 14, 9, m)).toISOString());
+    for (const k of ['logged', 'inbox', 'again', 'filtered', 'noNumber', 'callBack']) assert.equal(out[k], 0, k);
+    assert.ok(!out.late, 'a fill is not a late-found call');
+  }
+  assert.deepEqual(await len(), [['r1', 760, 724], ['s1', 25, 0]], 'the sweep filled s1');
+  assert.deepEqual(await snapshot(), before, 'no new Inbox item, event, task or history line; nothing else on the call changed');
+  // a stored length is never overwritten
+  calls[0] = { ...calls[0], duration: 999, duration_talk: 998 };
+  await run(db, tg, '2026-10-14T11:31:00Z');
+  assert.deepEqual((await len())[0], ['r1', 760, 724]);
+});
+
+test('length: a call the pushed events stored first (no length) gets it from the pull; the push path still stores', async () => {
+  const { receivePhoneEvent } = await import('../src/phoneevent.js');
+  const db = await openDb(':memory:');
+  const now = at('2026-10-14T08:59:00Z');
+  for (const event of ['ringing', 'answered', 'ended']) {
+    await receivePhoneEvent(db, { call_id: 'p1', event, queue: '1001*Q-ADMISSION', caller: '+37129111222', operator: 'Laura',
+      at: '2026-10-14 08:58:00' }, { mode: 'live', now });
+  }
+  assert.deepEqual({ ...(await db.prepare("SELECT picked_up, duration_sec, talk_sec FROM pbx_calls WHERE uniqueid = 'p1'").get()) },
+    { picked_up: 1, duration_sec: null, talk_sec: null });
+  const inboxBefore = (await db.prepare('SELECT COUNT(*) n FROM inbound').get()).n;
+  await run(db, fakeTeleGroup([call({ uniqueid: 'p1', duration: 300, duration_talk: 280 })]), '2026-10-14T09:05:00Z');
+  assert.deepEqual({ ...(await db.prepare("SELECT duration_sec, talk_sec FROM pbx_calls WHERE uniqueid = 'p1'").get()) },
+    { duration_sec: 300, talk_sec: 280 });
+  assert.equal((await db.prepare('SELECT COUNT(*) n FROM inbound').get()).n, inboxBefore);
+});
+
+test('length: the columns are added by the boot migration, so an existing database (production Postgres) gets them', async () => {
+  const src = fs.readFileSync(path.join(ROOT, 'src', 'db.js'), 'utf8');
+  assert.match(src, /\['pbx_calls', 'duration_sec', 'INTEGER'\]/);
+  assert.match(src, /\['pbx_calls', 'talk_sec', 'INTEGER'\]/);
+  // an older database file, made before the columns existed, gains them on the next open
+  const os = await import('node:os');
+  const { DatabaseSync } = await import('node:sqlite');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'crm-len-'));
+  const file = path.join(dir, 'old.db');
+  const old = new DatabaseSync(file);
+  old.exec(`CREATE TABLE pbx_calls (uniqueid TEXT PRIMARY KEY, called_at TEXT NOT NULL, queue TEXT NOT NULL, caller_num TEXT,
+    picked_up INTEGER NOT NULL, operator_name TEXT, person_id TEXT, inbound_id INTEGER, inserted_at TEXT NOT NULL);
+    INSERT INTO pbx_calls VALUES ('o1', '2026-10-13T08:00:00.000Z', '1001*Q-ADMISSION', NULL, 1, 'Ieva', NULL, NULL, 'x');`);
+  old.close();
+  const db = await openDb(file);
+  try {
+    const cols = (await db.prepare("SELECT name FROM pragma_table_info('pbx_calls')").all()).map((c) => c.name);
+    assert.ok(cols.includes('duration_sec') && cols.includes('talk_sec'), cols.join(','));
+    assert.deepEqual({ ...(await db.prepare("SELECT duration_sec, talk_sec FROM pbx_calls WHERE uniqueid = 'o1'").get()) },
+      { duration_sec: null, talk_sec: null }, 'the old row is kept, its length unknown');
+  } finally {
+    if (db.close) await db.close();
+    try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* Windows may still hold the file */ }
+  }
+});
+
+test('length: Help says it, in the same change', () => {
+  const help = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'help.json'), 'utf8'));
+  assert.match(help.faq.find((x) => x.id === 'phone-calls').a, /how long the talk lasted, and a missed call how long it rang/);
+});

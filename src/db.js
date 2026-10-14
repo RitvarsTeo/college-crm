@@ -357,7 +357,9 @@ CREATE TABLE IF NOT EXISTS pbx_calls (
   operator_name TEXT,            -- null on a missed call
   person_id TEXT,                -- the person it was logged on, when the number was known
   inbound_id INTEGER,            -- the Inbox item it became, when it was not
-  inserted_at TEXT NOT NULL
+  inserted_at TEXT NOT NULL,
+  duration_sec INTEGER,          -- 14.10.2026: the whole call in seconds, ringing included (TeleGroup's duration); null = not known
+  talk_sec INTEGER               -- 14.10.2026: the talk time in seconds (TeleGroup's duration_talk); null = not known
 );
 
 -- CALL EVENTS the phone system pushes (Q6, 04.10.2026): ringing, answered, ended. One row per
@@ -470,6 +472,8 @@ const ADDED_COLUMNS = [
   ['sis_applicants', 'admitted_on', 'TEXT'],   // 06.10.2026, the SIS's own admission date (src/sisdates.js)
   ['inbound', 'first_reply_at', 'TEXT'],       // 07.10.2026, first-reply time: the first sent email in the thread
   ['inbound', 'reply_checked_at', 'TEXT'],     // 07.10.2026, when the thread was last read for it
+  ['pbx_calls', 'duration_sec', 'INTEGER'],    // 14.10.2026, the call's length in seconds (lib/pbx.js toSeconds)
+  ['pbx_calls', 'talk_sec', 'INTEGER'],        // 14.10.2026, the talk time in seconds
 ];
 
 // ---------------------------------------------------------- the async layer --

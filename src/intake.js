@@ -376,12 +376,15 @@ export async function listInbound(db, { state = 'new', now = nowIso(), range = n
 
 // The calls an Inbox item holds (the first and every "rang again"), newest first, from pbx_calls: the PBX's own fields.
 // line = the phone menu's role for the queue ("Admissions"), else the queue as the PBX names it.
+// talkSec / durationSec (14.10.2026): the talk time and the whole call in seconds, null when not known.
 export async function callsFor(db, inboundId) {
   const menu = Object.values(CFG.phoneMenu || {});
-  const rows = await db.prepare(`SELECT called_at, queue, picked_up, operator_name FROM pbx_calls
+  const rows = await db.prepare(`SELECT called_at, queue, picked_up, operator_name, duration_sec, talk_sec FROM pbx_calls
     WHERE inbound_id = ? ORDER BY called_at DESC`).all(inboundId);
+  const sec = (v) => (v === null || v === undefined || v === '' ? null : Number(v));
   return rows.map((c) => ({ at: c.called_at, line: ((menu.find((m) => m && m.queue === c.queue) || {}).role) || c.queue,
-    answered: Boolean(Number(c.picked_up)), operator: c.operator_name || null }));
+    answered: Boolean(Number(c.picked_up)), operator: c.operator_name || null,
+    talkSec: sec(c.talk_sec), durationSec: sec(c.duration_sec) }));
 }
 
 // ------------------------------------------------- old calls, set aside once (Q92) --

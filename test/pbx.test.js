@@ -20,7 +20,7 @@ import { fileURLToPath } from 'node:url';
 import {
   QUEUES, PBX_URL, WINDOW_MINUTES, PBX_ZONE,
   isOurs, toRow, rowsFrom, buildRequest, fetchCalls,
-  authoriseCron, redact, requiredEnv,
+  authoriseCron, redact, requiredEnv, toSeconds,
 } from '../lib/pbx.js';
 import { toRigaStamp, fromRigaStamp, offsetMinutesAt, pollWindow, ZONE } from '../lib/riga.js';
 
@@ -110,11 +110,35 @@ test('9. the mapping preserves uniqueid, and refuses a call without one', async 
   assert.throws(() => toRow(call({ created_at: undefined })), /created_at/);
 });
 
-test('the row carries exactly the seven fields asked for, and nothing else', async () => {
-  const row = toRow(call({ recording_url: 'https://example/rec.mp3', duration: 96 }));
+test('the row carries exactly the fields asked for, the call length included, and nothing else', async () => {
+  const row = toRow(call({ recording: 'https://example/rec.mp3', recording_url: 'https://example/rec.mp3',
+    duration: 96, duration_talk: '1:10', billsec: 70 }));
   assert.deepEqual(Object.keys(row).sort(),
-    ['caller_num', 'created_at', 'operator_name', 'picked_up', 'queue', 'uniqueid'].sort(),
-    'inserted_at is the database default; nothing else may be collected');
+    ['caller_num', 'created_at', 'operator_name', 'picked_up', 'queue', 'uniqueid', 'duration_sec', 'talk_sec'].sort(),
+    'inserted_at is the database default; nothing else may be collected, never the recording');
+  assert.equal(row.duration_sec, 96);
+  assert.equal(row.talk_sec, 70);
+  const none = toRow(call());
+  assert.equal(none.duration_sec, null, 'no length sent = null');
+  assert.equal(none.talk_sec, null);
+});
+
+// 14.10.2026: TeleGroup's duration / duration_talk, format not yet seen - read defensively
+test('the call length: seconds as a number or digit string, MM:SS, H:MM:SS; anything else is null', () => {
+  assert.equal(toSeconds(754), 754);
+  assert.equal(toSeconds(0), 0);
+  assert.equal(toSeconds(12.6), 13);
+  assert.equal(toSeconds('754'), 754);
+  assert.equal(toSeconds(' 25 '), 25);
+  assert.equal(toSeconds('12:04'), 724);
+  assert.equal(toSeconds('00:25'), 25);
+  assert.equal(toSeconds('75:00'), 4500, 'minutes past an hour without an hour part');
+  assert.equal(toSeconds('1:02:03'), 3723);
+  assert.equal(toSeconds('01:02:03'), 3723);
+  for (const bad of ['', '   ', null, undefined, 'abc', -5, '-5', '-0:25', NaN, Infinity, '12:60', '1:60:00', '12:4',
+    '1:2:3', '12.5', '12s', true, {}, [], 90000, '90000']) {
+    assert.equal(toSeconds(bad), null, JSON.stringify(bad) + ' is not a length');
+  }
 });
 
 // ============================================== 10. duplicates and upsert ====
