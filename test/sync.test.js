@@ -44,7 +44,7 @@ async function waitingEmail(db, email = 'jonas@example.com') {
 const call = (over = {}) => ({
   uniqueid: '1727514000.1', destination: 'incoming', queue: '1001*Q-ADMISSION',
   caller_num: '+37129111222', state: 'ANSWER', operator_name: 'Ieva',
-  created_at: '2026-09-28 11:58:00', ...over,
+  created_at: '2026-09-28 08:58:00', ...over,   // UTC wall-clock, as TeleGroup writes it (14.10.2026): 11:58 Riga
 });
 const pbxFetch = (calls) => async () => ({ ok: true, status: 200, json: async () => calls, text: async () => '' });
 
@@ -67,7 +67,7 @@ test('phone: a known caller is logged on the person, not sent to the Inbox', asy
   assert.equal(ev.length, 1);
   assert.equal(ev[0].subject, 'Incoming call on button 1 (Admissions), answered by Ieva');
   assert.equal(ev[0].origin, 'automatic');
-  assert.equal(ev[0].occurred_at, '2026-09-28T08:58:00.000Z', 'Riga 11:58 in summer is 08:58 UTC');
+  assert.equal(ev[0].occurred_at, '2026-09-28T08:58:00.000Z', 'the PBX 08:58 is UTC: 11:58 Riga in summer');
   const row = await db.prepare('SELECT * FROM people WHERE id = ?').get(p.id);
   assert.equal(row.last_contact_at, '2026-09-28T08:58:00.000Z');
   assert.equal((await inbox(db)).length, 0);
@@ -158,8 +158,9 @@ test('phone catch-up: the first run reads the last 24 hours in 96 pieces of 15 m
   assert.equal(r.caughtUp, true);
   const win = pbx.seen.slice(0, r.pieces);      // the run's own window; the late sweep's pieces come after it
   for (let i = 1; i < win.length; i++) assert.equal(win[i].from, win[i - 1].to, 'no gap between pieces');
-  assert.equal(win[0].from, '2026-09-27 12:05:00', '24 hours back, in Riga time');
-  assert.equal(win.at(-1).to, '2026-09-28 12:05:00');
+  // the stamps sent to TeleGroup are UTC wall-clock (14.10.2026), not Riga
+  assert.equal(win[0].from, '2026-09-27 09:05:00', '24 hours back, in UTC wall-clock');
+  assert.equal(win.at(-1).to, '2026-09-28 09:05:00');
 });
 
 test('phone catch-up: the next run starts from the bookmark (2 minutes early), not from 24 hours back', async () => {
@@ -168,8 +169,8 @@ test('phone catch-up: the next run starts from the bookmark (2 minutes early), n
   const pbx = recordingPbx();
   const later = new Date(NOW.getTime() + 3 * 3600000);
   const r = await syncPbx(db, { now: later, env: ON, fetchImpl: pbx.fetchImpl });
-  assert.equal(pbx.seen[0].from, '2026-09-28 12:03:00');
-  assert.equal(pbx.seen[r.pieces - 1].to, '2026-09-28 15:05:00', 'the window; the late sweep follows it');
+  assert.equal(pbx.seen[0].from, '2026-09-28 09:03:00');      // UTC wall-clock
+  assert.equal(pbx.seen[r.pieces - 1].to, '2026-09-28 12:05:00', 'the window; the late sweep follows it');
   assert.equal(r.pieces, 13, '3 hours and 2 minutes = 12 full pieces and a short one');
 });
 
@@ -194,8 +195,9 @@ test('phone catch-up: a run that runs out of time saves how far it got, and the 
   const mark = Date.parse((await db.prepare("SELECT value FROM sync_state WHERE name = 'pbx_until'").get()).value);
   assert.equal(mark, NOW.getTime(), 'the bookmark ends at now');
   const { toRigaStamp } = await import('../lib/riga.js');
+  const { PBX_ZONE } = await import('../lib/pbx.js');
   const stopped = NOW.getTime() - 24 * 3600000 + first.pieces * 15 * 60000;
-  assert.equal(pbx.seen[0].from, toRigaStamp(new Date(stopped - 2 * 60000)), 'carries on from where the first run stopped');
+  assert.equal(pbx.seen[0].from, toRigaStamp(new Date(stopped - 2 * 60000), PBX_ZONE), 'carries on from where the first run stopped');
   assert.equal(first.pieces + second.pieces, 97, 'the one extra piece is the 2-minute overlap');
 });
 
@@ -215,7 +217,7 @@ test('retention: a phone call older than 13 months is deleted, a newer one is ke
   const db = await fresh();
   const p = await person(db, { phone: '29111222' });
   const old = new Date(NOW.getTime() - 400 * 86400000);
-  await syncPbx(db, { now: old, env: ON, fetchImpl: pbxFetch([call({ uniqueid: 'old-1', created_at: '2025-08-24 11:00:00' })]) });
+  await syncPbx(db, { now: old, env: ON, fetchImpl: pbxFetch([call({ uniqueid: 'old-1', created_at: '2025-08-24 08:00:00' })]) });
   await db.prepare("DELETE FROM sync_state WHERE name = 'pbx_until'").run();
   const r = await syncPbx(db, { now: NOW, env: ON, fetchImpl: pbxFetch([call({ uniqueid: 'new-1' })]) });
   assert.equal(r.purged, 1);
@@ -462,9 +464,9 @@ test('sis -> lifecycle: a fact on the second page is found (the cursor is follow
 test('phone: the same unknown number ringing again joins the row it already has', async () => {
   const db = await fresh();
   const first = call({ uniqueid: 'c1', state: 'NOANSWER', operator_name: '',
-    queue: '1001*Q-OTHER', created_at: '2026-09-28 11:58:00' });
+    queue: '1001*Q-OTHER', created_at: '2026-09-28 08:58:00' });      // UTC wall-clock: 11:58 Riga
   const second = call({ uniqueid: 'c2', state: 'NOANSWER', operator_name: '',
-    queue: '1001*Q-OTHER', caller_num: '371 29 111 222', created_at: '2026-09-28 12:01:00' });
+    queue: '1001*Q-OTHER', caller_num: '371 29 111 222', created_at: '2026-09-28 09:01:00' });   // 12:01 Riga
 
   const a = await syncPbx(db, { now: NOW, env: ON, fetchImpl: pbxFetch([first]) });
   assert.equal(a.inbox, 1);

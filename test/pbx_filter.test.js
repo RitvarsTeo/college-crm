@@ -19,7 +19,7 @@ const NOW = new Date('2026-10-01T09:05:00Z');
 const call = (over = {}) => ({
   uniqueid: 'c1', destination: 'incoming', queue: '1001*Q-ADMISSION',
   caller_num: '+37129111222', state: 'ANSWER', operator_name: 'Ieva',
-  created_at: '2026-10-01 11:58:00', ...over,
+  created_at: '2026-10-01 08:58:00', ...over,   // UTC wall-clock, as TeleGroup writes it (14.10.2026): 11:58 Riga
 });
 const pbxFetch = (calls) => async () => ({ ok: true, status: 200, json: async () => calls, text: async () => '' });
 const run = (db, calls, now = NOW) => syncPbx(db, { now, env: ON, fetchImpl: pbxFetch(calls) });
@@ -51,7 +51,7 @@ test('phone filter: a missed first call reaches New Leads too, with the number t
 test('phone filter: the same unknown number calling again adds to its open item, one row in New Leads', async () => {
   const db = await openDb(':memory:');
   await run(db, [call()]);
-  const r = await run(db, [call({ uniqueid: 'c2', state: 'NOANSWER', operator_name: '', created_at: '2026-10-01 12:20:00' })],
+  const r = await run(db, [call({ uniqueid: 'c2', state: 'NOANSWER', operator_name: '', created_at: '2026-10-01 09:20:00' })],
     new Date('2026-10-01T09:30:00Z'));
   assert.equal(r.inbox, 0);
   // One counter for this, not two. The channels lane called it folded and the intake-flow
@@ -74,7 +74,7 @@ test('phone filter: a number archived as Spam, Supplier or vendor, or Internal i
     await run(db, [call()]);
     const [first] = await listInbound(db, { state: 'new' });
     assert.equal((await archive(db, first.id, { reason, note: reason === 'Internal' ? 'our own line' : '', by: 'Ieva' })).ok, true);
-    const r = await run(db, [call({ uniqueid: 'c2', created_at: '2026-10-01 12:20:00' })], new Date('2026-10-01T09:30:00Z'));
+    const r = await run(db, [call({ uniqueid: 'c2', created_at: '2026-10-01 09:20:00' })], new Date('2026-10-01T09:30:00Z'));
     assert.equal(r.filtered, 1, reason);
     assert.equal(r.inbox, 0, reason);
     assert.equal((await listInbound(db, { state: 'new' })).length, 0, `${reason}: not in the queue`);
@@ -94,7 +94,7 @@ test('phone filter: any other archive reason does not filter the number; the nex
   await run(db, [call()]);
   const [first] = await listInbound(db, { state: 'new' });
   await archive(db, first.id, { reason: 'Not a prospective student', by: 'Ieva' });
-  const r = await run(db, [call({ uniqueid: 'c2', created_at: '2026-10-01 12:20:00' })], new Date('2026-10-01T09:30:00Z'));
+  const r = await run(db, [call({ uniqueid: 'c2', created_at: '2026-10-01 09:20:00' })], new Date('2026-10-01T09:30:00Z'));
   assert.equal(r.inbox, 1);
   assert.equal(r.filtered, 0);
 });
@@ -126,7 +126,7 @@ test('a missed call from a known lead puts a Call back step in their Today', asy
 test('a second missed call does not stack a second Call back', async () => {
   const db = await openDb(':memory:');
   await db.prepare('INSERT INTO people (id, name, phone, status) VALUES (?,?,?,?)').run('p1', 'Jonas', '+37129111222', 'Contacted');
-  await run(db, [call({ state: 'NOANSWER' }), call({ uniqueid: 'c2', state: 'NOANSWER', created_at: '2026-10-01 12:03:00' })]);
+  await run(db, [call({ state: 'NOANSWER' }), call({ uniqueid: 'c2', state: 'NOANSWER', created_at: '2026-10-01 09:03:00' })]);
   const open = await db.prepare("SELECT * FROM tasks WHERE person_id = ? AND done_at IS NULL AND label = 'Call back'").all('p1');
   assert.equal(open.length, 1);
 });

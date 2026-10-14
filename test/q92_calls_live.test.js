@@ -20,8 +20,10 @@ import { listInbound, archive, bringBack, receive, setAsideOldCalls, OLD_CALL_RE
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const ON = { PBX_API_TOKEN: 'test-pbx-token-not-real-0000', CHANNEL_MODE_PHONE: 'live' };
 const call = (over = {}) => ({ uniqueid: 'c1', destination: 'incoming', queue: '1001*Q-ADMISSION',
-  caller_num: '+37129111222', state: 'ANSWER', operator_name: 'Laura', created_at: '2026-10-14 11:58:00', ...over });
-// A fake TeleGroup: the calls whose Riga time falls inside the window asked for, like the real list.
+  caller_num: '+37129111222', state: 'ANSWER', operator_name: 'Laura', created_at: '2026-10-14 08:58:00', ...over });   // 11:58 Riga
+// A fake TeleGroup: the calls whose time falls inside the window asked for, like the real list. TeleGroup speaks
+// UTC wall-clock both ways (14.10.2026: a 09:59 Riga call came back as 06:59), so every created_at below is UTC,
+// 3 hours behind the Riga time the test reads (EEST).
 function fakeTeleGroup(calls, { status = 200, retryAfter = null } = {}) {
   const seen = { requests: 0 };
   const fetchImpl = async (url) => {
@@ -43,7 +45,7 @@ test('1: the pull runs every minute; a caught-up run asks once and writes nothin
   assert.equal(vercel.crons.find((c) => c.path === '/api/cron/pbx-calls').schedule, '* * * * *');
   assert.match(fs.readFileSync(path.join(ROOT, 'api', 'cron', 'pbx-calls.js'), 'utf8'), /authoriseCron\(/, 'still CRON_SECRET');
   const db = await openDb(':memory:');
-  const tg = fakeTeleGroup([call({ created_at: '2026-10-14 11:58:30' })]);
+  const tg = fakeTeleGroup([call({ created_at: '2026-10-14 08:58:30' })]);
   await run(db, tg, '2026-10-14T08:59:00Z');                 // 11:59 Riga: the call is in
   assert.equal((await listInbound(db, { state: 'new' })).length, 1);
   const before = tg.seen.requests;
@@ -58,7 +60,7 @@ test('1: the pull runs every minute; a caught-up run asks once and writes nothin
 
 test('1: TeleGroup answers 429 -> the pull waits (Retry-After), the bookmark stays, nothing is skipped', async () => {
   const db = await openDb(':memory:');
-  const tg = fakeTeleGroup([call({ created_at: '2026-10-14 12:00:30' })], { retryAfter: '120' });
+  const tg = fakeTeleGroup([call({ created_at: '2026-10-14 09:00:30' })], { retryAfter: '120' });
   await run(db, tg, '2026-10-14T08:59:00Z');
   const mark = (await db.prepare("SELECT value FROM sync_state WHERE name = 'pbx_until'").get()).value;
   tg.seen.status429 = true;
@@ -79,7 +81,7 @@ test('1: TeleGroup answers 429 -> the pull waits (Retry-After), the bookmark sta
 // ---------------------------------------------------------------------------- 2 --
 test('2: a phone card lists each call: time, line, answered by whom or missed; newest first', async () => {
   const db = await openDb(':memory:');
-  const tg = fakeTeleGroup([call(), call({ uniqueid: 'c2', state: 'NOANSWER', operator_name: '', created_at: '2026-10-14 12:20:00',
+  const tg = fakeTeleGroup([call(), call({ uniqueid: 'c2', state: 'NOANSWER', operator_name: '', created_at: '2026-10-14 09:20:00',
     queue: '1001*Q-COORDINATORS' })]);
   await run(db, tg, '2026-10-14T09:30:00Z');
   const [card] = await listInbound(db, { state: 'new' });
@@ -116,18 +118,18 @@ test('3: after Not a lead, the next call from that number reaches the Inbox; Spa
   await run(db, fakeTeleGroup([call()]), '2026-10-14T09:00:00Z');
   const [card] = await listInbound(db, { state: 'new' });
   assert.equal((await archive(db, card.id, { reason: 'Not a lead', by: 'Laura' })).ok, true);
-  const r = await run(db, fakeTeleGroup([call({ uniqueid: 'c2', caller_num: '29111222', created_at: '2026-10-14 12:10:00' })]),
+  const r = await run(db, fakeTeleGroup([call({ uniqueid: 'c2', caller_num: '29111222', created_at: '2026-10-14 09:10:00' })]),
     '2026-10-14T09:11:00Z');
   assert.equal(r.filtered, 0, 'no number is remembered');
   assert.equal(r.inbox, 1);
   // Spam is explicit, and it does remember
   const [second] = await listInbound(db, { state: 'new' });
   await archive(db, second.id, { reason: 'Spam', by: 'Laura' });
-  const s2 = await run(db, fakeTeleGroup([call({ uniqueid: 'c3', created_at: '2026-10-14 12:20:00' })]), '2026-10-14T09:21:00Z');
+  const s2 = await run(db, fakeTeleGroup([call({ uniqueid: 'c3', created_at: '2026-10-14 09:20:00' })]), '2026-10-14T09:21:00Z');
   assert.equal(s2.filtered, 1);
   // the number becomes a person's: their calls go on their profile, whatever the filter says
   await db.prepare(`INSERT INTO people (id, name, phone, status, owner, created_at) VALUES ('p1', 'Anna', '+371 29 111 222', 'new', 'Ieva', '2026-10-14T09:22:00Z')`).run();
-  const k = await run(db, fakeTeleGroup([call({ uniqueid: 'c4', created_at: '2026-10-14 12:25:00' })]), '2026-10-14T09:26:00Z');
+  const k = await run(db, fakeTeleGroup([call({ uniqueid: 'c4', created_at: '2026-10-14 09:25:00' })]), '2026-10-14T09:26:00Z');
   assert.equal(k.logged, 1);
   assert.equal(k.filtered, 0);
 });
@@ -138,11 +140,11 @@ test('3: Spam - Bring back undoes it, on the Spam card or on a later card of tha
     await run(db, fakeTeleGroup([call()]), '2026-10-14T09:00:00Z');
     const [card] = await listInbound(db, { state: 'new' });
     await archive(db, card.id, { reason: 'Spam', by: 'Ieva' });
-    await run(db, fakeTeleGroup([call({ uniqueid: 'c2', created_at: '2026-10-14 12:10:00' })]), '2026-10-14T09:11:00Z');
+    await run(db, fakeTeleGroup([call({ uniqueid: 'c2', created_at: '2026-10-14 09:10:00' })]), '2026-10-14T09:11:00Z');
     const later = await db.prepare("SELECT id FROM inbound WHERE state = 'filtered'").get();
     const back = which === 'the card itself' ? card.id : later.id;
     assert.equal((await bringBack(db, back, { by: 'Ieva', at: '2026-10-14T09:12:00Z' })).ok, true, which);
-    const r = await run(db, fakeTeleGroup([call({ uniqueid: 'c3', created_at: '2026-10-14 12:20:00' })]), '2026-10-14T09:21:00Z');
+    const r = await run(db, fakeTeleGroup([call({ uniqueid: 'c3', created_at: '2026-10-14 09:20:00' })]), '2026-10-14T09:21:00Z');
     assert.equal(r.filtered, 0, which + ': no longer set aside');
     assert.equal(r.inbox + r.again, 1, which + ': it reaches the Inbox');
   }
@@ -168,15 +170,16 @@ test('3: release - calls set aside because their number was once "Not Admissions
   assert.deepEqual(h.map((x) => [x.action, x.actor]), [['brought_back', 'Ritvars']]);
   assert.equal((await db.prepare("SELECT value FROM sync_state WHERE name = 'not_admissions_released'").get()).value, '1');
   // and the next call from that number reaches the Inbox
-  const r = await run(db, fakeTeleGroup([call({ uniqueid: 'c9', created_at: '2026-10-14 12:30:00' })]), '2026-10-14T09:31:00Z');
+  const r = await run(db, fakeTeleGroup([call({ uniqueid: 'c9', created_at: '2026-10-14 09:30:00' })]), '2026-10-14T09:31:00Z');
   assert.equal(r.filtered, 0);
 });
 
 // ---------------------------------------------------------------------------- 4 --
 test('4: old calls - a preview moves nothing; apply sets aside only phone items from before the day, logged; Bring back works', async () => {
   const db = await openDb(':memory:');
-  await run(db, fakeTeleGroup([call({ uniqueid: 'o1', caller_num: '+37120000001', created_at: '2026-10-13 23:50:00' }),
-    call({ uniqueid: 'o2', caller_num: '+37120000002', created_at: '2026-10-14 00:10:00' })]), '2026-10-14T06:00:00Z');
+  // both stamps are 13.10 in UTC; in Riga o1 is 23:50 on 13.10 and o2 is 00:10 on 14.10 - the day is Riga's
+  await run(db, fakeTeleGroup([call({ uniqueid: 'o1', caller_num: '+37120000001', created_at: '2026-10-13 20:50:00' }),
+    call({ uniqueid: 'o2', caller_num: '+37120000002', created_at: '2026-10-13 21:10:00' })]), '2026-10-14T06:00:00Z');
   const ids = Object.fromEntries((await db.prepare('SELECT uniqueid, inbound_id FROM pbx_calls').all()).map((c) => [c.uniqueid, c.inbound_id]));
   assert.deepEqual((await setAsideOldCalls(db, { before: '14.10' })).error, 'before must be a day, YYYY-MM-DD');
   const look = await setAsideOldCalls(db, { before: '2026-10-14' });
@@ -260,7 +263,7 @@ function lateTeleGroup(list) {
 
 test('late: a call TeleGroup lists 3 hours late, with its original time, is still caught by the sweep; recorded how late', async () => {
   const db = await openDb(':memory:');
-  const tg = lateTeleGroup([call({ uniqueid: 'late1', created_at: '2026-10-14 09:59:00', listedFrom: '2026-10-14T09:58:00Z' })]);
+  const tg = lateTeleGroup([call({ uniqueid: 'late1', created_at: '2026-10-14 06:59:00', listedFrom: '2026-10-14T09:58:00Z' })]);
   // every minute from 06:55 to 07:05 UTC: the call is not listed yet
   for (let m = 55; m <= 65; m++) {
     const now = new Date(Date.UTC(2026, 9, 14, 6, m)).toISOString();
@@ -290,7 +293,7 @@ test('late: a call TeleGroup lists 3 hours late, with its original time, is stil
 
 test('late: the sweep covers the trailing 48 hours, never re-stores a call, and every run stays small', async () => {
   const db = await openDb(':memory:');
-  const tg = lateTeleGroup([call({ uniqueid: 'old1', created_at: '2026-10-12 18:00:00', listedFrom: '2026-10-12T00:00:00Z' })]);
+  const tg = lateTeleGroup([call({ uniqueid: 'old1', created_at: '2026-10-12 15:00:00', listedFrom: '2026-10-12T00:00:00Z' })]);
   const starts = [];
   let total = 0;
   for (let m = 0; m < 40; m++) {

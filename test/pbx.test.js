@@ -7,6 +7,10 @@
 // The timezone tests deliberately assert Europe/Riga behaviour rather than the
 // machine's own zone, and cover both EET (+02:00) and EEST (+03:00) plus the two
 // Sundays the clocks move.
+//
+// THE PBX ITSELF SPEAKS UTC (14.10.2026): a test call at 09:59 Riga came back as
+// created_at 06:59. So the window sent to TeleGroup and every created_at read from
+// it are UTC wall-clock (PBX_ZONE); Riga is for what people read.
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -14,7 +18,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  QUEUES, PBX_URL, WINDOW_MINUTES,
+  QUEUES, PBX_URL, WINDOW_MINUTES, PBX_ZONE,
   isOurs, toRow, rowsFrom, buildRequest, fetchCalls,
   authoriseCron, redact, requiredEnv,
 } from '../lib/pbx.js';
@@ -36,7 +40,7 @@ const call = (over = {}) => ({
   caller_num: '+37129111222',
   state: 'ANSWER',
   operator_name: 'Ieva',
-  created_at: '2026-09-23 14:05:00',
+  created_at: '2026-09-23 11:05:00',      // UTC wall-clock, as TeleGroup writes it: 14:05 Riga
   ...over,
 });
 
@@ -121,6 +125,7 @@ test('10. a duplicate uniqueid inside one batch is collapsed', async () => {
   assert.equal(skipped.duplicateInBatch, 1);
 });
 
+// pollWindow itself: Riga by default (lib/riga.js), any zone when asked. The PBX asks it for UTC (below).
 test('11. the window is 15 minutes, in Riga wall clock, in the API format', async () => {
   const now = new Date('2026-09-23T11:05:00.000Z');       // 14:05 Riga, EEST
   const w = pollWindow(WINDOW_MINUTES, now);
@@ -197,9 +202,28 @@ test('a round trip through Riga and back is the same instant, in both seasons', 
   }
 });
 
-test('a PBX created_at is read as Riga, not as UTC, in both seasons', async () => {
-  assert.equal(toRow(call({ created_at: '2026-01-15 14:00:00' })).created_at, '2026-01-15T12:00:00.000Z');
-  assert.equal(toRow(call({ created_at: '2026-07-15 15:00:00' })).created_at, '2026-07-15T12:00:00.000Z');
+// 14.10.2026: a test call at 09:59 Riga came back as 06:59, and across 71 stored calls the gap between
+// the stated time and storage was never under 183 minutes. The stamp is UTC; reading it as Riga put
+// every call 2 hours (winter) or 3 hours (summer) early.
+test('a PBX created_at is read as UTC, not as Riga, in both seasons', async () => {
+  assert.equal(PBX_ZONE, 'UTC');
+  assert.equal(toRow(call({ created_at: '2026-01-15 12:00:00' })).created_at, '2026-01-15T12:00:00.000Z', 'EET');
+  assert.equal(toRow(call({ created_at: '2026-07-15 12:00:00' })).created_at, '2026-07-15T12:00:00.000Z', 'EEST');
+  // and a person still reads it in Riga: 14:00 in winter, 15:00 in summer
+  assert.equal(toRigaStamp(toRow(call({ created_at: '2026-01-15 12:00:00' })).created_at), '2026-01-15 14:00:00');
+  assert.equal(toRigaStamp(toRow(call({ created_at: '2026-07-15 12:00:00' })).created_at), '2026-07-15 15:00:00');
+  // the old Riga reading, explicitly, is not what the map does any more
+  assert.notEqual(toRow(call({ created_at: '2026-07-15 15:00:00' })).created_at, '2026-07-15T12:00:00.000Z');
+});
+
+test('the 14.10.2026 test call: stamped 06:59 UTC, stored as that instant, shown as 09:59 Riga', async () => {
+  const row = toRow(call({ created_at: '2026-10-14 06:59:35' }));
+  assert.equal(row.created_at, '2026-10-14T06:59:35.000Z');
+  assert.equal(toRigaStamp(row.created_at).slice(11, 16), '09:59');
+  // and a 2-minute window built at 07:00 UTC asks TeleGroup for 06:58 to 07:00, UTC wall-clock
+  const u = new URL(buildRequest({ env: ENV, minutes: 2, now: new Date('2026-10-14T07:00:00Z') }).url);
+  assert.equal(u.searchParams.get('dateFrom'), '2026-10-14 06:58:00');
+  assert.equal(u.searchParams.get('dateTo'), '2026-10-14 07:00:00');
 });
 
 // ======================================== 12-14. failure, secrets, logging ===
@@ -300,12 +324,16 @@ test('a refusal says Unauthorized and nothing about the secret', async () => {
 });
 
 test('the request goes to the documented endpoint, with the token as a query parameter', async () => {
-  const req = buildRequest({ env: ENV, now: new Date('2026-09-23T11:05:00Z') });
+  const req = buildRequest({ env: ENV, now: new Date('2026-09-23T11:05:00Z') });   // 14:05 Riga
   const u = new URL(req.url);
   assert.equal(u.origin + u.pathname, PBX_URL);
   assert.equal(u.searchParams.get('token'), FAKE_TOKEN, 'query param, because headers are refused by this API');
-  assert.equal(u.searchParams.get('dateFrom'), '2026-09-23 13:50:00');
-  assert.equal(u.searchParams.get('dateTo'), '2026-09-23 14:05:00');
+  // UTC wall-clock, because TeleGroup speaks UTC (14.10.2026), not the Riga 13:50-14:05
+  assert.equal(u.searchParams.get('dateFrom'), '2026-09-23 10:50:00');
+  assert.equal(u.searchParams.get('dateTo'), '2026-09-23 11:05:00');
+  // and in winter too: no offset either way
+  const w = new URL(buildRequest({ env: ENV, now: new Date('2026-01-15T12:00:00Z') }).url);
+  assert.equal(w.searchParams.get('dateTo'), '2026-01-15 12:00:00');
 });
 
 test('the window asked for is short, because a wide one makes the API fail', async () => {

@@ -8,7 +8,7 @@
 // TELEGROUP'S REAL FORMAT IS NOT KNOWN. Everything below `adaptPhoneEvent` speaks OUR field names
 // (docs/channel-writeups/phone-events.md is the shape we will ask them for). adaptPhoneEvent is the
 // one place that changes when their format is known, and it already accepts the names their call
-// LIST uses today (uniqueid, caller_num, operator_name, created_at as Riga wall-clock).
+// LIST uses today (uniqueid, caller_num, operator_name, created_at as UTC wall-clock - lib/pbx.js PBX_ZONE, 14.10.2026).
 //
 // EACH EVENT IS STORED ONCE: call id + event is unique, so a retry is a repeat, not a second row.
 //
@@ -19,7 +19,7 @@
 
 import { BadInbound } from './inbound.js';
 import { storeCall } from './sync.js';
-import { QUEUES } from '../lib/pbx.js';
+import { QUEUES, PBX_ZONE } from '../lib/pbx.js';
 import { fromRigaStamp } from '../lib/riga.js';
 import { knock } from './webpush.js';
 
@@ -42,8 +42,8 @@ function when(v) {
     const n = Number(v);
     return new Date(n < 1e12 ? n * 1000 : n).toISOString();
   }
-  // their call list writes Riga wall-clock without a zone: read it as Riga, never as UTC
-  if (/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2})?$/.test(String(v).trim())) return fromRigaStamp(String(v)).toISOString();
+  // their call list writes UTC wall-clock without a zone (14.10.2026): read it in PBX_ZONE, the same as the pull
+  if (/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2})?$/.test(String(v).trim())) return fromRigaStamp(String(v), PBX_ZONE).toISOString();
   const t = Date.parse(v);
   return Number.isNaN(t) ? null : new Date(t).toISOString();
 }

@@ -167,7 +167,7 @@ test('the Gmail run saves its reply read with the run, refused threads included'
 
 test('(b) the phone run saves how many calls of each destination the list returned: counts only', async () => {
   const c = (over) => ({ uniqueid: 'u' + Math.random(), destination: 'incoming', queue: '1001*Q-ADMISSION', caller_num: '+37129111222',
-    state: 'ANSWER', operator_name: 'op', created_at: '2026-10-01 11:58:00', ...over });
+    state: 'ANSWER', operator_name: 'op', created_at: '2026-10-01 08:58:00', ...over });   // UTC wall-clock (14.10.2026): 11:58 Riga
   const calls = [c({}), c({ destination: 'outgoing', queue: null }), c({ destination: 'outgoing', queue: null }), c({ destination: 'internal' }), c({ destination: undefined })];
   assert.deepEqual(rowsFrom(calls).destinations, { incoming: 1, outgoing: 2, internal: 1, none: 1 });
   const db = await openDb(':memory:');

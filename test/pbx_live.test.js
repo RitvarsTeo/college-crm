@@ -16,23 +16,24 @@ const TOKEN = 'test-pbx-token-not-real-0000';
 
 test('pbx live: the last 2 minutes, only the six fields, the caller cut to 4 digits', async () => {
   const seen = [];
+  // TeleGroup writes UTC wall-clock (14.10.2026): 13:01 UTC is 16:01 Riga
   const fetchImpl = async (url) => {
     seen.push(String(url));
     return { ok: true, status: 200, json: async () => [
-      { uniqueid: '1727690000.1', created_at: '2026-09-30 16:01:10', queue: '1001*Q-ADMISSION', state: 'RINGING',
+      { uniqueid: '1727690000.1', created_at: '2026-09-30 13:01:10', queue: '1001*Q-ADMISSION', state: 'RINGING',
         operator_name: null, caller_num: '+37129990123', destination: 'incoming', recording: 'secret.wav', extra: 'x' },
-      { uniqueid: '1727690000.2', created_at: '2026-09-30 16:01:30', queue: '1001*Q-OTHER', state: 'ANSWER',
+      { uniqueid: '1727690000.2', created_at: '2026-09-30 13:01:30', queue: '1001*Q-OTHER', state: 'ANSWER',
         operator_name: 'Ieva', caller_num: '20000000' }] };
   };
   const r = await pbxLive({ env: { PBX_API_TOKEN: TOKEN }, fetchImpl, now: new Date('2026-09-30T13:02:00Z') });
   assert.equal(r.ok, true);
   assert.equal(r.minutes, 2);
-  assert.deepEqual(r.calls[0], { uniqueid: '1727690000.1', created_at: '2026-09-30 16:01:10', queue: '1001*Q-ADMISSION',
+  assert.deepEqual(r.calls[0], { uniqueid: '1727690000.1', created_at: '2026-09-30 13:01:10', queue: '1001*Q-ADMISSION',
     state: 'RINGING', operator_name: null, caller_last4: '0123' });
   assert.deepEqual(Object.keys(r.calls[1]), ['uniqueid', 'created_at', 'queue', 'state', 'operator_name', 'caller_last4']);
   const u = new URL(seen[0]);
-  assert.equal(u.searchParams.get('dateFrom'), '2026-09-30 16:00:00', 'two minutes back, Riga time');
-  assert.equal(u.searchParams.get('dateTo'), '2026-09-30 16:02:00');
+  assert.equal(u.searchParams.get('dateFrom'), '2026-09-30 13:00:00', 'two minutes back, UTC wall-clock (14.10.2026)');
+  assert.equal(u.searchParams.get('dateTo'), '2026-09-30 13:02:00');
   assert.ok(!JSON.stringify(r).includes(TOKEN), 'never the token');
 });
 

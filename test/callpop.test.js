@@ -38,11 +38,12 @@ test('the adapter: our names, and the names TeleGroup\'s call list already uses'
   const a = adaptPhoneEvent({ call_id: 'c1', event: 'ringing', caller: '+37129990001', queue: Q, operator: null, at: '2026-10-04T08:00:00Z' });
   assert.equal(a.callId, 'c1');
   assert.equal(a.event, 'ringing');
-  const b = adaptPhoneEvent({ uniqueid: 'u9', state: 'ANSWER', caller_num: '29990001', operator_name: 'Ieva K', created_at: '2026-10-04 11:00:00' });
+  const b = adaptPhoneEvent({ uniqueid: 'u9', state: 'ANSWER', caller_num: '29990001', operator_name: 'Ieva K', created_at: '2026-10-04 08:00:00' });
   assert.equal(b.callId, 'u9');
   assert.equal(b.event, 'answered');
   assert.equal(b.operator, 'Ieva K');
-  assert.equal(b.at, '2026-10-04T08:00:00.000Z', 'Riga wall clock, read as Riga');
+  // the call list's stamp is UTC wall-clock (14.10.2026: a 09:59 Riga call came back as 06:59), read as UTC, like the pull
+  assert.equal(b.at, '2026-10-04T08:00:00.000Z', 'UTC wall clock, read as UTC: 11:00 Riga');
   assert.equal(adaptPhoneEvent({ call_id: 'x', type: 'HANGUP', answered: 'true' }).event, 'ended');
   assert.throws(() => adaptPhoneEvent({ event: 'ringing' }), /no call_id/);
   assert.throws(() => adaptPhoneEvent({ call_id: 'x', event: 'dancing' }), /unknown event/);
