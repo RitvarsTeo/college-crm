@@ -14,6 +14,7 @@
 // a name Intake does not know, it stays with everybody.
 
 import fs from 'node:fs';
+import { rememberedAs } from './phonefilter.js';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -21,11 +22,22 @@ import { fileURLToPath } from 'node:url';
 // coordinator Laura"): config.phoneMenu[n].popUp. Button 1 (Admissions) and 2 (Student Coordinator) pop up; button 3
 // (Other) does not. Its calls still reach the Inbox and the caller's history as before. An event that names no queue
 // (a push whose format we do not know yet) pops: it cannot be told apart, and a missed Admissions call is worse.
-const MENU = JSON.parse(fs.readFileSync(path.join(path.dirname(path.dirname(fileURLToPath(import.meta.url))), 'config', 'prototype.json'), 'utf8')).phoneMenu || {};
+const CFG = JSON.parse(fs.readFileSync(path.join(path.dirname(path.dirname(fileURLToPath(import.meta.url))), 'config', 'prototype.json'), 'utf8'));
+const MENU = CFG.phoneMenu || {};
 export function popsUp(queue, menu = MENU) {
   if (!queue) return true;
   const m = Object.values(menu).find((x) => x && x.queue === queue);
   return Boolean(m && m.popUp);
+}
+
+// A NUMBER THE PHONE FILTER SETS ASIDE NEVER POPS (Ritvars, 14.10.2026, "Yes, never pop"): Not Admissions, Spam and
+// the other phoneFilter.filterArchivedAs reasons, undone by Bring back exactly as in the pull. A caller who is a person
+// in Intake always pops: the person is looked for first, the same order as storeCall.
+export async function filteredCaller(db, callerNum, who = null) {
+  if (!callerNum) return false;
+  const w = who || await whoIsCalling(db, callerNum);
+  if (w.kind === 'person') return false;
+  return Boolean(await rememberedAs(db, callerNum, (CFG.phoneFilter || {}).filterArchivedAs || []));
 }
 
 // An app that was closed does not catch up on old calls: only events from the last few minutes.
@@ -99,8 +111,10 @@ export async function callFeed(db, { after = null, viewer = '', users = [], now 
     const someoneElse = Boolean(op && !mine && users.some((u) => isOperator(op, u)));
     // a known colleague took it: the others learn that, and nothing about the caller
     if (someoneElse) { events.push({ id: Number(r.id), callId: r.call_id, event: r.event, at: r.at, taken: true }); continue; }
+    const who = await whoIsCalling(db, r.caller_num);
+    if (await filteredCaller(db, r.caller_num, who)) continue;
     events.push({ id: Number(r.id), callId: r.call_id, event: r.event, at: r.at, operator: op, forYou: mine,
-      taken: false, who: await whoIsCalling(db, r.caller_num) });
+      taken: false, who });
   }
   return { last: Math.max(last, Number(after)), events };
 }
