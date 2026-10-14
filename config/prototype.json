@@ -991,6 +991,7 @@
     "1": {
       "role": "Admissions",
       "queue": "1001*Q-ADMISSION",
+      "popUp": true,
       "handledBy": [
         "Ieva"
       ]
@@ -998,6 +999,7 @@
     "2": {
       "role": "Student Coordinator",
       "queue": "1001*Q-COORDINATORS",
+      "popUp": true,
       "handledBy": [
         "Laura"
       ]
@@ -1005,6 +1007,8 @@
     "3": {
       "role": "Other",
       "queue": "1001*Q-OTHER",
+      "popUp": false,
+      "_popUp": "Ritvars 14.10.2026: for now only button 1 (Admissions) and button 2 (Coordinator, Laura) pop up; button 3 calls still reach the Inbox and history, without a pop-up.",
       "handledBy": [
         "Tetiana",
         "Arina"

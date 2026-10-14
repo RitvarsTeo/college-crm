@@ -84,7 +84,7 @@ export async function receivePhoneEvent(db, raw, { mode = 'test', now = new Date
     return { ok: true, duplicate: true, event: ev.event, callId: ev.callId };
   }
   // knock on the browsers that should hear about it (src/webpush.js); never fails the store
-  const pushed = await knock(db, { event: ev.event, operator: ev.operator });
+  const pushed = await knock(db, { event: ev.event, operator: ev.operator, queue: ev.queue });
   let call = null;
   if (ev.event === 'ended') call = await settleCall(db, ev, mode, at);
   return { ok: true, stored: true, event: ev.event, callId: ev.callId, call, pushed };

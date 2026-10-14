@@ -18,7 +18,7 @@
 // Without them push is simply off, and the open app still pops up as before.
 
 import crypto from 'node:crypto';
-import { isOperator } from './callpop.js';
+import { isOperator, popsUp } from './callpop.js';
 
 export const VAPID_ENV = ['VAPID_PUBLIC_KEY', 'VAPID_PRIVATE_KEY', 'VAPID_SUBJECT'];
 const b64u = (buf) => Buffer.from(buf).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -75,6 +75,7 @@ export async function targetsFor(db, ev, users = []) {
 // the push service says is gone (404, 410) is deleted.
 export async function knock(db, ev, { env = process.env, users = null, fetchImpl = fetch, timeoutMs = 3000 } = {}) {
   if (!pushConfigured(env)) return { sent: 0, skipped: 'push is not configured' };
+  if (!popsUp(ev.queue)) return { sent: 0, skipped: 'this button does not pop up' };
   if (!users) {
     try { users = (await db.prepare('SELECT display_name FROM crm_users WHERE active = 1').all()).map((u) => u.display_name).filter(Boolean); } catch { users = []; }
   }

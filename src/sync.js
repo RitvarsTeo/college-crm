@@ -210,7 +210,7 @@ async function callEventsFromPull(db, r, mode, at) {
     try {
       await db.prepare(`INSERT INTO call_events (call_id, event, at, queue, caller_num, operator, extension, source, received_at)
         VALUES (?,?,?,?,?,?,?,?,?)`).run(r.uniqueid, event, r.created_at, r.queue, r.caller_num, operator, null, source, at);
-      await knock(db, { event, operator });   // a new event only: a repeat never knocks twice
+      await knock(db, { event, operator, queue: r.queue });   // a new event only: a repeat never knocks twice
     } catch (err) {
       if (!/UNIQUE|duplicate key|unique constraint/i.test(String(err && err.message))) throw err;
     }

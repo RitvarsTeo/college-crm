@@ -13,6 +13,21 @@
 // Intake user); the others are told only that it was taken, so their card can close. Answered by
 // a name Intake does not know, it stays with everybody.
 
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+// WHICH BUTTONS POP UP (Ritvars, 14.10.2026: "for now, make only calls popup, who clicked number 1 for admissions or
+// coordinator Laura"): config.phoneMenu[n].popUp. Button 1 (Admissions) and 2 (Student Coordinator) pop up; button 3
+// (Other) does not. Its calls still reach the Inbox and the caller's history as before. An event that names no queue
+// (a push whose format we do not know yet) pops: it cannot be told apart, and a missed Admissions call is worse.
+const MENU = JSON.parse(fs.readFileSync(path.join(path.dirname(path.dirname(fileURLToPath(import.meta.url))), 'config', 'prototype.json'), 'utf8')).phoneMenu || {};
+export function popsUp(queue, menu = MENU) {
+  if (!queue) return true;
+  const m = Object.values(menu).find((x) => x && x.queue === queue);
+  return Boolean(m && m.popUp);
+}
+
 // An app that was closed does not catch up on old calls: only events from the last few minutes.
 export const FEED_MINUTES = 5;
 const PHONE_TAIL = 8;
@@ -74,10 +89,11 @@ export async function callFeed(db, { after = null, viewer = '', users = [], now 
   const last = Number((top && top.n) || 0);
   if (after === null || after === undefined || after === '' || !Number.isFinite(Number(after))) return { last, events: [] };
   const since = new Date(now.getTime() - FEED_MINUTES * 60000).toISOString();
-  const rows = await db.prepare(`SELECT id, call_id, event, at, caller_num, operator FROM call_events
+  const rows = await db.prepare(`SELECT id, call_id, event, at, queue, caller_num, operator FROM call_events
     WHERE id > ? AND received_at >= ? ORDER BY id LIMIT 50`).all(Number(after), since);
   const events = [];
   for (const r of rows) {
+    if (!popsUp(r.queue)) continue;     // button 3: no pop-up (14.10.2026)
     const op = r.operator || null;
     const mine = op ? isOperator(op, viewer) : false;
     const someoneElse = Boolean(op && !mine && users.some((u) => isOperator(op, u)));
