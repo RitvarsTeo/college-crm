@@ -23,10 +23,11 @@ this is a local prototype" stood here until 30.09.2026, from the weeks before th
   recording).
 - `DECIDED` Ask TeleGroup (via Aigars) whether their own incoming-call pop-up can open a link into Intake with the
   caller's number, so the two pop-ups are not duplicated.
-- `SAID` One rule on every card, every channel: **Make a lead / Not a lead**, one click, no reason list (Ieva finds the
-  7 reasons too many; "not a lead is all the things above"). Supplier or vendor / Internal / Spam become a MARK on the
-  number or address, kept until changed. "Already handled" goes: a known person's contact lands on their profile.
-  Waiting on one answer: Not a lead replaces Set aside everywhere it appears.
+- `DECIDED` One rule on every card, every channel: **Make a lead / Not a lead**, one click, no reason list (Ieva finds
+  the 7 reasons too many; "not a lead is all the things above"). **Not a lead replaces Set aside everywhere**; the same
+  folder stays (named Not a lead), Bring back stays. Supplier or vendor / Internal / Spam become a MARK on the number or
+  address, kept until changed (its contacts never pop and never reach the Inbox). "Already handled" goes: a known
+  person's contact lands on their profile.
 - `SAID` Big-screen bug: scrolling the Inbox on a big monitor breaks the folding top band (reproduced 14.10: the page
   froze when only ~160-240 px taller than the window). Fix in progress for every folding band.
 
