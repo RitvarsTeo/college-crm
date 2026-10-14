@@ -103,9 +103,11 @@ test('a stored call event knocks; a repeat of the same event does not', async ()
   try {
     const e = { call_id: 'k1', event: 'ringing', caller: '+37126660001', queue: Q, at: '2026-10-04T08:00:00Z' };
     const first = await receivePhoneEvent(db, e, { mode: 'test' });
-    assert.equal(first.pushed.sent, 2);
+    // Q94 (14.10.2026): a button 1 ring knocks on line 1's people (Ieva) and admins, not on Laura (line 2)
+    assert.equal(first.pushed.sent, 1);
+    assert.deepEqual(rec.calls.map((c) => c.url), ['https://push.example/ieva']);
     await receivePhoneEvent(db, e, { mode: 'test' });
-    assert.equal(rec.calls.length, 2, 'the retry knocked on nobody');
+    assert.equal(rec.calls.length, 1, 'the retry knocked on nobody');
   } finally {
     globalThis.fetch = realFetch;
     for (const k of Object.keys(env)) { if (k in saved) process.env[k] = saved[k]; else delete process.env[k]; }

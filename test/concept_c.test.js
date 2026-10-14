@@ -59,7 +59,7 @@ test('Today and the Inbox keep their own counts in C\'s navigation', () => {
   // Q47 + Q52: the counts are cPoolCounts', the user's NEW only
   const start = APP.indexOf('async function cPoolCounts(');
   const src = APP.slice(start, APP.indexOf('\n}\n', start));
-  assert.match(src, /const inbox = \(i\.rows \|\| \[\]\);/, 'the Inbox counts what is waiting');
+  assert.match(src, /const inbox = \(i\.rows \|\| \[\]\)\.filter\(\(r\) => cInLine\(r, line\)\);/, 'the Inbox counts what is waiting');
   assert.match(src, /cByPerson\(cDueNow\(t\)\)/, 'Today counts the people due now');
 });
 

@@ -2,8 +2,8 @@
 // numuru arī nāk diezgan daudz zvanu, kas nav ADMISSIONS"):
 //   1. the TeleGroup pull every minute; a 429 makes it wait, never skip;
 //   2. a phone card says each call plainly: when, the line, answered by whom or missed;
-//   3. "Not Admissions": one click sets the card aside and later calls from that number are set aside too; Bring back
-//      undoes it; a number that belongs to a person in Intake is never hidden;
+//   3. "Not a lead" (rethink 14.10.2026, replaces "Not Admissions"): one click sets THAT call aside, no number is
+//      remembered; only Spam, Supplier or vendor, Internal remember one; a person in Intake is never hidden;
 //   4. a one-off admin action sets aside the phone items from before calls were live, logged, nothing deleted.
 // Everything runs against a fake TeleGroup.
 import test from 'node:test';
@@ -15,7 +15,7 @@ import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { openDb } from '../src/db.js';
 import { syncPbx } from '../src/sync.js';
-import { listInbound, archive, bringBack, setAsideOldCalls, OLD_CALL_REASON, CONFIG } from '../src/intake.js';
+import { listInbound, archive, bringBack, receive, setAsideOldCalls, OLD_CALL_REASON, releaseNotAdmissions, RELEASED_NOTE, CONFIG } from '../src/intake.js';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const ON = { PBX_API_TOKEN: 'test-pbx-token-not-real-0000', CHANNEL_MODE_PHONE: 'live' };
@@ -90,7 +90,7 @@ test('2: a phone card lists each call: time, line, answered by whom or missed; n
   const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
   const TZ = 'Europe/Riga';
   const fmt = app.slice(app.indexOf('const fmtDateTime = '), app.indexOf('// Today in RIGA.'));
-  const fn = app.slice(app.indexOf('function cCallsHtml('), app.indexOf('// Q92: one click, no dialog'));
+  const fn = app.slice(app.indexOf('function cCallsHtml('), app.indexOf('async function cNotALead('));
   const ctx = { esc: (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;'), TZ };
   vm.runInNewContext(`const TZ = ${JSON.stringify(TZ)};` + fmt + fn + '; this.calls = cCallsHtml;', ctx);
   const html = ctx.calls(card.calls);
@@ -100,38 +100,44 @@ test('2: a phone card lists each call: time, line, answered by whom or missed; n
 });
 
 // ---------------------------------------------------------------------------- 3 --
-test('3: Not Admissions is a reason, and the phone filter remembers it', () => {
-  assert.ok(CONFIG.intake.archiveReasons.includes('Not Admissions'));
-  assert.ok(CONFIG.phoneFilter.filterArchivedAs.includes('Not Admissions'));
+// Rethink, Ritvars 14.10.2026 ("how do you know its 'Not Admissions'?" -> "Yes, this system"): calls run on facts.
+test('3: Not a lead is a reason for ONE call; only Spam, Supplier or vendor, Internal remember a number', () => {
+  assert.ok(CONFIG.intake.archiveReasons.includes('Not a lead'));
+  assert.ok(!CONFIG.intake.archiveReasons.includes('Not Admissions'), 'retired');
+  assert.deepEqual(CONFIG.phoneFilter.filterArchivedAs, ['Spam', 'Supplier or vendor', 'Internal']);
   const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
-  assert.match(app, /cNotAdmissions\(\$\{Number\(r\.id\)\}, this\)">Not Admissions</, 'one click on the card');
-  assert.match(app, /reason: 'Not Admissions'/);
+  assert.match(app, /cNotALead\(\$\{Number\(r\.id\)\}, this\)">Not a lead</, 'one click on the card');
+  assert.match(app, /reason: 'Not a lead'/);
+  assert.doesNotMatch(app, /Not Admissions/);
 });
 
-test('3: after Not Admissions, the same number (written any way) is set aside; a person in Intake never is', async () => {
+test('3: after Not a lead, the next call from that number reaches the Inbox; Spam sets later calls aside; a person never', async () => {
   const db = await openDb(':memory:');
   await run(db, fakeTeleGroup([call()]), '2026-10-14T09:00:00Z');
   const [card] = await listInbound(db, { state: 'new' });
-  assert.equal((await archive(db, card.id, { reason: 'Not Admissions', by: 'Ieva' })).ok, true);
+  assert.equal((await archive(db, card.id, { reason: 'Not a lead', by: 'Laura' })).ok, true);
   const r = await run(db, fakeTeleGroup([call({ uniqueid: 'c2', caller_num: '29111222', created_at: '2026-10-14 12:10:00' })]),
     '2026-10-14T09:11:00Z');
-  assert.equal(r.filtered, 1);
-  assert.equal((await listInbound(db, { state: 'new' })).length, 0);
-  const why = await db.prepare("SELECT archive_note FROM inbound WHERE state = 'filtered'").get();
-  assert.match(why.archive_note, /Not Admissions/);
-  // the number becomes a person's: their calls go on their history, never filtered
-  await db.prepare(`INSERT INTO people (id, name, phone, status, owner, created_at) VALUES ('p1', 'Anna', '+371 29 111 222', 'new', 'Ieva', '2026-10-14T09:12:00Z')`).run();
-  const k = await run(db, fakeTeleGroup([call({ uniqueid: 'c3', created_at: '2026-10-14 12:15:00' })]), '2026-10-14T09:16:00Z');
+  assert.equal(r.filtered, 0, 'no number is remembered');
+  assert.equal(r.inbox, 1);
+  // Spam is explicit, and it does remember
+  const [second] = await listInbound(db, { state: 'new' });
+  await archive(db, second.id, { reason: 'Spam', by: 'Laura' });
+  const s2 = await run(db, fakeTeleGroup([call({ uniqueid: 'c3', created_at: '2026-10-14 12:20:00' })]), '2026-10-14T09:21:00Z');
+  assert.equal(s2.filtered, 1);
+  // the number becomes a person's: their calls go on their profile, whatever the filter says
+  await db.prepare(`INSERT INTO people (id, name, phone, status, owner, created_at) VALUES ('p1', 'Anna', '+371 29 111 222', 'new', 'Ieva', '2026-10-14T09:22:00Z')`).run();
+  const k = await run(db, fakeTeleGroup([call({ uniqueid: 'c4', created_at: '2026-10-14 12:25:00' })]), '2026-10-14T09:26:00Z');
   assert.equal(k.logged, 1);
   assert.equal(k.filtered, 0);
 });
 
-test('3: Bring back undoes it - on the Not Admissions card, or on a later card of that number', async () => {
+test('3: Spam - Bring back undoes it, on the Spam card or on a later card of that number', async () => {
   for (const which of ['the card itself', 'a later filtered card']) {
     const db = await openDb(':memory:');
     await run(db, fakeTeleGroup([call()]), '2026-10-14T09:00:00Z');
     const [card] = await listInbound(db, { state: 'new' });
-    await archive(db, card.id, { reason: 'Not Admissions', by: 'Ieva' });
+    await archive(db, card.id, { reason: 'Spam', by: 'Ieva' });
     await run(db, fakeTeleGroup([call({ uniqueid: 'c2', created_at: '2026-10-14 12:10:00' })]), '2026-10-14T09:11:00Z');
     const later = await db.prepare("SELECT id FROM inbound WHERE state = 'filtered'").get();
     const back = which === 'the card itself' ? card.id : later.id;
@@ -140,6 +146,30 @@ test('3: Bring back undoes it - on the Not Admissions card, or on a later card o
     assert.equal(r.filtered, 0, which + ': no longer set aside');
     assert.equal(r.inbox + r.again, 1, which + ': it reaches the Inbox');
   }
+});
+
+test('3: release - calls set aside because their number was once "Not Admissions" come back, logged; the marked card stays', async () => {
+  const db = await openDb(':memory:');
+  // production as patch 44 left it: a card a person marked, and a later call the filter set aside because of it
+  const marked = await receive(db, { channel: 'phone', externalId: 'm1', receivedAt: '2026-10-14T07:00:00Z', phone: '+37129111222',
+    body: 'Incoming call', threadKey: 'phone:29111222', source: 'provider' });
+  await db.prepare("UPDATE inbound SET state = 'archived', archive_reason = 'Not Admissions', processed_by = 'Ieva', processed_at = '2026-10-14T07:05:00Z' WHERE id = ?").run(marked.id);
+  const held = await receive(db, { channel: 'phone', externalId: 'm2', receivedAt: '2026-10-14T08:00:00Z', phone: '+37129111222',
+    body: 'Missed call', threadKey: 'phone:29111222', source: 'provider', filterWhy: RELEASED_NOTE });
+  const look = await releaseNotAdmissions(db);
+  assert.deepEqual([look.applied, look.count], [false, 1]);
+  assert.equal((await db.prepare('SELECT state FROM inbound WHERE id = ?').get(held.id)).state, 'filtered', 'a preview moves nothing');
+  assert.equal((await releaseNotAdmissions(db, { apply: true })).error, 'who is releasing these?');
+  const done = await releaseNotAdmissions(db, { apply: true, by: 'Ritvars' });
+  assert.equal(done.broughtBack, 1);
+  assert.equal((await db.prepare('SELECT state FROM inbound WHERE id = ?').get(held.id)).state, 'new', 'back in the Inbox');
+  assert.equal((await db.prepare('SELECT state FROM inbound WHERE id = ?').get(marked.id)).state, 'archived', 'the marked call stays a decision');
+  const h = await db.prepare('SELECT action, actor FROM inbound_history WHERE inbound_id = ?').all(held.id);
+  assert.deepEqual(h.map((x) => [x.action, x.actor]), [['brought_back', 'Ritvars']]);
+  assert.equal((await db.prepare("SELECT value FROM sync_state WHERE name = 'not_admissions_released'").get()).value, '1');
+  // and the next call from that number reaches the Inbox
+  const r = await run(db, fakeTeleGroup([call({ uniqueid: 'c9', created_at: '2026-10-14 12:30:00' })]), '2026-10-14T09:31:00Z');
+  assert.equal(r.filtered, 0);
 });
 
 // ---------------------------------------------------------------------------- 4 --
@@ -191,6 +221,10 @@ test('4: the old-calls action is for admins only; GET previews, POST applies', a
   assert.equal(bad.status, 400);
   const done = await fetch(url, { method: 'POST', headers: admin, body: JSON.stringify({ before: '2026-10-14', apply: true }) }).then((r) => r.json());
   assert.equal(done.applied, true);
+  const rel = s.base + '/api/admin/inbox/release-not-admissions';
+  assert.equal((await fetch(rel, { headers: user })).status, 403, 'release: admins only');
+  assert.equal((await fetch(rel, { headers: admin }).then((r) => r.json())).applied, false);
+  assert.equal((await fetch(rel, { method: 'POST', headers: admin, body: JSON.stringify({ apply: true }) }).then((r) => r.json())).applied, true);
 });
 
 test('the Channels screen says "Every minute"; Help says it, in the same change', () => {
@@ -203,6 +237,6 @@ test('the Channels screen says "Every minute"; Help says it, in the same change'
   const help = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'help.json'), 'utf8'));
   const q = help.faq.find((x) => x.id === 'phone-calls');
   assert.match(q.a, /every minute/);
-  assert.match(q.a, /Not Admissions/);
+  assert.match(q.a, /Not a lead/);
   assert.match(q.a, /Bring back/);
 });

@@ -764,7 +764,7 @@
       "Supplier or vendor",
       "Internal",
       "Already handled",
-      "Not Admissions",
+      "Not a lead",
       "Other"
     ],
     "archiveReasonNeedsNote": [
@@ -981,35 +981,52 @@
     "filterArchivedAs": [
       "Spam",
       "Supplier or vendor",
-      "Internal",
-      "Not Admissions"
+      "Internal"
     ],
-    "_notAdmissions": "Q92, 14.10.2026 (Ieva: many calls to the college number are not ADMISSIONS): one click on a phone card sets it aside as Not Admissions and later calls from that number are set aside too. Bring back on any card of that number undoes it. A number that belongs to a person in Intake is never filtered: the person is found first.",
+    "_notALead": "Rethink, Ritvars 14.10.2026 (\"how do you know its 'Not Admissions'?\" -> \"Yes, this system\"): calls run on facts. The button decides whose list; whoever answered decides about THAT call: Make a lead, or Not a lead (this call only, no number remembered); a number that is a person in Intake goes to that person. Only Spam, Supplier or vendor and Internal remember a number. Not Admissions as a remembered reason is retired.",
     "oneOpenItemPerNumber": true
   },
   "phoneMenu": {
     "1": {
       "role": "Admissions",
+      "label": "Admissions",
       "queue": "1001*Q-ADMISSION",
+      "popUp": true,
       "handledBy": [
         "Ieva"
+      ],
+      "handledByEmail": [
+        "ieva.gudaneca@novikontas.org",
+        "edu@novikontas.org"
       ]
     },
     "2": {
       "role": "Student Coordinator",
+      "label": "Student coordination",
       "queue": "1001*Q-COORDINATORS",
+      "popUp": true,
       "handledBy": [
         "Laura"
+      ],
+      "handledByEmail": [
+        "laura.skirmante@novikontas.org"
       ]
     },
     "3": {
       "role": "Other",
+      "label": "Other",
       "queue": "1001*Q-OTHER",
+      "popUp": false,
+      "_popUp": "Ritvars 14.10.2026: for now only button 1 (Admissions) and button 2 (Coordinator, Laura) pop up; button 3 calls still reach the Inbox and history, without a pop-up.",
       "handledBy": [
         "Tetiana",
         "Arina"
+      ],
+      "handledByEmail": [
+        "arina.danilevska@novikontas.org"
       ]
     },
+    "_handledByEmail": "Q94 (the owner, 14.10.2026: 'all of these people use Intake as well. Its just Ieva is main priority, we have to keep it clean for her!'). The Inbox shows a signed-in person the calls of the line their email is listed on; an admin, or anybody not listed, sees every line. Anyone can switch with the Line filter. A copy without sign-in uses handledBy (the Acting as name).",
     "_note": "The caller presses 1, 2 or 3 and the PBX puts them on the matching queue. Those three queue names are exactly what lib/pbx.js keeps and everything else it drops, so the menu and the logger are one fact in one place.",
     "_answered": "The PBX event carries a `queue` field and the queue IS the button. This was in the original TeleGroup brief and was mapped here on 23.09.2026. Nobody needs to ask TeleGroup whether the button is included - it is. What is still needed is an API token."
   },

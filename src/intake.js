@@ -409,6 +409,26 @@ export async function setAsideOldCalls(db, { before, apply = false, by, at = now
   return { applied: Boolean(apply), before, cutoff, count: rows.length, reason: OLD_CALL_REASON };
 }
 
+// ------------------------------------- release the numbers once remembered as Not Admissions (rethink) --
+// Ritvars, 14.10.2026: "Not Admissions" no longer remembers a number. Calls that the pull set aside BECAUSE their number
+// had been set aside as "Not Admissions" come back to the Inbox, once, through Bring back (logged in inbound_history,
+// actor = the admin). The card a person marked stays set aside: that was their decision about that call. apply:false
+// (the default) only counts.
+export const RELEASED_NOTE = 'this number was archived before as "Not Admissions"';
+export async function releaseNotAdmissions(db, { apply = false, by, at = nowIso() } = {}) {
+  if (apply && !by) return { error: 'who is releasing these?' };
+  const rows = await db.prepare(`SELECT id FROM inbound WHERE channel = 'phone' AND state = 'filtered' AND archive_note = ?
+    ORDER BY id`).all(RELEASED_NOTE);
+  let back = 0;
+  if (apply) {
+    for (const { id } of rows) { const r = await bringBack(db, id, { by, at }); if (r && r.ok && !r.already) back++; }
+    await db.prepare(`INSERT INTO sync_state (name, value, ran_at, detail) VALUES ('not_admissions_released', ?, ?, ?)
+      ON CONFLICT (name) DO UPDATE SET value = excluded.value, ran_at = excluded.ran_at, detail = excluded.detail`)
+      .run(String(back), at, JSON.stringify({ by, ids: rows.map((r) => r.id) }));
+  }
+  return { applied: Boolean(apply), count: rows.length, broughtBack: back };
+}
+
 // ---------------------------------------------------------- sender kind (Q31) --
 // For the Inbox groups (Q30): current_student / possible_student / other, worked out on the server
 // from config.senderKind. A grouping, never a fact about the person, so every row carries its why.

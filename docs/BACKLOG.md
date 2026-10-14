@@ -26,6 +26,21 @@ frame, because the set the list opens on was drawn as chosen. Branch ui/2026-10-
 | Checked the other bands: Home's Needs you, the Inbox band and the Journey band frame only what was clicked; at rest every sibling is alike | BUILT |
 | test/tiles_alike_q95.test.js | BUILT |
 | Seen running at 1440, light and dark: `For review/2026-10-14 Q95 Coming up tile alike/` | BUILT |
+## 14.10.2026 - Q94: each person's Inbox shows the calls of their own line (PICKED 14.10)
+
+The owner, 14.10.2026: all of the call takers use Intake; Admissions is the main priority and its Inbox has to stay clean.
+Branch ui/2026-10-14-q94-call-lines from 5678232 (patch 44).
+
+| What | Status |
+|---|---|
+| Every call carries its menu line (1 Admissions, 2 Student coordination, 3 Other). config.phoneMenu lists who answers each line by sign-in email (handledByEmail) and the filter's word (label) | BUILT |
+| The Inbox shows a signed-in person the calls of their line by default; an admin, or anybody not listed, sees every line. On a copy without sign-in, the Acting as name (handledBy) | BUILT |
+| A Line filter (Admissions / Student coordination / Other / All) switches; the choice is remembered per person in this browser | BUILT |
+| Everything that is not a call (email, SIS, website, LinkedIn) is shown to everyone; a call whose line is unknown is shown to everyone. Nothing is set aside or hidden from the database; a call from a known person still goes to that person's profile | BUILT |
+| The menu's Inbox count and Home's In the Inbox count the same line | BUILT |
+| Help: one sentence in the Inbox box | BUILT |
+| test/inbox_call_lines_q94.test.js | BUILT |
+| Seen running at 1440 (light, dark) as the Admissions, Student coordination and admin users, and on a phone: `For review/2026-10-14 Q94 calls by line/` | BUILT |
 
 ## 13.10.2026 - Q89c: every Next action date becomes one Follow up (COMMITTED, NOT DEPLOYED)
 

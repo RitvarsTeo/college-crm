@@ -16,6 +16,7 @@
 import { receive, bringBack, activePersonFor, confirmedBySystem, CONFIG, newPersonId, ownerFor, emailFilterWhy, purgeLineBodies, recordReplyRead } from './intake.js';
 import { findMatches, isStrong, normEmail, normPhone } from './identity.js';
 import { knock } from './webpush.js';
+import { rememberedAs, phoneThread } from './phonefilter.js';
 import { logEvent, AUTOMATIC, MANUAL } from './history.js';
 import { fetchCalls, rowsFrom, WINDOW_MINUTES, toRigaStamp, ZONE } from '../lib/pbx.js';
 import { fetchChanged, toSisRow } from '../lib/sis.js';
@@ -111,28 +112,7 @@ const PBX_BACKOFF = 'pbx_backoff';
 // The call's own uniqueid is different every time, so the de-duplication above
 // cannot see it; the NUMBER has to be the key. Last 8 digits, the same comparison
 // identity.js makes, because one number is written three ways by three systems.
-const phoneThread = (num) => {
-  const d = normPhone(num).replace(/[^0-9]/g, '');
-  return d.length > 5 ? 'phone:' + d.slice(-8) : null;
-};
-
-// THE NUMBER IS REMEMBERED (01.10.2026; Q92, 14.10.2026 "Not Admissions"): a number a person set aside with one of
-// phoneFilter.filterArchivedAs, matched on the same last-8-digits key as the thread, so +371 29.. and 29.. are one
-// number. A Bring back on ANY card of that number after the set-aside is the undo: from then on its calls reach the
-// Inbox again. Only reached for a caller who is not a person in Intake (storeCall looks for the person first).
-export async function rememberedAs(db, num, reasons) {
-  if (!num || !reasons.length) return null;
-  const key = phoneThread(num);
-  const same = '(contact_phone = ? OR (thread_key IS NOT NULL AND thread_key = ?))';
-  const row = await db.prepare(`SELECT id, archive_reason, processed_at FROM inbound
-    WHERE ${same} AND state = 'archived' AND archive_reason IN (${reasons.map(() => '?').join(',')})
-    ORDER BY processed_at DESC, id DESC LIMIT 1`).get(num, key, ...reasons);
-  if (!row) return null;
-  const undone = await db.prepare(`SELECT 1 AS x FROM inbound_history h JOIN inbound j ON j.id = h.inbound_id
-    WHERE h.action = 'brought_back' AND h.at > ? AND (j.contact_phone = ? OR (j.thread_key IS NOT NULL AND j.thread_key = ?))`)
-    .get(row.processed_at || '', num, key);
-  return undone ? null : row;
-}
+// phoneThread lives in src/phonefilter.js (14.10.2026), shared with the call pop-up
 
 // Exported for the pushed call events (src/phoneevent.js): one function stores a call, whichever
 // path saw it first, so the two can never make two leads for one call.
@@ -210,7 +190,7 @@ async function callEventsFromPull(db, r, mode, at) {
     try {
       await db.prepare(`INSERT INTO call_events (call_id, event, at, queue, caller_num, operator, extension, source, received_at)
         VALUES (?,?,?,?,?,?,?,?,?)`).run(r.uniqueid, event, r.created_at, r.queue, r.caller_num, operator, null, source, at);
-      await knock(db, { event, operator });   // a new event only: a repeat never knocks twice
+      await knock(db, { event, operator, queue: r.queue, callerNum: r.caller_num });   // a new event only: a repeat never knocks twice
     } catch (err) {
       if (!/UNIQUE|duplicate key|unique constraint/i.test(String(err && err.message))) throw err;
     }

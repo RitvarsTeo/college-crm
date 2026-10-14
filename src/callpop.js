@@ -13,6 +13,77 @@
 // Intake user); the others are told only that it was taken, so their card can close. Answered by
 // a name Intake does not know, it stays with everybody.
 
+import fs from 'node:fs';
+import { rememberedAs } from './phonefilter.js';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+// WHICH BUTTONS POP UP (Ritvars, 14.10.2026: "for now, make only calls popup, who clicked number 1 for admissions or
+// coordinator Laura"): config.phoneMenu[n].popUp. Button 1 (Admissions) and 2 (Student Coordinator) pop up; button 3
+// (Other) does not. Its calls still reach the Inbox and the caller's history as before. An event that names no queue
+// (a push whose format we do not know yet) pops: it cannot be told apart, and a missed Admissions call is worse.
+const CFG = JSON.parse(fs.readFileSync(path.join(path.dirname(path.dirname(fileURLToPath(import.meta.url))), 'config', 'prototype.json'), 'utf8'));
+const MENU = CFG.phoneMenu || {};
+export function popsUp(queue, menu = MENU) {
+  if (!queue) return true;
+  const m = Object.values(menu).find((x) => x && x.queue === queue);
+  return Boolean(m && m.popUp);
+}
+
+// WHO A CALL POPS UP FOR (Q94, 14.10.2026): the people of that call's line, never everybody, and NEVER an admin
+// (Ritvars, 14.10.2026: "not for admins. never for admins."). The line's people are config.phoneMenu[n].handledBy
+// (1 Admissions: Ieva; 2 Coordinator: Laura; 3 Other: Tetiana, Arina). Whoever ANSWERED always sees their own call.
+// An event whose queue we cannot tell goes to everybody on a line, still never to an admin. Admins: config.admins and
+// every active crm_users admin; somebody named on a line who is also an admin gets that line's calls.
+export async function adminNames(db) {
+  const names = new Set(CFG.admins || []);
+  try {
+    for (const u of await db.prepare("SELECT display_name FROM crm_users WHERE role = 'admin' AND active = 1").all()) {
+      if (u.display_name) names.add(u.display_name);
+    }
+  } catch { /* no users table yet: the config list */ }
+  return [...names];
+}
+// THE VIEWER (14.10.2026, one map with the Inbox's Line filter): signed in, a person is their EMAIL, matched against
+// config.phoneMenu[n].handledByEmail (edu@novikontas.org counts as line 1), and an admin is their crm_users role. Only on a
+// copy without sign-in (no email) are the names used: handledBy and config.admins. `viewer` is a name, or
+// { name, email, isAdmin }.
+const asViewer = (v) => (v && typeof v === 'object' ? v : { name: v || '' });
+const sameEmail = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
+export function seesLine(viewer, queue, admins = [], menu = MENU) {
+  const v = asViewer(viewer);
+  if (!v.name && !v.email) return false;
+  const lines = Object.values(menu).filter((x) => x && x.queue);
+  const m = queue ? lines.find((x) => x.queue === queue) : null;
+  const onLine = (x) => (v.email
+    ? (x.handledByEmail || []).some((e) => sameEmail(e, v.email))
+    : (x.handledBy || []).some((h) => isOperator(h, v.name)));
+  if (m) return onLine(m);
+  // a queue we cannot tell: everybody on any line, never an admin who is on none
+  const admin = v.email ? Boolean(v.isAdmin) : (Boolean(v.isAdmin) || admins.some((a) => isOperator(a, v.name)));
+  return lines.some(onLine) || !admin;
+}
+
+// A pushed subscription knows only its user's name: signed in, that name is looked up in crm_users for the email and
+// the role, so a push follows the same email map as the open app.
+export async function viewerFor(db, name) {
+  try {
+    const u = await db.prepare('SELECT email, role FROM crm_users WHERE active = 1 AND lower(display_name) = lower(?)').get(String(name || ''));
+    if (u && u.email) return { name, email: u.email, isAdmin: u.role === 'admin' };
+  } catch { /* no users table: names */ }
+  return { name };
+}
+
+// A NUMBER THE PHONE FILTER SETS ASIDE NEVER POPS (Ritvars, 14.10.2026, "Yes, never pop"): Spam, Supplier or vendor,
+// Internal - phoneFilter.filterArchivedAs (since the rethink, "Not a lead" is one call and is never remembered), undone by Bring back exactly as in the pull. A caller who is a person
+// in Intake always pops: the person is looked for first, the same order as storeCall.
+export async function filteredCaller(db, callerNum, who = null) {
+  if (!callerNum) return false;
+  const w = who || await whoIsCalling(db, callerNum);
+  if (w.kind === 'person') return false;
+  return Boolean(await rememberedAs(db, callerNum, (CFG.phoneFilter || {}).filterArchivedAs || []));
+}
+
 // An app that was closed does not catch up on old calls: only events from the last few minutes.
 export const FEED_MINUTES = 5;
 const PHONE_TAIL = 8;
@@ -69,22 +140,28 @@ const cut = (s, n = 140) => {
 // --------------------------------------------------------- who sees what --
 // No `after`: the app has just opened. It gets the newest id and NO events, so nothing pops on
 // a load or a reload. With `after`: every newer event this viewer should see.
-export async function callFeed(db, { after = null, viewer = '', users = [], now = new Date() } = {}) {
+export async function callFeed(db, { after = null, viewer = '', viewerUser = null, users = [], now = new Date() } = {}) {
   const top = await db.prepare('SELECT MAX(id) n FROM call_events').get();
   const last = Number((top && top.n) || 0);
   if (after === null || after === undefined || after === '' || !Number.isFinite(Number(after))) return { last, events: [] };
   const since = new Date(now.getTime() - FEED_MINUTES * 60000).toISOString();
-  const rows = await db.prepare(`SELECT id, call_id, event, at, caller_num, operator FROM call_events
+  const rows = await db.prepare(`SELECT id, call_id, event, at, queue, caller_num, operator FROM call_events
     WHERE id > ? AND received_at >= ? ORDER BY id LIMIT 50`).all(Number(after), since);
   const events = [];
+  const admins = rows.length ? await adminNames(db) : [];
   for (const r of rows) {
+    if (!popsUp(r.queue)) continue;     // button 3: no pop-up (14.10.2026)
     const op = r.operator || null;
     const mine = op ? isOperator(op, viewer) : false;
+    // Q94: that line's people only (signed in: by email), never an admin
+    if (!mine && !seesLine(viewerUser && viewerUser.email ? { name: viewer, email: viewerUser.email, isAdmin: viewerUser.role === 'admin' } : viewer, r.queue, admins)) continue;
     const someoneElse = Boolean(op && !mine && users.some((u) => isOperator(op, u)));
     // a known colleague took it: the others learn that, and nothing about the caller
     if (someoneElse) { events.push({ id: Number(r.id), callId: r.call_id, event: r.event, at: r.at, taken: true }); continue; }
+    const who = await whoIsCalling(db, r.caller_num);
+    if (await filteredCaller(db, r.caller_num, who)) continue;
     events.push({ id: Number(r.id), callId: r.call_id, event: r.event, at: r.at, operator: op, forYou: mine,
-      taken: false, who: await whoIsCalling(db, r.caller_num) });
+      taken: false, who });
   }
   return { last: Math.max(last, Number(after)), events };
 }
@@ -106,10 +183,10 @@ export function noteFor(ev) {
 
 // The call a knock was about: this viewer's newest answered call, else the newest ring, from the
 // last two minutes. Nothing taken by a colleague, nothing ended.
-export async function latestNote(db, { viewer = '', users = [], now = new Date() } = {}) {
+export async function latestNote(db, { viewer = '', viewerUser = null, users = [], now = new Date() } = {}) {
   const top = await db.prepare('SELECT MAX(id) n FROM call_events').get();
   const last = Number((top && top.n) || 0);
-  const feed = await callFeed(db, { after: Math.max(0, last - 50), viewer, users, now });
+  const feed = await callFeed(db, { after: Math.max(0, last - 50), viewer, viewerUser, users, now });
   const since = now.getTime() - 2 * 60000;
   const fresh = feed.events.filter((e) => !e.taken && e.event !== 'ended' && Date.parse(e.at || 0) >= since - 60000);
   const pick = [...fresh].reverse().find((e) => e.event === 'answered' && e.forYou)

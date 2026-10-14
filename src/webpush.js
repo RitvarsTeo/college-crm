@@ -18,7 +18,7 @@
 // Without them push is simply off, and the open app still pops up as before.
 
 import crypto from 'node:crypto';
-import { isOperator } from './callpop.js';
+import { isOperator, popsUp, filteredCaller, seesLine, adminNames, viewerFor } from './callpop.js';
 
 export const VAPID_ENV = ['VAPID_PUBLIC_KEY', 'VAPID_PRIVATE_KEY', 'VAPID_SUBJECT'];
 const b64u = (buf) => Buffer.from(buf).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -68,13 +68,19 @@ export async function targetsFor(db, ev, users = []) {
   if (ev.event === 'answered' && ev.operator && users.some((u) => isOperator(ev.operator, u))) {
     return subs.filter((s) => isOperator(ev.operator, s.user_name));
   }
-  return subs;
+  // Q94: the people of the call's line only; never an admin (Ritvars 14.10.2026)
+  const admins = await adminNames(db);
+  const out = [];
+  for (const s of subs) if (seesLine(await viewerFor(db, s.user_name), ev.queue, admins)) out.push(s);
+  return out;
 }
 
 // Knock. Never throws: a call event is stored whatever the push services answer. A subscription
 // the push service says is gone (404, 410) is deleted.
 export async function knock(db, ev, { env = process.env, users = null, fetchImpl = fetch, timeoutMs = 3000 } = {}) {
   if (!pushConfigured(env)) return { sent: 0, skipped: 'push is not configured' };
+  if (!popsUp(ev.queue)) return { sent: 0, skipped: 'this button does not pop up' };
+  try { if (await filteredCaller(db, ev.callerNum)) return { sent: 0, skipped: 'a number the phone filter sets aside' }; } catch { /* knock anyway */ }
   if (!users) {
     try { users = (await db.prepare('SELECT display_name FROM crm_users WHERE active = 1').all()).map((u) => u.display_name).filter(Boolean); } catch { users = []; }
   }
