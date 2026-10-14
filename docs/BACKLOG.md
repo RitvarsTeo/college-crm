@@ -14,6 +14,22 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 14.10.2026 - One rule for every card, call notes, TeleGroup pop-up (owner's picks)
+
+- `DECIDED` A person marked **Not a lead** who contacts again, on any channel, comes back to the Inbox like anyone new,
+  with one line saying they were "Not a lead" before (date, who). The second time, the user can mark them so they do
+  not come back: for scam, pranks or inappropriate contact.
+- `DECIDED` What a call was about = **one line typed after the call** by the person who answered (no AI from the
+  recording).
+- `DECIDED` Ask TeleGroup (via Aigars) whether their own incoming-call pop-up can open a link into Intake with the
+  caller's number, so the two pop-ups are not duplicated.
+- `SAID` One rule on every card, every channel: **Make a lead / Not a lead**, one click, no reason list (Ieva finds the
+  7 reasons too many; "not a lead is all the things above"). Supplier or vendor / Internal / Spam become a MARK on the
+  number or address, kept until changed. "Already handled" goes: a known person's contact lands on their profile.
+  Waiting on one answer: Not a lead replaces Set aside everywhere it appears.
+- `SAID` Big-screen bug: scrolling the Inbox on a big monitor breaks the folding top band (reproduced 14.10: the page
+  froze when only ~160-240 px taller than the window). Fix in progress for every folding band.
+
 ## 02.10.2026 - HANDOFF: where this run stopped
 
 Branch **`ui/2026-10-02-journey`**, cut from `feat/home-b-command`. **933/933. Clean tree.
