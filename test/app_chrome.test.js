@@ -138,11 +138,13 @@ test('the corner button is the feedback box, says so, and opens solid', () => {
 // 05.10.2026, Ritvars: "also the icons dont match?! I want the white on also on the broswers tab." The tab icon
 // is the same white tile as the installed app, the taskbar and "Open in app" (icon-192.png) in light AND dark.
 // This replaces the 30.09.2026 dark variant (dark tile, white letters), which made the tab and the app differ.
+// 15.10.2026, Aigars: the Academy symbol on the tile is replaced by the Intake logo (navy I, light-blue arrow),
+// still on the same white tile.
 test('the tab icon is the white tile in light and dark, like the installed app', () => {
   const svg = fs.readFileSync(path.join(ROOT, 'src', 'assets', 'favicon.svg'), 'utf8');
   assert.match(svg, /\.tile \{ fill: #ffffff/, 'the white tile');
-  assert.match(svg, /\.mark \{ fill: #011111 \}/, 'black letters');
   assert.doesNotMatch(svg, /prefers-color-scheme/, 'no dark variant: the tab never turns dark');
-  assert.equal((svg.match(/#29a8df/gi) || []).length, 1, 'the Novikontas blue leg, declared once on the shape');
-  assert.match(svg, /viewBox="155\.18 59\.40 589\.35 589\.35"/, 'the symbol geometry is unchanged');
+  assert.equal((svg.match(/#0d2858/gi) || []).length, 1, 'the navy I, declared once on the shape');
+  assert.equal((svg.match(/#56a4d5/gi) || []).length, 1, 'the light-blue arrow, declared once on the shape');
+  assert.match(svg, /viewBox="107\.7 107\.7 1784\.5 1784\.5"/, 'the Intake mark geometry is unchanged');
 });

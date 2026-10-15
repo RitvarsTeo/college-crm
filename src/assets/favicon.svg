@@ -1,15 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="155.18 59.40 589.35 589.35">
-  <!-- The Academy symbol (brandbook shapes, unchanged) filling 84% of a tile: black letters on a white
-       tile, the A's leg Novikontas blue. Ritvars' pick, 28.09.2026. The SAME tile in light and dark
-       (Ritvars, 05.10.2026: "I want the white on also on the broswers tab"), so the tab matches the
-       installed app, the taskbar and "Open in app" (icon-192.png). This replaces the 30.09.2026 dark
-       variant (dark tile, white letters). -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="107.7 107.7 1784.5 1784.5">
+  <!-- Intake logo (Aigars, made in Gemini, 15.10.2026): navy I, light-blue arrow coming in. Replaces the
+       Academy symbol. Same white tile in light and dark, as Ritvars asked on 05.10.2026, so the tab still
+       matches the installed app, the taskbar and "Open in app" (icon-192.png). -->
   <style>
     .tile { fill: #ffffff; stroke: #c9d2de }
-    .mark { fill: #011111 }
   </style>
-  <rect class="tile" x="155.18" y="59.40" width="589.35" height="589.35" rx="106.08" stroke-width="7.07"/>
-  <path fill="#29a8df" d="M638.47,391.18h0l-71.42-138.3-83.75-50.56,95.21,185.91s-.02,0-.03.01l60.28,117.57h58.91s-59.2-114.64-59.2-114.64Z"/>
-  <polygon class="mark" fill-rule="evenodd" points="387.91 364.16 410.77 253.49 410.72 253.46 394.04 202.41 236.33 202.33 202.33 358.27 234.51 451.98 278.1 253.27 350.12 253.22 387.91 364.16"/>
-  <polygon class="mark" fill-rule="evenodd" points="542.76 403.59 502.12 403.59 513.83 349.88 530.95 349.88 482.44 256.17 481.65 256.17 440.25 444.91 438.06 454.88 366.04 454.93 328.25 343.99 304.57 454.87 304.61 454.9 322.12 505.74 479.83 505.82 490.64 456.24 493.99 440.9 534.5 440.9 542.76 403.59"/>
+  <rect x="107.7" y="107.7" width="1784.5" height="1784.5" rx="321.2" class="tile" stroke-width="21.4"/>
+  <path fill="#56a4d5" d="M919 250H1081V508H1209L1000 770L791 508H919Z"/>
+  <path fill="#0d2858" d="M736 694H880L1000 842L1120 694H1264V882H1137V1558H1264V1749H736V1558H863V882H736Z"/>
 </svg>
