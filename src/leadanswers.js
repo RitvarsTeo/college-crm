@@ -51,7 +51,7 @@ async function fill(db, row, { env, fetchImpl, at }) {
     } else if (item.state === 'new') {
       // A KNOWN PERSON, FOUND BY THE ANSWERS (14.10.2026, every channel): a lead form arrives with ids only, so it could
       // not be matched on arrival. Now that it has an email or phone, the same question every channel asks; one person
-      // still being worked with -> their profile, off the Inbox. A marked address or number stays where it is.
+      // -> their profile, off the Inbox. A marked address or number stays where it is.
       const contact = { email: item.contact_email || got.email, phone: item.contact_phone || got.phone };
       const pid = await activePersonFor(db, contact);
       if (pid && !(await markFor(db, contact))) await landOnProfile(db, item.id, pid, { at });

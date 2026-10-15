@@ -132,11 +132,14 @@ test('a second missed call does not stack a second Call back', async () => {
   assert.equal(open.length, 1);
 });
 
-test('an answered call, or a finished person, adds no step', async () => {
+// The owner, 14.10.2026 (B): a finished person's MISSED call gets its Call back too (one rule on every channel), their
+// stage untouched; an answered call still adds no step for anybody.
+test('an answered call adds no step; a finished person\'s missed call gets its Call back', async () => {
   const db = await openDb(':memory:');
   await db.prepare('INSERT INTO people (id, name, phone, status) VALUES (?,?,?,?)').run('p1', 'Jonas', '+37129111222', 'Contacted');
   await db.prepare('INSERT INTO people (id, name, phone, status) VALUES (?,?,?,?)').run('p2', 'Anna', '+37129333444', 'Admitted');
   await run(db, [call(), call({ uniqueid: 'c2', caller_num: '+37129333444', state: 'NOANSWER' })]);
-  const n = (await db.prepare('SELECT COUNT(*) n FROM tasks').get()).n;
-  assert.equal(Number(n), 0);
+  const t = await db.prepare('SELECT person_id, label FROM tasks').all();
+  assert.deepEqual(t.map((x) => [x.person_id, x.label]), [['p2', 'Call back']]);
+  assert.equal((await db.prepare("SELECT status FROM people WHERE id = 'p2'").get()).status, 'Admitted');
 });

@@ -5,8 +5,9 @@
 //   one person, still being worked with -> their history + Answer the question for today, no Inbox card
 //   nobody                             -> the Inbox
 //   two or more people                 -> the Inbox (the machine cannot choose)
-//   a marked address or number         -> set aside, as before (the mark wins over the match)
-//   a finished person (Admitted, Not proceeding) -> the Inbox, with Joins and their name (nothing reopens by machine)
+//   a marked address or number         -> set aside, as before (the mark wins over the match; the phone pull unchanged)
+//   a finished person (Admitted, Not proceeding) -> their profile and the step too (the owner, 14.10.2026, B), listed
+//                                         on their owner's Due; the stage is never changed by machine
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -144,19 +145,42 @@ test('a marked address wins over the match: set aside with the mark, never on th
   assert.ok(!e.attached);
 });
 
-test('a finished person (Admitted, Not proceeding) writes again: the Inbox card stays and says Joins and their name', async () => {
+// The owner, 14.10.2026 (B): a finished person who gets in touch lands on their profile like anybody, with the step for
+// their owner; their stage is never changed (no machine reopening).
+test('a finished person (Admitted, Not proceeding) writes again: their profile and Answer the question, the stage untouched', async () => {
   for (const status of ['Admitted', 'Not proceeding']) {
     const db = await openDb(':memory:');
     const { pid } = await personFrom(db, 'website', fixtureFor('website'), status);
-    assert.equal(await activePersonFor(db, { email: 'anna@example.lv' }), null, status);
-    const r = await arrive(db, 'website', fixtureFor('website'));
-    assert.ok(!r.attached, status);
-    const [card] = await inbox(db);
-    assert.equal(card.id, r.id, status);
-    assert.deepEqual(card.joins && card.joins.id, pid, `${status}: Joins ${card.joins && card.joins.name}, Add to them`);
-    assert.equal((await openSteps(db, pid)).length, 0, `${status}: nothing reopened by machine`);
-    const p = await db.prepare('SELECT status FROM people WHERE id = ?').get(pid);
+    await db.prepare("UPDATE tasks SET done_at = ? WHERE person_id = ?").run(at(9), pid);   // finishing closed their steps
+    assert.equal(await activePersonFor(db, { email: 'anna@example.lv' }), pid, status);
+    const r = await arrive(db, 'website', { ...fixtureFor('website'), submitted_at: at(10), message: 'A question about my diploma' });
+    assert.equal(r.attached, true, status);
+    assert.equal((await inbox(db)).length, 0, `${status}: no Inbox card`);
+    assert.ok((await messagesFor(db, pid)).some((m) => /diploma/.test(m.body)), `${status}: on their History`);
+    const steps = await openSteps(db, pid);
+    assert.equal(steps.length, 1, `${status}: one Answer the question`);
+    assert.equal(steps[0].due_at, new Date(at(10)).toISOString(), `${status}: due when they wrote`);
+    const p = await db.prepare('SELECT status, last_contact_at FROM people WHERE id = ?').get(pid);
     assert.equal(p.status, status, 'the stage is not touched');
+    assert.equal(p.last_contact_at, new Date(at(10)).toISOString(), 'last contact moves on');
+  }
+});
+
+test('phone, the same rule: a finished person\'s missed call gets a Call back for their owner, the stage untouched', async () => {
+  const { storeCall } = await import('../src/sync.js');
+  const out = () => ({ seen: 0, logged: 0, callBack: 0, again: 0, filtered: 0, inbox: 0, noNumber: 0 });
+  for (const status of ['Admitted', 'Not proceeding']) {
+    const db = await openDb(':memory:');
+    await db.prepare(`INSERT INTO people (id, name, phone, status, owner) VALUES ('f1', 'Finished', '+37129111222', ?, 'Admissions')`).run(status);
+    const o = out();
+    await storeCall(db, { uniqueid: 'u1', created_at: '2026-10-14T09:00:00.000Z', queue: '1001*Q-ADMISSION',
+      caller_num: '29111222', picked_up: false, operator_name: null }, 'live', '2026-10-14T09:01:00Z', o);
+    assert.equal(o.logged, 1, `${status}: on their history`);
+    assert.equal(o.callBack, 1, `${status}: a Call back`);
+    const t = await db.prepare(`SELECT label, due_at, owner FROM tasks WHERE person_id = 'f1' AND done_at IS NULL`).all();
+    assert.deepEqual(t.map((x) => [x.label, x.due_at, x.owner]), [['Call back', '2026-10-14T09:00:00.000Z', 'Admissions']]);
+    assert.equal((await db.prepare(`SELECT status FROM people WHERE id = 'f1'`).get()).status, status);
+    assert.equal((await inbox(db)).length, 0);
   }
 });
 
@@ -235,4 +259,18 @@ test('the webhook route: unknown -> Inbox; Make a lead; the next message -> thei
   const sim = await post(s.base, '/api/inbound/website/simulate', {});
   assert.equal(sim.outcome, "on the person's profile, not the Inbox");
   assert.ok(sim.personId);
+
+  // B (14.10.2026): a finished person who writes again is on their owner's Due and Home, their stage unchanged; any
+  // other leftover step of a finished person stays off the lists, as before
+  const pid = sim.personId;
+  const cold = await post(s.base, `/api/people/${pid}/status`, { status: 'Not proceeding', closedTag: 'cold', by: 'Ieva' });
+  assert.ok(!cold.error, JSON.stringify(cold));
+  await post(s.base, `/api/people/${pid}/task`, { label: 'Get in touch', by: 'Ieva' });
+  const back = await send(s.base, 'website', fixtureFor('website'));
+  assert.equal(back.json.outcome, "on the person's profile, not the Inbox");
+  const due = (await get(s.base, '/api/tasks?scope=open')).filter((x) => x.person_id === pid);
+  assert.deepEqual(due.map((x) => x.label), ['Answer the question'], 'the step is listed; the leftover is not');
+  const home = await get(s.base, '/api/summary');
+  assert.ok([...home.overdue, ...home.today].some((x) => x.person_id === pid && x.label === 'Answer the question'), 'Home counts it');
+  assert.equal((await get(s.base, `/api/people/${pid}`)).status, 'Not proceeding', 'never reopened by machine');
 });

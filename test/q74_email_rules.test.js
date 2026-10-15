@@ -43,13 +43,16 @@ test('rule 1: an email from somebody already in Intake goes on their history wit
     'one open "Answer the question" at a time');
 });
 
-test('rule 1 stops at a finished person: an admitted student\'s email stays in the Inbox', async () => {
+// The owner, 14.10.2026 (B): a finished person is no exception any more - their email goes on their history with the
+// step for their owner, and their stage stays as it is.
+test('rule 1 includes a finished person: an admitted student\'s email goes on their history, the stage untouched', async () => {
   const db = await openDb(':memory:');
-  await withLead(db, 'student@example.com', 'Admitted');
-  assert.equal(await activePersonFor(db, 'student@example.com'), null);
+  const pid = await withLead(db, 'student@example.com', 'Admitted');
+  assert.equal(await activePersonFor(db, 'student@example.com'), pid);
   const r = await email(db, 'm3', 'student@example.com');
-  assert.ok(!r.attached);
-  assert.equal((await inbox(db)).length, 1);
+  assert.equal(r.attached, true);
+  assert.equal((await inbox(db)).length, 0);
+  assert.equal((await db.prepare('SELECT status FROM people WHERE id = ?').get(pid)).status, 'Admitted');
 });
 
 test('rule 1 never guesses: two people with one address is a question for a person', async () => {

@@ -75,9 +75,8 @@ export function onlyStrong(matches) {
 // IS THIS A KNOWN PERSON? (the owner, 14.10.2026: a known person lands on their profile on every channel). The one
 // question every receive path asks: the one person this email (exact, lower case) or phone (last 8 digits) points at,
 // counting every contact they have (Q77), or null. A name alone never counts. Two or more people is null on purpose:
-// the message then waits in the Inbox, where a person chooses. The row carries status and owner, so each caller
-// decides what a finished stage means for its channel (src/intake.js activePersonFor for messages, src/sync.js for
-// calls and the SIS).
+// the message then waits in the Inbox, where a person chooses. The row carries status and owner (src/intake.js
+// activePersonFor for messages, src/sync.js for calls and the SIS).
 export async function onePersonFor(db, { email, phone } = {}) {
   if (!email && !phone) return null;
   return onlyStrong((await contactMatcher(db))({ email, phone }));

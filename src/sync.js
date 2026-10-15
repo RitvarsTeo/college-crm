@@ -13,7 +13,7 @@
 //
 // Neither poller runs while its channel is off, and off is the default.
 
-import { receive, bringBack, activePersonFor, confirmedBySystem, CONFIG, newPersonId, ownerFor, emailFilterWhy, purgeLineBodies, recordReplyRead } from './intake.js';
+import { receive, bringBack, activePersonFor, CALL_BACK_STEP, confirmedBySystem, CONFIG, newPersonId, ownerFor, emailFilterWhy, purgeLineBodies, recordReplyRead } from './intake.js';
 import { onePersonFor, normEmail, normPhone } from './identity.js';
 import { knock } from './webpush.js';
 import { phoneThread } from './phonefilter.js';
@@ -148,13 +148,14 @@ export async function storeCall(db, r, mode, at, out) {
     } else {
       // A KNOWN LEAD RANG AND NOBODY ANSWERED: that is work for today (Ritvars 02.10.2026, "they get
       // recorded for needs action which is today"). Due when they rang, because they have waited since
-      // then. One Call back at a time per person, and none for a finished person, who is not in any
-      // list; their call stays on their history above.
+      // then. One Call back at a time per person. A FINISHED person (Admitted, Not proceeding) gets it too
+      // since 14.10.2026 (the owner, B: one rule on every channel, the same as a message's Answer the
+      // question); it is listed on their owner's Due although they are finished, and their stage is not touched.
       const p = await db.prepare('SELECT status, owner FROM people WHERE id = ?').get(personId);
-      const open = await db.prepare("SELECT COUNT(*) n FROM tasks WHERE person_id = ? AND label = 'Call back' AND done_at IS NULL").get(personId);
-      if (p && !(CONFIG.terminalStages || []).includes(p.status) && !Number(open.n)) {
+      const open = await db.prepare('SELECT COUNT(*) n FROM tasks WHERE person_id = ? AND label = ? AND done_at IS NULL').get(personId, CALL_BACK_STEP);
+      if (p && !Number(open.n)) {
         await db.prepare('INSERT INTO tasks (person_id,label,due_at,owner,created_at) VALUES (?,?,?,?,?)')
-          .run(personId, 'Call back', r.created_at, p.owner || 'Admissions', at);
+          .run(personId, CALL_BACK_STEP, r.created_at, p.owner || 'Admissions', at);
         out.callBack++;
       }
     }

@@ -29,7 +29,7 @@ from 8577501.
 | An open day booking from a known person is on the Open Day list at once | BUILT |
 | Two or more people match: the Inbox card stays, a person chooses | BUILT |
 | A marked address or number (Supplier or vendor, Internal, Spam) is set aside even when it matches a person: the mark wins. The phone pull still looks for the person first, as before | BUILT |
-| Admitted or Not proceeding: the Inbox card stays and says Joins and their name (as an admitted student's email has since Q74); nothing reopens a finished person by machine | BUILT |
+| DECIDED 14.10 (B): Admitted or Not proceeding the same on every channel: their profile (History, last contact) and one Answer the question for their owner, due when they wrote, no Inbox card; a missed call from them gets its Call back too. These two steps are listed on Due and Home although the person is finished; any other leftover step of a finished person stays off the lists. The stage is never changed by machine | BUILT |
 | Messenger, Instagram and Facebook direct messages carry a handle only, no email or phone, so they reach the Inbox as before | BUILT |
 | Help: the Inbox box says it in one sentence | BUILT |
 | test/known_person_every_channel.test.js | BUILT |

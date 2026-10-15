@@ -161,23 +161,28 @@ export async function purgeLineBodies(db, cutoffIso) {
 
 // ------------------------------------------------------------- arrival ----
 // Nothing here decides anything. It stores, extracts and suggests.
-// Q74: the one person an address points at, when they are still being worked with (not in a finished
-// stage: an admitted student's email stays in the Inbox, grouped as a current student). Every email the
-// person has counts (Q77). Two strong matches: nobody - a person decides.
+// Q74: the one person an address points at. Every email the person has counts (Q77). Two strong matches: nobody - a
+// person decides.
 // EVERY CHANNEL (the owner, 14.10.2026: a known person lands on their profile automatically, on every channel): the
 // same question for an email address, a phone number or both (src/identity.js onePersonFor: email exact, phone last
 // 8 digits). The result is what receive() takes as attachTo.
 //   - TWO OR MORE people match: null, so the message KEEPS its Inbox card - the machine cannot choose safely; a person
 //     does, and Make a lead's duplicate check shows who they are.
-//   - A FINISHED person (Admitted, Not proceeding): null, so the message keeps its Inbox card too, which says Joins and
-//     their name (listInbound). Nothing in Intake reopens a finished person by machine, and their message must not sit
-//     on a profile nobody works any more.
+//   - A FINISHED person (Admitted, Not proceeding) counts too (the owner, 14.10.2026, B): their message lands on their
+//     profile with Answer the question for their owner like anybody's, and no Inbox card. Their stage is never
+//     touched: nothing reopens a finished person by machine. (The name is kept from Q74, when it meant "not finished".)
 export async function activePersonFor(db, contact) {
   const { email, phone } = typeof contact === 'string' || contact == null ? { email: contact } : contact;
   const one = await onePersonFor(db, { email, phone });
-  if (!one) return null;
-  return (CFG.terminalStages || []).includes(one.status) ? null : one.id;
+  return one ? one.id : null;
 }
+
+// The steps a person getting in touch puts on their owner's list: a message's Answer the question (landOnProfile) and
+// a missed call's Call back (src/sync.js). They are listed even for a finished person (the owner, 14.10.2026, B), while
+// any other leftover step of a finished person stays off the lists (src/server.js STEP_LISTED_SQL).
+export const ANSWER_STEP = 'Answer the question';
+export const CALL_BACK_STEP = 'Call back';
+export const IN_TOUCH_STEPS = [ANSWER_STEP, CALL_BACK_STEP];
 
 export async function receive(db, item) {
   const at = item.receivedAt || nowIso();
@@ -348,6 +353,8 @@ export async function receive(db, item) {
 // What a form brought reaches the person the way Add to them does: the values read off it stay with the person (a
 // provider's answer fills an empty field only, a guess stays a guess) and a ticked consent box joins their consent
 // record. Only a row still waiting (state new) moves. Returns the person's id, or null when nothing moved.
+// A FINISHED person (Admitted, Not proceeding) the same (the owner, 14.10.2026, B): the message on their History and the
+// step for their owner, listed on Due and Home even though they are finished; their stage is never changed.
 // Callers: receive() (attachTo) and a lead form whose answers arrive after it (src/leadanswers.js).
 export async function landOnProfile(db, id, personId, { at = nowIso() } = {}) {
   const item = await db.prepare('SELECT * FROM inbound WHERE id = ?').get(id);
@@ -365,10 +372,10 @@ export async function landOnProfile(db, id, personId, { at = nowIso() } = {}) {
   // no event: the message itself is the History entry (messagesFor, Q76), so its text keeps the 13-month clock
   await db.prepare('UPDATE people SET last_contact_at = ? WHERE id = ? AND (last_contact_at IS NULL OR last_contact_at < ?)')
     .run(wrote, p.id, wrote);
-  const open = await db.prepare("SELECT COUNT(*) n FROM tasks WHERE person_id = ? AND label = 'Answer the question' AND done_at IS NULL").get(p.id);
+  const open = await db.prepare('SELECT COUNT(*) n FROM tasks WHERE person_id = ? AND label = ? AND done_at IS NULL').get(p.id, ANSWER_STEP);
   if (!Number(open.n)) {
     await db.prepare('INSERT INTO tasks (person_id,label,due_at,owner,created_at) VALUES (?,?,?,?,?)')
-      .run(p.id, 'Answer the question', wrote, p.owner || 'Admissions', at);
+      .run(p.id, ANSWER_STEP, wrote, p.owner || 'Admissions', at);
   }
   return p.id;
 }

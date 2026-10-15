@@ -16,7 +16,7 @@ import * as gmailB from '../lib/gmail.js';
 import * as notify from '../lib/notify.js';
 import * as sheetB from '../lib/sheetpull.js';
 import { pullSheet, sheetCounts } from './sheetsync.js';
-import { receive, activePersonFor, listInbound, messagesFor, recordWhatsAppEcho, qualify, archive, setMark, removeMark, setCallNote, withCallNotes, bringBack, funnel, agedCount, handoffToSis, ownerFor, notifiedFor, handoverGap, canReach, surfaceAt, waitingFor, waitingByRole } from './intake.js';
+import { receive, activePersonFor, IN_TOUCH_STEPS, listInbound, messagesFor, recordWhatsAppEcho, qualify, archive, setMark, removeMark, setCallNote, withCallNotes, bringBack, funnel, agedCount, handoffToSis, ownerFor, notifiedFor, handoverGap, canReach, surfaceAt, waitingFor, waitingByRole } from './intake.js';
 import { readScreenshot, readKind, readBody, readPath, saveFeedback, listFeedback, getScreenshot, setHandled, BadScreenshot, helpOpened, helpCounts } from './feedback.js';
 import { findMatches as matchPeople, duplicateCheck, onePersonFor } from './identity.js';
 import { lifecycleOf, sisProgress, sisProgressByPerson, SIS_HOLDS_SQL } from './lifecycle.js';
@@ -733,6 +733,10 @@ const ACTIVITY = [];
 const FINISHED = ['Admitted', 'Not proceeding'];
 const STILL_OPEN_SQL = `pe.status NOT IN ('${FINISHED.join("','")}')`;
 const isFinished = (status) => FINISHED.includes(status);
+// A STEP ON A LIST (alias t on tasks, pe on people): an open person's step, or a finished person's step that came from
+// them getting in touch again - a message's Answer the question or a missed call's Call back (the owner, 14.10.2026, B:
+// it shows on their owner's Due although they are finished). Any other leftover of a finished person stays off the lists.
+const STEP_LISTED_SQL = `(${STILL_OPEN_SQL} OR t.label IN ('${IN_TOUCH_STEPS.join("','")}'))`;
 
 /**
  * Close whatever is still open on a person who has just finished, and say so in their history.
@@ -916,9 +920,9 @@ function integrationStatuses(env = process.env) {
 }
 // A KNOWN PERSON LANDS ON THEIR PROFILE, ON EVERY CHANNEL (the owner, 14.10.2026: "Already handled" is gone as a
 // reason). The one question (src/intake.js activePersonFor, over src/identity.js onePersonFor: email exact, phone last 8
-// digits), asked for every message a channel delivers; the answer is receive()'s attachTo. One person, still being worked
-// with: their profile, no Inbox card. Two or more people, or a finished person: null, so the Inbox card stays (Joins and
-// their name when it is one person). A marked address or number is set aside all the same (receive(): the mark wins).
+// digits), asked for every message a channel delivers; the answer is receive()'s attachTo. One person, finished or not
+// (B, 14.10.2026): their profile, no Inbox card. Two or more people: null, so the Inbox card stays. A marked address or
+// number is set aside all the same (receive(): the mark wins).
 // Not asked here: the phone and the SIS ask it themselves before the Inbox (src/sync.js), and Mailchimp is activity
 // about somebody, never an enquiry (set aside, and noted on the person by the webhook below).
 const ON_PROFILE = "on the person's profile, not the Inbox";
@@ -1920,9 +1924,9 @@ export const handle = async (req, res) => {
       // STILL_OPEN_SQL, not a bare task query: a finished person's leftover task used to appear
       // here as overdue while openPeople and noNextAction below already counted them out.
       const overdue = await db.prepare(`SELECT t.*, pe.name, pe.programme, pe.status FROM tasks t JOIN people pe ON pe.id = t.person_id
-        WHERE t.done_at IS NULL AND ${STILL_OPEN_SQL}${inScope} AND t.due_at < ? ORDER BY t.due_at ASC`).all(...scopeArgs, dayStart());
+        WHERE t.done_at IS NULL AND ${STEP_LISTED_SQL}${inScope} AND t.due_at < ? ORDER BY t.due_at ASC`).all(...scopeArgs, dayStart());
       const today = await db.prepare(`SELECT t.*, pe.name, pe.programme, pe.status FROM tasks t JOIN people pe ON pe.id = t.person_id
-        WHERE t.done_at IS NULL AND ${STILL_OPEN_SQL}${inScope} AND t.due_at >= ? AND t.due_at < ? ORDER BY t.due_at ASC`).all(...scopeArgs, dayStart(), dayEnd());
+        WHERE t.done_at IS NULL AND ${STEP_LISTED_SQL}${inScope} AND t.due_at >= ? AND t.due_at < ? ORDER BY t.due_at ASC`).all(...scopeArgs, dayStart(), dayEnd());
       return json(res, 200, {
         newLeads7: (await q('SELECT COUNT(*) n FROM people WHERE created_at >= ?', since7)).n,
         newLeadsToday: (await q('SELECT COUNT(*) n FROM people WHERE created_at >= ?', dayStart())).n,
@@ -2583,7 +2587,7 @@ export const handle = async (req, res) => {
       // Next Steps as overdue"). A step added AFTER the admission slips past the close-on-status
       // rule; a finished person's leftover is on their own page under "Still open", never in a list.
       const [inScope, scopeArgs] = scopeSql(scopeRange(url));
-      let sql = `SELECT t.*, pe.name, pe.programme, pe.status, pe.phone, pe.source_channel FROM tasks t JOIN people pe ON pe.id = t.person_id WHERE t.done_at IS NULL AND ${STILL_OPEN_SQL}${inScope}`;
+      let sql = `SELECT t.*, pe.name, pe.programme, pe.status, pe.phone, pe.source_channel FROM tasks t JOIN people pe ON pe.id = t.person_id WHERE t.done_at IS NULL AND ${STEP_LISTED_SQL}${inScope}`;
       const args = [...scopeArgs];
       if (scope === 'overdue') { sql += ' AND t.due_at < ?'; args.push(dayStart()); }
       if (scope === 'today') { sql += ' AND t.due_at >= ? AND t.due_at < ?'; args.push(dayStart(), dayEnd()); }
@@ -3082,7 +3086,7 @@ export const handle = async (req, res) => {
           : r.filtered
           ? 'A commercial pitch. It is stored and findable, and it is kept out of the funnel, so nobody has to archive it by hand.'
           : r.attached
-          ? 'It came from somebody already in Intake, so it went on their history with Answer the question for today, not into the Inbox.'
+          ? 'It came from somebody already in Intake, so it went on their history with Answer the question for today, not into the Inbox, also when they are admitted or not proceeding.'
           : existing
           ? `It came in as ${existing.name}, who is already in the database. Qualifying it will offer that person rather than making a second one.`
           : 'Open the Inbox and decide what it is. Nothing becomes an applicant on its own.';
