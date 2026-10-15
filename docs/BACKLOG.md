@@ -29,13 +29,13 @@ this is a local prototype" stood here until 30.09.2026, from the weeks before th
   separate "Not a lead" button goes; the same folder stays, Bring back stays. Supplier or vendor / Internal / Spam
   become a MARK on the number or address, kept until changed (its contacts never pop and never reach the Inbox).
   "Already handled" goes: a known person's contact lands on their profile.
-- `DECIDED` A known person's contact lands on their PROFILE on every channel that carries an email or phone number
+- `LIVE` (patch 53, 15.10) A known person's contact lands on their PROFILE on every channel that carries an email or phone number
   (history + last contact + an "Answer the question" step for their owner); two or more matches stay in the Inbox;
   Messenger/Instagram/Facebook messages stay in the Inbox (username only). **Admitted / Not proceeding person writes
   again: profile + "Answer the question" step on the owner's Today** (owner 14.10), stage unchanged.
 - `SAID` Open, owner "can't decide now" (14.10): a MARKED number of a KNOWN person calls - mark wins (set aside) like
   every other channel, or person wins on phone (as now: logged on the profile).
-- `SAID` Big-screen bug: scrolling the Inbox on a big monitor breaks the folding top band (reproduced 14.10: the page
+- `LIVE` (patch 53, 15.10, folding never changes the page length) Big-screen bug: scrolling the Inbox on a big monitor breaks the folding top band (reproduced 14.10: the page
   froze when only ~160-240 px taller than the window). Fix in progress for every folding band.
 
 ## 02.10.2026 - HANDOFF: where this run stopped
