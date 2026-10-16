@@ -52,6 +52,7 @@ import { receiveSisApplication, mergeSisDuplicate, syncSis, channelMode, SIS_STA
 import { foldContractStage, foldSisOnlyApplication } from './stagefold.js';
 import { redateSisAdmissions } from './sisdates.js';
 import { programmeNamesRepair } from './programmes.js';
+import { LIST_NOTE_COLS, LIST_NOTE_JOINS, pickListNote } from './listnote.js';
 import { htmlEscape, inviteOrigin } from './systempages.js';
 
 
@@ -1957,8 +1958,12 @@ export const handle = async (req, res) => {
         (SELECT MIN(occurred_at) FROM lifecycle_events le WHERE le.person_id = pe.id AND le.fact = 'matriculated') AS matriculated_at,
         -- the newest comment somebody wrote (Add a note / Log a call), for the Journey card's one-line preview
         (SELECT body FROM events e WHERE e.person_id = pe.id AND e.origin = 'manual' AND e.kind IN ('note', 'call')
-          AND COALESCE(e.body, '') <> '' ORDER BY e.occurred_at DESC, e.id DESC LIMIT 1) AS last_comment
-        FROM people pe WHERE 1 = 1${scopePeopleSql(scopeRange(url))[0]} ORDER BY ${orderBy} ${dir} NULLS LAST`).all(...scopePeopleSql(scopeRange(url))[1]);
+          AND COALESCE(e.body, '') <> '' ORDER BY e.occurred_at DESC, e.id DESC LIMIT 1) AS last_comment,
+        -- the List's latest note line (16.10.2026, src/listnote.js): three joins on this same query, no request per row
+        ${LIST_NOTE_COLS}
+        FROM people pe ${LIST_NOTE_JOINS}
+        WHERE 1 = 1${scopePeopleSql(scopeRange(url))[0]} ORDER BY pe.${orderBy} ${dir} NULLS LAST`).all(...scopePeopleSql(scopeRange(url))[1]);
+      for (const r of rows) r.list_note = pickListNote(r);
       // Decision 10: findable by whatever the operator remembers, including the
       // channel's plain name, so "instagram" finds it without knowing the id.
       if (q) {

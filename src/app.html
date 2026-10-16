@@ -1732,6 +1732,9 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .p-edit{padding:4px 16px 16px;border-top:1px solid var(--rule2)}
   html.ui-c .c-jedit .c-form{grid-template-columns:minmax(0,1fr)}   /* the board's opened card is narrow: one field per line */
   html.ui-c .p-rows .c-line.c-sel{background:var(--c-sunk)}
+  /* the latest note under a Journey List row (16.10.2026): the whole row's width, one quiet line, an ellipsis */
+  html.ui-c .p-rows .c-line > .c-lnote{grid-column:1/-1;min-width:0;margin-top:-8px;font-size:var(--type-detail);font-weight:400;
+    color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   /* Q52: only the user's NEW count in the menu - the small mark and the bold figure; no total */
   html.ui-c .n{display:inline-flex;align-items:baseline;gap:3px;white-space:nowrap}
   html.ui-c .n .nw{font-style:normal;font-size:8.5px;font-weight:800;letter-spacing:.06em;line-height:1;padding:2px 4px 1px;border-radius:4px;
@@ -4472,6 +4475,17 @@ async function viewJourneyPool() {
   C_PDATA = { people, taskOf };   // the same rows People's edit and save read
   cDrawJourneyPool();
 }
+// THE LATEST NOTE UNDER A LIST ROW (the owner, 16.10.2026, after Admissions: "notes do not show, but I think I marked
+// them"). The server picks the newest of a note or call somebody wrote, the Notes field and a call's "What was it about?"
+// (src/listnote.js); the row shows it on one quiet line, who and the day first, cut with an ellipsis. No note, no line.
+const cNoteDay = (iso) => { const d = fmtDate(iso); if (!d) return ''; const [y, m, dd] = d.split('-'); return `${dd}.${m}${y === todayStr().slice(0, 4) ? '' : '.' + y}`; };
+function cListNote(p) {
+  const n = p && p.list_note;
+  const text = n ? String(n.from === 'notes' ? cNotePreview(n.text) : n.text || '').replace(/\s+/g, ' ').trim() : '';
+  if (!text) return '';
+  const who = [n.by ? actorName(n.by) : '', n.at ? cNoteDay(n.at) : ''].filter(Boolean).join(' · ');
+  return `<small class="c-lnote" title="${esc(text)}">${who ? esc(who) + ': ' : ''}${esc(text)}</small>`;
+}
 function cDrawJourneyPool() {
   const { people, taskOf } = C_JPD;
   const roles = CFG.stageRoles || {};
@@ -4547,7 +4561,7 @@ function cDrawJourneyPool() {
       <div class="c-who"><b>${esc(p.name)}</b><small class="c-reach ${p.email || p.phone ? '' : 'c-gap'}">${p.email || p.phone ? cReach(p) : 'no contact details'}</small>${p.status === closed ? cSameMark(p, people) : ''}</div>
       <div class="c-what"><span class="p-stage">${esc(cStage(p.status))}</span> · ${esc(p.programme || 'programme not said')}<small class="p-step">${step}</small></div>
       <div class="c-when">${t ? `<span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span>` : ''}</div>
-      <div class="c-acts">${open && !t && !cSisHolds(p) ? cChooseNext(p.id) : ''}</div></div>
+      <div class="c-acts">${open && !t && !cSisHolds(p) ? cChooseNext(p.id) : ''}</div>${cListNote(p)}</div>
       ${C_PEDIT === p.id ? `<div class="c-edit p-edit">${cEditForm(p, t)}</div>` : ''}`; };
   const np = people.filter((p) => p.status === closed);
   $('#view').innerHTML = cPoolFrame({
