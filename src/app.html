@@ -6443,6 +6443,10 @@ function startLoginSea() {
   function creep() {
     if (!bar || !bar.isConnected || at < 0 || at >= STEPS.length - 1) return stop();
     const ceiling = MARK[STEPS[at + 1]] - 4;
+    // A CREEP THAT HAS ARRIVED STOPS TICKING (16.10.2026, found in Talent Acquisition, which hides
+    // its panels instead of removing them, so the bar never "left the page" and the interval ran
+    // for ever). It slows toward the ceiling and never passes it; the next real step restarts it.
+    if (ceiling - shown < 0.05) return stop();
     fill(shown + (ceiling - shown) * 0.04);
   }
   window.signinProgress = function signinProgress(step) {
