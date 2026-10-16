@@ -14,6 +14,16 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 16.10.2026 - Ieva: calls, leads, emails (owner, after Ieva's message)
+
+- `SAID` (to do, owner 16.10: "why emails show up this messy???") An email card shows the WHOLE raw thread: quoted
+  history (From/Sent/To/Subject), our own signature with every link spelled out, image placeholders [cid:...],
+  tracking URLs and the legal disclaimer. The card should show only what the person newly wrote, short, with the
+  rest one click away.
+- `DECIDED` (owner told Ieva 16.10 he is writing the rules now) edu@ email filtering: an email reaches the Inbox only
+  with the ADMISSION label or when it reads as someone wanting to study; a known person's email goes to their
+  profile; everything else is set aside automatically and stays searchable with Bring back.
+
 ## 14.10.2026 - One rule for every card, call notes, TeleGroup pop-up (owner's picks)
 
 - `LIVE` (patch 52, 14.10) A person **set aside** who contacts again, on any channel, comes back to the Inbox like anyone new,
