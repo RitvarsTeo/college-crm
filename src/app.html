@@ -412,10 +412,12 @@ tr.row:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
      would be a linear bar that means loading, which this product reserves for
      exactly that - but it would have to invent a number to fill, and the wait is
      one request whose duration nobody knows. */
-  #auth-pending.gate-loading{max-width:400px;padding:40px 34px 34px;text-align:center}
-  #auth-pending.gate-loading::before{background:var(--gate-surface);
-       backdrop-filter:none;-webkit-backdrop-filter:none;
-       border:1px solid var(--gate-line);box-shadow:0 22px 60px rgba(3,12,26,.34)}
+  /* THE SAME CARD AS THE ONE IT REPLACES (16.10.2026): sso-only gives it the sign-in card's
+     width, padding and centred 34px Raleway heading, so nothing moves when it swaps in. */
+  #auth-pending.gate-loading{text-align:center;display:flex;flex-direction:column;align-items:center}
+  #auth-pending.gate-loading.hidden{display:none !important}
+  /* The frame stays the sign-in card's glass: the whole view is the sea, so nothing of the app
+     can show through it (the 10.09 "residue" was an app page under a full-bleed wait). */
   #auth-pending .gl-org{margin:0 0 14px;font-size:10.5px;letter-spacing:.19em;
        text-transform:uppercase;color:var(--gate-muted);font-weight:600}
   /* The stack is LITERAL, not `var(--serif)`. That token is declared under
@@ -423,15 +425,15 @@ tr.row:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
      identically with the flag off - a var that fails to resolve makes the
      whole declaration invalid and the heading silently falls back to Raleway,
      which is the inconsistent font the owner was looking at. */
-  #auth-pending#auth-pending h1{margin:0 0 10px;
-       font-family:'Spectral',Constantia,Georgia,'Times New Roman',serif;
-       font-weight:400;font-size:31px;line-height:1.16;letter-spacing:-.015em;
-       color:var(--gate-ink)}
-  #auth-pending .sub{margin:0 0 22px;font-size:14.5px;line-height:1.5;color:var(--gate-muted)}
+  /* LIGHTER THAN THE APP NAME, with room under it (the owner, 16.10.2026: "signing you in is waaay
+     to heavy and sitting on top of the bottom text"). The app name is the card's one big word; a
+     status line is not. #login-view raises it past the sso-only heading rule. */
+  #login-view #auth-pending h1{font-size:20px;line-height:26px;font-weight:600;letter-spacing:0;margin:0 0 8px}
+  #auth-pending .sub{margin:0;text-align:center}
   /* THE MARK. Sized in the markup as well as here, so the card does not jump
      while the SVG is still being fetched. */
   #auth-pending .gl-mark{display:block;margin:0 auto 20px;width:196px;height:auto;opacity:.92}
-  #auth-pending .gate-wait{display:flex;justify-content:center;padding:8px 0 2px}
+  #auth-pending .gate-wait{display:flex;justify-content:center;padding:0 0 16px}
   /* A RING THAT IS LEGIBLE WITHOUT THE ANIMATION, ported from the Client Hub
      with its reasoning intact: a headless or hidden browser never fires the
      frames, and a spinner that is invisible when still reads as a broken
@@ -6277,6 +6279,7 @@ const LOGIN_SEA = () => {
     }
   
     function loop(now) {
+      if (!cv.isConnected) return;   // the gate was taken down (signed in): stop painting a canvas nobody sees
       raf=requestAnimationFrame(loop); if (!last) { last=now; return; }
       let dt=Math.min(200,now-last); last=now; acc+=dt; if (acc < 33) return; acc=0; time+=dt/1000;
       const start=performance.now(); render(time); const spent=performance.now()-start;
@@ -6323,7 +6326,8 @@ function readReturnFromGoogle() {
   if (error || ok) {
     history.replaceState(history.state, '', location.pathname + location.hash);
   }
-  return { refused: error === 'not_authorised', signedIn: ok };
+  // waiting: back from Google with no error, so "Signing you in" shows. An ?error= always wins.
+  return { refused: error === 'not_authorised', signedIn: ok, waiting: ok && !error };
 }
 
 async function loadAuth() {
@@ -6357,6 +6361,17 @@ async function loadAuth() {
   return AUTH;
 }
 
+// ONE SHELL - the sea, the scrim and the logo - for the sign-in card and for the wait after Google,
+// as in the kit, so the two cards sit in exactly the same place.
+const loginShell = (card) => `<div id="login-view">
+    <canvas class="sea" id="login-sea" aria-hidden="true"></canvas>
+    <div class="sea-scrim" aria-hidden="true"></div>
+    <div class="gate-inner">
+      <div class="brand"><img src="/assets/NoAca_logo_whitehor.svg" alt="Novikontas Academy"></div>
+      ${card}
+    </div>
+  </div>`;
+
 function drawLogin(message) {
   document.querySelector('.shell').style.display = 'none';
   let box = $('#loginScreen');
@@ -6379,12 +6394,7 @@ function drawLogin(message) {
         <span>Continue with Google</span>
       </a>` : '<p class="sub">Google sign-in is not configured on this copy.</p>';
 
-  box.innerHTML = `<div id="login-view">
-    <canvas class="sea" id="login-sea" aria-hidden="true"></canvas>
-    <div class="sea-scrim" aria-hidden="true"></div>
-    <div class="gate-inner">
-      <div class="brand"><img src="/assets/NoAca_logo_whitehor.svg" alt="Novikontas Academy"></div>
-      <div class="gate-card sso-only">
+  box.innerHTML = loginShell(`<div class="gate-card sso-only">
         <!-- Just the product name. The mark above the card already says NOVIKONTAS
              ACADEMY, so "Academy CRM" here said Academy twice on one screen. Renamed to
              Intake 02.10.2026, matching the sidebar and the installed app name. -->
@@ -6392,9 +6402,7 @@ function drawLogin(message) {
         <p class="sub">Sign in to continue</p>
         ${googleBlock}
         <div id="loginErr" class="err${message ? '' : ' hidden'}" role="alert">${esc(message || '')}</div>
-      </div>
-    </div>
-  </div>`;
+      </div>`);
   startLoginSea();
 }
 
@@ -6403,6 +6411,28 @@ function drawLogin(message) {
 // only when the gate is drawn - there is no canvas to paint at any other time.
 function startLoginSea() {
   try { LOGIN_SEA(); } catch { /* the card is legible on the gradient without it */ }
+}
+
+// "SIGNING YOU IN" - the dev kit's waiting card (kit part 1, c3967b4 + 30822d1), copied, not
+// redrawn. Shown on the way back from Google (?auth=google, no ?error) in the same shell as the
+// sign-in card, until /api/auth/me has answered; then the app as before, or the sign-in card.
+function drawSigningIn() {
+  let box = $('#loginScreen');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'loginScreen';
+    document.body.appendChild(box);
+  }
+  box.innerHTML = loginShell(`<div class="gate-card sso-only gate-loading" id="auth-pending" aria-live="polite">
+        <div class="gate-wait"><span class="gate-spin" aria-hidden="true"></span></div>
+        <h1 id="pendingTitle">Signing you in</h1>
+        <p class="sub" id="pendingSub">One moment - checking your Novikontas account.</p>
+      </div>`);
+  startLoginSea();
+}
+function clearSigningIn() {
+  const box = $('#loginScreen');
+  if (box) box.remove();
 }
 
 async function signOut() {
@@ -9466,7 +9496,9 @@ async function cpPushSetup() {
   // decision, every channel blocker - had already been pulled into the page
   // before the login screen appeared. The order is the whole control.
   const back = readReturnFromGoogle();
+  if (back.waiting) drawSigningIn();
   await loadAuth();
+  if (back.waiting && !(AUTH.on && !AUTH.user)) clearSigningIn();
   // Registered BEFORE the login check. Returning early here left no hashchange
   // listener at all, so after signing in every link in the navigation changed the
   // address bar and nothing on screen moved.
