@@ -16,7 +16,7 @@ import * as gmailB from '../lib/gmail.js';
 import * as notify from '../lib/notify.js';
 import * as sheetB from '../lib/sheetpull.js';
 import { pullSheet, sheetCounts } from './sheetsync.js';
-import { receive, activePersonFor, IN_TOUCH_STEPS, listInbound, messagesFor, recordWhatsAppEcho, qualify, archive, setMark, removeMark, setCallNote, withCallNotes, bringBack, funnel, agedCount, handoffToSis, ownerFor, notifiedFor, handoverGap, canReach, surfaceAt, waitingFor, waitingByRole } from './intake.js';
+import { receive, activePersonFor, IN_TOUCH_STEPS, listInbound, callsTodayFromPeople, messagesFor, recordWhatsAppEcho, qualify, archive, setMark, removeMark, setCallNote, withCallNotes, bringBack, funnel, agedCount, handoffToSis, ownerFor, notifiedFor, handoverGap, canReach, surfaceAt, waitingFor, waitingByRole } from './intake.js';
 import { readScreenshot, readKind, readBody, readPath, saveFeedback, listFeedback, getScreenshot, setHandled, BadScreenshot, helpOpened, helpCounts } from './feedback.js';
 import { findMatches as matchPeople, duplicateCheck, onePersonFor } from './identity.js';
 import { lifecycleOf, sisProgress, sisProgressByPerson, SIS_HOLDS_SQL } from './lifecycle.js';
@@ -2141,6 +2141,8 @@ export const handle = async (req, res) => {
         archiveReasons: CONFIG.intake.archiveReasons,   // one rule (14.10.2026): Set aside = one of these four
         marks: CONFIG.intake.marks,                     // the three that also mark the number or address
         ageing: CONFIG.ageing,
+        // 16.10.2026: today's calls from people already in Intake (no card of their own); only on the waiting Inbox
+        callsToday: state === 'new' ? await callsTodayFromPeople(db) : [],
       });
     }
 

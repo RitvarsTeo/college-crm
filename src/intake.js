@@ -465,10 +465,29 @@ export async function callsFor(db, inboundId) {
   const menu = Object.values(CFG.phoneMenu || {});
   const rows = await db.prepare(`SELECT uniqueid, called_at, queue, picked_up, operator_name, duration_sec, talk_sec, note, note_by
     FROM pbx_calls WHERE inbound_id = ? ORDER BY called_at DESC`).all(inboundId);
+  return rows.map((c) => ({ ...callView(c, menu), note: c.note || null, noteBy: c.note_by || null }));
+}
+// one call as every screen reads it: when, the line (the menu's role), answered by whom or missed, the lengths
+function callView(c, menu) {
   const sec = (v) => (v === null || v === undefined || v === '' ? null : Number(v));
-  return rows.map((c) => ({ id: c.uniqueid, at: c.called_at, line: ((menu.find((m) => m && m.queue === c.queue) || {}).role) || c.queue,
+  return { id: c.uniqueid, at: c.called_at, line: ((menu.find((m) => m && m.queue === c.queue) || {}).role) || c.queue,
     answered: Boolean(Number(c.picked_up)), operator: c.operator_name || null,
-    talkSec: sec(c.talk_sec), durationSec: sec(c.duration_sec), note: c.note || null, noteBy: c.note_by || null }));
+    talkSec: sec(c.talk_sec), durationSec: sec(c.duration_sec) };
+}
+
+// CALLS TODAY FROM PEOPLE IN INTAKE (Admissions, 16.10.2026: a call from a number that already belongs to a person goes
+// straight to their profile, so no Inbox card shows it; Laura's 08:54 call looked lost). Today's calls (a Riga day)
+// that were logged on a person, newest first: the call line the phone card shows, plus the person's id and name for the
+// link. Never the number, never the note: only what the Inbox strip shows.
+export async function callsTodayFromPeople(db, { now = new Date() } = {}) {
+  const menu = Object.values(CFG.phoneMenu || {});
+  const day = localDate(now);
+  const [y, m, d] = day.split('-').map(Number);
+  const rows = await db.prepare(`SELECT c.uniqueid, c.called_at, c.queue, c.picked_up, c.operator_name, c.duration_sec, c.talk_sec,
+      pe.id AS person_id, pe.name FROM pbx_calls c JOIN people pe ON pe.id = c.person_id
+    WHERE c.person_id IS NOT NULL AND c.called_at >= ? AND c.called_at < ? ORDER BY c.called_at DESC, c.uniqueid`)
+    .all(localMidnight(y, m, d), localMidnight(y, m, d + 1));
+  return rows.map((c) => ({ ...callView(c, menu), personId: c.person_id, name: c.name || '' }));
 }
 
 // SET ASIDE BEFORE (14.10.2026, "comes back"): somebody set aside earlier who gets in touch again, on any channel, is
@@ -689,7 +708,7 @@ function sourceDetailOf(item) {
   return 'from ' + item.channel + ' intake';
 }
 
-export async function qualify(db, id, { qualification, personId, createPerson, by, note,
+export async function qualify(db, id, { qualification, personId, createPerson, by, note, name: typedName,
   confirmFields = [], stated = {}, nextAction, nextActionDue, differentPerson = false, cold = null }) {
   const item = await db.prepare('SELECT * FROM inbound WHERE id = ?').get(id);
   if (!item) return { error: 'not found' };
@@ -707,6 +726,9 @@ export async function qualify(db, id, { qualification, personId, createPerson, b
   for (const k of ['email', 'phone']) stated[k] = String(stated[k] ?? '').trim() || undefined;
   if (stated.email && !/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(stated.email)) return { error: 'that email does not look right' };
   if (stated.phone && String(stated.phone).replace(/\D/g, '').length < 7) return { error: 'that phone number looks too short' };
+  // THE NAME ON THE CARD (Admissions, 16.10.2026: a lead made from a call was "Unknown contact", because the card had no
+  // name field). Optional; it names a NEW person only, never renames somebody we already have. Empty = as before.
+  const named = String(typedName ?? '').replace(/\s+/g, ' ').trim().slice(0, 200);
 
   // The request has to make sense before the business gates are worth applying,
   // otherwise a malformed call is reported as a missing next step.
@@ -735,7 +757,7 @@ export async function qualify(db, id, { qualification, personId, createPerson, b
   // from a channel therefore created twins in silence.
   if (!personId && createPerson && !differentPerson) {
     const dup = await duplicateCheck(db, {
-      email: item.contact_email || stated.email, phone: item.contact_phone || stated.phone, name: item.contact_name });
+      email: item.contact_email || stated.email, phone: item.contact_phone || stated.phone, name: named || item.contact_name });
     if (dup.blocked) {
       return { error: 'this looks like somebody we already have', duplicate: true,
         matches: dup.matches, strong: dup.strong.length > 0 };
@@ -747,7 +769,7 @@ export async function qualify(db, id, { qualification, personId, createPerson, b
 
   if (!pid && createPerson) {
     pid = newPersonId();
-    const name = item.contact_name || item.contact_handle || 'Unknown contact';
+    const name = named || item.contact_name || item.contact_handle || 'Unknown contact';
     await db.prepare(`INSERT INTO people
       (id,name,email,phone,status,owner,source_channel,source_detail,created_at,last_contact_at,
        qualification,first_channel)

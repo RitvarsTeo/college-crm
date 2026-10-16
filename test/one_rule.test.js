@@ -44,7 +44,7 @@ function board(rows, { show = 'new', aside = null } = {}) {
   vm.runInNewContext([ESC, line('const cPhone = '), line('const C_ST = '), line('const C_ST_RAIL = '), fnBody('function cStateLine('),
     line('const C_IP_KIND = '), fnBody('function cInboxAge(iso) {'), line('const cAgo = '), line('const cDdMm = '),
     line('const C_MARK_SHORT = '), line('const cAsideWhen = '), fnBody('function cMarkCtl('), fnBody('function cAsideChoice('),
-    fnBody('function cCallsHtml('), fnBody('function cCallNoteInput('),
+    fnBody('function cCallsHtml('), fnBody('function cCallLen('), fnBody('function cCallWhat('), fnBody('function cCallNoteInput('),
     'var CFG = globalThis.CFG || {};', FOLD + fnBody('function cInboxPool() {'), 'cInboxPool();'].join('\n'), ctx);
   return view.innerHTML;
 }
