@@ -244,7 +244,7 @@ test('the waiting card\'s CSS is the kit\'s, and the old Spectral panel is gone 
   assert.match(APP, /#auth-pending \.sub\{margin:0;text-align:center\}/);
   assert.match(APP, /#auth-pending \.gate-wait\{display:flex;justify-content:center;align-self:stretch;padding:0 0 16px\}/, 'the bar spans the card');
   assert.match(APP, /#auth-pending \.gate-bar\{display:block;width:100%;height:4px;margin:9px 0;border-radius:2px;\s*background:var\(--gate-line\);overflow:hidden\}/, '4px on a light track, in the spinner\'s 22px box');
-  assert.match(APP, /#auth-pending \.gate-bar-fill\{display:block;width:10%;height:100%;border-radius:2px;\s*background:var\(--brand-navy\);transition:width \.2s ease-out\}/, 'the gate\'s navy');
+  assert.match(APP, /#auth-pending \.gate-bar-fill\{display:block;width:10%;height:100%;border-radius:2px;\s*background:var\(--gate-progress\);transition:width \.2s ease-out\}/, 'the gate\'s navy');
   assert.match(APP, /#login-view\.gate-done\{opacity:0;pointer-events:none;transition:opacity \.22s ease \.18s\}/, 'fades once the first view is drawn');
   assert.match(APP, /@media\(prefers-reduced-motion:reduce\)\{\s*#auth-pending \.gate-bar-fill\{transition:none\}\s*#login-view\.gate-done\{transition:none\}\}/, 'reduced motion: steps only');
   assert.doesNotMatch(APP, /gate-spin|gatespin/, 'the spinner is gone, markup and CSS');

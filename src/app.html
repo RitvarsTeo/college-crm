@@ -223,6 +223,7 @@ tr.row:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
     --gate-google-line:#dadce0;
     --gate-primary-ink:#ffffff;        /* the Sign in label, on the dark glass button */
     --gate-on-navy:#ffffff;            /* anything written on top of --brand-navy */
+    --gate-progress:#29a8df;           /* the Signing you in bar: data blue, the owner's pick 16.10.2026 */
     --gate-err-bg:#fdecea;--gate-err-ink:#8c1d18;
     --brand-navy:#0a2463;position:fixed;inset:0;z-index:100;display:grid;place-items:center;
     padding:40px 20px;overflow:hidden;font-family:'Raleway','Segoe UI',Roboto,-apple-system,Helvetica,Arial,sans-serif;
@@ -441,7 +442,7 @@ tr.row:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
   #auth-pending .gate-bar{display:block;width:100%;height:4px;margin:9px 0;border-radius:2px;
     background:var(--gate-line);overflow:hidden}
   #auth-pending .gate-bar-fill{display:block;width:10%;height:100%;border-radius:2px;
-    background:var(--brand-navy);transition:width .2s ease-out}
+    background:var(--gate-progress);transition:width .2s ease-out}
   /* Once the first page is drawn the whole view fades (after the fill has reached the end), and
      stops taking clicks at once, so the page under it answers the first one. */
   #login-view.gate-done{opacity:0;pointer-events:none;transition:opacity .22s ease .18s}
