@@ -16,6 +16,12 @@ this is a local prototype" stood here until 30.09.2026, from the weeks before th
 
 ## 16.10.2026 - Ieva: calls, leads, emails (owner, after Ieva's message)
 
+- `DECIDED` (owner proposed, Ieva: "tas varētu būt noderīgi", 16.10) Inbox top: a small "Calls today from people in
+  Intake" line - time, name, line, who answered, click to the profile - so a known caller's call is never unseen (Laura's
+  08:54 call went straight to Nikita Zlotnikovs's profile and nobody saw it).
+- `SAID` (bug, 16.10, Arina via Ieva) Make a lead from a CALL card has no Name field, so the lead is created as
+  "Unknown contact"; Arina's note and step were saved (note "Coming on Thursday 22nd..." + step due 22.10), the name was
+  fixed by hand at 14:48. Ieva could not find the notes from Journey -> List.
 - `LIVE` (patch 56, 16.10) (owner 16.10: "why emails show up this messy???") An email card shows the WHOLE raw thread: quoted
   history (From/Sent/To/Subject), our own signature with every link spelled out, image placeholders [cid:...],
   tracking URLs and the legal disclaimer. The card should show only what the person newly wrote, short, with the
