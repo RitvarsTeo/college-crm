@@ -184,7 +184,7 @@ test('a figure opens People on exactly its people, every other filter cleared', 
   assert.match(fnBody('function cJTargetKeep('), /if \(C_PCOHORT && !C_PCOHORT\.ids\.has\(p\.id\)\) return false;/, 'the Board shows only the cohort');
   assert.match(fnBody('function cJTargetChips('), /C_PCOHORT \? x\(C_PCOHORT\.label, 'C_PCOHORT=null'\)/, 'and one click shows everyone again');
   const draw = fnBody('function cDrawJourneyPool() {');
-  assert.match(draw, /if \(C_PCOHORT\) base = base\.filter\(\(p\) => C_PCOHORT\.ids\.has\(p\.id\)\);/, 'the Journey lists only the cohort');
+  assert.match(draw, /if \(C_PCOHORT\) all = all\.filter\(\(p\) => C_PCOHORT\.ids\.has\(p\.id\)\);/, 'the Journey lists only the cohort');
   assert.match(draw, /C_PCOHORT=null;cDrawJourneyPool\(\)">Show everyone ✕/, 'and one click shows everyone again');
   assert.match(fnBody('function cChartGo(spec) {'), /if \(kind === 'cohort'\) \{ cGoCohort\(key\); return; \}/, 'bars and columns route through the same door');
   assert.match(fnBody('async function routeC(page, arg) {'), /if \(!\(place === 'people' && page !== 'journey'\)\) C_PCOHORT = null;/, 'a cohort never follows you elsewhere');

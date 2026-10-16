@@ -4427,6 +4427,7 @@ function cJColToBoard() {
   for (const k of ['programme', 'owner', 'source']) if (C_PF[k]) { C_JF[k] = [C_PF[k]]; C_PF[k] = ''; }
   if (C_PF.due === 'over' || C_PF.due === 'today') C_JF.due = [C_PF.due];
   C_PF.due = ''; C_PF.data = '';
+  C_PF.stage = '';   // the List's Active is what the board already shows (its open columns)
 }
 function cJBoardToCol() { const st = C_JF.stage || []; C_JP.col = st.length === 1 ? st[0] : null; if (C_TERMINAL.includes(C_JP.col)) C_OUTCOME = C_JP.col; }
 // The old addresses land here, on the right column: #/people and #/people/all are everyone, #/outcomes the outcome
@@ -4449,8 +4450,18 @@ function cPoolRouteJourney(page) {
   return viewJourneyC();
 }
 function cJourneyPick(v) {
+  if (C_PF.stage === 'open') C_PF.stage = '';   // a stage clicked on the band replaces Active in the Stage box
   C_JP.col = C_JP.col === v ? null : v;
   if (C_TERMINAL.includes(C_JP.col)) C_OUTCOME = C_JP.col;
+  C_OUT_TAG = null; C_OUT_REASON = null; C_OUT_FILTER = null;
+  cDrawJourneyPool();
+}
+// The List's Stage box (16.10.2026): '' = everyone, 'open' = Active (every open stage), else one stage, set exactly as
+// a band click sets it, so the band and the box never disagree.
+function cJourneyStage(v) {
+  C_PF.stage = v === 'open' ? 'open' : '';
+  C_JP.col = null;
+  if (v && v !== 'open') return cJourneyPick(v);
   C_OUT_TAG = null; C_OUT_REASON = null; C_OUT_FILTER = null;
   cDrawJourneyPool();
 }
@@ -4467,10 +4478,14 @@ function cDrawJourneyPool() {
   const closed = roles.closed || 'Not proceeding', admitted = roles.admitted || 'Admitted';
   const known = new Set(CFG.programmes || []);
   // every filter but the stage: the column is the stage
-  const f = { ...C_PF, stage: C_PF.stage === 'open' ? 'open' : '' };
-  let base = people.filter((p) => cPeopleMatch(p, taskOf.get(p.id), f, known));
-  if (C_PCOHORT) base = base.filter((p) => C_PCOHORT.ids.has(p.id));
-  if (C_PQ) { const q = C_PQ.toLowerCase(); base = base.filter((p) => [p.name, p.email, p.phone].some((v) => String(v || '').toLowerCase().includes(q))); }
+  const f = { ...C_PF, stage: '' };
+  let all = people.filter((p) => cPeopleMatch(p, taskOf.get(p.id), f, known));
+  if (C_PCOHORT) all = all.filter((p) => C_PCOHORT.ids.has(p.id));
+  if (C_PQ) { const q = C_PQ.toLowerCase(); all = all.filter((p) => [p.name, p.email, p.phone].some((v) => String(v || '').toLowerCase().includes(q))); }
+  // Admissions, 16.10.2026 (who in one programme is active right now?): Stage = Active is every open stage, i.e.
+  // not one of the two finished stages the config names (stageRoles.admitted / .closed)
+  const active = C_PF.stage === 'open';
+  const base = active ? all.filter((p) => p.status !== admitted && p.status !== closed) : all;
   const late = (p) => { const t = taskOf.get(p.id); return Boolean(t && cWhenClass(t.due_at) === 'over'); };
   const stages = (CFG.stages || []).filter((st) => !C_TERMINAL.includes(st.id));
   const cols = [...stages.map((st) => { const ps = base.filter((p) => p.status === st.id); return { id: st.id, label: st.label || st.id, n: ps.length, over: ps.filter(late).length }; }),
@@ -4500,20 +4515,25 @@ function cDrawJourneyPool() {
   const box = (k, label, values) => cPoolSelect(label, C_PF[k], values, `C_PF.${k}=this.value;cDrawJourneyPool()`);
   const tags = (CFG.closedTags || []).map((t) => [t.id, t.label || t.id, people.filter((p) => p.status === closed && p.closed_tag === t.id).length])
     .filter(([, , n]) => n > 0).map(([id, label, n]) => [id, `${label} ${n}`]);   // a tag nobody carries is not offered
-  // ONE LINE at 1440: three on show, the rest behind More filters (open by itself while one of them is set)
-  const more = C_JPMORE || Boolean(C_PF.owner || C_PF.data || C_PF.arrived);
+  // Stage: the band's own column (C_JP.col), so a band click and this box always agree; Active = every open stage.
+  // Each choice carries its count, the Cold / Reject way, so Programme MTM + Active says how many at once.
+  const stageOpts = [['open', `Active ${all.filter((p) => p.status !== admitted && p.status !== closed).length}`],
+    ...cols.map((c) => [c.id, `${c.label} ${all.filter((p) => p.status === c.id).length}`])];
+  // ONE LINE at 1440: three on show, the rest behind More filters (open by itself while one of them is set);
+  // Came from moved behind More filters when Stage came in (16.10.2026)
+  const more = C_JPMORE || Boolean(C_PF.source || C_PF.owner || C_PF.data || C_PF.arrived);
   const boxes = [
     box('programme', 'Programme', progs.map((v) => [v, name('programme', v)])),
+    cPoolSelect('Stage', active ? 'open' : C_JP.col || '', stageOpts, 'cJourneyStage(this.value)'),
     box('due', 'Next step', C_PF_DUE),
-    box('source', 'Came from', sources.map((v) => [v, name('source', v)])),
     isNp && tags.length ? cPoolSelect('Cold / Reject', C_OUT_TAG || '', tags, 'C_OUT_TAG=this.value||null;C_OUT_REASON=null;cDrawJourneyPool()') : '',
+    more ? box('source', 'Came from', sources.map((v) => [v, name('source', v)])) : '',
     more ? box('owner', 'Owner', owners.map((v) => [v, name('owner', v)])) : '',
     more ? box('data', 'Details', C_PF_DATA) : '',
     more ? box('arrived', 'Arrived', [...new Set(people.map((p) => cDay(p.created_at).slice(0, 4)).filter(Boolean))].sort().reverse().map((y) => [y, y])) : '',
     `<button type="button" class="btn sm ghost p-more" aria-expanded="${more}" onclick="C_JPMORE=!${more};cDrawJourneyPool()">${more ? 'Fewer filters' : 'More filters'}</button>`];
-  const any = Object.entries(C_PF).some(([k, v]) => k !== 'stage' && v) || (isNp && C_OUT_TAG);
+  const any = Object.values(C_PF).some(Boolean) || Boolean(C_JP.col) || (isNp && C_OUT_TAG);
   const chips = [
-    C_PF.stage === 'open' ? `<div class="c-filter">Open people only <button class="btn sm ghost" onclick="C_PF.stage='';cDrawJourneyPool()">Everyone ✕</button></div>` : '',
     C_PCOHORT ? `<div class="c-filter c-cohort">${esc(C_PCOHORT.label)} <button class="btn sm ghost" onclick="C_PCOHORT=null;cDrawJourneyPool()">Show everyone ✕</button></div>` : '',
     oF ? `<div class="c-filter">${esc(oF.label || '')} <button class="btn sm ghost" onclick="C_OUT_FILTER=null;cDrawJourneyPool()">All admitted ✕</button></div>` : '',
     isNp && C_OUT_REASON ? `<div class="c-filter">${esc(C_OUT_REASON)} <button class="btn sm ghost" onclick="C_OUT_REASON=null;cDrawJourneyPool()">Every reason ✕</button></div>` : ''].join('');
@@ -4534,7 +4554,7 @@ function cDrawJourneyPool() {
     title: 'Journey',
     act: `${cPoolViewSwitch()}<input class="c-search" id="cPQ" placeholder="Search name, email or phone" value="${esc(C_PQ)}" aria-label="Search people"><button class="btn" onclick="openAdd()">Add lead</button><button class="btn ghost" onclick="openExport()">Download</button>`,
     band: cPoolBand('The journey', cols, C_JP.col, 'cJourneyPick'),
-    filters: cPoolFilters('people', boxes, any ? "C_PF=C_PF_EMPTY();C_OUT_TAG=null;cDrawJourneyPool()" : '') + chips + (C_PMSG ? `<div class="c-filter">${esc(C_PMSG)}</div>` : ''),
+    filters: cPoolFilters('people', boxes, any ? "C_PF=C_PF_EMPTY();C_JP.col=null;C_OUT_TAG=null;cDrawJourneyPool()" : '') + chips + (C_PMSG ? `<div class="c-filter">${esc(C_PMSG)}</div>` : ''),
     // Cold or Reject: one card per programme, what a campaign is aimed at (D-C8, the owner's pick 05.10.2026)
     body: (isNp && C_OUT_TAG ? cColdGroups(list, people) : cPoolRows(list, row, 'Nobody matches. Remove a filter to widen the list.'))
       + (isNp && !C_OUT_TAG ? cReasonBreakdown(np, np.filter((p) => !p.closed_reason).length) : ''),

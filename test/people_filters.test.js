@@ -50,11 +50,14 @@ test('the pills are gone; compact dropdowns in the Journey look, with Clear, on 
   const pool = fn('function cDrawJourneyPool(');
   const labels = [...pool.matchAll(/box\('(\w+)', '([^']+)'/g)].map((x) => x[2]);
   assert.deepEqual(labels, ['Programme', 'Next step', 'Came from', 'Owner', 'Details', 'Arrived']);   // Arrived: Q36
-  assert.match(pool, /const more = C_JPMORE \|\| Boolean\(C_PF\.owner \|\| C_PF\.data \|\| C_PF\.arrived\);/);
+  // 16.10.2026 (Ieva): Stage (All / Active / each stage) joined right after Programme; Came from went behind More filters
+  assert.match(pool, /const more = C_JPMORE \|\| Boolean\(C_PF\.source \|\| C_PF\.owner \|\| C_PF\.data \|\| C_PF\.arrived\);/);
+  assert.match(pool, /box\('programme', 'Programme'[^\n]*\n\s*cPoolSelect\('Stage', active \? 'open' : C_JP\.col \|\| '', stageOpts, 'cJourneyStage\(this\.value\)'\),\n\s*box\('due', 'Next step'/, 'Programme, Stage, Next step');
+  assert.match(pool, /more \? box\('source', 'Came from'/);
   assert.match(pool, /more \? box\('owner', 'Owner', owners\.map/);
   assert.match(pool, /\$\{more \? 'Fewer filters' : 'More filters'\}/);
   assert.match(APP, /<div class="c-jfilters p-filters" role="group" aria-label="Filter \$\{esc\(name\)\}">/);
   assert.match(pool, /const name = \(k, v\) => \(v === cNotSaid \? 'not recorded' :/);
   assert.match(pool, /const owners = \[\.\.\.new Set\(\[\.\.\.\(CFG\.owners \|\| \[\]\), \.\.\.distinct\('owner'\)\]\)\];/, 'every configured owner');
-  assert.match(pool, /any \? "C_PF=C_PF_EMPTY\(\);C_OUT_TAG=null;cDrawJourneyPool\(\)" : ''/, 'with Clear');
+  assert.match(pool, /any \? "C_PF=C_PF_EMPTY\(\);C_JP\.col=null;C_OUT_TAG=null;cDrawJourneyPool\(\)" : ''/, 'with Clear');
 });
