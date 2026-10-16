@@ -16,12 +16,17 @@ this is a local prototype" stood here until 30.09.2026, from the weeks before th
 
 ## 16.10.2026 - Ieva: calls, leads, emails (owner, after Ieva's message)
 
-- `DECIDED` (Ieva 16.10, owner "Lets fix!") Journey -> List: filter the ACTIVE leads of one programme (Jevgenijs asked
+- `DECIDED` (owner 16.10, after Ieva: "OS shows only admitted") ONE name per programme: the SIS writes short codes, Intake
+  uses its own names. Map SIS -> Intake: OS -> MT OS, MTM -> MT MTM, WTT -> MT WTT, OR -> MT MR (owner: OR is MT MR); on
+  import and repair the existing rows (OS 24, MTM 11, WTT 10, OR 19).
+- `DECIDED` (owner 16.10, after Ieva: "Alberts ... notes do not show") Journey -> List shows each person's latest note in
+  one line (notes live in History; the List showed none).
+- `LIVE` (patch 57, 16.10) (Ieva 16.10, owner "Lets fix!") Journey -> List: filter the ACTIVE leads of one programme (Jevgenijs asked
   about MTM, the List showed everyone). A Stage filter with "Active" (all open stages) next to Programme.
-- `DECIDED` (owner proposed, Ieva: "tas varētu būt noderīgi", 16.10) Inbox top: a small "Calls today from people in
+- `LIVE` (patch 57, 16.10) (owner proposed, Ieva: "tas varētu būt noderīgi", 16.10) Inbox top: a small "Calls today from people in
   Intake" line - time, name, line, who answered, click to the profile - so a known caller's call is never unseen (Laura's
   08:54 call went straight to Nikita Zlotnikovs's profile and nobody saw it).
-- `SAID` (bug, 16.10, Arina via Ieva) Make a lead from a CALL card has no Name field, so the lead is created as
+- `LIVE` (patch 57, 16.10: Name field on call/unnamed cards) (bug, 16.10, Arina via Ieva) Make a lead from a CALL card has no Name field, so the lead is created as
   "Unknown contact"; Arina's note and step were saved (note "Coming on Thursday 22nd..." + step due 22.10), the name was
   fixed by hand at 14:48. Ieva could not find the notes from Journey -> List.
 - `LIVE` (patch 56, 16.10) (owner 16.10: "why emails show up this messy???") An email card shows the WHOLE raw thread: quoted
