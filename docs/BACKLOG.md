@@ -16,11 +16,11 @@ this is a local prototype" stood here until 30.09.2026, from the weeks before th
 
 ## 16.10.2026 - Ieva: calls, leads, emails (owner, after Ieva's message)
 
-- `SAID` (to do, owner 16.10: "why emails show up this messy???") An email card shows the WHOLE raw thread: quoted
+- `LIVE` (patch 56, 16.10) (owner 16.10: "why emails show up this messy???") An email card shows the WHOLE raw thread: quoted
   history (From/Sent/To/Subject), our own signature with every link spelled out, image placeholders [cid:...],
   tracking URLs and the legal disclaimer. The card should show only what the person newly wrote, short, with the
   rest one click away.
-- `DECIDED` (owner told Ieva 16.10 he is writing the rules now) edu@ email filtering: an email reaches the Inbox only
+- `LIVE` (patch 56, 16.10; applied to the 18 waiting: 7 set aside) edu@ email filtering: an email reaches the Inbox only
   with the ADMISSION label or when it reads as someone wanting to study; a known person's email goes to their
   profile; everything else is set aside automatically and stays searchable with Bring back.
 
