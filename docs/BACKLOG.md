@@ -16,6 +16,8 @@ this is a local prototype" stood here until 30.09.2026, from the weeks before th
 
 ## 16.10.2026 - Ieva: calls, leads, emails (owner, after Ieva's message)
 
+- `DECIDED` (Ieva 16.10, owner "Lets fix!") Journey -> List: filter the ACTIVE leads of one programme (Jevgenijs asked
+  about MTM, the List showed everyone). A Stage filter with "Active" (all open stages) next to Programme.
 - `DECIDED` (owner proposed, Ieva: "tas varētu būt noderīgi", 16.10) Inbox top: a small "Calls today from people in
   Intake" line - time, name, line, who answered, click to the profile - so a known caller's call is never unseen (Laura's
   08:54 call went straight to Nikita Zlotnikovs's profile and nobody saw it).
