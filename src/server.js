@@ -51,6 +51,7 @@ import { todayStart, tomorrowStart, localDate, localMidnight } from './bizday.js
 import { receiveSisApplication, mergeSisDuplicate, syncSis, channelMode, SIS_STAGE, emailRuleOnWaitingLive } from './sync.js';
 import { foldContractStage, foldSisOnlyApplication } from './stagefold.js';
 import { redateSisAdmissions } from './sisdates.js';
+import { programmeNamesRepair } from './programmes.js';
 import { htmlEscape, inviteOrigin } from './systempages.js';
 
 
@@ -2384,6 +2385,16 @@ export const handle = async (req, res) => {
       if (!admin) return refuseNotAdmin(res);
       const b = req.method === 'POST' ? await body(req) : {};
       const r = await emailRuleOnWaitingLive(db, { apply: req.method === 'POST' && b.apply === true, by: await actorOf(req, b) });
+      if (r.error) return json(res, 400, r);
+      return json(res, 200, { ok: true, ...r });
+    }
+    // ONE NAME PER PROGRAMME (one-off, the owner 16.10.2026; src/programmes.js). Admins only. GET is the PREVIEW: old -> new
+    // counts per table and person ids, no names, nothing changes. POST {"apply": true} rewrites them, each person's change
+    // a machine edit in their History. A second apply finds nothing.
+    if (p === '/api/admin/people/programme-names' && (req.method === 'GET' || req.method === 'POST')) {
+      if (!(await adminOf(req))) return refuseNotAdmin(res);
+      const b = req.method === 'POST' ? await body(req) : {};
+      const r = await programmeNamesRepair(db, { apply: req.method === 'POST' && b.apply === true, by: await actorOf(req, b) });
       if (r.error) return json(res, 400, r);
       return json(res, 200, { ok: true, ...r });
     }

@@ -9,6 +9,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { localDate } from './bizday.js';
+import { intakeProgramme } from './programmes.js';   // one name per programme (16.10.2026)
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 export const DATA_FILE = path.join(ROOT, 'data', 'real_people.json');
@@ -86,7 +87,7 @@ export async function loadReal(db, selection = {}) {
     // A missing first-contact date stays MISSING. It used to become the import time, which
     // counted 18 people admitted in 2026 as September leads (27.09.2026).
     const created = p.created_at || null;
-    await insPerson.run(id, p.name, p.email || null, p.phone || null, p.programme || null,
+    await insPerson.run(id, p.name, p.email || null, p.phone || null, intakeProgramme(p.programme) || null,
       p.study_form || null, edu(p.education), p.status, 'Admissions',
       chan(p.source_channel), p.source_campaign || null, p.source_detail || null,
       created, null, null, p.admitted_at || null, p.student_no || null,

@@ -25,6 +25,7 @@ import { adapt, toIntake } from './adapters.js';
 import { recordSisLifecycle } from './lifecycle.js';
 import { sisAdmissionDate } from './sisdates.js';
 import { localDate } from './bizday.js';
+import { intakeProgramme, unknownProgramme } from './programmes.js';
 
 const nowIso = () => new Date().toISOString();
 
@@ -405,7 +406,7 @@ const fullName = (r) => [r.given_name, r.family_name].filter(Boolean).join(' ') 
 
 function sisSentence(r) {
   if (!r.application_id) return 'SIS: registered, no application yet';
-  return `SIS: ${r.programme_code ? r.programme_code + ' ' : ''}application ${r.status}`;
+  return `SIS: ${r.programme_code ? intakeProgramme(r.programme_code) + ' ' : ''}application ${r.status}`;
 }
 
 // Links every row of one SIS person to a CRM person and plays their statuses onto
@@ -487,7 +488,7 @@ async function createFromSis(db, reference, rows, at, mode, stats) {
   const id = newPersonId();
   await db.prepare(`INSERT INTO people (id, name, email, phone, programme, status, owner, source_channel,
     created_at, last_contact_at, admitted_at, qualification, first_channel) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(
-    id, fullName(latest) || 'Unknown contact', latest.email, latest.phone, lead.programme_code, stage,
+    id, fullName(latest) || 'Unknown contact', latest.email, latest.phone, intakeProgramme(lead.programme_code), stage,
     ownerFor('lead'), 'sis', firstSeen, latest.changed_at, admittedAt,
     'lead', 'sis');
   await logEvent(db, { personId: id, kind: 'create', channel: 'sis', direction: 'in', at, origin: AUTOMATIC,
@@ -496,7 +497,7 @@ async function createFromSis(db, reference, rows, at, mode, stats) {
   await db.prepare('UPDATE sis_applicants SET person_id = ?, inbound_id = ? WHERE reference = ?').run(id, item.id, reference);
   // What the SIS said about them is known, the provider's word, so the person page never lists the
   // email, phone or programme it was sent as "still to find out" (APPLICATIONS lane, 01.10.2026).
-  const told = [['email', latest.email], ['phone', latest.phone], ['interest', lead.programme_code]];
+  const told = [['email', latest.email], ['phone', latest.phone], ['interest', intakeProgramme(lead.programme_code)]];
   for (const [field, value] of told) {
     if (!value) continue;
     await db.prepare(`INSERT INTO field_values (person_id, inbound_id, field, value, provenance, recorded_at,
@@ -720,7 +721,15 @@ export async function syncReplies(db, { now = new Date(), env = process.env, fet
 
 // One SIS record into sis_applicants. False when an older or equal copy arrives after the one we
 // hold: that changes nothing. The pull and the application webhook both come through here.
-async function storeSisRow(db, r, at, stats) {
+async function storeSisRow(db, raw, at, stats) {
+  // ONE NAME PER PROGRAMME (16.10.2026): the SIS code becomes the Intake name here, the one door both the pull and the
+  // webhook come through, so the person, their 'interest', the History line and Reports all carry the Intake name. A
+  // code the map does not know is kept as it came and counted in the run's detail.
+  const r = { ...raw, programme_code: intakeProgramme(raw.programme_code) };
+  if (unknownProgramme(r.programme_code)) {
+    stats.unknownProgrammes = stats.unknownProgrammes || {};
+    stats.unknownProgrammes[r.programme_code] = (stats.unknownProgrammes[r.programme_code] || 0) + 1;
+  }
   const old = await db.prepare('SELECT * FROM sis_applicants WHERE reference = ? AND application_id = ?')
     .get(r.reference, r.application_id);
   if (old && old.changed_at >= r.changed_at) return false;

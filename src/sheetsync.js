@@ -19,6 +19,7 @@ import { newPersonId } from './intake.js';
 import { fromRigaStamp } from '../lib/riga.js';
 import { sheetDay, rowsOf, readTab, accessToken, loadSheetToken, tabTitles, sameTab } from '../lib/sheetpull.js';
 import { rigaWeek } from './applications.js';
+import { intakeProgramme } from './programmes.js';
 
 export const ACTOR = 'Admissions sheet';
 // The sheet's Next action date is a Follow-up step with that date (Q86, MASTER CONTROL 12.10). The label comes from
@@ -48,12 +49,13 @@ const at9 = (day) => (day ? fromRigaStamp(day + ' 09:00:00').toISOString() : nul
 const tail = (v) => normPhone(v).replace(/\D/g, '').slice(-TAIL);
 const nameKey = (v) => String(v || '').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
 
-/** What a row says, in Intake's words. Only what the row carries; a blank stays blank. */
+/** What a row says, in Intake's words. Only what the row carries; a blank stays blank. The programme by its Intake
+ *  name (one name per programme, 16.10.2026, config.sis.programmeMap): an SIS code typed on the sheet is the same programme. */
 export function readRow(r, edu = (v) => v) {
   const email = normEmail(r.email);
   return {
     name: r.name, email: /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/.test(email) ? email : null,
-    phone: r.phone ? String(r.phone).trim() : null, programme: r.programme || null, education: r.education ? edu(r.education) : null,
+    phone: r.phone ? String(r.phone).trim() : null, programme: intakeProgramme(r.programme) || null, education: r.education ? edu(r.education) : null,
     source_channel: sourceOf(r.source), source_detail: r.source || null,
     stage: stageOf(r.status, r.docs), status: r.status || null, docs: r.docs || null,
     notes: r.notes || null, firstDay: sheetDay(r.firstContact), nextDay: sheetDay(r.nextAction),

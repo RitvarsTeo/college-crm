@@ -10,6 +10,7 @@
 import { FETCHERS, LeadFetchError, redactLead, TOKEN_ENV } from '../lib/leads.js';
 import { activePersonFor, landOnProfile } from './intake.js';
 import { markFor } from './phonefilter.js';
+import { intakeProgramme } from './programmes.js';
 
 export const MAX_TRIES = 10;
 const nowIso = () => new Date().toISOString();
@@ -41,13 +42,14 @@ async function fill(db, row, { env, fetchImpl, at }) {
     await db.prepare(`UPDATE inbound SET contact_name = COALESCE(contact_name, ?), contact_email = COALESCE(contact_email, ?),
       contact_phone = COALESCE(contact_phone, ?), body = CASE WHEN state = 'new' THEN ? ELSE body END WHERE id = ?`)
       .run(got.name, got.email, got.phone, text, item.id);
-    if (got.programme) {
+    const programme = intakeProgramme(got.programme);   // one name per programme (16.10.2026, config.sis.programmeMap)
+    if (programme) {
       await db.prepare(`INSERT INTO field_values (person_id, inbound_id, field, value, provenance, recorded_at, recorded_by)
-        VALUES (?, ?, 'interest', ?, 'provider', ?, 'machine')`).run(item.person_id || null, item.id, got.programme, at);
+        VALUES (?, ?, 'interest', ?, 'provider', ?, 'machine')`).run(item.person_id || null, item.id, programme, at);
     }
     if (item.person_id) {
       await db.prepare(`UPDATE people SET email = COALESCE(email, ?), phone = COALESCE(phone, ?),
-        programme = COALESCE(programme, ?) WHERE id = ?`).run(got.email, got.phone, got.programme, item.person_id);
+        programme = COALESCE(programme, ?) WHERE id = ?`).run(got.email, got.phone, programme, item.person_id);
     } else if (item.state === 'new') {
       // A KNOWN PERSON, FOUND BY THE ANSWERS (14.10.2026, every channel): a lead form arrives with ids only, so it could
       // not be matched on arrival. Now that it has an email or phone, the same question every channel asks; one person

@@ -20,6 +20,7 @@
 
 import { SIS_ORDER, SIS_WORD, sisProgress } from './lifecycle.js';
 import { channelMode } from './sync.js';
+import { intakeProgramme } from './programmes.js';
 
 export const FUNNEL = SIS_ORDER;                       // registered .. matriculated
 export const APART = ['rejected', 'withdrawn'];
@@ -84,7 +85,7 @@ export function funnelFrom(rows, setAsideRefs = new Set()) {
     for (const r of list) {
       if (!r.application_id) continue;
       applications++;
-      const code = r.programme_code || null;
+      const code = intakeProgramme(r.programme_code) || null;   // one name per programme (16.10.2026)
       const p = programmes.get(code) || { code, applications: 0, now: zero() };
       p.applications++; if (p.now[r.status] != null) p.now[r.status]++; programmes.set(code, p);
     }

@@ -105,6 +105,15 @@
     "MT MTM",
     "MT WTT"
   ],
+  "sis": {
+    "_programmeMap": "ONE NAME PER PROGRAMME (the owner, 16.10.2026, after Admissions filtered Journey by OS and saw only admitted students). The SIS writes short codes, leads use the Intake names in `programmes` above. Every programme that comes in from an import (the SIS pull and webhook, the admissions sheet, a lead form's answers) goes through this map before it is stored or shown (src/programmes.js intakeProgramme), so a person always carries the Intake name. NAV and ENG are the same on both sides. A code not in this map is kept exactly as it came, never guessed, and the SIS run counts it in its detail (unknownProgrammes). The rows stored before the map: the admin one-off GET/POST /api/admin/people/programme-names (preview first).",
+    "programmeMap": {
+      "OS": "MT OS",
+      "MTM": "MT MTM",
+      "WTT": "MT WTT",
+      "OR": "MT MR"
+    }
+  },
   "studyForms": [
     "Full time",
     "Part time"
