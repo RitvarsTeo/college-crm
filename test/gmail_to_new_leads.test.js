@@ -15,7 +15,7 @@ import { syncGmail } from '../src/sync.js';
 // a Gmail API message, as the real one arrives
 const message = (id, from, subject, body) => ({
   id, threadId: 't-' + id, labelIds: ['INBOX'],
-  payload: { headers: [
+  payload: { mimeType: 'text/plain', headers: [
     { name: 'Date', value: 'Tue, 30 Sep 2026 09:00:00 +0300' },
     { name: 'From', value: from },
     { name: 'Subject', value: subject },

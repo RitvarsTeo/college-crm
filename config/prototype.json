@@ -967,7 +967,29 @@
     ],
     "_textPatterns": "Read over the sender name and the start of the message, case-insensitive. Admissions can add a line: match is a regular expression, why is the reason shown in the Filtered view.",
     "newsletter": "unsubscribe|atrakst[iī]t(ies|os|ieties)|izrakst[iī]t(ies|os|ieties)|atteikties no (jaunum|e-?pasta|vēstk)|view (this email )?in (your )?browser",
-    "_newsletter": "Q74 rule 3, 07.10.2026 (Ritvars yes, against Aigars 07.10 'email kkadu automatizaciju'): a newsletter carries an unsubscribe link, usually at the END, so the whole message is read. Set aside with the reason, kept, can be brought back. The sender address is NOT widened on a guess: info@ / support@ / team@ can be a real school or partner."
+    "_newsletter": "Q74 rule 3, 07.10.2026 (Ritvars yes, against Aigars 07.10 'email kkadu automatizaciju'): a newsletter carries an unsubscribe link, usually at the END, so the whole message is read. Set aside with the reason, kept, can be brought back. The sender address is NOT widened on a guess: info@ / support@ / team@ can be a real school or partner.",
+    "studyRule": {
+      "decided": "Owner 16.10.2026 after Ieva: \"visi epasti nesaistīti ar admissions gan tur ir\". edu@ email reaches the Inbox only when it has the Admissions label, reads as somebody wanting to study, comes from somebody already in Intake (their History), or is a reply in a conversation already in the Inbox or already a lead. Everything else is set aside automatically with the reason, kept, can be brought back.",
+      "_how": "Read over the subject and the text, lower case, each word matched where a word starts (so 'kurs' never matches 'ekskursija'). Stays: the app's own study reading (src/extract.js signalsIn: a programme, study intent, education) OR any studyWords. Set aside: nothing of that (notStudyingWhy), or a company/supplier word with no admissionWords (companyWhy: a company booking crew training or a supplier is not Admissions).",
+      "notStudyingWhy": "Not about studying",
+      "companyWhy": "A company or supplier email, not about studying",
+      "ignorePhrases": ["of course", "in the course of", "course of action"],
+      "studyWords": [
+        "programme", "program", "course", "study", "studies", "studying", "student", "apply", "application", "admission", "enrol", "enroll", "dormitor", "tuition", "documents for", "diploma", "school leaving",
+        "programm", "kurs", "studij", "studēt", "studet", "mācīb", "macib", "mācīt", "macit", "pieteik", "uzņemšan", "uznemsan", "iestāties", "iestaties", "imatrikul", "kopmītn", "kopmitn", "dienesta viesnīc", "dienesta viesnic", "atestāt", "atestat", "diplom",
+        "программ", "курс", "учеб", "учиться", "обучени", "студент", "абитуриент", "поступить", "поступающ", "для поступления", "приемн", "зачислени", "общежити", "диплом", "аттестат"
+      ],
+      "admissionWords": [
+        "admission", "enrol", "enroll", "dormitor", "tuition", "studies", "studying", "student",
+        "studij", "studēt", "studet", "uzņemšan", "uznemsan", "iestāties", "iestaties", "imatrikul", "kopmītn", "kopmitn", "dienesta viesnīc", "dienesta viesnic", "mācību maks", "macibu maks",
+        "абитуриент", "поступить", "поступающ", "для поступления", "приемн", "зачислени", "общежити", "студент", "учиться"
+      ],
+      "companyWords": [
+        "purchase order", "po number", "invoice", "quotation", "request for quote", "proforma", "pro forma", "vat number", "our crew", "crew members", "crew training", "our seafarers", "our employees", "our staff", "our company", "group booking", "booking for", "supplier", "vendor",
+        "rēķin", "rekin", "pasūtījum", "pasutijum", "cenu piedāvājum", "cenu piedavajum", "mūsu apkalp", "musu apkalp", "mūsu darbinie", "musu darbinie", "mūsu jūrniek", "musu jurniek", "mūsu uzņēmum", "musu uznemum", "piegādātāj", "piegadataj",
+        "счет на оплату", "счет-фактур", "наш экипаж", "нашего экипажа", "наших моряков", "наших сотрудников", "нашей компании", "наша компания", "коммерческое предложение", "поставщик"
+      ]
+    }
   },
   "senderKind": {
     "decided": "Q31, 05.10.2026, for the Inbox groups (Q30): current student = matches a person already admitted, or admitted in the SIS, or writes like a student on a course; possible student = everything else that passes the filter; other = set aside by a rule. A grouping, never a fact about the person: every row says why.",

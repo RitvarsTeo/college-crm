@@ -13,14 +13,14 @@
 //
 // Neither poller runs while its channel is off, and off is the default.
 
-import { receive, bringBack, activePersonFor, CALL_BACK_STEP, confirmedBySystem, CONFIG, newPersonId, ownerFor, emailFilterWhy, purgeLineBodies, recordReplyRead } from './intake.js';
+import { receive, bringBack, activePersonFor, CALL_BACK_STEP, confirmedBySystem, CONFIG, newPersonId, ownerFor, emailFilterWhy, purgeLineBodies, recordReplyRead, emailRuleOnWaiting } from './intake.js';
 import { onePersonFor, normEmail, normPhone } from './identity.js';
 import { knock } from './webpush.js';
 import { phoneThread } from './phonefilter.js';
 import { logEvent, AUTOMATIC, MANUAL } from './history.js';
 import { fetchCalls, rowsFrom, WINDOW_MINUTES, toRigaStamp, ZONE } from '../lib/pbx.js';
 import { fetchChanged, toSisRow } from '../lib/sis.js';
-import { runPoll as gmailPoll, runReplies as gmailReplies, loadGmailRefreshToken } from '../lib/gmail.js';
+import { runPoll as gmailPoll, runReplies as gmailReplies, loadGmailRefreshToken, listLabelledIds } from '../lib/gmail.js';
 import { adapt, toIntake } from './adapters.js';
 import { recordSisLifecycle } from './lifecycle.js';
 import { sisAdmissionDate } from './sisdates.js';
@@ -619,9 +619,11 @@ export async function syncGmail(db, { now = new Date(), env = process.env, fetch
     // Q74 (07.10.2026): a known person's email goes on their history (rule 1); the same sender again
     // joins their waiting card (rule 2); a newsletter is set aside like other automatic mail (rule 3).
     // Q91 (13.10.2026): the Admissions label means a person accepted it: no filter at all, rules 1 and 2 as before.
+    // The edu@ email rule (16.10.2026): unlabelled mail reaches the Inbox only when it reads as somebody wanting to
+    // study (studyRule, decided in receive(): a known person and a reply in a conversation we hold still get through).
     const labelled = Boolean(shaped.admissions);
     const r = await receive(db, { ...it, source: mode === 'live' ? 'provider' : 'simulated',
-      ...(labelled ? { noFilter: true } : { filterWhy: emailFilterWhy(it.email) }),
+      ...(labelled ? { noFilter: true } : { filterWhy: emailFilterWhy(it.email), studyRule: true }),
       attachTo: await activePersonFor(db, it.email), joinOpenSender: true });
     if (labelled) out.labelled = (out.labelled || 0) + 1;
     if (r.duplicate && labelled && await labelBringsBack(db, r.id, at)) out.broughtBack = (out.broughtBack || 0) + 1;
@@ -649,6 +651,21 @@ export async function syncGmail(db, { now = new Date(), env = process.env, fetch
     ...(partial ? { ok: false, failed: got.failed, why: got.why } : {}) }, at);
   return { ok: !partial, ran: true, channel: 'gmail', mode, ...out, more: Boolean(got.more), query: got.query, replies,
     ...(partial ? { failed: got.failed, why: got.why } : {}) };
+}
+
+// THE EMAIL RULE OVER THE WAITING EMAIL CARDS (one-off, 16.10.2026; src/intake.js emailRuleOnWaiting), with the
+// Admissions label read from edu@ first, over every day back to the oldest waiting card. When the label cannot be read
+// the preview still answers (labelsRead:false, and why) and apply changes nothing.
+export async function emailRuleOnWaitingLive(db, { apply = false, by, now = new Date(), env = process.env, fetchImpl = fetch } = {}) {
+  const oldest = await db.prepare("SELECT MIN(received_at) AS at FROM inbound WHERE channel = 'gmail' AND state = 'new'").get();
+  let labelled = null; let labelsWhy = null;
+  if (oldest && oldest.at) {
+    const got = await listLabelledIds({ env, now, fetchImpl, refreshToken: await loadGmailRefreshToken(db, env),
+      since: new Date(Date.parse(oldest.at) - 86400000) });
+    if (got.ok) labelled = got.ids; else labelsWhy = got.why;
+  } else labelled = new Set();
+  const r = await emailRuleOnWaiting(db, { apply, by, labelled, at: now.toISOString() });
+  return labelsWhy ? { ...r, labelsWhy } : r;
 }
 
 // Q91: the Inbox row (or the card a line joined) that holds this Gmail message id, or null.

@@ -12,7 +12,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { extractFrom, looksLikeJunk } from './extract.js';
+import { extractFrom, looksLikeJunk, signalsIn } from './extract.js';
 import { logEvent, MANUAL, AUTOMATIC } from './history.js';
 import { duplicateCheck, contactMatcher, onlyStrong, onePersonFor } from './identity.js';
 import { localDate, localMidnight } from './bizday.js';
@@ -275,6 +275,25 @@ export async function receive(db, item) {
     const m = await markFor(db, { phone: item.phone, email: item.email });
     if (m) filterWhy = markedWhy(m);
   }
+  // THE EDU@ EMAIL RULE (16.10.2026; emailStudyWhy above). The caller opts in with studyRule (the Gmail pull, never for
+  // labelled mail). Asked only when nothing above set the message aside and it is from nobody in Intake (a known
+  // person's email still lands on their profile, below). A REPLY IN A CONVERSATION WE ALREADY HOLD is never judged on its
+  // own words, so a thread never breaks: one still waiting in the Inbox takes it as a line (the same join as a thread
+  // or the same sender, above); one that is already a lead puts it on that person's History; otherwise the rule reads it.
+  let attachTo = item.attachTo || null;
+  if (item.studyRule && !item.noFilter && !read.junk && !filterWhy && !attachTo) {
+    const home = item.threadKey ? await db.prepare(`SELECT id, body, state, person_id FROM inbound WHERE channel = ?
+      AND thread_key = ? AND state IN ('new', 'qualified') ORDER BY id DESC`).get(item.channel, item.threadKey) : null;
+    if (home && home.state === 'new') {
+      const line = item.body || '';
+      await db.prepare('UPDATE inbound SET body = ? WHERE id = ?').run([home.body || '', line].filter(Boolean).join('\n'), home.id);
+      const seq = await addLine(db, home.id, { channel: item.channel, externalId: item.externalId,
+        receivedAt: at, kind: item.kind, body: line });
+      return { joined: true, id: Number(home.id), seq };
+    }
+    if (home && home.person_id) attachTo = home.person_id;
+    else filterWhy = emailStudyWhy(item.body);
+  }
   const state = read.junk || filterWhy ? 'filtered' : 'new';
   // `source` records HOW this arrived. It defaults to null rather than to
   // 'provider': a row may only claim a real provider sent it when the caller
@@ -333,8 +352,8 @@ export async function receive(db, item) {
   // Q74 RULE 1: from somebody already in Intake (and still being worked with) it goes on THEIR history, not into the
   // Inbox (landOnProfile below). Since 14.10.2026 on every channel: the caller asks activePersonFor and passes the
   // answer as attachTo. A filter or a mark (above) wins: such a message is set aside, never put on a profile.
-  if (item.attachTo && !read.junk && !filterWhy) {
-    const pid = await landOnProfile(db, id, item.attachTo, { at });
+  if (attachTo && !read.junk && !filterWhy) {
+    const pid = await landOnProfile(db, id, attachTo, { at });
     if (pid) {
       return { id, attached: true, personId: pid, suggested: read.suggested, why: read.why,
         missing: read.missing, fields: read.fields, filtered: false };
@@ -1262,6 +1281,40 @@ export function emailFilterWhy(address, cfg = CFG.emailFilter) {
   return null;
 }
 
+// THE EDU@ EMAIL RULE (the owner, 16.10.2026, after Ieva: "visi epasti nesaistīti ar admissions gan tur ir"). An email
+// reaches the Inbox only when it has the Admissions label (Q91, decided in src/sync.js), comes from somebody already in
+// Intake (their History), is a reply in a conversation already in the Inbox or already a lead (receive() below), or
+// READS AS SOMEBODY WANTING TO STUDY - this function. Everything else is set aside like the other automatic filters:
+// kept, with the reason, can be brought back.
+// The reading is the app's own (src/extract.js signalsIn: a programme, study intent, education), plus the owner's
+// never-hide words (config.emailFilter.studyRule.studyWords, English, Latvian, Russian): a message that mentions a
+// programme, a course, studies, an application, admission, enrolment, a dormitory, tuition or documents for studying
+// is never hidden. One exception, decided with it: a company or supplier email (a purchase order, an invoice, a course
+// booking for a company's crew) is not Admissions, unless it also says admission, enrolment, studies, a dormitory or
+// tuition. Returns { stay, why }: why is the reason for a set-aside, or what the reading found for one that stays.
+const wordStart = (w) => new RegExp('(?:^|[^\\p{L}\\p{N}])' + String(w).toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'u');
+const firstWordIn = (text, words) => (words || []).find((w) => wordStart(w).test(text)) || null;
+export function emailStudyRead(text, cfg = CFG.emailFilter && CFG.emailFilter.studyRule) {
+  if (!cfg) return { stay: true, why: 'no email rule set' };
+  let t = String(text || '').toLowerCase().replace(/ё/g, 'е');
+  for (const p of cfg.ignorePhrases || []) t = t.split(String(p).toLowerCase()).join(' ');
+  const sig = signalsIn(t);
+  const word = firstWordIn(t, cfg.studyWords);
+  const reads = Boolean(sig.programme || sig.study_intent || sig.education || word);
+  const company = firstWordIn(t, cfg.companyWords);
+  if (reads && (!company || firstWordIn(t, cfg.admissionWords))) {
+    const found = sig.programmeValue ? `programme ${sig.programmeValue}` : word ? `"${word}"` : sig.education ? 'education background' : 'study intent';
+    return { stay: true, why: `reads as wanting to study (${found})` };
+  }
+  if (company) return { stay: false, why: `${cfg.companyWhy} ("${company}")` };
+  return { stay: false, why: cfg.notStudyingWhy };
+}
+// null when the email may reach the Inbox, else the reason it is set aside
+export function emailStudyWhy(text, cfg) {
+  const r = emailStudyRead(text, cfg);
+  return r.stay ? null : r.why;
+}
+
 // Q31 (05.10.2026): the same rule on every channel, plus what the TEXT says it is (a Google Chat
 // "messaged you while you were away", a Google Forms "has new responses"). The owner, on the
 // production Inbox: "collaguese should not be there!", and of noreply / Google Chat / Google Forms:
@@ -1315,4 +1368,63 @@ export async function refilterOpenEmail(db, { at = nowIso() } = {}) {
     moved++;
   }
   return { checked: open.length, setAside: moved, left: open.length - moved };
+}
+
+// THE EDU@ EMAIL RULE OVER THE EMAIL CARDS ALREADY WAITING (a one-off, the owner 16.10.2026). Admins only (the route in
+// src/server.js). apply:false, the default, is the PREVIEW: counts and card numbers (no names, no addresses), nothing
+// changes. apply:true sets aside what the preview listed, the way the automatic filter does (Filtered automatically,
+// the reason as the note), each one logged in inbound_history with the admin as actor; nothing is deleted and Bring
+// back works. A card STAYS when: a person brought it back before (they already decided), it carries the Admissions
+// label (`labelled`: the Gmail message ids that have it, read from edu@ by the route; null = not read, and then apply
+// refuses, because a labelled card must never be set aside on a guess), it is from somebody in Intake, it has no text
+// to read, or its text reads as somebody wanting to study (emailStudyRead).
+export const EMAIL_RULE_NOTE = 'one-off: the email rule over the waiting email cards (16.10.2026)';
+export async function emailRuleOnWaiting(db, { apply = false, by, at = nowIso(), labelled = null } = {}) {
+  if (apply && !by) return { error: 'who is applying this?' };
+  if (apply && !(labelled instanceof Set)) return { error: 'the Admissions label could not be read, so nothing was changed' };
+  const rows = await db.prepare(`SELECT i.id, i.external_id, i.received_at, i.contact_email, i.contact_phone, i.body,
+      EXISTS (SELECT 1 FROM inbound_history h WHERE h.inbound_id = i.id AND h.action = 'brought_back') AS back
+    FROM inbound i WHERE i.channel = 'gmail' AND i.state = 'new' ORDER BY i.id`).all();
+  const cards = [];
+  for (const r of rows) {
+    const card = { id: Number(r.id), received: r.received_at };
+    if (Number(r.back) || r.back === true) card.why = 'brought back by a person';
+    else if (labelled instanceof Set && await carriesLabel(db, r, labelled)) card.why = 'has the Admissions label';
+    else if (await activePersonFor(db, { email: r.contact_email, phone: r.contact_phone })) card.why = 'from somebody in Intake';
+    else if (!r.body) card.why = 'no text to read';
+    else {
+      const read = emailStudyRead(r.body);
+      card.why = read.why;
+      if (!read.stay) card.setAside = true;
+    }
+    cards.push(card);
+  }
+  const out = cards.filter((c) => c.setAside);
+  const byReason = {};
+  for (const c of cards) {
+    const key = c.why.replace(/\s*\([^)]*\)$/, '');
+    byReason[key] = (byReason[key] || 0) + 1;
+  }
+  if (apply) {
+    for (const c of out) {
+      const done = await db.prepare(`UPDATE inbound SET state = 'filtered', archive_reason = 'Filtered automatically',
+        archive_note = ?, processed_by = 'machine', processed_at = ? WHERE id = ? AND state = 'new'`).run(c.why, at, c.id);
+      if (!((done && (done.changes ?? done.rowCount)) > 0)) { c.moved = false; continue; }
+      await db.prepare(`INSERT INTO inbound_history (inbound_id, action, at, actor, reason, note)
+        VALUES (?, 'set_aside', ?, ?, 'Filtered automatically', ?)`).run(c.id, at, by, `${c.why} - ${EMAIL_RULE_NOTE}`);
+    }
+    await db.prepare(`INSERT INTO sync_state (name, value, ran_at, detail) VALUES ('email_rule_on_waiting', ?, ?, ?)
+      ON CONFLICT (name) DO UPDATE SET value = excluded.value, ran_at = excluded.ran_at, detail = excluded.detail`)
+      .run(String(out.filter((c) => c.moved !== false).length), at, JSON.stringify({ by, ids: out.map((c) => c.id) }));
+  }
+  const moved = out.filter((c) => c.moved !== false).length;
+  return { applied: Boolean(apply), labelsRead: labelled instanceof Set, checked: cards.length,
+    setAside: apply ? moved : out.length, stay: cards.length - out.length, byReason,
+    cards: cards.map(({ id, received, why, setAside }) => ({ id, received, outcome: setAside ? 'set aside' : 'stays', why })) };
+}
+// a card carries the label when its own message, or any message joined to it, has it
+async function carriesLabel(db, row, labelled) {
+  if (row.external_id && labelled.has(String(row.external_id))) return true;
+  const lines = await db.prepare("SELECT external_id FROM inbound_line WHERE inbound_id = ? AND external_id IS NOT NULL").all(row.id);
+  return lines.some((l) => labelled.has(String(l.external_id)));
 }

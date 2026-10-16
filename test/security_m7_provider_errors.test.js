@@ -20,7 +20,7 @@ const ENV = { CHANNEL_MODE_GMAIL: 'test', GMAIL_SERVICE_ACCOUNT_JSON: JSON.strin
   client_email: 'svc@example.iam.gserviceaccount.com', private_key: privateKey.export({ type: 'pkcs8', format: 'pem' }) }) };
 const reply = (status, body) => ({ ok: status < 300, status, json: async () => (typeof body === 'string' ? JSON.parse(body) : body),
   text: async () => (typeof body === 'string' ? body : JSON.stringify(body)), headers: { get: () => null } });
-const message = (id) => ({ id, threadId: 't-' + id, labelIds: ['INBOX'], payload: { headers: [
+const message = (id) => ({ id, threadId: 't-' + id, labelIds: ['INBOX'], payload: { mimeType: 'text/plain', headers: [
   { name: 'Date', value: 'Tue, 30 Sep 2026 09:00:00 +0300' }, { name: 'From', value: 'A <a@x.lv>' },
   { name: 'Subject', value: 'Hi' }], body: { data: Buffer.from('I want to study', 'utf8').toString('base64url') } } });
 
