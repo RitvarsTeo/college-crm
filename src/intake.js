@@ -19,6 +19,7 @@ import { localDate, localMidnight } from './bizday.js';
 import { SIS_HOLDS_SQL } from './lifecycle.js';
 import { rangesSql } from './yearscope.js';
 import { markFor, markedWhy, contactKeys, MARKS } from './phonefilter.js';
+import { emailBodyFor, isEmailChannel } from './emailtext.js';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const CFG = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'prototype.json'), 'utf8'));
@@ -444,6 +445,12 @@ export async function listInbound(db, { state = 'new', now = nowIso(), range = n
     r.answer_by = due.answerBy; r.late_at = due.lateAt;
     // Q92 (14.10.2026): a phone card says each call plainly: when, which line, answered (by whom) or missed
     if (r.channel === 'phone') r.calls = await callsFor(db, r.id);
+    // an email card shows what the person newly wrote (16.10.2026), each joined email cleaned on its own; body stays
+    // the stored text for "Show original" (src/emailtext.js)
+    if (isEmailChannel(r.channel) && r.body) {
+      const lines = await db.prepare('SELECT body FROM inbound_line WHERE inbound_id = ? ORDER BY seq').all(r.id);
+      r.bodyClean = emailBodyFor(r.channel, r.body, lines.map((l) => l.body));
+    }
     r.aged = r.state === 'new' && due.lateAt <= now;                    // late: red (Q50)
     r.answerNow = r.state === 'new' && !r.aged && due.answerBy <= now;  // answer now: amber
     Object.assign(r, senderKind(r, known));
@@ -935,7 +942,8 @@ export async function messagesFor(db, personId) {
     for (const x of parts) {
       if (!String(x.body || '').trim()) continue;
       out.push({ id: x.key, kind: 'message', channel: r.channel, direction: 'in', origin: 'inbound',   // what a person wrote, not 'automatic'
-        occurred_at: x.at, subject: 'Wrote', body: x.body, inbound_id: Number(r.id) });
+        occurred_at: x.at, subject: 'Wrote', body: x.body, inbound_id: Number(r.id),
+        ...(isEmailChannel(r.channel) ? { bodyClean: emailBodyFor(r.channel, x.body) } : {}) });   // 16.10.2026, src/emailtext.js
     }
   }
   return out.sort((a, b) => String(b.occurred_at).localeCompare(String(a.occurred_at)));

@@ -89,7 +89,8 @@ test('the History the person page reads shows what they wrote (no screen change 
   assert.equal(p.hiddenCorrections, 0, 'messages in the History never make the hidden-corrections count negative (seen running: "-1")');
   const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
   assert.match(app, /\$\{esc\(e\.subject \|\| e\.kind \|\| ''\)\}<\/div>/, 'the History shows each entry\'s subject');
-  assert.match(app, /e\.body \? `<div class="c-evt-body">\$\{esc\(e\.body\)\}<\/div>`/, 'and its text');
+  // since 16.10.2026 an email's text is the cleaned one (src/emailtext.js), the original one click away
+  assert.match(app, /e\.body \? `<div class="c-evt-body">\$\{esc\(e\.bodyClean \|\| e\.body\)\}<\/div>/, 'and its text');
 });
 
 test('the readiness doc and Help say the text stays', () => {
