@@ -274,9 +274,10 @@ test('the card: name, new or existing, last note, next step, Open; no underlines
 });
 
 test('the app asks every 3 s only while calls can arrive; otherwise every 5 minutes', () => {
-  assert.match(APP, /CP_TIMER = setTimeout\(cpTick, CP_ENABLED \? CP_EVERY_MS : CP_IDLE_MS\)/);
+  assert.match(APP, /CP_TIMER = setTimeout\(cpTick, cpDelay\(\)\)/);
+  assert.match(APP, /const normal = CP_ENABLED \? CP_EVERY_MS : CP_IDLE_MS;/, 'a good answer: 3 s or 5 minutes, as before');
   assert.match(APP, /const CP_IDLE_MS = 5 \* 60 \* 1000;/);
-  assert.match(APP, /fetch\('\/api\/calls\/events' \+ q, \{ headers: \{ 'x-acting-as': ACTOR \} \}\)/, 'not api(): no busy bar');
+  assert.match(APP, /apiFetch\('\/api\/calls\/events' \+ q, \{ headers: \{ 'x-acting-as': ACTOR \} \}\)/, 'not api(): no busy bar');
   const shell = APP.slice(APP.indexOf('async function startShell()'), APP.indexOf('async function startShell()') + 3000);
   assert.match(shell, /callPopStart\(\);/);
   const src = fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8');

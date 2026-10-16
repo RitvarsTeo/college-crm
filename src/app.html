@@ -6121,6 +6121,47 @@ function busy(delta) {
   }
 }
 
+// SIGNED OUT WHILE THE TAB STAYED OPEN (16.10.2026, Admissions: "intake nerādās zvani, nevar leads atzīmēt").
+// A session can end while the page is open: 12 hours after sign-in, or when anybody on the same account
+// signs out (that ends every session of the account, src/server.js /api/auth/logout). Only api() used to
+// notice. The call poller kept asking every 3 s and was told "not signed in" without a word, and the raw
+// fetches below failed quietly, so the page showed old cards and nothing worked.
+// ONE PLACE NOW: every request to Intake's own /api/ goes through apiFetch(), and a 401 from any of them
+// stops the pollers and puts Intake's sign-in card up with one sentence. Signing in comes back to the
+// screen the person was on (RETURN_SCRIPT in src/signinfirst.js keeps the route for this tab).
+const SIGNED_OUT_SAID = 'You were signed out. Sign in again to carry on.';
+let SIGNED_OUT = false;
+function signedOut() {
+  cpStop();                              // every poller: today there is one, the call pop-up
+  // Nobody was signed in (a first visit): the boot has already drawn the card, with its own words.
+  if (SIGNED_OUT || !AUTH.user) return;
+  SIGNED_OUT = true;
+  // Back to this screen after signing in. The route is written down NOW, in the form RETURN_SCRIPT reads,
+  // because what it wrote on the last move may be more than its 30 minutes old by the time the session ends.
+  try {
+    const h = String(location.hash || '').split('?')[0];
+    if (/^#\/[a-z]+(\/[A-Za-z0-9_-]{1,64})?$/.test(h) && h !== '#/home') {
+      sessionStorage.setItem('crmReturnAfterSignIn', JSON.stringify({ h, at: Date.now() }));
+    }
+  } catch (e) { /* storage blocked (a private window): signing in lands on Home */ }
+  closeModal();
+  cpClose();
+  drawLogin(SIGNED_OUT_SAID);
+  // Behind the card nothing else speaks. A dozen screens answer a failed save with alert(err.message), and
+  // each would pop "signed out" over the card. Signing in reloads the page, which brings alert() back.
+  window.alert = () => {};
+}
+async function apiFetch(path, opts) {
+  const r = await fetch(path, opts);
+  if (r.status === 401 && AUTH.on) {
+    signedOut();
+    const e = new Error('signed out');
+    e.signedOut = true;
+    throw e;
+  }
+  return r;
+}
+
 const api = async (path, opts) => {
   // every request says who is asking, so an admin-only screen does not have to
   // remember to add it to the query string and quietly get refused
@@ -6131,10 +6172,8 @@ const api = async (path, opts) => {
   if (scoped) path = cScoped(path);   // the year scope (Q45): one filter on every list and count
   busy(1);
   try {
-    const r = await fetch(path, o);
-    // A signed-in session that has expired, or been invalidated because somebody
-    // was disabled, must put the login back rather than show a broken screen.
-    if (r.status === 401 && AUTH.on) { drawLogin('Your session has ended. Sign in again.'); throw new Error('signed out'); }
+    // A 401 (the session ended, or the account was disabled) puts the sign-in card back: apiFetch().
+    const r = await apiFetch(path, o);
     if (!r.ok) {
       const e = await r.json().catch(() => ({ error: r.statusText }));
       const err = new Error(e.error || 'request failed');
@@ -7646,6 +7685,7 @@ async function doQualify(id, opts = {}) {
     LAST_RESULT = r.landed || null;      // the Inbox shows where they went
     viewInbox();
   } catch (e) {
+    if (e.signedOut) return;             // the sign-in card is up; nothing to say on a hidden card
     // a refused save keeps everything typed, and a duplicate answers with names
     if (e.detail && e.detail.duplicate) return showDuplicate(id, e.detail, { interest, nextAction, note, confirmFields });
     $('#qErr').innerHTML = `<div class="err">${esc(e.message)}</div>`;
@@ -8861,9 +8901,15 @@ async function saveAdd() {
     nextAction: $('#aNext').value, nextActionDays: Number($('#aDays').value), notes: $('#aNote').value,
     confirmedNotDuplicate: ADD_CONFIRMED_NEW,
   };
-  const r = await fetch('/api/people', { method: 'POST',
-    headers: { 'content-type': 'application/json', 'x-acting-as': ACTOR },
-    body: JSON.stringify({ by: ACTOR, ...payload }) });
+  let r;
+  try {
+    r = await apiFetch('/api/people', { method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-acting-as': ACTOR },
+      body: JSON.stringify({ by: ACTOR, ...payload }) });
+  } catch (e) {
+    if (e.signedOut) return;             // the sign-in card is up
+    return void ($('#addErr').innerHTML = `<div class="err">${esc(e.message || 'failed')}</div>`);
+  }
   const data = await r.json().catch(() => ({ error: r.statusText }));
   if (r.status === 409) return showDuplicateBlock(data);
   if (!r.ok) return void ($('#addErr').innerHTML = `<div class="err">${esc(data.error || 'failed')}</div>`);
@@ -9392,25 +9438,45 @@ let CP_TIMER = null;
 let CP_LAST = null;
 let CP_ENABLED = false;
 const CP_SHOWN = new Set();
+// A FAILED ASK WAITS LONGER (16.10.2026). A server error or no network doubles the wait after each failure,
+// 6 s, 12 s, 24 s ... up to 5 minutes, never sooner than the normal wait; one good answer is back to normal.
+// "Not signed in" (401) stops asking altogether: apiFetch() puts the sign-in card up and calls cpStop().
+let CP_FAILS = 0;
+let CP_STOPPED = false;
+const CP_BACKOFF_MAX_MS = 5 * 60 * 1000;
+const cpDelay = () => {
+  const normal = CP_ENABLED ? CP_EVERY_MS : CP_IDLE_MS;
+  return CP_FAILS ? Math.max(normal, Math.min(CP_BACKOFF_MAX_MS, CP_EVERY_MS * 2 ** CP_FAILS)) : normal;
+};
 
 function callPopStart() {
-  if (CP_TIMER) return;
+  if (CP_TIMER || CP_STOPPED) return;
   cpTick();
+}
+
+function cpStop() {
+  CP_STOPPED = true;
+  clearTimeout(CP_TIMER);
+  CP_TIMER = null;
 }
 
 function cpSchedule() {
   clearTimeout(CP_TIMER);
-  CP_TIMER = setTimeout(cpTick, CP_ENABLED ? CP_EVERY_MS : CP_IDLE_MS);
+  if (CP_STOPPED) { CP_TIMER = null; return; }
+  CP_TIMER = setTimeout(cpTick, cpDelay());
 }
 
 async function cpTick() {
+  if (CP_STOPPED) return;
   let d = null;
   try {
-    // not api(): a poll every few seconds must not flash the busy bar or throw the login up
+    // apiFetch, not api(): a poll every few seconds must not flash the busy bar; a 401 still signs out
     const q = CP_LAST === null ? '' : '?after=' + encodeURIComponent(CP_LAST);
-    const r = await fetch('/api/calls/events' + q, { headers: { 'x-acting-as': ACTOR } });
+    const r = await apiFetch('/api/calls/events' + q, { headers: { 'x-acting-as': ACTOR } });
     if (r.ok) d = await r.json();
   } catch (e) { d = null; }
+  if (CP_STOPPED) return;                // signed out while it was asking
+  CP_FAILS = d ? 0 : CP_FAILS + 1;
   if (d) {
     const was = CP_ENABLED;
     CP_ENABLED = Boolean(d.enabled);
@@ -9536,14 +9602,14 @@ async function cpPushSetup() {
   if (CP_PUSH || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
   CP_PUSH = true;
   try {
-    const k = await fetch('/api/push/key', { headers: { 'x-acting-as': ACTOR } }).then((r) => r.json());
+    const k = await apiFetch('/api/push/key', { headers: { 'x-acting-as': ACTOR } }).then((r) => r.json());
     if (!k.publicKey) return;
     const reg = await navigator.serviceWorker.register('/sw.js');
     const b = k.publicKey.replace(/-/g, '+').replace(/_/g, '/');
     const key = Uint8Array.from(atob(b + '='.repeat((4 - b.length % 4) % 4)), (c) => c.charCodeAt(0));
     const sub = (await reg.pushManager.getSubscription())
       || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
-    await fetch('/api/push/subscribe', { method: 'POST',
+    await apiFetch('/api/push/subscribe', { method: 'POST',
       headers: { 'content-type': 'application/json', 'x-acting-as': ACTOR }, body: JSON.stringify({ endpoint: sub.endpoint }) });
   } catch (e) { CP_PUSH = false; }
 }
