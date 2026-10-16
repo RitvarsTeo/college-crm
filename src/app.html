@@ -407,11 +407,8 @@ tr.row:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
      TYPE, ON PURPOSE. The organisation in Raleway at label size, the product in
      Spectral at display size, the sentence in Raleway at reading size - three
      roles, three treatments, rather than one font at one weight for all of it.
-     NO PERCENTAGE AND NO ARTIFICIAL DELAY. The three dots are the only motion
-     and they already stop under `prefers-reduced-motion`. A progress bar here
-     would be a linear bar that means loading, which this product reserves for
-     exactly that - but it would have to invent a number to fill, and the wait is
-     one request whose duration nobody knows. */
+     NO INVENTED NUMBER AND NO ARTIFICIAL DELAY. The bar below (16.10.2026) fills on
+     real events only - signinProgress() - and never shows full before the page is. */
   /* THE SAME CARD AS THE ONE IT REPLACES (16.10.2026): sso-only gives it the sign-in card's
      width, padding and centred 34px Raleway heading, so nothing moves when it swaps in. */
   #auth-pending.gate-loading{text-align:center;display:flex;flex-direction:column;align-items:center}
@@ -433,19 +430,24 @@ tr.row:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
   /* THE MARK. Sized in the markup as well as here, so the card does not jump
      while the SVG is still being fetched. */
   #auth-pending .gl-mark{display:block;margin:0 auto 20px;width:196px;height:auto;opacity:.92}
-  #auth-pending .gate-wait{display:flex;justify-content:center;padding:0 0 16px}
-  /* A RING THAT IS LEGIBLE WITHOUT THE ANIMATION, ported from the Client Hub
-     with its reasoning intact: a headless or hidden browser never fires the
-     frames, and a spinner that is invisible when still reads as a broken
-     screen. Colour carries it; motion only adds to it. This product has already
-     been bitten by exactly that - the Browser pane runs hidden, rAF does not
-     fire, and anything starting from opacity 0 stays there. */
-  #auth-pending .gate-spin{width:22px;height:22px;border-radius:50%;
-    border:2px solid var(--gate-line);border-top-color:var(--gate-ink);
-    animation:gatespin .9s linear infinite}
-  @keyframes gatespin{to{transform:rotate(360deg)}}
+  #auth-pending .gate-wait{display:flex;justify-content:center;align-self:stretch;padding:0 0 16px}
+  /* THE BAR, NOT A SPINNER (the owner, 16.10.2026: "can we have a horizontally filled line? can
+     you sync it with the actual timing of opening? Because small circle can trigger stress and
+     unclearity how long you have to wait."). 4px, rounded, the gate's navy on the gate's light
+     line as its track - the gate's own colours, as everything on this screen. It sits in the
+     spinner's 22px box (9px above and below), so the heading and the sentence do not move.
+     LEGIBLE STANDING STILL: the filled part is a width, not an animation, so a hidden or headless
+     browser that never fires a frame still shows how far the sign-in has got. */
+  #auth-pending .gate-bar{display:block;width:100%;height:4px;margin:9px 0;border-radius:2px;
+    background:var(--gate-line);overflow:hidden}
+  #auth-pending .gate-bar-fill{display:block;width:10%;height:100%;border-radius:2px;
+    background:var(--brand-navy);transition:width .2s ease-out}
+  /* Once the first page is drawn the whole view fades (after the fill has reached the end), and
+     stops taking clicks at once, so the page under it answers the first one. */
+  #login-view.gate-done{opacity:0;pointer-events:none;transition:opacity .22s ease .18s}
   @media(prefers-reduced-motion:reduce){
-    #auth-pending .gate-spin{animation:none;border-top-color:var(--gate-ink)}}
+    #auth-pending .gate-bar-fill{transition:none}
+    #login-view.gate-done{transition:none}}
   .err{background:var(--late-bg);color:var(--late);border-radius:8px;padding:9px 11px;font-size:13.5px;margin-top:12px}
   /* THE GATE KEEPS ITS OWN ERROR COLOURS, in every scheme.
 
@@ -6413,9 +6415,61 @@ function startLoginSea() {
   try { LOGIN_SEA(); } catch { /* the card is legible on the gradient without it */ }
 }
 
-// "SIGNING YOU IN" - the dev kit's waiting card (kit part 1, c3967b4 + 30822d1), copied, not
-// redrawn. Shown on the way back from Google (?auth=google, no ?error) in the same shell as the
-// sign-in card, until /api/auth/me has answered; then the app as before, or the sign-in card.
+// ============================================================================
+// THE SIGN-IN BAR - window.signinProgress(step). Copy this block as it is; the app only calls it.
+// Honest progress: the bar moves on REAL events and nothing else.
+//   'start'    the waiting card is on screen (this page calls it itself)  -> 10
+//   'account'  the app's sign-in check answered: somebody is signed in    -> 40
+//   'settings' the app's settings / config request answered               -> 70
+//   'ready'    the app's first page is drawn: full, then the view fades   -> 100
+// Between two steps the bar creeps toward the next mark and stops 4 points short of it, so it
+// never reaches a mark - and never shows full - before the event that earns it. A step already
+// passed, or an unknown one, is ignored; with no card on screen a call does nothing, so an app can
+// call every step on every load. 'ready' returns a Promise that settles once the view has faded
+// (at once under reduced motion); then the app removes the view.
+// A failure is NOT a step: the app replaces the card (not signed in -> the sign-in card, as before),
+// and the creep stops by itself once the bar has left the page.
+// Reduced motion: no creep, no fill animation, no fade - only the steps.
+// ============================================================================
+(function signinBar() {
+  const MARK = { start: 10, account: 40, settings: 70, ready: 100 };
+  const STEPS = ['start', 'account', 'settings', 'ready'];
+  const SAID = { start: 'Opening', account: 'Account checked', settings: 'Settings loaded', ready: 'Ready' };
+  const still = () => Boolean(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  let bar = null, at = -1, shown = 0, timer = 0;
+  const stop = () => { clearInterval(timer); timer = 0; };
+  const fill = (v) => { shown = v; const f = bar.querySelector('.gate-bar-fill'); if (f) f.style.width = v.toFixed(1) + '%'; };
+  function creep() {
+    if (!bar || !bar.isConnected || at < 0 || at >= STEPS.length - 1) return stop();
+    const ceiling = MARK[STEPS[at + 1]] - 4;
+    fill(shown + (ceiling - shown) * 0.04);
+  }
+  window.signinProgress = function signinProgress(step) {
+    const el = document.getElementById('signinBar');
+    if (!el) { stop(); return Promise.resolve(); }
+    if (el !== bar) { stop(); bar = el; at = -1; }       // a new card starts from the beginning
+    const i = STEPS.indexOf(step);
+    if (i <= at) return Promise.resolve();              // unknown (-1) or already passed
+    at = i;
+    fill(MARK[step]);
+    el.setAttribute('aria-valuenow', String(MARK[step]));
+    el.setAttribute('aria-valuetext', SAID[step]);
+    if (step !== 'ready') {
+      if (!still() && !timer) timer = setInterval(creep, 100);
+      return Promise.resolve();
+    }
+    stop();
+    const view = document.getElementById('login-view');
+    if (view) view.classList.add('gate-done');
+    return new Promise((done) => setTimeout(done, still() ? 0 : 400));
+  };
+})();
+
+// "SIGNING YOU IN" - the dev kit's waiting card (kit part 1, c3967b4 + 30822d1 + b4855d9), copied,
+// not redrawn. Shown on the way back from Google (?auth=google, no ?error) in the same shell as the
+// sign-in card. Its bar fills on Intake's three real events (the boot block and startShell):
+// /api/auth/me says signed in -> 'account', /api/config answered -> 'settings', the first view
+// drawn by route() -> 'ready'. Not signed in: the sign-in card replaces it, as before.
 function drawSigningIn() {
   let box = $('#loginScreen');
   if (!box) {
@@ -6424,15 +6478,17 @@ function drawSigningIn() {
     document.body.appendChild(box);
   }
   box.innerHTML = loginShell(`<div class="gate-card sso-only gate-loading" id="auth-pending" aria-live="polite">
-        <div class="gate-wait"><span class="gate-spin" aria-hidden="true"></span></div>
+        <div class="gate-wait"><div class="gate-bar" id="signinBar" role="progressbar" aria-label="Signing in" aria-valuemin="0" aria-valuemax="100" aria-valuenow="10" aria-valuetext="Opening"><span class="gate-bar-fill"></span></div></div>
         <h1 id="pendingTitle">Signing you in</h1>
         <p class="sub" id="pendingSub">One moment - checking your Novikontas account.</p>
       </div>`);
   startLoginSea();
+  signinProgress('start');
 }
+// Takes the WAIT down, and only the wait: a sign-in card drawn over it (a 401 on the way in) stays.
 function clearSigningIn() {
   const box = $('#loginScreen');
-  if (box) box.remove();
+  if (box && $('#auth-pending')) box.remove();
 }
 
 async function signOut() {
@@ -9498,7 +9554,6 @@ async function cpPushSetup() {
   const back = readReturnFromGoogle();
   if (back.waiting) drawSigningIn();
   await loadAuth();
-  if (back.waiting && !(AUTH.on && !AUTH.user)) clearSigningIn();
   // Registered BEFORE the login check. Returning early here left no hashchange
   // listener at all, so after signing in every link in the navigation changed the
   // address bar and nothing on screen moved.
@@ -9521,7 +9576,10 @@ async function cpPushSetup() {
       : '');
     return;
   }
-  await startShell();
+  signinProgress('account');   // the sign-in bar, step 1: /api/auth/me answered and somebody is signed in
+  // The wait never outlives the boot: drawn, failed or signed out, it is taken down here. On a
+  // failure the bar was never full; a 401 on the way in has already put the sign-in card there.
+  try { await startShell(); } finally { clearSigningIn(); }
 })();
 
 /**
@@ -9538,6 +9596,7 @@ async function cpPushSetup() {
  */
 async function startShell() {
   CFG = await api('/api/config');
+  signinProgress('settings');  // the sign-in bar, step 2: the settings have answered
   $('#ver').innerHTML = 'Intake &middot; ' + (CFG.version || 'prototype');
   drawDatasetBadge(CFG.dataset || {});
   let saved = 'light';
@@ -9557,6 +9616,7 @@ async function startShell() {
   drawActorPicker();
   callPopStart();   // Q6: whoever answers the phone sees who is calling
   await route();
+  await signinProgress('ready');   // the sign-in bar, step 3: the first view is drawn - full, then it fades
 }
 </script>
 </body>
