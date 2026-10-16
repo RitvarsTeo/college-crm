@@ -4,7 +4,8 @@
 //   1. a note or a call somebody wrote (events, origin manual, kind note or call, with text): Add a note, Log a call,
 //      the comment typed when a card was made a lead, and the call notes that travelled with it. Lines a machine
 //      wrote under a person's name are left out: a merge (its text is contact details), the visit tick, the SIS
-//      admission-date fix, and a "Qualified from" line whose text is only the Inbox's own suggestion.
+//      admission-date fix, and a line whose text is only the Inbox's own suggestion for that person ("Qualified from"
+//      with no comment typed).
 //   2. the person's Notes field (people.notes), dated by its last edit (who and when come from that History line).
 //      Notes from before Intake (the sheet import) have no edit: shown only when nothing dated exists.
 //   3. "What was it about?" on a known person's answered call (pbx_calls.note), at the time of the call.
@@ -19,16 +20,20 @@ export const LIST_NOTE_COLS = `ln_e.body AS ln_event_text, ln_e.actor AS ln_even
   ln_n.actor AS ln_notes_by, ln_n.occurred_at AS ln_notes_at,
   ln_c.note AS ln_call_text, ln_c.note_by AS ln_call_by, ln_c.called_at AS ln_call_at`;
 
+// Each source is ONE pass over its table, newest per person by ROW_NUMBER() (SQLite and Postgres alike), joined by
+// person id. Not a lookup per person: production has no index on events.person_id, and per-person lookups made the
+// List four times slower (measured read-only 16.10.2026: 0.23 s -> 1.05 s for 917 people).
+const newest = (cols, from, where, order) => `(SELECT ${cols} FROM (SELECT ${cols},
+    ROW_NUMBER() OVER (PARTITION BY person_id ORDER BY ${order}) AS ln_rn FROM ${from} WHERE ${where}) ln_x WHERE ln_rn = 1)`;
 export const LIST_NOTE_JOINS = `
-  LEFT JOIN events ln_e ON ln_e.id = (SELECT e.id FROM events e WHERE e.person_id = pe.id AND e.origin = 'manual'
-    AND e.kind IN ('note', 'call') AND TRIM(COALESCE(e.body, '')) <> '' AND ${notMachine}
-    AND NOT (COALESCE(e.subject, '') LIKE 'Qualified from %'
-      AND EXISTS (SELECT 1 FROM inbound i WHERE i.person_id = e.person_id AND i.suggestion_why = e.body))
-    ORDER BY e.occurred_at DESC, e.id DESC LIMIT 1)
-  LEFT JOIN events ln_n ON ln_n.id = (SELECT e.id FROM events e WHERE e.person_id = pe.id AND e.kind = 'edit'
-    AND e.field = 'notes' ORDER BY e.occurred_at DESC, e.id DESC LIMIT 1)
-  LEFT JOIN pbx_calls ln_c ON ln_c.uniqueid = (SELECT c.uniqueid FROM pbx_calls c WHERE c.person_id = pe.id
-    AND TRIM(COALESCE(c.note, '')) <> '' ORDER BY c.called_at DESC LIMIT 1)`;
+  LEFT JOIN ${newest('person_id, body, actor, occurred_at', 'events e', `e.origin = 'manual' AND e.kind IN ('note', 'call')
+    AND TRIM(COALESCE(e.body, '')) <> '' AND ${notMachine}
+    AND NOT EXISTS (SELECT 1 FROM inbound i WHERE i.person_id = e.person_id AND i.suggestion_why = e.body)`, 'occurred_at DESC, id DESC')} ln_e
+    ON ln_e.person_id = pe.id
+  LEFT JOIN ${newest('person_id, actor, occurred_at', 'events e', "e.kind = 'edit' AND e.field = 'notes'", 'occurred_at DESC, id DESC')} ln_n
+    ON ln_n.person_id = pe.id
+  LEFT JOIN ${newest('person_id, note, note_by, called_at', 'pbx_calls c', "c.person_id IS NOT NULL AND TRIM(COALESCE(c.note, '')) <> ''", 'called_at DESC, uniqueid DESC')} ln_c
+    ON ln_c.person_id = pe.id`;
 
 const LN_KEYS = ['ln_event_text', 'ln_event_by', 'ln_event_at', 'ln_notes_by', 'ln_notes_at', 'ln_call_text', 'ln_call_by', 'ln_call_at'];
 const time = (v) => { const t = Date.parse(v || ''); return Number.isFinite(t) ? t : null; };

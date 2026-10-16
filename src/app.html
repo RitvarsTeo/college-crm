@@ -4483,8 +4483,12 @@ function cListNote(p) {
   const n = p && p.list_note;
   const text = n ? String(n.from === 'notes' ? cNotePreview(n.text) : n.text || '').replace(/\s+/g, ' ').trim() : '';
   if (!text) return '';
-  const who = [n.by ? actorName(n.by) : '', n.at ? cNoteDay(n.at) : ''].filter(Boolean).join(' · ');
-  return `<small class="c-lnote" title="${esc(text)}">${who ? esc(who) + ': ' : ''}${esc(text)}</small>`;
+  // the first name on the line ("Firstname · 16.10"), the whole name and the whole text on hover
+  const by = n.by ? String(actorName(n.by)) : '';
+  const day = n.at ? cNoteDay(n.at) : '';
+  const who = [by.split(/\s+/)[0], day].filter(Boolean).join(' · ');
+  const full = [by, day].filter(Boolean).join(' · ');
+  return `<small class="c-lnote" title="${esc((full ? full + ': ' : '') + text)}">${who ? esc(who) + ': ' : ''}${esc(text)}</small>`;
 }
 function cDrawJourneyPool() {
   const { people, taskOf } = C_JPD;

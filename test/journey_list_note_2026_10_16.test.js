@@ -149,7 +149,9 @@ function page(p, year = '2026') {
 
 test('page: one quiet line, who and the day first, escaped; nothing when there is no note', () => {
   const html = page({ list_note: { text: 'Pajautāts, vai ir pieņemts lēmums <script>', by: 'Ieva', at: '2026-10-16T09:00:00.000Z', from: 'history' } });
-  assert.equal(html, '<small class="c-lnote" title="Pajautāts, vai ir pieņemts lēmums &lt;script&gt;">Ieva · 16.10: Pajautāts, vai ir pieņemts lēmums &lt;script&gt;</small>');
+  assert.equal(html, '<small class="c-lnote" title="Ieva · 16.10: Pajautāts, vai ir pieņemts lēmums &lt;script&gt;">Ieva · 16.10: Pajautāts, vai ir pieņemts lēmums &lt;script&gt;</small>');
+  const named = page({ list_note: { text: 'Zvanīja', by: 'Laura Skirmante', at: '2026-10-16T09:00:00.000Z', from: 'history' } });
+  assert.match(named, /title="Laura Skirmante · 16\.10: Zvanīja">Laura · 16\.10: Zvanīja</, 'the first name on the line, the whole name on hover');
   assert.equal(page({ list_note: null }), '');
   assert.equal(page({}), '');
   assert.equal(page({ list_note: { text: '   ', by: 'Ieva', at: '2026-10-16T09:00:00.000Z', from: 'history' } }), '');
