@@ -27,7 +27,7 @@ test('email filter: the rule is in config, and matches the real senders of the f
 });
 
 const message = (id, from, body) => ({ id, threadId: 't-' + id, labelIds: ['INBOX'],
-  payload: { headers: [{ name: 'Date', value: 'Wed, 01 Oct 2026 09:00:00 +0300' }, { name: 'From', value: from },
+  payload: { mimeType: 'text/plain', headers: [{ name: 'Date', value: 'Wed, 01 Oct 2026 09:00:00 +0300' }, { name: 'From', value: from },
     { name: 'Subject', value: 'Subject ' + id }], body: { data: Buffer.from(body, 'utf8').toString('base64url') } } });
 function fakeGmail(messages) {
   return async (url) => {

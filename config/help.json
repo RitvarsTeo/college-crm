@@ -194,6 +194,11 @@
       "a": "Intake reads the college phone line every minute, and a call appears as soon as the phone system lists it, which can be later than the call itself. Intake also re-reads the last two days, so a call the phone system lists late is never missed. A call card shows each call: the time, the line it came in on, and Answered by who answered, or Missed. When the phone system gives the length, an answered call also shows how long the talk lasted, and a missed call how long it rang. A call from somebody already in Intake goes on their history instead. Under an answered call, type one line in What was it about?; it goes onto the person's History with Make a lead. Set aside on a call card, then pick why (Bring back returns it). Not a prospective student sets aside only that card: the next call from the number comes in as usual. Supplier or vendor, Internal or Spam also marks the number: it never reaches the Inbox, until Remove mark. A call pops up in the app for button 1 (Admissions) and button 2 (Coordinator); a button 3 call does not pop up, it only reaches the Inbox or the history. A marked number never pops up. A call pops up only for the people of its line (1 Ieva, 2 Laura), never for admins."
     },
     {
+      "id": "email-to-inbox",
+      "q": "Which emails reach the Inbox?",
+      "a": "An email to edu@ reaches the Inbox only when it has the Admissions label or is about studying (a programme, a course, an application, admission, the dormitory, tuition or documents for studies); an email from somebody already in Intake goes on their History, a reply joins its conversation, and everything else is set aside as Filtered automatically with the reason, where you can find it and Bring it back."
+    },
+    {
       "id": "linkedin-leads",
       "q": "Where do LinkedIn leads come from?",
       "a": "From LinkedIn lead forms on the Novikontas Academy page (and ad forms, when an ad account is set), once an admin has pressed Subscribe leads on the LinkedIn channel (Channels, LinkedIn). Each lead lands in the Inbox as LinkedIn, and its answers fill in a few seconds later, dropdowns included. A lead withdrawn on LinkedIn is never added: if we already know the person, it is noted on their history."

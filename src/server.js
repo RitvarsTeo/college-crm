@@ -48,7 +48,7 @@ import { signInFirst, withReturnScript } from './signinfirst.js';
 import { bootstrapIfAuthOn } from './bootstrap.js';
 import * as channeladmin from './channeladmin.js';
 import { todayStart, tomorrowStart, localDate, localMidnight } from './bizday.js';
-import { receiveSisApplication, mergeSisDuplicate, syncSis, channelMode, SIS_STAGE } from './sync.js';
+import { receiveSisApplication, mergeSisDuplicate, syncSis, channelMode, SIS_STAGE, emailRuleOnWaitingLive } from './sync.js';
 import { foldContractStage, foldSisOnlyApplication } from './stagefold.js';
 import { redateSisAdmissions } from './sisdates.js';
 import { htmlEscape, inviteOrigin } from './systempages.js';
@@ -2372,6 +2372,16 @@ export const handle = async (req, res) => {
       if (!(await adminOf(req))) return refuseNotAdmin(res);
       const b = req.method === 'POST' ? await body(req) : {};
       const r = await releaseNotAdmissions(db, { apply: req.method === 'POST' && b.apply === true, by: await actorOf(req, b) });
+      if (r.error) return json(res, 400, r);
+      return json(res, 200, { ok: true, ...r });
+    }
+    // The edu@ email rule over the email cards already waiting (one-off, the owner 16.10.2026). Admins only. GET is the
+    // PREVIEW: counts and card numbers, no names, nothing changes. POST {"apply": true} sets aside what it listed, logged.
+    if (p === '/api/admin/inbox/email-rule' && (req.method === 'GET' || req.method === 'POST')) {
+      const admin = await adminOf(req);
+      if (!admin) return refuseNotAdmin(res);
+      const b = req.method === 'POST' ? await body(req) : {};
+      const r = await emailRuleOnWaitingLive(db, { apply: req.method === 'POST' && b.apply === true, by: await actorOf(req, b) });
       if (r.error) return json(res, 400, r);
       return json(res, 200, { ok: true, ...r });
     }
