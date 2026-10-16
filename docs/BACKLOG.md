@@ -16,10 +16,10 @@ this is a local prototype" stood here until 30.09.2026, from the weeks before th
 
 ## 16.10.2026 - Ieva: calls, leads, emails (owner, after Ieva's message)
 
-- `DECIDED` (owner 16.10, after Ieva: "OS shows only admitted") ONE name per programme: the SIS writes short codes, Intake
+- `LIVE` (patch 58 + repair applied 16.10: 64 people) (owner 16.10, after Ieva: "OS shows only admitted") ONE name per programme: the SIS writes short codes, Intake
   uses its own names. Map SIS -> Intake: OS -> MT OS, MTM -> MT MTM, WTT -> MT WTT, OR -> MT MR (owner: OR is MT MR); on
   import and repair the existing rows (OS 24, MTM 11, WTT 10, OR 19).
-- `DECIDED` (owner 16.10, after Ieva: "Alberts ... notes do not show") Journey -> List shows each person's latest note in
+- `LIVE` (patch 58, 16.10; Board + Today use the same note rule) (owner 16.10, after Ieva: "Alberts ... notes do not show") Journey -> List shows each person's latest note in
   one line (notes live in History; the List showed none).
 - `LIVE` (patch 57, 16.10) (Ieva 16.10, owner "Lets fix!") Journey -> List: filter the ACTIVE leads of one programme (Jevgenijs asked
   about MTM, the List showed everyone). A Stage filter with "Active" (all open stages) next to Programme.
