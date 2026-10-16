@@ -3616,7 +3616,7 @@ async function viewTodayC() {
   // Admissions (29.09): the contact details and the notes right here, to call or write without opening the profile
   const byId = new Map(people.map((p) => [p.id, p]));
   const reach = (p) => (!p ? '' : `<small class="c-reach">${cReach(p) || '<span class="c-gap">no email or phone</span>'}</small>`);
-  const said = (p) => (p && cComment(p) ? `<small class="c-nnote" title="${esc(p.last_comment || p.notes)}">${esc(cComment(p))}</small>` : '');
+  const said = (p) => (p && cComment(p) ? `<small class="c-nnote" title="${esc(cCommentFull(p))}">${esc(cComment(p))}</small>` : '');
   const done = (t) => `<button class="btn sm" onclick="event.stopPropagation();openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, ${
         C_TERMINAL.includes((byId.get(t.person_id) || {}).status)}, ${esc(JSON.stringify(String(t.person_id ?? '')))})">Done</button>`;
   // ONE ROW PER PERSON (Q43, the owner 05.10.2026: the app is about finding people), so Home's Overdue / Due today -
@@ -4481,7 +4481,7 @@ async function viewJourneyPool() {
 const cNoteDay = (iso) => { const d = fmtDate(iso); if (!d) return ''; const [y, m, dd] = d.split('-'); return `${dd}.${m}${y === todayStr().slice(0, 4) ? '' : '.' + y}`; };
 function cListNote(p) {
   const n = p && p.list_note;
-  const text = n ? String(n.from === 'notes' ? cNotePreview(n.text) : n.text || '').replace(/\s+/g, ' ').trim() : '';
+  const text = cComment(p);
   if (!text) return '';
   // the first name on the line ("Firstname · 16.10"), the whole name and the whole text on hover
   const by = n.by ? String(actorName(n.by)) : '';
@@ -4841,9 +4841,12 @@ const cStepIcon = (label) => C_JICON.type[groupForAction(cTask(label))] || C_JIC
 // The same import put "Sheet status: COLD | Docs: Not submitted | " in front of the comment people wrote.
 // The preview shows the comment; the whole note, tags included, stays on the card and the person page.
 const cNotePreview = (s) => String(s == null ? '' : s).replace(/^(?:(?:Sheet status|Docs):[^|]*\|\s*)+/, '').trim();
-// The card's comment: the newest one somebody wrote on the person page (Add a note / Log a call), else the
-// note from the import. The whole thread is the person page's History.
-const cComment = (p) => String(p.last_comment || '').trim() || cNotePreview(p.notes);
+// The card's comment, the List's note line and Today's note: ONE rule (the owner, 16.10.2026). The server picks the newest
+// of a note or call somebody wrote, the Notes field and a call's "What was it about?", leaving out the History lines a
+// machine wrote under a name (src/listnote.js pickListNote -> p.list_note); this only makes it one line of text, the
+// import's sheet tags left out. The whole thread is the person page's History.
+const cComment = (p) => { const n = p && p.list_note; return n ? String(n.from === 'notes' ? cNotePreview(n.text) : n.text || '').replace(/\s+/g, ' ').trim() : ''; };
+const cCommentFull = (p) => String((p && p.list_note && p.list_note.text) || '');
 // CALL OR WRITE WITHOUT OPENING THE PROFILE (Admissions, 29.09.2026): what was said must be visible
 // and the number callable. Next Steps got these links first and they were the only
 // tel:/mailto: in the whole app - the People row and the Journey person card printed the same
@@ -4958,7 +4961,7 @@ function cJourneyCard(p, t, sel) {
   const life = st === 'sis' ? '' : p.sis ? `<small class="c-jlife" title="In the SIS${p.sis.since ? ', by ' + esc(cDay(p.sis.since)) : ''}">SIS: ${esc(p.sis.label)}</small>`
     : cLifeFacts(p).map(([, at, short]) => `<small class="c-jlife" title="From the SIS, by ${esc(cDay(at))}">${esc(short)}</small>`).join('');
   return `<div class="${cls}" draggable="true" data-id="${esc(p.id)}" tabindex="0" onclick="cJOpen(${esc(JSON.stringify(String(p.id ?? '')))})" onkeydown="if(event.key==='Enter')cJOpen(${esc(JSON.stringify(String(p.id ?? '')))})"><b>${esc(p.name)}</b>${life}${t
-    ? `<span class="c-jnext">${cStepIcon(t.label)}<span>${esc(cTask(t.label))}</span></span>` : ''}${cComment(p) ? `<small class="c-jnote" title="${esc(p.last_comment || p.notes)}">${esc(cComment(p))}</small>` : ''}${
+    ? `<span class="c-jnext">${cStepIcon(t.label)}<span>${esc(cTask(t.label))}</span></span>` : ''}${cComment(p) ? `<small class="c-jnote" title="${esc(cCommentFull(p))}">${esc(cComment(p))}</small>` : ''}${
     cStateLine(st, detail, st === 'none' ? cChooseOnCard(p.id) : '')}</div>`;
 }
 // JOURNEY FILTERS (the review' feedback 2A, 28.09.2026: real filters, not one-choice pills). Four

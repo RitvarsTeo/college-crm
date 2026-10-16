@@ -15,13 +15,19 @@ const line = (start) => { const i = APP.indexOf(start); assert.ok(i >= 0, start)
 const fn = (name) => { const i = APP.indexOf(name); assert.ok(i >= 0, name); return APP.slice(i, APP.indexOf('\n}\n', i) + 2); };
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-test('the card comment: the newest one written on the person page, else the imported note', () => {
+test('the card comment: the same rule as the List note (16.10.2026), made one line, the sheet tags left out', () => {
   const ctx = {};
-  vm.runInNewContext(`${line('const cNotePreview =')}\n${line('const cComment =')}\nthis.c = cComment;`, ctx);
-  assert.equal(ctx.c({ last_comment: 'Called, wants the price', notes: 'Sheet status: HOT | old note' }), 'Called, wants the price');
-  assert.equal(ctx.c({ last_comment: null, notes: 'Sheet status: HOT | old note' }), 'old note');
-  assert.equal(ctx.c({ last_comment: '  ', notes: '' }), '');
-  assert.ok(APP.includes('${cComment(p) ? `<small class="c-jnote" title="${esc(p.last_comment || p.notes)}">${esc(cComment(p))}</small>` : \'\'}'));
+  vm.runInNewContext(`${line('const cNotePreview =')}\n${line('const cComment =')}\n${line('const cCommentFull =')}\nthis.c = cComment; this.f = cCommentFull;`, ctx);
+  const note = (text, from = 'history') => ({ list_note: { text, by: 'Admissions', at: '2026-10-16T09:00:00.000Z', from } });
+  assert.equal(ctx.c(note('Called, wants the price')), 'Called, wants the price');
+  assert.equal(ctx.c(note('Sheet status: HOT | old note', 'notes')), 'old note');
+  assert.equal(ctx.f(note('Sheet status: HOT | old note', 'notes')), 'Sheet status: HOT | old note', 'the whole note on hover');
+  assert.equal(ctx.c(note('two\nlines')), 'two lines');
+  assert.equal(ctx.c({ list_note: null, notes: 'a Notes field the server did not pick' }), '', 'only what the server picked');
+  assert.equal(ctx.c({}), '');
+  assert.ok(APP.includes('${cComment(p) ? `<small class="c-jnote" title="${esc(cCommentFull(p))}">${esc(cComment(p))}</small>` : \'\'}'), 'the Board card');
+  assert.ok(APP.includes('<small class="c-nnote" title="${esc(cCommentFull(p))}">${esc(cComment(p))}</small>'), 'Today');
+  assert.doesNotMatch(APP, /last_comment/, 'no second rule left on the page');
 });
 
 function startServer() {
@@ -48,7 +54,9 @@ test('the list carries the newest comment: a note written on the person page sho
     await new Promise((z) => setTimeout(z, 15));
   }
   const again = (await (await fetch(`${base}/api/people`)).json()).rows.find((r) => r.id === first.id);
-  assert.equal(again.last_comment, 'second comment');
+  assert.equal(again.list_note.text, 'second comment');
+  assert.equal(again.list_note.from, 'history');
+  assert.equal(again.last_comment, undefined, 'one rule: the old preview column is gone');
 });
 
 test('phone: the month chart is drawn 360 wide with larger labels; desktop keeps 640', () => {

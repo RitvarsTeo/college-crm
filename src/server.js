@@ -1956,10 +1956,8 @@ export const handle = async (req, res) => {
         (SELECT due_at FROM tasks t WHERE t.person_id = pe.id AND t.done_at IS NULL ORDER BY due_at LIMIT 1) AS next_action_at,
         (SELECT MIN(occurred_at) FROM lifecycle_events le WHERE le.person_id = pe.id AND le.fact = 'form_started') AS form_started_at,
         (SELECT MIN(occurred_at) FROM lifecycle_events le WHERE le.person_id = pe.id AND le.fact = 'matriculated') AS matriculated_at,
-        -- the newest comment somebody wrote (Add a note / Log a call), for the Journey card's one-line preview
-        (SELECT body FROM events e WHERE e.person_id = pe.id AND e.origin = 'manual' AND e.kind IN ('note', 'call')
-          AND COALESCE(e.body, '') <> '' ORDER BY e.occurred_at DESC, e.id DESC LIMIT 1) AS last_comment,
-        -- the List's latest note line (16.10.2026, src/listnote.js): three joins on this same query, no request per row
+        -- the latest note (16.10.2026, src/listnote.js): the List's line, the Journey card's comment and Today's note, one
+        -- rule; three joins on this same query, no request per row
         ${LIST_NOTE_COLS}
         FROM people pe ${LIST_NOTE_JOINS}
         WHERE 1 = 1${scopePeopleSql(scopeRange(url))[0]} ORDER BY pe.${orderBy} ${dir} NULLS LAST`).all(...scopePeopleSql(scopeRange(url))[1]);

@@ -17,7 +17,7 @@ const line = (start) => { const i = APP.indexOf(start); assert.ok(i >= 0, start)
 function card(p, t) {
   const ctx = { esc: (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`), cTodayIso: () => '2026-09-28', cDay: (iso) => String(iso).slice(0, 10), CFG: CONFIG };
   const i = APP.indexOf('const C_JICON = {');
-  vm.runInNewContext(`${line('const cWhenClass =')}\n${line('const cTask =')}\n${line('const cNotePreview =')}\n${line('const cComment =')}\n${APP.slice(i, APP.indexOf('\n};', i) + 3)}\n${fn('function groupForAction(')}\n${line('const cStepIcon =')}\n${fn('function cLifeFacts(')}\n${line('const C_SIS_HOLDS =')}
+  vm.runInNewContext(`${line('const cWhenClass =')}\n${line('const cTask =')}\n${line('const cNotePreview =')}\n${line('const cComment =')}\n${line('const cCommentFull =')}\n${APP.slice(i, APP.indexOf('\n};', i) + 3)}\n${fn('function groupForAction(')}\n${line('const cStepIcon =')}\n${fn('function cLifeFacts(')}\n${line('const C_SIS_HOLDS =')}
 ${line('const cSisHolds =')}
 ${line('const cSisHeld =')}
 ${line('const cChooseNext =')}\n${[line('const cDaysLate ='), line('const C_ST ='), line('const C_ST_RAIL ='), fn('function cStateLine('), line('const cDdMm ='), fn('function cStepState('), line('const cChooseOnCard =')].join('\n')}\n${fn('function cJourneyCard(')}\nthis.card = cJourneyCard;`, ctx);
@@ -34,10 +34,12 @@ test('the next step says what to do: the import\'s "(from the sheet)" is not sho
 });
 
 test('the comment preview: one quiet line of what people wrote, without the import tags; the whole note in its title', () => {
-  const html = card({ id: 'a', name: 'A', notes: 'Sheet status: COLD | Docs: Not submitted | Waiting for exam results' }, null);
+  // the server's one rule (src/listnote.js, 16.10.2026): an undated Notes field from the import is the person's note
+  const fromNotes = (text) => ({ id: 'a', name: 'A', notes: text, list_note: text.trim() ? { text, by: null, at: null, from: 'notes' } : null });
+  const html = card(fromNotes('Sheet status: COLD | Docs: Not submitted | Waiting for exam results'), null);
   assert.match(html, /<small class="c-jnote" title="Sheet status: COLD \| Docs: Not submitted \| Waiting for exam results">Waiting for exam results<\/small>/);
-  assert.doesNotMatch(card({ id: 'a', name: 'A', notes: '' }, null), /c-jnote/, 'no note, no line');
-  assert.doesNotMatch(card({ id: 'a', name: 'A', notes: 'Sheet status: HOT | ' }, null), /c-jnote/, 'tags only, no line');
+  assert.doesNotMatch(card(fromNotes(''), null), /c-jnote/, 'no note, no line');
+  assert.doesNotMatch(card(fromNotes('Sheet status: HOT | '), null), /c-jnote/, 'tags only, no line');
   assert.match(APP, /html\.ui-c \.c-jp small\.c-jnote\{[^}]*white-space:nowrap;overflow:hidden;text-overflow:ellipsis\}/, 'one line, cut with an ellipsis');
 });
 

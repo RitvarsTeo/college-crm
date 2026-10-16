@@ -143,7 +143,7 @@ function page(p, year = '2026') {
   const ctx = { esc: (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])),
     fmtDate: (iso) => (iso ? String(iso).slice(0, 10) : ''), todayStr: () => year + '-10-16',
     actorName: (x) => (x === 'CRM' ? 'Intake' : x), cNotePreview: (s) => String(s ?? '').replace(/^(?:(?:Sheet status|Docs):[^|]*\|\s*)+/, '').trim() };
-  vm.runInNewContext(line('const cNoteDay =') + fnSrc('function cListNote(') + '\nthis.out = cListNote(P);', Object.assign(ctx, { P: p }));
+  vm.runInNewContext(line('const cNoteDay =') + line('const cComment =') + fnSrc('function cListNote(') + '\nthis.out = cListNote(P);', Object.assign(ctx, { P: p }));
   return ctx.out;
 }
 
@@ -174,4 +174,22 @@ test('the Help center says it in one sentence', () => {
   assert.match(q.a, /newest note/);
   assert.match(q.a, /Notes field/);
   assert.equal(q.a.split(/[.!?](\s|$)/).filter((x) => x && x.trim()).length, 1, 'one sentence');
+});
+
+test('the Board card and Today use the same rule (the owner, 16.10.2026): a machine line never becomes the card comment', async () => {
+  const db = await db0();
+  await ev(db, { subject: 'Admission date set from SIS: 2025-09-01', body: 'It was the day the SIS pull ran (2025-10-01).', at: '2026-10-16T10:00:00.000Z' });
+  await db.prepare("UPDATE people SET notes = 'Sheet status: WARM | wants a call back' WHERE id = 'b'").run();
+  const rows = await listed(db);
+  const ctx = {};
+  vm.runInNewContext(`${line('const cNotePreview =')}${line('const cComment =')}this.c = cComment;`, ctx);
+  assert.equal(ctx.c({ list_note: rows.a }), '', 'the SIS fix line is not a comment: the card shows none');
+  assert.equal(ctx.c({ list_note: rows.b }), 'wants a call back');
+  // one function, used by all three places; the List line takes its text from it
+  assert.equal((APP.match(/const cComment = /g) || []).length, 1);
+  assert.match(fnSrc('function cListNote('), /const text = cComment\(p\);/);
+  assert.match(APP, /class="c-jnote" title="\$\{esc\(cCommentFull\(p\)\)\}">\$\{esc\(cComment\(p\)\)\}/, 'the Board card');
+  assert.match(APP, /class="c-nnote" title="\$\{esc\(cCommentFull\(p\)\)\}">\$\{esc\(cComment\(p\)\)\}/, 'Today');
+  assert.doesNotMatch(SERVER, /AS last_comment/, 'the old per-person preview query is gone');
+  await db.close();
 });
