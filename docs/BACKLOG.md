@@ -30,7 +30,12 @@ this is a local prototype" stood here until 30.09.2026, from the weeks before th
   contacts, Active clients); a tile opens that side with today's Home + side menu; the logo goes back to the tiles.
 - `DECIDED` (MVP interview 19.10) "Active clients" = any company with any course ever (471 in the Excel). The Training
   Centre tile opens for EVERYONE signed in (both tiles for all). Every TC person sees ALL companies (filter by person in
-  charge). Contact master: owner asked for a suggestion (see below).
+  charge). **Intake is the master for contacts** (owner, round 2): Client Hub's contacts go
+  into Intake once; Client Hub keeps running Grand Opening and later reads from Intake; meanwhile a one-way check shows
+  contacts changed only in Client Hub.
+- `DECIDED` (MASTER CONTROL defaults, owner "no preference" 19.10 - change any time) a company with offices in several
+  countries is ONE company with its offices inside (explicit office tags like /CY/ stay separate); course counts are
+  typed by TC staff for now (the Excel history imported); the 296 companies with no status start as "Not contacted".
 - `DECIDED` Sessions: MASTER CONTROL + three lanes - TC-DATA (clean the Excel, cross-check Client Hub, duplicates
   report, read-only on Client Hub), TC-UI (tiles first as A/B pictures, then TC screens from Intake's parts),
   TC-BACKEND (tables, API, security guards). Order: tiles -> short MVP interview with the owner -> companies list +
