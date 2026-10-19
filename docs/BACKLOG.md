@@ -25,6 +25,9 @@ this is a local prototype" stood here until 30.09.2026, from the weeks before th
   git), mainly LIST OF COMPANIES (1,572 companies: status, TC/ENERGY/OPITO, country, courses per year, contacts, next
   communication, NJK PIC), plus country, exhibition and calendar/gift tabs where useful. Cross-check against Client
   Hub's companies.
+- `DECIDED` (owner's pick 19.10, A/B pictures in _training-centre/mockups) **A: a start page with two identical tiles**
+  after sign-in - Academy (Due today, New in the Inbox, Active leads) and Training Centre (Due this week, Overdue
+  contacts, Active clients); a tile opens that side with today's Home + side menu; the logo goes back to the tiles.
 - `DECIDED` Sessions: MASTER CONTROL + three lanes - TC-DATA (clean the Excel, cross-check Client Hub, duplicates
   report, read-only on Client Hub), TC-UI (tiles first as A/B pictures, then TC screens from Intake's parts),
   TC-BACKEND (tables, API, security guards). Order: tiles -> short MVP interview with the owner -> companies list +
