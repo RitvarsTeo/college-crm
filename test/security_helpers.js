@@ -92,3 +92,35 @@ export function startHosted(env = {}) {
     child.on('exit', (code) => { clearTimeout(timer); reject(new Error(`exited ${code}: ${out}`)); });
   });
 }
+
+// AREAS (19.10.2026): a running copy with one account per kind - admin with both halves, a Training Centre user, an
+// Academy user and a user with no area - in a fresh SQLite file, the first-boot marker already set so the areas stay
+// exactly as written here. Synthetic addresses; no password is set or needed (the session is signed by SECRET).
+export const AREA_USERS = {
+  admin: { email: 'admin.both@novikontas.org', role: 'admin', areas: ['academy', 'tc'] },
+  tc: { email: 'tc.only@novikontas.org', role: 'user', areas: ['tc'] },
+  academy: { email: 'academy.only@novikontas.org', role: 'user', areas: ['academy'] },
+  none: { email: 'no.area@novikontas.org', role: 'user', areas: [] },
+};
+export async function startWithAreas(env = {}) {
+  const fs = await import('node:fs');
+  const os = await import('node:os');
+  const keep = {};
+  for (const k of ['DATABASE_URL', 'DATABASE_URL_UNPOOLED', 'CRM_DB_DATABASE_URL_UNPOOLED']) { keep[k] = process.env[k]; process.env[k] = ''; }
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'crm-areas-'));
+  const file = path.join(dir, 'areas.db');
+  const { openDb } = await import('../src/db.js');
+  const db = await openDb(file);
+  const at = new Date().toISOString();
+  for (const [k, u] of Object.entries(AREA_USERS)) {
+    await db.prepare(`INSERT INTO crm_users (id, email, display_name, password_hash, role, active, session_version, created_at)
+      VALUES (?,?,?,NULL,?,1,0,?)`).run('u_' + k, u.email, 'Test ' + k, u.role, at);
+    for (const a of u.areas) await db.prepare('INSERT INTO crm_user_areas (user_id, area, granted_at, granted_by) VALUES (?,?,?,?)').run('u_' + k, a, at, 'test');
+  }
+  await db.prepare('INSERT INTO sync_state (name, value, ran_at) VALUES (?,?,?)').run('areas_backfill_2026_10', 'done', at);
+  await db.close();
+  for (const [k, v] of Object.entries(keep)) process.env[k] = v ?? '';
+  const s = await start({ CRM_DB: file, DATASET: 'empty', CRM_RITVARS_PASSWORD: '', CRM_AIGARS_PASSWORD: '', CRM_ADMISSIONS_PASSWORD: '', ...env });
+  const cookie = (k) => session(AREA_USERS[k].email, AREA_USERS[k].role);
+  return { ...s, cookie, dir };
+}

@@ -15,7 +15,9 @@ import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { ROOT, start, startHosted, adminCookie } from './security_helpers.js';
+import { ROOT, start, startHosted, adminCookie, startWithAreas } from './security_helpers.js';
+import { areaOfApi } from '../src/areas.js';
+import { synthFiles } from './tc_fixtures.js';
 import { verifyRequest, channelIds, channelDef, acceptsWebhook, isActiveChannel, handshake } from '../src/inbound.js';
 import { authoriseCron } from '../lib/pbx.js';
 import { requireConfigured } from '../src/auth.js';
@@ -257,4 +259,113 @@ test('(d) a hosted copy without sign-in does not start (the boot itself: securit
   assert.equal(requireConfigured({ VERCEL: '1' }).ok, false);
   assert.equal(requireConfigured({ VERCEL: '1', CRM_AUTH: '0' }).ok, false);
   assert.match(SERVER, /requireConfigured\(/, 'server.js still asks it at boot');
+});
+
+// ------------------------------------------------------------------------------------------ (e)
+// THE AREAS (19.10.2026). Intake holds two halves, Academy and Training Centre, and an account opens only the halves an
+// admin gave it. The gate in src/server.js asks src/areas.js on EVERY /api/ request; this pins what it says and asks a
+// running copy as each kind of account.
+const AREAS_SRC = read('src', 'areas.js');
+const SHARED_API = {
+  "if (pathname.startsWith('/api/auth/')) return 'shared';": 'signing in and out, and who am I',
+  "if (pathname === '/api/whoami') return 'shared';": 'says only who is asking',
+  "if (pathname === '/api/feedback') return 'shared';": 'a bug report can come from either half',
+  "if (pathname === '/api/feedback/waiting') return 'shared';": 'a count, and only for the feedback readers',
+  "if (pathname.startsWith('/api/help/')) return 'shared';": 'the Help center open counts, a number per question',
+  "if (pathname === '/api/admin/access') return 'shared';": 'People and access: the admin ROLE is checked in the route',
+};
+const TC_API = [
+  "if (pathname === '/api/tc' || pathname.startsWith('/api/tc/')) return 'tc';",
+  "if (pathname.startsWith('/api/admin/tc/')) return 'tc';",
+];
+
+test('(e) the area function is pinned: a shared path or a Training Centre prefix must be added here with its reason', () => {
+  const at = AREAS_SRC.indexOf('export function areaOfApi(');
+  const fnSrc = AREAS_SRC.slice(at, AREAS_SRC.indexOf('\n}\n', at));
+  const lines = fnSrc.split('\n').map((l) => l.replace(/\/\/.*$/, '').trim()).filter((l) => /return '/.test(l));
+  assert.deepEqual(lines, [...Object.keys(SHARED_API), ...TC_API, "return 'academy';"],
+    'areaOfApi changed: list the new shared path or tc prefix here with its reason');
+  assert.match(SERVER, /if \(AUTH_ON && p\.startsWith\('\/api\/'\) && !openBeforeSignIn\(p\) && !areas\.areaAllows\(await currentUser\(req\), p\)\)/,
+    'the gate is asked on every /api/ request after the sign-in door');
+  assert.ok(SERVER.indexOf('areas.areaAllows(') < SERVER.indexOf("p === '/api/auth/me'"), 'and before any route');
+  assert.equal(areaOfApi('/api/people'), 'academy', 'anything not named is Academy: fail closed');
+  assert.equal(areaOfApi('/api/tcx'), 'academy');
+});
+
+test('(e) a running copy, as each kind of account: every route of the other half answers 403', async (t) => {
+  const s = await startWithAreas();
+  t.after(() => { s.child.kill(); });
+  const ask = async (p, method, who) => {
+    const r = await fetch(s.base + p, { method, redirect: 'manual', headers: { origin: s.base, 'content-type': 'application/json',
+      accept: 'application/json', cookie: s.cookie(who) }, ...(method === 'POST' ? { body: '{}' } : {}) });
+    await r.arrayBuffer();
+    return r.status;
+  };
+  const paths = routePaths().filter((p) => !openListed(p) && !/^\/api\/(auth|cron)\//.test(p));
+  const tcPaths = paths.filter((p) => areaOfApi(p) === 'tc');
+  assert.ok(tcPaths.length >= 8, 'the Training Centre routes were found: ' + tcPaths.length);
+  const wrong = [];
+  for (const p of paths) {
+    const need = areaOfApi(p);
+    for (const method of ['GET', 'POST']) {
+      if (need === 'academy') for (const who of ['tc', 'none']) { const st = await ask(p, method, who); if (st !== 403) wrong.push(`${who} ${method} ${p} -> ${st}`); }
+      if (need === 'tc') for (const who of ['academy', 'none']) { const st = await ask(p, method, who); if (st !== 403) wrong.push(`${who} ${method} ${p} -> ${st}`); }
+    }
+  }
+  assert.deepEqual(wrong, []);
+  // a user WITH the area gets through the gate (the route answers, never the gate's 403)
+  assert.equal(await ask('/api/tc/home', 'GET', 'tc'), 200);
+  assert.equal(await ask('/api/summary', 'GET', 'academy'), 200);
+  assert.equal(await ask('/api/tc/home', 'GET', 'admin'), 200);
+  // no area: only the shared paths
+  assert.equal(await ask('/api/whoami', 'GET', 'none'), 200);
+  const me = await (await fetch(s.base + '/api/auth/me', { headers: { cookie: s.cookie('none') } })).json();
+  assert.deepEqual(me.user.areas, [], 'the screen is told: no area yet');
+  const both = await (await fetch(s.base + '/api/auth/me', { headers: { cookie: s.cookie('admin') } })).json();
+  assert.deepEqual(both.user.areas, ['academy', 'tc']);
+});
+
+test('(e) admin-only routes refuse users, whichever half they open; the import apply needs an admin AND the preview hash', async (t) => {
+  const s = await startWithAreas();
+  t.after(() => { s.child.kill(); });
+  const call = async (p, who, body) => {
+    const r = await fetch(s.base + p, { method: body ? 'POST' : 'GET', headers: { origin: s.base, 'content-type': 'application/json', cookie: s.cookie(who) },
+      ...(body ? { body: JSON.stringify(body) } : {}) });
+    return [r.status, await r.json().catch(() => ({}))];
+  };
+  for (const p of routePaths().filter((x) => x.startsWith('/api/admin/tc/') || x === '/api/admin/access')) {
+    for (const who of ['tc', 'academy', 'none']) {
+      assert.equal((await call(p, who))[0], 403, `${who} GET ${p}`);
+      assert.equal((await call(p, who, {}))[0], 403, `${who} POST ${p}`);
+    }
+  }
+  const { files } = synthFiles({ n: 4 });
+  const [st1, noHash] = await call('/api/admin/tc/import', 'admin', { files, apply: true });
+  assert.equal(st1, 400);
+  assert.match(noHash.error, /preview first/);
+  const [, pv] = await call('/api/admin/tc/import', 'admin', { files });
+  const [st2] = await call('/api/admin/tc/import', 'admin', { files, apply: true, hash: pv.hash.replace(/^./, (c) => (c === 'a' ? 'b' : 'a')) });
+  assert.equal(st2, 400, 'another hash is refused');
+  assert.equal((await call('/api/tc/home', 'admin'))[1].cards.companies, 0, 'nothing was written by a refusal');
+  // People and access: an admin ticks, the change is logged, and it holds on the very next request
+  const [, list] = await call('/api/admin/access', 'admin');
+  const none = list.users.find((u) => u.email === 'no.area@novikontas.org');
+  assert.deepEqual(none.areas, []);
+  const [st3, after] = await call('/api/admin/access', 'admin', { userId: none.id, area: 'tc', on: true });
+  assert.equal(st3, 200);
+  assert.equal(after.log[0].action, 'grant');
+  assert.equal(after.log[0].area, 'tc');
+  assert.equal((await call('/api/tc/home', 'none'))[0], 200, 'the next click opens it');
+  await call('/api/admin/access', 'admin', { userId: none.id, area: 'tc', on: false });
+  assert.equal((await call('/api/tc/home', 'none'))[0], 403, 'and taking it away works on the next click too');
+});
+
+test('(e) no Training Centre row is ever deleted: no DELETE route, no DELETE FROM tc_ outside the area tags', () => {
+  assert.doesNotMatch(SERVER, /req\.method === 'DELETE'/, 'no DELETE handler');
+  for (const f of fs.readdirSync(path.join(ROOT, 'src')).filter((x) => x.endsWith('.js'))) {
+    const hits = (read('src', f).match(/DELETE FROM tc_\w+/g) || []).filter((h) => h !== 'DELETE FROM tc_company_areas');
+    assert.deepEqual(hits, [], f + ': a company, contact, course, log line or step is archived or closed, never deleted');
+  }
+  // the one allowed: an area TAG taken off a company, and every change of tags is a line in its log (src/tc.js editCompany)
+  assert.match(read('src', 'tc.js'), /DELETE FROM tc_company_areas[\s\S]{0,400}field: 'areas'/);
 });
