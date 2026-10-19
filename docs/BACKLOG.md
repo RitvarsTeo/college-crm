@@ -14,6 +14,22 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+
+## 19.10.2026 - New project: Training Centre in Intake (owner's picks)
+
+- `DECIDED` ONE big CRM on the **Intake base** (owner's pick 19.10): after sign-in two tiles, **Academy** (today's
+  Intake) and **Training Centre**. Client Hub's companies/contacts are DATA for it (imported or linked), not its code
+  base; Client Hub keeps running Grand Opening untouched. TC tables live in the same database as Intake (moving to
+  Aigars's Supabase, later the pro Supabase).
+- `DECIDED` Source for TC: "Planning of customers.xlsx" (copy in Projects/College CRM/_training-centre/source, outside
+  git), mainly LIST OF COMPANIES (1,572 companies: status, TC/ENERGY/OPITO, country, courses per year, contacts, next
+  communication, NJK PIC), plus country, exhibition and calendar/gift tabs where useful. Cross-check against Client
+  Hub's companies.
+- `DECIDED` Sessions: MASTER CONTROL + three lanes - TC-DATA (clean the Excel, cross-check Client Hub, duplicates
+  report, read-only on Client Hub), TC-UI (tiles first as A/B pictures, then TC screens from Intake's parts),
+  TC-BACKEND (tables, API, security guards). Order: tiles -> short MVP interview with the owner -> companies list +
+  company profile + next communication.
+
 ## 16.10.2026 - Ieva: calls, leads, emails (owner, after Ieva's message)
 
 - `LIVE` (patch 58 + repair applied 16.10: 64 people) (owner 16.10, after Ieva: "OS shows only admitted") ONE name per programme: the SIS writes short codes, Intake
