@@ -11,8 +11,9 @@
 // line argument lands in the shell history.
 //
 //   node scripts/manage_users.mjs list
-//   node scripts/manage_users.mjs seed                  from config/prototype.json, no passwords
-//   node scripts/manage_users.mjs add <email> [--name "Ieva Berzina"] [--role admin|user]
+//   node scripts/manage_users.mjs seed --areas academy  from config/prototype.json, no passwords
+//   node scripts/manage_users.mjs add <email> --areas academy,tc [--name "Ieva Berzina"] [--role admin|user]
+//   node scripts/manage_users.mjs areas <email> <academy,tc>   which halves of Intake they open (19.10.2026)
 //   node scripts/manage_users.mjs password <email>      prompts, twice
 //   node scripts/manage_users.mjs role <email> <admin|user>
 //   node scripts/manage_users.mjs disable <email>
@@ -27,6 +28,7 @@ import readline from 'node:readline';
 import { fileURLToPath } from 'node:url';
 import { openDb } from '../src/db.js';
 import { hashPassword, canonicalEmail, passwordProblem, ROLES, MIN_PASSWORD } from '../src/auth.js';
+import { AREAS, parseAreas, setArea, areasOf } from '../src/areas.js';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const DB_FILE = process.env.CRM_DB || path.join(ROOT, 'data', 'crm.db');
@@ -56,6 +58,19 @@ const flag = (args, name) => {
   return i === -1 ? null : args[i + 1];
 };
 
+// THE AREAS (19.10.2026): an account opens Academy, Training Centre or both. Creating one without saying which is
+// refused, so nobody is given a half of Intake by accident.
+function areasFlag(args) {
+  const raw = flag(args, 'areas');
+  if (!raw) die(`--areas is required: ${AREAS.join(', ')} or both (academy,tc).`);
+  const { areas, bad } = parseAreas(raw);
+  if (bad.length || !areas.length) die(`--areas takes ${AREAS.join(', ')} or both, comma separated; not "${raw}".`);
+  return areas;
+}
+const giveAreas = async (db, userId, list) => {
+  for (const area of list) await setArea(db, { userId, area, on: true, by: 'manage_users' });
+};
+
 async function main() {
   const [, , cmd, ...args] = process.argv;
 
@@ -73,15 +88,15 @@ async function main() {
   const find = async (email) => await db.prepare('SELECT * FROM crm_users WHERE email = ?').get(canonicalEmail(email));
 
   if (!cmd || cmd === 'list') {
-    const rows = await db.prepare(`SELECT email, display_name, role, active, last_login_at,
+    const rows = await db.prepare(`SELECT id, email, display_name, role, active, last_login_at,
       CASE WHEN password_hash IS NULL THEN 0 ELSE 1 END AS has_password
       FROM crm_users ORDER BY role, email`).all();
-    if (!rows.length) return console.log('No accounts yet. Run: node scripts/manage_users.mjs seed');
-    console.log('email'.padEnd(34) + 'name'.padEnd(20) + 'role'.padEnd(8) + 'password  active  last sign-in');
+    if (!rows.length) return console.log('No accounts yet. Run: node scripts/manage_users.mjs seed --areas academy');
+    console.log('email'.padEnd(34) + 'name'.padEnd(20) + 'role'.padEnd(8) + 'password  active  areas'.padEnd(36) + 'last sign-in');
     for (const r of rows) {
       console.log(String(r.email).padEnd(34) + String(r.display_name || '').padEnd(20)
         + String(r.role).padEnd(8) + (r.has_password ? 'set     ' : 'NOT SET ').padEnd(10)
-        + (r.active ? 'yes     ' : 'NO      ') + (r.last_login_at || 'never'));
+        + (r.active ? 'yes     ' : 'NO      ') + ((await areasOf(db, r.id)).join(',') || 'NONE').padEnd(18) + (r.last_login_at || 'never'));
     }
     return;
   }
@@ -99,6 +114,7 @@ async function main() {
     // and is named below, rather than being invented.
     const wanted = CONFIG.accounts || [];
     if (!wanted.length) die('config/prototype.json has no `accounts` list. Nothing to seed.');
+    const seedAreas = areasFlag(args);
 
     let made = 0;
     for (const w of wanted) {
@@ -106,9 +122,11 @@ async function main() {
       if (!email.includes('@')) die(`"${w.email}" is not an address.`);
       if (!ROLES.includes(w.role)) die(`${email}: role must be one of ${ROLES.join(', ')}`);
       if (await find(email)) { console.log(`exists  ${email}`); continue; }
+      const id = newId();
       await db.prepare(`INSERT INTO crm_users (id, email, display_name, password_hash, role, active,
         session_version, created_at) VALUES (?,?,?,NULL,?,1,0,?)`)
-        .run(newId(), email, w.name, w.role, nowIso());
+        .run(id, email, w.name, w.role, nowIso());
+      await giveAreas(db, id, seedAreas);
       made += 1;
       console.log(`created ${email.padEnd(34)} ${String(w.name).padEnd(12)} ${w.role}`
         + (w.shared ? `   shared by ${(w.sharedBy || []).join(' and ') || 'more than one person'}` : ''));
@@ -131,14 +149,17 @@ async function main() {
 
   if (cmd === 'add') {
     const email = canonicalEmail(args[0] || '');
-    if (!email) die('usage: add <email> [--name "Full Name"] [--role admin|user]');
+    if (!email) die('usage: add <email> --areas academy,tc [--name "Full Name"] [--role admin|user]');
     if (await find(email)) die(`${email} already exists.`);
     const role = flag(args, 'role') || 'user';
     if (!ROLES.includes(role)) die(`role must be one of ${ROLES.join(', ')}`);
+    const list = areasFlag(args);
+    const id = newId();
     await db.prepare(`INSERT INTO crm_users (id, email, display_name, password_hash, role, active,
       session_version, created_at) VALUES (?,?,?,NULL,?,1,0,?)`)
-      .run(newId(), email, flag(args, 'name') || email.split('@')[0], role, nowIso());
-    console.log(`created ${email} as ${role}. It cannot sign in until you run:`);
+      .run(id, email, flag(args, 'name') || email.split('@')[0], role, nowIso());
+    await giveAreas(db, id, list);
+    console.log(`created ${email} as ${role}, opening ${list.join(' and ')}. It cannot sign in until you run:`);
     console.log(`  node scripts/manage_users.mjs password ${email}`);
     return;
   }
@@ -169,6 +190,18 @@ async function main() {
     // No session bump needed: the role is re-read from this table on every
     // request, so the change is in force for their next click.
     console.log(`${row.email} is now ${role}. It takes effect on their next request, not on their next sign-in.`);
+    return;
+  }
+
+  if (cmd === 'areas') {
+    const row = await find(args[0] || '');
+    if (!row) die(`no account for ${args[0]}`);
+    const { areas: want, bad } = parseAreas(args[1] || '');
+    if (bad.length || args[1] === undefined) die(`usage: areas <email> <${AREAS.join(',')}> (one or both; "none" is not offered: disable the account instead)`);
+    if (!want.length) die('Give at least one area. To shut somebody out, disable the account.');
+    for (const area of AREAS) await setArea(db, { userId: row.id, area, on: want.includes(area), by: 'manage_users' });
+    // No session bump: the areas are re-read on every request, like the role.
+    console.log(`${row.email} now opens ${want.join(' and ')}. It takes effect on their next request.`);
     return;
   }
 

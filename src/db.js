@@ -470,6 +470,151 @@ CREATE TABLE IF NOT EXISTS sheet_rows (
   seen_at TEXT NOT NULL,
   PRIMARY KEY (tab, row_key)
 );
+
+-- WHICH HALF OF INTAKE A PERSON MAY OPEN (19.10.2026, the owner: "Academy people who are academy team can open it,
+-- people who are TC people can open that. We will have to give permissions."). One row per account and area
+-- (academy | tc). Read on EVERY request with the role (src/server.js resolveUser), so taking an area away works on the
+-- next click. The first boot after this table arrived gives every account that existed the academy area and the admins
+-- both, ONCE (src/areas.js backfillAreas, marked in sync_state), so a later account is never granted by accident.
+CREATE TABLE IF NOT EXISTS crm_user_areas (
+  user_id TEXT NOT NULL REFERENCES crm_users(id),
+  area TEXT NOT NULL,              -- academy | tc
+  granted_at TEXT NOT NULL,
+  granted_by TEXT,
+  PRIMARY KEY (user_id, area)
+);
+-- Every change to an area, by whom and when (People and access). Nothing is deleted from it.
+CREATE TABLE IF NOT EXISTS crm_user_area_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id TEXT NOT NULL,
+  area TEXT NOT NULL,
+  action TEXT NOT NULL,            -- grant | revoke
+  at TEXT NOT NULL,
+  by TEXT NOT NULL
+);
+
+-- TRAINING CENTRE (19.10.2026, docs: _training-centre/BACKEND_PROPOSAL.md). Client companies, their people, their
+-- courses per year, one log of every communication and change, and the next communication. Prefixed tc_ in the same
+-- schema, so they get identity ids, COLLATE "C" and RLS like everything else. Nothing is ever hard deleted: a row is
+-- archived (archived_at / archived_by). Statuses and areas are checked in code against config/tc.json.
+CREATE TABLE IF NOT EXISTS tc_companies (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  name_key TEXT NOT NULL,          -- lower case, punctuation and spaces collapsed (src/tc.js nameKey)
+  country TEXT,
+  city TEXT,
+  address TEXT,
+  website TEXT,
+  status TEXT NOT NULL,            -- config/tc.json statuses
+  status_detail TEXT,              -- the meeting type when the status is met
+  pic_name TEXT,                   -- the person in charge as the Excel names them
+  pic_email TEXT,                  -- the person in charge's Intake account, once one is picked
+  notes TEXT,
+  info_to_send TEXT,               -- what still has to be sent to them; empty = nothing waiting
+  last_contact_at TEXT,
+  extra TEXT,                      -- JSON: what the Excel's side tabs said (exhibitions, calendars, other names)
+  source TEXT,                     -- excel_2026_10 | manual
+  source_key TEXT,                 -- the import's own company id
+  source_row INTEGER,              -- the Excel row
+  created_at TEXT NOT NULL,
+  created_by TEXT,
+  updated_at TEXT,
+  archived_at TEXT,
+  archived_by TEXT
+);
+CREATE UNIQUE INDEX IF NOT EXISTS tc_companies_name_country ON tc_companies (name_key, country) WHERE archived_at IS NULL;
+CREATE INDEX IF NOT EXISTS tc_companies_status ON tc_companies (status);
+CREATE INDEX IF NOT EXISTS tc_companies_country ON tc_companies (country);
+CREATE INDEX IF NOT EXISTS tc_companies_pic ON tc_companies (pic_name);
+
+CREATE TABLE IF NOT EXISTS tc_company_areas (
+  company_id BIGINT NOT NULL REFERENCES tc_companies(id),
+  area TEXT NOT NULL,              -- TC | ENERGY | OPITO | PROJECTS
+  PRIMARY KEY (company_id, area)
+);
+CREATE INDEX IF NOT EXISTS tc_company_areas_area ON tc_company_areas (area, company_id);
+
+CREATE TABLE IF NOT EXISTS tc_company_contacts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  company_id BIGINT NOT NULL REFERENCES tc_companies(id),
+  name TEXT,
+  position TEXT,
+  email TEXT,                      -- lower case
+  phone TEXT,
+  notes TEXT,
+  ch_contact_id TEXT,              -- Client Hub contacts.contact_id, once matched
+  source TEXT,
+  created_at TEXT NOT NULL,
+  created_by TEXT,
+  updated_at TEXT,
+  archived_at TEXT,
+  archived_by TEXT
+);
+CREATE INDEX IF NOT EXISTS tc_company_contacts_company ON tc_company_contacts (company_id);
+CREATE INDEX IF NOT EXISTS tc_company_contacts_email ON tc_company_contacts (email);
+CREATE UNIQUE INDEX IF NOT EXISTS tc_company_contacts_one_email ON tc_company_contacts (company_id, email)
+  WHERE email IS NOT NULL AND archived_at IS NULL;
+
+-- Courses attended, one line per company per year: the count covers every code in the line.
+CREATE TABLE IF NOT EXISTS tc_company_courses (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  company_id BIGINT NOT NULL REFERENCES tc_companies(id),
+  year INTEGER NOT NULL,
+  attendees INTEGER,               -- 0 is a real value
+  course_codes TEXT,               -- upper case, ", " between
+  raw TEXT,                        -- the Excel line as written
+  as_of TEXT,                      -- the day the figure was true
+  source TEXT,
+  recorded_at TEXT NOT NULL,
+  recorded_by TEXT,
+  UNIQUE (company_id, year)
+);
+
+-- One log per company: communications AND history (as events is for a person).
+CREATE TABLE IF NOT EXISTS tc_activities (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  company_id BIGINT NOT NULL REFERENCES tc_companies(id),
+  contact_id BIGINT,
+  kind TEXT NOT NULL,              -- call | email | physical_meeting | digital_meeting | exhibition | contact | note | status | edit | create | import | task
+  occurred_at TEXT NOT NULL,
+  topics TEXT,
+  body TEXT,
+  actor TEXT,
+  origin TEXT NOT NULL DEFAULT 'manual',   -- manual | automatic | import
+  field TEXT,
+  old_value TEXT,
+  new_value TEXT
+);
+CREATE INDEX IF NOT EXISTS tc_activities_company ON tc_activities (company_id, occurred_at);
+
+-- The next communication, the shape of Intake's tasks. One open per company.
+CREATE TABLE IF NOT EXISTS tc_tasks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  company_id BIGINT NOT NULL REFERENCES tc_companies(id),
+  contact_id BIGINT,
+  label TEXT NOT NULL,
+  due_at TEXT NOT NULL,            -- a Riga day, YYYY-MM-DD
+  owner TEXT,                      -- the person in charge's name
+  done_at TEXT,
+  outcome TEXT,
+  created_at TEXT NOT NULL,
+  created_by TEXT
+);
+CREATE INDEX IF NOT EXISTS tc_tasks_open ON tc_tasks (due_at) WHERE done_at IS NULL;
+CREATE INDEX IF NOT EXISTS tc_tasks_company ON tc_tasks (company_id);
+
+-- What each import row became, so a second apply finds nothing and a company traces back to its Excel row.
+CREATE TABLE IF NOT EXISTS tc_import_rows (
+  batch TEXT NOT NULL,
+  source_key TEXT NOT NULL,        -- the import file's own company id
+  row_no INTEGER,                  -- the Excel row
+  company_id BIGINT,
+  outcome TEXT NOT NULL,           -- created | matched | rejected
+  reason TEXT,
+  applied_at TEXT NOT NULL,
+  applied_by TEXT,
+  PRIMARY KEY (batch, source_key)
+);
 `;
 
 // A test opens this in memory. The server opens a file, because a prototype that

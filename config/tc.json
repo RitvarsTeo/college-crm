@@ -1,0 +1,46 @@
+{
+  "_about": "TRAINING CENTRE settings (19.10.2026). The lists the Training Centre screens and the Excel import read. Statuses and areas are checked in code, never by a database CHECK, so a list can be renamed here without a migration. The defaults marked provisional are the owner's to confirm (MVP interview 19.10.2026: 'rest of questions I'll answer later').",
+  "statuses": [
+    { "id": "not_contacted", "label": "Not contacted" },
+    { "id": "to_contact", "label": "To contact" },
+    { "id": "contacted", "label": "Contacted" },
+    { "id": "met", "label": "Met" },
+    { "id": "focus", "label": "Focus" }
+  ],
+  "meetingTypes": [
+    { "id": "physical_meeting", "label": "Physical meeting" },
+    { "id": "digital_meeting", "label": "Digital meeting" },
+    { "id": "exhibition", "label": "Exhibition" }
+  ],
+  "areas": [
+    { "id": "TC", "label": "TC" },
+    { "id": "ENERGY", "label": "ENERGY" },
+    { "id": "OPITO", "label": "OPITO" },
+    { "id": "PROJECTS", "label": "PROJECTS" }
+  ],
+  "activityKinds": [
+    { "id": "call", "label": "Call" },
+    { "id": "email", "label": "Email" },
+    { "id": "physical_meeting", "label": "Physical meeting" },
+    { "id": "digital_meeting", "label": "Digital meeting" },
+    { "id": "exhibition", "label": "Exhibition" },
+    { "id": "contact", "label": "Communication" },
+    { "id": "note", "label": "Note" }
+  ],
+  "contactKinds": ["call", "email", "physical_meeting", "digital_meeting", "exhibition", "contact"],
+  "nextLabel": "Next communication",
+  "weekDays": 7,
+  "defaults": {
+    "_provisional": "The owner's answers are still open (19.10.2026); these are the build's defaults until then.",
+    "noStatus": "not_contacted",
+    "multiCountryCompany": "one company; an explicit office tag such as /CY/ stays a company of its own",
+    "courseCounts": "typed by Training Centre staff; the Excel history is imported"
+  },
+  "import": {
+    "batch": "excel_2026_10",
+    "sourceLabel": "Planning of customers.xlsx",
+    "coursesAsOf": "2025-09-24",
+    "files": ["companies.csv", "contacts.csv", "courses.csv"],
+    "maxBytes": 4194304
+  }
+}

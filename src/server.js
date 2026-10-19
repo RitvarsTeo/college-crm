@@ -54,6 +54,9 @@ import { redateSisAdmissions } from './sisdates.js';
 import { programmeNamesRepair } from './programmes.js';
 import { LIST_NOTE_COLS, LIST_NOTE_JOINS, pickListNote } from './listnote.js';
 import { htmlEscape, inviteOrigin } from './systempages.js';
+import * as areas from './areas.js';
+import * as tc from './tc.js';
+import * as tcimport from './tcimport.js';
 
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -146,7 +149,9 @@ async function resolveUser(req) {
                           FROM crm_users WHERE email = ?`).get(session.email);
   if (!row || Number(row.active) !== 1) return null;
   if (Number(row.session_version) !== Number(session.sessionVersion)) return null;
-  return { id: row.id, email: row.email, name: row.display_name || row.email, role: row.role };
+  // The AREAS too (19.10.2026), read this request like the role: taking one away works on the next click.
+  return { id: row.id, email: row.email, name: row.display_name || row.email, role: row.role,
+    areas: await areas.areasOf(db, row.id) };
 }
 
 // ------------------------------------------------------------ Google sign-in --
@@ -585,6 +590,12 @@ const PUBLIC = gate.isPublic();
   if (r.ran) {
     console.log(`accounts: ${r.created.length} created, ${r.kept.length} already there`
       + (r.created.length ? ` | new: ${r.created.join(', ')}` : ''));
+  }
+  // THE AREAS, ONCE (19.10.2026): every account that exists now keeps Academy, admins get Training Centre too. Only with
+  // sign-in on, where accounts mean something; a later account gets its areas from an admin (src/areas.js).
+  if (AUTH_ON) {
+    const b = await areas.backfillAreas(db);
+    if (b.ran) console.log(`areas: ${b.accounts} accounts, ${b.granted} areas given (Academy to all, Training Centre to admins)`);
   }
 }
 
@@ -1046,6 +1057,15 @@ export const handle = async (req, res) => {
       return json(res, 401, { error: 'not signed in', how: 'Open / and sign in.' });
     }
 
+    // ---------------------------------------------- the area gate --
+    // 19.10.2026: Intake holds two halves, Academy and Training Centre, and a person may open only the halves their
+    // account has (crm_user_areas, read this request). Checked on EVERY /api/ request, never only by the tiles on the
+    // screen. src/areas.js says what each path needs; anything it does not name needs academy (fail closed).
+    if (AUTH_ON && p.startsWith('/api/') && !openBeforeSignIn(p) && !areas.areaAllows(await currentUser(req), p)) {
+      return json(res, 403, { error: 'This part of Intake is not open to your account.', area: areas.areaOfApi(p),
+        how: 'Ask an admin to give you access on People and access.' });
+    }
+
     // ---------------------------------------------- same origin only --
     // AUDIT M1 (07.10.2026). The session cookie is SameSite=Lax, which stops other SITES, but
     // every *.novikontas.org app is the same site as intake.novikontas.org. So a browser write
@@ -1083,7 +1103,9 @@ export const handle = async (req, res) => {
       const g = google.googleConfigured(process.env);
       return json(res, 200, {
         auth: AUTH_ON,
-        user: me ? { name: me.name, email: me.email, role: me.role } : null,
+        // areas: which halves this account may open (19.10.2026). Sign-in off (a laptop): both, as everything is open.
+        user: me ? { name: me.name, email: me.email, role: me.role, areas: me.areas || [] } : null,
+        areas: me ? me.areas || [] : AUTH_ON ? [] : [...areas.AREAS],
         // Whether the BUTTON should exist at all. A button in front of a flow
         // that is not configured fails on Google's own error page, before any
         // code here runs, so nothing on our side could ever explain it.
@@ -1277,6 +1299,21 @@ export const handle = async (req, res) => {
         'cache-control': 'no-store',
         'set-cookie': auth.clearCookie({ secure: !DEV_INSECURE_COOKIE }) });
       return res.end(JSON.stringify({ ok: true }));
+    }
+
+    // ------------------------------------------------ People and access (19.10.2026) --
+    // Admins tick which halves of Intake each account opens: Academy, Training Centre. Every change is written to
+    // crm_user_area_log with who and when. The role is checked here; the area gate lets it through for either half.
+    if (p === '/api/admin/access' && (req.method === 'GET' || req.method === 'POST')) {
+      const me = await adminOf(req);
+      if (!me) return json(res, 403, { error: 'People and access is for admins only.' });
+      if (req.method === 'GET') return json(res, 200, await areas.accessList(db));
+      const b = await body(req, 4096);
+      const user = await db.prepare('SELECT id FROM crm_users WHERE id = ?').get(String(b.userId || ''));
+      if (!user) return json(res, 404, { error: 'There is no such account.' });
+      if (!areas.AREAS.includes(b.area)) return json(res, 400, { error: 'Unknown area.' });
+      const r = await areas.setArea(db, { userId: user.id, area: b.area, on: b.on === true, by: me.name || me.email || 'admin' });
+      return json(res, 200, { ok: true, changed: r.changed, ...(await areas.accessList(db)) });
     }
 
     // ------------------------------------------------------- admin: channels --
@@ -3171,6 +3208,66 @@ export const handle = async (req, res) => {
       });
     }
 
+    // ------------------------------------------------------- TRAINING CENTRE --
+    // 19.10.2026 (the owner's pick A): the second half of Intake, every client company. Every route here needs the tc
+    // area (the gate above) and writes nothing it cannot log: nothing is deleted, a company or contact is archived.
+    // The data rules live in src/tc.js, the Excel import in src/tcimport.js.
+    if (p === '/api/tc/meta' && req.method === 'GET') {
+      return json(res, 200, { ...(await tc.meta(db)), help: HELP.tc || { howto: [], faq: [] } });
+    }
+    if (p === '/api/tc/home' && req.method === 'GET') return json(res, 200, await tc.home(db));
+    if (p === '/api/tc/companies' && req.method === 'GET') {
+      return json(res, 200, await tc.listCompanies(db, tc.readFilters(url.searchParams),
+        { page: url.searchParams.get('page'), size: url.searchParams.get('size'), sort: url.searchParams.get('sort') || 'name' }));
+    }
+    if (p === '/api/tc/companies' && req.method === 'POST') {
+      const b = await body(req, 64 * 1024);
+      return json(res, 200, await tc.addCompany(db, b, await actorOf(req, b)));
+    }
+    if (p === '/api/tc/next' && req.method === 'GET') {
+      const who = url.searchParams.get('owner') === 'me' ? await viewerOf(req, url) : String(url.searchParams.get('owner') || '');
+      return json(res, 200, await tc.nextList(db, { owner: who === 'all' ? '' : who }));
+    }
+    {
+      const m = /^\/api\/tc\/companies\/(\d+)$/.exec(p);
+      if (m && req.method === 'GET') {
+        const c = await tc.getCompany(db, Number(m[1]));
+        return c ? json(res, 200, c) : json(res, 404, { error: 'not found' });
+      }
+    }
+    if (req.method === 'POST') {
+      const edit = /^\/api\/tc\/companies\/(\d+)\/(edit|archive|contacts|courses|activities|next)$/.exec(p);
+      const contact = /^\/api\/tc\/contacts\/(\d+)\/(edit|archive)$/.exec(p);
+      const task = /^\/api\/tc\/tasks\/(\d+)\/done$/.exec(p);
+      if (edit || contact || task) {
+        const b = await body(req, 64 * 1024);
+        const by = await actorOf(req, b);
+        if (task) return json(res, 200, await tc.finishTask(db, Number(task[1]), b, by));
+        if (contact) {
+          const id = Number(contact[1]);
+          return json(res, 200, contact[2] === 'edit' ? await tc.editContact(db, id, b, by) : await tc.archiveContact(db, id, by));
+        }
+        const id = Number(edit[1]);
+        const run = { edit: tc.editCompany, archive: tc.archiveCompany, contacts: tc.addContact, courses: tc.setCourseYear,
+          activities: tc.logActivity, next: tc.setNext }[edit[2]];
+        return json(res, 200, edit[2] === 'archive' ? await run(db, id, by) : await run(db, id, b, by));
+      }
+    }
+    // THE EXCEL IMPORT, an admin one-off (src/tcimport.js). GET says what this batch has done so far; POST without
+    // apply is the PREVIEW (counts only, writes nothing); apply: true with the preview's hash writes, once.
+    if (p === '/api/admin/tc/import' && (req.method === 'GET' || req.method === 'POST')) {
+      if (!(await adminOf(req))) return json(res, 403, { error: 'The import is for admins only.' });
+      if (req.method === 'GET') {
+        const rows = await db.prepare('SELECT outcome, COUNT(*) AS n FROM tc_import_rows WHERE batch = ? GROUP BY outcome').all(tc.TC.import.batch);
+        return json(res, 200, { batch: tc.TC.import.batch, files: tc.TC.import.files, done: Object.fromEntries(rows.map((r) => [r.outcome, r.n])) });
+      }
+      const b = await body(req, tc.TC.import.maxBytes);
+      const files = tcimport.readFiles(b);
+      const opts = { pastNext: b.pastNext || 'overdue', hash: b.hash };
+      if (b.apply !== true) return json(res, 200, { preview: true, ...(await tcimport.preview(db, files, opts)).counts });
+      return json(res, 200, await tcimport.apply(db, files, opts, await actorOf(req, b)));
+    }
+
     // ------------------------------------------------------------- feedback -
     // Anybody using the app can report a bug or an idea from the screen they are
     // on. Reading it back is admin-only. NOTE: there is no login yet, so 'admin'
@@ -3245,6 +3342,9 @@ export const handle = async (req, res) => {
     return json(res, 404, { error: 'not found' });
   } catch (err) {
     if (err instanceof BadScreenshot) return json(res, 400, { error: err.message });
+    // Training Centre: a refusal in plain words, for the screen to show (19.10.2026)
+    if (err instanceof tc.TcInputError) return json(res, 400, { error: err.message, ...(err.id ? { id: err.id } : {}) });
+    if (err instanceof tcimport.ImportError) return json(res, 400, { error: err.message });
     // The detail goes to the server log, never to the caller (L4, 07.10.2026): it carried SQL, driver
     // wording and file paths to whoever made the request.
     console.error(`500 ${req.method} ${p}: ${err && err.stack ? err.stack : err}`);
