@@ -6941,9 +6941,9 @@ const cKeysHelp = () => `<h2 class="c-set-h">Keyboard</h2><div class="c-sheet c-
 async function route() {
   const full = location.hash || START();
   const [hash, qs] = full.split('?');
+  if (UI === 'c') cRouteState(hash, qs);   // Q61: the view comes back exactly as it was left
   // TWO HALVES (19.10.2026): the start page, People and access and the Training Centre half are drawn by cAreaRoute.
   if (UI === 'c' && await cAreaRoute(hash)) return;
-  if (UI === 'c') cRouteState(hash, qs);   // Q61: the view comes back exactly as it was left
   drawIcons();
   const here = hash.split('/').slice(0, 2).join('/');
   // Only the two renames. The technical screens are not in the navigation at all,

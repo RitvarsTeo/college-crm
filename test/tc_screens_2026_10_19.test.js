@@ -52,7 +52,7 @@ test('the door: one area lands in it, two areas open on the tiles, a half you ma
 });
 
 test('the router asks the door first, and an account without Academy never asks for Academy\'s settings', () => {
-  assert.match(fn('async function route('), /const \[hash, qs\] = full\.split\('\?'\);\n\s*\/\/[^\n]*\n\s*if \(UI === 'c' && await cAreaRoute\(hash\)\) return;/);
+  assert.match(fn('async function route('), /cRouteState\(hash, qs\);[^\n]*\n\s*\/\/[^\n]*\n\s*if \(UI === 'c' && await cAreaRoute\(hash\)\) return;/);
   const shell = fn('async function startShell(');
   assert.ok(shell.indexOf('return startShellTc();') < shell.indexOf("api('/api/config')"));
   const tc = fn('async function startShellTc(');
