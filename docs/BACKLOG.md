@@ -28,6 +28,9 @@ this is a local prototype" stood here until 30.09.2026, from the weeks before th
 - `DECIDED` (owner's pick 19.10, A/B pictures in _training-centre/mockups) **A: a start page with two identical tiles**
   after sign-in - Academy (Due today, New in the Inbox, Active leads) and Training Centre (Due this week, Overdue
   contacts, Active clients); a tile opens that side with today's Home + side menu; the logo goes back to the tiles.
+- `DECIDED` (MVP interview 19.10) "Active clients" = any company with any course ever (471 in the Excel). The Training
+  Centre tile opens for EVERYONE signed in (both tiles for all). Every TC person sees ALL companies (filter by person in
+  charge). Contact master: owner asked for a suggestion (see below).
 - `DECIDED` Sessions: MASTER CONTROL + three lanes - TC-DATA (clean the Excel, cross-check Client Hub, duplicates
   report, read-only on Client Hub), TC-UI (tiles first as A/B pictures, then TC screens from Intake's parts),
   TC-BACKEND (tables, API, security guards). Order: tiles -> short MVP interview with the owner -> companies list +
