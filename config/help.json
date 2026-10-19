@@ -206,7 +206,7 @@
     {
       "id": "email-to-inbox",
       "q": "Which emails reach the Inbox?",
-      "a": "An email to edu@ reaches the Inbox only when it has the Admissions label or is about studying (a programme, a course, an application, admission, the dormitory, tuition or documents for studies); an email from somebody already in Intake goes on their History, a reply joins its conversation, and everything else is set aside as Filtered automatically with the reason, where you can find it and Bring it back."
+      "a": "An email to edu@ reaches the Inbox only when it has the Admissions label or is about studying (a programme, a course, an application, admission, the dormitory, tuition or documents for studies); an email from somebody already in Intake goes on their History, a reply joins its conversation (our own reply from edu@ or any @novikontas.org too, counted as the first reply, never as a card), and everything else is set aside as Filtered automatically with the reason, our own emails as Our own email, where you can find it and Bring it back."
     },
     {
       "id": "linkedin-leads",

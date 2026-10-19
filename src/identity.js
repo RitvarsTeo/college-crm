@@ -20,6 +20,20 @@ export const normEmail = (v) => String(v || '').trim().toLowerCase();
 export const normPhone = (v) => String(v || '').replace(/[^\d+]/g, '');
 export const normName = (v) => String(v || '').trim().toLowerCase();
 
+// OUR OWN ADDRESSES (19.10.2026: an Inbox card was our own reply from edu@, and Make a lead made a person
+// "Novikontas Academy" <edu@novikontas.org>). Every address at a domain in config.emailFilter.internalDomains, every
+// address in emailFilter.ownAddresses, and the mailbox Intake reads (config.gmail.mailbox). Nobody is ever matched by
+// one of these, and none is ever written onto a person (src/intake.js).
+export function isOwnAddress(email, cfg = CFG) {
+  const e = normEmail(email);
+  const at = e.lastIndexOf('@');
+  if (at < 1) return false;
+  const f = (cfg && cfg.emailFilter) || {};
+  if ((f.internalDomains || []).map(normEmail).includes(e.slice(at + 1))) return true;
+  const own = [...(f.ownAddresses || []), cfg && cfg.gmail && cfg.gmail.mailbox].filter(Boolean).map(normEmail);
+  return own.includes(e);
+}
+
 // A phone is compared on its last 8 digits, because the same number is written
 // +37120423829, 37120423829 and 20423829 by three different systems.
 const PHONE_TAIL = 8;
@@ -46,7 +60,8 @@ export async function contactMatcher(db) {
     FROM people`).all();
   const extra = await extraContacts(db);
   return ({ email, phone, name } = {}, { exclude } = {}) => {
-    const e = normEmail(email);
+    // our own address is never evidence of who somebody is (19.10.2026): it is left out, as if no email was given
+    const e = isOwnAddress(email) ? '' : normEmail(email);
     const ph = normPhone(phone);
     const n = normName(name);
     if (!e && !ph && !n) return [];

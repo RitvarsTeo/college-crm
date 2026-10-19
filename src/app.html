@@ -3954,14 +3954,15 @@ async function viewLeadsC() {
     // card and on any card without a known name, optional, filled in when the card has one. Never on "Add to X", which
     // is somebody we already have.
     const nameOf = String(r.contact_name || '').trim();
-    const unnamed = !nameOf || /^unknown\b/i.test(nameOf);
+    // 19.10.2026: a card whose address is our own (r.ownAddress) carries our name too, so it asks for both
+    const unnamed = !nameOf || /^unknown\b/i.test(nameOf) || Boolean(r.ownAddress);
     const askName = !r.joins && (r.channel === 'phone' || unnamed);
     return `<div class="ib-form" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter')event.stopPropagation()">
       ${askName ? `<label for="qName">Name</label><input id="qName" type="text" autocomplete="off" maxlength="200" value="${esc(unnamed ? '' : nameOf)}">` : ''}
       <label for="qInterest">Programme</label>
       <select id="qInterest"><option value="">they have not said yet</option>${(CFG.programmes || []).map((pr) => `<option ${pr === read ? 'selected' : ''}>${esc(pr)}</option>`).join('')}</select>
       ${others.length ? `<label>Tick what else is right</label>${others.map((f) => `<label class="c-tick"><input type="checkbox" class="qConfirm" value="${esc(f.field)}" checked> <b>${esc(f.field)}</b> ${esc(f.value)}</label>`).join('')}` : ''}
-      ${r.contact_email ? '' : `<label for="qEmail">Email</label><input id="qEmail" type="email" autocomplete="off">`}
+      ${r.contact_email && !r.ownAddress ? '' : `<label for="qEmail">Email</label><input id="qEmail" type="email" autocomplete="off">`}
       ${r.contact_phone ? '' : `<label for="qPhone">Phone</label><input id="qPhone" type="tel" autocomplete="off">`}
       <label>Next step</label>
       ${cNextPick('q')}

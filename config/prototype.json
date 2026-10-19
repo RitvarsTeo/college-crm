@@ -970,6 +970,10 @@
       "novikontas.org",
       "novikontas.lv"
     ],
+    "ownAddresses": [
+      "edu@novikontas.org"
+    ],
+    "_ownAddresses": "19.10.2026 (an Inbox card was our own reply from edu@, and Make a lead made a person of edu@): internalDomains plus ownAddresses plus gmail.mailbox are OUR OWN addresses (src/identity.js isOwnAddress). An email from one of them never opens an Inbox card: a reply in a conversation already in Intake joins it and counts as its first reply, anything else is set aside as Our own email, the Admissions label included. Make a lead never puts one on a person, and no duplicate check or known-person match is made on one. Add an address here when we send from one outside these domains.",
     "textPatterns": [
       { "match": "messaged you .{0,120}while you were away", "why": "a Google Chat notification" },
       { "match": "has new responses", "why": "a Google Forms response notification" }

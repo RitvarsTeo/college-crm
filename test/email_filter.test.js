@@ -58,7 +58,7 @@ test('email filter: the poll sets automatic and internal mail aside, with the re
   assert.equal(aside.length, 2);
   for (const a of aside) {
     assert.equal(a.state, 'filtered');
-    assert.match(a.archive_note, /automatic sender|our own address/);
+    assert.match(a.archive_note, /automatic sender|Our own email/);   // ours: Our own email since 19.10.2026
     assert.ok(a.body, 'decision 1d: the body is kept');
   }
 });

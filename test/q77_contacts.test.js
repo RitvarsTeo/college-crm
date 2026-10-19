@@ -99,7 +99,7 @@ test('two people with the same number: no "joins" - that is a question for a per
 });
 
 test('the card asks for the missing contact, and says who the message joins', () => {
-  assert.match(APP, /\$\{r\.contact_email \? '' : `<label for="qEmail">Email<\/label><input id="qEmail" type="email"/);
+  assert.match(APP, /\$\{r\.contact_email && !r\.ownAddress \? '' : `<label for="qEmail">Email<\/label><input id="qEmail" type="email"/);   // ours asks too (19.10.2026)
   assert.match(APP, /\$\{r\.contact_phone \? '' : `<label for="qPhone">Phone<\/label><input id="qPhone" type="tel"/);
   assert.match(APP, /<span class="ib-joins">Joins \$\{esc\(r\.joins\.name\)\}<\/span>/);
   // H2 (security patch 32): the id is a JSON string, escaped for the attribute, never esc() inside quotes

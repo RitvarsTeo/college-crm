@@ -14,7 +14,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { extractFrom, looksLikeJunk, signalsIn } from './extract.js';
 import { logEvent, MANUAL, AUTOMATIC } from './history.js';
-import { duplicateCheck, contactMatcher, onlyStrong, onePersonFor } from './identity.js';
+import { duplicateCheck, contactMatcher, onlyStrong, onePersonFor, isOwnAddress } from './identity.js';
 import { localDate, localMidnight } from './bizday.js';
 import { SIS_HOLDS_SQL } from './lifecycle.js';
 import { rangesSql } from './yearscope.js';
@@ -113,8 +113,9 @@ export async function handoverGap({ role, channel, email, phone }) {
 // ---------------------------------------------------- one line per arrival ----
 // A row is one thing to look at; a line is one arrival on it. Kinds are the four the
 // channels actually produce: a message somebody typed, a call, a submitted form, and
-// an activity we recorded about them (an open day, an event).
-export const LINE_KINDS = ['message', 'call', 'form', 'activity'];
+// an activity we recorded about them (an open day, an event). Plus our own reply in an
+// email conversation (19.10.2026, ownReplyJoins): its time and id only, never a text.
+export const LINE_KINDS = ['message', 'call', 'form', 'activity', 'reply'];
 
 // Guessed from the channel when the caller does not say. A caller that knows better
 // passes kind explicitly; nothing here ever overrules it.
@@ -185,6 +186,33 @@ export const ANSWER_STEP = 'Answer the question';
 export const CALL_BACK_STEP = 'Call back';
 export const IN_TOUCH_STEPS = [ANSWER_STEP, CALL_BACK_STEP];
 
+// OUR OWN EMAIL (19.10.2026, Ieva: an Inbox card of 14.10 was our own reply from edu@, "Re: MC 7.9 - 10 Able Seafarer
+// ...", and Make a lead made a person "Novikontas Academy" <edu@novikontas.org>). An email FROM one of our own addresses
+// (src/identity.js isOwnAddress) never opens a card, never lands on a profile and never joins a waiting card by its
+// sender, whatever label it carries (the Admissions label is put on a whole conversation, our replies included):
+//   - A REPLY IN A CONVERSATION ALREADY IN INTAKE (the same thread key as a card from somebody else) joins that card as
+//     our reply: a line of kind 'reply' with the provider id and the time, never the text (the first-reply rule of
+//     07.10.2026 keeps the time of our reply and nothing else). The card's text and the person's History are unchanged.
+//     Sent after the enquiry, on a card waiting or already a lead that has no first reply yet: it IS the first reply,
+//     written as the thread read writes it (recordReplyRead).
+//   - Anything else is set aside automatically (Filtered automatically) with the reason OWN_EMAIL_WHY. Kept.
+export const OWN_EMAIL_WHY = 'Our own email';
+export const OWN_ADDRESS_ERROR = "This is our own address - pick the person's own email";
+const REPLY_STATES = ['new', 'qualified'];
+async function ownReplyJoins(db, item, at) {
+  if (!item.threadKey) return null;
+  const rows = await db.prepare(`SELECT id, state, received_at, person_id, first_reply_at, contact_email FROM inbound
+    WHERE channel = ? AND thread_key = ? ORDER BY id DESC`).all(item.channel, item.threadKey);
+  const theirs = rows.filter((r) => !isOwnAddress(r.contact_email));
+  const home = theirs.find((r) => REPLY_STATES.includes(r.state)) || theirs[0];
+  if (!home) return null;
+  const seq = await addLine(db, home.id, { channel: item.channel, externalId: item.externalId, receivedAt: at,
+    kind: 'reply', body: null });
+  const first = !home.first_reply_at && REPLY_STATES.includes(home.state) && Date.parse(at) > Date.parse(home.received_at);
+  if (first) await recordReplyRead(db, { id: home.id, sentAt: at, checkedAt: nowIso(), personId: home.person_id });
+  return { joined: true, ownReply: true, id: Number(home.id), seq, firstReply: first };
+}
+
 export async function receive(db, item) {
   const at = item.receivedAt || nowIso();
 
@@ -199,6 +227,16 @@ export async function receive(db, item) {
     const line = await db.prepare('SELECT inbound_id FROM inbound_line WHERE channel = ? AND external_id = ?')
       .get(item.channel, item.externalId);
     if (line) return { duplicate: true, id: Number(line.inbound_id) };
+  }
+
+  // OUR OWN EMAIL (19.10.2026, below): never a card of its own, whatever label it carries
+  let own = false;
+  if (isEmailChannel(item.channel) && isOwnAddress(item.email)) {
+    const joined = await ownReplyJoins(db, item, at);
+    if (joined) return joined;
+    own = true;
+    item = { ...item, noFilter: false, filterWhy: OWN_EMAIL_WHY, attachTo: null, studyRule: false,
+      joinOpenThread: false, joinOpenSender: false };
   }
 
   // ONE THREAD, NOT ONE ROW PER ARRIVAL (Ritvars, 01.10.2026). A caller opts in with
@@ -265,7 +303,7 @@ export async function receive(db, item) {
   // A channel's own rule first (the phone, Mailchimp), then the shared one (Q31).
   // Q91 (13.10.2026): noFilter (edu@ mail a person gave the Admissions label) skips every filter, junk included:
   // "they are manually accepted by human. Rest goes through a filter."
-  if (item.noFilter) read.junk = false;
+  if (item.noFilter || own) read.junk = false;   // our own email is set aside with its own reason, below
   let filterWhy = item.noFilter ? null : (item.filterWhy || noiseWhy({ email: item.email, name: item.name, body: item.body }) || null);
   // A MARKED number or address (14.10.2026, one rule on every card): Supplier or vendor, Internal or Spam never reaches
   // the Inbox, on any channel. Set aside automatically, kept, with the mark as its reason.
@@ -429,6 +467,8 @@ export async function listInbound(db, { state = 'new', now = nowIso(), range = n
     // ONE RULE (14.10.2026): a card can be marked when it has a number or an address; a set-aside card says its mark;
     // a waiting card from somebody set aside before says when and by whom ("comes back")
     r.markable = contactKeys({ phone: r.contact_phone, email: r.contact_email }).length > 0;
+    // 19.10.2026: the card's address is ours, so Make a lead asks for the person's own email and name
+    r.ownAddress = isOwnAddress(r.contact_email);
     if (r.state !== 'new') {
       const m = r.markable ? await markFor(db, { phone: r.contact_phone, email: r.contact_email }) : null;
       r.mark = m ? m.mark : null;
@@ -726,6 +766,15 @@ export async function qualify(db, id, { qualification, personId, createPerson, b
   for (const k of ['email', 'phone']) stated[k] = String(stated[k] ?? '').trim() || undefined;
   if (stated.email && !/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(stated.email)) return { error: 'that email does not look right' };
   if (stated.phone && String(stated.phone).replace(/\D/g, '').length < 7) return { error: 'that phone number looks too short' };
+  // OUR OWN ADDRESS IS NEVER A PERSON'S (19.10.2026): a card whose email is ours (src/identity.js isOwnAddress) makes no
+  // lead and is added to nobody until the person's own email is typed on the card, and an own address typed is refused.
+  // Its name is ours too ("Novikontas Academy"), so it never names the person either.
+  const ownContact = isOwnAddress(item.contact_email);
+  if ((stated.email && isOwnAddress(stated.email)) || (ownContact && !stated.email)) {
+    return { error: OWN_ADDRESS_ERROR, ownAddress: true };
+  }
+  const contactEmail = ownContact ? null : item.contact_email;
+  const contactName = ownContact ? null : item.contact_name;
   // THE NAME ON THE CARD (Admissions, 16.10.2026: a lead made from a call was "Unknown contact", because the card had no
   // name field). Optional; it names a NEW person only, never renames somebody we already have. Empty = as before.
   const named = String(typedName ?? '').replace(/\s+/g, ' ').trim().slice(0, 200);
@@ -757,7 +806,7 @@ export async function qualify(db, id, { qualification, personId, createPerson, b
   // from a channel therefore created twins in silence.
   if (!personId && createPerson && !differentPerson) {
     const dup = await duplicateCheck(db, {
-      email: item.contact_email || stated.email, phone: item.contact_phone || stated.phone, name: named || item.contact_name });
+      email: contactEmail || stated.email, phone: item.contact_phone || stated.phone, name: named || contactName });
     if (dup.blocked) {
       return { error: 'this looks like somebody we already have', duplicate: true,
         matches: dup.matches, strong: dup.strong.length > 0 };
@@ -769,12 +818,12 @@ export async function qualify(db, id, { qualification, personId, createPerson, b
 
   if (!pid && createPerson) {
     pid = newPersonId();
-    const name = named || item.contact_name || item.contact_handle || 'Unknown contact';
+    const name = named || contactName || item.contact_handle || 'Unknown contact';
     await db.prepare(`INSERT INTO people
       (id,name,email,phone,status,owner,source_channel,source_detail,created_at,last_contact_at,
        qualification,first_channel)
       VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`).run(
-      pid, name, item.contact_email, item.contact_phone,
+      pid, name, contactEmail, item.contact_phone,
       CFG.stageRoles.first, ownerFor(qualification), item.channel,
       sourceDetailOf(item), item.received_at, item.received_at,
       qualification, item.channel);
@@ -800,6 +849,7 @@ export async function qualify(db, id, { qualification, personId, createPerson, b
   const confirm = new Set(confirmFields);
   const fields = await db.prepare('SELECT * FROM field_values WHERE inbound_id = ?').all(id);
   for (const f of fields) {
+    if (f.field === 'email' && isOwnAddress(f.value)) continue;   // our own address never reaches a person (19.10.2026)
     const provenance = f.provenance === 'extracted' && confirm.has(f.field) ? 'confirmed' : f.provenance;
     await db.prepare(`INSERT INTO field_values
       (person_id, inbound_id, field, value, provenance, recorded_at, recorded_by, confirmed_at, confirmed_by)
@@ -929,6 +979,7 @@ async function applyToPerson(db, personId, field, value, opts = {}) {
   const map = { interest: 'programme', education: 'education', email: 'email', phone: 'phone' };
   const column = map[field];
   if (!column) return;
+  if (column === 'email' && isOwnAddress(value)) return;   // our own address is never a person's (19.10.2026)
   const cur = await db.prepare(`SELECT ${column} v FROM people WHERE id = ?`).get(personId);
   if (!cur) return;
   const empty = cur.v === null || cur.v === '';

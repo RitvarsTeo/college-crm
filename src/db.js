@@ -182,7 +182,7 @@ CREATE TABLE IF NOT EXISTS inbound_line (
   channel TEXT NOT NULL,
   external_id TEXT,              -- THIS arrival's provider id, not the row's
   received_at TEXT NOT NULL,     -- this line's own clock, for its own 13 months
-  kind TEXT NOT NULL,            -- message | call | form | activity
+  kind TEXT NOT NULL,            -- message | call | form | activity | reply (our own email, 19.10.2026)
   body TEXT,                     -- survives filtering; emptied only by retention
   body_deleted_at TEXT
 );

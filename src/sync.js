@@ -14,7 +14,7 @@
 // Neither poller runs while its channel is off, and off is the default.
 
 import { receive, bringBack, activePersonFor, CALL_BACK_STEP, confirmedBySystem, CONFIG, newPersonId, ownerFor, emailFilterWhy, purgeLineBodies, recordReplyRead, emailRuleOnWaiting } from './intake.js';
-import { onePersonFor, normEmail, normPhone } from './identity.js';
+import { onePersonFor, normEmail, normPhone, isOwnAddress } from './identity.js';
 import { knock } from './webpush.js';
 import { phoneThread } from './phonefilter.js';
 import { logEvent, AUTOMATIC, MANUAL } from './history.js';
@@ -629,6 +629,7 @@ export async function syncGmail(db, { now = new Date(), env = process.env, fetch
     if (labelled) out.labelled = (out.labelled || 0) + 1;
     if (r.duplicate && labelled && await labelBringsBack(db, r.id, at)) out.broughtBack = (out.broughtBack || 0) + 1;
     if (r.duplicate) out.repeat++;
+    else if (r.ownReply) out.ownReply = (out.ownReply || 0) + 1;   // our own reply joined its conversation (19.10.2026)
     else if (r.filtered) out.filtered++;
     else if (r.attached) out.toPerson = (out.toPerson || 0) + 1;
     else if (r.joined) out.joined = (out.joined || 0) + 1;
@@ -679,9 +680,11 @@ async function heldGmail(db, externalId) {
 
 // Q91: filtered first, labelled later -> back in the Inbox, the same row (never a second one), logged as brought back
 // by the label. Only what a RULE set aside: a message a person set aside stays where the person put it.
+// Never our own email (19.10.2026): the label is put on a whole conversation, our replies included, and an email from
+// our own address stays set aside as Our own email (src/intake.js receive); a person can still Bring it back by hand.
 async function labelBringsBack(db, id, at) {
-  const row = await db.prepare('SELECT state FROM inbound WHERE id = ?').get(id);
-  if (!row || row.state !== 'filtered') return false;
+  const row = await db.prepare('SELECT state, contact_email FROM inbound WHERE id = ?').get(id);
+  if (!row || row.state !== 'filtered' || isOwnAddress(row.contact_email)) return false;
   const r = await bringBack(db, id, { by: 'Admissions label', at });
   return Boolean(r && r.ok && !r.already);
 }

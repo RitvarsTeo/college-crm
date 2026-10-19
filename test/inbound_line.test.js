@@ -99,7 +99,7 @@ test('the kind is guessed from the channel, and an explicit kind is never overru
   assert.equal((await lines(db, b.id))[0].kind, 'form');
   assert.equal((await lines(db, c.id))[0].kind, 'message');
   assert.equal((await lines(db, d.id))[0].kind, 'activity', 'the caller knows better than the guess');
-  assert.deepEqual(LINE_KINDS, ['message', 'call', 'form', 'activity']);
+  assert.deepEqual(LINE_KINDS, ['message', 'call', 'form', 'activity', 'reply']);   // reply: our own email, 19.10.2026
 });
 
 test('retention empties a line 13 months after ITS OWN arrival, and never a newer one', async () => {

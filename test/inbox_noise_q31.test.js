@@ -53,7 +53,7 @@ test('Q31: on arrival, on any channel, kept with the reason, never deleted', asy
   assert.equal(aside.length, 2, 'both reachable from the Filtered view');
   for (const a of aside) {
     assert.equal(a.state, 'filtered');
-    assert.match(a.archive_note, /our own address/);
+    assert.match(a.archive_note, /our own address|Our own email/);   // an email from ours: Our own email (19.10.2026)
     assert.ok(a.body, 'the body is kept');
   }
 });
