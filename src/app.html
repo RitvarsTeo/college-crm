@@ -2633,7 +2633,8 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tc-count{margin-left:auto}
   html.ui-c .tc-more{justify-content:center;margin-top:12px}
   html.ui-c .tc-ticks{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
-  html.ui-c .tc-ticks label, html.ui-c .tc-tick{display:inline-flex;align-items:center;gap:6px;font-weight:500;margin:0}
+  html.ui-c .tc-ticks label, html.ui-c .tc-tick{display:inline-flex;align-items:center;gap:6px;font-weight:500;margin:0;white-space:nowrap}
+  html.ui-c[data-area="start"] #view .c-back, html.ui-c[data-area="none"] #view .c-back{display:none}
   html.ui-c .tc-access{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) auto;cursor:default}
   html.ui-c .tc-access.is-off{opacity:.6}
   html.ui-c .tc-contact{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:10px 16px;border-top:1px solid var(--rule2)}
@@ -9911,6 +9912,7 @@ const tcDdMm = (d) => (d ? `${d.slice(8, 10)}.${d.slice(5, 7)}${d.slice(0, 4) ==
 const tcWhen = (d) => (!d ? '' : d < cTodayIso() ? 'over' : d === cTodayIso() ? 'today' : '');
 const tcWhenText = (d) => (!d ? 'no next contact' : tcWhen(d) === 'over'
   ? `${Math.round((Date.parse(cTodayIso()) - Date.parse(d)) / 86400000)} d. overdue` : tcWhen(d) === 'today' ? 'today' : tcDdMm(d));
+const tcDelegates = (n) => `${Number(n)} delegate${Number(n) === 1 ? '' : 's'}`;
 const tcPlace = (c) => [c.country, c.city].filter(Boolean).join(' · ');
 
 function tcInstallNav() {
@@ -9981,7 +9983,7 @@ function tcGo(key, value) {
 const tcRow = (r) => `<a class="tc-row${r.when === 'over' ? ' is-late' : ''}" href="#/tc/company/${Number(r.companyId)}">
     <span class="tc-when"><span class="tc-d ${r.when === 'over' ? 'late' : r.due === cTodayIso() ? 'today' : ''}">${r.due === cTodayIso() ? 'Today' : esc(tcDdMm(r.due))}</span></span>
     <span class="tc-co"><b>${esc(r.name)}</b><small>${esc(tcPlace(r) || 'country not recorded')}</small></span>
-    <span class="tc-last">${r.lastYear ? `${Number(r.lastYear)} · ${Number(r.lastYearN)} delegates` : 'no course yet'}</span>
+    <span class="tc-last">${r.lastYear ? `${Number(r.lastYear)} · ${tcDelegates(r.lastYearN)}` : 'no course yet'}</span>
     <span class="tc-pic">${esc(r.owner || r.pic || '')}</span></a>`;
 async function viewTcHome() {
   const H = await api('/api/tc/home');
@@ -10009,7 +10011,7 @@ async function viewTcHome() {
 // ---- COMPANIES: Journey's List for companies - the status band, the filter row, search, one line each ----
 const T_F_EMPTY = () => ({ status: '', area: '', country: '', pic: '', client: '', info: '', due: '' });
 let T_F = T_F_EMPTY(); let T_Q = ''; let T_PAGE = 1; let T_LIST = null; let T_TITLE = 'Companies'; let T_KEEP = false; let T_SORT = 'name';
-let T_QT = 0;
+let T_QT = 0; let T_MORE = false;
 async function viewTcCompanies(title) {
   if (!T_KEEP) { T_F = T_F_EMPTY(); T_Q = ''; }
   T_KEEP = false; T_TITLE = title; T_PAGE = 1;
@@ -10031,27 +10033,31 @@ function tcDrawCompanies() {
   const cols = M.statuses.map((s) => ({ id: s.id, label: s.label, n: L.counts.status[s.id] || 0 }));
   const word = (v) => (v === '-' ? 'not recorded' : v === '*' ? 'any recorded' : v);
   const box = (k, label, values) => cPoolSelect(label, T_F[k], values, `tcFilter('${k}', this.value)`);
+  const more = T_MORE || Boolean(T_F.due || T_F.info) || T_SORT !== 'name';
   const boxes = [
     box('area', 'Area', L.facets.areas.map(([a, n]) => [a, `${a} ${n}`])),
     box('country', 'Country', [['*', 'Any recorded'], ...L.facets.countries.map(([c, n]) => [c, `${word(c)} ${n}`])]),
     box('pic', 'Person in charge', L.facets.pics.map(([p, n]) => [p, `${word(p)} ${n}`])),
     box('client', 'Client', [['yes', 'Clients'], ['no', 'Prospects']]),
-    box('due', 'Next contact', [['over', 'Overdue'], ['week', 'This week'], ['later', 'Later'], ['none', 'None planned']]),
-    box('info', 'Information to send', [['yes', 'Something to send']]),
-    cPoolSelect('Sort', T_SORT === 'name' ? '' : T_SORT, [['next', 'Next contact'], ['last', 'Latest course']], "T_SORT=this.value||'name';tcLoadCompanies()")];
+    // one line at 1440, as Journey's List: four on show, the rest behind More filters (open while one of them is set)
+    ...(more ? [box('due', 'Next contact', [['over', 'Overdue'], ['week', 'This week'], ['later', 'Later'], ['none', 'None planned']]),
+      box('info', 'Information to send', [['yes', 'Something to send']]),
+      cPoolSelect('Sort', T_SORT === 'name' ? '' : T_SORT, [['next', 'Next contact'], ['last', 'Latest course']], "T_SORT=this.value||'name';tcLoadCompanies()")] : []),
+    `<button type="button" class="btn sm ghost p-more" aria-expanded="${more}" onclick="T_MORE=!T_MORE;tcDrawCompanies()">${more ? 'Fewer filters' : 'More filters'}</button>`];
   const any = Object.values(T_F).some(Boolean) || Boolean(T_Q);
   const st = (c) => tcStatus(c.status).label + (c.statusDetail ? ' · ' + tcMeeting(c.statusDetail) : '');
   const row = (c) => `<a class="c-line tc-cline" href="#/tc/company/${Number(c.id)}">
       <div class="c-who"><b>${esc(c.name)}</b><small class="c-reach${tcPlace(c) ? '' : ' c-gap'}">${esc(tcPlace(c) || 'country not recorded')}</small></div>
       <div class="c-what"><span class="p-stage">${esc(st(c))}</span>${c.areas.length ? ' · ' + esc(c.areas.join(', ')) : ''}<small class="p-step">${c.lastYear
-        ? `${Number(c.lastYear)} · ${Number(c.lastYearN)} delegates · ${Number(c.delegates)} in all` : 'no course yet'}${c.pic ? ' · ' + esc(c.pic) : ''}</small></div>
+        ? `${Number(c.lastYear)} · ${tcDelegates(c.lastYearN)} · ${Number(c.delegates)} in all` : 'no course yet'}${c.pic ? ' · ' + esc(c.pic) : ''}</small></div>
       <div class="c-when">${c.next ? `<span class="c-when ${tcWhen(c.next.due)}">${esc(tcWhenText(c.next.due))}</span>` : ''}</div>
       <div class="c-acts">${c.info ? '<span class="c-tag">Information to send</span>' : ''}</div></a>`;
   $('#view').innerHTML = cPoolFrame({
     title: T_TITLE,
+    crumb: `${Number(L.total)} ${L.total === 1 ? 'company' : 'companies'}${Object.values(T_F).some(Boolean) || T_Q ? ' match' : ''}`,
     act: `<input class="c-search" id="tcQ" placeholder="Search company, city or country" value="${esc(T_Q)}" aria-label="Search companies"><button class="btn" onclick="tcOpenAdd()">Add company</button>`,
     band: cPoolBand('Status', cols, T_F.status, 'tcPickStatus'),
-    filters: cPoolFilters('companies', boxes, any ? 'tcClear()' : '') + `<div class="c-filter tc-count">${Number(L.total)} ${L.total === 1 ? 'company' : 'companies'}</div>`,
+    filters: cPoolFilters('companies', boxes, any ? 'tcClear()' : ''),
     body: cPoolRows(L.rows, row, 'No company matches. Remove a filter to widen the list.')
       + (L.total > L.rows.length ? `<div class="c-row-acts tc-more"><button class="btn ghost" onclick="T_PAGE+=1;tcLoadCompanies()">Show ${Math.min(100, L.total - L.rows.length)} more of ${Number(L.total - L.rows.length)}</button></div>` : ''),
   });
@@ -10107,7 +10113,7 @@ function tcDrawCompany() {
   const c = T_CO, M = T_META;
   const today = cTodayIso();
   const next = c.next
-    ? `<div class="c-next"><b>Next communication</b><div class="c-next-row"><span>${esc(c.next.label)}</span><span class="c-when ${tcWhen(c.next.due)}">${esc(tcWhenText(c.next.due))}</span>${c.next.owner ? `<span class="c-gap-soft">${esc(c.next.owner)}</span>` : ''}</div>
+    ? `<div class="c-next"><b>Next communication</b><div class="c-next-row">${c.next.label !== M.nextLabel ? `<span>${esc(c.next.label)}</span>` : ''}<span class="c-when ${tcWhen(c.next.due)}">${esc(tcWhenText(c.next.due))}</span>${c.next.owner ? `<span class="c-gap-soft">${esc(c.next.owner)}</span>` : ''}</div>
         <div class="c-row-acts"><button class="btn sm" onclick="tcOpenDone(${Number(c.next.id)})">Done</button><button class="btn sm ghost" onclick="tcOpenNext()">Move the date</button></div></div>`
     : `<div class="c-next none"><b>Next communication</b>None planned<div class="c-row-acts"><button class="btn sm" onclick="tcOpenNext()">Set a date</button></div></div>`;
   const kinds = M.activityKinds.filter((k) => k.id !== 'contact');
@@ -10147,7 +10153,7 @@ function tcDrawCompany() {
         <div class="c-wide"><label for="tcyCodes">Courses</label><input id="tcyCodes" placeholder="GWO BST, BOSIET"></div>
         <div id="tcyErr" class="c-wide"></div><div class="c-wide c-row-acts"><button class="btn sm" onclick="tcSaveYear()">Save</button></div></div></div></div>`;
   $('#view').innerHTML = `<p class="c-crumb"><a href="#/tc/companies">Companies</a></p>
-    <div class="c-head"><div><h1 class="c-pname">${esc(c.name)}</h1><p>${esc(tcStatus(c.status).label)}${c.statusDetail ? ' · ' + esc(tcMeeting(c.statusDetail)) : ''}${c.areas.length ? ' · ' + esc(c.areas.join(', ')) : ''} · ${esc(tcPlace(c) || 'country not recorded')} · ${c.client ? `client, ${Number(c.delegates)} delegates` : 'prospect'}</p></div>
+    <div class="c-head"><div><h1 class="c-pname">${esc(c.name)}</h1><p>${esc(tcStatus(c.status).label)}${c.statusDetail ? ' · ' + esc(tcMeeting(c.statusDetail)) : ''}${c.areas.length ? ' · ' + esc(c.areas.join(', ')) : ''} · ${esc(tcPlace(c) || 'country not recorded')} · ${c.client ? `client, ${tcDelegates(c.delegates)}` : 'prospect'}</p></div>
       <div class="act"><button class="btn ghost" onclick="tcArchive()">Archive</button></div></div>
     <div class="c-pgrid">
       <div class="c-pmain">${next}${logBox}
