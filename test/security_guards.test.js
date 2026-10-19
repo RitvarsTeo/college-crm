@@ -181,7 +181,7 @@ const REVIEWED = new Map(Object.entries({
   '\n        C_TERMINAL.includes((byId.get(t.person_id) || {}).status)': 'boolean',
   'on(c.id)': 'boolean', 'on(out.admLabel)': 'boolean', 'on(out.npLabel)': 'boolean',
   // fixed pieces of code the screen itself chose
-  'pick': 'a function name from the screen', 'set': 'code from the screen', 'clear': 'code from the screen', 'toggle': 'code from the screen',
+  'pick': 'a function name from the screen', 'go': 'a call the screen itself wrote (the start page and Training Centre Home figures, 19.10.2026)', 'set': 'code from the screen', 'clear': 'code from the screen', 'toggle': 'code from the screen',
   // ids from the screen's own constants (columns, groups, filter keys), never from data
   'which': 'a fixed panel name', 'col': 'a board column id', 'g.id': 'a Today group id', 'c.id': 'an Inbox column id', 'k': 'a filter key',
   // person ids: made only by the server (newPersonId, crypto.randomUUID), never taken from input

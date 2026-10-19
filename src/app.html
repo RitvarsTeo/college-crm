@@ -2573,6 +2573,80 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c #view .kbar:active .kbt{filter:brightness(1.12) drop-shadow(0 5px 8px rgba(10,36,99,.38))}
   html.ui-c #view .klegend li[data-kgo]:hover{color:var(--ink-strong)}
   @media (prefers-reduced-motion:reduce){ html.ui-c #view :is(.pcards .p-card,.kstrip.rp-tabs > div,.jb-col,.p-chip,.c-jp,.ib-card,.kneed,a.kgo,.khero,.kcol,.kseg,.kbar,.rp-col){transition:none;transform:none!important;animation:none} }
+  /* TWO HALVES (19.10.2026, the owner's pick A): the start page's two identical tiles, and the Training Centre half,
+     taken from _training-centre/mockups/option-a.html. html[data-area] says which half is on screen: academy | tc |
+     start | none. Each half keeps its own side menu and phone tabs; the other's are hidden. */
+  html.ui-c[data-area="tc"] .shell > nav > .cnav:not(.tcnav), html.ui-c:not([data-area="tc"]) .shell > nav > .tcnav{display:none!important}
+  html.ui-c[data-area="tc"] .ctabs:not(.tctabs), html.ui-c:not([data-area="tc"]) .ctabs.tctabs, html.ui-c:not([data-area="tc"]) #tMore{display:none!important}
+  html.ui-c[data-area="tc"] #cScope, html.ui-c[data-area="start"] #cScope, html.ui-c[data-area="none"] #cScope{display:none!important}
+  html.ui-c[data-area="tc"], html.ui-c[data-area="start"], html.ui-c[data-area="none"]{--scope-w:0px!important}
+  html.ui-c[data-area="start"] .shell, html.ui-c[data-area="none"] .shell{display:block}
+  html.ui-c[data-area="start"] .shell > nav, html.ui-c[data-area="none"] .shell > nav, html.ui-c[data-area="start"] .ctabs,
+  html.ui-c[data-area="none"] .ctabs, html.ui-c[data-area="start"] .c-pagefoot, html.ui-c[data-area="none"] .c-pagefoot{display:none!important}
+  html.ui-c[data-area="start"] #view, html.ui-c[data-area="none"] #view{padding:0;max-width:none}
+  html.ui-c .dl{min-height:100vh;display:flex;flex-direction:column;padding:26px 40px 22px}
+  html.ui-c .dl-brand{display:block;width:172px}
+  html.ui-c .dl-brand img{display:block;width:100%;height:auto}
+  html.ui-c .dl-brand .logo.dark{display:none}
+  html.ui-c[data-theme="dark"] .dl-brand .logo.light{display:none}
+  html.ui-c[data-theme="dark"] .dl-brand .logo.dark{display:block}
+  html.ui-c .dl-tiles{flex:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));grid-auto-flow:column;gap:24px;align-content:center;max-width:1180px;width:100%;margin:28px auto}
+  html.ui-c .dl-tiles.dl-one{max-width:560px}
+  html.ui-c .dl-tile{display:flex;flex-direction:column;gap:18px;padding:24px 26px 20px;border-radius:16px;background:var(--surface);
+    color:var(--ink);text-decoration:none;border-top:3px solid #29a8df;box-shadow:var(--lift);cursor:pointer;
+    transition:transform .16s cubic-bezier(.22,.9,.3,1),box-shadow .16s ease}
+  html.ui-c .dl-tile:hover{transform:translateY(-2px);box-shadow:var(--lift-hover)}
+  html.ui-c .dl-tile:focus-within{outline:2px solid var(--pet);outline-offset:2px}
+  html.ui-c .dl-tile h2{margin:0;font-size:22px;font-weight:650;letter-spacing:-.015em}
+  html.ui-c .dl-tile h2 a{display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none}
+  html.ui-c .dl-tile h2 svg{width:24px;height:24px;flex:0 0 24px;stroke:#29a8df;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+  html.ui-c .dl-tile .kday-row{grid-template-columns:repeat(3,minmax(0,1fr))}
+  html.ui-c .dl-tile .kneed b{font-size:52px}
+  html.ui-c .dl-tile .kgo{align-self:flex-start;margin:0;font-size:13px;font-weight:600}
+  html.ui-c .dl-tile p{margin:0;color:var(--t2)}
+  html.ui-c .dl-foot{display:flex;flex-direction:column;align-items:center;gap:8px}
+  html.ui-c .dl-foot .theme-switch{width:240px}
+  @media (max-width:760px){
+    html.ui-c .dl{padding:16px 16px 20px}
+    html.ui-c .dl-brand{width:140px}
+    html.ui-c .dl-tiles{grid-template-columns:minmax(0,1fr);grid-auto-flow:row;gap:16px;margin:20px 0;align-content:start}
+    html.ui-c .dl-tile{padding:18px 16px 16px;gap:14px}
+    html.ui-c .dl-tile .kneed{padding:8px 9px}
+    html.ui-c .dl-tile .kneed span{font-size:11.5px}
+    html.ui-c .dl-tile .kneed b{font-size:34px}
+  }
+  /* Training Centre Home: the Next contacts list (rows on the app's card surface) */
+  html.ui-c .tc-next{margin-top:4px}
+  html.ui-c .tc-next .ksh{display:flex;align-items:baseline;gap:12px}
+  html.ui-c .tc-rows{display:grid;gap:8px;margin-top:10px}
+  html.ui-c .tc-row{display:grid;grid-template-columns:86px minmax(0,1.6fr) minmax(0,1fr) 160px;align-items:center;gap:14px;padding:11px 16px;
+    border-radius:12px;background:var(--surface);box-shadow:var(--lift);text-decoration:none;color:var(--ink);border-left:3px solid transparent}
+  html.ui-c .tc-row:hover{box-shadow:var(--lift-hover)}
+  html.ui-c .tc-row.is-late{border-left-color:#b3261e}
+  html.ui-c .tc-co b{display:block;font-weight:650;font-size:14.5px}
+  html.ui-c .tc-co small, html.ui-c .tc-last, html.ui-c .tc-pic{font-size:12.5px;color:var(--t3)}
+  html.ui-c .tc-d{display:inline-block;min-width:56px;text-align:center;padding:3px 8px;border-radius:999px;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--t2);background:var(--c-sunk)}
+  html.ui-c .tc-d.late{background:#b3261e;color:#fff}
+  html.ui-c .tc-d.today{background:#F7C04F;color:#011111}
+  html.ui-c .tc-card{cursor:pointer}
+  html.ui-c a.c-line.tc-cline{text-decoration:none;color:inherit}
+  html.ui-c .tc-count{margin-left:auto}
+  html.ui-c .tc-more{justify-content:center;margin-top:12px}
+  html.ui-c .tc-ticks{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
+  html.ui-c .tc-ticks label, html.ui-c .tc-tick{display:inline-flex;align-items:center;gap:6px;font-weight:500;margin:0}
+  html.ui-c .tc-access{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) auto;cursor:default}
+  html.ui-c .tc-access.is-off{opacity:.6}
+  html.ui-c .tc-contact{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:10px 16px;border-top:1px solid var(--rule2)}
+  html.ui-c .tc-contact small{display:block;color:var(--t3);font-size:12.5px}
+  html.ui-c .tc-status{display:flex;flex-wrap:wrap;gap:8px}
+  html.ui-c .tc-courses{width:100%;margin:0}
+  html.ui-c .tc-yearform{grid-template-columns:1fr 1fr}
+  @media (max-width:760px){
+    html.ui-c .tc-row{grid-template-columns:62px minmax(0,1fr);gap:4px 10px;padding:10px 12px}
+    html.ui-c .tc-when{grid-row:span 2}
+    html.ui-c .tc-pic{display:none}
+    html.ui-c .tc-access{grid-template-columns:minmax(0,1fr)}
+  }
 </style>
 </head>
 <body>
@@ -2952,6 +3026,7 @@ function installCScope() {
   // showed "Your session has ended" under the login. Signing in with Google reloads the page, and the
   // reload arrives here signed in.
   if (AUTH.on && !AUTH.user) return;
+  if (AUTH.on && AUTH.user && Array.isArray(AUTH.user.areas) && !AUTH.user.areas.includes('academy')) return;   // Academy's years
   api('/api/scope/years').then((r) => { C_SCOPE_YEARS = (r && r.years) || []; cDrawScope(); }).catch(() => {});
 }
 // AN OLD LINK STILL LANDS (Q59): ?y=2025&m=3 (the Q45 shape) opens 2025 with March 2025 chosen on Reports; ?y=2024,2026
@@ -3050,8 +3125,7 @@ function markCNav(page) {
 // count arriving or a font swap moves the icons and the line must still meet them. One
 // segment between each pair of top-level icons, stopping GAP short of each so it runs
 // BEHIND them; the part above the place you are in is drawn again in blue.
-function cSpine() {
-  const nav = document.querySelector('.cnav');
+function cSpine(nav = document.querySelector('.cnav')) {   // the Training Centre menu passes its own (19.10.2026)
   if (!nav || !nav.getBoundingClientRect) return;
   let svg = nav.querySelector('.c-spine');
   if (!svg) { nav.insertAdjacentHTML('afterbegin', '<svg class="c-spine" aria-hidden="true"></svg>'); svg = nav.querySelector('.c-spine'); }
@@ -3764,7 +3838,8 @@ async function cHelpAdmin() {
   box.innerHTML = `<h2 class="c-set-h">For admins</h2><div class="c-helpadmin">
     <a href="#/channels">Channels</a><a href="#/feedback">Feedback received</a>
     <a href="#/journey?v=list&amp;p_data=odd" title="People whose programme is not one of the official ones">Data to tidy${odd ? ` <b>${odd}</b>` : ''}</a>
-    <a href="/api/admin/sheet-pull" target="_blank" rel="noopener" title="The admissions sheet pulled into Intake, and how many leads are made in Intake each week">Admissions sheet</a></div>`;
+    <a href="/api/admin/sheet-pull" target="_blank" rel="noopener" title="The admissions sheet pulled into Intake, and how many leads are made in Intake each week">Admissions sheet</a>
+    <a href="#/access" title="Which half of Intake each account opens: Academy, Training Centre">People and access</a></div>`;
 }
 
 // ------------------------------------------------------------------ HELP CENTER
@@ -6866,6 +6941,8 @@ const cKeysHelp = () => `<h2 class="c-set-h">Keyboard</h2><div class="c-sheet c-
 async function route() {
   const full = location.hash || START();
   const [hash, qs] = full.split('?');
+  // TWO HALVES (19.10.2026): the start page, People and access and the Training Centre half are drawn by cAreaRoute.
+  if (UI === 'c' && await cAreaRoute(hash)) return;
   if (UI === 'c') cRouteState(hash, qs);   // Q61: the view comes back exactly as it was left
   drawIcons();
   const here = hash.split('/').slice(0, 2).join('/');
@@ -9727,6 +9804,496 @@ async function cpPushSetup() {
   } catch (e) { CP_PUSH = false; }
 }
 
+// ======================================================================= TWO HALVES: ACADEMY AND TRAINING CENTRE
+// 19.10.2026, the owner's pick A (_training-centre/mockups/option-a.html): after sign-in a START PAGE with two identical
+// tiles, Academy and Training Centre, each with three figures that open their place; a tile opens that half with its own
+// Home and side menu in the Academy layout; the logo goes back to the tiles. ACCESS PER TEAM (the owner: "Academy people
+// who are academy team can open it, people who are TC people can open that"): a tile a person may not open is not
+// shown, and somebody with one half lands in it straight away. The SERVER checks the half on every request
+// (src/areas.js); the tiles are only the way in.
+const T_ICON = {
+  co: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3.5 16.5V5.5l6-2v13"/><path d="M9.5 8h7v8.5"/><path d="M2.5 16.5h15"/><path d="M5.8 7.2v.1M5.8 10v.1M5.8 12.8v.1M12.5 11v.1M14.2 11v.1M12.5 13.6v.1M14.2 13.6v.1"/></svg>',
+  star: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3.2l2 4.3 4.6.5-3.4 3.1 1 4.6L10 13.4l-4.2 2.3 1-4.6-3.4-3.1 4.6-.5z"/></svg>',
+  aim: '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7"/><circle cx="10" cy="10" r="3.6"/><circle cx="10" cy="10" r=".8"/></svg>' };
+// Which halves this account opens: the server's answer (/api/auth/me). Sign-in off (a laptop): both.
+const cAreas = () => (AUTH.on ? ((AUTH.user || {}).areas || []) : ['academy', 'tc']);
+let C_AREA = '';
+function cSetArea(area) {
+  if (C_AREA === area) return;
+  C_AREA = area;
+  document.documentElement.dataset.area = area;
+  if (area === 'tc') tcInstallNav();
+  const brand = document.querySelector('.shell > nav > .brand');
+  if (brand) brand.setAttribute('href', cAreas().length > 1 ? '#/start' : area === 'tc' ? '#/tc' : '#/home');
+  const tag = $('#tagline');
+  if (tag) { if (!tag.dataset.academy) tag.dataset.academy = tag.textContent; tag.textContent = area === 'tc' ? 'Every client company, in one place' : tag.dataset.academy; }
+  for (const a of document.querySelectorAll('.c-foot a')) a.setAttribute('href', area === 'tc' ? '#/tc/help' : '#/help');
+}
+// Called first by route(): the start page, People and access, the Training Centre half, and the door between them.
+// Answers true when it drew the page; false lets the Academy router carry on.
+async function cAreaRoute(hash) {
+  const mine = cAreas();
+  if (!mine.length) { cSetArea('none'); cDrawNoArea(); return true; }
+  if (hash === '#/start' || (!location.hash && mine.length > 1)) {
+    if (mine.length < 2) { location.replace(mine[0] === 'tc' ? '#/tc' : '#/home'); return true; }
+    cSetArea('start'); await viewStart(); return true;
+  }
+  if (hash === '#/access') {
+    cSetArea(['academy', 'tc'].includes(C_AREA) ? C_AREA : mine.includes('academy') ? 'academy' : 'tc');
+    await viewAccess(); return true;
+  }
+  if (/^#\/tc(\/|$)/.test(hash)) {
+    if (!mine.includes('tc')) { location.replace('#/home'); return true; }
+    cSetArea('tc'); await tcRoute(hash); return true;
+  }
+  if (!mine.includes('academy')) { location.replace('#/tc'); return true; }
+  cSetArea('academy');
+  return false;
+}
+const cGo = (h) => { if (location.hash === h) route(); else location.hash = h; };
+const cStartBrand = () => `<a class="dl-brand" href="#/start" aria-label="Novikontas Academy - Start"><img class="logo light" src="/assets/NoAca_logo_twotonehor.svg" alt="">
+  <img class="logo dark" src="/assets/NoAca_logo_whitehor.svg" alt=""></a>`;
+function cDrawNoArea() {
+  $('#view').innerHTML = `<div class="dl">${cStartBrand()}<div class="dl-tiles dl-one"><div class="dl-tile"><h2>No access yet</h2>
+    <p>Your account does not open Academy or Training Centre yet. An admin gives access on People and access.</p>
+    <div class="c-row-acts"><button class="btn ghost" onclick="signOut()">Sign out</button></div></div></div></div>`;
+}
+
+// THE START PAGE: the two tiles, identical at rest (sibling tiles look identical, 14.10.2026). Each figure is a click to
+// where it is counted. Academy's three are Home's own reads (cHomeData), so a tile never disagrees with Home.
+async function viewStart() {
+  const mine = cAreas();
+  const [A, T] = await Promise.all([
+    mine.includes('academy') ? cHomeData().catch(() => null) : null,
+    mine.includes('tc') ? api('/api/tc/home').catch(() => null) : null]);
+  const fig = (label, n, href, go) => `<a class="kneed" href="${href}"${go ? ` onclick="${go};return false"` : ''}><span>${esc(label)}</span><b>${n == null ? '<span class="kgapn" title="not available">—</span>' : Number(n)}</b></a>`;
+  const tile = (home, icon, name, figs, open) => `<div class="dl-tile" role="group" aria-label="${esc(name)}" onclick="if(!event.target.closest('a'))location.hash=this.dataset.home" data-home="${home}">
+      <h2><a href="${home}">${icon}<span>${esc(name)}</span></a></h2><div class="kday-row">${figs}</div>
+      <a class="kgo" href="${home}">${esc(open)} →</a></div>`;
+  $('#view').innerHTML = `<div class="dl">${cStartBrand()}<div class="dl-tiles m-scene">
+      ${mine.includes('academy') ? tile('#/home', C_ICON.adm, 'Academy',
+        fig('Due today', A && A.dueToday, '#/due', "cGoToday('cTodayDue')") + fig('New in the Inbox', A && A.inbox, '#/leads') + fig('Active leads', A ? A.open.length : null, '#/journey'),
+        'Open Academy') : ''}
+      ${mine.includes('tc') ? tile('#/tc', T_ICON.co, 'Training Centre',
+        fig('Due this week', T && T.needs.week, '#/tc/next', "tcGoNext('week')") + fig('Overdue contacts', T && T.needs.overdue, '#/tc/next', "tcGoNext('over')")
+        + fig('Active clients', T && T.cards.activeClients, '#/tc/clients'), 'Open Training Centre') : ''}
+    </div>
+    <div class="dl-foot">${themeSwitchHtml()}<div class="c-foot" style="padding:0"><a href="#/help">Help center</a></div></div></div>`;
+  if (typeof syncThemeSwitches === 'function') syncThemeSwitches(THEME_PREF);
+  cOpenView();
+  cScenes($('#view'));
+}
+
+// THE SHELL FOR AN ACCOUNT WITHOUT ACADEMY. Academy's settings (/api/config), the call pop-up and the Academy counts are
+// Academy's, and the server refuses them to this account; nothing here asks for them.
+async function startShellTc() {
+  CFG = {};
+  signinProgress('settings');
+  $('#ver').innerHTML = 'Intake';
+  let saved = 'light';
+  try { saved = localStorage.getItem('crmTheme') || 'light'; } catch {}
+  setTheme(['light', 'dark', 'system'].includes(saved) ? saved : 'light');
+  if (AUTH.user) ACTOR = AUTH.user.name;
+  await route();
+  await signinProgress('ready');
+}
+
+// ------------------------------------------------------------------------- TRAINING CENTRE
+// The second half: every client company (src/tc.js). Its own Home and side menu, in the Academy layout and from
+// Academy's own parts: Needs you, the figure cards, the pool band and filters, the list rows, the person page's sheets.
+let T_META = null;
+const tcMeta = async () => (T_META ||= await api('/api/tc/meta'));
+const tcStatus = (id) => ((T_META && T_META.statuses) || []).find((s) => s.id === id) || { id, label: id || '' };
+const tcKind = (id) => (((T_META && T_META.activityKinds) || []).find((k) => k.id === id) || {}).label
+  || { status: 'Status', edit: 'Changed', create: 'Added', import: 'Imported', task: 'Next communication' }[id] || id;
+const tcMeeting = (id) => (((T_META && T_META.meetingTypes) || []).find((m) => m.id === id) || {}).label || '';
+const tcDdMm = (d) => (d ? `${d.slice(8, 10)}.${d.slice(5, 7)}${d.slice(0, 4) === cTodayIso().slice(0, 4) ? '' : '.' + d.slice(0, 4)}` : '');
+const tcWhen = (d) => (!d ? '' : d < cTodayIso() ? 'over' : d === cTodayIso() ? 'today' : '');
+const tcWhenText = (d) => (!d ? 'no next contact' : tcWhen(d) === 'over'
+  ? `${Math.round((Date.parse(cTodayIso()) - Date.parse(d)) / 86400000)} d. overdue` : tcWhen(d) === 'today' ? 'today' : tcDdMm(d));
+const tcPlace = (c) => [c.country, c.city].filter(Boolean).join(' · ');
+
+function tcInstallNav() {
+  if (document.querySelector('.tcnav')) return;
+  const after = document.querySelector('.shell > nav > .cnav') || document.querySelector('.shell > nav > .brand');
+  if (!after) return;
+  after.insertAdjacentHTML('afterend', `<div class="cnav tcnav" role="navigation" aria-label="Training Centre">
+    <a href="#/tc" data-c="tc-home" title="What needs you, and the clients">${C_ICON.home}<span>Home</span></a>
+    <a href="#/tc/companies" data-c="tc-companies" title="Every client company">${T_ICON.co}<span>Companies</span></a>
+    <div class="kids"><a href="#/tc/next" data-c="tc-next" title="Every next communication, by date"><span>Next contacts</span><span class="n" id="tnNext"></span></a>
+      <a href="#/tc/clients" data-c="tc-clients" title="Companies with delegates in any year"><span>Clients</span><span class="n" id="tnClients"></span></a>
+      <a href="#/tc/prospects" data-c="tc-prospects" title="Companies with no course yet"><span>Prospects</span><span class="n" id="tnProspects"></span></a></div>
+    <a href="#/tc/help" data-c="tc-help" class="c-navfoot">${C_ICON.help}<span>Help center</span></a></div>`);
+  const tab = (href, t, icon, label, count) => `<a href="${href}" data-t="${t}">${icon}<span>${label}</span>${count ? `<span class="n warn" id="${count}"></span>` : ''}</a>`;
+  document.body.insertAdjacentHTML('beforeend', `<div class="ctabs tctabs" role="navigation" aria-label="Training Centre phone menu">
+    ${tab('#/tc', 'home', C_ICON.home, 'Home')}${tab('#/tc/next', 'next', C_ICON.next, 'Next', 'ttNext')}${tab('#/tc/clients', 'clients', T_ICON.star, 'Clients')}${tab('#/tc/prospects', 'prospects', T_ICON.aim, 'Prospects')}
+    <button type="button" data-t="more" aria-haspopup="dialog" aria-expanded="false" onclick="tcMore(true)">${C_ICON.more}<span>More</span></button></div>
+    <div class="cmore" id="tMore" hidden><div class="cmore-back" onclick="tcMore(false)"></div>
+    <div class="cmore-sheet" role="dialog" aria-modal="true" aria-label="More">
+      <a href="#/tc/companies" onclick="tcMore(false)">${T_ICON.co}<span>Companies</span></a><a href="#/tc/help" onclick="tcMore(false)">${C_ICON.help}<span>Help</span></a></div></div>`);
+}
+function tcMore(open) { const m = $('#tMore'); if (m) m.hidden = !open; }
+function tcMark(place) {
+  const lit = ['next', 'clients', 'prospects', 'companies', 'company'].includes(place) ? ['tc-companies', 'tc-' + place] : ['tc-' + place];
+  document.querySelectorAll('.tcnav a').forEach((a) => a.classList.toggle('on', lit.includes(a.dataset.c)));
+  const t = ['home', 'next', 'clients', 'prospects'].includes(place) ? place : 'more';
+  document.querySelectorAll('.tctabs [data-t]').forEach((a) => a.classList.toggle('on', a.dataset.t === t));
+  tcMore(false);
+  cSpine(document.querySelector('.tcnav'));
+}
+async function tcNavCounts() {
+  try {
+    const h = await api('/api/tc/home');
+    const put = (id, n) => { const el = $(id); if (el) el.textContent = n ? String(n) : ''; };
+    put('#tnNext', h.next.total); put('#ttNext', h.needs.overdue + h.needs.week);
+    put('#tnClients', h.cards.activeClients); put('#tnProspects', h.cards.prospects);
+  } catch (e) { /* a count is a nudge; the page itself says when a read failed */ }
+}
+if (typeof window !== 'undefined' && window.addEventListener) window.addEventListener('resize', () => { if (C_AREA === 'tc') cSpine(document.querySelector('.tcnav')); });
+
+async function tcRoute(hash) {
+  const [, , page, arg] = hash.split('/');
+  await tcMeta();
+  const place = page || 'home';
+  tcMark(place);
+  fbClose();
+  try {
+    if (place === 'companies') await viewTcCompanies('Companies');
+    else if (place === 'clients') { T_F = { ...T_F_EMPTY(), client: 'yes' }; T_KEEP = true; await viewTcCompanies('Clients'); }
+    else if (place === 'prospects') { T_F = { ...T_F_EMPTY(), client: 'no' }; T_KEEP = true; await viewTcCompanies('Prospects'); }
+    else if (place === 'company') await viewTcCompany(Number(arg));
+    else if (place === 'next') await viewTcNext();
+    else if (place === 'help') viewTcHelp();
+    else await viewTcHome();
+    cOpenView();
+  } catch (e) {
+    $('#view').innerHTML = `<div class="err">Failed to load: ${esc(e.message)}</div>`;
+  }
+  tcNavCounts();
+}
+
+// ---- TRAINING CENTRE HOME: Needs you, the four figures, the next contacts (option A) ----
+const tcGoNext = (when) => { T_NX.when = when || ''; cGo('#/tc/next'); };
+function tcGo(key, value) {
+  if (key === 'client') return cGo(value === 'yes' ? '#/tc/clients' : '#/tc/prospects');
+  T_F = { ...T_F_EMPTY(), [key]: value }; T_KEEP = true; cGo('#/tc/companies');
+}
+const tcRow = (r) => `<a class="tc-row${r.when === 'over' ? ' is-late' : ''}" href="#/tc/company/${Number(r.companyId)}">
+    <span class="tc-when"><span class="tc-d ${r.when === 'over' ? 'late' : r.due === cTodayIso() ? 'today' : ''}">${r.due === cTodayIso() ? 'Today' : esc(tcDdMm(r.due))}</span></span>
+    <span class="tc-co"><b>${esc(r.name)}</b><small>${esc(tcPlace(r) || 'country not recorded')}</small></span>
+    <span class="tc-last">${r.lastYear ? `${Number(r.lastYear)} · ${Number(r.lastYearN)} delegates` : 'no course yet'}</span>
+    <span class="tc-pic">${esc(r.owner || r.pic || '')}</span></a>`;
+async function viewTcHome() {
+  const H = await api('/api/tc/home');
+  const asOf = new Intl.DateTimeFormat('en-GB', { timeZone: TZ, day: 'numeric', month: 'long' }).format(new Date());
+  const need = (label, n, go, k) => `<a class="kneed" href="#/tc/next" style="--i:${k}" onclick="${go};return false"><span>${esc(label)}</span><b>${Number(n)}</b></a>`;
+  const ys = H.cards.delegates.byYear;
+  const [prev, last] = ys.slice(-2);
+  const delta = prev && last ? `<span class="kdelta${last.n > prev.n ? ' up' : last.n < prev.n ? ' down' : ''}">${Number(last.year)} <b>${Number(last.n)}</b> · vs ${Number(prev.year)} ${Number(prev.n)}</span>` : '';
+  $('#view').innerHTML = `<div class="kpage kb">
+    <div class="khead"><div><h1 class="c-sr">Home</h1><p class="c-crumb" style="margin:0">Training Centre ${esc(H.asOf.slice(0, 4))} · to ${esc(asOf)}</p></div></div>
+    <section class="kday m-scene" aria-label="Needs you"><div class="kday-sheet"><h2>Needs you</h2><div class="kday-row">
+      ${need('Overdue contacts', H.needs.overdue, "tcGoNext('over')", 0)}${need('Due this week', H.needs.week, "tcGoNext('week')", 1)}
+      ${need('Information to send', H.needs.info, "tcGo('info','yes')", 2)}</div></div></section>
+    <div class="kstrip kb-strip">
+      <div class="khero tc-card" role="link" tabindex="0" onclick="tcGo('client','yes')"><span>Active clients</span><b>${Number(H.cards.activeClients)}</b><small>companies with delegates in any year</small><a class="kgo" href="#/tc/clients">Clients →</a></div>
+      <div class="tc-card" role="link" tabindex="0" onclick="tcGo('client','yes')"><span>Delegates trained</span><b>${Number(H.cards.delegates.total)}</b><small>all years${last ? ', course lines to ' + Number(last.year) : ''}</small>${cSpark(ys.map((y) => y.n), 'lead')}${delta}<a class="kgo" href="#/tc/clients">Clients →</a></div>
+      <div class="tc-card" role="link" tabindex="0" onclick="tcGo('client','no')"><span>Prospects</span><b>${Number(H.cards.prospects)}</b><small>companies, no course yet</small><a class="kgo" href="#/tc/prospects">Prospects →</a></div>
+      <div class="tc-card" role="link" tabindex="0" onclick="tcGo('country','*')"><span>Countries</span><b>${Number(H.cards.countries)}</b><small>where our companies are</small><a class="kgo" href="#/tc/companies" onclick="tcGo('country','*');return false">Companies →</a></div>
+    </div>
+    <section class="ksec tc-next"><div class="ksh"><h2>Next contacts</h2><a class="kgo" href="#/tc/next" style="margin:0 0 0 auto" onclick="tcGoNext('');return false">All ${Number(H.next.total)} →</a></div>
+      ${H.next.rows.length ? `<div class="tc-rows">${H.next.rows.map(tcRow).join('')}</div>` : '<p class="c-empty">No next communication is planned.</p>'}</section></div>`;
+  cScenes($('#view'));
+}
+
+// ---- COMPANIES: Journey's List for companies - the status band, the filter row, search, one line each ----
+const T_F_EMPTY = () => ({ status: '', area: '', country: '', pic: '', client: '', info: '', due: '' });
+let T_F = T_F_EMPTY(); let T_Q = ''; let T_PAGE = 1; let T_LIST = null; let T_TITLE = 'Companies'; let T_KEEP = false; let T_SORT = 'name';
+let T_QT = 0;
+async function viewTcCompanies(title) {
+  if (!T_KEEP) { T_F = T_F_EMPTY(); T_Q = ''; }
+  T_KEEP = false; T_TITLE = title; T_PAGE = 1;
+  await tcLoadCompanies();
+}
+async function tcLoadCompanies() {
+  const qs = new URLSearchParams();
+  for (const [k, v] of Object.entries(T_F)) if (v) qs.set(k, v);
+  if (T_Q) qs.set('q', T_Q);
+  qs.set('page', String(T_PAGE)); qs.set('size', '100'); qs.set('sort', T_SORT);
+  T_LIST = await api('/api/tc/companies?' + qs.toString());
+  tcDrawCompanies();
+}
+function tcFilter(k, v) { T_F[k] = v; T_PAGE = 1; tcLoadCompanies(); }
+function tcPickStatus(v) { tcFilter('status', T_F.status === v ? '' : v); }
+function tcClear() { T_F = T_F_EMPTY(); T_Q = ''; T_PAGE = 1; tcLoadCompanies(); }
+function tcDrawCompanies() {
+  const L = T_LIST, M = T_META;
+  const cols = M.statuses.map((s) => ({ id: s.id, label: s.label, n: L.counts.status[s.id] || 0 }));
+  const word = (v) => (v === '-' ? 'not recorded' : v === '*' ? 'any recorded' : v);
+  const box = (k, label, values) => cPoolSelect(label, T_F[k], values, `tcFilter('${k}', this.value)`);
+  const boxes = [
+    box('area', 'Area', L.facets.areas.map(([a, n]) => [a, `${a} ${n}`])),
+    box('country', 'Country', [['*', 'Any recorded'], ...L.facets.countries.map(([c, n]) => [c, `${word(c)} ${n}`])]),
+    box('pic', 'Person in charge', L.facets.pics.map(([p, n]) => [p, `${word(p)} ${n}`])),
+    box('client', 'Client', [['yes', 'Clients'], ['no', 'Prospects']]),
+    box('due', 'Next contact', [['over', 'Overdue'], ['week', 'This week'], ['later', 'Later'], ['none', 'None planned']]),
+    box('info', 'Information to send', [['yes', 'Something to send']]),
+    cPoolSelect('Sort', T_SORT === 'name' ? '' : T_SORT, [['next', 'Next contact'], ['last', 'Latest course']], "T_SORT=this.value||'name';tcLoadCompanies()")];
+  const any = Object.values(T_F).some(Boolean) || Boolean(T_Q);
+  const st = (c) => tcStatus(c.status).label + (c.statusDetail ? ' · ' + tcMeeting(c.statusDetail) : '');
+  const row = (c) => `<a class="c-line tc-cline" href="#/tc/company/${Number(c.id)}">
+      <div class="c-who"><b>${esc(c.name)}</b><small class="c-reach${tcPlace(c) ? '' : ' c-gap'}">${esc(tcPlace(c) || 'country not recorded')}</small></div>
+      <div class="c-what"><span class="p-stage">${esc(st(c))}</span>${c.areas.length ? ' · ' + esc(c.areas.join(', ')) : ''}<small class="p-step">${c.lastYear
+        ? `${Number(c.lastYear)} · ${Number(c.lastYearN)} delegates · ${Number(c.delegates)} in all` : 'no course yet'}${c.pic ? ' · ' + esc(c.pic) : ''}</small></div>
+      <div class="c-when">${c.next ? `<span class="c-when ${tcWhen(c.next.due)}">${esc(tcWhenText(c.next.due))}</span>` : ''}</div>
+      <div class="c-acts">${c.info ? '<span class="c-tag">Information to send</span>' : ''}</div></a>`;
+  $('#view').innerHTML = cPoolFrame({
+    title: T_TITLE,
+    act: `<input class="c-search" id="tcQ" placeholder="Search company, city or country" value="${esc(T_Q)}" aria-label="Search companies"><button class="btn" onclick="tcOpenAdd()">Add company</button>`,
+    band: cPoolBand('Status', cols, T_F.status, 'tcPickStatus'),
+    filters: cPoolFilters('companies', boxes, any ? 'tcClear()' : '') + `<div class="c-filter tc-count">${Number(L.total)} ${L.total === 1 ? 'company' : 'companies'}</div>`,
+    body: cPoolRows(L.rows, row, 'No company matches. Remove a filter to widen the list.')
+      + (L.total > L.rows.length ? `<div class="c-row-acts tc-more"><button class="btn ghost" onclick="T_PAGE+=1;tcLoadCompanies()">Show ${Math.min(100, L.total - L.rows.length)} more of ${Number(L.total - L.rows.length)}</button></div>` : ''),
+  });
+  const q = $('#tcQ');
+  if (q) q.addEventListener('input', () => { clearTimeout(T_QT); T_QT = setTimeout(async () => { T_Q = q.value.trim(); T_PAGE = 1; await tcLoadCompanies(); const n = $('#tcQ'); if (n) { n.focus(); n.setSelectionRange(n.value.length, n.value.length); } }, 250); });
+  cPoolWire();
+}
+function tcOpenAdd() {
+  const M = T_META;
+  modal('Add company', `<div class="c-form c-form1">
+    <div class="c-wide"><label for="tcaName">Name</label><input id="tcaName" autocomplete="off"></div>
+    <div><label for="tcaCountry">Country</label><input id="tcaCountry" list="tcaCountries"><datalist id="tcaCountries">${M.countries.map((c) => `<option value="${esc(c)}">`).join('')}</datalist></div>
+    <div><label for="tcaCity">City</label><input id="tcaCity"></div>
+    <div><label for="tcaPic">Person in charge</label><select id="tcaPic"><option value="">Nobody yet</option>${M.pics.map((p) => `<option>${esc(p)}</option>`).join('')}</select></div>
+    <div><label>Areas</label><div class="tc-ticks">${M.areas.map((a) => `<label><input type="checkbox" name="tcaArea" value="${esc(a.id)}"> ${esc(a.label)}</label>`).join('')}</div></div>
+    <div id="tcaErr" class="c-wide"></div>
+    <div class="c-wide c-row-acts"><button class="btn" onclick="tcAdd()">Add</button><button class="btn ghost" onclick="closeModal()">Cancel</button></div></div>`);
+  const n = $('#tcaName'); if (n) n.focus();
+}
+async function tcAdd() {
+  const v = (id) => ($(id) || {}).value || '';
+  try {
+    const r = await post('/api/tc/companies', { name: v('#tcaName'), country: v('#tcaCountry'), city: v('#tcaCity'), pic: v('#tcaPic'),
+      areas: [...document.querySelectorAll('input[name="tcaArea"]:checked')].map((x) => x.value) });
+    closeModal(); T_META = null; await tcMeta(); location.hash = '#/tc/company/' + Number(r.id);
+  } catch (e) {
+    const dup = e.detail && e.detail.id ? ` <a href="#/tc/company/${Number(e.detail.id)}" onclick="closeModal()">Open it</a>` : '';
+    $('#tcaErr').innerHTML = `<div class="err">${esc(e.message)}${dup}</div>`;
+  }
+}
+
+// ---- THE COMPANY PAGE: the person page's layout - the next step, the log with a note box; details, contacts, courses ----
+let T_CO = null; let T_EDIT = false;
+async function viewTcCompany(id) {
+  if (!T_CO || T_CO.id !== id) T_EDIT = false;
+  T_CO = await api('/api/tc/companies/' + Number(id));
+  tcDrawCompany();
+}
+const tcReload = async () => { T_CO = await api('/api/tc/companies/' + Number(T_CO.id)); tcDrawCompany(); tcNavCounts(); };
+const T_FIELD = { name: 'Name', country: 'Country', city: 'City', address: 'Address', website: 'Website', status: 'Status', status_detail: 'Meeting type',
+  pic_name: 'Person in charge', notes: 'Notes', info_to_send: 'Information to send', areas: 'Areas', next: 'Next communication', archived_at: 'Archived',
+  contact: 'Contact', contact_name: 'Contact name', contact_position: 'Contact position', contact_email: 'Contact email', contact_phone: 'Contact phone', contact_notes: 'Contact notes' };
+const tcFieldName = (f) => T_FIELD[f] || (/^courses_(\d{4})$/.test(f || '') ? 'Courses ' + f.slice(8) : f);
+const tcShow = (f, v) => (v == null ? '(empty)' : f === 'status' ? tcStatus(v).label : f === 'status_detail' ? tcMeeting(v) || v : v);
+function tcEv(e) {
+  const what = e.field && e.kind !== 'task' ? tcFieldName(e.field) : tcKind(e.kind);
+  return `<div class="c-evt"><div class="c-evt-when">${cStamp(e.occurred_at)}${e.actor ? ' · ' + esc(e.actor) : ''}${e.origin === 'import' ? ' · <span class="c-auto">from the Excel</span>' : ''}</div>
+    <div class="c-evt-what">${esc(what)}${e.topics && e.topics !== e.body ? ' · ' + esc(e.topics) : ''}</div>
+    ${e.field && e.kind !== 'task' && e.field !== 'contact' ? `<div class="c-evt-diff"><s>${esc(tcShow(e.field, e.old_value))}</s> → <b>${esc(tcShow(e.field, e.new_value))}</b></div>`
+      : e.body ? `<div class="c-evt-body">${esc(e.body)}</div>` : ''}</div>`;
+}
+function tcDrawCompany() {
+  const c = T_CO, M = T_META;
+  const today = cTodayIso();
+  const next = c.next
+    ? `<div class="c-next"><b>Next communication</b><div class="c-next-row"><span>${esc(c.next.label)}</span><span class="c-when ${tcWhen(c.next.due)}">${esc(tcWhenText(c.next.due))}</span>${c.next.owner ? `<span class="c-gap-soft">${esc(c.next.owner)}</span>` : ''}</div>
+        <div class="c-row-acts"><button class="btn sm" onclick="tcOpenDone(${Number(c.next.id)})">Done</button><button class="btn sm ghost" onclick="tcOpenNext()">Move the date</button></div></div>`
+    : `<div class="c-next none"><b>Next communication</b>None planned<div class="c-row-acts"><button class="btn sm" onclick="tcOpenNext()">Set a date</button></div></div>`;
+  const kinds = M.activityKinds.filter((k) => k.id !== 'contact');
+  const logBox = `<div class="c-sheet tc-logbox"><h3>Log a communication</h3><div class="c-pad"><div class="c-form c-form1">
+      <div><label for="tcKind">What</label><select id="tcKind">${kinds.map((k) => `<option value="${esc(k.id)}">${esc(k.label)}</option>`).join('')}</select></div>
+      <div><label for="tcDay">Day</label><input id="tcDay" type="date" value="${esc(today)}" max="${esc(today)}"></div>
+      ${c.contacts.length ? `<div><label for="tcWith">With</label><select id="tcWith"><option value="">The company</option>${c.contacts.map((k) => `<option value="${Number(k.id)}">${esc(k.name || k.email || k.phone || 'contact')}</option>`).join('')}</select></div>` : ''}
+      <div><label for="tcNextDue">Next contact on</label><input id="tcNextDue" type="date" min="${esc(today)}"></div>
+      <div class="c-wide"><label for="tcBody">What was said or done</label><textarea id="tcBody" rows="3"></textarea></div>
+      <div id="tcLogErr" class="c-wide"></div>
+      <div class="c-wide c-row-acts"><button class="btn" onclick="tcLog()">Save</button></div></div></div></div>`;
+  const row = (k, v, gap) => `<dt>${k}</dt><dd>${v ? v : `<span class="c-gap">${gap || 'not recorded'}</span>`}</dd>`;
+  const link = (w) => (w ? `<a href="${esc(/^https?:\/\//.test(w) ? w : 'https://' + w)}" target="_blank" rel="noopener noreferrer">${esc(w)}</a>` : '');
+  const details = T_EDIT ? tcEditForm(c) : `<div class="c-sheet c-facts"><h3>Details<span class="c-h3acts"><button class="btn sm ghost" onclick="T_EDIT=true;tcDrawCompany()">Edit</button></span></h3><dl>
+      ${row('Country', esc(c.country))}${row('City', esc(c.city))}${row('Address', esc(c.address))}${row('Website', link(c.website))}
+      ${row('Areas', esc(c.areas.join(', ')), 'none')}${row('Person in charge', esc(c.pic), 'nobody yet')}
+      ${row('Last contact', c.lastContactAt ? esc(fmtDate(c.lastContactAt)) : '')}
+      ${row('Information to send', esc(c.infoToSend), 'nothing waiting')}
+      ${c.sourceRow ? row('From the Excel', 'row ' + Number(c.sourceRow)) : ''}</dl>
+      ${c.notes ? `<div class="c-notes">${esc(c.notes)}</div>` : ''}</div>`;
+  const status = `<div class="c-sheet c-facts"><h3>Status</h3><div class="c-pad tc-status">
+      <select id="tcStatus" aria-label="Status" onchange="tcEdit({ status: this.value })">${M.statuses.map((s) => `<option value="${esc(s.id)}"${s.id === c.status ? ' selected' : ''}>${esc(s.label)}</option>`).join('')}</select>
+      ${c.status === 'met' ? `<select aria-label="Meeting type" onchange="tcEdit({ statusDetail: this.value })"><option value="">Meeting type</option>${M.meetingTypes.map((m) => `<option value="${esc(m.id)}"${m.id === c.statusDetail ? ' selected' : ''}>${esc(m.label)}</option>`).join('')}</select>` : ''}</div></div>`;
+  const contacts = `<div class="c-sheet c-facts"><h3>Contacts<b>${c.contacts.length}</b><span class="c-h3acts"><button class="btn sm ghost" onclick="tcToggle('tcAddContact')">Add</button></span></h3>
+      ${c.contacts.map((k) => `<div class="tc-contact"><div><b>${esc(k.name || 'no name')}</b>${k.position ? ` <small>${esc(k.position)}</small>` : ''}
+        <small>${[k.email ? `<a href="mailto:${esc(k.email)}">${esc(k.email)}</a>` : '', k.phone ? cPhoneHtml(k.phone) : ''].filter(Boolean).join(' · ')}</small>${k.notes ? `<small class="c-gap-soft">${esc(k.notes)}</small>` : ''}</div>
+        <button class="btn sm ghost" title="Archive this contact" onclick="tcArchiveContact(${Number(k.id)})">Archive</button></div>`).join('') || '<div class="c-empty">No contact yet.</div>'}
+      <div id="tcAddContact" class="c-pad" hidden><div class="c-form c-form1">
+        <div><label for="tckName">Name</label><input id="tckName"></div><div><label for="tckPos">Position</label><input id="tckPos"></div>
+        <div><label for="tckEmail">Email</label><input id="tckEmail" type="email"></div><div><label for="tckPhone">Phone</label><input id="tckPhone"></div>
+        <div id="tckErr" class="c-wide"></div><div class="c-wide c-row-acts"><button class="btn sm" onclick="tcAddContact()">Save contact</button></div></div></div></div>`;
+  const courses = `<div class="c-sheet c-facts"><h3>Courses per year<b>${Number(c.delegates)}</b></h3>
+      ${c.courses.length ? `<table class="ktable tc-courses"><thead><tr><th>Year</th><th>Delegates</th><th>Courses</th></tr></thead><tbody>${c.courses.map((k) => `<tr title="${esc(k.raw || '')}"><td>${Number(k.year)}</td><td>${k.attendees == null ? '?' : Number(k.attendees)}</td><td>${esc(k.codes)}</td></tr>`).join('')}</tbody></table>` : '<div class="c-empty">No course recorded.</div>'}
+      <div class="c-pad"><div class="c-form tc-yearform">
+        <div><label for="tcyYear">Year</label><input id="tcyYear" type="number" min="1990" max="2100" value="${Number(today.slice(0, 4))}"></div>
+        <div><label for="tcyN">Delegates</label><input id="tcyN" type="number" min="0"></div>
+        <div class="c-wide"><label for="tcyCodes">Courses</label><input id="tcyCodes" placeholder="GWO BST, BOSIET"></div>
+        <div id="tcyErr" class="c-wide"></div><div class="c-wide c-row-acts"><button class="btn sm" onclick="tcSaveYear()">Save</button></div></div></div></div>`;
+  $('#view').innerHTML = `<p class="c-crumb"><a href="#/tc/companies">Companies</a></p>
+    <div class="c-head"><div><h1 class="c-pname">${esc(c.name)}</h1><p>${esc(tcStatus(c.status).label)}${c.statusDetail ? ' · ' + esc(tcMeeting(c.statusDetail)) : ''}${c.areas.length ? ' · ' + esc(c.areas.join(', ')) : ''} · ${esc(tcPlace(c) || 'country not recorded')} · ${c.client ? `client, ${Number(c.delegates)} delegates` : 'prospect'}</p></div>
+      <div class="act"><button class="btn ghost" onclick="tcArchive()">Archive</button></div></div>
+    <div class="c-pgrid">
+      <div class="c-pmain">${next}${logBox}
+        <div class="c-sheet"><h3>Communications and changes<b>${c.log.length}</b></h3>${c.log.map(tcEv).join('') || '<div class="c-empty">Nothing yet.</div>'}</div></div>
+      <aside class="c-pside">${details}${status}${contacts}${courses}</aside>
+    </div>`;
+}
+function tcToggle(id) { const el = document.getElementById(id); if (el) el.hidden = !el.hidden; }
+function tcEditForm(c) {
+  const M = T_META;
+  const input = (id, label, v, wide) => `<div class="${wide ? 'c-wide' : ''}"><label for="${id}">${esc(label)}</label><input id="${id}" value="${esc(v)}"></div>`;
+  const area = (a) => `<label><input type="checkbox" name="tceArea" value="${esc(a.id)}"${c.areas.includes(a.id) ? ' checked' : ''}> ${esc(a.label)}</label>`;
+  const pics = [...new Set([c.pic, ...M.pics].filter(Boolean))];
+  return `<div class="c-sheet c-facts"><h3>Edit details</h3><div class="c-pad"><div class="c-form c-form1">
+    ${input('tceName', 'Name', c.name, true)}${input('tceCountry', 'Country', c.country)}${input('tceCity', 'City', c.city)}
+    ${input('tceAddress', 'Address', c.address, true)}${input('tceWebsite', 'Website', c.website, true)}
+    <div><label for="tcePic">Person in charge</label><select id="tcePic"><option value="">Nobody yet</option>${pics.map((p) => `<option${p === c.pic ? ' selected' : ''}>${esc(p)}</option>`).join('')}</select></div>
+    <div><label>Areas</label><div class="tc-ticks">${M.areas.map(area).join('')}</div></div>
+    <div class="c-wide"><label for="tceInfo">Information to send</label><textarea id="tceInfo" rows="2">${esc(c.infoToSend)}</textarea></div>
+    <div class="c-wide"><label for="tceNotes">Notes</label><textarea id="tceNotes" rows="4">${esc(c.notes)}</textarea></div>
+    <div id="tceErr" class="c-wide"></div>
+    <div class="c-wide c-row-acts"><button class="btn" onclick="tcSaveDetails()">Save</button><button class="btn ghost" onclick="T_EDIT=false;tcDrawCompany()">Cancel</button></div>
+    <p class="c-hint c-wide">Every change is written to the log with what it was, what it became and ${AUTH.user ? 'your name' : 'the name picked in the sidebar'}.</p></div></div></div>`;
+}
+const tcErr = (id, m) => { const e = $(id); if (e) e.innerHTML = `<div class="err">${esc(m)}</div>`; };
+async function tcEdit(patch) {
+  try { await post(`/api/tc/companies/${Number(T_CO.id)}/edit`, patch); await tcReload(); } catch (e) { alert(e.message); }
+}
+async function tcSaveDetails() {
+  const c = T_CO, v = (id) => ($(id) || {}).value || '';
+  const want = { name: v('#tceName'), country: v('#tceCountry'), city: v('#tceCity'), address: v('#tceAddress'), website: v('#tceWebsite'),
+    pic: v('#tcePic'), infoToSend: v('#tceInfo'), notes: v('#tceNotes') };
+  const patch = {};
+  for (const [k, val] of Object.entries(want)) if (val.trim() !== String(c[k] || '')) patch[k] = val;
+  const areas = [...document.querySelectorAll('input[name="tceArea"]:checked')].map((x) => x.value);
+  if (areas.join() !== c.areas.join()) patch.areas = areas;
+  try {
+    if (Object.keys(patch).length) await post(`/api/tc/companies/${Number(c.id)}/edit`, patch);
+    T_EDIT = false; T_META = null; await tcMeta(); await tcReload();
+  } catch (e) { tcErr('#tceErr', e.message); }
+}
+async function tcLog() {
+  const v = (id) => ($(id) || {}).value || '';
+  try {
+    await post(`/api/tc/companies/${Number(T_CO.id)}/activities`, { kind: v('#tcKind'), day: v('#tcDay'), body: v('#tcBody'),
+      contactId: v('#tcWith') || null, nextDue: v('#tcNextDue') || null });
+    await tcReload();
+  } catch (e) { tcErr('#tcLogErr', e.message); }
+}
+function tcOpenNext() {
+  const c = T_CO;
+  modal(c.next ? 'Move the next communication' : 'Set the next communication', `<div class="c-form c-form1">
+    <div><label for="tcnDue">Date</label><input id="tcnDue" type="date" value="${esc(c.next ? c.next.due : '')}" min="${esc(cTodayIso())}"></div>
+    <div><label for="tcnLabel">What</label><input id="tcnLabel" value="${esc(c.next ? c.next.label : T_META.nextLabel)}"></div>
+    <div id="tcnErr" class="c-wide"></div>
+    <div class="c-wide c-row-acts"><button class="btn" onclick="tcSaveNext()">Save</button><button class="btn ghost" onclick="closeModal()">Cancel</button></div></div>`);
+}
+async function tcSaveNext() {
+  try { await post(`/api/tc/companies/${Number(T_CO.id)}/next`, { due: $('#tcnDue').value, label: $('#tcnLabel').value }); closeModal(); await tcReload(); }
+  catch (e) { tcErr('#tcnErr', e.message); }
+}
+function tcOpenDone(taskId) {
+  modal('Done', `<div class="c-form c-form1">
+    <div class="c-wide"><label for="tcdOut">How did it go?</label><textarea id="tcdOut" rows="3"></textarea></div>
+    <div><label for="tcdNext">Next contact on</label><input id="tcdNext" type="date" min="${esc(cTodayIso())}"></div>
+    <div id="tcdErr" class="c-wide"></div>
+    <div class="c-wide c-row-acts"><button class="btn" onclick="tcDone(${Number(taskId)})">Save</button><button class="btn ghost" onclick="closeModal()">Cancel</button></div></div>`);
+}
+async function tcDone(taskId) {
+  try { await post(`/api/tc/tasks/${Number(taskId)}/done`, { outcome: $('#tcdOut').value, nextDue: $('#tcdNext').value || null }); closeModal(); await tcReload(); }
+  catch (e) { tcErr('#tcdErr', e.message); }
+}
+async function tcAddContact() {
+  const v = (id) => ($(id) || {}).value || '';
+  try { await post(`/api/tc/companies/${Number(T_CO.id)}/contacts`, { name: v('#tckName'), position: v('#tckPos'), email: v('#tckEmail'), phone: v('#tckPhone') }); await tcReload(); }
+  catch (e) { tcErr('#tckErr', e.message); }
+}
+async function tcArchiveContact(id) {
+  if (!confirm('Archive this contact? It leaves the list and stays in the log.')) return;
+  try { await post(`/api/tc/contacts/${Number(id)}/archive`, {}); await tcReload(); } catch (e) { alert(e.message); }
+}
+async function tcSaveYear() {
+  const v = (id) => ($(id) || {}).value || '';
+  try { await post(`/api/tc/companies/${Number(T_CO.id)}/courses`, { year: Number(v('#tcyYear')), attendees: v('#tcyN'), codes: v('#tcyCodes') }); await tcReload(); }
+  catch (e) { tcErr('#tcyErr', e.message); }
+}
+async function tcArchive() {
+  if (!confirm('Archive this company? It leaves every list; its log and contacts are kept.')) return;
+  try { await post(`/api/tc/companies/${Number(T_CO.id)}/archive`, {}); location.hash = '#/tc/companies'; } catch (e) { alert(e.message); }
+}
+
+// ---- NEXT CONTACTS: Due for companies - Overdue, This week, Later; whose ----
+let T_NX = { when: '', owner: '' };
+let T_NXD = null;
+function tcNextPick(v) { T_NX.when = T_NX.when === v ? '' : v; tcDrawNext(); }
+async function tcNextOwner(v) { T_NX.owner = v; await viewTcNext(); }
+async function viewTcNext() {
+  T_NXD = await api('/api/tc/next?owner=' + encodeURIComponent(T_NX.owner || 'all'));
+  tcDrawNext();
+}
+function tcDrawNext() {
+  const D = T_NXD;
+  const rows = T_NX.when ? D.rows.filter((r) => r.when === T_NX.when) : D.rows;
+  const whose = cPoolSelect('Person in charge', T_NX.owner, [['me', 'Mine'], ...T_META.pics.map((p) => [p, p])], 'tcNextOwner(this.value)');
+  $('#view').innerHTML = cPoolFrame({
+    title: 'Next contacts',
+    band: cPoolCards('Next contacts', 'Next contacts', [{ id: 'over', label: 'Overdue', n: D.counts.over }, { id: 'week', label: 'This week', n: D.counts.week },
+      { id: 'later', label: 'Later', n: D.counts.later }], T_NX.when, 'tcNextPick'),
+    filters: cPoolFilters('next contacts', [whose], T_NX.when || T_NX.owner ? "T_NX={ when: '', owner: '' };viewTcNext()" : ''),
+    body: rows.length ? `<div class="tc-rows">${rows.map(tcRow).join('')}</div>` : '<div class="c-sheet"><div class="c-empty">Nothing here.</div></div>',
+  });
+  cPoolWire();
+}
+
+// ---- HELP CENTER, TRAINING CENTRE: its own how-to and questions (config/help.json "tc", served with /api/tc/meta) ----
+function viewTcHelp() {
+  const H = T_META.help || { howto: [], faq: [] };
+  const how = H.howto.map((h) => `<a class="c-line c-hhow" href="${esc(h.href)}"><div class="c-who"><b>${esc(h.do)}</b><small>${esc(h.where)}</small></div><div class="c-when">›</div></a>`).join('');
+  $('#view').innerHTML = `<div class="c-head"><div><h1>Help center</h1></div><div class="act"><button class="btn" onclick="fbOpen('BUG')">Report a problem</button></div></div>
+    <h2 class="c-set-h">How to</h2><div class="c-sheet c-set">${how}</div>
+    <h2 class="c-set-h">Questions and answers</h2><div id="helpFaq" class="c-helpfaq"></div>
+    ${isAdmin() ? '<h2 class="c-set-h">For admins</h2><div class="c-helpadmin"><a href="#/access">People and access</a></div>' : ''}`;
+  if (window.HelpCenter) HelpCenter.mount(document.getElementById('helpFaq'), { faq: H.faq || [], onAsk: (text) => fbOpen('QUESTION', text) });
+}
+
+// ---- PEOPLE AND ACCESS (admins): which half each account opens; every change logged ----
+async function viewAccess() {
+  if (!isAdmin()) { $('#view').innerHTML = '<div class="c-head"><div><h1>People and access</h1></div></div><div class="c-sheet"><div class="c-empty">This page is for admins.</div></div>'; return; }
+  const D = await api('/api/admin/access');
+  const tick = (u, a) => `<label class="tc-tick"><input type="checkbox"${u.areas.includes(a.id) ? ' checked' : ''} aria-label="${esc(u.name)}: ${esc(a.label)}"
+      onchange="cAccessSet(${esc(JSON.stringify(String(u.id ?? '')))}, ${esc(JSON.stringify(String(a.id ?? '')))}, this.checked)"><span>${esc(a.label)}</span></label>`;
+  const row = (u) => `<div class="c-line tc-access${u.active ? '' : ' is-off'}"><div class="c-who"><b>${esc(u.name)}</b><small>${esc(u.email)}</small></div>
+      <div class="c-what"><span class="p-stage">${u.role === 'admin' ? 'Admin' : 'User'}</span>${u.active ? '' : ' · switched off'}<small class="p-step">${u.lastLogin ? 'last signed in ' + esc(fmtDate(u.lastLogin)) : 'never signed in'}</small></div>
+      <div class="tc-ticks">${D.areas.map((a) => tick(u, a)).join('')}</div></div>`;
+  const label = (id) => (D.areas.find((a) => a.id === id) || {}).label || id;
+  $('#view').innerHTML = `<p class="c-crumb"><a href="${C_AREA === 'tc' ? '#/tc/help' : '#/help'}">Help center</a></p>
+    <div class="c-head"><div><h1>People and access</h1></div></div>
+    <div class="c-sheet p-rows">${D.users.map(row).join('') || '<div class="c-empty">No accounts.</div>'}</div>
+    <h2 class="c-set-h">Changes</h2><div class="c-sheet">${D.log.map((l) => `<div class="c-evt"><div class="c-evt-when">${cStamp(l.at)} · ${esc(l.by)}</div>
+      <div class="c-evt-what">${l.action === 'grant' ? 'Gave' : 'Took away'} ${esc(label(l.area))} · ${esc(l.who)}</div></div>`).join('') || '<div class="c-empty">No change yet.</div>'}</div>`;
+}
+async function cAccessSet(userId, area, on) {
+  try { await post('/api/admin/access', { userId, area, on: on === true }); } catch (e) { alert(e.message); }
+  await viewAccess();
+}
+
 (async () => {
   // WHO ARE YOU, BEFORE ANYTHING ELSE IS FETCHED.
   //
@@ -9779,6 +10346,8 @@ async function cpPushSetup() {
  * It healed on the next reload, which is exactly why it survived a manual pass.
  */
 async function startShell() {
+  // An account without Academy (19.10.2026) never asks for Academy's settings: the server would refuse them.
+  if (AUTH.on && AUTH.user && Array.isArray(AUTH.user.areas) && !AUTH.user.areas.includes('academy')) return startShellTc();
   CFG = await api('/api/config');
   signinProgress('settings');  // the sign-in bar, step 2: the settings have answered
   $('#ver').innerHTML = 'Intake &middot; ' + (CFG.version || 'prototype');
