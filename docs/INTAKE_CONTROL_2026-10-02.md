@@ -854,3 +854,8 @@ Seen: GitHub - no Aigars commits since 309b10f; crm-novikontas.vercel.app = 1ced
 - Next: Client Hub import apply (owner's yes) with TC-DATA 2's script: preview -> apply with hash -> counts.
 - MASTER PITCHER BUILD_BRIEF.md received (Home M1, My week + Log + G3, Client book, Season); NEW data: tc_tasks.kind/outcome, gcal_event_id, tc_events + tc_event_companies, vendor tab, 2024 count rule.
 - HIS PICKS 20.10: 2 build lanes (TC-HOME 3: Home + Client book + menu; TC-WEEK 3: My week + Log + Season); 2024 = plain 0.
+
+## 20.10.2026 - Client Hub import APPLIED on live Intake (owner's yes)
+- Script Backups/apply_clienthub_import_2026_10.mjs (TC-DATA 2), app = crm-tiles at 0878f73 = origin/production. Preview hash afcef4f1ef7716ccc3c3384d59851378dd91945855d5036f6963cab719ab87d6 = the reported one.
+- Backup right before: 2026-10-20T17-48-04Z (38 tables, 26,684 rows). APPLIED: true.
+- After: companies 1,497 -> 1,927 (+430 from Client Hub); contacts 1,448 -> 3,022 (+1,574 from Client Hub). Batch rows: added 1,574, created 430, duplicate 229, review 326, skipped 148 (= 2,277 contact rows). crm_% schemas created: none.
