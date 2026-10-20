@@ -820,3 +820,9 @@ Seen: GitHub - no Aigars commits since 309b10f; crm-novikontas.vercel.app = 1ced
 
 ## 20.10.2026 - MASTER PITCHER
 - Owner's pick: a standing pitch session, pictures only, no app code; picks come to MASTER CONTROL. Backlog + memory master-pitcher-session. Chip task_65275bcb (folder Projects/Pitches/intake-tc).
+
+## 20.10.2026 - TC-UI 2 final report
+- feat/2026-10-20-tc-ui2 on 2ed8c46: 39a8601 (person in charge = account, src/tcpic.js, Mine), b1bd3f8 (= patch 63), f8aec01 (screen fixes: Show more pages 100 at a time, company log latest 15, Next contacts empty text, TC Home full-year compare), 48d5979 (test pin). Suite 1,770/1,771 then green.
+- Names matched to accounts: 4 of 20 (Mārcis Žabovs 45, Aigars Klūga 28, Māris Cīrulis 12, Aleksandrs Lukaševičs 1); 86 companies. 88 before/after PNGs in _training-centre/screens/round2.
+- Owner questions: PIC change admin-only? open next contact keeps old owner? (Mine two-word names only with sign-in off: laptop only.)
+- Next: one release branch on production b21a910 with all three lanes, full suite, pictures to owner.
