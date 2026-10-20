@@ -2822,7 +2822,7 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tw-k svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
   html.ui-c .tw-ok{margin-left:auto;color:var(--c-ok)}
   html.ui-c .tw-from{margin-left:auto;color:var(--t3);font-weight:500}
-  html.ui-c .tw-card b{display:block;font-size:13.5px;font-weight:650;line-height:1.25}
+  html.ui-c .tw-card b{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:13.5px;font-weight:650;line-height:1.25}   /* a long company name: two lines, the full name on hover */
   html.ui-c .tw-who{display:block;font-size:12px;color:var(--t3);margin-top:2px}
   html.ui-c .tw-why{display:inline-block;font-size:11.5px;background:var(--c-accent-bg);color:var(--ink);border-radius:6px;padding:2px 7px;margin-top:7px}
   html.ui-c .tw-pic{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--c-accent-bg);color:var(--ink);font-size:10.5px;font-weight:700;flex:none}
@@ -10995,7 +10995,7 @@ function twScope(s) { T_WK.scope = s; viewTcWeek(); }
 function twCard(c, team) {
   const top = `<span class="tw-k">${TW_ICON[c.kind] || ''}${esc(c.kindLabel)}</span>${c.done ? `<span class="tw-ok"${c.result ? ` title="${esc(c.result)}"` : ''}>✓ Logged</span>`
     : c.from ? `<span class="tw-from">from ${esc(c.from)}</span>` : ''}${team && c.ownerInitials ? `<span class="tw-pic" title="${esc(c.owner)}">${esc(c.ownerInitials)}</span>` : ''}`;
-  const inner = `<span class="tw-top">${top}</span><b>${esc(c.name)}</b>${c.contact ? `<span class="tw-who">${esc(c.contact)}</span>` : ''}
+  const inner = `<span class="tw-top">${top}</span><b title="${esc(c.name)}">${esc(c.name)}</b>${c.contact ? `<span class="tw-who">${esc(c.contact)}</span>` : ''}
     ${c.topic ? `<span class="tw-why">${esc(c.topic)}</span>` : ''}`;
   return c.done ? `<a class="tw-card done" href="#/tc/company/${Number(c.companyId)}">${inner}</a>`
     : `<button type="button" class="tw-card" onclick="twLogOpen(${Number(c.taskId)})">${inner}</button>`;
