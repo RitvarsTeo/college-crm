@@ -9,6 +9,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { openDb } from '../src/db.js';
 import { report, maturedBasis, maturedConversion, periodOf, MATURED_DAYS } from '../src/reports.js';
+import { localDate } from '../src/bizday.js';   // the app's own day (Riga); a UTC date is yesterday between 00:00 and 03:00
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
@@ -36,7 +37,7 @@ test('a lead added last week is not in the denominator; one that arrived 60+ day
   const db = await people([
     ['old-won', ago(120), ago(30)], ['old-open', ago(90)], ['edge', ago(61)],
     ['last-week', ago(7)], ['last-week-won', ago(6), ago(1)], ['young', ago(40)]]);
-  const r = await report(db, { from: '2000-01-01' , to: new Date().toISOString().slice(0, 10) });
+  const r = await report(db, { from: '2000-01-01' , to: localDate() });
   assert.equal(r.summary.newLeads, 6, 'every arrival is still a lead');
   assert.equal(r.summary.conversionB, 3, 'only the three who arrived 60+ days ago are the base');
   assert.equal(r.summary.conversionA, 1, 'and of them, the one admitted; last week\'s admission is not counted');
@@ -45,7 +46,7 @@ test('a lead added last week is not in the denominator; one that arrived 60+ day
   assert.equal(r.summary.conversionOf, '1 of 3 people who arrived 60+ days ago');
   // nobody matured: a dash, never 0%
   const fresh = await people([['a', ago(3)], ['b', ago(2), ago(1)]]);
-  const f = (await report(fresh, { from: '2000-01-01', to: new Date().toISOString().slice(0, 10) })).summary;
+  const f = (await report(fresh, { from: '2000-01-01', to: localDate() })).summary;
   assert.equal(f.conversionB, 0);
   assert.equal(f.conversionPct, null);
 });
@@ -78,7 +79,7 @@ test('one definition: the server report, the core metric, Home and Reports all r
 
 test('Reports counts the same people as the server, and the click opens exactly them', async () => {
   const db = await people([['old-won', ago(120), ago(30)], ['old-open', ago(90)], ['last-week', ago(7)], ['last-week-won', ago(6), ago(1)]]);
-  const conv = await maturedConversion(db, periodOf('2000-01-01', new Date().toISOString().slice(0, 10)));
+  const conv = await maturedConversion(db, periodOf('2000-01-01', localDate()));
   assert.deepEqual([conv.admitted, conv.of], [1, 2]);
   // the browser side, on the same rows: people created before the cutoff
   const rows = await db.prepare('SELECT * FROM people').all();

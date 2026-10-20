@@ -205,7 +205,7 @@ export async function logContact(db, taskId, b, actor, { now = new Date() } = {}
   const today = localDate(now);
   const due = nextDay(today, String(b.next || ''), b.nextDue);
   const note = clip(b.note, 4000);
-  const at = new Date().toISOString();
+  const at = now.toISOString();   // the same clock as today (a test passes its own now)
   return db.transaction(async (tx) => {
     await tx.prepare('UPDATE tc_tasks SET done_at = ?, outcome = ?, result = ?, kind = ? WHERE id = ?')
       .run(at, `${res.label}${note ? ': ' + note : ''}`.slice(0, 2000), res.id, k.id, t.id);

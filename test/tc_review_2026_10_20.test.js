@@ -206,13 +206,13 @@ test('the routes on a laptop copy: the admin loads, the list answers, Place and 
   assert.match(bad2.error, /why it is not a contact/);
 });
 
-test('the screen: reached from Companies (never a new top menu item), its own block, no word that reads as someone being late', async () => {
+test('the screen: reached from Companies and from the menu item From Client Hub under Companies (the owner’s picked picture), its own block, no word that reads as someone being late', async () => {
   const fs = await import('node:fs');
   const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
   assert.match(app, /else if \(place === 'review'\) await viewTcReview\(\);/, 'the route');
   assert.match(app, /act: `\$\{tcRvLink\(\)\}<input class="c-search" id="tcQ"/, 'the link on Companies');
   const nav = app.slice(app.indexOf('<a href="#/tc" data-c="tc-home"'), app.indexOf('data-c="tc-help"'));
-  assert.doesNotMatch(nav, /tc\/review/, 'not a menu item');
+  assert.match(nav, /<a href="#\/tc\/review" data-c="tc-review" id="tnReviewA"[^>]*hidden><span>From Client Hub<\/span>/, 'under Companies, hidden until contacts wait');
   const block = app.slice(app.indexOf('THE CLIENT HUB REVIEW LIST (#/tc/review) --'), app.indexOf('function viewTcHelp() {'));
   assert.ok(block.length > 2000, 'the block is found');
   assert.doesNotMatch(block.replace(/\/\/.*$/gm, ''), /\b(overdue|late|waiting since|days ago|still not|behind)\b/i);

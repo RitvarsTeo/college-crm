@@ -11153,7 +11153,7 @@ function tcDrawSeason() {
       ${S.undated.length ? `<p class="ts-undated">Date not known: ${S.undated.map((e) => `<a href="#/tc/season/event/${Number(e.id)}">${esc(e.name)}</a>`).join(', ')}</p>` : ''}</div>`;
 }
 const tcCount = (n, one, many) => `${Number(n)} ${Number(n) === 1 ? one : many}`;
-const tcInitials = (name) => String(name || '').split(/\s*;\s*/)[0].split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
+// tcInitials is the one defined with TC Home (same letters); a second const would stop the whole page
 async function viewTcEvent(id) {
   T_EVD = await api('/api/tc/events/' + Number(id));
   tcDrawEvent();
