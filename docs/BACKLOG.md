@@ -41,6 +41,15 @@ its data and features move into Intake. No separate Client Hub redesign (the CH 
 **Out of scope / not decided:** a CH redesign (stopped); TC open answers (offices per country, course counts source,
 companies with no status - defaults in use); phone: marked number of a known person.
 
+## 20.10.2026 - MASTER PITCHER session (owner's pick)
+
+- `DECIDED` (owner 20.10: "i need a session, called Master Pitcher ... who works as idea pitcher for the tools and apps
+  ... im open for pitches and working alongside with engineering master session") **One standing session, MASTER
+  PITCHER**, pitches what a tool should look like and do, as pictures (A/B/C side by side, real data shape), never as
+  word lists. First brief: **Intake Training Centre** (screens and functions for the TC team). It does not write app
+  code or deploy; his picks go to MASTER CONTROL, which records them here and builds them through the lanes.
+  Pitch boards live in `Local Repo/Projects/Pitches/<app>/`.
+
 ## 20.10.2026 - Ieva's feedback (owner: "we still have bugs to fix")
 
 - `DECIDED` (owner 20.10: "why is the top bar floating frozen?") the Journey stage bar folds and stays pinned when scrolling, and in the List it sits over the open edit panel. Shown as pictures A/B/C; first pick A, then his final word "Stays but slimmer!" = **C**: LIVE patch 62 (pinned, one thin line, no box or shadow).
