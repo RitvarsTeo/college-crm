@@ -2674,7 +2674,7 @@ svg .m-flag-mark{transform-origin:0 100%}
     html.ui-c .tc-access{grid-template-columns:minmax(0,1fr)}
   }
   /* MY WEEK + SEASON (the owner's picks B and C, 20.10.2026; pictures Pitches/intake-tc/board1). Today is amber, data blue
-     #29a8df, buttons navy; a carried contact is drawn like any other, never red. */
+     var(--c-sis), buttons navy; a carried contact is drawn like any other, never red. */
   html.ui-c .tw-head{align-items:center;flex-wrap:wrap;gap:12px}
   html.ui-c .tw-title{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
   html.ui-c .tw-title h1{margin:0}
@@ -2691,7 +2691,7 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tw-dh span{font-size:12px;color:var(--t3);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
   html.ui-c .tw-dh b{font-size:20px;font-weight:600}
   html.ui-c .tw-dh em{margin-left:auto;font-style:normal;font-size:11px;font-weight:700;background:#fdf1d3;color:#6b4a07;border-radius:6px;padding:2px 7px}
-  html.ui-c .tw-card{display:block;width:100%;text-align:left;font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--c-card-line);border-left:3px solid #29a8df;border-radius:10px;
+  html.ui-c .tw-card{display:block;width:100%;text-align:left;font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--c-card-line);border-left:3px solid var(--c-sis);border-radius:10px;
     box-shadow:0 1px 2px rgba(10,36,99,.06),0 4px 12px rgba(10,36,99,.05);padding:10px 11px;cursor:pointer;text-decoration:none;position:relative}
   html.ui-c .tw-card:hover{box-shadow:var(--c-card-lift)}
   html.ui-c .tw-card.done{opacity:.6;border-left-color:var(--rule)}
@@ -2725,9 +2725,9 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tw-drawer h2{margin:0;font-size:22px}
   html.ui-c .tw-sub{margin:4px 0 0;color:var(--t2);font-size:13.5px}
   html.ui-c .tw-drawer h4{margin:20px 0 8px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--t2)}
-  html.ui-c .tw-drawer .c-chips{margin:0}
-  html.ui-c .tw-drawer .c-chip{padding:8px 14px;font-size:13.5px}
-  html.ui-c .tw-drawer .c-chip[aria-pressed="true"]{background:var(--btn-bg);color:var(--btn-ink);border-color:var(--btn-bg)}
+  html.ui-c .tw-opts{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  html.ui-c .tw-opt{border:1px solid var(--control-line);background:var(--surface);color:var(--ink);border-radius:9px;padding:8px 14px;font:inherit;font-size:13.5px;font-weight:500;cursor:pointer;width:auto}
+  html.ui-c .tw-opt[aria-pressed="true"]{background:var(--btn-bg);color:var(--btn-ink);border-color:var(--btn-bg);font-weight:600}
   html.ui-c .tw-drawer textarea{width:100%}
   html.ui-c .tw-drawer #twDate{margin-top:8px}
   html.ui-c .tw-next{margin-top:14px;padding:12px 14px;border-radius:10px;background:var(--c-accent-bg);font-size:14px}
@@ -2744,11 +2744,11 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .ts-ln{font-size:13px;font-weight:650;padding-right:8px}
   html.ui-c .ts-ln small{display:block;font-weight:500;color:var(--t3);font-size:11.5px}
   html.ui-c .ts-track{position:relative;height:62px;background-image:linear-gradient(90deg,var(--rule2) 1px,transparent 1px);background-size:calc(100% / 12) 100%}
-  html.ui-c .ts-ev{position:absolute;top:11px;height:40px;border-radius:9px;background:#29a8df;color:#fff;padding:4px 9px;font-size:12px;font-weight:650;line-height:1.25;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;text-decoration:none;box-sizing:border-box}
+  html.ui-c .ts-ev{position:absolute;top:11px;height:40px;border-radius:9px;background:var(--c-sis);color:#fff;padding:4px 9px;font-size:12px;font-weight:650;line-height:1.25;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;text-decoration:none;box-sizing:border-box}
   html.ui-c .ts-ev small{display:block;font-weight:500;opacity:.95;font-size:11px;overflow:hidden;text-overflow:ellipsis}
   html.ui-c .ts-ev.soft{background:var(--c-accent-bg);color:var(--ink)}
   html.ui-c .ts-ev.navy{background:var(--btn-bg);color:var(--btn-ink)}
-  html.ui-c .ts-ev.tbc{background:var(--surface);color:var(--ink);border:1.5px dashed #29a8df}
+  html.ui-c .ts-ev.tbc{background:var(--surface);color:var(--ink);border:1.5px dashed var(--c-sis)}
   html.ui-c .ts-today{position:absolute;top:-34px;bottom:-130px;width:0;border-left:2px solid #F7C04F;z-index:3;pointer-events:none}
   html.ui-c .ts-today:before{content:"Today";position:absolute;top:-2px;left:-20px;font-size:10.5px;font-weight:700;background:#fdf1d3;color:#6b4a07;border-radius:5px;padding:1px 6px}
   html.ui-c .ts-mlist{display:none}
@@ -2758,7 +2758,7 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .ts-key{display:flex;gap:14px;font-size:12px;color:var(--t2);margin:0 0 8px}
   html.ui-c .ts-key i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
   html.ui-c .ts-key i.a, html.ui-c .ts-cbar i.a{background:#cfe9f7}
-  html.ui-c .ts-key i.c, html.ui-c .ts-cbar i.c{background:#29a8df}
+  html.ui-c .ts-key i.c, html.ui-c .ts-cbar i.c{background:var(--c-sis)}
   html.ui-c[data-theme="dark"] .ts-key i.a, html.ui-c[data-theme="dark"] .ts-cbar i.a{background:#2c5a82}
   html.ui-c .ts-crow{display:grid;grid-template-columns:150px minmax(0,1fr) 70px;align-items:center;gap:10px;padding:5px 0}
   html.ui-c .ts-crow a{font-size:13.5px;font-weight:600;color:var(--ink);text-decoration:none}
@@ -10597,7 +10597,7 @@ async function twLogOpen(taskId) {
   twDrawLog();
 }
 function twChips(key, list) {
-  return `<div class="c-chips" role="group">${list.map((o) => `<button type="button" class="c-chip" aria-pressed="${T_LOG[key] === o.id}" onclick="T_LOG[${esc(JSON.stringify(String(key ?? '')))}]=${esc(JSON.stringify(String(o.id ?? '')))};twDrawLog()">${esc(o.label)}</button>`).join('')}</div>`;
+  return `<div class="tw-opts" role="group">${list.map((o) => `<button type="button" class="tw-opt" aria-pressed="${T_LOG[key] === o.id}" onclick="T_LOG[${esc(JSON.stringify(String(key ?? '')))}]=${esc(JSON.stringify(String(o.id ?? '')))};twDrawLog()">${esc(o.label)}</button>`).join('')}</div>`;
 }
 function twDrawLog() {
   const L = T_LOG, D = T_WKD, d = L.d;
@@ -10635,13 +10635,13 @@ function twPlanOpen(companyId, day) {
   if (companyId) { const r = T_WKD.ready.rows.find((x) => x.id === Number(companyId)); T_PL.name = r ? r.name : ''; }
   modal('Plan a contact', `<div class="c-form c-form1">
     ${companyId ? `<div class="c-wide"><b>${esc(T_PL.name)}</b></div>` : `<div class="c-wide"><label for="twpQ">Company</label><input id="twpQ" placeholder="Company name, city or country" oninput="twPlanSearch()"><div id="twpHits"></div></div>`}
-    <div class="c-wide"><label>How</label><div class="c-chips" id="twpKind">${T_WKD.kinds.map((k) => `<button type="button" class="c-chip" aria-pressed="${k.id === T_PL.kind}" onclick="twPlanKind(${esc(JSON.stringify(String(k.id ?? '')))})">${esc(k.label)}</button>`).join('')}</div></div>
+    <div class="c-wide"><label>How</label><div class="tw-opts" id="twpKind">${T_WKD.kinds.map((k) => `<button type="button" class="tw-opt" aria-pressed="${k.id === T_PL.kind}" onclick="twPlanKind(${esc(JSON.stringify(String(k.id ?? '')))})">${esc(k.label)}</button>`).join('')}</div></div>
     <div><label for="twpDay">Day</label><input id="twpDay" type="date" min="${esc(T_WKD.today)}" value="${esc(day || T_WKD.today)}"></div>
     <div><label for="twpTopic">Topic</label><input id="twpTopic" placeholder="2027 training plan"></div>
     <div id="twpErr" class="c-wide"></div>
     <div class="c-wide c-row-acts"><button class="btn" onclick="twPlanSave()">Save</button><button class="btn ghost" onclick="closeModal()">Cancel</button></div></div>`);
 }
-function twPlanKind(k) { T_PL.kind = k; document.querySelectorAll('#twpKind .c-chip').forEach((b, i) => b.setAttribute('aria-pressed', String(T_WKD.kinds[i].id === k))); }
+function twPlanKind(k) { T_PL.kind = k; document.querySelectorAll('#twpKind .tw-opt').forEach((b, i) => b.setAttribute('aria-pressed', String(T_WKD.kinds[i].id === k))); }
 let TW_T = 0;
 function twPlanSearch() {
   clearTimeout(TW_T);
@@ -10710,7 +10710,7 @@ function tcDrawSeason() {
       ${lane('Exhibitions', `${tcCount(ex.events.length, 'event', 'events')} · ${Number(ex.companies)} on lists`, ex.events.map(evBar).join(''), true)}
       ${lane(`Training plans ${S.plans.forYear}`, 'clients plan next year', plans)}
       ${lane('Calendars & gifts', 'year-end', S.calendars.events.map(evBar).join(''))}
-      <div class="ts-mlist">${months || '<div class="c-empty">Nothing planned this season.</div>'}</div>
+      <div class="ts-mlist">${months || '<div class="c-empty">No event this season.</div>'}</div>
       ${S.undated.length ? `<p class="ts-undated">Date not known: ${S.undated.map((e) => `<a href="#/tc/season/event/${Number(e.id)}">${esc(e.name)}</a>`).join(', ')}</p>` : ''}</div>
     <div class="c-sheet ts-cb"><h3>Where our companies are</h3><div class="ts-key"><span><i class="a"></i>companies</span><span><i class="c"></i>clients</span></div>
       ${rows || '<div class="c-empty">No country recorded.</div>'}
@@ -10745,7 +10745,7 @@ function tsCardOpen(linkId) {
   const col = E.columns.find((c) => c.cards.some((k) => k.linkId === Number(linkId)));
   const k = col.cards.find((x) => x.linkId === Number(linkId));
   modal(k.name, `<div class="c-form c-form1">${k.note ? `<div class="c-wide tw-sub">${esc(k.note)}</div>` : ''}
-    <div class="c-wide"><label>Move to</label><div class="c-chips">${E.stages.map((s) => `<button type="button" class="c-chip" aria-pressed="${s.id === col.stage}" onclick="tsMove(${Number(linkId)}, ${esc(JSON.stringify(String(s.id ?? '')))})">${esc(s.label)}</button>`).join('')}</div></div>
+    <div class="c-wide"><label>Move to</label><div class="tw-opts">${E.stages.map((s) => `<button type="button" class="tw-opt" aria-pressed="${s.id === col.stage}" onclick="tsMove(${Number(linkId)}, ${esc(JSON.stringify(String(s.id ?? '')))})">${esc(s.label)}</button>`).join('')}</div></div>
     <div id="tsErr" class="c-wide"></div>
     <div class="c-wide c-row-acts"><a class="btn ghost" href="#/tc/company/${Number(k.companyId)}" onclick="closeModal()">Open the company</a><button class="btn ghost" onclick="tsRemove(${Number(linkId)})">Take off the list</button></div></div>`);
 }
