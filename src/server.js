@@ -58,6 +58,7 @@ import { htmlEscape, inviteOrigin } from './systempages.js';
 import * as areas from './areas.js';
 import * as tc from './tc.js';
 import * as tcimport from './tcimport.js';
+import * as tcclienthub from './tcclienthub.js';
 
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -3286,6 +3287,19 @@ export const handle = async (req, res) => {
       const opts = { pastNext: b.pastNext || 'overdue', hash: b.hash };
       if (b.apply !== true) return json(res, 200, { preview: true, ...(await tcimport.preview(db, files, opts)).counts });
       return json(res, 200, await tcimport.apply(db, files, opts, await actorOf(req, b)));
+    }
+    // THE CLIENT HUB IMPORT, the same shape (src/tcclienthub.js): Client Hub contacts come into Intake once.
+    if (p === '/api/admin/tc/import-clienthub' && (req.method === 'GET' || req.method === 'POST')) {
+      if (!(await adminOf(req))) return json(res, 403, { error: 'The import is for admins only.' });
+      const ch = tc.TC.clienthubImport;
+      if (req.method === 'GET') {
+        const rows = await db.prepare('SELECT outcome, COUNT(*) AS n FROM tc_import_rows WHERE batch = ? GROUP BY outcome').all(ch.batch);
+        return json(res, 200, { batch: ch.batch, files: ch.files, done: Object.fromEntries(rows.map((r) => [r.outcome, Number(r.n)])) });
+      }
+      const b = await body(req, ch.maxBytes);
+      const files = tcimport.readFiles(b, { names: ch.files });
+      if (b.apply !== true) return json(res, 200, { preview: true, ...(await tcclienthub.preview(db, files)).counts });
+      return json(res, 200, await tcclienthub.apply(db, files, { hash: b.hash }, await actorOf(req, b)));
     }
 
     // ------------------------------------------------------------- feedback -

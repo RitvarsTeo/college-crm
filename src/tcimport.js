@@ -58,10 +58,11 @@ const NEEDS = {
 };
 
 /** The files, from an upload { files: { 'companies.csv': text, ... } } or, never on a hosted copy, a folder. */
-export function readFiles(b, { hosted = Boolean(process.env.VERCEL) } = {}) {
+export function readFiles(b, { hosted = Boolean(process.env.VERCEL), names = TC.import.files } = {}) {
   const out = {};
+  const all = names.length === 1 ? 'the file' : `the ${names.length} files`;
   if (b && b.files && typeof b.files === 'object') {
-    for (const name of TC.import.files) {
+    for (const name of names) {
       if (typeof b.files[name] !== 'string') throw new ImportError(`The upload has no ${name}.`);
       out[name] = b.files[name];
     }
@@ -70,14 +71,14 @@ export function readFiles(b, { hosted = Boolean(process.env.VERCEL) } = {}) {
   if (b && b.dir) {
     if (hosted) throw new ImportError('On the live copy the files are uploaded, never read from a folder.');
     const dir = path.resolve(String(b.dir));
-    for (const name of TC.import.files) {
+    for (const name of names) {
       const file = path.join(dir, name);
       if (!fs.existsSync(file)) throw new ImportError(`${name} is not in that folder.`);
       out[name] = fs.readFileSync(file, 'utf8');
     }
     return out;
   }
-  throw new ImportError('Send the three files (files) or, on a laptop, the folder they are in (dir).');
+  throw new ImportError(`Send ${all} (files) or, on a laptop, the folder ${names.length === 1 ? 'it is' : 'they are'} in (dir).`);
 }
 
 const day = (v) => {
