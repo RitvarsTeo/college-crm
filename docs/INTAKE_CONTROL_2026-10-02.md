@@ -885,3 +885,4 @@ Seen: GitHub - no Aigars commits since 309b10f; crm-novikontas.vercel.app = 1ced
 - Season seed (his "Yes, fill them"): backup 21-40-24Z; Backups/apply_season_seed_2026_10.mjs, hash d29dbf13...; APPLIED: 5 events, 171 on lists (Hamburg 37, OEEC 9, Wind Europe 2027 16, Donso 6, Calendars & gifts 103), none date-confirmed.
 - Review list load (needed for the R2 screen): hash 55099256...; APPLIED: 326 open (144 domain, 20 tie, 7 possible, 2 fuzzy, 153 no company).
 - Live read-only check: 2025 delegates without TOTAL = 3,711 from 164 companies (= the pick); next exhibition OEEC Amsterdam 24.11.2026 (to confirm). No crm_% schema created.
+- 21.10 night: TC-REVIEW session renamed TC-GO (local_dc37ecd0), building G1 Grand Opening page on synthetic data + Intake tables + one-off import from a read-only Client Hub extract; NOT run on production (owner decides in the morning).
