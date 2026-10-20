@@ -143,21 +143,22 @@ function page(p, year = '2026') {
   const ctx = { esc: (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])),
     fmtDate: (iso) => (iso ? String(iso).slice(0, 10) : ''), todayStr: () => year + '-10-16',
     actorName: (x) => (x === 'CRM' ? 'Intake' : x), cNotePreview: (s) => String(s ?? '').replace(/^(?:(?:Sheet status|Docs):[^|]*\|\s*)+/, '').trim() };
-  vm.runInNewContext(line('const cNoteDay =') + line('const cComment =') + fnSrc('function cListNote(') + '\nthis.out = cListNote(P);', Object.assign(ctx, { P: p }));
+  vm.runInNewContext(line('const cNoteDay =') + line('const cComment =') + line('const cCommentFull =') + fnSrc('function cListNote(') + '\nthis.out = cListNote(P);', Object.assign(ctx, { P: p }));
   return ctx.out;
 }
 
 test('page: one quiet line, who and the day first, escaped; nothing when there is no note', () => {
   const html = page({ list_note: { text: 'Pajautāts, vai ir pieņemts lēmums <script>', by: 'Ieva', at: '2026-10-16T09:00:00.000Z', from: 'history' } });
-  assert.equal(html, '<small class="c-lnote" title="Ieva · 16.10: Pajautāts, vai ir pieņemts lēmums &lt;script&gt;">Ieva · 16.10: Pajautāts, vai ir pieņemts lēmums &lt;script&gt;</small>');
+  // 20.10.2026: the line is a button that opens the whole text in place (test/list_comments_2026_10_20.test.js)
+  assert.match(html, /^<small class="c-lnote" role="button" tabindex="0" aria-expanded="false" title="Ieva · 16\.10: Pajautāts, vai ir pieņemts lēmums &lt;script&gt;" onclick="[^"]*" onkeydown="[^"]*"><span class="c-ln-one">Ieva · 16\.10: Pajautāts, vai ir pieņemts lēmums &lt;script&gt;<\/span><span class="c-ln-all" hidden>Ieva · 16\.10: Pajautāts, vai ir pieņemts lēmums &lt;script&gt;<\/span><\/small>$/);
   const named = page({ list_note: { text: 'Zvanīja', by: 'Laura Skirmante', at: '2026-10-16T09:00:00.000Z', from: 'history' } });
-  assert.match(named, /title="Laura Skirmante · 16\.10: Zvanīja">Laura · 16\.10: Zvanīja</, 'the first name on the line, the whole name on hover');
+  assert.match(named, /title="Laura Skirmante · 16\.10: Zvanīja"[^>]*><span class="c-ln-one">Laura · 16\.10: Zvanīja</, 'the first name on the line, the whole name on hover');
   assert.equal(page({ list_note: null }), '');
   assert.equal(page({}), '');
   assert.equal(page({ list_note: { text: '   ', by: 'Ieva', at: '2026-10-16T09:00:00.000Z', from: 'history' } }), '');
-  assert.match(page({ list_note: { text: 'old one', by: 'Ieva', at: '2025-03-02T09:00:00.000Z', from: 'call' } }), />Ieva · 02\.03\.2025: old one</, 'another year says its year');
-  assert.match(page({ list_note: { text: 'Sheet status: COLD | wants a call', by: null, at: null, from: 'notes' } }), />wants a call</, 'the import tags are left out, as on the card');
-  assert.match(page({ list_note: { text: 'two\nlines', by: 'Laura', at: '2026-10-16T09:00:00.000Z', from: 'notes' } }), />Laura · 16\.10: two lines</);
+  assert.match(page({ list_note: { text: 'old one', by: 'Ieva', at: '2025-03-02T09:00:00.000Z', from: 'call' } }), /"c-ln-one">Ieva · 02\.03\.2025: old one</, 'another year says its year');
+  assert.match(page({ list_note: { text: 'Sheet status: COLD | wants a call', by: null, at: null, from: 'notes' } }), /"c-ln-one">wants a call</, 'the import tags are left out, as on the card');
+  assert.match(page({ list_note: { text: 'two\nlines', by: 'Laura', at: '2026-10-16T09:00:00.000Z', from: 'notes' } }), /"c-ln-one">Laura · 16\.10: two lines</);
 });
 
 test('page: every List row carries it, and it is cut to one line with an ellipsis', () => {

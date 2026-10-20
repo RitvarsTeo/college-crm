@@ -169,6 +169,11 @@
       "a": "On Journey, open List: under each person one quiet line shows their newest note (a note or call written on their page, their Notes field, or the line typed under an answered call) with who wrote it and the day, and their History keeps every note."
     },
     {
+      "id": "edit-a-comment",
+      "q": "How do I read a whole comment and correct one I wrote?",
+      "a": "On the Journey List a click on the note line opens the whole comment, and the opened row lists every comment with who and when, where Edit corrects one you wrote (an admin any, the Notes field everybody) and History keeps the old text, while new comments go in the one Add a comment box."
+    },
+    {
       "id": "source-colours",
       "q": "Why are the sources on the Inbox cards in colour?",
       "a": "So you can see where a message came from at a glance: each source has its own colour, for example Email, Phone, Website, LinkedIn, WhatsApp, Facebook, Instagram. Any other source is grey. The red or navy edge of the card still says whether it needs you."

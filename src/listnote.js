@@ -25,10 +25,13 @@ export const LIST_NOTE_COLS = `ln_e.body AS ln_event_text, ln_e.actor AS ln_even
 // List four times slower (measured read-only 16.10.2026: 0.23 s -> 1.05 s for 917 people).
 const newest = (cols, from, where, order) => `(SELECT ${cols} FROM (SELECT ${cols},
     ROW_NUMBER() OVER (PARTITION BY person_id ORDER BY ${order}) AS ln_rn FROM ${from} WHERE ${where}) ln_x WHERE ln_rn = 1)`;
-export const LIST_NOTE_JOINS = `
-  LEFT JOIN ${newest('person_id, body, actor, occurred_at', 'events e', `e.origin = 'manual' AND e.kind IN ('note', 'call')
+// What counts as a comment somebody WROTE, over events aliased e: the List's line and the edit panel's comments
+// (src/comments.js, 20.10.2026) read the same rule, so the two never disagree about what a comment is.
+export const LIST_NOTE_EVENT_WHERE = `e.origin = 'manual' AND e.kind IN ('note', 'call')
     AND TRIM(COALESCE(e.body, '')) <> '' AND ${notMachine}
-    AND NOT EXISTS (SELECT 1 FROM inbound i WHERE i.person_id = e.person_id AND i.suggestion_why = e.body)`, 'occurred_at DESC, id DESC')} ln_e
+    AND NOT EXISTS (SELECT 1 FROM inbound i WHERE i.person_id = e.person_id AND i.suggestion_why = e.body)`;
+export const LIST_NOTE_JOINS = `
+  LEFT JOIN ${newest('person_id, body, actor, occurred_at', 'events e', LIST_NOTE_EVENT_WHERE, 'occurred_at DESC, id DESC')} ln_e
     ON ln_e.person_id = pe.id
   LEFT JOIN ${newest('person_id, actor, occurred_at', 'events e', "e.kind = 'edit' AND e.field = 'notes'", 'occurred_at DESC, id DESC')} ln_n
     ON ln_n.person_id = pe.id

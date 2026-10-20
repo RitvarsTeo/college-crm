@@ -53,6 +53,7 @@ import { foldContractStage, foldSisOnlyApplication } from './stagefold.js';
 import { redateSisAdmissions } from './sisdates.js';
 import { programmeNamesRepair } from './programmes.js';
 import { LIST_NOTE_COLS, LIST_NOTE_JOINS, pickListNote } from './listnote.js';
+import { commentsFor, editComment } from './comments.js';
 import { htmlEscape, inviteOrigin } from './systempages.js';
 import * as areas from './areas.js';
 import * as tc from './tc.js';
@@ -2157,6 +2158,25 @@ export const handle = async (req, res) => {
         subject: b.subject || 'Note', body: b.body || '' });
       await db.prepare('UPDATE people SET last_contact_at = ? WHERE id = ?').run(now, id);
       return json(res, 200, await personRow(id, await actorOf(req, b)));
+    }
+
+    // A PERSON'S COMMENTS (Admissions, 20.10.2026, src/comments.js): History notes and calls somebody wrote, the Notes
+    // field and the calls' "What was it about?", newest first, whole text. GET lists them with what the caller may edit;
+    // POST {ref, text} edits one: whoever wrote it, or an admin; the Notes field every user. Behind sign-in like the rest.
+    if (/^\/api\/people\/[^/]+\/comments$/.test(p) && (req.method === 'GET' || req.method === 'POST')) {
+      let id = '';
+      try { id = decodeURIComponent(p.split('/')[3]); } catch { return json(res, 400, { error: 'not a person' }); }
+      const me = await currentUser(req);
+      const b = req.method === 'POST' ? await body(req) : {};
+      const who = req.method === 'POST' ? await actorOf(req, b) : await viewerOf(req, url);
+      const admin = me ? me.role === 'admin' : isAdmin(who);
+      if (req.method === 'POST') {
+        const r = await editComment(db, id, { ref: b.ref, text: b.text, by: who === 'unknown user' ? '' : who, admin });
+        if (r.error) return json(res, r.status || 400, { error: r.error });
+      }
+      const rows = await commentsFor(db, id, { viewer: who, admin });
+      if (!rows) return json(res, 404, { error: 'not found' });
+      return json(res, 200, { rows, viewer: who || null, admin });
     }
 
     // ------------------------------------------------------------ intake ---

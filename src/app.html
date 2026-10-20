@@ -1735,6 +1735,16 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   /* the latest note under a Journey List row (16.10.2026): the whole row's width, one quiet line, an ellipsis */
   html.ui-c .p-rows .c-line > .c-lnote{grid-column:1/-1;min-width:0;margin-top:-8px;font-size:var(--type-detail);font-weight:400;
     color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* 20.10.2026 (Admissions: "from this view I can't see the full comment"): a click on the line opens the whole text in
+     place, a second click closes it; the row itself does not open */
+  html.ui-c .p-rows .c-line > .c-lnote[role="button"]{cursor:pointer}
+  html.ui-c .p-rows .c-line > .c-lnote.is-open{white-space:pre-wrap;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;color:var(--t2)}
+  /* the edit panel's comments: the whole text, who and when, Edit on what the reader may edit */
+  html.ui-c .pe-comments{margin-top:0;border-top:0;padding-top:0}
+  html.ui-c .pe-comments .c-talk-when{display:flex;gap:8px;align-items:baseline}
+  html.ui-c .pe-comments .c-talk-when .btn{margin-left:auto}
+  html.ui-c .pe-comments textarea{width:100%;margin-top:4px}
+  html.ui-c .pe-comments .c-row-acts{margin-top:6px}
   /* Q52: only the user's NEW count in the menu - the small mark and the bold figure; no total */
   html.ui-c .n{display:inline-flex;align-items:baseline;gap:3px;white-space:nowrap}
   html.ui-c .n .nw{font-style:normal;font-size:8.5px;font-weight:800;letter-spacing:.06em;line-height:1;padding:2px 4px 1px;border-radius:4px;
@@ -4565,7 +4575,16 @@ function cListNote(p) {
   const day = n.at ? cNoteDay(n.at) : '';
   const who = [by.split(/\s+/)[0], day].filter(Boolean).join(' · ');
   const full = [by, day].filter(Boolean).join(' · ');
-  return `<small class="c-lnote" title="${esc((full ? full + ': ' : '') + text)}">${who ? esc(who) + ': ' : ''}${esc(text)}</small>`;
+  // 20.10.2026: a click (or Enter) opens the WHOLE comment in place and closes it again; the row does not open
+  const all = String(cCommentFull(p)).trim() || text;
+  return `<small class="c-lnote" role="button" tabindex="0" aria-expanded="false" title="${esc((full ? full + ': ' : '') + text)}" onclick="event.stopPropagation();cNoteOpen(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();cNoteOpen(this)}"><span class="c-ln-one">${who ? esc(who) + ': ' : ''}${esc(text)}</span><span class="c-ln-all" hidden>${full ? esc(full) + ': ' : ''}${esc(all)}</span></small>`;
+}
+function cNoteOpen(el) {
+  const open = el.getAttribute('aria-expanded') !== 'true';
+  el.setAttribute('aria-expanded', String(open));
+  el.classList.toggle('is-open', open);
+  el.querySelector('.c-ln-one').hidden = open;
+  el.querySelector('.c-ln-all').hidden = !open;
 }
 function cDrawJourneyPool() {
   const { people, taskOf } = C_JPD;
@@ -4687,6 +4706,10 @@ function cGoPeople(filter) {
 // Journey's Edit opens the same person in People, unfiltered, scrolled to the row.
 // EDIT IN PLACE (Admissions 05.10: editing a person threw them to the People page; edit right on the Journey). On the
 // Board the opened card turns into the same edit form, right there; on the List the row opens it.
+// closing the panel: a comment edited in it is read again on the List line and the card
+function cCloseEdit() { const stale = C_PCSTALE; C_PEDIT = null; C_PCEDIT = null; C_PCSTALE = false;
+  if (!stale) return cEditRedraw();
+  if (C_JP.view === 'board' && C_JDATA) viewJourneyC(); else viewJourneyPool(); }
 function cEditRedraw() { if (C_JP.view === 'board' && C_JDATA) cDrawJourney(); else cDrawJourneyPool(); }
 function cEditFromJourney(id) { if (C_JP.view === 'board' && C_JDATA) { C_PEDIT = id; C_PMSG = ''; C_JSEL = id; return cDrawJourney(); }
   C_PF = C_PF_EMPTY(); C_PQ = ''; C_PEDIT = id; C_PMSG = ''; C_PSCROLL = true; C_PTAB = 'all'; C_JP.col = null; C_JP.view = 'board'; C_JF = C_JF_EMPTY(); C_JSEL = id;
@@ -4714,6 +4737,46 @@ function cPeopleMatch(p, t, f, known) {
   const one = (v) => (v ? [v] : []);
   return cJourneyMatch(p, t, { programme: one(f.programme), due: [], owner: one(f.owner), source: one(f.source) });
 }
+// A PERSON'S COMMENTS IN THE EDIT PANEL (Admissions, 20.10.2026: "I can no longer edit earlier comments", "for some people
+// earlier comments show in the box, for others not"). The Notes box showed only the Notes field; comments written with
+// Add a note, Log a call or Make a lead are in History. Now the panel lists them all (src/comments.js: History notes and
+// calls somebody wrote, the Notes field, the calls' "What was it about?"), newest first, whole text, who and when; Edit on
+// the ones the reader wrote (an admin: all; the Notes field: everybody), the edit logged in History with the old text.
+// Fetched once per opened person; only this box redraws, so what is typed in the form above stays.
+const C_PCOMM = new Map();   // person id -> rows | null (could not read)
+let C_PCEDIT = null;         // the ref being edited
+let C_PCSTALE = false;       // a comment was edited: the List line reads again on close
+function cCommentsHtml(id) {
+  if (!C_PCOMM.has(id)) { setTimeout(() => cLoadComments(id), 0); return '<p class="c-talk-wait">Reading…</p>'; }
+  const rows = C_PCOMM.get(id);
+  if (rows === null) return '<p class="c-talk-wait">Could not read the comments just now.</p>';
+  if (!rows.length) return '<p class="c-talk-wait">Nothing written yet.</p>';
+  return rows.map((c) => {
+    const when = [c.at ? cNoteDay(c.at) : 'before Intake', c.by ? actorName(c.by) : '', c.kind === 'call' ? 'call' : c.from === 'notes' ? 'Notes field' : '']
+      .filter(Boolean).map(esc).join(' · ');
+    const edited = c.edited ? ` · <i>edited${c.edited.by ? ' by ' + esc(actorName(c.edited.by)) : ''} ${esc(cNoteDay(c.edited.at))}</i>` : '';
+    if (C_PCEDIT === c.ref) return `<div class="c-talkrow"><div class="c-talk-when">${when}</div>
+      <textarea id="pe-cedit" rows="3" aria-label="Edit the comment">${esc(c.text)}</textarea><div id="pe-cerr"></div>
+      <div class="c-row-acts"><button class="btn sm" onclick="cSaveComment(${esc(JSON.stringify(String(id ?? '')))}, ${esc(JSON.stringify(String(c.ref)))})">Save comment</button><button class="btn sm ghost" onclick="C_PCEDIT=null;cDrawComments(${esc(JSON.stringify(String(id ?? '')))})">Cancel</button></div></div>`;
+    return `<div class="c-talkrow"><div class="c-talk-when"><span>${when}${edited}</span>${c.canEdit ? `<button type="button" class="btn sm ghost" onclick="C_PCEDIT=${esc(JSON.stringify(String(c.ref)))};cDrawComments(${esc(JSON.stringify(String(id ?? '')))})">Edit</button>` : ''}</div>
+      <div class="c-talk-what">${esc(c.text)}</div></div>`;
+  }).join('');
+}
+function cDrawComments(id) { const box = document.querySelector('#pe-comments'); if (box) box.innerHTML = cCommentsHtml(id); }
+async function cLoadComments(id) {
+  if (C_PCOMM.has(id)) return;
+  try { C_PCOMM.set(id, (await api(`/api/people/${encodeURIComponent(id)}/comments`)).rows || []); }
+  catch { C_PCOMM.set(id, null); }
+  if (C_PEDIT === id) cDrawComments(id);
+}
+async function cSaveComment(id, ref) {
+  const box = document.querySelector('#pe-cedit');
+  const text = box ? box.value : '';
+  try {
+    const r = await post(`/api/people/${encodeURIComponent(id)}/comments`, { ref, text });
+    C_PCOMM.set(id, r.rows || []); C_PCEDIT = null; C_PCSTALE = true; cDrawComments(id);
+  } catch (e) { const er = document.querySelector('#pe-cerr'); if (er) er.innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+}
 function cEditForm(p, t) {
   const progs = ['', ...(CFG.programmes || [])]; if (p.programme && !progs.includes(p.programme)) progs.push(p.programme);
   const stages = CFG.stages || [];
@@ -4729,9 +4792,10 @@ function cEditForm(p, t) {
     <div class="c-wide c-step">${t
       ? `<label for="pe-due">Next step</label><div class="c-steprow"><span>${esc(cTask(t.label))}</span><input id="pe-due" type="date" value="${esc(cDay(t.due_at))}" aria-label="Due date"><button class="btn sm ghost" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, false, ${esc(JSON.stringify(String(p.id ?? '')))})">Done…</button></div>`
       : open ? `<label>Next step</label>${cNextPick('pe', true)}` : '<label>Next step</label>'}</div>
-    <div class="c-wide"><label for="pe-notes">Notes</label><textarea id="pe-notes" rows="4" oninput="this.nextElementSibling.textContent=this.value.length+' characters'">${esc(p.notes || '')}</textarea><div class="c-hint">${(p.notes || '').length} characters</div></div>
+    <div class="c-wide"><label>Comments</label><div id="pe-comments" class="c-talk pe-comments">${cCommentsHtml(p.id)}</div></div>
+    <div class="c-wide"><label for="pe-new">Add a comment</label><textarea id="pe-new" rows="3"></textarea></div>
     <div id="pe-err" class="c-wide"></div>
-    <div class="c-wide c-row-acts"><button class="btn" onclick="cSavePerson(${esc(JSON.stringify(String(p.id ?? '')))})">Save</button><button class="btn ghost" onclick="C_PEDIT=null;cEditRedraw()">Cancel</button><a class="btn ghost" href="#/person/${esc(p.id)}" style="margin-left:auto">Open person details →</a></div>
+    <div class="c-wide c-row-acts"><button class="btn" onclick="cSavePerson(${esc(JSON.stringify(String(p.id ?? '')))})">Save</button><button class="btn ghost" onclick="cCloseEdit()">Cancel</button><a class="btn ghost" href="#/person/${esc(p.id)}" style="margin-left:auto">Open person details →</a></div>
   </div>`;
 }
 async function cSavePerson(id) {
@@ -4744,7 +4808,7 @@ async function cSavePerson(id) {
   if (v('#pe-status') === cClosedStage() && p.status !== cClosedStage() && (CFG.closedReasonNeedsNote || []).includes(v('#pe-reason')) && !String(v('#pe-rnote') || '').trim()) return err(`"${v('#pe-reason')}" needs an explanation.`);
   try {
     const patch = {};
-    for (const [f, sel] of [['name', '#pe-name'], ['email', '#pe-email'], ['phone', '#pe-phone'], ['programme', '#pe-programme'], ['notes', '#pe-notes']]) {
+    for (const [f, sel] of [['name', '#pe-name'], ['email', '#pe-email'], ['phone', '#pe-phone'], ['programme', '#pe-programme']]) {
       const now = v(sel); if (now !== null && now !== (p[f] || '')) patch[f] = now;
     }
     const st = v('#pe-status');
@@ -4755,6 +4819,10 @@ async function cSavePerson(id) {
     const pick = !t ? cNextPickRead('pe') : { kind: '' };
     if (pick.error) return err(pick.error);
     if (Object.keys(patch).length) await post(`/api/people/${id}/edit`, patch);
+    // the one box for a new comment (20.10.2026): it goes on History like Add a note; earlier ones are edited in the list
+    const said = String(v('#pe-new') || '').trim();
+    if (said) await post(`/api/people/${id}/note`, { kind: 'note', subject: 'Note', body: said });
+    C_PCOMM.delete(id); C_PCEDIT = null; C_PCSTALE = false;
     if (pick.kind === 'cold') await cGoCold(id, pick.reason);
     else if (st && st !== p.status) await post(`/api/people/${id}/status`, st === cClosedStage() ? { status: st, reason: v('#pe-reason'), note: v('#pe-rnote'), closedTag: (document.querySelector('input[name="peTag"]:checked') || {}).value || null } : cMoveBody(st, ask));
     if (t) { const due = v('#pe-due'); if (due && due !== cDay(t.due_at)) await post(`/api/tasks/${Number(t.id)}/reschedule`, { due }); }
