@@ -2753,22 +2753,7 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .ts-today:before{content:"Today";position:absolute;top:-2px;left:-20px;font-size:10.5px;font-weight:700;background:#fdf1d3;color:#6b4a07;border-radius:5px;padding:1px 6px}
   html.ui-c .ts-mlist{display:none}
   html.ui-c .ts-undated{margin:10px 0 0;font-size:12.5px;color:var(--t3)}
-  html.ui-c .ts-cb{padding:16px 20px;margin-top:16px}
-  html.ui-c .ts-cb h3{margin:0 0 8px}
-  html.ui-c .ts-key{display:flex;gap:14px;font-size:12px;color:var(--t2);margin:0 0 8px}
-  html.ui-c .ts-key i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
-  html.ui-c .ts-key i.a, html.ui-c .ts-cbar i.a{background:#cfe9f7}
-  html.ui-c .ts-key i.c, html.ui-c .ts-cbar i.c{background:var(--c-sis)}
-  html.ui-c[data-theme="dark"] .ts-key i.a, html.ui-c[data-theme="dark"] .ts-cbar i.a{background:#2c5a82}
-  html.ui-c .ts-crow{display:grid;grid-template-columns:150px minmax(0,1fr) 70px;align-items:center;gap:10px;padding:5px 0}
-  html.ui-c .ts-crow a{font-size:13.5px;font-weight:600;color:var(--ink);text-decoration:none}
-  html.ui-c .ts-cbar{height:16px;position:relative}
-  html.ui-c .ts-cbar i{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
-  html.ui-c .ts-n{font-size:12.5px;text-align:right;color:var(--t2);font-variant-numeric:tabular-nums}
-  html.ui-c .ts-n b{color:var(--ink)}
-  html.ui-c .ts-all{margin-top:8px;background:none;border:0;padding:0;font:inherit;cursor:pointer;width:auto}
   html.ui-c .ts-chips{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
-  html.ui-c .ts-note{margin:0 0 6px;font-size:13px;color:var(--t2)}
   html.ui-c .ts-chip{font-size:12.5px;background:var(--c-sunk);color:var(--t2);border-radius:99px;padding:4px 11px}
   html.ui-c .ts-chip.blue{background:var(--c-accent-bg);color:var(--ink)}
   html.ui-c .ts-kb{display:grid;grid-template-columns:repeat(var(--cols,4),minmax(0,1fr));gap:12px;margin-top:6px;align-items:start}
@@ -2802,8 +2787,7 @@ svg .m-flag-mark{transform-origin:0 100%}
     html.ui-c .ts-m>b{width:40px;font-size:12px;color:var(--t3);padding-top:4px;flex:none}
     html.ui-c .ts-m>div{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
     html.ui-c .ts-mlist .ts-ev{position:static;display:block;height:auto;width:auto!important;white-space:normal}
-    html.ui-c .ts-crow{grid-template-columns:96px minmax(0,1fr) 60px}
-    html.ui-c .ts-kb{grid-template-columns:1fr}
+      html.ui-c .ts-kb{grid-template-columns:1fr}
     html.ui-c .ts-prow{grid-template-columns:62px minmax(0,1fr)}
   }
 </style>
@@ -10664,8 +10648,8 @@ async function twPlanSave() {
 }
 
 // ---- SEASON (the owner's pick C, 20.10.2026; pictures C_home + C_key): the year planner September to August with the
-// exhibitions, Ask for Y+2 plans and the calendars & gifts; where our companies are; an exhibition's columns. ----
-let T_SS = { start: null, allCountries: false }, T_SSD = null, T_EVD = null, T_EV_OPEN = {};
+// exhibitions, Ask for Y+2 plans and the calendars & gifts; an exhibition's columns. ----
+let T_SS = { start: null }, T_SSD = null, T_EVD = null, T_EV_OPEN = {};
 const SS_MONTHS = ['Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'];
 // #/tc/season, #/tc/season/<start year>, #/tc/season/event/<id>, #/tc/season/plans/<year>
 async function viewTcSeason(sub) {
@@ -10700,21 +10684,13 @@ function tcDrawSeason() {
     ...S.calendars.events.map((e) => ({ at: e.startsOn, html: evBar(e) }))].sort((a, b) => a.at.localeCompare(b.at));
   const months = SS_MONTHS.map((m, i) => { const y = i < 4 ? S.start : S.start + 1; const mm = String(((i + 8) % 12) + 1).padStart(2, '0');
     const these = items.filter((x) => x.at.slice(0, 7) === `${y}-${mm}`); return these.length ? `<div class="ts-m"><b>${m}</b><div>${these.map((x) => x.html).join('')}</div></div>` : ''; }).join('');
-  const C = S.countries;
-  const max = Math.max(1, ...C.rows.map((r) => r.companies));
-  const rows = (T_SS.allCountries ? C.rows : C.rows.slice(0, 11)).map((r) => `<div class="ts-crow"><a href="#/tc/companies" onclick="tcGo('country', ${esc(JSON.stringify(String(r.country ?? '')))});return false">${esc(r.country)}</a>
-      <div class="ts-cbar"><i class="a" style="width:${(r.companies / max * 100).toFixed(1)}%"></i><i class="c" style="width:${(r.clients / max * 100).toFixed(1)}%"></i></div>
-      <span class="ts-n"><b>${Number(r.clients)}</b> / ${Number(r.companies)}</span></div>`).join('');
   $('#view').innerHTML = `<p class="c-crumb ts-crumb"><button type="button" class="tw-arr" aria-label="The season before" onclick="T_SS.start=${Number(S.prev)};viewTcSeason()">‹</button>Training Centre · Season ${esc(SS_MONTHS[0])} ${Number(S.start)} – ${esc(SS_MONTHS[11])} ${Number(S.start) + 1}<button type="button" class="tw-arr" aria-label="The season after" onclick="T_SS.start=${Number(S.next)};viewTcSeason()">›</button></p>
     <div class="c-sheet ts-yp"><div class="ts-months"><span></span>${SS_MONTHS.map((m) => `<span>${m}</span>`).join('')}</div>
       ${lane('Exhibitions', `${tcCount(ex.events.length, 'event', 'events')} · ${Number(ex.companies)} on lists`, ex.events.map(evBar).join(''), true)}
       ${lane(`Training plans ${S.plans.forYear}`, 'clients plan next year', plans)}
       ${lane('Calendars & gifts', 'year-end', S.calendars.events.map(evBar).join(''))}
       <div class="ts-mlist">${months || '<div class="c-empty">No event this season.</div>'}</div>
-      ${S.undated.length ? `<p class="ts-undated">Date not known: ${S.undated.map((e) => `<a href="#/tc/season/event/${Number(e.id)}">${esc(e.name)}</a>`).join(', ')}</p>` : ''}</div>
-    <div class="c-sheet ts-cb"><h3>Where our companies are</h3><div class="ts-key"><span><i class="a"></i>companies</span><span><i class="c"></i>clients</span></div>
-      ${rows || '<div class="c-empty">No country recorded.</div>'}
-      ${C.total > 11 ? `<button type="button" class="kgo ts-all" onclick="T_SS.allCountries=!T_SS.allCountries;tcDrawSeason()">${T_SS.allCountries ? 'Fewer countries' : `All ${Number(C.total)} countries →`}</button>` : ''}</div>`;
+      ${S.undated.length ? `<p class="ts-undated">Date not known: ${S.undated.map((e) => `<a href="#/tc/season/event/${Number(e.id)}">${esc(e.name)}</a>`).join(', ')}</p>` : ''}</div>`;
 }
 const tcCount = (n, one, many) => `${Number(n)} ${Number(n) === 1 ? one : many}`;
 const tcInitials = (name) => String(name || '').split(/\s*;\s*/)[0].split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
@@ -10737,7 +10713,7 @@ function tcDrawEvent() {
     <div class="c-head"><div><h1 class="c-pname">${esc(E.name)}</h1><div class="ts-chips"><span class="ts-chip">${esc(when)}</span>${E.city ? `<span class="ts-chip">${esc(E.city)}</span>` : ''}
       <span class="ts-chip blue">${esc(tcCount(E.companies, 'company', 'companies'))}</span><span class="ts-chip blue">${esc(tcCount(E.clients, 'our client', 'our clients'))}</span></div></div>
       <div class="act">${isAdmin() ? '<button class="btn ghost" onclick="tsEditOpen()">Edit dates</button>' : ''}<button class="btn" onclick="tsAddOpen()">Add company</button></div></div>
-    ${E.notes ? `<p class="ts-note">${esc(E.notes)}</p>` : ''}<div class="ts-kb" style="--cols:${E.columns.length}">${cols}</div>`;
+    <div class="ts-kb" style="--cols:${E.columns.length}">${cols}</div>`;
 }
 const SEASON_ROWS = 8;
 function tsCardOpen(linkId) {
@@ -10781,12 +10757,13 @@ function tsEditOpen() {
     <div><label for="tseTo">Last day</label><input id="tseTo" type="date" value="${esc(E.endsOn || '')}"></div>
     <div><label for="tseCity">City</label><input id="tseCity" value="${esc(E.city)}"></div>
     <div class="c-wide"><label class="tc-tick"><input type="checkbox" id="tseOk"${E.dateConfirmed ? ' checked' : ''}> The date is confirmed</label></div>
+    <div class="c-wide"><label for="tseNotes">Notes</label><textarea id="tseNotes" rows="3">${esc(E.notes)}</textarea></div>
     <div id="tseErr" class="c-wide"></div>
     <div class="c-wide c-row-acts"><button class="btn" onclick="tsEditSave()">Save</button><button class="btn ghost" onclick="closeModal()">Cancel</button></div></div>`);
 }
 async function tsEditSave() {
   try {
-    await post(`/api/tc/events/${Number(T_EVD.id)}/edit`, { startsOn: $('#tseFrom').value || null, endsOn: $('#tseTo').value || null, city: $('#tseCity').value, dateConfirmed: $('#tseOk').checked });
+    await post(`/api/tc/events/${Number(T_EVD.id)}/edit`, { startsOn: $('#tseFrom').value || null, endsOn: $('#tseTo').value || null, city: $('#tseCity').value, dateConfirmed: $('#tseOk').checked, notes: $('#tseNotes').value });
     closeModal(); await viewTcEvent(T_EVD.id);
   } catch (e) { tcErr('#tseErr', e.message); }
 }

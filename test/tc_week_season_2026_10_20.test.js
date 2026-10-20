@@ -1,6 +1,6 @@
 // MY WEEK + LOG A CONTACT (pick B) and SEASON (pick C), the owner's picks 20.10.2026 (src/tcweek.js, src/tcseason.js).
 // The rules: nothing reads as late (a contact not done earlier is in today's column, with its first day); Mine / Team;
-// Ready to plan; Log closes the contact and plans the next; the season planner, the countries and an exhibition's
+// Ready to plan; Log closes the contact and plans the next; the season planner and an exhibition's
 // columns; a group's TOTAL row out of every count; nothing deleted; the seed is a preview + apply with its hash, once.
 // Synthetic data only. The routes' gate: test/security_guards.test.js.
 import test from 'node:test';
@@ -209,7 +209,7 @@ test('the seed: the preview counts per event and writes nothing; the apply needs
   assert.equal(page.columns[0].cards.find((c) => c.companyId === ids.t).counted, false);
 });
 
-test('the season: lanes in Sep-Aug, Ask for Y+2 plans from the clients of Y, countries clients / companies, TOTAL out', async () => {
+test('the season: lanes in Sep-Aug, Ask for Y+2 plans from the clients of Y, TOTAL out', async () => {
   const { db, ids } = await seasonWorld();
   const pv = await ss.seedPreview(db);
   await ss.seedApply(db, { hash: pv.hash }, 'admin');
@@ -223,8 +223,7 @@ test('the season: lanes in Sep-Aug, Ask for Y+2 plans from the clients of Y, cou
   assert.deepEqual([s.plans.year, s.plans.forYear, s.plans.companies, s.plans.from, s.plans.to], [2025, 2027, 2, '2026-10-01', '2026-12-31'],
     'clients trained in 2025: Global Wind Service, Ampelmann (the TOTAL row not)');
   assert.deepEqual(s.calendars.events.map((e) => [e.name, e.companies]), [['Calendars & gifts', 2]]);
-  assert.deepEqual(s.countries.rows.map((c) => [c.country, c.clients, c.companies]),
-    [['Netherlands', 2, 2], ['Denmark', 1, 1], ['Greece', 0, 1], ['Sweden', 0, 1]], 'no TOTAL, no empty country');
+  assert.equal(s.countries, undefined, 'where our companies are lives on TC Home only (one map in the app)');
   const plans = await ss.plansList(db, 2025);
   assert.deepEqual(plans.rows.map((r) => [r.name, r.delegates]), [['Global Wind Service', 487], ['Ampelmann', 129]]);
   assert.equal(plans.delegates, 616);
@@ -253,9 +252,10 @@ test('an exhibition\'s columns: a move and a removal are lines in the company\'s
   assert.equal(await count(db, 'tc_event_companies', `id = ${link} AND removed_at IS NOT NULL`), 1, 'stamped, not deleted');
   await ss.addToEvent(db, ham, { companyId: ids.h }, 'Aleksandrs');
   assert.equal((await ss.eventPage(db, ham)).columns[0].cards.length, 3, 'back on the list, in the first column');
-  await ss.editEvent(db, ham, { startsOn: '2026-09-23', endsOn: '2026-09-26', dateConfirmed: true }, 'admin');
+  await ss.editEvent(db, ham, { startsOn: '2026-09-23', endsOn: '2026-09-26', dateConfirmed: true, notes: 'Confirmed by the TC team.' }, 'admin');
   await assert.rejects(ss.editEvent(db, ham, { startsOn: '2026-09-23', endsOn: '2026-09-01' }, 'admin'), /before the first/);
-  assert.equal((await ss.eventPage(db, ham)).startsOn, '2026-09-23');
+  const edited = await ss.eventPage(db, ham);
+  assert.deepEqual([edited.startsOn, edited.dateConfirmed, edited.notes], ['2026-09-23', true, 'Confirmed by the TC team.']);
 });
 
 test('the help center says it once per screen', () => {

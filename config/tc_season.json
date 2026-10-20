@@ -49,7 +49,6 @@
     "_about": "Ask for Y+2 plans: in October to December of the season's first year, every company that trained delegates in the year before the season (Y = start year - 1) is asked for its training plan for Y+2."
   },
   "columnRows": 8,
-  "countryRows": 11,
   "seed": {
     "_about": "The ONE seed from the Excel tabs (src/tcseason.js seedPreview / seedApply), an admin one-off like the TC import: the preview writes nothing and answers counts and a hash, the apply needs that hash and runs once. The Excel has no dates (MASTER CONTROL, 20.10.2026): no event is seeded as confirmed, every date is a month estimate drawn as 'date to confirm', and each event's notes say where its estimate comes from. An admin confirms the dates on the event's page.",
     "batch": "season_seed_2026_10",

@@ -2,7 +2,7 @@
 //
 // A year planner, September to August, with three lanes: exhibitions (tc_events), "Ask for Y+2 plans" (October to
 // December: every company that trained delegates in Y, the year before the season), and the year-end calendars & gifts.
-// Under it: where our companies are, per country, clients / companies. An exhibition's page: the companies on its list
+// (Where our companies are lives on TC Home only: one map in the app, the owner 20.10.2026.) An exhibition's page: the companies on its list
 // in columns On the list / Met at the stand / Follow-up sent / Booked a course; a move is a line in the company's log.
 //
 // Nothing is deleted: an event is never removed here, a company taken off a list is stamped (removed_at). B2B only.
@@ -74,7 +74,7 @@ const eventOut = (e, n) => ({ id: Number(e.id), name: e.name, kind: e.kind, city
   startsOn: e.starts_on || null, endsOn: e.ends_on || null, dateConfirmed: Number(e.date_confirmed) === 1, notes: e.notes || '',
   companies: n ? n.companies : 0, clients: n ? n.clients : 0, stages: n ? n.stages : {} });
 
-/** The planner for the season starting in September of `start`, and the countries. */
+/** The planner for the season starting in September of `start`. */
 export async function season(db, { start = null, now = new Date() } = {}) {
   const today = localDate(now);
   const y0 = Number.isInteger(Number(start)) && Number(start) > 1990 ? Number(start) : seasonOf(today);
@@ -88,16 +88,6 @@ export async function season(db, { start = null, now = new Date() } = {}) {
   const cal = lane('calendars');
   const y = y0 - 1;
   const trained = [...counted.values()].filter((c) => c.years.get(y) > 0).length;
-  // where our companies are: every country recorded, companies / clients (any delegates), the biggest first
-  const countries = new Map();
-  for (const c of counted.values()) {
-    if (!c.country) continue;
-    const k = countries.get(c.country) || { country: c.country, companies: 0, clients: 0 };
-    k.companies += 1;
-    if (c.delegates > 0) k.clients += 1;
-    countries.set(c.country, k);
-  }
-  const list = [...countries.values()].sort((a, b) => b.companies - a.companies || b.clients - a.clients || byLv(a.country, b.country));
   return {
     today, start: y0, from: span.from, to: span.to, prev: y0 - 1, next: y0 + 1,
     exhibitions: { events: ex, companies: ex.reduce((s, e) => s + e.companies, 0) },
@@ -105,7 +95,6 @@ export async function season(db, { start = null, now = new Date() } = {}) {
       from: `${y0}-${pad(SEASON.plans.fromMonth)}-01`, to: `${y0}-${pad(SEASON.plans.toMonth)}-${SEASON.plans.toMonth === 12 ? 31 : 30}` },
     calendars: { events: cal, companies: cal.reduce((s, e) => s + e.companies, 0) },
     undated: events.filter((e) => !e.startsOn).sort((a, b) => byLv(a.name, b.name)),
-    countries: { total: list.length, rows: list },
   };
 }
 
