@@ -983,6 +983,9 @@
     "_textPatterns": "Read over the sender name and the start of the message, case-insensitive. Admissions can add a line: match is a regular expression, why is the reason shown in the Filtered view.",
     "newsletter": "unsubscribe|atrakst[iī]t(ies|os|ieties)|izrakst[iī]t(ies|os|ieties)|atteikties no (jaunum|e-?pasta|vēstk)|view (this email )?in (your )?browser",
     "_newsletter": "Q74 rule 3, 07.10.2026 (Ritvars yes, against Aigars 07.10 'email kkadu automatizaciju'): a newsletter carries an unsubscribe link, usually at the END, so the whole message is read. Set aside with the reason, kept, can be brought back. The sender address is NOT widened on a guess: info@ / support@ / team@ can be a real school or partner.",
+    "agencyDomains": ["pmlp.gov.lv"],
+    "agencyWhy": "Agency / authority",
+    "_agencyDomains": "20.10.2026, the owner's yes after Ieva's PMLP cards: email from one of these domains (or a subdomain) is a state agency or authority's process mail (PMLP: invitations and residence permits), not a lead, and is set aside as Agency / authority, kept, can be brought back. Part of the edu@ email rule: the Admissions label and somebody already in Intake still win. Add a domain here, never a person's address.",
     "massMail": {
       "decided": "20.10.2026 after Ieva: a ShipSpeak newsletter (\"PLEASE PASS THIS MESSAGE TO YOUR ENGLISH DEPARTMENT Dear Maritime Colleagues\") reached the Inbox because it says \"study\" and had no unsubscribe line. Part of the edu@ email rule: asked before the study reading, never on Admissions-labelled mail, mail from somebody in Intake or a reply in a conversation we hold. Set aside with the reason, kept, can be brought back.",
       "why": "Newsletter or mass mail",

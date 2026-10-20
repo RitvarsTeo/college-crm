@@ -19,7 +19,7 @@ import { localDate, localMidnight } from './bizday.js';
 import { SIS_HOLDS_SQL } from './lifecycle.js';
 import { rangesSql } from './yearscope.js';
 import { markFor, markedWhy, contactKeys, MARKS } from './phonefilter.js';
-import { emailBodyFor, isEmailChannel, cleanEmailBody } from './emailtext.js';
+import { emailBodyFor, isEmailChannel, cleanEmailBody, emailShown } from './emailtext.js';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const CFG = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'prototype.json'), 'utf8'));
@@ -352,8 +352,8 @@ export async function receive(db, item) {
       return { joined: true, id: Number(home.id), seq };
     }
     if (home && home.person_id) attachTo = home.person_id;
-    // 20.10.2026: a newsletter or mass mail first, whatever study words it carries (massMailWhy below)
-    else filterWhy = massMailWhy({ headers: item.listHeaders, text: item.body }) || emailStudyWhy(item.body);
+    // 20.10.2026: an agency or authority, then a newsletter or mass mail, then the study reading (emailRuleWhy below)
+    else filterWhy = emailRuleWhy({ email: item.email, headers: item.listHeaders, text: item.body });
   }
   const state = read.junk || filterWhy ? 'filtered' : 'new';
   // `source` records HOW this arrived. It defaults to null rather than to
@@ -1444,10 +1444,34 @@ export function massMailWhy({ headers = null, text = '' } = {}, cfg = CFG.emailF
   return null;
 }
 
+// THE SENDER'S OWN NEW TEXT (the owner, 20.10.2026): the study reading reads what the sender newly wrote, the subject
+// included (src/emailtext.js, the text the Inbox card shows), never the quoted thread under it or our own quoted
+// signature. A PMLP forward kept itself in the Inbox through the word "course" in our signature's own link
+// (novikontas.org/course-cancel), quoted under it (cards 1162 and 1395, read-only 20.10.2026).
+export const emailNewText = (text) => emailShown(text, { subjectFirstLine: true });
+
 // null when the email may reach the Inbox, else the reason it is set aside
 export function emailStudyWhy(text, cfg) {
-  const r = emailStudyRead(text, cfg);
+  const r = emailStudyRead(emailNewText(text), cfg);
   return r.stay ? null : r.why;
+}
+
+// AGENCY / AUTHORITY (the owner, 20.10.2026, after Ieva's PMLP cards): mail from a state agency or authority's domain
+// (config.emailFilter.agencyDomains, pmlp.gov.lv first: invitations and residence permits for foreign students, written
+// from many addresses, the officers' own included) is process mail, not a lead, whatever study words it carries. The
+// domain or any of its subdomains. Part of the edu@ email rule, so the Admissions label and a known person still win.
+export function agencyWhy(address, cfg = CFG.emailFilter) {
+  const domain = String(address || '').toLowerCase().trim().split('@')[1] || '';
+  if (!domain || !cfg) return null;
+  const hit = (cfg.agencyDomains || []).map((d) => String(d).toLowerCase().trim()).find((d) => d && (domain === d || domain.endsWith('.' + d)));
+  return hit ? `${cfg.agencyWhy || 'Agency / authority'} (${hit})` : null;
+}
+
+// THE EDU@ EMAIL RULE IN ONE PLACE (16.10.2026, widened 20.10.2026), asked only for unlabelled mail from nobody in Intake
+// that is not a reply in a conversation we hold (receive() above): an agency or authority, a newsletter or mass mail,
+// then the study reading over the sender's own new text. Returns the reason it is set aside, or null for the Inbox.
+export function emailRuleWhy({ email = null, headers = null, text = '' } = {}) {
+  return agencyWhy(email) || massMailWhy({ headers, text }) || emailStudyWhy(text);
 }
 
 // Q31 (05.10.2026): the same rule on every channel, plus what the TEXT says it is (a Google Chat
@@ -1528,7 +1552,7 @@ export async function emailRuleOnWaiting(db, { apply = false, by, at = nowIso(),
     else if (await activePersonFor(db, { email: r.contact_email, phone: r.contact_phone })) card.why = 'from somebody in Intake';
     else if (!r.body) card.why = 'no text to read';
     else {
-      const read = emailStudyRead(r.body);
+      const read = emailStudyRead(emailNewText(r.body));   // the sender's own new text (20.10.2026)
       card.why = read.why;
       if (!read.stay) card.setAside = true;
     }
