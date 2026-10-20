@@ -871,3 +871,4 @@ Seen: GitHub - no Aigars commits since 309b10f; crm-novikontas.vercel.app = 1ced
 - HIS YES 20.10 night: release the overnight TC build tonight when green + screenshots checked; apply the Season seed (backup first). Google Calendar not included.
 - 20.10 night TC-HOME 3 report: 9f047ff, ac46fc2, fd825f6 on feat/2026-10-20-tc-home3, 1,791 green. Checked picture vs built: sent back 4 gaps (Delegates spark shape, compare Y-2 per picture via config, donut size, Client book top 3 cards missing). Accepted: no 'overdue' anywhere on TC (his standing rule), year default = latest as_of, Today counts carry not-done, phone tabs. Morning keep/change: Delegates compare Y-1 vs Y-2.
 - HIS PICK 20.10 night: board 5 Grand Opening = G1 own page (Pitcher's suggestion). Map pick pending.
+- HIS PICK 20.10 night: map = N3 on TC Home only; added to TC-HOME 3. Board 5 fully decided (G1 + N3). G1 Grand Opening page = phase 4 build, later (needs Client Hub send data).
