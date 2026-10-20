@@ -27,6 +27,11 @@ this is a local prototype" stood here until 30.09.2026, from the weeks before th
 
 ## 19.10.2026 - New project: Training Centre in Intake (owner's picks)
 
+- `DECIDED` (owner 20.10, after Ieva's fixes were live) next TC lanes, all three now: TC-DATA 2 (Client Hub contacts into
+  Intake once - Intake is master; contacts for the 364 matched companies, the 467 Client Hub-only companies as new, with
+  a preview before apply), TC-UI 2 (person in charge linked to Intake accounts so "Mine" works, TC screens checked with
+  the real data on desktop and phone), TC-BACKEND 2 (company <-> person link: a seafarer sent by a company).
+  **TC team for now = admins only** (Ritvars, Aigars, Māris) - already so after patch 60.
 - `LIVE` (patch 60 + import 20.10) Training Centre foundation: start page with two tiles, access per area, People and access, TC Home, Companies, company page, Next contacts; Excel imported (1,497 companies, 1,448 contacts, 471 active clients; past next dates left out).
 - `DECIDED` ONE big CRM on the **Intake base** (owner's pick 19.10): after sign-in two tiles, **Academy** (today's
   Intake) and **Training Centre**. Client Hub's companies/contacts are DATA for it (imported or linked), not its code
