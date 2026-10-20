@@ -809,3 +809,9 @@ Seen: GitHub - no Aigars commits since 309b10f; crm-novikontas.vercel.app = 1ced
 - Found by TC-UI 2: fetch() refuses a non-ISO-8859-1 x-acting-as header, so accounts named Mārcis Žabovs / Aleksandrs Lukaševičs / Līva Mihailova stayed on "Loading...".
 - Fix cherry-picked b1bd3f8 -> 97cecb6 on fix/2026-10-20-latvian-name-header from origin/production 7668290; session_lapse pin updated 012afbf; record b21a910.
 - Owner's yes 20.10 ("Yes, release now"). Backup 2026-10-20T16-49-55Z (38 tables, 26,598 rows). deploy_verify running.
+
+## 20.10.2026 - TC-BACKEND 2 final report (company-person link)
+- Branch feat/2026-10-20-tc-backend2 on 2ed8c46: 8634add (tc_company_people, no hard delete), 958b956 (routes behind area gate + security_guards e), af087ef (company/person page boxes + Help FAQ), c4fbb2d (8 tests). Full suite 1,767/1,767 in 4 batches.
+- Linking needs both areas; one-area viewers see names only. Admin "Possible matches" read-only route.
+- Production read-only count: 3 suggestions, 1 person x 3 companies, all on rs.gov.lv (shared government domain). 802 of 812 Academy emails are public domains.
+- To check before release: rebase on production (now patch 63), screen pictures, owner pick on dropping shared domains from suggestions.
