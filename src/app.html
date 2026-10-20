@@ -10117,7 +10117,7 @@ function tcDrawCompanies() {
   const boxes = [
     box('area', 'Area', L.facets.areas.map(([a, n]) => [a, `${a} ${n}`])),
     box('country', 'Country', [['*', 'Any recorded'], ...L.facets.countries.map(([c, n]) => [c, `${word(c)} ${n}`])]),
-    box('pic', 'Person in charge', L.facets.pics.map(([p, n]) => [p, `${word(p)} ${n}`])),
+    box('pic', 'Person in charge', [['me', `Mine ${Number(L.facets.mine || 0)}`], ...L.facets.pics.map(([p, n, t]) => [p, `${t || word(p)} ${n}`])]),
     box('client', 'Client', [['yes', 'Clients'], ['no', 'Prospects']]),
     // one line at 1440, as Journey's List: four on show, the rest behind More filters (open while one of them is set)
     ...(more ? [box('due', 'Next contact', [['over', 'Overdue'], ['week', 'This week'], ['later', 'Later'], ['none', 'None planned']]),
@@ -10151,7 +10151,7 @@ function tcOpenAdd() {
     <div class="c-wide"><label for="tcaName">Name</label><input id="tcaName" autocomplete="off"></div>
     <div><label for="tcaCountry">Country</label><input id="tcaCountry" list="tcaCountries"><datalist id="tcaCountries">${M.countries.map((c) => `<option value="${esc(c)}">`).join('')}</datalist></div>
     <div><label for="tcaCity">City</label><input id="tcaCity"></div>
-    <div><label for="tcaPic">Person in charge</label><select id="tcaPic"><option value="">Nobody yet</option>${M.pics.map((p) => `<option>${esc(p)}</option>`).join('')}</select></div>
+    ${isAdmin() ? `<div><label for="tcaPic">Person in charge</label>${tcPicSelect('tcaPic', '')}</div>` : ''}
     <div><label>Areas</label><div class="tc-ticks">${M.areas.map((a) => `<label><input type="checkbox" name="tcaArea" value="${esc(a.id)}"> ${esc(a.label)}</label>`).join('')}</div></div>
     <div id="tcaErr" class="c-wide"></div>
     <div class="c-wide c-row-acts"><button class="btn" onclick="tcAdd()">Add</button><button class="btn ghost" onclick="closeModal()">Cancel</button></div></div>`);
@@ -10160,7 +10160,7 @@ function tcOpenAdd() {
 async function tcAdd() {
   const v = (id) => ($(id) || {}).value || '';
   try {
-    const r = await post('/api/tc/companies', { name: v('#tcaName'), country: v('#tcaCountry'), city: v('#tcaCity'), pic: v('#tcaPic'),
+    const r = await post('/api/tc/companies', { name: v('#tcaName'), country: v('#tcaCountry'), city: v('#tcaCity'), ...($('#tcaPic') ? { pic: v('#tcaPic') } : {}),
       areas: [...document.querySelectorAll('input[name="tcaArea"]:checked')].map((x) => x.value) });
     closeModal(); T_META = null; await tcMeta(); location.hash = '#/tc/company/' + Number(r.id);
   } catch (e) {
@@ -10168,6 +10168,18 @@ async function tcAdd() {
     $('#tcaErr').innerHTML = `<div class="err">${esc(e.message)}${dup}</div>`;
   }
 }
+
+// THE PERSON IN CHARGE (20.10.2026): an admin picks from the accounts that open Training Centre, then the names written in
+// the Excel that are no account (colleagues without Intake access). The value is 'u:<id>' for an account, else the name.
+function tcPicSelect(id, value, attrs = '') {
+  const P = T_META.pics || [];
+  const acc = P.filter((p) => p.account), plain = P.filter((p) => !p.account);
+  const has = !value || P.some((p) => p.value === value);
+  const opt = (p) => `<option value="${esc(p.value)}"${p.value === value ? ' selected' : ''}>${esc(p.label)}</option>`;
+  return `<select id="${id}" aria-label="Person in charge"${attrs}><option value="">Nobody yet</option>${has ? '' : `<option value="${esc(value)}" selected>${esc(value)}</option>`}
+    ${acc.length ? `<optgroup label="Intake accounts">${acc.map(opt).join('')}</optgroup>` : ''}${plain.length ? `<optgroup label="No Intake access">${plain.map(opt).join('')}</optgroup>` : ''}</select>`;
+}
+const tcPicValue = (c) => (c.picAccount ? c.picAccount.value : c.pic || '');
 
 // ---- THE COMPANY PAGE: the person page's layout - the next step, the log with a note box; details, contacts, courses ----
 let T_CO = null; let T_EDIT = false;
@@ -10178,7 +10190,7 @@ async function viewTcCompany(id) {
 }
 const tcReload = async () => { T_CO = await api('/api/tc/companies/' + Number(T_CO.id)); tcDrawCompany(); tcNavCounts(); };
 const T_FIELD = { name: 'Name', country: 'Country', city: 'City', address: 'Address', website: 'Website', status: 'Status', status_detail: 'Meeting type',
-  pic_name: 'Person in charge', notes: 'Notes', info_to_send: 'Information to send', areas: 'Areas', next: 'Next communication', archived_at: 'Archived',
+  pic_name: 'Person in charge', pic_account: 'Person in charge', notes: 'Notes', info_to_send: 'Information to send', areas: 'Areas', next: 'Next communication', archived_at: 'Archived',
   contact: 'Contact', contact_name: 'Contact name', contact_position: 'Contact position', contact_email: 'Contact email', contact_phone: 'Contact phone', contact_notes: 'Contact notes' };
 const tcFieldName = (f) => T_FIELD[f] || (/^courses_(\d{4})$/.test(f || '') ? 'Courses ' + f.slice(8) : f);
 const tcShow = (f, v) => (v == null ? '(empty)' : f === 'status' ? tcStatus(v).label : f === 'status_detail' ? tcMeeting(v) || v : v);
@@ -10186,7 +10198,7 @@ function tcEv(e) {
   const what = e.field && e.kind !== 'task' ? tcFieldName(e.field) : tcKind(e.kind);
   return `<div class="c-evt"><div class="c-evt-when">${cStamp(e.occurred_at)}${e.actor ? ' · ' + esc(e.actor) : ''}${e.origin === 'import' ? ' · <span class="c-auto">from the Excel</span>' : ''}</div>
     <div class="c-evt-what">${esc(what)}${e.topics && e.topics !== e.body ? ' · ' + esc(e.topics) : ''}</div>
-    ${e.field && e.kind !== 'task' && e.field !== 'contact' ? `<div class="c-evt-diff"><s>${esc(tcShow(e.field, e.old_value))}</s> → <b>${esc(tcShow(e.field, e.new_value))}</b></div>`
+    ${e.field && e.kind !== 'task' && e.field !== 'contact' && e.field !== 'pic_account' ? `<div class="c-evt-diff"><s>${esc(tcShow(e.field, e.old_value))}</s> → <b>${esc(tcShow(e.field, e.new_value))}</b></div>`
       : e.body ? `<div class="c-evt-body">${esc(e.body)}</div>` : ''}</div>`;
 }
 function tcDrawCompany() {
@@ -10209,7 +10221,7 @@ function tcDrawCompany() {
   const link = (w) => (w ? `<a href="${esc(/^https?:\/\//.test(w) ? w : 'https://' + w)}" target="_blank" rel="noopener noreferrer">${esc(w)}</a>` : '');
   const details = T_EDIT ? tcEditForm(c) : `<div class="c-sheet c-facts"><h3>Details<span class="c-h3acts"><button class="btn sm ghost" onclick="T_EDIT=true;tcDrawCompany()">Edit</button></span></h3><dl>
       ${row('Country', esc(c.country))}${row('City', esc(c.city))}${row('Address', esc(c.address))}${row('Website', link(c.website))}
-      ${row('Areas', esc(c.areas.join(', ')), 'none')}${row('Person in charge', esc(c.pic), 'nobody yet')}
+      ${row('Areas', esc(c.areas.join(', ')), 'none')}${isAdmin() ? `<dt>Person in charge</dt><dd class="tc-picdd">${tcPicSelect('tcPic', tcPicValue(c), ' onchange="tcEdit({ pic: this.value })"')}</dd>` : row('Person in charge', esc(c.pic), 'nobody yet')}
       ${row('Last contact', c.lastContactAt ? esc(fmtDate(c.lastContactAt)) : '')}
       ${row('Information to send', esc(c.infoToSend), 'nothing waiting')}
       ${c.sourceRow ? row('From the Excel', 'row ' + Number(c.sourceRow)) : ''}</dl>
@@ -10246,11 +10258,9 @@ function tcEditForm(c) {
   const M = T_META;
   const input = (id, label, v, wide) => `<div class="${wide ? 'c-wide' : ''}"><label for="${id}">${esc(label)}</label><input id="${id}" value="${esc(v)}"></div>`;
   const area = (a) => `<label><input type="checkbox" name="tceArea" value="${esc(a.id)}"${c.areas.includes(a.id) ? ' checked' : ''}> ${esc(a.label)}</label>`;
-  const pics = [...new Set([c.pic, ...M.pics].filter(Boolean))];
   return `<div class="c-sheet c-facts"><h3>Edit details</h3><div class="c-pad"><div class="c-form c-form1">
     ${input('tceName', 'Name', c.name, true)}${input('tceCountry', 'Country', c.country)}${input('tceCity', 'City', c.city)}
     ${input('tceAddress', 'Address', c.address, true)}${input('tceWebsite', 'Website', c.website, true)}
-    <div><label for="tcePic">Person in charge</label><select id="tcePic"><option value="">Nobody yet</option>${pics.map((p) => `<option${p === c.pic ? ' selected' : ''}>${esc(p)}</option>`).join('')}</select></div>
     <div><label>Areas</label><div class="tc-ticks">${M.areas.map(area).join('')}</div></div>
     <div class="c-wide"><label for="tceInfo">Information to send</label><textarea id="tceInfo" rows="2">${esc(c.infoToSend)}</textarea></div>
     <div class="c-wide"><label for="tceNotes">Notes</label><textarea id="tceNotes" rows="4">${esc(c.notes)}</textarea></div>
@@ -10265,7 +10275,7 @@ async function tcEdit(patch) {
 async function tcSaveDetails() {
   const c = T_CO, v = (id) => ($(id) || {}).value || '';
   const want = { name: v('#tceName'), country: v('#tceCountry'), city: v('#tceCity'), address: v('#tceAddress'), website: v('#tceWebsite'),
-    pic: v('#tcePic'), infoToSend: v('#tceInfo'), notes: v('#tceNotes') };
+    infoToSend: v('#tceInfo'), notes: v('#tceNotes') };
   const patch = {};
   for (const [k, val] of Object.entries(want)) if (val.trim() !== String(c[k] || '')) patch[k] = val;
   const areas = [...document.querySelectorAll('input[name="tceArea"]:checked')].map((x) => x.value);
@@ -10337,7 +10347,7 @@ async function viewTcNext() {
 function tcDrawNext() {
   const D = T_NXD;
   const rows = T_NX.when ? D.rows.filter((r) => r.when === T_NX.when) : D.rows;
-  const whose = cPoolSelect('Person in charge', T_NX.owner, [['me', 'Mine'], ...T_META.pics.map((p) => [p, p])], 'tcNextOwner(this.value)');
+  const whose = cPoolSelect('Person in charge', T_NX.owner, [['me', 'Mine'], ...T_META.pics.map((p) => [p.value, p.label])], 'tcNextOwner(this.value)');
   $('#view').innerHTML = cPoolFrame({
     title: 'Next contacts',
     band: cPoolCards('Next contacts', 'Next contacts', [{ id: 'over', label: 'Overdue', n: D.counts.over }, { id: 'week', label: 'This week', n: D.counts.week },

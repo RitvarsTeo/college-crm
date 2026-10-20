@@ -14,6 +14,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { localDate } from './bizday.js';
+import { accountIndex, matchAccount, picChoices, picLabels, isMine, meKeys } from './tcpic.js';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 export const TC = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'tc.json'), 'utf8'));
@@ -74,6 +75,8 @@ async function companyRows(db) {
   const areas = new Map(); for (const r of areaRows) { if (!areas.has(r.company_id)) areas.set(r.company_id, []); areas.get(r.company_id).push(r.area); }
   const courses = new Map(); for (const r of courseRows) { if (!courses.has(r.company_id)) courses.set(r.company_id, []); courses.get(r.company_id).push(r); }
   const tasks = new Map(); for (const r of taskRows) if (!tasks.has(r.company_id)) tasks.set(r.company_id, r);
+  // the person in charge's account (src/tcpic.js): a linked company filters and counts by the account, not the spelling
+  const users = new Map((await db.prepare('SELECT id, email FROM crm_users').all()).map((u) => [String(u.email).toLowerCase(), String(u.id)]));
   return companies.map((c) => {
     const ks = courses.get(c.id) || [];
     const trained = ks.filter((k) => Number(k.attendees) > 0);
@@ -82,6 +85,7 @@ async function companyRows(db) {
     return {
       id: Number(c.id), name: c.name, nameKey: c.name_key, country: c.country || '', city: c.city || '',
       status: c.status, statusDetail: c.status_detail || '', pic: c.pic_name || '', picEmail: c.pic_email || '',
+      picKey: c.pic_email && users.has(String(c.pic_email).toLowerCase()) ? 'u:' + users.get(String(c.pic_email).toLowerCase()) : c.pic_name || '',
       areas: (areas.get(c.id) || []).sort((a, b) => AREA_IDS.indexOf(a) - AREA_IDS.indexOf(b)),
       info: Boolean(String(c.info_to_send || '').trim()), lastContactAt: c.last_contact_at || null,
       delegates: ks.reduce((n, k) => n + (Number(k.attendees) || 0), 0),
@@ -94,13 +98,14 @@ async function companyRows(db) {
 }
 
 // THE FILTERS, one function, so a count on Home and the list it opens are the same companies.
-//   status, area, country ('-' = none recorded, '*' = any recorded), pic ('-' = nobody), client (yes | no),
-//   info (yes), due (over | week | later | none), q (name, city, country).
-export function matches(c, f, w) {
+//   status, area, country ('-' = none recorded, '*' = any recorded), pic ('-' = nobody, 'me' = the signed-in person's,
+//   'u:<id>' = an account, else a plain name), client (yes | no), info (yes), due (over | week | later | none), q.
+//   `me` is meKeys(the signed-in person): "Mine" reads it, and without it "Mine" matches nothing.
+export function matches(c, f, w, me = null) {
   if (f.status && c.status !== f.status) return false;
   if (f.area && !c.areas.includes(f.area)) return false;
   if (f.country === '-' ? c.country : f.country === '*' ? !c.country : f.country && c.country !== f.country) return false;
-  if (f.pic === '-' ? c.pic : f.pic && c.pic !== f.pic) return false;
+  if (f.pic === '-' ? c.pic : f.pic === 'me' ? !isMine(c, me) : f.pic && c.picKey !== f.pic && c.pic !== f.pic) return false;
   if (f.client === 'yes' && !c.client) return false;
   if (f.client === 'no' && c.client) return false;
   if (f.info === 'yes' && !c.info) return false;
@@ -125,17 +130,20 @@ const tally = (rows, fn) => {
 };
 const byLv = (a, b) => String(a).localeCompare(String(b), 'lv');
 
-export async function listCompanies(db, filters = {}, { page = 1, size = 100, sort = 'name', now = new Date() } = {}) {
+export async function listCompanies(db, filters = {}, { page = 1, size = 100, sort = 'name', now = new Date(), me = null } = {}) {
   const w = tcWindow(now);
   const all = await companyRows(db);
-  const rows = all.filter((c) => matches(c, filters, w));
+  const mk = meKeys(me);
+  const rows = all.filter((c) => matches(c, filters, w, mk));
   const sorters = {
     name: (a, b) => byLv(a.name, b.name),
     next: (a, b) => String((a.next && a.next.due) || '9999').localeCompare(String((b.next && b.next.due) || '9999')) || byLv(a.name, b.name),
     last: (a, b) => (b.lastYear || 0) - (a.lastYear || 0) || b.delegates - a.delegates || byLv(a.name, b.name),
   };
   rows.sort(sorters[sort] || sorters.name);
-  const noStatus = all.filter((c) => matches(c, { ...filters, status: '' }, w));
+  const noStatus = all.filter((c) => matches(c, { ...filters, status: '' }, w, mk));
+  const labels = await picLabels(db);
+  const picOf = new Map(all.map((c) => [c.picKey, c.picEmail ? labels.get(c.picEmail.toLowerCase()) || c.pic : c.pic]));
   const n = Math.max(1, Math.min(2000, Number(size) || 100));
   const pg = Math.max(1, Number(page) || 1);
   return {
@@ -145,7 +153,9 @@ export async function listCompanies(db, filters = {}, { page = 1, size = 100, so
     counts: { status: Object.fromEntries(STATUS_IDS.map((s) => [s, noStatus.filter((c) => c.status === s).length])) },
     facets: {
       countries: tally(all, (c) => c.country || '-').sort((a, b) => b[1] - a[1] || byLv(a[0], b[0])),
-      pics: tally(all, (c) => c.pic || '-').sort((a, b) => byLv(a[0], b[0])),
+      // [value, count, label]: a linked person is one line whatever the spelling; "Mine" counts the signed-in person's
+      pics: tally(all, (c) => c.picKey || '-').map(([k, n]) => [k, n, k === '-' ? '' : picOf.get(k) || k]).sort((a, b) => byLv(a[2] || a[0], b[2] || b[0])),
+      mine: mk ? all.filter((c) => isMine(c, mk)).length : 0,
       areas: AREA_IDS.map((a) => [a, all.filter((c) => c.areas.includes(a)).length]),
     },
   };
@@ -183,10 +193,15 @@ const nextRow = (w) => (c) => ({ taskId: c.next.id, due: c.next.due, label: c.ne
   when: dueGroup(c.next.due, w), companyId: c.id, name: c.name, country: c.country, city: c.city, pic: c.pic,
   lastYear: c.lastYear, lastYearN: c.lastYearN, status: c.status });
 
-/** Next contacts: every open next communication, by date, in Overdue, This week, Later. owner: '' = everyone. */
-export async function nextList(db, { owner = '', now = new Date() } = {}) {
+/**
+ * Next contacts: every open next communication, by date, in Overdue, This week, Later. owner: '' = everyone, 'me' = the
+ * signed-in person's (`me`), 'u:<id>' an account, else a plain name (the company's person in charge or the task's owner).
+ */
+export async function nextList(db, { owner = '', now = new Date(), me = null } = {}) {
   const w = tcWindow(now);
-  const all = (await companyRows(db)).filter((c) => c.next && (!owner || c.next.owner === owner || c.pic === owner));
+  const mk = meKeys(me);
+  const all = (await companyRows(db)).filter((c) => c.next && (!owner || (owner === 'me' ? isMine(c, mk)
+    : c.picKey === owner || c.next.owner === owner || c.pic === owner)));
   all.sort((a, b) => a.next.due.localeCompare(b.next.due) || byLv(a.name, b.name));
   const rows = all.map(nextRow(w));
   return { asOf: w.today, weekEnd: w.weekEnd, owner,
@@ -214,6 +229,7 @@ export async function getCompany(db, id) {
   return {
     id: Number(c.id), name: c.name, country: c.country || '', city: c.city || '', address: c.address || '', website: c.website || '',
     status: c.status, statusDetail: c.status_detail || '', pic: c.pic_name || '', picEmail: c.pic_email || '',
+    picAccount: await picAccountOf(db, c.pic_email),
     notes: c.notes || '', infoToSend: c.info_to_send || '', lastContactAt: c.last_contact_at || null,
     source: c.source || '', sourceRow: c.source_row ?? null, createdAt: c.created_at, archivedAt: c.archived_at || null,
     areas, client: trained.length > 0, delegates: courses.reduce((n, k) => n + (Number(k.attendees) || 0), 0),
@@ -226,18 +242,21 @@ export async function getCompany(db, id) {
   };
 }
 
-/** Countries in use, people in charge (from the companies and from the accounts that open Training Centre). */
+/** The account a company's person in charge is linked to: { value: 'u:<id>', name }, or null. */
+async function picAccountOf(db, email) {
+  if (!email) return null;
+  const u = await db.prepare('SELECT id, display_name, email FROM crm_users WHERE lower(email) = ?').get(String(email).toLowerCase());
+  return u ? { value: 'u:' + u.id, name: u.display_name || u.email } : null;
+}
+
+/** Countries in use, and who can be in charge: the accounts that open Training Centre, then the plain names (src/tcpic.js). */
 export async function meta(db) {
   const countries = (await db.prepare(`SELECT DISTINCT country FROM tc_companies WHERE archived_at IS NULL AND country IS NOT NULL`).all())
     .map((r) => r.country).filter(Boolean).sort(byLv);
-  const fromData = (await db.prepare(`SELECT DISTINCT pic_name FROM tc_companies WHERE archived_at IS NULL AND pic_name IS NOT NULL`).all())
-    .map((r) => r.pic_name).filter(Boolean);
-  const accounts = (await db.prepare(`SELECT u.display_name, u.email FROM crm_users u JOIN crm_user_areas a ON a.user_id = u.id
-    WHERE a.area = 'tc' AND u.active = 1`).all()).map((u) => u.display_name || u.email).filter(Boolean);
   return {
     statuses: TC.statuses, meetingTypes: TC.meetingTypes, areas: TC.areas, activityKinds: TC.activityKinds,
     contactKinds: TC.contactKinds, nextLabel: TC.nextLabel, weekDays: TC.weekDays, defaults: TC.defaults,
-    countries, pics: [...new Set([...accounts, ...fromData])].sort(byLv),
+    countries, pics: await picChoices(db),
   };
 }
 
@@ -261,6 +280,23 @@ const checkAreas = (list) => {
   return a;
 };
 
+/**
+ * Who a picked person in charge is: 'u:<id>' an account that opens Training Centre (written with the name it goes by),
+ * a plain name (linked when it clearly is one account, src/tcpic.js), or '' nobody.
+ */
+export async function resolvePic(db, v) {
+  const raw = clip(v, 120);
+  if (!raw) return { name: null, email: null };
+  const index = await accountIndex(db);
+  if (/^u:/.test(raw)) {
+    const u = index.byId.get(raw.slice(2));
+    if (!u || !u.tc) bad('Pick a person in charge from the list.');
+    return { name: (await picLabels(db)).get(u.email) || u.name, email: u.email };
+  }
+  const u = matchAccount(index, raw);
+  return { name: raw, email: u ? u.email : null };
+}
+
 export async function addCompany(db, b, actor) {
   const name = clip(b.name, 200);
   if (!name) bad('A company needs a name.');
@@ -268,14 +304,15 @@ export async function addCompany(db, b, actor) {
   const country = clip(b.country, 80);
   const status = checkStatus(b.status || TC.defaults.noStatus);
   const areas = checkAreas(b.areas);
+  const pic = await resolvePic(db, b.pic);
   const twin = country
     ? await db.prepare('SELECT id FROM tc_companies WHERE name_key = ? AND country = ? AND archived_at IS NULL').get(key, country)
     : await db.prepare('SELECT id FROM tc_companies WHERE name_key = ? AND country IS NULL AND archived_at IS NULL').get(key);
   if (twin) { const e = new TcInputError('This company is already here.'); e.id = Number(twin.id); throw e; }
   const at = nowIso();
   return db.transaction(async (tx) => {
-    const r = await tx.prepare(`INSERT INTO tc_companies (name, name_key, country, city, website, status, pic_name, notes, source, created_at, created_by)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?)`).run(name, key, country, clip(b.city, 80), clip(b.website, 200), status, clip(b.pic, 120),
+    const r = await tx.prepare(`INSERT INTO tc_companies (name, name_key, country, city, website, status, pic_name, pic_email, notes, source, created_at, created_by)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`).run(name, key, country, clip(b.city, 80), clip(b.website, 200), status, pic.name, pic.email,
       clip(b.notes), 'manual', at, actor);
     const id = Number(r.lastInsertRowid);
     for (const a of areas) await tx.prepare('INSERT INTO tc_company_areas (company_id, area) VALUES (?,?)').run(id, a);
@@ -286,7 +323,7 @@ export async function addCompany(db, b, actor) {
 
 const EDITABLE = { name: 200, country: 80, city: 80, address: 300, website: 200, status: 40, status_detail: 40, pic_name: 120, notes: 4000, info_to_send: 4000 };
 const FIELD_OF = { name: 'name', country: 'country', city: 'city', address: 'address', website: 'website', status: 'status',
-  statusDetail: 'status_detail', pic: 'pic_name', notes: 'notes', infoToSend: 'info_to_send' };
+  statusDetail: 'status_detail', notes: 'notes', infoToSend: 'info_to_send' };   // pic: resolvePic, in editCompany
 export const FIELD_LABELS = { name: 'Name', country: 'Country', city: 'City', address: 'Address', website: 'Website', status: 'Status',
   status_detail: 'Meeting type', pic_name: 'Person in charge', notes: 'Notes', info_to_send: 'Information to send', areas: 'Areas' };
 
@@ -294,8 +331,14 @@ export const FIELD_LABELS = { name: 'Name', country: 'Country', city: 'City', ad
 export async function editCompany(db, id, b, actor) {
   const c = await mustCompany(db, id);
   const at = nowIso();
+  const pic = 'pic' in b ? await resolvePic(db, b.pic) : null;
   return db.transaction(async (tx) => {
     let changed = 0;
+    if (pic && ((c.pic_name ?? null) !== pic.name || String(c.pic_email ?? '').toLowerCase() !== String(pic.email ?? '').toLowerCase())) {
+      await tx.prepare('UPDATE tc_companies SET pic_name = ?, pic_email = ?, updated_at = ? WHERE id = ?').run(pic.name, pic.email, at, c.id);
+      await logAct(tx, c.id, { kind: 'edit', field: 'pic_name', old: c.pic_name ?? null, new: pic.name, actor, at });
+      changed += 1;
+    }
     for (const [k, col] of Object.entries(FIELD_OF)) {
       if (!(k in b)) continue;
       let v = clip(b[k], EDITABLE[col]);

@@ -59,6 +59,7 @@ import * as areas from './areas.js';
 import * as tc from './tc.js';
 import * as tcimport from './tcimport.js';
 import * as tcclienthub from './tcclienthub.js';
+import * as tcpic from './tcpic.js';
 
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -600,6 +601,12 @@ const PUBLIC = gate.isPublic();
     if (b.ran) console.log(`areas: ${b.accounts} accounts, ${b.granted} areas given (Academy to all, Training Centre to admins)`);
   }
 }
+// THE PERSON IN CHARGE'S ACCOUNT (20.10.2026): a name that clearly is one account is linked, once (src/tcpic.js). A count
+// only in this line; the names stay in each company's own log. A failure here never keeps the door shut.
+try {
+  const l = await tcpic.linkPicAccounts(db);
+  if (l.linked) console.log(`training centre: ${l.linked} companies linked to their person in charge's account`);
+} catch (e) { console.error('training centre: linking the person in charge failed: ' + e.message); }
 
 console.log(`prototype started ${DATASET.dataset.toUpperCase()}: ${DATASET.people} people`
   + (hasRealData() ? ' | real data available on demand' : ' | no real data file'));
@@ -699,6 +706,15 @@ const actorOf = async (req, b) => {
   if (me) return me.name;
   if (AUTH_ON) return 'unknown user';
   return String((b && b.by) || req.headers['x-acting-as'] || 'unknown user');
+};
+// "Mine" on the Training Centre lists: the signed-in account (its email and names, src/tcpic.js); on a laptop copy with
+// sign-in off, the name picked in "Acting as".
+const tcMe = async (req, url) => {
+  const me = await currentUser(req);
+  if (me) return { email: me.email, name: me.name };
+  if (AUTH_ON) return null;
+  const who = String(url.searchParams.get('as') || req.headers['x-acting-as'] || '');
+  return who ? { email: '', name: who } : null;
 };
 const viewerOf = async (req, url) => {
   const me = await currentUser(req);
@@ -3239,15 +3255,17 @@ export const handle = async (req, res) => {
     if (p === '/api/tc/home' && req.method === 'GET') return json(res, 200, await tc.home(db));
     if (p === '/api/tc/companies' && req.method === 'GET') {
       return json(res, 200, await tc.listCompanies(db, tc.readFilters(url.searchParams),
-        { page: url.searchParams.get('page'), size: url.searchParams.get('size'), sort: url.searchParams.get('sort') || 'name' }));
+        { page: url.searchParams.get('page'), size: url.searchParams.get('size'), sort: url.searchParams.get('sort') || 'name',
+          me: await tcMe(req, url) }));
     }
     if (p === '/api/tc/companies' && req.method === 'POST') {
       const b = await body(req, 64 * 1024);
+      if (b.pic && !(await adminOf(req))) return json(res, 403, { error: 'An admin picks the person in charge.' });
       return json(res, 200, await tc.addCompany(db, b, await actorOf(req, b)));
     }
     if (p === '/api/tc/next' && req.method === 'GET') {
-      const who = url.searchParams.get('owner') === 'me' ? await viewerOf(req, url) : String(url.searchParams.get('owner') || '');
-      return json(res, 200, await tc.nextList(db, { owner: who === 'all' ? '' : who }));
+      const who = String(url.searchParams.get('owner') || '');
+      return json(res, 200, await tc.nextList(db, { owner: who === 'all' ? '' : who, me: await tcMe(req, url) }));
     }
     {
       const m = /^\/api\/tc\/companies\/(\d+)$/.exec(p);
@@ -3263,6 +3281,8 @@ export const handle = async (req, res) => {
       if (edit || contact || task) {
         const b = await body(req, 64 * 1024);
         const by = await actorOf(req, b);
+        // the person in charge is an admin's pick (the owner, 20.10.2026); everything else on a company is everybody's
+        if (edit && edit[2] === 'edit' && 'pic' in b && !(await adminOf(req))) return json(res, 403, { error: 'An admin picks the person in charge.' });
         if (task) return json(res, 200, await tc.finishTask(db, Number(task[1]), b, by));
         if (contact) {
           const id = Number(contact[1]);

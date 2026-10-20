@@ -278,8 +278,8 @@
         "href": "#/tc/clients"
       },
       {
-        "do": "See one person's companies",
-        "where": "Companies, the Person in charge filter",
+        "do": "See your own companies",
+        "where": "Companies, Person in charge, Mine",
         "href": "#/tc/companies"
       }
     ],
@@ -308,6 +308,11 @@
         "id": "tc-next-contact",
         "q": "How do I set the next contact?",
         "a": "On the company page, write what happened under Log a communication and pick the date of the next one, or set the date under Next communication."
+      },
+      {
+        "id": "tc-person-in-charge",
+        "q": "Who is the person in charge, and what is Mine?",
+        "a": "An admin picks the person in charge on the company page, from the Intake accounts or the names without Intake access, and Mine on Companies and Next contacts shows the companies in your own charge."
       },
       {
         "id": "tc-overdue",
