@@ -43,7 +43,7 @@ companies with no status - defaults in use); phone: marked number of a known per
 
 ## 20.10.2026 - Ieva's feedback (owner: "we still have bugs to fix")
 
-- `DECIDED` (owner 20.10: "why is the top bar floating frozen?") the Journey stage bar folds and stays pinned when scrolling, and in the List it sits over the open edit panel. Shown as pictures A/B/C; HIS PICK: **A - keep as now** (pinned, box + shadow). Nothing to change.
+- `DECIDED` (owner 20.10: "why is the top bar floating frozen?") the Journey stage bar folds and stays pinned when scrolling, and in the List it sits over the open edit panel. Shown as pictures A/B/C; first pick A, then his final word "Stays but slimmer!" = **C**: LIVE patch 62 (pinned, one thin line, no box or shadow).
 - `LIVE` (patch 61, 20.10) Notes: from Journey -> List she cannot edit earlier comments (the edit panel's Notes box is the person's Notes
   field, earlier comments live in History), and the List line shows only part of the latest comment; some people show
   earlier comments in the box, others not. She needs the full comments and to fix earlier ones from the List.
@@ -95,7 +95,7 @@ companies with no status - defaults in use); phone: marked number of a known per
 - `SAID` (open - owner: "rest of questions I'll answer later", 19.10; the build uses these defaults until he answers) a company with offices in several
   countries is ONE company with its offices inside (explicit office tags like /CY/ stay separate); course counts are
   typed by TC staff for now (the Excel history imported); the 296 companies with no status start as "Not contacted".
-- `DECIDED` (owner 20.10, after seeing the live tiles: "nevajag tos metrics uzreiz sākumā ... kaut ko, kas nepasaka, ka
+- `LIVE` (patch 62, 20.10) (owner 20.10, after seeing the live tiles: "nevajag tos metrics uzreiz sākumā ... kaut ko, kas nepasaka, ka
   kāds kavē savu darbu") the start-page tiles show **no figures** - just Academy / Training Centre (icon, name, open).
   Due / overdue counts stay inside each side.
 - `DECIDED` Sessions: MASTER CONTROL + three lanes - TC-DATA (clean the Excel, cross-check Client Hub, duplicates
