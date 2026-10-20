@@ -10330,10 +10330,11 @@ function tcInstallNav() {
     <div class="kids"><a href="#/tc/next" data-c="tc-next" title="Every next communication, by date"><span>Next contacts</span><span class="n" id="tnNext"></span></a>
       <a href="#/tc/clients" data-c="tc-clients" title="Companies with delegates in any year"><span>Clients</span><span class="n" id="tnClients"></span></a>
       <a href="#/tc/prospects" data-c="tc-prospects" title="Companies with no course yet"><span>Prospects</span><span class="n" id="tnProspects"></span></a>
-      <a href="#/tc/review" data-c="tc-review" id="tnReviewA" title="Client Hub contacts to place by hand" hidden><span>From Client Hub</span><span class="n" id="tnReview"></span></a></div>
+      <a href="#/tc/review" data-c="tc-review" id="tnReviewA" title="Client Hub contacts to place by hand" hidden style="display:none"><span>From Client Hub</span><span class="n" id="tnReview"></span></a></div>
     <a href="#/tc/help" data-c="tc-help" class="c-navfoot">${C_ICON.help}<span>Help center</span></a></div>`);
-  // From Client Hub (board 4 R2, as in the owner's picked picture): shown only while contacts wait to be placed
-  api('/api/tc/review?count=1').then((c) => { const a = $('#tnReviewA'), b = $('#tnReview'); if (a && c && c.all) { a.hidden = false; b.textContent = String(Number(c.all)); } }).catch(() => {});
+  // From Client Hub (board 4 R2, as in the owner's picked picture): shown only while contacts wait to be placed;
+  // style display, because the menu's display:flex outranks [hidden]
+  api('/api/tc/review?count=1').then((c) => { const a = $('#tnReviewA'), b = $('#tnReview'); if (a && c && c.all) { a.hidden = false; a.style.display = ''; b.textContent = String(Number(c.all)); } }).catch(() => {});
   const tab = (href, t, icon, label, count) => `<a href="${href}" data-t="${t}">${icon}<span>${label}</span>${count ? `<span class="n" id="${count}"></span>` : ''}</a>`;
   const more = (href, icon, label) => `<a href="${href}" onclick="tcMore(false)">${icon}<span>${label}</span></a>`;
   document.body.insertAdjacentHTML('beforeend', `<div class="ctabs tctabs" role="navigation" aria-label="Training Centre phone menu">
