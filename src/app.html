@@ -9931,24 +9931,17 @@ function cDrawNoArea() {
     <div class="c-row-acts"><button class="btn ghost" onclick="signOut()">Sign out</button></div></div></div></div>`;
 }
 
-// THE START PAGE: the two tiles, identical at rest (sibling tiles look identical, 14.10.2026). Each figure is a click to
-// where it is counted. Academy's three are Home's own reads (cHomeData), so a tile never disagrees with Home.
+// THE START PAGE: the two tiles, identical at rest (sibling tiles look identical, 14.10.2026). NO FIGURES (owner, 20.10.2026:
+// "nevajag tos metrics uzreiz sākumā ... kaut ko, kas nepasaka, ka kāds kavē savu darbu"): a name, an icon and the way in.
+// What is due or late is shown inside each side (Due, Next contacts), never on the door.
 async function viewStart() {
   const mine = cAreas();
-  const [A, T] = await Promise.all([
-    mine.includes('academy') ? cHomeData().catch(() => null) : null,
-    mine.includes('tc') ? api('/api/tc/home').catch(() => null) : null]);
-  const fig = (label, n, href, go) => `<a class="kneed" href="${href}"${go ? ` onclick="${go};return false"` : ''}><span>${esc(label)}</span><b>${n == null ? '<span class="kgapn" title="not available">—</span>' : Number(n)}</b></a>`;
-  const tile = (home, icon, name, figs, open) => `<div class="dl-tile" role="group" aria-label="${esc(name)}" onclick="if(!event.target.closest('a'))location.hash=this.dataset.home" data-home="${home}">
-      <h2><a href="${home}">${icon}<span>${esc(name)}</span></a></h2><div class="kday-row">${figs}</div>
+  const tile = (home, icon, name, open) => `<div class="dl-tile" role="group" aria-label="${esc(name)}" onclick="if(!event.target.closest('a'))location.hash=this.dataset.home" data-home="${home}">
+      <h2><a href="${home}">${icon}<span>${esc(name)}</span></a></h2>
       <a class="kgo" href="${home}">${esc(open)} →</a></div>`;
   $('#view').innerHTML = `<div class="dl">${cStartBrand()}<div class="dl-tiles m-scene">
-      ${mine.includes('academy') ? tile('#/home', C_ICON.adm, 'Academy',
-        fig('Due today', A && A.dueToday, '#/due', "cGoToday('cTodayDue')") + fig('New in the Inbox', A && A.inbox, '#/leads') + fig('Active leads', A ? A.open.length : null, '#/journey'),
-        'Open Academy') : ''}
-      ${mine.includes('tc') ? tile('#/tc', T_ICON.co, 'Training Centre',
-        fig('Due this week', T && T.needs.week, '#/tc/next', "tcGoNext('week')") + fig('Overdue contacts', T && T.needs.overdue, '#/tc/next', "tcGoNext('over')")
-        + fig('Active clients', T && T.cards.activeClients, '#/tc/clients'), 'Open Training Centre') : ''}
+      ${mine.includes('academy') ? tile('#/home', C_ICON.adm, 'Academy', 'Open Academy') : ''}
+      ${mine.includes('tc') ? tile('#/tc', T_ICON.co, 'Training Centre', 'Open Training Centre') : ''}
     </div>
     <div class="dl-foot">${themeSwitchHtml()}<div class="c-foot" style="padding:0"><a href="#/help">Help center</a></div></div></div>`;
   if (typeof syncThemeSwitches === 'function') syncThemeSwitches(THEME_PREF);

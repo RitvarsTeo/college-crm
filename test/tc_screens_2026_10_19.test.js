@@ -60,15 +60,13 @@ test('the router asks the door first, and an account without Academy never asks 
   assert.match(fn('function installCScope('), /!AUTH\.user\.areas\.includes\('academy'\)\) return;/);
 });
 
-test('the start page: two identical tiles, each figure a click to where it is counted, only the halves you open', () => {
+test('the start page: two identical tiles with NO figures (owner 20.10: nothing that says someone is late), only the halves you open', () => {
   const v = fn('async function viewStart(');
-  assert.match(v, /mine\.includes\('academy'\) \? tile\('#\/home', C_ICON\.adm, 'Academy'/);
-  assert.match(v, /mine\.includes\('tc'\) \? tile\('#\/tc', T_ICON\.co, 'Training Centre'/);
-  for (const [label, href] of [['Due today', '#/due'], ['New in the Inbox', '#/leads'], ['Active leads', '#/journey'],
-    ['Due this week', '#/tc/next'], ['Overdue contacts', '#/tc/next'], ['Active clients', '#/tc/clients']]) {
-    assert.ok(v.includes(`fig('${label}'`) && v.includes(`'${href}'`), label);
+  assert.match(v, /mine\.includes\('academy'\) \? tile\('#\/home', C_ICON\.adm, 'Academy', 'Open Academy'\)/);
+  assert.match(v, /mine\.includes\('tc'\) \? tile\('#\/tc', T_ICON\.co, 'Training Centre', 'Open Training Centre'\)/);
+  for (const word of ['Due today', 'New in the Inbox', 'Active leads', 'Due this week', 'Overdue contacts', 'Active clients', 'fig(', 'cHomeData', '/api/tc/home']) {
+    assert.ok(!v.includes(word), `no figure on the door: ${word}`);
   }
-  assert.match(v, /cHomeData\(\)/, 'Academy\'s figures are Home\'s own reads');
   // identical at rest: one tile function, one class, no variant
   assert.equal((v.match(/class="dl-tile"/g) || []).length, 1);
   assert.match(APP, /html\.ui-c \.dl-tile\{display:flex;flex-direction:column;gap:18px;padding:24px 26px 20px;border-radius:16px;background:var\(--surface\);/);
