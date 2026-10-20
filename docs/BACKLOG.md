@@ -18,7 +18,7 @@ this is a local prototype" stood here until 30.09.2026, from the weeks before th
 
 ## 20.10.2026 - Ieva's feedback (owner: "we still have bugs to fix")
 
-- `SAID` (owner 20.10: "why is the top bar floating frozen?") the Journey stage bar folds and stays pinned when scrolling, and in the List it sits over the open edit panel. Options offered (no pick yet): scroll away in List only / scroll away everywhere / stay but slimmer.
+- `DECIDED` (owner 20.10: "why is the top bar floating frozen?") the Journey stage bar folds and stays pinned when scrolling, and in the List it sits over the open edit panel. Shown as pictures A/B/C; HIS PICK: **A - keep as now** (pinned, box + shadow). Nothing to change.
 - `LIVE` (patch 61, 20.10) Notes: from Journey -> List she cannot edit earlier comments (the edit panel's Notes box is the person's Notes
   field, earlier comments live in History), and the List line shows only part of the latest comment; some people show
   earlier comments in the box, others not. She needs the full comments and to fix earlier ones from the List.
