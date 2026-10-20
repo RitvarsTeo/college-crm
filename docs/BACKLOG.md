@@ -39,6 +39,10 @@ this is a local prototype" stood here until 30.09.2026, from the weeks before th
   retired only after its data is confirmed in Intake. Not Client Hub's project: mixing two live apps in one database
   during the move risks Client Hub (still serving Grand Opening) and makes the later delete harder. Aigars: not told
   yet (owner: "not yet").
+- `DECIDED` (owner 20.10) Supabase free tier allows 2 projects (TA + Client Hub today): Intake **reuses Client Hub's
+  slot** - after Client Hub's data is confirmed in Intake, a full backup of Client Hub's Supabase, then that project is
+  deleted (owner's yes for the delete is asked again at that moment), then a new empty Supabase project for Intake and
+  the one move from Neon. TA stays where it is.
 - `DECIDED` (owner 20.10, after Ieva's fixes were live) next TC lanes, all three now: TC-DATA 2 (Client Hub contacts into
   Intake once - Intake is master; contacts for the 364 matched companies, the 467 Client Hub-only companies as new, with
   a preview before apply), TC-UI 2 (person in charge linked to Intake accounts so "Mine" works, TC screens checked with
