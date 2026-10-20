@@ -18,11 +18,11 @@ this is a local prototype" stood here until 30.09.2026, from the weeks before th
 
 ## 20.10.2026 - Ieva's feedback (owner: "we still have bugs to fix")
 
-- `SAID` Notes: from Journey -> List she cannot edit earlier comments (the edit panel's Notes box is the person's Notes
+- `LIVE` (patch 61, 20.10) Notes: from Journey -> List she cannot edit earlier comments (the edit panel's Notes box is the person's Notes
   field, earlier comments live in History), and the List line shows only part of the latest comment; some people show
   earlier comments in the box, others not. She needs the full comments and to fix earlier ones from the List.
-- `SAID` A lead made from an Inbox email got owner "Marketing" - why? (she changed it to Admissions by hand).
-- `SAID` Still coming into the Inbox: a ShipSpeak newsletter ("PLEASE PASS THIS MESSAGE...") and PMLP "IZPILDE!!FW:
+- `LIVE` (patch 61, 20.10: Inbox leads owned by Admissions) A lead made from an Inbox email got owner "Marketing" - why? (she changed it to Admissions by hand).
+- `LIVE` (patch 61, 20.10: newsletters + agency list pmlp.gov.lv + study check on new text only) Still coming into the Inbox: a ShipSpeak newsletter ("PLEASE PASS THIS MESSAGE...") and PMLP "IZPILDE!!FW:
   Jauns izsaukums TUA pieprasījumam" (came back: set aside before 14.10, Other).
 
 ## 19.10.2026 - New project: Training Centre in Intake (owner's picks)
