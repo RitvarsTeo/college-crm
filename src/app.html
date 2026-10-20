@@ -4745,6 +4745,7 @@ function cPeopleMatch(p, t, f, known) {
 // Fetched once per opened person; only this box redraws, so what is typed in the form above stays.
 const C_PCOMM = new Map();   // person id -> rows | null (could not read)
 let C_PCEDIT = null;         // the ref being edited
+const C_PCBUSY = new Set();  // ids being read right now: a redraw meanwhile does not ask again
 let C_PCSTALE = false;       // a comment was edited: the List line reads again on close
 function cCommentsHtml(id) {
   if (!C_PCOMM.has(id)) { setTimeout(() => cLoadComments(id), 0); return '<p class="c-talk-wait">Reading…</p>'; }
@@ -4764,9 +4765,11 @@ function cCommentsHtml(id) {
 }
 function cDrawComments(id) { const box = document.querySelector('#pe-comments'); if (box) box.innerHTML = cCommentsHtml(id); }
 async function cLoadComments(id) {
-  if (C_PCOMM.has(id)) return;
+  if (C_PCOMM.has(id) || C_PCBUSY.has(id)) return;
+  C_PCBUSY.add(id);
   try { C_PCOMM.set(id, (await api(`/api/people/${encodeURIComponent(id)}/comments`)).rows || []); }
   catch { C_PCOMM.set(id, null); }
+  finally { C_PCBUSY.delete(id); }
   if (C_PEDIT === id) cDrawComments(id);
 }
 async function cSaveComment(id, ref) {
