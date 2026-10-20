@@ -815,3 +815,8 @@ Seen: GitHub - no Aigars commits since 309b10f; crm-novikontas.vercel.app = 1ced
 - Linking needs both areas; one-area viewers see names only. Admin "Possible matches" read-only route.
 - Production read-only count: 3 suggestions, 1 person x 3 companies, all on rs.gov.lv (shared government domain). 802 of 812 Academy emails are public domains.
 - To check before release: rebase on production (now patch 63), screen pictures, owner pick on dropping shared domains from suggestions.
+- LIVE 20.10: deploy_verify b21a910 green (1,761 tests, byte-identical, 401 probes, leaks 0), dpl_HC4et4rYZUNNdA5Sx54Ads6FuYx7; pushed 7668290..b21a910 -> production.
+- Verified on intake.novikontas.org in the browser: fetch with x-acting-as "Mārcis Žabovs" the old way throws (non ISO-8859-1); through cSafeHeaders -> 200.
+
+## 20.10.2026 - MASTER PITCHER
+- Owner's pick: a standing pitch session, pictures only, no app code; picks come to MASTER CONTROL. Backlog + memory master-pitcher-session. Chip task_65275bcb (folder Projects/Pitches/intake-tc).

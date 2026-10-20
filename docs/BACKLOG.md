@@ -52,6 +52,7 @@ companies with no status - defaults in use); phone: marked number of a known per
 
 ## 20.10.2026 - Ieva's feedback (owner: "we still have bugs to fix")
 
+- `LIVE` (patch 63, 20.10) An account whose name has Latvian letters (Mārcis Žabovs, Aleksandrs Lukaševičs, Līva Mihailova) stayed on Loading...: the browser refuses those letters in a request header. Fixed and checked on the live site.
 - `DECIDED` (owner 20.10: "why is the top bar floating frozen?") the Journey stage bar folds and stays pinned when scrolling, and in the List it sits over the open edit panel. Shown as pictures A/B/C; first pick A, then his final word "Stays but slimmer!" = **C**: LIVE patch 62 (pinned, one thin line, no box or shadow).
 - `LIVE` (patch 61, 20.10) Notes: from Journey -> List she cannot edit earlier comments (the edit panel's Notes box is the person's Notes
   field, earlier comments live in History), and the List line shows only part of the latest comment; some people show
