@@ -43,6 +43,7 @@ companies with no status - defaults in use); phone: marked number of a known per
 
 ## 20.10.2026 - Training Centre round 2 (owner's picks)
 
+- `DECIDED` (owner 20.10: "TC companies dont send people to admissions. Those are two separate client basis. B2B and B2C sectors!") Training Centre companies (B2B) and Academy admissions (B2C) are separate client bases. The company <-> person link built by TC-BACKEND 2 rests on the opposite assumption; what happens to it is asked (drop from the release).
 - `DECIDED` (owner 20.10) The person in charge of a company is changed by admins only.
 - `DECIDED` (owner 20.10) When the person in charge changes, the planned next contact moves to the new person in charge.
 
