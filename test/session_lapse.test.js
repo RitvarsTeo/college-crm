@@ -209,7 +209,7 @@ test('every request to Intake\'s own /api/ goes through the one 401 handler', ()
   const raw = [...script.matchAll(/(?<![\w.])fetch\((['`])(\/api\/[^'`]*)\1/g)].map((m) => m[2]);
   // the only raw ones left are the two that are open before sign-in and never answer 401
   assert.deepEqual(raw.sort(), ['/api/auth/logout', '/api/auth/me']);
-  assert.match(APP, /async function apiFetch\(path, opts\) \{\n  const r = await fetch\(path, opts\);\n  if \(r\.status === 401 && AUTH\.on\) \{/);
+  assert.match(APP, /async function apiFetch\(path, opts\) \{\n  const r = await fetch\(path, cSafeHeaders\(opts\)\);\n  if \(r\.status === 401 && AUTH\.on\) \{/);   // 20.10: a Latvian name never stops a request
   assert.match(APP, /const r = await apiFetch\(path, o\);/, 'api() and post() use it');
   assert.match(APP, /apiFetch\('\/api\/calls\/events' \+ q/, 'the call poller uses it');
   assert.match(APP, /apiFetch\('\/api\/push\/key'/);
