@@ -41,6 +41,11 @@ its data and features move into Intake. No separate Client Hub redesign (the CH 
 **Out of scope / not decided:** a CH redesign (stopped); TC open answers (offices per country, course counts source,
 companies with no status - defaults in use); phone: marked number of a known person.
 
+## 20.10.2026 - Training Centre round 2 (owner's picks)
+
+- `DECIDED` (owner 20.10) The person in charge of a company is changed by admins only.
+- `DECIDED` (owner 20.10) When the person in charge changes, the planned next contact moves to the new person in charge.
+
 ## 20.10.2026 - MASTER PITCHER session (owner's pick)
 
 - `DECIDED` (owner 20.10: "i need a session, called Master Pitcher ... who works as idea pitcher for the tools and apps

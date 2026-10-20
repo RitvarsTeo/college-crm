@@ -826,3 +826,9 @@ Seen: GitHub - no Aigars commits since 309b10f; crm-novikontas.vercel.app = 1ced
 - Names matched to accounts: 4 of 20 (Mārcis Žabovs 45, Aigars Klūga 28, Māris Cīrulis 12, Aleksandrs Lukaševičs 1); 86 companies. 88 before/after PNGs in _training-centre/screens/round2.
 - Owner questions: PIC change admin-only? open next contact keeps old owner? (Mine two-word names only with sign-in off: laptop only.)
 - Next: one release branch on production b21a910 with all three lanes, full suite, pictures to owner.
+
+## 20.10.2026 - round 2 combined + owner's picks
+- release/2026-10-20-tc-round2 on production b21a910: TC-DATA 2 (7e9fcae 5b9c04d), TC-UI 2 (56cde14 f3e7a0d), TC-BACKEND 2 (7f42091 7ba0ffd + app.html merge + c4fbb2d pick). Conflicts: imports in server.js (kept all), company page aside (short log + tcPeople box). Suite 1,786/1,786.
+- Board: _training-centre/screens/round2/board_round2.png (local synthetic copy, port 8901).
+- HIS PICKS: person in charge changed by ADMINS ONLY (as built); when the person in charge changes the open next contact moves to the NEW person (change needed).
+- Release: owner answered "Something else" with no text - asked again. Shared-domain question: "i dont understand this" - shown as a picture.
