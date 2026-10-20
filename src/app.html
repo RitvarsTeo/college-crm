@@ -2976,6 +2976,78 @@ svg .m-flag-mark{transform-origin:0 100%}
   }
   /* the phone: the bar rides above the bottom tabs and the FEEDBACK button */
   @media (max-width:760px){ html.ui-c .tcrv-bulk{bottom:calc(122px + env(safe-area-inset-bottom));margin-bottom:120px;gap:8px 10px;padding:10px 12px;font-size:13.5px} }
+  /* THE GRAND OPENING (#/tc/go, the owner's pick G1, 20.10.2026): four cards, What came back, three boxes; the lists.
+     Its own tcgo- names only. Not reached is navy, never red. */
+  html.ui-c .tcgo-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:0 0 16px}
+  html.ui-c .tcgo-card{display:flex;flex-direction:column;gap:2px;padding:18px 20px 16px;border-radius:16px;background:var(--surface);box-shadow:var(--c-card-lift);
+    border-top:3px solid var(--c-sis);text-decoration:none;color:var(--ink)}
+  html.ui-c .tcgo-card:hover{box-shadow:var(--lift-hover, var(--c-card-lift))}
+  html.ui-c .tcgo-card span{font-size:14px;color:var(--t2)}
+  html.ui-c .tcgo-card b{font-size:38px;line-height:1.15;font-weight:600;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+  html.ui-c .tcgo-card small{font-size:12.5px;color:var(--t3)}
+  html.ui-c .tcgo-back{padding:18px 20px 20px;margin:0 0 16px}
+  html.ui-c .tcgo-bh{display:flex;align-items:baseline;gap:12px}
+  html.ui-c .tcgo-bh h2, html.ui-c .tcgo-box h2{margin:0;font-size:12.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t2)}
+  html.ui-c .tcgo-bh span{margin-left:auto;font-size:13px;color:var(--t3);font-variant-numeric:tabular-nums}
+  html.ui-c .tcgo-bar{display:flex;gap:3px;height:28px;margin:12px 0 14px;border-radius:8px;overflow:hidden}
+  html.ui-c .tcgo-bar i, html.ui-c .tcgo-key i{display:block;min-width:2px}
+  html.ui-c .t-p{background:var(--c-sis)}
+  html.ui-c .t-a{background:repeating-linear-gradient(135deg,var(--c-sis) 0 4px,var(--surface) 4px 8px)}
+  html.ui-c .t-s{background:#a7b0be}
+  html.ui-c .t-n{background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--rule)}
+  html.ui-c .tcgo-legend{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+  html.ui-c .tcgo-legend > div{display:flex;flex-direction:column;gap:2px;padding:0 16px;border-left:1px solid var(--rule)}
+  html.ui-c .tcgo-legend > div:first-child{padding-left:0;border-left:0}
+  html.ui-c .tcgo-key{display:flex;align-items:center;gap:7px;font-size:13.5px;color:var(--t2)}
+  html.ui-c .tcgo-key i{width:12px;height:12px;border-radius:3px;flex:none}
+  html.ui-c .tcgo-legend b{font-size:28px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink)}
+  html.ui-c .tcgo-legend small{font-size:12.5px;color:var(--t3)}
+  html.ui-c .tcgo-boxes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start}
+  html.ui-c .tcgo-box{padding:18px 20px 20px}
+  html.ui-c .tcgo-box h2{margin-bottom:10px}
+  html.ui-c .tcgo-br{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--rule);text-decoration:none;color:var(--ink);font-size:14px}
+  html.ui-c .tcgo-br b{font-size:15px;font-variant-numeric:tabular-nums}
+  html.ui-c .tcgo-br:hover span, html.ui-c .tcgo-br:hover b{color:var(--pet)}
+  html.ui-c .tcgo-act{margin-top:12px;display:inline-flex;text-decoration:none}
+  html.ui-c .tcgo-when{margin:0;font-size:15px;font-weight:600;color:var(--ink)}
+  html.ui-c .tcgo-where{margin:4px 0 0;font-size:13.5px;color:var(--t2)}
+  html.ui-c .tcgo-note{margin:6px 0 0;font-size:12.5px;color:var(--t3)}
+  html.ui-c .tcgo-empty{padding:22px 18px;color:var(--t2)}
+  html.ui-c .tcgo-tabs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
+  html.ui-c .tcgo-tabs a{font-size:13px;font-weight:600;border-radius:9px;padding:7px 11px;background:var(--surface);border:1px solid var(--rule);color:var(--t2);text-decoration:none}
+  html.ui-c .tcgo-tabs a b{color:var(--ink);margin-left:5px;font-variant-numeric:tabular-nums}
+  html.ui-c .tcgo-tabs a.on{background:var(--btn-bg);border-color:var(--btn-bg);color:var(--btn-ink)}
+  html.ui-c .tcgo-tabs a.on b{color:var(--btn-ink)}
+  html.ui-c .tcgo-list{padding:0;overflow:hidden}
+  html.ui-c .tcgo-person{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) 220px;gap:6px 16px;align-items:center;padding:11px 16px;border-top:1px solid var(--rule2)}
+  html.ui-c .tcgo-person:first-child{border-top:0}
+  html.ui-c .tcgo-who a{text-decoration:none;color:inherit}
+  html.ui-c .tcgo-who b{font-size:14px;font-weight:600;overflow-wrap:anywhere}
+  html.ui-c .tcgo-who small{display:block;font-size:12.5px;color:var(--t3);overflow-wrap:anywhere}
+  html.ui-c .tcgo-mail{font-size:13px;color:var(--t2);overflow-wrap:anywhere}
+  html.ui-c .tcgo-state{display:flex;flex-direction:column;align-items:flex-start;gap:3px}
+  html.ui-c .tcgo-state small{font-size:12px;color:var(--t3)}
+  html.ui-c .tcgo-chip{font-size:11.5px;font-weight:700;border-radius:6px;padding:2px 8px;background:var(--surface-2);color:var(--t2)}
+  html.ui-c .tcgo-chip.s-reached{background:var(--c-accent-bg);color:var(--petink)}
+  html.ui-c .tcgo-chip.s-bounced_hard, html.ui-c .tcgo-chip.s-bounced_soft{background:var(--btn-bg);color:var(--btn-ink)}
+  html.ui-c .tcgo-sends{padding:0;overflow:hidden}
+  html.ui-c .tcgo-tscroll{overflow-x:auto}
+  html.ui-c .tcgo-t{width:100%;border-collapse:collapse;font-size:13.5px;font-variant-numeric:tabular-nums}
+  html.ui-c .tcgo-t th{font-size:11.5px;font-weight:650;letter-spacing:.04em;text-transform:uppercase;color:var(--t3);background:var(--surface-2);text-align:right;padding:10px 12px;vertical-align:bottom;line-height:1.3;white-space:normal;max-width:120px}
+  html.ui-c .tcgo-t th:first-child, html.ui-c .tcgo-t td:first-child{text-align:left}
+  html.ui-c .tcgo-t td{padding:10px 12px;border-top:1px solid var(--rule2);text-align:right;color:var(--ink)}
+  html.ui-c .tcgo-t td small{display:block;font-size:12px;color:var(--t3);white-space:nowrap}
+  html.ui-c .tcgo-t td:first-child{white-space:nowrap;min-width:110px}
+  html.ui-c .tcgo-t tfoot td{border-top:2px solid var(--rule);font-weight:700}
+  html.ui-c .tcgo-read{margin-top:10px}
+  @media (max-width:900px){
+    html.ui-c .tcgo-cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    html.ui-c .tcgo-legend{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 0}
+    html.ui-c .tcgo-legend > div:nth-child(3){padding-left:0;border-left:0}
+    html.ui-c .tcgo-boxes{grid-template-columns:minmax(0,1fr)}
+    html.ui-c .tcgo-person{grid-template-columns:minmax(0,1fr)}
+  }
+  @media (max-width:760px){ html.ui-c .tcgo-card b{font-size:32px} html.ui-c .tcgo-card{padding:16px} }
 </style>
 </head>
 <body>
@@ -10326,6 +10398,10 @@ function tcInstallNav() {
     ${week ? `<a href="#/tc/week" data-c="tc-week" title="Your planned contacts, Monday to Friday">${C_ICON.next}<span>My week</span></a>` : ''}
     <a href="#/tc/book" data-c="tc-book" title="The clients by delegates, and who to welcome back">${T_ICON.book}<span>Client book</span></a>
     ${season ? `<a href="#/tc/season" data-c="tc-season" title="Exhibitions, plans and gifts over the year">${T_ICON.season}<span>Season</span></a>` : ''}
+    <a href="#/tc/go" data-c="tc-go" id="tnGoA" title="The Grand Opening, 27 May 2027: the invitation and what came back" hidden style="display:none">${T_ICON.star}<span>Grand Opening</span></a>
+    <div class="kids" id="tnGoK" hidden style="display:none"><a href="#/tc/go/notreached" data-c="tc-go-notreached" title="Who the Save the Date did not reach"><span>Not reached</span><span class="n" id="tnGoNr"></span></a>
+      <a href="#/tc/go/audience" data-c="tc-go-audience" title="Every guest and where they stand"><span>Audience</span></a>
+      <a href="#/tc/go/delivery" data-c="tc-go-delivery" title="Each Save the Date send and what it did"><span>Delivery</span></a></div>
     <a href="#/tc/companies" data-c="tc-companies" title="Every client company">${T_ICON.co}<span>Companies</span></a>
     <div class="kids"><a href="#/tc/next" data-c="tc-next" title="Every next communication, by date"><span>Next contacts</span><span class="n" id="tnNext"></span></a>
       <a href="#/tc/clients" data-c="tc-clients" title="Companies with delegates in any year"><span>Clients</span><span class="n" id="tnClients"></span></a>
@@ -10335,6 +10411,7 @@ function tcInstallNav() {
   // From Client Hub (board 4 R2, as in the owner's picked picture): shown only while contacts wait to be placed;
   // style display, because the menu's display:flex outranks [hidden]
   api('/api/tc/review?count=1').then((c) => { const a = $('#tnReviewA'), b = $('#tnReview'); if (a && c && c.all) { a.hidden = false; a.style.display = ''; b.textContent = String(Number(c.all)); } }).catch(() => {});
+  tcGoNav();   // the Grand Opening item, once its figures are in Intake
   const tab = (href, t, icon, label, count) => `<a href="${href}" data-t="${t}">${icon}<span>${label}</span>${count ? `<span class="n" id="${count}"></span>` : ''}</a>`;
   const more = (href, icon, label) => `<a href="${href}" onclick="tcMore(false)">${icon}<span>${label}</span></a>`;
   document.body.insertAdjacentHTML('beforeend', `<div class="ctabs tctabs" role="navigation" aria-label="Training Centre phone menu">
@@ -10342,7 +10419,7 @@ function tcInstallNav() {
     <button type="button" data-t="more" aria-haspopup="dialog" aria-expanded="false" onclick="tcMore(true)">${C_ICON.more}<span>More</span></button></div>
     <div class="cmore" id="tMore" hidden><div class="cmore-back" onclick="tcMore(false)"></div>
     <div class="cmore-sheet" role="dialog" aria-modal="true" aria-label="More">
-      ${week ? more('#/tc/next', C_ICON.next, 'Next contacts') : ''}${season ? more('#/tc/season', T_ICON.season, 'Season') : ''}${more('#/tc/clients', T_ICON.star, 'All clients')}${more('#/tc/prospects', T_ICON.aim, 'Prospects')}${more('#/tc/help', C_ICON.help, 'Help')}</div></div>`);
+      ${week ? more('#/tc/next', C_ICON.next, 'Next contacts') : ''}${season ? more('#/tc/season', T_ICON.season, 'Season') : ''}${more('#/tc/clients', T_ICON.star, 'All clients')}${more('#/tc/prospects', T_ICON.aim, 'Prospects')}<a href="#/tc/go" id="tmGoA" onclick="tcMore(false)" hidden style="display:none">${T_ICON.star}<span>Grand Opening</span></a>${more('#/tc/help', C_ICON.help, 'Help')}</div></div>`);
 }
 function tcMore(open) { const m = $('#tMore'); if (m) m.hidden = !open; }
 function tcMark(place) {
@@ -10380,6 +10457,7 @@ async function tcRoute(hash) {
     else if (place === 'season' && typeof viewTcSeason === 'function') await viewTcSeason(arg); // lane TC-WEEK 3
     else if (place === 'help') viewTcHelp();
     else if (place === 'review') await viewTcReview();
+    else if (place === 'go') await viewTcGo();   // lane TC-GO: the Grand Opening
     else await viewTcHome();
     cOpenView();
   } catch (e) {
@@ -11410,6 +11488,110 @@ async function tcRvPlace() {
     for (const g of T_RV.groups) if (items.some((it) => it.ids[0] === g.contacts[0].id)) T_RV_ON.delete(g.key);
     await viewTcReview();
   } catch (e) { alert(e.message); }
+}
+
+// ------------------------------------------------------------ THE GRAND OPENING (#/tc/go) --
+// The owner's pick G1, board 5 (20.10.2026): "Grand Opening" in the Training Centre menu with Not reached, Audience and
+// Delivery; the page is his Client Hub pick (Q6a 16.10, labels C7 20.10) redrawn in Intake: four cards, What came
+// back, three boxes. Not reached is navy, never red. The data rules are src/tcgo.js. Self-contained: this block, its
+// CSS (tcgo-) and the hooks (the route, the menu item, the phone's More sheet).
+let T_GO = null;
+let T_GO_PEOPLE = null;
+let T_GO_SHOW = 200;
+const tcGoN = (n) => Number(n || 0).toLocaleString('en');
+const tcGoPct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
+
+/** The menu item and its sub-items appear once the figures are in Intake. */
+function tcGoNav() {
+  api('/api/tc/go?count=1').then((c) => {
+    if (!c || !c.guests) return;
+    for (const id of ['#tnGoA', '#tnGoK', '#tmGoA']) { const el = $(id); if (el) { el.hidden = false; el.style.display = ''; } }
+    const n = $('#tnGoNr'); if (n) n.textContent = c.notReached ? String(Number(c.notReached)) : '';
+  }).catch(() => {});
+}
+
+async function viewTcGo() {
+  const [, , , sub, state] = location.hash.split('?')[0].split('/');
+  document.querySelectorAll('.tcnav a[data-c^="tc-go-"]').forEach((a) => a.classList.toggle('on', a.dataset.c === 'tc-go-' + (sub || '')));
+  T_GO = await api('/api/tc/go');
+  if (!T_GO.figures) {
+    $('#view').innerHTML = `<p class="c-crumb">${esc(T_GO.event.name)} · ${esc(T_GO.event.dateLabel)} · ${esc(T_GO.event.send)}</p>
+      <div class="c-head"><div><h1>The invitation</h1></div></div><div class="c-sheet tcgo-empty">The Grand Opening figures are not in Intake yet: an admin brings them in from Client Hub.</div>`;
+    return;
+  }
+  if (sub === 'notreached') return tcGoPeopleView('notReached', state || '', 'Not reached');
+  if (sub === 'audience') return tcGoPeopleView(state && ['reached', 'notReached', 'notIn'].includes(state) ? state : 'all', '', 'Audience');
+  if (sub === 'delivery') return tcGoDelivery();
+  tcGoDraw();
+}
+const tcGoCrumb = (link) => { const E = T_GO.event; const t = `${esc(E.name)} · ${esc(E.dateLabel)} · ${esc(E.send)}`; return `<p class="c-crumb">${link ? `<a href="#/tc/go">${t}</a>` : t}</p>`; };
+function tcGoDraw() {
+  const F = T_GO.figures, E = T_GO.event;
+  const card = (label, n, sub, href) => `<a class="tcgo-card" href="${href}"><span>${esc(label)}</span><b>${tcGoN(n)}</b>${sub ? `<small>${sub}</small>` : ''}</a>`;
+  const seg = F.cameBack;
+  const tone = { person: 'p', cant_tell: 'a', scanner: 's', none: 'n' };
+  const subOf = { person: F.clicked ? `${tcGoN(F.clicked)} clicked` : '', none: F.optedOutNoOpen ? `${tcGoN(F.optedOutNoOpen)} opted out` : '' };
+  const row = (x, href) => `<a class="tcgo-br" href="${href}"><span>${esc(x.label)}</span><b>${tcGoN(x.n)}</b></a>`;
+  $('#view').innerHTML = `${tcGoCrumb(false)}<div class="c-head"><div><h1>The invitation</h1></div></div>
+    <div class="tcgo-cards">
+      ${card('Sent the Save the Date', F.sent, '', '#/tc/go/audience')}
+      ${card('Reached', F.reached, `${tcGoPct(F.reached, F.sent)}% of ${tcGoN(F.sent)}`, '#/tc/go/audience/reached')}
+      ${card('Not reached', F.notReached, '', '#/tc/go/notreached')}
+      ${card('Not in the invitation', F.notIn, '', '#/tc/go/audience/notIn')}</div>
+    <section class="c-sheet tcgo-back" aria-label="What came back">
+      <div class="tcgo-bh"><h2>What came back</h2><span>${tcGoN(F.reached)} delivered</span></div>
+      <div class="tcgo-bar" role="img" aria-label="${esc(seg.map((x) => `${x.label} ${x.n}`).join(', '))}">${seg.map((x) => `<i class="t-${tone[x.id]}" style="flex:${Number(x.n)}"></i>`).join('')}</div>
+      <div class="tcgo-legend">${seg.map((x) => `<div><span class="tcgo-key"><i class="t-${tone[x.id]}"></i>${esc(x.label)}</span><b>${tcGoN(x.n)}</b>${subOf[x.id] ? `<small>${subOf[x.id]}</small>` : ''}</div>`).join('')}</div>
+    </section>
+    <div class="tcgo-boxes">
+      <section class="c-sheet tcgo-box"><h2>Not reached · ${tcGoN(F.notReached)}</h2>
+        ${F.notReachedWhy.map((x) => row(x, '#/tc/go/notreached/' + encodeURIComponent(x.id))).join('')}
+        <a class="btn sm ghost tcgo-act" href="#/tc/go/notreached/bounced_hard">Fix the addresses</a></section>
+      <section class="c-sheet tcgo-box"><h2>Not in the invitation · ${tcGoN(F.notIn)}</h2>
+        ${F.notInWhy.map((x) => row(x, '#/tc/go/audience/notIn')).join('')}</section>
+      <section class="c-sheet tcgo-box"><h2>Add to Calendar · ${tcGoN(F.calendar)} ${F.calendar === 1 ? 'person' : 'people'}</h2>
+        <p class="tcgo-when">${esc(E.dateLabel)}</p><p class="tcgo-where">${esc(E.place)}</p><p class="tcgo-note">interest, not an RSVP</p>
+        <button type="button" class="btn sm ghost tcgo-act" onclick="tcGoCopy(this)">Copy link</button></section>
+    </div>`;
+}
+async function tcGoCopy(btn) {
+  const url = T_GO && T_GO.event.calendarUrl;
+  try { await navigator.clipboard.writeText(url); btn.textContent = 'Link copied'; }
+  catch (e) { window.prompt('The Add to Calendar link', url); }
+}
+async function tcGoPeopleView(group, state, title) {
+  const qs = new URLSearchParams({ group: group === 'all' ? 'all' : group, ...(state ? { state } : {}) });
+  if (!T_GO_PEOPLE || T_GO_PEOPLE.key !== qs.toString()) { T_GO_PEOPLE = { key: qs.toString(), ...(await api('/api/tc/go/people?' + qs.toString())) }; T_GO_SHOW = 200; }
+  const P = T_GO_PEOPLE, F = T_GO.figures;
+  const back = (id) => (P.cameBack.find((c) => c.id === id) || {}).label || '';
+  const isNR = title === 'Not reached';
+  const tabs = isNR
+    ? [['', 'All', F.notReached, '#/tc/go/notreached'], ...F.notReachedWhy.map((x) => [x.id, x.label, x.n, '#/tc/go/notreached/' + encodeURIComponent(x.id)])]
+    : [['all', 'All', F.sent + F.notIn, '#/tc/go/audience'], ['reached', 'Reached', F.reached, '#/tc/go/audience/reached'],
+      ['notReached', 'Not reached', F.notReached, '#/tc/go/audience/notReached'], ['notIn', 'Not in the invitation', F.notIn, '#/tc/go/audience/notIn']];
+  const on = isNR ? state : group;
+  const row = (r) => `<div class="tcgo-person">
+      <div class="tcgo-who">${r.companyId ? `<a href="#/tc/company/${Number(r.companyId)}"><b>${esc(r.company || 'Company')}</b></a>` : `<b>${esc(r.company || 'No company in Client Hub')}</b>`}
+        <small>${esc([r.name || (r.contactId ? 'no name' : r.onReview ? 'on the review list' : 'not in Intake'), r.position].filter(Boolean).join(' · '))}${r.country ? ' · ' + esc(r.country) : ''}</small></div>
+      <div class="tcgo-mail">${r.email ? esc(r.email) : ''}</div>
+      <div class="tcgo-state"><span class="tcgo-chip s-${esc(r.invitation)}">${esc(r.why)}</span>${r.cameBack ? `<small>${esc(back(r.cameBack))}</small>` : ''}</div></div>`;
+  $('#view').innerHTML = `${tcGoCrumb(true)}<div class="c-head"><div><h1>${esc(title)}</h1></div></div>
+    <div class="tcgo-tabs" role="group" aria-label="${esc(title)}">${tabs.map(([id, label, n, href]) => `<a class="${on === id ? 'on' : ''}" href="${href}" aria-current="${on === id}">${esc(label)}<b>${tcGoN(n)}</b></a>`).join('')}</div>
+    <div class="c-sheet tcgo-list">${P.rows.slice(0, T_GO_SHOW).map(row).join('') || '<div class="c-empty">Nobody here.</div>'}</div>
+    ${P.rows.length > T_GO_SHOW ? `<div class="c-row-acts tc-more"><button class="btn ghost" onclick="tcGoMore()">Show ${Math.min(200, P.rows.length - T_GO_SHOW)} more of ${tcGoN(P.rows.length - T_GO_SHOW)}</button></div>` : ''}`;
+}
+function tcGoMore() { T_GO_SHOW += 200; viewTcGo(); }
+async function tcGoDelivery() {
+  const S = await api('/api/tc/go/sends');
+  const day = (iso) => (iso ? new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Europe/Riga' }) : '');
+  const sum = (k) => S.sends.reduce((n, s) => n + s[k], 0);
+  const cols = [['sent', 'Sent'], ['delivered', 'Delivered'], ['hard', 'Address does not work'], ['soft', 'Refused, can be tried again'], ['person', 'Opened by a person'],
+    ['cantTell', "Can't tell"], ['scanner', 'Scanner only'], ['clicked', 'Clicked'], ['calendar', 'Add to Calendar']];
+  $('#view').innerHTML = `${tcGoCrumb(true)}<div class="c-head"><div><h1>Delivery</h1></div></div>
+    <div class="c-sheet tcgo-sends"><div class="tcgo-tscroll"><table class="tcgo-t"><thead><tr><th>Send</th>${cols.map(([, l]) => `<th>${esc(l)}</th>`).join('')}</tr></thead>
+      <tbody>${S.sends.map((s) => `<tr><td><b>${esc(s.label)}</b><small>${esc(day(s.firstSentAt))}</small></td>${cols.map(([k]) => `<td>${tcGoN(s[k])}</td>`).join('')}</tr>`).join('')}</tbody>
+      <tfoot><tr><td><b>Every send</b></td>${cols.map(([k]) => `<td>${tcGoN(sum(k))}</td>`).join('')}</tr></tfoot></table></div></div>
+    <p class="c-crumb tcgo-read">Client Hub read the results on ${esc(day(T_GO.readAt))}.</p>`;
 }
 
 function viewTcHelp() {

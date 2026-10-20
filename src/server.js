@@ -62,6 +62,7 @@ import * as tcweek from './tcweek.js';
 import * as tcseason from './tcseason.js';
 import * as tcclienthub from './tcclienthub.js';
 import * as tcreview from './tcreview.js';
+import * as tcgo from './tcgo.js';
 import * as tcpic from './tcpic.js';
 import * as tchome from './tchome.js';
 
@@ -3400,6 +3401,24 @@ export const handle = async (req, res) => {
       if (b.apply !== true) return json(res, 200, { preview: true, ...(await tcreview.previewLoad(db, files)).counts });
       return json(res, 200, await tcreview.applyLoad(db, files, { hash: b.hash }, await actorOf(req, b)));
     }
+    // THE GRAND OPENING (src/tcgo.js, the owner's pick G1): the page, its people and its sends, behind the tc gate; the
+    // import of Client Hub's extract is for admins (preview, then apply with the hash).
+    if (p === '/api/admin/tc/go-import' && (req.method === 'GET' || req.method === 'POST')) {
+      if (!(await adminOf(req))) return json(res, 403, { error: 'The Grand Opening import is for admins only.' });
+      if (req.method === 'GET') return json(res, 200, { files: tc.TC.grandOpening.files, ...(await tcgo.goCount(db)),
+        last: (await db.prepare('SELECT applied_at, applied_by, hash FROM tc_go_imports ORDER BY id DESC LIMIT 1').get()) || null });
+      const b = await body(req, tc.TC.grandOpening.maxBytes * 3);
+      const files = tcimport.readFiles(b, { names: tc.TC.grandOpening.files });
+      if (b.apply !== true) return json(res, 200, { preview: true, ...(await tcgo.previewImport(db, files)).counts });
+      return json(res, 200, await tcgo.applyImport(db, files, { hash: b.hash }, await actorOf(req, b)));
+    }
+    if (p === '/api/tc/go' && req.method === 'GET') {
+      return json(res, 200, url.searchParams.get('count') === '1' ? await tcgo.goCount(db) : await tcgo.goPage(db));
+    }
+    if (p === '/api/tc/go/people' && req.method === 'GET') {
+      return json(res, 200, await tcgo.goPeople(db, { group: String(url.searchParams.get('group') || 'notReached'), state: String(url.searchParams.get('state') || '') }));
+    }
+    if (p === '/api/tc/go/sends' && req.method === 'GET') return json(res, 200, await tcgo.goSends(db));
     if (p === '/api/tc/review' && req.method === 'GET') {
       return json(res, 200, url.searchParams.get('count') === '1' ? await tcreview.reviewCounts(db) : await tcreview.listReview(db));
     }

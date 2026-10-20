@@ -98,5 +98,29 @@
     "maxCandidates": 6,
     "maxPerPlace": 400,
     "setAsideLabel": "Not a contact for us"
+  },
+  "grandOpening": {
+    "_about": "THE GRAND OPENING (21.10.2026, src/tcgo.js; the owner's pick G1, board 5): its own page in the Training Centre half. The figures are Client Hub's: its per-person invitation state, the latest reading of each Save the Date send, Add to Calendar, and who opened it (a person, Apple Mail, a security scanner) from the classified opens. Brought in by the admin import; the extract is _training-centre/tools/go_extract.mjs.",
+    "event": { "name": "Grand Opening", "dateLabel": "27 May 2027", "place": "Novikontas Academy Campus, Duntes iela 17d, Riga", "send": "Save the Date",
+      "calendarUrl": "https://novikontas-grand-opening-calendar.vercel.app/" },
+    "files": ["go_guests.csv", "go_sends.csv", "go_deliveries.csv"],
+    "maxBytes": 4194304,
+    "invitation": [
+      { "id": "reached", "label": "Reached", "group": "reached" },
+      { "id": "bounced_hard", "label": "Address does not work", "group": "notReached" },
+      { "id": "bounced_soft", "label": "Refused, can be tried again", "group": "notReached" },
+      { "id": "decided", "label": "A decision is recorded", "group": "notIn" },
+      { "id": "record_blocked", "label": "The record is blocked", "group": "notIn" },
+      { "id": "opted_out", "label": "Asked not to receive email", "group": "notIn" },
+      { "id": "refused_no_reason", "label": "Refused, nothing says why", "group": "notIn" }
+    ],
+    "cameBack": [
+      { "id": "person", "label": "Opened by a person" },
+      { "id": "cant_tell", "label": "Can't tell (Apple Mail)" },
+      { "id": "scanner", "label": "Only a security scanner" },
+      { "id": "none", "label": "No open" }
+    ],
+    "_clickCountsAsPerson": "A click by a person is a person who opened it, so the clicked count sits inside Opened by a person.",
+    "clickCountsAsPerson": true
   }
 }

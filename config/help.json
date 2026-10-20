@@ -283,6 +283,11 @@
         "href": "#/tc/review"
       },
       {
+        "do": "See who the Save the Date did not reach",
+        "where": "Grand Opening, Not reached",
+        "href": "#/tc/go/notreached"
+      },
+      {
         "do": "See the biggest clients and who to call back",
         "where": "Client book",
         "href": "#/tc/book"
@@ -338,6 +343,11 @@
         "id": "tc-client-hub-review",
         "q": "How do I place the contacts that came from Client Hub?",
         "a": "Open Companies, Review list: each row already has its suggested company chosen, so tick the rows that are right, change the company in a row where it is not, press Place, and pick Not a contact for us with a few words for a row that does not belong."
+      },
+      {
+        "id": "tc-grand-opening",
+        "q": "What does the Grand Opening page show?",
+        "a": "The Save the Date for 27 May 2027 as Client Hub recorded it: who it was sent to, who it reached and who it did not, what came back (a person opening it, Apple Mail that cannot tell, a security scanner only, or no open), and Add to Calendar, which is interest and not an RSVP."
       },
       {
         "id": "tc-overdue",

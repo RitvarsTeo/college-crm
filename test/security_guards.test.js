@@ -381,6 +381,27 @@ test('(e) the Client Hub review list: the Training Centre team and admins open a
   }, '400 = through every gate and refused in words (nothing to place, no files)');
 });
 
+test('(e) the Grand Opening: the Training Centre team and admins open the page and its lists, only an admin imports, nobody else gets in', async (t) => {
+  const s = await startWithAreas();
+  t.after(() => { s.child.kill(); });
+  const call = async (p, who, body) => {
+    const r = await fetch(s.base + p, { method: body ? 'POST' : 'GET', redirect: 'manual', headers: { origin: s.base, 'content-type': 'application/json',
+      accept: 'application/json', ...(who ? { cookie: s.cookie(who) } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) });
+    await r.arrayBuffer();
+    return r.status;
+  };
+  const got = {};
+  for (const [p, body] of [['/api/tc/go'], ['/api/tc/go/people'], ['/api/tc/go/sends'], ['/api/admin/tc/go-import', { files: {} }]]) {
+    for (const who of ['tc', 'admin', 'academy', 'none', null]) got[`${who || 'nobody'} ${p}`] = await call(p, who, body);
+  }
+  assert.deepEqual(got, {
+    'tc /api/tc/go': 200, 'admin /api/tc/go': 200, 'academy /api/tc/go': 403, 'none /api/tc/go': 403, 'nobody /api/tc/go': 401,
+    'tc /api/tc/go/people': 200, 'admin /api/tc/go/people': 200, 'academy /api/tc/go/people': 403, 'none /api/tc/go/people': 403, 'nobody /api/tc/go/people': 401,
+    'tc /api/tc/go/sends': 200, 'admin /api/tc/go/sends': 200, 'academy /api/tc/go/sends': 403, 'none /api/tc/go/sends': 403, 'nobody /api/tc/go/sends': 401,
+    'tc /api/admin/tc/go-import': 403, 'admin /api/admin/tc/go-import': 400, 'academy /api/admin/tc/go-import': 403, 'none /api/admin/tc/go-import': 403, 'nobody /api/admin/tc/go-import': 401,
+  }, '400 = through every gate and refused in words (no files)');
+});
+
 test('(e) no Training Centre row is ever deleted: no DELETE route, no DELETE FROM tc_ outside the area tags', () => {
   assert.doesNotMatch(SERVER, /req\.method === 'DELETE'/, 'no DELETE handler');
   for (const f of fs.readdirSync(path.join(ROOT, 'src')).filter((x) => x.endsWith('.js'))) {

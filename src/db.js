@@ -689,6 +689,53 @@ CREATE TABLE IF NOT EXISTS tc_review_contacts (
   UNIQUE (batch, ch_contact_id)
 );
 CREATE INDEX IF NOT EXISTS tc_review_contacts_open ON tc_review_contacts (status, why);
+
+-- THE GRAND OPENING (21.10.2026, src/tcgo.js; the owner's pick G1): the guest list and the Save the Date results as
+-- Client Hub holds them, brought in by an admin import (preview, then apply with the hash) from a read-only extract.
+-- A guest is a Client Hub contact; who the guest is in Intake is read live (tc_company_contacts.ch_contact_id, the
+-- review list, or the same email address), so nothing here copies a name. Nothing is deleted: a guest Client Hub no
+-- longer has is marked gone.
+CREATE TABLE IF NOT EXISTS tc_go_guests (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  ch_contact_id TEXT NOT NULL UNIQUE, -- Client Hub contacts.contact_id
+  ch_company TEXT,                 -- the company as Client Hub writes it
+  country TEXT,
+  email_sha TEXT,                  -- sha256 of the lower-case address, first 32 characters: to find the person in Intake
+  invitation TEXT NOT NULL,        -- Client Hub's own state: reached | bounced_hard | bounced_soft | decided | record_blocked | opted_out | refused_no_reason
+  reason_code TEXT,
+  opted_out INTEGER NOT NULL DEFAULT 0,   -- asked not to receive email (Mailchimp)
+  gone INTEGER NOT NULL DEFAULT 0,        -- no longer in Client Hub's latest extract
+  imported_at TEXT NOT NULL,
+  updated_at TEXT
+);
+CREATE TABLE IF NOT EXISTS tc_go_sends (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  send_key TEXT NOT NULL UNIQUE,   -- go-s01.. in send order
+  label TEXT NOT NULL,             -- Send 1-5, Retry 1-2, Final, One-off 1..
+  first_sent_at TEXT,
+  read_at TEXT,                    -- when Client Hub last read the send's results
+  imported_at TEXT NOT NULL
+);
+-- What one send did for one guest: delivered or not, what came back (person | cant_tell | scanner | none), a click by
+-- a person, Add to Calendar (interest, not an RSVP), an opt-out.
+CREATE TABLE IF NOT EXISTS tc_go_deliveries (
+  guest_id BIGINT NOT NULL REFERENCES tc_go_guests(id),
+  send_id BIGINT NOT NULL REFERENCES tc_go_sends(id),
+  delivery TEXT NOT NULL,          -- delivered | soft_bounce | hard_bounce
+  came_back TEXT,
+  clicked INTEGER NOT NULL DEFAULT 0,
+  calendar INTEGER NOT NULL DEFAULT 0,
+  opted_out INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (guest_id, send_id)
+);
+-- Every applied import: when, by whom, the files' hash and what it changed.
+CREATE TABLE IF NOT EXISTS tc_go_imports (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  hash TEXT NOT NULL,
+  counts TEXT NOT NULL,            -- JSON
+  applied_at TEXT NOT NULL,
+  applied_by TEXT
+);
 `;
 
 // A test opens this in memory. The server opens a file, because a prototype that
