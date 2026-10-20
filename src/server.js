@@ -3256,7 +3256,7 @@ export const handle = async (req, res) => {
     if (p === '/api/tc/companies' && req.method === 'GET') {
       return json(res, 200, await tc.listCompanies(db, tc.readFilters(url.searchParams),
         { page: url.searchParams.get('page'), size: url.searchParams.get('size'), sort: url.searchParams.get('sort') || 'name',
-          me: await tcMe(req, url) }));
+          me: await tcMe(req, url), only: url.searchParams.get('only') === '1' }));
     }
     if (p === '/api/tc/companies' && req.method === 'POST') {
       const b = await body(req, 64 * 1024);

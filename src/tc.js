@@ -130,7 +130,7 @@ const tally = (rows, fn) => {
 };
 const byLv = (a, b) => String(a).localeCompare(String(b), 'lv');
 
-export async function listCompanies(db, filters = {}, { page = 1, size = 100, sort = 'name', now = new Date(), me = null } = {}) {
+export async function listCompanies(db, filters = {}, { page = 1, size = 100, sort = 'name', now = new Date(), me = null, only = false } = {}) {
   const w = tcWindow(now);
   const all = await companyRows(db);
   const mk = meKeys(me);
@@ -149,7 +149,10 @@ export async function listCompanies(db, filters = {}, { page = 1, size = 100, so
   return {
     total: rows.length,
     page: pg, size: n,
-    rows: rows.slice(0, pg * n),     // page 2 is the first two pages: the list grows with Show more
+    // page 2 is the first two pages: the list grows with Show more; `only` (round 2, 20.10.2026) sends just that page's rows,
+    // so the fifteenth Show more carries 100 rows, not all 1,497 again
+    rows: only ? rows.slice((pg - 1) * n, pg * n) : rows.slice(0, pg * n),
+    only: Boolean(only),
     counts: { status: Object.fromEntries(STATUS_IDS.map((s) => [s, noStatus.filter((c) => c.status === s).length])) },
     facets: {
       countries: tally(all, (c) => c.country || '-').sort((a, b) => b[1] - a[1] || byLv(a[0], b[0])),

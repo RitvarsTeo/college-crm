@@ -2645,8 +2645,18 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tc-d.today{background:#F7C04F;color:#011111}
   html.ui-c .tc-card{cursor:pointer}
   html.ui-c a.c-line.tc-cline{text-decoration:none;color:inherit}
+  html.ui-c .p-rows .c-line.tc-cline{grid-template-columns:minmax(0,1.4fr) minmax(0,1.3fr) 130px 150px}
+  html.ui-c .tc-cline .c-acts{justify-self:end}
   html.ui-c .tc-count{margin-left:auto}
   html.ui-c .tc-more{justify-content:center;margin-top:12px}
+  html.ui-c .c-facts .tc-long{white-space:pre-wrap;overflow-wrap:anywhere}
+  html.ui-c .c-facts .tc-long.c-clamp{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4;overflow:hidden}
+  html.ui-c .c-facts dd .c-more{padding:2px 0 0}
+  html.ui-c .tc-picdd select{width:100%;max-width:100%;min-width:0}
+  html.ui-c .tc-logmore{display:block;padding:10px 16px 14px}
+  html.ui-c .tc-empty{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px;padding:22px 18px}
+  html.ui-c .tc-empty b{font-weight:600;color:var(--t2)}
+  html.ui-c .tc-empty .kgo{margin:0}
   html.ui-c .tc-ticks{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
   html.ui-c .tc-ticks label, html.ui-c .tc-tick{display:inline-flex;align-items:center;gap:6px;font-weight:500;margin:0;white-space:nowrap}
   html.ui-c[data-area="start"] #view .c-back, html.ui-c[data-area="none"] #view .c-back{display:none}
@@ -10069,7 +10079,8 @@ async function viewTcHome() {
   const H = await api('/api/tc/home');
   const asOf = new Intl.DateTimeFormat('en-GB', { timeZone: TZ, day: 'numeric', month: 'long' }).format(new Date());
   const need = (label, n, go, k) => `<a class="kneed" href="#/tc/next" style="--i:${k}" onclick="${go};return false"><span>${esc(label)}</span><b>${Number(n)}</b></a>`;
-  const ys = H.cards.delegates.byYear;
+  // the year under way is not compared (round 2, 20.10.2026): a few early bookings read as a fall against a whole year
+  const ys = H.cards.delegates.byYear.filter((y) => y.year < Number(H.asOf.slice(0, 4)));
   const [prev, last] = ys.slice(-2);
   const delta = prev && last ? `<span class="kdelta${last.n > prev.n ? ' up' : last.n < prev.n ? ' down' : ''}">${Number(last.year)} <b>${Number(last.n)}</b> · vs ${Number(prev.year)} ${Number(prev.n)}</span>` : '';
   $('#view').innerHTML = `<div class="kpage kb">
@@ -10079,7 +10090,7 @@ async function viewTcHome() {
       ${need('Information to send', H.needs.info, "tcGo('info','yes')", 2)}</div></div></section>
     <div class="kstrip kb-strip">
       <div class="khero tc-card" role="link" tabindex="0" onclick="tcGo('client','yes')"><span>Active clients</span><b>${Number(H.cards.activeClients)}</b><small>companies with delegates in any year</small><a class="kgo" href="#/tc/clients">Clients →</a></div>
-      <div class="tc-card" role="link" tabindex="0" onclick="tcGo('client','yes')"><span>Delegates trained</span><b>${Number(H.cards.delegates.total)}</b><small>all years${last ? ', course lines to ' + Number(last.year) : ''}</small>${cSpark(ys.map((y) => y.n), 'lead')}${delta}<a class="kgo" href="#/tc/clients">Clients →</a></div>
+      <div class="tc-card" role="link" tabindex="0" onclick="tcGo('client','yes')"><span>Delegates trained</span><b>${Number(H.cards.delegates.total)}</b><small>all years</small>${cSpark(ys.map((y) => y.n), 'lead')}${delta}<a class="kgo" href="#/tc/clients">Clients →</a></div>
       <div class="tc-card" role="link" tabindex="0" onclick="tcGo('client','no')"><span>Prospects</span><b>${Number(H.cards.prospects)}</b><small>companies, no course yet</small><a class="kgo" href="#/tc/prospects">Prospects →</a></div>
       <div class="tc-card" role="link" tabindex="0" onclick="tcGo('country','*')"><span>Countries</span><b>${Number(H.cards.countries)}</b><small>where our companies are</small><a class="kgo" href="#/tc/companies" onclick="tcGo('country','*');return false">Companies →</a></div>
     </div>
@@ -10103,6 +10114,18 @@ async function tcLoadCompanies() {
   if (T_Q) qs.set('q', T_Q);
   qs.set('page', String(T_PAGE)); qs.set('size', '100'); qs.set('sort', T_SORT);
   T_LIST = await api('/api/tc/companies?' + qs.toString());
+  tcDrawCompanies();
+}
+// Show more asks for the next 100 only and adds them (round 2, 20.10.2026): at 1,497 companies the last click used to fetch
+// and draw the whole list again.
+async function tcMoreCompanies() {
+  const qs = new URLSearchParams();
+  for (const [k, v] of Object.entries(T_F)) if (v) qs.set(k, v);
+  if (T_Q) qs.set('q', T_Q);
+  qs.set('page', String(T_PAGE + 1)); qs.set('size', '100'); qs.set('sort', T_SORT); qs.set('only', '1');
+  const next = await api('/api/tc/companies?' + qs.toString());
+  T_PAGE += 1;
+  T_LIST = { ...next, rows: T_LIST.rows.concat(next.rows) };
   tcDrawCompanies();
 }
 function tcFilter(k, v) { T_F[k] = v; T_PAGE = 1; tcLoadCompanies(); }
@@ -10139,7 +10162,7 @@ function tcDrawCompanies() {
     band: cPoolBand('Status', cols, T_F.status, 'tcPickStatus'),
     filters: cPoolFilters('companies', boxes, any ? 'tcClear()' : ''),
     body: cPoolRows(L.rows, row, 'No company matches. Remove a filter to widen the list.')
-      + (L.total > L.rows.length ? `<div class="c-row-acts tc-more"><button class="btn ghost" onclick="T_PAGE+=1;tcLoadCompanies()">Show ${Math.min(100, L.total - L.rows.length)} more of ${Number(L.total - L.rows.length)}</button></div>` : ''),
+      + (L.total > L.rows.length ? `<div class="c-row-acts tc-more"><button class="btn ghost" onclick="tcMoreCompanies()">Show ${Math.min(100, L.total - L.rows.length)} more of ${Number(L.total - L.rows.length)}</button></div>` : ''),
   });
   const q = $('#tcQ');
   if (q) q.addEventListener('input', () => { clearTimeout(T_QT); T_QT = setTimeout(async () => { T_Q = q.value.trim(); T_PAGE = 1; await tcLoadCompanies(); const n = $('#tcQ'); if (n) { n.focus(); n.setSelectionRange(n.value.length, n.value.length); } }, 250); });
@@ -10182,9 +10205,10 @@ function tcPicSelect(id, value, attrs = '') {
 const tcPicValue = (c) => (c.picAccount ? c.picAccount.value : c.pic || '');
 
 // ---- THE COMPANY PAGE: the person page's layout - the next step, the log with a note box; details, contacts, courses ----
-let T_CO = null; let T_EDIT = false;
+let T_CO = null; let T_EDIT = false; let T_LOG_ALL = false;
+const T_LOG_FIRST = 15;   // round 2, 20.10.2026: a long log shows its latest 15 and Show all, so a phone reaches the details
 async function viewTcCompany(id) {
-  if (!T_CO || T_CO.id !== id) T_EDIT = false;
+  if (!T_CO || T_CO.id !== id) { T_EDIT = false; T_LOG_ALL = false; }
   T_CO = await api('/api/tc/companies/' + Number(id));
   tcDrawCompany();
 }
@@ -10223,9 +10247,9 @@ function tcDrawCompany() {
       ${row('Country', esc(c.country))}${row('City', esc(c.city))}${row('Address', esc(c.address))}${row('Website', link(c.website))}
       ${row('Areas', esc(c.areas.join(', ')), 'none')}${isAdmin() ? `<dt>Person in charge</dt><dd class="tc-picdd">${tcPicSelect('tcPic', tcPicValue(c), ' onchange="tcEdit({ pic: this.value })"')}</dd>` : row('Person in charge', esc(c.pic), 'nobody yet')}
       ${row('Last contact', c.lastContactAt ? esc(fmtDate(c.lastContactAt)) : '')}
-      ${row('Information to send', esc(c.infoToSend), 'nothing waiting')}
+      ${row('Information to send', c.infoToSend ? tcClamp(c.infoToSend) : '', 'nothing waiting')}
       ${c.sourceRow ? row('From the Excel', 'row ' + Number(c.sourceRow)) : ''}</dl>
-      ${c.notes ? `<div class="c-notes">${esc(c.notes)}</div>` : ''}</div>`;
+      ${c.notes ? tcClamp(c.notes, 'c-notes') : ''}</div>`;
   const status = `<div class="c-sheet c-facts"><h3>Status</h3><div class="c-pad tc-status">
       <select id="tcStatus" aria-label="Status" onchange="tcEdit({ status: this.value })">${M.statuses.map((s) => `<option value="${esc(s.id)}"${s.id === c.status ? ' selected' : ''}>${esc(s.label)}</option>`).join('')}</select>
       ${c.status === 'met' ? `<select aria-label="Meeting type" onchange="tcEdit({ statusDetail: this.value })"><option value="">Meeting type</option>${M.meetingTypes.map((m) => `<option value="${esc(m.id)}"${m.id === c.statusDetail ? ' selected' : ''}>${esc(m.label)}</option>`).join('')}</select>` : ''}</div></div>`;
@@ -10249,10 +10273,15 @@ function tcDrawCompany() {
       <div class="act"><button class="btn ghost" onclick="tcArchive()">Archive</button></div></div>
     <div class="c-pgrid">
       <div class="c-pmain">${next}${logBox}
-        <div class="c-sheet"><h3>Communications and changes<b>${c.log.length}</b></h3>${c.log.map(tcEv).join('') || '<div class="c-empty">Nothing yet.</div>'}</div></div>
+        <div class="c-sheet"><h3>Communications and changes<b>${c.log.length}</b></h3>${(T_LOG_ALL ? c.log : c.log.slice(0, T_LOG_FIRST)).map(tcEv).join('') || '<div class="c-empty">Nothing yet.</div>'}
+          ${!T_LOG_ALL && c.log.length > T_LOG_FIRST ? `<button class="c-more tc-logmore" onclick="T_LOG_ALL=true;tcDrawCompany()">Show all ${Number(c.log.length)}</button>` : ''}</div></div>
       <aside class="c-pside">${details}${status}${contacts}${courses}</aside>
     </div>`;
 }
+// A long text shows four lines and Show all, as the person page's notes do.
+const tcClamp = (t, cls = 'tc-long') => (t.length > 240
+  ? `<div class="${cls} c-clamp">${esc(t)}</div><button class="c-more" onclick="const n=this.previousElementSibling;n.classList.toggle('c-clamp');this.textContent=n.classList.contains('c-clamp')?'Show all ${Number(t.length)} characters':'Show less'">Show all ${Number(t.length)} characters</button>`
+  : `<div class="${cls}">${esc(t)}</div>`);
 function tcToggle(id) { const el = document.getElementById(id); if (el) el.hidden = !el.hidden; }
 function tcEditForm(c) {
   const M = T_META;
@@ -10344,6 +10373,15 @@ async function viewTcNext() {
   T_NXD = await api('/api/tc/next?owner=' + encodeURIComponent(T_NX.owner || 'all'));
   tcDrawNext();
 }
+// EMPTY, SAID PLAINLY (round 2, 20.10.2026): the import left every past date out, so the list starts empty. What is empty is
+// said as a status, and the way on is the companies the dates are set on - your own when Mine is picked.
+function tcNextEmpty(D) {
+  const mine = T_NX.owner === 'me';
+  const what = D.rows.length ? { over: 'Nothing is overdue.', week: 'Nothing is due this week.', later: 'Nothing is planned after this week.' }[T_NX.when]
+    : mine ? 'None of your companies has a next contact.' : T_NX.owner ? 'None of these companies has a next contact.' : 'No next contact is planned.';
+  const go = mine ? `<a class="kgo" href="#/tc/companies" onclick="tcGo('pic','me');return false">Your companies →</a>` : '<a class="kgo" href="#/tc/companies">Companies →</a>';
+  return `<div class="c-sheet"><div class="c-empty tc-empty"><b>${esc(what)}</b>${go}</div></div>`;
+}
 function tcDrawNext() {
   const D = T_NXD;
   const rows = T_NX.when ? D.rows.filter((r) => r.when === T_NX.when) : D.rows;
@@ -10353,7 +10391,7 @@ function tcDrawNext() {
     band: cPoolCards('Next contacts', 'Next contacts', [{ id: 'over', label: 'Overdue', n: D.counts.over }, { id: 'week', label: 'This week', n: D.counts.week },
       { id: 'later', label: 'Later', n: D.counts.later }], T_NX.when, 'tcNextPick'),
     filters: cPoolFilters('next contacts', [whose], T_NX.when || T_NX.owner ? "T_NX={ when: '', owner: '' };viewTcNext()" : ''),
-    body: rows.length ? `<div class="tc-rows">${rows.map(tcRow).join('')}</div>` : '<div class="c-sheet"><div class="c-empty">Nothing here.</div></div>',
+    body: rows.length ? `<div class="tc-rows">${rows.map(tcRow).join('')}</div>` : tcNextEmpty(D),
   });
   cPoolWire();
 }
