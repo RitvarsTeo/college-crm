@@ -189,3 +189,29 @@ test('the screens: the picker is the admin\'s, on the company page and in Add co
   assert.match(fn('function tcDrawCompanies('), /box\('pic', 'Person in charge', \[\['me', `Mine \$\{Number\(L\.facets\.mine \|\| 0\)\}`\]/);
   assert.match(fn('function tcDrawNext('), /\[\['me', 'Mine'\], \.\.\.T_META\.pics\.map\(\(p\) => \[p\.value, p\.label\]\)\]/);
 });
+
+test('a new person in charge takes the planned next contact with the company, and the move is logged (the owner, 20.10.2026)', async () => {
+  const { db, id } = await world();
+  await pic.linkPicAccounts(db);
+  const mock = await id('Mock Marine');
+  await tc.setNext(db, mock, { due: '2030-01-10', label: 'Send the offer' }, 'Admin');
+  assert.equal((await tc.getCompany(db, mock)).next.owner, 'Pēteris Bezkonta', 'set while Pēteris was in charge');
+  await tc.editCompany(db, mock, { pic: 'u:u2' }, 'Admin');
+  let c = await tc.getCompany(db, mock);
+  assert.deepEqual([c.next.owner, c.next.due, c.next.label], ['Ilze Piemēre', '2030-01-10', 'Send the offer'], 'the date and the label stay');
+  const moved = c.log.find((e) => e.field === 'next_owner');
+  assert.deepEqual([moved.kind, moved.old_value, moved.new_value, moved.actor], ['task', 'Pēteris Bezkonta', 'Ilze Piemēre', 'Admin']);
+  assert.equal(moved.body, 'Send the offer on 2030-01-10 moved to Ilze Piemēre');
+  const ilze = { email: 'ilze.piemere@example.com', name: 'Ilze' };
+  assert.ok((await tc.nextList(db, { owner: 'me', me: ilze })).rows.some((r) => r.companyId === mock), "in Ilze's Mine now");
+  assert.ok(!(await tc.nextList(db, { owner: 'Pēteris Bezkonta' })).rows.some((r) => r.companyId === mock), "out of Pēteris's");
+  await tc.editCompany(db, mock, { status: 'contacted' }, 'Admin');
+  assert.equal(c.log.filter((e) => e.field === 'next_owner').length, 1, 'only a change of the person in charge moves it');
+  await tc.editCompany(db, mock, { pic: '' }, 'Admin');
+  c = await tc.getCompany(db, mock);
+  assert.equal(c.next.owner, '', 'nobody in charge: the next contact is nobody\'s');
+  assert.equal(c.log.find((e) => e.field === 'next_owner').body, 'Send the offer on 2030-01-10 moved to nobody');
+  const plain = await id('Draft Energy');
+  await tc.editCompany(db, plain, { pic: 'u:u1' }, 'Admin');
+  assert.equal((await tc.getCompany(db, plain)).log.filter((e) => e.field === 'next_owner').length, 0, 'no next contact planned: nothing to move');
+});

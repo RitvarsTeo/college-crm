@@ -341,6 +341,13 @@ export async function editCompany(db, id, b, actor) {
       await tx.prepare('UPDATE tc_companies SET pic_name = ?, pic_email = ?, updated_at = ? WHERE id = ?').run(pic.name, pic.email, at, c.id);
       await logAct(tx, c.id, { kind: 'edit', field: 'pic_name', old: c.pic_name ?? null, new: pic.name, actor, at });
       changed += 1;
+      // the planned next contact goes with the company to the new person in charge (the owner, 20.10.2026), one log line each
+      const open = await tx.prepare('SELECT id, owner, label, due_at FROM tc_tasks WHERE company_id = ? AND done_at IS NULL').all(c.id);
+      for (const t of open.filter((x) => (x.owner ?? null) !== pic.name)) {
+        await tx.prepare('UPDATE tc_tasks SET owner = ? WHERE id = ?').run(pic.name, t.id);
+        await logAct(tx, c.id, { kind: 'task', field: 'next_owner', old: t.owner ?? null, new: pic.name, actor, at,
+          body: `${t.label} on ${t.due_at} moved to ${pic.name || 'nobody'}` });
+      }
     }
     for (const [k, col] of Object.entries(FIELD_OF)) {
       if (!(k in b)) continue;

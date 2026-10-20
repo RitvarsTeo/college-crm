@@ -312,7 +312,7 @@
       {
         "id": "tc-person-in-charge",
         "q": "Who is the person in charge, and what is Mine?",
-        "a": "An admin picks the person in charge on the company page, from the Intake accounts or the names without Intake access, and Mine on Companies and Next contacts shows the companies in your own charge."
+        "a": "An admin picks the person in charge on the company page, from the Intake accounts or the names without Intake access, the planned next contact moves to the new person with the company, and Mine on Companies and Next contacts shows the companies in your own charge."
       },
       {
         "id": "tc-overdue",
