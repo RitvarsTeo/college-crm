@@ -21,8 +21,9 @@ const FIGURES = [
   ['Home', 'No next step', 'function cHomeB(D) {', /need\('No next step', D\.noNext, "cGoPeople\(\{ due: 'none' \}\)"/],
   ['Home', 'Admitted card', 'function cHomeB(D) {', /onclick="cGoReportYear\('admitted'\);return false">Reports →/],   // Q35: all four cards open their Reports tab
   ['Home', 'Leads / Conversion / Median cards', 'function cHomeB(D) {', /onclick="cGoReportYear\('(?:leads|conversion|median)'\);return false">Reports →/],
-  ['Home', 'Donut slices and legend', 'function cDonut(rows) {', /data-kgo="\$\{go === 'journey' \? 'journey' : 'outcome\|' \+ go\}"/],
-  ['Home', 'Donut centre', 'function cDonut(rows) {', /data-kgo="people"/],
+  // 20.10.2026: the donut takes its clicks from the caller (TC Home); Academy's are the default, the same as before
+  ['Home', 'Donut slices and legend', 'function cDonut(rows, opts = {}) {', /kgoOf = opts\.kgo \|\| \(\(go\) => \(go === 'journey' \? 'journey' : 'outcome\|' \+ go\)\)[\s\S]*data-kgo="\$\{esc\(kgoOf\(g\.go\)\)\}"/],
+  ['Home', 'Donut centre', 'function cDonut(rows, opts = {}) {', /hole = opts\.hole \|\| 'people'[\s\S]*data-kgo="\$\{esc\(hole\)\}"/],
   ['Home', 'Month bands', 'function cMonthChart(months, year, fitH = 0) {', /data-kgo="month\|\$\{m\.month\}\|/],
   ['Today', 'planned %', 'function cTodayPool() {', /<a class="c-planned" href="#\/journey" onclick="cGoPeople\(\{ stage: 'open' \}\);return false">/],
   // Q47: the same card one level deeper - Home's Needs you is Today's band, each card the click to its people

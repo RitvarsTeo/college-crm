@@ -58,9 +58,6 @@ test('the company page: the latest 15 of a long log and Show all; a long text fo
   assert.doesNotMatch(ctx.f('short'), /Show all/);
 });
 
-test('Home: the year under way is never compared with a whole year; the list rows keep their columns whatever the tag', () => {
-  const home = fn('async function viewTcHome(');
-  assert.match(home, /const ys = H\.cards\.delegates\.byYear\.filter\(\(y\) => y\.year < Number\(H\.asOf\.slice\(0, 4\)\)\);/);
-  assert.match(home, /<span>Delegates trained<\/span><b>\$\{Number\(H\.cards\.delegates\.total\)\}<\/b><small>all years<\/small>/, 'the total still counts every year');
+test('the list rows keep their columns whatever the tag (Home is the owner pick M1 since 20.10, tc_home3 test)', () => {
   assert.match(APP, /html\.ui-c \.p-rows \.c-line\.tc-cline\{grid-template-columns:minmax\(0,1\.4fr\) minmax\(0,1\.3fr\) 130px 150px\}/);
 });

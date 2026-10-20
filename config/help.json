@@ -283,6 +283,11 @@
         "href": "#/tc/review"
       },
       {
+        "do": "See the biggest clients and who to call back",
+        "where": "Client book",
+        "href": "#/tc/book"
+      },
+      {
         "do": "See your own companies",
         "where": "Companies, Person in charge, Mine",
         "href": "#/tc/companies"
@@ -313,6 +318,16 @@
         "id": "tc-next-contact",
         "q": "How do I set the next contact?",
         "a": "On the company page, write what happened under Log a communication and pick the date of the next one, or set the date under Next communication."
+      },
+      {
+        "id": "tc-home-year",
+        "q": "What does the Training Centre Home count?",
+        "a": "Home counts the year picked at the top, from the course lines (TOTAL group rows left out), every figure opens the companies it counts, and Today counts your own planned contacts up to today and up to Friday."
+      },
+      {
+        "id": "tc-client-book",
+        "q": "What is the Client book?",
+        "a": "The Client book ranks the clients by delegates in the picked year (All, Mine or one area) and lists Welcome back: companies that trained with us two and three years ago but not this year, each with Plan a call."
       },
       {
         "id": "tc-person-in-charge",

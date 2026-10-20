@@ -29,9 +29,12 @@ test('every Home figure is a click to where it comes from', () => {
   // the whole card is the click
   assert.match(APP, /html\.ui-c \.kb-strip > div > \.kgo::after\{content:"";position:absolute;inset:0;border-radius:inherit\}/);
   // the donut: slices, centre and legend rows
-  const donut = fnBody('function cDonut(rows) {');
-  assert.match(donut, /class="khole"[^>]*data-kgo="people"/, 'the centre opens People');
-  assert.match(donut, /<li tabindex="0" role="button" data-tip="[^"]*"\s*data-kgo="\$\{go === 'journey' \? 'journey' : 'outcome\|' \+ go\}"/, 'legend rows go where their slice goes');
+  const donut = fnBody('function cDonut(rows, opts = {}) {');
+  // 20.10.2026: the clicks come from the caller (TC Home passes its own); Academy passes none, so these defaults are its
+  assert.match(donut, /hole = opts\.hole \|\| 'people'/);
+  assert.match(donut, /class="khole"[^>]*data-kgo="\$\{esc\(hole\)\}"/, 'the centre opens People');
+  assert.match(donut, /kgoOf = opts\.kgo \|\| \(\(go\) => \(go === 'journey' \? 'journey' : 'outcome\|' \+ go\)\)/);
+  assert.match(donut, /<li tabindex="0" role="button" data-tip="[^"]*"\s*data-kgo="\$\{esc\(kgoOf\(go\)\)\}"/, 'legend rows go where their slice goes');
   assert.match(fnBody('function cChartGo(spec) {'), /if \(kind === 'people'\) \{ cGoPeople\(\{\}\); return; \}/, 'Q47: the centre opens the Journey, everyone');
   assert.match(fnBody('function cChartGo(spec) {'), /if \(kind === 'journey'\) \{ cGoPeople\(\{ stage: 'open' \}\); return; \}/, 'the Open slice: everyone still on the journey');
   assert.doesNotMatch(HOME, /cGoClosedTag/, 'Cold / Reject live in Outcomes only (Q43)');

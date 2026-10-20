@@ -2637,11 +2637,9 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tc-row{display:grid;grid-template-columns:86px minmax(0,1.6fr) minmax(0,1fr) 160px;align-items:center;gap:14px;padding:11px 16px;
     border-radius:12px;background:var(--surface);box-shadow:var(--lift);text-decoration:none;color:var(--ink);border-left:3px solid transparent}
   html.ui-c .tc-row:hover{box-shadow:var(--lift-hover)}
-  html.ui-c .tc-row.is-late{border-left-color:#b3261e}
   html.ui-c .tc-co b{display:block;font-weight:650;font-size:14.5px}
   html.ui-c .tc-co small, html.ui-c .tc-last, html.ui-c .tc-pic{font-size:12.5px;color:var(--t3)}
   html.ui-c .tc-d{display:inline-block;min-width:56px;text-align:center;padding:3px 8px;border-radius:999px;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--t2);background:var(--c-sunk)}
-  html.ui-c .tc-d.late{background:#b3261e;color:#fff}
   html.ui-c .tc-d.today{background:#F7C04F;color:#011111}
   html.ui-c .tc-card{cursor:pointer}
   html.ui-c a.c-line.tc-cline{text-decoration:none;color:inherit}
@@ -2655,6 +2653,86 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tc-picdd select{width:100%;max-width:100%;min-width:0}
   html.ui-c .tc-logmore{display:block;padding:10px 16px 14px}
   html.ui-c .tc-empty{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px;padding:22px 18px}
+  /* ROUND 3 (20.10.2026): TC Home (M1) and the Client book, in the Academy Home's parts */
+  html.ui-c{--v-tc1:#29a8df;--v-tc2:#7fc6ea;--v-tc3:#c3e3f5}
+  html.ui-c[data-theme="dark"]{--v-tc1:#29a8df;--v-tc2:#5b9fcd;--v-tc3:#9cc6e4}
+  html.ui-c .tc-home .khead, html.ui-c .tc-book .khead{justify-content:space-between;align-items:center}
+  html.ui-c .tc-year{margin:0;flex:0 0 auto}
+  html.ui-c .tc-year select{font-weight:700}
+  html.ui-c .kstrip .tc-card small b{display:inline;font-size:inherit;line-height:inherit;letter-spacing:0;margin:0;font-weight:700}
+  html.ui-c .tc-card small.tc-line{display:block;margin-top:6px;font-size:12.5px;line-height:1.45;color:var(--t2)}
+  html.ui-c .tc-card small.tc-line b, html.ui-c .tc-legend b{color:var(--ink);font-weight:700}
+  html.ui-c .tc-card small.tc-line a, html.ui-c .tc-legend a{color:inherit;text-decoration:none}
+  html.ui-c .tc-card small.tc-line a:hover, html.ui-c .tc-legend a:hover{text-decoration:underline}
+  html.ui-c .tc-split{display:flex;gap:3px;height:12px;margin:12px 0 6px}
+  html.ui-c .tc-split a{display:block;border-radius:999px;min-width:6px}
+  html.ui-c .tc-split .back, html.ui-c .tc-legend i.back{background:var(--v-lead)}
+  html.ui-c .tc-split .new, html.ui-c .tc-legend i.new{background:var(--v-adm)}
+  html.ui-c .tc-legend{display:block;font-size:12.5px;color:var(--t2)}
+  html.ui-c .tc-legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:0}
+  html.ui-c .kchart .tc-bar{fill:var(--v-adm)}
+  html.ui-c .kchart .tc-bar.on{fill:var(--v-lead)}
+  html.ui-c .kchart .tc-val{font-weight:700;fill:var(--ink)}
+  html.ui-c .kchart .tc-cos{font-weight:700;fill:var(--t2)}
+  html.ui-c .kchart.tc-years{max-width:none}
+  html.ui-c .tc-home2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:18px;margin-top:26px;align-items:start}
+  html.ui-c .tc-home2 h3 .kgo, html.ui-c .tc-book h3 .kgo{margin:0;font-size:12.5px}
+  html.ui-c .tc-wday + .tc-wday{margin-top:14px}
+  html.ui-c .tc-wday h4{margin:0 0 6px;font-size:12px;letter-spacing:.06em;color:var(--t2);display:flex;align-items:center;gap:8px}
+  html.ui-c .tc-today{display:inline-block;padding:1px 8px;border-radius:999px;background:#F7C04F;color:#011111;font-size:11px;letter-spacing:0;font-weight:700}
+  html.ui-c .tc-wrow{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;border-left:3px solid var(--v-adm);background:var(--surface);box-shadow:var(--lift);margin-top:6px}
+  html.ui-c .tc-wrow > a:first-child{flex:1;min-width:0;color:inherit;text-decoration:none}
+  html.ui-c .tc-wrow b{display:block;font-weight:650;font-size:14px}
+  html.ui-c .tc-wrow small{display:block;font-size:12.5px;color:var(--t3);overflow-wrap:anywhere}
+  html.ui-c .tc-big-row{display:grid;grid-template-columns:28px minmax(0,1.3fr) minmax(0,1fr) 66px auto;align-items:center;gap:14px;padding:10px 0;border-top:1px solid var(--rule2);color:inherit;text-decoration:none}
+  html.ui-c .tc-big-row:first-child{border-top:0}
+  html.ui-c .tc-big-row:hover .tc-co b{text-decoration:underline}
+  html.ui-c .tc-rank{color:var(--t3);font-variant-numeric:tabular-nums}
+  html.ui-c .tc-big-row .tc-co b, html.ui-c .tc-wrow b, html.ui-c .tc-wb-row > a:first-child b{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+  html.ui-c .tc-big-row .tc-co b{font-weight:650;font-size:14.5px}
+  html.ui-c .tc-big-row .tc-co small{display:block;font-size:12.5px;color:var(--t3)}
+  html.ui-c .tc-meter{display:flex;align-items:center;gap:8px;min-width:0}
+  html.ui-c .tc-meter i{display:block;height:14px;border-radius:999px;background:var(--v-adm);flex:0 0 auto}
+  html.ui-c .tc-meter b{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}
+  html.ui-c .tc-mini{width:66px;height:24px}
+  html.ui-c .tc-mini rect{fill:var(--v-tc2)}
+  html.ui-c .tc-mini rect.on{fill:var(--v-lead)}
+  html.ui-c .tc-mini rect.nil{fill:var(--rule2)}
+  html.ui-c .tc-pic-chip{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--c-sunk);font-size:11.5px;font-weight:700;color:var(--ink)}
+  html.ui-c .tc-pic-chip.none{background:none;border:1px dashed var(--rule2)}
+  html.ui-c .tc-bookgrid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:18px;align-items:start}
+  html.ui-c .tc-seg{display:inline-flex;gap:2px;padding:3px;border-radius:10px;background:var(--c-sunk)}
+  html.ui-c .tc-seg button{border:0;background:none;font:inherit;font-size:13px;padding:5px 11px;border-radius:8px;color:var(--t2);cursor:pointer;letter-spacing:0;text-transform:none}
+  html.ui-c .tc-seg button.on{background:var(--surface);color:var(--ink);font-weight:650;box-shadow:var(--lift)}
+  html.ui-c .tc-seg small{color:var(--t3);font-size:11.5px}
+  html.ui-c .tc-all{display:inline-block;margin:10px 0 0}
+  html.ui-c .tc-sub{margin:-2px 16px 0;font-size:12.5px;color:var(--t3)}
+  html.ui-c .tc-wb-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:12px;padding:9px 0;border-top:1px solid var(--rule2)}
+  html.ui-c .tc-wb-row:first-child{border-top:0}
+  html.ui-c .tc-wb-row > a:first-child{color:inherit;text-decoration:none;min-width:0}
+  html.ui-c .tc-wb-row > a:first-child b{display:block;font-weight:650}
+  html.ui-c .tc-wb-row small{display:block;font-size:12.5px;color:var(--t3)}
+  html.ui-c .tc-wb-n{font-variant-numeric:tabular-nums;font-size:15px}
+  html.ui-c .tc-wb-planned{font-size:12.5px;color:var(--t2)}
+  html.ui-c .tc-since{margin:0 0 4px;color:var(--t2)} html.ui-c .tc-since b{font-size:30px;color:var(--ink);font-weight:700;letter-spacing:-.02em}
+  html.ui-c .tc-peryear .kchart{max-width:none}
+  html.ui-c .tc-h4{margin:14px 0 8px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--t2)}
+  html.ui-c .tc-chips{display:flex;flex-wrap:wrap;gap:6px}
+  html.ui-c .tc-chip{padding:3px 10px;border-radius:999px;background:var(--c-sunk);font-size:12.5px;font-weight:600}
+  html.ui-c .c-sheet.tc-info{box-shadow:inset 0 3px 0 #F7C04F,var(--c-card-lift)}
+  html.ui-c .tc-home .ksh{flex-wrap:wrap;row-gap:4px}
+  html.ui-c .tc-home .klegend.inline li{white-space:nowrap}
+  html.ui-c .tc-home .kdonut .klegend li span{min-width:0}
+  @media (max-width:1100px){ html.ui-c .tc-home2, html.ui-c .tc-bookgrid{grid-template-columns:minmax(0,1fr)} }
+  @media (max-width:760px){
+    html.ui-c .tc-big-row{grid-template-columns:22px minmax(0,1fr) 66px auto;gap:10px}
+    html.ui-c .tc-big-row .tc-meter{grid-column:2 / -1;grid-row:2}
+    html.ui-c .tc-home .khead, html.ui-c .tc-book .khead{flex-wrap:wrap}
+    html.ui-c .tc-seg{flex-wrap:wrap}
+    html.ui-c .tc-home .kdonut{flex-direction:column;align-items:stretch}
+    html.ui-c .tc-home .kdonut svg{width:180px;flex:0 0 auto;align-self:center}
+    html.ui-c .tc-home .klegend.inline{margin-left:0}
+  }
   html.ui-c .tc-empty b{font-weight:600;color:var(--t2)}
   html.ui-c .tc-empty .kgo{margin:0}
   html.ui-c .tc-ticks{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
@@ -3769,7 +3847,9 @@ function cMonthChart(months, year, fitH = 0) {
 //
 // Drawn plinth first, faces second. No visibility maths: the faces hide what should be
 // hidden because they are painted last and are exactly the same shape.
-function cDonut(rows) {
+function cDonut(rows, opts = {}) {
+  // opts (TC Home, 20.10.2026): unit ('people'), title, kgo(go) for a slice's click, hole for the centre's; Academy passes none
+  const unit = opts.unit || 'people', kgoOf = opts.kgo || ((go) => (go === 'journey' ? 'journey' : 'outcome|' + go)), hole = opts.hole || 'people';
   const total = rows.reduce((a, r) => a + r[1], 0) || 1;
   const R = 54, r0 = 37, c = 70, cy = 62, gap = 0.035, DEPTH = 11;
   const live = rows.filter((r) => r[1] > 0);
@@ -3797,17 +3877,17 @@ function cDonut(rows) {
   const face = (g, i) => `<path d="${ring(g, 0)}"
     style="fill:var(--v-${g.v});--i:${i}" class="kseg" tabindex="0" role="button"
     aria-label="${esc(g.k)}: ${g.n}"
-    data-tip="${esc(g.k)}|${g.n} people|${Math.round((g.n / total) * 100)}% of ${total}"
-    data-kgo="${g.go === 'journey' ? 'journey' : 'outcome|' + g.go}"/>`;
+    data-tip="${esc(g.k)}|${g.n} ${unit}|${Math.round((g.n / total) * 100)}% of ${total}"
+    data-kgo="${esc(kgoOf(g.go))}"/>`;
 
-  return `<div class="kdonut"><svg viewBox="0 0 140 140" role="img" aria-label="Where everyone is now">
+  return `<div class="kdonut"><svg viewBox="0 0 140 140" role="img" aria-label="${esc(opts.title || 'Where everyone is now')}">
     <g class="kring">${segs.length ? plinth : ''}${segs.map(face).join('')}</g>
     <circle cx="${c}" cy="${cy}" r="${r0 - 2}" class="khole" tabindex="0" role="button" aria-label="Everybody: ${total}"
-      data-tip="Everybody|${total} people|open People" data-kgo="people"/>
-    <text x="${c}" y="${cy + 4}" text-anchor="middle" class="kbig">${total}</text>
-    <text x="${c}" y="${cy + 22}" text-anchor="middle" class="kt">people</text></svg>
-    <ul class="klegend">${rows.map(([k, n, v, go]) => `<li tabindex="0" role="button" data-tip="${esc(k)}|${n} people|${Math.round((n / total) * 100)}% of ${total}"
-      data-kgo="${go === 'journey' ? 'journey' : 'outcome|' + go}"><i style="background:var(--v-${v})"></i><span>${esc(k)}</span><b>${n}</b></li>`).join('')}</ul></div>`;
+      data-tip="${unit === 'people' ? 'Everybody' : 'All'}|${total.toLocaleString('en-US')} ${unit}|open ${unit === 'people' ? 'People' : 'the list'}" data-kgo="${esc(hole)}"/>
+    <text x="${c}" y="${cy + 4}" text-anchor="middle" class="kbig">${total.toLocaleString('en-US')}</text>
+    <text x="${c}" y="${cy + 22}" text-anchor="middle" class="kt">${esc(unit)}</text></svg>
+    <ul class="klegend">${rows.map(([k, n, v, go]) => `<li tabindex="0" role="button" data-tip="${esc(k)}|${n} ${unit}|${Math.round((n / total) * 100)}% of ${total}"
+      data-kgo="${esc(kgoOf(go))}"><i style="background:var(--v-${v})"></i><span>${esc(k)}</span><b>${n.toLocaleString('en-US')}</b></li>`).join('')}</ul></div>`;
 }
 
 function cBars(rows, kind) {
@@ -3826,6 +3906,7 @@ function cChartGo(spec) {
   if (kind === 'stage') { cGoStage(key); return; }
   if (kind === 'inbox') { location.hash = '#/leads'; return; }
   if (kind === 'cohort') { cGoCohort(key); return; }   // a Reports figure: exactly its people (Q35)
+  if (kind === 'tc') { tcChartGo(key || ''); return; }   // a Training Centre figure: the companies it counts (round 3)
   C_PF = C_PF_EMPTY(); C_PCOHORT = null; C_JF = C_JF_EMPTY();   // Q57: the board shows exactly what the figure counts
   if (kind === 'outcome') { C_OUTCOME = key; C_OUT_FILTER = null; C_OUT_TAG = null; C_OUT_REASON = null; if (location.hash.split('?')[0] === '#/outcomes') viewOutcomesC(); else location.hash = '#/outcomes'; return; }
   C_OUTCOME = 'Admitted';
@@ -10093,7 +10174,9 @@ async function cpPushSetup() {
 const T_ICON = {
   co: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3.5 16.5V5.5l6-2v13"/><path d="M9.5 8h7v8.5"/><path d="M2.5 16.5h15"/><path d="M5.8 7.2v.1M5.8 10v.1M5.8 12.8v.1M12.5 11v.1M14.2 11v.1M12.5 13.6v.1M14.2 13.6v.1"/></svg>',
   star: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3.2l2 4.3 4.6.5-3.4 3.1 1 4.6L10 13.4l-4.2 2.3 1-4.6-3.4-3.1 4.6-.5z"/></svg>',
-  aim: '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7"/><circle cx="10" cy="10" r="3.6"/><circle cx="10" cy="10" r=".8"/></svg>' };
+  aim: '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7"/><circle cx="10" cy="10" r="3.6"/><circle cx="10" cy="10" r=".8"/></svg>',
+  book: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 16.5V9.5M8 16.5V5.5M12 16.5V8M16 16.5V3.5"/></svg>',
+  season: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3.5 6h13M3.5 10h13M3.5 14h13"/><circle cx="7" cy="6" r="1.4"/><circle cx="13" cy="10" r="1.4"/><circle cx="9" cy="14" r="1.4"/></svg>' };
 // Which halves this account opens: the server's answer (/api/auth/me). Sign-in off (a laptop): both.
 const cAreas = () => (AUTH.on ? ((AUTH.user || {}).areas || []) : ['academy', 'tc']);
 let C_AREA = '';
@@ -10180,9 +10263,10 @@ const tcKind = (id) => (((T_META && T_META.activityKinds) || []).find((k) => k.i
   || { status: 'Status', edit: 'Changed', create: 'Added', import: 'Imported', task: 'Next communication' }[id] || id;
 const tcMeeting = (id) => (((T_META && T_META.meetingTypes) || []).find((m) => m.id === id) || {}).label || '';
 const tcDdMm = (d) => (d ? `${d.slice(8, 10)}.${d.slice(5, 7)}${d.slice(0, 4) === cTodayIso().slice(0, 4) ? '' : '.' + d.slice(0, 4)}` : '');
-const tcWhen = (d) => (!d ? '' : d < cTodayIso() ? 'over' : d === cTodayIso() ? 'today' : '');
-const tcWhenText = (d) => (!d ? 'no next contact' : tcWhen(d) === 'over'
-  ? `${Math.round((Date.parse(cTodayIso()) - Date.parse(d)) / 86400000)} d. overdue` : tcWhen(d) === 'today' ? 'today' : tcDdMm(d));
+// NOTHING READS AS SOMEBODY BEING LATE (the owner, 20.10.2026): a contact not done on its day is still planned, shown with
+// the day it was planned for, never in red and never counted as overdue
+const tcWhen = (d) => (!d ? '' : d <= cTodayIso() ? 'today' : '');
+const tcWhenText = (d) => (!d ? 'no next contact' : d < cTodayIso() ? `planned ${tcDdMm(d)}` : d === cTodayIso() ? 'today' : tcDdMm(d));
 const tcDelegates = (n) => `${Number(n)} delegate${Number(n) === 1 ? '' : 's'}`;
 const tcPlace = (c) => [c.country, c.city].filter(Boolean).join(' · ');
 
@@ -10190,26 +10274,33 @@ function tcInstallNav() {
   if (document.querySelector('.tcnav')) return;
   const after = document.querySelector('.shell > nav > .cnav') || document.querySelector('.shell > nav > .brand');
   if (!after) return;
+  // ROUND 3 (the owner's pick, 20.10.2026): Home, My week, Client book, Season, Companies (Next contacts, Clients,
+  // Prospects), Help center. My week and Season are lane TC-WEEK 3's screens: their items show once their views exist.
+  const week = typeof viewTcWeek === 'function', season = typeof viewTcSeason === 'function';
   after.insertAdjacentHTML('afterend', `<div class="cnav tcnav" role="navigation" aria-label="Training Centre">
-    <a href="#/tc" data-c="tc-home" title="What needs you, and the clients">${C_ICON.home}<span>Home</span></a>
+    <a href="#/tc" data-c="tc-home" title="The year in figures, and your week">${C_ICON.home}<span>Home</span></a>
+    ${week ? `<a href="#/tc/week" data-c="tc-week" title="Your planned contacts, Monday to Friday">${C_ICON.next}<span>My week</span></a>` : ''}
+    <a href="#/tc/book" data-c="tc-book" title="The clients by delegates, and who to welcome back">${T_ICON.book}<span>Client book</span></a>
+    ${season ? `<a href="#/tc/season" data-c="tc-season" title="Exhibitions, plans and gifts over the year">${T_ICON.season}<span>Season</span></a>` : ''}
     <a href="#/tc/companies" data-c="tc-companies" title="Every client company">${T_ICON.co}<span>Companies</span></a>
     <div class="kids"><a href="#/tc/next" data-c="tc-next" title="Every next communication, by date"><span>Next contacts</span><span class="n" id="tnNext"></span></a>
       <a href="#/tc/clients" data-c="tc-clients" title="Companies with delegates in any year"><span>Clients</span><span class="n" id="tnClients"></span></a>
       <a href="#/tc/prospects" data-c="tc-prospects" title="Companies with no course yet"><span>Prospects</span><span class="n" id="tnProspects"></span></a></div>
     <a href="#/tc/help" data-c="tc-help" class="c-navfoot">${C_ICON.help}<span>Help center</span></a></div>`);
-  const tab = (href, t, icon, label, count) => `<a href="${href}" data-t="${t}">${icon}<span>${label}</span>${count ? `<span class="n warn" id="${count}"></span>` : ''}</a>`;
+  const tab = (href, t, icon, label, count) => `<a href="${href}" data-t="${t}">${icon}<span>${label}</span>${count ? `<span class="n" id="${count}"></span>` : ''}</a>`;
+  const more = (href, icon, label) => `<a href="${href}" onclick="tcMore(false)">${icon}<span>${label}</span></a>`;
   document.body.insertAdjacentHTML('beforeend', `<div class="ctabs tctabs" role="navigation" aria-label="Training Centre phone menu">
-    ${tab('#/tc', 'home', C_ICON.home, 'Home')}${tab('#/tc/next', 'next', C_ICON.next, 'Next', 'ttNext')}${tab('#/tc/clients', 'clients', T_ICON.star, 'Clients')}${tab('#/tc/prospects', 'prospects', T_ICON.aim, 'Prospects')}
+    ${tab('#/tc', 'home', C_ICON.home, 'Home')}${week ? tab('#/tc/week', 'week', C_ICON.next, 'My week') : tab('#/tc/next', 'next', C_ICON.next, 'Next', 'ttNext')}${tab('#/tc/book', 'book', T_ICON.book, 'Clients')}${tab('#/tc/companies', 'companies', T_ICON.co, 'Companies')}
     <button type="button" data-t="more" aria-haspopup="dialog" aria-expanded="false" onclick="tcMore(true)">${C_ICON.more}<span>More</span></button></div>
     <div class="cmore" id="tMore" hidden><div class="cmore-back" onclick="tcMore(false)"></div>
     <div class="cmore-sheet" role="dialog" aria-modal="true" aria-label="More">
-      <a href="#/tc/companies" onclick="tcMore(false)">${T_ICON.co}<span>Companies</span></a><a href="#/tc/help" onclick="tcMore(false)">${C_ICON.help}<span>Help</span></a></div></div>`);
+      ${week ? more('#/tc/next', C_ICON.next, 'Next contacts') : ''}${season ? more('#/tc/season', T_ICON.season, 'Season') : ''}${more('#/tc/clients', T_ICON.star, 'All clients')}${more('#/tc/prospects', T_ICON.aim, 'Prospects')}${more('#/tc/help', C_ICON.help, 'Help')}</div></div>`);
 }
 function tcMore(open) { const m = $('#tMore'); if (m) m.hidden = !open; }
 function tcMark(place) {
   const lit = ['next', 'clients', 'prospects', 'companies', 'company'].includes(place) ? ['tc-companies', 'tc-' + place] : ['tc-' + place];
   document.querySelectorAll('.tcnav a').forEach((a) => a.classList.toggle('on', lit.includes(a.dataset.c)));
-  const t = ['home', 'next', 'clients', 'prospects'].includes(place) ? place : 'more';
+  const t = ['home', 'week', 'next', 'book', 'companies'].includes(place) ? place : place === 'company' ? 'companies' : 'more';
   document.querySelectorAll('.tctabs [data-t]').forEach((a) => a.classList.toggle('on', a.dataset.t === t));
   tcMore(false);
   cSpine(document.querySelector('.tcnav'));
@@ -10218,7 +10309,7 @@ async function tcNavCounts() {
   try {
     const h = await api('/api/tc/home');
     const put = (id, n) => { const el = $(id); if (el) el.textContent = n ? String(n) : ''; };
-    put('#tnNext', h.next.total); put('#ttNext', h.needs.overdue + h.needs.week);
+    put('#tnNext', h.next.total); put('#ttNext', h.next.total);
     put('#tnClients', h.cards.activeClients); put('#tnProspects', h.cards.prospects);
   } catch (e) { /* a count is a nudge; the page itself says when a read failed */ }
 }
@@ -10236,6 +10327,9 @@ async function tcRoute(hash) {
     else if (place === 'prospects') { T_F = { ...T_F_EMPTY(), client: 'no' }; T_KEEP = true; await viewTcCompanies('Prospects'); }
     else if (place === 'company') await viewTcCompany(Number(arg));
     else if (place === 'next') await viewTcNext();
+    else if (place === 'book') await viewTcBook();
+    else if (place === 'week' && typeof viewTcWeek === 'function') await viewTcWeek(arg);       // lane TC-WEEK 3
+    else if (place === 'season' && typeof viewTcSeason === 'function') await viewTcSeason(arg); // lane TC-WEEK 3
     else if (place === 'help') viewTcHelp();
     else if (place === 'review') await viewTcReview();
     else await viewTcHome();
@@ -10252,37 +10346,177 @@ function tcGo(key, value) {
   if (key === 'client') return cGo(value === 'yes' ? '#/tc/clients' : '#/tc/prospects');
   T_F = { ...T_F_EMPTY(), [key]: value }; T_KEEP = true; cGo('#/tc/companies');
 }
-const tcRow = (r) => `<a class="tc-row${r.when === 'over' ? ' is-late' : ''}" href="#/tc/company/${Number(r.companyId)}">
-    <span class="tc-when"><span class="tc-d ${r.when === 'over' ? 'late' : r.due === cTodayIso() ? 'today' : ''}">${r.due === cTodayIso() ? 'Today' : esc(tcDdMm(r.due))}</span></span>
+const tcRow = (r) => `<a class="tc-row" href="#/tc/company/${Number(r.companyId)}">
+    <span class="tc-when"><span class="tc-d ${r.due <= cTodayIso() ? 'today' : ''}">${r.due === cTodayIso() ? 'Today' : esc(tcDdMm(r.due))}</span></span>
     <span class="tc-co"><b>${esc(r.name)}</b><small>${esc(tcPlace(r) || 'country not recorded')}</small></span>
     <span class="tc-last">${r.lastYear ? `${Number(r.lastYear)} · ${tcDelegates(r.lastYearN)}` : 'no course yet'}</span>
     <span class="tc-pic">${esc(r.owner || r.pic || '')}</span></a>`;
+// ---- TC HOME, ROUND 3 (the owner's pick M1, 20.10.2026): the year's figures first, like the Academy Home ----
+// Top to bottom: the year, Today (Planned today, This week; the Needs you slot, no overdue figure), four cards for the
+// year, Delegates by year beside Our companies by last course, then This week (mine) and the year's biggest clients.
+// Every figure is one of the Companies list's filters (src/tchome.js), so a click opens the companies it counts.
+let T_YEAR = null;   // the year picked on TC Home or the Client book; null = the year the course counts run to
+let T_HOME = null;
+const tcN = (n) => Number(n || 0).toLocaleString('en-US');
+const tcDay = (d) => (d ? `${d.slice(8, 10)}.${d.slice(5, 7)}.${d.slice(0, 4)}` : '');
+function tcSetYear(v) { T_YEAR = Number(v) || null; if (location.hash.split('?')[0] === '#/tc/book') viewTcBook(); else viewTcHome(); }
+function tcYearSel(D) {
+  const ys = [...new Set([D.year, ...(D.years || [])])].sort((a, b) => b - a);
+  return `<label class="c-jf on tc-year"><span>Year</span><select aria-label="Year" onchange="tcSetYear(this.value)">
+    ${ys.map((y) => `<option value="${Number(y)}"${y === D.year ? ' selected' : ''}>${Number(y)}</option>`).join('')}</select></label>`;
+}
+// A click on a figure: the Companies list with exactly that filter, its filter boxes showing it
+function tcGoList(f, title) {
+  T_F = { ...T_F_EMPTY(), ...f }; T_Q = ''; T_KEEP = true; T_MORE = true;
+  if (location.hash.split('?')[0] === '#/tc/companies') viewTcCompanies(title || 'Companies'); else location.hash = '#/tc/companies';
+}
+// a chart's data-kgo "tc|year=2025&last=mid" (cChartGo)
+const tcGoYear = (y, cohort = '') => tcGoList({ year: String(Number(y)), cohort });
+const tcChartGo = (q) => tcGoList(Object.fromEntries(new URLSearchParams(q)));
+// Planned today / This week: Next contacts, mine, up to that day
+function tcGoNextUpto(upto) { T_NX = { when: '', owner: 'me', upto }; cGo('#/tc/next'); }
+
+// Delegates by year: one column per year, its client companies under it; the picked year is the dark column
+function tcYearChart(rows, Y, { small = false } = {}) {
+  if (!rows.length) return '<p class="c-empty">No course recorded yet.</p>';
+  const narrow = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width:760px)').matches;
+  const W = narrow ? 360 : 640, H = small ? 200 : narrow ? 240 : 262, L = small ? 8 : 34, R = 8, T = 22, B = small ? 26 : 44, n = rows.length;
+  const top = Math.max(1, ...rows.map((r) => r.n));
+  const step = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000].find((x) => top / x <= 4) || Math.ceil(top / 4);
+  const max = Math.ceil(top / step) * step, band = (W - L - R) / n, bw = Math.min(small ? 64 : 56, band * 0.56);
+  const y = (v) => T + (H - T - B) * (1 - v / max);
+  const ticks = small ? [] : Array.from({ length: max / step + 1 }, (_, k) => k * step);
+  const grid = ticks.map((v) => `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" class="kg"/><text x="${L - 7}" y="${y(v) + 4}" class="kt" text-anchor="end">${v >= 1000 ? (v / 1000) + 'k' : v}</text>`).join('');
+  const cols = rows.map((r, k) => {
+    const cx = L + band * k + band / 2, t = y(r.n), on = r.year === Y;
+    const bar = r.n ? `<path d="M${cx - bw / 2},${y(0)} V${Math.min(t + 4, y(0))} q0,-4 4,-4 h${bw - 8} q4,0 4,4 V${y(0)} Z" class="tc-bar${on ? ' on' : ''} m-fade" style="--i:${k}"/>` : '';
+    const go = small ? '' : ` tabindex="0" role="button" data-kgo="tc|year=${Number(r.year)}" data-tip="${Number(r.year)}|${tcN(r.n)} delegates|${tcN(r.clients)} client companies"`;
+    return `<g class="kcol"${go} aria-label="${Number(r.year)}: ${tcN(r.n)} delegates${small ? '' : `, ${tcN(r.clients)} client companies`}"><rect x="${cx - band / 2}" y="${T}" width="${band}" height="${H - T - B}" class="khit"/>${bar}
+      <text x="${cx}" y="${t - 7}" class="kt tc-val" text-anchor="middle">${tcN(r.n)}</text>
+      <text x="${cx}" y="${H - B + 16}" class="kt" text-anchor="middle">${Number(r.year)}</text>${small ? '' : `<text x="${cx}" y="${H - B + 33}" class="kt tc-cos" text-anchor="middle">${tcN(r.clients)} cos.</text>`}</g>`;
+  }).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" class="kchart tc-years${narrow ? ' narrow' : ''}${small ? ' small' : ''}" data-plot="${T} ${H - B}" role="img" aria-label="Delegates by year">${grid}${cols}</svg>`;
+}
+// six years in six small bars, the picked year dark (the biggest clients' rows)
+function tcMiniBars(v) {
+  const max = Math.max(1, ...v), W = 66, H = 24, bw = 8, gap = (W - bw * v.length) / Math.max(1, v.length - 1);
+  return `<svg class="tc-mini" viewBox="0 0 ${W} ${H}" aria-hidden="true">${v.map((n, i) => `<rect x="${(i * (bw + gap)).toFixed(1)}" y="${(H - Math.max(n ? 2 : 1, (n / max) * H)).toFixed(1)}" width="${bw}" height="${Math.max(n ? 2 : 1, (n / max) * H).toFixed(1)}" class="${i === v.length - 1 ? 'on' : n ? '' : 'nil'}"/>`).join('')}</svg>`;
+}
+const tcInitials = (name) => String(name || '').split(/\s*;\s*/)[0].split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+function tcBigRows(rows, top, { pic = false, start = 0 } = {}) {
+  if (!rows.length) return '<div class="c-empty">No company with delegates in this year.</div>';
+  return rows.map((c, i) => `<a class="tc-big-row" href="#/tc/company/${Number(c.id)}">
+      <span class="tc-rank">${start + i + 1}</span>
+      <span class="tc-co"><b>${esc(c.name)}</b><small>${esc([c.country || 'country not recorded', ...(pic ? [c.areas.join(', ')] : [])].filter(Boolean).join(' · '))}</small></span>
+      <span class="tc-meter"><i style="width:${Math.max(4, (c.n / Math.max(1, top)) * 100).toFixed(1)}%"></i><b>${tcN(c.n)}</b></span>
+      ${tcMiniBars(c.spark.slice(-6))}
+      ${pic ? (c.pic ? `<span class="tc-pic-chip" title="${esc(c.pic)}">${esc(tcInitials(c.pic))}</span>` : '<span class="tc-pic-chip none" title="No person in charge"></span>') : ''}</a>`).join('');
+}
+function tcWeekRows(rows) {
+  if (!rows.length) return `<div class="c-empty tc-empty"><b>Nothing planned this week.</b><a class="kgo" href="#/tc/book">Client book →</a></div>`;
+  const today = cTodayIso();
+  const days = [...new Set(rows.map((r) => r.day))];
+  const dname = (d) => new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', weekday: 'short', day: 'numeric' }).format(new Date(d + 'T12:00:00Z')).toUpperCase();
+  return days.map((d) => `<div class="tc-wday"><h4>${esc(dname(d))}${d === today ? ' <span class="tc-today">Today</span>' : ''}</h4>
+    ${rows.filter((r) => r.day === d).map((r) => `<div class="tc-wrow"><a href="#/tc/company/${Number(r.companyId)}"><b>${esc(r.name)}</b>
+      <small>${esc([r.contact, r.label].filter(Boolean).join(' · '))}${r.from ? ` · from ${esc(tcDdMm(r.from))}` : ''}</small></a>
+      <a class="btn sm ghost" href="#/tc/company/${Number(r.companyId)}">Log</a></div>`).join('')}</div>`).join('');
+}
+
 async function viewTcHome() {
-  const H = await api('/api/tc/home');
-  const asOf = new Intl.DateTimeFormat('en-GB', { timeZone: TZ, day: 'numeric', month: 'long' }).format(new Date());
-  const need = (label, n, go, k) => `<a class="kneed" href="#/tc/next" style="--i:${k}" onclick="${go};return false"><span>${esc(label)}</span><b>${Number(n)}</b></a>`;
-  // the year under way is not compared (round 2, 20.10.2026): a few early bookings read as a fall against a whole year
-  const ys = H.cards.delegates.byYear.filter((y) => y.year < Number(H.asOf.slice(0, 4)));
-  const [prev, last] = ys.slice(-2);
-  const delta = prev && last ? `<span class="kdelta${last.n > prev.n ? ' up' : last.n < prev.n ? ' down' : ''}">${Number(last.year)} <b>${Number(last.n)}</b> · vs ${Number(prev.year)} ${Number(prev.n)}</span>` : '';
-  $('#view').innerHTML = `<div class="kpage kb">
-    <div class="khead"><div><h1 class="c-sr">Home</h1><p class="c-crumb" style="margin:0">Training Centre ${esc(H.asOf.slice(0, 4))} · to ${esc(asOf)}</p></div></div>
-    <section class="kday m-scene" aria-label="Needs you"><div class="kday-sheet"><h2>Needs you</h2><div class="kday-row">
-      ${need('Overdue contacts', H.needs.overdue, "tcGoNext('over')", 0)}${need('Due this week', H.needs.week, "tcGoNext('week')", 1)}
-      ${need('Information to send', H.needs.info, "tcGo('info','yes')", 2)}</div></div></section>
+  const D = await api('/api/tc/overview' + (T_YEAR ? '?year=' + Number(T_YEAR) : ''));
+  T_HOME = D; T_YEAR = D.year;
+  const Y = D.year;
+  const need = (label, n, go, k) => `<a class="kneed" href="#/tc/next" style="--i:${k}" onclick="${go};return false"><span>${esc(label)}</span><b>${tcN(n)}</b></a>`;
+  const ex = D.exhibition;   // lane TC-WEEK 3's next exhibition ({ id, name, startsOn, companies }); hidden until it exists
+  const p = D.delegates.prev;
+  const delta = p ? `<span class="kdelta${D.delegates.n > p.n ? ' up' : D.delegates.n < p.n ? ' down' : ''}">${Y} <b>${tcN(D.delegates.n)}</b> · vs ${Number(p.year)} ${tcN(p.n)} · ${D.delegates.n - p.n > 0 ? '+' : ''}${tcN(D.delegates.n - p.n)}</span>` : '';
+  const split = D.clients.n ? `<div class="tc-split" role="group" aria-label="Came back and new">
+      <a href="#/tc/companies" onclick="tcGoYear(${Number(Y)}, 'back');return false" class="back" style="flex:${D.clients.back} 1 0" title="came back: ${D.clients.back}"></a>
+      <a href="#/tc/companies" onclick="tcGoYear(${Number(Y)}, 'new');return false" class="new" style="flex:${D.clients.fresh} 1 0" title="new: ${D.clients.fresh}"></a></div>
+    <small class="tc-legend"><a href="#/tc/companies" onclick="tcGoYear(${Number(Y)}, 'back');return false"><i class="back"></i>came back <b>${tcN(D.clients.back)}</b></a> ·
+      <a href="#/tc/companies" onclick="tcGoYear(${Number(Y)}, 'new');return false"><i class="new"></i>new <b>${tcN(D.clients.fresh)}</b></a></small>` : '';
+  const largest = D.newClients.largest.map((c) => `<a href="#/tc/company/${Number(c.id)}">${esc(c.name)} ${tcN(c.n)}</a>`).join(' · ');
+  $('#view').innerHTML = `<div class="kpage kb tc-home">
+    <div class="khead"><div><h1 class="c-sr">Home</h1><p class="c-crumb" style="margin:0">Training Centre ${Y}${D.countsTo ? ` · course counts to ${esc(tcDay(D.countsTo))}` : ''}</p></div>${tcYearSel(D)}</div>
+    <section class="kday m-scene" aria-label="Today"><div class="kday-sheet"><h2>Today</h2><div class="kday-row">
+      ${need('Planned today', D.today.planned, `tcGoNextUpto(${esc(JSON.stringify(String(D.asOf)))})`, 0)}${need('This week', D.today.week, `tcGoNextUpto(${esc(JSON.stringify(String(D.today.friday)))})`, 1)}
+      ${ex ? `<a class="kneed tc-ex" href="#/tc/season" style="--i:2"><span>Next exhibition</span><b>${esc(ex.name)}</b><small>${esc([ex.when, ex.companies != null ? tcN(ex.companies) + ' companies' : ''].filter(Boolean).join(' · '))}</small></a>` : ''}</div></div></section>
     <div class="kstrip kb-strip">
-      <div class="khero tc-card" role="link" tabindex="0" onclick="tcGo('client','yes')"><span>Active clients</span><b>${Number(H.cards.activeClients)}</b><small>companies with delegates in any year</small><a class="kgo" href="#/tc/clients">Clients →</a></div>
-      <div class="tc-card" role="link" tabindex="0" onclick="tcGo('client','yes')"><span>Delegates trained</span><b>${Number(H.cards.delegates.total)}</b><small>all years</small>${cSpark(ys.map((y) => y.n), 'lead')}${delta}<a class="kgo" href="#/tc/clients">Clients →</a></div>
-      <div class="tc-card" role="link" tabindex="0" onclick="tcGo('client','no')"><span>Prospects</span><b>${Number(H.cards.prospects)}</b><small>companies, no course yet</small><a class="kgo" href="#/tc/prospects">Prospects →</a></div>
-      <div class="tc-card" role="link" tabindex="0" onclick="tcGo('country','*')"><span>Countries</span><b>${Number(H.cards.countries)}</b><small>where our companies are</small><a class="kgo" href="#/tc/companies" onclick="tcGo('country','*');return false">Companies →</a></div>
+      <div class="khero tc-card" role="link" tabindex="0" onclick="if(!event.target.closest('a'))tcGoYear(${Number(Y)})"><span>Delegates</span><b>${tcN(D.delegates.n)}</b><small>${Y}</small>${cSpark(D.delegates.spark, 'lead')}${delta}<a class="kgo" href="#/tc/companies" onclick="tcGoYear(${Number(Y)});return false">Clients →</a></div>
+      <div class="tc-card" role="link" tabindex="0" onclick="if(!event.target.closest('a'))tcGoYear(${Number(Y)})"><span>Client companies</span><b>${tcN(D.clients.n)}</b><small>${Y}</small>${split}<a class="kgo" href="#/tc/companies" onclick="tcGoYear(${Number(Y)});return false">Clients →</a></div>
+      <div class="tc-card" role="link" tabindex="0" onclick="if(!event.target.closest('a'))tcGoYear(${Number(Y)}, 'new')"><span>New clients</span><b>${tcN(D.newClients.n)}</b><small>${Y}</small>
+        <small class="tc-line"><b>${tcN(D.newClients.delegates)}</b> delegates from companies new in ${Y}</small>${largest ? `<small class="tc-line">largest: ${largest}</small>` : ''}<a class="kgo" href="#/tc/companies" onclick="tcGoYear(${Number(Y)}, 'new');return false">Clients →</a></div>
+      <div class="tc-card" role="link" tabindex="0" onclick="if(!event.target.closest('a'))tcGoYear(${Number(Y)})"><span>Countries</span><b>${tcN(D.countries.clients)}</b><small>${Y}</small>
+        <small class="tc-line">sent delegates in ${Y}</small><small class="tc-line">of <a href="#/tc/companies" onclick="tcGoList({ country: '*' });return false"><b>${tcN(D.countries.all)}</b></a> where our companies are</small><a class="kgo" href="#/tc/companies" onclick="tcGoList({ country: '*' });return false">Companies →</a></div>
     </div>
-    <section class="ksec tc-next"><div class="ksh"><h2>Next contacts</h2><a class="kgo" href="#/tc/next" style="margin:0 0 0 auto" onclick="tcGoNext('');return false">All ${Number(H.next.total)} →</a></div>
-      ${H.next.rows.length ? `<div class="tc-rows">${H.next.rows.map(tcRow).join('')}</div>` : '<p class="c-empty">No next communication is planned.</p>'}</section></div>`;
+    <div class="m-scene kb-charts"><div class="kb-top">
+      <section class="ksec"><div class="ksh"><h2>Delegates by year</h2><ul class="klegend inline"><li><i style="background:var(--v-adm)"></i><span>Delegates</span></li><li><span>cos. = client companies</span></li></ul><span class="ksrc">click a year → Clients</span></div>
+        ${tcYearChart(D.byYear, Y)}</section>
+      <section class="ksec"><div class="ksh"><h2>Our companies, by last course</h2><span class="ksrc">click a slice</span></div>
+        ${cDonut(D.donut.rows.map((r, i) => [r.label, r.n, ['tc1', 'tc2', 'tc3', 'np'][i], `year=${Y}&last=${r.id}`]), { unit: 'companies', title: 'Our companies, by last course', kgo: (go) => 'tc|' + go, hole: 'tc|' })}</section>
+    </div></div>
+    <div class="tc-home2">
+      <section class="c-sheet tc-week"><h3>This week · mine<span class="c-h3acts">${typeof viewTcWeek === 'function' ? '<a class="kgo" href="#/tc/week">My week →</a>' : `<a class="kgo" href="#/tc/next" onclick="tcGoNextUpto(${esc(JSON.stringify(String(D.today.friday)))});return false">Next contacts →</a>`}</span></h3>
+        <div class="c-pad">${tcWeekRows(D.week)}</div></section>
+      <section class="c-sheet tc-big"><h3>Biggest clients ${Y}<span class="c-h3acts"><a class="kgo" href="#/tc/book">Client book →</a></span></h3>
+        <div class="c-pad">${tcBigRows(D.biggest.rows, D.biggest.rows.length ? D.biggest.rows[0].n : 1)}</div></section>
+    </div>
+    <div class="ktip" role="status" aria-live="polite"></div></div>`;
+  cFitDonut();
+  cWireCharts();
   cScenes($('#view'));
 }
 
+// ---- THE CLIENT BOOK (the owner's pick A, 20.10.2026): the biggest clients of the year, and who to welcome back ----
+let T_BOOK = { area: '', mine: false, shown: 10, wshown: 8 };
+async function viewTcBook() {
+  const qs = new URLSearchParams();
+  if (T_YEAR) qs.set('year', String(T_YEAR));
+  if (T_BOOK.area) qs.set('area', T_BOOK.area);
+  if (T_BOOK.mine) qs.set('mine', '1');
+  const B = await api('/api/tc/book?' + qs.toString());
+  T_YEAR = B.year;
+  const Y = B.year;
+  const seg = [['', 'All', !T_BOOK.mine && !T_BOOK.area], ['mine', 'Mine', T_BOOK.mine], ...['TC', 'ENERGY', 'OPITO'].map((a) => [a, a, !T_BOOK.mine && T_BOOK.area === a])];
+  const rows = B.biggest.rows.slice(0, T_BOOK.shown);
+  const welcome = B.welcome.rows.slice(0, T_BOOK.wshown);
+  const wrow = (c) => `<div class="tc-wb-row"><a href="#/tc/company/${Number(c.id)}"><b>${esc(c.name)}</b><small>${esc(c.country || 'country not recorded')}</small></a>
+      <b class="tc-wb-n">${tcN(c.n)}</b>${c.next ? `<a class="tc-wb-planned" href="#/tc/company/${Number(c.id)}">Planned ${esc(tcDdMm(c.next.due))}</a>`
+        : `<button class="btn sm ghost" onclick="tcOpenPlan(${Number(c.id)}, ${esc(JSON.stringify(String(c.name ?? '')))})">Plan a call</button>`}</div>`;
+  $('#view').innerHTML = `<div class="kpage kb tc-book">
+    <div class="khead"><div><h1>Client book</h1><p class="c-crumb" style="margin:0">Training Centre ${Y}${B.countsTo ? ` · course counts to ${esc(tcDay(B.countsTo))}` : ''}</p></div>${tcYearSel(B)}</div>
+    <div class="tc-bookgrid">
+      <section class="c-sheet tc-big"><h3>Biggest clients ${Y}<span class="c-h3acts tc-seg" role="group" aria-label="Which clients">${seg.map(([v, label, on]) => `<button type="button" class="${on ? 'on' : ''}" aria-pressed="${Boolean(on)}"
+          onclick="tcBookSeg(${esc(JSON.stringify(String(v)))})">${esc(label)}${v === 'mine' ? ` <small>${tcN(B.mineCount)}</small>` : ''}</button>`).join('')}</span></h3>
+        <div class="c-pad">${tcBigRows(rows, B.biggest.top, { pic: true })}
+          ${B.biggest.total > rows.length ? `<button class="c-more tc-logmore" onclick="T_BOOK.shown+=10;viewTcBook()">Show 10 more of ${tcN(B.biggest.total - rows.length)}</button>` : ''}
+          ${B.biggest.total ? `<a class="kgo tc-all" href="#/tc/companies" onclick="tcBookAll();return false">All ${tcN(B.biggest.total)} in the list →</a>` : ''}</div></section>
+      <section class="c-sheet tc-welcome"><h3>Welcome back<b>${tcN(B.welcome.total)}</b></h3>
+        <p class="tc-sub">Trained with us ${B.welcome.from}-${String(B.welcome.to).slice(-2)}, none in ${Y} · delegates</p>
+        <div class="c-pad">${welcome.map(wrow).join('') || '<div class="c-empty">Every company of those years trained again.</div>'}
+          ${B.welcome.total > welcome.length ? `<button class="c-more tc-logmore" onclick="T_BOOK.wshown+=8;viewTcBook()">Show 8 more of ${tcN(B.welcome.total - welcome.length)}</button>` : ''}</div></section>
+    </div></div>`;
+  cScenes($('#view'));
+}
+function tcBookSeg(v) { T_BOOK = { ...T_BOOK, area: v === 'mine' ? '' : v, mine: v === 'mine', shown: 10 }; viewTcBook(); }
+const tcBookAll = () => tcGoList({ year: String(Number(T_YEAR)), area: T_BOOK.area, pic: T_BOOK.mine ? 'me' : '' });
+// Plan a call: a date for the next communication (the next working day to start with), written as the company's next contact
+function tcOpenPlan(id, name) {
+  const d = new Date(cTodayIso() + 'T12:00:00Z');
+  do { d.setUTCDate(d.getUTCDate() + 1); } while ([0, 6].includes(d.getUTCDay()));
+  modal('Plan a call', `<div class="c-form c-form1"><p class="c-wide" style="margin:0"><b>${esc(name)}</b></p>
+    <div><label for="tcpDue">Date</label><input id="tcpDue" type="date" value="${d.toISOString().slice(0, 10)}" min="${esc(cTodayIso())}"></div>
+    <div id="tcpErr" class="c-wide"></div>
+    <div class="c-wide c-row-acts"><button class="btn" onclick="tcSavePlan(${Number(id)})">Plan</button><button class="btn ghost" onclick="closeModal()">Cancel</button></div></div>`);
+}
+async function tcSavePlan(id) {
+  try { await post(`/api/tc/companies/${Number(id)}/next`, { due: $('#tcpDue').value, label: 'Call' }); closeModal(); await viewTcBook(); tcNavCounts(); }
+  catch (e) { tcErr('#tcpErr', e.message); }
+}
+
 // ---- COMPANIES: Journey's List for companies - the status band, the filter row, search, one line each ----
-const T_F_EMPTY = () => ({ status: '', area: '', country: '', pic: '', client: '', info: '', due: '' });
+const T_F_EMPTY = () => ({ status: '', area: '', country: '', pic: '', client: '', info: '', due: '', year: '', cohort: '', last: '' });
 let T_F = T_F_EMPTY(); let T_Q = ''; let T_PAGE = 1; let T_LIST = null; let T_TITLE = 'Companies'; let T_KEEP = false; let T_SORT = 'name';
 let T_QT = 0; let T_MORE = false;
 async function viewTcCompanies(title) {
@@ -10318,7 +10552,13 @@ function tcDrawCompanies() {
   const cols = M.statuses.map((s) => ({ id: s.id, label: s.label, n: L.counts.status[s.id] || 0 }));
   const word = (v) => (v === '-' ? 'not recorded' : v === '*' ? 'any recorded' : v);
   const box = (k, label, values) => cPoolSelect(label, T_F[k], values, `tcFilter('${k}', this.value)`);
-  const more = T_MORE || Boolean(T_F.due || T_F.info) || T_SORT !== 'name';
+  const more = T_MORE || Boolean(T_F.due || T_F.info || T_F.year || T_F.cohort || T_F.last) || T_SORT !== 'name';
+  // TC Home's figures (round 3): trained in a year, came back / new that year, latest course against that year
+  const yrs = []; for (let y = Number(cTodayIso().slice(0, 4)); y >= 2020; y--) yrs.push([String(y), String(y)]);
+  const yf = T_F.year || '';
+  const yearBoxes = [box('year', T_F.last ? 'Measured against' : 'Trained in', yrs),
+    ...(yf ? [box('cohort', 'Clients in ' + yf, [['back', 'Came back'], ['new', 'New']]),
+      box('last', 'Last course', [['recent', `${yf} or later`], ['mid', `${yf - 2}-${String(yf - 1).slice(-2)}`], ['old', `before ${yf - 2}`], ['none', 'No course yet']])] : [])];
   const boxes = [
     box('area', 'Area', L.facets.areas.map(([a, n]) => [a, `${a} ${n}`])),
     box('country', 'Country', [['*', 'Any recorded'], ...L.facets.countries.map(([c, n]) => [c, `${word(c)} ${n}`])]),
@@ -10327,7 +10567,7 @@ function tcDrawCompanies() {
     // one line at 1440, as Journey's List: four on show, the rest behind More filters (open while one of them is set)
     ...(more ? [box('due', 'Next contact', [['over', 'Overdue'], ['week', 'This week'], ['later', 'Later'], ['none', 'None planned']]),
       box('info', 'Information to send', [['yes', 'Something to send']]),
-      cPoolSelect('Sort', T_SORT === 'name' ? '' : T_SORT, [['next', 'Next contact'], ['last', 'Latest course']], "T_SORT=this.value||'name';tcLoadCompanies()")] : []),
+      cPoolSelect('Sort', T_SORT === 'name' ? '' : T_SORT, [['next', 'Next contact'], ['last', 'Latest course']], "T_SORT=this.value||'name';tcLoadCompanies()"), ...yearBoxes] : []),
     `<button type="button" class="btn sm ghost p-more" aria-expanded="${more}" onclick="T_MORE=!T_MORE;tcDrawCompanies()">${more ? 'Fewer filters' : 'More filters'}</button>`];
   const any = Object.values(T_F).some(Boolean) || Boolean(T_Q);
   const st = (c) => tcStatus(c.status).label + (c.statusDetail ? ' · ' + tcMeeting(c.statusDetail) : '');
@@ -10429,7 +10669,6 @@ function tcDrawCompany() {
       ${row('Country', esc(c.country))}${row('City', esc(c.city))}${row('Address', esc(c.address))}${row('Website', link(c.website))}
       ${row('Areas', esc(c.areas.join(', ')), 'none')}${isAdmin() ? `<dt>Person in charge</dt><dd class="tc-picdd">${tcPicSelect('tcPic', tcPicValue(c), ' onchange="tcEdit({ pic: this.value })"')}</dd>` : row('Person in charge', esc(c.pic), 'nobody yet')}
       ${row('Last contact', c.lastContactAt ? esc(fmtDate(c.lastContactAt)) : '')}
-      ${row('Information to send', c.infoToSend ? tcClamp(c.infoToSend) : '', 'nothing waiting')}
       ${c.sourceRow ? row('From the Excel', 'row ' + Number(c.sourceRow)) : ''}</dl>
       ${c.notes ? tcClamp(c.notes, 'c-notes') : ''}</div>`;
   const status = `<div class="c-sheet c-facts"><h3>Status</h3><div class="c-pad tc-status">
@@ -10450,14 +10689,28 @@ function tcDrawCompany() {
         <div><label for="tcyN">Delegates</label><input id="tcyN" type="number" min="0"></div>
         <div class="c-wide"><label for="tcyCodes">Courses</label><input id="tcyCodes" placeholder="GWO BST, BOSIET"></div>
         <div id="tcyErr" class="c-wide"></div><div class="c-wide c-row-acts"><button class="btn sm" onclick="tcSaveYear()">Save</button></div></div></div></div>`;
+  // ROUND 3 (the owner's pick A, 20.10.2026): delegates per year since 2020 with the courses they take; information to
+  // send on a card of its own with Mark sent
+  const thisYear = Number(today.slice(0, 4));
+  const last = Math.max(thisYear, ...c.courses.map((k) => k.year));
+  const dys = []; for (let y = Math.min(2020, ...c.courses.map((k) => k.year)); y <= last; y++) {
+    const k = c.courses.find((x) => x.year === y); dys.push({ year: y, n: k && k.attendees ? k.attendees : 0, clients: 0 });
+  }
+  const since = dys.filter((r) => r.year >= 2020).reduce((n, r) => n + r.n, 0);
+  const codes = [...new Set(c.courses.flatMap((k) => String(k.codes || '').split(/\s*,\s*/)).filter(Boolean))].sort(byLvCodes);
+  const perYear = `<div class="c-sheet tc-peryear"><h3>Delegates per year</h3><div class="c-pad">
+      <p class="tc-since"><b>${tcN(since)}</b> since 2020</p>${since ? tcYearChart(dys.filter((r) => r.year >= 2020), null, { small: true }) : ''}
+      ${codes.length ? `<h4 class="tc-h4">Courses they take</h4><div class="tc-chips">${codes.map((k) => `<span class="tc-chip">${esc(k)}</span>`).join('')}</div>` : ''}</div></div>`;
+  const info = c.infoToSend ? `<div class="c-sheet c-facts tc-info"><h3>Information to send</h3><div class="c-pad">${tcClamp(c.infoToSend)}
+      <div class="c-row-acts"><button class="btn sm ghost" onclick="tcInfoSent()">Mark sent</button></div></div></div>` : '';
   $('#view').innerHTML = `<p class="c-crumb"><a href="#/tc/companies">Companies</a></p>
     <div class="c-head"><div><h1 class="c-pname">${esc(c.name)}</h1><p>${esc(tcStatus(c.status).label)}${c.statusDetail ? ' · ' + esc(tcMeeting(c.statusDetail)) : ''}${c.areas.length ? ' · ' + esc(c.areas.join(', ')) : ''} · ${esc(tcPlace(c) || 'country not recorded')} · ${c.client ? `client, ${tcDelegates(c.delegates)}` : 'prospect'}</p></div>
       <div class="act"><button class="btn ghost" onclick="tcArchive()">Archive</button></div></div>
     <div class="c-pgrid">
-      <div class="c-pmain">${next}${logBox}
+      <div class="c-pmain">${perYear}${next}${logBox}
         <div class="c-sheet"><h3>Communications and changes<b>${c.log.length}</b></h3>${(T_LOG_ALL ? c.log : c.log.slice(0, T_LOG_FIRST)).map(tcEv).join('') || '<div class="c-empty">Nothing yet.</div>'}
           ${!T_LOG_ALL && c.log.length > T_LOG_FIRST ? `<button class="c-more tc-logmore" onclick="T_LOG_ALL=true;tcDrawCompany()">Show all ${Number(c.log.length)}</button>` : ''}</div></div>
-      <aside class="c-pside">${details}${status}${contacts}${courses}</aside>
+      <aside class="c-pside">${info}${details}${status}${contacts}${courses}</aside>
     </div>`;
 }
 // A long text shows four lines and Show all, as the person page's notes do.
@@ -10541,15 +10794,21 @@ async function tcSaveYear() {
   try { await post(`/api/tc/companies/${Number(T_CO.id)}/courses`, { year: Number(v('#tcyYear')), attendees: v('#tcyN'), codes: v('#tcyCodes') }); await tcReload(); }
   catch (e) { tcErr('#tcyErr', e.message); }
 }
+const byLvCodes = (a, b) => String(a).localeCompare(String(b), 'en');
+async function tcInfoSent() {
+  if (!confirm('Mark the information as sent? The text leaves this card and stays in the log.')) return;
+  try { await post(`/api/tc/companies/${Number(T_CO.id)}/info-sent`, {}); await tcReload(); } catch (e) { alert(e.message); }
+}
 async function tcArchive() {
   if (!confirm('Archive this company? It leaves every list; its log and contacts are kept.')) return;
   try { await post(`/api/tc/companies/${Number(T_CO.id)}/archive`, {}); location.hash = '#/tc/companies'; } catch (e) { alert(e.message); }
 }
 
 // ---- NEXT CONTACTS: Due for companies - Overdue, This week, Later; whose ----
-let T_NX = { when: '', owner: '' };
+let T_NX = { when: '', owner: '', upto: '' };
 let T_NXD = null;
 function tcNextPick(v) { T_NX.when = T_NX.when === v ? '' : v; tcDrawNext(); }
+const tcUpto = (rows) => (T_NX.upto ? rows.filter((r) => r.due <= T_NX.upto) : rows);
 async function tcNextOwner(v) { T_NX.owner = v; await viewTcNext(); }
 async function viewTcNext() {
   T_NXD = await api('/api/tc/next?owner=' + encodeURIComponent(T_NX.owner || 'all'));
@@ -10566,13 +10825,14 @@ function tcNextEmpty(D) {
 }
 function tcDrawNext() {
   const D = T_NXD;
-  const rows = T_NX.when ? D.rows.filter((r) => r.when === T_NX.when) : D.rows;
+  const rows = tcUpto(T_NX.when ? D.rows.filter((r) => r.when === T_NX.when) : D.rows);
   const whose = cPoolSelect('Person in charge', T_NX.owner, [['me', 'Mine'], ...T_META.pics.map((p) => [p.value, p.label])], 'tcNextOwner(this.value)');
   $('#view').innerHTML = cPoolFrame({
     title: 'Next contacts',
-    band: cPoolCards('Next contacts', 'Next contacts', [{ id: 'over', label: 'Overdue', n: D.counts.over }, { id: 'week', label: 'This week', n: D.counts.week },
+    band: cPoolCards('Next contacts', 'Next contacts', [{ id: 'over', label: 'From earlier days', n: D.counts.over }, { id: 'week', label: 'This week', n: D.counts.week },
       { id: 'later', label: 'Later', n: D.counts.later }], T_NX.when, 'tcNextPick'),
-    filters: cPoolFilters('next contacts', [whose], T_NX.when || T_NX.owner ? "T_NX={ when: '', owner: '' };viewTcNext()" : ''),
+    filters: cPoolFilters('next contacts', [whose, ...(T_NX.upto ? [cPoolSelect('Planned', T_NX.upto, [[T_NX.upto, T_NX.upto === cTodayIso() ? 'Up to today' : 'Up to ' + tcDdMm(T_NX.upto)]], 'T_NX.upto=this.value;tcDrawNext()')] : [])],
+      T_NX.when || T_NX.owner || T_NX.upto ? "T_NX={ when: '', owner: '', upto: '' };viewTcNext()" : ''),
     body: rows.length ? `<div class="tc-rows">${rows.map(tcRow).join('')}</div>` : tcNextEmpty(D),
   });
   cPoolWire();

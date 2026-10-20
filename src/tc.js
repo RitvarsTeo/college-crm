@@ -69,6 +69,8 @@ const nowIso = () => new Date().toISOString();
 // ------------------------------------------------------------------ reading --
 
 /** Every company that is not archived, with what every screen counts: areas, delegates, the open next step. */
+/** Every live company as the screens count it (exported for src/tchome.js). */
+export const companyFacts = (db) => companyRows(db);
 async function companyRows(db) {
   const companies = await db.prepare(`SELECT id, name, name_key, country, city, status, status_detail, pic_name, pic_email,
     info_to_send, last_contact_at, created_at FROM tc_companies WHERE archived_at IS NULL`).all();
@@ -95,6 +97,7 @@ async function companyRows(db) {
       areas: (areas.get(c.id) || []).sort((a, b) => AREA_IDS.indexOf(a) - AREA_IDS.indexOf(b)),
       info: Boolean(String(c.info_to_send || '').trim()), lastContactAt: c.last_contact_at || null,
       delegates: ks.reduce((n, k) => n + (Number(k.attendees) || 0), 0),
+      years: Object.fromEntries(ks.map((k) => [Number(k.year), Number(k.attendees) || 0])),   // delegates per year (TC Home, 20.10)
       lastYear: last ? Number(last.year) : null, lastYearN: last ? Number(last.attendees) : null,
       client: trained.length > 0,
       next: t ? { id: Number(t.id), due: t.due_at, label: t.label, owner: t.owner || '' } : null,
@@ -108,7 +111,24 @@ async function companyRows(db) {
 //   status, area, country ('-' = none recorded, '*' = any recorded), pic ('-' = nobody, 'me' = the signed-in person's,
 //   'u:<id>' = an account, else a plain name), client (yes | no), info (yes), due (over | week | later | none), q.
 //   `me` is meKeys(the signed-in person): "Mine" reads it, and without it "Mine" matches nothing.
+//   TC Home (20.10.2026) adds three, each about one year (year = a four-digit year): year = trained in that year (delegates
+//   above 0); cohort = back (also trained in an earlier year) | new (never before) among those; last = the company's latest
+//   year with delegates against that year: recent (that year or later), mid (the two years before), old (earlier), none.
+export function lastBucket(c, y) {
+  const done = Object.entries(c.years || {}).filter(([, n]) => n > 0).map(([k]) => Number(k));
+  if (!done.length) return 'none';
+  const last = Math.max(...done);
+  return last >= y ? 'recent' : last >= y - 2 ? 'mid' : 'old';
+}
+const yearOf = (v) => { const y = Number(v); return Number.isInteger(y) && y >= 1990 && y <= 2100 ? y : null; };
 export function matches(c, f, w, me = null) {
+  const fy = yearOf(f.year);
+  if (fy && !f.last && !((c.years || {})[fy] > 0)) return false;   // with last, the year is only what last is measured against
+  if (fy && f.cohort) {
+    const before = Object.entries(c.years || {}).some(([k, n]) => Number(k) < fy && n > 0);
+    if (f.cohort === 'back' ? !before : f.cohort === 'new' ? before : false) return false;
+  }
+  if (fy && f.last && lastBucket(c, fy) !== f.last) return false;
   if (f.status && c.status !== f.status) return false;
   if (f.area && !c.areas.includes(f.area)) return false;
   if (f.country === '-' ? c.country : f.country === '*' ? !c.country : f.country && c.country !== f.country) return false;
@@ -123,7 +143,7 @@ export function matches(c, f, w, me = null) {
   }
   return true;
 }
-export const FILTER_KEYS = ['status', 'area', 'country', 'pic', 'client', 'info', 'due', 'q'];
+export const FILTER_KEYS = ['status', 'area', 'country', 'pic', 'client', 'info', 'due', 'q', 'year', 'cohort', 'last'];
 export function readFilters(params) {
   const f = {};
   for (const k of FILTER_KEYS) { const v = params.get ? params.get(k) : params[k]; if (v) f[k] = String(v).slice(0, 200); }
@@ -385,6 +405,18 @@ export async function editCompany(db, id, b, actor) {
       }
     }
     return { changed };
+  });
+}
+
+/** Information to send, sent (TC Home round 3, 20.10.2026): the text is cleared and the log keeps what it was. */
+export async function markInfoSent(db, id, actor) {
+  const c = await mustCompany(db, id);
+  if (!String(c.info_to_send || '').trim()) bad('Nothing is waiting to be sent.');
+  const at = nowIso();
+  return db.transaction(async (tx) => {
+    await tx.prepare('UPDATE tc_companies SET info_to_send = NULL, updated_at = ? WHERE id = ?').run(at, c.id);
+    await logAct(tx, c.id, { kind: 'edit', field: 'info_to_send', old: c.info_to_send, new: null, body: 'Information sent', actor, at });
+    return { ok: true };
   });
 }
 

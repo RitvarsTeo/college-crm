@@ -109,7 +109,7 @@ test('the donut is balanced with the month chart: its row IS the plot, the ring 
   assert.match(APP, /html\.ui-c \.kb-top > \.ksec:has\(> \.kdonut\.kfit\)\{display:flex;flex-direction:column\}/, 'its top margin never collapses');
   // the 108 and the 2.5 are the drawing's own numbers: ring R 54 in a 140 box; ring and plinth together run from
   // cy - R to cy + R + DEPTH, so their middle is 2.5 above the box's middle
-  const donut = fnSrc('function cDonut(rows) {');
+  const donut = fnSrc('function cDonut(rows, opts = {}) {');
   const m = donut.match(/const R = (\d+), r0 = \d+, c = 70, cy = (\d+), gap = [\d.]+, DEPTH = (\d+);/);
   assert.ok(m, 'the donut drawing constants');
   const [R, cy, DEPTH] = m.slice(1).map(Number);

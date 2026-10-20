@@ -63,6 +63,7 @@ import * as tcseason from './tcseason.js';
 import * as tcclienthub from './tcclienthub.js';
 import * as tcreview from './tcreview.js';
 import * as tcpic from './tcpic.js';
+import * as tchome from './tchome.js';
 
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -3256,6 +3257,15 @@ export const handle = async (req, res) => {
       return json(res, 200, { ...(await tc.meta(db)), help: HELP.tc || { howto: [], faq: [] } });
     }
     if (p === '/api/tc/home' && req.method === 'GET') return json(res, 200, await tc.home(db));
+    // TC Home for a year and the Client book (round 3, 20.10.2026, src/tchome.js): read-only, the signed-in person for Mine
+    if (p === '/api/tc/overview' && req.method === 'GET') {
+      return json(res, 200, await tchome.homeYear(db, { year: url.searchParams.get('year'), me: await tcMe(req, url) }));
+    }
+    if (p === '/api/tc/book' && req.method === 'GET') {
+      const area = String(url.searchParams.get('area') || '');
+      return json(res, 200, await tchome.book(db, { year: url.searchParams.get('year'), area: tc.AREA_IDS.includes(area) ? area : '',
+        mine: url.searchParams.get('mine') === '1', me: await tcMe(req, url) }));
+    }
     if (p === '/api/tc/companies' && req.method === 'GET') {
       return json(res, 200, await tc.listCompanies(db, tc.readFilters(url.searchParams),
         { page: url.searchParams.get('page'), size: url.searchParams.get('size'), sort: url.searchParams.get('sort') || 'name',
@@ -3321,7 +3331,7 @@ export const handle = async (req, res) => {
       }
     }
     if (req.method === 'POST') {
-      const edit = /^\/api\/tc\/companies\/(\d+)\/(edit|archive|contacts|courses|activities|next)$/.exec(p);
+      const edit = /^\/api\/tc\/companies\/(\d+)\/(edit|archive|contacts|courses|activities|next|info-sent)$/.exec(p);
       const contact = /^\/api\/tc\/contacts\/(\d+)\/(edit|archive)$/.exec(p);
       const task = /^\/api\/tc\/tasks\/(\d+)\/done$/.exec(p);
       if (edit || contact || task) {
@@ -3336,8 +3346,8 @@ export const handle = async (req, res) => {
         }
         const id = Number(edit[1]);
         const run = { edit: tc.editCompany, archive: tc.archiveCompany, contacts: tc.addContact, courses: tc.setCourseYear,
-          activities: tc.logActivity, next: tc.setNext }[edit[2]];
-        return json(res, 200, edit[2] === 'archive' ? await run(db, id, by) : await run(db, id, b, by));
+          activities: tc.logActivity, next: tc.setNext, 'info-sent': tc.markInfoSent }[edit[2]];
+        return json(res, 200, ['archive', 'info-sent'].includes(edit[2]) ? await run(db, id, by) : await run(db, id, b, by));
       }
     }
     // THE EXCEL IMPORT, an admin one-off (src/tcimport.js). GET says what this batch has done so far; POST without

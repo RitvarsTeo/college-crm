@@ -82,15 +82,14 @@ test('the Training Centre menu: Home, Companies with Next contacts, Clients and 
   assert.match(APP, /html\.ui-c\[data-area="tc"\] #cScope/, 'the Year filter is Academy\'s');
 });
 
-test('Training Centre Home: Needs you and four figures, every one opening the companies it counts', () => {
+// 20.10.2026: TC Home became the owner's pick M1 (test/tc_home3_2026_10_20.test.js pins it); its figures still open
+// the companies they count
+test('Training Centre Home: the year first, Today, four cards, every one opening the companies it counts', () => {
   const h = fn('async function viewTcHome(');
-  for (const [label, go] of [['Overdue contacts', "tcGoNext('over')"], ['Due this week', "tcGoNext('week')"], ['Information to send', "tcGo('info','yes')"]]) {
-    assert.ok(h.includes(`need('${label}'`) && h.includes(go), label);
-  }
-  for (const [label, go] of [['Active clients', "tcGo('client','yes')"], ['Delegates trained', "tcGo('client','yes')"], ['Prospects', "tcGo('client','no')"], ['Countries', "tcGo('country','*')"]]) {
-    assert.match(h, new RegExp(`onclick="${go.replace(/[()*]/g, '\\$&')}"><span>${label}</span>`), label);
-  }
-  assert.match(h, /<h2>Next contacts<\/h2>/);
+  assert.match(h, /need\('Planned today', D\.today\.planned/);
+  assert.match(h, /need\('This week', D\.today\.week/);
+  for (const label of ['Delegates', 'Client companies', 'New clients', 'Countries']) assert.match(h, new RegExp(`<span>${label}</span>`), label);
+  assert.doesNotMatch(h, /Overdue/, 'no overdue figure on Home');
 });
 
 test('Companies, the company page, Next contacts and People and access are built from Intake\'s own parts', () => {
