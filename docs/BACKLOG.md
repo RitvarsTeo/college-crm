@@ -15,8 +15,19 @@ The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words 
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
 
+
+## 20.10.2026 - Ieva's feedback (owner: "we still have bugs to fix")
+
+- `SAID` Notes: from Journey -> List she cannot edit earlier comments (the edit panel's Notes box is the person's Notes
+  field, earlier comments live in History), and the List line shows only part of the latest comment; some people show
+  earlier comments in the box, others not. She needs the full comments and to fix earlier ones from the List.
+- `SAID` A lead made from an Inbox email got owner "Marketing" - why? (she changed it to Admissions by hand).
+- `SAID` Still coming into the Inbox: a ShipSpeak newsletter ("PLEASE PASS THIS MESSAGE...") and PMLP "IZPILDE!!FW:
+  Jauns izsaukums TUA pieprasījumam" (came back: set aside before 14.10, Other).
+
 ## 19.10.2026 - New project: Training Centre in Intake (owner's picks)
 
+- `LIVE` (patch 60 + import 20.10) Training Centre foundation: start page with two tiles, access per area, People and access, TC Home, Companies, company page, Next contacts; Excel imported (1,497 companies, 1,448 contacts, 471 active clients; past next dates left out).
 - `DECIDED` ONE big CRM on the **Intake base** (owner's pick 19.10): after sign-in two tiles, **Academy** (today's
   Intake) and **Training Centre**. Client Hub's companies/contacts are DATA for it (imported or linked), not its code
   base; Client Hub keeps running Grand Opening untouched. TC tables live in the same database as Intake (moving to
