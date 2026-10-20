@@ -57,6 +57,12 @@ export function tcWindow(now = new Date()) {
   const today = localDate(now);
   return { today, weekEnd: addDays(today, Math.max(1, Number(TC.weekDays) || 7) - 1) };
 }
+// A GROUP'S TOTAL ROW (the owner, 20.10.2026): the Excel holds a few groups twice, once per subsidiary and once more as a
+// company with country "TOTAL" whose delegates repeat the subsidiaries'. Such a row stays, unchanged and openable, and is
+// found by its name in the search; it is left out of every figure that sums or counts, and out of the lists those figures
+// open, so nothing is counted twice. Its next contact and its information to send are real work and stay in Needs you.
+export const isTotalRow = (country) => String(country ?? '').trim().toUpperCase() === 'TOTAL';
+const NOT_TOTAL_SQL = `upper(trim(coalesce(c.country, ''))) <> 'TOTAL'`;
 const dueGroup = (due, w) => (!due ? 'none' : due < w.today ? 'over' : due <= w.weekEnd ? 'week' : 'later');
 const nowIso = () => new Date().toISOString();
 
@@ -93,6 +99,7 @@ async function companyRows(db) {
       client: trained.length > 0,
       next: t ? { id: Number(t.id), due: t.due_at, label: t.label, owner: t.owner || '' } : null,
       createdAt: c.created_at,
+      groupTotal: isTotalRow(c.country),
     };
   });
 }
@@ -134,14 +141,17 @@ export async function listCompanies(db, filters = {}, { page = 1, size = 100, so
   const w = tcWindow(now);
   const all = await companyRows(db);
   const mk = meKeys(me);
-  const rows = all.filter((c) => matches(c, filters, w, mk));
+  // a group's TOTAL row is counted nowhere; the search alone finds it, so it can still be opened
+  const counted = all.filter((c) => !c.groupTotal);
+  const pool = filters.q ? all : counted;
+  const rows = pool.filter((c) => matches(c, filters, w, mk));
   const sorters = {
     name: (a, b) => byLv(a.name, b.name),
     next: (a, b) => String((a.next && a.next.due) || '9999').localeCompare(String((b.next && b.next.due) || '9999')) || byLv(a.name, b.name),
     last: (a, b) => (b.lastYear || 0) - (a.lastYear || 0) || b.delegates - a.delegates || byLv(a.name, b.name),
   };
   rows.sort(sorters[sort] || sorters.name);
-  const noStatus = all.filter((c) => matches(c, { ...filters, status: '' }, w, mk));
+  const noStatus = pool.filter((c) => matches(c, { ...filters, status: '' }, w, mk));
   const labels = await picLabels(db);
   const picOf = new Map(all.map((c) => [c.picKey, c.picEmail ? labels.get(c.picEmail.toLowerCase()) || c.pic : c.pic]));
   const n = Math.max(1, Math.min(2000, Number(size) || 100));
@@ -155,11 +165,11 @@ export async function listCompanies(db, filters = {}, { page = 1, size = 100, so
     only: Boolean(only),
     counts: { status: Object.fromEntries(STATUS_IDS.map((s) => [s, noStatus.filter((c) => c.status === s).length])) },
     facets: {
-      countries: tally(all, (c) => c.country || '-').sort((a, b) => b[1] - a[1] || byLv(a[0], b[0])),
+      countries: tally(counted, (c) => c.country || '-').sort((a, b) => b[1] - a[1] || byLv(a[0], b[0])),
       // [value, count, label]: a linked person is one line whatever the spelling; "Mine" counts the signed-in person's
-      pics: tally(all, (c) => c.picKey || '-').map(([k, n]) => [k, n, k === '-' ? '' : picOf.get(k) || k]).sort((a, b) => byLv(a[2] || a[0], b[2] || b[0])),
-      mine: mk ? all.filter((c) => isMine(c, mk)).length : 0,
-      areas: AREA_IDS.map((a) => [a, all.filter((c) => c.areas.includes(a)).length]),
+      pics: tally(counted, (c) => c.picKey || '-').map(([k, n]) => [k, n, k === '-' ? '' : picOf.get(k) || k]).sort((a, b) => byLv(a[2] || a[0], b[2] || b[0])),
+      mine: mk ? counted.filter((c) => isMine(c, mk)).length : 0,
+      areas: AREA_IDS.map((a) => [a, counted.filter((c) => c.areas.includes(a)).length]),
     },
   };
 }
@@ -170,7 +180,8 @@ export async function home(db, { now = new Date(), nextRows = 8 } = {}) {
   const all = await companyRows(db);
   const open = all.filter((c) => c.next).sort((a, b) => a.next.due.localeCompare(b.next.due) || byLv(a.name, b.name));
   const courses = await db.prepare(`SELECT k.year, SUM(k.attendees) AS n FROM tc_company_courses k
-    JOIN tc_companies c ON c.id = k.company_id WHERE c.archived_at IS NULL GROUP BY k.year ORDER BY k.year`).all();
+    JOIN tc_companies c ON c.id = k.company_id WHERE c.archived_at IS NULL AND ${NOT_TOTAL_SQL} GROUP BY k.year ORDER BY k.year`).all();
+  const counted = all.filter((c) => !c.groupTotal);   // the figures; Needs you and the next contacts keep every row
   const thisYear = Number(w.today.slice(0, 4));
   const byYear = courses.map((r) => ({ year: Number(r.year), n: Number(r.n) || 0 })).filter((r) => r.year <= thisYear);
   return {
@@ -182,11 +193,11 @@ export async function home(db, { now = new Date(), nextRows = 8 } = {}) {
       info: all.filter((c) => c.info).length,
     },
     cards: {
-      companies: all.length,
-      activeClients: all.filter((c) => c.client).length,
-      prospects: all.filter((c) => !c.client).length,
-      countries: new Set(all.map((c) => c.country).filter(Boolean)).size,
-      delegates: { total: all.reduce((n, c) => n + c.delegates, 0), byYear },
+      companies: counted.length,
+      activeClients: counted.filter((c) => c.client).length,
+      prospects: counted.filter((c) => !c.client).length,
+      countries: new Set(counted.map((c) => c.country).filter(Boolean)).size,
+      delegates: { total: counted.reduce((n, c) => n + c.delegates, 0), byYear },
     },
     next: { total: open.length, rows: open.slice(0, nextRows).map(nextRow(w)) },
   };
@@ -254,7 +265,7 @@ async function picAccountOf(db, email) {
 
 /** Countries in use, and who can be in charge: the accounts that open Training Centre, then the plain names (src/tcpic.js). */
 export async function meta(db) {
-  const countries = (await db.prepare(`SELECT DISTINCT country FROM tc_companies WHERE archived_at IS NULL AND country IS NOT NULL`).all())
+  const countries = (await db.prepare(`SELECT DISTINCT country FROM tc_companies c WHERE archived_at IS NULL AND country IS NOT NULL AND ${NOT_TOTAL_SQL}`).all())
     .map((r) => r.country).filter(Boolean).sort(byLv);
   return {
     statuses: TC.statuses, meetingTypes: TC.meetingTypes, areas: TC.areas, activityKinds: TC.activityKinds,
