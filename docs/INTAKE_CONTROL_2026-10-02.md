@@ -859,3 +859,8 @@ Seen: GitHub - no Aigars commits since 309b10f; crm-novikontas.vercel.app = 1ced
 - Script Backups/apply_clienthub_import_2026_10.mjs (TC-DATA 2), app = crm-tiles at 0878f73 = origin/production. Preview hash afcef4f1ef7716ccc3c3384d59851378dd91945855d5036f6963cab719ab87d6 = the reported one.
 - Backup right before: 2026-10-20T17-48-04Z (38 tables, 26,684 rows). APPLIED: true.
 - After: companies 1,497 -> 1,927 (+430 from Client Hub); contacts 1,448 -> 3,022 (+1,574 from Client Hub). Batch rows: added 1,574, created 430, duplicate 229, review 326, skipped 148 (= 2,277 contact rows). crm_% schemas created: none.
+
+## 20.10.2026 evening - overnight run (owner: "I need work to be going on the whole night")
+- The TC-HOME 3 / TC-WEEK 3 chips never started -> reused the idle sessions: TC-UI 2 renamed "Intake TC-HOME 3: Home + Client book" (local_7045579f), TC-BACKEND 2 renamed "Intake TC-WEEK 3: My week + Season" (local_4059fed2). Both briefed from BUILD_BRIEF, base origin/production 0878f73.
+- MASTER PITCHER overnight: board 4 (review list screen, 326 contacts), board 5 (phase 4: guest lists, Save the Date results, network map).
+- Heartbeat cron e8c5a9df at :17 and :47: nudge idle lanes, integrate and test reports. No deploy or production write overnight (needs his yes).
