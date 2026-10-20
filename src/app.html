@@ -2703,6 +2703,22 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tc-mini rect.nil{fill:var(--rule2)}
   html.ui-c .tc-pic-chip{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--c-sunk);font-size:11.5px;font-weight:700;color:var(--ink)}
   html.ui-c .tc-pic-chip.none{background:none;border:1px dashed var(--rule2)}
+  html.ui-c .tc-spark{display:block;width:100%;height:46px;margin:8px 0 2px;overflow:visible}
+  html.ui-c .tc-spark-area{fill:var(--v-tc3);opacity:.45}
+  html.ui-c .tc-spark-line{fill:none;stroke:var(--v-adm);stroke-width:1.6;vector-effect:non-scaling-stroke;stroke-linejoin:round}
+  html.ui-c .tc-spark circle{fill:var(--v-adm)}
+  html.ui-c .tc-spark circle.on{fill:var(--v-lead)}
+  @media (min-width:1101px){ html.ui-c .tc-home .kb-top{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr)} }   /* the donut as big as the picture's */
+  html.ui-c .tc-bookcards{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) minmax(0,1fr);grid-template-rows:none;margin-bottom:18px}
+  html.ui-c .tc-bookcards > div{display:block;grid-row:auto;grid-template-rows:none;position:relative}
+  html.ui-c .kstrip.tc-bookcards > div > b{font-size:40px;letter-spacing:-.03em;line-height:1.1}   /* the picture: all three figures alike */
+  html.ui-c .tc-bookcards b em{font-style:normal;font-size:20px;font-weight:500;color:var(--t3);letter-spacing:0}
+  html.ui-c .tc-bookcards b em a{color:inherit;text-decoration:none}
+  html.ui-c .tc-ycols{display:flex;align-items:flex-end;gap:6px;height:90px;margin-top:8px}
+  html.ui-c .tc-ycol{flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%;text-decoration:none;color:var(--t3);font-size:11.5px;text-align:center;position:relative;z-index:1}
+  html.ui-c .tc-ycol i{display:block;width:100%;border-radius:4px 4px 0 0;background:var(--v-adm);margin-bottom:4px}
+  html.ui-c .tc-ycol.on i{background:var(--v-lead)}
+  html.ui-c .tc-ycol:hover span{color:var(--pet)}
   html.ui-c .tc-bookgrid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:18px;align-items:start}
   html.ui-c .tc-seg{display:inline-flex;gap:2px;padding:3px;border-radius:10px;background:var(--c-sunk)}
   html.ui-c .tc-seg button{border:0;background:none;font:inherit;font-size:13px;padding:5px 11px;border-radius:8px;color:var(--t2);cursor:pointer;letter-spacing:0;text-transform:none}
@@ -2732,6 +2748,8 @@ svg .m-flag-mark{transform-origin:0 100%}
     html.ui-c .tc-big-row .tc-meter{grid-column:2 / -1;grid-row:2}
     html.ui-c .tc-home .khead, html.ui-c .tc-book .khead{flex-wrap:wrap}
     html.ui-c .tc-seg{flex-wrap:wrap}
+    html.ui-c .tc-bookcards{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+    html.ui-c .tc-bookcards > .khero{grid-column:1 / -1}
     html.ui-c .tc-home .kdonut{flex-direction:column;align-items:stretch}
     html.ui-c .tc-home .kdonut svg{width:180px;flex:0 0 auto;align-self:center}
     html.ui-c .tc-home .klegend.inline{margin-left:0;flex-wrap:wrap;gap:4px 14px;min-width:0;max-width:100%}
@@ -10401,6 +10419,19 @@ function tcYearChart(rows, Y, { small = false } = {}) {
   }).join('');
   return `<svg viewBox="0 0 ${W} ${H}" class="kchart tc-years${narrow ? ' narrow' : ''}${small ? ' small' : ''}" data-plot="${T} ${H - B}" role="img" aria-label="Delegates by year">${grid}${cols}</svg>`;
 }
+// The Delegates card's line (the owner's picture M1): thin, a dot on every year from 2020, the picked year the dark dot,
+// a pale band under it. Not cSpark's wedge, which suits a month series.
+function tcSpark(rows) {
+  const v = rows.map((r) => Number(r.n) || 0);
+  if (v.length < 2 || !v.some((n) => n > 0)) return '';
+  const W = 200, H = 46, P = 4, max = Math.max(...v);
+  const pts = v.map((n, i) => [P + (i / (v.length - 1)) * (W - 2 * P), H - P - (n / max) * (H - 2 * P)]);
+  const line = pts.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+  const last = pts[pts.length - 1];
+  return `<svg class="tc-spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${esc(rows.map((r) => `${r.year} ${r.n}`).join(', '))}">
+    <path d="${line} L${last[0].toFixed(1)},${H} L${pts[0][0].toFixed(1)},${H} Z" class="tc-spark-area"/><path d="${line}" class="tc-spark-line"/>
+    ${pts.map((p, i) => `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="${i === pts.length - 1 ? 3.6 : 2.1}" class="${i === pts.length - 1 ? 'on' : ''}"/>`).join('')}</svg>`;
+}
 // six years in six small bars, the picked year dark (the biggest clients' rows)
 function tcMiniBars(v) {
   const max = Math.max(1, ...v), W = 66, H = 24, bw = 8, gap = (W - bw * v.length) / Math.max(1, v.length - 1);
@@ -10451,7 +10482,7 @@ async function viewTcHome() {
       ${need('Planned today', D.today.planned, `tcGoNextUpto(${esc(JSON.stringify(String(D.asOf)))})`, 0)}${need('This week', D.today.week, `tcGoNextUpto(${esc(JSON.stringify(String(D.today.friday)))})`, 1)}
       ${ex ? `<a class="kneed tc-ex" href="#/tc/season/event/${Number(ex.id)}" style="--i:2"><span>Next exhibition</span><b>${esc(ex.name)}</b><small>${esc([exWhen, ex.companies != null ? tcN(ex.companies) + ' companies' : ''].filter(Boolean).join(' · '))}${ex.dateConfirmed ? '' : ' <em class="tc-tbc">date to confirm</em>'}</small></a>` : ''}</div></div></section>
     <div class="kstrip kb-strip">
-      <div class="khero tc-card" role="link" tabindex="0" onclick="if(!event.target.closest('a'))tcGoYear(${Number(Y)})"><span>Delegates</span><b>${tcN(D.delegates.n)}</b><small>${Y}</small>${cSpark(D.delegates.spark, 'lead')}${delta}<a class="kgo" href="#/tc/companies" onclick="tcGoYear(${Number(Y)});return false">Clients →</a></div>
+      <div class="khero tc-card" role="link" tabindex="0" onclick="if(!event.target.closest('a'))tcGoYear(${Number(Y)})"><span>Delegates</span><b>${tcN(D.delegates.n)}</b><small>${Y}</small>${tcSpark(D.byYear)}${delta}<a class="kgo" href="#/tc/companies" onclick="tcGoYear(${Number(Y)});return false">Clients →</a></div>
       <div class="tc-card" role="link" tabindex="0" onclick="if(!event.target.closest('a'))tcGoYear(${Number(Y)})"><span>Client companies</span><b>${tcN(D.clients.n)}</b><small>${Y}</small>${split}<a class="kgo" href="#/tc/companies" onclick="tcGoYear(${Number(Y)});return false">Clients →</a></div>
       <div class="tc-card" role="link" tabindex="0" onclick="if(!event.target.closest('a'))tcGoYear(${Number(Y)}, 'new')"><span>New clients</span><b>${tcN(D.newClients.n)}</b><small>${Y}</small>
         <small class="tc-line"><b>${tcN(D.newClients.delegates)}</b> delegates from companies new in ${Y}</small>${largest ? `<small class="tc-line">largest: ${largest}</small>` : ''}<a class="kgo" href="#/tc/companies" onclick="tcGoYear(${Number(Y)}, 'new');return false">Clients →</a></div>
@@ -10494,6 +10525,7 @@ async function viewTcBook() {
         : `<button class="btn sm ghost" onclick="tcOpenPlan(${Number(c.id)}, ${esc(JSON.stringify(String(c.name ?? '')))})">Plan a call</button>`}</div>`;
   $('#view').innerHTML = `<div class="kpage kb tc-book">
     <div class="khead"><div><h1>Client book</h1><p class="c-crumb" style="margin:0">Training Centre ${Y}${B.countsTo ? ` · course counts to ${esc(tcDay(B.countsTo))}` : ''}</p></div>${tcYearSel(B)}</div>
+    ${tcBookCards(B)}
     <div class="tc-bookgrid">
       <section class="c-sheet tc-big"><h3>Biggest clients ${Y}<span class="c-h3acts tc-seg" role="group" aria-label="Which clients">${seg.map(([v, label, on]) => `<button type="button" class="${on ? 'on' : ''}" aria-pressed="${Boolean(on)}"
           onclick="tcBookSeg(${esc(JSON.stringify(String(v)))})">${esc(label)}${v === 'mine' ? ` <small>${tcN(B.mineCount)}</small>` : ''}</button>`).join('')}</span></h3>
@@ -10506,6 +10538,20 @@ async function viewTcBook() {
           ${B.welcome.total > welcome.length ? `<button class="c-more tc-logmore" onclick="T_BOOK.wshown+=8;viewTcBook()">Show 8 more of ${tcN(B.welcome.total - welcome.length)}</button>` : ''}</div></section>
     </div></div>`;
   cScenes($('#view'));
+}
+// The three cards on top (the owner's picture A): Delegates with a column per year, the client companies of the year
+// out of every company that ever trained, the countries; each figure opens its companies, TOTAL rows in none
+function tcBookCards(B) {
+  const C = B.cards, Y = B.year, max = Math.max(1, ...C.delegates.byYear.map((r) => r.n));
+  const col = (r) => `<a class="tc-ycol${r.year === Y ? ' on' : ''}" href="#/tc/companies" onclick="tcGoYear(${Number(r.year)});return false" title="${Number(r.year)}: ${tcN(r.n)} delegates">
+      <i style="height:${Math.max(r.n ? 4 : 1, (r.n / max) * 100).toFixed(1)}%"></i><span>${Number(r.year)}</span></a>`;
+  return `<div class="kstrip tc-bookcards">
+    <div class="khero tc-card" role="link" tabindex="0" onclick="if(!event.target.closest('a'))tcGoYear(${Number(Y)})"><span>Delegates ${Number(Y)}</span><b>${tcN(C.delegates.n)}</b>
+      <div class="tc-ycols">${C.delegates.byYear.map(col).join('')}</div></div>
+    <div class="tc-card" role="link" tabindex="0" onclick="if(!event.target.closest('a'))tcGoYear(${Number(Y)})"><span>Client companies that trained in ${Number(Y)}</span>
+      <b>${tcN(C.clients.n)} <em>/ <a href="#/tc/clients">${tcN(C.clients.ever)}</a></em></b><small>of all companies that ever trained</small></div>
+    <div class="tc-card" role="link" tabindex="0" onclick="if(!event.target.closest('a'))tcGoList({ country: '*' })"><span>Countries</span><b>${tcN(C.countries)}</b><small>where our companies are</small></div>
+  </div>`;
 }
 function tcBookSeg(v) { T_BOOK = { ...T_BOOK, area: v === 'mine' ? '' : v, mine: v === 'mine', shown: 10 }; viewTcBook(); }
 const tcBookAll = () => tcGoList({ year: String(Number(T_YEAR)), area: T_BOOK.area, pic: T_BOOK.mine ? 'me' : '' });

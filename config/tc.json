@@ -30,6 +30,10 @@
   "contactKinds": ["call", "email", "physical_meeting", "digital_meeting", "exhibition", "contact"],
   "nextLabel": "Next communication",
   "weekDays": 7,
+  "home": {
+    "_compareYearsBack": "TC Home's Delegates card compares the year with this many years before it. 2 for now (MASTER CONTROL 20.10.2026, as the owner's picked picture M1: 2025 vs 2023, because most 2024 counts are missing in the Excel); 1 = the year before. The owner's keep / change is asked.",
+    "compareYearsBack": 2
+  },
   "defaults": {
     "_provisional": "The owner's answers are still open (19.10.2026); these are the build's defaults until then.",
     "noStatus": "not_contacted",

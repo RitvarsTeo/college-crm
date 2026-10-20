@@ -51,7 +51,10 @@ test('the year: four cards, the TOTAL row in none of them, 2024 a plain number',
   const h = await th.homeYear(db, { year: 2025, me: ME });
   assert.equal(h.year, 2025);
   assert.equal(h.delegates.n, 135, '100 + 30 + 5, not the group row\'s 100 again');
-  assert.deepEqual(h.delegates.prev, { year: 2024, n: 15 }, 'the year before, 2024 as it is recorded');
+  // compared with config/tc.json home.compareYearsBack years before (2 for now: 2025 vs 2023, as the picked picture)
+  assert.equal(tc.TC.home.compareYearsBack, 2);
+  assert.equal(th.compareBack(), 2);
+  assert.deepEqual(h.delegates.prev, { year: 2023, n: 75 });
   assert.deepEqual(h.clients, { n: 3, back: 1, fresh: 2 });
   assert.deepEqual(h.newClients, { n: 2, delegates: 35, largest: [{ id: ids.fresh, name: 'Sample Wind GmbH', n: 30 }, { id: ids.fresh2, name: 'Demo Tankers Ltd', n: 5 }] });
   assert.deepEqual(h.countries, { clients: 3, all: 7 }, 'TOTAL is not a country');
@@ -116,6 +119,12 @@ test('the Client book: ranked by the year, All / Mine / one area; Welcome back =
   assert.deepEqual((await th.book(db, { year: 2025, mine: true, me: ME })).biggest.rows.map((r) => r.id), [ids.back]);
   assert.deepEqual(all.welcome.rows.map((r) => [r.id, r.n]), [[ids.welcome, 90], [ids.welcome2, 15]], 'the group row is never welcomed back');
   assert.deepEqual([all.welcome.from, all.welcome.to], [2022, 2023]);
+  // the three cards on top: delegates per year, the year's client companies out of every company that ever trained, countries
+  assert.equal(all.cards.delegates.n, 135);
+  assert.deepEqual(all.cards.delegates.byYear.map((r) => r.n), [0, 8, 70, 75, 15, 135]);
+  assert.deepEqual(all.cards.clients, { n: 3, ever: 7 }, 'the group row and the prospect are not clients');
+  assert.equal(all.cards.countries, 7);
+  assert.equal((await tc.listCompanies(db, { client: 'yes' }, { size: 2000 })).total, all.cards.clients.ever, 'the "of all" figure opens Clients');
   await tc.setNext(db, ids.welcome, { due: day(3), label: 'Call' }, 'T');   // Plan a call
   const after = await th.book(db, { year: 2025 });
   assert.equal(after.welcome.rows[0].next.due, day(3), 'a planned call shows as planned');
@@ -176,7 +185,13 @@ test('the screens: the menu, Home in the Academy Home\'s parts, nothing reads as
   assert.doesNotMatch(fn('function tcYearChart('), /hatch|~/, '2024 is a number like any other');
   assert.doesNotMatch(APP.slice(APP.indexOf('const tcWhenText'), APP.indexOf('const tcDelegates')), /overdue/, 'a past day reads "planned dd.mm"');
   assert.doesNotMatch(APP, /tc-row\.is-late|tc-d\.late/, 'no red for a contact not done yet');
+  assert.match(home, /<small>\$\{Y\}<\/small>\$\{tcSpark\(D\.byYear\)\}/, 'the Delegates line: thin, a dot a year');
+  assert.match(fn('function tcSpark('), /class="tc-spark-line"/);
+  assert.match(APP, /@media \(min-width:1101px\)\{ html\.ui-c \.tc-home \.kb-top\{grid-template-columns:minmax\(0,1\.3fr\) minmax\(0,1fr\)\} \}/, 'the donut as big as in the picture, one column on a phone');
+  const cards = fn('function tcBookCards(');
+  for (const part of ['Delegates ${Number(Y)}', 'Client companies that trained in ${Number(Y)}', 'of all companies that ever trained', 'where our companies are', 'tcGoYear(${Number(r.year)})', 'href="#/tc/clients"']) assert.ok(cards.includes(part), part);
   const book = fn('async function viewTcBook(');
+  assert.match(book, /\$\{tcBookCards\(B\)\}/);
   for (const part of ["'All'", "'Mine'", "['TC', 'ENERGY', 'OPITO']", 'Welcome back', 'Plan a call', 'tcBigRows(rows, B.biggest.top, { pic: true })']) assert.ok(book.includes(part), part);
   const co = fn('function tcDrawCompany(');
   for (const part of ['Delegates per year', 'since 2020', 'Courses they take', 'Information to send', 'Mark sent']) assert.ok(co.includes(part), part);

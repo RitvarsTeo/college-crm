@@ -14,10 +14,12 @@
 //
 // Pure data functions, the database first, like src/tc.js.
 
-import { companyFacts, tcWindow, addDays, lastBucket } from './tc.js';
+import { companyFacts, tcWindow, addDays, lastBucket, TC } from './tc.js';
 import { meKeys, isMine } from './tcpic.js';
 
 export const FIRST_YEAR = 2020;   // the Excel's course history starts in 2020
+// how many years back the Delegates card compares (config/tc.json home.compareYearsBack; 2 for now, 1 = the year before)
+export const compareBack = () => { const n = Number(TC.home && TC.home.compareYearsBack); return Number.isInteger(n) && n >= 1 && n <= 5 ? n : 1; };
 const byLv = (a, b) => String(a).localeCompare(String(b), 'lv');
 const yearOf = (v) => { const y = Number(v); return Number.isInteger(y) && y >= 1990 && y <= 2100 ? y : null; };
 const got = (c, y) => (c.years[y] || 0);
@@ -67,7 +69,7 @@ export async function homeYear(db, { year = null, me = null, now = new Date(), b
   const before = (c) => Object.entries(c.years).some(([y, n]) => Number(y) < Y && n > 0);
   const back = clients.filter(before), fresh = clients.filter((c) => !before(c));
   const byYear = span.map((y) => ({ year: y, n: counted.reduce((s, c) => s + got(c, y), 0), clients: counted.filter((c) => got(c, y) > 0).length }));
-  const cur = byYear.find((r) => r.year === Y), prev = byYear.find((r) => r.year === Y - 1) || null;
+  const cur = byYear.find((r) => r.year === Y), prev = byYear.find((r) => r.year === Y - compareBack()) || null;
   const countries = (rows) => new Set(rows.map((c) => c.country).filter(Boolean)).size;
 
   const buckets = { recent: 0, mid: 0, old: 0, none: 0 };
@@ -119,10 +121,17 @@ export async function book(db, { year = null, area = '', mine = false, me = null
     .filter((c) => !mine || isMine(c, mk))
     .sort((a, b) => got(b, Y) - got(a, Y) || byLv(a.name, b.name));
   const was = (c) => got(c, Y - 3) + got(c, Y - 2);
+  const ever = counted.filter((c) => Object.values(c.years).some((n) => n > 0));
+  const yearClients = counted.filter((c) => got(c, Y) > 0);
   const welcome = counted.filter((c) => was(c) > 0 && got(c, Y) === 0).sort((a, b) => was(b) - was(a) || byLv(a.name, b.name));
   return {
     year: Y, years: Y0.years, countsTo: Y0.countsTo, span, area: area || '', mine: Boolean(mine),
     mineCount: mk ? counted.filter((c) => got(c, Y) > 0 && isMine(c, mk)).length : 0,
+    cards: {
+      delegates: { n: yearClients.reduce((s, c) => s + got(c, Y), 0), byYear: span.map((y) => ({ year: y, n: counted.reduce((s, c) => s + got(c, y), 0) })) },
+      clients: { n: yearClients.length, ever: ever.length },
+      countries: new Set(counted.map((c) => c.country).filter(Boolean)).size,
+    },
     biggest: { total: ranked.length, top: ranked.length ? got(ranked[0], Y) : 0, rows: ranked.slice(0, 200).map(rankRow(Y, span)) },
     welcome: { from: Y - 3, to: Y - 2, total: welcome.length,
       rows: welcome.slice(0, 60).map((c) => ({ id: c.id, name: c.name, country: c.country, n: was(c), pic: c.pic,
