@@ -16,6 +16,30 @@ this is a local prototype" stood here until 30.09.2026, from the weeks before th
 
 
 
+## PROJECT SCOPE (owner, locked 20.10.2026) - one CRM: Intake
+
+**Goal:** ONE app, Intake (intake.novikontas.org). After sign-in a start page with two tiles - **Academy** and
+**Training Centre** - each person opens only the side they have permission for. Client Hub stops being a separate app:
+its data and features move into Intake. No separate Client Hub redesign (the CH remake is stopped 20.10).
+
+**Phases, in order:**
+1. **Academy** - today's Intake (Inbox, Due, Journey, Reports). Live; Ieva's feedback done (patches 52-61).
+2. **Training Centre foundation** - tiles, access per area, People and access, TC Home, Companies, company page,
+   Next contacts; Excel imported (1,497 companies, 1,448 contacts, 471 active clients). LIVE patch 60 (20.10).
+   TC team: admins + Mārcis Žabovs, Aleksandrs Lukaševičs, Līva Mihailova.
+3. **Training Centre round 2** (lanes running 20.10) - Client Hub contacts into Intake once (Intake is master),
+   person in charge = account ("Mine"), screens checked at real size, company <-> person link.
+4. **Client Hub into Intake** - Grand Opening guest lists, Save the Date send results, the network map (kept CH
+   branches: network 5465221, flagship 0a96971, main 549a4a9 + 196140c), each shown as pictures first. Client Hub
+   stays live as it is until this is confirmed.
+5. **Database move** - Intake stays on Neon until phases 3-4 are confirmed. Then: full backup of Client Hub's Supabase
+   -> delete that project (owner's yes asked again at that moment) -> its free slot holds a NEW empty Supabase project
+   for Intake -> one move from Neon with row counts per table, Neon kept as the fallback until it matches -> switch.
+   TA keeps its own Supabase. Later: pro Supabase. Aigars not told yet (owner: "not yet").
+
+**Out of scope / not decided:** a CH redesign (stopped); TC open answers (offices per country, course counts source,
+companies with no status - defaults in use); phone: marked number of a known person.
+
 ## 20.10.2026 - Ieva's feedback (owner: "we still have bugs to fix")
 
 - `DECIDED` (owner 20.10: "why is the top bar floating frozen?") the Journey stage bar folds and stays pinned when scrolling, and in the List it sits over the open edit panel. Shown as pictures A/B/C; HIS PICK: **A - keep as now** (pinned, box + shadow). Nothing to change.
