@@ -54,6 +54,9 @@ this is a local prototype" stood here until 30.09.2026, from the weeks before th
 - `SAID` (open - owner: "rest of questions I'll answer later", 19.10; the build uses these defaults until he answers) a company with offices in several
   countries is ONE company with its offices inside (explicit office tags like /CY/ stay separate); course counts are
   typed by TC staff for now (the Excel history imported); the 296 companies with no status start as "Not contacted".
+- `DECIDED` (owner 20.10, after seeing the live tiles: "nevajag tos metrics uzreiz sākumā ... kaut ko, kas nepasaka, ka
+  kāds kavē savu darbu") the start-page tiles show **no figures** - just Academy / Training Centre (icon, name, open).
+  Due / overdue counts stay inside each side.
 - `DECIDED` Sessions: MASTER CONTROL + three lanes - TC-DATA (clean the Excel, cross-check Client Hub, duplicates
   report, read-only on Client Hub), TC-UI (tiles first as A/B pictures, then TC screens from Intake's parts),
   TC-BACKEND (tables, API, security guards). Order: tiles -> short MVP interview with the owner -> companies list +
