@@ -1,0 +1,35 @@
+{
+  "_about": "SEASON (the owner's pick C, 20.10.2026; src/tcseason.js). A season runs September to August. Lanes: exhibitions, asking the clients of year Y for their Y+2 training plans (October to December), the year-end calendars & gifts. Ids never change once used; labels can.",
+  "seasonStartMonth": 9,
+  "kinds": [
+    { "id": "exhibition", "label": "Exhibitions", "stages": ["on_list", "met", "follow_up", "booked"] },
+    { "id": "calendars", "label": "Calendars & gifts", "stages": ["on_list", "sent"] }
+  ],
+  "stages": [
+    { "id": "on_list", "label": "On the list" },
+    { "id": "met", "label": "Met at the stand" },
+    { "id": "follow_up", "label": "Follow-up sent" },
+    { "id": "booked", "label": "Booked a course" },
+    { "id": "sent", "label": "Sent" }
+  ],
+  "plans": { "fromMonth": 10, "toMonth": 12, "_about": "Ask for Y+2 plans: in October to December of the season's first year, every company that trained delegates in the year before the season (Y = start year - 1) is asked for its training plan for Y+2." },
+  "columnRows": 8,
+  "countryRows": 11,
+  "seed": {
+    "_about": "The ONE seed from the Excel tabs (src/tcseason.js seedPreview / seedApply), an admin one-off like the TC import: the preview writes nothing and answers counts and a hash, the apply needs that hash and runs once. The Excel has no dates: the dates here are the build's, marked to confirm unless known; an admin changes them on the event's page.",
+    "batch": "season_seed_2026_10",
+    "source": "Planning of customers.xlsx (exhibition and calendar tabs)",
+    "events": [
+      { "key": "windenergy_hamburg_2026", "name": "WindEnergy Hamburg", "kind": "exhibition", "city": "Hamburg", "country": "Germany",
+        "startsOn": "2026-09-22", "endsOn": "2026-09-25", "dateConfirmed": true, "match": "^WindEnergy Hamburg" },
+      { "key": "oeec_amsterdam_2026", "name": "OEEC Amsterdam", "kind": "exhibition", "city": "Amsterdam", "country": "Netherlands",
+        "startsOn": "2026-11-24", "endsOn": "2026-11-26", "dateConfirmed": false, "match": "^OEEC Amsterdam" },
+      { "key": "wind_europe_2027", "name": "Wind Europe 2027", "kind": "exhibition", "city": null, "country": null,
+        "startsOn": "2027-04-13", "endsOn": "2027-04-15", "dateConfirmed": false, "match": "^Wind Europe" },
+      { "key": "donso_2027", "name": "Donsö", "kind": "exhibition", "city": "Gothenburg", "country": "Sweden",
+        "startsOn": "2027-06-08", "endsOn": "2027-06-10", "dateConfirmed": false, "match": "^Dons(ö|o|\\uFFFD|\\?)" },
+      { "key": "calendars_2026", "name": "Calendars & gifts", "kind": "calendars", "city": null, "country": null,
+        "startsOn": "2026-12-01", "endsOn": "2026-12-23", "dateConfirmed": true, "from": "calendar_gift" }
+    ]
+  }
+}

@@ -58,6 +58,8 @@ import { htmlEscape, inviteOrigin } from './systempages.js';
 import * as areas from './areas.js';
 import * as tc from './tc.js';
 import * as tcimport from './tcimport.js';
+import * as tcweek from './tcweek.js';
+import * as tcseason from './tcseason.js';
 import * as tcclienthub from './tcclienthub.js';
 import * as tcpic from './tcpic.js';
 
@@ -3274,6 +3276,49 @@ export const handle = async (req, res) => {
         return c ? json(res, 200, c) : json(res, 404, { error: 'not found' });
       }
     }
+    // MY WEEK and LOG A CONTACT (the owner's pick B, 20.10.2026; src/tcweek.js): Monday to Friday of planned contacts,
+    // Mine or Team; a contact not done earlier is drawn in today's column, never as late.
+    if (p === '/api/tc/week' && req.method === 'GET') {
+      return json(res, 200, await tcweek.week(db, { from: url.searchParams.get('from'), scope: url.searchParams.get('scope') || 'mine',
+        me: await tcMe(req, url) }));
+    }
+    {
+      const drawer = /^\/api\/tc\/tasks\/(\d+)$/.exec(p);
+      if (drawer && req.method === 'GET') {
+        const d = await tcweek.drawer(db, Number(drawer[1]));
+        return d ? json(res, 200, d) : json(res, 404, { error: 'not found' });
+      }
+      const log = /^\/api\/tc\/tasks\/(\d+)\/log$/.exec(p);
+      const plan = /^\/api\/tc\/companies\/(\d+)\/plan$/.exec(p);
+      if ((log || plan) && req.method === 'POST') {
+        const b = await body(req, 16 * 1024);
+        const by = await actorOf(req, b);
+        return json(res, 200, log ? await tcweek.logContact(db, Number(log[1]), b, by) : await tcweek.plan(db, Number(plan[1]), b, by));
+      }
+    }
+    // SEASON (the owner's pick C, 20.10.2026; src/tcseason.js): the year planner, the countries, an event's columns.
+    if (p === '/api/tc/season' && req.method === 'GET') return json(res, 200, await tcseason.season(db, { start: url.searchParams.get('start') }));
+    if (p === '/api/tc/season/plans' && req.method === 'GET') return json(res, 200, await tcseason.plansList(db, url.searchParams.get('year')));
+    {
+      const ev = /^\/api\/tc\/events\/(\d+)$/.exec(p);
+      if (ev && req.method === 'GET') {
+        const e = await tcseason.eventPage(db, Number(ev[1]));
+        return e ? json(res, 200, e) : json(res, 404, { error: 'not found' });
+      }
+      const evw = /^\/api\/tc\/events\/(\d+)\/(edit|companies)$/.exec(p);
+      const link = /^\/api\/tc\/event-companies\/(\d+)\/(stage|remove)$/.exec(p);
+      if ((evw || link) && req.method === 'POST') {
+        const b = await body(req, 16 * 1024);
+        const by = await actorOf(req, b);
+        if (evw && evw[2] === 'edit') {
+          if (!(await adminOf(req))) return json(res, 403, { error: 'An admin changes the dates of an event.' });
+          return json(res, 200, await tcseason.editEvent(db, Number(evw[1]), b, by));
+        }
+        if (evw) return json(res, 200, await tcseason.addToEvent(db, Number(evw[1]), b, by));
+        return json(res, 200, link[2] === 'stage' ? await tcseason.setStage(db, Number(link[1]), String(b.stage || ''), by)
+          : await tcseason.removeFromEvent(db, Number(link[1]), by));
+      }
+    }
     if (req.method === 'POST') {
       const edit = /^\/api\/tc\/companies\/(\d+)\/(edit|archive|contacts|courses|activities|next)$/.exec(p);
       const contact = /^\/api\/tc\/contacts\/(\d+)\/(edit|archive)$/.exec(p);
@@ -3307,6 +3352,14 @@ export const handle = async (req, res) => {
       const opts = { pastNext: b.pastNext || 'overdue', hash: b.hash };
       if (b.apply !== true) return json(res, 200, { preview: true, ...(await tcimport.preview(db, files, opts)).counts });
       return json(res, 200, await tcimport.apply(db, files, opts, await actorOf(req, b)));
+    }
+    // THE SEASON SEED, the same shape (src/tcseason.js): the Excel's exhibition and calendar tabs become events, once.
+    // GET and POST without apply are the preview (counts only, writes nothing); apply: true with the preview's hash writes.
+    if (p === '/api/admin/tc/season-seed' && (req.method === 'GET' || req.method === 'POST')) {
+      if (!(await adminOf(req))) return json(res, 403, { error: 'The seed is for admins only.' });
+      const b = req.method === 'POST' ? await body(req, 16 * 1024) : {};
+      if (b.apply !== true) return json(res, 200, await tcseason.seedPreview(db));
+      return json(res, 200, await tcseason.seedApply(db, { hash: b.hash }, await actorOf(req, b)));
     }
     // THE CLIENT HUB IMPORT, the same shape (src/tcclienthub.js): Client Hub contacts come into Intake once.
     if (p === '/api/admin/tc/import-clienthub' && (req.method === 'GET' || req.method === 'POST')) {
@@ -3399,6 +3452,7 @@ export const handle = async (req, res) => {
     // Training Centre: a refusal in plain words, for the screen to show (19.10.2026)
     if (err instanceof tc.TcInputError) return json(res, 400, { error: err.message, ...(err.id ? { id: err.id } : {}) });
     if (err instanceof tcimport.ImportError) return json(res, 400, { error: err.message });
+    if (err instanceof tcseason.SeedError) return json(res, 400, { error: err.message });
     // The detail goes to the server log, never to the caller (L4, 07.10.2026): it carried SQL, driver
     // wording and file paths to whoever made the request.
     console.error(`500 ${req.method} ${p}: ${err && err.stack ? err.stack : err}`);

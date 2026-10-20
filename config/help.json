@@ -343,6 +343,21 @@
         "id": "tc-back-to-academy",
         "q": "How do I get to Academy from here?",
         "a": "Click the logo at the top of the menu to go back to the two tiles and open Academy, if your account opens it."
+      },
+      {
+        "id": "tc-my-week",
+        "q": "How does My week work?",
+        "a": "My week shows your planned contacts from Monday to Friday; Log on a card saves what you did, how it went and when the next contact is, and a contact not done on its day waits in today's column."
+      },
+      {
+        "id": "tc-season",
+        "q": "What is on the Season page?",
+        "a": "Season shows the exhibitions, the October to December round of asking last year's clients for their training plans, and the year-end calendars and gifts from September to August, with where our companies are per country under it."
+      },
+      {
+        "id": "tc-exhibition",
+        "q": "How do I follow up an exhibition?",
+        "a": "Open the exhibition from Season and move each company from On the list to Met at the stand, Follow-up sent or Booked a course; every move is written in the company's history."
       }
     ]
   }

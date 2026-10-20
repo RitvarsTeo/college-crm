@@ -598,10 +598,54 @@ CREATE TABLE IF NOT EXISTS tc_tasks (
   done_at TEXT,
   outcome TEXT,
   created_at TEXT NOT NULL,
-  created_by TEXT
+  created_by TEXT,
+  kind TEXT,                       -- My week (20.10.2026): call | email | meeting | exhibition, the planned way to reach them
+  result TEXT                      -- Log a contact, on the closed task: reached | no_answer | sent_info | meeting_booked | asked_offer
 );
 CREATE INDEX IF NOT EXISTS tc_tasks_open ON tc_tasks (due_at) WHERE done_at IS NULL;
 CREATE INDEX IF NOT EXISTS tc_tasks_company ON tc_tasks (company_id);
+
+-- SEASON (the owner's pick C, 20.10.2026; src/tcseason.js): exhibitions and the year-end calendars & gifts, and the
+-- companies on each one's list with how far they got. Seeded ONCE from the Excel tabs held in tc_companies.extra (an
+-- admin preview + apply with its hash). Nothing is deleted: an event is archived, a company taken off a list is stamped.
+CREATE TABLE IF NOT EXISTS tc_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  kind TEXT NOT NULL,              -- exhibition | calendars (config/tc_season.json)
+  city TEXT,
+  country TEXT,
+  starts_on TEXT,                  -- YYYY-MM-DD; NULL = not known
+  ends_on TEXT,
+  date_confirmed INTEGER NOT NULL DEFAULT 0,
+  notes TEXT,
+  source TEXT,
+  source_key TEXT,                 -- the seed's own key, so a second apply finds it
+  created_at TEXT NOT NULL,
+  created_by TEXT,
+  updated_at TEXT,
+  updated_by TEXT,
+  archived_at TEXT,
+  archived_by TEXT
+);
+CREATE UNIQUE INDEX IF NOT EXISTS tc_events_source_key ON tc_events (source_key) WHERE source_key IS NOT NULL;
+CREATE INDEX IF NOT EXISTS tc_events_starts ON tc_events (starts_on);
+
+CREATE TABLE IF NOT EXISTS tc_event_companies (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  event_id BIGINT NOT NULL REFERENCES tc_events(id),
+  company_id BIGINT NOT NULL REFERENCES tc_companies(id),
+  stage TEXT NOT NULL,             -- exhibition: on_list | met | follow_up | booked; calendars: on_list | sent
+  note TEXT,
+  source TEXT,
+  created_at TEXT NOT NULL,
+  created_by TEXT,
+  updated_at TEXT,
+  updated_by TEXT,
+  removed_at TEXT,
+  removed_by TEXT
+);
+CREATE UNIQUE INDEX IF NOT EXISTS tc_event_companies_one ON tc_event_companies (event_id, company_id) WHERE removed_at IS NULL;
+CREATE INDEX IF NOT EXISTS tc_event_companies_company ON tc_event_companies (company_id);
 
 -- What each import row became, so a second apply finds nothing and a company traces back to its Excel row.
 CREATE TABLE IF NOT EXISTS tc_import_rows (
@@ -638,6 +682,8 @@ const ADDED_COLUMNS = [
   ['pbx_calls', 'note', 'TEXT'],               // 14.10.2026, what the call was about (one line)
   ['pbx_calls', 'note_by', 'TEXT'],
   ['pbx_calls', 'note_at', 'TEXT'],
+  ['tc_tasks', 'kind', 'TEXT'],       // 20.10.2026, My week: how the contact is planned
+  ['tc_tasks', 'result', 'TEXT'],     // 20.10.2026, Log a contact: how it went, on the closed task
 ];
 
 // ---------------------------------------------------------- the async layer --

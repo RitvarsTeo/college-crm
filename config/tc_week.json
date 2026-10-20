@@ -1,0 +1,27 @@
+{
+  "_about": "MY WEEK and LOG A CONTACT (the owner's pick B, 20.10.2026; src/tcweek.js). Monday to Friday of planned contacts per person. A contact not done on an earlier day is drawn in today's column with its first day ('from Mon'), never in red and never counted as late. Ids never change once used; the labels can.",
+  "kinds": [
+    { "id": "call", "label": "Call", "activity": "call" },
+    { "id": "email", "label": "Email", "activity": "email" },
+    { "id": "meeting", "label": "Meeting", "activity": "physical_meeting" },
+    { "id": "exhibition", "label": "Exhibition", "activity": "exhibition" }
+  ],
+  "defaultKind": "call",
+  "results": [
+    { "id": "reached", "label": "Reached" },
+    { "id": "no_answer", "label": "No answer" },
+    { "id": "sent_info", "label": "Sent info" },
+    { "id": "meeting_booked", "label": "Meeting booked" },
+    { "id": "asked_offer", "label": "Asked for offer" }
+  ],
+  "next": [
+    { "id": "1w", "label": "In 1 week", "days": 7 },
+    { "id": "2w", "label": "In 2 weeks", "days": 14 },
+    { "id": "1m", "label": "In 1 month", "months": 1 },
+    { "id": "newyear", "label": "After New Year", "newYearDay": 11 },
+    { "id": "date", "label": "Pick a date" }
+  ],
+  "_newYearDay": "After New Year = the first working day on or after this day of January (the 11th: the first full working week, when people are back).",
+  "readyRows": 6,
+  "doneOutcomesHidden": ["replaced"]
+}

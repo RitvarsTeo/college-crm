@@ -369,3 +369,44 @@ test('(e) no Training Centre row is ever deleted: no DELETE route, no DELETE FRO
   // the one allowed: an area TAG taken off a company, and every change of tags is a line in its log (src/tc.js editCompany)
   assert.match(read('src', 'tc.js'), /DELETE FROM tc_company_areas[\s\S]{0,400}field: 'areas'/);
 });
+
+test('(e) My week and Season: a Training Centre user plans, logs and moves; only an admin changes an event or runs the season seed', async (t) => {
+  const s = await startWithAreas();
+  t.after(() => { s.child.kill(); });
+  const call = async (p, who, body) => {
+    const r = await fetch(s.base + p, { method: body ? 'POST' : 'GET', headers: { origin: s.base, 'content-type': 'application/json', cookie: s.cookie(who) },
+      ...(body ? { body: JSON.stringify(body) } : {}) });
+    return [r.status, await r.json().catch(() => ({}))];
+  };
+  const [, co] = await call('/api/tc/companies', 'admin', { name: 'Guard Week Shipping', country: 'Latvia' });
+  const day = new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10);
+  const [st1, planned] = await call(`/api/tc/companies/${co.id}/plan`, 'tc', { due: day, kind: 'call', topic: 'Guard topic' });
+  assert.equal(st1, 200, 'a Training Centre user plans');
+  assert.equal((await call(`/api/tc/companies/${co.id}/plan`, 'academy', { due: day }))[0], 403, 'Academy only: the gate');
+  const [, w] = await call(`/api/tc/week?scope=team&from=${day}`, 'tc');
+  assert.ok(w.days.some((d) => d.cards.some((c) => c.taskId === planned.id)));
+  assert.equal((await call(`/api/tc/tasks/${planned.id}`, 'tc'))[1].topic, 'Guard topic');
+  const [st2, logged] = await call(`/api/tc/tasks/${planned.id}/log`, 'tc', { what: 'call', result: 'reached', next: '1w', note: 'ok' });
+  assert.equal(st2, 200);
+  assert.ok(logged.next.due);
+  assert.equal((await call(`/api/tc/tasks/${planned.id}/log`, 'tc', { what: 'call', result: 'reached', next: '1w' }))[0], 400, 'not twice');
+  // the season seed: an admin, a preview hash, once; refused to everybody else
+  for (const who of ['tc', 'academy', 'none']) assert.equal((await call('/api/admin/tc/season-seed', who, { apply: true }))[0], 403, who);
+  const [, pv] = await call('/api/admin/tc/season-seed', 'admin');
+  assert.equal(pv.preview, true);
+  assert.equal((await call('/api/admin/tc/season-seed', 'admin', { apply: true }))[0], 400, 'no hash, nothing written');
+  const [st3, ap] = await call('/api/admin/tc/season-seed', 'admin', { apply: true, hash: pv.hash });
+  assert.equal(st3, 200);
+  assert.equal(ap.applied, true);
+  assert.equal((await call('/api/admin/tc/season-seed', 'admin', { apply: true, hash: pv.hash }))[0], 400, 'once');
+  const [, season] = await call('/api/tc/season', 'tc');
+  const ev = season.exhibitions.events[0] || season.calendars.events[0];
+  assert.ok(ev, 'the seed made the events');
+  assert.equal((await call(`/api/tc/events/${ev.id}/edit`, 'tc', { startsOn: '2026-09-01' }))[0], 403, 'an admin changes the dates');
+  assert.equal((await call(`/api/tc/events/${ev.id}/edit`, 'admin', { startsOn: ev.startsOn, dateConfirmed: true }))[0], 200);
+  const [st4, added] = await call(`/api/tc/events/${ev.id}/companies`, 'tc', { companyId: co.id });
+  assert.equal(st4, 200, 'a Training Centre user puts a company on a list');
+  assert.equal((await call(`/api/tc/event-companies/${added.id}/stage`, 'tc', { stage: 'nonsense' }))[0], 400);
+  assert.equal((await call(`/api/tc/event-companies/${added.id}/remove`, 'academy', {}))[0], 403);
+  assert.equal((await call(`/api/tc/event-companies/${added.id}/remove`, 'tc', {}))[0], 200);
+});
