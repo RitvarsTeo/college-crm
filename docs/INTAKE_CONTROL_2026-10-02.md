@@ -868,3 +868,4 @@ Seen: GitHub - no Aigars commits since 309b10f; crm-novikontas.vercel.app = 1ced
 - 20.10 night: MASTER PITCHER board 5 ready (phase 4): Grand Opening G1 own page / G2 Our events on Season / G3 by company; map N1 Companies>Map / N2 Season / N3 TC Home. Client Hub facts: old event statuses = history; cohorts/time slots/RSVP not built (A/B open there); no companies table in CH. Both boards for his morning, with the overnight build.
 - 20.10 night: 160 vs 153 reconciled by MASTER PITCHER: 160 no-company rows minus 3 Outdated minus 4 duplicates (skip rules run first) = 153. Nothing missing. Board 4 note corrected: 84 of 153 share a domain with a TC company.
 - HIS PICK 20.10 night: board 4 = R2 table with bulk. Lane TC-REVIEW (TC-DATA 2 session, local_dc37ecd0) builds it overnight.
+- HIS YES 20.10 night: release the overnight TC build tonight when green + screenshots checked; apply the Season seed (backup first). Google Calendar not included.
