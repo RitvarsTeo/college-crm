@@ -2658,6 +2658,9 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c[data-theme="dark"]{--v-tc1:#29a8df;--v-tc2:#5b9fcd;--v-tc3:#9cc6e4}
   html.ui-c .tc-home .khead, html.ui-c .tc-book .khead{justify-content:space-between;align-items:center}
   html.ui-c .tc-year{margin:0;flex:0 0 auto}
+  html.ui-c .kneed.tc-ex b{font-size:clamp(22px,2.2vw,34px);line-height:1.15}
+  html.ui-c .kneed.tc-ex small{font-size:12.5px;color:var(--t2)}
+  html.ui-c .kneed.tc-ex .tc-tbc{font-style:normal;font-size:11.5px;color:var(--t3);margin-left:6px}
   html.ui-c .tc-year select{font-weight:700}
   html.ui-c .kstrip .tc-card small b{display:inline;font-size:inherit;line-height:inherit;letter-spacing:0;margin:0;font-weight:700}
   html.ui-c .tc-card small.tc-line{display:block;margin-top:6px;font-size:12.5px;line-height:1.45;color:var(--t2)}
@@ -2731,7 +2734,8 @@ svg .m-flag-mark{transform-origin:0 100%}
     html.ui-c .tc-seg{flex-wrap:wrap}
     html.ui-c .tc-home .kdonut{flex-direction:column;align-items:stretch}
     html.ui-c .tc-home .kdonut svg{width:180px;flex:0 0 auto;align-self:center}
-    html.ui-c .tc-home .klegend.inline{margin-left:0}
+    html.ui-c .tc-home .klegend.inline{margin-left:0;flex-wrap:wrap;gap:4px 14px;min-width:0;max-width:100%}
+    html.ui-c .tc-home .klegend.inline li{white-space:normal}
   }
   html.ui-c .tc-empty b{font-weight:600;color:var(--t2)}
   html.ui-c .tc-empty .kgo{margin:0}
@@ -10428,7 +10432,11 @@ async function viewTcHome() {
   T_HOME = D; T_YEAR = D.year;
   const Y = D.year;
   const need = (label, n, go, k) => `<a class="kneed" href="#/tc/next" style="--i:${k}" onclick="${go};return false"><span>${esc(label)}</span><b>${tcN(n)}</b></a>`;
-  const ex = D.exhibition;   // lane TC-WEEK 3's next exhibition ({ id, name, startsOn, companies }); hidden until it exists
+  // lane TC-WEEK 3's next exhibition (src/tcseason.js nextExhibition, joined into /api/tc/overview as "exhibition":
+  // { id, name, city, startsOn, endsOn, dateConfirmed, companies }); not drawn while the overview has none
+  const ex = D.exhibition && D.exhibition.id != null ? D.exhibition : null;
+  const exWhen = ex && /^\d{4}-\d{2}/.test(String(ex.startsOn || '')) ? new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', month: 'long',
+    ...(String(ex.startsOn).slice(0, 4) !== D.asOf.slice(0, 4) ? { year: 'numeric' } : {}) }).format(new Date(String(ex.startsOn).slice(0, 10) + 'T12:00:00Z')) : '';
   const p = D.delegates.prev;
   const delta = p ? `<span class="kdelta${D.delegates.n > p.n ? ' up' : D.delegates.n < p.n ? ' down' : ''}">${Y} <b>${tcN(D.delegates.n)}</b> · vs ${Number(p.year)} ${tcN(p.n)} · ${D.delegates.n - p.n > 0 ? '+' : ''}${tcN(D.delegates.n - p.n)}</span>` : '';
   const split = D.clients.n ? `<div class="tc-split" role="group" aria-label="Came back and new">
@@ -10441,7 +10449,7 @@ async function viewTcHome() {
     <div class="khead"><div><h1 class="c-sr">Home</h1><p class="c-crumb" style="margin:0">Training Centre ${Y}${D.countsTo ? ` · course counts to ${esc(tcDay(D.countsTo))}` : ''}</p></div>${tcYearSel(D)}</div>
     <section class="kday m-scene" aria-label="Today"><div class="kday-sheet"><h2>Today</h2><div class="kday-row">
       ${need('Planned today', D.today.planned, `tcGoNextUpto(${esc(JSON.stringify(String(D.asOf)))})`, 0)}${need('This week', D.today.week, `tcGoNextUpto(${esc(JSON.stringify(String(D.today.friday)))})`, 1)}
-      ${ex ? `<a class="kneed tc-ex" href="#/tc/season" style="--i:2"><span>Next exhibition</span><b>${esc(ex.name)}</b><small>${esc([ex.when, ex.companies != null ? tcN(ex.companies) + ' companies' : ''].filter(Boolean).join(' · '))}</small></a>` : ''}</div></div></section>
+      ${ex ? `<a class="kneed tc-ex" href="#/tc/season/event/${Number(ex.id)}" style="--i:2"><span>Next exhibition</span><b>${esc(ex.name)}</b><small>${esc([exWhen, ex.companies != null ? tcN(ex.companies) + ' companies' : ''].filter(Boolean).join(' · '))}${ex.dateConfirmed ? '' : ' <em class="tc-tbc">date to confirm</em>'}</small></a>` : ''}</div></div></section>
     <div class="kstrip kb-strip">
       <div class="khero tc-card" role="link" tabindex="0" onclick="if(!event.target.closest('a'))tcGoYear(${Number(Y)})"><span>Delegates</span><b>${tcN(D.delegates.n)}</b><small>${Y}</small>${cSpark(D.delegates.spark, 'lead')}${delta}<a class="kgo" href="#/tc/companies" onclick="tcGoYear(${Number(Y)});return false">Clients →</a></div>
       <div class="tc-card" role="link" tabindex="0" onclick="if(!event.target.closest('a'))tcGoYear(${Number(Y)})"><span>Client companies</span><b>${tcN(D.clients.n)}</b><small>${Y}</small>${split}<a class="kgo" href="#/tc/companies" onclick="tcGoYear(${Number(Y)});return false">Clients →</a></div>

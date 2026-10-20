@@ -184,3 +184,11 @@ test('the screens: the menu, Home in the Academy Home\'s parts, nothing reads as
   const help = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'help.json'), 'utf8'));
   for (const id of ['tc-home-year', 'tc-client-book']) assert.ok(help.tc.faq.some((f) => f.id === id), 'Help: ' + id);
 });
+
+test('Next exhibition: drawn from the overview "exhibition" (lane TC-WEEK 3, joined by MASTER CONTROL), hidden without it', () => {
+  const home = fn('async function viewTcHome(');
+  assert.match(home, /const ex = D\.exhibition && D\.exhibition\.id != null \? D\.exhibition : null;/, 'a missing exhibition hides the figure');
+  assert.match(home, /\$\{ex \? `<a class="kneed tc-ex" href="#\/tc\/season\/event\/\$\{Number\(ex\.id\)\}"/, 'opens the exhibition');
+  assert.match(home, /\$\{ex\.dateConfirmed \? '' : ' <em class="tc-tbc">date to confirm<\/em>'\}/);
+  assert.match(home, /year: 'numeric'/, 'another year is named');
+});
