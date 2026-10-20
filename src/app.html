@@ -2704,16 +2704,18 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tw-who{display:block;font-size:12px;color:var(--t3);margin-top:2px}
   html.ui-c .tw-why{display:inline-block;font-size:11.5px;background:var(--c-accent-bg);color:var(--ink);border-radius:6px;padding:2px 7px;margin-top:7px}
   html.ui-c .tw-pic{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--c-accent-bg);color:var(--ink);font-size:10.5px;font-weight:700;flex:none}
-  html.ui-c .tw-card .tw-pic{position:absolute;right:9px;bottom:9px}
+  html.ui-c .tw-top .tw-pic{margin-left:auto;width:22px;height:22px;font-size:10px}
+  html.ui-c .tw-top .tw-from + .tw-pic, html.ui-c .tw-top .tw-ok + .tw-pic{margin-left:6px}
   html.ui-c .tw-add{font:inherit;font-size:12.5px;color:var(--t3);padding:7px 4px;border:1px dashed var(--control-line);background:none;border-radius:8px;text-align:center;cursor:pointer;width:100%}
-  html.ui-c .tw-rail{padding:16px 18px}
-  html.ui-c .tw-rail h3{margin:0 0 6px}
+  html.ui-c .tw-rail{padding:0 0 14px}
+  html.ui-c .tw-rail .tw-row, html.ui-c .tw-rail .c-empty{margin:0 18px}
+  html.ui-c .tw-rail .tw-all{margin:10px 18px 0}
   html.ui-c .tw-row{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--rule2)}
   html.ui-c .tw-row div{flex:1;min-width:0}
   html.ui-c .tw-row a{color:inherit;text-decoration:none}
   html.ui-c .tw-row b{display:block;font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   html.ui-c .tw-row small{font-size:12px;color:var(--t3)}
-  html.ui-c .tw-all{display:inline-block;margin-top:10px}
+  html.ui-c .tw-all{display:inline-block}
   html.ui-c .tw-hit{display:block;width:100%;text-align:left;font:inherit;background:var(--surface);color:var(--ink);border:1px solid var(--rule2);border-radius:8px;padding:7px 10px;margin-top:6px;cursor:pointer}
   html.ui-c .tw-hit.on{border-color:var(--pet);background:var(--c-sel)}
   html.ui-c .tw-hit small{display:block;color:var(--t3);font-size:12px}
@@ -2792,7 +2794,6 @@ svg .m-flag-mark{transform-origin:0 100%}
     html.ui-c .tw-day:not(.today):not(.open) .tw-card, html.ui-c .tw-day:not(.today):not(.open) .tw-add{display:none}
     html.ui-c .tw-day:not(.today):not(.open) .tw-dh:after{content:attr(data-n);margin-left:auto;font-size:12.5px;color:var(--t3)}
     html.ui-c .tw-day:not(.today) .tw-dh{cursor:pointer}
-    html.ui-c .tw-day .tw-dh:after{content:none}
     html.ui-c .ts-yp .ts-months, html.ui-c .ts-yp .ts-lane{display:none}
     html.ui-c .ts-mlist{display:block}
     html.ui-c .ts-m{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--rule2)}
@@ -10551,9 +10552,9 @@ function twMove(to) { T_WK.from = to; viewTcWeek(); }
 function twScope(s) { T_WK.scope = s; viewTcWeek(); }
 function twCard(c, team) {
   const top = `<span class="tw-k">${TW_ICON[c.kind] || ''}${esc(c.kindLabel)}</span>${c.done ? `<span class="tw-ok"${c.result ? ` title="${esc(c.result)}"` : ''}>✓ Logged</span>`
-    : c.from ? `<span class="tw-from">from ${esc(c.from)}</span>` : ''}`;
+    : c.from ? `<span class="tw-from">from ${esc(c.from)}</span>` : ''}${team && c.ownerInitials ? `<span class="tw-pic" title="${esc(c.owner)}">${esc(c.ownerInitials)}</span>` : ''}`;
   const inner = `<span class="tw-top">${top}</span><b>${esc(c.name)}</b>${c.contact ? `<span class="tw-who">${esc(c.contact)}</span>` : ''}
-    ${c.topic ? `<span class="tw-why">${esc(c.topic)}</span>` : ''}${team && c.ownerInitials ? `<span class="tw-pic" title="${esc(c.owner)}">${esc(c.ownerInitials)}</span>` : ''}`;
+    ${c.topic ? `<span class="tw-why">${esc(c.topic)}</span>` : ''}`;
   return c.done ? `<a class="tw-card done" href="#/tc/company/${Number(c.companyId)}">${inner}</a>`
     : `<button type="button" class="tw-card" onclick="twLogOpen(${Number(c.taskId)})">${inner}</button>`;
 }
@@ -10562,8 +10563,8 @@ function tcDrawWeek() {
   const range = `${Number(D.monday.slice(8))}${D.monday.slice(5, 7) === D.friday.slice(5, 7) ? '' : ' ' + twDayName(D.monday, { month: 'short' })} – ${Number(D.friday.slice(8))} ${twDayName(D.friday, { month: 'short' })}`;
   const title = D.thisWeek ? twDayName(D.days.some((d) => d.today) ? D.today : D.monday, { weekday: 'long', day: 'numeric', month: 'long' })
     : 'Week of ' + twDayName(D.monday, { day: 'numeric', month: 'long' });
-  const days = D.days.map((d) => `<section class="tw-day${d.today ? ' today' : ''}" data-n="${d.cards.length ? d.cards.length + ' planned' : ''}">
-      <div class="tw-dh" onclick="this.parentNode.classList.toggle('open')"><span>${esc(d.dow)}</span><b>${Number(d.n)}</b>${d.today ? '<em>Today</em>' : ''}</div>
+  const days = D.days.map((d) => `<section class="tw-day${d.today ? ' today' : ''}">
+      <div class="tw-dh" data-n="${esc([d.cards.filter((c) => !c.done).length ? d.cards.filter((c) => !c.done).length + ' planned' : '', d.cards.filter((c) => c.done).length ? d.cards.filter((c) => c.done).length + ' logged' : ''].filter(Boolean).join(' · '))}" onclick="this.parentNode.classList.toggle('open')"><span>${esc(d.dow)}</span><b>${Number(d.n)}</b>${d.today ? '<em>Today</em>' : ''}</div>
       ${d.cards.map((c) => twCard(c, team)).join('')}
       <button type="button" class="tw-add" onclick="twPlanOpen(null, ${esc(JSON.stringify(String(d.day ?? '')))})">+ Plan</button></section>`).join('');
   const R = D.ready;
