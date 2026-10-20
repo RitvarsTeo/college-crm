@@ -169,6 +169,11 @@
       "a": "On Journey, open List: under each person one quiet line shows their newest note (a note or call written on their page, their Notes field, or the line typed under an answered call) with who wrote it and the day, and their History keeps every note."
     },
     {
+      "id": "lead-owner",
+      "q": "Who owns a lead I make from the Inbox?",
+      "a": "Admissions, also when no programme is picked yet on the card (only a lead Marketing makes without a programme stays with Marketing)."
+    },
+    {
       "id": "edit-a-comment",
       "q": "How do I read a whole comment and correct one I wrote?",
       "a": "On the Journey List a click on the note line opens the whole comment, and the opened row lists every comment with who and when, where Edit corrects one you wrote (an admin any, the Notes field everybody) and History keeps the old text, while new comments go in the one Add a comment box."

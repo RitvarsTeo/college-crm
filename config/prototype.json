@@ -783,6 +783,8 @@
   },
   "routing": {
     "unclear": "Marketing",
+    "madeFromInbox": "Admissions",
+    "_madeFromInbox": "20.10.2026, after Ieva (a lead she made from an Inbox email got owner Marketing, because no programme was picked and routing.unclear is Marketing): a person somebody makes or adds to from the Inbox is owned by Admissions even when the programme is not said yet. routing.unclear still decides when the person making it has the Marketing role (config.users). src/intake.js ownerForMade.",
     "lead": "Admissions",
     "rule": "a confirmed interest routes to Admissions; everything else stays with Marketing",
     "_note": "Decided 23.09.2026 at the visual review. Marketing is NOT a second admissions desk: Tetiana answers one question, \"is this a real prospective student or not\". The moment somebody has told us what they want to study, it is Admissions work - including a question about documents or price, which is exactly what Admissions answers."

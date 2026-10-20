@@ -871,7 +871,7 @@ async function personRow(id, viewer) {
   p.fields = await db.prepare('SELECT * FROM field_values WHERE person_id = ? ORDER BY id').all(id);
   const known = new Set(p.fields.filter((f) => f.value).map((f) => f.field));
   p.missingInfo = (CONFIG.qualification.completionFields || []).filter((f) => !known.has(f));
-  p.routedTo = ownerFor(p.qualification || 'raw');
+  p.routedTo = p.owner || ownerFor(p.qualification || 'raw');   // the person's own owner first (20.10.2026)
   p.handoverGap = p.qualification === 'hot'
     ? await handoverGap({ role: p.routedTo, channel: p.first_channel || p.source_channel,
       email: p.email, phone: p.phone })

@@ -70,6 +70,27 @@ export async function surfaceAt(receivedIso, cfg = CFG.ageing) {
 export const ownerFor = (qualification) => CFG.routing[qualification] || CFG.routing.unclear;
 export const notifiedFor = (qualification) => CFG.notifications[qualification]?.notify || [];
 
+// THE OWNER OF A PERSON SOMEBODY MAKES FROM THE INBOX (Admissions, 20.10.2026: a lead Ieva made from an Inbox email got
+// owner Marketing and she changed it by hand). Make a lead with no programme picked files the person as 'unclear', and
+// ownerFor('unclear') is routing.unclear = Marketing (decided 23.09.2026, when Marketing triaged the unclear contacts).
+// Since D-C2 (no "Not clear yet" pile: everybody kept gets a next step) and the config's own provisional.owners
+// ("Admissions is the only owner of a person"), a person made by hand is Admissions work: routing.madeFromInbox. The one
+// case the 23.09 rule still decides: somebody whose role IS Marketing makes it unclear, and it stays with Marketing.
+// The maker's role is read from config.users by name; a signed-in name is the account's full name ("Ieva Gudaneca"), so
+// the first word counts too ("Ieva"). Nobody known = not Marketing.
+export function roleOfMaker(by) {
+  const name = String(by || '').trim();
+  if (!name) return null;
+  const users = CFG.users || [];
+  const u = users.find((x) => x.name === name) || users.find((x) => !/\s/.test(x.name) && x.name === name.split(/\s+/)[0]);
+  return u ? u.role || null : null;
+}
+export function ownerForMade(qualification, by) {
+  if (qualification === 'lead') return ownerFor('lead');
+  if (roleOfMaker(by) === CFG.routing.unclear) return ownerFor(qualification);
+  return CFG.routing.madeFromInbox || ownerFor('lead');
+}
+
 // Who can actually open this channel.
 //
 // Access is recorded PER PERSON, because no role-shaped model can say "everybody
@@ -815,6 +836,7 @@ export async function qualify(db, id, { qualification, personId, createPerson, b
 
   const at = nowIso();
   let pid = personId || null;
+  const owner = ownerForMade(qualification, by);   // 20.10.2026: made by hand = Admissions, unless a Marketing user made it unclear
 
   if (!pid && createPerson) {
     pid = newPersonId();
@@ -824,7 +846,7 @@ export async function qualify(db, id, { qualification, personId, createPerson, b
        qualification,first_channel)
       VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`).run(
       pid, name, contactEmail, item.contact_phone,
-      CFG.stageRoles.first, ownerFor(qualification), item.channel,
+      CFG.stageRoles.first, owner, item.channel,
       sourceDetailOf(item), item.received_at, item.received_at,
       qualification, item.channel);
     await logEvent(db, { personId: pid, kind: 'create', channel: item.channel, direction: 'note',
@@ -834,7 +856,7 @@ export async function qualify(db, id, { qualification, personId, createPerson, b
     const before = await db.prepare('SELECT qualification, owner FROM people WHERE id = ?').get(pid);
     if (!before) return { error: 'person not found' };
     await db.prepare('UPDATE people SET qualification = ?, owner = ?, last_contact_at = ? WHERE id = ?')
-      .run(qualification, ownerFor(qualification), at, pid);
+      .run(qualification, owner, at, pid);
     if (before.qualification !== qualification) {
       await logEvent(db, { personId: pid, kind: 'qualification', direction: 'note', at, origin: MANUAL,
         actor: by, subject: `Qualification: ${before.qualification || 'raw'} -> ${qualification}`,
@@ -929,9 +951,9 @@ export async function qualify(db, id, { qualification, personId, createPerson, b
     const set = Date.parse(nextActionDue || '');
     const due = Number.isFinite(set) ? new Date(set).toISOString() : defaultDueFor(nextAction, at);
     await db.prepare('INSERT INTO tasks (person_id,label,due_at,owner,created_at) VALUES (?,?,?,?,?)')
-      .run(pid, String(nextAction).trim(), due, ownerFor(qualification), at);
+      .run(pid, String(nextAction).trim(), due, owner, at);
     await logEvent(db, { personId: pid, kind: 'task', direction: 'note', at, origin: MANUAL, actor: by,
-      subject: `Next step: ${nextAction}`, body: `due ${localDate(due)}, ${ownerFor(qualification)}` });
+      subject: `Next step: ${nextAction}`, body: `due ${localDate(due)}, ${owner}` });
   }
 
   // Q86: Cold - closed as Not proceeding, tagged cold, a reason only if one of the list was given; what was planned closes
@@ -950,12 +972,12 @@ export async function qualify(db, id, { qualification, personId, createPerson, b
 
   const person = await db.prepare('SELECT * FROM people WHERE id = ?').get(pid);
   const gap = qualification === 'lead'
-    ? await handoverGap({ role: ownerFor(qualification), channel: item.channel,
+    ? await handoverGap({ role: owner, channel: item.channel,
       email: person.email, phone: person.phone })
     : null;
 
   return {
-    ok: true, personId: pid, qualification, owner: ownerFor(qualification),
+    ok: true, personId: pid, qualification, owner,
     notify: notifiedFor(qualification), bodyDeleted: true,
     missing: missingFor(fields), handoverGap: gap,
   };
