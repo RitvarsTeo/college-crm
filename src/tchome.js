@@ -101,7 +101,27 @@ export async function homeYear(db, { year = null, me = null, now = new Date(), b
     // a contact not done yet shows on today with the day it was planned for, never as late
     week: week.map((t) => ({ taskId: Number(t.id), companyId: Number(t.company_id), name: t.name, country: t.country || '', contact: t.contact || '',
       label: t.label, due: t.due_at, day: t.due_at < w.today ? w.today : t.due_at, from: t.due_at < w.today ? t.due_at : null })),
+    // WHERE OUR COMPANIES ARE (the owner's pick N3, 20.10.2026): companies per country, the clients among them (a course in
+    // any year), and the ten biggest clients of the year as pins; a company with no country is not placed
+    geo: geoOf(counted, clients, Y),
     biggest: { year: Y, span, rows: [...clients].sort((a, b) => got(b, Y) - got(a, Y) || byLv(a.name, b.name)).slice(0, biggest).map(rankRow(Y, span)) },
+  };
+}
+
+function geoOf(counted, clients, Y) {
+  const placed = counted.filter((c) => c.country);
+  const ever = (c) => Object.values(c.years).some((n) => n > 0);
+  const by = new Map();
+  for (const c of placed) {
+    const r = by.get(c.country) || { country: c.country, companies: 0, clients: 0 };
+    r.companies += 1; if (ever(c)) r.clients += 1;
+    by.set(c.country, r);
+  }
+  return {
+    companies: placed.length, countries: by.size, clients: placed.filter(ever).length,
+    rows: [...by.values()].sort((a, b) => b.companies - a.companies || byLv(a.country, b.country)),
+    largest: [...clients].filter((c) => c.country).sort((a, b) => got(b, Y) - got(a, Y) || byLv(a.name, b.name)).slice(0, 10)
+      .map((c) => ({ id: c.id, name: c.name, country: c.country, n: got(c, Y) })),
   };
 }
 

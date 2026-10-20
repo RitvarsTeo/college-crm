@@ -207,3 +207,29 @@ test('Next exhibition: drawn from the overview "exhibition" (lane TC-WEEK 3, joi
   assert.match(home, /\$\{ex\.dateConfirmed \? '' : ' <em class="tc-tbc">date to confirm<\/em>'\}/);
   assert.match(home, /year: 'numeric'/, 'another year is named');
 });
+
+test('Where our companies are (the owner\'s pick N3): companies per country with their clients, the year\'s biggest as pins; Home only', async () => {
+  const { db, ids } = await world();
+  const G = (await th.homeYear(db, { year: 2025 })).geo;
+  assert.deepEqual([G.companies, G.countries, G.clients], [8, 7, 7], 'TOTAL rows out; the prospect has a country, so it is placed');
+  assert.deepEqual(G.rows[0], { country: 'Norway', companies: 2, clients: 1 }, 'the most companies first');
+  assert.ok(!G.rows.some((r) => r.country === 'TOTAL'));
+  assert.deepEqual(G.largest.map((l) => [l.id, l.n]), [[ids.back, 100], [ids.fresh, 30], [ids.fresh2, 5]]);
+  for (const r of G.rows) assert.equal((await tc.listCompanies(db, { country: r.country }, { size: 2000 })).total, r.companies, 'a country opens its companies: ' + r.country);
+  await tc.editCompany(db, ids.old, { country: '' }, 'T');
+  assert.equal((await th.homeYear(db, { year: 2025 })).geo.companies, 7, 'a company with no country is not placed');
+  const home = fn('async function viewTcHome(');
+  assert.ok(home.indexOf('${tcGeoSection(D)}') > home.indexOf('kb-charts') && home.indexOf('${tcGeoSection(D)}') < home.indexOf('tc-home2'), 'between the charts and This week');
+  assert.match(home, /tcDrawMap\(D\);/);
+  assert.doesNotMatch(fn('async function viewTcBook('), /tcGeo|tcDrawMap/, 'Home only');
+  assert.doesNotMatch(fn('function tcInstallNav('), /map/i, 'no separate Map tab');
+  const draw = fn('async function tcDrawMap(');
+  assert.match(draw, /data-kgo="\$\{esc\(tcGeoGo\(r\.country\)\)\}"/, 'a country opens its companies');
+  assert.match(draw, /class="tc-mpin"[^>]*data-kgo="\$\{esc\(tcGeoGo\(l\.country\)\)\}"/, 'a pin too');
+  assert.equal(new URLSearchParams(`country=${encodeURIComponent("Côte d'Ivoire & Co")}`).get('country'), "Côte d'Ivoire & Co");
+  const SERVER = fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8');
+  assert.match(SERVER, /'world\.js': 'text\/javascript; charset=utf-8',/, 'the outline is a static asset');
+  const W = fs.readFileSync(path.join(ROOT, 'src', 'assets', 'world.js'), 'utf8');
+  assert.match(W, /"source":"Natural Earth 1:110m via world-atlas, public domain"/);
+  assert.match(fn('function tcWorld('), /sc\.src = '\/assets\/world\.js'/, 'read once, when the map is first drawn');
+});

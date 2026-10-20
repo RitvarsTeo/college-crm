@@ -850,6 +850,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
     --st-track:#8fb4e8;   /* on track in the dark (Q69): the readable blue on the sea; needs you keeps the alarm red */
     --v-adm:#29a8df;--v-lead:#e7ebf0;--v-open:#E0A526;--v-np:#93A5B8;--v-grid:#24507a;
     --v-tc1:#29a8df;--v-tc2:#5b9fcd;--v-tc3:#9cc6e4;   /* TC Home's donut, latest course: this year, two years, earlier */
+    --v-land:#1c4168;   /* TC Home's map: the land, a frame colour */
     --k-plinth:#0b2542;   /* the donut's plinth: a frame colour, the dark card well, never a data colour */
     --j-from:#1d4d7a;--j-to:#8fcbef;   /* the Journey's stage line in dark (the review #2) */
     --glass:linear-gradient(180deg,rgba(255,255,255,.06) 0%,rgba(255,255,255,.035) 100%);
@@ -1247,7 +1248,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
      validated with the dataviz validator: teal = admitted, sand = leads / still open,
      slate = not proceeding or not recorded (always with its word). */
   html.ui-c{--v-adm:#29a8df;--v-lead:#0a2463;--v-open:#E0A526;--v-np:#98a4b3;--v-grid:#e7ebf0}
-  html.ui-c:not([data-theme="dark"]){--v-tc1:#29a8df;--v-tc2:#7fc6ea;--v-tc3:#c3e3f5}   /* TC Home's donut in light (the dark ones sit in the dark palette) */
+  html.ui-c:not([data-theme="dark"]){--v-tc1:#29a8df;--v-tc2:#7fc6ea;--v-tc3:#c3e3f5;--v-land:#dfe7ef}   /* TC Home's donut in light (the dark ones sit in the dark palette) */
   html.ui-c:not([data-theme="dark"]){--k-plinth:#d6dee7}   /* the donut's plinth in light: a frame grey, not a data colour */
   /* dark chart colours: with the rest of the dark sea palette, near the top of CONCEPT C */
   /* No page cap of its own (29.09.2026). Home and Reports were held at 1080px inside a main that
@@ -2719,6 +2720,26 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tc-ycol i{display:block;width:100%;border-radius:4px 4px 0 0;background:var(--v-adm);margin-bottom:4px}
   html.ui-c .tc-ycol.on i{background:var(--v-lead)}
   html.ui-c .tc-ycol:hover span{color:var(--pet)}
+  html.ui-c .tc-geo{margin-top:26px}
+  html.ui-c .tc-mapwrap{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:18px;align-items:stretch}
+  html.ui-c .tc-mapwrap > .c-sheet{margin:0}
+  html.ui-c .tc-mapsvg{display:block;width:100%;height:auto}
+  html.ui-c .tc-mapsvg .land path{fill:var(--v-land);stroke:var(--surface);stroke-width:.4}
+  html.ui-c .tc-mapsvg .a{fill:var(--v-tc3)} html.ui-c .tc-mapsvg .c{fill:var(--v-adm)}
+  html.ui-c .tc-mapsvg .tc-mcol, html.ui-c .tc-mapsvg .tc-mpin{cursor:pointer}
+  html.ui-c .tc-mapsvg .tc-mpin circle{fill:var(--v-open);stroke:var(--surface);stroke-width:.6}
+  html.ui-c .tc-mapsvg .tc-mcol:hover .a, html.ui-c .tc-mapsvg .tc-mcol.hot .a{fill:var(--v-tc2)}
+  html.ui-c .tc-mkey{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--t2);margin-top:8px}
+  html.ui-c .tc-mkey i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+  html.ui-c .tc-mkey i.a{background:var(--v-tc3)} html.ui-c .tc-mkey i.c{background:var(--v-adm)} html.ui-c .tc-mkey i.p{background:var(--v-open);border-radius:50%}
+  html.ui-c .tc-cbr{display:grid;grid-template-columns:118px minmax(0,1fr) 72px;align-items:center;gap:10px;padding:5px 0;font-size:13px;cursor:pointer}
+  html.ui-c .tc-cbr > span:first-child{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  html.ui-c .tc-cbr:hover > span:first-child, html.ui-c .tc-cbr.hot > span:first-child{color:var(--pet)}
+  html.ui-c .tc-cbar{position:relative;height:14px}
+  html.ui-c .tc-cbar i{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+  html.ui-c .tc-cbar i.a{background:var(--v-tc3)} html.ui-c .tc-cbar i.c{background:var(--v-adm)}
+  html.ui-c .tc-cbr.rest .tc-cbar i.a{background:var(--rule2)} html.ui-c .tc-cbr.rest .tc-cbar i.c{display:none}   /* the picture: the rest is one grey bar */
+  html.ui-c .tc-cbr .n{font-size:12px;text-align:right;color:var(--t2)} html.ui-c .tc-cbr .n b{color:var(--ink)}
   html.ui-c .tc-bookgrid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:18px;align-items:start}
   html.ui-c .tc-seg{display:inline-flex;gap:2px;padding:3px;border-radius:10px;background:var(--c-sunk)}
   html.ui-c .tc-seg button{border:0;background:none;font:inherit;font-size:13px;padding:5px 11px;border-radius:8px;color:var(--t2);cursor:pointer;letter-spacing:0;text-transform:none}
@@ -2742,13 +2763,14 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tc-home .ksh{flex-wrap:wrap;row-gap:4px}
   html.ui-c .tc-home .klegend.inline li{white-space:nowrap}
   html.ui-c .tc-home .kdonut .klegend li span{min-width:0}
-  @media (max-width:1100px){ html.ui-c .tc-home2, html.ui-c .tc-bookgrid{grid-template-columns:minmax(0,1fr)} }
+  @media (max-width:1100px){ html.ui-c .tc-home2, html.ui-c .tc-bookgrid, html.ui-c .tc-mapwrap{grid-template-columns:minmax(0,1fr)} }
   @media (max-width:760px){
     html.ui-c .tc-big-row{grid-template-columns:22px minmax(0,1fr) 66px auto;gap:10px}
     html.ui-c .tc-big-row .tc-meter{grid-column:2 / -1;grid-row:2}
     html.ui-c .tc-home .khead, html.ui-c .tc-book .khead{flex-wrap:wrap}
     html.ui-c .tc-seg{flex-wrap:wrap}
     html.ui-c .tc-bookcards{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+    html.ui-c .tc-cbr{grid-template-columns:96px minmax(0,1fr) 64px}
     html.ui-c .tc-bookcards > .khero{grid-column:1 / -1}
     html.ui-c .tc-home .kdonut{flex-direction:column;align-items:stretch}
     html.ui-c .tc-home .kdonut svg{width:180px;flex:0 0 auto;align-self:center}
@@ -10495,6 +10517,7 @@ async function viewTcHome() {
       <section class="ksec"><div class="ksh"><h2>Our companies, by last course</h2><span class="ksrc">click a slice</span></div>
         ${cDonut(D.donut.rows.map((r, i) => [r.label, r.n, ['tc1', 'tc2', 'tc3', 'np'][i], `year=${Y}&last=${r.id}`]), { unit: 'companies', title: 'Our companies, by last course', kgo: (go) => 'tc|' + go, hole: 'tc|' })}</section>
     </div></div>
+    ${tcGeoSection(D)}
     <div class="tc-home2">
       <section class="c-sheet tc-week"><h3>This week · mine<span class="c-h3acts">${typeof viewTcWeek === 'function' ? '<a class="kgo" href="#/tc/week">My week →</a>' : `<a class="kgo" href="#/tc/next" onclick="tcGoNextUpto(${esc(JSON.stringify(String(D.today.friday)))});return false">Next contacts →</a>`}</span></h3>
         <div class="c-pad">${tcWeekRows(D.week)}</div></section>
@@ -10505,6 +10528,61 @@ async function viewTcHome() {
   cFitDonut();
   cWireCharts();
   cScenes($('#view'));
+  tcDrawMap(D);
+}
+
+// ---- WHERE OUR COMPANIES ARE (the owner's pick N3, 20.10.2026): a map and the countries, on TC Home only ----
+// Each country is a column at its centre: its companies (light) with the clients among them (data blue) inside; the ten
+// biggest clients of the year are mustard pins. A country, its bar or a pin opens that country's companies. The outline is
+// Natural Earth 1:110m (public domain, /assets/world.js, the Client Hub's file), read once, when the map is first drawn.
+const T_MAP_ALIAS = { 'United States': 'United States of America', USA: 'United States of America', 'Czech Republic': 'Czechia',
+  'Faroe Islands': 'Faeroe Is.', 'Marshall Islands': 'Marshall Is.', 'Bosnia and Herzegovina': 'Bosnia and Herz.',
+  'North Macedonia': 'Macedonia', 'Dominican Republic': 'Dominican Rep.', 'Türkiye': 'Turkey', 'Korea': 'South Korea', UAE: 'United Arab Emirates' };
+const T_MAP_VIEW = { x: 445, y: 52, w: 370, h: 205, max: 42 };   // the picture's frame: Europe to Singapore
+let T_WORLD = null;
+function tcWorld() {
+  if (window.HUB_WORLD) return Promise.resolve(window.HUB_WORLD);
+  return (T_WORLD ||= new Promise((ok, no) => {
+    const sc = document.createElement('script'); sc.src = '/assets/world.js';
+    sc.onload = () => (window.HUB_WORLD ? ok(window.HUB_WORLD) : no(new Error('no outline')));
+    sc.onerror = () => { T_WORLD = null; no(new Error('the map outline did not load')); };
+    document.head.appendChild(sc);
+  }));
+}
+const tcGeoGo = (country) => `tc|country=${encodeURIComponent(String(country || ''))}`;
+function tcGeoSection(D) {
+  const G = D.geo;
+  if (!G || !G.rows.length) return '';
+  const top = Math.max(1, G.rows[0].companies), rows = G.rows.slice(0, 10), rest = G.rows.slice(10);
+  const bar = (label, a, c, go, tip, cls = '') => `<div class="tc-cbr${cls}" tabindex="0" role="button" data-kgo="${esc(go)}" data-tip="${esc(tip)}">
+      <span>${esc(label)}</span><span class="tc-cbar"><i class="a" style="width:${Math.min(100, (a / top) * 100).toFixed(1)}%"></i>${c != null ? `<i class="c" style="width:${((c / top) * 100).toFixed(1)}%"></i>` : ''}</span>
+      <span class="n">${c != null ? `<b>${tcN(c)}</b> / ` : ''}${tcN(a)}</span></div>`;
+  const restA = rest.reduce((n, r) => n + r.companies, 0), restC = rest.reduce((n, r) => n + r.clients, 0);
+  return `<section class="tc-geo"><div class="ksh"><h2>Where our companies are</h2><span class="ksrc">${tcN(G.companies)} companies · ${tcN(G.countries)} countries · ${tcN(G.clients)} clients</span></div>
+    <div class="tc-mapwrap"><div class="c-sheet tc-map"><div class="c-pad" id="tcMap"><p class="c-empty">Drawing the map…</p></div></div>
+      <div class="c-sheet tc-cbars"><div class="c-pad">${rows.map((r) => bar(r.country, r.companies, r.clients, tcGeoGo(r.country), `${r.country}|${tcN(r.clients)} clients|of ${tcN(r.companies)} companies`)).join('')}
+        ${rest.length ? bar(`${rest.length} more countries`, restA, restC, 'tc|country=*', `${rest.length} more countries|${tcN(restC)} clients|of ${tcN(restA)} companies`, ' rest') : ''}</div></div></div></section>`;
+}
+async function tcDrawMap(D) {
+  const el = document.getElementById('tcMap');
+  if (!el || !D.geo) return;
+  let W;
+  try { W = await tcWorld(); } catch (e) { el.innerHTML = `<p class="c-empty">${esc(e.message)}</p>`; return; }
+  if (!document.body.contains(el)) return;   // the page moved on while the outline loaded
+  const o = T_MAP_VIEW, G = D.geo, at = (name) => W.centres[name] || W.centres[T_MAP_ALIAS[name]] || null;
+  const top = Math.max(1, ...G.rows.map((r) => r.companies));
+  const inView = ([x, y]) => x >= o.x && x <= o.x + o.w && y >= o.y && y <= o.y + o.h;
+  const cols = G.rows.map((r) => ({ r, c: at(r.country) })).filter((x) => x.c && inView(x.c)).sort((a, b) => a.c[1] - b.c[1]).map(({ r, c: [cx, cy] }) => {
+    const H = Math.max(3, (r.companies / top) * o.max), Hc = r.clients ? Math.max(2, (r.clients / top) * o.max) : 0;
+    return `<g class="tc-mcol" tabindex="0" role="button" data-kgo="${esc(tcGeoGo(r.country))}" data-tip="${esc(`${r.country}|${tcN(r.clients)} clients|of ${tcN(r.companies)} companies`)}" aria-label="${esc(r.country)}: ${tcN(r.clients)} clients of ${tcN(r.companies)} companies">
+      <rect x="${(cx - 4).toFixed(1)}" y="${(cy - o.max - 2).toFixed(1)}" width="8" height="${o.max + 4}" class="khit"/>
+      <rect x="${(cx - 1.2).toFixed(1)}" y="${(cy - H).toFixed(1)}" width="2.4" height="${H.toFixed(1)}" rx="1" class="a"/>${Hc ? `<rect x="${(cx - 1.2).toFixed(1)}" y="${(cy - Hc).toFixed(1)}" width="2.4" height="${Hc.toFixed(1)}" rx="1" class="c"/>` : ''}</g>`;
+  }).join('');
+  const pins = G.largest.map((l, i) => ({ l, i, c: at(l.country) })).filter((x) => x.c && inView(x.c)).map(({ l, i, c: [cx, cy] }) => `<g class="tc-mpin" tabindex="0" role="button" data-kgo="${esc(tcGeoGo(l.country))}"
+      data-tip="${esc(`${l.name}|${tcN(l.n)} delegates ${Number(D.year)}|${l.country}`)}" aria-label="${esc(l.name)}: ${tcN(l.n)} delegates"><circle cx="${(cx + ((i % 3) - 1) * 4 + 5).toFixed(1)}" cy="${(cy + 3).toFixed(1)}" r="2"/></g>`).join('');
+  el.innerHTML = `<svg viewBox="${o.x} ${o.y} ${o.w} ${o.h}" class="tc-mapsvg" role="img" aria-label="Where our companies are"><g class="land">${W.land.map((d) => `<path d="${d}"/>`).join('')}</g>${cols}${pins}</svg>
+    <div class="tc-mkey"><span><i class="a"></i>Companies</span><span><i class="c"></i>Clients</span><span><i class="p"></i>Largest clients ${Number(D.year)}</span></div>`;
+  cWireCharts(el);
 }
 
 // ---- THE CLIENT BOOK (the owner's pick A, 20.10.2026): the biggest clients of the year, and who to welcome back ----

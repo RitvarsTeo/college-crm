@@ -1708,6 +1708,9 @@ export const handle = async (req, res) => {
         'icon-512.png': 'image/png',
         'icon-maskable-512.png': 'image/png',
         'apple-touch-icon.png': 'image/png',
+        // TC Home's map (the owner's pick N3, 20.10.2026): Natural Earth 1:110m, public domain, the same file as the Client
+        // Hub's hub/dashboard/assets/world.js (commit 5465221); a static outline, read only when TC Home draws its map
+        'world.js': 'text/javascript; charset=utf-8',
       };
       const name = p.slice('/assets/'.length);
       // MOTION (Q65, the owner picked A 07.10.2026): src/assets/motion.js, motion.css and motion-<area>.js|css, served
@@ -3259,7 +3262,9 @@ export const handle = async (req, res) => {
     if (p === '/api/tc/home' && req.method === 'GET') return json(res, 200, await tc.home(db));
     // TC Home for a year and the Client book (round 3, 20.10.2026, src/tchome.js): read-only, the signed-in person for Mine
     if (p === '/api/tc/overview' && req.method === 'GET') {
-      return json(res, 200, await tchome.homeYear(db, { year: url.searchParams.get('year'), me: await tcMe(req, url) }));
+      // Home's Next exhibition (owner's picks M1 + C, 20.10.2026) comes from Season's events (src/tcseason.js)
+      return json(res, 200, { ...(await tchome.homeYear(db, { year: url.searchParams.get('year'), me: await tcMe(req, url) })),
+        exhibition: await tcseason.nextExhibition(db) });
     }
     if (p === '/api/tc/book' && req.method === 'GET') {
       const area = String(url.searchParams.get('area') || '');
