@@ -847,3 +847,4 @@ Seen: GitHub - no Aigars commits since 309b10f; crm-novikontas.vercel.app = 1ced
 - 20.10 TOTAL group rows (ids 155, 218) double-count on TC Home; TC-UI 2 asked to leave them out of every sum/count (base 9ed79fc).
 - 20.10 TC-DATA 2: owner's 5 answers built, a78c35f on feat/2026-10-20-tc-data2-answers (from 9ed79fc), 1,779/1,779. Production preview (read-only) hash afcef4f1...: 955 contacts to 248 existing companies; 430 new companies (283 country not recorded) with 619 contacts; 91 No mailing; 229 already there; 148 skipped; review 326 (153 no company). Sum 2,277 = file.
 - Keep/change asked: of the tie contacts only 17 settle by same country, 108 by closest name alone (switch tieNeedsSameCountry).
+- HIS PICKS 20.10: ties keep as built; YES release patch 65 (a78c35f + TOTAL fix) then fresh preview + apply import. Board 3: all 4 cards; M1 Today strip on top; TC Home layout + menu decided.
