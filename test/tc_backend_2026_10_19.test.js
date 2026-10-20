@@ -7,6 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { localDate } from '../src/bizday.js';
 
 for (const k of ['DATABASE_URL', 'DATABASE_URL_UNPOOLED', 'CRM_DB_DATABASE_URL_UNPOOLED']) process.env[k] = '';
 const { openDb, pgSchemaSql } = await import('../src/db.js');
@@ -15,7 +16,8 @@ const tcimport = await import('../src/tcimport.js');
 const { synthFiles } = await import('./tc_fixtures.js');
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-const TODAY = '2026-10-19';
+// the fixtures are built around the REAL Riga day, because the lists ('overdue', 'this week') read the real clock
+const TODAY = localDate();
 const NOW = new Date('2026-10-19T09:00:00Z');   // a Riga morning
 const count = async (db, t) => Number((await db.prepare(`SELECT COUNT(*) AS n FROM ${t}`).get()).n);
 async function imported(opts = {}) {
