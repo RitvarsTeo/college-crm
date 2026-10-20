@@ -853,3 +853,4 @@ Seen: GitHub - no Aigars commits since 309b10f; crm-novikontas.vercel.app = 1ced
 - 960a46b = 9ed79fc + a78c35f (TC-DATA 2 import answers) + efe66ac (TC-UI 2 TOTAL rows left out of every figure; with no search typed the lists also hide them, search finds them). Record 0878f73. Suite 1,782/1,782. Backup 2026-10-20T17-38-32Z (26,684 rows; +86 = the person-in-charge log lines from patch 64's boot). deploy_verify green, dpl_5nrJwCoGYPBebxXk8qtpHZmdVeAg; pushed 9ed79fc..0878f73 -> production.
 - Next: Client Hub import apply (owner's yes) with TC-DATA 2's script: preview -> apply with hash -> counts.
 - MASTER PITCHER BUILD_BRIEF.md received (Home M1, My week + Log + G3, Client book, Season); NEW data: tc_tasks.kind/outcome, gcal_event_id, tc_events + tc_event_companies, vendor tab, 2024 count rule.
+- HIS PICKS 20.10: 2 build lanes (TC-HOME 3: Home + Client book + menu; TC-WEEK 3: My week + Log + Season); 2024 = plain 0.
