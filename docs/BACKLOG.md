@@ -28,6 +28,11 @@ this is a local prototype" stood here until 30.09.2026, from the weeks before th
 
 ## 19.10.2026 - New project: Training Centre in Intake (owner's picks)
 
+- `SAID` (owner 20.10: "we will no longer need a separate CH app, if everything will be shifted to Intake") open
+  question: the 4 CH REMAKE sessions (MAIN, NETWORK, FLAGSHIP, OG-LOOK, steered by CLIENT HUB MASTER CONTROL) redesign
+  Client Hub as a separate app. Suggested: stop them, keep Client Hub live as it is until Grand Opening moves, and bring
+  the network map, Save the Date send results and Grand Opening guest lists into Intake TC one at a time (pictures
+  first). Owner: no preference yet - nothing stopped.
 - `DECIDED` (owner 20.10, after Ieva's fixes were live) next TC lanes, all three now: TC-DATA 2 (Client Hub contacts into
   Intake once - Intake is master; contacts for the 364 matched companies, the 467 Client Hub-only companies as new, with
   a preview before apply), TC-UI 2 (person in charge linked to Intake accounts so "Mine" works, TC screens checked with
