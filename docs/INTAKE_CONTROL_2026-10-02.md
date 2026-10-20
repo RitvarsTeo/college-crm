@@ -834,3 +834,4 @@ Seen: GitHub - no Aigars commits since 309b10f; crm-novikontas.vercel.app = 1ced
 - Release: owner answered "Something else" with no text - asked again. Shared-domain question: "i dont understand this" - shown as a picture.
 - Owner 20.10: "TC companies dont send people to admissions ... B2B and B2C sectors!" -> HIS PICK: company-person link DROPPED. release/2026-10-20-tc-round2 reset to f3e7a0d (no TC-BACKEND 2); the version with the link kept as keep/2026-10-20-tc-round2-with-link. TC-BACKEND 2 told to stay idle; TC-UI 2 told to base the next-contact change on f3e7a0d. MASTER PITCHER told the B2B/B2C rule. Memory tc-b2b-academy-b2c-separate.
 - Release timing: owner asked "What is round 2 ????" - explained in plain words, asked again.
+- HIS PICK 20.10: release the TC batch once, WITH the next-contact change (patch 64). Waiting on TC-UI 2's commit.
