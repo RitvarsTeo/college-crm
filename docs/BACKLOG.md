@@ -26,7 +26,8 @@ its data and features move into Intake. No separate Client Hub redesign (the CH 
 1. **Academy** - today's Intake (Inbox, Due, Journey, Reports). Live; Ieva's feedback done (patches 52-61).
 2. **Training Centre foundation** - tiles, access per area, People and access, TC Home, Companies, company page,
    Next contacts; Excel imported (1,497 companies, 1,448 contacts, 471 active clients). LIVE patch 60 (20.10).
-   TC team: admins + Mārcis Žabovs, Aleksandrs Lukaševičs, Līva Mihailova.
+   TC team: admins + Mārcis Žabovs, Aleksandrs Lukaševičs, Līva Mihailova. Both tiles also for ab@novikontas.org
+   (given 20.10) and mc@novikontas.org (Māris Cīrulis, admin, already both).
 3. **Training Centre round 2** (lanes running 20.10) - Client Hub contacts into Intake once (Intake is master),
    person in charge = account ("Mine"), screens checked at real size, company <-> person link.
 4. **Client Hub into Intake** - Grand Opening guest lists, Save the Date send results, the network map (kept CH
