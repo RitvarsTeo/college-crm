@@ -14,10 +14,16 @@
 //
 // The rules, each a decision written down (config/tc.json clienthubImport):
 //   - skipped: deleted in Client Hub; Novikontas itself (its company, its status, its own addresses); marked Outdated;
-//     a duplicate Client Hub folded away; no company; nothing to reach (no name, email or phone);
+//     a duplicate Client Hub folded away; nothing to reach (no name, email or phone);
+//   - no company in Client Hub: the REVIEW list, to be placed by hand (the owner, 20.10);
 //   - linked by exact name, normalised name or domain to ONE Excel company: the contact is added to that company,
 //     never twice the same email on one company, never twice the same Client Hub contact;
-//   - a weak or domain-only link, or a tie between two Excel companies: the REVIEW list, never imported;
+//   - a tie, the company fitting two or more Excel companies equally (the owner, 20.10): the one in the same country
+//     as Client Hub gives, then the one with the closest name (the cross-check's name score); still equal = review;
+//   - a weak or domain-only link: the REVIEW list, never imported;
+//   - unsubscribed, bounced (cleaned) or opted out in Client Hub's Mailchimp: imported, marked no mailing in the
+//     contact's note (the owner, 20.10);
+//   - a new company with no country in Client Hub: no country, which every screen says as "country not recorded";
 //   - only in Client Hub: a new company (status clienthubImport.newCompanyStatus: Client Hub's statuses are Grand
 //     Opening states, not Training Centre ones), unless Intake already holds ONE company of that name, which then
 //     gets the contacts; two or more of that name go to the review list;
@@ -32,7 +38,8 @@ import { ImportError, parseCsv } from './tcimport.js';
 const CH = TC.clienthubImport;
 export const FILE = CH.files[0];
 const NEEDS = ['ch_contact_id', 'deleted', 'ch_company_key', 'company', 'link', 'tc_company_id', 'name', 'role', 'email', 'phone',
-  'country', 'city', 'ch_status', 'issue_type'];
+  'country', 'city', 'ch_status', 'issue_type', 'mailchimp_status', 'unsubscribed', 'tie_candidates', 'ch_company_country'];
+const sameCountry = (a, b) => Boolean(a) && String(a).trim().toLowerCase() === String(b || '').trim().toLowerCase();
 const FINAL = ['added', 'created'];
 
 const txt = (v, n = 4000) => { const s = String(v ?? '').trim(); return s ? s.slice(0, n) : null; };
@@ -81,16 +88,24 @@ export function plan(files, { batch = CH.batch } = {}) {
     }
     if (CH.inactiveStatuses.includes(String(r.ch_status || '').trim())) return Object.assign(e, { outcome: 'skipped', reason: 'Outdated in Client Hub' });
     if (CH.duplicateIssues.includes(String(r.issue_type || '').trim())) return Object.assign(e, { outcome: 'skipped', reason: 'a duplicate in Client Hub' });
-    const company = txt(r.company, 200);
-    if (!txt(r.ch_company_key) || !company) return Object.assign(e, { outcome: 'skipped', reason: 'no company in Client Hub' });
-    const contact = { name: txt(r.name, 160), position: txt(r.role, 160), email, phone: txt(r.phone, 60) };
+    const noMailing = CH.noMailing.mailchimpStatuses.includes(String(r.mailchimp_status || '').trim())
+      || CH.noMailing.issues.includes(String(r.issue_type || '').trim()) || String(r.unsubscribed).trim() === 'true';
+    const contact = { name: txt(r.name, 160), position: txt(r.role, 160), email, phone: txt(r.phone, 60), notes: noMailing ? CH.noMailing.note : null };
     if (!contact.name && !contact.email && !contact.phone) return Object.assign(e, { outcome: 'skipped', reason: 'no name, email or phone' });
-    Object.assign(e, { contact, fp: fingerprint(contact), chKey: String(r.ch_company_key).trim(), company,
-      country: txt(r.country, 80), city: txt(r.city, 80), link, unsubscribed: ['unsubscribed', 'cleaned'].includes(String(r.mailchimp_status || '').trim()) });
+    Object.assign(e, { contact, fp: fingerprint(contact), noMailing });
+    const company = txt(r.company, 200);
+    if (!txt(r.ch_company_key) || !company) return Object.assign(e, { outcome: 'review', reason: 'no company in Client Hub: to be placed by hand' });
+    Object.assign(e, { chKey: String(r.ch_company_key).trim(), company, country: txt(r.country, 80), city: txt(r.city, 80), link });
     if (CH.importLinks.includes(link)) {
       const tcId = txt(r.tc_company_id, 80);
       if (!tcId) return Object.assign(e, { outcome: 'review', reason: 'linked, with no Excel company id' });
       return Object.assign(e, { target: 'excel', tcId });
+    }
+    if (link === CH.tieLink) {
+      const candidates = String(r.tie_candidates || '').split(';').map((x) => x.trim().split('~')).filter(([t]) => t)
+        .map(([tc, score]) => ({ tc, score: Number(score) || 0 }));
+      if (!candidates.length) return Object.assign(e, { outcome: 'review', reason: 'link: tie' });
+      return Object.assign(e, { target: 'tie', candidates, chCountry: txt(r.ch_company_country, 80) });
     }
     if (CH.reviewLinks.includes(link)) return Object.assign(e, { outcome: 'review', reason: `link: ${link}` });
     if (link === CH.newLink) return Object.assign(e, { target: 'new', nameKey: nameKey(company) || company.toLowerCase() });
@@ -110,7 +125,8 @@ export async function preview(db, files, opts = {}) {
   // the Excel companies, by the Excel import's own id (TC.import.batch), as long as they are not archived
   const excel = new Map((await db.prepare(`SELECT r.source_key, r.company_id FROM tc_import_rows r JOIN tc_companies c ON c.id = r.company_id
     WHERE r.batch = ? AND r.company_id IS NOT NULL AND c.archived_at IS NULL`).all(TC.import.batch)).map((r) => [r.source_key, Number(r.company_id)]));
-  const companies = await db.prepare('SELECT id, name, name_key, source, source_key FROM tc_companies WHERE archived_at IS NULL').all();
+  const companies = await db.prepare('SELECT id, name, name_key, country, source, source_key FROM tc_companies WHERE archived_at IS NULL').all();
+  const countryOf = new Map(companies.map((c) => [Number(c.id), c.country]));
   const byName = new Map();
   for (const c of companies) {
     for (const k of new Set([c.name_key, nameKey(c.name)])) {
@@ -132,7 +148,16 @@ export async function preview(db, files, opts = {}) {
   for (const e of p.entries) {
     if (e.outcome) continue;
     if (FINAL.includes((marks.get(e.key) || {}).outcome) || inIntake.has(e.chId)) { e.outcome = 'done'; continue; }
-    if (e.target === 'excel') {
+    if (e.target === 'tie') {
+      // the owner, 20.10: the same country first, then the closest name; still equal = the review list
+      const cands = e.candidates.map((c) => ({ ...c, id: excel.get(c.tc) })).filter((c) => c.id);
+      const same = cands.filter((c) => sameCountry(e.chCountry, countryOf.get(c.id)));
+      const pool = same.length ? same : CH.tieNeedsSameCountry ? [] : cands;
+      const top = Math.max(...pool.map((c) => c.score));
+      const win = [...new Set(pool.filter((c) => c.score === top).map((c) => c.id))];
+      if (win.length !== 1) { e.outcome = 'review'; e.reason = 'link: tie'; continue; }
+      Object.assign(e, { companyId: win[0], into: 'existing', tie: same.length ? 'same country' : 'closest name' });
+    } else if (e.target === 'excel') {
       e.companyId = excel.get(e.tcId);
       if (!e.companyId) { e.outcome = 'review'; e.reason = 'its Excel company is not in Intake'; continue; }
       e.into = 'existing';
@@ -174,7 +199,9 @@ export async function preview(db, files, opts = {}) {
       toNewCompanies: added.length - toOld.length,
       withEmail: added.filter((e) => e.contact.email).length,
       withPhone: added.filter((e) => e.contact.phone).length,
-      unsubscribedOrCleanedInMailchimp: added.filter((e) => e.unsubscribed).length,
+      markedNoMailing: added.filter((e) => e.noMailing).length,
+      tieSettledBySameCountry: added.filter((e) => e.tie === 'same country').length,
+      tieSettledByClosestName: added.filter((e) => e.tie === 'closest name').length,
       alreadyImported: of('done').length,
       sameEmailOnTheCompany: of('duplicate').length,
       skipped: of('skipped').length,
@@ -187,11 +214,13 @@ export async function preview(db, files, opts = {}) {
       ofThemFoundByNameInIntake: new Set(toOld.filter((e) => e.byName).map((e) => e.companyId)).size,
       new: news.length,
       newWithCountry: news.filter((c) => c.country).length,
+      newCountryNotRecorded: news.filter((c) => !c.country).length,
       newStatus: CH.newCompanyStatus,
     },
     review: {
-      companies: new Set(review.map((e) => e.chKey)).size,
+      companies: new Set(review.filter((e) => e.chKey).map((e) => e.chKey)).size,
       contacts: review.length,
+      contactsWithoutCompany: review.filter((e) => !e.chKey).length,
       why: reasons(review),
     },
     rejectedRows: of('rejected').map((e) => ({ line: e.line, reason: e.reason })),
@@ -222,8 +251,8 @@ export async function apply(db, files, opts = {}, actor = 'admin') {
       .map((r) => [r.source_key, Number(r.id)]));
     const added = p.entries.filter((e) => e.outcome === 'added');
     for (const e of added) if (e.into === 'new') e.companyId = ids.get('ch:' + e.nameKey);
-    await insertMany(tx, 'tc_company_contacts', ['company_id', 'name', 'position', 'email', 'phone', 'ch_contact_id', 'source', 'created_at', 'created_by'],
-      added.map((e) => [e.companyId, e.contact.name, e.contact.position, e.contact.email, e.contact.phone, e.chId, p.batch, at, actor]));
+    await insertMany(tx, 'tc_company_contacts', ['company_id', 'name', 'position', 'email', 'phone', 'notes', 'ch_contact_id', 'source', 'created_at', 'created_by'],
+      added.map((e) => [e.companyId, e.contact.name, e.contact.position, e.contact.email, e.contact.phone, e.contact.notes, e.chId, p.batch, at, actor]));
     const per = new Map();
     for (const e of added) per.set(e.companyId, (per.get(e.companyId) || 0) + 1);
     const created = new Set(p.news.map((c) => ids.get(c.sourceKey)));
@@ -236,7 +265,7 @@ export async function apply(db, files, opts = {}, actor = 'admin') {
     for (const c of p.news) rows.push([p.batch, 'company:' + c.nameKey, null, ids.get(c.sourceKey), 'created', null, at, actor]);
     for (const e of p.entries) {
       if (e.outcome === 'done') continue;
-      const reason = e.outcome === 'added' ? 'as imported ' + e.fp : e.reason || null;
+      const reason = e.outcome === 'added' ? 'as imported ' + e.fp + (e.tie ? ` (tie: ${e.tie})` : '') : e.reason || null;
       const was = p.marks.get(e.key);
       if (was && was.outcome === e.outcome && (was.reason || null) === reason) continue;
       rows.push([p.batch, e.key, e.line, e.companyId || null, e.outcome, reason, at, actor]);

@@ -50,7 +50,17 @@
     "files": ["clienthub_import_contacts.csv"],
     "maxBytes": 4194304,
     "importLinks": ["exact_name", "normalised_name", "domain"],
-    "reviewLinks": ["tie", "fuzzy", "possible", "domain_group", "unchecked"],
+    "reviewLinks": ["fuzzy", "possible", "domain_group", "unchecked"],
+    "tieLink": "tie",
+    "_tie": "The owner, 20.10.2026: a contact whose company fits two or more Excel companies equally goes to the one in the same country, then the one with the closest name; still equal = the review list. tieNeedsSameCountry true = only a same-country candidate may win.",
+    "tieNeedsSameCountry": false,
+    "_noCompany": "The owner, 20.10.2026: a contact with no company goes on the review list, to be placed by hand.",
+    "noMailing": {
+      "_about": "The owner, 20.10.2026: imported, marked no mailing in the contact's note (the company page shows it under the email).",
+      "mailchimpStatuses": ["unsubscribed", "cleaned"],
+      "issues": ["mailchimp_optout"],
+      "note": "No mailing (Client Hub: unsubscribed or the address bounced)"
+    },
     "newLink": "none",
     "internalLink": "novikontas",
     "internalStatuses": ["Novikontas"],
