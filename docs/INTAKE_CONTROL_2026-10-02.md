@@ -844,3 +844,4 @@ Seen: GitHub - no Aigars commits since 309b10f; crm-novikontas.vercel.app = 1ced
 - A Client book, B My week, C Season - all three. Home and menu not decided (board 2 next). Do not build the Home layout before board 2's pick.
 - HIS PICKS 20.10 Client Hub import: ties -> same country + closest name; Outdated left out; 82 unsubscribed in, no mailing; 283 no-country companies in. Q5 (153 no company) asked.
 - HIS PICKS 20.10: import Q5 153 no-company contacts -> review list. Board 2: TC Home = metrics first like Academy (board 3 picks cards, build waits); Google Calendar G3 two-way, Workspace admin approval via Marina.
+- 20.10 TOTAL group rows (ids 155, 218) double-count on TC Home; TC-UI 2 asked to leave them out of every sum/count (base 9ed79fc).
