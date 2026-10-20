@@ -835,3 +835,10 @@ Seen: GitHub - no Aigars commits since 309b10f; crm-novikontas.vercel.app = 1ced
 - Owner 20.10: "TC companies dont send people to admissions ... B2B and B2C sectors!" -> HIS PICK: company-person link DROPPED. release/2026-10-20-tc-round2 reset to f3e7a0d (no TC-BACKEND 2); the version with the link kept as keep/2026-10-20-tc-round2-with-link. TC-BACKEND 2 told to stay idle; TC-UI 2 told to base the next-contact change on f3e7a0d. MASTER PITCHER told the B2B/B2C rule. Memory tc-b2b-academy-b2c-separate.
 - Release timing: owner asked "What is round 2 ????" - explained in plain words, asked again.
 - HIS PICK 20.10: release the TC batch once, WITH the next-contact change (patch 64). Waiting on TC-UI 2's commit.
+
+## 20.10.2026 - patch 64 LIVE (Training Centre batch)
+- c67f969 (TC-UI 2's rebased next-contact change, tree identical to my pick of 7a0e427) on f3e7a0d; record 9ed79fc. Backup 2026-10-20T17-16-04Z (38 tables, 26,598 rows). deploy_verify green: 1,778 tests, byte-identical, 105 files, 401 probes, leaks 0, dpl_2rbnXH1xjeEDN5yfDtmHKPJDnaJc. Pushed b21a910..9ed79fc -> production.
+- Production read-only check: pic_email set on 86 companies (45 / 28 / 12 / 1), as TC-UI 2 predicted. Client Hub import route live, NOT run.
+
+## 20.10.2026 - MASTER PITCHER board 1: HIS PICK A + B + C
+- A Client book, B My week, C Season - all three. Home and menu not decided (board 2 next). Do not build the Home layout before board 2's pick.

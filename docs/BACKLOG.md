@@ -43,6 +43,12 @@ companies with no status - defaults in use); phone: marked number of a known per
 
 ## 20.10.2026 - Training Centre round 2 (owner's picks)
 
+- `LIVE` (patch 64, 20.10) Person in charge = an Intake account where one clearly matches (86 companies), Mine on Companies and Next contacts, a new person in charge takes the planned next contact, screen fixes at real size. The Client Hub import is live as an admin route and not run (5 questions open).
+- `DECIDED` HIS PICK (owner 20.10, MASTER PITCHER board 1: Pitches/intake-tc/board1) **A + B + C, all three**:
+  - **A Client book:** TC Home ranks clients by delegates 2025 (bars, 2020-25 spark, person in charge; filters All / Mine / TC / ENERGY / OPITO), a "Welcome back" list (strong 2022-23, none 2025), company page with delegates per year, courses they take, next contact, contacts, information to send, last communication.
+  - **B My week:** Mon-Fri of planned contacts per person (Mine / Team), not-done moves to today with no red, "Ready to plan" list; Log a contact drawer (what, result, next contact +1w / +2w / +1m / after New Year / date, note); Save moves the card.
+  - **C Season:** year planner Sep-Aug with exhibitions from the Excel tabs, "Ask for 2027 plans" (clients trained 2025), Calendars & gifts, countries bars, vendor portals; exhibition page with follow-up columns.
+  - Not decided: which one is Home, and the menu (MASTER PITCHER board 2). Nothing of the Home layout is built before that pick.
 - `DECIDED` (owner 20.10: "TC companies dont send people to admissions. Those are two separate client basis. B2B and B2C sectors!") Training Centre companies (B2B) and Academy admissions (B2C) are separate client bases. The company <-> person link built by TC-BACKEND 2 rests on the opposite assumption; **DROPPED** (owner's pick 20.10): not released; the code stays on feat/2026-10-20-tc-backend2.
 - `DECIDED` (owner 20.10) The person in charge of a company is changed by admins only.
 - `DECIDED` (owner 20.10) When the person in charge changes, the planned next contact moves to the new person in charge.
