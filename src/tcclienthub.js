@@ -68,7 +68,8 @@ export function plan(files, { batch = CH.batch } = {}) {
     const e = { line, chId: id, key: id ? 'contact:' + id : `line:${line}` };
     entries.push(e);
     if (!id) return Object.assign(e, { outcome: 'rejected', reason: 'no Client Hub contact id' });
-    if (seen.has(id)) return Object.assign(e, { outcome: 'rejected', reason: 'the same Client Hub contact twice' });
+    // traced by its line, never by the id: the first row with that id keeps its own trace
+    if (seen.has(id)) return Object.assign(e, { key: `line:${line}`, outcome: 'rejected', reason: 'the same Client Hub contact twice' });
     seen.add(id);
     if (String(r.deleted).trim() === 'true') return Object.assign(e, { outcome: 'skipped', reason: 'deleted in Client Hub' });
     const email = txt(r.email, 200) ? String(r.email).trim().toLowerCase() : null;
