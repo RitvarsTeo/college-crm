@@ -19,7 +19,7 @@ import { localDate, localMidnight } from './bizday.js';
 import { SIS_HOLDS_SQL } from './lifecycle.js';
 import { rangesSql } from './yearscope.js';
 import { markFor, markedWhy, contactKeys, MARKS } from './phonefilter.js';
-import { emailBodyFor, isEmailChannel } from './emailtext.js';
+import { emailBodyFor, isEmailChannel, cleanEmailBody } from './emailtext.js';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const CFG = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'prototype.json'), 'utf8'));
@@ -352,7 +352,8 @@ export async function receive(db, item) {
       return { joined: true, id: Number(home.id), seq };
     }
     if (home && home.person_id) attachTo = home.person_id;
-    else filterWhy = emailStudyWhy(item.body);
+    // 20.10.2026: a newsletter or mass mail first, whatever study words it carries (massMailWhy below)
+    else filterWhy = massMailWhy({ headers: item.listHeaders, text: item.body }) || emailStudyWhy(item.body);
   }
   const state = read.junk || filterWhy ? 'filtered' : 'new';
   // `source` records HOW this arrived. It defaults to null rather than to
@@ -1412,6 +1413,37 @@ export function emailStudyRead(text, cfg = CFG.emailFilter && CFG.emailFilter.st
   if (company) return { stay: false, why: `${cfg.companyWhy} ("${company}")` };
   return { stay: false, why: cfg.notStudyingWhy };
 }
+// NEWSLETTER OR MASS MAIL (Admissions, 20.10.2026: a ShipSpeak newsletter, "PLEASE PASS THIS MESSAGE TO YOUR ENGLISH
+// DEPARTMENT Dear Maritime Colleagues, ... an educational platform", reached the Inbox: it says "study", so the study
+// reading kept it, and it had no unsubscribe line for the Q74 newsletter rule). Part of the edu@ email rule, so it is
+// asked only where that rule is (never on Admissions-labelled mail, never on mail from somebody in Intake, never on a
+// reply in a conversation we hold), and BEFORE the study reading: a mass mailing is set aside whatever it mentions.
+// Two signs (config.emailFilter.massMail): the message's own list headers (lib/gmail.js listHeadersOf:
+// List-Unsubscribe, List-Id, Precedence bulk/list/junk) - except a copy through one of our own groups, whose List-Id
+// names our domain - or a phrase only a mass mailing uses (pass this message, unsubscribe, newsletter, a greeting to
+// colleagues) in the sender's own new text, never in the quoted thread under it. Returns the reason, or null.
+export function massMailWhy({ headers = null, text = '' } = {}, cfg = CFG.emailFilter && CFG.emailFilter.massMail, own = (CFG.emailFilter || {}).internalDomains) {
+  if (!cfg) return null;
+  const why = (found) => `${cfg.why} (${found})`;
+  if (headers && cfg.headers !== false) {
+    const listId = String(headers.id || '').toLowerCase();
+    const ours = listId && (own || []).some((d) => listId.includes(String(d).toLowerCase()));
+    if (!ours) {
+      if (headers.unsubscribe) return why('List-Unsubscribe header');
+      if (listId) return why('List-Id header');
+      if (['bulk', 'list', 'junk'].includes(String(headers.precedence || ''))) return why(`Precedence: ${headers.precedence}`);
+    }
+  }
+  // the sender's OWN new text (src/emailtext.js): a partner school's reply quoting "Dear colleagues" from further down
+  // the thread, or a signature's "our newsletter", is not a mass mailing (checked read-only on production 20.10.2026)
+  const t = cleanEmailBody(text, { subjectFirstLine: true }).toLowerCase().replace(/ё/g, 'е');
+  const phrase = firstWordIn(t, cfg.phrases);
+  if (phrase) return why(`"${phrase}"`);
+  const greet = cfg.greeting ? new RegExp(cfg.greeting, 'imu').exec(t) : null;
+  if (greet) return why(`"${greet[0].trim()}"`);
+  return null;
+}
+
 // null when the email may reach the Inbox, else the reason it is set aside
 export function emailStudyWhy(text, cfg) {
   const r = emailStudyRead(text, cfg);

@@ -624,7 +624,7 @@ export async function syncGmail(db, { now = new Date(), env = process.env, fetch
     // study (studyRule, decided in receive(): a known person and a reply in a conversation we hold still get through).
     const labelled = Boolean(shaped.admissions);
     const r = await receive(db, { ...it, source: mode === 'live' ? 'provider' : 'simulated',
-      ...(labelled ? { noFilter: true } : { filterWhy: emailFilterWhy(it.email), studyRule: true }),
+      ...(labelled ? { noFilter: true } : { filterWhy: emailFilterWhy(it.email), studyRule: true, listHeaders: shaped.listHeaders || null }),
       attachTo: await activePersonFor(db, it.email), joinOpenSender: true });
     if (labelled) out.labelled = (out.labelled || 0) + 1;
     if (r.duplicate && labelled && await labelBringsBack(db, r.id, at)) out.broughtBack = (out.broughtBack || 0) + 1;

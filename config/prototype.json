@@ -983,6 +983,32 @@
     "_textPatterns": "Read over the sender name and the start of the message, case-insensitive. Admissions can add a line: match is a regular expression, why is the reason shown in the Filtered view.",
     "newsletter": "unsubscribe|atrakst[iī]t(ies|os|ieties)|izrakst[iī]t(ies|os|ieties)|atteikties no (jaunum|e-?pasta|vēstk)|view (this email )?in (your )?browser",
     "_newsletter": "Q74 rule 3, 07.10.2026 (Ritvars yes, against Aigars 07.10 'email kkadu automatizaciju'): a newsletter carries an unsubscribe link, usually at the END, so the whole message is read. Set aside with the reason, kept, can be brought back. The sender address is NOT widened on a guess: info@ / support@ / team@ can be a real school or partner.",
+    "massMail": {
+      "decided": "20.10.2026 after Ieva: a ShipSpeak newsletter (\"PLEASE PASS THIS MESSAGE TO YOUR ENGLISH DEPARTMENT Dear Maritime Colleagues\") reached the Inbox because it says \"study\" and had no unsubscribe line. Part of the edu@ email rule: asked before the study reading, never on Admissions-labelled mail, mail from somebody in Intake or a reply in a conversation we hold. Set aside with the reason, kept, can be brought back.",
+      "why": "Newsletter or mass mail",
+      "headers": true,
+      "_headers": "List-Unsubscribe, List-Id, Precedence bulk/list/junk on the message (lib/gmail.js listHeadersOf). A List-Id naming one of internalDomains is a copy through our own Google Group and does not count.",
+      "phrases": [
+        "pass this message",
+        "pass this e-mail",
+        "pass this email",
+        "pass this on to",
+        "forward this message to",
+        "forward this email to",
+        "forward this e-mail to",
+        "please share this with",
+        "unsubscribe",
+        "newsletter",
+        "mailing list",
+        "jaunumu vēstul",
+        "jaunumu vestul",
+        "рассылк",
+        "отписаться"
+      ],
+      "_phrases": "Read over the subject and the text, lower case, where a word starts. Only what a mass mailing says; a word a person writing to us could use (information, programme) never goes here.",
+      "greeting": "^[ \\t]*(?:dear|hello|hi)[ \\t]+(?:[\\p{L}-]+[ \\t]+){0,2}colleagues\\b|^[ \\t]*(?:cienījam|godāt|cienijam|godat)\\p{L}*[ \\t]+(?:[\\p{L}-]+[ \\t]+){0,1}kolēģ|^[ \\t]*уважаем\\p{L}*[ \\t]+коллег",
+      "_greeting": "A greeting to colleagues at the start of a line (Dear Maritime Colleagues, Cienījamie kolēģi, Уважаемые коллеги): a person asking about studies does not write to us as colleagues."
+    },
     "studyRule": {
       "decided": "Owner 16.10.2026 after Ieva: \"visi epasti nesaistīti ar admissions gan tur ir\". edu@ email reaches the Inbox only when it has the Admissions label, reads as somebody wanting to study, comes from somebody already in Intake (their History), or is a reply in a conversation already in the Inbox or already a lead. Everything else is set aside automatically with the reason, kept, can be brought back.",
       "_how": "Read over the subject and the text, lower case, each word matched where a word starts (so 'kurs' never matches 'ekskursija'). Stays: the app's own study reading (src/extract.js signalsIn: a programme, study intent, education) OR any studyWords. Set aside: nothing of that (notStudyingWhy), or a company/supplier word with no admissionWords (companyWhy: a company booking crew training or a supplier is not Admissions).",
