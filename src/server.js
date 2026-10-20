@@ -61,6 +61,7 @@ import * as tcimport from './tcimport.js';
 import * as tcweek from './tcweek.js';
 import * as tcseason from './tcseason.js';
 import * as tcclienthub from './tcclienthub.js';
+import * as tcreview from './tcreview.js';
 import * as tcpic from './tcpic.js';
 
 
@@ -3373,6 +3374,27 @@ export const handle = async (req, res) => {
       const files = tcimport.readFiles(b, { names: ch.files });
       if (b.apply !== true) return json(res, 200, { preview: true, ...(await tcclienthub.preview(db, files)).counts });
       return json(res, 200, await tcclienthub.apply(db, files, { hash: b.hash }, await actorOf(req, b)));
+    }
+    // THE CLIENT HUB REVIEW LIST (src/tcreview.js). The admin loads it once (preview, then apply with the hash); the
+    // Training Centre team places its contacts or sets them aside (behind the tc area gate, like every /api/tc/ route).
+    if (p === '/api/admin/tc/review-load' && (req.method === 'GET' || req.method === 'POST')) {
+      if (!(await adminOf(req))) return json(res, 403, { error: 'Loading the review list is for admins only.' });
+      if (req.method === 'GET') return json(res, 200, await tcreview.reviewCounts(db));
+      const b = await body(req, tc.TC.clienthubReview.maxBytes * 2);
+      const files = tcimport.readFiles(b, { names: tc.TC.clienthubReview.files });
+      if (b.apply !== true) return json(res, 200, { preview: true, ...(await tcreview.previewLoad(db, files)).counts });
+      return json(res, 200, await tcreview.applyLoad(db, files, { hash: b.hash }, await actorOf(req, b)));
+    }
+    if (p === '/api/tc/review' && req.method === 'GET') {
+      return json(res, 200, url.searchParams.get('count') === '1' ? await tcreview.reviewCounts(db) : await tcreview.listReview(db));
+    }
+    if (p === '/api/tc/review/place' && req.method === 'POST') {
+      const b = await body(req, 64 * 1024);
+      return json(res, 200, await tcreview.place(db, b.items, await actorOf(req, b)));
+    }
+    if (p === '/api/tc/review/set-aside' && req.method === 'POST') {
+      const b = await body(req, 64 * 1024);
+      return json(res, 200, await tcreview.setAside(db, b.ids, b.reason, await actorOf(req, b)));
     }
 
     // ------------------------------------------------------------- feedback -

@@ -68,5 +68,31 @@
     "inactiveStatuses": ["Outdated"],
     "duplicateIssues": ["duplicate_suppressed"],
     "newCompanyStatus": "not_contacted"
+  },
+  "clienthubReview": {
+    "_about": "THE CLIENT HUB REVIEW LIST (20.10.2026, src/tcclienthub.js -> src/tcreview.js): the owner's pick R2, one table with the suggestion chosen, tick many, Place. Loaded once by an admin from the file the import applied plus the cross-check's candidates; placed by the Training Centre team.",
+    "files": ["clienthub_import_contacts.csv", "clienthub_review_candidates.csv"],
+    "maxBytes": 4194304,
+    "kinds": [
+      { "id": "tie", "label": "Two matches" },
+      { "id": "fuzzy", "label": "Spelling" },
+      { "id": "possible", "label": "Possible" },
+      { "id": "domain_group", "label": "Same domain only" },
+      { "id": "none", "label": "No company" },
+      { "id": "other", "label": "To check" }
+    ],
+    "hits": {
+      "exact_name": "same name", "normalised_name": "same name", "domain": "same website domain", "fuzzy": "name spelt like",
+      "domain_group": "same domain group", "possible": "name looks like", "email_domain": "uses the same email domain"
+    },
+    "genericDomains": ["gmail.com", "googlemail.com", "hotmail.com", "hotmail.co.uk", "outlook.com", "live.com", "msn.com", "yahoo.com",
+      "yahoo.co.uk", "icloud.com", "me.com", "mail.ru", "bk.ru", "list.ru", "inbox.ru", "yandex.ru", "yandex.com", "rambler.ru", "inbox.lv",
+      "inbox.lt", "one.lv", "apollo.lv", "tvnet.lv", "delfi.lv", "gmx.de", "gmx.net", "gmx.com", "web.de", "t-online.de", "mail.com", "aol.com",
+      "protonmail.com", "proton.me", "zoho.com", "ukr.net", "mail.ee", "hot.ee", "online.no", "wp.pl", "o2.pl", "interia.pl", "onet.pl",
+      "seznam.cz", "libero.it", "orange.fr", "free.fr", "bigpond.com", "live.nl", "hotmail.nl", "planet.nl", "ziggo.nl", "telenet.be",
+      "skynet.be", "mail.lv", "navigator.lv", "outlook.lv", "hotmail.lv", "yahoo.de", "hotmail.de", "freenet.de", "posteo.de", "qq.com", "163.com"],
+    "maxCandidates": 6,
+    "maxPerPlace": 400,
+    "setAsideLabel": "Not a contact for us"
   }
 }

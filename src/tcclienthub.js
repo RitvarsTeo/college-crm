@@ -40,7 +40,7 @@ export const FILE = CH.files[0];
 const NEEDS = ['ch_contact_id', 'deleted', 'ch_company_key', 'company', 'link', 'tc_company_id', 'name', 'role', 'email', 'phone',
   'country', 'city', 'ch_status', 'issue_type', 'mailchimp_status', 'unsubscribed', 'tie_candidates', 'ch_company_country'];
 const sameCountry = (a, b) => Boolean(a) && String(a).trim().toLowerCase() === String(b || '').trim().toLowerCase();
-const FINAL = ['added', 'created'];
+const FINAL = ['added', 'created', 'set_aside'];   // set_aside: a person said so on the review list (src/tcreview.js)
 
 const txt = (v, n = 4000) => { const s = String(v ?? '').trim(); return s ? s.slice(0, n) : null; };
 const sha = (s) => crypto.createHash('sha256').update(s).digest('hex');
@@ -62,6 +62,15 @@ const mostCommon = (list) => {
   return best;
 };
 
+/** One row of the file as a contact, the way the import writes it (the review list reads it the same way). */
+export function contactOf(r) {
+  const email = txt(r.email, 200) ? String(r.email).trim().toLowerCase() : null;
+  const noMailing = CH.noMailing.mailchimpStatuses.includes(String(r.mailchimp_status || '').trim())
+    || CH.noMailing.issues.includes(String(r.issue_type || '').trim()) || String(r.unsubscribed).trim() === 'true';
+  return { contact: { name: txt(r.name, 160), position: txt(r.role, 160), email, phone: txt(r.phone, 60), notes: noMailing ? CH.noMailing.note : null },
+    noMailing };
+}
+
 /** The file worked out in memory: what each row is. Touches no database. */
 export function plan(files, { batch = CH.batch } = {}) {
   const rows = parseCsv(files[FILE]);
@@ -79,7 +88,8 @@ export function plan(files, { batch = CH.batch } = {}) {
     if (seen.has(id)) return Object.assign(e, { key: `line:${line}`, outcome: 'rejected', reason: 'the same Client Hub contact twice' });
     seen.add(id);
     if (String(r.deleted).trim() === 'true') return Object.assign(e, { outcome: 'skipped', reason: 'deleted in Client Hub' });
-    const email = txt(r.email, 200) ? String(r.email).trim().toLowerCase() : null;
+    const { contact, noMailing } = contactOf(r);
+    const email = contact.email;
     const domain = email && email.includes('@') ? email.split('@').pop() : '';
     const link = String(r.link || '').trim();
     if (link === CH.internalLink || CH.internalStatuses.includes(String(r.ch_status || '').trim())
@@ -88,9 +98,6 @@ export function plan(files, { batch = CH.batch } = {}) {
     }
     if (CH.inactiveStatuses.includes(String(r.ch_status || '').trim())) return Object.assign(e, { outcome: 'skipped', reason: 'Outdated in Client Hub' });
     if (CH.duplicateIssues.includes(String(r.issue_type || '').trim())) return Object.assign(e, { outcome: 'skipped', reason: 'a duplicate in Client Hub' });
-    const noMailing = CH.noMailing.mailchimpStatuses.includes(String(r.mailchimp_status || '').trim())
-      || CH.noMailing.issues.includes(String(r.issue_type || '').trim()) || String(r.unsubscribed).trim() === 'true';
-    const contact = { name: txt(r.name, 160), position: txt(r.role, 160), email, phone: txt(r.phone, 60), notes: noMailing ? CH.noMailing.note : null };
     if (!contact.name && !contact.email && !contact.phone) return Object.assign(e, { outcome: 'skipped', reason: 'no name, email or phone' });
     Object.assign(e, { contact, fp: fingerprint(contact), noMailing });
     const company = txt(r.company, 200);

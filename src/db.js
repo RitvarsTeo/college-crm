@@ -659,6 +659,36 @@ CREATE TABLE IF NOT EXISTS tc_import_rows (
   applied_by TEXT,
   PRIMARY KEY (batch, source_key)
 );
+
+-- THE CLIENT HUB REVIEW LIST (20.10.2026, src/tcreview.js): the contacts the Client Hub import could not place alone,
+-- as the import read them, until a Training Centre person places one under a company or sets it aside. Never deleted:
+-- status open | placed | duplicate | set_aside, with who and when.
+CREATE TABLE IF NOT EXISTS tc_review_contacts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  batch TEXT NOT NULL,             -- the import's batch (clienthub_2026_10)
+  ch_contact_id TEXT NOT NULL,     -- Client Hub contacts.contact_id
+  row_no INTEGER,                  -- the line in the import's file
+  why TEXT NOT NULL,               -- tie | fuzzy | possible | domain_group | none | other
+  ch_company TEXT,                 -- the company as Client Hub writes it; empty = none
+  ch_company_key TEXT,
+  country TEXT,
+  name TEXT,
+  position TEXT,
+  email TEXT,                      -- lower case
+  phone TEXT,
+  notes TEXT,                      -- No mailing, as the import marks it
+  candidates TEXT,                 -- JSON [{ id, kind, score }]: Intake companies the cross-check found, best first
+  status TEXT NOT NULL DEFAULT 'open',
+  company_id BIGINT,               -- where it was placed
+  contact_id BIGINT,               -- the contact it became
+  reason TEXT,                     -- why it was set aside
+  done_at TEXT,
+  done_by TEXT,
+  loaded_at TEXT NOT NULL,
+  loaded_by TEXT,
+  UNIQUE (batch, ch_contact_id)
+);
+CREATE INDEX IF NOT EXISTS tc_review_contacts_open ON tc_review_contacts (status, why);
 `;
 
 // A test opens this in memory. The server opens a file, because a prototype that
