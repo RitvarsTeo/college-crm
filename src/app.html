@@ -849,6 +849,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
     --c-sis:#29a8df;--c-ok:#9be0bd;--c-warn:#F7C04F;--c-bad:#ffb0a8;--c-accent-bg:#1a4670;--c-sunk:#0b2542;--c-sel:#163f66;
     --st-track:#8fb4e8;   /* on track in the dark (Q69): the readable blue on the sea; needs you keeps the alarm red */
     --v-adm:#29a8df;--v-lead:#e7ebf0;--v-open:#E0A526;--v-np:#93A5B8;--v-grid:#24507a;
+    --v-tc1:#29a8df;--v-tc2:#5b9fcd;--v-tc3:#9cc6e4;   /* TC Home's donut, latest course: this year, two years, earlier */
     --k-plinth:#0b2542;   /* the donut's plinth: a frame colour, the dark card well, never a data colour */
     --j-from:#1d4d7a;--j-to:#8fcbef;   /* the Journey's stage line in dark (the review #2) */
     --glass:linear-gradient(180deg,rgba(255,255,255,.06) 0%,rgba(255,255,255,.035) 100%);
@@ -1246,6 +1247,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
      validated with the dataviz validator: teal = admitted, sand = leads / still open,
      slate = not proceeding or not recorded (always with its word). */
   html.ui-c{--v-adm:#29a8df;--v-lead:#0a2463;--v-open:#E0A526;--v-np:#98a4b3;--v-grid:#e7ebf0}
+  html.ui-c:not([data-theme="dark"]){--v-tc1:#29a8df;--v-tc2:#7fc6ea;--v-tc3:#c3e3f5}   /* TC Home's donut in light (the dark ones sit in the dark palette) */
   html.ui-c:not([data-theme="dark"]){--k-plinth:#d6dee7}   /* the donut's plinth in light: a frame grey, not a data colour */
   /* dark chart colours: with the rest of the dark sea palette, near the top of CONCEPT C */
   /* No page cap of its own (29.09.2026). Home and Reports were held at 1080px inside a main that
@@ -2654,8 +2656,6 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tc-logmore{display:block;padding:10px 16px 14px}
   html.ui-c .tc-empty{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px;padding:22px 18px}
   /* ROUND 3 (20.10.2026): TC Home (M1) and the Client book, in the Academy Home's parts */
-  html.ui-c{--v-tc1:#29a8df;--v-tc2:#7fc6ea;--v-tc3:#c3e3f5}
-  html.ui-c[data-theme="dark"]{--v-tc1:#29a8df;--v-tc2:#5b9fcd;--v-tc3:#9cc6e4}
   html.ui-c .tc-home .khead, html.ui-c .tc-book .khead{justify-content:space-between;align-items:center}
   html.ui-c .tc-year{margin:0;flex:0 0 auto}
   html.ui-c .kneed.tc-ex b{font-size:clamp(22px,2.2vw,34px);line-height:1.15}
@@ -2666,7 +2666,7 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tc-card small.tc-line{display:block;margin-top:6px;font-size:12.5px;line-height:1.45;color:var(--t2)}
   html.ui-c .tc-card small.tc-line b, html.ui-c .tc-legend b{color:var(--ink);font-weight:700}
   html.ui-c .tc-card small.tc-line a, html.ui-c .tc-legend a{color:inherit;text-decoration:none}
-  html.ui-c .tc-card small.tc-line a:hover, html.ui-c .tc-legend a:hover{text-decoration:underline}
+  html.ui-c .tc-card small.tc-line a:hover, html.ui-c .tc-legend a:hover{color:var(--pet)}
   html.ui-c .tc-split{display:flex;gap:3px;height:12px;margin:12px 0 6px}
   html.ui-c .tc-split a{display:block;border-radius:999px;min-width:6px}
   html.ui-c .tc-split .back, html.ui-c .tc-legend i.back{background:var(--v-lead)}
@@ -2689,7 +2689,7 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tc-wrow small{display:block;font-size:12.5px;color:var(--t3);overflow-wrap:anywhere}
   html.ui-c .tc-big-row{display:grid;grid-template-columns:28px minmax(0,1.3fr) minmax(0,1fr) 66px auto;align-items:center;gap:14px;padding:10px 0;border-top:1px solid var(--rule2);color:inherit;text-decoration:none}
   html.ui-c .tc-big-row:first-child{border-top:0}
-  html.ui-c .tc-big-row:hover .tc-co b{text-decoration:underline}
+  html.ui-c .tc-big-row:hover .tc-co b{color:var(--pet)}
   html.ui-c .tc-rank{color:var(--t3);font-variant-numeric:tabular-nums}
   html.ui-c .tc-big-row .tc-co b, html.ui-c .tc-wrow b, html.ui-c .tc-wb-row > a:first-child b{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
   html.ui-c .tc-big-row .tc-co b{font-weight:650;font-size:14.5px}
@@ -10417,7 +10417,7 @@ function tcBigRows(rows, top, { pic = false, start = 0 } = {}) {
       ${pic ? (c.pic ? `<span class="tc-pic-chip" title="${esc(c.pic)}">${esc(tcInitials(c.pic))}</span>` : '<span class="tc-pic-chip none" title="No person in charge"></span>') : ''}</a>`).join('');
 }
 function tcWeekRows(rows) {
-  if (!rows.length) return `<div class="c-empty tc-empty"><b>Nothing planned this week.</b><a class="kgo" href="#/tc/book">Client book →</a></div>`;
+  if (!rows.length) return `<div class="c-empty tc-empty"><b>No contact this week.</b><a class="kgo" href="#/tc/book">Client book →</a></div>`;
   const today = cTodayIso();
   const days = [...new Set(rows.map((r) => r.day))];
   const dname = (d) => new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', weekday: 'short', day: 'numeric' }).format(new Date(d + 'T12:00:00Z')).toUpperCase();
