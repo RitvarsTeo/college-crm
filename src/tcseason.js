@@ -292,9 +292,9 @@ export async function seedApply(db, { hash } = {}, actor = 'admin') {
     for (const e of p.events) {
       const have = await tx.prepare('SELECT id FROM tc_events WHERE source_key = ?').get(e.key);
       if (have) { ids.set(e.key, Number(have.id)); continue; }
-      const r = await tx.prepare(`INSERT INTO tc_events (name, kind, city, country, starts_on, ends_on, date_confirmed, source, source_key, created_at, created_by)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?)`).run(e.name, e.kind, e.city || null, e.country || null, e.startsOn || null, e.endsOn || null,
-        e.dateConfirmed ? 1 : 0, SEED.batch, e.key, at, actor);
+      const r = await tx.prepare(`INSERT INTO tc_events (name, kind, city, country, starts_on, ends_on, date_confirmed, notes, source, source_key, created_at, created_by)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`).run(e.name, e.kind, e.city || null, e.country || null, e.startsOn || null, e.endsOn || null,
+        e.dateConfirmed ? 1 : 0, e.notes || null, SEED.batch, e.key, at, actor);
       ids.set(e.key, Number(r.lastInsertRowid));
     }
     let n = 0;

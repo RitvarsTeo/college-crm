@@ -216,7 +216,9 @@ test('the season: lanes in Sep-Aug, Ask for Y+2 plans from the clients of Y, cou
   const s = await ss.season(db, { now: TUE });
   assert.deepEqual([s.start, s.from, s.to], [2026, '2026-09-01', '2027-08-31']);
   assert.deepEqual(s.exhibitions.events.map((e) => [e.name, e.companies, e.dateConfirmed]),
-    [['WindEnergy Hamburg', 2, true], ['OEEC Amsterdam', 1, false], ['Wind Europe 2027', 1, false], ['Donsö', 1, false]]);
+    [['WindEnergy Hamburg', 2, false], ['OEEC Amsterdam', 1, false], ['Wind Europe 2027', 1, false], ['Donsö', 1, false]],
+    'the Excel has no dates: no event is seeded as confirmed');
+  assert.ok(s.exhibitions.events.every((e) => /estimate, not from the Excel/.test(e.notes)), 'each says where its estimate comes from');
   assert.equal(s.exhibitions.companies, 5);
   assert.deepEqual([s.plans.year, s.plans.forYear, s.plans.companies, s.plans.from, s.plans.to], [2025, 2027, 2, '2026-10-01', '2026-12-31'],
     'clients trained in 2025: Global Wind Service, Ampelmann (the TOTAL row not)');
