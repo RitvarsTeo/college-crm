@@ -1585,6 +1585,11 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .pband.is-mini{padding-top:8px;padding-bottom:8px}
   html.ui-c .pband.is-mini .jb-cols{display:none}
   html.ui-c .pband.is-mini .p-mini{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  /* SLIMMER WHEN FOLDED (owner's pick C from pictures, 20.10.2026: "Stays but slimmer!"): still pinned, but one thin
+     line on the page's own colour - no box, no shadow - so it covers as little of the list under it as it can. */
+  html.ui-c #view .kflow.jband.pband.is-mini,html.ui-c .pband.is-mini{box-shadow:none;border:0;border-radius:0;background:var(--bg);padding-top:4px;padding-bottom:4px}
+  html.ui-c .pband.is-mini::before,html.ui-c .pband.is-mini::after{display:none}
+  html.ui-c .pband.is-mini .p-mini > *{padding-top:2px;padding-bottom:2px;font-size:11px}
   html.ui-c .jb-cell.p-sep{border-left:1px solid var(--rule2);padding-left:8px}
   /* THE TODAY BOARD: the Journey board's columns and cards; Coming up folded to a narrow column with its count */
   html.ui-c .t-board{margin:0 0 16px;align-items:start}
