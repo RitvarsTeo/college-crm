@@ -842,3 +842,4 @@ Seen: GitHub - no Aigars commits since 309b10f; crm-novikontas.vercel.app = 1ced
 
 ## 20.10.2026 - MASTER PITCHER board 1: HIS PICK A + B + C
 - A Client book, B My week, C Season - all three. Home and menu not decided (board 2 next). Do not build the Home layout before board 2's pick.
+- HIS PICKS 20.10 Client Hub import: ties -> same country + closest name; Outdated left out; 82 unsubscribed in, no mailing; 283 no-country companies in. Q5 (153 no company) asked.
