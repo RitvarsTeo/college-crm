@@ -6414,8 +6414,19 @@ function signedOut() {
   // each would pop "signed out" over the card. Signing in reloads the page, which brings alert() back.
   window.alert = () => {};
 }
+// A NAME WITH LATVIAN LETTERS NEVER STOPS A REQUEST (round 2, 20.10.2026). A header may carry ISO-8859-1 only, and fetch()
+// refused every request of an account named "Mārcis Žabovs": the page stayed on Loading... With sign-in on the server never
+// reads x-acting-as (the session says who is asking), so a name it cannot carry is left out; with sign-in off it is sent
+// percent-encoded, as the names in the settings are plain Latin and never need it.
+function cSafeHeaders(opts) {
+  const h = opts && opts.headers;
+  if (!h || h['x-acting-as'] == null || [...String(h['x-acting-as'])].every((ch) => ch.charCodeAt(0) < 256)) return opts;
+  const headers = { ...h };
+  if (AUTH.on) delete headers['x-acting-as']; else headers['x-acting-as'] = encodeURIComponent(String(h['x-acting-as']));
+  return { ...opts, headers };
+}
 async function apiFetch(path, opts) {
-  const r = await fetch(path, opts);
+  const r = await fetch(path, cSafeHeaders(opts));
   if (r.status === 401 && AUTH.on) {
     signedOut();
     const e = new Error('signed out');
