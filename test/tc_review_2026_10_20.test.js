@@ -205,3 +205,20 @@ test('the routes on a laptop copy: the admin loads, the list answers, Place and 
   assert.equal(st5, 400);
   assert.match(bad2.error, /why it is not a contact/);
 });
+
+test('the screen: reached from Companies (never a new top menu item), its own block, no word that reads as someone being late', async () => {
+  const fs = await import('node:fs');
+  const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
+  assert.match(app, /else if \(place === 'review'\) await viewTcReview\(\);/, 'the route');
+  assert.match(app, /act: `\$\{tcRvLink\(\)\}<input class="c-search" id="tcQ"/, 'the link on Companies');
+  const nav = app.slice(app.indexOf('<a href="#/tc" data-c="tc-home"'), app.indexOf('data-c="tc-help"'));
+  assert.doesNotMatch(nav, /tc\/review/, 'not a menu item');
+  const block = app.slice(app.indexOf('THE CLIENT HUB REVIEW LIST (#/tc/review) --'), app.indexOf('function viewTcHelp() {'));
+  assert.ok(block.length > 2000, 'the block is found');
+  assert.doesNotMatch(block.replace(/\/\/.*$/gm, ''), /\b(overdue|late|waiting since|days ago|still not|behind)\b/i);
+  assert.match(block, /'\/api\/tc\/review\/place'/);
+  assert.match(block, /'\/api\/tc\/review\/set-aside'/);
+  const help = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'help.json'), 'utf8')).tc;
+  assert.ok(help.faq.some((f) => f.id === 'tc-client-hub-review'));
+  assert.ok(help.howto.some((h) => h.href === '#/tc/review'));
+});

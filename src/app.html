@@ -2790,6 +2790,70 @@ svg .m-flag-mark{transform-origin:0 100%}
       html.ui-c .ts-kb{grid-template-columns:1fr}
     html.ui-c .ts-prow{grid-template-columns:62px minmax(0,1fr)}
   }
+  /* THE CLIENT HUB REVIEW LIST (#/tc/review, the owner's pick 20.10.2026, board 4 R2): one table, the suggestion
+     chosen, a bulk bar. Its own tcrv- names only. */
+  html.ui-c .tcrv-link b{margin-left:4px;font-variant-numeric:tabular-nums}
+  html.ui-c .tcrv-tabs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
+  html.ui-c .tcrv-tabs button{font:inherit;font-size:13px;font-weight:600;border-radius:9px;padding:7px 11px;background:var(--surface);border:1px solid var(--rule);color:var(--t2);cursor:pointer}
+  html.ui-c .tcrv-tabs button b{color:var(--ink);margin-left:5px;font-variant-numeric:tabular-nums}
+  html.ui-c .tcrv-tabs button.on{background:var(--btn-bg);border-color:var(--btn-bg);color:var(--btn-ink)}
+  html.ui-c .tcrv-tabs button.on b{color:var(--btn-ink)}
+  html.ui-c .tcrv-table{padding:0;overflow:hidden}
+  html.ui-c .tcrv-row{display:grid;grid-template-columns:30px minmax(170px,1.1fr) 70px minmax(230px,1.6fr) 150px 44px;
+    grid-template-areas:"tick co n sel why pic" ". people people people people people";gap:0 12px;align-items:center;padding:11px 16px;border-top:1px solid var(--rule2)}
+  html.ui-c .tcrv-row.on{background:var(--c-sel)}
+  html.ui-c .tcrv-h{border-top:0;font-size:11.5px;font-weight:650;letter-spacing:.05em;text-transform:uppercase;color:var(--t3);background:var(--surface-2)}
+  html.ui-c .tcrv-h > span:nth-child(1){grid-area:tick}html.ui-c .tcrv-h > span:nth-child(2){grid-area:co}html.ui-c .tcrv-h > span:nth-child(3){grid-area:n}
+  html.ui-c .tcrv-h > span:nth-child(4){grid-area:sel}html.ui-c .tcrv-h > span:nth-child(5){grid-area:why}html.ui-c .tcrv-h > span:nth-child(6){grid-area:pic}
+  html.ui-c .tcrv-tick{grid-area:tick;display:flex;margin:0}
+  html.ui-c .tcrv-tick input{width:18px;height:18px;margin:0;accent-color:var(--pet);cursor:pointer}
+  html.ui-c .tcrv-co{grid-area:co;min-width:0}
+  html.ui-c .tcrv-co b{display:block;font-size:14px;font-weight:600;overflow-wrap:anywhere}
+  html.ui-c .tcrv-ninline{display:none}
+  html.ui-c .tcrv-kind{display:inline-block;margin-top:3px;font-size:11.5px;font-weight:700;border-radius:6px;padding:2px 8px;background:var(--c-accent-bg);color:var(--petink)}
+  html.ui-c .tcrv-kind.k-tie{background:var(--btn-bg);color:var(--btn-ink)}
+  html.ui-c .tcrv-kind.k-domain_group, html.ui-c .tcrv-kind.k-none{background:var(--surface-2);color:var(--t2)}
+  html.ui-c .tcrv-n{grid-area:n;justify-self:start;font:inherit;font-size:14px;font-variant-numeric:tabular-nums;background:none;border:0;padding:4px 6px;
+    border-radius:6px;color:var(--ink);cursor:pointer;text-decoration:underline;text-decoration-color:var(--rule);text-underline-offset:3px}
+  html.ui-c .tcrv-n[aria-expanded="true"]{background:var(--surface-2)}
+  html.ui-c .tcrv-sel{grid-area:sel;position:relative;min-width:0}
+  html.ui-c .tcrv-sel select{width:100%;min-width:0;font:inherit;font-size:13.5px;color:var(--ink);background:var(--field);border:1px solid var(--control-line);
+    border-radius:8px;padding:8px 52px 8px 10px;text-overflow:ellipsis}
+  html.ui-c .tcrv-cnt{position:absolute;right:30px;top:50%;transform:translateY(-50%);font-size:12px;font-weight:650;color:var(--t2);pointer-events:none}
+  html.ui-c .tcrv-why{grid-area:why;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--t3);min-width:0}
+  html.ui-c .tcrv-why span{flex:1;min-width:0}
+  html.ui-c .tcrv-why i{display:block;flex:0 0 60px;height:6px;border-radius:3px;background:var(--surface-2);position:relative;overflow:hidden}
+  html.ui-c .tcrv-why i:after{content:"";position:absolute;left:0;top:0;bottom:0;width:var(--w);background:var(--c-sis)}
+  html.ui-c .tcrv-pic{grid-area:pic}
+  html.ui-c .tcrv-pic span{width:28px;height:28px;border-radius:50%;background:var(--c-accent-bg);color:var(--petink);display:grid;place-items:center;font-size:11px;font-weight:700}
+  html.ui-c .tcrv-pic span.none{background:transparent;border:1px dashed var(--control-line)}
+  html.ui-c .tcrv-people{grid-area:people;display:grid;gap:2px;padding:8px 0 2px}
+  html.ui-c .tcrv-person{font-size:12.5px;color:var(--t2);overflow-wrap:anywhere}
+  html.ui-c .tcrv-person b{color:var(--ink);font-weight:600}
+  html.ui-c .tcrv-person em{font-style:normal;font-size:11px;font-weight:700;background:var(--surface-2);border-radius:5px;padding:1px 6px;margin-left:4px}
+  html.ui-c .tcrv-bulk{position:sticky;bottom:60px;z-index:3;display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin:12px 0 56px;padding:12px 16px;
+    border-radius:12px;background:var(--pet);color:var(--on-navy);font-size:14px;box-shadow:var(--c-card-lift)}
+  html.ui-c .tcrv-bulk .tcrv-tick input{accent-color:var(--surface)}
+  html.ui-c .tcrv-said{font-weight:600}
+  html.ui-c .tcrv-bulk .tcrv-place{margin-left:auto;background:var(--surface);color:var(--ink);border-color:var(--surface)}
+  html.ui-c .tcrv-bulk .tcrv-place[disabled]{opacity:.55;cursor:default}
+  html.ui-c .tcrv-done{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px;padding:22px 18px}
+  html.ui-c .tcrv-found{display:grid;gap:6px;max-height:320px;overflow:auto}
+  html.ui-c .tcrv-hit{display:block;text-align:left;font:inherit;padding:9px 12px;border:1px solid var(--rule);border-radius:9px;background:var(--surface);color:var(--ink);cursor:pointer}
+  html.ui-c .tcrv-hit small{display:block;color:var(--t3);font-size:12.5px}
+  html.ui-c .tcrv-hit:hover{border-color:var(--control-line)}
+  @media (max-width:900px){
+    html.ui-c .tcrv-h{display:none}
+    html.ui-c .tcrv-row{grid-template-columns:30px minmax(0,1fr);grid-template-areas:"tick co" "sel sel" "people people";gap:8px 10px;padding:12px 14px}
+    html.ui-c .tcrv-n, html.ui-c .tcrv-why, html.ui-c .tcrv-pic{display:none}
+    html.ui-c .tcrv-ninline{display:inline;font:inherit;font-size:12.5px;color:var(--t3);background:none;border:0;padding:0 0 0 2px;cursor:pointer;
+      text-decoration:underline;text-decoration-color:var(--rule);text-underline-offset:3px}
+    html.ui-c .tcrv-co b{display:inline;margin-right:6px}
+    html.ui-c .tcrv-kind{display:table;margin-top:4px}
+    html.ui-c .c-head .act .c-search#tcRvQ{width:100%;flex:1 1 100%}
+  }
+  /* the phone: the bar rides above the bottom tabs and the FEEDBACK button */
+  @media (max-width:760px){ html.ui-c .tcrv-bulk{bottom:calc(122px + env(safe-area-inset-bottom));margin-bottom:120px;gap:8px 10px;padding:10px 12px;font-size:13.5px} }
 </style>
 </head>
 <body>
@@ -10173,6 +10237,7 @@ async function tcRoute(hash) {
     else if (place === 'company') await viewTcCompany(Number(arg));
     else if (place === 'next') await viewTcNext();
     else if (place === 'help') viewTcHelp();
+    else if (place === 'review') await viewTcReview();
     else await viewTcHome();
     cOpenView();
   } catch (e) {
@@ -10275,7 +10340,7 @@ function tcDrawCompanies() {
   $('#view').innerHTML = cPoolFrame({
     title: T_TITLE,
     crumb: `${Number(L.total)} ${L.total === 1 ? 'company' : 'companies'}${Object.values(T_F).some(Boolean) || T_Q ? ' match' : ''}`,
-    act: `<input class="c-search" id="tcQ" placeholder="Search company, city or country" value="${esc(T_Q)}" aria-label="Search companies"><button class="btn" onclick="tcOpenAdd()">Add company</button>`,
+    act: `${tcRvLink()}<input class="c-search" id="tcQ" placeholder="Search company, city or country" value="${esc(T_Q)}" aria-label="Search companies"><button class="btn" onclick="tcOpenAdd()">Add company</button>`,
     band: cPoolBand('Status', cols, T_F.status, 'tcPickStatus'),
     filters: cPoolFilters('companies', boxes, any ? 'tcClear()' : ''),
     body: cPoolRows(L.rows, row, 'No company matches. Remove a filter to widen the list.')
@@ -10784,6 +10849,173 @@ async function twPlanFor(id, name) {
 }
 
 // ---- HELP CENTER, TRAINING CENTRE: its own how-to and questions (config/help.json "tc", served with /api/tc/meta) ----
+// ------------------------------------------------------------ THE CLIENT HUB REVIEW LIST (#/tc/review) --
+// The owner's pick 20.10.2026, board 4 R2 "Table with bulk": every contact the Client Hub import could not place alone,
+// one row per Client Hub company (a contact with no company: per email domain), the suggested company already chosen.
+// Tick many, Place; change the suggestion in the row; "Not a contact for us" sets the row aside with a reason. The data
+// rules are src/tcreview.js. Self-contained: this block, its CSS (tcrv-) and three hooks (the route, the link on
+// Companies, the menu mark).
+let T_RV = null;          // the last /api/tc/review: { counts, kinds, groups }
+let T_RV_KIND = '';       // the tab: '' = all
+let T_RV_Q = '';
+let T_RV_PICK = {};       // group key -> chosen company id ('' = none)
+let T_RV_EXTRA = {};      // group key -> a company picked with Another company: { id, name, country, picShort }
+let T_RV_ON = new Set();  // ticked group keys
+let T_RV_OPEN = new Set();// group keys whose contacts are shown
+let T_RV_N = null;        // the open count, for the link on Companies
+let T_RV_SAID = '';       // what the last Place or Set aside did
+let T_RV_QT = null;
+
+/** The link on Companies: "Review list 326", only while something waits. */
+function tcRvLink() {
+  setTimeout(async () => {
+    try { const c = await api('/api/tc/review?count=1'); T_RV_N = c.all; } catch (e) { return; }
+    const a = $('#tcRvLink');
+    if (a) { a.hidden = !T_RV_N; const b = $('#tcRvN'); if (b) b.textContent = String(T_RV_N || ''); }
+  }, 0);
+  return `<a class="btn ghost tcrv-link" id="tcRvLink" href="#/tc/review"${T_RV_N ? '' : ' hidden'}>Review list <b id="tcRvN">${T_RV_N ? Number(T_RV_N) : ''}</b></a>`;
+}
+
+async function viewTcReview() {
+  document.querySelectorAll('.tcnav a').forEach((a) => a.classList.toggle('on', a.dataset.c === 'tc-companies'));
+  T_RV = await api('/api/tc/review');
+  T_RV_N = T_RV.counts.all;
+  const live = new Set(T_RV.groups.map((g) => g.key));
+  for (const k of [...T_RV_ON]) if (!live.has(k)) T_RV_ON.delete(k);
+  for (const g of T_RV.groups) if (!(g.key in T_RV_PICK)) T_RV_PICK[g.key] = g.suggested ? String(g.suggested) : '';
+  tcRvDraw();
+}
+const tcRvKind = (id) => (T_RV.kinds.find((k) => k.id === id) || {}).label || id;
+function tcRvShown() {
+  const q = T_RV_Q.toLowerCase();
+  return T_RV.groups.map((g, i) => ({ g, i })).filter(({ g }) => (!T_RV_KIND || g.why === T_RV_KIND)
+    && (!q || [g.title, g.domain, ...g.candidates.map((c) => c.name), ...g.contacts.map((k) => k.email.split('@').pop())]
+      .some((v) => String(v || '').toLowerCase().includes(q))));
+}
+function tcRvCands(g) {
+  const x = T_RV_EXTRA[g.key];
+  return x && !g.candidates.some((c) => c.id === x.id) ? [...g.candidates, { ...x, hit: 'picked by hand', score: 0 }] : g.candidates;
+}
+function tcRvDraw() {
+  const R = T_RV, C = R.counts;
+  const tabs = [['', 'All', C.all], ...R.kinds.map((k) => [k.id, k.label, C.open[k.id] || 0]).filter(([id, , n]) => n || id !== 'other')];
+  const shown = tcRvShown();
+  const row = ({ g, i }) => {
+    const cands = tcRvCands(g);
+    const pick = T_RV_PICK[g.key] || '';
+    const c = cands.find((x) => String(x.id) === pick) || null;
+    const n = g.contacts.length;
+    const opts = `<option value=""${pick ? '' : ' selected'}>${cands.length ? 'Choose a company' : 'No suggestion: choose a company'}</option>`
+      + cands.map((x) => `<option value="${Number(x.id)}"${String(x.id) === pick ? ' selected' : ''}>${esc(x.name)}${x.country ? ' · ' + esc(x.country) : ''}</option>`).join('')
+      + '<option value="other">Another company…</option><option value="aside">Not a contact for us…</option>';
+    const people = T_RV_OPEN.has(g.key) ? `<div class="tcrv-people">${g.contacts.map((k) => `<span class="tcrv-person"><b>${esc(k.name || 'No name')}</b>${
+      k.position ? ' · ' + esc(k.position) : ''}${k.email ? ' · ' + esc(k.email) : ''}${k.phone ? ' · ' + esc(k.phone) : ''}${k.noMailing ? ' <em>No mailing</em>' : ''}</span>`).join('')}</div>` : '';
+    return `<div class="tcrv-row${T_RV_ON.has(g.key) ? ' on' : ''}">
+      <label class="tcrv-tick"><input type="checkbox" aria-label="Tick ${esc(g.title)}"${T_RV_ON.has(g.key) ? ' checked' : ''} onchange="tcRvTick(${Number(i)}, this.checked)"></label>
+      <div class="tcrv-co"><b>${esc(g.title)}</b><button type="button" class="tcrv-ninline" onclick="tcRvPeople(${Number(i)})">${n} contact${n === 1 ? '' : 's'}</button>
+        <span class="tcrv-kind k-${esc(g.why)}">${esc(tcRvKind(g.why))}</span></div>
+      <button type="button" class="tcrv-n" aria-expanded="${T_RV_OPEN.has(g.key)}" title="Show the contacts" onclick="tcRvPeople(${Number(i)})">${n}</button>
+      <div class="tcrv-sel"><select aria-label="Place ${esc(g.title)} under" onchange="tcRvPick(${Number(i)}, this.value)">${opts}</select>${
+        cands.length > 1 ? `<span class="tcrv-cnt">${cands.length}</span>` : ''}</div>
+      <div class="tcrv-why">${c ? `<span>${esc(c.hit)}</span>${c.score ? `<i style="--w:${Math.round(c.score * 100)}%"></i>` : ''}` : ''}</div>
+      <div class="tcrv-pic">${c ? (c.picShort ? `<span title="${esc(c.pic)}">${esc(c.picShort)}</span>` : '<span class="none" title="No person in charge"></span>') : ''}</div>
+      ${people}</div>`;
+  };
+  const on = R.groups.filter((g) => T_RV_ON.has(g.key));
+  const ready = on.filter((g) => T_RV_PICK[g.key]);
+  const people = on.reduce((n, g) => n + g.contacts.length, 0);
+  const body = !C.all
+    ? `<div class="c-sheet tcrv-done"><b>Every Client Hub contact has a place.</b><a class="kgo" href="#/tc/companies">Companies →</a></div>`
+    : `<div class="c-sheet tcrv-table" role="table">
+        <div class="tcrv-row tcrv-h" role="row"><span></span><span>Client Hub company</span><span>Contacts</span><span>Place under (suggested)</span><span>Why</span><span>PIC</span></div>
+        ${shown.map(row).join('') || '<div class="c-empty">Nothing matches. Clear the search or pick another tab.</div>'}</div>
+      <div class="tcrv-bulk" role="region" aria-label="Selected">
+        <label class="tcrv-tick"><input type="checkbox" aria-label="Tick every row shown"${shown.length && shown.every(({ g }) => T_RV_ON.has(g.key)) ? ' checked' : ''} onchange="tcRvAll(this.checked)"></label>
+        <span><b>${on.length}</b> selected · ${people} contact${people === 1 ? '' : 's'}${on.length > ready.length ? ` · ${on.length - ready.length} without a company` : ''}</span>
+        ${T_RV_SAID ? `<span class="tcrv-said" role="status">${esc(T_RV_SAID)}</span>` : ''}
+        <button class="btn tcrv-place"${ready.length ? '' : ' disabled'} onclick="tcRvPlace()">${ready.length ? `Place ${ready.length === on.length && ready.length > 1 ? 'all ' : ''}${ready.length}` : 'Place'}</button></div>`;
+  $('#view').innerHTML = `<p class="c-crumb"><a href="#/tc/companies">Companies</a> › From Client Hub</p>
+    <div class="c-head"><div><h1>Place Client Hub contacts</h1></div><div class="act"><input class="c-search" id="tcRvQ" placeholder="Search company or domain"
+      value="${esc(T_RV_Q)}" aria-label="Search company or domain"></div></div>
+    ${C.all ? `<div class="tcrv-tabs" role="group" aria-label="Why">${tabs.map(([id, label, n]) => `<button type="button" class="${T_RV_KIND === id ? 'on' : ''}" aria-pressed="${T_RV_KIND === id}"
+      data-v="${esc(id)}" onclick="tcRvTab(this.dataset.v)">${esc(label)}<b>${Number(n)}</b></button>`).join('')}</div>` : ''}
+    ${body}`;
+  const q = $('#tcRvQ');
+  if (q) q.addEventListener('input', () => { clearTimeout(T_RV_QT); T_RV_QT = setTimeout(() => { T_RV_Q = q.value.trim(); tcRvDraw(); const n = $('#tcRvQ'); if (n) { n.focus(); n.setSelectionRange(n.value.length, n.value.length); } }, 200); });
+}
+function tcRvTab(v) { T_RV_KIND = T_RV_KIND === v ? '' : v; tcRvDraw(); }
+function tcRvTick(i, on) { const g = T_RV.groups[i]; if (!g) return; if (on) T_RV_ON.add(g.key); else T_RV_ON.delete(g.key); T_RV_SAID = ''; tcRvDraw(); }
+function tcRvAll(on) { for (const { g } of tcRvShown()) { if (on) T_RV_ON.add(g.key); else T_RV_ON.delete(g.key); } tcRvDraw(); }
+function tcRvPeople(i) { const g = T_RV.groups[i]; if (!g) return; if (T_RV_OPEN.has(g.key)) T_RV_OPEN.delete(g.key); else T_RV_OPEN.add(g.key); tcRvDraw(); }
+function tcRvPick(i, v) {
+  const g = T_RV.groups[i];
+  if (!g) return;
+  if (v === 'other') return tcRvOther(i);
+  if (v === 'aside') return tcRvAside(i);
+  T_RV_PICK[g.key] = v;
+  if (v) T_RV_ON.add(g.key);
+  tcRvDraw();
+}
+// Another company: the Companies search, inside a small window
+function tcRvOther(i) {
+  const g = T_RV.groups[i];
+  modal(`Place ${g.title} under`, `<div class="c-form c-form1"><div class="c-wide"><label for="tcRvFind">Company</label>
+    <input id="tcRvFind" placeholder="Search company, city or country" autocomplete="off"></div><div class="c-wide tcrv-found" id="tcRvFound"></div></div>`);
+  tcRvDraw();
+  const box = $('#tcRvFind');
+  let t = null;
+  const find = async () => {
+    const q = box.value.trim();
+    if (q.length < 2) { $('#tcRvFound').innerHTML = ''; return; }
+    const L = await api('/api/tc/companies?' + new URLSearchParams({ q, size: '12', only: '1' }).toString());
+    $('#tcRvFound').innerHTML = L.rows.map((c) => `<button type="button" class="tcrv-hit" data-id="${Number(c.id)}" onclick="tcRvChoose(${Number(i)}, Number(this.dataset.id))">
+      <b>${esc(c.name)}</b><small>${esc([c.country, c.city].filter(Boolean).join(' · ') || 'country not recorded')}${c.pic ? ' · ' + esc(c.pic) : ''}</small></button>`).join('')
+      || '<div class="c-empty">No company matches.</div>';
+    T_RV_FOUND = L.rows;
+  };
+  box.addEventListener('input', () => { clearTimeout(t); t = setTimeout(find, 250); });
+  box.focus();
+}
+let T_RV_FOUND = [];
+function tcRvChoose(i, id) {
+  const g = T_RV.groups[i], c = T_RV_FOUND.find((x) => Number(x.id) === id);
+  if (!g || !c) return;
+  T_RV_EXTRA[g.key] = { id: Number(c.id), name: c.name, country: c.country || '', pic: c.pic || '', picShort: String(c.pic || '').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('') };
+  T_RV_PICK[g.key] = String(c.id);
+  T_RV_ON.add(g.key);
+  closeModal(); tcRvDraw();
+}
+// Not a contact for us: the row's contacts, set aside with a reason; nothing is deleted
+function tcRvAside(i) {
+  const g = T_RV.groups[i];
+  modal(`${T_RV.setAsideLabel}: ${g.title}`, `<div class="c-form c-form1"><div class="c-wide"><label for="tcRvWhy">Why (a few words)</label>
+    <input id="tcRvWhy" maxlength="300" autocomplete="off" placeholder="Supplier, private address, not in our field…"></div>
+    <div class="c-wide" id="tcRvErr"></div>
+    <div class="c-wide c-row-acts"><button class="btn" onclick="tcRvAsideGo(${Number(i)})">Set ${g.contacts.length === 1 ? 'it' : 'all ' + g.contacts.length} aside</button>
+      <button class="btn ghost" onclick="closeModal()">Cancel</button></div></div>`);
+  tcRvDraw();
+  $('#tcRvWhy').focus();
+}
+async function tcRvAsideGo(i) {
+  const g = T_RV.groups[i];
+  try {
+    const r = await post('/api/tc/review/set-aside', { ids: g.contacts.map((k) => k.id), reason: $('#tcRvWhy').value });
+    T_RV_SAID = `${r.setAside} set aside`;
+    T_RV_ON.delete(g.key);
+    closeModal(); await viewTcReview();
+  } catch (e) { $('#tcRvErr').innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+}
+async function tcRvPlace() {
+  const items = T_RV.groups.filter((g) => T_RV_ON.has(g.key) && T_RV_PICK[g.key]).map((g) => ({ ids: g.contacts.map((k) => k.id), companyId: Number(T_RV_PICK[g.key]) }));
+  if (!items.length) return;
+  try {
+    const r = await post('/api/tc/review/place', { items });
+    T_RV_SAID = `${r.placed} placed under ${r.companies} ${r.companies === 1 ? 'company' : 'companies'}${r.sameEmail ? ` · ${r.sameEmail} already there` : ''}`;
+    for (const g of T_RV.groups) if (items.some((it) => it.ids[0] === g.contacts[0].id)) T_RV_ON.delete(g.key);
+    await viewTcReview();
+  } catch (e) { alert(e.message); }
+}
+
 function viewTcHelp() {
   const H = T_META.help || { howto: [], faq: [] };
   const how = H.howto.map((h) => `<a class="c-line c-hhow" href="${esc(h.href)}"><div class="c-who"><b>${esc(h.do)}</b><small>${esc(h.where)}</small></div><div class="c-when">›</div></a>`).join('');

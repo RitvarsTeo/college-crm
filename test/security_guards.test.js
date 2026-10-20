@@ -360,6 +360,27 @@ test('(e) admin-only routes refuse users, whichever half they open; the import a
   assert.equal((await call('/api/tc/home', 'none'))[0], 403, 'and taking it away works on the next click too');
 });
 
+test('(e) the Client Hub review list: the Training Centre team and admins open and place, only an admin loads it, nobody else gets in', async (t) => {
+  const s = await startWithAreas();
+  t.after(() => { s.child.kill(); });
+  const call = async (p, who, body) => {
+    const r = await fetch(s.base + p, { method: body ? 'POST' : 'GET', redirect: 'manual', headers: { origin: s.base, 'content-type': 'application/json',
+      accept: 'application/json', ...(who ? { cookie: s.cookie(who) } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) });
+    await r.arrayBuffer();
+    return r.status;
+  };
+  const got = {};
+  for (const [p, body] of [['/api/tc/review'], ['/api/tc/review/place', { items: [] }], ['/api/tc/review/set-aside', { ids: [] }], ['/api/admin/tc/review-load', { files: {} }]]) {
+    for (const who of ['tc', 'admin', 'academy', 'none', null]) got[`${who || 'nobody'} ${p}`] = await call(p, who, body);
+  }
+  assert.deepEqual(got, {
+    'tc /api/tc/review': 200, 'admin /api/tc/review': 200, 'academy /api/tc/review': 403, 'none /api/tc/review': 403, 'nobody /api/tc/review': 401,
+    'tc /api/tc/review/place': 400, 'admin /api/tc/review/place': 400, 'academy /api/tc/review/place': 403, 'none /api/tc/review/place': 403, 'nobody /api/tc/review/place': 401,
+    'tc /api/tc/review/set-aside': 400, 'admin /api/tc/review/set-aside': 400, 'academy /api/tc/review/set-aside': 403, 'none /api/tc/review/set-aside': 403, 'nobody /api/tc/review/set-aside': 401,
+    'tc /api/admin/tc/review-load': 403, 'admin /api/admin/tc/review-load': 400, 'academy /api/admin/tc/review-load': 403, 'none /api/admin/tc/review-load': 403, 'nobody /api/admin/tc/review-load': 401,
+  }, '400 = through every gate and refused in words (nothing to place, no files)');
+});
+
 test('(e) no Training Centre row is ever deleted: no DELETE route, no DELETE FROM tc_ outside the area tags', () => {
   assert.doesNotMatch(SERVER, /req\.method === 'DELETE'/, 'no DELETE handler');
   for (const f of fs.readdirSync(path.join(ROOT, 'src')).filter((x) => x.endsWith('.js'))) {
