@@ -78,6 +78,17 @@ companies with no status - defaults in use); phone: marked number of a known per
   code or deploy; his picks go to MASTER CONTROL, which records them here and builds them through the lanes.
   Pitch boards live in `Local Repo/Projects/Pitches/<app>/`.
 
+## 21.10.2026 - TC: Google Calendar two-way (G3), owner's picks
+
+- `DECIDED` (owner 21.10, popup) **Access: Marina for everyone** - domain-wide delegation: a Google service account that
+  Intake uses for every Training Centre person's calendar, authorised once in the Workspace Admin console (Security >
+  API controls > Domain-wide delegation), not a per-person Allow. Fact to check (01.10 note): this click needs Super
+  Admin; it is to be confirmed whether Marina holds it.
+- `DECIDED` (owner 21.10: "Vajag ar opciju, send tick, or no tick!") **Invite to the client contact: a tick per
+  meeting.** Ticked = Google sends the client contact the invitation; not ticked = the event is in our calendar only.
+- `SAID` (owner 21.10: "varam jau taisit so un sutit vinai kur vinai ieiet, lai nospiez, lidzigi ka ar edu") build G3
+  now and send Marina exactly where to click, as with edu@. Marina's heads-up was sent 21.10.
+
 ## 21.10.2026 - Two master sessions (owner's pick)
 
 - `DECIDED` HIS PICK (owner 21.10: "Thats why i want academy intake and tc intake separate sessions, this is hectic"): **Intake ACADEMY MASTER CONTROL** (this session: Academy feedback, Ieva, Admissions, SIS, phone, email) and **Intake TC MASTER CONTROL** (a separate session: Training Centre, Grand Opening, Season, review list, Google Calendar, MASTER PITCHER's TC boards). One app and one `production` branch: each master fetches origin/production right before a release, deploy_verify refuses a release that misses the other's commits, and each tells the other in one line before pushing production. Both keep this backlog and the control file.
