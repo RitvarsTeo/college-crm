@@ -902,3 +902,4 @@ Seen: GitHub - no Aigars commits since 309b10f; crm-novikontas.vercel.app = 1ced
 4. Aleks Zubovičs / Viktors Bistrovs: overdue, but the SIS handles them; Complete: Follow up forces a date or Cold, no "the SIS has it" answer.
 - 21.10 HIS PICKS: row 1 A (line on the page for maybe-same-person), row 2 A (third answer With the SIS). Wording: he asked 'explain'. Draft reply to Ieva: yes.
 - HIS PICK 21.10: account-only SIS people -> 'Call: did they start the application form?'. Sent to lane ACADEMY.
+- 21.10 ACADEMY report: 68b6785 7d2825e 15709fc on fix/2026-10-21-ieva (maybe-same-person line + person_not_same table; With the SIS answer stamps sis_handoff_at). Wording done by me (messages paused): FORM_START + relabel follows SIS, commit on release/2026-10-21-ieva. Suite 1,831/1,831. Picture vs built matches (board _ieva-feedback/built_vs_picture_2026-10-21.png opened on screen). Release asked.
