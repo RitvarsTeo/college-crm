@@ -27,5 +27,5 @@ test('and that one way is on every screen that shows it', () => {
   assert.match(APP, /none: 'No next step'/, 'the state line');
   assert.match(APP, /cStateLine\(st, detail, st === 'none' \? cChooseOnCard\(p\.id\) : ''\)/, 'the Journey card: Choose on the line');
   // Q86 (12.10.2026): the picker offers Follow up or Cold; "No next step" stays the state's one wording everywhere else
-  assert.match(APP, /<b>Follow up<\/b><\/label>[\s\S]{0,400}<b>Cold<\/b><\/label>/, 'the picker');
+  assert.match(APP, /<b>Follow up<\/b><\/label>[\s\S]{0,700}<b>Cold<\/b><\/label>/, 'the picker');
 });

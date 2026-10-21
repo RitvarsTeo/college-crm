@@ -61,9 +61,9 @@ test('Q71 + Q72 under Q86: the Inbox card asks Follow up on a date or Cold, and 
 });
 
 test('Q72 under Q86: every place a step is chosen asks for the date itself', () => {
-  assert.match(APP, /open \? `<label>Next step<\/label>\$\{cNextPick\('pe', true\)\}`/, 'Journey quick edit');
-  assert.match(fn('function openComplete('), /\$\{done \? '' : `<label>Next step<\/label>\$\{cNextPick\('c'\)\}`\}/, 'Due and person page "Done"');
-  assert.match(fn('function openNewTask('), /modal\('Next step', `\$\{cNextPick\('t'\)\}/, '"Choose next step"');
+  assert.match(APP, /open \? `<label>Next step<\/label>\$\{cNextPick\('pe', true, true\)\}`/, 'Journey quick edit');
+  assert.match(fn('function openComplete('), /\$\{done \? '' : `<label>Next step<\/label>\$\{cNextPick\('c', false, Boolean\(personId\)\)\}`\}/, 'Due and person page "Done"');
+  assert.match(fn('function openNewTask('), /modal\('Next step', `\$\{cNextPick\('t', false, true\)\}/, '"Choose next step"');
 });
 
 test('Q71 + Q72 on the server: the note is kept and the day staff set is the due day', async () => {
@@ -98,6 +98,6 @@ test('the Help center answers it in the same commit', () => {
   const HELP = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'help.json'), 'utf8'));
   const q = HELP.faq.find((x) => x.id === 'step-due');
   assert.equal(q.q, 'How do I choose a next step?');
-  assert.match(q.a, /Follow up: pick the date, it is required\. Cold:/);
+  assert.match(q.a, /Follow up: pick the date, it is required\. With the SIS: [^.]*\. Cold:/);
   assert.match(q.a, /In the Inbox you can add a note too\./);
 });

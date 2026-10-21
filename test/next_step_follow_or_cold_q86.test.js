@@ -67,7 +67,7 @@ test('Q86 on the server: Make a lead can be Cold at once, and Cold needs no reas
   assert.equal(sd, 400, 'a reject without a reason is refused, as before');
 });
 
-test('Q86 in the app: one picker, two answers, on the Inbox card, Done, Choose and the quick edit', () => {
+test('Q86 in the app: one picker on the Inbox card, Done, Choose and the quick edit (two answers; With the SIS the third where it fits, 21.10)', () => {
   const pick = fn('function cNextPick(');
   assert.match(pick, /value="follow"[^>]*><b>Follow up<\/b><\/label>\s*<input id="\$\{esc\(pfx\)\}-date" type="date" min="\$\{cTodayIso\(\)\}"/, 'Follow up and its date');
   assert.match(pick, /value="cold"[^>]*><b>Cold<\/b><\/label>\s*<select id="\$\{esc\(pfx\)\}-reason"[^>]*hidden><option value="">No reason<\/option>/, 'Cold and an optional reason');
@@ -75,9 +75,9 @@ test('Q86 in the app: one picker, two answers, on the Inbox card, Done, Choose a
   const read = fn('function cNextPickRead(');
   assert.match(read, /return due \? \{ kind: 'follow', due \} : \{ kind: 'follow', error: 'Set the follow-up date\.' \};/, 'the date is required');
   assert.match(APP, /\$\{cNextPick\('q'\)\}/, 'the Inbox card');
-  assert.match(APP, /\$\{cNextPick\('c'\)\}/, 'Done');
-  assert.match(APP, /\$\{cNextPick\('t'\)\}/, 'Choose next step');
-  assert.match(APP, /\$\{cNextPick\('pe', true\)\}/, 'the quick edit, nothing chosen until a choice is made');
+  assert.match(APP, /\$\{cNextPick\('c', false, Boolean\(personId\)\)\}/, 'Done');
+  assert.match(APP, /\$\{cNextPick\('t', false, true\)\}/, 'Choose next step');
+  assert.match(APP, /\$\{cNextPick\('pe', true, true\)\}/, 'the quick edit, nothing chosen until a choice is made');
   assert.match(APP, /const C_FOLLOW = 'Follow up';/);
   assert.ok(CFG.nextActions.flatMap((g) => g.items).some((i) => i.label === 'Follow up' && i.anyStage), 'Follow up is a step of every stage');
 });

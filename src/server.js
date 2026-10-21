@@ -2338,7 +2338,7 @@ export const handle = async (req, res) => {
       return json(res, 200, r);
     }
 
-    // MAYBE THE SAME PERSON (Ieva, 21.10.2026, src/samepeople.js): the other open records that look like this person, and
+    // MAYBE THE SAME PERSON (Admissions, 21.10.2026, src/samepeople.js): the other open records that look like this person, and
     // "Not the same", which writes the pair down so the line never shows again for those two.
     if (req.method === 'GET' && /^\/api\/people\/[^/]+\/maybe-same$/.test(p)) {
       let id;
@@ -2352,7 +2352,7 @@ export const handle = async (req, res) => {
       if (r.error) return json(res, r.error === 'not found' ? 404 : 400, { error: r.error });
       return json(res, 200, r);
     }
-    // WITH THE SIS (Ieva, 21.10.2026, the owner's pick A): the third answer where a next step is chosen. No date: the step
+    // WITH THE SIS (Admissions, 21.10.2026, the owner's pick A): the third answer where a next step is chosen. No date: the step
     // being done is closed with how it went (as Done does), any other open step is closed, and the person is handed to the
     // SIS (sis_handoff_at, once), so they count as With the SIS - never overdue, never "no next step".
     if (req.method === 'POST' && /^\/api\/people\/[^/]+\/with-sis$/.test(p)) {

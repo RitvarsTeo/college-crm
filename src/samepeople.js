@@ -1,6 +1,6 @@
-// MAYBE THE SAME PERSON (Ieva, 21.10.2026; the owner's pick A on _ieva-feedback/board_2026-10-21.png, row 1).
+// MAYBE THE SAME PERSON (Admissions, 21.10.2026; the owner's pick A on _ieva-feedback/board_2026-10-21.png, row 1).
 //
-// Production held Brunonas twice: an email lead of 19.10 with Ieva's comments, and a record the SIS made on 20.10,
+// Production held Brunonas twice: an email lead of 19.10 with Admissions' comments, and a record the SIS made on 20.10,
 // empty, with another email, no phone on the lead, and the name written without the Lithuanian letters. Nothing told
 // her. The person page now shows one line per other OPEN record that looks like the same person, on BOTH records:
 // "Maybe the same person: <name> · <how they came> · <stage> · <n comments>", with Open / Same person / Not the same.

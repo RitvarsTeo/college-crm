@@ -65,7 +65,7 @@ test('no stage known: the whole list, as before', () => {
 
 test('every dialog in the main view passes the stage', () => {
   // Q86 (12.10.2026): these two ask Follow up or Cold, the same at every stage; the stage list stays for the classic view
-  assert.match(APP, /modal\('Next step', `\$\{cNextPick\('t'\)\}/, 'Plan a next step');
-  assert.match(APP, /open \? `<label>Next step<\/label>\$\{cNextPick\('pe', true\)\}`/, 'People quick edit');
+  assert.match(APP, /modal\('Next step', `\$\{cNextPick\('t', false, true\)\}/, 'Plan a next step');
+  assert.match(APP, /open \? `<label>Next step<\/label>\$\{cNextPick\('pe', true, true\)\}`/, 'People quick edit');
   assert.match(APP, /function openComplete\(taskId, label, finished, personId\)/, 'Done carries the person');
 });

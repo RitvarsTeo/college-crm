@@ -3314,7 +3314,7 @@ const C_TERMINAL = ['Admitted', 'Not proceeding'];
 // step"; the SIS line says where they are. The same rule as SIS_HOLDS_SQL in src/lifecycle.js.
 // 07.10.2026: a form only started needs a call, not the SIS
 const C_SIS_HOLDS = ['submitted', 'admitted', 'matriculated'];
-// 21.10.2026 (Ieva): or Admissions answered "With the SIS" on a step (sis_handoff_at), the same as src/lifecycle.js SIS_HOLDS_SQL
+// 21.10.2026 (Admissions): or Admissions answered "With the SIS" on a step (sis_handoff_at), the same as src/lifecycle.js SIS_HOLDS_SQL
 const cSisHolds = (p) => Boolean(p && (p.sis_handoff_at || (p.first_channel === 'sis' && p.sis && C_SIS_HOLDS.includes(p.sis.status))));
 const cSisHeld = (p) => (p.sis && p.sis.label ? `In the SIS: ${esc(p.sis.label)}` : 'With the SIS');
 // /api/people answers { count, rows } and returns every row: no paging, no cap.
@@ -5954,7 +5954,7 @@ async function viewPersonC(id) {
     </div>`;
   cMaybeSameLoad(p.id);
 }
-// MAYBE THE SAME PERSON (Ieva, 21.10.2026, the owner's pick A; src/samepeople.js): one line per other open record that
+// MAYBE THE SAME PERSON (Admissions, 21.10.2026, the owner's pick A; src/samepeople.js): one line per other open record that
 // looks like this person, under the header, on both records. Open; Same person (the "Same person as..." merge, with
 // that record picked, offered when one of the two was made by the SIS); Not the same (never shown again for the pair).
 async function cMaybeSameLoad(id) {
@@ -7590,7 +7590,7 @@ const cStepDue = (label) => fmtDate(new Date(Date.now() + daysForAction(label) *
 // dormant close (Not proceeding, tagged cold) with a reason if there is one. Steps already planned keep their names.
 const C_FOLLOW = 'Follow up';
 const cColdReasons = () => (CFG.closedReasons || []).filter((r) => !(CFG.closedReasonNeedsNote || []).includes(r));
-// WITH THE SIS (Ieva, 21.10.2026, the owner's pick A): a third answer between them where the person already exists and the
+// WITH THE SIS (Admissions, 21.10.2026, the owner's pick A): a third answer between them where the person already exists and the
 // SIS may hold them (Done, the next step of somebody with none, the Journey edit panel); not on a lead being made from
 // the Inbox. No date: the step closes and the person counts as With the SIS (POST /api/people/<id>/with-sis).
 function cNextPick(pfx, optional = false, sis = false) {

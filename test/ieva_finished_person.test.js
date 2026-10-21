@@ -158,7 +158,7 @@ test('the Done dialog drops the next-step row for a finished person', () => {
   // already finished is a control that does nothing when used: the server ignores nextLabel for
   // them, so she would pick one, press Save and nothing would be planned. The row goes instead.
   const open = APP.slice(APP.indexOf('function openComplete('), APP.indexOf('async function doComplete('));
-  assert.match(open, /\$\{done \? '' : `<label>Next step<\/label>\$\{cNextPick\('c'\)\}`\}/,
+  assert.match(open, /\$\{done \? '' : `<label>Next step<\/label>\$\{cNextPick\('c', false, Boolean\(personId\)\)\}`\}/,
     'the whole Next step / When row is drawn only when the person is NOT finished');
   // "No next step" is a real section name on Next Steps and a People filter value, so this checks
   // the dead OPTION and its constant, not the words.
@@ -233,7 +233,7 @@ test('IEVA-4 on Today: a finished person is not asked for a next step they canno
   // and the dialog still honours it
   const dlg = APP.slice(APP.indexOf('function openComplete('), APP.indexOf('\n}\n', APP.indexOf('function openComplete(')));
   assert.match(dlg, /const done = Boolean\(finished\)/);
-  assert.match(dlg, /\$\{done \? '' : `<label>Next step<\/label>\$\{cNextPick\('c'\)\}`\}/, 'the whole row goes, rather than an option that lies');
+  assert.match(dlg, /\$\{done \? '' : `<label>Next step<\/label>\$\{cNextPick\('c', false, Boolean\(personId\)\)\}`\}/, 'the whole row goes, rather than an option that lies');
 });
 
 // Ieva 30.09 10:23, the full message (pasted 02.10): "I changed the status, but he still shows for me
