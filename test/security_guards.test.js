@@ -421,7 +421,9 @@ test('(e) My week and Season: a Training Centre user plans, logs and moves; only
     return [r.status, await r.json().catch(() => ({}))];
   };
   const [, co] = await call('/api/tc/companies', 'admin', { name: 'Guard Week Shipping', country: 'Latvia' });
-  const day = new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10);
+  // a weekday at least 3 days ahead: My week shows Monday to Friday (3 days from a Wednesday is a Saturday)
+  let ahead = new Date(Date.now() + 3 * 86400000); while ([0, 6].includes(ahead.getUTCDay())) ahead = new Date(ahead.getTime() + 86400000);
+  const day = ahead.toISOString().slice(0, 10);
   const [st1, planned] = await call(`/api/tc/companies/${co.id}/plan`, 'tc', { due: day, kind: 'call', topic: 'Guard topic' });
   assert.equal(st1, 200, 'a Training Centre user plans');
   assert.equal((await call(`/api/tc/companies/${co.id}/plan`, 'academy', { due: day }))[0], 403, 'Academy only: the gate');
