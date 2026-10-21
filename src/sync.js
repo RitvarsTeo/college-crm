@@ -370,8 +370,10 @@ export const FORM_CHECK = 'Call: did they finish the application form?';
 export const FORM_START = 'Call: did they start the application form?';
 const FORM_CHECK_FOR = ['registered', 'started'];
 export async function planFormCheck(db, personId, at) {
-  const p = await db.prepare('SELECT status, owner FROM people WHERE id = ?').get(personId);
+  const p = await db.prepare('SELECT status, owner, sis_handoff_at FROM people WHERE id = ?').get(personId);
   if (!p || (CONFIG.terminalStages || []).includes(p.status)) return false;
+  // Admissions answered "With the SIS" (21.10.2026): the SIS has them, so no call step comes back after that
+  if (p.sis_handoff_at) return false;
   const rows = await db.prepare('SELECT status FROM sis_applicants WHERE person_id = ?').all(personId);
   if (!rows.length || rows.some((r) => SIS_STAGE[r.status]) || !rows.some((r) => FORM_CHECK_FOR.includes(r.status))) return false;
   const label = rows.some((r) => r.status === 'started') ? FORM_CHECK : FORM_START;

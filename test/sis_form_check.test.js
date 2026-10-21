@@ -126,3 +126,10 @@ test('an account only gets "did they start"; once the SIS says the form is begun
   await syncSis(db, { now: new Date('2026-10-03T05:00:00Z'), env: ENV, fetchImpl: feed([app({ status: 'started', changedAt: '2026-10-02T09:00:00.000Z' })]) });
   assert.deepEqual((await tasks(db, 'p9')).map((t) => t.label), [FORM_CHECK], 'the same step, its words follow the SIS; never two');
 });
+
+test('once Admissions answered "With the SIS", a later SIS change plans no call step (21.10, Aleks)', async () => {
+  const db = await openDb(':memory:');
+  await db.prepare(`INSERT INTO people (id, name, email, status, owner, created_at, sis_handoff_at) VALUES ('p8', 'Anna', 'anna.fc@example.com', 'Application', 'Admissions', '2026-09-01', '2026-10-21T10:00:00.000Z')`).run();
+  await syncSis(db, { now: new Date('2026-10-22T05:00:00Z'), env: ENV, fetchImpl: feed([app({ status: 'started' })]) });
+  assert.deepEqual((await tasks(db, 'p8')).map((t) => t.label), [], 'no step comes back');
+});
