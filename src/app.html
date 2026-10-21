@@ -1378,6 +1378,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-np{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 12px;align-items:center;margin:4px 0}
   html.ui-c .c-np-opt{display:flex;align-items:center;gap:8px;margin:0;font-size:14px;cursor:pointer;color:var(--ink)}
   html.ui-c .c-np-opt input{width:auto;margin:0}
+  html.ui-c .c-np-row{grid-column:1 / -1}   /* With the SIS has no date: a line of its own */
   html.ui-c .c-np input[type=date],html.ui-c .c-np select{width:100%;margin:0}
   html.ui-c .c-np input[type=date]:disabled{opacity:.45}
   html.ui-c .c-steprow > span{font-weight:600;color:var(--ink)}
@@ -2792,6 +2793,7 @@ svg .m-flag-mark{transform-origin:0 100%}
   /* Maybe the same person (21.10.2026): one line under the person's header */
   html.ui-c .c-same-line{display:flex;align-items:center;justify-content:space-between;gap:10px 14px;flex-wrap:wrap;padding:10px 14px;margin:0 0 14px;font-size:13.5px}
   html.ui-c .c-same-line .c-row-acts{margin:0;display:flex;gap:6px;flex-wrap:wrap}
+  html.ui-c .c-same-line a.btn{text-decoration:none}
   @media (max-width:760px){
     html.ui-c .tc-row{grid-template-columns:62px minmax(0,1fr);gap:4px 10px;padding:10px 12px}
     html.ui-c .tc-when{grid-row:span 2}
@@ -5960,7 +5962,7 @@ async function cMaybeSameLoad(id) {
   if (!C_PERSON || C_PERSON.id !== id || !d.rows.length) return;
   const head = document.querySelector('#view .c-head');
   if (!head || document.querySelector('#view .c-same-line')) return;
-  const came = (r) => [`${channelLabel(r.firstChannel).replace(/^./, (c) => c.toLowerCase())} ${r.firstChannel === 'sis' ? 'record' : 'lead'}`, r.createdAt ? cDdMm(r.createdAt) : ''].filter(Boolean).join(' ');
+  const came = (r) => [`${channelLabel(r.firstChannel).replace(/^[A-Z](?=[a-z])/, (c) => c.toLowerCase())} ${r.firstChannel === 'sis' ? 'record' : 'lead'}`, r.createdAt ? cDdMm(r.createdAt) : ''].filter(Boolean).join(' ');
   head.insertAdjacentHTML('afterend', d.rows.map((r) => `<div class="c-sheet c-same-line"><span><b>Maybe the same person:</b> ${esc([r.name, came(r), cStage(r.stage), `${Number(r.comments)} comment${Number(r.comments) === 1 ? '' : 's'}`].join(' · '))}</span>
     <span class="c-row-acts"><a class="btn sm" href="#/person/${esc(r.id)}">Open</a>${r.merge ? `<button class="btn sm ghost" onclick="cSameMerge(${esc(JSON.stringify(String(r.merge.sourceId ?? '')))}, ${esc(JSON.stringify(String(r.merge.targetId ?? '')))})">Same person</button>` : ''}<button class="btn sm ghost" onclick="cNotSame(${esc(JSON.stringify(String(id ?? '')))}, ${esc(JSON.stringify(String(r.id ?? '')))})">Not the same</button></span></div>`).join(''));
 }
@@ -7596,7 +7598,7 @@ function cNextPick(pfx, optional = false, sis = false) {
   return `<div class="c-np" role="radiogroup" aria-label="Next step">
     <label class="c-np-opt"><input type="radio" name="${esc(pfx)}-np" value="follow"${optional ? '' : ' checked'} onchange="cNextPickSet(${p})"><b>Follow up</b></label>
     <input id="${esc(pfx)}-date" type="date" min="${cTodayIso()}" aria-label="Follow-up date"${optional ? ' disabled' : ''}>
-    ${sis ? `<label class="c-np-opt"><input type="radio" name="${esc(pfx)}-np" value="sis" onchange="cNextPickSet(${p})"><b>With the SIS</b></label>` : ''}
+    ${sis ? `<label class="c-np-opt c-np-row"><input type="radio" name="${esc(pfx)}-np" value="sis" onchange="cNextPickSet(${p})"><b>With the SIS</b></label>` : ''}
     <label class="c-np-opt"><input type="radio" name="${esc(pfx)}-np" value="cold" onchange="cNextPickSet(${p})"><b>Cold</b></label>
     <select id="${esc(pfx)}-reason" aria-label="Why cold, if you know" hidden><option value="">No reason</option>${cColdReasons().map((r) => `<option>${esc(r)}</option>`).join('')}</select>
   </div>`;

@@ -91,7 +91,7 @@ test('the third answer is offered on Done, on the next step of somebody with non
   assert.match(APP, /cNextPick\('t', false, true\)/, 'Choose a next step');
   assert.match(APP, /cNextPick\('pe', true, true\)/, 'the Journey edit panel');
   assert.match(APP, /\$\{cNextPick\('q'\)\}/, 'the Inbox keeps two answers');
-  assert.match(APP, /value="sis" onchange="cNextPickSet\(\$\{p\}\)"><b>With the SIS<\/b>/);
+  assert.match(APP, /<label class="c-np-opt c-np-row"><input type="radio" name="\$\{esc\(pfx\)\}-np" value="sis" onchange="cNextPickSet\(\$\{p\}\)"><b>With the SIS<\/b>/);
   assert.ok(!/Choose Follow up or Cold\.<\/div>'; return; \}\n  try \{\n    \/\/ Cold: how it went/.test(APP));
   // no explanatory sentence on screen, and nothing reads as late: the line is the name, how they came, stage, comments
   assert.match(APP, /<b>Maybe the same person:<\/b>/);
@@ -119,7 +119,7 @@ test('a running copy: With the SIS closes the step with how it went, hands the p
   assert.ok(r.person.tasks.every((t) => t.done_at), 'no open step left');
   const done = r.person.tasks.find((t) => t.id === task.id);
   assert.equal(done.outcome, 'Answered');
-  assert.ok(r.person.timeline.some((e) => e.subject === 'With the SIS' && e.field === 'sis_handoff_at'));
+  assert.equal(r.person.timeline.filter((e) => e.subject === 'With the SIS' && !e.field).length, 1, 'one plain History line');
   assert.ok(r.person.timeline.some((e) => e.body === 'The SIS has her application.'));
   const again = (await call(`/api/people/${id}/with-sis`, 'academy', {}))[1];
   assert.equal(again.person.sis_handoff_at, r.person.sis_handoff_at, 'handed over once');

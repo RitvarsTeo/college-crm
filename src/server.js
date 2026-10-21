@@ -2377,7 +2377,7 @@ export const handle = async (req, res) => {
       if (!person.sis_handoff_at) {
         await db.prepare('UPDATE people SET sis_handoff_at = ? WHERE id = ?').run(now, id);
         await logEvent(db, { personId: id, kind: 'status', direction: 'note', at: now, origin: MANUAL, actor: by,
-          subject: 'With the SIS', field: 'sis_handoff_at', oldValue: null, newValue: now });
+          subject: 'With the SIS' });
       }
       return json(res, 200, { ok: true, person: await personRow(id, by) });
     }
