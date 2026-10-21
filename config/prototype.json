@@ -240,7 +240,15 @@
           "days": 0,
           "drives": "application",
           "anyStage": true,
-          "_why": "Ritvars 07.10.2026: the SIS says they only made an account or started the form, so somebody calls and checks whether they really finished it. The SIS sync plans this step itself, one open at a time; it does not move the stage."
+          "_why": "Ritvars 07.10.2026: the SIS says they started the form, so somebody calls and checks whether they really finished it. The SIS sync plans this step itself, one open at a time; it does not move the stage."
+        },
+        {
+          "id": "check_form_start",
+          "label": "Call: did they start the application form?",
+          "days": 0,
+          "drives": "application",
+          "anyStage": true,
+          "_why": "Ritvars 21.10.2026 (Ieva, Brunonas): the SIS says they only made an account, so the call asks whether they started the form. The SIS sync plans it like the finish step, one open at a time, and turns it into the finish step once the SIS says the form is begun."
         }
       ]
     },

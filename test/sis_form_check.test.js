@@ -96,7 +96,8 @@ test('the fold: back to the stage before the SIS moved them, with a line and the
     const ev = await db.prepare("SELECT body, old_value, new_value, origin FROM events WHERE person_id = ? AND body = ?").get(id, WHY_SIS);
     assert.ok(ev, id + ': the line on the history');
     assert.deepEqual([ev.old_value, ev.new_value, ev.origin], ['Application', st[id], 'automatic']);
-    assert.deepEqual((await tasks(db, id)).map((t) => t.label), [FORM_CHECK], id + ': the call step');
+    // 21.10: an account only (lead: registered) is asked whether they STARTED the form; a form begun keeps "finish"
+    assert.deepEqual((await tasks(db, id)).map((t) => t.label), [id === 'lead' ? 'Call: did they start the application form?' : FORM_CHECK], id + ': the call step');
   }
   assert.equal(WHY_SIS, 'moved: only a submitted application counts (07.10)');
   assert.equal((await tasks(db, 'byhand')).length, 0, 'moved by hand: untouched');
@@ -112,4 +113,16 @@ test('Help says it in the same change', () => {
   const help = fs.readFileSync(path.join(ROOT, 'config', 'help.json'), 'utf8');
   assert.ok(help.includes('holds the person once their application form is submitted'));
   assert.ok(help.includes('gets the step Call: did they finish the application form?'));
+});
+
+test('an account only gets "did they start"; once the SIS says the form is begun, the same open step says "finish" (21.10)', async () => {
+  const { FORM_START } = await import('../src/stagefold.js');
+  assert.equal(FORM_START, 'Call: did they start the application form?');
+  assert.ok(CFG.nextActions.flatMap((g) => g.items).some((i) => i.label === FORM_START && i.anyStage), 'a configured step');
+  const db = await openDb(':memory:');
+  await db.prepare(`INSERT INTO people (id, name, email, status, owner, created_at) VALUES ('p9', 'Anna', 'anna.fc@example.com', 'Contacted', 'Admissions', '2026-09-01')`).run();
+  await syncSis(db, { now: new Date('2026-10-02T05:00:00Z'), env: ENV, fetchImpl: feed([app({ status: 'registered' })]) });
+  assert.deepEqual((await tasks(db, 'p9')).map((t) => t.label), [FORM_START]);
+  await syncSis(db, { now: new Date('2026-10-03T05:00:00Z'), env: ENV, fetchImpl: feed([app({ status: 'started', changedAt: '2026-10-02T09:00:00.000Z' })]) });
+  assert.deepEqual((await tasks(db, 'p9')).map((t) => t.label), [FORM_CHECK], 'the same step, its words follow the SIS; never two');
 });

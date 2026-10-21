@@ -365,16 +365,24 @@ export const SIS_CLOSING = ['rejected', 'withdrawn'];
 // registered or started gets a step to call and check whether they finished the form. One open at a
 // time, none for a finished person, and none once any of their applications is submitted or further.
 export const FORM_CHECK = 'Call: did they finish the application form?';
+// Somebody the SIS says only made an account has not begun a form (Ieva 21.10.2026, Brunonas): the owner's pick
+// is to ask whether they STARTED it. A person whose form is begun keeps "finish"; the open step follows the SIS.
+export const FORM_START = 'Call: did they start the application form?';
 const FORM_CHECK_FOR = ['registered', 'started'];
 export async function planFormCheck(db, personId, at) {
   const p = await db.prepare('SELECT status, owner FROM people WHERE id = ?').get(personId);
   if (!p || (CONFIG.terminalStages || []).includes(p.status)) return false;
   const rows = await db.prepare('SELECT status FROM sis_applicants WHERE person_id = ?').all(personId);
   if (!rows.length || rows.some((r) => SIS_STAGE[r.status]) || !rows.some((r) => FORM_CHECK_FOR.includes(r.status))) return false;
-  const open = await db.prepare('SELECT COUNT(*) n FROM tasks WHERE person_id = ? AND label = ? AND done_at IS NULL').get(personId, FORM_CHECK);
-  if (Number(open.n)) return false;
+  const label = rows.some((r) => r.status === 'started') ? FORM_CHECK : FORM_START;
+  const open = await db.prepare('SELECT id, label FROM tasks WHERE person_id = ? AND label IN (?, ?) AND done_at IS NULL ORDER BY id').all(personId, FORM_CHECK, FORM_START);
+  if (open.length) {
+    // one open at a time; its words follow what the SIS says now (an account only, or a form begun)
+    if (open[0].label !== label) await db.prepare('UPDATE tasks SET label = ? WHERE id = ?').run(label, open[0].id);
+    return false;
+  }
   await db.prepare('INSERT INTO tasks (person_id,label,due_at,owner,created_at) VALUES (?,?,?,?,?)')
-    .run(personId, FORM_CHECK, at, p.owner || 'Admissions', at);
+    .run(personId, label, at, p.owner || 'Admissions', at);
   return true;
 }
 

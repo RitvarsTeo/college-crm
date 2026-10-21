@@ -8,9 +8,9 @@
 // second boot moves nobody. contract_at is kept: it is the date the contract happened, and stays history.
 
 import { logEvent, AUTOMATIC } from './history.js';
-import { planFormCheck, FORM_CHECK, SIS_STAGE } from './sync.js';
+import { planFormCheck, FORM_CHECK, FORM_START, SIS_STAGE } from './sync.js';
 
-export { FORM_CHECK };
+export { FORM_CHECK, FORM_START };
 
 export const REMOVED = 'Contract';
 export const INTO = 'Application';
