@@ -102,6 +102,7 @@ companies with no status - defaults in use); phone: marked number of a known per
 
 ## 21.10.2026 - Ieva's feedback (Academy), owner's picks
 
+- `LIVE` (patch 70, 21.10) With the SIS stays: after it, the SIS no longer plans the form call step for that person (a missed call still plans Call back).
 - `LIVE` (patch 69, 21.10) all three below: the Maybe the same person line, With the SIS on Done, and "did they start" for an SIS account only.
 - `DECIDED` HIS PICK (picture board _ieva-feedback/board_2026-10-21.png, row 1 **A**): when Intake holds two records that may be one person (e.g. an email lead and a later SIS record with another email and the name without Latvian letters), the person page shows a line "Maybe the same person: <name> · <how they came> · <stage> · <n comments>" with Open / Same person / Not the same.
 - `DECIDED` HIS PICK (row 2 **A**): Done on a follow-up gets a third answer, **With the SIS**, between Follow up and Cold: no date needed, the person counts as With the SIS (navy), never overdue.
