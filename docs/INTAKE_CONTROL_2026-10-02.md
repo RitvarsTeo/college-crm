@@ -912,3 +912,4 @@ Seen: GitHub - no Aigars commits since 309b10f; crm-novikontas.vercel.app = 1ced
 - TC: 21.10 Marina heads-up (Google Calendar G3) SENT by Ritvars. His ask: build G3 now and send Marina exactly where to click, as with edu@.
 - TC: 21.10 HIS PICKS G3: access = Marina for everyone (domain-wide delegation; Super Admin needed, to confirm Marina has it); client invite = a tick per meeting (ticked = Google invites the contact). Build next.
 - TC: 21.10 owner: "try the simplest route for her with this. and well if she cant, lets try another one later". Marina gets the shortest click list (direct link to Admin console domain-wide delegation, Client ID + scope to paste). Fallback (per-person Allow, as edu@) only if she cannot; not built. Told TC-GCAL.
+- 21.10: owner sent the Google Calendar heads-up to Marina (TC side; TC MASTER CONTROL told). Messages to Ieva and Ilja drafted for him.
