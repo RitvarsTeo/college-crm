@@ -40,6 +40,16 @@ CREATE TABLE IF NOT EXISTS people (
   nationality TEXT             -- typed in by whoever is talking to them. Nobody derives it.
 );
 
+-- "Not the same person" (Ieva, 21.10.2026; src/samepeople.js): two records that look alike and are two people. The pair
+-- is written once (person_a < person_b) and the "Maybe the same person" line never shows for them again.
+CREATE TABLE IF NOT EXISTS person_not_same (
+  person_a TEXT NOT NULL,
+  person_b TEXT NOT NULL,
+  marked_at TEXT NOT NULL,
+  marked_by TEXT,
+  PRIMARY KEY (person_a, person_b)
+);
+
 -- One history log. Everything that happens to a person lands here, whether a
 -- machine did it or a person did it, and 'origin' says which. An edit also lands
 -- here, and then field / old_value / new_value carry what actually changed.

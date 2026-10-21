@@ -454,3 +454,21 @@ test('(e) My week and Season: a Training Centre user plans, logs and moves; only
   assert.equal((await call(`/api/tc/event-companies/${added.id}/remove`, 'academy', {}))[0], 403);
   assert.equal((await call(`/api/tc/event-companies/${added.id}/remove`, 'tc', {}))[0], 200);
 });
+
+test('(e) Ieva 21.10: Maybe the same person and With the SIS are Academy routes - the sweeps above reach them, and a person needs a session and Academy', async (t) => {
+  const s = await startWithAreas();
+  t.after(() => { s.child.kill(); });
+  const paths = routePaths();
+  for (const p of ['/api/people/x1/maybe-same', '/api/people/x1/not-same', '/api/people/x1/with-sis']) {
+    assert.ok(paths.includes(p), p + ' is found by the route sweep');
+    assert.equal(areaOfApi(p), 'academy');
+  }
+  const call = async (p, who, body) => (await fetch(s.base + p, { method: body ? 'POST' : 'GET', redirect: 'manual',
+    headers: { origin: s.base, 'content-type': 'application/json', ...(who ? { cookie: s.cookie(who) } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) })).status;
+  for (const who of ['tc', 'none']) {
+    assert.equal(await call('/api/people/x1/maybe-same', who), 403, who);
+    assert.equal(await call('/api/people/x1/with-sis', who, {}), 403, who);
+  }
+  assert.equal(await call('/api/people/x1/not-same', null, { otherId: 'x2' }), 401, 'no session');
+  assert.equal(await call('/api/people/x1/maybe-same', 'academy'), 404, 'Academy reaches the route');
+});

@@ -97,8 +97,10 @@ export const SIS_ORDER = ['registered', 'started', 'submitted', 'admitted', 'mat
 // One rule, used by every count (this) and by the page (cSisHolds in src/app.html).
 // 07.10.2026 (Ritvars): 'started' is out. A form only started is a call to check, not something the SIS holds.
 export const SIS_HOLDS = ['submitted', 'admitted', 'matriculated'];
-export const SIS_HOLDS_SQL = `(pe.first_channel = 'sis' AND EXISTS (SELECT 1 FROM sis_applicants sa
-  WHERE sa.person_id = pe.id AND sa.status IN ('${SIS_HOLDS.join("','")}')))`;
+// 21.10.2026 (Ieva, the owner's pick A): Admissions can also say so on Done - "With the SIS" stamps sis_handoff_at,
+// and the person is with the SIS from then on, never overdue and never "no next step".
+export const SIS_HOLDS_SQL = `(pe.sis_handoff_at IS NOT NULL OR (pe.first_channel = 'sis' AND EXISTS (SELECT 1 FROM sis_applicants sa
+  WHERE sa.person_id = pe.id AND sa.status IN ('${SIS_HOLDS.join("','")}'))))`;
 export const SIS_WORD = { registered: 'Registered', started: 'Form started', submitted: 'Submitted', admitted: 'Admitted',
   matriculated: 'Matriculated', rejected: 'Rejected', withdrawn: 'Withdrawn' };
 // who does the next step - only where Ritvars has said so

@@ -58,6 +58,7 @@ import { htmlEscape, inviteOrigin } from './systempages.js';
 import * as areas from './areas.js';
 import * as tc from './tc.js';
 import * as tcimport from './tcimport.js';
+import * as samepeople from './samepeople.js';
 import * as tcweek from './tcweek.js';
 import * as tcseason from './tcseason.js';
 import * as tcclienthub from './tcclienthub.js';
@@ -2335,6 +2336,50 @@ export const handle = async (req, res) => {
       const r = await receiveSisApplication(db, await body(req));
       if (!r.ok) return json(res, r.status, { error: r.error });
       return json(res, 200, r);
+    }
+
+    // MAYBE THE SAME PERSON (Ieva, 21.10.2026, src/samepeople.js): the other open records that look like this person, and
+    // "Not the same", which writes the pair down so the line never shows again for those two.
+    if (req.method === 'GET' && /^\/api\/people\/[^/]+\/maybe-same$/.test(p)) {
+      let id;
+      try { id = decodeURIComponent(p.split('/')[3]); } catch { return json(res, 400, { error: 'not a person' }); }
+      const r = await samepeople.maybeSame(db, id);
+      return r ? json(res, 200, r) : json(res, 404, { error: 'not found' });
+    }
+    if (req.method === 'POST' && /^\/api\/people\/[^/]+\/not-same$/.test(p)) {
+      const b = await body(req);
+      const r = await samepeople.notSame(db, p.split('/')[3], b.otherId, await actorOf(req, b));
+      if (r.error) return json(res, r.error === 'not found' ? 404 : 400, { error: r.error });
+      return json(res, 200, r);
+    }
+    // WITH THE SIS (Ieva, 21.10.2026, the owner's pick A): the third answer where a next step is chosen. No date: the step
+    // being done is closed with how it went (as Done does), any other open step is closed, and the person is handed to the
+    // SIS (sis_handoff_at, once), so they count as With the SIS - never overdue, never "no next step".
+    if (req.method === 'POST' && /^\/api\/people\/[^/]+\/with-sis$/.test(p)) {
+      const id = p.split('/')[3];
+      const b = await body(req);
+      const person = await db.prepare('SELECT id, status, sis_handoff_at FROM people WHERE id = ?').get(id);
+      if (!person) return json(res, 404, { error: 'not found' });
+      const by = await actorOf(req, b);
+      const now = nowIso();
+      if (b.taskId != null) {
+        const t = await db.prepare('SELECT * FROM tasks WHERE id = ? AND person_id = ? AND done_at IS NULL').get(Number(b.taskId), id);
+        if (!t) return json(res, 400, { error: 'That step is already done, or it belongs to someone else.' });
+        await db.prepare('UPDATE tasks SET done_at = ?, outcome = ? WHERE id = ?').run(now, b.outcome || 'Done', t.id);
+        await logEvent(db, { personId: id, kind: 'task', channel: 'phone', direction: 'note', at: now, origin: MANUAL, actor: by || t.owner,
+          subject: `${t.label}: ${b.outcome || 'done'}`, body: b.note || '' });
+        await db.prepare('UPDATE people SET last_contact_at = ? WHERE id = ?').run(now, id);
+        await advanceStatus(id, t.label, now);
+      }
+      for (const t of await db.prepare('SELECT id FROM tasks WHERE person_id = ? AND done_at IS NULL').all(id)) {
+        await db.prepare('UPDATE tasks SET done_at = ?, outcome = ? WHERE id = ?').run(now, 'With the SIS', t.id);
+      }
+      if (!person.sis_handoff_at) {
+        await db.prepare('UPDATE people SET sis_handoff_at = ? WHERE id = ?').run(now, id);
+        await logEvent(db, { personId: id, kind: 'status', direction: 'note', at: now, origin: MANUAL, actor: by,
+          subject: 'With the SIS', field: 'sis_handoff_at', oldValue: null, newValue: now });
+      }
+      return json(res, 200, { ok: true, person: await personRow(id, by) });
     }
 
     // "Same person as..." on a person the SIS created (30.09.2026, src/sync.js mergeSisDuplicate).

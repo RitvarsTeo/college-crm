@@ -2789,6 +2789,9 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tc-status{display:flex;flex-wrap:wrap;gap:8px}
   html.ui-c .tc-courses{width:100%;margin:0}
   html.ui-c .tc-yearform{grid-template-columns:1fr 1fr}
+  /* Maybe the same person (21.10.2026): one line under the person's header */
+  html.ui-c .c-same-line{display:flex;align-items:center;justify-content:space-between;gap:10px 14px;flex-wrap:wrap;padding:10px 14px;margin:0 0 14px;font-size:13.5px}
+  html.ui-c .c-same-line .c-row-acts{margin:0;display:flex;gap:6px;flex-wrap:wrap}
   @media (max-width:760px){
     html.ui-c .tc-row{grid-template-columns:62px minmax(0,1fr);gap:4px 10px;padding:10px 12px}
     html.ui-c .tc-when{grid-row:span 2}
@@ -3309,8 +3312,9 @@ const C_TERMINAL = ['Admitted', 'Not proceeding'];
 // step"; the SIS line says where they are. The same rule as SIS_HOLDS_SQL in src/lifecycle.js.
 // 07.10.2026: a form only started needs a call, not the SIS
 const C_SIS_HOLDS = ['submitted', 'admitted', 'matriculated'];
-const cSisHolds = (p) => Boolean(p && p.first_channel === 'sis' && p.sis && C_SIS_HOLDS.includes(p.sis.status));
-const cSisHeld = (p) => `In the SIS: ${esc((p.sis && p.sis.label) || '')}`;
+// 21.10.2026 (Ieva): or Admissions answered "With the SIS" on a step (sis_handoff_at), the same as src/lifecycle.js SIS_HOLDS_SQL
+const cSisHolds = (p) => Boolean(p && (p.sis_handoff_at || (p.first_channel === 'sis' && p.sis && C_SIS_HOLDS.includes(p.sis.status))));
+const cSisHeld = (p) => (p.sis && p.sis.label ? `In the SIS: ${esc(p.sis.label)}` : 'With the SIS');
 // /api/people answers { count, rows } and returns every row: no paging, no cap.
 // Each person's stage as last read, so a dialog opened from any list can offer the steps that fit it.
 const C_STAGE_OF = new Map();
@@ -5187,7 +5191,7 @@ function cEditForm(p, t) {
     <div id="pe-closed" hidden><label for="pe-reason">Why are we stopping?</label><select id="pe-reason">${reasonsForStage(p.status).map((r) => `<option>${esc(r)}</option>`).join('')}</select><input id="pe-rnote" placeholder="Explanation (needed for Other)" style="margin-top:6px"><label style="margin-top:8px">And now?</label><div class="cltags">${(CFG.closedTags || []).map((x, i) => `<label class="cltag"><input type="radio" name="peTag" value="${esc(x.id)}"${i === 0 ? ' checked' : ''}><b>${esc(x.label)}</b><small>${esc(x.what)}</small></label>`).join('')}</div></div>
     <div class="c-wide c-step">${t
       ? `<label for="pe-due">Next step</label><div class="c-steprow"><span>${esc(cTask(t.label))}</span><input id="pe-due" type="date" value="${esc(cDay(t.due_at))}" aria-label="Due date"><button class="btn sm ghost" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, false, ${esc(JSON.stringify(String(p.id ?? '')))})">Done…</button></div>`
-      : open ? `<label>Next step</label>${cNextPick('pe', true)}` : '<label>Next step</label>'}</div>
+      : open ? `<label>Next step</label>${cNextPick('pe', true, true)}` : '<label>Next step</label>'}</div>
     <div class="c-wide"><label>Comments</label><div id="pe-comments" class="c-talk pe-comments">${cCommentsHtml(p.id)}</div></div>
     <div class="c-wide"><label for="pe-new">Add a comment</label><textarea id="pe-new" rows="3"></textarea></div>
     <div id="pe-err" class="c-wide"></div>
@@ -5220,7 +5224,8 @@ async function cSavePerson(id) {
     if (said) await post(`/api/people/${id}/note`, { kind: 'note', subject: 'Note', body: said });
     C_PCOMM.delete(id); C_PCEDIT = null; C_PCSTALE = false;
     if (pick.kind === 'cold') await cGoCold(id, pick.reason);
-    else if (st && st !== p.status) await post(`/api/people/${id}/status`, st === cClosedStage() ? { status: st, reason: v('#pe-reason'), note: v('#pe-rnote'), closedTag: (document.querySelector('input[name="peTag"]:checked') || {}).value || null } : cMoveBody(st, ask));
+    else if (pick.kind === 'sis') await cGoSis(id);
+    if (pick.kind !== 'cold' && st && st !== p.status) await post(`/api/people/${id}/status`, st === cClosedStage() ? { status: st, reason: v('#pe-reason'), note: v('#pe-rnote'), closedTag: (document.querySelector('input[name="peTag"]:checked') || {}).value || null } : cMoveBody(st, ask));
     if (t) { const due = v('#pe-due'); if (due && due !== cDay(t.due_at)) await post(`/api/tasks/${Number(t.id)}/reschedule`, { due }); }
     else if (pick.kind === 'follow') await post(`/api/people/${id}/task`, { label: C_FOLLOW, due: pick.due });
     C_PEDIT = null; C_PMSG = `Saved ${p.name}.`;
@@ -5945,6 +5950,28 @@ async function viewPersonC(id) {
       </div>
       <aside class="c-pside">${cPersonFacts(p)}</aside>
     </div>`;
+  cMaybeSameLoad(p.id);
+}
+// MAYBE THE SAME PERSON (Ieva, 21.10.2026, the owner's pick A; src/samepeople.js): one line per other open record that
+// looks like this person, under the header, on both records. Open; Same person (the "Same person as..." merge, with
+// that record picked, offered when one of the two was made by the SIS); Not the same (never shown again for the pair).
+async function cMaybeSameLoad(id) {
+  let d; try { d = await api(`/api/people/${encodeURIComponent(id)}/maybe-same`); } catch { return; }
+  if (!C_PERSON || C_PERSON.id !== id || !d.rows.length) return;
+  const head = document.querySelector('#view .c-head');
+  if (!head || document.querySelector('#view .c-same-line')) return;
+  const came = (r) => [`${channelLabel(r.firstChannel).replace(/^./, (c) => c.toLowerCase())} ${r.firstChannel === 'sis' ? 'record' : 'lead'}`, r.createdAt ? cDdMm(r.createdAt) : ''].filter(Boolean).join(' ');
+  head.insertAdjacentHTML('afterend', d.rows.map((r) => `<div class="c-sheet c-same-line"><span><b>Maybe the same person:</b> ${esc([r.name, came(r), cStage(r.stage), `${Number(r.comments)} comment${Number(r.comments) === 1 ? '' : 's'}`].join(' · '))}</span>
+    <span class="c-row-acts"><a class="btn sm" href="#/person/${esc(r.id)}">Open</a>${r.merge ? `<button class="btn sm ghost" onclick="cSameMerge(${esc(JSON.stringify(String(r.merge.sourceId ?? '')))}, ${esc(JSON.stringify(String(r.merge.targetId ?? '')))})">Same person</button>` : ''}<button class="btn sm ghost" onclick="cNotSame(${esc(JSON.stringify(String(id ?? '')))}, ${esc(JSON.stringify(String(r.id ?? '')))})">Not the same</button></span></div>`).join(''));
+}
+async function cSameMerge(sourceId, targetId) {
+  await openSisMerge(sourceId);
+  const t = C_MERGE.people.find((x) => x.id === targetId);
+  const q = $('#mQ');
+  if (t && q) { q.value = t.name; cDrawMerge(); }
+}
+async function cNotSame(id, otherId) {
+  try { await post(`/api/people/${encodeURIComponent(id)}/not-same`, { otherId }); await viewPersonC(id); } catch (e) { alert(e.message); }
 }
 function cPersonFacts(p) {
   const known = new Set(CFG.programmes || []);
@@ -7561,11 +7588,15 @@ const cStepDue = (label) => fmtDate(new Date(Date.now() + daysForAction(label) *
 // dormant close (Not proceeding, tagged cold) with a reason if there is one. Steps already planned keep their names.
 const C_FOLLOW = 'Follow up';
 const cColdReasons = () => (CFG.closedReasons || []).filter((r) => !(CFG.closedReasonNeedsNote || []).includes(r));
-function cNextPick(pfx, optional = false) {
+// WITH THE SIS (Ieva, 21.10.2026, the owner's pick A): a third answer between them where the person already exists and the
+// SIS may hold them (Done, the next step of somebody with none, the Journey edit panel); not on a lead being made from
+// the Inbox. No date: the step closes and the person counts as With the SIS (POST /api/people/<id>/with-sis).
+function cNextPick(pfx, optional = false, sis = false) {
   const p = esc(JSON.stringify(String(pfx)));
   return `<div class="c-np" role="radiogroup" aria-label="Next step">
     <label class="c-np-opt"><input type="radio" name="${esc(pfx)}-np" value="follow"${optional ? '' : ' checked'} onchange="cNextPickSet(${p})"><b>Follow up</b></label>
     <input id="${esc(pfx)}-date" type="date" min="${cTodayIso()}" aria-label="Follow-up date"${optional ? ' disabled' : ''}>
+    ${sis ? `<label class="c-np-opt"><input type="radio" name="${esc(pfx)}-np" value="sis" onchange="cNextPickSet(${p})"><b>With the SIS</b></label>` : ''}
     <label class="c-np-opt"><input type="radio" name="${esc(pfx)}-np" value="cold" onchange="cNextPickSet(${p})"><b>Cold</b></label>
     <select id="${esc(pfx)}-reason" aria-label="Why cold, if you know" hidden><option value="">No reason</option>${cColdReasons().map((r) => `<option>${esc(r)}</option>`).join('')}</select>
   </div>`;
@@ -7581,9 +7612,12 @@ function cNextPickRead(pfx) {
   const on = document.querySelector(`input[name="${pfx}-np"]:checked`);
   if (!on) return { kind: '' };
   if (on.value === 'cold') return { kind: 'cold', reason: (document.querySelector('#' + pfx + '-reason') || {}).value || '' };
+  if (on.value === 'sis') return { kind: 'sis' };
   const due = (document.querySelector('#' + pfx + '-date') || {}).value || '';
   return due ? { kind: 'follow', due } : { kind: 'follow', error: 'Set the follow-up date.' };
 }
+// With the SIS: the step being done (if any) closes with how it went, the person is with the SIS
+const cGoSis = (personId, done) => post(`/api/people/${personId}/with-sis`, done || {});
 // Cold, from any of the four places: the person is closed as Not proceeding, tagged cold; what was planned is closed
 const cGoCold = (personId, reason, note) => post(`/api/people/${personId}/status`,
   { status: (CFG.stageRoles || {}).closed || 'Not proceeding', closedTag: 'cold', ...(reason ? { reason } : {}), ...(note ? { note } : {}) });
@@ -9623,7 +9657,7 @@ function openComplete(taskId, label, finished, personId) {
     <label>Outcome</label>
     <select id="cOut">${(CFG.callOutcomes || ['Done']).map(o => `<option>${esc(o)}</option>`).join('')}</select>
     <label>Note</label><textarea id="cNote" rows="2"></textarea>
-    ${done ? '' : `<label>Next step</label>${cNextPick('c')}`}
+    ${done ? '' : `<label>Next step</label>${cNextPick('c', false, Boolean(personId))}`}
     <div id="cErr"></div>
     <div style="margin-top:14px;display:flex;gap:8px"><button class="btn" onclick="doComplete(${taskId}, ${done})">Save</button>
     <button class="btn ghost" onclick="closeModal()">Cancel</button></div>`);
@@ -9633,11 +9667,12 @@ let C_DONE_PERSON = null;   // whose step Done is closing, for Cold
 async function doComplete(id, finished) {
   // the next-step choice is not in the dialog for a finished person
   const pick = finished ? { kind: '' } : cNextPickRead('c');
-  if (!finished && !pick.kind) { $('#cErr').innerHTML = '<div class="err">Choose Follow up or Cold.</div>'; return; }
+  if (!finished && !pick.kind) { $('#cErr').innerHTML = '<div class="err">Choose Follow up, With the SIS or Cold.</div>'; return; }
   if (pick.error) { $('#cErr').innerHTML = `<div class="err">${esc(pick.error)}</div>`; return; }
   try {
     // Cold: how it went goes on the close; the step is closed with the person
     if (pick.kind === 'cold' && C_DONE_PERSON) await cGoCold(C_DONE_PERSON, pick.reason, [$('#cOut').value, $('#cNote').value].filter(Boolean).join(': '));
+    else if (pick.kind === 'sis' && C_DONE_PERSON) await cGoSis(C_DONE_PERSON, { taskId: Number(id), outcome: $('#cOut').value, note: $('#cNote').value });
     else await post(`/api/tasks/${id}/complete`, { outcome: $('#cOut').value, note: $('#cNote').value,
       ...(pick.kind === 'follow' ? { nextLabel: C_FOLLOW, nextDate: pick.due } : {}) });
     closeModal(); route();
@@ -9651,15 +9686,16 @@ function openReschedule(id) {
 async function doReschedule(id) { await post(`/api/tasks/${id}/reschedule`, { due: $('#rDate').value }); closeModal(); route(); }
 
 function openNewTask(personId) {
-  modal('Next step', `${cNextPick('t')}<div id="tErr"></div>
+  modal('Next step', `${cNextPick('t', false, true)}<div id="tErr"></div>
     <div style="margin-top:14px;display:flex;gap:8px"><button class="btn" onclick="doNewTask(${esc(JSON.stringify(String(personId ?? '')))})">Save</button>
     <button class="btn ghost" onclick="closeModal()">Cancel</button></div>`);
 }
 async function doNewTask(personId) {
   const pick = cNextPickRead('t');
-  if (pick.error || !pick.kind) { $('#tErr').innerHTML = `<div class="err">${esc(pick.error || 'Choose Follow up or Cold.')}</div>`; return; }
+  if (pick.error || !pick.kind) { $('#tErr').innerHTML = `<div class="err">${esc(pick.error || 'Choose Follow up, With the SIS or Cold.')}</div>`; return; }
   try {
     if (pick.kind === 'cold') await cGoCold(personId, pick.reason);
+    else if (pick.kind === 'sis') await cGoSis(personId);
     else await post(`/api/people/${personId}/task`, { label: C_FOLLOW, due: pick.due });
   } catch (e) { $('#tErr').innerHTML = `<div class="err">${esc(e.message)}</div>`; return; }
   closeModal();
