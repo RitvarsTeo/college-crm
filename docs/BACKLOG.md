@@ -78,6 +78,10 @@ companies with no status - defaults in use); phone: marked number of a known per
   code or deploy; his picks go to MASTER CONTROL, which records them here and builds them through the lanes.
   Pitch boards live in `Local Repo/Projects/Pitches/<app>/`.
 
+## 21.10.2026 - Two master sessions (owner's pick)
+
+- `DECIDED` HIS PICK (owner 21.10: "Thats why i want academy intake and tc intake separate sessions, this is hectic"): **Intake ACADEMY MASTER CONTROL** (this session: Academy feedback, Ieva, Admissions, SIS, phone, email) and **Intake TC MASTER CONTROL** (a separate session: Training Centre, Grand Opening, Season, review list, Google Calendar, MASTER PITCHER's TC boards). One app and one `production` branch: each master fetches origin/production right before a release, deploy_verify refuses a release that misses the other's commits, and each tells the other in one line before pushing production. Both keep this backlog and the control file.
+
 ## 21.10.2026 - Ieva's feedback (Academy), owner's picks
 
 - `LIVE` (patch 69, 21.10) all three below: the Maybe the same person line, With the SIS on Done, and "did they start" for an SIS account only.
