@@ -83,7 +83,7 @@ companies with no status - defaults in use); phone: marked number of a known per
 - `DECIDED` HIS PICK (picture board _ieva-feedback/board_2026-10-21.png, row 1 **A**): when Intake holds two records that may be one person (e.g. an email lead and a later SIS record with another email and the name without Latvian letters), the person page shows a line "Maybe the same person: <name> · <how they came> · <stage> · <n comments>" with Open / Same person / Not the same.
 - `DECIDED` HIS PICK (row 2 **A**): Done on a follow-up gets a third answer, **With the SIS**, between Follow up and Cold: no date needed, the person counts as With the SIS (navy), never overdue.
 - `SAID` (Ieva) Journey list order by state: she found the filter at the top and will try it; nothing built.
-- Open: the step wording for people who only made an SIS account ("did they start" instead of "did they finish") - explained to the owner, his answer pending.
+- `DECIDED` HIS PICK (owner 21.10): people the SIS says only made an account get the step **"Call: did they start the application form?"**; people who started the form keep "Call: did they finish the application form?".
 
 ## 20.10.2026 - Ieva's feedback (owner: "we still have bugs to fix")
 

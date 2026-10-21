@@ -901,3 +901,4 @@ Seen: GitHub - no Aigars commits since 309b10f; crm-novikontas.vercel.app = 1ced
 3. Journey list order by state (follow up / submitted / in SIS at top): she then found the filter at the top and will try it. SAID, not built.
 4. Aleks Zubovičs / Viktors Bistrovs: overdue, but the SIS handles them; Complete: Follow up forces a date or Cold, no "the SIS has it" answer.
 - 21.10 HIS PICKS: row 1 A (line on the page for maybe-same-person), row 2 A (third answer With the SIS). Wording: he asked 'explain'. Draft reply to Ieva: yes.
+- HIS PICK 21.10: account-only SIS people -> 'Call: did they start the application form?'. Sent to lane ACADEMY.
