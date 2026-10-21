@@ -890,3 +890,13 @@ Seen: GitHub - no Aigars commits since 309b10f; crm-novikontas.vercel.app = 1ced
 - 21.10 ~01:30 patch 67 LIVE: My week cards clamp a long company name to two lines (title = full name); found in the morning-picture check (a 13-line card). 9012dff, record 07781be, backup 2026-10-20T22-27-59Z UTC, deploy_verify green, pushed c0f5602..07781be -> production. G1 branch release/2026-10-21-tc-go rebased onto 07781be (not released).
 - 21.10 ~01:40 morning board ready: _training-centre/screens/morning_2026-10-21.png (made-up data; live 2025 = 3,711 / 164). Morning popups: G1 release + import (+ clickCountsAsPerson keep/change), Delegates compare vs 2023 or vs 2024, exhibition dates with the TC team.
 - 21.10 morning HIS PICKS: G1 live + import yes; clicks count as person; compare 2023 (my suggestion on his 'Suggest'); dates later. Starting: fresh Client Hub extract (read-only), release G1, then import.
+
+## 21.10.2026 morning - patch 68 LIVE (Grand Opening page) + import
+- First gate run failed 1: security_guards (e) planned "3 days ahead" = Saturday on a Wednesday, My week is Mon-Fri. Test fixed (weekday) e0fe6cc; record 603ad17; backup 06-44-12Z; gate 1,822/1,822, dpl_BTnY8H7fMfGn5Sw1VTYzY4RP4Zo6; pushed 07781be..603ad17 -> production.
+- Fresh Client Hub extract (read-only): 2,259 guests, 12 sends, same figures. Backup 06-48-25Z. Import hash 264435f3... (unchanged since night) APPLIED: 4,074 rows (2,259 guests, 12 sends, 1,803 deliveries). Live page: sent 1,723, reached 1,548, not reached 175 (128 / 47), not in 536, came back 433 / 129 / 502 / 484, 117 clicked, 110 Add to Calendar. No crm_% schema created.
+
+## 21.10.2026 - Ieva's feedback (Academy)
+1. Brunonas Manculevičius: TWO records - email lead 19.10 (Follow-up, her notes) and SIS-made 20.10 (New, empty). Different email (both gmail), no phone on the lead, name differs (diacritics) -> the SIS could not match. She opened the empty one.
+2. "Call: did they finish the application form?" shows for SIS "registered" (account only, no form yet) -> wording reads as if a form was started.
+3. Journey list order by state (follow up / submitted / in SIS at top): she then found the filter at the top and will try it. SAID, not built.
+4. Aleks Zubovičs / Viktors Bistrovs: overdue, but the SIS handles them; Complete: Follow up forces a date or Cold, no "the SIS has it" answer.
