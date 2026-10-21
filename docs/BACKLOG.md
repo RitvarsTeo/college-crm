@@ -86,6 +86,13 @@ companies with no status - defaults in use); phone: marked number of a known per
   Admin; it is to be confirmed whether Marina holds it.
 - `DECIDED` (owner 21.10: "Vajag ar opciju, send tick, or no tick!") **Invite to the client contact: a tick per
   meeting.** Ticked = Google sends the client contact the invitation; not ticked = the event is in our calendar only.
+- `DECIDED` (owner 21.10, popup) the event title an invited client sees: **"Novikontas Academy · <topic>"**
+  ("Novikontas Academy · meeting" with no topic).
+- `DECIDED` (owner 21.10, popup) on switch-on, **meetings already planned from today get events, with no invites**.
+- `BUILT` (lane defaults, written down): events are all-day (My week plans a day); an invited client is told of a move
+  or a cancel; an event stays with the old person in charge when the person in charge changes.
+- `BUILT` TC-GCAL feat/2026-10-21-tc-gcal 576d027..882c4e5, 1,847/1,847; not released. Click lists:
+  docs/channel-writeups/12-google-calendar-tc.md (Part A Ritvars, Google Cloud; Part B Marina, one link + two pastes).
 - `SAID` (owner 21.10: "varam jau taisit so un sutit vinai kur vinai ieiet, lai nospiez, lidzigi ka ar edu") build G3
   now and send Marina exactly where to click, as with edu@. Marina's heads-up was sent 21.10.
 
