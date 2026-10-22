@@ -85,6 +85,13 @@ companies with no status - defaults in use); phone: marked number of a known per
   delegates per year, log a call, next contact, it shows in My week), (3) person in charge for the TC team's companies
   so Mine and My week fill. Facts at the time (production, read-only): 1,927 companies, 344 with a person in charge
   (86 linked to an account), 0 planned contacts, 0 logged calls since launch, 326 review contacts open.
+- `DECIDED` (owner 22.10, popup, before leaving: "CAn you finish without me now?") (a) **release tonight's fixes** when
+  tests and checks are green, backup first, nothing new; (b) **link person-in-charge names to TC accounts** where the name
+  matches exactly (backup first); (c) **archive junk company rows** (names in brackets, addresses), nothing deleted, the
+  list kept for him; (d) the **2024 dip** (1,294 delegates vs ~3,700 in 2023/2025): "Don't know", left as is, a question
+  for the TC team.
+- Found in the live check 22.10: My week's "Ready to plan · Mine" says "Every one of your companies has a contact
+  planned" for a person with no companies in their charge (misleading).
 
 - `DECIDED` (owner 22.10: "Lets move past the calendar for now. And build the app further. But in MVP mode. meaning, no
   useless tabs tracing to no where. It can be small functioning app, but it has to be funcitoning.") Google Calendar G3
