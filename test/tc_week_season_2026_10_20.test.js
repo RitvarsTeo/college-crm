@@ -105,8 +105,14 @@ test('Ready to plan: my companies with no open contact, recent delegates first, 
   const w = await wk.week(db, { me: ME, now: TUE });
   assert.deepEqual(w.ready.rows.map((r) => r.id), [e, g], 'Columbia (2025) before GoTa (2024); Atlas has a contact; Group TOTAL left out');
   assert.equal(w.ready.total, 2);
+  assert.equal(w.ready.mine, 5, 'five of mine in all: Columbia and GoTa to plan, three with a contact planned (the TOTAL row is never mine)');
   assert.deepEqual(w.ready.rows[1].last, { year: 2024, n: 1 });
-  assert.deepEqual((await wk.week(db, { me: null, now: TUE })).ready, { total: 0, rows: [] }, 'nobody signed in: nothing is "mine"');
+  assert.deepEqual((await wk.week(db, { me: null, now: TUE })).ready, { total: 0, rows: [], mine: 0 }, 'nobody signed in: nothing is "mine"');
+  // live check 22.10.2026: somebody with no company in their charge is told so, not "every one ... has a contact planned"
+  const none = await wk.week(db, { me: { email: 'nobody.here@novikontas.org', name: 'Nobody Here' }, now: TUE });
+  assert.deepEqual([none.ready.total, none.ready.mine], [0, 0]);
+  const app = (await import('node:fs')).readFileSync(new URL('../src/app.html', import.meta.url), 'utf8');
+  assert.match(app, /R\.mine \? 'Every one of your companies has a contact planned\.'\s*:\s*'No company is in your charge yet\./);
 });
 
 test('the next-contact choices land on working days', () => {

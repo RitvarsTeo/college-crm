@@ -11124,7 +11124,8 @@ function tcDrawWeek() {
   const ready = `<aside class="c-sheet tw-rail"><h3>Ready to plan · mine</h3>
       ${R.rows.map((r) => `<div class="tw-row"><div><a href="#/tc/company/${Number(r.id)}"><b>${esc(r.name)}</b></a><small>${esc([r.country, r.last ? tcDelegates(r.last.n) + ' ' + Number(r.last.year) : ''].filter(Boolean).join(' · ') || 'country not recorded')}</small></div>
         <button type="button" class="btn sm ghost" onclick="twPlanOpen(${Number(r.id)}, '')">Plan</button></div>`).join('')
-        || `<div class="c-empty">${D.signedIn ? 'Every one of your companies has a contact planned.' : 'Sign in to see your companies.'}</div>`}
+        || `<div class="c-empty">${!D.signedIn ? 'Sign in to see your companies.' : R.mine ? 'Every one of your companies has a contact planned.'
+          : 'No company is in your charge yet. <a class="kgo" href="#/tc/companies">Companies →</a>'}</div>`}
       ${R.total > R.rows.length ? `<a class="kgo tw-all" href="#/tc/companies" onclick="T_F={ ...T_F_EMPTY(), pic: 'me', due: 'none' };T_KEEP=true;cGo('#/tc/companies');return false">All ${Number(R.total)} of mine →</a>` : ''}</aside>`;
   $('#view').innerHTML = `<p class="c-crumb">Training Centre · My week</p>
     <div class="c-head tw-head"><div class="tw-title"><h1>${esc(title)}</h1>

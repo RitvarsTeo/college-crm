@@ -112,10 +112,14 @@ export async function week(db, { from = null, scope = 'mine', me = null, now = n
 
 /** My companies with no open contact, the ones with the most recent delegates first. Not a TOTAL row. */
 export async function readyToPlan(db, mk, { limit = 6 } = {}) {
-  if (!mk) return { total: 0, rows: [] };
-  const companies = await db.prepare(`SELECT c.id, c.name, c.country, c.pic_name, c.pic_email FROM tc_companies c
-    WHERE c.archived_at IS NULL AND NOT EXISTS (SELECT 1 FROM tc_tasks t WHERE t.company_id = c.id AND t.done_at IS NULL)`).all();
-  const mineRows = companies.filter((c) => !isTotalRow(c.country) && isMine({ picEmail: c.pic_email || '', pic: c.pic_name || '', next: null }, mk));
+  if (!mk) return { total: 0, rows: [], mine: 0 };
+  // mine = every company in my charge, planned or not, so the empty list can say which of the two it is (live check
+  // 22.10.2026: a person with no companies read "Every one of your companies has a contact planned")
+  const companies = await db.prepare(`SELECT c.id, c.name, c.country, c.pic_name, c.pic_email,
+    CASE WHEN EXISTS (SELECT 1 FROM tc_tasks t WHERE t.company_id = c.id AND t.done_at IS NULL) THEN 1 ELSE 0 END AS planned
+    FROM tc_companies c WHERE c.archived_at IS NULL`).all();
+  const mineAll = companies.filter((c) => !isTotalRow(c.country) && isMine({ picEmail: c.pic_email || '', pic: c.pic_name || '', next: null }, mk));
+  const mineRows = mineAll.filter((c) => !Number(c.planned));
   const ids = new Set(mineRows.map((c) => Number(c.id)));
   const courses = new Map();
   for (const k of await db.prepare('SELECT company_id, year, attendees FROM tc_company_courses WHERE attendees > 0').all()) {
@@ -125,7 +129,7 @@ export async function readyToPlan(db, mk, { limit = 6 } = {}) {
   }
   const rows = mineRows.map((c) => ({ id: Number(c.id), name: c.name, country: c.country || '', last: courses.get(Number(c.id)) || null }));
   rows.sort((a, b) => ((b.last ? b.last.year : 0) - (a.last ? a.last.year : 0)) || ((b.last ? b.last.n : 0) - (a.last ? a.last.n : 0)) || byLv(a.name, b.name));
-  return { total: rows.length, rows: rows.slice(0, Math.max(1, Number(limit) || 6)) };
+  return { total: rows.length, rows: rows.slice(0, Math.max(1, Number(limit) || 6)), mine: mineAll.length };
 }
 
 async function mustCompany(db, id) {
