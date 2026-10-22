@@ -80,6 +80,12 @@ companies with no status - defaults in use); phone: marked number of a known per
 
 ## 22.10.2026 - TC: MVP mode (owner)
 
+- `DECIDED` (owner 22.10, popup) **demo tomorrow 23.10 for management**; before it, all 3: (1) check every TC menu item
+  on live and fix or hide what is empty or leads nowhere, (2) a 5-minute demo path on real data (find a company,
+  delegates per year, log a call, next contact, it shows in My week), (3) person in charge for the TC team's companies
+  so Mine and My week fill. Facts at the time (production, read-only): 1,927 companies, 344 with a person in charge
+  (86 linked to an account), 0 planned contacts, 0 logged calls since launch, 326 review contacts open.
+
 - `DECIDED` (owner 22.10: "Lets move past the calendar for now. And build the app further. But in MVP mode. meaning, no
   useless tabs tracing to no where. It can be small functioning app, but it has to be funcitoning.") Google Calendar G3
   **PARKED** (branch feat/2026-10-21-tc-gcal kept, not released). TC is built as a small app where every tab works.
