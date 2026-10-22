@@ -91,7 +91,10 @@ companies with no status - defaults in use); phone: marked number of a known per
   list kept for him; (d) the **2024 dip** (1,294 delegates vs ~3,700 in 2023/2025): "Don't know", left as is, a question
   for the TC team.
 - Found in the live check 22.10: My week's "Ready to plan · Mine" says "Every one of your companies has a contact
-  planned" for a person with no companies in their charge (misleading).
+  planned" for a person with no companies in their charge (misleading). `LIVE` 22.10 patch 72 (code 1c37a90, record 7b669da).
+- `LIVE` 22.10 four junk company rows archived (ids 2, 1696, 1785, 1895: an address and three roles in brackets); nothing
+  deleted; H2K kept. Person in charge: every exact match was already linked; the other names have no Intake account.
+- `LIVE` 22.10 demo path for Management 23.10: docs/TC_DEMO_2026-10-23.md.
 
 - `DECIDED` (owner 22.10: "Lets move past the calendar for now. And build the app further. But in MVP mode. meaning, no
   useless tabs tracing to no where. It can be small functioning app, but it has to be funcitoning.") Google Calendar G3
