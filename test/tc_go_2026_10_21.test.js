@@ -198,19 +198,23 @@ test('the routes on a laptop copy: the admin imports by upload, the page and its
   assert.equal((await get('/api/tc/go/sends'))[1].sends.length, 2);
 });
 
-test('the screen: the menu item and its three, shown once the figures are in; Not reached is navy, never red; nothing reads as late; Help', () => {
+test('the screen: the menu item, shown once the figures are in; no page or link that leads nowhere; Not reached is navy, never red; nothing reads as late; Help', () => {
   const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
   assert.match(app, /else if \(place === 'go'\) await viewTcGo\(\);/);
   assert.match(app, /<a href="#\/tc\/go" data-c="tc-go" id="tnGoA"[^>]* hidden style="display:none">\$\{T_ICON\.star\}<span>Grand Opening<\/span><\/a>/);
-  for (const sub of ['Not reached', 'Audience', 'Delivery']) assert.match(app, new RegExp(`data-c="tc-go-[a-z]+"[^>]*><span>${sub}</span>`));
   assert.match(app, /id="tmGoA"/, 'and on the phone, in More');
+  // the owner 22.10: Not reached, Audience and Delivery are hidden (they could not do their job): no sub-item, no link to them
+  assert.doesNotMatch(app, /data-c="tc-go-|#\/tc\/go\/|tcGoPeopleView|tcGoDelivery/);
   const css = app.slice(app.indexOf('/* THE GRAND OPENING (#/tc/go'), app.indexOf('</style>\n</head>'));
   const js = app.slice(app.indexOf('THE GRAND OPENING (#/tc/go) --'), app.indexOf('function viewTcHelp() {'));
-  assert.ok(css.length > 1000 && js.length > 2000, 'the blocks are found');
+  assert.ok(css.length > 1000 && js.length > 1500, 'the blocks are found');
   assert.doesNotMatch(css.replace(/\/\*[\s\S]*?\*\//g, ''), /#b3261e|var\(--bad\)|var\(--c-bad\)|var\(--late\)|\bred\b/i, 'nothing in red');
+  assert.doesNotMatch(css, /tcgo-(card|br):hover/, 'nothing that is not a link looks like one');
   assert.doesNotMatch(js.replace(/\/\/.*$/gm, ''), /\b(overdue|late|waiting since|days ago|still not|behind|failed)\b/i);
   assert.match(js, /interest, not an RSVP/);
+  assert.doesNotMatch(js, /Fix the addresses/);
   const help = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'help.json'), 'utf8')).tc;
   assert.ok(help.faq.some((f) => f.id === 'tc-grand-opening'));
-  assert.ok(help.howto.some((h) => h.href === '#/tc/go/notreached'));
+  assert.ok(help.howto.some((h) => h.href === '#/tc/go'));
+  assert.ok(!help.howto.some((h) => /#\/tc\/go\//.test(h.href)), 'Help points at no hidden page');
 });

@@ -288,9 +288,9 @@
         "href": "#/tc/review"
       },
       {
-        "do": "See who the Save the Date did not reach",
-        "where": "Grand Opening, Not reached",
-        "href": "#/tc/go/notreached"
+        "do": "See what came back from the Save the Date",
+        "where": "Grand Opening",
+        "href": "#/tc/go"
       },
       {
         "do": "See the biggest clients and who to call back",
