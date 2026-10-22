@@ -78,6 +78,17 @@ companies with no status - defaults in use); phone: marked number of a known per
   code or deploy; his picks go to MASTER CONTROL, which records them here and builds them through the lanes.
   Pitch boards live in `Local Repo/Projects/Pitches/<app>/`.
 
+## 22.10.2026 - TC: MVP mode (owner)
+
+- `DECIDED` (owner 22.10: "Lets move past the calendar for now. And build the app further. But in MVP mode. meaning, no
+  useless tabs tracing to no where. It can be small functioning app, but it has to be funcitoning.") Google Calendar G3
+  **PARKED** (branch feat/2026-10-21-tc-gcal kept, not released). TC is built as a small app where every tab works.
+- `FACT` (owner 22.10) **TC course bookings are recorded in N3.** API description:
+  https://dev-apps.novikontas.lv/n3api/swagger-ui/index.html - "the apis are incorrectly written down, the first part of
+  public you should ignore, the rest is correct link". (Answers the open question "the source of course counts".)
+- `DECIDED` (owner 22.10, popup) **first check every TC menu item** (works / dead end), shown as a picture before
+  anything is removed. Then: bookings, read from N3, so delegates per year stop being an Excel copy.
+
 ## 21.10.2026 - TC: Google Calendar two-way (G3), owner's picks
 
 - `DECIDED` (owner 21.10, popup) **Access: Marina for everyone** - domain-wide delegation: a Google service account that
