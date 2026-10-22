@@ -86,6 +86,10 @@ companies with no status - defaults in use); phone: marked number of a known per
 - `FACT` (owner 22.10) **TC course bookings are recorded in N3.** API description:
   https://dev-apps.novikontas.lv/n3api/swagger-ui/index.html - "the apis are incorrectly written down, the first part of
   public you should ignore, the rest is correct link". (Answers the open question "the source of course counts".)
+- `DECIDED` (owner 22.10, after "please explain wtf is the purpose of this shit?" on Grand Opening > Not reached; popup)
+  **Hide Not reached, Audience and Delivery**; keep the main Grand Opening page. Why: the list could not do its job
+  (rows not in Intake show no address, no field for a new address, nothing resends). The main page's cards, rows and
+  "Fix the addresses" lose their links to the hidden pages, so nothing points nowhere.
 - `DECIDED` (owner 22.10, popup) **first check every TC menu item** (works / dead end), shown as a picture before
   anything is removed. Then: bookings, read from N3, so delegates per year stop being an Excel copy.
 
