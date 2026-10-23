@@ -94,6 +94,8 @@ companies with no status - defaults in use); phone: marked number of a known per
   planned" for a person with no companies in their charge (misleading). `LIVE` 22.10 patch 72 (code 1c37a90, record 7b669da).
 - `LIVE` 22.10 four junk company rows archived (ids 2, 1696, 1785, 1895: an address and three roles in brackets); nothing
   deleted; H2K kept. Person in charge: every exact match was already linked; the other names have no Intake account.
+- `LIVE` 23.10 (owner's yes) Intake accounts for Aleksejs Maļinovskis (alma@), Jānis Sticenko (js@) and the name on
+  ab@ (Aleksejs Bogdaņecs), Training Centre, Google sign-in; 211 companies linked to them (144 / 38 / 29).
 - `LIVE` 22.10 demo path for Management 23.10: docs/TC_DEMO_2026-10-23.md.
 
 - `DECIDED` (owner 22.10: "Lets move past the calendar for now. And build the app further. But in MVP mode. meaning, no
