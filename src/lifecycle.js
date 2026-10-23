@@ -103,6 +103,7 @@ export const SIS_HOLDS_SQL = `(pe.sis_handoff_at IS NOT NULL OR (pe.first_channe
   WHERE sa.person_id = pe.id AND sa.status IN ('${SIS_HOLDS.join("','")}'))))`;
 export const SIS_WORD = { registered: 'Registered', started: 'Form started', submitted: 'Submitted', admitted: 'Admitted',
   matriculated: 'Matriculated', rejected: 'Rejected', withdrawn: 'Withdrawn' };
+export const SIS_ACCOUNT_ONLY = 'Account only, no form yet';
 // who does the next step - only where Ritvars has said so
 const SIS_NEXT_BY = { submitted: 'Student Coordinator' };
 
@@ -117,11 +118,14 @@ export function sisProgress(rows) {
   const r = open[0] || [...list].sort(latest)[0];
   const i = rank(r.status);
   const nextStatus = i >= 0 && i < SIS_ORDER.length - 1 ? SIS_ORDER[i + 1] : null;
+  // An account only (23.10.2026, Ieva on Andrejs and Brunonas): "Registered" read like an application, so the person
+  // page says what the SIS really has - a login on apply.novikontas.org, no form - and no "next" guess
+  const accountOnly = r.status === 'registered';
   return {
     status: r.status,
-    label: SIS_WORD[r.status] || r.status,
+    label: accountOnly ? SIS_ACCOUNT_ONLY : (SIS_WORD[r.status] || r.status),
     since: r.changed_at || null,               // the SIS last changed it: it has been here at least since then
-    next: nextStatus ? SIS_WORD[nextStatus] : null,
+    next: !accountOnly && nextStatus ? SIS_WORD[nextStatus] : null,
     nextBy: SIS_NEXT_BY[r.status] || null,
   };
 }

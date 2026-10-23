@@ -123,3 +123,12 @@ test('holds: the Journey filter leaves the held person out of "No next step"', (
     assert.match(APP.slice(i, APP.indexOf('\n', i)), /cSisHolds\(p\) \? null : 'No next step'/, where);
   }
 });
+
+test('an SIS account only reads "Account only, no form yet", since its date, with no next guess (23.10, Ieva)', async () => {
+  const { sisProgress, SIS_ACCOUNT_ONLY } = await import('../src/lifecycle.js');
+  const p = sisProgress([{ status: 'registered', changed_at: '2026-10-20T11:05:12.172Z' }]);
+  assert.equal(SIS_ACCOUNT_ONLY, 'Account only, no form yet');
+  assert.deepEqual([p.label, p.next, p.since], [SIS_ACCOUNT_ONLY, null, '2026-10-20T11:05:12.172Z']);
+  const s = sisProgress([{ status: 'started', changed_at: '2026-10-20T11:05:12.172Z' }]);
+  assert.deepEqual([s.label, s.next], ['Form started', 'Submitted'], 'a begun form keeps its words');
+});

@@ -5275,7 +5275,7 @@ function cLifeFacts(p) {
 // Student Coordinator's work; Admissions sees whether it has moved, to nudge). SIS words only.
 function cSisNow(s) {
   if (!s) return '';
-  return `<span class="c-sisnow" title="From the SIS">In the SIS: <b>${esc(s.label)}</b>${s.since ? ` <time>by ${esc(cDay(s.since))}</time>` : ''}${s.next ? ` · next: ${esc(s.next)}${s.nextBy ? ` (${esc(s.nextBy)})` : ''}` : ''}</span>`;
+  return `<span class="c-sisnow" title="From the SIS">In the SIS: <b>${esc(s.label)}</b>${s.since ? ` <time>${s.status === 'registered' ? 'since' : 'by'} ${esc(cDay(s.since))}</time>` : ''}${s.next ? ` · next: ${esc(s.next)}${s.nextBy ? ` (${esc(s.nextBy)})` : ''}` : ''}</span>`;
 }
 function cLifeLine(p) {
   const f = cLifeFacts(p);
