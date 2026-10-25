@@ -97,6 +97,9 @@ companies with no status - defaults in use); phone: marked number of a known per
 - `LIVE` 23.10 (owner's yes) Intake accounts for Aleksejs Maļinovskis (alma@), Jānis Sticenko (js@) and the name on
   ab@ (Aleksejs Bogdaņecs), Training Centre, Google sign-in; 211 companies linked to them (144 / 38 / 29).
 - `LIVE` 22.10 demo path for Management 23.10: docs/TC_DEMO_2026-10-23.md.
+- `LIVE` 25.10 (owner: "Amend bugs like these!") history and records name the person ("Ritvars"), never a work session;
+  18,489 rows renamed on production, 0 left. Open from the dry run: Barbara Blawat twice on Essberger; AERONES vs
+  Aerones Nordic SIA (one client? TC team to confirm).
 
 - `DECIDED` (owner 22.10: "Lets move past the calendar for now. And build the app further. But in MVP mode. meaning, no
   useless tabs tracing to no where. It can be small functioning app, but it has to be funcitoning.") Google Calendar G3
