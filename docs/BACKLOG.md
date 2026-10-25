@@ -137,6 +137,11 @@ companies with no status - defaults in use); phone: marked number of a known per
 
 - `DECIDED` HIS PICK (owner 21.10: "Thats why i want academy intake and tc intake separate sessions, this is hectic"): **Intake ACADEMY MASTER CONTROL** (this session: Academy feedback, Ieva, Admissions, SIS, phone, email) and **Intake TC MASTER CONTROL** (a separate session: Training Centre, Grand Opening, Season, review list, Google Calendar, MASTER PITCHER's TC boards). One app and one `production` branch: each master fetches origin/production right before a release, deploy_verify refuses a release that misses the other's commits, and each tells the other in one line before pushing production. Both keep this backlog and the control file.
 
+## 23.10.2026 - Ieva: "in the SIS" but not there (Andrejs Lavrinenko, Brunonas)
+
+- `LIVE` (patch 73, 25.10) an SIS account only (a login on apply.novikontas.org, no form) reads "In the SIS: Account only, no form yet since <date>", with no next guess; "Registered" had read like an application.
+- `DONE` (23.10, owner's yes) Brunonas: With the SIS taken back (the SIS has only his account); his step "Call: did they start the application form?" is back.
+
 ## 21.10.2026 - Ieva's feedback (Academy), owner's picks
 
 - `LIVE` (patch 70, 21.10) With the SIS stays: after it, the SIS no longer plans the form call step for that person (a missed call still plans Call back).
