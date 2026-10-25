@@ -101,8 +101,8 @@ companies with no status - defaults in use); phone: marked number of a known per
   18,489 rows renamed on production, 0 left. Open from the dry run: AERONES vs Aerones Nordic SIA (one client? TC team
   to confirm).
 - `LIVE` 25.10 Barbara Bławat is one Essberger contact (both addresses, both phones; the duplicate archived).
-- `ASKED` 25.10 12 TC contacts (11 companies) have two phones joined by ":::" (Client Hub import), shown as one garbled
-  number: first number in Phone, the rest in Notes?
+- `LIVE` 25.10 12 TC contacts (11 companies) had two phones joined by ":::" (Client Hub import): first number in Phone,
+  the rest in Notes (owner's yes); 0 left.
 
 - `DECIDED` (owner 22.10: "Lets move past the calendar for now. And build the app further. But in MVP mode. meaning, no
   useless tabs tracing to no where. It can be small functioning app, but it has to be funcitoning.") Google Calendar G3
