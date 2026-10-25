@@ -98,8 +98,11 @@ companies with no status - defaults in use); phone: marked number of a known per
   ab@ (Aleksejs Bogdaņecs), Training Centre, Google sign-in; 211 companies linked to them (144 / 38 / 29).
 - `LIVE` 22.10 demo path for Management 23.10: docs/TC_DEMO_2026-10-23.md.
 - `LIVE` 25.10 (owner: "Amend bugs like these!") history and records name the person ("Ritvars"), never a work session;
-  18,489 rows renamed on production, 0 left. Open from the dry run: Barbara Blawat twice on Essberger; AERONES vs
-  Aerones Nordic SIA (one client? TC team to confirm).
+  18,489 rows renamed on production, 0 left. Open from the dry run: AERONES vs Aerones Nordic SIA (one client? TC team
+  to confirm).
+- `LIVE` 25.10 Barbara Bławat is one Essberger contact (both addresses, both phones; the duplicate archived).
+- `ASKED` 25.10 12 TC contacts (11 companies) have two phones joined by ":::" (Client Hub import), shown as one garbled
+  number: first number in Phone, the rest in Notes?
 
 - `DECIDED` (owner 22.10: "Lets move past the calendar for now. And build the app further. But in MVP mode. meaning, no
   useless tabs tracing to no where. It can be small functioning app, but it has to be funcitoning.") Google Calendar G3
