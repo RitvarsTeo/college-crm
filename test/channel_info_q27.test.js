@@ -90,7 +90,10 @@ test('Q27: SIS stands apart: the chain to apply, how its statuses map, and all g
   assert.deepEqual([...f.chain], ['apply.novikontas.org', 'SIS', 'Intake']);
   const map = Object.fromEntries(f.map.map((m) => [m.to, [...m.from]]));
   assert.deepEqual(map, { Application: ['submitted'], Admitted: ['admitted', 'matriculated'] }, 'only a submission is a submitted application (07.10)');
-  assert.equal(f.pull, 'Daily 08:00');
+  // 05:00 UTC is 08:00 in Riga in summer and 07:00 in winter (25.10.2026 the clocks went back): the page says Riga time
+  const at5 = new Date(); at5.setUTCHours(5, 0, 0, 0);
+  const riga = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Riga', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(at5);
+  assert.equal(f.pull, 'Daily ' + riga);
   assert.equal(f.ok, true, 'the recorded pull was fine');
   const fresh = new Date(Date.now() - 3600e3).toISOString();
   assert.equal(s.sis(apiRows(), PROD, CTX({ runs: { sis: { at: fresh, detail: {} } } })).ok, true);
