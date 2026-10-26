@@ -104,6 +104,8 @@ companies with no status - defaults in use); phone: marked number of a known per
   3 Edit a contact, 4 Import people from a file, 5 Company families, 6 Download the filtered list, 8 Do not invite /
   hold, 9 Fix an address that bounced, 10 RSVP answers. Not 7 View as. Each look as a picture first, then built.
   HIS ORDER (26.10): 10 RSVP answers first, then 3 Edit a contact, 1 Search people, 6 Download list, then 2, 9, 8, 5, 4.
+- `DECIDED` 26.10 HIS PICK for 10 RSVP: layout B (one funnel Sent > Reached > Answered > Coming, answers by person in
+  charge, company page line) + LIVE read-only from Client Hub (new read-only key, he pastes it).
 - `LIVE` 25.10 Barbara Bławat is one Essberger contact (both addresses, both phones; the duplicate archived).
 - `LIVE` 25.10 12 TC contacts (11 companies) had two phones joined by ":::" (Client Hub import): first number in Phone,
   the rest in Notes (owner's yes); 0 left.
