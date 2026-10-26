@@ -121,8 +121,7 @@ test('the page: one funnel strip, who answered by person in charge, Mine or Team
   assert.match(app, /step\('Sent', F\.sent, ''\)\}\$\{step\('Reached'/);
   assert.doesNotMatch(app.slice(app.indexOf('function tcGoStrip('), app.indexOf('async function tcGoCopy(')), /Answered|Coming/, 'the owner 26.10: no Answered / Coming figure');
   assert.doesNotMatch(app, /card\('Not reached', F\.notReached|card\('Sent the Save the Date'/, 'the four cards became the strip');
-  assert.match(app, /api\(`\/api\/tc\/go\/rsvp\?scope=\$\{T_RSVP_SCOPE\}`\)/);
-  assert.match(app, /onclick="tcGoRsvp\('mine'\)">Mine<\/button><button aria-pressed="\$\{team\}" onclick="tcGoRsvp\('team'\)">Team/);
+  assert.doesNotMatch(app, /Who answered|tcGoAnswers|tcGoRsvp/, 'the owner 26.10: "Who answered" removed; the stage 2 lists per manager show the answers');
   assert.match(app, /<p class="tc-rsvpline">Grand Opening: \$\{R\.map\(one\)\.join\(' · '\)\}<\/p>/);
   assert.match(app, /api\('\/api\/tc\/go\/rsvp\?company=' \+ Number\(id\)\)/);
   const server = fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8');

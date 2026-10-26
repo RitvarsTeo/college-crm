@@ -746,6 +746,22 @@ CREATE TABLE IF NOT EXISTS tc_go_imports (
   applied_at TEXT NOT NULL,
   applied_by TEXT
 );
+-- THE STAGE 2 LISTS PER MANAGER (26.10.2026, the owner's pick A): who each of the six managers sends the RSVP email to,
+-- loaded from the Save the Date session's sender split. One row per Client Hub contact; a row the newer split no longer
+-- has is marked gone, never deleted. The answers are not stored here: they are read live (src/tcrsvp.js).
+CREATE TABLE IF NOT EXISTS tc_go_stage2 (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  ch_contact_id TEXT NOT NULL UNIQUE, -- Client Hub contacts.contact_id
+  sender TEXT NOT NULL,            -- config/tc.json grandOpening.stage2.senders[].code
+  name TEXT,
+  company TEXT,
+  position TEXT,
+  country TEXT,
+  email TEXT,                      -- lower case
+  gone INTEGER NOT NULL DEFAULT 0,
+  loaded_at TEXT NOT NULL,
+  loaded_by TEXT
+);
 `;
 
 // A test opens this in memory. The server opens a file, because a prototype that

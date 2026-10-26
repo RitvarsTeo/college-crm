@@ -256,6 +256,80 @@ export async function goPeople(db, { group = 'notReached', state = '' } = {}) {
   return { group, state, states: GO.invitation.filter((s) => ids.includes(s.id)), tally, cameBack: GO.cameBack, rows };
 }
 
+// ------------------------------------------------------------------ the stage 2 lists per manager --
+// The owner's pick A (26.10.2026): a tab per manager, the people that manager sends the RSVP email to, an answer on the
+// row when one comes in (read live by the caller, src/tcrsvp.js), answered people first. No "answered" totals.
+const S2 = (GO.stage2 && GO.stage2.senders) || [];
+const S2_CODES = new Set(S2.map((s) => s.code));
+
+/**
+ * Load the sender split: rows [{ ch_contact_id, sender, name, company, position, country, email }]. Without apply it only
+ * counts (per sender, new, moved to another sender, gone). With apply it writes in one transaction: a new row is added,
+ * a known one takes the newer sender and details, one the split no longer has is marked gone.
+ */
+export async function stage2Load(db, rows, actor, { apply = false } = {}) {
+  const seen = new Set();
+  const clean = rows.map((r, i) => {
+    const id = txt(r.ch_contact_id, 60);
+    if (!id) throw new TcInputError(`Row ${i + 2} has no Client Hub id.`);
+    if (seen.has(id)) throw new TcInputError(`${id} is in the split twice.`);
+    seen.add(id);
+    if (!S2_CODES.has(String(r.sender))) throw new TcInputError(`Row ${i + 2}: unknown sender ${String(r.sender).slice(0, 20)}.`);
+    const email = txt(r.email, 200);
+    return { id, sender: String(r.sender), name: txt(r.name, 160), company: txt(r.company, 200), position: txt(r.position, 160),
+      country: txt(r.country, 80), email: email ? email.toLowerCase() : null };
+  });
+  const old = new Map((await db.prepare('SELECT ch_contact_id, sender, gone FROM tc_go_stage2').all()).map((r) => [r.ch_contact_id, r]));
+  const counts = { rows: clean.length, perSender: Object.fromEntries(S2.map((s) => [s.code, clean.filter((r) => r.sender === s.code).length])),
+    added: clean.filter((r) => !old.has(r.id)).length,
+    moved: clean.filter((r) => old.has(r.id) && old.get(r.id).sender !== r.sender).length,
+    gone: [...old.values()].filter((o) => !Number(o.gone) && !seen.has(o.ch_contact_id)).length };
+  if (!apply) return { counts };
+  const at = nowIso();
+  await db.transaction(async (tx) => {
+    for (const r of clean) {
+      if (old.has(r.id)) {
+        await tx.prepare(`UPDATE tc_go_stage2 SET sender = ?, name = ?, company = ?, position = ?, country = ?, email = ?, gone = 0, loaded_at = ?, loaded_by = ?
+          WHERE ch_contact_id = ?`).run(r.sender, r.name, r.company, r.position, r.country, r.email, at, actor, r.id);
+      } else {
+        await tx.prepare(`INSERT INTO tc_go_stage2 (ch_contact_id, sender, name, company, position, country, email, gone, loaded_at, loaded_by)
+          VALUES (?,?,?,?,?,?,?,0,?,?)`).run(r.id, r.sender, r.name, r.company, r.position, r.country, r.email, at, actor);
+      }
+    }
+    for (const o of old.values()) {
+      if (!Number(o.gone) && !seen.has(o.ch_contact_id)) await tx.prepare('UPDATE tc_go_stage2 SET gone = 1, loaded_at = ?, loaded_by = ? WHERE ch_contact_id = ?').run(at, actor, o.ch_contact_id);
+    }
+  });
+  return { counts, applied: true };
+}
+
+/** The tabs: [{ code, label, n }] in the configured order (only managers with a list), and which one is mine. */
+export async function stage2Senders(db, me = null) {
+  const n = new Map((await db.prepare('SELECT sender, COUNT(*) AS n FROM tc_go_stage2 WHERE gone = 0 GROUP BY sender').all()).map((r) => [r.sender, Number(r.n)]));
+  const mail = String((me && me.email) || '').toLowerCase();
+  const mine = (S2.find((s) => s.email === mail) || {}).code || null;
+  return { senders: S2.filter((s) => n.get(s.code)).map((s) => ({ code: s.code, label: s.label, n: n.get(s.code) })), mine };
+}
+
+/**
+ * One manager's list. answers: [{ chContactId, answer, people, at }] (src/tcrsvp.js answers(), or null when not connected).
+ * Answered people first (newest first), then by name. A person Intake knows links to their company.
+ */
+export async function stage2List(db, code, answers = null) {
+  if (!S2_CODES.has(String(code))) throw new TcInputError('There is no such list.');
+  const rows = await db.prepare(`SELECT s.ch_contact_id, s.name, s.company, s.position, s.country, s.email, k.company_id
+    FROM tc_go_stage2 s LEFT JOIN tc_company_contacts k ON k.ch_contact_id = s.ch_contact_id AND k.archived_at IS NULL
+    WHERE s.sender = ? AND s.gone = 0`).all(String(code));
+  const ans = new Map((answers || []).map((a) => [a.chContactId, a]));
+  const seen = new Set();
+  return rows.filter((r) => (seen.has(r.ch_contact_id) ? false : seen.add(r.ch_contact_id))).map((r) => {
+    const a = ans.get(r.ch_contact_id);
+    return { name: r.name || '', company: r.company || '', position: r.position || '', country: r.country || '', email: r.email || '',
+      companyId: r.company_id ? Number(r.company_id) : null, answer: a ? a.answer : null, people: a ? a.people : null, at: a ? a.at : null };
+  }).sort((x, y) => (Boolean(y.answer) - Boolean(x.answer)) || String(y.at || '').localeCompare(String(x.at || ''))
+    || String(x.name).localeCompare(String(y.name), 'lv'));
+}
+
 export async function goSends(db) {
   const sends = await db.prepare('SELECT id, send_key, label, first_sent_at, read_at FROM tc_go_sends ORDER BY first_sent_at, send_key').all();
   const { deliveries } = await loaded(db);

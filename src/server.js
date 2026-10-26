@@ -3500,6 +3500,26 @@ export const handle = async (req, res) => {
       return json(res, 200, await tcgo.goPeople(db, { group: String(url.searchParams.get('group') || 'notReached'), state: String(url.searchParams.get('state') || '') }));
     }
     if (p === '/api/tc/go/sends' && req.method === 'GET') return json(res, 200, await tcgo.goSends(db));
+    // THE STAGE 2 LISTS PER MANAGER (the owner's pick A, 26.10.2026): the tabs, one manager's list with its answers, its file
+    if (p === '/api/tc/go/stage2' && req.method === 'GET') {
+      const code = String(url.searchParams.get('sender') || '');
+      if (!code) return json(res, 200, await tcgo.stage2Senders(db, await tcMe(req, url)));
+      try { return json(res, 200, { sender: code, rows: await tcgo.stage2List(db, code, await tcrsvp.answers()) }); }
+      catch (e) { if (e instanceof tc.TcInputError) return json(res, 400, { error: e.message }); throw e; }
+    }
+    if (p === '/api/tc/go/stage2.xlsx' && req.method === 'GET') {
+      const code = String(url.searchParams.get('sender') || '');
+      let list;
+      try { list = await tcgo.stage2List(db, code, await tcrsvp.answers()); } catch (e) { if (e instanceof tc.TcInputError) return json(res, 400, { error: e.message }); throw e; }
+      const me = await tcMe(req, url);
+      console.log(`tc download: ${me ? me.email || me.name : 'unknown'} stage2 ${code} ${list.length} people`);
+      const word = { yes: 'Yes', maybe: 'Maybe', no: 'No' };
+      const rows = [['Name', 'Company', 'Position', 'Country', 'Email', 'Answer', 'People', 'Answered on'],
+        ...list.map((r) => [r.name, r.company, r.position, r.country, r.email, r.answer ? word[r.answer] : '', r.answer && r.answer !== 'no' ? r.people : '', r.at ? r.at.slice(0, 10) : ''])];
+      const name = `Grand Opening ${code} ${localDate()}.xlsx`;
+      res.writeHead(200, { 'content-type': XLSX_TYPE, 'cache-control': 'no-store', 'content-disposition': `attachment; filename="${name}"` });
+      return res.end(rowsToXlsx(rows, { bold: [0], sheetName: code, title: name }));
+    }
     // THE RSVP ANSWERS (26.10.2026, src/tcrsvp.js): read live from Client Hub, read-only; ?company=<id> for one company's page
     if (p === '/api/tc/go/rsvp' && req.method === 'GET') {
       const company = String(url.searchParams.get('company') || '');

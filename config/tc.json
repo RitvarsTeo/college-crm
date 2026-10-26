@@ -104,6 +104,17 @@
     "event": { "name": "Grand Opening", "dateLabel": "27 May 2027", "place": "Novikontas Academy Campus, Duntes iela 17d, Riga", "send": "Save the Date",
       "calendarUrl": "https://novikontas-grand-opening-calendar.vercel.app/" },
     "files": ["go_guests.csv", "go_sends.csv", "go_deliveries.csv"],
+    "stage2": {
+      "_about": "The RSVP lists per manager (the owner's pick A, 26.10.2026): one tab each, in this order; code = the sender split's sheet name.",
+      "senders": [
+        { "code": "Marcis", "label": "Mārcis", "email": "marcis.zabovs@novikontas.org" },
+        { "code": "DS", "label": "DS", "email": "ds@novikontas.org" },
+        { "code": "MC", "label": "MC", "email": "mc@novikontas.org" },
+        { "code": "AB", "label": "AB", "email": "ab@novikontas.org" },
+        { "code": "Alma", "label": "Alma", "email": "alma@novikontas.org" },
+        { "code": "JS", "label": "JS", "email": "js@novikontas.org" }
+      ]
+    },
     "maxBytes": 4194304,
     "invitation": [
       { "id": "reached", "label": "Reached", "group": "reached" },

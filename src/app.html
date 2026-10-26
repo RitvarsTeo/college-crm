@@ -3111,6 +3111,19 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tcgo-ans .a-maybe{font-weight:700;color:var(--t2)}
   html.ui-c .tcgo-ans .a-no{font-weight:700;color:var(--t3)}
   html.ui-c .tcgo-ans small{color:var(--t3);font-size:12.5px;font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
+  html.ui-c .tcs2{padding:18px 20px 12px;margin:0 0 16px}
+  html.ui-c .tcs2 .tcgo-bh > span{display:flex;gap:8px;align-items:center}
+  html.ui-c .tcs2-q{width:220px}
+  html.ui-c .tcs2-tabs{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 6px}
+  html.ui-c .tcs2-tab{font:inherit;font-size:13px;font-weight:600;border-radius:9px;padding:7px 11px;background:var(--surface);border:1px solid var(--rule);color:var(--t2);cursor:pointer}
+  html.ui-c .tcs2-tab b{margin-left:6px;color:var(--t3);font-weight:600;font-variant-numeric:tabular-nums}
+  html.ui-c .tcs2-tab[aria-pressed="true"]{background:var(--btn-bg);border-color:var(--btn-bg);color:var(--btn-ink)}
+  html.ui-c .tcs2-tab[aria-pressed="true"] b{color:var(--btn-ink)}
+  html.ui-c .tcs2-row{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.2fr) 90px 50px;gap:12px;align-items:baseline;padding:9px 0;border-top:1px solid var(--rule2);font-size:14px}
+  html.ui-c .tcs2-row b{font-weight:600} html.ui-c .tcs2-row a{color:inherit;text-decoration:none}
+  html.ui-c .tcs2-row small{display:block;color:var(--t3);font-size:12.5px}
+  html.ui-c .tcs2-row .a-yes{font-weight:700;color:var(--c-sis)} html.ui-c .tcs2-row .a-maybe{font-weight:700;color:var(--t2)} html.ui-c .tcs2-row .a-no{font-weight:700;color:var(--t3)}
+  @media (max-width:760px){ html.ui-c .tcs2-row{grid-template-columns:minmax(0,1fr) 80px} html.ui-c .tcs2-row > div:nth-child(2), html.ui-c .tcs2-row > small{display:none} html.ui-c .tcs2-q{width:140px} }
   html.ui-c .tc-rsvpline{margin:4px 0 0;font-size:13.5px;color:var(--t2)}
   html.ui-c .tc-rsvpline b{color:var(--c-sis)}
   @media (max-width:900px){ html.ui-c .tcgo-strip{grid-template-columns:repeat(2,minmax(0,1fr))} html.ui-c .tcgo-step:nth-child(3){border-left:0}
@@ -11765,31 +11778,47 @@ async function viewTcGo() {
       <div class="c-head"><div><h1>The invitation</h1></div></div><div class="c-sheet tcgo-empty">The Grand Opening figures are not in Intake yet: an admin brings them in from Client Hub.</div>`;
     return;
   }
-  T_RSVP = null;
   tcGoDraw();
-  tcGoRsvp();
+  tcS2Load();
 }
-// THE RSVP ANSWERS (the owner's pick B, 26.10.2026): read live from Client Hub after the page is drawn, Team or Mine
-let T_RSVP = null, T_RSVP_SCOPE = 'team';
-async function tcGoRsvp(scope) {
-  if (scope) T_RSVP_SCOPE = scope;
-  try { T_RSVP = await api(`/api/tc/go/rsvp?scope=${T_RSVP_SCOPE}`); } catch (e) { T_RSVP = { connected: false }; }
-  if (location.hash.split('?')[0] === '#/tc/go' && T_GO && T_GO.figures) tcGoDraw();
+// THE STAGE 2 LISTS PER MANAGER (the owner's pick A, 26.10.2026; the answers-by-person-in-charge list removed that day): a tab per manager,
+// the people that manager sends the RSVP email to, an answer on the row when it comes in, answered people first, a search,
+// the list as a file. No "answered" totals (the owner, 26.10.2026).
+let T_S2 = null;
+async function tcS2Load(code) {
+  try {
+    if (!T_S2 || !T_S2.senders) { const r = await api('/api/tc/go/stage2'); T_S2 = { senders: r.senders || [], mine: r.mine, code: null, rows: null, q: '' }; }
+    if (!T_S2.senders.length) return;
+    T_S2.code = code || T_S2.code || (T_S2.senders.find((x) => x.code === T_S2.mine) || T_S2.senders[0]).code;
+    T_S2.rows = null; tcS2Draw();
+    T_S2.rows = (await api('/api/tc/go/stage2?sender=' + encodeURIComponent(T_S2.code))).rows;
+  } catch (e) { if (T_S2) T_S2.rows = []; }
+  tcS2Draw();
 }
-function tcGoAnswers() {
-  const R = T_RSVP;
-  if (!R || !R.connected || !R.totals.answered) return '';
+function tcS2Draw() {
+  const box = $('#tcS2');
+  if (box && T_S2) box.outerHTML = tcGoStage2();
+}
+function tcS2Find(v) { T_S2.q = v; const list = $('#tcS2rows'); if (list) list.innerHTML = tcS2Rows(); }
+function tcS2Rows() {
   const word = { yes: 'Yes', maybe: 'Maybe', no: 'No' };
-  const ini = (n) => String(n || '').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase() || '·';
-  const row = (r) => `<div class="tcgo-ans"><div>${r.companyId ? `<a href="#/tc/company/${Number(r.companyId)}">${esc(r.company)}</a>` : esc(r.company || '-')}</div>
-      <div class="a-who">${esc(r.name)}</div><div class="a-${esc(r.answer)}">${word[r.answer]}</div>
-      <div>${r.answer === 'no' ? '' : `${Number(r.people)} ${Number(r.people) === 1 ? 'person' : 'people'}`}</div><small>${r.at ? esc(String(r.at).slice(8, 10) + '.' + String(r.at).slice(5, 7)) : ''}</small></div>`;
-  const groups = R.groups.map((g) => `<div class="tcgo-pic"><i>${esc(ini(g.pic))}</i>${esc(g.pic || 'No person in charge')} · ${g.rows.length}</div>${g.rows.map(row).join('')}`).join('');
-  const team = R.scope !== 'mine';
-  return `<section class="c-sheet tcgo-rsvp" aria-label="Who answered">
-    <div class="tcgo-bh"><h2>Who answered · ${tcGoN(R.totals.answered)}</h2><span>Yes ${tcGoN(R.totals.yes)} · Maybe ${tcGoN(R.totals.maybe)} · No ${tcGoN(R.totals.no)}</span>
-      <div class="c-seg" role="group" aria-label="Whose"><button aria-pressed="${!team}" onclick="tcGoRsvp('mine')">Mine</button><button aria-pressed="${team}" onclick="tcGoRsvp('team')">Team</button></div></div>
-    ${groups || '<div class="c-empty">None of your companies has answered yet.</div>'}</section>`;
+  const q = (T_S2.q || '').trim().toLowerCase();
+  const rows = (T_S2.rows || []).filter((r) => !q || `${r.name} ${r.company} ${r.country}`.toLowerCase().includes(q));
+  return rows.map((r) => `<div class="tcs2-row"><div><b>${esc(r.name)}</b><small>${esc(r.position)}</small></div>
+      <div>${r.companyId ? `<a href="#/tc/company/${Number(r.companyId)}"><b>${esc(r.company)}</b></a>` : `<b>${esc(r.company)}</b>`}<small>${esc(r.country)}</small></div>
+      <div class="${r.answer ? 'a-' + esc(r.answer) : ''}">${r.answer ? word[r.answer] + (r.answer !== 'no' ? ` · ${Number(r.people)}` : '') : ''}</div>
+      <small>${r.at ? esc(String(r.at).slice(8, 10) + '.' + String(r.at).slice(5, 7)) : ''}</small></div>`).join('')
+    || `<div class="c-empty">${T_S2.rows ? 'Nobody matches.' : 'Loading…'}</div>`;
+}
+function tcGoStage2() {
+  const S = T_S2;
+  if (!S || !S.senders || !S.senders.length) return '<div id="tcS2"></div>';
+  const tab = (x) => `<button type="button" class="tcs2-tab" aria-pressed="${x.code === S.code}" onclick="tcS2Load(${esc(JSON.stringify(String(x.code)))})">${esc(x.label)}<b>${Number(x.n)}</b></button>`;
+  return `<section class="c-sheet tcs2" id="tcS2" aria-label="Stage 2 lists">
+    <div class="tcgo-bh"><h2>Stage 2 lists</h2><span><input class="c-search tcs2-q" placeholder="Search name or company" value="${esc(S.q || '')}" oninput="tcS2Find(this.value)" aria-label="Search the list">
+      <a class="btn sm ghost" href="/api/tc/go/stage2.xlsx?sender=${encodeURIComponent(S.code)}" download>Download</a></span></div>
+    <div class="tcs2-tabs" role="group" aria-label="Whose list">${S.senders.map(tab).join('')}</div>
+    <div id="tcS2rows">${tcS2Rows()}</div></section>`;
 }
 const tcGoCrumb = (link) => { const E = T_GO.event; const t = `${esc(E.name)} · ${esc(E.dateLabel)} · ${esc(E.send)}`; return `<p class="c-crumb">${link ? `<a href="#/tc/go">${t}</a>` : t}</p>`; };
 function tcGoDraw() {
@@ -11800,7 +11829,7 @@ function tcGoDraw() {
   const subOf = { person: F.clicked ? `${tcGoN(F.clicked)} clicked` : '', none: F.optedOutNoOpen ? `${tcGoN(F.optedOutNoOpen)} opted out` : '' };
   const row = (x) => `<div class="tcgo-br"><span>${esc(x.label)}</span><b>${tcGoN(x.n)}</b></div>`;
   $('#view').innerHTML = `${tcGoCrumb(false)}<div class="c-head"><div><h1>The invitation</h1></div></div>
-    ${tcGoStrip(F)}${tcGoAnswers()}
+    ${tcGoStrip(F)}${tcGoStage2()}
     <section class="c-sheet tcgo-back" aria-label="What came back">
       <div class="tcgo-bh"><h2>What came back</h2><span>${tcGoN(F.reached)} delivered</span></div>
       <div class="tcgo-bar" role="img" aria-label="${esc(seg.map((x) => `${x.label} ${x.n}`).join(', '))}">${seg.map((x) => `<i class="t-${tone[x.id]}" style="flex:${Number(x.n)}"></i>`).join('')}</div>
