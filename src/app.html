@@ -2787,6 +2787,13 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tc-access.is-off{opacity:.6}
   html.ui-c .tc-contact{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:10px 16px;border-top:1px solid var(--rule2)}
   html.ui-c .tc-contact small{display:block;color:var(--t3);font-size:12.5px}
+  html.ui-c .tc-kname{all:unset;cursor:pointer;font-weight:600;color:var(--ink);border-radius:4px}
+  html.ui-c .tc-kname:hover{color:var(--pet)}
+  html.ui-c .tc-kname:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  html.ui-c .tc-kx{position:absolute;top:14px;right:16px;background:none;border:0;font-size:18px;color:var(--t3);cursor:pointer}
+  html.ui-c .tc-kdrawer .c-form.tc-kform{margin-top:14px;grid-template-columns:minmax(0,1fr);max-width:none}
+  html.ui-c .tc-kdrawer .tw-acts{display:flex;gap:8px}
+  html.ui-c .tc-kform input, html.ui-c .tc-kform textarea{width:100%}
   html.ui-c .tc-status{display:flex;flex-wrap:wrap;gap:8px}
   html.ui-c .tc-courses{width:100%;margin:0}
   html.ui-c .tc-yearform{grid-template-columns:1fr 1fr}
@@ -10961,9 +10968,8 @@ function tcDrawCompany() {
       <select id="tcStatus" aria-label="Status" onchange="tcEdit({ status: this.value })">${M.statuses.map((s) => `<option value="${esc(s.id)}"${s.id === c.status ? ' selected' : ''}>${esc(s.label)}</option>`).join('')}</select>
       ${c.status === 'met' ? `<select aria-label="Meeting type" onchange="tcEdit({ statusDetail: this.value })"><option value="">Meeting type</option>${M.meetingTypes.map((m) => `<option value="${esc(m.id)}"${m.id === c.statusDetail ? ' selected' : ''}>${esc(m.label)}</option>`).join('')}</select>` : ''}</div></div>`;
   const contacts = `<div class="c-sheet c-facts"><h3>Contacts<b>${c.contacts.length}</b><span class="c-h3acts"><button class="btn sm ghost" onclick="tcToggle('tcAddContact')">Add</button></span></h3>
-      ${c.contacts.map((k) => `<div class="tc-contact"><div><b>${esc(k.name || 'no name')}</b>${k.position ? ` <small>${esc(k.position)}</small>` : ''}
-        <small>${[k.email ? `<a href="mailto:${esc(k.email)}">${esc(k.email)}</a>` : '', k.phone ? cPhoneHtml(k.phone) : ''].filter(Boolean).join(' · ')}</small>${k.notes ? `<small class="c-gap-soft">${esc(k.notes)}</small>` : ''}</div>
-        <button class="btn sm ghost" title="Archive this contact" onclick="tcArchiveContact(${Number(k.id)})">Archive</button></div>`).join('') || '<div class="c-empty">No contact yet.</div>'}
+      ${c.contacts.map((k) => `<div class="tc-contact"><div><button type="button" class="tc-kname" title="Open to edit" onclick="tcContactOpen(${Number(k.id)})">${esc(k.name || k.email || k.phone || 'no name')}</button>${k.position ? ` <small>${esc(k.position)}</small>` : ''}
+        <small>${[k.email ? `<a href="mailto:${esc(k.email)}">${esc(k.email)}</a>` : '', k.phone ? cPhoneHtml(k.phone) : ''].filter(Boolean).join(' · ')}</small>${k.notes ? `<small class="c-gap-soft">${esc(k.notes)}</small>` : ''}</div></div>`).join('') || '<div class="c-empty">No contact yet.</div>'}
       <div id="tcAddContact" class="c-pad" hidden><div class="c-form c-form1">
         <div><label for="tckName">Name</label><input id="tckName"></div><div><label for="tckPos">Position</label><input id="tckPos"></div>
         <div><label for="tckEmail">Email</label><input id="tckEmail" type="email"></div><div><label for="tckPhone">Phone</label><input id="tckPhone"></div>
@@ -11073,7 +11079,31 @@ async function tcAddContact() {
 }
 async function tcArchiveContact(id) {
   if (!confirm('Archive this contact? It leaves the list and stays in the log.')) return;
-  try { await post(`/api/tc/contacts/${Number(id)}/archive`, {}); await tcReload(); } catch (e) { alert(e.message); }
+  try { await post(`/api/tc/contacts/${Number(id)}/archive`, {}); tcContactClose(); await tcReload(); } catch (e) { alert(e.message); }
+}
+// EDIT A CONTACT (the owner's Client Hub pick 3, layout B "Side drawer", 26.10.2026): click a contact's name, a drawer
+// slides in from the right with its fields, Save and Archive. Each changed field is one line in the company's history.
+function tcContactOpen(id) {
+  const k = (T_CO && T_CO.contacts || []).find((x) => Number(x.id) === Number(id));
+  if (!k) return;
+  const f = (key, label, type = 'text') => `<div><label for="tcke_${key}">${label}</label><input id="tcke_${key}" type="${type}" value="${esc(k[key] || '')}"></div>`;
+  $('#modal').innerHTML = `<div class="tw-back" onclick="tcContactClose()"></div><aside class="tw-drawer tc-kdrawer" role="dialog" aria-modal="true" aria-label="Edit a contact">
+    <button type="button" class="tc-kx" aria-label="Close" onclick="tcContactClose()">✕</button>
+    <h2>${esc(k.name || k.email || 'Contact')}</h2><p class="tw-sub">${esc(T_CO.name)} · contact</p>
+    <div class="c-form c-form1 tc-kform">${f('name', 'Name')}${f('position', 'Position')}${f('email', 'Email', 'email')}${f('phone', 'Phone')}
+      <div><label for="tcke_notes">Notes</label><textarea id="tcke_notes" rows="3">${esc(k.notes || '')}</textarea></div></div>
+    <div id="tckeErr"></div>
+    <div class="tw-acts"><button class="btn" onclick="tcContactSave(${Number(k.id)})">Save</button><button class="btn ghost" onclick="tcArchiveContact(${Number(k.id)})">Archive</button></div></aside>`;
+  const first = $('#tcke_name'); if (first) first.focus();
+}
+function tcContactClose() { if ($('.tc-kdrawer')) $('#modal').innerHTML = ''; }
+if (typeof document !== 'undefined' && document.addEventListener) document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && document.querySelector('.tc-kdrawer')) tcContactClose(); });
+async function tcContactSave(id) {
+  const v = (key) => $('#tcke_' + key).value;
+  try {
+    await post(`/api/tc/contacts/${Number(id)}/edit`, { name: v('name'), position: v('position'), email: v('email'), phone: v('phone'), notes: v('notes') });
+    tcContactClose(); await tcReload();
+  } catch (e) { tcErr('#tckeErr', e.message); }
 }
 async function tcSaveYear() {
   const v = (id) => ($(id) || {}).value || '';
