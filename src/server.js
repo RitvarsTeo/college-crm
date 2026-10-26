@@ -64,6 +64,7 @@ import * as tcseason from './tcseason.js';
 import * as tcclienthub from './tcclienthub.js';
 import * as tcreview from './tcreview.js';
 import * as tcgo from './tcgo.js';
+import * as tcrsvp from './tcrsvp.js';
 import * as tcpic from './tcpic.js';
 import * as tchome from './tchome.js';
 
@@ -3464,6 +3465,15 @@ export const handle = async (req, res) => {
       return json(res, 200, await tcgo.goPeople(db, { group: String(url.searchParams.get('group') || 'notReached'), state: String(url.searchParams.get('state') || '') }));
     }
     if (p === '/api/tc/go/sends' && req.method === 'GET') return json(res, 200, await tcgo.goSends(db));
+    // THE RSVP ANSWERS (26.10.2026, src/tcrsvp.js): read live from Client Hub, read-only; ?company=<id> for one company's page
+    if (p === '/api/tc/go/rsvp' && req.method === 'GET') {
+      const company = String(url.searchParams.get('company') || '');
+      if (company) {
+        if (!/^\d{1,9}$/.test(company)) return json(res, 400, { error: 'Which company?' });
+        return json(res, 200, { rows: await tcrsvp.rsvpForCompany(db, Number(company)) });
+      }
+      return json(res, 200, await tcrsvp.rsvpPage(db, { me: await tcMe(req, url), scope: url.searchParams.get('scope') === 'mine' ? 'mine' : 'team' }));
+    }
     if (p === '/api/tc/review' && req.method === 'GET') {
       return json(res, 200, url.searchParams.get('count') === '1' ? await tcreview.reviewCounts(db) : await tcreview.listReview(db));
     }

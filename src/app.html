@@ -3051,6 +3051,32 @@ svg .m-flag-mark{transform-origin:0 100%}
     html.ui-c .tcgo-person{grid-template-columns:minmax(0,1fr)}
   }
   @media (max-width:760px){ html.ui-c .tcgo-card b{font-size:32px} html.ui-c .tcgo-card{padding:16px} }
+  /* THE RSVP ANSWERS (the owner's pick B, 26.10.2026): one funnel strip, Sent > Reached > Answered > Coming, then who
+     answered, grouped by person in charge. Answered and Coming are read live from Client Hub (src/tcrsvp.js). */
+  html.ui-c .tcgo-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:0 0 16px;border-radius:16px;overflow:hidden;
+    background:var(--surface);box-shadow:var(--c-card-lift);border-top:3px solid var(--c-sis)}
+  html.ui-c .tcgo-strip.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+  html.ui-c .tcgo-step{display:flex;flex-direction:column;gap:2px;padding:18px 20px 16px;border-left:1px solid var(--rule)}
+  html.ui-c .tcgo-step:first-child{border-left:0}
+  html.ui-c .tcgo-step span{font-size:14px;color:var(--t2)}
+  html.ui-c .tcgo-step b{font-size:38px;line-height:1.15;font-weight:600;letter-spacing:-.01em;font-variant-numeric:tabular-nums;color:var(--ink)}
+  html.ui-c .tcgo-step small{font-size:12.5px;color:var(--t3)}
+  html.ui-c .tcgo-step.hot{background:var(--c-accent-bg)}
+  html.ui-c .tcgo-step.hot b{color:var(--c-sis)}
+  html.ui-c .tcgo-rsvp{padding:18px 20px 12px;margin:0 0 16px}
+  html.ui-c .tcgo-rsvp .tcgo-bh{margin-bottom:6px}
+  html.ui-c .tcgo-pic{display:flex;align-items:center;gap:8px;margin:14px 0 4px;font-size:13.5px;font-weight:700;color:var(--ink)}
+  html.ui-c .tcgo-pic i{width:26px;height:26px;border-radius:50%;background:var(--btn-bg);color:var(--btn-ink);font-style:normal;font-size:10.5px;font-weight:700;display:grid;place-items:center}
+  html.ui-c .tcgo-ans{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) 70px 90px 60px;gap:12px;align-items:baseline;padding:9px 0;border-top:1px solid var(--rule2);font-size:14px}
+  html.ui-c .tcgo-ans a{color:inherit;text-decoration:none;font-weight:600}
+  html.ui-c .tcgo-ans .a-yes{font-weight:700;color:var(--c-sis)}
+  html.ui-c .tcgo-ans .a-maybe{font-weight:700;color:var(--t2)}
+  html.ui-c .tcgo-ans .a-no{font-weight:700;color:var(--t3)}
+  html.ui-c .tcgo-ans small{color:var(--t3);font-size:12.5px;font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
+  html.ui-c .tc-rsvpline{margin:4px 0 0;font-size:13.5px;color:var(--t2)}
+  html.ui-c .tc-rsvpline b{color:var(--c-sis)}
+  @media (max-width:900px){ html.ui-c .tcgo-strip{grid-template-columns:repeat(2,minmax(0,1fr))} html.ui-c .tcgo-step:nth-child(3){border-left:0}
+    html.ui-c .tcgo-step:nth-child(n+3){border-top:1px solid var(--rule)} html.ui-c .tcgo-ans{grid-template-columns:minmax(0,1fr) 70px 80px} html.ui-c .tcgo-ans .a-who, html.ui-c .tcgo-ans small{display:none} }
 </style>
 </head>
 <body>
@@ -10877,9 +10903,22 @@ const tcPicValue = (c) => (c.picAccount ? c.picAccount.value : c.pic || '');
 let T_CO = null; let T_EDIT = false; let T_LOG_ALL = false;
 const T_LOG_FIRST = 15;   // round 2, 20.10.2026: a long log shows its latest 15 and Show all, so a phone reaches the details
 async function viewTcCompany(id) {
-  if (!T_CO || T_CO.id !== id) { T_EDIT = false; T_LOG_ALL = false; }
+  if (!T_CO || T_CO.id !== id) { T_EDIT = false; T_LOG_ALL = false; T_CO_RSVP = null; }
   T_CO = await api('/api/tc/companies/' + Number(id));
   tcDrawCompany();
+  if (!T_CO_RSVP || T_CO_RSVP.id !== Number(id)) {
+    try { T_CO_RSVP = { id: Number(id), rows: (await api('/api/tc/go/rsvp?company=' + Number(id))).rows || [] }; } catch (e) { T_CO_RSVP = { id: Number(id), rows: [] }; }
+    if (T_CO && T_CO.id === Number(id) && T_CO_RSVP.rows.length) tcDrawCompany();
+  }
+}
+// the owner's pick B (26.10.2026): the company page says what its people answered to the Save the Date, read live
+let T_CO_RSVP = null;
+function tcRsvpLine() {
+  const R = T_CO_RSVP && T_CO && T_CO_RSVP.id === T_CO.id ? T_CO_RSVP.rows : [];
+  if (!R.length) return '';
+  const word = { yes: 'Yes', maybe: 'Maybe', no: 'No' };
+  const one = (r) => `<b>${word[r.answer]}</b>${r.answer === 'no' ? '' : `, ${Number(r.people)} ${Number(r.people) === 1 ? 'person' : 'people'}`}${R.length > 1 && r.name ? ` (${esc(r.name)})` : ''}`;
+  return `<p class="tc-rsvpline">Grand Opening: ${R.map(one).join(' · ')}</p>`;
 }
 const tcReload = async () => { T_CO = await api('/api/tc/companies/' + Number(T_CO.id)); tcDrawCompany(); tcNavCounts(); };
 const T_FIELD = { name: 'Name', country: 'Country', city: 'City', address: 'Address', website: 'Website', status: 'Status', status_detail: 'Meeting type',
@@ -10951,7 +10990,7 @@ function tcDrawCompany() {
   const info = c.infoToSend ? `<div class="c-sheet c-facts tc-info"><h3>Information to send</h3><div class="c-pad">${tcClamp(c.infoToSend)}
       <div class="c-row-acts"><button class="btn sm ghost" onclick="tcInfoSent()">Mark sent</button></div></div></div>` : '';
   $('#view').innerHTML = `<p class="c-crumb"><a href="#/tc/companies">Companies</a></p>
-    <div class="c-head"><div><h1 class="c-pname">${esc(c.name)}</h1><p>${esc(tcStatus(c.status).label)}${c.statusDetail ? ' · ' + esc(tcMeeting(c.statusDetail)) : ''}${c.areas.length ? ' · ' + esc(c.areas.join(', ')) : ''} · ${esc(tcPlace(c) || 'country not recorded')} · ${c.client ? `client, ${tcDelegates(c.delegates)}` : 'prospect'}</p></div>
+    <div class="c-head"><div><h1 class="c-pname">${esc(c.name)}</h1><p>${esc(tcStatus(c.status).label)}${c.statusDetail ? ' · ' + esc(tcMeeting(c.statusDetail)) : ''}${c.areas.length ? ' · ' + esc(c.areas.join(', ')) : ''} · ${esc(tcPlace(c) || 'country not recorded')} · ${c.client ? `client, ${tcDelegates(c.delegates)}` : 'prospect'}</p>${tcRsvpLine()}</div>
       <div class="act"><button class="btn ghost" onclick="tcArchive()">Archive</button></div></div>
     <div class="c-pgrid">
       <div class="c-pmain">${perYear}${next}${logBox}
@@ -11549,23 +11588,42 @@ async function viewTcGo() {
       <div class="c-head"><div><h1>The invitation</h1></div></div><div class="c-sheet tcgo-empty">The Grand Opening figures are not in Intake yet: an admin brings them in from Client Hub.</div>`;
     return;
   }
+  T_RSVP = null;
   tcGoDraw();
+  tcGoRsvp();
+}
+// THE RSVP ANSWERS (the owner's pick B, 26.10.2026): read live from Client Hub after the page is drawn, Team or Mine
+let T_RSVP = null, T_RSVP_SCOPE = 'team';
+async function tcGoRsvp(scope) {
+  if (scope) T_RSVP_SCOPE = scope;
+  try { T_RSVP = await api(`/api/tc/go/rsvp?scope=${T_RSVP_SCOPE}`); } catch (e) { T_RSVP = { connected: false }; }
+  if (location.hash.split('?')[0] === '#/tc/go' && T_GO && T_GO.figures) tcGoDraw();
+}
+function tcGoAnswers() {
+  const R = T_RSVP;
+  if (!R || !R.connected || !R.totals.answered) return '';
+  const word = { yes: 'Yes', maybe: 'Maybe', no: 'No' };
+  const ini = (n) => String(n || '').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase() || '·';
+  const row = (r) => `<div class="tcgo-ans"><div>${r.companyId ? `<a href="#/tc/company/${Number(r.companyId)}">${esc(r.company)}</a>` : esc(r.company || '-')}</div>
+      <div class="a-who">${esc(r.name)}</div><div class="a-${esc(r.answer)}">${word[r.answer]}</div>
+      <div>${r.answer === 'no' ? '' : `${Number(r.people)} ${Number(r.people) === 1 ? 'person' : 'people'}`}</div><small>${r.at ? esc(String(r.at).slice(8, 10) + '.' + String(r.at).slice(5, 7)) : ''}</small></div>`;
+  const groups = R.groups.map((g) => `<div class="tcgo-pic"><i>${esc(ini(g.pic))}</i>${esc(g.pic || 'No person in charge')} · ${g.rows.length}</div>${g.rows.map(row).join('')}`).join('');
+  const team = R.scope !== 'mine';
+  return `<section class="c-sheet tcgo-rsvp" aria-label="Who answered">
+    <div class="tcgo-bh"><h2>Who answered · ${tcGoN(R.totals.answered)}</h2><span>Yes ${tcGoN(R.totals.yes)} · Maybe ${tcGoN(R.totals.maybe)} · No ${tcGoN(R.totals.no)}</span>
+      <div class="c-seg" role="group" aria-label="Whose"><button aria-pressed="${!team}" onclick="tcGoRsvp('mine')">Mine</button><button aria-pressed="${team}" onclick="tcGoRsvp('team')">Team</button></div></div>
+    ${groups || '<div class="c-empty">None of your companies has answered yet.</div>'}</section>`;
 }
 const tcGoCrumb = (link) => { const E = T_GO.event; const t = `${esc(E.name)} · ${esc(E.dateLabel)} · ${esc(E.send)}`; return `<p class="c-crumb">${link ? `<a href="#/tc/go">${t}</a>` : t}</p>`; };
 function tcGoDraw() {
   const F = T_GO.figures, E = T_GO.event;
   // the owner 22.10: Not reached, Audience and Delivery are hidden (they could not do their job), so nothing here links to them
-  const card = (label, n, sub) => `<div class="tcgo-card"><span>${esc(label)}</span><b>${tcGoN(n)}</b>${sub ? `<small>${sub}</small>` : ''}</div>`;
   const seg = F.cameBack;
   const tone = { person: 'p', cant_tell: 'a', scanner: 's', none: 'n' };
   const subOf = { person: F.clicked ? `${tcGoN(F.clicked)} clicked` : '', none: F.optedOutNoOpen ? `${tcGoN(F.optedOutNoOpen)} opted out` : '' };
   const row = (x) => `<div class="tcgo-br"><span>${esc(x.label)}</span><b>${tcGoN(x.n)}</b></div>`;
   $('#view').innerHTML = `${tcGoCrumb(false)}<div class="c-head"><div><h1>The invitation</h1></div></div>
-    <div class="tcgo-cards">
-      ${card('Sent the Save the Date', F.sent, '')}
-      ${card('Reached', F.reached, `${tcGoPct(F.reached, F.sent)}% of ${tcGoN(F.sent)}`)}
-      ${card('Not reached', F.notReached, '')}
-      ${card('Not in the invitation', F.notIn, '')}</div>
+    ${tcGoStrip(F)}${tcGoAnswers()}
     <section class="c-sheet tcgo-back" aria-label="What came back">
       <div class="tcgo-bh"><h2>What came back</h2><span>${tcGoN(F.reached)} delivered</span></div>
       <div class="tcgo-bar" role="img" aria-label="${esc(seg.map((x) => `${x.label} ${x.n}`).join(', '))}">${seg.map((x) => `<i class="t-${tone[x.id]}" style="flex:${Number(x.n)}"></i>`).join('')}</div>
@@ -11580,6 +11638,14 @@ function tcGoDraw() {
         <p class="tcgo-when">${esc(E.dateLabel)}</p><p class="tcgo-where">${esc(E.place)}</p><p class="tcgo-note">interest, not an RSVP</p>
         <button type="button" class="btn sm ghost tcgo-act" onclick="tcGoCopy(this)">Copy link</button></section>
     </div>`;
+}
+// the owner's pick B (26.10.2026): one funnel. Answered and Coming only once Client Hub's answers are read.
+function tcGoStrip(F) {
+  const step = (label, n, sub, hot) => `<div class="tcgo-step${hot ? ' hot' : ''}"><span>${esc(label)}</span><b>${tcGoN(n)}</b>${sub ? `<small>${sub}</small>` : ''}</div>`;
+  const R = T_RSVP && T_RSVP.connected ? T_RSVP.totals : null;
+  return `<div class="tcgo-strip${R ? '' : ' two'}" aria-label="The invitation, step by step">
+    ${step('Sent', F.sent, '')}${step('Reached', F.reached, `${tcGoPct(F.reached, F.sent)}% of ${tcGoN(F.sent)}`)}
+    ${R ? step('Answered', R.answered, '', true) + step('Coming', R.coming, R.coming === 1 ? 'person' : 'people', true) : ''}</div>`;
 }
 async function tcGoCopy(btn) {
   const url = T_GO && T_GO.event.calendarUrl;
