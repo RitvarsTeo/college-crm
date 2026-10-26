@@ -108,6 +108,10 @@ companies with no status - defaults in use); phone: marked number of a known per
   charge, company page line) + LIVE read-only from Client Hub (new read-only key, he pastes it).
   `LIVE` 26.10 patch 74 (a5ce9d6 + record d6f239a) + patch 75 (ea89e76, test answers left out, his pick): live page Answered
   1, Coming 1. Seen: Atlantic Shipping's contact is not linked to an Intake company (shows under No person in charge).
+- `DECIDED` 26.10 HIS PICK for 9 Fix bounced: A, fix in Intake; "Fixed, waiting for the next send" + Download for the sender;
+  nothing written into Client Hub.
+- `DECIDED` 26.10 HIS PICK: status "Not contacted" is relabelled "No status yet" (it is the no-status default); companies
+  with a logged contact become Contacted; the rest stay.
 - `LIVE` 26.10 2 Quick add, HIS PICK A ("+ Someone I met" drawer on TC Home): patch 80 (f976776).
 - `LIVE` 26.10 6 Download list, HIS PICK B (Companies / with their people, Excel, everyone in TC): patch 79 (4bfdabd).
 - `LIVE` 26.10 1 Search people, HIS PICK A (Companies box lists People; a person opens with the drawer): patch 77 (a5ab728).
