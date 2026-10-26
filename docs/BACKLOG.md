@@ -152,6 +152,7 @@ companies with no status - defaults in use); phone: marked number of a known per
 
 ## 26.10.2026 - Ieva: SIS drafts show as overdue
 
+- `LIVE` (patch 78, 26.10) the Draft in the SIS band; the 5 current drafts' form calls marked done per Ieva (emailed, called), so all 5 sit in the band.
 - Ieva 26.10: everyone who started the application form but did not submit shows overdue; she has emailed and called them all, no answers; asks to separate them differently; would not mark them Cold (only a draft); from the client side, chasing them every week is too much.
 - Live 26.10 (read-only): 5 people with a draft (4 overdue), 2 with an account only (2 overdue).
 - `DECIDED` HIS PICK (owner 26.10: "According to IEVA!", picture _ieva-feedback/drafts_AB_2026-10-26.png) = **B, their own band**: everyone with an SIS draft (form started, not submitted) still gets the ONE call (his 07.10 rule); after that call they move by themselves to a navy "Draft in the SIS" band on Due, never overdue and never "no next step", no clicking; they come back to the normal flow when the SIS says submitted (or they write or call). Account-only people are not part of it (they keep "did they start the application form?").
