@@ -111,7 +111,10 @@ companies with no status - defaults in use); phone: marked number of a known per
 - `LIVE` 26.10 Companies simpler (HIS PICK B with filters): patch 83 (575f29c).
 - `LIVE` 26.10 Grand Opening Stage 1 / Stage 2 (HIS PICK A): patch 84 (644b0c9). Pack lines from config
   stage2.packStatus; change to "Sent dd.mm" when the Save the Date session reports a send.
-- `SAID` 26.10 Management review workbook (Downloads/5_Form_Management_review.xlsx) has metrics to use for Companies.
+- `LIVE` 26.10 Management review trends (HIS PICK: simplest, A table + bars, Piemeri motion): patch 85 (c283e4d + record
+  c4ff564). Client book chapter "How our clients changed" + company card "How has this client done with us over the years?".
+  Review loaded 26.10 (547 rows, 166 names, 105 linked to a company; backup 2026-10-26T14-59-40Z). Checked live: chapter
+  2019-2025 figures, Fugro card. Next: link the other 61 review names by hand (e.g. CSM, OSM).
 - `LIVE` 26.10 Grand Opening RSVP lists per manager (HIS PICK A, tabs; Who answered removed): patch 82 (1f8c489), corrected
   split loaded (1,589: Mārcis 347, DS 519, MC 346, AB 275, Alma 7, JS 95).
 - `DECIDED` 26.10 HIS PICK for 9 Fix bounced: A, fix in Intake; "Fixed, waiting for the next send" + Download for the sender;
