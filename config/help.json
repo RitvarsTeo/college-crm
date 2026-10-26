@@ -377,7 +377,7 @@
       {
         "id": "tc-statuses",
         "q": "What do the statuses mean?",
-        "a": "To contact, Contacted, Met (with the meeting type) and Focus are the Excel's own steps. A company that had no step in the Excel or in Client Hub shows No status yet; one with a logged contact is Contacted."
+        "a": "To contact, Contacted, Met (with the meeting type) and Focus are the Excel's own steps; a company that had no step in the Excel or in Client Hub shows No status yet, and one with a logged contact is Contacted."
       },
       {
         "id": "tc-delete",
