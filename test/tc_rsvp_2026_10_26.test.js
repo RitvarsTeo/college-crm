@@ -119,7 +119,7 @@ test('the read is the view only, through a verified certificate, with the addres
 test('the page: one funnel strip, who answered by person in charge, Mine or Team; the company line; the route', () => {
   const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
   assert.match(app, /step\('Sent', F\.sent, ''\)\}\$\{step\('Reached'/);
-  assert.match(app, /step\('Answered', R\.answered, '', true\) \+ step\('Coming', R\.coming/);
+  assert.doesNotMatch(app.slice(app.indexOf('function tcGoStrip('), app.indexOf('async function tcGoCopy(')), /Answered|Coming/, 'the owner 26.10: no Answered / Coming figure');
   assert.doesNotMatch(app, /card\('Not reached', F\.notReached|card\('Sent the Save the Date'/, 'the four cards became the strip');
   assert.match(app, /api\(`\/api\/tc\/go\/rsvp\?scope=\$\{T_RSVP_SCOPE\}`\)/);
   assert.match(app, /onclick="tcGoRsvp\('mine'\)">Mine<\/button><button aria-pressed="\$\{team\}" onclick="tcGoRsvp\('team'\)">Team/);

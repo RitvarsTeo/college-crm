@@ -11816,13 +11816,11 @@ function tcGoDraw() {
         <button type="button" class="btn sm ghost tcgo-act" onclick="tcGoCopy(this)">Copy link</button></section>
     </div>`;
 }
-// the owner's pick B (26.10.2026): one funnel. Answered and Coming only once Client Hub's answers are read.
+// Sent and Reached only. The owner, 26.10.2026: "delete that answered and coming" (no Answered / Coming figure here).
 function tcGoStrip(F) {
-  const step = (label, n, sub, hot) => `<div class="tcgo-step${hot ? ' hot' : ''}"><span>${esc(label)}</span><b>${tcGoN(n)}</b>${sub ? `<small>${sub}</small>` : ''}</div>`;
-  const R = T_RSVP && T_RSVP.connected ? T_RSVP.totals : null;
-  return `<div class="tcgo-strip${R ? '' : ' two'}" aria-label="The invitation, step by step">
-    ${step('Sent', F.sent, '')}${step('Reached', F.reached, `${tcGoPct(F.reached, F.sent)}% of ${tcGoN(F.sent)}`)}
-    ${R ? step('Answered', R.answered, '', true) + step('Coming', R.coming, R.coming === 1 ? 'person' : 'people', true) : ''}</div>`;
+  const step = (label, n, sub) => `<div class="tcgo-step"><span>${esc(label)}</span><b>${tcGoN(n)}</b>${sub ? `<small>${sub}</small>` : ''}</div>`;
+  return `<div class="tcgo-strip two" aria-label="The invitation, step by step">
+    ${step('Sent', F.sent, '')}${step('Reached', F.reached, `${tcGoPct(F.reached, F.sent)}% of ${tcGoN(F.sent)}`)}</div>`;
 }
 async function tcGoCopy(btn) {
   const url = T_GO && T_GO.event.calendarUrl;
