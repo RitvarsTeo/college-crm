@@ -212,7 +212,7 @@ export async function goPage(db) {
   const { guests, deliveries } = await loaded(db);
   const last = await db.prepare('SELECT applied_at, applied_by FROM tc_go_imports ORDER BY id DESC LIMIT 1').get();
   const read = await db.prepare('SELECT MAX(read_at) AS r FROM tc_go_sends').get();
-  return { event: GO.event, imported: last ? { at: last.applied_at } : null, readAt: read ? read.r : null,
+  return { event: GO.event, stage2: { packStatus: (GO.stage2 && GO.stage2.packStatus) || {} }, imported: last ? { at: last.applied_at } : null, readAt: read ? read.r : null,
     figures: guests.length ? figures(guests, deliveries) : null };
 }
 

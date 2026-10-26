@@ -1718,6 +1718,9 @@ export const handle = async (req, res) => {
         // TC Home's map (the owner's pick N3, 20.10.2026): Natural Earth 1:110m, public domain, the same file as the Client
         // Hub's hub/dashboard/assets/world.js (commit 5465221); a static outline, read only when TC Home draws its map
         'world.js': 'text/javascript; charset=utf-8',
+        // the Grand Opening's Stage 2 (the owner, 26.10.2026): pictures of the live RSVP email and the live landing page
+        'go-stage2-email.jpg': 'image/jpeg',
+        'go-stage2-landing.jpg': 'image/jpeg',
       };
       const name = p.slice('/assets/'.length);
       // MOTION (Q65, the owner picked A 07.10.2026): src/assets/motion.js, motion.css and motion-<area>.js|css, served

@@ -48,7 +48,20 @@ test('the tabs and one list: own list first, answered people first, no totals of
 
 test('the page: tabs, search, Download; no Who answered and no answered totals; the routes are behind the gate', () => {
   const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
-  assert.match(app, /\$\{tcGoStrip\(F\)\}\$\{tcGoStage2\(\)\}/);
+  // the owner's pick A (26.10.2026): Stage 1 the Save the Date, then Stage 2 the RSVP, on one page
+  const draw = app.slice(app.indexOf('function tcGoDraw('), app.indexOf('function tcGoStrip('));
+  const i1 = draw.indexOf('Stage 1 · Save the Date'), iBack = draw.indexOf('What came back'), i2 = draw.indexOf('Stage 2 · RSVP'), iList = draw.indexOf('${tcGoStage2()}'), iShots = draw.indexOf('tcgo-shots');
+  assert.ok(i1 > 0 && i1 < iBack && iBack < i2 && i2 < iList && iList < iShots, 'Stage 1 (figures) before Stage 2 (packs + lists, then the pictures)');
+  assert.match(draw, /<img src="\/assets\/go-stage2-email\.jpg" alt="The Stage 2 email/);
+  assert.match(draw, /<a href="https:\/\/novikontas\.org\/grand-opening" target="_blank" rel="noopener"><img src="\/assets\/go-stage2-landing\.jpg"/);
+  assert.match(app, /<div class="tcgo-pack"><b>\$\{esc\(x\.label\)\}<\/b><span>\$\{Number\(x\.n\)\}<\/span>\$\{state\(x\.code\) \? `<small>✓ \$\{esc\(state\(x\.code\)\)\}<\/small>` : ''\}<\/div>/);
+  const cfg = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'tc.json'), 'utf8'));
+  assert.equal(cfg.grandOpening.stage2.packStatus.default, 'Ready to send');
+  const srv = fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8');
+  for (const f of ['go-stage2-email.jpg', 'go-stage2-landing.jpg']) {
+    assert.match(srv, new RegExp(`'${f.replace('.', '\.')}': 'image/jpeg'`), f + ' is on the assets allow-list');
+    assert.ok(fs.statSync(path.join(ROOT, 'src', 'assets', f)).size < 150000, f + ' stays small');
+  }
   const fn = app.slice(app.indexOf('function tcGoStage2('), app.indexOf('const tcGoCrumb = '));
   assert.match(fn, /<h2>Stage 2 lists<\/h2>/);
   assert.match(fn, /placeholder="Search name or company"/);

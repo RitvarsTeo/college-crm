@@ -105,7 +105,8 @@
       "calendarUrl": "https://novikontas-grand-opening-calendar.vercel.app/" },
     "files": ["go_guests.csv", "go_sends.csv", "go_deliveries.csv"],
     "stage2": {
-      "_about": "The RSVP lists per manager (the owner's pick A, 26.10.2026): one tab each, in this order; code = the sender split's sheet name.",
+      "_about": "The RSVP lists per manager (the owner's pick A, 26.10.2026): one tab each, in this order; code = the sender split's sheet name. packStatus: the line under each pack on Stage 2 (default, or per code, e.g. \"Sent 27.10\").",
+      "packStatus": { "default": "Ready to send" },
       "senders": [
         { "code": "Marcis", "label": "Mārcis", "email": "marcis.zabovs@novikontas.org" },
         { "code": "DS", "label": "DS", "email": "ds@novikontas.org" },
