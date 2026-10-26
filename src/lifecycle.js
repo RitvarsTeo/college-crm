@@ -101,6 +101,25 @@ export const SIS_HOLDS = ['submitted', 'admitted', 'matriculated'];
 // and the person is with the SIS from then on, never overdue and never "no next step".
 export const SIS_HOLDS_SQL = `(pe.sis_handoff_at IS NOT NULL OR (pe.first_channel = 'sis' AND EXISTS (SELECT 1 FROM sis_applicants sa
   WHERE sa.person_id = pe.id AND sa.status IN ('${SIS_HOLDS.join("','")}'))))`;
+// A DRAFT IN THE SIS (Admissions 26.10.2026, the owner's pick B, _ieva-feedback/drafts_AB_2026-10-26.png): somebody whose
+// form the SIS says is started, not submitted, after their ONE form call is done ("Call: did they finish the application
+// form?", the 07.10 rule, src/sync.js planFormCheck). They wait for the person to submit: never Overdue, never "No next
+// step", their open steps inside the band. They leave by themselves when the SIS says submitted (they are With the SIS),
+// when Admissions answered With the SIS, or when they write or call in after that call (an inbound message or call that
+// is not the SIS's own). An account only ('registered') is not a draft. One rule for every count (this) and the page
+// (each person row's sis_draft, read with it).
+export const SIS_DRAFT_STEP = 'Call: did they finish the application form?';   // = src/sync.js FORM_CHECK (a test pins it)
+export const SIS_DRAFT_SQL = `(pe.sis_handoff_at IS NULL
+  AND EXISTS (SELECT 1 FROM sis_applicants sa WHERE sa.person_id = pe.id AND sa.status = 'started')
+  AND NOT EXISTS (SELECT 1 FROM sis_applicants sa WHERE sa.person_id = pe.id AND sa.status IN ('${SIS_HOLDS.join("','")}'))
+  AND EXISTS (SELECT 1 FROM tasks fc WHERE fc.person_id = pe.id AND fc.label = '${SIS_DRAFT_STEP}' AND fc.done_at IS NOT NULL
+    AND NOT EXISTS (SELECT 1 FROM events ev WHERE ev.person_id = pe.id AND ev.direction = 'in' AND ev.kind IN ('note', 'call', 'channel')
+      AND COALESCE(ev.channel, '') NOT IN ('sis', 'mailchimp') AND ev.occurred_at > fc.done_at)))`;
+// what Admissions already tried with a draft, for the card: emailed, called
+export const SIS_DRAFT_REACH_SQL = `(SELECT CASE WHEN EXISTS (SELECT 1 FROM events ev WHERE ev.person_id = pe.id AND ev.direction = 'out'
+    AND (ev.kind = 'email' OR ev.channel IN ('email', 'gmail'))) THEN 'emailed' ELSE '' END) AS sis_draft_emailed,
+  (SELECT CASE WHEN EXISTS (SELECT 1 FROM events ev WHERE ev.person_id = pe.id AND ev.origin = 'manual' AND ((ev.kind = 'call'
+    AND COALESCE(ev.direction, '') <> 'in') OR (ev.kind = 'task' AND ev.subject LIKE 'Call%'))) THEN 'called' ELSE '' END) AS sis_draft_called`;
 export const SIS_WORD = { registered: 'Registered', started: 'Form started', submitted: 'Submitted', admitted: 'Admitted',
   matriculated: 'Matriculated', rejected: 'Rejected', withdrawn: 'Withdrawn' };
 export const SIS_ACCOUNT_ONLY = 'Account only, no form yet';

@@ -9,7 +9,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { SIS_HOLDS_SQL } from './lifecycle.js';
+import { SIS_HOLDS_SQL, SIS_DRAFT_SQL } from './lifecycle.js';
 import { localDate, localDateTime, localMidnight, dayStartOf, dayAfterStartOf, todayStart, tomorrowStart } from './bizday.js';
 import { yearsOf, yearRanges, rangesSql } from './yearscope.js';
 
@@ -162,10 +162,11 @@ export async function report(db, { from, to, years } = {}) {
   const activeApplicants = await count(db, `SELECT COUNT(*) n FROM people
     WHERE status NOT IN ('Admitted','Not proceeding')`);
   // Overdue means its day has passed - the same line as every screen draws.
-  const overdue = await count(db, `SELECT COUNT(*) n FROM tasks
-    WHERE done_at IS NULL AND due_at < ?`, todayStart());
+  // a draft in the SIS (26.10.2026) waits for them, so its steps are not overdue here either
+  const overdue = await count(db, `SELECT COUNT(*) n FROM tasks t JOIN people pe ON pe.id = t.person_id
+    WHERE t.done_at IS NULL AND t.due_at < ? AND NOT ${SIS_DRAFT_SQL}`, todayStart());
   const noNextAction = await count(db, `SELECT COUNT(*) n FROM people pe
-    WHERE pe.status NOT IN ('Admitted','Not proceeding') AND NOT ${SIS_HOLDS_SQL}
+    WHERE pe.status NOT IN ('Admitted','Not proceeding') AND NOT ${SIS_HOLDS_SQL} AND NOT ${SIS_DRAFT_SQL}
       AND NOT EXISTS (SELECT 1 FROM tasks t WHERE t.person_id = pe.id AND t.done_at IS NULL)`);
 
   // Conversion follows the MATURED people who arrived in the period (maturedConversion above), so the two numbers

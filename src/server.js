@@ -19,7 +19,7 @@ import { pullSheet, sheetCounts } from './sheetsync.js';
 import { receive, activePersonFor, IN_TOUCH_STEPS, listInbound, callsTodayFromPeople, messagesFor, recordWhatsAppEcho, qualify, archive, setMark, removeMark, setCallNote, withCallNotes, bringBack, funnel, agedCount, handoffToSis, ownerFor, notifiedFor, handoverGap, canReach, surfaceAt, waitingFor, waitingByRole } from './intake.js';
 import { readScreenshot, readKind, readBody, readPath, saveFeedback, listFeedback, getScreenshot, setHandled, BadScreenshot, helpOpened, helpCounts } from './feedback.js';
 import { findMatches as matchPeople, duplicateCheck, onePersonFor } from './identity.js';
-import { lifecycleOf, sisProgress, sisProgressByPerson, SIS_HOLDS_SQL } from './lifecycle.js';
+import { lifecycleOf, sisProgress, sisProgressByPerson, SIS_HOLDS_SQL, SIS_DRAFT_SQL, SIS_DRAFT_REACH_SQL } from './lifecycle.js';
 import { firstLook } from './sisfirstlook.js';
 import { redactSis, fetchWebStats, WEB_RANGES } from '../lib/sis.js';
 import { applicationFunnel } from './applications.js';
@@ -891,6 +891,10 @@ async function personRow(id, viewer) {
   p.lifecycle = await lifecycleOf(db, id);   // dated facts from the SIS; never a stage
   try { p.sis = sisProgress(await db.prepare('SELECT status, changed_at FROM sis_applicants WHERE person_id = ?').all(id)); }
   catch { p.sis = null; }                    // a database without the SIS tables yet
+  // a draft in the SIS (26.10.2026): the same rule as every list and count
+  try { Object.assign(p, await db.prepare(`SELECT CASE WHEN ${SIS_DRAFT_SQL} THEN 1 ELSE 0 END AS sis_draft, ${SIS_DRAFT_REACH_SQL}
+    FROM people pe WHERE pe.id = ?`).get(id)); }
+  catch { p.sis_draft = 0; }
   // structured fields with where they came from. A suggestion is never a fact.
   p.fields = await db.prepare('SELECT * FROM field_values WHERE person_id = ? ORDER BY id').all(id);
   const known = new Set(p.fields.filter((f) => f.value).map((f) => f.field));
@@ -1850,7 +1854,7 @@ export const handle = async (req, res) => {
       // FOLLOW-UPS - a next step due today or already late, plus the ones closed today.
       const openFollow = await db.prepare(`SELECT t.*, pe.name, pe.programme, pe.status FROM tasks t
         JOIN people pe ON pe.id = t.person_id
-        WHERE t.done_at IS NULL AND t.due_at < ? ORDER BY t.due_at ASC`).all(to);
+        WHERE t.done_at IS NULL AND t.due_at < ? AND NOT ${SIS_DRAFT_SQL} ORDER BY t.due_at ASC`).all(to);
       const doneFollow = (await db.prepare(`SELECT COUNT(*) n FROM tasks WHERE done_at >= ? AND done_at < ?`).get(from, to)).n;
       const openFollowMine = mine(openFollow);
 
@@ -1990,15 +1994,17 @@ export const handle = async (req, res) => {
       const [inScope, scopeArgs] = scopeSql(scopeRange(url));
       // STILL_OPEN_SQL, not a bare task query: a finished person's leftover task used to appear
       // here as overdue while openPeople and noNextAction below already counted them out.
+      // a draft in the SIS (26.10.2026) is never Overdue or Due today: its steps wait inside its own band
       const overdue = await db.prepare(`SELECT t.*, pe.name, pe.programme, pe.status FROM tasks t JOIN people pe ON pe.id = t.person_id
-        WHERE t.done_at IS NULL AND ${STEP_LISTED_SQL}${inScope} AND t.due_at < ? ORDER BY t.due_at ASC`).all(...scopeArgs, dayStart());
+        WHERE t.done_at IS NULL AND ${STEP_LISTED_SQL}${inScope} AND NOT ${SIS_DRAFT_SQL} AND t.due_at < ? ORDER BY t.due_at ASC`).all(...scopeArgs, dayStart());
       const today = await db.prepare(`SELECT t.*, pe.name, pe.programme, pe.status FROM tasks t JOIN people pe ON pe.id = t.person_id
-        WHERE t.done_at IS NULL AND ${STEP_LISTED_SQL}${inScope} AND t.due_at >= ? AND t.due_at < ? ORDER BY t.due_at ASC`).all(...scopeArgs, dayStart(), dayEnd());
+        WHERE t.done_at IS NULL AND ${STEP_LISTED_SQL}${inScope} AND NOT ${SIS_DRAFT_SQL} AND t.due_at >= ? AND t.due_at < ? ORDER BY t.due_at ASC`).all(...scopeArgs, dayStart(), dayEnd());
       return json(res, 200, {
         newLeads7: (await q('SELECT COUNT(*) n FROM people WHERE created_at >= ?', since7)).n,
         newLeadsToday: (await q('SELECT COUNT(*) n FROM people WHERE created_at >= ?', dayStart())).n,
         openPeople: (await q(`SELECT COUNT(*) n FROM people pe WHERE ${STILL_OPEN_SQL}${inScope}`, ...scopeArgs)).n,
-        noNextAction: (await q(`SELECT COUNT(*) n FROM people pe WHERE ${STILL_OPEN_SQL}${inScope} AND NOT ${SIS_HOLDS_SQL}
+        sisDraft: Number((await q(`SELECT COUNT(*) n FROM people pe WHERE ${STILL_OPEN_SQL}${inScope} AND ${SIS_DRAFT_SQL}`, ...scopeArgs)).n),
+        noNextAction: (await q(`SELECT COUNT(*) n FROM people pe WHERE ${STILL_OPEN_SQL}${inScope} AND NOT ${SIS_HOLDS_SQL} AND NOT ${SIS_DRAFT_SQL}
           AND NOT EXISTS (SELECT 1 FROM tasks t WHERE t.person_id = pe.id AND t.done_at IS NULL)`, ...scopeArgs)).n,
         admitted30: (await q('SELECT COUNT(*) n FROM people WHERE admitted_at >= ?', since30)).n,
         admittedTotal: (await q('SELECT COUNT(*) n FROM people WHERE status = ?', 'Admitted')).n,
@@ -2021,6 +2027,8 @@ export const handle = async (req, res) => {
         (SELECT due_at FROM tasks t WHERE t.person_id = pe.id AND t.done_at IS NULL ORDER BY due_at LIMIT 1) AS next_action_at,
         (SELECT MIN(occurred_at) FROM lifecycle_events le WHERE le.person_id = pe.id AND le.fact = 'form_started') AS form_started_at,
         (SELECT MIN(occurred_at) FROM lifecycle_events le WHERE le.person_id = pe.id AND le.fact = 'matriculated') AS matriculated_at,
+        -- a draft in the SIS (26.10.2026, src/lifecycle.js SIS_DRAFT_SQL): its own band on Due, never overdue
+        CASE WHEN ${SIS_DRAFT_SQL} THEN 1 ELSE 0 END AS sis_draft, ${SIS_DRAFT_REACH_SQL},
         -- the latest note (16.10.2026, src/listnote.js): the List's line, the Journey card's comment and Today's note, one
         -- rule; three joins on this same query, no request per row
         ${LIST_NOTE_COLS}
@@ -2741,10 +2749,12 @@ export const handle = async (req, res) => {
       // Next Steps as overdue"). A step added AFTER the admission slips past the close-on-status
       // rule; a finished person's leftover is on their own page under "Still open", never in a list.
       const [inScope, scopeArgs] = scopeSql(scopeRange(url));
-      let sql = `SELECT t.*, pe.name, pe.programme, pe.status, pe.phone, pe.source_channel FROM tasks t JOIN people pe ON pe.id = t.person_id WHERE t.done_at IS NULL AND ${STEP_LISTED_SQL}${inScope}`;
+      // sis_draft (26.10.2026): the step of a draft in the SIS waits in its own band on Due, so Overdue and Today leave it out
+      let sql = `SELECT t.*, pe.name, pe.programme, pe.status, pe.phone, pe.source_channel, CASE WHEN ${SIS_DRAFT_SQL} THEN 1 ELSE 0 END AS sis_draft
+        FROM tasks t JOIN people pe ON pe.id = t.person_id WHERE t.done_at IS NULL AND ${STEP_LISTED_SQL}${inScope}`;
       const args = [...scopeArgs];
-      if (scope === 'overdue') { sql += ' AND t.due_at < ?'; args.push(dayStart()); }
-      if (scope === 'today') { sql += ' AND t.due_at >= ? AND t.due_at < ?'; args.push(dayStart(), dayEnd()); }
+      if (scope === 'overdue') { sql += ` AND t.due_at < ? AND NOT ${SIS_DRAFT_SQL}`; args.push(dayStart()); }
+      if (scope === 'today') { sql += ` AND t.due_at >= ? AND t.due_at < ? AND NOT ${SIS_DRAFT_SQL}`; args.push(dayStart(), dayEnd()); }
       if (scope === 'week') { sql += ' AND t.due_at < ?'; args.push(new Date(Date.now() + 7 * 86400000).toISOString()); }
       sql += ' ORDER BY t.due_at ASC';
       return json(res, 200, await db.prepare(sql).all(...args));
@@ -2853,7 +2863,8 @@ export const handle = async (req, res) => {
         byStage, bySource, byProgramme,
         total: (await db.prepare('SELECT COUNT(*) n FROM people').get()).n,
         openTasks: (await db.prepare('SELECT COUNT(*) n FROM tasks WHERE done_at IS NULL').get()).n,
-        overdueTasks: (await db.prepare('SELECT COUNT(*) n FROM tasks WHERE done_at IS NULL AND due_at < ?').get(dayStart())).n,
+        overdueTasks: (await db.prepare(`SELECT COUNT(*) n FROM tasks t JOIN people pe ON pe.id = t.person_id WHERE t.done_at IS NULL
+          AND t.due_at < ? AND NOT ${SIS_DRAFT_SQL}`).get(dayStart())).n,
         timeToContract: Object.entries(groups).map(([k, v]) => ({ group: k, n: v.length, median: med(v) })).sort((a, b) => b.n - a.n),
       });
     }

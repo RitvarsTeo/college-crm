@@ -2244,6 +2244,11 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-when.over,html.ui-c .c-late,html.ui-c .c-now b.c-late{background:var(--j-alarm);color:var(--j-on-alarm);font-weight:700;
     border-radius:5px;padding:1px 7px;white-space:nowrap;display:inline-block;line-height:1.5;width:max-content}
   html.ui-c h3 b.c-count{border-radius:99px;padding:0 7px;letter-spacing:0;font-weight:700}
+  html.ui-c h3 b.c-count.draft{background:var(--btn-bg);color:var(--btn-ink)}   /* Draft in the SIS (26.10.2026): navy, calm */
+  html.ui-c .p-chip.t-draft i{background:var(--st-due)}
+  html.ui-c .c-st-draft .c-st-w{color:var(--st-track)}
+  html.ui-c .c-next-draft{border-left-color:var(--st-due)}
+  html.ui-c .t-draft{cursor:pointer}
   html.ui-c h3 b.c-count.over{background:var(--j-alarm);color:var(--j-on-alarm)} html.ui-c h3 b.c-count.today{background:var(--j-soon);color:var(--j-on-soon)}
   /* Q50: "answer now" - a message a working hour old; the same solid amber as Today, the urgency on the row */
   html.ui-c .c-answer{background:var(--j-soon);color:var(--j-on-soon);font-weight:700;border-radius:5px;padding:1px 7px;white-space:nowrap;display:inline-block;line-height:1.5}
@@ -4124,12 +4129,17 @@ function cScenes(root) {
 // Four states, and every open person is in exactly one of them. No "Waiting on us":
 // a message is a New Lead, a promise is a Next Step. No row limit.
 async function viewTodayC() {
-  const [people, tasks] = await Promise.all([cPeopleRows(), api('/api/tasks?scope=open')]);
+  const [people, all] = await Promise.all([cPeopleRows(), api('/api/tasks?scope=open')]);
+  // a draft in the SIS (26.10.2026): its own band; its steps wait inside it, never in Overdue or Due today
+  const open = people.filter((p) => !C_TERMINAL.includes(p.status));
+  const drafts = open.filter(cIsDraft);
+  const draftIds = new Set(drafts.map((p) => p.id));
+  const draftTasks = new Map(cByPerson(all.filter((t) => draftIds.has(t.person_id))).map((ts) => [ts[0].person_id, ts]));
+  const tasks = all.filter((t) => !draftIds.has(t.person_id));
   const over = tasks.filter((t) => cWhenClass(t.due_at) === 'over');
   const today = tasks.filter((t) => cWhenClass(t.due_at) === 'today');
   const later = tasks.filter((t) => !cWhenClass(t.due_at));
-  const open = people.filter((p) => !C_TERMINAL.includes(p.status));
-  const none = open.filter((p) => !p.next_action_at && !cSisHolds(p));
+  const none = open.filter((p) => !p.next_action_at && !cSisHolds(p) && !cIsDraft(p));
   const pct = open.length ? Math.round(((open.length - none.length) / open.length) * 100) : 100;
   // Admissions (29.09): the contact details and the notes right here, to call or write without opening the profile
   const byId = new Map(people.map((p) => [p.id, p]));
@@ -4162,7 +4172,7 @@ async function viewTodayC() {
   // NO STRIP ABOVE THE SECTIONS (the owner, 05.10.2026: "Nothing should be duplicated. Its confusing." - "you see in
   // needs you, we already have"): open / overdue / no next step / waiting in the Inbox are Home's Needs you, and each
   // of Home's figures opens its people here or in People. The sections keep their own counts in their headings.
-  C_TPD = { over, today, later, none, pTasks, pRow, byId, people, pct, open, done };
+  C_TPD = { over, today, later, none, drafts, draftTasks, pTasks, pRow, byId, people, pct, open, done };
   if (C_TODAY_AT) { C_TP.col = { cTodayOver: 'over', cTodayDue: 'today', cTodayNone: 'none' }[C_TODAY_AT] || null; C_TODAY_AT = ''; }
   return cTodayPool();
 }
@@ -4613,12 +4623,12 @@ async function cPoolCounts() {
     const after = (k, at) => { const s = cSeen(k); return Boolean(s && at && at > s); };
     const line = cLineNow();
     const inbox = (i.rows || []).filter((r) => cInLine(r, line));   // Q94: the person's own line
-    const dueNow = cByPerson(cDueNow(t));
+    const dueNow = cByPerson(cDueNow(t.filter((x) => !Number(x.sis_draft))));   // a draft in the SIS waits (26.10.2026)
     const people = (ppl && ppl.rows) || [];
     const put = (sel, html) => { const el = document.querySelector(sel); if (el) el.innerHTML = html; };
     // Today = everyone who needs an action NOW: Overdue + Due today + No next step (MASTER CONTROL for the owner,
     // 05.10.2026), which is exactly the set Today opens on; Coming up is a click away and not counted.
-    const none = people.filter((p) => !C_TERMINAL.includes(p.status) && !p.next_action_at && !cSisHolds(p));
+    const none = people.filter((p) => !C_TERMINAL.includes(p.status) && !p.next_action_at && !cSisHolds(p) && !cIsDraft(p));
     put('#cnLeads', cBadge(inbox.filter((r) => after('leads', r.received_at)).length));
     // a step is new on Today when its due DAY began after the last visit (it entered Today since), or it was planned
     // since; a step due later today is not new the moment Today has been opened
@@ -4697,6 +4707,7 @@ function cTodayPool() {
     { id: 'over', label: 'Overdue', rows: cByPerson(D.over).filter(okG), fn: D.pTasks, tone: 'over' },
     { id: 'today', label: 'Due today', rows: cByPerson(D.today).filter(okG), fn: D.pTasks, tone: 'today' },
     { id: 'later', label: 'Coming up', rows: cByPerson(D.later).filter(okG), fn: D.pTasks, tone: 'later' },
+    { id: 'draft', label: 'Draft in the SIS', rows: D.drafts.filter(okP), fn: null, tone: 'draft' },
     { id: 'none', label: 'No next step', rows: D.none.filter(okP), fn: D.pRow, tone: 'none' }];
   // NO CARD CHOSEN = what needs an action now: Overdue, Due today and No next step, lit together - the menu's count is
   // these people. Coming up is a click away. A card narrows to itself; a second click goes back to the three.
@@ -4749,19 +4760,27 @@ function cTodayBoard(D, groups) {
       <b>${esc(t0.name)}</b><small>${esc(t0.programme || 'programme not said')} · ${esc(cStage(t0.status))}</small>
       ${ts.map((t) => `<span class="c-jnext">${cStepIcon(t.label)}<span>${esc(cTask(t.label))}</span></span>
         <div class="t-foot">${cStateLine(...cStepState(D.byId.get(pid), t))}${D.done(t)}</div>`).join('')}${pick(pid, col)}</div>`; };
+  // a draft's card: no date, no red, no dragging; what it waits for, its open steps, since when and what was tried
+  const draftCard = (p) => { const ts = D.draftTasks.get(p.id) || []; const tried = [p.sis_draft_emailed, p.sis_draft_called].filter(Boolean).join(', ');
+    return `<div class="c-jp row t-card c-rail c-rail-due t-draft" data-pid="${esc(p.id)}" tabindex="0"
+      onclick="location.hash='#/person/${esc(p.id)}'" onkeydown="if(event.key==='Enter')location.hash='#/person/${esc(p.id)}'">
+      <b>${esc(p.name)}</b><small>${esc(p.programme || 'programme not said')} · ${esc(cStage(p.status))}</small>
+      <span class="c-jnext">${C_JICON.next}<span>Waits for them to submit</span></span>
+      ${ts.map((t) => `<span class="c-jnext">${cStepIcon(t.label)}<span>${esc(cTask(t.label))}</span>${D.done(t)}</span>`).join('')}
+      <div class="t-foot"><div class="c-st c-st-draft"><span class="c-st-w">Draft since ${esc(cDraftSince(p) || 'the SIS')}</span>${tried ? `<span class="c-st-d">· ${esc(tried)}</span>` : ''}</div></div></div>`; };
   const emptyFold = (g) => !folded(g) && !C_TP.col && cFoldEmpty('due', g.id, g.rows.length);
   const column = (g, i) => {
     if (emptyFold(g)) return cFoldStrip('due', g.id, i + 1, g.label, 0);
     if (folded(g)) return `<div class="c-col t-col t-fold${g.id === 'later' ? ' c-drop t-drop' : ''}" data-col="${g.id}" role="button" tabindex="0" aria-label="${esc(g.label)}: ${g.rows.length}, open"
       onclick="cTodayTap('${g.id}')" onkeydown="if(event.key==='Enter')cTodayTap('${g.id}')"><span class="t-foldl">${esc(g.label)}</span><b>${g.rows.length}</b></div>`;
-    const open = C_TP.more[g.id] || (C_TP.pick && g.rows.some((ts) => ts[0].person_id === C_TP.pick.pid));
+    const open = C_TP.more[g.id] || (C_TP.pick && g.id !== 'draft' && g.rows.some((ts) => ts[0].person_id === C_TP.pick.pid));
     const shown = open ? g.rows : g.rows.slice(0, C_TCOL_SHOW);
     const rest = g.rows.length - shown.length;
     const more = rest > 0 ? `<button type="button" class="c-jmore" onclick="event.stopPropagation();C_TP.more['${g.id}']=true;cTodayPool()">${rest} more</button>`
       : C_TP.more[g.id] && g.rows.length > C_TCOL_SHOW ? `<button type="button" class="c-jmore" onclick="event.stopPropagation();C_TP.more['${g.id}']=false;cTodayPool()">Show fewer</button>` : '';
     const fold = g.id === 'later' && !C_TP.col ? `<button type="button" class="t-foldx" onclick="C_TP.upOpen=false;cTodayPool()">Fold</button>` : '';
     return `<div class="c-col t-col" style="--jt:${((i + 1) / cols.length).toFixed(3)}"><h3><span class="c-jn">${i + 1}</span>${esc(g.label)}<b class="c-count ${g.tone}">${g.rows.length}</b>${fold}</h3>
-      <div class="c-drop t-drop" data-col="${g.id}">${shown.map((ts) => card(ts, g.id)).join('') || '<div class="c-empty">Nobody here.</div>'}${more}</div></div>`;
+      <div class="${g.id === 'draft' ? 't-still' : 'c-drop t-drop'}" data-col="${g.id}">${shown.map((ts) => (g.id === 'draft' ? draftCard(ts) : card(ts, g.id))).join('') || '<div class="c-empty">Nobody here.</div>'}${more}</div></div>`;
   };
   const widths = cols.map((g) => (folded(g) || emptyFold(g) ? '92px' : 'minmax(0,1fr)')).join(' ');
   return `<div class="c-cols t-board" style="grid-template-columns:${widths}">${cols.map(column).join('')}</div>`;
@@ -5158,8 +5177,9 @@ function cPeopleMatch(p, t, f, known) {
   if (f.stage && f.stage.startsWith('tag:')) {
     if (p.status !== ((CFG.stageRoles || {}).closed || 'Not proceeding') || p.closed_tag !== f.stage.slice(4)) return false;
   } else if (f.stage && f.stage !== 'open' && p.status !== f.stage) return false;
-  if (f.due === 'none') { if (!open || t || cSisHolds(p)) return false; }
-  else if (f.due && !(t && cWhenClass(t.due_at) === f.due)) return false;
+  const draft = Number(p.sis_draft) === 1;   // a draft in the SIS is never overdue nor without a step (26.10.2026)
+  if (f.due === 'none') { if (!open || t || cSisHolds(p) || draft) return false; }
+  else if (f.due && (draft || !(t && cWhenClass(t.due_at) === f.due))) return false;
   if (f.arrived && !cDay(p.created_at).startsWith(f.arrived)) return false;   // the year of first contact (Q36)
   if (f.data === 'nocontact' && (p.email || p.phone)) return false;
   if (f.data === 'odd' && !(p.programme && !known.has(p.programme))) return false;
@@ -5517,22 +5537,28 @@ const cReach = (p) => [cTelLink(p), cMailLink(p)].filter(Boolean).join(' · ');
 // alert), amber = due today / answer now (the signal), navy = planned, grey = no next step, blue = the SIS holds it.
 // A card with no next step carries its action on that line ("Choose"); the dark button left the cards. Real dates are
 // never touched: an old sheet date stays overdue by as many days as it is.
-const C_ST = { over: 'Overdue', today: 'Due today', due: 'Due', none: 'No next step', sis: 'With the SIS', late: 'Late', now: 'Answer now', new: 'New', aside: 'Set aside' };
-const C_ST_RAIL = { over: 'over', today: 'today', due: 'due', none: 'none', sis: 'sis', late: 'over', now: 'over', new: 'due', aside: 'due' };   // Q69: red needs you, navy on track
+const C_ST = { over: 'Overdue', today: 'Due today', due: 'Due', none: 'No next step', sis: 'With the SIS', draft: 'Draft in the SIS', late: 'Late', now: 'Answer now', new: 'New', aside: 'Set aside' };
+const C_ST_RAIL = { over: 'over', today: 'today', due: 'due', none: 'none', sis: 'sis', draft: 'due', late: 'over', now: 'over', new: 'due', aside: 'due' };   // Q69: red needs you, navy on track
 function cStateLine(st, detail, act, title) {
   return `<div class="c-st c-st-${st}"${title ? ` title="${esc(title)}"` : ''}><span class="c-st-w">${C_ST[st] || esc(st)}</span>${
     detail ? `<span class="c-st-d">· ${esc(detail)}</span>` : ''}${act || ''}</div>`;
 }
 const cDdMm = (iso) => { const d = cDay(iso); return d ? `${d.slice(8, 10)}.${d.slice(5, 7)}` : ''; };
 // a person's state from the next step: overdue by N days, due today, due on a date; no step: the SIS holds them, or no next step
+// A DRAFT IN THE SIS (Admissions 26.10.2026, the owner's pick B): the SIS says the form is started, their one form call is
+// done, and nothing came in from them since - they wait to submit, navy, never overdue (src/lifecycle.js SIS_DRAFT_SQL, the
+// server's p.sis_draft); their open steps wait with them
+const cIsDraft = (p) => Boolean(p && Number(p.sis_draft) === 1);
+const cDraftSince = (p) => (p && p.sis && p.sis.since ? cDdMm(p.sis.since) : '');
 function cStepState(p, t) {
+  if (p && Number(p.sis_draft) === 1) return ['draft', p.sis && p.sis.since ? 'since ' + cDdMm(p.sis.since) : ''];   // = cIsDraft, inline: lifted alone by tests
   if (t && t.due_at) { const w = cWhenClass(t.due_at); return w === 'over' ? ['over', `${cDaysLate(t.due_at)} d`] : w === 'today' ? ['today', ''] : ['due', cDdMm(t.due_at)]; }
   if (cSisHolds(p)) return ['sis', (p.sis && p.sis.label) || ''];
   return ['none', ''];
 }
 const cStepGroup = (p, t) => { const st = cStepState(p, t)[0]; return st === 'today' || st === 'due' ? 'plan' : st; };
 const cChooseOnCard = (id) => `<button type="button" class="c-st-act" onclick="event.stopPropagation();openNewTask(${esc(JSON.stringify(String(id ?? '')))})" onkeydown="event.stopPropagation()">Choose ›</button>`;
-const C_GRP = { over: 'Overdue', plan: 'Planned', none: 'No next step', sis: 'With the SIS' };
+const C_GRP = { over: 'Overdue', plan: 'Planned', none: 'No next step', sis: 'With the SIS', draft: 'Draft in the SIS' };
 // the band over a group inside a column: its name and how many of the column's people are in that state; the Overdue
 // band opens the stage's overdue filter, as the header's red pill did before it
 const cGroupBand = (g, n, stage) => `<div class="c-grp c-grp-${g}"${g === 'over' ? ` role="button" tabindex="0" onclick="event.stopPropagation();cJfOverdue(${esc(JSON.stringify(String(stage ?? '')))})" onkeydown="if(event.key==='Enter')cJfOverdue(${esc(JSON.stringify(String(stage ?? '')))})"` : ''}><span>${C_GRP[g]}</span><b>${n}</b></div>`;
@@ -5589,14 +5615,14 @@ function cJfPick(k, value, on) {
 // Q36: a column's "N overdue" shows exactly those people: the stage and the overdue filter, together.
 function cJfOverdue(stage) { C_JF = { ...C_JF_EMPTY(), stage: [stage], due: ['over'] }; C_JFOPEN = null; cDrawJourney(); }
 // the two colours of the graph (Q69): a segment opens the stage filtered to the states it stacks
-const C_ST_GROUPS = [['need', ['over', 'none'], 'Needs you'], ['track', ['today', 'due', 'sis'], 'On track']];
+const C_ST_GROUPS = [['need', ['over', 'none'], 'Needs you'], ['track', ['today', 'due', 'sis', 'draft'], 'On track']];
 function cJfStates(stage, k) {
   const g = C_ST_GROUPS.find((x) => x[0] === k);
   C_JF = { ...C_JF_EMPTY(), stage: [stage], due: g ? [...g[1]] : [k] }; C_JFOPEN = null; cDrawJourney();
 }
 function cJfClear() { C_JF = C_JF_EMPTY(); C_JFOPEN = null; cDrawJourney(); }
 // the State filter (Q66): the five states of the cards; "Overdue or today" was dropped earlier, it was just the two together
-const C_JF_DUE = [['over', 'Overdue'], ['today', 'Due today'], ['due', 'Planned'], ['none', 'No next step'], ['sis', 'With the SIS']];
+const C_JF_DUE = [['over', 'Overdue'], ['today', 'Due today'], ['due', 'Planned'], ['none', 'No next step'], ['sis', 'With the SIS'], ['draft', 'Draft in the SIS']];
 const cNotSaid = '\u2014';   // stands for "no value recorded" in a filter
 function cJourneyMatch(p, t, f) {
   const prog = p.programme || cNotSaid, owner = p.owner || cNotSaid, src = p.source_channel || cNotSaid;
@@ -5686,7 +5712,7 @@ function cJourneyBand(everyone, taskOf, stages, exitMark, out) {
   // step, with the SIS, the order of the column's bands. The bar's height and the shared baseline stay exact; every
   // segment is a path to its people (the stage, filtered to that state). The red count that sat beside the total went
   // the way of the column pill: the overdue segment says it.
-  const ST = ['over', 'today', 'due', 'none', 'sis'];
+  const ST = ['over', 'today', 'due', 'none', 'sis', 'draft'];
   const cols = stages.map((st) => {
     const ps = everyone.filter((p) => p.status === st.id);
     const by = Object.fromEntries(ST.map((k) => [k, 0]));
@@ -5776,6 +5802,7 @@ function cJourneySummary(everyone, taskOf, stages) {
 const C_JCOL_SHOW = 5;
 const C_JCOLOPEN = new Set();
 function cJUrgency(t, p) {
+  if (p && Number(p.sis_draft) === 1) return [4, 0];   // a draft in the SIS waits with the people the SIS holds
   if (!t || !t.due_at) return [cSisHolds(p) ? 4 : 3, 0];   // no next step, then the people the SIS holds (Q66)
   const w = cWhenClass(t.due_at);
   return w === 'over' ? [0, -cDaysLate(t.due_at)] : w === 'today' ? [1, 0] : [2, Date.parse(cDay(t.due_at)) || 0];
@@ -5967,7 +5994,11 @@ async function viewPersonC(id) {
       <div class="c-evt-when">${cStamp(e.occurred_at)}${e.actor ? ' · ' + esc(actorName(e.actor)) : ''}${e.channel ? ' · ' + esc(channelLabel(e.channel)) : ''}${e.origin === 'automatic' ? ' · <span class="c-auto">automatic</span>' : ''}</div>
       <div class="c-evt-what">${esc(e.subject || e.kind || '')}</div>
       ${e.field ? `<div class="c-evt-diff"><s>${esc(e.old_value ?? '(empty)')}</s> → <b>${esc(e.new_value ?? '(empty)')}</b></div>` : (e.body ? `<div class="c-evt-body">${esc(e.bodyClean || e.body)}</div>${e.bodyClean && e.bodyClean !== e.body ? `<details class="c-evt-orig"><summary>Show original</summary><div class="c-evt-body">${esc(e.body)}</div></details>` : ''}` : '')}${e.call && e.call.answered && e.call.id ? `<div class="c-evt-body">${cCallNoteInput(e.call)}</div>` : ''}</div>`;
-  const next = open
+  // a draft in the SIS (26.10.2026): what it waits for, navy; an open step stays with its Done, its date plain, never late
+  const draftNext = cIsDraft(p) ? `<div class="c-next c-next-draft"><b>Next step</b><div class="c-next-row"><span>Waits for them to submit</span><span class="c-when">Draft since ${esc(cDraftSince(p) || 'the SIS')}</span></div>
+    ${t ? `<div class="c-next-row"><span>${esc(cTask(t.label))}</span><span class="c-when">${esc(cDdMm(t.due_at))}</span></div>
+      <div class="c-row-acts"><button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, false, ${esc(JSON.stringify(String(p.id ?? '')))})">Done</button><button class="btn sm ghost" onclick="openReschedule(${Number(t.id)})">Move the date</button></div>` : ''}</div>` : '';
+  const next = draftNext && open ? draftNext : open
     ? (t ? `<div class="c-next"><b>Next step</b><div class="c-next-row"><span>${esc(cTask(t.label))}</span><span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span>${t.owner ? `<span class="c-gap-soft">${esc(t.owner)}</span>` : ''}</div>
         <div class="c-row-acts"><button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, false, ${esc(JSON.stringify(String(p.id ?? '')))})">Done</button><button class="btn sm ghost" onclick="openReschedule(${Number(t.id)})">Move the date</button></div></div>`
       : cSisHolds(p) ? `<div class="c-next"><b>Next step</b>${cSisHeld(p)}<div class="c-row-acts"><button class="btn sm ghost" onclick="openNewTask(${esc(JSON.stringify(String(p.id ?? '')))})">Plan a next step</button></div></div>`

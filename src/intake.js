@@ -16,7 +16,7 @@ import { extractFrom, looksLikeJunk, signalsIn } from './extract.js';
 import { logEvent, MANUAL, AUTOMATIC } from './history.js';
 import { duplicateCheck, contactMatcher, onlyStrong, onePersonFor, isOwnAddress } from './identity.js';
 import { localDate, localMidnight } from './bizday.js';
-import { SIS_HOLDS_SQL } from './lifecycle.js';
+import { SIS_HOLDS_SQL, SIS_DRAFT_SQL } from './lifecycle.js';
 import { rangesSql } from './yearscope.js';
 import { markFor, markedWhy, contactKeys, MARKS } from './phonefilter.js';
 import { emailBodyFor, isEmailChannel, cleanEmailBody, emailShown } from './emailtext.js';
@@ -720,7 +720,7 @@ export async function waitingFor(db, role, now = nowIso()) {
     .all(role, ...(CFG.terminalStages || []));
   for (const p of leads) mine.push({ kind: 'lead', ...p });
   const overdue = await db.prepare(`SELECT t.*, pe.name FROM tasks t JOIN people pe ON pe.id = t.person_id
-    WHERE t.done_at IS NULL AND t.due_at < ? AND t.owner = ?`).all(now, role);
+    WHERE t.done_at IS NULL AND t.due_at < ? AND t.owner = ? AND NOT ${SIS_DRAFT_SQL}`).all(now, role);
   return {
     role,
     intake: mine.filter((m) => m.kind === 'intake').length,
@@ -1276,9 +1276,10 @@ export async function funnel(db, now = nowIso()) {
     biggestAccumulation: biggest && biggest.people ? biggest : null,
     mostStuck: mostStuck && mostStuck.stuck ? mostStuck : null,
     agedInbound: await agedCount(db, now),
-    overdueActions: await n('SELECT COUNT(*) n FROM tasks WHERE done_at IS NULL AND due_at < ?', now),
+    overdueActions: await n(`SELECT COUNT(*) n FROM tasks t JOIN people pe ON pe.id = t.person_id WHERE t.done_at IS NULL AND t.due_at < ?
+      AND NOT ${SIS_DRAFT_SQL}`, now),   // a draft in the SIS is never overdue (26.10.2026)
     noNextAction: await n(`SELECT COUNT(*) n FROM people pe
-      WHERE pe.status NOT IN (${terminal.map(() => '?').join(',') || "''"}) AND NOT ${SIS_HOLDS_SQL}
+      WHERE pe.status NOT IN (${terminal.map(() => '?').join(',') || "''"}) AND NOT ${SIS_HOLDS_SQL} AND NOT ${SIS_DRAFT_SQL}
       AND NOT EXISTS (SELECT 1 FROM tasks t WHERE t.person_id = pe.id AND t.done_at IS NULL)`, ...terminal),
     honesty: 'Every number here is a count of rows that exist. Nothing is modelled, estimated or projected.',
   };

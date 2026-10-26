@@ -81,7 +81,7 @@ test('the tick lists offer only real values; Owner lists every configured role, 
     return all[label];
   };
   assert.deepEqual(ticks('programme'), ['NAV', 'ENG', DASH], 'no empty "All" option: an empty list already means all');
-  assert.deepEqual(ticks('due'), ['over', 'today', 'due', 'none', 'sis'], 'the State filter: the five states of the cards (Q66)');
+  assert.deepEqual(ticks('due'), ['over', 'today', 'due', 'none', 'sis', 'draft'], 'the State filter: the states of the cards (Q66; Draft in the SIS 26.10)');
   for (const role of CONFIG.owners) assert.ok(ticks('owner').includes(role), `${role} is offered`);
   assert.ok(ticks('owner').includes('Student Coordinator'));
   assert.deepEqual(ticks('source').sort(), ['phone', 'website', DASH].sort());

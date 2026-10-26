@@ -65,9 +65,9 @@ test('a stage with one colour is one segment; an empty stage has none; the scale
 test('every segment is a path to its people: the stage filtered to the states it stacks; the State filter keeps its five values', () => {
   const segs = segsOf(cellOf(draw(PEOPLE, TASKS), 3));
   assert.ok(segs.every((s) => s.stage === S && s.dataSt === s.st));
-  assert.match(APP, /const C_ST_GROUPS = \[\['need', \['over', 'none'\], 'Needs you'\], \['track', \['today', 'due', 'sis'\], 'On track'\]\];/);
+  assert.match(APP, /const C_ST_GROUPS = \[\['need', \['over', 'none'\], 'Needs you'\], \['track', \['today', 'due', 'sis', 'draft'\], 'On track'\]\];/);
   assert.match(fn('function cJfStates('), /C_JF = \{ \.\.\.C_JF_EMPTY\(\), stage: \[stage\], due: g \? \[\.\.\.g\[1\]\] : \[k\] \}; C_JFOPEN = null; cDrawJourney\(\);/);
-  assert.match(APP, /const C_JF_DUE = \[\['over', 'Overdue'\], \['today', 'Due today'\], \['due', 'Planned'\], \['none', 'No next step'\], \['sis', 'With the SIS'\]\];/);
+  assert.match(APP, /const C_JF_DUE = \[\['over', 'Overdue'\], \['today', 'Due today'\], \['due', 'Planned'\], \['none', 'No next step'\], \['sis', 'With the SIS'\], \['draft', 'Draft in the SIS'\]\];/);
   assert.match(APP, /\$\{box\('due', 'State', C_JF_DUE\)\}/, 'the filter box is named for what it holds');
   assert.match(fn('function cJourneyMatch('), /if \(!kept\('due', cStepState\(p, t\)\[0\]\)\) return false;/, 'the filter reads the same state as the card');
 });
