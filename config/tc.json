@@ -1,7 +1,7 @@
 {
   "_about": "TRAINING CENTRE settings (19.10.2026). The lists the Training Centre screens and the Excel import read. Statuses and areas are checked in code, never by a database CHECK, so a list can be renamed here without a migration. The defaults marked provisional are the owner's to confirm (MVP interview 19.10.2026: 'rest of questions I'll answer later').",
   "statuses": [
-    { "id": "not_contacted", "label": "Not contacted" },
+    { "id": "not_contacted", "label": "No status yet" },
     { "id": "to_contact", "label": "To contact" },
     { "id": "contacted", "label": "Contacted" },
     { "id": "met", "label": "Met" },

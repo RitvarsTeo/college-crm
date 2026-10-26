@@ -66,7 +66,7 @@ test('PREVIEW: counts only, writes nothing, and the rules are the written ones',
   for (const k of facts.contacts.filter((x) => x.name || x.email)) {
     assert.ok(!json.includes(k.name || '\u0000') && !json.includes(k.email || '\u0000'), 'no contact name or email in the preview');
   }
-  // no status in the Excel starts as Not contacted (provisional default, config/tc.json)
+  // no status in the Excel starts as not_contacted, shown "No status yet" (the owner, 26.10.2026; config/tc.json)
   const notSet = facts.companies.filter((c) => c.status === 'not_set').length;
   assert.ok(notSet > 0);
   assert.equal(counts.statuses.not_contacted, facts.companies.filter((c) => ['not_set', 'not_contacted'].includes(c.status)).length);
