@@ -194,6 +194,46 @@ export async function listCompanies(db, filters = {}, { page = 1, size = 100, so
   };
 }
 
+/**
+ * DOWNLOAD THE LIST (the owner's Client Hub pick 6, layout B, 26.10.2026): exactly the filtered Companies list as the rows
+ * of a workbook. people=false: one row per company; people=true: one row per active contact (a company with none keeps
+ * one row with the contact columns empty). Returns { rows, companies, people }.
+ */
+export async function exportRows(db, filters = {}, { sort = 'name', me = null, people = false, now = new Date() } = {}) {
+  const first = await listCompanies(db, filters, { page: 1, size: 2000, sort, me, now });
+  const list = first.total > first.rows.length
+    ? (await listCompanies(db, filters, { page: Math.ceil(first.total / 2000), size: 2000, sort, me, now })).rows : first.rows;
+  const thisYear = Number(localDate(now).slice(0, 4));
+  const years = []; for (let y = 2020; y <= thisYear; y++) years.push(y);
+  const statusOf = (c) => (TC.statuses.find((s) => s.id === c.status) || { label: c.status || '' }).label;
+  const company = (c) => [c.name, c.country || '', c.city || '', statusOf(c), (c.areas || []).join(', '), c.pic || '',
+    ...years.map((y) => (c.years && c.years[y]) || 0), Number(c.delegates) || 0, (c.next && c.next.due) || '', c.info ? 'yes' : ''];
+  const head = ['Company', 'Country', 'City', 'Status', 'Areas', 'Person in charge', ...years.map(String), 'Delegates in all', 'Next contact', 'Information to send'];
+  if (!people) return { rows: [head, ...list.map(company)], companies: list.length, people: 0 };
+  const byCo = new Map();
+  for (const k of await db.prepare(`SELECT company_id, name, position, email, phone, notes FROM tc_company_contacts WHERE archived_at IS NULL
+    ORDER BY company_id, name`).all()) {
+    const id = Number(k.company_id);
+    if (!byCo.has(id)) byCo.set(id, []);
+    byCo.get(id).push(k);
+  }
+  const rows = [[...head, 'Contact', 'Position', 'Email', 'Phone', 'Notes']];
+  let n = 0;
+  for (const c of list) {
+    const ks = byCo.get(Number(c.id)) || [];
+    if (!ks.length) rows.push([...company(c), '', '', '', '', '']);
+    for (const k of ks) { rows.push([...company(c), k.name || '', k.position || '', k.email || '', k.phone || '', k.notes || '']); n += 1; }
+  }
+  return { rows, companies: list.length, people: n };
+}
+
+/** How many active contacts the filtered companies have (the Download menu's second line). */
+export async function peopleCount(db, ids) {
+  if (!ids.length) return 0;
+  const want = new Set(ids.map(Number));
+  return (await db.prepare('SELECT company_id FROM tc_company_contacts WHERE archived_at IS NULL').all()).filter((k) => want.has(Number(k.company_id))).length;
+}
+
 /** Home and the start page's tile: what needs somebody, the four figures, the next contacts. */
 export async function home(db, { now = new Date(), nextRows = 8 } = {}) {
   const w = tcWindow(now);

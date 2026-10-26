@@ -2797,6 +2797,17 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tc-kname{all:unset;cursor:pointer;font-weight:600;color:var(--ink);border-radius:4px}
   html.ui-c .tc-kname:hover{color:var(--pet)}
   html.ui-c .tc-people{margin-top:16px;padding:0;overflow:hidden}
+  html.ui-c #tcQ{width:340px;max-width:100%}
+  @media (max-width:760px){ html.ui-c #tcQ{width:auto} }
+  html.ui-c .tc-dl{position:relative}
+  html.ui-c .tc-dl summary{list-style:none;cursor:pointer}
+  html.ui-c .tc-dl summary::-webkit-details-marker{display:none}
+  html.ui-c .tc-dlmenu{position:absolute;right:0;top:calc(100% + 6px);z-index:30;width:300px;background:var(--menu);border:1px solid var(--rule2);border-radius:10px;box-shadow:var(--lift-hover);overflow:hidden}
+  html.ui-c .tc-dlmenu a{display:block;padding:10px 14px;color:var(--ink);text-decoration:none;border-top:1px solid var(--rule2)}
+  html.ui-c .tc-dlmenu a:first-child{border-top:0}
+  html.ui-c .tc-dlmenu a:hover{background:var(--surface-2)}
+  html.ui-c .tc-dlmenu b{display:block;font-weight:600}
+  html.ui-c .tc-dlmenu small{color:var(--t3);font-size:12px}
   html.ui-c .tc-people h3{margin:0;padding:12px 16px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--t2);border-bottom:1px solid var(--rule2)}
   html.ui-c .tc-pline .c-what b{display:block;font-weight:600}
   html.ui-c .tc-kname:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
@@ -10851,6 +10862,25 @@ async function tcLoadCompanies() {
   T_LIST = list; T_PEOPLE = people;
   tcDrawCompanies();
 }
+// DOWNLOAD THE LIST (the owner's Client Hub pick 6, layout B, 26.10.2026): Download, Companies or Companies with their
+// people, exactly the filtered list as Excel.
+function tcListQuery() {
+  const qs = new URLSearchParams();
+  for (const [k, v] of Object.entries(T_F)) if (v) qs.set(k, v);
+  if (T_Q) qs.set('q', T_Q);
+  if (T_SORT && T_SORT !== 'name') qs.set('sort', T_SORT);
+  return qs;
+}
+function tcDownloadMenu() {
+  const qs = tcListQuery(), n = T_LIST ? Number(T_LIST.total) : 0;
+  const withPeople = new URLSearchParams(qs); withPeople.set('people', '1');
+  return `<details class="tc-dl" ontoggle="if(this.open)tcPeopleCount()"><summary class="btn ghost">Download ▾</summary><div class="tc-dlmenu" role="menu">
+    <a role="menuitem" href="/api/tc/companies.xlsx?${esc(qs.toString())}" download><b>Companies · ${n}</b><small>one row per company</small></a>
+    <a role="menuitem" href="/api/tc/companies.xlsx?${esc(withPeople.toString())}" download><b>Companies with their people<span id="tcDlN"></span></b><small>one row per contact: name, position, email, phone</small></a></div></details>`;
+}
+async function tcPeopleCount() {
+  try { const r = await api('/api/tc/companies/people-count?' + tcListQuery().toString()); const el = $('#tcDlN'); if (el) el.textContent = ' · ' + Number(r.people); } catch (e) {}
+}
 // SEARCH PEOPLE (the owner's Client Hub pick 1, layout A, 26.10.2026): the Companies box also lists the people it finds;
 // a person opens their company page with the edit drawer open on them.
 let T_PEOPLE = null, T_OPEN_CONTACT = null;
@@ -10912,7 +10942,7 @@ function tcDrawCompanies() {
   $('#view').innerHTML = cPoolFrame({
     title: T_TITLE,
     crumb: `${Number(L.total)} ${L.total === 1 ? 'company' : 'companies'}${Object.values(T_F).some(Boolean) || T_Q ? ' match' : ''}`,
-    act: `${tcRvLink()}<input class="c-search" id="tcQ" placeholder="Search company, city, country or person" value="${esc(T_Q)}" aria-label="Search companies and people"><button class="btn" onclick="tcOpenAdd()">Add company</button>`,
+    act: `${tcRvLink()}<input class="c-search" id="tcQ" placeholder="Search company, city, country or person" value="${esc(T_Q)}" aria-label="Search companies and people">${tcDownloadMenu()}<button class="btn" onclick="tcOpenAdd()">Add company</button>`,
     band: cPoolBand('Status', cols, T_F.status, 'tcPickStatus'),
     filters: cPoolFilters('companies', boxes, any ? 'tcClear()' : ''),
     body: cPoolRows(L.rows, row, 'No company matches. Remove a filter to widen the list.')
