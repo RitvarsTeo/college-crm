@@ -106,8 +106,8 @@ companies with no status - defaults in use); phone: marked number of a known per
   HIS ORDER (26.10): 10 RSVP answers first, then 3 Edit a contact, 1 Search people, 6 Download list, then 2, 9, 8, 5, 4.
 - `DECIDED` 26.10 HIS PICK for 10 RSVP: layout B (one funnel Sent > Reached > Answered > Coming, answers by person in
   charge, company page line) + LIVE read-only from Client Hub (new read-only key, he pastes it).
-  `LIVE` 26.10 patch 74 (a5ce9d6 + record d6f239a): Answered 2, Coming 3 on the live page. Open: the test answer counts in
-  the totals; Atlantic Shipping's contact is not linked to an Intake company (shows under No person in charge).
+  `LIVE` 26.10 patch 74 (a5ce9d6 + record d6f239a) + patch 75 (ea89e76, test answers left out, his pick): live page Answered
+  1, Coming 1. Seen: Atlantic Shipping's contact is not linked to an Intake company (shows under No person in charge).
 - `LIVE` 25.10 Barbara Bławat is one Essberger contact (both addresses, both phones; the duplicate archived).
 - `LIVE` 25.10 12 TC contacts (11 companies) had two phones joined by ":::" (Client Hub import): first number in Phone,
   the rest in Notes (owner's yes); 0 left.
