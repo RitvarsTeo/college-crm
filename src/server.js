@@ -65,6 +65,7 @@ import * as tcclienthub from './tcclienthub.js';
 import * as tcreview from './tcreview.js';
 import * as tcgo from './tcgo.js';
 import * as tcrsvp from './tcrsvp.js';
+import * as tcmr from './tcmr.js';
 import * as tcpic from './tcpic.js';
 import * as tchome from './tchome.js';
 
@@ -3503,6 +3504,17 @@ export const handle = async (req, res) => {
       return json(res, 200, await tcgo.goPeople(db, { group: String(url.searchParams.get('group') || 'notReached'), state: String(url.searchParams.get('state') || '') }));
     }
     if (p === '/api/tc/go/sends' && req.method === 'GET') return json(res, 200, await tcgo.goSends(db));
+    // HOW OUR CLIENTS CHANGED (26.10.2026, src/tcmr.js): the Client book chapter (?all=1 every client), one company's card
+    if (p === '/api/tc/trends' && req.method === 'GET') {
+      const company = String(url.searchParams.get('company') || '');
+      if (company) {
+        if (!/^\d{1,9}$/.test(company)) return json(res, 400, { error: 'Which company?' });
+        return json(res, 200, await tcmr.companyMr(db, Number(company)));
+      }
+      const h = await tchome.homeYear(db, { me: await tcMe(req, url) });
+      const excelByYear = Object.fromEntries((h.byYear || []).map((r) => [r.year, r.n]));
+      return json(res, 200, await tcmr.trends(db, { all: url.searchParams.get('all') === '1', excelByYear }));
+    }
     // THE STAGE 2 LISTS PER MANAGER (the owner's pick A, 26.10.2026): the tabs, one manager's list with its answers, its file
     if (p === '/api/tc/go/stage2' && req.method === 'GET') {
       const code = String(url.searchParams.get('sender') || '');

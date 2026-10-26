@@ -749,6 +749,25 @@ CREATE TABLE IF NOT EXISTS tc_go_imports (
 -- THE STAGE 2 LISTS PER MANAGER (26.10.2026, the owner's pick A): who each of the six managers sends the RSVP email to,
 -- loaded from the Save the Date session's sender split. One row per Client Hub contact; a row the newer split no longer
 -- has is marked gone, never deleted. The answers are not stored here: they are read live (src/tcrsvp.js).
+-- HOW OUR CLIENTS CHANGED (26.10.2026, src/tcmr.js): the yearly management review, per business client and year, how
+-- many people they sent (6.5) and how they rated us (6.4). The review's own company names, each matched once to an
+-- Intake company in tc_mr_names (or left a name with no link).
+CREATE TABLE IF NOT EXISTS tc_mr (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  review_name TEXT NOT NULL,
+  year INTEGER NOT NULL,
+  trainees INTEGER,
+  rating REAL,
+  loaded_at TEXT NOT NULL,
+  loaded_by TEXT,
+  UNIQUE (review_name, year)
+);
+CREATE TABLE IF NOT EXISTS tc_mr_names (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  review_name TEXT NOT NULL UNIQUE,
+  company_id BIGINT,
+  matched_by TEXT                  -- auto | hand | NULL (no company)
+);
 CREATE TABLE IF NOT EXISTS tc_go_stage2 (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   ch_contact_id TEXT NOT NULL UNIQUE, -- Client Hub contacts.contact_id
