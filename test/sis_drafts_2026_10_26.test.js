@@ -124,7 +124,7 @@ test('a running copy: Overdue, Due today and No next step leave drafts out on Du
 });
 
 test('the screen: one band on Due with its own figure, the card in words, navy, no red; the State filter knows it; Help center', () => {
-  assert.match(APP, /\{ id: 'draft', label: 'Draft in the SIS', rows: D\.drafts\.filter\(okP\), fn: null, tone: 'draft' \}/);
+  assert.match(APP, /\{ id: 'draft', label: 'Draft in the SIS', rows: \(D\.drafts \|\| \[\]\)\.filter\(okP\), fn: null, tone: 'draft' \}/);
   assert.match(APP, /<span>Waits for them to submit<\/span>/);
   assert.match(APP, /Draft since \$\{esc\(cDraftSince\(p\) \|\| 'the SIS'\)\}/);
   assert.match(APP, /c-rail c-rail-due t-draft/, 'the navy rail');

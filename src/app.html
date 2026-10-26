@@ -4625,7 +4625,7 @@ async function cPoolCounts() {
     const after = (k, at) => { const s = cSeen(k); return Boolean(s && at && at > s); };
     const line = cLineNow();
     const inbox = (i.rows || []).filter((r) => cInLine(r, line));   // Q94: the person's own line
-    const dueNow = cByPerson(cDueNow(t.filter((x) => !Number(x.sis_draft))));   // a draft in the SIS waits (26.10.2026)
+    const dueNow = cByPerson(cDueNow(t)).filter((g) => !Number(g[0].sis_draft));   // a draft in the SIS waits (26.10.2026)
     const people = (ppl && ppl.rows) || [];
     const put = (sel, html) => { const el = document.querySelector(sel); if (el) el.innerHTML = html; };
     // Today = everyone who needs an action NOW: Overdue + Due today + No next step (MASTER CONTROL for the owner,
@@ -4709,7 +4709,7 @@ function cTodayPool() {
     { id: 'over', label: 'Overdue', rows: cByPerson(D.over).filter(okG), fn: D.pTasks, tone: 'over' },
     { id: 'today', label: 'Due today', rows: cByPerson(D.today).filter(okG), fn: D.pTasks, tone: 'today' },
     { id: 'later', label: 'Coming up', rows: cByPerson(D.later).filter(okG), fn: D.pTasks, tone: 'later' },
-    { id: 'draft', label: 'Draft in the SIS', rows: D.drafts.filter(okP), fn: null, tone: 'draft' },
+    { id: 'draft', label: 'Draft in the SIS', rows: (D.drafts || []).filter(okP), fn: null, tone: 'draft' },
     { id: 'none', label: 'No next step', rows: D.none.filter(okP), fn: D.pRow, tone: 'none' }];
   // NO CARD CHOSEN = what needs an action now: Overdue, Due today and No next step, lit together - the menu's count is
   // these people. Coming up is a click away. A card narrows to itself; a second click goes back to the three.
@@ -4782,7 +4782,8 @@ function cTodayBoard(D, groups) {
       : C_TP.more[g.id] && g.rows.length > C_TCOL_SHOW ? `<button type="button" class="c-jmore" onclick="event.stopPropagation();C_TP.more['${g.id}']=false;cTodayPool()">Show fewer</button>` : '';
     const fold = g.id === 'later' && !C_TP.col ? `<button type="button" class="t-foldx" onclick="C_TP.upOpen=false;cTodayPool()">Fold</button>` : '';
     return `<div class="c-col t-col" style="--jt:${((i + 1) / cols.length).toFixed(3)}"><h3><span class="c-jn">${i + 1}</span>${esc(g.label)}<b class="c-count ${g.tone}">${g.rows.length}</b>${fold}</h3>
-      <div class="${g.id === 'draft' ? 't-still' : 'c-drop t-drop'}" data-col="${g.id}">${shown.map((ts) => (g.id === 'draft' ? draftCard(ts) : card(ts, g.id))).join('') || '<div class="c-empty">Nobody here.</div>'}${more}</div></div>`;
+      ${g.id === 'draft' ? `<div class="t-still">${shown.map(draftCard).join('') || '<div class="c-empty">Nobody here.</div>'}${more}</div>`
+    : `<div class="c-drop t-drop" data-col="${g.id}">${shown.map((ts) => card(ts, g.id)).join('') || '<div class="c-empty">Nobody here.</div>'}${more}</div>`}</div>`;
   };
   const widths = cols.map((g) => (folded(g) || emptyFold(g) ? '92px' : 'minmax(0,1fr)')).join(' ');
   return `<div class="c-cols t-board" style="grid-template-columns:${widths}">${cols.map(column).join('')}</div>`;

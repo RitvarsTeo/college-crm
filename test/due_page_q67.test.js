@@ -51,7 +51,7 @@ test('RUN the Due page: its title and its band are "Due"; the sections keep thei
     cPoolFilters: () => '', cPoolSelect: () => '', cTodayBoard: () => '<board>', $: () => ({ innerHTML: '' }), cTodayWire() {}, cPoolWire() {}, cPoolOpened() {} };
   vm.runInNewContext(fn('function cByPerson(') + '\n' + (FOLD + fn('function cTodayPool(')) + '\ncTodayPool();', ctx);
   assert.equal(frames[0].title, 'Due', 'the page title');
-  assert.deepEqual(JSON.parse(JSON.stringify(cards[0])), ['Due', 'Needs you', ['Overdue', 'Due today', 'Coming up', 'No next step']], 'the band is named for the page; its groups as before');
+  assert.deepEqual(JSON.parse(JSON.stringify(cards[0])), ['Due', 'Needs you', ['Overdue', 'Due today', 'Coming up', 'Draft in the SIS', 'No next step']], 'the band is named for the page; its groups, Draft in the SIS since 26.10');
 });
 
 test('RUN the Inbox: short day words on one scale - Today, Yesterday, Earlier this week, Older - in the heads and the band', () => {
