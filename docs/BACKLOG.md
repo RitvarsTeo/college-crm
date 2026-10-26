@@ -109,8 +109,8 @@ companies with no status - defaults in use); phone: marked number of a known per
   `LIVE` 26.10 patch 74 (a5ce9d6 + record d6f239a) + patch 75 (ea89e76, test answers left out, his pick): live page Answered
   1, Coming 1. Seen: Atlantic Shipping's contact is not linked to an Intake company (shows under No person in charge).
 - `LIVE` 26.10 Companies simpler (HIS PICK B with filters): patch 83 (575f29c).
-- `DECIDED` 26.10 HIS PICK: Grand Opening A one page: Stage 1 Save the Date, then Stage 2 RSVP (packs ready, live email +
-  landing page pictures, lists per manager). He: "After all of this. commit and deploy."
+- `LIVE` 26.10 Grand Opening Stage 1 / Stage 2 (HIS PICK A): patch 84 (644b0c9). Pack lines from config
+  stage2.packStatus; change to "Sent dd.mm" when the Save the Date session reports a send.
 - `SAID` 26.10 Management review workbook (Downloads/5_Form_Management_review.xlsx) has metrics to use for Companies.
 - `LIVE` 26.10 Grand Opening RSVP lists per manager (HIS PICK A, tabs; Who answered removed): patch 82 (1f8c489), corrected
   split loaded (1,589: Mārcis 347, DS 519, MC 346, AB 275, Alma 7, JS 95).
