@@ -108,6 +108,8 @@ companies with no status - defaults in use); phone: marked number of a known per
   charge, company page line) + LIVE read-only from Client Hub (new read-only key, he pastes it).
   `LIVE` 26.10 patch 74 (a5ce9d6 + record d6f239a) + patch 75 (ea89e76, test answers left out, his pick): live page Answered
   1, Coming 1. Seen: Atlantic Shipping's contact is not linked to an Intake company (shows under No person in charge).
+- `DECIDED` 26.10 HIS PICK: Companies simpler = B with filters (Mine / All, one Filters button, no status chart, menu sub-items
+  Next contacts / Clients / Prospects / From Client Hub gone, Review list in Help center).
 - `LIVE` 26.10 Grand Opening RSVP lists per manager (HIS PICK A, tabs; Who answered removed): patch 82 (1f8c489), corrected
   split loaded (1,589: Mārcis 347, DS 519, MC 346, AB 275, Alma 7, JS 95).
 - `DECIDED` 26.10 HIS PICK for 9 Fix bounced: A, fix in Intake; "Fixed, waiting for the next send" + Download for the sender;
