@@ -96,7 +96,7 @@ test('Companies, the company page, Next contacts and People and access are built
   const list = fn('function tcDrawCompanies(');
   for (const part of ['cPoolFrame(', 'cPoolBand(', 'cPoolFilters(', 'cPoolSelect(', 'cPoolRows(']) assert.ok(list.includes(part), part);
   for (const f of ["'Area'", "'Country'", "'Person in charge'", "'Client'"]) assert.ok(list.includes(f), f);
-  assert.match(list, /placeholder="Search company, city or country"/);
+  assert.match(list, /placeholder="Search company, city, country or person"/, "the box finds people too (the owner, 26.10.2026)");
   const page = fn('function tcDrawCompany(');
   for (const part of ['c-pgrid', 'c-pmain', 'c-pside', 'Next communication', 'Log a communication', 'Contacts', 'Courses per year', 'Communications and changes']) {
     assert.ok(page.includes(part), part);

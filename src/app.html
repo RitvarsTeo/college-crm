@@ -2789,6 +2789,9 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tc-contact small{display:block;color:var(--t3);font-size:12.5px}
   html.ui-c .tc-kname{all:unset;cursor:pointer;font-weight:600;color:var(--ink);border-radius:4px}
   html.ui-c .tc-kname:hover{color:var(--pet)}
+  html.ui-c .tc-people{margin-top:16px;padding:0;overflow:hidden}
+  html.ui-c .tc-people h3{margin:0;padding:12px 16px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--t2);border-bottom:1px solid var(--rule2)}
+  html.ui-c .tc-pline .c-what b{display:block;font-weight:600}
   html.ui-c .tc-kname:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
   html.ui-c .tc-kx{position:absolute;top:14px;right:16px;background:none;border:0;font-size:18px;color:var(--t3);cursor:pointer}
   html.ui-c .tc-kdrawer .c-form.tc-kform{margin-top:14px;grid-template-columns:minmax(0,1fr);max-width:none}
@@ -10809,8 +10812,23 @@ async function tcLoadCompanies() {
   for (const [k, v] of Object.entries(T_F)) if (v) qs.set(k, v);
   if (T_Q) qs.set('q', T_Q);
   qs.set('page', String(T_PAGE)); qs.set('size', '100'); qs.set('sort', T_SORT);
-  T_LIST = await api('/api/tc/companies?' + qs.toString());
+  const [list, people] = await Promise.all([api('/api/tc/companies?' + qs.toString()),
+    T_Q.length >= 2 ? api('/api/tc/people?q=' + encodeURIComponent(T_Q)) : Promise.resolve(null)]);
+  T_LIST = list; T_PEOPLE = people;
   tcDrawCompanies();
+}
+// SEARCH PEOPLE (the owner's Client Hub pick 1, layout A, 26.10.2026): the Companies box also lists the people it finds;
+// a person opens their company page with the edit drawer open on them.
+let T_PEOPLE = null, T_OPEN_CONTACT = null;
+function tcPeopleSheet() {
+  const P = T_PEOPLE;
+  if (!P || !T_Q || T_Q.length < 2) return '';
+  const row = (k) => `<a class="c-line tc-cline tc-pline" href="#/tc/company/${Number(k.companyId)}" onclick="T_OPEN_CONTACT=${Number(k.id)}">
+      <div class="c-who"><b>${esc(k.name || k.email || k.phone)}</b><small>${esc(k.position || '')}</small></div>
+      <div class="c-what"><b>${esc(k.company)}</b><small class="p-step">${esc([k.email, k.phone].filter(Boolean).join(' · '))}</small></div>
+      <div class="c-when">${esc(k.pic)}</div></a>`;
+  return `<section class="c-sheet tc-people" aria-label="People"><h3>People · ${Number(P.total)}</h3>
+    ${P.rows.map(row).join('') || '<div class="c-empty">No person matches.</div>'}${P.total > P.rows.length ? `<div class="c-empty">The first ${P.rows.length}: type more to narrow it.</div>` : ''}</section>`;
 }
 // Show more asks for the next 100 only and adds them (round 2, 20.10.2026): at 1,497 companies the last click used to fetch
 // and draw the whole list again.
@@ -10860,11 +10878,12 @@ function tcDrawCompanies() {
   $('#view').innerHTML = cPoolFrame({
     title: T_TITLE,
     crumb: `${Number(L.total)} ${L.total === 1 ? 'company' : 'companies'}${Object.values(T_F).some(Boolean) || T_Q ? ' match' : ''}`,
-    act: `${tcRvLink()}<input class="c-search" id="tcQ" placeholder="Search company, city or country" value="${esc(T_Q)}" aria-label="Search companies"><button class="btn" onclick="tcOpenAdd()">Add company</button>`,
+    act: `${tcRvLink()}<input class="c-search" id="tcQ" placeholder="Search company, city, country or person" value="${esc(T_Q)}" aria-label="Search companies and people"><button class="btn" onclick="tcOpenAdd()">Add company</button>`,
     band: cPoolBand('Status', cols, T_F.status, 'tcPickStatus'),
     filters: cPoolFilters('companies', boxes, any ? 'tcClear()' : ''),
     body: cPoolRows(L.rows, row, 'No company matches. Remove a filter to widen the list.')
-      + (L.total > L.rows.length ? `<div class="c-row-acts tc-more"><button class="btn ghost" onclick="tcMoreCompanies()">Show ${Math.min(100, L.total - L.rows.length)} more of ${Number(L.total - L.rows.length)}</button></div>` : ''),
+      + (L.total > L.rows.length ? `<div class="c-row-acts tc-more"><button class="btn ghost" onclick="tcMoreCompanies()">Show ${Math.min(100, L.total - L.rows.length)} more of ${Number(L.total - L.rows.length)}</button></div>` : '')
+      + tcPeopleSheet(),
   });
   const q = $('#tcQ');
   if (q) q.addEventListener('input', () => { clearTimeout(T_QT); T_QT = setTimeout(async () => { T_Q = q.value.trim(); T_PAGE = 1; await tcLoadCompanies(); const n = $('#tcQ'); if (n) { n.focus(); n.setSelectionRange(n.value.length, n.value.length); } }, 250); });
@@ -10913,6 +10932,7 @@ async function viewTcCompany(id) {
   if (!T_CO || T_CO.id !== id) { T_EDIT = false; T_LOG_ALL = false; T_CO_RSVP = null; }
   T_CO = await api('/api/tc/companies/' + Number(id));
   tcDrawCompany();
+  if (T_OPEN_CONTACT) { const k = T_OPEN_CONTACT; T_OPEN_CONTACT = null; tcContactOpen(k); }
   if (!T_CO_RSVP || T_CO_RSVP.id !== Number(id)) {
     try { T_CO_RSVP = { id: Number(id), rows: (await api('/api/tc/go/rsvp?company=' + Number(id))).rows || [] }; } catch (e) { T_CO_RSVP = { id: Number(id), rows: [] }; }
     if (T_CO && T_CO.id === Number(id) && T_CO_RSVP.rows.length) tcDrawCompany();

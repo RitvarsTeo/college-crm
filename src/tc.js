@@ -14,7 +14,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { localDate } from './bizday.js';
-import { accountIndex, matchAccount, picChoices, picLabels, isMine, meKeys } from './tcpic.js';
+import { accountIndex, matchAccount, picChoices, picLabels, isMine, meKeys, foldName } from './tcpic.js';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 export const TC = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'tc.json'), 'utf8'));
@@ -472,6 +472,28 @@ export async function editContact(db, contactId, b, actor) {
     return { changed };
   });
 }
+/**
+ * SEARCH PEOPLE (the owner's Client Hub pick 1, layout A, 26.10.2026): the Companies box also finds contacts by name
+ * (accents folded: "Blawat" finds "Bławat"), email or phone digits. Active contacts of active companies only.
+ */
+export async function searchPeople(db, q, { limit = 50 } = {}) {
+  const text = String(q ?? '').trim();
+  if (text.length < 2) return { total: 0, rows: [] };
+  // letters with no accent to fold away (ł, ø, đ, ß, æ, œ, þ) are spelled out first, so "Blawat" finds "Bławat"
+  const fold = (v) => foldName(String(v ?? '').replace(/[łŁ]/g, 'l').replace(/[øØ]/g, 'o').replace(/[đĐ]/g, 'd').replace(/ß/g, 'ss')
+    .replace(/[æÆ]/g, 'ae').replace(/[œŒ]/g, 'oe').replace(/[þÞ]/g, 'th'));
+  const key = fold(text);
+  const low = text.toLowerCase();
+  const digits = text.replace(/\D+/g, '');
+  const all = await db.prepare(`SELECT k.id, k.name, k.position, k.email, k.phone, c.id AS company_id, c.name AS company, c.pic_name
+    FROM tc_company_contacts k JOIN tc_companies c ON c.id = k.company_id WHERE k.archived_at IS NULL AND c.archived_at IS NULL`).all();
+  const hits = all.filter((k) => (key && fold(k.name).includes(key)) || String(k.email || '').toLowerCase().includes(low)
+    || (digits.length >= 3 && String(k.phone || '').replace(/\D+/g, '').includes(digits)))
+    .sort((a, b) => String(a.name || a.email).localeCompare(String(b.name || b.email), 'lv') || String(a.company).localeCompare(String(b.company), 'lv'));
+  return { total: hits.length, rows: hits.slice(0, Math.max(1, Number(limit) || 50)).map((k) => ({ id: Number(k.id), name: k.name || '', position: k.position || '',
+    email: k.email || '', phone: k.phone || '', companyId: Number(k.company_id), company: k.company, pic: k.pic_name || '' })) };
+}
+
 export async function archiveContact(db, contactId, actor) {
   const k = await db.prepare('SELECT * FROM tc_company_contacts WHERE id = ? AND archived_at IS NULL').get(Number(contactId));
   if (!k) bad('There is no such contact.');

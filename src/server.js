@@ -3323,6 +3323,8 @@ export const handle = async (req, res) => {
         { page: url.searchParams.get('page'), size: url.searchParams.get('size'), sort: url.searchParams.get('sort') || 'name',
           me: await tcMe(req, url), only: url.searchParams.get('only') === '1' }));
     }
+    // SEARCH PEOPLE (the owner's pick 1, layout A, 26.10.2026): the Companies box also finds contacts
+    if (p === '/api/tc/people' && req.method === 'GET') return json(res, 200, await tc.searchPeople(db, String(url.searchParams.get('q') || '').slice(0, 100)));
     if (p === '/api/tc/companies' && req.method === 'POST') {
       const b = await body(req, 64 * 1024);
       if (b.pic && !(await adminOf(req))) return json(res, 403, { error: 'An admin picks the person in charge.' });
