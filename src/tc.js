@@ -227,6 +227,54 @@ export async function exportRows(db, filters = {}, { sort = 'name', me = null, p
   return { rows, companies: list.length, people: n };
 }
 
+/** The exhibitions "Where we met" offers (Season's events of kind exhibition), soonest first, undated last. */
+export async function metEvents(db) {
+  const rows = await db.prepare(`SELECT id, name, starts_on FROM tc_events WHERE archived_at IS NULL AND kind = 'exhibition'`).all();
+  return rows.map((e) => ({ id: Number(e.id), name: e.name, startsOn: e.starts_on || null }))
+    .sort((a, b) => String(a.startsOn || '9999').localeCompare(String(b.startsOn || '9999')) || byLv(a.name, b.name));
+}
+
+/**
+ * QUICK ADD (the owner's Client Hub pick 2, layout A, 26.10.2026): someone I just met. The company is picked, or made
+ * new by name (an existing one of that name is used instead); the person is added to it (or found, when the email is
+ * already one of its contacts); the meeting is one line in its history (Exhibition at <event>, else Physical meeting),
+ * which also moves its last contact. Returns { companyId, contactId, newCompany, newContact }.
+ */
+export async function quickAdd(db, b, actor) {
+  if (!actor) bad('Who is adding?');
+  let companyId = b.companyId ? Number(b.companyId) : null, newCompany = false;
+  if (companyId) await mustCompany(db, companyId);
+  else {
+    const name = clip(b.newCompany, 200);
+    if (!name) bad('Pick the company, or type a new one.');
+    // a company of that name already here, in any country, is the one: never a second copy of the same company
+    const twins = await db.prepare('SELECT id FROM tc_companies WHERE name_key = ? AND archived_at IS NULL').all(nameKey(name) || name.toLowerCase());
+    if (twins.length > 1) bad(`There are ${twins.length} companies called "${name}": pick one from the list.`);
+    if (twins.length === 1) companyId = Number(twins[0].id);
+    else try { companyId = (await addCompany(db, { name, country: b.country || null }, actor)).id; newCompany = true; } catch (e) {
+      if (e instanceof TcInputError && e.id) companyId = Number(e.id); else throw e;
+    }
+  }
+  const f = contactFields(b);
+  if (!f.name && !f.email && !f.phone) bad('A contact needs a name, an email or a phone.');
+  let contactId = null, newContact = true;
+  if (f.email) {
+    const k = await db.prepare('SELECT id FROM tc_company_contacts WHERE company_id = ? AND email = ? AND archived_at IS NULL').get(companyId, f.email);
+    if (k) { contactId = Number(k.id); newContact = false; }
+  }
+  if (!contactId) contactId = (await addContact(db, companyId, { name: f.name, position: f.position, email: f.email, phone: f.phone }, actor)).id;
+  let event = null;
+  if (b.eventId) {
+    event = await db.prepare(`SELECT id, name FROM tc_events WHERE id = ? AND archived_at IS NULL AND kind = 'exhibition'`).get(Number(b.eventId));
+    if (!event) bad('That exhibition is not in the Season.');
+  }
+  const who = f.name || f.email || f.phone;
+  const note = clip(b.note, 2000);
+  await logActivity(db, companyId, { kind: event ? 'exhibition' : 'physical_meeting', contactId,
+    body: `Met ${who}${event ? ' at ' + event.name : ''}.${note ? ' ' + note : ''}` }, actor);
+  return { companyId, contactId, newCompany, newContact };
+}
+
 /** How many active contacts the filtered companies have (the Download menu's second line). */
 export async function peopleCount(db, ids) {
   if (!ids.length) return 0;

@@ -2799,6 +2799,16 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tc-people{margin-top:16px;padding:0;overflow:hidden}
   html.ui-c #tcQ{width:340px;max-width:100%}
   @media (max-width:760px){ html.ui-c #tcQ{width:auto} }
+  html.ui-c .tc-homeacts{display:flex;align-items:center;gap:10px;margin-left:auto}
+  html.ui-c .tc-mhits{display:flex;flex-direction:column;margin-top:4px;border-radius:8px;overflow:hidden}
+  html.ui-c .tc-mhits button{all:unset;cursor:pointer;padding:7px 10px;border-top:1px solid var(--rule2);background:var(--surface);font-size:13.5px}
+  html.ui-c .tc-mhits button:first-child{border-top:0}
+  html.ui-c .tc-mhits button:hover, html.ui-c .tc-mhits button:focus-visible{background:var(--surface-2)}
+  html.ui-c .tc-mhits small{margin-left:8px;color:var(--t3);font-size:12px}
+  html.ui-c .tc-mhits .tc-mnew{font-weight:600;color:var(--pet)}
+  html.ui-c .tc-mpicked{display:inline-flex;align-items:center;gap:8px;font-weight:600;background:var(--surface-2);border-radius:8px;padding:6px 10px}
+  html.ui-c .tc-mpicked small{font-weight:500;color:var(--t3)}
+  html.ui-c .tc-mpicked button{all:unset;cursor:pointer;color:var(--t3)}
   html.ui-c .tc-dl{position:relative}
   html.ui-c .tc-dl summary{list-style:none;cursor:pointer}
   html.ui-c .tc-dl summary::-webkit-details-marker{display:none}
@@ -10695,7 +10705,7 @@ async function viewTcHome() {
       <a href="#/tc/companies" onclick="tcGoYear(${Number(Y)}, 'new');return false"><i class="new"></i>new <b>${tcN(D.clients.fresh)}</b></a></small>` : '';
   const largest = D.newClients.largest.map((c) => `<a href="#/tc/company/${Number(c.id)}">${esc(c.name)} ${tcN(c.n)}</a>`).join(' · ');
   $('#view').innerHTML = `<div class="kpage kb tc-home">
-    <div class="khead"><div><h1 class="c-sr">Home</h1><p class="c-crumb" style="margin:0">Training Centre ${Y}${D.countsTo ? ` · course counts to ${esc(tcDay(D.countsTo))}` : ''}</p></div>${tcYearSel(D)}</div>
+    <div class="khead"><div><h1 class="c-sr">Home</h1><p class="c-crumb" style="margin:0">Training Centre ${Y}${D.countsTo ? ` · course counts to ${esc(tcDay(D.countsTo))}` : ''}</p></div><div class="tc-homeacts"><button class="btn" onclick="tcMetOpen()">+ Someone I met</button>${tcYearSel(D)}</div></div>
     <section class="kday m-scene" aria-label="Today"><div class="kday-sheet"><h2>Today</h2><div class="kday-row">
       ${need('Planned today', D.today.planned, `tcGoNextUpto(${esc(JSON.stringify(String(D.asOf)))})`, 0)}${need('This week', D.today.week, `tcGoNextUpto(${esc(JSON.stringify(String(D.today.friday)))})`, 1)}
       ${ex ? `<a class="kneed tc-ex" href="#/tc/season/event/${Number(ex.id)}" style="--i:2"><span>Next exhibition</span><b>${esc(ex.name)}</b><small>${esc([exWhen, ex.companies != null ? tcN(ex.companies) + ' companies' : ''].filter(Boolean).join(' · '))}${ex.dateConfirmed ? '' : ' <em class="tc-tbc">date to confirm</em>'}</small></a>` : ''}</div></div></section>
@@ -10862,6 +10872,59 @@ async function tcLoadCompanies() {
   T_LIST = list; T_PEOPLE = people;
   tcDrawCompanies();
 }
+// QUICK ADD (the owner's Client Hub pick 2, layout A, 26.10.2026): "+ Someone I met" on TC Home opens a drawer: the
+// company (picked, or new), the person, where we met, a note. Add puts the person on the company with a history line.
+let T_MET = null, T_MET_EVENTS = null, T_MET_T = 0;
+async function tcMetOpen() {
+  if (!T_MET_EVENTS) { try { T_MET_EVENTS = (await api('/api/tc/met/events')).events || []; } catch (e) { T_MET_EVENTS = []; } }
+  T_MET = { companyId: null, company: '', newCompany: '', eventId: null };
+  const f = (key, label, type = 'text') => `<div><label for="tcm_${key}">${label}</label><input id="tcm_${key}" type="${type}" autocomplete="off"></div>`;
+  $('#modal').innerHTML = `<div class="tw-back" onclick="tcMetClose()"></div><aside class="tw-drawer tc-kdrawer tc-metdrawer" role="dialog" aria-modal="true" aria-label="Someone I met">
+    <button type="button" class="tc-kx" aria-label="Close" onclick="tcMetClose()">✕</button>
+    <h2>Someone I met</h2><p class="tw-sub">goes onto the company, with a line in its history</p>
+    <div class="c-form c-form1 tc-kform">
+      <div><label for="tcm_q">Company</label><div id="tcmPicked"></div><input id="tcm_q" autocomplete="off" placeholder="Start typing a company" oninput="tcMetSearch()"><div id="tcmHits" class="tc-mhits"></div></div>
+      ${f('name', 'Name')}${f('position', 'Position')}${f('email', 'Email', 'email')}${f('phone', 'Phone')}
+      <div><label>Where we met</label><div class="tw-opts" id="tcmWhere">${T_MET_EVENTS.map((e) => `<button type="button" class="tw-opt" aria-pressed="false" onclick="tcMetWhere(${Number(e.id)})">${esc(e.name)}</button>`).join('')}<button type="button" class="tw-opt" aria-pressed="true" onclick="tcMetWhere(null)">Other</button></div></div>
+      <div><label for="tcm_note">Note</label><textarea id="tcm_note" rows="3"></textarea></div></div>
+    <div id="tcmErr"></div>
+    <div class="tw-acts"><button class="btn" onclick="tcMetSave()">Add</button><button class="btn ghost" onclick="tcMetClose()">Cancel</button></div></aside>`;
+  const q = $('#tcm_q'); if (q) q.focus();
+}
+function tcMetClose() { if ($('.tc-metdrawer')) $('#modal').innerHTML = ''; T_MET = null; }
+if (typeof document !== 'undefined' && document.addEventListener) document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && document.querySelector('.tc-metdrawer')) tcMetClose(); });
+function tcMetWhere(id) {
+  T_MET.eventId = id;
+  const ids = [...T_MET_EVENTS.map((e) => e.id), null];
+  document.querySelectorAll('#tcmWhere .tw-opt').forEach((b, i) => b.setAttribute('aria-pressed', String(ids[i] === id)));
+}
+function tcMetSearch() {
+  clearTimeout(T_MET_T);
+  T_MET_T = setTimeout(async () => {
+    const q = $('#tcm_q'), hits = $('#tcmHits');
+    if (!q || !hits) return;
+    const text = q.value.trim();
+    if (text.length < 2) { hits.innerHTML = ''; return; }
+    const r = await api('/api/tc/companies?q=' + encodeURIComponent(text) + '&size=6&only=1');
+    hits.innerHTML = r.rows.map((c) => `<button type="button" onclick="tcMetPick(${Number(c.id)}, ${esc(JSON.stringify(String(c.name)))})">${esc(c.name)}<small>${esc(tcPlace(c) || '')}</small></button>`).join('')
+      + `<button type="button" class="tc-mnew" onclick="tcMetNew()">+ New company "${esc(text)}"</button>`;
+  }, 200);
+}
+function tcMetPick(id, name) { T_MET.companyId = id; T_MET.company = name; T_MET.newCompany = ''; tcMetShowPicked(); }
+function tcMetNew() { T_MET.companyId = null; T_MET.newCompany = $('#tcm_q').value.trim(); T_MET.company = T_MET.newCompany; tcMetShowPicked(); }
+function tcMetShowPicked() {
+  $('#tcmPicked').innerHTML = `<span class="tc-mpicked">${esc(T_MET.company)}${T_MET.companyId ? '' : ' <small>new</small>'} <button type="button" aria-label="Change company" onclick="T_MET.companyId=null;T_MET.newCompany='';$('#tcmPicked').innerHTML='';$('#tcm_q').hidden=false;$('#tcm_q').focus()">✕</button></span>`;
+  $('#tcm_q').hidden = true; $('#tcmHits').innerHTML = '';
+}
+async function tcMetSave() {
+  const v = (k) => ($('#tcm_' + k) || {}).value || '';
+  try {
+    const r = await post('/api/tc/met', { companyId: T_MET.companyId, newCompany: T_MET.newCompany, name: v('name'), position: v('position'),
+      email: v('email'), phone: v('phone'), eventId: T_MET.eventId, note: v('note') });
+    tcMetClose(); T_META = null; await tcMeta(); location.hash = '#/tc/company/' + Number(r.companyId);
+  } catch (e) { tcErr('#tcmErr', e.message); }
+}
+
 // DOWNLOAD THE LIST (the owner's Client Hub pick 6, layout B, 26.10.2026): Download, Companies or Companies with their
 // people, exactly the filtered list as Excel.
 function tcListQuery() {

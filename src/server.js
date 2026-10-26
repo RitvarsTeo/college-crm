@@ -3350,6 +3350,12 @@ export const handle = async (req, res) => {
       const all = await tc.listCompanies(db, tc.readFilters(url.searchParams), { page: 1, size: 2000, me: await tcMe(req, url) });
       return json(res, 200, { companies: all.total, people: await tc.peopleCount(db, all.rows.map((c) => c.id)) });
     }
+    // QUICK ADD (the owner's pick 2, layout A, 26.10.2026): someone I just met, from TC Home
+    if (p === '/api/tc/met/events' && req.method === 'GET') return json(res, 200, { events: await tc.metEvents(db) });
+    if (p === '/api/tc/met' && req.method === 'POST') {
+      try { return json(res, 200, await tc.quickAdd(db, await body(req), await actorOf(req, {}))); }
+      catch (e) { if (e instanceof tc.TcInputError) return json(res, 400, { error: e.message }); throw e; }
+    }
     // SEARCH PEOPLE (the owner's pick 1, layout A, 26.10.2026): the Companies box also finds contacts
     if (p === '/api/tc/people' && req.method === 'GET') return json(res, 200, await tc.searchPeople(db, String(url.searchParams.get('q') || '').slice(0, 100)));
     if (p === '/api/tc/companies' && req.method === 'POST') {
