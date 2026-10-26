@@ -151,6 +151,12 @@ companies with no status - defaults in use); phone: marked number of a known per
 
 - `DECIDED` HIS PICK (owner 21.10: "Thats why i want academy intake and tc intake separate sessions, this is hectic"): **Intake ACADEMY MASTER CONTROL** (this session: Academy feedback, Ieva, Admissions, SIS, phone, email) and **Intake TC MASTER CONTROL** (a separate session: Training Centre, Grand Opening, Season, review list, Google Calendar, MASTER PITCHER's TC boards). One app and one `production` branch: each master fetches origin/production right before a release, deploy_verify refuses a release that misses the other's commits, and each tells the other in one line before pushing production. Both keep this backlog and the control file.
 
+## 26.10.2026 - Ieva: SIS drafts show as overdue
+
+- Ieva 26.10: everyone who started the application form but did not submit shows overdue; she has emailed and called them all, no answers; asks to separate them differently; would not mark them Cold (only a draft); from the client side, chasing them every week is too much.
+- Live 26.10 (read-only): 5 people with a draft (4 overdue), 2 with an account only (2 overdue).
+- `DECIDED` HIS PICK (owner 26.10: "According to IEVA!", picture _ieva-feedback/drafts_AB_2026-10-26.png) = **B, their own band**: everyone with an SIS draft (form started, not submitted) still gets the ONE call (his 07.10 rule); after that call they move by themselves to a navy "Draft in the SIS" band on Due, never overdue and never "no next step", no clicking; they come back to the normal flow when the SIS says submitted (or they write or call). Account-only people are not part of it (they keep "did they start the application form?").
+
 ## 23.10.2026 - Ieva: "in the SIS" but not there (Andrejs Lavrinenko, Brunonas)
 
 - `LIVE` (patch 73, 25.10) an SIS account only (a login on apply.novikontas.org, no form) reads "In the SIS: Account only, no form yet since <date>", with no next guess; "Registered" had read like an application.
