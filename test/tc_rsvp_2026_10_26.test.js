@@ -69,6 +69,19 @@ test('the answers are matched live to the Intake company and its person in charg
   rsvp.setFetcher(null);
 });
 
+test('a test answer (company marked test) is left out of the counts and the list (the owner, 26.10.2026)', async () => {
+  rsvp.setFetcher(async () => [...ROWS,
+    { contact_id: 'T1', person_name: 'TEST - Somebody', company: 'Novikontas Academy (test)', answer: 'yes', guests: 2, updated_at: '2026-10-26T11:00:00Z' },
+    { contact_id: 'T2', person_name: 'Tester', company: 'TEST company', answer: 'maybe', guests: 1, updated_at: '2026-10-26T11:00:00Z' },
+    { contact_id: 'T3', person_name: 'Real', company: 'Testing Marine Ltd', answer: 'yes', guests: 1, updated_at: '2026-10-26T11:00:00Z' }]);
+  const { db } = await seeded();
+  const P = await rsvp.rsvpPage(db, { env: {}, now: 10 });
+  assert.deepEqual([P.totals.answered, P.totals.yes, P.totals.maybe, P.totals.coming], [7, 5, 1, 15], 'the two test rows are gone; "Testing Marine" is a real company');
+  assert.ok(!P.groups.some((g) => g.rows.some((r) => /test\)|TEST company/.test(r.company))));
+  assert.deepEqual(['Novikontas Academy (test)', 'TEST company', 'test', 'Testing Marine Ltd', 'Contest Shipping', ''].map(rsvp.isTest), [true, true, true, false, false, false]);
+  rsvp.setFetcher(null);
+});
+
 test('one read per minute at most; a failed read keeps the last answers, never an error page', async () => {
   let calls = 0;
   rsvp.setFetcher(async () => { calls += 1; if (calls === 2) throw Object.assign(new Error('down'), { code: 'ETIMEDOUT' }); return ROWS.slice(0, 1); });

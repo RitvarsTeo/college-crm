@@ -18,6 +18,9 @@ const ANSWERS = ['yes', 'maybe', 'no'];
 let cache = null;          // { at, rows }
 let fetcher = null;        // tests put their own here
 
+/** A test answer: its company is marked test ("Novikontas Academy (test)", "TEST company"); "Testing Ltd" is not. */
+export const isTest = (company) => /\btest\b/i.test(String(company || ''));
+
 export const configured = (env = process.env) => Boolean(String(env.CLIENT_HUB_RSVP_DATABASE_URL || '').trim());
 
 /** For tests: answer rows without a database. Pass null to go back to the real one. */
@@ -43,7 +46,8 @@ export async function answers({ env = process.env, now = Date.now() } = {}) {
     console.error('rsvp: Client Hub could not be read:', e && e.code ? e.code : 'error');
     return cache ? cache.rows : null;
   }
-  const clean = (rows || []).filter((r) => ANSWERS.includes(String(r.answer))).map((r) => ({
+  // the owner 26.10.2026: "leave test answers (company marked test) out of the counts and the list"
+  const clean = (rows || []).filter((r) => ANSWERS.includes(String(r.answer)) && !isTest(r.company)).map((r) => ({
     chContactId: String(r.contact_id || ''), name: String(r.person_name || '').slice(0, 160), company: String(r.company || '').slice(0, 200),
     answer: String(r.answer), people: r.answer === 'no' ? 0 : Math.max(1, Math.min(10, Number(r.guests) || 1)),
     at: r.updated_at ? new Date(r.updated_at).toISOString() : null }));
