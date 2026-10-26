@@ -108,8 +108,7 @@ companies with no status - defaults in use); phone: marked number of a known per
   charge, company page line) + LIVE read-only from Client Hub (new read-only key, he pastes it).
   `LIVE` 26.10 patch 74 (a5ce9d6 + record d6f239a) + patch 75 (ea89e76, test answers left out, his pick): live page Answered
   1, Coming 1. Seen: Atlantic Shipping's contact is not linked to an Intake company (shows under No person in charge).
-- `DECIDED` 26.10 HIS PICK for 6 Download list: B, Download menu with Companies / Companies with their people (Excel, the
-  filtered list); everyone in Training Centre may download.
+- `LIVE` 26.10 6 Download list, HIS PICK B (Companies / with their people, Excel, everyone in TC): patch 79 (4bfdabd).
 - `LIVE` 26.10 1 Search people, HIS PICK A (Companies box lists People; a person opens with the drawer): patch 77 (a5ab728).
 - `LIVE` 26.10 3 Edit a contact, HIS PICK B side drawer: patch 76 (86f9a6a + record 75d5f9d), checked on the live site.
 - `LIVE` 25.10 Barbara Bławat is one Essberger contact (both addresses, both phones; the duplicate archived).
