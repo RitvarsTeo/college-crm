@@ -189,6 +189,7 @@ export async function listCompanies(db, filters = {}, { page = 1, size = 100, so
       // [value, count, label]: a linked person is one line whatever the spelling; "Mine" counts the signed-in person's
       pics: tally(counted, (c) => c.picKey || '-').map(([k, n]) => [k, n, k === '-' ? '' : picOf.get(k) || k]).sort((a, b) => byLv(a[2] || a[0], b[2] || b[0])),
       mine: mk ? counted.filter((c) => isMine(c, mk)).length : 0,
+      all: counted.length,
       areas: AREA_IDS.map((a) => [a, counted.filter((c) => c.areas.includes(a)).length]),
     },
   };

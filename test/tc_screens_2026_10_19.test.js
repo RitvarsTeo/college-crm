@@ -72,9 +72,10 @@ test('the start page: two identical tiles with NO figures (owner 20.10: nothing 
   assert.match(APP, /html\.ui-c \.dl-tile\{display:flex;flex-direction:column;gap:18px;padding:24px 26px 20px;border-radius:16px;background:var\(--surface\);/);
 });
 
-test('the Training Centre menu: Home, Companies with Next contacts, Clients and Prospects, the Help center; the logo goes to the tiles', () => {
+test('the Training Centre menu: Home, Companies (no sub-items since 26.10.2026), the Help center; the logo goes to the tiles', () => {
   const nav = fn('function tcInstallNav(');
-  for (const h of ['#/tc"', '#/tc/companies"', '#/tc/next"', '#/tc/clients"', '#/tc/prospects"', '#/tc/help"']) assert.ok(nav.includes(h), h);
+  for (const h of ['#/tc"', '#/tc/companies"', '#/tc/help"']) assert.ok(nav.includes(h), h);
+  assert.doesNotMatch(nav, /data-c="tc-next"|data-c="tc-clients"|data-c="tc-prospects"|data-c="tc-review"/, 'the owner 26.10: "too much tabs"');
   assert.match(nav, /<div class="cnav tcnav"/, 'the Academy menu\'s own look');
   assert.match(nav, /<div class="ctabs tctabs"/, 'and its phone tabs');
   assert.match(fn('function cSetArea('), /brand\.setAttribute\('href', cAreas\(\)\.length > 1 \? '#\/start'/);
@@ -94,8 +95,12 @@ test('Training Centre Home: the year first, Today, four cards, every one opening
 
 test('Companies, the company page, Next contacts and People and access are built from Intake\'s own parts', () => {
   const list = fn('function tcDrawCompanies(');
-  for (const part of ['cPoolFrame(', 'cPoolBand(', 'cPoolFilters(', 'cPoolSelect(', 'cPoolRows(']) assert.ok(list.includes(part), part);
-  for (const f of ["'Area'", "'Country'", "'Person in charge'", "'Client'"]) assert.ok(list.includes(f), f);
+  for (const part of ['cPoolFrame(', 'cPoolFilters(', 'cPoolSelect(', 'cPoolRows(']) assert.ok(list.includes(part), part);
+  for (const f of ["'Status'", "'Area'", "'Country'", "'Person in charge'", "'Client'"]) assert.ok(list.includes(f), f);
+  // the owner 26.10.2026, "B but with filters": Mine or All, every filter behind one Filters button, no status chart
+  assert.match(list, /band: '',/, 'no status chart');
+  assert.match(list, /onclick="tcFilter\('pic','me'\)">Mine <b>/);
+  assert.match(list, /<summary class="btn ghost">Filters\$\{nf \? ` · \$\{nf\}` : ''\} ▾<\/summary>/);
   assert.match(list, /placeholder="Search company, city, country or person"/, "the box finds people too (the owner, 26.10.2026)");
   const page = fn('function tcDrawCompany(');
   for (const part of ['c-pgrid', 'c-pmain', 'c-pside', 'Next communication', 'Log a communication', 'Contacts', 'Courses per year', 'Communications and changes']) {
@@ -106,7 +111,7 @@ test('Companies, the company page, Next contacts and People and access are built
   assert.match(access, /if \(!isAdmin\(\)\)/);
   assert.match(access, /api\('\/api\/admin\/access'\)/);
   assert.match(fn('async function cHelpAdmin('), /<a href="#\/access"[^>]*>People and access<\/a>/, 'in the Help center admin pills');
-  assert.match(fn('function viewTcHelp('), /isAdmin\(\) \? '<h2 class="c-set-h">For admins<\/h2><div class="c-helpadmin"><a href="#\/access">People and access<\/a>/);
+  assert.match(fn('function viewTcHelp('), /isAdmin\(\) \? '<h2 class="c-set-h">For admins<\/h2><div class="c-helpadmin"><a href="#\/access">People and access<\/a><a href="#\/tc\/review">Review list \(from Client Hub\)<\/a>/);
 });
 
 test('Help keeps up: the Training Centre answers are one sentence each, and Academy says why there are two tiles', () => {

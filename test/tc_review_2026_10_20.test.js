@@ -210,9 +210,8 @@ test('the screen: reached from Companies and from the menu item From Client Hub 
   const fs = await import('node:fs');
   const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
   assert.match(app, /else if \(place === 'review'\) await viewTcReview\(\);/, 'the route');
-  assert.match(app, /act: `\$\{tcRvLink\(\)\}<input class="c-search" id="tcQ"/, 'the link on Companies');
-  const nav = app.slice(app.indexOf('<a href="#/tc" data-c="tc-home"'), app.indexOf('data-c="tc-help"'));
-  assert.match(nav, /<a href="#\/tc\/review" data-c="tc-review" id="tnReviewA"[^>]*hidden style="display:none"><span>From Client Hub<\/span>/, 'under Companies, hidden until contacts wait');
+  // the owner 26.10.2026 ("too much tabs", B with filters): the review list moved from Companies and the menu to the Help center, for admins
+  assert.match(app, /<a href="#\/tc\/review">Review list \(from Client Hub\)<\/a>/, 'in the Help center');
   const block = app.slice(app.indexOf('THE CLIENT HUB REVIEW LIST (#/tc/review) --'), app.indexOf('function viewTcHelp() {'));
   assert.ok(block.length > 2000, 'the block is found');
   assert.doesNotMatch(block.replace(/\/\/.*$/gm, ''), /\b(overdue|late|waiting since|days ago|still not|behind)\b/i);

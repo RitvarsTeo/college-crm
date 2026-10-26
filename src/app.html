@@ -2809,6 +2809,14 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tc-mpicked{display:inline-flex;align-items:center;gap:8px;font-weight:600;background:var(--surface-2);border-radius:8px;padding:6px 10px}
   html.ui-c .tc-mpicked small{font-weight:500;color:var(--t3)}
   html.ui-c .tc-mpicked button{all:unset;cursor:pointer;color:var(--t3)}
+  html.ui-c .tc-fbar{display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;margin:0 0 14px;position:relative;z-index:40}
+  html.ui-c .tc-mineall button b{margin-left:5px;font-weight:600;opacity:.75;font-variant-numeric:tabular-nums}
+  html.ui-c .tc-filters{position:static;display:inline-block}
+  html.ui-c .tc-filters summary{list-style:none;cursor:pointer}
+  html.ui-c .tc-filters summary::-webkit-details-marker{display:none}
+  html.ui-c .tc-fpanel{position:absolute;left:0;top:calc(100% + 6px);z-index:30;width:min(760px,100%);padding:12px;background:var(--menu);border:1px solid var(--rule2);border-radius:12px;box-shadow:var(--lift-hover)}
+  html.ui-c .tc-fpanel .p-filters{flex-wrap:wrap;margin:0}
+  html.ui-c .c-helpadmin a + a{margin-left:16px}
   html.ui-c .tc-dl{position:relative}
   html.ui-c .tc-dl summary{list-style:none;cursor:pointer}
   html.ui-c .tc-dl summary::-webkit-details-marker{display:none}
@@ -10540,10 +10548,6 @@ function tcInstallNav() {
     ${season ? `<a href="#/tc/season" data-c="tc-season" title="Exhibitions, plans and gifts over the year">${T_ICON.season}<span>Season</span></a>` : ''}
     <a href="#/tc/go" data-c="tc-go" id="tnGoA" title="The Grand Opening, 27 May 2027: the invitation and what came back" hidden style="display:none">${T_ICON.star}<span>Grand Opening</span></a>
     <a href="#/tc/companies" data-c="tc-companies" title="Every client company">${T_ICON.co}<span>Companies</span></a>
-    <div class="kids"><a href="#/tc/next" data-c="tc-next" title="Every next communication, by date"><span>Next contacts</span><span class="n" id="tnNext"></span></a>
-      <a href="#/tc/clients" data-c="tc-clients" title="Companies with delegates in any year"><span>Clients</span><span class="n" id="tnClients"></span></a>
-      <a href="#/tc/prospects" data-c="tc-prospects" title="Companies with no course yet"><span>Prospects</span><span class="n" id="tnProspects"></span></a>
-      <a href="#/tc/review" data-c="tc-review" id="tnReviewA" title="Client Hub contacts to place by hand" hidden style="display:none"><span>From Client Hub</span><span class="n" id="tnReview"></span></a></div>
     <a href="#/tc/help" data-c="tc-help" class="c-navfoot">${C_ICON.help}<span>Help center</span></a></div>`);
   // From Client Hub (board 4 R2, as in the owner's picked picture): shown only while contacts wait to be placed;
   // style display, because the menu's display:flex outranks [hidden]
@@ -10556,7 +10560,7 @@ function tcInstallNav() {
     <button type="button" data-t="more" aria-haspopup="dialog" aria-expanded="false" onclick="tcMore(true)">${C_ICON.more}<span>More</span></button></div>
     <div class="cmore" id="tMore" hidden><div class="cmore-back" onclick="tcMore(false)"></div>
     <div class="cmore-sheet" role="dialog" aria-modal="true" aria-label="More">
-      ${week ? more('#/tc/next', C_ICON.next, 'Next contacts') : ''}${season ? more('#/tc/season', T_ICON.season, 'Season') : ''}${more('#/tc/clients', T_ICON.star, 'All clients')}${more('#/tc/prospects', T_ICON.aim, 'Prospects')}<a href="#/tc/go" id="tmGoA" onclick="tcMore(false)" hidden style="display:none">${T_ICON.star}<span>Grand Opening</span></a>${more('#/tc/help', C_ICON.help, 'Help')}</div></div>`);
+      ${season ? more('#/tc/season', T_ICON.season, 'Season') : ''}${more('#/tc/companies', T_ICON.co, 'Companies')}<a href="#/tc/go" id="tmGoA" onclick="tcMore(false)" hidden style="display:none">${T_ICON.star}<span>Grand Opening</span></a>${more('#/tc/help', C_ICON.help, 'Help')}</div></div>`);
 }
 function tcMore(open) { const m = $('#tMore'); if (m) m.hidden = !open; }
 function tcMark(place) {
@@ -10871,10 +10875,15 @@ const T_F_EMPTY = () => ({ status: '', area: '', country: '', pic: '', client: '
 let T_F = T_F_EMPTY(); let T_Q = ''; let T_PAGE = 1; let T_LIST = null; let T_TITLE = 'Companies'; let T_KEEP = false; let T_SORT = 'name';
 let T_QT = 0; let T_MORE = false;
 async function viewTcCompanies(title) {
-  if (!T_KEEP) { T_F = T_F_EMPTY(); T_Q = ''; }
+  const fresh = !T_KEEP;
+  if (fresh) { T_F = T_F_EMPTY(); T_Q = ''; }
   T_KEEP = false; T_TITLE = title; T_PAGE = 1;
   await tcLoadCompanies();
+  // Mine first (the owner's pick B, 26.10.2026): a person with companies in their charge opens on their own
+  if (fresh && !T_F.pic && T_LIST && Number(T_LIST.facets.mine) > 0) { T_F.pic = 'me'; await tcLoadCompanies(); }
 }
+let T_FOPEN = false;
+function tcClearFilters() { const pic = T_F.pic; T_F = { ...T_F_EMPTY(), pic: pic === 'me' ? 'me' : '' }; T_SORT = 'name'; T_PAGE = 1; tcLoadCompanies(); }
 async function tcLoadCompanies() {
   const qs = new URLSearchParams();
   for (const [k, v] of Object.entries(T_F)) if (v) qs.set(k, v);
@@ -10990,23 +10999,29 @@ function tcDrawCompanies() {
   const cols = M.statuses.map((s) => ({ id: s.id, label: s.label, n: L.counts.status[s.id] || 0 }));
   const word = (v) => (v === '-' ? 'not recorded' : v === '*' ? 'any recorded' : v);
   const box = (k, label, values) => cPoolSelect(label, T_F[k], values, `tcFilter('${k}', this.value)`);
-  const more = T_MORE || Boolean(T_F.due || T_F.info || T_F.year || T_F.cohort || T_F.last) || T_SORT !== 'name';
   // TC Home's figures (round 3): trained in a year, came back / new that year, latest course against that year
   const yrs = []; for (let y = Number(cTodayIso().slice(0, 4)); y >= 2020; y--) yrs.push([String(y), String(y)]);
   const yf = T_F.year || '';
   const yearBoxes = [box('year', T_F.last ? 'Measured against' : 'Trained in', yrs),
     ...(yf ? [box('cohort', 'Clients in ' + yf, [['back', 'Came back'], ['new', 'New']]),
       box('last', 'Last course', [['recent', `${yf} or later`], ['mid', `${yf - 2}-${String(yf - 1).slice(-2)}`], ['old', `before ${yf - 2}`], ['none', 'No course yet']])] : [])];
+  // THE SIMPLER PAGE (the owner, 26.10.2026: "B but with filters"): Mine or All, and every filter behind one Filters button
   const boxes = [
+    box('status', 'Status', M.statuses.map((s) => [s.id, `${s.label} ${Number(L.counts.status[s.id] || 0)}`])),
     box('area', 'Area', L.facets.areas.map(([a, n]) => [a, `${a} ${n}`])),
     box('country', 'Country', [['*', 'Any recorded'], ...L.facets.countries.map(([c, n]) => [c, `${word(c)} ${n}`])]),
     box('pic', 'Person in charge', [['me', `Mine ${Number(L.facets.mine || 0)}`], ...L.facets.pics.map(([p, n, t]) => [p, `${t || word(p)} ${n}`])]),
     box('client', 'Client', [['yes', 'Clients'], ['no', 'Prospects']]),
-    // one line at 1440, as Journey's List: four on show, the rest behind More filters (open while one of them is set)
-    ...(more ? [box('due', 'Next contact', [['over', 'Overdue'], ['week', 'This week'], ['later', 'Later'], ['none', 'None planned']]),
-      box('info', 'Information to send', [['yes', 'Something to send']]),
-      cPoolSelect('Sort', T_SORT === 'name' ? '' : T_SORT, [['next', 'Next contact'], ['last', 'Latest course']], "T_SORT=this.value||'name';tcLoadCompanies()"), ...yearBoxes] : []),
-    `<button type="button" class="btn sm ghost p-more" aria-expanded="${more}" onclick="T_MORE=!T_MORE;tcDrawCompanies()">${more ? 'Fewer filters' : 'More filters'}</button>`];
+    box('due', 'Next contact', [['over', 'Overdue'], ['week', 'This week'], ['later', 'Later'], ['none', 'None planned']]),
+    box('info', 'Information to send', [['yes', 'Something to send']]),
+    cPoolSelect('Sort', T_SORT === 'name' ? '' : T_SORT, [['next', 'Next contact'], ['last', 'Latest course']], "T_SORT=this.value||'name';tcLoadCompanies()"), ...yearBoxes];
+  const nf = Object.entries(T_F).filter(([k, v]) => v && k !== 'pic').length + (T_F.pic && T_F.pic !== 'me' ? 1 : 0) + (T_SORT !== 'name' ? 1 : 0);
+  const mine = T_F.pic === 'me';
+  const fbar = `<div class="tc-fbar"><div class="c-seg tc-mineall" role="group" aria-label="Whose companies">
+      <button aria-pressed="${mine}" onclick="tcFilter('pic','me')">Mine <b>${tcN(L.facets.mine || 0)}</b></button>
+      <button aria-pressed="${!mine && T_F.pic === ''}" onclick="tcFilter('pic','')">All <b>${tcN(L.facets.all || 0)}</b></button></div>
+    <details class="tc-filters"${T_FOPEN ? ' open' : ''} ontoggle="T_FOPEN=this.open"><summary class="btn ghost">Filters${nf ? ` · ${nf}` : ''} ▾</summary>
+      <div class="tc-fpanel">${cPoolFilters('companies', boxes, nf ? 'tcClearFilters()' : '')}</div></details></div>`;
   const any = Object.values(T_F).some(Boolean) || Boolean(T_Q);
   const st = (c) => tcStatus(c.status).label + (c.statusDetail ? ' · ' + tcMeeting(c.statusDetail) : '');
   const row = (c) => `<a class="c-line tc-cline" href="#/tc/company/${Number(c.id)}">
@@ -11018,9 +11033,9 @@ function tcDrawCompanies() {
   $('#view').innerHTML = cPoolFrame({
     title: T_TITLE,
     crumb: `${Number(L.total)} ${L.total === 1 ? 'company' : 'companies'}${Object.values(T_F).some(Boolean) || T_Q ? ' match' : ''}`,
-    act: `${tcRvLink()}<input class="c-search" id="tcQ" placeholder="Search company, city, country or person" value="${esc(T_Q)}" aria-label="Search companies and people">${tcDownloadMenu()}<button class="btn" onclick="tcOpenAdd()">Add company</button>`,
-    band: cPoolBand('Status', cols, T_F.status, 'tcPickStatus'),
-    filters: cPoolFilters('companies', boxes, any ? 'tcClear()' : ''),
+    act: `<input class="c-search" id="tcQ" placeholder="Search company, city, country or person" value="${esc(T_Q)}" aria-label="Search companies and people">${tcDownloadMenu()}<button class="btn" onclick="tcOpenAdd()">Add company</button>`,
+    band: '',
+    filters: fbar,
     body: cPoolRows(L.rows, row, 'No company matches. Remove a filter to widen the list.')
       + (L.total > L.rows.length ? `<div class="c-row-acts tc-more"><button class="btn ghost" onclick="tcMoreCompanies()">Show ${Math.min(100, L.total - L.rows.length)} more of ${Number(L.total - L.rows.length)}</button></div>` : '')
       + tcPeopleSheet(),
@@ -11862,7 +11877,7 @@ function viewTcHelp() {
   $('#view').innerHTML = `<div class="c-head"><div><h1>Help center</h1></div><div class="act"><button class="btn" onclick="fbOpen('BUG')">Report a problem</button></div></div>
     <h2 class="c-set-h">How to</h2><div class="c-sheet c-set">${how}</div>
     <h2 class="c-set-h">Questions and answers</h2><div id="helpFaq" class="c-helpfaq"></div>
-    ${isAdmin() ? '<h2 class="c-set-h">For admins</h2><div class="c-helpadmin"><a href="#/access">People and access</a></div>' : ''}`;
+    ${isAdmin() ? '<h2 class="c-set-h">For admins</h2><div class="c-helpadmin"><a href="#/access">People and access</a><a href="#/tc/review">Review list (from Client Hub)</a></div>' : ''}`;
   if (window.HelpCenter) HelpCenter.mount(document.getElementById('helpFaq'), { faq: H.faq || [], onAsk: (text) => fbOpen('QUESTION', text) });
 }
 
