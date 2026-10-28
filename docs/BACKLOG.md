@@ -132,6 +132,7 @@ companies with no status - defaults in use); phone: marked number of a known per
   (the TC Excel's 2024 column is incomplete: 1,294 / 92 companies). Other years stay the Excel.
 - `DECIDED` 28.10 HIS PICK B for the compact TC menu: Home · Plan (My week · Season · Grand Opening) · Clients
   (Companies · Client book) · Help center.
+- `LIVE` 28.10 patch 90 (72535e9 + record 2ed58b2): Companies -> Import people from a file.
 - `DECIDED` 28.10 HIS PICK for 4 Import people from a file: A, one import on Companies; file -> match columns -> review
   (company found / pick / new; new, update, already there, to fix) -> Import; error file; same email = update.
 - `DECIDED` 26.10 HIS PICK: status "Not contacted" is relabelled "No status yet" (it is the no-status default); companies
