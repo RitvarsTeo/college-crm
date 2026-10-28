@@ -127,6 +127,7 @@ companies with no status - defaults in use); phone: marked number of a known per
   `LIVE` 28.10 patch 88 (8ff46ae + record c467929). Holds for the Grand Opening are AB's (his Excel): AB's 9.09 decisions LIVE 28.10 (148 marks: 106 mailbox, 42 hold).
 - `DECIDED` 28.10 HIS PICK for 5 Company families: B, Intake suggests (same name start / web domain), a person confirms
   and picks the parent; family on each member's page; nothing merges; one level.
+  `LIVE` 28.10 patch 89 (e01c00a + record 5a61596): Companies -> Families, 241 suggestions to look at.
 - `DECIDED` 26.10 HIS PICK: status "Not contacted" is relabelled "No status yet" (it is the no-status default); companies
   with a logged contact become Contacted; the rest stay.
 - `LIVE` 26.10 2 Quick add, HIS PICK A ("+ Someone I met" drawer on TC Home): patch 80 (f976776).
