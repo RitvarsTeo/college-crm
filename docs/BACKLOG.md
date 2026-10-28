@@ -168,6 +168,13 @@ companies with no status - defaults in use); phone: marked number of a known per
 
 - `DECIDED` HIS PICK (owner 21.10: "Thats why i want academy intake and tc intake separate sessions, this is hectic"): **Intake ACADEMY MASTER CONTROL** (this session: Academy feedback, Ieva, Admissions, SIS, phone, email) and **Intake TC MASTER CONTROL** (a separate session: Training Centre, Grand Opening, Season, review list, Google Calendar, MASTER PITCHER's TC boards). One app and one `production` branch: each master fetches origin/production right before a release, deploy_verify refuses a release that misses the other's commits, and each tells the other in one line before pushing production. Both keep this backlog and the control file.
 
+## 26-28.10.2026 - Refurbish like the Piemeri Profesiju report and the school deck (owner's ask)
+
+- Owner 26.10: "Refurbish where you practically can according to piemeri profesiju and skola htmls." Pictures in College CRM/_refurbish/.
+- `DECIDED` (owner 28.10, RULE) one font everywhere, never two mixed ("DONT MIX TWO FONTS together, not clean").
+- `DECIDED` HIS PICK (owner 28.10): the one font is **Inter** (as today).
+- Still to pick, as pictures: grid-paper background + small-capital section titles; the report's navy header band with gold eyebrow; big "finding" numbers and milestone charts.
+
 ## 26.10.2026 - Ieva: SIS drafts show as overdue
 
 - `LIVE` (patch 78, 26.10) the Draft in the SIS band; the 5 current drafts' form calls marked done per Ieva (emailed, called), so all 5 sit in the band.
