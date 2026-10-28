@@ -174,6 +174,7 @@ companies with no status - defaults in use); phone: marked number of a known per
 - `DECIDED` (owner 28.10, RULE) one font everywhere, never two mixed ("DONT MIX TWO FONTS together, not clean").
 - `DECIDED` HIS PICK (owner 28.10): the one font is **Inter** (as today).
 - `DECIDED` HIS PICK (owner 28.10): **grid-paper background + small-capital section titles** ("Yes, both").
+- `DECIDED` HIS PICK (owner 28.10, picture band_A_B): **no header band**; the layout stays as today.
 - Still to pick, as pictures: the report's navy header band with gold eyebrow; big "finding" numbers and milestone charts.
 
 ## 26.10.2026 - Ieva: SIS drafts show as overdue
