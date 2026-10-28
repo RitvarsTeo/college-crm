@@ -3222,6 +3222,12 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tc-rsvpline b{color:var(--c-sis)}
   @media (max-width:900px){ html.ui-c .tcgo-strip{grid-template-columns:repeat(2,minmax(0,1fr))} html.ui-c .tcgo-step:nth-child(3){border-left:0}
     html.ui-c .tcgo-step:nth-child(n+3){border-top:1px solid var(--rule)} html.ui-c .tcgo-ans{grid-template-columns:minmax(0,1fr) 70px 80px} html.ui-c .tcgo-ans .a-who, html.ui-c .tcgo-ans small{display:none} }
+  /* THE REPORT LOOK (the owner's picks 28.10.2026, after the Piemeri Profesiju report and the school deck): one font,
+     Inter, as before; a faint grid-paper background behind the content; section titles in letter-spaced small
+     capitals. No header band, nothing moves. Both sides of Intake. */
+  html.ui-c #view { background-image: linear-gradient(rgba(65,92,143,.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(30,155,215,.05) 1px, transparent 1px); background-size: 24px 24px; }
+  html.ui-c #view h2, html.ui-c #view h3 { letter-spacing: .14em; text-transform: uppercase; font-size: 11.5px; font-weight: 700; color: var(--ink, #0f1b35); }
 </style>
 </head>
 <body>
