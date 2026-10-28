@@ -85,6 +85,12 @@ async function companyRows(db) {
   const tasks = new Map(); for (const r of taskRows) if (!tasks.has(r.company_id)) tasks.set(r.company_id, r);
   // the person in charge's account (src/tcpic.js): a linked company filters and counts by the account, not the spelling
   const users = new Map((await db.prepare('SELECT id, email FROM crm_users').all()).map((u) => [String(u.email).toLowerCase(), String(u.id)]));
+  // its family (src/tcfam.js, 28.10.2026): the parent's name and how many companies are in it
+  const fam = new Map(), famSize = new Map();
+  const famRows = await db.prepare(`SELECT m.family_id, m.company_id, p.name AS parent FROM tc_family_members m JOIN tc_families f ON f.id = m.family_id
+    JOIN tc_companies p ON p.id = f.parent_id WHERE m.ended_at IS NULL AND f.ended_at IS NULL`).all();
+  for (const r of famRows) famSize.set(Number(r.family_id), (famSize.get(Number(r.family_id)) || 0) + 1);
+  for (const r of famRows) fam.set(Number(r.company_id), { name: r.parent, n: famSize.get(Number(r.family_id)) });
   return companies.map((c) => {
     const ks = courses.get(c.id) || [];
     const trained = ks.filter((k) => Number(k.attendees) > 0);
@@ -103,6 +109,7 @@ async function companyRows(db) {
       next: t ? { id: Number(t.id), due: t.due_at, label: t.label, owner: t.owner || '' } : null,
       createdAt: c.created_at,
       groupTotal: isTotalRow(c.country),
+      family: fam.get(Number(c.id)) || null,
     };
   });
 }
@@ -139,7 +146,7 @@ export function matches(c, f, w, me = null) {
   if (f.due && dueGroup(c.next && c.next.due, w) !== f.due) return false;
   if (f.q) {
     const q = String(f.q).toLowerCase();
-    if (![c.name, c.city, c.country].some((v) => String(v || '').toLowerCase().includes(q))) return false;
+    if (![c.name, c.city, c.country, c.family && c.family.name].some((v) => String(v || '').toLowerCase().includes(q))) return false;
   }
   return true;
 }

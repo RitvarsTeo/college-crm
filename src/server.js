@@ -66,6 +66,7 @@ import * as tcreview from './tcreview.js';
 import * as tcgo from './tcgo.js';
 import * as tcrsvp from './tcrsvp.js';
 import * as tcmr from './tcmr.js';
+import * as tcfam from './tcfam.js';
 import * as tcpic from './tcpic.js';
 import * as tchome from './tchome.js';
 
@@ -3504,6 +3505,25 @@ export const handle = async (req, res) => {
       return json(res, 200, await tcgo.goPeople(db, { group: String(url.searchParams.get('group') || 'notReached'), state: String(url.searchParams.get('state') || '') }));
     }
     if (p === '/api/tc/go/sends' && req.method === 'GET') return json(res, 200, await tcgo.goSends(db));
+    // COMPANY FAMILIES (the owner's pick B, 28.10.2026; src/tcfam.js): the suggestions and the families, one company's
+    // family (?company=), confirm, Not a family, Unlink
+    if (p === '/api/tc/families' && req.method === 'GET') {
+      const company = String(url.searchParams.get('company') || '');
+      if (company) {
+        if (!/^\d{1,9}$/.test(company)) return json(res, 400, { error: 'Which company?' });
+        return json(res, 200, { family: await tcfam.familyOf(db, Number(company)) });
+      }
+      const limit = Math.min(500, Math.max(1, Number(url.searchParams.get('limit')) || 20));
+      return json(res, 200, { suggestions: await tcfam.suggestions(db, { limit }), families: await tcfam.familiesList(db) });
+    }
+    const famAct = p.match(/^\/api\/tc\/families(?:\/(dismiss|unlink))?$/);
+    if (famAct && req.method === 'POST') {
+      const b = await body(req);
+      const by = await actorOf(req, b);
+      if (famAct[1] === 'dismiss') return json(res, 200, await tcfam.dismissSuggestion(db, b.suggestion, by));
+      if (famAct[1] === 'unlink') return json(res, 200, await tcfam.unlinkCompany(db, Number(b.companyId), by));
+      return json(res, 200, await tcfam.confirmFamily(db, b, by));
+    }
     // HOW OUR CLIENTS CHANGED (26.10.2026, src/tcmr.js): the Client book chapter (?all=1 every client), one company's card
     if (p === '/api/tc/trends' && req.method === 'GET') {
       const company = String(url.searchParams.get('company') || '');

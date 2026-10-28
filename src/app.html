@@ -3204,6 +3204,28 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tcs2-row small{display:block;color:var(--t3);font-size:12.5px}
   html.ui-c .tcs2-row .a-yes{font-weight:700;color:var(--c-sis)} html.ui-c .tcs2-row .a-maybe{font-weight:700;color:var(--t2)} html.ui-c .tcs2-row .a-no{font-weight:700;color:var(--t3)}
   @media (max-width:760px){ html.ui-c .tcs2-row{grid-template-columns:minmax(0,1fr) 80px} html.ui-c .tcs2-row > div:nth-child(2), html.ui-c .tcs2-row > small{display:none} html.ui-c .tcs2-q{width:140px} }
+  /* COMPANY FAMILIES (the owner's pick B, 28.10.2026) */
+  html.ui-c .tcfam{padding:18px 20px 12px;margin:0 0 16px}
+  html.ui-c .tcfam-row{display:grid;grid-template-columns:minmax(0,1.6fr) 80px 90px 80px;gap:12px;align-items:center;padding:8px 0;border-top:1px solid var(--rule2);font-size:14px}
+  html.ui-c .tcfam-row b{font-weight:600} html.ui-c .tcfam-row a{color:inherit;text-decoration:none}
+  html.ui-c .tcfam-row small{display:block;color:var(--t3);font-size:12.5px}
+  html.ui-c .tcfam-row .n{text-align:right;font-variant-numeric:tabular-nums}
+  html.ui-c .tcfam-head{color:var(--t3);font-size:12.5px;border-top:0}
+  html.ui-c .tcfam-tot{font-weight:700;border-top:2px solid var(--rule)}
+  html.ui-c .tcfam-in{padding-left:16px}
+  html.ui-c .tcfam-list{padding:8px 20px 12px}
+  html.ui-c .tcfam-sug{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,.8fr) auto;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--rule2);font-size:14px;color:inherit;text-decoration:none}
+  html.ui-c .tcfam-sug:first-child{border-top:0}
+  html.ui-c .tcfam-sug b{font-weight:600} html.ui-c .tcfam-sug small{display:block;color:var(--t3);font-size:12.5px}
+  html.ui-c .tcfam-btns{display:flex;gap:6px;justify-content:flex-end}
+  html.ui-c .tcfam-pick{margin:0 0 10px;padding:12px 14px;border:1px solid var(--rule);border-radius:12px;background:var(--surface)}
+  html.ui-c .tcfam-q{font-size:13px;color:var(--t2);margin-bottom:6px}
+  html.ui-c .tcfam-pl{display:grid;grid-template-columns:110px minmax(0,1.4fr) 120px 90px;gap:10px;align-items:center;padding:6px 0;border-top:1px solid var(--rule2);font-size:13.5px}
+  html.ui-c .tcfam-pl label{display:flex;gap:6px;align-items:center;justify-content:flex-start;text-align:left;white-space:nowrap;margin:0;padding:0;cursor:pointer;font-size:13.5px;font-weight:400;color:var(--ink);text-transform:none;letter-spacing:0}
+  html.ui-c .tcfam-pl label b{font-weight:600;white-space:normal} html.ui-c .tcfam-pl input{width:auto;margin:0;flex:none} html.ui-c .tcfam-pl small{color:var(--t3)}
+  html.ui-c .tcfam-tag{background:var(--c-accent-bg);color:var(--c-sis)}
+  @media (max-width:760px){ html.ui-c .tcfam-row{grid-template-columns:minmax(0,1fr) 60px 70px} html.ui-c .tcfam-row > div:last-child, html.ui-c .tcfam-row > span:last-child{display:none}
+    html.ui-c .tcfam-sug{grid-template-columns:minmax(0,1fr)} html.ui-c .tcfam-btns{justify-content:flex-start} html.ui-c .tcfam-pl{grid-template-columns:90px minmax(0,1fr)} html.ui-c .tcfam-pl small{display:none} }
   /* DO NOT INVITE / HOLD (the owner's rule 28.10.2026, layout B) */
   html.ui-c .tcmk{padding:18px 20px 12px;margin:0 0 16px}
   html.ui-c .tcmk .tcgo-bh > span{display:flex;gap:8px;align-items:center}
@@ -10718,6 +10740,7 @@ async function tcRoute(hash) {
     else if (place === 'help') viewTcHelp();
     else if (place === 'review') await viewTcReview();
     else if (place === 'go') await viewTcGo();   // lane TC-GO: the Grand Opening
+    else if (place === 'families') await viewTcFamilies();   // the owner's pick B, 28.10.2026
     else await viewTcHome();
     cOpenView();
   } catch (e) {
@@ -11229,11 +11252,11 @@ function tcDrawCompanies() {
       <div class="c-what"><span class="p-stage">${esc(st(c))}</span>${c.areas.length ? ' · ' + esc(c.areas.join(', ')) : ''}<small class="p-step">${c.lastYear
         ? `${Number(c.lastYear)} · ${tcDelegates(c.lastYearN)} · ${Number(c.delegates)} in all` : 'no course yet'}${c.pic ? ' · ' + esc(c.pic) : ''}</small></div>
       <div class="c-when">${c.next ? `<span class="c-when ${tcWhen(c.next.due)}">${esc(tcWhenText(c.next.due))}</span>` : ''}</div>
-      <div class="c-acts">${c.info ? '<span class="c-tag">Information to send</span>' : ''}</div></a>`;
+      <div class="c-acts">${c.family ? `<span class="c-tag tcfam-tag">${esc(c.family.name)} family · ${Number(c.family.n)}</span>` : ''}${c.info ? '<span class="c-tag">Information to send</span>' : ''}</div></a>`;
   $('#view').innerHTML = cPoolFrame({
     title: T_TITLE,
     crumb: `${Number(L.total)} ${L.total === 1 ? 'company' : 'companies'}${Object.values(T_F).some(Boolean) || T_Q ? ' match' : ''}`,
-    act: `<input class="c-search" id="tcQ" placeholder="Search company, city, country or person" value="${esc(T_Q)}" aria-label="Search companies and people">${tcDownloadMenu()}<button class="btn" onclick="tcOpenAdd()">Add company</button>`,
+    act: `<a class="btn ghost" href="#/tc/families">Families</a><input class="c-search" id="tcQ" placeholder="Search company, city, country or person" value="${esc(T_Q)}" aria-label="Search companies and people">${tcDownloadMenu()}<button class="btn" onclick="tcOpenAdd()">Add company</button>`,
     band: '',
     filters: fbar,
     body: cPoolRows(L.rows, row, 'No company matches. Remove a filter to widen the list.')
@@ -11284,7 +11307,7 @@ const tcPicValue = (c) => (c.picAccount ? c.picAccount.value : c.pic || '');
 let T_CO = null; let T_EDIT = false; let T_LOG_ALL = false;
 const T_LOG_FIRST = 15;   // round 2, 20.10.2026: a long log shows its latest 15 and Show all, so a phone reaches the details
 async function viewTcCompany(id) {
-  if (!T_CO || T_CO.id !== id) { T_EDIT = false; T_LOG_ALL = false; T_CO_RSVP = null; T_CO_MK = null; }
+  if (!T_CO || T_CO.id !== id) { T_EDIT = false; T_LOG_ALL = false; T_CO_RSVP = null; T_CO_MK = null; T_CO_FAM = null; }
   T_CO = await api('/api/tc/companies/' + Number(id));
   tcDrawCompany();
   if (T_OPEN_CONTACT) { const k = T_OPEN_CONTACT; T_OPEN_CONTACT = null; tcContactOpen(k); }
@@ -11296,10 +11319,78 @@ async function viewTcCompany(id) {
     try { T_CO_RSVP = { id: Number(id), rows: (await api('/api/tc/go/rsvp?company=' + Number(id))).rows || [] }; } catch (e) { T_CO_RSVP = { id: Number(id), rows: [] }; }
     if (T_CO && T_CO.id === Number(id) && T_CO_RSVP.rows.length) tcDrawCompany();
   }
+  if (!T_CO_FAM || T_CO_FAM.id !== Number(id)) {
+    try { T_CO_FAM = { id: Number(id), family: (await api('/api/tc/families?company=' + Number(id))).family }; } catch (e) { T_CO_FAM = { id: Number(id), family: null }; }
+    if (T_CO && T_CO.id === Number(id) && T_CO_FAM.family) tcDrawCompany();
+  }
   if (!T_CO_MK || T_CO_MK.id !== Number(id)) {
     try { T_CO_MK = { id: Number(id), rows: (await api('/api/tc/go/marks?company=' + Number(id))).rows || [] }; } catch (e) { T_CO_MK = { id: Number(id), rows: [] }; }
     if (T_CO && T_CO.id === Number(id) && T_CO_MK.rows.length) tcDrawCompany();
   }
+}
+// COMPANY FAMILIES (the owner's pick B, 28.10.2026; src/tcfam.js): the family on each member's page, its companies with
+// people and delegates added up; Unlink takes one out (the parent out ends the family). Families are confirmed on #/tc/families.
+let T_CO_FAM = null;
+function tcFamCard() {
+  const F = T_CO_FAM && T_CO && T_CO_FAM.id === T_CO.id ? T_CO_FAM.family : null;
+  if (!F) return '';
+  const row = (c) => `<div class="tcfam-row"><div class="${c.parent ? '' : 'tcfam-in'}">${c.id === T_CO.id ? `<b>${esc(c.name)}</b>` : `<a href="#/tc/company/${Number(c.id)}"><b>${esc(c.name)}</b></a>`}<small>${c.parent ? 'the parent' : esc(c.country || '')}</small></div>
+      <div class="n">${tcN(c.people)}</div><div class="n">${tcN(c.delegates)}</div><div><button type="button" class="btn sm ghost" onclick="tcFamUnlink(${Number(c.id)}, ${Number(Boolean(c.parent))})">Unlink</button></div></div>`;
+  return `<section class="c-sheet tcfam" aria-label="Company family"><div class="tcgo-bh"><h2>${esc(F.name)} family · ${tcN(F.members.length)} companies</h2></div>
+    <div class="tcfam-row tcfam-head"><span>Company</span><span class="n">People</span><span class="n">Delegates</span><span></span></div>
+    ${F.members.map(row).join('')}
+    <div class="tcfam-row tcfam-tot"><div>The family</div><div class="n">${tcN(F.people)}</div><div class="n">${tcN(F.delegates)}</div><div></div></div></section>`;
+}
+async function tcFamUnlink(companyId, parent) {
+  if (parent && !confirm('Take the parent out? That ends the family; every company stays as it is.')) return;
+  try { await post('/api/tc/families/unlink', { companyId: Number(companyId) }); T_CO_FAM = null; await viewTcCompany(T_CO.id); } catch (e) { alert(e.message); }
+}
+// THE FAMILIES PAGE: Companies → Families. To look at = Intake's suggestions (same web domain, then same name start);
+// Confirm opens the picker (the parent, the companies that belong); Not a family hides it. Confirmed = the families, A to Z.
+let T_FAM = null;
+async function viewTcFamilies(keep) {
+  const tab = (T_FAM && T_FAM.tab) || 'look', limit = (keep && T_FAM && T_FAM.limit) || 20;
+  const r = await api('/api/tc/families?limit=' + limit);
+  T_FAM = { ...r, tab, limit, pick: null };
+  tcFamDraw();
+}
+function tcFamDraw() {
+  const F = T_FAM, S = F.suggestions;
+  const seg = `<div class="c-seg" role="group" aria-label="Which families"><button aria-pressed="${F.tab === 'done'}" onclick="T_FAM.tab='done';tcFamDraw()">Confirmed <b>${tcN(F.families.length)}</b></button>
+    <button aria-pressed="${F.tab === 'look'}" onclick="T_FAM.tab='look';tcFamDraw()">To look at <b>${tcN(S.total)}</b></button></div>`;
+  const names = (m) => m.slice(0, 4).map((c) => esc(c.name) + (c.country ? ` (${esc(c.country)})` : '')).join(', ') + (m.length > 4 ? `, +${m.length - 4}` : '');
+  const sug = (s, i) => `<div class="tcfam-sug"><div><b>${esc(s.label)}</b><small>${tcN(s.members.length)} companies: ${names(s.members)}</small></div><small>${esc(s.why)}</small>
+      <div class="tcfam-btns"><button type="button" class="btn sm" onclick="tcFamPick(${i})">Confirm</button><button type="button" class="btn sm ghost" onclick="tcFamNo(${i})">Not a family</button></div></div>
+      ${F.pick && F.pick.i === i ? tcFamPickHtml() : ''}`;
+  const fam = (f) => `<a class="tcfam-sug tcfam-done" href="#/tc/company/${Number(f.parentId)}"><div><b>${esc(f.name)}</b><small>${tcN(f.companies)} companies</small></div>
+      <small>${tcN(f.people)} people · ${tcN(f.delegates)} delegates</small><div></div></a>`;
+  const body = F.tab === 'done' ? (F.families.map(fam).join('') || '<div class="c-empty">No family confirmed yet.</div>')
+    : (S.rows.map(sug).join('') || '<div class="c-empty">Nothing to look at.</div>')
+      + (S.total > S.rows.length ? `<button class="c-more tc-logmore" onclick="T_FAM.limit+=20;viewTcFamilies(true)">Show 20 more of ${tcN(S.total - S.rows.length)}</button>` : '');
+  $('#view').innerHTML = `<p class="c-crumb"><a href="#/tc/companies">Companies</a></p><div class="c-head"><div><h1>Families</h1></div></div>
+    ${seg}<section class="c-sheet tcfam-list">${body}</section>`;
+}
+function tcFamPick(i) {
+  const s = T_FAM.suggestions.rows[i];
+  T_FAM.pick = { i, parent: s.members[0].id, keep: new Set(s.members.map((c) => c.id)) };
+  tcFamDraw();
+}
+function tcFamPickHtml() {
+  const P = T_FAM.pick, s = T_FAM.suggestions.rows[P.i];
+  const line = (c) => `<div class="tcfam-pl"><label><input type="radio" name="tcfamParent" ${P.parent === c.id ? 'checked' : ''} onchange="T_FAM.pick.parent=${Number(c.id)};T_FAM.pick.keep.add(${Number(c.id)});tcFamDraw()"> the parent</label>
+      <label><input type="checkbox" ${P.keep.has(c.id) ? 'checked' : ''} ${P.parent === c.id ? 'disabled' : ''} onchange="this.checked?T_FAM.pick.keep.add(${Number(c.id)}):T_FAM.pick.keep.delete(${Number(c.id)})"> <b>${esc(c.name)}</b></label>
+      <small>${esc(c.country || '')}</small><small>${tcN(c.people)} ${c.people === 1 ? 'person' : 'people'}</small></div>`;
+  return `<div class="tcfam-pick"><div class="tcfam-q">Confirm ${esc(s.label)}: pick the parent; untick a company that does not belong</div>${s.members.map(line).join('')}
+    <div id="tcFamErr"></div><div class="tcmk-acts"><button type="button" class="btn sm ghost" onclick="T_FAM.pick=null;tcFamDraw()">Cancel</button><button type="button" class="btn sm" onclick="tcFamSave()">Confirm the family</button></div></div>`;
+}
+async function tcFamSave() {
+  const P = T_FAM.pick, s = T_FAM.suggestions.rows[P.i];
+  try { await post('/api/tc/families', { parentId: P.parent, memberIds: [...P.keep], suggestion: s.key }); await viewTcFamilies(true); }
+  catch (e) { tcErr('#tcFamErr', e.message); }
+}
+async function tcFamNo(i) {
+  const s = T_FAM.suggestions.rows[i];
+  try { await post('/api/tc/families/dismiss', { suggestion: s.key }); await viewTcFamilies(true); } catch (e) { alert(e.message); }
 }
 // DO NOT INVITE / HOLD on the company page (layout B, 28.10.2026): a line per mark, the list itself is on the event's page
 let T_CO_MK = null;
@@ -11388,7 +11479,7 @@ function tcDrawCompany() {
     <div class="c-head"><div><h1 class="c-pname">${esc(c.name)}</h1><p>${esc(tcStatus(c.status).label)}${c.statusDetail ? ' · ' + esc(tcMeeting(c.statusDetail)) : ''}${c.areas.length ? ' · ' + esc(c.areas.join(', ')) : ''} · ${esc(tcPlace(c) || 'country not recorded')} · ${c.client ? `client, ${tcDelegates(c.delegates)}` : 'prospect'}</p>${tcRsvpLine()}${tcMkLine()}</div>
       <div class="act"><button class="btn ghost" onclick="tcArchive()">Archive</button></div></div>
     <div class="c-pgrid">
-      <div class="c-pmain">${perYear}${tcMrCard()}${next}${logBox}
+      <div class="c-pmain">${perYear}${tcMrCard()}${tcFamCard()}${next}${logBox}
         <div class="c-sheet"><h3>Communications and changes<b>${c.log.length}</b></h3>${(T_LOG_ALL ? c.log : c.log.slice(0, T_LOG_FIRST)).map(tcEv).join('') || '<div class="c-empty">Nothing yet.</div>'}
           ${!T_LOG_ALL && c.log.length > T_LOG_FIRST ? `<button class="c-more tc-logmore" onclick="T_LOG_ALL=true;tcDrawCompany()">Show all ${Number(c.log.length)}</button>` : ''}</div></div>
       <aside class="c-pside">${info}${details}${status}${contacts}${courses}</aside>

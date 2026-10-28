@@ -800,6 +800,34 @@ CREATE TABLE IF NOT EXISTS tc_invite_marks (
   ended_by TEXT
 );
 CREATE INDEX IF NOT EXISTS tc_invite_marks_company ON tc_invite_marks (company_id, ended_at);
+-- COMPANY FAMILIES (28.10.2026, src/tcfam.js; the owner's pick B, suggest + confirm): one parent and its companies, one
+-- level, a company in one family at most. The parent is a member too. Nothing merges and nothing is deleted: Unlink
+-- ends a member, taking the parent out ends the family. A suggestion answered Not a family is not shown again.
+CREATE TABLE IF NOT EXISTS tc_families (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  parent_id BIGINT NOT NULL REFERENCES tc_companies(id),
+  suggestion TEXT,                 -- the suggestion it was confirmed from: web:<domain> | name:<word>
+  created_at TEXT NOT NULL,
+  created_by TEXT,
+  ended_at TEXT,
+  ended_by TEXT
+);
+CREATE TABLE IF NOT EXISTS tc_family_members (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  family_id BIGINT NOT NULL REFERENCES tc_families(id),
+  company_id BIGINT NOT NULL REFERENCES tc_companies(id),
+  added_at TEXT NOT NULL,
+  added_by TEXT,
+  ended_at TEXT,
+  ended_by TEXT
+);
+CREATE INDEX IF NOT EXISTS tc_family_members_company ON tc_family_members (company_id, ended_at);
+CREATE TABLE IF NOT EXISTS tc_family_dismissed (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  suggestion TEXT NOT NULL UNIQUE,
+  dismissed_at TEXT NOT NULL,
+  dismissed_by TEXT
+);
 CREATE TABLE IF NOT EXISTS tc_go_stage2 (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   ch_contact_id TEXT NOT NULL UNIQUE, -- Client Hub contacts.contact_id
