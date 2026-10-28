@@ -3204,6 +3204,31 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tcs2-row small{display:block;color:var(--t3);font-size:12.5px}
   html.ui-c .tcs2-row .a-yes{font-weight:700;color:var(--c-sis)} html.ui-c .tcs2-row .a-maybe{font-weight:700;color:var(--t2)} html.ui-c .tcs2-row .a-no{font-weight:700;color:var(--t3)}
   @media (max-width:760px){ html.ui-c .tcs2-row{grid-template-columns:minmax(0,1fr) 80px} html.ui-c .tcs2-row > div:nth-child(2), html.ui-c .tcs2-row > small{display:none} html.ui-c .tcs2-q{width:140px} }
+  /* DO NOT INVITE / HOLD (the owner's rule 28.10.2026, layout B) */
+  html.ui-c .tcmk{padding:18px 20px 12px;margin:0 0 16px}
+  html.ui-c .tcmk .tcgo-bh > span{display:flex;gap:8px;align-items:center}
+  html.ui-c .tcmk-q-in{width:240px}
+  html.ui-c .tcmk-drop{display:flex;flex-direction:column;max-width:420px;margin:8px 0 0}
+  html.ui-c .tcmk-drop:empty{display:none}
+  html.ui-c .tcmk-drop button{font:inherit;font-size:13.5px;text-align:left;padding:8px 10px;border:1px solid var(--rule2);border-top:0;background:var(--surface);color:var(--ink);cursor:pointer}
+  html.ui-c .tcmk-drop button:first-child{border-top:1px solid var(--rule2);border-radius:9px 9px 0 0} html.ui-c .tcmk-drop button:last-child{border-radius:0 0 9px 9px}
+  html.ui-c .tcmk-drop small{color:var(--t3)}
+  html.ui-c .tcmk-pick{margin:10px 0 6px;padding:12px 14px;border:1px solid var(--rule);border-radius:12px;background:var(--surface)}
+  html.ui-c .tcmk-pick:empty{display:none}
+  html.ui-c .tcmk-who b{font-weight:700} html.ui-c .tcmk-who small{margin-left:8px;color:var(--t3);font-size:12.5px}
+  html.ui-c .tcmk-q{font-size:12.5px;color:var(--t3);margin:10px 0 4px}
+  html.ui-c .tcmk-opts{display:flex;flex-wrap:wrap;gap:6px}
+  html.ui-c .tcmk-o{font:inherit;font-size:13px;border:1px solid var(--rule);border-radius:9px;padding:6px 10px;background:var(--surface);color:var(--t2);cursor:pointer}
+  html.ui-c .tcmk-o[aria-pressed="true"]{background:var(--btn-bg);border-color:var(--btn-bg);color:var(--btn-ink)}
+  html.ui-c .tcmk-acts{display:flex;justify-content:flex-end;gap:6px;margin-top:10px}
+  html.ui-c .tcmk-row{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1.2fr) 140px auto;gap:12px;align-items:center;padding:9px 0;border-top:1px solid var(--rule2);font-size:14px}
+  html.ui-c .tcmk-row b{font-weight:600} html.ui-c .tcmk-row a{color:inherit;text-decoration:none}
+  html.ui-c .tcmk-row small{display:block;color:var(--t3);font-size:12.5px}
+  html.ui-c .tcmk-btns{display:flex;gap:6px;justify-content:flex-end}
+  html.ui-c .tcmk-chip{display:inline-block;font-size:12px;font-weight:700;border-radius:6px;padding:2px 7px;background:var(--c-sunk);color:var(--t2)}
+  html.ui-c .tcmk-chip.hold{background:var(--c-accent-bg);color:var(--c-sis)}
+  html.ui-c .tcmk-line a{color:inherit}
+  @media (max-width:760px){ html.ui-c .tcmk-row{grid-template-columns:minmax(0,1fr) auto} html.ui-c .tcmk-row > small{display:none} html.ui-c .tcmk-row > div:first-child{grid-column:1/-1} html.ui-c .tcmk-q-in{width:150px} }
   /* FIX AN ADDRESS THAT BOUNCED (the owner's pick A, 26.10.2026) */
   html.ui-c .tcfix{padding:18px 20px 12px;margin:16px 0}
   html.ui-c .tcfix .tcgo-bh > span{display:flex}
@@ -11259,7 +11284,7 @@ const tcPicValue = (c) => (c.picAccount ? c.picAccount.value : c.pic || '');
 let T_CO = null; let T_EDIT = false; let T_LOG_ALL = false;
 const T_LOG_FIRST = 15;   // round 2, 20.10.2026: a long log shows its latest 15 and Show all, so a phone reaches the details
 async function viewTcCompany(id) {
-  if (!T_CO || T_CO.id !== id) { T_EDIT = false; T_LOG_ALL = false; T_CO_RSVP = null; }
+  if (!T_CO || T_CO.id !== id) { T_EDIT = false; T_LOG_ALL = false; T_CO_RSVP = null; T_CO_MK = null; }
   T_CO = await api('/api/tc/companies/' + Number(id));
   tcDrawCompany();
   if (T_OPEN_CONTACT) { const k = T_OPEN_CONTACT; T_OPEN_CONTACT = null; tcContactOpen(k); }
@@ -11271,6 +11296,16 @@ async function viewTcCompany(id) {
     try { T_CO_RSVP = { id: Number(id), rows: (await api('/api/tc/go/rsvp?company=' + Number(id))).rows || [] }; } catch (e) { T_CO_RSVP = { id: Number(id), rows: [] }; }
     if (T_CO && T_CO.id === Number(id) && T_CO_RSVP.rows.length) tcDrawCompany();
   }
+  if (!T_CO_MK || T_CO_MK.id !== Number(id)) {
+    try { T_CO_MK = { id: Number(id), rows: (await api('/api/tc/go/marks?company=' + Number(id))).rows || [] }; } catch (e) { T_CO_MK = { id: Number(id), rows: [] }; }
+    if (T_CO && T_CO.id === Number(id) && T_CO_MK.rows.length) tcDrawCompany();
+  }
+}
+// DO NOT INVITE / HOLD on the company page (layout B, 28.10.2026): a line per mark, the list itself is on the event's page
+let T_CO_MK = null;
+function tcMkLine() {
+  const R = T_CO_MK && T_CO && T_CO_MK.id === T_CO.id ? T_CO_MK.rows : [];
+  return R.map((r) => `<p class="tc-rsvpline tcmk-line">Grand Opening: <b>${r.kind === 'hold' ? 'Hold' : 'Do not invite'}</b> · ${esc(r.sendLabel)}${r.contactId ? ` · ${esc(r.person || r.email)}` : ''} · ${esc(r.whyLabel.replace(/^Hold: /, ''))} · <a href="#/tc/go">open the list</a></p>`).join('');
 }
 // the owner's pick B (26.10.2026): the company page says what its people answered to the Save the Date, read live
 let T_CO_RSVP = null;
@@ -11350,7 +11385,7 @@ function tcDrawCompany() {
   const info = c.infoToSend ? `<div class="c-sheet c-facts tc-info"><h3>Information to send</h3><div class="c-pad">${tcClamp(c.infoToSend)}
       <div class="c-row-acts"><button class="btn sm ghost" onclick="tcInfoSent()">Mark sent</button></div></div></div>` : '';
   $('#view').innerHTML = `<p class="c-crumb"><a href="#/tc/companies">Companies</a></p>
-    <div class="c-head"><div><h1 class="c-pname">${esc(c.name)}</h1><p>${esc(tcStatus(c.status).label)}${c.statusDetail ? ' · ' + esc(tcMeeting(c.statusDetail)) : ''}${c.areas.length ? ' · ' + esc(c.areas.join(', ')) : ''} · ${esc(tcPlace(c) || 'country not recorded')} · ${c.client ? `client, ${tcDelegates(c.delegates)}` : 'prospect'}</p>${tcRsvpLine()}</div>
+    <div class="c-head"><div><h1 class="c-pname">${esc(c.name)}</h1><p>${esc(tcStatus(c.status).label)}${c.statusDetail ? ' · ' + esc(tcMeeting(c.statusDetail)) : ''}${c.areas.length ? ' · ' + esc(c.areas.join(', ')) : ''} · ${esc(tcPlace(c) || 'country not recorded')} · ${c.client ? `client, ${tcDelegates(c.delegates)}` : 'prospect'}</p>${tcRsvpLine()}${tcMkLine()}</div>
       <div class="act"><button class="btn ghost" onclick="tcArchive()">Archive</button></div></div>
     <div class="c-pgrid">
       <div class="c-pmain">${perYear}${tcMrCard()}${next}${logBox}
@@ -11976,6 +12011,7 @@ async function viewTcGo() {
   tcGoDraw();
   tcS2Load();
   tcFixLoad();
+  tcMkLoad();
 }
 // THE STAGE 2 LISTS PER MANAGER (the owner's pick A, 26.10.2026; the answers-by-person-in-charge list removed that day): a tab per manager,
 // the people that manager sends the RSVP email to, an answer on the row when it comes in, answered people first, a search,
@@ -12000,7 +12036,7 @@ function tcS2Rows() {
   const word = { yes: 'Yes', maybe: 'Maybe', no: 'No' };
   const q = (T_S2.q || '').trim().toLowerCase();
   const rows = (T_S2.rows || []).filter((r) => !q || `${r.name} ${r.company} ${r.country}`.toLowerCase().includes(q));
-  return rows.map((r) => `<div class="tcs2-row"><div><b>${esc(r.name)}</b><small>${esc(r.position)}</small></div>
+  return rows.map((r) => `<div class="tcs2-row"><div><b>${esc(r.name)}</b>${r.marked ? ` <span class="tcmk-chip${r.marked.kind === 'hold' ? ' hold' : ''}">${esc(r.marked.label)}</span>` : ''}<small>${esc(r.position)}</small></div>
       <div>${r.companyId ? `<a href="#/tc/company/${Number(r.companyId)}"><b>${esc(r.company)}</b></a>` : `<b>${esc(r.company)}</b>`}<small>${esc(r.country)}</small></div>
       <div class="${r.answer ? 'a-' + esc(r.answer) : ''}">${r.answer ? word[r.answer] + (r.answer !== 'no' ? ` · ${Number(r.people)}` : '') : ''}</div>
       <small>${r.at ? esc(String(r.at).slice(8, 10) + '.' + String(r.at).slice(5, 7)) : ''}</small></div>`).join('')
@@ -12059,6 +12095,68 @@ async function tcFixSave(guestId, input) {
   try { await post('/api/tc/go/bounced', { guestId: Number(guestId), email }); await tcFixLoad(); }
   catch (e) { input.disabled = false; tcErr('#tcfixErr' + Number(guestId), e.message); }
 }
+// DO NOT INVITE / HOLD (the owner's rule 28.10.2026: "Invite or no should be A CAMPAIGN OR EVENT SPECIFIC!"; layout B):
+// the list lives on the event's page. Search a company or a person, pick what it is for (every send or Stage 2 RSVP only)
+// and why; a hold ends with Release or Make final; Undo ends a do-not-invite. src/tcgo.js; nothing is deleted.
+let T_MK = null; let T_MK_T = 0;
+async function tcMkLoad() {
+  try { T_MK = { ...(await api('/api/tc/go/marks')), pick: null }; } catch (e) { T_MK = null; }
+  const box = $('#tcMk'); if (box) box.innerHTML = tcMkHtml();
+}
+function tcMkFind(v) {
+  clearTimeout(T_MK_T);
+  T_MK_T = setTimeout(async () => {
+    const drop = $('#tcMkDrop'); if (!drop) return;
+    if (String(v).trim().length < 2) { drop.innerHTML = ''; return; }
+    let rows = [];
+    try { rows = (await api('/api/tc/go/marks?q=' + encodeURIComponent(v))).rows || []; } catch (e) { rows = []; }
+    T_MK.hits = rows;
+    drop.innerHTML = rows.length ? rows.map((r, i) => `<button type="button" onclick="tcMkPick(${i})"><b>${esc(r.label)}</b> <small>${esc(r.sub)}</small></button>`).join('')
+      : '<div class="c-empty">Nobody matches.</div>';
+  }, 200);
+}
+function tcMkPick(i) {
+  const h = (T_MK.hits || [])[i]; if (!h) return;
+  T_MK.pick = { ...h, send: 'all', why: '' };
+  const box = $('#tcMk'); if (box) box.innerHTML = tcMkHtml();
+}
+function tcMkSet(key, v) { T_MK.pick[key] = v; const box = $('#tcMkPick'); if (box) box.outerHTML = tcMkPickHtml(); }
+function tcMkPickHtml() {
+  const P = T_MK.pick;
+  if (!P) return '<div id="tcMkPick"></div>';
+  const opt = (key, x) => `<button type="button" class="tcmk-o" aria-pressed="${P[key] === x.id}" onclick="tcMkSet('${key}', ${esc(JSON.stringify(String(x.id)))})">${esc(x.label)}</button>`;
+  return `<div id="tcMkPick" class="tcmk-pick"><div class="tcmk-who"><b>${esc(P.contactId ? P.label : P.label + ', the whole company')}</b><small>${esc(P.contactId ? P.sub : P.sub)}</small></div>
+    <div class="tcmk-q">For</div><div class="tcmk-opts">${T_MK.sends.map((x) => opt('send', x)).join('')}</div>
+    <div class="tcmk-q">Why</div><div class="tcmk-opts">${T_MK.why.map((x) => opt('why', x)).join('')}</div>
+    <div id="tcMkErr"></div>
+    <div class="tcmk-acts"><button type="button" class="btn sm ghost" onclick="T_MK.pick=null;tcMkSet0()">Cancel</button><button type="button" class="btn sm" onclick="tcMkSave()">Save</button></div></div>`;
+}
+function tcMkSet0() { const box = $('#tcMk'); if (box) box.innerHTML = tcMkHtml(); }
+async function tcMkSave() {
+  const P = T_MK.pick;
+  try { await post('/api/tc/go/marks', { companyId: P.companyId, contactId: P.contactId, send: P.send, why: P.why }); await tcMkLoad(); tcS2Load(); }
+  catch (e) { tcErr('#tcMkErr', e.message); }
+}
+async function tcMkAct(id, what) {
+  try { await post(`/api/tc/go/marks/${Number(id)}/${what === 'final' ? 'final' : 'end'}`, {}); await tcMkLoad(); tcS2Load(); } catch (e) { alert(e.message); }
+}
+function tcMkHtml() {
+  const M = T_MK;
+  if (!M) return '';
+  const day = (iso) => (iso ? `${String(iso).slice(8, 10)}.${String(iso).slice(5, 7)}` : '');
+  const row = (r) => `<div class="tcmk-row"><div><a href="#/tc/company/${Number(r.companyId)}"><b>${esc(r.company)}</b></a>
+      <small>${r.contactId ? esc(r.person || r.email) : `the whole company · ${Number(r.people)} ${r.people === 1 ? 'person' : 'people'}`}</small></div>
+    <div><span class="tcmk-chip${r.kind === 'hold' ? ' hold' : ''}">${r.kind === 'hold' ? 'Hold' : 'Do not invite'} · ${esc(r.sendLabel)}</span><small>${esc(r.whyLabel.replace(/^Hold: /, ''))}${r.final ? ' · made final' : ''}</small></div>
+    <small>${esc(r.by)} · ${day(r.at)}</small>
+    <div class="tcmk-btns">${r.kind === 'hold' ? `<button type="button" class="btn sm ghost" onclick="tcMkAct(${Number(r.id)}, 'end')">Release</button><button type="button" class="btn sm ghost" onclick="tcMkAct(${Number(r.id)}, 'final')">Make final</button>`
+      : `<button type="button" class="btn sm ghost" onclick="tcMkAct(${Number(r.id)}, 'end')">Undo</button>`}</div></div>`;
+  return `<section class="c-sheet tcmk" aria-label="Do not invite or hold">
+    <div class="tcgo-bh"><h2>${esc(T_GO.event.name)} · Do not invite / hold · ${tcGoN(M.total)}</h2><span><input class="c-search tcmk-q-in" placeholder="Add a person or company" aria-label="Add a person or company" autocomplete="off" oninput="tcMkFind(this.value)">
+      ${M.total ? '<a class="btn sm ghost" href="/api/tc/go/marks.xlsx" download>Download</a>' : ''}</span></div>
+    <div id="tcMkDrop" class="tcmk-drop"></div>
+    ${tcMkPickHtml()}
+    ${M.rows.map(row).join('')}</section>`;
+}
 const tcGoCrumb = (link) => { const E = T_GO.event; const t = `${esc(E.name)} · ${esc(E.dateLabel)} · ${esc(E.send)}`; return `<p class="c-crumb">${link ? `<a href="#/tc/go">${t}</a>` : t}</p>`; };
 function tcGoDraw() {
   const F = T_GO.figures, E = T_GO.event;
@@ -12088,6 +12186,7 @@ function tcGoDraw() {
     <div id="tcFix">${tcFixHtml()}</div>
     <h2 class="tcgo-stage"><i>2</i>Stage 2 · RSVP</h2>
     ${tcGoStage2()}
+    <div id="tcMk">${tcMkHtml()}</div>
     <div class="tcgo-shots">
       <figure class="c-sheet tcgo-shot"><figcaption>The email<a href="/assets/go-stage2-email.jpg" target="_blank" rel="noopener">Full size ↗</a></figcaption>
         <a href="/assets/go-stage2-email.jpg" target="_blank" rel="noopener"><img src="/assets/go-stage2-email.jpg" alt="The Stage 2 email: 27 May 2027, You saved the date. Will you be there?" loading="lazy"></a></figure>

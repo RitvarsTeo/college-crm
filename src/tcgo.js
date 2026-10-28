@@ -14,7 +14,7 @@
 //            Intake contact with the same email address (its hash), else the company as Client Hub writes it.
 
 import crypto from 'node:crypto';
-import { TC, TcInputError, setContactEmail } from './tc.js';
+import { TC, TcInputError, setContactEmail, listCompanies, searchPeople } from './tc.js';
 import { picLabels, meKeys, isMine } from './tcpic.js';
 import { ImportError, parseCsv } from './tcimport.js';
 
@@ -318,15 +318,17 @@ export async function stage2Senders(db, me = null) {
  */
 export async function stage2List(db, code, answers = null) {
   if (!S2_CODES.has(String(code))) throw new TcInputError('There is no such list.');
-  const rows = await db.prepare(`SELECT s.ch_contact_id, s.name, s.company, s.position, s.country, s.email, k.company_id
+  const rows = await db.prepare(`SELECT s.ch_contact_id, s.name, s.company, s.position, s.country, s.email, k.company_id, k.id AS contact_id
     FROM tc_go_stage2 s LEFT JOIN tc_company_contacts k ON k.ch_contact_id = s.ch_contact_id AND k.archived_at IS NULL
     WHERE s.sender = ? AND s.gone = 0`).all(String(code));
   const ans = new Map((answers || []).map((a) => [a.chContactId, a]));
+  const markOf = await markedFor(db, 'stage2');
   const seen = new Set();
   return rows.filter((r) => (seen.has(r.ch_contact_id) ? false : seen.add(r.ch_contact_id))).map((r) => {
     const a = ans.get(r.ch_contact_id);
     return { name: r.name || '', company: r.company || '', position: r.position || '', country: r.country || '', email: r.email || '',
-      companyId: r.company_id ? Number(r.company_id) : null, answer: a ? a.answer : null, people: a ? a.people : null, at: a ? a.at : null };
+      companyId: r.company_id ? Number(r.company_id) : null, answer: a ? a.answer : null, people: a ? a.people : null, at: a ? a.at : null,
+      marked: markOf(r.company_id, r.contact_id) };
   }).sort((x, y) => (Boolean(y.answer) - Boolean(x.answer)) || String(y.at || '').localeCompare(String(x.at || ''))
     || String(x.name).localeCompare(String(y.name), 'lv'));
 }
@@ -409,4 +411,96 @@ export async function bounceWaiting(db) {
   return (await bounceRows(db)).filter((x) => x.k && waitingFix(x.g, x.f)).map(({ g, f, k }) => ({ chContactId: g.ch_contact_id, company: k.company,
     name: k.name || '', oldEmail: f.old_email || '', newEmail: f.new_email, fixedAt: f.fixed_at, fixedBy: f.fixed_by || '' }))
     .sort((a, b) => String(a.company).localeCompare(String(b.company), 'lv') || String(a.name).localeCompare(String(b.name), 'lv'));
+}
+
+// ------------------------------------------------------------------ do not invite / hold --
+// The owner's rule (28.10.2026): "Invite or no should be A CAMPAIGN OR EVENT SPECIFIC!" A mark is always for this event
+// (every send) or one of its sends (Stage 2 RSVP only), on a whole company or one person; layout B, the list lives on the
+// event's page. A hold is temporary (check the company first): Release ends it, Make final turns it into a do-not-invite.
+// Nothing is deleted. Intake writes nothing into Client Hub; the file is for whoever runs the send.
+const INVITE = GO.invite || { event: 'go', sends: [], why: [] };
+const SENDS = new Map(INVITE.sends.map((x) => [x.id, x]));
+const WHY = new Map(INVITE.why.map((x) => [x.id, x]));
+
+async function activeMarks(db, where = '', ...args) {
+  return db.prepare(`SELECT m.id, m.send, m.why, m.kind, m.company_id, m.contact_id, m.marked_at, m.marked_by, m.final_at, c.name AS company,
+    k.name AS person, k.email FROM tc_invite_marks m JOIN tc_companies c ON c.id = m.company_id LEFT JOIN tc_company_contacts k ON k.id = m.contact_id
+    WHERE m.event = ? AND m.ended_at IS NULL ${where}`).all(INVITE.event, ...args);
+}
+const markRow = (m, people) => ({ id: Number(m.id), companyId: Number(m.company_id), company: m.company, contactId: m.contact_id ? Number(m.contact_id) : null,
+  person: m.person || '', email: m.email || '', people: m.contact_id ? null : people.get(Number(m.company_id)) || 0, send: m.send,
+  sendLabel: (SENDS.get(m.send) || {}).label || m.send, why: m.why, whyLabel: (WHY.get(m.why) || {}).label || m.why, kind: m.kind,
+  final: Boolean(m.final_at), by: m.marked_by || '', at: m.marked_at });
+async function peopleBy(db) {
+  const n = new Map();
+  for (const k of await db.prepare('SELECT company_id FROM tc_company_contacts WHERE archived_at IS NULL').all()) n.set(Number(k.company_id), (n.get(Number(k.company_id)) || 0) + 1);
+  return n;
+}
+
+/** The list on the event's page: newest first. */
+export async function marksList(db) {
+  const people = await peopleBy(db);
+  const rows = (await activeMarks(db)).map((m) => markRow(m, people)).sort((a, b) => String(b.at).localeCompare(String(a.at)) || b.id - a.id);
+  return { event: INVITE.event, sends: INVITE.sends, why: INVITE.why, total: rows.length, rows };
+}
+
+/** One company's marks, for its page. */
+export async function companyMarks(db, companyId) {
+  const people = await peopleBy(db);
+  return (await activeMarks(db, 'AND m.company_id = ?', Number(companyId))).map((m) => markRow(m, people));
+}
+
+/** For a send: (companyId, contactId) -> the mark that keeps that person out of it, or null. */
+export async function markedFor(db, send) {
+  const list = (await activeMarks(db)).filter((m) => m.send === 'all' || m.send === send);
+  const byCo = new Map(), byK = new Map();
+  for (const m of list) {
+    const v = { kind: m.kind, label: m.kind === 'hold' ? 'Hold' : 'Do not invite' };
+    if (m.contact_id) byK.set(Number(m.contact_id), v); else byCo.set(Number(m.company_id), v);
+  }
+  return (companyId, contactId) => (contactId && byK.get(Number(contactId))) || (companyId && byCo.get(Number(companyId))) || null;
+}
+
+/** The search to add: companies by name, then people (name, email, phone). */
+export async function markSearch(db, q) {
+  const text = String(q ?? '').trim();
+  if (text.length < 2) return { rows: [] };
+  const people = await peopleBy(db);
+  const cos = (await listCompanies(db, { q: text }, { size: 5 })).rows.map((c) => ({ companyId: Number(c.id), contactId: null, label: c.name,
+    sub: `company · ${people.get(Number(c.id)) || 0} ${people.get(Number(c.id)) === 1 ? 'person' : 'people'}` }));
+  const ps = (await searchPeople(db, text, { limit: 8 })).rows.map((k) => ({ companyId: k.companyId, contactId: k.id, label: k.name || k.email, sub: k.company }));
+  return { rows: [...cos, ...ps] };
+}
+
+export async function markAdd(db, b, actor) {
+  const send = String(b.send || ''), why = String(b.why || '');
+  if (!SENDS.has(send)) throw new TcInputError('Pick what it is for.');
+  if (!WHY.has(why)) throw new TcInputError('Pick why.');
+  const companyId = Number(b.companyId), contactId = b.contactId ? Number(b.contactId) : null;
+  const c = await db.prepare('SELECT id FROM tc_companies WHERE id = ? AND archived_at IS NULL').get(companyId);
+  if (!c) throw new TcInputError('There is no such company.');
+  if (contactId && !(await db.prepare('SELECT id FROM tc_company_contacts WHERE id = ? AND company_id = ? AND archived_at IS NULL').get(contactId, companyId))) {
+    throw new TcInputError('There is no such contact at this company.');
+  }
+  const same = (await activeMarks(db, 'AND m.company_id = ?', companyId)).find((m) => (m.contact_id ? Number(m.contact_id) : null) === contactId && m.send === send);
+  if (same) throw new TcInputError('Already on the list for this send.');
+  const r = await db.prepare(`INSERT INTO tc_invite_marks (event, send, why, kind, company_id, contact_id, marked_at, marked_by) VALUES (?,?,?,?,?,?,?,?)`)
+    .run(INVITE.event, send, why, WHY.get(why).hold ? 'hold' : 'no', companyId, contactId, nowIso(), actor);
+  return { id: Number(r.lastInsertRowid) };
+}
+
+/** Undo (a do-not-invite) or Release (a hold): the mark ends, the row stays. */
+export async function markEnd(db, id, actor) {
+  const m = await db.prepare('SELECT id FROM tc_invite_marks WHERE id = ? AND ended_at IS NULL').get(Number(id));
+  if (!m) throw new TcInputError('This mark is no longer on the list.');
+  await db.prepare('UPDATE tc_invite_marks SET ended_at = ?, ended_by = ? WHERE id = ?').run(nowIso(), actor, Number(id));
+  return { ended: Number(id) };
+}
+
+/** Make final: a hold becomes a do-not-invite. */
+export async function markFinal(db, id, actor) {
+  const m = await db.prepare(`SELECT id FROM tc_invite_marks WHERE id = ? AND ended_at IS NULL AND kind = 'hold'`).get(Number(id));
+  if (!m) throw new TcInputError('Only a hold can be made final.');
+  await db.prepare(`UPDATE tc_invite_marks SET kind = 'no', final_at = ?, final_by = ? WHERE id = ?`).run(nowIso(), actor, Number(id));
+  return { final: Number(id) };
 }

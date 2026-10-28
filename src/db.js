@@ -781,6 +781,25 @@ CREATE TABLE IF NOT EXISTS tc_go_fixes (
   fixed_by TEXT
 );
 CREATE INDEX IF NOT EXISTS tc_go_fixes_guest ON tc_go_fixes (guest_id, id);
+-- DO NOT INVITE / HOLD (28.10.2026, src/tcgo.js; the owner's rule: always for one event or campaign). A whole company
+-- (contact_id NULL) or one person, for every send of the event or one of its sends. A hold is temporary: Release ends
+-- it, Make final turns it into a do-not-invite. Nothing is deleted: Undo and Release end the mark and keep the row.
+CREATE TABLE IF NOT EXISTS tc_invite_marks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  event TEXT NOT NULL,             -- go = the Grand Opening
+  send TEXT NOT NULL,              -- config grandOpening.invite.sends: all | stage2
+  why TEXT NOT NULL,               -- config grandOpening.invite.why
+  kind TEXT NOT NULL,              -- no | hold
+  company_id BIGINT NOT NULL REFERENCES tc_companies(id),
+  contact_id BIGINT REFERENCES tc_company_contacts(id),
+  marked_at TEXT NOT NULL,
+  marked_by TEXT,
+  final_at TEXT,
+  final_by TEXT,
+  ended_at TEXT,
+  ended_by TEXT
+);
+CREATE INDEX IF NOT EXISTS tc_invite_marks_company ON tc_invite_marks (company_id, ended_at);
 CREATE TABLE IF NOT EXISTS tc_go_stage2 (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   ch_contact_id TEXT NOT NULL UNIQUE, -- Client Hub contacts.contact_id

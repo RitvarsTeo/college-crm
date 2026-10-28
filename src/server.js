@@ -3532,6 +3532,37 @@ export const handle = async (req, res) => {
       res.writeHead(200, { 'content-type': XLSX_TYPE, 'cache-control': 'no-store', 'content-disposition': `attachment; filename="${name}"` });
       return res.end(rowsToXlsx(rows, { bold: [0], sheetName: 'Fixed', title: name }));
     }
+    // DO NOT INVITE / HOLD (the owner's rule 28.10.2026: per event or campaign; src/tcgo.js): the list, ?company= one
+    // company's marks, ?q= the search to add; add; undo / release / make final; the list as a file
+    if (p === '/api/tc/go/marks' && req.method === 'GET') {
+      const company = String(url.searchParams.get('company') || '');
+      if (company) {
+        if (!/^\d{1,9}$/.test(company)) return json(res, 400, { error: 'Which company?' });
+        return json(res, 200, { rows: await tcgo.companyMarks(db, Number(company)) });
+      }
+      if (url.searchParams.has('q')) return json(res, 200, await tcgo.markSearch(db, String(url.searchParams.get('q') || '').slice(0, 100)));
+      return json(res, 200, await tcgo.marksList(db));
+    }
+    if (p === '/api/tc/go/marks' && req.method === 'POST') {
+      const b = await body(req);
+      return json(res, 200, await tcgo.markAdd(db, b, await actorOf(req, b)));
+    }
+    const markAct = p.match(/^\/api\/tc\/go\/marks\/(\d{1,9})\/(end|final)$/);
+    if (markAct && req.method === 'POST') {
+      const b = await body(req);
+      const by = await actorOf(req, b);
+      return json(res, 200, markAct[2] === 'end' ? await tcgo.markEnd(db, Number(markAct[1]), by) : await tcgo.markFinal(db, Number(markAct[1]), by));
+    }
+    if (p === '/api/tc/go/marks.xlsx' && req.method === 'GET') {
+      const M = await tcgo.marksList(db);
+      const me = await tcMe(req, url);
+      console.log(`tc download: ${me ? me.email || me.name : 'unknown'} do not invite ${M.rows.length} marks`);
+      const rows = [['Company', 'Person', 'Email', 'For', 'Mark', 'Why', 'By', 'On'],
+        ...M.rows.map((r) => [r.company, r.contactId ? r.person : `the whole company (${r.people})`, r.email, r.sendLabel, r.kind === 'hold' ? 'Hold' : 'Do not invite', r.whyLabel, r.by, r.at ? r.at.slice(0, 10) : ''])];
+      const name = `Grand Opening do not invite ${localDate()}.xlsx`;
+      res.writeHead(200, { 'content-type': XLSX_TYPE, 'cache-control': 'no-store', 'content-disposition': `attachment; filename="${name}"` });
+      return res.end(rowsToXlsx(rows, { bold: [0], sheetName: 'Do not invite', title: name }));
+    }
     // THE STAGE 2 LISTS PER MANAGER (the owner's pick A, 26.10.2026): the tabs, one manager's list with its answers, its file
     if (p === '/api/tc/go/stage2' && req.method === 'GET') {
       const code = String(url.searchParams.get('sender') || '');
@@ -3547,7 +3578,7 @@ export const handle = async (req, res) => {
       console.log(`tc download: ${me ? me.email || me.name : 'unknown'} stage2 ${code} ${list.length} people`);
       const word = { yes: 'Yes', maybe: 'Maybe', no: 'No' };
       const rows = [['Name', 'Company', 'Position', 'Country', 'Email', 'Answer', 'People', 'Answered on'],
-        ...list.map((r) => [r.name, r.company, r.position, r.country, r.email, r.answer ? word[r.answer] : '', r.answer && r.answer !== 'no' ? r.people : '', r.at ? r.at.slice(0, 10) : ''])];
+        ...list.filter((r) => !r.marked).map((r) => [r.name, r.company, r.position, r.country, r.email, r.answer ? word[r.answer] : '', r.answer && r.answer !== 'no' ? r.people : '', r.at ? r.at.slice(0, 10) : ''])];
       const name = `Grand Opening ${code} ${localDate()}.xlsx`;
       res.writeHead(200, { 'content-type': XLSX_TYPE, 'cache-control': 'no-store', 'content-disposition': `attachment; filename="${name}"` });
       return res.end(rowsToXlsx(rows, { bold: [0], sheetName: code, title: name }));

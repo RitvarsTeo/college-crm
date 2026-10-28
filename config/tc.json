@@ -104,6 +104,17 @@
     "event": { "name": "Grand Opening", "dateLabel": "27 May 2027", "place": "Novikontas Academy Campus, Duntes iela 17d, Riga", "send": "Save the Date",
       "calendarUrl": "https://novikontas-grand-opening-calendar.vercel.app/" },
     "files": ["go_guests.csv", "go_sends.csv", "go_deliveries.csv"],
+    "invite": {
+      "_about": "DO NOT INVITE / HOLD (28.10.2026, src/tcgo.js; the owner's rule: always for one event or campaign; layout B, the list on the event's page). sends: what a mark is for; why: the reasons, hold = temporary until the company is checked (Release or Make final).",
+      "event": "go",
+      "sends": [ { "id": "all", "label": "Every send" }, { "id": "stage2", "label": "Stage 2 RSVP only" } ],
+      "why": [
+        { "id": "manager", "label": "A manager's decision" },
+        { "id": "mailbox", "label": "Company mailbox, not a person" },
+        { "id": "staff", "label": "Our own staff" },
+        { "id": "hold", "label": "Hold: check the company first", "hold": true }
+      ]
+    },
     "stage2": {
       "_about": "The RSVP lists per manager (the owner's pick A, 26.10.2026): one tab each, in this order; code = the sender split's sheet name. packStatus: the line under each pack on Stage 2 (default, or per code, e.g. \"Sent 27.10\").",
       "packStatus": { "default": "Ready to send" },
