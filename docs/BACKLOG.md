@@ -125,6 +125,8 @@ companies with no status - defaults in use); phone: marked number of a known per
 - `DECIDED` 28.10 8 Do not invite / hold: per event or campaign (his rule); layout B, the list on the event's page
   (Grand Opening), search to add, For every send | Stage 2 RSVP only, why, Release / Make final, Download.
   `LIVE` 28.10 patch 88 (8ff46ae + record c467929). Holds for the Grand Opening are AB's (his Excel): AB's 9.09 decisions LIVE 28.10 (148 marks: 106 mailbox, 42 hold).
+- `DECIDED` 28.10 HIS PICK for 5 Company families: B, Intake suggests (same name start / web domain), a person confirms
+  and picks the parent; family on each member's page; nothing merges; one level.
 - `DECIDED` 26.10 HIS PICK: status "Not contacted" is relabelled "No status yet" (it is the no-status default); companies
   with a logged contact become Contacted; the rest stay.
 - `LIVE` 26.10 2 Quick add, HIS PICK A ("+ Someone I met" drawer on TC Home): patch 80 (f976776).
