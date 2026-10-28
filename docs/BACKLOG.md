@@ -119,6 +119,9 @@ companies with no status - defaults in use); phone: marked number of a known per
   split loaded (1,589: Mārcis 347, DS 519, MC 346, AB 275, Alma 7, JS 95).
 - `DECIDED` 26.10 HIS PICK for 9 Fix bounced: A, fix in Intake; "Fixed, waiting for the next send" + Download for the sender;
   nothing written into Client Hub.
+  `LIVE` 28.10 patch 86 (abdb9e3 + record d08fd45): Grand Opening Stage 1 "Fix an address that bounced" under the three
+  boxes, by person in charge, Mine / Team; Save changes the Intake contact's address (logged); waiting list + Download.
+  Live 28.10: 125 people in Intake to fix (11 groups), 45 only Client Hub has, 0 fixed yet. Next in his order: 8, 5, 4.
 - `DECIDED` 26.10 HIS PICK: status "Not contacted" is relabelled "No status yet" (it is the no-status default); companies
   with a logged contact become Contacted; the rest stay.
 - `LIVE` 26.10 2 Quick add, HIS PICK A ("+ Someone I met" drawer on TC Home): patch 80 (f976776).
