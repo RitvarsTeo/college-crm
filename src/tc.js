@@ -561,6 +561,18 @@ export async function editContact(db, contactId, b, actor) {
     return { changed };
   });
 }
+/** One contact's new address inside the caller's transaction (FIX AN ADDRESS THAT BOUNCED, src/tcgo.js), logged as an edit. */
+export async function setContactEmail(tx, k, email, actor, at) {
+  const f = contactFields({ email });
+  if (!f.email) bad('Type the new address.');
+  if (f.email === String(k.email || '').toLowerCase()) bad('That is the address Intake already has.');
+  if (await tx.prepare('SELECT id FROM tc_company_contacts WHERE company_id = ? AND email = ? AND id <> ? AND archived_at IS NULL').get(k.company_id, f.email, k.id)) {
+    bad('Another contact of this company has this address.');
+  }
+  await tx.prepare('UPDATE tc_company_contacts SET email = ?, updated_at = ? WHERE id = ?').run(f.email, at, k.id);
+  await logAct(tx, k.company_id, { kind: 'edit', field: 'contact_email', old: k.email ?? null, new: f.email, actor, at, contactId: Number(k.id) });
+  return f.email;
+}
 /**
  * SEARCH PEOPLE (the owner's Client Hub pick 1, layout A, 26.10.2026): the Companies box also finds contacts by name
  * (accents folded: "Blawat" finds "Bławat"), email or phone digits. Active contacts of active companies only.

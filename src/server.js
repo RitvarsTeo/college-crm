@@ -3515,6 +3515,23 @@ export const handle = async (req, res) => {
       const excelByYear = Object.fromEntries((h.byYear || []).map((r) => [r.year, r.n]));
       return json(res, 200, await tcmr.trends(db, { all: url.searchParams.get('all') === '1', excelByYear }));
     }
+    // FIX AN ADDRESS THAT BOUNCED (the owner's pick A, 26.10.2026; src/tcgo.js): the list, one fix, the waiting fixes as a file
+    if (p === '/api/tc/go/bounced' && req.method === 'GET') return json(res, 200, await tcgo.bounceList(db, await tcMe(req, url)));
+    if (p === '/api/tc/go/bounced' && req.method === 'POST') {
+      const b = await body(req);
+      if (!/^\d{1,9}$/.test(String(b.guestId ?? ''))) return json(res, 400, { error: 'Which person?' });
+      return json(res, 200, await tcgo.bounceFix(db, Number(b.guestId), String(b.email ?? ''), await actorOf(req, b)));
+    }
+    if (p === '/api/tc/go/bounced.xlsx' && req.method === 'GET') {
+      const list = await tcgo.bounceWaiting(db);
+      const me = await tcMe(req, url);
+      console.log(`tc download: ${me ? me.email || me.name : 'unknown'} fixed addresses ${list.length} people`);
+      const rows = [['Company', 'Name', 'Address that bounced', 'New address', 'Client Hub id', 'Fixed by', 'Fixed on'],
+        ...list.map((r) => [r.company, r.name, r.oldEmail, r.newEmail, r.chContactId, r.fixedBy, r.fixedAt ? r.fixedAt.slice(0, 10) : ''])];
+      const name = `Grand Opening fixed addresses ${localDate()}.xlsx`;
+      res.writeHead(200, { 'content-type': XLSX_TYPE, 'cache-control': 'no-store', 'content-disposition': `attachment; filename="${name}"` });
+      return res.end(rowsToXlsx(rows, { bold: [0], sheetName: 'Fixed', title: name }));
+    }
     // THE STAGE 2 LISTS PER MANAGER (the owner's pick A, 26.10.2026): the tabs, one manager's list with its answers, its file
     if (p === '/api/tc/go/stage2' && req.method === 'GET') {
       const code = String(url.searchParams.get('sender') || '');

@@ -768,6 +768,19 @@ CREATE TABLE IF NOT EXISTS tc_mr_names (
   company_id BIGINT,
   matched_by TEXT                  -- auto | hand | NULL (no company)
 );
+-- FIX AN ADDRESS THAT BOUNCED (28.10.2026, src/tcgo.js; the owner's pick A, 26.10.2026): every new address typed in
+-- Intake for a not reached guest. The newest row per guest counts; it waits for the next send until Client Hub's extract
+-- carries that address. Intake writes nothing into Client Hub.
+CREATE TABLE IF NOT EXISTS tc_go_fixes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  guest_id BIGINT NOT NULL REFERENCES tc_go_guests(id),
+  contact_id BIGINT REFERENCES tc_company_contacts(id),
+  old_email TEXT,
+  new_email TEXT NOT NULL,
+  fixed_at TEXT NOT NULL,
+  fixed_by TEXT
+);
+CREATE INDEX IF NOT EXISTS tc_go_fixes_guest ON tc_go_fixes (guest_id, id);
 CREATE TABLE IF NOT EXISTS tc_go_stage2 (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   ch_contact_id TEXT NOT NULL UNIQUE, -- Client Hub contacts.contact_id

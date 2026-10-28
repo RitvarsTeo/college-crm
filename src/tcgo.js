@@ -14,7 +14,8 @@
 //            Intake contact with the same email address (its hash), else the company as Client Hub writes it.
 
 import crypto from 'node:crypto';
-import { TC, TcInputError } from './tc.js';
+import { TC, TcInputError, setContactEmail } from './tc.js';
+import { picLabels, meKeys, isMine } from './tcpic.js';
 import { ImportError, parseCsv } from './tcimport.js';
 
 const GO = TC.grandOpening;
@@ -342,4 +343,70 @@ export async function goSends(db) {
       person: back('person'), cantTell: back('cant_tell'), scanner: back('scanner'), none: back('none'),
       clicked: del.filter((x) => Number(x.clicked)).length, calendar: del.filter((x) => Number(x.calendar)).length };
   }), cameBack: GO.cameBack };
+}
+
+// ------------------------------------------------------------------ fix an address that bounced --
+// The owner's pick A (26.10.2026): the not reached guests Intake holds as a contact, by person in charge (Mine / Team),
+// each with a field for the new address. Saving changes the Intake contact's address (logged on its company) and keeps
+// the fix in tc_go_fixes. A fix waits in "Fixed, waiting for the next send" (a file for whoever runs the send) until
+// Client Hub's extract carries the new address. Intake writes nothing into Client Hub; a guest Intake holds no contact
+// for is fixed in Client Hub, as before.
+const NR = GO.invitation.filter((s) => s.group === 'notReached').map((s) => s.id);
+
+async function bounceRows(db) {
+  const guests = (await loaded(db)).guests.filter((g) => NR.includes(g.invitation));
+  const fixes = new Map((await db.prepare(`SELECT f.id, f.guest_id, f.contact_id, f.old_email, f.new_email, f.fixed_at, f.fixed_by FROM tc_go_fixes f
+    WHERE f.id IN (SELECT MAX(id) FROM tc_go_fixes GROUP BY guest_id)`).all()).map((f) => [Number(f.guest_id), f]));
+  const contacts = new Map((await db.prepare(`SELECT k.id, k.company_id, k.name, k.email, k.ch_contact_id, c.name AS company, c.pic_name, c.pic_email
+    FROM tc_company_contacts k JOIN tc_companies c ON c.id = k.company_id WHERE k.archived_at IS NULL AND c.archived_at IS NULL`).all())
+    .map((k) => [Number(k.id), k]));
+  const who = await whoIs(db, guests);
+  return guests.map((g, i) => {
+    const f = fixes.get(g.id) || null;
+    // a fixed guest stays with the contact the fix changed (its address no longer matches the one that bounced)
+    const k = contacts.get(Number(f ? f.contact_id : who[i].contactId)) || null;
+    return { g, f, k, onReview: who[i].onReview };
+  });
+}
+const waitingFix = (g, f) => Boolean(f) && emailSha(f.new_email) !== g.email_sha;
+
+/** { rows (Intake contacts only), total, onlyCh, waiting }; each row with its person in charge and whether it is mine. */
+export async function bounceList(db, me = null) {
+  const all = await bounceRows(db);
+  const labels = await picLabels(db);
+  const mk = meKeys(me);
+  const rows = all.filter((x) => x.k).map(({ g, f, k }) => {
+    const pic = (k.pic_email && labels.get(String(k.pic_email).toLowerCase())) || k.pic_name || '';
+    return { guestId: g.id, hard: g.invitation === 'bounced_hard', why: INV.get(g.invitation).label, contactId: Number(k.id), companyId: Number(k.company_id),
+      company: k.company, name: k.name || '', email: f ? f.old_email || '' : k.email || '', fixed: f ? f.new_email : null, pic,
+      mine: isMine({ picEmail: k.pic_email || '', pic: k.pic_name || '', next: null }, mk) };
+  }).sort((a, b) => (a.pic ? 0 : 1) - (b.pic ? 0 : 1) || a.pic.localeCompare(b.pic, 'lv') || String(a.company).localeCompare(String(b.company), 'lv')
+    || String(a.name).localeCompare(String(b.name), 'lv'));
+  return { rows, total: rows.length, onlyCh: all.filter((x) => !x.k && !x.onReview).length, waiting: all.filter((x) => x.k && waitingFix(x.g, x.f)).length };
+}
+
+/** Save a new address for one not reached guest that Intake holds as a contact. */
+export async function bounceFix(db, guestId, email, actor) {
+  const all = await bounceRows(db);
+  const x = all.find((r) => r.g.id === Number(guestId));
+  if (!x) throw new TcInputError('This person is not on the not reached list.');
+  if (!x.k) throw new TcInputError('Intake holds no contact for this person: the address is fixed in Client Hub.');
+  const at = nowIso();
+  return db.transaction(async (tx) => {
+    const to = await setContactEmail(tx, x.k, email, actor, at);
+    // the contact keeps its Client Hub id, so the other Grand Opening lists still find it under the new address
+    if (!x.k.ch_contact_id && !(await tx.prepare('SELECT id FROM tc_company_contacts WHERE ch_contact_id = ? AND archived_at IS NULL').get(x.g.ch_contact_id))) {
+      await tx.prepare('UPDATE tc_company_contacts SET ch_contact_id = ? WHERE id = ?').run(x.g.ch_contact_id, x.k.id);
+    }
+    await tx.prepare('INSERT INTO tc_go_fixes (guest_id, contact_id, old_email, new_email, fixed_at, fixed_by) VALUES (?,?,?,?,?,?)')
+      .run(x.g.id, x.k.id, x.f ? x.f.old_email : x.k.email || null, to, at, actor);
+    return { guestId: x.g.id, fixed: to };
+  });
+}
+
+/** The fixes waiting for the next send, for the file. */
+export async function bounceWaiting(db) {
+  return (await bounceRows(db)).filter((x) => x.k && waitingFix(x.g, x.f)).map(({ g, f, k }) => ({ chContactId: g.ch_contact_id, company: k.company,
+    name: k.name || '', oldEmail: f.old_email || '', newEmail: f.new_email, fixedAt: f.fixed_at, fixedBy: f.fixed_by || '' }))
+    .sort((a, b) => String(a.company).localeCompare(String(b.company), 'lv') || String(a.name).localeCompare(String(b.name), 'lv'));
 }

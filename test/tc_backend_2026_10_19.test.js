@@ -18,7 +18,7 @@ const { synthFiles } = await import('./tc_fixtures.js');
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 // the fixtures are built around the REAL Riga day, because the lists ('overdue', 'this week') read the real clock
 const TODAY = localDate();
-const NOW = new Date('2026-10-19T09:00:00Z');   // a Riga morning
+const NOW = new Date(TODAY + 'T09:00:00Z');   // a Riga morning on the fixtures' own day (a fixed 19.10 stopped matching them from 27.10)
 const count = async (db, t) => Number((await db.prepare(`SELECT COUNT(*) AS n FROM ${t}`).get()).n);
 async function imported(opts = {}) {
   const db = await openDb();
