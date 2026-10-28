@@ -173,7 +173,8 @@ companies with no status - defaults in use); phone: marked number of a known per
 - Owner 26.10: "Refurbish where you practically can according to piemeri profesiju and skola htmls." Pictures in College CRM/_refurbish/.
 - `DECIDED` (owner 28.10, RULE) one font everywhere, never two mixed ("DONT MIX TWO FONTS together, not clean").
 - `DECIDED` HIS PICK (owner 28.10): the one font is **Inter** (as today).
-- Still to pick, as pictures: grid-paper background + small-capital section titles; the report's navy header band with gold eyebrow; big "finding" numbers and milestone charts.
+- `DECIDED` HIS PICK (owner 28.10): **grid-paper background + small-capital section titles** ("Yes, both").
+- Still to pick, as pictures: the report's navy header band with gold eyebrow; big "finding" numbers and milestone charts.
 
 ## 26.10.2026 - Ieva: SIS drafts show as overdue
 
