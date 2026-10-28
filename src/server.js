@@ -67,6 +67,7 @@ import * as tcgo from './tcgo.js';
 import * as tcrsvp from './tcrsvp.js';
 import * as tcmr from './tcmr.js';
 import * as tcfam from './tcfam.js';
+import * as tcpeople from './tcpeople.js';
 import * as tcpic from './tcpic.js';
 import * as tchome from './tchome.js';
 
@@ -3505,6 +3506,16 @@ export const handle = async (req, res) => {
       return json(res, 200, await tcgo.goPeople(db, { group: String(url.searchParams.get('group') || 'notReached'), state: String(url.searchParams.get('state') || '') }));
     }
     if (p === '/api/tc/go/sends' && req.method === 'GET') return json(res, 200, await tcgo.goSends(db));
+    // IMPORT PEOPLE FROM A FILE (the owner's pick A, 28.10.2026; src/tcpeople.js): the browser reads the file and sends the
+    // matched rows; preview writes nothing, apply writes in one transaction
+    if ((p === '/api/tc/import/people/preview' || p === '/api/tc/import/people/apply') && req.method === 'POST') {
+      const b = await body(req, 4 * 1024 * 1024);
+      if (p.endsWith('/preview')) return json(res, 200, await tcpeople.importPreview(db, b.rows));
+      const by = await actorOf(req, b);
+      const out = await tcpeople.importApply(db, b.rows, b.picks || {}, by);
+      console.log(`tc import people: ${by} added ${out.added} updated ${out.updated} new companies ${out.newCompanies}`);
+      return json(res, 200, out);
+    }
     // COMPANY FAMILIES (the owner's pick B, 28.10.2026; src/tcfam.js): the suggestions and the families, one company's
     // family (?company=), confirm, Not a family, Unlink
     if (p === '/api/tc/families' && req.method === 'GET') {

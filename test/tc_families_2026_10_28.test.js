@@ -65,7 +65,7 @@ test('confirm: the parent among the members, one family per company; the family 
 
 test('the page: Families on Companies, the route, the card on the company page, the tag; routes behind the gate', () => {
   const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
-  assert.match(app, /act: `<a class="btn ghost" href="#\/tc\/families">Families<\/a><input class="c-search" id="tcQ"/);
+  assert.match(app, /act: `<a class="btn ghost" href="#\/tc\/families">Families<\/a><a class="btn ghost" href="#\/tc\/import">Import people<\/a><input class="c-search" id="tcQ"/);
   assert.match(app, /else if \(place === 'families'\) await viewTcFamilies\(\);/);
   assert.match(app, /\$\{tcMrCard\(\)\}\$\{tcFamCard\(\)\}/);
   assert.match(app, /family · \$\{Number\(c\.family\.n\)\}<\/span>/);

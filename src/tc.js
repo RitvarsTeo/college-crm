@@ -397,6 +397,8 @@ async function logAct(db, companyId, e) {
     VALUES (?,?,?,?,?,?,?,?,?,?,?)`).run(companyId, e.contactId ?? null, e.kind, e.at || nowIso(), e.topics ?? null, e.body ?? null,
     e.actor ?? null, e.origin || 'manual', e.field ?? null, e.old ?? null, e.new ?? null);
 }
+/** A log line on a company inside the caller's transaction (IMPORT PEOPLE FROM A FILE, src/tcpeople.js). */
+export async function logTcActivity(db, companyId, e) { return logAct(db, companyId, e); }
 async function mustCompany(db, id) {
   const c = await db.prepare('SELECT * FROM tc_companies WHERE id = ? AND archived_at IS NULL').get(Number(id));
   if (!c) bad('There is no such company, or it is archived.');

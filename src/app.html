@@ -3204,6 +3204,26 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tcs2-row small{display:block;color:var(--t3);font-size:12.5px}
   html.ui-c .tcs2-row .a-yes{font-weight:700;color:var(--c-sis)} html.ui-c .tcs2-row .a-maybe{font-weight:700;color:var(--t2)} html.ui-c .tcs2-row .a-no{font-weight:700;color:var(--t3)}
   @media (max-width:760px){ html.ui-c .tcs2-row{grid-template-columns:minmax(0,1fr) 80px} html.ui-c .tcs2-row > div:nth-child(2), html.ui-c .tcs2-row > small{display:none} html.ui-c .tcs2-q{width:140px} }
+  /* IMPORT PEOPLE FROM A FILE (the owner's pick A, 28.10.2026) */
+  html.ui-c .tcimp{padding:18px 20px 14px;margin:0 0 16px}
+  html.ui-c .tcimp-drop{display:flex;flex-direction:column;align-items:center;gap:4px;margin:12px 0 4px;padding:26px;border:2px dashed var(--rule);border-radius:12px;cursor:pointer;color:var(--t3);font-size:13.5px;text-transform:none;letter-spacing:0;font-weight:400}
+  html.ui-c .tcimp-drop b{color:var(--ink);font-size:15px} html.ui-c .tcimp-drop input{width:auto}
+  html.ui-c .tcimp-boxes{display:flex;flex-wrap:wrap;gap:12px;margin:12px 0}
+  html.ui-c .tcimp-boxes label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--t3)}
+  html.ui-c .tcimp-sub{margin-top:14px}
+  html.ui-c .tcimp-map{display:flex;flex-direction:column;gap:6px;margin:8px 0;max-width:640px}
+  html.ui-c .tcimp-m{display:grid;grid-template-columns:200px 20px minmax(0,1fr);gap:10px;align-items:center;font-size:14px}
+  html.ui-c .tcimp-m small{color:var(--t3);font-size:12px} html.ui-c .tcimp-ar{color:var(--t3);text-align:center}
+  html.ui-c .tcimp-tot{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+  html.ui-c .tcimp-row{display:grid;grid-template-columns:110px minmax(0,1.2fr) minmax(0,1.3fr);gap:12px;align-items:center;padding:8px 0;border-top:1px solid var(--rule2);font-size:14px}
+  html.ui-c .tcimp-row small{display:block;color:var(--t3);font-size:12.5px;overflow-wrap:anywhere}
+  html.ui-c .tcimp-head{color:var(--t3);font-size:12.5px;border-top:0}
+  html.ui-c .tcimp-sel{max-width:100%}
+  html.ui-c .tcimp-st{display:inline-block;font-size:12px;font-weight:700;border-radius:6px;padding:2px 8px;background:var(--c-sunk);color:var(--t2)}
+  html.ui-c .tcimp-st.s-new{background:var(--c-accent-bg);color:var(--c-sis)} html.ui-c .tcimp-st.s-update{background:var(--c-accent-bg);color:var(--ink)}
+  html.ui-c .tcimp-st.s-fix{background:var(--c-sunk);color:var(--ink);box-shadow:inset 0 0 0 1px var(--rule)}
+  html.ui-c .tcimp-done{font-size:15px;margin:10px 0}
+  @media (max-width:760px){ html.ui-c .tcimp-row{grid-template-columns:90px minmax(0,1fr)} html.ui-c .tcimp-row > div:last-child{grid-column:1/-1} html.ui-c .tcimp-m{grid-template-columns:110px 14px minmax(0,1fr)} }
   /* COMPANY FAMILIES (the owner's pick B, 28.10.2026) */
   html.ui-c .tcfam{padding:18px 20px 12px;margin:0 0 16px}
   html.ui-c .tcfam-row{display:grid;grid-template-columns:minmax(0,1.6fr) 80px 90px 80px;gap:12px;align-items:center;padding:8px 0;border-top:1px solid var(--rule2);font-size:14px}
@@ -10741,6 +10761,7 @@ async function tcRoute(hash) {
     else if (place === 'review') await viewTcReview();
     else if (place === 'go') await viewTcGo();   // lane TC-GO: the Grand Opening
     else if (place === 'families') await viewTcFamilies();   // the owner's pick B, 28.10.2026
+    else if (place === 'import') viewTcImport();   // the owner's pick A, 28.10.2026
     else await viewTcHome();
     cOpenView();
   } catch (e) {
@@ -11256,7 +11277,7 @@ function tcDrawCompanies() {
   $('#view').innerHTML = cPoolFrame({
     title: T_TITLE,
     crumb: `${Number(L.total)} ${L.total === 1 ? 'company' : 'companies'}${Object.values(T_F).some(Boolean) || T_Q ? ' match' : ''}`,
-    act: `<a class="btn ghost" href="#/tc/families">Families</a><input class="c-search" id="tcQ" placeholder="Search company, city, country or person" value="${esc(T_Q)}" aria-label="Search companies and people">${tcDownloadMenu()}<button class="btn" onclick="tcOpenAdd()">Add company</button>`,
+    act: `<a class="btn ghost" href="#/tc/families">Families</a><a class="btn ghost" href="#/tc/import">Import people</a><input class="c-search" id="tcQ" placeholder="Search company, city, country or person" value="${esc(T_Q)}" aria-label="Search companies and people">${tcDownloadMenu()}<button class="btn" onclick="tcOpenAdd()">Add company</button>`,
     band: '',
     filters: fbar,
     body: cPoolRows(L.rows, row, 'No company matches. Remove a filter to widen the list.')
@@ -11344,6 +11365,166 @@ function tcFamCard() {
 async function tcFamUnlink(companyId, parent) {
   if (parent && !confirm('Take the parent out? That ends the family; every company stays as it is.')) return;
   try { await post('/api/tc/families/unlink', { companyId: Number(companyId) }); T_CO_FAM = null; await viewTcCompany(T_CO.id); } catch (e) { alert(e.message); }
+}
+// IMPORT PEOPLE FROM A FILE (the owner's Client Hub pick 4, layout A, 28.10.2026; src/tcpeople.js): Companies → Import
+// people. 1 the file (CSV or Excel, read here in the browser), its worksheet and header row; 2 match the columns; 3 the
+// review: New / Update / Already there / To fix, and the company for each new person (found, pick one, or a new one);
+// 4 Import. Nothing is written before the review; the rows to fix download as a file.
+let T_IMP = null;
+const TCIMP_FIELDS = [['name', 'Name'], ['email', 'Email'], ['company', 'Company'], ['position', 'Position'], ['phone', 'Phone'], ['country', 'Country'], ['notes', 'Notes']];
+// each field: the exact header names first, then a looser pattern ("Person in charge" is never the person's name)
+const TCIMP_GUESS = { name: [/^(full ?name|name|vārds|vards|contact|contact name|kontakts|person|person name)$/i, /(^|\s)name$/i],
+  email: [/^(e-?mail|e-pasts|epasts|email address)$/i, /e-?mail|e-pasts/i], company: [/^(company|uzņēmums|uznemums|organi[sz]ation|firma|employer)$/i, /company|uzņēmums|organi[sz]ation/i],
+  position: [/^(position|title|job title|role|amats)$/i, /position|title|amats/i], phone: [/^(phone|tel|telephone|mobile|tālrunis|talrunis)$/i, /phone|mobile|tālr/i],
+  country: [/^(country|valsts)$/i, /country|valsts/i], notes: [/^(notes?|comments?|piezīmes?)$/i, /note|comment|piezīm/i] };
+function viewTcImport() {
+  T_IMP = { step: 1, sheets: null, sheet: 0, head: 0, map: {}, rows: null, preview: null, picks: {}, all: false, done: null, file: '' };
+  tcImpDraw();
+}
+function tcImpGrid() { const S = T_IMP.sheets && T_IMP.sheets[T_IMP.sheet]; return S ? S.grid : []; }
+function tcImpCols() { return (tcImpGrid()[T_IMP.head] || []).map((h, i) => String(h || '').trim() || `Column ${i + 1}`); }
+function tcImpGuess() {
+  const cols = tcImpCols(); T_IMP.map = {};
+  for (const [f] of TCIMP_FIELDS) {
+    for (const re of TCIMP_GUESS[f]) { const i = cols.findIndex((c, j) => re.test(c.trim()) && !Object.values(T_IMP.map).includes(j)); if (i >= 0) { T_IMP.map[f] = i; break; } }
+  }
+}
+function tcImpCsv(text) {
+  const s = String(text || '').replace(/^\uFEFF/, '');
+  const first = s.split(/\r?\n/, 1)[0] || '';
+  const d = [',', ';', '\t'].sort((a, b) => first.split(b).length - first.split(a).length)[0];
+  const rows = []; let row = [], f = '', q = false;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (q) { if (c === '"') { if (s[i + 1] === '"') { f += '"'; i++; } else q = false; } else f += c; continue; }
+    if (c === '"') q = true; else if (c === d) { row.push(f); f = ''; } else if (c === '\n') { row.push(f); rows.push(row); row = []; f = ''; } else if (c !== '\r') f += c;
+  }
+  if (f !== '' || row.length) { row.push(f); rows.push(row); }
+  return rows.filter((r) => r.some((x) => String(x).trim() !== ''));
+}
+async function tcImpXlsx(buf) {
+  const u8 = new Uint8Array(buf), dv = new DataView(buf), dec = new TextDecoder();
+  let e = u8.length - 22; while (e >= 0 && dv.getUint32(e, true) !== 0x06054b50) e--;
+  if (e < 0) throw new Error('This file is not an Excel workbook.');
+  const files = {}; let p = dv.getUint32(e + 16, true);
+  for (let i = 0, n = dv.getUint16(e + 10, true); i < n; i++) {
+    const nl = dv.getUint16(p + 28, true), xl = dv.getUint16(p + 30, true), cl = dv.getUint16(p + 32, true);
+    files[dec.decode(u8.subarray(p + 46, p + 46 + nl))] = { method: dv.getUint16(p + 10, true), size: dv.getUint32(p + 20, true), off: dv.getUint32(p + 42, true) };
+    p += 46 + nl + xl + cl;
+  }
+  const read = async (name) => {
+    const f = files[name]; if (!f) return '';
+    const start = f.off + 30 + dv.getUint16(f.off + 26, true) + dv.getUint16(f.off + 28, true), data = u8.subarray(start, start + f.size);
+    if (f.method === 0) return dec.decode(data);
+    return new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text();
+  };
+  const xml = (t) => new DOMParser().parseFromString(t || '<x/>', 'application/xml');
+  const shared = [...xml(await read('xl/sharedStrings.xml')).getElementsByTagName('si')].map((si) => [...si.getElementsByTagName('t')].map((t) => t.textContent).join(''));
+  const rel = {}; for (const r of xml(await read('xl/_rels/workbook.xml.rels')).getElementsByTagName('Relationship')) rel[r.getAttribute('Id')] = r.getAttribute('Target');
+  const out = [];
+  for (const sh of xml(await read('xl/workbook.xml')).getElementsByTagName('sheet')) {
+    let target = String(rel[sh.getAttribute('r:id')] || '').replace(/^\//, ''); if (!target.startsWith('xl/')) target = 'xl/' + target;
+    const grid = [];
+    for (const row of xml(await read(target)).getElementsByTagName('row')) {
+      const r = [];
+      for (const c of row.getElementsByTagName('c')) {
+        const col = String(c.getAttribute('r') || '').replace(/[0-9]/g, '').split('').reduce((n, ch) => n * 26 + ch.charCodeAt(0) - 64, 0) - 1;
+        const t = c.getAttribute('t'), v = c.getElementsByTagName('v')[0];
+        const val = t === 's' ? shared[Number(v && v.textContent)] ?? '' : t === 'inlineStr' ? [...c.getElementsByTagName('t')].map((x) => x.textContent).join('') : (v ? v.textContent : '');
+        r[col >= 0 ? col : r.length] = val;
+      }
+      const filled = Array.from(r, (x) => x ?? '');
+      if (filled.some((x) => String(x).trim() !== '')) grid.push(filled);
+    }
+    out.push({ name: sh.getAttribute('name') || `Sheet ${out.length + 1}`, grid });
+  }
+  return out;
+}
+async function tcImpFile(input) {
+  const f = input.files && input.files[0]; if (!f) return;
+  if (f.size > 5 * 1024 * 1024) { tcErr('#tcImpErr', 'The file is over 5 MB.'); return; }
+  try {
+    const xl = /\.xls[xm]$/i.test(f.name);
+    T_IMP.sheets = xl ? await tcImpXlsx(await f.arrayBuffer()) : [{ name: f.name, grid: tcImpCsv(await f.text()) }];
+    if (!T_IMP.sheets.some((s) => s.grid.length)) throw new Error('The file has no rows.');
+    T_IMP.file = f.name; T_IMP.sheet = Math.max(0, T_IMP.sheets.findIndex((s) => s.grid.length)); T_IMP.head = 0; T_IMP.step = 2; tcImpGuess(); tcImpDraw();
+  } catch (e) { tcErr('#tcImpErr', e.message || 'This file cannot be read.'); }
+}
+function tcImpSet(key, v) { T_IMP[key] = Number(v) || 0; if (key !== 'head') T_IMP.head = 0; tcImpGuess(); tcImpDraw(); }
+function tcImpMap(field, v) { if (v === '') delete T_IMP.map[field]; else T_IMP.map[field] = Number(v); tcImpDraw(); }
+function tcImpRows() {
+  return tcImpGrid().slice(T_IMP.head + 1).map((r) => Object.fromEntries(TCIMP_FIELDS.map(([f]) => [f, T_IMP.map[f] === undefined ? '' : String(r[T_IMP.map[f]] ?? '')])));
+}
+async function tcImpReview() {
+  try { T_IMP.rows = tcImpRows(); T_IMP.preview = await post('/api/tc/import/people/preview', { rows: T_IMP.rows }); T_IMP.picks = {}; T_IMP.step = 3; tcImpDraw(); }
+  catch (e) { tcErr('#tcImpErr', e.message); }
+}
+function tcImpPick(i, v) { T_IMP.picks[Number(i)] = v; }
+async function tcImpGo(btn) {
+  btn.disabled = true;
+  try { T_IMP.done = await post('/api/tc/import/people/apply', { rows: T_IMP.rows, picks: T_IMP.picks }); T_IMP.step = 4; tcImpDraw(); }
+  catch (e) { btn.disabled = false; tcErr('#tcImpErr', e.message); }
+}
+function tcImpErrFile() {
+  const q = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const fix = T_IMP.preview.rows.filter((r) => r.status === 'fix');
+  const csv = ['Row,Why,Name,Email,Company,Position,Phone,Country', ...fix.map((r) => [r.i + 2 + T_IMP.head, r.why, r.person.name, r.person.email, r.person.company, r.person.position, r.person.phone, r.person.country].map(q).join(','))].join('\r\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\uFEFF' + csv], { type: 'text/csv' })); a.download = 'Import people - to fix.csv'; a.click();
+}
+function tcImpDraw() {
+  const I = T_IMP;
+  const head = `<p class="c-crumb"><a href="#/tc/companies">Companies</a></p><div class="c-head"><div><h1>Import people</h1></div></div>`;
+  if (I.step === 1) {
+    $('#view').innerHTML = `${head}<section class="c-sheet tcimp"><div class="tcgo-bh"><h2>Choose a file</h2></div>
+      <label class="tcimp-drop"><input type="file" accept=".csv,.txt,.xlsx,.xlsm" onchange="tcImpFile(this)"><b>Choose a file</b><span>CSV or Excel · one row is one person · the company on each row</span></label>
+      <div id="tcImpErr"></div></section>`;
+    return;
+  }
+  if (I.step === 2) {
+    const cols = tcImpCols(), grid = tcImpGrid();
+    const opt = (sel, list) => list.map(([v, t]) => `<option value="${esc(String(v))}"${String(v) === String(sel) ? ' selected' : ''}>${esc(t)}</option>`).join('');
+    const sheetBox = I.sheets.length > 1 ? `<label>Worksheet<select onchange="tcImpSet('sheet', this.value)">${opt(I.sheet, I.sheets.map((s, i) => [i, `${s.name} · ${s.grid.length} rows`]))}</select></label>` : '';
+    const headBox = `<label>Header row<select onchange="tcImpSet('head', this.value)">${opt(I.head, grid.slice(0, 6).map((r, i) => [i, `Row ${i + 1}: ${r.filter(Boolean).slice(0, 3).join(', ')}`]))}</select></label>`;
+    const map = TCIMP_FIELDS.map(([f, label]) => `<div class="tcimp-m"><span>${esc(label)}${f === 'company' ? ' <small>(or the email points to it)</small>' : ''}</span><span class="tcimp-ar">←</span>
+      <select aria-label="${esc(label)}" onchange="tcImpMap(${esc(JSON.stringify(String(f)))}, this.value)"><option value="">not in the file</option>${opt(I.map[f] === undefined ? '' : I.map[f], cols.map((c, i) => [i, c]))}</select></div>`).join('');
+    const ok = (I.map.name !== undefined || I.map.email !== undefined);
+    $('#view').innerHTML = `${head}<section class="c-sheet tcimp"><div class="tcgo-bh"><h2>${esc(I.file)} · ${tcN(Math.max(0, grid.length - I.head - 1))} rows</h2></div>
+      <div class="tcimp-boxes">${sheetBox}${headBox}</div>
+      <div class="tcgo-bh tcimp-sub"><h2>Match the columns</h2></div><div class="tcimp-map">${map}</div>
+      <div id="tcImpErr"></div>
+      <div class="tcmk-acts"><button type="button" class="btn sm ghost" onclick="viewTcImport()">Start again</button><button type="button" class="btn sm" ${ok ? '' : 'disabled'} onclick="tcImpReview()">Review</button></div></section>`;
+    return;
+  }
+  if (I.step === 3) {
+    const P = I.preview, C = P.counts;
+    const word = { new: 'New', update: 'Update', same: 'Already there', fix: 'To fix' };
+    const company = (r) => {
+      const c = r.company || {};
+      if (r.status === 'fix') return `<small>${esc(r.why)}</small>`;
+      if (c.state === 'person') return `${esc(c.name)}<small>${esc(c.how)}</small>`;
+      if (c.state === 'found') return `${esc(c.name)}<small>found: ${esc(c.how)}</small>`;
+      const opts = [...(c.candidates || []).map((x) => `<option value="${Number(x.id)}">${esc(x.name)}${x.country ? ' · ' + esc(x.country) : ''}</option>`),
+        c.newName ? `<option value="new"${c.state === 'new' ? ' selected' : ''}>+ New company "${esc(c.newName)}"</option>` : '', '<option value="skip">Leave this person out</option>'];
+      if (c.state === 'choose') opts.unshift('<option value="" selected disabled>Pick the company</option>');
+      return `<select class="tcimp-sel" aria-label="Company for ${esc(r.person.name || r.person.email)}" onchange="tcImpPick(${Number(r.i)}, this.value)">${opts.join('')}</select>`;
+    };
+    const changes = (r) => r.status === 'update' ? r.changes.map((x) => `${esc(x.field)} → ${esc(x.to)}`).join(', ') : esc(r.person.email || r.person.phone);
+    const list = (I.all ? P.rows : P.rows.slice(0, 200));
+    const row = (r) => `<div class="tcimp-row"><span class="tcimp-st s-${esc(r.status)}">${word[r.status]}</span><div>${esc(r.person.name || '(no name)')}<small>${changes(r)}</small></div><div>${company(r)}</div></div>`;
+    const n = C.new + C.update;
+    $('#view').innerHTML = `${head}<section class="c-sheet tcimp"><div class="tcgo-bh"><h2>Review · ${esc(I.file)}</h2>${C.fix ? '<span><button type="button" class="btn sm ghost" onclick="tcImpErrFile()">Error file</button></span>' : ''}</div>
+      <div class="tcimp-tot"><span class="tcimp-st s-new">${tcN(C.new)} new</span><span class="tcimp-st s-update">${tcN(C.update)} update</span><span class="tcimp-st s-same">${tcN(C.same)} already there</span><span class="tcimp-st s-fix">${tcN(C.fix)} to fix</span></div>
+      <div class="tcimp-row tcimp-head"><span></span><span>Person</span><span>Company in Intake</span></div>
+      ${list.map(row).join('')}
+      ${P.rows.length > list.length ? `<button class="c-more tc-logmore" onclick="T_IMP.all=true;tcImpDraw()">Show all ${tcN(P.rows.length)}</button>` : ''}
+      <div id="tcImpErr"></div>
+      <div class="tcmk-acts"><button type="button" class="btn sm ghost" onclick="viewTcImport()">Start again</button><button type="button" class="btn sm" ${n ? '' : 'disabled'} onclick="tcImpGo(this)">Import ${tcN(n)} ${n === 1 ? 'person' : 'people'}</button></div></section>`;
+    return;
+  }
+  const D = I.done;
+  $('#view').innerHTML = `${head}<section class="c-sheet tcimp"><div class="tcgo-bh"><h2>Imported</h2></div>
+    <p class="tcimp-done">${tcN(D.added)} added · ${tcN(D.updated)} updated${D.newCompanies ? ` · ${tcN(D.newCompanies)} new ${D.newCompanies === 1 ? 'company' : 'companies'}` : ''}${D.skipped ? ` · ${tcN(D.skipped)} left out` : ''}</p>
+    <div class="tcmk-acts"><button type="button" class="btn sm ghost" onclick="viewTcImport()">Import another file</button><a class="btn sm" href="#/tc/companies">Companies</a></div></section>`;
 }
 // THE FAMILIES PAGE: Companies → Families. To look at = Intake's suggestions (same web domain, then same name start);
 // Confirm opens the picker (the parent, the companies that belong); Not a family hides it. Confirmed = the families, A to Z.
