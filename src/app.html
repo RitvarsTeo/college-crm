@@ -3227,7 +3227,9 @@ svg .m-flag-mark{transform-origin:0 100%}
      capitals. No header band, nothing moves. Both sides of Intake. */
   html.ui-c #view { background-image: linear-gradient(rgba(65,92,143,.045) 1px, transparent 1px),
     linear-gradient(90deg, rgba(30,155,215,.05) 1px, transparent 1px); background-size: 24px 24px; }
-  html.ui-c #view h2, html.ui-c #view h3 { letter-spacing: .14em; text-transform: uppercase; font-size: 11.5px; font-weight: 700; color: var(--ink, #0f1b35); }
+  /* Page titles keep their own size: the start tiles, Applications, the one-card title, the person's name, the Client
+     book's title and the Grand Opening stage titles. */
+  html.ui-c #view h2:not(.dl-tile h2, .c-apps-head h2, .one h2, .c-card h2, .tct-h, .tcgo-stage), html.ui-c #view h3 { letter-spacing: .14em; text-transform: uppercase; font-size: 11.5px; font-weight: 700; color: var(--ink, #0f1b35); }
 </style>
 </head>
 <body>
