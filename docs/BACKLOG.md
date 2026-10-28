@@ -131,6 +131,7 @@ companies with no status - defaults in use); phone: marked number of a known per
 - `DECIDED` 28.10 HIS PICK: TC Home Delegates by year, 2024 bar = the management review figure (3,569), marked as such
   (the TC Excel's 2024 column is incomplete: 1,294 / 92 companies). Other years stay the Excel.
 - `SAID` 28.10 the dark look is too blue, not enough contrast (Intake-wide palette). Pictures first.
+- `LIVE` 28.10 patch 91 (6bf5e8b + record 73ea6cb): the compact TC menu (B) and 2024 from the management review.
 - `DECIDED` 28.10 HIS PICK B for the compact TC menu: Home · Plan (My week · Season · Grand Opening) · Clients
   (Companies · Client book) · Help center.
 - `LIVE` 28.10 patch 90 (72535e9 + record 2ed58b2): Companies -> Import people from a file.
