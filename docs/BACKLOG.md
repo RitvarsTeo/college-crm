@@ -124,7 +124,7 @@ companies with no status - defaults in use); phone: marked number of a known per
   Live 28.10: 125 people in Intake to fix (11 groups), 45 only Client Hub has, 0 fixed yet. Next in his order: 8, 5, 4.
 - `DECIDED` 28.10 8 Do not invite / hold: per event or campaign (his rule); layout B, the list on the event's page
   (Grand Opening), search to add, For every send | Stage 2 RSVP only, why, Release / Make final, Download.
-  `LIVE` 28.10 patch 88 (8ff46ae + record c467929). Holds for the Grand Opening are AB's (his Excel): load AB's list = SAID.
+  `LIVE` 28.10 patch 88 (8ff46ae + record c467929). Holds for the Grand Opening are AB's (his Excel): AB's 9.09 decisions LIVE 28.10 (148 marks: 106 mailbox, 42 hold).
 - `DECIDED` 26.10 HIS PICK: status "Not contacted" is relabelled "No status yet" (it is the no-status default); companies
   with a logged contact become Contacted; the rest stay.
 - `LIVE` 26.10 2 Quick add, HIS PICK A ("+ Someone I met" drawer on TC Home): patch 80 (f976776).
