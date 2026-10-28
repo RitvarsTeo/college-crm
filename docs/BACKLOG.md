@@ -177,7 +177,10 @@ companies with no status - defaults in use); phone: marked number of a known per
 - `DECIDED` HIS PICK (owner 28.10): the one font is **Inter** (as today).
 - `DECIDED` HIS PICK (owner 28.10): **grid-paper background + small-capital section titles** ("Yes, both").
 - `DECIDED` HIS PICK (owner 28.10, picture band_A_B): **no header band**; the layout stays as today.
-- Still to pick, as pictures: the report's navy header band with gold eyebrow; big "finding" numbers and milestone charts.
+- `LIVE` 28.10 patch 87 (code aea674e + d6364a7, record 7385ea2), whole Intake: faint grid-paper background, section
+  titles in letter-spaced small capitals; page titles keep their own size (start tiles, Applications, the person's name,
+  Client book title, Grand Opening stages). Gate 1,865/0, live checked.
+- Still to pick, as pictures: big "finding" numbers and milestone charts.
 
 ## 26.10.2026 - Ieva: SIS drafts show as overdue
 
