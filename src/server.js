@@ -3543,7 +3543,7 @@ export const handle = async (req, res) => {
         return json(res, 200, await tcmr.companyMr(db, Number(company)));
       }
       const h = await tchome.homeYear(db, { me: await tcMe(req, url) });
-      const excelByYear = Object.fromEntries((h.byYear || []).map((r) => [r.year, r.n]));
+      const excelByYear = Object.fromEntries((h.byYear || []).map((r) => [r.year, r.excel ?? r.n]));   // the Excel's own figure, also for a review year
       return json(res, 200, await tcmr.trends(db, { all: url.searchParams.get('all') === '1', excelByYear }));
     }
     // FIX AN ADDRESS THAT BOUNCED (the owner's pick A, 26.10.2026; src/tcgo.js): the list, one fix, the waiting fixes as a file

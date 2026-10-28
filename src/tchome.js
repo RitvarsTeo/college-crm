@@ -56,6 +56,19 @@ async function myTasks(db, mk) {
   return rows.filter((t) => isMine({ picEmail: t.pic_email, pic: t.pic_name, next: { owner: t.owner } }, mk));
 }
 
+// THE 2024 HOLE (the owner's pick, 28.10.2026; config tc.json homeReviewYears): a year the Excel holds only in part shows
+// the management review's figure, marked source 'review'; the Excel's own figure stays beside it as excel. rows: [{ year, n, clients? }]
+async function reviewYears(db, rows) {
+  const RY = new Set(((TC.homeReviewYears && TC.homeReviewYears.years) || []).map(Number));
+  if (!RY.size) return rows;
+  const mr = await db.prepare('SELECT year, SUM(trainees) AS n, COUNT(*) AS c FROM tc_mr WHERE trainees > 0 GROUP BY year').all();
+  for (const r of rows) {
+    const m = RY.has(r.year) ? mr.find((x) => Number(x.year) === r.year) : null;
+    if (m && Number(m.n) > 0) Object.assign(r, { excel: r.n, excelClients: r.clients, n: Number(m.n), clients: Number(m.c), source: 'review' });
+  }
+  return rows;
+}
+
 /** TC Home for one year. `me` is the signed-in person ({ email, name }); `year` the selector's, else the year it opens on. */
 export async function homeYear(db, { year = null, me = null, now = new Date(), biggest = 6 } = {}) {
   const w = tcWindow(now);
@@ -69,6 +82,7 @@ export async function homeYear(db, { year = null, me = null, now = new Date(), b
   const before = (c) => Object.entries(c.years).some(([y, n]) => Number(y) < Y && n > 0);
   const back = clients.filter(before), fresh = clients.filter((c) => !before(c));
   const byYear = span.map((y) => ({ year: y, n: counted.reduce((s, c) => s + got(c, y), 0), clients: counted.filter((c) => got(c, y) > 0).length }));
+  await reviewYears(db, byYear);
   const cur = byYear.find((r) => r.year === Y), prev = byYear.find((r) => r.year === Y - compareBack()) || null;
   const countries = (rows) => new Set(rows.map((c) => c.country).filter(Boolean)).size;
 
@@ -148,7 +162,7 @@ export async function book(db, { year = null, area = '', mine = false, me = null
     year: Y, years: Y0.years, countsTo: Y0.countsTo, span, area: area || '', mine: Boolean(mine),
     mineCount: mk ? counted.filter((c) => got(c, Y) > 0 && isMine(c, mk)).length : 0,
     cards: {
-      delegates: { n: yearClients.reduce((s, c) => s + got(c, Y), 0), byYear: span.map((y) => ({ year: y, n: counted.reduce((s, c) => s + got(c, y), 0) })) },
+      delegates: { n: yearClients.reduce((s, c) => s + got(c, Y), 0), byYear: await reviewYears(db, span.map((y) => ({ year: y, n: counted.reduce((s, c) => s + got(c, y), 0) }))) },
       clients: { n: yearClients.length, ever: ever.length },
       countries: new Set(counted.map((c) => c.country).filter(Boolean)).size,
     },

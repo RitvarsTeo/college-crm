@@ -170,9 +170,10 @@ test('the routes on a laptop copy: the year, the Client book (an unknown area is
 
 test('the screens: the menu, Home in the Academy Home\'s parts, nothing reads as late, the Client book, the company page', () => {
   const nav = fn('function tcInstallNav(').split("insertAdjacentHTML('afterend'")[1];
-  const order = ['>Home<', 'My week', '>Client book<', 'Season', '>Companies<', 'Help center'].map((w) => nav.indexOf(w));
+  const order = ['>Home<', '>Plan<', '>Clients<', 'Help center'].map((w) => nav.indexOf(w));
   assert.ok(order.every((n) => n >= 0));
-  assert.deepEqual([...order].sort((a, b) => a - b), order, 'Home, My week, Client book, Season, Companies, Help center (no sub-items, the owner 26.10.2026)');
+  assert.deepEqual([...order].sort((a, b) => a - b), order, 'Home, Plan, Clients, Help center (the compact menu, the owner\'s pick B 28.10.2026)');
+  assert.doesNotMatch(nav, />My week<|>Season<|>Client book<|>Grand Opening<|>Companies</, 'those are tabs on the pages now');
   assert.match(fn('function tcInstallNav('), /const week = typeof viewTcWeek === 'function', season = typeof viewTcSeason === 'function';/, 'lane TC-WEEK 3\'s screens show once they exist');
   const route = fn('async function tcRoute(');
   assert.match(route, /place === 'book'\) await viewTcBook\(\)/);

@@ -3285,6 +3285,10 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tcfix-note{margin:6px 0 0;font-size:13px;color:var(--t3)}
   html.ui-c .tcfix-warn{margin:0 0 16px;font-size:13px;color:var(--t2)}
   @media (max-width:760px){ html.ui-c .tcfix-row{grid-template-columns:minmax(0,1fr) 70px} html.ui-c .tcfix-row > div:nth-child(2){display:none} html.ui-c .tcfix-row > div:first-child{grid-column:1/-1} }
+  /* THE TABS ON THE PAGES (the compact menu, the owner's pick B, 28.10.2026) */
+  html.ui-c .tc-pagetabs{display:inline-flex;margin:0 0 14px}
+  html.ui-c .tc-pagetabs a{padding:6px 14px;border-radius:7px;font-size:13.5px;font-weight:600;color:var(--t2);text-decoration:none}
+  html.ui-c .tc-pagetabs a[aria-current="page"]{background:var(--c-accent-bg);color:var(--ink)}
   html.ui-c .tc-rsvpline{margin:4px 0 0;font-size:13.5px;color:var(--t2)}
   html.ui-c .tc-rsvpline b{color:var(--c-sis)}
   @media (max-width:900px){ html.ui-c .tcgo-strip{grid-template-columns:repeat(2,minmax(0,1fr))} html.ui-c .tcgo-step:nth-child(3){border-left:0}
@@ -10699,16 +10703,13 @@ function tcInstallNav() {
   if (document.querySelector('.tcnav')) return;
   const after = document.querySelector('.shell > nav > .cnav') || document.querySelector('.shell > nav > .brand');
   if (!after) return;
-  // ROUND 3 (the owner's pick, 20.10.2026): Home, My week, Client book, Season, Companies (Next contacts, Clients,
-  // Prospects), Help center. My week and Season are lane TC-WEEK 3's screens: their items show once their views exist.
+  // THE COMPACT MENU (the owner's pick B, 28.10.2026: "this is too long of a list"): Home, Plan (My week · Season · Grand
+  // Opening as tabs), Clients (Companies · Client book as tabs), Help center. Every page stays where it was underneath.
   const week = typeof viewTcWeek === 'function', season = typeof viewTcSeason === 'function';
   after.insertAdjacentHTML('afterend', `<div class="cnav tcnav" role="navigation" aria-label="Training Centre">
     <a href="#/tc" data-c="tc-home" title="The year in figures, and your week">${C_ICON.home}<span>Home</span></a>
-    ${week ? `<a href="#/tc/week" data-c="tc-week" title="Your planned contacts, Monday to Friday">${C_ICON.next}<span>My week</span></a>` : ''}
-    <a href="#/tc/book" data-c="tc-book" title="The clients by delegates, and who to welcome back">${T_ICON.book}<span>Client book</span></a>
-    ${season ? `<a href="#/tc/season" data-c="tc-season" title="Exhibitions, plans and gifts over the year">${T_ICON.season}<span>Season</span></a>` : ''}
-    <a href="#/tc/go" data-c="tc-go" id="tnGoA" title="The Grand Opening, 27 May 2027: the invitation and what came back" hidden style="display:none">${T_ICON.star}<span>Grand Opening</span></a>
-    <a href="#/tc/companies" data-c="tc-companies" title="Every client company">${T_ICON.co}<span>Companies</span></a>
+    <a href="${week ? '#/tc/week' : '#/tc/next'}" data-c="tc-plan" title="My week, the Season and the Grand Opening">${C_ICON.next}<span>Plan</span></a>
+    <a href="#/tc/companies" data-c="tc-companies" title="The companies and the Client book">${T_ICON.co}<span>Clients</span></a>
     <a href="#/tc/help" data-c="tc-help" class="c-navfoot">${C_ICON.help}<span>Help center</span></a></div>`);
   // From Client Hub (board 4 R2, as in the owner's picked picture): shown only while contacts wait to be placed;
   // style display, because the menu's display:flex outranks [hidden]
@@ -10717,18 +10718,49 @@ function tcInstallNav() {
   const tab = (href, t, icon, label, count) => `<a href="${href}" data-t="${t}">${icon}<span>${label}</span>${count ? `<span class="n" id="${count}"></span>` : ''}</a>`;
   const more = (href, icon, label) => `<a href="${href}" onclick="tcMore(false)">${icon}<span>${label}</span></a>`;
   document.body.insertAdjacentHTML('beforeend', `<div class="ctabs tctabs" role="navigation" aria-label="Training Centre phone menu">
-    ${tab('#/tc', 'home', C_ICON.home, 'Home')}${week ? tab('#/tc/week', 'week', C_ICON.next, 'My week') : tab('#/tc/next', 'next', C_ICON.next, 'Next', 'ttNext')}${tab('#/tc/book', 'book', T_ICON.book, 'Clients')}${tab('#/tc/companies', 'companies', T_ICON.co, 'Companies')}
+    ${tab('#/tc', 'home', C_ICON.home, 'Home')}${tab(week ? '#/tc/week' : '#/tc/next', 'plan', C_ICON.next, 'Plan')}${tab('#/tc/companies', 'clients', T_ICON.co, 'Clients')}
     <button type="button" data-t="more" aria-haspopup="dialog" aria-expanded="false" onclick="tcMore(true)">${C_ICON.more}<span>More</span></button></div>
     <div class="cmore" id="tMore" hidden><div class="cmore-back" onclick="tcMore(false)"></div>
     <div class="cmore-sheet" role="dialog" aria-modal="true" aria-label="More">
-      ${season ? more('#/tc/season', T_ICON.season, 'Season') : ''}${more('#/tc/companies', T_ICON.co, 'Companies')}<a href="#/tc/go" id="tmGoA" onclick="tcMore(false)" hidden style="display:none">${T_ICON.star}<span>Grand Opening</span></a>${more('#/tc/help', C_ICON.help, 'Help')}</div></div>`);
+      ${more('#/tc/help', C_ICON.help, 'Help')}</div></div>`);
+}
+// THE TABS (the owner's pick B, 28.10.2026): Plan = My week · Season · Grand Opening (once its figures are in), Clients =
+// Companies · Client book. One strip at the top of the page, put back whenever the page redraws itself.
+let T_TABS = '', T_GO_ON = false;
+function tcPageTabs(place) {
+  const week = typeof viewTcWeek === 'function', season = typeof viewTcSeason === 'function';
+  const plan = [week ? ['#/tc/week', 'week', 'My week'] : ['#/tc/next', 'next', 'Next contacts'], ...(season ? [['#/tc/season', 'season', 'Season']] : []), ...(T_GO_ON ? [['#/tc/go', 'go', 'Grand Opening']] : [])];
+  const clients = [['#/tc/companies', 'companies', 'Companies'], ['#/tc/book', 'book', 'Client book']];
+  const group = ['week', 'season', 'go', 'next'].includes(place) ? plan : ['companies', 'clients', 'prospects', 'book'].includes(place) ? clients : null;
+  const on = ['clients', 'prospects'].includes(place) ? 'companies' : place;
+  // a div, not a nav: the page's own nav rule is the side menu's
+  T_TABS = group && group.length > 1 ? `<div class="c-seg tc-pagetabs" role="navigation" aria-label="${group === plan ? 'Plan' : 'Clients'}">${group.map(([h, id, label]) =>
+    `<a href="${h}"${id === on ? ' aria-current="page"' : ''}>${label}</a>`).join('')}</div>` : '';
+  tcTabsPut();
+}
+function tcTabsPut() {
+  const v = $('#view');
+  if (!v) return;
+  // one strip, the page's first child, whatever else is put at the top of the page
+  const all = [...v.children].filter((x) => x.classList.contains('tc-pagetabs'));
+  if (!T_TABS || !String(location.hash).startsWith('#/tc')) { all.forEach((x) => x.remove()); return; }
+  if (all.length === 1 && v.firstElementChild === all[0] && all[0].outerHTML === T_TABS) return;
+  all.forEach((x) => x.remove());
+  v.insertAdjacentHTML('afterbegin', T_TABS);
+}
+if (typeof MutationObserver !== 'undefined' && typeof document !== 'undefined' && document.getElementById) {
+  const watch = () => { const v = document.getElementById('view'); if (v) new MutationObserver(() => tcTabsPut()).observe(v, { childList: true }); };
+  if (document.getElementById('view')) watch(); else document.addEventListener('DOMContentLoaded', watch);
 }
 function tcMore(open) { const m = $('#tMore'); if (m) m.hidden = !open; }
+// which menu item a page belongs to (the compact menu, the owner's pick B, 28.10.2026)
+const TC_PLAN = ['week', 'season', 'go', 'next'], TC_CLIENTS = ['companies', 'company', 'clients', 'prospects', 'book', 'families', 'import'];
 function tcMark(place) {
-  const lit = ['next', 'clients', 'prospects', 'companies', 'company'].includes(place) ? ['tc-companies', 'tc-' + place] : ['tc-' + place];
-  document.querySelectorAll('.tcnav a').forEach((a) => a.classList.toggle('on', lit.includes(a.dataset.c)));
-  const t = ['home', 'week', 'next', 'book', 'companies'].includes(place) ? place : place === 'company' ? 'companies' : 'more';
+  const item = TC_PLAN.includes(place) ? 'plan' : TC_CLIENTS.includes(place) ? 'companies' : place;
+  document.querySelectorAll('.tcnav a').forEach((a) => a.classList.toggle('on', a.dataset.c === 'tc-' + item));
+  const t = place === 'home' ? 'home' : TC_PLAN.includes(place) ? 'plan' : TC_CLIENTS.includes(place) ? 'clients' : 'more';
   document.querySelectorAll('.tctabs [data-t]').forEach((a) => a.classList.toggle('on', a.dataset.t === t));
+  tcPageTabs(place);
   tcMore(false);
   cSpine(document.querySelector('.tcnav'));
 }
@@ -10820,10 +10852,11 @@ function tcYearChart(rows, Y, { small = false } = {}) {
   const cols = rows.map((r, k) => {
     const cx = L + band * k + band / 2, t = y(r.n), on = r.year === Y;
     const bar = r.n ? `<path d="M${cx - bw / 2},${y(0)} V${Math.min(t + 4, y(0))} q0,-4 4,-4 h${bw - 8} q4,0 4,4 V${y(0)} Z" class="tc-bar${on ? ' on' : ''} m-fade" style="--i:${k}"/>` : '';
-    const go = small ? '' : ` tabindex="0" role="button" data-kgo="tc|year=${Number(r.year)}" data-tip="${Number(r.year)}|${tcN(r.n)} delegates|${tcN(r.clients)} client companies"`;
+    const rv = r.source === 'review';   // the owner's pick 28.10.2026: a year the Excel holds only in part shows the management review
+    const go = small ? '' : ` tabindex="0" role="button" data-kgo="tc|year=${Number(r.year)}" data-tip="${Number(r.year)}|${tcN(r.n)} delegates|${tcN(r.clients)} client companies${rv ? '|from the management review' : ''}"`;
     return `<g class="kcol"${go} aria-label="${Number(r.year)}: ${tcN(r.n)} delegates${small ? '' : `, ${tcN(r.clients)} client companies`}"><rect x="${cx - band / 2}" y="${T}" width="${band}" height="${H - T - B}" class="khit"/>${bar}
       <text x="${cx}" y="${t - 7}" class="kt tc-val" text-anchor="middle">${tcN(r.n)}</text>
-      <text x="${cx}" y="${H - B + 16}" class="kt" text-anchor="middle">${Number(r.year)}</text>${small ? '' : `<text x="${cx}" y="${H - B + 33}" class="kt tc-cos" text-anchor="middle">${tcN(r.clients)} cos.</text>`}</g>`;
+      <text x="${cx}" y="${H - B + 16}" class="kt" text-anchor="middle">${Number(r.year)}${rv ? '*' : ''}</text>${small ? '' : `<text x="${cx}" y="${H - B + 33}" class="kt tc-cos" text-anchor="middle">${tcN(r.clients)} cos.</text>`}</g>`;
   }).join('');
   return `<svg viewBox="0 0 ${W} ${H}" class="kchart tc-years${narrow ? ' narrow' : ''}${small ? ' small' : ''}" data-plot="${T} ${H - B}" role="img" aria-label="Delegates by year">${grid}${cols}</svg>`;
 }
@@ -10898,7 +10931,7 @@ async function viewTcHome() {
         <small class="tc-line">sent delegates in ${Y}</small><small class="tc-line">of <a href="#/tc/companies" onclick="tcGoList({ country: '*' });return false"><b>${tcN(D.countries.all)}</b></a> where our companies are</small><a class="kgo" href="#/tc/companies" onclick="tcGoList({ country: '*' });return false">Companies →</a></div>
     </div>
     <div class="m-scene kb-charts"><div class="kb-top">
-      <section class="ksec"><div class="ksh"><h2>Delegates by year</h2><ul class="klegend inline"><li><i style="background:var(--v-adm)"></i><span>Delegates</span></li><li><span>cos. = client companies</span></li></ul><span class="ksrc">click a year → Clients</span></div>
+      <section class="ksec"><div class="ksh"><h2>Delegates by year</h2><ul class="klegend inline"><li><i style="background:var(--v-adm)"></i><span>Delegates</span></li><li><span>cos. = client companies</span></li>${D.byYear.some((r) => r.source === 'review') ? '<li><span>* management review</span></li>' : ''}</ul><span class="ksrc">click a year → Clients</span></div>
         ${tcYearChart(D.byYear, Y)}</section>
       <section class="ksec"><div class="ksh"><h2>Our companies, by last course</h2><span class="ksrc">click a slice</span></div>
         ${cDonut(D.donut.rows.map((r, i) => [r.label, r.n, ['tc1', 'tc2', 'tc3', 'np'][i], `year=${Y}&last=${r.id}`]), { unit: 'companies', title: 'Our companies, by last course', kgo: (go) => 'tc|' + go, hole: 'tc|' })}</section>
@@ -11088,8 +11121,8 @@ async function viewTcBook() {
 // out of every company that ever trained, the countries; each figure opens its companies, TOTAL rows in none
 function tcBookCards(B) {
   const C = B.cards, Y = B.year, max = Math.max(1, ...C.delegates.byYear.map((r) => r.n));
-  const col = (r) => `<a class="tc-ycol${r.year === Y ? ' on' : ''}" href="#/tc/companies" onclick="tcGoYear(${Number(r.year)});return false" title="${Number(r.year)}: ${tcN(r.n)} delegates">
-      <i style="height:${Math.max(r.n ? 4 : 1, (r.n / max) * 100).toFixed(1)}%"></i><span>${Number(r.year)}</span></a>`;
+  const col = (r) => `<a class="tc-ycol${r.year === Y ? ' on' : ''}" href="#/tc/companies" onclick="tcGoYear(${Number(r.year)});return false" title="${Number(r.year)}: ${tcN(r.n)} delegates${r.source === 'review' ? ', from the management review' : ''}">
+      <i style="height:${Math.max(r.n ? 4 : 1, (r.n / max) * 100).toFixed(1)}%"></i><span>${Number(r.year)}${r.source === 'review' ? '*' : ''}</span></a>`;
   return `<div class="kstrip tc-bookcards">
     <div class="khero tc-card" role="link" tabindex="0" onclick="if(!event.target.closest('a'))tcGoYear(${Number(Y)})"><span>Delegates ${Number(Y)}</span><b>${tcN(C.delegates.n)}</b>
       <div class="tc-ycols">${C.delegates.byYear.map(col).join('')}</div></div>
@@ -12268,8 +12301,10 @@ const tcGoPct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
 function tcGoNav() {
   api('/api/tc/go?count=1').then((c) => {
     if (!c || !c.guests) return;
-    for (const id of ['#tnGoA', '#tmGoA']) { const el = $(id); if (el) { el.hidden = false; el.style.display = ''; } }
-    const n = $('#tnGoNr'); if (n) n.textContent = c.notReached ? String(Number(c.notReached)) : '';
+    // the Grand Opening is a tab in Plan (the owner's pick B, 28.10.2026), shown once its figures are in Intake
+    T_GO_ON = true;
+    const h = String(location.hash).split('/')[2] || '';
+    if (['week', 'season', 'go', 'next'].includes(h)) tcPageTabs(h);
   }).catch(() => {});
 }
 

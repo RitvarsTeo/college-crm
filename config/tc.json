@@ -99,6 +99,10 @@
     "maxPerPlace": 400,
     "setAsideLabel": "Not a contact for us"
   },
+  "homeReviewYears": {
+    "_about": "THE 2024 HOLE (the owner's pick, 28.10.2026): the TC Excel's 2024 column is incomplete (1,294 delegates, 92 companies) while the management review counts 3,569. For these years TC Home's Delegates by year shows the management review's business-client trainees (src/tcmr.js tables), marked as from the review; every other year stays the Excel.",
+    "years": [2024]
+  },
   "grandOpening": {
     "_about": "THE GRAND OPENING (21.10.2026, src/tcgo.js; the owner's pick G1, board 5): its own page in the Training Centre half. The figures are Client Hub's: its per-person invitation state, the latest reading of each Save the Date send, Add to Calendar, and who opened it (a person, Apple Mail, a security scanner) from the classified opens. Brought in by the admin import; the extract is _training-centre/tools/go_extract.mjs.",
     "event": { "name": "Grand Opening", "dateLabel": "27 May 2027", "place": "Novikontas Academy Campus, Duntes iela 17d, Riga", "send": "Save the Date",

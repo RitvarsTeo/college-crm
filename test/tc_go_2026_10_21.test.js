@@ -201,8 +201,9 @@ test('the routes on a laptop copy: the admin imports by upload, the page and its
 test('the screen: the menu item, shown once the figures are in; no page or link that leads nowhere; Not reached is navy, never red; nothing reads as late; Help', () => {
   const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
   assert.match(app, /else if \(place === 'go'\) await viewTcGo\(\);/);
-  assert.match(app, /<a href="#\/tc\/go" data-c="tc-go" id="tnGoA"[^>]* hidden style="display:none">\$\{T_ICON\.star\}<span>Grand Opening<\/span><\/a>/);
-  assert.match(app, /id="tmGoA"/, 'and on the phone, in More');
+  // the compact menu (the owner's pick B, 28.10.2026): the Grand Opening is a tab in Plan, shown once its figures are in
+  assert.match(app, /\.\.\.\(T_GO_ON \? \[\['#\/tc\/go', 'go', 'Grand Opening'\]\] : \[\]\)/);
+  assert.match(app, /T_GO_ON = true;/);
   // the owner 22.10: Not reached, Audience and Delivery are hidden (they could not do their job): no sub-item, no link to them
   assert.doesNotMatch(app, /data-c="tc-go-|#\/tc\/go\/|tcGoPeopleView|tcGoDelivery/);
   const css = app.slice(app.indexOf('/* THE GRAND OPENING (#/tc/go'), app.indexOf('</style>\n</head>'));
