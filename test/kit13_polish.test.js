@@ -42,7 +42,7 @@ test('dark: kit 13 lines - field edge #82a0ba, the menu tree line at 28%', () =>
   assert.match(dark, /--control-line:#82a0ba;/);
   assert.ok(ratio('#82a0ba', '#17456e') >= 3, 'the edge holds 3:1 at the brightest point of the sea');
   assert.match(APP, /html\.ui-c\[data-theme="dark"\] \.cnav \.kids\{border-left-color:rgba\(194,211,222,\.28\)\}/);
-  assert.match(dark, /--paper:#0f2f4f;--surface:#133a60;--surface-2:#17456e;--shell:#08182e;/, 'the sea itself is unchanged');
+  assert.match(dark, /--paper:#0f2f4f;--surface:#0d2a49;--surface-2:#17456e;--shell:#08182e;/, 'the sea itself is unchanged; the deep card #0d2a49 (the owner 28.10.2026)');
 });
 
 test('the screen texts are gone entirely, and the one that carries a count stays', () => {
@@ -86,7 +86,7 @@ test('panels are the kit card, and the card in dark is solid', () => {
   assert.doesNotMatch(APP, /html\.ui-c \.kstrip > div \+ div\{padding-left:18px;border-left/,
     'the dividing rules are gone');
 
-  // NEVER glass in dark: --surface in ui-c dark is the solid #133a60, and the card uses --surface
-  assert.match(APP, /html\.ui-c\[data-theme="dark"\]\{--paper:#0f2f4f;--surface:#133a60/,
+  // NEVER glass in dark: --surface in ui-c dark is the solid #0d2a49 (the owner 28.10.2026), and the card uses --surface
+  assert.match(APP, /html\.ui-c\[data-theme="dark"\]\{--paper:#0f2f4f;--surface:#0d2a49/,
     'the dark card surface is solid, the way the kit requires');
 });

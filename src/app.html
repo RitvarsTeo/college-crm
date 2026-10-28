@@ -837,8 +837,8 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
      and normal-vision separation pass, contrast 3:1+ passes. Two flags are deliberate:
      the amber and teal are lighter than the validator's band because he asked for them
      brighter, and the slate for 'not proceeding' is a neutral grey that always carries its word. */
-  html.ui-c[data-theme="dark"]{--paper:#0f2f4f;--surface:#133a60;--surface-2:#17456e;--shell:#08182e;--field:#0c2745;--menu:#133a60;--ink:#f2f6f9;
-    --t2:#cddbe5;--t3:#bfd0dd;--t4:#b8cad8;--rule:#2a5580;--rule2:#1d4670;--control-line:#82a0ba;
+  html.ui-c[data-theme="dark"]{--paper:#0f2f4f;--surface:#0d2a49;--surface-2:#17456e;--shell:#08182e;--field:#0c2745;--menu:#0d2a49;--ink:#ffffff;
+    --t2:#e6eef5;--t3:#c8d7e4;--t4:#b8cad8;--rule:#35618c;--rule2:#264d75;--control-line:#82a0ba;
     /* the kit's dark card: SOLID, never glass. --surface here is already #133a60, so only the
        edge and the lift change. Kept out of the way of the named colours the contrast test reads. */
     --c-card-line:rgba(194,211,222,.12);
@@ -853,7 +853,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
     --v-land:#1c4168;   /* TC Home's map: the land, a frame colour */
     --k-plinth:#0b2542;   /* the donut's plinth: a frame colour, the dark card well, never a data colour */
     --j-from:#1d4d7a;--j-to:#8fcbef;   /* the Journey's stage line in dark (the review #2) */
-    --glass:linear-gradient(180deg,rgba(255,255,255,.06) 0%,rgba(255,255,255,.035) 100%);
+    --glass:#0d2a49;   /* THE SEA WITH CONTRAST (the owner, 28.10.2026): the deep card, solid; was a 6% white glass */
     --glass-line:rgba(194,211,222,.18);
     --sea:radial-gradient(120% 80% at 50% 0%,#17456e 0%,rgba(23,69,110,0) 60%),linear-gradient(180deg,#0f2f4f 0%,#0f2f4f 45%,#08182e 100%);--v-off:#bfe3f6;--bm-band:#3f5f80;--bm-ring:var(--surface);--sel-lift:0 10px 24px rgba(0,0,0,.45),0 2px 6px rgba(0,0,0,.30);--sel-hover:0 6px 14px rgba(0,0,0,.35)}
   /* THE LIGHT SEA (the owner, 01.10.2026: "same way we have a gradient for the dark mode,
@@ -877,8 +877,8 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c[data-theme="dark"] .shell > nav{background:linear-gradient(180deg,rgba(8,24,46,.78) 0%,rgba(8,24,46,.92) 100%);border-right:1px solid rgba(194,211,222,.10)}
   html.ui-c[data-theme="dark"] :is(.c-health,.c-sheet,.c-seg,.c-said,.c-card,.c-jp,.c-folded,.c-next.c-finished,.kstrip,.ksec){
     background:var(--glass);border:1px solid var(--glass-line);
-    -webkit-backdrop-filter:blur(14px) saturate(110%);backdrop-filter:blur(14px) saturate(110%);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 10px 28px rgba(3,12,26,.22)}
+    -webkit-backdrop-filter:none;backdrop-filter:none;
+    box-shadow:0 0 0 1px rgba(255,255,255,.20),0 10px 26px rgba(1,10,20,.38)}
   /* Home had hairlines and no boxes; as glass its strip and sections need an edge and room */
   html.ui-c[data-theme="dark"] .kstrip{border-radius:14px;padding:0 18px}
   html.ui-c[data-theme="dark"] .ksec{border-radius:14px;padding:16px 14px 14px}
@@ -2448,8 +2448,15 @@ html.ui-c:not([data-theme="dark"]) #view .jb-outs{border-left:1px solid #e3e9ef;
    surface (never glass), the same 3px Novikontas Blue top edge (#53a7db on #133a60 is about 3.9:1, enough for a
    non-text edge), a deeper shadow, the same plain insides with a light hairline; Needs-you stays amber. */
 html.ui-c[data-theme="dark"] #view :is(.kstrip > div, .kday-sheet, .c-todaystrip, .c-sheet, .c-apps, .kflow.jband){
-  background:#133a60;border:1px solid rgba(194,211,222,.12);border-top:3px solid #53a7db;border-radius:14px;
-  box-shadow:0 1px 2px rgba(0,0,0,.25),0 10px 24px rgba(0,0,0,.35);-webkit-backdrop-filter:none;backdrop-filter:none}
+  background:#0d2a49;border:1px solid rgba(194,211,222,.12);border-top:3px solid #53a7db;border-radius:14px;
+  box-shadow:0 0 0 1px rgba(255,255,255,.20),0 10px 26px rgba(1,10,20,.38);-webkit-backdrop-filter:none;backdrop-filter:none}
+/* THE SEA WITH CONTRAST (the owner's picks, 28.10.2026: "The sea is the best anyways. But we need some contrast!", "we need
+   combo of deep cards and bright cards on the sea!", "the deep ones cant be darker than the left side card!", "Dont lose
+   the novikontas blue and the yellow lines on sides of boxes!"): the headline figures sit on BRIGHT cards (#1b4a77), the
+   lists, tables and charts on DEEP ones (#0d2a49, never darker than the side menu, whose lightest is #0c2745). The edge is
+   a light ring in the shadow, so every border - the 3px Novikontas Blue top line, the amber lines - stays as it was. */
+html.ui-c[data-theme="dark"] body .shell #view :is(.kstrip > div, .kday-sheet, .c-todaystrip, .tcgo-strip, .tcgo-pack, .khero){
+  background:#1b4a77;box-shadow:0 0 0 1px rgba(255,255,255,.30),0 12px 28px rgba(1,10,20,.45)}
 html.ui-c[data-theme="dark"] #view .kday-sheet.kday-sheet.kday-sheet{border-top-color:#F7C04F}
 html.ui-c[data-theme="dark"] #view .kday-row{gap:0}
 html.ui-c[data-theme="dark"] #view .kneed{background:transparent;border:0;border-left:1px solid rgba(194,211,222,.14);border-radius:0;box-shadow:none;padding:4px 16px}

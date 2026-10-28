@@ -23,7 +23,7 @@ test('no boxes inside a card: the Needs-you tiles and the band bookends are plai
 });
 
 test('dark matches: the same cards, solid (never glass), the same blue top, amber Needs-you, plain insides', () => {
-  const m = APP.match(/html\.ui-c\[data-theme="dark"\] #view :is\(([^)]*)\)\{\s*background:#133a60;[^}]*border-top:3px solid #53a7db;border-radius:14px;[^}]*backdrop-filter:none\}/);
+  const m = APP.match(/html\.ui-c\[data-theme="dark"\] #view :is\(([^)]*)\)\{\s*background:#0d2a49;[^}]*border-top:3px solid #53a7db;border-radius:14px;[^}]*backdrop-filter:none\}/);
   assert.ok(m, 'the dark card rule');
   assert.equal(m[1], '.kstrip > div, .kday-sheet, .c-todaystrip, .c-sheet, .c-apps, .kflow.jband', 'the same list as light');
   assert.match(APP, /html\.ui-c\[data-theme="dark"\] #view \.kday-sheet\.kday-sheet\.kday-sheet\{border-top-color:#F7C04F\}/);
