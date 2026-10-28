@@ -1024,3 +1024,4 @@ Seen: GitHub - no Aigars commits since 309b10f; crm-novikontas.vercel.app = 1ced
 - 28.10 HIS PICK for 5 Company families: B "suggest + confirm" (Intake suggests families by same name start or web domain; a person confirms and picks the parent; the family shows on each member's page; nothing merges; one level, one family per company). Building.
 - 28.10 LOADED (his "Yes, load it"): backup VERIFIED 2026-10-28T13-11-33Z; split 1,559 (44 gone = AB's holds; Mārcis 325, DS 501, MC 342, AB 272, Alma 7, JS 112).
 - 28.10 Account (owner's ask, popup: Both / User): davis.ositis@novikontas.org "Davis Ositis", user, academy + tc; signs in with Google. Backup VERIFIED 2026-10-28T13-18-06Z.
+- 28.10 Account: davis.ositis@novikontas.org role user -> admin (owner's word "Admin"). He had signed in with Google at 13:18. Backup VERIFIED 2026-10-28T13-19-00Z.
