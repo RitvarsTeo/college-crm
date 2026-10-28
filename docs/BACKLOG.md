@@ -128,6 +128,10 @@ companies with no status - defaults in use); phone: marked number of a known per
 - `DECIDED` 28.10 HIS PICK for 5 Company families: B, Intake suggests (same name start / web domain), a person confirms
   and picks the parent; family on each member's page; nothing merges; one level.
   `LIVE` 28.10 patch 89 (e01c00a + record 5a61596): Companies -> Families, 241 suggestions to look at.
+- `DECIDED` 28.10 HIS PICK: TC Home Delegates by year, 2024 bar = the management review figure (3,569), marked as such
+  (the TC Excel's 2024 column is incomplete: 1,294 / 92 companies). Other years stay the Excel.
+- `SAID` 28.10 a more compact TC menu: My week + Season together, Client book + Companies together, Grand Opening not a
+  menu item of its own. Picture first.
 - `DECIDED` 28.10 HIS PICK for 4 Import people from a file: A, one import on Companies; file -> match columns -> review
   (company found / pick / new; new, update, already there, to fix) -> Import; error file; same email = update.
 - `DECIDED` 26.10 HIS PICK: status "Not contacted" is relabelled "No status yet" (it is the no-status default); companies
