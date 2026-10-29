@@ -3296,7 +3296,10 @@ svg .m-flag-mark{transform-origin:0 100%}
   /* FIX AN ADDRESS THAT BOUNCED (the owner's pick A, 26.10.2026) */
   html.ui-c .tcfix{padding:18px 20px 12px;margin:16px 0}
   /* 29.10.2026 ("this page is soooo long"): the long lists scroll inside their own box, the page stays short */
-  html.ui-c .tcfix-list, html.ui-c #tcS2rows{max-height:min(520px,60vh);overflow:auto;overscroll-behavior:contain}
+  html.ui-c .tcfix-list, html.ui-c #tcS2rows, html.ui-c .tcgo-flist{max-height:min(520px,60vh);overflow:auto;overscroll-behavior:contain}
+  /* 29.10.2026 ("make this list foldable ... or both foldable"): the hold list and the bounced list open on their title */
+  html.ui-c .tcgo-fold{all:unset;cursor:pointer;font:inherit;letter-spacing:inherit;text-transform:inherit}
+  html.ui-c .tcgo-fold:focus-visible{outline:2px solid var(--pet);outline-offset:3px;border-radius:3px}
   html.ui-c .tcgo-tabs{margin:4px 0 14px} html.ui-c .tcgo-tabn{font-style:normal;font-weight:700;margin-right:6px;opacity:.7}
   html.ui-c .tcfix .tcgo-bh > span{display:flex}
   html.ui-c .tcfix-row{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) minmax(0,1.3fr) 70px;gap:12px;align-items:center;padding:9px 0;border-top:1px solid var(--rule2);font-size:14px}
@@ -12498,7 +12501,7 @@ function tcGoStage2() {
 // for whoever runs it. Intake writes nothing into Client Hub; the people only Client Hub has are fixed there.
 let T_FIX = null;
 async function tcFixLoad() {
-  try { const r = await api('/api/tc/go/bounced'); T_FIX = { ...r, scope: (T_FIX && T_FIX.scope) || 'team' }; } catch (e) { T_FIX = null; }
+  try { const r = await api('/api/tc/go/bounced'); T_FIX = { ...r, scope: (T_FIX && T_FIX.scope) || 'team', open: Boolean(T_FIX && T_FIX.open) }; } catch (e) { T_FIX = null; }
   const box = $('#tcFix'); if (box) box.innerHTML = tcFixHtml();
 }
 function tcFixScope(v) { T_FIX.scope = v; const box = $('#tcFix'); if (box) box.innerHTML = tcFixHtml(); }
@@ -12518,8 +12521,8 @@ function tcFixHtml() {
       <div class="tcfix-err" id="tcfixErr${Number(r.guestId)}"></div></div>`;
   const seg = [['mine', 'Mine'], ['team', 'Team']].map(([v, label]) => `<button type="button" class="${F.scope === v ? 'on' : ''}" aria-pressed="${F.scope === v}" onclick="tcFixScope('${v}')">${label}</button>`).join('');
   return `<section class="c-sheet tcfix" aria-label="Fix an address that bounced">
-      <div class="tcgo-bh"><h2>Fix an address that bounced · ${tcGoN(F.total)}</h2><span class="tc-seg" role="group" aria-label="Whose contacts">${seg}</span></div>
-      <div class="tcfix-list">${groups.map((g) => `<div class="tcgo-pic"><i>${esc(ini(g.pic) || '·')}</i>${esc(g.pic || 'Nobody yet')} · ${g.rows.length}</div>${g.rows.map(row).join('')}`).join('')
+      <div class="tcgo-bh"><h2><button type="button" class="tcgo-fold" aria-expanded="${Boolean(F.open)}" onclick="T_FIX.open=!T_FIX.open;tcFixScope(T_FIX.scope)">${F.open ? '▾' : '▸'} Fix an address that bounced · ${tcGoN(F.total)}</button></h2><span class="tc-seg" role="group" aria-label="Whose contacts">${seg}</span></div>
+      <div class="tcfix-list"${F.open ? '' : ' hidden'}>${groups.map((g) => `<div class="tcgo-pic"><i>${esc(ini(g.pic) || '·')}</i>${esc(g.pic || 'Nobody yet')} · ${g.rows.length}</div>${g.rows.map(row).join('')}`).join('')
         || `<div class="c-empty">${F.scope === 'mine' ? 'None of your contacts is on this list.' : 'Nobody to fix.'}</div>`}</div>
     </section>
     ${F.waiting ? `<section class="c-sheet tcfix-wait"><div class="tcgo-bh"><h2>Fixed, waiting for the next send · ${tcGoN(F.waiting)}</h2>
@@ -12538,7 +12541,7 @@ async function tcFixSave(guestId, input) {
 // and why; a hold ends with Release or Make final; Undo ends a do-not-invite. src/tcgo.js; nothing is deleted.
 let T_MK = null; let T_MK_T = 0;
 async function tcMkLoad() {
-  try { T_MK = { ...(await api('/api/tc/go/marks')), pick: null }; } catch (e) { T_MK = null; }
+  try { T_MK = { ...(await api('/api/tc/go/marks')), pick: null, open: Boolean(T_MK && T_MK.open) }; } catch (e) { T_MK = null; }
   const box = $('#tcMk'); if (box) box.innerHTML = tcMkHtml();
 }
 function tcMkFind(v) {
@@ -12589,11 +12592,11 @@ function tcMkHtml() {
     <div class="tcmk-btns">${r.kind === 'hold' ? `<button type="button" class="btn sm ghost" onclick="tcMkAct(${Number(r.id)}, 'end')">Release</button><button type="button" class="btn sm ghost" onclick="tcMkAct(${Number(r.id)}, 'final')">Make final</button>`
       : `<button type="button" class="btn sm ghost" onclick="tcMkAct(${Number(r.id)}, 'end')">Undo</button>`}</div></div>`;
   return `<section class="c-sheet tcmk" aria-label="Do not invite or hold">
-    <div class="tcgo-bh"><h2>${esc(T_GO.event.name)} · Do not invite / hold · ${tcGoN(M.total)}</h2><span><input class="c-search tcmk-q-in" placeholder="Add a person or company" aria-label="Add a person or company" autocomplete="off" oninput="tcMkFind(this.value)">
+    <div class="tcgo-bh"><h2><button type="button" class="tcgo-fold" aria-expanded="${Boolean(M.open)}" onclick="T_MK.open=!T_MK.open;tcMkSet0()">${M.open ? '▾' : '▸'} ${esc(T_GO.event.name)} · Do not invite / hold · ${tcGoN(M.total)}</button></h2><span><input class="c-search tcmk-q-in" placeholder="Add a person or company" aria-label="Add a person or company" autocomplete="off" oninput="tcMkFind(this.value)">
       ${M.total ? '<a class="btn sm ghost" href="/api/tc/go/marks.xlsx" download>Download</a>' : ''}</span></div>
     <div id="tcMkDrop" class="tcmk-drop"></div>
     ${tcMkPickHtml()}
-    ${M.rows.map(row).join('')}</section>`;
+    ${M.open ? `<div class="tcgo-flist">${M.rows.map(row).join('')}</div>` : ''}</section>`;
 }
 const tcGoCrumb = (link) => { const E = T_GO.event; const t = `${esc(E.name)} · ${esc(E.dateLabel)} · ${esc(E.send)}`; return `<p class="c-crumb">${link ? `<a href="#/tc/go">${t}</a>` : t}</p>`; };
 function tcGoDraw() {
@@ -12610,7 +12613,7 @@ function tcGoDraw() {
   const tab = T_GO_TAB === 's1' ? 's1' : 's2';
   const tb = (v, n, label) => `<button type="button" class="tcs2-tab" aria-pressed="${tab === v}" onclick="tcGoTab('${v}')"><i class="tcgo-tabn">${n}</i>${label}</button>`;
   const head = `${tcGoCrumb(false)}<div class="c-head"><div><h1>The invitation</h1></div></div>
-    <div class="tcs2-tabs tcgo-tabs" role="group" aria-label="Stage">${tb('s2', 2, 'Stage 2 · RSVP')}${tb('s1', 1, 'Stage 1 · Save the Date')}</div>`;
+    <div class="tcs2-tabs tcgo-tabs" role="group" aria-label="Stage">${tb('s1', 1, 'Stage 1 · Save the Date')}${tb('s2', 2, 'Stage 2 · RSVP')}</div>`;
   $('#view').innerHTML = head + (tab === 's1' ? `
     <!-- stage1 -->${tcGoStrip(F)}
     <section class="c-sheet tcgo-back" aria-label="What came back">

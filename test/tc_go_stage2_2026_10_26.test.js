@@ -52,10 +52,10 @@ test('the page: tabs, search, Download; no Who answered and no answered totals; 
   const draw = app.slice(app.indexOf('function tcGoDraw('), app.indexOf('function tcGoStrip('));
   // the owner's pick B (29.10.2026): two tabs, Stage 2 · RSVP opens first; each tab holds only its own part
   assert.match(draw, /let T_GO_TAB = 's2';|const tab = T_GO_TAB === 's1' \? 's1' : 's2';/);
-  assert.ok(draw.indexOf("tb('s2', 2, 'Stage 2 · RSVP')") < draw.indexOf("tb('s1', 1, 'Stage 1 · Save the Date')"), 'the Stage 2 tab first');
+  assert.ok(draw.indexOf("tb('s1', 1, 'Stage 1 · Save the Date')") < draw.indexOf("tb('s2', 2, 'Stage 2 · RSVP')"), 'the tabs in order, 1 then 2 (the owner 29.10.2026)');
   const i1 = draw.indexOf('<!-- stage1 -->'), iBack = draw.indexOf('What came back'), i2 = draw.indexOf('<!-- stage2 -->'), iList = draw.indexOf('${tcGoStage2()}'), iShots = draw.indexOf('tcgo-shots');
   assert.ok(i1 > 0 && i1 < iBack && iBack < i2 && i2 < iList && iList < iShots, 'the Stage 1 part, then the Stage 2 part (packs + lists, then the pictures)');
-  assert.match(app, /html\.ui-c \.tcfix-list, html\.ui-c #tcS2rows\{max-height:min\(520px,60vh\);overflow:auto/);
+  assert.match(app, /html\.ui-c \.tcfix-list, html\.ui-c #tcS2rows, html\.ui-c \.tcgo-flist\{max-height:min\(520px,60vh\);overflow:auto/);
   assert.match(draw, /<img src="\/assets\/go-stage2-email\.jpg" alt="The Stage 2 email/);
   assert.match(draw, /<a href="https:\/\/novikontas\.org\/grand-opening" target="_blank" rel="noopener"><img src="\/assets\/go-stage2-landing\.jpg"/);
   assert.match(app, /<div class="tcgo-pack"><b>\$\{esc\(x\.label\)\}<\/b><span>\$\{Number\(x\.n\)\}<\/span>\$\{state\(x\.code\) \? `<small>✓ \$\{esc\(state\(x\.code\)\)\}<\/small>` : ''\}<\/div>/);
