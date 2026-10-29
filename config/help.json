@@ -311,6 +311,11 @@
         "do": "Approve or flag new additions (approvers)",
         "where": "Clients, New additions",
         "href": "#/tc/additions"
+      },
+      {
+        "do": "Place the contacts from Client Hub (admins)",
+        "where": "Help center, Review list",
+        "href": "#/tc/review"
       }
     ],
     "faq": [
