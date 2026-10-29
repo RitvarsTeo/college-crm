@@ -828,6 +828,13 @@ CREATE TABLE IF NOT EXISTS tc_family_dismissed (
   dismissed_at TEXT NOT NULL,
   dismissed_by TEXT
 );
+-- My week + Gmail (29.10.2026, src/tcgoogle.js): one row per person who connected their own Google account, read only.
+-- token = the refresh token, encrypted (AES-256-GCM); nothing from the mailbox or the calendar is stored.
+CREATE TABLE IF NOT EXISTS tc_google_links (
+  user_email TEXT PRIMARY KEY,
+  token TEXT NOT NULL,
+  connected_at TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS tc_go_stage2 (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   ch_contact_id TEXT NOT NULL UNIQUE, -- Client Hub contacts.contact_id

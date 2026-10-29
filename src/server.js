@@ -60,6 +60,7 @@ import * as tc from './tc.js';
 import * as tcimport from './tcimport.js';
 import * as samepeople from './samepeople.js';
 import * as tcweek from './tcweek.js';
+import * as tcgoogle from './tcgoogle.js';
 import * as tcseason from './tcseason.js';
 import * as tcclienthub from './tcclienthub.js';
 import * as tcreview from './tcreview.js';
@@ -325,6 +326,21 @@ async function finishSheetPull(req, res, url, code, flow, fetchImpl = fetch) {
 }
 
 // The feedback email's one-time Allow (04.10.2026). Only the sending account is kept.
+// My week + Gmail (29.10.2026): one person connects their own Google account, read only. The flow cookie carries the
+// Intake email that started it; the Google account that came back must be that same address, and the person must still
+// be signed in as it. Anything else connects nothing.
+async function finishTcGoogle(req, res, url, code, flow) {
+  const back = (why) => { res.writeHead(303, { location: `/?google=${encodeURIComponent(why)}#/tc/week`, 'cache-control': 'no-store', 'set-cookie': flowCookie('', 0) }); return res.end(); };
+  if (url.searchParams.get('error') || !code) return back('declined');
+  const me = await currentUser(req);
+  if (!me || String(me.email || '').toLowerCase() !== String(flow.email || '').toLowerCase()) return back('signed_out');
+  const got = await tcgoogle.exchangeCode({ env: process.env, code, redirectUri: process.env.GOOGLE_REDIRECT_URI });
+  if (!got.ok) return back('refused');
+  if (got.email !== String(flow.email).toLowerCase()) return back('other_account');
+  await tcgoogle.saveLink(db, got.email, got.refreshToken, process.env);
+  return back('connected');
+}
+
 async function finishNotify(req, res, url, code) {
   if (url.searchParams.get('error') || !code) return gmailPage(res, 400, false, 'Access was not given. Open the link again and press Allow.');
   const got = await notify.exchangeCode({ env: process.env, code, redirectUri: process.env.GOOGLE_REDIRECT_URI });
@@ -1236,6 +1252,7 @@ export const handle = async (req, res) => {
         const gs = url.searchParams.get('state');
         if (gf && gf.purpose === 'gmail' && gs && gs === gf.state) return finishGmail(req, res, url, url.searchParams.get('code'));
         if (gf && gf.purpose === 'notify' && gs && gs === gf.state) return finishNotify(req, res, url, url.searchParams.get('code'));
+        if (gf && gf.purpose === 'tcgoogle' && gs && gs === gf.state) return finishTcGoogle(req, res, url, url.searchParams.get('code'), gf);
         if (gf && gf.purpose === 'sheetpull' && gs && gs === gf.state) return finishSheetPull(req, res, url, url.searchParams.get('code'), gf);
       }
       if (!AUTH_ON) return json(res, 400, { error: 'Sign-in is not switched on for this copy.' });
@@ -3386,6 +3403,34 @@ export const handle = async (req, res) => {
     }
     // MY WEEK and LOG A CONTACT (the owner's pick B, 20.10.2026; src/tcweek.js): Monday to Friday of planned contacts,
     // Mine or Team; a contact not done earlier is drawn in today's column, never as late.
+    // MY WEEK + GMAIL (29.10.2026, src/tcgoogle.js): the signed-in person's own Google account only, read only
+    if (p === '/api/tc/google' && req.method === 'GET') {
+      const me = await currentUser(req);
+      return json(res, 200, me ? await tcgoogle.status(db, me.email) : { connected: false });
+    }
+    if (p === '/api/tc/google/connect' && req.method === 'GET') {
+      const me = await currentUser(req);
+      if (!me || !me.email) return json(res, 401, { error: 'Sign in first.' });
+      if (!process.env.CRM_SESSION_SECRET || !process.env.GOOGLE_REDIRECT_URI) return json(res, 503, { error: 'Google cannot be connected on this copy yet.' });
+      const state = crypto.randomBytes(24).toString('base64url');
+      const flow = signFlow({ state, purpose: 'tcgoogle', email: String(me.email).toLowerCase(), exp: Date.now() + FLOW_MINUTES * 60 * 1000 }, process.env.CRM_SESSION_SECRET);
+      const to = tcgoogle.consentUrl({ env: process.env, state, redirectUri: process.env.GOOGLE_REDIRECT_URI, email: me.email });
+      if (!to) return json(res, 503, { error: 'The Google client is not set on this copy.' });
+      res.writeHead(302, { location: to, 'cache-control': 'no-store', 'set-cookie': flowCookie(flow, FLOW_MINUTES) });
+      return res.end();
+    }
+    if (p === '/api/tc/google/disconnect' && req.method === 'POST') {
+      const me = await currentUser(req);
+      if (!me) return json(res, 401, { error: 'Sign in first.' });
+      return json(res, 200, await tcgoogle.disconnect(db, me.email));
+    }
+    if (p === '/api/tc/week/google' && req.method === 'GET') {
+      const me = await currentUser(req);
+      const from = String(url.searchParams.get('from') || ''), to = String(url.searchParams.get('to') || '');
+      if (!me || !/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to)) return json(res, 200, { connected: false, items: [] });
+      try { return json(res, 200, await tcgoogle.weekItems(db, me.email, from, to)); }
+      catch (e) { return json(res, 200, { connected: true, items: [], error: 'Google did not answer; try again in a minute.' }); }
+    }
     if (p === '/api/tc/week' && req.method === 'GET') {
       return json(res, 200, await tcweek.week(db, { from: url.searchParams.get('from'), scope: url.searchParams.get('scope') || 'mine',
         me: await tcMe(req, url) }));

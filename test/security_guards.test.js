@@ -405,7 +405,9 @@ test('(e) the Grand Opening: the Training Centre team and admins open the page a
 test('(e) no Training Centre row is ever deleted: no DELETE route, no DELETE FROM tc_ outside the area tags', () => {
   assert.doesNotMatch(SERVER, /req\.method === 'DELETE'/, 'no DELETE handler');
   for (const f of fs.readdirSync(path.join(ROOT, 'src')).filter((x) => x.endsWith('.js'))) {
-    const hits = (read('src', f).match(/DELETE FROM tc_\w+/g) || []).filter((h) => h !== 'DELETE FROM tc_company_areas');
+    const hits = (read('src', f).match(/DELETE FROM tc_\w+/g) || []).filter((h) => h !== 'DELETE FROM tc_company_areas'
+      // 29.10.2026: a person's own Google connection key (not a record) is deleted on Disconnect, as a secret should be
+      && !(f === 'tcgoogle.js' && h === 'DELETE FROM tc_google_links'));
     assert.deepEqual(hits, [], f + ': a company, contact, course, log line or step is archived or closed, never deleted');
   }
   // the one allowed: an area TAG taken off a company, and every change of tags is a line in its log (src/tc.js editCompany)
