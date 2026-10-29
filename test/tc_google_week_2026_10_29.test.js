@@ -75,3 +75,18 @@ test('read-only scopes; the routes sit behind sign-in and the Training Centre ga
   assert.match(app, /<div class="tw-side"><div id="twGG">\$\{twGoogleCard\(\)\}<\/div>\$\{ready\}<\/div>/);
   assert.match(app, /<a class="btn tw-ggbtn" href="\/api\/tc\/google\/connect">Connect Gmail<\/a>/);
 });
+
+test('the owner\'s pick A: one card per company a day; one subject to 5+ companies is one card with the list', async () => {
+  const vm = await import('node:vm');
+  const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
+  const code = app.slice(app.indexOf('const twSubj = '), app.indexOf("const TW_G = '<svg"));
+  const ctx = { esc: (s) => String(s) }; vm.createContext(ctx); vm.runInContext(code.replace('const twSubj', 'var twSubj') + '\nthis.day = twGoogleDay;', ctx);
+  const e = (companyId, company, contact, title, dir = 'out') => ({ day: '2026-10-21', kind: 'email', companyId, company, contact, title, dir });
+  const list = [1, 2, 3, 4, 5].map((i) => e(i, 'Co ' + i, 'P' + i, 'Save the date: Grand Opening'));
+  list.push(e(1, 'Co 1', 'Another', 'Re: Save the date: Grand Opening', 'in'));
+  list.push(e(9, 'Astor', 'A', 'Course dates'), e(9, 'Astor', 'B', 'Course dates'), e(9, 'Astor', 'C', 'Course dates'));
+  const html = ctx.day(list);
+  assert.equal((html.match(/class="tw-card/g) || []).length, 2, 'the bulk send is one card, Astor one card');
+  assert.match(html, /✉ Sent to 5 companies/);
+  assert.match(html, /<b[^>]*>Astor<\/b><span class="tw-who">3 people<\/span>/);
+});
