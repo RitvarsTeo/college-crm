@@ -64,3 +64,18 @@ test('the database address: INTAKE_DATABASE_URL first, then the Neon connection 
     }
   }
 });
+
+test('a pasted database address is read as meant (spaces, quotes, NAME=, a password with # / ? [ ])', async () => {
+  const { pgUrlTidy } = await import('../src/db.js');
+  const good = 'postgresql://intake_app.abc:s3cret@aws-0-eu-central-1.pooler.supabase.com:5432/postgres';
+  assert.equal(pgUrlTidy(good), good);
+  assert.equal(pgUrlTidy('  ' + good + '\n'), good);
+  assert.equal(pgUrlTidy('"' + good + '"'), good);
+  assert.equal(pgUrlTidy('INTAKE_DATABASE_URL=' + good), good);
+  const odd = 'postgresql://intake_app.abc:p#a/s?s[w]@rd@aws-0-eu-central-1.pooler.supabase.com:5432/postgres';
+  const u = new URL(pgUrlTidy(odd));
+  assert.equal(u.hostname, 'aws-0-eu-central-1.pooler.supabase.com');
+  assert.equal(decodeURIComponent(u.password), 'p#a/s?s[w]@rd');
+  assert.equal(u.username, 'intake_app.abc');
+  assert.equal(pgUrlTidy(''), '');
+});

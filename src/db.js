@@ -978,8 +978,23 @@ async function migrate(db) {
 // INTAKE_DATABASE_URL comes first (29.10.2026, the move to Supabase): the CRM_DB_ names belong to the Vercel-Neon
 // connection, which keeps its own values, so a hand edit there never reaches the app.
 export function pgUrl() {
-  return process.env.INTAKE_DATABASE_URL || process.env.CRM_DB_DATABASE_URL_UNPOOLED || process.env.DATABASE_URL_UNPOOLED
-    || process.env.DATABASE_URL || '';
+  return pgUrlTidy(process.env.INTAKE_DATABASE_URL || process.env.CRM_DB_DATABASE_URL_UNPOOLED || process.env.DATABASE_URL_UNPOOLED
+    || process.env.DATABASE_URL || '');
+}
+
+// A PASTED ADDRESS IS READ AS MEANT (29.10.2026, the move to Supabase): spaces, quotes or a leading NAME= around it
+// are dropped, and a password holding a character an address cannot carry (# / ? [ ] and the like) is encoded,
+// so `new URL()` reads it. The value is never printed.
+export function pgUrlTidy(raw) {
+  let v = String(raw || '').trim().replace(/^[A-Z_][A-Z0-9_]*=/, '').trim().replace(/^(['"])(.*)\1$/, '$2').trim();
+  if (!v) return '';
+  try { new URL(v); return v; } catch {}
+  const m = /^(postgres(?:ql)?:\/\/)([^:@/]+):(.*)@([^@]+)$/.exec(v);
+  if (!m) return v;
+  const [, scheme, user, pass, rest] = m;
+  let plain = pass;
+  try { plain = decodeURIComponent(pass); } catch {}
+  return `${scheme}${user}:${encodeURIComponent(plain)}@${rest}`;
 }
 
 // THE SCHEMA IS PART OF THE CONNECTION (29.09.2026). It used to be a `SET search_path` sent from the
