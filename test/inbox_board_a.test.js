@@ -168,7 +168,7 @@ test('Q82: a click on a folded strip opens that column with exactly the people i
   B.cUnfold('inbox', 'week');
   const after = B.view.innerHTML;
   assert.doesNotMatch(after, /aria-label="Earlier this week: 0, open"/, 'opened');
-  assert.match(after, /<h3><span class="c-jn">3<\/span>Earlier this week<b>0<\/b><\/h3>\s*<div class="c-drop"><div class="c-empty">Nothing here\.<\/div><\/div>/, 'its 0 people');
+  assert.match(after, /<h3><span class="c-jn">3<\/span>Earlier this week<b>0<\/b><button type="button" class="t-foldx"[^>]*cRefold[^>]*>Fold<\/button><\/h3>\s*<div class="c-drop"><div class="c-empty">Nothing here\.<\/div><\/div>/, 'its 0 people');
   // a column with people never folds, so every strip's count is 0 and every card stays one click away
   const all = board().view.innerHTML;
   assert.doesNotMatch(all, /c-fold-empty/, 'no empty day, no strip');
