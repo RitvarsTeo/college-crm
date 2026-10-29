@@ -193,8 +193,7 @@ companies with no status - defaults in use); phone: marked number of a known per
 - `TODO` LinkedIn webhook: in LinkedIn Developers, app Novikontas Intake -> Webhooks, the row
   https://intake.novikontas.org/api/inbound/linkedin shows Failed Validation (LinkedIn's check 29.10 09:25 hit the
   outage). Once Intake answers again: ••• -> Validate, until it reads Validated. Owner presses it; Academy master checks.
-- `TODO` Ship the daytime window (branch perf/2026-10-29-daytime-checks, 79c405c) with the switch, then check
-  Channels shows "Every minute, 08:00-17:00" / "Every 10 min, 08:00-17:00".
+- `LIVE` 29.10 patch 93 (a62d349): the daytime window; Intake back on Supabase.
 - `TODO` Academy checks after the switch: Home, Due, a person page, Inbox, the SIS sync, the call pull.
 
 ## 26-28.10.2026 - Refurbish like the Piemeri Profesiju report and the school deck (owner's ask)
