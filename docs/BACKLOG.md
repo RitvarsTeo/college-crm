@@ -192,7 +192,7 @@ companies with no status - defaults in use); phone: marked number of a known per
 
 - `DONE` 29.10 11:34 LinkedIn webhook https://intake.novikontas.org/api/inbound/linkedin: Validated, Enabled (owner pressed Validate after Intake came back).
 - `LIVE` 29.10 patch 93 (a62d349): the daytime window; Intake back on Supabase.
-- `TODO` Academy checks after the switch: Home, Due, a person page, Inbox, the SIS sync, the call pull.
+- `DONE` 29.10 Academy checks after the switch: owner confirmed "Intake works, Home and Due load fine"; logs clean, 945 people read.
 
 ## 26-28.10.2026 - Refurbish like the Piemeri Profesiju report and the school deck (owner's ask)
 
