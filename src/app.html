@@ -2738,6 +2738,8 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tc-geo{margin-top:26px}
   html.ui-c .tc-mapwrap{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:18px;align-items:stretch}
   html.ui-c .tc-mapwrap > .c-sheet{margin:0}
+  /* 29.10.2026 ("why so much white space??"): the country bars spread over the full height of the map beside them */
+  html.ui-c .tc-cbars{display:flex} html.ui-c .tc-cbars > .c-pad{flex:1;display:flex;flex-direction:column;justify-content:space-between}
   html.ui-c .tc-mapsvg{display:block;width:100%;height:auto}
   html.ui-c .tc-mapsvg .land path{fill:var(--v-land);stroke:var(--surface);stroke-width:.4}
   html.ui-c .tc-mapsvg .a{fill:var(--v-tc3)} html.ui-c .tc-mapsvg .c{fill:var(--v-adm)}
@@ -11234,7 +11236,7 @@ async function tcMetOpen() {
     <div class="c-form c-form1 tc-kform">
       <div><label for="tcm_q">Company</label><div id="tcmPicked"></div><input id="tcm_q" autocomplete="off" placeholder="Start typing a company" oninput="tcMetSearch()"><div id="tcmHits" class="tc-mhits"></div></div>
       ${f('name', 'Name')}${f('position', 'Position')}${f('email', 'Email', 'email')}${f('phone', 'Phone')}
-      <div><label>Where we met</label><div class="tw-opts" id="tcmWhere">${T_MET_EVENTS.map((e) => `<button type="button" class="tw-opt" aria-pressed="false" onclick="tcMetWhere(${Number(e.id)})">${esc(e.name)}</button>`).join('')}<button type="button" class="tw-opt" aria-pressed="true" onclick="tcMetWhere(null)">Other</button></div></div>
+      <div><label>Where we met</label><div class="tw-opts" id="tcmWhere">${T_MET_EVENTS.map((e) => `<button type="button" class="tw-opt" aria-pressed="false" onclick="tcMetWhere(${Number(e.id)})">${esc(e.name)}</button>`).join('')}<button type="button" class="tw-opt" aria-pressed="true" onclick="tcMetWhere(null)">Other</button></div><input id="tcm_where" autocomplete="off" maxlength="200" placeholder="Write where we met" aria-label="Where we met, written in" style="margin-top:8px"></div>
       <div><label for="tcm_note">Note</label><textarea id="tcm_note" rows="3"></textarea></div></div>
     <div id="tcmErr"></div>
     <div class="tw-acts"><button class="btn" onclick="tcMetSave()">Add</button><button class="btn ghost" onclick="tcMetClose()">Cancel</button></div></aside>`;
@@ -11246,6 +11248,7 @@ function tcMetWhere(id) {
   T_MET.eventId = id;
   const ids = [...T_MET_EVENTS.map((e) => e.id), null];
   document.querySelectorAll('#tcmWhere .tw-opt').forEach((b, i) => b.setAttribute('aria-pressed', String(ids[i] === id)));
+  const w = $('#tcm_where'); if (w) { w.hidden = id !== null; if (id === null) w.focus(); }
 }
 function tcMetSearch() {
   clearTimeout(T_MET_T);
@@ -11269,7 +11272,7 @@ async function tcMetSave() {
   const v = (k) => ($('#tcm_' + k) || {}).value || '';
   try {
     const r = await post('/api/tc/met', { companyId: T_MET.companyId, newCompany: T_MET.newCompany, name: v('name'), position: v('position'),
-      email: v('email'), phone: v('phone'), eventId: T_MET.eventId, note: v('note') });
+      email: v('email'), phone: v('phone'), eventId: T_MET.eventId, where: T_MET.eventId ? '' : v('where'), note: v('note') });
     tcMetClose(); T_META = null; await tcMeta(); location.hash = '#/tc/company/' + Number(r.companyId);
   } catch (e) { tcErr('#tcmErr', e.message); }
 }

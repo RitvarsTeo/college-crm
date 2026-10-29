@@ -309,8 +309,10 @@ export async function quickAdd(db, b, actor) {
   }
   const who = f.name || f.email || f.phone;
   const note = clip(b.note, 2000);
+  // the owner 29.10.2026: Other opens a box to write where we met (a place that is not in the Season)
+  const where = event ? event.name : clip(b.where, 200);
   await logActivity(db, companyId, { kind: event ? 'exhibition' : 'physical_meeting', contactId,
-    body: `Met ${who}${event ? ' at ' + event.name : ''}.${note ? ' ' + note : ''}` }, actor);
+    body: `Met ${who}${where ? ' at ' + where : ''}.${note ? ' ' + note : ''}` }, actor);
   return { companyId, contactId, newCompany, newContact };
 }
 
