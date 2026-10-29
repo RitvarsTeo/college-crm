@@ -7673,7 +7673,8 @@ function cBackLink() {
     return;
   }
   const from = history.state && history.state.from;
-  if (!from) return;
+  // the owner 29.10.2026 ("just 1, not two"): a page with its own way back (a linked crumb) gets no second Back link
+  if (!from || view.querySelector('.c-crumb a')) return;
   view.insertAdjacentHTML('afterbegin', `<p class="c-back"><a href="#" onclick="history.back();return false" title="Back one step (Alt+Left)">← ${esc(from)}</a></p>`);
 }
 function installCViewState() {

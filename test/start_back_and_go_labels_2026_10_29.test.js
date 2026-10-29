@@ -18,6 +18,7 @@ test('both Home pages carry "<- Start" for an account with both halves', () => {
   const back = app.slice(app.indexOf('function cBackLink('), app.indexOf('function installCViewState('));
   assert.match(back, /\(path === '#\/home' \|\| path === '#\/tc'\) && cAreas\(\)\.length > 1/);
   assert.match(back, /<a href="#\/start"[^>]*>← Start<\/a>/);
+  assert.match(back, /if \(!from \|\| view\.querySelector\('\.c-crumb a'\)\) return;/, 'one way back, never two');
 });
 
 test('What came back shows no Can\'t tell part; the five are "Not in the approved send list"', () => {
