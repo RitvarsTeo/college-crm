@@ -50,15 +50,19 @@ test('the page: tabs, search, Download; no Who answered and no answered totals; 
   const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
   // the owner's pick A (26.10.2026): Stage 1 the Save the Date, then Stage 2 the RSVP, on one page
   const draw = app.slice(app.indexOf('function tcGoDraw('), app.indexOf('function tcGoStrip('));
-  const i1 = draw.indexOf('Stage 1 · Save the Date'), iBack = draw.indexOf('What came back'), i2 = draw.indexOf('Stage 2 · RSVP'), iList = draw.indexOf('${tcGoStage2()}'), iShots = draw.indexOf('tcgo-shots');
-  assert.ok(i1 > 0 && i1 < iBack && iBack < i2 && i2 < iList && iList < iShots, 'Stage 1 (figures) before Stage 2 (packs + lists, then the pictures)');
+  // the owner's pick B (29.10.2026): two tabs, Stage 2 · RSVP opens first; each tab holds only its own part
+  assert.match(draw, /let T_GO_TAB = 's2';|const tab = T_GO_TAB === 's1' \? 's1' : 's2';/);
+  assert.ok(draw.indexOf("tb('s2', 2, 'Stage 2 · RSVP')") < draw.indexOf("tb('s1', 1, 'Stage 1 · Save the Date')"), 'the Stage 2 tab first');
+  const i1 = draw.indexOf('<!-- stage1 -->'), iBack = draw.indexOf('What came back'), i2 = draw.indexOf('<!-- stage2 -->'), iList = draw.indexOf('${tcGoStage2()}'), iShots = draw.indexOf('tcgo-shots');
+  assert.ok(i1 > 0 && i1 < iBack && iBack < i2 && i2 < iList && iList < iShots, 'the Stage 1 part, then the Stage 2 part (packs + lists, then the pictures)');
+  assert.match(app, /html\.ui-c \.tcfix-list, html\.ui-c #tcS2rows\{max-height:min\(520px,60vh\);overflow:auto/);
   assert.match(draw, /<img src="\/assets\/go-stage2-email\.jpg" alt="The Stage 2 email/);
   assert.match(draw, /<a href="https:\/\/novikontas\.org\/grand-opening" target="_blank" rel="noopener"><img src="\/assets\/go-stage2-landing\.jpg"/);
   assert.match(app, /<div class="tcgo-pack"><b>\$\{esc\(x\.label\)\}<\/b><span>\$\{Number\(x\.n\)\}<\/span>\$\{state\(x\.code\) \? `<small>✓ \$\{esc\(state\(x\.code\)\)\}<\/small>` : ''\}<\/div>/);
   const cfg = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'tc.json'), 'utf8'));
   assert.equal(cfg.grandOpening.stage2.packStatus.default, 'Ready to send');
   const srv = fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8');
-  for (const f of ['go-stage2-email.jpg', 'go-stage2-landing.jpg']) {
+  for (const f of ['go-stage2-email.jpg', 'go-stage2-landing.jpg', 'go-stage1-email.jpg', 'go-stage2-invite.jpg']) {
     assert.match(srv, new RegExp(`'${f.replace('.', '\.')}': 'image/jpeg'`), f + ' is on the assets allow-list');
     assert.ok(fs.statSync(path.join(ROOT, 'src', 'assets', f)).size < 150000, f + ' stays small');
   }

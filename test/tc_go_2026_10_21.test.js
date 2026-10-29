@@ -212,7 +212,7 @@ test('the screen: the menu item, shown once the figures are in; no page or link 
   assert.doesNotMatch(css.replace(/\/\*[\s\S]*?\*\//g, ''), /#b3261e|var\(--bad\)|var\(--c-bad\)|var\(--late\)|\bred\b/i, 'nothing in red');
   assert.doesNotMatch(css, /tcgo-(card|br):hover/, 'nothing that is not a link looks like one');
   assert.doesNotMatch(js.replace(/\/\/.*$/gm, ''), /\b(overdue|late|waiting since|days ago|still not|behind|failed)\b/i);
-  assert.match(js, /interest, not an RSVP/);
+  assert.match(js, /Clicked Add to calendar · /);   // the owner 29.10.2026: no "interest, not an RSVP" line
   assert.doesNotMatch(js, /Fix the addresses/);
   const help = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'help.json'), 'utf8')).tc;
   assert.ok(help.faq.some((f) => f.id === 'tc-grand-opening'));

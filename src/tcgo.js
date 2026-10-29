@@ -15,7 +15,6 @@
 
 import crypto from 'node:crypto';
 import { TC, TcInputError, setContactEmail, listCompanies, searchPeople } from './tc.js';
-import { picLabels, meKeys, isMine } from './tcpic.js';
 import { ImportError, parseCsv } from './tcimport.js';
 
 const GO = TC.grandOpening;
@@ -271,6 +270,7 @@ export async function goPeople(db, { group = 'notReached', state = '' } = {}) {
 // The owner's pick A (26.10.2026): a tab per manager, the people that manager sends the RSVP email to, an answer on the
 // row when one comes in (read live by the caller, src/tcrsvp.js), answered people first. No "answered" totals.
 const S2 = (GO.stage2 && GO.stage2.senders) || [];
+const NO_SENDER = 'Not in the Stage 2 split';
 const S2_CODES = new Set(S2.map((s) => s.code));
 
 /**
@@ -382,17 +382,21 @@ async function bounceRows(db) {
 }
 const waitingFix = (g, f) => Boolean(f) && emailSha(f.new_email) !== g.email_sha;
 
-/** { rows (Intake contacts only), total, onlyCh, waiting }; each row with its person in charge and whether it is mine. */
+/** { rows (Intake contacts only), total, onlyCh, waiting }; each row grouped under its Stage 2 sender and whether it is mine.
+ *  The owner's pick A, 29.10.2026: grouped by the Stage 2 sender from AB's split (who sends that contact the RSVP), not by
+ *  the TC Excel's Person in charge (it named people who never handed over a contact, and left 72 under "Nobody yet"). */
 export async function bounceList(db, me = null) {
   const all = await bounceRows(db);
-  const labels = await picLabels(db);
-  const mk = meKeys(me);
+  const split = new Map((await db.prepare('SELECT ch_contact_id, sender FROM tc_go_stage2 WHERE gone = 0').all()).map((r) => [String(r.ch_contact_id), r.sender]));
+  const byCode = new Map(S2.map((s) => [s.code, s]));
+  const myEmail = me && me.email ? String(me.email).toLowerCase() : '';
   const rows = all.filter((x) => x.k).map(({ g, f, k }) => {
-    const pic = (k.pic_email && labels.get(String(k.pic_email).toLowerCase())) || k.pic_name || '';
+    const s = byCode.get(split.get(String(g.ch_contact_id)));
+    const pic = s ? s.name || s.label : NO_SENDER;
     return { guestId: g.id, hard: g.invitation === 'bounced_hard', why: INV.get(g.invitation).label, contactId: Number(k.id), companyId: Number(k.company_id),
       company: k.company, name: k.name || '', email: f ? f.old_email || '' : k.email || '', fixed: f ? f.new_email : null, pic,
-      mine: isMine({ picEmail: k.pic_email || '', pic: k.pic_name || '', next: null }, mk) };
-  }).sort((a, b) => (a.pic ? 0 : 1) - (b.pic ? 0 : 1) || a.pic.localeCompare(b.pic, 'lv') || String(a.company).localeCompare(String(b.company), 'lv')
+      mine: Boolean(s && myEmail && String(s.email || '').toLowerCase() === myEmail) };
+  }).sort((a, b) => (a.pic === NO_SENDER ? 1 : 0) - (b.pic === NO_SENDER ? 1 : 0) || a.pic.localeCompare(b.pic, 'lv') || String(a.company).localeCompare(String(b.company), 'lv')
     || String(a.name).localeCompare(String(b.name), 'lv'));
   return { rows, total: rows.length, onlyCh: all.filter((x) => !x.k && !x.onReview).length, waiting: all.filter((x) => x.k && waitingFix(x.g, x.f)).length };
 }

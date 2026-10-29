@@ -29,10 +29,12 @@ async function seeded() {
 
 test('the list: not reached people Intake holds as a contact, by person in charge, Mine; the rest only Client Hub has', async () => {
   const { db, g1, g2, a } = await seeded();
+  // the owner's pick A, 29.10.2026: grouped by the Stage 2 sender (AB's split), not by the company's person in charge
+  await db.prepare('INSERT INTO tc_go_stage2 (ch_contact_id, sender, loaded_at) VALUES (?,?,?)').run('C1', 'Marcis', AT);
   const L = await go.bounceList(db, { email: 'marcis.zabovs@novikontas.org', name: 'Mārcis Žabovs' });
   assert.deepEqual([L.total, L.onlyCh, L.waiting], [2, 1, 0], 'G1 by its Client Hub id, G2 by its address; G3 only Client Hub has; G4 was reached');
   assert.deepEqual(L.rows.map((r) => [r.guestId, r.pic, r.mine, r.hard, r.why]),
-    [[g1, 'Mārcis Žabovs', true, true, 'Address does not work'], [g2, '', false, false, 'Refused, can be tried again']], 'a person in charge first, nobody yet last');
+    [[g1, 'Mārcis Žabovs', true, true, 'Address does not work'], [g2, 'Not in the Stage 2 split', false, false, 'Refused, can be tried again']], 'a Stage 2 sender first, not in the split last');
   assert.equal(L.rows[0].companyId, a);
   assert.equal(L.rows[0].email, 'anna@exampl-shipping.com');
   assert.deepEqual((await go.bounceList(db, null)).rows.map((r) => r.mine), [false, false], 'nobody signed in: nothing is mine');
@@ -66,10 +68,10 @@ test('a fix: the contact takes the new address (logged), keeps its Client Hub id
 test('the page: Stage 1 under the three boxes, Mine / Team, the waiting file; the routes are behind the gate', () => {
   const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
   const draw = app.slice(app.indexOf('function tcGoDraw('), app.indexOf('function tcGoStrip('));
-  const iBoxes = draw.indexOf('tcgo-boxes'), iFix = draw.indexOf('<div id="tcFix">${tcFixHtml()}</div>'), i2 = draw.indexOf('Stage 2 · RSVP');
+  const iBoxes = draw.indexOf('tcgo-boxes'), iFix = draw.indexOf('<div id="tcFix">${tcFixHtml()}</div>'), i2 = draw.indexOf('<!-- stage2 -->');
   assert.ok(iBoxes > 0 && iBoxes < iFix && iFix < i2, 'in Stage 1, after Not reached / Not in the invitation / Add to Calendar');
   const fn = app.slice(app.indexOf('function tcFixHtml('), app.indexOf('async function tcFixSave('));
-  for (const t of ['Fix an address that bounced · ', 'Fixed, waiting for the next send · ', 'Intake writes nothing into Client Hub.', 'not reached only Client Hub has: fixed there, as today.', 'Nobody yet'])
+  for (const t of ['Fix an address that bounced · ', 'Fixed, waiting for the next send · ', 'more not reached are not Intake contacts.', 'class="tcfix-list"'])
     assert.ok(fn.includes(t), t);
   assert.match(fn, /\[\['mine', 'Mine'\], \['team', 'Team'\]\]/);
   assert.match(fn, /<a class="btn sm ghost" href="\/api\/tc\/go\/bounced\.xlsx" download>Download<\/a>/);

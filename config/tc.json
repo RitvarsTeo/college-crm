@@ -123,12 +123,12 @@
       "_about": "The RSVP lists per manager (the owner's pick A, 26.10.2026): one tab each, in this order; code = the sender split's sheet name. packStatus: the line under each pack on Stage 2 (default, or per code, e.g. \"Sent 27.10\").",
       "packStatus": { "default": "Ready to send" },
       "senders": [
-        { "code": "Marcis", "label": "Mārcis", "email": "marcis.zabovs@novikontas.org" },
-        { "code": "DS", "label": "DS", "email": "ds@novikontas.org" },
-        { "code": "MC", "label": "MC", "email": "mc@novikontas.org" },
-        { "code": "AB", "label": "AB", "email": "ab@novikontas.org" },
-        { "code": "Alma", "label": "Alma", "email": "alma@novikontas.org" },
-        { "code": "JS", "label": "JS", "email": "js@novikontas.org" }
+        { "code": "Marcis", "label": "Mārcis", "name": "Mārcis Žabovs", "email": "marcis.zabovs@novikontas.org" },
+        { "code": "DS", "label": "DS", "name": "Dmitrijs Semjonovs", "email": "ds@novikontas.org" },
+        { "code": "MC", "label": "MC", "name": "Māris Cirulis", "email": "mc@novikontas.org" },
+        { "code": "AB", "label": "AB", "name": "Aleksejs Bogdaņecs", "email": "ab@novikontas.org" },
+        { "code": "Alma", "label": "Alma", "name": "Aleksejs Maļinovskis", "email": "alma@novikontas.org" },
+        { "code": "JS", "label": "JS", "name": "Jānis Sticenko", "email": "js@novikontas.org" }
       ]
     },
     "maxBytes": 4194304,
@@ -139,7 +139,7 @@
       { "id": "decided", "label": "A decision is recorded", "group": "notIn" },
       { "id": "record_blocked", "label": "The record is blocked", "group": "notIn" },
       { "id": "opted_out", "label": "Asked not to receive email", "group": "notIn" },
-      { "id": "refused_no_reason", "label": "Refused, nothing says why", "group": "notIn" }
+      { "id": "refused_no_reason", "label": "Not in the approved send list", "group": "notIn" }
     ],
     "cameBack": [
       { "id": "person", "label": "Opened by a person" },
