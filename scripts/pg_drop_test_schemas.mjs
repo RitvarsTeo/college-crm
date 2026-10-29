@@ -5,7 +5,7 @@
 //   DATABASE_URL=... node scripts/pg_drop_test_schemas.mjs
 import pg from 'pg';
 
-const url = process.env.CRM_DB_DATABASE_URL_UNPOOLED || process.env.DATABASE_URL;
+const url = process.env.INTAKE_DATABASE_URL || process.env.CRM_DB_DATABASE_URL_UNPOOLED || process.env.DATABASE_URL;
 if (!url) { console.error('DATABASE_URL is not set'); process.exit(1); }
 const client = new pg.Client({ connectionString: url, ssl: { rejectUnauthorized: false } });
 await client.connect();

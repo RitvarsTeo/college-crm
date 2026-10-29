@@ -974,8 +974,11 @@ async function migrate(db) {
 // Neon, through the Vercel Marketplace, supplies a pooled and a direct address, prefixed CRM_DB_
 // on this project. The pooled one runs in transaction mode, which does not keep the search_path
 // each connection sets, so the DIRECT one is used whenever it is present.
+//
+// INTAKE_DATABASE_URL comes first (29.10.2026, the move to Supabase): the CRM_DB_ names belong to the Vercel-Neon
+// connection, which keeps its own values, so a hand edit there never reaches the app.
 export function pgUrl() {
-  return process.env.CRM_DB_DATABASE_URL_UNPOOLED || process.env.DATABASE_URL_UNPOOLED
+  return process.env.INTAKE_DATABASE_URL || process.env.CRM_DB_DATABASE_URL_UNPOOLED || process.env.DATABASE_URL_UNPOOLED
     || process.env.DATABASE_URL || '';
 }
 

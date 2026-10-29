@@ -48,3 +48,19 @@ test('the page asks for call pop-ups only on screen and 08:00-17:00', () => {
   assert.match(html, /async function cpTick\(\) \{\n  if \(CP_STOPPED\) return;\n  if \(!cpOnDuty\(\)\) \{ CP_LAST = null;/);
   assert.match(html, /const CP_EVERY_MS = 3000;/, 'on duty it still asks every 3 seconds');
 });
+
+test('the database address: INTAKE_DATABASE_URL first, then the Neon connection names (the move, 29.10.2026)', async () => {
+  const { pgUrl } = await import('../src/db.js');
+  const keep = { ...process.env };
+  try {
+    for (const k of ['INTAKE_DATABASE_URL', 'CRM_DB_DATABASE_URL_UNPOOLED', 'DATABASE_URL_UNPOOLED', 'DATABASE_URL']) delete process.env[k];
+    process.env.CRM_DB_DATABASE_URL_UNPOOLED = 'postgres://old.example/db';
+    assert.equal(pgUrl(), 'postgres://old.example/db');
+    process.env.INTAKE_DATABASE_URL = 'postgres://new.example/db';
+    assert.equal(pgUrl(), 'postgres://new.example/db');
+  } finally {
+    for (const k of ['INTAKE_DATABASE_URL', 'CRM_DB_DATABASE_URL_UNPOOLED', 'DATABASE_URL_UNPOOLED', 'DATABASE_URL']) {
+      if (k in keep) process.env[k] = keep[k]; else delete process.env[k];
+    }
+  }
+});
