@@ -4870,7 +4870,13 @@ const cPhone = () => typeof window !== 'undefined' && Boolean(window.matchMedia 
 // to never folds. On the Journey the strip stays a drop target, so a card can still be dragged into an empty stage.
 const C_UNFOLD = new Set();
 const cFoldEmpty = (board, id, n) => !cPhone() && n === 0 && !C_UNFOLD.has(board + ':' + id);
-function cUnfold(board, id) { C_UNFOLD.add(board + ':' + id); ({ inbox: () => cInboxPool(), due: () => cTodayPool(), journey: () => cDrawJourney() })[board](); }
+const cFoldRedraw = (board) => ({ inbox: () => cInboxPool(), due: () => cTodayPool(), journey: () => cDrawJourney() })[board]();
+function cUnfold(board, id) { C_UNFOLD.add(board + ':' + id); cFoldRedraw(board); }
+// FOLD IT BACK (the owner, 29.10.2026: "you can open the folded one, but cant fold it back"): an empty column that was
+// opened carries the same Fold button Coming up has, and folds to its strip again.
+function cRefold(board, id) { C_UNFOLD.delete(board + ':' + id); cFoldRedraw(board); }
+const cFoldBack = (board, id, n) => (!cPhone() && n === 0 && C_UNFOLD.has(board + ':' + id)
+  ? `<button type="button" class="t-foldx" onclick="event.stopPropagation();cRefold(${esc(JSON.stringify(String(board)))}, ${esc(JSON.stringify(String(id ?? '')))})">Fold</button>` : '');
 const cFoldStrip = (board, id, num, label, n, drop = '') => `<div class="c-col t-fold c-fold-empty${drop ? ' c-drop' : ''}"${drop} role="button" tabindex="0"
     aria-label="${esc(label)}: ${n}, open" onclick="cUnfold(${esc(JSON.stringify(String(board)))}, ${esc(JSON.stringify(String(id ?? '')))})" onkeydown="if(event.key==='Enter')cUnfold(${esc(JSON.stringify(String(board)))}, ${esc(JSON.stringify(String(id ?? '')))})"><span class="c-jn">${num}</span><span class="t-foldl">${esc(label)}</span><b>${n}</b></div>`;
 // CALLS BY LINE (Q94, the owner, 14.10.2026: all of the call takers use Intake; Admissions is the main priority and its
@@ -4995,7 +5001,7 @@ function cTodayBoard(D, groups) {
     const more = rest > 0 ? `<button type="button" class="c-jmore" onclick="event.stopPropagation();C_TP.more['${g.id}']=true;cTodayPool()">${rest} more</button>`
       : C_TP.more[g.id] && g.rows.length > C_TCOL_SHOW ? `<button type="button" class="c-jmore" onclick="event.stopPropagation();C_TP.more['${g.id}']=false;cTodayPool()">Show fewer</button>` : '';
     const fold = g.id === 'later' && !C_TP.col ? `<button type="button" class="t-foldx" onclick="C_TP.upOpen=false;cTodayPool()">Fold</button>` : '';
-    return `<div class="c-col t-col" style="--jt:${((i + 1) / cols.length).toFixed(3)}"><h3><span class="c-jn">${i + 1}</span>${esc(g.label)}<b class="c-count ${g.tone}">${g.rows.length}</b>${fold}</h3>
+    return `<div class="c-col t-col" style="--jt:${((i + 1) / cols.length).toFixed(3)}"><h3><span class="c-jn">${i + 1}</span>${esc(g.label)}<b class="c-count ${g.tone}">${g.rows.length}</b>${fold || cFoldBack('due', g.id, g.rows.length)}</h3>
       ${g.id === 'draft' ? `<div class="t-still">${shown.map(draftCard).join('') || '<div class="c-empty">Nobody here.</div>'}${more}</div>`
     : `<div class="c-drop t-drop" data-col="${g.id}">${shown.map((ts) => card(ts, g.id)).join('') || '<div class="c-empty">Nobody here.</div>'}${more}</div>`}</div>`;
   };
@@ -5146,7 +5152,7 @@ function cInboxPool() {
   const emptyFold = (c) => !openId && !C_IP.col && cFoldEmpty('inbox', c.id, c.n);
   const column = (c, i) => (emptyFold(c) ? cFoldStrip('inbox', c.id, i + 1, c.label, 0) : openId && c.id !== openId
     ? `<div class="c-col ib-col is-fold"><button type="button" class="c-foldrow" onclick="cInboxTap('${c.id}')"><span class="c-jn">${i + 1}</span>${esc(c.label)}<b>${c.n}</b></button></div>`
-    : `<div class="c-col ib-col" style="--jt:${((i + 1) / shownCols.length).toFixed(3)}"><h3><span class="c-jn">${i + 1}</span>${esc(c.label)}<b>${c.n}</b></h3>
+    : `<div class="c-col ib-col" style="--jt:${((i + 1) / shownCols.length).toFixed(3)}"><h3><span class="c-jn">${i + 1}</span>${esc(c.label)}<b>${c.n}</b>${cFoldBack('inbox', c.id, c.n)}</h3>
       <div class="c-drop">${rows.filter((r) => cInboxAge(r.received_at) === c.id).map(card).join('') || '<div class="c-empty">Nothing here.</div>'}</div></div>`);
   const board = rows.length
     ? `<div class="c-cols ib-board" style="grid-template-columns:${shownCols.map((c) => (emptyFold(c) ? '92px' : 'minmax(0,1fr)')).join(' ')}">${shownCols.map(column).join('')}</div>`
@@ -6155,7 +6161,7 @@ function cDrawJourney() {
         // an end column is a place to look, not a drop target: a close needs its reason (the edit form asks it)
         if (C_TERMINAL.includes(s.id)) return `<div class="c-col c-col-end${s.id === (CFG.stageRoles || {}).admitted ? ' good' : ''}" style="--jt:1"><h3>${esc(s.label || s.id)}</h3><div class="c-endcol" data-stage="${esc(s.id)}">${cJColumn(s.id, ps, taskOf, sel) || '<div class="c-empty" style="padding:8px">empty</div>'}</div></div>`;
         if (phone && s.id !== openStage) return `<div class="c-col is-fold" style="--jt:${((i + 1) / stages.length).toFixed(3)}"><button type="button" class="c-foldrow" onclick="cJStageTap(${esc(JSON.stringify(String(s.id ?? '')))})"><span class="c-jn">${i + 1}</span>${esc(s.label || s.id)}<b>${ps.length}</b></button></div>`;
-        return `<div class="c-col" style="--jt:${((i + 1) / stages.length).toFixed(3)}"><h3><span class="c-jn">${i + 1}</span>${esc(s.label || s.id)}</h3><div class="c-drop" data-stage="${esc(s.id)}">${cJColumn(s.id, ps, taskOf, sel) || '<div class="c-empty" style="padding:8px">empty</div>'}</div></div>`; }).join('')}</div>
+        return `<div class="c-col" style="--jt:${((i + 1) / stages.length).toFixed(3)}"><h3><span class="c-jn">${i + 1}</span>${esc(s.label || s.id)}${cFoldBack('journey', s.id, ps.length)}</h3><div class="c-drop" data-stage="${esc(s.id)}">${cJColumn(s.id, ps, taskOf, sel) || '<div class="c-empty" style="padding:8px">empty</div>'}</div></div>`; }).join('')}</div>
     </div></div>`;
   if (C_JDATA.play) cScenes($('#view'));
   cPoolWire(); cJourneyMini();   // Q68: the band is the strip on a phone, compact once the page has scrolled
