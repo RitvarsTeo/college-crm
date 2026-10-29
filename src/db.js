@@ -987,6 +987,9 @@ export function pgUrl() {
 export function pgConnectionString(schema, url = pgUrl()) {
   if (!url) return url;
   const u = new URL(url);
+  // Supabase (29.10.2026): an sslmode in the address makes pg drop pgSsl()'s pinned certificate and the
+  // connection fails on Supabase's own CA; TLS stays on and verified through pgSsl()
+  if (/\.supabase\.(com|co)$/.test(u.hostname)) u.searchParams.delete('sslmode');
   const opts = [u.searchParams.get('options'), `-c search_path=${schema}`].filter(Boolean).join(' ');
   u.searchParams.set('options', opts);
   return u.toString();
