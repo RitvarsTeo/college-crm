@@ -20,10 +20,14 @@ async function active(db) {
   return members.map((m) => ({ familyId: Number(m.family_id), companyId: Number(m.company_id), parentId: Number(m.parent_id) }));
 }
 async function facts(db) {
-  const cos = await db.prepare('SELECT id, name, country, extra FROM tc_companies WHERE archived_at IS NULL').all();
+  // only the web domain out of the Excel's extra facts, read in the database (the owner's pick "TC pages lighter",
+  // 29.10.2026: the whole extra text of every company was 0.3 MB a page); never fails on text that is not JSON
+  const web = db.kind === 'pg' ? `substring(extra from '"web_domain": *"([^"]*)"')`
+    : `CASE WHEN json_valid(extra) THEN json_extract(extra, '$.web_domain') END`;
+  const cos = await db.prepare(`SELECT id, name, country, ${web} AS web_domain FROM tc_companies WHERE archived_at IS NULL`).all();
   const people = new Map(); for (const k of await db.prepare('SELECT company_id FROM tc_company_contacts WHERE archived_at IS NULL').all()) people.set(Number(k.company_id), (people.get(Number(k.company_id)) || 0) + 1);
   const del = new Map(); for (const k of await db.prepare('SELECT company_id, attendees FROM tc_company_courses').all()) del.set(Number(k.company_id), (del.get(Number(k.company_id)) || 0) + (Number(k.attendees) || 0));
-  return cos.map((c) => ({ id: Number(c.id), name: c.name, country: c.country || '', web: webOf(c.extra), word: firstWord(c.name), total: isTotalRow(c.country),
+  return cos.map((c) => ({ id: Number(c.id), name: c.name, country: c.country || '', web: String(c.web_domain || '').trim().toLowerCase().replace(/^www\./, ''), word: firstWord(c.name), total: isTotalRow(c.country),
     people: people.get(Number(c.id)) || 0, delegates: del.get(Number(c.id)) || 0 }));
 }
 const member = (c, parentId) => ({ id: c.id, name: c.name, country: c.country, people: c.people, delegates: c.delegates, parent: c.id === parentId });

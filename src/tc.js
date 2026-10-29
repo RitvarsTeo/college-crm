@@ -71,9 +71,40 @@ const nowIso = () => new Date().toISOString();
 /** Every company that is not archived, with what every screen counts: areas, delegates, the open next step. */
 /** Every live company as the screens count it (exported for src/tchome.js). */
 export const companyFacts = (db) => companyRows(db);
+// ONE COMPANY READ, REUSED (the owner's pick "TC pages lighter", 29.10.2026): every TC page read every company, course and
+// task again, about 0.9 MB a page from the database, and Neon's free monthly transfer ran out. The rows are kept for up to
+// 60 s and reused while a small check says nothing they are built from has changed: counts and latest times, and for the
+// open tasks (whose date, label and owner change without a timestamp) a sum of their dates and label lengths. Each caller
+// gets its own copies.
+const ROWS_TTL_MS = 60000;
+let ROWS_CACHE = null;   // { db, stamp, at, rows }
+async function rowsStamp(db) {
+  const day = (col) => `CAST(REPLACE(${col}, '-', '') AS BIGINT)`;
+  return JSON.stringify(await db.prepare(`SELECT
+    (SELECT COUNT(*) FROM tc_companies) AS c1, (SELECT MAX(COALESCE(updated_at, created_at)) FROM tc_companies) AS c2,
+    (SELECT MAX(archived_at) FROM tc_companies) AS c3, (SELECT MAX(last_contact_at) FROM tc_companies) AS c4,
+    (SELECT COUNT(*) FROM tc_company_courses) AS k1, (SELECT SUM(attendees) FROM tc_company_courses) AS k2,
+    (SELECT MAX(recorded_at) FROM tc_company_courses) AS k3,
+    (SELECT COUNT(*) FROM tc_tasks) AS t1, (SELECT MAX(done_at) FROM tc_tasks) AS t2,
+    (SELECT COUNT(*) FROM tc_tasks WHERE done_at IS NULL) AS t3,
+    (SELECT SUM(${day('due_at')} + LENGTH(label) + LENGTH(COALESCE(owner, ''))) FROM tc_tasks WHERE done_at IS NULL) AS t4,
+    (SELECT COUNT(*) FROM tc_company_areas) AS a1, (SELECT SUM(company_id * LENGTH(area)) FROM tc_company_areas) AS a2,
+    (SELECT COUNT(*) FROM tc_family_members WHERE ended_at IS NULL) AS f1, (SELECT MAX(COALESCE(ended_at, added_at)) FROM tc_family_members) AS f2,
+    (SELECT COUNT(*) FROM crm_users) AS u1, (SELECT MAX(id) FROM crm_users) AS u2`).get());
+}
 async function companyRows(db) {
+  const stamp = await rowsStamp(db);
+  const C = ROWS_CACHE;
+  if (!(C && C.db === db && C.stamp === stamp && Date.now() - C.at < ROWS_TTL_MS)) {
+    ROWS_CACHE = { db, stamp, at: Date.now(), rows: await readCompanyRows(db) };
+  }
+  return ROWS_CACHE.rows.map((r) => ({ ...r, areas: [...r.areas], years: { ...r.years }, next: r.next ? { ...r.next } : null }));
+}
+async function readCompanyRows(db) {
+  // info_to_send is only ever shown as "something to send": the database says yes or no, not the whole text
   const companies = await db.prepare(`SELECT id, name, name_key, country, city, status, status_detail, pic_name, pic_email,
-    info_to_send, last_contact_at, created_at FROM tc_companies WHERE archived_at IS NULL`).all();
+    CASE WHEN TRIM(COALESCE(info_to_send, '')) <> '' THEN 1 ELSE 0 END AS info_flag, last_contact_at, created_at
+    FROM tc_companies WHERE archived_at IS NULL`).all();
   const areaRows = await db.prepare(`SELECT a.company_id, a.area FROM tc_company_areas a
     JOIN tc_companies c ON c.id = a.company_id WHERE c.archived_at IS NULL`).all();
   const courseRows = await db.prepare(`SELECT k.company_id, k.year, k.attendees FROM tc_company_courses k
@@ -101,7 +132,7 @@ async function companyRows(db) {
       status: c.status, statusDetail: c.status_detail || '', pic: c.pic_name || '', picEmail: c.pic_email || '',
       picKey: c.pic_email && users.has(String(c.pic_email).toLowerCase()) ? 'u:' + users.get(String(c.pic_email).toLowerCase()) : c.pic_name || '',
       areas: (areas.get(c.id) || []).sort((a, b) => AREA_IDS.indexOf(a) - AREA_IDS.indexOf(b)),
-      info: Boolean(String(c.info_to_send || '').trim()), lastContactAt: c.last_contact_at || null,
+      info: Number(c.info_flag) === 1, lastContactAt: c.last_contact_at || null,
       delegates: ks.reduce((n, k) => n + (Number(k.attendees) || 0), 0),
       years: Object.fromEntries(ks.map((k) => [Number(k.year), Number(k.attendees) || 0])),   // delegates per year (TC Home, 20.10)
       lastYear: last ? Number(last.year) : null, lastYearN: last ? Number(last.attendees) : null,

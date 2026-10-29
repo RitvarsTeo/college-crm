@@ -194,7 +194,17 @@ export async function applyImport(db, files, { hash } = {}, actor = 'admin') {
 
 // ------------------------------------------------------------------ the page --
 
+// THE GUESTS, REUSED (the owner's pick "TC pages lighter", 29.10.2026): they change only with an import, so they are read
+// again only when the import log, the guest count or the delivery count moves, or after 60 s; each caller gets copies
+let GO_CACHE = null;   // { db, stamp, at, guests, deliveries }
 async function loaded(db) {
+  const stamp = JSON.stringify(await db.prepare(`SELECT (SELECT MAX(id) FROM tc_go_imports) AS i, (SELECT COUNT(*) FROM tc_go_guests) AS g,
+    (SELECT MAX(COALESCE(updated_at, imported_at)) FROM tc_go_guests) AS u, (SELECT COUNT(*) FROM tc_go_deliveries) AS d`).get());
+  const C = GO_CACHE;
+  if (!(C && C.db === db && C.stamp === stamp && Date.now() - C.at < 60000)) GO_CACHE = { db, stamp, at: Date.now(), ...(await readLoaded(db)) };
+  return { guests: GO_CACHE.guests.map((g) => ({ ...g })), deliveries: GO_CACHE.deliveries.map((d) => ({ ...d })) };
+}
+async function readLoaded(db) {
   const guests = await db.prepare('SELECT id, ch_contact_id, ch_company, country, email_sha, invitation, reason_code, opted_out FROM tc_go_guests WHERE gone = 0').all();
   const deliveries = await db.prepare(`SELECT d.guest_id, d.send_id, d.delivery, d.came_back, d.clicked, d.calendar, d.opted_out FROM tc_go_deliveries d
     JOIN tc_go_guests g ON g.id = d.guest_id WHERE g.gone = 0`).all();
