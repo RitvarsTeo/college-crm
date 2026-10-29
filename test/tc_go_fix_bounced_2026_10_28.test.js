@@ -56,7 +56,9 @@ test('a fix: the contact takes the new address (logged), keeps its Client Hub id
   const row = L.rows.find((r) => r.guestId === g2);
   assert.deepEqual([row.fixed, row.email, L.waiting], ['olga@sample-offshore.lv', 'olga@sample-offshore.com', 1], 'still on the list, the old address beside the fix');
   assert.deepEqual((await go.bounceWaiting(db)).map((r) => [r.chContactId, r.oldEmail, r.newEmail, r.fixedBy]), [['C2', 'olga@sample-offshore.com', 'olga@sample-offshore.lv', 'Ritvars']]);
-  await db.prepare('UPDATE tc_go_guests SET email_sha = ? WHERE id = ?').run(go.emailSha('olga@sample-offshore.lv'), g2);
+  // as an import does it (src/tcgo.js applyImport): the new address, its updated_at and a line in the import log
+  await db.prepare('UPDATE tc_go_guests SET email_sha = ?, updated_at = ? WHERE id = ?').run(go.emailSha('olga@sample-offshore.lv'), '2026-10-29T08:00:00.000Z', g2);
+  await db.prepare("INSERT INTO tc_go_imports (hash, counts, applied_at, applied_by) VALUES ('h2', '{}', '2026-10-29T08:00:00.000Z', 'Ritvars')").run();
   assert.equal((await go.bounceList(db, null)).waiting, 0, 'the next extract carries the new address: no longer waiting');
   assert.deepEqual(await go.bounceWaiting(db), []);
 });
@@ -77,4 +79,20 @@ test('the page: Stage 1 under the three boxes, Mine / Team, the waiting file; th
   for (const route of ["p === '/api/tc/go/bounced' && req.method === 'GET'", "p === '/api/tc/go/bounced' && req.method === 'POST'", "p === '/api/tc/go/bounced.xlsx' && req.method === 'GET'"])
     assert.ok(server.indexOf(route) > gate && gate > 0, route);
   assert.match(server, /console\.log\(`tc download: \$\{me \? me\.email \|\| me\.name : 'unknown'\} fixed addresses/);
+});
+
+test('the lighter pages (29.10.2026): the company list and the guests are reused only while nothing they come from has changed', async () => {
+  const tc = await import('../src/tc.js');
+  const db = await openDb();
+  const a = (await tc.addCompany(db, { name: 'Example Shipping', country: 'Latvia' }, 'Ritvars')).id;
+  assert.equal((await tc.listCompanies(db, {}, { size: 10 })).rows[0].status, 'not_contacted');
+  await tc.editCompany(db, a, { status: 'contacted' }, 'Ritvars');
+  assert.equal((await tc.listCompanies(db, {}, { size: 10 })).rows[0].status, 'contacted', 'an edit shows at once');
+  await tc.setNext(db, a, { due: '2026-11-03', label: 'Call' }, 'Ritvars');
+  await tc.setNext(db, a, { due: '2026-11-05', label: 'Call' }, 'Ritvars');
+  assert.equal((await tc.nextList(db, {})).rows[0].due, '2026-11-05', 'a moved date shows at once (no timestamp on the task)');
+  const app = fs.readFileSync(path.join(ROOT, 'src', 'tc.js'), 'utf8');
+  assert.match(app, /CASE WHEN TRIM\(COALESCE\(info_to_send, ''\)\) <> '' THEN 1 ELSE 0 END AS info_flag/, 'the text to send stays in the database');
+  const fam = fs.readFileSync(path.join(ROOT, 'src', 'tcfam.js'), 'utf8');
+  assert.match(fam, /AS web_domain FROM tc_companies/, 'families read only the web domain');
 });
