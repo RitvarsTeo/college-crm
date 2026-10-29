@@ -2663,6 +2663,17 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c a.c-line.tc-cline{text-decoration:none;color:inherit}
   html.ui-c .p-rows .c-line.tc-cline{grid-template-columns:minmax(0,1.4fr) minmax(0,1.3fr) 130px 150px}
   html.ui-c .tc-cline .c-acts{justify-self:end}
+  html.ui-c .tc-guides{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin:0 0 18px;align-items:start}
+  html.ui-c .tc-guide{padding:14px 18px;margin:0} html.ui-c .tc-guide summary{cursor:pointer} html.ui-c .tc-guide ol{margin:10px 0 2px 18px;padding:0;line-height:1.6}
+  /* Ownership and New additions (29.10.2026) */
+  html.ui-c .tc-mine{white-space:nowrap} html.ui-c .tc-mine.on{font-size:12px;font-weight:700;color:var(--ink);background:var(--surface-2);border-radius:999px;padding:4px 10px}
+  html.ui-c .tc-addn{display:flex;align-items:center;gap:14px;padding:12px 18px;margin:0 0 12px;border-top:3px solid #f5b82e} html.ui-c .tc-addn .btn{margin-left:auto}
+  html.ui-c .tc-adds{padding:16px 20px;margin:0 0 14px} html.ui-c .tc-addwho{font-size:12.5px;color:var(--t3)}
+  html.ui-c .tc-addrow{display:grid;grid-template-columns:110px minmax(0,1.4fr) minmax(0,1fr) auto;gap:14px;align-items:center;padding:11px 0;border-top:1px solid var(--rule2)}
+  html.ui-c .tc-addrow small{display:block;color:var(--t3);font-size:12.5px} html.ui-c .tc-addrow a{color:inherit;text-decoration:none}
+  html.ui-c .tc-addkind{font-size:11.5px;font-weight:700;border-radius:999px;padding:4px 10px;background:var(--surface-2);justify-self:start} html.ui-c .tc-addkind.p{background:#fdf3d9;color:#0a2463}
+  html.ui-c .tc-addacts{display:flex;gap:8px;align-items:center;justify-content:flex-end} html.ui-c .tc-addflag{font-size:12px;font-weight:700;color:#8a5a00}
+  @media (max-width:760px){ html.ui-c .tc-addrow{grid-template-columns:minmax(0,1fr)} }
   html.ui-c .tc-count{margin-left:auto}
   html.ui-c .tc-more{justify-content:center;margin-top:12px}
   html.ui-c .c-facts .tc-long{white-space:pre-wrap;overflow-wrap:anywhere}
@@ -10794,8 +10805,9 @@ let T_TABS = '', T_GO_ON = false;
 function tcPageTabs(place) {
   const week = typeof viewTcWeek === 'function', season = typeof viewTcSeason === 'function';
   const plan = [week ? ['#/tc/week', 'week', 'My week'] : ['#/tc/next', 'next', 'Next contacts'], ...(season ? [['#/tc/season', 'season', 'Season']] : []), ...(T_GO_ON ? [['#/tc/go', 'go', 'Grand Opening']] : [])];
-  const clients = [['#/tc/companies', 'companies', 'Companies'], ['#/tc/book', 'book', 'Client book']];
-  const group = ['week', 'season', 'go', 'next'].includes(place) ? plan : ['companies', 'clients', 'prospects', 'book'].includes(place) ? clients : null;
+  const clients = [['#/tc/companies', 'companies', 'Companies'], ['#/tc/book', 'book', 'Client book'],
+    ...(T_ADDN && T_ADDN.approver ? [['#/tc/additions', 'additions', `New additions${T_ADDN.n ? ' · ' + Number(T_ADDN.n) : ''}`]] : [])];
+  const group = ['week', 'season', 'go', 'next'].includes(place) ? plan : ['companies', 'clients', 'prospects', 'book', 'additions'].includes(place) ? clients : null;
   const on = ['clients', 'prospects'].includes(place) ? 'companies' : place;
   // a div, not a nav: the page's own nav rule is the side menu's
   T_TABS = group && group.length > 1 ? `<div class="c-seg tc-pagetabs" role="navigation" aria-label="${group === plan ? 'Plan' : 'Clients'}">${group.map(([h, id, label]) =>
@@ -10858,7 +10870,8 @@ async function tcRoute(hash) {
     else if (place === 'go') await viewTcGo();   // lane TC-GO: the Grand Opening
     else if (place === 'families') await viewTcFamilies();   // the owner's pick B, 28.10.2026
     else if (place === 'import') viewTcImport();   // the owner's pick A, 28.10.2026
-    else await viewTcHome();
+    else if (place === 'additions') await viewTcAdditions();   // the owner, 29.10.2026: New additions, approve or flag
+    else { await viewTcHome(); tcTourFirst(); }
     cOpenView();
   } catch (e) {
     $('#view').innerHTML = `<div class="err">Failed to load: ${esc(e.message)}</div>`;
@@ -11215,10 +11228,68 @@ async function tcSavePlan(id) {
 const T_F_EMPTY = () => ({ status: '', area: '', country: '', pic: '', client: '', info: '', due: '', year: '', cohort: '', last: '' });
 let T_F = T_F_EMPTY(); let T_Q = ''; let T_PAGE = 1; let T_LIST = null; let T_TITLE = 'Companies'; let T_KEEP = false; let T_SORT = 'name';
 let T_QT = 0; let T_MORE = false;
+// OWNERSHIP AND NEW ADDITIONS (29.10.2026, src/tcadd.js; the owner's picks: Make mine on Companies, a New additions tab with
+// Approve / Flag, Flag = hidden until approved). Every TC account makes a company theirs; the approvers review what is added.
+let T_ADDN = null, T_ADD = null;
+async function tcAddnCount() { try { T_ADDN = await api('/api/tc/additions/count'); } catch (e) { T_ADDN = null; } }
+const tcMeEmail = () => String((AUTH && AUTH.user && AUTH.user.email) || '').toLowerCase();
+function tcMineHtml(c) {
+  if (!tcMeEmail()) return '';
+  return String(c.picEmail || '').toLowerCase() === tcMeEmail() ? '<span class="tc-mine on">✓ Mine</span>'
+    : `<span role="button" tabindex="0" class="btn sm ghost tc-mine" onclick="event.preventDefault();event.stopPropagation();tcMakeMine(${Number(c.id)}, this)"
+      onkeydown="if(event.key==='Enter'){event.preventDefault();event.stopPropagation();tcMakeMine(${Number(c.id)}, this)}">+ Make mine</span>`;
+}
+async function tcMakeMine(id, el) {
+  try {
+    await post(`/api/tc/companies/${Number(id)}/mine`, {});
+    if (el) el.outerHTML = '<span class="tc-mine on">✓ Mine</span>';
+    const r = T_LIST && T_LIST.rows && T_LIST.rows.find((x) => Number(x.id) === Number(id));
+    if (r) { r.picEmail = tcMeEmail(); r.pic = (AUTH.user && AUTH.user.name) || r.pic; }
+  } catch (e) { alert(e.message); }
+}
+function tcAddnStrip() {
+  if (!T_ADDN || !T_ADDN.approver || !T_ADDN.n) return '';
+  return `<div class="c-sheet tc-addn"><b>New additions to review · ${Number(T_ADDN.n)}</b><a class="btn" href="#/tc/additions">Review</a></div>`;
+}
+async function viewTcAdditions() {
+  await tcAddnCount();
+  if (!T_ADDN || !T_ADDN.approver) { location.replace('#/tc/companies'); return; }
+  T_ADD = await api('/api/tc/additions');
+  tcPageTabs('additions');
+  tcDrawAdditions();
+}
+function tcAddRow(r, acts) {
+  const when = r.at ? new Date(r.at).toLocaleString('en-GB', { timeZone: 'Europe/Riga', weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) : '';
+  const what = r.kind === 'contact'
+    ? `<a href="#/tc/company/${Number(r.companyId)}"><b>${esc(r.person || r.personEmail)}</b></a><small>${esc([r.company, r.position, r.personEmail].filter(Boolean).join(' · '))}</small>`
+    : `<a href="#/tc/company/${Number(r.companyId)}"><b>${esc(r.company)}</b></a><small>${esc(r.place || 'country not recorded')}</small>`;
+  return `<div class="tc-addrow"><span class="tc-addkind${r.kind === 'contact' ? ' p' : ''}">${r.kind === 'contact' ? 'New person' : 'New company'}</span><div>${what}</div>
+    <small>added by <b>${esc(r.by || 'somebody')}</b><br>${esc(when)}</small>
+    <div class="tc-addacts">${acts ? `<button type="button" class="btn sm" onclick="tcAddDecide(${Number(r.id)}, 'approve')">Approve</button><button type="button" class="btn sm ghost" onclick="tcAddDecide(${Number(r.id)}, 'flag')">Flag</button>`
+      : r.state === 'flagged' ? `<span class="tc-addflag">Flagged · ${esc(r.decidedBy)}</span><button type="button" class="btn sm ghost" onclick="tcAddDecide(${Number(r.id)}, 'approve')">Approve</button>`
+      : `<small>Approved · ${esc(r.decidedBy)}</small>`}</div></div>`;
+}
+function tcDrawAdditions() {
+  const A = T_ADD;
+  const fold = (key, title, rows, acts) => `<section class="c-sheet tc-adds"><div class="tcgo-bh"><h2><button type="button" class="tcgo-fold" aria-expanded="${Boolean(T_ADD_OPEN[key])}"
+      onclick="T_ADD_OPEN.${key}=!T_ADD_OPEN.${key};tcDrawAdditions()">${T_ADD_OPEN[key] ? '▾' : '▸'} ${title} · ${rows.length}</button></h2></div>
+      ${T_ADD_OPEN[key] ? `<div class="tcgo-flist">${rows.map((r) => tcAddRow(r, acts)).join('') || '<div class="c-empty">None.</div>'}</div>` : ''}</section>`;
+  $('#view').innerHTML = `<p class="c-crumb"><a href="#/tc/companies">Companies</a></p><div class="c-head"><div><h1>New additions</h1></div></div>
+    <section class="c-sheet tc-adds"><div class="tcgo-bh"><h2>To review · ${A.toReview.length}</h2><span class="tc-addwho">Approvers: ${esc(A.approvers.join(' · '))}</span></div>
+      <div class="tcgo-flist">${A.toReview.map((r) => tcAddRow(r, true)).join('') || '<div class="c-empty">Nothing new to review.</div>'}</div></section>
+    ${fold('flagged', 'Flagged', A.flagged, false)}${fold('approved', 'Approved', A.approved, false)}`;
+}
+let T_ADD_OPEN = { flagged: false, approved: false };
+async function tcAddDecide(id, what) {
+  try { await post(`/api/tc/additions/${Number(id)}`, { what }); T_ADD = await api('/api/tc/additions'); await tcAddnCount(); tcPageTabs('additions'); tcDrawAdditions(); }
+  catch (e) { alert(e.message); }
+}
 async function viewTcCompanies(title) {
   const fresh = !T_KEEP;
   if (fresh) { T_F = T_F_EMPTY(); T_Q = ''; }
   T_KEEP = false; T_TITLE = title; T_PAGE = 1;
+  await tcAddnCount();
+  tcPageTabs('companies');
   await tcLoadCompanies();
   // Mine first (the owner's pick B, 26.10.2026): a person with companies in their charge opens on their own
   if (fresh && !T_F.pic && T_LIST && Number(T_LIST.facets.mine) > 0) { T_F.pic = 'me'; await tcLoadCompanies(); }
@@ -11371,12 +11442,12 @@ function tcDrawCompanies() {
       <div class="c-what"><span class="p-stage">${esc(st(c))}</span>${c.areas.length ? ' · ' + esc(c.areas.join(', ')) : ''}<small class="p-step">${c.lastYear
         ? `${Number(c.lastYear)} · ${tcDelegates(c.lastYearN)} · ${Number(c.delegates)} in all` : 'no course yet'}${c.pic ? ' · ' + esc(c.pic) : ''}</small></div>
       <div class="c-when">${c.next ? `<span class="c-when ${tcWhen(c.next.due)}">${esc(tcWhenText(c.next.due))}</span>` : ''}</div>
-      <div class="c-acts">${c.family ? `<span class="c-tag tcfam-tag">${esc(c.family.name)} family · ${Number(c.family.n)}</span>` : ''}${c.info ? '<span class="c-tag">Information to send</span>' : ''}</div></a>`;
+      <div class="c-acts">${c.family ? `<span class="c-tag tcfam-tag">${esc(c.family.name)} family · ${Number(c.family.n)}</span>` : ''}${c.info ? '<span class="c-tag">Information to send</span>' : ''}${tcMineHtml(c)}</div></a>`;
   $('#view').innerHTML = cPoolFrame({
     title: T_TITLE,
     crumb: `${Number(L.total)} ${L.total === 1 ? 'company' : 'companies'}${Object.values(T_F).some(Boolean) || T_Q ? ' match' : ''}`,
     act: `<a class="btn ghost" href="#/tc/families">Families</a><a class="btn ghost" href="#/tc/import">Import people</a><input class="c-search" id="tcQ" placeholder="Search company, city, country or person" value="${esc(T_Q)}" aria-label="Search companies and people">${tcDownloadMenu()}<button class="btn" onclick="tcOpenAdd()">Add company</button>`,
-    band: '',
+    band: tcAddnStrip(),
     filters: fbar,
     body: cPoolRows(L.rows, row, 'No company matches. Remove a filter to widen the list.')
       + (L.total > L.rows.length ? `<div class="c-row-acts tc-more"><button class="btn ghost" onclick="tcMoreCompanies()">Show ${Math.min(100, L.total - L.rows.length)} more of ${Number(L.total - L.rows.length)}</button></div>` : '')
@@ -12657,10 +12728,17 @@ async function tcGoCopy(btn) {
   try { await navigator.clipboard.writeText(url); btn.textContent = 'Link copied'; }
   catch (e) { window.prompt('The Add to Calendar link', url); }
 }
+// THE TRAINING CENTRE TOUR (29.10.2026): the dev kit's tour over the TC menu; it opens by itself on the first visit
+function tcTour() { return window.HelpTour && T_META && T_META.help && (T_META.help.tour || []).length ? HelpTour.create({ steps: T_META.help.tour, storageKey: 'tcTour' }) : null; }
+function tcStartTour(btn) { const t = tcTour(); if (t) t.open(btn); }
+function tcTourFirst() { const t = tcTour(); if (t && t.shouldAutoOpen() && !(window.matchMedia && window.matchMedia('(max-width:900px)').matches)) setTimeout(() => t.open(), 600); }
 function viewTcHelp() {
   const H = T_META.help || { howto: [], faq: [] };
   const how = H.howto.map((h) => `<a class="c-line c-hhow" href="${esc(h.href)}"><div class="c-who"><b>${esc(h.do)}</b><small>${esc(h.where)}</small></div><div class="c-when">›</div></a>`).join('');
-  $('#view').innerHTML = `<div class="c-head"><div><h1>Help center</h1></div><div class="act"><button class="btn" onclick="fbOpen('BUG')">Report a problem</button></div></div>
+  // the owner 29.10.2026: "all of this should be also in big steps explained in the help center! And have a first login tour."
+  const guides = (H.guides || []).map((g) => `<details class="c-sheet tc-guide"><summary><b>${esc(g.title)}</b></summary><ol>${g.steps.map((x) => `<li>${esc(x)}</li>`).join('')}</ol></details>`).join('');
+  $('#view').innerHTML = `<div class="c-head"><div><h1>Help center</h1></div><div class="act"><button class="btn ghost" onclick="tcStartTour(this)">Take the tour</button><button class="btn" onclick="fbOpen('BUG')">Report a problem</button></div></div>
+    ${guides ? `<h2 class="c-set-h">Step by step</h2><div class="tc-guides">${guides}</div>` : ''}
     <h2 class="c-set-h">How to</h2><div class="c-sheet c-set">${how}</div>
     <h2 class="c-set-h">Questions and answers</h2><div id="helpFaq" class="c-helpfaq"></div>
     ${isAdmin() ? '<h2 class="c-set-h">For admins</h2><div class="c-helpadmin"><a href="#/access">People and access</a><a href="#/tc/review">Review list (from Client Hub)</a></div>' : ''}`;

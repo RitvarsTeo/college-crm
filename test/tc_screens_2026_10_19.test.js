@@ -101,7 +101,7 @@ test('Companies, the company page, Next contacts and People and access are built
   for (const part of ['cPoolFrame(', 'cPoolFilters(', 'cPoolSelect(', 'cPoolRows(']) assert.ok(list.includes(part), part);
   for (const f of ["'Status'", "'Area'", "'Country'", "'Person in charge'", "'Client'"]) assert.ok(list.includes(f), f);
   // the owner 26.10.2026, "B but with filters": Mine or All, every filter behind one Filters button, no status chart
-  assert.match(list, /band: '',/, 'no status chart');
+  assert.match(list, /band: tcAddnStrip\(\),/, 'no status chart: the band holds only the approvers New additions strip (29.10.2026)');
   assert.match(list, /onclick="tcFilter\('pic','me'\)">Mine <b>/);
   assert.match(list, /<summary class="btn ghost">Filters\$\{nf \? ` · \$\{nf\}` : ''\} ▾<\/summary>/);
   assert.match(list, /placeholder="Search company, city, country or person"/, "the box finds people too (the owner, 26.10.2026)");

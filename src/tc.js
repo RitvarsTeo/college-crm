@@ -104,7 +104,7 @@ async function readCompanyRows(db) {
   // info_to_send is only ever shown as "something to send": the database says yes or no, not the whole text
   const companies = await db.prepare(`SELECT id, name, name_key, country, city, status, status_detail, pic_name, pic_email,
     CASE WHEN TRIM(COALESCE(info_to_send, '')) <> '' THEN 1 ELSE 0 END AS info_flag, last_contact_at, created_at
-    FROM tc_companies WHERE archived_at IS NULL`).all();
+    FROM tc_companies WHERE archived_at IS NULL AND hidden_at IS NULL`).all();   // hidden_at: flagged, hidden until approved (src/tcadd.js)
   const areaRows = await db.prepare(`SELECT a.company_id, a.area FROM tc_company_areas a
     JOIN tc_companies c ON c.id = a.company_id WHERE c.archived_at IS NULL`).all();
   const courseRows = await db.prepare(`SELECT k.company_id, k.year, k.attendees FROM tc_company_courses k
@@ -250,7 +250,7 @@ export async function exportRows(db, filters = {}, { sort = 'name', me = null, p
   const head = ['Company', 'Country', 'City', 'Status', 'Areas', 'Person in charge', ...years.map(String), 'Delegates in all', 'Next contact', 'Information to send'];
   if (!people) return { rows: [head, ...list.map(company)], companies: list.length, people: 0 };
   const byCo = new Map();
-  for (const k of await db.prepare(`SELECT company_id, name, position, email, phone, notes FROM tc_company_contacts WHERE archived_at IS NULL
+  for (const k of await db.prepare(`SELECT company_id, name, position, email, phone, notes FROM tc_company_contacts WHERE archived_at IS NULL AND hidden_at IS NULL
     ORDER BY company_id, name`).all()) {
     const id = Number(k.company_id);
     if (!byCo.has(id)) byCo.set(id, []);
@@ -380,7 +380,7 @@ export async function getCompany(db, id) {
   const areas = (await db.prepare('SELECT area FROM tc_company_areas WHERE company_id = ?').all(c.id)).map((r) => r.area)
     .sort((a, b) => AREA_IDS.indexOf(a) - AREA_IDS.indexOf(b));
   const contacts = await db.prepare(`SELECT id, name, position, email, phone, notes, source, created_at FROM tc_company_contacts
-    WHERE company_id = ? AND archived_at IS NULL ORDER BY name, email, id`).all(c.id);
+    WHERE company_id = ? AND archived_at IS NULL AND hidden_at IS NULL ORDER BY name, email, id`).all(c.id);
   const courses = await db.prepare(`SELECT year, attendees, course_codes, raw, as_of, source, recorded_at, recorded_by
     FROM tc_company_courses WHERE company_id = ? ORDER BY year DESC`).all(c.id);
   const log = await db.prepare(`SELECT id, contact_id, kind, occurred_at, topics, body, actor, origin, field, old_value, new_value
@@ -629,7 +629,8 @@ export async function searchPeople(db, q, { limit = 50 } = {}) {
   const low = text.toLowerCase();
   const digits = text.replace(/\D+/g, '');
   const all = await db.prepare(`SELECT k.id, k.name, k.position, k.email, k.phone, c.id AS company_id, c.name AS company, c.pic_name
-    FROM tc_company_contacts k JOIN tc_companies c ON c.id = k.company_id WHERE k.archived_at IS NULL AND c.archived_at IS NULL`).all();
+    FROM tc_company_contacts k JOIN tc_companies c ON c.id = k.company_id WHERE k.archived_at IS NULL AND c.archived_at IS NULL
+    AND k.hidden_at IS NULL AND c.hidden_at IS NULL`).all();
   const hits = all.filter((k) => (key && fold(k.name).includes(key)) || String(k.email || '').toLowerCase().includes(low)
     || (digits.length >= 3 && String(k.phone || '').replace(/\D+/g, '').includes(digits)))
     .sort((a, b) => String(a.name || a.email).localeCompare(String(b.name || b.email), 'lv') || String(a.company).localeCompare(String(b.company), 'lv'));

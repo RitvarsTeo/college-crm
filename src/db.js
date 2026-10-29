@@ -830,6 +830,20 @@ CREATE TABLE IF NOT EXISTS tc_family_dismissed (
 );
 -- My week + Gmail (29.10.2026, src/tcgoogle.js): one row per person who connected their own Google account, read only.
 -- token = the refresh token, encrypted (AES-256-GCM); nothing from the mailbox or the calendar is stored.
+-- New additions (29.10.2026, src/tcadd.js): every company or person added by hand, with who added it; an approver
+-- (config/tc.json approvals) approves it or flags it (flagged = hidden from lists until approved; nothing is deleted).
+CREATE TABLE IF NOT EXISTS tc_additions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  kind TEXT NOT NULL,              -- company | contact
+  company_id INTEGER NOT NULL REFERENCES tc_companies(id),
+  contact_id INTEGER REFERENCES tc_company_contacts(id),
+  added_by TEXT,
+  added_by_email TEXT,
+  added_at TEXT NOT NULL,
+  state TEXT NOT NULL DEFAULT 'new',   -- new | approved | flagged
+  decided_by TEXT,
+  decided_at TEXT
+);
 CREATE TABLE IF NOT EXISTS tc_google_links (
   user_email TEXT PRIMARY KEY,
   token TEXT NOT NULL,
@@ -873,6 +887,8 @@ const ADDED_COLUMNS = [
   ['pbx_calls', 'note_at', 'TEXT'],
   ['tc_tasks', 'kind', 'TEXT'],       // 20.10.2026, My week: how the contact is planned
   ['tc_tasks', 'result', 'TEXT'],     // 20.10.2026, Log a contact: how it went, on the closed task
+  ['tc_companies', 'hidden_at', 'TEXT'],          // 29.10.2026, flagged by an approver: hidden from lists until approved
+  ['tc_company_contacts', 'hidden_at', 'TEXT'],
 ];
 
 // ---------------------------------------------------------- the async layer --

@@ -263,49 +263,54 @@
     "_about": "THE TRAINING CENTRE HALF (19.10.2026): its own how-to and questions, shown in its Help center and served with /api/tc/meta (never with /api/config, which is Academy). One sentence per answer. ids never change once used.",
     "howto": [
       {
-        "do": "Find a company",
-        "where": "Companies, the search box",
+        "do": "Find a company or a person",
+        "where": "Clients, Companies, the search box",
         "href": "#/tc/companies"
       },
       {
-        "do": "See who to contact this week",
-        "where": "Next contacts, This week",
-        "href": "#/tc/next"
-      },
-      {
-        "do": "Log a call, an email or a meeting",
-        "where": "The company page, Log a communication",
+        "do": "Make a company yours",
+        "where": "Clients, Companies, + Make mine on its row",
         "href": "#/tc/companies"
       },
       {
-        "do": "Set the next contact",
-        "where": "The company page, Next communication",
+        "do": "Add someone you met",
+        "where": "Home, + Someone I met",
+        "href": "#/tc"
+      },
+      {
+        "do": "Add a company",
+        "where": "Clients, Companies, Add company",
         "href": "#/tc/companies"
       },
       {
-        "do": "See the clients only",
-        "where": "Clients, under Companies in the menu",
-        "href": "#/tc/clients"
+        "do": "Plan and log your contacts",
+        "where": "Plan, My week",
+        "href": "#/tc/week"
       },
       {
-        "do": "Place the contacts from Client Hub",
-        "where": "Companies, Review list",
-        "href": "#/tc/review"
+        "do": "See your client emails and meetings",
+        "where": "Plan, My week, Connect Gmail",
+        "href": "#/tc/week"
       },
       {
-        "do": "See what came back from the Save the Date",
+        "do": "Exhibitions, calendars and training plans",
+        "where": "Plan, Season",
+        "href": "#/tc/season"
+      },
+      {
+        "do": "The Grand Opening invitation",
         "where": "Plan, Grand Opening",
         "href": "#/tc/go"
       },
       {
-        "do": "See the biggest clients and who to call back",
+        "do": "The biggest clients and who to call back",
         "where": "Clients, Client book",
         "href": "#/tc/book"
       },
       {
-        "do": "See your own companies",
-        "where": "Companies, Person in charge, Mine",
-        "href": "#/tc/companies"
+        "do": "Approve or flag new additions (approvers)",
+        "where": "Clients, New additions",
+        "href": "#/tc/additions"
       }
     ],
     "faq": [
@@ -403,6 +408,74 @@
         "id": "tc-exhibition",
         "q": "How do I follow up an exhibition?",
         "a": "Open the exhibition from Season and move each company from On the list to Met at the stand, Follow-up sent or Booked a course; every move is written in the company's history."
+      }
+    ],
+    "guides": [
+      {
+        "title": "Make a client yours",
+        "steps": [
+          "Open Clients, then Companies.",
+          "Find the company with the search box.",
+          "Press + Make mine on its row. It now shows ✓ Mine.",
+          "Mine at the top of the list shows only your companies."
+        ]
+      },
+      {
+        "title": "Add a company or a person",
+        "steps": [
+          "A person you met: Home, + Someone I met. Pick the company, or type a new one.",
+          "A company: Clients, Companies, Add company.",
+          "What you add is yours: you become the person in charge.",
+          "The approvers (Ritvars, Aleksejs Bogdaņecs, Jānis Sticenko) get a note and approve it."
+        ]
+      },
+      {
+        "title": "Approve or flag a new addition (approvers)",
+        "steps": [
+          "The email says who added what. Its link opens Clients, New additions.",
+          "Approve: it stays in every list.",
+          "Flag: it is hidden from the lists until an approver approves it. Nothing is deleted.",
+          "Flagged and Approved are folded below, to look back."
+        ]
+      },
+      {
+        "title": "See your emails and meetings in My week",
+        "steps": [
+          "Open Plan, My week.",
+          "In the Gmail card on the right, press Connect Gmail.",
+          "Google asks to read Gmail and Calendar: tick both and press Allow.",
+          "Emails and meetings with client contacts show on their day. Only you see yours. Disconnect is in the same card."
+        ]
+      },
+      {
+        "title": "Plan and log a contact",
+        "steps": [
+          "Plan, My week: + Plan on a day, or Plan next to a company on the right.",
+          "When it is done, click the card and log what happened.",
+          "Pick the next contact: it moves to that week."
+        ]
+      }
+    ],
+    "tour": [
+      {
+        "title": "Home",
+        "body": "The year in figures, and + Someone I met for a person you just met.",
+        "target": ".tcnav [data-c=\"tc-home\"]"
+      },
+      {
+        "title": "Plan",
+        "body": "My week (your contacts, emails and meetings), the Season and the Grand Opening.",
+        "target": ".tcnav [data-c=\"tc-plan\"]"
+      },
+      {
+        "title": "Clients",
+        "body": "Every company. + Make mine makes one yours; what you add is yours.",
+        "target": ".tcnav [data-c=\"tc-companies\"]"
+      },
+      {
+        "title": "Help center",
+        "body": "Every step written out, and questions and answers. Report a problem from here.",
+        "target": ".tcnav [data-c=\"tc-help\"]"
       }
     ]
   }

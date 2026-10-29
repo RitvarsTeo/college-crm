@@ -61,6 +61,7 @@ import * as tcimport from './tcimport.js';
 import * as samepeople from './samepeople.js';
 import * as tcweek from './tcweek.js';
 import * as tcgoogle from './tcgoogle.js';
+import * as tcadd from './tcadd.js';
 import * as tcseason from './tcseason.js';
 import * as tcclienthub from './tcclienthub.js';
 import * as tcreview from './tcreview.js';
@@ -735,6 +736,24 @@ const actorOf = async (req, b) => {
 };
 // "Mine" on the Training Centre lists: the signed-in account (its email and names, src/tcpic.js); on a laptop copy with
 // sign-in off, the name picked in "Acting as".
+// NEW ADDITIONS (29.10.2026, src/tcadd.js): each company or person added by hand goes under its adder and, unless an
+// approver added it, onto the approvers' New additions tab with one email to them. A failed email never fails the save.
+async function tcAddedNotify(req, list) {
+  const me = await currentUser(req);
+  const who = me ? { email: me.email, name: me.name } : null;
+  const fresh = [];
+  for (const x of list) { const r = await tcadd.added(db, x, who); if (r.toReview) fresh.push(x); }
+  if (!fresh.length) return;
+  const to = tcadd.APPROVERS.map((a) => a.email).filter((e) => !who || e !== String(who.email || '').toLowerCase());
+  const first = fresh[0];
+  const co = await db.prepare('SELECT name FROM tc_companies WHERE id = ?').get(Number(first.companyId));
+  const k = first.contactId ? await db.prepare('SELECT name, email FROM tc_company_contacts WHERE id = ?').get(Number(first.contactId)) : null;
+  const origin = inviteOrigin(req);
+  const one = tcadd.emailText({ kind: first.kind, company: co ? co.name : '', person: k ? k.name || k.email : '', by: who ? who.name : '', origin });
+  const mail = fresh.length === 1 ? one : { subject: `Intake: ${who ? who.name : 'Somebody'} added ${fresh.length} new companies or people`,
+    text: `${who ? who.name : 'Somebody'} added ${fresh.length} new companies or people to Intake Training Centre.\r\n\r\nApprove or flag them: ${origin || ''}/#/tc/additions` };
+  notify.sendMail(db, { to, subject: mail.subject, text: mail.text }).then((r) => { if (!r.ok) console.log('tc additions email: ' + r.why); });
+}
 const tcMe = async (req, url) => {
   const me = await currentUser(req);
   if (me) return { email: me.email, name: me.name };
@@ -3380,7 +3399,14 @@ export const handle = async (req, res) => {
     // QUICK ADD (the owner's pick 2, layout A, 26.10.2026): someone I just met, from TC Home
     if (p === '/api/tc/met/events' && req.method === 'GET') return json(res, 200, { events: await tc.metEvents(db) });
     if (p === '/api/tc/met' && req.method === 'POST') {
-      try { return json(res, 200, await tc.quickAdd(db, await body(req), await actorOf(req, {}))); }
+      try {
+        const out = await tc.quickAdd(db, await body(req), await actorOf(req, {}));
+        const list = [];
+        if (out.newCompany) list.push({ kind: 'company', companyId: out.companyId });
+        else if (out.newContact) list.push({ kind: 'contact', companyId: out.companyId, contactId: out.contactId });
+        await tcAddedNotify(req, list);
+        return json(res, 200, out);
+      }
       catch (e) { if (e instanceof tc.TcInputError) return json(res, 400, { error: e.message }); throw e; }
     }
     // SEARCH PEOPLE (the owner's pick 1, layout A, 26.10.2026): the Companies box also finds contacts
@@ -3388,7 +3414,35 @@ export const handle = async (req, res) => {
     if (p === '/api/tc/companies' && req.method === 'POST') {
       const b = await body(req, 64 * 1024);
       if (b.pic && !(await adminOf(req))) return json(res, 403, { error: 'An admin picks the person in charge.' });
-      return json(res, 200, await tc.addCompany(db, b, await actorOf(req, b)));
+      const out = await tc.addCompany(db, b, await actorOf(req, b));
+      await tcAddedNotify(req, [{ kind: 'company', companyId: out.id }]);
+      return json(res, 200, out);
+    }
+    // MAKE MINE (29.10.2026): the company's person in charge becomes the signed-in account
+    {
+      const mine = p.match(/^\/api\/tc\/companies\/(\d+)\/mine$/);
+      if (mine && req.method === 'POST') {
+        try { return json(res, 200, await tcadd.claim(db, Number(mine[1]), await tcMe(req, url))); }
+        catch (e) { if (e instanceof tc.TcInputError) return json(res, 400, { error: e.message }); throw e; }
+      }
+    }
+    // NEW ADDITIONS: the count (approvers only see a number), the list and the decisions for the approvers
+    if (p === '/api/tc/additions/count' && req.method === 'GET') {
+      const me = await currentUser(req);
+      const approver = Boolean(me && tcadd.isApprover(me.email));
+      return json(res, 200, { approver, n: approver ? await tcadd.reviewCount(db) : 0 });
+    }
+    if (p === '/api/tc/additions' && req.method === 'GET') {
+      const me = await currentUser(req);
+      if (!me || !tcadd.isApprover(me.email)) return json(res, 403, { error: 'New additions are for the approvers.' });
+      return json(res, 200, await tcadd.list(db));
+    }
+    {
+      const dec = p.match(/^\/api\/tc\/additions\/(\d+)$/);
+      if (dec && req.method === 'POST') {
+        try { const b = await body(req); return json(res, 200, await tcadd.decide(db, Number(dec[1]), String(b.what || ''), await currentUser(req))); }
+        catch (e) { if (e instanceof tc.TcInputError) return json(res, 400, { error: e.message }); throw e; }
+      }
     }
     if (p === '/api/tc/next' && req.method === 'GET') {
       const who = String(url.searchParams.get('owner') || '');
@@ -3489,7 +3543,9 @@ export const handle = async (req, res) => {
         const id = Number(edit[1]);
         const run = { edit: tc.editCompany, archive: tc.archiveCompany, contacts: tc.addContact, courses: tc.setCourseYear,
           activities: tc.logActivity, next: tc.setNext, 'info-sent': tc.markInfoSent }[edit[2]];
-        return json(res, 200, ['archive', 'info-sent'].includes(edit[2]) ? await run(db, id, by) : await run(db, id, b, by));
+        const out = ['archive', 'info-sent'].includes(edit[2]) ? await run(db, id, by) : await run(db, id, b, by);
+        if (edit[2] === 'contacts' && out && out.id) await tcAddedNotify(req, [{ kind: 'contact', companyId: id, contactId: out.id }]);
+        return json(res, 200, out);
       }
     }
     // THE EXCEL IMPORT, an admin one-off (src/tcimport.js). GET says what this batch has done so far; POST without
@@ -3561,7 +3617,13 @@ export const handle = async (req, res) => {
       const b = await body(req, 4 * 1024 * 1024);
       if (p.endsWith('/preview')) return json(res, 200, await tcpeople.importPreview(db, b.rows));
       const by = await actorOf(req, b);
+      const t0 = new Date(Date.now() - 1000).toISOString();
       const out = await tcpeople.importApply(db, b.rows, b.picks || {}, by);
+      const newCos = (await db.prepare('SELECT id FROM tc_companies WHERE created_at >= ? AND created_by = ?').all(t0, by)).map((r) => ({ kind: 'company', companyId: Number(r.id) }));
+      const newCoIds = new Set(newCos.map((x) => x.companyId));
+      const newKs = (await db.prepare('SELECT id, company_id FROM tc_company_contacts WHERE created_at >= ? AND created_by = ?').all(t0, by))
+        .filter((r) => !newCoIds.has(Number(r.company_id))).map((r) => ({ kind: 'contact', companyId: Number(r.company_id), contactId: Number(r.id) }));
+      await tcAddedNotify(req, [...newCos, ...newKs]);
       console.log(`tc import people: ${by} added ${out.added} updated ${out.updated} new companies ${out.newCompanies}`);
       return json(res, 200, out);
     }

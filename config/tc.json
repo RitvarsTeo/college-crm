@@ -149,5 +149,13 @@
     ],
     "_clickCountsAsPerson": "A click by a person is a person who opened it, so the clicked count sits inside Opened by a person.",
     "clickCountsAsPerson": true
+  },
+  "approvals": {
+    "_about": "NEW ADDITIONS (the owner, 29.10.2026): a company or person added by hand goes under the adder; these approvers get a line in Intake and an email, and Approve or Flag it (Flag = hidden from lists until approved). An approver's own additions count as approved.",
+    "approvers": [
+      { "name": "Ritvars", "email": "ritvars.vilcins@novikontas.org" },
+      { "name": "Aleksejs Bogdaņecs", "email": "ab@novikontas.org" },
+      { "name": "Jānis Sticenko", "email": "js@novikontas.org" }
+    ]
   }
 }
