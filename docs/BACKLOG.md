@@ -130,6 +130,8 @@ companies with no status - defaults in use); phone: marked number of a known per
   `LIVE` 28.10 patch 89 (e01c00a + record 5a61596): Companies -> Families, 241 suggestions to look at.
 - `DECIDED` 28.10 HIS PICK: TC Home Delegates by year, 2024 bar = the management review figure (3,569), marked as such
   (the TC Excel's 2024 column is incomplete: 1,294 / 92 companies). Other years stay the Excel.
+- `SAID` 29.10 move Intake completely to Supabase (his Hobby level), then shift ownership to the Novikontas Academy Supabase
+  (paid). Analysis first.
 - `LIVE` 28.10 patch 92: Intake's dark look, the sea with contrast (bright headline cards, deep list/chart cards never
   darker than the side menu, blue and yellow lines kept).
 - `LIVE` 28.10 patch 91 (6bf5e8b + record 73ea6cb): the compact TC menu (B) and 2024 from the management review.
