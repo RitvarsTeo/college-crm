@@ -57,11 +57,11 @@
     },
     {
       "path": "/api/cron/pbx-calls",
-      "schedule": "* * * * *"
+      "schedule": "* 5-15 * * *"
     },
     {
       "path": "/api/cron/gmail-poll",
-      "schedule": "*/5 * * * *"
+      "schedule": "*/10 5-15 * * *"
     },
     {
       "path": "/api/cron/lead-answers",

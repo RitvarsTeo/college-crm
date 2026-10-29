@@ -376,13 +376,13 @@ test('the window asked for is short, because a wide one makes the API fail', asy
 // until then; the phone runs at 05:15 UTC (08:15 Riga in summer) and catches up the whole day.
 test('both poller routes exist and bundle what they need; the schedule waits for Vercel Pro', async () => {
   const vercel = JSON.parse(fs.readFileSync(path.join(ROOT, 'vercel.json'), 'utf8'));
-  // Q91 (13.10.2026): the project is in a Pro team; the email pull runs every 5 minutes, the only */5 cron
-  assert.deepEqual((vercel.crons || []).filter((c) => /\*\/5/.test(c.schedule)).map((c) => c.path), ['/api/cron/gmail-poll']);
+  // Q91 (13.10.2026): the project is in a Pro team; the email pull runs every 10 minutes in the working day (29.10.2026), the only */10 cron
+  assert.deepEqual((vercel.crons || []).filter((c) => /\*\/10/.test(c.schedule)).map((c) => c.path), ['/api/cron/gmail-poll']);
   // once a day is what Hobby allows (08:00 Riga); it also gives the Vercel Cron Jobs page a Run button that
   // sends CRON_SECRET itself, so a run by hand never needs the secret typed anywhere
   assert.deepEqual(vercel.crons, [{ path: '/api/cron/sis-sync', schedule: '0 5 * * *' },
-    { path: '/api/cron/pbx-calls', schedule: '* * * * *' },        // Q92, 14.10.2026: every minute (Pro team)
-    { path: '/api/cron/gmail-poll', schedule: '*/5 * * * *' },   // C3, 30.09.2026; every 5 minutes since Q91, 13.10.2026
+    { path: '/api/cron/pbx-calls', schedule: '* 5-15 * * *' },     // Q92 every minute; 08:00-17:00 Latvian time only (29.10.2026)
+    { path: '/api/cron/gmail-poll', schedule: '*/10 5-15 * * *' },   // C3, 30.09.2026; every 10 minutes, 08:00-17:00 Latvian time (29.10.2026)
     { path: '/api/cron/lead-answers', schedule: '45 5 * * *' },   // C2 + C7, 30.09.2026
     { path: '/api/cron/sheet-pull', schedule: '0 * * * *' }]);    // Q89: the admissions sheet, every hour (Pro team since 13.10.2026)
   for (const f of ['pbx-calls.js', 'sis-sync.js', 'gmail-poll.js']) {

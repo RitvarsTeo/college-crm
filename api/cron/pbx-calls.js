@@ -13,6 +13,7 @@
 
 import { authoriseCron, redact, sendJson } from '../../lib/pbx.js';
 import { cronDb } from '../../src/crondb.js';
+import { inWorkHours } from '../../src/bizday.js';
 import { syncPbx } from '../../src/sync.js';
 
 export default async function handler(req, res) {
@@ -25,6 +26,13 @@ export default async function handler(req, res) {
   const auth = authoriseCron(req.headers?.authorization);
   if (!auth.ok) {
     sendJson(res, auth.status, { error: auth.error });
+    return;
+  }
+
+  // Only 08:00-17:00 Latvian time (the owner, 29.10.2026), before the database is opened: outside it the
+  // database sleeps, and the first run of the morning catches up from the bookmark.
+  if (!inWorkHours()) {
+    sendJson(res, 200, { ok: true, ran: false, channel: 'phone', why: 'outside 08:00-17:00 Latvian time' });
     return;
   }
 

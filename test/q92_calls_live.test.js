@@ -43,7 +43,7 @@ const run = (db, tg, now) => syncPbx(db, { now: at(now), env: ON, fetchImpl: tg.
 // ---------------------------------------------------------------------------- 1 --
 test('1: the pull runs every minute; a caught-up run asks once and writes nothing new', async () => {
   const vercel = JSON.parse(fs.readFileSync(path.join(ROOT, 'vercel.json'), 'utf8'));
-  assert.equal(vercel.crons.find((c) => c.path === '/api/cron/pbx-calls').schedule, '* * * * *');
+  assert.equal(vercel.crons.find((c) => c.path === '/api/cron/pbx-calls').schedule, '* 5-15 * * *');
   assert.match(fs.readFileSync(path.join(ROOT, 'api', 'cron', 'pbx-calls.js'), 'utf8'), /authoriseCron\(/, 'still CRON_SECRET');
   const db = await openDb(':memory:');
   const tg = fakeTeleGroup([call({ created_at: '2026-10-14 08:58:30' })]);
@@ -242,6 +242,8 @@ test('the Channels screen says "Every minute"; Help says it, in the same change'
   vm.runInNewContext(fn + '; this.every = chEvery;', ctx);
   assert.equal(ctx.every('* * * * *'), 'Every minute');
   assert.equal(ctx.every('*/5 * * * *'), 'Every 5 min');
+  assert.equal(ctx.every('* 5-15 * * *'), 'Every minute, 08:00-17:00');
+  assert.equal(ctx.every('*/10 5-15 * * *'), 'Every 10 min, 08:00-17:00');
   const help = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'help.json'), 'utf8'));
   const q = help.faq.find((x) => x.id === 'phone-calls');
   assert.match(q.a, /every minute/);

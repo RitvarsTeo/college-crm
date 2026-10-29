@@ -9376,11 +9376,15 @@ function chRiga(cron, day = new Date()) {
   const at = new Date(Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate(), Number(m[2]), Number(m[1])));
   return new Intl.DateTimeFormat('en-GB', { timeZone: CH_ZONE, hour: '2-digit', minute: '2-digit', hour12: false }).format(at);
 }
-// "*/5 * * * *" -> "Every 5 min" (Q91: the email pull, Pro team since 13.10.2026); any other shape is not guessed
+// "*/5 * * * *" -> "Every 5 min" (Q91: the email pull, Pro team since 13.10.2026); any other shape is not guessed.
+// " 5-15" in the hour field is the working day (the owner, 29.10.2026): the job itself keeps to 08:00-17:00 Latvian time.
 function chEvery(cron) {
-  if (String(cron || '').trim() === '* * * * *') return 'Every minute';   // Q92: the phone pull, 14.10.2026
-  const m = /^\*\/(\d{1,2}) \* \* \* \*$/.exec(String(cron || '').trim());
-  return m ? `Every ${Number(m[1])} min` : null;
+  const c = String(cron || '').trim();
+  const day = / 5-15 \* \* \*$/.test(c) ? ', 08:00-17:00' : '';
+  const base = day ? c.replace(/ 5-15 \* \* \*$/, ' * * * *') : c;
+  if (base === '* * * * *') return 'Every minute' + day;   // Q92: the phone pull, 14.10.2026
+  const m = /^\*\/(\d{1,2}) \* \* \* \*$/.exec(base);
+  return m ? `Every ${Number(m[1])} min${day}` : null;
 }
 function chWhen(iso) {
   const t = Date.parse(iso || '');
@@ -10452,8 +10456,22 @@ function cpSchedule() {
   CP_TIMER = setTimeout(cpTick, cpDelay());
 }
 
+// ON DUTY ONLY (the owner, 29.10.2026): the 3-second ask runs while the tab is on screen and 08:00-17:00 Latvian
+// time. A hidden tab, or the evening, asks nothing; coming back starts a fresh baseline, so a call missed in
+// the meantime never pops up late.
+function cpOnDuty() {
+  if (document.hidden) return false;
+  const p = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Riga', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date());
+  const m = Number(p.find((x) => x.type === 'hour').value) * 60 + Number(p.find((x) => x.type === 'minute').value);
+  return m >= 8 * 60 && m <= 17 * 60;
+}
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && CP_TIMER && !CP_STOPPED) { clearTimeout(CP_TIMER); CP_TIMER = null; cpTick(); }
+});
+
 async function cpTick() {
   if (CP_STOPPED) return;
+  if (!cpOnDuty()) { CP_LAST = null; clearTimeout(CP_TIMER); CP_TIMER = setTimeout(cpTick, 60 * 1000); return; }
   let d = null;
   try {
     // apiFetch, not api(): a poll every few seconds must not flash the busy bar; a 401 still signs out

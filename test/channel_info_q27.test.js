@@ -72,7 +72,7 @@ test('Q27: production figures come from the rows and the run record; locally fro
   const runs = { gmail: { at: '2026-10-06T05:35:00Z' }, pbx_until: { at: '2026-10-06T05:27:00Z' }, phone: { at: '2026-09-29T13:28:48Z' } };
   const p = s.facts(byId(prodRows, 'gmail'), PROD, CTX({ runs }));
   assert.deepEqual({ ...p.counts }, { received: 120, filtered: 30, asOf: null, inbox: 90 });
-  assert.equal(p.pull, 'Every 5 min', 'Q91: the email pull every 5 minutes (Pro team since 13.10.2026)');
+  assert.equal(p.pull, 'Every 10 min, 08:00-17:00', 'the email pull every 10 minutes in the working day (29.10.2026)');
   assert.equal(s.facts(byId(prodRows, 'phone'), PROD, CTX({ runs })).last, '06.10 08:27', 'the daily catch-up, not the old first run');
   const l = s.facts(byId(apiRows(), 'gmail'), LOCAL, CTX());
   assert.deepEqual({ ...l.counts }, { received: 98, filtered: 24, asOf: '2026-10-04', inbox: 74 });

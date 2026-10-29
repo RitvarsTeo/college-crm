@@ -56,3 +56,13 @@ export function localDateTime(at = new Date(), tz = BUSINESS_TZ) {
 }
 export const todayStart = (now = new Date()) => dayStartOf(localDate(now));
 export const tomorrowStart = (now = new Date()) => dayAfterStartOf(localDate(now));
+
+// THE WORKING DAY (the owner, 29.10.2026: "Daytime hours are Latvian time 08.00 - 17.00", every day). The phone and
+// email pulls run only inside it, so the database can sleep at night; the next morning's first pull catches up.
+export const WORK_FROM_MIN = 8 * 60;
+export const WORK_TO_MIN = 17 * 60;
+export function localMinutes(at = new Date(), tz = BUSINESS_TZ) {
+  const p = new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(at);
+  return Number(p.find((x) => x.type === 'hour').value) * 60 + Number(p.find((x) => x.type === 'minute').value);
+}
+export const inWorkHours = (at = new Date()) => { const m = localMinutes(at); return m >= WORK_FROM_MIN && m <= WORK_TO_MIN; };

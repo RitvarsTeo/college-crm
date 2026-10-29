@@ -167,9 +167,9 @@ test('the Channels screen: one line with the label found, or that none was', () 
   assert.match(app, /c\.channel === 'gmail' \? chLabelLine\(/, 'shown on the Email channel');
 });
 
-test('the pull runs every 5 minutes, still behind CRON_SECRET', () => {
+test('the pull runs every 10 minutes in the working day, still behind CRON_SECRET', () => {
   const vercel = JSON.parse(fs.readFileSync(path.join(ROOT, 'vercel.json'), 'utf8'));
-  assert.equal(vercel.crons.find((c) => c.path === '/api/cron/gmail-poll').schedule, '*/5 * * * *');
+  assert.equal(vercel.crons.find((c) => c.path === '/api/cron/gmail-poll').schedule, '*/10 5-15 * * *');
   const src = fs.readFileSync(path.join(ROOT, 'api', 'cron', 'gmail-poll.js'), 'utf8');
   assert.match(src, /authoriseCron\(/);
 });
@@ -177,5 +177,5 @@ test('the pull runs every 5 minutes, still behind CRON_SECRET', () => {
 test('Help says it, in the same change', () => {
   const help = fs.readFileSync(path.join(ROOT, 'config', 'help.json'), 'utf8');
   assert.match(help, /Admissions label in edu@ is never filtered/);
-  assert.match(help, /every 5 minutes/);
+  assert.match(help, /every 10 minutes from 08:00 to 17:00 Latvian time/);
 });
