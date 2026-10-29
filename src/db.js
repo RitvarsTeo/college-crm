@@ -1171,7 +1171,10 @@ async function openPg(file) {
   });
   pool.on('error', () => {});             // an idle connection dropped by the server is not fatal
   const db = new PgDb(pool, pool, schema);
-  await db.query(`CREATE SCHEMA IF NOT EXISTS ${schema}`);
+  // Supabase (29.10.2026): the login owns its schema but may not create schemas in the database, and Postgres
+  // checks that right before it looks whether the schema exists, so ask first and create only when it is missing.
+  const { rows: [have] } = await db.query('SELECT 1 AS y FROM pg_namespace WHERE nspname = $1', [schema]);
+  if (!have) await db.query(`CREATE SCHEMA IF NOT EXISTS ${schema}`);
   // AUDIT H4 (07.10.2026): prove the schema took BEFORE creating anything. The schema rides on
   // the connection's startup options; a pooler that dropped them would leave search_path at
   // public, and every table below would be created where Supabase's Data API publishes it.
