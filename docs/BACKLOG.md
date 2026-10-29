@@ -190,9 +190,7 @@ companies with no status - defaults in use); phone: marked number of a known per
 
 ## 29.10.2026 - After the move to Supabase: Academy checks (owner: "save this to be done")
 
-- `TODO` LinkedIn webhook: in LinkedIn Developers, app Novikontas Intake -> Webhooks, the row
-  https://intake.novikontas.org/api/inbound/linkedin shows Failed Validation (LinkedIn's check 29.10 09:25 hit the
-  outage). Once Intake answers again: ••• -> Validate, until it reads Validated. Owner presses it; Academy master checks.
+- `DONE` 29.10 11:34 LinkedIn webhook https://intake.novikontas.org/api/inbound/linkedin: Validated, Enabled (owner pressed Validate after Intake came back).
 - `LIVE` 29.10 patch 93 (a62d349): the daytime window; Intake back on Supabase.
 - `TODO` Academy checks after the switch: Home, Due, a person page, Inbox, the SIS sync, the call pull.
 
