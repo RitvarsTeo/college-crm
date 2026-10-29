@@ -17,7 +17,9 @@ function door({ areas, hash, on = true }) {
   const seen = { drawn: null, replaced: null, area: null };
   const ctx = {
     AUTH: { on, user: on ? { name: 'T', areas } : null },
-    location: { hash, replace: (h) => { seen.replaced = h; } },
+    location: { hash, pathname: '/', search: '', replace: (h) => { seen.replaced = h; } },
+    // 29.10.2026: the start page writes its own address (#/start) in place
+    history: { state: null, replaceState: (s, t, u) => { seen.address = u; } },
     document: { documentElement: { dataset: {} }, querySelector: () => null, querySelectorAll: () => [] },
     $: () => null,
     tcInstallNav: () => {}, cDrawNoArea: () => { seen.drawn = 'none'; },
@@ -32,6 +34,7 @@ function door({ areas, hash, on = true }) {
 test('the door: one area lands in it, two areas open on the tiles, a half you may not open is never drawn', async () => {
   let d = door({ areas: ['academy', 'tc'], hash: '' });
   assert.equal(await d.run(), true); assert.equal(d.seen.drawn, 'start', 'both halves: the start page first');
+  assert.equal(d.seen.address, '/#/start', 'the start page owns #/start, so the Academy tile (#/home) is always a move');
   d = door({ areas: ['academy'], hash: '' });
   assert.equal(await d.run(), false, 'Academy only: straight into Academy, no extra click'); assert.equal(d.seen.area, 'academy');
   d = door({ areas: ['tc'], hash: '' });
