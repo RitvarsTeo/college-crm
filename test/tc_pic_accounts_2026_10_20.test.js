@@ -186,7 +186,7 @@ test('the screens: the picker is the admin\'s, on the company page and in Add co
   const sel = fn('function tcPicSelect(');
   assert.match(sel, /<optgroup label="Intake accounts">/);
   assert.match(sel, /<optgroup label="No Intake access">/);
-  assert.match(fn('function tcDrawCompanies('), /box\('pic', 'Person in charge', \[\['me', `Mine \$\{Number\(L\.facets\.mine \|\| 0\)\}`\]/);
+  assert.match(fn('function tcDrawCompanies('), /box\('pic', 'Person in charge', \[\.\.\.\(Number\(L\.facets\.mine \|\| 0\) > 0 \? \[\['me', `Mine \$\{Number\(L\.facets\.mine \|\| 0\)\}`\]\] : \[\]\)/, 'Mine leads, only when the account has companies (30.10.2026)');
   assert.match(fn('function tcDrawNext('), /\[\['me', 'Mine'\], \.\.\.T_META\.pics\.map\(\(p\) => \[p\.value, p\.label\]\)\]/);
 });
 

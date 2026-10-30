@@ -11177,7 +11177,9 @@ async function viewTcBook() {
   const B = await api('/api/tc/book?' + qs.toString());
   T_YEAR = B.year;
   const Y = B.year;
-  const seg = [['', 'All', !T_BOOK.mine && !T_BOOK.area], ['mine', 'Mine', T_BOOK.mine], ...['TC', 'ENERGY', 'OPITO'].map((a) => [a, a, !T_BOOK.mine && T_BOOK.area === a])];
+  // the owner 30.10.2026: no Mine at 0; every area the companies carry (PROJECTS was missing)
+  const seg = [['', 'All', !T_BOOK.mine && !T_BOOK.area], ...(Number(B.mineCount) > 0 || T_BOOK.mine ? [['mine', 'Mine', T_BOOK.mine]] : []),
+    ...['TC', 'ENERGY', 'OPITO', 'PROJECTS'].map((a) => [a, a, !T_BOOK.mine && T_BOOK.area === a])];
   const rows = B.biggest.rows.slice(0, T_BOOK.shown);
   const welcome = B.welcome.rows.slice(0, T_BOOK.wshown);
   const wrow = (c) => `<div class="tc-wb-row"><a href="#/tc/company/${Number(c.id)}"><b>${esc(c.name)}</b><small>${esc(c.country || 'country not recorded')}</small></a>
