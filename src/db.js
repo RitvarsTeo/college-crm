@@ -844,6 +844,27 @@ CREATE TABLE IF NOT EXISTS tc_additions (
   decided_by TEXT,
   decided_at TEXT
 );
+-- Stage 2 sending (30.10.2026, src/tcs2send.js): one row per person sent (never twice), and the send log (tests and batches).
+CREATE TABLE IF NOT EXISTS tc_go_s2_sent (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  stage2_id INTEGER NOT NULL UNIQUE REFERENCES tc_go_stage2(id),
+  sender TEXT NOT NULL,
+  mail_kind TEXT,
+  result TEXT NOT NULL,            -- sent | refused
+  detail TEXT,
+  sent_at TEXT NOT NULL,
+  sent_by TEXT
+);
+CREATE TABLE IF NOT EXISTS tc_go_s2_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  batch TEXT NOT NULL UNIQUE,
+  sender TEXT NOT NULL,
+  what TEXT NOT NULL,              -- test | batch
+  sent INTEGER NOT NULL DEFAULT 0,
+  refused INTEGER NOT NULL DEFAULT 0,
+  started_at TEXT NOT NULL,
+  started_by TEXT
+);
 CREATE TABLE IF NOT EXISTS tc_google_links (
   user_email TEXT PRIMARY KEY,
   token TEXT NOT NULL,
@@ -889,6 +910,9 @@ const ADDED_COLUMNS = [
   ['tc_tasks', 'result', 'TEXT'],     // 20.10.2026, Log a contact: how it went, on the closed task
   ['tc_companies', 'hidden_at', 'TEXT'],          // 29.10.2026, flagged by an approver: hidden from lists until approved
   ['tc_company_contacts', 'hidden_at', 'TEXT'],
+  ['tc_go_stage2', 'first_name', 'TEXT'],       // 30.10.2026, Stage 2 sending from Intake: the greeting, the personal link code
+  ['tc_go_stage2', 'link_code', 'TEXT'],
+  ['tc_go_stage2', 'mail_kind', 'TEXT'],         // confirm | invite | new (stage2_send_data_2026-10-22.json)
 ];
 
 // ---------------------------------------------------------- the async layer --

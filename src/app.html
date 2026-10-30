@@ -2663,6 +2663,12 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c a.c-line.tc-cline{text-decoration:none;color:inherit}
   html.ui-c .p-rows .c-line.tc-cline{grid-template-columns:minmax(0,1.4fr) minmax(0,1.3fr) 130px 150px}
   html.ui-c .tc-cline .c-acts{justify-self:end}
+  /* Stage 2 sending (30.10.2026) */
+  html.ui-c .tcs2x-ok{display:block;font-weight:700;color:#1e7bc4} html.ui-c .tcs2x-sub{display:block;color:var(--t3);font-size:11.5px}
+  html.ui-c .tcs2x-wait{display:block;color:#8a5a00;font-size:11.5px;font-weight:600}
+  html.ui-c .tcs2x-btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px} html.ui-c .tcs2x-btns .btn[disabled]{opacity:.45;cursor:not-allowed}
+  html.ui-c .tcs2x-connect{margin:0 0 10px;font-size:13px} html.ui-c .tcs2x-log{padding:14px 20px;margin:12px 0}
+  html.ui-c .tcs2x-lrow{display:grid;grid-template-columns:240px 110px 1fr 140px;gap:12px;padding:6px 0;border-top:1px solid var(--rule2);font-size:13px} html.ui-c .tcs2x-lrow small{color:var(--t3)}
   html.ui-c .tc-guides{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin:0 0 18px;align-items:start}
   html.ui-c .tc-guide{padding:14px 18px;margin:0} html.ui-c .tc-guide summary{cursor:pointer} html.ui-c .tc-guide ol{margin:10px 0 2px 18px;padding:0;line-height:1.6}
   /* Ownership and New additions (29.10.2026) */
@@ -11423,16 +11429,18 @@ function tcDrawCompanies() {
     box('status', 'Status', M.statuses.map((s) => [s.id, `${s.label} ${Number(L.counts.status[s.id] || 0)}`])),
     box('area', 'Area', L.facets.areas.map(([a, n]) => [a, `${a} ${n}`])),
     box('country', 'Country', [['*', 'Any recorded'], ...L.facets.countries.map(([c, n]) => [c, `${word(c)} ${n}`])]),
-    box('pic', 'Person in charge', [['me', `Mine ${Number(L.facets.mine || 0)}`], ...L.facets.pics.map(([p, n, t]) => [p, `${t || word(p)} ${n}`])]),
+    box('pic', 'Person in charge', [...(Number(L.facets.mine || 0) > 0 ? [['me', `Mine ${Number(L.facets.mine || 0)}`]] : []), ...L.facets.pics.map(([p, n, t]) => [p, `${t || word(p)} ${n}`])]),
     box('client', 'Client', [['yes', 'Clients'], ['no', 'Prospects']]),
     box('due', 'Next contact', [['over', 'Overdue'], ['week', 'This week'], ['later', 'Later'], ['none', 'None planned']]),
     box('info', 'Information to send', [['yes', 'Something to send']]),
     cPoolSelect('Sort', T_SORT === 'name' ? '' : T_SORT, [['next', 'Next contact'], ['last', 'Latest course']], "T_SORT=this.value||'name';tcLoadCompanies()"), ...yearBoxes];
   const nf = Object.entries(T_F).filter(([k, v]) => v && k !== 'pic').length + (T_F.pic && T_F.pic !== 'me' ? 1 : 0) + (T_SORT !== 'name' ? 1 : 0);
   const mine = T_F.pic === 'me';
-  const fbar = `<div class="tc-fbar"><div class="c-seg tc-mineall" role="group" aria-label="Whose companies">
+  // the owner 30.10.2026: Mine only for an account that has a company in its charge; at 0 there is no Mine / All switch
+  const hasMine = Number(L.facets.mine || 0) > 0 || mine;
+  const fbar = `<div class="tc-fbar">${hasMine ? `<div class="c-seg tc-mineall" role="group" aria-label="Whose companies">
       <button aria-pressed="${mine}" onclick="tcFilter('pic','me')">Mine <b>${tcN(L.facets.mine || 0)}</b></button>
-      <button aria-pressed="${!mine && T_F.pic === ''}" onclick="tcFilter('pic','')">All <b>${tcN(L.facets.all || 0)}</b></button></div>
+      <button aria-pressed="${!mine && T_F.pic === ''}" onclick="tcFilter('pic','')">All <b>${tcN(L.facets.all || 0)}</b></button></div>` : ''}
     <details class="tc-filters"${T_FOPEN ? ' open' : ''} ontoggle="T_FOPEN=this.open"><summary class="btn ghost">Filters${nf ? ` · ${nf}` : ''} ▾</summary>
       <div class="tc-fpanel">${cPoolFilters('companies', boxes, nf ? 'tcClearFilters()' : '')}</div></details></div>`;
   const any = Object.values(T_F).some(Boolean) || Boolean(T_Q);
@@ -12523,6 +12531,7 @@ async function viewTcGo() {
   }
   tcGoDraw();
   tcS2Load();
+  tcS2xLoad().then(() => { if (T_S2) tcS2Redraw(); });   // Stage 2 sending (admins)
   tcFixLoad();
   tcMkLoad();
 }
@@ -12560,7 +12569,7 @@ function tcGoStage2() {
   if (!S || !S.senders || !S.senders.length) return '<div id="tcS2"></div>';
   const tab = (x) => `<button type="button" class="tcs2-tab" aria-pressed="${x.code === S.code}" onclick="tcS2Load(${esc(JSON.stringify(String(x.code)))})">${esc(x.label)}<b>${Number(x.n)}</b></button>`;
   const state = (code) => (T_GO.stage2 && T_GO.stage2.packStatus && (T_GO.stage2.packStatus[code] || T_GO.stage2.packStatus.default)) || '';
-  const packs = `<div class="tcgo-packs">${S.senders.map((x) => `<div class="tcgo-pack"><b>${esc(x.label)}</b><span>${Number(x.n)}</span>${state(x.code) ? `<small>✓ ${esc(state(x.code))}</small>` : ''}</div>`).join('')}</div>`;
+  const packs = tcS2PacksHtml(S, state);
   return `<div id="tcS2">${packs}<section class="c-sheet tcs2" aria-label="Stage 2 lists">
     <div class="tcgo-bh"><h2>Stage 2 lists</h2><span><input class="c-search tcs2-q" placeholder="Search name or company" value="${esc(S.q || '')}" oninput="tcS2Find(this.value)" aria-label="Search the list">
       <a class="btn sm ghost" href="/api/tc/go/stage2.xlsx?sender=${encodeURIComponent(S.code)}" download>Download</a></span></div>
@@ -12576,6 +12585,57 @@ async function tcFixLoad() {
   const box = $('#tcFix'); if (box) box.innerHTML = tcFixHtml();
 }
 function tcFixScope(v) { T_FIX.scope = v; const box = $('#tcFix'); if (box) box.innerHTML = tcFixHtml(); }
+// STAGE 2 SENDING (30.10.2026, the owner's pick, picture board-stage2-sending): admins see, per sender, Sent X of N, Test to me
+// and Send next 100; Send is grey until the colleague's "Send mail as" address is confirmed in the Gmail. The send log below.
+let T_S2X = null, T_S2X_BUSY = '';
+async function tcS2xLoad() { if (!isAdmin()) { T_S2X = null; return; } try { T_S2X = await api('/api/tc/go/stage2/sending'); } catch (e) { T_S2X = null; } }
+function tcS2PacksHtml(S, state) {
+  const X = T_S2X, xs = X ? new Map(X.senders.map((x) => [x.code, x])) : new Map();
+  const card = (x) => {
+    const y = xs.get(x.code);
+    if (!y) return `<div class="tcgo-pack"><b>${esc(x.label)}</b><span>${Number(x.n)}</span>${state(x.code) ? `<small>✓ ${esc(state(x.code))}</small>` : ''}</div>`;
+    const busy = T_S2X_BUSY === x.code, all = y.sent + y.refused >= y.n - y.noCode && y.n > 0;
+    const line = all ? `<small class="tcs2x-ok">✓ Sent ${Number(y.sent)} of ${Number(y.n)}</small>`
+      : y.sent ? `<small class="tcs2x-ok">Sent ${Number(y.sent)} of ${Number(y.n)}</small>` : '<small class="tcs2x-ok">Ready to send</small>';
+    const sub = y.confirmed === false ? `<small class="tcs2x-wait">Waiting: ${esc(y.email)} confirms once</small>`
+      : y.confirmed === null ? '<small class="tcs2x-sub">Connect sending first</small>' : y.refused ? `<small class="tcs2x-sub">${Number(y.refused)} refused</small>` : '<small class="tcs2x-sub">address confirmed</small>';
+    const can = y.confirmed === true && !busy && !T_S2X_BUSY;
+    const btns = all ? '' : `<div class="tcs2x-btns"><button type="button" class="btn sm ghost" ${can ? '' : 'disabled'} onclick="tcS2xTest(${esc(JSON.stringify(String(x.code)))})">Test to me</button>
+      <button type="button" class="btn sm" ${can && y.left > 0 ? '' : 'disabled'} onclick="tcS2xSend(${esc(JSON.stringify(String(x.code)))})">${busy ? 'Sending…' : `Send next ${Math.min(X.batch, y.left)}`}</button></div>`;
+    return `<div class="tcgo-pack"><b>${esc(x.label)}</b><span>${Number(x.n)}</span>${line}${sub}${btns}</div>`;
+  };
+  const connect = X && X.needsConnect ? `<p class="tcs2x-connect">Sending from Intake needs one Allow in Google: <a href="/api/admin/notify/connect">Connect sending</a> (as ritvars.vilcins@novikontas.org).</p>` : '';
+  const day = (iso) => new Date(iso).toLocaleString('en-GB', { timeZone: 'Europe/Riga', weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+  const lab = (c) => (S.senders.find((z) => z.code === c) || {}).label || c;
+  const log = X && X.log.length ? `<section class="c-sheet tcs2x-log"><div class="tcgo-bh"><h2><button type="button" class="tcgo-fold" aria-expanded="${Boolean(T_S2X.open)}"
+      onclick="T_S2X.open=!T_S2X.open;tcS2Redraw()">${T_S2X.open ? '▾' : '▸'} Send log · ${X.log.length}</button></h2><span class="tcs2x-sub">${Number(X.today)} sent in the last 24 hours</span></div>
+      ${T_S2X.open ? `<div class="tcgo-flist">${X.log.map((l) => `<div class="tcs2x-lrow"><span>${esc(day(l.at))}</span><b>${esc(lab(l.sender))}</b><span>${l.what === 'test' ? 'Test to me' : `${Number(l.sent)} sent · ${Number(l.refused)} refused`}</span><small>by ${esc(l.by)}</small></div>`).join('')}</div>` : ''}</section>` : '';
+  return `${connect}<div class="tcgo-packs">${S.senders.map(card).join('')}</div>${log}`;
+}
+function tcS2Redraw() { const box = $('#tcS2'); if (box && typeof tcGoStage2 === 'function') box.outerHTML = tcGoStage2(); }
+async function tcS2xTest(code) {
+  T_S2X_BUSY = code; tcS2Redraw();
+  try { const r = await post('/api/tc/go/stage2/test', { sender: code }); alert(`Sent ${r.sent} test emails to your inbox.`); }
+  catch (e) { alert(e.message); }
+  T_S2X_BUSY = ''; await tcS2xLoad(); tcS2Redraw();
+}
+async function tcS2xSend(code) {
+  const x = T_S2X.senders.find((z) => z.code === code);
+  const n = Math.min(T_S2X.batch, x.left);
+  if (!confirm(`Send the next ${n} Stage 2 emails from ${x.email}?`)) return;
+  T_S2X_BUSY = code; tcS2Redraw();
+  const batch = 'b-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+  let sent = 0, refused = 0;
+  try {
+    for (let i = 0; i < 20; i++) {
+      const r = await post('/api/tc/go/stage2/send', { sender: code, batch });
+      sent += r.sent; refused += r.refused;
+      const b = document.querySelector('.tcgo-pack button.btn.sm:not(.ghost)[disabled]'); if (b) b.textContent = `Sending… ${sent}`;
+      if (r.done) break;
+    }
+  } catch (e) { alert(e.message); }
+  T_S2X_BUSY = ''; await tcS2xLoad(); tcS2Redraw();
+}
 function tcFixHtml() {
   const F = T_FIX;
   if (!F || (!F.total && !F.onlyCh)) return '';

@@ -62,6 +62,7 @@ import * as samepeople from './samepeople.js';
 import * as tcweek from './tcweek.js';
 import * as tcgoogle from './tcgoogle.js';
 import * as tcadd from './tcadd.js';
+import * as tcs2send from './tcs2send.js';
 import * as tcseason from './tcseason.js';
 import * as tcclienthub from './tcclienthub.js';
 import * as tcreview from './tcreview.js';
@@ -3706,6 +3707,19 @@ export const handle = async (req, res) => {
       return res.end(rowsToXlsx(rows, { bold: [0], sheetName: 'Do not invite', title: name }));
     }
     // THE STAGE 2 LISTS PER MANAGER (the owner's pick A, 26.10.2026): the tabs, one manager's list with its answers, its file
+    // STAGE 2 SENDING (30.10.2026, src/tcs2send.js; the owner's pick): admins only. The cards and the log, Test to me, Send next.
+    if (p === '/api/tc/go/stage2/sending' && req.method === 'GET') {
+      if (!(await adminOf(req))) return refuseNotAdmin(res);
+      return json(res, 200, await tcs2send.overview(db));
+    }
+    if ((p === '/api/tc/go/stage2/test' || p === '/api/tc/go/stage2/send') && req.method === 'POST') {
+      if (!(await adminOf(req))) return refuseNotAdmin(res);
+      const b = await body(req);
+      const me = await currentUser(req);
+      const out = p.endsWith('/test') ? await tcs2send.sendTest(db, String(b.sender || ''), me)
+        : await tcs2send.sendNext(db, String(b.sender || ''), String(b.batch || ''), me);
+      return json(res, out.ok ? 200 : 400, out.ok ? out : { error: out.why });
+    }
     if (p === '/api/tc/go/stage2' && req.method === 'GET') {
       const code = String(url.searchParams.get('sender') || '');
       if (!code) return json(res, 200, await tcgo.stage2Senders(db, await tcMe(req, url)));
