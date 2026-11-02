@@ -2663,6 +2663,18 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c a.c-line.tc-cline{text-decoration:none;color:inherit}
   html.ui-c .p-rows .c-line.tc-cline{grid-template-columns:minmax(0,1.4fr) minmax(0,1.3fr) 130px 150px}
   html.ui-c .tc-cline .c-acts{justify-self:end}
+  /* The bars on the left (02.11.2026, the owner's pick B) */
+  html.ui-c .tc-fside{display:grid;grid-template-columns:250px minmax(0,1fr);gap:16px;align-items:start} html.ui-c .tc-flist{min-width:0}
+  html.ui-c .tc-fpanel2{padding:14px;margin:0;position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}
+  html.ui-c .tc-fgrp{margin:0 0 14px} html.ui-c .tc-fgrp h3{font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--t3);margin:0 0 6px}
+  html.ui-c .tc-fbtn{all:unset;box-sizing:border-box;display:grid;grid-template-columns:1fr auto;gap:2px 8px;width:100%;padding:4px 6px;border-radius:6px;cursor:pointer}
+  html.ui-c .tc-fbtn:hover{background:var(--surface-2)} html.ui-c .tc-fbtn.on{background:#e6f2fb} html.ui-c .tc-fbtn:focus-visible{outline:2px solid var(--pet)}
+  html.ui-c .tc-fl{font-size:12.5px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap} html.ui-c .tc-fbtn.on .tc-fl{font-weight:700}
+  html.ui-c .tc-fn{font-size:12px;font-weight:600;color:var(--t3);text-align:right}
+  html.ui-c .tc-fbtn i{grid-column:1/-1;display:block;height:6px;border-radius:3px;background:#29a8df;box-shadow:0 0 0 0 transparent}
+  html.ui-c .tc-fbtn.on i{background:#0a2463}
+  html.ui-c .tc-fmore{all:unset;cursor:pointer;font-size:12.5px;color:#1e7bc4;padding:2px 6px}
+  @media (max-width:900px){ html.ui-c .tc-fside{grid-template-columns:minmax(0,1fr)} html.ui-c .tc-fpanel2{position:static;max-height:none} }
   /* Stage 2 sending (30.10.2026) */
   html.ui-c .tcs2x-ok{display:block;font-weight:700;color:#1e7bc4} html.ui-c .tcs2x-sub{display:block;color:var(--t3);font-size:11.5px}
   html.ui-c .tcs2x-wait{display:block;color:#8a5a00;font-size:11.5px;font-weight:600}
@@ -11233,7 +11245,7 @@ async function tcSavePlan(id) {
 }
 
 // ---- COMPANIES: Journey's List for companies - the status band, the filter row, search, one line each ----
-const T_F_EMPTY = () => ({ status: '', area: '', country: '', pic: '', client: '', info: '', due: '', year: '', cohort: '', last: '' });
+const T_F_EMPTY = () => ({ status: '', area: '', country: '', pic: '', client: '', info: '', due: '', year: '', cohort: '', last: '', course: '', since: '' });
 let T_F = T_F_EMPTY(); let T_Q = ''; let T_PAGE = 1; let T_LIST = null; let T_TITLE = 'Companies'; let T_KEEP = false; let T_SORT = 'name';
 let T_QT = 0; let T_MORE = false;
 // OWNERSHIP AND NEW ADDITIONS (29.10.2026, src/tcadd.js; the owner's picks: Make mine on Companies, a New additions tab with
@@ -11415,6 +11427,30 @@ async function tcMoreCompanies() {
 function tcFilter(k, v) { T_F[k] = v; T_PAGE = 1; tcLoadCompanies(); }
 function tcPickStatus(v) { tcFilter('status', T_F.status === v ? '' : v); }
 function tcClear() { T_F = T_F_EMPTY(); T_Q = ''; T_PAGE = 1; tcLoadCompanies(); }
+// THE BARS ON THE LEFT (02.11.2026, the owner's pick B, picture board-companies-filter): each value a small bar with its
+// count; a click filters, a second click on the same bar takes it off; Courses (GWO, BST, IRATA ...) is new.
+let T_FMORE = {};
+function tcFilterBars(L, M) {
+  const yr = Number(cTodayIso().slice(0, 4));
+  const groups = [
+    ['area', 'Area', L.facets.areas.filter(([, n]) => n > 0).map(([a, n]) => [a, a, n])],
+    ['course', 'Courses', (L.facets.courses || []).map(([c, n]) => [c, c, n])],
+    ['country', 'Country', L.facets.countries.filter(([c]) => c !== '-').map(([c, n]) => [c, c, n])],
+    ['status', 'Status', M.statuses.map((x) => [x.id, x.label, Number(L.counts.status[x.id] || 0)]).filter(([, , n]) => n > 0)],
+    ['since', 'Last course', (L.facets.since || []).map(([b, n]) => [b, { recent: `${yr - 1}-${String(yr).slice(-2)}`, mid: `${yr - 3}-${String(yr - 2).slice(-2)}`, old: `Before ${yr - 3}`, none: 'No course yet' }[b], n])],
+  ];
+  const any = groups.some(([k]) => T_F[k]);
+  const grp = ([k, h, vals]) => {
+    if (!vals.length) return '';
+    const max = Math.max(1, ...vals.map((v) => v[2]));
+    const open = T_FMORE[k], shown = open || vals.length <= 8 ? vals : vals.slice(0, 6);
+    return `<div class="tc-fgrp"><h3>${esc(h)}</h3>${shown.map(([v, label, n]) => `<button type="button" class="tc-fbtn${T_F[k] === v ? ' on' : ''}" aria-pressed="${T_F[k] === v}"
+        onclick="tcFilter(${esc(JSON.stringify(k))}, ${esc(JSON.stringify(T_F[k] === v ? '' : String(v)))})"><span class="tc-fl">${esc(label)}</span><span class="tc-fn">${tcN(n)}</span>
+        <i style="width:${Math.max(3, Math.round((n / max) * 100))}%"></i></button>`).join('')}
+      ${vals.length > shown.length || open ? `<button type="button" class="tc-fmore" onclick="T_FMORE.${k}=!T_FMORE.${k};tcDrawCompanies()">${open ? 'Fewer' : `+ ${vals.length - shown.length} more`}</button>` : ''}</div>`;
+  };
+  return `<aside class="c-sheet tc-fpanel2" aria-label="Filter the companies">${groups.map(grp).join('')}${any ? '<button type="button" class="tc-fmore" onclick="tcClearFilters()">Clear all</button>' : ''}</aside>`;
+}
 function tcDrawCompanies() {
   const L = T_LIST, M = T_META;
   const cols = M.statuses.map((s) => ({ id: s.id, label: s.label, n: L.counts.status[s.id] || 0 }));
@@ -11459,7 +11495,7 @@ function tcDrawCompanies() {
     act: `<a class="btn ghost" href="#/tc/families">Families</a><a class="btn ghost" href="#/tc/import">Import people</a><input class="c-search" id="tcQ" placeholder="Search company, city, country or person" value="${esc(T_Q)}" aria-label="Search companies and people">${tcDownloadMenu()}<button class="btn" onclick="tcOpenAdd()">Add company</button>`,
     band: tcAddnStrip(),
     filters: fbar,
-    body: cPoolRows(L.rows, row, 'No company matches. Remove a filter to widen the list.')
+    body: `<div class="tc-fside">${tcFilterBars(L, M)}<div class="tc-flist">${cPoolRows(L.rows, row, 'No company matches. Remove a filter to widen the list.')}</div></div>`
       + (L.total > L.rows.length ? `<div class="c-row-acts tc-more"><button class="btn ghost" onclick="tcMoreCompanies()">Show ${Math.min(100, L.total - L.rows.length)} more of ${Number(L.total - L.rows.length)}</button></div>` : '')
       + tcPeopleSheet(),
   });

@@ -107,7 +107,7 @@ async function readCompanyRows(db) {
     FROM tc_companies WHERE archived_at IS NULL AND hidden_at IS NULL`).all();   // hidden_at: flagged, hidden until approved (src/tcadd.js)
   const areaRows = await db.prepare(`SELECT a.company_id, a.area FROM tc_company_areas a
     JOIN tc_companies c ON c.id = a.company_id WHERE c.archived_at IS NULL`).all();
-  const courseRows = await db.prepare(`SELECT k.company_id, k.year, k.attendees FROM tc_company_courses k
+  const courseRows = await db.prepare(`SELECT k.company_id, k.year, k.attendees, k.course_codes FROM tc_company_courses k
     JOIN tc_companies c ON c.id = k.company_id WHERE c.archived_at IS NULL`).all();
   const taskRows = await db.prepare(`SELECT t.id, t.company_id, t.due_at, t.label, t.owner FROM tc_tasks t
     JOIN tc_companies c ON c.id = t.company_id WHERE t.done_at IS NULL AND c.archived_at IS NULL ORDER BY t.due_at`).all();
@@ -136,6 +136,8 @@ async function readCompanyRows(db) {
       delegates: ks.reduce((n, k) => n + (Number(k.attendees) || 0), 0),
       years: Object.fromEntries(ks.map((k) => [Number(k.year), Number(k.attendees) || 0])),   // delegates per year (TC Home, 20.10)
       lastYear: last ? Number(last.year) : null, lastYearN: last ? Number(last.attendees) : null,
+      // 02.11.2026 (the owner's pick B, the bars on the left): the course codes the company ever took (GWO, BST, IRATA ...)
+      courses: [...new Set(ks.flatMap((k) => courseCodes(k.course_codes)))],
       client: trained.length > 0,
       next: t ? { id: Number(t.id), due: t.due_at, label: t.label, owner: t.owner || '' } : null,
       createdAt: c.created_at,
@@ -159,6 +161,15 @@ export function lastBucket(c, y) {
   return last >= y ? 'recent' : last >= y - 2 ? 'mid' : 'old';
 }
 const yearOf = (v) => { const y = Number(v); return Number.isInteger(y) && y >= 1990 && y <= 2100 ? y : null; };
+/** The codes in a course cell ("GWO BST, IRATA/FOET"): upper case, 2 to 12 letters or digits each. */
+export function courseCodes(cell) {
+  return String(cell || '').toUpperCase().split(/[\s,;/+]+/).map((x) => x.trim()).filter((x) => /^[A-Z0-9-]{2,12}$/.test(x) && /[A-Z]/.test(x));
+}
+/** The latest course against this calendar year: recent (this or last year), mid (2-3 years ago), old, none. */
+export function sinceBucket(c, thisYear) {
+  if (!c.lastYear) return 'none';
+  return c.lastYear >= thisYear - 1 ? 'recent' : c.lastYear >= thisYear - 3 ? 'mid' : 'old';
+}
 export function matches(c, f, w, me = null) {
   const fy = yearOf(f.year);
   if (fy && !f.last && !((c.years || {})[fy] > 0)) return false;   // with last, the year is only what last is measured against
@@ -169,6 +180,8 @@ export function matches(c, f, w, me = null) {
   if (fy && f.last && lastBucket(c, fy) !== f.last) return false;
   if (f.status && c.status !== f.status) return false;
   if (f.area && !c.areas.includes(f.area)) return false;
+  if (f.course && !(c.courses || []).includes(String(f.course).toUpperCase())) return false;
+  if (f.since && sinceBucket(c, Number(w.today.slice(0, 4))) !== f.since) return false;
   if (f.country === '-' ? c.country : f.country === '*' ? !c.country : f.country && c.country !== f.country) return false;
   if (f.pic === '-' ? c.pic : f.pic === 'me' ? !isMine(c, me) : f.pic && c.picKey !== f.pic && c.pic !== f.pic) return false;
   if (f.client === 'yes' && !c.client) return false;
@@ -181,7 +194,7 @@ export function matches(c, f, w, me = null) {
   }
   return true;
 }
-export const FILTER_KEYS = ['status', 'area', 'country', 'pic', 'client', 'info', 'due', 'q', 'year', 'cohort', 'last'];
+export const FILTER_KEYS = ['status', 'area', 'country', 'pic', 'client', 'info', 'due', 'q', 'year', 'cohort', 'last', 'course', 'since'];
 export function readFilters(params) {
   const f = {};
   for (const k of FILTER_KEYS) { const v = params.get ? params.get(k) : params[k]; if (v) f[k] = String(v).slice(0, 200); }
@@ -229,6 +242,9 @@ export async function listCompanies(db, filters = {}, { page = 1, size = 100, so
       mine: mk ? counted.filter((c) => isMine(c, mk)).length : 0,
       all: counted.length,
       areas: AREA_IDS.map((a) => [a, counted.filter((c) => c.areas.includes(a)).length]),
+      // the bars on the left (02.11.2026): the courses most companies took, and the latest course against this year
+      courses: tally(counted.flatMap((c) => (c.courses || []).map((x) => ({ x }))), (o) => o.x).sort((a, b) => b[1] - a[1] || byLv(a[0], b[0])).slice(0, 24),
+      since: ['recent', 'mid', 'old', 'none'].map((b) => [b, counted.filter((c) => sinceBucket(c, Number(w.today.slice(0, 4))) === b).length]),
     },
   };
 }
