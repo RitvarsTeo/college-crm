@@ -2663,6 +2663,15 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c a.c-line.tc-cline{text-decoration:none;color:inherit}
   html.ui-c .p-rows .c-line.tc-cline{grid-template-columns:minmax(0,1.4fr) minmax(0,1.3fr) 130px 150px}
   html.ui-c .tc-cline .c-acts{justify-self:end}
+  /* Families cards and the company row chips (02.11.2026, the owner's pick "Yes, build all") */
+  html.ui-c .tcfam-card{grid-template-columns:200px minmax(0,1fr) auto} html.ui-c .tcfam-chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  html.ui-c .tcfam-n{font-size:12px;font-weight:700;background:#0a2463;color:#fff;border-radius:999px;padding:4px 10px}
+  html.ui-c .tcfam-chip{font-size:12px;background:var(--surface-2);color:var(--ink);border-radius:999px;padding:4px 10px;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  html.ui-c .tcfam-more{all:unset;cursor:pointer;font-size:12px;color:#1e7bc4}
+  html.ui-c .tc-rowtop{display:flex;gap:8px;align-items:center;flex-wrap:wrap} html.ui-c .tc-rowtop .tc-area{font-size:10.5px;font-weight:700;letter-spacing:.05em;color:#1e7bc4}
+  html.ui-c .tc-rowsub{display:flex;gap:6px;align-items:center;margin-top:4px;flex-wrap:wrap;font-size:12px;color:var(--t3)}
+  html.ui-c .tc-ychip{font-size:12px;font-weight:600;background:#e6f2fb;color:var(--ink);border-radius:999px;padding:3px 9px}
+  html.ui-c .tc-ini{margin-left:auto;font-size:11px;font-weight:700;background:#0a2463;color:#fff;border-radius:999px;width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center}
   /* The bars on the left (02.11.2026, the owner's pick B) */
   html.ui-c .tc-fside{display:grid;grid-template-columns:250px minmax(0,1fr);gap:16px;align-items:start} html.ui-c .tc-flist{min-width:0}
   html.ui-c .tc-fpanel2{padding:14px;margin:0;position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}
@@ -2681,6 +2690,8 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tcs2x-btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px} html.ui-c .tcs2x-btns .btn[disabled]{opacity:.45;cursor:not-allowed}
   html.ui-c .tcs2x-connect{margin:0 0 10px;font-size:13px} html.ui-c .tcs2x-log{padding:14px 20px;margin:12px 0}
   html.ui-c .tcs2x-lrow{display:grid;grid-template-columns:240px 110px 1fr 140px;gap:12px;padding:6px 0;border-top:1px solid var(--rule2);font-size:13px} html.ui-c .tcs2x-lrow small{color:var(--t3)}
+  html.ui-c .tc-hfold > summary{cursor:pointer;list-style:none} html.ui-c .tc-hfold > summary::-webkit-details-marker{display:none}
+  html.ui-c .tc-hfold > summary h2::before{content:'▸ '} html.ui-c .tc-hfold[open] > summary h2::before{content:'▾ '}
   html.ui-c .tc-guides{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin:0 0 18px;align-items:start}
   html.ui-c .tc-guide{padding:14px 18px;margin:0} html.ui-c .tc-guide summary{cursor:pointer} html.ui-c .tc-guide ol{margin:10px 0 2px 18px;padding:0;line-height:1.6}
   /* Ownership and New additions (29.10.2026) */
@@ -11005,7 +11016,8 @@ async function viewTcHome() {
   const exWhen = ex && /^\d{4}-\d{2}/.test(String(ex.startsOn || '')) ? new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', month: 'long',
     ...(String(ex.startsOn).slice(0, 4) !== D.asOf.slice(0, 4) ? { year: 'numeric' } : {}) }).format(new Date(String(ex.startsOn).slice(0, 10) + 'T12:00:00Z')) : '';
   const p = D.delegates.prev;
-  const delta = p ? `<span class="kdelta${D.delegates.n > p.n ? ' up' : D.delegates.n < p.n ? ' down' : ''}">${Y} <b>${tcN(D.delegates.n)}</b> · vs ${Number(p.year)} ${tcN(p.n)} · ${D.delegates.n - p.n > 0 ? '+' : ''}${tcN(D.delegates.n - p.n)}</span>` : '';
+  // the owner 02.11.2026 ("Yes, build all"): the year and the year before side by side, no difference with a minus
+  const delta = p ? `<span class="kdelta">${Y} <b>${tcN(D.delegates.n)}</b> · ${Number(p.year)} <b>${tcN(p.n)}</b></span>` : '';
   const split = D.clients.n ? `<div class="tc-split" role="group" aria-label="Came back and new">
       <a href="#/tc/companies" onclick="tcGoYear(${Number(Y)}, 'back');return false" class="back" style="flex:${D.clients.back} 1 0" title="came back: ${D.clients.back}"></a>
       <a href="#/tc/companies" onclick="tcGoYear(${Number(Y)}, 'new');return false" class="new" style="flex:${D.clients.fresh} 1 0" title="new: ${D.clients.fresh}"></a></div>
@@ -11198,7 +11210,7 @@ async function viewTcBook() {
       <b class="tc-wb-n">${tcN(c.n)}</b>${c.next ? `<a class="tc-wb-planned" href="#/tc/company/${Number(c.id)}">Planned ${esc(tcDdMm(c.next.due))}</a>`
         : `<button class="btn sm ghost" onclick="tcOpenPlan(${Number(c.id)}, ${esc(JSON.stringify(String(c.name ?? '')))})">Plan a call</button>`}</div>`;
   $('#view').innerHTML = `<div class="kpage kb tc-book">
-    <div class="khead"><div><h1>Client book</h1><p class="c-crumb" style="margin:0">Training Centre ${Y}${B.countsTo ? ` · course counts to ${esc(tcDay(B.countsTo))}` : ''}</p></div>${tcYearSel(B)}</div>
+    <div class="khead"><div><h1>Client book</h1><p class="c-crumb" style="margin:0">Training Centre ${Y}</p></div>${tcYearSel(B)}</div>
     ${tcBookCards(B)}
     <div class="tc-bookgrid">
       <section class="c-sheet tc-big"><h3>Biggest clients ${Y}<span class="c-h3acts tc-seg" role="group" aria-label="Which clients">${seg.map(([v, label, on]) => `<button type="button" class="${on ? 'on' : ''}" aria-pressed="${Boolean(on)}"
@@ -11485,8 +11497,9 @@ function tcDrawCompanies() {
   const st = (c) => tcStatus(c.status).label + (c.statusDetail ? ' · ' + tcMeeting(c.statusDetail) : '');
   const row = (c) => `<a class="c-line tc-cline" href="#/tc/company/${Number(c.id)}">
       <div class="c-who"><b>${esc(c.name)}</b><small class="c-reach${tcPlace(c) ? '' : ' c-gap'}">${esc(tcPlace(c) || 'country not recorded')}</small></div>
-      <div class="c-what"><span class="p-stage">${esc(st(c))}</span>${c.areas.length ? ' · ' + esc(c.areas.join(', ')) : ''}<small class="p-step">${c.lastYear
-        ? `${Number(c.lastYear)} · ${tcDelegates(c.lastYearN)} · ${Number(c.delegates)} in all` : 'no course yet'}${c.pic ? ' · ' + esc(c.pic) : ''}</small></div>
+      <div class="c-what"><div class="tc-rowtop"><span class="p-stage">${esc(st(c))}</span>${c.areas.map((a) => `<span class="tc-area">${esc(a)}</span>`).join('')}</div>
+        <div class="tc-rowsub">${c.lastYear ? `<span class="tc-ychip">${Number(c.lastYear)} · ${tcDelegates(c.lastYearN)}</span><span>${Number(c.delegates)} in all</span>` : '<span>no course yet</span>'}${c.pic
+          ? `<span class="tc-ini" title="${esc(c.pic)}">${esc(String(c.pic).split(/[\s;]+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase())}</span>` : ''}</div></div>
       <div class="c-when">${c.next ? `<span class="c-when ${tcWhen(c.next.due)}">${esc(tcWhenText(c.next.due))}</span>` : ''}</div>
       <div class="c-acts">${c.family ? `<span class="c-tag tcfam-tag">${esc(c.family.name)} family · ${Number(c.family.n)}</span>` : ''}${c.info ? '<span class="c-tag">Information to send</span>' : ''}${tcMineHtml(c)}</div></a>`;
   $('#view').innerHTML = cPoolFrame({
@@ -11750,12 +11763,19 @@ async function viewTcFamilies(keep) {
   T_FAM = { ...r, tab, limit, pick: null };
   tcFamDraw();
 }
+let T_FAM_OPEN = -1;
 function tcFamDraw() {
   const F = T_FAM, S = F.suggestions;
   const seg = `<div class="c-seg" role="group" aria-label="Which families"><button aria-pressed="${F.tab === 'done'}" onclick="T_FAM.tab='done';tcFamDraw()">Confirmed <b>${tcN(F.families.length)}</b></button>
     <button aria-pressed="${F.tab === 'look'}" onclick="T_FAM.tab='look';tcFamDraw()">To look at <b>${tcN(S.total)}</b></button></div>`;
   const names = (m) => m.slice(0, 4).map((c) => esc(c.name) + (c.country ? ` (${esc(c.country)})` : '')).join(', ') + (m.length > 4 ? `, +${m.length - 4}` : '');
-  const sug = (s, i) => `<div class="tcfam-sug"><div><b>${esc(s.label)}</b><small>${tcN(s.members.length)} companies: ${names(s.members)}</small></div><small>${esc(s.why)}</small>
+  // the owner 02.11.2026 ("Yes, build all"): a card per suggestion - its name and why in plain words, a count badge, three
+  // companies as chips and + N more that opens the rest
+  const why = (s) => s.why === 'same web domain' ? `Same web domain ${s.label}` : `Name starts “${s.label}”`;
+  const chips = (s, i) => { const all = T_FAM_OPEN === i; const list = all ? s.members : s.members.slice(0, 3);
+    return `<span class="tcfam-n">${tcN(s.members.length)} companies</span>${list.map((c) => `<span class="tcfam-chip" title="${esc(c.name + (c.country ? ' (' + c.country + ')' : ''))}">${esc(c.name)}</span>`).join('')}${s.members.length > 3
+      ? `<button type="button" class="tcfam-more" onclick="T_FAM_OPEN=T_FAM_OPEN===${i}?-1:${i};tcFamDraw()">${all ? 'Fewer ▴' : `+ ${tcN(s.members.length - 3)} more ▾`}</button>` : ''}`; };
+  const sug = (s, i) => `<div class="tcfam-sug tcfam-card"><div><b>${esc(s.label)}</b><small>${esc(why(s))}</small></div><div class="tcfam-chips">${chips(s, i)}</div>
       <div class="tcfam-btns"><button type="button" class="btn sm" onclick="tcFamPick(${i})">Confirm</button><button type="button" class="btn sm ghost" onclick="tcFamNo(${i})">Not a family</button></div></div>
       ${F.pick && F.pick.i === i ? tcFamPickHtml() : ''}`;
   const fam = (f) => `<a class="tcfam-sug tcfam-done" href="#/tc/company/${Number(f.parentId)}"><div><b>${esc(f.name)}</b><small>${tcN(f.companies)} companies</small></div>
@@ -12837,8 +12857,8 @@ function viewTcHelp() {
   const guides = (H.guides || []).map((g) => `<details class="c-sheet tc-guide"><summary><b>${esc(g.title)}</b></summary><ol>${g.steps.map((x) => `<li>${esc(x)}</li>`).join('')}</ol></details>`).join('');
   $('#view').innerHTML = `<div class="c-head"><div><h1>Help center</h1></div><div class="act"><button class="btn ghost" onclick="tcStartTour(this)">Take the tour</button><button class="btn" onclick="fbOpen('BUG')">Report a problem</button></div></div>
     ${guides ? `<h2 class="c-set-h">Step by step</h2><div class="tc-guides">${guides}</div>` : ''}
-    <h2 class="c-set-h">How to</h2><div class="c-sheet c-set">${how}</div>
-    <h2 class="c-set-h">Questions and answers</h2><div id="helpFaq" class="c-helpfaq"></div>
+    <details class="tc-hfold"><summary><h2 class="c-set-h">How to</h2></summary><div class="c-sheet c-set">${how}</div></details>
+    <details class="tc-hfold"><summary><h2 class="c-set-h">Questions and answers</h2></summary><div id="helpFaq" class="c-helpfaq"></div></details>
     ${isAdmin() ? '<h2 class="c-set-h">For admins</h2><div class="c-helpadmin"><a href="#/access">People and access</a><a href="#/tc/review">Review list (from Client Hub)</a></div>' : ''}`;
   if (window.HelpCenter) HelpCenter.mount(document.getElementById('helpFaq'), { faq: H.faq || [], onAsk: (text) => fbOpen('QUESTION', text) });
 }

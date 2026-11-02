@@ -51,10 +51,10 @@ test('the year: four cards, the TOTAL row in none of them, 2024 a plain number',
   const h = await th.homeYear(db, { year: 2025, me: ME });
   assert.equal(h.year, 2025);
   assert.equal(h.delegates.n, 135, '100 + 30 + 5, not the group row\'s 100 again');
-  // compared with config/tc.json home.compareYearsBack years before (2 for now: 2025 vs 2023, as the picked picture)
-  assert.equal(tc.TC.home.compareYearsBack, 2);
-  assert.equal(th.compareBack(), 2);
-  assert.deepEqual(h.delegates.prev, { year: 2023, n: 75 });
+  // compared with the year before (the owner's pick 02.11.2026, config/tc.json home.compareYearsBack = 1)
+  assert.equal(tc.TC.home.compareYearsBack, 1);
+  assert.equal(th.compareBack(), 1);
+  assert.deepEqual(h.delegates.prev, { year: 2024, n: 15 });
   assert.deepEqual(h.clients, { n: 3, back: 1, fresh: 2 });
   assert.deepEqual(h.newClients, { n: 2, delegates: 35, largest: [{ id: ids.fresh, name: 'Sample Wind GmbH', n: 30 }, { id: ids.fresh2, name: 'Demo Tankers Ltd', n: 5 }] });
   assert.deepEqual(h.countries, { clients: 3, all: 7 }, 'TOTAL is not a country');

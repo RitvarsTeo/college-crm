@@ -31,8 +31,8 @@
   "nextLabel": "Next communication",
   "weekDays": 7,
   "home": {
-    "_compareYearsBack": "TC Home's Delegates card compares the year with this many years before it. 2 for now (MASTER CONTROL 20.10.2026, as the owner's picked picture M1: 2025 vs 2023, because most 2024 counts are missing in the Excel); 1 = the year before. The owner's keep / change is asked.",
-    "compareYearsBack": 2
+    "_compareYearsBack": "TC Home's Delegates card compares the year with this many years before it. 1 = the year before (the owner's pick 02.11.2026, Yes, build all: the year before, no minus; 2024 reads the management review, so it is whole).",
+    "compareYearsBack": 1
   },
   "defaults": {
     "_provisional": "The owner's answers are still open (19.10.2026); these are the build's defaults until then.",
@@ -125,7 +125,7 @@
       "senders": [
         { "code": "Marcis", "label": "Mārcis", "name": "Mārcis Žabovs", "email": "marcis.zabovs@novikontas.org" },
         { "code": "DS", "label": "DS", "name": "Dmitrijs Semjonovs", "email": "ds@novikontas.org" },
-        { "code": "MC", "label": "MC", "name": "Māris Cirulis", "email": "mc@novikontas.org" },
+        { "code": "MC", "label": "MC", "name": "Māris Cīrulis", "email": "mc@novikontas.org" },
         { "code": "AB", "label": "AB", "name": "Aleksejs Bogdaņecs", "email": "ab@novikontas.org" },
         { "code": "Alma", "label": "Alma", "name": "Aleksejs Maļinovskis", "email": "alma@novikontas.org" },
         { "code": "JS", "label": "JS", "name": "Jānis Sticenko", "email": "js@novikontas.org" }
