@@ -2663,6 +2663,11 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c a.c-line.tc-cline{text-decoration:none;color:inherit}
   html.ui-c .p-rows .c-line.tc-cline{grid-template-columns:minmax(0,1.4fr) minmax(0,1.3fr) 130px 150px}
   html.ui-c .tc-cline .c-acts{justify-self:end}
+  /* My clients on TC Home (04.11.2026) */
+  html.ui-c .tc-mine-card{padding:16px 22px 8px;margin:0 0 16px;border-top:3px solid #53a7db}
+  html.ui-c .tc-mrow{display:grid;grid-template-columns:minmax(0,1.4fr) 180px 140px 80px;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--rule2);color:inherit;text-decoration:none}
+  html.ui-c .tc-mrow b{display:block} html.ui-c .tc-mrow small{display:block;color:var(--t3);font-size:12px} html.ui-c .tc-mrow:hover{background:var(--surface-2)}
+  @media (max-width:760px){ html.ui-c .tc-mrow{grid-template-columns:minmax(0,1fr) auto} html.ui-c .tc-mrow > span:nth-child(2), html.ui-c .tc-mrow > span:nth-child(3){display:none} }
   /* Families cards and the company row chips (02.11.2026, the owner's pick "Yes, build all") */
   html.ui-c .tcfam-card{grid-template-columns:200px minmax(0,1fr) auto} html.ui-c .tcfam-chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
   html.ui-c .tcfam-n{font-size:12px;font-weight:700;background:#0a2463;color:#fff;border-radius:999px;padding:4px 10px}
@@ -10900,7 +10905,7 @@ async function tcRoute(hash) {
     else if (place === 'families') await viewTcFamilies();   // the owner's pick B, 28.10.2026
     else if (place === 'import') viewTcImport();   // the owner's pick A, 28.10.2026
     else if (place === 'additions') await viewTcAdditions();   // the owner, 29.10.2026: New additions, approve or flag
-    else { await viewTcHome(); tcTourFirst(); }
+    else { await viewTcHome(); tcMyClients(); tcTourFirst(); }
     cOpenView();
   } catch (e) {
     $('#view').innerHTML = `<div class="err">Failed to load: ${esc(e.message)}</div>`;
@@ -11005,6 +11010,20 @@ function tcWeekRows(rows) {
       <a class="btn sm ghost" href="#/tc/company/${Number(r.companyId)}">Log</a></div>`).join('')}</div>`).join('');
 }
 
+// MY CLIENTS ON HOME (04.11.2026, the owner's pick: "Clients under clients, but Home should have a clear shortcut!"): an account
+// with companies in its charge sees them first on TC Home - the next contact first, the last course, Plan - and All of mine.
+async function tcMyClients() {
+  let L; try { L = await api('/api/tc/companies?pic=me&size=6&sort=next&only=1'); } catch (e) { return; }
+  const k = document.querySelector('#view .khead');
+  if (!L || !Number(L.total) || !k || document.querySelector('.tc-mine-card')) return;
+  const row = (c) => `<a class="tc-mrow" href="#/tc/company/${Number(c.id)}"><div><b>${esc(c.name)}</b><small>${esc(tcPlace(c) || 'country not recorded')}</small></div>
+      <span>${c.lastYear ? `<span class="tc-ychip">${Number(c.lastYear)} · ${tcDelegates(c.lastYearN)}</span>` : '<small>no course yet</small>'}</span>
+      <span>${c.next ? `<span class="c-when ${tcWhen(c.next.due)}">${esc(tcWhenText(c.next.due))}</span>` : ''}</span>
+      <span>${c.next ? '' : `<button type="button" class="btn sm ghost" onclick="event.preventDefault();event.stopPropagation();tcOpenPlan(${Number(c.id)}, ${esc(JSON.stringify(String(c.name ?? '')))})">Plan</button>`}</span></a>`;
+  k.insertAdjacentHTML('afterend', `<section class="c-sheet tc-mine-card" aria-label="My clients"><div class="tcgo-bh"><h2>My clients · ${tcN(L.total)}</h2>
+      <a class="kgo" href="#/tc/companies" onclick="T_F={ ...T_F_EMPTY(), pic: 'me' };T_KEEP=true;cGo('#/tc/companies');return false">All ${tcN(L.total)} of mine →</a></div>
+    ${L.rows.map(row).join('')}</section>`);
+}
 async function viewTcHome() {
   const D = await api('/api/tc/overview' + (T_YEAR ? '?year=' + Number(T_YEAR) : ''));
   T_HOME = D; T_YEAR = D.year;
