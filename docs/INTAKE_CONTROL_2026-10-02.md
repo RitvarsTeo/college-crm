@@ -1134,3 +1134,4 @@ Seen: GitHub - no Aigars commits since 309b10f; crm-novikontas.vercel.app = 1ced
 - 04.11 HIS WORDS: launch note to the TC team "already sent!"; Stage 2 email 1 text: Aleksejs B. "is working on it".
 - 04.11 Connect sending DONE (his click): Intake sees the Send mail as addresses. Confirmed: Mārcis (325 left), MC (341), JS (117). Not confirmed yet: DS (501), AB (270), Alma (7). Nothing sent.
 - 04.11 HIS PICK: puzzle grid "32x32 it is" (1,024 places on the 1.5 x 1.5 m board); the Grand Opening session remakes the position codes and QR set.
+- 04.11 SAID (his words): "now we need to have the same qr idea to the digital invitations also" + a full list of companies split into met physically (physical gift) vs digital only; question whether the digital goes after the RSVP send (RSVP is for everyone) or the QR is in it too, matching the physical piece (each company has a unique id).
