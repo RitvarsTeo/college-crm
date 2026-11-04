@@ -1129,3 +1129,4 @@ Seen: GitHub - no Aigars commits since 309b10f; crm-novikontas.vercel.app = 1ced
   3. SAID: mother-company grouping for item 2 (Intake has Families: 40 confirmed, parent + companies - the base for it).
   4. SAID (later): post-event gift - photo of each guest + album (QR on a banner); the same piece with a physical lighthouse.
   5. FACT: Send mail as confirmed for Jānis, Māris, Mārcis; still AB, DS, Alma. Email 1 picture now 27.05.2005 -> 27.05.2027; email 1 text being re-agreed with Aleksejs B. Nothing sent from any of the six.
+- 04.11 HIS PICK (pictures Projects/Pitches/intake-tc/board-owner-start/): "Clients under clients, but Home should have a clear shortcut!" = the owner's own list stays under Clients (Companies opens on Mine); TC Home gets a clear MY CLIENTS shortcut card (top companies, last course, next contact, Plan, All N of mine). No new menu item.
