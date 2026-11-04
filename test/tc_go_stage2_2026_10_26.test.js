@@ -68,7 +68,7 @@ test('the page: tabs, search, Download; no Who answered and no answered totals; 
   }
   const fn = app.slice(app.indexOf('function tcGoStage2('), app.indexOf('const tcGoCrumb = '));
   assert.match(fn, /<h2>Stage 2 lists<\/h2>/);
-  assert.match(fn, /placeholder="Search name or company"/);
+  assert.match(fn, /placeholder="Search company or person"/);
   assert.match(fn, /href="\/api\/tc\/go\/stage2\.xlsx\?sender=\$\{encodeURIComponent\(S\.code\)\}" download>Download<\/a>/);
   assert.doesNotMatch(app, /Who answered|Answered<|Coming</, 'no answered totals anywhere on the page');
   assert.match(app, /T_S2\.code = code \|\| T_S2\.code \|\| \(T_S2\.senders\.find\(\(x\) => x\.code === T_S2\.mine\) \|\| T_S2\.senders\[0\]\)\.code;/, 'opens on my own list');

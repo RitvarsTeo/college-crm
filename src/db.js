@@ -865,6 +865,14 @@ CREATE TABLE IF NOT EXISTS tc_go_s2_log (
   started_at TEXT NOT NULL,
   started_by TEXT
 );
+-- The Grand Opening gift per company (04.11.2026, the owner's pick: the company tiles): physical piece or digital only.
+-- company_key = 'id:<tc_companies.id>' or 'n:<the company name in lower case>' for a Stage 2 company Intake does not hold.
+CREATE TABLE IF NOT EXISTS tc_go_gifts (
+  company_key TEXT PRIMARY KEY,
+  kind TEXT NOT NULL,              -- physical | digital
+  set_at TEXT NOT NULL,
+  set_by TEXT
+);
 CREATE TABLE IF NOT EXISTS tc_google_links (
   user_email TEXT PRIMARY KEY,
   token TEXT NOT NULL,

@@ -3720,10 +3720,15 @@ export const handle = async (req, res) => {
         : await tcs2send.sendNext(db, String(b.sender || ''), String(b.batch || ''), me);
       return json(res, out.ok ? 200 : 400, out.ok ? out : { error: out.why });
     }
+    // THE GIFT PER COMPANY (04.11.2026): Physical or Digital on a company tile; any Training Centre account sets it
+    if (p === '/api/tc/go/gift' && req.method === 'POST') {
+      try { const b = await body(req); return json(res, 200, await tcgo.setGift(db, String(b.key || ''), String(b.kind || ''), await actorOf(req, b))); }
+      catch (e) { if (e instanceof tc.TcInputError) return json(res, 400, { error: e.message }); throw e; }
+    }
     if (p === '/api/tc/go/stage2' && req.method === 'GET') {
       const code = String(url.searchParams.get('sender') || '');
       if (!code) return json(res, 200, await tcgo.stage2Senders(db, await tcMe(req, url)));
-      try { return json(res, 200, { sender: code, rows: await tcgo.stage2List(db, code, await tcrsvp.answers()) }); }
+      try { return json(res, 200, { sender: code, rows: await tcgo.stage2List(db, code, await tcrsvp.answers()), gifts: await tcgo.giftMap(db) }); }
       catch (e) { if (e instanceof tc.TcInputError) return json(res, 400, { error: e.message }); throw e; }
     }
     if (p === '/api/tc/go/stage2.xlsx' && req.method === 'GET') {
