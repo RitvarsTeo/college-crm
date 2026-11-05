@@ -3747,6 +3747,15 @@ export const handle = async (req, res) => {
       try { const ans = await tcrsvp.answers(); return json(res, 200, { sender: code, rows: await tcgo.stage2List(db, code, ans), gifts: await tcgo.giftMap(db), met: await tcgo.metKeys(db), places: await tcgo.placesForYes(db, ans) }); }
       catch (e) { if (e instanceof tc.TcInputError) return json(res, 400, { error: e.message }); throw e; }
     }
+    // CHECK-IN AT THE DOOR (05.11.2026, src/tcgo.js doorCard / checkIn): any Training Centre account
+    if (p === '/api/tc/go/door' && req.method === 'GET') {
+      try { return json(res, 200, await tcgo.doorCard(db, String(url.searchParams.get('p') || ''), await tcrsvp.answers())); }
+      catch (e) { if (e instanceof tc.TcInputError) return json(res, 400, { error: e.message }); throw e; }
+    }
+    if (p === '/api/tc/go/door' && req.method === 'POST') {
+      try { const b = await body(req); return json(res, 200, await tcgo.checkIn(db, String(b.p || ''), b.people, await actorOf(req, b))); }
+      catch (e) { if (e instanceof tc.TcInputError) return json(res, 400, { error: e.message }); throw e; }
+    }
     // THE PHYSICAL LIST (05.11.2026): the companies set to Physical, with place, people and address, as a file
     if (p === '/api/tc/go/physical.xlsx' && req.method === 'GET') {
       const list = await tcgo.physicalList(db, await tcrsvp.answers());

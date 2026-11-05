@@ -618,3 +618,40 @@ export async function physicalList(db, answers = null) {
   }
   return [...by.values()].map((g) => ({ ...g, lists: [...g.lists].join(', ') })).sort((a, b) => a.company.localeCompare(b.company, 'lv'));
 }
+
+// CHECK-IN AT THE DOOR (05.11.2026): the guest shows the QR (novikontas.org/grand-opening?p=13H) or says the code; the door
+// sees the company, its place, who said Yes and how many, and taps Arrived.
+export const placeFromText = (t) => {
+  const m = /[?&]p=([0-9]{1,2}[A-Za-z]{1,2})\b/.exec(String(t || '')) || /^\s*([0-9]{1,2}[A-Za-z]{1,2})\s*$/.exec(String(t || ''));
+  const code = m ? m[1].toUpperCase() : '';
+  return PLACE_CODES.includes(code) ? code : '';
+};
+export async function doorCard(db, text, answers = null) {
+  const code = placeFromText(text);
+  if (!code) throw new TcInputError('That is not a place code. Try like 13H.');
+  const pl = await db.prepare(`SELECT company_key, company FROM tc_go_places WHERE code = ?`).get(code);
+  const arrived = await db.prepare(`SELECT people, arrived_at, arrived_by FROM tc_go_checkins WHERE code = ?`).get(code);
+  const totals = await doorTotals(db);
+  if (!pl) return { code, company: null, people: [], expected: 0, arrived: arrived || null, totals };
+  const rows = await db.prepare(`SELECT s.ch_contact_id, s.name, s.company, k.company_id FROM tc_go_stage2 s
+    LEFT JOIN tc_company_contacts k ON k.ch_contact_id = s.ch_contact_id AND k.archived_at IS NULL WHERE s.gone = 0`).all();
+  const ans = new Map((answers || []).map((a) => [a.chContactId, a]));
+  const people = rows.filter((r) => giftKey(r.company_id, r.company) === pl.company_key).map((r) => ({ name: r.name || '', answer: (ans.get(r.ch_contact_id) || {}).answer || null,
+    people: (ans.get(r.ch_contact_id) || {}).people || 0 })).filter((x) => x.answer === 'yes' || x.answer === 'maybe');
+  return { code, company: pl.company, gift: (await giftMap(db))[pl.company_key] || null, people, expected: people.filter((x) => x.answer === 'yes').reduce((n, x) => n + Number(x.people || 1), 0),
+    arrived: arrived || null, totals };
+}
+export async function doorTotals(db) {
+  const r = await db.prepare(`SELECT COUNT(*) AS n, COALESCE(SUM(people), 0) AS p FROM tc_go_checkins`).get();
+  const placed = await db.prepare(`SELECT COUNT(*) AS n FROM tc_go_places`).get();
+  return { companies: Number(r.n) || 0, people: Number(r.p) || 0, placed: Number(placed.n) || 0 };
+}
+export async function checkIn(db, text, people, actor) {
+  const code = placeFromText(text);
+  if (!code) throw new TcInputError('That is not a place code. Try like 13H.');
+  const n = Math.round(Number(people));
+  if (!(n >= 1 && n <= 30)) throw new TcInputError('How many people came?');
+  await db.prepare(`INSERT INTO tc_go_checkins (code, people, arrived_at, arrived_by) VALUES (?,?,?,?)
+    ON CONFLICT (code) DO UPDATE SET people = excluded.people, arrived_at = excluded.arrived_at, arrived_by = excluded.arrived_by`).run(code, n, new Date().toISOString(), actor);
+  return { code, people: n };
+}

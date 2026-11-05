@@ -29,3 +29,25 @@ test('a Yes company gets the next free place, first Yes first; again changes not
   assert.equal(list.length, 1);
   assert.equal(list[0].place, '2A'); assert.equal(list[0].yes, true); assert.equal(list[0].people.length, 2); assert.equal(list[0].lists, 'JS');
 });
+
+test('check-in at the door: the QR link or the code finds the place; Arrived with a count; again updates it', async () => {
+  const db = await openDb();
+  assert.equal(go.placeFromText('https://novikontas.org/grand-opening?p=13H'), '13H');
+  assert.equal(go.placeFromText(' 13h '), '13H');
+  assert.equal(go.placeFromText('33A'), '');
+  assert.equal(go.placeFromText('https://evil.example/?p=1A&x'), '1A');
+  await assert.rejects(go.doorCard(db, 'hello'), /not a place code/);
+  const at = new Date().toISOString();
+  await db.prepare(`INSERT INTO tc_go_stage2 (ch_contact_id, sender, name, company, position, country, email, gone, loaded_at, loaded_by) VALUES (?,?,?,?,?,?,?,0,?,?)`)
+    .run('D1', 'MC', 'Anna Example', 'Door Example AS', '', 'Norway', 'd1@example.com', at, 'test');
+  const answers = [{ chContactId: 'D1', answer: 'yes', people: 2, at }];
+  const places = await go.placesForYes(db, answers);
+  const code = places['n:door example as'];
+  let c = await go.doorCard(db, code, answers);
+  assert.equal(c.company, 'Door Example AS'); assert.equal(c.expected, 2); assert.equal(c.arrived, null);
+  await go.checkIn(db, code, 2, 'Ritvars');
+  await go.checkIn(db, code, 3, 'Ritvars');
+  c = await go.doorCard(db, code, answers);
+  assert.equal(Number(c.arrived.people), 3); assert.equal(c.totals.companies, 1); assert.equal(c.totals.people, 3);
+  await assert.rejects(go.checkIn(db, code, 0, 'Ritvars'), /How many/);
+});

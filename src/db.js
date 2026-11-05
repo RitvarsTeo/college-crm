@@ -876,6 +876,14 @@ CREATE TABLE IF NOT EXISTS tc_go_places (
   assigned_at TEXT NOT NULL,
   assigned_by TEXT
 );
+-- Check-in at the door on 27.05.2027 (05.11.2026): one row per company place when its guests arrive; a second check-in
+-- updates the count. Never deleted.
+CREATE TABLE IF NOT EXISTS tc_go_checkins (
+  code TEXT PRIMARY KEY,           -- the place code, as on the QR ('13H')
+  people INTEGER NOT NULL,
+  arrived_at TEXT NOT NULL,
+  arrived_by TEXT
+);
 CREATE TABLE IF NOT EXISTS tc_go_gifts (
   company_key TEXT PRIMARY KEY,
   kind TEXT NOT NULL,              -- physical | digital | none (a cleared pick, 05.11.2026)

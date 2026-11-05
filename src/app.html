@@ -2671,6 +2671,13 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tcs2-tile:hover{box-shadow:var(--lift-hover)} html.ui-c .tcs2-tile.phys{border-color:#0a2463;box-shadow:inset 0 0 0 1px #0a2463}
   html.ui-c .tcs2-tile b{font-size:12.5px;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;padding-right:34px}
   html.ui-c .tcs2-tile small{font-size:11px;color:var(--t3)} html.ui-c .tcs2-yes{position:absolute;top:8px;right:8px;font-size:10.5px;font-weight:700;color:#1e7bc4}
+  html.ui-c .tc-door{padding:20px 22px} html.ui-c .tc-door-f{display:flex;gap:8px;flex-wrap:wrap} html.ui-c .tc-door-f .c-search{flex:1;min-width:180px;font-size:20px;text-transform:uppercase}
+  html.ui-c #tcDoorCam{width:100%;max-width:420px;margin-top:12px;border-radius:10px}
+  html.ui-c .tc-door-card{margin-top:16px;padding:18px;border:1px solid var(--rule2);border-radius:12px} html.ui-c .tc-door-card.in{border-color:#1e7bc4;box-shadow:inset 0 0 0 1px #1e7bc4}
+  html.ui-c .tc-door-code{font-size:28px;font-weight:800;color:#0a2463} html.ui-c .tc-door-card h2{margin:4px 0 8px}
+  html.ui-c .tc-door-gift{display:inline-block;font-size:12px;font-weight:700;color:#fff;background:#0a2463;border-radius:5px;padding:2px 8px;margin-bottom:8px}
+  html.ui-c .tc-door-act{display:flex;gap:8px;align-items:center;margin-top:14px} html.ui-c .tc-door-act b{font-size:22px;min-width:28px;text-align:center}
+  html.ui-c .tc-door-was{color:#1e7bc4;font-weight:600;margin:10px 0 0} html.ui-c .tc-door-err{color:#b3261e;margin-top:12px} html.ui-c .tc-door-tot{color:var(--t3);margin:12px 0 0}
   html.ui-c .tcs2-met{align-self:flex-start;font-size:10.5px;font-weight:700;color:#8a5a00;background:#fdf3d9;border-radius:5px;padding:2px 6px}
   html.ui-c .tcs2-gift{margin-top:auto;display:flex;gap:4px} html.ui-c .tcs2-gift button{all:unset;cursor:pointer;font-size:10.5px;font-weight:600;border-radius:5px;padding:3px 7px;background:var(--surface-2);color:var(--t3)}
   html.ui-c .tcs2-gift button.on{background:#0a2463;color:#fff} html.ui-c .tcs2-gift button.on.d{background:#29a8df}
@@ -11011,6 +11018,7 @@ async function tcRoute(hash) {
     else if (place === 'help') viewTcHelp();
     else if (place === 'review') await viewTcReview();
     else if (place === 'go') await viewTcGo();   // lane TC-GO: the Grand Opening
+    else if (place === 'door') viewTcDoor(arg);   // check-in at the door, 05.11.2026
     else if (place === 'families') await viewTcFamilies();   // the owner's pick B, 28.10.2026
     else if (place === 'import') viewTcImport();   // the owner's pick A, 28.10.2026
     else if (place === 'additions') await viewTcAdditions();   // the owner, 29.10.2026: New additions, approve or flag
@@ -12723,9 +12731,60 @@ async function viewTcGo() {
   api('/api/tc/go/demo-access').then((r) => { T_GO_DEMO = Boolean(r && r.ok); const h = document.querySelector('#view .c-head');
     if (T_GO_DEMO && h && !h.querySelector('.tcgo-demo')) h.insertAdjacentHTML('beforeend', tcGoDemoBtn()); }).catch(() => {});
 }
+// CHECK-IN AT THE DOOR (05.11.2026): type the code or scan the guest's QR; the company, its place, who said Yes and how many;
+// Arrived with the number that came. The camera scan needs a browser that reads QR codes (Chrome on Android does).
+let T_DOOR = { card: null, n: 1, cam: null };
+function viewTcDoor(code) {
+  $('#view').innerHTML = `${typeof T_GO !== 'undefined' && T_GO ? tcGoCrumb(true) : ''}<div class="c-head"><div><h1>Check-in at the door</h1></div></div>
+    <section class="c-sheet tc-door"><form class="tc-door-f" onsubmit="event.preventDefault();tcDoorFind(this.p.value)">
+      <input class="c-search" name="p" placeholder="Place code, like 13H" autocomplete="off" autocapitalize="characters" aria-label="Place code">
+      <button class="btn" type="submit">Find</button>
+      ${'BarcodeDetector' in window ? '<button class="btn ghost" type="button" onclick="tcDoorScan()">📷 Scan QR</button>' : ''}</form>
+      <video id="tcDoorCam" playsinline muted hidden></video><div id="tcDoorCard"></div></section>`;
+  if (code) tcDoorFind(code);
+}
+async function tcDoorFind(text) {
+  tcDoorStop();
+  try { T_DOOR.card = await api('/api/tc/go/door?p=' + encodeURIComponent(String(text || ''))); T_DOOR.n = Math.max(1, (T_DOOR.card.arrived && T_DOOR.card.arrived.people) || T_DOOR.card.expected || 1); }
+  catch (e) { T_DOOR.card = { error: e.message }; }
+  tcDoorDraw();
+}
+function tcDoorDraw() {
+  const c = T_DOOR.card, box = $('#tcDoorCard'); if (!box || !c) return;
+  if (c.error) { box.innerHTML = `<p class="tc-door-err">${esc(c.error)}</p>`; return; }
+  const word = { yes: 'Yes', maybe: 'Maybe' };
+  box.innerHTML = `<div class="tc-door-card${c.arrived ? ' in' : ''}"><div class="tc-door-code">🧩 ${esc(c.code)}</div>
+    <h2>${c.company ? esc(c.company) : 'No company has this place yet'}</h2>
+    ${c.gift === 'physical' ? '<span class="tc-door-gift">🎁 Physical piece</span>' : ''}
+    ${c.people.map((x) => `<div class="tcs2-prow"><b>${esc(x.name)}</b><span class="a-${esc(x.answer)}">${word[x.answer] || ''}${x.answer === 'yes' ? ' · ' + Number(x.people || 1) : ''}</span></div>`).join('')}
+    ${c.company ? `<div class="tc-door-act"><span>People here</span><button type="button" class="btn ghost" aria-label="One fewer" onclick="T_DOOR.n=Math.max(1,T_DOOR.n-1);tcDoorDraw()">−</button><b>${Number(T_DOOR.n)}</b>
+      <button type="button" class="btn ghost" aria-label="One more" onclick="T_DOOR.n=Math.min(30,T_DOOR.n+1);tcDoorDraw()">+</button>
+      <button type="button" class="btn" onclick="tcDoorIn()">${c.arrived ? 'Update' : '✓ Arrived'}</button></div>` : ''}
+    ${c.arrived ? `<p class="tc-door-was">Arrived ${esc(new Date(c.arrived.arrived_at).toLocaleTimeString('lv-LV', { hour: '2-digit', minute: '2-digit' }))} · ${Number(c.arrived.people)} ${Number(c.arrived.people) === 1 ? 'person' : 'people'}</p>` : ''}</div>
+    <p class="tc-door-tot">At the door so far: <b>${tcN(c.totals.companies)}</b> companies · <b>${tcN(c.totals.people)}</b> people</p>`;
+}
+async function tcDoorIn() {
+  const c = T_DOOR.card; if (!c || !c.code) return;
+  try { await post('/api/tc/go/door', { p: c.code, people: T_DOOR.n }); await tcDoorFind(c.code); } catch (e) { alert(e.message); }
+}
+async function tcDoorScan() {
+  const v = $('#tcDoorCam'); if (!v) return;
+  try {
+    const det = new BarcodeDetector({ formats: ['qr_code'] });
+    T_DOOR.cam = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    v.srcObject = T_DOOR.cam; v.hidden = false; await v.play();
+    const tick = async () => {
+      if (!T_DOOR.cam) return;
+      try { const r = await det.detect(v); if (r && r[0] && r[0].rawValue) return tcDoorFind(r[0].rawValue); } catch (e) { /* the next frame */ }
+      requestAnimationFrame(tick);
+    };
+    tick();
+  } catch (e) { tcDoorStop(); alert('The camera did not open. Type the code instead.'); }
+}
+function tcDoorStop() { if (T_DOOR.cam) { T_DOOR.cam.getTracks().forEach((t) => t.stop()); T_DOOR.cam = null; } const v = $('#tcDoorCam'); if (v) v.hidden = true; }
 // THE DEMO (05.11.2026, src/godemo.js): a button for the accounts the demo is for; it opens in a new tab with every link working.
 let T_GO_DEMO = false;
-const tcGoDemoBtn = () => (T_GO_DEMO ? '<a class="btn tcgo-demo" href="/api/tc/go/demo/" target="_blank" rel="noopener">▶ Demo</a>' : '');
+const tcGoDemoBtn = () => '<a class="btn ghost tcgo-door" href="#/tc/door">Check-in at the door</a>' + (T_GO_DEMO ? '<a class="btn tcgo-demo" href="/api/tc/go/demo/" target="_blank" rel="noopener">▶ Demo</a>' : '');
 // THE STAGE 2 LISTS PER MANAGER (the owner's pick A, 26.10.2026; the answers-by-person-in-charge list removed that day): a tab per manager,
 // the people that manager sends the RSVP email to, an answer on the row when it comes in, answered people first, a search,
 // the list as a file. No "answered" totals (the owner, 26.10.2026).
