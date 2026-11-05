@@ -188,6 +188,13 @@ companies with no status - defaults in use); phone: marked number of a known per
 
 - `DECIDED` HIS PICK (owner 21.10: "Thats why i want academy intake and tc intake separate sessions, this is hectic"): **Intake ACADEMY MASTER CONTROL** (this session: Academy feedback, Ieva, Admissions, SIS, phone, email) and **Intake TC MASTER CONTROL** (a separate session: Training Centre, Grand Opening, Season, review list, Google Calendar, MASTER PITCHER's TC boards). One app and one `production` branch: each master fetches origin/production right before a release, deploy_verify refuses a release that misses the other's commits, and each tells the other in one line before pushing production. Both keep this backlog and the control file.
 
+## 05.11.2026 - Academy Home: last year around this time + Needs you for CRD only (owner's asks)
+
+- `DECIDED` HIS PICK (05.11): the Home cards show last year around this time, wording "Last year around this time",
+  styled quieter than the figure so it does not overwhelm with data.
+- `DECIDED` HIS PICK (05.11): "Needs you" on Home shows only for CRD: Ieva, Arina, Marina, Laura Skirmante, the shared
+  Admissions account (+ Tetiana once she has an account). Not for Ritvars or anyone outside CRD.
+
 ## 29.10.2026 - After the move to Supabase: Academy checks (owner: "save this to be done")
 
 - `DONE` 29.10 11:34 LinkedIn webhook https://intake.novikontas.org/api/inbound/linkedin: Validated, Enabled (owner pressed Validate after Intake came back).
