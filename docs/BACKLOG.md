@@ -207,6 +207,8 @@ companies with no status - defaults in use); phone: marked number of a known per
   contact on a line of days, median marked (a month's median rests on 1-2 people, too few to draw). "all of them numbers in the
   graphics need to be clickable and linked to the fuller stats" -> every wave number opens that month on the card's Reports
   tab; the conversion and median numbers open their Reports tab.
+- `DECIDED` HIS WORDS (05.11): "Median sucks. Conversion is good!" -> HIS PICK A split bar for Median: the people with a known first
+  contact in 4 groups (under 1 month, 1-3, 3-6, over 6 months), one bar + key with counts, each count opens Reports > Median.
 
 ## 29.10.2026 - After the move to Supabase: Academy checks (owner: "save this to be done")
 
