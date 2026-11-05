@@ -194,6 +194,11 @@ companies with no status - defaults in use); phone: marked number of a known per
   styled quieter than the figure so it does not overwhelm with data.
 - `DECIDED` HIS PICK (05.11): "Needs you" on Home shows only for CRD: Ieva, Arina, Marina, Laura Skirmante, the shared
   Admissions account (+ Tetiana once she has an account). Not for Ritvars or anyone outside CRD.
+- `DECIDED` HIS ASKS + PICKS (05.11): "something is a little too much" on Admitted, the wave line "doesnt tell you precisely
+  anything" -> HIS PICK A calm: Admitted and Leads lose the wave line and the month line; Admitted keeps one target (all
+  admitted), the Officer target stays on Reports. Conversion also gets "Last year around this time" (2025: 32.6%,
+  admitted by that day). Median time: HIS PICK count only people with a known first contact (SIS-only records carry one
+  date, so first contact = admission); no last-year line (last year has none with a known first contact).
 
 ## 29.10.2026 - After the move to Supabase: Academy checks (owner: "save this to be done")
 
