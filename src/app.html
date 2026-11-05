@@ -12720,7 +12720,12 @@ async function viewTcGo() {
   tcS2xLoad().then(() => { if (T_S2) tcS2Redraw(); });   // Stage 2 sending (admins)
   tcFixLoad();
   tcMkLoad();
+  api('/api/tc/go/demo-access').then((r) => { T_GO_DEMO = Boolean(r && r.ok); const h = document.querySelector('#view .c-head');
+    if (T_GO_DEMO && h && !h.querySelector('.tcgo-demo')) h.insertAdjacentHTML('beforeend', tcGoDemoBtn()); }).catch(() => {});
 }
+// THE DEMO (05.11.2026, src/godemo.js): a button for the accounts the demo is for; it opens in a new tab with every link working.
+let T_GO_DEMO = false;
+const tcGoDemoBtn = () => (T_GO_DEMO ? '<a class="btn tcgo-demo" href="/api/tc/go/demo/" target="_blank" rel="noopener">▶ Demo</a>' : '');
 // THE STAGE 2 LISTS PER MANAGER (the owner's pick A, 26.10.2026; the answers-by-person-in-charge list removed that day): a tab per manager,
 // the people that manager sends the RSVP email to, an answer on the row when it comes in, answered people first, a search,
 // the list as a file. No "answered" totals (the owner, 26.10.2026).
@@ -12752,26 +12757,27 @@ function tcS2Groups() {
   }
   return [...by.values()].sort((a, b) => b.ps.length - a.ps.length || a.name.localeCompare(b.name, 'lv'));
 }
-const tcS2Gift = (g) => ((T_S2.gifts || {})[g.key] === 'physical' ? 'physical' : 'digital');
+// No company has a gift yet (05.11.2026, his correction): nothing is lit until an owner picks; a second click clears it.
+const tcS2Gift = (g) => ((T_S2.gifts || {})[g.key] || null);
 function tcS2Rows() {
   if (!T_S2.rows) return '<div class="c-empty">Loading…</div>';
   const q = (T_S2.q || '').trim().toLowerCase();
   const all = tcS2Groups();
   const shown = all.filter((g) => !q || g.name.toLowerCase().includes(q) || g.ps.some((r) => `${r.name} ${r.email || ''}`.toLowerCase().includes(q)));
-  const phys = all.filter((g) => tcS2Gift(g) === 'physical').length;
+  const phys = all.filter((g) => tcS2Gift(g) === 'physical').length, digi = all.filter((g) => tcS2Gift(g) === 'digital').length;
   const tile = (g) => {
-    const p = tcS2Gift(g) === 'physical', yes = g.ps.some((r) => r.answer === 'yes'), met = T_S2.met && T_S2.met.has(g.key);
+    const p = tcS2Gift(g) === 'physical', d = tcS2Gift(g) === 'digital', yes = g.ps.some((r) => r.answer === 'yes'), met = T_S2.met && T_S2.met.has(g.key);
     const k = esc(JSON.stringify(g.key));
     return `<div class="tcs2-tile${p ? ' phys' : ''}" role="button" tabindex="0" onclick="tcS2Open(${k})" onkeydown="if(event.key==='Enter')tcS2Open(${k})">
       ${yes ? '<span class="tcs2-yes">✓ Yes</span>' : ''}<b>${esc(g.name || 'No company yet')}</b>${met ? '<span class="tcs2-met" title="Met face to face: suggested for the physical piece">🤝 Met</span>' : ''}
       <small>${tcN(g.ps.length)} ${g.ps.length === 1 ? 'person' : 'people'}${g.country ? ' · ' + esc(g.country) : ''}</small>
-      <span class="tcs2-gift" onclick="event.stopPropagation()"><button type="button" class="${p ? 'on' : ''}" aria-pressed="${p}" onclick="tcS2SetGift(${k}, 'physical')">🎁 Physical</button><button type="button" class="${p ? '' : 'on d'}" aria-pressed="${!p}" onclick="tcS2SetGift(${k}, 'digital')">Digital</button></span></div>`;
+      <span class="tcs2-gift" onclick="event.stopPropagation()"><button type="button" class="${p ? 'on' : ''}" aria-pressed="${p}" onclick="tcS2SetGift(${k}, '${p ? 'none' : 'physical'}')">🎁 Physical</button><button type="button" class="${d ? 'on d' : ''}" aria-pressed="${d}" onclick="tcS2SetGift(${k}, '${d ? 'none' : 'digital'}')">Digital</button></span></div>`;
   };
-  return `<div class="tcs2-sum"><b>${tcN(all.length)} companies</b><span>· ${tcN((T_S2.rows || []).length)} people</span><span class="tcs2-sumr">🎁 Physical <b>${tcN(phys)}</b> · Digital <b>${tcN(all.length - phys)}</b></span></div>
+  return `<div class="tcs2-sum"><b>${tcN(all.length)} companies</b><span>· ${tcN((T_S2.rows || []).length)} people</span><span class="tcs2-sumr">🎁 Physical <b>${tcN(phys)}</b> · Digital <b>${tcN(digi)}</b></span></div>
     <div class="tcs2-tiles">${shown.map(tile).join('') || '<div class="c-empty">Nobody matches.</div>'}</div>`;
 }
 async function tcS2SetGift(key, kind) {
-  try { await post('/api/tc/go/gift', { key, kind }); T_S2.gifts = { ...(T_S2.gifts || {}), [key]: kind }; const list = $('#tcS2rows'); if (list) list.innerHTML = tcS2Rows(); }
+  try { await post('/api/tc/go/gift', { key, kind }); T_S2.gifts = { ...(T_S2.gifts || {}) }; if (kind === 'none') delete T_S2.gifts[key]; else T_S2.gifts[key] = kind; const list = $('#tcS2rows'); if (list) list.innerHTML = tcS2Rows(); }
   catch (e) { alert(e.message); }
 }
 function tcS2Open(key) {
@@ -12963,7 +12969,7 @@ function tcGoDraw() {
   // Date beside it; each tab holds only its own part, and each long list scrolls inside its own box
   const tab = T_GO_TAB === 's1' ? 's1' : 's2';
   const tb = (v, n, label) => `<button type="button" class="tcs2-tab" aria-pressed="${tab === v}" onclick="tcGoTab('${v}')"><i class="tcgo-tabn">${n}</i>${label}</button>`;
-  const head = `${tcGoCrumb(false)}<div class="c-head"><div><h1>The invitation</h1></div></div>
+  const head = `${tcGoCrumb(false)}<div class="c-head"><div><h1>The invitation</h1></div>${tcGoDemoBtn()}</div>
     <div class="tcs2-tabs tcgo-tabs" role="group" aria-label="Stage">${tb('s1', 1, 'Stage 1 · Save the Date')}${tb('s2', 2, 'Stage 2 · RSVP')}</div>`;
   $('#view').innerHTML = head + (tab === 's1' ? `
     <!-- stage1 -->${tcGoStrip(F)}

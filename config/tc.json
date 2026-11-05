@@ -104,6 +104,10 @@
     "years": [2024]
   },
   "grandOpening": {
+    "demo": {
+      "_about": "THE DEMO IN INTAKE (05.11.2026, src/godemo.js; the owner: 'demo should be in the intake. For me, MC, Marcis, Aigars, Aleksejs.'). Only these sign-ins open /api/tc/go/demo/.",
+      "viewers": ["ritvars.vilcins@novikontas.org", "mc@novikontas.org", "marcis.zabovs@novikontas.org", "aigars.kluga@novikontas.org", "ab@novikontas.org"]
+    },
     "_about": "THE GRAND OPENING (21.10.2026, src/tcgo.js; the owner's pick G1, board 5): its own page in the Training Centre half. The figures are Client Hub's: its per-person invitation state, the latest reading of each Save the Date send, Add to Calendar, and who opened it (a person, Apple Mail, a security scanner) from the classified opens. Brought in by the admin import; the extract is _training-centre/tools/go_extract.mjs.",
     "event": { "name": "Grand Opening", "dateLabel": "27 May 2027", "place": "Novikontas Academy Campus, Duntes iela 17d, Riga", "send": "Save the Date",
       "calendarUrl": "https://novikontas-grand-opening-calendar.vercel.app/" },

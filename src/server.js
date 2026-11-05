@@ -57,6 +57,7 @@ import { commentsFor, editComment } from './comments.js';
 import { htmlEscape, inviteOrigin } from './systempages.js';
 import * as areas from './areas.js';
 import * as tc from './tc.js';
+import * as godemo from './godemo.js';
 import * as tcimport from './tcimport.js';
 import * as samepeople from './samepeople.js';
 import * as tcweek from './tcweek.js';
@@ -3721,6 +3722,20 @@ export const handle = async (req, res) => {
         : await tcs2send.sendNext(db, String(b.sender || ''), String(b.batch || ''), me);
       return json(res, out.ok ? 200 : 400, out.ok ? out : { error: out.why });
     }
+    // THE GRAND OPENING DEMO (05.11.2026, src/godemo.js): the page and its files, for the configured accounts only
+    if (req.method === 'GET' && (p === '/api/tc/go/demo' || p.startsWith(godemo.PREFIX))) {
+      const me = await currentUser(req);
+      if (!godemo.mayView(me)) {
+        res.writeHead(403, { 'content-type': 'text/html; charset=utf-8' });
+        return res.end('<!doctype html><meta charset="utf-8"><title>Grand Opening demo</title><p style="font:16px Inter,Arial,sans-serif;padding:40px">This demo opens for the accounts it was made for. <a href="/#/tc/go">Back to the Grand Opening</a></p>');
+      }
+      if (p === '/api/tc/go/demo') { res.writeHead(302, { location: godemo.PREFIX }); return res.end(); }
+      const f = godemo.fileFor(p);
+      if (!f) return json(res, 404, { error: 'not found' });
+      res.writeHead(200, { 'content-type': f.type, 'cache-control': 'no-store', 'x-frame-options': 'SAMEORIGIN', 'x-content-type-options': 'nosniff' });
+      return res.end(godemo.read(f));
+    }
+    if (p === '/api/tc/go/demo-access' && req.method === 'GET') return json(res, 200, { ok: godemo.mayView(await currentUser(req)) });
     // THE GIFT PER COMPANY (04.11.2026): Physical or Digital on a company tile; any Training Centre account sets it
     if (p === '/api/tc/go/gift' && req.method === 'POST') {
       try { const b = await body(req); return json(res, 200, await tcgo.setGift(db, String(b.key || ''), String(b.kind || ''), await actorOf(req, b))); }
