@@ -3,7 +3,8 @@
 // 'confirm' = saw the Save the Date (date-led dark card + the building picture), 'invite' = it may not have reached them,
 // 'new' = never sent the Save the Date. No signature (his words).
 const S2_PAGE = 'https://novikontas.org/grand-opening';
-const S2_INVITE_IMG = 'https://mcusercontent.com/742b7cc5cefdc84b1134d8ca1/images/aa5828e0-30d8-8a91-b894-9f4501f6b9ca.jpg';
+// the picture as the Grand Opening changed it 03.11.2026 (27.05.2005 -> 27.05.2027), Contacts/stage2_emails_appsscript_2026-10-22.js
+const S2_INVITE_IMG = 'https://mcusercontent.com/742b7cc5cefdc84b1134d8ca1/images/52205135-b22f-0b43-d49c-4436ba613cd8.jpg';
 const esc_ = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 export function s2Mail(kind, first, code) {
   const link = S2_PAGE + '?c=' + code;

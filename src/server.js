@@ -3730,7 +3730,7 @@ export const handle = async (req, res) => {
         return res.end('<!doctype html><meta charset="utf-8"><title>Grand Opening demo</title><p style="font:16px Inter,Arial,sans-serif;padding:40px">This demo opens for the accounts it was made for. <a href="/#/tc/go">Back to the Grand Opening</a></p>');
       }
       if (p === '/api/tc/go/demo') { res.writeHead(302, { location: godemo.PREFIX }); return res.end(); }
-      const f = godemo.fileFor(p);
+      const f = godemo.fileFor(p, me);
       if (!f) return json(res, 404, { error: 'not found' });
       res.writeHead(200, { 'content-type': f.type, 'cache-control': 'no-store', 'x-frame-options': 'SAMEORIGIN', 'x-content-type-options': 'nosniff' });
       return res.end(godemo.read(f));

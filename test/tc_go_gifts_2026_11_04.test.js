@@ -71,3 +71,20 @@ test('the demo in Intake: only the five accounts open it; every local link in th
   const srv = fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8');
   assert.match(srv, /if \(!godemo\.mayView\(me\)\) \{/);
 });
+
+test('05.11 the demo shows the real Stage 2 letters (drawn from tcs2mail.js), not the filtered-email Save the Date; the current picture', async () => {
+  const godemo = await import('../src/godemo.js');
+  const html = godemo.read(godemo.fileFor(godemo.PREFIX)).toString('utf8');
+  assert.doesNotMatch(html, /1b_personal_from_ritvars/);
+  assert.match(html, /JS 154\./);
+  const inv = godemo.read(godemo.fileFor(godemo.PREFIX + 'letters/3_you_are_invited.html', { name: 'Anna Example' })).toString('utf8');
+  assert.match(inv, /Dear Anna,/);
+  assert.match(inv, /52205135-b22f-0b43-d49c-4436ba613cd8\.jpg/);
+  assert.match(inv, /grand-opening\?c=rvtst1&rsvp=yes/);
+  const conf = godemo.read(godemo.fileFor(godemo.PREFIX + 'letters/2_will_you_be_there.html', null)).toString('utf8');
+  assert.match(conf, /src="building\.jpg"/);
+  assert.ok(godemo.fileFor(godemo.PREFIX + 'letters/building.jpg'));
+  assert.match(godemo.read(godemo.fileFor(godemo.PREFIX + 'letters/4_new_contact.html')).toString('utf8'), /You are invited/);
+  const mail = (await import('../src/tcs2mail.js')).s2Mail('invite', 'Anna', 'x1');
+  assert.doesNotMatch(mail.html, /aa5828e0/);
+});
