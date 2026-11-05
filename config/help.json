@@ -257,6 +257,11 @@
       "id": "draft-in-sis",
       "q": "Why is somebody in Draft in the SIS?",
       "a": "Their form is started in the SIS and the call about it is done, so Due keeps them in their own navy band, never overdue, until the SIS says submitted or they write or call in."
+    },
+    {
+      "id": "test-records",
+      "q": "Are test records counted?",
+      "a": "No: a record with a Novikontas email or a name that is \"Test ...\" is left out of every figure and list, and still opens by its own link."
     }
   ],
   "tc": {

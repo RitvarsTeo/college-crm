@@ -9,6 +9,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { REAL_PEOPLE } from './realpeople.js';
 import { SIS_HOLDS_SQL, SIS_DRAFT_SQL } from './lifecycle.js';
 import { localDate, localDateTime, localMidnight, dayStartOf, dayAfterStartOf, todayStart, tomorrowStart } from './bizday.js';
 import { yearsOf, yearRanges, rangesSql } from './yearscope.js';
@@ -64,12 +65,12 @@ export async function maturedConversion(db, p, opts = {}) {
   const basis = maturedBasis(p, opts);
   const until = basis.cutoff < p.to ? basis.cutoff : p.to;
   const [inR, rArgs] = inP('created_at', p);
-  const of = await count(db, `SELECT COUNT(*) n FROM people WHERE ${inR} AND created_at < ?`, ...rArgs, until);
+  const of = await count(db, `SELECT COUNT(*) n FROM ${REAL_PEOPLE} people WHERE ${inR} AND created_at < ?`, ...rArgs, until);
   // asOfEnd (Home's "Last year around this time", 05.11.2026): only admissions up to the period's last day, as it stood then
   const admitted = opts.asOfEnd
-    ? await count(db, `SELECT COUNT(*) n FROM people
+    ? await count(db, `SELECT COUNT(*) n FROM ${REAL_PEOPLE} people
       WHERE ${inR} AND created_at < ? AND admitted_at IS NOT NULL AND admitted_at < ?`, ...rArgs, until, p.to)
-    : await count(db, `SELECT COUNT(*) n FROM people
+    : await count(db, `SELECT COUNT(*) n FROM ${REAL_PEOPLE} people
     WHERE ${inR} AND created_at < ? AND admitted_at IS NOT NULL`, ...rArgs, until);
   return { ...basis, admitted, of, pct: of ? Math.round((admitted / of) * 1000) / 10 : null };
 }
@@ -91,12 +92,12 @@ export async function maturedSteps(db, p, opts) {
   const basis = maturedBasis(p, opts);
   const until = basis.cutoff < p.to ? basis.cutoff : p.to;
   const [inR, rArgs] = inP('created_at', p);
-  const ripe = await db.prepare(`SELECT id, status, admitted_at FROM people WHERE ${inR} AND created_at < ? ORDER BY id`)
+  const ripe = await db.prepare(`SELECT id, status, admitted_at FROM ${REAL_PEOPLE} people WHERE ${inR} AND created_at < ? ORDER BY id`)
     .all(...rArgs, until);
   const ever = new Map();
   if (ripe.length) {
     const rows = await db.prepare(`SELECT DISTINCT person_id, new_value FROM events WHERE kind = 'status' AND new_value IS NOT NULL
-      AND person_id IN (SELECT id FROM people WHERE ${inR} AND created_at < ?)`).all(...rArgs, until);
+      AND person_id IN (SELECT id FROM ${REAL_PEOPLE} people WHERE ${inR} AND created_at < ?)`).all(...rArgs, until);
     for (const r of rows) { if (!ever.has(r.person_id)) ever.set(r.person_id, new Set()); ever.get(r.person_id).add(r.new_value); }
   }
   const reached = (pp, stage) => {
@@ -146,7 +147,7 @@ export async function firstReply(db, p, { now = new Date() } = {}) {
 async function breakdown(db, column, { where = '', args = [], ...p } = {}) {
   const [inR, rArgs] = inP('created_at', p);
   const rows = await db.prepare(`SELECT COALESCE(NULLIF(TRIM(${column}), ''), '(not recorded)') k,
-      COUNT(*) n FROM people
+      COUNT(*) n FROM ${REAL_PEOPLE} people
     WHERE ${inR} ${where}
     GROUP BY k ORDER BY n DESC`).all(...rArgs, ...args);
   return rows.map((r) => ({ value: r.k, count: r.n }));
@@ -158,18 +159,18 @@ export async function report(db, { from, to, years, asOfEnd = false } = {}) {
   const [ARR, A] = inP('created_at', p);     // arrived in the period
   const [ADM] = inP('admitted_at', p);        // admitted in it (the same arguments, A)
 
-  const newLeads = await count(db, `SELECT COUNT(*) n FROM people WHERE ${ARR}`, ...A);
-  const applications = await count(db, `SELECT COUNT(*) n FROM people
+  const newLeads = await count(db, `SELECT COUNT(*) n FROM ${REAL_PEOPLE} people WHERE ${ARR}`, ...A);
+  const applications = await count(db, `SELECT COUNT(*) n FROM ${REAL_PEOPLE} people
     WHERE ${ARR} AND status IN ('Application','Admitted')`, ...A);
-  const admitted = await count(db, `SELECT COUNT(*) n FROM people WHERE ${ADM}`, ...A);
+  const admitted = await count(db, `SELECT COUNT(*) n FROM ${REAL_PEOPLE} people WHERE ${ADM}`, ...A);
 
-  const activeApplicants = await count(db, `SELECT COUNT(*) n FROM people
+  const activeApplicants = await count(db, `SELECT COUNT(*) n FROM ${REAL_PEOPLE} people
     WHERE status NOT IN ('Admitted','Not proceeding')`);
   // Overdue means its day has passed - the same line as every screen draws.
   // a draft in the SIS (26.10.2026) waits for them, so its steps are not overdue here either
-  const overdue = await count(db, `SELECT COUNT(*) n FROM tasks t JOIN people pe ON pe.id = t.person_id
+  const overdue = await count(db, `SELECT COUNT(*) n FROM tasks t JOIN ${REAL_PEOPLE} pe ON pe.id = t.person_id
     WHERE t.done_at IS NULL AND t.due_at < ? AND NOT ${SIS_DRAFT_SQL}`, todayStart());
-  const noNextAction = await count(db, `SELECT COUNT(*) n FROM people pe
+  const noNextAction = await count(db, `SELECT COUNT(*) n FROM ${REAL_PEOPLE} pe
     WHERE pe.status NOT IN ('Admitted','Not proceeding') AND NOT ${SIS_HOLDS_SQL} AND NOT ${SIS_DRAFT_SQL}
       AND NOT EXISTS (SELECT 1 FROM tasks t WHERE t.person_id = pe.id AND t.done_at IS NULL)`);
 
@@ -183,7 +184,7 @@ export async function report(db, { from, to, years, asOfEnd = false } = {}) {
 
   // How long admission actually took, as a median of real durations. Only people with a KNOWN first contact (the owner,
   // 05.11.2026): a person the SIS created carries one date, so their first contact IS their admission and would read 0.
-  const durations = (await db.prepare(`SELECT created_at, admitted_at FROM people
+  const durations = (await db.prepare(`SELECT created_at, admitted_at FROM ${REAL_PEOPLE} people
     WHERE admitted_at IS NOT NULL AND ${ADM} AND COALESCE(first_channel, '') <> 'sis'`).all(...A))
     .map((r) => Math.round((Date.parse(r.admitted_at) - Date.parse(r.created_at)) / 86400000))
     .filter((d) => Number.isFinite(d) && d >= 0)
@@ -199,8 +200,8 @@ export async function report(db, { from, to, years, asOfEnd = false } = {}) {
     const m1 = localMidnight(ey, em - i + 1, 1);
     months.push({
       month: localDate(m0).slice(0, 7),
-      newLeads: await count(db, 'SELECT COUNT(*) n FROM people WHERE created_at >= ? AND created_at < ?', m0, m1),
-      admitted: await count(db, 'SELECT COUNT(*) n FROM people WHERE admitted_at >= ? AND admitted_at < ?', m0, m1),
+      newLeads: await count(db, `SELECT COUNT(*) n FROM ${REAL_PEOPLE} people WHERE created_at >= ? AND created_at < ?`, m0, m1),
+      admitted: await count(db, `SELECT COUNT(*) n FROM ${REAL_PEOPLE} people WHERE admitted_at >= ? AND admitted_at < ?`, m0, m1),
     });
   }
 
@@ -210,9 +211,9 @@ export async function report(db, { from, to, years, asOfEnd = false } = {}) {
   // carried unresolved objects.
   const programmes = await Promise.all((CFG.programmes || []).map(async (code) => ({
     programme: code,
-    newLeads: await count(db, `SELECT COUNT(*) n FROM people
+    newLeads: await count(db, `SELECT COUNT(*) n FROM ${REAL_PEOPLE} people
       WHERE ${ARR} AND programme = ?`, ...A, code),
-    admitted: await count(db, `SELECT COUNT(*) n FROM people
+    admitted: await count(db, `SELECT COUNT(*) n FROM ${REAL_PEOPLE} people
       WHERE ${ADM} AND programme = ?`, ...A, code),
   })));
 
@@ -220,16 +221,16 @@ export async function report(db, { from, to, years, asOfEnd = false } = {}) {
   // has been filled in by hand for years. What is thin is the COVERAGE, and that is
   // reported next to the number instead of the number being withheld.
   const maritimeList = CFG.maritimeEducations || [];
-  const maritime = maritimeList.length ? await count(db, `SELECT COUNT(*) n FROM people
+  const maritime = maritimeList.length ? await count(db, `SELECT COUNT(*) n FROM ${REAL_PEOPLE} people
     WHERE ${ARR}
       AND education IN (${maritimeList.map(() => '?').join(',')})`, ...A, ...maritimeList) : 0;
-  const withEducation = await count(db, `SELECT COUNT(*) n FROM people
+  const withEducation = await count(db, `SELECT COUNT(*) n FROM ${REAL_PEOPLE} people
     WHERE ${ARR} AND education IS NOT NULL AND TRIM(education) != ''`, ...A);
-  const withNationality = await count(db, `SELECT COUNT(*) n FROM people
+  const withNationality = await count(db, `SELECT COUNT(*) n FROM ${REAL_PEOPLE} people
     WHERE ${ARR} AND nationality IS NOT NULL AND TRIM(nationality) != ''`, ...A);
 
   const lost = (await db.prepare(`SELECT COALESCE(NULLIF(TRIM(closed_reason), ''), '(no reason recorded)') k,
-      COUNT(*) n FROM people
+      COUNT(*) n FROM ${REAL_PEOPLE} people
     WHERE status = 'Not proceeding' GROUP BY k ORDER BY n DESC`).all())
     .map((r) => ({ value: r.k, count: r.n }));
 
@@ -260,7 +261,7 @@ export async function report(db, { from, to, years, asOfEnd = false } = {}) {
       education: await breakdown(db, 'education', { ...p }),
       source: await breakdown(db, 'source_channel', { ...p }),
       nationality: await breakdown(db, 'nationality', { ...p }),
-      stage: (await db.prepare(`SELECT status k, COUNT(*) n FROM people GROUP BY k ORDER BY n DESC`).all())
+      stage: (await db.prepare(`SELECT status k, COUNT(*) n FROM ${REAL_PEOPLE} people GROUP BY k ORDER BY n DESC`).all())
         .map((r) => ({ value: r.k, count: r.n })),
     },
     lostReasons: lost,
@@ -294,9 +295,9 @@ async function notMeasured(db, p) {
   // limit of the software at all - it is a field nobody has filled in yet. Those
   // two things need completely different work, so they are never listed together.
   const cover = async (col) => {
-    const filled = (await db.prepare(`SELECT COUNT(*) n FROM people
+    const filled = (await db.prepare(`SELECT COUNT(*) n FROM ${REAL_PEOPLE} people
       WHERE ${ARR} AND ${col} IS NOT NULL AND TRIM(${col}) != ''`).get(...A)).n;
-    const total = (await db.prepare(`SELECT COUNT(*) n FROM people WHERE ${ARR}`).get(...A)).n;
+    const total = (await db.prepare(`SELECT COUNT(*) n FROM ${REAL_PEOPLE} people WHERE ${ARR}`).get(...A)).n;
     return { filled, total };
   };
 
@@ -435,7 +436,7 @@ export async function reportRows(db, opts = {}) {
           ORDER BY t.due_at LIMIT 1) next_label,
         (SELECT t.due_at FROM tasks t WHERE t.person_id = pe.id AND t.done_at IS NULL
           ORDER BY t.due_at LIMIT 1) next_due
-      FROM people pe WHERE pe.created_at >= ? AND pe.created_at < ?
+      FROM ${REAL_PEOPLE} pe WHERE pe.created_at >= ? AND pe.created_at < ?
       ORDER BY pe.created_at DESC`).all(r.period.from, r.period.to);
     for (const x of people) {
       rows.push([x.name, x.programme, x.study_form, x.education, x.nationality,

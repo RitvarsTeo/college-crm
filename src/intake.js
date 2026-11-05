@@ -17,6 +17,7 @@ import { logEvent, MANUAL, AUTOMATIC } from './history.js';
 import { duplicateCheck, contactMatcher, onlyStrong, onePersonFor, isOwnAddress } from './identity.js';
 import { localDate, localMidnight } from './bizday.js';
 import { SIS_HOLDS_SQL, SIS_DRAFT_SQL } from './lifecycle.js';
+import { REAL_PEOPLE } from './realpeople.js';
 import { rangesSql } from './yearscope.js';
 import { markFor, markedWhy, contactKeys, MARKS } from './phonefilter.js';
 import { emailBodyFor, isEmailChannel, cleanEmailBody, emailShown } from './emailtext.js';
@@ -715,11 +716,11 @@ export async function waitingFor(db, role, now = nowIso()) {
   if (role === CFG.routing.unclear) {
     for (const r of await listInbound(db, { state: 'new', now })) mine.push({ kind: 'intake', ...r });
   }
-  const leads = await db.prepare(`SELECT pe.* FROM people pe WHERE pe.qualification = 'lead' AND pe.owner = ?
+  const leads = await db.prepare(`SELECT pe.* FROM ${REAL_PEOPLE} pe WHERE pe.qualification = 'lead' AND pe.owner = ?
     AND pe.status NOT IN (${(CFG.terminalStages || []).map(() => '?').join(',') || "''"})`)
     .all(role, ...(CFG.terminalStages || []));
   for (const p of leads) mine.push({ kind: 'lead', ...p });
-  const overdue = await db.prepare(`SELECT t.*, pe.name FROM tasks t JOIN people pe ON pe.id = t.person_id
+  const overdue = await db.prepare(`SELECT t.*, pe.name FROM tasks t JOIN ${REAL_PEOPLE} pe ON pe.id = t.person_id
     WHERE t.done_at IS NULL AND t.due_at < ? AND t.owner = ? AND NOT ${SIS_DRAFT_SQL}`).all(now, role);
   return {
     role,
@@ -1234,8 +1235,8 @@ export async function funnel(db, now = nowIso()) {
   // unresolved objects into the report.
   const byStage = await Promise.all(stages.map(async (id) => ({
     stage: id,
-    people: await n('SELECT COUNT(*) n FROM people WHERE status = ?', id),
-    stuck: await n(`SELECT COUNT(*) n FROM people pe WHERE pe.status = ?
+    people: await n(`SELECT COUNT(*) n FROM ${REAL_PEOPLE} people WHERE status = ?`, id),
+    stuck: await n(`SELECT COUNT(*) n FROM ${REAL_PEOPLE} pe WHERE pe.status = ?
       AND NOT EXISTS (SELECT 1 FROM tasks t WHERE t.person_id = pe.id AND t.done_at IS NULL)
       AND pe.status NOT IN (${terminal.map(() => '?').join(',') || "''"})`, id, ...terminal),
   })));
@@ -1245,13 +1246,13 @@ export async function funnel(db, now = nowIso()) {
       go: '#/car' },
     { step: 'Waiting to be looked at', count: await n("SELECT COUNT(*) n FROM inbound WHERE state = 'new'"),
       go: '#/car' },
-    { step: 'Became a lead', count: await n("SELECT COUNT(*) n FROM people WHERE qualification = 'lead'"),
+    { step: 'Became a lead', count: await n("SELECT COUNT(*) n FROM ${REAL_PEOPLE} people WHERE qualification = 'lead'"),
       go: '#/people?q=&qual=lead' },
-    { step: 'Application', count: await n('SELECT COUNT(*) n FROM people WHERE status = ?', CFG.stageRoles.application),
+    { step: 'Application', count: await n(`SELECT COUNT(*) n FROM ${REAL_PEOPLE} people WHERE status = ?`, CFG.stageRoles.application),
       go: '#/people' },
-    { step: 'Admitted', count: await n('SELECT COUNT(*) n FROM people WHERE status = ?', CFG.stageRoles.admitted),
+    { step: 'Admitted', count: await n(`SELECT COUNT(*) n FROM ${REAL_PEOPLE} people WHERE status = ?`, CFG.stageRoles.admitted),
       go: '#/people' },
-    { step: 'Handed to SIS', count: await n('SELECT COUNT(*) n FROM people WHERE sis_handoff_at IS NOT NULL'),
+    { step: 'Handed to SIS', count: await n(`SELECT COUNT(*) n FROM ${REAL_PEOPLE} people WHERE sis_handoff_at IS NOT NULL`),
       go: '#/people' },
   ];
 
@@ -1262,7 +1263,7 @@ export async function funnel(db, now = nowIso()) {
     FROM inbound GROUP BY channel
     HAVING SUM(CASE WHEN state != 'filtered' THEN 1 ELSE 0 END) > 0 ORDER BY contacts DESC`).all();
 
-  const dropOut = await db.prepare(`SELECT closed_reason reason, COUNT(*) n FROM people
+  const dropOut = await db.prepare(`SELECT closed_reason reason, COUNT(*) n FROM ${REAL_PEOPLE} people
     WHERE status = ? AND closed_reason IS NOT NULL GROUP BY closed_reason ORDER BY n DESC`)
     .all(CFG.stageRoles.closed);
   const filtered = await n("SELECT COUNT(*) n FROM inbound WHERE state = 'filtered'");
@@ -1276,9 +1277,9 @@ export async function funnel(db, now = nowIso()) {
     biggestAccumulation: biggest && biggest.people ? biggest : null,
     mostStuck: mostStuck && mostStuck.stuck ? mostStuck : null,
     agedInbound: await agedCount(db, now),
-    overdueActions: await n(`SELECT COUNT(*) n FROM tasks t JOIN people pe ON pe.id = t.person_id WHERE t.done_at IS NULL AND t.due_at < ?
+    overdueActions: await n(`SELECT COUNT(*) n FROM tasks t JOIN ${REAL_PEOPLE} pe ON pe.id = t.person_id WHERE t.done_at IS NULL AND t.due_at < ?
       AND NOT ${SIS_DRAFT_SQL}`, now),   // a draft in the SIS is never overdue (26.10.2026)
-    noNextAction: await n(`SELECT COUNT(*) n FROM people pe
+    noNextAction: await n(`SELECT COUNT(*) n FROM ${REAL_PEOPLE} pe
       WHERE pe.status NOT IN (${terminal.map(() => '?').join(',') || "''"}) AND NOT ${SIS_HOLDS_SQL} AND NOT ${SIS_DRAFT_SQL}
       AND NOT EXISTS (SELECT 1 FROM tasks t WHERE t.person_id = pe.id AND t.done_at IS NULL)`, ...terminal),
     honesty: 'Every number here is a count of rows that exist. Nothing is modelled, estimated or projected.',
