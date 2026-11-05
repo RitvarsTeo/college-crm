@@ -192,9 +192,12 @@ companies with no status - defaults in use); phone: marked number of a known per
 
 - `SAID` (05.11) "Make the date and the address little bit more standing out. And make the animations appear sooner in the
   scroll timing. The confetti I LIKE!" -> 2 looks as a picture first; reveal earlier on scroll; confetti unchanged.
+- `SAID` (05.11) description: "The new Novikontas Academy opens." then, instead of the second sentence, "Stay tuned for the full program."
+- `SAID` (05.11) Stage 2: the letter shown is the filtered-email Save the Date follow-up, "not the Stage 2 RSVP" -> show the real Stage 2 RSVP letter.
 
 ## 05.11.2026 - Academy Home: last year around this time + Needs you for CRD only (owner's asks)
 
+- `LIVE` 05.11 patch 108 (4030455): all of the Home picks below.
 - `DECIDED` HIS PICK (05.11): the Home cards show last year around this time, wording "Last year around this time",
   styled quieter than the figure so it does not overwhelm with data.
 - `DECIDED` HIS PICK (05.11): "Needs you" on Home shows only for CRD: Ieva, Arina, Marina, Laura Skirmante, the shared
