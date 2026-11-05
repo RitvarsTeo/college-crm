@@ -44,6 +44,8 @@ function home(r, people) {
     C_TERMINAL: ['Admitted', 'Not proceeding'], C_MONTHS: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
     cPeopleRows: async () => people, cTodayIso: () => localDate(), cDay: (iso) => (iso ? String(iso).slice(0, 10) : ''),
     cSpark: () => '', cMonthChart: () => '', cBars: () => '', cDonut: () => '', C_REP_COH: {}, opened: null,
+    // Home 05.11.2026: the measured wave, the conversion bar, the median split, Needs you for CRD
+    cSeesNeedsYou: () => true, cWave: () => '', cConvBar: () => '', cDaysSplit: () => '',
   };
   ctx.cGoCohort = (k) => { ctx.opened = ctx.C_REP_COH[k]; };
   vm.createContext(ctx);

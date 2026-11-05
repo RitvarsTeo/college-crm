@@ -3118,7 +3118,8 @@ export const handle = async (req, res) => {
     // The KPI report. One period, chosen by whoever is running the meeting.
     if (req.method === 'GET' && p === '/api/report') {
       return json(res, 200, await buildReport(db, {
-        from: url.searchParams.get('from'), to: url.searchParams.get('to'), years: yearsOf(url.searchParams.get('years')) }));
+        from: url.searchParams.get('from'), to: url.searchParams.get('to'), years: yearsOf(url.searchParams.get('years')),
+        asOfEnd: url.searchParams.get('asof') === 'end' }));
     }
 
     if (req.method === 'GET' && p === '/api/report/sections') {

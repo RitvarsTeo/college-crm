@@ -60,12 +60,16 @@ export function maturedBasis(p, { now = new Date(), days = MATURED_DAYS } = {}) 
   return { days, cutoff: dayAfterStartOf(lastDay), lastDay,
     who: toNow ? `who arrived ${days}+ days ago` : `who arrived ${days}+ days before ${localDate(new Date(end))}` };
 }
-export async function maturedConversion(db, p, opts) {
+export async function maturedConversion(db, p, opts = {}) {
   const basis = maturedBasis(p, opts);
   const until = basis.cutoff < p.to ? basis.cutoff : p.to;
   const [inR, rArgs] = inP('created_at', p);
   const of = await count(db, `SELECT COUNT(*) n FROM people WHERE ${inR} AND created_at < ?`, ...rArgs, until);
-  const admitted = await count(db, `SELECT COUNT(*) n FROM people
+  // asOfEnd (Home's "Last year around this time", 05.11.2026): only admissions up to the period's last day, as it stood then
+  const admitted = opts.asOfEnd
+    ? await count(db, `SELECT COUNT(*) n FROM people
+      WHERE ${inR} AND created_at < ? AND admitted_at IS NOT NULL AND admitted_at < ?`, ...rArgs, until, p.to)
+    : await count(db, `SELECT COUNT(*) n FROM people
     WHERE ${inR} AND created_at < ? AND admitted_at IS NOT NULL`, ...rArgs, until);
   return { ...basis, admitted, of, pct: of ? Math.round((admitted / of) * 1000) / 10 : null };
 }
@@ -148,7 +152,7 @@ async function breakdown(db, column, { where = '', args = [], ...p } = {}) {
   return rows.map((r) => ({ value: r.k, count: r.n }));
 }
 
-export async function report(db, { from, to, years } = {}) {
+export async function report(db, { from, to, years, asOfEnd = false } = {}) {
   // a set of whole years (Q59), or a run of days (a month chosen on Reports, an export, an older caller)
   const p = yearsOf(years).length ? periodOfYears(years) : periodOf(from, to);
   const [ARR, A] = inP('created_at', p);     // arrived in the period
@@ -171,15 +175,16 @@ export async function report(db, { from, to, years } = {}) {
 
   // Conversion follows the MATURED people who arrived in the period (maturedConversion above), so the two numbers
   // describe one population. Admitted-this-month counts a different one and says so.
-  const conv = await maturedConversion(db, p);
+  const conv = await maturedConversion(db, p, { asOfEnd });
   const conversion = conv.pct;
   const stepRates = (await maturedSteps(db, p)).steps;   // the two stage rates the benchmarks compare with
   const reply = await firstReply(db, p);                    // and the first-reply time, when anything is known
   if (reply) stepRates.firstReply = reply;
 
-  // How long admission actually took, as a median of real durations.
+  // How long admission actually took, as a median of real durations. Only people with a KNOWN first contact (the owner,
+  // 05.11.2026): a person the SIS created carries one date, so their first contact IS their admission and would read 0.
   const durations = (await db.prepare(`SELECT created_at, admitted_at FROM people
-    WHERE admitted_at IS NOT NULL AND ${ADM}`).all(...A))
+    WHERE admitted_at IS NOT NULL AND ${ADM} AND COALESCE(first_channel, '') <> 'sis'`).all(...A))
     .map((r) => Math.round((Date.parse(r.admitted_at) - Date.parse(r.created_at)) / 86400000))
     .filter((d) => Number.isFinite(d) && d >= 0)
     .sort((a, b) => a - b);
@@ -243,6 +248,8 @@ export async function report(db, { from, to, years } = {}) {
       conversionDays: conv.days,
       conversionCutoff: conv.cutoff,
       medianDaysToAdmission: median,
+      medianOf: durations.length,   // the people with a known first contact the median is over
+      admitDays: durations,         // each of them, in days (sorted): Home draws them as a strip (05.11.2026)
     },
     steps: stepRates,
     trend: months,

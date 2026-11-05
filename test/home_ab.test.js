@@ -53,6 +53,8 @@ function harness({ summary = 'ok', intake = 'ok' } = {}) {
     cTodayIso: () => '2026-10-02',
     cDay: (iso) => (iso ? String(iso).slice(0, 10) : ''),
     cSpark: (v, kind) => `<svg class="kspark ${kind}"></svg>`,
+    // Home 05.11.2026: the measured wave, the conversion bar, the median split, Needs you for CRD
+    cSeesNeedsYou: () => true, cWave: () => '', cConvBar: () => '', cDaysSplit: () => '',
     cMonthChart: () => '<svg class="kchart"></svg>',
     cBars: (rows, kind) => `<div class="kbars ${kind}">${rows.length}</div>`,
     cDonut: (rows) => `<div class="kdonut">${rows.map((r) => r[0] + '=' + r[1]).join(',')}</div>`,
@@ -100,12 +102,14 @@ test('B: what needs a person comes first, and every figure links to where the pe
   assert.match(html, /kdonut">Open=6,Not proceeding=4/, 'the donut counts the same people: Open and Not proceeding (Q43)');
 });
 
-test('B: the comparison is the last COMPLETE month against the one before, with its basis named', async () => {
+// 05.11.2026 (the owner, "A calm" + "Keep wave, but have a measurement of the wave"): the month-against-month line left the
+// cards; the measured wave draws the COMPLETE months only, so the month in progress is never a dip.
+test('B: no month-against-month line; the wave draws the complete months only', async () => {
   const h = harness(); const html = h.B(await h.data());
-  // October is in progress on 2 October, so it is Sep against Aug - never Oct against Sep
-  assert.match(html, /Sep <b>4<\/b> · vs Aug 1 · \+3/, 'admitted');
-  assert.match(html, /Sep <b>9<\/b> · vs Aug 8 · \+1/, 'leads');
-  assert.doesNotMatch(html, /Oct <b>/);
+  assert.doesNotMatch(html, /class="kdelta/, 'the month line is gone');
+  const B = APP.slice(APP.indexOf('function cHomeB(D) {'), APP.indexOf('// EVERY HOME FIGURE IS A CLICK'));
+  assert.match(B, /const done = D\.months\.filter\(\(m\) => m\.month < now\);/);
+  assert.ok(B.includes("${cWave(done, 'admitted', 'admitted')}") && B.includes("${cWave(done, 'newLeads', 'leads')}"));
 });
 
 test('at most TWO scenes on Home (KB 08 P5), and no mark is scaled on arrival', async () => {

@@ -1061,6 +1061,14 @@
     "_notALead": "Rethink, Ritvars 14.10.2026 (\"how do you know its 'Not Admissions'?\" -> \"Yes, this system\"): calls run on facts. The button decides whose list; whoever answered decides about THAT call: Make a lead, or Not a lead (this call only, no number remembered); a number that is a person in Intake goes to that person. Only Spam, Supplier or vendor and Internal remember a number. Not Admissions as a remembered reason is retired.",
     "oneOpenItemPerNumber": true
   },
+  "needsYouFor": [
+    "ieva.gudaneca@novikontas.org",
+    "arina.danilevska@novikontas.org",
+    "poma@novikontas.org",
+    "laura.skirmante@novikontas.org",
+    "edu@novikontas.org"
+  ],
+  "_needsYouFor": "The owner, 05.11.2026: Needs you on Home is for CRD only - Ieva, Arina, Marina (poma@), Laura Skirmante and the shared Admissions account (edu@); Tetiana once she has an account. Not for anyone else, admins included. A copy without sign-in shows it.",
   "phoneMenu": {
     "1": {
       "role": "Admissions",

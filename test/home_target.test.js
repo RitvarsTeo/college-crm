@@ -55,6 +55,7 @@ test('each meter fills exactly its share of its own target', () => {
 
 test('the bars are on the Admitted card, always; every target switch is gone', () => {
   const home = APP.slice(APP.indexOf('function cHomeB(D) {'), APP.indexOf('// A stage on Home opens the Journey'));
-  assert.match(home, /<div class="khero"><span>Admitted<\/span>[^\n]*\$\{goal \? cTargetMeter\(goal\) : ''\}/);
+  // 05.11.2026 (the owner, "A calm"): Home keeps the one target, all admitted; the officer target stays on Reports
+  assert.ok(/<div class="khero"><span>Admitted<\/span>[^\n]*\$\{goal \? cTargetBars\(\{ \.\.\.goal, off: null \}, goal\.rows\.length, 0\) : ''\}/.test(home));
   assert.doesNotMatch(APP, /cTargetMode|cTargetYear|cTargetMini|get\('target'\)|get\('first'\)|get\('home2'\)|cHome2Mode|cHomeVitals/);
 });

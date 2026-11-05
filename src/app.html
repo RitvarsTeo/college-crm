@@ -3387,6 +3387,38 @@ svg .m-flag-mark{transform-origin:0 100%}
   /* Page titles keep their own size: the start tiles, Applications, the one-card title, the person's name, the Client
      book's title and the Grand Opening stage titles. */
   html.ui-c #view h2:not(.dl-tile h2, .c-apps-head h2, .one h2, .c-card h2, .tct-h, .tcgo-stage), html.ui-c #view h3 { letter-spacing: .14em; text-transform: uppercase; font-size: 11.5px; font-weight: 700; color: var(--ink, #0f1b35); }
+  /* LAST YEAR AROUND THIS TIME (05.11.2026): quieter than the figure, one short line */
+  html.ui-c #view .kly{display:block;margin-top:4px;font-size:12px;font-weight:500;color:var(--t3);letter-spacing:0;text-transform:none}
+  /* THE WAVE, MEASURED (05.11.2026) */
+  html.ui-c #view .kwave{position:relative;margin:14px 2px 4px;height:84px}
+  html.ui-c #view .kwave svg{position:absolute;left:0;top:0;width:100%;height:64px;overflow:visible}
+  html.ui-c #view .kwave path.l{fill:none;stroke:#29a8df;stroke-width:2;vector-effect:non-scaling-stroke}
+  html.ui-c #view .kwave path.a{fill:rgba(41,168,223,.16);stroke:none}
+  html.ui-c #view .kwave .kwn{position:absolute;transform:translateX(-50%);font-size:10.5px;font-weight:600;color:var(--ink);line-height:1;text-decoration:none}
+  html.ui-c #view .kwave .kwn:hover{color:#29a8df}
+  html.ui-c #view .kmed{margin:16px 2px 6px}
+  html.ui-c #view .kmed-bar{display:flex;height:12px;border-radius:6px;overflow:hidden;background:rgba(41,168,223,.1)}
+  html.ui-c #view .kmed-bar i{display:block;height:100%}
+  html.ui-c #view .kmed .g0{background:#29a8df} html.ui-c #view .kmed .g1{background:#6cc1e8}
+  html.ui-c #view .kmed .g2{background:#a9d9ef} html.ui-c #view .kmed .g3{background:#d6ecf6}
+  html.ui-c #view .kmed-k{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;margin-top:9px}
+  html.ui-c #view .kmed-i{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--t2);text-transform:none;letter-spacing:0}
+  html.ui-c #view .kmed-i i{display:inline-block;width:9px;height:9px;border-radius:2px;flex:none}
+  html.ui-c #view .kmed-i a{font-weight:700;color:var(--ink);text-decoration:none}
+  html.ui-c #view .kmed-i a:hover{color:#29a8df}
+  html.ui-c[data-theme="dark"] #view .kmed-i a{color:#fff}
+  html.ui-c #view .kconv{margin:16px 2px 6px}
+  html.ui-c #view .kconv-t{position:relative;height:10px;border-radius:6px;background:rgba(41,168,223,.14)}
+  html.ui-c #view .kconv-t i{position:absolute;left:0;top:0;bottom:0;border-radius:6px;background:#29a8df}
+  html.ui-c #view .kconv-t s{position:absolute;top:-4px;bottom:-4px;width:2px;margin-left:-1px;background:#f0a500}
+  html.ui-c #view .kconv-n{position:relative;height:16px;margin-top:5px;font-size:10.5px;color:var(--t3)}
+  html.ui-c #view .kconv-n a{position:absolute;left:0;font-weight:700;color:var(--ink);text-decoration:none}
+  html.ui-c #view .kconv-n a.now, html.ui-c #view .kconv-n a.ly{transform:translateX(-50%)}
+  html.ui-c #view .kconv-n a.ly{color:#b07800}
+  html.ui-c #view .kconv-n a:hover{color:#29a8df}
+  html.ui-c #view .kwm{position:absolute;left:0;right:0;top:68px;display:flex;justify-content:space-between}
+  html.ui-c #view .kwm span{display:block;width:0;margin:0;text-align:center;font-size:10px;color:var(--t3);text-transform:none;letter-spacing:0;white-space:nowrap}
+  html.ui-c[data-theme="dark"] #view .kwave .kwn, html.ui-c[data-theme="dark"] #view .kconv-n a{color:#fff}
 </style>
 </head>
 <body>
@@ -3985,11 +4017,16 @@ async function cHomeData() {
   // THE PERIOD (Q45): the year scope, never the calendar year on its own. 'all' has no year: no target, the last
   // twelve months on the chart.
   const year = cScopeYear();   // one year, 'multi' or 'all' (Q59): a year's target only for one year
-  const [rep, people, sum, intake] = await Promise.all([
+  // LAST YEAR AROUND THIS TIME (the owner, 05.11.2026): this year's figures next to last year's up to the same day.
+  // Only when Home shows the current year on its own.
+  const md = cTodayIso().slice(5, 10) === '02-29' ? '02-28' : cTodayIso().slice(5, 10);
+  const ly = year === cNowYear() ? year - 1 : null;
+  const [rep, people, sum, intake, lyRep] = await Promise.all([
     api('/api/report?' + cScopeReportQs()),
     cPeopleRows(),
     api('/api/summary').catch(() => null),
     api('/api/intake').catch(() => null),
+    ly ? api(`/api/report?from=${ly}-01-01&to=${ly}-${md}&asof=end`).catch(() => null) : null,
   ]);
   const s = rep.summary || {};
   const thisMonth = cTodayIso().slice(0, 7);
@@ -4010,6 +4047,8 @@ async function cHomeData() {
   const todayRows = sum && Array.isArray(sum.today) ? sum.today : null;
   return {
     year, s, months, people, admitted, undated, progs, chans, stages, open, closed,
+    lastYear: lyRep && lyRep.summary ? { admitted: lyRep.summary.admitted, leads: lyRep.summary.newLeads,
+      conversion: lyRep.summary.conversionPct == null ? null : lyRep.summary.conversionPct + '%' } : null,
     steps: rep.steps || {},   // the server's matured step rates (Reached Application on the Conversion card, 07.10)
     // Admissions, 30.09: cold and reject, for statistics and to aim marketing at the cold ones
     overdue: overdueRows ? new Set(overdueRows.map((t) => t.person_id)).size : null,
@@ -4022,6 +4061,14 @@ async function cHomeData() {
   };
 }
 
+// NEEDS YOU IS FOR CRD (the owner, 05.11.2026): the CRD accounts and the shared Admissions account (config needsYouFor).
+// Anybody else, admins included, sees Home without it. A copy without sign-in shows it.
+function cSeesNeedsYou() {
+  const u = typeof AUTH !== 'undefined' && AUTH && AUTH.user;
+  if (!u) return true;
+  const email = String(u.email || '').trim().toLowerCase();
+  return (CFG.needsYouFor || []).some((x) => String(x).toLowerCase() === email);
+}
 const cFig = (n) => (n === null ? '<span class="kgapn" title="not available">—</span>' : n);
 
 async function viewHomeC() {
@@ -4144,19 +4191,14 @@ function cHomeB(D) {
   const s = D.s;
   const goal = cTarget(D);   // the year's target on the Admitted card, or null
   const now = cTodayIso().slice(0, 7);
-  const done = D.months.filter((m) => m.month < now);
-  const [prev, last] = done.slice(-2);
-  const mo = (m) => C_MONTHS[Number(m.month.slice(5)) - 1];
-  const delta = (key) => {
-    if (!prev || !last) return '';
-    const d = last[key] - prev[key];
-    return `<span class="kdelta${d > 0 ? ' up' : d < 0 ? ' down' : ''}">${mo(last)} <b>${last[key]}</b> · vs ${mo(prev)} ${prev[key]} · ${d > 0 ? '+' : ''}${d}</span>`;
-  };
+  const done = D.months.filter((m) => m.month < now);   // complete months only: the month in progress is never a dip
+  // quiet, under the year: last year up to the same day
+  const ly = (n) => (D.lastYear && (typeof n === 'number' || typeof n === 'string') ? `<span class="kly">Last year around this time: ${n}</span>` : '');
   const need = (label, n, go, href, k) => `<a class="kneed" href="${href}" style="--i:${k}" ${go ? `onclick="${go};return false"` : ''}>
       <span>${esc(label)}</span><b>${cFig(n)}</b></a>`;
   // Needs you is the whole row: "The journey now" left Home on 05.10.2026 (the owner: "The journey now. Do we need it on
   // home?" - dropped; the Journey page's band has the stage counts, and the donut's Open opens the Journey).
-  return `<section class="kday m-scene" aria-label="Needs you">
+  return `${cSeesNeedsYou() ? `<section class="kday m-scene" aria-label="Needs you">
       <div class="kday-sheet">
         <h2>Needs you</h2>
         <div class="kday-row">
@@ -4166,12 +4208,13 @@ function cHomeB(D) {
           ${D.noNext ? need('No next step', D.noNext, "cGoPeople({ due: 'none' })", '#/due', 3) : ''}
         </div>
       </div>
-    </section>
+    </section>` : ''}
     <div class="kstrip kb-strip">
-      <div class="khero"><span>Admitted</span><b>${D.admitted.length}</b><small>${esc(cScopeWord())}${D.undated ? ` · +${D.undated} undated` : ''}</small>${goal ? cTargetMeter(goal) : ''}${cSpark(D.months.map((m) => m.admitted), 'adm')}${delta('admitted')}<a class="kgo" href="#/reports" onclick="cGoReportYear('admitted');return false">Reports →</a></div>
-      <div><span>Leads</span><b>${s.newLeads ?? 0}</b><small>${esc(cScopeWord())}</small>${cSpark(D.months.map((m) => m.newLeads), 'lead')}${delta('newLeads')}<a class="kgo" href="#/reports" onclick="cGoReportYear('leads');return false">Reports →</a></div>
-      <div><span>Conversion</span><b>${s.conversionPct == null ? '-' : s.conversionPct + '%'}</b><small>${s.conversionA ?? 0} / ${s.conversionB ?? 0} ${esc(s.conversionWho || 'who arrived')}${cReachedWords(D.steps.leadToApplication, (n, which) => `<a class="rp-go" href="#/people" data-n="${n}" onclick="cGoHomeReached('${which}');return false">${n}</a>`)}</small><a class="kgo" href="#/reports" onclick="cGoReportYear('conversion');return false">Reports →</a></div>
-      <div><span>Median time to admission</span><b>${s.medianDaysToAdmission == null ? '-' : s.medianDaysToAdmission} <em>days</em></b><small>first contact to admission</small><a class="kgo" href="#/reports" onclick="cGoReportYear('median');return false">Reports →</a></div>
+      <!-- Leads first, then Admitted (the owner, 05.11.2026: "shouldnt leads be before admitted? chronology much?") -->
+      <div><span>Leads</span><b>${s.newLeads ?? 0}</b><small>${esc(cScopeWord())}</small>${ly(D.lastYear && D.lastYear.leads)}${cWave(done, 'newLeads', 'leads')}<a class="kgo" href="#/reports" onclick="cGoReportYear('leads');return false">Reports →</a></div>
+      <div class="khero"><span>Admitted</span><b>${D.admitted.length}</b><small>${esc(cScopeWord())}${D.undated ? ` · +${D.undated} undated` : ''}</small>${ly(D.lastYear && D.lastYear.admitted)}${goal ? cTargetBars({ ...goal, off: null }, goal.rows.length, 0) : ''}${cWave(done, 'admitted', 'admitted')}<a class="kgo" href="#/reports" onclick="cGoReportYear('admitted');return false">Reports →</a></div>
+      <div><span>Conversion</span><b>${s.conversionPct == null ? '-' : s.conversionPct + '%'}</b><small>${s.conversionA ?? 0} / ${s.conversionB ?? 0} ${esc(s.conversionWho || 'who arrived')}${cReachedWords(D.steps.leadToApplication, (n, which) => `<a class="rp-go" href="#/people" data-n="${n}" onclick="cGoHomeReached('${which}');return false">${n}</a>`)}</small>${ly(D.lastYear && D.lastYear.conversion)}${cConvBar(s.conversionPct, D.lastYear && D.lastYear.conversion)}<a class="kgo" href="#/reports" onclick="cGoReportYear('conversion');return false">Reports →</a></div>
+      <div><span>Median time to admission</span><b>${s.medianDaysToAdmission == null ? '-' : s.medianDaysToAdmission} <em>days</em></b><small>first contact to admission${s.medianOf ? ` · ${s.medianOf} people with a known first contact` : ''}</small>${cDaysSplit(s.admitDays)}<a class="kgo" href="#/reports" onclick="cGoReportYear('median');return false">Reports →</a></div>
     </div>
     <div class="m-scene kb-charts">
       <div class="kb-top">
@@ -4194,6 +4237,36 @@ function cGoHomeReached(which) {
   C_REP_COH = { ...C_REP_COH, home_reached: { name: 'home:reached:' + which,
     label: `Leads · ${cScopeWord()} · ${who}${which === 'reached' ? ' · reached Submitted application' : ''}`, ids: which === 'reached' ? st.reachedIds : st.ofIds } };
   cGoCohort('home_reached');
+}
+// A number in a Home wave opens that month on the card's own Reports tab (the owner, 05.11.2026: "all of them numbers in
+// the graphics need to be clickable and linked to the fuller stats")
+// CONVERSION, DRAWN (the owner, 05.11.2026: "Conversion should have also a nice visual reference!"): this year's share as
+// a bar to 100 %, last year around this time as a mark on it; both numbers open Reports > Conversion.
+function cConvBar(pct, lastYear) {
+  if (pct == null) return '';
+  const ly = lastYear == null ? null : parseFloat(String(lastYear));
+  const go = `onclick="cGoReportYear('conversion');return false"`;
+  return `<div class="kconv" role="img" aria-label="${esc(`${pct}% this year${ly == null ? '' : `, ${ly}% last year around this time`}`)}">
+    <div class="kconv-t"><i style="width:${Math.min(100, pct)}%"></i>${ly == null ? '' : `<s style="left:${Math.min(100, ly)}%" title="Last year around this time"></s>`}</div>
+    <div class="kconv-n"><a class="now" href="#/reports" style="left:${Math.min(100, pct)}%" ${go}>${pct}%</a>${ly == null ? '' : `<a class="ly" href="#/reports" style="left:${Math.min(100, ly)}%" ${go}>${ly}%</a>`}</div></div>`;
+}
+// MEDIAN TIME, DRAWN (the owner, 05.11.2026: "and the median time also!", his pick A "split bar"): the people with a known
+// first contact in four groups by how long admission took, one bar split by the groups and a key with the counts; every
+// count opens Reports > Median time. A month's median rests on one or two people too often to draw as a wave.
+const C_MED_GROUPS = [['under 1 month', 0, 30], ['1-3 months', 31, 91], ['3-6 months', 92, 183], ['over 6 months', 184, Infinity]];
+function cDaysSplit(days) {
+  const d = (days || []).filter((x) => Number.isFinite(x));
+  if (d.length < 2) return '';
+  const groups = C_MED_GROUPS.map(([label, a, b], k) => ({ label, k, n: d.filter((x) => x >= a && x <= b).length }));
+  const go = `onclick="cGoReportYear('median');return false"`;
+  return `<div class="kmed" role="img" aria-label="${esc(groups.map((g) => `${g.n} ${g.label}`).join(', '))}">
+    <div class="kmed-bar">${groups.filter((g) => g.n).map((g) => `<i class="g${g.k}" style="width:${((g.n / d.length) * 100).toFixed(1)}%"></i>`).join('')}</div>
+    <div class="kmed-k">${groups.map((g) => `<span class="kmed-i"><i class="g${g.k}"></i><a href="#/reports" ${go}>${g.n}</a> ${g.label}</span>`).join('')}</div></div>`;
+}
+function cGoReportMonth(chapter, ym) {
+  C_RPT_PRESET = 'year'; RPT = { from: ym.slice(0, 4) + '-01-01', to: '' }; C_REP_MONTH = ym;
+  C_REP_CH = chapter || null;
+  if (location.hash.split('?')[0] === '#/reports') viewReportsC(); else location.hash = '#/reports';
 }
 function cGoReportYear(chapter) {
   C_RPT_PRESET = 'year'; RPT = { from: cTodayIso().slice(0, 4) + '-01-01', to: '' }; C_REP_MONTH = '';   // a Home card is the whole years
@@ -4226,6 +4299,29 @@ function cGoClosedTag(id) {
 // It draws nothing when there is nothing to say: fewer than two months of data, or a
 // series that is flat at zero, gets no line rather than a straight one pretending to
 // be a trend.
+// THE WAVE, MEASURED (the owner, 05.11.2026: "Keep wave, but have a measurement of the wave. make the cards big enough
+// to have it visible!", then "More like wave"): the year's complete months as a smooth line with a light fill, each
+// month's number above its point and its letter below.
+function cWave(months, key, chapter) {
+  months = (months || []).filter((m) => m[key] != null);   // a month with nothing to measure is left out, never drawn as 0
+  const v = months.map((m) => Number(m[key]) || 0);
+  if (v.length < 2 || !v.some((n) => n > 0)) return '';
+  const H = 64, top = 16, max = Math.max(...v), n = v.length;
+  const pts = v.map((x, i) => [(i / (n - 1)) * 100, top + (H - top - 4) - (max ? (x / max) * (H - top - 4) : 0)]);
+  let d = `M${pts[0][0].toFixed(2)},${pts[0][1].toFixed(2)}`;
+  for (let i = 0; i < n - 1; i++) {
+    const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+    d += ` C${(p1[0] + (p2[0] - p0[0]) / 6).toFixed(2)},${(p1[1] + (p2[1] - p0[1]) / 6).toFixed(2)} ${(p2[0] - (p3[0] - p1[0]) / 6).toFixed(2)},${(p2[1] - (p3[1] - p1[1]) / 6).toFixed(2)} ${p2[0].toFixed(2)},${p2[1].toFixed(2)}`;
+  }
+  const letter = (m) => C_MONTHS[Number(m.month.slice(5)) - 1].slice(0, 1);
+  return `<div class="kwave" role="img" aria-label="${esc(months.map((m, i) => `${C_MONTHS[Number(m.month.slice(5)) - 1]} ${v[i]}`).join(', '))}">
+    <svg viewBox="0 0 100 ${H}" preserveAspectRatio="none" aria-hidden="true"><path class="a" d="${d} L100,${H} L0,${H} Z"/><path class="l" d="${d}"/></svg>
+    ${pts.map((p, i) => `<a class="kwn" href="#/reports" style="left:${p[0].toFixed(2)}%;top:${(p[1] - 14).toFixed(1)}px"
+      title="${esc(C_MONTHS[Number(months[i].month.slice(5)) - 1])}: open it in Reports"
+      onclick="cGoReportMonth(${esc(JSON.stringify(String(chapter || '')))}, ${esc(JSON.stringify(months[i].month))});return false">${v[i]}</a>`).join('')}
+    <div class="kwm">${months.map((m) => `<span>${letter(m)}</span>`).join('')}</div></div>`;
+}
+
 function cSpark(values, kind) {
   const v = (values || []).map((n) => Number(n) || 0);
   if (v.length < 2 || !v.some((n) => n > 0)) return '';

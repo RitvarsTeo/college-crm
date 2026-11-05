@@ -47,6 +47,8 @@ function home(r, people, cfg = CFG) {
     C_TERMINAL: ['Admitted', 'Not proceeding'], C_MONTHS: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
     cPeopleRows: async () => people, cTodayIso: () => localDate(), cDay: (iso) => (iso ? String(iso).slice(0, 10) : ''),
     cSpark: () => '', cMonthChart: () => '', cBars: () => '', cDonut: () => '', C_REP_COH: {},
+    // Home 05.11.2026: the measured wave, the conversion bar, the median split, Needs you for CRD
+    cSeesNeedsYou: () => true, cWave: () => '', cConvBar: () => '', cDaysSplit: () => '',
   };
   vm.createContext(ctx);
   vm.runInContext([
@@ -58,7 +60,8 @@ function home(r, people, cfg = CFG) {
   ].join('\n') + '\nthis.data = cHomeData; this.B = cHomeB;', ctx);
   return ctx;
 }
-const homeCard = (html) => html.slice(html.indexOf('<div class="khero">'), html.indexOf('<div><span>Leads</span>'));
+// Leads stands before Admitted since 05.11.2026 (the owner: "chronology"): the Admitted card ends where Conversion starts
+const homeCard = (html) => html.slice(html.indexOf('<div class="khero">'), html.indexOf('<div><span>Conversion</span>'));
 
 // Reports: the model and the Admitted chapter's head
 function reports(cfg = CFG) {
@@ -108,7 +111,8 @@ test('Home and Reports say the same words, the same hover and the same key, on o
   const onReports = meters(R.X.cRepEcho('admitted', M).more);
 
   const expected = want(adm.length, off.length);
-  assert.deepEqual(onHome.map(([c, t, w]) => [c, t, w]), expected, 'Home');
+  // Home keeps the one target, all admitted (the owner, "A calm", 05.11.2026); Reports keeps both
+  assert.deepEqual(onHome.map(([c, t, w]) => [c, t, w]), expected.slice(0, 1), 'Home');
   assert.deepEqual(onReports.map(([c, t, w]) => [c, t, w]), expected, 'Reports, word for word');
   for (const [, , , inner] of [...onHome, ...onReports]) {
     assert.match(inner, /<span class="ktgt-b"><span class="ktgt-sep"> · <\/span><span class="ktgt-key" aria-hidden="true"><\/span>target <strong class="ktgt-goal">/, 'the tick stands before "target"');

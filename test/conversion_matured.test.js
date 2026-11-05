@@ -63,7 +63,8 @@ test('the end of a past period is its last day; of a running one, today', () => 
 
 test('one definition: the server report, the core metric, Home and Reports all read it', () => {
   const R = fs.readFileSync(path.join(ROOT, 'src', 'reports.js'), 'utf8');
-  assert.match(R, /const conv = await maturedConversion\(db, p\);/, 'the report');
+  // asOfEnd: Home's "Last year around this time" counts admissions up to that day (05.11.2026); the rule is the same one
+  assert.match(R, /const conv = await maturedConversion\(db, p, \{ asOfEnd \}\);/, 'the report');
   assert.match(SERVER, /const conv = await maturedConversion\(db, periodOf\(\)\);/, '/api/metrics/core');
   assert.doesNotMatch(SERVER, /cohortAdmitted/, 'the old all-arrivals rule is gone');
   // Home: only the small label changed; the figures are the report's a / b and its words
