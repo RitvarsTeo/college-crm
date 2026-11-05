@@ -200,7 +200,8 @@ companies with no status - defaults in use); phone: marked number of a known per
   preview list); (b) a record with our own email domain or "Test" in the name never counts in any figure; (c) Admitted
   figures count distinct people, not records. The 2 sheet+sheet pairs (two programmes) are listed, not merged.
 - `DECIDED` HIS PICK (05.11, popup in the Academy lane): "Fix the 2026 Admitted figure: join the 64 doubles and leave test records
-  out of every figure?" = "Yes, fix all". (The 2 sheet+sheet pairs: one person, two programmes; question to him whether to join them too.)
+  out of every figure?" = "Yes, fix all". HIS PICK (05.11, popup via MASTER): the 2 sheet+sheet pairs (one person, two
+  programmes) = "Keep both records"; they count once through (c). So 62 merges.
 
 ## 05.11.2026 - Grand Opening landing page (owner's ask, lane: Intake TC LANE)
 
