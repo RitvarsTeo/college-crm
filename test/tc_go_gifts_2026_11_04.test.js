@@ -24,7 +24,8 @@ test('the tiles: one per company, same name whatever the capitals, a click opens
   const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
   assert.match(app, /const key = r\.companyId \? 'id:' \+ Number\(r\.companyId\) : 'n:' \+ String\(r\.company \|\| ''\)\.trim\(\)\.toLowerCase\(\);/);
   assert.match(app, /<div class="tcs2-tiles">/);
-  assert.match(app, /onclick="tcS2SetGift\(\$\{k\}, '\$\{p \? 'none' : 'physical'\}'\)">🎁 Physical<\/button>/);
+  assert.match(app, /onclick="tcS2SetGift\(\$\{k\}, 'physical'\)">🎁 Physical<\/button>/);
+  assert.match(app, /const kind = \(T_S2\.gifts \|\| \{\}\)\[key\] === pick \? 'none' : pick;/);
   assert.match(app, /\$\{esc\(g\.name \|\| 'No company yet'\)\}/);
   const srv = fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8');
   assert.match(srv, /p === '\/api\/tc\/go\/gift' && req\.method === 'POST'/);
@@ -42,7 +43,7 @@ test('met face to face: a meeting or exhibition logged, or a Season stage past O
   assert.match(app, /🤝 Met<\/span>/);
 });
 
-test('05.11 his correction: no gift is lit until picked; a second click clears it (none deletes the row)', async () => {
+test('05.11 his correction: no gift is lit until picked; a second click clears it (kept as none, never deleted)', async () => {
   const db = await openDb();
   assert.deepEqual(await go.giftMap(db), {});
   await go.setGift(db, 'id:7', 'digital', 'Ritvars');

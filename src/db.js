@@ -869,7 +869,7 @@ CREATE TABLE IF NOT EXISTS tc_go_s2_log (
 -- company_key = 'id:<tc_companies.id>' or 'n:<the company name in lower case>' for a Stage 2 company Intake does not hold.
 CREATE TABLE IF NOT EXISTS tc_go_gifts (
   company_key TEXT PRIMARY KEY,
-  kind TEXT NOT NULL,              -- physical | digital
+  kind TEXT NOT NULL,              -- physical | digital | none (a cleared pick, 05.11.2026)
   set_at TEXT NOT NULL,
   set_by TEXT
 );

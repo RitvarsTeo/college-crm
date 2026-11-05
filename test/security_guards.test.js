@@ -237,7 +237,9 @@ test('(b) a JSON literal keeps a hostile value one harmless string', () => {
 // write (DEMO_WRITES / isDemoWrite in src/server.js) and answer 410 on the live copy, even to an admin.
 const DANGER = /reset|wipe|demo|scenario|dataset|\/sim\/|simulate|console\/(mode|send|phone-event)|intake\/receive/;
 // Matched by the words but reviewed 07.10.2026 as harmless: read-only lists, behind sign-in.
-const REVIEWED_READ_ONLY = new Set(['/api/console/scenarios', '/api/sim/providers', '/api/sim/events', '/api/sim/events/1']);
+// /api/tc/go/demo and /api/tc/go/demo-access (05.11.2026): the Grand Opening demo page and its files, GET only, for five named
+// accounts (src/godemo.js); they write nothing, and a POST to them falls through to 404.
+const REVIEWED_READ_ONLY = new Set(['/api/console/scenarios', '/api/sim/providers', '/api/sim/events', '/api/sim/events/1', '/api/tc/go/demo', '/api/tc/go/demo-access']);
 
 test('(c) on the live copy every reset, demo and simulator write answers 410, even to an admin', async (t) => {
   const s = await startHosted();
