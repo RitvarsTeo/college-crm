@@ -44,13 +44,18 @@ function letter(kind, first) {
     + '<div class="subj">Subject: ' + esc(m.subject) + '</div>' + m.html.replace('src="cid:building"', 'src="building.jpg"') + '</body></html>';
 }
 
+// The page with a <base> so its relative links work at /api/tc/go/demo (no slash) too.
+const page = () => fs.readFileSync(path.join(DIR, 'index.html'), 'utf8').replace('<head>', '<head><base href="' + PREFIX + '">');
+
 /** The file for a path under PREFIX: { file | body, type } or null. The folder itself is the page. */
 export function fileFor(pathname, me = null) {
   let rel;
+  if (String(pathname) + '/' === PREFIX) return { body: page(), type: TYPES['.html'] };
   try { rel = decodeURIComponent(String(pathname).slice(PREFIX.length)); } catch (e) { return null; }
   if (LETTERS[rel]) return { body: letter(LETTERS[rel], String((me && me.name) || '').split(/\s+/)[0] || ''), type: TYPES['.html'] };
   if (rel === 'letters/building.jpg') return { file: BUILDING, type: TYPES['.jpg'] };
-  const file = FILES.get(rel || 'index.html');
+  if (!rel || rel === 'index.html') return { body: page(), type: TYPES['.html'] };
+  const file = FILES.get(rel);
   return file ? { file, type: TYPES[path.extname(file).toLowerCase()] } : null;
 }
 export const read = (f) => (f.body !== undefined ? Buffer.from(f.body, 'utf8') : fs.readFileSync(f.file));

@@ -12784,7 +12784,7 @@ async function tcDoorScan() {
 function tcDoorStop() { if (T_DOOR.cam) { T_DOOR.cam.getTracks().forEach((t) => t.stop()); T_DOOR.cam = null; } const v = $('#tcDoorCam'); if (v) v.hidden = true; }
 // THE DEMO (05.11.2026, src/godemo.js): a button for the accounts the demo is for; it opens in a new tab with every link working.
 let T_GO_DEMO = false;
-const tcGoDemoBtn = () => '<a class="btn ghost tcgo-door" href="#/tc/door">Check-in at the door</a>' + (T_GO_DEMO ? '<a class="btn tcgo-demo" href="/api/tc/go/demo/" target="_blank" rel="noopener">▶ Demo</a>' : '');
+const tcGoDemoBtn = () => '<a class="btn ghost tcgo-door" href="#/tc/door">Check-in at the door</a>' + (T_GO_DEMO ? '<a class="btn tcgo-demo" href="/api/tc/go/demo" target="_blank" rel="noopener">▶ Demo</a>' : '');
 // THE STAGE 2 LISTS PER MANAGER (the owner's pick A, 26.10.2026; the answers-by-person-in-charge list removed that day): a tab per manager,
 // the people that manager sends the RSVP email to, an answer on the row when it comes in, answered people first, a search,
 // the list as a file. No "answered" totals (the owner, 26.10.2026).

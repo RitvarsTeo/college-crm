@@ -63,7 +63,7 @@ test('the demo in Intake: only the five accounts open it; every local link in th
   const page = godemo.fileFor(godemo.PREFIX);
   assert.ok(page && /text\/html/.test(page.type));
   const html = godemo.read(page).toString('utf8');
-  const local = [...html.matchAll(/(?:src|href)="([^"#:]+)"/g)].map((m) => m[1]);
+  const local = [...html.matchAll(/(?:src|href)="([^"#:/][^"#:]*)"/g)].map((m) => m[1]);
   assert.ok(local.length >= 8);
   for (const rel of local) assert.ok(godemo.fileFor(godemo.PREFIX + rel), rel);
   assert.equal(godemo.fileFor(godemo.PREFIX + '../server.js'), null);
@@ -87,4 +87,14 @@ test('05.11 the demo shows the real Stage 2 letters (drawn from tcs2mail.js), no
   assert.match(godemo.read(godemo.fileFor(godemo.PREFIX + 'letters/4_new_contact.html')).toString('utf8'), /You are invited/);
   const mail = (await import('../src/tcs2mail.js')).s2Mail('invite', 'Anna', 'x1');
   assert.doesNotMatch(mail.html, /aa5828e0/);
+});
+
+test('05.11 the demo opens at /api/tc/go/demo without a redirect (Vercel strips the slash); its links resolve by <base>', async () => {
+  const godemo = await import('../src/godemo.js');
+  const f = godemo.fileFor('/api/tc/go/demo');
+  assert.ok(f && /text\/html/.test(f.type));
+  assert.match(godemo.read(f).toString('utf8'), /<head><base href="\/api\/tc\/go\/demo\/">/);
+  const srv = fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8');
+  assert.doesNotMatch(srv, /location: godemo\.PREFIX/);
+  assert.match(fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8'), /href="\/api\/tc\/go\/demo" target="_blank"/);
 });
