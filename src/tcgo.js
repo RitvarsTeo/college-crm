@@ -534,3 +534,11 @@ export async function setGift(db, key, kind, actor) {
     ON CONFLICT (company_key) DO UPDATE SET kind = excluded.kind, set_at = excluded.set_at, set_by = excluded.set_by`).run(k, kind, new Date().toISOString(), actor);
   return { key: k, kind };
 }
+
+/** Companies met face to face (05.11.2026, his pick "Yes, suggest"): a meeting or an exhibition logged on the company, or a
+ *  Season exhibition stage Met / Follow-up / Booked. A suggestion on the tile only; the owner still picks Physical or Digital. */
+export async function metKeys(db) {
+  const a = await db.prepare(`SELECT DISTINCT company_id FROM tc_activities WHERE kind IN ('physical_meeting', 'exhibition')`).all();
+  const e = await db.prepare(`SELECT DISTINCT company_id FROM tc_event_companies WHERE stage IN ('met', 'follow_up', 'booked') AND removed_at IS NULL`).all();
+  return [...new Set([...a, ...e].map((r) => 'id:' + Number(r.company_id)))];
+}

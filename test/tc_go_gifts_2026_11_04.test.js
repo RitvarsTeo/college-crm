@@ -29,3 +29,15 @@ test('the tiles: one per company, same name whatever the capitals, a click opens
   const srv = fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8');
   assert.match(srv, /p === '\/api\/tc\/go\/gift' && req\.method === 'POST'/);
 });
+
+test('met face to face: a meeting or exhibition logged, or a Season stage past On the list, marks the tile (a suggestion)', async () => {
+  const db = await openDb();
+  const tc = await import('../src/tc.js');
+  const a = (await tc.addCompany(db, { name: 'Example Met AS', country: 'Norway' }, 'Ritvars')).id;
+  const b = (await tc.addCompany(db, { name: 'Sample Unmet AS', country: 'Norway' }, 'Ritvars')).id;
+  await tc.quickAdd(db, { companyId: a, name: 'Anna Example' }, 'Ritvars');
+  const keys = await go.metKeys(db);
+  assert.ok(keys.includes('id:' + a)); assert.ok(!keys.includes('id:' + b));
+  const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
+  assert.match(app, /🤝 Met<\/span>/);
+});

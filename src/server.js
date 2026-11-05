@@ -3728,7 +3728,7 @@ export const handle = async (req, res) => {
     if (p === '/api/tc/go/stage2' && req.method === 'GET') {
       const code = String(url.searchParams.get('sender') || '');
       if (!code) return json(res, 200, await tcgo.stage2Senders(db, await tcMe(req, url)));
-      try { return json(res, 200, { sender: code, rows: await tcgo.stage2List(db, code, await tcrsvp.answers()), gifts: await tcgo.giftMap(db) }); }
+      try { return json(res, 200, { sender: code, rows: await tcgo.stage2List(db, code, await tcrsvp.answers()), gifts: await tcgo.giftMap(db), met: await tcgo.metKeys(db) }); }
       catch (e) { if (e instanceof tc.TcInputError) return json(res, 400, { error: e.message }); throw e; }
     }
     if (p === '/api/tc/go/stage2.xlsx' && req.method === 'GET') {

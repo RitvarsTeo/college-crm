@@ -2671,6 +2671,7 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tcs2-tile:hover{box-shadow:var(--lift-hover)} html.ui-c .tcs2-tile.phys{border-color:#0a2463;box-shadow:inset 0 0 0 1px #0a2463}
   html.ui-c .tcs2-tile b{font-size:12.5px;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;padding-right:34px}
   html.ui-c .tcs2-tile small{font-size:11px;color:var(--t3)} html.ui-c .tcs2-yes{position:absolute;top:8px;right:8px;font-size:10.5px;font-weight:700;color:#1e7bc4}
+  html.ui-c .tcs2-met{align-self:flex-start;font-size:10.5px;font-weight:700;color:#8a5a00;background:#fdf3d9;border-radius:5px;padding:2px 6px}
   html.ui-c .tcs2-gift{margin-top:auto;display:flex;gap:4px} html.ui-c .tcs2-gift button{all:unset;cursor:pointer;font-size:10.5px;font-weight:600;border-radius:5px;padding:3px 7px;background:var(--surface-2);color:var(--t3)}
   html.ui-c .tcs2-gift button.on{background:#0a2463;color:#fff} html.ui-c .tcs2-gift button.on.d{background:#29a8df}
   html.ui-c .tcs2-gift button:focus-visible, html.ui-c .tcs2-tile:focus-visible{outline:2px solid var(--pet);outline-offset:2px}
@@ -12634,7 +12635,7 @@ async function tcS2Load(code) {
     if (!T_S2.senders.length) return;
     T_S2.code = code || T_S2.code || (T_S2.senders.find((x) => x.code === T_S2.mine) || T_S2.senders[0]).code;
     T_S2.rows = null; tcS2Draw();
-    { const r = await api('/api/tc/go/stage2?sender=' + encodeURIComponent(T_S2.code)); T_S2.rows = r.rows; T_S2.gifts = r.gifts || {}; }
+    { const r = await api('/api/tc/go/stage2?sender=' + encodeURIComponent(T_S2.code)); T_S2.rows = r.rows; T_S2.gifts = r.gifts || {}; T_S2.met = new Set(r.met || []); }
   } catch (e) { if (T_S2) T_S2.rows = []; }
   tcS2Draw();
 }
@@ -12663,10 +12664,10 @@ function tcS2Rows() {
   const shown = all.filter((g) => !q || g.name.toLowerCase().includes(q) || g.ps.some((r) => `${r.name} ${r.email || ''}`.toLowerCase().includes(q)));
   const phys = all.filter((g) => tcS2Gift(g) === 'physical').length;
   const tile = (g) => {
-    const p = tcS2Gift(g) === 'physical', yes = g.ps.some((r) => r.answer === 'yes');
+    const p = tcS2Gift(g) === 'physical', yes = g.ps.some((r) => r.answer === 'yes'), met = T_S2.met && T_S2.met.has(g.key);
     const k = esc(JSON.stringify(g.key));
     return `<div class="tcs2-tile${p ? ' phys' : ''}" role="button" tabindex="0" onclick="tcS2Open(${k})" onkeydown="if(event.key==='Enter')tcS2Open(${k})">
-      ${yes ? '<span class="tcs2-yes">✓ Yes</span>' : ''}<b>${esc(g.name || 'No company yet')}</b>
+      ${yes ? '<span class="tcs2-yes">✓ Yes</span>' : ''}<b>${esc(g.name || 'No company yet')}</b>${met ? '<span class="tcs2-met" title="Met face to face: suggested for the physical piece">🤝 Met</span>' : ''}
       <small>${tcN(g.ps.length)} ${g.ps.length === 1 ? 'person' : 'people'}${g.country ? ' · ' + esc(g.country) : ''}</small>
       <span class="tcs2-gift" onclick="event.stopPropagation()"><button type="button" class="${p ? 'on' : ''}" aria-pressed="${p}" onclick="tcS2SetGift(${k}, 'physical')">🎁 Physical</button><button type="button" class="${p ? '' : 'on d'}" aria-pressed="${!p}" onclick="tcS2SetGift(${k}, 'digital')">Digital</button></span></div>`;
   };
