@@ -58,6 +58,7 @@ import { htmlEscape, inviteOrigin } from './systempages.js';
 import * as areas from './areas.js';
 import * as tc from './tc.js';
 import * as godemo from './godemo.js';
+import * as tcgomail from './tcgomail.js';
 import * as tcimport from './tcimport.js';
 import { REAL_PEOPLE } from './realpeople.js';
 import * as samepeople from './samepeople.js';
@@ -3721,6 +3722,23 @@ export const handle = async (req, res) => {
       const me = await currentUser(req);
       const out = p.endsWith('/test') ? await tcs2send.sendTest(db, String(b.sender || ''), me)
         : await tcs2send.sendNext(db, String(b.sender || ''), String(b.batch || ''), me);
+      return json(res, out.ok ? 200 : 400, out.ok ? out : { error: out.why });
+    }
+    // AFTER THE ANSWER (05.11.2026, src/tcgomail.js): You're in / Reminder 1 / See you soon; admins only, sent only on Send
+    if (p === '/api/tc/go/mails' && req.method === 'GET') {
+      if (!(await adminOf(req))) return refuseNotAdmin(res);
+      return json(res, 200, await tcgomail.overview(db, await tcrsvp.answers()));
+    }
+    if (p === '/api/tc/go/mails/preview' && req.method === 'GET') {
+      if (!(await adminOf(req))) return refuseNotAdmin(res);
+      const kind = String(url.searchParams.get('kind') || '');
+      if (!tcgomail.KINDS.includes(kind)) return json(res, 400, { error: 'Which email?' });
+      return json(res, 200, tcgomail.preview(kind));
+    }
+    if (p === '/api/tc/go/mails/send' && req.method === 'POST') {
+      if (!(await adminOf(req))) return refuseNotAdmin(res);
+      const b = await body(req);
+      const out = await tcgomail.sendNext(db, String(b.kind || ''), String(b.sender || ''), await tcrsvp.answers(), await currentUser(req));
       return json(res, out.ok ? 200 : 400, out.ok ? out : { error: out.why });
     }
     // THE GRAND OPENING DEMO (05.11.2026, src/godemo.js): the page and its files, for the configured accounts only

@@ -6,7 +6,9 @@ const S2_PAGE = 'https://novikontas.org/grand-opening';
 // the picture as the Grand Opening changed it 03.11.2026 (27.05.2005 -> 27.05.2027), Contacts/stage2_emails_appsscript_2026-10-22.js
 const S2_INVITE_IMG = 'https://mcusercontent.com/742b7cc5cefdc84b1134d8ca1/images/52205135-b22f-0b43-d49c-4436ba613cd8.jpg';
 const esc_ = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
-export function s2Mail(kind, first, code) {
+// opts.remind (05.11.2026, Reminder 1, his pick "OK, build them"): the same email with "A quick reminder: will you be there?" above the button
+export function s2Mail(kind, first, code, opts = {}) {
+  const REM = 'A quick reminder: will you be there?';
   const link = S2_PAGE + '?c=' + code;
   const hi = first ? 'Dear ' + esc_(first) + ',' : 'Hello,';
   const hiPlain = first ? 'Dear ' + first + ',' : 'Hello,';
@@ -21,9 +23,10 @@ export function s2Mail(kind, first, code) {
     return { subject: 'You are invited: Novikontas Academy Grand Opening, 27 May 2027',
       html: wrap('<tr><td style="background:#fff;border-radius:6px 6px 0 0;overflow:hidden"><a href="' + link + '&rsvp=yes"><img src="' + S2_INVITE_IMG + '" width="600" alt="You are invited - 27 May 2027" style="display:block;width:100%;max-width:600px;border:0"></a></td></tr>'
         + '<tr><td style="background:#fff;padding:30px 36px 6px;color:#011111;font-size:16px;line-height:1.6">' + hi + '<br><br>' + p + '</td></tr>'
+        + (opts.remind ? '<tr><td style="background:#fff;padding:18px 36px 0;color:#0a2463;font-size:16px;font-weight:bold">' + REM + '</td></tr>' : '')
         + '<tr><td style="background:#fff;padding:18px 36px 8px">' + btn('Yes, I\'ll attend', '#0a2463', '#ffffff') + '</td></tr>'
         + '<tr><td style="background:#fff;border-radius:0 0 6px 6px;padding:14px 36px 30px;color:#415c8f;font-size:14px;line-height:1.6">' + cal + '<br>' + contact + '</td></tr>'),
-      plain: hiPlain + '\n\nWe would be delighted to welcome you at the Novikontas Academy Grand Opening on 27 May 2027 in Riga.\n\nYes, I\'ll attend: ' + link + '&rsvp=yes\n\nHaven\'t added it to your calendar yet? Add it here: ' + link + '#go-calendars\n\n' + contactPlain,
+      plain: hiPlain + '\n\nWe would be delighted to welcome you at the Novikontas Academy Grand Opening on 27 May 2027 in Riga.\n\n' + (opts.remind ? REM + '\n\n' : '') + 'Yes, I\'ll attend: ' + link + '&rsvp=yes\n\nHaven\'t added it to your calendar yet? Add it here: ' + link + '#go-calendars\n\n' + contactPlain,
       inline: null };
   }
   // 'confirm' = his pick B 22.10: the date leads, dark card like the landing page.
@@ -37,9 +40,10 @@ export function s2Mail(kind, first, code) {
       + td('22px 48px 0', 'color:#53a7db;font-weight:bold;font-size:22px;line-height:1.3', 'You saved the date. Will you be there?')
       + td('28px 48px 0', '', '<div style="height:1px;line-height:1px;font-size:0;background:#22385a">&nbsp;</div>')
       + td('24px 48px 0', 'color:#c9d4e3;font-size:15px;line-height:1.65', (first ? 'Dear ' + esc_(first) + ',' : 'Hello,') + '<br>' + p2)
+      + (opts.remind ? td('24px 48px 0', 'color:#ffffff;font-weight:bold;font-size:16px', REM) : '')
       + td('32px 48px 44px', '', btn('Yes, I\'ll attend', '#53a7db', '#ffffff'))
       + '<tr><td style="background:#0a182e;line-height:0"><img src="cid:building" width="600" alt="Novikontas Academy Campus, 2005 to 2027" style="display:block;width:100%;max-width:600px;border:0"></td></tr>'
       + td('28px 48px 36px', 'border-radius:0 0 6px 6px;color:#8fa9cf;font-size:13px;line-height:1.7', cal.replace('color:#0a2463', lk) + '<br>' + contact.replace('color:#0a2463', lk))),
-    plain: '27 May 2027 - Novikontas Academy Grand Opening, Novikontas Academy Campus, Riga\n\nYou saved the date. Will you be there?\n\n' + hiPlain + '\n' + p2 + '\n\nYes, I\'ll attend: ' + link + '&rsvp=yes\n\nHaven\'t added it to your calendar yet? Add it here: ' + link + '#go-calendars\n\n' + contactPlain,
+    plain: '27 May 2027 - Novikontas Academy Grand Opening, Novikontas Academy Campus, Riga\n\nYou saved the date. Will you be there?\n\n' + hiPlain + '\n' + p2 + '\n\n' + (opts.remind ? REM + '\n\n' : '') + 'Yes, I\'ll attend: ' + link + '&rsvp=yes\n\nHaven\'t added it to your calendar yet? Add it here: ' + link + '#go-calendars\n\n' + contactPlain,
     inline: 'building' };
 }
