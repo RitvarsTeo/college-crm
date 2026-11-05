@@ -188,6 +188,11 @@ companies with no status - defaults in use); phone: marked number of a known per
 
 - `DECIDED` HIS PICK (owner 21.10: "Thats why i want academy intake and tc intake separate sessions, this is hectic"): **Intake ACADEMY MASTER CONTROL** (this session: Academy feedback, Ieva, Admissions, SIS, phone, email) and **Intake TC MASTER CONTROL** (a separate session: Training Centre, Grand Opening, Season, review list, Google Calendar, MASTER PITCHER's TC boards). One app and one `production` branch: each master fetches origin/production right before a release, deploy_verify refuses a release that misses the other's commits, and each tells the other in one line before pushing production. Both keep this backlog and the control file.
 
+## 05.11.2026 - Grand Opening landing page (owner's ask, lane: Intake TC LANE)
+
+- `SAID` (05.11) "Make the date and the address little bit more standing out. And make the animations appear sooner in the
+  scroll timing. The confetti I LIKE!" -> 2 looks as a picture first; reveal earlier on scroll; confetti unchanged.
+
 ## 05.11.2026 - Academy Home: last year around this time + Needs you for CRD only (owner's asks)
 
 - `DECIDED` HIS PICK (05.11): the Home cards show last year around this time, wording "Last year around this time",
