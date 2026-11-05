@@ -199,6 +199,8 @@ companies with no status - defaults in use); phone: marked number of a known per
   admitted), the Officer target stays on Reports. Conversion also gets "Last year around this time" (2025: 32.6%,
   admitted by that day). Median time: HIS PICK count only people with a known first contact (SIS-only records carry one
   date, so first contact = admission); no last-year line (last year has none with a known first contact).
+- `DECIDED` HIS WORDS (05.11, after A calm): "Keep wave, but have a measurement of the wave. make the cards big enough to have
+  it visible!" -> the wave stays on Admitted and Leads with each month's number and month letter (complete months), cards taller.
 
 ## 29.10.2026 - After the move to Supabase: Academy checks (owner: "save this to be done")
 
