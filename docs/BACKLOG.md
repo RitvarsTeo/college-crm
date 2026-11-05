@@ -201,6 +201,12 @@ companies with no status - defaults in use); phone: marked number of a known per
   date, so first contact = admission); no last-year line (last year has none with a known first contact).
 - `DECIDED` HIS WORDS (05.11, after A calm): "Keep wave, but have a measurement of the wave. make the cards big enough to have
   it visible!" -> the wave stays on Admitted and Leads with each month's number and month letter (complete months), cards taller.
+- `DECIDED` HIS WORDS (05.11): "More like wave" -> smooth wave with a light fill (HIS YES "build it"). "shouldnt leads be before
+  admitted? chronology much?" -> order Leads, Admitted, Conversion, Median. "Conversion should have also a nice visual reference! and
+  the median time also!" -> Conversion: a bar to 100 % with last year's mark; Median: one dot per person with a known first
+  contact on a line of days, median marked (a month's median rests on 1-2 people, too few to draw). "all of them numbers in the
+  graphics need to be clickable and linked to the fuller stats" -> every wave number opens that month on the card's Reports
+  tab; the conversion and median numbers open their Reports tab.
 
 ## 29.10.2026 - After the move to Supabase: Academy checks (owner: "save this to be done")
 
