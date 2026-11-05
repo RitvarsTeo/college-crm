@@ -521,7 +521,7 @@ export async function markFinal(db, id, actor) {
 
 // THE GIFT PER COMPANY (04.11.2026, the owner's pick: the company tiles; his picks: the physical piece to the companies met in
 // person, the biggest clients and the ones each owner ticks, "cant put a number on it" - so it is set company by company).
-// Digital is the default and is never stored; Physical is a row. A company is one key: Intake's company, else its name.
+// Nothing is picked until an owner picks (05.11.2026, his correction); a pick is a row, clearing it deletes the row. A company is one key: Intake's company, else its name.
 export const giftKey = (companyId, company) => (companyId ? 'id:' + Number(companyId) : 'n:' + String(company || '').trim().toLowerCase());
 export async function giftMap(db) {
   return Object.fromEntries((await db.prepare(`SELECT company_key, kind FROM tc_go_gifts`).all()).map((r) => [r.company_key, r.kind]));
@@ -529,7 +529,9 @@ export async function giftMap(db) {
 export async function setGift(db, key, kind, actor) {
   const k = String(key || '');
   if (!/^(id:\d{1,12}|n:.{1,200})$/.test(k)) throw new TcInputError('Which company?');
-  if (!['physical', 'digital'].includes(kind)) throw new TcInputError('Physical or digital?');
+  if (!['physical', 'digital', 'none'].includes(kind)) throw new TcInputError('Physical or digital?');
+  // none (05.11.2026, the owner: "no any company yet has been gifted anything, as there is no gift yet"): the pick is cleared
+  if (kind === 'none') { await db.prepare(`DELETE FROM tc_go_gifts WHERE company_key = ?`).run(k); return { key: k, kind: null }; }
   await db.prepare(`INSERT INTO tc_go_gifts (company_key, kind, set_at, set_by) VALUES (?,?,?,?)
     ON CONFLICT (company_key) DO UPDATE SET kind = excluded.kind, set_at = excluded.set_at, set_by = excluded.set_by`).run(k, kind, new Date().toISOString(), actor);
   return { key: k, kind };

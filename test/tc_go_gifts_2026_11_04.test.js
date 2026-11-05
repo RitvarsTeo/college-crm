@@ -8,7 +8,7 @@ const { openDb } = await import('../src/db.js');
 const go = await import('../src/tcgo.js');
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
-test('Physical or Digital per company: Intake company by id, else the name in lower case; digital is the default', async () => {
+test('Physical or Digital per company: Intake company by id, else the name in lower case; nothing is picked until an owner picks', async () => {
   const db = await openDb();
   assert.equal(go.giftKey(12, 'Minship'), 'id:12');
   assert.equal(go.giftKey(null, '  MINSHIP '), 'n:minship');
@@ -24,7 +24,7 @@ test('the tiles: one per company, same name whatever the capitals, a click opens
   const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
   assert.match(app, /const key = r\.companyId \? 'id:' \+ Number\(r\.companyId\) : 'n:' \+ String\(r\.company \|\| ''\)\.trim\(\)\.toLowerCase\(\);/);
   assert.match(app, /<div class="tcs2-tiles">/);
-  assert.match(app, /onclick="tcS2SetGift\(\$\{k\}, 'physical'\)">🎁 Physical<\/button>/);
+  assert.match(app, /onclick="tcS2SetGift\(\$\{k\}, '\$\{p \? 'none' : 'physical'\}'\)">🎁 Physical<\/button>/);
   assert.match(app, /\$\{esc\(g\.name \|\| 'No company yet'\)\}/);
   const srv = fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8');
   assert.match(srv, /p === '\/api\/tc\/go\/gift' && req\.method === 'POST'/);
@@ -40,4 +40,33 @@ test('met face to face: a meeting or exhibition logged, or a Season stage past O
   assert.ok(keys.includes('id:' + a)); assert.ok(!keys.includes('id:' + b));
   const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
   assert.match(app, /🤝 Met<\/span>/);
+});
+
+test('05.11 his correction: no gift is lit until picked; a second click clears it (none deletes the row)', async () => {
+  const db = await openDb();
+  assert.deepEqual(await go.giftMap(db), {});
+  await go.setGift(db, 'id:7', 'digital', 'Ritvars');
+  await go.setGift(db, 'id:7', 'none', 'Ritvars');
+  assert.deepEqual(await go.giftMap(db), {});
+  const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
+  assert.match(app, /const tcS2Gift = \(g\) => \(\(T_S2\.gifts \|\| \{\}\)\[g\.key\] \|\| null\);/);
+  assert.doesNotMatch(app, /Digital <b>\$\{tcN\(all\.length - phys\)\}/);
+});
+
+test('the demo in Intake: only the five accounts open it; every local link in the page is a file served beside it', async () => {
+  const godemo = await import('../src/godemo.js');
+  assert.deepEqual(godemo.viewers().sort(), ['ab@novikontas.org', 'aigars.kluga@novikontas.org', 'marcis.zabovs@novikontas.org', 'mc@novikontas.org', 'ritvars.vilcins@novikontas.org']);
+  assert.equal(godemo.mayView({ email: 'MC@novikontas.org' }), true);
+  assert.equal(godemo.mayView({ email: 'someone@example.com' }), false);
+  assert.equal(godemo.mayView(null), false);
+  const page = godemo.fileFor(godemo.PREFIX);
+  assert.ok(page && /text\/html/.test(page.type));
+  const html = godemo.read(page).toString('utf8');
+  const local = [...html.matchAll(/(?:src|href)="([^"#:]+)"/g)].map((m) => m[1]);
+  assert.ok(local.length >= 8);
+  for (const rel of local) assert.ok(godemo.fileFor(godemo.PREFIX + rel), rel);
+  assert.equal(godemo.fileFor(godemo.PREFIX + '../server.js'), null);
+  assert.equal(godemo.fileFor(godemo.PREFIX + '%2e%2e%2fserver.js'), null);
+  const srv = fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8');
+  assert.match(srv, /if \(!godemo\.mayView\(me\)\) \{/);
 });
