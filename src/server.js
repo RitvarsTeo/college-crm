@@ -3744,8 +3744,20 @@ export const handle = async (req, res) => {
     if (p === '/api/tc/go/stage2' && req.method === 'GET') {
       const code = String(url.searchParams.get('sender') || '');
       if (!code) return json(res, 200, await tcgo.stage2Senders(db, await tcMe(req, url)));
-      try { return json(res, 200, { sender: code, rows: await tcgo.stage2List(db, code, await tcrsvp.answers()), gifts: await tcgo.giftMap(db), met: await tcgo.metKeys(db) }); }
+      try { const ans = await tcrsvp.answers(); return json(res, 200, { sender: code, rows: await tcgo.stage2List(db, code, ans), gifts: await tcgo.giftMap(db), met: await tcgo.metKeys(db), places: await tcgo.placesForYes(db, ans) }); }
       catch (e) { if (e instanceof tc.TcInputError) return json(res, 400, { error: e.message }); throw e; }
+    }
+    // THE PHYSICAL LIST (05.11.2026): the companies set to Physical, with place, people and address, as a file
+    if (p === '/api/tc/go/physical.xlsx' && req.method === 'GET') {
+      const list = await tcgo.physicalList(db, await tcrsvp.answers());
+      const me = await tcMe(req, url);
+      console.log(`tc download: ${me ? me.email || me.name : 'unknown'} physical ${list.length} companies`);
+      const rows = [['Company', 'Place', 'Answered Yes', 'List', 'People', 'Positions', 'Emails', 'Address', 'City', 'Country'],
+        ...list.map((g) => [g.company, g.place, g.yes ? 'Yes' : '', g.lists, g.people.map((x) => x.name).join('; '), g.people.map((x) => x.position).join('; '),
+          g.people.map((x) => x.email).filter(Boolean).join('; '), g.address, g.city, g.country])];
+      const name = `Grand Opening Physical ${localDate()}.xlsx`;
+      res.writeHead(200, { 'content-type': XLSX_TYPE, 'cache-control': 'no-store', 'content-disposition': `attachment; filename="${name}"` });
+      return res.end(rowsToXlsx(rows, { bold: [0], sheetName: 'Physical', title: name }));
     }
     if (p === '/api/tc/go/stage2.xlsx' && req.method === 'GET') {
       const code = String(url.searchParams.get('sender') || '');

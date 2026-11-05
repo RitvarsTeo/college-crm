@@ -12736,7 +12736,7 @@ async function tcS2Load(code) {
     if (!T_S2.senders.length) return;
     T_S2.code = code || T_S2.code || (T_S2.senders.find((x) => x.code === T_S2.mine) || T_S2.senders[0]).code;
     T_S2.rows = null; tcS2Draw();
-    { const r = await api('/api/tc/go/stage2?sender=' + encodeURIComponent(T_S2.code)); T_S2.rows = r.rows; T_S2.gifts = r.gifts || {}; T_S2.met = new Set(r.met || []); }
+    { const r = await api('/api/tc/go/stage2?sender=' + encodeURIComponent(T_S2.code)); T_S2.rows = r.rows; T_S2.gifts = r.gifts || {}; T_S2.met = new Set(r.met || []); T_S2.places = r.places || {}; }
   } catch (e) { if (T_S2) T_S2.rows = []; }
   tcS2Draw();
 }
@@ -12766,14 +12766,14 @@ function tcS2Rows() {
   const shown = all.filter((g) => !q || g.name.toLowerCase().includes(q) || g.ps.some((r) => `${r.name} ${r.email || ''}`.toLowerCase().includes(q)));
   const phys = all.filter((g) => tcS2Gift(g) === 'physical').length, digi = all.filter((g) => tcS2Gift(g) === 'digital').length;
   const tile = (g) => {
-    const p = tcS2Gift(g) === 'physical', d = tcS2Gift(g) === 'digital', yes = g.ps.some((r) => r.answer === 'yes'), met = T_S2.met && T_S2.met.has(g.key);
+    const p = tcS2Gift(g) === 'physical', d = tcS2Gift(g) === 'digital', yes = g.ps.some((r) => r.answer === 'yes'), met = T_S2.met && T_S2.met.has(g.key), place = (T_S2.places || {})[g.key];
     const k = esc(JSON.stringify(g.key));
     return `<div class="tcs2-tile${p ? ' phys' : ''}" role="button" tabindex="0" onclick="tcS2Open(${k})" onkeydown="if(event.key==='Enter')tcS2Open(${k})">
-      ${yes ? '<span class="tcs2-yes">✓ Yes</span>' : ''}<b>${esc(g.name || 'No company yet')}</b>${met ? '<span class="tcs2-met" title="Met face to face: suggested for the physical piece">🤝 Met</span>' : ''}
+      ${yes ? `<span class="tcs2-yes">✓ Yes${place ? ' · 🧩 ' + esc(place) : ''}</span>` : ''}<b>${esc(g.name || 'No company yet')}</b>${met ? '<span class="tcs2-met" title="Met face to face: suggested for the physical piece">🤝 Met</span>' : ''}
       <small>${tcN(g.ps.length)} ${g.ps.length === 1 ? 'person' : 'people'}${g.country ? ' · ' + esc(g.country) : ''}</small>
       <span class="tcs2-gift" onclick="event.stopPropagation()"><button type="button" class="${p ? 'on' : ''}" aria-pressed="${p}" onclick="tcS2SetGift(${k}, 'physical')">🎁 Physical</button><button type="button" class="${d ? 'on d' : ''}" aria-pressed="${d}" onclick="tcS2SetGift(${k}, 'digital')">Digital</button></span></div>`;
   };
-  return `<div class="tcs2-sum"><b>${tcN(all.length)} companies</b><span>· ${tcN((T_S2.rows || []).length)} people</span><span class="tcs2-sumr">🎁 Physical <b>${tcN(phys)}</b> · Digital <b>${tcN(digi)}</b></span></div>
+  return `<div class="tcs2-sum"><b>${tcN(all.length)} companies</b><span>· ${tcN((T_S2.rows || []).length)} people</span><span class="tcs2-sumr">🎁 Physical <b>${tcN(phys)}</b> · Digital <b>${tcN(digi)}</b>${phys ? ` <a class="btn sm ghost" href="/api/tc/go/physical.xlsx" download>Physical list</a>` : ''}</span></div>
     <div class="tcs2-tiles">${shown.map(tile).join('') || '<div class="c-empty">Nobody matches.</div>'}</div>`;
 }
 async function tcS2SetGift(key, pick) {

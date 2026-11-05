@@ -867,6 +867,15 @@ CREATE TABLE IF NOT EXISTS tc_go_s2_log (
 );
 -- The Grand Opening gift per company (04.11.2026, the owner's pick: the company tiles): physical piece or digital only.
 -- company_key = 'id:<tc_companies.id>' or 'n:<the company name in lower case>' for a Stage 2 company Intake does not hold.
+-- The puzzle place per company (05.11.2026, his picks: "32x32 it is"; a company gets its place when it answers Yes).
+-- code = the position on the 32 x 32 board, as on the QR: column 1-32 + row A-Z then AA-AF ('13H').
+CREATE TABLE IF NOT EXISTS tc_go_places (
+  company_key TEXT PRIMARY KEY,    -- the same key as tc_go_gifts: 'id:<tc_companies.id>' or 'n:<name in lower case>'
+  code TEXT NOT NULL UNIQUE,
+  company TEXT,                    -- the name when the place was given, for the list
+  assigned_at TEXT NOT NULL,
+  assigned_by TEXT
+);
 CREATE TABLE IF NOT EXISTS tc_go_gifts (
   company_key TEXT PRIMARY KEY,
   kind TEXT NOT NULL,              -- physical | digital | none (a cleared pick, 05.11.2026)
