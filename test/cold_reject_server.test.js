@@ -36,9 +36,9 @@ test('Cold and Reject are both kept, read back, and cleared when the person is a
 
   assert.deepEqual(CFG.closedTags.map((x) => x.id).sort(), ['cold', 'reject']);
   const reason = CFG.closedReasons.find((r) => !(CFG.closedReasonNeedsNote || []).includes(r));
-  const cold = (await post('/api/people', { name: 'Cold Server Test', email: 'cold@example.lv' })).id;
-  const rej = (await post('/api/people', { name: 'Reject Server Test', email: 'reject@example.lv' })).id;
-  const odd = (await post('/api/people', { name: 'Unknown Tag Test', email: 'odd@example.lv' })).id;
+  const cold = (await post('/api/people', { name: 'Cold Server Paraugs', email: 'cold@example.lv' })).id;
+  const rej = (await post('/api/people', { name: 'Reject Server Paraugs', email: 'reject@example.lv' })).id;
+  const odd = (await post('/api/people', { name: 'Unknown Tag Paraugs', email: 'odd@example.lv' })).id;
 
   await post(`/api/people/${cold}/status`, { status: 'Not proceeding', reason, closedTag: 'cold' });
   await post(`/api/people/${rej}/status`, { status: 'Not proceeding', reason, closedTag: 'reject' });
