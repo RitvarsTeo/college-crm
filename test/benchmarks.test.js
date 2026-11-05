@@ -49,7 +49,7 @@ async function dataset(rows) {
   const db = await openDb(':memory:');
   for (const [id, d, status, admitted, moved = []] of rows) {
     await db.prepare(`INSERT INTO people (id,name,status,owner,source_channel,created_at,last_contact_at,admitted_at) VALUES (?,?,?,?,?,?,?,?)`)
-      .run(id, 'Test ' + id, status, 'Admissions', 'website', ago(d), ago(d), admitted ? ago(d - 30) : null);
+      .run(id, 'Paraugs ' + id, status, 'Admissions', 'website', ago(d), ago(d), admitted ? ago(d - 30) : null);
     let from = 'New';
     for (const to of moved) {
       await db.prepare(`INSERT INTO events (person_id,kind,direction,occurred_at,subject,body,actor,origin,field,old_value,new_value)

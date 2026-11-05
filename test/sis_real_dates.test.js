@@ -24,7 +24,7 @@ const PULL = '2026-10-06T05:31:40.959Z';             // the old pull's own clock
 
 // a student the SIS loaded on 05.10: registered and changed that day, submitted years ago
 const student = (i, submittedAt, over = {}) => ({
-  reference: `ref-${i}`, applicationId: `app-${i}`, givenName: 'Test', familyName: `Student${i}`,
+  reference: `ref-${i}`, applicationId: `app-${i}`, givenName: 'Paraugs', familyName: `Student${i}`,
   email: `student${i}@example.com`, phone: null, programmeCode: 'NAV', status: 'matriculated',
   registeredAt: '2026-10-05T10:20:00.000Z', submittedAt, changedAt: `2026-10-05T10:${String(20 + i).padStart(2, '0')}:00.000Z`, ...over,
 });
@@ -123,8 +123,8 @@ async function oldState() {
   const fact = (personId, ref, recorded) => db.prepare(`INSERT INTO lifecycle_events (person_id, fact, source, source_ref,
     occurred_at, recorded_at) VALUES (?, 'matriculated', 'sis', ?, '2026-10-05T10:30:00.000Z', ?)`).run(personId, ref + ':a-' + ref, recorded);
   const person = (id, firstChannel, admittedAt, status = 'Admitted') => db.prepare(`INSERT INTO people (id, name, status,
-    created_at, admitted_at, first_channel, source_channel) VALUES (?, 'Made up', ?, '2026-10-05T10:20:00.000Z', ?, ?, ?)`)
-    .run(id, status, admittedAt, firstChannel, firstChannel);
+    created_at, admitted_at, first_channel, source_channel) VALUES (?, ?, ?, '2026-10-05T10:20:00.000Z', ?, ?, ?)`)
+    .run(id, 'Made up ' + id, status, admittedAt, firstChannel, firstChannel);   // a name each: one person, one count (05.11.2026)
   // the SIS-created ones: 2014, 2014, 2023, 2026, and one the SIS never dated
   const made = [['s1', '2014-06-01T09:00:00.000Z'], ['s2', '2014-08-15T09:00:00.000Z'], ['s3', '2023-07-10T09:00:00.000Z'],
     ['s4', '2026-07-20T09:00:00.000Z'], ['s5', null]];
@@ -224,7 +224,7 @@ test('re-date: Admitted for the year counts by the corrected date (Reports and H
   // Home counts the people list by the same column, so it moves with it
   const home = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
   // Q45: the people rows are the period, the Admitted in it by their admission date (server, scopePeopleSql)
-  assert.match(home, /const admitted = people\.filter\(\(p\) => p\.status === 'Admitted' && p\.admitted_at\);/);
+  assert.match(home, /const admitted = cOnePerPerson\(people\.filter\(\(p\) => p\.status === 'Admitted' && p\.admitted_at\)\);/);
   // (Q59: the same rule over a set of years, src/yearscope.js rangesSql)
   assert.match(fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8'), /const \[adm, a2\] = rangesSql\(`\$\{alias\}\.admitted_at`, ranges\);[\s\S]*OR \(\$\{alias\}\.status = 'Admitted' AND \$\{alias\}\.admitted_at IS NOT NULL AND \$\{adm\}\)/);
   const people = await db.prepare('SELECT status, admitted_at FROM people').all();

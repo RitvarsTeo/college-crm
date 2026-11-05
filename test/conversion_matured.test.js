@@ -21,7 +21,7 @@ async function people(rows) {
   const db = await openDb(':memory:');
   for (const [id, created, admitted] of rows) {
     await db.prepare(`INSERT INTO people (id,name,status,owner,source_channel,created_at,last_contact_at,admitted_at) VALUES (?,?,?,?,?,?,?,?)`)
-      .run(id, 'Test ' + id, admitted ? 'Admitted' : 'New', 'Admissions', 'website', created, created, admitted || null);
+      .run(id, 'Paraugs ' + id, admitted ? 'Admitted' : 'New', 'Admissions', 'website', created, created, admitted || null);
   }
   return db;
 }

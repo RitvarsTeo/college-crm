@@ -14,7 +14,7 @@ import { start } from './security_helpers.js';
 
 for (const k of ['DATABASE_URL', 'DATABASE_URL_UNPOOLED', 'CRM_DB_DATABASE_URL_UNPOOLED', 'INTAKE_DATABASE_URL']) process.env[k] = '';
 const { openDb } = await import('../src/db.js');
-const { isTestPerson, REAL_PEOPLE } = await import('../src/realpeople.js');
+const { isTestPerson, REAL_PEOPLE, countPeople } = await import('../src/realpeople.js');
 const { planDoubles } = await import('../scripts/merge_admitted_doubles.mjs');
 const { mergeSisDuplicate } = await import('../src/sync.js');
 
@@ -25,6 +25,7 @@ test('a test or staff record: our own email domain, or a name that is "Test ..."
   assert.equal(isTestPerson({ name: 'Test New Student', email: 'test.newstudent@novikontas.org' }), true);
   assert.equal(isTestPerson({ name: 'Anna Paraudze', email: 'anna@novikontas.lv' }), true, 'staff, our own domain');
   assert.equal(isTestPerson({ name: 'test', email: '' }), true);
+  assert.equal(isTestPerson({ name: 'New Test Student', email: 'n@example.com' }), true, '"Test" anywhere in the name, as a word (his pick (b))');
   assert.equal(isTestPerson({ name: 'Testers Kārlis', email: 'k@example.com' }), false, 'a surname that starts with Test is a person');
   assert.equal(isTestPerson({ name: 'Anna Paraudze', email: 'anna@gmail.com' }), false);
   assert.equal(isTestPerson({ name: 'Anna', email: 'anna@students-novikontas.example.com' }), false);
@@ -54,21 +55,32 @@ async function seed(db) {
   await person(db, 'lead', { name: 'Kārlis Testers', status: 'New', admitted: null });
 }
 
+test('one person, one count: records sharing a folded name, an email or a phone count once (his pick (c))', () => {
+  assert.equal(countPeople([{ name: 'Jakov Tešović' }, { name: 'tesovic JAKOV' }]), 1, 'letters, case and word order folded');
+  assert.equal(countPeople([{ name: 'A B', email: 'x@y.lv' }, { name: 'C D', email: 'X@Y.lv ' }]), 1, 'the same email');
+  assert.equal(countPeople([{ name: 'E F', phone: '+371 2000 1234' }, { name: 'G H', phone: '20001234' }]), 1, 'the same phone');
+  assert.equal(countPeople([{ name: 'Anna' }, { name: 'Anna' }]), 2, 'one word is not enough to call two records one person');
+  assert.equal(countPeople([]), 0);
+  const home = read('src', 'app.html');
+  assert.match(home, /const admitted = cOnePerPerson\(people\.filter\(\(p\) => p\.status === 'Admitted' && p\.admitted_at\)\);/, 'Home counts the same way');
+});
+
 test('the plan: an SIS-made twin with exactly one sheet record that shares programme, email or phone; nothing else is joined', async () => {
   const db = await openDb();
   await seed(db);
   const rows = await db.prepare('SELECT id, name, email, phone, programme, status, first_channel, admitted_at FROM people').all();
   const notSame = await db.prepare('SELECT person_a, person_b FROM person_not_same').all();
   const plan = planDoubles(rows, notSame, 2026);
-  assert.deepEqual(plan.join.map((j) => [j.sourceId, j.targetId]), [['sis1', 'r1'], ['sis2', 'r2']]);
-  assert.deepEqual(plan.look.map((l) => l.name).sort(), ['Anastasija Plūme', 'Ilze Ozola'], 'shares nothing / twice in the sheet: for a person');
+  assert.deepEqual(plan.join.map((j) => [j.sourceId, j.targetId]), [['sis1', 'r1']]);
+  assert.deepEqual(plan.look.map((l) => l.name).sort(), ['Anastasija Plūme', 'Ilze Ozola', 'Tribunskis Sergejs'], 'shares nothing / twice in the sheet / another programme: for a person');
   assert.ok(!plan.join.some((j) => j.sourceId === 'sis6'), '"Not the same" is respected');
   assert.ok(!plan.join.some((j) => j.sourceId === 'sis7'), 'another year waits for its own run');
   assert.equal(planDoubles(rows, notSame, 2026).hash, plan.hash, 'the same rows, the same hash');
   assert.deepEqual(planDoubles(rows, notSame, 2025).join.map((j) => j.sourceId), ['sis7']);
   // the apply is the existing merge: the SIS record goes, everything it held moves, the sheet record stays
   for (const j of plan.join) assert.equal((await mergeSisDuplicate(db, j.sourceId, j.targetId, { by: 'Ritvars' })).ok, true);
-  assert.equal(await db.prepare(`SELECT id FROM people WHERE id IN ('sis1','sis2')`).get(), undefined);
+  assert.equal(await db.prepare(`SELECT id FROM people WHERE id = 'sis1'`).get(), undefined);
+  assert.ok(await db.prepare(`SELECT id FROM people WHERE id = 'sis2'`).get(), 'another programme: left alone');
   assert.equal((await db.prepare(`SELECT email FROM people WHERE id = 'r1'`).get()).email, 'jakov@example.com', 'an empty value is filled from the twin');
   const left = planDoubles(await db.prepare('SELECT id, name, email, phone, programme, status, first_channel, admitted_at FROM people').all(), notSame, 2026);
   assert.equal(left.join.length, 0, 'a second run finds nothing');
@@ -88,7 +100,7 @@ test('a running copy: the test record is in no figure and no list - Home, Report
   assert.ok(!ids.includes('test'), 'not in the people list (Home, Journey, Due read it)');
   assert.ok(ids.includes('lead'), '"Kārlis Testers" is a person');
   const rep = await get('/api/report?years=2026');
-  assert.equal(rep.summary.admitted, 10, 'Reports: the 10 admitted in 2026, the test record not');
+  assert.equal(rep.summary.admitted, 5, 'Reports: the 10 Admitted 2026 records are 5 people, the test record not counted');
   const sum = await get('/api/summary');
   assert.equal(sum.admittedTotal, 12, 'every Admitted record but the test one');
   assert.equal((await get('/api/people/test')).name, 'Test New Student', 'the record stays and opens by its link');

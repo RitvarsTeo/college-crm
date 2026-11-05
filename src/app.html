@@ -4020,6 +4020,23 @@ async function routeC(page, arg) {
 // Reference: Remote's dashboard (to-do first, groups ending in "View all") and Square's
 // figure-first stack with a delta row (Mobbin, free tier). Every figure is read live from
 // /api/report, /api/summary, /api/people and /api/intake; a failed read says so.
+// ONE PERSON, ONE COUNT (the owner's pick (c), 05.11.2026): the Admitted 2026 records were 168 for 104 people - a student
+// the Admissions sheet held and the SIS made again. Records sharing a name (case, Latvian / Lithuanian letters and word
+// order folded, two words at least), an email or a phone are one person; the first record stands for them. The same rule
+// as src/realpeople.js countPeople, so Home and Reports say the same number.
+const cPersonName = (v) => String(v ?? '').normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().split(' ').filter(Boolean).sort().join(' ');
+function cOnePerPerson(rows) {
+  const seen = new Map(), out = [];
+  for (const p of rows || []) {
+    const keys = [];
+    const n = cPersonName(p.name); if (n.includes(' ')) keys.push('n:' + n);
+    const e = String(p.email || '').trim().toLowerCase(); if (e) keys.push('e:' + e);
+    const d = String(p.phone || '').replace(/\D/g, ''); if (d.length >= 8) keys.push('p:' + d.slice(-8));
+    if (keys.some((k) => seen.has(k))) { const i = seen.get(keys.find((k) => seen.has(k))); keys.forEach((k) => seen.set(k, i)); continue; }
+    keys.forEach((k) => seen.set(k, out.length)); out.push(p);
+  }
+  return out;
+}
 async function cHomeData() {
   // THE PERIOD (Q45): the year scope, never the calendar year on its own. 'all' has no year: no target, the last
   // twelve months on the chart.
@@ -4040,7 +4057,7 @@ async function cHomeData() {
   const picked = cScopeList();
   const months = (rep.trend || []).filter((m) => (picked === 'all' || picked.includes(Number(m.month.slice(0, 4)))) && m.month <= thisMonth);
   // the rows ARE the period: the Admitted among them were admitted in it (server, scopePeopleSql)
-  const admitted = people.filter((p) => p.status === 'Admitted' && p.admitted_at);
+  const admitted = cOnePerPerson(people.filter((p) => p.status === 'Admitted' && p.admitted_at));   // one person, one count (05.11.2026)
   const undated = people.filter((p) => p.status === 'Admitted' && !p.admitted_at).length;
   const count = (arr, key) => { const m = new Map(); arr.forEach((p) => { const k = key(p); m.set(k, (m.get(k) || 0) + 1); }); return [...m.entries()].sort((a, b) => b[1] - a[1]); };
   const known = new Set(CFG.programmes || []);

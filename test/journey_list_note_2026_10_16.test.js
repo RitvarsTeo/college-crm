@@ -101,7 +101,7 @@ test('the helper columns never reach the page', async () => {
 test('server: the List\'s own query carries it, one query (joins), no request per row', () => {
   const i = SERVER.indexOf("if (req.method === 'GET' && p === '/api/people') {");
   const route = SERVER.slice(i, SERVER.indexOf("if (req.method === 'GET' && p === '/api/people/fields')", i));
-  assert.match(route, /\$\{LIST_NOTE_COLS\}\s+FROM people pe \$\{LIST_NOTE_JOINS\}/);
+  assert.match(route, /\$\{LIST_NOTE_COLS\}\s+FROM \$\{REAL_PEOPLE\} pe \$\{LIST_NOTE_JOINS\}/);   // without the test records (05.11.2026)
   assert.match(route, /for \(const r of rows\) r\.list_note = pickListNote\(r\);/);
   assert.equal((route.match(/await db\.prepare/g) || []).length, 1, 'one query');
 });

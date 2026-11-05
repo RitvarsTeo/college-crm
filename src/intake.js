@@ -1246,7 +1246,7 @@ export async function funnel(db, now = nowIso()) {
       go: '#/car' },
     { step: 'Waiting to be looked at', count: await n("SELECT COUNT(*) n FROM inbound WHERE state = 'new'"),
       go: '#/car' },
-    { step: 'Became a lead', count: await n("SELECT COUNT(*) n FROM ${REAL_PEOPLE} people WHERE qualification = 'lead'"),
+    { step: 'Became a lead', count: await n(`SELECT COUNT(*) n FROM ${REAL_PEOPLE} people WHERE qualification = 'lead'`),
       go: '#/people?q=&qual=lead' },
     { step: 'Application', count: await n(`SELECT COUNT(*) n FROM ${REAL_PEOPLE} people WHERE status = ?`, CFG.stageRoles.application),
       go: '#/people' },

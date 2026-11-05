@@ -53,7 +53,7 @@ test('a lead at 00:30 on New Year\'s Day belongs to the new year and to January'
   const db = await openDb(':memory:');
   const add = (id, created, admitted = null) => db.prepare(`INSERT INTO people
       (id,name,status,owner,source_channel,created_at,last_contact_at,admitted_at) VALUES (?,?,?,?,?,?,?,?)`)
-    .run(id, 'Test ' + id, admitted ? 'Admitted' : 'New', 'Admissions', 'website', created, created, admitted);
+    .run(id, 'Paraugs ' + id, admitted ? 'Admitted' : 'New', 'Admissions', 'website', created, created, admitted);
   await add('a1', '2025-12-31T22:30:00.000Z');                                // 00:30 Riga, 1 Jan 2026
   await add('a2', '2025-12-31T20:30:00.000Z');                                // 22:30 Riga, 31 Dec 2025
   await add('a3', '2026-12-31T22:30:00.000Z');                                // 00:30 Riga, 1 Jan 2027

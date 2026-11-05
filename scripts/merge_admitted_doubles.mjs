@@ -10,8 +10,8 @@
 //
 // A pair is joined only when it is unambiguous: an SIS-made record (first_channel 'sis') and exactly ONE other record
 // with the same name (case, Latvian / Lithuanian letters and word order folded, two words at least) that also shares
-// the programme, the email or the phone; both Admitted, the SIS one admitted in the year; never a pair somebody marked
-// "Not the same". Anything else is listed for a person to decide, never joined. Against Postgres it runs only with
+// the programme, the email or the phone, AND has the same programme; both Admitted, the SIS one admitted in the year;
+// never a pair somebody marked "Not the same". Anything else is listed for a person to decide, never joined. Against Postgres it runs only with
 // CRM_PG_SCHEMA set (src/db.js refuses otherwise), so it can never land in a throwaway schema.
 import { createHash } from 'node:crypto';
 import { openDb, pgUrl } from '../src/db.js';
@@ -48,6 +48,11 @@ export function planDoubles(people, notSame, year) {
       const fits = open.filter((o) => ((s.programme && s.programme === o.programme)
         || (s.email && String(s.email).toLowerCase() === String(o.email || '').toLowerCase())
         || (phoneKey(s.phone) && phoneKey(s.phone) === phoneKey(o.phone))));
+      // MASTER CONTROL, 05.11.2026: a pair whose programme differs is not certain enough to join; a person looks
+      if (fits.length === 1 && (s.programme || '') !== (fits[0].programme || '')) {
+        look.push({ why: `programme differs (${s.programme || 'none'} / ${fits[0].programme || 'none'})`, name: s.name, ids: [s.id, fits[0].id] });
+        continue;
+      }
       if (fits.length === 1) join.push({ sourceId: s.id, targetId: fits[0].id, name: fits[0].name, programme: fits[0].programme || '',
         sisAdmitted: String(s.admitted_at).slice(0, 10), sheetAdmitted: String(fits[0].admitted_at || '').slice(0, 10) });
       else look.push({ why: fits.length ? 'more than one record fits' : 'no other record shares programme, email or phone', name: s.name, ids: group.map((p) => p.id) });

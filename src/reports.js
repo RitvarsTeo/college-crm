@@ -9,7 +9,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { REAL_PEOPLE } from './realpeople.js';
+import { REAL_PEOPLE, countPeople } from './realpeople.js';
 import { SIS_HOLDS_SQL, SIS_DRAFT_SQL } from './lifecycle.js';
 import { localDate, localDateTime, localMidnight, dayStartOf, dayAfterStartOf, todayStart, tomorrowStart } from './bizday.js';
 import { yearsOf, yearRanges, rangesSql } from './yearscope.js';
@@ -162,7 +162,8 @@ export async function report(db, { from, to, years, asOfEnd = false } = {}) {
   const newLeads = await count(db, `SELECT COUNT(*) n FROM ${REAL_PEOPLE} people WHERE ${ARR}`, ...A);
   const applications = await count(db, `SELECT COUNT(*) n FROM ${REAL_PEOPLE} people
     WHERE ${ARR} AND status IN ('Application','Admitted')`, ...A);
-  const admitted = await count(db, `SELECT COUNT(*) n FROM ${REAL_PEOPLE} people WHERE ${ADM}`, ...A);
+  // one person, one count (his pick (c), 05.11.2026): records of the same person count once
+  const admitted = countPeople(await db.prepare(`SELECT name, email, phone FROM ${REAL_PEOPLE} people WHERE ${ADM}`).all(...A));
 
   const activeApplicants = await count(db, `SELECT COUNT(*) n FROM ${REAL_PEOPLE} people
     WHERE status NOT IN ('Admitted','Not proceeding')`);
@@ -201,7 +202,7 @@ export async function report(db, { from, to, years, asOfEnd = false } = {}) {
     months.push({
       month: localDate(m0).slice(0, 7),
       newLeads: await count(db, `SELECT COUNT(*) n FROM ${REAL_PEOPLE} people WHERE created_at >= ? AND created_at < ?`, m0, m1),
-      admitted: await count(db, `SELECT COUNT(*) n FROM ${REAL_PEOPLE} people WHERE admitted_at >= ? AND admitted_at < ?`, m0, m1),
+      admitted: countPeople(await db.prepare(`SELECT name, email, phone FROM ${REAL_PEOPLE} people WHERE admitted_at >= ? AND admitted_at < ?`).all(m0, m1)),
     });
   }
 
@@ -213,8 +214,8 @@ export async function report(db, { from, to, years, asOfEnd = false } = {}) {
     programme: code,
     newLeads: await count(db, `SELECT COUNT(*) n FROM ${REAL_PEOPLE} people
       WHERE ${ARR} AND programme = ?`, ...A, code),
-    admitted: await count(db, `SELECT COUNT(*) n FROM ${REAL_PEOPLE} people
-      WHERE ${ADM} AND programme = ?`, ...A, code),
+    admitted: countPeople(await db.prepare(`SELECT name, email, phone FROM ${REAL_PEOPLE} people
+      WHERE ${ADM} AND programme = ?`).all(...A, code)),
   })));
 
   // Maritime school graduates. This is a real count, not a gap: the education field
