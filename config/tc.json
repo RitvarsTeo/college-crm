@@ -104,6 +104,10 @@
     "years": [2024]
   },
   "grandOpening": {
+    "mails": {
+      "_about": "AFTER THE ANSWER (05.11.2026, src/tcgomail.js): You're in / Reminder 1 / See you soon, sent only on Send. pieceImage = the address of the digital piece's front picture, set once he picks the design; empty = You're in and See you soon do not send.",
+      "pieceImage": ""
+    },
     "demo": {
       "_about": "THE DEMO IN INTAKE (05.11.2026, src/godemo.js; the owner: 'demo should be in the intake. For me, MC, Marcis, Aigars, Aleksejs.'). Only these sign-ins open /api/tc/go/demo/.",
       "viewers": ["ritvars.vilcins@novikontas.org", "mc@novikontas.org", "marcis.zabovs@novikontas.org", "aigars.kluga@novikontas.org", "ab@novikontas.org"]

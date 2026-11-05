@@ -26,13 +26,15 @@ export function mime({ fromName, fromEmail, to, mail }) {
   const head = [`From: =?UTF-8?B?${b64(fromName)}?= <${fromEmail}>`, `Reply-To: ${fromEmail}`, `To: ${to}`, `Subject: =?UTF-8?B?${b64(mail.subject)}?=`, 'MIME-Version: 1.0'];
   const altPart = [`Content-Type: multipart/alternative; boundary="${alt}"`, '', `--${alt}`, 'Content-Type: text/plain; charset=UTF-8', 'Content-Transfer-Encoding: base64', '',
     wrap76(b64(mail.plain)), `--${alt}`, 'Content-Type: text/html; charset=UTF-8', 'Content-Transfer-Encoding: base64', '', wrap76(b64(mail.html)), `--${alt}--`];
-  if (!mail.inline) return [...head, ...altPart].join('\r\n');
-  return [...head, `Content-Type: multipart/related; boundary="${rel}"`, '', `--${rel}`, ...altPart, `--${rel}`,
-    'Content-Type: image/jpeg; name="building.jpg"', 'Content-Transfer-Encoding: base64', 'Content-ID: <building>', 'Content-Disposition: inline; filename="building.jpg"', '',
-    wrap76(BUILDING().toString('base64')), `--${rel}--`].join('\r\n');
+  // inline pictures: 'building' (the Stage 2 confirm email) or a list [{ cid, type, name, bytes }] (05.11.2026, the QR)
+  const inl = mail.inline === 'building' ? [{ cid: 'building', type: 'image/jpeg', name: 'building.jpg', bytes: BUILDING() }] : (Array.isArray(mail.inline) ? mail.inline : []);
+  if (!inl.length) return [...head, ...altPart].join('\r\n');
+  return [...head, `Content-Type: multipart/related; boundary="${rel}"`, '', `--${rel}`, ...altPart,
+    ...inl.flatMap((x) => [`--${rel}`, `Content-Type: ${x.type}; name="${x.name}"`, 'Content-Transfer-Encoding: base64', `Content-ID: <${x.cid}>`,
+      `Content-Disposition: inline; filename="${x.name}"`, '', wrap76(Buffer.from(x.bytes).toString('base64'))]), `--${rel}--`].join('\r\n');
 }
 
-async function gmail(env, fetchImpl, token, p, opts = {}) {
+export async function gmail(env, fetchImpl, token, p, opts = {}) {
   return fetchImpl(GMAIL_API(env) + p, { ...opts, headers: { authorization: 'Bearer ' + token, 'content-type': 'application/json', ...(opts.headers || {}) } });
 }
 /** The confirmed "Send mail as" addresses, or null when Intake may not read them yet (connect sending again). */
@@ -42,7 +44,7 @@ async function aliases(env, fetchImpl, tok) {
   if (!r.ok) return null;
   return new Set(((await r.json()).sendAs || []).filter((a) => a.isPrimary || a.verificationStatus === 'accepted').map((a) => low(a.sendAsEmail)));
 }
-const todaySent = async (db) => Number((await db.prepare(`SELECT COUNT(*) AS n FROM tc_go_s2_sent WHERE sent_at >= ?`).get(new Date(Date.now() - 864e5).toISOString())).n) || 0;
+export const todaySent = async (db) => Number((await db.prepare(`SELECT COUNT(*) AS n FROM tc_go_s2_sent WHERE sent_at >= ?`).get(new Date(Date.now() - 864e5).toISOString())).n) || 0;
 
 /** The cards and the log: per sender, the list, sent, refused, left, and whether the address is confirmed. */
 export async function overview(db, { env = process.env, fetchImpl = fetch } = {}) {
@@ -60,7 +62,7 @@ export async function overview(db, { env = process.env, fetchImpl = fetch } = {}
         confirmed: ok ? ok.has(low(s.email)) : null }; }) };
 }
 
-async function ready(db, code, env, fetchImpl) {
+export async function ready(db, code, env, fetchImpl) {
   const s = S2.find((x) => x.code === code);
   if (!s) return { why: 'Which sender?' };
   const tok = await senderToken(db, { env, fetchImpl });

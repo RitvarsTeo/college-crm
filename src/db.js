@@ -884,6 +884,19 @@ CREATE TABLE IF NOT EXISTS tc_go_checkins (
   arrived_at TEXT NOT NULL,
   arrived_by TEXT
 );
+-- The after-answer emails (05.11.2026, src/tcgomail.js): one row per person and kind, written BEFORE the email goes, so
+-- nobody gets the same one twice. kind: in | r1 | r2.
+CREATE TABLE IF NOT EXISTS tc_go_mails (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  stage2_id INTEGER NOT NULL,
+  kind TEXT NOT NULL,
+  sender TEXT NOT NULL,
+  result TEXT NOT NULL,            -- sent | refused
+  detail TEXT,
+  sent_at TEXT NOT NULL,
+  sent_by TEXT
+);
+CREATE UNIQUE INDEX IF NOT EXISTS tc_go_mails_once ON tc_go_mails (stage2_id, kind);
 CREATE TABLE IF NOT EXISTS tc_go_gifts (
   company_key TEXT PRIMARY KEY,
   kind TEXT NOT NULL,              -- physical | digital | none (a cleared pick, 05.11.2026)
