@@ -188,6 +188,13 @@ companies with no status - defaults in use); phone: marked number of a known per
 
 - `DECIDED` HIS PICK (owner 21.10: "Thats why i want academy intake and tc intake separate sessions, this is hectic"): **Intake ACADEMY MASTER CONTROL** (this session: Academy feedback, Ieva, Admissions, SIS, phone, email) and **Intake TC MASTER CONTROL** (a separate session: Training Centre, Grand Opening, Season, review list, Google Calendar, MASTER PITCHER's TC boards). One app and one `production` branch: each master fetches origin/production right before a release, deploy_verify refuses a release that misses the other's commits, and each tells the other in one line before pushing production. Both keep this backlog and the control file.
 
+## 05.11.2026 - Test records in stats; is 164 admitted right? (owner's ask, lane: Intake ACADEMY LANE)
+
+- `SAID` (05.11, to the Academy lane, screenshot "Test New Student · Admitted 2026-10-29" in the admitted report): "A BUG LIKE THIS
+  SHOULD NEVER BE ACCOUNTED FOR IN STATS! ... ALso double check, do we really have 164 admitted students THIS YEAR ALONE?"
+  -> read-only check of the 164 (test records, duplicates, SIS statuses, admission dates, intake year) + a fix so test
+  records never count; data changes only on his yes.
+
 ## 05.11.2026 - Grand Opening landing page (owner's ask, lane: Intake TC LANE)
 
 - `SAID` (05.11) "Make the date and the address little bit more standing out. And make the animations appear sooner in the
