@@ -16,6 +16,24 @@ this is a local prototype" stood here until 30.09.2026, from the weeks before th
 
 
 
+## OPEN TO-DO (Intake MASTER CONTROL keeps this list; owner 06.11.2026: "DONT LOSE ANYTHING, save aeverything in the to do list!")
+
+Every open ask, its lane, its next step. An item leaves this list only when it is LIVE and checked, or he drops it in words.
+
+| # | What (his words where given) | Lane | Next step | Status |
+|---|---|---|---|---|
+| 1 | Grand Opening landing page: "Make the date and the address little bit more standing out", "animations appear sooner in the scroll timing", "The confetti I LIKE!", description "The new Novikontas Academy opens." + "stay tuned for the full program"; "show me the grand opening landing page draft" | Grand opening project (local_5ad2eea5) | the draft's path/URL to MASTER; A/B picture; publish on Tilda only on his yes | WAITING on that session |
+| 2 | Demo tile "Do not invite / hold": "there is no list visible under the tile! it just opens stage 2" | TC LANE | Open lands on the 148-mark list; every tile's Open checked | BRIEFED 06.11 |
+| 3 | Stage 2 owners: "any conflicti contacts should be assigned to him [JS] as primary!" | TC LANE | numbers to MASTER (conflicts, before -> after), then backup + write | BRIEFED 06.11 |
+| 4 | Personal Stage 2 letters (4) | TC LANE | patch 114 (his "OK, release") | RELEASING |
+| 5 | QR letters You're in + See you soon: "the AMento to create qr's, and later just put them in connection to our companies, so hold that letter!" | TC LANE | wait for Amento's QR codes, then link to companies | ON HOLD (Amento) |
+| 6 | Digital piece front/back pick | MASTER -> him | only when the QR letters come back | ON HOLD (with 5) |
+| 7 | Remove the filtered-email letter from the Grand opening project's own demo copy (docs/demo_2026-11-06) | Grand opening project | confirm done | BRIEFED 05.11 |
+| 8 | N3 phone directory for Intake calls (Marina: existing seafarers calling about sons/children; owner: "sākam ar šo") | ACADEMY LANE | column list for Marina's N3 export + design to MASTER; then his yes | BRIEFED 06.11 |
+| 9 | List for Davis: (1) Intake TC N3 read access (companies, contact persons, registrations by company) so "Courses attended" updates itself; (2) website course price, length, validity, entry requirements, dates from N3; (3) N3 endpoint to look up a caller by phone (live) | owner -> Davis | message drafted by MASTER in Latvian; he sends it | DRAFT given 06.11 |
+| 10 | Sign in to Intake in Chrome and look at Home (Admitted 100), Families, Grand Opening demo | owner | his click "Continue with Google" | OPEN |
+| 11 | Client Hub retirement: move Stage 2 sends, RSVP answers, guest pages, approvals into Intake TC | TC LANE | check the list against live Client Hub, pitch each as a picture | PLANNED (his "Yes, plan it" 29.10) |
+
 ## PROJECT SCOPE (owner, locked 20.10.2026) - one CRM: Intake
 
 **Goal:** ONE app, Intake (intake.novikontas.org). After sign-in a start page with two tiles - **Academy** and
