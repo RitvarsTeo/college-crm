@@ -77,3 +77,8 @@ test('the page: Families on Companies, the route, the card on the company page, 
   const gate = server.indexOf('// ------------------------------------------------------- TRAINING CENTRE --');
   for (const route of ["p === '/api/tc/families' && req.method === 'GET'", 'const famAct = p.match(']) assert.ok(server.indexOf(route) > gate && gate > 0, route);
 });
+
+test('06.11 his pick "Drop no course yet": a company with no course shows nothing there, the chip only when there are courses', () => {
+  const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
+  assert.ok(!app.includes("no course yet"), "the rows; the Last course filter keeps its option No course yet");
+});

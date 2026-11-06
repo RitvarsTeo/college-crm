@@ -11056,7 +11056,7 @@ function tcGo(key, value) {
 const tcRow = (r) => `<a class="tc-row" href="#/tc/company/${Number(r.companyId)}">
     <span class="tc-when"><span class="tc-d ${r.due <= cTodayIso() ? 'today' : ''}">${r.due === cTodayIso() ? 'Today' : esc(tcDdMm(r.due))}</span></span>
     <span class="tc-co"><b>${esc(r.name)}</b><small>${esc(tcPlace(r) || 'country not recorded')}</small></span>
-    <span class="tc-last">${r.lastYear ? `${Number(r.lastYear)} · ${tcDelegates(r.lastYearN)}` : 'no course yet'}</span>
+    <span class="tc-last">${r.lastYear ? `${Number(r.lastYear)} · ${tcDelegates(r.lastYearN)}` : ''}</span>
     <span class="tc-pic">${esc(r.owner || r.pic || '')}</span></a>`;
 // ---- TC HOME, ROUND 3 (the owner's pick M1, 20.10.2026): the year's figures first, like the Academy Home ----
 // Top to bottom: the year, Today (Planned today, This week; the Needs you slot, no overdue figure), four cards for the
@@ -11151,7 +11151,7 @@ async function tcMyClients() {
   const k = document.querySelector('#view .khead');
   if (!L || !Number(L.total) || !k || document.querySelector('.tc-mine-card')) return;
   const row = (c) => `<a class="tc-mrow" href="#/tc/company/${Number(c.id)}"><div><b>${esc(c.name)}</b><small>${esc(tcPlace(c) || 'country not recorded')}</small></div>
-      <span>${c.lastYear ? `<span class="tc-ychip">${Number(c.lastYear)} · ${tcDelegates(c.lastYearN)}</span>` : '<small>no course yet</small>'}</span>
+      <span>${c.lastYear ? `<span class="tc-ychip">${Number(c.lastYear)} · ${tcDelegates(c.lastYearN)}</span>` : ''}</span>
       <span>${c.next ? `<span class="c-when ${tcWhen(c.next.due)}">${esc(tcWhenText(c.next.due))}</span>` : ''}</span>
       <span>${c.next ? '' : `<button type="button" class="btn sm ghost" onclick="event.preventDefault();event.stopPropagation();tcOpenPlan(${Number(c.id)}, ${esc(JSON.stringify(String(c.name ?? '')))})">Plan</button>`}</span></a>`;
   k.insertAdjacentHTML('afterend', `<section class="c-sheet tc-mine-card" aria-label="My clients"><div class="tcgo-bh"><h2>My clients · ${tcN(L.total)}</h2>
@@ -11651,7 +11651,7 @@ function tcDrawCompanies() {
   const row = (c) => `<a class="c-line tc-cline" href="#/tc/company/${Number(c.id)}">
       <div class="c-who"><b>${esc(c.name)}</b><small class="c-reach${tcPlace(c) ? '' : ' c-gap'}">${esc(tcPlace(c) || 'country not recorded')}</small></div>
       <div class="c-what"><div class="tc-rowtop"><span class="p-stage">${esc(st(c))}</span>${c.areas.map((a) => `<span class="tc-area">${esc(a)}</span>`).join('')}</div>
-        <div class="tc-rowsub">${c.lastYear ? `<span class="tc-ychip">${Number(c.lastYear)} · ${tcDelegates(c.lastYearN)}</span><span>${Number(c.delegates)} in all</span>` : '<span>no course yet</span>'}${c.pic
+        <div class="tc-rowsub">${c.lastYear ? `<span class="tc-ychip">${Number(c.lastYear)} · ${tcDelegates(c.lastYearN)}</span><span>${Number(c.delegates)} in all</span>` : ''}${c.pic
           ? `<span class="tc-ini" title="${esc(c.pic)}">${esc(String(c.pic).split(/[\s;]+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase())}</span>` : ''}</div></div>
       <div class="c-when">${c.next ? `<span class="c-when ${tcWhen(c.next.due)}">${esc(tcWhenText(c.next.due))}</span>` : ''}</div>
       <div class="c-acts">${c.family ? `<span class="c-tag tcfam-tag">${esc(c.family.name)} family · ${Number(c.family.n)}</span>` : ''}${c.info ? '<span class="c-tag">Information to send</span>' : ''}${tcMineHtml(c)}</div></a>`;
