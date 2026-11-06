@@ -18,9 +18,13 @@ import { giftKey, placesForYes, placeLink, PLACE_CODES } from './tcgo.js';
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const CFG = () => ((TC.grandOpening || {}).mails || {});
 export const KINDS = ['in', 'r1', 'r2'];
+// ON HOLD (06.11.2026, his words: "THE qr's we will allow the AMento to create qr's, and later just put them in connection to our
+// companies, so hold that letter!"): You're in and See you soon carry the QR, so they neither send nor show a QR of ours.
+export const HOLD = new Set(['in', 'r2']);
+const HOLD_WHY = 'On hold: the QR codes come from Amento, then Intake links them to the companies.';
 export const LABEL = { in: "You're in", r1: 'Reminder: no answer yet', r2: 'See you soon' };
 const REMIND_DAYS = 21;
-export const qrPng = (code) => (PLACE_CODES.includes(code) ? fs.readFileSync(path.join(ROOT, 'src', 'assets', 'go-qr', code + '.png')) : null);
+export const qrPng = () => null;   // no QR image of ours (06.11.2026): Amento makes them
 export const pieceImage = () => String(CFG().pieceImage || '').trim();
 
 /** The email, in the list owner's voice (06.11.2026, his decision). qrSrc: 'cid:qr' when sending, a data address in a preview. */
@@ -32,12 +36,12 @@ export function mailFor(kind, { first = '', company = '', code = '', linkCode = 
   const place = co + ' place in the Grand Opening puzzle is <b>' + esc_(code) + '</b>.';
   const placePlain = coPlain + ' place in the Grand Opening puzzle is ' + code + '.';
   const door = 'Show this QR at the door on 27 May 2027, Novikontas Academy Campus, Duntes iela 17d, Riga.';
-  const qr = '<div style="text-align:center">' + (piece ? '<img src="' + esc_(piece) + '" width="260" alt="Your puzzle piece" style="display:inline-block;width:260px;max-width:100%;border:0"><br>' : '')
+  const qr = !qrSrc ? '' : '<div style="text-align:center">' + (piece ? '<img src="' + esc_(piece) + '" width="260" alt="Your puzzle piece" style="display:inline-block;width:260px;max-width:100%;border:0"><br>' : '')
     + '<img src="' + esc_(qrSrc) + '" width="200" height="200" alt="QR ' + esc_(code) + '" style="display:inline-block;width:200px;height:200px;border:0"><div style="font-weight:800;font-size:22px;color:#0a2463">' + esc_(code) + '</div></div>';
   const body = kind === 'in' ? ['Thank you for your Yes, I am glad you will be with us. ' + place] : ['See you soon. ' + place];
   const bodyPlain = kind === 'in' ? 'Thank you for your Yes, I am glad you will be with us. ' + placePlain : 'See you soon. ' + placePlain;
   const subject = kind === 'in' ? "You're in: Novikontas Academy Grand Opening, 27 May 2027" : 'See you on 27 May 2027: Novikontas Academy Grand Opening';
-  const html = letter({ first, body, after: [qr, door], from });
+  const html = letter({ first, body, after: [qr, door].filter(Boolean), from });
   const plain = (first ? 'Dear ' + first + ',' : 'Hello,') + '\n\n' + bodyPlain + '\n\n' + door + '\nYour place online: ' + placeLink(code) + '\n\n' + plainSig(from)
     + '\n\nYou can reply to this email, it comes to me, or write to events@novikontas.org.';
   return { subject, html, plain, inline: [{ cid: 'qr', type: 'image/png', name: 'qr-' + code + '.png', bytes: qrPng(code) || Buffer.alloc(0) }] };
@@ -75,7 +79,7 @@ export async function overview(db, answers) {
     const list = await due(db, k, answers);
     const per = {};
     for (const p of list) per[p.sender] = (per[p.sender] || 0) + 1;
-    out[k] = { label: LABEL[k], n: list.length, perSender: per, blocked: k !== 'r1' && !pieceImage() ? 'The digital piece design is not picked yet.' : '' };
+    out[k] = { label: LABEL[k], n: list.length, perSender: per, blocked: HOLD.has(k) ? HOLD_WHY : '' };
   }
   const sent = await db.prepare(`SELECT kind, COUNT(*) AS n FROM tc_go_mails WHERE result = 'sent' GROUP BY kind`).all();
   for (const r of sent) if (out[r.kind]) out[r.kind].sent = Number(r.n);
@@ -85,7 +89,7 @@ export async function overview(db, answers) {
 /** The next few of one kind from one sender (the screen calls it again until nothing is left). */
 export async function sendNext(db, kind, code, answers, me, { env = process.env, fetchImpl = fetch } = {}) {
   if (!KINDS.includes(kind)) return { ok: false, why: 'Which email?' };
-  if (kind !== 'r1' && !pieceImage()) return { ok: false, why: 'The digital piece design is not picked yet. Nothing was sent.' };
+  if (HOLD.has(kind)) return { ok: false, why: HOLD_WHY + ' Nothing was sent.' };
   const r = await ready(db, code, env, fetchImpl);
   if (r.why) return { ok: false, why: r.why };
   if (await todaySent(db) >= DAY_CAP) return { ok: false, why: `Today's ${DAY_CAP} are sent. The next ones go tomorrow.` };
@@ -108,7 +112,7 @@ export async function sendNext(db, kind, code, answers, me, { env = process.env,
 
 /** A preview for the screen: the email to a made-up person, the QR drawn from the file. */
 export function preview(kind, from = {}) {
-  const m = mailFor(kind, { first: 'Anna', company: 'Example Shipping AS', code: '13H', linkCode: 'test00' }, 'data:image/png;base64,' + qrPng('13H').toString('base64'), from);
+  const m = mailFor(kind, { first: 'Anna', company: 'Example Shipping AS', code: '13H', linkCode: 'test00' }, '', from);
   const html = String(m.html).replace('src="cid:building"', 'src="data:image/jpeg;base64,' + fs.readFileSync(path.join(ROOT, 'src', 'assets', 'go-building.jpg')).toString('base64') + '"');
   return { subject: m.subject, html };
 }

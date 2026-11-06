@@ -1,6 +1,6 @@
 // STAGE 2 EMAILS, PERSONAL FROM THE LIST'S OWNER (06.11.2026). The owner's decision: "all stage 2 emails will be like from a
 // personal manager." Every Stage 2 email and every after-answer email (src/tcgomail.js) is a short note in the owner's own
-// voice ("I"), signed with their name (and title when config/tc.json has one), sent from their own address so the reply goes
+// voice ("I"), signed with their name and Novikontas Academy (his pick "Name only", 06.11.2026), from their own address so the reply goes
 // to them. The facts, the picture (27.05.2005 -> 27.05.2027), the Yes button and the calendar link stay.
 //   'confirm' = saw the Save the Date   'invite' = it may not have reached them   'new' = never sent the Save the Date
 //   opts.remind = Reminder 1 (no answer yet)   opts.from = { name, title } the list's owner
@@ -13,7 +13,7 @@ const INK = 'color:#011111;font-size:16px;line-height:1.6';
 /** The note's frame: white card, the owner's signature at the end. Shared with the after-answer emails. */
 export function letter({ first = '', body = [], button = '', picture = '', after = [], from = {} }) {
   const hi = first ? 'Dear ' + esc_(first) + ',' : 'Hello,';
-  const sig = [esc_(from.name || ''), from.title ? esc_(from.title) : '', 'Novikontas Academy'].filter(Boolean).join('<br>');
+  const sig = [esc_(from.name || ''), 'Novikontas Academy'].filter(Boolean).join('<br>');
   const tr = (pad, css, inner) => '<tr><td style="background:#fff;padding:' + pad + ';' + css + '">' + inner + '</td></tr>';
   return '<div style="background:#e7ebf0;padding:24px 0"><table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" style="width:600px;max-width:100%;margin:0 auto;font-family:Raleway,Arial,sans-serif">'
     + (picture ? '<tr><td style="background:#fff;border-radius:6px 6px 0 0;line-height:0">' + picture + '</td></tr>' : '')
@@ -24,7 +24,7 @@ export function letter({ first = '', body = [], button = '', picture = '', after
     + tr('20px 36px 30px', 'border-radius:0 0 6px 6px;color:#415c8f;font-size:14px;line-height:1.6', 'You can reply to this email, it comes to me, or write to <a href="mailto:events@novikontas.org" style="color:#0a2463">events@novikontas.org</a>.')
     + '</table></div>';
 }
-export const plainSig = (from = {}) => [from.name || '', from.title || '', 'Novikontas Academy'].filter(Boolean).join('\n');
+export const plainSig = (from = {}) => [from.name || '', 'Novikontas Academy'].filter(Boolean).join('\n');
 
 export function s2Mail(kind, first, code, opts = {}) {
   const from = opts.from || {};
@@ -44,10 +44,11 @@ export function s2Mail(kind, first, code, opts = {}) {
     lines = ['You saved the date for our Grand Opening. ' + opens + ', and I would be glad to welcome you there myself.', 'Will you join us? It takes one minute to confirm.'];
   } else if (kind === 'invite') {
     subject = 'You are invited: Novikontas Academy Grand Opening, 27 May 2027';
-    lines = ['I wanted to write to you personally, as our first invitation may not have reached you. ' + opens + ', and it would mean a lot to me to welcome you there.', 'Will you join us? It takes one minute to confirm.'];
+    // his words 06.11.2026: "i wanted to write to you personally is not ok": the facts in the owner's voice, no announcement
+    lines = ['Our first invitation may not have reached you, so here it is again. ' + opens + ', and it would mean a lot to me to welcome you there.', 'Will you join us? It takes one minute to confirm.'];
   } else {
     subject = 'You are invited: Novikontas Academy Grand Opening, 27 May 2027';
-    lines = ['I wanted to write to you personally. ' + opens + ', and it would mean a lot to me to welcome you there.', 'Will you join us? It takes one minute to confirm.'];
+    lines = [opens + ', and it would mean a lot to me to welcome you there.', 'Will you join us? It takes one minute to confirm.'];
   }
   const picture = kind === 'confirm'
     ? '<img src="cid:building" width="600" alt="Novikontas Academy Campus, 27.05.2005 to 27.05.2027" style="display:block;width:100%;max-width:600px;border:0;border-radius:6px 6px 0 0">'
