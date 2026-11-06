@@ -194,6 +194,7 @@ companies with no status - defaults in use); phone: marked number of a known per
   SHOULD NEVER BE ACCOUNTED FOR IN STATS! ... ALso double check, do we really have 164 admitted students THIS YEAR ALONE?"
   -> read-only check of the 164 (test records, duplicates, SIS statuses, admission dates, intake year) + a fix so test
   records never count; data changes only on his yes.
+- `LIVE` 06.11 patch 111 (bcf01b8): test records out of every figure, Admitted counts people; the 62 SIS twins merged on 05.11 (backup 09-12-10Z). Admitted 2026 = 100 people (101 records), Test New Student not counted.
 - FINDING (05.11, read-only): 168 Admitted 2026 records = 104 people (103 without "Test New Student", which the SIS
   made on 29.10 as matriculated). 62 pairs = Admissions-sheet record + SIS-made twin; 2 pairs both from the sheet.
 - `DECIDED` HIS PICKS (05.11): (a) merge the 62 SIS twins into their sheet records (Same person merge, backup first, after a
