@@ -196,6 +196,8 @@ companies with no status - defaults in use); phone: marked number of a known per
 - `DECIDED` HIS ANSWERS (06.11) on the drafts: "i wanted to write to you personally is not ok" (opening removed); "THE qr's we will
   allow the AMento to create qr's, and later just put them in connection to our companies, so hold that letter!" (You're in +
   See you soon held; our own QR images not used); signature "Name only" (+ Novikontas Academy).
+- `DECIDED` HIS PICK (06.11): "OK, release" for the new lines 2 ("Our first invitation may not have reached you, so here it is again...")
+  and 3, and the set of four (Will you be there?, You are invited, New contacts, Reminder 1) as patch 114; QR letters on hold.
 
 ## 06.11.2026 - TC Companies list: "no course yet" goes (owner's pick, lane: Intake TC LANE)
 
