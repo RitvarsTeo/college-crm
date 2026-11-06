@@ -897,6 +897,21 @@ CREATE TABLE IF NOT EXISTS tc_go_mails (
   sent_by TEXT
 );
 CREATE UNIQUE INDEX IF NOT EXISTS tc_go_mails_once ON tc_go_mails (stage2_id, kind);
+-- THE N3 PHONE DIRECTORY (the owner's yes, 06.11.2026; Marina: seafarers in N3 call about their sons and daughters).
+-- A read-only copy of N3's numbers, ONLY to recognise a caller: "Known in N3: <name>" on the call pop-up, the Inbox call
+-- card and the person page (src/n3dir.js). Never joined into people, never counted, never listed, searched or exported.
+-- Only the last 8 digits of a number are kept. Every import replaces the whole table. The nightly backup leaves it out
+-- (his pick "Skip it"): it is a copy of N3 and is imported again.
+CREATE TABLE IF NOT EXISTS n3_phone_directory (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  n3_id TEXT NOT NULL,             -- N3's own number for the person
+  first_name TEXT,
+  last_name TEXT,
+  phone_tail TEXT NOT NULL,        -- the last 8 digits, as everywhere else in Intake
+  imported_at TEXT NOT NULL,
+  imported_by TEXT
+);
+CREATE INDEX IF NOT EXISTS n3_phone_directory_tail ON n3_phone_directory (phone_tail);
 CREATE TABLE IF NOT EXISTS tc_go_gifts (
   company_key TEXT PRIMARY KEY,
   kind TEXT NOT NULL,              -- physical | digital | none (a cleared pick, 05.11.2026)

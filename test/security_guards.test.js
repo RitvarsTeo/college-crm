@@ -335,7 +335,9 @@ test('(e) admin-only routes refuse users, whichever half they open; the import a
       ...(body ? { body: JSON.stringify(body) } : {}) });
     return [r.status, await r.json().catch(() => ({}))];
   };
-  for (const p of routePaths().filter((x) => x.startsWith('/api/admin/tc/') || x === '/api/admin/access')) {
+  // the N3 phone directory (06.11.2026): admins only, both ways; it must be in the sweep
+  assert.ok(routePaths().includes('/api/admin/n3-directory'), 'the route sweep finds the N3 phone directory');
+  for (const p of routePaths().filter((x) => x.startsWith('/api/admin/tc/') || x === '/api/admin/access' || x === '/api/admin/n3-directory')) {
     for (const who of ['tc', 'academy', 'none']) {
       assert.equal((await call(p, who))[0], 403, `${who} GET ${p}`);
       assert.equal((await call(p, who, {}))[0], 403, `${who} POST ${p}`);

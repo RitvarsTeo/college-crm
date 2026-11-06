@@ -15,6 +15,7 @@
 
 import fs from 'node:fs';
 import { markFor } from './phonefilter.js';
+import { n3Names } from './n3dir.js';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -108,7 +109,8 @@ export function isOperator(operator, viewer) {
 
 // ------------------------------------------------------------ the caller --
 // A person first (last 8 digits, as everywhere else in Intake), then a lead still waiting in
-// the Inbox, then nobody: a new caller.
+// the Inbox, then nobody: a new caller. A new caller whose number is in the N3 phone directory (06.11.2026) carries
+// n3: the names N3 holds for it, "Known in N3: <name>"; a person or a lead still wins.
 export async function whoIsCalling(db, callerNum) {
   const t = tail(callerNum);
   if (t.length < 7) return { kind: 'unknown', isNew: true, last4: digits(callerNum).slice(-4) || null };
@@ -127,7 +129,8 @@ export async function whoIsCalling(db, callerNum) {
     WHERE state = 'new' AND contact_phone IS NOT NULL ORDER BY received_at DESC`).all();
   const w = waiting.find((x) => tail(x.contact_phone) === t);
   if (w) return { kind: 'lead', isNew: true, inboundId: Number(w.id), name: w.contact_name || null, since: w.received_at };
-  return { kind: 'unknown', isNew: true, last4: digits(callerNum).slice(-4) || null };
+  const n3 = await n3Names(db, callerNum);
+  return { kind: 'unknown', isNew: true, last4: digits(callerNum).slice(-4) || null, ...(n3.length ? { n3 } : {}) };
 }
 
 const cut = (s, n = 140) => {
@@ -176,6 +179,7 @@ export function noteFor(ev) {
     : w.kind === 'lead' ? (w.name || 'A lead waiting in the Inbox')
     : 'New caller' + (w.last4 ? ' ···' + w.last4 : '');
   const lines = [w.kind === 'person' ? 'Existing' + (w.status ? ' · ' + w.status : '') : 'New'];
+  if (w.n3 && w.n3.length) lines.push('Known in N3: ' + w.n3.join(', '));
   if (w.lastNote) lines.push('Last note: ' + w.lastNote);
   if (w.nextStep) lines.push('Next step: ' + w.nextStep);
   const href = w.kind === 'person' ? '#/person/' + encodeURIComponent(w.id) : w.kind === 'lead' ? '#/inbox' : '#/inbox';

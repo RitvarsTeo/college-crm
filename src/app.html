@@ -1648,6 +1648,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .ib-tags{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
   html.ui-c .ib-prog{font-size:11.5px;font-weight:700;padding:1px 6px;border-radius:5px;background:var(--c-sunk);color:var(--ink)}
   html.ui-c .ib-joins{font-size:11.5px;font-weight:700;padding:1px 6px;border-radius:5px;border:1px solid #29a8df;color:var(--ink)}   /* Q77: already in Intake */
+  html.ui-c .ib-n3{font-size:11.5px;font-weight:600;padding:1px 6px;border-radius:5px;border:1px solid var(--rule);color:var(--t2)}   /* Known in N3 (06.11.2026) */
   html.ui-c .ib-kind{font-size:11.5px;font-weight:600;padding:1px 6px;border-radius:5px;border:1px solid var(--rule);color:var(--t2)}
   html.ui-c .ib-acts{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:2px;padding-top:7px;border-top:1px solid var(--rule2)}
   html.ui-c .ib-aside{border:0;background:none;padding:0;font:inherit;font-size:12px;color:var(--t3);cursor:pointer;text-decoration:underline}
@@ -1961,6 +1962,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   #callpop .cp-name{font-size:18px;line-height:1.2}
   #callpop .cp-tag{justify-self:start;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;border:1px solid var(--rule);color:var(--t2)}
   #callpop .cp-tag.new{border-color:#E0A526}
+  #callpop .cp-n3{margin:0;font-size:12.5px;color:var(--t2)}   /* "Known in N3: <name>" (06.11.2026) */
   #callpop dl{margin:0;display:grid;gap:5px;font-size:12px}
   #callpop dl div{display:grid;grid-template-columns:5.6em minmax(0,1fr);gap:8px}
   #callpop dt{color:var(--t4);font-size:10px;letter-spacing:.05em;text-transform:uppercase;padding-top:2px}
@@ -3996,6 +3998,7 @@ async function routeC(page, arg) {
   if (page === 'person') return viewPerson(arg);
   if (page === 'channels') return viewChannels(arg);
   if (page === 'feedback') return viewFeedback();
+  if (page === 'n3') return viewN3();
   if (!(place === 'people' && page !== 'journey')) C_PCOHORT = null;   // a Reports cohort lives only on People
   if (place === 'reports') {
     if (arg) C_REP_CH = arg;   // #/reports/<chapter> opens that tab (#/reports/applications too)
@@ -4711,7 +4714,8 @@ async function cHelpAdmin() {
     <a href="#/channels">Channels</a><a href="#/feedback">Feedback received</a>
     <a href="#/journey?v=list&amp;p_data=odd" title="People whose programme is not one of the official ones">Data to tidy${odd ? ` <b>${odd}</b>` : ''}</a>
     <a href="/api/admin/sheet-pull" target="_blank" rel="noopener" title="The admissions sheet pulled into Intake, and how many leads are made in Intake each week">Admissions sheet</a>
-    <a href="#/access" title="Which half of Intake each account opens: Academy, Training Centre">People and access</a></div>`;
+    <a href="#/access" title="Which half of Intake each account opens: Academy, Training Centre">People and access</a>
+    <a href="#/n3" title="N3's phone numbers, so a call from a seafarer in N3 says who it is">N3 phone directory</a></div>`;
 }
 
 // ------------------------------------------------------------------ HELP CENTER
@@ -5341,7 +5345,7 @@ function cInboxPool() {
       <div class="ib-top"><b class="c-reach">${who(r)}</b></div>
       <small class="ib-ch" style="--src:${C_SRC_COLOUR[r.channel] || '#8a94a6'}"><i></i>${esc(channelLabel(r.channel))}</small>
       ${r.channel === 'phone' && (r.calls || []).length ? cCallsHtml(r.calls) : r.bodyClean ? msgHtml(r) : `<div class="ib-msg">${esc(r.channel === 'phone' ? cCallLine(r.body) : (r.body || D.val(r, 'question') || ''))}</div>`}
-      ${prog || kind || r.joins || (!live && r.mark && r.mark !== r.archive_reason) ? `<div class="ib-tags">${r.joins ? `<span class="ib-joins">Joins ${esc(r.joins.name)}</span>` : ''}${prog ? `<span class="ib-prog">${esc(prog)}</span>` : ''}${kind}${!live && r.mark && r.mark !== r.archive_reason ? `<span class="ib-kind ib-marktag">${esc(r.mark)}</span>` : ''}</div>` : ''}
+      ${prog || kind || r.joins || (r.knownInN3 || []).length || (!live && r.mark && r.mark !== r.archive_reason) ? `<div class="ib-tags">${r.joins ? `<span class="ib-joins">Joins ${esc(r.joins.name)}</span>` : ''}${(r.knownInN3 || []).length ? `<span class="ib-n3">Known in N3: ${esc(r.knownInN3.join(', '))}</span>` : ''}${prog ? `<span class="ib-prog">${esc(prog)}</span>` : ''}${kind}${!live && r.mark && r.mark !== r.archive_reason ? `<span class="ib-kind ib-marktag">${esc(r.mark)}</span>` : ''}</div>` : ''}
       ${live && r.setAsideBefore ? `<div class="ib-before"><span>Set aside before: ${cAsideWhen(r.setAsideBefore)}</span>${cMarkCtl(r, D.marks)}</div>` : ''}
       ${!live && r.state === 'archived' ? `<div class="ib-before"><span>Set aside: ${cAsideWhen({ at: r.processed_at, by: r.processed_by, reason: r.archive_reason })}</span></div>` : ''}
       ${cStateLine(st, cAgo(r.received_at), '', fmtDateTime(r.received_at))}
@@ -6472,7 +6476,7 @@ function cPersonFacts(p) {
   if (C_PERSON_EDIT) return cPersonForm(p);
   const stages = CFG.stages || [];
   return `<div class="c-sheet c-facts"><h3>Details<span class="c-h3acts"><button class="btn sm ghost" onclick="C_PERSON_EDIT=true;viewPersonC(${esc(JSON.stringify(String(p.id ?? '')))})">Edit</button></span></h3><dl>
-      ${row('Email', esc(p.email || ''))}${row('Phone', esc(p.phone || ''))}
+      ${row('Email', esc(p.email || ''))}${row('Phone', esc(p.phone || ''))}${(p.knownInN3 || []).length ? row('Known in N3', esc(p.knownInN3.join(', '))) : ''}
       ${row('Programme', p.programme ? esc(p.programme) + (known.has(p.programme) ? '' : ' <span class="c-tag">not in list</span>') : '', 'not said')}
       ${row('Study form', esc(p.study_form || ''))}${row('Education', esc(p.education || ''))}${row('Nationality', esc(p.nationality || ''))}
       ${row('Came from', came ? esc(came) + (cameWhy ? ` <small class="c-gap-soft">${esc(cameWhy)}</small>` : '') + (p.source_campaign ? ' / ' + esc(p.source_campaign) : '') : '')}
@@ -10770,6 +10774,7 @@ function cpCardHtml(call) {
     <header><span class="cp-dot" aria-hidden="true"></span><b class="cp-name">${esc(cpWho(w))}</b>
       <button class="cp-x" onclick="cpClose()" aria-label="Close">&times;</button></header>
     <span class="cp-tag ${w.isNew ? 'new' : 'old'}">${esc(cpTag(w))}</span>
+    ${(w.n3 || []).length ? `<p class="cp-n3">Known in N3: <b>${esc(w.n3.join(', '))}</b></p>` : ''}
     ${w.lastNote || w.nextStep ? `<dl>
       ${w.lastNote ? `<div><dt>Last note</dt><dd>${esc(w.lastNote)}</dd></div>` : ''}
       ${w.nextStep ? `<div><dt>Next step</dt><dd>${esc(w.nextStep)}${w.nextStepAt ? ' · ' + esc(fmtDate(w.nextStepAt)) : ''}</dd></div>` : ''}
@@ -10783,6 +10788,7 @@ function cpClose() { const box = document.querySelector('#callpop'); if (box) { 
 function cpNoteText(call) {
   const w = call.who || {};
   const lines = [cpTag(w)];
+  if ((w.n3 || []).length) lines.push('Known in N3: ' + w.n3.join(', '));
   if (w.lastNote) lines.push('Last note: ' + w.lastNote);
   if (w.nextStep) lines.push('Next step: ' + w.nextStep);
   return { title: cpWho(w), body: lines.join('\n') };
@@ -13123,6 +13129,65 @@ async function viewAccess() {
 async function cAccessSet(userId, area, on) {
   try { await post('/api/admin/access', { userId, area, on: on === true }); } catch (e) { alert(e.message); }
   await viewAccess();
+}
+
+// ---- THE N3 PHONE DIRECTORY (admins, 06.11.2026): N3's numbers, only to say "Known in N3: <name>" for a caller ----
+// The page shows counts, never a name or a number. The file is read in the browser with the TC import's readers
+// (tcImpXlsx, tcImpCsv); only the N3 id, the names and the last 8 digits of each number are sent. Replace = the whole
+// directory, at once.
+let N3_IMP = null;
+const N3_FIELDS = [['id', 'N3 id', /^(n3[ _]?)?(id|person[ _]?id|personas? ?id|nr\.?)$/i], ['first', 'First name', /^(first|first ?name|given ?name|v[āa]rds)$/i],
+  ['last', 'Last name', /^(last|last ?name|surname|family ?name|uzv[āa]rds)$/i], ['phone', 'Phone', /^(phone|mobile|tel\.?|telefons|t[āa]lrunis)( ?1)?$/i],
+  ['phone2', 'Phone 2', /^(phone|mobile|tel\.?|telefons|t[āa]lrunis) ?2$|^(other|second) ?phone$/i]];
+const n3Tail = (v) => { const d = String(v ?? '').replace(/\D/g, ''); return d.length >= 8 ? d.slice(-8) : ''; };
+async function viewN3() {
+  if (!isAdmin()) { $('#view').innerHTML = '<div class="c-head"><div><h1>N3 phone directory</h1></div></div><div class="c-sheet"><div class="c-empty">This page is for admins.</div></div>'; return; }
+  const st = await api('/api/admin/n3-directory');
+  const grid = N3_IMP ? N3_IMP.grid : null;
+  const head = grid ? grid[0] : [];
+  const pick = (f, label) => `<label class="c-line2">${esc(label)} <select onchange="n3Map(${esc(JSON.stringify(String(f ?? '')))}, this.value)">
+      <option value="">none</option>${head.map((h, i) => `<option value="${i}"${N3_IMP.map[f] === i ? ' selected' : ''}>${esc(h || 'Column ' + (i + 1))}</option>`).join('')}</select></label>`;
+  const rows = grid ? n3Rows() : [];
+  const usable = rows.filter((r) => r[0] && (r[3] || r[4])).length;
+  $('#view').innerHTML = `<p class="c-crumb"><a href="#/help">Help center</a></p>
+    <div class="c-head"><div><h1>N3 phone directory</h1></div></div>
+    <div class="c-sheet c-pad"><p class="c-line2">${st.numbers
+      ? `<b>${st.numbers.toLocaleString('en-GB')}</b> numbers of <b>${st.people.toLocaleString('en-GB')}</b> people in N3 · imported ${esc(fmtDate(st.importedAt))}${st.importedBy ? ' by ' + esc(st.importedBy) : ''}`
+      : 'No directory yet.'}</p></div>
+    <div class="c-sheet c-pad">
+      <p class="c-line2"><input type="file" accept=".xlsx,.csv" onchange="n3File(this)" aria-label="The N3 export, Excel or CSV"></p>
+      ${grid ? `<p class="c-line2">${esc(N3_IMP.file)} · ${(grid.length - 1).toLocaleString('en-GB')} rows</p>
+        <div class="c-line2">${N3_FIELDS.map(([f, l]) => pick(f, l)).join(' ')}</div>
+        <p class="c-line2"><b>${usable.toLocaleString('en-GB')}</b> rows have an N3 id and a phone number${rows.length - usable ? ` · ${(rows.length - usable).toLocaleString('en-GB')} without, left out` : ''}</p>
+        <p><button class="btn" ${usable && N3_IMP.map.id !== undefined ? '' : 'disabled'} onclick="n3Replace(this)">Replace the directory</button></p>` : ''}
+      <p class="c-hint" id="n3Err"></p>
+    </div>`;
+}
+function n3Map(f, v) { if (!N3_FIELDS.some(([k]) => k === f)) return; if (v === '') delete N3_IMP.map[f]; else N3_IMP.map[f] = Number(v); viewN3(); }
+function n3Rows() {
+  const m = N3_IMP.map, at = (r, f) => (m[f] === undefined ? '' : String(r[m[f]] ?? '').trim());
+  return N3_IMP.grid.slice(1).map((r) => [at(r, 'id'), at(r, 'first'), at(r, 'last'), n3Tail(at(r, 'phone')), n3Tail(at(r, 'phone2'))]);
+}
+async function n3File(input) {
+  const f = input.files && input.files[0]; if (!f) return;
+  const say = (t) => { const e = $('#n3Err'); if (e) e.textContent = t; };
+  if (f.size > 20 * 1024 * 1024) { say('The file is over 20 MB.'); return; }
+  try {
+    const sheets = /\.xls[xm]$/i.test(f.name) ? await tcImpXlsx(await f.arrayBuffer()) : [{ grid: tcImpCsv(await f.text()) }];
+    const grid = (sheets.find((x) => x.grid.length > 1) || {}).grid;
+    if (!grid) throw new Error('The file has no rows.');
+    const map = {};
+    N3_FIELDS.forEach(([k, , re]) => { const i = grid[0].findIndex((h, j) => re.test(String(h || '').trim()) && !Object.values(map).includes(j)); if (i >= 0) map[k] = i; });
+    N3_IMP = { file: f.name, grid, map };
+    await viewN3();
+  } catch (e) { say(e.message || 'This file cannot be read.'); }
+}
+async function n3Replace(btn) {
+  const rows = n3Rows().filter((r) => r[0] && (r[3] || r[4])).map((r) => r.filter((x, i) => i < 3 || x));
+  if (!confirm(`Replace the N3 phone directory with ${rows.length.toLocaleString('en-GB')} people? The old directory is removed.`)) return;
+  btn.disabled = true;
+  try { await post('/api/admin/n3-directory', { rows }); N3_IMP = null; await viewN3(); }
+  catch (e) { btn.disabled = false; const el = $('#n3Err'); if (el) el.textContent = e.message; }
 }
 
 (async () => {

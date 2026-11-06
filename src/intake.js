@@ -21,6 +21,7 @@ import { REAL_PEOPLE } from './realpeople.js';
 import { rangesSql } from './yearscope.js';
 import { markFor, markedWhy, contactKeys, MARKS } from './phonefilter.js';
 import { emailBodyFor, isEmailChannel, cleanEmailBody, emailShown } from './emailtext.js';
+import { n3Names } from './n3dir.js';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const CFG = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'prototype.json'), 'utf8'));
@@ -508,6 +509,8 @@ export async function listInbound(db, { state = 'new', now = nowIso(), range = n
     r.answer_by = due.answerBy; r.late_at = due.lateAt;
     // Q92 (14.10.2026): a phone card says each call plainly: when, which line, answered (by whom) or missed
     if (r.channel === 'phone') r.calls = await callsFor(db, r.id);
+    // 06.11.2026: a caller Intake does not hold, whose number is in the N3 phone directory: "Known in N3: <name>"
+    if (r.channel === 'phone' && !r.person_id) r.knownInN3 = await n3Names(db, r.contact_phone);
     // an email card shows what the person newly wrote (16.10.2026), each joined email cleaned on its own; body stays
     // the stored text for "Show original" (src/emailtext.js)
     if (isEmailChannel(r.channel) && r.body) {

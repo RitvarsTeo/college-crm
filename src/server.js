@@ -17,6 +17,7 @@ import * as notify from '../lib/notify.js';
 import * as sheetB from '../lib/sheetpull.js';
 import { pullSheet, sheetCounts } from './sheetsync.js';
 import { receive, activePersonFor, IN_TOUCH_STEPS, listInbound, callsTodayFromPeople, messagesFor, recordWhatsAppEcho, qualify, archive, setMark, removeMark, setCallNote, withCallNotes, bringBack, funnel, agedCount, handoffToSis, ownerFor, notifiedFor, handoverGap, canReach, surfaceAt, waitingFor, waitingByRole } from './intake.js';
+import { replaceN3Directory, n3Status, n3Names } from './n3dir.js';
 import { readScreenshot, readKind, readBody, readPath, saveFeedback, listFeedback, getScreenshot, setHandled, BadScreenshot, helpOpened, helpCounts } from './feedback.js';
 import { findMatches as matchPeople, duplicateCheck, onePersonFor } from './identity.js';
 import { lifecycleOf, sisProgress, sisProgressByPerson, SIS_HOLDS_SQL, SIS_DRAFT_SQL, SIS_DRAFT_REACH_SQL } from './lifecycle.js';
@@ -926,6 +927,7 @@ async function personRow(id, viewer) {
     .sort((a, b) => String(b.occurred_at).localeCompare(String(a.occurred_at)));
   p.viewer = viewer || null;
   p.viewerIsAdmin = isAdmin(viewer);
+  p.knownInN3 = await n3Names(db, p.phone);   // "Known in N3: <name>" (06.11.2026); the number is never sent
   p.tasks = await db.prepare('SELECT * FROM tasks WHERE person_id = ? ORDER BY due_at ASC').all(id);
   p.documents = await db.prepare('SELECT * FROM documents WHERE person_id = ?').all(id);
   p.registrations = await db.prepare(`SELECT r.*, o.title, o.held_on FROM registrations r JOIN open_days o ON o.id = r.open_day_id WHERE r.person_id = ?`).all(id);
@@ -1386,6 +1388,20 @@ export const handle = async (req, res) => {
       if (!areas.AREAS.includes(b.area)) return json(res, 400, { error: 'Unknown area.' });
       const r = await areas.setArea(db, { userId: user.id, area: b.area, on: b.on === true, by: me.name || me.email || 'admin' });
       return json(res, 200, { ok: true, changed: r.changed, ...(await areas.accessList(db)) });
+    }
+
+    // ------------------------------------------- the N3 phone directory (06.11.2026) --
+    // Admins only. GET says how many numbers, when and by whom; POST replaces the whole directory. There is no route
+    // that reads a name or a number out (src/n3dir.js): the directory only answers "Known in N3" for one caller.
+    if (p === '/api/admin/n3-directory' && (req.method === 'GET' || req.method === 'POST')) {
+      const me = await adminOf(req);
+      if (!me) return json(res, 403, { error: 'The N3 phone directory is for admins only.' });
+      if (req.method === 'GET') return json(res, 200, await n3Status(db));
+      const b = await body(req, 4 * 1024 * 1024);
+      try {
+        const r = await replaceN3Directory(db, b.rows, { by: me.name || me.email || 'admin' });
+        return json(res, 200, { ok: true, ...r, status: await n3Status(db) });
+      } catch (e) { return json(res, 400, { error: e.message }); }
     }
 
     // ------------------------------------------------------- admin: channels --
