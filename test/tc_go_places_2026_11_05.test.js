@@ -4,12 +4,13 @@ import assert from 'node:assert/strict';
 const { openDb } = await import('../src/db.js');
 const go = await import('../src/tcgo.js');
 
-test('the 32 x 32 codes: 1,024, in the list order 1A..32A, 1B.., ending 32AF', () => {
-  assert.equal(go.PLACE_CODES.length, 1024);
-  assert.equal(new Set(go.PLACE_CODES).size, 1024);
+test('06.11 his pick B: the 45 x 25 codes, 1,125, in the list order 1A..45A, 1B.., ending 45Y', () => {
+  assert.equal(go.PLACE_CODES.length, 1125);
+  assert.equal(new Set(go.PLACE_CODES).size, 1125);
   assert.deepEqual(go.PLACE_CODES.slice(0, 2), ['1A', '2A']);
-  assert.equal(go.PLACE_CODES[32], '1B');
-  assert.equal(go.PLACE_CODES.at(-1), '32AF');
+  assert.equal(go.PLACE_CODES[45], '1B');
+  assert.equal(go.PLACE_CODES.at(-1), '45Y');
+  assert.ok(go.PLACE_CODES.includes('1A') && go.PLACE_CODES.includes('13H') && !go.PLACE_CODES.includes('32AF'));
   assert.equal(go.placeLink('13H'), 'https://novikontas.org/grand-opening?p=13H');
 });
 
@@ -34,7 +35,7 @@ test('check-in at the door: the QR link or the code finds the place; Arrived wit
   const db = await openDb();
   assert.equal(go.placeFromText('https://novikontas.org/grand-opening?p=13H'), '13H');
   assert.equal(go.placeFromText(' 13h '), '13H');
-  assert.equal(go.placeFromText('33A'), '');
+  assert.equal(go.placeFromText('46A'), ''); assert.equal(go.placeFromText('1Z'), ''); assert.equal(go.placeFromText('45y'), '45Y');
   assert.equal(go.placeFromText('https://evil.example/?p=1A&x'), '1A');
   await assert.rejects(go.doorCard(db, 'hello'), /not a place code/);
   const at = new Date().toISOString();

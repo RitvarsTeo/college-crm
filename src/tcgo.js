@@ -543,11 +543,13 @@ export async function metKeys(db) {
   return [...new Set([...a, ...e].map((r) => 'id:' + Number(r.company_id)))];
 }
 
-// THE PUZZLE PLACE ON YES (05.11.2026; his picks: "32x32 it is", a company gets its place when it answers Yes; the codes and
-// QR set are the Grand Opening's Puzzle_pozicijas_1024_32x32_2026-11-05.xlsx). Places are given in the list's order (1A, 2A
-// ... 32A, 1B ...), first Yes first. A place, once given, stays with its company.
-const PLACE_ROWS = [...'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'AA', 'AB', 'AC', 'AD', 'AE', 'AF'];
-export const PLACE_CODES = PLACE_ROWS.flatMap((r) => Array.from({ length: 32 }, (_, i) => `${i + 1}${r}`));
+// THE PUZZLE PLACE ON YES (05.11.2026; a company gets its place when it answers Yes). THE GRID (06.11.2026, his words "the
+// puzzle will be 6cm x 6cm pieces. wider than tall", his pick B): 45 columns x 25 rows = 1,125 places, 2.70 x 1.50 m, codes
+// 1A..45Y; the Grand Opening's Puzzle_pozicijas_1125_45x25_2026-11-06.xlsx. Places are given in the list's order (1A, 2A ...
+// 45A, 1B ...), first Yes first. A place, once given, stays with its company (1A, given under 32 x 32, is in this grid too).
+const PLACE_COLS = 45;
+const PLACE_ROWS = [...'ABCDEFGHIJKLMNOPQRSTUVWXY'];
+export const PLACE_CODES = PLACE_ROWS.flatMap((r) => Array.from({ length: PLACE_COLS }, (_, i) => `${i + 1}${r}`));
 export const placeLink = (code) => 'https://novikontas.org/grand-opening?p=' + encodeURIComponent(code);
 
 export async function placeMap(db) {
