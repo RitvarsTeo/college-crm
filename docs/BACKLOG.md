@@ -191,7 +191,10 @@ companies with no status - defaults in use); phone: marked number of a known per
 ## 06.11.2026 - TC Companies list: "no course yet" goes (owner's pick, lane: Intake TC LANE)
 
 - `DECIDED` HIS PICK (06.11): "Drop 'no course yet'": a company with no courses shows nothing there; the course chip only when there
-  are courses. Status (Contacted / Met · ...) stays as it is ("status with date" not picked).
+  are courses.
+- `DECIDED` HIS PICK (06.11, after the facts: TC Excel sales status, imported 19.10, 128 derived 26.10, no dates): "Remove from the
+  list": the status mark leaves the Companies list rows; it stays on the company page only.
+- `DECIDED` HIS PICK (06.11): "delegates" -> "trained" on every TC screen (e.g. "2025 · 4 trained · 12 in all").
 
 ## 06.11.2026 - Company families: decided by research, no "To look at" tab (owner, lane: Intake TC LANE)
 
