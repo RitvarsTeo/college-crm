@@ -11907,59 +11907,20 @@ function tcImpDraw() {
     <p class="tcimp-done">${tcN(D.added)} added · ${tcN(D.updated)} updated${D.newCompanies ? ` · ${tcN(D.newCompanies)} new ${D.newCompanies === 1 ? 'company' : 'companies'}` : ''}${D.skipped ? ` · ${tcN(D.skipped)} left out` : ''}</p>
     <div class="tcmk-acts"><button type="button" class="btn sm ghost" onclick="viewTcImport()">Import another file</button><a class="btn sm" href="#/tc/companies">Companies</a></div></section>`;
 }
-// THE FAMILIES PAGE: Companies → Families. To look at = Intake's suggestions (same web domain, then same name start);
-// Confirm opens the picker (the parent, the companies that belong); Not a family hides it. Confirmed = the families, A to Z.
+// THE FAMILIES PAGE: Companies → Families. The confirmed families, A to Z (06.11.2026, the owner: "please confirm yourself
+// the company families! DO a proper research! there should not even be a too look at tab!": families are decided by
+// research with a source each, Projects/College CRM/_tc/families_research_2026-11-06.md; no suggestions to look at here).
 let T_FAM = null;
-async function viewTcFamilies(keep) {
-  const tab = (T_FAM && T_FAM.tab) || 'look', limit = (keep && T_FAM && T_FAM.limit) || 20;
-  const r = await api('/api/tc/families?limit=' + limit);
-  T_FAM = { ...r, tab, limit, pick: null };
+async function viewTcFamilies() {
+  T_FAM = await api('/api/tc/families');
   tcFamDraw();
 }
-let T_FAM_OPEN = -1;
 function tcFamDraw() {
-  const F = T_FAM, S = F.suggestions;
-  const seg = `<div class="c-seg" role="group" aria-label="Which families"><button aria-pressed="${F.tab === 'done'}" onclick="T_FAM.tab='done';tcFamDraw()">Confirmed <b>${tcN(F.families.length)}</b></button>
-    <button aria-pressed="${F.tab === 'look'}" onclick="T_FAM.tab='look';tcFamDraw()">To look at <b>${tcN(S.total)}</b></button></div>`;
-  const names = (m) => m.slice(0, 4).map((c) => esc(c.name) + (c.country ? ` (${esc(c.country)})` : '')).join(', ') + (m.length > 4 ? `, +${m.length - 4}` : '');
-  // the owner 02.11.2026 ("Yes, build all"): a card per suggestion - its name and why in plain words, a count badge, three
-  // companies as chips and + N more that opens the rest
-  const why = (s) => s.why === 'same web domain' ? `Same web domain ${s.label}` : `Name starts “${s.label}”`;
-  const chips = (s, i) => { const all = T_FAM_OPEN === i; const list = all ? s.members : s.members.slice(0, 3);
-    return `<span class="tcfam-n">${tcN(s.members.length)} companies</span>${list.map((c) => `<span class="tcfam-chip" title="${esc(c.name + (c.country ? ' (' + c.country + ')' : ''))}">${esc(c.name)}</span>`).join('')}${s.members.length > 3
-      ? `<button type="button" class="tcfam-more" onclick="T_FAM_OPEN=T_FAM_OPEN===${i}?-1:${i};tcFamDraw()">${all ? 'Fewer ▴' : `+ ${tcN(s.members.length - 3)} more ▾`}</button>` : ''}`; };
-  const sug = (s, i) => `<div class="tcfam-sug tcfam-card"><div><b>${esc(s.label)}</b><small>${esc(why(s))}</small></div><div class="tcfam-chips">${chips(s, i)}</div>
-      <div class="tcfam-btns"><button type="button" class="btn sm" onclick="tcFamPick(${i})">Confirm</button><button type="button" class="btn sm ghost" onclick="tcFamNo(${i})">Not a family</button></div></div>
-      ${F.pick && F.pick.i === i ? tcFamPickHtml() : ''}`;
+  const F = T_FAM;
   const fam = (f) => `<a class="tcfam-sug tcfam-done" href="#/tc/company/${Number(f.parentId)}"><div><b>${esc(f.name)}</b><small>${tcN(f.companies)} companies</small></div>
       <small>${tcN(f.people)} people · ${tcN(f.delegates)} delegates</small><div></div></a>`;
-  const body = F.tab === 'done' ? (F.families.map(fam).join('') || '<div class="c-empty">No family confirmed yet.</div>')
-    : (S.rows.map(sug).join('') || '<div class="c-empty">Nothing to look at.</div>')
-      + (S.total > S.rows.length ? `<button class="c-more tc-logmore" onclick="T_FAM.limit+=20;viewTcFamilies(true)">Show 20 more of ${tcN(S.total - S.rows.length)}</button>` : '');
-  $('#view').innerHTML = `<p class="c-crumb"><a href="#/tc/companies">Companies</a></p><div class="c-head"><div><h1>Families</h1></div></div>
-    ${seg}<section class="c-sheet tcfam-list">${body}</section>`;
-}
-function tcFamPick(i) {
-  const s = T_FAM.suggestions.rows[i];
-  T_FAM.pick = { i, parent: s.members[0].id, keep: new Set(s.members.map((c) => c.id)) };
-  tcFamDraw();
-}
-function tcFamPickHtml() {
-  const P = T_FAM.pick, s = T_FAM.suggestions.rows[P.i];
-  const line = (c) => `<div class="tcfam-pl"><label><input type="radio" name="tcfamParent" ${P.parent === c.id ? 'checked' : ''} onchange="T_FAM.pick.parent=${Number(c.id)};T_FAM.pick.keep.add(${Number(c.id)});tcFamDraw()"> the parent</label>
-      <label><input type="checkbox" ${P.keep.has(c.id) ? 'checked' : ''} ${P.parent === c.id ? 'disabled' : ''} onchange="this.checked?T_FAM.pick.keep.add(${Number(c.id)}):T_FAM.pick.keep.delete(${Number(c.id)})"> <b>${esc(c.name)}</b></label>
-      <small>${esc(c.country || '')}</small><small>${tcN(c.people)} ${c.people === 1 ? 'person' : 'people'}</small></div>`;
-  return `<div class="tcfam-pick"><div class="tcfam-q">Confirm ${esc(s.label)}: pick the parent; untick a company that does not belong</div>${s.members.map(line).join('')}
-    <div id="tcFamErr"></div><div class="tcmk-acts"><button type="button" class="btn sm ghost" onclick="T_FAM.pick=null;tcFamDraw()">Cancel</button><button type="button" class="btn sm" onclick="tcFamSave()">Confirm the family</button></div></div>`;
-}
-async function tcFamSave() {
-  const P = T_FAM.pick, s = T_FAM.suggestions.rows[P.i];
-  try { await post('/api/tc/families', { parentId: P.parent, memberIds: [...P.keep], suggestion: s.key }); await viewTcFamilies(true); }
-  catch (e) { tcErr('#tcFamErr', e.message); }
-}
-async function tcFamNo(i) {
-  const s = T_FAM.suggestions.rows[i];
-  try { await post('/api/tc/families/dismiss', { suggestion: s.key }); await viewTcFamilies(true); } catch (e) { alert(e.message); }
+  $('#view').innerHTML = `<p class="c-crumb"><a href="#/tc/companies">Companies</a></p><div class="c-head"><div><h1>Families · ${tcN(F.families.length)}</h1></div></div>
+    <section class="c-sheet tcfam-list">${F.families.map(fam).join('') || '<div class="c-empty">No family confirmed yet.</div>'}</section>`;
 }
 // DO NOT INVITE / HOLD on the company page (layout B, 28.10.2026): a line per mark, the list itself is on the event's page
 let T_CO_MK = null;

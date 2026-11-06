@@ -69,9 +69,10 @@ test('the page: Families on Companies, the route, the card on the company page, 
   assert.match(app, /else if \(place === 'families'\) await viewTcFamilies\(\);/);
   assert.match(app, /\$\{tcMrCard\(\)\}\$\{tcFamCard\(\)\}/);
   assert.match(app, /family · \$\{Number\(c\.family\.n\)\}<\/span>/);
-  const fn = app.slice(app.indexOf('function tcFamDraw('), app.indexOf('function tcFamPick('));
-  for (const t of ['Confirmed <b>', 'To look at <b>', '>Confirm</button>', '>Not a family</button>']) assert.ok(fn.includes(t), t);
-  assert.ok(app.includes('Confirm the family</button>'));
+  // 06.11.2026, the owner: "there should not even be a too look at tab!": the confirmed families only
+  const fn = app.slice(app.indexOf('function tcFamDraw('), app.indexOf('// DO NOT INVITE / HOLD on the company page'));
+  assert.ok(fn.includes('<h1>Families · ${tcN(F.families.length)}</h1>'));
+  for (const t of ['To look at <b>', '>Not a family</button>', 'tcFamPick']) assert.ok(!app.includes(t), t);
   const server = fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8');
   const gate = server.indexOf('// ------------------------------------------------------- TRAINING CENTRE --');
   for (const route of ["p === '/api/tc/families' && req.method === 'GET'", 'const famAct = p.match(']) assert.ok(server.indexOf(route) > gate && gate > 0, route);

@@ -3639,8 +3639,8 @@ export const handle = async (req, res) => {
         if (!/^\d{1,9}$/.test(company)) return json(res, 400, { error: 'Which company?' });
         return json(res, 200, { family: await tcfam.familyOf(db, Number(company)) });
       }
-      const limit = Math.min(500, Math.max(1, Number(url.searchParams.get('limit')) || 20));
-      return json(res, 200, { suggestions: await tcfam.suggestions(db, { limit }), families: await tcfam.familiesList(db) });
+      // the families only (06.11.2026, the owner: no "To look at" tab; families are decided by research)
+      return json(res, 200, { families: await tcfam.familiesList(db) });
     }
     const famAct = p.match(/^\/api\/tc\/families(?:\/(dismiss|unlink))?$/);
     if (famAct && req.method === 'POST') {
