@@ -1,49 +1,60 @@
-// STAGE 2 EMAILS (30.10.2026): the three emails of the Apps Script that sent Stage 2 until now (his picks 22.10 and 28.10),
-// copied word for word from Grand Opening/Contacts/stage2_emails_appsscript_2026-10-22.js so Intake sends exactly the same.
-// 'confirm' = saw the Save the Date (date-led dark card + the building picture), 'invite' = it may not have reached them,
-// 'new' = never sent the Save the Date. No signature (his words).
+// STAGE 2 EMAILS, PERSONAL FROM THE LIST'S OWNER (06.11.2026). The owner's decision: "all stage 2 emails will be like from a
+// personal manager." Every Stage 2 email and every after-answer email (src/tcgomail.js) is a short note in the owner's own
+// voice ("I"), signed with their name (and title when config/tc.json has one), sent from their own address so the reply goes
+// to them. The facts, the picture (27.05.2005 -> 27.05.2027), the Yes button and the calendar link stay.
+//   'confirm' = saw the Save the Date   'invite' = it may not have reached them   'new' = never sent the Save the Date
+//   opts.remind = Reminder 1 (no answer yet)   opts.from = { name, title } the list's owner
 const S2_PAGE = 'https://novikontas.org/grand-opening';
 // the picture as the Grand Opening changed it 03.11.2026 (27.05.2005 -> 27.05.2027), Contacts/stage2_emails_appsscript_2026-10-22.js
 const S2_INVITE_IMG = 'https://mcusercontent.com/742b7cc5cefdc84b1134d8ca1/images/52205135-b22f-0b43-d49c-4436ba613cd8.jpg';
-const esc_ = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
-// opts.remind (05.11.2026, Reminder 1, his pick "OK, build them"): the same email with "A quick reminder: will you be there?" above the button
-export function s2Mail(kind, first, code, opts = {}) {
-  const REM = 'A quick reminder: will you be there?';
-  const link = S2_PAGE + '?c=' + code;
+export const esc_ = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const INK = 'color:#011111;font-size:16px;line-height:1.6';
+
+/** The note's frame: white card, the owner's signature at the end. Shared with the after-answer emails. */
+export function letter({ first = '', body = [], button = '', picture = '', after = [], from = {} }) {
   const hi = first ? 'Dear ' + esc_(first) + ',' : 'Hello,';
+  const sig = [esc_(from.name || ''), from.title ? esc_(from.title) : '', 'Novikontas Academy'].filter(Boolean).join('<br>');
+  const tr = (pad, css, inner) => '<tr><td style="background:#fff;padding:' + pad + ';' + css + '">' + inner + '</td></tr>';
+  return '<div style="background:#e7ebf0;padding:24px 0"><table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" style="width:600px;max-width:100%;margin:0 auto;font-family:Raleway,Arial,sans-serif">'
+    + (picture ? '<tr><td style="background:#fff;border-radius:6px 6px 0 0;line-height:0">' + picture + '</td></tr>' : '')
+    + tr('30px 36px 0', INK + (picture ? '' : ';border-radius:6px 6px 0 0'), hi + '<br><br>' + body.join('<br><br>'))
+    + (button ? tr('22px 36px 0', '', button) : '')
+    + after.map((a) => tr('18px 36px 0', INK, a)).join('')
+    + tr('24px 36px 0', INK, sig)
+    + tr('20px 36px 30px', 'border-radius:0 0 6px 6px;color:#415c8f;font-size:14px;line-height:1.6', 'You can reply to this email, it comes to me, or write to <a href="mailto:events@novikontas.org" style="color:#0a2463">events@novikontas.org</a>.')
+    + '</table></div>';
+}
+export const plainSig = (from = {}) => [from.name || '', from.title || '', 'Novikontas Academy'].filter(Boolean).join('\n');
+
+export function s2Mail(kind, first, code, opts = {}) {
+  const from = opts.from || {};
+  const link = S2_PAGE + '?c=' + code;
   const hiPlain = first ? 'Dear ' + first + ',' : 'Hello,';
-  const contact = 'You can reply to my email or write to <a href="mailto:events@novikontas.org" style="color:#0a2463">events@novikontas.org</a>.';
-  const contactPlain = 'You can reply to my email or write to events@novikontas.org.';
+  const btn = '<a href="' + link + '&rsvp=yes" style="display:inline-block;background:#0a2463;color:#ffffff;font-weight:bold;font-size:16px;text-decoration:none;padding:15px 28px;border-radius:3px">Yes, I\'ll attend &rarr;</a>';
   const cal = 'Haven\'t added it to your calendar yet? <a href="' + link + '#go-calendars" style="color:#0a2463">Add it here</a>.';
-  const btn = function (label, bg, fg) { return '<a href="' + link + '&rsvp=yes" style="display:inline-block;background:' + bg + ';color:' + fg + ';font-weight:bold;font-size:16px;text-decoration:none;padding:15px 28px;border-radius:3px">' + label + ' &rarr;</a>'; };
-  const wrap = function (inner) { return '<div style="background:#e7ebf0;padding:24px 0"><table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" style="width:600px;max-width:100%;margin:0 auto;font-family:Raleway,Arial,sans-serif">' + inner + '</table></div>'; };
-  // 'new' (28.10) = people who never got the Save the Date: the invite without the 'may not have reached you' line.
-  if (kind === 'invite' || kind === 'new') {
-    const p = (kind === 'new' ? '' : 'It looks like our first invitation may not have reached you, so here it is again.<br><br>') + 'We would be delighted to welcome you at the <b>Novikontas Academy Grand Opening</b> on <b>27 May 2027</b> in Riga.';
-    return { subject: 'You are invited: Novikontas Academy Grand Opening, 27 May 2027',
-      html: wrap('<tr><td style="background:#fff;border-radius:6px 6px 0 0;overflow:hidden"><a href="' + link + '&rsvp=yes"><img src="' + S2_INVITE_IMG + '" width="600" alt="You are invited - 27 May 2027" style="display:block;width:100%;max-width:600px;border:0"></a></td></tr>'
-        + '<tr><td style="background:#fff;padding:30px 36px 6px;color:#011111;font-size:16px;line-height:1.6">' + hi + '<br><br>' + p + '</td></tr>'
-        + (opts.remind ? '<tr><td style="background:#fff;padding:18px 36px 0;color:#0a2463;font-size:16px;font-weight:bold">' + REM + '</td></tr>' : '')
-        + '<tr><td style="background:#fff;padding:18px 36px 8px">' + btn('Yes, I\'ll attend', '#0a2463', '#ffffff') + '</td></tr>'
-        + '<tr><td style="background:#fff;border-radius:0 0 6px 6px;padding:14px 36px 30px;color:#415c8f;font-size:14px;line-height:1.6">' + cal + '<br>' + contact + '</td></tr>'),
-      plain: hiPlain + '\n\nWe would be delighted to welcome you at the Novikontas Academy Grand Opening on 27 May 2027 in Riga.\n\n' + (opts.remind ? REM + '\n\n' : '') + 'Yes, I\'ll attend: ' + link + '&rsvp=yes\n\nHaven\'t added it to your calendar yet? Add it here: ' + link + '#go-calendars\n\n' + contactPlain,
-      inline: null };
+  const calPlain = 'Haven\'t added it to your calendar yet? Add it here: ' + link + '#go-calendars';
+  const opens = 'On <b>27 May 2027</b> we open the new <b>Novikontas Academy Campus</b> in Riga';
+  const opensPlain = 'On 27 May 2027 we open the new Novikontas Academy Campus in Riga';
+  let subject, lines;
+  if (opts.remind) {
+    subject = 'A quick reminder: Novikontas Academy Grand Opening, 27 May 2027';
+    lines = ['A quick reminder from me. ' + opens + ', and I would still be glad to welcome you there.', 'Will you be there? It takes one minute to confirm.'];
+  } else if (kind === 'confirm') {
+    subject = '27 May 2027: will you join me at the Novikontas Academy Grand Opening?';
+    lines = ['You saved the date for our Grand Opening. ' + opens + ', and I would be glad to welcome you there myself.', 'Will you join us? It takes one minute to confirm.'];
+  } else if (kind === 'invite') {
+    subject = 'You are invited: Novikontas Academy Grand Opening, 27 May 2027';
+    lines = ['I wanted to write to you personally, as our first invitation may not have reached you. ' + opens + ', and it would mean a lot to me to welcome you there.', 'Will you join us? It takes one minute to confirm.'];
+  } else {
+    subject = 'You are invited: Novikontas Academy Grand Opening, 27 May 2027';
+    lines = ['I wanted to write to you personally. ' + opens + ', and it would mean a lot to me to welcome you there.', 'Will you join us? It takes one minute to confirm.'];
   }
-  // 'confirm' = his pick B 22.10: the date leads, dark card like the landing page.
-  const p2 = 'to prepare the day well, we are now putting together the guest list. It takes one minute.';
-  const td = function (pad, css, inner) { return '<tr><td style="background:#0a182e;padding:' + pad + ';' + css + '">' + inner + '</td></tr>'; };
-  const lk = 'color:#53a7db';
-  return { subject: 'Novikontas Academy Grand Opening, 27 May 2027 - will you be there?',
-    html: wrap(td('44px 48px 0', 'border-radius:6px 6px 0 0;color:#53a7db;font-weight:800;font-size:11px;letter-spacing:.16em', 'NOVIKONTAS ACADEMY GRAND OPENING')
-      + td('20px 48px 0', 'color:#ffffff;font-weight:800;font-size:56px;line-height:1;letter-spacing:-.03em', '27 May 2027')
-      + td('10px 48px 0', 'color:#8fa9cf;font-size:14px', 'Novikontas Academy Campus, Riga')
-      + td('22px 48px 0', 'color:#53a7db;font-weight:bold;font-size:22px;line-height:1.3', 'You saved the date. Will you be there?')
-      + td('28px 48px 0', '', '<div style="height:1px;line-height:1px;font-size:0;background:#22385a">&nbsp;</div>')
-      + td('24px 48px 0', 'color:#c9d4e3;font-size:15px;line-height:1.65', (first ? 'Dear ' + esc_(first) + ',' : 'Hello,') + '<br>' + p2)
-      + (opts.remind ? td('24px 48px 0', 'color:#ffffff;font-weight:bold;font-size:16px', REM) : '')
-      + td('32px 48px 44px', '', btn('Yes, I\'ll attend', '#53a7db', '#ffffff'))
-      + '<tr><td style="background:#0a182e;line-height:0"><img src="cid:building" width="600" alt="Novikontas Academy Campus, 2005 to 2027" style="display:block;width:100%;max-width:600px;border:0"></td></tr>'
-      + td('28px 48px 36px', 'border-radius:0 0 6px 6px;color:#8fa9cf;font-size:13px;line-height:1.7', cal.replace('color:#0a2463', lk) + '<br>' + contact.replace('color:#0a2463', lk))),
-    plain: '27 May 2027 - Novikontas Academy Grand Opening, Novikontas Academy Campus, Riga\n\nYou saved the date. Will you be there?\n\n' + hiPlain + '\n' + p2 + '\n\n' + (opts.remind ? REM + '\n\n' : '') + 'Yes, I\'ll attend: ' + link + '&rsvp=yes\n\nHaven\'t added it to your calendar yet? Add it here: ' + link + '#go-calendars\n\n' + contactPlain,
-    inline: 'building' };
+  const picture = kind === 'confirm'
+    ? '<img src="cid:building" width="600" alt="Novikontas Academy Campus, 27.05.2005 to 27.05.2027" style="display:block;width:100%;max-width:600px;border:0;border-radius:6px 6px 0 0">'
+    : '<a href="' + link + '&rsvp=yes"><img src="' + S2_INVITE_IMG + '" width="600" alt="You are invited, 27.05.2005 to 27.05.2027" style="display:block;width:100%;max-width:600px;border:0;border-radius:6px 6px 0 0"></a>';
+  const html = letter({ first, body: lines, button: btn, picture, after: [cal], from });
+  const plain = hiPlain + '\n\n' + lines.map((l) => l.replace(/<[^>]+>/g, '')).join('\n\n').replace(opens.replace(/<[^>]+>/g, ''), opensPlain)
+    + '\n\nYes, I\'ll attend: ' + link + '&rsvp=yes\n\n' + calPlain + '\n\n' + plainSig(from)
+    + '\n\nYou can reply to this email, it comes to me, or write to events@novikontas.org.';
+  return { subject, html, plain, inline: kind === 'confirm' ? 'building' : null };
 }

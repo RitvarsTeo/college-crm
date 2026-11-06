@@ -31,9 +31,9 @@ async function seeded() {
   return db;
 }
 
-test('the three emails are the Apps Script ones: subject, personal link, the building inline only for confirm', () => {
+test('the three emails, personal from the list owner (his decision 06.11): subject, personal link, the building inline only for confirm', () => {
   const c = s2Mail('confirm', 'Anna', 'abc123'), i = s2Mail('invite', 'Anna', 'abc123'), n = s2Mail('new', '', 'abc123');
-  assert.equal(c.subject, 'Novikontas Academy Grand Opening, 27 May 2027 - will you be there?');
+  assert.equal(c.subject, '27 May 2027: will you join me at the Novikontas Academy Grand Opening?');
   assert.equal(i.subject, 'You are invited: Novikontas Academy Grand Opening, 27 May 2027');
   assert.match(c.html, /https:\/\/novikontas\.org\/grand-opening\?c=abc123&rsvp=yes/);
   assert.match(i.html, /may not have reached you/); assert.doesNotMatch(n.html, /may not have reached you/); assert.match(n.html, /Hello,/);

@@ -136,7 +136,7 @@
         { "code": "MC", "label": "MC", "name": "Māris Cīrulis", "email": "mc@novikontas.org" },
         { "code": "AB", "label": "AB", "name": "Aleksejs Bogdaņecs", "email": "ab@novikontas.org" },
         { "code": "Alma", "label": "Alma", "name": "Aleksejs Maļinovskis", "email": "alma@novikontas.org" },
-        { "code": "JS", "label": "JS", "name": "Jānis Sticenko", "email": "js@novikontas.org" }
+        { "code": "JS", "label": "JS", "name": "Jānis Sticenko", "title": "Director of Communications", "email": "js@novikontas.org" }
       ]
     },
     "maxBytes": 4194304,

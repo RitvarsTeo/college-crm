@@ -11,7 +11,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { TC } from './tc.js';
-import { s2Mail } from './tcs2mail.js';
+import { s2Mail, letter, plainSig, esc_ } from './tcs2mail.js';
 import { mime, gmail, ready, todaySent, DAY_CAP, PER_CALL } from './tcs2send.js';
 import { giftKey, placesForYes, placeLink, PLACE_CODES } from './tcgo.js';
 
@@ -20,33 +20,26 @@ const CFG = () => ((TC.grandOpening || {}).mails || {});
 export const KINDS = ['in', 'r1', 'r2'];
 export const LABEL = { in: "You're in", r1: 'Reminder: no answer yet', r2: 'See you soon' };
 const REMIND_DAYS = 21;
-const esc_ = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 export const qrPng = (code) => (PLACE_CODES.includes(code) ? fs.readFileSync(path.join(ROOT, 'src', 'assets', 'go-qr', code + '.png')) : null);
 export const pieceImage = () => String(CFG().pieceImage || '').trim();
 
-/** The email. qrSrc: 'cid:qr' when sending, a data or file address in a preview. */
-export function mailFor(kind, { first = '', company = '', code = '', linkCode = '' } = {}, qrSrc = 'cid:qr') {
-  if (kind === 'r1') return s2Mail('invite', first, linkCode || 'test00', { remind: true });
-  const hi = first ? 'Dear ' + esc_(first) + ',' : 'Hello,';
-  const hiPlain = first ? 'Dear ' + first + ',' : 'Hello,';
-  const co = company ? esc_(company) + "'s" : 'Your company\'s';
+/** The email, in the list owner's voice (06.11.2026, his decision). qrSrc: 'cid:qr' when sending, a data address in a preview. */
+export function mailFor(kind, { first = '', company = '', code = '', linkCode = '' } = {}, qrSrc = 'cid:qr', from = {}) {
+  if (kind === 'r1') return s2Mail('invite', first, linkCode || 'test00', { remind: true, from });
+  const co = company ? esc_(company) + "'s" : "Your company's";
   const coPlain = company ? company + "'s" : "Your company's";
   const piece = pieceImage();
+  const place = co + ' place in the Grand Opening puzzle is <b>' + esc_(code) + '</b>.';
+  const placePlain = coPlain + ' place in the Grand Opening puzzle is ' + code + '.';
   const door = 'Show this QR at the door on 27 May 2027, Novikontas Academy Campus, Duntes iela 17d, Riga.';
-  const contact = 'You can reply to my email or write to <a href="mailto:events@novikontas.org" style="color:#0a2463">events@novikontas.org</a>.';
-  const wrap = (inner) => '<div style="background:#e7ebf0;padding:24px 0"><table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" style="width:600px;max-width:100%;margin:0 auto;font-family:Raleway,Arial,sans-serif">' + inner + '</table></div>';
-  const tr = (pad, css, inner) => '<tr><td style="background:#fff;padding:' + pad + ';' + css + '">' + inner + '</td></tr>';
-  const lead = kind === 'in' ? 'thank you for your Yes. ' + co + ' place in the Grand Opening puzzle is <b>' + esc_(code) + '</b>.'
-    : 'See you on 27 May 2027. ' + co + ' place in the puzzle is <b>' + esc_(code) + '</b>.';
-  const leadPlain = kind === 'in' ? 'thank you for your Yes. ' + coPlain + ' place in the Grand Opening puzzle is ' + code + '.'
-    : 'See you on 27 May 2027. ' + coPlain + ' place in the puzzle is ' + code + '.';
+  const qr = '<div style="text-align:center">' + (piece ? '<img src="' + esc_(piece) + '" width="260" alt="Your puzzle piece" style="display:inline-block;width:260px;max-width:100%;border:0"><br>' : '')
+    + '<img src="' + esc_(qrSrc) + '" width="200" height="200" alt="QR ' + esc_(code) + '" style="display:inline-block;width:200px;height:200px;border:0"><div style="font-weight:800;font-size:22px;color:#0a2463">' + esc_(code) + '</div></div>';
+  const body = kind === 'in' ? ['Thank you for your Yes, I am glad you will be with us. ' + place] : ['See you soon. ' + place];
+  const bodyPlain = kind === 'in' ? 'Thank you for your Yes, I am glad you will be with us. ' + placePlain : 'See you soon. ' + placePlain;
   const subject = kind === 'in' ? "You're in: Novikontas Academy Grand Opening, 27 May 2027" : 'See you on 27 May 2027: Novikontas Academy Grand Opening';
-  const html = wrap(tr('30px 36px 6px', 'border-radius:6px 6px 0 0;color:#011111;font-size:16px;line-height:1.6', hi + '<br>' + lead)
-    + (piece ? tr('18px 36px 0', 'text-align:center', '<img src="' + esc_(piece) + '" width="260" alt="Your puzzle piece" style="display:inline-block;width:260px;max-width:100%;border:0">') : '')
-    + tr('18px 36px 0', 'text-align:center', '<img src="' + esc_(qrSrc) + '" width="200" height="200" alt="QR ' + esc_(code) + '" style="display:inline-block;width:200px;height:200px;border:0"><div style="font-weight:800;font-size:22px;color:#0a2463">' + esc_(code) + '</div>')
-    + tr('18px 36px 0', 'color:#011111;font-size:15px;line-height:1.6', door)
-    + tr('14px 36px 30px', 'border-radius:0 0 6px 6px;color:#415c8f;font-size:14px;line-height:1.6', contact));
-  const plain = hiPlain + '\n' + leadPlain + '\n\n' + door + '\nYour place online: ' + placeLink(code) + '\n\nYou can reply to my email or write to events@novikontas.org.';
+  const html = letter({ first, body, after: [qr, door], from });
+  const plain = (first ? 'Dear ' + first + ',' : 'Hello,') + '\n\n' + bodyPlain + '\n\n' + door + '\nYour place online: ' + placeLink(code) + '\n\n' + plainSig(from)
+    + '\n\nYou can reply to this email, it comes to me, or write to events@novikontas.org.';
   return { subject, html, plain, inline: [{ cid: 'qr', type: 'image/png', name: 'qr-' + code + '.png', bytes: qrPng(code) || Buffer.alloc(0) }] };
 }
 
@@ -102,7 +95,7 @@ export async function sendNext(db, kind, code, answers, me, { env = process.env,
     const mark = await db.prepare(`INSERT INTO tc_go_mails (stage2_id, kind, sender, result, sent_at, sent_by) VALUES (?,?,?,?,?,?) ON CONFLICT DO NOTHING`)
       .run(p.id, kind, code, 'sent', new Date().toISOString(), me && me.name);
     if (!Number(mark.changes)) continue;
-    const mail = mailFor(kind, p);
+    const mail = mailFor(kind, p, 'cid:qr', { name: r.s.name || r.s.label, title: r.s.title || '' });
     const raw = Buffer.from(mime({ fromName: r.s.name || r.s.label, fromEmail: r.s.email, to: p.email, mail }), 'utf8').toString('base64url');
     let ok = false, detail = '';
     try { const res = await gmail(env, fetchImpl, r.tok.token, '/users/me/messages/send', { method: 'POST', body: JSON.stringify({ raw }) }); ok = res.ok; if (!ok) detail = 'Gmail ' + res.status; }
@@ -114,8 +107,8 @@ export async function sendNext(db, kind, code, answers, me, { env = process.env,
 }
 
 /** A preview for the screen: the email to a made-up person, the QR drawn from the file. */
-export function preview(kind) {
-  const m = mailFor(kind, { first: 'Anna', company: 'Example Shipping AS', code: '13H', linkCode: 'test00' }, 'data:image/png;base64,' + qrPng('13H').toString('base64'));
+export function preview(kind, from = {}) {
+  const m = mailFor(kind, { first: 'Anna', company: 'Example Shipping AS', code: '13H', linkCode: 'test00' }, 'data:image/png;base64,' + qrPng('13H').toString('base64'), from);
   const html = String(m.html).replace('src="cid:building"', 'src="data:image/jpeg;base64,' + fs.readFileSync(path.join(ROOT, 'src', 'assets', 'go-building.jpg')).toString('base64') + '"');
   return { subject: m.subject, html };
 }

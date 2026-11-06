@@ -36,9 +36,12 @@ export const mayView = (me) => Boolean(me && me.email && viewers().includes(Stri
 const LETTERS = { 'letters/2_will_you_be_there.html': 'confirm', 'letters/3_you_are_invited.html': 'invite', 'letters/4_new_contact.html': 'new' };
 const BUILDING = path.join(path.dirname(DIR), 'assets', 'go-building.jpg');
 const DEMO_CODE = 'rvtst1';
+let demoViewer = '';
 const esc = (t) => String(t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 function letter(kind, first) {
-  const m = s2Mail(kind, first, DEMO_CODE);
+  const S = ((TC.grandOpening || {}).stage2 || {}).senders || [];
+  const own = S.find((x) => x.email === demoViewer) || S.find((x) => x.code === 'Marcis') || {};
+  const m = s2Mail(kind, first, DEMO_CODE, { from: { name: own.name || '', title: own.title || '' } });
   return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + esc(m.subject)
     + '</title><style>body{margin:0;background:#e7ebf0}.subj{max-width:600px;margin:16px auto 0;padding:10px 16px;background:#fff;border-radius:6px;font:600 14px Raleway,Arial;color:#0a2463}</style></head><body>'
     + '<div class="subj">Subject: ' + esc(m.subject) + '</div>' + m.html.replace('src="cid:building"', 'src="building.jpg"') + '</body></html>';
@@ -52,7 +55,7 @@ export function fileFor(pathname, me = null) {
   let rel;
   if (String(pathname) + '/' === PREFIX) return { body: page(), type: TYPES['.html'] };
   try { rel = decodeURIComponent(String(pathname).slice(PREFIX.length)); } catch (e) { return null; }
-  if (LETTERS[rel]) return { body: letter(LETTERS[rel], String((me && me.name) || '').split(/\s+/)[0] || ''), type: TYPES['.html'] };
+  if (LETTERS[rel]) { demoViewer = String((me && me.email) || '').toLowerCase(); return { body: letter(LETTERS[rel], String((me && me.name) || '').split(/\s+/)[0] || ''), type: TYPES['.html'] }; }
   if (rel === 'letters/building.jpg') return { file: BUILDING, type: TYPES['.jpg'] };
   if (!rel || rel === 'index.html') return { body: page(), type: TYPES['.html'] };
   const file = FILES.get(rel);

@@ -14,14 +14,14 @@ const add = async (db, id, company, email) => {
 test('the texts as drafted (his "OK, build them"): place, QR, the door line; the reminder line on Reminder 1', () => {
   const m = gm.mailFor('in', { first: 'Anna', company: 'Example AS', code: '13H' });
   assert.equal(m.subject, "You're in: Novikontas Academy Grand Opening, 27 May 2027");
-  assert.match(m.html, /Dear Anna,<br>thank you for your Yes\. Example AS's place in the Grand Opening puzzle is <b>13H<\/b>\./);
+  assert.match(m.html, /Dear Anna,<br><br>Thank you for your Yes, I am glad you will be with us\. Example AS's place in the Grand Opening puzzle is <b>13H<\/b>\./);
   assert.match(m.html, /src="cid:qr"/);
   assert.match(m.html, /Show this QR at the door on 27 May 2027, Novikontas Academy Campus, Duntes iela 17d, Riga\./);
   assert.ok(m.inline[0].bytes.length > 100);
   const r2 = gm.mailFor('r2', { first: 'Anna', company: 'Example AS', code: '13H' });
-  assert.match(r2.html, /See you on 27 May 2027\. Example AS's place in the puzzle is <b>13H<\/b>\./);
+  assert.match(r2.html, /See you soon. Example AS's place in the Grand Opening puzzle is <b>13H<\/b>\./);
   const r1 = gm.mailFor('r1', { first: 'Anna', linkCode: 'ab12cd' });
-  assert.match(r1.html, /A quick reminder: will you be there\?/);
+  assert.match(r1.html, /A quick reminder from me\./);
   assert.match(r1.html, /c=ab12cd&rsvp=yes/);
   const raw = mime({ fromName: 'X', fromEmail: 'x@example.com', to: 'a@example.com', mail: m });
   assert.match(raw, /Content-ID: <qr>/);
@@ -50,4 +50,18 @@ test('who is due: You are in = Yes with a place, once; See you soon only after Y
   assert.equal(o.r1.blocked, '');
   const s = await gm.sendNext(db, 'in', 'JS', answers, { name: 'Ritvars' });
   assert.equal(s.ok, false); assert.match(s.why, /not picked yet/);
+});
+
+test('06.11 his decision "all stage 2 emails will be like from a personal manager": the owner signs every one, the picture keeps both dates', async () => {
+  const { s2Mail } = await import('../src/tcs2mail.js');
+  const from = { name: 'Jānis Sticenko', title: 'Director of Communications' };
+  for (const k of ['confirm', 'invite', 'new']) {
+    const m = s2Mail(k, 'Anna', 'ab12cd', { from });
+    assert.match(m.html, /Jānis Sticenko<br>Director of Communications<br>Novikontas Academy/);
+    assert.match(m.html, /27\.05\.2005 to 27\.05\.2027/);
+    assert.match(m.plain, /Jānis Sticenko\nDirector of Communications\nNovikontas Academy/);
+    assert.match(m.html, /c=ab12cd&rsvp=yes/);
+  }
+  for (const k of ['in', 'r2']) assert.match(gm.mailFor(k, { first: 'Anna', company: 'X', code: '1A' }, 'cid:qr', from).html, /Jānis Sticenko<br>Director of Communications/);
+  assert.match(gm.mailFor('r1', { first: 'Anna', linkCode: 'zz' }, 'cid:qr', from).html, /A quick reminder from me/);
 });

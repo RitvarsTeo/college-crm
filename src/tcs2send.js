@@ -88,7 +88,7 @@ export async function sendTest(db, code, me, { env = process.env, fetchImpl = fe
   await logRow(db, batch, code, 'test', me.name);
   let sent = 0;
   for (const kind of ['confirm', 'invite']) {
-    const mail = s2Mail(kind, first, 'test00');
+    const mail = s2Mail(kind, first, 'test00', { from: { name: r.s.name || r.s.label, title: r.s.title || '' } });
     const raw = Buffer.from(mime({ fromName: r.s.name || r.s.label, fromEmail: r.s.email, to: me.email, mail }), 'utf8').toString('base64url');
     const res = await gmail(env, fetchImpl, r.tok.token, '/users/me/messages/send', { method: 'POST', body: JSON.stringify({ raw }) });
     if (res.ok) sent++;
@@ -115,7 +115,7 @@ export async function sendNext(db, code, batch, me, { env = process.env, fetchIm
     const mark = await db.prepare(`INSERT INTO tc_go_s2_sent (stage2_id, sender, mail_kind, result, sent_at, sent_by) VALUES (?,?,?,?,?,?)
       ON CONFLICT (stage2_id) DO NOTHING`).run(p.id, code, p.mail_kind || 'invite', 'sent', nowIso(), me && me.name);
     if (!Number(mark.changes)) continue;
-    const mail = s2Mail(p.mail_kind || 'invite', p.first_name || '', p.link_code);
+    const mail = s2Mail(p.mail_kind || 'invite', p.first_name || '', p.link_code, { from: { name: r.s.name || r.s.label, title: r.s.title || '' } });
     const raw = Buffer.from(mime({ fromName: r.s.name || r.s.label, fromEmail: r.s.email, to: p.email, mail }), 'utf8').toString('base64url');
     let ok = false, detail = '';
     try { const res = await gmail(env, fetchImpl, r.tok.token, '/users/me/messages/send', { method: 'POST', body: JSON.stringify({ raw }) }); ok = res.ok; if (!ok) detail = 'Gmail ' + res.status; }
