@@ -133,7 +133,7 @@ svg .m-flag-mark{transform-origin:0 100%}
 <svg class="tl" viewBox="0 0 720 80" aria-label="27.05.2005 to 27.05.2027">
 <path class="m-draw" pathLength="1" d="M24 52 Q360 -14 696 52" fill="none" stroke="#f0b429" stroke-width="3" stroke-linecap="round" style="--m-delay:.4s;--m-dur:2s"/>
 <circle class="m-pop" cx="24" cy="52" r="7" fill="#53a7db" style="--m-delay:.3s"/>
-<circle class="m-pop" cx="696" cy="52" r="7" fill="#53a7db" style="--m-delay:2.4s"/>
+<circle id="goEnd" class="m-pop" cx="696" cy="52" r="7" fill="#53a7db" style="--m-delay:2.4s"/>
 <text class="m-fade" x="24" y="76" style="--m-delay:.4s">27.05.2005</text>
 <text class="m-fade" x="696" y="76" text-anchor="end" style="--m-delay:2.5s">27.05.2027</text>
 </svg></div></header>
@@ -291,11 +291,11 @@ svg .m-flag-mark{transform-origin:0 100%}
     if (/[?&]motion=all\b/.test(location.search)) { scenes.forEach(M.fire); return; }   // tests and thumbnails
     var io = new IntersectionObserver(function (es) {
       es.forEach(function (e) { if (e.isIntersecting) { M.fire(e.target); io.unobserve(e.target); } });
-    }, { rootMargin: "0px 0px -55% 0px" });
+    }, { rootMargin: "0px 0px -10% 0px" });
     scenes.forEach(function (s) { io.observe(s); });
     function sweep() {                                           // a hidden pane stalls the observer; scrolling still fires
       var h = window.innerHeight;
-      scenes.forEach(function (s) { var r = s.getBoundingClientRect(); if (r.top < h * .45 && r.bottom > 0) M.fire(s); });
+      scenes.forEach(function (s) { var r = s.getBoundingClientRect(); if (r.top < h * .9 && r.bottom > 0) M.fire(s); });
     }
     window.addEventListener("scroll", sweep, { passive: true }); setTimeout(sweep, 60);
   }
@@ -303,4 +303,29 @@ svg .m-flag-mark{transform-origin:0 100%}
 })();
 </script>
 <script>(function(){function sweep(){var near=(window.scrollY||0)+innerHeight>=document.documentElement.scrollHeight-4;var short=document.documentElement.scrollHeight<=innerHeight+4;if(!near&&!short)return;var ss=document.querySelectorAll('.m-scene:not(.in)');for(var i=0;i<ss.length;i++){var r=ss[i].getBoundingClientRect();if(r.top<innerHeight&&r.bottom>0)ss[i].classList.add('in');}}addEventListener('scroll',sweep,{passive:true});addEventListener('resize',sweep);setTimeout(sweep,600);})();</script>
+<style>.cf{position:fixed;width:8px;height:12px;border-radius:2px;pointer-events:none;z-index:50;animation:cf 1.6s cubic-bezier(.2,.7,.4,1) forwards}
+@keyframes cf{0%{transform:translate(0,0) rotate(0);opacity:1}100%{transform:translate(var(--x),var(--y)) rotate(var(--r));opacity:0}}</style>
+<script>(function(){ // the confetti burst at 27.05.2027, once per visit (06.11.2026)
+  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  try { if (sessionStorage.getItem('goCf')) return; } catch (e) {}
+  var head = document.querySelector('header.m-scene'), dot = document.getElementById('goEnd'); if (!head || !dot) return;
+  var t0 = Date.now(), wait = setInterval(function () {
+    if (Date.now() - t0 > 15000) return clearInterval(wait);
+    if (!head.classList.contains('in')) return;
+    clearInterval(wait);
+    setTimeout(function () {
+      var b = dot.getBoundingClientRect(), cx = b.left + b.width / 2, cy = b.top + b.height / 2;
+      var col = ['#f0b429', '#53a7db', '#0a2463', '#ffffff', '#29a8df'];
+      for (var i = 0; i < 70; i++) {
+        var c = document.createElement('i'); c.className = 'cf';
+        var a = Math.random() * Math.PI * 2, d = 60 + Math.random() * 180;
+        c.style.left = cx + 'px'; c.style.top = cy + 'px'; c.style.background = col[i % col.length];
+        c.style.setProperty('--x', Math.cos(a) * d + 'px'); c.style.setProperty('--y', Math.sin(a) * d - 60 + Math.random() * 200 + 'px');
+        c.style.setProperty('--r', (Math.random() * 720 - 360) + 'deg'); c.style.animationDelay = Math.random() * .15 + 's';
+        document.body.appendChild(c); setTimeout(function (el) { return function () { el.remove(); }; }(c), 2000);
+      }
+      try { sessionStorage.setItem('goCf', '1'); } catch (e) {}
+    }, 2600);
+  }, 150);
+})();</script>
 </body></html>

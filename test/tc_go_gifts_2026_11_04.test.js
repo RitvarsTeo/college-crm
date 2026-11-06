@@ -119,3 +119,13 @@ test('06.11 his "Remove both": the demo has no Supabase dashboard tile and no fr
   assert.ok(!html.includes('<b>The database</b>') && !html.includes('supabase.com/dashboard'));
   assert.ok(!html.includes('<b>The fronts</b>') && !html.includes('FRONT_new_concepts_v5'));
 });
+
+test('06.11 the demo: confetti at the 27.05.2027 end of the arc once per visit (not with reduced motion); sections animate as they come into view', async () => {
+  const godemo = await import('../src/godemo.js');
+  const html = godemo.read(godemo.fileFor(godemo.PREFIX)).toString('utf8');
+  assert.match(html, /<circle id="goEnd"[^>]*cx="696"/);
+  assert.match(html, /prefers-reduced-motion: reduce\)'\)\.matches\) return;/);
+  assert.match(html, /sessionStorage\.getItem\('goCf'\)/);
+  assert.match(html, /rootMargin: "0px 0px -10% 0px"/);
+  assert.match(html, /r\.top < h \* \.9/);
+});
