@@ -188,6 +188,12 @@ companies with no status - defaults in use); phone: marked number of a known per
 
 - `DECIDED` HIS PICK (owner 21.10: "Thats why i want academy intake and tc intake separate sessions, this is hectic"): **Intake ACADEMY MASTER CONTROL** (this session: Academy feedback, Ieva, Admissions, SIS, phone, email) and **Intake TC MASTER CONTROL** (a separate session: Training Centre, Grand Opening, Season, review list, Google Calendar, MASTER PITCHER's TC boards). One app and one `production` branch: each master fetches origin/production right before a release, deploy_verify refuses a release that misses the other's commits, and each tells the other in one line before pushing production. Both keep this backlog and the control file.
 
+## 06.11.2026 - Stage 2 emails written as from the personal manager (owner, lane: Intake TC LANE)
+
+- `DECIDED` HIS WORDS (06.11): "all stage 2 emails will be like from a personal manager." -> every Stage 2 email (Will you be
+  there?, You are invited, New contacts) and the after-answer ones (You're in, Reminder 1, See you soon) read as a personal
+  note from the list's owner, signed with their name; texts shown to him before any send.
+
 ## 06.11.2026 - TC Companies list: "no course yet" goes (owner's pick, lane: Intake TC LANE)
 
 - `DECIDED` HIS PICK (06.11): "Drop 'no course yet'": a company with no courses shows nothing there; the course chip only when there
