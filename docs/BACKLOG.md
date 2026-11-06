@@ -23,8 +23,8 @@ Every open ask, its lane, its next step. An item leaves this list only when it i
 | # | What (his words where given) | Lane | Next step | Status |
 |---|---|---|---|---|
 | 1 | Grand Opening landing page: "Make the date and the address little bit more standing out", "animations appear sooner in the scroll timing", "The confetti I LIKE!", description "The new Novikontas Academy opens." + "stay tuned for the full program"; "show me the grand opening landing page draft" | Grand opening project (local_5ad2eea5) | the draft's path/URL to MASTER; A/B picture; publish on Tilda only on his yes | WAITING on that session |
-| 2 | Demo tile "Do not invite / hold": "there is no list visible under the tile! it just opens stage 2" | TC LANE | Open lands on the 148-mark list; every tile's Open checked | BRIEFED 06.11 |
-| 3 | Stage 2 owners: "any conflicti contacts should be assigned to him [JS] as primary!" | TC LANE | numbers to MASTER (conflicts, before -> after), then backup + write | BRIEFED 06.11 |
+| 2 | Demo tile "Do not invite / hold": "there is no list visible under the tile! it just opens stage 2"; tiles "The database" and "The fronts": "Remove both" | TC LANE | built (afdb207): every tile opens what it names; the 2 tiles removed; gate, then release on MASTER's go | BUILT 06.11 |
+| 3 | Stage 2 owners: "any conflicti contacts should be assigned to him [JS] as primary!", then on the numbers (678 claimed by 2+, all-to-JS = MC 46): "Between all, balance them out. I also dont want to see MC drop to 46 or to 100 only. JS, should be more, but not if it hurts other this much!" | TC LANE | a balanced rule + before -> after per owner to MASTER, shown to him, then backup + write | BRIEFED 06.11 |
 | 4 | Personal Stage 2 letters (4) | TC LANE | - | LIVE 06.11 patch 114 (38c9f3e) |
 | 5 | QR letters You're in + See you soon: "the AMento to create qr's, and later just put them in connection to our companies, so hold that letter!" | TC LANE | wait for Amento's QR codes, then link to companies | ON HOLD (Amento) |
 | 6 | Digital piece front/back pick | MASTER -> him | only when the QR letters come back | ON HOLD (with 5) |
