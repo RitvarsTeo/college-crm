@@ -193,6 +193,9 @@ companies with no status - defaults in use); phone: marked number of a known per
 - `DECIDED` HIS WORDS (06.11): "all stage 2 emails will be like from a personal manager." -> every Stage 2 email (Will you be
   there?, You are invited, New contacts) and the after-answer ones (You're in, Reminder 1, See you soon) read as a personal
   note from the list's owner, signed with their name; texts shown to him before any send.
+- `DECIDED` HIS ANSWERS (06.11) on the drafts: "i wanted to write to you personally is not ok" (opening removed); "THE qr's we will
+  allow the AMento to create qr's, and later just put them in connection to our companies, so hold that letter!" (You're in +
+  See you soon held; our own QR images not used); signature "Name only" (+ Novikontas Academy).
 
 ## 06.11.2026 - TC Companies list: "no course yet" goes (owner's pick, lane: Intake TC LANE)
 
