@@ -76,7 +76,7 @@ test('05.11 the demo shows the real Stage 2 letters (drawn from tcs2mail.js), no
   const godemo = await import('../src/godemo.js');
   const html = godemo.read(godemo.fileFor(godemo.PREFIX)).toString('utf8');
   assert.doesNotMatch(html, /1b_personal_from_ritvars/);
-  assert.match(html, /JS 154\./);
+  assert.match(html, /JS 204./);
   const inv = godemo.read(godemo.fileFor(godemo.PREFIX + 'letters/3_you_are_invited.html', { name: 'Anna Example' })).toString('utf8');
   assert.match(inv, /Dear Anna,/);
   assert.match(inv, /52205135-b22f-0b43-d49c-4436ba613cd8\.jpg/);
