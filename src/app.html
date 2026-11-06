@@ -11038,7 +11038,7 @@ async function tcRoute(hash) {
     else if (place === 'season' && typeof viewTcSeason === 'function') await viewTcSeason(arg); // lane TC-WEEK 3
     else if (place === 'help') viewTcHelp();
     else if (place === 'review') await viewTcReview();
-    else if (place === 'go') await viewTcGo();   // lane TC-GO: the Grand Opening
+    else if (place === 'go') await viewTcGo(arg);   // lane TC-GO: the Grand Opening; #/tc/go/hold|back|lists land on that part
     else if (place === 'door') viewTcDoor(arg);   // check-in at the door, 05.11.2026
     else if (place === 'families') await viewTcFamilies();   // the owner's pick B, 28.10.2026
     else if (place === 'import') viewTcImport();   // the owner's pick A, 28.10.2026
@@ -12695,7 +12695,14 @@ function tcGoNav() {
   }).catch(() => {});
 }
 
-async function viewTcGo() {
+// DEEP LINKS (06.11.2026, the owner on the demo: "there is no list visible under the tile! it just opens stage 2 and thats it"):
+// #/tc/go/hold opens the Do not invite / hold list, unfolded; #/tc/go/back = Stage 1, What came back; #/tc/go/lists = the
+// Stage 2 lists. Each lands scrolled to that part.
+const TC_GO_PART = { hold: ['s2', '.tcmk'], back: ['s1', '.tcgo-back'], lists: ['s2', 'section.tcs2'] };
+async function viewTcGo(part) {
+  const go = TC_GO_PART[part] || null;
+  if (go) T_GO_TAB = go[0];
+  if (part === 'hold') T_MK = { ...(T_MK || {}), open: true };
   T_GO = await api('/api/tc/go');
   if (!T_GO.figures) {
     $('#view').innerHTML = `<p class="c-crumb">${esc(T_GO.event.name)} · ${esc(T_GO.event.dateLabel)} · ${esc(T_GO.event.send)}</p>
@@ -12703,11 +12710,9 @@ async function viewTcGo() {
     return;
   }
   tcGoDraw();
-  tcS2Load();
-  tcS2xLoad().then(() => { if (T_S2) tcS2Redraw(); });   // Stage 2 sending (admins)
-  tcGmLoad();   // after the answer (admins)
-  tcFixLoad();
-  tcMkLoad();
+  const loads = [tcS2Load(), tcS2xLoad().then(() => { if (T_S2) tcS2Redraw(); }), tcGmLoad(), tcFixLoad(), tcMkLoad()];   // sending + after the answer: admins
+  // the part named in the link, once everything above it has drawn (06.11.2026)
+  if (go) Promise.allSettled(loads).then(() => setTimeout(() => { const el = document.querySelector('#view ' + go[1]); if (el) el.scrollIntoView({ block: 'start' }); }, 150));
   api('/api/tc/go/demo-access').then((r) => { T_GO_DEMO = Boolean(r && r.ok); const h = document.querySelector('#view .c-head');
     if (T_GO_DEMO && h && !h.querySelector('.tcgo-demo')) h.insertAdjacentHTML('beforeend', tcGoDemoBtn()); }).catch(() => {});
 }
@@ -13008,7 +13013,7 @@ async function tcMkAct(id, what) {
 }
 function tcMkHtml() {
   const M = T_MK;
-  if (!M) return '';
+  if (!M || !M.rows) return '';   // #/tc/go/hold sets open before the rows arrive
   const day = (iso) => (iso ? `${String(iso).slice(8, 10)}.${String(iso).slice(5, 7)}` : '');
   const row = (r) => `<div class="tcmk-row"><div><a href="#/tc/company/${Number(r.companyId)}"><b>${esc(r.company)}</b></a>
       <small>${r.contactId ? esc(r.person || r.email) : `the whole company · ${Number(r.people)} ${r.people === 1 ? 'person' : 'people'}`}</small></div>

@@ -98,3 +98,17 @@ test('05.11 the demo opens at /api/tc/go/demo without a redirect (Vercel strips 
   assert.doesNotMatch(srv, /location: godemo\.PREFIX/);
   assert.match(fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8'), /href="\/api\/tc\/go\/demo" target="_blank"/);
 });
+
+test('06.11 the demo tiles open what they name: #/tc/go/hold (the list, unfolded), /back, /lists, families, clients', async () => {
+  const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
+  assert.match(app, /else if \(place === 'go'\) await viewTcGo\(arg\);/);
+  assert.match(app, /const TC_GO_PART = \{ hold: \['s2', '\.tcmk'\], back: \['s1', '\.tcgo-back'\], lists: \['s2', 'section\.tcs2'\] \};/);
+  assert.match(app, /if \(part === 'hold'\) T_MK = \{ \.\.\.\(T_MK \|\| \{\}\), open: true \};/);
+  const godemo = await import('../src/godemo.js');
+  const html = godemo.read(godemo.fileFor(godemo.PREFIX)).toString('utf8');
+  for (const [title, href] of [['Do not invite / hold', '#/tc/go/hold'], ['What came back', '#/tc/go/back'], ['Six owners, six lists', '#/tc/go/lists'],
+    ['Answers by owner', '#/tc/go/lists'], ['Company families', '#/tc/families'], ['Clients in Intake', '#/tc/clients']]) {
+    const at = html.indexOf('<b>' + title + '</b>'); const a = html.lastIndexOf('<a class="win', at);
+    assert.ok(at > 0 && html.slice(a, at).includes('href="https://intake.novikontas.org/' + href + '"'), title);
+  }
+});
