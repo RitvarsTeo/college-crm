@@ -112,3 +112,10 @@ test('06.11 the demo tiles open what they name: #/tc/go/hold (the list, unfolded
     assert.ok(at > 0 && html.slice(a, at).includes('href="https://intake.novikontas.org/' + href + '"'), title);
   }
 });
+
+test('06.11 his "Remove both": the demo has no Supabase dashboard tile and no fronts tile with bare years', async () => {
+  const godemo = await import('../src/godemo.js');
+  const html = godemo.read(godemo.fileFor(godemo.PREFIX)).toString('utf8');
+  assert.ok(!html.includes('<b>The database</b>') && !html.includes('supabase.com/dashboard'));
+  assert.ok(!html.includes('<b>The fronts</b>') && !html.includes('FRONT_new_concepts_v5'));
+});
