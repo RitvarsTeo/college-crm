@@ -200,12 +200,13 @@ test('the routes on a laptop copy: the admin imports by upload, the page and its
 
 test('the screen: the menu item, shown once the figures are in; no page or link that leads nowhere; Not reached is navy, never red; nothing reads as late; Help', () => {
   const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
-  assert.match(app, /else if \(place === 'go'\) await viewTcGo\(\);/);
+  assert.match(app, /else if \(place === 'go'\) await viewTcGo\(arg\);/);
   // the compact menu (the owner's pick B, 28.10.2026): the Grand Opening is a tab in Plan, shown once its figures are in
   assert.match(app, /\.\.\.\(T_GO_ON \? \[\['#\/tc\/go', 'go', 'Grand Opening'\]\] : \[\]\)/);
   assert.match(app, /T_GO_ON = true;/);
   // the owner 22.10: Not reached, Audience and Delivery are hidden (they could not do their job): no sub-item, no link to them
-  assert.doesNotMatch(app, /data-c="tc-go-|#\/tc\/go\/|tcGoPeopleView|tcGoDelivery/);
+  // 06.11.2026: #/tc/go/hold|back|lists land on a part of the page (the demo tiles); any other #/tc/go/ address still leads nowhere
+  assert.doesNotMatch(app, /data-c="tc-go-|#\/tc\/go\/(?!hold|back|lists)|tcGoPeopleView|tcGoDelivery/);
   const css = app.slice(app.indexOf('/* THE GRAND OPENING (#/tc/go'), app.indexOf('</style>\n</head>'));
   const js = app.slice(app.indexOf('THE GRAND OPENING (#/tc/go) --'), app.indexOf('function viewTcHelp() {'));
   assert.ok(css.length > 1000 && js.length > 1500, 'the blocks are found');
