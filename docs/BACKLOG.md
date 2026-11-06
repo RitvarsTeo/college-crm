@@ -188,6 +188,13 @@ companies with no status - defaults in use); phone: marked number of a known per
 
 - `DECIDED` HIS PICK (owner 21.10: "Thats why i want academy intake and tc intake separate sessions, this is hectic"): **Intake ACADEMY MASTER CONTROL** (this session: Academy feedback, Ieva, Admissions, SIS, phone, email) and **Intake TC MASTER CONTROL** (a separate session: Training Centre, Grand Opening, Season, review list, Google Calendar, MASTER PITCHER's TC boards). One app and one `production` branch: each master fetches origin/production right before a release, deploy_verify refuses a release that misses the other's commits, and each tells the other in one line before pushing production. Both keep this backlog and the control file.
 
+## 06.11.2026 - Company families: decided by research, no "To look at" tab (owner, lane: Intake TC LANE)
+
+- `SAID` (06.11, screenshot Families: Confirmed 40 / To look at 191, groups by a shared first word): "this is not ready! please
+  confirm yourself the company families! DO a proper research! there should not even be a too look at tab!" -> TC lane
+  researches each candidate (website, registry, LinkedIn), confirms real groups with one source each, drops the rest;
+  evidence file Projects/College CRM/_tc/families_research_2026-11-06.md; the To look at tab goes (release on MASTER's go).
+
 ## 05.11.2026 - Test records in stats; is 164 admitted right? (owner's ask, lane: Intake ACADEMY LANE)
 
 - `SAID` (05.11, to the Academy lane, screenshot "Test New Student · Admitted 2026-10-29" in the admitted report): "A BUG LIKE THIS
