@@ -22,9 +22,9 @@ Every open ask, its lane, its next step. An item leaves this list only when it i
 
 | # | What (his words where given) | Lane | Next step | Status |
 |---|---|---|---|---|
-| 1 | Grand Opening: DEMO = confetti at the 27.05.2027 end of the arc + sections animate as they come into view + tile links + 2 tiles removed (patch 115); LANDING PAGE: already live (framed date + pin + address; description "The new Novikontas Academy opens. Stay tuned for the full program.") - his "Yes, done" 06.11 | TC LANE | demo: push 115 after the gate | LANDING DONE; DEMO RELEASING |
+| 1 | Grand Opening: DEMO (confetti at 27.05.2027, sections animate as they come into view, tile links, 2 tiles removed) LIVE 06.11 patch 115 (eb6b292); LANDING PAGE live, his "Yes, done" | TC LANE | the demo list numbers (DS 482 ... JS 204) in the next TC patch (dd3d5bb) | LIVE 06.11 |
 | 2 | Demo tile "Do not invite / hold": "there is no list visible under the tile! it just opens stage 2"; tiles "The database" and "The fronts": "Remove both" | TC LANE | built (afdb207): every tile opens what it names; the 2 tiles removed; gate, then release on MASTER's go | BUILT 06.11 |
-| 3 | Stage 2 owners: "JS, increase! i need his real contacts, he gave many!" -> recount: JS's real Stage 2 contacts about 180 (his cards + batches + 79 companies he is in charge of; no Gmail/LinkedIn export from him exists). HIS ANSWER 06.11: card pack B (27.07 15:49) = "No, Ilze's". Write: JS 154 -> 204, DS 482, MC 308, AB 243, Mārcis 318, Alma 7 | TC LANE | backup + write, after-counts to MASTER | WRITING 06.11 |
+| 3 | Stage 2 owners: JS's real contacts (pack B = Ilze's, his word 06.11): backup 14:30Z VERIFIED, 50 moved to JS. Lists now DS 482, Mārcis 318, MC 308, AB 243, JS 204, Alma 7 (read back). Register source_owners.csv updated | TC LANE | - | DONE 06.11 |
 | 4 | Personal Stage 2 letters (4) | TC LANE | - | LIVE 06.11 patch 114 (38c9f3e) |
 | 5 | QR letters You're in + See you soon: "the AMento to create qr's, and later just put them in connection to our companies, so hold that letter!" | TC LANE | wait for Amento's QR codes, then link to companies | ON HOLD (Amento) |
 | 6 | Digital piece front/back pick | MASTER -> him | only when the QR letters come back | ON HOLD (with 5) |
