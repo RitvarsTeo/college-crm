@@ -10938,7 +10938,8 @@ const tcDdMm = (d) => (d ? `${d.slice(8, 10)}.${d.slice(5, 7)}${d.slice(0, 4) ==
 // the day it was planned for, never in red and never counted as overdue
 const tcWhen = (d) => (!d ? '' : d <= cTodayIso() ? 'today' : '');
 const tcWhenText = (d) => (!d ? 'no next contact' : d < cTodayIso() ? `planned ${tcDdMm(d)}` : d === cTodayIso() ? 'today' : tcDdMm(d));
-const tcDelegates = (n) => `${Number(n)} delegate${Number(n) === 1 ? '' : 's'}`;
+// his pick 06.11.2026 "Say 'trained'": the word for people on courses
+const tcDelegates = (n) => `${Number(n)} trained`;
 const tcPlace = (c) => [c.country, c.city].filter(Boolean).join(' · ');
 
 function tcInstallNav() {
@@ -11098,12 +11099,12 @@ function tcYearChart(rows, Y, { small = false } = {}) {
     const cx = L + band * k + band / 2, t = y(r.n), on = r.year === Y;
     const bar = r.n ? `<path d="M${cx - bw / 2},${y(0)} V${Math.min(t + 4, y(0))} q0,-4 4,-4 h${bw - 8} q4,0 4,4 V${y(0)} Z" class="tc-bar${on ? ' on' : ''} m-fade" style="--i:${k}"/>` : '';
     const rv = r.source === 'review';   // the owner's pick 28.10.2026: a year the Excel holds only in part shows the management review
-    const go = small ? '' : ` tabindex="0" role="button" data-kgo="tc|year=${Number(r.year)}" data-tip="${Number(r.year)}|${tcN(r.n)} delegates|${tcN(r.clients)} client companies${rv ? '|from the management review' : ''}"`;
-    return `<g class="kcol"${go} aria-label="${Number(r.year)}: ${tcN(r.n)} delegates${small ? '' : `, ${tcN(r.clients)} client companies`}"><rect x="${cx - band / 2}" y="${T}" width="${band}" height="${H - T - B}" class="khit"/>${bar}
+    const go = small ? '' : ` tabindex="0" role="button" data-kgo="tc|year=${Number(r.year)}" data-tip="${Number(r.year)}|${tcN(r.n)} trained|${tcN(r.clients)} client companies${rv ? '|from the management review' : ''}"`;
+    return `<g class="kcol"${go} aria-label="${Number(r.year)}: ${tcN(r.n)} trained${small ? '' : `, ${tcN(r.clients)} client companies`}"><rect x="${cx - band / 2}" y="${T}" width="${band}" height="${H - T - B}" class="khit"/>${bar}
       <text x="${cx}" y="${t - 7}" class="kt tc-val" text-anchor="middle">${tcN(r.n)}</text>
       <text x="${cx}" y="${H - B + 16}" class="kt" text-anchor="middle">${Number(r.year)}${rv ? '*' : ''}</text>${small ? '' : `<text x="${cx}" y="${H - B + 33}" class="kt tc-cos" text-anchor="middle">${tcN(r.clients)} cos.</text>`}</g>`;
   }).join('');
-  return `<svg viewBox="0 0 ${W} ${H}" class="kchart tc-years${narrow ? ' narrow' : ''}${small ? ' small' : ''}" data-plot="${T} ${H - B}" role="img" aria-label="Delegates by year">${grid}${cols}</svg>`;
+  return `<svg viewBox="0 0 ${W} ${H}" class="kchart tc-years${narrow ? ' narrow' : ''}${small ? ' small' : ''}" data-plot="${T} ${H - B}" role="img" aria-label="Trained by year">${grid}${cols}</svg>`;
 }
 // The Delegates card's line (the owner's picture M1): thin, a dot on every year from 2020, the picked year the dark dot,
 // a pale band under it. Not cSpark's wedge, which suits a month series.
@@ -11125,7 +11126,7 @@ function tcMiniBars(v) {
 }
 const tcInitials = (name) => String(name || '').split(/\s*;\s*/)[0].split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 function tcBigRows(rows, top, { pic = false, start = 0 } = {}) {
-  if (!rows.length) return '<div class="c-empty">No company with delegates in this year.</div>';
+  if (!rows.length) return '<div class="c-empty">No company with people trained in this year.</div>';
   return rows.map((c, i) => `<a class="tc-big-row" href="#/tc/company/${Number(c.id)}">
       <span class="tc-rank">${start + i + 1}</span>
       <span class="tc-co"><b>${esc(c.name)}</b><small>${esc([c.country || 'country not recorded', ...(pic ? [c.areas.join(', ')] : [])].filter(Boolean).join(' · '))}</small></span>
@@ -11183,15 +11184,15 @@ async function viewTcHome() {
       ${need('Planned today', D.today.planned, `tcGoNextUpto(${esc(JSON.stringify(String(D.asOf)))})`, 0)}${need('This week', D.today.week, `tcGoNextUpto(${esc(JSON.stringify(String(D.today.friday)))})`, 1)}
       ${ex ? `<a class="kneed tc-ex" href="#/tc/season/event/${Number(ex.id)}" style="--i:2"><span>Next exhibition</span><b>${esc(ex.name)}</b><small>${esc([exWhen, ex.companies != null ? tcN(ex.companies) + ' companies' : ''].filter(Boolean).join(' · '))}${ex.dateConfirmed ? '' : ' <em class="tc-tbc">date to confirm</em>'}</small></a>` : ''}</div></div></section>
     <div class="kstrip kb-strip">
-      <div class="khero tc-card" role="link" tabindex="0" onclick="if(!event.target.closest('a'))tcGoYear(${Number(Y)})"><span>Delegates</span><b>${tcN(D.delegates.n)}</b><small>${Y}</small>${tcSpark(D.byYear)}${delta}<a class="kgo" href="#/tc/companies" onclick="tcGoYear(${Number(Y)});return false">Clients →</a></div>
+      <div class="khero tc-card" role="link" tabindex="0" onclick="if(!event.target.closest('a'))tcGoYear(${Number(Y)})"><span>Trained</span><b>${tcN(D.delegates.n)}</b><small>${Y}</small>${tcSpark(D.byYear)}${delta}<a class="kgo" href="#/tc/companies" onclick="tcGoYear(${Number(Y)});return false">Clients →</a></div>
       <div class="tc-card" role="link" tabindex="0" onclick="if(!event.target.closest('a'))tcGoYear(${Number(Y)})"><span>Client companies</span><b>${tcN(D.clients.n)}</b><small>${Y}</small>${split}<a class="kgo" href="#/tc/companies" onclick="tcGoYear(${Number(Y)});return false">Clients →</a></div>
       <div class="tc-card" role="link" tabindex="0" onclick="if(!event.target.closest('a'))tcGoYear(${Number(Y)}, 'new')"><span>New clients</span><b>${tcN(D.newClients.n)}</b><small>${Y}</small>
-        <small class="tc-line"><b>${tcN(D.newClients.delegates)}</b> delegates from companies new in ${Y}</small>${largest ? `<small class="tc-line">largest: ${largest}</small>` : ''}<a class="kgo" href="#/tc/companies" onclick="tcGoYear(${Number(Y)}, 'new');return false">Clients →</a></div>
+        <small class="tc-line"><b>${tcN(D.newClients.delegates)}</b> trained from companies new in ${Y}</small>${largest ? `<small class="tc-line">largest: ${largest}</small>` : ''}<a class="kgo" href="#/tc/companies" onclick="tcGoYear(${Number(Y)}, 'new');return false">Clients →</a></div>
       <div class="tc-card" role="link" tabindex="0" onclick="if(!event.target.closest('a'))tcGoYear(${Number(Y)})"><span>Countries</span><b>${tcN(D.countries.clients)}</b><small>${Y}</small>
-        <small class="tc-line">sent delegates in ${Y}</small><small class="tc-line">of <a href="#/tc/companies" onclick="tcGoList({ country: '*' });return false"><b>${tcN(D.countries.all)}</b></a> where our companies are</small><a class="kgo" href="#/tc/companies" onclick="tcGoList({ country: '*' });return false">Companies →</a></div>
+        <small class="tc-line">had people trained in ${Y}</small><small class="tc-line">of <a href="#/tc/companies" onclick="tcGoList({ country: '*' });return false"><b>${tcN(D.countries.all)}</b></a> where our companies are</small><a class="kgo" href="#/tc/companies" onclick="tcGoList({ country: '*' });return false">Companies →</a></div>
     </div>
     <div class="m-scene kb-charts"><div class="kb-top">
-      <section class="ksec"><div class="ksh"><h2>Delegates by year</h2><ul class="klegend inline"><li><i style="background:var(--v-adm)"></i><span>Delegates</span></li><li><span>cos. = client companies</span></li>${D.byYear.some((r) => r.source === 'review') ? '<li><span>* management review</span></li>' : ''}</ul><span class="ksrc">click a year → Clients</span></div>
+      <section class="ksec"><div class="ksh"><h2>Trained by year</h2><ul class="klegend inline"><li><i style="background:var(--v-adm)"></i><span>Trained</span></li><li><span>cos. = client companies</span></li>${D.byYear.some((r) => r.source === 'review') ? '<li><span>* management review</span></li>' : ''}</ul><span class="ksrc">click a year → Clients</span></div>
         ${tcYearChart(D.byYear, Y)}</section>
       <section class="ksec"><div class="ksh"><h2>Our companies, by last course</h2><span class="ksrc">click a slice</span></div>
         ${cDonut(D.donut.rows.map((r, i) => [r.label, r.n, ['tc1', 'tc2', 'tc3', 'np'][i], `year=${Y}&last=${r.id}`]), { unit: 'companies', title: 'Our companies, by last course', kgo: (go) => 'tc|' + go, hole: 'tc|' })}</section>
@@ -11258,7 +11259,7 @@ async function tcDrawMap(D) {
       <rect x="${(cx - 1.2).toFixed(1)}" y="${(cy - H).toFixed(1)}" width="2.4" height="${H.toFixed(1)}" rx="1" class="a"/>${Hc ? `<rect x="${(cx - 1.2).toFixed(1)}" y="${(cy - Hc).toFixed(1)}" width="2.4" height="${Hc.toFixed(1)}" rx="1" class="c"/>` : ''}</g>`;
   }).join('');
   const pins = G.largest.map((l, i) => ({ l, i, c: at(l.country) })).filter((x) => x.c && inView(x.c)).map(({ l, i, c: [cx, cy] }) => `<g class="tc-mpin" tabindex="0" role="button" data-kgo="${esc(tcGeoGo(l.country))}"
-      data-tip="${esc(`${l.name}|${tcN(l.n)} delegates ${Number(D.year)}|${l.country}`)}" aria-label="${esc(l.name)}: ${tcN(l.n)} delegates"><circle cx="${(cx + ((i % 3) - 1) * 4 + 5).toFixed(1)}" cy="${(cy + 3).toFixed(1)}" r="2"/></g>`).join('');
+      data-tip="${esc(`${l.name}|${tcN(l.n)} trained ${Number(D.year)}|${l.country}`)}" aria-label="${esc(l.name)}: ${tcN(l.n)} trained"><circle cx="${(cx + ((i % 3) - 1) * 4 + 5).toFixed(1)}" cy="${(cy + 3).toFixed(1)}" r="2"/></g>`).join('');
   el.innerHTML = `<svg viewBox="${o.x} ${o.y} ${o.w} ${o.h}" class="tc-mapsvg" role="img" aria-label="Where our companies are"><g class="land">${W.land.map((d) => `<path d="${d}"/>`).join('')}</g>${cols}${pins}</svg>
     <div class="tc-mkey"><span><i class="a"></i>Companies</span><span><i class="c"></i>Clients</span><span><i class="p"></i>Largest clients ${Number(D.year)}</span></div>`;
   cWireCharts(el);
@@ -11298,7 +11299,7 @@ function tcTrendsHtml() {
     <h3 class="tct-q">How many people did our business clients send us each year?</h3>
     <p class="tct-a">From the yearly management review, next to the TC Excel.</p>
     <div class="c-sheet tct-sheet tct-mv"><div class="tct-bars" style="grid-template-columns:repeat(${ys.length},minmax(0,1fr))">${cols}</div>
-      <div class="tct-legend"><span><i class="a"></i>Management review (business clients)</span><span><i class="b"></i>TC Excel delegates</span></div>
+      <div class="tct-legend"><span><i class="a"></i>Management review (business clients)</span><span><i class="b"></i>TC Excel trained</span></div>
       ${gaps || repNote ? `<div class="tct-flags">${gaps}${repNote}</div>` : ''}</div>
     <h3 class="tct-q">Which clients send us more, and which send fewer?</h3>
     <p class="tct-a">Every year; the darker, the more people. Growing or Fewer = ${T.last} against ${T.last - 1}. Click a company to open it.</p>
@@ -11372,7 +11373,7 @@ async function viewTcBook() {
           ${B.biggest.total > rows.length ? `<button class="c-more tc-logmore" onclick="T_BOOK.shown+=10;viewTcBook()">Show 10 more of ${tcN(B.biggest.total - rows.length)}</button>` : ''}
           ${B.biggest.total ? `<a class="kgo tc-all" href="#/tc/companies" onclick="tcBookAll();return false">All ${tcN(B.biggest.total)} in the list →</a>` : ''}</div></section>
       <section class="c-sheet tc-welcome"><h3>Welcome back<b>${tcN(B.welcome.total)}</b></h3>
-        <p class="tc-sub">Trained with us ${B.welcome.from}-${String(B.welcome.to).slice(-2)}, none in ${Y} · delegates</p>
+        <p class="tc-sub">Trained with us ${B.welcome.from}-${String(B.welcome.to).slice(-2)}, none in ${Y} · trained</p>
         <div class="c-pad">${welcome.map(wrow).join('') || '<div class="c-empty">Every company of those years trained again.</div>'}
           ${B.welcome.total > welcome.length ? `<button class="c-more tc-logmore" onclick="T_BOOK.wshown+=8;viewTcBook()">Show 8 more of ${tcN(B.welcome.total - welcome.length)}</button>` : ''}</div></section>
     </div></div><div id="tcTrends"></div>`;
@@ -11383,10 +11384,10 @@ async function viewTcBook() {
 // out of every company that ever trained, the countries; each figure opens its companies, TOTAL rows in none
 function tcBookCards(B) {
   const C = B.cards, Y = B.year, max = Math.max(1, ...C.delegates.byYear.map((r) => r.n));
-  const col = (r) => `<a class="tc-ycol${r.year === Y ? ' on' : ''}" href="#/tc/companies" onclick="tcGoYear(${Number(r.year)});return false" title="${Number(r.year)}: ${tcN(r.n)} delegates${r.source === 'review' ? ', from the management review' : ''}">
+  const col = (r) => `<a class="tc-ycol${r.year === Y ? ' on' : ''}" href="#/tc/companies" onclick="tcGoYear(${Number(r.year)});return false" title="${Number(r.year)}: ${tcN(r.n)} trained${r.source === 'review' ? ', from the management review' : ''}">
       <i style="height:${Math.max(r.n ? 4 : 1, (r.n / max) * 100).toFixed(1)}%"></i><span>${Number(r.year)}${r.source === 'review' ? '*' : ''}</span></a>`;
   return `<div class="kstrip tc-bookcards">
-    <div class="khero tc-card" role="link" tabindex="0" onclick="if(!event.target.closest('a'))tcGoYear(${Number(Y)})"><span>Delegates ${Number(Y)}</span><b>${tcN(C.delegates.n)}</b>
+    <div class="khero tc-card" role="link" tabindex="0" onclick="if(!event.target.closest('a'))tcGoYear(${Number(Y)})"><span>Trained ${Number(Y)}</span><b>${tcN(C.delegates.n)}</b>
       <div class="tc-ycols">${C.delegates.byYear.map(col).join('')}</div></div>
     <div class="tc-card" role="link" tabindex="0" onclick="if(!event.target.closest('a'))tcGoYear(${Number(Y)})"><span>Client companies that trained in ${Number(Y)}</span>
       <b>${tcN(C.clients.n)} <em>/ <a href="#/tc/clients">${tcN(C.clients.ever)}</a></em></b><small>of all companies that ever trained</small></div>
@@ -11601,7 +11602,6 @@ function tcFilterBars(L, M) {
     ['area', 'Area', L.facets.areas.filter(([, n]) => n > 0).map(([a, n]) => [a, a, n])],
     ['course', 'Courses', (L.facets.courses || []).map(([c, n]) => [c, c, n])],
     ['country', 'Country', L.facets.countries.filter(([c]) => c !== '-').map(([c, n]) => [c, c, n])],
-    ['status', 'Status', M.statuses.map((x) => [x.id, x.label, Number(L.counts.status[x.id] || 0)]).filter(([, , n]) => n > 0)],
     ['since', 'Last course', (L.facets.since || []).map(([b, n]) => [b, { recent: `${yr - 1}-${String(yr).slice(-2)}`, mid: `${yr - 3}-${String(yr - 2).slice(-2)}`, old: `Before ${yr - 3}`, none: 'No course yet' }[b], n])],
   ];
   const any = groups.some(([k]) => T_F[k]);
@@ -11629,7 +11629,6 @@ function tcDrawCompanies() {
       box('last', 'Last course', [['recent', `${yf} or later`], ['mid', `${yf - 2}-${String(yf - 1).slice(-2)}`], ['old', `before ${yf - 2}`], ['none', 'No course yet']])] : [])];
   // THE SIMPLER PAGE (the owner, 26.10.2026: "B but with filters"): Mine or All, and every filter behind one Filters button
   const boxes = [
-    box('status', 'Status', M.statuses.map((s) => [s.id, `${s.label} ${Number(L.counts.status[s.id] || 0)}`])),
     box('area', 'Area', L.facets.areas.map(([a, n]) => [a, `${a} ${n}`])),
     box('country', 'Country', [['*', 'Any recorded'], ...L.facets.countries.map(([c, n]) => [c, `${word(c)} ${n}`])]),
     box('pic', 'Person in charge', [...(Number(L.facets.mine || 0) > 0 ? [['me', `Mine ${Number(L.facets.mine || 0)}`]] : []), ...L.facets.pics.map(([p, n, t]) => [p, `${t || word(p)} ${n}`])]),
@@ -11647,10 +11646,9 @@ function tcDrawCompanies() {
     <details class="tc-filters"${T_FOPEN ? ' open' : ''} ontoggle="T_FOPEN=this.open"><summary class="btn ghost">Filters${nf ? ` · ${nf}` : ''} ▾</summary>
       <div class="tc-fpanel">${cPoolFilters('companies', boxes, nf ? 'tcClearFilters()' : '')}</div></details></div>`;
   const any = Object.values(T_F).some(Boolean) || Boolean(T_Q);
-  const st = (c) => tcStatus(c.status).label + (c.statusDetail ? ' · ' + tcMeeting(c.statusDetail) : '');
   const row = (c) => `<a class="c-line tc-cline" href="#/tc/company/${Number(c.id)}">
       <div class="c-who"><b>${esc(c.name)}</b><small class="c-reach${tcPlace(c) ? '' : ' c-gap'}">${esc(tcPlace(c) || 'country not recorded')}</small></div>
-      <div class="c-what"><div class="tc-rowtop"><span class="p-stage">${esc(st(c))}</span>${c.areas.map((a) => `<span class="tc-area">${esc(a)}</span>`).join('')}</div>
+      <div class="c-what"><div class="tc-rowtop">${c.areas.map((a) => `<span class="tc-area">${esc(a)}</span>`).join('')}</div>
         <div class="tc-rowsub">${c.lastYear ? `<span class="tc-ychip">${Number(c.lastYear)} · ${tcDelegates(c.lastYearN)}</span><span>${Number(c.delegates)} in all</span>` : ''}${c.pic
           ? `<span class="tc-ini" title="${esc(c.pic)}">${esc(String(c.pic).split(/[\s;]+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase())}</span>` : ''}</div></div>
       <div class="c-when">${c.next ? `<span class="c-when ${tcWhen(c.next.due)}">${esc(tcWhenText(c.next.due))}</span>` : ''}</div>
@@ -11739,7 +11737,7 @@ function tcFamCard() {
   const row = (c) => `<div class="tcfam-row"><div class="${c.parent ? '' : 'tcfam-in'}">${c.id === T_CO.id ? `<b>${esc(c.name)}</b>` : `<a href="#/tc/company/${Number(c.id)}"><b>${esc(c.name)}</b></a>`}<small>${c.parent ? 'the parent' : esc(c.country || '')}</small></div>
       <div class="n">${tcN(c.people)}</div><div class="n">${tcN(c.delegates)}</div><div><button type="button" class="btn sm ghost" onclick="tcFamUnlink(${Number(c.id)}, ${Number(Boolean(c.parent))})">Unlink</button></div></div>`;
   return `<section class="c-sheet tcfam" aria-label="Company family"><div class="tcgo-bh"><h2>${esc(F.name)} family · ${tcN(F.members.length)} companies</h2></div>
-    <div class="tcfam-row tcfam-head"><span>Company</span><span class="n">People</span><span class="n">Delegates</span><span></span></div>
+    <div class="tcfam-row tcfam-head"><span>Company</span><span class="n">People</span><span class="n">Trained</span><span></span></div>
     ${F.members.map(row).join('')}
     <div class="tcfam-row tcfam-tot"><div>The family</div><div class="n">${tcN(F.people)}</div><div class="n">${tcN(F.delegates)}</div><div></div></div></section>`;
 }
@@ -11918,7 +11916,7 @@ async function viewTcFamilies() {
 function tcFamDraw() {
   const F = T_FAM;
   const fam = (f) => `<a class="tcfam-sug tcfam-done" href="#/tc/company/${Number(f.parentId)}"><div><b>${esc(f.name)}</b><small>${tcN(f.companies)} companies</small></div>
-      <small>${tcN(f.people)} people · ${tcN(f.delegates)} delegates</small><div></div></a>`;
+      <small>${tcN(f.people)} people · ${tcN(f.delegates)} trained</small><div></div></a>`;
   $('#view').innerHTML = `<p class="c-crumb"><a href="#/tc/companies">Companies</a></p><div class="c-head"><div><h1>Families · ${tcN(F.families.length)}</h1></div></div>
     <section class="c-sheet tcfam-list">${F.families.map(fam).join('') || '<div class="c-empty">No family confirmed yet.</div>'}</section>`;
 }
@@ -11985,10 +11983,10 @@ function tcDrawCompany() {
         <div><label for="tckEmail">Email</label><input id="tckEmail" type="email"></div><div><label for="tckPhone">Phone</label><input id="tckPhone"></div>
         <div id="tckErr" class="c-wide"></div><div class="c-wide c-row-acts"><button class="btn sm" onclick="tcAddContact()">Save contact</button></div></div></div></div>`;
   const courses = `<div class="c-sheet c-facts"><h3>Courses per year<b>${Number(c.delegates)}</b></h3>
-      ${c.courses.length ? `<table class="ktable tc-courses"><thead><tr><th>Year</th><th>Delegates</th><th>Courses</th></tr></thead><tbody>${c.courses.map((k) => `<tr title="${esc(k.raw || '')}"><td>${Number(k.year)}</td><td>${k.attendees == null ? '?' : Number(k.attendees)}</td><td>${esc(k.codes)}</td></tr>`).join('')}</tbody></table>` : '<div class="c-empty">No course recorded.</div>'}
+      ${c.courses.length ? `<table class="ktable tc-courses"><thead><tr><th>Year</th><th>Trained</th><th>Courses</th></tr></thead><tbody>${c.courses.map((k) => `<tr title="${esc(k.raw || '')}"><td>${Number(k.year)}</td><td>${k.attendees == null ? '?' : Number(k.attendees)}</td><td>${esc(k.codes)}</td></tr>`).join('')}</tbody></table>` : '<div class="c-empty">No course recorded.</div>'}
       <div class="c-pad"><div class="c-form tc-yearform">
         <div><label for="tcyYear">Year</label><input id="tcyYear" type="number" min="1990" max="2100" value="${Number(today.slice(0, 4))}"></div>
-        <div><label for="tcyN">Delegates</label><input id="tcyN" type="number" min="0"></div>
+        <div><label for="tcyN">Trained</label><input id="tcyN" type="number" min="0"></div>
         <div class="c-wide"><label for="tcyCodes">Courses</label><input id="tcyCodes" placeholder="GWO BST, BOSIET"></div>
         <div id="tcyErr" class="c-wide"></div><div class="c-wide c-row-acts"><button class="btn sm" onclick="tcSaveYear()">Save</button></div></div></div></div>`;
   // ROUND 3 (the owner's pick A, 20.10.2026): delegates per year since 2020 with the courses they take; information to
@@ -12000,7 +11998,7 @@ function tcDrawCompany() {
   }
   const since = dys.filter((r) => r.year >= 2020).reduce((n, r) => n + r.n, 0);
   const codes = [...new Set(c.courses.flatMap((k) => String(k.codes || '').split(/\s*,\s*/)).filter(Boolean))].sort(byLvCodes);
-  const perYear = `<div class="c-sheet tc-peryear"><h3>Delegates per year</h3><div class="c-pad">
+  const perYear = `<div class="c-sheet tc-peryear"><h3>Trained per year</h3><div class="c-pad">
       <p class="tc-since"><b>${tcN(since)}</b> since 2020</p>${since ? tcYearChart(dys.filter((r) => r.year >= 2020), null, { small: true }) : ''}
       ${codes.length ? `<h4 class="tc-h4">Courses they take</h4><div class="tc-chips">${codes.map((k) => `<span class="tc-chip">${esc(k)}</span>`).join('')}</div>` : ''}</div></div>`;
   const info = c.infoToSend ? `<div class="c-sheet c-facts tc-info"><h3>Information to send</h3><div class="c-pad">${tcClamp(c.infoToSend)}
@@ -12322,7 +12320,7 @@ function twDrawLog() {
     <div id="twErr"></div>
     <div class="tw-acts"><button class="btn" onclick="twLogSave()">Save</button><button class="btn ghost" onclick="twLogClose()">Cancel</button></div>
     <div class="tw-hist">${d.last ? `<p><b>${esc(tcDdMm(d.last.day))}</b> · ${esc(d.last.kind)}${d.last.what ? ' · ' + esc(d.last.what) : ''}</p>` : ''}
-      ${d.delegates.length ? `<p><b>Delegates</b> · ${d.delegates.map((y) => `${Number(y.year)}: ${Number(y.n)}`).join(' · ')}</p>` : ''}
+      ${d.delegates.length ? `<p><b>Trained</b> · ${d.delegates.map((y) => `${Number(y.year)}: ${Number(y.n)}`).join(' · ')}</p>` : ''}
       <p><a href="#/tc/company/${Number(d.companyId)}" onclick="twLogClose()">Open the company →</a></p></div></aside>`;
   $('#modal').innerHTML = box;
   const ta = $('#twNote'); if (ta && note) ta.value = note;

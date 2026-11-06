@@ -337,12 +337,12 @@
       {
         "id": "tc-active-client",
         "q": "What is an active client?",
-        "a": "A company with at least one delegate on a course in any year; every other company counts as a prospect."
+        "a": "A company with at least one person trained on a course in any year; every other company counts as a prospect."
       },
       {
         "id": "tc-delegates",
-        "q": "Where does Delegates trained come from?",
-        "a": "It adds up the delegates on every company's course lines for all years, as imported from the Excel (figures till 24.09.2025) and as typed on the company page since."
+        "q": "Where does Trained come from?",
+        "a": "It adds up the people trained on every company's course lines for all years, as imported from the Excel (figures till 24.09.2025) and as typed on the company page since."
       },
       {
         "id": "tc-next-contact",
@@ -357,7 +357,7 @@
       {
         "id": "tc-client-book",
         "q": "What is the Client book?",
-        "a": "The Client book ranks the clients by delegates in the picked year (All, Mine or one area) and lists Welcome back: companies that trained with us two and three years ago but not this year, each with Plan a call."
+        "a": "The Client book ranks the clients by people trained in the picked year (All, Mine or one area) and lists Welcome back: companies that trained with us two and three years ago but not this year, each with Plan a call."
       },
       {
         "id": "tc-person-in-charge",
@@ -387,7 +387,7 @@
       {
         "id": "tc-courses",
         "q": "How do I add this year's courses?",
-        "a": "On the company page, under Courses per year, type the year, the number of delegates and the course codes, and press Save."
+        "a": "On the company page, under Courses per year, type the year, the number trained and the course codes, and press Save."
       },
       {
         "id": "tc-statuses",

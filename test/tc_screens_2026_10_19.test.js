@@ -92,14 +92,16 @@ test('Training Centre Home: the year first, Today, four cards, every one opening
   const h = fn('async function viewTcHome(');
   assert.match(h, /need\('Planned today', D\.today\.planned/);
   assert.match(h, /need\('This week', D\.today\.week/);
-  for (const label of ['Delegates', 'Client companies', 'New clients', 'Countries']) assert.match(h, new RegExp(`<span>${label}</span>`), label);
+  for (const label of ['Trained', 'Client companies', 'New clients', 'Countries']) assert.match(h, new RegExp(`<span>${label}</span>`), label);
   assert.doesNotMatch(h, /Overdue/, 'no overdue figure on Home');
 });
 
 test('Companies, the company page, Next contacts and People and access are built from Intake\'s own parts', () => {
   const list = fn('function tcDrawCompanies(');
   for (const part of ['cPoolFrame(', 'cPoolFilters(', 'cPoolSelect(', 'cPoolRows(']) assert.ok(list.includes(part), part);
-  for (const f of ["'Status'", "'Area'", "'Country'", "'Person in charge'", "'Client'"]) assert.ok(list.includes(f), f);
+  // his pick 06.11.2026 "Remove from the list": no status filter on the list; it stays on the company page
+  assert.ok(!list.includes("box('status'"));
+  for (const f of ["'Area'", "'Country'", "'Person in charge'", "'Client'"]) assert.ok(list.includes(f), f);
   // the owner 26.10.2026, "B but with filters": Mine or All, every filter behind one Filters button, no status chart
   assert.match(list, /band: tcAddnStrip\(\),/, 'no status chart: the band holds only the approvers New additions strip (29.10.2026)');
   assert.match(list, /onclick="tcFilter\('pic','me'\)">Mine <b>/);
