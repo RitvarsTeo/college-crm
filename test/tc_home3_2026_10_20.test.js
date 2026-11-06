@@ -191,12 +191,12 @@ test('the screens: the menu, Home in the Academy Home\'s parts, nothing reads as
   assert.match(fn('function tcSpark('), /class="tc-spark-line"/);
   assert.match(APP, /@media \(min-width:1101px\)\{ html\.ui-c \.tc-home \.kb-top\{grid-template-columns:minmax\(0,1\.3fr\) minmax\(0,1fr\)\} \}/, 'the donut as big as in the picture, one column on a phone');
   const cards = fn('function tcBookCards(');
-  for (const part of ['Delegates ${Number(Y)}', 'Client companies that trained in ${Number(Y)}', 'of all companies that ever trained', 'where our companies are', 'tcGoYear(${Number(r.year)})', 'href="#/tc/clients"']) assert.ok(cards.includes(part), part);
+  for (const part of ['Trained ${Number(Y)}', 'Client companies that trained in ${Number(Y)}', 'of all companies that ever trained', 'where our companies are', 'tcGoYear(${Number(r.year)})', 'href="#/tc/clients"']) assert.ok(cards.includes(part), part);
   const book = fn('async function viewTcBook(');
   assert.match(book, /\$\{tcBookCards\(B\)\}/);
   for (const part of ["'All'", "'Mine'", "['TC', 'ENERGY', 'OPITO', 'PROJECTS']", 'Welcome back', 'Plan a call', 'tcBigRows(rows, B.biggest.top, { pic: true })']) assert.ok(book.includes(part), part);
   const co = fn('function tcDrawCompany(');
-  for (const part of ['Delegates per year', 'since 2020', 'Courses they take', 'Information to send', 'Mark sent']) assert.ok(co.includes(part), part);
+  for (const part of ['Trained per year', 'since 2020', 'Courses they take', 'Information to send', 'Mark sent']) assert.ok(co.includes(part), part);
   assert.match(fn('async function tcInfoSent('), /\/info-sent`, \{\}\)/);
   const help = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'help.json'), 'utf8'));
   for (const id of ['tc-home-year', 'tc-client-book']) assert.ok(help.tc.faq.some((f) => f.id === id), 'Help: ' + id);

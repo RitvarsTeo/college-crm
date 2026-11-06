@@ -82,3 +82,12 @@ test('06.11 his pick "Drop no course yet": a company with no course shows nothin
   const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
   assert.ok(!app.includes("no course yet"), "the rows; the Last course filter keeps its option No course yet");
 });
+
+test('06.11 his picks: no status mark or status filter on the Companies list (the company page keeps it); "trained", not "delegates"', () => {
+  const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
+  assert.ok(!app.includes('<span class="p-stage">${esc(st(c))}</span>'));
+  assert.ok(!app.includes("box('status', 'Status'"));
+  assert.match(app, /<p>\$\{esc\(tcStatus\(c\.status\)\.label\)\}/, 'the company page keeps the status');
+  assert.match(app, /const tcDelegates = \(n\) => `\$\{Number\(n\)\} trained`;/);
+  for (const t of ['<span>Delegates</span>', '<h2>Delegates by year</h2>', '<h3>Delegates per year</h3>', '<th>Delegates</th>']) assert.ok(!app.includes(t), t);
+});
