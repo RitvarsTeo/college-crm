@@ -5286,6 +5286,11 @@ function cInboxAge(iso) {
   const day = cDay(iso), w = cWeekStarts();
   return day >= w.today ? 'today' : day >= w.mon ? 'week' : day >= w.lastMon ? 'lastweek' : 'older';
 }
+// THE WEEK FILTER (the owner, 09.11.2026: "Filters with this week, last week, older. And handled switch"): the same three
+// weeks on the waiting cards (by arrival) and on the handled ones (by the day they were handled); '' = all
+const C_IB_WEEKS = [['this', 'This week'], ['last', 'Last week'], ['older', 'Older']];
+const cInboxWeek = (iso) => ({ today: 'this', week: 'this', lastweek: 'last', older: 'older' })[cInboxAge(iso)];
+function cInboxWeekPick(v) { C_IP.week = v || ''; C_IP.olderLimit = 0; if (C_IP.handled && C_IP.show === 'new') cInboxHandled(); else cInboxPool(); }
 // how long ago, as a person says it: "10 min", "3 h", "2 d"
 const cAgo = (iso) => { const m = Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 60000)); return m < 60 ? `${m} min` : m < 1440 ? `${Math.round(m / 60)} h` : `${Math.round(m / 1440)} d`; };
 // Show more / Show original on an email card (cInboxPool's msgHtml): the card's own classes, no redraw, no data
@@ -5316,7 +5321,8 @@ function cCallsToday(calls, line) {
 }
 function cInboxPool() {
   const D = C_IPD; if (!D) return;
-  const ok = (r) => (!C_IP.channel || r.channel === C_IP.channel) && (!C_IP.kind || r.senderKind === C_IP.kind) && cInLine(r, C_IP.line);
+  const ok = (r) => (!C_IP.week || cInboxWeek(r.received_at) === C_IP.week) && (!C_IP.channel || r.channel === C_IP.channel)
+    && (!C_IP.kind || r.senderKind === C_IP.kind) && cInLine(r, C_IP.line);
   const rows = D.rows.filter(ok);
   const AGES = [['today', 'Today', 'today'], ['week', 'Earlier this week', 'yesterday'], ['lastweek', 'Last week', 'week'], ['older', 'Before last week', 'older']];
   const cols = AGES.map(([id, label, tone]) => ({ id, label, n: rows.filter((r) => cInboxAge(r.received_at) === id).length, tone: 'age-' + tone }));
@@ -5376,11 +5382,12 @@ function cInboxPool() {
     act: live ? cInboxSwitch(false) : '',
     band: cPoolBand('Inbox', cols, C_IP.col, 'cInboxPick'),
     filters: cPoolFilters('the inbox', [
+      cPoolSelect('Week', C_IP.week || '', C_IB_WEEKS, 'cInboxWeekPick(this.value)'),
       cPoolSelect('Source', C_IP.channel, chans, 'C_IP.channel=this.value;cInboxPool()'),   // Admissions 05.10: filter by source
       cPoolSelect('Kind', C_IP.kind, C_IP_KIND, 'C_IP.kind=this.value;cInboxPool()'),
       // Q94: the calls of one line, or all; the person's own line is the default
       cPoolSelect('Line', C_IP.line || '', cLines().map(([k, m]) => [k, m.label || m.role]), 'cInboxLine(this.value)')],
-      C_IP.channel || C_IP.kind ? "C_IP.channel='';C_IP.kind='';cInboxPool()" : ''),
+      C_IP.channel || C_IP.kind || C_IP.week ? "C_IP.channel='';C_IP.kind='';C_IP.week='';cInboxPool()" : ''),
     body: D.receipt + (live && D.callsToday ? cCallsToday(D.callsToday, C_IP.line) : '') + board,
   });
   // the first field of the open card's form: the name when it asks for one, else the programme
@@ -8950,9 +8957,17 @@ function cInboxSwitch(handled) {
   return `<div class="c-seg p-view" role="group" aria-label="Show"><button aria-pressed="${!handled}" onclick="C_IP.handled=false;viewLeadsC()">Waiting</button><button aria-pressed="${handled}" onclick="C_IP.handled=true;viewLeadsC()">Handled</button></div>`;
 }
 async function cInboxHandled() {
-  const D = await api('/api/intake/handled');
-  const rows = (D.rows || []).filter((r) => cInLine(r, C_IP.line));
-  const cols = [['this', 'This week', 'today'], ['last', 'Last week', 'week']].map(([id, label, tone]) => ({ id, label, tone: 'age-' + tone, n: rows.filter((r) => r.week === id).length }));
+  // Older = handled before last week, in the Year picker's years, 300 at a time ("Show more")
+  const older = !C_IP.week || C_IP.week === 'older';
+  const limit = C_IP.olderLimit || 300;
+  const yq = cScopeQs();
+  const D = await api('/api/intake/handled' + (older ? `?older=1&limit=${limit}${yq ? '&' + yq : ''}` : ''));
+  const all = (D.rows || []).filter((r) => cInLine(r, C_IP.line) && (!C_IP.channel || r.channel === C_IP.channel));
+  const rows = all.filter((r) => !C_IP.week || r.week === C_IP.week);
+  const loadedOlder = (D.rows || []).filter((r) => r.week === 'older').length;
+  const more = older && Number(D.olderTotal || 0) > loadedOlder;
+  const cols = [['this', 'This week', 'today'], ['last', 'Last week', 'week'], ['older', 'Older', 'older']]
+    .map(([id, label, tone]) => ({ id, label, tone: 'age-' + tone, n: rows.filter((r) => r.week === id).length }));
   const cardName = (r) => esc(r.contact_name || r.contact_handle || '') || cTelLink({ phone: r.contact_phone }) || 'Unknown';
   const what = (r) => r.state === 'archived' ? 'Set aside · ' + esc(r.archive_reason || '') : r.automatic ? 'Added to their record automatically' : 'Made a lead';
   const card = (r) => `<div class="c-jp row ib-card c-rail${r.state === 'archived' ? '' : ' c-rail-due'}" data-id="${Number(r.id)}">
@@ -8963,12 +8978,19 @@ async function cInboxHandled() {
       <div class="ib-acts">${r.state === 'archived'
         ? `<button class="btn sm" onclick="cBringBack(${Number(r.id)}, this)">Bring back</button>`
         : r.person_id ? `<a class="btn sm" href="#/person/${esc(encodeURIComponent(r.person_id))}">Open</a>` : ''}</div></div>`;
+  const moreBtn = (c) => (c.id === 'older' && more ? `<button type="button" class="btn sm ghost" onclick="C_IP.olderLimit=${Number(limit + 300)};cInboxHandled()">Show more</button>` : '');
+  const shown = cols.filter((c) => !C_IP.week || c.id === C_IP.week);
   const board = rows.length
-    ? `<div class="c-cols ib-board" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr)">${cols.map((c, i) => `<div class="c-col ib-col"><h3><span class="c-jn">${i + 1}</span>${esc(c.label)}<b>${c.n}</b></h3>
-      <div class="c-drop">${rows.filter((r) => r.week === c.id).map(card).join('') || '<div class="c-empty">Nothing here.</div>'}</div></div>`).join('')}</div>`
-    : '<div class="c-sheet"><div class="c-empty">Nothing handled this week or last week.</div></div>';
-  $('#view').innerHTML = cPoolFrame({ title: 'Inbox', act: cInboxSwitch(true), band: cPoolBand('Inbox', cols, null, 'cInboxNoPick'),
-    filters: cPoolFilters('the inbox', [cPoolSelect('Line', C_IP.line || '', cLines().map(([k, m]) => [k, m.label || m.role]), 'cInboxLine(this.value)')], ''),
+    ? `<div class="c-cols ib-board" style="grid-template-columns:${shown.map(() => 'minmax(0,1fr)').join(' ')}">${shown.map((c, i) => `<div class="c-col ib-col"><h3><span class="c-jn">${i + 1}</span>${esc(c.label)}<b>${c.n}${c.id === 'older' && more ? '+' : ''}</b></h3>
+      <div class="c-drop">${rows.filter((r) => r.week === c.id).map(card).join('') || '<div class="c-empty">Nothing here.</div>'}${moreBtn(c)}</div></div>`).join('')}</div>`
+    : '<div class="c-sheet"><div class="c-empty">Nothing handled here.</div></div>';
+  const chans = [...new Set((D.rows || []).map((r) => r.channel))].sort().map((c) => [c, channelLabel(c)]);
+  $('#view').innerHTML = cPoolFrame({ title: 'Inbox', act: cInboxSwitch(true), band: cPoolBand('Inbox', shown, null, 'cInboxNoPick'),
+    filters: cPoolFilters('the inbox', [
+      cPoolSelect('Week', C_IP.week || '', C_IB_WEEKS, 'cInboxWeekPick(this.value)'),
+      cPoolSelect('Source', C_IP.channel, chans, 'C_IP.channel=this.value;cInboxHandled()'),
+      cPoolSelect('Line', C_IP.line || '', cLines().map(([k, m]) => [k, m.label || m.role]), 'cInboxLine(this.value)')],
+      C_IP.channel || C_IP.week ? "C_IP.channel='';C_IP.week='';C_IP.olderLimit=0;cInboxHandled()" : ''),
     body: board });
   cPoolWire();
 }

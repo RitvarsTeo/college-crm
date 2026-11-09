@@ -136,7 +136,7 @@ test('the Inbox on a phone: Today open, the other days folded to rows with their
     const ctx = { window: mq(phone), Date: FixedDate, C_IP: { col: null, channel: '', kind: '', show: 'new', open: 'today', ...ip }, C_LOPEN: null, cTodayIso: () => '2026-10-07', cDay: (iso) => String(iso).slice(0, 10),
       C_IPD: { rows, receipt: '', val: () => '', form: () => '' }, channelLabel: (c) => c, cTelLink: () => '', fmtDateTime: (iso) => iso, cCallLine: (b) => b, esc: (s) => String(s ?? ''),
       cPoolFrame: (o) => o.body, cPoolBand: () => '', cPoolSelect: () => '', cPoolFilters: () => '', $: () => view, cPoolWire() {}, cPoolOpened() {} };
-    vm.runInNewContext([line('const cPhone = '), line('const C_IP_KIND = '), fn('function cWeekStarts() {'), fn('function cInboxSwitch(handled) {'), line('const C_SRC_COLOUR = '), fn('function cInboxAge(iso) {'), line('const cAgo = '), line('const C_ST = '), line('const C_ST_RAIL = '), fn('function cStateLine('),
+    vm.runInNewContext([line('const cPhone = '), line('const C_IP_KIND = '), fn('function cWeekStarts() {'), fn('function cInboxSwitch(handled) {'), line('const C_SRC_COLOUR = '), fn('function cInboxAge(iso) {'), line('const C_IB_WEEKS = '), line('const cInboxWeek = '), line('const cAgo = '), line('const C_ST = '), line('const C_ST_RAIL = '), fn('function cStateLine('),
       'var CFG = globalThis.CFG || {};', (FOLD + fn('function cInboxPool() {')), fn('function cInboxPick('), fn('function cInboxTap('), 'cInboxPool(); this.pick = cInboxPick; this.IP = () => C_IP;'].join('\n'), ctx);
     return { html: view.innerHTML, ctx };
   };

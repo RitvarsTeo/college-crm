@@ -2312,7 +2312,10 @@ export const handle = async (req, res) => {
     }
 
     // Handled this week and last week (the owner's pick C, 09.11.2026): src/intake.js listHandled
-    if (req.method === 'GET' && p === '/api/intake/handled') return json(res, 200, await listHandled(db));
+    if (req.method === 'GET' && p === '/api/intake/handled') {
+      return json(res, 200, await listHandled(db, { older: url.searchParams.get('older') === '1', ranges: scopeRange(url),
+        limit: url.searchParams.get('limit') }));
+    }
 
     if (req.method === 'POST' && p === '/api/intake/demo') {
       const now = Date.now();

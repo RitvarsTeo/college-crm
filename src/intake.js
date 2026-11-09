@@ -549,18 +549,27 @@ function callView(c, menu) {
 // week? when the week changes, the leads disappear"). The Inbox cards somebody dealt with since last Monday (Riga), newest first: made a
 // lead, set aside (with its reason), or added to a person's record automatically when it arrived. What a filter took out
 // as noise (state filtered) is not here. Each row says what, who and when; nothing here is counted anywhere else.
-export async function listHandled(db, { now = new Date() } = {}) {
+export async function listHandled(db, { now = new Date(), older = false, ranges = null, limit = 300 } = {}) {
   const [y, m, d] = localDate(now).split('-').map(Number);
   const dow = (new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 6) % 7;   // 0 = Monday
   const thisWeek = localMidnight(y, m, d - dow), lastWeek = localMidnight(y, m, d - dow - 7);
   // a phone card's body names its line (the Line filter reads it, as on the waiting cards)
-  const rows = await db.prepare(`SELECT i.id, i.channel, i.contact_name, i.contact_handle, i.contact_phone, i.state, i.archive_reason,
+  const COLS = `i.id, i.channel, i.contact_name, i.contact_handle, i.contact_phone, i.state, i.archive_reason,
       i.processed_by, i.processed_at, i.received_at, i.person_id, pe.name AS person_name,
-      CASE WHEN i.channel = 'phone' THEN i.body END AS body
-    FROM inbound i LEFT JOIN people pe ON pe.id = i.person_id
-    WHERE i.state IN ('qualified', 'archived') AND i.processed_at >= ? ORDER BY i.processed_at DESC, i.id DESC`).all(lastWeek);
-  return { thisWeek, lastWeek, rows: rows.map((r) => ({ ...r, week: r.processed_at >= thisWeek ? 'this' : 'last',
-    automatic: r.processed_by === 'machine' })) };
+      CASE WHEN i.channel = 'phone' THEN i.body END AS body`;
+  const view = (week) => (r) => ({ ...r, week: week || (r.processed_at >= thisWeek ? 'this' : 'last'), automatic: r.processed_by === 'machine' });
+  const rows = (await db.prepare(`SELECT ${COLS} FROM inbound i LEFT JOIN people pe ON pe.id = i.person_id
+    WHERE i.state IN ('qualified', 'archived') AND i.processed_at >= ? ORDER BY i.processed_at DESC, i.id DESC`).all(lastWeek)).map(view());
+  if (!older) return { thisWeek, lastWeek, rows };
+  // OLDER (the owner, 09.11.2026: "Filters with this week, last week, older"): handled before last week, within the Year
+  // picker's years (on the day it was handled), newest first, `limit` at a time; olderTotal is how many there are
+  const [inRx, rxArgs] = ranges ? rangesSql('i.processed_at', ranges) : ['1 = 1', []];
+  const where = `i.state IN ('qualified', 'archived') AND i.processed_at < ? AND ${inRx}`;
+  const n = Math.max(1, Math.min(2000, Number(limit) || 300));
+  const old = (await db.prepare(`SELECT ${COLS} FROM inbound i LEFT JOIN people pe ON pe.id = i.person_id WHERE ${where}
+    ORDER BY i.processed_at DESC, i.id DESC LIMIT ${n}`).all(lastWeek, ...rxArgs)).map(view('older'));
+  const total = await db.prepare(`SELECT COUNT(*) AS n FROM inbound i WHERE ${where}`).get(lastWeek, ...rxArgs);
+  return { thisWeek, lastWeek, rows: [...rows, ...old], olderTotal: Number(total.n) };
 }
 
 export async function callsTodayFromPeople(db, { now = new Date() } = {}) {

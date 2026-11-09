@@ -75,6 +75,25 @@ test('Handled: this week and last week, Monday to Sunday in Riga; what, who and 
   assert.equal(h.rows.find((r) => r.channel === 'gmail').body ?? null, null, 'an email card sends no text');
 });
 
+test('Older, when the Week filter asks for it: handled before last week, in the Year picker\'s years, a page at a time', async () => {
+  const db = await seeded();
+  const { yearRanges } = await import('../src/yearscope.js');
+  const h = await listHandled(db, { now: NOW, older: true, ranges: yearRanges([2026]) });
+  const old = h.rows.filter((r) => r.week === 'older');
+  assert.deepEqual(old.map((r) => [r.archive_reason, r.processed_by]), [['Other', 'Ieva']]);
+  assert.equal(h.olderTotal, 1);
+  assert.equal(h.rows.filter((r) => r.week !== 'older').length, 5, 'this week and last week are still there');
+  assert.equal((await listHandled(db, { now: NOW, older: true, ranges: yearRanges([2025]) })).olderTotal, 0, 'another year: none');
+  const one = await listHandled(db, { now: NOW, older: true, limit: 1 });
+  assert.equal(one.rows.filter((r) => r.week === 'older').length, 1);
+  assert.equal((await listHandled(db, { now: NOW })).olderTotal, undefined, 'not asked: not read');
+  const view = fn('async function cInboxHandled() {');
+  assert.match(view, /cPoolSelect\('Week', C_IP\.week \|\| '', C_IB_WEEKS, 'cInboxWeekPick\(this\.value\)'\)/, 'the Week filter on Handled too');
+  assert.match(view, /\['older', 'Older', 'older'\]/);
+  assert.match(view, />Show more<\/button>/);
+  assert.match(APP, /const C_IB_WEEKS = \[\['this', 'This week'\], \['last', 'Last week'\], \['older', 'Older'\]\];/);
+});
+
 test('the columns: Today · Earlier this week · Last week · Before last week, by the calendar week, on a Monday and a Thursday', () => {
   const run = (today) => {
     const ctx = { cTodayIso: () => today, cDay: (iso) => String(iso).slice(0, 10) };
@@ -92,7 +111,7 @@ test('the columns: Today · Earlier this week · Last week · Before last week, 
 
 test('the Handled card says what happened, who and when, with Open or Bring back; the switch sits on the waiting Inbox only', () => {
   const view = fn('async function cInboxHandled() {');
-  assert.match(view, /api\('\/api\/intake\/handled'\)/);
+  assert.match(view, /api\('\/api\/intake\/handled' \+/);
   for (const w of ["'Set aside · '", "'Added to their record automatically'", "'Made a lead'", 'Bring back</button>', '>Open</a>', "r.automatic ? 'Intake' : (r.processed_by || '')", 'fmtDateTime(r.processed_at)'])
     assert.ok(view.includes(w), w);
   assert.match(view, /\['this', 'This week', 'today'\], \['last', 'Last week', 'week'\]/);

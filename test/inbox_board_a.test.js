@@ -41,7 +41,7 @@ function board(ip = {}, { rows = ROWS, open = null, show = 'new' } = {}) {
     cPoolFilters: (name, boxes, clear) => `<filters ${name} clear="${clear}">${boxes.join('')}</filters>`,
     $: (q) => (q === '#qInterest' ? { focus() {} } : view), view, cPoolWire: () => {}, cPoolOpened: () => {},
   };
-  vm.runInNewContext([line('const cPhone = '), line('const C_IP_KIND = '), fnBody('function cWeekStarts() {'), fnBody('function cInboxSwitch(handled) {'), line('const C_SRC_COLOUR = '), fnBody('function cInboxAge(iso) {'), line('const cAgo = '), line('const C_ST = '), line('const C_ST_RAIL = '), fnBody('function cStateLine('),
+  vm.runInNewContext([line('const cPhone = '), line('const C_IP_KIND = '), fnBody('function cWeekStarts() {'), fnBody('function cInboxSwitch(handled) {'), line('const C_SRC_COLOUR = '), fnBody('function cInboxAge(iso) {'), line('const C_IB_WEEKS = '), line('const cInboxWeek = '), line('const cAgo = '), line('const C_ST = '), line('const C_ST_RAIL = '), fnBody('function cStateLine('),
     line('const cDdMm = '), line('const C_MARK_SHORT = '), line('const cAsideWhen = '), fnBody('function cMarkCtl('), fnBody('function cAsideChoice('),   // one rule (14.10.2026)
     'var CFG = globalThis.CFG || {};', (FOLD + fnBody('function cInboxPool() {')), 'cInboxPool();'].join('\n'), ctx);
   return ctx;
@@ -109,7 +109,11 @@ test('the action is on the card: "Make a lead" opens the small form, "Set aside"
 
 test('the filter row is Source + Kind, nothing else; a band click narrows to that day; set-aside messages carry no actions', () => {
   const html = board().view.innerHTML;
-  assert.match(html, /<filters the inbox clear=""><select label="Source" value="" n=3><select label="Kind" value="" n=3><select label="Line" value="" n=\d+><\/filters>/);
+  // Week first (the owner, 09.11.2026: "Filters with this week, last week, older"), then Source, Kind, Line
+  assert.match(html, /<filters the inbox clear=""><select label="Week" value="" n=3><select label="Source" value="" n=3><select label="Kind" value="" n=3><select label="Line" value="" n=\d+><\/filters>/);
+  const lastWeek = board({ week: 'last' }).view.innerHTML;
+  assert.deepEqual([...lastWeek.matchAll(/data-id="(\d+)"/g)].map((m) => m[1]), ['5'], 'Last week: only the card that came in last week');
+  assert.match(lastWeek, /clear="C_IP\.channel='';C_IP\.kind='';C_IP\.week='';cInboxPool\(\)"/, 'and Clear clears it');
   assert.doesNotMatch(APP, /C_IP_SHOW|<span>Show<\/span>/, 'no Show dropdown');
   const narrowed = board({ col: 'week' }).view.innerHTML;
   assert.equal((narrowed.match(/<h3><span class="c-jn">/g) || []).length, 1, 'one column');
@@ -119,7 +123,7 @@ test('the filter row is Source + Kind, nothing else; a band click narrows to tha
   // the day the filter empties folds to its strip (08.10.2026, "Build it"): number, name, count, and a click opens it
   assert.match(filtered, /<div class="c-col t-fold c-fold-empty" role="button" tabindex="0"\s+aria-label="Last week: 0, open" onclick="cUnfold\((?:&quot;|")inbox(?:&quot;|"), (?:&quot;|")lastweek(?:&quot;|")\)"[^>]*><span class="c-jn">3<\/span><span class="t-foldl">Last week<\/span><b>0<\/b><\/div>/);
   assert.match(filtered, /grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\) 92px minmax\(0,1fr\)"/);
-  assert.match(filtered, /clear="C_IP\.channel='';C_IP\.kind='';cInboxPool\(\)"/);
+  assert.match(filtered, /clear="C_IP\.channel='';C_IP\.kind='';C_IP\.week='';cInboxPool\(\)"/);
   const aside = board({ show: 'archived' }, { show: 'archived' }).view.innerHTML;
   assert.doesNotMatch(aside, /Make a lead|ib-aside/, 'a message set aside keeps its card, without the actions');
   assert.match(aside, /class="c-jp row ib-card c-rail c-rail-due"[\s\S]*<span class="c-st-w">Set aside<\/span>/, 'its state line says so, on the navy rail (Q69: nothing to do)');

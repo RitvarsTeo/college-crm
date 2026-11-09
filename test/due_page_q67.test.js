@@ -64,7 +64,7 @@ test('RUN the Inbox: calendar weeks on one scale - Today, Earlier this week, Las
     C_IPD: { rows, receipt: '', val: () => '', form: () => '' }, channelLabel: (c) => c, cTelLink: () => '', fmtDateTime: (iso) => iso, cCallLine: (b) => b, esc: (s) => String(s ?? ''),
     cPoolFrame: (o) => o.body, cPoolBand: (name, cols) => { band = cols.map((c) => c.label); return ''; }, cPoolCards: (name, title, cols) => { band = cols.map((c) => c.label); return ''; },
     cPoolSelect: () => '', cPoolFilters: () => '', $: () => view, cPoolWire() {}, cPoolOpened() {} };
-  vm.runInNewContext([line('const cPhone = '), line('const C_IP_KIND = '), fn('function cWeekStarts() {'), fn('function cInboxSwitch(handled) {'), line('const C_SRC_COLOUR = '), fn('function cInboxAge(iso) {'), line('const cAgo = '), line('const C_ST = '), line('const C_ST_RAIL = '), fn('function cStateLine('),
+  vm.runInNewContext([line('const cPhone = '), line('const C_IP_KIND = '), fn('function cWeekStarts() {'), fn('function cInboxSwitch(handled) {'), line('const C_SRC_COLOUR = '), fn('function cInboxAge(iso) {'), line('const C_IB_WEEKS = '), line('const cInboxWeek = '), line('const cAgo = '), line('const C_ST = '), line('const C_ST_RAIL = '), fn('function cStateLine('),
     'var CFG = globalThis.CFG || {};', (FOLD + fn('function cInboxPool() {')), 'cInboxPool();'].join('\n'), ctx);
   const heads = [...view.innerHTML.matchAll(/<h3><span class="c-jn">\d<\/span>([^<]+)<b>(\d+)<\/b><\/h3>/g)].map((m) => [m[1], Number(m[2])]);
   // Wednesday 7 October: Tuesday 6 is earlier this week, Sunday 4 is last week, 20 September before that
