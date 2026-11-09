@@ -4884,6 +4884,7 @@ async function cUnmark(id, btn) {
 
 async function viewLeadsC() {
   if (C_IP.line === undefined) C_IP.line = cLineNow();   // Q94: the person's own line, or the choice they made last
+  if (C_IP.handled && C_IP.show === 'new') return cInboxHandled();
   const d = await api('/api/intake?state=' + C_IP.show);
   const rows = d.rows || [];
   if (C_LOPEN && !rows.some((r) => r.id === C_LOPEN)) C_LOPEN = null;
@@ -5264,17 +5265,26 @@ function cInboxPick(v) {
 function cInboxLine(v) {
   C_IP.line = v || '';
   try { localStorage.setItem(cLineKey(), C_IP.line); } catch (e) { /* private window */ }
-  cInboxPool(); cNavCounts();
+  if (C_IP.handled && C_IP.show === 'new') cInboxHandled(); else cInboxPool();
+  cNavCounts();
 }
 function cInboxTap(id) {
   if (cPhone()) C_IP.open = id;
   cInboxPool();
 }
 const C_IP_KIND = [['possible_student', 'Possible student'], ['current_student', 'Current student'], ['other', 'Other']];
-function cInboxAge(iso) {
-  const day = cDay(iso), today = cTodayIso();
+// CALENDAR WEEKS, MONDAY TO SUNDAY, RIGA (the owner's pick A2, 09.11.2026, on the admissions lead's "when the week changes,
+// the leads disappear"): Today · Earlier this week · Last week · Before last week. A waiting card only moves to the next column as the
+// days pass; it leaves the Inbox when somebody handles it, and then it is under Handled.
+function cWeekStarts() {
+  const today = cTodayIso();
   const back = (n) => new Date(Date.parse(today) - n * 86400000).toISOString().slice(0, 10);
-  return day === today ? 'today' : day === back(1) ? 'yesterday' : day >= back(6) ? 'week' : 'older';
+  const dow = (new Date(today + 'T12:00:00Z').getUTCDay() + 6) % 7;   // 0 = Monday
+  return { today, mon: back(dow), lastMon: back(dow + 7) };
+}
+function cInboxAge(iso) {
+  const day = cDay(iso), w = cWeekStarts();
+  return day >= w.today ? 'today' : day >= w.mon ? 'week' : day >= w.lastMon ? 'lastweek' : 'older';
 }
 // how long ago, as a person says it: "10 min", "3 h", "2 d"
 const cAgo = (iso) => { const m = Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 60000)); return m < 60 ? `${m} min` : m < 1440 ? `${Math.round(m / 60)} h` : `${Math.round(m / 1440)} d`; };
@@ -5308,8 +5318,8 @@ function cInboxPool() {
   const D = C_IPD; if (!D) return;
   const ok = (r) => (!C_IP.channel || r.channel === C_IP.channel) && (!C_IP.kind || r.senderKind === C_IP.kind) && cInLine(r, C_IP.line);
   const rows = D.rows.filter(ok);
-  const AGES = [['today', 'Today'], ['yesterday', 'Yesterday'], ['week', 'Earlier this week'], ['older', 'Older']];
-  const cols = AGES.map(([id, label]) => ({ id, label, n: rows.filter((r) => cInboxAge(r.received_at) === id).length, tone: 'age-' + id }));
+  const AGES = [['today', 'Today', 'today'], ['week', 'Earlier this week', 'yesterday'], ['lastweek', 'Last week', 'week'], ['older', 'Before last week', 'older']];
+  const cols = AGES.map(([id, label, tone]) => ({ id, label, n: rows.filter((r) => cInboxAge(r.received_at) === id).length, tone: 'age-' + tone }));
   // Q78: every channel, always (the inboxSources list from channels.json); a channel on the board that is not in that list is
   // added after it, so no message can ever be left without a way to filter to it
   const fixed = CFG.inboxSources || [];
@@ -5320,8 +5330,6 @@ function cInboxPool() {
   // Email and Phone are the brand's blue and mustard; the rest passed the dataviz check (validate_palette.js, all
   // pairs, light and dark: normal-vision floor >= 15). The word is always on the chip, so colour is never alone.
   // real mail arrives as 'gmail' (the adapter's id, config/channels.json); 'email' is the older and simulated name
-  const C_SRC_COLOUR = { gmail: '#29a8df', email: '#29a8df', website_form: '#1baf7a', phone: '#E0A526', website: '#1baf7a', linkedin: '#7b5bd6', whatsapp: '#008300',
-    facebook: '#a0662a', messenger: '#a0662a', instagram: '#d55181' };
   // AN EMAIL CARD SAYS WHAT THE PERSON NEWLY WROTE (the owner, 16.10.2026: "why emails show up this messy???"). The
   // server sends bodyClean for an email (src/emailtext.js): no quoted thread, signatures, image placeholders or notices.
   // Three lines at rest; Show more opens the rest of the cleaned text, Show original the email exactly as it came
@@ -5365,6 +5373,7 @@ function cInboxPool() {
     : `<div class="c-sheet"><div class="c-empty">${live ? 'Nothing waiting. This queue is clear.' : 'Nothing here.'}</div></div>`;
   $('#view').innerHTML = cPoolFrame({
     title: 'Inbox',
+    act: live ? cInboxSwitch(false) : '',
     band: cPoolBand('Inbox', cols, C_IP.col, 'cInboxPick'),
     filters: cPoolFilters('the inbox', [
       cPoolSelect('Source', C_IP.channel, chans, 'C_IP.channel=this.value;cInboxPool()'),   // Admissions 05.10: filter by source
@@ -8931,6 +8940,39 @@ async function cBringBack(id, btn) {
   catch (e) { if (btn) btn.disabled = false; throw e; }
   await viewLeadsC();
 }
+
+// HANDLED (the owner's pick C, 09.11.2026): Waiting | Handled at the top of the Inbox. Handled = the cards somebody dealt
+// with this week and last week (Monday to Sunday, Riga; src/intake.js listHandled), each saying what happened, who and
+// when, with Open (the person) or Bring back (a card set aside). Filtered noise is not here.
+// one colour per source on an Inbox card (Q73, the owner's pick 07.10.2026); the waiting and the handled cards both read it
+const C_SRC_COLOUR = { gmail: '#29a8df', email: '#29a8df', website_form: '#1baf7a', phone: '#E0A526', website: '#1baf7a', linkedin: '#7b5bd6', whatsapp: '#008300', facebook: '#a0662a', messenger: '#a0662a', instagram: '#d55181' };
+function cInboxSwitch(handled) {
+  return `<div class="c-seg p-view" role="group" aria-label="Show"><button aria-pressed="${!handled}" onclick="C_IP.handled=false;viewLeadsC()">Waiting</button><button aria-pressed="${handled}" onclick="C_IP.handled=true;viewLeadsC()">Handled</button></div>`;
+}
+async function cInboxHandled() {
+  const D = await api('/api/intake/handled');
+  const rows = (D.rows || []).filter((r) => cInLine(r, C_IP.line));
+  const cols = [['this', 'This week', 'today'], ['last', 'Last week', 'week']].map(([id, label, tone]) => ({ id, label, tone: 'age-' + tone, n: rows.filter((r) => r.week === id).length }));
+  const cardName = (r) => esc(r.contact_name || r.contact_handle || '') || cTelLink({ phone: r.contact_phone }) || 'Unknown';
+  const what = (r) => r.state === 'archived' ? 'Set aside · ' + esc(r.archive_reason || '') : r.automatic ? 'Added to their record automatically' : 'Made a lead';
+  const card = (r) => `<div class="c-jp row ib-card c-rail${r.state === 'archived' ? '' : ' c-rail-due'}" data-id="${Number(r.id)}">
+      <div class="ib-top"><b class="c-reach">${cardName(r)}</b></div>
+      <small class="ib-ch" style="--src:${C_SRC_COLOUR[r.channel] || '#8a94a6'}"><i></i>${esc(channelLabel(r.channel))}</small>
+      <div class="ib-msg">${what(r)}</div>
+      <div class="ib-before"><span>${esc(r.automatic ? 'Intake' : (r.processed_by || ''))} · ${esc(fmtDateTime(r.processed_at) || '')}</span></div>
+      <div class="ib-acts">${r.state === 'archived'
+        ? `<button class="btn sm" onclick="cBringBack(${Number(r.id)}, this)">Bring back</button>`
+        : r.person_id ? `<a class="btn sm" href="#/person/${esc(encodeURIComponent(r.person_id))}">Open</a>` : ''}</div></div>`;
+  const board = rows.length
+    ? `<div class="c-cols ib-board" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr)">${cols.map((c, i) => `<div class="c-col ib-col"><h3><span class="c-jn">${i + 1}</span>${esc(c.label)}<b>${c.n}</b></h3>
+      <div class="c-drop">${rows.filter((r) => r.week === c.id).map(card).join('') || '<div class="c-empty">Nothing here.</div>'}</div></div>`).join('')}</div>`
+    : '<div class="c-sheet"><div class="c-empty">Nothing handled this week or last week.</div></div>';
+  $('#view').innerHTML = cPoolFrame({ title: 'Inbox', act: cInboxSwitch(true), band: cPoolBand('Inbox', cols, null, 'cInboxNoPick'),
+    filters: cPoolFilters('the inbox', [cPoolSelect('Line', C_IP.line || '', cLines().map(([k, m]) => [k, m.label || m.role]), 'cInboxLine(this.value)')], ''),
+    body: board });
+  cPoolWire();
+}
+function cInboxNoPick() {}
 
 // The reason dialog (openArchive, #aReason) went on 14.10.2026: the four reasons are on the card itself (cAsideChoice, cSetAside).
 

@@ -545,6 +545,24 @@ function callView(c, menu) {
 // straight to their profile, so no Inbox card shows it; Laura's 08:54 call looked lost). Today's calls (a Riga day)
 // that were logged on a person, newest first: the call line the phone card shows, plus the person's id and name for the
 // link. Never the number, never the note: only what the Inbox strip shows.
+// HANDLED, THIS WEEK AND LAST WEEK (the owner's pick C, 09.11.2026, on the admissions lead's "how do I see the previous
+// week? when the week changes, the leads disappear"). The Inbox cards somebody dealt with since last Monday (Riga), newest first: made a
+// lead, set aside (with its reason), or added to a person's record automatically when it arrived. What a filter took out
+// as noise (state filtered) is not here. Each row says what, who and when; nothing here is counted anywhere else.
+export async function listHandled(db, { now = new Date() } = {}) {
+  const [y, m, d] = localDate(now).split('-').map(Number);
+  const dow = (new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 6) % 7;   // 0 = Monday
+  const thisWeek = localMidnight(y, m, d - dow), lastWeek = localMidnight(y, m, d - dow - 7);
+  // a phone card's body names its line (the Line filter reads it, as on the waiting cards)
+  const rows = await db.prepare(`SELECT i.id, i.channel, i.contact_name, i.contact_handle, i.contact_phone, i.state, i.archive_reason,
+      i.processed_by, i.processed_at, i.received_at, i.person_id, pe.name AS person_name,
+      CASE WHEN i.channel = 'phone' THEN i.body END AS body
+    FROM inbound i LEFT JOIN people pe ON pe.id = i.person_id
+    WHERE i.state IN ('qualified', 'archived') AND i.processed_at >= ? ORDER BY i.processed_at DESC, i.id DESC`).all(lastWeek);
+  return { thisWeek, lastWeek, rows: rows.map((r) => ({ ...r, week: r.processed_at >= thisWeek ? 'this' : 'last',
+    automatic: r.processed_by === 'machine' })) };
+}
+
 export async function callsTodayFromPeople(db, { now = new Date() } = {}) {
   const menu = Object.values(CFG.phoneMenu || {});
   const day = localDate(now);

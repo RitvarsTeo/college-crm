@@ -23,7 +23,7 @@ const ROWS = [
   msg(3, 'marta.celmina', 'instagram', '2026-10-05T13:00:00Z', 'How long is the navigation programme?', { aged: true }),
   msg(4, 'Liene Kalna', 'gmail', '2026-10-05T08:20:00Z', 'I am in my group MT OS part time. Could I get a certificate?', { aged: true, senderKind: 'current_student', senderKindWhy: 'writes "my group"' }),
   msg(5, 'Mark Lee', 'website', '2026-10-02T09:10:00Z', 'Is the Engineering programme taught in English?', { aged: true }),
-  msg(6, 'Juris Ozolins', 'gmail', '2026-09-28T10:00:00Z', 'Which course gets me to officer?', { aged: true }),
+  msg(6, 'Juris Ozolins', 'gmail', '2026-09-25T10:00:00Z', 'Which course gets me to officer?', { aged: true }),
 ];
 
 function board(ip = {}, { rows = ROWS, open = null, show = 'new' } = {}) {
@@ -41,7 +41,7 @@ function board(ip = {}, { rows = ROWS, open = null, show = 'new' } = {}) {
     cPoolFilters: (name, boxes, clear) => `<filters ${name} clear="${clear}">${boxes.join('')}</filters>`,
     $: (q) => (q === '#qInterest' ? { focus() {} } : view), view, cPoolWire: () => {}, cPoolOpened: () => {},
   };
-  vm.runInNewContext([line('const cPhone = '), line('const C_IP_KIND = '), fnBody('function cInboxAge(iso) {'), line('const cAgo = '), line('const C_ST = '), line('const C_ST_RAIL = '), fnBody('function cStateLine('),
+  vm.runInNewContext([line('const cPhone = '), line('const C_IP_KIND = '), fnBody('function cWeekStarts() {'), fnBody('function cInboxSwitch(handled) {'), line('const C_SRC_COLOUR = '), fnBody('function cInboxAge(iso) {'), line('const cAgo = '), line('const C_ST = '), line('const C_ST_RAIL = '), fnBody('function cStateLine('),
     line('const cDdMm = '), line('const C_MARK_SHORT = '), line('const cAsideWhen = '), fnBody('function cMarkCtl('), fnBody('function cAsideChoice('),   // one rule (14.10.2026)
     'var CFG = globalThis.CFG || {};', (FOLD + fnBody('function cInboxPool() {')), 'cInboxPool();'].join('\n'), ctx);
   return ctx;
@@ -50,8 +50,9 @@ function board(ip = {}, { rows = ROWS, open = null, show = 'new' } = {}) {
 test('four columns by arrival day, in his order, each with its count; the band keeps the same four', () => {
   const html = board().view.innerHTML;
   const heads = [...html.matchAll(/<h3><span class="c-jn">(\d)<\/span>([^<]+)<b>(\d+)<\/b><\/h3>/g)].map((m) => [m[1], m[2], Number(m[3])]);
-  assert.deepEqual(heads, [['1', 'Today', 2], ['2', 'Yesterday', 2], ['3', 'Earlier this week', 1], ['4', 'Older', 1]]);
-  assert.match(html, /<band Inbox on=null pick=cInboxPick>today:2:age-today,yesterday:2:age-yesterday,week:1:age-week,older:1:age-older<\/band>/);
+  // calendar weeks (the owner's pick A2, 09.11.2026): Tuesday 6 October is today, Monday 5 earlier this week, Friday 2 last week
+  assert.deepEqual(heads, [['1', 'Today', 2], ['2', 'Earlier this week', 2], ['3', 'Last week', 1], ['4', 'Before last week', 1]]);
+  assert.match(html, /<band Inbox on=null pick=cInboxPick>today:2:age-today,week:2:age-yesterday,lastweek:1:age-week,older:1:age-older<\/band>/);
   assert.match(html, /grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\) minmax\(0,1fr\) minmax\(0,1fr\)"/, 'no day is empty, so none folds');
   assert.doesNotMatch(html, /New lead|Not relevant|Later/, 'no such columns');
 });
@@ -71,7 +72,7 @@ test('a card: name, the channel, the message, the programme and kind tags, and t
   assert.match(card(3), /<div class="c-st c-st-late" title="[^"]+"><span class="c-st-w">Late<\/span>/);
   assert.doesNotMatch(html, /c-late|c-answer/, 'no chip: the state line says it once');
   assert.match(card(4), /<span class="ib-kind" title="writes &quot;my group&quot;|<span class="ib-kind" title="writes "my group"">Current student<\/span>/);
-  assert.match(card(6), /<div class="c-st c-st-late" title="2026-09-28 10:00"><span class="c-st-w">Late<\/span><span class="c-st-d">· 8 d<\/span><\/div>/);
+  assert.match(card(6), /<div class="c-st c-st-late" title="2026-09-25 10:00"><span class="c-st-w">Late<\/span><span class="c-st-d">· 11 d<\/span><\/div>/);
   assert.match(APP, /class="c-jp row ib-card/, 'the Journey board\'s card');
 });
 
@@ -110,13 +111,13 @@ test('the filter row is Source + Kind, nothing else; a band click narrows to tha
   const html = board().view.innerHTML;
   assert.match(html, /<filters the inbox clear=""><select label="Source" value="" n=3><select label="Kind" value="" n=3><select label="Line" value="" n=\d+><\/filters>/);
   assert.doesNotMatch(APP, /C_IP_SHOW|<span>Show<\/span>/, 'no Show dropdown');
-  const narrowed = board({ col: 'yesterday' }).view.innerHTML;
+  const narrowed = board({ col: 'week' }).view.innerHTML;
   assert.equal((narrowed.match(/<h3><span class="c-jn">/g) || []).length, 1, 'one column');
-  assert.match(narrowed, /Yesterday<b>2<\/b>/);
+  assert.match(narrowed, /Earlier this week<b>2<\/b>/);
   const filtered = board({ channel: 'gmail' }).view.innerHTML;
   assert.deepEqual([...filtered.matchAll(/<h3>[^<]*<span class="c-jn">\d<\/span>([^<]+)<b>(\d+)<\/b>/g)].map((m) => m[2]), ['1', '1', '1']);
   // the day the filter empties folds to its strip (08.10.2026, "Build it"): number, name, count, and a click opens it
-  assert.match(filtered, /<div class="c-col t-fold c-fold-empty" role="button" tabindex="0"\s+aria-label="Earlier this week: 0, open" onclick="cUnfold\((?:&quot;|")inbox(?:&quot;|"), (?:&quot;|")week(?:&quot;|")\)"[^>]*><span class="c-jn">3<\/span><span class="t-foldl">Earlier this week<\/span><b>0<\/b><\/div>/);
+  assert.match(filtered, /<div class="c-col t-fold c-fold-empty" role="button" tabindex="0"\s+aria-label="Last week: 0, open" onclick="cUnfold\((?:&quot;|")inbox(?:&quot;|"), (?:&quot;|")lastweek(?:&quot;|")\)"[^>]*><span class="c-jn">3<\/span><span class="t-foldl">Last week<\/span><b>0<\/b><\/div>/);
   assert.match(filtered, /grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\) 92px minmax\(0,1fr\)"/);
   assert.match(filtered, /clear="C_IP\.channel='';C_IP\.kind='';cInboxPool\(\)"/);
   const aside = board({ show: 'archived' }, { show: 'archived' }).view.innerHTML;
@@ -163,12 +164,12 @@ test('Q73: every real channel id from channels.json has its colour (gmail is Ema
 test('Q82: a click on a folded strip opens that column with exactly the people its count says', () => {
   const B = board({ channel: 'gmail' });
   const before = B.view.innerHTML;
-  assert.match(before, /aria-label="Earlier this week: 0, open"/, 'folded, its count 0');
-  assert.match(before, /<band Inbox[^>]*>[^<]*week:0:age-week/, 'the band says the same 0');
-  B.cUnfold('inbox', 'week');
+  assert.match(before, /aria-label="Last week: 0, open"/, 'folded, its count 0');
+  assert.match(before, /<band Inbox[^>]*>[^<]*lastweek:0:age-week/, 'the band says the same 0');
+  B.cUnfold('inbox', 'lastweek');
   const after = B.view.innerHTML;
-  assert.doesNotMatch(after, /aria-label="Earlier this week: 0, open"/, 'opened');
-  assert.match(after, /<h3><span class="c-jn">3<\/span>Earlier this week<b>0<\/b><button type="button" class="t-foldx"[^>]*cRefold[^>]*>Fold<\/button><\/h3>\s*<div class="c-drop"><div class="c-empty">Nothing here\.<\/div><\/div>/, 'its 0 people');
+  assert.doesNotMatch(after, /aria-label="Last week: 0, open"/, 'opened');
+  assert.match(after, /<h3><span class="c-jn">3<\/span>Last week<b>0<\/b><button type="button" class="t-foldx"[^>]*cRefold[^>]*>Fold<\/button><\/h3>\s*<div class="c-drop"><div class="c-empty">Nothing here\.<\/div><\/div>/, 'its 0 people');
   // a column with people never folds, so every strip's count is 0 and every card stays one click away
   const all = board().view.innerHTML;
   assert.doesNotMatch(all, /c-fold-empty/, 'no empty day, no strip');

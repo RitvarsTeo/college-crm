@@ -16,7 +16,7 @@ import * as gmailB from '../lib/gmail.js';
 import * as notify from '../lib/notify.js';
 import * as sheetB from '../lib/sheetpull.js';
 import { pullSheet, sheetCounts } from './sheetsync.js';
-import { receive, activePersonFor, IN_TOUCH_STEPS, listInbound, callsTodayFromPeople, messagesFor, recordWhatsAppEcho, qualify, archive, setMark, removeMark, setCallNote, withCallNotes, bringBack, funnel, agedCount, handoffToSis, ownerFor, notifiedFor, handoverGap, canReach, surfaceAt, waitingFor, waitingByRole } from './intake.js';
+import { receive, activePersonFor, IN_TOUCH_STEPS, listInbound, listHandled, callsTodayFromPeople, messagesFor, recordWhatsAppEcho, qualify, archive, setMark, removeMark, setCallNote, withCallNotes, bringBack, funnel, agedCount, handoffToSis, ownerFor, notifiedFor, handoverGap, canReach, surfaceAt, waitingFor, waitingByRole } from './intake.js';
 import { replaceN3Directory, n3Status, n3Names } from './n3dir.js';
 import { readScreenshot, readKind, readBody, readPath, saveFeedback, listFeedback, getScreenshot, setHandled, BadScreenshot, helpOpened, helpCounts } from './feedback.js';
 import { findMatches as matchPeople, duplicateCheck, onePersonFor } from './identity.js';
@@ -2286,9 +2286,12 @@ export const handle = async (req, res) => {
     if (req.method === 'GET' && p === '/api/intake') {
       const state = url.searchParams.get('state') || 'new';
       const ranges = scopeRange(url);   // the Inbox by the MESSAGE's arrival (Q45), a set of years (Q59)
-      const rows = await listInbound(db, { state, ranges });
+      // A WAITING MESSAGE IS NEVER HIDDEN BY THE YEAR (the owner, 09.11.2026, B): one from December still waits in January,
+      // whatever the Year picker says; the picker scopes what was handled, set aside or filtered
+      const rows = await listInbound(db, { state, ranges: state === 'new' ? null : ranges });
       const [inRx, rxArgs] = ranges ? rangesSql('received_at', ranges) : ['1 = 1', []];
-      const inState = async (st) => (await db.prepare(`SELECT COUNT(*) n FROM inbound WHERE state = ? AND ${inRx}`).get(st, ...rxArgs)).n;
+      const inState = async (st) => (await db.prepare(`SELECT COUNT(*) n FROM inbound WHERE state = ? AND ${st === 'new' ? '1 = 1' : inRx}`)
+        .get(st, ...(st === 'new' ? [] : rxArgs))).n;
       return json(res, 200, {
         rows, state,
         counts: {
@@ -2296,7 +2299,7 @@ export const handle = async (req, res) => {
           qualified: await inState('qualified'),
           archived: await inState('archived'),
           filtered: await inState('filtered'),
-          aged: await agedCount(db, undefined, ranges),
+          aged: await agedCount(db),   // waiting ones, every year (B, 09.11.2026)
         },
         levels: CONFIG.qualification.levels,
         routing: CONFIG.routing,
@@ -2307,6 +2310,9 @@ export const handle = async (req, res) => {
         callsToday: state === 'new' ? await callsTodayFromPeople(db) : [],
       });
     }
+
+    // Handled this week and last week (the owner's pick C, 09.11.2026): src/intake.js listHandled
+    if (req.method === 'GET' && p === '/api/intake/handled') return json(res, 200, await listHandled(db));
 
     if (req.method === 'POST' && p === '/api/intake/demo') {
       const now = Date.now();

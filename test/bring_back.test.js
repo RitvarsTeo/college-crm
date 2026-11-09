@@ -200,7 +200,7 @@ function board(show) {
   };
   // + Q66's state line (merged with this in rc/2026-10-07): the card's foot is drawn by cStateLine
   vm.runInNewContext([line('const cPhone = '), line('const C_ST = '), line('const C_ST_RAIL = '), fnBody('function cStateLine(st, detail, act, title) {'), line('const C_IP_KIND = '),
-    line('const cDdMm = '), line('const C_MARK_SHORT = '), line('const cAsideWhen = '), fnBody('function cMarkCtl('), fnBody('function cAsideChoice('), fnBody('function cInboxAge(iso) {'), line('const cAgo = '), 'var CFG = globalThis.CFG || {};', (FOLD + fnBody('function cInboxPool() {')), 'cInboxPool();'].join('\n'), ctx);
+    line('const cDdMm = '), line('const C_MARK_SHORT = '), line('const cAsideWhen = '), fnBody('function cMarkCtl('), fnBody('function cAsideChoice('), fnBody('function cWeekStarts() {'), fnBody('function cInboxSwitch(handled) {'), line('const C_SRC_COLOUR = '), fnBody('function cInboxAge(iso) {'), line('const cAgo = '), 'var CFG = globalThis.CFG || {};', (FOLD + fnBody('function cInboxPool() {')), 'cInboxPool();'].join('\n'), ctx);
   return view.innerHTML;
 }
 

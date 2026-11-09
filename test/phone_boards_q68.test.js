@@ -136,17 +136,17 @@ test('the Inbox on a phone: Today open, the other days folded to rows with their
     const ctx = { window: mq(phone), Date: FixedDate, C_IP: { col: null, channel: '', kind: '', show: 'new', open: 'today', ...ip }, C_LOPEN: null, cTodayIso: () => '2026-10-07', cDay: (iso) => String(iso).slice(0, 10),
       C_IPD: { rows, receipt: '', val: () => '', form: () => '' }, channelLabel: (c) => c, cTelLink: () => '', fmtDateTime: (iso) => iso, cCallLine: (b) => b, esc: (s) => String(s ?? ''),
       cPoolFrame: (o) => o.body, cPoolBand: () => '', cPoolSelect: () => '', cPoolFilters: () => '', $: () => view, cPoolWire() {}, cPoolOpened() {} };
-    vm.runInNewContext([line('const cPhone = '), line('const C_IP_KIND = '), fn('function cInboxAge(iso) {'), line('const cAgo = '), line('const C_ST = '), line('const C_ST_RAIL = '), fn('function cStateLine('),
+    vm.runInNewContext([line('const cPhone = '), line('const C_IP_KIND = '), fn('function cWeekStarts() {'), fn('function cInboxSwitch(handled) {'), line('const C_SRC_COLOUR = '), fn('function cInboxAge(iso) {'), line('const cAgo = '), line('const C_ST = '), line('const C_ST_RAIL = '), fn('function cStateLine('),
       'var CFG = globalThis.CFG || {};', (FOLD + fn('function cInboxPool() {')), fn('function cInboxPick('), fn('function cInboxTap('), 'cInboxPool(); this.pick = cInboxPick; this.IP = () => C_IP;'].join('\n'), ctx);
     return { html: view.innerHTML, ctx };
   };
   const p = run(true);
   assert.match(p.html, /<h3><span class="c-jn">1<\/span>Today<b>1<\/b><\/h3>/, 'Today open');
   const rowsF = [...p.html.matchAll(/<div class="c-col ib-col is-fold"><button type="button" class="c-foldrow" onclick="cInboxTap\('(\w+)'\)"><span class="c-jn">\d<\/span>([^<]+)<b>(\d+)<\/b><\/button><\/div>/g)].map((m) => [m[1], m[2], Number(m[3])]);
-  assert.deepEqual(rowsF, [['yesterday', 'Yesterday', 1], ['week', 'Earlier this week', 1], ['older', 'Older', 1]]);
+  assert.deepEqual(rowsF, [['week', 'Earlier this week', 1], ['lastweek', 'Last week', 1], ['older', 'Before last week', 1]]);   // calendar weeks, A2 09.11.2026
   assert.doesNotMatch(p.html, /data-id="2"/, 'no card in a folded day');
   const o = run(true, { open: 'older' });
-  assert.match(o.html, /<h3><span class="c-jn">4<\/span>Older<b>1<\/b><\/h3>/); assert.match(o.html, /data-id="4"/);
+  assert.match(o.html, /<h3><span class="c-jn">4<\/span>Before last week<b>1<\/b><\/h3>/); assert.match(o.html, /data-id="4"/);
   p.ctx.pick('week'); assert.equal(p.ctx.IP().open, 'week'); assert.equal(p.ctx.IP().col, null, 'a bar opens the day, it does not narrow');
   const w = run(false);
   assert.doesNotMatch(w.html, /is-fold/, 'wide: four columns of cards, as before');

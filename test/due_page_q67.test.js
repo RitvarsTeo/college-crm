@@ -54,7 +54,8 @@ test('RUN the Due page: its title and its band are "Due"; the sections keep thei
   assert.deepEqual(JSON.parse(JSON.stringify(cards[0])), ['Due', 'Needs you', ['Overdue', 'Due today', 'Coming up', 'Draft in the SIS', 'No next step']], 'the band is named for the page; its groups, Draft in the SIS since 26.10');
 });
 
-test('RUN the Inbox: short day words on one scale - Today, Yesterday, Earlier this week, Older - in the heads and the band', () => {
+// 09.11.2026, the owner's pick A2 (Aigars: "when the week changes, the leads disappear"): calendar weeks, Monday to Sunday
+test('RUN the Inbox: calendar weeks on one scale - Today, Earlier this week, Last week, Before last week - in the heads and the band', () => {
   class FixedDate extends Date { static now() { return Date.parse('2026-10-07T15:00:00Z'); } }
   const msg = (id, at) => ({ id, contact_name: 'P' + id, channel: 'gmail', received_at: at, body: 'Hello', fields: [], state: 'new', senderKind: 'possible_student' });
   const rows = [msg(1, '2026-10-07T12:00:00Z'), msg(2, '2026-10-06T12:00:00Z'), msg(3, '2026-10-04T12:00:00Z'), msg(4, '2026-09-20T12:00:00Z')];
@@ -63,11 +64,12 @@ test('RUN the Inbox: short day words on one scale - Today, Yesterday, Earlier th
     C_IPD: { rows, receipt: '', val: () => '', form: () => '' }, channelLabel: (c) => c, cTelLink: () => '', fmtDateTime: (iso) => iso, cCallLine: (b) => b, esc: (s) => String(s ?? ''),
     cPoolFrame: (o) => o.body, cPoolBand: (name, cols) => { band = cols.map((c) => c.label); return ''; }, cPoolCards: (name, title, cols) => { band = cols.map((c) => c.label); return ''; },
     cPoolSelect: () => '', cPoolFilters: () => '', $: () => view, cPoolWire() {}, cPoolOpened() {} };
-  vm.runInNewContext([line('const cPhone = '), line('const C_IP_KIND = '), fn('function cInboxAge(iso) {'), line('const cAgo = '), line('const C_ST = '), line('const C_ST_RAIL = '), fn('function cStateLine('),
+  vm.runInNewContext([line('const cPhone = '), line('const C_IP_KIND = '), fn('function cWeekStarts() {'), fn('function cInboxSwitch(handled) {'), line('const C_SRC_COLOUR = '), fn('function cInboxAge(iso) {'), line('const cAgo = '), line('const C_ST = '), line('const C_ST_RAIL = '), fn('function cStateLine('),
     'var CFG = globalThis.CFG || {};', (FOLD + fn('function cInboxPool() {')), 'cInboxPool();'].join('\n'), ctx);
   const heads = [...view.innerHTML.matchAll(/<h3><span class="c-jn">\d<\/span>([^<]+)<b>(\d+)<\/b><\/h3>/g)].map((m) => [m[1], Number(m[2])]);
-  assert.deepEqual(heads, [['Today', 1], ['Yesterday', 1], ['Earlier this week', 1], ['Older', 1]]);
-  assert.deepEqual(JSON.parse(JSON.stringify(band)), ['Today', 'Yesterday', 'Earlier this week', 'Older'], 'the band says the same four');
+  // Wednesday 7 October: Tuesday 6 is earlier this week, Sunday 4 is last week, 20 September before that
+  assert.deepEqual(heads, [['Today', 1], ['Earlier this week', 1], ['Last week', 1], ['Before last week', 1]]);
+  assert.deepEqual(JSON.parse(JSON.stringify(band)), ['Today', 'Earlier this week', 'Last week', 'Before last week'], 'the band says the same four');
   assert.doesNotMatch(view.innerHTML, /This week/);
 });
 
@@ -93,6 +95,6 @@ test('no user-facing "Today" names the work page any more, in the app or in the 
   assert.ok(help.howto.filter((h) => h.href === '#/due').every((h) => h.where.startsWith('Due, ')), 'the how-to lines');
   assert.ok(!help.howto.some((h) => /^Today,/.test(h.where)));
   // "Today" that is not the page stays: the Inbox's own column of today's messages, and "Due today"
-  assert.match(APP, /\[\['today', 'Today'\], \['yesterday', 'Yesterday'\], \['week', 'Earlier this week'\], \['older', 'Older'\]\]/);
+  assert.match(APP, /\[\['today', 'Today', 'today'\], \['week', 'Earlier this week', 'yesterday'\], \['lastweek', 'Last week', 'week'\], \['older', 'Before last week', 'older'\]\]/);
   assert.match(APP, /label: 'Due today'/);
 });
