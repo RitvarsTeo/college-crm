@@ -43,6 +43,15 @@
           "value": "SAMEORIGIN"
         }
       ]
+    },
+    {
+      "source": "/api/tc/go/letter/(.*)",
+      "headers": [
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        }
+      ]
     }
   ],
   "functions": {

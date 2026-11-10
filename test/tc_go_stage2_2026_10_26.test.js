@@ -56,13 +56,16 @@ test('the page: tabs, search, Download; no Who answered and no answered totals; 
   const i1 = draw.indexOf('<!-- stage1 -->'), iBack = draw.indexOf('What came back'), i2 = draw.indexOf('<!-- stage2 -->'), iList = draw.indexOf('${tcGoStage2()}'), iShots = draw.indexOf('tcgo-shots');
   assert.ok(i1 > 0 && i1 < iBack && iBack < i2 && i2 < iList && iList < iShots, 'the Stage 1 part, then the Stage 2 part (packs + lists, then the pictures)');
   assert.match(app, /html\.ui-c \.tcfix-list, html\.ui-c #tcS2rows, html\.ui-c \.tcgo-flist\{max-height:min\(520px,60vh\);overflow:auto/);
-  assert.match(draw, /<img src="\/assets\/go-stage2-email\.jpg" alt="The Stage 2 email/);
+  // 10.11.2026 (the owner: "this has to be updated!"): the two letter panels are the live letters, never a stale picture
+  assert.match(draw, /<div class="tcgo-lt"><iframe src="\/api\/tc\/go\/letter\/confirm"/);
+  assert.match(draw, /<div class="tcgo-lt"><iframe src="\/api\/tc\/go\/letter\/invite"/);
+  assert.ok(!draw.includes('go-stage2-email.jpg') && !draw.includes('go-stage2-invite.jpg'));
   assert.match(draw, /<a href="https:\/\/novikontas\.org\/grand-opening" target="_blank" rel="noopener"><img src="\/assets\/go-stage2-landing\.jpg"/);
   assert.match(app, /<div class="tcgo-pack"><b>\$\{esc\(x\.label\)\}<\/b><span>\$\{Number\(x\.n\)\}<\/span>\$\{state\(x\.code\) \? `<small>✓ \$\{esc\(state\(x\.code\)\)\}<\/small>` : ''\}<\/div>/);
   const cfg = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'tc.json'), 'utf8'));
   assert.equal(cfg.grandOpening.stage2.packStatus.default, 'Ready to send');
   const srv = fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8');
-  for (const f of ['go-stage2-email.jpg', 'go-stage2-landing.jpg', 'go-stage1-email.jpg', 'go-stage2-invite.jpg']) {
+  for (const f of ['go-stage2-landing.jpg', 'go-stage1-email.jpg', 'go-building.jpg']) {
     assert.match(srv, new RegExp(`'${f.replace('.', '\.')}': 'image/jpeg'`), f + ' is on the assets allow-list');
     assert.ok(fs.statSync(path.join(ROOT, 'src', 'assets', f)).size < 150000, f + ' stays small');
   }
@@ -76,4 +79,17 @@ test('the page: tabs, search, Download; no Who answered and no answered totals; 
   const gate = server.indexOf('// ------------------------------------------------------- TRAINING CENTRE --');
   for (const route of ["p === '/api/tc/go/stage2' && req.method === 'GET'", "p === '/api/tc/go/stage2.xlsx' && req.method === 'GET'"]) assert.ok(server.indexOf(route) > gate && gate > 0, route);
   assert.match(server, /console\.log\(`tc download: \$\{me \? me\.email \|\| me\.name : 'unknown'\} stage2/);
+});
+
+test('10.11 the live letter panels: /api/tc/go/letter/confirm|invite are the Stage 2 letters as they go out, both dates in full', async () => {
+  const godemo = await import('../src/godemo.js');
+  const inv = godemo.letterPage('invite', { email: 'mc@novikontas.org', name: 'Māris Cīrulis' });
+  assert.match(inv, /Dear Māris,/); assert.match(inv, /Māris Cīrulis<br>Novikontas Academy/); assert.match(inv, /27\.05\.2005 to 27\.05\.2027/);
+  const conf = godemo.letterPage('confirm', null);
+  assert.match(conf, /src="\/assets\/go-building\.jpg"/); assert.match(conf, /27\.05\.2005 to 27\.05\.2027/);
+  assert.equal(godemo.letterPage('new', null), null);
+  const srv = fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8');
+  assert.match(srv, /'x-frame-options': 'SAMEORIGIN'/);
+  const v = JSON.parse(fs.readFileSync(path.join(ROOT, 'vercel.json'), 'utf8'));
+  assert.ok(v.headers.some((h) => h.source === '/api/tc/go/letter/(.*)'));
 });

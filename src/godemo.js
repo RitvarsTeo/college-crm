@@ -61,4 +61,12 @@ export function fileFor(pathname, me = null) {
   const file = FILES.get(rel);
   return file ? { file, type: TYPES[path.extname(file).toLowerCase()] } : null;
 }
+// THE LETTERS ON THE GRAND OPENING PAGE (10.11.2026, the owner on the Stage 2 preview panels: "this has to be updated!"): the
+// panels show the same live letters as the demo, drawn from src/tcs2mail.js on each open, so they never go stale; the building
+// picture comes from /assets. From the viewer's own list when they own one, else Mārcis's.
+export function letterPage(kind, me) {
+  if (!['confirm', 'invite'].includes(kind)) return null;
+  demoViewer = String((me && me.email) || '').toLowerCase();
+  return letter(kind, String((me && me.name) || '').split(/\s+/)[0] || '').replace('src="building.jpg"', 'src="/assets/go-building.jpg"');
+}
 export const read = (f) => (f.body !== undefined ? Buffer.from(f.body, 'utf8') : fs.readFileSync(f.file));

@@ -1777,13 +1777,13 @@ export const handle = async (req, res) => {
         // TC Home's map (the owner's pick N3, 20.10.2026): Natural Earth 1:110m, public domain, the same file as the Client
         // Hub's hub/dashboard/assets/world.js (commit 5465221); a static outline, read only when TC Home draws its map
         'world.js': 'text/javascript; charset=utf-8',
-        // the Grand Opening's Stage 2 (the owner, 26.10.2026): pictures of the live RSVP email and the live landing page
-        'go-stage2-email.jpg': 'image/jpeg',
+        // the Grand Opening's Stage 2 (the owner, 26.10.2026): the picture of the live landing page (the letters are live since 10.11.2026)
         'go-stage2-landing.jpg': 'image/jpeg',
         // 29.10.2026 (the owner: "emails we need all. the OG email, then the 2 versions and the LP"): the Save the Date as
-        // Mailchimp sent it, and the Stage 2 version for those it did not reach
+        // Mailchimp sent it
         'go-stage1-email.jpg': 'image/jpeg',
-        'go-stage2-invite.jpg': 'image/jpeg',
+        // the building picture the Stage 2 email carries inline, for the live letter panels (10.11.2026)
+        'go-building.jpg': 'image/jpeg',
       };
       const name = p.slice('/assets/'.length);
       // MOTION (Q65, the owner picked A 07.10.2026): src/assets/motion.js, motion.css and motion-<area>.js|css, served
@@ -3778,6 +3778,12 @@ export const handle = async (req, res) => {
       if (!f) return json(res, 404, { error: 'not found' });
       res.writeHead(200, { 'content-type': f.type, 'cache-control': 'no-store', 'x-frame-options': 'SAMEORIGIN', 'x-content-type-options': 'nosniff' });
       return res.end(godemo.read(f));
+    }
+    // THE LIVE STAGE 2 LETTERS for the preview panels (10.11.2026, src/godemo.js letterPage): any Training Centre account
+    const lt = p.match(/^\/api\/tc\/go\/letter\/(confirm|invite)$/);
+    if (lt && req.method === 'GET') {
+      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-frame-options': 'SAMEORIGIN', 'x-content-type-options': 'nosniff' });
+      return res.end(godemo.letterPage(lt[1], await currentUser(req)));
     }
     if (p === '/api/tc/go/demo-access' && req.method === 'GET') return json(res, 200, { ok: godemo.mayView(await currentUser(req)) });
     // THE GIFT PER COMPANY (04.11.2026): Physical or Digital on a company tile; any Training Centre account sets it
