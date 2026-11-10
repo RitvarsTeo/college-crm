@@ -20,7 +20,9 @@ test('the texts as drafted (his "OK, build them"): place, QR, the door line; the
   const r2 = gm.mailFor('r2', { first: 'Anna', company: 'Example AS', code: '13H' });
   assert.match(r2.html, /See you soon. Example AS's place in the Grand Opening puzzle is <b>13H<\/b>\./);
   const r1 = gm.mailFor('r1', { first: 'Anna', linkCode: 'ab12cd' });
-  assert.match(r1.html, /A quick reminder from me\./);
+  assert.match(r1.html, /A quick reminder from me: I would still be glad to welcome you there\.<br><br>Will you be there\?/);
+  assert.match(r1.plain, /A quick reminder from me: I would still be glad to welcome you there\.\n\nWill you be there\?/);
+  assert.doesNotMatch(r1.html, /we open the new/);
   assert.match(r1.html, /c=ab12cd&rsvp=yes/);
   const raw = mime({ fromName: 'X', fromEmail: 'x@example.com', to: 'a@example.com', mail: m });
   assert.match(raw, /Content-ID: <qr>/);

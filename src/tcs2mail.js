@@ -54,7 +54,8 @@ export function s2Mail(kind, first, code, opts = {}) {
   let subject, lines;
   if (opts.remind) {
     subject = 'A quick reminder: Novikontas Academy Grand Opening, 27 May 2027';
-    lines = ['A quick reminder from me. On 27 May 2027 we open the new Novikontas Academy Campus in Riga, and I would still be glad to welcome you there.', 'Will you be there? It takes one minute to confirm.'];
+    // his words 10.11.2026: "shorten R1" (the card above already says Grand Opening, 27 May 2027 and the campus)
+    lines = ['A quick reminder from me: I would still be glad to welcome you there.', 'Will you be there? It takes one minute to confirm.'];
   } else if (kind === 'confirm') {
     subject = '27 May 2027: will you join me at the Novikontas Academy Grand Opening?';
     // his rule "never the same idea twice": the card says Grand Opening, 27 May 2027 and the campus, so the note does not
