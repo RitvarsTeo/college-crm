@@ -22,16 +22,16 @@ const ROWS = [
   { id: 'N3-1002', first: 'Inese', last: 'Paraudziņa', phones: ['29001001'] },     // the same family number
   ['N3-1003', 'Pēteris', 'Kalniņš', '29001003'],
   ['N3-1004', 'Bez', 'Numura', ''],                                                  // no number: left out
-  ['', 'Bez', 'Id', '29001005'],                                                     // no id: left out
+  ['', 'Bez', 'Id', '29001005'],                                                     // no id: its own key (10.11.2026)
 ];
 
-test('replace-all: only id, names and the last 8 digits; a row without an id or a number is left out', async () => {
+test('replace-all: only id, names and the last 8 digits; a row without a number is left out', async () => {
   const db = await openDb(':memory:');
   const r = await replaceN3Directory(db, ROWS, { by: 'Ritvars', now: new Date('2026-11-06T09:00:00Z') });
-  assert.deepEqual(r, { people: 3, numbers: 4, skipped: 2 });
+  assert.deepEqual(r, { people: 4, numbers: 5, skipped: 1 });
   const cols = (await db.prepare('SELECT * FROM n3_phone_directory').all()).map((x) => x.phone_tail);
-  assert.deepEqual(cols.sort(), ['29001001', '29001001', '29001003', '67001001']);
-  assert.deepEqual(await n3Status(db), { numbers: 4, people: 3, importedAt: '2026-11-06T09:00:00.000Z', importedBy: 'Ritvars' });
+  assert.deepEqual(cols.sort(), ['29001001', '29001001', '29001003', '29001005', '67001001']);
+  assert.deepEqual(await n3Status(db), { numbers: 5, people: 4, importedAt: '2026-11-06T09:00:00.000Z', importedBy: 'Ritvars' });
   // a second import replaces the first as a whole
   await replaceN3Directory(db, [['N3-2000', 'Anna', 'Ozola', '29002000']], { by: 'Marina' });
   assert.deepEqual(await n3Names(db, '+37129001001'), [], 'the old copy is gone');
@@ -96,7 +96,7 @@ test('a running copy: an admin replaces, the status shows counts only, the perso
   assert.equal((await call('/api/admin/n3-directory', 'Ritvars'))[1].numbers, 0);
   const [st, done] = await call('/api/admin/n3-directory', 'Ritvars', { rows: ROWS });
   assert.equal(st, 200);
-  assert.equal(done.numbers, 4);
+  assert.equal(done.numbers, 5);
   const [, status] = await call('/api/admin/n3-directory', 'Ritvars');
   assert.deepEqual(Object.keys(status).sort(), ['importedAt', 'importedBy', 'numbers', 'people'], 'counts, when, who: never a name or a number');
   assert.equal(status.importedBy, 'Ritvars');

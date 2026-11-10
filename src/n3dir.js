@@ -9,12 +9,14 @@ import { phoneKey } from './samepeople.js';
 
 export const N3_MAX_ROWS = 200000;
 const clip = (v, n) => String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, n);
-const CHUNK = 400;   // rows per INSERT: one round trip per 400, well under both engines' parameter limits
+const CHUNK = 1000;   // rows per INSERT: 6,000 parameters, under both engines' limits; N3's 39,000 numbers in about 40 trips
 
 /**
  * Replace the whole directory with these rows: [{ id, first, last, phones: ['+371 2...', ...] }] or [id, first, last,
- * phone, phone2]. A row without an id or without a number of 8+ digits is skipped and counted.
- * Returns { people, numbers, skipped }.
+ * phone, phone2, ...]. N3's own export has no id column (10.11.2026, the owner's "Load it as it is"): a row without an
+ * id gets its own key from its place in the upload ("row:12"), never a phone number; a full name arrives as `first`
+ * with `last` empty and is shown as it is, no first/last guessing. A row with neither an id nor a name, or without a
+ * number of 8+ digits, is skipped and counted. Returns { people, numbers, skipped }.
  */
 export async function replaceN3Directory(db, rows, { by = null, now = new Date() } = {}) {
   if (!Array.isArray(rows)) throw new Error('rows must be a list');
@@ -24,21 +26,22 @@ export async function replaceN3Directory(db, rows, { by = null, now = new Date()
   const seen = new Set();
   const people = new Set();
   let skipped = 0;
-  for (const raw of rows) {
-    // the page sends each row as [id, first, last, phone, phone2] to stay small; an object is read the same way
-    const r = Array.isArray(raw) ? { id: raw[0], first: raw[1], last: raw[2], phones: raw.slice(3) } : raw;
-    const id = clip(r && r.id, 64);
-    const tails = [...new Set((Array.isArray(r && r.phones) ? r.phones : []).map(phoneKey).filter(Boolean))];
-    if (!id || !tails.length) { skipped += 1; continue; }
+  rows.forEach((raw, i) => {
+    // the page sends each row as [id, first, last, phone, phone2, ...] to stay small; an object is read the same way
+    const r = (Array.isArray(raw) ? { id: raw[0], first: raw[1], last: raw[2], phones: raw.slice(3) } : raw) || {};
+    const first = clip(r.first, 120) || null, last = clip(r.last, 80) || null;
+    const id = clip(r.id, 64) || (first || last ? 'row:' + (i + 1) : '');
+    const tails = [...new Set((Array.isArray(r.phones) ? r.phones : []).map(phoneKey).filter(Boolean))];
+    if (!id || !tails.length) { skipped += 1; return; }
     people.add(id);
     for (const t of tails) {
       const k = id + '|' + t;
       if (seen.has(k)) continue;
       seen.add(k);
-      keep.push([id, clip(r.first, 80) || null, clip(r.last, 80) || null, t, at, by]);
+      keep.push([id, first, last, t, at, by]);
     }
-  }
-  if (!keep.length) throw new Error('No row has an N3 id and a phone number, so the directory was left as it was.');
+  });
+  if (!keep.length) throw new Error('No row has a name and a phone number, so the directory was left as it was.');
   await db.transaction(async (tx) => {
     await tx.prepare('DELETE FROM n3_phone_directory').run();
     for (let i = 0; i < keep.length; i += CHUNK) {
