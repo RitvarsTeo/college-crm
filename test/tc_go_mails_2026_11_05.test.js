@@ -64,12 +64,12 @@ test('06.11 his decision "all stage 2 emails will be like from a personal manage
     assert.match(m.html, /Jānis Sticenko<br>Novikontas Academy/);
     assert.doesNotMatch(m.html, /Director of Communications/);
     assert.doesNotMatch(m.html, /personally/);
-    assert.match(m.html, /27\.05\.2005 to 27\.05\.2027/);
+    assert.match(m.html, /5791191e-9348-b914-d4e1-8f7027aa609e\.jpg/);
     assert.match(m.plain, /Jānis Sticenko\nNovikontas Academy/);
     assert.match(m.html, /c=ab12cd&rsvp=yes/);
   }
-  assert.match(s2Mail('invite', 'Anna', 'x', { from }).html, /Dear Anna,<br><br>Our first invitation may not have reached you, so here it is again\. On <b>27 May 2027<\/b>/);
-  assert.match(s2Mail('new', 'Anna', 'x', { from }).html, /Dear Anna,<br><br>On <b>27 May 2027<\/b> we open the new <b>Novikontas Academy Campus<\/b> in Riga, and it would mean a lot to me to welcome you there\./);
+  assert.match(s2Mail('invite', 'Anna', 'x', { from }).html, /Dear Anna,<br><br>Our first invitation may not have reached you, so here it is again\. It would mean a lot to me to welcome you there\./);
+  assert.match(s2Mail('new', 'Anna', 'x', { from }).html, /Dear Anna,<br><br>It would mean a lot to me to welcome you there\./);
   for (const k of ['in', 'r2']) assert.match(gm.mailFor(k, { first: 'Anna', company: 'X', code: '1A' }, 'cid:qr', from).html, /Jānis Sticenko<br>Novikontas Academy/);
   assert.match(gm.mailFor('r1', { first: 'Anna', linkCode: 'zz' }, 'cid:qr', from).html, /A quick reminder from me/);
 });

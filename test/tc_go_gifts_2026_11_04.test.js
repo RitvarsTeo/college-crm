@@ -79,10 +79,10 @@ test('05.11 the demo shows the real Stage 2 letters (drawn from tcs2mail.js), no
   assert.match(html, /JS 204./);
   const inv = godemo.read(godemo.fileFor(godemo.PREFIX + 'letters/3_you_are_invited.html', { name: 'Anna Example' })).toString('utf8');
   assert.match(inv, /Dear Anna,/);
-  assert.match(inv, /52205135-b22f-0b43-d49c-4436ba613cd8\.jpg/);
+  assert.match(inv, /5791191e-9348-b914-d4e1-8f7027aa609e\.jpg/);
   assert.match(inv, /grand-opening\?c=rvtst1&rsvp=yes/);
   const conf = godemo.read(godemo.fileFor(godemo.PREFIX + 'letters/2_will_you_be_there.html', null)).toString('utf8');
-  assert.match(conf, /src="building\.jpg"/);
+  assert.match(conf, /5791191e-9348-b914-d4e1-8f7027aa609e\.jpg/);
   assert.ok(godemo.fileFor(godemo.PREFIX + 'letters/building.jpg'));
   assert.match(godemo.read(godemo.fileFor(godemo.PREFIX + 'letters/4_new_contact.html')).toString('utf8'), /You are invited/);
   const mail = (await import('../src/tcs2mail.js')).s2Mail('invite', 'Anna', 'x1');

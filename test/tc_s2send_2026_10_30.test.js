@@ -31,15 +31,15 @@ async function seeded() {
   return db;
 }
 
-test('the three emails, personal from the list owner (his decision 06.11): subject, personal link, the building inline only for confirm', () => {
+test('the three emails, personal from the list owner, in the landing page design (10.11): subject, personal link, no inline picture', () => {
   const c = s2Mail('confirm', 'Anna', 'abc123'), i = s2Mail('invite', 'Anna', 'abc123'), n = s2Mail('new', '', 'abc123');
   assert.equal(c.subject, '27 May 2027: will you join me at the Novikontas Academy Grand Opening?');
   assert.equal(i.subject, 'You are invited: Novikontas Academy Grand Opening, 27 May 2027');
   assert.match(c.html, /https:\/\/novikontas\.org\/grand-opening\?c=abc123&rsvp=yes/);
   assert.match(i.html, /may not have reached you/); assert.doesNotMatch(n.html, /may not have reached you/); assert.match(n.html, /Hello,/);
-  assert.equal(c.inline, 'building'); assert.equal(i.inline, null);
+  assert.equal(c.inline, null); assert.equal(i.inline, null);
   const raw = s2.mime({ fromName: 'Mārcis Žabovs', fromEmail: 'marcis.zabovs@novikontas.org', to: 'a@example.com', mail: c });
-  assert.match(raw, /Content-ID: <building>/); assert.match(raw, /Reply-To: marcis\.zabovs@novikontas\.org/);
+  assert.doesNotMatch(raw, /Content-ID:/); assert.match(raw, /Reply-To: marcis\.zabovs@novikontas\.org/);
 });
 
 test('an address that is not a confirmed "Send mail as" sends nothing; without the settings permission nothing either', async () => {
@@ -73,4 +73,21 @@ test('send next: 10 a call from the alias, each marked, never twice; the log cou
   assert.deepEqual([t.ok, t.sent], [true, 2]);
   assert.ok(G.sent.slice(before).every((x) => /To: ritvars\.vilcins@novikontas\.org/.test(x)));
   assert.equal(O.senders.find((x) => x.code === 'JS').noCode, 1, 'a person without a personal link is never sent');
+});
+
+test('10.11 his pick L1: the landing page card on top (photo, band, Grand Opening, date block, black Yes), no calendar line, no repeat in the note', () => {
+  const c = s2Mail('confirm', 'Anna', 'abc123', { from: { name: 'Mārcis Žabovs' } }), i = s2Mail('invite', 'Anna', 'abc123', { from: { name: 'Mārcis Žabovs' } });
+  for (const m of [c, i]) {
+    assert.match(m.html, /5791191e-9348-b914-d4e1-8f7027aa609e\.jpg/);
+    assert.match(m.html, />You are invited<\/td>/);
+    assert.match(m.html, />Grand Opening<\/div>/);
+    assert.match(m.html, />27 May 2027<\/div>/);
+    assert.match(m.html, /Novikontas Academy Campus, Duntes iela 17d, Riga/);
+    assert.match(m.html, /background:#011111"><a href="https:\/\/novikontas\.org\/grand-opening\?c=abc123&rsvp=yes"[^>]*>Yes, I&#39;ll attend<\/a>/);
+    assert.doesNotMatch(m.html, /calendar/i); assert.doesNotMatch(m.plain, /calendar/i);
+    assert.doesNotMatch(m.html, /we open the new/);
+    assert.match(m.plain, /^You are invited to the Grand Opening of Novikontas Academy\n27 May 2027, Novikontas Academy Campus, Duntes iela 17d, Riga/);
+  }
+  assert.match(c.html, /Dear Anna,<br><br>You saved the date for our Grand Opening, and I would be glad to welcome you there myself\.<br><br>Will you join us\? It takes one minute to confirm\./);
+  assert.match(i.html, /Dear Anna,<br><br>Our first invitation may not have reached you, so here it is again\. It would mean a lot to me to welcome you there\.<br><br>Will you join us\?/);
 });

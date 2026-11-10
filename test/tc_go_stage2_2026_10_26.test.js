@@ -84,9 +84,9 @@ test('the page: tabs, search, Download; no Who answered and no answered totals; 
 test('10.11 the live letter panels: /api/tc/go/letter/confirm|invite are the Stage 2 letters as they go out, both dates in full', async () => {
   const godemo = await import('../src/godemo.js');
   const inv = godemo.letterPage('invite', { email: 'mc@novikontas.org', name: 'Māris Cīrulis' });
-  assert.match(inv, /Dear Māris,/); assert.match(inv, /Māris Cīrulis<br>Novikontas Academy/); assert.match(inv, /27\.05\.2005 to 27\.05\.2027/);
+  assert.match(inv, /Dear Māris,/); assert.match(inv, /Māris Cīrulis<br>Novikontas Academy/); assert.match(inv, /5791191e-9348-b914-d4e1-8f7027aa609e\.jpg/);
   const conf = godemo.letterPage('confirm', null);
-  assert.match(conf, /src="\/assets\/go-building\.jpg"/); assert.match(conf, /27\.05\.2005 to 27\.05\.2027/);
+  assert.match(conf, /5791191e-9348-b914-d4e1-8f7027aa609e\.jpg/);
   assert.equal(godemo.letterPage('new', null), null);
   const srv = fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8');
   assert.match(srv, /'x-frame-options': 'SAMEORIGIN'/);
