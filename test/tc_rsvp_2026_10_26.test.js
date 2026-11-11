@@ -103,15 +103,7 @@ test('one read per minute at most; a failed read keeps the last answers, never a
 test('the read is the view only, through a verified certificate, with the address from the environment', () => {
   const src = fs.readFileSync(path.join(ROOT, 'src', 'tcrsvp.js'), 'utf8');
   assert.match(src, /FROM intake_read\.rsvp_answers`/);
-  // 11.11.2026: a second read, the landing page's totals (docs/client-hub/intake_landing_counts.sql); each read is one
-  // SELECT from one of the two intake_read views, nothing else
-  const reads = src.match(/c\.query\(`[^`]*`/g) || [];
-  assert.equal((src.match(/c\.query\(/g) || []).length, 2, 'two queries');
-  assert.equal(reads.length, 2);
-  for (const q of reads) assert.match(q, /^c\.query\(`SELECT [^`]* FROM intake_read\.(rsvp_answers|landing_counts)`$/);
-  const lc = fs.readFileSync(path.join(ROOT, 'docs', 'client-hub', 'intake_landing_counts.sql'), 'utf8').replace(/--.*$/gm, '');
-  assert.equal((lc.match(/\bgrant\b/gi) || []).length, 1, 'select on the one view, nothing else');
-  assert.doesNotMatch(lc, /password|create role|alter role/i);
+  assert.equal((src.match(/c\.query\(/g) || []).length, 1, 'one query, a SELECT');
   assert.doesNotMatch(src, /INSERT|UPDATE|DELETE|rejectUnauthorized:\s*false/);
   assert.match(src, /ssl: pgSsl\(url\)/);
   assert.match(src, /CLIENT_HUB_RSVP_DATABASE_URL/);

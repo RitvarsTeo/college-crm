@@ -14,7 +14,7 @@
 //            Intake contact with the same email address (its hash), else the company as Client Hub writes it.
 
 import crypto from 'node:crypto';
-import { TC, TcInputError, setContactEmail, listCompanies, searchPeople, nameKey } from './tc.js';
+import { TC, TcInputError, setContactEmail, listCompanies, searchPeople, nameKey, logTcActivity } from './tc.js';
 import { ImportError, parseCsv } from './tcimport.js';
 
 const GO = TC.grandOpening;
@@ -545,12 +545,14 @@ export async function metKeys(db) {
 
 // THE REAL COMPANY COUNT (11.11.2026, the owner's answer on the demo: the "1,125 places" tile becomes the live number of
 // mother companies on the Stage 2 lists, one puzzle piece per mother company). A person's company is Intake's company
-// (their contact there), else the Intake company with the same name key, else the name on their row; a company in a
+// (their contact there, by Client Hub id or by the same email), else the Intake company with the same name key, else the name on their row; a company in a
 // confirmed family counts as its parent. Rows set aside (gone) are not counted; people without any company are counted
 // apart (noCompany), never dropped. One function feeds the number and the list.
 export async function motherCompanyList(db) {
-  const rows = await db.prepare(`SELECT s.id, s.name, s.sender, s.company, MIN(k.company_id) AS company_id FROM tc_go_stage2 s
-    LEFT JOIN tc_company_contacts k ON k.ch_contact_id = s.ch_contact_id AND k.archived_at IS NULL WHERE s.gone = 0
+  // the person's Intake contact by Client Hub id, else by the same email (one person held under two Client Hub ids)
+  const rows = await db.prepare(`SELECT s.id, s.name, s.sender, s.company, COALESCE(MIN(k.company_id), MIN(e.company_id)) AS company_id FROM tc_go_stage2 s
+    LEFT JOIN tc_company_contacts k ON k.ch_contact_id = s.ch_contact_id AND k.archived_at IS NULL
+    LEFT JOIN tc_company_contacts e ON s.email IS NOT NULL AND e.email = LOWER(s.email) AND e.archived_at IS NULL WHERE s.gone = 0
     GROUP BY s.id, s.name, s.sender, s.company ORDER BY s.id`).all();
   const cos = await db.prepare(`SELECT id, name, name_key FROM tc_companies WHERE archived_at IS NULL`).all();
   const byId = new Map(cos.map((c) => [Number(c.id), c.name]));
@@ -590,7 +592,11 @@ export async function goDemoFacts(db) {
     }
   }
   const piece = [...companies].filter((c) => c.companyId).sort((a, b) => b.branches - a.branches || b.people - a.people)[0] || null;
-  return { mothers: companies.length, people, sample, piece: piece ? { name: piece.name, branches: piece.branches, people: piece.people } : null };
+  // the Save the Date as it came back (Intake's own Grand Opening figures, src/tcgo.js figures), for "What we measure"
+  const page = await goPage(db);
+  const fg = page.figures;
+  const std = fg ? { sent: fg.sent, reached: fg.reached, person: (fg.cameBack.find((c) => c.id === 'person') || {}).n || 0, calendar: fg.calendar } : null;
+  return { mothers: companies.length, people, sample, piece: piece ? { name: piece.name, branches: piece.branches, people: piece.people } : null, std };
 }
 export async function motherCompanies(db) { return (await motherCompanyList(db)).companies.length; }
 
@@ -647,6 +653,61 @@ export async function stage2MatchPlan(db) {
     for (const p of ps) { p.newCompany = newName; p.why = g.startsWith('d:') ? `NEW: no Intake company has @${p.domain}` + (ps.length > 1 ? `; ${ps.length} people write from it` : '') : 'NEW: no Intake company by this name'; }
   }
   return plan;
+}
+
+/** APPLY THE MATCH (11.11.2026, the owner's yes on the dry run: the sure rows, and the Check rows as he settled them).
+ *  decisions: [{ id (tc_go_stage2.id), companyId } | { id, newCompany }]. One transaction: a NEW company is added once per
+ *  name (or the Intake company of that name, if one is there by then) in the Training Centre area with the default
+ *  status; each person goes onto their company as a contact carrying their Client Hub id, or, when that email is already
+ *  a contact there, that contact gets the Client Hub id. Every change is a line in the company's log, like a change by
+ *  hand. Rows already on a company are skipped, so it is safe to run again. Returns the counts. */
+export async function stage2MatchApply(db, decisions, actor) {
+  const at = new Date().toISOString();
+  return db.transaction(async (tx) => {
+    const made = new Map();
+    const out = { companiesAdded: 0, contactsAdded: 0, contactsLinked: 0, skipped: 0 };
+    for (const d of decisions) {
+      const r = await tx.prepare(`SELECT s.id, s.ch_contact_id, s.name, s.position, s.email, s.country, s.company FROM tc_go_stage2 s WHERE s.id = ? AND s.gone = 0`).get(Number(d.id));
+      if (!r || !r.ch_contact_id) { out.skipped += 1; continue; }
+      if (await tx.prepare(`SELECT id FROM tc_company_contacts WHERE ch_contact_id = ? AND archived_at IS NULL`).get(r.ch_contact_id)) { out.skipped += 1; continue; }
+      let cid = d.companyId ? Number(d.companyId) : null;
+      if (!cid) {
+        const name = String(d.newCompany || '').trim().slice(0, 200);
+        const key = nameKey(name) || name.toLowerCase();
+        if (!name) throw new TcInputError('A new company needs a name.');
+        cid = made.get(key) || null;
+        if (!cid) {
+          const twin = await tx.prepare(`SELECT id FROM tc_companies WHERE name_key = ? AND archived_at IS NULL ORDER BY id`).get(key);
+          if (twin) cid = Number(twin.id);
+          else {
+            const ins = await tx.prepare(`INSERT INTO tc_companies (name, name_key, country, status, source, created_at, created_by) VALUES (?,?,?,?,?,?,?)`)
+              .run(name, key, r.country || null, TC.defaults.noStatus, 'stage2-match', at, actor);
+            cid = Number(ins.lastInsertRowid);
+            await tx.prepare('INSERT INTO tc_company_areas (company_id, area) VALUES (?,?)').run(cid, 'TC');
+            await logTcActivity(tx, cid, { kind: 'create', body: 'Company added (Grand Opening Stage 2 list)', actor, at });
+            out.companiesAdded += 1;
+          }
+          made.set(key, cid);
+        }
+      } else if (!(await tx.prepare(`SELECT id FROM tc_companies WHERE id = ? AND archived_at IS NULL`).get(cid))) {
+        throw new TcInputError('There is no such company: ' + cid);
+      }
+      const email = String(r.email || '').trim().toLowerCase() || null;
+      const same = email ? await tx.prepare(`SELECT id, ch_contact_id FROM tc_company_contacts WHERE company_id = ? AND email = ? AND archived_at IS NULL`).get(cid, email) : null;
+      if (same) {
+        if (same.ch_contact_id) { out.skipped += 1; continue; }
+        await tx.prepare(`UPDATE tc_company_contacts SET ch_contact_id = ?, updated_at = ? WHERE id = ?`).run(r.ch_contact_id, at, same.id);
+        await logTcActivity(tx, cid, { kind: 'edit', field: 'contact', body: 'Contact linked to the Grand Opening Stage 2 list', actor, at, contactId: Number(same.id) });
+        out.contactsLinked += 1;
+        continue;
+      }
+      const k = await tx.prepare(`INSERT INTO tc_company_contacts (company_id, name, position, email, ch_contact_id, source, created_at, created_by) VALUES (?,?,?,?,?,?,?,?)`)
+        .run(cid, r.name || null, r.position || null, email, r.ch_contact_id, 'stage2-match', at, actor);
+      await logTcActivity(tx, cid, { kind: 'edit', field: 'contact', old: null, new: r.name || email, body: 'Contact added (Grand Opening Stage 2 list)', actor, at, contactId: Number(k.lastInsertRowid) });
+      out.contactsAdded += 1;
+    }
+    return out;
+  });
 }
 
 // THE PUZZLE PLACE ON YES (05.11.2026; a company gets its place when it answers Yes). THE GRID (06.11.2026, his words "the

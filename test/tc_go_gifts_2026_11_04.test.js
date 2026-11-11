@@ -117,7 +117,7 @@ test('11.11 the new demo (the Grand Opening 10 chapters) plus In Intake: the til
   assert.ok(!html.includes('<h3>1,125 places</h3>') && !html.includes('45 x 25'));
   assert.match(html, /\{\{MOTHER_COMPANIES\}\}<\/b> mother companies on the Stage 2 lists/);
   assert.match(godemo.withCount({ body: html, type: 'text/html; charset=utf-8' }, 1234).body, /<b class="innum">1,234<\/b> mother companies/);
-  assert.match(fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8'), /const facts = \{ ...\(await tcgo\.goDemoFacts\(db\)\), landing: await tcrsvp\.landingCounts\(\) \}; f = godemo\.withCount\(f, facts\.mothers, facts\)/);
+  assert.match(fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8'), /const facts = await tcgo\.goDemoFacts\(db\); f = godemo\.withCount\(f, facts\.mothers, facts\)/);
   assert.doesNotMatch(html, /\.\.\/\.\.\//);
 });
 
@@ -139,11 +139,14 @@ test('11.11 the Real company count: one per mother company on the Stage 2 lists;
   await person('MC4', null, 'Name Only Example'); await person('MC5', null, '  NAME ONLY EXAMPLE '); await person('MC6', null, '');
   await person('MC7', null, 'Gone Example', 1);
   await person('MC8', null, 'OTHER EXAMPLE LTD');   // no Intake contact, but Intake has the company by name: not a second company
+  await db.prepare(`INSERT INTO tc_company_contacts (company_id, name, email, ch_contact_id, created_at) VALUES (?,?,?,?,?)`).run(other, 'Twin', 'twin@other-example.com', 'OTHER-CH-ID', at);
+  await db.prepare(`INSERT INTO tc_go_stage2 (ch_contact_id, sender, name, first_name, company, position, country, email, link_code, gone, loaded_at, loaded_by)
+    VALUES (?,?,?,?,?,?,?,?,?,0,?,?)`).run('MC9', 'JS', 'Twin', 'T', 'Quite Another Name', '', 'Latvia', 'Twin@Other-Example.com', 'mcMC9', at, 'test');   // same email, second Client Hub id: the same company
   assert.equal(await go.motherCompanies(db) - before, 3);
   const l = await go.motherCompanyList(db);
   assert.equal(l.companies.length, await go.motherCompanies(db));   // the number and the list are one
   assert.equal(l.companies.find((c) => c.companyId === mother).people, 2);
-  assert.equal(l.companies.find((c) => c.companyId === other).people, 2);
+  assert.equal(l.companies.find((c) => c.companyId === other).people, 3);
   assert.equal(l.companies.find((c) => c.key === 'n:' + nameKey('Name Only Example')).people, 2);
   assert.ok(l.noCompany >= 1);
 });
@@ -199,21 +202,41 @@ test('11.11 "demo has to be like the real thing": ch1 shows the real Stage 2 let
   assert.ok(f.sample.length <= 8 && f.sample.every((r) => r.mother && 'written' in r));
 });
 
-test('11.11 ch3 "What we measure" shows the landing page counts as Client Hub has them (one row of totals, no names); without them it shows no numbers, never invented ones; ch5 claims no QR of its own', async () => {
-  const rsvp = await import('../src/tcrsvp.js');
+test('11.11 ch3 "What we measure" = the Save the Date as it came back (the figures Intake holds) and the live mother companies; no example numbers; ch5 claims no QR of its own and carries the real gift QR', async () => {
   const godemo = await import('../src/godemo.js');
-  rsvp.setLandingFetcher(async () => ({ gift_opens: '1', gift_registered: '0', page_opens: '65', page_registered: '3', link_opens: '5', link_calendar: '1', link_registered: '1' }));
-  assert.deepEqual(await rsvp.landingCounts({ env: {}, now: 1 }), { gift_opens: 1, gift_registered: 0, page_opens: 65, page_registered: 3, link_opens: 5, link_calendar: 1, link_registered: 1 });
-  rsvp.setLandingFetcher(async () => { throw new Error('relation does not exist'); });
-  assert.equal(await rsvp.landingCounts({ env: {}, now: 2 }), null);
-  rsvp.setLandingFetcher(null);
-  assert.equal(await rsvp.landingCounts({ env: {}, now: 3 }), null);   // not configured: fails closed
   const html = godemo.read(godemo.fileFor(godemo.PREFIX)).toString('utf8');
   const ch = (t) => { const a = html.indexOf('data-t="' + t + '"'); return html.slice(a, html.indexOf('</section>', a)); };
   assert.ok(!ch('What we measure').includes('class="example"') && !/>(236|448|755|352|205|174)</.test(ch('What we measure')));
+  for (const l of ['Save the Date sent', 'Reached', 'Opened by a person', 'Added to calendar', 'Mother companies']) assert.ok(ch('What we measure').includes('>' + l + '<'), l);
   assert.ok(!ch('One piece per company').includes('own QR') && ch('One piece per company').includes('assets/qr_gift.svg'));
-  assert.match(fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8'), /landing: await tcrsvp\.landingCounts\(\)/);
-  const sql = fs.readFileSync(path.join(ROOT, 'docs', 'client-hub', 'intake_landing_counts.sql'), 'utf8');
-  assert.match(sql, /grant select on intake_read\.landing_counts to intake_rsvp_reader;/);
-  assert.ok(!/email|person_name|first_name|contact_id|company/i.test(sql.split('begin;')[1].split('revoke')[0]));   // totals only
+  const db = await openDb();
+  const f = await go.goDemoFacts(db);
+  assert.ok(f.std === null || ['sent', 'reached', 'person', 'calendar'].every((k) => Number.isFinite(f.std[k])));
+});
+
+test('11.11 the match applied: each person onto their company with their Client Hub id, a NEW company once per name in the TC area, an existing email gets linked, every change logged; safe to run again', async () => {
+  const db = await openDb();
+  const { nameKey } = await import('../src/tc.js');
+  const at = new Date().toISOString();
+  const co = Number((await db.prepare(`INSERT INTO tc_companies (name, name_key, status, created_at) VALUES (?,?,?,?)`).run('Applyco Example', nameKey('Applyco Example'), 'active', at)).lastInsertRowid);
+  await db.prepare(`INSERT INTO tc_company_contacts (company_id, name, email, created_at) VALUES (?,?,?,?)`).run(co, 'Old', 'old@applyco-example.com', at);
+  const row = async (ch, company, email) => Number((await db.prepare(`INSERT INTO tc_go_stage2 (ch_contact_id, sender, name, first_name, company, position, country, email, link_code, gone, loaded_at, loaded_by)
+    VALUES (?,?,?,?,?,?,?,?,?,0,?,?)`).run(ch, 'JS', 'P ' + ch, 'P', company, 'Crewing', 'Latvia', email, 'ap' + ch, at, 'test')).lastInsertRowid);
+  const a = await row('AP1', 'Applyco', 'new@applyco-example.com');
+  const b = await row('AP2', 'Applyco', 'old@applyco-example.com');
+  const c = await row('AP3', 'Freshco Example', 'x@freshco-example.com');
+  const d = await row('AP4', 'FRESHCO EXAMPLE', 'y@freshco-example.com');
+  const out = await go.stage2MatchApply(db, [{ id: a, companyId: co }, { id: b, companyId: co }, { id: c, newCompany: 'Freshco Example' }, { id: d, newCompany: 'Freshco Example' }], 'Ritvars');
+  assert.deepEqual(out, { companiesAdded: 1, contactsAdded: 3, contactsLinked: 1, skipped: 0 });
+  assert.equal((await db.prepare(`SELECT ch_contact_id FROM tc_company_contacts WHERE email = 'old@applyco-example.com'`).get()).ch_contact_id, 'AP2');
+  const fresh = await db.prepare(`SELECT id, source, created_by FROM tc_companies WHERE name = 'Freshco Example'`).all();
+  assert.equal(fresh.length, 1);
+  assert.equal(fresh[0].source, 'stage2-match');
+  assert.equal(fresh[0].created_by, 'Ritvars');
+  assert.ok(await db.prepare(`SELECT 1 FROM tc_company_areas WHERE company_id = ? AND area = 'TC'`).get(fresh[0].id));
+  assert.equal(Number((await db.prepare(`SELECT COUNT(*) AS n FROM tc_activities WHERE actor = 'Ritvars' AND company_id IN (?, ?)`).get(co, fresh[0].id)).n), 5);
+  const l = await go.motherCompanyList(db);
+  assert.equal(l.companies.find((x) => x.companyId === co).people, 2);
+  assert.equal(l.companies.find((x) => x.companyId === fresh[0].id).people, 2);
+  assert.deepEqual(await go.stage2MatchApply(db, [{ id: a, companyId: co }], 'Ritvars'), { companiesAdded: 0, contactsAdded: 0, contactsLinked: 0, skipped: 1 });
 });

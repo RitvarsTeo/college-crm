@@ -238,16 +238,12 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
 
 <!-- 3 -->
 <section class="ch" data-t="What we measure" data-s="Stage 2">
- <h2>What we measure on the page</h2>
- <p class="lead">Every visit and every registration, by the way the guest came in.</p>
- <div class="tiles">
-  <div class="tile"><div class="k">Physical gift QR</div><div class="v" id="m-g"></div><div class="s">scans · <span id="m-gr"></span> people registered</div></div>
-  <div class="tile"><div class="k">Digital invitation</div><div class="v" id="m-l"></div><div class="s">link opens · <span id="m-lr"></span> answered Yes</div></div>
-  <div class="tile"><div class="k">Typed address</div><div class="v" id="m-p"></div><div class="s">visits · <span id="m-pr"></span> people registered</div></div>
- </div>
+ <h2>What we measure</h2>
+ <p class="lead">The Save the Date as it came back, and the mother companies on the Stage 2 lists.</p>
  <div class="card bars" id="bars">
-  <div class="bar"><span class="lbl">Visits</span><div class="track"><div class="fill" id="b-v"></div></div><span class="n" id="n-v"></span></div>
-  <div class="bar"><span class="lbl">People registered</span><div class="track"><div class="fill" id="b-r"></div></div><span class="n" id="n-r"></span></div>
+  <div class="bar"><span class="lbl">Save the Date sent</span><div class="track"><div class="fill" id="b-s"></div></div><span class="n" id="n-s"></span></div>
+  <div class="bar"><span class="lbl">Reached</span><div class="track"><div class="fill" id="b-r"></div></div><span class="n" id="n-r"></span></div>
+  <div class="bar"><span class="lbl">Opened by a person</span><div class="track"><div class="fill" id="b-o"></div></div><span class="n" id="n-o"></span></div>
   <div class="bar"><span class="lbl">Added to calendar</span><div class="track"><div class="fill" id="b-c"></div></div><span class="n" id="n-c"></span></div>
   <div class="bar"><span class="lbl">Mother companies</span><div class="track"><div class="fill navy" id="b-m"></div></div><span class="n" id="n-m"></span></div>
  </div>
@@ -426,13 +422,12 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
  tabs.forEach(function(t){ t.onclick=function(){ tabs.forEach(function(x){x.setAttribute('aria-pressed',x===t?'true':'false');}); var n=t.dataset.n; document.getElementById('ph-img').src='assets/phone_'+n+'.jpg'; document.getElementById('dk-img').src='assets/desktop_'+n+'.jpg'; document.getElementById('ph-scr').scrollTop=0; }; });
 
  /* 4 count */
- var R=window.GO_REAL||{sample:[],people:0,piece:null,landing:null,mothers:0};
+ var R=window.GO_REAL||{sample:[],people:0,piece:null,std:null,mothers:0};
  var rows=R.sample.map(function(r){ return [r.person, r.sender, r.written, r.mother, r.sender, 'ok']; });
  document.getElementById('r-people').textContent=Number(R.people||0).toLocaleString('en-US');
- (function(){ var L=R.landing, n=function(x){ return L ? Number(x||0).toLocaleString('en-US') : '–'; }, set=function(id,v){ document.getElementById(id).textContent=v; };
-  set('m-g',n(L&&L.gift_opens)); set('m-gr',n(L&&L.gift_registered)); set('m-l',n(L&&L.link_opens)); set('m-lr',n(L&&L.link_registered)); set('m-p',n(L&&L.page_opens)); set('m-pr',n(L&&L.page_registered));
-  var v=L?L.gift_opens+L.link_opens+L.page_opens:0, r=L?L.gift_registered+L.link_registered+L.page_registered:0, c=L?L.link_calendar:0, m=Number(R.mothers||0), top=Math.max(v,r,c,m,1);
-  [['v',v,!!L],['r',r,!!L],['c',c,!!L],['m',m,true]].forEach(function(x){ set('n-'+x[0], x[2] ? Number(x[1]).toLocaleString('en-US') : '–'); document.getElementById('b-'+x[0]).dataset.w=(x[2] ? Math.max(x[1]/top*100, x[1] ? 1.5 : 0) : 0).toFixed(1); });
+ (function(){ var D=R.std, m=Number(R.mothers||0), top=Math.max(D?D.sent:0, m, 1);
+  [['s',D&&D.sent],['r',D&&D.reached],['o',D&&D.person],['c',D&&D.calendar],['m',m]].forEach(function(x){ var ok=(x[0]==='m')||!!D, v=Number(x[1]||0);
+   document.getElementById('n-'+x[0]).textContent=ok ? v.toLocaleString('en-US') : '–'; document.getElementById('b-'+x[0]).dataset.w=(ok ? Math.max(v/top*100, v ? 1.5 : 0) : 0).toFixed(1); });
  })();
  if(R.piece){ document.getElementById('pc-name').textContent=R.piece.name; document.getElementById('pc-sub').innerHTML=R.piece.branches+(R.piece.branches===1?' company':' companies')+' · '+Number(R.piece.people).toLocaleString('en-US')+' people<br>one piece, one place'; }
  var grouped=false;
