@@ -239,17 +239,17 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
 <!-- 3 -->
 <section class="ch" data-t="What we measure" data-s="Stage 2">
  <h2>What we measure on the page</h2>
- <p class="lead">Every visit and every registration, by the way the guest came in. <span class="example">Example numbers</span></p>
+ <p class="lead">Every visit and every registration, by the way the guest came in.</p>
  <div class="tiles">
-  <div class="tile"><div class="k">Physical gift QR</div><div class="v">236</div><div class="s">scans · 96 people registered</div></div>
-  <div class="tile"><div class="k">Digital invitation</div><div class="v">448</div><div class="s">link opens · 231 people registered</div></div>
-  <div class="tile"><div class="k">Typed address</div><div class="v">71</div><div class="s">visits · 25 people registered</div></div>
+  <div class="tile"><div class="k">Physical gift QR</div><div class="v" id="m-g"></div><div class="s">scans · <span id="m-gr"></span> people registered</div></div>
+  <div class="tile"><div class="k">Digital invitation</div><div class="v" id="m-l"></div><div class="s">link opens · <span id="m-lr"></span> answered Yes</div></div>
+  <div class="tile"><div class="k">Typed address</div><div class="v" id="m-p"></div><div class="s">visits · <span id="m-pr"></span> people registered</div></div>
  </div>
  <div class="card bars" id="bars">
-  <div class="bar"><span class="lbl">Visits</span><div class="track"><div class="fill" data-w="100"></div></div><span class="n">755</span></div>
-  <div class="bar"><span class="lbl">People registered</span><div class="track"><div class="fill" data-w="46.6"></div></div><span class="n">352</span></div>
-  <div class="bar"><span class="lbl">Added to calendar</span><div class="track"><div class="fill" data-w="27.2"></div></div><span class="n">205</span></div>
-  <div class="bar"><span class="lbl">Mother companies</span><div class="track"><div class="fill navy" data-w="23"></div></div><span class="n">174</span></div>
+  <div class="bar"><span class="lbl">Visits</span><div class="track"><div class="fill" id="b-v"></div></div><span class="n" id="n-v"></span></div>
+  <div class="bar"><span class="lbl">People registered</span><div class="track"><div class="fill" id="b-r"></div></div><span class="n" id="n-r"></span></div>
+  <div class="bar"><span class="lbl">Added to calendar</span><div class="track"><div class="fill" id="b-c"></div></div><span class="n" id="n-c"></span></div>
+  <div class="bar"><span class="lbl">Mother companies</span><div class="track"><div class="fill navy" id="b-m"></div></div><span class="n" id="n-m"></span></div>
  </div>
 </section>
 
@@ -271,7 +271,7 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
 <!-- 5 -->
 <section class="ch" data-t="One piece per company" data-s="Count">
  <h2>One piece per mother company</h2>
- <p class="lead">Each piece has its own QR and its own place on the board.</p>
+ <p class="lead">Each piece has its own place on the board.</p>
  <div class="pc-row">
   <div><div class="board" id="board5" aria-label="Puzzle board"></div></div>
   <div class="card">
@@ -279,7 +279,7 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
     <svg class="piece" viewBox="0 0 200 200" aria-hidden="true">
      <path d="M40 40 H85 a15 15 0 1 1 30 0 H160 V85 a15 15 0 1 0 0 30 V160 H115 a15 15 0 1 1 -30 0 H40 V115 a15 15 0 1 0 0 -30 Z" fill="#ebbb6c" stroke="#011111" stroke-width="3"/>
      <rect x="64" y="64" width="72" height="72" rx="6" fill="#fff"/>
-     <image href="assets/qr_company.svg" x="68" y="68" width="64" height="64"/>
+     <image href="assets/qr_gift.svg" x="68" y="68" width="64" height="64"/>
     </svg>
     <div><b style="font-size:20px" id="pc-name"></b><br><span style="color:var(--muted);font-weight:600" id="pc-sub"></span></div>
    </div>
@@ -426,9 +426,14 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
  tabs.forEach(function(t){ t.onclick=function(){ tabs.forEach(function(x){x.setAttribute('aria-pressed',x===t?'true':'false');}); var n=t.dataset.n; document.getElementById('ph-img').src='assets/phone_'+n+'.jpg'; document.getElementById('dk-img').src='assets/desktop_'+n+'.jpg'; document.getElementById('ph-scr').scrollTop=0; }; });
 
  /* 4 count */
- var R=window.GO_REAL||{sample:[],people:0,piece:null};
+ var R=window.GO_REAL||{sample:[],people:0,piece:null,landing:null,mothers:0};
  var rows=R.sample.map(function(r){ return [r.person, r.sender, r.written, r.mother, r.sender, 'ok']; });
  document.getElementById('r-people').textContent=Number(R.people||0).toLocaleString('en-US');
+ (function(){ var L=R.landing, n=function(x){ return L ? Number(x||0).toLocaleString('en-US') : '–'; }, set=function(id,v){ document.getElementById(id).textContent=v; };
+  set('m-g',n(L&&L.gift_opens)); set('m-gr',n(L&&L.gift_registered)); set('m-l',n(L&&L.link_opens)); set('m-lr',n(L&&L.link_registered)); set('m-p',n(L&&L.page_opens)); set('m-pr',n(L&&L.page_registered));
+  var v=L?L.gift_opens+L.link_opens+L.page_opens:0, r=L?L.gift_registered+L.link_registered+L.page_registered:0, c=L?L.link_calendar:0, m=Number(R.mothers||0), top=Math.max(v,r,c,m,1);
+  [['v',v,!!L],['r',r,!!L],['c',c,!!L],['m',m,true]].forEach(function(x){ set('n-'+x[0], x[2] ? Number(x[1]).toLocaleString('en-US') : '–'); document.getElementById('b-'+x[0]).dataset.w=(x[2] ? Math.max(x[1]/top*100, x[1] ? 1.5 : 0) : 0).toFixed(1); });
+ })();
  if(R.piece){ document.getElementById('pc-name').textContent=R.piece.name; document.getElementById('pc-sub').innerHTML=R.piece.branches+(R.piece.branches===1?' company':' companies')+' · '+Number(R.piece.people).toLocaleString('en-US')+' people<br>one piece, one place'; }
  var grouped=false;
  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}

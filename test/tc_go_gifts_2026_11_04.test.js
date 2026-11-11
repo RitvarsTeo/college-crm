@@ -117,7 +117,7 @@ test('11.11 the new demo (the Grand Opening 10 chapters) plus In Intake: the til
   assert.ok(!html.includes('<h3>1,125 places</h3>') && !html.includes('45 x 25'));
   assert.match(html, /\{\{MOTHER_COMPANIES\}\}<\/b> mother companies on the Stage 2 lists/);
   assert.match(godemo.withCount({ body: html, type: 'text/html; charset=utf-8' }, 1234).body, /<b class="innum">1,234<\/b> mother companies/);
-  assert.match(fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8'), /const facts = await tcgo\.goDemoFacts\(db\); f = godemo\.withCount\(f, facts\.mothers, facts\)/);
+  assert.match(fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8'), /const facts = \{ ...\(await tcgo\.goDemoFacts\(db\)\), landing: await tcrsvp\.landingCounts\(\) \}; f = godemo\.withCount\(f, facts\.mothers, facts\)/);
   assert.doesNotMatch(html, /\.\.\/\.\.\//);
 });
 
@@ -197,4 +197,23 @@ test('11.11 "demo has to be like the real thing": ch1 shows the real Stage 2 let
   const f = await go.goDemoFacts(db);
   assert.equal(f.mothers, await go.motherCompanies(db));
   assert.ok(f.sample.length <= 8 && f.sample.every((r) => r.mother && 'written' in r));
+});
+
+test('11.11 ch3 "What we measure" shows the landing page counts as Client Hub has them (one row of totals, no names); without them it shows no numbers, never invented ones; ch5 claims no QR of its own', async () => {
+  const rsvp = await import('../src/tcrsvp.js');
+  const godemo = await import('../src/godemo.js');
+  rsvp.setLandingFetcher(async () => ({ gift_opens: '1', gift_registered: '0', page_opens: '65', page_registered: '3', link_opens: '5', link_calendar: '1', link_registered: '1' }));
+  assert.deepEqual(await rsvp.landingCounts({ env: {}, now: 1 }), { gift_opens: 1, gift_registered: 0, page_opens: 65, page_registered: 3, link_opens: 5, link_calendar: 1, link_registered: 1 });
+  rsvp.setLandingFetcher(async () => { throw new Error('relation does not exist'); });
+  assert.equal(await rsvp.landingCounts({ env: {}, now: 2 }), null);
+  rsvp.setLandingFetcher(null);
+  assert.equal(await rsvp.landingCounts({ env: {}, now: 3 }), null);   // not configured: fails closed
+  const html = godemo.read(godemo.fileFor(godemo.PREFIX)).toString('utf8');
+  const ch = (t) => { const a = html.indexOf('data-t="' + t + '"'); return html.slice(a, html.indexOf('</section>', a)); };
+  assert.ok(!ch('What we measure').includes('class="example"') && !/>(236|448|755|352|205|174)</.test(ch('What we measure')));
+  assert.ok(!ch('One piece per company').includes('own QR') && ch('One piece per company').includes('assets/qr_gift.svg'));
+  assert.match(fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8'), /landing: await tcrsvp\.landingCounts\(\)/);
+  const sql = fs.readFileSync(path.join(ROOT, 'docs', 'client-hub', 'intake_landing_counts.sql'), 'utf8');
+  assert.match(sql, /grant select on intake_read\.landing_counts to intake_rsvp_reader;/);
+  assert.ok(!/email|person_name|first_name|contact_id|company/i.test(sql.split('begin;')[1].split('revoke')[0]));   // totals only
 });
