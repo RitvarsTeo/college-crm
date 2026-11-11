@@ -14,7 +14,7 @@
 //            Intake contact with the same email address (its hash), else the company as Client Hub writes it.
 
 import crypto from 'node:crypto';
-import { TC, TcInputError, setContactEmail, listCompanies, searchPeople } from './tc.js';
+import { TC, TcInputError, setContactEmail, listCompanies, searchPeople, nameKey } from './tc.js';
 import { ImportError, parseCsv } from './tcimport.js';
 
 const GO = TC.grandOpening;
@@ -544,23 +544,32 @@ export async function metKeys(db) {
 }
 
 // THE REAL COMPANY COUNT (11.11.2026, the owner's answer on the demo: the "1,125 places" tile becomes the live number of
-// mother companies on the Stage 2 lists, one puzzle piece per mother company). A person's company is Intake's company,
-// else the name on their row; a company in a confirmed family counts as its parent. People without any company are not
-// a company and are not counted.
-export async function motherCompanies(db) {
-  const rows = await db.prepare(`SELECT s.ch_contact_id, s.company, MIN(k.company_id) AS company_id FROM tc_go_stage2 s
+// mother companies on the Stage 2 lists, one puzzle piece per mother company). A person's company is Intake's company
+// (their contact there), else the Intake company with the same name key, else the name on their row; a company in a
+// confirmed family counts as its parent. Rows set aside (gone) are not counted; people without any company are counted
+// apart (noCompany), never dropped. One function feeds the number and the list.
+export async function motherCompanyList(db) {
+  const rows = await db.prepare(`SELECT s.id, s.company, MIN(k.company_id) AS company_id FROM tc_go_stage2 s
     LEFT JOIN tc_company_contacts k ON k.ch_contact_id = s.ch_contact_id AND k.archived_at IS NULL WHERE s.gone = 0
-    GROUP BY s.id, s.ch_contact_id, s.company`).all();
+    GROUP BY s.id, s.company`).all();
+  const cos = await db.prepare(`SELECT id, name, name_key FROM tc_companies WHERE archived_at IS NULL`).all();
+  const byId = new Map(cos.map((c) => [Number(c.id), c.name]));
+  const byName = new Map(); for (const c of cos) if (c.name_key && !byName.has(c.name_key)) byName.set(c.name_key, Number(c.id));
   const parent = new Map((await db.prepare(`SELECT m.company_id, f.parent_id FROM tc_family_members m JOIN tc_families f ON f.id = m.family_id
     WHERE m.ended_at IS NULL AND f.ended_at IS NULL`).all()).map((r) => [Number(r.company_id), Number(r.parent_id)]));
-  const keys = new Set();
+  const out = new Map(); let noCompany = 0;
   for (const r of rows) {
-    if (r.company_id) { const id = Number(r.company_id); keys.add('id:' + (parent.get(id) || id)); continue; }
-    const n = String(r.company || '').trim().toLowerCase();
-    if (n) keys.add('n:' + n);
+    const name = String(r.company || '').trim();
+    let id = r.company_id ? Number(r.company_id) : (name ? byName.get(nameKey(name)) || null : null);
+    if (id) id = parent.get(id) || id;
+    const key = id ? 'id:' + id : name ? 'n:' + nameKey(name) : null;
+    if (!key || key === 'n:') { noCompany += 1; continue; }
+    if (!out.has(key)) out.set(key, { key, companyId: id, name: id ? byId.get(id) || name : name, people: 0 });
+    out.get(key).people += 1;
   }
-  return keys.size;
+  return { companies: [...out.values()].sort((x, y) => y.people - x.people || x.name.localeCompare(y.name, 'lv')), noCompany };
 }
+export async function motherCompanies(db) { return (await motherCompanyList(db)).companies.length; }
 
 // THE PUZZLE PLACE ON YES (05.11.2026; a company gets its place when it answers Yes). THE GRID (06.11.2026, his words "the
 // puzzle will be 6cm x 6cm pieces. wider than tall", his pick B): 45 columns x 25 rows = 1,125 places, 2.70 x 1.50 m, codes

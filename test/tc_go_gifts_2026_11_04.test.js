@@ -123,8 +123,9 @@ test('11.11 the new demo (the Grand Opening 10 chapters) plus In Intake: the til
 
 test('11.11 the Real company count: one per mother company on the Stage 2 lists; a family counts once as its parent; gone rows and no-company rows are not counted', async () => {
   const db = await openDb();
+  const { nameKey } = await import('../src/tc.js');
   const at = new Date().toISOString();
-  const co = async (name) => Number((await db.prepare(`INSERT INTO tc_companies (name, name_key, status, created_at) VALUES (?,?,?,?)`).run(name, name.toLowerCase(), 'active', at)).lastInsertRowid);
+  const co = async (name) => Number((await db.prepare(`INSERT INTO tc_companies (name, name_key, status, created_at) VALUES (?,?,?,?)`).run(name, nameKey(name), 'active', at)).lastInsertRowid);
   const mother = await co('Mother Example AS'), branch = await co('Mother Example Branch SIA'), other = await co('Other Example Ltd');
   const fam = Number((await db.prepare(`INSERT INTO tc_families (parent_id, created_at) VALUES (?,?)`).run(mother, at)).lastInsertRowid);
   for (const id of [mother, branch]) await db.prepare(`INSERT INTO tc_family_members (family_id, company_id, added_at) VALUES (?,?,?)`).run(fam, id, at);
@@ -137,7 +138,14 @@ test('11.11 the Real company count: one per mother company on the Stage 2 lists;
   await person('MC1', mother, 'Mother Example AS'); await person('MC2', branch, 'Mother Example Branch SIA'); await person('MC3', other, 'Other Example Ltd');
   await person('MC4', null, 'Name Only Example'); await person('MC5', null, '  NAME ONLY EXAMPLE '); await person('MC6', null, '');
   await person('MC7', null, 'Gone Example', 1);
+  await person('MC8', null, 'OTHER EXAMPLE LTD');   // no Intake contact, but Intake has the company by name: not a second company
   assert.equal(await go.motherCompanies(db) - before, 3);
+  const l = await go.motherCompanyList(db);
+  assert.equal(l.companies.length, await go.motherCompanies(db));   // the number and the list are one
+  assert.equal(l.companies.find((c) => c.companyId === mother).people, 2);
+  assert.equal(l.companies.find((c) => c.companyId === other).people, 2);
+  assert.equal(l.companies.find((c) => c.key === 'n:' + nameKey('Name Only Example')).people, 2);
+  assert.ok(l.noCompany >= 1);
 });
 
 test('06.11 his "Remove both": the demo has no Supabase dashboard tile and no fronts tile with bare years', async () => {
