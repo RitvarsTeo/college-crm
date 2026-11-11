@@ -102,18 +102,19 @@ test('05.11 the demo opens at /api/tc/go/demo without a redirect (Vercel strips 
   assert.match(fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8'), /href="\/api\/tc\/go\/demo" target="_blank"/);
 });
 
-test('06.11 the demo tiles open what they name: #/tc/go/hold (the list, unfolded), /back, /lists, families, clients', async () => {
-  const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
-  assert.match(app, /else if \(place === 'go'\) await viewTcGo\(arg\);/);
-  assert.match(app, /const TC_GO_PART = \{ hold: \['s2', '\.tcmk'\], back: \['s1', '\.tcgo-back'\], lists: \['s2', 'section\.tcs2'\] \};/);
-  assert.match(app, /if \(part === 'hold'\) T_MK = \{ \.\.\.\(T_MK \|\| \{\}\), open: true \};/);
+test('11.11 the new demo (the Grand Opening 10 chapters) plus In Intake: the tiles open what they name, the letters live', async () => {
   const godemo = await import('../src/godemo.js');
   const html = godemo.read(godemo.fileFor(godemo.PREFIX)).toString('utf8');
+  assert.equal((html.match(/<section class="ch"/g) || []).length, 11);
+  assert.match(html, /<section class="ch" data-t="In Intake" data-s="Intake">/);
   for (const [title, href] of [['Do not invite / hold', '#/tc/go/hold'], ['What came back', '#/tc/go/back'], ['Six owners, six lists', '#/tc/go/lists'],
-    ['Answers by owner', '#/tc/go/lists'], ['Company families', '#/tc/families'], ['Clients in Intake', '#/tc/clients']]) {
-    const at = html.indexOf('<b>' + title + '</b>'); const a = html.lastIndexOf('<a class="win', at);
+    ['Company families', '#/tc/families'], ['Clients in Intake', '#/tc/clients']]) {
+    const at = html.indexOf('<h3>' + title + '</h3>'); const a = html.lastIndexOf('<a class="card intile"', at);
     assert.ok(at > 0 && html.slice(a, at).includes('href="https://intake.novikontas.org/' + href + '"'), title);
   }
+  for (const f of ['2_will_you_be_there', '3_you_are_invited', '4_new_contact']) assert.match(html, new RegExp('<iframe src="letters/' + f + '\.html"'));
+  assert.match(html, /href="puzzle\/Puzzle_pozicijas_1125_45x25_2026-11-06\.xlsx"/);
+  assert.doesNotMatch(html, /\.\.\/\.\.\//);
 });
 
 test('06.11 his "Remove both": the demo has no Supabase dashboard tile and no fronts tile with bare years', async () => {
@@ -123,12 +124,3 @@ test('06.11 his "Remove both": the demo has no Supabase dashboard tile and no fr
   assert.ok(!html.includes('<b>The fronts</b>') && !html.includes('FRONT_new_concepts_v5'));
 });
 
-test('06.11 the demo: confetti at the 27.05.2027 end of the arc once per visit (not with reduced motion); sections animate as they come into view', async () => {
-  const godemo = await import('../src/godemo.js');
-  const html = godemo.read(godemo.fileFor(godemo.PREFIX)).toString('utf8');
-  assert.match(html, /<circle id="goEnd"[^>]*cx="696"/);
-  assert.match(html, /prefers-reduced-motion: reduce\)'\)\.matches\) return;/);
-  assert.match(html, /sessionStorage\.getItem\('goCf'\)/);
-  assert.match(html, /rootMargin: "0px 0px -10% 0px"/);
-  assert.match(html, /r\.top < h \* \.9/);
-});
