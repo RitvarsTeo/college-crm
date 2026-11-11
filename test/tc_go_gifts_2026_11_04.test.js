@@ -155,3 +155,29 @@ test('06.11 his "Remove both": the demo has no Supabase dashboard tile and no fr
   assert.ok(!html.includes('<b>The fronts</b>') && !html.includes('FRONT_new_concepts_v5'));
 });
 
+
+test('11.11 "Match into Intake" (a dry run first): same name, same name without spaces, the email domain of one Intake company, else NEW per domain; a free mailbox with no name stays without one; weak matches are marked Check', async () => {
+  const db = await openDb();
+  const { nameKey } = await import('../src/tc.js');
+  const at = new Date().toISOString();
+  const co = async (name) => Number((await db.prepare(`INSERT INTO tc_companies (name, name_key, status, created_at) VALUES (?,?,?,?)`).run(name, nameKey(name), 'active', at)).lastInsertRowid);
+  const ship = await co('Matchship Example Management'), fleet = await co('Fleetex Example AS'), small = await co('Quietco Example');
+  for (const [cid, e] of [[fleet, 'a@fleetex-example.com'], [fleet, 'b@fleetex-example.com'], [small, 'q@quietco-example.com']])
+    await db.prepare(`INSERT INTO tc_company_contacts (company_id, name, email, created_at) VALUES (?,?,?,?)`).run(cid, 'K', e, at);
+  const row = async (ch, company, email) => db.prepare(`INSERT INTO tc_go_stage2 (ch_contact_id, sender, name, first_name, company, position, country, email, link_code, gone, loaded_at, loaded_by)
+    VALUES (?,?,?,?,?,?,?,?,?,0,?,?)`).run(ch, 'JS', 'P ' + ch, 'P', company, '', 'Latvia', email, 'mp' + ch, at, 'test');
+  await row('MP1', 'MATCHSHIP EXAMPLE MANAGEMENT', 'x@other-example.com');
+  await row('MP2', 'Matchship Example Manage ment', 'y@other-example.com');
+  await row('MP3', null, 'c@fleetex-example.com');
+  await row('MP4', 'Totally Different Example', 'd@quietco-example.com');
+  await row('MP5', 'Brandnew Example', 'e@brandnew-example.com'); await row('MP6', 'Brandnew Example Ltd', 'f@brandnew-example.com');
+  await row('MP7', null, 'someone@gmail.com');
+  const plan = new Map((await go.stage2MatchPlan(db)).map((p) => [p.email, p]));
+  assert.equal(plan.get('x@other-example.com').companyId, ship); assert.equal(plan.get('x@other-example.com').why, 'same name');
+  assert.equal(plan.get('y@other-example.com').companyId, ship); assert.equal(plan.get('y@other-example.com').why, 'same name without spaces');
+  assert.equal(plan.get('c@fleetex-example.com').companyId, fleet); assert.equal(plan.get('c@fleetex-example.com').check, false);
+  assert.equal(plan.get('d@quietco-example.com').companyId, small); assert.equal(plan.get('d@quietco-example.com').check, true);
+  assert.equal(plan.get('e@brandnew-example.com').newCompany, plan.get('f@brandnew-example.com').newCompany);
+  assert.equal(plan.get('someone@gmail.com').companyId, null); assert.equal(plan.get('someone@gmail.com').newCompany, undefined);
+  assert.equal(await db.prepare('SELECT COUNT(*) AS n FROM tc_companies WHERE name = ?').get('Brandnew Example').then((r) => Number(r.n)), 0);   // a plan writes nothing
+});

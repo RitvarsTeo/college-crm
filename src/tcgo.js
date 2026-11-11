@@ -571,6 +571,61 @@ export async function motherCompanyList(db) {
 }
 export async function motherCompanies(db) { return (await motherCompanyList(db)).companies.length; }
 
+// MATCH THE STAGE 2 NAMES INTO INTAKE (11.11.2026, the owner: "Match into Intake"; a dry run he looks at before any write).
+// For every Stage 2 person not yet on an Intake company: 1. the Intake company with the same name key; 2. the same name
+// with the spaces taken out ("BS Ship Management" = "BS Shipmanagement"); 3. the Intake company whose people write from
+// the same email domain (one company only; a work domain, never gmail and the like); 4. otherwise a NEW company, one per
+// email domain (the name most of its people wrote), or per name when the domain is a free mailbox. A person with no
+// company and a free mailbox stays without one. Reads only; returns the plan.
+const FREE_MAIL = new Set(['gmail.com', 'googlemail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'live.com', 'icloud.com', 'inbox.lv',
+  'mail.ru', 'yandex.ru', 'gmx.de', 'gmx.net', 'web.de', 'proton.me', 'protonmail.com', 'aol.com', 'msn.com', 'one.lt', 'tvnet.lv']);
+const domainOf = (email) => { const d = String(email || '').toLowerCase().split('@')[1] || ''; return d && !FREE_MAIL.has(d) ? d : ''; };
+const tight = (k) => String(k || '').replace(/\s+/g, '');
+export async function stage2MatchPlan(db) {
+  const rows = await db.prepare(`SELECT s.id, s.name, s.company, s.email, s.sender FROM tc_go_stage2 s WHERE s.gone = 0 AND NOT EXISTS
+    (SELECT 1 FROM tc_company_contacts k WHERE k.ch_contact_id = s.ch_contact_id AND k.archived_at IS NULL) ORDER BY s.id`).all();
+  const cos = await db.prepare(`SELECT id, name, name_key FROM tc_companies WHERE archived_at IS NULL`).all();
+  const byKey = new Map(), byTight = new Map();
+  for (const c of cos) { if (c.name_key && !byKey.has(c.name_key)) byKey.set(c.name_key, c); const t = tight(c.name_key); if (t && !byTight.has(t)) byTight.set(t, c); }
+  const dom = new Map();
+  for (const k of await db.prepare(`SELECT company_id, email FROM tc_company_contacts WHERE archived_at IS NULL AND email IS NOT NULL`).all()) {
+    const d = domainOf(k.email); if (!d) continue;
+    if (!dom.has(d)) dom.set(d, new Map());
+    dom.get(d).set(Number(k.company_id), (dom.get(d).get(Number(k.company_id)) || 0) + 1);
+  }
+  const name = new Map(cos.map((c) => [Number(c.id), c.name]));
+  const plan = [];
+  for (const r of rows) {
+    const written = String(r.company || '').trim(), key = nameKey(written), d = domainOf(r.email);
+    let to = null, why = '';
+    if (key && byKey.has(key)) { to = byKey.get(key); why = 'same name'; }
+    else if (key && byTight.has(tight(key))) { to = byTight.get(tight(key)); why = 'same name without spaces'; }
+    else if (d && dom.has(d) && dom.get(d).size === 1) { const [id, n] = [...dom.get(d)][0]; to = { id, name: name.get(id) }; why = `email @${d}, like ${n} ${n === 1 ? 'person' : 'people'} at this company`; }
+    else if (d && dom.has(d)) { const top = [...dom.get(d)].sort((a, b) => b[1] - a[1]); to = { id: top[0][0], name: name.get(top[0][0]) }; why = `email @${d}; ${top.length} Intake companies use it, this one most (${top[0][1]})`; }
+    // a weak match (by email domain only, the written name unlike the company's, and 2 people or fewer behind it) is
+    // marked Check: it goes in only when the owner ticks it
+    const alike = (a, b) => { const x = nameKey(a).split(' ')[0] || '', y = nameKey(b).split(' ')[0] || ''; return Boolean(x && y && (x.startsWith(y.slice(0, 4)) || y.startsWith(x.slice(0, 4)))); };
+    const behind = d && dom.has(d) && to ? dom.get(d).get(Number(to.id)) || 0 : 0;
+    const check = Boolean(to && /^email/.test(why) && written && !alike(written, to.name) && behind <= 2);
+    plan.push({ id: Number(r.id), person: r.name || '', email: r.email || '', sender: r.sender, written, domain: d,
+      companyId: to ? Number(to.id) : null, company: to ? to.name : null, why, check });
+  }
+  // the rest: one NEW company per work domain, else per name; a free mailbox and no name stays without a company
+  const groups = new Map();
+  for (const p of plan.filter((x) => !x.companyId)) {
+    const g = p.domain ? 'd:' + p.domain : nameKey(p.written) ? 'n:' + nameKey(p.written) : '';
+    if (!g) { p.why = 'no company written, personal email: stays without a company'; continue; }
+    if (!groups.has(g)) groups.set(g, []); groups.get(g).push(p);
+  }
+  for (const [g, ps] of groups) {
+    const counts = new Map(); for (const p of ps) if (p.written) counts.set(p.written, (counts.get(p.written) || 0) + 1);
+    const best = [...counts].sort((a, b) => b[1] - a[1] || b[0].length - a[0].length)[0];
+    const newName = best ? best[0] : g.slice(2).split('.')[0];
+    for (const p of ps) { p.newCompany = newName; p.why = g.startsWith('d:') ? `NEW: no Intake company has @${p.domain}` + (ps.length > 1 ? `; ${ps.length} people write from it` : '') : 'NEW: no Intake company by this name'; }
+  }
+  return plan;
+}
+
 // THE PUZZLE PLACE ON YES (05.11.2026; a company gets its place when it answers Yes). THE GRID (06.11.2026, his words "the
 // puzzle will be 6cm x 6cm pieces. wider than tall", his pick B): 45 columns x 25 rows = 1,125 places, 2.70 x 1.50 m, codes
 // 1A..45Y; the Grand Opening's Puzzle_pozicijas_1125_45x25_2026-11-06.xlsx. Places are given in the list's order (1A, 2A ...
