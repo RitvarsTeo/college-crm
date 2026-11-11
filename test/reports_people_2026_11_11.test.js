@@ -93,3 +93,18 @@ test('the page counts what the server counts, and Reports\' totals equal Home\'s
     for (const x of M.leads[mine].filter((z) => z.n)) assert.equal(new Set(M.coh[x.k].ids).size, x.n, mine + ' ' + x.value + ': its list holds its count');
   }
 });
+
+test('where everyone is now (the now tab): each person once, where they are now; the page and the server agree', async () => {
+  const db = await seeded();
+  await db.prepare(`INSERT INTO people (id, name, phone, status, created_at) VALUES ('t2', 'Toms Paraugs', '+371 2000 0099', 'New', ?)`).run(at(3));   // Toms came back
+  const r = await report(db, { years: [Y] });
+  const stage = Object.fromEntries(r.breakdowns.stage.map((x) => [x.value, x.count]));
+  assert.deepEqual(stage, { Admitted: 2, New: 2, 'Follow-up': 1 }, 'the student once, Admitted; Toms once, open again: New');
+  const people = await db.prepare('SELECT * FROM people').all();
+  const { M } = model(r, people);
+  assert.equal(M.now.everyone.n, 5, '7 records, 5 people');
+  assert.equal(r.breakdowns.stage.reduce((a, x) => a + x.count, 0), M.now.everyone.n, 'the stages add up to everybody');
+  const grid = Object.fromEntries(M.now.grid.map((g) => [g.stage, g.cells.reduce((a, c) => a + c.n, 0)]).filter(([, n]) => n));
+  assert.deepEqual(grid, stage, 'stage by programme adds up to every stage');
+  assert.equal(M.now.open.n + M.now.admitted.n + M.now.closed.n, M.now.everyone.n);
+});

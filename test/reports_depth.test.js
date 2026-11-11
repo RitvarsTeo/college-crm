@@ -199,7 +199,7 @@ test('each tab starts with its Home card: the same label and the same figure', a
   const homeAdmitted = people.filter((p) => p.status === 'Admitted' && p.admitted_at && riga.format(new Date(p.admitted_at)).startsWith(year())).length;
   const want = { admitted: ['Admitted', `data-n="${homeAdmitted}"`], leads: ['Leads', `data-n="${home.newLeads}"`],
     conversion: ['Conversion', `data-v="${home.conversionPct}%"`], median: ['Median time to admission', `data-v="${home.medianDaysToAdmission}"`],
-    now: ['Where everyone is now', `data-n="${people.length}"`] };
+    now: ['Where everyone is now', `data-n="${(await import('../src/realpeople.js')).countPeople(people)}"`] };   // people, each once (11.11.2026)
   assert.equal(M.pw, year(), 'This year reads as the year, as on Home');
   for (const [id, [label, fig]] of Object.entries(want)) {
     const tab = html.slice(html.indexOf(`<div class="rp-tab" role="tab" id="rep-tab-${id}"`));

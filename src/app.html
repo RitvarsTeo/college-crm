@@ -4059,6 +4059,9 @@ function cOnePerPerson(rows) {
     const m = { ...p };
     for (const f of ['programme', 'source_channel', 'education', 'nationality', 'study_form']) if (g.some((x) => f in x)) { const w = early.find((x) => !blank(x[f])); m[f] = w ? w[f] : null; }
     m.admitted_at = p.admitted_at || early.map((x) => x.admitted_at).filter(Boolean).sort()[0] || null;
+    // where they are now: Admitted when any record is, else their latest open record's stage, else Not proceeding
+    if (g.some((x) => 'status' in x)) m.status = g.some((x) => x.status === 'Admitted') ? 'Admitted'
+      : ([...early].reverse().find((x) => x.status !== 'Admitted' && x.status !== 'Not proceeding') || early[0]).status;
     out.push(m);
   });
   return out;
@@ -6813,18 +6816,20 @@ function cRepModel(r, people, cfg, today) {
       .sort((a, b) => a.days - b.days),
   };
 
-  // 5 WHERE EVERYONE IS NOW (everybody, whatever the period: Home's donut, then stage by programme)
-  const open = people.filter((p) => !C_TERMINAL.includes(p.status));
+  // 5 WHERE EVERYONE IS NOW (everybody, whatever the period: Home's donut, then stage by programme), in PEOPLE (11.11.2026):
+  // each person once, where they are now, under their earliest record's programme - the server's stage breakdown
+  const all = cOnePerPerson([...people].sort((a, b) => String(a.created_at || '\uffff').localeCompare(String(b.created_at || '\uffff')) || String(a.id).localeCompare(String(b.id))));
+  const open = all.filter((p) => !C_TERMINAL.includes(p.status));
   const stages = (cfg.stages || []).map((s) => s.id);
-  const cols = [...progs, ...[...new Set(people.map((p) => val(p.programme)))].filter((v) => !progs.includes(v))]
-    .filter((c) => people.some((p) => val(p.programme) === c));
+  const cols = [...progs, ...[...new Set(all.map((p) => val(p.programme)))].filter((v) => !progs.includes(v))]
+    .filter((c) => all.some((p) => val(p.programme) === c));
   const now = {
-    everyone: fig('now', 'Everybody', people),
+    everyone: fig('now', 'Everybody', all),
     open: fig('now:open', 'Open', open),
-    admitted: { n: people.filter((p) => p.status === 'Admitted').length, go: 'outcome|Admitted' },
-    closed: { n: people.filter((p) => p.status === 'Not proceeding').length, go: 'outcome|Not proceeding' },
+    admitted: { n: all.filter((p) => p.status === 'Admitted').length, go: 'outcome|Admitted' },
+    closed: { n: all.filter((p) => p.status === 'Not proceeding').length, go: 'outcome|Not proceeding' },
     cols,
-    grid: stages.map((st) => ({ stage: st, cells: cols.map((c) => { const ps = people.filter((p) => p.status === st && val(p.programme) === c);
+    grid: stages.map((st) => ({ stage: st, cells: cols.map((c) => { const ps = all.filter((p) => p.status === st && val(p.programme) === c);
       return ps.length ? { col: c, ...fig(`now:${st}:${c}`, `${cStage(st)} · ${c === '(not recorded)' ? 'programme not recorded' : c}`, ps) } : { col: c, n: 0 }; }) })),
   };
   return { pw, grain: T.grain, coh, admitted, leads, conversion, median, now };

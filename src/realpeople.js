@@ -44,9 +44,13 @@ export function peopleGroups(rows) {
 // to its total. The page's cOnePerPerson (src/app.html) does the same.
 export const PERSON_FIELDS = ['programme', 'source_channel', 'education', 'nationality', 'study_form'];
 const blank = (v) => v == null || String(v).trim() === '';
+// where a person with several records is now (s: their records, earliest first)
+const placeOf = (s) => (s.some((r) => r.status === 'Admitted') ? 'Admitted'
+  : ([...s].reverse().find((r) => r.status !== 'Admitted' && r.status !== 'Not proceeding') || s[0]).status);
 const byEarliest = (a, b) => String(a.created_at || '\uffff').localeCompare(String(b.created_at || '\uffff')) || String(a.id).localeCompare(String(b.id));
 /** One merged person per group: the earliest record's id, created_at and values (a real value beats a blank),
- * admitted_at = the first admission among the records, records = every record id. */
+ * admitted_at = the first admission among the records, records = every record id; and where they are NOW: Admitted when
+ * any record is, else the stage of their latest open record, else Not proceeding. */
 export function mergedPeople(rows) {
   return peopleGroups(rows).map((g) => {
     const s = [...g].sort(byEarliest);
@@ -54,6 +58,7 @@ export function mergedPeople(rows) {
     for (const f of PERSON_FIELDS) if (s.some((r) => f in r)) { const w = s.find((r) => !blank(r[f])); out[f] = w ? w[f] : null; }
     const adm = s.map((r) => r.admitted_at).filter(Boolean).sort();
     out.admitted_at = adm[0] || null;
+    if (s.some((r) => 'status' in r)) out.status = placeOf(s);
     return out;
   });
 }

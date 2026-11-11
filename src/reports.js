@@ -271,8 +271,8 @@ export async function report(db, { from, to, years, asOfEnd = false } = {}) {
       education: breakdownOf(arrivedP, 'education'),
       source: breakdownOf(arrivedP, 'source_channel'),
       nationality: breakdownOf(arrivedP, 'nationality'),
-      stage: (await db.prepare(`SELECT status k, COUNT(*) n FROM ${REAL_PEOPLE} people GROUP BY k ORDER BY n DESC`).all())
-        .map((r) => ({ value: r.k, count: r.n })),
+      // where everyone is now, in PEOPLE (11.11.2026): each person once, in the place of mergedPeople
+      stage: breakdownOf(mergedPeople(await db.prepare(`SELECT id, name, email, phone, created_at, status FROM ${REAL_PEOPLE} people`).all()), 'status'),
     },
     lostReasons: lost,
 
