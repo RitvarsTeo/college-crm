@@ -35,7 +35,7 @@ function load(people) {
     line('const cDaysLate ='), line('const cDdMm ='), fn('function cStepState('), line('const cIsDraft ='), line('const C_JDRAFT ='), line('const cJStage ='), fn('function cJStagesOpen('), line('const cJNum ='), line('const C_TERMINAL ='), fn('function cJourneyMatch('), line('const C_PF_EMPTY ='),
     line('const C_PF_DUE ='), line('const C_PF_DATA ='), line('const C_SIS_HOLDS ='), line('const cSisHolds ='), fn('function cPeopleMatch('),
     APP.slice(APP.indexOf('const cPoolSelect ='), APP.indexOf('function cPoolFrame(')),
-    fn('function cJColToBoard('), fn('function cJourneyPick('), fn('function cJourneyStage('), fn('function cDrawJourneyPool('),
+    fn('function cJColToBoard('), fn('function cJourneyPick('), fn('function cJourneyStage('), line('const cPersonName ='), fn('function cOnePerPerson('), fn('function cAdmittedOnce('), fn('function cDrawJourneyPool('),
     'var C_PF = C_PF_EMPTY(); var C_JP = { col: null, view: "list", open: null };',
     `var C_JPD = { people: ${JSON.stringify(people)}, taskOf: new Map() };`].join('\n').replace(/^const /gm, 'var '), ctx);
   ctx.draw = () => { ctx.cDrawJourneyPool(); return ctx; };

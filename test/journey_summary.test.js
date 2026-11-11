@@ -39,6 +39,7 @@ function sandbox(filters = {}, { exits = null, all = [] } = {}) {
     "const cWhenClass = (iso) => (iso === 'over' ? 'over' : '');",
     line('const cDaysLate ='), line('const C_ST ='), line('const cDdMm ='), fn('function cStepState('), line('const cIsDraft ='), line('const C_JDRAFT ='), line('const cJStage ='), fn('function cJStagesOpen('), line('const cJNum ='), line('const C_TERMINAL ='), line('const C_ST_GROUPS ='),   // Q66: the stack; Q69: two colours
     fn('function cJourneyBand('),
+    line('const cPersonName ='), fn('function cOnePerPerson('), fn('function cAdmittedOnce('),   // the Admitted figure counts people (11.11.2026)
     fn('function cJourneySummary('),
     'this.summary = cJourneySummary;',
   ].join('\n'), ctx);

@@ -137,7 +137,7 @@ function board(people, setup = {}) {
   vm.runInNewContext([line('const cPhone = '), line('const C_JCOL_SHOW = '), line('const C_JCOLOPEN = '), fn('function cJUrgency('), fn('function cJSort('),
     line('const C_ST = '), line('const C_ST_RAIL = '), fn('function cStateLine('), line('const cDdMm = '), fn('function cStepState('), line('const cIsDraft ='), line('const C_JDRAFT ='), line('const cJStage ='), fn('function cJStagesOpen('), line('const cJNum ='), line('const C_TERMINAL ='), line('const cStepGroup = '), line('const C_GRP = '), line('const cGroupBand = '),   // Q66
     fn('function cJColumn('), fn('function cJEndCard('), filtersSrc.replace('let C_JF = {', 'var C_JF = {'),
-    fn('function cJTargetKeep('), line('const cJTargeted = '), line('const cMoveBody = '), fn('function cJTargetChips('), (FOLD + fn('function cDrawJourney(')),
+    fn('function cJTargetKeep('), line('const cJTargeted = '), line('const cMoveBody = '), fn('function cJTargetChips('), line('const cPersonName ='), fn('function cOnePerPerson('), fn('function cAdmittedOnce('), (FOLD + fn('function cDrawJourney(')),
     'this.draw = cDrawJourney; this.setJF = (v) => { C_JF = v; };'].join('\n'), ctx);
   return { ctx, draw: () => { ctx.draw(); return html; }, handlers, posts, asked };
 }

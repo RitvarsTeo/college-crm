@@ -4038,13 +4038,21 @@ function cOnePerPerson(rows) {
   const seen = new Map(), out = [];
   for (const p of rows || []) {
     const keys = [];
-    const n = cPersonName(p.name); if (n.includes(' ')) keys.push('n:' + n);
+    const n = cPersonName(String(p.name ?? '').split('\n')[0].replace(/\([^)]*\)/g, ' ')); if (n.includes(' ')) keys.push('n:' + n);   // a "(note)" or a second line is no part of the name (11.11.2026)
     const e = String(p.email || '').trim().toLowerCase(); if (e) keys.push('e:' + e);
     const d = String(p.phone || '').replace(/\D/g, ''); if (d.length >= 8) keys.push('p:' + d.slice(-8));
     if (keys.some((k) => seen.has(k))) { const i = seen.get(keys.find((k) => seen.has(k))); keys.forEach((k) => seen.set(k, i)); continue; }
     keys.forEach((k) => seen.set(k, out.length)); out.push(p);
   }
   return out;
+}
+// THE ADMITTED, ONE PER PERSON (the owner's pick B, 11.11.2026: count PEOPLE, one number, every figure clickable to its
+// people): every Admitted record of the rows, one per person (cOnePerPerson), a dated record chosen before an undated one.
+// Home, the Journey and Reports all count and open this same list; the people with no admission date on any of their
+// records are the clickable part under it.
+function cAdmittedOnce(rows) {
+  const a = (rows || []).filter((p) => p.status === 'Admitted');
+  return cOnePerPerson([...a.filter((p) => p.admitted_at), ...a.filter((p) => !p.admitted_at)]);
 }
 async function cHomeData() {
   // THE PERIOD (Q45): the year scope, never the calendar year on its own. 'all' has no year: no target, the last
@@ -4066,8 +4074,8 @@ async function cHomeData() {
   const picked = cScopeList();
   const months = (rep.trend || []).filter((m) => (picked === 'all' || picked.includes(Number(m.month.slice(0, 4)))) && m.month <= thisMonth);
   // the rows ARE the period: the Admitted among them were admitted in it (server, scopePeopleSql)
-  const admitted = cOnePerPerson(people.filter((p) => p.status === 'Admitted' && p.admitted_at));   // one person, one count (05.11.2026)
-  const undated = people.filter((p) => p.status === 'Admitted' && !p.admitted_at).length;
+  const admitted = cAdmittedOnce(people);   // one person, one count (05.11.2026); the undated ones too (11.11.2026, pick B)
+  const undated = admitted.filter((p) => !p.admitted_at);
   const count = (arr, key) => { const m = new Map(); arr.forEach((p) => { const k = key(p); m.set(k, (m.get(k) || 0) + 1); }); return [...m.entries()].sort((a, b) => b[1] - a[1]); };
   const known = new Set(CFG.programmes || []);
   const progs = count(admitted, (p) => p.programme || '(not recorded)').map(([k, n]) => [k, n, known.has(k) ? '' : (k === '(not recorded)' ? 'no programme recorded' : 'not one of the list'), k]);
@@ -4245,7 +4253,7 @@ function cHomeB(D) {
     <div class="kstrip kb-strip">
       <!-- Leads first, then Admitted (the owner, 05.11.2026: "shouldnt leads be before admitted? chronology much?") -->
       <div><span>Leads</span><b>${s.newLeads ?? 0}</b><small>${esc(cScopeWord())}</small>${ly(D.lastYear && D.lastYear.leads)}${cWave(done, 'newLeads', 'leads')}<a class="kgo" href="#/reports" onclick="cGoReportYear('leads');return false">Reports →</a></div>
-      <div class="khero"><span>Admitted</span><b>${D.admitted.length}</b><small>${esc(cScopeWord())}${D.undated ? ` · +${D.undated} undated` : ''}</small>${ly(D.lastYear && D.lastYear.admitted)}${goal ? cTargetBars({ ...goal, off: null }, goal.rows.length, 0) : ''}${cWave(done, 'admitted', 'admitted')}<a class="kgo" href="#/reports" onclick="cGoReportYear('admitted');return false">Reports →</a></div>
+      <div class="khero"><span>Admitted</span><b>${D.admitted.length}</b><small>${esc(cScopeWord())}${D.undated.length ? ` · <a class="rp-go" href="#/people" onclick="cGoHomeUndated();return false">${D.undated.length} without a date</a>` : ''}</small>${ly(D.lastYear && D.lastYear.admitted)}${goal ? cTargetBars({ ...goal, off: null }, goal.rows.length, 0) : ''}${cWave(done, 'admitted', 'admitted')}<a class="kgo" href="#/reports" onclick="cGoReportYear('admitted');return false">Reports →</a></div>
       <div><span>Conversion</span><b>${s.conversionPct == null ? '-' : s.conversionPct + '%'}</b><small>${s.conversionA ?? 0} / ${s.conversionB ?? 0} ${esc(s.conversionWho || 'who arrived')}${cReachedWords(D.steps.leadToApplication, (n, which) => `<a class="rp-go" href="#/people" data-n="${n}" onclick="cGoHomeReached('${which}');return false">${n}</a>`)}</small>${ly(D.lastYear && D.lastYear.conversion)}${cConvBar(s.conversionPct, D.lastYear && D.lastYear.conversion)}<a class="kgo" href="#/reports" onclick="cGoReportYear('conversion');return false">Reports →</a></div>
       <div><span>Median time to admission</span><b>${s.medianDaysToAdmission == null ? '-' : s.medianDaysToAdmission} <em>days</em></b><small>first contact to admission${s.medianOf ? ` · ${s.medianOf} people with a known first contact` : ''}</small>${cDaysSplit(s.admitDays)}<a class="kgo" href="#/reports" onclick="cGoReportYear('median');return false">Reports →</a></div>
     </div>
@@ -4263,6 +4271,13 @@ function cHomeB(D) {
 // (Admitted, Leads, Conversion, Median) open their own Reports tab on This year (the owner, 05.10.2026): Home card ->
 // the tab's breakdowns -> the people, whose header figure and every bar open them.
 // Home's numbers on the Reached Application line (cReachedWords, in the Reports block below) open their people
+// Home's Admitted: the people in it with no admission date open as a list of their own (11.11.2026, pick B)
+function cGoHomeUndated() {
+  if (!C_HOME_D || !C_HOME_D.undated) return;
+  C_REP_COH = { ...C_REP_COH, home_undated: { name: 'home:admitted:undated', label: `Admitted · ${cScopeWord()} · no admission date`,
+    ids: C_HOME_D.undated.map((p) => p.id) } };
+  cGoCohort('home_undated');
+}
 function cGoHomeReached(which) {
   const st = C_HOME_D && C_HOME_D.steps && C_HOME_D.steps.leadToApplication;
   if (!st) return;
@@ -5501,7 +5516,9 @@ function cDrawJourneyPool() {
   const known = new Set(CFG.programmes || []);
   // every filter but the stage: the column is the stage
   const f = { ...C_PF, stage: '' };
-  let all = people.filter((p) => cPeopleMatch(p, taskOf.get(p.id), f, known));
+  // Admitted, one record per person: the column's count and its list are the people Home counts (11.11.2026, pick B)
+  const admOnce = new Set(cAdmittedOnce(people).map((p) => p.id));
+  let all = people.filter((p) => p.status !== admitted || admOnce.has(p.id)).filter((p) => cPeopleMatch(p, taskOf.get(p.id), f, known));
   if (C_PCOHORT) all = all.filter((p) => C_PCOHORT.ids.has(p.id));
   if (C_PQ) { const q = C_PQ.toLowerCase(); all = all.filter((p) => [p.name, p.email, p.phone].some((v) => String(v || '').toLowerCase().includes(q))); }
   // Admissions, 16.10.2026 (who in one programme is active right now?): Stage = Active is every open stage, i.e.
@@ -6247,7 +6264,7 @@ function cJourneySummary(everyone, taskOf, stages) {
   const roles = CFG.stageRoles || {};
   // from the WHOLE database, not from `everyone`, which is the open people only
   const all = (C_JDATA && C_JDATA.people) || [];
-  const adm = all.filter((p) => p.status === roles.admitted).length;
+  const adm = cAdmittedOnce(all).length;   // people, the same list as Home (11.11.2026, pick B)
   const np = all.filter((p) => p.status === roles.closed).length;
   // The outcomes are the band's right-hand bookends (02.10.2026): each fact once.
   const band = cJourneyBand(everyone, taskOf, stages, exitMark, {
@@ -6382,7 +6399,10 @@ function cDrawJourney() {
   const ends = C_TERMINAL.filter((id) => (C_JF.stage || []).includes(id) || (cJTargeted() && people.some((p) => p.status === id)));
   const stages = [...cJStagesOpen(), ...(CFG.stages || []).filter((s) => C_TERMINAL.includes(s.id) && ends.includes(s.id))];
   const everyone = people.filter((p) => !C_TERMINAL.includes(p.status));
-  const open = people.filter((p) => !C_TERMINAL.includes(p.status) || ends.includes(p.status)).filter((p) => cJourneyMatch(p, taskOf.get(p.id), C_JF));
+  // the Admitted end column opens the people its figure counts: one record per person (11.11.2026, pick B)
+  const admOnce = new Set(cAdmittedOnce(people).map((p) => p.id));
+  const open = people.filter((p) => !C_TERMINAL.includes(p.status) || ends.includes(p.status)).filter((p) => p.status !== 'Admitted' || admOnce.has(p.id))
+    .filter((p) => cJourneyMatch(p, taskOf.get(p.id), C_JF));
   const narrow = window.matchMedia && window.matchMedia('(max-width:900px)').matches;
   // Q68, a phone: one stage open (the chosen one, else the first with people), the rest folded to a row with their count
   const phone = cPhone();
@@ -6680,18 +6700,19 @@ function cRepModel(r, people, cfg, today) {
   const inB = (iso, x) => { const d = cDay(iso); return !!d && d >= x.from && d <= x.to; };
 
   // 1 ADMITTED (Home's card: admitted, with the admission date in the period)
-  const adm = people.filter((p) => p.status === 'Admitted' && inP(p.admitted_at));
+  const once = cAdmittedOnce(people);   // people, the same list as Home and the Journey (11.11.2026, pick B)
+  const adm = once.filter((p) => inP(p.admitted_at));
   const yr = /^\d{4}$/.test(pw) ? pw : null;
   const t = yr && cfg.targets && cfg.targets[yr];
   const offP = t && Array.isArray(t.officerProgrammes) ? t.officerProgrammes : [];
   const admitted = {
     all: fig('admitted', `Admitted · ${pw}`, adm),
-    undated: fig('admitted:undated', 'Admitted · no admission date', people.filter((p) => p.status === 'Admitted' && !p.admitted_at)),
+    undated: fig('admitted:undated', 'Admitted · no admission date', once.filter((p) => !p.admitted_at)),
     target: t && Number(t.admitted) > 0 ? { goal: Number(t.admitted), year: yr, source: t.hover || '',
       off: offP.length && Number(t.officerPct) > 0 ? { label: offP.join(' + '), pct: Number(t.officerPct), goal: Math.round(Number(t.admitted) * Number(t.officerPct) / 100),
         ...fig('admitted:officer', `Admitted · ${pw} · ${offP.join(' + ')}`, adm.filter((p) => offP.includes(p.programme))) } : null } : null,
     byTime: T.list.map((x) => ({ ...x, ...fig(`admitted:${T.grain}:${x.key}`, `Admitted · ${x.tip}`,
-      people.filter((p) => p.status === 'Admitted' && inB(p.admitted_at, x))) })),
+      once.filter((p) => inB(p.admitted_at, x))) })),
     byProgramme: rows('admitted:programme', `Admitted · ${pw}`, adm, (p) => val(p.programme), progs),
     byChannel: rows('admitted:channel', `Admitted · ${pw} · came from`, adm, (p) => val(p.source_channel)),
   };

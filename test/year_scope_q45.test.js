@@ -84,7 +84,7 @@ test('the look: frozen top-right on a wide screen, a row of its own in the phone
 test('Home, the Journey band and Reports read the years; Reports has no period bar; the download follows it', () => {
   const home = fnBody('async function cHomeData() {');
   assert.match(home, /api\('\/api\/report\?' \+ cScopeReportQs\(\)\)/);
-  assert.match(home, /const admitted = cOnePerPerson\(people\.filter\(\(p\) => p\.status === 'Admitted' && p\.admitted_at\)\);/, 'the Admitted of the period, by admission, one person one count');
+  assert.match(home, /const admitted = cAdmittedOnce\(people\);/, 'the Admitted of the period, by admission, one person one count (11.11.2026: the undated too)');
   assert.match(fnBody('async function viewJourneyC() {'), /api\('\/api\/report\?' \+ cScopeReportQs\(\)\)/);
   assert.match(fnBody('function cRepPeriod() {'), /RPT = \{ from: '', to: '', years: \[\.\.\.l\] \};/);
   assert.doesNotMatch(fnBody('function cRepHtml('), /c-periodbar|type="date"/);

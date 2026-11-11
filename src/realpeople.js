@@ -25,7 +25,8 @@ export function countPeople(rows) {
   const seen = new Map();
   const join = (k, i) => { if (!seen.has(k)) seen.set(k, i); else { const a = find(seen.get(k)), b = find(i); if (a !== b) parent[b] = a; } };
   list.forEach((p, i) => {
-    const n = nameKey(p.name); if (n.includes(' ')) join('n:' + n, i);
+    // a bracketed note ("(atsāk studijas)") or a second line (a parent's name) is no part of the person's name (11.11.2026)
+    const n = nameKey(String(p.name ?? '').split('\n')[0].replace(/\([^)]*\)/g, ' ')); if (n.includes(' ')) join('n:' + n, i);
     const e = String(p.email || '').trim().toLowerCase(); if (e) join('e:' + e, i);
     const ph = phoneKey(p.phone); if (ph) join('p:' + ph, i);
   });

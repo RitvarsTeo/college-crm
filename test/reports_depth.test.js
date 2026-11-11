@@ -17,6 +17,7 @@ const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
 const CFG = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'prototype.json'), 'utf8'));
 const fnBody = (name) => { const i = APP.indexOf(name); assert.ok(i >= 0, name); return APP.slice(i, APP.indexOf('\n}\n', i) + 2); };
+const FNX = (name) => { const i = APP.indexOf(name); return APP.slice(i, APP.indexOf('\n}\n', i) + 2); };
 const line = (start) => { const i = APP.indexOf(start); assert.ok(i >= 0, start); return APP.slice(i, APP.indexOf('\n', i)); };
 const BLOCK = APP.slice(APP.indexOf('// ---------------------------------------------------- FULL REPORT, ONE LEVEL DEEPER (Q35)'),
   APP.indexOf('// apply.novikontas.org, from the SIS'));
@@ -40,7 +41,7 @@ function load() {
     cScopeList: () => [Number(localDate().slice(0, 4))], cScopeAllYears: () => [Number(localDate().slice(0, 4))], cNowYear: () => Number(localDate().slice(0, 4)),
     C_SCOPE_YEARS: [], C_MONTHS_LONG: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
   };
-  vm.runInNewContext([line('const C_MONTHS ='), line('const C_TERMINAL ='), BLOCK,
+  vm.runInNewContext([line('const C_MONTHS ='), line('const C_TERMINAL ='), line('const cPersonName ='), FNX('function cOnePerPerson('), FNX('function cAdmittedOnce('), BLOCK,
     'this.X = { cRepModel, cRepHtml, cRepBuckets, cRepPeriodWord, cRepPeriod, cGoCohort, setCoh: (c) => { C_REP_COH = c; }, setCh: (c) => { C_REP_CH = c; } };'].join('\n'), ctx);
   return ctx;
 }

@@ -40,7 +40,7 @@ function journey(phone, people, setup = {}) {
   vm.runInNewContext([line('const cPhone = '), 'var C_JP = { col: null, view: "board", open: null };', line('const C_JCOL_SHOW = '), line('const C_JCOLOPEN = '),
     line('const C_ST = '), line('const C_ST_RAIL = '), fn('function cStateLine('), line('const cDdMm = '), fn('function cStepState('), line('const cIsDraft ='), line('const C_JDRAFT ='), line('const cJStage ='), fn('function cJStagesOpen('), line('const cJNum ='), line('const C_TERMINAL ='), line('const cStepGroup = '), line('const C_GRP = '), line('const cGroupBand = '),
     fn('function cJUrgency('), fn('function cJSort('), fn('function cJColumn('), filtersSrc.replace('let C_JF = {', 'var C_JF = {'),
-    fn('function cJTargetKeep('), line('const cJTargeted = '), line('const cMoveBody = '), fn('function cJTargetChips('), fn('function cJourneyMini('), (FOLD + fn('function cDrawJourney(')),
+    fn('function cJTargetKeep('), line('const cJTargeted = '), line('const cMoveBody = '), fn('function cJTargetChips('), fn('function cJourneyMini('), line('const cPersonName ='), fn('function cOnePerPerson('), fn('function cAdmittedOnce('), (FOLD + fn('function cDrawJourney(')),
     'this.draw = cDrawJourney; this.tap = cJStageTap; this.bar = cJBarTap; this.JP = () => C_JP; this.JF = () => C_JF; this.setOpen = (v) => { C_JP.open = v; };'].join('\n'), ctx);
   return { ctx, draw: () => { ctx.draw(); return html; }, last: () => html };
 }

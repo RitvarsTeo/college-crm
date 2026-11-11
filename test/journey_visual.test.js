@@ -127,7 +127,7 @@ test('every next step the demo plans is one of the configured types', () => {
 test('every Journey stage still appears, in the same order, with its own label', () => {
   const open = (CONFIG.stages || []).filter((s) => !['Admitted', 'Not proceeding'].includes(s.id));
   assert.ok(open.length >= 3);
-  const draw = (FOLD + fn('function cDrawJourney('));
+  const draw = ([line('const cPersonName ='), fn('function cOnePerPerson('), fn('function cAdmittedOnce(')].join('\n') + FOLD + fn('function cDrawJourney('));
   // Q57: the five stages as before; an end column joins them only when a way in targets it
   // 11.11.2026: the open stages with the "Draft in SIS" column before Submitted application; an end column as before
   assert.match(draw, /const stages = \[\.\.\.cJStagesOpen\(\), \.\.\.\(CFG\.stages \|\| \[\]\)\.filter\(\(s\) => C_TERMINAL\.includes\(s\.id\) && ends\.includes\(s\.id\)\)\];/, 'the stage list');

@@ -224,7 +224,7 @@ test('re-date: Admitted for the year counts by the corrected date (Reports and H
   // Home counts the people list by the same column, so it moves with it
   const home = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
   // Q45: the people rows are the period, the Admitted in it by their admission date (server, scopePeopleSql)
-  assert.match(home, /const admitted = cOnePerPerson\(people\.filter\(\(p\) => p\.status === 'Admitted' && p\.admitted_at\)\);/);
+  assert.match(home, /const admitted = cAdmittedOnce\(people\);/);
   // (Q59: the same rule over a set of years, src/yearscope.js rangesSql)
   assert.match(fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8'), /const \[adm, a2\] = rangesSql\(`\$\{alias\}\.admitted_at`, ranges\);[\s\S]*OR \(\$\{alias\}\.status = 'Admitted' AND \$\{alias\}\.admitted_at IS NOT NULL AND \$\{adm\}\)/);
   const people = await db.prepare('SELECT status, admitted_at FROM people').all();

@@ -62,7 +62,7 @@ test('one person, one count: records sharing a folded name, an email or a phone 
   assert.equal(countPeople([{ name: 'Anna' }, { name: 'Anna' }]), 2, 'one word is not enough to call two records one person');
   assert.equal(countPeople([]), 0);
   const home = read('src', 'app.html');
-  assert.match(home, /const admitted = cOnePerPerson\(people\.filter\(\(p\) => p\.status === 'Admitted' && p\.admitted_at\)\);/, 'Home counts the same way');
+  assert.match(home, /const admitted = cAdmittedOnce\(people\);/, 'Home counts the same way');
 });
 
 test('the plan: an SIS-made twin with exactly one sheet record that shares programme, email or phone; nothing else is joined', async () => {
