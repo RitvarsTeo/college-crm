@@ -3776,7 +3776,7 @@ export const handle = async (req, res) => {
       // no redirect (05.11.2026): Vercel takes the trailing slash off, so /demo -> /demo/ looped; the page carries a <base> instead
       let f = godemo.fileFor(p, me);
       if (!f) return json(res, 404, { error: 'not found' });
-      if (f.body !== undefined && f.body.includes('{{MOTHER_COMPANIES}}')) f = godemo.withCount(f, await tcgo.motherCompanies(db));
+      if (f.body !== undefined && f.body.includes('{{MOTHER_COMPANIES}}')) { const facts = await tcgo.goDemoFacts(db); f = godemo.withCount(f, facts.mothers, facts); }
       res.writeHead(200, { 'content-type': f.type, 'cache-control': 'no-store', 'x-frame-options': 'SAMEORIGIN', 'x-content-type-options': 'nosniff' });
       return res.end(godemo.read(f));
     }

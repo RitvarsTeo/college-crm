@@ -117,7 +117,7 @@ test('11.11 the new demo (the Grand Opening 10 chapters) plus In Intake: the til
   assert.ok(!html.includes('<h3>1,125 places</h3>') && !html.includes('45 x 25'));
   assert.match(html, /\{\{MOTHER_COMPANIES\}\}<\/b> mother companies on the Stage 2 lists/);
   assert.match(godemo.withCount({ body: html, type: 'text/html; charset=utf-8' }, 1234).body, /<b class="innum">1,234<\/b> mother companies/);
-  assert.match(fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8'), /godemo\.withCount\(f, await tcgo\.motherCompanies\(db\)\)/);
+  assert.match(fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8'), /const facts = await tcgo\.goDemoFacts\(db\); f = godemo\.withCount\(f, facts\.mothers, facts\)/);
   assert.doesNotMatch(html, /\.\.\/\.\.\//);
 });
 
@@ -180,4 +180,21 @@ test('11.11 "Match into Intake" (a dry run first): same name, same name without 
   assert.equal(plan.get('e@brandnew-example.com').newCompany, plan.get('f@brandnew-example.com').newCompany);
   assert.equal(plan.get('someone@gmail.com').companyId, null); assert.equal(plan.get('someone@gmail.com').newCompany, undefined);
   assert.equal(await db.prepare('SELECT COUNT(*) AS n FROM tc_companies WHERE name = ?').get('Brandnew Example').then((r) => Number(r.n)), 0);   // a plan writes nothing
+});
+
+test('11.11 "demo has to be like the real thing": ch1 shows the real Stage 2 letter, ch4 the real lists, ch5 a real mother company, all from goDemoFacts; no example labels left on ch1, ch4, ch5, ch8', async () => {
+  const godemo = await import('../src/godemo.js');
+  const html = godemo.read(godemo.fileFor(godemo.PREFIX)).toString('utf8');
+  const ch = (t) => { const a = html.indexOf('data-t="' + t + '"'); return html.slice(a, html.indexOf('</section>', a)); };
+  assert.match(ch('Two ways in'), /<iframe src="letters\/2_will_you_be_there\.html"/);
+  assert.ok(!ch('Two ways in').includes('your director at Novikontas Academy'));
+  for (const t of ['Two ways in', 'The count', 'One piece per company', 'The board']) assert.ok(!ch(t).includes('class="example"'), t);
+  assert.ok(!html.includes("['Anna Bērziņa','anna@exampleshipping.lv'") && !ch('One piece per company').includes('Example Shipping Group'));
+  assert.match(html, /<script>window\.GO_REAL=\/\*\{\{GO_REAL\}\}\*\/null;<\/script>/);
+  const filled = godemo.withCount({ body: html, type: 'text/html; charset=utf-8' }, 3, { mothers: 3, people: 9, sample: [{ person: '</script>x', written: 'A', sender: 'JS', mother: 'A' }], piece: { name: 'A', branches: 2, people: 4 } }).body;
+  assert.ok(!filled.includes('/*{{GO_REAL}}*/') && !filled.includes('</script>x') && filled.includes(String.fromCharCode(92) + 'u003c/script>x'));
+  const db = await openDb();
+  const f = await go.goDemoFacts(db);
+  assert.equal(f.mothers, await go.motherCompanies(db));
+  assert.ok(f.sample.length <= 8 && f.sample.every((r) => r.mother && 'written' in r));
 });

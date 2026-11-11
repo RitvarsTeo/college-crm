@@ -178,6 +178,7 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
 .intile{display:flex;flex-direction:column;gap:8px;text-decoration:none;color:var(--ink)} .intile h3,.inletter h3{margin:0;font-size:19px} .intile p,.inletter p{margin:0;color:var(--muted);font-weight:600} .intile .go{margin-top:auto;font-weight:800;color:var(--navy)} .intile .pill{align-self:flex-start} .intile .innum{color:var(--ink);font-size:22px;font-weight:800}
 .intile:hover,.inletter:hover{border-color:var(--navy)} .inh{margin:26px 0 12px;font-size:20px}
 .inletter{display:block;text-decoration:none;color:var(--ink);padding:14px} .inletter .lt{position:relative;overflow:hidden;aspect-ratio:600/1180;border-radius:10px;background:var(--bg);margin-bottom:10px}
+.inletter.ch1l{padding:0;border:0} .inletter .lt.top{aspect-ratio:600/700}
 .inletter .lt iframe{position:absolute;top:0;left:0;width:600px;height:1180px;border:0;transform-origin:0 0;pointer-events:none}
 </style>
 </head>
@@ -211,10 +212,7 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
   <div class="card way">
    <span class="pill blue">Digital invitation</span>
    <h3>Email from the director, a personal link for each person</h3>
-   <div class="mail">
-    <div class="hd"><b>From:</b> your director at Novikontas Academy<br><b>Subject:</b> You are invited: Grand Opening, Thursday 27 May 2027</div>
-    <div class="bd"><p>We would be glad to see you at the Grand Opening of Novikontas Academy.</p><a class="cta" href="https://novikontas.org/grand-opening" target="_blank" rel="noopener">Yes, I'll attend →</a></div>
-   </div>
+   <a class="inletter ch1l" href="letters/2_will_you_be_there.html" target="_blank" rel="noopener"><div class="lt top"><iframe src="letters/2_will_you_be_there.html" tabindex="-1" loading="lazy" scrolling="no" title="Will you be there?"></iframe></div></a>
   </div>
  </div>
  <div class="join"><span class="to">↓</span><div class="lp"><img src="assets/phone_1.jpg" alt=""><div><b>novikontas.org/grand-opening</b><br><span style="color:var(--muted);font-weight:600">live now</span></div></div><button class="btn" data-go="1">See the page →</button></div>
@@ -258,15 +256,15 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
 <!-- 4 -->
 <section class="ch" data-t="The count" data-s="Count">
  <h2>The count: people and mother companies</h2>
- <p class="lead">Every registration is matched to the company list; branches sit under their mother company. <span class="example">Example data</span></p>
+ <p class="lead">Every person on the Stage 2 lists is matched to the company list; branches sit under their mother company.</p>
  <div class="countbar">
   <button class="btn" id="grp">Group by mother company</button>
-  <span class="pill line" id="grp-state">People: 8 rows</span>
+  <span class="pill line" id="grp-state"></span>
  </div>
  <div id="tbl"></div>
  <div class="result">
-  <div class="tile"><div class="k">People who can attend</div><div class="v" id="r-people">7</div><div class="s">one ticket each</div></div>
-  <div class="tile"><div class="k">Mother companies</div><div class="v" id="r-comp">4</div><div class="s">= puzzle pieces to cut</div></div>
+  <div class="tile"><div class="k">People on the Stage 2 lists</div><div class="v" id="r-people"></div></div>
+  <div class="tile"><div class="k">Mother companies</div><div class="v" id="r-comp">{{MOTHER_COMPANIES}}</div><div class="s">= puzzle pieces to cut</div></div>
  </div>
 </section>
 
@@ -283,7 +281,7 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
      <rect x="64" y="64" width="72" height="72" rx="6" fill="#fff"/>
      <image href="assets/qr_company.svg" x="68" y="68" width="64" height="64"/>
     </svg>
-    <div><b style="font-size:20px">Example Shipping Group</b><br><span style="color:var(--muted);font-weight:600">Riga + Tallinn branches · 3 people<br>one piece, one place</span></div>
+    <div><b style="font-size:20px" id="pc-name"></b><br><span style="color:var(--muted);font-weight:600" id="pc-sub"></span></div>
    </div>
    <p style="margin:16px 0 0;font-weight:600;color:var(--muted)"><b style="color:var(--ink)">Board:</b> 2.70 × 1.50 m; one place per mother company, plus spares</p>
   </div>
@@ -346,7 +344,7 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
 <!-- 8 -->
 <section class="ch" data-t="The board" data-s="27.05.2027">
  <h2>The board: every company puts in its piece</h2>
- <p class="lead">Each placed piece uncovers its part of the artwork. <span class="example">Stand-in picture</span></p>
+ <p class="lead">Each placed piece uncovers its part of the artwork.</p>
  <div class="countbar"><button class="btn" id="place1">Place Example Shipping Group's piece</button><button class="btn ghost" id="placeall">Place every piece</button><button class="btn ghost" id="reset8">Start again</button><span class="pill line" id="placed">0 pieces placed</span></div>
  <div class="board" id="board8" aria-label="Puzzle board"></div>
 </section>
@@ -400,6 +398,7 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
  <button class="btn" id="next">Next →</button>
 </div></div>
 
+<script>window.GO_REAL=/*{{GO_REAL}}*/null;</script>
 <script>
 (function(){
  var chs=[].slice.call(document.querySelectorAll('.ch')), nav=document.getElementById('nav'), cur=0, lastStage='';
@@ -427,24 +426,18 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
  tabs.forEach(function(t){ t.onclick=function(){ tabs.forEach(function(x){x.setAttribute('aria-pressed',x===t?'true':'false');}); var n=t.dataset.n; document.getElementById('ph-img').src='assets/phone_'+n+'.jpg'; document.getElementById('dk-img').src='assets/desktop_'+n+'.jpg'; document.getElementById('ph-scr').scrollTop=0; }; });
 
  /* 4 count */
- var rows=[
-  ['Anna Bērziņa','anna@exampleshipping.lv','Example Shipping Riga','Example Shipping Group','Gift QR','ok'],
-  ['Jānis Ozols','janis@exampleshipping.ee','Example Shipping Tallinn','Example Shipping Group','Email','ok'],
-  ['Eva Sproģe','eva@exampleshipping.lv','Example Shipping','Example Shipping Group','Email','ok'],
-  ['Anna Bērziņa','anna@exampleshipping.lv','Example Shipping Riga','Example Shipping Group','Email','dup'],
-  ['Līga Kalniņa','liga@balticexample.com','Baltic Example Lines','Baltic Example Lines','Email','ok'],
-  ['Mārtiņš Liepa','martins@nordicexample.no','Nordic Ex. Tankers AS','Nordic Example Tankers','Gift QR','hand'],
-  ['Toms Krūmiņš','toms@examplecrew.lv','Example Crewing','Example Crewing','Typed','ok'],
-  ['Inga Rozīte','inga@examplecrew.lv','Example Crewing','Example Crewing','Email','ok']
- ];
+ var R=window.GO_REAL||{sample:[],people:0,piece:null};
+ var rows=R.sample.map(function(r){ return [r.person, r.sender, r.written, r.mother, r.sender, 'ok']; });
+ document.getElementById('r-people').textContent=Number(R.people||0).toLocaleString('en-US');
+ if(R.piece){ document.getElementById('pc-name').textContent=R.piece.name; document.getElementById('pc-sub').innerHTML=R.piece.branches+(R.piece.branches===1?' company':' companies')+' · '+Number(R.piece.people).toLocaleString('en-US')+' people<br>one piece, one place'; }
  var grouped=false;
  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
  function drawTbl(){
   var t=document.getElementById('tbl'), h;
   if(!grouped){
-   h='<table><thead><tr><th>Person</th><th>Company as typed</th><th>Came in by</th><th>Match</th></tr></thead><tbody>';
+   h='<table><thead><tr><th>Person</th><th>Company as written</th><th>List</th><th>Match</th></tr></thead><tbody>';
    rows.forEach(function(r){ var tag=r[5]==='ok'?'<span class="tag">matched: '+esc(r[3])+'</span>':r[5]==='dup'?'<span class="tag dup">same person, counted once</span>':'<span class="tag hand">checked by hand → '+esc(r[3])+'</span>';
-    h+='<tr><td><b>'+esc(r[0])+'</b><span class="sub">'+esc(r[1])+'</span></td><td>'+esc(r[2])+'</td><td>'+esc(r[4])+'</td><td>'+tag+'</td></tr>'; });
+    h+='<tr><td><b>'+esc(r[0])+'</b></td><td>'+esc(r[2])+'</td><td>'+esc(r[4])+'</td><td>'+tag+'</td></tr>'; });
    document.getElementById('grp-state').textContent='People: '+rows.length+' rows';
   } else {
    var m={}; rows.forEach(function(r){ if(r[5]==='dup')return; (m[r[3]]=m[r[3]]||{b:{},p:[]}); m[r[3]].b[r[2]]=1; m[r[3]].p.push(r[0]); });

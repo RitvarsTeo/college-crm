@@ -71,5 +71,8 @@ export function letterPage(kind, me) {
 }
 // THE REAL COMPANY COUNT on the In Intake chapter (11.11.2026): the page carries {{MOTHER_COMPANIES}}; the server puts in the
 // live number from src/tcgo.js motherCompanies on each open.
-export const withCount = (f, n) => (f && f.body !== undefined && f.type === TYPES['.html'] ? { ...f, body: f.body.split('{{MOTHER_COMPANIES}}').join(Number(n || 0).toLocaleString('en')) } : f);
+// THE DEMO'S REAL FACTS (11.11.2026): the page also carries /*{{GO_REAL}}*/null, replaced by src/tcgo.js goDemoFacts as JSON
+// (every < written as \u003c, so no data can close the script).
+export const withCount = (f, n, facts = null) => (f && f.body !== undefined && f.type === TYPES['.html'] ? { ...f, body: f.body.split('{{MOTHER_COMPANIES}}').join(Number(n || 0).toLocaleString('en'))
+  .split('/*{{GO_REAL}}*/null').join(JSON.stringify(facts).replace(/</g, String.fromCharCode(92) + 'u003c').replace(/[\u2028\u2029]/g, ' ')) } : f);
 export const read = (f) => (f.body !== undefined ? Buffer.from(f.body, 'utf8') : fs.readFileSync(f.file));

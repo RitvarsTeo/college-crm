@@ -549,9 +549,9 @@ export async function metKeys(db) {
 // confirmed family counts as its parent. Rows set aside (gone) are not counted; people without any company are counted
 // apart (noCompany), never dropped. One function feeds the number and the list.
 export async function motherCompanyList(db) {
-  const rows = await db.prepare(`SELECT s.id, s.company, MIN(k.company_id) AS company_id FROM tc_go_stage2 s
+  const rows = await db.prepare(`SELECT s.id, s.name, s.sender, s.company, MIN(k.company_id) AS company_id FROM tc_go_stage2 s
     LEFT JOIN tc_company_contacts k ON k.ch_contact_id = s.ch_contact_id AND k.archived_at IS NULL WHERE s.gone = 0
-    GROUP BY s.id, s.company`).all();
+    GROUP BY s.id, s.name, s.sender, s.company ORDER BY s.id`).all();
   const cos = await db.prepare(`SELECT id, name, name_key FROM tc_companies WHERE archived_at IS NULL`).all();
   const byId = new Map(cos.map((c) => [Number(c.id), c.name]));
   const byName = new Map(); for (const c of cos) if (c.name_key && !byName.has(c.name_key)) byName.set(c.name_key, Number(c.id));
@@ -564,10 +564,33 @@ export async function motherCompanyList(db) {
     if (id) id = parent.get(id) || id;
     const key = id ? 'id:' + id : name ? 'n:' + nameKey(name) : null;
     if (!key || key === 'n:') { noCompany += 1; continue; }
-    if (!out.has(key)) out.set(key, { key, companyId: id, name: id ? byId.get(id) || name : name, people: 0 });
-    out.get(key).people += 1;
+    if (!out.has(key)) out.set(key, { key, companyId: id, name: id ? byId.get(id) || name : name, people: 0, rows: [], branches: new Set() });
+    const g = out.get(key); g.people += 1;
+    g.rows.push({ person: r.name || '', written: name, sender: r.sender || '' });
+    if (r.company_id) g.branches.add(Number(r.company_id));
   }
-  return { companies: [...out.values()].sort((x, y) => y.people - x.people || x.name.localeCompare(y.name, 'lv')), noCompany };
+  return { companies: [...out.values()].map((g) => ({ ...g, branches: g.branches.size })).sort((x, y) => y.people - x.people || x.name.localeCompare(y.name, 'lv')), noCompany };
+}
+
+/** THE DEMO'S REAL FACTS (11.11.2026, the owner: "demo has to be like the real thing"): the live totals, eight real rows
+ *  for The count (from the mother companies whose people wrote their company in the most different ways, so the
+ *  matching shows) and one real mother company for the piece (the one with the most branches on the lists). */
+export async function goDemoFacts(db) {
+  const { companies, noCompany } = await motherCompanyList(db);
+  const people = companies.reduce((n, c) => n + c.people, 0) + noCompany;
+  const spread = (c) => new Set(c.rows.map((r) => r.written.toLowerCase())).size;
+  const pick = companies.filter((c) => c.companyId && spread(c) > 1).sort((a, b) => spread(b) - spread(a) || b.people - a.people).slice(0, 3);
+  const owner = new Map((((TC.grandOpening || {}).stage2 || {}).senders || []).map((x) => [x.code, x.name || x.code]));
+  const sample = [];
+  for (const c of pick) {
+    const seen = new Set(); let n = 0;
+    for (const r of c.rows) {
+      const w = r.written.toLowerCase(); if (seen.has(w) || n >= 3 || sample.length >= 8) continue;
+      seen.add(w); n += 1; sample.push({ ...r, sender: owner.get(r.sender) || r.sender, mother: c.name });
+    }
+  }
+  const piece = [...companies].filter((c) => c.companyId).sort((a, b) => b.branches - a.branches || b.people - a.people)[0] || null;
+  return { mothers: companies.length, people, sample, piece: piece ? { name: piece.name, branches: piece.branches, people: piece.people } : null };
 }
 export async function motherCompanies(db) { return (await motherCompanyList(db)).companies.length; }
 
