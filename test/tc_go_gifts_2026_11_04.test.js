@@ -304,3 +304,13 @@ test('11.11 his consolidated list ("we are golden"): Stage 1 first, the send-out
   const f = await go.goDemoFacts(await openDb());
   assert.ok(Array.isArray(f.lists) && f.lists.length === 6 && f.lists.every((l) => /@novikontas\.org$/.test(l.email)));
 });
+
+test('11.11 the app is a working product, not a wall of notes (the owner): no on-hold, waiting-for, second-phase or "until then" note on any screen; a held letter is not shown', async () => {
+  const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
+  const demo = fs.readFileSync(path.join(ROOT, 'src', 'go-demo', 'index.html'), 'utf8');
+  for (const [name, src] of [['app', app], ['demo', demo]]) {
+    for (const re of [/On hold/i, /second phase/i, /confirms once/i, /Until then/, /tcgm-blk/, /not switched on for Intake yet/]) assert.doesNotMatch(src, re, name + ' ' + re);
+  }
+  assert.ok(app.includes("const live = ['in', 'r1', 'r2'].filter((k) => T_GM[k] && !T_GM[k].blocked);"));
+  assert.ok(app.includes('if (y.confirmed === false) return'));
+});

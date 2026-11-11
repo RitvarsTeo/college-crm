@@ -2681,7 +2681,7 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tc-door-act{display:flex;gap:8px;align-items:center;margin-top:14px} html.ui-c .tc-door-act b{font-size:22px;min-width:28px;text-align:center}
   html.ui-c .tc-door-was{color:#1e7bc4;font-weight:600;margin:10px 0 0} html.ui-c .tc-door-err{color:#b3261e;margin-top:12px} html.ui-c .tc-door-tot{color:var(--t3);margin:12px 0 0}
   html.ui-c .tcgm{padding:16px 22px} html.ui-c .tcgm-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
-  html.ui-c .tcgm-card{display:flex;flex-direction:column;gap:4px} html.ui-c .tcgm-n{font-size:28px;font-weight:700} html.ui-c .tcgm-blk{color:#8a5a00}
+  html.ui-c .tcgm-card{display:flex;flex-direction:column;gap:4px} html.ui-c .tcgm-n{font-size:28px;font-weight:700}
   html.ui-c .tcgm-acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px} html.ui-c .tcgm-prev{width:min(680px,96vw)} html.ui-c .tcgm-prev iframe{width:100%;height:70vh;border:0;border-radius:8px}
   html.ui-c .tcs2-met{align-self:flex-start;font-size:10.5px;font-weight:700;color:#8a5a00;background:#fdf3d9;border-radius:5px;padding:2px 6px}
   html.ui-c .tcs2-gift{margin-top:auto;display:flex;gap:4px} html.ui-c .tcs2-gift button{all:unset;cursor:pointer;font-size:10.5px;font-weight:600;border-radius:5px;padding:3px 7px;background:var(--surface-2);color:var(--t3)}
@@ -6630,7 +6630,7 @@ let C_RPT_PRESET = 'month';
 const C_SHEET_TEXT = {
   declined: 'No sheet was made: Google access was not given. Nothing was saved in Google Drive.',
   wrong_account: 'No sheet was made: Google answered for a different account than the one signed in to Intake. Choose your own novikontas.org account.',
-  drive_api_disabled: 'No sheet was made: Google Drive is not switched on for Intake yet. An admin enables the Google Drive API once in Intake\'s Google Cloud project. Until then, download Excel; it opens in Google Sheets too.',
+  drive_api_disabled: 'No sheet was made: Google Drive is switched off for Intake. Download Excel; it opens in Google Sheets too.',
   no_permission: 'No sheet was made: Google did not give Intake permission to create the file.',
   failed: 'No sheet was made: Google Drive did not accept the file. Nothing was saved. Try again, or download Excel.',
 };
@@ -13025,10 +13025,12 @@ function tcGmHtml() {
   if (!T_GM) return '';
   const card = (k) => { const c = T_GM[k]; const per = Object.entries(c.perSender || {});
     return `<div class="tcgo-pack tcgm-card"><b>${esc(c.label)}</b><div class="tcgm-n">${tcN(c.n)}</div><small>${c.n ? 'waiting' : 'nobody waiting'}${c.sent ? ' · ' + tcN(c.sent) + ' sent' : ''}</small>
-      ${c.blocked ? `<small class="tcgm-blk">${esc(c.blocked)}</small>` : ''}
       <div class="tcgm-acts"><button type="button" class="btn sm ghost" onclick="tcGmPreview(${esc(JSON.stringify(k))})">Preview</button>
-      ${per.map(([s, n]) => `<button type="button" class="btn sm" ${c.blocked || T_GM_BUSY ? 'disabled' : ''} onclick="tcGmSend(${esc(JSON.stringify(k))}, ${esc(JSON.stringify(s))})">Send ${Number(n)} · ${esc(s)}</button>`).join('')}</div></div>`; };
-  return `<section class="c-sheet tcgm" aria-label="After the answer"><div class="tcgo-bh"><h2>After the answer</h2></div><div class="tcgm-cards">${['in', 'r1', 'r2'].map(card).join('')}</div></section>`;
+      ${per.map(([s, n]) => `<button type="button" class="btn sm" ${T_GM_BUSY ? 'disabled' : ''} onclick="tcGmSend(${esc(JSON.stringify(k))}, ${esc(JSON.stringify(s))})">Send ${Number(n)} · ${esc(s)}</button>`).join('')}</div></div>`; };
+  // THE APP IS A WORKING PRODUCT, NOT A WALL OF NOTES (the owner, 11.11.2026): a letter held back is not shown at all
+  const live = ['in', 'r1', 'r2'].filter((k) => T_GM[k] && !T_GM[k].blocked);
+  if (!live.length) return '';
+  return `<section class="c-sheet tcgm" aria-label="After the answer"><div class="tcgo-bh"><h2>After the answer</h2></div><div class="tcgm-cards">${live.map(card).join('')}</div></section>`;
 }
 async function tcGmPreview(kind) {
   try { const m = await api('/api/tc/go/mails/preview?kind=' + encodeURIComponent(kind));
@@ -13051,8 +13053,8 @@ function tcS2PacksHtml(S, state) {
     const busy = T_S2X_BUSY === x.code, all = y.sent + y.refused >= y.n - y.noCode && y.n > 0;
     const line = all ? `<small class="tcs2x-ok">✓ Sent ${Number(y.sent)} of ${Number(y.n)}</small>`
       : y.sent ? `<small class="tcs2x-ok">Sent ${Number(y.sent)} of ${Number(y.n)}</small>` : '<small class="tcs2x-ok">Ready to send</small>';
-    const sub = y.confirmed === false ? `<small class="tcs2x-wait">Waiting: ${esc(y.email)} confirms once</small>`
-      : y.confirmed === null ? '<small class="tcs2x-sub">Connect sending first</small>' : y.refused ? `<small class="tcs2x-sub">${Number(y.refused)} refused</small>` : '<small class="tcs2x-sub">address confirmed</small>';
+    if (y.confirmed === false) return `<div class="tcgo-pack"><b>${esc(x.label)}</b><span>${Number(x.n)}</span>${y.sent ? line : ''}</div>`;
+    const sub = y.confirmed === null ? '<small class="tcs2x-sub">Connect sending first</small>' : y.refused ? `<small class="tcs2x-sub">${Number(y.refused)} refused</small>` : '<small class="tcs2x-sub">address confirmed</small>';
     const can = y.confirmed === true && !busy && !T_S2X_BUSY;
     const btns = all ? '' : `<div class="tcs2x-btns"><button type="button" class="btn sm ghost" ${can ? '' : 'disabled'} onclick="tcS2xTest(${esc(JSON.stringify(String(x.code)))})">Test to me</button>
       <button type="button" class="btn sm" ${can && y.left > 0 ? '' : 'disabled'} onclick="tcS2xSend(${esc(JSON.stringify(String(x.code)))})">${busy ? 'Sending…' : `Send next ${Math.min(X.batch, y.left)}`}</button></div>`;
