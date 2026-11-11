@@ -3421,7 +3421,10 @@ export const handle = async (req, res) => {
     if (p === '/api/tc/companies.xlsx' && req.method === 'GET') {
       const people = url.searchParams.get('people') === '1';
       const me = await tcMe(req, url);
-      const out = await tc.exportRows(db, tc.readFilters(url.searchParams), { sort: url.searchParams.get('sort') || 'name', me, people });
+      const xf = tc.readFilters(url.searchParams);
+      // the Stage 2 mother companies download as they show (11.11.2026)
+      if (xf.go2) xf.go2ids = new Set((await tcgo.motherCompanyList(db)).companies.filter((c) => c.companyId).map((c) => c.companyId));
+      const out = await tc.exportRows(db, xf, { sort: url.searchParams.get('sort') || 'name', me, people });
       console.log(`tc download: ${me ? me.email || me.name : 'unknown'} ${people ? 'companies+people' : 'companies'} ${out.companies} companies, ${out.people} people`);
       const name = `${people ? 'Companies and people' : 'Companies'} ${localDate()}.xlsx`;
       const file = rowsToXlsx(out.rows, { bold: [0], sheetName: people ? 'Companies and people' : 'Companies', title: name });
