@@ -69,4 +69,7 @@ export function letterPage(kind, me) {
   demoViewer = String((me && me.email) || '').toLowerCase();
   return letter(kind, String((me && me.name) || '').split(/\s+/)[0] || '').replace('src="building.jpg"', 'src="/assets/go-building.jpg"');
 }
+// THE REAL COMPANY COUNT on the In Intake chapter (11.11.2026): the page carries {{MOTHER_COMPANIES}}; the server puts in the
+// live number from src/tcgo.js motherCompanies on each open.
+export const withCount = (f, n) => (f && f.body !== undefined && f.type === TYPES['.html'] ? { ...f, body: f.body.split('{{MOTHER_COMPANIES}}').join(Number(n || 0).toLocaleString('en')) } : f);
 export const read = (f) => (f.body !== undefined ? Buffer.from(f.body, 'utf8') : fs.readFileSync(f.file));

@@ -108,13 +108,36 @@ test('11.11 the new demo (the Grand Opening 10 chapters) plus In Intake: the til
   assert.equal((html.match(/<section class="ch"/g) || []).length, 11);
   assert.match(html, /<section class="ch" data-t="In Intake" data-s="Intake">/);
   for (const [title, href] of [['Do not invite / hold', '#/tc/go/hold'], ['What came back', '#/tc/go/back'], ['Six owners, six lists', '#/tc/go/lists'],
-    ['Company families', '#/tc/families'], ['Clients in Intake', '#/tc/clients']]) {
+    ['Company families', '#/tc/families'], ['Clients in Intake', '#/tc/clients'], ['Real company count', '#/tc/go/lists']]) {
     const at = html.indexOf('<h3>' + title + '</h3>'); const a = html.lastIndexOf('<a class="card intile"', at);
     assert.ok(at > 0 && html.slice(a, at).includes('href="https://intake.novikontas.org/' + href + '"'), title);
   }
   for (const f of ['2_will_you_be_there', '3_you_are_invited', '4_new_contact']) assert.match(html, new RegExp('<iframe src="letters/' + f + '\.html"'));
-  assert.match(html, /href="puzzle\/Puzzle_pozicijas_1125_45x25_2026-11-06\.xlsx"/);
+  // his answer 11.11.2026: the "1,125 places" tile is the live Real company count; no 45 x 25 on it
+  assert.ok(!html.includes('<h3>1,125 places</h3>') && !html.includes('45 x 25'));
+  assert.match(html, /\{\{MOTHER_COMPANIES\}\}<\/b> mother companies on the Stage 2 lists/);
+  assert.match(godemo.withCount({ body: html, type: 'text/html; charset=utf-8' }, 1234).body, /<b class="innum">1,234<\/b> mother companies/);
+  assert.match(fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8'), /godemo\.withCount\(f, await tcgo\.motherCompanies\(db\)\)/);
   assert.doesNotMatch(html, /\.\.\/\.\.\//);
+});
+
+test('11.11 the Real company count: one per mother company on the Stage 2 lists; a family counts once as its parent; gone rows and no-company rows are not counted', async () => {
+  const db = await openDb();
+  const at = new Date().toISOString();
+  const co = async (name) => Number((await db.prepare(`INSERT INTO tc_companies (name, name_key, status, created_at) VALUES (?,?,?,?)`).run(name, name.toLowerCase(), 'active', at)).lastInsertRowid);
+  const mother = await co('Mother Example AS'), branch = await co('Mother Example Branch SIA'), other = await co('Other Example Ltd');
+  const fam = Number((await db.prepare(`INSERT INTO tc_families (parent_id, created_at) VALUES (?,?)`).run(mother, at)).lastInsertRowid);
+  for (const id of [mother, branch]) await db.prepare(`INSERT INTO tc_family_members (family_id, company_id, added_at) VALUES (?,?,?)`).run(fam, id, at);
+  const person = async (ch, companyId, company, gone = 0) => {
+    if (companyId) await db.prepare(`INSERT INTO tc_company_contacts (company_id, name, ch_contact_id, created_at) VALUES (?,?,?,?)`).run(companyId, 'P ' + ch, ch, at);
+    await db.prepare(`INSERT INTO tc_go_stage2 (ch_contact_id, sender, name, first_name, company, position, country, email, link_code, gone, loaded_at, loaded_by)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`).run(ch, 'JS', 'P ' + ch, 'P', company, '', 'Latvia', ch + '@example.com', 'mc' + ch, gone, at, 'test');
+  };
+  const before = await go.motherCompanies(db);
+  await person('MC1', mother, 'Mother Example AS'); await person('MC2', branch, 'Mother Example Branch SIA'); await person('MC3', other, 'Other Example Ltd');
+  await person('MC4', null, 'Name Only Example'); await person('MC5', null, '  NAME ONLY EXAMPLE '); await person('MC6', null, '');
+  await person('MC7', null, 'Gone Example', 1);
+  assert.equal(await go.motherCompanies(db) - before, 3);
 });
 
 test('06.11 his "Remove both": the demo has no Supabase dashboard tile and no fronts tile with bare years', async () => {

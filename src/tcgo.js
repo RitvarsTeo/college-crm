@@ -543,6 +543,25 @@ export async function metKeys(db) {
   return [...new Set([...a, ...e].map((r) => 'id:' + Number(r.company_id)))];
 }
 
+// THE REAL COMPANY COUNT (11.11.2026, the owner's answer on the demo: the "1,125 places" tile becomes the live number of
+// mother companies on the Stage 2 lists, one puzzle piece per mother company). A person's company is Intake's company,
+// else the name on their row; a company in a confirmed family counts as its parent. People without any company are not
+// a company and are not counted.
+export async function motherCompanies(db) {
+  const rows = await db.prepare(`SELECT s.ch_contact_id, s.company, MIN(k.company_id) AS company_id FROM tc_go_stage2 s
+    LEFT JOIN tc_company_contacts k ON k.ch_contact_id = s.ch_contact_id AND k.archived_at IS NULL WHERE s.gone = 0
+    GROUP BY s.id, s.ch_contact_id, s.company`).all();
+  const parent = new Map((await db.prepare(`SELECT m.company_id, f.parent_id FROM tc_family_members m JOIN tc_families f ON f.id = m.family_id
+    WHERE m.ended_at IS NULL AND f.ended_at IS NULL`).all()).map((r) => [Number(r.company_id), Number(r.parent_id)]));
+  const keys = new Set();
+  for (const r of rows) {
+    if (r.company_id) { const id = Number(r.company_id); keys.add('id:' + (parent.get(id) || id)); continue; }
+    const n = String(r.company || '').trim().toLowerCase();
+    if (n) keys.add('n:' + n);
+  }
+  return keys.size;
+}
+
 // THE PUZZLE PLACE ON YES (05.11.2026; a company gets its place when it answers Yes). THE GRID (06.11.2026, his words "the
 // puzzle will be 6cm x 6cm pieces. wider than tall", his pick B): 45 columns x 25 rows = 1,125 places, 2.70 x 1.50 m, codes
 // 1A..45Y; the Grand Opening's Puzzle_pozicijas_1125_45x25_2026-11-06.xlsx. Places are given in the list's order (1A, 2A ...
