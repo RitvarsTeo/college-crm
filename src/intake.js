@@ -1257,6 +1257,10 @@ export async function inboundHistory(db, id) {
 // Counted from what actually happened. Nothing is modelled or estimated.
 export async function funnel(db, now = nowIso()) {
   const n = async (sql, ...a) => (await db.prepare(sql).get(...a)).n;
+  // A CONTACT is somebody from outside (the owner's rule 05.11.2026: no staff or test record in any figure). An item set
+  // aside as Internal, Spam or Supplier or vendor (MARKS, the same three that mark a number or an address) is not one;
+  // "Not a prospective student" is a real person who wrote or called, and stays a contact.
+  const CONTACT = `state != 'filtered' AND NOT (state = 'archived' AND COALESCE(archive_reason, '') IN (${MARKS.map(() => '?').join(',')}))`;
   const stages = CFG.stages.map((s) => s.id);
   const terminal = CFG.terminalStages || [];
 
@@ -1272,7 +1276,7 @@ export async function funnel(db, now = nowIso()) {
   })));
 
   const steps = [
-    { step: 'Contacted us', count: await n("SELECT COUNT(*) n FROM inbound WHERE state != 'filtered'"),
+    { step: 'Contacted us', count: await n(`SELECT COUNT(*) n FROM inbound WHERE ${CONTACT}`, ...MARKS),
       go: '#/car' },
     { step: 'Waiting to be looked at', count: await n("SELECT COUNT(*) n FROM inbound WHERE state = 'new'"),
       go: '#/car' },
@@ -1287,11 +1291,11 @@ export async function funnel(db, now = nowIso()) {
   ];
 
   const byChannel = await db.prepare(`SELECT channel,
-      SUM(CASE WHEN state != 'filtered' THEN 1 ELSE 0 END) contacts,
+      SUM(CASE WHEN ${CONTACT} THEN 1 ELSE 0 END) contacts,
       SUM(CASE WHEN qualification = 'lead' THEN 1 ELSE 0 END) leads,
       SUM(CASE WHEN state = 'new' THEN 1 ELSE 0 END) waiting
     FROM inbound GROUP BY channel
-    HAVING SUM(CASE WHEN state != 'filtered' THEN 1 ELSE 0 END) > 0 ORDER BY contacts DESC`).all();
+    HAVING SUM(CASE WHEN ${CONTACT} THEN 1 ELSE 0 END) > 0 ORDER BY contacts DESC`).all(...MARKS, ...MARKS);
 
   const dropOut = await db.prepare(`SELECT closed_reason reason, COUNT(*) n FROM ${REAL_PEOPLE} people
     WHERE status = ? AND closed_reason IS NOT NULL GROUP BY closed_reason ORDER BY n DESC`)
