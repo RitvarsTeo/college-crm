@@ -120,6 +120,7 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
 @media (max-width:900px){.pc-row{grid-template-columns:1fr}}
 .pc-big{display:flex;gap:18px;align-items:center}
 .pc-big .piece{width:150px;height:150px}
+.realpiece{object-fit:contain;border-radius:8px}
 /* 6 ticket */
 .tk-row{display:grid;grid-template-columns:1fr auto;gap:30px;align-items:start}
 @media (max-width:900px){.tk-row{grid-template-columns:1fr}}
@@ -201,11 +202,7 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
    <span class="pill">Physical gift</span>
    <h3>Puzzle-piece invitation, handed over by the director</h3>
    <div class="piece-wrap">
-    <svg class="piece" viewBox="0 0 200 200" aria-label="Puzzle piece, back side, with the QR">
-     <path d="M30 30 H82 a18 18 0 1 1 36 0 H170 V82 a18 18 0 1 0 0 36 V170 H118 a18 18 0 1 1 -36 0 H30 V118 a18 18 0 1 0 0 -36 Z" fill="#0a2463"/>
-     <rect x="52" y="52" width="96" height="96" rx="6" fill="#fff"/>
-     <image href="assets/qr_gift.svg" x="56" y="56" width="88" height="88"/>
-    </svg>
+    <img class="piece realpiece" src="assets/piece_gift.jpg" alt="The Grand Opening puzzle piece with the gift QR">
     <div><div class="addr" style="font-weight:800;font-size:18px">novikontas.org/<br>grand-opening?gift</div><p style="margin:8px 0 0;color:var(--muted);font-weight:600">Same QR on every gift.<br>Scan it now with a phone.</p></div>
    </div>
   </div>
@@ -239,7 +236,7 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
 <!-- 3 -->
 <section class="ch" data-t="What we measure" data-s="Stage 2">
  <h2>What we measure</h2>
- <p class="lead">The Save the Date as it came back, and the mother companies on the Stage 2 lists.</p>
+ <h3 class="inh">Measured so far</h3>
  <div class="card bars" id="bars">
   <div class="bar"><span class="lbl">Save the Date sent</span><div class="track"><div class="fill" id="b-s"></div></div><span class="n" id="n-s"></span></div>
   <div class="bar"><span class="lbl">Reached</span><div class="track"><div class="fill" id="b-r"></div></div><span class="n" id="n-r"></span></div>
@@ -247,20 +244,21 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
   <div class="bar"><span class="lbl">Added to calendar</span><div class="track"><div class="fill" id="b-c"></div></div><span class="n" id="n-c"></span></div>
   <div class="bar"><span class="lbl">Mother companies</span><div class="track"><div class="fill navy" id="b-m"></div></div><span class="n" id="n-m"></span></div>
  </div>
+ <h3 class="inh">Stage 2: what we measure</h3>
+ <div class="tiles">
+  <div class="tile"><div class="k">Gift QR</div><div class="v" id="m-g"></div><div class="s">visits · <span id="m-gr"></span> registered</div></div>
+  <div class="tile"><div class="k">Personal email link</div><div class="v" id="m-l"></div><div class="s">opens · <span id="m-lr"></span> registered · <span id="m-lc"></span> added to calendar</div></div>
+  <div class="tile"><div class="k">Typed address</div><div class="v" id="m-p"></div><div class="s">visits · <span id="m-pr"></span> registered</div></div>
+ </div>
 </section>
 
 <!-- 4 -->
 <section class="ch" data-t="The count" data-s="Count">
  <h2>The count: people and mother companies</h2>
- <p class="lead">Every person on the Stage 2 lists is matched to the company list; branches sit under their mother company.</p>
- <div class="countbar">
-  <button class="btn" id="grp">Group by mother company</button>
-  <span class="pill line" id="grp-state"></span>
- </div>
- <div id="tbl"></div>
+ <p class="lead">Every person on the Stage 2 lists sits on their company; branches sit under their mother company.</p>
  <div class="result">
-  <div class="tile"><div class="k">People on the Stage 2 lists</div><div class="v" id="r-people"></div></div>
-  <div class="tile"><div class="k">Mother companies</div><div class="v" id="r-comp">{{MOTHER_COMPANIES}}</div><div class="s">= puzzle pieces to cut</div></div>
+  <a class="tile intile" href="https://intake.novikontas.org/#/tc/go/lists" target="_blank" rel="noopener"><div class="k">People on the Stage 2 lists</div><div class="v" id="r-people"></div><span class="go">Open &rarr;</span></a>
+  <a class="tile intile" href="https://intake.novikontas.org/#/tc/companies/go2" target="_blank" rel="noopener"><div class="k">Mother companies</div><div class="v" id="r-comp">{{MOTHER_COMPANIES}}</div><div class="s">= puzzle pieces to cut</div><span class="go">Open &rarr;</span></a>
  </div>
 </section>
 
@@ -272,11 +270,7 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
   <div><div class="board" id="board5" aria-label="Puzzle board"></div></div>
   <div class="card">
    <div class="pc-big">
-    <svg class="piece" viewBox="0 0 200 200" aria-hidden="true">
-     <path d="M40 40 H85 a15 15 0 1 1 30 0 H160 V85 a15 15 0 1 0 0 30 V160 H115 a15 15 0 1 1 -30 0 H40 V115 a15 15 0 1 0 0 -30 Z" fill="#ebbb6c" stroke="#011111" stroke-width="3"/>
-     <rect x="64" y="64" width="72" height="72" rx="6" fill="#fff"/>
-     <image href="assets/qr_gift.svg" x="68" y="68" width="64" height="64"/>
-    </svg>
+    <img class="piece realpiece" src="assets/piece_gift.jpg" alt="">
     <div><b style="font-size:20px" id="pc-name"></b><br><span style="color:var(--muted);font-weight:600" id="pc-sub"></span></div>
    </div>
    <p style="margin:16px 0 0;font-weight:600;color:var(--muted)"><b style="color:var(--ink)">Board:</b> 2.70 × 1.50 m; one place per mother company, plus spares</p>
@@ -422,34 +416,17 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
  tabs.forEach(function(t){ t.onclick=function(){ tabs.forEach(function(x){x.setAttribute('aria-pressed',x===t?'true':'false');}); var n=t.dataset.n; document.getElementById('ph-img').src='assets/phone_'+n+'.jpg'; document.getElementById('dk-img').src='assets/desktop_'+n+'.jpg'; document.getElementById('ph-scr').scrollTop=0; }; });
 
  /* 4 count */
- var R=window.GO_REAL||{sample:[],people:0,piece:null,std:null,mothers:0};
- var rows=R.sample.map(function(r){ return [r.person, r.sender, r.written, r.mother, r.sender, 'ok']; });
+ var R=window.GO_REAL||{sample:[],people:0,piece:null,std:null,landing:null,mothers:0};
  document.getElementById('r-people').textContent=Number(R.people||0).toLocaleString('en-US');
+ (function(){ var L=R.landing, n=function(x){ return L ? Number(x||0).toLocaleString('en-US') : '–'; }, set=function(id,v){ document.getElementById(id).textContent=v; };
+  set('m-g',n(L&&L.gift_opens)); set('m-gr',n(L&&L.gift_registered)); set('m-l',n(L&&L.link_opens)); set('m-lr',n(L&&L.link_registered)); set('m-lc',n(L&&L.link_calendar)); set('m-p',n(L&&L.page_opens)); set('m-pr',n(L&&L.page_registered));
+ })();
  (function(){ var D=R.std, m=Number(R.mothers||0), top=Math.max(D?D.sent:0, m, 1);
   [['s',D&&D.sent],['r',D&&D.reached],['o',D&&D.person],['c',D&&D.calendar],['m',m]].forEach(function(x){ var ok=(x[0]==='m')||!!D, v=Number(x[1]||0);
    document.getElementById('n-'+x[0]).textContent=ok ? v.toLocaleString('en-US') : '–'; document.getElementById('b-'+x[0]).dataset.w=(ok ? Math.max(v/top*100, v ? 1.5 : 0) : 0).toFixed(1); });
  })();
  if(R.piece){ document.getElementById('pc-name').textContent=R.piece.name; document.getElementById('pc-sub').innerHTML=R.piece.branches+(R.piece.branches===1?' company':' companies')+' · '+Number(R.piece.people).toLocaleString('en-US')+' people<br>one piece, one place'; }
- var grouped=false;
  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
- function drawTbl(){
-  var t=document.getElementById('tbl'), h;
-  if(!grouped){
-   h='<table><thead><tr><th>Person</th><th>Company as written</th><th>List</th><th>Match</th></tr></thead><tbody>';
-   rows.forEach(function(r){ var tag=r[5]==='ok'?'<span class="tag">matched: '+esc(r[3])+'</span>':r[5]==='dup'?'<span class="tag dup">same person, counted once</span>':'<span class="tag hand">checked by hand → '+esc(r[3])+'</span>';
-    h+='<tr><td><b>'+esc(r[0])+'</b></td><td>'+esc(r[2])+'</td><td>'+esc(r[4])+'</td><td>'+tag+'</td></tr>'; });
-   document.getElementById('grp-state').textContent='People: '+rows.length+' rows';
-  } else {
-   var m={}; rows.forEach(function(r){ if(r[5]==='dup')return; (m[r[3]]=m[r[3]]||{b:{},p:[]}); m[r[3]].b[r[2]]=1; m[r[3]].p.push(r[0]); });
-   h='<table><thead><tr><th>Mother company</th><th>Branches</th><th>People</th><th>Pieces</th></tr></thead><tbody>';
-   Object.keys(m).forEach(function(k){ h+='<tr><td><b>'+esc(k)+'</b></td><td>'+esc(Object.keys(m[k].b).join(', '))+'</td><td>'+m[k].p.length+'<span class="sub">'+esc(m[k].p.join(', '))+'</span></td><td><b>1</b></td></tr>'; });
-   document.getElementById('grp-state').textContent='Mother companies: '+Object.keys(m).length;
-  }
-  t.innerHTML=h+'</tbody></table>';
-  document.getElementById('grp').textContent=grouped?'Show every registration':'Group by mother company';
- }
- document.getElementById('grp').onclick=function(){ grouped=!grouped; drawTbl(); };
- drawTbl();
 
  /* boards */
  var W=45,H=25;

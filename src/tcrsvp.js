@@ -98,3 +98,31 @@ export async function rsvpForCompany(db, companyId, { env = process.env, now = D
     .all(Number(companyId))).map((k) => k.ch_contact_id));
   return list.filter((a) => ids.has(a.chContactId)).map((a) => ({ name: a.name, answer: a.answer, people: a.people }));
 }
+
+// THE LANDING PAGE'S COUNTS (11.11.2026, the Grand Opening demo's "What we measure", the owner: "demo has to be like the
+// real thing"): one row of totals from intake_read.landing_counts (docs/client-hub/intake_landing_counts.sql) through the
+// same read-only login. No names, no addresses. Kept 60 s; null when not configured, not reachable or not applied yet
+// (fails closed: the demo then shows no numbers, never invented ones).
+let landingCache = null;   // { at, row }
+let landingFetcher = null; // tests put their own here
+export function setLandingFetcher(fn) { landingFetcher = fn; landingCache = null; }
+async function readLanding(env) {
+  const url = String(env.CLIENT_HUB_RSVP_DATABASE_URL || '').trim();
+  const { default: pg } = await import('pg');
+  const c = new pg.Client({ connectionString: url, ssl: pgSsl(url), connectionTimeoutMillis: 5000, statement_timeout: 5000 });
+  await c.connect();
+  try { return (await c.query(`SELECT * FROM intake_read.landing_counts`)).rows[0] || null; } finally { await c.end().catch(() => {}); }
+}
+const LANDING_KEYS = ['gift_opens', 'gift_registered', 'page_opens', 'page_registered', 'link_opens', 'link_calendar', 'link_registered'];
+export async function landingCounts({ env = process.env, now = Date.now() } = {}) {
+  if (!landingFetcher && !configured(env)) return null;
+  if (landingCache && now - landingCache.at < TTL_MS) return landingCache.row;
+  let row;
+  try { row = await (landingFetcher || readLanding)(env); } catch (e) {
+    console.error('rsvp: landing counts could not be read:', e && e.code ? e.code : 'error');
+    return landingCache ? landingCache.row : null;
+  }
+  const out = row && LANDING_KEYS.every((k) => Number.isFinite(Number(row[k]))) ? Object.fromEntries(LANDING_KEYS.map((k) => [k, Number(row[k])])) : null;
+  landingCache = { at: now, row: out };
+  return out;
+}

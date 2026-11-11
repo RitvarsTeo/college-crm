@@ -117,7 +117,7 @@ test('11.11 the new demo (the Grand Opening 10 chapters) plus In Intake: the til
   assert.ok(!html.includes('<h3>1,125 places</h3>') && !html.includes('45 x 25'));
   assert.match(html, /\{\{MOTHER_COMPANIES\}\}<\/b> mother companies on the Stage 2 lists/);
   assert.match(godemo.withCount({ body: html, type: 'text/html; charset=utf-8' }, 1234).body, /<b class="innum">1,234<\/b> mother companies/);
-  assert.match(fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8'), /const facts = await tcgo\.goDemoFacts\(db\); f = godemo\.withCount\(f, facts\.mothers, facts\)/);
+  assert.match(fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8'), /landing: await tcrsvp\.landingCounts\(\)/);
   assert.doesNotMatch(html, /\.\.\/\.\.\//);
 });
 
@@ -208,7 +208,18 @@ test('11.11 ch3 "What we measure" = the Save the Date as it came back (the figur
   const ch = (t) => { const a = html.indexOf('data-t="' + t + '"'); return html.slice(a, html.indexOf('</section>', a)); };
   assert.ok(!ch('What we measure').includes('class="example"') && !/>(236|448|755|352|205|174)</.test(ch('What we measure')));
   for (const l of ['Save the Date sent', 'Reached', 'Opened by a person', 'Added to calendar', 'Mother companies']) assert.ok(ch('What we measure').includes('>' + l + '<'), l);
-  assert.ok(!ch('One piece per company').includes('own QR') && ch('One piece per company').includes('assets/qr_gift.svg'));
+  assert.ok(!ch('One piece per company').includes('own QR'));
+  // his words 11.11: "Put the real puzzle piece as we have concepted": Amento's piece (its QR opens ?gift) wherever a piece is drawn
+  for (const t of ['Two ways in', 'One piece per company']) assert.ok(ch(t).includes('src="assets/piece_gift.jpg"') && !ch(t).includes('<svg class="piece"'), t);
+  // ch3: measured so far, then the Stage 2 measures live (one row of totals; test and staff entries left out in the view)
+  assert.ok(ch('What we measure').includes('>Measured so far<') && ch('What we measure').includes('>Stage 2: what we measure<'));
+  for (const l of ['Gift QR', 'Personal email link', 'Typed address']) assert.ok(ch('What we measure').includes('>' + l + '<'), l);
+  const sql = fs.readFileSync(path.join(ROOT, 'docs', 'client-hub', 'intake_landing_counts.sql'), 'utf8');
+  assert.match(sql, /@novikontas/); assert.match(sql, /test/); assert.match(sql, /grant select on intake_read.landing_counts to intake_rsvp_reader;/);
+  const cols = sql.split('select' + String.fromCharCode(10))[1].split('revoke')[0];
+  assert.equal((cols.match(/ as [a-z_]+/g) || []).length, 7); assert.ok(!/email|first_name|company|contact_id/.test(cols.replace(/coalesce\(l\.company[^)]*\)/g, '')));
+  // ch4 (his words "we already have clients page on the app!"): no matching table, the two real numbers open the app's own pages
+  assert.ok(!ch('The count').includes('id="tbl"') && ch('The count').includes('https://intake.novikontas.org/#/tc/companies/go2'));
   const db = await openDb();
   const f = await go.goDemoFacts(db);
   assert.ok(f.std === null || ['sent', 'reached', 'person', 'calendar'].every((k) => Number.isFinite(f.std[k])));
