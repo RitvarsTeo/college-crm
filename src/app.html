@@ -4035,15 +4035,32 @@ async function routeC(page, arg) {
 // as src/realpeople.js countPeople, so Home and Reports say the same number.
 const cPersonName = (v) => String(v ?? '').normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().split(' ').filter(Boolean).sort().join(' ');
 function cOnePerPerson(rows) {
-  const seen = new Map(), out = [];
-  for (const p of rows || []) {
+  // ONE PER PERSON (05.11.2026), each person in ONE place of every breakdown (11.11.2026, the server's mergedPeople): the
+  // first record of each person in the order given (callers order them: dated first, earliest first), carrying the
+  // values of the person's EARLIEST record - a real value beats a blank - and their first admission
+  const list = rows || [], parent = list.map((_, i) => i), seen = new Map();
+  const find = (i) => { while (parent[i] !== i) i = parent[i] = parent[parent[i]]; return i; };
+  list.forEach((p, i) => {
     const keys = [];
     const n = cPersonName(String(p.name ?? '').split('\n')[0].replace(/\([^)]*\)/g, ' ')); if (n.includes(' ')) keys.push('n:' + n);   // a "(note)" or a second line is no part of the name (11.11.2026)
     const e = String(p.email || '').trim().toLowerCase(); if (e) keys.push('e:' + e);
     const d = String(p.phone || '').replace(/\D/g, ''); if (d.length >= 8) keys.push('p:' + d.slice(-8));
-    if (keys.some((k) => seen.has(k))) { const i = seen.get(keys.find((k) => seen.has(k))); keys.forEach((k) => seen.set(k, i)); continue; }
-    keys.forEach((k) => seen.set(k, out.length)); out.push(p);
-  }
+    for (const k of keys) { if (!seen.has(k)) seen.set(k, i); else { const a = find(seen.get(k)), b = find(i); if (a !== b) parent[b] = a; } }
+  });
+  const groups = new Map();
+  list.forEach((p, i) => { const r = find(i); if (!groups.has(r)) groups.set(r, []); groups.get(r).push(p); });
+  const blank = (v) => v == null || String(v).trim() === '';
+  const out = [], done = new Set();
+  list.forEach((p, i) => {
+    const r = find(i); if (done.has(r)) return; done.add(r);
+    const g = groups.get(r);
+    if (g.length === 1) { out.push(p); return; }
+    const early = [...g].sort((a, b) => String(a.created_at || '\uffff').localeCompare(String(b.created_at || '\uffff')) || String(a.id).localeCompare(String(b.id)));
+    const m = { ...p };
+    for (const f of ['programme', 'source_channel', 'education', 'nationality', 'study_form']) if (g.some((x) => f in x)) { const w = early.find((x) => !blank(x[f])); m[f] = w ? w[f] : null; }
+    m.admitted_at = p.admitted_at || early.map((x) => x.admitted_at).filter(Boolean).sort()[0] || null;
+    out.push(m);
+  });
   return out;
 }
 // THE ADMITTED, ONE PER PERSON (the owner's pick B, 11.11.2026: count PEOPLE, one number, every figure clickable to its
@@ -6729,23 +6746,23 @@ function cRepModel(r, people, cfg, today) {
   };
 
   // 2 LEADS (a lead is a PERSON added to Intake in the period, never an Inbox row)
-  // the Leads figure and its months: one per person, as the server's Arrived and Home's Leads count them (the owner's pick
-  // A, 11.11.2026); the breakdowns and Conversion keep their own server figures, over the records (arrAll)
+  // every Leads figure, its breakdowns and Conversion count PEOPLE (11.11.2026): each person once, by their earliest
+  // record and its values, as the server counts them (src/realpeople.js mergedPeople), so every breakdown adds up
   const arrAll = people.filter((p) => inP(p.created_at));
-  const arr = cOnePerPerson([...arrAll].sort((a, b) => String(a.created_at).localeCompare(String(b.created_at))));   // each person by their earliest record
+  const arr = cOnePerPerson([...arrAll].sort((a, b) => String(a.created_at || '\uffff').localeCompare(String(b.created_at || '\uffff')) || String(a.id).localeCompare(String(b.id))));
   const sea = cfg.maritimeEducations || [];
   const leads = {
     all: fig('leads', `Leads · ${pw} · people added`, arr),
     byTime: T.list.map((x) => ({ ...x, ...fig(`leads:${T.grain}:${x.key}`, `Leads · people added · ${x.tip}`,
       arr.filter((p) => inB(p.created_at, x))) })),
-    byChannel: rows('leads:channel', `Leads · ${pw} · came from`, arrAll, (p) => val(p.source_channel)),
-    byProgramme: rows('leads:programme', `Leads · ${pw}`, arrAll, (p) => val(p.programme), progs),
-    byStudyForm: rows('leads:studyForm', `Leads · ${pw}`, arrAll, (p) => val(p.study_form)),
-    byEducation: rows('leads:education', `Leads · ${pw}`, arrAll, (p) => val(p.education)),
-    byNationality: rows('leads:nationality', `Leads · ${pw}`, arrAll, (p) => val(p.nationality)),
-    eduRecorded: fig('leads:education:recorded', `Leads · ${pw} · education recorded`, arrAll.filter((p) => val(p.education) !== '(not recorded)')),
-    natRecorded: fig('leads:nationality:recorded', `Leads · ${pw} · nationality recorded`, arrAll.filter((p) => val(p.nationality) !== '(not recorded)')),
-    maritime: fig('leads:maritime', `Leads · ${pw} · from a maritime school`, arrAll.filter((p) => sea.includes(p.education))),
+    byChannel: rows('leads:channel', `Leads · ${pw} · came from`, arr, (p) => val(p.source_channel)),
+    byProgramme: rows('leads:programme', `Leads · ${pw}`, arr, (p) => val(p.programme), progs),
+    byStudyForm: rows('leads:studyForm', `Leads · ${pw}`, arr, (p) => val(p.study_form)),
+    byEducation: rows('leads:education', `Leads · ${pw}`, arr, (p) => val(p.education)),
+    byNationality: rows('leads:nationality', `Leads · ${pw}`, arr, (p) => val(p.nationality)),
+    eduRecorded: fig('leads:education:recorded', `Leads · ${pw} · education recorded`, arr.filter((p) => val(p.education) !== '(not recorded)')),
+    natRecorded: fig('leads:nationality:recorded', `Leads · ${pw} · nationality recorded`, arr.filter((p) => val(p.nationality) !== '(not recorded)')),
+    maritime: fig('leads:maritime', `Leads · ${pw} · from a maritime school`, arr.filter((p) => sea.includes(p.education))),
   };
 
   // 3 CONVERSION, MATURED (the owner, 05.10.2026): admitted / the people who arrived in the period at least N days
@@ -6753,7 +6770,7 @@ function cRepModel(r, people, cfg, today) {
   // its cutoff, so Home's card, this tab and the export can never disagree on who counts.
   const S = r.summary || {};
   const cut = S.conversionCutoff ? Date.parse(S.conversionCutoff) : -Infinity;
-  const ripe = arrAll.filter((p) => Date.parse(p.created_at) < cut);
+  const ripe = arr.filter((p) => Date.parse(p.created_at) < cut);
   const who = S.conversionWho || 'who arrived';
   const won = ripe.filter((p) => p.admitted_at);
   const pct = (a, b) => (b ? Math.round((a / b) * 1000) / 10 : null);
@@ -6768,7 +6785,7 @@ function cRepModel(r, people, cfg, today) {
     reached: r.steps && r.steps.leadToApplication && r.steps.leadToApplication.of > 0 ? { step: r.steps.leadToApplication,
       of: fig('conversion:reached:of', `Leads · ${pw} · ${who}`, r.steps.leadToApplication.ofIds.map((id) => ({ id }))),
       won: fig('conversion:reached', `Leads · ${pw} · ${who} · reached Submitted application`, r.steps.leadToApplication.reachedIds.map((id) => ({ id }))) } : null,
-    stoppedAt: stops.map((id) => ({ value: id, ...fig(`conversion:now:${id}`, `Leads · ${pw} · now ${cStage(id)}`, arrAll.filter((p) => p.status === id && !p.admitted_at)) })).filter((x) => x.n),
+    stoppedAt: stops.map((id) => ({ value: id, ...fig(`conversion:now:${id}`, `Leads · ${pw} · now ${cStage(id)}`, arr.filter((p) => p.status === id && !p.admitted_at)) })).filter((x) => x.n),
     byProgramme: rate('conversion:programme', `Leads · ${pw} · ${who}`, ripe, (p) => val(p.programme)),
     byChannel: rate('conversion:channel', `Leads · ${pw} · ${who} · came from`, ripe, (p) => val(p.source_channel)),
     // BENCHMARKS (variant A, the owner 06.10.2026). Each row is a config.benchmarks row WITH its source, set against the

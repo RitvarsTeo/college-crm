@@ -38,6 +38,26 @@ export function peopleGroups(rows) {
   return [...groups.values()];
 }
 
+// ONE PERSON, ONE PLACE IN EVERY BREAKDOWN (the owner's rule "everyone accounted for", MASTER's pick (2), 11.11.2026):
+// a person with several records is counted once, under the values of their EARLIEST record; a real value beats a missing
+// one ("(not recorded)" + "NAV" = NAV). Every Reports figure counts these merged people, so each breakdown's rows add up
+// to its total. The page's cOnePerPerson (src/app.html) does the same.
+export const PERSON_FIELDS = ['programme', 'source_channel', 'education', 'nationality', 'study_form'];
+const blank = (v) => v == null || String(v).trim() === '';
+const byEarliest = (a, b) => String(a.created_at || '\uffff').localeCompare(String(b.created_at || '\uffff')) || String(a.id).localeCompare(String(b.id));
+/** One merged person per group: the earliest record's id, created_at and values (a real value beats a blank),
+ * admitted_at = the first admission among the records, records = every record id. */
+export function mergedPeople(rows) {
+  return peopleGroups(rows).map((g) => {
+    const s = [...g].sort(byEarliest);
+    const out = { ...s[0], records: s.map((r) => r.id) };
+    for (const f of PERSON_FIELDS) if (s.some((r) => f in r)) { const w = s.find((r) => !blank(r[f])); out[f] = w ? w[f] : null; }
+    const adm = s.map((r) => r.admitted_at).filter(Boolean).sort();
+    out.admitted_at = adm[0] || null;
+    return out;
+  });
+}
+
 /** ARRIVED, BY WHERE THEY ARE NOW (the owner's pick A, 11.11.2026): the people among these arrived records, one id each,
  * split Open / Admitted / Not proceeding. A person with records in two places is where their furthest record is:
  * Admitted before an open stage, an open stage before Not proceeding. The three lists add up to countPeople(rows). */

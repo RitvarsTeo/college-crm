@@ -9,7 +9,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { REAL_PEOPLE, countPeople, arrivedByPlace, peopleGroups } from './realpeople.js';
+import { REAL_PEOPLE, countPeople, arrivedByPlace, peopleGroups, mergedPeople } from './realpeople.js';
 import { SIS_HOLDS_SQL, SIS_DRAFT_SQL } from './lifecycle.js';
 import { localDate, localDateTime, localMidnight, dayStartOf, dayAfterStartOf, todayStart, tomorrowStart } from './bizday.js';
 import { yearsOf, yearRanges, rangesSql } from './yearscope.js';
@@ -65,13 +65,12 @@ export async function maturedConversion(db, p, opts = {}) {
   const basis = maturedBasis(p, opts);
   const until = basis.cutoff < p.to ? basis.cutoff : p.to;
   const [inR, rArgs] = inP('created_at', p);
-  const of = await count(db, `SELECT COUNT(*) n FROM ${REAL_PEOPLE} people WHERE ${inR} AND created_at < ?`, ...rArgs, until);
+  // PEOPLE (11.11.2026): a person is matured by their earliest record, admitted when any of their records is
+  const ripe = mergedPeople(await db.prepare(`SELECT id, name, email, phone, created_at, admitted_at FROM ${REAL_PEOPLE} people
+    WHERE ${inR}`).all(...rArgs)).filter((pp) => pp.created_at < until);
+  const of = ripe.length;
   // asOfEnd (Home's "Last year around this time", 05.11.2026): only admissions up to the period's last day, as it stood then
-  const admitted = opts.asOfEnd
-    ? await count(db, `SELECT COUNT(*) n FROM ${REAL_PEOPLE} people
-      WHERE ${inR} AND created_at < ? AND admitted_at IS NOT NULL AND admitted_at < ?`, ...rArgs, until, p.to)
-    : await count(db, `SELECT COUNT(*) n FROM ${REAL_PEOPLE} people
-    WHERE ${inR} AND created_at < ? AND admitted_at IS NOT NULL`, ...rArgs, until);
+  const admitted = ripe.filter((pp) => pp.admitted_at && (!opts.asOfEnd || pp.admitted_at < p.to)).length;
   return { ...basis, admitted, of, pct: of ? Math.round((admitted / of) * 1000) / 10 : null };
 }
 
@@ -92,26 +91,31 @@ export async function maturedSteps(db, p, opts) {
   const basis = maturedBasis(p, opts);
   const until = basis.cutoff < p.to ? basis.cutoff : p.to;
   const [inR, rArgs] = inP('created_at', p);
-  const ripe = await db.prepare(`SELECT id, status, admitted_at FROM ${REAL_PEOPLE} people WHERE ${inR} AND created_at < ? ORDER BY id`)
-    .all(...rArgs, until);
+  // PEOPLE (11.11.2026): a person is matured by their earliest record and reached a stage when any of their records did;
+  // the ids are each person's earliest record, as everywhere in Reports
+  const all = await db.prepare(`SELECT id, name, email, phone, created_at, status, admitted_at FROM ${REAL_PEOPLE} people WHERE ${inR}`).all(...rArgs);
+  const groups = peopleGroups(all).map((g) => [...g].sort((a, b) => String(a.created_at || '\uffff').localeCompare(String(b.created_at || '\uffff')) || String(a.id).localeCompare(String(b.id))))
+    .filter((g) => g[0].created_at < until).sort((a, b) => String(a[0].id).localeCompare(String(b[0].id)));
   const ever = new Map();
-  if (ripe.length) {
+  if (groups.length) {
     const rows = await db.prepare(`SELECT DISTINCT person_id, new_value FROM events WHERE kind = 'status' AND new_value IS NOT NULL
-      AND person_id IN (SELECT id FROM ${REAL_PEOPLE} people WHERE ${inR} AND created_at < ?)`).all(...rArgs, until);
+      AND person_id IN (SELECT id FROM ${REAL_PEOPLE} people WHERE ${inR})`).all(...rArgs);
     for (const r of rows) { if (!ever.has(r.person_id)) ever.set(r.person_id, new Set()); ever.get(r.person_id).add(r.new_value); }
   }
-  const reached = (pp, stage) => {
+  const one = (pp, stage) => {
     if (stage === 'Admitted' && pp.admitted_at) return true;
     const later = fromStage(stage);
     return later.includes(pp.status) || !!pp.admitted_at || [...(ever.get(pp.id) || [])].some((s) => later.includes(s));
   };
+  const reached = (g, stage) => g.some((pp) => one(pp, stage));
+  const ripe = groups;
   const steps = {};
   for (const s of STEPS) {
     const base = s.from ? ripe.filter((pp) => reached(pp, s.from)) : ripe;
     const won = base.filter((pp) => reached(pp, s.to));
     steps[s.id] = { from: s.from || 'Lead', to: s.to, of: base.length, reached: won.length,
       pct: base.length ? Math.round((won.length / base.length) * 1000) / 10 : null,
-      ofIds: base.map((pp) => pp.id), reachedIds: won.map((pp) => pp.id) };
+      ofIds: base.map((g) => g[0].id), reachedIds: won.map((g) => g[0].id) };
   }
   return { ...basis, steps };
 }
@@ -144,13 +148,11 @@ export async function firstReply(db, p, { now = new Date() } = {}) {
 
 // A breakdown is always a count per value, plus an explicit "not recorded" row,
 // because a blank in a report reads as zero when it really means unknown.
-async function breakdown(db, column, { where = '', args = [], ...p } = {}) {
-  const [inR, rArgs] = inP('created_at', p);
-  const rows = await db.prepare(`SELECT COALESCE(NULLIF(TRIM(${column}), ''), '(not recorded)') k,
-      COUNT(*) n FROM ${REAL_PEOPLE} people
-    WHERE ${inR} ${where}
-    GROUP BY k ORDER BY n DESC`).all(...rArgs, ...args);
-  return rows.map((r) => ({ value: r.k, count: r.n }));
+// over PEOPLE (11.11.2026): each merged person once, under their value (mergedPeople), so the rows add up to the total
+function breakdownOf(people, column) {
+  const m = new Map();
+  for (const pp of people) { const k = pp[column] == null || String(pp[column]).trim() === '' ? '(not recorded)' : String(pp[column]).trim(); m.set(k, (m.get(k) || 0) + 1); }
+  return [...m.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([value, count]) => ({ value, count }));
 }
 
 export async function report(db, { from, to, years, asOfEnd = false } = {}) {
@@ -163,6 +165,11 @@ export async function report(db, { from, to, years, asOfEnd = false } = {}) {
   // person count once, and the same people split by where they are now feed Home's "Where everyone is now"
   const arrivedRows = await db.prepare(`SELECT id, name, email, phone, status FROM ${REAL_PEOPLE} people WHERE ${ARR}`).all(...A);
   const arrived = arrivedByPlace(arrivedRows, { admitted: CFG.stageRoles.admitted, closed: CFG.stageRoles.closed });
+  // the same people, merged, with their values: every Leads breakdown, the maritime count and the coverage read these
+  const arrivedP = mergedPeople(await db.prepare(`SELECT id, name, email, phone, created_at, programme, source_channel, education, nationality, study_form
+    FROM ${REAL_PEOPLE} people WHERE ${ARR}`).all(...A));
+  const admittedP = mergedPeople(await db.prepare(`SELECT id, name, email, phone, created_at, admitted_at, programme FROM ${REAL_PEOPLE} people
+    WHERE ${ADM}`).all(...A));
   const newLeads = arrived.open.length + arrived.admitted.length + arrived.closed.length;
   const applications = await count(db, `SELECT COUNT(*) n FROM ${REAL_PEOPLE} people
     WHERE ${ARR} AND status IN ('Application','Admitted')`, ...A);
@@ -220,23 +227,17 @@ export async function report(db, { from, to, years, asOfEnd = false } = {}) {
   // carried unresolved objects.
   const programmes = await Promise.all((CFG.programmes || []).map(async (code) => ({
     programme: code,
-    newLeads: await count(db, `SELECT COUNT(*) n FROM ${REAL_PEOPLE} people
-      WHERE ${ARR} AND programme = ?`, ...A, code),
-    admitted: countPeople(await db.prepare(`SELECT name, email, phone FROM ${REAL_PEOPLE} people
-      WHERE ${ADM} AND programme = ?`).all(...A, code)),
+    newLeads: arrivedP.filter((pp) => pp.programme === code).length,
+    admitted: admittedP.filter((pp) => pp.programme === code).length,
   })));
 
   // Maritime school graduates. This is a real count, not a gap: the education field
   // has been filled in by hand for years. What is thin is the COVERAGE, and that is
   // reported next to the number instead of the number being withheld.
   const maritimeList = CFG.maritimeEducations || [];
-  const maritime = maritimeList.length ? await count(db, `SELECT COUNT(*) n FROM ${REAL_PEOPLE} people
-    WHERE ${ARR}
-      AND education IN (${maritimeList.map(() => '?').join(',')})`, ...A, ...maritimeList) : 0;
-  const withEducation = await count(db, `SELECT COUNT(*) n FROM ${REAL_PEOPLE} people
-    WHERE ${ARR} AND education IS NOT NULL AND TRIM(education) != ''`, ...A);
-  const withNationality = await count(db, `SELECT COUNT(*) n FROM ${REAL_PEOPLE} people
-    WHERE ${ARR} AND nationality IS NOT NULL AND TRIM(nationality) != ''`, ...A);
+  const maritime = arrivedP.filter((pp) => maritimeList.includes(pp.education)).length;
+  const withEducation = arrivedP.filter((pp) => pp.education != null && String(pp.education).trim() !== '').length;
+  const withNationality = arrivedP.filter((pp) => pp.nationality != null && String(pp.nationality).trim() !== '').length;
 
   const lost = (await db.prepare(`SELECT COALESCE(NULLIF(TRIM(closed_reason), ''), '(no reason recorded)') k,
       COUNT(*) n FROM ${REAL_PEOPLE} people
@@ -265,11 +266,11 @@ export async function report(db, { from, to, years, asOfEnd = false } = {}) {
     trend: months,
     programmes,
     breakdowns: {
-      programme: await breakdown(db, 'programme', { ...p }),
-      studyForm: await breakdown(db, 'study_form', { ...p }),
-      education: await breakdown(db, 'education', { ...p }),
-      source: await breakdown(db, 'source_channel', { ...p }),
-      nationality: await breakdown(db, 'nationality', { ...p }),
+      programme: breakdownOf(arrivedP, 'programme'),
+      studyForm: breakdownOf(arrivedP, 'study_form'),
+      education: breakdownOf(arrivedP, 'education'),
+      source: breakdownOf(arrivedP, 'source_channel'),
+      nationality: breakdownOf(arrivedP, 'nationality'),
       stage: (await db.prepare(`SELECT status k, COUNT(*) n FROM ${REAL_PEOPLE} people GROUP BY k ORDER BY n DESC`).all())
         .map((r) => ({ value: r.k, count: r.n })),
     },
