@@ -17,8 +17,8 @@ const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const ON = { SIS_API_TOKEN: 'test-sis-token-not-real-0000', CHANNEL_MODE_SIS: 'test' };
 const app = (over = {}) => ({
   reference: 'ref-m', applicationId: 'app-m', givenName: 'Anna', familyName: 'Ozola-Berzina',
-  email: 'anna.new@example.com', phone: '+371 29990009', programmeCode: 'NAV', status: 'started',
-  registeredAt: '2026-09-29T08:00:00.000Z', changedAt: '2026-09-29T09:00:00.000Z', ...over,
+  email: 'anna.new@example.com', phone: '+371 29990009', programmeCode: 'NAV', status: 'submitted',   // 11.11.2026: a draft makes nobody, so the twin is a submitted one
+  registeredAt: '2026-09-29T08:00:00.000Z', submittedAt: '2026-09-29T09:00:00.000Z', changedAt: '2026-09-29T09:00:00.000Z', ...over,
 });
 const sis = (apps) => async () => ({ ok: true, status: 200, json: async () => ({ applicants: apps, nextCursor: null }) });
 
@@ -39,7 +39,7 @@ test('merge: the SIS twin folds into the real person, and the next run links to 
   assert.equal(r.ok, true, JSON.stringify(r));
   assert.equal((await db.prepare('SELECT COUNT(*) n FROM people').get()).n, 1, 'the extra record is gone');
   const real = await db.prepare("SELECT * FROM people WHERE id = 'p-real'").get();
-  assert.equal(real.status, 'Contacted', 'a form only started leaves her stage (07.10: only a submission moves it)');
+  assert.equal(real.status, 'Application', 'the SIS submission moves her on');
   assert.equal(real.email, 'anna.old@example.com', 'her own email is kept');
   assert.equal(real.phone, '+371 29990009', 'an empty field is filled from the SIS');
   assert.equal(real.source_channel, 'phone', 'her first source is kept');

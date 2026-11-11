@@ -369,9 +369,23 @@ export const FORM_CHECK = 'Call: did they finish the application form?';
 // is to ask whether they STARTED it. A person whose form is begun keeps "finish"; the open step follows the SIS.
 export const FORM_START = 'Call: did they start the application form?';
 const FORM_CHECK_FOR = ['registered', 'started'];
+// a record the SIS holds as only an account or a begun form: a draft (11.11.2026, placeSisReference)
+export const SIS_DRAFT_ONLY = ['registered', 'started'];
 export async function planFormCheck(db, personId, at) {
   const p = await db.prepare('SELECT status, owner, sis_handoff_at FROM people WHERE id = ?').get(personId);
-  if (!p || (CONFIG.terminalStages || []).includes(p.status)) return false;
+  if (!p) return false;
+  // SUBMITTED, SO THE CALL IS ANSWERED (11.11.2026): once any of their applications is submitted or further, an open
+  // "did they start / finish the form?" step is done by itself, and History says the SIS answered it
+  const all = await db.prepare('SELECT status FROM sis_applicants WHERE person_id = ?').all(personId);
+  if (all.some((r) => SIS_STAGE[r.status])) {
+    const open = await db.prepare('SELECT id, label FROM tasks WHERE person_id = ? AND label IN (?, ?) AND done_at IS NULL').all(personId, FORM_CHECK, FORM_START);
+    for (const t of open) {
+      await db.prepare('UPDATE tasks SET done_at = ?, outcome = ? WHERE id = ?').run(at, 'The SIS says the form is submitted', t.id);
+      await logEvent(db, { personId, kind: 'task', direction: 'note', at, origin: AUTOMATIC, actor: 'SIS',
+        subject: `Done: ${t.label}`, body: 'The SIS says the form is submitted.' });
+    }
+  }
+  if ((CONFIG.terminalStages || []).includes(p.status)) return false;
   // Admissions answered "With the SIS" (21.10.2026): the SIS has them, so no call step comes back after that
   if (p.sis_handoff_at) return false;
   const rows = await db.prepare('SELECT status FROM sis_applicants WHERE person_id = ?').all(personId);
@@ -539,6 +553,12 @@ export async function placeSisReference(db, reference, { at, mode, stats }) {
   if (!personId) personId = await onePerson(db, { email: latest.email, phone: latest.phone });
   if (personId) { await applyToPerson(db, reference, personId, at, stats); return; }
   if (inboundId) return;                                     // already waiting for a human
+  // ONLY A DRAFT, NOBODY WE KNOW (the owner 11.11.2026, "Stay, counted"; Admissions: drafts are in the SIS and get in the
+  // way until they really become a lead): an SIS record that is only 'registered' or 'started' makes no person, no Inbox
+  // item and no call step. It waits in sis_applicants; every run tries it again (syncSis), so it becomes a person when
+  // the SIS says submitted or later, and it links to them when they reach us another way first. Nobody already in
+  // Intake is touched: a known person is updated above, as before.
+  if (rows.every((r) => SIS_DRAFT_ONLY.includes(r.status))) { stats.draftsWaiting = (stats.draftsWaiting || 0) + 1; return; }
   if (!(await waitingFor(db, latest))) {
     await createFromSis(db, reference, rows, at, mode, stats);
     return;
@@ -782,7 +802,7 @@ export async function receiveSisApplication(db, raw, { now = new Date(), env = p
   const outcome = stats.created ? 'created'
     : stats.undated && !stats.linked && !stats.moved ? 'undated'
     : stats.linked || stats.moved || stats.facts || stats.noted ? 'linked'
-      : stats.inbox ? 'waiting' : 'repeat';
+      : stats.inbox ? 'waiting' : stats.draftsWaiting ? 'draft' : 'repeat';   // draft: kept, no person yet (11.11.2026)
   return { ok: true, outcome, mode };
 }
 

@@ -20,8 +20,8 @@ const ON = { SIS_API_TOKEN: 'test-sis-token-not-real-0000', CHANNEL_MODE_SIS: 't
 const NOW = new Date('2026-10-16T05:00:00Z');
 const app = (n, over = {}) => ({
   reference: 'ref-' + n, applicationId: 'app-' + n, givenName: 'Anna' + n, familyName: 'Ozola',
-  email: `anna${n}@example.com`, phone: '+371 2999' + String(n).padStart(4, '0'), programmeCode: 'OS', status: 'started',
-  registeredAt: '2026-10-15T08:00:00.000Z', submittedAt: null, changedAt: '2026-10-15T09:00:00.000Z', ...over,
+  email: `anna${n}@example.com`, phone: '+371 2999' + String(n).padStart(4, '0'), programmeCode: 'OS', status: 'submitted',   // 11.11.2026: a draft makes nobody
+  registeredAt: '2026-10-15T08:00:00.000Z', submittedAt: '2026-10-15T09:00:00.000Z', changedAt: '2026-10-15T09:00:00.000Z', ...over,
 });
 const sis = (apps) => async () => ({ ok: true, status: 200, json: async () => ({ applicants: apps, nextCursor: null }) });
 
@@ -52,7 +52,7 @@ test('SIS pull: OS arrives as MT OS on the person, their interest, the History l
   const codes = await db.prepare('SELECT programme_code FROM sis_applicants ORDER BY programme_code').all();
   assert.deepEqual(codes.map((x) => x.programme_code), ['MT OS', 'MT WTT', 'NAV']);
   const made = await db.prepare("SELECT body FROM events WHERE kind = 'create' AND person_id = ?").get(people[0].id);
-  assert.equal(made.body, 'SIS: MT OS application started');
+  assert.equal(made.body, 'SIS: MT OS application submitted');
   assert.equal(r.unknownProgrammes, undefined, 'nothing unknown in this run');
   // Reports > Applications groups by the same one name
   const f = await applicationFunnel(db, { env: ON });

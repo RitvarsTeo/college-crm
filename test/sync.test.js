@@ -433,13 +433,14 @@ test('sis -> lifecycle: submitted = form started by its submit date; registered 
   const r = await syncSis(db, { now: NOW, env: ON, fetchImpl: fakeSis([[app({ status: 'submitted' }),
     app({ reference: 'ref-2', applicationId: 'app-9', email: 'nobody@example.com', phone: null, status: 'started' }),
     app({ reference: 'ref-3', applicationId: null, email: 'reg@example.com', phone: null, status: 'registered', submittedAt: null })]]).fetchImpl });
-  assert.equal(r.facts, 2, 'the matched submitted one, and the started one the SIS created');
-  assert.equal(r.created, 2, 'the two unknown are created by the SIS (30.09.2026)');
+  assert.equal(r.facts, 1, 'the matched submitted one');
+  assert.equal(r.created, 0, 'the two unknown drafts make nobody (11.11.2026)');
+  assert.equal(r.draftsWaiting, 2);
   assert.equal(r.inbox, 0);
   const { lifecycleOf } = await import('../src/lifecycle.js');
   assert.deepEqual((await lifecycleOf(db, p.id)).map((f) => [f.fact, f.at]), [['form_started', '2026-09-28T07:58:02.000Z']]);
   const reg = await db.prepare("SELECT person_id FROM sis_applicants WHERE reference = 'ref-3'").get();
-  assert.deepEqual(await lifecycleOf(db, reg.person_id), [], 'registered only: no fact');
+  assert.equal(reg.person_id, null, 'registered only: kept, nobody made, no fact');
 });
 
 test('sis -> lifecycle: a fact on the second page is found (the cursor is followed)', async () => {

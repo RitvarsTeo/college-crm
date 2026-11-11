@@ -22,8 +22,8 @@ const PATH = '/api/intake/application';
 
 const app = (over = {}) => ({
   reference: 'ref-wh', applicationId: 'app-wh', givenName: 'Liene', familyName: 'Kalna',
-  email: 'liene.kalna@example.com', phone: '+371 29990002', programmeCode: 'MEH', status: 'started',
-  registeredAt: '2026-09-30T06:00:00.000Z', changedAt: '2026-09-30T06:05:00.000Z', ...over,
+  email: 'liene.kalna@example.com', phone: '+371 29990002', programmeCode: 'MEH', status: 'submitted',   // 11.11.2026: a draft makes nobody
+  registeredAt: '2026-09-30T06:00:00.000Z', submittedAt: '2026-09-30T06:05:00.000Z', changedAt: '2026-09-30T06:05:00.000Z', ...over,
 });
 
 function start(env) {
@@ -61,10 +61,14 @@ test('webhook: no secret configured refuses everything, and a wrong or missing h
   assert.equal(list(await people(s.base)).length, 0, 'nothing was stored');
 });
 
-test('webhook: the right secret creates an application-first person once; a form only started is at New (07.10)', async (t) => {
+test('webhook: a form only started makes nobody (11.11.2026); the right secret creates the person once at the submission', async (t) => {
   const s = await start({ CHANNEL_MODE_SIS: 'test', SIS_APPLICATION_SECRET: SECRET });
   t.after(() => s.child.kill());
   const h = { 'x-crm-application-secret': SECRET };
+  const d = await post(s.base, app({ status: 'started', submittedAt: null, changedAt: '2026-09-30T06:01:00.000Z' }), h);
+  assert.equal(d.status, 200, d.text);
+  assert.equal(JSON.parse(d.text).outcome, 'draft');
+  assert.equal(list(await people(s.base)).length, 0, 'a draft is nobody yet');
   const r1 = await post(s.base, app(), h);
   assert.equal(r1.status, 200, r1.text);
   assert.equal(JSON.parse(r1.text).outcome, 'created');
@@ -74,7 +78,7 @@ test('webhook: the right secret creates an application-first person once; a form
   assert.equal(JSON.parse(r2.text).outcome, 'repeat');
   const all = list(await people(s.base));
   assert.equal(all.length, 1);
-  assert.equal(all[0].status, 'New', 'started is not a submitted application');
+  assert.equal(all[0].status, 'Application', 'made at the submission');
   assert.equal(all[0].name, 'Liene Kalna');
 });
 

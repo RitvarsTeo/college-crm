@@ -50,16 +50,30 @@ test('a known lead the SIS says started: the call step is planned once, and the 
   assert.equal((await tasks(db, 'p1')).filter((t) => t.label === FORM_CHECK && !t.done_at).length, 1, 'one open at a time');
 });
 
-test('a person the SIS created at started: at New, with the call step; submitted later: no new step', async () => {
+test('started, nobody we know: no person, no step (11.11.2026); submitted later: a person at Application, no step', async () => {
   const db = await openDb(':memory:');
   await syncSis(db, { now: new Date('2026-10-02T05:00:00Z'), env: ENV, fetchImpl: feed([app()]) });
-  const p = await db.prepare("SELECT id, status FROM people WHERE first_channel = 'sis'").get();
-  assert.equal(p.status, 'New');
-  assert.deepEqual((await tasks(db, p.id)).map((t) => t.label), [FORM_CHECK]);
+  assert.equal((await db.prepare('SELECT COUNT(*) n FROM people').get()).n, 0, 'a draft makes nobody');
+  assert.equal((await db.prepare('SELECT COUNT(*) n FROM tasks').get()).n, 0);
   await syncSis(db, { now: new Date('2026-10-03T05:00:00Z'), env: ENV, fetchImpl: feed([app({ status: 'submitted',
     submittedAt: '2026-10-02T10:00:00.000Z', changedAt: '2026-10-02T10:00:00.000Z' })]) });
-  assert.equal((await db.prepare('SELECT status FROM people WHERE id = ?').get(p.id)).status, 'Application');
-  assert.equal((await tasks(db, p.id)).length, 1, 'a submission plans nothing new');
+  const p = await db.prepare("SELECT id, status FROM people WHERE first_channel = 'sis'").get();
+  assert.equal(p.status, 'Application');
+  assert.equal((await tasks(db, p.id)).length, 0, 'a submission plans nothing');
+});
+
+test('a known lead with the call step open: the SIS says submitted, and the step is done by itself (11.11.2026)', async () => {
+  const db = await openDb(':memory:');
+  await db.prepare(`INSERT INTO people (id, name, email, status, owner, created_at) VALUES ('p2', 'Anna', 'anna.fc@example.com', 'Contacted', 'Admissions', '2026-09-01')`).run();
+  await syncSis(db, { now: new Date('2026-10-02T05:00:00Z'), env: ENV, fetchImpl: feed([app()]) });
+  assert.equal((await tasks(db, 'p2')).filter((t) => !t.done_at).length, 1, 'open');
+  await syncSis(db, { now: new Date('2026-10-03T05:00:00Z'), env: ENV, fetchImpl: feed([app({ status: 'submitted',
+    submittedAt: '2026-10-02T10:00:00.000Z', changedAt: '2026-10-02T10:00:00.000Z' })]) });
+  const [t] = await db.prepare('SELECT label, done_at, outcome FROM tasks WHERE person_id = ?').all('p2');
+  assert.deepEqual([t.label, Boolean(t.done_at), t.outcome], [FORM_CHECK, true, 'The SIS says the form is submitted']);
+  const ev = await db.prepare("SELECT subject, actor, origin FROM events WHERE person_id = 'p2' AND subject LIKE 'Done:%'").get();
+  assert.deepEqual({ ...ev }, { subject: 'Done: ' + FORM_CHECK, actor: 'SIS', origin: 'automatic' });
+  assert.equal((await db.prepare("SELECT status FROM people WHERE id = 'p2'").get()).status, 'Application');
 });
 
 test('a submitted or admitted person gets no call step', async () => {

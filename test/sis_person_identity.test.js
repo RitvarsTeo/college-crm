@@ -27,8 +27,8 @@ const ENV = { SIS_API_TOKEN: 'test-sis-token-not-real-0000', CHANNEL_MODE_SIS: '
 
 const app = (over = {}) => ({
   reference: 'ref-id', applicationId: 'app-id', givenName: 'Liene', familyName: 'Kalna',
-  email: 'liene.kalna@example.com', phone: '+371 29990002', programmeCode: 'NAV', status: 'started',
-  registeredAt: '2026-09-30T06:00:00.000Z', changedAt: '2026-09-30T06:05:00.000Z', ...over,
+  email: 'liene.kalna@example.com', phone: '+371 29990002', programmeCode: 'NAV', status: 'submitted',   // 11.11.2026: a draft makes nobody
+  registeredAt: '2026-09-30T06:00:00.000Z', submittedAt: '2026-09-30T06:05:00.000Z', changedAt: '2026-09-30T06:05:00.000Z', ...over,
 });
 const feed = (apps) => async () => ({ ok: true, status: 200, json: async () => ({ applicants: apps, nextCursor: null }) });
 
@@ -80,12 +80,12 @@ test('identity: the SIS facts are written once, as the provider\'s, and a second
   ]);
 });
 
-test('identity: a registered-only person with no phone and no programme claims neither', async () => {
+test('identity: a person with no phone and no programme from the SIS claims neither', async () => {
   const db = await openDb(':memory:');
   await syncSis(db, { now: new Date('2026-09-30T07:00:00Z'), env: ENV,
-    fetchImpl: feed([app({ applicationId: '', programmeCode: null, phone: null, status: 'registered' })]) });
+    fetchImpl: feed([app({ programmeCode: null, phone: null })]) });
   const person = await db.prepare('SELECT id, status FROM people').get();
-  assert.equal(person.status, 'New');
+  assert.equal(person.status, 'Application');
   const f = await db.prepare('SELECT field FROM field_values WHERE person_id = ?').all(person.id);
   assert.deepEqual(f.map((x) => x.field), ['email']);
 });

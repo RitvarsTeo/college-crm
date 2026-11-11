@@ -46,7 +46,8 @@ function start(env) {
   });
 }
 
-test('holds: the Home count leaves out the person the SIS holds; the registered-only one has the call step', async (t) => {
+// 11.11.2026: a registered-only record from somebody we do not know makes no person any more, so it adds nobody here
+test('holds: the Home count leaves out the person the SIS holds; a registered-only stranger is nobody yet', async (t) => {
   const s = await start({ CHANNEL_MODE_SIS: 'test', SIS_APPLICATION_SECRET: SECRET });
   t.after(() => s.child.kill());
   for (const a of [app(), registeredOnly]) {
@@ -55,8 +56,8 @@ test('holds: the Home count leaves out the person the SIS holds; the registered-
     assert.equal(r.status, 200, await r.text());
   }
   const sum = await fetch(s.base + '/api/summary', { headers: { 'x-acting-as': 'Ieva' } }).then((r) => r.json());
-  assert.equal(sum.openPeople, 2);
-  assert.equal(sum.noNextAction, 0, 'the registered-only person has the call step now (07.10), the submitted one is held');
+  assert.equal(sum.openPeople, 1, 'only the submitted one is a person');
+  assert.equal(sum.noNextAction, 0, 'the submitted one is held');
 });
 
 test('holds: the funnel and the report count the same way', async () => {

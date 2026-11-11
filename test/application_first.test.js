@@ -35,13 +35,22 @@ const run = (db, apps, now = NOW) => syncSis(db, { now, env: ON, fetchImpl: sis(
 const people = (db) => db.prepare('SELECT * FROM people ORDER BY created_at').all();
 const waiting = async (db) => (await db.prepare("SELECT COUNT(*) n FROM inbound WHERE state = 'new'").get()).n;
 
-test('application-first: SIS started -> a person at New (only a submission is "Submitted application", 07.10), form started dated, nothing waits', async () => {
+// 11.11.2026 (the owner, "Stay, counted"): a record that is only a draft in the SIS (registered or started) makes nobody;
+// the person is made when the SIS says submitted, with everything below.
+test('application-first: SIS started makes nobody and nothing waits; submitted -> a person at Application, form started dated', async () => {
   const db = await openDb(':memory:');
-  const r = await run(db, [app()]);
+  const d = await run(db, [app()]);
+  assert.equal((await people(db)).length, 0, 'a draft is no person');
+  assert.equal(d.created, 0);
+  assert.equal(d.draftsWaiting, 1);
+  assert.equal(await waiting(db), 0, 'and no Inbox item');
+  assert.equal((await db.prepare("SELECT COUNT(*) n FROM tasks").get()).n, 0, 'and no call step');
+  assert.equal((await db.prepare("SELECT person_id FROM sis_applicants WHERE reference = 'ref-af'").get()).person_id, null, 'kept, waiting');
+  const r = await run(db, [app({ status: 'submitted', submittedAt: '2026-09-29T09:00:00.000Z', changedAt: '2026-09-29T09:30:00.000Z' })]);
   const all = await people(db);
   assert.equal(all.length, 1, 'one person');
   const [p] = all;
-  assert.equal(p.status, 'New');
+  assert.equal(p.status, 'Application');
   assert.equal(p.name, 'Anna Ozola');
   assert.equal(p.email, 'anna.ozola@example.com');
   assert.equal(p.programme, 'NAV');
@@ -57,7 +66,7 @@ test('application-first: SIS started -> a person at New (only a submission is "S
   const ev = await db.prepare('SELECT * FROM events WHERE person_id = ? ORDER BY id').all(p.id);
   const made = ev.find((e) => e.kind === 'create');
   assert.equal(made.subject, 'Created from the SIS');
-  assert.equal(made.body, 'SIS: NAV application started');
+  assert.match(made.body, /^SIS: NAV application/);
   assert.equal(made.actor, 'SIS');
   assert.equal(made.origin, 'automatic');
   const link = await db.prepare('SELECT person_id FROM sis_applicants WHERE reference = ?').get('ref-af');
@@ -66,7 +75,7 @@ test('application-first: SIS started -> a person at New (only a submission is "S
 
 test('application-first: the funnel counts them from the top (done item, lead, application)', async () => {
   const db = await openDb(':memory:');
-  await run(db, [app()]);
+  await run(db, [app({ status: 'submitted', submittedAt: '2026-09-29T09:00:00.000Z' })]);
   const items = await db.prepare("SELECT * FROM inbound WHERE channel = 'sis'").all();
   assert.equal(items.length, 1);
   assert.equal(items[0].state, 'qualified');
@@ -79,7 +88,7 @@ test('application-first: the funnel counts them from the top (done item, lead, a
   assert.equal(step('Contacted us'), 1);
   assert.equal(step('Waiting to be looked at'), 0);
   assert.equal(step('Became a lead'), 1);
-  assert.equal(step('Application'), 0, 'a form only started is not a submitted application (07.10)');
+  assert.equal(step('Application'), 1, 'made at the submission, so at Application');
 });
 
 test('application-first: submitted is at Application too, form started by its submit date', async () => {
@@ -101,29 +110,19 @@ test('application-first: matriculated straight away -> Admitted, both facts', as
   assert.deepEqual((await lifecycleOf(db, p.id)).map((f) => f.fact), ['form_started', 'matriculated']);
 });
 
-test('application-first: registered only -> a person at New, no fact; started later moves them on', async () => {
+test('application-first: registered, then started: still nobody (11.11.2026); submitted: one person at Application', async () => {
   const db = await openDb(':memory:');
   await run(db, [app({ status: 'registered', applicationId: null, programmeCode: null })]);
-  let [p] = await people(db);
-  assert.equal(p.status, 'New');
+  assert.equal((await people(db)).length, 0);
   assert.equal(await waiting(db), 0);
-  assert.deepEqual(await lifecycleOf(db, p.id), []);
-  // the SIS touches the record again, still registered: they stay at New
-  await run(db, [app({ status: 'registered', applicationId: null, programmeCode: null,
-    changedAt: '2026-09-29T11:00:00.000Z' })]);
-  [p] = await people(db);
-  assert.equal(p.status, 'New');
-  // the application starts: the fact is recorded, the stage stays (07.10: only a submission moves it)
+  await run(db, [app({ status: 'registered', applicationId: null, programmeCode: null, changedAt: '2026-09-29T11:00:00.000Z' })]);
   await run(db, [app({ changedAt: '2026-09-30T04:00:00.000Z' })]);
-  let all = await people(db);
-  assert.equal(all.length, 1, 'still one person');
-  assert.equal(all[0].status, 'New');
-  assert.deepEqual((await lifecycleOf(db, p.id)).map((f) => [f.fact, f.at]),
-    [['form_started', '2026-09-30T04:00:00.000Z']]);
-  // and it is submitted: now they move on
+  assert.equal((await people(db)).length, 0, 'a begun form is still a draft');
   await run(db, [app({ status: 'submitted', submittedAt: '2026-10-01T04:00:00.000Z', changedAt: '2026-10-01T04:00:00.000Z' })]);
-  all = await people(db);
+  const all = await people(db);
+  assert.equal(all.length, 1, 'one person, made at the submission');
   assert.equal(all[0].status, 'Application');
+  assert.equal(await waiting(db), 0);
 });
 
 test('application-first: the same application twice is one person and one item', async () => {
@@ -162,10 +161,12 @@ test('application-first: a known lead at New stays at New on registered (07.10, 
 test('application-first: a call still waiting in New Leads with the same number is not application-first', async () => {
   const db = await openDb(':memory:');
   await receive(db, { channel: 'phone', externalId: 'call-1', phone: '+37129990001', body: 'missed call', source: 'simulated' });
-  const r = await run(db, [app({ email: null })]);
+  const d = await run(db, [app({ email: null })]);
+  assert.equal(d.inbox, 0, 'a draft does not even wait beside the call (11.11.2026)');
+  const r = await run(db, [app({ email: null, status: 'submitted', submittedAt: '2026-09-29T10:00:00.000Z', changedAt: '2026-09-29T10:00:00.000Z' })]);
   assert.equal((await people(db)).length, 0, 'nobody is created');
   assert.equal(r.created, 0);
-  assert.equal(r.inbox, 1, 'the SIS item waits beside the call, as today');
+  assert.equal(r.inbox, 1, 'the submitted SIS item waits beside the call, as today');
 });
 
 test('application-first: an SIS item already waiting in New Leads is left for a human', async () => {
