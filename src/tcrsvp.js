@@ -113,7 +113,7 @@ async function readLanding(env) {
   await c.connect();
   try { return (await c.query(`SELECT * FROM intake_read.landing_counts`)).rows[0] || null; } finally { await c.end().catch(() => {}); }
 }
-const LANDING_KEYS = ['gift_opens', 'gift_registered', 'page_opens', 'page_registered', 'link_opens', 'link_calendar', 'link_registered'];
+const LANDING_KEYS = ['gift_opens', 'gift_registered', 'page_opens', 'page_registered', 'link_opens', 'link_calendar', 'link_registered', 'link_people'];
 export async function landingCounts({ env = process.env, now = Date.now() } = {}) {
   if (!landingFetcher && !configured(env)) return null;
   if (landingCache && now - landingCache.at < TTL_MS) return landingCache.row;

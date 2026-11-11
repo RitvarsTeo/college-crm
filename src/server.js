@@ -3804,7 +3804,7 @@ export const handle = async (req, res) => {
     if (p === '/api/tc/go/stage2' && req.method === 'GET') {
       const code = String(url.searchParams.get('sender') || '');
       if (!code) return json(res, 200, await tcgo.stage2Senders(db, await tcMe(req, url)));
-      try { const ans = await tcrsvp.answers(); return json(res, 200, { sender: code, rows: await tcgo.stage2List(db, code, ans), gifts: await tcgo.giftMap(db), met: await tcgo.metKeys(db), places: await tcgo.placesForYes(db, ans) }); }
+      try { const ans = await tcrsvp.answers(); return json(res, 200, { sender: code, rows: await tcgo.stage2List(db, code, ans), gifts: await tcgo.giftMap(db), places: await tcgo.placesForYes(db, ans) }); }
       catch (e) { if (e instanceof tc.TcInputError) return json(res, 400, { error: e.message }); throw e; }
     }
     // CHECK-IN AT THE DOOR (05.11.2026, src/tcgo.js doorCard / checkIn): any Training Centre account

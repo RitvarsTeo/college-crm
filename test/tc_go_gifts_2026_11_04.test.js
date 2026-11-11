@@ -31,16 +31,10 @@ test('the tiles: one per company, same name whatever the capitals, a click opens
   assert.match(srv, /p === '\/api\/tc\/go\/gift' && req\.method === 'POST'/);
 });
 
-test('met face to face: a meeting or exhibition logged, or a Season stage past On the list, marks the tile (a suggestion)', async () => {
-  const db = await openDb();
-  const tc = await import('../src/tc.js');
-  const a = (await tc.addCompany(db, { name: 'Example Met AS', country: 'Norway' }, 'Ritvars')).id;
-  const b = (await tc.addCompany(db, { name: 'Sample Unmet AS', country: 'Norway' }, 'Ritvars')).id;
-  await tc.quickAdd(db, { companyId: a, name: 'Anna Example' }, 'Ritvars');
-  const keys = await go.metKeys(db);
-  assert.ok(keys.includes('id:' + a)); assert.ok(!keys.includes('id:' + b));
+test('11.11 his words "NO ONE ISMET YET! WHY ITS PUT DOWN AS MET?": no Met mark on any Grand Opening tile, and the server sends none', () => {
   const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
-  assert.match(app, /🤝 Met<\/span>/);
+  assert.ok(!app.includes('🤝 Met') && !app.includes('tcs2-met') && !app.includes('T_S2.met'));
+  assert.ok(!fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8').includes('metKeys') && !('metKeys' in go));
 });
 
 test('05.11 his correction: no gift is lit until picked; a second click clears it (kept as none, never deleted)', async () => {
@@ -207,17 +201,19 @@ test('11.11 ch3 "What we measure" = the Save the Date as it came back (the figur
   const html = godemo.read(godemo.fileFor(godemo.PREFIX)).toString('utf8');
   const ch = (t) => { const a = html.indexOf('data-t="' + t + '"'); return html.slice(a, html.indexOf('</section>', a)); };
   assert.ok(!ch('What we measure').includes('class="example"') && !/>(236|448|755|352|205|174)</.test(ch('What we measure')));
-  for (const l of ['Save the Date sent', 'Reached', 'Opened by a person', 'Added to calendar', 'Mother companies']) assert.ok(ch('What we measure').includes('>' + l + '<'), l);
+  // his words 11.11 (via the GO session): only the people who will attend, physical / digital, and the mother companies
+  for (const l of ['Postcard (physical)', 'Personal email link (digital)', 'Mother companies']) assert.ok(ch('What we measure').includes('>' + l + '<'), l);
+  for (const l of ['Save the Date sent', 'Typed address', 'opens', 'visits', 'Measured so far']) assert.ok(!ch('What we measure').includes(l), l);
   assert.ok(!html.includes('own QR'));
   // his words 11.11: "Put the real puzzle piece as we have concepted": Amento's piece (its QR opens ?gift) wherever a piece is drawn
-  for (const t of ['Two ways in', 'At the entrance']) assert.ok(ch(t).includes('src="assets/piece_gift.jpg"') && !ch(t).includes('<svg class="piece"'), t);
+  assert.ok(ch('At the entrance').includes('src="assets/piece_gift.jpg"') && !ch('At the entrance').includes('<svg class="piece"'));
+  // his words 11.11: the physical invitation is a postcard in a physical letter; its QR opens ?gift (the puzzle is the board on the day)
+  assert.ok(ch('Two ways in').includes('A postcard in a physical letter') && ch('Two ways in').includes('src="assets/qr_gift.svg"') && !ch('Two ways in').includes('piece_gift.jpg'));
   // ch3: measured so far, then the Stage 2 measures live (one row of totals; test and staff entries left out in the view)
-  assert.ok(ch('What we measure').includes('>Measured so far<') && ch('What we measure').includes('>Stage 2: what we measure<'));
-  for (const l of ['Gift QR', 'Personal email link', 'Typed address']) assert.ok(ch('What we measure').includes('>' + l + '<'), l);
   const sql = fs.readFileSync(path.join(ROOT, 'docs', 'client-hub', 'intake_landing_counts.sql'), 'utf8');
   assert.match(sql, /@novikontas/); assert.match(sql, /test/); assert.match(sql, /grant select on intake_read.landing_counts to intake_rsvp_reader;/);
   const cols = sql.split('select' + String.fromCharCode(10))[1].split('revoke')[0];
-  assert.equal((cols.match(/ as [a-z_]+/g) || []).length, 7); assert.ok(!/email|first_name|company|contact_id/.test(cols.replace(/coalesce\(l\.company[^)]*\)/g, '')));
+  assert.equal((cols.match(/ as [a-z_]+/g) || []).length, 8); assert.match(cols, / as link_people;/); assert.ok(!/email|first_name|company|contact_id/.test(cols.replace(/coalesce\(l\.company[^)]*\)/g, '')));
   // ch4 (his words "we already have clients page on the app!"): no matching table, the two real numbers open the app's own pages
   assert.ok(!ch('The count').includes('id="tbl"') && ch('The count').includes('https://intake.novikontas.org/#/tc/companies/go2'));
   const db = await openDb();

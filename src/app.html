@@ -2680,7 +2680,6 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tc-door-gift{display:inline-block;font-size:12px;font-weight:700;color:#fff;background:#0a2463;border-radius:5px;padding:2px 8px;margin-bottom:8px}
   html.ui-c .tc-door-act{display:flex;gap:8px;align-items:center;margin-top:14px} html.ui-c .tc-door-act b{font-size:22px;min-width:28px;text-align:center}
   html.ui-c .tc-door-was{color:#1e7bc4;font-weight:600;margin:10px 0 0} html.ui-c .tc-door-err{color:#b3261e;margin-top:12px} html.ui-c .tc-door-tot{color:var(--t3);margin:12px 0 0}
-  html.ui-c .tcs2-met{align-self:flex-start;font-size:10.5px;font-weight:700;color:#8a5a00;background:#fdf3d9;border-radius:5px;padding:2px 6px}
   html.ui-c .tcs2-gift{margin-top:auto;display:flex;gap:4px} html.ui-c .tcs2-gift button{all:unset;cursor:pointer;font-size:10.5px;font-weight:600;border-radius:5px;padding:3px 7px;background:var(--surface-2);color:var(--t3)}
   html.ui-c .tcs2-gift button.on{background:#0a2463;color:#fff} html.ui-c .tcs2-gift button.on.d{background:#29a8df}
   html.ui-c .tcs2-gift button:focus-visible, html.ui-c .tcs2-tile:focus-visible{outline:2px solid var(--pet);outline-offset:2px}
@@ -9124,7 +9123,7 @@ async function viewIntake(arg) {
       <td>${esc(r.name)}</td><td>${esc(r.subject || '')}<div style="color:var(--steel);font-size:12px">${esc((r.body || '').slice(0, 70))}</div></td>
       <td>${stageChip(r.status)}</td></tr>`).join('')}</tbody></table>
   </div>
-  <div class="prov">In the prototype these events are synthetic. The real channels are documented and tested separately (channel-spike), but are not connected yet.</div>`;
+`;
 }
 
 // ----------------------------------------------------------------- events --
@@ -9151,7 +9150,7 @@ async function viewOpenDaysInsideChannels() {
         </td></tr>`).join('')}</tbody></table>`
     : '<div class="empty">Nobody has booked yet.</div>'}
   </div>`).join('')}
-  <div class="prov">The event flow in the prototype: booking &rarr; person &rarr; attendance &rarr; follow-up. Marking "attended" creates a follow-up action 2 days later. This is a proposal, not an approved procedure.</div>`;
+`;
 }
 async function setAttendance(id, attended) { await post(`/api/registrations/${id}/attendance`, { attended }); viewOpenDaysInsideChannels(); }
 
@@ -9568,7 +9567,6 @@ async function viewMetrics() {
       <div>Meta</div><div>${esc(m.returnPath.meta)}</div>
       <div>Mailchimp</div><div>${esc(m.returnPath.mailchimp)}</div>
     </div>
-    <div class="warn-box">The prototype sends nothing anywhere. This is research into what would have to be built if we want the platform to learn about an admission.</div>
   </div>`;
 }
 
@@ -10036,7 +10034,7 @@ async function viewPrivacy() {
   $('#view').innerHTML = `
   <h1>Data and consent</h1><p class="sub">What is a technical requirement, what is provider policy and what is a legal consideration. This is not legal advice.</p>
   <div class="card">
-    <h3>Consent state in the prototype</h3>
+    <h3>Consent state</h3>
     ${Object.keys(byPurpose).length ? Object.entries(byPurpose).map(([purpose, rows]) => `<div style="margin-bottom:8px">
       <b>${esc(purpose)}</b>: ${rows.map(r => esc(r.state) + ' ' + r.n).join(' &middot; ')}</div>`).join('')
       : '<div class="empty">No records yet. Run an integration test.</div>'}
@@ -10046,7 +10044,7 @@ async function viewPrivacy() {
     <table><thead><tr><th>Purpose</th><th>Possible basis</th><th>Note</th></tr></thead><tbody>
     ${d.purposes.map(p => `<tr><td>${esc(p.label)}</td><td>${esc(p.basisOptions.join(', '))}</td><td>${esc(p.note)}</td></tr>`).join('')}
     </tbody></table>
-    <div class="prov">GDPR does not equal consent. The basis depends on the purpose, and this prototype does not choose it for you. Where the basis is consent, it must be freely given, specific, informed and unambiguous, and as easy to withdraw as it was to give.</div>
+    <div class="prov">GDPR does not equal consent. The basis depends on the purpose. Where the basis is consent, it must be freely given, specific, informed and unambiguous, and as easy to withdraw as it was to give.</div>
   </div>
   <div class="card">
     <h3>Three different things</h3>
@@ -10205,10 +10203,6 @@ function renderHistoryRefusal(message) {
     <h3 style="margin:0 0 8px">${esc(message)}</h3>
     <p>You are acting as <b>${esc(ACTOR)}</b>. The admins are
       <b>${esc((CFG.admins || []).join(', '))}</b>. Nobody in the admissions roles is an admin.</p>
-    <div class="prov"><b>This is not security.</b> ${esc(CFG.historyHonesty || '')}
-      The rule is shown here so it can be judged before authentication is built.</div>
-    <div class="prov" style="margin-top:10px"><b>Still open:</b> does an ordinary user see no history at all,
-      or only their own actions? Nobody has decided, so the prototype shows nothing.</div>
   </div>`;
 }
 
@@ -12866,7 +12860,7 @@ async function viewTcGo(part) {
   // the part named in the link, once everything above it has drawn (06.11.2026)
   if (go) Promise.allSettled(loads).then(() => setTimeout(() => { const el = document.querySelector('#view ' + go[1]); if (el) el.scrollIntoView({ block: 'start' }); }, 150));
   api('/api/tc/go/demo-access').then((r) => { T_GO_DEMO = Boolean(r && r.ok); const h = document.querySelector('#view .c-head');
-    if (T_GO_DEMO && h && !h.querySelector('.tcgo-demo')) h.insertAdjacentHTML('beforeend', tcGoDemoBtn()); }).catch(() => {});
+    if (T_GO_DEMO && h && !h.querySelector('.tcgo-demo')) h.insertAdjacentHTML('beforeend', '<a class="btn tcgo-demo" href="/api/tc/go/demo" target="_blank" rel="noopener">▶ Demo</a>'); }).catch(() => {});
 }
 // CHECK-IN AT THE DOOR (05.11.2026): type the code or scan the guest's QR; the company, its place, who said Yes and how many;
 // Arrived with the number that came. The camera scan needs a browser that reads QR codes (Chrome on Android does).
@@ -12932,7 +12926,7 @@ async function tcS2Load(code) {
     if (!T_S2.senders.length) return;
     T_S2.code = code || T_S2.code || (T_S2.senders.find((x) => x.code === T_S2.mine) || T_S2.senders[0]).code;
     T_S2.rows = null; tcS2Draw();
-    { const r = await api('/api/tc/go/stage2?sender=' + encodeURIComponent(T_S2.code)); T_S2.rows = r.rows; T_S2.gifts = r.gifts || {}; T_S2.met = new Set(r.met || []); T_S2.places = r.places || {}; }
+    { const r = await api('/api/tc/go/stage2?sender=' + encodeURIComponent(T_S2.code)); T_S2.rows = r.rows; T_S2.gifts = r.gifts || {}; T_S2.places = r.places || {}; }
   } catch (e) { if (T_S2) T_S2.rows = []; }
   tcS2Draw();
 }
@@ -12962,10 +12956,10 @@ function tcS2Rows() {
   const shown = all.filter((g) => !q || g.name.toLowerCase().includes(q) || g.ps.some((r) => `${r.name} ${r.email || ''}`.toLowerCase().includes(q)));
   const phys = all.filter((g) => tcS2Gift(g) === 'physical').length, digi = all.filter((g) => tcS2Gift(g) === 'digital').length;
   const tile = (g) => {
-    const p = tcS2Gift(g) === 'physical', d = tcS2Gift(g) === 'digital', yes = g.ps.some((r) => r.answer === 'yes'), met = T_S2.met && T_S2.met.has(g.key), place = (T_S2.places || {})[g.key];
+    const p = tcS2Gift(g) === 'physical', d = tcS2Gift(g) === 'digital', yes = g.ps.some((r) => r.answer === 'yes'), place = (T_S2.places || {})[g.key];
     const k = esc(JSON.stringify(g.key));
     return `<div class="tcs2-tile${p ? ' phys' : ''}" role="button" tabindex="0" onclick="tcS2Open(${k})" onkeydown="if(event.key==='Enter')tcS2Open(${k})">
-      ${yes ? `<span class="tcs2-yes">✓ Yes${place ? ' · 🧩 ' + esc(place) : ''}</span>` : ''}<b>${esc(g.name || 'No company yet')}</b>${met ? '<span class="tcs2-met" title="Met face to face: suggested for the physical piece">🤝 Met</span>' : ''}
+      ${yes ? `<span class="tcs2-yes">✓ Yes${place ? ' · 🧩 ' + esc(place) : ''}</span>` : ''}<b>${esc(g.name || 'No company yet')}</b>
       <small>${tcN(g.ps.length)} ${g.ps.length === 1 ? 'person' : 'people'}${g.country ? ' · ' + esc(g.country) : ''}</small>
       <span class="tcs2-gift" onclick="event.stopPropagation()"><button type="button" class="${p ? 'on' : ''}" aria-pressed="${p}" onclick="tcS2SetGift(${k}, 'physical')">🎁 Physical</button><button type="button" class="${d ? 'on d' : ''}" aria-pressed="${d}" onclick="tcS2SetGift(${k}, 'digital')">Digital</button></span></div>`;
   };
@@ -13385,7 +13379,7 @@ async function startShell() {
   if (AUTH.on && AUTH.user && Array.isArray(AUTH.user.areas) && !AUTH.user.areas.includes('academy')) return startShellTc();
   CFG = await api('/api/config');
   signinProgress('settings');  // the sign-in bar, step 2: the settings have answered
-  $('#ver').innerHTML = 'Intake &middot; ' + (CFG.version || 'prototype');
+  $('#ver').innerHTML = 'Intake' + (CFG.version ? ' &middot; ' + CFG.version : '');
   drawDatasetBadge(CFG.dataset || {});
   let saved = 'light';
   try { saved = localStorage.getItem('crmTheme') || 'light'; } catch {}

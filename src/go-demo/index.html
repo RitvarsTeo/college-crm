@@ -122,6 +122,7 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
 .pc-big{display:flex;gap:18px;align-items:center}
 .pc-big .piece{width:150px;height:150px}
 .realpiece{object-fit:contain;border-radius:8px}
+.pc-qr{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;object-fit:contain}
 .s1-row{display:grid;grid-template-columns:minmax(0,360px) minmax(0,1fr);gap:18px;align-items:start}
 .s1-mail img{width:100%;border-radius:12px;border:1px solid var(--line);display:block;max-height:640px;object-fit:cover;object-position:top}
 .s1-res{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -232,14 +233,14 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
 
 <section class="ch" data-t="Two ways in" data-s="Stage 2">
  <h2>Two ways in, one landing page</h2>
- <p class="lead">The physical gift and the digital invitation lead to the same page.</p>
+ <p class="lead">The postcard and the digital invitation lead to the same page.</p>
  <div class="ways">
   <div class="card way">
-   <span class="pill">Physical gift</span>
-   <h3>Puzzle-piece invitation, handed over by the director</h3>
+   <span class="pill">Physical invitation</span>
+   <h3>A postcard in a physical letter</h3>
    <div class="piece-wrap">
-    <img class="piece realpiece" src="assets/piece_gift.jpg" alt="The Grand Opening puzzle piece with the gift QR">
-    <div><div class="addr" style="font-weight:800;font-size:18px">novikontas.org/<br>grand-opening?gift</div><p style="margin:8px 0 0;color:var(--muted);font-weight:600">Same QR on every gift.<br>Scan it now with a phone.</p></div>
+    <img class="piece pc-qr" src="assets/qr_gift.svg" alt="The QR on the postcard">
+    <div><div class="addr" style="font-weight:800;font-size:18px">novikontas.org/<br>grand-opening?gift</div><p style="margin:8px 0 0;color:var(--muted);font-weight:600">Same QR on every postcard.<br>Scan it now with a phone.</p></div>
    </div>
   </div>
   <div class="card way">
@@ -283,19 +284,11 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
 
 <section class="ch" data-t="What we measure" data-s="Stage 2">
  <h2>What we measure</h2>
- <h3 class="inh">Measured so far</h3>
- <div class="card bars" id="bars">
-  <div class="bar"><span class="lbl">Save the Date sent</span><div class="track"><div class="fill" id="b-s"></div></div><span class="n" id="n-s"></span></div>
-  <div class="bar"><span class="lbl">Reached</span><div class="track"><div class="fill" id="b-r"></div></div><span class="n" id="n-r"></span></div>
-  <div class="bar"><span class="lbl">Opened by a person</span><div class="track"><div class="fill" id="b-o"></div></div><span class="n" id="n-o"></span></div>
-  <div class="bar"><span class="lbl">Added to calendar</span><div class="track"><div class="fill" id="b-c"></div></div><span class="n" id="n-c"></span></div>
-  <div class="bar"><span class="lbl">Mother companies</span><div class="track"><div class="fill navy" id="b-m"></div></div><span class="n" id="n-m"></span></div>
- </div>
- <h3 class="inh">Stage 2: what we measure</h3>
+ <p class="lead">The people who will attend, and the mother companies for the puzzle pieces.</p>
  <div class="tiles">
-  <div class="tile"><div class="k">Gift QR</div><div class="v" id="m-g"></div><div class="s">visits · <span id="m-gr"></span> registered</div></div>
-  <div class="tile"><div class="k">Personal email link</div><div class="v" id="m-l"></div><div class="s">opens · <span id="m-lr"></span> registered · <span id="m-lc"></span> added to calendar</div></div>
-  <div class="tile"><div class="k">Typed address</div><div class="v" id="m-p"></div><div class="s">visits · <span id="m-pr"></span> registered</div></div>
+  <div class="tile"><div class="k">Postcard (physical)</div><div class="v" id="m-phys"></div><div class="s">people registered</div></div>
+  <div class="tile"><div class="k">Personal email link (digital)</div><div class="v" id="m-dig"></div><div class="s">people said Yes</div></div>
+  <a class="tile intile" href="https://intake.novikontas.org/#/tc/companies/go2" target="_blank" rel="noopener"><div class="k">Mother companies</div><div class="v">{{MOTHER_COMPANIES}}</div><div class="s">puzzle pieces</div><span class="go">Open &rarr;</span></a>
  </div>
 </section>
 
@@ -374,7 +367,7 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
  <p class="lead">From the invitation to the finished board.</p>
  <ol class="order">
   <li><div><b>Stage 1: the Save the Date</b><span>what came back is in Intake</span></div></li>
-  <li><div><b>Physical gifts handed over</b><span>QR: novikontas.org/grand-opening?gift</span></div></li>
+  <li><div><b>Postcards in physical letters</b><span>QR: novikontas.org/grand-opening?gift</span></div></li>
   <li><div><b>Digital invitations from each owner's own mailbox</b><span>personal link for each person</span></div></li>
   <li><div><b>Registrations on the landing page</b><span>counted by channel</span></div></li>
   <li><div><b>The count</b><span>people per mother company, branches grouped</span></div></li>
@@ -422,16 +415,12 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
  var R=window.GO_REAL||{sample:[],people:0,piece:null,std:null,landing:null,mothers:0,lists:[]};
  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
  document.getElementById('r-people').textContent=Number(R.people||0).toLocaleString('en-US');
- (function(){ var L=R.landing, n=function(x){ return L ? Number(x||0).toLocaleString('en-US') : '–'; }, set=function(id,v){ document.getElementById(id).textContent=v; };
-  set('m-g',n(L&&L.gift_opens)); set('m-gr',n(L&&L.gift_registered)); set('m-l',n(L&&L.link_opens)); set('m-lr',n(L&&L.link_registered)); set('m-lc',n(L&&L.link_calendar)); set('m-p',n(L&&L.page_opens)); set('m-pr',n(L&&L.page_registered));
+ (function(){ var L=R.landing, n=function(x){ return L ? Number(x||0).toLocaleString('en-US') : '–'; };
+  document.getElementById('m-phys').textContent=n(L&&L.gift_registered); document.getElementById('m-dig').textContent=n(L&&L.link_people);
  })();
  (function(){ var D=R.std, t=function(id,v){ document.getElementById(id).textContent = D ? Number(v||0).toLocaleString('en-US') : '–'; };
   t('s1-s',D&&D.sent); t('s1-r',D&&D.reached); t('s1-o',D&&D.person); t('s1-c',D&&D.calendar);
   document.getElementById('so').innerHTML=(R.lists||[]).map(function(l){ return '<div class="so-row"><div class="so-box"><b>'+esc(l.name)+'</b><small>'+esc(l.email)+'</small></div><div class="so-arrow">&rarr;</div><div class="so-n">'+Number(l.people).toLocaleString('en-US')+'<span>people on their list</span></div></div>'; }).join('');
- })();
- (function(){ var D=R.std, m=Number(R.mothers||0), top=Math.max(D?D.sent:0, m, 1);
-  [['s',D&&D.sent],['r',D&&D.reached],['o',D&&D.person],['c',D&&D.calendar],['m',m]].forEach(function(x){ var ok=(x[0]==='m')||!!D, v=Number(x[1]||0);
-   document.getElementById('n-'+x[0]).textContent=ok ? v.toLocaleString('en-US') : '–'; document.getElementById('b-'+x[0]).dataset.w=(ok ? Math.max(v/top*100, v ? 1.5 : 0) : 0).toFixed(1); });
  })();
  if(R.piece){ document.getElementById('pc-name').textContent=R.piece.name; document.getElementById('pc-sub').innerHTML=R.piece.branches+(R.piece.branches===1?' company':' companies')+' · '+Number(R.piece.people).toLocaleString('en-US')+' people<br>one piece, to the first guest at the door'; }
 

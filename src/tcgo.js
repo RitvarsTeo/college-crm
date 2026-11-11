@@ -535,13 +535,6 @@ export async function setGift(db, key, kind, actor) {
   return { key: k, kind: kind === 'none' ? null : kind };
 }
 
-/** Companies met face to face (05.11.2026, his pick "Yes, suggest"): a meeting or an exhibition logged on the company, or a
- *  Season exhibition stage Met / Follow-up / Booked. A suggestion on the tile only; the owner still picks Physical or Digital. */
-export async function metKeys(db) {
-  const a = await db.prepare(`SELECT DISTINCT company_id FROM tc_activities WHERE kind IN ('physical_meeting', 'exhibition')`).all();
-  const e = await db.prepare(`SELECT DISTINCT company_id FROM tc_event_companies WHERE stage IN ('met', 'follow_up', 'booked') AND removed_at IS NULL`).all();
-  return [...new Set([...a, ...e].map((r) => 'id:' + Number(r.company_id)))];
-}
 
 // THE REAL COMPANY COUNT (11.11.2026, the owner's answer on the demo: the "1,125 places" tile becomes the live number of
 // mother companies on the Stage 2 lists, one puzzle piece per mother company). A person's company is Intake's company

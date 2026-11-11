@@ -9,6 +9,7 @@
 --   page_opens / page_registered       the same page reached any other way (typed address, shared link)
 --   link_opens / link_registered       the personal Stage 2 email links (std_linkedin_events open; std_rsvp answered Yes)
 --   link_calendar                      added to calendar from a personal link (std_linkedin_events ics)
+--   link_people                        the people behind those Yes answers (each answer's guests; 11.11.2026, the demo's attendees)
 -- TEST AND STAFF ENTRIES ARE LEFT OUT (the owner's rule: no test or staff record in any figure): a registration from a
 -- novikontas address, one with "test" in its address, company or name, or an address of fewer than 3 characters before
 -- the @ (typing tests); a Yes whose invitee's company is marked test. Single visits carry no name, so visits are as stored.
@@ -32,7 +33,9 @@ select
   (select count(*) from public.std_linkedin_events where event = 'open')                                   as link_opens,
   (select count(*) from public.std_linkedin_events where event = 'ics')                                    as link_calendar,
   (select count(*) from public.std_rsvp r join public.std_linkedin_links l on l.code = r.code
-    where r.answer = 'yes' and coalesce(l.company, '') !~* '\mtest\M')                                     as link_registered;
+    where r.answer = 'yes' and coalesce(l.company, '') !~* '\mtest\M')                                     as link_registered,
+  (select coalesce(sum(greatest(coalesce(r.guests, 1), 1)), 0) from public.std_rsvp r join public.std_linkedin_links l on l.code = r.code
+    where r.answer = 'yes' and coalesce(l.company, '') !~* '\mtest\M')                                     as link_people;
 
 revoke all on intake_read.landing_counts from public, anon, authenticated;
 grant select on intake_read.landing_counts to intake_rsvp_reader;
