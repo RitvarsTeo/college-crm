@@ -291,6 +291,9 @@ test('11.11 his consolidated list ("we are golden"): Stage 1 first, the send-out
   const order = [...html.matchAll(/<section class="ch" data-t="([^"]+)"/g)].map((m) => m[1]);
   assert.deepEqual(order, ['The Save the Date', 'Two ways in', 'The send-out', 'The landing page', 'What we measure', 'The count', 'The ticket', 'At the entrance', 'The board', 'In Intake', 'The order']);
   assert.ok(!html.includes('Built-in checks') && (html.match(/class="board"/g) || []).length === 1 && !html.includes('board5'));
+  // his words 11.11: "The board was supposed to be the pre filled one ... delete the empty one"
+  assert.ok(html.includes('id="board9"') && !html.includes('board8') && !html.includes('Place every piece') && !html.includes('Start again'));
+  assert.ok(html.includes("b9.forEach(function(c){ if(rnd()<0.155) c.classList.add('mine'); });"));
   const ch = (t) => { const a = html.indexOf('data-t="' + t + '"'); return html.slice(a, html.indexOf('</section>', a)); };
   assert.ok(ch('The Save the Date').includes('src="/assets/go-stage1-email.jpg"'));
   assert.ok(ch('The ticket').includes('Thursday 27 May 2027') && ch('The ticket').includes('Your ticket') && ch('The ticket').includes('Add to Google Wallet'));

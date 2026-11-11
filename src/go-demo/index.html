@@ -114,6 +114,7 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
 .board{display:grid;grid-template-columns:repeat(45,1fr);gap:1px;background:#d9e0ea;border:6px solid var(--ink);border-radius:6px;aspect-ratio:45/25;width:100%}
 .board i{display:block;background:#f3f6fa}
 .board i.mine{background:var(--navy)}
+.b-sw{display:inline-block;width:14px;height:14px;background:var(--gold);outline:2px solid var(--ink);vertical-align:-2px;margin-right:8px}
 .board i.hl{background:var(--gold);outline:2px solid var(--ink);z-index:1}
 .board i.art{background-image:url(assets/campus_morning.jpg);background-size:4500% 2500%}
 .pc-row{display:grid;grid-template-columns:1.6fr 1fr;gap:22px;align-items:start}
@@ -353,10 +354,8 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
 
 <section class="ch" data-t="The board" data-s="27.05.2027">
  <h2>The board: every company puts in its piece</h2>
- <p class="lead">Each placed piece uncovers its part of the artwork.</p>
- <div class="countbar"><button class="btn" id="place1"></button><button class="btn ghost" id="placeall">Place every piece</button><button class="btn ghost" id="reset8">Start again</button><span class="pill line" id="placed">0 pieces placed</span></div>
- <div class="board" id="board8" aria-label="Puzzle board"></div>
- <p style="margin:14px 0 0;font-weight:600;color:var(--muted)"><b style="color:var(--ink)">Board:</b> 2.70 × 1.50 m; one place per mother company, plus spares</p>
+ <div class="board" id="board9" aria-label="Puzzle board"></div>
+ <p style="margin:14px 0 0;font-weight:600;color:var(--muted)"><span class="b-sw"></span><b style="color:var(--ink)" id="b-me"></b> · <b style="color:var(--ink)">Board:</b> 2.70 × 1.50 m; one place per mother company, plus spares</p>
 </section>
 
 <!-- In Intake, live (Intake TC LANE 11.11.2026) -->
@@ -439,14 +438,10 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
  /* boards */
  var W=45,H=25;
  function mk(el){ var f=document.createDocumentFragment(); for(var y=0;y<H;y++)for(var x=0;x<W;x++){ var i=document.createElement('i'); i.style.backgroundPosition=(x/(W-1)*100)+'% '+(y/(H-1)*100)+'%'; i.dataset.x=x; i.dataset.y=y; f.appendChild(i);} el.appendChild(f); return [].slice.call(el.children); }
- var b8=mk(document.getElementById('board8')), placed=0, timer=null;
- function upd(){ document.getElementById('placed').textContent=placed.toLocaleString('en-US')+(placed===1?' piece placed':' pieces placed'); }
- function put(c){ if(!c.classList.contains('art')){ c.classList.add('art'); placed++; } }
- document.getElementById('place1').onclick=function(){ var c=b8[12*W+20]; put(c); c.classList.add('hl'); setTimeout(function(){c.classList.remove('hl');},900); upd(); };
- document.getElementById('placeall').onclick=function(){ if(timer)return; var order=b8.filter(function(c){return !c.classList.contains('art');}).sort(function(){return Math.random()-.5;}); var k=0; var step=Math.ceil(order.length/40);
-  timer=setInterval(function(){ for(var j=0;j<step&&k<order.length;j++,k++) put(order[k]); upd(); if(k>=order.length){ clearInterval(timer); timer=null; } },40); };
- document.getElementById('reset8').onclick=function(){ if(timer){clearInterval(timer);timer=null;} b8.forEach(function(c){c.classList.remove('art','hl');}); placed=0; upd(); };
- upd();
+ var b9=mk(document.getElementById('board9'));
+ var seed=7; function rnd(){ seed=(seed*16807)%2147483647; return seed/2147483647; }
+ b9.forEach(function(c){ if(rnd()<0.155) c.classList.add('mine'); });
+ var me=b9[12*W+20]; me.classList.remove('mine'); me.classList.add('hl');
 
  /* 6 wallet */
  document.getElementById('add-g').onclick=function(){ var p=document.getElementById('w-pass'); document.getElementById('w-empty').hidden=true; p.hidden=false; requestAnimationFrame(function(){ requestAnimationFrame(function(){ p.classList.remove('out'); }); }); this.textContent='Added to Google Wallet'; this.disabled=true; };
@@ -457,7 +452,7 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
  var G={anna:{n:'Anna Bērziņa',c:PC,t:'T1'},janis:{n:'Jānis Ozols',c:PC,t:'T2'},anna2:{n:'Anna Bērziņa',c:PC,t:'T1'},liga:{n:'Līga Kalniņa',c:OT,t:'T3'}};
  document.getElementById('g-anna').textContent=PC+(BR[0]?' · '+BR[0]:''); document.getElementById('g-janis').textContent=PC+(BR[1]?' · '+BR[1]:'');
  document.getElementById('g-liga').textContent=OT; document.getElementById('tk-co').textContent=PC; document.getElementById('tk-co2').textContent=PC;
- document.getElementById('place1').textContent='Place '+PC+(/s$/i.test(PC)?"'":"'s")+' piece';
+ document.getElementById('b-me').textContent=PC+(/s$/i.test(PC)?"'":"'s")+' piece';
  var mins=4;
  function now(){ mins++; return '10:'+(mins<10?'0':'')+mins; }
  function show7(cls,big,mid,act){ res.className='res '+cls; res.innerHTML='<div class="big">'+big+'</div><div class="mid">'+mid+'</div>'+(act?'<span class="act">'+act+'</span>':''); }
