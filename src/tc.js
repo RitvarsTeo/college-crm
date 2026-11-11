@@ -178,6 +178,9 @@ export function matches(c, f, w, me = null) {
     if (f.cohort === 'back' ? !before : f.cohort === 'new' ? before : false) return false;
   }
   if (fy && f.last && lastBucket(c, fy) !== f.last) return false;
+  // STAGE 2 MOTHER COMPANIES (11.11.2026, the owner: every figure opens its own list): the server passes the ids of the
+  // Real company count (src/tcgo.js motherCompanyList); without them the filter shows nothing rather than everything
+  if (f.go2 && !(f.go2ids && f.go2ids.has(Number(c.id)))) return false;
   if (f.status && c.status !== f.status) return false;
   if (f.area && !c.areas.includes(f.area)) return false;
   if (f.course && !(c.courses || []).includes(String(f.course).toUpperCase())) return false;
@@ -194,7 +197,7 @@ export function matches(c, f, w, me = null) {
   }
   return true;
 }
-export const FILTER_KEYS = ['status', 'area', 'country', 'pic', 'client', 'info', 'due', 'q', 'year', 'cohort', 'last', 'course', 'since'];
+export const FILTER_KEYS = ['status', 'area', 'country', 'pic', 'client', 'info', 'due', 'q', 'year', 'cohort', 'last', 'course', 'since', 'go2'];
 export function readFilters(params) {
   const f = {};
   for (const k of FILTER_KEYS) { const v = params.get ? params.get(k) : params[k]; if (v) f[k] = String(v).slice(0, 200); }
@@ -214,7 +217,8 @@ export async function listCompanies(db, filters = {}, { page = 1, size = 100, so
   const mk = meKeys(me);
   // a group's TOTAL row is counted nowhere; the search alone finds it, so it can still be opened
   const counted = all.filter((c) => !c.groupTotal);
-  const pool = filters.q ? all : counted;
+  // the Stage 2 mother companies (11.11.2026) are listed whole: a group's own row is a mother company there too
+  const pool = filters.q || filters.go2 ? all : counted;
   const rows = pool.filter((c) => matches(c, filters, w, mk));
   const sorters = {
     name: (a, b) => byLv(a.name, b.name),

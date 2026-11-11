@@ -108,7 +108,7 @@ test('11.11 the new demo (the Grand Opening 10 chapters) plus In Intake: the til
   assert.equal((html.match(/<section class="ch"/g) || []).length, 11);
   assert.match(html, /<section class="ch" data-t="In Intake" data-s="Intake">/);
   for (const [title, href] of [['Do not invite / hold', '#/tc/go/hold'], ['What came back', '#/tc/go/back'], ['Six owners, six lists', '#/tc/go/lists'],
-    ['Company families', '#/tc/families'], ['Clients in Intake', '#/tc/clients'], ['Real company count', '#/tc/go/lists']]) {
+    ['Company families', '#/tc/families'], ['Clients in Intake', '#/tc/clients'], ['Real company count', '#/tc/companies/go2']]) {
     const at = html.indexOf('<h3>' + title + '</h3>'); const a = html.lastIndexOf('<a class="card intile"', at);
     assert.ok(at > 0 && html.slice(a, at).includes('href="https://intake.novikontas.org/' + href + '"'), title);
   }
@@ -239,4 +239,27 @@ test('11.11 the match applied: each person onto their company with their Client 
   assert.equal(l.companies.find((x) => x.companyId === co).people, 2);
   assert.equal(l.companies.find((x) => x.companyId === fresh[0].id).people, 2);
   assert.deepEqual(await go.stage2MatchApply(db, [{ id: a, companyId: co }], 'Ritvars'), { companiesAdded: 0, contactsAdded: 0, contactsLinked: 0, skipped: 1 });
+});
+
+test('11.11 the Real company count opens its own list: the Clients filter go2 shows exactly the mother companies the count holds; without the ids it shows none', async () => {
+  const tc = await import('../src/tc.js');
+  const db = await openDb();
+  const at = new Date().toISOString();
+  const co = async (name) => Number((await db.prepare(`INSERT INTO tc_companies (name, name_key, status, created_at) VALUES (?,?,?,?)`).run(name, tc.nameKey(name), 'not_contacted', at)).lastInsertRowid);
+  const one = await co('Listone Example'), two = await co('Listtwo Example');
+  await co('Listnone Example');
+  for (const [cid, ch] of [[one, 'LS1'], [one, 'LS2'], [two, 'LS3']]) {
+    await db.prepare(`INSERT INTO tc_company_contacts (company_id, name, ch_contact_id, created_at) VALUES (?,?,?,?)`).run(cid, 'P', ch, at);
+    await db.prepare(`INSERT INTO tc_go_stage2 (ch_contact_id, sender, name, first_name, company, position, country, email, link_code, gone, loaded_at, loaded_by)
+      VALUES (?,?,?,?,?,?,?,?,?,0,?,?)`).run(ch, 'JS', 'P', 'P', 'x', '', 'Latvia', ch + '@list-example.com', 'ls' + ch, at, 'test');
+  }
+  const l = await go.motherCompanyList(db);
+  const ids = new Set(l.companies.filter((c) => c.companyId).map((c) => c.companyId));
+  const list = await tc.listCompanies(db, { go2: '1', go2ids: ids }, { size: 2000 });
+  assert.equal(list.total, ids.size);
+  assert.ok(list.rows.some((c) => c.id === one) && list.rows.some((c) => c.id === two) && !list.rows.some((c) => c.name === 'Listnone Example'));
+  assert.equal((await tc.listCompanies(db, { go2: '1' }, { size: 2000 })).total, 0);
+  const srv = fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8');
+  assert.ok(srv.includes('filters.go2 ? new Map((await tcgo.motherCompanyList(db))'));
+  assert.ok(fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8').includes("place === 'companies' && arg === 'go2'"));
 });

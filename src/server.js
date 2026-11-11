@@ -3406,9 +3406,15 @@ export const handle = async (req, res) => {
         mine: url.searchParams.get('mine') === '1', me: await tcMe(req, url) }));
     }
     if (p === '/api/tc/companies' && req.method === 'GET') {
-      return json(res, 200, await tc.listCompanies(db, tc.readFilters(url.searchParams),
+      const filters = tc.readFilters(url.searchParams);
+      // Stage 2 mother companies (11.11.2026): the same list as the Real company count, each with its Stage 2 people
+      const go2 = filters.go2 ? new Map((await tcgo.motherCompanyList(db)).companies.filter((c) => c.companyId).map((c) => [c.companyId, c.people])) : null;
+      if (go2) filters.go2ids = new Set(go2.keys());
+      const list = await tc.listCompanies(db, filters,
         { page: url.searchParams.get('page'), size: url.searchParams.get('size'), sort: url.searchParams.get('sort') || 'name',
-          me: await tcMe(req, url), only: url.searchParams.get('only') === '1' }));
+          me: await tcMe(req, url), only: url.searchParams.get('only') === '1' });
+      if (go2) list.rows = list.rows.map((c) => ({ ...c, s2: go2.get(Number(c.id)) || 0 }));
+      return json(res, 200, list);
     }
     // DOWNLOAD THE LIST (the owner's pick 6, layout B, 26.10.2026): exactly the filtered Companies list as Excel, companies
     // or companies with their people; every account that opens Training Centre (the gate above). Each download is logged.

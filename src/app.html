@@ -11181,7 +11181,9 @@ async function tcRoute(hash) {
   tcMark(place);
   fbClose();
   try {
-    if (place === 'companies') await viewTcCompanies('Companies');
+    // the Real company count's own list (11.11.2026): #/tc/companies/go2 = the Stage 2 mother companies, each with its people
+    if (place === 'companies' && arg === 'go2') { T_F = { ...T_F_EMPTY(), go2: '1' }; T_KEEP = true; await viewTcCompanies('Companies'); }
+    else if (place === 'companies') await viewTcCompanies('Companies');
     else if (place === 'clients') { T_F = { ...T_F_EMPTY(), client: 'yes' }; T_KEEP = true; await viewTcCompanies('Clients'); }
     else if (place === 'prospects') { T_F = { ...T_F_EMPTY(), client: 'no' }; T_KEEP = true; await viewTcCompanies('Prospects'); }
     else if (place === 'company') await viewTcCompany(Number(arg));
@@ -11567,7 +11569,7 @@ async function tcSavePlan(id) {
 }
 
 // ---- COMPANIES: Journey's List for companies - the status band, the filter row, search, one line each ----
-const T_F_EMPTY = () => ({ status: '', area: '', country: '', pic: '', client: '', info: '', due: '', year: '', cohort: '', last: '', course: '', since: '' });
+const T_F_EMPTY = () => ({ status: '', area: '', country: '', pic: '', client: '', info: '', due: '', year: '', cohort: '', last: '', course: '', since: '', go2: '' });
 let T_F = T_F_EMPTY(); let T_Q = ''; let T_PAGE = 1; let T_LIST = null; let T_TITLE = 'Companies'; let T_KEEP = false; let T_SORT = 'name';
 let T_QT = 0; let T_MORE = false;
 // OWNERSHIP AND NEW ADDITIONS (29.10.2026, src/tcadd.js; the owner's picks: Make mine on Companies, a New additions tab with
@@ -11808,9 +11810,9 @@ function tcDrawCompanies() {
         <div class="tc-rowsub">${c.lastYear ? `<span class="tc-ychip">${Number(c.lastYear)} · ${tcDelegates(c.lastYearN)}</span><span>${Number(c.delegates)} in all</span>` : ''}${c.pic
           ? `<span class="tc-ini" title="${esc(c.pic)}">${esc(String(c.pic).split(/[\s;]+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase())}</span>` : ''}</div></div>
       <div class="c-when">${c.next ? `<span class="c-when ${tcWhen(c.next.due)}">${esc(tcWhenText(c.next.due))}</span>` : ''}</div>
-      <div class="c-acts">${c.family ? `<span class="c-tag tcfam-tag">${esc(c.family.name)} family · ${Number(c.family.n)}</span>` : ''}${c.info ? '<span class="c-tag">Information to send</span>' : ''}${tcMineHtml(c)}</div></a>`;
+      <div class="c-acts">${c.s2 ? `<span class="c-tag">${tcN(c.s2)} on Stage 2</span>` : ''}${c.family ? `<span class="c-tag tcfam-tag">${esc(c.family.name)} family · ${Number(c.family.n)}</span>` : ''}${c.info ? '<span class="c-tag">Information to send</span>' : ''}${tcMineHtml(c)}</div></a>`;
   $('#view').innerHTML = cPoolFrame({
-    title: T_TITLE,
+    title: T_F.go2 ? 'Stage 2 mother companies' : T_TITLE,
     crumb: `${Number(L.total)} ${L.total === 1 ? 'company' : 'companies'}${Object.values(T_F).some(Boolean) || T_Q ? ' match' : ''}`,
     act: `<a class="btn ghost" href="#/tc/families">Families</a><a class="btn ghost" href="#/tc/import">Import people</a><input class="c-search" id="tcQ" placeholder="Search company, city, country or person" value="${esc(T_Q)}" aria-label="Search companies and people">${tcDownloadMenu()}<button class="btn" onclick="tcOpenAdd()">Add company</button>`,
     band: tcAddnStrip(),

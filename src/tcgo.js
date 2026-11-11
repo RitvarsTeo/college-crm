@@ -552,7 +552,9 @@ export async function motherCompanyList(db) {
   // the person's Intake contact by Client Hub id, else by the same email (one person held under two Client Hub ids)
   const rows = await db.prepare(`SELECT s.id, s.name, s.sender, s.company, COALESCE(MIN(k.company_id), MIN(e.company_id)) AS company_id FROM tc_go_stage2 s
     LEFT JOIN tc_company_contacts k ON k.ch_contact_id = s.ch_contact_id AND k.archived_at IS NULL
-    LEFT JOIN tc_company_contacts e ON s.email IS NOT NULL AND e.email = LOWER(s.email) AND e.archived_at IS NULL WHERE s.gone = 0
+      AND k.company_id IN (SELECT id FROM tc_companies WHERE archived_at IS NULL)
+    LEFT JOIN tc_company_contacts e ON s.email IS NOT NULL AND e.email = LOWER(s.email) AND e.archived_at IS NULL
+      AND e.company_id IN (SELECT id FROM tc_companies WHERE archived_at IS NULL) WHERE s.gone = 0
     GROUP BY s.id, s.name, s.sender, s.company ORDER BY s.id`).all();
   const cos = await db.prepare(`SELECT id, name, name_key FROM tc_companies WHERE archived_at IS NULL`).all();
   const byId = new Map(cos.map((c) => [Number(c.id), c.name]));
@@ -561,14 +563,16 @@ export async function motherCompanyList(db) {
     WHERE m.ended_at IS NULL AND f.ended_at IS NULL`).all()).map((r) => [Number(r.company_id), Number(r.parent_id)]));
   const out = new Map(); let noCompany = 0;
   for (const r of rows) {
-    const name = String(r.company || '').trim();
+    // a name written wholly in brackets is a description ("(freelance web developer)"), not a company
+    const written = String(r.company || '').trim();
+    const name = /^\(.*\)$/.test(written) ? '' : written;
     let id = r.company_id ? Number(r.company_id) : (name ? byName.get(nameKey(name)) || null : null);
     if (id) id = parent.get(id) || id;
     const key = id ? 'id:' + id : name ? 'n:' + nameKey(name) : null;
     if (!key || key === 'n:') { noCompany += 1; continue; }
     if (!out.has(key)) out.set(key, { key, companyId: id, name: id ? byId.get(id) || name : name, people: 0, rows: [], branches: new Set() });
     const g = out.get(key); g.people += 1;
-    g.rows.push({ person: r.name || '', written: name, sender: r.sender || '' });
+    g.rows.push({ person: r.name || '', written, sender: r.sender || '' });
     if (r.company_id) g.branches.add(Number(r.company_id));
   }
   return { companies: [...out.values()].map((g) => ({ ...g, branches: g.branches.size })).sort((x, y) => y.people - x.people || x.name.localeCompare(y.name, 'lv')), noCompany };
