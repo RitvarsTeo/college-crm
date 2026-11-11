@@ -101,16 +101,25 @@ export const SIS_HOLDS = ['submitted', 'admitted', 'matriculated'];
 // and the person is with the SIS from then on, never overdue and never "no next step".
 export const SIS_HOLDS_SQL = `(pe.sis_handoff_at IS NOT NULL OR (pe.first_channel = 'sis' AND EXISTS (SELECT 1 FROM sis_applicants sa
   WHERE sa.person_id = pe.id AND sa.status IN ('${SIS_HOLDS.join("','")}'))))`;
-// A DRAFT IN THE SIS (Admissions 26.10.2026, the owner's pick B; widened 11.11.2026, his "Yes, build it" for the Journey
-// column "Draft in SIS", on the admissions team's word that a form begun is not yet anything to call about): a person whose every SIS
-// record is 'registered' (an account) or 'started' (a form begun), nothing submitted, withdrawn or rejected. Whatever
-// their stage says, and whether Admissions marked them With the SIS or not, they sit in the Journey column "Draft in SIS"
-// (counted and clickable like every column); their steps are never Overdue nor "No next step", they wait inside the
-// draft band on Due. They leave by themselves when the SIS says submitted (the pull moves them to Application and the
-// open form call is done). One rule for every count (this) and the page (each person row's sis_draft, read with it).
+// A DRAFT IN THE SIS (Admissions 26.10.2026, the owner's pick B; reshaped 11.11.2026 with his "Yes, build it" for the
+// Journey column "Draft in SIS", and the agreed edge: a draft who ALSO reached us another way is a real lead and stays a
+// lead). A person the SIS itself made (first_channel 'sis') whose every SIS record is 'registered' (an account) or
+// 'started' (a form begun) - nothing submitted, withdrawn or rejected - and who never reached us by another channel: no
+// email, form or message in the Inbox, no call, nothing logged as coming in from them outside the SIS. Somebody added by
+// hand or who first came another way is never a draft; a stage moved by hand is no contact and changes nothing.
+// They sit in the Journey column "Draft in SIS" (counted and clickable like every column); their steps are never
+// Overdue nor "No next step", they wait inside the draft band on Due. They leave by themselves when the SIS says
+// submitted (the pull moves them to Application and the open form call is done) or when they reach us another way.
+// One rule for every count (this) and the page (each person row's sis_draft, read with it).
 export const SIS_DRAFT_STEP = 'Call: did they finish the application form?';   // = src/sync.js FORM_CHECK (a test pins it)
-export const SIS_DRAFT_SQL = `(EXISTS (SELECT 1 FROM sis_applicants sa WHERE sa.person_id = pe.id)
-  AND NOT EXISTS (SELECT 1 FROM sis_applicants sa WHERE sa.person_id = pe.id AND sa.status NOT IN ('registered', 'started')))`;
+// COALESCE: first_channel is NULL for older records; a NULL must never make anybody a draft
+export const SIS_DRAFT_SQL = `(COALESCE(pe.first_channel, '') = 'sis'
+  AND EXISTS (SELECT 1 FROM sis_applicants sa WHERE sa.person_id = pe.id)
+  AND NOT EXISTS (SELECT 1 FROM sis_applicants sa WHERE sa.person_id = pe.id AND sa.status NOT IN ('registered', 'started'))
+  AND NOT EXISTS (SELECT 1 FROM inbound oi WHERE oi.person_id = pe.id AND oi.channel <> 'sis')
+  AND NOT EXISTS (SELECT 1 FROM pbx_calls oc WHERE oc.person_id = pe.id)
+  AND NOT EXISTS (SELECT 1 FROM events oe WHERE oe.person_id = pe.id AND oe.direction = 'in'
+    AND oe.kind IN ('note', 'call', 'channel', 'email') AND COALESCE(oe.channel, '') NOT IN ('sis', 'mailchimp')))`;
 // what Admissions already tried with a draft, for the card: emailed, called
 export const SIS_DRAFT_REACH_SQL = `(SELECT CASE WHEN EXISTS (SELECT 1 FROM events ev WHERE ev.person_id = pe.id AND ev.direction = 'out'
     AND (ev.kind = 'email' OR ev.channel IN ('email', 'gmail'))) THEN 'emailed' ELSE '' END) AS sis_draft_emailed,

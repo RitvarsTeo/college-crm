@@ -256,7 +256,7 @@
     {
       "id": "draft-in-sis",
       "q": "Why is somebody in Draft in the SIS?",
-      "a": "The SIS has only their account or a form they began, nothing submitted. The Journey shows them in the Draft in SIS column, between Follow-up and Submitted application, and Due keeps them in their own navy band, never overdue. When the SIS says submitted they move to Submitted application by themselves and the call about the form is done."
+      "a": "The SIS made them, it has only their account or a form they began, nothing submitted, and they have not reached us any other way (an email, a form, a call or a message: then they are a lead like anybody else). The Journey shows them in the Draft in SIS column, between Follow-up and Submitted application, and Due keeps them in their own navy band, never overdue. When the SIS says submitted they move to Submitted application by themselves and the call about the form is done."
     },
     {
       "id": "test-records",

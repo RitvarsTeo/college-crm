@@ -4,7 +4,8 @@
 // it by themselves when the SIS says submitted, or when they write or call in. An account only is not part of it.
 // WIDENED 11.11.2026 (the owner's "Yes, build it" for the Journey column "Draft in SIS", on the admissions team's word): everybody whose
 // SIS records are only an account or a begun form is a draft, call done or not, written in or not, With the SIS or not;
-// they leave when the SIS says submitted. Synthetic people only.
+// they leave when the SIS says submitted. The same day, the agreed edge: only somebody the SIS itself made, who never
+// reached us another way (an email, a form, a call, a message; added by hand), is a draft. Synthetic people only.
 import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -25,7 +26,7 @@ const DONE_AT = '2026-10-14T09:00:00.000Z';
 
 async function seed(db) {
   const person = (id, p = {}) => db.prepare(`INSERT INTO people (id, name, email, status, owner, first_channel, created_at, sis_handoff_at)
-    VALUES (?,?,?,?,?,?,?,?)`).run(id, p.name || 'Paraugs ' + id, id + '@example.com', p.status || 'Follow-up', 'Admissions', p.first || 'website',
+    VALUES (?,?,?,?,?,?,?,?)`).run(id, p.name || 'Paraugs ' + id, id + '@example.com', p.status || 'Follow-up', 'Admissions', 'first' in p ? p.first : 'sis',
     '2026-10-01T08:00:00.000Z', p.handoff || null);
   const sis = (pid, status, app = 1) => db.prepare(`INSERT INTO sis_applicants (reference, application_id, person_id, status, changed_at, synced_at)
     VALUES (?,?,?,?,?,?)`).run('ref-' + pid, String(app), pid, status, '2026-10-12T10:00:00.000Z', '2026-10-12T10:05:00.000Z');
@@ -59,6 +60,10 @@ async function seed(db) {
   await task('submitted', FORM_CHECK, '2026-10-13T09:00:00.000Z', DONE_AT);
   // Admissions answered With the SIS: with the SIS, not a draft
   await person('handed', { handoff: '2026-10-20T09:00:00.000Z' }); await sis('handed', 'started'); await task('handed', FORM_CHECK, '2026-10-13T09:00:00.000Z', DONE_AT);
+  // a lead we had who first came by the website, then began a form: a lead, never a draft (11.11.2026)
+  await person('known', { first: 'website' }); await sis('known', 'started'); await task('known', 'Follow up', '2026-10-13T09:00:00.000Z');
+  // added by hand (no first channel), then an SIS account: a lead, never a draft
+  await person('byhand', { first: null }); await sis('byhand', 'registered');
   // a finished person is in no band
   await person('closed', { status: 'Not proceeding' }); await sis('closed', 'started'); await task('closed', FORM_CHECK, '2026-10-13T09:00:00.000Z', DONE_AT);
 }
@@ -68,7 +73,8 @@ test('one rule (11.11.2026): every SIS record only an account or a begun form; a
   assert.equal(SIS_DRAFT_STEP, FORM_CHECK, 'the rule reads the same step the SIS plans');
   const db = await openDb();
   await seed(db);
-  assert.deepEqual(await drafts(db), ['account', 'called_not_yet', 'draft', 'draft2', 'handed', 'phoned', 'sis_said', 'wrote']);
+  assert.deepEqual(await drafts(db), ['account', 'called_not_yet', 'draft', 'draft2', 'handed', 'sis_said'],
+    'the one who wrote, the one who called, the lead who came by the website and the one added by hand are leads, not drafts');
   const holds = (await db.prepare(`SELECT pe.id FROM people pe WHERE ${SIS_HOLDS_SQL} ORDER BY pe.id`).all()).map((r) => r.id);
   assert.deepEqual(holds, ['handed', 'submitted'], 'submitted and handed over are With the SIS, as before');
 });
@@ -96,12 +102,15 @@ test('a running copy: Overdue, Due today and No next step leave drafts out on Du
   const sum = await get('/api/summary');
   const overdueIds = new Set(sum.overdue.map((t) => t.person_id));
   for (const id of ['draft', 'account', 'called_not_yet']) assert.ok(!overdueIds.has(id), id + ': a draft is never overdue (11.11.2026)');
-  assert.equal(sum.sisDraft, 8, 'the band figure: every open draft');
+  assert.equal(sum.sisDraft, 6, 'the band figure: every open draft');
+  assert.ok(overdueIds.has('known'), 'a lead with a draft keeps their overdue step');
   const people = (await get('/api/people')).rows;
   const by = Object.fromEntries(people.map((p) => [p.id, p]));
   assert.equal(by.draft.sis_draft, 1);
   assert.equal(by.account.sis_draft, 1, 'an account only is a draft too (11.11.2026)');
-  assert.equal(by.wrote.sis_draft, 1);
+  assert.equal(by.wrote.sis_draft, 0, 'they wrote to us: a lead (11.11.2026)');
+  assert.equal(by.known.sis_draft, 0);
+  assert.equal(by.byhand.sis_draft, 0);
   assert.equal(by.submitted.sis_draft, 0);
   assert.deepEqual([by.draft.sis_draft_emailed, by.draft.sis_draft_called], ['emailed', 'called'], 'what was tried, for the card');
   assert.deepEqual([by.draft2.sis_draft_emailed, by.draft2.sis_draft_called], ['', ''], 'nothing logged: nothing claimed');
