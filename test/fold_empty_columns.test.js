@@ -44,7 +44,7 @@ test('each board uses it: Due and the Inbox not when narrowed, the Journey never
   assert.match(APP, /const emptyFold = \(g\) => !folded\(g\) && !C_TP\.col && cFoldEmpty\('due', g\.id, g\.rows\.length\);/);
   assert.match(APP, /const emptyFold = \(c\) => !openId && !C_IP\.col && cFoldEmpty\('inbox', c\.id, c\.n\);/);
   assert.match(APP, /const jFold = \(s\) => !phone && !C_TERMINAL\.includes\(s\.id\) && cFoldEmpty\('journey', s\.id,/);
-  assert.match(APP, /if \(jFold\(s\)\) return cFoldStrip\('journey', s\.id, i \+ 1, s\.label \|\| s\.id, 0, ` data-stage="\$\{esc\(s\.id\)\}"`\);/, 'a drop target');
+  assert.match(APP, /if \(jFold\(s\)\) return cFoldStrip\('journey', s\.id, cJNum\(stages, i\), s\.label \|\| s\.id, 0, ` data-stage="\$\{esc\(s\.id\)\}"`\);/, 'a drop target');
 });
 
 test('the strip is a box, so on hover it comes forward; no outline', () => {

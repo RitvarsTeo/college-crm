@@ -151,7 +151,7 @@
     {
       "id": "card-states",
       "q": "What do the colours on the cards mean?",
-      "a": "Two colours. Red means the person needs you: Overdue, with the days late, and No next step - press Choose on the card to set one. Navy means on track: Due today, Due with the date, and With the SIS, the student information system holds the person once their application form is submitted, or once Admissions answers With the SIS on a step. Draft in the SIS is navy too: the form is started in the SIS, the call about it is done, and they wait to submit. Somebody the SIS says only made an account gets the step Call: did they start the application form?; somebody who started the form gets the step Call: did they finish the application form? The last line of the card says which. In the Inbox red is Late or Answer now, navy is New, with how long the message has waited. Inside a column the bands group the cards by state and count everyone in that state, the people behind N more too. The Journey's graph stacks the same two colours per stage, red at the bottom; a click on a colour opens those people, and the State filter offers the five states."
+      "a": "Two colours. Red means the person needs you: Overdue, with the days late, and No next step - press Choose on the card to set one. Navy means on track: Due today, Due with the date, and With the SIS, the student information system holds the person once their application form is submitted, or once Admissions answers With the SIS on a step. Draft in the SIS is navy too: the SIS has only their account or a form begun, nothing submitted, and they wait to submit. Somebody the SIS says only made an account gets the step Call: did they start the application form?; somebody who started the form gets the step Call: did they finish the application form? The last line of the card says which. In the Inbox red is Late or Answer now, navy is New, with how long the message has waited. Inside a column the bands group the cards by state and count everyone in that state, the people behind N more too. The Journey's graph stacks the same two colours per stage, red at the bottom; a click on a colour opens those people, and the State filter offers the five states."
     },
     {
       "id": "move-someone-along",
@@ -256,7 +256,7 @@
     {
       "id": "draft-in-sis",
       "q": "Why is somebody in Draft in the SIS?",
-      "a": "Their form is started in the SIS and the call about it is done, so Due keeps them in their own navy band, never overdue, until the SIS says submitted or they write or call in."
+      "a": "The SIS has only their account or a form they began, nothing submitted. The Journey shows them in the Draft in SIS column, between Follow-up and Submitted application, and Due keeps them in their own navy band, never overdue. When the SIS says submitted they move to Submitted application by themselves and the call about the form is done."
     },
     {
       "id": "test-records",

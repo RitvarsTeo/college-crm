@@ -2,7 +2,9 @@
 // SIS form is started and not submitted still gets the ONE form call; once it is done they move by themselves to a navy
 // band "Draft in the SIS" on Due - never Overdue, never "No next step" (Due, Journey, Home, Reports: one rule) - and leave
 // it by themselves when the SIS says submitted, or when they write or call in. An account only is not part of it.
-// Synthetic people only.
+// WIDENED 11.11.2026 (the owner's "Yes, build it" for the Journey column "Draft in SIS", on the admissions team's word): everybody whose
+// SIS records are only an account or a begun form is a draft, call done or not, written in or not, With the SIS or not;
+// they leave when the SIS says submitted. Synthetic people only.
 import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -62,24 +64,22 @@ async function seed(db) {
 }
 const drafts = async (db) => (await db.prepare(`SELECT pe.id FROM people pe WHERE pe.status NOT IN ('Admitted','Not proceeding') AND ${SIS_DRAFT_SQL} ORDER BY pe.id`).all()).map((r) => r.id);
 
-test('one rule: started and not submitted, the form call done, nothing in from them since; not an account only', async () => {
+test('one rule (11.11.2026): every SIS record only an account or a begun form; a submitted one or a finished person is not', async () => {
   assert.equal(SIS_DRAFT_STEP, FORM_CHECK, 'the rule reads the same step the SIS plans');
   const db = await openDb();
   await seed(db);
-  assert.deepEqual(await drafts(db), ['draft', 'draft2', 'sis_said']);
+  assert.deepEqual(await drafts(db), ['account', 'called_not_yet', 'draft', 'draft2', 'handed', 'phoned', 'sis_said', 'wrote']);
   const holds = (await db.prepare(`SELECT pe.id FROM people pe WHERE ${SIS_HOLDS_SQL} ORDER BY pe.id`).all()).map((r) => r.id);
   assert.deepEqual(holds, ['handed', 'submitted'], 'submitted and handed over are With the SIS, as before');
 });
 
-test('leaving: the SIS says submitted -> With the SIS; a new call after another one is answered and done -> back in the band', async () => {
+test('leaving: the SIS says submitted -> out of the drafts, With the SIS; withdrawn is no draft either', async () => {
   const db = await openDb();
   await seed(db);
   await db.prepare(`UPDATE sis_applicants SET status = 'submitted' WHERE person_id = 'draft'`).run();
   assert.ok(!(await drafts(db)).includes('draft'));
-  // "wrote" came back into the flow; a second form call done after their message puts them back
-  await db.prepare('INSERT INTO tasks (person_id, label, due_at, owner, created_at, done_at, outcome) VALUES (?,?,?,?,?,?,?)')
-    .run('wrote', FORM_CHECK, '2026-10-22T09:00:00.000Z', 'Admissions', '2026-10-20T10:00:00.000Z', '2026-10-22T10:00:00.000Z', 'Answered');
-  assert.ok((await drafts(db)).includes('wrote'));
+  await db.prepare(`UPDATE sis_applicants SET status = 'withdrawn' WHERE person_id = 'account'`).run();
+  assert.ok(!(await drafts(db)).includes('account'), 'a person decides what withdrawn means');
 });
 
 // ------------------------------------------------------------------------------------------ a running copy
@@ -95,23 +95,21 @@ test('a running copy: Overdue, Due today and No next step leave drafts out on Du
   const get = async (p) => (await fetch(srv.base + p, { headers: { 'x-acting-as': 'Ritvars' } })).json();
   const sum = await get('/api/summary');
   const overdueIds = new Set(sum.overdue.map((t) => t.person_id));
-  assert.ok(!overdueIds.has('draft'), 'the draft\'s follow-up is not overdue');
-  assert.ok(overdueIds.has('account'), 'an account only still is');
-  assert.ok(overdueIds.has('called_not_yet'), 'the form call itself still is, until it is done');
-  assert.ok(overdueIds.has('wrote') === false && overdueIds.has('phoned') === false, 'nothing open for them here');
-  assert.equal(sum.sisDraft, 3, 'the band\'s figure');
+  for (const id of ['draft', 'account', 'called_not_yet']) assert.ok(!overdueIds.has(id), id + ': a draft is never overdue (11.11.2026)');
+  assert.equal(sum.sisDraft, 8, 'the band figure: every open draft');
   const people = (await get('/api/people')).rows;
   const by = Object.fromEntries(people.map((p) => [p.id, p]));
   assert.equal(by.draft.sis_draft, 1);
-  assert.equal(by.account.sis_draft, 0);
-  assert.equal(by.wrote.sis_draft, 0);
+  assert.equal(by.account.sis_draft, 1, 'an account only is a draft too (11.11.2026)');
+  assert.equal(by.wrote.sis_draft, 1);
+  assert.equal(by.submitted.sis_draft, 0);
   assert.deepEqual([by.draft.sis_draft_emailed, by.draft.sis_draft_called], ['emailed', 'called'], 'what was tried, for the card');
   assert.deepEqual([by.draft2.sis_draft_emailed, by.draft2.sis_draft_called], ['', ''], 'nothing logged: nothing claimed');
-  // "No next step" leaves out draft2 (a draft with nothing open) but keeps "wrote" (back in the flow, nothing open)
+  // "No next step" leaves out every draft and the people the SIS holds
   const none = people.filter((p) => !['Admitted', 'Not proceeding'].includes(p.status) && !p.next_action_at).map((p) => p.id);
-  assert.ok(none.includes('draft2') && none.includes('wrote'));
+  const isDraft = new Set(people.filter((p) => Number(p.sis_draft) === 1).map((p) => p.id));
   const sum2 = await get('/api/summary');
-  assert.equal(sum2.noNextAction, none.filter((id) => !['draft2', 'sis_said', 'handed', 'submitted'].includes(id)).length,
+  assert.equal(sum2.noNextAction, none.filter((id) => !isDraft.has(id) && !['handed', 'submitted'].includes(id)).length,
     'the count leaves out the drafts and the people the SIS holds');
   const tasks = await get('/api/tasks?scope=overdue');
   assert.ok(!tasks.some((t) => t.person_id === 'draft'));

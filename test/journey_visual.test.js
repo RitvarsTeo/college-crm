@@ -17,7 +17,7 @@ const fn = (name) => { const i = APP.indexOf(name); assert.ok(i >= 0, name); ret
 const line = (start) => { const i = APP.indexOf(start); assert.ok(i >= 0, start); return APP.slice(i, APP.indexOf('\n', i)); };
 // Q66 (07.10.2026): the state line, the rail and the column bands the card and the column draw with
 const stateHelpers = () => [line('const cDaysLate ='), line('const C_ST ='), line('const C_ST_RAIL ='), fn('function cStateLine('), line('const cDdMm ='),
-  fn('function cStepState('), line('const cStepGroup ='), line('const cChooseOnCard ='), line('const C_GRP ='), line('const cGroupBand =')].join('\n');
+  fn('function cStepState('), line('const cIsDraft ='), line('const C_JDRAFT ='), line('const cJStage ='), fn('function cJStagesOpen('), line('const cJNum ='), line('const C_TERMINAL ='), line('const cStepGroup ='), line('const cChooseOnCard ='), line('const C_GRP ='), line('const cGroupBand =')].join('\n');
 
 function sandbox(today = '2026-09-28') {
   const ctx = {
@@ -129,7 +129,8 @@ test('every Journey stage still appears, in the same order, with its own label',
   assert.ok(open.length >= 3);
   const draw = (FOLD + fn('function cDrawJourney('));
   // Q57: the five stages as before; an end column joins them only when a way in targets it
-  assert.match(draw, /const stages = \(CFG\.stages \|\| \[\]\)\.filter\(\(s\) => !C_TERMINAL\.includes\(s\.id\) \|\| ends\.includes\(s\.id\)\);/, 'the same stage list as before');
+  // 11.11.2026: the open stages with the "Draft in SIS" column before Submitted application; an end column as before
+  assert.match(draw, /const stages = \[\.\.\.cJStagesOpen\(\), \.\.\.\(CFG\.stages \|\| \[\]\)\.filter\(\(s\) => C_TERMINAL\.includes\(s\.id\) && ends\.includes\(s\.id\)\)\];/, 'the stage list');
   let html = '';
   const ctx = { ...sandbox(), CFG: CONFIG, C_TERMINAL: ['Admitted', 'Not proceeding'], C_JSEL: null,
     C_PCOHORT: null, C_PF: {}, C_OUT_TAG: null, C_OUT_REASON: null, C_OUT_FILTER: null,
@@ -176,7 +177,7 @@ test('dark mode keeps the rail (the glass border would hide it) and the numbers'
 
 test('phone widths: columns keep their minimum and scroll sideways as before; dates never wrap', () => {
   // every column keeps 150px; the column holding the opened person widens to 330px (02.10.2026)
-  assert.match(APP, /sel && sel\.status === s\.id \? 'minmax\(330px, 2\.4fr\)' : jFold\(s\) \? '92px' : 'minmax\(150px, 1fr\)'/, 'an empty stage folds to 92px (08.10.2026)');
+  assert.match(APP, /sel && cJStage\(sel\) === s\.id \? 'minmax\(330px, 2\.4fr\)' : jFold\(s\) \? '92px' : 'minmax\(150px, 1fr\)'/, 'an empty stage folds to 92px (08.10.2026)');
   assert.match(APP, /html\.ui-c \.c-cols\{display:grid;gap:10px;overflow-x:auto/);
   assert.match(APP, /html\.ui-c \.c-st-w\{font-weight:700;white-space:nowrap/, 'the state word never breaks');
 });

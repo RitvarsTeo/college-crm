@@ -23,7 +23,7 @@ const TODAY = '2026-10-07';
 function draw(people, taskOf, stageFilter = []) {
   const ctx = { esc: (s) => String(s ?? ''), Math, Object, C_JF: { stage: stageFilter }, cTodayIso: () => TODAY, cDay: (iso) => (iso ? String(iso).slice(0, 10) : '') };
   vm.runInNewContext([line('const cWhenClass = '), line('const cDaysLate = '), line('const C_SIS_HOLDS = '), line('const cSisHolds = '), line('const C_ST = '),
-    line('const cDdMm = '), fn('function cStepState('), line('const C_ST_GROUPS = '), fn('function cJourneyBand('), 'this.band = cJourneyBand;'].join('\n'), ctx);
+    line('const cDdMm = '), fn('function cStepState('), line('const cIsDraft ='), line('const C_JDRAFT ='), line('const cJStage ='), fn('function cJStagesOpen('), line('const cJNum ='), line('const C_TERMINAL ='), line('const C_ST_GROUPS = '), fn('function cJourneyBand('), 'this.band = cJourneyBand;'].join('\n'), ctx);
   return ctx.band(people, taskOf, STAGES, (id) => `<exit ${id}>`, { adm: 1, np: 1, admLabel: 'Admitted', npLabel: 'Not proceeding', unrecorded: 0, arrived: 9, year: 2026, play: false });
 }
 const S = STAGES[3].id;   // Application: all five states in one stage

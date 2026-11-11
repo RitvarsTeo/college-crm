@@ -5509,11 +5509,11 @@ function cDrawJourneyPool() {
   const active = C_PF.stage === 'open';
   const base = active ? all.filter((p) => p.status !== admitted && p.status !== closed) : all;
   const late = (p) => { const t = taskOf.get(p.id); return Boolean(t && cWhenClass(t.due_at) === 'over'); };
-  const stages = (CFG.stages || []).filter((st) => !C_TERMINAL.includes(st.id));
-  const cols = [...stages.map((st) => { const ps = base.filter((p) => p.status === st.id); return { id: st.id, label: st.label || st.id, n: ps.length, over: ps.filter(late).length }; }),
+  const stages = cJStagesOpen();
+  const cols = [...stages.map((st) => { const ps = base.filter((p) => cJStage(p) === st.id); return { id: st.id, label: st.label || st.id, n: ps.length, over: ps.filter(late).length }; }),
     { id: admitted, label: admitted, n: base.filter((p) => p.status === admitted).length, tone: 'good', sep: true },
     { id: closed, label: closed, n: base.filter((p) => p.status === closed).length, tone: 'np' }];
-  let list = C_JP.col ? base.filter((p) => p.status === C_JP.col) : base;
+  let list = C_JP.col ? base.filter((p) => cJStage(p) === C_JP.col) : base;
   const isNp = C_JP.col === closed, isAdm = C_JP.col === admitted;
   if (isNp && C_OUT_TAG) list = list.filter((p) => p.closed_tag === C_OUT_TAG);
   if (isNp && C_OUT_REASON) list = list.filter((p) => p.closed_reason === C_OUT_REASON);
@@ -5540,7 +5540,7 @@ function cDrawJourneyPool() {
   // Stage: the band's own column (C_JP.col), so a band click and this box always agree; Active = every open stage.
   // Each choice carries its count, the Cold / Reject way, so Programme MTM + Active says how many at once.
   const stageOpts = [['open', `Active ${all.filter((p) => p.status !== admitted && p.status !== closed).length}`],
-    ...cols.map((c) => [c.id, `${c.label} ${all.filter((p) => p.status === c.id).length}`])];
+    ...cols.map((c) => [c.id, `${c.label} ${all.filter((p) => cJStage(p) === c.id).length}`])];
   // ONE LINE at 1440: three on show, the rest behind More filters (open by itself while one of them is set);
   // Came from moved behind More filters when Stage came in (16.10.2026)
   const more = C_JPMORE || Boolean(C_PF.source || C_PF.owner || C_PF.data || C_PF.arrived);
@@ -6006,6 +6006,21 @@ const cDdMm = (iso) => { const d = cDay(iso); return d ? `${d.slice(8, 10)}.${d.
 // server's p.sis_draft); their open steps wait with them
 const cIsDraft = (p) => Boolean(p && Number(p.sis_draft) === 1);
 const cDraftSince = (p) => (p && p.sis && p.sis.since ? cDdMm(p.sis.since) : '');
+// THE JOURNEY COLUMN "DRAFT IN SIS" (the owner 11.11.2026, "Yes, build it", on the admissions team's word): an open person who is a draft
+// in the SIS (cIsDraft) sits in their own column between Follow-up and Submitted application, whatever their stage says;
+// unnumbered (it is no step to take), counted and clickable like every column. Their stage itself is untouched: the column
+// is where the board SHOWS them, so nothing can ever write "Draft in SIS" as a stage; a card dropped on it does nothing.
+// Admitted and Not proceeding stay at the ends. On submit the SIS pull moves them to Submitted application by itself.
+const C_JDRAFT = 'Draft in SIS';
+const cJStage = (p) => (cIsDraft(p) && !C_TERMINAL.includes(p.status) ? C_JDRAFT : p.status);
+function cJStagesOpen() {
+  const st = (CFG.stages || []).filter((x) => !C_TERMINAL.includes(x.id));
+  const i = st.findIndex((x) => x.id === ((CFG.stageRoles || {}).application || 'Application'));
+  const d = { id: C_JDRAFT, label: C_JDRAFT, draft: true };
+  return i < 0 ? [...st, d] : [...st.slice(0, i), d, ...st.slice(i)];
+}
+// a column's number: the steps are numbered, the draft column is not
+const cJNum = (stages, i) => (stages[i] && stages[i].id === C_JDRAFT ? '·' : String(stages.slice(0, i + 1).filter((x) => x.id !== C_JDRAFT).length));
 function cStepState(p, t) {
   if (p && Number(p.sis_draft) === 1) return ['draft', p.sis && p.sis.since ? 'since ' + cDdMm(p.sis.since) : ''];   // = cIsDraft, inline: lifted alone by tests
   if (t && t.due_at) { const w = cWhenClass(t.due_at); return w === 'over' ? ['over', `${cDaysLate(t.due_at)} d`] : w === 'today' ? ['today', ''] : ['due', cDdMm(t.due_at)]; }
@@ -6091,7 +6106,7 @@ function cJourneyMatch(p, t, f) {
   if (!kept('programme', prog)) return false;
   if (!kept('owner', owner)) return false;
   if (!kept('source', src)) return false;
-  if (!kept('stage', p.status)) return false;
+  if (!kept('stage', cJStage(p))) return false;
   // the kind of the next step. A person with none can only match when nothing is chosen.
   if (!kept('group', t ? (groupForAction(cTask(t.label)) || 'No group') : cSisHolds(p) ? null : 'No next step')) return false;
   // THE STEP ITSELF, not only its group (Admissions: the list item by item). A person with no
@@ -6170,7 +6185,7 @@ function cJourneyBand(everyone, taskOf, stages, exitMark, out) {
   // the way of the column pill: the overdue segment says it.
   const ST = ['over', 'today', 'due', 'none', 'sis', 'draft'];
   const cols = stages.map((st) => {
-    const ps = everyone.filter((p) => p.status === st.id);
+    const ps = everyone.filter((p) => cJStage(p) === st.id);
     const by = Object.fromEntries(ST.map((k) => [k, 0]));
     for (const p of ps) by[cStepState(p, taskOf.get(p.id))[0]] += 1;
     return { id: st.id, label: st.label || st.id, n: ps.length, by, over: by.over };
@@ -6188,7 +6203,7 @@ function cJourneyBand(everyone, taskOf, stages, exitMark, out) {
       title="${esc(c.label)}: ${c.n} ${c.n === 1 ? 'person' : 'people'}${c.n ? ` (${says(c)})` : ''}"
       aria-label="${esc(c.label)}: ${c.n}${c.n ? `, ${says(c)}` : ''}">
       <span class="jb-plot"><span class="jb-bar" style="height:${pct(c.n)}%"><b class="jb-n">${c.n}</b>${segs(c)}</span></span>
-      <span class="jb-l"><span class="c-jn">${i + 1}</span>${esc(c.label)}</span>
+      <span class="jb-l"><span class="c-jn">${cJNum(stages, i)}</span>${esc(c.label)}</span>
     </button>${exitMark(c.id)}</div>`;
   return `<section class="kflow jband${out.play ? ' m-scene' : ''}" aria-label="The journey">
     <div class="jband-row">
@@ -6365,13 +6380,13 @@ function cDrawJourney() {
   // one - or any way in that targets it - filters the board to it exactly as a stage click does, and its column is
   // drawn at the end of the board; a figure that counts finished people (a Reports cohort, Arrived) draws theirs too.
   const ends = C_TERMINAL.filter((id) => (C_JF.stage || []).includes(id) || (cJTargeted() && people.some((p) => p.status === id)));
-  const stages = (CFG.stages || []).filter((s) => !C_TERMINAL.includes(s.id) || ends.includes(s.id));
+  const stages = [...cJStagesOpen(), ...(CFG.stages || []).filter((s) => C_TERMINAL.includes(s.id) && ends.includes(s.id))];
   const everyone = people.filter((p) => !C_TERMINAL.includes(p.status));
   const open = people.filter((p) => !C_TERMINAL.includes(p.status) || ends.includes(p.status)).filter((p) => cJourneyMatch(p, taskOf.get(p.id), C_JF));
   const narrow = window.matchMedia && window.matchMedia('(max-width:900px)').matches;
   // Q68, a phone: one stage open (the chosen one, else the first with people), the rest folded to a row with their count
   const phone = cPhone();
-  const openStage = phone ? (stages.some((s) => s.id === C_JP.open) ? C_JP.open : (stages.find((s) => open.some((p) => p.status === s.id)) || stages[0] || {}).id) : null;
+  const openStage = phone ? (stages.some((s) => s.id === C_JP.open) ? C_JP.open : (stages.find((s) => open.some((p) => cJStage(p) === s.id)) || stages[0] || {}).id) : null;
   // NO PERSON UNTIL ONE IS CLICKED (the owner, 02.10.2026). The board used to pick the first
   // person on its own, so a random lead sat on the left like a hero and took 320px from the board.
   const sel = open.find((p) => p.id === C_JSEL) || null;
@@ -6383,18 +6398,18 @@ function cDrawJourney() {
     cJourneyTalk(sel.id).then(() => { if (C_JTALK.has(sel.id)) cDrawJourney(); });
   }
   // an empty open stage folds on a wide screen; an end column (Admitted, Not proceeding) never does
-  const jFold = (s) => !phone && !C_TERMINAL.includes(s.id) && cFoldEmpty('journey', s.id, open.filter((p) => p.status === s.id).length);
+  const jFold = (s) => !phone && !C_TERMINAL.includes(s.id) && cFoldEmpty('journey', s.id, open.filter((p) => cJStage(p) === s.id).length);
   $('#view').innerHTML = `
     <div class="c-head"><div><h1>Journey</h1></div><div class="act">${cPoolViewSwitch()}<button class="btn" onclick="openAdd()">Add lead</button></div></div>
     <div class="j-sentinel" aria-hidden="true"></div>${cJourneySummary(everyone, taskOf, stages.filter((s) => !C_TERMINAL.includes(s.id)))}
     ${cJourneyFilters(everyone)}${cJTargetChips()}
     <div class="c-journey c-nosel">${sel ? '<div class="c-jveil" onclick="cJClose()"></div>' : ''}<div style="min-width:0">
-      <div class="c-cols" style="grid-template-columns:${stages.map((s) => (sel && sel.status === s.id ? 'minmax(330px, 2.4fr)' : jFold(s) ? '92px' : 'minmax(150px, 1fr)')).join(' ')}">${stages.map((s, i) => { const ps = open.filter((p) => p.status === s.id);
-        if (jFold(s)) return cFoldStrip('journey', s.id, i + 1, s.label || s.id, 0, ` data-stage="${esc(s.id)}"`);
+      <div class="c-cols" style="grid-template-columns:${stages.map((s) => (sel && cJStage(sel) === s.id ? 'minmax(330px, 2.4fr)' : jFold(s) ? '92px' : 'minmax(150px, 1fr)')).join(' ')}">${stages.map((s, i) => { const ps = open.filter((p) => cJStage(p) === s.id);
+        if (jFold(s)) return cFoldStrip('journey', s.id, cJNum(stages, i), s.label || s.id, 0, ` data-stage="${esc(s.id)}"`);
         // an end column is a place to look, not a drop target: a close needs its reason (the edit form asks it)
         if (C_TERMINAL.includes(s.id)) return `<div class="c-col c-col-end${s.id === (CFG.stageRoles || {}).admitted ? ' good' : ''}" style="--jt:1"><h3>${esc(s.label || s.id)}</h3><div class="c-endcol" data-stage="${esc(s.id)}">${cJColumn(s.id, ps, taskOf, sel) || '<div class="c-empty" style="padding:8px">empty</div>'}</div></div>`;
-        if (phone && s.id !== openStage) return `<div class="c-col is-fold" style="--jt:${((i + 1) / stages.length).toFixed(3)}"><button type="button" class="c-foldrow" onclick="cJStageTap(${esc(JSON.stringify(String(s.id ?? '')))})"><span class="c-jn">${i + 1}</span>${esc(s.label || s.id)}<b>${ps.length}</b></button></div>`;
-        return `<div class="c-col" style="--jt:${((i + 1) / stages.length).toFixed(3)}"><h3><span class="c-jn">${i + 1}</span>${esc(s.label || s.id)}${cFoldBack('journey', s.id, ps.length)}</h3><div class="c-drop" data-stage="${esc(s.id)}">${cJColumn(s.id, ps, taskOf, sel) || '<div class="c-empty" style="padding:8px">empty</div>'}</div></div>`; }).join('')}</div>
+        if (phone && s.id !== openStage) return `<div class="c-col is-fold" style="--jt:${((i + 1) / stages.length).toFixed(3)}"><button type="button" class="c-foldrow" onclick="cJStageTap(${esc(JSON.stringify(String(s.id ?? '')))})"><span class="c-jn">${cJNum(stages, i)}</span>${esc(s.label || s.id)}<b>${ps.length}</b></button></div>`;
+        return `<div class="c-col" style="--jt:${((i + 1) / stages.length).toFixed(3)}"><h3><span class="c-jn">${cJNum(stages, i)}</span>${esc(s.label || s.id)}${cFoldBack('journey', s.id, ps.length)}</h3><div class="c-drop" data-stage="${esc(s.id)}">${cJColumn(s.id, ps, taskOf, sel) || '<div class="c-empty" style="padding:8px">empty</div>'}</div></div>`; }).join('')}</div>
     </div></div>`;
   if (C_JDATA.play) cScenes($('#view'));
   cPoolWire(); cJourneyMini();   // Q68: the band is the strip on a phone, compact once the page has scrolled
@@ -6413,7 +6428,7 @@ function cDrawJourney() {
     col.addEventListener('dragover', (e) => { e.preventDefault(); col.classList.add('over'); });
     col.addEventListener('dragleave', () => col.classList.remove('over'));
     col.addEventListener('drop', async (e) => { e.preventDefault(); col.classList.remove('over');
-      const id = e.dataTransfer.getData('text/plain'); const p = C_JDATA.people.find((x) => x.id === id); if (!p || p.status === col.dataset.stage) return;
+      const id = e.dataTransfer.getData('text/plain'); const p = C_JDATA.people.find((x) => x.id === id); if (!p || col.dataset.stage === C_JDRAFT || p.status === col.dataset.stage) return;
       try {
         // Q15: the note is asked first; a cancelled move back leaves the card where it was
         const ask = await cAskMoveNote(id, p.status, col.dataset.stage);

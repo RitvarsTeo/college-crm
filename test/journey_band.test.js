@@ -27,7 +27,7 @@ function band(stageFilter = []) {
     cWhenClass: (iso) => (iso === 'over' ? 'over' : iso === 'today' ? 'today' : '') };
   // Q66: the bar is a stack of the card states, read with the cards' own helper
   vm.runInNewContext([line('const cDaysLate = '), line('const C_SIS_HOLDS = '), line('const cSisHolds = '), line('const C_ST = '), line('const cDdMm = '),
-    fn('function cStepState('), line('const C_ST_GROUPS = '), fn('function cJourneyBand('), 'this.band = cJourneyBand;'].join('\n'), ctx);
+    fn('function cStepState('), line('const cIsDraft ='), line('const C_JDRAFT ='), line('const cJStage ='), fn('function cJStagesOpen('), line('const cJNum ='), line('const C_TERMINAL ='), line('const C_ST_GROUPS = '), fn('function cJourneyBand('), 'this.band = cJourneyBand;'].join('\n'), ctx);
   return ctx.band;
 }
 const P = (id, status, due) => ({ id, status, due });
@@ -100,7 +100,7 @@ test('the board keeps exactly the chosen stage, and the other filters still comb
   vm.runInNewContext([line('const cNotSaid = '), line('const cTask ='), fn('function groupForAction('),
     line('const C_SIS_HOLDS ='), line('const cSisHolds ='),
     "const cWhenClass = (iso) => (iso === 'over' ? 'over' : '');",
-    line('const cDaysLate ='), line('const cDdMm ='), fn('function cStepState('),   // Q66: the filter reads the card's state
+    line('const cDaysLate ='), line('const cDdMm ='), fn('function cStepState('), line('const cIsDraft ='), line('const C_JDRAFT ='), line('const cJStage ='), fn('function cJStagesOpen('), line('const cJNum ='), line('const C_TERMINAL ='),   // Q66: the filter reads the card's state
     fn('function cJourneyMatch('), 'this.match = cJourneyMatch;'].join('\n'), ctx);
   const people = [{ id: 1, status: 'Application', programme: 'ENG' }, { id: 2, status: 'Application', programme: 'NAV' },
     { id: 3, status: 'Follow-up', programme: 'ENG' }];

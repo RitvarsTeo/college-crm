@@ -101,20 +101,16 @@ export const SIS_HOLDS = ['submitted', 'admitted', 'matriculated'];
 // and the person is with the SIS from then on, never overdue and never "no next step".
 export const SIS_HOLDS_SQL = `(pe.sis_handoff_at IS NOT NULL OR (pe.first_channel = 'sis' AND EXISTS (SELECT 1 FROM sis_applicants sa
   WHERE sa.person_id = pe.id AND sa.status IN ('${SIS_HOLDS.join("','")}'))))`;
-// A DRAFT IN THE SIS (Admissions 26.10.2026, the owner's pick B, _ieva-feedback/drafts_AB_2026-10-26.png): somebody whose
-// form the SIS says is started, not submitted, after their ONE form call is done ("Call: did they finish the application
-// form?", the 07.10 rule, src/sync.js planFormCheck). They wait for the person to submit: never Overdue, never "No next
-// step", their open steps inside the band. They leave by themselves when the SIS says submitted (they are With the SIS),
-// when Admissions answered With the SIS, or when they write or call in after that call (an inbound message or call that
-// is not the SIS's own). An account only ('registered') is not a draft. One rule for every count (this) and the page
-// (each person row's sis_draft, read with it).
+// A DRAFT IN THE SIS (Admissions 26.10.2026, the owner's pick B; widened 11.11.2026, his "Yes, build it" for the Journey
+// column "Draft in SIS", on the admissions team's word that a form begun is not yet anything to call about): a person whose every SIS
+// record is 'registered' (an account) or 'started' (a form begun), nothing submitted, withdrawn or rejected. Whatever
+// their stage says, and whether Admissions marked them With the SIS or not, they sit in the Journey column "Draft in SIS"
+// (counted and clickable like every column); their steps are never Overdue nor "No next step", they wait inside the
+// draft band on Due. They leave by themselves when the SIS says submitted (the pull moves them to Application and the
+// open form call is done). One rule for every count (this) and the page (each person row's sis_draft, read with it).
 export const SIS_DRAFT_STEP = 'Call: did they finish the application form?';   // = src/sync.js FORM_CHECK (a test pins it)
-export const SIS_DRAFT_SQL = `(pe.sis_handoff_at IS NULL
-  AND EXISTS (SELECT 1 FROM sis_applicants sa WHERE sa.person_id = pe.id AND sa.status = 'started')
-  AND NOT EXISTS (SELECT 1 FROM sis_applicants sa WHERE sa.person_id = pe.id AND sa.status IN ('${SIS_HOLDS.join("','")}'))
-  AND EXISTS (SELECT 1 FROM tasks fc WHERE fc.person_id = pe.id AND fc.label = '${SIS_DRAFT_STEP}' AND fc.done_at IS NOT NULL
-    AND NOT EXISTS (SELECT 1 FROM events ev WHERE ev.person_id = pe.id AND ev.direction = 'in' AND ev.kind IN ('note', 'call', 'channel')
-      AND COALESCE(ev.channel, '') NOT IN ('sis', 'mailchimp') AND ev.occurred_at > fc.done_at)))`;
+export const SIS_DRAFT_SQL = `(EXISTS (SELECT 1 FROM sis_applicants sa WHERE sa.person_id = pe.id)
+  AND NOT EXISTS (SELECT 1 FROM sis_applicants sa WHERE sa.person_id = pe.id AND sa.status NOT IN ('registered', 'started')))`;
 // what Admissions already tried with a draft, for the card: emailed, called
 export const SIS_DRAFT_REACH_SQL = `(SELECT CASE WHEN EXISTS (SELECT 1 FROM events ev WHERE ev.person_id = pe.id AND ev.direction = 'out'
     AND (ev.kind = 'email' OR ev.channel IN ('email', 'gmail'))) THEN 'emailed' ELSE '' END) AS sis_draft_emailed,

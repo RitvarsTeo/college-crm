@@ -32,7 +32,7 @@ function load(people) {
     C_OUT_TAG: null, C_OUT_REASON: null, C_OUT_FILTER: null, C_OUTCOME: null, C_JF: {}, C_JF_EMPTY: () => ({}),
   };
   vm.runInNewContext([line('const cWhenClass ='), line('const cNotSaid ='), line('const cTask ='), fn('function groupForAction('),
-    line('const cDaysLate ='), line('const cDdMm ='), fn('function cStepState('), fn('function cJourneyMatch('), line('const C_PF_EMPTY ='),
+    line('const cDaysLate ='), line('const cDdMm ='), fn('function cStepState('), line('const cIsDraft ='), line('const C_JDRAFT ='), line('const cJStage ='), fn('function cJStagesOpen('), line('const cJNum ='), line('const C_TERMINAL ='), fn('function cJourneyMatch('), line('const C_PF_EMPTY ='),
     line('const C_PF_DUE ='), line('const C_PF_DATA ='), line('const C_SIS_HOLDS ='), line('const cSisHolds ='), fn('function cPeopleMatch('),
     APP.slice(APP.indexOf('const cPoolSelect ='), APP.indexOf('function cPoolFrame(')),
     fn('function cJColToBoard('), fn('function cJourneyPick('), fn('function cJourneyStage('), fn('function cDrawJourneyPool('),
@@ -69,10 +69,10 @@ test('Programme MT MTM + Stage Active = exactly the open MTM people, and the cou
   assert.equal(chosen(ctx), 'open');
   // the band counts the same five; the finished columns are empty under Active
   const n = Object.fromEntries(ctx.band.cols.map((c) => [c.id, c.n]));
-  assert.deepEqual(n, { New: 1, Contacted: 1, 'Follow-up': 2, Application: 1, Admitted: 0, 'Not proceeding': 0 });
+  assert.deepEqual(n, { New: 1, Contacted: 1, 'Follow-up': 2, 'Draft in SIS': 0, Application: 1, Admitted: 0, 'Not proceeding': 0 });
   // the other choices keep their own counts under the programme, so Admitted 1 is still there to pick
   assert.deepEqual(opts(ctx).map((o) => [o.v, o.t]), [['', 'All'], ['open', 'Active 5'], ['New', 'New 1'], ['Contacted', 'Contacted 1'],
-    ['Follow-up', 'Follow-up 2'], ['Application', 'Submitted application 1'], ['Admitted', 'Admitted 1'], ['Not proceeding', 'Not proceeding 1']]);
+    ['Follow-up', 'Follow-up 2'], ['Draft in SIS', 'Draft in SIS 0'], ['Application', 'Submitted application 1'], ['Admitted', 'Admitted 1'], ['Not proceeding', 'Not proceeding 1']]);
 });
 
 test('the band click and the Stage box are one setting', () => {

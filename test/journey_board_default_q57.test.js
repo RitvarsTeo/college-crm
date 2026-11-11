@@ -135,7 +135,7 @@ function board(people, setup = {}) {
   };
   const filtersSrc = APP.slice(APP.indexOf('let C_JF = {'), APP.indexOf('// FOR MANAGEMENT (30.09.2026)'));
   vm.runInNewContext([line('const cPhone = '), line('const C_JCOL_SHOW = '), line('const C_JCOLOPEN = '), fn('function cJUrgency('), fn('function cJSort('),
-    line('const C_ST = '), line('const C_ST_RAIL = '), fn('function cStateLine('), line('const cDdMm = '), fn('function cStepState('), line('const cStepGroup = '), line('const C_GRP = '), line('const cGroupBand = '),   // Q66
+    line('const C_ST = '), line('const C_ST_RAIL = '), fn('function cStateLine('), line('const cDdMm = '), fn('function cStepState('), line('const cIsDraft ='), line('const C_JDRAFT ='), line('const cJStage ='), fn('function cJStagesOpen('), line('const cJNum ='), line('const C_TERMINAL ='), line('const cStepGroup = '), line('const C_GRP = '), line('const cGroupBand = '),   // Q66
     fn('function cJColumn('), fn('function cJEndCard('), filtersSrc.replace('let C_JF = {', 'var C_JF = {'),
     fn('function cJTargetKeep('), line('const cJTargeted = '), line('const cMoveBody = '), fn('function cJTargetChips('), (FOLD + fn('function cDrawJourney(')),
     'this.draw = cDrawJourney; this.setJF = (v) => { C_JF = v; };'].join('\n'), ctx);
@@ -152,7 +152,10 @@ test('the board as it was: five stage columns, drop targets, no end columns unti
   const html = B.draw();
   // an empty stage is folded to its strip (08.10.2026) and is still a drop target
   const drops = [...html.matchAll(/class="(?:c-drop|c-col t-fold c-fold-empty c-drop)" data-stage="([^"]+)"/g)].map((m) => m[1]);
-  assert.deepEqual(drops, CONFIG.stages.filter((s) => !['Admitted', 'Not proceeding'].includes(s.id)).map((s) => s.id));
+  // 11.11.2026: the "Draft in SIS" column sits before Submitted application (a drop on it moves nobody)
+  const open = CONFIG.stages.filter((s) => !['Admitted', 'Not proceeding'].includes(s.id)).map((s) => s.id);
+  const at = open.indexOf(CONFIG.stageRoles.application);
+  assert.deepEqual(drops, [...open.slice(0, at), 'Draft in SIS', ...open.slice(at)]);
   assert.doesNotMatch(html, /c-col-end/);
   assert.match(html, /\[n1\]/); assert.doesNotMatch(html, /\[a1\]|\[x1\]/, 'finished people wait behind their bookend');
 });

@@ -38,7 +38,7 @@ function journey(phone, people, setup = {}) {
   };
   const filtersSrc = APP.slice(APP.indexOf('let C_JF = {'), APP.indexOf('// FOR MANAGEMENT (30.09.2026)'));
   vm.runInNewContext([line('const cPhone = '), 'var C_JP = { col: null, view: "board", open: null };', line('const C_JCOL_SHOW = '), line('const C_JCOLOPEN = '),
-    line('const C_ST = '), line('const C_ST_RAIL = '), fn('function cStateLine('), line('const cDdMm = '), fn('function cStepState('), line('const cStepGroup = '), line('const C_GRP = '), line('const cGroupBand = '),
+    line('const C_ST = '), line('const C_ST_RAIL = '), fn('function cStateLine('), line('const cDdMm = '), fn('function cStepState('), line('const cIsDraft ='), line('const C_JDRAFT ='), line('const cJStage ='), fn('function cJStagesOpen('), line('const cJNum ='), line('const C_TERMINAL ='), line('const cStepGroup = '), line('const C_GRP = '), line('const cGroupBand = '),
     fn('function cJUrgency('), fn('function cJSort('), fn('function cJColumn('), filtersSrc.replace('let C_JF = {', 'var C_JF = {'),
     fn('function cJTargetKeep('), line('const cJTargeted = '), line('const cMoveBody = '), fn('function cJTargetChips('), fn('function cJourneyMini('), (FOLD + fn('function cDrawJourney(')),
     'this.draw = cDrawJourney; this.tap = cJStageTap; this.bar = cJBarTap; this.JP = () => C_JP; this.JF = () => C_JF; this.setOpen = (v) => { C_JP.open = v; };'].join('\n'), ctx);
@@ -108,7 +108,7 @@ test('Due on a phone: Overdue open, Due today and Coming up folded to rows with 
     const ctx = { window: mq(phone), C_TP: { col: null, programme: '', stage: '', source: '', upOpen: false, more: {}, pick: null, open: 'over', ...tp },
       cTodayIso: () => '2026-10-07', cDay: (iso) => String(iso).slice(0, 10), cWhenClass: () => 'over', cDaysLate: () => 1, esc: (s) => String(s ?? ''), fmtDate: (s) => s, cStage: (s) => s, cTask: (s) => s, cStepIcon: () => '', cSisHolds: () => false,
       cTodayPool() { ctx.redrawn = (ctx.redrawn || 0) + 1; }, redrawn: 0 };
-    vm.runInNewContext([line('const cPhone = '), APP.match(/const C_TCOL_SHOW = \d+;/)[0], line('const C_ST = '), fn('function cStateLine('), line('const cDdMm = '), fn('function cStepState('),
+    vm.runInNewContext([line('const cPhone = '), APP.match(/const C_TCOL_SHOW = \d+;/)[0], line('const C_ST = '), fn('function cStateLine('), line('const cDdMm = '), fn('function cStepState('), line('const cIsDraft ='), line('const C_JDRAFT ='), line('const cJStage ='), fn('function cJStagesOpen('), line('const cJNum ='), line('const C_TERMINAL ='),
       (FOLD + fn('function cTodayBoard(D, groups) {')), fn('function cTodayPick('), fn('function cTodayTap('), 'this.html = cTodayBoard(D, groups); this.pick = cTodayPick; this.tapRow = cTodayTap; this.TP = () => C_TP;'].join('\n'), Object.assign(ctx, { D, groups }));
     return ctx;
   };

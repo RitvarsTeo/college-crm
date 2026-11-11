@@ -37,7 +37,7 @@ function sandbox(filters = {}, { exits = null, all = [] } = {}) {
     'let C_JDATA = { people: ' + JSON.stringify(all) + ' };',
     // the band (02.10.2026): a task due 'over' is overdue here, anything else is not
     "const cWhenClass = (iso) => (iso === 'over' ? 'over' : '');",
-    line('const cDaysLate ='), line('const C_ST ='), line('const cDdMm ='), fn('function cStepState('), line('const C_ST_GROUPS ='),   // Q66: the stack; Q69: two colours
+    line('const cDaysLate ='), line('const C_ST ='), line('const cDdMm ='), fn('function cStepState('), line('const cIsDraft ='), line('const C_JDRAFT ='), line('const cJStage ='), fn('function cJStagesOpen('), line('const cJNum ='), line('const C_TERMINAL ='), line('const C_ST_GROUPS ='),   // Q66: the stack; Q69: two colours
     fn('function cJourneyBand('),
     fn('function cJourneySummary('),
     'this.summary = cJourneySummary;',
