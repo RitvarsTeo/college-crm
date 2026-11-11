@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Grand Opening - Stage 2 and Stage 3</title>
+<title>Grand Opening - Stage 1, 2 and 3</title>
 <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#eef2f7;--paper:#fff;--ink:#011111;--navy:#0a2463;--blue:#53a7db;--data:#29a8df;--gold:#ebbb6c;--muted:#5f7391;--line:#d5dde8;--ok:#1f8a4c;--warn:#b7791f;--stop:#9aa6b8;color-scheme:light}
@@ -121,6 +121,27 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
 .pc-big{display:flex;gap:18px;align-items:center}
 .pc-big .piece{width:150px;height:150px}
 .realpiece{object-fit:contain;border-radius:8px}
+.s1-row{display:grid;grid-template-columns:minmax(0,360px) minmax(0,1fr);gap:18px;align-items:start}
+.s1-mail img{width:100%;border-radius:12px;border:1px solid var(--line);display:block;max-height:640px;object-fit:cover;object-position:top}
+.s1-res{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.so{display:grid;gap:10px}
+.so-row{display:grid;grid-template-columns:minmax(0,1.3fr) 40px minmax(0,1fr);gap:10px;align-items:center}
+.so-box{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.so-box b{display:block;font-size:16px} .so-box small{color:var(--muted);font-weight:600;font-size:13px;word-break:break-all}
+.so-arrow{text-align:center;font-weight:800;color:var(--navy);font-size:22px}
+.so-n{font-size:26px;font-weight:800;color:var(--data);line-height:1} .so-n span{display:block;font-size:13px;color:var(--muted);font-weight:600}
+.so-facts{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.tkt{display:flex;flex-direction:column;gap:14px}
+.tk-date{background:#f2f7fc;border:1px solid #a9cdea;border-radius:12px;padding:14px 18px;display:flex;flex-direction:column;gap:2px}
+.tk-date b{font-size:24px;border-bottom:2px solid var(--blue);align-self:flex-start;margin-bottom:6px}
+.tk-card{border:1.5px solid var(--ink);border-radius:12px;padding:14px 18px;display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.tk-card img{width:130px;height:130px}
+.tk-card .k{display:block;color:#415c8f;font-weight:700;font-size:14px}
+.tk-card b{display:block;font-size:22px} .tk-card small{display:block;color:#415c8f;font-weight:600;margin-top:4px}
+.tk-acts{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.pc-hand{display:flex;gap:18px;align-items:center;margin-top:16px}
+.pc-hand .piece{width:130px;height:130px}
+@media (max-width:760px){ .s1-row{grid-template-columns:1fr} .so-row{grid-template-columns:minmax(0,1fr) 28px minmax(0,.8fr)} }
 /* 6 ticket */
 .tk-row{display:grid;grid-template-columns:1fr auto;gap:30px;align-items:start}
 @media (max-width:900px){.tk-row{grid-template-columns:1fr}}
@@ -186,14 +207,28 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
 <body>
 <header class="top"><div class="top-in">
  <div class="mark"><img src="assets/logo.svg" alt="Novikontas Academy"></div>
- <h1>Grand Opening of Novikontas Academy · Stage 2 and Stage 3</h1>
+ <h1>Grand Opening of Novikontas Academy · Stage 1, 2 and 3</h1>
  <span class="sp"></span>
  <span class="dates">27.05.2005 → 27.05.2027</span>
 </div></header>
 <nav class="nav" aria-label="Chapters"><div class="nav-in" id="nav"></div></nav>
 
 <main>
-<!-- 1 -->
+<section class="ch" data-t="The Save the Date" data-s="Stage 1">
+ <h2>Stage 1: the Save the Date</h2>
+ <p class="lead">The first invitation, as it went out, and what came back.</p>
+ <div class="s1-row">
+  <a class="s1-mail" href="/assets/go-stage1-email.jpg" target="_blank" rel="noopener"><img src="/assets/go-stage1-email.jpg" alt="The Save the Date email as it was sent"></a>
+  <div class="s1-res">
+   <div class="tile"><div class="k">Sent</div><div class="v" id="s1-s"></div></div>
+   <div class="tile"><div class="k">Reached</div><div class="v" id="s1-r"></div></div>
+   <div class="tile"><div class="k">Opened by a person</div><div class="v" id="s1-o"></div></div>
+   <div class="tile"><div class="k">Added to calendar</div><div class="v" id="s1-c"></div></div>
+   <a class="card intile" href="https://intake.novikontas.org/#/tc/go/back" target="_blank" rel="noopener"><span class="pill">Intake</span><h3>What came back</h3><span class="go">Open &rarr;</span></a>
+  </div>
+ </div>
+</section>
+
 <section class="ch" data-t="Two ways in" data-s="Stage 2">
  <h2>Two ways in, one landing page</h2>
  <p class="lead">The physical gift and the digital invitation lead to the same page.</p>
@@ -212,10 +247,22 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
    <a class="inletter ch1l" href="letters/2_will_you_be_there.html" target="_blank" rel="noopener"><div class="lt top"><iframe src="letters/2_will_you_be_there.html" tabindex="-1" loading="lazy" scrolling="no" title="Will you be there?"></iframe></div></a>
   </div>
  </div>
- <div class="join"><span class="to">↓</span><div class="lp"><img src="assets/phone_1.jpg" alt=""><div><b>novikontas.org/grand-opening</b><br><span style="color:var(--muted);font-weight:600">live now</span></div></div><button class="btn" data-go="1">See the page →</button></div>
+ <div class="join"><span class="to">↓</span><div class="lp"><img src="assets/phone_1.jpg" alt=""><div><b>novikontas.org/grand-opening</b><br><span style="color:var(--muted);font-weight:600">live now</span></div></div><button class="btn" data-go="3">See the page →</button></div>
 </section>
 
-<!-- 2 -->
+<section class="ch" data-t="The send-out" data-s="Stage 2">
+ <h2>Stage 2: from each owner's own mailbox</h2>
+ <p class="lead">Every list owner sends to their own list, from their own address, signed with their own name.</p>
+ <div class="so" id="so"></div>
+ <div class="so-facts">
+  <span class="pill line">Sent through Gmail, as the owner's own address</span>
+  <span class="pill line">Signed with the owner's name</span>
+  <span class="pill line">Replies come back to the owner</span>
+  <span class="pill line">100 at a time, never twice to one person</span>
+ </div>
+ <p style="margin:16px 0 0"><a href="https://intake.novikontas.org/#/tc/go/lists" target="_blank" rel="noopener"><b>Open the six lists &rarr;</b></a></p>
+</section>
+
 <section class="ch" data-t="The landing page" data-s="Stage 2">
  <h2>The landing page: three steps</h2>
  <p class="lead">Live on novikontas.org/grand-opening, on phones and computers.</p>
@@ -233,7 +280,6 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
  </div>
 </section>
 
-<!-- 3 -->
 <section class="ch" data-t="What we measure" data-s="Stage 2">
  <h2>What we measure</h2>
  <h3 class="inh">Measured so far</h3>
@@ -252,7 +298,6 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
  </div>
 </section>
 
-<!-- 4 -->
 <section class="ch" data-t="The count" data-s="Count">
  <h2>The count: people and mother companies</h2>
  <p class="lead">Every person on the Stage 2 lists sits on their company; branches sit under their mother company.</p>
@@ -262,39 +307,14 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
  </div>
 </section>
 
-<!-- 5 -->
-<section class="ch" data-t="One piece per company" data-s="Count">
- <h2>One piece per mother company</h2>
- <p class="lead">Each piece has its own place on the board.</p>
- <div class="pc-row">
-  <div><div class="board" id="board5" aria-label="Puzzle board"></div></div>
-  <div class="card">
-   <div class="pc-big">
-    <img class="piece realpiece" src="assets/piece_gift.jpg" alt="">
-    <div><b style="font-size:20px" id="pc-name"></b><br><span style="color:var(--muted);font-weight:600" id="pc-sub"></span></div>
-   </div>
-   <p style="margin:16px 0 0;font-weight:600;color:var(--muted)"><b style="color:var(--ink)">Board:</b> 2.70 × 1.50 m; one place per mother company, plus spares</p>
-  </div>
- </div>
-</section>
-
-<!-- 6 -->
 <section class="ch" data-t="The ticket" data-s="Stage 3">
  <h2>Stage 3: a ticket for every person</h2>
- <p class="lead">Each registered guest gets their own check-in QR by email, ready for the phone wallet.</p>
+ <p class="lead">Each registered guest gets their own ticket by email; its QR is theirs alone and leads to their company's piece.</p>
  <div class="tk-row">
-  <div class="mail card" style="padding:0">
-   <div class="hd"><b>To:</b> Anna Bērziņa<br><b>Subject:</b> Your ticket: Grand Opening of Novikontas Academy</div>
-   <div class="bd">
-    <p>Dear Anna, here is your personal ticket for Thursday 27 May 2027. Please show it at the entrance.</p>
-    <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
-     <img src="assets/qr_ticket.svg" alt="Ticket QR" style="width:120px;border:1px solid var(--line);border-radius:8px;padding:6px;background:#fff">
-     <div style="display:flex;flex-direction:column;gap:8px">
-      <button class="btn" id="add-g">Add to Google Wallet</button>
-      <span class="pill line">Apple Wallet: second phase</span>
-     </div>
-    </div>
-   </div>
+  <div class="card tkt">
+   <div class="tk-date"><b>Thursday 27 May 2027</b><span>Doors open 10:00</span><span>Novikontas Academy Campus, Duntes iela 17d, Riga</span></div>
+   <div class="tk-card"><img src="assets/qr_ticket.svg" alt="Ticket QR"><div><span class="k">Your ticket</span><b>Anna Bērziņa</b><span id="tk-co2"></span><small>Show it at the entrance.</small></div></div>
+   <div class="tk-acts"><button class="btn" id="add-g">Add to Google Wallet</button><span class="pill line">Apple Wallet: second phase</span></div>
   </div>
   <div class="wallet" aria-label="Phone wallet">
    <div class="wt">Wallet</div>
@@ -311,7 +331,6 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
  </div>
 </section>
 
-<!-- 7 -->
 <section class="ch" data-t="At the entrance" data-s="27.05.2027">
  <h2>At the entrance: scan, welcome, hand over the piece</h2>
  <p class="lead">Press a guest to scan their ticket.</p>
@@ -329,34 +348,18 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
    <button data-g="x"><span><b>A ticket we do not know</b><span>screenshot of someone else's code</span></span><em>Scan →</em></button>
   </div>
  </div>
+ <div class="card pc-hand"><img class="piece realpiece" src="assets/piece_gift.jpg" alt=""><div><b style="font-size:20px" id="pc-name"></b><br><span style="color:var(--muted);font-weight:600" id="pc-sub"></span></div></div>
 </section>
 
-<!-- 8 -->
 <section class="ch" data-t="The board" data-s="27.05.2027">
  <h2>The board: every company puts in its piece</h2>
  <p class="lead">Each placed piece uncovers its part of the artwork.</p>
  <div class="countbar"><button class="btn" id="place1"></button><button class="btn ghost" id="placeall">Place every piece</button><button class="btn ghost" id="reset8">Start again</button><span class="pill line" id="placed">0 pieces placed</span></div>
  <div class="board" id="board8" aria-label="Puzzle board"></div>
+ <p style="margin:14px 0 0;font-weight:600;color:var(--muted)"><b style="color:var(--ink)">Board:</b> 2.70 × 1.50 m; one place per mother company, plus spares</p>
 </section>
 
-<!-- 9 -->
-<section class="ch" data-t="Built-in checks" data-s="Checks">
- <h2>Built-in checks</h2>
- <p class="lead">What could go wrong, and what the system does about it.</p>
- <div class="checks">
-  <div class="chk"><b>Gift scans counted apart</b><span>The gift QR has its own link, so gift visits never mix with emails or typed visits.</span></div>
-  <div class="chk"><b>One person, one registration</b><span>A guest who registers from the email and from the gift is one person: matched by email address.</span></div>
-  <div class="chk"><b>Company names written differently</b><span>Each registration is matched to the company list; a name with no match is checked by hand before the count.</span></div>
-  <div class="chk"><b>Branches under the mother company</b><span>Riga and Tallinn branches of one group count as one company and one piece.</span></div>
-  <div class="chk"><b>Registrations after the count</b><span>A set count date, plus spare pieces cut with the rest.</span></div>
-  <div class="chk"><b>Ticket used twice or forwarded</b><span>Each ticket checks in once; a second scan shows the time of the first.</span></div>
-  <div class="chk"><b>Several people from one company</b><span>The piece goes to the first person of that company at the door; the rest are told who has it.</span></div>
-  <div class="chk"><b>Personal data</b><span>The form links the Novikontas privacy policy; details are used to organise the Grand Opening.</span></div>
- </div>
-</section>
-
-<!-- 10 -->
-<!-- In Intake, live (Intake TC LANE 11.11.2026: what is still true from the 05.11 demo, kept beside the Grand Opening's new chapters) -->
+<!-- In Intake, live (Intake TC LANE 11.11.2026) -->
 <section class="ch" data-t="In Intake" data-s="Intake">
  <h2>In Intake, live</h2>
  <p class="lead">The lists, the letters and the places as Intake holds them now. Every window opens the real thing.</p>
@@ -371,13 +374,14 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
  <h2>The order of work</h2>
  <p class="lead">From the invitation to the finished board.</p>
  <ol class="order">
+  <li><div><b>Stage 1: the Save the Date</b><span>what came back is in Intake</span></div></li>
   <li><div><b>Physical gifts handed over</b><span>QR: novikontas.org/grand-opening?gift</span></div></li>
-  <li><div><b>Digital invitations from the directors</b><span>personal link for each person</span></div></li>
+  <li><div><b>Digital invitations from each owner's own mailbox</b><span>personal link for each person</span></div></li>
   <li><div><b>Registrations on the landing page</b><span>counted by channel</span></div></li>
   <li><div><b>The count</b><span>people per mother company, branches grouped</span></div></li>
-  <li><div><b>Pieces cut</b><span>one per mother company, own place, plus spares</span></div></li>
   <li><div><b>Stage 3: tickets</b><span>one per person, by email, Google Wallet</span></div></li>
-  <li class="end"><div><b>Thursday 27 May 2027, 10:00</b><span>scan at the door, piece handed over, piece on the board</span></div></li>
+  <li><div><b>Pieces cut</b><span>one per mother company, own place, plus spares</span></div></li>
+  <li class="end"><div><b>Thursday 27 May 2027, 10:00</b><span>ticket scanned at the door, piece handed over, piece on the board</span></div></li>
  </ol>
 </section>
 </main>
@@ -416,25 +420,25 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
  tabs.forEach(function(t){ t.onclick=function(){ tabs.forEach(function(x){x.setAttribute('aria-pressed',x===t?'true':'false');}); var n=t.dataset.n; document.getElementById('ph-img').src='assets/phone_'+n+'.jpg'; document.getElementById('dk-img').src='assets/desktop_'+n+'.jpg'; document.getElementById('ph-scr').scrollTop=0; }; });
 
  /* 4 count */
- var R=window.GO_REAL||{sample:[],people:0,piece:null,std:null,landing:null,mothers:0};
+ var R=window.GO_REAL||{sample:[],people:0,piece:null,std:null,landing:null,mothers:0,lists:[]};
+ function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
  document.getElementById('r-people').textContent=Number(R.people||0).toLocaleString('en-US');
  (function(){ var L=R.landing, n=function(x){ return L ? Number(x||0).toLocaleString('en-US') : '–'; }, set=function(id,v){ document.getElementById(id).textContent=v; };
   set('m-g',n(L&&L.gift_opens)); set('m-gr',n(L&&L.gift_registered)); set('m-l',n(L&&L.link_opens)); set('m-lr',n(L&&L.link_registered)); set('m-lc',n(L&&L.link_calendar)); set('m-p',n(L&&L.page_opens)); set('m-pr',n(L&&L.page_registered));
+ })();
+ (function(){ var D=R.std, t=function(id,v){ document.getElementById(id).textContent = D ? Number(v||0).toLocaleString('en-US') : '–'; };
+  t('s1-s',D&&D.sent); t('s1-r',D&&D.reached); t('s1-o',D&&D.person); t('s1-c',D&&D.calendar);
+  document.getElementById('so').innerHTML=(R.lists||[]).map(function(l){ return '<div class="so-row"><div class="so-box"><b>'+esc(l.name)+'</b><small>'+esc(l.email)+'</small></div><div class="so-arrow">&rarr;</div><div class="so-n">'+Number(l.people).toLocaleString('en-US')+'<span>people on their list</span></div></div>'; }).join('');
  })();
  (function(){ var D=R.std, m=Number(R.mothers||0), top=Math.max(D?D.sent:0, m, 1);
   [['s',D&&D.sent],['r',D&&D.reached],['o',D&&D.person],['c',D&&D.calendar],['m',m]].forEach(function(x){ var ok=(x[0]==='m')||!!D, v=Number(x[1]||0);
    document.getElementById('n-'+x[0]).textContent=ok ? v.toLocaleString('en-US') : '–'; document.getElementById('b-'+x[0]).dataset.w=(ok ? Math.max(v/top*100, v ? 1.5 : 0) : 0).toFixed(1); });
  })();
- if(R.piece){ document.getElementById('pc-name').textContent=R.piece.name; document.getElementById('pc-sub').innerHTML=R.piece.branches+(R.piece.branches===1?' company':' companies')+' · '+Number(R.piece.people).toLocaleString('en-US')+' people<br>one piece, one place'; }
- function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+ if(R.piece){ document.getElementById('pc-name').textContent=R.piece.name; document.getElementById('pc-sub').innerHTML=R.piece.branches+(R.piece.branches===1?' company':' companies')+' · '+Number(R.piece.people).toLocaleString('en-US')+' people<br>one piece, to the first guest at the door'; }
 
  /* boards */
  var W=45,H=25;
  function mk(el){ var f=document.createDocumentFragment(); for(var y=0;y<H;y++)for(var x=0;x<W;x++){ var i=document.createElement('i'); i.style.backgroundPosition=(x/(W-1)*100)+'% '+(y/(H-1)*100)+'%'; i.dataset.x=x; i.dataset.y=y; f.appendChild(i);} el.appendChild(f); return [].slice.call(el.children); }
- var b5=mk(document.getElementById('board5'));
- var seed=7; function rnd(){ seed=(seed*16807)%2147483647; return seed/2147483647; }
- var mine=0; b5.forEach(function(c){ if(rnd()<0.155){ c.classList.add('mine'); mine++; } });
- var me=b5[12*W+20]; me.classList.remove('mine'); me.classList.add('hl');
  var b8=mk(document.getElementById('board8')), placed=0, timer=null;
  function upd(){ document.getElementById('placed').textContent=placed.toLocaleString('en-US')+(placed===1?' piece placed':' pieces placed'); }
  function put(c){ if(!c.classList.contains('art')){ c.classList.add('art'); placed++; } }
@@ -452,7 +456,7 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
  var PC=(R.piece&&R.piece.name)||'', BR=(R.piece&&R.piece.branchNames)||[], OT=R.other||'';
  var G={anna:{n:'Anna Bērziņa',c:PC,t:'T1'},janis:{n:'Jānis Ozols',c:PC,t:'T2'},anna2:{n:'Anna Bērziņa',c:PC,t:'T1'},liga:{n:'Līga Kalniņa',c:OT,t:'T3'}};
  document.getElementById('g-anna').textContent=PC+(BR[0]?' · '+BR[0]:''); document.getElementById('g-janis').textContent=PC+(BR[1]?' · '+BR[1]:'');
- document.getElementById('g-liga').textContent=OT; document.getElementById('tk-co').textContent=PC;
+ document.getElementById('g-liga').textContent=OT; document.getElementById('tk-co').textContent=PC; document.getElementById('tk-co2').textContent=PC;
  document.getElementById('place1').textContent='Place '+PC+(/s$/i.test(PC)?"'":"'s")+' piece';
  var mins=4;
  function now(){ mins++; return '10:'+(mins<10?'0':'')+mins; }

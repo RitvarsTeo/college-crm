@@ -191,8 +191,8 @@ test('11.11 "demo has to be like the real thing": ch1 shows the real Stage 2 let
   const ch = (t) => { const a = html.indexOf('data-t="' + t + '"'); return html.slice(a, html.indexOf('</section>', a)); };
   assert.match(ch('Two ways in'), /<iframe src="letters\/2_will_you_be_there\.html"/);
   assert.ok(!ch('Two ways in').includes('your director at Novikontas Academy'));
-  for (const t of ['Two ways in', 'The count', 'One piece per company', 'The board']) assert.ok(!ch(t).includes('class="example"'), t);
-  assert.ok(!html.includes("['Anna Bērziņa','anna@exampleshipping.lv'") && !ch('One piece per company').includes('Example Shipping Group'));
+  for (const t of ['Two ways in', 'The count', 'At the entrance', 'The board']) assert.ok(!ch(t).includes('class="example"'), t);
+  assert.ok(!html.includes("['Anna Bērziņa','anna@exampleshipping.lv'") && !html.includes('Example Shipping Group'));
   assert.match(html, /<script>window\.GO_REAL=\/\*\{\{GO_REAL\}\}\*\/null;<\/script>/);
   const filled = godemo.withCount({ body: html, type: 'text/html; charset=utf-8' }, 3, { mothers: 3, people: 9, sample: [{ person: '</script>x', written: 'A', sender: 'JS', mother: 'A' }], piece: { name: 'A', branches: 2, people: 4 } }).body;
   assert.ok(!filled.includes('/*{{GO_REAL}}*/') && !filled.includes('</script>x') && filled.includes(String.fromCharCode(92) + 'u003c/script>x'));
@@ -208,9 +208,9 @@ test('11.11 ch3 "What we measure" = the Save the Date as it came back (the figur
   const ch = (t) => { const a = html.indexOf('data-t="' + t + '"'); return html.slice(a, html.indexOf('</section>', a)); };
   assert.ok(!ch('What we measure').includes('class="example"') && !/>(236|448|755|352|205|174)</.test(ch('What we measure')));
   for (const l of ['Save the Date sent', 'Reached', 'Opened by a person', 'Added to calendar', 'Mother companies']) assert.ok(ch('What we measure').includes('>' + l + '<'), l);
-  assert.ok(!ch('One piece per company').includes('own QR'));
+  assert.ok(!html.includes('own QR'));
   // his words 11.11: "Put the real puzzle piece as we have concepted": Amento's piece (its QR opens ?gift) wherever a piece is drawn
-  for (const t of ['Two ways in', 'One piece per company']) assert.ok(ch(t).includes('src="assets/piece_gift.jpg"') && !ch(t).includes('<svg class="piece"'), t);
+  for (const t of ['Two ways in', 'At the entrance']) assert.ok(ch(t).includes('src="assets/piece_gift.jpg"') && !ch(t).includes('<svg class="piece"'), t);
   // ch3: measured so far, then the Stage 2 measures live (one row of totals; test and staff entries left out in the view)
   assert.ok(ch('What we measure').includes('>Measured so far<') && ch('What we measure').includes('>Stage 2: what we measure<'));
   for (const l of ['Gift QR', 'Personal email link', 'Typed address']) assert.ok(ch('What we measure').includes('>' + l + '<'), l);
@@ -283,4 +283,21 @@ test('11.11 his word before release: no invented company anywhere in the demo (c
   assert.ok(html.includes("var G={anna:{n:'Anna Bērziņa',c:PC,"));
   const f = await go.goDemoFacts(await openDb());
   assert.ok('other' in f);
+});
+
+test('11.11 his consolidated list ("we are golden"): Stage 1 first, the send-out from the mailbox of each list owner, the ticket before the piece, the piece at the entrance, the board once after it; no Built-in checks', async () => {
+  const godemo = await import('../src/godemo.js');
+  const html = godemo.read(godemo.fileFor(godemo.PREFIX)).toString('utf8');
+  const order = [...html.matchAll(/<section class="ch" data-t="([^"]+)"/g)].map((m) => m[1]);
+  assert.deepEqual(order, ['The Save the Date', 'Two ways in', 'The send-out', 'The landing page', 'What we measure', 'The count', 'The ticket', 'At the entrance', 'The board', 'In Intake', 'The order']);
+  assert.ok(!html.includes('Built-in checks') && (html.match(/class="board"/g) || []).length === 1 && !html.includes('board5'));
+  const ch = (t) => { const a = html.indexOf('data-t="' + t + '"'); return html.slice(a, html.indexOf('</section>', a)); };
+  assert.ok(ch('The Save the Date').includes('src="/assets/go-stage1-email.jpg"'));
+  assert.ok(ch('The ticket').includes('Thursday 27 May 2027') && ch('The ticket').includes('Your ticket') && ch('The ticket').includes('Add to Google Wallet'));
+  assert.ok(ch('At the entrance').includes('pc-hand'));
+  assert.ok(html.includes('data-go="3"'));   // "See the page" goes to the landing page
+  const ol = ch('The order');
+  assert.ok(ol.indexOf('Stage 1: the Save the Date') < ol.indexOf('Stage 3: tickets') && ol.indexOf('Stage 3: tickets') < ol.indexOf('Pieces cut'));
+  const f = await go.goDemoFacts(await openDb());
+  assert.ok(Array.isArray(f.lists) && f.lists.length === 6 && f.lists.every((l) => /@novikontas\.org$/.test(l.email)));
 });

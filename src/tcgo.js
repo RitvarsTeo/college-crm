@@ -604,7 +604,11 @@ export async function goDemoFacts(db) {
   // two of its own companies as branches, and the largest other mother company
   const other = piece ? companies.find((c) => c.companyId && c.key !== piece.key) : null;
   const branchNames = piece ? piece.branchNames.filter((n) => n !== piece.name).slice(0, 2) : [];
-  return { mothers: companies.length, people, sample, std, other: other ? other.name : null,
+  // the send-out (11.11.2026): each list owner's own mailbox and how many people are on their list now
+  const n = new Map((await db.prepare(`SELECT sender, COUNT(*) AS n FROM tc_go_stage2 WHERE gone = 0 GROUP BY sender`).all()).map((r) => [r.sender, Number(r.n)]));
+  const lists = ((((TC.grandOpening || {}).stage2 || {}).senders) || []).map((x) => ({ name: x.name, email: x.email, people: n.get(x.code) || 0 }))
+    .sort((a, b) => b.people - a.people);
+  return { mothers: companies.length, people, sample, std, lists, other: other ? other.name : null,
     piece: piece ? { name: piece.name, branches: piece.branches, people: piece.people, branchNames } : null };
 }
 export async function motherCompanies(db) { return (await motherCompanyList(db)).companies.length; }
