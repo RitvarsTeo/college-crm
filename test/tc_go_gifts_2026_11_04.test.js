@@ -263,3 +263,13 @@ test('11.11 the Real company count opens its own list: the Clients filter go2 sh
   assert.ok(srv.includes('filters.go2 ? new Map((await tcgo.motherCompanyList(db))'));
   assert.ok(fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8').includes("place === 'companies' && arg === 'go2'"));
 });
+
+test('11.11 his word before release: no invented company anywhere in the demo (ch6-ch8 take real mother companies from goDemoFacts); ch11 claims no QR of its own', async () => {
+  const godemo = await import('../src/godemo.js');
+  const html = godemo.read(godemo.fileFor(godemo.PREFIX)).toString('utf8');
+  assert.ok(!/Example (Shipping|Lines|Crewing|Tankers)|Baltic Example|Nordic Example/.test(html));
+  assert.ok(!html.includes('own QR'));
+  assert.ok(html.includes("var G={anna:{n:'Anna Bērziņa',c:PC,"));
+  const f = await go.goDemoFacts(await openDb());
+  assert.ok('other' in f);
+});

@@ -308,7 +308,7 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
    <div class="pass out" id="w-pass" hidden>
     <div class="ph"><span class="mk"><img src="assets/logo.svg" alt=""></span><b>Novikontas Academy<br>Grand Opening</b></div>
     <div class="nm">Anna Bērziņa</div>
-    <div class="co">Example Shipping Group</div>
+    <div class="co" id="tk-co"></div>
     <div class="dt"><div><span>Date</span><b>Thu 27 May 2027</b></div><div><span>Doors</span><b>10:00</b></div><div style="grid-column:1/-1"><span>Place</span><b>Duntes iela 17d, Riga</b></div></div>
     <div class="qr"><img src="assets/qr_ticket.svg" alt="Ticket QR"></div>
     <div class="id">Ticket GO2027-T-7Q4K-M2XD</div>
@@ -328,10 +328,10 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
    <div class="cnt"><span>Checked in <b id="c-in">0</b></span><span>Pieces handed over <b id="c-pc">0</b></span></div>
   </div>
   <div class="guests">
-   <button data-g="anna"><span><b>Anna Bērziņa</b><span>Example Shipping Group · Riga</span></span><em>Scan →</em></button>
-   <button data-g="janis"><span><b>Jānis Ozols</b><span>Example Shipping Group · Tallinn branch</span></span><em>Scan →</em></button>
+   <button data-g="anna"><span><b>Anna Bērziņa</b><span id="g-anna"></span></span><em>Scan →</em></button>
+   <button data-g="janis"><span><b>Jānis Ozols</b><span id="g-janis"></span></span><em>Scan →</em></button>
    <button data-g="anna2"><span><b>Anna Bērziņa again</b><span>same ticket, second time</span></span><em>Scan →</em></button>
-   <button data-g="liga"><span><b>Līga Kalniņa</b><span>Baltic Example Lines</span></span><em>Scan →</em></button>
+   <button data-g="liga"><span><b>Līga Kalniņa</b><span id="g-liga"></span></span><em>Scan →</em></button>
    <button data-g="x"><span><b>A ticket we do not know</b><span>screenshot of someone else's code</span></span><em>Scan →</em></button>
   </div>
  </div>
@@ -341,7 +341,7 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
 <section class="ch" data-t="The board" data-s="27.05.2027">
  <h2>The board: every company puts in its piece</h2>
  <p class="lead">Each placed piece uncovers its part of the artwork.</p>
- <div class="countbar"><button class="btn" id="place1">Place Example Shipping Group's piece</button><button class="btn ghost" id="placeall">Place every piece</button><button class="btn ghost" id="reset8">Start again</button><span class="pill line" id="placed">0 pieces placed</span></div>
+ <div class="countbar"><button class="btn" id="place1"></button><button class="btn ghost" id="placeall">Place every piece</button><button class="btn ghost" id="reset8">Start again</button><span class="pill line" id="placed">0 pieces placed</span></div>
  <div class="board" id="board8" aria-label="Puzzle board"></div>
 </section>
 
@@ -381,7 +381,7 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
   <li><div><b>Digital invitations from the directors</b><span>personal link for each person</span></div></li>
   <li><div><b>Registrations on the landing page</b><span>counted by channel</span></div></li>
   <li><div><b>The count</b><span>people per mother company, branches grouped</span></div></li>
-  <li><div><b>Pieces cut</b><span>one per mother company, own QR, own place, plus spares</span></div></li>
+  <li><div><b>Pieces cut</b><span>one per mother company, own place, plus spares</span></div></li>
   <li><div><b>Stage 3: tickets</b><span>one per person, by email, Google Wallet</span></div></li>
   <li class="end"><div><b>Thursday 27 May 2027, 10:00</b><span>scan at the door, piece handed over, piece on the board</span></div></li>
  </ol>
@@ -472,7 +472,11 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
 
  /* 7 entrance */
  var st={in:{},pc:{}}, res=document.getElementById('res');
- var G={anna:{n:'Anna Bērziņa',c:'Example Shipping Group',t:'T1'},janis:{n:'Jānis Ozols',c:'Example Shipping Group',t:'T2'},anna2:{n:'Anna Bērziņa',c:'Example Shipping Group',t:'T1'},liga:{n:'Līga Kalniņa',c:'Baltic Example Lines',t:'T3'}};
+ var PC=(R.piece&&R.piece.name)||'', BR=(R.piece&&R.piece.branchNames)||[], OT=R.other||'';
+ var G={anna:{n:'Anna Bērziņa',c:PC,t:'T1'},janis:{n:'Jānis Ozols',c:PC,t:'T2'},anna2:{n:'Anna Bērziņa',c:PC,t:'T1'},liga:{n:'Līga Kalniņa',c:OT,t:'T3'}};
+ document.getElementById('g-anna').textContent=PC+(BR[0]?' · '+BR[0]:''); document.getElementById('g-janis').textContent=PC+(BR[1]?' · '+BR[1]:'');
+ document.getElementById('g-liga').textContent=OT; document.getElementById('tk-co').textContent=PC;
+ document.getElementById('place1').textContent='Place '+PC+(/s$/i.test(PC)?"'":"'s")+' piece';
  var mins=4;
  function now(){ mins++; return '10:'+(mins<10?'0':'')+mins; }
  function show7(cls,big,mid,act){ res.className='res '+cls; res.innerHTML='<div class="big">'+big+'</div><div class="mid">'+mid+'</div>'+(act?'<span class="act">'+act+'</span>':''); }

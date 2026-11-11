@@ -575,7 +575,7 @@ export async function motherCompanyList(db) {
     g.rows.push({ person: r.name || '', written, sender: r.sender || '' });
     if (r.company_id) g.branches.add(Number(r.company_id));
   }
-  return { companies: [...out.values()].map((g) => ({ ...g, branches: g.branches.size })).sort((x, y) => y.people - x.people || x.name.localeCompare(y.name, 'lv')), noCompany };
+  return { companies: [...out.values()].map((g) => ({ ...g, branchNames: [...g.branches].map((i) => byId.get(i)).filter(Boolean), branches: g.branches.size })).sort((x, y) => y.people - x.people || x.name.localeCompare(y.name, 'lv')), noCompany };
 }
 
 /** THE DEMO'S REAL FACTS (11.11.2026, the owner: "demo has to be like the real thing"): the live totals, eight real rows
@@ -600,7 +600,12 @@ export async function goDemoFacts(db) {
   const page = await goPage(db);
   const fg = page.figures;
   const std = fg ? { sent: fg.sent, reached: fg.reached, person: (fg.cameBack.find((c) => c.id === 'person') || {}).n || 0, calendar: fg.calendar } : null;
-  return { mothers: companies.length, people, sample, piece: piece ? { name: piece.name, branches: piece.branches, people: piece.people } : null, std };
+  // the Stage 3 chapters' companies (11.11.2026, the owner: real mother companies, invented guests): the piece's company with
+  // two of its own companies as branches, and the largest other mother company
+  const other = piece ? companies.find((c) => c.companyId && c.key !== piece.key) : null;
+  const branchNames = piece ? piece.branchNames.filter((n) => n !== piece.name).slice(0, 2) : [];
+  return { mothers: companies.length, people, sample, std, other: other ? other.name : null,
+    piece: piece ? { name: piece.name, branches: piece.branches, people: piece.people, branchNames } : null };
 }
 export async function motherCompanies(db) { return (await motherCompanyList(db)).companies.length; }
 
