@@ -3428,6 +3428,8 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c #view .kconv-n a{position:absolute;left:0;font-weight:700;color:var(--ink);text-decoration:none}
   html.ui-c #view .kconv-n a.now, html.ui-c #view .kconv-n a.ly{transform:translateX(-50%)}
   html.ui-c #view .kconv-n a.ly{color:#b07800}
+  html.ui-c #view .kconv-n .kconv-pair{position:absolute;transform:translateX(-50%);display:flex;gap:8px;white-space:nowrap}
+  html.ui-c #view .kconv-n .kconv-pair a{position:static;transform:none}
   html.ui-c #view .kconv-n a:hover{color:#29a8df}
   html.ui-c #view .kwm{position:absolute;left:0;right:0;top:68px;display:flex;justify-content:space-between}
   html.ui-c #view .kwm span{display:block;width:0;margin:0;text-align:center;font-size:10px;color:var(--t3);text-transform:none;letter-spacing:0;white-space:nowrap}
@@ -4272,14 +4274,22 @@ function cGoHomeReached(which) {
 // A number in a Home wave opens that month on the card's own Reports tab (the owner, 05.11.2026: "all of them numbers in
 // the graphics need to be clickable and linked to the fuller stats")
 // CONVERSION, DRAWN (the owner, 05.11.2026: "Conversion should have also a nice visual reference!"): this year's share as
-// a bar to 100 %, last year around this time as a mark on it; both numbers open Reports > Conversion.
+// a bar to 100 %, last year around this time as a mark on it; both numbers open Reports > Conversion. Two numbers less than
+// C_CONV_NEAR points apart were drawn over each other ("33%" on "36%" read "336%", the owner 11.11.2026): then they sit
+// side by side, the lower one first, centred between the two marks.
+const C_CONV_NEAR = 25;   // the bar is about 130 px on a laptop: two "33.3%" labels need about a quarter of it
 function cConvBar(pct, lastYear) {
   if (pct == null) return '';
   const ly = lastYear == null ? null : parseFloat(String(lastYear));
   const go = `onclick="cGoReportYear('conversion');return false"`;
+  const num = (cls, v, at) => `<a class="${cls}" href="#/reports"${at == null ? '' : ` style="left:${Math.min(100, v)}%"`} ${go}>${v}%</a>`;
+  const near = ly != null && Math.abs(Number(pct) - ly) < C_CONV_NEAR;
+  const nums = ly == null ? num('now', pct, true)
+    : near ? `<span class="kconv-pair" style="left:${Math.max(8, Math.min(92, (Number(pct) + ly) / 2))}%">${Number(pct) <= ly ? num('now', pct) + num('ly', ly) : num('ly', ly) + num('now', pct)}</span>`
+      : num('now', pct, true) + num('ly', ly, true);
   return `<div class="kconv" role="img" aria-label="${esc(`${pct}% this year${ly == null ? '' : `, ${ly}% last year around this time`}`)}">
     <div class="kconv-t"><i style="width:${Math.min(100, pct)}%"></i>${ly == null ? '' : `<s style="left:${Math.min(100, ly)}%" title="Last year around this time"></s>`}</div>
-    <div class="kconv-n"><a class="now" href="#/reports" style="left:${Math.min(100, pct)}%" ${go}>${pct}%</a>${ly == null ? '' : `<a class="ly" href="#/reports" style="left:${Math.min(100, ly)}%" ${go}>${ly}%</a>`}</div></div>`;
+    <div class="kconv-n">${nums}</div></div>`;
 }
 // MEDIAN TIME, DRAWN (the owner, 05.11.2026: "and the median time also!", his pick A "split bar"): the people with a known
 // first contact in four groups by how long admission took, one bar split by the groups and a key with the counts; every

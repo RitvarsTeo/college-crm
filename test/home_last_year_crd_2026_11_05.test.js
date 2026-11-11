@@ -57,3 +57,21 @@ test('the server: median over known first contacts; last year counts admissions 
     'as of the day, the December admission is not counted');
   await db.close();
 });
+
+test('the conversion numbers never sit on each other: 33% and 36% side by side, the lower first (the owner, 11.11.2026)', async () => {
+  const vm = await import('node:vm');
+  const at = html.indexOf('const C_CONV_NEAR = ');
+  const src = html.slice(at, html.indexOf('\n}\n', html.indexOf('function cConvBar(', at)) + 2);
+  const ctx = { esc: (s) => String(s) };
+  vm.runInNewContext(src + '\nthis.bar = cConvBar;', ctx);
+  const near = ctx.bar(33, '36');
+  assert.match(near, /<span class="kconv-pair" style="left:34\.5%"><a class="now" href="#\/reports" onclick[^>]*>33%<\/a><a class="ly" href="#\/reports" onclick[^>]*>36%<\/a><\/span>/);
+  assert.match(ctx.bar(40, '36'), /kconv-pair[^>]*><a class="ly"[^>]*>36%<\/a><a class="now"[^>]*>40%<\/a>/, 'last year lower: it goes first');
+  const far = ctx.bar(20, '50');
+  assert.ok(!far.includes('kconv-pair'), 'far apart: each under its own mark');
+  assert.match(far, /<a class="now" href="#\/reports" style="left:20%"/);
+  assert.match(far, /<a class="ly" href="#\/reports" style="left:50%"/);
+  assert.match(ctx.bar(2, '5'), /kconv-pair" style="left:8%"/, 'near the start: kept inside the bar');
+  assert.ok(!ctx.bar(30, null).includes('kconv-pair'));
+  assert.match(html, /\.kconv-n \.kconv-pair\{position:absolute;transform:translateX\(-50%\);display:flex;gap:8px;white-space:nowrap\}/);
+});
