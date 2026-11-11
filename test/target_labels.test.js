@@ -56,7 +56,7 @@ function home(r, people, cfg = CFG) {
     APP.slice(APP.indexOf('const C_SCOPED = '), APP.indexOf('function cScopeHtml(')),
     line('const cPersonName = '), fn('function cOnePerPerson('), fn('function cAdmittedOnce('), fn('async function cHomeData('), fn('function cHomeMonths('),
     APP.slice(APP.indexOf("// ---- THE YEAR'S TARGET (D-C6"), APP.indexOf('// ---- B: TODAY FIRST')),
-    fn('function cReachedWords('), fn('function cTargetBars('), fn('function cHomeB('),
+    fn('function cReachedWords('), fn('function cTargetBars('), fn('function cHomeNow('), fn('function cHomeB('),
   ].join('\n') + '\nthis.data = cHomeData; this.B = cHomeB;', ctx);
   return ctx;
 }

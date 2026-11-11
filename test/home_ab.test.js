@@ -32,7 +32,7 @@ const TREND = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10'].map((
 
 function harness({ summary = 'ok', intake = 'ok' } = {}) {
   const api = async (url) => {
-    if (url.startsWith('/api/report')) return { summary: { newLeads: 55, conversionPct: 19, conversionA: 2, conversionB: 55, medianDaysToAdmission: 38 }, trend: TREND };
+    if (url.startsWith('/api/report')) return { summary: { newLeads: 55, arrived: { open: ['o1', 'o2', 'o3', 'o4', 'o5', 'o6'], admitted: ['a1', 'a2'], closed: ['x1', 'x2', 'x3', 'x4'] }, conversionPct: 19, conversionA: 2, conversionB: 55, medianDaysToAdmission: 38 }, trend: TREND };
     if (url === '/api/summary') {
       if (summary !== 'ok') throw new Error('down');
       return { noNextAction: 3, overdue: [
@@ -58,6 +58,7 @@ function harness({ summary = 'ok', intake = 'ok' } = {}) {
     cMonthChart: () => '<svg class="kchart"></svg>',
     cBars: (rows, kind) => `<div class="kbars ${kind}">${rows.length}</div>`,
     cDonut: (rows) => `<div class="kdonut">${rows.map((r) => r[0] + '=' + r[1]).join(',')}</div>`,
+    C_REP_COH: {},   // the donut's slices register their people here (11.11.2026)
   };
   vm.createContext(ctx);
   vm.runInContext([
@@ -70,7 +71,7 @@ function harness({ summary = 'ok', intake = 'ok' } = {}) {
     APP.slice(APP.indexOf("// ---- THE YEAR'S TARGET (D-C6"), APP.indexOf('// ---- B: TODAY FIRST')),
     fn('function cReachedWords('),   // Reached Application on the Conversion card (07.10.2026)
     fn('function cTargetBars('),     // the target meters' words, shared with Reports (07.10.2026)
-    fn('function cHomeB('),
+    fn('function cHomeNow('), fn('function cHomeB('),
   ].join('\n') + '\nthis.data = cHomeData; this.B = cHomeB;', ctx);
   return ctx;
 }
@@ -99,7 +100,7 @@ test('B: what needs a person comes first, and every figure links to where the pe
   assert.match(html, /href="#\/leads"[^>]*>\s*<span>In the Inbox<\/span><b>6<\/b>/);
   assert.match(html, /<span>No next step<\/span><b>3<\/b>/);
   assert.doesNotMatch(html, /The journey now|kday-side/, 'the journey card left Home on 05.10.2026 (Q37)');
-  assert.match(html, /kdonut">Open=6,Not proceeding=4/, 'the donut counts the same people: Open and Not proceeding (Q43)');
+  assert.match(html, /kdonut">Open=6,Admitted=2,Not proceeding=4/, 'the donut: Arrived by where they are now, Admitted included (11.11.2026, pick A)');
 });
 
 // 05.11.2026 (the owner, "A calm" + "Keep wave, but have a measurement of the wave"): the month-against-month line left the

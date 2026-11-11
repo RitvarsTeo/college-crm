@@ -73,7 +73,7 @@ test('one definition: the server report, the core metric, Home and Reports all r
   // Reports: the tab takes the server's cutoff, never its own rule
   const model = APP.slice(APP.indexOf('function cRepModel('), APP.indexOf('// One figure, drawn as the click to its people.'));
   assert.match(model, /const cut = S\.conversionCutoff \? Date\.parse\(S\.conversionCutoff\) : -Infinity;/);
-  assert.match(model, /const ripe = arr\.filter\(\(p\) => Date\.parse\(p\.created_at\) < cut\);/);
+  assert.match(model, /const ripe = arrAll\.filter\(\(p\) => Date\.parse\(p\.created_at\) < cut\);/);
   assert.match(model, /base: fig\('conversion:matured', /, 'the base is its own people, one click away');
   assert.doesNotMatch(model, /maturedDays|86400000 \* 60/, 'no second copy of the rule');
 });

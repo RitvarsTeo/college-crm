@@ -4260,8 +4260,7 @@ function cHomeB(D) {
     <div class="m-scene kb-charts">
       <div class="kb-top">
       ${cHomeMonths(D)}
-        <section class="ksec"><div class="ksh"><h2>Where everyone is now</h2><span class="ksrc">click a slice</span></div>${cDonut([
-          ['Open', D.open.length, 'open', 'journey'], ['Not proceeding', D.closed.length, 'np', 'Not proceeding']])}</section>
+        <section class="ksec"><div class="ksh"><h2>Where everyone is now</h2><span class="ksrc">click a slice</span></div>${cHomeNow(D)}</section>
       </div>
     </div>`;
 }
@@ -4271,6 +4270,18 @@ function cHomeB(D) {
 // (Admitted, Leads, Conversion, Median) open their own Reports tab on This year (the owner, 05.10.2026): Home card ->
 // the tab's breakdowns -> the people, whose header figure and every bar open them.
 // Home's numbers on the Reached Application line (cReachedWords, in the Reports block below) open their people
+// WHERE EVERYONE IS NOW (the owner's pick A, 11.11.2026, "everyone accounted for"): the people who ARRIVED in the period,
+// split by where they are now - Open, Admitted, Not proceeding - from the server's own split of the Arrived figure
+// (src/reports.js summary.arrived), so the three slices add up to Arrived and each opens exactly its people. A read that
+// failed draws nothing rather than a figure from somewhere else.
+function cHomeNow(D) {
+  const a = D.s && D.s.arrived;
+  if (!a) return '';
+  const y = cScopeWord();
+  const parts = [['now_open', 'Open', a.open, 'open'], ['now_adm', 'Admitted', a.admitted, 'adm'], ['now_np', 'Not proceeding', a.closed, 'np']];
+  C_REP_COH = { ...C_REP_COH, ...Object.fromEntries(parts.map(([k, label, ids]) => [k, { name: 'home:' + k, label: `Arrived ${y} · ${label}`, ids }])) };
+  return cDonut(parts.map(([k, label, ids, v]) => [label, ids.length, v, k]), { kgo: (k) => 'cohort|' + k });
+}
 // Home's Admitted: the people in it with no admission date open as a list of their own (11.11.2026, pick B)
 function cGoHomeUndated() {
   if (!C_HOME_D || !C_HOME_D.undated) return;
@@ -6718,20 +6729,23 @@ function cRepModel(r, people, cfg, today) {
   };
 
   // 2 LEADS (a lead is a PERSON added to Intake in the period, never an Inbox row)
-  const arr = people.filter((p) => inP(p.created_at));
+  // the Leads figure and its months: one per person, as the server's Arrived and Home's Leads count them (the owner's pick
+  // A, 11.11.2026); the breakdowns and Conversion keep their own server figures, over the records (arrAll)
+  const arrAll = people.filter((p) => inP(p.created_at));
+  const arr = cOnePerPerson([...arrAll].sort((a, b) => String(a.created_at).localeCompare(String(b.created_at))));   // each person by their earliest record
   const sea = cfg.maritimeEducations || [];
   const leads = {
     all: fig('leads', `Leads · ${pw} · people added`, arr),
     byTime: T.list.map((x) => ({ ...x, ...fig(`leads:${T.grain}:${x.key}`, `Leads · people added · ${x.tip}`,
-      people.filter((p) => inB(p.created_at, x))) })),
-    byChannel: rows('leads:channel', `Leads · ${pw} · came from`, arr, (p) => val(p.source_channel)),
-    byProgramme: rows('leads:programme', `Leads · ${pw}`, arr, (p) => val(p.programme), progs),
-    byStudyForm: rows('leads:studyForm', `Leads · ${pw}`, arr, (p) => val(p.study_form)),
-    byEducation: rows('leads:education', `Leads · ${pw}`, arr, (p) => val(p.education)),
-    byNationality: rows('leads:nationality', `Leads · ${pw}`, arr, (p) => val(p.nationality)),
-    eduRecorded: fig('leads:education:recorded', `Leads · ${pw} · education recorded`, arr.filter((p) => val(p.education) !== '(not recorded)')),
-    natRecorded: fig('leads:nationality:recorded', `Leads · ${pw} · nationality recorded`, arr.filter((p) => val(p.nationality) !== '(not recorded)')),
-    maritime: fig('leads:maritime', `Leads · ${pw} · from a maritime school`, arr.filter((p) => sea.includes(p.education))),
+      arr.filter((p) => inB(p.created_at, x))) })),
+    byChannel: rows('leads:channel', `Leads · ${pw} · came from`, arrAll, (p) => val(p.source_channel)),
+    byProgramme: rows('leads:programme', `Leads · ${pw}`, arrAll, (p) => val(p.programme), progs),
+    byStudyForm: rows('leads:studyForm', `Leads · ${pw}`, arrAll, (p) => val(p.study_form)),
+    byEducation: rows('leads:education', `Leads · ${pw}`, arrAll, (p) => val(p.education)),
+    byNationality: rows('leads:nationality', `Leads · ${pw}`, arrAll, (p) => val(p.nationality)),
+    eduRecorded: fig('leads:education:recorded', `Leads · ${pw} · education recorded`, arrAll.filter((p) => val(p.education) !== '(not recorded)')),
+    natRecorded: fig('leads:nationality:recorded', `Leads · ${pw} · nationality recorded`, arrAll.filter((p) => val(p.nationality) !== '(not recorded)')),
+    maritime: fig('leads:maritime', `Leads · ${pw} · from a maritime school`, arrAll.filter((p) => sea.includes(p.education))),
   };
 
   // 3 CONVERSION, MATURED (the owner, 05.10.2026): admitted / the people who arrived in the period at least N days
@@ -6739,7 +6753,7 @@ function cRepModel(r, people, cfg, today) {
   // its cutoff, so Home's card, this tab and the export can never disagree on who counts.
   const S = r.summary || {};
   const cut = S.conversionCutoff ? Date.parse(S.conversionCutoff) : -Infinity;
-  const ripe = arr.filter((p) => Date.parse(p.created_at) < cut);
+  const ripe = arrAll.filter((p) => Date.parse(p.created_at) < cut);
   const who = S.conversionWho || 'who arrived';
   const won = ripe.filter((p) => p.admitted_at);
   const pct = (a, b) => (b ? Math.round((a / b) * 1000) / 10 : null);
@@ -6754,7 +6768,7 @@ function cRepModel(r, people, cfg, today) {
     reached: r.steps && r.steps.leadToApplication && r.steps.leadToApplication.of > 0 ? { step: r.steps.leadToApplication,
       of: fig('conversion:reached:of', `Leads · ${pw} · ${who}`, r.steps.leadToApplication.ofIds.map((id) => ({ id }))),
       won: fig('conversion:reached', `Leads · ${pw} · ${who} · reached Submitted application`, r.steps.leadToApplication.reachedIds.map((id) => ({ id }))) } : null,
-    stoppedAt: stops.map((id) => ({ value: id, ...fig(`conversion:now:${id}`, `Leads · ${pw} · now ${cStage(id)}`, arr.filter((p) => p.status === id && !p.admitted_at)) })).filter((x) => x.n),
+    stoppedAt: stops.map((id) => ({ value: id, ...fig(`conversion:now:${id}`, `Leads · ${pw} · now ${cStage(id)}`, arrAll.filter((p) => p.status === id && !p.admitted_at)) })).filter((x) => x.n),
     byProgramme: rate('conversion:programme', `Leads · ${pw} · ${who}`, ripe, (p) => val(p.programme)),
     byChannel: rate('conversion:channel', `Leads · ${pw} · ${who} · came from`, ripe, (p) => val(p.source_channel)),
     // BENCHMARKS (variant A, the owner 06.10.2026). Each row is a config.benchmarks row WITH its source, set against the

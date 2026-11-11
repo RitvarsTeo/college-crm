@@ -9,7 +9,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { REAL_PEOPLE, countPeople } from './realpeople.js';
+import { REAL_PEOPLE, countPeople, arrivedByPlace, peopleGroups } from './realpeople.js';
 import { SIS_HOLDS_SQL, SIS_DRAFT_SQL } from './lifecycle.js';
 import { localDate, localDateTime, localMidnight, dayStartOf, dayAfterStartOf, todayStart, tomorrowStart } from './bizday.js';
 import { yearsOf, yearRanges, rangesSql } from './yearscope.js';
@@ -159,7 +159,11 @@ export async function report(db, { from, to, years, asOfEnd = false } = {}) {
   const [ARR, A] = inP('created_at', p);     // arrived in the period
   const [ADM] = inP('admitted_at', p);        // admitted in it (the same arguments, A)
 
-  const newLeads = await count(db, `SELECT COUNT(*) n FROM ${REAL_PEOPLE} people WHERE ${ARR}`, ...A);
+  // ARRIVED = HOME'S LEADS = THE JOURNEY'S ARRIVED, in PEOPLE (the owner's pick A, 11.11.2026): the records of one
+  // person count once, and the same people split by where they are now feed Home's "Where everyone is now"
+  const arrivedRows = await db.prepare(`SELECT id, name, email, phone, status FROM ${REAL_PEOPLE} people WHERE ${ARR}`).all(...A);
+  const arrived = arrivedByPlace(arrivedRows, { admitted: CFG.stageRoles.admitted, closed: CFG.stageRoles.closed });
+  const newLeads = arrived.open.length + arrived.admitted.length + arrived.closed.length;
   const applications = await count(db, `SELECT COUNT(*) n FROM ${REAL_PEOPLE} people
     WHERE ${ARR} AND status IN ('Application','Admitted')`, ...A);
   // one person, one count (his pick (c), 05.11.2026): records of the same person count once
@@ -196,12 +200,16 @@ export async function report(db, { from, to, years, asOfEnd = false } = {}) {
   const months = [];
   // Riga months, ending with the month the period's last day falls in.
   const [ey, em] = localDate(new Date(Date.parse(p.to) - 1)).split('-').map(Number);
+  // a person arrived in the month of their EARLIEST record (11.11.2026): their records in two months count once
+  const w0 = localMidnight(ey, em - 11, 1), w1 = localMidnight(ey, em + 1, 1);
+  const firsts = peopleGroups(await db.prepare(`SELECT name, email, phone, created_at FROM ${REAL_PEOPLE} people
+    WHERE created_at >= ? AND created_at < ?`).all(w0, w1)).map((g) => g.map((r) => r.created_at).sort()[0]);
   for (let i = 11; i >= 0; i -= 1) {
     const m0 = localMidnight(ey, em - i, 1);
     const m1 = localMidnight(ey, em - i + 1, 1);
     months.push({
       month: localDate(m0).slice(0, 7),
-      newLeads: await count(db, `SELECT COUNT(*) n FROM ${REAL_PEOPLE} people WHERE created_at >= ? AND created_at < ?`, m0, m1),
+      newLeads: firsts.filter((d) => d >= m0 && d < m1).length,
       admitted: countPeople(await db.prepare(`SELECT name, email, phone FROM ${REAL_PEOPLE} people WHERE admitted_at >= ? AND admitted_at < ?`).all(m0, m1)),
     });
   }
@@ -238,7 +246,7 @@ export async function report(db, { from, to, years, asOfEnd = false } = {}) {
   return {
     period: p,
     summary: {
-      newLeads, applications, admitted, activeApplicants, overdue, noNextAction,
+      newLeads, arrived, applications, admitted, activeApplicants, overdue, noNextAction,
       conversionPct: conversion,
       maritimeGraduates: maritime,
       conversionOf: conversion === null ? `no one ${conv.who} in this period`

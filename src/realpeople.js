@@ -18,7 +18,10 @@ export const isTestPerson = (p) => Boolean(p) && (/@novikontas\./i.test(String(p
   || /(^|\s)test(\s|$)/i.test(String(p.name || '').trim()));
 
 /** How many PEOPLE these records are: one person however many records share a name, an email or a phone. */
-export function countPeople(rows) {
+export function countPeople(rows) { return peopleGroups(rows).length; }
+
+/** The records grouped by person (the same rule as countPeople): one array of records per person. */
+export function peopleGroups(rows) {
   const list = rows || [];
   const parent = list.map((_, i) => i);
   const find = (i) => { while (parent[i] !== i) i = parent[i] = parent[parent[i]]; return i; };
@@ -30,5 +33,19 @@ export function countPeople(rows) {
     const e = String(p.email || '').trim().toLowerCase(); if (e) join('e:' + e, i);
     const ph = phoneKey(p.phone); if (ph) join('p:' + ph, i);
   });
-  return new Set(list.map((_, i) => find(i))).size;
+  const groups = new Map();
+  list.forEach((p, i) => { const r = find(i); if (!groups.has(r)) groups.set(r, []); groups.get(r).push(p); });
+  return [...groups.values()];
+}
+
+/** ARRIVED, BY WHERE THEY ARE NOW (the owner's pick A, 11.11.2026): the people among these arrived records, one id each,
+ * split Open / Admitted / Not proceeding. A person with records in two places is where their furthest record is:
+ * Admitted before an open stage, an open stage before Not proceeding. The three lists add up to countPeople(rows). */
+export function arrivedByPlace(rows, { admitted = 'Admitted', closed = 'Not proceeding' } = {}) {
+  const out = { open: [], admitted: [], closed: [] };
+  for (const g of peopleGroups(rows)) {
+    const a = g.find((p) => p.status === admitted), o = g.find((p) => p.status !== admitted && p.status !== closed);
+    if (a) out.admitted.push(a.id); else if (o) out.open.push(o.id); else out.closed.push(g[0].id);
+  }
+  return out;
 }

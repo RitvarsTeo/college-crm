@@ -110,7 +110,8 @@ test('Cold / Reject only in Outcomes, the donut without Admitted, the board head
   assert.doesNotMatch(home, /cGoClosedTag|ktags/, 'no Cold / Reject on Home');
   assert.doesNotMatch(fnBody('function cJourneyBand('), /cGoClosedTag|kfl-tags/, 'none on the Journey band');
   assert.match(fnBody('function cDrawJourneyPool() {'), /isNp && tags\.length \? cPoolSelect\('Cold \/ Reject'/, 'they are on the Journey\'s Not proceeding (Outcomes)');
-  assert.match(home, /\['Open', D\.open\.length, 'open', 'journey'\], \['Not proceeding', D\.closed\.length, 'np', 'Not proceeding'\]\]/);
+  // 11.11.2026 (the owner's pick A): the donut is Arrived split by where they are now, Admitted included (cHomeNow)
+  assert.match(home, /\$\{cHomeNow\(D\)\}/);
   assert.doesNotMatch(home, /'Admitted', D\.allAdmitted/);
   assert.doesNotMatch(fnBody('function cDrawJourney() {'), /\$\{esc\(s\.label \|\| s\.id\)\} <b>\$\{ps\.length\}<\/b>/, 'the band keeps the stage counts');
 });
