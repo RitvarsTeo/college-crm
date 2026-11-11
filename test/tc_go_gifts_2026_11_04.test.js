@@ -56,7 +56,10 @@ test('05.11 his correction: no gift is lit until picked; a second click clears i
 
 test('the demo in Intake: only the five accounts open it; every local link in the page is a file served beside it', async () => {
   const godemo = await import('../src/godemo.js');
-  assert.deepEqual(godemo.viewers().sort(), ['ab@novikontas.org', 'aigars.kluga@novikontas.org', 'marcis.zabovs@novikontas.org', 'mc@novikontas.org', 'ritvars.vilcins@novikontas.org']);
+  // 11.11.2026, the owner: "every Director and C level can see it from their account!"
+  assert.deepEqual(godemo.viewers().sort(), ['ab@novikontas.org', 'aigars.kluga@novikontas.org', 'alma@novikontas.org', 'ds@novikontas.org', 'iljasemjonovs@novikontas.org', 'js@novikontas.org', 'marcis.zabovs@novikontas.org', 'mc@novikontas.org', 'ritvars.vilcins@novikontas.org']);
+  assert.equal(godemo.mayView({ email: 'ilja.semjonovs@novikontas.org' }), false, 'the inactive address stays out');
+  for (const e of ['ds@novikontas.org', 'JS@novikontas.org', 'alma@novikontas.org', 'iljasemjonovs@novikontas.org']) assert.equal(godemo.mayView({ email: e }), true, e);
   assert.equal(godemo.mayView({ email: 'MC@novikontas.org' }), true);
   assert.equal(godemo.mayView({ email: 'someone@example.com' }), false);
   assert.equal(godemo.mayView(null), false);
