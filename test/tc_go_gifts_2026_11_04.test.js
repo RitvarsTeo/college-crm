@@ -311,6 +311,7 @@ test('11.11 the app is a working product, not a wall of notes (the owner): no on
   for (const [name, src] of [['app', app], ['demo', demo]]) {
     for (const re of [/On hold/i, /second phase/i, /confirms once/i, /Until then/, /tcgm-blk/, /not switched on for Intake yet/]) assert.doesNotMatch(src, re, name + ' ' + re);
   }
-  assert.ok(app.includes("const live = ['in', 'r1', 'r2'].filter((k) => T_GM[k] && !T_GM[k].blocked);"));
+  // his words 11.11: "delete the after the answer boxes from the grand opening tab, it serves no real point"
+  assert.ok(!app.includes('After the answer') && !app.includes('tcGm') && !app.includes('/api/tc/go/mails'));
   assert.ok(app.includes('if (y.confirmed === false) return'));
 });

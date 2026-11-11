@@ -2680,9 +2680,6 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tc-door-gift{display:inline-block;font-size:12px;font-weight:700;color:#fff;background:#0a2463;border-radius:5px;padding:2px 8px;margin-bottom:8px}
   html.ui-c .tc-door-act{display:flex;gap:8px;align-items:center;margin-top:14px} html.ui-c .tc-door-act b{font-size:22px;min-width:28px;text-align:center}
   html.ui-c .tc-door-was{color:#1e7bc4;font-weight:600;margin:10px 0 0} html.ui-c .tc-door-err{color:#b3261e;margin-top:12px} html.ui-c .tc-door-tot{color:var(--t3);margin:12px 0 0}
-  html.ui-c .tcgm{padding:16px 22px} html.ui-c .tcgm-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
-  html.ui-c .tcgm-card{display:flex;flex-direction:column;gap:4px} html.ui-c .tcgm-n{font-size:28px;font-weight:700}
-  html.ui-c .tcgm-acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px} html.ui-c .tcgm-prev{width:min(680px,96vw)} html.ui-c .tcgm-prev iframe{width:100%;height:70vh;border:0;border-radius:8px}
   html.ui-c .tcs2-met{align-self:flex-start;font-size:10.5px;font-weight:700;color:#8a5a00;background:#fdf3d9;border-radius:5px;padding:2px 6px}
   html.ui-c .tcs2-gift{margin-top:auto;display:flex;gap:4px} html.ui-c .tcs2-gift button{all:unset;cursor:pointer;font-size:10.5px;font-weight:600;border-radius:5px;padding:3px 7px;background:var(--surface-2);color:var(--t3)}
   html.ui-c .tcs2-gift button.on{background:#0a2463;color:#fff} html.ui-c .tcs2-gift button.on.d{background:#29a8df}
@@ -12865,7 +12862,7 @@ async function viewTcGo(part) {
     return;
   }
   tcGoDraw();
-  const loads = [tcS2Load(), tcS2xLoad().then(() => { if (T_S2) tcS2Redraw(); }), tcGmLoad(), tcFixLoad(), tcMkLoad()];   // sending + after the answer: admins
+  const loads = [tcS2Load(), tcS2xLoad().then(() => { if (T_S2) tcS2Redraw(); }), tcFixLoad(), tcMkLoad()];   // sending + after the answer: admins
   // the part named in the link, once everything above it has drawn (06.11.2026)
   if (go) Promise.allSettled(loads).then(() => setTimeout(() => { const el = document.querySelector('#view ' + go[1]); if (el) el.scrollIntoView({ block: 'start' }); }, 150));
   api('/api/tc/go/demo-access').then((r) => { T_GO_DEMO = Boolean(r && r.ok); const h = document.querySelector('#view .c-head');
@@ -12997,7 +12994,7 @@ function tcGoStage2() {
   const tab = (x) => `<button type="button" class="tcs2-tab" aria-pressed="${x.code === S.code}" onclick="tcS2Load(${esc(JSON.stringify(String(x.code)))})">${esc(x.label)}<b>${Number(x.n)}</b></button>`;
   const state = (code) => (T_GO.stage2 && T_GO.stage2.packStatus && (T_GO.stage2.packStatus[code] || T_GO.stage2.packStatus.default)) || '';
   const packs = tcS2PacksHtml(S, state);
-  return `<div id="tcS2">${packs}<div id="tcGm">${tcGmHtml()}</div><section class="c-sheet tcs2" aria-label="Stage 2 lists">
+  return `<div id="tcS2">${packs}<section class="c-sheet tcs2" aria-label="Stage 2 lists">
     <div class="tcgo-bh"><h2>Stage 2 lists</h2><span><input class="c-search tcs2-q" placeholder="Search company or person" value="${esc(S.q || '')}" oninput="tcS2Find(this.value)" aria-label="Search the list">
       <a class="btn sm ghost" href="/api/tc/go/stage2.xlsx?sender=${encodeURIComponent(S.code)}" download>Download</a></span></div>
     <div class="tcs2-tabs" role="group" aria-label="Whose list">${S.senders.map(tab).join('')}</div>
@@ -13016,35 +13013,6 @@ function tcFixScope(v) { T_FIX.scope = v; const box = $('#tcFix'); if (box) box.
 // and Send next 100; Send is grey until the colleague's "Send mail as" address is confirmed in the Gmail. The send log below.
 let T_S2X = null, T_S2X_BUSY = '';
 async function tcS2xLoad() { if (!isAdmin()) { T_S2X = null; return; } try { T_S2X = await api('/api/tc/go/stage2/sending'); } catch (e) { T_S2X = null; } }
-// AFTER THE ANSWER (05.11.2026, src/tcgomail.js; his picks "Checked first" and "OK, build them"): three cards, each with how
-// many are waiting per list, a Preview and Send (from each list's own sender, ten at a time). Admins only.
-let T_GM = null, T_GM_BUSY = '';
-async function tcGmLoad() { if (!isAdmin()) { T_GM = null; return; } try { T_GM = await api('/api/tc/go/mails'); } catch (e) { T_GM = null; } tcGmDraw(); }
-function tcGmDraw() { const box = $('#tcGm'); if (box) box.innerHTML = tcGmHtml(); }
-function tcGmHtml() {
-  if (!T_GM) return '';
-  const card = (k) => { const c = T_GM[k]; const per = Object.entries(c.perSender || {});
-    return `<div class="tcgo-pack tcgm-card"><b>${esc(c.label)}</b><div class="tcgm-n">${tcN(c.n)}</div><small>${c.n ? 'waiting' : 'nobody waiting'}${c.sent ? ' · ' + tcN(c.sent) + ' sent' : ''}</small>
-      <div class="tcgm-acts"><button type="button" class="btn sm ghost" onclick="tcGmPreview(${esc(JSON.stringify(k))})">Preview</button>
-      ${per.map(([s, n]) => `<button type="button" class="btn sm" ${T_GM_BUSY ? 'disabled' : ''} onclick="tcGmSend(${esc(JSON.stringify(k))}, ${esc(JSON.stringify(s))})">Send ${Number(n)} · ${esc(s)}</button>`).join('')}</div></div>`; };
-  // THE APP IS A WORKING PRODUCT, NOT A WALL OF NOTES (the owner, 11.11.2026): a letter held back is not shown at all
-  const live = ['in', 'r1', 'r2'].filter((k) => T_GM[k] && !T_GM[k].blocked);
-  if (!live.length) return '';
-  return `<section class="c-sheet tcgm" aria-label="After the answer"><div class="tcgo-bh"><h2>After the answer</h2></div><div class="tcgm-cards">${live.map(card).join('')}</div></section>`;
-}
-async function tcGmPreview(kind) {
-  try { const m = await api('/api/tc/go/mails/preview?kind=' + encodeURIComponent(kind));
-    $('#modal').innerHTML = `<div class="tw-back" onclick="$('#modal').innerHTML=''"></div><aside class="tw-drawer tcgm-prev" role="dialog" aria-modal="true" aria-label="Preview">
-      <button type="button" class="tc-kx" aria-label="Close" onclick="$('#modal').innerHTML=''">✕</button><h2>${esc(m.subject)}</h2><iframe title="Preview" sandbox="" srcdoc="${esc(m.html)}"></iframe></aside>`;
-  } catch (e) { alert(e.message); }
-}
-async function tcGmSend(kind, sender) {
-  const n = ((T_GM[kind] || {}).perSender || {})[sender] || 0;
-  if (!confirm(`Send "${T_GM[kind].label}" to ${n} ${n === 1 ? 'person' : 'people'} on ${sender}'s list?`)) return;
-  T_GM_BUSY = kind; tcGmDraw();
-  try { for (let i = 0; i < 40; i++) { const r = await post('/api/tc/go/mails/send', { kind, sender }); if (r.done) break; } } catch (e) { alert(e.message); }
-  T_GM_BUSY = ''; await tcGmLoad();
-}
 function tcS2PacksHtml(S, state) {
   const X = T_S2X, xs = X ? new Map(X.senders.map((x) => [x.code, x])) : new Map();
   const card = (x) => {
