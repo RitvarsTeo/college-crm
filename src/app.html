@@ -12917,7 +12917,7 @@ function viewTcDoor(code) {
     <section class="c-sheet tc-door"><form class="tc-door-f" onsubmit="event.preventDefault();tcDoorFind(this.p.value)">
       <input class="c-search" name="p" placeholder="Ticket code, like GO27-K7M2Q9XR4T" autocomplete="off" autocapitalize="characters" aria-label="Ticket code">
       <button class="btn" type="submit">Check in</button>
-      ${'BarcodeDetector' in window ? '<button class="btn ghost" type="button" onclick="tcDoorScan()">📷 Scan ticket</button>' : ''}</form>
+      ${'BarcodeDetector' in window ? '<button class="btn ghost" type="button" onclick="tcDoorScan()">Scan ticket</button>' : ''}</form>
       <video id="tcDoorCam" playsinline muted hidden></video><div id="tcDoorCard"></div><p class="tc-door-tot" id="tcDoorTot"></p></section>`;
   api('/api/tc/go/door').then((r) => { T_DOOR.totals = r.totals; tcDoorDraw(); }).catch(() => {});
   if (code) tcDoorFind(code);
@@ -12937,7 +12937,7 @@ function tcDoorDraw() {
   if (!box || !c) return;
   if (c.error) { box.innerHTML = `<p class="tc-door-err">${esc(c.error)}</p>`; return; }
   const who = c.name ? `<div class="tc-door-who">${esc(c.name)}</div><p class="tc-door-co">${esc(c.company)}</p>` : '';
-  const say = { in: '<p class="tc-door-say">🧩 Hand over a piece</p>',
+  const say = { in: '<p class="tc-door-say">Hand over a piece</p>',
     again: `<p class="tc-door-say">Already checked in at ${esc(tcDoorTime(c.at))} - piece given</p>`,
     unknown: '<p class="tc-door-say">Not on the list. Please send them to the help desk.</p>' }[c.state] || '';
   box.innerHTML = `<div class="tc-door-card tk-${esc(c.state)}">${c.state === 'unknown' && c.code ? `<div class="tc-door-code">${esc(c.code)}</div>` : ''}${who}${say}</div>`;

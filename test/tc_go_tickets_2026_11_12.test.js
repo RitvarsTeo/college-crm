@@ -145,9 +145,11 @@ test('at the door (his words 12.11: "everyone at the end get the puzzle piece on
 test('the page: Stage 3 tab with the cards for admins, the door scans tickets with the four answers, no Wallet note anywhere', () => {
   const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
   assert.ok(app.includes("${tb('s3', 3, 'Stage 3 · Ticket')}"));
-  for (const t of ["'<p class=\"tc-door-say\">🧩 Hand over a piece</p>'", '`<p class="tc-door-say">Already checked in at ${esc(tcDoorTime(c.at))} - piece given</p>`',
+  for (const t of ["'<p class=\"tc-door-say\">Hand over a piece</p>'", '`<p class="tc-door-say">Already checked in at ${esc(tcDoorTime(c.at))} - piece given</p>`',
     "'<p class=\"tc-door-say\">Not on the list. Please send them to the help desk.</p>'"]) assert.ok(app.includes(t), t);
   assert.ok(!app.includes('Piece already with') && !app.includes('Hand over the piece'));
+  const door = app.slice(app.indexOf('function viewTcDoor('), app.indexOf('async function tcDoorScan()'));
+  assert.ok(!/[\u{1F300}-\u{1FAFF}]/u.test(door), 'no emoji on the door (his no-AI-slop rule)');
   assert.ok(app.includes('registered, no list owner') && app.includes('onclick="tcTkSend(${k})"'));
   assert.ok(!/wallet/i.test(app));
 });
