@@ -3806,7 +3806,7 @@ export const handle = async (req, res) => {
     if (p === '/api/tc/go/mylist' && req.method === 'GET') {
       const me = await currentUser(req), admin = Boolean(await adminOf(req));
       const code = String(url.searchParams.get('sender') || '');
-      if (!code) return json(res, 200, { lists: tcmylist.openable(me, admin), mine: tcmylist.ownCode(me) });
+      if (!code) { const lists = tcmylist.openable(me, admin); return json(res, 200, { lists, names: tcmylist.listNames(lists), mine: tcmylist.ownCode(me) }); }
       if (!tcmylist.mayOpen(me, admin, code)) return json(res, 403, { error: 'This list is not yours.' });
       try { return json(res, 200, await tcmylist.myList(db, code, String((me && me.email) || ''))); }
       catch (e) { if (e instanceof tc.TcInputError) return json(res, 400, { error: e.message }); throw e; }

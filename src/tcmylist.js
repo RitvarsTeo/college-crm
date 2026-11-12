@@ -34,6 +34,8 @@ export function mayOpen(me, admin, code) {
 }
 /** The lists a viewer may open: an admin every list, an owner their own. */
 export const openable = (me, admin) => (admin ? S2().map((s) => s.code) : [ownCode(me)].filter(Boolean));
+/** The owners' names for the list switcher (proposal F, 12.11.2026). */
+export const listNames = (codes) => Object.fromEntries(codes.map((c) => [c, (S2().find((s) => s.code === c) || {}).name || c]));
 
 // a row that holds no person's name (a shared company mailbox written as "iPS - Latvia") shows its address
 export function personLabel(name, company, email) {

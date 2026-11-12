@@ -207,7 +207,7 @@ test('the sandbox on the page: Undo steps back, a pressed button again clears, a
 test('the page: Save / Undo / status with the full date, Ctrl+Z, Ctrl+S on nothing does nothing, autosave soon after a change and as the page hides, an old autosave ignored, the leave prompt, errors on the page', () => {
   const fn = (name) => { const i = APP.indexOf(`function ${name}(`); return APP.slice(i, APP.indexOf('\n}\n', i)); };
   assert.ok(APP.includes("else if (place === 'mylist') viewTcMyList(arg ? decodeURIComponent(arg) : '');"));
-  assert.ok(APP.includes("filter: 'todo'"));
+  assert.ok(APP.includes("filter: 'all'"), 'B. All is on by default');
   assert.ok(APP.includes('onclick="tcMlSave()">Save</button>') && APP.includes('onclick="tcMlUndo()" title="Ctrl+Z">Undo</button>'));
   assert.ok(APP.includes("return `${o.weekday} ${o.day} ${o.month}, ${o.hour}:${o.minute}`;"), '6. full date and time');
   for (const t of ["'Saving…'", '`Saved ${tcMlTime(S.statusAt)}`', '`Unsaved changes · autosaved ${tcMlTime(S.statusAt)}`', "'Unsaved changes'"]) assert.ok(APP.includes(t), t);
@@ -227,6 +227,28 @@ test('the page: Save / Undo / status with the full date, Ctrl+Z, Ctrl+S on nothi
   assert.ok(APP.includes('draggable="true"') && APP.includes('ondrop="tcMlDrop(event,'));
   assert.ok(APP.includes("else if (place === 'postcards') viewTcPostcards();") && APP.includes('href="/api/tc/go/postcards.xlsx" download'));
   assert.ok(APP.includes('onclick="tcS2xNoCode(') && APP.includes('without an email or link'), '8. the people the email cannot reach');
+});
+
+test('the proposals he said yes to (12.11.2026): A outlined until picked, B All, C Pick a way, D No address, E Move to on a phone, F owner names', () => {
+  // A: Invite and No outlined; the pick fills (Invite blue, No grey); the tile border follows
+  assert.ok(APP.includes('class="btn sm yes" aria-pressed=') && APP.includes('class="btn sm nay" aria-pressed='));
+  assert.ok(APP.includes(".tcml-yn .btn.btn.yes[aria-pressed=\"true\"]{background:var(--btn-bg)") && APP.includes(".tcml-yn .btn.btn.nay[aria-pressed=\"true\"]{background:#5b6472"));
+  assert.ok(APP.includes("g.decision === 'invite' ? ' inv' : g.decision === 'no' ? ' no' : ''") && APP.includes('.tcml-t.no{border:2px solid #9aa3af'));
+  // B: All, first, and it shows every company
+  assert.ok(APP.includes("${fig('all', F.todo + F.invite + F.no, 'All')}${fig('todo'"));
+  const g = { people: [{ decision: 'invite' }] };
+  assert.equal(P.mlShows(g, 'all'), true); assert.equal(P.mlShows(g, 'todo'), false);
+  // C
+  assert.ok(APP.includes(`\${g.way ? '' : '<div class="tcml-pick">Pick a way</div>'}`));
+  // D
+  assert.ok(APP.includes("noaddr: (x) => !String(x.address || '').trim()") && APP.includes("${fig('noaddr', 'No address')}"));
+  // E: no drag on a phone, a Move to… list instead, onto a company in Intake only
+  assert.ok(APP.includes("window.matchMedia('(max-width: 760px)')") && APP.includes('onchange="tcMlMoveTo(${Number(p.id)}, this.value)"><option value="">Move to…</option>'));
+  assert.ok(APP.includes('const targets = T_ML.base.groups.filter((g) => g.intake)'));
+  assert.ok(APP.includes("const drop = g.intake && !narrow ?"));
+  // F
+  assert.ok(APP.includes('>${esc(T_ML.names[c] || c)}</button>'));
+  assert.deepEqual(ml.listNames(['JS', 'DS']), { JS: 'Jānis Sticenko', DS: 'Dmitrijs Semjonovs' });
 });
 
 test('over the wire: own list only, an admin any; 409 with who and when on an old version; the postcard list is their own; signed out nothing', async (t) => {
@@ -250,6 +272,7 @@ test('over the wire: own list only, an admin any; 409 with who and when on an ol
   const post = (p, cookie, b) => fetch(s.base + p, { method: 'POST', headers: { origin: s.base, 'content-type': 'application/json', ...(cookie ? { cookie } : {}) }, body: JSON.stringify(b) });
   const st = { picks: { [ids.A]: { decision: 'invite', way: 'in_person' } }, out: [], moves: {} };
   assert.deepEqual((await (await get('/api/tc/go/mylist', js)).json()).lists, ['JS']);
+  assert.equal((await (await get('/api/tc/go/mylist', ad)).json()).names.JS, 'Jānis Sticenko', 'F. the admin sees the names');
   assert.equal((await get('/api/tc/go/mylist?sender=DS', js)).status, 403);
   assert.equal((await post('/api/tc/go/mylist/save', js, { sender: 'DS', state: E })).status, 403);
   assert.equal((await post('/api/tc/go/mylist/draft', js, { sender: 'DS', state: E })).status, 403);
