@@ -47,17 +47,22 @@ function letter(kind, first) {
     + '<div class="subj">Subject: ' + esc(m.subject) + '</div>' + m.html.replace('src="cid:building"', 'src="building.jpg"') + '</body></html>';
 }
 
-// The page with a <base> so its relative links work at /api/tc/go/demo (no slash) too.
-const page = () => fs.readFileSync(path.join(DIR, 'index.html'), 'utf8').replace('<head>', '<head><base href="' + PREFIX + '">');
+// The page with a <base> so its relative links work at /api/tc/go/demo (no slash) too. The invitations on "Two ways in" are signed
+// by the viewer's own list owner (12.11.2026, his words "letters signed by director or C-level"), else Mārcis, as the letters are.
+export const signerOf = (me) => {
+  const S = ((TC.grandOpening || {}).stage2 || {}).senders || [], mail = String((me && me.email) || '').toLowerCase();
+  return (S.find((x) => String(x.email || '').toLowerCase() === mail) || S.find((x) => x.code === 'Marcis') || {}).name || '';
+};
+const page = (me = null) => fs.readFileSync(path.join(DIR, 'index.html'), 'utf8').replace('<head>', '<head><base href="' + PREFIX + '">').split('{{SIGNER}}').join(esc(signerOf(me)));
 
 /** The file for a path under PREFIX: { file | body, type } or null. The folder itself is the page. */
 export function fileFor(pathname, me = null) {
   let rel;
-  if (String(pathname) + '/' === PREFIX) return { body: page(), type: TYPES['.html'] };
+  if (String(pathname) + '/' === PREFIX) return { body: page(me), type: TYPES['.html'] };
   try { rel = decodeURIComponent(String(pathname).slice(PREFIX.length)); } catch (e) { return null; }
   if (LETTERS[rel]) { demoViewer = String((me && me.email) || '').toLowerCase(); return { body: letter(LETTERS[rel], String((me && me.name) || '').split(/\s+/)[0] || ''), type: TYPES['.html'] }; }
   if (rel === 'letters/building.jpg') return { file: BUILDING, type: TYPES['.jpg'] };
-  if (!rel || rel === 'index.html') return { body: page(), type: TYPES['.html'] };
+  if (!rel || rel === 'index.html') return { body: page(me), type: TYPES['.html'] };
   const file = FILES.get(rel);
   return file ? { file, type: TYPES[path.extname(file).toLowerCase()] } : null;
 }

@@ -183,7 +183,8 @@ test('11.11 "demo has to be like the real thing": ch1 shows the real Stage 2 let
   const godemo = await import('../src/godemo.js');
   const html = godemo.read(godemo.fileFor(godemo.PREFIX)).toString('utf8');
   const ch = (t) => { const a = html.indexOf('data-t="' + t + '"'); return html.slice(a, html.indexOf('</section>', a)); };
-  assert.match(ch('Two ways in'), /<iframe src="letters\/2_will_you_be_there\.html"/);
+  // 12.11.2026: ch1 now carries his two invitation mockups and his final text (the live letters stay on In Intake)
+  assert.ok(ch('Two ways in').includes('src="assets/invite_email.jpg"') && ch('Two ways in').includes('src="assets/invite_letter.jpg"'));
   assert.ok(!ch('Two ways in').includes('your director at Novikontas Academy'));
   for (const t of ['Two ways in', 'The count', 'At the entrance', 'The board']) assert.ok(!ch(t).includes('class="example"'), t);
   assert.ok(!html.includes("['Anna Bērziņa','anna@exampleshipping.lv'") && !html.includes('Example Shipping Group'));
@@ -208,7 +209,7 @@ test('11.11 ch3 "What we measure" = the Save the Date as it came back (the figur
   // his words 11.11: "Put the real puzzle piece as we have concepted": Amento's piece (its QR opens ?gift) wherever a piece is drawn
   assert.ok(ch('At the entrance').includes('src="assets/piece_gift.jpg"') && !ch('At the entrance').includes('<svg class="piece"'));
   // his words 11.11: the physical invitation is a postcard in a physical letter; its QR opens ?gift (the puzzle is the board on the day)
-  assert.ok(ch('Two ways in').includes('A postcard in a physical letter') && ch('Two ways in').includes('src="assets/qr_gift.svg"') && !ch('Two ways in').includes('piece_gift.jpg'));
+  assert.ok(ch('Two ways in').includes('A postcard in a letter') && ch('Two ways in').includes('src="assets/qr_gift.svg"') && !ch('Two ways in').includes('piece_gift.jpg'));
   // ch3: measured so far, then the Stage 2 measures live (one row of totals; test and staff entries left out in the view)
   const sql = fs.readFileSync(path.join(ROOT, 'docs', 'client-hub', 'intake_landing_counts.sql'), 'utf8');
   assert.match(sql, /@novikontas/); assert.match(sql, /test/); assert.match(sql, /grant select on intake_read.landing_counts to intake_rsvp_reader;/);
@@ -310,4 +311,28 @@ test('11.11 the app is a working product, not a wall of notes (the owner): no on
   // his words 11.11: "delete the after the answer boxes from the grand opening tab, it serves no real point"
   assert.ok(!app.includes('After the answer') && !app.includes('tcGm') && !app.includes('/api/tc/go/mails'));
   assert.ok(app.includes('if (y.confirmed === false) return'));
+});
+
+test('12.11 patch 130, his words "Update the Grand Opening demo chapter 2 with the two mockups ... letters signed by director or C-level, my final invitation text": both mockups, his text word for word, signed by the own list owner of the viewer', async () => {
+  const godemo = await import('../src/godemo.js');
+  const fsx = await import('node:fs');
+  const pathx = await import('node:path');
+  const page = (me) => godemo.read(godemo.fileFor(godemo.PREFIX, me)).toString('utf8');
+  const ch = (html) => { const a = html.indexOf('data-t="Two ways in"'); return html.slice(a, html.indexOf('</section>', a)); };
+  const two = ch(page({ email: 'JS@novikontas.org' }));
+  for (const f of ['invite_letter.jpg', 'invite_email.jpg']) {
+    assert.ok(two.includes('src="assets/' + f + '"'), f);
+    assert.ok(fsx.existsSync(pathx.join(ROOT, 'src', 'go-demo', 'assets', f)), f);
+    assert.ok(godemo.fileFor(godemo.PREFIX + 'assets/' + f), 'served: ' + f);
+  }
+  // his final words, from letter.html and email_invitation.html (12.11.2026), unchanged
+  for (const t of ['Twenty-two years ago, on 27 May 2005, Novikontas began. On 27th of May 2027 we open our new campus in Riga, and I would be glad if you were there with us.',
+    'I want to share the joy of this with you. Thank you for having a part in this!',
+    'The postcard in this envelope is your invitation. Scan the QR code on its back to register. You can add colleagues from Example Company in the same form.',
+    'You are invited: Grand Opening of Novikontas Academy', 'You can reply to this email, it comes to me, or write to events@novikontas.org.', 'I look forward to seeing you.']) assert.ok(two.includes(t), t);
+  assert.ok(two.includes('A postcard in a letter') && two.includes('src="assets/qr_gift.svg"') && two.includes('grand-opening?gift'));
+  // signed by the viewer's own list owner; anyone else sees Mārcis, as the letters do; never the placeholder
+  assert.equal((two.match(/<b>Jānis Sticenko<\/b><br>Novikontas Academy/g) || []).length, 2);
+  assert.ok(ch(page({ email: 'ritvars.vilcins@novikontas.org' })).includes('<b>Mārcis Žabovs</b>'));
+  assert.ok(!page(null).includes('{{SIGNER}}'));
 });

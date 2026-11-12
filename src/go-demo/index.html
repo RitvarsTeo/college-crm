@@ -56,6 +56,10 @@ main{max-width:1320px;margin:0 auto;padding:28px 24px 110px}
 @media (max-width:900px){.ways{grid-template-columns:1fr}}
 .way h3{margin:8px 0 10px;font-size:21px;font-weight:800;line-height:1.25}
 .piece-wrap{display:flex;gap:22px;align-items:center;flex-wrap:wrap}
+.mock{display:block;border-radius:12px;overflow:hidden;border:1px solid var(--line);margin:0 0 16px;background:#eef1f5}
+.mock img{display:block;width:100%;height:auto}
+.words{border-left:4px solid var(--blue);padding:2px 0 2px 16px;margin:0 0 16px;font-size:15.5px;line-height:1.5}
+.words p{margin:0 0 10px} .words .subj{font-weight:800} .words .when{color:var(--navy)} .words .sig{margin-top:14px} .words .fine{color:var(--muted);font-size:14px}
 .piece{width:200px;height:200px;flex:none}
 .scan{display:flex;gap:16px;align-items:center}
 .scan img{width:132px;height:132px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px}
@@ -234,10 +238,23 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
 <section class="ch" data-t="Two ways in" data-s="Stage 2">
  <h2>Two ways in, one landing page</h2>
  <p class="lead">The postcard and the digital invitation lead to the same page.</p>
+ <!-- 12.11.2026, his words: "Update the Grand Opening demo chapter 2 with the two mockups ... letters signed by director or C-level,
+      my final invitation text ... The physical invitation is now a postcard in a letter." The texts are his final letter.html and
+      email_invitation.html (Postcard invitation/prototype_2026-11-12), word for word; the signer is the viewer's own list owner. -->
  <div class="ways">
   <div class="card way">
    <span class="pill">Physical invitation</span>
-   <h3>A postcard in a physical letter</h3>
+   <h3>A postcard in a letter, signed by the director or C-level</h3>
+   <a class="mock" href="assets/invite_letter.jpg" target="_blank" rel="noopener"><img src="assets/invite_letter.jpg" alt="The letter, the envelope and the postcard, front and back"></a>
+   <div class="words">
+    <p>Dear Anna,</p>
+    <p>Twenty-two years ago, on 27 May 2005, Novikontas began. On 27th of May 2027 we open our new campus in Riga, and I would be glad if you were there with us.</p>
+    <p>I want to share the joy of this with you. Thank you for having a part in this!</p>
+    <p>The postcard in this envelope is your invitation. Scan the QR code on its back to register. You can add colleagues from Example Company in the same form.</p>
+    <p class="when"><b>Thursday 27 May 2027</b><br>Novikontas Academy Campus, Duntes iela 17d, Riga</p>
+    <p>I look forward to seeing you.</p>
+    <p class="sig"><b>{{SIGNER}}</b><br>Novikontas Academy</p>
+   </div>
    <div class="piece-wrap">
     <img class="piece pc-qr" src="assets/qr_gift.svg" alt="The QR on the postcard">
     <div><div class="addr" style="font-weight:800;font-size:18px">novikontas.org/<br>grand-opening?gift</div><p style="margin:8px 0 0;color:var(--muted);font-weight:600">Same QR on every postcard.<br>Scan it now with a phone.</p></div>
@@ -245,8 +262,19 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
   </div>
   <div class="card way">
    <span class="pill blue">Digital invitation</span>
-   <h3>Email from the director, a personal link for each person</h3>
-   <a class="inletter ch1l" href="letters/2_will_you_be_there.html" target="_blank" rel="noopener"><div class="lt top"><iframe src="letters/2_will_you_be_there.html" tabindex="-1" loading="lazy" scrolling="no" title="Will you be there?"></iframe></div></a>
+   <h3>Email from the director or C-level, a personal link for each person</h3>
+   <a class="mock" href="assets/invite_email.jpg" target="_blank" rel="noopener"><img src="assets/invite_email.jpg" alt="The invitation email in the inbox"></a>
+   <div class="words">
+    <p class="subj">You are invited: Grand Opening of Novikontas Academy</p>
+    <p>Dear Anna,</p>
+    <p>Twenty-two years ago, on 27 May 2005, Novikontas began. On 27th of May 2027 we open our new campus in Riga, and I would be glad if you were there with us.</p>
+    <p>I want to share the joy of this with you. Thank you for having a part in this!</p>
+    <p class="when"><b>Thursday 27 May 2027</b><br>Novikontas Academy Campus, Duntes iela 17d, Riga</p>
+    <p><b>Scan or click to register</b><br>You can add colleagues from Example Company in the same form.</p>
+    <p>I look forward to seeing you.</p>
+    <p class="sig"><b>{{SIGNER}}</b><br>Novikontas Academy</p>
+    <p class="fine">You can reply to this email, it comes to me, or write to events@novikontas.org.</p>
+   </div>
   </div>
  </div>
  <div class="join"><span class="to">↓</span><div class="lp"><img src="assets/phone_1.jpg" alt=""><div><b>novikontas.org/grand-opening</b><br><span style="color:var(--muted);font-weight:600">live now</span></div></div><button class="btn" data-go="3">See the page →</button></div>
