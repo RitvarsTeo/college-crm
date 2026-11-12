@@ -312,11 +312,10 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
 
 <section class="ch" data-t="What we measure" data-s="Stage 2">
  <h2>What we measure</h2>
- <p class="lead">The people who will attend, and the mother companies for the puzzle pieces.</p>
+ <p class="lead">The people who will attend.</p>
  <div class="tiles">
   <div class="tile"><div class="k">Postcard (physical)</div><div class="v" id="m-phys"></div><div class="s">people registered</div></div>
   <div class="tile"><div class="k">Personal email link (digital)</div><div class="v" id="m-dig"></div><div class="s">people said Yes</div></div>
-  <a class="tile intile" href="https://intake.novikontas.org/#/tc/companies/go2" target="_blank" rel="noopener"><div class="k">Mother companies</div><div class="v">{{MOTHER_COMPANIES}}</div><div class="s">puzzle pieces</div><span class="go">Open &rarr;</span></a>
  </div>
 </section>
 
@@ -325,13 +324,13 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
  <p class="lead">Every person on the Stage 2 lists sits on their company; branches sit under their mother company.</p>
  <div class="result">
   <a class="tile intile" href="https://intake.novikontas.org/#/tc/go/lists" target="_blank" rel="noopener"><div class="k">People on the Stage 2 lists</div><div class="v" id="r-people"></div><span class="go">Open &rarr;</span></a>
-  <a class="tile intile" href="https://intake.novikontas.org/#/tc/companies/go2" target="_blank" rel="noopener"><div class="k">Mother companies</div><div class="v" id="r-comp">{{MOTHER_COMPANIES}}</div><div class="s">= puzzle pieces to cut</div><span class="go">Open &rarr;</span></a>
+  <a class="tile intile" href="https://intake.novikontas.org/#/tc/companies/go2" target="_blank" rel="noopener"><div class="k">Mother companies</div><div class="v" id="r-comp">{{MOTHER_COMPANIES}}</div><span class="go">Open &rarr;</span></a>
  </div>
 </section>
 
 <section class="ch" data-t="The ticket" data-s="Stage 3">
  <h2>Stage 3: a ticket for every person</h2>
- <p class="lead">Each registered guest gets their own ticket by email; its QR is theirs alone and leads to their company's piece.</p>
+ <p class="lead">Each registered guest gets their own ticket by email; its QR is theirs alone and gets them a puzzle piece at the door.</p>
  <div class="tk-row">
   <div class="card tkt">
    <div class="tk-date"><b>Thursday 27 May 2027</b><span>Doors open 10:00</span><span>Novikontas Academy Campus, Duntes iela 17d, Riga</span></div>
@@ -354,7 +353,7 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
 </section>
 
 <section class="ch" data-t="At the entrance" data-s="27.05.2027">
- <h2>At the entrance: scan, welcome, hand over the piece</h2>
+ <h2>At the entrance: scan, welcome, hand over a piece</h2>
  <p class="lead">Press a guest to scan their ticket.</p>
  <div class="door">
   <div class="scanner">
@@ -374,16 +373,16 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
 </section>
 
 <section class="ch" data-t="The board" data-s="27.05.2027">
- <h2>The board: every company puts in its piece</h2>
+ <h2>The board: every guest puts in their piece</h2>
  <div class="board" id="board9" aria-label="Puzzle board"></div>
- <p style="margin:14px 0 0;font-weight:600;color:var(--muted)"><span class="b-sw"></span><b style="color:var(--ink)" id="b-me"></b> · <b style="color:var(--ink)">Board:</b> 2.70 × 1.50 m; one place per mother company, plus spares</p>
+ <p style="margin:14px 0 0;font-weight:600;color:var(--muted)"><span class="b-sw"></span><b style="color:var(--ink)" id="b-me"></b> · <b style="color:var(--ink)">Board:</b> 2.70 × 1.50 m; one place per guest, plus spares</p>
 </section>
 
 <!-- In Intake, live (Intake TC LANE 11.11.2026) -->
 <section class="ch" data-t="In Intake" data-s="Intake">
  <h2>In Intake, live</h2>
  <p class="lead">The lists, the letters and the places as Intake holds them now. Every window opens the real thing.</p>
- <div class="grid3"><a class="card intile" href="https://intake.novikontas.org/#/tc/clients" target="_blank" rel="noopener"><span class="pill">Intake</span><h3>Clients in Intake</h3><p>Every client company with its owner, contacts and history.</p><span class="go">Open &rarr;</span></a><a class="card intile" href="https://intake.novikontas.org/#/tc/families" target="_blank" rel="noopener"><span class="pill">Intake</span><h3>Company families</h3><p>Branches under one owner, each family with its source.</p><span class="go">Open &rarr;</span></a><a class="card intile" href="https://intake.novikontas.org/#/tc/go/hold" target="_blank" rel="noopener"><span class="pill">Intake</span><h3>Do not invite / hold</h3><p>Aleksejs Bogdaņecs&#x27;s decisions stay out of every send.</p><span class="go">Open &rarr;</span></a><a class="card intile" href="https://intake.novikontas.org/#/tc/go/back" target="_blank" rel="noopener"><span class="pill">Intake</span><h3>What came back</h3><p>The Save the Date: sent 1,723, reached 1,548, opened by a person 433, added to calendar 110.</p><span class="go">Open &rarr;</span></a><a class="card intile" href="https://intake.novikontas.org/#/tc/go/lists" target="_blank" rel="noopener"><span class="pill">Intake</span><h3>Six owners, six lists</h3><p>Mārcis 318, DS 482, MC 308, AB 245, Alma 7, JS 204.</p><span class="go">Open &rarr;</span></a><a class="card intile" href="https://intake.novikontas.org/#/tc/companies/go2" target="_blank" rel="noopener"><span class="pill">Intake</span><h3>Real company count</h3><p><b class="innum">{{MOTHER_COMPANIES}}</b> mother companies on the Stage 2 lists, one puzzle piece each.</p><span class="go">Open &rarr;</span></a>
+ <div class="grid3"><a class="card intile" href="https://intake.novikontas.org/#/tc/clients" target="_blank" rel="noopener"><span class="pill">Intake</span><h3>Clients in Intake</h3><p>Every client company with its owner, contacts and history.</p><span class="go">Open &rarr;</span></a><a class="card intile" href="https://intake.novikontas.org/#/tc/families" target="_blank" rel="noopener"><span class="pill">Intake</span><h3>Company families</h3><p>Branches under one owner, each family with its source.</p><span class="go">Open &rarr;</span></a><a class="card intile" href="https://intake.novikontas.org/#/tc/go/hold" target="_blank" rel="noopener"><span class="pill">Intake</span><h3>Do not invite / hold</h3><p>Aleksejs Bogdaņecs&#x27;s decisions stay out of every send.</p><span class="go">Open &rarr;</span></a><a class="card intile" href="https://intake.novikontas.org/#/tc/go/back" target="_blank" rel="noopener"><span class="pill">Intake</span><h3>What came back</h3><p>The Save the Date: sent 1,723, reached 1,548, opened by a person 433, added to calendar 110.</p><span class="go">Open &rarr;</span></a><a class="card intile" href="https://intake.novikontas.org/#/tc/go/lists" target="_blank" rel="noopener"><span class="pill">Intake</span><h3>Six owners, six lists</h3><p>Mārcis 318, DS 482, MC 308, AB 245, Alma 7, JS 204.</p><span class="go">Open &rarr;</span></a><a class="card intile" href="https://intake.novikontas.org/#/tc/companies/go2" target="_blank" rel="noopener"><span class="pill">Intake</span><h3>Real company count</h3><p><b class="innum">{{MOTHER_COMPANIES}}</b> mother companies on the Stage 2 lists.</p><span class="go">Open &rarr;</span></a>
  </div>
  <h3 class="inh">The Stage 2 letters, exactly as they go out</h3>
  <div class="grid3"><a class="card inletter" href="letters/2_will_you_be_there.html" target="_blank" rel="noopener"><div class="lt"><iframe src="letters/2_will_you_be_there.html" tabindex="-1" loading="lazy" scrolling="no" title="Will you be there?"></iframe></div><h3>Will you be there?</h3><p>To those the Save the Date reached.</p></a><a class="card inletter" href="letters/3_you_are_invited.html" target="_blank" rel="noopener"><div class="lt"><iframe src="letters/3_you_are_invited.html" tabindex="-1" loading="lazy" scrolling="no" title="You are invited"></iframe></div><h3>You are invited</h3><p>To those it did not reach.</p></a><a class="card inletter" href="letters/4_new_contact.html" target="_blank" rel="noopener"><div class="lt"><iframe src="letters/4_new_contact.html" tabindex="-1" loading="lazy" scrolling="no" title="New contacts"></iframe></div><h3>New contacts</h3><p>To people added after the Save the Date.</p></a>
@@ -400,7 +399,7 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
   <li><div><b>Registrations on the landing page</b><span>counted by channel</span></div></li>
   <li><div><b>The count</b><span>people per mother company, branches grouped</span></div></li>
   <li><div><b>Stage 3: tickets</b><span>one per person, by email, Google Wallet</span></div></li>
-  <li><div><b>Pieces cut</b><span>one per mother company, own place, plus spares</span></div></li>
+  <li><div><b>Pieces cut</b><span>one per guest, own place, plus spares</span></div></li>
   <li class="end"><div><b>Thursday 27 May 2027, 10:00</b><span>ticket scanned at the door, piece handed over, piece on the board</span></div></li>
  </ol>
 </section>
@@ -450,7 +449,7 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
   t('s1-s',D&&D.sent); t('s1-r',D&&D.reached); t('s1-o',D&&D.person); t('s1-c',D&&D.calendar);
   document.getElementById('so').innerHTML=(R.lists||[]).map(function(l){ return '<div class="so-row"><div class="so-box"><b>'+esc(l.name)+'</b><small>'+esc(l.email)+'</small></div><div class="so-arrow">&rarr;</div><div class="so-n">'+Number(l.people).toLocaleString('en-US')+'<span>people on their list</span></div></div>'; }).join('');
  })();
- if(R.piece){ document.getElementById('pc-name').textContent=R.piece.name; document.getElementById('pc-sub').innerHTML=R.piece.branches+(R.piece.branches===1?' company':' companies')+' · '+Number(R.piece.people).toLocaleString('en-US')+' people<br>one piece, to the first guest at the door'; }
+ if(R.piece){ document.getElementById('pc-name').textContent=R.piece.name; document.getElementById('pc-sub').innerHTML=R.piece.branches+(R.piece.branches===1?' company':' companies')+' · '+Number(R.piece.people).toLocaleString('en-US')+' people<br>a puzzle piece for every guest, at the door'; }
 
  /* boards */
  var W=45,H=25;
@@ -469,18 +468,17 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
  var G={anna:{n:'Anna Bērziņa',c:PC,t:'T1'},janis:{n:'Jānis Ozols',c:PC,t:'T2'},anna2:{n:'Anna Bērziņa',c:PC,t:'T1'},liga:{n:'Līga Kalniņa',c:OT,t:'T3'}};
  document.getElementById('g-anna').textContent=PC+(BR[0]?' · '+BR[0]:''); document.getElementById('g-janis').textContent=PC+(BR[1]?' · '+BR[1]:'');
  document.getElementById('g-liga').textContent=OT; document.getElementById('tk-co').textContent=PC; document.getElementById('tk-co2').textContent=PC;
- document.getElementById('b-me').textContent=PC+(/s$/i.test(PC)?"'":"'s")+' piece';
+ document.getElementById('b-me').textContent="Anna Bērziņa's piece"+(PC?' · '+PC:'');
  var mins=4;
  function now(){ mins++; return '10:'+(mins<10?'0':'')+mins; }
  function show7(cls,big,mid,act){ res.className='res '+cls; res.innerHTML='<div class="big">'+big+'</div><div class="mid">'+mid+'</div>'+(act?'<span class="act">'+act+'</span>':''); }
  document.querySelectorAll('.guests button').forEach(function(b){ b.onclick=function(){
   var g=G[b.dataset.g], t=now(); document.getElementById('clock').textContent=t;
   if(!g){ show7('stop','Not on the guest list','This code is not a Grand Opening ticket.','Send to the help desk'); return; }
-  if(st.in[g.t]){ show7('warn','Already checked in','Ticket of '+esc(g.n)+', checked in at '+st.in[g.t].t+'.','Ask for ID, call the help desk'); return; }
+  if(st.in[g.t]){ show7('warn','Already checked in','Ticket of '+esc(g.n)+', checked in at '+st.in[g.t].t+' - piece given.','Ask for ID, call the help desk'); return; }
   st.in[g.t]={t:t,n:g.n};
-  if(!st.pc[g.c]){ st.pc[g.c]={n:g.n,t:t}; show7('ok','Welcome, '+esc(g.n.split(' ')[0])+'.',esc(g.c)+': first guest of the company.','Hand over the piece of '+esc(g.c)); }
-  else { show7('info','Welcome, '+esc(g.n.split(' ')[0])+'.',esc(g.c)+': piece already with '+esc(st.pc[g.c].n)+' ('+st.pc[g.c].t+').','No piece to hand over'); }
-  document.getElementById('c-in').textContent=Object.keys(st.in).length; document.getElementById('c-pc').textContent=Object.keys(st.pc).length;
+  show7('ok','Welcome, '+esc(g.n.split(' ')[0])+'.',esc(g.c),'Hand over a piece');
+  document.getElementById('c-in').textContent=Object.keys(st.in).length; document.getElementById('c-pc').textContent=Object.keys(st.in).length;
  }; });
 
  var h=parseInt((location.hash||'#1').slice(1),10); show(isNaN(h)?0:h-1);

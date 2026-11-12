@@ -203,7 +203,9 @@ test('11.11 ch3 "What we measure" = the Save the Date as it came back (the figur
   const ch = (t) => { const a = html.indexOf('data-t="' + t + '"'); return html.slice(a, html.indexOf('</section>', a)); };
   assert.ok(!ch('What we measure').includes('class="example"') && !/>(236|448|755|352|205|174)</.test(ch('What we measure')));
   // his words 11.11 (via the GO session): only the people who will attend, physical / digital, and the mother companies
-  for (const l of ['Postcard (physical)', 'Personal email link (digital)', 'Mother companies']) assert.ok(ch('What we measure').includes('>' + l + '<'), l);
+  for (const l of ['Postcard (physical)', 'Personal email link (digital)']) assert.ok(ch('What we measure').includes('>' + l + '<'), l);
+  // 12.11.2026, his words "everyone at the end get the puzzle piece only at the door": pieces = the people who attend, not mother companies
+  assert.ok(!ch('What we measure').includes('Mother companies') && !ch('What we measure').includes('puzzle pieces'));
   for (const l of ['Save the Date sent', 'Typed address', 'opens', 'visits', 'Measured so far']) assert.ok(!ch('What we measure').includes(l), l);
   assert.ok(!html.includes('own QR'));
   // his words 11.11: "Put the real puzzle piece as we have concepted": Amento's piece (its QR opens ?gift) wherever a piece is drawn
@@ -335,4 +337,16 @@ test('12.11 patch 130, his words "Update the Grand Opening demo chapter 2 with t
   assert.equal((two.match(/<b>Jānis Sticenko<\/b><br>Novikontas Academy/g) || []).length, 2);
   assert.ok(ch(page({ email: 'ritvars.vilcins@novikontas.org' })).includes('<b>Mārcis Žabovs</b>'));
   assert.ok(!page(null).includes('{{SIGNER}}'));
+});
+
+test('12.11 patch 131, his words "everyone at the end get the puzzle piece only at the door" and "yes, staff scan tickets at the door": every guest gets a piece at the door; no chapter says one piece per mother company', async () => {
+  const godemo = await import('../src/godemo.js');
+  const html = godemo.read(godemo.fileFor(godemo.PREFIX)).toString('utf8');
+  const ch = (t) => { const a = html.indexOf('data-t="' + t + '"'); return html.slice(a, html.indexOf('</section>', a)); };
+  for (const no of ['one piece per mother company', 'one place per mother company', 'one per mother company', '= puzzle pieces to cut', 'first guest', 'one puzzle piece each', 'piece already with', "leads to their company's piece", 'No piece to hand over']) assert.ok(!html.includes(no), no);
+  assert.ok(ch('The count').includes('Mother companies') && ch('The count').includes('{{MOTHER_COMPANIES}}'), 'the count keeps the mother companies as the Stage 2 picture');
+  assert.ok(ch('At the entrance').includes('hand over a piece') && html.includes("show7('ok','Welcome, '+esc(g.n.split(' ')[0])+'.',esc(g.c),'Hand over a piece');"));
+  assert.ok(html.includes("checked in at '+st.in[g.t].t+' - piece given.'"));
+  assert.ok(ch('The board').includes('one place per guest, plus spares') && ch('The board').includes('every guest puts in their piece'));
+  assert.ok(html.includes('<b>Pieces cut</b><span>one per guest, own place, plus spares</span>'));
 });
