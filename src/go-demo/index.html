@@ -151,8 +151,6 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
 /* 6 ticket */
 .tk-row{display:grid;grid-template-columns:1fr auto;gap:30px;align-items:start}
 @media (max-width:900px){.tk-row{grid-template-columns:1fr}}
-.wallet{width:290px;border:9px solid var(--ink);border-radius:32px;background:#f1f3f6;min-height:470px;overflow:hidden;padding:18px 14px;position:relative}
-.wallet .wt{font-weight:800;font-size:20px;margin:6px 4px 14px}
 .pass{background:var(--navy);color:#fff;border-radius:16px;padding:16px;box-shadow:0 8px 20px rgba(10,36,99,.18)}
 .pass .ph{display:flex;align-items:center;gap:10px}
 .pass .ph .mk{width:38px;height:32px;background:#fff;border-radius:6px;display:grid;place-items:center}
@@ -166,9 +164,6 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
 .pass .qr{background:#fff;border-radius:10px;padding:10px;display:grid;place-items:center}
 .pass .qr img{width:120px;height:120px}
 .pass .id{text-align:center;color:#cfe3f4;font-size:12px;margin-top:6px;font-weight:600}
-.wallet .empty{border:2px dashed #c8d1de;border-radius:16px;height:150px;display:grid;place-items:center;color:var(--muted);font-weight:700;text-align:center;padding:10px}
-.wallet .pass{transform:translateY(0);transition:transform .5s cubic-bezier(.2,.7,.2,1),opacity .5s}
-.wallet .pass.out{transform:translateY(40px);opacity:0}
 /* 7 entrance */
 .door{display:grid;grid-template-columns:1.1fr 1fr;gap:22px}
 @media (max-width:900px){.door{grid-template-columns:1fr}}
@@ -207,6 +202,7 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
 .intile:hover,.inletter:hover{border-color:var(--navy)} .inh{margin:26px 0 12px;font-size:20px}
 .inletter{display:block;text-decoration:none;color:var(--ink);padding:14px} .inletter .lt{position:relative;overflow:hidden;aspect-ratio:600/1180;border-radius:10px;background:var(--bg);margin-bottom:10px}
 .inletter.ch1l{padding:0;border:0} .inletter .lt.top{aspect-ratio:600/700}
+.inletter.tkl{max-width:640px} .inletter .lt.tk{aspect-ratio:600/1480} .inletter .lt.tk iframe{height:1480px}
 .inletter .lt iframe{position:absolute;top:0;left:0;width:600px;height:1180px;border:0;transform-origin:0 0;pointer-events:none}
 </style>
 </head>
@@ -331,25 +327,9 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
 <section class="ch" data-t="The ticket" data-s="Stage 3">
  <h2>Stage 3: a ticket for every person</h2>
  <p class="lead">Each registered guest gets their own ticket by email; its QR is theirs alone and gets them a puzzle piece at the door.</p>
- <div class="tk-row">
-  <div class="card tkt">
-   <div class="tk-date"><b>Thursday 27 May 2027</b><span>Doors open 10:00</span><span>Novikontas Academy Campus, Duntes iela 17d, Riga</span></div>
-   <div class="tk-card"><img src="assets/qr_ticket.svg" alt="Ticket QR"><div><span class="k">Your ticket</span><b>Anna Bērziņa</b><span id="tk-co2"></span><small>Show it at the entrance.</small></div></div>
-   <div class="tk-acts"><button class="btn" id="add-g">Add to Google Wallet</button></div>
-  </div>
-  <div class="wallet" aria-label="Phone wallet">
-   <div class="wt">Wallet</div>
-   <div class="empty" id="w-empty">The ticket appears here</div>
-   <div class="pass out" id="w-pass" hidden>
-    <div class="ph"><span class="mk"><img src="assets/logo.svg" alt=""></span><b>Novikontas Academy<br>Grand Opening</b></div>
-    <div class="nm">Anna Bērziņa</div>
-    <div class="co" id="tk-co"></div>
-    <div class="dt"><div><span>Date</span><b>Thu 27 May 2027</b></div><div><span>Doors</span><b>10:00</b></div><div style="grid-column:1/-1"><span>Place</span><b>Duntes iela 17d, Riga</b></div></div>
-    <div class="qr"><img src="assets/qr_ticket.svg" alt="Ticket QR"></div>
-    <div class="id">Ticket GO2027-T-7Q4K-M2XD</div>
-   </div>
-  </div>
- </div>
+ <!-- 12.11.2026, his words "demo has to be like the real thing" + "QR + calendar now": the real ticket email, drawn from
+      src/tctickets.js on each open and signed by the viewer's own list owner; Add to calendar -->
+ <a class="card inletter tkl" href="letters/5_ticket.html" target="_blank" rel="noopener"><div class="lt tk"><iframe src="letters/5_ticket.html" tabindex="-1" loading="lazy" scrolling="no" title="The ticket email"></iframe></div></a>
 </section>
 
 <section class="ch" data-t="At the entrance" data-s="27.05.2027">
@@ -398,7 +378,7 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
   <li><div><b>Digital invitations from each owner's own mailbox</b><span>personal link for each person</span></div></li>
   <li><div><b>Registrations on the landing page</b><span>counted by channel</span></div></li>
   <li><div><b>The count</b><span>people per mother company, branches grouped</span></div></li>
-  <li><div><b>Stage 3: tickets</b><span>one per person, by email, Google Wallet</span></div></li>
+  <li><div><b>Stage 3: tickets</b><span>one per person, by email, Add to calendar</span></div></li>
   <li><div><b>Pieces cut</b><span>one per guest, own place, plus spares</span></div></li>
   <li class="end"><div><b>Thursday 27 May 2027, 10:00</b><span>ticket scanned at the door, piece handed over, piece on the board</span></div></li>
  </ol>
@@ -459,15 +439,13 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
  b9.forEach(function(c){ if(rnd()<0.155) c.classList.add('mine'); });
  var me=b9[12*W+20]; me.classList.remove('mine'); me.classList.add('hl');
 
- /* 6 wallet */
- document.getElementById('add-g').onclick=function(){ var p=document.getElementById('w-pass'); document.getElementById('w-empty').hidden=true; p.hidden=false; requestAnimationFrame(function(){ requestAnimationFrame(function(){ p.classList.remove('out'); }); }); this.textContent='Added to Google Wallet'; this.disabled=true; };
 
  /* 7 entrance */
  var st={in:{},pc:{}}, res=document.getElementById('res');
  var PC=(R.piece&&R.piece.name)||'', BR=(R.piece&&R.piece.branchNames)||[], OT=R.other||'';
  var G={anna:{n:'Anna Bērziņa',c:PC,t:'T1'},janis:{n:'Jānis Ozols',c:PC,t:'T2'},anna2:{n:'Anna Bērziņa',c:PC,t:'T1'},liga:{n:'Līga Kalniņa',c:OT,t:'T3'}};
  document.getElementById('g-anna').textContent=PC+(BR[0]?' · '+BR[0]:''); document.getElementById('g-janis').textContent=PC+(BR[1]?' · '+BR[1]:'');
- document.getElementById('g-liga').textContent=OT; document.getElementById('tk-co').textContent=PC; document.getElementById('tk-co2').textContent=PC;
+ document.getElementById('g-liga').textContent=OT;
  document.getElementById('b-me').textContent="Anna Bērziņa's piece"+(PC?' · '+PC:'');
  var mins=4;
  function now(){ mins++; return '10:'+(mins<10?'0':'')+mins; }

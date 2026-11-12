@@ -185,3 +185,14 @@ test('over the wire: ticket cards, preview and Send for admins only; the door fo
   assert.notEqual((await post('/api/tc/go/door', null, { t: 'x' })).status, 200);
   assert.notEqual((await post('/api/tc/go/tickets/send', null, { sender: 'JS' })).status, 200);
 });
+
+test('12.11 the demo is like the real thing: the ticket chapter is the real ticket email (Add to calendar, signed by the own list owner of the viewer), no Wallet anywhere in the demo', async () => {
+  const godemo = await import('../src/godemo.js');
+  const html = godemo.read(godemo.fileFor(godemo.PREFIX)).toString('utf8');
+  const a = html.indexOf('data-t="The ticket"'), ch = html.slice(a, html.indexOf('</section>', a));
+  assert.ok(ch.includes('<iframe src="letters/5_ticket.html"'));
+  assert.ok(!/wallet/i.test(html), 'no Wallet in the demo');
+  assert.ok(html.includes('<b>Stage 3: tickets</b><span>one per person, by email, Add to calendar</span>'));
+  const t = godemo.read(godemo.fileFor(godemo.PREFIX + 'letters/5_ticket.html', { email: 'js@novikontas.org' })).toString('utf8');
+  assert.ok(t.includes('See you soon') && t.includes('>Add to calendar</a>') && t.includes('Jānis Sticenko<br>Novikontas Academy') && !/wallet/i.test(t));
+});

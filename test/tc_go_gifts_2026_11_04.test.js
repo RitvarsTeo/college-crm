@@ -295,7 +295,8 @@ test('11.11 his consolidated list ("we are golden"): Stage 1 first, the send-out
   assert.ok(html.includes("b9.forEach(function(c){ if(rnd()<0.155) c.classList.add('mine'); });"));
   const ch = (t) => { const a = html.indexOf('data-t="' + t + '"'); return html.slice(a, html.indexOf('</section>', a)); };
   assert.ok(ch('The Save the Date').includes('src="/assets/go-stage1-email.jpg"'));
-  assert.ok(ch('The ticket').includes('Thursday 27 May 2027') && ch('The ticket').includes('Your ticket') && ch('The ticket').includes('Add to Google Wallet'));
+  // 12.11.2026: the ticket chapter is the real ticket email (Thursday 27 May 2027, Your ticket, Add to calendar), test/tc_go_tickets
+  assert.ok(ch('The ticket').includes('<iframe src="letters/5_ticket.html"'));
   assert.ok(ch('At the entrance').includes('pc-hand'));
   assert.ok(html.includes('data-go="3"'));   // "See the page" goes to the landing page
   const ol = ch('The order');

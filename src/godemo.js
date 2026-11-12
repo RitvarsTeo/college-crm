@@ -9,6 +9,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { TC } from './tc.js';
 import { s2Mail } from './tcs2mail.js';
+import { previewHtml as ticketPreview } from './tctickets.js';
 
 const DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), 'go-demo');
 const TYPES = { '.html': 'text/html; charset=utf-8', '.png': 'image/png', '.svg': 'image/svg+xml', '.jpg': 'image/jpeg',
@@ -60,6 +61,8 @@ export function fileFor(pathname, me = null) {
   let rel;
   if (String(pathname) + '/' === PREFIX) return { body: page(me), type: TYPES['.html'] };
   try { rel = decodeURIComponent(String(pathname).slice(PREFIX.length)); } catch (e) { return null; }
+  // the Stage 3 ticket email, as src/tctickets.js sends it, from the viewer's own list owner (12.11.2026)
+  if (rel === 'letters/5_ticket.html') return { body: ticketPreview({ name: signerOf(me) }), type: TYPES['.html'] };
   if (LETTERS[rel]) { demoViewer = String((me && me.email) || '').toLowerCase(); return { body: letter(LETTERS[rel], String((me && me.name) || '').split(/\s+/)[0] || ''), type: TYPES['.html'] }; }
   if (rel === 'letters/building.jpg') return { file: BUILDING, type: TYPES['.jpg'] };
   if (!rel || rel === 'index.html') return { body: page(me), type: TYPES['.html'] };
