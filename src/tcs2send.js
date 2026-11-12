@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { TC } from './tc.js';
 import { s2Mail } from './tcs2mail.js';
 import { senderToken, GMAIL_API } from '../lib/notify.js';
+import { digitalIds } from './tcmylist.js';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const BUILDING = () => fs.readFileSync(path.join(ROOT, 'src', 'assets', 'go-building.jpg'));
@@ -48,10 +49,16 @@ export const todaySent = async (db) => Number((await db.prepare(`SELECT COUNT(*)
 
 /** The cards and the log: per sender, the list, sent, refused, left, and whether the address is confirmed. */
 export async function overview(db, { env = process.env, fetchImpl = fetch } = {}) {
-  const rows = await db.prepare(`SELECT s.sender, COUNT(*) AS n, SUM(CASE WHEN x.result = 'sent' THEN 1 ELSE 0 END) AS sent,
-    SUM(CASE WHEN x.result = 'refused' THEN 1 ELSE 0 END) AS refused, SUM(CASE WHEN s.link_code IS NULL THEN 1 ELSE 0 END) AS nocode
-    FROM tc_go_stage2 s LEFT JOIN tc_go_s2_sent x ON x.stage2_id = s.id WHERE s.gone = 0 GROUP BY s.sender`).all();
-  const by = new Map(rows.map((r) => [r.sender, r]));
+  // THE FULL FLOW (12.11.2026, the owner's "I need the full flow"): an owner's Stage 2 send goes only to the people they saved as
+  // Invite with the way Digital on My Grand Opening list (src/tcmylist.js digitalIds); the counts are those people
+  const all = await db.prepare(`SELECT s.id, s.sender, s.link_code, x.result FROM tc_go_stage2 s LEFT JOIN tc_go_s2_sent x ON x.stage2_id = s.id WHERE s.gone = 0`).all();
+  const by = new Map();
+  for (const sd of S2) {
+    const ids = await digitalIds(db, sd.code);
+    const mine = all.filter((r) => r.sender === sd.code && ids.has(Number(r.id)));
+    by.set(sd.code, { n: mine.length, sent: mine.filter((r) => r.result === 'sent').length, refused: mine.filter((r) => r.result === 'refused').length,
+      nocode: mine.filter((r) => !r.link_code && !r.result).length });
+  }
   let ok = null, why = '';
   try { const tok = await senderToken(db, { env, fetchImpl }); if (tok.token) { ok = await aliases(env, fetchImpl, tok); if (!ok) why = 'connect'; } else why = 'connect'; } catch (e) { why = 'connect'; }
   const log = (await db.prepare('SELECT * FROM tc_go_s2_log ORDER BY started_at DESC, id DESC LIMIT 200').all())
@@ -107,8 +114,11 @@ export async function sendNext(db, code, batch, me, { env = process.env, fetchIm
   const done = Number((await db.prepare('SELECT sent + refused AS n FROM tc_go_s2_log WHERE batch = ?').get(batch)).n) || 0;
   const want = Math.min(PER_CALL, BATCH - done);
   if (want <= 0) return { ok: true, sent: 0, refused: 0, done: true };
-  const people = await db.prepare(`SELECT s.id, s.email, s.first_name, s.link_code, s.mail_kind FROM tc_go_stage2 s LEFT JOIN tc_go_s2_sent x ON x.stage2_id = s.id
-    WHERE s.gone = 0 AND s.sender = ? AND x.id IS NULL AND s.link_code IS NOT NULL AND s.email IS NOT NULL ORDER BY s.id LIMIT ?`).all(code, want);
+  // only the people saved as Invite + Digital on the owner's list (12.11.2026, the full flow)
+  const ids = await digitalIds(db, code);
+  const people = (await db.prepare(`SELECT s.id, s.email, s.first_name, s.link_code, s.mail_kind FROM tc_go_stage2 s LEFT JOIN tc_go_s2_sent x ON x.stage2_id = s.id
+    WHERE s.gone = 0 AND s.sender = ? AND x.id IS NULL AND s.link_code IS NOT NULL AND s.email IS NOT NULL ORDER BY s.id`).all(code))
+    .filter((p) => ids.has(Number(p.id))).slice(0, want);
   let sent = 0, refused = 0;
   for (const p of people) {
     // the mark first, so a crash between the two can never send the same person twice
@@ -123,7 +133,7 @@ export async function sendNext(db, code, batch, me, { env = process.env, fetchIm
     if (ok) sent++; else { refused++; await db.prepare(`UPDATE tc_go_s2_sent SET result = 'refused', detail = ? WHERE stage2_id = ?`).run(detail, p.id); }
   }
   await db.prepare('UPDATE tc_go_s2_log SET sent = sent + ?, refused = refused + ? WHERE batch = ?').run(sent, refused, batch);
-  const left = Number((await db.prepare(`SELECT COUNT(*) AS n FROM tc_go_stage2 s LEFT JOIN tc_go_s2_sent x ON x.stage2_id = s.id
-    WHERE s.gone = 0 AND s.sender = ? AND x.id IS NULL AND s.link_code IS NOT NULL`).get(code)).n) || 0;
+  const left = (await db.prepare(`SELECT s.id FROM tc_go_stage2 s LEFT JOIN tc_go_s2_sent x ON x.stage2_id = s.id
+    WHERE s.gone = 0 AND s.sender = ? AND x.id IS NULL AND s.link_code IS NOT NULL`).all(code)).filter((p) => ids.has(Number(p.id))).length;
   return { ok: true, sent, refused, left, done: !people.length || done + people.length >= BATCH || !left };
 }

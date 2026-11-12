@@ -3811,16 +3811,30 @@ export const handle = async (req, res) => {
       try { return json(res, 200, await tcmylist.myList(db, code)); }
       catch (e) { if (e instanceof tc.TcInputError) return json(res, 400, { error: e.message }); throw e; }
     }
-    if (/^\/api\/tc\/go\/mylist\/(decide|way|out)$/.test(p) && req.method === 'POST') {
+    if (/^\/api\/tc\/go\/mylist\/(save|draft|discard)$/.test(p) && req.method === 'POST') {
       const me = await currentUser(req), admin = Boolean(await adminOf(req));
       const b = await body(req), code = String(b.sender || '');
       if (!tcmylist.mayOpen(me, admin, code)) return json(res, 403, { error: 'This list is not yours.' });
       const actor = await actorOf(req, b), what = p.split('/').pop();
       try {
-        if (what === 'decide') return json(res, 200, await tcmylist.decide(db, code, String(b.key || ''), String(b.decision || ''), actor));
-        if (what === 'way') return json(res, 200, await tcmylist.setWay(db, code, String(b.key || ''), String(b.way || ''), actor));
-        return json(res, 200, await tcmylist.toggleOut(db, code, b.id, actor));
+        if (what === 'save') return json(res, 200, await tcmylist.saveState(db, code, b.state, actor));
+        if (what === 'draft') return json(res, 200, await tcmylist.saveDraft(db, code, b.state, actor));
+        return json(res, 200, await tcmylist.dropDraft(db, code));
       } catch (e) { if (e instanceof tc.TcInputError) return json(res, 400, { error: e.message }); throw e; }
+    }
+    // THE POSTCARD LIST (12.11.2026): the invited people whose company goes in person or by post; an owner their own, an admin all
+    if ((p === '/api/tc/go/postcards' || p === '/api/tc/go/postcards.xlsx') && req.method === 'GET') {
+      const me = await currentUser(req), admin = Boolean(await adminOf(req));
+      const codes = tcmylist.openable(me, admin);
+      if (!codes.length) return json(res, 403, { error: 'There is no list for this account.' });
+      const rows = await tcmylist.postcardRows(db, codes);
+      if (p === '/api/tc/go/postcards') return json(res, 200, { rows });
+      const WAY = { in_person: 'In person', post: 'By post' };
+      const name = `Postcard list ${localDate()}.xlsx`;
+      const file = rowsToXlsx([['Person', 'Position', 'Company', 'Country', 'How', 'Address', 'List owner'],
+        ...rows.map((r) => [r.person, r.position, r.company, r.country, WAY[r.way] || '', r.address, r.owner])], { bold: [0], sheetName: 'Postcard list', title: name });
+      res.writeHead(200, { 'content-type': XLSX_TYPE, 'cache-control': 'no-store', 'content-disposition': `attachment; filename="${name}"` });
+      return res.end(file);
     }
     if (p === '/api/tc/go/stage2' && req.method === 'GET') {
       const code = String(url.searchParams.get('sender') || '');

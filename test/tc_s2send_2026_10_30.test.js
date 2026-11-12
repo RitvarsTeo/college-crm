@@ -6,6 +6,7 @@ const { openDb } = await import('../src/db.js');
 const notify = await import('../lib/notify.js');
 const s2 = await import('../src/tcs2send.js');
 const { s2Mail } = await import('../src/tcs2mail.js');
+const ml = await import('../src/tcmylist.js');
 const ENV = { CRM_SESSION_SECRET: 'x'.repeat(40), GOOGLE_CLIENT_ID: 'id', GOOGLE_CLIENT_SECRET: 'secret' };
 const ME = { email: 'ritvars.vilcins@novikontas.org', name: 'Ritvars' };
 
@@ -20,7 +21,7 @@ function fakeGmail({ scope = 'https://www.googleapis.com/auth/gmail.send https:/
   };
   return { fetchImpl, sent };
 }
-async function seeded() {
+async function seeded(digital = true) {
   const db = await openDb();
   await notify.saveToken(db, '1//refresh', ENV);
   for (let i = 1; i <= 15; i++) {
@@ -28,6 +29,9 @@ async function seeded() {
       .run('C' + i, 'Marcis', 'Person ' + i, `p${i}@example.com`, 'Person', 'code' + String(i).padStart(2, '0'), i % 2 ? 'confirm' : 'invite', '2026-10-30T08:00:00Z');
   }
   await db.prepare(`INSERT INTO tc_go_stage2 (ch_contact_id, sender, name, email, loaded_at) VALUES (?,?,?,?,?)`).run('C99', 'JS', 'No Code', 'nc@example.com', '2026-10-30T08:00:00Z');
+  // the full flow (12.11.2026): the send goes only to the people the owner saved as Invite + Digital on My Grand Opening list
+  if (digital) await ml.saveState(db, 'Marcis', { picks: { 'n:': { decision: 'invite', way: 'digital' } }, out: [], moves: {} }, 'Mārcis Žabovs');
+  if (digital) await ml.saveState(db, 'JS', { picks: { 'n:': { decision: 'invite', way: 'digital' } }, out: [], moves: {} }, 'Jānis Sticenko');
   return db;
 }
 
@@ -90,4 +94,21 @@ test('10.11 his pick L1: the landing page card on top (photo, band, Grand Openin
   }
   assert.match(c.html, /Dear Anna,<br><br>You saved the date for our Grand Opening, and I would be glad to welcome you there myself\.<br><br>Will you join us\? It takes one minute to confirm\./);
   assert.match(i.html, /Dear Anna,<br><br>Our first invitation may not have reached you, so here it is again\. It would mean a lot to me to welcome you there\.<br><br>Will you join us\?/);
+});
+
+test('12.11 the full flow: without a saved Invite + Digital from the owner nobody is sent the Stage 2 email; a person tapped out is not sent', async () => {
+  const none = await seeded(false);
+  const G = fakeGmail();
+  const r = await s2.sendNext(none, 'Marcis', 'b-test-0101', ME, { env: ENV, fetchImpl: G.fetchImpl });
+  assert.equal(r.sent, 0); assert.equal(G.sent.length, 0);
+  assert.equal((await s2.overview(none, { env: ENV, fetchImpl: G.fetchImpl })).senders.find((x) => x.code === 'Marcis').n, 0);
+  const db = await seeded(false);
+  const one = Number((await db.prepare("SELECT id FROM tc_go_stage2 WHERE ch_contact_id = 'C1'").get()).id);
+  await ml.saveState(db, 'Marcis', { picks: { 'n:': { decision: 'invite', way: 'digital' } }, out: [one], moves: {} }, 'M');
+  const G2 = fakeGmail();
+  await s2.sendNext(db, 'Marcis', 'b-test-0102', ME, { env: ENV, fetchImpl: G2.fetchImpl });
+  await s2.sendNext(db, 'Marcis', 'b-test-0102', ME, { env: ENV, fetchImpl: G2.fetchImpl });
+  assert.equal(G2.sent.length, 14); assert.ok(!G2.sent.some((m) => /To: p1@example\.com/.test(m)));
+  await ml.saveState(db, 'Marcis', { picks: { 'n:': { decision: 'invite', way: 'post' } }, out: [], moves: {} }, 'M');   // postcards, not email
+  assert.equal((await s2.overview(db, { env: ENV, fetchImpl: G2.fetchImpl })).senders.find((x) => x.code === 'Marcis').n, 0);
 });

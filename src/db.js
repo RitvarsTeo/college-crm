@@ -947,6 +947,25 @@ CREATE TABLE IF NOT EXISTS tc_go_decision_log (
   by_name TEXT
 );
 CREATE INDEX IF NOT EXISTS tc_go_decision_log_person ON tc_go_decision_log (stage2_id, id);
+-- the owner's unsaved work, kept by autosave (12.11.2026, his words "it should have autosave also time to time"): one draft per
+-- list; it is never a decision - nothing reaches a send or the postcard list until Save
+CREATE TABLE IF NOT EXISTS tc_go_drafts (
+  sender TEXT PRIMARY KEY,
+  state TEXT NOT NULL,             -- JSON: { picks, out, moves }
+  saved_at TEXT NOT NULL,
+  saved_by TEXT
+);
+-- a person dragged to another company on the list (12.11.2026, his words "let the people be drag and dropped from company to
+-- company"); on Save the person's Intake contact moves; every move kept
+CREATE TABLE IF NOT EXISTS tc_go_moves (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  stage2_id BIGINT NOT NULL,
+  sender TEXT NOT NULL,
+  from_key TEXT,
+  to_key TEXT NOT NULL,
+  at TEXT NOT NULL,
+  by_name TEXT
+);
 CREATE TABLE IF NOT EXISTS tc_google_links (
   user_email TEXT PRIMARY KEY,
   token TEXT NOT NULL,
