@@ -71,6 +71,7 @@ import * as tcseason from './tcseason.js';
 import * as tcclienthub from './tcclienthub.js';
 import * as tcreview from './tcreview.js';
 import * as tcgo from './tcgo.js';
+import * as tcmylist from './tcmylist.js';
 import * as tcrsvp from './tcrsvp.js';
 import * as tcmr from './tcmr.js';
 import * as tcfam from './tcfam.js';
@@ -3800,6 +3801,26 @@ export const handle = async (req, res) => {
     if (p === '/api/tc/go/gift' && req.method === 'POST') {
       try { const b = await body(req); return json(res, 200, await tcgo.setGift(db, String(b.key || ''), String(b.kind || ''), await actorOf(req, b))); }
       catch (e) { if (e instanceof tc.TcInputError) return json(res, 400, { error: e.message }); throw e; }
+    }
+    // MY GRAND OPENING LIST (12.11.2026, src/tcmylist.js): the owner their own list only, an admin every list; nothing is sent
+    if (p === '/api/tc/go/mylist' && req.method === 'GET') {
+      const me = await currentUser(req), admin = Boolean(await adminOf(req));
+      const code = String(url.searchParams.get('sender') || '');
+      if (!code) return json(res, 200, { lists: tcmylist.openable(me, admin), mine: tcmylist.ownCode(me) });
+      if (!tcmylist.mayOpen(me, admin, code)) return json(res, 403, { error: 'This list is not yours.' });
+      try { return json(res, 200, await tcmylist.myList(db, code)); }
+      catch (e) { if (e instanceof tc.TcInputError) return json(res, 400, { error: e.message }); throw e; }
+    }
+    if (/^\/api\/tc\/go\/mylist\/(decide|way|out)$/.test(p) && req.method === 'POST') {
+      const me = await currentUser(req), admin = Boolean(await adminOf(req));
+      const b = await body(req), code = String(b.sender || '');
+      if (!tcmylist.mayOpen(me, admin, code)) return json(res, 403, { error: 'This list is not yours.' });
+      const actor = await actorOf(req, b), what = p.split('/').pop();
+      try {
+        if (what === 'decide') return json(res, 200, await tcmylist.decide(db, code, String(b.key || ''), String(b.decision || ''), actor));
+        if (what === 'way') return json(res, 200, await tcmylist.setWay(db, code, String(b.key || ''), String(b.way || ''), actor));
+        return json(res, 200, await tcmylist.toggleOut(db, code, b.id, actor));
+      } catch (e) { if (e instanceof tc.TcInputError) return json(res, 400, { error: e.message }); throw e; }
     }
     if (p === '/api/tc/go/stage2' && req.method === 'GET') {
       const code = String(url.searchParams.get('sender') || '');

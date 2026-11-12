@@ -918,6 +918,35 @@ CREATE TABLE IF NOT EXISTS tc_go_gifts (
   set_at TEXT NOT NULL,
   set_by TEXT
 );
+-- MY GRAND OPENING LIST (12.11.2026, the owner's picks "C1: tap a name" + "Yes, build it"; src/tcmylist.js): each list
+-- owner decides per company, Invite or No, and how it goes out; a person tapped out of an invited company is not invited.
+CREATE TABLE IF NOT EXISTS tc_go_company_picks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  sender TEXT NOT NULL,            -- the list owner's code (config/tc.json grandOpening.stage2.senders)
+  company_key TEXT NOT NULL,       -- 'id:<tc_companies.id>' or 'n:<name key>', as on the list
+  decision TEXT,                   -- invite | no | null (not decided)
+  way TEXT,                        -- digital | in_person | post | null
+  set_at TEXT NOT NULL,
+  set_by TEXT
+);
+CREATE UNIQUE INDEX IF NOT EXISTS tc_go_company_picks_one ON tc_go_company_picks (sender, company_key);
+CREATE TABLE IF NOT EXISTS tc_go_people_out (
+  stage2_id BIGINT PRIMARY KEY,    -- tc_go_stage2.id; 1 = left out of an invitation (tapped), 0 = back in
+  out_flag INTEGER NOT NULL,
+  set_at TEXT NOT NULL,
+  set_by TEXT
+);
+-- every person's result after each change, kept (never updated, never deleted): who, what, when, by whom
+CREATE TABLE IF NOT EXISTS tc_go_decision_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  stage2_id BIGINT NOT NULL,
+  sender TEXT NOT NULL,
+  decision TEXT,                   -- invite | no | null (not decided)
+  way TEXT,
+  at TEXT NOT NULL,
+  by_name TEXT
+);
+CREATE INDEX IF NOT EXISTS tc_go_decision_log_person ON tc_go_decision_log (stage2_id, id);
 CREATE TABLE IF NOT EXISTS tc_google_links (
   user_email TEXT PRIMARY KEY,
   token TEXT NOT NULL,

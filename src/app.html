@@ -2674,6 +2674,26 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tcs2-tile b{font-size:12.5px;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;padding-right:34px}
   html.ui-c .tcs2-tile small{font-size:11px;color:var(--t3)} html.ui-c .tcs2-yes{position:absolute;top:8px;right:8px;font-size:10.5px;font-weight:700;color:#1e7bc4}
   html.ui-c .tc-door{padding:20px 22px} html.ui-c .tc-door-f{display:flex;gap:8px;flex-wrap:wrap} html.ui-c .tc-door-f .c-search{flex:1;min-width:180px;font-size:20px;text-transform:uppercase}
+  /* MY GRAND OPENING LIST (12.11.2026, his picks: folded tiles, C1 tap a name) */
+  html.ui-c .tcml-figs{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 14px}
+  html.ui-c .tcml-fig{flex:1 1 150px;text-align:left;background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:12px 16px;cursor:pointer;font:inherit;color:var(--ink)}
+  html.ui-c .tcml-fig b{display:block;font-size:30px;font-weight:750;line-height:1.1} html.ui-c .tcml-fig span{font-weight:600;color:var(--t2)}
+  html.ui-c .tcml-fig[aria-pressed="true"]{border-color:var(--btn-bg);box-shadow:inset 0 0 0 1.5px var(--btn-bg)}
+  html.ui-c .tcml-lists{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px}
+  html.ui-c .tcml-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;align-items:start}
+  html.ui-c .tcml-t{background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+  html.ui-c .tcml-t.inv{border-color:var(--btn-bg);box-shadow:inset 0 0 0 1.5px var(--btn-bg)}
+  html.ui-c .tcml-t > b{font-size:16px;line-height:1.25} html.ui-c .tcml-t > small{color:var(--t3);font-weight:600}
+  html.ui-c .tcml-fold{align-self:flex-start;background:none;border:0;padding:2px 0;font:inherit;font-weight:700;font-size:13px;color:var(--btn-bg);cursor:pointer}
+  html.ui-c .tcml-ppl{display:flex;flex-direction:column;margin:0 0 4px}
+  html.ui-c .tcml-p{display:block;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--rule2);padding:6px 0;font:inherit;color:var(--ink);cursor:pointer}
+  html.ui-c .tcml-p b{display:block;font-size:14px;line-height:1.25;font-weight:650} html.ui-c .tcml-p span{display:block;color:var(--t3);font-size:12.5px;font-weight:600;line-height:1.3}
+  html.ui-c .tcml-p.out b, html.ui-c .tcml-p.out span{opacity:.45;text-decoration:line-through}
+  html.ui-c .tcml-yn{display:flex;gap:6px} html.ui-c .tcml-yn .btn{flex:1;justify-content:center}
+  html.ui-c .tcml-yn .btn[aria-pressed="true"]{outline:3px solid var(--c-sis);outline-offset:1px}
+  html.ui-c .tcml-how{display:flex;gap:6px} html.ui-c .tcml-how button{flex:1;font:inherit;font-weight:700;font-size:13px;padding:8px 4px;border-radius:8px;border:1.5px solid var(--rule);background:var(--surface-2);color:var(--ink);cursor:pointer}
+  html.ui-c .tcml-how button[aria-pressed="true"]{background:var(--btn-bg);color:#fff;border-color:var(--btn-bg)}
+  @media (max-width:700px){ html.ui-c .tcml-figs{gap:6px} html.ui-c .tcml-fig{flex:1 1 30%;padding:10px} html.ui-c .tcml-fig b{font-size:22px} html.ui-c .tcml-tiles{grid-template-columns:1fr} }
   html.ui-c #tcDoorCam{width:100%;max-width:420px;margin-top:12px;border-radius:10px}
   html.ui-c .tc-door-card{margin-top:16px;padding:18px;border:1px solid var(--rule2);border-radius:12px} html.ui-c .tc-door-card.in{border-color:#1e7bc4;box-shadow:inset 0 0 0 1px #1e7bc4}
   html.ui-c .tc-door-code{font-size:28px;font-weight:800;color:#0a2463} html.ui-c .tc-door-card h2{margin:4px 0 8px}
@@ -11145,7 +11165,7 @@ if (typeof MutationObserver !== 'undefined' && typeof document !== 'undefined' &
 }
 function tcMore(open) { const m = $('#tMore'); if (m) m.hidden = !open; }
 // which menu item a page belongs to (the compact menu, the owner's pick B, 28.10.2026)
-const TC_PLAN = ['week', 'season', 'go', 'next'], TC_CLIENTS = ['companies', 'company', 'clients', 'prospects', 'book', 'families', 'import'];
+const TC_PLAN = ['week', 'season', 'go', 'next', 'mylist'], TC_CLIENTS = ['companies', 'company', 'clients', 'prospects', 'book', 'families', 'import'];
 function tcMark(place) {
   const item = TC_PLAN.includes(place) ? 'plan' : TC_CLIENTS.includes(place) ? 'companies' : place;
   document.querySelectorAll('.tcnav a').forEach((a) => a.classList.toggle('on', a.dataset.c === 'tc-' + item));
@@ -11186,6 +11206,7 @@ async function tcRoute(hash) {
     else if (place === 'review') await viewTcReview();
     else if (place === 'go') await viewTcGo(arg);   // lane TC-GO: the Grand Opening; #/tc/go/hold|back|lists land on that part
     else if (place === 'door') viewTcDoor(arg);   // check-in at the door, 05.11.2026
+    else if (place === 'mylist') viewTcMyList(arg);   // my Grand Opening list, 12.11.2026
     else if (place === 'families') await viewTcFamilies();   // the owner's pick B, 28.10.2026
     else if (place === 'import') viewTcImport();   // the owner's pick A, 28.10.2026
     else if (place === 'additions') await viewTcAdditions();   // the owner, 29.10.2026: New additions, approve or flag
@@ -12859,6 +12880,8 @@ async function viewTcGo(part) {
   const loads = [tcS2Load(), tcS2xLoad().then(() => { if (T_S2) tcS2Redraw(); }), tcFixLoad(), tcMkLoad()];   // sending + after the answer: admins
   // the part named in the link, once everything above it has drawn (06.11.2026)
   if (go) Promise.allSettled(loads).then(() => setTimeout(() => { const el = document.querySelector('#view ' + go[1]); if (el) el.scrollIntoView({ block: 'start' }); }, 150));
+  api('/api/tc/go/mylist').then((r) => { const h = document.querySelector('#view .c-head');
+    if (r && r.lists && r.lists.length && h && !h.querySelector('.tcml-open')) h.insertAdjacentHTML('beforeend', '<a class="btn tcml-open" href="#/tc/mylist">My Grand Opening list</a>'); }).catch(() => {});
   api('/api/tc/go/demo-access').then((r) => { T_GO_DEMO = Boolean(r && r.ok); const h = document.querySelector('#view .c-head');
     if (T_GO_DEMO && h && !h.querySelector('.tcgo-demo')) h.insertAdjacentHTML('beforeend', '<a class="btn tcgo-demo" href="/api/tc/go/demo" target="_blank" rel="noopener">▶ Demo</a>'); }).catch(() => {});
 }
@@ -12915,6 +12938,43 @@ async function tcDoorScan() {
 function tcDoorStop() { if (T_DOOR.cam) { T_DOOR.cam.getTracks().forEach((t) => t.stop()); T_DOOR.cam = null; } const v = $('#tcDoorCam'); if (v) v.hidden = true; }
 // THE DEMO (05.11.2026, src/godemo.js): a button for the accounts the demo is for; it opens in a new tab with every link working.
 let T_GO_DEMO = false;
+// MY GRAND OPENING LIST (12.11.2026, src/tcmylist.js; his picks: layout A with the people inside, folded tiles, "C1: tap a name",
+// "Yes, build it"). The owner sees their own list; an admin switches between the lists. One Invite / No per company, then how it
+// goes out; a tapped name inside an invited company is left out. The three figures count people and filter the companies.
+let T_ML = null;
+const TCML_WAYS = [['digital', 'Digital'], ['in_person', 'In person'], ['post', 'By post']];
+async function viewTcMyList(code) {
+  const L = await api('/api/tc/go/mylist');
+  const pick = code && L.lists.includes(code) ? code : (L.mine && L.lists.includes(L.mine) ? L.mine : L.lists[0]);
+  if (!pick) { $('#view').innerHTML = '<div class="c-head"><div><h1>My Grand Opening list</h1></div></div>'; return; }
+  T_ML = { lists: L.lists, code: pick, open: new Set(), filter: '', data: await api('/api/tc/go/mylist?sender=' + encodeURIComponent(pick)) };
+  tcMlDraw();
+}
+const tcMlHas = (g, f) => !f || g.people.some((p) => (f === 'todo' ? !p.decision : p.decision === f));
+function tcMlDraw() {
+  const D = T_ML.data, F = D.figures;
+  const fig = (id, n, label) => `<button type="button" class="tcml-fig" aria-pressed="${T_ML.filter === id}" onclick="T_ML.filter=T_ML.filter===${esc(JSON.stringify(String(id)))}?'':${esc(JSON.stringify(String(id)))};tcMlDraw()"><b>${tcN(n)}</b><span>${label}</span></button>`;
+  const lists = T_ML.lists.length > 1 ? `<div class="tcml-lists" role="group" aria-label="Lists">${T_ML.lists.map((c) => `<button type="button" class="btn sm${c === T_ML.code ? '' : ' ghost'}" onclick="location.hash='#/tc/mylist/'+encodeURIComponent(${esc(JSON.stringify(String(c)))})">${esc(c)}</button>`).join('')}</div>` : '';
+  const tile = (g) => {
+    const open = T_ML.open.has(g.key), left = g.people.filter((p) => p.out).length;
+    const count = g.decision === 'invite' && left ? `${tcN(g.people.length - left)} of ${tcN(g.people.length)} people` : `${tcN(g.people.length)} ${g.people.length === 1 ? 'person' : 'people'}`;
+    const ppl = open ? `<div class="tcml-ppl">${g.people.map((p) => `<button type="button" class="tcml-p${p.out ? ' out' : ''}" onclick="tcMlOut(${Number(p.id)})"><b>${esc(p.label)}</b>${p.position ? `<span>${esc(p.position)}</span>` : ''}</button>`).join('')}</div>` : '';
+    const how = g.decision === 'invite' ? `<div class="tcml-how">${TCML_WAYS.map(([w, t]) => `<button type="button" aria-pressed="${g.way === w}" onclick="tcMlWay(${esc(JSON.stringify(String(g.key)))}, ${esc(JSON.stringify(String(w)))})">${t}</button>`).join('')}</div>` : '';
+    return `<div class="tcml-t${g.decision === 'invite' ? ' inv' : ''}"><b>${esc(g.name)}</b><small>${count}${g.country ? ' · ' + esc(g.country) : ''}</small>
+      <button type="button" class="tcml-fold" aria-expanded="${open}" onclick="tcMlFold(${esc(JSON.stringify(String(g.key)))})">${open ? 'Hide people ▴' : 'Show people ▾'}</button>${ppl}
+      <div class="tcml-yn"><button type="button" class="btn sm" aria-pressed="${g.decision === 'invite'}" onclick="tcMlDecide(${esc(JSON.stringify(String(g.key)))}, 'invite')">Invite</button><button type="button" class="btn sm ghost" aria-pressed="${g.decision === 'no'}" onclick="tcMlDecide(${esc(JSON.stringify(String(g.key)))}, 'no')">No</button></div>${how}</div>`;
+  };
+  $('#view').innerHTML = `<div class="c-head"><div><h1>My Grand Opening list</h1><p class="c-crumb">${esc(D.name)} · ${tcN(D.people)} people · ${tcN(D.companies)} companies</p></div></div>
+    ${lists}<div class="tcml-figs">${fig('todo', F.todo, 'Still to decide')}${fig('invite', F.invite, 'Invite')}${fig('no', F.no, 'No')}</div>
+    <div class="tcml-tiles">${D.groups.filter((g) => tcMlHas(g, T_ML.filter)).map(tile).join('')}</div>`;
+}
+function tcMlFold(key) { if (T_ML.open.has(key)) T_ML.open.delete(key); else T_ML.open.add(key); tcMlDraw(); }
+async function tcMlSave(path, data) {
+  try { T_ML.data = await post('/api/tc/go/mylist/' + path, { sender: T_ML.code, ...data }); tcMlDraw(); } catch (e) { alert(e.message); }
+}
+const tcMlDecide = (key, decision) => tcMlSave('decide', { key, decision });
+const tcMlWay = (key, way) => tcMlSave('way', { key, way });
+const tcMlOut = (id) => tcMlSave('out', { id });
 const tcGoDemoBtn = () => '<a class="btn ghost tcgo-door" href="#/tc/door">Check-in at the door</a>' + (T_GO_DEMO ? '<a class="btn tcgo-demo" href="/api/tc/go/demo" target="_blank" rel="noopener">▶ Demo</a>' : '');
 // THE STAGE 2 LISTS PER MANAGER (the owner's pick A, 26.10.2026; the answers-by-person-in-charge list removed that day): a tab per manager,
 // the people that manager sends the RSVP email to, an answer on the row when it comes in, answered people first, a search,
