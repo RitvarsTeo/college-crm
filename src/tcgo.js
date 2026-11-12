@@ -716,117 +716,45 @@ export async function stage2MatchApply(db, decisions, actor) {
   });
 }
 
-// THE PUZZLE PLACE ON YES (05.11.2026; a company gets its place when it answers Yes). THE GRID (06.11.2026, his words "the
-// puzzle will be 6cm x 6cm pieces. wider than tall", his pick B): 45 columns x 25 rows = 1,125 places, 2.70 x 1.50 m, codes
-// 1A..45Y; the Grand Opening's Puzzle_pozicijas_1125_45x25_2026-11-06.xlsx. Places are given in the list's order (1A, 2A ...
-// 45A, 1B ...), first Yes first. A place, once given, stays with its company (1A, given under 32 x 32, is in this grid too).
-const PLACE_COLS = 45;
-const PLACE_ROWS = [...'ABCDEFGHIJKLMNOPQRSTUVWXY'];
-export const PLACE_CODES = PLACE_ROWS.flatMap((r) => Array.from({ length: PLACE_COLS }, (_, i) => `${i + 1}${r}`));
-export const placeLink = (code) => 'https://novikontas.org/grand-opening?p=' + encodeURIComponent(code);
+// PLACE CODES ARE OUT (12.11.2026, his pick "Yes, build it"): no puzzle place per company, no place QR, no place at the
+// door. One piece per mother company, handed to the first guest of that company whose TICKET is scanned (src/tctickets.js).
+// The one place ever given (1A) is archived in tc_go_places, never deleted; nothing reads that table any more.
 
-export async function placeMap(db) {
-  return Object.fromEntries((await db.prepare(`SELECT company_key, code FROM tc_go_places`).all()).map((r) => [r.company_key, r.code]));
-}
-
-/** The Yes companies: [{ key, company, at }] earliest Yes first. A Yes person's company is Intake's company for that
- *  Client Hub contact, else their Stage 2 row's company, else the company Client Hub wrote. */
-export async function yesCompanies(db, answers) {
-  const yes = (answers || []).filter((a) => a.answer === 'yes' && a.chContactId);
-  if (!yes.length) return [];
-  const byCh = new Map((await db.prepare(`SELECT k.ch_contact_id, c.id, c.name FROM tc_company_contacts k JOIN tc_companies c ON c.id = k.company_id
-    WHERE k.archived_at IS NULL AND c.archived_at IS NULL AND k.ch_contact_id IS NOT NULL`).all()).map((r) => [r.ch_contact_id, r]));
-  const s2 = new Map((await db.prepare(`SELECT ch_contact_id, company FROM tc_go_stage2 WHERE gone = 0`).all()).map((r) => [r.ch_contact_id, r.company]));
-  const out = new Map();
-  for (const a of [...yes].sort((x, y) => String(x.at || '').localeCompare(String(y.at || '')))) {
-    const k = byCh.get(a.chContactId);
-    const name = k ? k.name : (s2.get(a.chContactId) || a.company || '');
-    if (!k && !String(name).trim()) continue;
-    const key = giftKey(k ? k.id : null, name);
-    if (!out.has(key)) out.set(key, { key, company: String(name).trim(), at: a.at });
-  }
-  return [...out.values()];
-}
-
-/** Give every Yes company without a place the next free one. Safe to run again and from two requests at once. */
-export async function placesForYes(db, answers, actor = 'Intake') {
-  const have = await placeMap(db);
-  const want = (await yesCompanies(db, answers)).filter((c) => !have[c.key]);
-  if (!want.length) return have;
-  const used = new Set(Object.values(have));
-  let i = 0;
-  for (const c of want) {
-    for (;;) {
-      while (i < PLACE_CODES.length && used.has(PLACE_CODES[i])) i++;
-      if (i >= PLACE_CODES.length) return placeMap(db);     // all 1,024 places are given
-      const code = PLACE_CODES[i]; used.add(code);
-      const r = await db.prepare(`INSERT INTO tc_go_places (company_key, code, company, assigned_at, assigned_by) VALUES (?,?,?,?,?) ON CONFLICT DO NOTHING`)
-        .run(c.key, code, c.company, new Date().toISOString(), actor);
-      if (Number(r.changes)) break;
-      if ((await db.prepare(`SELECT code FROM tc_go_places WHERE company_key = ?`).get(c.key))) break;   // placed by the other request
-    }
-  }
-  return placeMap(db);
-}
-
-/** THE PHYSICAL LIST (05.11.2026): every company set to Physical, with its place, its people on the Stage 2 lists and the
- *  address Intake holds; for posting or handing the piece over. */
+/** THE PHYSICAL LIST (05.11.2026; one row per MOTHER company since 12.11.2026): every mother company with a company set to
+ *  Physical, whether anyone of it answered Yes, its people on the Stage 2 lists and the address Intake holds; for posting or
+ *  handing the gift over. A person's company is Intake's (their contact by Client Hub id, else by email), else the name they
+ *  wrote; a company in a confirmed family counts as its mother company. */
 export async function physicalList(db, answers = null) {
-  const gifts = await giftMap(db), places = await placeMap(db);
-  const keys = new Set(Object.keys(gifts).filter((k) => gifts[k] === 'physical'));
-  if (!keys.size) return [];
-  const rows = await db.prepare(`SELECT s.ch_contact_id, s.sender, s.name, s.company, s.position, s.country, s.email, k.company_id
-    FROM tc_go_stage2 s LEFT JOIN tc_company_contacts k ON k.ch_contact_id = s.ch_contact_id AND k.archived_at IS NULL WHERE s.gone = 0`).all();
-  const cos = new Map((await db.prepare(`SELECT id, name, address, city, country FROM tc_companies WHERE archived_at IS NULL`).all()).map((c) => [Number(c.id), c]));
+  const gifts = await giftMap(db);
+  if (!Object.values(gifts).includes('physical')) return [];
+  const rows = await db.prepare(`SELECT s.id, s.ch_contact_id, s.sender, s.name, s.company, s.position, s.country, s.email,
+      COALESCE(MIN(k.company_id), MIN(e.company_id)) AS company_id FROM tc_go_stage2 s
+    LEFT JOIN tc_company_contacts k ON k.ch_contact_id = s.ch_contact_id AND k.archived_at IS NULL
+      AND k.company_id IN (SELECT id FROM tc_companies WHERE archived_at IS NULL)
+    LEFT JOIN tc_company_contacts e ON s.email IS NOT NULL AND e.email = LOWER(s.email) AND e.archived_at IS NULL
+      AND e.company_id IN (SELECT id FROM tc_companies WHERE archived_at IS NULL)
+    WHERE s.gone = 0 GROUP BY s.id, s.ch_contact_id, s.sender, s.name, s.company, s.position, s.country, s.email ORDER BY s.id`).all();
+  const cos = new Map((await db.prepare(`SELECT id, name, name_key, address, city, country FROM tc_companies WHERE archived_at IS NULL`).all()).map((c) => [Number(c.id), c]));
+  const byName = new Map(); for (const c of cos.values()) if (c.name_key && !byName.has(c.name_key)) byName.set(c.name_key, Number(c.id));
+  const parent = new Map((await db.prepare(`SELECT m.company_id, f.parent_id FROM tc_family_members m JOIN tc_families f ON f.id = m.family_id
+    WHERE m.ended_at IS NULL AND f.ended_at IS NULL`).all()).map((r) => [Number(r.company_id), Number(r.parent_id)]));
   const ans = new Map((answers || []).map((a) => [a.chContactId, a]));
   const by = new Map();
   for (const r of rows) {
-    const key = giftKey(r.company_id, r.company);
-    if (!keys.has(key)) continue;
-    const co = r.company_id ? cos.get(Number(r.company_id)) : null;
-    if (!by.has(key)) by.set(key, { key, company: (co && co.name) || r.company || '', place: places[key] || '', lists: new Set(), yes: false, people: [],
+    const written = String(r.company || '').trim(), name = /^\(.*\)$/.test(written) ? '' : written;
+    let id = r.company_id ? Number(r.company_id) : (name ? byName.get(nameKey(name)) || null : null);
+    const own = giftKey(id || r.company_id, r.company);
+    if (id) id = parent.get(id) || id;
+    const key = id ? 'id:' + id : name ? 'n:' + nameKey(name) : null;
+    if (!key || key === 'n:') continue;
+    const co = id ? cos.get(id) : null;
+    if (!by.has(key)) by.set(key, { key, company: (co && co.name) || name, physical: false, lists: new Set(), yes: false, people: [],
       address: (co && co.address) || '', city: (co && co.city) || '', country: (co && co.country) || r.country || '' });
     const g = by.get(key);
+    if (gifts[own] === 'physical' || gifts[giftKey(r.company_id, r.company)] === 'physical') g.physical = true;
     g.lists.add(r.sender);
     if ((ans.get(r.ch_contact_id) || {}).answer === 'yes') g.yes = true;
     g.people.push({ name: r.name || '', position: r.position || '', email: r.email || '' });
   }
-  return [...by.values()].map((g) => ({ ...g, lists: [...g.lists].join(', ') })).sort((a, b) => a.company.localeCompare(b.company, 'lv'));
-}
-
-// CHECK-IN AT THE DOOR (05.11.2026): the guest shows the QR (novikontas.org/grand-opening?p=13H) or says the code; the door
-// sees the company, its place, who said Yes and how many, and taps Arrived.
-export const placeFromText = (t) => {
-  const m = /[?&]p=([0-9]{1,2}[A-Za-z]{1,2})\b/.exec(String(t || '')) || /^\s*([0-9]{1,2}[A-Za-z]{1,2})\s*$/.exec(String(t || ''));
-  const code = m ? m[1].toUpperCase() : '';
-  return PLACE_CODES.includes(code) ? code : '';
-};
-export async function doorCard(db, text, answers = null) {
-  const code = placeFromText(text);
-  if (!code) throw new TcInputError('That is not a place code. Try like 13H.');
-  const pl = await db.prepare(`SELECT company_key, company FROM tc_go_places WHERE code = ?`).get(code);
-  const arrived = await db.prepare(`SELECT people, arrived_at, arrived_by FROM tc_go_checkins WHERE code = ?`).get(code);
-  const totals = await doorTotals(db);
-  if (!pl) return { code, company: null, people: [], expected: 0, arrived: arrived || null, totals };
-  const rows = await db.prepare(`SELECT s.ch_contact_id, s.name, s.company, k.company_id FROM tc_go_stage2 s
-    LEFT JOIN tc_company_contacts k ON k.ch_contact_id = s.ch_contact_id AND k.archived_at IS NULL WHERE s.gone = 0`).all();
-  const ans = new Map((answers || []).map((a) => [a.chContactId, a]));
-  const people = rows.filter((r) => giftKey(r.company_id, r.company) === pl.company_key).map((r) => ({ name: r.name || '', answer: (ans.get(r.ch_contact_id) || {}).answer || null,
-    people: (ans.get(r.ch_contact_id) || {}).people || 0 })).filter((x) => x.answer === 'yes' || x.answer === 'maybe');
-  return { code, company: pl.company, gift: (await giftMap(db))[pl.company_key] || null, people, expected: people.filter((x) => x.answer === 'yes').reduce((n, x) => n + Number(x.people || 1), 0),
-    arrived: arrived || null, totals };
-}
-export async function doorTotals(db) {
-  const r = await db.prepare(`SELECT COUNT(*) AS n, COALESCE(SUM(people), 0) AS p FROM tc_go_checkins`).get();
-  const placed = await db.prepare(`SELECT COUNT(*) AS n FROM tc_go_places`).get();
-  return { companies: Number(r.n) || 0, people: Number(r.p) || 0, placed: Number(placed.n) || 0 };
-}
-export async function checkIn(db, text, people, actor) {
-  const code = placeFromText(text);
-  if (!code) throw new TcInputError('That is not a place code. Try like 13H.');
-  const n = Math.round(Number(people));
-  if (!(n >= 1 && n <= 30)) throw new TcInputError('How many people came?');
-  await db.prepare(`INSERT INTO tc_go_checkins (code, people, arrived_at, arrived_by) VALUES (?,?,?,?)
-    ON CONFLICT (code) DO UPDATE SET people = excluded.people, arrived_at = excluded.arrived_at, arrived_by = excluded.arrived_by`).run(code, n, new Date().toISOString(), actor);
-  return { code, people: n };
+  return [...by.values()].filter((g) => g.physical).map(({ physical, ...g }) => ({ ...g, lists: [...g.lists].join(', ') })).sort((a, b) => a.company.localeCompare(b.company, 'lv'));
 }

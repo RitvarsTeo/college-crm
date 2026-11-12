@@ -60,6 +60,7 @@ import * as areas from './areas.js';
 import * as tc from './tc.js';
 import * as godemo from './godemo.js';
 import * as tcgomail from './tcgomail.js';
+import * as tctickets from './tctickets.js';
 import * as tcimport from './tcimport.js';
 import { REAL_PEOPLE } from './realpeople.js';
 import * as samepeople from './samepeople.js';
@@ -3759,7 +3760,7 @@ export const handle = async (req, res) => {
         : await tcs2send.sendNext(db, String(b.sender || ''), String(b.batch || ''), me);
       return json(res, out.ok ? 200 : 400, out.ok ? out : { error: out.why });
     }
-    // AFTER THE ANSWER (05.11.2026, src/tcgomail.js): You're in / Reminder 1 / See you soon; admins only, sent only on Send
+    // AFTER THE ANSWER (05.11.2026, src/tcgomail.js): Reminder 1; admins only, sent only on Send
     if (p === '/api/tc/go/mails' && req.method === 'GET') {
       if (!(await adminOf(req))) return refuseNotAdmin(res);
       return json(res, 200, await tcgomail.overview(db, await tcrsvp.answers()));
@@ -3844,25 +3845,40 @@ export const handle = async (req, res) => {
     if (p === '/api/tc/go/stage2' && req.method === 'GET') {
       const code = String(url.searchParams.get('sender') || '');
       if (!code) return json(res, 200, await tcgo.stage2Senders(db, await tcMe(req, url)));
-      try { const ans = await tcrsvp.answers(); return json(res, 200, { sender: code, rows: await tcgo.stage2List(db, code, ans), gifts: await tcgo.giftMap(db), places: await tcgo.placesForYes(db, ans) }); }
+      try { const ans = await tcrsvp.answers(); return json(res, 200, { sender: code, rows: await tcgo.stage2List(db, code, ans), gifts: await tcgo.giftMap(db) }); }
       catch (e) { if (e instanceof tc.TcInputError) return json(res, 400, { error: e.message }); throw e; }
     }
-    // CHECK-IN AT THE DOOR (05.11.2026, src/tcgo.js doorCard / checkIn): any Training Centre account
-    if (p === '/api/tc/go/door' && req.method === 'GET') {
-      try { return json(res, 200, await tcgo.doorCard(db, String(url.searchParams.get('p') || ''), await tcrsvp.answers())); }
-      catch (e) { if (e instanceof tc.TcInputError) return json(res, 400, { error: e.message }); throw e; }
-    }
+    // CHECK-IN AT THE DOOR (12.11.2026, his pick "Yes, at the door"; src/tctickets.js doorScan): the guest's TICKET QR or code;
+    // any Training Centre account. A scan checks the guest in; the piece goes to the first guest of each mother company.
+    if (p === '/api/tc/go/door' && req.method === 'GET') return json(res, 200, await tctickets.doorStart(db));
     if (p === '/api/tc/go/door' && req.method === 'POST') {
-      try { const b = await body(req); return json(res, 200, await tcgo.checkIn(db, String(b.p || ''), b.people, await actorOf(req, b))); }
-      catch (e) { if (e instanceof tc.TcInputError) return json(res, 400, { error: e.message }); throw e; }
+      const b = await body(req);
+      return json(res, 200, await tctickets.doorScan(db, String(b.t || '').slice(0, 300), await actorOf(req, b)));
     }
-    // THE PHYSICAL LIST (05.11.2026): the companies set to Physical, with place, people and address, as a file
+    // STAGE 3, THE TICKET (12.11.2026, src/tctickets.js): admins only, like Stage 2 sending; a ticket goes only on Send
+    if (p === '/api/tc/go/tickets' && req.method === 'GET') {
+      if (!(await adminOf(req))) return refuseNotAdmin(res);
+      return json(res, 200, await tctickets.overview(db, await tctickets.registrations()));
+    }
+    if (p === '/api/tc/go/tickets/preview' && req.method === 'GET') {
+      if (!(await adminOf(req))) return refuseNotAdmin(res);
+      const s = ((((tc.TC.grandOpening || {}).stage2 || {}).senders) || []).find((x) => x.code === String(url.searchParams.get('sender') || ''));
+      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' });
+      return res.end(tctickets.previewHtml(s ? { name: s.name || s.label } : {}));
+    }
+    if (p === '/api/tc/go/tickets/send' && req.method === 'POST') {
+      if (!(await adminOf(req))) return refuseNotAdmin(res);
+      const b = await body(req);
+      const out = await tctickets.sendNext(db, String(b.sender || ''), await tctickets.registrations(), await currentUser(req));
+      return json(res, out.ok ? 200 : 400, out.ok ? out : { error: out.why });
+    }
+    // THE PHYSICAL LIST (05.11.2026; one row per mother company, no place, since 12.11.2026): people and address, as a file
     if (p === '/api/tc/go/physical.xlsx' && req.method === 'GET') {
       const list = await tcgo.physicalList(db, await tcrsvp.answers());
       const me = await tcMe(req, url);
       console.log(`tc download: ${me ? me.email || me.name : 'unknown'} physical ${list.length} companies`);
-      const rows = [['Company', 'Place', 'Answered Yes', 'List', 'People', 'Positions', 'Emails', 'Address', 'City', 'Country'],
-        ...list.map((g) => [g.company, g.place, g.yes ? 'Yes' : '', g.lists, g.people.map((x) => x.name).join('; '), g.people.map((x) => x.position).join('; '),
+      const rows = [['Company', 'Answered Yes', 'List', 'People', 'Positions', 'Emails', 'Address', 'City', 'Country'],
+        ...list.map((g) => [g.company, g.yes ? 'Yes' : '', g.lists, g.people.map((x) => x.name).join('; '), g.people.map((x) => x.position).join('; '),
           g.people.map((x) => x.email).filter(Boolean).join('; '), g.address, g.city, g.country])];
       const name = `Grand Opening Physical ${localDate()}.xlsx`;
       res.writeHead(200, { 'content-type': XLSX_TYPE, 'cache-control': 'no-store', 'content-disposition': `attachment; filename="${name}"` });

@@ -2711,6 +2711,12 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tc-door-code{font-size:28px;font-weight:800;color:#0a2463} html.ui-c .tc-door-card h2{margin:4px 0 8px}
   html.ui-c .tc-door-gift{display:inline-block;font-size:12px;font-weight:700;color:#fff;background:#0a2463;border-radius:5px;padding:2px 8px;margin-bottom:8px}
   html.ui-c .tc-door-act{display:flex;gap:8px;align-items:center;margin-top:14px} html.ui-c .tc-door-act b{font-size:22px;min-width:28px;text-align:center}
+  html.ui-c .tc-door-co{margin:0 0 6px;color:var(--t2);font-weight:600} html.ui-c .tc-door-say{font-size:22px;font-weight:800;margin:10px 0 0}
+  html.ui-c .tc-door-card.tk-first{border:2px solid #1e7bc4;background:#eaf5fc} html.ui-c .tc-door-card.tk-colleague{border:2px solid #0a2463}
+  html.ui-c .tc-door-card.tk-again{border:2px solid #835c12;background:#fdf3e1} html.ui-c .tc-door-card.tk-unknown{border:2px solid #b3261e;background:#fdecea}
+  html.ui-c .tctk{padding:18px 22px} html.ui-c .tctk-p{color:var(--t2);font-weight:600} html.ui-c .tctk-door{margin-top:14px}
+  html.ui-c .tctk-fig{display:inline-flex;gap:8px;align-items:baseline;margin-top:12px;background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:10px 16px;cursor:pointer;font:inherit;color:var(--ink)} html.ui-c .tctk-fig b{font-size:24px}
+  html.ui-c .tctk-shot{max-width:680px} html.ui-c .tcgo-lt.tctk-lt{aspect-ratio:600/1400} html.ui-c .tcgo-lt.tctk-lt iframe{height:1400px}
   html.ui-c .tc-door-was{color:#1e7bc4;font-weight:600;margin:10px 0 0} html.ui-c .tc-door-err{color:#b3261e;margin-top:12px} html.ui-c .tc-door-tot{color:var(--t3);margin:12px 0 0}
   html.ui-c .tcs2-gift{margin-top:auto;display:flex;gap:4px} html.ui-c .tcs2-gift button{all:unset;cursor:pointer;font-size:10.5px;font-weight:600;border-radius:5px;padding:3px 7px;background:var(--surface-2);color:var(--t3)}
   html.ui-c .tcs2-gift button.on{background:#0a2463;color:#fff} html.ui-c .tcs2-gift button.on.d{background:#29a8df}
@@ -12900,41 +12906,41 @@ async function viewTcGo(part) {
   api('/api/tc/go/demo-access').then((r) => { T_GO_DEMO = Boolean(r && r.ok); const h = document.querySelector('#view .c-head');
     if (T_GO_DEMO && h && !h.querySelector('.tcgo-demo')) h.insertAdjacentHTML('beforeend', '<a class="btn tcgo-demo" href="/api/tc/go/demo" target="_blank" rel="noopener">▶ Demo</a>'); }).catch(() => {});
 }
-// CHECK-IN AT THE DOOR (05.11.2026): type the code or scan the guest's QR; the company, its place, who said Yes and how many;
-// Arrived with the number that came. The camera scan needs a browser that reads QR codes (Chrome on Android does).
-let T_DOOR = { card: null, n: 1, cam: null };
+// CHECK-IN AT THE DOOR (12.11.2026, his pick "Yes, at the door"; src/tctickets.js): scan the guest's ticket QR or type its
+// code; the scan checks them in. First guest of a mother company: hand over the piece; a colleague later: the piece is already
+// with them; the same ticket again: already checked in; a code nobody has: the help desk. The camera scan needs a browser
+// that reads QR codes (Chrome on Android does).
+let T_DOOR = { card: null, cam: null, totals: null };
 function viewTcDoor(code) {
   $('#view').innerHTML = `${typeof T_GO !== 'undefined' && T_GO ? tcGoCrumb(true) : ''}<div class="c-head"><div><h1>Check-in at the door</h1></div></div>
     <section class="c-sheet tc-door"><form class="tc-door-f" onsubmit="event.preventDefault();tcDoorFind(this.p.value)">
-      <input class="c-search" name="p" placeholder="Place code, like 13H" autocomplete="off" autocapitalize="characters" aria-label="Place code">
-      <button class="btn" type="submit">Find</button>
-      ${'BarcodeDetector' in window ? '<button class="btn ghost" type="button" onclick="tcDoorScan()">📷 Scan QR</button>' : ''}</form>
-      <video id="tcDoorCam" playsinline muted hidden></video><div id="tcDoorCard"></div></section>`;
+      <input class="c-search" name="p" placeholder="Ticket code, like GO27-K7M2Q9XR4T" autocomplete="off" autocapitalize="characters" aria-label="Ticket code">
+      <button class="btn" type="submit">Check in</button>
+      ${'BarcodeDetector' in window ? '<button class="btn ghost" type="button" onclick="tcDoorScan()">📷 Scan ticket</button>' : ''}</form>
+      <video id="tcDoorCam" playsinline muted hidden></video><div id="tcDoorCard"></div><p class="tc-door-tot" id="tcDoorTot"></p></section>`;
+  api('/api/tc/go/door').then((r) => { T_DOOR.totals = r.totals; tcDoorDraw(); }).catch(() => {});
   if (code) tcDoorFind(code);
 }
 async function tcDoorFind(text) {
   tcDoorStop();
-  try { T_DOOR.card = await api('/api/tc/go/door?p=' + encodeURIComponent(String(text || ''))); T_DOOR.n = Math.max(1, (T_DOOR.card.arrived && T_DOOR.card.arrived.people) || T_DOOR.card.expected || 1); }
+  if (!String(text || '').trim()) return;
+  try { T_DOOR.card = await post('/api/tc/go/door', { t: String(text) }); T_DOOR.totals = T_DOOR.card.totals; }
   catch (e) { T_DOOR.card = { error: e.message }; }
+  const f = document.querySelector('.tc-door-f input'); if (f) f.value = '';
   tcDoorDraw();
 }
+const tcDoorTime = (iso) => (iso ? new Date(iso).toLocaleTimeString('lv-LV', { hour: '2-digit', minute: '2-digit' }) : '');
 function tcDoorDraw() {
-  const c = T_DOOR.card, box = $('#tcDoorCard'); if (!box || !c) return;
+  const c = T_DOOR.card, box = $('#tcDoorCard'), tot = $('#tcDoorTot');
+  if (tot && T_DOOR.totals) tot.innerHTML = `Checked in: <b>${tcN(T_DOOR.totals.people)}</b> ${T_DOOR.totals.people === 1 ? 'person' : 'people'} · <b>${tcN(T_DOOR.totals.pieces)}</b> ${T_DOOR.totals.pieces === 1 ? 'piece' : 'pieces'} handed over`;
+  if (!box || !c) return;
   if (c.error) { box.innerHTML = `<p class="tc-door-err">${esc(c.error)}</p>`; return; }
-  const word = { yes: 'Yes', maybe: 'Maybe' };
-  box.innerHTML = `<div class="tc-door-card${c.arrived ? ' in' : ''}"><div class="tc-door-code">🧩 ${esc(c.code)}</div>
-    <h2>${c.company ? esc(c.company) : 'No company has this place yet'}</h2>
-    ${c.gift === 'physical' ? '<span class="tc-door-gift">🎁 Physical piece</span>' : ''}
-    ${c.people.map((x) => `<div class="tcs2-prow"><b>${esc(x.name)}</b><span class="a-${esc(x.answer)}">${word[x.answer] || ''}${x.answer === 'yes' ? ' · ' + Number(x.people || 1) : ''}</span></div>`).join('')}
-    ${c.company ? `<div class="tc-door-act"><span>People here</span><button type="button" class="btn ghost" aria-label="One fewer" onclick="T_DOOR.n=Math.max(1,T_DOOR.n-1);tcDoorDraw()">−</button><b>${Number(T_DOOR.n)}</b>
-      <button type="button" class="btn ghost" aria-label="One more" onclick="T_DOOR.n=Math.min(30,T_DOOR.n+1);tcDoorDraw()">+</button>
-      <button type="button" class="btn" onclick="tcDoorIn()">${c.arrived ? 'Update' : '✓ Arrived'}</button></div>` : ''}
-    ${c.arrived ? `<p class="tc-door-was">Arrived ${esc(new Date(c.arrived.arrived_at).toLocaleTimeString('lv-LV', { hour: '2-digit', minute: '2-digit' }))} · ${Number(c.arrived.people)} ${Number(c.arrived.people) === 1 ? 'person' : 'people'}</p>` : ''}</div>
-    <p class="tc-door-tot">At the door so far: <b>${tcN(c.totals.companies)}</b> companies · <b>${tcN(c.totals.people)}</b> people</p>`;
-}
-async function tcDoorIn() {
-  const c = T_DOOR.card; if (!c || !c.code) return;
-  try { await post('/api/tc/go/door', { p: c.code, people: T_DOOR.n }); await tcDoorFind(c.code); } catch (e) { alert(e.message); }
+  const who = c.name ? `<h2>${esc(c.name)}</h2><p class="tc-door-co">${esc(c.company)}</p>` : '';
+  const say = { first: '<p class="tc-door-say">🧩 Hand over the piece</p>',
+    colleague: `<p class="tc-door-say">Piece already with ${esc(c.pieceWith || '')} (${esc(tcDoorTime(c.pieceAt))})</p>`,
+    again: `<p class="tc-door-say">Already checked in at ${esc(tcDoorTime(c.at))}</p>`,
+    unknown: '<p class="tc-door-say">Not on the list. Please send them to the help desk.</p>' }[c.state] || '';
+  box.innerHTML = `<div class="tc-door-card tk-${esc(c.state)}">${c.state === 'unknown' && c.code ? `<div class="tc-door-code">${esc(c.code)}</div>` : ''}${who}${say}</div>`;
 }
 async function tcDoorScan() {
   const v = $('#tcDoorCam'); if (!v) return;
@@ -12948,7 +12954,7 @@ async function tcDoorScan() {
       requestAnimationFrame(tick);
     };
     tick();
-  } catch (e) { tcDoorStop(); alert('The camera did not open. Type the code instead.'); }
+  } catch (e) { tcDoorStop(); T_DOOR.card = { error: 'The camera did not open. Type the ticket code instead.' }; tcDoorDraw(); }
 }
 function tcDoorStop() { if (T_DOOR.cam) { T_DOOR.cam.getTracks().forEach((t) => t.stop()); T_DOOR.cam = null; } const v = $('#tcDoorCam'); if (v) v.hidden = true; }
 // THE DEMO (05.11.2026, src/godemo.js): a button for the accounts the demo is for; it opens in a new tab with every link working.
@@ -13210,7 +13216,7 @@ async function tcS2Load(code) {
     if (!T_S2.senders.length) return;
     T_S2.code = code || T_S2.code || (T_S2.senders.find((x) => x.code === T_S2.mine) || T_S2.senders[0]).code;
     T_S2.rows = null; tcS2Draw();
-    { const r = await api('/api/tc/go/stage2?sender=' + encodeURIComponent(T_S2.code)); T_S2.rows = r.rows; T_S2.gifts = r.gifts || {}; T_S2.places = r.places || {}; }
+    { const r = await api('/api/tc/go/stage2?sender=' + encodeURIComponent(T_S2.code)); T_S2.rows = r.rows; T_S2.gifts = r.gifts || {}; }
   } catch (e) { if (T_S2) T_S2.rows = []; }
   tcS2Draw();
 }
@@ -13240,10 +13246,10 @@ function tcS2Rows() {
   const shown = all.filter((g) => !q || g.name.toLowerCase().includes(q) || g.ps.some((r) => `${r.name} ${r.email || ''}`.toLowerCase().includes(q)));
   const phys = all.filter((g) => tcS2Gift(g) === 'physical').length, digi = all.filter((g) => tcS2Gift(g) === 'digital').length;
   const tile = (g) => {
-    const p = tcS2Gift(g) === 'physical', d = tcS2Gift(g) === 'digital', yes = g.ps.some((r) => r.answer === 'yes'), place = (T_S2.places || {})[g.key];
+    const p = tcS2Gift(g) === 'physical', d = tcS2Gift(g) === 'digital', yes = g.ps.some((r) => r.answer === 'yes');
     const k = esc(JSON.stringify(g.key));
     return `<div class="tcs2-tile${p ? ' phys' : ''}" role="button" tabindex="0" onclick="tcS2Open(${k})" onkeydown="if(event.key==='Enter')tcS2Open(${k})">
-      ${yes ? `<span class="tcs2-yes">✓ Yes${place ? ' · 🧩 ' + esc(place) : ''}</span>` : ''}<b>${esc(g.name || 'No company yet')}</b>
+      ${yes ? '<span class="tcs2-yes">✓ Yes</span>' : ''}<b>${esc(g.name || 'No company yet')}</b>
       <small>${tcN(g.ps.length)} ${g.ps.length === 1 ? 'person' : 'people'}${g.country ? ' · ' + esc(g.country) : ''}</small>
       <span class="tcs2-gift" onclick="event.stopPropagation()"><button type="button" class="${p ? 'on' : ''}" aria-pressed="${p}" onclick="tcS2SetGift(${k}, 'physical')">🎁 Physical</button><button type="button" class="${d ? 'on d' : ''}" aria-pressed="${d}" onclick="tcS2SetGift(${k}, 'digital')">Digital</button></span></div>`;
   };
@@ -13320,6 +13326,52 @@ function tcS2xNoCode(code) {
   const y = T_S2X && T_S2X.senders.find((x) => x.code === code);
   if (!y) return;
   modal(`${y.label} · without an email or link`, `<div class="tcgo-flist">${(y.noCodeRows || []).map((r) => `<div class="tcs2x-lrow"><b>${esc(r.name)}</b><span>${esc(r.company)}</span><small>${esc(r.why)}</small></div>`).join('')}</div>`);
+}
+// STAGE 3, THE TICKET (12.11.2026, his picks "Yes, build it" / "QR + calendar now" / "Yes, read them"; src/tctickets.js): per
+// list owner, the people registered on the landing page and their tickets; Send goes from the owner's own mailbox, like Stage 2.
+// The people with no list owner, or no email, are figures of their own, by name. Below, the ticket email itself.
+let T_TK = null, T_TK_BUSY = '';
+async function tcTkLoad() {
+  if (!isAdmin()) return;
+  try { T_TK = await api('/api/tc/go/tickets'); } catch (e) { T_TK = { error: e.message }; }
+  const box = $('#tcTk'); if (box) { box.innerHTML = tcTkHtml(); tcGoFitLetters(); }
+}
+function tcTkHtml() {
+  const door = '<a class="btn" href="#/tc/door">Check-in at the door</a>';
+  if (!isAdmin()) return `<section class="c-sheet tctk"><h2>The ticket</h2><p class="tctk-p">Each registered guest gets their own ticket QR, shown at the entrance.</p>${door}</section>`;
+  if (!T_TK) return '<section class="c-sheet tctk"><div class="c-empty">Loading…</div></section>';
+  if (T_TK.error) return `<section class="c-sheet tctk"><p class="tc-door-err">${esc(T_TK.error)}</p></section>`;
+  if (!T_TK.connected) return `<section class="c-sheet tctk"><h2>The ticket</h2><p class="tctk-p">Registrations cannot be read from Client Hub right now.</p>${door}</section>`;
+  const all = T_TK.senders.reduce((n, x) => n + x.n, 0), sent = T_TK.senders.reduce((n, x) => n + x.sent, 0);
+  const card = (x) => {
+    const busy = T_TK_BUSY === x.code, k = esc(JSON.stringify(String(x.code)));
+    const line = x.sent ? `Sent ${tcN(x.sent)} of ${tcN(x.n)}` : `${tcN(x.n)} ${x.n === 1 ? 'ticket' : 'tickets'}`;
+    return `<div class="tcgo-pack"><b>${esc(x.label)}</b><span>${tcN(x.n)}</span><small class="tcs2x-ok">${line}</small>
+      ${x.refused ? `<small class="tcs2x-sub">${tcN(x.refused)} refused</small>` : ''}
+      ${x.noEmail.length ? `<button type="button" class="tcs2x-nocode" onclick="tcTkList(${k})">${tcN(x.noEmail.length)} without an email</button>` : ''}
+      <div class="tcs2x-btns"><a class="btn sm ghost" href="/api/tc/go/tickets/preview?sender=${encodeURIComponent(x.code)}" target="_blank" rel="noopener">Preview</a>
+      <button type="button" class="btn sm" ${x.left > 0 && !T_TK_BUSY ? '' : 'disabled'} onclick="tcTkSend(${k})">${busy ? 'Sending…' : `Send ${tcN(x.left)}`}</button></div></div>`;
+  };
+  const first = (T_TK.senders.find((x) => x.n) || T_TK.senders[0] || {}).code || '';
+  return `<section class="c-sheet tctk"><div class="tcgo-bh"><h2>The ticket · ${tcN(all)} registered</h2><span>${tcN(sent)} sent</span></div>
+      <div class="tcgo-packs">${T_TK.senders.map(card).join('')}</div>
+      ${T_TK.noOwner.length ? `<button type="button" class="tctk-fig" onclick="tcTkList('')"><b>${tcN(T_TK.noOwner.length)}</b><span>registered, no list owner</span></button>` : ''}
+      <div id="tcTkErr"></div><div class="tctk-door">${door}</div></section>
+    <figure class="c-sheet tcgo-shot tctk-shot"><figcaption>The ticket email<a href="/api/tc/go/tickets/preview?sender=${encodeURIComponent(first)}" target="_blank" rel="noopener">Full size ↗</a></figcaption>
+      <div class="tcgo-lt tctk-lt"><iframe src="/api/tc/go/tickets/preview?sender=${encodeURIComponent(first)}" title="The ticket email" loading="lazy" tabindex="-1" scrolling="no"></iframe></div></figure>`;
+}
+function tcTkList(code) {
+  const x = code ? T_TK.senders.find((z) => z.code === code) : null;
+  const rows = x ? x.noEmail : T_TK.noOwner;
+  modal(x ? `${x.label} · without an email` : 'Registered, no list owner', `<div class="tcgo-flist">${rows.map((r) => `<div class="tcs2x-lrow"><b>${esc(r.name)}</b><span>${esc(r.company)}</span></div>`).join('')}</div>`);
+}
+async function tcTkSend(code) {
+  const x = T_TK.senders.find((z) => z.code === code);
+  if (!x || !confirm(`Send ${x.left} ${x.left === 1 ? 'ticket' : 'tickets'} from ${x.name}?`)) return;
+  T_TK_BUSY = code; let box = $('#tcTk'); if (box) box.innerHTML = tcTkHtml();
+  try { for (let i = 0; i < 60; i++) { const r = await post('/api/tc/go/tickets/send', { sender: code }); if (r.done) break; } }
+  catch (e) { T_TK_BUSY = ''; await tcTkLoad(); tcErr('#tcTkErr', e.message); return; }
+  T_TK_BUSY = ''; await tcTkLoad();
 }
 function tcS2Redraw() { const box = $('#tcS2'); if (box && typeof tcGoStage2 === 'function') box.outerHTML = tcGoStage2(); }
 async function tcS2xTest(code) {
@@ -13450,10 +13502,11 @@ function tcGoDraw() {
   const row = (x) => `<div class="tcgo-br"><span>${esc(x.label)}</span><b>${tcGoN(x.n)}</b></div>`;
   // TWO TABS (the owner's pick B, 29.10.2026, "this page is soooo long"): Stage 2 · RSVP opens first, Stage 1 · Save the
   // Date beside it; each tab holds only its own part, and each long list scrolls inside its own box
-  const tab = T_GO_TAB === 's1' ? 's1' : 's2';
+  const tab = ['s1', 's3'].includes(T_GO_TAB) ? T_GO_TAB : 's2';
   const tb = (v, n, label) => `<button type="button" class="tcs2-tab" aria-pressed="${tab === v}" onclick="tcGoTab('${v}')"><i class="tcgo-tabn">${n}</i>${label}</button>`;
   const head = `${tcGoCrumb(false)}<div class="c-head"><div><h1>The invitation</h1></div>${tcGoDemoBtn()}</div>
-    <div class="tcs2-tabs tcgo-tabs" role="group" aria-label="Stage">${tb('s1', 1, 'Stage 1 · Save the Date')}${tb('s2', 2, 'Stage 2 · RSVP')}</div>`;
+    <div class="tcs2-tabs tcgo-tabs" role="group" aria-label="Stage">${tb('s1', 1, 'Stage 1 · Save the Date')}${tb('s2', 2, 'Stage 2 · RSVP')}${tb('s3', 3, 'Stage 3 · Ticket')}</div>`;
+  if (tab === 's3') { $('#view').innerHTML = head + `<div id="tcTk">${tcTkHtml()}</div>`; tcTkLoad(); return; }
   $('#view').innerHTML = head + (tab === 's1' ? `
     <!-- stage1 -->${tcGoStrip(F)}
     <section class="c-sheet tcgo-back" aria-label="What came back">
@@ -13486,7 +13539,7 @@ function tcGoDraw() {
   tcGoFitLetters();
 }
 let T_GO_TAB = 's2';
-function tcGoTab(v) { T_GO_TAB = v === 's1' ? 's1' : 's2'; tcGoDraw(); }
+function tcGoTab(v) { T_GO_TAB = ['s1', 's3'].includes(v) ? v : 's2'; tcGoDraw(); }
 // the live letter panels (10.11.2026): the 600 px email drawn at the panel's width, measured whenever the panel's size changes
 const TC_GO_FIT = typeof ResizeObserver === 'function' ? new ResizeObserver((es) => es.forEach((e) => {
   const f = e.target.querySelector('iframe'); if (f && e.target.clientWidth) f.style.transform = `scale(${e.target.clientWidth / 600})`; })) : null;

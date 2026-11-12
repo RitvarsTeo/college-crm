@@ -867,8 +867,8 @@ CREATE TABLE IF NOT EXISTS tc_go_s2_log (
 );
 -- The Grand Opening gift per company (04.11.2026, the owner's pick: the company tiles): physical piece or digital only.
 -- company_key = 'id:<tc_companies.id>' or 'n:<the company name in lower case>' for a Stage 2 company Intake does not hold.
--- The puzzle place per company (05.11.2026, his picks: "32x32 it is"; a company gets its place when it answers Yes).
--- code = the position on the 32 x 32 board, as on the QR: column 1-32 + row A-Z then AA-AF ('13H').
+-- The puzzle place per company (05.11.2026). OUT SINCE 12.11.2026 (his pick "Yes, build it"): nothing gives or reads a place;
+-- the one place ever given (1A) is archived (archived_at), never deleted. The piece now goes per mother company (tc_go_pieces).
 CREATE TABLE IF NOT EXISTS tc_go_places (
   company_key TEXT PRIMARY KEY,    -- the same key as tc_go_gifts: 'id:<tc_companies.id>' or 'n:<name in lower case>'
   code TEXT NOT NULL UNIQUE,
@@ -876,13 +876,43 @@ CREATE TABLE IF NOT EXISTS tc_go_places (
   assigned_at TEXT NOT NULL,
   assigned_by TEXT
 );
--- Check-in at the door on 27.05.2027 (05.11.2026): one row per company place when its guests arrive; a second check-in
--- updates the count. Never deleted.
+-- Check-in by place (05.11.2026). OUT SINCE 12.11.2026: the door checks in by ticket (tc_go_ticket_checkins). Never deleted.
 CREATE TABLE IF NOT EXISTS tc_go_checkins (
   code TEXT PRIMARY KEY,           -- the place code, as on the QR ('13H')
   people INTEGER NOT NULL,
   arrived_at TEXT NOT NULL,
   arrived_by TEXT
+);
+-- STAGE 3, THE TICKET (12.11.2026, his picks "Yes, build it" / "Yes, read them" / "Yes, at the door"; src/tctickets.js): one
+-- ticket per registered person (Client Hub intake_read.registered_people, read-only), its own code in its own QR, written
+-- BEFORE the email goes from the list owner's own mailbox (never twice). Never deleted.
+CREATE TABLE IF NOT EXISTS tc_go_tickets (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  reg_key TEXT NOT NULL UNIQUE,    -- the registration in Client Hub: 'L:<link code>:<position>' or 'Q:<registration id>'
+  code TEXT NOT NULL UNIQUE,       -- the ticket code in the QR, like GO27-K7M2Q9XR4T
+  sender TEXT NOT NULL,            -- the list owner the ticket comes from
+  name TEXT,
+  email TEXT,
+  company TEXT,                    -- as the person wrote it
+  mother_key TEXT,                 -- the mother company: 'id:<tc_companies.id>' or 'n:<name key>'
+  mother_name TEXT,
+  result TEXT NOT NULL,            -- sent | refused
+  detail TEXT,
+  sent_at TEXT NOT NULL,
+  sent_by TEXT
+);
+-- the door on 27.05.2027: one check-in per ticket; the piece goes to the first guest of each mother company
+CREATE TABLE IF NOT EXISTS tc_go_ticket_checkins (
+  code TEXT PRIMARY KEY,           -- tc_go_tickets.code
+  at TEXT NOT NULL,
+  by_name TEXT
+);
+CREATE TABLE IF NOT EXISTS tc_go_pieces (
+  mother_key TEXT PRIMARY KEY,
+  code TEXT NOT NULL,              -- the ticket of the guest who took the piece
+  name TEXT,
+  at TEXT NOT NULL,
+  by_name TEXT
 );
 -- The after-answer emails (05.11.2026, src/tcgomail.js): one row per person and kind, written BEFORE the email goes, so
 -- nobody gets the same one twice. kind: in | r1 | r2.
@@ -1035,6 +1065,8 @@ const ADDED_COLUMNS = [
   ['tc_go_stage2', 'first_name', 'TEXT'],       // 30.10.2026, Stage 2 sending from Intake: the greeting, the personal link code
   ['tc_go_stage2', 'link_code', 'TEXT'],
   ['tc_go_stage2', 'mail_kind', 'TEXT'],         // confirm | invite | new (stage2_send_data_2026-10-22.json)
+  ['tc_go_places', 'archived_at', 'TEXT'],       // 12.11.2026, his pick: place codes out; the one place given (1A) is archived, not deleted
+  ['tc_go_places', 'archived_by', 'TEXT'],
 ];
 
 // ---------------------------------------------------------- the async layer --
