@@ -209,7 +209,7 @@ test('the page: Save / Undo / status with the full date, Ctrl+Z, Ctrl+S on nothi
   assert.ok(APP.includes("else if (place === 'mylist') viewTcMyList(arg ? decodeURIComponent(arg) : '');"));
   assert.ok(APP.includes("filter: 'todo'"));
   assert.ok(APP.includes('onclick="tcMlSave()">Save</button>') && APP.includes('onclick="tcMlUndo()" title="Ctrl+Z">Undo</button>'));
-  assert.ok(APP.includes("toLocaleString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })"), '6. full date and time');
+  assert.ok(APP.includes("return `${o.weekday} ${o.day} ${o.month}, ${o.hour}:${o.minute}`;"), '6. full date and time');
   for (const t of ["'Saving…'", '`Saved ${tcMlTime(S.statusAt)}`', '`Unsaved changes · autosaved ${tcMlTime(S.statusAt)}`', "'Unsaved changes'"]) assert.ok(APP.includes(t), t);
   assert.ok(APP.includes("String(e.key).toLowerCase() === 'z') { e.preventDefault(); tcMlUndo(); }"));
   assert.match(fn('tcMlSave'), /if \(!T_ML\.dirty\) return true;/, '5. nothing to save');

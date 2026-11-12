@@ -13000,7 +13000,10 @@ const mlShows = (g, f) => !f || g.people.some((p) => (f === 'todo' ? !p.decision
 let T_ML = null;
 const TCML_WAYS = [['digital', 'Digital'], ['in_person', 'In person'], ['post', 'By post']];
 // the full date and time (his rule: a date names the full weekday)
-const tcMlTime = (iso) => new Date(iso).toLocaleString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+const tcMlTime = (iso) => {
+  const o = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date(iso)).map((x) => [x.type, x.value]));
+  return `${o.weekday} ${o.day} ${o.month}, ${o.hour}:${o.minute}`;
+};
 async function viewTcMyList(code) {
   if (T_ML && T_ML.dirty && T_ML.code === code) { tcMlDraw(); return; }   // back to the same list after Cancel: the work is still here
   const L = await api('/api/tc/go/mylist');
