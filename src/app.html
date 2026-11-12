@@ -2711,10 +2711,11 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tc-door-code{font-size:28px;font-weight:800;color:#0a2463} html.ui-c .tc-door-card h2{margin:4px 0 8px}
   html.ui-c .tc-door-gift{display:inline-block;font-size:12px;font-weight:700;color:#fff;background:#0a2463;border-radius:5px;padding:2px 8px;margin-bottom:8px}
   html.ui-c .tc-door-act{display:flex;gap:8px;align-items:center;margin-top:14px} html.ui-c .tc-door-act b{font-size:22px;min-width:28px;text-align:center}
-  html.ui-c .tc-door-co{margin:0 0 6px;color:var(--t2);font-weight:600} html.ui-c .tc-door-say{font-size:22px;font-weight:800;margin:10px 0 0}
+  html.ui-c .tc-door-who{font-size:26px;font-weight:800;line-height:1.2;text-transform:none;letter-spacing:0;color:var(--ink)} html.ui-c .tc-door-co{margin:2px 0 6px;color:var(--t2);font-weight:600} html.ui-c .tc-door-say{font-size:22px;font-weight:800;margin:10px 0 0}
   html.ui-c .tc-door-card.tk-first{border:2px solid #1e7bc4;background:#eaf5fc} html.ui-c .tc-door-card.tk-colleague{border:2px solid #0a2463}
   html.ui-c .tc-door-card.tk-again{border:2px solid #835c12;background:#fdf3e1} html.ui-c .tc-door-card.tk-unknown{border:2px solid #b3261e;background:#fdecea}
-  html.ui-c .tctk{padding:18px 22px} html.ui-c .tctk-p{color:var(--t2);font-weight:600} html.ui-c .tctk-door{margin-top:14px}
+  html.ui-c .tctk{padding:18px 22px} html.ui-c .tctk-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:0 0 12px} html.ui-c .tctk-head b{font-size:20px;font-weight:800;color:var(--ink)} html.ui-c .tctk-head span{color:var(--t2);font-weight:600}
+  html.ui-c .tc-door-f .c-search::placeholder{text-transform:none;font-size:16px} html.ui-c .tctk-p{color:var(--t2);font-weight:600} html.ui-c .tctk-door{margin-top:14px}
   html.ui-c .tctk-fig{display:inline-flex;gap:8px;align-items:baseline;margin-top:12px;background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:10px 16px;cursor:pointer;font:inherit;color:var(--ink)} html.ui-c .tctk-fig b{font-size:24px}
   html.ui-c .tctk-shot{max-width:680px} html.ui-c .tcgo-lt.tctk-lt{aspect-ratio:600/1400} html.ui-c .tcgo-lt.tctk-lt iframe{height:1400px}
   html.ui-c .tc-door-was{color:#1e7bc4;font-weight:600;margin:10px 0 0} html.ui-c .tc-door-err{color:#b3261e;margin-top:12px} html.ui-c .tc-door-tot{color:var(--t3);margin:12px 0 0}
@@ -12935,7 +12936,7 @@ function tcDoorDraw() {
   if (tot && T_DOOR.totals) tot.innerHTML = `Checked in: <b>${tcN(T_DOOR.totals.people)}</b> ${T_DOOR.totals.people === 1 ? 'person' : 'people'} · <b>${tcN(T_DOOR.totals.pieces)}</b> ${T_DOOR.totals.pieces === 1 ? 'piece' : 'pieces'} handed over`;
   if (!box || !c) return;
   if (c.error) { box.innerHTML = `<p class="tc-door-err">${esc(c.error)}</p>`; return; }
-  const who = c.name ? `<h2>${esc(c.name)}</h2><p class="tc-door-co">${esc(c.company)}</p>` : '';
+  const who = c.name ? `<div class="tc-door-who">${esc(c.name)}</div><p class="tc-door-co">${esc(c.company)}</p>` : '';
   const say = { first: '<p class="tc-door-say">🧩 Hand over the piece</p>',
     colleague: `<p class="tc-door-say">Piece already with ${esc(c.pieceWith || '')} (${esc(tcDoorTime(c.pieceAt))})</p>`,
     again: `<p class="tc-door-say">Already checked in at ${esc(tcDoorTime(c.at))}</p>`,
@@ -13350,10 +13351,10 @@ function tcTkHtml() {
       ${x.refused ? `<small class="tcs2x-sub">${tcN(x.refused)} refused</small>` : ''}
       ${x.noEmail.length ? `<button type="button" class="tcs2x-nocode" onclick="tcTkList(${k})">${tcN(x.noEmail.length)} without an email</button>` : ''}
       <div class="tcs2x-btns"><a class="btn sm ghost" href="/api/tc/go/tickets/preview?sender=${encodeURIComponent(x.code)}" target="_blank" rel="noopener">Preview</a>
-      <button type="button" class="btn sm" ${x.left > 0 && !T_TK_BUSY ? '' : 'disabled'} onclick="tcTkSend(${k})">${busy ? 'Sending…' : `Send ${tcN(x.left)}`}</button></div></div>`;
+      ${x.left > 0 || busy ? `<button type="button" class="btn sm" ${T_TK_BUSY ? 'disabled' : ''} onclick="tcTkSend(${k})">${busy ? 'Sending…' : `Send ${tcN(x.left)}`}</button>` : ''}</div></div>`;
   };
   const first = (T_TK.senders.find((x) => x.n) || T_TK.senders[0] || {}).code || '';
-  return `<section class="c-sheet tctk"><div class="tcgo-bh"><h2>The ticket · ${tcN(all)} registered</h2><span>${tcN(sent)} sent</span></div>
+  return `<section class="c-sheet tctk"><div class="tctk-head"><b>The ticket · ${tcN(all)} registered</b><span>${tcN(sent)} sent</span></div>
       <div class="tcgo-packs">${T_TK.senders.map(card).join('')}</div>
       ${T_TK.noOwner.length ? `<button type="button" class="tctk-fig" onclick="tcTkList('')"><b>${tcN(T_TK.noOwner.length)}</b><span>registered, no list owner</span></button>` : ''}
       <div id="tcTkErr"></div><div class="tctk-door">${door}</div></section>
