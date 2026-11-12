@@ -115,7 +115,7 @@ const LOGO = () => fs.readFileSync(path.join(ROOT, 'src', 'assets', 'go-logo-ema
 export function ticketMail({ first = '', name = '', company = '', code = '' }, from = {}, img = { qr: 'cid:qr', logo: 'cid:logo' }) {
   const hi = first ? 'Dear ' + esc_(first) + ',' : 'Hello,';
   const sig = [esc_(from.name || ''), 'Novikontas Academy'].filter(Boolean).join('<br>');
-  const html = '<style>@media (max-width:620px){.tk-pad{padding-left:20px!important;padding-right:20px!important}.tk-h1{font-size:30px!important}.tk-date{font-size:25px!important}'
+  const html = '<style>@media (max-width:599px){.tk-pad{padding-left:20px!important;padding-right:20px!important}.tk-h1{font-size:30px!important}.tk-date{font-size:25px!important}'
     + '.tk-qr{display:block!important;width:100%!important;text-align:center!important;padding:18px 0 12px!important}.tk-qr img{margin:0 auto!important}.tk-txt{display:block!important;width:100%!important;text-align:center!important}.tk-bar2{display:block!important;margin-top:2px}}</style>'
     + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#e7ebf0"><tr><td align="center" style="padding:24px 0">'
     + '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background:#ffffff">'
