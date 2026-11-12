@@ -2712,7 +2712,7 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tc-door-gift{display:inline-block;font-size:12px;font-weight:700;color:#fff;background:#0a2463;border-radius:5px;padding:2px 8px;margin-bottom:8px}
   html.ui-c .tc-door-act{display:flex;gap:8px;align-items:center;margin-top:14px} html.ui-c .tc-door-act b{font-size:22px;min-width:28px;text-align:center}
   html.ui-c .tc-door-who{font-size:26px;font-weight:800;line-height:1.2;text-transform:none;letter-spacing:0;color:var(--ink)} html.ui-c .tc-door-co{margin:2px 0 6px;color:var(--t2);font-weight:600} html.ui-c .tc-door-say{font-size:22px;font-weight:800;margin:10px 0 0}
-  html.ui-c .tc-door-card.tk-first{border:2px solid #1e7bc4;background:#eaf5fc} html.ui-c .tc-door-card.tk-colleague{border:2px solid #0a2463}
+  html.ui-c .tc-door-card.tk-in{border:2px solid #1e7bc4;background:#eaf5fc}
   html.ui-c .tc-door-card.tk-again{border:2px solid #835c12;background:#fdf3e1} html.ui-c .tc-door-card.tk-unknown{border:2px solid #b3261e;background:#fdecea}
   html.ui-c .tctk{padding:18px 22px} html.ui-c .tctk-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:0 0 12px} html.ui-c .tctk-head b{font-size:20px;font-weight:800;color:var(--ink)} html.ui-c .tctk-head span{color:var(--t2);font-weight:600}
   html.ui-c .tc-door-f .c-search::placeholder{text-transform:none;font-size:16px} html.ui-c .tctk-p{color:var(--t2);font-weight:600} html.ui-c .tctk-door{margin-top:14px}
@@ -12907,10 +12907,10 @@ async function viewTcGo(part) {
   api('/api/tc/go/demo-access').then((r) => { T_GO_DEMO = Boolean(r && r.ok); const h = document.querySelector('#view .c-head');
     if (T_GO_DEMO && h && !h.querySelector('.tcgo-demo')) h.insertAdjacentHTML('beforeend', '<a class="btn tcgo-demo" href="/api/tc/go/demo" target="_blank" rel="noopener">▶ Demo</a>'); }).catch(() => {});
 }
-// CHECK-IN AT THE DOOR (12.11.2026, his pick "Yes, at the door"; src/tctickets.js): scan the guest's ticket QR or type its
-// code; the scan checks them in. First guest of a mother company: hand over the piece; a colleague later: the piece is already
-// with them; the same ticket again: already checked in; a code nobody has: the help desk. The camera scan needs a browser
-// that reads QR codes (Chrome on Android does).
+// CHECK-IN AT THE DOOR (12.11.2026, his picks "Yes, at the door" and "yes, staff scan tickets at the door"; src/tctickets.js):
+// staff scan the guest's ticket QR or type its code; the scan checks them in and every guest gets a puzzle piece ("everyone at
+// the end get the puzzle piece only at the door"); the same ticket again: already checked in, piece given; a code nobody has:
+// the help desk. The camera scan needs a browser that reads QR codes (Chrome on Android does).
 let T_DOOR = { card: null, cam: null, totals: null };
 function viewTcDoor(code) {
   $('#view').innerHTML = `${typeof T_GO !== 'undefined' && T_GO ? tcGoCrumb(true) : ''}<div class="c-head"><div><h1>Check-in at the door</h1></div></div>
@@ -12933,13 +12933,12 @@ async function tcDoorFind(text) {
 const tcDoorTime = (iso) => (iso ? new Date(iso).toLocaleTimeString('lv-LV', { hour: '2-digit', minute: '2-digit' }) : '');
 function tcDoorDraw() {
   const c = T_DOOR.card, box = $('#tcDoorCard'), tot = $('#tcDoorTot');
-  if (tot && T_DOOR.totals) tot.innerHTML = `Checked in: <b>${tcN(T_DOOR.totals.people)}</b> ${T_DOOR.totals.people === 1 ? 'person' : 'people'} · <b>${tcN(T_DOOR.totals.pieces)}</b> ${T_DOOR.totals.pieces === 1 ? 'piece' : 'pieces'} handed over`;
+  if (tot && T_DOOR.totals) tot.innerHTML = `Checked in, each with a piece: <b>${tcN(T_DOOR.totals.people)}</b>`;
   if (!box || !c) return;
   if (c.error) { box.innerHTML = `<p class="tc-door-err">${esc(c.error)}</p>`; return; }
   const who = c.name ? `<div class="tc-door-who">${esc(c.name)}</div><p class="tc-door-co">${esc(c.company)}</p>` : '';
-  const say = { first: '<p class="tc-door-say">🧩 Hand over the piece</p>',
-    colleague: `<p class="tc-door-say">Piece already with ${esc(c.pieceWith || '')} (${esc(tcDoorTime(c.pieceAt))})</p>`,
-    again: `<p class="tc-door-say">Already checked in at ${esc(tcDoorTime(c.at))}</p>`,
+  const say = { in: '<p class="tc-door-say">🧩 Hand over a piece</p>',
+    again: `<p class="tc-door-say">Already checked in at ${esc(tcDoorTime(c.at))} - piece given</p>`,
     unknown: '<p class="tc-door-say">Not on the list. Please send them to the help desk.</p>' }[c.state] || '';
   box.innerHTML = `<div class="tc-door-card tk-${esc(c.state)}">${c.state === 'unknown' && c.code ? `<div class="tc-door-code">${esc(c.code)}</div>` : ''}${who}${say}</div>`;
 }

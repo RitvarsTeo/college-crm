@@ -122,21 +122,21 @@ test('the ticket email: the "See you soon" concept words, the person own QR, Add
   tk.setRegFetcher(null);
 });
 
-test('at the door: first guest of a mother company = hand over the piece; a colleague = piece already with them; the same ticket again = already in; an unknown code = help desk', async () => {
+test('at the door (his words 12.11: "everyone at the end get the puzzle piece only at the door"): every guest checked in = hand over a piece; the same ticket again = already in, piece given; an unknown code = help desk', async () => {
   const db = await openDb();
   const t = (code, name, mother) => db.prepare(`INSERT INTO tc_go_tickets (reg_key, code, sender, name, email, company, mother_key, mother_name, result, sent_at) VALUES (?,?,?,?,?,?,?,?,?,?)`)
     .run('K' + code, code, 'JS', name, name + '@example.com', mother, 'id:1', mother, 'sent', at);
   await t('GO27-AAAAAAAAAA', 'Anna Example', 'Alpha Example AS'); await t('GO27-BBBBBBBBBB', 'Ben Example', 'Alpha Example AS');
   let r = await tk.doorScan(db, 'go27-aaaaaaaaaa', 'Door 1');
-  assert.equal(r.state, 'first'); assert.equal(r.name, 'Anna Example'); assert.equal(r.company, 'Alpha Example AS');
+  assert.equal(r.state, 'in'); assert.equal(r.name, 'Anna Example'); assert.equal(r.company, 'Alpha Example AS');
   r = await tk.doorScan(db, 'GO27-BBBBBBBBBB', 'Door 2');
-  assert.equal(r.state, 'colleague'); assert.equal(r.pieceWith, 'Anna Example'); assert.ok(r.pieceAt);
+  assert.equal(r.state, 'in', 'a colleague of the same company gets a piece too'); assert.equal(r.name, 'Ben Example');
   r = await tk.doorScan(db, 'GO27-AAAAAAAAAA', 'Door 1');
   assert.equal(r.state, 'again'); assert.ok(r.at);
   r = await tk.doorScan(db, 'GO27-ZZZZZZZZZZ', 'Door 1');
   assert.equal(r.state, 'unknown');
   assert.equal((await tk.doorScan(db, 'hello', 'Door 1')).state, 'unknown');
-  assert.deepEqual(r.totals, { people: 2, pieces: 1 });
+  assert.deepEqual(r.totals, { people: 2 });
   // a refused ticket never lets anyone in
   await db.prepare(`INSERT INTO tc_go_tickets (reg_key, code, sender, name, result, sent_at) VALUES ('KR','GO27-RRRRRRRRRR','JS','R','refused',?)`).run(at);
   assert.equal((await tk.doorScan(db, 'GO27-RRRRRRRRRR', 'Door 1')).state, 'unknown');
@@ -145,8 +145,9 @@ test('at the door: first guest of a mother company = hand over the piece; a coll
 test('the page: Stage 3 tab with the cards for admins, the door scans tickets with the four answers, no Wallet note anywhere', () => {
   const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
   assert.ok(app.includes("${tb('s3', 3, 'Stage 3 · Ticket')}"));
-  for (const t of ["'<p class=\"tc-door-say\">🧩 Hand over the piece</p>'", '`<p class="tc-door-say">Piece already with ${esc(c.pieceWith || \'\')} (${esc(tcDoorTime(c.pieceAt))})</p>`',
-    '`<p class="tc-door-say">Already checked in at ${esc(tcDoorTime(c.at))}</p>`', "'<p class=\"tc-door-say\">Not on the list. Please send them to the help desk.</p>'"]) assert.ok(app.includes(t), t);
+  for (const t of ["'<p class=\"tc-door-say\">🧩 Hand over a piece</p>'", '`<p class="tc-door-say">Already checked in at ${esc(tcDoorTime(c.at))} - piece given</p>`',
+    "'<p class=\"tc-door-say\">Not on the list. Please send them to the help desk.</p>'"]) assert.ok(app.includes(t), t);
+  assert.ok(!app.includes('Piece already with') && !app.includes('Hand over the piece'));
   assert.ok(app.includes('registered, no list owner') && app.includes('onclick="tcTkSend(${k})"'));
   assert.ok(!/wallet/i.test(app));
 });
@@ -177,7 +178,7 @@ test('over the wire: ticket cards, preview and Send for admins only; the door fo
   assert.equal(pv.status, 200); assert.match(await pv.text(), /See you soon/);
   assert.equal((await post('/api/tc/go/tickets/send', ad, { sender: 'JS' })).status, 400, 'not connected: nothing sent');
   assert.equal((await post('/api/tc/go/door', js, { t: 'GO27-ZZZZZZZZZZ' })).status, 200);
-  assert.deepEqual((await (await get('/api/tc/go/door', js)).json()).totals, { people: 0, pieces: 0 });
+  assert.deepEqual((await (await get('/api/tc/go/door', js)).json()).totals, { people: 0 });
   for (const p of ['/api/tc/go/tickets', '/api/tc/go/tickets/preview?sender=JS', '/api/tc/go/door']) assert.notEqual((await get(p)).status, 200, p);
   assert.notEqual((await post('/api/tc/go/door', null, { t: 'x' })).status, 200);
   assert.notEqual((await post('/api/tc/go/tickets/send', null, { sender: 'JS' })).status, 200);

@@ -717,7 +717,7 @@ export async function stage2MatchApply(db, decisions, actor) {
 }
 
 // PLACE CODES ARE OUT (12.11.2026, his pick "Yes, build it"): no puzzle place per company, no place QR, no place at the
-// door. One piece per mother company, handed to the first guest of that company whose TICKET is scanned (src/tctickets.js).
+// door. Every guest gets a puzzle piece at the door when their TICKET is scanned (his words 12.11.2026; src/tctickets.js).
 // The one place ever given (1A) is archived in tc_go_places, never deleted; nothing reads that table any more.
 
 /** THE PHYSICAL LIST (05.11.2026; one row per MOTHER company since 12.11.2026): every mother company with a company set to

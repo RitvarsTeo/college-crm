@@ -1,6 +1,7 @@
 // STAGE 3, THE TICKET (12.11.2026). His picks, relayed by Intake MASTER: "Yes, build it" (place codes out, Stage 3 = the
 // ticket), "QR + calendar now" (no Wallet button yet: Add to calendar), "Yes, read them" (Intake reads who registered,
-// read-only) and "Yes, at the door" (the door scans the person's ticket QR; one piece per mother company).
+// read-only) and "Yes, at the door" (the door scans the person's ticket QR). His correction 12.11.2026: "everyone at the end get
+// the puzzle piece only at the door" and "yes, staff scan tickets at the door": EVERY checked-in guest gets a piece there.
 //
 // WHO GETS A TICKET: every person registered on the landing page, read live and read-only from Client Hub's
 // intake_read.registered_people (docs/client-hub/intake_registered_people.sql) through the existing read-only login, kept 60 s
@@ -13,8 +14,8 @@
 // THE EMAIL: the Grand Opening session's "See you soon" concept (docs/letters_concept_2026-11-11), its words and layout, with
 // the person's own QR; from the owner's own mailbox and signed by them (src/tcs2send.js, the same "Send mail as"). Only
 // on the owner's Send button (admins, like Stage 2); the ticket row is written BEFORE the email goes, so never twice.
-// AT THE DOOR: the ticket's QR (or its code typed); first guest of a mother company = hand over the piece; a colleague later =
-// the piece is already with that person; the same ticket again = already checked in; an unknown code = the help desk.
+// AT THE DOOR: staff scan the ticket's QR (or type its code); every guest checked in = hand over a piece; the same ticket again
+// = already checked in, piece given; an unknown code = the help desk.
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -208,11 +209,10 @@ export async function sendNext(db, code, regs, me, { env = process.env, fetchImp
 // ---------------------------------------------------------------- the door --
 async function doorTotals(db) {
   const p = await db.prepare('SELECT COUNT(*) AS n FROM tc_go_ticket_checkins').get();
-  const g = await db.prepare('SELECT COUNT(*) AS n FROM tc_go_pieces').get();
-  return { people: Number(p.n) || 0, pieces: Number(g.n) || 0 };
+  return { people: Number(p.n) || 0 };
 }
-/** Scan or type a ticket: checks the guest in. state: first (hand over the piece) | colleague (the piece is with someone of
- *  the same mother company) | again (this ticket is already in) | unknown (send them to the help desk). */
+/** Scan or type a ticket: checks the guest in. state: in (hand over a piece) | again (this ticket is already in, its piece
+ *  given) | unknown (send them to the help desk). */
 export async function doorScan(db, text, actor) {
   const code = codeFromText(text);
   const t = code ? await db.prepare(`SELECT code, name, company, mother_key, mother_name FROM tc_go_tickets WHERE code = ? AND result = 'sent'`).get(code) : null;
@@ -224,14 +224,7 @@ export async function doorScan(db, text, actor) {
     const was = await db.prepare('SELECT at FROM tc_go_ticket_checkins WHERE code = ?').get(t.code);
     return { state: 'again', ...who, at: was ? was.at : null, totals: await doorTotals(db) };
   }
-  if (t.mother_key) {
-    const took = await db.prepare('INSERT INTO tc_go_pieces (mother_key, code, name, at, by_name) VALUES (?,?,?,?,?) ON CONFLICT (mother_key) DO NOTHING').run(t.mother_key, t.code, t.name, at, actor);
-    if (!Number(took.changes)) {
-      const p = await db.prepare('SELECT name, at FROM tc_go_pieces WHERE mother_key = ?').get(t.mother_key);
-      return { state: 'colleague', ...who, pieceWith: p ? p.name : '', pieceAt: p ? p.at : null, totals: await doorTotals(db) };
-    }
-  }
-  return { state: 'first', ...who, at, totals: await doorTotals(db) };
+  return { state: 'in', ...who, at, totals: await doorTotals(db) };
 }
 /** The door's figures before anyone scans. */
 export const doorStart = async (db) => ({ totals: await doorTotals(db) });

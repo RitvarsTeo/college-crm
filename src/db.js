@@ -868,7 +868,7 @@ CREATE TABLE IF NOT EXISTS tc_go_s2_log (
 -- The Grand Opening gift per company (04.11.2026, the owner's pick: the company tiles): physical piece or digital only.
 -- company_key = 'id:<tc_companies.id>' or 'n:<the company name in lower case>' for a Stage 2 company Intake does not hold.
 -- The puzzle place per company (05.11.2026). OUT SINCE 12.11.2026 (his pick "Yes, build it"): nothing gives or reads a place;
--- the one place ever given (1A) is archived (archived_at), never deleted. The piece now goes per mother company (tc_go_pieces).
+-- the one place ever given (1A) is archived (archived_at), never deleted. Every guest now gets a piece at the door (tc_go_ticket_checkins).
 CREATE TABLE IF NOT EXISTS tc_go_places (
   company_key TEXT PRIMARY KEY,    -- the same key as tc_go_gifts: 'id:<tc_companies.id>' or 'n:<name in lower case>'
   code TEXT NOT NULL UNIQUE,
@@ -901,16 +901,9 @@ CREATE TABLE IF NOT EXISTS tc_go_tickets (
   sent_at TEXT NOT NULL,
   sent_by TEXT
 );
--- the door on 27.05.2027: one check-in per ticket; the piece goes to the first guest of each mother company
+-- the door on 27.05.2027: one check-in per ticket; every guest checked in gets a puzzle piece there (his words 12.11.2026)
 CREATE TABLE IF NOT EXISTS tc_go_ticket_checkins (
   code TEXT PRIMARY KEY,           -- tc_go_tickets.code
-  at TEXT NOT NULL,
-  by_name TEXT
-);
-CREATE TABLE IF NOT EXISTS tc_go_pieces (
-  mother_key TEXT PRIMARY KEY,
-  code TEXT NOT NULL,              -- the ticket of the guest who took the piece
-  name TEXT,
   at TEXT NOT NULL,
   by_name TEXT
 );
