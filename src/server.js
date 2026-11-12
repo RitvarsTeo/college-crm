@@ -3808,19 +3808,24 @@ export const handle = async (req, res) => {
       const code = String(url.searchParams.get('sender') || '');
       if (!code) return json(res, 200, { lists: tcmylist.openable(me, admin), mine: tcmylist.ownCode(me) });
       if (!tcmylist.mayOpen(me, admin, code)) return json(res, 403, { error: 'This list is not yours.' });
-      try { return json(res, 200, await tcmylist.myList(db, code)); }
+      try { return json(res, 200, await tcmylist.myList(db, code, String((me && me.email) || ''))); }
       catch (e) { if (e instanceof tc.TcInputError) return json(res, 400, { error: e.message }); throw e; }
     }
     if (/^\/api\/tc\/go\/mylist\/(save|draft|discard)$/.test(p) && req.method === 'POST') {
       const me = await currentUser(req), admin = Boolean(await adminOf(req));
       const b = await body(req), code = String(b.sender || '');
       if (!tcmylist.mayOpen(me, admin, code)) return json(res, 403, { error: 'This list is not yours.' });
-      const actor = await actorOf(req, b), what = p.split('/').pop();
+      const actor = await actorOf(req, b), what = p.split('/').pop(), editor = String((me && me.email) || actor || '');
+      const base = b.base === undefined || b.base === null ? null : Number(b.base);
       try {
-        if (what === 'save') return json(res, 200, await tcmylist.saveState(db, code, b.state, actor));
-        if (what === 'draft') return json(res, 200, await tcmylist.saveDraft(db, code, b.state, actor));
-        return json(res, 200, await tcmylist.dropDraft(db, code));
-      } catch (e) { if (e instanceof tc.TcInputError) return json(res, 400, { error: e.message }); throw e; }
+        if (what === 'save') return json(res, 200, await tcmylist.saveState(db, code, b.state, actor, base, editor));
+        if (what === 'draft') return json(res, 200, await tcmylist.saveDraft(db, code, b.state, actor, base || 0, editor));
+        return json(res, 200, await tcmylist.dropDraft(db, code, editor));
+      } catch (e) {
+        if (e instanceof tcmylist.MlConflict) return json(res, 409, { error: e.message, by: e.by, at: e.at, conflict: true });
+        if (e instanceof tc.TcInputError) return json(res, 400, { error: e.message });
+        throw e;
+      }
     }
     // THE POSTCARD LIST (12.11.2026): the invited people whose company goes in person or by post; an owner their own, an admin all
     if ((p === '/api/tc/go/postcards' || p === '/api/tc/go/postcards.xlsx') && req.method === 'GET') {

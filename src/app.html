@@ -2678,6 +2678,8 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tcml-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap} html.ui-c .tcml-st{font-weight:600;color:var(--t2)} html.ui-c .tcml-st.dirty{color:#835c12}
   html.ui-c .tcml-t.drop{border-color:var(--c-sis);box-shadow:inset 0 0 0 2px var(--c-sis)} html.ui-c .tcml-p.moved b::after{content:' · moved here';color:var(--c-sis);font-weight:700;font-size:12px}
   html.ui-c .tcml-p[draggable="true"]{cursor:grab}
+  html.ui-c .tcml-note{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#fdf3e1;border:1px solid #e9c98a;color:#5c3f07;border-radius:10px;padding:10px 14px;margin:0 0 12px;font-weight:600}
+  html.ui-c .tcs2x-nocode{background:none;border:0;padding:0;font:inherit;font-size:12.5px;color:var(--c-sis);text-decoration:underline;cursor:pointer;text-align:left}
   html.ui-c table.tcpc{width:100%;border-collapse:collapse;font-size:13.5px} html.ui-c .tcpc th{text-align:left;color:var(--t2);font-weight:700;padding:10px 12px;border-bottom:1px solid var(--rule);text-transform:none;letter-spacing:0;font-size:13px}
   html.ui-c .tcpc td{padding:8px 12px;border-bottom:1px solid var(--rule2);vertical-align:top} html.ui-c .tcpc td span{color:var(--t3)}
   html.ui-c .tcpc-way{font-style:normal;font-weight:700;font-size:12px;border-radius:6px;padding:2px 8px;background:var(--surface-2);white-space:nowrap} html.ui-c .tcpc-way.post{background:#e5f1fa;color:#0a2463}
@@ -12966,7 +12968,8 @@ function mlView(base, W) {
   for (const g of groups) {
     const pk = W.picks[g.key] || {};
     g.decision = pk.decision || null; g.way = g.decision === 'invite' ? pk.way || null : null;
-    for (const p of g.people) { p.out = out.has(p.id); p.decision = g.decision === 'invite' ? (p.out ? 'no' : 'invite') : g.decision === 'no' ? 'no' : null; }
+    // an Invite reaches somebody only once its way is picked: until then its people are still to decide (the audit, 12.11.2026)
+    for (const p of g.people) { p.out = out.has(p.id); p.decision = g.decision === 'invite' ? (g.way ? (p.out ? 'no' : 'invite') : null) : g.decision === 'no' ? 'no' : null; }
   }
   const all = groups.flatMap((g) => g.people);
   return { groups: groups.filter((g) => g.people.length), figures: { todo: all.filter((p) => !p.decision).length, invite: all.filter((p) => p.decision === 'invite').length, no: all.filter((p) => p.decision === 'no').length } };
@@ -12980,21 +12983,38 @@ function mlApply(W, a) {
   if (a.type === 'move') { if (a.home === a.key) delete n.moves[a.id]; else n.moves[a.id] = a.key; }
   return n;
 }
+/** The same state whatever the order it was written in (a draft equal to what is saved is no unsaved change). */
+function mlSame(a, b) {
+  const norm = (w) => {
+    const picks = {};
+    for (const k of Object.keys((w && w.picks) || {}).sort()) { const p = w.picks[k] || {}; if (p.decision) picks[k] = { decision: p.decision, way: p.decision === 'invite' ? p.way || null : null }; }
+    const moves = {};
+    for (const k of Object.keys((w && w.moves) || {}).sort()) moves[k] = w.moves[k];
+    return JSON.stringify({ picks, out: [...new Set(((w && w.out) || []).map(Number))].sort((x, y) => x - y), moves });
+  };
+  return norm(a) === norm(b);
+}
 /** Which view shows a company: Still to decide = any person not decided; Invite / No = any person with that result. */
 const mlShows = (g, f) => !f || g.people.some((p) => (f === 'todo' ? !p.decision : p.decision === f));
 // MLSTATE END
 let T_ML = null;
 const TCML_WAYS = [['digital', 'Digital'], ['in_person', 'In person'], ['post', 'By post']];
-const tcMlTime = (iso) => new Date(iso).toLocaleTimeString('lv-LV', { hour: '2-digit', minute: '2-digit' });
+// the full date and time (his rule: a date names the full weekday)
+const tcMlTime = (iso) => new Date(iso).toLocaleString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
 async function viewTcMyList(code) {
   if (T_ML && T_ML.dirty && T_ML.code === code) { tcMlDraw(); return; }   // back to the same list after Cancel: the work is still here
   const L = await api('/api/tc/go/mylist');
   const pick = code && L.lists.includes(code) ? code : (L.mine && L.lists.includes(L.mine) ? L.mine : L.lists[0]);
   if (!pick) { $('#view').innerHTML = '<div class="c-head"><div><h1>My Grand Opening list</h1></div></div>'; return; }
   const base = await api('/api/tc/go/mylist?sender=' + encodeURIComponent(pick));
-  T_ML = { lists: L.lists, code: pick, base, saved: tcMlStateOf(base), undo: [], open: new Set(), filter: 'todo', dirty: false, status: '', statusAt: '', lastDraft: '', hash: location.hash };
+  T_ML = { lists: L.lists, code: pick, base, version: (base.version || {}).id || 0, saved: tcMlStateOf(base), undo: [], open: new Set(), filter: 'todo',
+    dirty: false, status: '', statusAt: '', lastDraft: '', error: '', conflict: '', seq: 0, hash: location.hash };
   T_ML.W = mlClone(T_ML.saved);
-  if (base.draft) { T_ML.W = { picks: base.draft.state.picks || {}, out: base.draft.state.out || [], moves: base.draft.state.moves || {} }; T_ML.dirty = true; T_ML.status = 'restored'; T_ML.statusAt = base.draft.at; T_ML.lastDraft = JSON.stringify(T_ML.W); }
+  // the editor's own draft, made on this saved version, comes back; one equal to what is saved is no unsaved change
+  if (base.draft && !mlSame(base.draft.state, T_ML.saved)) {
+    T_ML.W = { picks: base.draft.state.picks || {}, out: base.draft.state.out || [], moves: base.draft.state.moves || {} };
+    T_ML.dirty = true; T_ML.status = 'restored'; T_ML.statusAt = base.draft.at; T_ML.lastDraft = JSON.stringify(T_ML.W);
+  }
   tcMlDraw();
   tcMlAutosaveStart();
 }
@@ -13020,7 +13040,7 @@ function tcMlDraw() {
   const tile = (g) => {
     const open = T_ML.open.has(g.key), left = g.people.filter((p) => p.out).length;
     const count = g.decision === 'invite' && left ? `${tcN(g.people.length - left)} of ${tcN(g.people.length)} people` : `${tcN(g.people.length)} ${g.people.length === 1 ? 'person' : 'people'}`;
-    const ppl = open ? `<div class="tcml-ppl">${g.people.map((p) => `<button type="button" class="tcml-p${p.out ? ' out' : ''}${p.from ? ' moved' : ''}" draggable="true" ondragstart="event.dataTransfer.setData('text/plain', String(${Number(p.id)}))" onclick="tcMlDo({ type: 'out', id: ${Number(p.id)} })"><b>${esc(p.label)}</b>${p.position ? `<span>${esc(p.position)}</span>` : ''}</button>`).join('')}</div>` : '';
+    const ppl = open ? `<div class="tcml-ppl">${g.people.map((p) => `<button type="button" class="tcml-p${p.out ? ' out' : ''}${p.from || p.moved ? ' moved' : ''}" draggable="true" ondragstart="event.dataTransfer.setData('text/plain', String(${Number(p.id)}))" onclick="tcMlDo({ type: 'out', id: ${Number(p.id)} })"><b>${esc(p.label)}</b>${p.position ? `<span>${esc(p.position)}</span>` : ''}</button>`).join('')}</div>` : '';
     const how = g.decision === 'invite' ? `<div class="tcml-how">${TCML_WAYS.map(([w, t]) => `<button type="button" aria-pressed="${g.way === w}" onclick="tcMlDo({ type: 'way', key: ${esc(JSON.stringify(String(g.key)))}, way: ${esc(JSON.stringify(String(w)))} })">${t}</button>`).join('')}</div>` : '';
     const drop = g.intake ? ` ondragover="event.preventDefault();this.classList.add('drop')" ondragleave="this.classList.remove('drop')" ondrop="tcMlDrop(event, ${esc(JSON.stringify(String(g.key)))})"` : '';
     return `<div class="tcml-t${g.decision === 'invite' ? ' inv' : ''}"${drop}><b>${esc(g.name)}</b><small>${count}${g.country ? ' · ' + esc(g.country) : ''}</small>
@@ -13028,12 +13048,15 @@ function tcMlDraw() {
       <div class="tcml-yn"><button type="button" class="btn sm" aria-pressed="${g.decision === 'invite'}" onclick="tcMlDo({ type: 'decide', key: ${esc(JSON.stringify(String(g.key)))}, decision: 'invite' })">Invite</button><button type="button" class="btn sm ghost" aria-pressed="${g.decision === 'no'}" onclick="tcMlDo({ type: 'decide', key: ${esc(JSON.stringify(String(g.key)))}, decision: 'no' })">No</button></div>${how}</div>`;
   };
   const shown = V.groups.filter((g) => mlShows(g, T_ML.filter));
+  // a refused Save says why on the page, never in a browser box (the audit, 12.11.2026)
+  const note = T_ML.conflict ? `<div class="tcml-note" role="alert">${esc(T_ML.conflict)} <button type="button" class="btn sm" onclick="tcMlReload()">Load it</button></div>`
+    : T_ML.error ? `<div class="tcml-note" role="alert">${esc(T_ML.error)}</div>` : '';
   $('#view').innerHTML = `<div class="c-head"><div><h1>My Grand Opening list</h1><p class="c-crumb">${esc(D.name)} · ${tcN(D.people)} people · ${tcN(V.groups.length)} companies</p></div>
       <div class="tcml-bar"><span class="tcml-st${T_ML.dirty ? ' dirty' : ''}" role="status">${esc(tcMlStatus())}</span>
       <button type="button" class="btn ghost" ${T_ML.undo.length ? '' : 'disabled'} onclick="tcMlUndo()" title="Ctrl+Z">Undo</button>
       <button type="button" class="btn" ${T_ML.dirty && T_ML.status !== 'saving' ? '' : 'disabled'} onclick="tcMlSave()">Save</button>
       <a class="btn ghost" href="#/tc/postcards">Postcard list</a></div></div>
-    ${lists}<div class="tcml-figs">${fig('todo', F.todo, 'Still to decide')}${fig('invite', F.invite, 'Invite')}${fig('no', F.no, 'No')}</div>
+    ${note}${lists}<div class="tcml-figs">${fig('todo', F.todo, 'Still to decide')}${fig('invite', F.invite, 'Invite')}${fig('no', F.no, 'No')}</div>
     <div class="tcml-tiles">${shown.map(tile).join('')}</div>`;
 }
 function tcMlFold(key) { if (T_ML.open.has(key)) T_ML.open.delete(key); else T_ML.open.add(key); tcMlDraw(); }
@@ -13054,29 +13077,57 @@ function tcMlDrop(ev, key) {
   tcMlDraw();
 }
 function tcMlMarkDirty() {
-  T_ML.dirty = JSON.stringify(T_ML.W) !== JSON.stringify(T_ML.saved);
+  T_ML.dirty = !mlSame(T_ML.W, T_ML.saved);
+  T_ML.error = '';
   if (T_ML.status === 'saved' || T_ML.status === 'restored') T_ML.status = '';
   tcMlDraw();
+  tcMlAutosaveSoon();
 }
 function tcMlUndo() { if (!T_ML || !T_ML.undo.length) return; T_ML.W = T_ML.undo.pop(); tcMlMarkDirty(); }
 async function tcMlSave() {
+  // nothing changed = nothing to save: Ctrl+S never stamps a list again (the audit, 12.11.2026)
   if (!T_ML || T_ML.status === 'saving') return false;
-  T_ML.status = 'saving'; tcMlDraw();
+  if (!T_ML.dirty) return true;
+  clearTimeout(TCML_SOON);
+  T_ML.seq++;                               // an autosave still on its way is ignored from here on
+  T_ML.status = 'saving'; T_ML.error = ''; tcMlDraw();
   try {
-    const base = await post('/api/tc/go/mylist/save', { sender: T_ML.code, state: T_ML.W });
-    T_ML.base = base; T_ML.saved = tcMlStateOf(base); T_ML.W = mlClone(T_ML.saved); T_ML.undo = []; T_ML.dirty = false;
-    T_ML.status = 'saved'; T_ML.statusAt = new Date().toISOString(); T_ML.lastDraft = '';
+    const base = await post('/api/tc/go/mylist/save', { sender: T_ML.code, state: T_ML.W, base: T_ML.version });
+    T_ML.base = base; T_ML.version = (base.version || {}).id || 0; T_ML.saved = tcMlStateOf(base); T_ML.W = mlClone(T_ML.saved); T_ML.undo = []; T_ML.dirty = false;
+    T_ML.status = 'saved'; T_ML.statusAt = (base.version || {}).at || new Date().toISOString(); T_ML.lastDraft = ''; T_ML.conflict = '';
     tcMlDraw(); return true;
-  } catch (e) { T_ML.status = ''; tcMlDraw(); alert(e.message); return false; }
+  } catch (e) {
+    T_ML.status = '';
+    if (e.detail && e.detail.conflict) T_ML.conflict = e.message; else T_ML.error = e.message || 'The list was not saved. Try Save again.';
+    tcMlDraw(); return false;
+  }
 }
+async function tcMlReload() { const code = T_ML.code; T_ML = null; await viewTcMyList(code); }
 async function tcMlAutosave() {
+  if (!T_ML || !T_ML.dirty || T_ML.status === 'saving' || !String(location.hash).startsWith('#/tc/mylist')) return;
+  const json = JSON.stringify(T_ML.W), seq = T_ML.seq, S = T_ML;
+  if (json === S.lastDraft) return;
+  try {
+    await post('/api/tc/go/mylist/draft', { sender: S.code, state: S.W, base: S.version });
+    if (T_ML !== S || S.seq !== seq || S.status === 'saving' || !S.dirty) return;   // a Save came in between: this draft is old
+    S.lastDraft = json; S.status = 'autosaved'; S.statusAt = new Date().toISOString(); tcMlDraw();
+  } catch (e) { /* the next change or tick tries again */ }
+}
+let TCML_TIMER = null, TCML_SOON = null;
+function tcMlAutosaveStart() { if (!TCML_TIMER) TCML_TIMER = setInterval(tcMlAutosave, 90 * 1000); }
+// a few seconds after each change (the audit, 12.11.2026)
+function tcMlAutosaveSoon() { clearTimeout(TCML_SOON); TCML_SOON = setTimeout(tcMlAutosave, 4000); }
+// a phone puts the page away without a beforeunload: the draft goes out as the page hides
+function tcMlAutosaveNow() {
   if (!T_ML || !T_ML.dirty || T_ML.status === 'saving' || !String(location.hash).startsWith('#/tc/mylist')) return;
   const json = JSON.stringify(T_ML.W);
   if (json === T_ML.lastDraft) return;
-  try { await post('/api/tc/go/mylist/draft', { sender: T_ML.code, state: T_ML.W }); T_ML.lastDraft = json; T_ML.status = 'autosaved'; T_ML.statusAt = new Date().toISOString(); tcMlDraw(); } catch (e) { /* the next tick tries again */ }
+  try {
+    apiFetch('/api/tc/go/mylist/draft', { method: 'POST', keepalive: true, credentials: 'same-origin', headers: { 'content-type': 'application/json', 'x-acting-as': ACTOR },
+      body: JSON.stringify({ by: ACTOR, sender: T_ML.code, state: T_ML.W, base: T_ML.version }) }).catch(() => {});
+    T_ML.lastDraft = json;
+  } catch (e) { /* nothing more can be done while the page goes away */ }
 }
-let TCML_TIMER = null;
-function tcMlAutosaveStart() { if (!TCML_TIMER) TCML_TIMER = setInterval(tcMlAutosave, 90 * 1000); }
 // LEAVING (his words "cant leave the window without saving or not saving"): a move inside the app asks first; closing the tab or
 // reloading gets the browser's own question
 function tcMlMayLeave(hash) {
@@ -13092,12 +13143,14 @@ function tcMlMayLeave(hash) {
 async function tcMlLeave(how) {
   const go = T_ML.pending;
   if (how === 'save') { closeModal(); if (!(await tcMlSave())) return; }
-  else { try { await post('/api/tc/go/mylist/discard', { sender: T_ML.code }); } catch (e) { /* the draft stays; nothing was decided */ } T_ML.W = mlClone(T_ML.saved); T_ML.dirty = false; closeModal(); }
+  else { T_ML.seq++; clearTimeout(TCML_SOON); try { await post('/api/tc/go/mylist/discard', { sender: T_ML.code }); } catch (e) { /* the draft stays; nothing was decided */ } T_ML.W = mlClone(T_ML.saved); T_ML.dirty = false; closeModal(); }
   T_ML.hash = '';
   location.hash = go;
 }
 if (typeof window !== 'undefined' && window.addEventListener) {
-  window.addEventListener('beforeunload', (e) => { if (T_ML && T_ML.dirty && String(location.hash).startsWith('#/tc/mylist')) { e.preventDefault(); e.returnValue = ''; } });
+  window.addEventListener('beforeunload', (e) => { if (T_ML && T_ML.dirty && String(location.hash).startsWith('#/tc/mylist')) { tcMlAutosaveNow(); e.preventDefault(); e.returnValue = ''; } });
+  window.addEventListener('pagehide', tcMlAutosaveNow);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') tcMlAutosaveNow(); });
   document.addEventListener('keydown', (e) => {
     if (!T_ML || !String(location.hash).startsWith('#/tc/mylist') || (e.target && e.target.closest && e.target.closest('input,textarea,select'))) return;
     if ((e.ctrlKey || e.metaKey) && !e.shiftKey && String(e.key).toLowerCase() === 'z') { e.preventDefault(); tcMlUndo(); }
@@ -13219,7 +13272,8 @@ function tcS2PacksHtml(S, state) {
     const can = y.confirmed === true && !busy && !T_S2X_BUSY;
     const btns = all || !Number(y.n) ? '' : `<div class="tcs2x-btns"><button type="button" class="btn sm ghost" ${can ? '' : 'disabled'} onclick="tcS2xTest(${esc(JSON.stringify(String(x.code)))})">Test to me</button>
       <button type="button" class="btn sm" ${can && y.left > 0 ? '' : 'disabled'} onclick="tcS2xSend(${esc(JSON.stringify(String(x.code)))})">${busy ? 'Sending…' : `Send next ${Math.min(X.batch, y.left)}`}</button></div>`;
-    return `<div class="tcgo-pack"><b>${esc(x.label)}</b><span>${Number(x.n)}</span>${line}${sub}${btns}</div>`;
+    const nocode = Number(y.noCode) ? `<button type="button" class="tcs2x-nocode" onclick="tcS2xNoCode(${esc(JSON.stringify(String(x.code)))})">${tcN(y.noCode)} without an email or link</button>` : '';
+    return `<div class="tcgo-pack"><b>${esc(x.label)}</b><span>${Number(x.n)}</span>${line}${sub}${nocode}${btns}</div>`;
   };
   const connect = X && X.needsConnect ? `<p class="tcs2x-connect">Sending from Intake needs one Allow in Google: <a href="/api/admin/notify/connect">Connect sending</a> (as ritvars.vilcins@novikontas.org).</p>` : '';
   const day = (iso) => new Date(iso).toLocaleString('en-GB', { timeZone: 'Europe/Riga', weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
@@ -13228,6 +13282,12 @@ function tcS2PacksHtml(S, state) {
       onclick="T_S2X.open=!T_S2X.open;tcS2Redraw()">${T_S2X.open ? '▾' : '▸'} Send log · ${X.log.length}</button></h2><span class="tcs2x-sub">${Number(X.today)} sent in the last 24 hours</span></div>
       ${T_S2X.open ? `<div class="tcgo-flist">${X.log.map((l) => `<div class="tcs2x-lrow"><span>${esc(day(l.at))}</span><b>${esc(lab(l.sender))}</b><span>${l.what === 'test' ? 'Test to me' : `${Number(l.sent)} sent · ${Number(l.refused)} refused`}</span><small>by ${esc(l.by)}</small></div>`).join('')}</div>` : ''}</section>` : '';
   return `${connect}<div class="tcgo-packs">${S.senders.map(card).join('')}</div>${log}`;
+}
+// the people the email cannot reach (no email, no link code), by name, so none of them waits as "left" (the audit, 12.11.2026)
+function tcS2xNoCode(code) {
+  const y = T_S2X && T_S2X.senders.find((x) => x.code === code);
+  if (!y) return;
+  modal(`${y.label} · without an email or link`, `<div class="tcgo-flist">${(y.noCodeRows || []).map((r) => `<div class="tcs2x-lrow"><b>${esc(r.name)}</b><span>${esc(r.company)}</span><small>${esc(r.why)}</small></div>`).join('')}</div>`);
 }
 function tcS2Redraw() { const box = $('#tcS2'); if (box && typeof tcGoStage2 === 'function') box.outerHTML = tcGoStage2(); }
 async function tcS2xTest(code) {

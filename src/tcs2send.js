@@ -51,13 +51,14 @@ export const todaySent = async (db) => Number((await db.prepare(`SELECT COUNT(*)
 export async function overview(db, { env = process.env, fetchImpl = fetch } = {}) {
   // THE FULL FLOW (12.11.2026, the owner's "I need the full flow"): an owner's Stage 2 send goes only to the people they saved as
   // Invite with the way Digital on My Grand Opening list (src/tcmylist.js digitalIds); the counts are those people
-  const all = await db.prepare(`SELECT s.id, s.sender, s.link_code, x.result FROM tc_go_stage2 s LEFT JOIN tc_go_s2_sent x ON x.stage2_id = s.id WHERE s.gone = 0`).all();
+  const all = await db.prepare(`SELECT s.id, s.sender, s.name, s.company, s.email, s.link_code, x.result FROM tc_go_stage2 s LEFT JOIN tc_go_s2_sent x ON x.stage2_id = s.id WHERE s.gone = 0`).all();
   const by = new Map();
   for (const sd of S2) {
     const ids = await digitalIds(db, sd.code);
     const mine = all.filter((r) => r.sender === sd.code && ids.has(Number(r.id)));
     by.set(sd.code, { n: mine.length, sent: mine.filter((r) => r.result === 'sent').length, refused: mine.filter((r) => r.result === 'refused').length,
-      nocode: mine.filter((r) => !r.link_code && !r.result).length });
+      // no email or no link code: they cannot get the email, so they are their own figure on the card, never "left" (the audit, 12.11.2026)
+      nocode: mine.filter((r) => (!r.link_code || !String(r.email || '').trim()) && !r.result).map((r) => ({ name: r.name || '', company: r.company || '', why: !String(r.email || '').trim() ? 'No email' : 'No link code' })) });
   }
   let ok = null, why = '';
   try { const tok = await senderToken(db, { env, fetchImpl }); if (tok.token) { ok = await aliases(env, fetchImpl, tok); if (!ok) why = 'connect'; } else why = 'connect'; } catch (e) { why = 'connect'; }
@@ -65,7 +66,7 @@ export async function overview(db, { env = process.env, fetchImpl = fetch } = {}
     .map((l) => ({ at: l.started_at, sender: l.sender, what: l.what, sent: Number(l.sent), refused: Number(l.refused), by: l.started_by || '' }));
   return { needsConnect: why === 'connect', today: await todaySent(db), dayCap: DAY_CAP, batch: BATCH, log,
     senders: S2.map((s) => { const r = by.get(s.code) || {}; const n = Number(r.n) || 0, sent = Number(r.sent) || 0, refused = Number(r.refused) || 0;
-      return { code: s.code, label: s.label, name: s.name || s.label, email: s.email, n, sent, refused, left: n - sent - refused - (Number(r.nocode) || 0), noCode: Number(r.nocode) || 0,
+      return { code: s.code, label: s.label, name: s.name || s.label, email: s.email, n, sent, refused, left: n - sent - refused - (r.nocode || []).length, noCode: (r.nocode || []).length, noCodeRows: r.nocode || [],
         confirmed: ok ? ok.has(low(s.email)) : null }; }) };
 }
 
@@ -117,7 +118,7 @@ export async function sendNext(db, code, batch, me, { env = process.env, fetchIm
   // only the people saved as Invite + Digital on the owner's list (12.11.2026, the full flow)
   const ids = await digitalIds(db, code);
   const people = (await db.prepare(`SELECT s.id, s.email, s.first_name, s.link_code, s.mail_kind FROM tc_go_stage2 s LEFT JOIN tc_go_s2_sent x ON x.stage2_id = s.id
-    WHERE s.gone = 0 AND s.sender = ? AND x.id IS NULL AND s.link_code IS NOT NULL AND s.email IS NOT NULL ORDER BY s.id`).all(code))
+    WHERE s.gone = 0 AND s.sender = ? AND x.id IS NULL AND s.link_code IS NOT NULL AND s.email IS NOT NULL AND s.email <> '' ORDER BY s.id`).all(code))
     .filter((p) => ids.has(Number(p.id))).slice(0, want);
   let sent = 0, refused = 0;
   for (const p of people) {
@@ -134,6 +135,6 @@ export async function sendNext(db, code, batch, me, { env = process.env, fetchIm
   }
   await db.prepare('UPDATE tc_go_s2_log SET sent = sent + ?, refused = refused + ? WHERE batch = ?').run(sent, refused, batch);
   const left = (await db.prepare(`SELECT s.id FROM tc_go_stage2 s LEFT JOIN tc_go_s2_sent x ON x.stage2_id = s.id
-    WHERE s.gone = 0 AND s.sender = ? AND x.id IS NULL AND s.link_code IS NOT NULL`).all(code)).filter((p) => ids.has(Number(p.id))).length;
+    WHERE s.gone = 0 AND s.sender = ? AND x.id IS NULL AND s.link_code IS NOT NULL AND s.email IS NOT NULL AND s.email <> ''`).all(code)).filter((p) => ids.has(Number(p.id))).length;
   return { ok: true, sent, refused, left, done: !people.length || done + people.length >= BATCH || !left };
 }

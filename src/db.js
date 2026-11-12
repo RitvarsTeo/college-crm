@@ -947,16 +947,37 @@ CREATE TABLE IF NOT EXISTS tc_go_decision_log (
   by_name TEXT
 );
 CREATE INDEX IF NOT EXISTS tc_go_decision_log_person ON tc_go_decision_log (stage2_id, id);
--- the owner's unsaved work, kept by autosave (12.11.2026, his words "it should have autosave also time to time"): one draft per
--- list; it is never a decision - nothing reaches a send or the postcard list until Save
+-- the unsaved work, kept by autosave (12.11.2026, his words "it should have autosave also time to time"): one draft per list AND
+-- per editor (the audit, 12.11.2026: two editors never share one draft); a draft is never a decision, and a draft made on an
+-- older saved version than the list's last Save is not offered back
 CREATE TABLE IF NOT EXISTS tc_go_drafts (
-  sender TEXT PRIMARY KEY,
-  state TEXT NOT NULL,             -- JSON: { picks, out, moves }
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  sender TEXT NOT NULL,
+  editor TEXT NOT NULL,            -- the signed-in account's address
+  state TEXT NOT NULL,             -- JSON: { picks, out, moves }; '' = no draft
+  base BIGINT NOT NULL,            -- the tc_go_saves id the page had loaded (0 = never saved)
   saved_at TEXT NOT NULL,
   saved_by TEXT
 );
+CREATE UNIQUE INDEX IF NOT EXISTS tc_go_drafts_one ON tc_go_drafts (sender, editor);
+-- every Save of a list (the version a page loaded; a Save on an older version is refused, the audit 12.11.2026)
+CREATE TABLE IF NOT EXISTS tc_go_saves (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  sender TEXT NOT NULL,
+  at TEXT NOT NULL,
+  by_name TEXT
+);
+CREATE INDEX IF NOT EXISTS tc_go_saves_list ON tc_go_saves (sender, id);
 -- a person dragged to another company on the list (12.11.2026, his words "let the people be drag and dropped from company to
--- company"); on Save the person's Intake contact moves; every move kept
+-- company"): the person shows under that company on THIS list only (the audit, 12.11.2026: the shared Intake contact is not
+-- moved); a person with no Intake company gets an Intake contact there. Every move kept.
+CREATE TABLE IF NOT EXISTS tc_go_assign (
+  stage2_id BIGINT PRIMARY KEY,    -- tc_go_stage2.id
+  sender TEXT NOT NULL,
+  company_key TEXT NOT NULL,       -- 'id:<tc_companies.id>'; '' = back under their own company
+  set_at TEXT NOT NULL,
+  set_by TEXT
+);
 CREATE TABLE IF NOT EXISTS tc_go_moves (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   stage2_id BIGINT NOT NULL,
