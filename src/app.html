@@ -13171,6 +13171,10 @@ function tcMlMayLeave(hash) {
   if (String(hash).split('?')[0] === String(T_ML.hash).split('?')[0]) return true;
   T_ML.pending = hash;
   history.replaceState(null, '', T_ML.hash);
+  // the page stays (his ask 13.11.2026, "0 problems with interactivity"): the motion engine had already frozen a copy of it for the
+  // move and hidden the real one, so for up to 3 seconds after Cancel the screen showed the copy while taps went to the hidden page
+  document.querySelectorAll('.mo-held').forEach((n) => n.remove());
+  { const v = document.getElementById('view'); if (v) v.style.opacity = ''; }
   modal('Save the changes?', `<p>Your list has changes that are not saved.</p>
     <div class="c-row-acts"><button class="btn" onclick="tcMlLeave('save')">Save</button><button class="btn ghost" onclick="tcMlLeave('drop')">Don't save</button><button class="btn ghost" onclick="closeModal()">Cancel</button></div>`);
   return false;

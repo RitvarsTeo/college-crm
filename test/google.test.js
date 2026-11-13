@@ -301,7 +301,7 @@ function startFakeGoogle() {
     resolve({ server, port: server.address().port, state })));
 }
 
-async function seededDb(dir) {
+async function seededDb(dir, more) {
   const file = path.join(dir, 'crm.db');
   const db = await openDb(file);
   const add = async (email, name, role, active = 1) => await db.prepare(`INSERT INTO crm_users
@@ -312,6 +312,7 @@ async function seededDb(dir) {
   await add('ritvars@novikontas.org', 'Ritvars', 'admin');
   await add('ieva@novikontas.org', 'Ieva', 'user');
   await add('gone@novikontas.org', 'Left The Company', 'user', 0);
+  if (more) await more(db, add);
   return file;
 }
 
@@ -366,10 +367,10 @@ const cookieValue = (list, name) => {
 };
 
 /** Everything a signed-in Google flow needs, ready to drive. */
-async function rig(t, extraEnv = {}) {
+async function rig(t, extraEnv = {}, more = null) {
   const fake = await startFakeGoogle();
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'crm-google-'));
-  const file = await seededDb(dir);
+  const file = await seededDb(dir, more);
   const s = await startServer({
     CRM_DB: file, CRM_AUTH: '1', CRM_SESSION_SECRET: SECRET,
     GOOGLE_CLIENT_ID: CLIENT_ID, GOOGLE_CLIENT_SECRET: CLIENT_SECRET,
@@ -808,4 +809,33 @@ test('Google Sheets cannot be started by somebody who is not signed in', async (
   const s = await rig(t);
   const r = await request(s.port, 'GET', '/api/report.gsheet');
   assert.equal(r.status, 401);
+});
+
+// HIS ASK 13.11.2026 "make sure all accounts have actually access and everyone has a link via which they can enter": three
+// Grand Opening list owners had never signed in (DS, Marcis, Alma). A first-ever Google sign-in needs no earlier login: the
+// account row, active, with the Training Centre area is enough; the address Google returns in any case finds it; the owner
+// lands on their own list and only theirs.
+test('A LIST OWNER WHO HAS NEVER SIGNED IN GETS IN BY GOOGLE AND OPENS ONLY THEIR OWN LIST', async (t) => {
+  const s = await rig(t, {}, async (db) => {
+    for (const [email, name] of [['ds@novikontas.org', 'DS Example'], ['marcis.zabovs@novikontas.org', 'Marcis Example'], ['alma@novikontas.org', 'Alma Example']]) {
+      const id = 'u' + crypto.randomBytes(4).toString('hex');
+      await db.prepare(`INSERT INTO crm_users (id, email, display_name, password_hash, role, active, session_version, created_at)
+        VALUES (?,?,?,NULL,'user',1,0,?)`).run(id, email, name, new Date().toISOString());
+      await db.prepare('INSERT INTO crm_user_areas (user_id, area, granted_at, granted_by) VALUES (?,?,?,?)').run(id, 'tc', new Date().toISOString(), 'test');
+    }
+  });
+  for (const [google, code] of [['DS@Novikontas.org', 'DS'], ['Marcis.Zabovs@novikontas.org', 'Marcis'], ['alma@novikontas.org', 'Alma']]) {
+    const f = await beginFlow(s.port);
+    s.fake.state.idToken = mintToken({ nonce: f.nonce, email: google });
+    const cb = await request(s.port, 'GET', `/api/auth/google/callback?code=abc&state=${f.state}`, { headers: withFlow(f.flow) });
+    assert.equal(cb.status, 303, code); assert.equal(cb.location, '/?auth=google', code);
+    const cookie = { cookie: `crm_session=${cookieValue(cb.cookies, 'crm_session')}` };
+    const lists = await request(s.port, 'GET', '/api/tc/go/mylist', { headers: cookie });
+    assert.equal(lists.status, 200, code);
+    assert.equal(lists.json.mine, code); assert.deepEqual(lists.json.lists, [code]);
+    const own = await request(s.port, 'GET', `/api/tc/go/mylist?sender=${code}`, { headers: cookie });
+    assert.equal(own.status, 200, code + ' opens their own list');
+    const other = await request(s.port, 'GET', '/api/tc/go/mylist?sender=JS', { headers: cookie });
+    assert.equal(other.status, 403, code + ' never opens another owner list');
+  }
 });

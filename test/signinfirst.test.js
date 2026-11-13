@@ -116,3 +116,9 @@ test('the sign-in error keeps the gate colours in every scheme', () => {
   assert.match(APP, /\.gate-card \.err\{[^}]*background:var\(--gate-err-bg\);color:var\(--gate-err-ink\)\}/s,
     'the card keeps its own rule too');
 });
+
+test('his ask 13.11: the My Grand Opening list link survives the Google round trip', () => {
+  const store = {};
+  tab('/#/tc/mylist', store);
+  assert.equal(tab('/?auth=google', store).hash, '#/tc/mylist');
+});
