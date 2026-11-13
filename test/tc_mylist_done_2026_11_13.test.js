@@ -37,3 +37,25 @@ test('By post is By mail everywhere; the stored value stays post', () => {
   assert.ok(SERVER.includes("const WAY = { in_person: 'In person', post: 'By mail' };"));
   for (const f of ['app.html', 'server.js', 'tcmylist.js']) assert.ok(!/by post/i.test(fs.readFileSync(path.join(ROOT, 'src', f), 'utf8')), f);
 });
+
+// his words 13.11.2026: "for company list, there has to be a search bar and the companies should be put alphabetically"
+test('companies A-Z with Latvian letters in place; the search finds a company, a person or an email, together with the views', () => {
+  const pick = (re) => APP.match(re)[0];
+  const src = [pick(/const mlNorm = [^\n]+/), pick(/const mlPersonHit = [^\n]+/), pick(/const mlShows = [^\n]+/), fn('tcMlShown')].join('\n');
+  const run = (q, filter, groups) => new Function('T_ML', src + '; return tcMlShown;')({ q, filter })(groups).map((g) => g.name);
+  const P = (label, email, decision = null) => ({ label, email, decision });
+  const G = [
+    { name: 'Wood', people: [P('Anna Berg', 'anna@wood.example')] },
+    { name: 'Ādažu Osta', people: [P('Jānis Ozols', 'janis@adazi.example', 'invite')] },
+    { name: 'acta marine', people: [P('Peter Smit', 'p.smit@acta.example', 'no')] },
+    { name: 'Boskalis', people: [P('Žanis Kalns', 'zanis@boskalis.example')] },
+  ];
+  assert.deepEqual(run('', 'all', G), ['acta marine', 'Ādažu Osta', 'Boskalis', 'Wood']);
+  assert.deepEqual(run('bosk', 'all', G), ['Boskalis'], 'a company name');
+  assert.deepEqual(run('zanis', 'all', G), ['Boskalis'], 'a person, without the long letters');
+  assert.deepEqual(run('smit@acta', 'all', G), ['acta marine'], 'an email');
+  assert.deepEqual(run('a', 'invite', G), ['Ādažu Osta'], 'with the Invite view');
+  assert.deepEqual(run('nobody', 'all', G), []);
+  assert.ok(APP.includes('placeholder="Search a company, a person or an email"') && APP.includes('oninput="tcMlSearch(this.value)"'));
+  assert.ok(fn('tcMlFinish').includes('const shown = tcMlShown(groups)'), 'the next company after Done follows A-Z');
+});

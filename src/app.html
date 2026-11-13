@@ -2713,7 +2713,8 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tcml-t.done.no{background:var(--surface-2);border-color:#c3c8cf;color:var(--t2)} html.ui-c .tcml-t.done.no > b{color:var(--t2)}
   html.ui-c .tcml-res{font-weight:700;font-size:14px;display:flex;align-items:center;gap:6px} html.ui-c .tcml-ck{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:#fff;color:var(--btn-bg);font-size:13px;font-weight:800}
   html.ui-c .tcml-chg{align-self:flex-start;background:none;border:0;padding:2px 0;font:inherit;font-weight:700;font-size:13px;color:inherit;text-decoration:underline;cursor:pointer}
-  html.ui-c .tcml-donebtn{align-self:stretch;justify-content:center;margin-top:4px} html.ui-c .tcml-donebtn:disabled{opacity:.4;cursor:not-allowed}
+  html.ui-c .tcml-donebtn{align-self:stretch;justify-content:center;margin-top:4px} html.ui-c .tcml-donebtn.btn:disabled{background:var(--surface-2);color:var(--t3);border:1px solid var(--rule);box-shadow:none;opacity:1;cursor:not-allowed}
+  html.ui-c .tcml-find{display:flex;align-items:center;gap:12px;margin:0 0 14px} html.ui-c .tcml-find .c-search{flex:1;max-width:520px} html.ui-c .tcml-found{color:var(--t3);font-weight:600;font-size:13px} html.ui-c .tcml-none{color:var(--t3);font-weight:600}
   html.ui-c .tcml-t.nx{box-shadow:0 0 0 3px var(--c-sis);transition:box-shadow .3s}
   html.ui-c .tcml-fig.bump b{animation:tcmlBump .6s ease-out}
   @keyframes tcmlSettle{from{transform:scale(1.03);opacity:.6}to{transform:none;opacity:1}}
@@ -13037,7 +13038,7 @@ async function viewTcMyList(code) {
   const pick = code && L.lists.includes(code) ? code : (L.mine && L.lists.includes(L.mine) ? L.mine : L.lists[0]);
   if (!pick) { $('#view').innerHTML = '<div class="c-head"><div><h1>My Grand Opening list</h1></div></div>'; return; }
   const base = await api('/api/tc/go/mylist?sender=' + encodeURIComponent(pick));
-  T_ML = { lists: L.lists, names: L.names || {}, code: pick, base, version: (base.version || {}).id || 0, saved: tcMlStateOf(base), undo: [], open: new Set(), edit: new Set(), bump: '', filter: 'all',
+  T_ML = { lists: L.lists, names: L.names || {}, code: pick, base, version: (base.version || {}).id || 0, saved: tcMlStateOf(base), undo: [], open: new Set(), edit: new Set(), bump: '', q: '', filter: 'all',
     dirty: false, status: '', statusAt: '', lastDraft: '', error: '', conflict: '', seq: 0, hash: location.hash };
   T_ML.W = mlClone(T_ML.saved);
   // the editor's own draft, made on this saved version, comes back; one equal to what is saved is no unsaved change
@@ -13070,7 +13071,7 @@ function tcMlDraw() {
   const narrow = tcMlNarrow();
   const targets = T_ML.base.groups.filter((g) => g.intake).sort((a, b) => a.name.localeCompare(b.name, 'lv'));
   const tile = (g) => {
-    const open = T_ML.open.has(g.key), left = g.people.filter((p) => p.out).length;
+    const open = T_ML.open.has(g.key) || (Boolean(T_ML.q) && mlPersonHit(g, T_ML.q)), left = g.people.filter((p) => p.out).length;
     const count = g.decision === 'invite' && left ? `${tcN(g.people.length - left)} of ${tcN(g.people.length)} people` : `${tcN(g.people.length)} ${g.people.length === 1 ? 'person' : 'people'}`;
     const person = (p) => `<button type="button" class="tcml-p${p.out ? ' out' : ''}${p.from || p.moved ? ' moved' : ''}"${narrow ? '' : ` draggable="true" ondragstart="event.dataTransfer.setData('text/plain', String(${Number(p.id)}))"`} onclick="tcMlDo({ type: 'out', id: ${Number(p.id)} })"><b>${esc(p.label)}</b>${p.position ? `<span>${esc(p.position)}</span>` : ''}</button>`
       + (narrow ? `<select class="tcml-mv" aria-label="Move to another company" onchange="tcMlMoveTo(${Number(p.id)}, this.value)"><option value="">Move to…</option>${targets.filter((o) => o.key !== g.key).map((o) => `<option value="${esc(o.key)}">${esc(o.name)}</option>`).join('')}</select>` : '');
@@ -13088,7 +13089,7 @@ function tcMlDraw() {
       <div class="tcml-yn"><button type="button" class="btn sm yes" aria-pressed="${g.decision === 'invite'}" onclick="tcMlDo({ type: 'decide', key: ${esc(JSON.stringify(String(g.key)))}, decision: 'invite' })">Invite</button><button type="button" class="btn sm nay" aria-pressed="${g.decision === 'no'}" onclick="tcMlDo({ type: 'decide', key: ${esc(JSON.stringify(String(g.key)))}, decision: 'no' })">No</button></div>${how}
       <button type="button" class="btn tcml-donebtn" ${mlDone(g) ? '' : 'disabled'} onclick="tcMlFinish(${esc(JSON.stringify(String(g.key)))})">Done</button></div>`;
   };
-  const shown = V.groups.filter((g) => mlShows(g, T_ML.filter));
+  const shown = tcMlShown(V.groups);
   // a refused Save says why on the page, never in a browser box (the audit, 12.11.2026)
   const note = T_ML.conflict ? `<div class="tcml-note" role="alert">${esc(T_ML.conflict)} <button type="button" class="btn sm" onclick="tcMlReload()">Load it</button></div>`
     : T_ML.error ? `<div class="tcml-note" role="alert">${esc(T_ML.error)}</div>` : '';
@@ -13098,7 +13099,8 @@ function tcMlDraw() {
       <button type="button" class="btn" ${T_ML.dirty && T_ML.status !== 'saving' ? '' : 'disabled'} onclick="tcMlSave()">Save</button>
       <a class="btn ghost" href="#/tc/postcards">Postcard list</a></div></div>
     ${note}${lists}<div class="tcml-figs">${fig('all', F.todo + F.invite + F.no, 'All')}${fig('todo', F.todo, 'Still to decide')}${fig('invite', F.invite, 'Invite')}${fig('no', F.no, 'No')}</div>
-    <div class="tcml-tiles">${shown.map(tile).join('')}</div>`;
+    <div class="tcml-find"><input id="tcMlQ" class="c-search" type="search" placeholder="Search a company, a person or an email" aria-label="Search the list" autocomplete="off" value="${esc(T_ML.q)}" oninput="tcMlSearch(this.value)">${T_ML.q ? `<span class="tcml-found">${tcN(shown.length)} ${shown.length === 1 ? 'company' : 'companies'}</span>` : ''}</div>
+    <div class="tcml-tiles">${shown.length ? shown.map(tile).join('') : (T_ML.q ? '<p class="tcml-none">No company or person on this list matches.</p>' : '')}</div>`;
 }
 // a phone has no drag: Move to… under each person (proposal E, 12.11.2026)
 const tcMlNarrow = () => typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(max-width: 760px)').matches : false;
@@ -13134,11 +13136,27 @@ function tcMlFinish(key) {
   const groups = mlView(T_ML.base, T_ML.W).groups, g = groups.find((x) => x.key === key);
   if (!g || !mlDone(g)) return;
   T_ML.edit.delete(key); T_ML.open.delete(key); T_ML.bump = g.decision === 'no' ? 'no' : 'invite'; T_ML.next = '';
-  const shown = groups.filter((x) => mlShows(x, T_ML.filter)), at = shown.findIndex((x) => x.key === key);
+  const shown = tcMlShown(groups), at = shown.findIndex((x) => x.key === key);
   const next = [...shown.slice(at + 1), ...shown.slice(0, Math.max(at, 0))].find((x) => !mlDone(x));
   if (next) { T_ML.open.add(next.key); T_ML.next = next.key; }
   tcMlDraw();
   tcMlAfterDone();
+}
+// SEARCH AND A-Z (his words 13.11.2026: "for company list, there has to be a search bar and the companies should be put
+// alphabetically to find them easier!"): companies A-Z by the name as shown (Latvian / Lithuanian letters in their place); the
+// search finds a company by its name, or by a person's name or email (that person's company shows, opened); it works with the
+// All / Still to decide / Invite / No views. The next company after Done follows the same order.
+const mlNorm = (s) => String(s || '').toLocaleLowerCase('lv').normalize('NFD').replace(/[̀-ͯ]/g, '');
+const mlPersonHit = (g, q) => { const n = mlNorm(q).trim(); return Boolean(n) && g.people.some((p) => mlNorm(p.label).includes(n) || mlNorm(p.email).includes(n)); };
+function tcMlShown(groups) {
+  const n = mlNorm(T_ML.q).trim();
+  return groups.filter((g) => mlShows(g, T_ML.filter) && (!n || mlNorm(g.name).includes(n) || mlPersonHit(g, T_ML.q)))
+    .sort((a, b) => a.name.localeCompare(b.name, 'lv', { sensitivity: 'base' }));
+}
+function tcMlSearch(v) {
+  T_ML.q = String(v || '').slice(0, 80);
+  tcMlDraw();
+  const i = document.getElementById('tcMlQ'); if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); }
 }
 function tcMlEdit(key) { T_ML.edit.add(key); T_ML.open.add(key); T_ML.bump = ''; tcMlDraw(); }
 // the finished company settles with a short move, the next one comes into view

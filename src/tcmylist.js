@@ -90,7 +90,7 @@ export async function myList(db, code, editor = '') {
     }
     const g = groups.get(key), isOut = out.has(Number(r.id));
     // an Invite reaches somebody only once its way is picked: until then its people are still to decide (the audit, 12.11.2026)
-    g.people.push({ id: Number(r.id), label: personLabel(r.name, g.name, r.email), position: r.position || '', out: isOut,
+    g.people.push({ id: Number(r.id), label: personLabel(r.name, g.name, r.email), position: r.position || '', email: String(r.email || '').toLowerCase(), out: isOut,
       moved: key !== homeOf(r), decision: g.decision === 'invite' ? (g.way ? (isOut ? 'no' : 'invite') : null) : g.decision === 'no' ? 'no' : null });
   }
   const list = [...groups.values()].sort((a, b) => b.people.length - a.people.length || a.name.localeCompare(b.name, 'lv'));
