@@ -4125,8 +4125,10 @@ function cOnePerPerson(rows) {
 // Home, the Journey and Reports all count and open this same list; the people with no admission date on any of their
 // records are the clickable part under it.
 function cAdmittedOnce(rows) {
+  // dated first, the earliest admission first (13.11.2026): a person's month is their first admission, as the server's months
   const a = (rows || []).filter((p) => p.status === 'Admitted');
-  return cOnePerPerson([...a.filter((p) => p.admitted_at), ...a.filter((p) => !p.admitted_at)]);
+  const dated = a.filter((p) => p.admitted_at).sort((x, y) => String(x.admitted_at).localeCompare(String(y.admitted_at)) || String(x.id).localeCompare(String(y.id)));
+  return cOnePerPerson([...dated, ...a.filter((p) => !p.admitted_at)]);
 }
 async function cHomeData() {
   // THE PERIOD (Q45): the year scope, never the calendar year on its own. 'all' has no year: no target, the last

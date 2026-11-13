@@ -169,12 +169,13 @@ export async function report(db, { from, to, years, asOfEnd = false } = {}) {
   const arrivedP = mergedPeople(await db.prepare(`SELECT id, name, email, phone, created_at, programme, source_channel, education, nationality, study_form
     FROM ${REAL_PEOPLE} people WHERE ${ARR}`).all(...A));
   const admittedP = mergedPeople(await db.prepare(`SELECT id, name, email, phone, created_at, admitted_at, programme FROM ${REAL_PEOPLE} people
-    WHERE ${ADM}`).all(...A));
+    WHERE ${ADM} AND status = 'Admitted'`).all(...A));
   const newLeads = arrived.open.length + arrived.admitted.length + arrived.closed.length;
   const applications = await count(db, `SELECT COUNT(*) n FROM ${REAL_PEOPLE} people
     WHERE ${ARR} AND status IN ('Application','Admitted')`, ...A);
   // one person, one count (his pick (c), 05.11.2026): records of the same person count once
-  const admitted = countPeople(await db.prepare(`SELECT name, email, phone FROM ${REAL_PEOPLE} people WHERE ${ADM}`).all(...A));
+  // the Admitted card's people (13.11.2026): at the Admitted stage, each once, admitted in the period (src/app.html cAdmittedOnce)
+  const admitted = countPeople(await db.prepare(`SELECT name, email, phone FROM ${REAL_PEOPLE} people WHERE ${ADM} AND status = 'Admitted'`).all(...A));
 
   const activeApplicants = await count(db, `SELECT COUNT(*) n FROM ${REAL_PEOPLE} people
     WHERE status NOT IN ('Admitted','Not proceeding')`);
@@ -211,13 +212,17 @@ export async function report(db, { from, to, years, asOfEnd = false } = {}) {
   const w0 = localMidnight(ey, em - 11, 1), w1 = localMidnight(ey, em + 1, 1);
   const firsts = peopleGroups(await db.prepare(`SELECT name, email, phone, created_at FROM ${REAL_PEOPLE} people
     WHERE created_at >= ? AND created_at < ?`).all(w0, w1)).map((g) => g.map((r) => r.created_at).sort()[0]);
+  // ADMITTED BY MONTH = THE ADMITTED CARD'S PEOPLE (13.11.2026, "every figure has legs"): at the Admitted stage, each person
+  // once, in the month of their first admission; nobody with another stage, so the months add up to the card's dated people
+  const admFirsts = peopleGroups(await db.prepare(`SELECT name, email, phone, admitted_at FROM ${REAL_PEOPLE} people
+    WHERE status = 'Admitted' AND admitted_at >= ? AND admitted_at < ?`).all(w0, w1)).map((g) => g.map((r) => r.admitted_at).sort()[0]);
   for (let i = 11; i >= 0; i -= 1) {
     const m0 = localMidnight(ey, em - i, 1);
     const m1 = localMidnight(ey, em - i + 1, 1);
     months.push({
       month: localDate(m0).slice(0, 7),
       newLeads: firsts.filter((d) => d >= m0 && d < m1).length,
-      admitted: countPeople(await db.prepare(`SELECT name, email, phone FROM ${REAL_PEOPLE} people WHERE admitted_at >= ? AND admitted_at < ?`).all(m0, m1)),
+      admitted: admFirsts.filter((d) => d >= m0 && d < m1).length,
     });
   }
 
