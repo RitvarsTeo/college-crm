@@ -105,6 +105,6 @@ test('boot: the server folds Contract on start and says how many', async (t) => 
 
 test('SIS: only a real submission moves the stage (Ritvars 07.10); registered and started leave it, rejected and withdrawn go on the timeline', async () => {
   const { SIS_STAGE, SIS_CLOSING } = await import('../src/sync.js');
-  assert.deepEqual({ ...SIS_STAGE }, { submitted: 'Application', admitted: 'Admitted', matriculated: 'Admitted' });
+  assert.deepEqual({ ...SIS_STAGE }, { submitted: 'Application', admitted: 'Application', matriculated: 'Admitted' }, 'Admitted = matriculated (13.11.2026)');
   assert.deepEqual(SIS_CLOSING, ['rejected', 'withdrawn']);
 });

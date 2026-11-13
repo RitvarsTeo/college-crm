@@ -88,7 +88,9 @@ test('an admission date of the SIS\'s own, if it ever sends one, is preferred ov
     '2020-09-01T00:00:00.000Z');
   assert.equal(sisAdmissionDate([{ status: 'submitted', submitted_at: '2020-05-01T00:00:00Z' }]), null, 'not admitted: no admission date');
   assert.equal(sisAdmissionDate([{ status: 'matriculated', submitted_at: '2015-01-01T00:00:00Z' },
-    { status: 'admitted', submitted_at: '2024-02-01T00:00:00Z' }]), '2024-02-01T00:00:00.000Z', 'the latest admission');
+    { status: 'matriculated', submitted_at: '2024-02-01T00:00:00Z' }]), '2024-02-01T00:00:00.000Z', 'the latest admission');
+  assert.equal(sisAdmissionDate([{ status: 'matriculated', submitted_at: '2015-01-01T00:00:00Z' },
+    { status: 'admitted', submitted_at: '2024-02-01T00:00:00Z' }]), '2015-01-01T00:00:00.000Z', 'an SIS "admitted" is not an admission (13.11.2026)');
   const db = await openDb(':memory:');
   await pull(db, [student(6, '2020-05-01T00:00:00Z', { matriculatedAt: '2020-09-01T00:00:00Z' })]);
   assert.equal((await one(db, 'student6@example.com')).admitted_at, '2020-09-01T00:00:00.000Z');

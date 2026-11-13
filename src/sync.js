@@ -23,7 +23,7 @@ import { fetchChanged, toSisRow } from '../lib/sis.js';
 import { runPoll as gmailPoll, runReplies as gmailReplies, loadGmailRefreshToken, listLabelledIds } from '../lib/gmail.js';
 import { adapt, toIntake } from './adapters.js';
 import { recordSisLifecycle } from './lifecycle.js';
-import { sisAdmissionDate } from './sisdates.js';
+import { sisAdmissionDate, handTyped } from './sisdates.js';
 import { localDate } from './bizday.js';
 import { intakeProgramme, unknownProgramme } from './programmes.js';
 
@@ -353,9 +353,12 @@ export async function syncPbx(db, { now = new Date(), minutes = WINDOW_MINUTES,
 // "Submitted application" now, so an account (registered) or a form begun (started) leaves the person
 // where they are. "Application form started" is still recorded as a lifecycle fact. Supersedes the
 // 29-30.09 rule that started (and a known lead's registered) moved them to the application stage.
+// ADMITTED = MATRICULATED (13.11.2026, the admissions team: "admitted appears only at the very last step, matriculation";
+// the owner's pick A): the SIS "admitted" (accepted, not yet paid or matriculated) keeps the person in Application, and their
+// page shows the SIS word "Admitted (not matriculated)". Only "matriculated" makes a person Admitted.
 export const SIS_STAGE = {
   submitted: 'Application',
-  admitted: 'Admitted',
+  admitted: 'Application',
   matriculated: 'Admitted',
 };
 // the two statuses only a human may turn into a closing: they go on the timeline instead
@@ -497,7 +500,9 @@ async function createFromSis(db, reference, rows, at, mode, stats) {
   // An admitted or matriculated record the SIS does not date stays in sis_applicants, counted as
   // undated in the run's detail; nothing else is written, so a later record with a date still can.
   const admittedAt = stage === CONFIG.stageRoles.admitted ? sisAdmissionDate(rows) : null;
-  if (stage === CONFIG.stageRoles.admitted && !admittedAt) { stats.undated = (stats.undated || 0) + 1; return null; }
+  // A record staff typed into the SIS by hand (13.11.2026, sisdates.js handTyped) is a real student with no admission date:
+  // the person is made, undated, so the admissions team sees them under "without a date" and adds the real one
+  if (stage === CONFIG.stageRoles.admitted && !admittedAt && !rows.some(handTyped)) { stats.undated = (stats.undated || 0) + 1; return null; }
   // The door is claimed first: the unique (channel, external_id) index makes a second run, or the
   // webhook racing the daily pull, a repeat rather than a second person.
   const item = await receive(db, { channel: 'sis', externalId: 'sis:' + reference, receivedAt: at,

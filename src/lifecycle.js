@@ -125,7 +125,7 @@ export const SIS_DRAFT_REACH_SQL = `(SELECT CASE WHEN EXISTS (SELECT 1 FROM even
     AND (ev.kind = 'email' OR ev.channel IN ('email', 'gmail'))) THEN 'emailed' ELSE '' END) AS sis_draft_emailed,
   (SELECT CASE WHEN EXISTS (SELECT 1 FROM events ev WHERE ev.person_id = pe.id AND ev.origin = 'manual' AND ((ev.kind = 'call'
     AND COALESCE(ev.direction, '') <> 'in') OR (ev.kind = 'task' AND ev.subject LIKE 'Call%'))) THEN 'called' ELSE '' END) AS sis_draft_called`;
-export const SIS_WORD = { registered: 'Registered', started: 'Form started', submitted: 'Submitted', admitted: 'Admitted',
+export const SIS_WORD = { registered: 'Registered', started: 'Form started', submitted: 'Submitted', admitted: 'Admitted (not matriculated)',
   matriculated: 'Matriculated', rejected: 'Rejected', withdrawn: 'Withdrawn' };
 export const SIS_ACCOUNT_ONLY = 'Account only, no form yet';
 // who does the next step - only where Ritvars has said so

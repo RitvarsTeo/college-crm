@@ -27,14 +27,25 @@ import { logEvent, MANUAL } from './history.js';
 import { localDate, dayStartOf, dayAfterStartOf } from './bizday.js';
 
 export const ADMITTED_STATUSES = ['admitted', 'matriculated'];
+// the one SIS status that is an admission in Intake (13.11.2026: Admitted = matriculated, src/sync.js SIS_STAGE)
+export const MATRICULATED = 'matriculated';
 export const PULL_DAYS = ['2026-10-06'];
 
 const iso = (v) => (v && !Number.isNaN(Date.parse(v)) ? new Date(v).toISOString() : null);
 
 /** The SIS's own admission date for one person, from their stored SIS rows, or null when the SIS does
  *  not clearly date it. Pure. */
+// A RECORD TYPED INTO THE SIS BY HAND (13.11.2026, the admissions team: Voļskis, Jankevics and Bojarinovs, admitted in 2025,
+// showed "Admitted 09.10.2026"): staff entered an existing student in one go, so registered, submitted and changed fall in
+// the same minute and the SIS sends no admission date. Its submit date is the day of typing, never an admission date.
+export function handTyped(r) {
+  if (!r || iso(r.admitted_on)) return false;
+  const t = [r.registered_at, r.submitted_at, r.changed_at].map((v) => Date.parse(v));
+  return t.every((x) => !Number.isNaN(x)) && Math.max(...t) - Math.min(...t) < 60e3;
+}
+
 export function sisAdmissionDate(rows) {
-  const dates = (rows || []).filter((r) => r && ADMITTED_STATUSES.includes(r.status))
+  const dates = (rows || []).filter((r) => r && r.status === MATRICULATED && !handTyped(r))
     .map((r) => iso(r.admitted_on) || iso(r.submitted_at)).filter(Boolean).sort();
   return dates.length ? dates[dates.length - 1] : null;
 }

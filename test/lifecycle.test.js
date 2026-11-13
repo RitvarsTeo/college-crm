@@ -103,9 +103,9 @@ test('where they are in the SIS: the furthest open application, the next SIS sta
   const { sisProgress } = await import('../src/lifecycle.js');
   assert.equal(sisProgress([]), null);
   assert.deepEqual(sisProgress([{ status: 'submitted', changed_at: '2026-09-28T07:58:02Z' }]),
-    { status: 'submitted', label: 'Submitted', since: '2026-09-28T07:58:02Z', next: 'Admitted', nextBy: 'Student Coordinator' });
+    { status: 'submitted', label: 'Submitted', since: '2026-09-28T07:58:02Z', next: 'Admitted (not matriculated)', nextBy: 'Student Coordinator' });
   const two = sisProgress([{ status: 'registered', changed_at: '2026-09-29' }, { status: 'admitted', changed_at: '2026-09-20' }]);
-  assert.equal(two.label, 'Admitted');
+  assert.equal(two.label, 'Admitted (not matriculated)', 'the SIS word on their page (13.11.2026)');
   assert.equal(two.next, 'Matriculated');
   assert.equal(two.nextBy, null, 'nobody named where Ritvars has not said who');
   assert.equal(sisProgress([{ status: 'matriculated', changed_at: 'x' }]).next, null, 'the end');
