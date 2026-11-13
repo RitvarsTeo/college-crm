@@ -59,3 +59,13 @@ test('companies A-Z with Latvian letters in place; the search finds a company, a
   assert.ok(APP.includes('placeholder="Search a company, a person or an email"') && APP.includes('oninput="tcMlSearch(this.value)"'));
   assert.ok(fn('tcMlFinish').includes('const shown = tcMlShown(groups)'), 'the next company after Done follows A-Z');
 });
+
+// his words 13.11.2026: "lets have the whole list like A and a line and under it all with A, then B with a line"
+test('a letter heading over its companies: Ā and Č apart as Latvian sorts them, # for a company not starting with a letter, no empty letters', () => {
+  const src = [APP.match(/const mlLetter = [^\n]+/)[0], fn('tcMlLetters')].join('\n');
+  const run = (names) => new Function('esc', src + '; return tcMlLetters;')((x) => String(x))(names.map((name) => ({ name })), (g) => `[${g.name}]`);
+  assert.equal(run(['acta', 'Ādažu', 'Boskalis', 'Cassiopeia', 'Čakste', '3D Wind']).replace(/<div class="tcml-letter" role="heading" aria-level="3">/g, '|').replace(/<\/div>/g, ':'),
+    '|A:[acta]|Ā:[Ādažu]|B:[Boskalis]|C:[Cassiopeia]|Č:[Čakste]|#:[3D Wind]');
+  assert.equal(run([]), '');
+  assert.ok(APP.includes("${shown.length ? tcMlLetters(shown, tile) : "));
+});

@@ -2715,6 +2715,7 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tcml-chg{align-self:flex-start;background:none;border:0;padding:2px 0;font:inherit;font-weight:700;font-size:13px;color:inherit;text-decoration:underline;cursor:pointer}
   html.ui-c .tcml-donebtn{align-self:stretch;justify-content:center;margin-top:4px} html.ui-c .tcml-donebtn.btn:disabled{background:var(--surface-2);color:var(--t3);border:1px solid var(--rule);box-shadow:none;opacity:1;cursor:not-allowed}
   html.ui-c .tcml-find{display:flex;align-items:center;gap:12px;margin:0 0 14px} html.ui-c .tcml-find .c-search{flex:1;max-width:520px} html.ui-c .tcml-found{color:var(--t3);font-weight:600;font-size:13px} html.ui-c .tcml-none{color:var(--t3);font-weight:600}
+  html.ui-c .tcml-letter{grid-column:1 / -1;margin:10px 0 0;padding:0 0 6px;border-bottom:1px solid var(--rule);font-size:18px;font-weight:750;color:var(--ink)} html.ui-c .tcml-letter:first-child{margin-top:0}
   html.ui-c .tcml-t.nx{box-shadow:0 0 0 3px var(--c-sis);transition:box-shadow .3s}
   html.ui-c .tcml-fig.bump b{animation:tcmlBump .6s ease-out}
   @keyframes tcmlSettle{from{transform:scale(1.03);opacity:.6}to{transform:none;opacity:1}}
@@ -13100,7 +13101,7 @@ function tcMlDraw() {
       <a class="btn ghost" href="#/tc/postcards">Postcard list</a></div></div>
     ${note}${lists}<div class="tcml-figs">${fig('all', F.todo + F.invite + F.no, 'All')}${fig('todo', F.todo, 'Still to decide')}${fig('invite', F.invite, 'Invite')}${fig('no', F.no, 'No')}</div>
     <div class="tcml-find"><input id="tcMlQ" class="c-search" type="search" placeholder="Search a company, a person or an email" aria-label="Search the list" autocomplete="off" value="${esc(T_ML.q)}" oninput="tcMlSearch(this.value)">${T_ML.q ? `<span class="tcml-found">${tcN(shown.length)} ${shown.length === 1 ? 'company' : 'companies'}</span>` : ''}</div>
-    <div class="tcml-tiles">${shown.length ? shown.map(tile).join('') : (T_ML.q ? '<p class="tcml-none">No company or person on this list matches.</p>' : '')}</div>`;
+    <div class="tcml-tiles">${shown.length ? tcMlLetters(shown, tile) : (T_ML.q ? '<p class="tcml-none">No company or person on this list matches.</p>' : '')}</div>`;
 }
 // a phone has no drag: Move to… under each person (proposal E, 12.11.2026)
 const tcMlNarrow = () => typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(max-width: 760px)').matches : false;
@@ -13152,6 +13153,19 @@ function tcMlShown(groups) {
   const n = mlNorm(T_ML.q).trim();
   return groups.filter((g) => mlShows(g, T_ML.filter) && (!n || mlNorm(g.name).includes(n) || mlPersonHit(g, T_ML.q)))
     .sort((a, b) => a.name.localeCompare(b.name, 'lv', { sensitivity: 'base' }));
+}
+// LETTERS (his words 13.11.2026: "lets have the whole list like A and a line and under it all with A, then B with a line and
+// everything under it"): a letter heading with a thin line over its companies; the letters as Latvian sorts them (Ā, Č, Š, Ž each
+// with its own heading after A, C, S, Z); a company not starting with a letter goes under #; empty letters are not drawn.
+const mlLetter = (name) => { const ch = String(name || '').trim().charAt(0).toLocaleUpperCase('lv'); return /\p{L}/u.test(ch) ? ch : '#'; };
+function tcMlLetters(shown, tile) {
+  let out = '', last = null;
+  for (const g of shown) {
+    const L = mlLetter(g.name);
+    if (last === null || L.localeCompare(last, 'lv', { sensitivity: 'base' }) !== 0) { out += `<div class="tcml-letter" role="heading" aria-level="3">${esc(L)}</div>`; last = L; }
+    out += tile(g);
+  }
+  return out;
 }
 function tcMlSearch(v) {
   T_ML.q = String(v || '').slice(0, 80);
