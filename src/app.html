@@ -2713,6 +2713,7 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tcml-t.done.no{background:var(--surface-2);border-color:#c3c8cf;color:var(--t2)} html.ui-c .tcml-t.done.no > b{color:var(--t2)}
   html.ui-c .tcml-res{font-weight:700;font-size:14px;display:flex;align-items:center;gap:6px} html.ui-c .tcml-ck{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:#fff;color:var(--btn-bg);font-size:13px;font-weight:800}
   html.ui-c .tcml-chg{align-self:flex-start;background:none;border:0;padding:2px 0;font:inherit;font-weight:700;font-size:13px;color:inherit;text-decoration:underline;cursor:pointer}
+  html.ui-c .tcml-donebtn{align-self:stretch;justify-content:center;margin-top:4px} html.ui-c .tcml-donebtn:disabled{opacity:.4;cursor:not-allowed}
   html.ui-c .tcml-t.nx{box-shadow:0 0 0 3px var(--c-sis);transition:box-shadow .3s}
   html.ui-c .tcml-fig.bump b{animation:tcmlBump .6s ease-out}
   @keyframes tcmlSettle{from{transform:scale(1.03);opacity:.6}to{transform:none;opacity:1}}
@@ -13084,7 +13085,8 @@ function tcMlDraw() {
     }
     return `<div class="tcml-t${g.decision === 'invite' ? ' inv' : g.decision === 'no' ? ' no' : ''}" data-k="${esc(g.key)}"${drop}><b>${esc(g.name)}</b><small>${count}${g.country ? ' · ' + esc(g.country) : ''}</small>
       <button type="button" class="tcml-fold" aria-expanded="${open}" onclick="tcMlFold(${esc(JSON.stringify(String(g.key)))})">${open ? 'Hide people ▴' : 'Show people ▾'}</button>${ppl}
-      <div class="tcml-yn"><button type="button" class="btn sm yes" aria-pressed="${g.decision === 'invite'}" onclick="tcMlDo({ type: 'decide', key: ${esc(JSON.stringify(String(g.key)))}, decision: 'invite' })">Invite</button><button type="button" class="btn sm nay" aria-pressed="${g.decision === 'no'}" onclick="tcMlDo({ type: 'decide', key: ${esc(JSON.stringify(String(g.key)))}, decision: 'no' })">No</button></div>${how}</div>`;
+      <div class="tcml-yn"><button type="button" class="btn sm yes" aria-pressed="${g.decision === 'invite'}" onclick="tcMlDo({ type: 'decide', key: ${esc(JSON.stringify(String(g.key)))}, decision: 'invite' })">Invite</button><button type="button" class="btn sm nay" aria-pressed="${g.decision === 'no'}" onclick="tcMlDo({ type: 'decide', key: ${esc(JSON.stringify(String(g.key)))}, decision: 'no' })">No</button></div>${how}
+      <button type="button" class="btn tcml-donebtn" ${mlDone(g) ? '' : 'disabled'} onclick="tcMlFinish(${esc(JSON.stringify(String(g.key)))})">Done</button></div>`;
   };
   const shown = V.groups.filter((g) => mlShows(g, T_ML.filter));
   // a refused Save says why on the page, never in a browser box (the audit, 12.11.2026)
@@ -13112,30 +13114,30 @@ let TCML_WAS_NARROW = null;
 if (typeof window !== 'undefined' && window.addEventListener) window.addEventListener('resize', () => { const n = tcMlNarrow(); if (TCML_WAS_NARROW !== null && n !== TCML_WAS_NARROW && T_ML && String(location.hash).startsWith('#/tc/mylist')) tcMlDraw(); TCML_WAS_NARROW = n; });
 function tcMlFold(key) { if (T_ML.open.has(key)) T_ML.open.delete(key); else T_ML.open.add(key); tcMlDraw(); }
 // A COMPANY DONE (his words 13.11.2026: "when director chooses a company its stays opened with all buttons clicked and nothing
-// else happens ... we need a clear sign that the invitees are picked, company is picked and company goes into YES"): No, or Invite
-// with a way, finishes a company: it folds to its result (Invited · Digital · 9 of 10 people / Not invited), the Invite or No
-// figure ticks, and the next company still to decide opens and comes into view. Change opens a finished one again. All of it is
-// part of the unsaved changes until Save, like every other change.
+// else happens ... we need a clear sign that the invitees are picked, company is picked and company goes into YES", then "Done
+// button, keep it open until then"): Invite / No / a way keep the company open, so names can still be tapped out. Done (on once the
+// decision is complete: No, or Invite with a way) folds it to its result (Invited · Digital · 9 of 10 people / Not invited), the
+// Invite or No figure ticks, and the next company still to decide opens and comes into view. Change opens a finished one again.
+// A company already complete when the list loads shows its result. All of it is part of the unsaved changes until Save.
 const mlDone = (g) => g.decision === 'no' || (g.decision === 'invite' && Boolean(g.way));
 function tcMlDo(a) {
   if (!T_ML) return;
-  const key = a.type === 'decide' || a.type === 'way' ? a.key : null;
-  const before = key ? mlView(T_ML.base, T_ML.W).groups : null;
-  const was = key ? mlDone(before.find((g) => g.key === key) || {}) : false;
+  if (a.type === 'decide' || a.type === 'way') { T_ML.edit.add(a.key); T_ML.open.add(a.key); }   // stays open until Done
   T_ML.undo.push(mlClone(T_ML.W));
   if (T_ML.undo.length > 200) T_ML.undo.shift();
   T_ML.W = mlApply(T_ML.W, a);
   T_ML.bump = ''; T_ML.next = '';
-  if (key) {
-    const groups = mlView(T_ML.base, T_ML.W).groups, g = groups.find((x) => x.key === key) || {};
-    if (!was && mlDone(g)) {
-      T_ML.edit.delete(key); T_ML.open.delete(key); T_ML.bump = g.decision === 'no' ? 'no' : 'invite';
-      const shown = groups.filter((x) => mlShows(x, T_ML.filter)), at = shown.findIndex((x) => x.key === key);
-      const next = [...shown.slice(at + 1), ...shown.slice(0, Math.max(at, 0))].find((x) => !mlDone(x));
-      if (next) { T_ML.open.add(next.key); T_ML.next = next.key; }
-    }
-  }
   tcMlMarkDirty();
+}
+function tcMlFinish(key) {
+  if (!T_ML) return;
+  const groups = mlView(T_ML.base, T_ML.W).groups, g = groups.find((x) => x.key === key);
+  if (!g || !mlDone(g)) return;
+  T_ML.edit.delete(key); T_ML.open.delete(key); T_ML.bump = g.decision === 'no' ? 'no' : 'invite'; T_ML.next = '';
+  const shown = groups.filter((x) => mlShows(x, T_ML.filter)), at = shown.findIndex((x) => x.key === key);
+  const next = [...shown.slice(at + 1), ...shown.slice(0, Math.max(at, 0))].find((x) => !mlDone(x));
+  if (next) { T_ML.open.add(next.key); T_ML.next = next.key; }
+  tcMlDraw();
   tcMlAfterDone();
 }
 function tcMlEdit(key) { T_ML.edit.add(key); T_ML.open.add(key); T_ML.bump = ''; tcMlDraw(); }

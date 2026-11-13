@@ -19,14 +19,16 @@ test('done = No, or Invite with a way; Invite alone is still to decide', () => {
   assert.equal(mlDone({ decision: null }), false);
 });
 
-test('a finished company folds to its result with Change; the figure ticks; the next one to decide opens', () => {
+test('a company stays open until Done; Done folds it to its result with Change, the figure ticks, the next one to decide opens', () => {
   assert.ok(APP.includes('Invited · ${esc(way)} · ${tcN(g.people.length - left)} of ${tcN(g.people.length)}'));
   assert.ok(APP.includes('`Not invited · ${tcN(g.people.length)}'));
   assert.ok(APP.includes('onclick="tcMlEdit(${esc(JSON.stringify(String(g.key)))})">Change</button>'));
-  const d = fn('tcMlDo');
-  assert.ok(d.includes("T_ML.edit.delete(key); T_ML.open.delete(key); T_ML.bump = g.decision === 'no' ? 'no' : 'invite';"));
-  assert.ok(d.includes('.find((x) => !mlDone(x));') && d.includes('T_ML.open.add(next.key)'));
+  const d = fn('tcMlDo'), f = fn('tcMlFinish');
+  assert.ok(d.includes("if (a.type === 'decide' || a.type === 'way') { T_ML.edit.add(a.key); T_ML.open.add(a.key); }"), 'his words: keep it open until Done');
   assert.ok(d.includes('T_ML.undo.push(mlClone(T_ML.W));') && d.includes('tcMlMarkDirty();'), 'the same unsaved / undo rules');
+  assert.ok(APP.includes("<button type=\"button\" class=\"btn tcml-donebtn\" ${mlDone(g) ? '' : 'disabled'} onclick=\"tcMlFinish("), 'Done only when the decision is complete');
+  assert.ok(f.includes('if (!g || !mlDone(g)) return;') && f.includes("T_ML.edit.delete(key); T_ML.open.delete(key); T_ML.bump = g.decision === 'no' ? 'no' : 'invite';"));
+  assert.ok(f.includes('.find((x) => !mlDone(x));') && f.includes('T_ML.open.add(next.key)'));
   assert.ok(APP.includes("filter: 'all'"), 'his pick B stays: All on by default');
 });
 
