@@ -66,7 +66,7 @@ function harness({ summary = 'ok', intake = 'ok' } = {}) {
     line('const cFig = '),
     // the year scope (Q45): Home reads its period from it; every open starts on the current year
     APP.slice(APP.indexOf('const C_SCOPED = '), APP.indexOf('function cScopeHtml(')),
-    line('const cPersonName = '), fn('function cOnePerPerson('), fn('function cAdmittedOnce('), fn('async function cHomeData('), fn('function cHomeMonths('),
+    line('const cPersonName = '), fn('function cOnePerPerson('), fn('function cAdmittedOnce('), fn('async function cHomeData('), "let C_HOME_PROG = '';", fn('function cHomeProgPicks() {'), fn('function cHomeMonthsFor(D) {'), fn('function cHomeMonths('),
     // the year's target on the Admitted card (test/home_target.test.js): loaded so cHomeB can call it
     APP.slice(APP.indexOf("// ---- THE YEAR'S TARGET (D-C6"), APP.indexOf('// ---- B: TODAY FIRST')),
     fn('function cReachedWords('),   // Reached Application on the Conversion card (07.10.2026)

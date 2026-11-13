@@ -1219,6 +1219,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .c-empty{padding:18px 16px;color:var(--t3);font-size:13.5px}
   html.ui-c .c-ev{font-size:12.5px;color:var(--t3);margin-top:10px;max-width:90ch}
   html.ui-c .c-seg{display:inline-flex;border:1px solid var(--rule);border-radius:9px;padding:3px;background:var(--surface);gap:3px;margin-bottom:16px}
+  html.ui-c .c-seg.kprog{display:flex;flex-wrap:wrap;width:fit-content;max-width:100%;margin:2px 0 10px}   /* Home's Programme picker (13.11.2026) */
   html.ui-c .c-seg button{border:0;background:transparent;cursor:pointer;padding:6px 14px;border-radius:7px;font:inherit;font-size:13.5px;font-weight:600;color:var(--t2)}
   html.ui-c .c-seg button[aria-pressed="true"]{background:var(--c-accent-bg);color:var(--ink)}
   html.ui-c .c-ok{color:var(--c-ok);font-weight:700;margin-right:6px} html.ui-c .c-no{color:var(--c-bad);font-weight:700;margin-right:6px}
@@ -4149,6 +4150,7 @@ async function cHomeData() {
   const thisMonth = cTodayIso().slice(0, 7);
   const picked = cScopeList();
   const months = (rep.trend || []).filter((m) => (picked === 'all' || picked.includes(Number(m.month.slice(0, 4)))) && m.month <= thisMonth);
+  const progMonths = Object.fromEntries(Object.entries(rep.trendByProgramme || {}).map(([k, ms]) => [k, ms.filter((m) => months.some((x) => x.month === m.month))]));
   // the rows ARE the period: the Admitted among them were admitted in it (server, scopePeopleSql)
   const admitted = cAdmittedOnce(people);   // one person, one count (05.11.2026); the undated ones too (11.11.2026, pick B)
   const undated = admitted.filter((p) => !p.admitted_at);
@@ -4163,7 +4165,7 @@ async function cHomeData() {
   const overdueRows = sum && Array.isArray(sum.overdue) ? sum.overdue : null;
   const todayRows = sum && Array.isArray(sum.today) ? sum.today : null;
   return {
-    year, s, months, people, admitted, undated, progs, chans, stages, open, closed,
+    year, s, months, progMonths, people, admitted, undated, progs, chans, stages, open, closed,
     lastYear: lyRep && lyRep.summary ? { admitted: lyRep.summary.admitted, leads: lyRep.summary.newLeads,
       conversion: lyRep.summary.conversionPct == null ? null : lyRep.summary.conversionPct + '%' } : null,
     steps: rep.steps || {},   // the server's matured step rates (Reached Application on the Conversion card, 07.10)
@@ -4259,13 +4261,34 @@ function cFitDonut() {
 }
 
 // The month chart and its table, the same in both: one chart, one source.
+// THE PROGRAMME PICKER (the owner's pick A, 13.11.2026; Admissions: short and long programmes are KPIs of their own):
+// All, each group of config.programmeGroups, each programme. The chart and its table redraw for the pick from the server's
+// months per programme (src/reports.js trendByProgramme, the same people rule as the months of everybody), and a month
+// opens its admitted people of that pick.
+let C_HOME_PROG = '';
+function cHomeProgPicks() {
+  return [['', 'All', null], ...(CFG.programmeGroups || []).map((g) => ['g:' + g.id, g.label, g.programmes]),
+    ...(CFG.programmes || []).map((p) => ['p:' + p, p, [p]])];
+}
+function cHomeMonthsFor(D) {
+  const pick = cHomeProgPicks().find(([k]) => k === C_HOME_PROG);
+  if (!pick || !pick[2]) return D.months;
+  const progs = pick[2];
+  return D.months.map((m) => {
+    const rows = progs.map((p) => ((D.progMonths || {})[p] || []).find((x) => x.month === m.month) || { admitted: 0, newLeads: 0 });
+    return { month: m.month, admitted: rows.reduce((a, x) => a + x.admitted, 0), newLeads: rows.reduce((a, x) => a + x.newLeads, 0), progs };
+  });
+}
+function cHomeProgPick(k) { C_HOME_PROG = k; const el = $('#homeMonths'); if (el && C_HOME_D) { el.outerHTML = cHomeMonths(C_HOME_D, el.dataset.cls || ''); cWireCharts(); } }
 function cHomeMonths(D, extraCls = '') {
-  return `<section class="ksec ${extraCls}">
+  const ms = cHomeMonthsFor(D);
+  const picker = `<div class="c-seg kprog" role="group" aria-label="Programme">${cHomeProgPicks().map(([k, label, ps]) => `<button type="button" aria-pressed="${k === C_HOME_PROG}"${ps && ps.length > 1 ? ` title="${esc(ps.join(', '))}"` : ''} onclick="cHomeProgPick(${esc(JSON.stringify(k))})">${esc(label)}</button>`).join('')}</div>`;
+  return `<section class="ksec ${extraCls}" id="homeMonths" data-cls="${esc(extraCls)}">
     <div class="ksh"><h2>Admissions by month</h2>
       <ul class="klegend inline"><li><i style="background:var(--v-adm)"></i><span>Admitted</span></li><li><i class="ln" style="background:var(--v-lead)"></i><span>New leads</span></li></ul>
       <span class="ksrc">from Reports · click a month → Outcomes</span></div>
-    ${cMonthChart(D.months, D.year)}
-    <details class="kdet"><summary>Show as a table</summary><table class="ktable"><thead><tr><th>Month</th><th>Admitted</th><th>New leads</th></tr></thead><tbody>${D.months.map((m) => `<tr><td>${C_MONTHS[Number(m.month.slice(5)) - 1]}</td><td>${m.admitted}</td><td>${m.newLeads}</td></tr>`).join('')}</tbody></table></details>
+    ${picker}${cMonthChart(ms, D.year)}
+    <details class="kdet"><summary>Show as a table</summary><table class="ktable"><thead><tr><th>Month</th><th>Admitted</th><th>New leads</th></tr></thead><tbody>${ms.map((m) => `<tr><td>${C_MONTHS[Number(m.month.slice(5)) - 1]}</td><td>${m.admitted}</td><td>${m.newLeads}</td></tr>`).join('')}</tbody></table></details>
   </section>`;
 }
 // Admitted by programme and where admitted people came from left Home on 05.10.2026 (the owner: "nothing after
@@ -4512,7 +4535,7 @@ function cMonthChart(months, year, fitH = 0) {
     const bar = m.admitted ? `<path d="M${cx - bw / 2},${y(0)} V${Math.min(t + 4, y(0))} q0,-4 4,-4 h${bw - 8} q4,0 4,4 V${y(0)} Z" style="fill:var(--v-adm);--i:${k}" class="m-fade"/>` : '';
     // No figure printed on any one month (the owner, 05.10.2026: "Delete that above the graph 16 admitted. It is
     // hover over info."): every month shows its figures on hover, the same for each.
-    return `<g class="kcol" tabindex="0" role="button" aria-label="${mo} ${m.month.slice(0, 4)}: ${m.admitted} admitted, ${m.newLeads} new leads" data-tip="${mo} ${m.month.slice(0, 4)}|${m.admitted} admitted|${m.newLeads} new leads" data-kgo="month|${m.month}|${mo} ${m.month.slice(0, 4)}"><rect x="${cx - band / 2}" y="${T}" width="${band}" height="${H - T - B}" class="khit"/>${bar}${labelled(k) ? `<text x="${cx}" y="${H - 8}" class="kt" text-anchor="middle">${mo}</text>` : ''}</g>`; }).join('');
+    return `<g class="kcol" tabindex="0" role="button" aria-label="${mo} ${m.month.slice(0, 4)}: ${m.admitted} admitted, ${m.newLeads} new leads" data-tip="${mo} ${m.month.slice(0, 4)}|${m.admitted} admitted|${m.newLeads} new leads" data-kgo="month|${m.month}|${mo} ${m.month.slice(0, 4)}${m.progs ? '|' + m.progs.join(',') : ''}"><rect x="${cx - band / 2}" y="${T}" width="${band}" height="${H - T - B}" class="khit"/>${bar}${labelled(k) ? `<text x="${cx}" y="${H - 8}" class="kt" text-anchor="middle">${mo}</text>` : ''}</g>`; }).join('');
   const pts = months.map((m, k) => [L + band * k + band / 2, y(m.newLeads)]);
   // data-plot: where the plot runs (top gridline to the baseline) in drawing units, so Home's donut can match it (Q46)
   return `<svg viewBox="0 0 ${W} ${H}" class="kchart${narrow ? ' narrow' : ''}" data-plot="${T} ${H - B}" role="img" aria-label="Admissions and new leads per month, ${year}">${grid}${cols}<path d="M${pts.map((p) => p.join(',')).join(' L')}" class="kline m-draw" pathLength="1"/>${pts.map(([x, yy], k) => `<circle cx="${x}" cy="${yy}" r="4" class="kdot m-fade" style="--i:${k}"/>`).join('')}</svg>`;
@@ -4595,7 +4618,7 @@ function cBars(rows, kind) {
 
 let C_OUT_FILTER = null;
 function cChartGo(spec) {
-  const [kind, key, label] = String(spec || '').split('|');
+  const [kind, key, label, progList] = String(spec || '').split('|');
   if (kind === 'journey') { cGoPeople({ stage: 'open' }); return; }   // the donut's Open: everyone still on the journey
   if (kind === 'people') { cGoPeople({}); return; }
   if (kind === 'stage') { cGoStage(key); return; }
@@ -4605,7 +4628,8 @@ function cChartGo(spec) {
   C_PF = C_PF_EMPTY(); C_PCOHORT = null; C_JF = C_JF_EMPTY();   // Q57: the board shows exactly what the figure counts
   if (kind === 'outcome') { C_OUTCOME = key; C_OUT_FILTER = null; C_OUT_TAG = null; C_OUT_REASON = null; if (location.hash.split('?')[0] === '#/outcomes') viewOutcomesC(); else location.hash = '#/outcomes'; return; }
   C_OUTCOME = 'Admitted';
-  C_OUT_FILTER = { kind, key, label };
+  // a month of one programme or group (Home's Programme picker, 13.11.2026): its admitted people of that pick
+  C_OUT_FILTER = { kind, key, label: progList ? `${label} · ${progList.split(',').join(', ')}` : label, ...(progList ? { progs: progList.split(',') } : {}) };
   if (location.hash.split('?')[0] === '#/outcomes') viewOutcomesC(); else location.hash = '#/outcomes';
 }
 
@@ -5624,6 +5648,7 @@ function cDrawJourneyPool() {
   const oF = isAdm ? C_OUT_FILTER : null;
   if (oF) {
     if (oF.kind === 'month') list = list.filter((p) => cDay(p.admitted_at).startsWith(oF.key));
+    if (oF.progs) list = list.filter((p) => oF.progs.includes(p.programme));
     else if (oF.kind === 'year') list = list.filter((p) => cDay(p.admitted_at).startsWith(oF.key));
     if (oF.kind === 'prog') list = list.filter((p) => (p.programme || '(not recorded)') === oF.key);
     if (oF.kind === 'chan') list = list.filter((p) => (p.source_channel || 'unknown') === oF.key);
@@ -6463,6 +6488,7 @@ function cJTargetKeep(p, taskOf) {
   const oF = C_OUT_FILTER;
   if (p.status === admitted && oF) {
     if ((oF.kind === 'month' || oF.kind === 'year') && !cDay(p.admitted_at).startsWith(oF.key)) return false;
+    if (oF.progs && !oF.progs.includes(p.programme)) return false;   // a month of one programme or group (13.11.2026)
     if (oF.kind === 'prog' && (p.programme || '(not recorded)') !== oF.key) return false;
     if (oF.kind === 'chan' && (p.source_channel || 'unknown') !== oF.key) return false;
   }

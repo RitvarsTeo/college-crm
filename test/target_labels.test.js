@@ -54,7 +54,7 @@ function home(r, people, cfg = CFG) {
   vm.runInContext([
     line('const esc = '), line('const channelLabel = '), line('const cChannel = '), line('const cFig = '),
     APP.slice(APP.indexOf('const C_SCOPED = '), APP.indexOf('function cScopeHtml(')),
-    line('const cPersonName = '), fn('function cOnePerPerson('), fn('function cAdmittedOnce('), fn('async function cHomeData('), fn('function cHomeMonths('),
+    line('const cPersonName = '), fn('function cOnePerPerson('), fn('function cAdmittedOnce('), fn('async function cHomeData('), "let C_HOME_PROG = '';", fn('function cHomeProgPicks() {'), fn('function cHomeMonthsFor(D) {'), fn('function cHomeMonths('),
     APP.slice(APP.indexOf("// ---- THE YEAR'S TARGET (D-C6"), APP.indexOf('// ---- B: TODAY FIRST')),
     fn('function cReachedWords('), fn('function cTargetBars('), fn('function cHomeNow('), fn('function cHomeB('),
   ].join('\n') + '\nthis.data = cHomeData; this.B = cHomeB;', ctx);

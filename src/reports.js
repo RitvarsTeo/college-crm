@@ -210,12 +210,18 @@ export async function report(db, { from, to, years, asOfEnd = false } = {}) {
   const [ey, em] = localDate(new Date(Date.parse(p.to) - 1)).split('-').map(Number);
   // a person arrived in the month of their EARLIEST record (11.11.2026): their records in two months count once
   const w0 = localMidnight(ey, em - 11, 1), w1 = localMidnight(ey, em + 1, 1);
-  const firsts = peopleGroups(await db.prepare(`SELECT name, email, phone, created_at FROM ${REAL_PEOPLE} people
-    WHERE created_at >= ? AND created_at < ?`).all(w0, w1)).map((g) => g.map((r) => r.created_at).sort()[0]);
+  // each person merged (src/realpeople.js mergedPeople): their earliest record's date and programme (13.11.2026: the
+  // months by programme behind Home's Programme picker add up to the months of everybody)
+  const leadP = mergedPeople(await db.prepare(`SELECT id, name, email, phone, created_at, programme FROM ${REAL_PEOPLE} people
+    WHERE created_at >= ? AND created_at < ?`).all(w0, w1));
+  const firsts = leadP.map((pp) => pp.created_at);
   // ADMITTED BY MONTH = THE ADMITTED CARD'S PEOPLE (13.11.2026, "every figure has legs"): at the Admitted stage, each person
   // once, in the month of their first admission; nobody with another stage, so the months add up to the card's dated people
-  const admFirsts = peopleGroups(await db.prepare(`SELECT name, email, phone, admitted_at FROM ${REAL_PEOPLE} people
-    WHERE status = 'Admitted' AND admitted_at >= ? AND admitted_at < ?`).all(w0, w1)).map((g) => g.map((r) => r.admitted_at).sort()[0]);
+  const admP = mergedPeople(await db.prepare(`SELECT id, name, email, phone, created_at, admitted_at, programme FROM ${REAL_PEOPLE} people
+    WHERE status = 'Admitted' AND admitted_at >= ? AND admitted_at < ?`).all(w0, w1));
+  const admFirsts = admP.map((pp) => pp.admitted_at);
+  const progOf = (pp) => (pp.programme == null || String(pp.programme).trim() === '' ? '(not recorded)' : String(pp.programme).trim());
+  const byProgramme = {};
   for (let i = 11; i >= 0; i -= 1) {
     const m0 = localMidnight(ey, em - i, 1);
     const m1 = localMidnight(ey, em - i + 1, 1);
@@ -224,6 +230,12 @@ export async function report(db, { from, to, years, asOfEnd = false } = {}) {
       newLeads: firsts.filter((d) => d >= m0 && d < m1).length,
       admitted: admFirsts.filter((d) => d >= m0 && d < m1).length,
     });
+    const month = localDate(m0).slice(0, 7);
+    for (const prog of new Set([...leadP, ...admP].map(progOf))) {
+      (byProgramme[prog] = byProgramme[prog] || []).push({ month,
+        newLeads: leadP.filter((pp) => progOf(pp) === prog && pp.created_at >= m0 && pp.created_at < m1).length,
+        admitted: admP.filter((pp) => progOf(pp) === prog && pp.admitted_at >= m0 && pp.admitted_at < m1).length });
+    }
   }
 
   // Programme numbers the existing KPI sheet already reports on.
@@ -269,6 +281,7 @@ export async function report(db, { from, to, years, asOfEnd = false } = {}) {
     },
     steps: stepRates,
     trend: months,
+    trendByProgramme: byProgramme,   // the same twelve months per programme (Home's Programme picker, 13.11.2026)
     programmes,
     breakdowns: {
       programme: breakdownOf(arrivedP, 'programme'),
