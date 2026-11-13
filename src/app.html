@@ -13342,8 +13342,13 @@ function tcTkHtml() {
   if (!T_TK) return '<section class="c-sheet tctk"><div class="c-empty">Loading…</div></section>';
   if (T_TK.error) return `<section class="c-sheet tctk"><p class="tc-door-err">${esc(T_TK.error)}</p></section>`;
   if (!T_TK.connected) return `<section class="c-sheet tctk"><h2>The ticket</h2><p class="tctk-p">Registrations cannot be read from Client Hub right now.</p>${door}</section>`;
-  // everyone registered, the people with no list owner too (13.11.2026, his yes: the heading said 0 while 1 had no owner)
-  const all = T_TK.senders.reduce((n, x) => n + x.n, 0) + T_TK.noOwner.length, sent = T_TK.senders.reduce((n, x) => n + x.sent, 0);
+  // HIDE UNTIL NEEDED (13.11.2026, his pick, asking "what are tickets???" at six cards of 0): no ticket cards while nobody on an
+  // owner's list has registered; the people with no list owner stay one clickable line, never hidden. The heading counts everyone
+  // (his yes 13.11: it said 0 while 1 had no owner), and only owners with people get a card.
+  const owners = T_TK.senders.filter((x) => x.n > 0), mine = owners.reduce((n, x) => n + x.n, 0);
+  const noOwner = T_TK.noOwner.length ? `<button type="button" class="tctk-fig" onclick="tcTkList('')"><b>${tcN(T_TK.noOwner.length)}</b><span>registered, no list owner</span></button>` : '';
+  if (!mine) return `<section class="c-sheet tctk">${noOwner}<div id="tcTkErr"></div><div class="tctk-door">${door}</div></section>`;
+  const all = mine + T_TK.noOwner.length, sent = owners.reduce((n, x) => n + x.sent, 0);
   const card = (x) => {
     const busy = T_TK_BUSY === x.code, k = esc(JSON.stringify(String(x.code)));
     const line = x.sent ? `Sent ${tcN(x.sent)} of ${tcN(x.n)}` : `${tcN(x.n)} ${x.n === 1 ? 'ticket' : 'tickets'}`;
@@ -13353,10 +13358,10 @@ function tcTkHtml() {
       <div class="tcs2x-btns"><a class="btn sm ghost" href="/api/tc/go/tickets/preview?sender=${encodeURIComponent(x.code)}" target="_blank" rel="noopener">Preview</a>
       ${x.left > 0 || busy ? `<button type="button" class="btn sm" ${T_TK_BUSY ? 'disabled' : ''} onclick="tcTkSend(${k})">${busy ? 'Sending…' : `Send ${tcN(x.left)}`}</button>` : ''}</div></div>`;
   };
-  const first = (T_TK.senders.find((x) => x.n) || T_TK.senders[0] || {}).code || '';
+  const first = owners[0].code;
   return `<section class="c-sheet tctk"><div class="tctk-head"><b>The ticket · ${tcN(all)} registered</b><span>${tcN(sent)} sent</span></div>
-      <div class="tcgo-packs">${T_TK.senders.map(card).join('')}</div>
-      ${T_TK.noOwner.length ? `<button type="button" class="tctk-fig" onclick="tcTkList('')"><b>${tcN(T_TK.noOwner.length)}</b><span>registered, no list owner</span></button>` : ''}
+      <div class="tcgo-packs">${owners.map(card).join('')}</div>
+      ${noOwner}
       <div id="tcTkErr"></div><div class="tctk-door">${door}</div></section>
     <figure class="c-sheet tcgo-shot tctk-shot"><figcaption>The ticket email<a href="/api/tc/go/tickets/preview?sender=${encodeURIComponent(first)}" target="_blank" rel="noopener">Full size ↗</a></figcaption>
       <div class="tcgo-lt tctk-lt"><iframe src="/api/tc/go/tickets/preview?sender=${encodeURIComponent(first)}" title="The ticket email" loading="lazy" tabindex="-1" scrolling="no"></iframe></div></figure>`;

@@ -197,12 +197,25 @@ test('12.11 the demo is like the real thing: the ticket chapter is the real tick
   assert.ok(t.includes('See you soon') && t.includes('>Add to calendar</a>') && t.includes('Jānis Sticenko<br>Novikontas Academy') && !/wallet/i.test(t));
 });
 
-test('13.11 the Stage 3 heading counts everyone registered, the people with no list owner too (his yes to the fix)', () => {
+test('13.11 his pick "Hide until needed": no ticket cards while nobody on an owner list registered, the no-owner people stay one clickable line; at 1 or more the heading equals the sum of its figures', () => {
   const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
-  assert.ok(app.includes('const all = T_TK.senders.reduce((n, x) => n + x.n, 0) + T_TK.noOwner.length,'));
   const i = app.indexOf('function tcTkHtml()'), fn = app.slice(i, app.indexOf('\n}\n', i) + 2);
-  const run = new Function('T_TK', 'isAdmin', 'tcN', 'esc', 'let T_TK_BUSY = "";' + fn + '; return tcTkHtml();');
-  const html = run({ connected: true, senders: [{ code: 'JS', label: 'JS', name: 'J', n: 0, sent: 0, refused: 0, left: 0, noEmail: [] }], noOwner: [{ name: 'A', company: 'B' }] },
-    () => true, (n) => String(n), (s) => String(s));
-  assert.match(html, /The ticket · 1 registered/);
+  const run = (T) => new Function('T_TK', 'isAdmin', 'tcN', 'esc', 'let T_TK_BUSY = "";' + fn + '; return tcTkHtml();')(T, () => true, (n) => String(n), (s) => String(s));
+  const S = (code, n, sent = 0) => ({ code, label: code, name: code, n, sent, refused: 0, left: n - sent, noEmail: [] });
+  const zero = ['Marcis', 'DS', 'MC', 'AB', 'Alma', 'JS'].map((c) => S(c, 0));
+  // nobody on an owner list: no heading, no cards, no preview; the no-owner person is still there, clickable
+  let html = run({ connected: true, senders: zero, noOwner: [{ name: 'A', company: 'B' }] });
+  assert.ok(!html.includes('The ticket ·') && !html.includes('tcgo-pack') && !html.includes('tickets/preview'));
+  assert.ok(html.includes(`onclick="tcTkList('')"><b>1</b><span>registered, no list owner</span>`));
+  html = run({ connected: true, senders: zero, noOwner: [] });
+  assert.ok(!html.includes('tctk-fig') && !html.includes('tcgo-pack') && html.includes('Check-in at the door'));
+  // 1 or more: cards only for owners with people; the heading = the sum of the card figures + the no-owner figure
+  html = run({ connected: true, senders: [S('Marcis', 0), S('MC', 2, 1), S('JS', 3)], noOwner: [{ name: 'A', company: 'B' }] });
+  assert.equal((html.match(/class="tcgo-pack"/g) || []).length, 2);
+  const cards = [...html.matchAll(/class="tcgo-pack"><b>[^<]*<\/b><span>(\d+)<\/span>/g)].map((m) => Number(m[1]));
+  const no = Number((/<b>(\d+)<\/b><span>registered, no list owner/.exec(html) || [])[1] || 0);
+  const head = Number(/The ticket · (\d+) registered/.exec(html)[1]);
+  assert.deepEqual(cards, [2, 3]); assert.equal(no, 1);
+  assert.equal(head, cards.reduce((a, b) => a + b, 0) + no, 'every figure has legs');
+  assert.match(html, /<span>1 sent<\/span>/);
 });
