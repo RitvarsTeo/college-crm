@@ -107,7 +107,7 @@ test('3. a stale draft never blocks Save: companies and people no longer on the 
   assert.equal(L.groups.find((g) => g.key === A).decision, 'invite');
   assert.deepEqual((await db.prepare('SELECT stage2_id FROM tc_go_people_out WHERE out_flag = 1').all()).map((r) => Number(r.stage2_id)), [p1], 'a DS person through the JS list is not touched');
   await assert.rejects(ml.saveState(db, 'JS', { ...E, picks: { [A]: { decision: 'maybe' } } }, 'J'), /Invite or No/);
-  await assert.rejects(ml.saveState(db, 'JS', { ...E, picks: { [A]: { decision: 'invite', way: 'pigeon' } } }, 'J'), /Digital, in person or by post/);
+  await assert.rejects(ml.saveState(db, 'JS', { ...E, picks: { [A]: { decision: 'invite', way: 'pigeon' } } }, 'J'), /Digital, in person or by mail/);
 });
 
 test('4. Invite without a way reaches nobody: its people stay Still to decide, out of the send and the postcards', async () => {

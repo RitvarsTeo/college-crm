@@ -123,7 +123,7 @@ function clean(list, state) {
   for (const [k, v] of Object.entries(s.picks || {})) {
     const decision = v && v.decision ? String(v.decision) : null, way = v && v.way ? String(v.way) : null;
     if (decision && !['invite', 'no'].includes(decision)) throw new TcInputError('Invite or No?');
-    if (way && !WAYS.includes(way)) throw new TcInputError('Digital, in person or by post?');
+    if (way && !WAYS.includes(way)) throw new TcInputError('Digital, in person or by mail?');
     if (keys.has(k)) picks[k] = { decision, way: decision === 'invite' ? way : null };
   }
   const out = [...new Set([].concat(s.out || []).map(Number))].filter((id) => ids.has(id));
@@ -228,7 +228,7 @@ export async function digitalIds(db, code) {
   return new Set(L.groups.filter((g) => g.decision === 'invite' && g.way === 'digital').flatMap((g) => g.people.filter((p) => p.decision === 'invite').map((p) => p.id)));
 }
 
-/** The postcard list: one row per invited person whose company goes in person or by post, from the lists given. */
+/** The postcard list: one row per invited person whose company goes in person or by mail, from the lists given. */
 export async function postcardRows(db, codes) {
   const rows = [];
   for (const code of codes) {

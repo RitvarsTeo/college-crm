@@ -3828,14 +3828,14 @@ export const handle = async (req, res) => {
         throw e;
       }
     }
-    // THE POSTCARD LIST (12.11.2026): the invited people whose company goes in person or by post; an owner their own, an admin all
+    // THE POSTCARD LIST (12.11.2026): the invited people whose company goes in person or by mail; an owner their own, an admin all
     if ((p === '/api/tc/go/postcards' || p === '/api/tc/go/postcards.xlsx') && req.method === 'GET') {
       const me = await currentUser(req), admin = Boolean(await adminOf(req));
       const codes = tcmylist.openable(me, admin);
       if (!codes.length) return json(res, 403, { error: 'There is no list for this account.' });
       const rows = await tcmylist.postcardRows(db, codes);
       if (p === '/api/tc/go/postcards') return json(res, 200, { rows });
-      const WAY = { in_person: 'In person', post: 'By post' };
+      const WAY = { in_person: 'In person', post: 'By mail' };
       const name = `Postcard list ${localDate()}.xlsx`;
       const file = rowsToXlsx([['Person', 'Position', 'Company', 'Country', 'How', 'Address', 'List owner'],
         ...rows.map((r) => [r.person, r.position, r.company, r.country, WAY[r.way] || '', r.address, r.owner])], { bold: [0], sheetName: 'Postcard list', title: name });
