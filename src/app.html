@@ -2722,7 +2722,9 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tcs2-gift{margin-top:auto;display:flex;gap:4px} html.ui-c .tcs2-gift button{all:unset;cursor:pointer;font-size:10.5px;font-weight:600;border-radius:5px;padding:3px 7px;background:var(--surface-2);color:var(--t3)}
   html.ui-c .tcs2-gift button.on{background:#0a2463;color:#fff} html.ui-c .tcs2-gift button.on.d{background:#29a8df}
   html.ui-c .tcs2-gift button:focus-visible, html.ui-c .tcs2-tile:focus-visible{outline:2px solid var(--pet);outline-offset:2px}
-  html.ui-c .tcs2-prow{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid var(--rule2)} html.ui-c .tcs2-prow small{display:block;color:var(--t3);font-size:12px}
+  html.ui-c .tcs2-prow{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:5px 0;border-top:1px solid var(--rule2);cursor:pointer}
+  html.ui-c .tcs2-pline{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} html.ui-c .tcs2-pline small{color:var(--t3);font-size:12.5px;font-weight:600;margin-left:8px}
+  html.ui-c .tcs2-prow:hover b, html.ui-c .tcs2-prow.open b{color:var(--btn-bg)} html.ui-c .tcs2-pcard{position:static;margin:2px 0 8px;padding:12px 14px 4px;box-shadow:0 10px 28px -16px rgba(1,17,17,.35)}
   /* My clients on TC Home (04.11.2026) */
   html.ui-c .tc-mine-card{padding:16px 22px 8px;margin:0 0 16px}
   html.ui-c .tc-mrow{display:grid;grid-template-columns:minmax(0,1.4fr) 180px 140px 80px;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--rule2);color:inherit;text-decoration:none}
@@ -13264,13 +13266,35 @@ async function tcS2SetGift(key, pick) {
 }
 function tcS2Open(key) {
   const g = tcS2Groups().find((x) => x.key === key); if (!g) return;
+  T_S2P = null;
   const word = { yes: 'Yes', maybe: 'Maybe', no: 'No' };
   $('#modal').innerHTML = `<div class="tw-back" onclick="$('#modal').innerHTML=''"></div><aside class="tw-drawer" role="dialog" aria-modal="true" aria-label="${esc(g.name)}">
     <button type="button" class="tc-kx" aria-label="Close" onclick="$('#modal').innerHTML=''">✕</button>
     <h2>${g.companyId ? `<a href="#/tc/company/${Number(g.companyId)}" onclick="$('#modal').innerHTML=''">${esc(g.name)}</a>` : esc(g.name || 'No company yet')}</h2>
     <p class="tw-sub">${tcN(g.ps.length)} ${g.ps.length === 1 ? 'person' : 'people'}${g.country ? ' · ' + esc(g.country) : ''}</p>
-    ${g.ps.map((r) => `<div class="tcs2-prow"><div><b>${esc(r.name)}</b>${r.marked ? ` <span class="tcmk-chip${r.marked.kind === 'hold' ? ' hold' : ''}">${esc(r.marked.label)}</span>` : ''}<small>${esc(r.position || '')}</small></div>
-      <span class="${r.answer ? 'a-' + esc(r.answer) : ''}">${r.answer ? word[r.answer] + (r.answer !== 'no' ? ` · ${Number(r.people)}` : '') : ''}</span></div>`).join('')}</aside>`;
+    <div class="tcs2-ppl">${g.ps.map((r, i) => tcS2Person(g, r, i, word)).join('')}</div></aside>`;
+}
+// SAVE SPACE FOR GUESTS (13.11.2026, his words: "make them sort of push out as the list opens, like done on academy part of intake
+// about the lead information ... plus add the positions"): one line a person, name and position; a click opens the person in place
+// and pushes the rows below down, in the Academy lead card's own look (.c-card); a second click folds it.
+let T_S2P = null;
+function tcS2Person(g, r, i, word) {
+  const open = T_S2P === g.key + '#' + i, k = esc(JSON.stringify(String(g.key))), ans = r.answer ? word[r.answer] + (r.answer !== 'no' ? ` · ${Number(r.people)}` : '') : '';
+  const card = open ? `<div class="c-card tcs2-pcard"><dl>
+      <dt>Position</dt><dd class="${r.position ? '' : 'c-gap'}">${r.position ? esc(r.position) : 'not recorded'}</dd>
+      <dt>Email</dt><dd class="${r.email ? 'c-reach' : 'c-gap'}">${r.email ? `<a href="mailto:${esc(r.email)}">${esc(r.email)}</a>` : 'not recorded'}</dd>
+      <dt>Company</dt><dd>${esc(r.company || g.name || '')}</dd>
+      ${r.country ? `<dt>Country</dt><dd>${esc(r.country)}</dd>` : ''}
+      <dt>Answer</dt><dd>${ans ? esc(ans) : 'No answer yet'}</dd></dl></div>` : '';
+  return `<div class="tcs2-prow${open ? ' open' : ''}" role="button" tabindex="0" aria-expanded="${open}" onclick="tcS2PToggle(${k}, ${Number(i)})" onkeydown="if(event.key==='Enter')tcS2PToggle(${k}, ${Number(i)})">
+      <div class="tcs2-pline"><b>${esc(r.name)}</b>${r.position ? `<small>${esc(r.position)}</small>` : ''}${r.marked ? ` <span class="tcmk-chip${r.marked.kind === 'hold' ? ' hold' : ''}">${esc(r.marked.label)}</span>` : ''}</div>
+      <span class="${r.answer ? 'a-' + esc(r.answer) : ''}">${ans}</span></div>${card}`;
+}
+function tcS2PToggle(key, i) {
+  const id = key + '#' + i; T_S2P = T_S2P === id ? null : id;
+  const g = tcS2Groups().find((x) => x.key === key), box = document.querySelector('.tw-drawer .tcs2-ppl'); if (!g || !box) return;
+  const word = { yes: 'Yes', maybe: 'Maybe', no: 'No' };
+  box.innerHTML = g.ps.map((r, j) => tcS2Person(g, r, j, word)).join('');
 }
 function tcGoStage2() {
   const S = T_S2;

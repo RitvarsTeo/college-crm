@@ -328,8 +328,12 @@ export async function stage2Senders(db, me = null) {
  */
 export async function stage2List(db, code, answers = null) {
   if (!S2_CODES.has(String(code))) throw new TcInputError('There is no such list.');
-  const rows = await db.prepare(`SELECT s.ch_contact_id, s.name, s.company, s.position, s.country, s.email, k.company_id, k.id AS contact_id
+  // the position (13.11.2026, his words "add the positions for people as to best precision you know about them"): the Stage 2
+  // row's own, else what Intake holds for that person (their contact by Client Hub id, then by the same email); never invented
+  const rows = await db.prepare(`SELECT s.ch_contact_id, s.name, s.company, s.country, s.email, k.company_id, k.id AS contact_id,
+      COALESCE(NULLIF(TRIM(s.position), ''), NULLIF(TRIM(k.position), ''), NULLIF(TRIM(e.position), '')) AS position
     FROM tc_go_stage2 s LEFT JOIN tc_company_contacts k ON k.ch_contact_id = s.ch_contact_id AND k.archived_at IS NULL
+    LEFT JOIN tc_company_contacts e ON s.email IS NOT NULL AND e.email = LOWER(s.email) AND e.archived_at IS NULL
     WHERE s.sender = ? AND s.gone = 0`).all(String(code));
   const ans = new Map((answers || []).map((a) => [a.chContactId, a]));
   const markOf = await markedFor(db, 'stage2');
