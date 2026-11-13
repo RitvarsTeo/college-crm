@@ -12,7 +12,8 @@
 --   gift QR / typed address (std_qr_registrations; source 'gift' = the QR on every gift, anything else = 'page')
 -- TEST AND STAFF ENTRIES ARE LEFT OUT (the owner's rule: no test or staff record in any figure), as in landing_counts: a
 -- novikontas address, "test" in the address, company or name, an address of fewer than 3 characters before the @; a link
--- whose invitee's company is marked test.
+-- whose invitee's company is marked test. And (13.11.2026, his rule "test records never in any figure", the "aaaaa / aaa / aaaa"
+-- registration) a first name, last name or company that is one letter repeated ("aaaa", "x").
 --
 -- Undo: DROP VIEW intake_read.registered_people;
 
@@ -32,6 +33,9 @@ where r.answer = 'yes'
   and coalesce(p.email, '') !~* '@novikontas\.'
   and (coalesce(p.email, '') || ' ' || coalesce(p.first_name, '') || ' ' || coalesce(p.last_name, '')) !~* '\mtest'
   and length(split_part(coalesce(p.email, ''), '@', 1)) >= 3
+  and lower(trim(coalesce(p.first_name, ''))) !~ '^(.)\1*$'
+  and lower(trim(coalesce(p.last_name, ''))) !~ '^(.)\1*$'
+  and lower(trim(coalesce(l.company, ''))) !~ '^(.)\1*$'
 union all
 select 'Q:' || q.id::text,
        case when q.source = 'gift' then 'gift' else 'page' end,
@@ -41,7 +45,10 @@ select 'Q:' || q.id::text,
 from public.std_qr_registrations q
 where coalesce(q.email, '') !~* '@novikontas\.'
   and (coalesce(q.email, '') || ' ' || coalesce(q.company, '') || ' ' || coalesce(q.first_name, '') || ' ' || coalesce(q.last_name, '')) !~* '\mtest'
-  and length(split_part(coalesce(q.email, ''), '@', 1)) >= 3;
+  and length(split_part(coalesce(q.email, ''), '@', 1)) >= 3
+  and lower(trim(coalesce(q.first_name, ''))) !~ '^(.)\1*$'
+  and lower(trim(coalesce(q.last_name, ''))) !~ '^(.)\1*$'
+  and lower(trim(coalesce(q.company, ''))) !~ '^(.)\1*$';
 
 revoke all on intake_read.registered_people from public, anon, authenticated;
 grant select on intake_read.registered_people to intake_rsvp_reader;

@@ -86,6 +86,9 @@ test('who registered, read-only: both ways in, matched to their mother company a
   assert.match(sql, /grant select on intake_read\.registered_people to intake_rsvp_reader;/);
   assert.match(sql, /revoke all on intake_read\.registered_people from public, anon, authenticated;/);
   assert.match(sql, /@novikontas/); assert.match(sql, /\\mtest/);
+  // 13.11.2026: a name or company of one letter repeated ("aaaa") is a typing test, left out on both sides of the view
+  assert.equal((sql.match(/!~ '\^\(\.\)\\1\*\$'/g) || []).length, 6);
+  assert.ok(new RegExp('^(.)\\1*$').test('aaaa') && !new RegExp('^(.)\\1*$').test('anna') && !new RegExp('^(.)\\1*$').test(''));
   const cols = sql.split('select ')[1].split('from public.std_rsvp_people')[0];
   for (const no of ['created_at', 'party', 'times', 'updated_at', 'guests']) assert.ok(!cols.includes(no), 'least fields: no ' + no);
 });
