@@ -196,3 +196,13 @@ test('12.11 the demo is like the real thing: the ticket chapter is the real tick
   const t = godemo.read(godemo.fileFor(godemo.PREFIX + 'letters/5_ticket.html', { email: 'js@novikontas.org' })).toString('utf8');
   assert.ok(t.includes('See you soon') && t.includes('>Add to calendar</a>') && t.includes('Jānis Sticenko<br>Novikontas Academy') && !/wallet/i.test(t));
 });
+
+test('13.11 the Stage 3 heading counts everyone registered, the people with no list owner too (his yes to the fix)', () => {
+  const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
+  assert.ok(app.includes('const all = T_TK.senders.reduce((n, x) => n + x.n, 0) + T_TK.noOwner.length,'));
+  const i = app.indexOf('function tcTkHtml()'), fn = app.slice(i, app.indexOf('\n}\n', i) + 2);
+  const run = new Function('T_TK', 'isAdmin', 'tcN', 'esc', 'let T_TK_BUSY = "";' + fn + '; return tcTkHtml();');
+  const html = run({ connected: true, senders: [{ code: 'JS', label: 'JS', name: 'J', n: 0, sent: 0, refused: 0, left: 0, noEmail: [] }], noOwner: [{ name: 'A', company: 'B' }] },
+    () => true, (n) => String(n), (s) => String(s));
+  assert.match(html, /The ticket · 1 registered/);
+});

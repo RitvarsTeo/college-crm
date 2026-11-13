@@ -13342,7 +13342,8 @@ function tcTkHtml() {
   if (!T_TK) return '<section class="c-sheet tctk"><div class="c-empty">Loading…</div></section>';
   if (T_TK.error) return `<section class="c-sheet tctk"><p class="tc-door-err">${esc(T_TK.error)}</p></section>`;
   if (!T_TK.connected) return `<section class="c-sheet tctk"><h2>The ticket</h2><p class="tctk-p">Registrations cannot be read from Client Hub right now.</p>${door}</section>`;
-  const all = T_TK.senders.reduce((n, x) => n + x.n, 0), sent = T_TK.senders.reduce((n, x) => n + x.sent, 0);
+  // everyone registered, the people with no list owner too (13.11.2026, his yes: the heading said 0 while 1 had no owner)
+  const all = T_TK.senders.reduce((n, x) => n + x.n, 0) + T_TK.noOwner.length, sent = T_TK.senders.reduce((n, x) => n + x.sent, 0);
   const card = (x) => {
     const busy = T_TK_BUSY === x.code, k = esc(JSON.stringify(String(x.code)));
     const line = x.sent ? `Sent ${tcN(x.sent)} of ${tcN(x.n)}` : `${tcN(x.n)} ${x.n === 1 ? 'ticket' : 'tickets'}`;
