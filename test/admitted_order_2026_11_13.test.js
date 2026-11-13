@@ -14,7 +14,7 @@ const line = (start) => { const i = APP.indexOf(start); assert.ok(i >= 0, start)
 
 test('Admitted newest first, undated last; Oldest first turns it round; the List offers the order', () => {
   const ctx = { cTodayIso: () => '2026-11-13', cDay: (iso) => String(iso).slice(0, 10) };
-  vm.runInNewContext([line('const cWhenClass = '), line('const cDaysLate = '), fn('function cJUrgency('), fn('function cJSort(')].join('\n') + '\nthis.sort = cJSort;', ctx);
+  vm.runInNewContext([line('const C_SIS_HOLDS = '), line('const cSisHolds = '), line('const cWhenClass = '), line('const cDaysLate = '), fn('function cJUrgency('), fn('function cJSort(')].join('\n') + '\nthis.sort = cJSort;', ctx);
   const A = (id, d) => ({ id, status: 'Admitted', admitted_at: d });
   const ps = [A('jan', '2026-01-10'), A('none', null), A('sep', '2026-09-05'), A('mar', '2026-03-02')];
   assert.deepEqual(Array.from(ctx.sort(ps, new Map())).map((p) => p.id), ['sep', 'mar', 'jan', 'none']);
