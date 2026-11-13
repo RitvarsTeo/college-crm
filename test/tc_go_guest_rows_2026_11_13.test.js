@@ -24,15 +24,18 @@ test('the position: the Stage 2 row own, else the Intake contact (by Client Hub 
   assert.deepEqual(rows, { 'Own Example': 'Fleet Manager', 'Byid Example': 'Crew Manager', 'Bymail Example': 'HR Director', 'None Example': '' });
 });
 
-test('the panel: one line a person (name + position), a click opens the person in place in the Academy card look and pushes the rest down', () => {
+test('his words 13.11 "The whole list expands horizontally! pushes out nearby list": a click widens the company tile across the grid with its people in wide rows; one open at a time; the answer only when there is one', () => {
   const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
-  assert.ok(app.includes('<div class="tcs2-ppl">${g.ps.map((r, i) => tcS2Person(g, r, i, word)).join(\'\')}</div>'));
-  assert.ok(app.includes('<div class="c-card tcs2-pcard"><dl>') && app.includes('onclick="tcS2PToggle(${k}, ${Number(i)})"'));
-  assert.ok(app.includes('html.ui-c .tcs2-pline{min-width:0;white-space:nowrap'));
-  const i = app.indexOf('function tcS2Person('), fn = app.slice(i, app.indexOf('\n}\n', i) + 2);
-  const run = (open) => new Function('esc', `let T_S2P = ${JSON.stringify(open)};` + fn + '; return tcS2Person;')((s) => String(s))(
-    { key: 'id:1', name: 'Rows Example AS' }, { name: 'Anna Example', position: 'Crew Manager', email: 'a@example.com', company: 'Rows Example AS', answer: null, marked: null }, 0, { yes: 'Yes' });
-  const shut = run(null), open = run('id:1#0');
-  assert.match(shut, /<b>Anna Example<\/b><small>Crew Manager<\/small>/);
-  assert.ok(!shut.includes('c-card') && open.includes('c-card tcs2-pcard') && open.includes('mailto:a@example.com') && open.includes('aria-expanded="true"'));
+  assert.ok(app.includes('onclick="tcS2Toggle(${k})"') && !app.includes('tcS2Open(') && !app.includes('tcS2PToggle') && !app.includes('No answer yet'));
+  assert.ok(app.includes('html.ui-c .tcs2-tile.open{grid-column:1 / -1;') && app.includes('grid-auto-flow:row dense'));
+  const i = app.indexOf('function tcS2People('), fn = app.slice(i, app.indexOf('\n}\n', i) + 2);
+  const run = (ps) => new Function('esc', fn + '; return tcS2People;')((s) => String(s))({ ps });
+  const html = run([{ name: 'Anna Example', position: 'Crew Manager', email: 'a@example.com', country: 'Norway', answer: null, marked: null },
+    { name: 'Ben Example', position: '', email: '', country: '', answer: 'yes', people: 2, marked: null }]);
+  assert.match(html, /<b>Anna Example<\/b><span class="tcs2-pos">Crew Manager<\/span>/);
+  assert.ok(html.includes('mailto:a@example.com') && html.includes('>Norway<'));
+  assert.equal((html.match(/class="a-/g) || []).length, 1, 'the answer only where there is one');
+  assert.ok(html.includes('<i class="a-yes">Yes · 2</i>') && !/not recorded|none yet|>-</.test(html));
+  const t = app.indexOf('function tcS2Toggle('), tg = app.slice(t, app.indexOf('\n}\n', t) + 2);
+  assert.ok(tg.includes('T_S2.open = T_S2.open === key ? null : key;'), 'one open at a time; a second click folds it');
 });

@@ -26,7 +26,7 @@ test('the tiles: one per company, same name whatever the capitals, a click opens
   assert.match(app, /<div class="tcs2-tiles">/);
   assert.match(app, /onclick="tcS2SetGift\(\$\{k\}, 'physical'\)">🎁 Physical<\/button>/);
   assert.match(app, /const kind = \(T_S2\.gifts \|\| \{\}\)\[key\] === pick \? 'none' : pick;/);
-  assert.match(app, /\$\{esc\(g\.name \|\| 'No company yet'\)\}/);
+  assert.ok(app.includes(": esc(g.name || 'No company yet')}</b>"));   // 13.11.2026: the open tile links its name to the company
   const srv = fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8');
   assert.match(srv, /p === '\/api\/tc\/go\/gift' && req\.method === 'POST'/);
 });

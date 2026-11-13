@@ -2668,7 +2668,10 @@ svg .m-flag-mark{transform-origin:0 100%}
   /* The company tiles (04.11.2026, the owner's pick) */
   html.ui-c .tcs2-sum{display:flex;gap:10px;align-items:center;padding:6px 0 10px;font-size:13px} html.ui-c .tcs2-sum span{color:var(--t3)} html.ui-c .tcs2-sumr{margin-left:auto;color:var(--ink)!important}
   html.ui-c #tcS2rows{max-height:min(780px,78vh)}   /* the tiles: more companies in their own box */
-  html.ui-c .tcs2-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:8px}
+  html.ui-c .tcs2-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:8px;grid-auto-flow:row dense}
+  html.ui-c .tcs2-tile.open{grid-column:1 / -1;cursor:default;border-color:var(--btn-bg);box-shadow:inset 0 0 0 1px var(--btn-bg);padding:14px 16px}
+  html.ui-c .tcs2-tile.open > b{font-size:16px;-webkit-line-clamp:unset} html.ui-c .tcs2-tile.open > b a{color:inherit}
+  html.ui-c .tcs2-ppl{margin-top:6px;cursor:auto}
   html.ui-c .tcs2-tile{position:relative;display:flex;flex-direction:column;gap:6px;min-height:86px;padding:10px;border:1px solid var(--rule2);border-radius:10px;background:var(--card, #fff);cursor:pointer}
   html.ui-c .tcs2-tile:hover{box-shadow:var(--lift-hover)} html.ui-c .tcs2-tile.phys{border-color:#0a2463;box-shadow:inset 0 0 0 1px #0a2463}
   html.ui-c .tcs2-tile b{font-size:12.5px;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;padding-right:34px}
@@ -2722,9 +2725,10 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tcs2-gift{margin-top:auto;display:flex;gap:4px} html.ui-c .tcs2-gift button{all:unset;cursor:pointer;font-size:10.5px;font-weight:600;border-radius:5px;padding:3px 7px;background:var(--surface-2);color:var(--t3)}
   html.ui-c .tcs2-gift button.on{background:#0a2463;color:#fff} html.ui-c .tcs2-gift button.on.d{background:#29a8df}
   html.ui-c .tcs2-gift button:focus-visible, html.ui-c .tcs2-tile:focus-visible{outline:2px solid var(--pet);outline-offset:2px}
-  html.ui-c .tcs2-prow{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:5px 0;border-top:1px solid var(--rule2);cursor:pointer}
-  html.ui-c .tcs2-pline{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} html.ui-c .tcs2-pline small{color:var(--t3);font-size:12.5px;font-weight:600;margin-left:8px}
-  html.ui-c .tcs2-prow:hover b, html.ui-c .tcs2-prow.open b{color:var(--btn-bg)} html.ui-c .tcs2-pcard{position:static;margin:2px 0 8px;padding:12px 14px 4px;box-shadow:0 10px 28px -16px rgba(1,17,17,.35)}
+  html.ui-c .tcs2-prow{display:grid;grid-template-columns:minmax(150px,1.1fr) minmax(140px,1.3fr) minmax(170px,1.3fr) minmax(80px,.6fr) minmax(70px,auto);gap:4px 14px;align-items:baseline;padding:6px 0;border-top:1px solid var(--rule2);font-size:13.5px}
+  html.ui-c .tcs2-prow b{font-size:13.5px;font-weight:700} html.ui-c .tcs2-pos{color:var(--t2);font-weight:600} html.ui-c .tcs2-ctry{color:var(--t3)} html.ui-c .tcs2-mail a{color:var(--t2);overflow-wrap:anywhere}
+  html.ui-c .tcs2-ans{text-align:right} html.ui-c .tcs2-ans i{font-style:normal;font-weight:700}
+  @media (max-width:760px){ html.ui-c .tcs2-prow{grid-template-columns:1fr auto} html.ui-c .tcs2-pos, html.ui-c .tcs2-mail, html.ui-c .tcs2-ctry{grid-column:1 / -1;font-size:12.5px} }
   /* My clients on TC Home (04.11.2026) */
   html.ui-c .tc-mine-card{padding:16px 22px 8px;margin:0 0 16px}
   html.ui-c .tc-mrow{display:grid;grid-template-columns:minmax(0,1.4fr) 180px 140px 80px;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--rule2);color:inherit;text-decoration:none}
@@ -13250,10 +13254,12 @@ function tcS2Rows() {
   const tile = (g) => {
     const p = tcS2Gift(g) === 'physical', d = tcS2Gift(g) === 'digital', yes = g.ps.some((r) => r.answer === 'yes');
     const k = esc(JSON.stringify(g.key));
-    return `<div class="tcs2-tile${p ? ' phys' : ''}" role="button" tabindex="0" onclick="tcS2Open(${k})" onkeydown="if(event.key==='Enter')tcS2Open(${k})">
-      ${yes ? '<span class="tcs2-yes">✓ Yes</span>' : ''}<b>${esc(g.name || 'No company yet')}</b>
+    const open = T_S2.open === g.key;
+    return `<div class="tcs2-tile${p ? ' phys' : ''}${open ? ' open' : ''}" role="button" tabindex="0" aria-expanded="${open}" onclick="tcS2Toggle(${k})" onkeydown="if(event.key==='Enter')tcS2Toggle(${k})">
+      ${yes ? '<span class="tcs2-yes">✓ Yes</span>' : ''}<b>${open && g.companyId ? `<a href="#/tc/company/${Number(g.companyId)}" onclick="event.stopPropagation()">${esc(g.name)}</a>` : esc(g.name || 'No company yet')}</b>
       <small>${tcN(g.ps.length)} ${g.ps.length === 1 ? 'person' : 'people'}${g.country ? ' · ' + esc(g.country) : ''}</small>
-      <span class="tcs2-gift" onclick="event.stopPropagation()"><button type="button" class="${p ? 'on' : ''}" aria-pressed="${p}" onclick="tcS2SetGift(${k}, 'physical')">🎁 Physical</button><button type="button" class="${d ? 'on d' : ''}" aria-pressed="${d}" onclick="tcS2SetGift(${k}, 'digital')">Digital</button></span></div>`;
+      <span class="tcs2-gift" onclick="event.stopPropagation()"><button type="button" class="${p ? 'on' : ''}" aria-pressed="${p}" onclick="tcS2SetGift(${k}, 'physical')">🎁 Physical</button><button type="button" class="${d ? 'on d' : ''}" aria-pressed="${d}" onclick="tcS2SetGift(${k}, 'digital')">Digital</button></span>
+      ${open ? tcS2People(g) : ''}</div>`;
   };
   return `<div class="tcs2-sum"><b>${tcN(all.length)} companies</b><span>· ${tcN((T_S2.rows || []).length)} people</span><span class="tcs2-sumr">🎁 Physical <b>${tcN(phys)}</b> · Digital <b>${tcN(digi)}</b>${phys ? ` <a class="btn sm ghost" href="/api/tc/go/physical.xlsx" download>Physical list</a>` : ''}</span></div>
     <div class="tcs2-tiles">${shown.map(tile).join('') || '<div class="c-empty">Nobody matches.</div>'}</div>`;
@@ -13264,37 +13270,23 @@ async function tcS2SetGift(key, pick) {
   try { await post('/api/tc/go/gift', { key, kind }); T_S2.gifts = { ...(T_S2.gifts || {}) }; if (kind === 'none') delete T_S2.gifts[key]; else T_S2.gifts[key] = kind; const list = $('#tcS2rows'); if (list) list.innerHTML = tcS2Rows(); }
   catch (e) { alert(e.message); }
 }
-function tcS2Open(key) {
-  const g = tcS2Groups().find((x) => x.key === key); if (!g) return;
-  T_S2P = null;
+// SAVE SPACE FOR GUESTS (13.11.2026, his words: "The whole list needs to expand, not the individual people! The whole list expands
+// horizontally! pushes out nearby list, for a better readibility, until the next company is chosen and it widens up"): a click on a
+// company widens its tile across the grid and pushes the tiles next to it down; its people in rows that use the width (name,
+// position, email, country; the answer only when there is one: his "no answer out!"); another company folds the first. Positions
+// as Intake holds them, never invented.
+function tcS2People(g) {
   const word = { yes: 'Yes', maybe: 'Maybe', no: 'No' };
-  $('#modal').innerHTML = `<div class="tw-back" onclick="$('#modal').innerHTML=''"></div><aside class="tw-drawer" role="dialog" aria-modal="true" aria-label="${esc(g.name)}">
-    <button type="button" class="tc-kx" aria-label="Close" onclick="$('#modal').innerHTML=''">✕</button>
-    <h2>${g.companyId ? `<a href="#/tc/company/${Number(g.companyId)}" onclick="$('#modal').innerHTML=''">${esc(g.name)}</a>` : esc(g.name || 'No company yet')}</h2>
-    <p class="tw-sub">${tcN(g.ps.length)} ${g.ps.length === 1 ? 'person' : 'people'}${g.country ? ' · ' + esc(g.country) : ''}</p>
-    <div class="tcs2-ppl">${g.ps.map((r, i) => tcS2Person(g, r, i, word)).join('')}</div></aside>`;
+  return `<div class="tcs2-ppl" onclick="event.stopPropagation()">${g.ps.map((r) => `<div class="tcs2-prow">
+      <b>${esc(r.name)}</b><span class="tcs2-pos">${esc(r.position || '')}</span>
+      <span class="tcs2-mail">${r.email ? `<a href="mailto:${esc(r.email)}">${esc(r.email)}</a>` : ''}</span><span class="tcs2-ctry">${esc(r.country || '')}</span>
+      <span class="tcs2-ans">${r.answer ? `<i class="a-${esc(r.answer)}">${word[r.answer]}${r.answer !== 'no' ? ` · ${Number(r.people)}` : ''}</i>` : ''}${r.marked ? ` <span class="tcmk-chip${r.marked.kind === 'hold' ? ' hold' : ''}">${esc(r.marked.label)}</span>` : ''}</span></div>`).join('')}</div>`;
 }
-// SAVE SPACE FOR GUESTS (13.11.2026, his words: "make them sort of push out as the list opens, like done on academy part of intake
-// about the lead information ... plus add the positions"): one line a person, name and position; a click opens the person in place
-// and pushes the rows below down, in the Academy lead card's own look (.c-card); a second click folds it.
-let T_S2P = null;
-function tcS2Person(g, r, i, word) {
-  const open = T_S2P === g.key + '#' + i, k = esc(JSON.stringify(String(g.key))), ans = r.answer ? word[r.answer] + (r.answer !== 'no' ? ` · ${Number(r.people)}` : '') : '';
-  const card = open ? `<div class="c-card tcs2-pcard"><dl>
-      <dt>Position</dt><dd class="${r.position ? '' : 'c-gap'}">${r.position ? esc(r.position) : 'not recorded'}</dd>
-      <dt>Email</dt><dd class="${r.email ? 'c-reach' : 'c-gap'}">${r.email ? `<a href="mailto:${esc(r.email)}">${esc(r.email)}</a>` : 'not recorded'}</dd>
-      <dt>Company</dt><dd>${esc(r.company || g.name || '')}</dd>
-      ${r.country ? `<dt>Country</dt><dd>${esc(r.country)}</dd>` : ''}
-      <dt>Answer</dt><dd>${ans ? esc(ans) : 'No answer yet'}</dd></dl></div>` : '';
-  return `<div class="tcs2-prow${open ? ' open' : ''}" role="button" tabindex="0" aria-expanded="${open}" onclick="tcS2PToggle(${k}, ${Number(i)})" onkeydown="if(event.key==='Enter')tcS2PToggle(${k}, ${Number(i)})">
-      <div class="tcs2-pline"><b>${esc(r.name)}</b>${r.position ? `<small>${esc(r.position)}</small>` : ''}${r.marked ? ` <span class="tcmk-chip${r.marked.kind === 'hold' ? ' hold' : ''}">${esc(r.marked.label)}</span>` : ''}</div>
-      <span class="${r.answer ? 'a-' + esc(r.answer) : ''}">${ans}</span></div>${card}`;
-}
-function tcS2PToggle(key, i) {
-  const id = key + '#' + i; T_S2P = T_S2P === id ? null : id;
-  const g = tcS2Groups().find((x) => x.key === key), box = document.querySelector('.tw-drawer .tcs2-ppl'); if (!g || !box) return;
-  const word = { yes: 'Yes', maybe: 'Maybe', no: 'No' };
-  box.innerHTML = g.ps.map((r, j) => tcS2Person(g, r, j, word)).join('');
+function tcS2Toggle(key) {
+  T_S2.open = T_S2.open === key ? null : key;
+  const list = $('#tcS2rows'); if (!list) return;
+  list.innerHTML = tcS2Rows();
+  const el = list.querySelector('.tcs2-tile.open'); if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 }
 function tcGoStage2() {
   const S = T_S2;
