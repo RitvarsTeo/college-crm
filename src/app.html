@@ -5656,7 +5656,7 @@ function cDrawJourneyPool() {
   // Q87 (Admissions, 12.10.2026: "tur leadi iet pēc datumiem, lai augšā vistuvākie datumi"): the list runs by the next-step
   // date - overdue first, then today, then the coming dates; people with no date after them, and the finished last.
   // The Journey board's own order (cJSort), so the list and the columns never disagree.
-  list = cJSort(list, taskOf);
+  list = cJSort(list, taskOf, C_JP.admOrder || 'new');
   list = [...list.filter((p) => !C_TERMINAL.includes(p.status)), ...list.filter((p) => C_TERMINAL.includes(p.status))];
   const distinct = (key) => [...new Set(people.map((p) => p[key] || cNotSaid))];
   const progs = distinct('programme').sort((a, b) => ((CFG.programmes || []).indexOf(a) + 1 || 99) - ((CFG.programmes || []).indexOf(b) + 1 || 99) || a.localeCompare(b));
@@ -5677,6 +5677,7 @@ function cDrawJourneyPool() {
     box('programme', 'Programme', progs.map((v) => [v, name('programme', v)])),
     cPoolSelect('Stage', active ? 'open' : C_JP.col || '', stageOpts, 'cJourneyStage(this.value)'),
     box('due', 'Next step', C_PF_DUE),
+    isAdm ? `<label class="c-jf on"><span>Order</span><select aria-label="Order" onchange="C_JP.admOrder=this.value;cDrawJourneyPool()">${[['new', 'Newest first'], ['old', 'Oldest first']].map(([v, t]) => `<option value="${v}"${(C_JP.admOrder || 'new') === v ? ' selected' : ''}>${t}</option>`).join('')}</select></label>` : '',
     isNp && tags.length ? cPoolSelect('Cold / Reject', C_OUT_TAG || '', tags, 'C_OUT_TAG=this.value||null;C_OUT_REASON=null;cDrawJourneyPool()') : '',
     more ? box('source', 'Came from', sources.map((v) => [v, name('source', v)])) : '',
     more ? box('owner', 'Owner', owners.map((v) => [v, name('owner', v)])) : '',
@@ -6407,9 +6408,13 @@ function cJUrgency(t, p) {
   const w = cWhenClass(t.due_at);
   return w === 'over' ? [0, -cDaysLate(t.due_at)] : w === 'today' ? [1, 0] : [2, Date.parse(cDay(t.due_at)) || 0];
 }
-function cJSort(ps, taskOf) {
+// THE ADMITTED IN DATE ORDER (13.11.2026, Admissions: "which students were matriculated, in order"): the Admitted are
+// listed by their admission date, newest first (admOrder 'old': oldest first), the ones with no date after them
+function cJSort(ps, taskOf, admOrder = 'new') {
+  const adm = (p) => p.status === 'Admitted';
+  const byDate = (x, y) => (!x.admitted_at - !y.admitted_at) || (admOrder === 'old' ? 1 : -1) * String(x.admitted_at || '').localeCompare(String(y.admitted_at || ''));
   return ps.map((p, i) => [p, cJUrgency(taskOf.get(p.id), p), i])
-    .sort((a, b) => a[1][0] - b[1][0] || a[1][1] - b[1][1] || a[2] - b[2]).map((x) => x[0]);
+    .sort((a, b) => (adm(a[0]) && adm(b[0]) ? byDate(a[0], b[0]) : 0) || a[1][0] - b[1][0] || a[1][1] - b[1][1] || a[2] - b[2]).map((x) => x[0]);
 }
 function cJColumn(stageId, ps, taskOf, sel) {
   const sorted = cJSort(ps, taskOf);

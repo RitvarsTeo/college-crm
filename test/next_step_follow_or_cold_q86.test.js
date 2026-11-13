@@ -95,7 +95,7 @@ test('Q86: the date-less Follow up is refused before anything is saved', () => {
 
 test('Q87: the Journey list runs by the next-step date, nearest first; the finished last', () => {
   const pool = fn('function cDrawJourneyPool(');
-  assert.match(pool, /list = cJSort\(list, taskOf\);\s*list = \[\.\.\.list\.filter\(\(p\) => !C_TERMINAL\.includes\(p\.status\)\), \.\.\.list\.filter\(\(p\) => C_TERMINAL\.includes\(p\.status\)\)\];/);
+  assert.match(pool, /list = cJSort\(list, taskOf, C_JP\.admOrder \|\| 'new'\);\s*list = \[\.\.\.list\.filter\(\(p\) => !C_TERMINAL\.includes\(p\.status\)\), \.\.\.list\.filter\(\(p\) => C_TERMINAL\.includes\(p\.status\)\)\];/);
   // run the board's order on people with known dates
   const TODAY = '2026-10-12';
   const ctx = { Date, Math, cTodayIso: () => TODAY, cDay: (iso) => (iso ? String(iso).slice(0, 10) : ''), C_SIS_HOLDS: [], cSisHolds: () => false };
