@@ -1639,6 +1639,12 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c #view .ib-today .ib-call a{display:inline-block;color:var(--petink);font-weight:600;text-decoration:none;transition:transform .16s cubic-bezier(.22,.9,.3,1)}
   html.ui-c #view .ib-today .ib-call a:hover{transform:translateY(-2px)}
   html.ui-c #view .ib-card.is-open .ib-msg{-webkit-line-clamp:unset;color:var(--ink)}
+  /* a website form card (patch 144, the owner's pick "A, but use bold (not too much though)"): every answer on its own
+     line, the form name bold, each label semi-bold, the answer plain */
+  html.ui-c #view .ib-card .ib-msg.ib-form{display:block;-webkit-line-clamp:unset;overflow:visible}
+  html.ui-c #view .ib-card .ib-form > div{margin:1px 0}
+  html.ui-c #view .ib-card .ib-form .ib-fname{font-weight:700;color:var(--ink)}
+  html.ui-c #view .ib-card .ib-form b{display:inline;font-weight:600;color:var(--t2)}
   /* an email card (16.10.2026): the cleaned text, Show more and Show original; the original keeps its own line breaks */
   html.ui-c #view .ib-card .ib-msg[hidden]{display:none}
   html.ui-c #view .ib-card.msg-full .ib-msg-clean,html.ui-c #view .ib-card.is-open .ib-msg-clean{-webkit-line-clamp:unset;white-space:pre-line}
@@ -5486,6 +5492,22 @@ function cInboxPool() {
     return `<div class="ib-msg ib-msg-clean">${esc(clean)}</div>${differs ? `<div class="ib-msg ib-msg-raw" hidden>${esc(raw)}</div>` : ''}`
       + (long || differs ? `<div class="ib-msgacts">${long ? more : ''}${differs ? orig : ''}</div>` : '');
   };
+  // A WEBSITE FORM CARD (patch 144, the owner's pick 16.11.2026: "A, but use bold (not too much though)"): the form's name
+  // bold, then one answer per line with its label semi-bold and the answer plain; a line without a known label (the
+  // person's own question, "Comes with parents or a friend") stays plain. Only website items whose first line is one of
+  // the three form names; every part goes through esc().
+  const formHtml = (r) => {
+    // the three forms and the labels the website adapter writes (src/adapters.js websiteAnswers, 16.11.2026)
+    const FORMS = ['Talk to Admissions', 'Book a visit', 'Career support'];
+    const LABELS = ['Student', 'Citizenship', 'Contact by', 'Wants to talk about', 'Preferred time', 'Tour language'];
+    const lines = String(r.body || '').split('\n').map((l) => l.trim()).filter(Boolean);
+    if (r.channel !== 'website' || !FORMS.includes(lines[0])) return '';
+    const line = (l) => {
+      const label = LABELS.find((x) => l.startsWith(x + ': '));
+      return label ? `<div><b>${esc(label)}:</b> ${esc(l.slice(label.length + 2))}</div>` : `<div>${esc(l)}</div>`;
+    };
+    return `<div class="ib-msg ib-form"><div class="ib-fname">${esc(lines[0])}</div>${lines.slice(1).map(line).join('')}</div>`;
+  };
   const card = (r) => {
     const open = C_LOPEN === r.id; const prog = D.val(r, 'interest');
     // the state line (Q66): how long the message has waited and whether that is late (Q50); a card set aside says so
@@ -5495,7 +5517,7 @@ function cInboxPool() {
     return `<div class="c-jp row ib-card c-rail c-rail-${C_ST_RAIL[st]}${open ? ' is-open' : ''}" data-id="${Number(r.id)}" tabindex="0" onclick="${toggle}" onkeydown="if(event.key==='Enter'){${toggle}}">
       <div class="ib-top"><b class="c-reach">${who(r)}</b></div>
       <small class="ib-ch" style="--src:${C_SRC_COLOUR[r.channel] || '#8a94a6'}"><i></i>${esc(channelLabel(r.channel))}</small>
-      ${r.channel === 'phone' && (r.calls || []).length ? cCallsHtml(r.calls) : r.bodyClean ? msgHtml(r) : `<div class="ib-msg">${esc(r.channel === 'phone' ? cCallLine(r.body) : (r.body || D.val(r, 'question') || ''))}</div>`}
+      ${r.channel === 'phone' && (r.calls || []).length ? cCallsHtml(r.calls) : r.bodyClean ? msgHtml(r) : formHtml(r) || `<div class="ib-msg">${esc(r.channel === 'phone' ? cCallLine(r.body) : (r.body || D.val(r, 'question') || ''))}</div>`}
       ${prog || kind || r.joins || (r.knownInN3 || []).length || (!live && r.mark && r.mark !== r.archive_reason) ? `<div class="ib-tags">${r.joins ? `<span class="ib-joins">Joins ${esc(r.joins.name)}</span>` : ''}${(r.knownInN3 || []).length ? `<span class="ib-n3">Known in N3: ${esc(r.knownInN3.join(', '))}</span>` : ''}${prog ? `<span class="ib-prog">${esc(prog)}</span>` : ''}${kind}${!live && r.mark && r.mark !== r.archive_reason ? `<span class="ib-kind ib-marktag">${esc(r.mark)}</span>` : ''}</div>` : ''}
       ${live && r.setAsideBefore ? `<div class="ib-before"><span>Set aside before: ${cAsideWhen(r.setAsideBefore)}</span>${cMarkCtl(r, D.marks)}</div>` : ''}
       ${!live && r.state === 'archived' ? `<div class="ib-before"><span>Set aside: ${cAsideWhen({ at: r.processed_at, by: r.processed_by, reason: r.archive_reason })}</span></div>` : ''}
