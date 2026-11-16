@@ -3,16 +3,19 @@
 //   together under managers that have very similar companies as those not on the list and on the list."; "A: spread evenly";
 //   "CEO's are invited by our CEO Dmitrijs, or COO Aleksejs B." (13.11); real offshore -> Alma (13.11); Jānis's list untouched.
 // For a contact whose company (with its whole family) is on no list yet:
-//   1. recent clients only: a course year >= RECENT with at least one attendee (tc_company_courses, the Training Centre Excel's
-//      years), anywhere in the family. Else off: "No course since <year>" / "No course on record"
+//   1. recent clients only: off ONLY with proven old business - the last course year with attendees (tc_company_courses, the
+//      Training Centre Excel's years, anywhere in the family) before RECENT: "Last course <year>". No course on record is not old
+//      (mostly Client Hub's curated Grand Opening contacts; Intake MASTER CONTROL's call 16.11.2026): divided like the rest
 //   2. a CEO / MD / owner (the 13.11 title rule, word for word below) -> DS or AB, the lighter list
 //   3. the person in charge Intake names for the company is a list owner -> that owner
 //   4. offshore / wind (the name, or an ENERGY / OPITO area) -> Alma
 //   5. else the list most like it: the same email domain, then the most companies of the same kind, then of the same country;
-//      a list already past an even share (+4 %) is skipped, and a tie goes to the lighter list. Jānis takes no new companies.
+//      only lists within BAND people of the lightest (and under an even share +4 %) compete, a tie goes to the lighter list.
+//      Jānis takes no new companies.
 // A whole family goes to one owner; each company keeps its reason (`why`), shown in the History line.
 export const RECENT = 2023;
 const SPLIT = ['DS', 'AB', 'Marcis', 'MC', 'Alma'];
+const BAND = 30;   // "spread evenly": a list more than this many people above the lightest takes no company by similarity
 const C_LEVEL = ['DS', 'AB'];
 
 // --- the title rule (13.11.2026, Backups/ceo_to_ds_ab_dryrun_2026_11_13.mjs, word for word) ---
@@ -57,7 +60,7 @@ export const domainOf = (e) => { const d = String(e || '').toLowerCase().split('
  * rows = placement's "nobody" rows ({ contactId, companyId, company, name, email, position }); placed = what this run already
  * puts on lists ({ code, companyId, email }); owners = the list codes; mom = companyId -> mother.
  */
-export async function splitNew(db, rows, placed, { owners, mom, picOwner }) {
+export async function splitNew(db, rows, placed, { owners, mom, picOwner, mailboxOnly = 'Only a company mailbox' }) {
   const top = (id) => mom.get(id) || id;
   const cos = new Map((await db.prepare(`SELECT c.id, c.name, c.country, LOWER(COALESCE(c.pic_email, '')) AS pic,
     (SELECT string_agg(a.area, '+') FROM tc_company_areas a WHERE a.company_id = c.id) AS areas FROM tc_companies c WHERE c.archived_at IS NULL`).all())
@@ -85,9 +88,18 @@ export async function splitNew(db, rows, placed, { owners, mom, picOwner }) {
   for (const r of placed) add(r.code, r.companyId, r.email);
 
   // the families, recent ones first in size order (the biggest is placed while every list still has room)
-  const fams = new Map();
-  for (const r of rows) { const m = top(r.companyId); if (!fams.has(m)) fams.set(m, []); fams.get(m).push(r); }
   const out = { place: [], left: [] };
+  // a company whose only contact is a company mailbox (his pick 16.11.2026): on only with a course since RECENT; then to the list
+  // that has its family when one does, else divided like the rest
+  const fams = new Map();
+  for (const r of rows) {
+    if (r.mailboxOnly) {
+      const y = last.get(top(r.companyId)) || 0;
+      if (y < RECENT) { out.left.push({ ...r, reason: 'mailbox_only', label: mailboxOnly }); continue; }
+      if (r.holder && owners.includes(r.holder)) { add(r.holder, r.companyId, r.email); out.place.push({ ...r, code: r.holder, why: 'The company mailbox of a recent client, on the list that has the company' }); continue; }
+    }
+    const m = top(r.companyId); if (!fams.has(m)) fams.set(m, []); fams.get(m).push(r);
+  }
   const size = (o) => prof[o].people;
   const room = () => Math.ceil((SPLIT.reduce((a, o) => a + size(o), 0) + [...fams.values()].reduce((a, f) => a + f.length, 0)) / SPLIT.length * 1.04);
   const cap = room();
@@ -95,7 +107,7 @@ export async function splitNew(db, rows, placed, { owners, mom, picOwner }) {
   const families = [...fams.entries()].sort((a, b) => b[1].length - a[1].length || String(a[1][0].company).localeCompare(String(b[1][0].company)));
   for (const [m, ps] of families) {
     const y = last.get(m) || 0;
-    if (y < RECENT) { for (const r of ps) out.left.push({ ...r, reason: 'not_recent', label: y ? `No course since ${y}` : 'No course on record' }); continue; }
+    if (y && y < RECENT) { for (const r of ps) out.left.push({ ...r, reason: 'not_recent', label: `Last course ${y}` }); continue; }
     const c = cos.get(m) || cos.get(ps[0].companyId) || {};
     const k = kindOf(c.name, c.areas);
     const rest = [];
@@ -109,13 +121,15 @@ export async function splitNew(db, rows, placed, { owners, mom, picOwner }) {
     if (!code) {
       const doms = new Set(rest.map((r) => domainOf(r.email)).filter(Boolean));
       const pool = SPLIT.filter((o) => o !== 'Alma' && owners.includes(o));
-      const open = pool.filter((o) => size(o) + rest.length <= cap);
+      // evenly: similarity chooses only among the lists within BAND people of the lightest, and under the cap
+      const least = Math.min(...pool.map(size));
+      const open = pool.filter((o) => size(o) + rest.length <= cap && size(o) <= least + BAND);
       const sc = (open.length ? open : pool).map((o) => ({ o, same: [...doms].reduce((a, d) => a + (prof[o].domains.get(d) || 0), 0),
         kind: k === 'other' ? 0 : prof[o].kinds[k] || 0, country: c.country ? prof[o].countries[c.country] || 0 : 0 }))
         .sort((a, b) => b.same - a.same || b.kind - a.kind || b.country - a.country || size(a.o) - size(b.o) || SPLIT.indexOf(a.o) - SPLIT.indexOf(b.o));
       const b = sc[0];
       code = b.o;
-      why = b.same ? 'The same email domain as people on this list' : b.kind ? `A ${k} company, like ${b.kind} on this list` + (b.country ? ` (${b.country} in ${c.country})` : '')
+      why = b.same ? 'The same email domain as people on this list' : b.kind ? `${/^[aeiou]/i.test(k) ? 'An' : 'A'} ${k} company, like ${b.kind} on this list` + (b.country ? ` (${b.country} in ${c.country})` : '')
         : b.country ? `${b.country} companies in ${c.country} on this list` : 'The lighter list';
     }
     for (const r of rest) { add(code, r.companyId, r.email); out.place.push({ ...r, code, why }); }

@@ -329,7 +329,7 @@ export async function addContactToList(tx, { code, company, contactId, f, actor,
 //   - else: onto the list of the owner who already has the company (listHolding's rule), under that company. A company already
 //     decided (Invite or No) keeps its decision; the person is still to decide there until Done (patch 145's mechanism)
 //   - a company nobody has yet: divided by his established rules (src/tcgosplit.js: recent clients only, C level to DS / AB,
-//     offshore to Alma, else the most similar list, evenly); a company with no course since 2023 stays off with that reason
+//     offshore to Alma, else the most similar list, evenly); a company whose last course was before 2023 stays off with that reason
 // A person with no email goes on the list too: the list shows them as Postcard only, with an Add email box.
 // placeEveryone runs after every import and every hand placing; the 16.11 backfill runs the same function once.
 // Added the same day (his words through Intake MASTER CONTROL):
@@ -340,7 +340,7 @@ export async function addContactToList(tx, { code, company, contactId, f, actor,
 //     same email, or the same name at the same company) is one person; a daughter company's people go to the list that has its
 //     mother company (or any company of the family), never to another owner
 export const LEFT_WHY = { approval: 'Waiting for approval', nobody: 'No list has this company yet', same_email: 'Same email as a person already on a list',
-  same_person: 'Same person as one already on a list', mailbox: 'Company mailbox, not a person', mailbox_only: 'Only a company mailbox: waiting for a pick' };
+  same_person: 'Same person as one already on a list', mailbox: 'Company mailbox, not a person', mailbox_only: 'Only a company mailbox' };
 
 const MAILBOXES = () => new Set((((TC.grandOpening || {}).invite || {}).companyMailboxes) || []);
 /** A company or department mailbox (info@, office@, crewing@ ...), by the part before the @. */
@@ -424,8 +424,10 @@ export async function placement(db) {
     if (email && planned.has(email)) { out.left.push({ ...base, reason: 'same_email', label: LEFT_WHY.same_email }); continue; }
     if (who && people.has(who)) { out.left.push({ ...base, reason: 'same_person', label: LEFT_WHY.same_person }); continue; }
     if (isCompanyMailbox(email)) {
-      const only = !persons.has(Number(k.company_id));
-      out.left.push({ ...base, reason: only ? 'mailbox_only' : 'mailbox', label: only ? LEFT_WHY.mailbox_only : 'Do not invite: ' + LEFT_WHY.mailbox });
+      // the only contact of its company: his pick 16.11.2026 "The 45 with a course since 2023" - such a mailbox goes on by the same
+      // rules when the company has a course since 2023 (src/tcgosplit.js), else stays off as "Only a company mailbox"
+      if (!persons.has(Number(k.company_id))) { if (email && !planned.has(email)) { planned.add(email); nobody.push({ ...base, mailboxOnly: true, holder: has[Number(k.company_id)] || null }); } continue; }
+      out.left.push({ ...base, reason: 'mailbox', label: 'Do not invite: ' + LEFT_WHY.mailbox });
       continue;
     }
     const was = gone.get(k.ch_contact_id || 'intake:' + Number(k.id));
@@ -440,7 +442,7 @@ export async function placement(db) {
   if (nobody.length) {
     const alias = { 'alma@novikontas.org': 'Alma' };   // the person-in-charge address Intake holds for Alma (his mailbox is alm@)
     const picOwner = (mail) => alias[mail] || (S2().find((x) => String(x.email || '').toLowerCase() === mail) || {}).code || null;
-    const sp = await splitNew(db, nobody, out.place, { owners: S2().map((x) => x.code), mom: await mothers(db), picOwner });
+    const sp = await splitNew(db, nobody, out.place, { owners: S2().map((x) => x.code), mom: await mothers(db), picOwner, mailboxOnly: LEFT_WHY.mailbox_only });
     out.place.push(...sp.place);
     out.left.push(...sp.left);
   }

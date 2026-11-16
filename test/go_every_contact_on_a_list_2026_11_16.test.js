@@ -58,10 +58,11 @@ test('the plan: who goes where, who stays off and why; nothing written', async (
   const { held, decided, ids } = await seed(db);
   assert.deepEqual(await ml.holders(db), { [held]: 'JS', [decided]: 'DS' });
   const P = await ml.placement(db);
-  assert.deepEqual(P.place.map((r) => [r.contactId, r.code]).sort(), [[ids.excel, 'JS'], [ids.noEmail, 'JS'], [ids.late, 'DS']].sort());
+  assert.deepEqual(P.place.filter((r) => r.contactId !== ids.nobody).map((r) => [r.contactId, r.code]).sort(), [[ids.excel, 'JS'], [ids.noEmail, 'JS'], [ids.late, 'DS']].sort());
+  // no list has Nobodys Example and it has no course on record: not old, so divided like the rest (to the lighter list)
+  assert.deepEqual(P.place.filter((r) => r.contactId === ids.nobody).map((r) => [r.code, r.why]), [['AB', 'The lighter list']]);
   assert.deepEqual(P.revive.map((r) => [r.contactId, r.code]), [[ids.dropped, 'MC']], 'back onto the list it was dropped from');
   const left = Object.fromEntries(P.left.map((r) => [r.contactId, r.label]));
-  assert.equal(left[ids.nobody], 'No course on record', 'no list has the company and no course: off, with that reason');
   assert.match(left[ids.dnI], /^Do not invite: A manager's decision$/);
   assert.match(left[ids.dead], /^Do not invite: /);
   assert.equal(left[ids.flagged], 'Waiting for approval');
@@ -74,14 +75,14 @@ test('placeEveryone: onto the owner\'s list; a decided company keeps its decisio
   const db = await openDb();
   const { ids } = await seed(db);
   const r = await ml.placeEveryone(db, 'Test Person');
-  assert.deepEqual({ placed: r.placed, revived: r.revived, left: r.left }, { placed: 3, revived: 1, left: 5 });
-  assert.deepEqual(r.byList, { JS: 2, DS: 1, MC: 1 });
+  assert.deepEqual({ placed: r.placed, revived: r.revived, left: r.left }, { placed: 4, revived: 1, left: 4 });
+  assert.deepEqual(r.byList, { JS: 2, DS: 1, MC: 1, AB: 1 });
   assert.equal((await onList(db, ids.excel)).sender, 'JS');
   assert.equal((await onList(db, ids.late)).sender, 'DS');
   assert.ok((await onList(db, ids.late)).fresh, 'Decided Example was decided: the new person is still to decide (patch 145)');
   const g = await onList(db, ids.dropped);
   assert.deepEqual([g.sender, g.gone], ['MC', 0]);
-  for (const id of [ids.nobody, ids.dnI, ids.dead, ids.flagged]) assert.equal(await onList(db, id), undefined, 'stays off');
+  for (const id of [ids.dnI, ids.dead, ids.flagged]) assert.equal(await onList(db, id), undefined, 'stays off');
   const L = await ml.myList(db, 'DS');
   const lars = L.groups.flatMap((x) => x.people).find((p) => p.email === 'lars@decided-example.com');
   assert.equal(lars.decision, null, 'still to decide');
@@ -123,10 +124,9 @@ test('the people off every list: grouped by reason, each with name and company',
   await ml.placeEveryone(db, 'Test Person');
   const G = await ml.leftOff(db);
   const by = Object.fromEntries(G.map((g) => [g.label, g.n]));
-  assert.equal(by['No course on record'], 1);
   assert.equal(by['Waiting for approval'], 1);
-  // 4: once Pēteris is on JS's list, his twin's address is on a list too: one address, one invitation
-  assert.equal(G.reduce((a, g) => a + g.n, 0), 4);
+  // 3: once Pēteris is on JS's list, his twin's address is on a list too (one address, one invitation); Nobodys Example went on
+  assert.equal(G.reduce((a, g) => a + g.n, 0), 3);
   assert.ok(G.every((g) => g.people.every((p) => p.company && p.companyId)));
 });
 
@@ -141,7 +141,7 @@ test('one rule at add time: every import and hand placing runs it; the page show
   assert.match(APP, /Not on a Grand Opening list · \$\{tcGoN\(total\)\}/);
 });
 
-test('company mailboxes stay off; one that is the only contact of its company waits for a pick; the same person twice is one; a daughter goes with its mother', async () => {
+test('company mailboxes stay off; one that is the only contact of its company goes on only with a course since 2023; the same person twice is one; a daughter goes with its mother', async () => {
   const db = await openDb();
   const { held, none } = await seed(db);
   const co = async (name) => Number((await db.prepare(`INSERT INTO tc_companies (name, name_key, country, status, created_at) VALUES (?,?,?,?,?)`)
@@ -165,7 +165,10 @@ test('company mailboxes stay off; one that is the only contact of its company wa
   const left = Object.fromEntries(P.left.map((r) => [r.contactId, r.label]));
   assert.equal(left[ids.info], 'Do not invite: Company mailbox, not a person');
   assert.equal(left[ids.crewing2], 'Do not invite: Company mailbox, not a person');
-  assert.equal(left[ids.lonely], 'Only a company mailbox: waiting for a pick');
+  assert.equal(left[ids.lonely], 'Only a company mailbox', 'no course since 2023: off (his pick: only the ones with a course since 2023 go on)');
+  await db.prepare(`INSERT INTO tc_company_courses (company_id, year, attendees, source, recorded_at) VALUES (?,?,?,?,?)`).run(lonely, 2024, 3, 'excel_2026_10', at);
+  const P2 = await ml.placement(db);
+  assert.equal(P2.place.filter((r) => r.contactId === ids.lonely).length, 1, 'a course in 2024: the mailbox goes on as the contact of its company');
   assert.equal(left[ids.twin], 'Same person as one already on a list');
   assert.deepEqual(P.place.filter((r) => r.contactId === ids.riga).map((r) => r.code), ['JS'], 'with its mother, on JS\'s list');
   assert.equal((await ml.holders(db))[daughter], 'JS');
@@ -206,8 +209,8 @@ test('the companies no list has: recent clients only, C level to DS / AB, offsho
   assert.equal(to[ids.ceo][1], 'CEO / MD / owner: our CEO or COO');
   assert.ok(['DS', 'AB'].includes(to[ids.ceo][0]));
   assert.equal(to[ids.opito][0], 'Alma', 'an OPITO area is offshore');
-  assert.equal(left[ids.old], 'No course since 2021');
-  assert.equal(left[ids.zero], 'No course on record', 'a year with 0 attendees is no course');
+  assert.equal(left[ids.old], 'Last course 2021', 'proven old business: off');
+  assert.ok(to[ids.zero], 'a year with 0 attendees is no course on record: not old, divided like the rest');
   assert.deepEqual(to[ids.pic], ['MC', 'The person in charge Intake names for the company']);
   assert.notEqual(to[ids.dom][0], 'JS', 'Jānis takes no new companies');
   assert.ok(['DS', 'AB', 'Marcis', 'MC'].includes(to[ids.dom][0]));
