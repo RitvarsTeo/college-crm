@@ -47,7 +47,10 @@ function card(link) {
 
 export function s2Mail(kind, first, code, opts = {}) {
   const from = opts.from || {};
-  const link = S2_PAGE + '?c=' + code;
+  // patch 146 (his pick "Yes, build it (Rec.)"): the company's card goes with the person's code, so the page prefills company,
+  // name and email (?k=<card>&c=<code>); without a card the code alone, as before
+  const kCard = /^[a-hj-km-np-z2-9]{6}$/.test(String(opts.card || '')) ? String(opts.card) : '';
+  const link = S2_PAGE + (kCard ? '?k=' + kCard + '&c=' : '?c=') + code;
   const hi = first ? 'Dear ' + esc_(first) + ',' : 'Hello,';
   const hiPlain = first ? 'Dear ' + first + ',' : 'Hello,';
   const ask = 'Will you join us? It takes one minute to confirm.';

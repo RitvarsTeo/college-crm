@@ -74,6 +74,7 @@ import * as tcreview from './tcreview.js';
 import * as tcgo from './tcgo.js';
 import * as tcmylist from './tcmylist.js';
 import * as tcdoor from './tcdoor.js';
+import * as tccodes from './tccodes.js';
 import * as tcgopass from './tcgopass.js';
 import * as tcrsvp from './tcrsvp.js';
 import * as tcmr from './tcmr.js';
@@ -3597,6 +3598,8 @@ export const handle = async (req, res) => {
           : goCode ? await tc.addContact(db, id, b, by, (tx, x) => tcmylist.addContactToList(tx, { code: goCode, ...x }))
           : await run(db, id, b, by);
         if (edit[2] === 'contacts' && out && out.id) await tcAddedNotify(req, [{ kind: 'contact', companyId: id, contactId: out.id }]);
+        // a person put on a list gets their personal code now (patch 146); a failure never undoes the contact
+        if (out && out.list === 'added') await tccodes.ensureCodes(db).catch((e) => console.error('codes:', e.message));
         return json(res, 200, out);
       }
     }
@@ -3856,7 +3859,11 @@ export const handle = async (req, res) => {
       const me = await currentUser(req), admin = Boolean(await adminOf(req));
       const b = await body(req), code = String(b.sender || '');
       if (!tcmylist.mayOpen(me, admin, code)) return json(res, 403, { error: 'This list is not yours.' });
-      try { return json(res, 200, await tcmylist.addEmail(db, code, Number(b.id), b.email, await actorOf(req, b))); }
+      try {
+        const out = await tcmylist.addEmail(db, code, Number(b.id), b.email, await actorOf(req, b));
+        await tccodes.ensureCodes(db).catch((e) => console.error('codes:', e.message));   // patch 146: an email = a personal code
+        return json(res, 200, out);
+      }
       catch (e) { if (e instanceof tc.TcInputError) return json(res, 400, { error: e.message }); throw e; }
     }
     // THE PEOPLE OFF EVERY LIST (patch 149, 16.11.2026; every figure has legs): each with the reason, for an admin

@@ -2,6 +2,7 @@
 // me and Send next 100, from his Gmail as that colleague ("Send mail as"), the same three emails the Apps Script sent
 // (src/tcs2mail.js). Never twice: a person is marked in tc_go_s2_sent before the next one goes. A sender whose address is
 // not a confirmed "Send mail as" in his Gmail sends nothing (Gmail would put his own address in From). Admins only.
+import { ensureCodes } from './tccodes.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -9,7 +10,8 @@ import { fileURLToPath } from 'node:url';
 import { TC } from './tc.js';
 import { s2Mail } from './tcs2mail.js';
 import { senderToken, GMAIL_API } from '../lib/notify.js';
-import { digitalIds } from './tcmylist.js';
+import { digitalIds, myList } from './tcmylist.js';
+import { linked } from './tccards.js';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const BUILDING = () => fs.readFileSync(path.join(ROOT, 'src', 'assets', 'go-building.jpg'));
@@ -49,6 +51,8 @@ export const todaySent = async (db) => Number((await db.prepare(`SELECT COUNT(*)
 
 /** The cards and the log: per sender, the list, sent, refused, left, and whether the address is confirmed. */
 export async function overview(db, { env = process.env, fetchImpl = fetch } = {}) {
+  // patch 146: everyone on a list with an email has a personal code before the send screen counts them (one rule, src/tccodes.js)
+  await ensureCodes(db).catch((e) => console.error('codes:', e.message));
   // THE FULL FLOW (12.11.2026, the owner's "I need the full flow"): an owner's Stage 2 send goes only to the people they saved as
   // Invite with the way Digital on My Grand Opening list (src/tcmylist.js digitalIds); the counts are those people
   const all = await db.prepare(`SELECT s.id, s.sender, s.name, s.company, s.email, s.link_code, x.result FROM tc_go_stage2 s LEFT JOIN tc_go_s2_sent x ON x.stage2_id = s.id WHERE s.gone = 0`).all();
@@ -120,13 +124,16 @@ export async function sendNext(db, code, batch, me, { env = process.env, fetchIm
   const people = (await db.prepare(`SELECT s.id, s.email, s.first_name, s.link_code, s.mail_kind FROM tc_go_stage2 s LEFT JOIN tc_go_s2_sent x ON x.stage2_id = s.id
     WHERE s.gone = 0 AND s.sender = ? AND x.id IS NULL AND s.link_code IS NOT NULL AND s.email IS NOT NULL AND s.email <> '' ORDER BY s.id`).all(code))
     .filter((p) => ids.has(Number(p.id))).slice(0, want);
+  // each person's company card for the link (patch 146): their company on the owner's list -> its card, when it has one
+  const groupOf = new Map((await myList(db, code)).groups.flatMap((g) => g.people.map((x) => [x.id, g.key])));
+  const cardOf = (await linked(db)) || new Map();
   let sent = 0, refused = 0;
   for (const p of people) {
     // the mark first, so a crash between the two can never send the same person twice
     const mark = await db.prepare(`INSERT INTO tc_go_s2_sent (stage2_id, sender, mail_kind, result, sent_at, sent_by) VALUES (?,?,?,?,?,?)
       ON CONFLICT (stage2_id) DO NOTHING`).run(p.id, code, p.mail_kind || 'invite', 'sent', nowIso(), me && me.name);
     if (!Number(mark.changes)) continue;
-    const mail = s2Mail(p.mail_kind || 'invite', p.first_name || '', p.link_code, { from: { name: r.s.name || r.s.label, title: r.s.title || '' } });
+    const mail = s2Mail(p.mail_kind || 'invite', p.first_name || '', p.link_code, { from: { name: r.s.name || r.s.label, title: r.s.title || '' }, card: (cardOf.get(groupOf.get(Number(p.id))) || {}).code || '' });
     const raw = Buffer.from(mime({ fromName: r.s.name || r.s.label, fromEmail: r.s.email, to: p.email, mail }), 'utf8').toString('base64url');
     let ok = false, detail = '';
     try { const res = await gmail(env, fetchImpl, r.tok.token, '/users/me/messages/send', { method: 'POST', body: JSON.stringify({ raw }) }); ok = res.ok; if (!ok) detail = 'Gmail ' + res.status; }

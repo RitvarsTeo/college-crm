@@ -491,10 +491,28 @@ test('(f) every SQL file for the shared database grants intake_app only what it 
     'intake_go_cards.sql: grant execute on function intake_go.card_link(text, text, text) to intake_app;',
     // patch 148, the door (screen 4): link THIS card to a company that has none yet
     'intake_go_cards_door.sql: grant execute on function intake_go.card_link_code(text, text, text, text) to intake_app;',
+    // patch 146 (his pick "Yes, build it (Rec.)"): a personal code for every person on a list with an email
+    'intake_go_person_codes.sql: grant execute on function intake_go.person_code_issue(text, text, text) to intake_app;',
   ]);
   for (const f of ['intake_go_cards.sql', 'intake_go_cards_door.sql']) {
     const cards = fs.readFileSync(path.join(dir, f), 'utf8').toLowerCase();
     assert.ok(!/grant[^;]*\b(anon|authenticated|public)\s*;/.test(cards.replace(/--[^\n]*/g, '')), f + ': nothing to anon, authenticated or public');
     assert.ok(/security definer\s+set search_path = pg_catalog, public/.test(cards), f + ': a definer function with a fixed path');
   }
+});
+
+test('(f) the landing page prefill (patch 146) is the ONE thing anon gets from these files: execute on std_go_prefill, exact match only', () => {
+  const dir = path.join(ROOT, 'docs', 'client-hub');
+  const anon = fs.readdirSync(dir).filter((f) => f.endsWith('.sql')).flatMap((f) => [...fs.readFileSync(path.join(dir, f), 'utf8')
+    .replace(/--[^\n]*/g, '').toLowerCase().matchAll(/\bgrant\s+[^;]+;/g)].map((m) => m[0].replace(/\s+/g, ' ')).filter((g) => /\b(anon|authenticated)\b/.test(g)).map((g) => `${f}: ${g}`));
+  assert.deepEqual(anon, ['intake_go_person_codes.sql: grant execute on function public.std_go_prefill(text, text) to anon, authenticated;']);
+  const sql = fs.readFileSync(path.join(dir, 'intake_go_person_codes.sql'), 'utf8').replace(/--[^\n]*/g, '').toLowerCase();
+  const fn = sql.slice(sql.indexOf('create or replace function public.std_go_prefill'), sql.indexOf('$$;', sql.indexOf('create or replace function public.std_go_prefill')));
+  assert.ok(/security definer\s+set search_path = pg_catalog, public/.test(fn), 'a definer function with a fixed path');
+  assert.ok(!/\blike\b|\bilike\b|~\*|similar to/.test(fn.replace(/v_card !~|v_code ~/g, '')), 'exact match only: no pattern search on data');
+  assert.ok(fn.includes("where c.code = v_card and c.company_key is not null") && fn.includes('and s.link_code = v_code'), 'card and code by equality');
+  assert.ok(fn.includes("= v_key"), 'the person only under THIS card\'s company');
+  assert.ok(/>= 600 then return null/.test(fn), 'a cap on lookups');
+  assert.ok(!/\b(insert|update|delete)\b[^;]*\b(std_go_cards|std_linkedin_links|tc_go_stage2)\b/.test(fn), 'it writes nothing but its own counter');
+  assert.ok(sql.includes('revoke all on public.std_go_prefill_hits from public, anon, authenticated;'));
 });
