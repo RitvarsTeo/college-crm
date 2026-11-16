@@ -817,14 +817,14 @@ test('Google Sheets cannot be started by somebody who is not signed in', async (
 // lands on their own list and only theirs.
 test('A LIST OWNER WHO HAS NEVER SIGNED IN GETS IN BY GOOGLE AND OPENS ONLY THEIR OWN LIST', async (t) => {
   const s = await rig(t, {}, async (db) => {
-    for (const [email, name] of [['ds@novikontas.org', 'DS Example'], ['marcis.zabovs@novikontas.org', 'Marcis Example'], ['alma@novikontas.org', 'Alma Example']]) {
+    for (const [email, name] of [['ds@novikontas.org', 'DS Example'], ['marcis.zabovs@novikontas.org', 'Marcis Example'], ['alm@novikontas.org', 'Alma Example']]) {
       const id = 'u' + crypto.randomBytes(4).toString('hex');
       await db.prepare(`INSERT INTO crm_users (id, email, display_name, password_hash, role, active, session_version, created_at)
         VALUES (?,?,?,NULL,'user',1,0,?)`).run(id, email, name, new Date().toISOString());
       await db.prepare('INSERT INTO crm_user_areas (user_id, area, granted_at, granted_by) VALUES (?,?,?,?)').run(id, 'tc', new Date().toISOString(), 'test');
     }
   });
-  for (const [google, code] of [['DS@Novikontas.org', 'DS'], ['Marcis.Zabovs@novikontas.org', 'Marcis'], ['alma@novikontas.org', 'Alma']]) {
+  for (const [google, code] of [['DS@Novikontas.org', 'DS'], ['Marcis.Zabovs@novikontas.org', 'Marcis'], ['alm@novikontas.org', 'Alma']]) {
     const f = await beginFlow(s.port);
     s.fake.state.idToken = mintToken({ nonce: f.nonce, email: google });
     const cb = await request(s.port, 'GET', `/api/auth/google/callback?code=abc&state=${f.state}`, { headers: withFlow(f.flow) });
