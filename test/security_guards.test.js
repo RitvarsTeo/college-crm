@@ -478,3 +478,19 @@ test('(e) Ieva 21.10: Maybe the same person and With the SIS are Academy routes 
   assert.equal(await call('/api/people/x1/not-same', null, { otherId: 'x2' }), 401, 'no session');
   assert.equal(await call('/api/people/x1/maybe-same', 'academy'), 404, 'Academy reaches the route');
 });
+
+test('(f) every SQL file for the shared database grants intake_app only what it names: the cards (patch 147) = one view + one function', () => {
+  // 16.11.2026, his pick "A: card table (Rec.)": SELECT on intake_go.cards and EXECUTE on intake_go.card_link, nothing else;
+  // anon and authenticated get nothing; the schema is not one the Data API publishes. A new grant must be added here, with its reason.
+  const dir = path.join(ROOT, 'docs', 'client-hub');
+  const all = fs.readdirSync(dir).filter((f) => f.endsWith('.sql')).flatMap((f) => [...fs.readFileSync(path.join(dir, f), 'utf8')
+    .replace(/--[^\n]*/g, '').toLowerCase().matchAll(/\bgrant\s+[^;]+;/g)].map((m) => m[0].replace(/\s+/g, ' ')).filter((g) => /\bintake_app\b/.test(g)).map((g) => `${f}: ${g}`));
+  assert.deepEqual(all, [
+    'intake_go_cards.sql: grant usage on schema intake_go to intake_app;',
+    'intake_go_cards.sql: grant select on intake_go.cards to intake_app;',
+    'intake_go_cards.sql: grant execute on function intake_go.card_link(text, text, text) to intake_app;',
+  ]);
+  const cards = fs.readFileSync(path.join(dir, 'intake_go_cards.sql'), 'utf8').toLowerCase();
+  assert.ok(!/grant[^;]*\b(anon|authenticated|public)\s*;/.test(cards.replace(/--[^\n]*/g, '')), 'nothing to anon, authenticated or public');
+  assert.ok(/security definer\s+set search_path = pg_catalog, public/.test(cards), 'a definer function with a fixed path');
+});
