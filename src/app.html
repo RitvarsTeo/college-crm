@@ -2732,7 +2732,6 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tcml-p{display:block;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--rule2);padding:6px 0;font:inherit;color:var(--ink);cursor:pointer}
   html.ui-c .tcml-p b{display:block;font-size:14px;line-height:1.25;font-weight:650} html.ui-c .tcml-p span{display:block;color:var(--t3);font-size:12.5px;font-weight:600;line-height:1.3}
   html.ui-c .tcml-p.out b, html.ui-c .tcml-p.out span{opacity:.45;text-decoration:line-through}
-  html.ui-c .tcml-p .tcml-new{font-style:normal;font-size:12px;font-weight:700;color:var(--c-sis);background:color-mix(in srgb,var(--c-sis) 12%,transparent);border-radius:4px;padding:0 5px;margin-left:4px}
   html.ui-c .tc-knote{color:var(--c-sis);font-size:13px;font-weight:600}
   html.ui-c .tcml-yn{display:flex;gap:6px} html.ui-c .tcml-yn .btn{flex:1;justify-content:center}
   html.ui-c .tcml-yn .btn.btn{background:var(--surface);color:var(--ink);border:1.5px solid var(--rule);box-shadow:none}
@@ -13264,9 +13263,8 @@ function tcMlDraw() {
   const targets = T_ML.base.groups.filter((g) => g.intake).sort((a, b) => a.name.localeCompare(b.name, 'lv'));
   const tile = (g) => {
     const open = T_ML.open.has(g.key) || (Boolean(T_ML.q) && mlPersonHit(g, T_ML.q)), left = g.people.filter((p) => p.out).length, waiting = g.people.filter((p) => p.waiting).length;
-    const count = (g.decision === 'invite' && left ? `${tcN(g.people.length - left)} of ${tcN(g.people.length)} people` : `${tcN(g.people.length)} ${g.people.length === 1 ? 'person' : 'people'}`)
-      + (waiting ? ` · ${tcN(waiting)} new` : '');
-    const person = (p) => `<button type="button" class="tcml-p${p.out ? ' out' : ''}${p.from || p.moved ? ' moved' : ''}"${narrow ? '' : ` draggable="true" ondragstart="event.dataTransfer.setData('text/plain', String(${Number(p.id)}))"`} onclick="tcMlDo({ type: 'out', id: ${Number(p.id)} })"><b>${esc(p.label)}${p.waiting ? ' <em class="tcml-new">New</em>' : ''}${p.postcard ? ' <em class="tcml-pc">Postcard only</em>' : ''}${p.passedTo ? ` <em class="tcpo-wait">Passed to ${esc(p.passedTo)}, waiting</em>` : ''}</b>${p.position ? `<span>${esc(p.position)}</span>` : ''}</button>`
+    const count = (g.decision === 'invite' && left ? `${tcN(g.people.length - left)} of ${tcN(g.people.length)} people` : `${tcN(g.people.length)} ${g.people.length === 1 ? 'person' : 'people'}`);   // no "N new" (the owner, 16.11.2026: "NELIEC APPA new!")
+    const person = (p) => `<button type="button" class="tcml-p${p.out ? ' out' : ''}${p.from || p.moved ? ' moved' : ''}"${narrow ? '' : ` draggable="true" ondragstart="event.dataTransfer.setData('text/plain', String(${Number(p.id)}))"`} onclick="tcMlDo({ type: 'out', id: ${Number(p.id)} })"><b>${esc(p.label)}${p.postcard ? ' <em class="tcml-pc">Postcard only</em>' : ''}${p.passedTo ? ` <em class="tcpo-wait">Passed to ${esc(p.passedTo)}, waiting</em>` : ''}</b>${p.position ? `<span>${esc(p.position)}</span>` : ''}</button>`
       // PASS ON (patch 152): a person this owner does not know goes to another list owner
       + (p.passedTo ? '' : T_ML.po === p.id ? tcPoPick(p) : `<button type="button" class="tcpo-link" onclick="T_ML.po=${Number(p.id)};tcMlDraw()">Pass on</button>`)
       // no email (patch 149): Postcard only until somebody adds the email here

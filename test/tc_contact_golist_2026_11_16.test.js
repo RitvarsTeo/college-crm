@@ -190,7 +190,8 @@ test('the page: the box under the fields, pre-set label, Not on a list, escaped;
   assert.ok(box.includes('${esc(v)}') && box.includes('${esc(t)}'), 'escaped');
   assert.ok(APP.includes("goList: v('#tckGo')"));
   assert.ok(APP.includes('${tcGoListBox(c)}\n        <div id="tckErr"'), 'right under Email / Phone');
-  assert.ok(APP.includes(`\${p.waiting ? ' <em class="tcml-new">New</em>' : ''}`));
+  // no New tag anywhere (the owner, 16.11.2026: "NELIEC APPA new!"): the person shows like everyone else, still to decide until Done
+  assert.ok(!APP.includes('tcml-new') && !/\$\{tcN\(waiting\)\} new/.test(APP));
   const f = APP.slice(APP.indexOf('function tcMlFinish('), APP.indexOf('\n}\n', APP.indexOf('function tcMlFinish(')));
   assert.ok(f.includes("mlApply(T_ML.W, { type: 'settle', ids: waiting })") && f.includes('T_ML.undo.push(mlClone(T_ML.W));'), 'Done settles, Undo steps back');
   // the pure view: a waiting person is still to decide in an invited company; settled follows the company
