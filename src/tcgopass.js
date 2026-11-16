@@ -91,13 +91,28 @@ export async function accept(db, code, id, actor, at = nowIso()) {
   });
 }
 
+// THE EMAILS ARE IN LATVIAN and say they are automated (the owner, 16.11.2026: "Mention obligatory that its Intake automated
+// message."), in the "tu" form he uses with the directors
+export const AUTO = 'Šī ir automātiska Intake ziņa.';
+const lvN = (n, one, many) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? one : many}`;
+const LV_DAY = ['svētdien', 'pirmdien', 'otrdien', 'trešdien', 'ceturtdien', 'piektdien', 'sestdien'];
+const LV_MONTH = ['janvārī', 'februārī', 'martā', 'aprīlī', 'maijā', 'jūnijā', 'jūlijā', 'augustā', 'septembrī', 'oktobrī', 'novembrī', 'decembrī'];
+/** "ceturtdien, 19. novembrī, plkst. 17:00", Riga time */
+export function lvWhen(d) {
+  const o = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Riga', weekday: 'short', day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
+    .formatToParts(d).map((x) => [x.type, x.value]));
+  const wd = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(o.weekday);
+  return `${LV_DAY[wd]}, ${Number(o.day)}. ${LV_MONTH[Number(o.month) - 1]}, plkst. ${o.hour}:${o.minute}`;
+}
 function mailFor(r, from, to, fin) {
-  const who = r.name || r.email || 'a person';
+  const who = r.name || r.email || 'kontaktpersonu';
   const what = [r.position, r.company].filter(Boolean).join(', ');
   const link = `https://intake.novikontas.org/#/tc/mylist/${encodeURIComponent(to)}`;
   return fin
-    ? { to: emailOf(to), subject: `Intake: ${who} is now on your Grand Opening list`, text: `${nameOf(from)} passed ${who}${what ? ` (${what})` : ''} on and nobody else is left, so ${who} is on your Grand Opening list.\n\n${link}\n` }
-    : { to: emailOf(to), subject: `Intake: ${nameOf(from)} passed ${who} to you`, text: `${nameOf(from)} passed ${who}${what ? ` (${what})` : ''} to you for the Grand Opening.\n\nAccept onto your list, or pass on:\n${link}\n` };
+    ? { to: emailOf(to), subject: `Intake: ${who} tagad ir tavā Grand Opening sarakstā`,
+      text: `${nameOf(from)} nodeva ${who}${what ? ` (${what})` : ''} tālāk, un neviens cits vairs nav palicis, tāpēc ${who} tagad ir tavā Grand Opening sarakstā.\n\n${link}\n\n${AUTO}\n` }
+    : { to: emailOf(to), subject: `Intake: ${nameOf(from)} nodeva tev ${who}`,
+      text: `${nameOf(from)} nodeva tev ${who}${what ? ` (${what})` : ''} Grand Opening ielūgumu sarakstam.\n\nPieņem savā sarakstā vai nodod tālāk:\n${link}\n\n${AUTO}\n` };
 }
 
 /** For My Grand Opening list: { passedToYou: [...], waiting: { stage2Id: toName }, involved: { stage2Id: [codes] } }. */
@@ -142,10 +157,10 @@ export async function sendReminders(db, open, send, now = new Date()) {
       if (now < due[kind] || done.has(s.code + '|' + kind)) continue;
       // the day-before one is not sent once the last call is due: two emails, never both at once
       if (kind === 'day_before' && now >= due.last_call) continue;
-      const day = kind === 'day_before' ? 'tomorrow' : 'today';
-      const mail = { to: s.email, subject: `Intake: your Grand Opening list closes ${day} at 17:00`,
-        text: `Your Grand Opening list closes on ${when(end.toISOString())} at 17:00.\n\nStill to decide: ${o.companies} ${o.companies === 1 ? 'company' : 'companies'}\n`
-          + (o.passed ? `Passed to you: ${o.passed} ${o.passed === 1 ? 'person' : 'people'}\n` : '') + `\nhttps://intake.novikontas.org/#/tc/mylist/${encodeURIComponent(s.code)}\n` };
+      const day = kind === 'day_before' ? 'rīt' : 'šodien';
+      const mail = { to: s.email, subject: `Intake: tavs Grand Opening saraksts tiek slēgts ${day} plkst. 17:00`,
+        text: `Tavs Grand Opening saraksts tiek slēgts ${lvWhen(end)}.\n\nVēl jāizlemj: ${lvN(o.companies, 'uzņēmums', 'uzņēmumi')}\n`
+          + (o.passed ? `Nodoti tev: ${lvN(o.passed, 'cilvēks', 'cilvēki')}\n` : '') + `\nhttps://intake.novikontas.org/#/tc/mylist/${encodeURIComponent(s.code)}\n\n${AUTO}\n` };
       // the row first: a second run while this one sends finds it and sends nothing
       try { await db.prepare('INSERT INTO tc_go_reminders (sender, kind, sent_at, companies, passed) VALUES (?,?,?,?,?)').run(s.code, kind, now.toISOString(), o.companies, o.passed); }
       catch (e) { continue; }

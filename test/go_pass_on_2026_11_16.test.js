@@ -32,8 +32,9 @@ test('pass on: he stays on the list, waiting; the other owner sees him under Pas
   const { co, id } = await seed(db);
   const r = await po.passOn(db, 'AB', id, 'JS', 'Aleksejs Bogdaņecs', at);
   assert.equal(r.state, 'pending');
-  assert.deepEqual([r.mail.to, r.mail.subject], ['js@novikontas.org', 'Intake: Aleksejs Bogdaņecs passed Ruurd Exempel to you']);
-  assert.match(r.mail.text, /#\/tc\/mylist\/JS/);
+  assert.deepEqual([r.mail.to, r.mail.subject], ['js@novikontas.org', 'Intake: Aleksejs Bogdaņecs nodeva tev Ruurd Exempel']);
+  assert.equal(r.mail.text, 'Aleksejs Bogdaņecs nodeva tev Ruurd Exempel (Vessel Superintendent, Acta Example Offshore B.V.) Grand Opening ielūgumu sarakstam.\n\n'
+    + 'Pieņem savā sarakstā vai nodod tālāk:\nhttps://intake.novikontas.org/#/tc/mylist/JS\n\nŠī ir automātiska Intake ziņa.\n', 'Latvian, and it says it is automated (the owner, 16.11.2026)');
   assert.equal(await senderOf(db, id), 'AB', 'still on AB\'s list while waiting');
   const AB = await ml.myList(db, 'AB');
   assert.equal(AB.groups[0].people[0].passedTo, 'Jānis Sticenko');
@@ -64,6 +65,8 @@ test('nobody who had him or was passed him can be picked again; when nobody is l
   await assert.rejects(po.passOn(db, 'DS', id, 'JS', 'd', at), /already with that list owner/);
   const fin = await po.passOn(db, 'DS', id, '', 'd', at);
   assert.equal(fin.state, 'final');
+  assert.equal(fin.mail.subject, 'Intake: Ruurd Exempel tagad ir tavā Grand Opening sarakstā');
+  assert.match(fin.mail.text, /neviens cits vairs nav palicis[\s\S]*Šī ir automātiska Intake ziņa\.\n$/);
   assert.equal(await senderOf(db, id), 'DS');
   await assert.rejects(po.passOn(db, 'DS', id, '', 'd', at), /Nobody else is left/);
   // a pick is needed while somebody is still left
@@ -94,13 +97,16 @@ test('reminders: at most two per owner, 24 h before and the time his list still 
   assert.equal((await po.sendReminders(db, open, send, new Date('2026-11-18T14:50:00Z'))).sent, 0, 'not yet');
   const a = await po.sendReminders(db, open, send, new Date('2026-11-18T15:00:00Z'));
   assert.equal(a.sent, 5, 'everyone with something open; not MC');
-  assert.ok(sent.every((m) => m.subject === 'Intake: your Grand Opening list closes tomorrow at 17:00'));
-  assert.match(sent.find((m) => m.to === 'js@novikontas.org').text, /Still to decide: 200 companies\nPassed to you: 1 person/);
+  assert.ok(sent.every((m) => m.subject === 'Intake: tavs Grand Opening saraksts tiek slēgts rīt plkst. 17:00'));
+  assert.equal(sent.find((m) => m.to === 'js@novikontas.org').text, 'Tavs Grand Opening saraksts tiek slēgts ceturtdien, 19. novembrī, plkst. 17:00.\n\n'
+    + 'Vēl jāizlemj: 200 uzņēmumi\nNodoti tev: 1 cilvēks\n\nhttps://intake.novikontas.org/#/tc/mylist/JS\n\nŠī ir automātiska Intake ziņa.\n');
+  assert.match(sent.find((m) => m.to !== 'js@novikontas.org').text, /Vēl jāizlemj: 5 uzņēmumi\n\nhttps/, 'nobody passed to him: no such line');
   assert.equal((await po.sendReminders(db, open, send, new Date('2026-11-18T15:10:00Z'))).sent, 0, 'never twice');
   const b = await po.sendReminders(db, open, send, new Date('2026-11-19T11:40:00Z'));
   assert.deepEqual(b.out.map((x) => x.code), ['JS'], 'the long list gets its last call first');
   const c = await po.sendReminders(db, open, send, new Date('2026-11-19T14:30:00Z'));
   assert.equal(c.sent, 4);
+  assert.ok(sent.slice(-4).every((m) => m.subject === 'Intake: tavs Grand Opening saraksts tiek slēgts šodien plkst. 17:00'));
   assert.equal(sent.filter((m) => m.to === 'js@novikontas.org').length, 2, 'two at most');
   assert.equal((await po.sendReminders(db, open, send, new Date('2026-11-19T15:00:00Z'))).sent, 0, 'after the deadline: nothing');
 });
