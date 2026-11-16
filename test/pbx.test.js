@@ -21,6 +21,7 @@ import {
   QUEUES, PBX_URL, WINDOW_MINUTES, PBX_ZONE,
   isOurs, toRow, rowsFrom, buildRequest, fetchCalls,
   authoriseCron, redact, requiredEnv, toSeconds,
+  networkReason,
 } from '../lib/pbx.js';
 import { toRigaStamp, fromRigaStamp, offsetMinutesAt, pollWindow, ZONE } from '../lib/riga.js';
 
@@ -265,6 +266,24 @@ test('12. a PBX failure is handled safely', async () => {
   await assert.rejects(
     fetchCalls({ env: ENV, fetchImpl: okFetch({ message: 'no token' }) }),
     /not a list of calls/);
+});
+
+test('12b (16.11.2026). a network failure says its real reason - code and address - and never the token', async () => {
+  const refused = Object.assign(new TypeError('fetch failed'), { cause: Object.assign(new Error('connect ECONNREFUSED 193.110.8.106:443'),
+    { code: 'ECONNREFUSED', address: '193.110.8.106', port: 443 }) });
+  await assert.rejects(fetchCalls({ env: ENV, fetchImpl: async () => { throw refused; } }),
+    (err) => { assert.equal(err.message, 'PBX request failed: fetch failed (ECONNREFUSED 193.110.8.106:443)'); return true; });
+  const timeout = Object.assign(new TypeError('fetch failed'), { cause: Object.assign(new Error('Connect Timeout Error'), { code: 'UND_ERR_CONNECT_TIMEOUT' }) });
+  await assert.rejects(fetchCalls({ env: ENV, fetchImpl: async () => { throw timeout; } }), /fetch failed \(UND_ERR_CONNECT_TIMEOUT\)$/);
+  const many = Object.assign(new TypeError('fetch failed'), { cause: Object.assign(new AggregateError([
+    Object.assign(new Error('a'), { code: 'ETIMEDOUT', address: '193.110.8.106', port: 443 }),
+    Object.assign(new Error('b'), { code: 'ENETUNREACH', address: '2001:db8::1', port: 443 })]), { code: 'ETIMEDOUT' }) });
+  await assert.rejects(fetchCalls({ env: ENV, fetchImpl: async () => { throw many; } }),
+    /\(ETIMEDOUT 193\.110\.8\.106:443; ENETUNREACH 2001:db8::1:443\)$/);
+  const leaky = Object.assign(new TypeError('fetch failed'), { cause: new Error(`bad url ?token=${FAKE_TOKEN}`) });
+  await assert.rejects(fetchCalls({ env: ENV, fetchImpl: async () => { throw leaky; } }),
+    (err) => { assert.ok(!err.message.includes(FAKE_TOKEN), 'the token never reaches the message'); return true; });
+  assert.equal(networkReason(new Error('plain')), '', 'no cause, nothing added');
 });
 
 test('13. a missing PBX_API_TOKEN fails clearly and names only the variable', async () => {
