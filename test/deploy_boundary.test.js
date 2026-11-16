@@ -22,7 +22,16 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const VERCEL = JSON.parse(fs.readFileSync(path.join(ROOT, 'vercel.json'), 'utf8'));
-const PUBLIC_ALLOWED = ['robots.txt'];
+// THE BRAND LOGOS (16.11.2026, his ask: public novikontas.org-domain links to the new logos for HTML use, plain image links):
+// exactly these five files under public/brand/, copied unchanged from the Talent Acquisition release's assets; images only.
+const BRAND = {
+  'NoAca_logo_drkbluehor.png': '44d9eefae9e581d0aa424eca1ad58b6bdf2dc5985e17e29470d76cc4ca6c2fe3',
+  'NoAca_logo_twotone_horizontal.svg': 'ad4cea5c33c71a839fd46d4fec7718cb95b547c10a109483294c9e362d23e521',
+  'NoAca_logo_white_horizontal.svg': '93fb986ba7894dc4ae2030048a77b383c43cbe0af8b4513ff417628acdba320d',
+  'NoAca_logo_whitehor.svg': '93fb986ba7894dc4ae2030048a77b383c43cbe0af8b4513ff417628acdba320d',
+  'NoAca_logo_symbol_white.svg': '49551504bd98ec5c01061c902a6701905e8138b43be3d7b6e867d32d7b147122',
+};
+const PUBLIC_ALLOWED = ['robots.txt', ...Object.keys(BRAND).map((f) => 'brand/' + f)].sort();
 
 test('static files come only from public/, and public/ holds nothing but the allowed files', () => {
   assert.equal(VERCEL.outputDirectory, 'public');
@@ -51,4 +60,20 @@ test('the page loads nothing from the folders that are no longer public', () => 
     }
   }
   assert.ok(APP.includes('/assets/NoAca_logo_twotonehor.svg'), 'the logo comes from /assets/, which the server serves');
+});
+
+test('public/brand/ holds only the five logo images, unchanged, with nothing in them that runs', async () => {
+  const { createHash } = await import('node:crypto');
+  const dir = path.join(ROOT, 'public', 'brand');
+  assert.deepEqual(fs.readdirSync(dir).sort(), Object.keys(BRAND).sort());
+  for (const [f, sha] of Object.entries(BRAND)) {
+    assert.match(f, /^[A-Za-z0-9_]+\.(png|svg)$/, 'an image file name');
+    const buf = fs.readFileSync(path.join(dir, f));
+    assert.equal(createHash('sha256').update(buf).digest('hex'), sha, f + ' is the file as given');
+    if (f.endsWith('.svg')) assert.ok(!/<script|\son\w+\s*=|javascript:|foreignObject|<iframe|<embed|<object|href\s*=\s*["']https?:/i.test(buf.toString('utf8')), f + ' has nothing that runs or loads');
+  }
+  // an SVG opened on its own runs in this site's origin: the folder gets a policy that lets nothing run
+  const h = (VERCEL.headers || []).find((x) => x.source === '/brand/(.*)');
+  const csp = h && h.headers.find((x) => x.key === 'Content-Security-Policy');
+  assert.ok(csp && /default-src 'none'/.test(csp.value) && /sandbox/.test(csp.value), '/brand/ is served with a policy that runs nothing');
 });
