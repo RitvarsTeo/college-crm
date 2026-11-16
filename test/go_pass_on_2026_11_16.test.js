@@ -131,6 +131,9 @@ test('a test reminder (patch 152g): admins only, to their own address only, the 
   assert.match(route, /if \(!\(await adminOf\(req\)\) \|\| !me \|\| !me\.email\) return json\(res, 403/);
   assert.match(route, /tcgopass\.reminderMail\(\{ code, email: me\.email \}/, 'to the signed-in admin, never the list owner');
   assert.doesNotMatch(route, /tc_go_reminders/, 'nothing is recorded: the real reminders still go');
+  assert.ok(route.includes("if (!end || Date.now() >= end.getTime()) return json(res, 410"), 'it expires with the deadline (KB 08 P11)');
+  assert.ok(route.includes('if (REMINDER_TESTS.length >= 3) return json(res, 429'), 'at most 3 an hour');
+  assert.ok(route.includes('sent && sent.ok ? 200 : 502'), 'fails closed without the sender');
   const m = po.reminderMail({ code: 'JS', email: 'me@novikontas.org' }, { companies: 3, passed: 0 }, 'day_before');
   assert.equal(m.to, 'me@novikontas.org');
   assert.equal(m.subject, 'Intake: tavs Grand Opening saraksts tiek slēgts rīt plkst. 17:00');

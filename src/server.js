@@ -76,6 +76,8 @@ import * as tcmylist from './tcmylist.js';
 import * as tcdoor from './tcdoor.js';
 import * as tccodes from './tccodes.js';
 import * as tcgopass from './tcgopass.js';
+// the test reminder's sends in the last hour (patch 152g; at most 3)
+const REMINDER_TESTS = [];
 import * as tcrsvp from './tcrsvp.js';
 import * as tcmr from './tcmr.js';
 import * as tcfam from './tcfam.js';
@@ -3844,9 +3846,17 @@ export const handle = async (req, res) => {
     }
     // A TEST REMINDER (patch 152g, 16.11.2026, the owner's "Yes, test to me"): an admin gets, to his OWN address only, the exact
     // deadline reminder a list owner would get today, through the same sender. Nothing is recorded; nobody else gets anything.
+    // KB 08 P11 (no test routes left in production): it expires with the deadline, sends at most 3 an hour, writes nothing, and
+    // fails closed (502) when the sender is not connected.
     if (p === '/api/admin/go/reminder-test' && req.method === 'POST') {
       const me = await currentUser(req);
       if (!(await adminOf(req)) || !me || !me.email) return json(res, 403, { error: 'An admin sends this, to himself.' });
+      const end = tcgopass.deadline();
+      if (!end || Date.now() >= end.getTime()) return json(res, 410, { error: 'The deadline has passed: there is nothing to test.' });
+      const now = Date.now();
+      REMINDER_TESTS.splice(0, REMINDER_TESTS.length, ...REMINDER_TESTS.filter((t) => now - t < 3600e3));
+      if (REMINDER_TESTS.length >= 3) return json(res, 429, { error: 'Three test reminders this hour already.' });
+      REMINDER_TESTS.push(now);
       const b = await body(req), code = String(b.sender || '');
       const owner = (((tc.TC.grandOpening || {}).stage2 || {}).senders || []).find((x) => x.code === code);
       if (!owner) return json(res, 400, { error: 'There is no such list.' });
