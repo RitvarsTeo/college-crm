@@ -32,9 +32,7 @@ test('pass on: he stays on the list, waiting; the other owner sees him under Pas
   const { co, id } = await seed(db);
   const r = await po.passOn(db, 'AB', id, 'JS', 'Aleksejs Bogdaņecs', at);
   assert.equal(r.state, 'pending');
-  assert.deepEqual([r.mail.to, r.mail.subject], ['js@novikontas.org', 'Intake: Aleksejs Bogdaņecs nodeva tev Ruurd Exempel']);
-  assert.equal(r.mail.text, 'Aleksejs Bogdaņecs nodeva tev Ruurd Exempel (Vessel Superintendent, Acta Example Offshore B.V.) Grand Opening ielūgumu sarakstam.\n\n'
-    + 'Pieņem savā sarakstā vai nodod tālāk:\nhttps://intake.novikontas.org/#/tc/mylist/JS\n\nŠī ir automātiska Intake ziņa.\n', 'Latvian, and it says it is automated (the owner, 16.11.2026)');
+  assert.deepEqual(r, { state: 'pending', to: 'JS' }, 'in the app only: no email (the owner, 16.11.2026: "so appa tikai!")');
   assert.equal(await senderOf(db, id), 'AB', 'still on AB\'s list while waiting');
   const AB = await ml.myList(db, 'AB');
   assert.equal(AB.groups[0].people[0].passedTo, 'Jānis Sticenko');
@@ -65,8 +63,7 @@ test('nobody who had him or was passed him can be picked again; when nobody is l
   await assert.rejects(po.passOn(db, 'DS', id, 'JS', 'd', at), /already with that list owner/);
   const fin = await po.passOn(db, 'DS', id, '', 'd', at);
   assert.equal(fin.state, 'final');
-  assert.equal(fin.mail.subject, 'Intake: Ruurd Exempel tagad ir tavā Grand Opening sarakstā');
-  assert.match(fin.mail.text, /neviens cits vairs nav palicis[\s\S]*Šī ir automātiska Intake ziņa\.\n$/);
+  assert.deepEqual(fin, { state: 'final', to: 'DS' }, 'no email to Dmitrijs either');
   assert.equal(await senderOf(db, id), 'DS');
   await assert.rejects(po.passOn(db, 'DS', id, '', 'd', at), /Nobody else is left/);
   // a pick is needed while somebody is still left
@@ -118,4 +115,12 @@ test('wired: the routes check the list, the cron runs every 10 minutes 08:00-17:
   assert.match(APP, /<h2>Passed to you · \$\{tcN\(L\.length\)\}<\/h2>/);
   assert.match(APP, /Passed to \$\{esc\(p\.passedTo\)\}, waiting/);
   assert.match(APP, /Nobody else is left: \$\{name\} goes to Dmitrijs Semjonovs/);
+});
+
+test('the only automatic emails are the two deadline reminders: Pass on sends none', () => {
+  const pass = SERVER.slice(SERVER.indexOf("if ((p === '/api/tc/go/mylist/pass'"), SERVER.indexOf('// ADD EMAIL on a list'));
+  assert.ok(pass.length > 100);
+  assert.doesNotMatch(pass, /sendMail/, 'no email on a pass');
+  const src = fs.readFileSync(path.join(ROOT, 'src', 'tcgopass.js'), 'utf8');
+  assert.doesNotMatch(src, /mailFor|nodeva tev/);
 });

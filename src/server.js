@@ -3847,10 +3847,8 @@ export const handle = async (req, res) => {
       try {
         const actor = await actorOf(req, b);
         if (p.endsWith('/accept')) return json(res, 200, await tcgopass.accept(db, code, Number(b.id), actor));
-        const out = await tcgopass.passOn(db, code, Number(b.id), String(b.to || ''), actor);
-        // the email to whoever it went to, after the write; a failed email never undoes the pass
-        const sent = out.mail && out.mail.to ? await notify.sendMail(db, out.mail) : { ok: false, why: 'no address' };
-        return json(res, 200, { state: out.state, to: out.to, emailed: Boolean(sent && sent.ok) });
+        // in the app only, no email (the owner, 16.11.2026: "so appa tikai!")
+        return json(res, 200, await tcgopass.passOn(db, code, Number(b.id), String(b.to || ''), actor));
       } catch (e) { if (e instanceof tc.TcInputError) return json(res, 400, { error: e.message }); throw e; }
     }
     // ADD EMAIL on a list (patch 149, 16.11.2026): a Postcard only person gets an email; the owner on their own list, an admin any

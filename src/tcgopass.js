@@ -6,14 +6,14 @@
 //   - the other owner sees him under "Passed to you": Accept (onto his list; New where the company is already decided) or Pass on
 //   - nobody who held or was passed this person before can be picked again; when nobody is left, the person goes to Dmitrijs
 //     Semjonovs (CEO), final
-//   - every step is a line on the person's company History, and the owner it is passed to gets an email at once
+//   - every step is a line on the person's company History. Pass on is IN THE APP ONLY: no email (the owner, 16.11.2026: "NĒ, es
+//     tev neteicu automatiskas zinas par nodosanu! ... so appa tikai! Automatiskas zinas ir par saraksta izfiltresanu!")
 //   - deadline reminders: at most two per owner, only with companies still to decide or people passed to him
 import { TC, TcInputError, logTcActivity } from './tc.js';
 
 export const FINAL = 'DS';   // "if no one wants the person, it goes to Dmitrijs!"
 const S2 = () => ((((TC.grandOpening || {}).stage2 || {}).senders) || []);
 const nameOf = (code) => (S2().find((s) => s.code === code) || {}).name || code;
-const emailOf = (code) => (S2().find((s) => s.code === code) || {}).email || '';
 const nowIso = () => new Date().toISOString();
 const when = (iso) => {
   const o = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Riga', weekday: 'long', day: 'numeric', month: 'long' })
@@ -51,7 +51,7 @@ async function moveTo(tx, r, to, at, actor) {
 
 /**
  * `code` passes person `id` to `to`. `code` is the person's list owner (nothing pending), or the owner it was passed to (pending).
- * Returns { state: 'pending' | 'final', to, mail } - mail = { to, subject, text } for the caller to send after the write.
+ * Returns { state: 'pending' | 'final', to }.
  */
 export async function passOn(db, code, id, to, actor, at = nowIso()) {
   const r = await rowOf(db, id);
@@ -71,11 +71,11 @@ export async function passOn(db, code, id, to, actor, at = nowIso()) {
         .run(Number(r.id), code, FINAL, at, actor, at, actor);
       await moveTo(tx, r, FINAL, at, actor);
       await history(tx, r, `Grand Opening: ${nameOf(code)} passed ${r.name || r.email || 'this person'} on; nobody else is left, so to ${nameOf(FINAL)}`, actor, at);
-      return { state: 'final', to: FINAL, mail: mailFor(r, code, FINAL, true) };
+      return { state: 'final', to: FINAL };
     }
     await tx.prepare(`INSERT INTO tc_go_passes (stage2_id, from_sender, to_sender, state, at, by_name) VALUES (?,?,?,'pending',?,?)`).run(Number(r.id), code, target, at, actor);
     await history(tx, r, `Grand Opening: ${nameOf(code)} passed ${r.name || r.email || 'this person'} to ${nameOf(target)}`, actor, at);
-    return { state: 'pending', to: target, mail: mailFor(r, code, target, false) };
+    return { state: 'pending', to: target };
   });
 }
 
@@ -92,7 +92,7 @@ export async function accept(db, code, id, actor, at = nowIso()) {
   });
 }
 
-// THE EMAILS ARE IN LATVIAN and say they are automated (the owner, 16.11.2026: "Mention obligatory that its Intake automated
+// THE REMINDER EMAILS (the only automatic ones) ARE IN LATVIAN and say they are automated (the owner, 16.11.2026: "Mention obligatory that its Intake automated
 // message."), in the "tu" form he uses with the directors
 export const AUTO = 'Šī ir automātiska Intake ziņa.';
 const lvN = (n, one, many) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? one : many}`;
@@ -104,16 +104,6 @@ export function lvWhen(d) {
     .formatToParts(d).map((x) => [x.type, x.value]));
   const wd = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(o.weekday);
   return `${LV_DAY[wd]}, ${Number(o.day)}. ${LV_MONTH[Number(o.month) - 1]}, plkst. ${o.hour}:${o.minute}`;
-}
-function mailFor(r, from, to, fin) {
-  const who = r.name || r.email || 'kontaktpersonu';
-  const what = [r.position, r.company].filter(Boolean).join(', ');
-  const link = `https://intake.novikontas.org/#/tc/mylist/${encodeURIComponent(to)}`;
-  return fin
-    ? { to: emailOf(to), subject: `Intake: ${who} tagad ir tavā Grand Opening sarakstā`,
-      text: `${nameOf(from)} nodeva ${who}${what ? ` (${what})` : ''} tālāk, un neviens cits vairs nav palicis, tāpēc ${who} tagad ir tavā Grand Opening sarakstā.\n\n${link}\n\n${AUTO}\n` }
-    : { to: emailOf(to), subject: `Intake: ${nameOf(from)} nodeva tev ${who}`,
-      text: `${nameOf(from)} nodeva tev ${who}${what ? ` (${what})` : ''} Grand Opening ielūgumu sarakstam.\n\nPieņem savā sarakstā vai nodod tālāk:\n${link}\n\n${AUTO}\n` };
 }
 
 /** For My Grand Opening list: { passedToYou: [...], waiting: { stage2Id: toName }, involved: { stage2Id: [codes] } }. */
