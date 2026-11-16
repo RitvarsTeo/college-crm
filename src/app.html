@@ -13291,6 +13291,7 @@ function tcMlDraw() {
   $('#view').innerHTML = `<div class="c-head"><div><h1>My Grand Opening list</h1><p class="c-crumb">${esc(D.name)} · ${tcN(D.people)} people · ${tcN(V.groups.length)} companies</p></div>
       <div class="tcml-bar"><span class="tcml-st${T_ML.dirty ? ' dirty' : ''}" role="status">${esc(tcMlStatus())}</span>
       <button type="button" class="btn ghost" ${T_ML.undo.length ? '' : 'disabled'} onclick="tcMlUndo()" title="Ctrl+Z">Undo</button>
+      <button type="button" class="btn" onclick="tcMlSaveNow()">${T_ML.savedFlash ? 'Saved' : 'Save'}</button>
       <a class="btn ghost" href="#/tc/postcards">Postcard list</a></div></div>
     ${note}${lists}<div class="tcml-figs">${fig('all', F.todo + F.invite + F.no, 'All')}${fig('todo', F.todo, 'Still to decide')}${fig('invite', F.invite, 'Invite')}${fig('no', F.no, 'No')}</div>
     ${tcPoSection()}
@@ -13479,6 +13480,16 @@ async function tcPoAccept(id) {
     if (T_ML.dirty) await tcMlAutosave();   // the list reloads with the person on it; unsaved changes come back from the draft
     await tcMlReload();
   } catch (e) { T_ML.error = e.message; tcMlDraw(); }
+}
+// THE SAVE BUTTON IS BACK (patch 152e, his pick 16.11.2026 "Yes, add it back": the directors' emails say "Kad uzņēmums gatavs, spied
+// Done. Beigās Save."). Every change still saves by itself; the button saves anything still on its way at once and says Saved.
+async function tcMlSaveNow() {
+  if (!T_ML) return;
+  clearTimeout(TCML_SOON);
+  if (!(await tcMlSave())) return;
+  const S = T_ML;
+  S.savedFlash = true; tcMlDraw();
+  setTimeout(() => { if (T_ML === S) { S.savedFlash = false; tcMlDraw(); } }, 2500);
 }
 async function tcMlReload() { const code = T_ML.code; T_ML = null; await viewTcMyList(code); }
 async function tcMlAutosave() {

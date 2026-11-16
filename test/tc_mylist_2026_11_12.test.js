@@ -209,7 +209,10 @@ test('the page: Save / Undo / status with the full date, Ctrl+Z, Ctrl+S on nothi
   assert.ok(APP.includes("else if (place === 'mylist') viewTcMyList(arg ? decodeURIComponent(arg) : '');"));
   assert.ok(APP.includes("filter: 'all'"), 'B. All is on by default');
   // patch 152 (his pick A, 16.11.2026: "LETS NOT ALLOW TO ANYONE FINISH THEIR TASK WITHOUT SAVING"): no Save button, every change saves
-  assert.ok(!APP.includes('onclick="tcMlSave()">Save</button>') && APP.includes('onclick="tcMlUndo()" title="Ctrl+Z">Undo</button>'));
+  assert.ok(APP.includes('onclick="tcMlUndo()" title="Ctrl+Z">Undo</button>'));
+  // patch 152e (his pick 16.11.2026 "Yes, add it back"): the Save button is back, always there; every change still saves by itself
+  assert.ok(APP.includes(`<button type="button" class="btn" onclick="tcMlSaveNow()">\${T_ML.savedFlash ? 'Saved' : 'Save'}</button>`));
+  assert.ok(fn('tcMlSaveNow').includes('clearTimeout(TCML_SOON);\n  if (!(await tcMlSave())) return;'), 'it saves anything on its way at once');
   assert.ok(APP.includes("return `${o.weekday} ${o.day} ${o.month}, ${o.hour}:${o.minute}`;"), '6. full date and time');
   assert.match(fn('tcMlStatus'), /if \(S\.status === 'saving' \|\| S\.dirty\) return 'Saving…';[\s\S]*return 'All changes saved';/);
   assert.ok(!APP.includes("'Unsaved changes'"), 'never unsaved');
