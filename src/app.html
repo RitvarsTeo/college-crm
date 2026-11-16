@@ -13240,6 +13240,7 @@ async function viewTcMyList(code) {
   if (base.draft && !mlSame(base.draft.state, T_ML.saved)) {
     T_ML.W = { picks: base.draft.state.picks || {}, out: base.draft.state.out || [], moves: base.draft.state.moves || {}, settled: base.draft.state.settled || [] };
     T_ML.dirty = true; T_ML.status = 'restored'; T_ML.statusAt = base.draft.at; T_ML.lastDraft = JSON.stringify(T_ML.W);
+    setTimeout(() => tcMlSave(), 0);   // an old draft is saved for real at once (patch 152: nothing is ever left unsaved)
   }
   tcMlDraw();
   tcMlAutosaveStart();
@@ -13251,11 +13252,7 @@ function tcMlStateOf(base) {
 }
 function tcMlStatus() {
   const S = T_ML;
-  if (S.status === 'saving') return 'Saving…';
-  if (S.status === 'restored') return `Unsaved changes, kept from ${tcMlTime(S.statusAt)}`;
-  if (S.dirty && S.status === 'autosaved') return `Unsaved changes · autosaved ${tcMlTime(S.statusAt)}`;
-  if (S.dirty) return 'Unsaved changes';
-  if (S.status === 'saved') return `Saved ${tcMlTime(S.statusAt)}`;
+  if (S.status === 'saving' || S.dirty) return 'Saving…';   // every change saves (patch 152)
   return 'All changes saved';
 }
 function tcMlDraw() {
@@ -13296,7 +13293,6 @@ function tcMlDraw() {
   $('#view').innerHTML = `<div class="c-head"><div><h1>My Grand Opening list</h1><p class="c-crumb">${esc(D.name)} · ${tcN(D.people)} people · ${tcN(V.groups.length)} companies</p></div>
       <div class="tcml-bar"><span class="tcml-st${T_ML.dirty ? ' dirty' : ''}" role="status">${esc(tcMlStatus())}</span>
       <button type="button" class="btn ghost" ${T_ML.undo.length ? '' : 'disabled'} onclick="tcMlUndo()" title="Ctrl+Z">Undo</button>
-      <button type="button" class="btn" ${T_ML.dirty && T_ML.status !== 'saving' ? '' : 'disabled'} onclick="tcMlSave()">Save</button>
       <a class="btn ghost" href="#/tc/postcards">Postcard list</a></div></div>
     ${note}${lists}<div class="tcml-figs">${fig('all', F.todo + F.invite + F.no, 'All')}${fig('todo', F.todo, 'Still to decide')}${fig('invite', F.invite, 'Invite')}${fig('no', F.no, 'No')}</div>
     ${tcPoSection()}
@@ -13417,11 +13413,19 @@ async function tcMlSave() {
   clearTimeout(TCML_SOON);
   T_ML.seq++;                               // an autosave still on its way is ignored from here on
   T_ML.status = 'saving'; T_ML.error = ''; tcMlDraw();
+  const S = T_ML, sent = JSON.stringify(S.W);
   try {
-    const base = await post('/api/tc/go/mylist/save', { sender: T_ML.code, state: T_ML.W, base: T_ML.version });
-    T_ML.base = base; T_ML.version = (base.version || {}).id || 0; T_ML.saved = tcMlStateOf(base); T_ML.W = mlClone(T_ML.saved); T_ML.undo = []; T_ML.dirty = false;
-    T_ML.status = 'saved'; T_ML.statusAt = (base.version || {}).at || new Date().toISOString(); T_ML.lastDraft = ''; T_ML.conflict = '';
-    tcMlDraw(); return true;
+    const base = await post('/api/tc/go/mylist/save', { sender: S.code, state: JSON.parse(sent), base: S.version });
+    if (T_ML !== S) return true;
+    S.base = base; S.version = (base.version || {}).id || 0; S.saved = tcMlStateOf(base);
+    // a change made while this save was on its way stays, and saves next; Undo keeps its steps (an undo is itself a saved change)
+    const later = JSON.stringify(S.W) !== sent;
+    if (!later) S.W = mlClone(S.saved);
+    S.dirty = !mlSame(S.W, S.saved);
+    S.status = 'saved'; S.statusAt = (base.version || {}).at || new Date().toISOString(); S.lastDraft = ''; S.conflict = '';
+    tcMlDraw();
+    if (S.dirty) tcMlAutosaveSoon();
+    return true;
   } catch (e) {
     T_ML.status = '';
     if (e.detail && e.detail.conflict) T_ML.conflict = e.message; else T_ML.error = e.message || 'The list was not saved. Try Save again.';
@@ -13491,15 +13495,16 @@ async function tcMlAutosave() {
 }
 let TCML_TIMER = null, TCML_SOON = null;
 function tcMlAutosaveStart() { if (!TCML_TIMER) TCML_TIMER = setInterval(tcMlAutosave, 90 * 1000); }
-// a few seconds after each change (the audit, 12.11.2026)
-function tcMlAutosaveSoon() { clearTimeout(TCML_SOON); TCML_SOON = setTimeout(tcMlAutosave, 4000); }
+// EVERY CHANGE SAVES (patch 152, his pick A, 16.11.2026: "LETS NOT ALLOW TO ANYONE FINISH THEIR TASK WITHOUT SAVING"): a real
+// Save a moment after each change, an Undo included; no draft is left behind
+function tcMlAutosaveSoon() { clearTimeout(TCML_SOON); TCML_SOON = setTimeout(() => tcMlSave(), 1200); }
 // a phone puts the page away without a beforeunload: the draft goes out as the page hides
 function tcMlAutosaveNow() {
   if (!T_ML || !T_ML.dirty || T_ML.status === 'saving' || !String(location.hash).startsWith('#/tc/mylist')) return;
   const json = JSON.stringify(T_ML.W);
   if (json === T_ML.lastDraft) return;
   try {
-    apiFetch('/api/tc/go/mylist/draft', { method: 'POST', keepalive: true, credentials: 'same-origin', headers: { 'content-type': 'application/json', 'x-acting-as': ACTOR },
+    apiFetch('/api/tc/go/mylist/save', { method: 'POST', keepalive: true, credentials: 'same-origin', headers: { 'content-type': 'application/json', 'x-acting-as': ACTOR },
       body: JSON.stringify({ by: ACTOR, sender: T_ML.code, state: T_ML.W, base: T_ML.version }) }).catch(() => {});
     T_ML.lastDraft = json;
   } catch (e) { /* nothing more can be done while the page goes away */ }
@@ -13512,12 +13517,12 @@ function tcMlMayLeave(hash) {
   if (String(hash).split('?')[0] === String(T_ML.hash).split('?')[0]) return true;
   T_ML.pending = hash;
   history.replaceState(null, '', T_ML.hash);
-  // the page stays (his ask 13.11.2026, "0 problems with interactivity"): the motion engine had already frozen a copy of it for the
-  // move and hidden the real one, so for up to 3 seconds after Cancel the screen showed the copy while taps went to the hidden page
+  // the page stays while it saves (his ask 13.11.2026, "0 problems with interactivity"): the motion engine had already frozen a copy
+  // of it for the move and hidden the real one, so the copy goes and the real list shows at once
   document.querySelectorAll('.mo-held').forEach((n) => n.remove());
   { const v = document.getElementById('view'); if (v) v.style.opacity = ''; }
-  modal('Save the changes?', `<p>Your list has changes that are not saved.</p>
-    <div class="c-row-acts"><button class="btn" onclick="tcMlLeave('save')">Save</button><button class="btn ghost" onclick="tcMlLeave('drop')">Don't save</button><button class="btn ghost" onclick="closeModal()">Cancel</button></div>`);
+  // nothing is ever left unsaved (patch 152): the change on its way saves, then the page moves on; only a refused save stays here
+  tcMlSave().then((ok) => { if (ok && T_ML && !T_ML.dirty) { T_ML.hash = ''; location.hash = hash; } });
   return false;
 }
 async function tcMlLeave(how) {
@@ -13528,7 +13533,7 @@ async function tcMlLeave(how) {
   location.hash = go;
 }
 if (typeof window !== 'undefined' && window.addEventListener) {
-  window.addEventListener('beforeunload', (e) => { if (T_ML && T_ML.dirty && String(location.hash).startsWith('#/tc/mylist')) { tcMlAutosaveNow(); e.preventDefault(); e.returnValue = ''; } });
+  window.addEventListener('beforeunload', () => { if (T_ML && T_ML.dirty && String(location.hash).startsWith('#/tc/mylist')) tcMlAutosaveNow(); });
   window.addEventListener('pagehide', tcMlAutosaveNow);
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') tcMlAutosaveNow(); });
   document.addEventListener('keydown', (e) => {
