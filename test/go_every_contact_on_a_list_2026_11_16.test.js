@@ -231,3 +231,20 @@ test('patch 151: whoever the rule would place shows on the Grand Opening page as
   assert.equal((await db.prepare(`SELECT COUNT(*) AS n FROM tc_go_stage2 WHERE loaded_by = 'Test Person'`).get()).n, 0, 'leftOff writes nothing');
   assert.ok(ids.excel);
 });
+
+test('an owner\'s unsaved draft survives the re-placing: it still opens, and a person who comes into a company he picked only in the draft is New there', async () => {
+  const db = await openDb();
+  const { held, ids } = await seed(db);
+  // JS marked Heldfast Example as Invite / digital in his draft and never pressed Save (as AB and Alma did, 16.11.2026)
+  const state = { picks: { ['id:' + held]: { decision: 'invite', way: 'digital' } }, out: [], moves: {}, settled: [] };
+  await ml.saveDraft(db, 'JS', state, 'Jānis Sticenko', 0, 'js@novikontas.org');
+  assert.ok((await ml.myList(db, 'JS', 'js@novikontas.org')).draft, 'the draft opens before');
+  await ml.placeEveryone(db, 'Test Person');
+  const L = await ml.myList(db, 'JS', 'js@novikontas.org');
+  assert.ok(L.draft, 'the draft still opens after: no Save happened, so its base is still the saved version');
+  assert.deepEqual(L.draft.state.picks, state.picks, 'his marks unchanged');
+  const p = L.groups.flatMap((g) => g.people).find((x) => x.email === 'peteris@heldfast-example.com');
+  assert.equal(p.fresh, true, 'New beside his marks, not silently under the draft\'s Invite');
+  assert.equal(L.groups.flatMap((g) => g.people).find((x) => x.label === 'Nora Noemail').fresh, true);
+  assert.ok(ids.excel);
+});

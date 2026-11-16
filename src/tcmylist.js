@@ -458,14 +458,25 @@ export async function placement(db) {
   return out;
 }
 
+/** Every company an owner has decided, saved or still only in his draft: a Set of "<code>|<company key>". */
+export async function decidedKeys(db) {
+  const out = new Set((await db.prepare('SELECT sender, company_key, decision FROM tc_go_company_picks').all()).filter((p) => p.decision).map((p) => p.sender + '|' + p.company_key));
+  for (const d of await db.prepare('SELECT sender, state FROM tc_go_drafts').all()) {
+    let st = null; try { st = JSON.parse(d.state || 'null'); } catch (e) { st = null; }
+    for (const [key, pick] of Object.entries((st && st.picks) || {})) if (pick && pick.decision) out.add(d.sender + '|' + key);
+  }
+  return out;
+}
+
 /** Every contact not on a list goes onto one by the rule above. Returns { on, placed, revived, left, byList, leftBy }. */
 export async function placeEveryone(db, actor, at = nowIso()) {
   const P = await placement(db);
   if (P.place.length || P.revive.length) {
     await db.transaction(async (tx) => {
-      const picks = new Map((await tx.prepare('SELECT sender, company_key, decision FROM tc_go_company_picks').all())
-        .map((p) => [p.sender + '|' + p.company_key, p.decision]));
-      const decided = (code, companyId) => Boolean(picks.get(code + '|id:' + Number(companyId)));
+      // decided = saved (tc_go_company_picks) OR picked in an owner's draft not saved yet (16.11.2026: AB marked his list and never
+      // pressed Save): either way the person who comes in is New there, never silently under the draft's Invite
+      const picks = await decidedKeys(tx);
+      const decided = (code, companyId) => picks.has(code + '|id:' + Number(companyId));
       const owner = (code) => (S2().find((s) => s.code === code) || {}).name || code;
       for (const r of P.revive) {
         await tx.prepare('UPDATE tc_go_stage2 SET gone = 0 WHERE id = ? AND gone = 1').run(r.stage2Id);
