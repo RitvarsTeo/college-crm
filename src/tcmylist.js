@@ -330,65 +330,106 @@ export async function addContactToList(tx, { code, company, contactId, f, actor,
 //   - a company nobody has yet: stays off, counted as "No list has this company yet", until a list owner is given the company
 // A person with no email goes on the list too: the list shows them as Postcard only, with an Add email box.
 // placeEveryone runs after every import and every hand placing; the 16.11 backfill runs the same function once.
-export const LEFT_WHY = { approval: 'Waiting for approval', nobody: 'No list has this company yet', same_email: 'Same email as a person already on a list' };
+// Added the same day (his words through Intake MASTER CONTROL):
+//   - "Info we will not invite." + "Only if that info or generic department email is the only one of that company, and its an
+//     important company.": a company or department mailbox (info@, office@, crewing@ ...; config grandOpening.invite.
+//     companyMailboxes) stays off; when it is the ONLY contact of its company it waits for his pick of the important ones
+//   - "Make sure you merge the contacts that are under same company or daughter/morther companies!": the same person twice (the
+//     same email, or the same name at the same company) is one person; a daughter company's people go to the list that has its
+//     mother company (or any company of the family), never to another owner
+export const LEFT_WHY = { approval: 'Waiting for approval', nobody: 'No list has this company yet', same_email: 'Same email as a person already on a list',
+  same_person: 'Same person as one already on a list', mailbox: 'Company mailbox, not a person', mailbox_only: 'Only a company mailbox: waiting for a pick' };
 
-/** Which list owner has each company: { companyId: code }, by the same count as listHolding (most people, then list order). */
+const MAILBOXES = () => new Set((((TC.grandOpening || {}).invite || {}).companyMailboxes) || []);
+/** A company or department mailbox (info@, office@, crewing@ ...), by the part before the @. */
+export function isCompanyMailbox(email) {
+  const local = String(email || '').trim().toLowerCase().split('@')[0];
+  return Boolean(local) && MAILBOXES().has(local.replace(/[0-9]+$/, ''));
+}
+const personKey = (companyId, name) => { const n = nameKey(name || ''); return n ? companyId + '|' + n : null; };
+
+/** Each company's mother: { companyId: motherId } for every company in a confirmed family (src/tcgo.js motherCompanyList's rule). */
+export async function mothers(db) {
+  return new Map((await db.prepare(`SELECT m.company_id, f.parent_id FROM tc_family_members m JOIN tc_families f ON f.id = m.family_id
+    WHERE m.ended_at IS NULL AND f.ended_at IS NULL`).all()).map((r) => [Number(r.company_id), Number(r.parent_id)]));
+}
+
+/** Which list owner has each company: { companyId: code }, by the same count as listHolding (most people, then list order),
+ *  counted per mother company: every company of a family gets the owner who has the most of the family's people. */
 export async function holders(db) {
   const rows = await db.prepare(`SELECT s.id, s.sender, s.company, MIN(k.company_id) AS company_id, MAX(a.company_key) AS assigned
     FROM tc_go_stage2 s LEFT JOIN tc_company_contacts k ON k.ch_contact_id = s.ch_contact_id AND k.archived_at IS NULL
       AND k.company_id IN (SELECT id FROM tc_companies WHERE archived_at IS NULL)
     LEFT JOIN tc_go_assign a ON a.stage2_id = s.id AND a.sender = s.sender
     WHERE s.gone = 0 GROUP BY s.id, s.sender, s.company`).all();
+  const all = await db.prepare('SELECT id, name FROM tc_companies WHERE archived_at IS NULL').all();
   const byName = new Map();
-  for (const c of await db.prepare('SELECT id, name FROM tc_companies WHERE archived_at IS NULL').all()) {
+  for (const c of all) {
     const k = nameKey(c.name || '');
     if (k) byName.set(k, byName.has(k) ? null : Number(c.id));   // a name two companies share names neither
   }
+  const mom = await mothers(db), top = (id) => mom.get(id) || id;
   const n = new Map();
   for (const r of rows) {
     if (!S2().some((x) => x.code === r.sender)) continue;
     const key = r.assigned ? String(r.assigned) : homeOf(r);
     const id = key.startsWith('id:') ? Number(key.slice(3)) : byName.get(key.slice(2)) || null;
     if (!id) continue;
-    const m = n.get(id) || new Map();
+    const m = n.get(top(id)) || new Map();
     m.set(r.sender, (m.get(r.sender) || 0) + 1);
-    n.set(id, m);
+    n.set(top(id), m);
   }
   const order = (c) => S2().findIndex((x) => x.code === c);
   const out = {};
-  for (const [id, m] of n) out[id] = [...m.entries()].sort((a, b) => b[1] - a[1] || order(a[0]) - order(b[0]))[0][0];
+  for (const c of all) {
+    const m = n.get(top(Number(c.id)));
+    if (m) out[Number(c.id)] = [...m.entries()].sort((a, b) => b[1] - a[1] || order(a[0]) - order(b[0]))[0][0];
+  }
   return out;
 }
 
 /** What placeEveryone would do, writing nothing: { on, place: [...], revive: [...], left: [...] }. */
 export async function placement(db) {
+  // people with an email first, so the same person twice keeps the one that can be emailed
   const contacts = await db.prepare(`SELECT k.id, k.company_id, k.name, k.position, k.email, k.ch_contact_id, k.hidden_at,
       c.name AS co_name, c.country AS co_country, c.hidden_at AS co_hidden
     FROM tc_company_contacts k JOIN tc_companies c ON c.id = k.company_id AND c.archived_at IS NULL
-    WHERE k.archived_at IS NULL ORDER BY k.id`).all();
-  const live = await db.prepare('SELECT ch_contact_id, email FROM tc_go_stage2 WHERE gone = 0').all();
+    WHERE k.archived_at IS NULL ORDER BY CASE WHEN k.email IS NULL OR k.email = '' THEN 1 ELSE 0 END, k.id`).all();
+  const live = await db.prepare(`SELECT s.ch_contact_id, s.email, s.name, MIN(k.company_id) AS company_id FROM tc_go_stage2 s
+    LEFT JOIN tc_company_contacts k ON k.ch_contact_id = s.ch_contact_id AND k.archived_at IS NULL WHERE s.gone = 0
+    GROUP BY s.id, s.ch_contact_id, s.email, s.name`).all();
   const liveCh = new Set(live.map((r) => r.ch_contact_id)), emails = new Set(live.map((r) => String(r.email || '').trim().toLowerCase()).filter(Boolean));
+  const people = new Set(live.map((r) => (r.company_id ? personKey(Number(r.company_id), r.name) : null)).filter(Boolean));
   const gone = new Map((await db.prepare('SELECT id, ch_contact_id, sender FROM tc_go_stage2 WHERE gone = 1').all()).map((r) => [r.ch_contact_id, r]));
   const why = new Map(((((TC.grandOpening || {}).invite || {}).why) || []).map((w) => [w.id, w.label]));
   const marks = await db.prepare(`SELECT company_id, contact_id, kind, why FROM tc_invite_marks WHERE event = 'go' AND ended_at IS NULL`).all();
   const markOf = new Map(), coMark = new Map();
   for (const m of marks) { if (m.contact_id) markOf.set(Number(m.contact_id), m); else coMark.set(Number(m.company_id), m); }
+  // a company whose every contact is a company mailbox
+  const persons = new Set(contacts.filter((k) => !isCompanyMailbox(k.email) && (String(k.email || '').trim() || String(k.name || '').trim())).map((k) => Number(k.company_id)));
   const has = await holders(db);
   const out = { on: 0, place: [], revive: [], left: [] };
   const planned = new Set();   // emails this run puts on a list: a second contact with one of them is the same address twice
   for (const k of contacts) {
-    const email = String(k.email || '').trim().toLowerCase();
+    const email = String(k.email || '').trim().toLowerCase(), who = personKey(Number(k.company_id), k.name);
     if ((k.ch_contact_id && liveCh.has(k.ch_contact_id)) || (email && emails.has(email))) { out.on += 1; continue; }
     const base = { contactId: Number(k.id), companyId: Number(k.company_id), company: k.co_name, name: k.name || '', email };
     const m = markOf.get(Number(k.id)) || coMark.get(Number(k.company_id));
     if (m) { out.left.push({ ...base, reason: 'mark', kind: m.kind, label: (m.kind === 'hold' ? 'Hold: ' : 'Do not invite: ') + String(why.get(m.why) || m.why).replace(/^Hold: /, '') }); continue; }
     if (k.hidden_at || k.co_hidden) { out.left.push({ ...base, reason: 'approval', label: LEFT_WHY.approval }); continue; }
-    const was = gone.get(k.ch_contact_id || 'intake:' + Number(k.id));
     if (email && planned.has(email)) { out.left.push({ ...base, reason: 'same_email', label: LEFT_WHY.same_email }); continue; }
-    if (was) { out.revive.push({ ...base, stage2Id: Number(was.id), code: was.sender }); if (email) planned.add(email); continue; }
+    if (who && people.has(who)) { out.left.push({ ...base, reason: 'same_person', label: LEFT_WHY.same_person }); continue; }
+    if (isCompanyMailbox(email)) {
+      const only = !persons.has(Number(k.company_id));
+      out.left.push({ ...base, reason: only ? 'mailbox_only' : 'mailbox', label: only ? LEFT_WHY.mailbox_only : 'Do not invite: ' + LEFT_WHY.mailbox });
+      continue;
+    }
+    const was = gone.get(k.ch_contact_id || 'intake:' + Number(k.id));
+    if (was) { out.revive.push({ ...base, stage2Id: Number(was.id), code: was.sender }); if (email) planned.add(email); if (who) people.add(who); continue; }
     const code = has[Number(k.company_id)];
     if (!code) { out.left.push({ ...base, reason: 'nobody', label: LEFT_WHY.nobody }); continue; }
     if (email) planned.add(email);
+    if (who) people.add(who);
     out.place.push({ ...base, code, position: k.position || null, ch: k.ch_contact_id || null,
       country: k.co_country && !/^total$/i.test(String(k.co_country).trim()) ? k.co_country : null });
   }

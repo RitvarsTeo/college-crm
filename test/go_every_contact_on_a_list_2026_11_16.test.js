@@ -140,3 +140,34 @@ test('one rule at add time: every import and hand placing runs it; the page show
   assert.match(APP, /class="tcml-addmail" onsubmit="tcMlAddEmail\(event/);
   assert.match(APP, /Not on a Grand Opening list · \$\{tcGoN\(total\)\}/);
 });
+
+test('company mailboxes stay off; one that is the only contact of its company waits for a pick; the same person twice is one; a daughter goes with its mother', async () => {
+  const db = await openDb();
+  const { held, none } = await seed(db);
+  const co = async (name) => Number((await db.prepare(`INSERT INTO tc_companies (name, name_key, country, status, created_at) VALUES (?,?,?,?,?)`)
+    .run(name, nameKey(name), 'Latvia', 'not_contacted', at)).lastInsertRowid);
+  const kontakt = async (companyId, name, email) => Number((await db.prepare(`INSERT INTO tc_company_contacts (company_id, name, email, source, created_at)
+    VALUES (?,?,?,?,?)`).run(companyId, name, email, 'excel_2026_10', at)).lastInsertRowid);
+  const lonely = await co('Lonely Example SIA'), daughter = await co('Heldfast Example Riga SIA');
+  const fam = Number((await db.prepare(`INSERT INTO tc_families (parent_id, created_at) VALUES (?,?)`).run(held, at)).lastInsertRowid);
+  await db.prepare(`INSERT INTO tc_family_members (family_id, company_id, added_at) VALUES (?,?,?)`).run(fam, daughter, at);
+  const ids = {
+    info: await kontakt(held, null, 'info@heldfast-example.com'),            // a person of Heldfast is on JS's list
+    crewing2: await kontakt(held, null, 'crewing2@heldfast-example.com'),    // a department mailbox, a trailing number
+    lonely: await kontakt(lonely, null, 'office@lonely-example.com'),         // the only contact of its company
+    twin: await kontakt(held, 'Olga Example', null),                          // Olga is on JS's list already: the same person
+    riga: await kontakt(daughter, 'Rita Riga', 'rita@heldfast-example.lv'),   // the daughter company: its mother is on JS's list
+  };
+  assert.equal(ml.isCompanyMailbox('Info@x.com'), true);
+  assert.equal(ml.isCompanyMailbox('crewing2@x.com'), true);
+  assert.equal(ml.isCompanyMailbox('ingrid.info@x.com'), false, 'a person whose address has the word in it');
+  const P = await ml.placement(db);
+  const left = Object.fromEntries(P.left.map((r) => [r.contactId, r.label]));
+  assert.equal(left[ids.info], 'Do not invite: Company mailbox, not a person');
+  assert.equal(left[ids.crewing2], 'Do not invite: Company mailbox, not a person');
+  assert.equal(left[ids.lonely], 'Only a company mailbox: waiting for a pick');
+  assert.equal(left[ids.twin], 'Same person as one already on a list');
+  assert.deepEqual(P.place.filter((r) => r.contactId === ids.riga).map((r) => r.code), ['JS'], 'with its mother, on JS\'s list');
+  assert.equal((await ml.holders(db))[daughter], 'JS');
+  assert.equal((await ml.holders(db))[none], undefined);
+});

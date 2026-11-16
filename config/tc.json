@@ -127,7 +127,9 @@
         { "id": "dead", "label": "Mailbox no longer works" },
         { "id": "duplicate", "label": "Same person as another contact" },
         { "id": "hold", "label": "Hold: check the company first", "hold": true }
-      ]
+      ],
+      "companyMailboxes": ["info", "nfo", "office", "backoffice", "mail", "post", "pasts", "firmapost", "birojs", "kontakti", "contact", "contacts", "enquiries", "enquiry", "inquiries", "inquiry", "hello", "general", "reception", "main", "team", "admin", "administration", "sales", "support", "service", "careline", "crewing", "crew", "manning", "personnel", "hr", "recruitment", "jobs", "careers", "training", "chartering", "operations", "ops", "technical", "purchasing", "procurement", "management", "marketing", "communications", "bookings", "booking", "accounts", "accounting", "finance", "invoice", "invoices", "billing", "secretary"],
+      "_companyMailboxes": "The owner, 16.11.2026: \"Info we will not invite\" + \"Only if that info or generic department email is the only one of that company, and its an important company.\" The part before the @ of a company or department mailbox (a trailing number is ignored). Such a contact stays off the Grand Opening lists; when it is the only contact of its company it waits for his pick (src/tcmylist.js placement)."
     },
     "stage2": {
       "_about": "The RSVP lists per manager (the owner's pick A, 26.10.2026): one tab each, in this order; code = the sender split's sheet name. packStatus: the line under each pack on Stage 2 (default, or per code, e.g. \"Sent 27.10\").",
