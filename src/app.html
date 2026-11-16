@@ -2714,6 +2714,8 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tcml-yn .btn.btn.yes[aria-pressed="true"]{background:var(--btn-bg);color:#fff;border-color:var(--btn-bg)}
   html.ui-c .tcml-yn .btn.btn.nay[aria-pressed="true"]{background:#5b6472;color:#fff;border-color:#5b6472}
   html.ui-c .tcml-pick{font-weight:700;color:#835c12;font-size:13px} html.ui-c .tcml-how.need button{border-color:#e0b862}
+  html.ui-c .tcml-p .tcml-pc{font-style:normal;font-size:12px;font-weight:700;color:var(--t2);background:var(--rule2);border-radius:4px;padding:0 5px;margin-left:4px}
+  html.ui-c .tcml-addmail{display:flex;gap:6px;margin:0 0 6px} html.ui-c .tcml-addmail input{flex:1;min-width:0;font:inherit;font-size:13px;border:1px solid var(--rule);border-radius:8px;padding:5px 8px;background:var(--surface);color:var(--ink)}
   html.ui-c .tcml-mv{display:block;width:100%;margin:2px 0 6px;font:inherit;font-size:13px;border:1px solid var(--rule);border-radius:8px;padding:6px 8px;background:var(--surface);color:var(--ink)}
   html.ui-c .tcml-how{display:flex;gap:6px} html.ui-c .tcml-how button{flex:1;font:inherit;font-weight:700;font-size:13px;padding:8px 4px;border-radius:8px;border:1.5px solid var(--rule);background:var(--surface-2);color:var(--ink);cursor:pointer}
   html.ui-c .tcml-how button[aria-pressed="true"]{background:var(--btn-bg);color:#fff;border-color:var(--btn-bg)}
@@ -3420,6 +3422,7 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tcmk-o[aria-pressed="true"]{background:var(--btn-bg);border-color:var(--btn-bg);color:var(--btn-ink)}
   html.ui-c .tcmk-acts{display:flex;justify-content:flex-end;gap:6px;margin-top:10px}
   html.ui-c .tcmk-row{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1.2fr) 140px auto;gap:12px;align-items:center;padding:9px 0;border-top:1px solid var(--rule2);font-size:14px}
+  html.ui-c .tcleft-g h3{margin:6px 0 0;font-size:15px} html.ui-c .tcleft-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
   html.ui-c .tcmk-row b{font-weight:600} html.ui-c .tcmk-row a{color:inherit;text-decoration:none}
   html.ui-c .tcmk-row small{display:block;color:var(--t3);font-size:12.5px}
   html.ui-c .tcmk-btns{display:flex;gap:6px;justify-content:flex-end}
@@ -12991,7 +12994,7 @@ async function viewTcGo(part) {
     return;
   }
   tcGoDraw();
-  const loads = [tcS2Load(), tcS2xLoad().then(() => { if (T_S2) tcS2Redraw(); }), tcFixLoad(), tcMkLoad()];   // sending + after the answer: admins
+  const loads = [tcS2Load(), tcS2xLoad().then(() => { if (T_S2) tcS2Redraw(); }), tcFixLoad(), tcMkLoad(), tcLeftLoad()];   // sending + after the answer: admins
   // the part named in the link, once everything above it has drawn (06.11.2026)
   if (go) Promise.allSettled(loads).then(() => setTimeout(() => { const el = document.querySelector('#view ' + go[1]); if (el) el.scrollIntoView({ block: 'start' }); }, 150));
   api('/api/tc/go/mylist').then((r) => { const h = document.querySelector('#view .c-head');
@@ -13154,7 +13157,9 @@ function tcMlDraw() {
     const open = T_ML.open.has(g.key) || (Boolean(T_ML.q) && mlPersonHit(g, T_ML.q)), left = g.people.filter((p) => p.out).length, waiting = g.people.filter((p) => p.waiting).length;
     const count = (g.decision === 'invite' && left ? `${tcN(g.people.length - left)} of ${tcN(g.people.length)} people` : `${tcN(g.people.length)} ${g.people.length === 1 ? 'person' : 'people'}`)
       + (waiting ? ` · ${tcN(waiting)} new` : '');
-    const person = (p) => `<button type="button" class="tcml-p${p.out ? ' out' : ''}${p.from || p.moved ? ' moved' : ''}"${narrow ? '' : ` draggable="true" ondragstart="event.dataTransfer.setData('text/plain', String(${Number(p.id)}))"`} onclick="tcMlDo({ type: 'out', id: ${Number(p.id)} })"><b>${esc(p.label)}${p.waiting ? ' <em class="tcml-new">New</em>' : ''}</b>${p.position ? `<span>${esc(p.position)}</span>` : ''}</button>`
+    const person = (p) => `<button type="button" class="tcml-p${p.out ? ' out' : ''}${p.from || p.moved ? ' moved' : ''}"${narrow ? '' : ` draggable="true" ondragstart="event.dataTransfer.setData('text/plain', String(${Number(p.id)}))"`} onclick="tcMlDo({ type: 'out', id: ${Number(p.id)} })"><b>${esc(p.label)}${p.waiting ? ' <em class="tcml-new">New</em>' : ''}${p.postcard ? ' <em class="tcml-pc">Postcard only</em>' : ''}</b>${p.position ? `<span>${esc(p.position)}</span>` : ''}</button>`
+      // no email (patch 149): Postcard only until somebody adds the email here
+      + (p.postcard ? `<form class="tcml-addmail" onsubmit="tcMlAddEmail(event, ${Number(p.id)})"><input type="email" required placeholder="Add email" aria-label="Add email for ${esc(p.label)}" autocomplete="off"><button type="submit" class="btn sm ghost">Save email</button></form>` : '')
       + (narrow ? `<select class="tcml-mv" aria-label="Move to another company" onchange="tcMlMoveTo(${Number(p.id)}, this.value)"><option value="">Move to…</option>${targets.filter((o) => o.key !== g.key).map((o) => `<option value="${esc(o.key)}">${esc(o.name)}</option>`).join('')}</select>` : '');
     const ppl = open ? `<div class="tcml-ppl">${g.people.map(person).join('')}</div>` : '';
     const how = g.decision === 'invite' ? `${g.way ? '' : '<div class="tcml-pick">Pick a way</div>'}<div class="tcml-how${g.way ? '' : ' need'}">${TCML_WAYS.map(([w, t]) => `<button type="button" aria-pressed="${g.way === w}" onclick="tcMlDo({ type: 'way', key: ${esc(JSON.stringify(String(g.key)))}, way: ${esc(JSON.stringify(String(w)))} })">${t}</button>`).join('')}</div>` : '';
@@ -13307,6 +13312,18 @@ async function tcMlSave() {
     if (e.detail && e.detail.conflict) T_ML.conflict = e.message; else T_ML.error = e.message || 'The list was not saved. Try Save again.';
     tcMlDraw(); return false;
   }
+}
+// ADD EMAIL (patch 149): saved at once, apart from the list's Save; the person stops being Postcard only
+async function tcMlAddEmail(ev, id) {
+  ev.preventDefault();
+  const input = ev.target.querySelector('input'), email = String(input.value || '').trim();
+  if (!email) return;
+  try {
+    const r = await post('/api/tc/go/mylist/email', { sender: T_ML.code, id, email });
+    for (const g of T_ML.base.groups) for (const p of g.people) if (p.id === id) { p.email = r.email; p.postcard = false; }
+    T_ML.error = '';
+  } catch (e) { T_ML.error = e.message; }
+  tcMlDraw();
 }
 async function tcMlReload() { const code = T_ML.code; T_ML = null; await viewTcMyList(code); }
 async function tcMlAutosave() {
@@ -13661,6 +13678,24 @@ function tcMkPickHtml() {
     <div id="tcMkErr"></div>
     <div class="tcmk-acts"><button type="button" class="btn sm ghost" onclick="T_MK.pick=null;tcMkSet0()">Cancel</button><button type="button" class="btn sm" onclick="tcMkSave()">Save</button></div></div>`;
 }
+// OFF EVERY LIST (patch 149, 16.11.2026; every figure has legs): the contacts on no director's list, each under its reason, for an admin
+let T_LEFT = null;
+async function tcLeftLoad() {
+  try { T_LEFT = { groups: (await api('/api/tc/go/leftoff')).groups || [], open: (T_LEFT && T_LEFT.open) || {} }; } catch (e) { T_LEFT = null; }
+  const box = $('#tcLeft'); if (box) box.innerHTML = tcLeftHtml();
+}
+function tcLeftFold(label) { T_LEFT.open[label] = !T_LEFT.open[label]; const box = $('#tcLeft'); if (box) box.innerHTML = tcLeftHtml(); }
+function tcLeftHtml() {
+  if (!T_LEFT || !T_LEFT.groups.length) return '';
+  const total = T_LEFT.groups.reduce((a, g) => a + g.n, 0);
+  const group = (g) => {
+    const open = Boolean(T_LEFT.open[g.label]);
+    const rows = open ? g.people.map((p) => `<div class="tcmk-row tcleft-row"><div><b>${esc(p.name || p.email || 'No name')}</b>${p.name && p.email ? `<small>${esc(p.email)}</small>` : ''}</div>
+      <div><a href="#/tc/company/${Number(p.companyId)}">${esc(p.company)}</a></div></div>`).join('') : '';
+    return `<div class="tcleft-g"><h3><button type="button" class="tcgo-fold" aria-expanded="${open}" onclick="tcLeftFold(${esc(JSON.stringify(g.label))})">${open ? '▾' : '▸'} ${esc(g.label)} · ${tcGoN(g.n)}</button></h3>${rows}</div>`;
+  };
+  return `<section class="c-sheet tcmk tcleft" aria-label="Off every list"><div class="tcgo-bh"><h2>Not on a Grand Opening list · ${tcGoN(total)}</h2></div>${T_LEFT.groups.map(group).join('')}</section>`;
+}
 function tcMkSet0() { const box = $('#tcMk'); if (box) box.innerHTML = tcMkHtml(); }
 async function tcMkSave() {
   const P = T_MK.pick;
@@ -13723,6 +13758,7 @@ function tcGoDraw() {
     <div id="tcFix">${tcFixHtml()}</div>` : `
     <!-- stage2 -->${tcGoStage2()}
     <div id="tcMk">${tcMkHtml()}</div>
+    <div id="tcLeft">${tcLeftHtml()}</div>
     <div class="tcgo-shots">
       <figure class="c-sheet tcgo-shot"><figcaption>Stage 1 · the Save the Date<a href="/assets/go-stage1-email.jpg" target="_blank" rel="noopener">Full size ↗</a></figcaption>
         <a href="/assets/go-stage1-email.jpg" target="_blank" rel="noopener"><img src="/assets/go-stage1-email.jpg" alt="The Save the Date email: Novikontas Flagship Event 2027, 27 May 2027" loading="lazy"></a></figure>

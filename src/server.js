@@ -3481,7 +3481,12 @@ export const handle = async (req, res) => {
     {
       const dec = p.match(/^\/api\/tc\/additions\/(\d+)$/);
       if (dec && req.method === 'POST') {
-        try { const b = await body(req); return json(res, 200, await tcadd.decide(db, Number(dec[1]), String(b.what || ''), await currentUser(req))); }
+        try {
+          const b = await body(req), me = await currentUser(req), out = await tcadd.decide(db, Number(dec[1]), String(b.what || ''), me);
+          // approved: a person no longer waiting goes onto a list by the same rule (patch 149)
+          if (out.state === 'approved') out.goLists = await tcmylist.placeEveryone(db, (me && me.name) || 'approver');
+          return json(res, 200, out);
+        }
         catch (e) { if (e instanceof tc.TcInputError) return json(res, 400, { error: e.message }); throw e; }
       }
     }
@@ -3607,7 +3612,8 @@ export const handle = async (req, res) => {
       const files = tcimport.readFiles(b);
       const opts = { pastNext: b.pastNext || 'overdue', hash: b.hash };
       if (b.apply !== true) return json(res, 200, { preview: true, ...(await tcimport.preview(db, files, opts)).counts });
-      return json(res, 200, await tcimport.apply(db, files, opts, await actorOf(req, b)));
+      { const actor = await actorOf(req, b), out = await tcimport.apply(db, files, opts, actor);
+        return json(res, 200, { ...out, goLists: await tcmylist.placeEveryone(db, actor) }); }   // patch 149: every contact on a list
     }
     // THE SEASON SEED, the same shape (src/tcseason.js): the Excel's exhibition and calendar tabs become events, once.
     // GET and POST without apply are the preview (counts only, writes nothing); apply: true with the preview's hash writes.
@@ -3628,7 +3634,8 @@ export const handle = async (req, res) => {
       const b = await body(req, ch.maxBytes);
       const files = tcimport.readFiles(b, { names: ch.files });
       if (b.apply !== true) return json(res, 200, { preview: true, ...(await tcclienthub.preview(db, files)).counts });
-      return json(res, 200, await tcclienthub.apply(db, files, { hash: b.hash }, await actorOf(req, b)));
+      { const actor = await actorOf(req, b), out = await tcclienthub.apply(db, files, { hash: b.hash }, actor);
+        return json(res, 200, { ...out, goLists: await tcmylist.placeEveryone(db, actor) }); }   // patch 149
     }
     // THE CLIENT HUB REVIEW LIST (src/tcreview.js). The admin loads it once (preview, then apply with the hash); the
     // Training Centre team places its contacts or sets them aside (behind the tc area gate, like every /api/tc/ route).
@@ -3666,6 +3673,7 @@ export const handle = async (req, res) => {
       const by = await actorOf(req, b);
       const t0 = new Date(Date.now() - 1000).toISOString();
       const out = await tcpeople.importApply(db, b.rows, b.picks || {}, by);
+      if (out && !out.error) out.goLists = await tcmylist.placeEveryone(db, by);   // patch 149: every contact on a list
       const newCos = (await db.prepare('SELECT id FROM tc_companies WHERE created_at >= ? AND created_by = ?').all(t0, by)).map((r) => ({ kind: 'company', companyId: Number(r.id) }));
       const newCoIds = new Set(newCos.map((x) => x.companyId));
       const newKs = (await db.prepare('SELECT id, company_id FROM tc_company_contacts WHERE created_at >= ? AND created_by = ?').all(t0, by))
@@ -3834,6 +3842,19 @@ export const handle = async (req, res) => {
         throw e;
       }
     }
+    // ADD EMAIL on a list (patch 149, 16.11.2026): a Postcard only person gets an email; the owner on their own list, an admin any
+    if (p === '/api/tc/go/mylist/email' && req.method === 'POST') {
+      const me = await currentUser(req), admin = Boolean(await adminOf(req));
+      const b = await body(req), code = String(b.sender || '');
+      if (!tcmylist.mayOpen(me, admin, code)) return json(res, 403, { error: 'This list is not yours.' });
+      try { return json(res, 200, await tcmylist.addEmail(db, code, Number(b.id), b.email, await actorOf(req, b))); }
+      catch (e) { if (e instanceof tc.TcInputError) return json(res, 400, { error: e.message }); throw e; }
+    }
+    // THE PEOPLE OFF EVERY LIST (patch 149, 16.11.2026; every figure has legs): each with the reason, for an admin
+    if (p === '/api/tc/go/leftoff' && req.method === 'GET') {
+      if (!(await adminOf(req))) return json(res, 403, { error: 'An admin opens this.' });
+      return json(res, 200, { groups: await tcmylist.leftOff(db) });
+    }
     // THE POSTCARD LIST (12.11.2026): the invited people whose company goes in person or by mail; an owner their own, an admin all
     if ((p === '/api/tc/go/postcards' || p === '/api/tc/go/postcards.xlsx') && req.method === 'GET') {
       const me = await currentUser(req), admin = Boolean(await adminOf(req));
@@ -3917,7 +3938,8 @@ export const handle = async (req, res) => {
     }
     if (p === '/api/tc/review/place' && req.method === 'POST') {
       const b = await body(req, 64 * 1024);
-      return json(res, 200, await tcreview.place(db, b.items, await actorOf(req, b)));
+      { const actor = await actorOf(req, b), out = await tcreview.place(db, b.items, actor);
+        return json(res, 200, { ...out, goLists: await tcmylist.placeEveryone(db, actor) }); }   // patch 149
     }
     if (p === '/api/tc/review/set-aside' && req.method === 'POST') {
       const b = await body(req, 64 * 1024);

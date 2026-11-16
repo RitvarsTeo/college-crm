@@ -124,6 +124,8 @@
         { "id": "manager", "label": "A manager's decision" },
         { "id": "mailbox", "label": "Company mailbox, not a person" },
         { "id": "staff", "label": "Our own staff" },
+        { "id": "dead", "label": "Mailbox no longer works" },
+        { "id": "duplicate", "label": "Same person as another contact" },
         { "id": "hold", "label": "Hold: check the company first", "hold": true }
       ]
     },

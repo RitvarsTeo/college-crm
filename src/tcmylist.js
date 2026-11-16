@@ -93,7 +93,9 @@ export async function myList(db, code, editor = '') {
     const g = groups.get(key), isOut = out.has(Number(r.id)), fresh = Boolean(Number(r.fresh));
     // an Invite reaches somebody only once its way is picked: until then its people are still to decide (the audit, 12.11.2026);
     // a person added from the company page after the company was decided is still to decide until Done (patch 145, 16.11.2026)
+    // no email: Postcard only, with an Add email box on the list (patch 149, 16.11.2026)
     g.people.push({ id: Number(r.id), label: personLabel(r.name, g.name, r.email), position: r.position || '', email: String(r.email || '').toLowerCase(), out: isOut,
+      postcard: !String(r.email || '').trim(),
       moved: key !== homeOf(r), fresh,
       decision: fresh ? null : g.decision === 'invite' ? (g.way ? (isOut ? 'no' : 'invite') : null) : g.decision === 'no' ? 'no' : null });
   }
@@ -244,8 +246,9 @@ export async function postcardRows(db, codes) {
   for (const code of codes) {
     const L = await myList(db, code);
     for (const g of L.groups) {
-      if (g.decision !== 'invite' || !['in_person', 'post'].includes(g.way)) continue;
-      for (const p of g.people) if (p.decision === 'invite') rows.push({ person: p.label, position: p.position, company: g.name, country: g.country, address: g.address, way: g.way, owner: L.name });
+      if (g.decision !== 'invite' || !g.way) continue;
+      // a digital company's people with no email are Postcard only (patch 149): by mail, until somebody adds their email
+      for (const p of g.people) if (p.decision === 'invite' && (['in_person', 'post'].includes(g.way) || p.postcard)) rows.push({ person: p.label, position: p.position, company: g.name, country: g.country, address: g.address, way: ['in_person', 'post'].includes(g.way) ? g.way : 'post', owner: L.name });
     }
   }
   return rows;
@@ -312,4 +315,142 @@ export async function addContactToList(tx, { code, company, contactId, f, actor,
   await logTcActivity(tx, Number(company.id), { kind: 'edit', field: 'go_list', old: null, new: ownerName,
     body: `Added to the Grand Opening list of ${ownerName}`, actor, at, contactId: Number(contactId) });
   return { list: 'added', owner: ownerName, decided };
+}
+
+// EVERY CONTACT ON A LIST (16.11.2026, patch 149). His rule: "ALL CONTACTS have companies. all have the same mechanism. who cares
+// how they got into the contact list?" and "no email people also need to be included, but they should be mentioned physical only or
+// add an email!!!!". One rule for every contact, however they came in (the Client Hub split, the October Excel, an import, by hand):
+//   - already on a list (by Client Hub id or by email): stays where they are
+//   - a Do not invite / hold mark for the Grand Opening (src/tcgo.js marks: a manager's decision, a dead or company mailbox, our
+//     own staff, hold): stays off, and is counted under that reason on the Grand Opening page
+//   - waiting for an approver (hidden_at): stays off until approved
+//   - dropped from a list once with no reason recorded (gone = 1, the 28.10 Client Hub reload): back on that same list
+//   - else: onto the list of the owner who already has the company (listHolding's rule), under that company. A company already
+//     decided (Invite or No) keeps its decision; the person is still to decide there until Done (patch 145's mechanism)
+//   - a company nobody has yet: stays off, counted as "No list has this company yet", until a list owner is given the company
+// A person with no email goes on the list too: the list shows them as Postcard only, with an Add email box.
+// placeEveryone runs after every import and every hand placing; the 16.11 backfill runs the same function once.
+export const LEFT_WHY = { approval: 'Waiting for approval', nobody: 'No list has this company yet', same_email: 'Same email as a person already on a list' };
+
+/** Which list owner has each company: { companyId: code }, by the same count as listHolding (most people, then list order). */
+export async function holders(db) {
+  const rows = await db.prepare(`SELECT s.id, s.sender, s.company, MIN(k.company_id) AS company_id, MAX(a.company_key) AS assigned
+    FROM tc_go_stage2 s LEFT JOIN tc_company_contacts k ON k.ch_contact_id = s.ch_contact_id AND k.archived_at IS NULL
+      AND k.company_id IN (SELECT id FROM tc_companies WHERE archived_at IS NULL)
+    LEFT JOIN tc_go_assign a ON a.stage2_id = s.id AND a.sender = s.sender
+    WHERE s.gone = 0 GROUP BY s.id, s.sender, s.company`).all();
+  const byName = new Map();
+  for (const c of await db.prepare('SELECT id, name FROM tc_companies WHERE archived_at IS NULL').all()) {
+    const k = nameKey(c.name || '');
+    if (k) byName.set(k, byName.has(k) ? null : Number(c.id));   // a name two companies share names neither
+  }
+  const n = new Map();
+  for (const r of rows) {
+    if (!S2().some((x) => x.code === r.sender)) continue;
+    const key = r.assigned ? String(r.assigned) : homeOf(r);
+    const id = key.startsWith('id:') ? Number(key.slice(3)) : byName.get(key.slice(2)) || null;
+    if (!id) continue;
+    const m = n.get(id) || new Map();
+    m.set(r.sender, (m.get(r.sender) || 0) + 1);
+    n.set(id, m);
+  }
+  const order = (c) => S2().findIndex((x) => x.code === c);
+  const out = {};
+  for (const [id, m] of n) out[id] = [...m.entries()].sort((a, b) => b[1] - a[1] || order(a[0]) - order(b[0]))[0][0];
+  return out;
+}
+
+/** What placeEveryone would do, writing nothing: { on, place: [...], revive: [...], left: [...] }. */
+export async function placement(db) {
+  const contacts = await db.prepare(`SELECT k.id, k.company_id, k.name, k.position, k.email, k.ch_contact_id, k.hidden_at,
+      c.name AS co_name, c.country AS co_country, c.hidden_at AS co_hidden
+    FROM tc_company_contacts k JOIN tc_companies c ON c.id = k.company_id AND c.archived_at IS NULL
+    WHERE k.archived_at IS NULL ORDER BY k.id`).all();
+  const live = await db.prepare('SELECT ch_contact_id, email FROM tc_go_stage2 WHERE gone = 0').all();
+  const liveCh = new Set(live.map((r) => r.ch_contact_id)), emails = new Set(live.map((r) => String(r.email || '').trim().toLowerCase()).filter(Boolean));
+  const gone = new Map((await db.prepare('SELECT id, ch_contact_id, sender FROM tc_go_stage2 WHERE gone = 1').all()).map((r) => [r.ch_contact_id, r]));
+  const why = new Map(((((TC.grandOpening || {}).invite || {}).why) || []).map((w) => [w.id, w.label]));
+  const marks = await db.prepare(`SELECT company_id, contact_id, kind, why FROM tc_invite_marks WHERE event = 'go' AND ended_at IS NULL`).all();
+  const markOf = new Map(), coMark = new Map();
+  for (const m of marks) { if (m.contact_id) markOf.set(Number(m.contact_id), m); else coMark.set(Number(m.company_id), m); }
+  const has = await holders(db);
+  const out = { on: 0, place: [], revive: [], left: [] };
+  const planned = new Set();   // emails this run puts on a list: a second contact with one of them is the same address twice
+  for (const k of contacts) {
+    const email = String(k.email || '').trim().toLowerCase();
+    if ((k.ch_contact_id && liveCh.has(k.ch_contact_id)) || (email && emails.has(email))) { out.on += 1; continue; }
+    const base = { contactId: Number(k.id), companyId: Number(k.company_id), company: k.co_name, name: k.name || '', email };
+    const m = markOf.get(Number(k.id)) || coMark.get(Number(k.company_id));
+    if (m) { out.left.push({ ...base, reason: 'mark', kind: m.kind, label: (m.kind === 'hold' ? 'Hold: ' : 'Do not invite: ') + String(why.get(m.why) || m.why).replace(/^Hold: /, '') }); continue; }
+    if (k.hidden_at || k.co_hidden) { out.left.push({ ...base, reason: 'approval', label: LEFT_WHY.approval }); continue; }
+    const was = gone.get(k.ch_contact_id || 'intake:' + Number(k.id));
+    if (email && planned.has(email)) { out.left.push({ ...base, reason: 'same_email', label: LEFT_WHY.same_email }); continue; }
+    if (was) { out.revive.push({ ...base, stage2Id: Number(was.id), code: was.sender }); if (email) planned.add(email); continue; }
+    const code = has[Number(k.company_id)];
+    if (!code) { out.left.push({ ...base, reason: 'nobody', label: LEFT_WHY.nobody }); continue; }
+    if (email) planned.add(email);
+    out.place.push({ ...base, code, position: k.position || null, ch: k.ch_contact_id || null,
+      country: k.co_country && !/^total$/i.test(String(k.co_country).trim()) ? k.co_country : null });
+  }
+  return out;
+}
+
+/** Every contact not on a list goes onto one by the rule above. Returns { on, placed, revived, left, byList, leftBy }. */
+export async function placeEveryone(db, actor, at = nowIso()) {
+  const P = await placement(db);
+  if (P.place.length || P.revive.length) {
+    await db.transaction(async (tx) => {
+      const picks = new Map((await tx.prepare('SELECT sender, company_key, decision FROM tc_go_company_picks').all())
+        .map((p) => [p.sender + '|' + p.company_key, p.decision]));
+      const decided = (code, companyId) => Boolean(picks.get(code + '|id:' + Number(companyId)));
+      const owner = (code) => (S2().find((s) => s.code === code) || {}).name || code;
+      for (const r of P.revive) {
+        await tx.prepare('UPDATE tc_go_stage2 SET gone = 0 WHERE id = ? AND gone = 1').run(r.stage2Id);
+        if (decided(r.code, r.companyId)) await tx.prepare('INSERT INTO tc_go_people_new (stage2_id, sender, added_at, added_by) VALUES (?,?,?,?)').run(r.stage2Id, r.code, at, actor);
+        await logTcActivity(tx, r.companyId, { kind: 'edit', field: 'go_list', old: null, new: owner(r.code), body: `Back on the Grand Opening list of ${owner(r.code)}`, actor, at, contactId: r.contactId });
+      }
+      for (const r of P.place) {
+        const ch = r.ch || 'intake:' + r.contactId;
+        if (!r.ch) await tx.prepare('UPDATE tc_company_contacts SET ch_contact_id = ? WHERE id = ? AND ch_contact_id IS NULL').run(ch, r.contactId);
+        const ins = await tx.prepare(`INSERT INTO tc_go_stage2 (ch_contact_id, sender, name, company, position, country, email, gone, loaded_at, loaded_by)
+          VALUES (?,?,?,?,?,?,?,0,?,?)`).run(ch, r.code, r.name || null, r.company, r.position, r.country, r.email || null, at, actor);
+        if (decided(r.code, r.companyId)) await tx.prepare('INSERT INTO tc_go_people_new (stage2_id, sender, added_at, added_by) VALUES (?,?,?,?)').run(Number(ins.lastInsertRowid), r.code, at, actor);
+        await logTcActivity(tx, r.companyId, { kind: 'edit', field: 'go_list', old: null, new: owner(r.code), body: `Added to the Grand Opening list of ${owner(r.code)}`, actor, at, contactId: r.contactId });
+      }
+    });
+  }
+  const tally = (rows, f) => rows.reduce((o, r) => { o[f(r)] = (o[f(r)] || 0) + 1; return o; }, {});
+  return { on: P.on, placed: P.place.length, revived: P.revive.length, left: P.left.length,
+    byList: tally([...P.place, ...P.revive], (r) => r.code), leftBy: tally(P.left, (r) => r.label) };
+}
+
+/** The people still off every list, for the Grand Opening page: [{ label, n, people: [{ name, email, company, companyId }] }]. */
+export async function leftOff(db) {
+  const groups = new Map();
+  for (const r of (await placement(db)).left) {
+    if (!groups.has(r.label)) groups.set(r.label, []);
+    groups.get(r.label).push({ name: r.name, email: r.email, company: r.company, companyId: r.companyId });
+  }
+  return [...groups.entries()].map(([label, people]) => ({ label, n: people.length, people: people.sort((a, b) => String(a.company).localeCompare(String(b.company), 'lv')) }))
+    .sort((a, b) => b.n - a.n);
+}
+
+/** ADD EMAIL (16.11.2026): a person on list `code` with no email gets one; the Intake contact gets it too, when it has none. */
+export async function addEmail(db, code, stage2Id, raw, actor, at = nowIso()) {
+  const email = String(raw || '').trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 200) throw new TcInputError('That email address does not look right.');
+  const s = await db.prepare('SELECT id, ch_contact_id, email FROM tc_go_stage2 WHERE id = ? AND sender = ? AND gone = 0').get(Number(stage2Id), String(code));
+  if (!s) throw new TcInputError('This person is not on this list.');
+  if (String(s.email || '').trim()) throw new TcInputError('This person already has an email.');
+  const on = await db.prepare('SELECT sender FROM tc_go_stage2 WHERE gone = 0 AND LOWER(email) = ? LIMIT 1').get(email);
+  if (on) throw new TcInputError(`This email is already on the list of ${(S2().find((x) => x.code === on.sender) || {}).name || on.sender}.`);
+  return db.transaction(async (tx) => {
+    await tx.prepare('UPDATE tc_go_stage2 SET email = ? WHERE id = ?').run(email, Number(s.id));
+    const k = await tx.prepare('SELECT id, company_id, email FROM tc_company_contacts WHERE ch_contact_id = ? AND archived_at IS NULL').get(s.ch_contact_id);
+    if (k && !String(k.email || '').trim()) {
+      await tx.prepare('UPDATE tc_company_contacts SET email = ?, updated_at = ? WHERE id = ?').run(email, at, Number(k.id));
+      await logTcActivity(tx, Number(k.company_id), { kind: 'edit', field: 'contact_email', old: null, new: email, body: 'Email added on the Grand Opening list', actor, at, contactId: Number(k.id) });
+    }
+    return { ok: true, email };
+  });
 }
