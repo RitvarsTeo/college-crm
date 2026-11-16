@@ -125,3 +125,14 @@ test('the only automatic emails are the two deadline reminders: Pass on sends no
   const src = fs.readFileSync(path.join(ROOT, 'src', 'tcgopass.js'), 'utf8');
   assert.doesNotMatch(src, /mailFor|nodeva tev/);
 });
+
+test('a test reminder (patch 152g): admins only, to their own address only, the exact text the cron sends', () => {
+  const route = SERVER.slice(SERVER.indexOf("if (p === '/api/admin/go/reminder-test'"), SERVER.indexOf('// PASS ON (patch 152, 16.11.2026; src/tcgopass.js)'));
+  assert.match(route, /if \(!\(await adminOf\(req\)\) \|\| !me \|\| !me\.email\) return json\(res, 403/);
+  assert.match(route, /tcgopass\.reminderMail\(\{ code, email: me\.email \}/, 'to the signed-in admin, never the list owner');
+  assert.doesNotMatch(route, /tc_go_reminders/, 'nothing is recorded: the real reminders still go');
+  const m = po.reminderMail({ code: 'JS', email: 'me@novikontas.org' }, { companies: 3, passed: 0 }, 'day_before');
+  assert.equal(m.to, 'me@novikontas.org');
+  assert.equal(m.subject, 'Intake: tavs Grand Opening saraksts tiek slēgts rīt plkst. 17:00');
+  assert.equal(m.text, 'Tavs Grand Opening saraksts tiek slēgts ceturtdien, 19. novembrī, plkst. 17:00.\n\nVēl jāizlemj: 3 uzņēmumi\n\nhttps://intake.novikontas.org/#/tc/mylist/JS\n\nŠī ir automātiska Intake ziņa.\n');
+});

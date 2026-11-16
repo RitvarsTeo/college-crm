@@ -133,6 +133,14 @@ export function dueTimes(end, companies) {
   return { day_before: new Date(end.getTime() - 32 * 3600e3), last_call: new Date(end.getTime() - Math.max(30, Number(companies) || 0) * 60e3) };
 }
 
+/** One reminder email for list owner `s` ({ code, email }) with `o` = { companies, passed } open: the same text the cron sends. */
+export function reminderMail(s, o, kind, end = deadline()) {
+  const day = kind === 'day_before' ? 'rīt' : 'šodien';
+  return { to: s.email, subject: `Intake: tavs Grand Opening saraksts tiek slēgts ${day} plkst. 17:00`,
+    text: `Tavs Grand Opening saraksts tiek slēgts ${lvWhen(end)}.\n\nVēl jāizlemj: ${lvN(o.companies, 'uzņēmums', 'uzņēmumi')}\n`
+      + (o.passed ? `Nodoti tev: ${lvN(o.passed, 'cilvēks', 'cilvēki')}\n` : '') + `\nhttps://intake.novikontas.org/#/tc/mylist/${encodeURIComponent(s.code)}\n\n${AUTO}\n` };
+}
+
 /** Run by the reminder cron: sends what is due, each at most once. `open(code)` = { companies, passed } still open on that list. */
 export async function sendReminders(db, open, send, now = new Date()) {
   const end = deadline();
@@ -148,10 +156,7 @@ export async function sendReminders(db, open, send, now = new Date()) {
       if (now < due[kind] || done.has(s.code + '|' + kind)) continue;
       // the day-before one is not sent once the last call is due: two emails, never both at once
       if (kind === 'day_before' && now >= due.last_call) continue;
-      const day = kind === 'day_before' ? 'rīt' : 'šodien';
-      const mail = { to: s.email, subject: `Intake: tavs Grand Opening saraksts tiek slēgts ${day} plkst. 17:00`,
-        text: `Tavs Grand Opening saraksts tiek slēgts ${lvWhen(end)}.\n\nVēl jāizlemj: ${lvN(o.companies, 'uzņēmums', 'uzņēmumi')}\n`
-          + (o.passed ? `Nodoti tev: ${lvN(o.passed, 'cilvēks', 'cilvēki')}\n` : '') + `\nhttps://intake.novikontas.org/#/tc/mylist/${encodeURIComponent(s.code)}\n\n${AUTO}\n` };
+      const mail = reminderMail(s, o, kind, end);
       // the row first: a second run while this one sends finds it and sends nothing
       try { await db.prepare('INSERT INTO tc_go_reminders (sender, kind, sent_at, companies, passed) VALUES (?,?,?,?,?)').run(s.code, kind, now.toISOString(), o.companies, o.passed); }
       catch (e) { continue; }

@@ -3842,6 +3842,18 @@ export const handle = async (req, res) => {
         throw e;
       }
     }
+    // A TEST REMINDER (patch 152g, 16.11.2026, the owner's "Yes, test to me"): an admin gets, to his OWN address only, the exact
+    // deadline reminder a list owner would get today, through the same sender. Nothing is recorded; nobody else gets anything.
+    if (p === '/api/admin/go/reminder-test' && req.method === 'POST') {
+      const me = await currentUser(req);
+      if (!(await adminOf(req)) || !me || !me.email) return json(res, 403, { error: 'An admin sends this, to himself.' });
+      const b = await body(req), code = String(b.sender || '');
+      const owner = (((tc.TC.grandOpening || {}).stage2 || {}).senders || []).find((x) => x.code === code);
+      if (!owner) return json(res, 400, { error: 'There is no such list.' });
+      const mail = tcgopass.reminderMail({ code, email: me.email }, await tcmylist.openCounts(db, code), b.kind === 'last_call' ? 'last_call' : 'day_before');
+      const sent = await notify.sendMail(db, mail);
+      return json(res, sent && sent.ok ? 200 : 502, { ok: Boolean(sent && sent.ok), to: me.email, subject: mail.subject, why: sent && !sent.ok ? sent.why : undefined });
+    }
     // PASS ON (patch 152, 16.11.2026; src/tcgopass.js): the owner of the list the person is on (or passed to), or an admin
     if ((p === '/api/tc/go/mylist/pass' || p === '/api/tc/go/mylist/accept') && req.method === 'POST') {
       const me = await currentUser(req), admin = Boolean(await adminOf(req));
