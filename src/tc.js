@@ -590,7 +590,7 @@ function contactFields(b) {
   return { name: clip(b.name, 160), position: clip(b.position, 160), email: email ? email.toLowerCase() : null,
     phone: clip(b.phone, 60), notes: clip(b.notes, 2000) };
 }
-export async function addContact(db, companyId, b, actor) {
+export async function addContact(db, companyId, b, actor, also = null) {
   const c = await mustCompany(db, companyId);
   const f = contactFields(b);
   if (!f.name && !f.email && !f.phone) bad('A contact needs a name, an email or a phone.');
@@ -603,7 +603,9 @@ export async function addContact(db, companyId, b, actor) {
       VALUES (?,?,?,?,?,?,?,?,?)`).run(c.id, f.name, f.position, f.email, f.phone, f.notes, 'manual', at, actor);
     await logAct(tx, c.id, { kind: 'edit', field: 'contact', old: null, new: f.name || f.email || f.phone, body: 'Contact added', actor, at,
       contactId: Number(r.lastInsertRowid) });
-    return { id: Number(r.lastInsertRowid) };
+    // also: a step in the same transaction (the Grand Opening list box, src/tcmylist.js addContactToList, patch 145)
+    const more = also ? await also(tx, { company: c, contactId: Number(r.lastInsertRowid), f, actor, at }) : null;
+    return { id: Number(r.lastInsertRowid), ...(more || {}) };
   });
 }
 export async function editContact(db, contactId, b, actor) {

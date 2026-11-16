@@ -47,10 +47,12 @@ export function personLabel(name, company, email) {
 }
 
 async function rowsOf(db, code) {
-  return db.prepare(`SELECT s.id, s.ch_contact_id, s.name, s.position, s.country, s.company, s.email, MIN(k.company_id) AS company_id, MAX(a.company_key) AS assigned
+  return db.prepare(`SELECT s.id, s.ch_contact_id, s.name, s.position, s.country, s.company, s.email, MIN(k.company_id) AS company_id, MAX(a.company_key) AS assigned,
+      MAX(CASE WHEN n.stage2_id IS NULL THEN 0 ELSE 1 END) AS fresh
     FROM tc_go_stage2 s LEFT JOIN tc_company_contacts k ON k.ch_contact_id = s.ch_contact_id AND k.archived_at IS NULL
       AND k.company_id IN (SELECT id FROM tc_companies WHERE archived_at IS NULL)
     LEFT JOIN tc_go_assign a ON a.stage2_id = s.id AND a.sender = s.sender
+    LEFT JOIN tc_go_people_new n ON n.stage2_id = s.id AND n.settled_at IS NULL
     WHERE s.sender = ? AND s.gone = 0 GROUP BY s.id, s.ch_contact_id, s.name, s.position, s.country, s.company, s.email ORDER BY s.id`).all(String(code));
 }
 // a person's own company on the list: their Intake company, else the company name they came with
@@ -88,10 +90,12 @@ export async function myList(db, code, editor = '') {
         address: [co && co.address, co && co.city].filter(Boolean).join(', '), intake: Boolean(co),
         decision: p.decision || null, way: p.decision === 'invite' ? p.way || null : null, people: [] });
     }
-    const g = groups.get(key), isOut = out.has(Number(r.id));
-    // an Invite reaches somebody only once its way is picked: until then its people are still to decide (the audit, 12.11.2026)
+    const g = groups.get(key), isOut = out.has(Number(r.id)), fresh = Boolean(Number(r.fresh));
+    // an Invite reaches somebody only once its way is picked: until then its people are still to decide (the audit, 12.11.2026);
+    // a person added from the company page after the company was decided is still to decide until Done (patch 145, 16.11.2026)
     g.people.push({ id: Number(r.id), label: personLabel(r.name, g.name, r.email), position: r.position || '', email: String(r.email || '').toLowerCase(), out: isOut,
-      moved: key !== homeOf(r), decision: g.decision === 'invite' ? (g.way ? (isOut ? 'no' : 'invite') : null) : g.decision === 'no' ? 'no' : null });
+      moved: key !== homeOf(r), fresh,
+      decision: fresh ? null : g.decision === 'invite' ? (g.way ? (isOut ? 'no' : 'invite') : null) : g.decision === 'no' ? 'no' : null });
   }
   const list = [...groups.values()].sort((a, b) => b.people.length - a.people.length || a.name.localeCompare(b.name, 'lv'));
   const all = list.flatMap((g) => g.people);
@@ -106,11 +110,12 @@ export async function myList(db, code, editor = '') {
     groups: list, version, draft };
 }
 
-/** The state the page works on, read from what is saved: { picks: { key: { decision, way } }, out: [ids], moves: {} }. */
+/** The state the page works on, read from what is saved: { picks: { key: { decision, way } }, out: [ids], moves: {}, settled: [] }.
+ * settled = the new people (added after their company was decided) whose company the owner pressed Done on. */
 export function stateOf(list) {
   const picks = {};
   for (const g of list.groups) if (g.decision || g.way) picks[g.key] = { decision: g.decision, way: g.way };
-  return { picks, out: list.groups.flatMap((g) => g.people.filter((p) => p.out).map((p) => p.id)), moves: {} };
+  return { picks, out: list.groups.flatMap((g) => g.people.filter((p) => p.out).map((p) => p.id)), moves: {}, settled: [] };
 }
 
 /** A state from the page, checked against this list. A wrong value is refused; a company or person no longer on the list (an old
@@ -129,7 +134,9 @@ function clean(list, state) {
   const out = [...new Set([].concat(s.out || []).map(Number))].filter((id) => ids.has(id));
   const moves = {};
   for (const [id, k] of Object.entries(s.moves || {})) if (ids.has(Number(id)) && intake.has(String(k))) moves[Number(id)] = String(k);
-  return { picks, out, moves };
+  const fresh = new Set(list.groups.flatMap((g) => g.people.filter((p) => p.fresh).map((p) => p.id)));
+  const settled = [...new Set([].concat(s.settled || []).map(Number))].filter((id) => fresh.has(id));
+  return { picks, out, moves, settled };
 }
 
 // one statement per table and chunk (the audit, 12.11.2026: a Save of the whole list stays one short round of writes)
@@ -177,7 +184,7 @@ export async function saveState(db, code, state, actor, base = null, editor = ''
   const outRows = [...new Set([...was, ...now])].filter((id) => was.has(id) !== now.has(id)).map((id) => [id, now.has(id) ? 1 : 0, at, actor]);
   const moves = Object.entries(st.moves).map(([id, to]) => [Number(id), to]).filter(([id, to]) => groupOf.get(id).key !== to);
   const editorKey = String(editor || actor || '').toLowerCase();
-  if (!pickRows.length && !outRows.length && !moves.length) {   // Ctrl+S on nothing: no stamp, no write (the audit, 12.11.2026)
+  if (!pickRows.length && !outRows.length && !moves.length && !st.settled.length) {   // Ctrl+S on nothing: no stamp, no write (the audit, 12.11.2026)
     await dropDraft(db, code, editorKey);
     return { ...before, draft: null, unchanged: true };
   }
@@ -208,6 +215,9 @@ export async function saveState(db, code, state, actor, base = null, editor = ''
     // 3. the people tapped out or back in
     if (outRows.length) await insertMany(tx, 'INSERT INTO tc_go_people_out (stage2_id, out_flag, set_at, set_by)', 4, outRows,
       'ON CONFLICT (stage2_id) DO UPDATE SET out_flag = excluded.out_flag, set_at = excluded.set_at, set_by = excluded.set_by');
+    // 3b. the new people whose company the owner pressed Done on: from now on they follow the company like everyone else
+    if (st.settled.length) await tx.prepare(`UPDATE tc_go_people_new SET settled_at = ?, settled_by = ? WHERE settled_at IS NULL AND stage2_id IN (${st.settled.map(() => '?').join(',')})`)
+      .run(at, actor, ...st.settled);
     // 4. every person whose result changed, kept
     const after = await myList(tx, code), logRows = [];
     for (const g of after.groups) for (const p of g.people) {
@@ -239,4 +249,67 @@ export async function postcardRows(db, codes) {
     }
   }
   return rows;
+}
+
+// A CONTACT ONTO A LIST FROM THE COMPANY PAGE (Client Hub step 4, his pick "Yes, A, build it", 16.11.2026, picture
+// _pictures/CH_step4_business_cards.html column A): the Add contact form has one more box, "Grand Opening list", pre-set to the
+// owner who already has this company. Save puts the new contact on that owner's Stage 2 list under this company.
+
+/** Which list already has this company: the owner with the most people under it (as their list groups them), or null. */
+export async function listHolding(db, companyId) {
+  const id = Number(companyId);
+  const co = await db.prepare('SELECT id, name FROM tc_companies WHERE id = ?').get(id);
+  if (!co) return null;
+  const rows = await db.prepare(`SELECT s.id, s.sender, s.company, MIN(k.company_id) AS company_id, MAX(a.company_key) AS assigned
+    FROM tc_go_stage2 s LEFT JOIN tc_company_contacts k ON k.ch_contact_id = s.ch_contact_id AND k.archived_at IS NULL
+      AND k.company_id IN (SELECT id FROM tc_companies WHERE archived_at IS NULL)
+    LEFT JOIN tc_go_assign a ON a.stage2_id = s.id AND a.sender = s.sender
+    WHERE s.gone = 0 AND (k.company_id = ? OR a.company_key = ? OR LOWER(s.company) = LOWER(?))
+    GROUP BY s.id, s.sender, s.company`).all(id, 'id:' + id, String(co.name || ''));
+  const want = 'id:' + id, wantName = 'n:' + nameKey(co.name || ''), n = new Map();
+  for (const r of rows) {
+    const key = r.assigned ? String(r.assigned) : homeOf(r);
+    if (key !== want && key !== wantName) continue;
+    if (S2().some((x) => x.code === r.sender)) n.set(r.sender, (n.get(r.sender) || 0) + 1);
+  }
+  const order = (c) => S2().findIndex((x) => x.code === c);
+  const best = [...n.entries()].sort((a, b) => b[1] - a[1] || order(a[0]) - order(b[0]))[0];
+  return best ? best[0] : null;
+}
+
+/** The box on the form: every list owner by name, and the one pre-set. */
+export async function listBox(db, companyId) {
+  return { options: S2().map((s) => ({ code: s.code, name: s.name || s.code })), has: await listHolding(db, companyId) };
+}
+
+/** A real list code, or '' for "Not on a list"; anything else is refused. */
+export function checkListCode(code) {
+  const c = String(code ?? '').trim();
+  if (!c) return '';
+  if (!S2().some((s) => s.code === c)) throw new TcInputError('Pick a Grand Opening list from the box.');
+  return c;
+}
+
+/** Inside the Add contact transaction: put the new contact on list `code` under its company. An email already on any list is not
+ * added twice. A company already decided (Invite or No) on that list keeps its decision; the person is still to decide there until
+ * the owner presses Done on it. Returns what happened, for the form. */
+export async function addContactToList(tx, { code, company, contactId, f, actor, at }) {
+  const owner = S2().find((s) => s.code === code) || {};
+  const ownerName = owner.name || code;
+  if (f.email) {
+    const on = await tx.prepare('SELECT sender FROM tc_go_stage2 WHERE gone = 0 AND LOWER(email) = ? ORDER BY id LIMIT 1').get(f.email);
+    if (on) return { list: 'already', owner: (S2().find((s) => s.code === on.sender) || {}).name || on.sender };
+  }
+  const ch = 'intake:' + Number(contactId);   // no Client Hub id: the contact's own Intake id, so the list finds them under this company
+  await tx.prepare('UPDATE tc_company_contacts SET ch_contact_id = ? WHERE id = ?').run(ch, Number(contactId));
+  const country = company.country && !/^total$/i.test(String(company.country).trim()) ? company.country : null;
+  const r = await tx.prepare(`INSERT INTO tc_go_stage2 (ch_contact_id, sender, name, company, position, country, email, gone, loaded_at, loaded_by)
+    VALUES (?,?,?,?,?,?,?,0,?,?)`).run(ch, code, f.name, company.name, f.position, country, f.email, at, actor);
+  const sid = Number(r.lastInsertRowid);
+  const pick = await tx.prepare('SELECT decision FROM tc_go_company_picks WHERE sender = ? AND company_key = ?').get(code, 'id:' + Number(company.id));
+  const decided = Boolean(pick && pick.decision);
+  if (decided) await tx.prepare('INSERT INTO tc_go_people_new (stage2_id, sender, added_at, added_by) VALUES (?,?,?,?)').run(sid, code, at, actor);
+  await logTcActivity(tx, Number(company.id), { kind: 'edit', field: 'go_list', old: null, new: ownerName,
+    body: `Added to the Grand Opening list of ${ownerName}`, actor, at, contactId: Number(contactId) });
+  return { list: 'added', owner: ownerName, decided };
 }

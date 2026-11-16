@@ -290,7 +290,8 @@ export async function stage2Load(db, rows, actor, { apply = false } = {}) {
     return { id, sender: String(r.sender), name: txt(r.name, 160), company: txt(r.company, 200), position: txt(r.position, 160),
       country: txt(r.country, 80), email: email ? email.toLowerCase() : null };
   });
-  const old = new Map((await db.prepare('SELECT ch_contact_id, sender, gone FROM tc_go_stage2').all()).map((r) => [r.ch_contact_id, r]));
+  // people added in Intake (ch_contact_id 'intake:<contact id>', patch 145) are not in the Client Hub split, so a reload leaves them be
+  const old = new Map((await db.prepare("SELECT ch_contact_id, sender, gone FROM tc_go_stage2 WHERE ch_contact_id NOT LIKE 'intake:%'").all()).map((r) => [r.ch_contact_id, r]));
   const counts = { rows: clean.length, perSender: Object.fromEntries(S2.map((s) => [s.code, clean.filter((r) => r.sender === s.code).length])),
     added: clean.filter((r) => !old.has(r.id)).length,
     moved: clean.filter((r) => old.has(r.id) && old.get(r.id).sender !== r.sender).length,

@@ -3493,6 +3493,8 @@ export const handle = async (req, res) => {
       const m = /^\/api\/tc\/companies\/(\d+)$/.exec(p);
       if (m && req.method === 'GET') {
         const c = await tc.getCompany(db, Number(m[1]));
+        // the Add contact form's "Grand Opening list" box: every list owner, pre-set to the one who has this company (patch 145)
+        if (c) c.goList = await tcmylist.listBox(db, c.id);
         return c ? json(res, 200, c) : json(res, 404, { error: 'not found' });
       }
     }
@@ -3584,7 +3586,11 @@ export const handle = async (req, res) => {
         const id = Number(edit[1]);
         const run = { edit: tc.editCompany, archive: tc.archiveCompany, contacts: tc.addContact, courses: tc.setCourseYear,
           activities: tc.logActivity, next: tc.setNext, 'info-sent': tc.markInfoSent }[edit[2]];
-        const out = ['archive', 'info-sent'].includes(edit[2]) ? await run(db, id, by) : await run(db, id, b, by);
+        // Add contact with a Grand Opening list picked (patch 145): the list must be a real one; the person goes on it in the same transaction
+        const goCode = edit[2] === 'contacts' ? tcmylist.checkListCode(b.goList) : '';
+        const out = ['archive', 'info-sent'].includes(edit[2]) ? await run(db, id, by)
+          : goCode ? await tc.addContact(db, id, b, by, (tx, x) => tcmylist.addContactToList(tx, { code: goCode, ...x }))
+          : await run(db, id, b, by);
         if (edit[2] === 'contacts' && out && out.id) await tcAddedNotify(req, [{ kind: 'contact', companyId: id, contactId: out.id }]);
         return json(res, 200, out);
       }

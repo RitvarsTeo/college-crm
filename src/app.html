@@ -2707,6 +2707,8 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tcml-p{display:block;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--rule2);padding:6px 0;font:inherit;color:var(--ink);cursor:pointer}
   html.ui-c .tcml-p b{display:block;font-size:14px;line-height:1.25;font-weight:650} html.ui-c .tcml-p span{display:block;color:var(--t3);font-size:12.5px;font-weight:600;line-height:1.3}
   html.ui-c .tcml-p.out b, html.ui-c .tcml-p.out span{opacity:.45;text-decoration:line-through}
+  html.ui-c .tcml-p .tcml-new{font-style:normal;font-size:12px;font-weight:700;color:var(--c-sis);background:color-mix(in srgb,var(--c-sis) 12%,transparent);border-radius:4px;padding:0 5px;margin-left:4px}
+  html.ui-c .tc-knote{color:var(--c-sis);font-size:13px;font-weight:600}
   html.ui-c .tcml-yn{display:flex;gap:6px} html.ui-c .tcml-yn .btn{flex:1;justify-content:center}
   html.ui-c .tcml-yn .btn.btn{background:var(--surface);color:var(--ink);border:1.5px solid var(--rule);box-shadow:none}
   html.ui-c .tcml-yn .btn.btn.yes[aria-pressed="true"]{background:var(--btn-bg);color:#fff;border-color:var(--btn-bg)}
@@ -11973,7 +11975,7 @@ const tcPicValue = (c) => (c.picAccount ? c.picAccount.value : c.pic || '');
 let T_CO = null; let T_EDIT = false; let T_LOG_ALL = false;
 const T_LOG_FIRST = 15;   // round 2, 20.10.2026: a long log shows its latest 15 and Show all, so a phone reaches the details
 async function viewTcCompany(id) {
-  if (!T_CO || T_CO.id !== id) { T_EDIT = false; T_LOG_ALL = false; T_CO_RSVP = null; T_CO_MK = null; T_CO_FAM = null; }
+  if (!T_CO || T_CO.id !== id) { T_EDIT = false; T_LOG_ALL = false; T_CO_RSVP = null; T_CO_MK = null; T_CO_FAM = null; TC_KNOTE = ''; }
   T_CO = await api('/api/tc/companies/' + Number(id));
   tcDrawCompany();
   if (T_OPEN_CONTACT) { const k = T_OPEN_CONTACT; T_OPEN_CONTACT = null; tcContactOpen(k); }
@@ -12247,7 +12249,9 @@ function tcDrawCompany() {
       <div id="tcAddContact" class="c-pad" hidden><div class="c-form c-form1">
         <div><label for="tckName">Name</label><input id="tckName"></div><div><label for="tckPos">Position</label><input id="tckPos"></div>
         <div><label for="tckEmail">Email</label><input id="tckEmail" type="email"></div><div><label for="tckPhone">Phone</label><input id="tckPhone"></div>
-        <div id="tckErr" class="c-wide"></div><div class="c-wide c-row-acts"><button class="btn sm" onclick="tcAddContact()">Save contact</button></div></div></div></div>`;
+        ${tcGoListBox(c)}
+        <div id="tckErr" class="c-wide"></div><div class="c-wide c-row-acts"><button class="btn sm" onclick="tcAddContact()">Save contact</button></div></div></div>
+      ${TC_KNOTE ? `<div class="c-pad tc-knote" role="status">${esc(TC_KNOTE)}</div>` : ''}</div>`;
   const courses = `<div class="c-sheet c-facts"><h3>Courses per year<b>${Number(c.delegates)}</b></h3>
       ${c.courses.length ? `<table class="ktable tc-courses"><thead><tr><th>Year</th><th>Trained</th><th>Courses</th></tr></thead><tbody>${c.courses.map((k) => `<tr title="${esc(k.raw || '')}"><td>${Number(k.year)}</td><td>${k.attendees == null ? '?' : Number(k.attendees)}</td><td>${esc(k.codes)}</td></tr>`).join('')}</tbody></table>` : '<div class="c-empty">No course recorded.</div>'}
       <div class="c-pad"><div class="c-form tc-yearform">
@@ -12347,9 +12351,23 @@ async function tcDone(taskId) {
   try { await post(`/api/tc/tasks/${Number(taskId)}/done`, { outcome: $('#tcdOut').value, nextDue: $('#tcdNext').value || null }); closeModal(); await tcReload(); }
   catch (e) { tcErr('#tcdErr', e.message); }
 }
+// GRAND OPENING LIST ON ADD CONTACT (Client Hub step 4, his pick "Yes, A, build it", 16.11.2026): one box under the fields, pre-set
+// to the list owner who already has this company; Save contact also puts the person on that owner's list under this company.
+let TC_KNOTE = '';
+function tcGoListBox(c) {
+  const L = c.goList;
+  if (!L || !L.options || !L.options.length) return '';
+  const opt = (v, t) => `<option value="${esc(v)}"${(L.has || '') === v ? ' selected' : ''}>${esc(t)}</option>`;
+  return `<div class="c-wide"><label for="tckGo">Grand Opening list</label><select id="tckGo">${L.options.map((o) => opt(o.code, o.name + (o.code === L.has ? ' (has this company)' : ''))).join('')}${opt('', 'Not on a list')}</select></div>`;
+}
 async function tcAddContact() {
   const v = (id) => ($(id) || {}).value || '';
-  try { await post(`/api/tc/companies/${Number(T_CO.id)}/contacts`, { name: v('#tckName'), position: v('#tckPos'), email: v('#tckEmail'), phone: v('#tckPhone') }); await tcReload(); }
+  try {
+    const r = await post(`/api/tc/companies/${Number(T_CO.id)}/contacts`, { name: v('#tckName'), position: v('#tckPos'), email: v('#tckEmail'), phone: v('#tckPhone'), goList: v('#tckGo') });
+    TC_KNOTE = r && r.list === 'added' ? `Added to the Grand Opening list of ${r.owner}, under this company: still to decide.`
+      : r && r.list === 'already' ? `This email is already on the Grand Opening list of ${r.owner}, so it was not added twice.` : '';
+    await tcReload();
+  }
   catch (e) { tcErr('#tckErr', e.message); }
 }
 async function tcArchiveContact(id) {
@@ -13048,12 +13066,16 @@ function mlView(base, W) {
     const to = W.moves[p.id] && byKey.has(W.moves[p.id]) ? W.moves[p.id] : g.key;
     byKey.get(to).people.push({ ...p, from: to !== g.key ? g.key : null });
   }
-  const out = new Set(W.out);
+  const out = new Set(W.out), settled = new Set(W.settled || []);
   for (const g of groups) {
     const pk = W.picks[g.key] || {};
     g.decision = pk.decision || null; g.way = g.decision === 'invite' ? pk.way || null : null;
-    // an Invite reaches somebody only once its way is picked: until then its people are still to decide (the audit, 12.11.2026)
-    for (const p of g.people) { p.out = out.has(p.id); p.decision = g.decision === 'invite' ? (g.way ? (p.out ? 'no' : 'invite') : null) : g.decision === 'no' ? 'no' : null; }
+    // an Invite reaches somebody only once its way is picked: until then its people are still to decide (the audit, 12.11.2026);
+    // a person added from the company page after the company was decided waits for Done (patch 145, 16.11.2026)
+    for (const p of g.people) {
+      p.out = out.has(p.id); p.waiting = Boolean(p.fresh) && !settled.has(p.id);
+      p.decision = p.waiting ? null : g.decision === 'invite' ? (g.way ? (p.out ? 'no' : 'invite') : null) : g.decision === 'no' ? 'no' : null;
+    }
   }
   const all = groups.flatMap((g) => g.people);
   return { groups: groups.filter((g) => g.people.length), figures: { todo: all.filter((p) => !p.decision).length, invite: all.filter((p) => p.decision === 'invite').length, no: all.filter((p) => p.decision === 'no').length } };
@@ -13065,6 +13087,7 @@ function mlApply(W, a) {
   if (a.type === 'way') n.picks[a.key] = { decision: 'invite', way: a.way };
   if (a.type === 'out') n.out = n.out.includes(a.id) ? n.out.filter((x) => x !== a.id) : [...n.out, a.id];
   if (a.type === 'move') { if (a.home === a.key) delete n.moves[a.id]; else n.moves[a.id] = a.key; }
+  if (a.type === 'settle') n.settled = [...new Set([...(n.settled || []), ...a.ids])];
   return n;
 }
 /** The same state whatever the order it was written in (a draft equal to what is saved is no unsaved change). */
@@ -13074,7 +13097,8 @@ function mlSame(a, b) {
     for (const k of Object.keys((w && w.picks) || {}).sort()) { const p = w.picks[k] || {}; if (p.decision) picks[k] = { decision: p.decision, way: p.decision === 'invite' ? p.way || null : null }; }
     const moves = {};
     for (const k of Object.keys((w && w.moves) || {}).sort()) moves[k] = w.moves[k];
-    return JSON.stringify({ picks, out: [...new Set(((w && w.out) || []).map(Number))].sort((x, y) => x - y), moves });
+    return JSON.stringify({ picks, out: [...new Set(((w && w.out) || []).map(Number))].sort((x, y) => x - y), moves,
+      settled: [...new Set(((w && w.settled) || []).map(Number))].sort((x, y) => x - y) });
   };
   return norm(a) === norm(b);
 }
@@ -13099,7 +13123,7 @@ async function viewTcMyList(code) {
   T_ML.W = mlClone(T_ML.saved);
   // the editor's own draft, made on this saved version, comes back; one equal to what is saved is no unsaved change
   if (base.draft && !mlSame(base.draft.state, T_ML.saved)) {
-    T_ML.W = { picks: base.draft.state.picks || {}, out: base.draft.state.out || [], moves: base.draft.state.moves || {} };
+    T_ML.W = { picks: base.draft.state.picks || {}, out: base.draft.state.out || [], moves: base.draft.state.moves || {}, settled: base.draft.state.settled || [] };
     T_ML.dirty = true; T_ML.status = 'restored'; T_ML.statusAt = base.draft.at; T_ML.lastDraft = JSON.stringify(T_ML.W);
   }
   tcMlDraw();
@@ -13108,7 +13132,7 @@ async function viewTcMyList(code) {
 function tcMlStateOf(base) {
   const picks = {};
   for (const g of base.groups) if (g.decision || g.way) picks[g.key] = { decision: g.decision, way: g.way };
-  return { picks, out: base.groups.flatMap((g) => g.people.filter((p) => p.out).map((p) => p.id)), moves: {} };
+  return { picks, out: base.groups.flatMap((g) => g.people.filter((p) => p.out).map((p) => p.id)), moves: {}, settled: [] };
 }
 function tcMlStatus() {
   const S = T_ML;
@@ -13127,9 +13151,10 @@ function tcMlDraw() {
   const narrow = tcMlNarrow();
   const targets = T_ML.base.groups.filter((g) => g.intake).sort((a, b) => a.name.localeCompare(b.name, 'lv'));
   const tile = (g) => {
-    const open = T_ML.open.has(g.key) || (Boolean(T_ML.q) && mlPersonHit(g, T_ML.q)), left = g.people.filter((p) => p.out).length;
-    const count = g.decision === 'invite' && left ? `${tcN(g.people.length - left)} of ${tcN(g.people.length)} people` : `${tcN(g.people.length)} ${g.people.length === 1 ? 'person' : 'people'}`;
-    const person = (p) => `<button type="button" class="tcml-p${p.out ? ' out' : ''}${p.from || p.moved ? ' moved' : ''}"${narrow ? '' : ` draggable="true" ondragstart="event.dataTransfer.setData('text/plain', String(${Number(p.id)}))"`} onclick="tcMlDo({ type: 'out', id: ${Number(p.id)} })"><b>${esc(p.label)}</b>${p.position ? `<span>${esc(p.position)}</span>` : ''}</button>`
+    const open = T_ML.open.has(g.key) || (Boolean(T_ML.q) && mlPersonHit(g, T_ML.q)), left = g.people.filter((p) => p.out).length, waiting = g.people.filter((p) => p.waiting).length;
+    const count = (g.decision === 'invite' && left ? `${tcN(g.people.length - left)} of ${tcN(g.people.length)} people` : `${tcN(g.people.length)} ${g.people.length === 1 ? 'person' : 'people'}`)
+      + (waiting ? ` · ${tcN(waiting)} new` : '');
+    const person = (p) => `<button type="button" class="tcml-p${p.out ? ' out' : ''}${p.from || p.moved ? ' moved' : ''}"${narrow ? '' : ` draggable="true" ondragstart="event.dataTransfer.setData('text/plain', String(${Number(p.id)}))"`} onclick="tcMlDo({ type: 'out', id: ${Number(p.id)} })"><b>${esc(p.label)}${p.waiting ? ' <em class="tcml-new">New</em>' : ''}</b>${p.position ? `<span>${esc(p.position)}</span>` : ''}</button>`
       + (narrow ? `<select class="tcml-mv" aria-label="Move to another company" onchange="tcMlMoveTo(${Number(p.id)}, this.value)"><option value="">Move to…</option>${targets.filter((o) => o.key !== g.key).map((o) => `<option value="${esc(o.key)}">${esc(o.name)}</option>`).join('')}</select>` : '');
     const ppl = open ? `<div class="tcml-ppl">${g.people.map(person).join('')}</div>` : '';
     const how = g.decision === 'invite' ? `${g.way ? '' : '<div class="tcml-pick">Pick a way</div>'}<div class="tcml-how${g.way ? '' : ' need'}">${TCML_WAYS.map(([w, t]) => `<button type="button" aria-pressed="${g.way === w}" onclick="tcMlDo({ type: 'way', key: ${esc(JSON.stringify(String(g.key)))}, way: ${esc(JSON.stringify(String(w)))} })">${t}</button>`).join('')}</div>` : '';
@@ -13143,7 +13168,7 @@ function tcMlDraw() {
     return `<div class="tcml-t${g.decision === 'invite' ? ' inv' : g.decision === 'no' ? ' no' : ''}" data-k="${esc(g.key)}"${drop}><b>${esc(g.name)}</b><small>${count}${g.country ? ' · ' + esc(g.country) : ''}</small>
       <button type="button" class="tcml-fold" aria-expanded="${open}" onclick="tcMlFold(${esc(JSON.stringify(String(g.key)))})">${open ? 'Hide people ▴' : 'Show people ▾'}</button>${ppl}
       <div class="tcml-yn"><button type="button" class="btn sm yes" aria-pressed="${g.decision === 'invite'}" onclick="tcMlDo({ type: 'decide', key: ${esc(JSON.stringify(String(g.key)))}, decision: 'invite' })">Invite</button><button type="button" class="btn sm nay" aria-pressed="${g.decision === 'no'}" onclick="tcMlDo({ type: 'decide', key: ${esc(JSON.stringify(String(g.key)))}, decision: 'no' })">No</button></div>${how}
-      <button type="button" class="btn tcml-donebtn" ${mlDone(g) ? '' : 'disabled'} onclick="tcMlFinish(${esc(JSON.stringify(String(g.key)))})">Done</button></div>`;
+      <button type="button" class="btn tcml-donebtn" ${mlDecided(g) ? '' : 'disabled'} onclick="tcMlFinish(${esc(JSON.stringify(String(g.key)))})">Done</button></div>`;
   };
   const shown = tcMlShown(V.groups);
   // a refused Save says why on the page, never in a browser box (the audit, 12.11.2026)
@@ -13177,7 +13202,9 @@ function tcMlFold(key) { if (T_ML.open.has(key)) T_ML.open.delete(key); else T_M
 // decision is complete: No, or Invite with a way) folds it to its result (Invited · Digital · 9 of 10 people / Not invited), the
 // Invite or No figure ticks, and the next company still to decide opens and comes into view. Change opens a finished one again.
 // A company already complete when the list loads shows its result. All of it is part of the unsaved changes until Save.
-const mlDone = (g) => g.decision === 'no' || (g.decision === 'invite' && Boolean(g.way));
+const mlDecided = (g) => g.decision === 'no' || (g.decision === 'invite' && Boolean(g.way));
+// a company with a new person still waiting (patch 145) shows open, with its decision, until Done settles the new person
+const mlDone = (g) => mlDecided(g) && !g.people.some((p) => p.waiting);
 function tcMlDo(a) {
   if (!T_ML) return;
   if (a.type === 'decide' || a.type === 'way') { T_ML.edit.add(a.key); T_ML.open.add(a.key); }   // stays open until Done
@@ -13189,8 +13216,18 @@ function tcMlDo(a) {
 }
 function tcMlFinish(key) {
   if (!T_ML) return;
-  const groups = mlView(T_ML.base, T_ML.W).groups, g = groups.find((x) => x.key === key);
-  if (!g || !mlDone(g)) return;
+  let groups = mlView(T_ML.base, T_ML.W).groups, g = groups.find((x) => x.key === key);
+  if (!g || !mlDecided(g)) return;
+  // Done on a company with a new person: the new person now follows the company's decision (part of the unsaved changes, Undo works)
+  const waiting = g.people.filter((p) => p.waiting).map((p) => p.id);
+  if (waiting.length) {
+    T_ML.undo.push(mlClone(T_ML.W));
+    T_ML.W = mlApply(T_ML.W, { type: 'settle', ids: waiting });
+    T_ML.dirty = !mlSame(T_ML.W, T_ML.saved); T_ML.error = '';
+    if (T_ML.status === 'saved' || T_ML.status === 'restored') T_ML.status = '';
+    tcMlAutosaveSoon();
+    groups = mlView(T_ML.base, T_ML.W).groups; g = groups.find((x) => x.key === key);
+  }
   T_ML.edit.delete(key); T_ML.open.delete(key); T_ML.bump = g.decision === 'no' ? 'no' : 'invite'; T_ML.next = '';
   const shown = tcMlShown(groups), at = shown.findIndex((x) => x.key === key);
   const next = [...shown.slice(at + 1), ...shown.slice(0, Math.max(at, 0))].find((x) => !mlDone(x));

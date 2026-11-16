@@ -959,6 +959,16 @@ CREATE TABLE IF NOT EXISTS tc_go_people_out (
   set_at TEXT NOT NULL,
   set_by TEXT
 );
+-- 16.11.2026 (patch 145): a person added from a company page onto a list where that company was already decided. The company's
+-- Invite or No stays; this person is still to decide until the list owner presses Done on that company and saves (settled_at).
+CREATE TABLE IF NOT EXISTS tc_go_people_new (
+  stage2_id BIGINT PRIMARY KEY,    -- tc_go_stage2.id
+  sender TEXT NOT NULL,
+  added_at TEXT NOT NULL,
+  added_by TEXT,
+  settled_at TEXT,
+  settled_by TEXT
+);
 -- every person's result after each change, kept (never updated, never deleted): who, what, when, by whom
 CREATE TABLE IF NOT EXISTS tc_go_decision_log (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
