@@ -2740,6 +2740,14 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tcml-yn .btn.btn.nay[aria-pressed="true"]{background:#5b6472;color:#fff;border-color:#5b6472}
   html.ui-c .tcml-pick{font-weight:700;color:#835c12;font-size:13px} html.ui-c .tcml-how.need button{border-color:#e0b862}
   html.ui-c .tcml-p .tcml-pc{font-style:normal;font-size:12px;font-weight:700;color:var(--t2);background:var(--rule2);border-radius:4px;padding:0 5px;margin-left:4px}
+  html.ui-c .tcpo{border:2px solid #29a8df;border-radius:12px;background:var(--surface);padding:14px 16px;margin:0 0 16px} html.ui-c #view .tcpo h2{font-size:18px;margin:0 0 10px;text-transform:none;letter-spacing:0;font-weight:700;color:var(--ink)}
+  html.ui-c .tcpo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px} html.ui-c .tcpo-c{border:1px solid var(--rule);border-radius:10px;padding:10px 12px}
+  html.ui-c .tcpo-c b{display:block;font-size:14px} html.ui-c .tcpo-c span{display:block;font-size:12.5px;color:var(--t3)} html.ui-c .tcpo-from{font-size:12px;font-weight:600;color:var(--c-sis);margin:6px 0 8px}
+  html.ui-c .tcpo-btns{display:flex;gap:8px} html.ui-c .tcpo-btns .btn{flex:1}
+  html.ui-c .tcpo-link{display:inline-block;align-self:flex-start;text-align:left;width:auto;font:inherit;font-size:12px;font-weight:600;color:var(--c-sis);background:none;border:0;padding:0;margin:0 0 6px;text-decoration:underline;cursor:pointer}
+  html.ui-c .tcpo-pick{border:1px solid var(--rule);border-radius:8px;padding:8px;margin:0 0 8px} html.ui-c .tcpo-pick legend{font-size:12.5px;font-weight:600;padding:0 4px}
+  html.ui-c .tcpo-pick label{display:flex;gap:8px;align-items:center;justify-content:flex-start;font-size:13px;font-weight:500;padding:3px 0;margin:0;text-align:left;color:var(--ink)} html.ui-c .tcpo-pick input[type=radio]{width:auto;height:auto;margin:0;flex:none} html.ui-c .tcpo-pick label.off{color:var(--t3);justify-content:space-between}
+  html.ui-c .tcml-p .tcpo-wait{font-style:normal;font-size:11.5px;font-weight:700;color:#7a5a00;background:#fff3cf;border-radius:4px;padding:0 5px;margin-left:4px}
   html.ui-c .tcml-addmail{display:flex;gap:6px;margin:0 0 6px} html.ui-c .tcml-addmail input{flex:1;min-width:0;font:inherit;font-size:13px;border:1px solid var(--rule);border-radius:8px;padding:5px 8px;background:var(--surface);color:var(--ink)}
   html.ui-c .tcml-mv{display:block;width:100%;margin:2px 0 6px;font:inherit;font-size:13px;border:1px solid var(--rule);border-radius:8px;padding:6px 8px;background:var(--surface);color:var(--ink)}
   html.ui-c .tcml-how{display:flex;gap:6px} html.ui-c .tcml-how button{flex:1;font:inherit;font-weight:700;font-size:13px;padding:8px 4px;border-radius:8px;border:1.5px solid var(--rule);background:var(--surface-2);color:var(--ink);cursor:pointer}
@@ -3490,7 +3498,7 @@ svg .m-flag-mark{transform-origin:0 100%}
     linear-gradient(90deg, rgba(30,155,215,.05) 1px, transparent 1px); background-size: 24px 24px; }
   /* Page titles keep their own size: the start tiles, Applications, the one-card title, the person's name, the Client
      book's title and the Grand Opening stage titles. */
-  html.ui-c #view h2:not(.dl-tile h2, .c-apps-head h2, .one h2, .c-card h2, .tct-h, .tcgo-stage), html.ui-c #view h3 { letter-spacing: .14em; text-transform: uppercase; font-size: 11.5px; font-weight: 700; color: var(--ink, #0f1b35); }
+  html.ui-c #view h2:not(.dl-tile h2, .c-apps-head h2, .one h2, .c-card h2, .tct-h, .tcgo-stage, .tcpo h2), html.ui-c #view h3 { letter-spacing: .14em; text-transform: uppercase; font-size: 11.5px; font-weight: 700; color: var(--ink, #0f1b35); }
   /* LAST YEAR AROUND THIS TIME (05.11.2026): quieter than the figure, one short line */
   html.ui-c #view .kly{display:block;margin-top:4px;font-size:12px;font-weight:500;color:var(--t3);letter-spacing:0;text-transform:none}
   /* THE WAVE, MEASURED (05.11.2026) */
@@ -13261,7 +13269,9 @@ function tcMlDraw() {
     const open = T_ML.open.has(g.key) || (Boolean(T_ML.q) && mlPersonHit(g, T_ML.q)), left = g.people.filter((p) => p.out).length, waiting = g.people.filter((p) => p.waiting).length;
     const count = (g.decision === 'invite' && left ? `${tcN(g.people.length - left)} of ${tcN(g.people.length)} people` : `${tcN(g.people.length)} ${g.people.length === 1 ? 'person' : 'people'}`)
       + (waiting ? ` · ${tcN(waiting)} new` : '');
-    const person = (p) => `<button type="button" class="tcml-p${p.out ? ' out' : ''}${p.from || p.moved ? ' moved' : ''}"${narrow ? '' : ` draggable="true" ondragstart="event.dataTransfer.setData('text/plain', String(${Number(p.id)}))"`} onclick="tcMlDo({ type: 'out', id: ${Number(p.id)} })"><b>${esc(p.label)}${p.waiting ? ' <em class="tcml-new">New</em>' : ''}${p.postcard ? ' <em class="tcml-pc">Postcard only</em>' : ''}</b>${p.position ? `<span>${esc(p.position)}</span>` : ''}</button>`
+    const person = (p) => `<button type="button" class="tcml-p${p.out ? ' out' : ''}${p.from || p.moved ? ' moved' : ''}"${narrow ? '' : ` draggable="true" ondragstart="event.dataTransfer.setData('text/plain', String(${Number(p.id)}))"`} onclick="tcMlDo({ type: 'out', id: ${Number(p.id)} })"><b>${esc(p.label)}${p.waiting ? ' <em class="tcml-new">New</em>' : ''}${p.postcard ? ' <em class="tcml-pc">Postcard only</em>' : ''}${p.passedTo ? ` <em class="tcpo-wait">Passed to ${esc(p.passedTo)}, waiting</em>` : ''}</b>${p.position ? `<span>${esc(p.position)}</span>` : ''}</button>`
+      // PASS ON (patch 152): a person this owner does not know goes to another list owner
+      + (p.passedTo ? '' : T_ML.po === p.id ? tcPoPick(p) : `<button type="button" class="tcpo-link" onclick="T_ML.po=${Number(p.id)};tcMlDraw()">Pass on</button>`)
       // no email (patch 149): Postcard only until somebody adds the email here
       + (p.postcard ? `<form class="tcml-addmail" onsubmit="tcMlAddEmail(event, ${Number(p.id)})"><input type="email" required placeholder="Add email" aria-label="Add email for ${esc(p.label)}" autocomplete="off"><button type="submit" class="btn sm ghost">Save email</button></form>` : '')
       + (narrow ? `<select class="tcml-mv" aria-label="Move to another company" onchange="tcMlMoveTo(${Number(p.id)}, this.value)"><option value="">Move to…</option>${targets.filter((o) => o.key !== g.key).map((o) => `<option value="${esc(o.key)}">${esc(o.name)}</option>`).join('')}</select>` : '');
@@ -13289,6 +13299,7 @@ function tcMlDraw() {
       <button type="button" class="btn" ${T_ML.dirty && T_ML.status !== 'saving' ? '' : 'disabled'} onclick="tcMlSave()">Save</button>
       <a class="btn ghost" href="#/tc/postcards">Postcard list</a></div></div>
     ${note}${lists}<div class="tcml-figs">${fig('all', F.todo + F.invite + F.no, 'All')}${fig('todo', F.todo, 'Still to decide')}${fig('invite', F.invite, 'Invite')}${fig('no', F.no, 'No')}</div>
+    ${tcPoSection()}
     <div class="tcml-find"><input id="tcMlQ" class="c-search" type="search" placeholder="Search a company, a person or an email" aria-label="Search the list" autocomplete="off" value="${esc(T_ML.q)}" oninput="tcMlSearch(this.value)">${T_ML.q ? `<span class="tcml-found">${tcN(shown.length)} ${shown.length === 1 ? 'company' : 'companies'}</span>` : ''}</div>
     <div class="tcml-tiles">${shown.length ? tcMlLetters(shown, tile) : (T_ML.q ? '<p class="tcml-none">No company or person on this list matches.</p>' : '')}</div>`;
 }
@@ -13428,6 +13439,44 @@ async function tcMlAddEmail(ev, id) {
     T_ML.error = '';
   } catch (e) { T_ML.error = e.message; }
   tcMlDraw();
+}
+// PASS ON (patch 152, 16.11.2026; src/tcgopass.js). The owner: "they have to accept of nominate further to some different manager,
+// you cant nominate a person who was already nominated before by anyone else for this contact. if no one wants the person, it goes to Dmitrijs!"
+function tcPoLeft(p, holder) {
+  const seen = new Set([holder || T_ML.code, ...(p.involved || [])]);
+  return (T_ML.base.owners || []).filter((o) => !seen.has(o.code) && o.code !== T_ML.code);
+}
+function tcPoPick(p, holder) {
+  const left = tcPoLeft(p, holder), seen = (T_ML.base.owners || []).filter((o) => !left.includes(o) && o.code !== T_ML.code);
+  const name = esc(p.label || 'this person');
+  const opts = left.map((o, i) => `<label><input type="radio" name="tcpo${Number(p.id)}" value="${esc(o.code)}"${i === 0 ? ' checked' : ''}> ${esc(o.name)}</label>`).join('')
+    + seen.map((o) => `<label class="off"><span>${esc(o.name)}</span><span>already had ${name}</span></label>`).join('');
+  return `<fieldset class="tcpo-pick"><legend>Pass ${name} on to</legend>${left.length ? opts : `<label>Nobody else is left: ${name} goes to Dmitrijs Semjonovs</label>`}
+    <div class="tcpo-btns"><button type="button" class="btn sm" onclick="tcPoPass(${Number(p.id)})">Pass on</button><button type="button" class="btn sm ghost" onclick="T_ML.po=null;tcMlDraw()">Cancel</button></div></fieldset>`;
+}
+function tcPoSection() {
+  const L = (T_ML.base.passedToYou || []);
+  if (!L.length) return '';
+  const card = (x) => `<div class="tcpo-c"><b>${esc(x.label)}</b><span>${esc([x.position, x.company].filter(Boolean).join(' · '))}</span>
+    <div class="tcpo-from">Passed on by ${esc(x.chain.join(', then '))} · ${esc(x.when)}</div>
+    ${T_ML.po === 'in' + x.id ? tcPoPick({ id: x.id, label: x.label, involved: x.involved || [] }, x.holder) : `<div class="tcpo-btns"><button type="button" class="btn sm" onclick="tcPoAccept(${Number(x.id)})">Accept</button><button type="button" class="btn sm ghost" onclick="T_ML.po='in${Number(x.id)}';tcMlDraw()">Pass on</button></div>`}</div>`;
+  return `<section class="tcpo" aria-label="Passed to you"><h2>Passed to you · ${tcN(L.length)}</h2><div class="tcpo-grid">${L.map(card).join('')}</div></section>`;
+}
+async function tcPoPass(id) {
+  const box = document.querySelector(`input[name="tcpo${Number(id)}"]:checked`);
+  try {
+    await post('/api/tc/go/mylist/pass', { sender: T_ML.code, id, to: box ? box.value : '' });
+    T_ML.po = null; T_ML.error = '';
+    if (T_ML.dirty) await tcMlAutosave();
+    await tcMlReload();
+  } catch (e) { T_ML.error = e.message; tcMlDraw(); }
+}
+async function tcPoAccept(id) {
+  try {
+    await post('/api/tc/go/mylist/accept', { sender: T_ML.code, id });
+    if (T_ML.dirty) await tcMlAutosave();   // the list reloads with the person on it; unsaved changes come back from the draft
+    await tcMlReload();
+  } catch (e) { T_ML.error = e.message; tcMlDraw(); }
 }
 async function tcMlReload() { const code = T_ML.code; T_ML = null; await viewTcMyList(code); }
 async function tcMlAutosave() {

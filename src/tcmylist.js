@@ -16,6 +16,7 @@
 import { TC, TcInputError, nameKey, logTcActivity } from './tc.js';
 import * as cards from './tccards.js';
 import { splitNew } from './tcgosplit.js';
+import { passState } from './tcgopass.js';
 
 /** Someone else saved the list after this page loaded it. */
 export class MlConflict extends Error { constructor(msg, by, at) { super(msg); this.by = by; this.at = at; } }
@@ -109,7 +110,11 @@ export async function myList(db, code, editor = '') {
     const d = await db.prepare('SELECT state, base, saved_at, saved_by FROM tc_go_drafts WHERE sender = ? AND editor = ?').get(String(code), String(editor).toLowerCase());
     if (d && d.state && Number(d.base) === version.id) { try { draft = { state: JSON.parse(d.state), at: d.saved_at, by: d.saved_by || '' }; } catch (e) { draft = null; } }
   }
-  return { code, name: (S2().find((s) => s.code === code) || {}).name || code, people: all.length, companies: list.length,
+  // PASS ON (patch 152): who is passed to this list, who on it is passed on and waiting, and who each person was with before
+  const P = await passState(db, code);
+  for (const p of all) { if (P.waiting[p.id]) p.passedTo = P.waiting[p.id]; if (P.involved[p.id]) p.involved = P.involved[p.id]; }
+  return { code, name: (S2().find((s) => s.code === code) || {}).name || code, people: all.length, companies: list.length, passedToYou: P.passedToYou,
+    owners: S2().map((s) => ({ code: s.code, name: s.name || s.code })),
     figures: { todo: all.filter((p) => !p.decision).length, invite: all.filter((p) => p.decision === 'invite').length, no: all.filter((p) => p.decision === 'no').length },
     groups: list, version, draft };
 }
@@ -560,4 +565,10 @@ export async function cardRows(db, codes) {
     }
   }
   return rows.sort((a, b) => (a.place ? 0 : 1) - (b.place ? 0 : 1) || cards.placeOrder(a.place, b.place) || a.company.localeCompare(b.company, 'lv'));
+}
+
+/** What is still open on a list, for the deadline reminders (patch 152): companies with anyone still to decide, people passed to it. */
+export async function openCounts(db, code) {
+  const L = await myList(db, code);
+  return { companies: L.groups.filter((g) => g.people.some((p) => !p.decision)).length, passed: (L.passedToYou || []).length };
 }

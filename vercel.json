@@ -103,6 +103,10 @@
     {
       "path": "/api/cron/sheet-pull",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/go-reminders",
+      "schedule": "*/10 6-15 * * *"
     }
   ]
 }

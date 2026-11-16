@@ -74,6 +74,7 @@ import * as tcreview from './tcreview.js';
 import * as tcgo from './tcgo.js';
 import * as tcmylist from './tcmylist.js';
 import * as tcdoor from './tcdoor.js';
+import * as tcgopass from './tcgopass.js';
 import * as tcrsvp from './tcrsvp.js';
 import * as tcmr from './tcmr.js';
 import * as tcfam from './tcfam.js';
@@ -3837,6 +3838,20 @@ export const handle = async (req, res) => {
         if (e instanceof tc.TcInputError) return json(res, 400, { error: e.message });
         throw e;
       }
+    }
+    // PASS ON (patch 152, 16.11.2026; src/tcgopass.js): the owner of the list the person is on (or passed to), or an admin
+    if ((p === '/api/tc/go/mylist/pass' || p === '/api/tc/go/mylist/accept') && req.method === 'POST') {
+      const me = await currentUser(req), admin = Boolean(await adminOf(req));
+      const b = await body(req), code = String(b.sender || '');
+      if (!tcmylist.mayOpen(me, admin, code)) return json(res, 403, { error: 'This list is not yours.' });
+      try {
+        const actor = await actorOf(req, b);
+        if (p.endsWith('/accept')) return json(res, 200, await tcgopass.accept(db, code, Number(b.id), actor));
+        const out = await tcgopass.passOn(db, code, Number(b.id), String(b.to || ''), actor);
+        // the email to whoever it went to, after the write; a failed email never undoes the pass
+        const sent = out.mail && out.mail.to ? await notify.sendMail(db, out.mail) : { ok: false, why: 'no address' };
+        return json(res, 200, { state: out.state, to: out.to, emailed: Boolean(sent && sent.ok) });
+      } catch (e) { if (e instanceof tc.TcInputError) return json(res, 400, { error: e.message }); throw e; }
     }
     // ADD EMAIL on a list (patch 149, 16.11.2026): a Postcard only person gets an email; the owner on their own list, an admin any
     if (p === '/api/tc/go/mylist/email' && req.method === 'POST') {

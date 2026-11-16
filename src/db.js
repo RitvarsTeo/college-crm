@@ -993,6 +993,31 @@ CREATE TABLE IF NOT EXISTS tc_go_people_new (
   settled_at TEXT,
   settled_by TEXT
 );
+-- PASS ON (patch 152, 16.11.2026; src/tcgopass.js): a list owner passes a person he does not know to another owner, who accepts or
+-- passes on; nobody left -> Dmitrijs Semjonovs. One row per step, never deleted: pending | accepted | passed | final
+CREATE TABLE IF NOT EXISTS tc_go_passes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  stage2_id BIGINT NOT NULL,       -- tc_go_stage2.id
+  from_sender TEXT NOT NULL,
+  to_sender TEXT NOT NULL,
+  state TEXT NOT NULL,
+  at TEXT NOT NULL,
+  by_name TEXT,
+  done_at TEXT,
+  done_by TEXT
+);
+CREATE INDEX IF NOT EXISTS tc_go_passes_row ON tc_go_passes (stage2_id);
+-- the deadline reminders each list owner got (patch 152): one row per owner and reminder, so none goes twice
+CREATE TABLE IF NOT EXISTS tc_go_reminders (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  sender TEXT NOT NULL,
+  kind TEXT NOT NULL,              -- day_before | last_call
+  sent_at TEXT NOT NULL,
+  companies INTEGER,
+  passed INTEGER,
+  result TEXT
+);
+CREATE UNIQUE INDEX IF NOT EXISTS tc_go_reminders_one ON tc_go_reminders (sender, kind);
 -- every person's result after each change, kept (never updated, never deleted): who, what, when, by whom
 CREATE TABLE IF NOT EXISTS tc_go_decision_log (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
