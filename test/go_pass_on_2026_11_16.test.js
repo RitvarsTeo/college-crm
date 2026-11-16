@@ -82,7 +82,7 @@ test('accepted into a company already decided on that list: the person is New th
   assert.equal(p.decision, null);
 });
 
-test('reminders: at most two per owner, 24 h before and the time his list still needs (1 min per company, at least 30)', async () => {
+test('reminders: at most two per owner, the morning before at 09:00 (his pick 16.11.2026) and the time his list still needs (1 min per company, at least 30)', async () => {
   const db = await openDb();
   const end = po.deadline();
   assert.equal(end.toISOString(), '2026-11-19T15:00:00.000Z', 'Thursday 19 November 17:00 Riga');
@@ -91,14 +91,15 @@ test('reminders: at most two per owner, 24 h before and the time his list still 
   const open = async (code) => (code === 'JS' ? { companies: 200, passed: 1 } : code === 'MC' ? { companies: 0, passed: 0 } : { companies: 5, passed: 0 });
   const sent = [];
   const send = async (m) => { sent.push(m); return { ok: true }; };
-  assert.equal((await po.sendReminders(db, open, send, new Date('2026-11-18T14:50:00Z'))).sent, 0, 'not yet');
-  const a = await po.sendReminders(db, open, send, new Date('2026-11-18T15:00:00Z'));
+  assert.equal((await po.sendReminders(db, open, send, new Date('2026-11-18T06:50:00Z'))).sent, 0, 'not yet: Wednesday 08:50 Riga');
+  assert.equal(po.dueTimes(end, 5).day_before.toISOString(), '2026-11-18T07:00:00.000Z', 'Wednesday 18 November 09:00 Riga');
+  const a = await po.sendReminders(db, open, send, new Date('2026-11-18T07:00:00Z'));
   assert.equal(a.sent, 5, 'everyone with something open; not MC');
   assert.ok(sent.every((m) => m.subject === 'Intake: tavs Grand Opening saraksts tiek slēgts rīt plkst. 17:00'));
   assert.equal(sent.find((m) => m.to === 'js@novikontas.org').text, 'Tavs Grand Opening saraksts tiek slēgts ceturtdien, 19. novembrī, plkst. 17:00.\n\n'
     + 'Vēl jāizlemj: 200 uzņēmumi\nNodoti tev: 1 cilvēks\n\nhttps://intake.novikontas.org/#/tc/mylist/JS\n\nŠī ir automātiska Intake ziņa.\n');
   assert.match(sent.find((m) => m.to !== 'js@novikontas.org').text, /Vēl jāizlemj: 5 uzņēmumi\n\nhttps/, 'nobody passed to him: no such line');
-  assert.equal((await po.sendReminders(db, open, send, new Date('2026-11-18T15:10:00Z'))).sent, 0, 'never twice');
+  assert.equal((await po.sendReminders(db, open, send, new Date('2026-11-18T15:10:00Z'))).sent, 0, 'never twice (also later that day)');
   const b = await po.sendReminders(db, open, send, new Date('2026-11-19T11:40:00Z'));
   assert.deepEqual(b.out.map((x) => x.code), ['JS'], 'the long list gets its last call first');
   const c = await po.sendReminders(db, open, send, new Date('2026-11-19T14:30:00Z'));

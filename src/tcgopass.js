@@ -127,10 +127,12 @@ export async function passState(db, code) {
 // ---------------------------------------------------------------- reminders --
 /** The deadline (config tc.json grandOpening.stage2.deadline), or null. */
 export const deadline = () => { const d = (((TC.grandOpening || {}).stage2 || {}).deadline) || ''; return d && !Number.isNaN(Date.parse(d)) ? new Date(d) : null; };
-/** When each reminder is due for an owner with `companies` still to decide: 24 hours before, and the time his list still needs
+/** When each reminder is due for an owner with `companies` still to decide: the morning before at 09:00, and the time his list still needs
  *  (one minute per company, at least 30 minutes) before the deadline. */
 export function dueTimes(end, companies) {
-  return { day_before: new Date(end.getTime() - 24 * 3600e3), last_call: new Date(end.getTime() - Math.max(30, Number(companies) || 0) * 60e3) };
+  // the first one the morning before, 09:00 (his pick 16.11.2026, not 24 hours before = 17:00, the end of the working day):
+  // a 17:00 deadline less 32 hours
+  return { day_before: new Date(end.getTime() - 32 * 3600e3), last_call: new Date(end.getTime() - Math.max(30, Number(companies) || 0) * 60e3) };
 }
 
 /** Run by the reminder cron: sends what is due, each at most once. `open(code)` = { companies, passed } still open on that list. */
