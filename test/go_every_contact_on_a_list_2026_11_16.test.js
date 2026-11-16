@@ -61,7 +61,7 @@ test('the plan: who goes where, who stays off and why; nothing written', async (
   assert.deepEqual(P.place.map((r) => [r.contactId, r.code]).sort(), [[ids.excel, 'JS'], [ids.noEmail, 'JS'], [ids.late, 'DS']].sort());
   assert.deepEqual(P.revive.map((r) => [r.contactId, r.code]), [[ids.dropped, 'MC']], 'back onto the list it was dropped from');
   const left = Object.fromEntries(P.left.map((r) => [r.contactId, r.label]));
-  assert.equal(left[ids.nobody], 'No list has this company yet');
+  assert.equal(left[ids.nobody], 'No course on record', 'no list has the company and no course: off, with that reason');
   assert.match(left[ids.dnI], /^Do not invite: A manager's decision$/);
   assert.match(left[ids.dead], /^Do not invite: /);
   assert.equal(left[ids.flagged], 'Waiting for approval');
@@ -123,7 +123,7 @@ test('the people off every list: grouped by reason, each with name and company',
   await ml.placeEveryone(db, 'Test Person');
   const G = await ml.leftOff(db);
   const by = Object.fromEntries(G.map((g) => [g.label, g.n]));
-  assert.equal(by['No list has this company yet'], 1);
+  assert.equal(by['No course on record'], 1);
   assert.equal(by['Waiting for approval'], 1);
   // 4: once Pēteris is on JS's list, his twin's address is on a list too: one address, one invitation
   assert.equal(G.reduce((a, g) => a + g.n, 0), 4);
@@ -170,4 +170,49 @@ test('company mailboxes stay off; one that is the only contact of its company wa
   assert.deepEqual(P.place.filter((r) => r.contactId === ids.riga).map((r) => r.code), ['JS'], 'with its mother, on JS\'s list');
   assert.equal((await ml.holders(db))[daughter], 'JS');
   assert.equal((await ml.holders(db))[none], undefined);
+});
+
+test('the companies no list has: recent clients only, C level to DS / AB, offshore to Alma, the person in charge, else the most similar list', async () => {
+  const db = await openDb();
+  await seed(db);
+  const co = async (name, extra = {}) => {
+    const id = Number((await db.prepare(`INSERT INTO tc_companies (name, name_key, country, pic_email, status, created_at) VALUES (?,?,?,?,?,?)`)
+      .run(name, nameKey(name), extra.country || 'Norway', extra.pic || null, 'not_contacted', at)).lastInsertRowid);
+    if (extra.area) await db.prepare('INSERT INTO tc_company_areas (company_id, area) VALUES (?,?)').run(id, extra.area);
+    if (extra.year) await db.prepare(`INSERT INTO tc_company_courses (company_id, year, attendees, source, recorded_at) VALUES (?,?,?,?,?)`).run(id, extra.year, extra.n ?? 2, 'excel_2026_10', at);
+    return id;
+  };
+  const kontakt = async (companyId, name, email, position = null) => Number((await db.prepare(`INSERT INTO tc_company_contacts (company_id, name, position, email, source, created_at)
+    VALUES (?,?,?,?,?,?)`).run(companyId, name, position, email, 'excel_2026_10', at)).lastInsertRowid);
+  const wind = await co('Northwind Example AS', { year: 2025 });
+  const opito = await co('Plainname Example AS', { year: 2024, area: 'OPITO' });
+  const old = await co('Oldtimer Example AS', { year: 2021 });
+  const zero = await co('Zero Example AS', { year: 2025, n: 0 });
+  const pic = await co('Picked Example SIA', { year: 2024, pic: 'mc@novikontas.org', country: 'Latvia' });
+  const dom = await co('Heldfast Example Bergen AS', { year: 2023 });   // the same email domain as Heldfast, on JS's list - but JS takes no new
+  const ids = {
+    wind: await kontakt(wind, 'Wenche Wind', 'wenche@northwind-example.no'),
+    ceo: await kontakt(wind, 'Carl Chief', 'carl@northwind-example.no', 'CEO'),
+    opito: await kontakt(opito, 'Odd Opito', 'odd@plainname-example.no'),
+    old: await kontakt(old, 'Olav Old', 'olav@oldtimer-example.no'),
+    zero: await kontakt(zero, 'Zara Zero', 'zara@zero-example.no'),
+    pic: await kontakt(pic, 'Pauls Pic', 'pauls@picked-example.lv'),
+    dom: await kontakt(dom, 'Dag Domain', 'dag@heldfast-example.com'),
+  };
+  const P = await ml.placement(db);
+  const to = Object.fromEntries(P.place.map((r) => [r.contactId, [r.code, r.why]]));
+  const left = Object.fromEntries(P.left.map((r) => [r.contactId, r.label]));
+  assert.deepEqual(to[ids.wind], ['Alma', 'Offshore / wind company']);
+  assert.equal(to[ids.ceo][1], 'CEO / MD / owner: our CEO or COO');
+  assert.ok(['DS', 'AB'].includes(to[ids.ceo][0]));
+  assert.equal(to[ids.opito][0], 'Alma', 'an OPITO area is offshore');
+  assert.equal(left[ids.old], 'No course since 2021');
+  assert.equal(left[ids.zero], 'No course on record', 'a year with 0 attendees is no course');
+  assert.deepEqual(to[ids.pic], ['MC', 'The person in charge Intake names for the company']);
+  assert.notEqual(to[ids.dom][0], 'JS', 'Jānis takes no new companies');
+  assert.ok(['DS', 'AB', 'Marcis', 'MC'].includes(to[ids.dom][0]));
+  const r = await ml.placeEveryone(db, 'Test Person');
+  assert.ok(r.byList.Alma >= 2);
+  const line = await db.prepare(`SELECT body FROM tc_activities WHERE body LIKE '%Offshore / wind company%'`).get();
+  assert.match(line.body, /^Added to the Grand Opening list of .+ \(Offshore \/ wind company\)$/, 'the reason is on the History line');
 });

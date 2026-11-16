@@ -12361,7 +12361,8 @@ function tcGoListBox(c) {
   const L = c.goList;
   if (!L || !L.options || !L.options.length) return '';
   const opt = (v, t) => `<option value="${esc(v)}"${(L.has || '') === v ? ' selected' : ''}>${esc(t)}</option>`;
-  return `<div class="c-wide"><label for="tckGo">Grand Opening list</label><select id="tckGo">${L.options.map((o) => opt(o.code, o.name + (o.code === L.has ? ' (has this company)' : ''))).join('')}${opt('', 'Not on a list')}</select></div>`;
+  // "Not on a list" only where no director has the company yet (patch 149: every contact on a list)
+  return `<div class="c-wide"><label for="tckGo">Grand Opening list</label><select id="tckGo">${L.options.map((o) => opt(o.code, o.name + (o.code === L.has ? ' (has this company)' : ''))).join('')}${L.has ? '' : opt('', 'Not on a list')}</select></div>`;
 }
 async function tcAddContact() {
   const v = (id) => ($(id) || {}).value || '';

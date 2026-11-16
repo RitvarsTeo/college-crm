@@ -14,6 +14,7 @@
 // (src/tcs2send.js), in person / post people make the postcard list. Every person's result after each Save is kept
 // (tc_go_decision_log), every move too (tc_go_moves). Admins open every list. Pure data functions; each takes the database first.
 import { TC, TcInputError, nameKey, logTcActivity } from './tc.js';
+import { splitNew } from './tcgosplit.js';
 
 /** Someone else saved the list after this page loaded it. */
 export class MlConflict extends Error { constructor(msg, by, at) { super(msg); this.by = by; this.at = at; } }
@@ -327,7 +328,8 @@ export async function addContactToList(tx, { code, company, contactId, f, actor,
 //   - dropped from a list once with no reason recorded (gone = 1, the 28.10 Client Hub reload): back on that same list
 //   - else: onto the list of the owner who already has the company (listHolding's rule), under that company. A company already
 //     decided (Invite or No) keeps its decision; the person is still to decide there until Done (patch 145's mechanism)
-//   - a company nobody has yet: stays off, counted as "No list has this company yet", until a list owner is given the company
+//   - a company nobody has yet: divided by his established rules (src/tcgosplit.js: recent clients only, C level to DS / AB,
+//     offshore to Alma, else the most similar list, evenly); a company with no course since 2023 stays off with that reason
 // A person with no email goes on the list too: the list shows them as Postcard only, with an Add email box.
 // placeEveryone runs after every import and every hand placing; the 16.11 backfill runs the same function once.
 // Added the same day (his words through Intake MASTER CONTROL):
@@ -410,10 +412,12 @@ export async function placement(db) {
   const has = await holders(db);
   const out = { on: 0, place: [], revive: [], left: [] };
   const planned = new Set();   // emails this run puts on a list: a second contact with one of them is the same address twice
+  const nobody = [];
   for (const k of contacts) {
     const email = String(k.email || '').trim().toLowerCase(), who = personKey(Number(k.company_id), k.name);
     if ((k.ch_contact_id && liveCh.has(k.ch_contact_id)) || (email && emails.has(email))) { out.on += 1; continue; }
-    const base = { contactId: Number(k.id), companyId: Number(k.company_id), company: k.co_name, name: k.name || '', email };
+    const base = { contactId: Number(k.id), companyId: Number(k.company_id), company: k.co_name, name: k.name || '', email, position: k.position || null,
+      ch: k.ch_contact_id || null, country: k.co_country && !/^total$/i.test(String(k.co_country).trim()) ? k.co_country : null };
     const m = markOf.get(Number(k.id)) || coMark.get(Number(k.company_id));
     if (m) { out.left.push({ ...base, reason: 'mark', kind: m.kind, label: (m.kind === 'hold' ? 'Hold: ' : 'Do not invite: ') + String(why.get(m.why) || m.why).replace(/^Hold: /, '') }); continue; }
     if (k.hidden_at || k.co_hidden) { out.left.push({ ...base, reason: 'approval', label: LEFT_WHY.approval }); continue; }
@@ -427,11 +431,18 @@ export async function placement(db) {
     const was = gone.get(k.ch_contact_id || 'intake:' + Number(k.id));
     if (was) { out.revive.push({ ...base, stage2Id: Number(was.id), code: was.sender }); if (email) planned.add(email); if (who) people.add(who); continue; }
     const code = has[Number(k.company_id)];
-    if (!code) { out.left.push({ ...base, reason: 'nobody', label: LEFT_WHY.nobody }); continue; }
+    if (!code) { nobody.push(base); continue; }
     if (email) planned.add(email);
     if (who) people.add(who);
-    out.place.push({ ...base, code, position: k.position || null, ch: k.ch_contact_id || null,
-      country: k.co_country && !/^total$/i.test(String(k.co_country).trim()) ? k.co_country : null });
+    out.place.push({ ...base, code });
+  }
+  // the companies no list has yet: divided by his established rules (src/tcgosplit.js), a whole family to one owner
+  if (nobody.length) {
+    const alias = { 'alma@novikontas.org': 'Alma' };   // the person-in-charge address Intake holds for Alma (his mailbox is alm@)
+    const picOwner = (mail) => alias[mail] || (S2().find((x) => String(x.email || '').toLowerCase() === mail) || {}).code || null;
+    const sp = await splitNew(db, nobody, out.place, { owners: S2().map((x) => x.code), mom: await mothers(db), picOwner });
+    out.place.push(...sp.place);
+    out.left.push(...sp.left);
   }
   return out;
 }
@@ -456,7 +467,7 @@ export async function placeEveryone(db, actor, at = nowIso()) {
         const ins = await tx.prepare(`INSERT INTO tc_go_stage2 (ch_contact_id, sender, name, company, position, country, email, gone, loaded_at, loaded_by)
           VALUES (?,?,?,?,?,?,?,0,?,?)`).run(ch, r.code, r.name || null, r.company, r.position, r.country, r.email || null, at, actor);
         if (decided(r.code, r.companyId)) await tx.prepare('INSERT INTO tc_go_people_new (stage2_id, sender, added_at, added_by) VALUES (?,?,?,?)').run(Number(ins.lastInsertRowid), r.code, at, actor);
-        await logTcActivity(tx, r.companyId, { kind: 'edit', field: 'go_list', old: null, new: owner(r.code), body: `Added to the Grand Opening list of ${owner(r.code)}`, actor, at, contactId: r.contactId });
+        await logTcActivity(tx, r.companyId, { kind: 'edit', field: 'go_list', old: null, new: owner(r.code), body: `Added to the Grand Opening list of ${owner(r.code)}` + (r.why ? ` (${r.why})` : ''), actor, at, contactId: r.contactId });
       }
     });
   }
