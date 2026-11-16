@@ -130,10 +130,8 @@ test('the people off every list: grouped by reason, each with name and company',
   assert.ok(G.every((g) => g.people.every((p) => p.company && p.companyId)));
 });
 
-test('one rule at add time: every import and hand placing runs it; the page shows the tag, the box and the list of the left-off', () => {
-  for (const call of ['tcimport.apply(db, files, opts, actor)', 'tcclienthub.apply(db, files, { hash: b.hash }, actor)', 'tcreview.place(db, b.items, actor)'])
-    assert.ok(SERVER.includes(call), call);
-  assert.equal((SERVER.match(/tcmylist\.placeEveryone\(db/g) || []).length, 5, 'four imports + an approval');
+test('patch 151, back to the original lists: no import or approval puts anyone on a list; the page shows the tag, the box and the left-off', () => {
+  assert.equal((SERVER.match(/placeEveryone/g) || []).length, 0, 'the owner 16.11.2026: "we need to get back to the original list"');
   assert.match(SERVER, /\/api\/tc\/go\/mylist\/email/);
   assert.match(SERVER, /if \(p === '\/api\/tc\/go\/leftoff' && req\.method === 'GET'\) \{\n\s+if \(!\(await adminOf\(req\)\)\) return json\(res, 403/, 'admins only');
   assert.match(APP, /<em class="tcml-pc">Postcard only<\/em>/);
@@ -218,4 +216,18 @@ test('the companies no list has: recent clients only, C level to DS / AB, offsho
   assert.ok(r.byList.Alma >= 2);
   const line = await db.prepare(`SELECT body FROM tc_activities WHERE body LIKE '%Offshore / wind company%'`).get();
   assert.match(line.body, /^Added to the Grand Opening list of .+ \(Offshore \/ wind company\)$/, 'the reason is on the History line');
+});
+
+test('patch 151: whoever the rule would place shows on the Grand Opening page as Not on a list yet, with a company to click', async () => {
+  const db = await openDb();
+  const { ids } = await seed(db);
+  const G = await ml.leftOff(db);
+  const yet = G.find((g) => g.label === ml.NOT_YET);
+  assert.ok(yet, 'Not on a list yet');
+  // the October Excel person, the no-email one, the late one, Nobodys Example and the dropped one: nobody placed them
+  assert.equal(yet.n, 5);
+  assert.ok(yet.people.every((p) => p.companyId && p.company));
+  assert.equal(G.reduce((a, g) => a + g.n, 0), 5 + 4, 'plus the four kept off for their own reasons (Do not invite, dead, flagged, the same email twice)');
+  assert.equal((await db.prepare(`SELECT COUNT(*) AS n FROM tc_go_stage2 WHERE loaded_by = 'Test Person'`).get()).n, 0, 'leftOff writes nothing');
+  assert.ok(ids.excel);
 });

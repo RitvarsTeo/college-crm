@@ -334,7 +334,8 @@ export async function addContactToList(tx, { code, company, contactId, f, actor,
 //   - a company nobody has yet: divided by his established rules (src/tcgosplit.js: recent clients only, C level to DS / AB,
 //     offshore to Alma, else the most similar list, evenly); a company whose last course was before 2023 stays off with that reason
 // A person with no email goes on the list too: the list shows them as Postcard only, with an Add email box.
-// placeEveryone runs after every import and every hand placing; the 16.11 backfill runs the same function once.
+// placeEveryone is NOT run by imports since patch 151 (the owner, 16.11.2026: back to the original lists); placement() still
+// names who is off and why, for the Grand Opening page.
 // Added the same day (his words through Intake MASTER CONTROL):
 //   - "Info we will not invite." + "Only if that info or generic department email is the only one of that company, and its an
 //     important company.": a company or department mailbox (info@, office@, crewing@ ...; config grandOpening.invite.
@@ -481,10 +482,16 @@ export async function placeEveryone(db, actor, at = nowIso()) {
     byList: tally([...P.place, ...P.revive], (r) => r.code), leftBy: tally(P.left, (r) => r.label) };
 }
 
-/** The people still off every list, for the Grand Opening page: [{ label, n, people: [{ name, email, company, companyId }] }]. */
+// BACK TO THE ORIGINAL LISTS (16.11.2026, the owner: "we need to get back to the original list, because people are asking me
+// questions already, who are they!?"; patch 151): no import puts anyone on a list by itself any more. The people the rule would
+// place stay off, counted as "Not on a list yet", until a list owner takes them (the General list, patch 152).
+export const NOT_YET = 'Not on a list yet';
+
+/** The people off every list, for the Grand Opening page: [{ label, n, people: [{ name, email, company, companyId }] }]. */
 export async function leftOff(db) {
+  const P = await placement(db);
   const groups = new Map();
-  for (const r of (await placement(db)).left) {
+  for (const r of [...P.place, ...P.revive].map((x) => ({ ...x, label: NOT_YET })).concat(P.left)) {
     if (!groups.has(r.label)) groups.set(r.label, []);
     groups.get(r.label).push({ name: r.name, email: r.email, company: r.company, companyId: r.companyId });
   }
