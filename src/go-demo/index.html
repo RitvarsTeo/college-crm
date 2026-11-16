@@ -348,9 +348,9 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
 </section>
 
 <section class="ch" data-t="The board" data-s="27.05.2027">
- <h2>The board: every guest puts in their piece</h2>
+ <h2>The board: every company puts in its piece</h2>
  <div class="board" id="board9" aria-label="Puzzle board"></div>
- <p style="margin:14px 0 0;font-weight:600;color:var(--muted)"><span class="b-sw"></span><b style="color:var(--ink)" id="b-me"></b> · <b style="color:var(--ink)">Board:</b> 2.70 × 1.50 m; one place per guest, plus spares</p>
+ <p style="margin:14px 0 0;font-weight:600;color:var(--muted)"><span class="b-sw"></span><b style="color:var(--ink)" id="b-me"></b> · <b style="color:var(--ink)">Board:</b> 2.70 × 1.50 m; one place per invited company, plus spares</p>
 </section>
 
 <!-- In Intake, live (Intake TC LANE 11.11.2026) -->
@@ -374,7 +374,7 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
   <li><div><b>Registrations on the landing page</b><span>counted by channel</span></div></li>
   <li><div><b>The count</b><span>people per mother company, branches grouped</span></div></li>
   <li><div><b>The cards</b><span>one per invited company, its QR registers and opens the door</span></div></li>
-  <li><div><b>Pieces cut</b><span>one per guest, own place, plus spares</span></div></li>
+  <li><div><b>Pieces cut</b><span>one per invited company</span></div></li>
   <li class="end"><div><b>Thursday 27 May 2027, 10:00</b><span>invitation card scanned at the door, piece handed over, piece on the board</span></div></li>
  </ol>
 </section>
@@ -424,7 +424,7 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
   t('s1-s',D&&D.sent); t('s1-r',D&&D.reached); t('s1-o',D&&D.person); t('s1-c',D&&D.calendar);
   document.getElementById('so').innerHTML=(R.lists||[]).map(function(l){ return '<div class="so-row"><div class="so-box"><b>'+esc(l.name)+'</b><small>'+esc(l.email)+'</small></div><div class="so-arrow">&rarr;</div><div class="so-n">'+Number(l.people).toLocaleString('en-US')+'<span>people on their list</span></div></div>'; }).join('');
  })();
- if(R.piece){ document.getElementById('pc-name').textContent=R.piece.name; document.getElementById('pc-sub').innerHTML=R.piece.branches+(R.piece.branches===1?' company':' companies')+' · '+Number(R.piece.people).toLocaleString('en-US')+' people<br>a puzzle piece for every guest, at the door'; }
+ if(R.piece){ document.getElementById('pc-name').textContent=R.piece.name; document.getElementById('pc-sub').innerHTML=R.piece.branches+(R.piece.branches===1?' company':' companies')+' · '+Number(R.piece.people).toLocaleString('en-US')+' people<br>one puzzle piece for the company, to its first guest at the door'; }
 
  /* boards */
  var W=45,H=25;
@@ -439,7 +439,7 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
  var st={pc:null,ppl:{},linked:false}, res=document.getElementById('res');
  var PC=(R.piece&&R.piece.name)||'', BR=(R.piece&&R.piece.branchNames)||[], OT=R.other||'';
  document.getElementById('g-anna').textContent=PC+(BR[0]?' · '+BR[0]:'')+' · first of the company'; document.getElementById('g-janis').textContent=PC+' · same card';
- document.getElementById('b-me').textContent="Anna Bērziņa's piece"+(PC?' · '+PC:'');
+ document.getElementById('b-me').textContent=PC?'The piece of '+PC:'The company piece';
  var mins=4;
  function now(){ mins++; return '10:'+(mins<10?'0':'')+mins; }
  function show7(cls,big,mid,act){ res.className='res '+cls; res.innerHTML='<div class="big">'+big+'</div><div class="mid">'+mid+'</div>'+(act?'<span class="act">'+act+'</span>':''); }

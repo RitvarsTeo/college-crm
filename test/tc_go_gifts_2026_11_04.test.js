@@ -350,5 +350,8 @@ test('16.11 patch 148 (his pick "Take it", DOOR_SCANNER_concept): at the entranc
   assert.ok(ch('At the entrance').includes('hand over a piece'));
   assert.ok(html.includes("First guest of this company. Announce:") && html.includes("already handed over at '+st.pc+'"));
   assert.ok(!html.includes('Ticket of ') && !html.includes('Checked in <b'), 'no ticket at the door');
-  assert.ok(ch('The board').includes('every guest puts in their piece'));
+  // his 16.11 lock: "one company = one board place = one piece shape = one QR", "its first representative gets the piece"
+  assert.ok(ch('The board').includes('every company puts in its piece') && ch('The board').includes('one place per invited company, plus spares'));
+  assert.ok(html.includes('<b>Pieces cut</b><span>one per invited company</span>'));
+  assert.ok(!/per guest|every guest/i.test(html), 'nothing in the demo says per guest any more');
 });
