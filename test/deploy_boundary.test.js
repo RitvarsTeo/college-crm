@@ -23,7 +23,7 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const VERCEL = JSON.parse(fs.readFileSync(path.join(ROOT, 'vercel.json'), 'utf8'));
 // THE BRAND LOGOS (16.11.2026, his ask: public novikontas.org-domain links to the new logos for HTML use, plain image links):
-// exactly these six files under public/brand/, copied unchanged (five from the Talent Acquisition release's assets, one from Marketings un Dizains/Logo public); png, svg and jpg images only.
+// exactly these files under public/brand/, copied unchanged (five from the Talent Acquisition release's assets, one from Marketings un Dizains/Logo public); png, svg and jpg images only.
 const BRAND = {
   'NoAca_logo_drkbluehor.png': '44d9eefae9e581d0aa424eca1ad58b6bdf2dc5985e17e29470d76cc4ca6c2fe3',
   'NoAca_logo_twotone_horizontal.svg': 'ad4cea5c33c71a839fd46d4fec7718cb95b547c10a109483294c9e362d23e521',
@@ -32,6 +32,12 @@ const BRAND = {
   'NoAca_logo_symbol_white.svg': '49551504bd98ec5c01061c902a6701905e8138b43be3d7b6e867d32d7b147122',
   // 16.11.2026, his words "Ieliekam uz Intake virsū visus.": from Marketings un Dizains/Logo public, 1000x380
   'NoAca_logo_twotone_horizontal_whitebg.jpg': '1a0e54ff60242f5f9a494a660eaba280063ba036ae99ccce2a5f6b7fdc7cfff4',
+  // 16.11.2026 (patch 142): the same logos cropped tight to the artwork, from Marketings un Dizains/Logo public/tight
+  'NoAca_logo_drkbluehor_tight.png': '523a1912de7b2710981ebd15aad4a29986dbe52e7507f937367f0a82403ac5de',
+  'NoAca_logo_twotone_horizontal_tight.svg': '369e98d7df19488aac510c0e54db420760304ee3ff11002f1b418abe5170c289',
+  'NoAca_logo_white_horizontal_tight.svg': '06915534059190d5ac18760912f5395ec5563331e67a4c8830ab295b8f120972',
+  'NoAca_logo_symbol_white_tight.svg': 'e970fc43df4168d7f20bba30d8d1e7643abf740aa6ab302ad3693c1bf15ff970',
+  'NoAca_logo_twotone_horizontal_whitebg_tight.jpg': '6dfba25768d334cc0d91ef8348f1a07becad74a4a2523209361541f1348594f0',
 };
 const PUBLIC_ALLOWED = ['robots.txt', ...Object.keys(BRAND).map((f) => 'brand/' + f)].sort();
 
@@ -64,7 +70,7 @@ test('the page loads nothing from the folders that are no longer public', () => 
   assert.ok(APP.includes('/assets/NoAca_logo_twotonehor.svg'), 'the logo comes from /assets/, which the server serves');
 });
 
-test('public/brand/ holds only the six logo images, unchanged, with nothing in them that runs', async () => {
+test('public/brand/ holds only the logo images listed, unchanged, with nothing in them that runs', async () => {
   const { createHash } = await import('node:crypto');
   const dir = path.join(ROOT, 'public', 'brand');
   assert.deepEqual(fs.readdirSync(dir).sort(), Object.keys(BRAND).sort());
