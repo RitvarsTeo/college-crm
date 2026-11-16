@@ -60,7 +60,8 @@ test('the plan: who goes where, who stays off and why; nothing written', async (
   const P = await ml.placement(db);
   assert.deepEqual(P.place.filter((r) => r.contactId !== ids.nobody).map((r) => [r.contactId, r.code]).sort(), [[ids.excel, 'JS'], [ids.noEmail, 'JS'], [ids.late, 'DS']].sort());
   // no list has Nobodys Example and it has no course on record: not old, so divided like the rest (to the lighter list)
-  assert.deepEqual(P.place.filter((r) => r.contactId === ids.nobody).map((r) => [r.code, r.why]), [['AB', 'The lighter list']]);
+  // no list has Nobodys Example and it has no trainees since 2023: off (the owner, 16.11.2026 evening: business in the last 3 years only)
+  assert.equal(P.left.find((r) => r.contactId === ids.nobody).label, 'No business since 2023');
   assert.deepEqual(P.revive.map((r) => [r.contactId, r.code]), [[ids.dropped, 'MC']], 'back onto the list it was dropped from');
   const left = Object.fromEntries(P.left.map((r) => [r.contactId, r.label]));
   assert.match(left[ids.dnI], /^Do not invite: A manager's decision$/);
@@ -75,8 +76,8 @@ test('placeEveryone: onto the owner\'s list; a decided company keeps its decisio
   const db = await openDb();
   const { ids } = await seed(db);
   const r = await ml.placeEveryone(db, 'Test Person');
-  assert.deepEqual({ placed: r.placed, revived: r.revived, left: r.left }, { placed: 4, revived: 1, left: 4 });
-  assert.deepEqual(r.byList, { JS: 2, DS: 1, MC: 1, AB: 1 });
+  assert.deepEqual({ placed: r.placed, revived: r.revived, left: r.left }, { placed: 3, revived: 1, left: 5 });
+  assert.deepEqual(r.byList, { JS: 2, DS: 1, MC: 1 });
   assert.equal((await onList(db, ids.excel)).sender, 'JS');
   assert.equal((await onList(db, ids.late)).sender, 'DS');
   assert.ok((await onList(db, ids.late)).fresh, 'Decided Example was decided: the new person is still to decide (patch 145)');
@@ -126,7 +127,7 @@ test('the people off every list: grouped by reason, each with name and company',
   const by = Object.fromEntries(G.map((g) => [g.label, g.n]));
   assert.equal(by['Waiting for approval'], 1);
   // 3: once Pēteris is on JS's list, his twin's address is on a list too (one address, one invitation); Nobodys Example went on
-  assert.equal(G.reduce((a, g) => a + g.n, 0), 3);
+  assert.equal(G.reduce((a, g) => a + g.n, 0), 4, 'and Nobodys Example: no business since 2023');
   assert.ok(G.every((g) => g.people.every((p) => p.company && p.companyId)));
 });
 
@@ -173,7 +174,7 @@ test('company mailboxes stay off; one that is the only contact of its company go
   assert.equal((await ml.holders(db))[none], undefined);
 });
 
-test('the companies no list has: recent clients only, C level to DS / AB, offshore to Alma, the person in charge, else the most similar list', async () => {
+test('the companies no list has (16.11.2026 evening): business in the last 3 years only; C level to Dmitrijs, offshore / renewables to Alma, anyone else to Mārcis', async () => {
   const db = await openDb();
   await seed(db);
   const co = async (name, extra = {}) => {
@@ -203,19 +204,18 @@ test('the companies no list has: recent clients only, C level to DS / AB, offsho
   const P = await ml.placement(db);
   const to = Object.fromEntries(P.place.map((r) => [r.contactId, [r.code, r.why]]));
   const left = Object.fromEntries(P.left.map((r) => [r.contactId, r.label]));
-  assert.deepEqual(to[ids.wind], ['Alma', 'Offshore / wind company']);
-  assert.equal(to[ids.ceo][1], 'CEO / MD / owner: our CEO or COO');
-  assert.ok(['DS', 'AB'].includes(to[ids.ceo][0]));
+  // the owner, 16.11.2026 evening: Training Centre only -> offshore / renewables to Alma, C level to Dmitrijs, anyone else to Mārcis
+  assert.deepEqual(to[ids.wind], ['Alma', 'Training Centre client, offshore / renewables']);
+  assert.deepEqual(to[ids.ceo], ['DS', 'Training Centre client, C level: our CEO']);
   assert.equal(to[ids.opito][0], 'Alma', 'an OPITO area is offshore');
   assert.equal(left[ids.old], 'Last course 2021', 'proven old business: off');
-  assert.ok(to[ids.zero], 'a year with 0 attendees is no course on record: not old, divided like the rest');
-  assert.deepEqual(to[ids.pic], ['MC', 'The person in charge Intake names for the company']);
-  assert.notEqual(to[ids.dom][0], 'JS', 'Jānis takes no new companies');
-  assert.ok(['DS', 'AB', 'Marcis', 'MC'].includes(to[ids.dom][0]));
+  assert.equal(left[ids.zero], 'No business since 2023', 'a year with 0 trainees is no business');
+  assert.deepEqual(to[ids.pic], ['Marcis', 'Training Centre client: the Director of the Training Centre'], 'the person in charge no longer decides');
+  assert.deepEqual(to[ids.dom], ['Marcis', 'Training Centre client: the Director of the Training Centre']);
   const r = await ml.placeEveryone(db, 'Test Person');
   assert.ok(r.byList.Alma >= 2);
-  const line = await db.prepare(`SELECT body FROM tc_activities WHERE body LIKE '%Offshore / wind company%'`).get();
-  assert.match(line.body, /^Added to the Grand Opening list of .+ \(Offshore \/ wind company\)$/, 'the reason is on the History line');
+  const line = await db.prepare(`SELECT body FROM tc_activities WHERE body LIKE '%offshore / renewables%'`).get();
+  assert.equal(line.body, "Added to the Grand Opening list of Aleksejs Maļinovskis (Training Centre client, offshore / renewables)", "the reason is on the History line");
 });
 
 test('patch 151: whoever the rule would place shows on the Grand Opening page as Not on a list yet, with a company to click', async () => {
@@ -225,9 +225,9 @@ test('patch 151: whoever the rule would place shows on the Grand Opening page as
   const yet = G.find((g) => g.label === ml.NOT_YET);
   assert.ok(yet, 'Not on a list yet');
   // the October Excel person, the no-email one, the late one, Nobodys Example and the dropped one: nobody placed them
-  assert.equal(yet.n, 5);
+  assert.equal(yet.n, 4, 'Nobodys Example has no business since 2023: off for that reason, not Not on a list yet');
   assert.ok(yet.people.every((p) => p.companyId && p.company));
-  assert.equal(G.reduce((a, g) => a + g.n, 0), 5 + 4, 'plus the four kept off for their own reasons (Do not invite, dead, flagged, the same email twice)');
+  assert.equal(G.reduce((a, g) => a + g.n, 0), 4 + 5, 'plus the five kept off for their own reasons (Do not invite, dead, flagged, the same email twice, no business)');
   assert.equal((await db.prepare(`SELECT COUNT(*) AS n FROM tc_go_stage2 WHERE loaded_by = 'Test Person'`).get()).n, 0, 'leftOff writes nothing');
   assert.ok(ids.excel);
 });

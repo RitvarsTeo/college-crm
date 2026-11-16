@@ -2,17 +2,13 @@
 //   "divide them for directiors and c levels with our established rules!!"; "C: recent clients only"; "Similar companies go
 //   together under managers that have very similar companies as those not on the list and on the list."; "A: spread evenly";
 //   "CEO's are invited by our CEO Dmitrijs, or COO Aleksejs B." (13.11); real offshore -> Alma (13.11); Jānis's list untouched.
-// For a contact whose company (with its whole family) is on no list yet:
-//   1. recent clients only: off ONLY with proven old business - the last course year with attendees (tc_company_courses, the
-//      Training Centre Excel's years, anywhere in the family) before RECENT: "Last course <year>". No course on record is not old
-//      (mostly Client Hub's curated Grand Opening contacts; Intake MASTER CONTROL's call 16.11.2026): divided like the rest
-//   2. a CEO / MD / owner (the 13.11 title rule, word for word below) -> DS or AB, the lighter list
-//   3. the person in charge Intake names for the company is a list owner -> that owner
-//   4. offshore / wind (the name, or an ENERGY / OPITO area) -> Alma
-//   5. else the list most like it: the same email domain, then the most companies of the same kind, then of the same country;
-//      only lists within BAND people of the lightest (and under an even share +4 %) compete, a tie goes to the lighter list.
-//      Jānis takes no new companies.
-// A whole family goes to one owner; each company keeps its reason (`why`), shown in the History line.
+// For a contact whose company (with its whole family) is on no list yet - since 16.11.2026 evening:
+//   1. only with business in the last 3 years: trainees in tc_company_courses for RECENT or later, anywhere in the family.
+//      Else off: "Last course <year>" / "No business since 2023"
+//   2. a CEO / MD / owner (the 13.11 title rule, word for word below) -> Dmitrijs Semjonovs (CEO)
+//   3. offshore / renewables (the name, or an ENERGY / OPITO area) -> Aleksejs Maļinovskis
+//   4. anyone else -> Mārcis Žabovs, Director of the Training Centre
+// Each person keeps the reason (`why`), shown in the History line.
 export const RECENT = 2023;
 const SPLIT = ['DS', 'AB', 'Marcis', 'MC', 'Alma'];
 const BAND = 30;   // "spread evenly": a list more than this many people above the lightest takes no company by similarity
@@ -105,34 +101,21 @@ export async function splitNew(db, rows, placed, { owners, mom, picOwner, mailbo
   const cap = room();
   const lighter = (list) => list.slice().sort((a, b) => size(a) - size(b) || SPLIT.indexOf(a) - SPLIT.indexOf(b))[0];
   const families = [...fams.entries()].sort((a, b) => b[1].length - a[1].length || String(a[1][0].company).localeCompare(String(b[1][0].company)));
+  // THE TRAINING CENTRE ONLY COMPANIES (16.11.2026 evening, the owner: "insert only companies that are of high importance and have
+  // had business with us in the last 3 years. if they are TC only, then give them to Alm (offshore/renewables, to Marcis Dir of TC
+  // and to Dmitrijs CEO (only C level to Dmitrijs)"; importance = "Any business": trainees in 2023, 2024 or 2025)
   for (const [m, ps] of families) {
     const y = last.get(m) || 0;
-    if (y && y < RECENT) { for (const r of ps) out.left.push({ ...r, reason: 'not_recent', label: `Last course ${y}` }); continue; }
+    if (y < RECENT) { for (const r of ps) out.left.push({ ...r, reason: 'not_recent', label: y ? `Last course ${y}` : 'No business since 2023' }); continue; }
     const c = cos.get(m) || cos.get(ps[0].companyId) || {};
-    const k = kindOf(c.name, c.areas);
-    const rest = [];
+    const offshore = kindOf(c.name, c.areas) === 'offshore / wind';
     for (const r of ps) {
-      if (isCLevel(r.position)) { const o = lighter(C_LEVEL.filter((x) => owners.includes(x))); add(o, r.companyId, r.email); out.place.push({ ...r, code: o, why: 'CEO / MD / owner: our CEO or COO' }); }
-      else rest.push(r);
+      const [code, why] = isCLevel(r.position) && owners.includes('DS') ? ['DS', 'Training Centre client, C level: our CEO']
+        : offshore && owners.includes('Alma') ? ['Alma', 'Training Centre client, offshore / renewables']
+        : ['Marcis', 'Training Centre client: the Director of the Training Centre'];
+      add(code, r.companyId, r.email);
+      out.place.push({ ...r, code, why });
     }
-    if (!rest.length) continue;
-    let code = picOwner(c.pic) || picOwner((cos.get(ps[0].companyId) || {}).pic), why = code ? 'The person in charge Intake names for the company' : '';
-    if (!code && k === 'offshore / wind') { code = 'Alma'; why = 'Offshore / wind company'; }
-    if (!code) {
-      const doms = new Set(rest.map((r) => domainOf(r.email)).filter(Boolean));
-      const pool = SPLIT.filter((o) => o !== 'Alma' && owners.includes(o));
-      // evenly: similarity chooses only among the lists within BAND people of the lightest, and under the cap
-      const least = Math.min(...pool.map(size));
-      const open = pool.filter((o) => size(o) + rest.length <= cap && size(o) <= least + BAND);
-      const sc = (open.length ? open : pool).map((o) => ({ o, same: [...doms].reduce((a, d) => a + (prof[o].domains.get(d) || 0), 0),
-        kind: k === 'other' ? 0 : prof[o].kinds[k] || 0, country: c.country ? prof[o].countries[c.country] || 0 : 0 }))
-        .sort((a, b) => b.same - a.same || b.kind - a.kind || b.country - a.country || size(a.o) - size(b.o) || SPLIT.indexOf(a.o) - SPLIT.indexOf(b.o));
-      const b = sc[0];
-      code = b.o;
-      why = b.same ? 'The same email domain as people on this list' : b.kind ? `${/^[aeiou]/i.test(k) ? 'An' : 'A'} ${k} company, like ${b.kind} on this list` + (b.country ? ` (${b.country} in ${c.country})` : '')
-        : b.country ? `${b.country} companies in ${c.country} on this list` : 'The lighter list';
-    }
-    for (const r of rest) { add(code, r.companyId, r.email); out.place.push({ ...r, code, why }); }
   }
   return out;
 }

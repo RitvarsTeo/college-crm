@@ -237,7 +237,9 @@ test('every path the channel register declares exists on disk', async () => {
   assert.deepEqual(missing, [], missing.join('; '));
 });
 
-test('the gmail cron route refuses without the scheduled-invocation secret', async () => {
+test('the gmail cron route refuses without the scheduled-invocation secret', async (t) => {
+  // the route runs only 08:00-17:00 Latvian time: the clock is pinned to 11:00 Riga, or this test fails every evening (16.11.2026)
+  t.mock.timers.enable({ apis: ['Date'], now: Date.parse('2026-11-16T09:00:00Z') });
   const { default: handler } = await import('../api/cron/gmail-poll.js');
   const answer = (req, envVars = {}) => new Promise((resolve) => {
     const old = { ...process.env };

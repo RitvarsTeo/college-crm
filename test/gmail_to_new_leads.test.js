@@ -165,7 +165,9 @@ test('C3: a failed run does not move the bookmark', async () => {
   assert.ok(after <= t1.getTime(), 'the failed day is asked for again');
 });
 
-test('C3: the cron route writes to New Leads (it used to read and throw away)', async () => {
+test('C3: the cron route writes to New Leads (it used to read and throw away)', async (t) => {
+  // the route runs only 08:00-17:00 Latvian time: the clock is pinned to 11:00 Riga, or this test fails every evening (16.11.2026)
+  t.mock.timers.enable({ apis: ['Date'], now: Date.parse('2026-11-16T09:00:00Z') });
   const src = fs.readFileSync(path.join(ROOT, 'api', 'cron', 'gmail-poll.js'), 'utf8');
   assert.match(src, /syncGmail\(/);
   assert.doesNotMatch(src, /runPoll\(/);

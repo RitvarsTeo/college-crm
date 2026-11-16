@@ -23,6 +23,10 @@ const SAID = 'You were signed out. Sign in again to carry on.';
 // The page: the shell, the help button, the modal, the call card, the two forms (Make a lead on the Inbox
 // card, Add a person), and whatever the sign-in card appends to <body>. Every request is answered by
 // `answer(path, opts)`; timers are held so the test fires them one by one and reads each wait.
+// THE PAGE'S CLOCK IS PINNED to Monday 16 November 2026, 11:00 Riga (16.11.2026): the call poller asks every 3 s only 08:00-17:00
+// Latvian time, so with the real clock these tests failed every evening and stopped every release gate after 17:00
+const ON_DUTY = Date.parse('2026-11-16T09:00:00Z');
+class DutyDate extends Date { constructor(...a) { super(...(a.length ? a : [ON_DUTY])); } static now() { return ON_DUTY; } }
 function page(answer) {
   const box = (extra = {}) => ({ value: '', innerHTML: '', style: {}, dataset: {}, ...extra });
   const els = { modal: box({ innerHTML: '<div class="modal">Add a person</div>' }), callpop: box({ innerHTML: 'Anna Ozola', dataset: { call: 'c1' } }),
@@ -49,7 +53,7 @@ function page(answer) {
     document, location: { hash: '#/inbox', search: '', pathname: '/' },
     AUTH: { on: true, auth: true, google: true, user: { name: 'Admissions', role: 'user' } }, ACTOR: 'Admissions',
     LOGIN_SEA: () => {}, busy: () => {}, cScoped: (p) => p, viewInbox: () => { ctx.inboxDrawn = true; },
-    showDuplicate: () => {}, alert: (m) => alerts.push(m), JSON, Date,
+    showDuplicate: () => {}, alert: (m) => alerts.push(m), JSON, Date: DutyDate,
     sessionStorage: { saved: {}, setItem(k, v) { this.saved[k] = v; } },
     setTimeout: (f, ms) => { const t = { f, ms }; timers.push(t); return t; },
     clearTimeout: (t) => { timers = timers.filter((x) => x !== t); },
