@@ -73,6 +73,7 @@ import * as tcclienthub from './tcclienthub.js';
 import * as tcreview from './tcreview.js';
 import * as tcgo from './tcgo.js';
 import * as tcmylist from './tcmylist.js';
+import * as tcdoor from './tcdoor.js';
 import * as tcrsvp from './tcrsvp.js';
 import * as tcmr from './tcmr.js';
 import * as tcfam from './tcfam.js';
@@ -3891,12 +3892,22 @@ export const handle = async (req, res) => {
       try { const ans = await tcrsvp.answers(); return json(res, 200, { sender: code, rows: await tcgo.stage2List(db, code, ans), gifts: await tcgo.giftMap(db) }); }
       catch (e) { if (e instanceof tc.TcInputError) return json(res, 400, { error: e.message }); throw e; }
     }
-    // CHECK-IN AT THE DOOR (12.11.2026, his pick "Yes, at the door"; src/tctickets.js doorScan): the guest's TICKET QR or code;
-    // any Training Centre account. A scan checks the guest in; the piece goes to the first guest of each mother company.
-    if (p === '/api/tc/go/door' && req.method === 'GET') return json(res, 200, await tctickets.doorStart(db));
-    if (p === '/api/tc/go/door' && req.method === 'POST') {
-      const b = await body(req);
-      return json(res, 200, await tctickets.doorScan(db, String(b.t || '').slice(0, 300), await actorOf(req, b)));
+    // THE DOOR BY CARD (16.11.2026, patch 148; src/tcdoor.js; LOCKED "Invitation QR only"): the invitation card's QR or code,
+    // any Training Centre account. One piece per card; tick who is here; link a card no company has yet; find a guest by name.
+    if (p === '/api/tc/go/door' && req.method === 'GET') return json(res, 200, { totals: await tcdoor.totals(db) });
+    if (p === '/api/tc/go/door/find' && req.method === 'GET') {
+      return json(res, 200, await tcdoor.find(db, String(url.searchParams.get('q') || ''), await tctickets.registrations()));
+    }
+    if ((p === '/api/tc/go/door' || p === '/api/tc/go/door/piece' || p === '/api/tc/go/door/tick' || p === '/api/tc/go/door/add' || p === '/api/tc/go/door/link') && req.method === 'POST') {
+      const b = await body(req), what = p.split('/')[5] || 'scan', actor = await actorOf(req, b), regs = await tctickets.registrations();
+      const code = String(b.code || b.t || '').slice(0, 300);
+      try {
+        if (what === 'scan') return json(res, 200, await tcdoor.scan(db, code, regs));
+        if (what === 'piece') return json(res, 200, await tcdoor.handOver(db, code, regs, actor));
+        if (what === 'tick') return json(res, 200, await tcdoor.tick(db, code, String(b.person || '').slice(0, 120), b.here !== false, regs, actor));
+        if (what === 'add') return json(res, 200, await tcdoor.addPerson(db, code, String(b.name || ''), regs, actor));
+        return json(res, 200, await tcdoor.link(db, code, Number(b.companyId), regs, actor));
+      } catch (e) { if (e instanceof tc.TcInputError) return json(res, 400, { error: e.message }); throw e; }
     }
     // STAGE 3, THE TICKET (12.11.2026, src/tctickets.js): admins only, like Stage 2 sending; a ticket goes only on Send
     if (p === '/api/tc/go/tickets' && req.method === 'GET') {

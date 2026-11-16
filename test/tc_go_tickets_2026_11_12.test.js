@@ -148,8 +148,8 @@ test('at the door (his words 12.11: "everyone at the end get the puzzle piece on
 test('the page: Stage 3 tab with the cards for admins, the door scans tickets with the four answers, no Wallet note anywhere', () => {
   const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
   assert.ok(app.includes("${tb('s3', 3, 'Stage 3 · Ticket')}"));
-  for (const t of ["'<p class=\"tc-door-say\">Hand over a piece</p>'", '`<p class="tc-door-say">Already checked in at ${esc(tcDoorTime(c.at))} - piece given</p>`',
-    "'<p class=\"tc-door-say\">Not on the list. Please send them to the help desk.</p>'"]) assert.ok(app.includes(t), t);
+  // patch 148 (16.11.2026): the door reads the invitation card, not the ticket (LOCKED "Invitation QR only"); its four answers
+  for (const t of ['First guest of this company', 'already handed over at', 'Not linked to a company yet', 'Not a Grand Opening card']) assert.ok(app.includes(t), t);
   assert.ok(!app.includes('Piece already with') && !app.includes('Hand over the piece'));
   const door = app.slice(app.indexOf('function viewTcDoor('), app.indexOf('async function tcDoorScan()'));
   assert.ok(!/[\u{1F300}-\u{1FAFF}]/u.test(door), 'no emoji on the door (his no-AI-slop rule)');
@@ -183,7 +183,7 @@ test('over the wire: ticket cards, preview and Send for admins only; the door fo
   assert.equal(pv.status, 200); assert.match(await pv.text(), /See you soon/);
   assert.equal((await post('/api/tc/go/tickets/send', ad, { sender: 'JS' })).status, 400, 'not connected: nothing sent');
   assert.equal((await post('/api/tc/go/door', js, { t: 'GO27-ZZZZZZZZZZ' })).status, 200);
-  assert.deepEqual((await (await get('/api/tc/go/door', js)).json()).totals, { people: 0 });
+  assert.deepEqual((await (await get('/api/tc/go/door', js)).json()).totals, { companies: 0, people: 0 }, 'patch 148: the door counts companies and people');
   for (const p of ['/api/tc/go/tickets', '/api/tc/go/tickets/preview?sender=JS', '/api/tc/go/door']) assert.notEqual((await get(p)).status, 200, p);
   assert.notEqual((await post('/api/tc/go/door', null, { t: 'x' })).status, 200);
   assert.notEqual((await post('/api/tc/go/tickets/send', null, { sender: 'JS' })).status, 200);

@@ -959,6 +959,30 @@ CREATE TABLE IF NOT EXISTS tc_go_people_out (
   set_at TEXT NOT NULL,
   set_by TEXT
 );
+-- THE DOOR BY CARD (16.11.2026, patch 148): the invitation card's QR is the only QR at the door. One piece per card (the first
+-- guest of the company), each registered person ticked as here, and the people added at the door. Never deleted.
+CREATE TABLE IF NOT EXISTS tc_go_door_pieces (
+  card TEXT PRIMARY KEY,           -- public.std_go_cards.code
+  company_key TEXT,
+  company TEXT,
+  place TEXT,
+  handed_at TEXT NOT NULL,
+  handed_by TEXT
+);
+CREATE TABLE IF NOT EXISTS tc_go_door_people (
+  person_key TEXT PRIMARY KEY,     -- 'R:' + the registration key, or 'A:' + tc_go_door_added.id
+  card TEXT NOT NULL,
+  here INTEGER NOT NULL,           -- 1 = here, 0 = ticked off again
+  set_at TEXT NOT NULL,
+  set_by TEXT
+);
+CREATE TABLE IF NOT EXISTS tc_go_door_added (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  card TEXT NOT NULL,
+  name TEXT NOT NULL,
+  added_at TEXT NOT NULL,
+  added_by TEXT
+);
 -- 16.11.2026 (patch 145): a person added from a company page onto a list where that company was already decided. The company's
 -- Invite or No stays; this person is still to decide until the list owner presses Done on that company and saves (settled_at).
 CREATE TABLE IF NOT EXISTS tc_go_people_new (

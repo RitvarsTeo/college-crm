@@ -22,6 +22,12 @@ const pgStore = {
   async all(db) {
     return db.prepare('SELECT code, place, company_key, company, linked_at FROM intake_go.cards WHERE company_key IS NOT NULL').all();
   },
+  async byCode(db, code) {
+    return db.prepare('SELECT code, place, company_key, company, linked_at FROM intake_go.cards WHERE code = ?').get(code);
+  },
+  async linkCode(db, code, key, company, by) {
+    return db.prepare('SELECT card_code AS code, card_place AS place FROM intake_go.card_link_code(?, ?, ?, ?)').get(code, key, company, by);
+  },
 };
 
 const active = (db) => store || (db && db.kind === 'pg' ? pgStore : null);
@@ -52,3 +58,35 @@ export function placeOrder(a, b) {
 }
 
 export const qrUrl = (code) => QR_BASE + encodeURIComponent(String(code));
+
+// THE DOOR (patch 148): one card by its code, and linking THIS card on the spot (intake_go.card_link_code).
+
+/** The card's code from what the camera read: a whole link (...grand-opening?k=abc123) or the 6 characters alone; '' if neither. */
+export function codeFrom(text) {
+  const t = String(text || '').trim();
+  const m = /[?&]k=([a-hj-km-np-z2-9]{6})(?:&|#|$)/i.exec(t) || /^([a-hj-km-np-z2-9]{6})$/i.exec(t);
+  return m ? m[1].toLowerCase() : '';
+}
+
+/** One card: { code, place, companyKey, company } or null when there is no such card; undefined when no store is reachable. */
+export async function byCode(db, code) {
+  const s = active(db);
+  if (!s || !s.byCode) return undefined;
+  if (!CODE.test(String(code))) return null;
+  const r = await s.byCode(db, String(code));
+  return r ? { code: String(r.code), place: String(r.place), companyKey: r.company_key ? String(r.company_key) : '', company: r.company || '' } : null;
+}
+
+/** Link THIS card to a company that has no card (refused with the reason otherwise). */
+export async function linkCode(db, code, key, company, by) {
+  const s = active(db);
+  if (!s || !s.linkCode) throw new Error('The cards are not reachable.');
+  const r = await s.linkCode(db, String(code), String(key), String(company || '').slice(0, 200), String(by || '').slice(0, 120));
+  return r && CODE.test(String(r.code)) ? { code: String(r.code), place: String(r.place) } : null;
+}
+
+/** "14H" -> { col: 14, row: 'H', rowNo: 8 } on the 35 x 22 board (rows A..V). */
+export function placeParts(place) {
+  const m = /^(\d+)([A-V])$/.exec(String(place || ''));
+  return m && Number(m[1]) >= 1 && Number(m[1]) <= 35 ? { col: Number(m[1]), row: m[2], rowNo: m[2].charCodeAt(0) - 64 } : null;
+}

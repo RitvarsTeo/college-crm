@@ -42,8 +42,11 @@ async function readClientHub(env) {
   const { default: pg } = await import('pg');
   const c = new pg.Client({ connectionString: url, ssl: pgSsl(url), connectionTimeoutMillis: 5000, statement_timeout: 5000 });
   await c.connect();
-  try { return (await c.query('SELECT reg_key, source, contact_id, first_name, last_name, email, company FROM intake_read.registered_people')).rows; }
-  finally { await c.end().catch(() => {}); }
+  try {
+    // the card column comes with patch 148 (docs/client-hub/intake_registered_people_card.sql); before it, the same rows without
+    try { return (await c.query('SELECT reg_key, source, contact_id, first_name, last_name, email, company, card FROM intake_read.registered_people')).rows; }
+    catch (e) { if (e && e.code === '42703') return (await c.query('SELECT reg_key, source, contact_id, first_name, last_name, email, company FROM intake_read.registered_people')).rows; throw e; }
+  } finally { await c.end().catch(() => {}); }
 }
 /** The registered people now (or up to 60 s ago): [{ regKey, source, chContactId, first, last, name, email, company }]; null
  *  when not configured or not reachable. */
@@ -59,7 +62,8 @@ export async function registrations({ env = process.env, now = Date.now() } = {}
     const first = String(r.first_name || '').trim().slice(0, 80), last = String(r.last_name || '').trim().slice(0, 80);
     return { regKey: String(r.reg_key).slice(0, 80), source: ['link', 'gift', 'page'].includes(r.source) ? r.source : 'page',
       chContactId: r.contact_id ? String(r.contact_id) : '', first, last, name: [first, last].filter(Boolean).join(' '),
-      email: low(r.email).slice(0, 200), company: String(r.company || '').trim().slice(0, 200) };
+      email: low(r.email).slice(0, 200), company: String(r.company || '').trim().slice(0, 200),
+      card: /^[a-hj-km-np-z2-9]{6}$/.test(String(r.card || '')) ? String(r.card) : '' };
   });
   cache = { at: now, rows: clean };
   return clean;
