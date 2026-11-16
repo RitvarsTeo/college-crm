@@ -3,3 +3,5 @@
 * text=auto eol=lf
 *.png binary
 *.xlsx binary
+# 16.11.2026: the public logo files are served byte for byte as given (their sha256 is pinned in test/deploy_boundary.test.js)
+public/brand/** binary
