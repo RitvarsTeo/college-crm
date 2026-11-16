@@ -135,9 +135,9 @@ export function dueTimes(end, companies) {
 
 /** One reminder email for list owner `s` ({ code, email }) with `o` = { companies, passed } open: the same text the cron sends. */
 export function reminderMail(s, o, kind, end = deadline()) {
-  const day = kind === 'day_before' ? 'rīt' : 'šodien';
-  return { to: s.email, subject: `Intake: tavs Grand Opening saraksts tiek slēgts ${day} plkst. 17:00`,
-    text: `Tavs Grand Opening saraksts tiek slēgts ${lvWhen(end)}.\n\nVēl jāizlemj: ${lvN(o.companies, 'uzņēmums', 'uzņēmumi')}\n`
+  // the list does not close at the deadline (his pick "Leave as they are"): his wording B, 16.11.2026 - a reminder and the date
+  return { to: s.email, subject: 'Intake: atgādinājums par Grand Opening sarakstu',
+    text: `Termiņš: ${lvWhen(end)}.\n\nVēl jāizlemj: ${lvN(o.companies, 'uzņēmums', 'uzņēmumi')}\n`
       + (o.passed ? `Nodoti tev: ${lvN(o.passed, 'cilvēks', 'cilvēki')}\n` : '') + `\nhttps://intake.novikontas.org/#/tc/mylist/${encodeURIComponent(s.code)}\n\n${AUTO}\n` };
 }
 

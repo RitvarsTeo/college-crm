@@ -95,8 +95,10 @@ test('reminders: at most two per owner, the morning before at 09:00 (his pick 16
   assert.equal(po.dueTimes(end, 5).day_before.toISOString(), '2026-11-18T07:00:00.000Z', 'Wednesday 18 November 09:00 Riga');
   const a = await po.sendReminders(db, open, send, new Date('2026-11-18T07:00:00Z'));
   assert.equal(a.sent, 5, 'everyone with something open; not MC');
-  assert.ok(sent.every((m) => m.subject === 'Intake: tavs Grand Opening saraksts tiek slēgts rīt plkst. 17:00'));
-  assert.equal(sent.find((m) => m.to === 'js@novikontas.org').text, 'Tavs Grand Opening saraksts tiek slēgts ceturtdien, 19. novembrī, plkst. 17:00.\n\n'
+  // his wording B, 16.11.2026: the list does not close at the deadline, so the email is a reminder with the date
+  assert.ok(sent.every((m) => m.subject === 'Intake: atgādinājums par Grand Opening sarakstu'));
+  assert.ok(sent.every((m) => !/slēgts/.test(m.subject + m.text)), 'never says the list closes');
+  assert.equal(sent.find((m) => m.to === 'js@novikontas.org').text, 'Termiņš: ceturtdien, 19. novembrī, plkst. 17:00.\n\n'
     + 'Vēl jāizlemj: 200 uzņēmumi\nNodoti tev: 1 cilvēks\n\nhttps://intake.novikontas.org/#/tc/mylist/JS\n\nŠī ir automātiska Intake ziņa.\n');
   assert.match(sent.find((m) => m.to !== 'js@novikontas.org').text, /Vēl jāizlemj: 5 uzņēmumi\n\nhttps/, 'nobody passed to him: no such line');
   assert.equal((await po.sendReminders(db, open, send, new Date('2026-11-18T15:10:00Z'))).sent, 0, 'never twice (also later that day)');
@@ -104,7 +106,7 @@ test('reminders: at most two per owner, the morning before at 09:00 (his pick 16
   assert.deepEqual(b.out.map((x) => x.code), ['JS'], 'the long list gets its last call first');
   const c = await po.sendReminders(db, open, send, new Date('2026-11-19T14:30:00Z'));
   assert.equal(c.sent, 4);
-  assert.ok(sent.slice(-4).every((m) => m.subject === 'Intake: tavs Grand Opening saraksts tiek slēgts šodien plkst. 17:00'));
+  assert.ok(sent.slice(-4).every((m) => m.subject === 'Intake: atgādinājums par Grand Opening sarakstu'));
   assert.equal(sent.filter((m) => m.to === 'js@novikontas.org').length, 2, 'two at most');
   assert.equal((await po.sendReminders(db, open, send, new Date('2026-11-19T15:00:00Z'))).sent, 0, 'after the deadline: nothing');
 });
@@ -126,16 +128,9 @@ test('the only automatic emails are the two deadline reminders: Pass on sends no
   assert.doesNotMatch(src, /mailFor|nodeva tev/);
 });
 
-test('a test reminder (patch 152g): admins only, to their own address only, the exact text the cron sends', () => {
-  const route = SERVER.slice(SERVER.indexOf("if (p === '/api/admin/go/reminder-test'"), SERVER.indexOf('// PASS ON (patch 152, 16.11.2026; src/tcgopass.js)'));
-  assert.match(route, /if \(!\(await adminOf\(req\)\) \|\| !me \|\| !me\.email\) return json\(res, 403/);
-  assert.match(route, /tcgopass\.reminderMail\(\{ code, email: me\.email \}/, 'to the signed-in admin, never the list owner');
-  assert.doesNotMatch(route, /tc_go_reminders/, 'nothing is recorded: the real reminders still go');
-  assert.ok(route.includes("if (!end || Date.now() >= end.getTime()) return json(res, 410"), 'it expires with the deadline (KB 08 P11)');
-  assert.ok(route.includes('if (REMINDER_TESTS.length >= 3) return json(res, 429'), 'at most 3 an hour');
-  assert.ok(route.includes('sent && sent.ok ? 200 : 502'), 'fails closed without the sender');
-  const m = po.reminderMail({ code: 'JS', email: 'me@novikontas.org' }, { companies: 3, passed: 0 }, 'day_before');
-  assert.equal(m.to, 'me@novikontas.org');
-  assert.equal(m.subject, 'Intake: tavs Grand Opening saraksts tiek slēgts rīt plkst. 17:00');
-  assert.equal(m.text, 'Tavs Grand Opening saraksts tiek slēgts ceturtdien, 19. novembrī, plkst. 17:00.\n\nVēl jāizlemj: 3 uzņēmumi\n\nhttps://intake.novikontas.org/#/tc/mylist/JS\n\nŠī ir automātiska Intake ziņa.\n');
+test('the test reminder route is gone after its one test (patch 152h, KB 08 P11: no test routes in production); one text for every reminder', () => {
+  assert.ok(!SERVER.includes('/api/admin/go/reminder-test') && !SERVER.includes('REMINDER_TESTS'));
+  const m = po.reminderMail({ code: 'JS', email: 'js@novikontas.org' }, { companies: 3, passed: 0 }, 'last_call');
+  assert.equal(m.subject, 'Intake: atgādinājums par Grand Opening sarakstu');
+  assert.equal(m.text, 'Termiņš: ceturtdien, 19. novembrī, plkst. 17:00.\n\nVēl jāizlemj: 3 uzņēmumi\n\nhttps://intake.novikontas.org/#/tc/mylist/JS\n\nŠī ir automātiska Intake ziņa.\n');
 });
