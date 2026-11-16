@@ -491,10 +491,14 @@ test('(f) every SQL file for the shared database grants intake_app only what it 
     'intake_go_cards.sql: grant execute on function intake_go.card_link(text, text, text) to intake_app;',
     // patch 148, the door (screen 4): link THIS card to a company that has none yet
     'intake_go_cards_door.sql: grant execute on function intake_go.card_link_code(text, text, text, text) to intake_app;',
+    // patch 153: the same view and the same two functions again (reserve cards; a card held by name is never free), no new grant
+    'intake_go_cards_reserve.sql: grant select on intake_go.cards to intake_app;',
+    'intake_go_cards_reserve.sql: grant execute on function intake_go.card_link(text, text, text) to intake_app;',
+    'intake_go_cards_reserve.sql: grant execute on function intake_go.card_link_code(text, text, text, text) to intake_app;',
     // patch 146 (his pick "Yes, build it (Rec.)"): a personal code for every person on a list with an email
     'intake_go_person_codes.sql: grant execute on function intake_go.person_code_issue(text, text, text) to intake_app;',
   ]);
-  for (const f of ['intake_go_cards.sql', 'intake_go_cards_door.sql']) {
+  for (const f of ['intake_go_cards.sql', 'intake_go_cards_door.sql', 'intake_go_cards_reserve.sql']) {
     const cards = fs.readFileSync(path.join(dir, f), 'utf8').toLowerCase();
     assert.ok(!/grant[^;]*\b(anon|authenticated|public)\s*;/.test(cards.replace(/--[^\n]*/g, '')), f + ': nothing to anon, authenticated or public');
     assert.ok(/security definer\s+set search_path = pg_catalog, public/.test(cards), f + ': a definer function with a fixed path');

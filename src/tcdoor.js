@@ -40,6 +40,9 @@ async function keyer(db) {
   };
 }
 
+// a card is held by a company by its key, or by the company's name alone (patch 153: cards the Grand Opening session linked for
+// companies Intake has under no key); such a card is that company's at the door, never "not linked"
+const held = (card) => Boolean(card.companyKey || card.company);
 async function needCard(db, code) {
   const card = await cards.byCode(db, code);
   if (card === undefined) bad('The cards are not reachable.');
@@ -73,14 +76,14 @@ export async function scan(db, text, regs) {
   const card = await cards.byCode(db, code);
   if (card === undefined) bad('The cards are not reachable.');
   if (!card) return { state: 'notours', totals: await totals(db) };
-  if (!card.companyKey) return { state: 'unlinked', code: card.code, place: card.place, ...cards.placeParts(card.place), totals: await totals(db) };
+  if (!held(card)) return { state: 'unlinked', code: card.code, place: card.place, ...cards.placeParts(card.place), totals: await totals(db) };
   return companyView(db, card, regs);
 }
 
 /** "Piece handed over": once per card; the second time changes nothing. */
 export async function handOver(db, code, regs, actor) {
   const card = await needCard(db, cards.codeFrom(code));
-  if (!card.companyKey) bad('Link this card to a company first.');
+  if (!held(card)) bad('Link this card to a company first.');
   await db.prepare('INSERT INTO tc_go_door_pieces (card, company_key, company, place, handed_at, handed_by) VALUES (?,?,?,?,?,?) ON CONFLICT (card) DO NOTHING')
     .run(card.code, card.companyKey, card.company, card.place, nowIso(), actor);
   return companyView(db, card, regs);
@@ -89,7 +92,7 @@ export async function handOver(db, code, regs, actor) {
 /** Tick a person as here (or off again). Only a person shown on this card's screen. */
 export async function tick(db, code, personKey, here, regs, actor) {
   const card = await needCard(db, cards.codeFrom(code));
-  if (!card.companyKey) bad('Link this card to a company first.');
+  if (!held(card)) bad('Link this card to a company first.');
   const v = await companyView(db, card, regs);
   if (!v.people.some((p) => p.key === String(personKey))) bad('This person is not on this card.');
   await db.prepare(`INSERT INTO tc_go_door_people (person_key, card, here, set_at, set_by) VALUES (?,?,?,?,?)
@@ -101,7 +104,7 @@ export async function tick(db, code, personKey, here, regs, actor) {
 /** "+ Add a person not on the list": the name only, ticked as here. */
 export async function addPerson(db, code, name, regs, actor) {
   const card = await needCard(db, cards.codeFrom(code));
-  if (!card.companyKey) bad('Link this card to a company first.');
+  if (!held(card)) bad('Link this card to a company first.');
   const n = String(name || '').replace(/\s+/g, ' ').trim().slice(0, 120);
   if (n.length < 2) bad('Type the guest\'s name.');
   const at = nowIso();

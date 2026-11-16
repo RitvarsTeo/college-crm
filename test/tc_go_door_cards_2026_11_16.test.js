@@ -122,3 +122,12 @@ test('without the registrations the door still works (no people listed); without
   cards.setStore(null);
   await assert.rejects(door.scan(db, 'abcdef', null), /not reachable/);
 });
+
+test('patch 153: a card held by a company NAME (no key) is that company at the door, never "not linked"', async (t) => {
+  const { db, st, regs } = await setup(t);
+  Object.assign(st.rows[1], { company_key: null, company: 'Riva Exploitatie B.V.' });   // 22M, linked by name only
+  const v = await door.scan(db, 'bcdefg', regs);
+  assert.equal(v.state, 'first'); assert.equal(v.company, 'Riva Exploitatie B.V.'); assert.equal(v.place, '22M');
+  assert.deepEqual(v.people, [], 'nobody registered through this card yet');
+  assert.equal((await door.handOver(db, 'bcdefg', regs, 'Door 1')).state, 'here', 'its piece can be handed over');
+});
