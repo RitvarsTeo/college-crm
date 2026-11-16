@@ -164,3 +164,74 @@ test('Q3: the real enquiry form, posted the way Tilda posts it, lands whole', as
   assert.ok(!field('interest') || field('interest').provenance !== 'provider', 'never as a confirmed interest');
   assert.equal(JSON.parse(item.attribution).utm_source, null, 'and never as advert tracking');
 });
+
+// ------------------------------- the new website's three forms, 16.11.2026 --
+// Talk to Admissions, Book a visit and Career support all post to /api/inbound/website. Field names
+// read off the published test pages (how-to-apply-test, facilities-test, sea-practice-test) on 16.11.
+const TALK = {
+  'Student type': 'International student', name: 'Amir Khan', Phone: '+92 300 0000000', email: 'amir@example.com',
+  Citizenship: 'Pakistan', 'Contact method': 'WhatsApp', Topics: 'Visa / residence permit; English requirements',
+  Question: 'Can I start in February?', tranid: '5555555:6666666', formid: 'form5723427903',
+};
+const VISIT = {
+  name: 'Ilze Liepa', Phone: '+371 20000003', email: 'ilze@example.com', Programme: 'Not sure yet',
+  'Preferred time': 'Weekdays 14:00–18:00', 'Tour language': 'Latviešu', 'With parents or friend': 'yes',
+  tranid: '7777777:8888888', formid: 'form5723428203',
+};
+const CAREER = { Form: 'Career support', name: 'Toms Ozols', Phone: '+371 20000004', email: 'toms@example.com',
+  tranid: '9999999:1010101', formid: 'form5544289803' };
+
+test('16.11: Talk to Admissions is named and keeps every answer in the Inbox text', () => {
+  const e = ADAPTERS.website(TALK);
+  assert.equal(e.senderName, 'Amir Khan');
+  assert.equal(e.senderPhone, '+92 300 0000000');
+  assert.equal(e.messageSubject, 'Talk to Admissions');
+  assert.equal(e.extracted.form, 'admissions');
+  assert.match(e.messageBody, /Student: International student/);
+  assert.match(e.messageBody, /Citizenship: Pakistan/);
+  assert.match(e.messageBody, /Contact by: WhatsApp/);
+  assert.match(e.messageBody, /Wants to talk about: Visa \/ residence permit, English requirements/);
+  assert.match(e.messageBody, /Can I start in February\?/);
+});
+
+test('16.11: Book a visit is named, "Not sure yet" is no programme, and the visit choices are kept', () => {
+  const e = ADAPTERS.website(VISIT);
+  assert.equal(e.messageSubject, 'Book a visit');
+  assert.equal(e.extracted.programme, null);
+  assert.match(e.messageBody, /Preferred time: Weekdays 14:00–18:00/);
+  assert.match(e.messageBody, /Tour language: Latviešu/);
+  assert.match(e.messageBody, /Comes with parents or a friend/);
+  assert.equal(ADAPTERS.website({ ...VISIT, Programme: 'Ship Navigation' }).extracted.programme, 'Ship Navigation');
+});
+
+test('16.11: Career support is known by its hidden Form field (it asks only name, phone, email)', () => {
+  const e = ADAPTERS.website(CAREER);
+  assert.equal(e.messageSubject, 'Career support');
+  assert.equal(e.extracted.form, 'career');
+  assert.equal(e.senderEmail, 'toms@example.com');
+  assert.equal(e.messageBody, null);
+  assert.equal(ADAPTERS.website({ ...TALK, Form: 'Talk to Admissions' }).extracted.form, 'admissions');
+  assert.equal(ADAPTERS.website({ ...VISIT, Form: 'Book a visit' }).extracted.form, 'visit');
+});
+
+test('16.11: the old college forms are untouched - no form name, same text', () => {
+  const e = ADAPTERS.website(ENQUIRY);
+  assert.equal(e.messageSubject, null);
+  assert.equal(e.messageBody, 'When does it start?');
+  assert.equal(e.extracted.form, null);
+});
+
+test('16.11: all three forms through the one endpoint land in New Leads, each once, with its form name', async (t) => {
+  const s = await start();
+  t.after(() => s.child.kill());
+  for (const body of [TALK, VISIT, CAREER, TALK]) {
+    const r = await post(s, form(body), { 'x-crm-secret': SECRET });
+    assert.equal(await r.text(), 'ok');
+  }
+  const rows = await newLeads(s);
+  assert.equal(rows.length, 3);
+  const by = Object.fromEntries(rows.map((x) => [x.contact_email, x]));
+  assert.match(by['amir@example.com'].body, /^Talk to Admissions\n/);
+  assert.match(by['ilze@example.com'].body, /^Book a visit\n/);
+  assert.equal(by['toms@example.com'].body, 'Career support');
+});

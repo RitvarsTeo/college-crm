@@ -75,6 +75,38 @@ export function utmFromCookies(cookies) {
   return out;
 }
 
+// The new website's three forms (16.11.2026): Talk to Admissions, Book a visit, Career support. All
+// three post to this one endpoint. A hidden field "Form" names the form when Tilda sends it; without
+// it the form is known by its own questions (field names read off the published test pages 16.11).
+const WEBSITE_FORMS = {
+  admissions: 'Talk to Admissions',
+  visit: 'Book a visit',
+  career: 'Career support',
+};
+function websiteForm(f) {
+  const said = String(f('form', 'form_type', 'formname') || '').toLowerCase();
+  if (/admission|talk/.test(said)) return 'admissions';
+  if (/visit|tour/.test(said)) return 'visit';
+  if (/career|consult/.test(said)) return 'career';
+  if (f('preferred time', 'tour language', 'with parents or friend')) return 'visit';
+  if (f('student type', 'contact method', 'topics', 'question', 'citizenship')) return 'admissions';
+  return null;
+}
+// What the person chose on those forms, one line each, in the form's own words, so the Inbox card
+// reads like the form they filled in. Tilda joins ticked boxes with "; ".
+function websiteAnswers(kind, f) {
+  const line = (label, v) => (v ? `${label}: ${String(v).split(/\s*;\s*/).filter(Boolean).join(', ')}` : null);
+  if (kind === 'admissions') {
+    return [line('Student', f('student type')), line('Citizenship', f('citizenship')),
+      line('Contact by', f('contact method')), line('Wants to talk about', f('topics'))];
+  }
+  if (kind === 'visit') {
+    return [line('Preferred time', f('preferred time')), line('Tour language', f('tour language')),
+      truthy(f('with parents or friend')) ? 'Comes with parents or a friend' : null];
+  }
+  return [];
+}
+
 export const ADAPTERS = {
   // ------------------------------------------------------------- website --
   website: (raw) => {
@@ -84,6 +116,9 @@ export const ADAPTERS = {
     const f = pickFrom(raw);
     const utm = { ...utmFromCookies(raw.COOKIES || raw.cookies) };
     for (const k of ['utm_source', 'utm_medium', 'utm_campaign', 'gclid']) if (f(k)) utm[k] = f(k);
+    const kind = websiteForm(f);
+    const said = str(f('message', 'additional comments', 'comments', 'comment', 'textarea', 'question', 'jautajums', 'jautājums'));
+    const body = [...websiteAnswers(kind, f), said].filter(Boolean).join('\n');
     return makeInbound('website', {
       externalEventId: need(raw.submission_id || raw.idempotency_key || (raw.tranid && 'tilda-' + raw.tranid), 'website', 'submission_id'),
       receivedAt: iso(raw.submitted_at) || now(),
@@ -91,12 +126,15 @@ export const ADAPTERS = {
       senderName: nameFrom(f),
       senderEmail: str(f('email', 'e-mail', 'epasts', 'e-pasts')),
       senderPhone: str(f('phone', 'telefons', 'tel')),
-      messageBody: str(f('message', 'additional comments', 'comments', 'comment', 'textarea', 'jautajums', 'jautājums')),
+      messageSubject: kind ? WEBSITE_FORMS[kind] : null,
+      messageBody: body || null,
       // "Source" on the college form is the person's own answer to "where did you hear about
       // us". It is an answer, not advert tracking, so it never becomes the utm source.
-      extracted: { programme: str(f('programme', 'program', 'study program', 'study programme', 'programma')),
+      // "Not sure yet" on the visit form is no programme.
+      extracted: { programme: /^not sure/i.test(f('programme') || '') ? null
+        : str(f('programme', 'program', 'study program', 'study programme', 'programma')),
         study_form: str(f('study_form')), heard_from: str(f('source')),
-        company: str(f('company', 'name_2')) },
+        company: str(f('company', 'name_2')), form: kind },
       attribution: { utm_source: str(utm.utm_source), utm_medium: str(utm.utm_medium),
         utm_campaign: str(utm.utm_campaign), gclid: str(utm.gclid) },
       consent: { admissions: truthy(f('consent_admissions')), marketing: truthy(f('consent_marketing')) },
