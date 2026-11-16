@@ -3855,6 +3855,22 @@ export const handle = async (req, res) => {
       if (!(await adminOf(req))) return json(res, 403, { error: 'An admin opens this.' });
       return json(res, 200, { groups: await tcmylist.leftOff(db) });
     }
+    // THE CARDS EXPORT (patch 147, 16.11.2026): one row per invited company with its card, place and QR link, for the print run;
+    // an owner their own list, an admin every list; signed-in only (the area check above). Fails closed when the cards are not reachable.
+    if (p === '/api/tc/go/cards.csv' && req.method === 'GET') {
+      const me = await currentUser(req), admin = Boolean(await adminOf(req));
+      const codes = tcmylist.openable(me, admin);
+      if (!codes.length) return json(res, 403, { error: 'There is no list for this account.' });
+      const rows = await tcmylist.cardRows(db, codes);
+      if (!rows) return json(res, 503, { error: 'The cards are not reachable.' });
+      // a cell that starts with = + - @ is written as text, so a spreadsheet never runs it
+      const cell = (v) => { let s = String(v ?? ''); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return /[",\n\r;]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+      const csv = [['Company', 'Place', 'Card code', 'QR link', 'Delivery', 'Dear', 'Invited people', 'Country', 'List owner'],
+        ...rows.map((r) => [r.company, r.place, r.code, r.qr, r.way, r.dear, r.names, r.country, r.owner])].map((r) => r.map(cell).join(',')).join('\r\n');
+      res.writeHead(200, { 'content-type': 'text/csv; charset=utf-8', 'cache-control': 'no-store',
+        'content-disposition': `attachment; filename="Grand Opening cards ${localDate()}.csv"` });
+      return res.end('\uFEFF' + csv);
+    }
     // THE POSTCARD LIST (12.11.2026): the invited people whose company goes in person or by mail; an owner their own, an admin all
     if ((p === '/api/tc/go/postcards' || p === '/api/tc/go/postcards.xlsx') && req.method === 'GET') {
       const me = await currentUser(req), admin = Boolean(await adminOf(req));

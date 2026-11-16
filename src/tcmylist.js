@@ -14,6 +14,7 @@
 // (src/tcs2send.js), in person / post people make the postcard list. Every person's result after each Save is kept
 // (tc_go_decision_log), every move too (tc_go_moves). Admins open every list. Pure data functions; each takes the database first.
 import { TC, TcInputError, nameKey, logTcActivity } from './tc.js';
+import * as cards from './tccards.js';
 import { splitNew } from './tcgosplit.js';
 
 /** Someone else saved the list after this page loaded it. */
@@ -232,6 +233,8 @@ export async function saveState(db, code, state, actor, base = null, editor = ''
     await tx.prepare('INSERT INTO tc_go_saves (sender, at, by_name) VALUES (?,?,?)').run(code, at, actor);
     await tx.prepare("UPDATE tc_go_drafts SET state = '', saved_at = ? WHERE sender = ? AND editor = ?").run(at, code, editorKey);
   });
+  // the cards (patch 147, his pick "Automatic"): every company Invite on this list has its card; a failure never undoes the Save
+  try { await linkCards(db, [code], actor); } catch (e) { console.error(`cards: linking after the save of list ${code} failed (${e.message})`); }
   return myList(db, code, editorKey);
 }
 
@@ -507,4 +510,47 @@ export async function addEmail(db, code, stage2Id, raw, actor, at = nowIso()) {
     }
     return { ok: true, email };
   });
+}
+
+// THE CARDS (patch 147, 16.11.2026; src/tccards.js). One company = one card = one place; the card stays the company's for good.
+
+/** Every company saved as Invite on these lists gets its card (the one it has, or the next free one). Returns counts. */
+export async function linkCards(db, codes, by) {
+  const out = { invited: 0, linked: 0, had: 0, failed: 0, reachable: cards.reachable(db) };
+  if (!out.reachable) return out;
+  const before = await cards.linked(db);
+  const seen = new Set();
+  for (const code of codes) {
+    const L = await myList(db, code);
+    for (const g of L.groups) {
+      if (g.decision !== 'invite' || seen.has(g.key)) continue;
+      seen.add(g.key); out.invited += 1;
+      if (before.has(g.key)) { out.had += 1; continue; }
+      try { (await cards.link(db, g.key, g.name, by)) ? out.linked += 1 : out.failed += 1; }
+      catch (e) { out.failed += 1; console.error(`cards: no card for one company (${e.message})`); }
+    }
+  }
+  return out;
+}
+
+/** The export for the print run: one row per company Invite on these lists, in board order; a company still without a card
+ * comes last with no place, so nothing is hidden. Dear = the first invited person with a name; all = every invited name. */
+export async function cardRows(db, codes) {
+  const have = await cards.linked(db);
+  if (!have) return null;
+  const rows = [], seen = new Set();
+  const WAY = { digital: 'Digital', in_person: 'In person', post: 'By mail' };
+  for (const code of codes) {
+    const L = await myList(db, code);
+    for (const g of L.groups) {
+      if (g.decision !== 'invite' || seen.has(g.key)) continue;
+      seen.add(g.key);
+      const c = have.get(g.key) || null;
+      const people = g.people.filter((p) => (g.way ? p.decision === 'invite' : !p.out));
+      const named = people.map((p) => p.label).filter((n) => n && !n.includes('@'));
+      rows.push({ company: g.name, place: c ? c.place : '', code: c ? c.code : '', qr: c ? cards.qrUrl(c.code) : '', way: WAY[g.way] || '',
+        owner: L.name, dear: named[0] || '', names: named.join('; '), country: g.country || '' });
+    }
+  }
+  return rows.sort((a, b) => (a.place ? 0 : 1) - (b.place ? 0 : 1) || cards.placeOrder(a.place, b.place) || a.company.localeCompare(b.company, 'lv'));
 }
