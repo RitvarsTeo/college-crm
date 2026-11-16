@@ -113,6 +113,19 @@ const PBX_BACKOFF = 'pbx_backoff';
 // every ~32 minutes, a call already stored is skipped by its uniqueid as always. Each call stored records how late it
 // was found (pbx_lag: the newest LAG_KEEP), which is how TeleGroup's real delay is learned.
 export const LATE_HOURS = 48;
+
+// AN OUTAGE (16.11.2026): from 13.11 08:00 Riga every pull failed ("fetch failed"), and the catch-up above would have
+// reached back only CATCH_UP_HOURS (+ the LATE_HOURS sweep) once it worked again. Now a failed pull notes where the
+// last good one ended (sync_state pbx_down_since). While that is set, the catch-up reaches back to it (at most
+// OUTAGE_MAX_DAYS). The first pull that works again turns it into the outage window (pbx_outage "from|to"), if it
+// lasted OUTAGE_MIN_MINUTES or more - a short blip is no outage. A call from inside that window is HISTORY ONLY (the
+// owner's pick 16.11.2026): a known person gets it on their history but no Call back step; an unknown number is
+// stored and set aside with OUTAGE_WHY, never an Inbox card. Everything outside the window is handled as always.
+export const OUTAGE_MAX_DAYS = 14;
+export const OUTAGE_MIN_MINUTES = 60;
+export const OUTAGE_WHY = 'Phone call from the time the PBX could not be read, loaded later (history only)';
+const PBX_DOWN = 'pbx_down_since';
+const PBX_OUTAGE = 'pbx_outage';
 export const RECENT_MINUTES = 60;
 export const SWEEP_PIECES = 6;
 export const LAG_KEEP = 200;
@@ -131,10 +144,11 @@ const PBX_FIELDS = 'pbx_fields';
 
 // Exported for the pushed call events (src/phoneevent.js): one function stores a call, whichever
 // path saw it first, so the two can never make two leads for one call.
-export async function storeCall(db, r, mode, at, out) {
+export async function storeCall(db, r, mode, at, out, { historyOnly = false } = {}) {
   // the pieces overlap on purpose; a call already here was handled last time
   const had = await db.prepare('SELECT uniqueid, duration_sec, talk_sec FROM pbx_calls WHERE uniqueid = ?').get(r.uniqueid);
   if (had) { await fillLength(db, had, r); out.seen++; return; }
+  if (historyOnly) out.history = (out.history || 0) + 1;
 
   let personId = null;
   let inboundId = null;
@@ -146,7 +160,7 @@ export async function storeCall(db, r, mode, at, out) {
     if (r.picked_up) {
       await db.prepare('UPDATE people SET last_contact_at = ? WHERE id = ? AND (last_contact_at IS NULL OR last_contact_at < ?)')
         .run(r.created_at, personId, r.created_at);
-    } else {
+    } else if (!historyOnly) {
       // A KNOWN LEAD RANG AND NOBODY ANSWERED: that is work for today (Ritvars 02.10.2026, "they get
       // recorded for needs action which is today"). Due when they rang, because they have waited since
       // then. One Call back at a time per person. A FINISHED person (Admitted, Not proceeding) gets it too
@@ -179,7 +193,8 @@ export async function storeCall(db, r, mode, at, out) {
     // somebody who keeps ringing has been waiting LONGER, not less.
     const got = await receive(db, { channel: 'phone', externalId: r.uniqueid, receivedAt: r.created_at,
       phone: r.caller_num, body: sentence, source: mode === 'live' ? 'provider' : 'simulated',
-      threadKey: phoneThread(r.caller_num), joinOpenThread: Boolean(rule.oneOpenItemPerNumber),
+      threadKey: phoneThread(r.caller_num), joinOpenThread: !historyOnly && Boolean(rule.oneOpenItemPerNumber),
+      ...(historyOnly ? { filterWhy: OUTAGE_WHY } : {}),
       joinBody: `Rang again ${toRigaStamp(r.created_at).slice(0, 16)}, ${sentence.charAt(0).toLowerCase()}${sentence.slice(1)}` });
     inboundId = got.id;
     if (got.joined) out.again++; else if (got.filtered) out.filtered++; else out.inbox++;
@@ -236,9 +251,22 @@ export async function syncPbx(db, { now = new Date(), minutes = WINDOW_MINUTES,
     return { ok: true, ran: false, channel: 'phone', mode, backingOff: true, until: wait.value,
       why: 'TeleGroup asked us to slow down; the next pull is after ' + toRigaStamp(new Date(Date.parse(wait.value))).slice(11, 16) };
   }
-  const earliest = nowMs - CATCH_UP_HOURS * 3600000;
   const mark = await db.prepare('SELECT value FROM sync_state WHERE name = ?').get(PBX_BOOKMARK);
   const markMs = mark && mark.value ? Date.parse(mark.value) : NaN;
+  // an outage still open: reach back to where the last good pull ended, not just CATCH_UP_HOURS
+  const downRow = await db.prepare('SELECT value FROM sync_state WHERE name = ?').get(PBX_DOWN);
+  const downMs = downRow && downRow.value ? Date.parse(downRow.value) : NaN;
+  const earliest = Number.isFinite(downMs)
+    ? Math.max(nowMs - OUTAGE_MAX_DAYS * 86400000, Math.min(downMs, nowMs - CATCH_UP_HOURS * 3600000))
+    : nowMs - CATCH_UP_HOURS * 3600000;
+  // the last outage window: calls from inside it are history only
+  const outRow = await db.prepare('SELECT value FROM sync_state WHERE name = ?').get(PBX_OUTAGE);
+  let outage = null;
+  if (outRow && outRow.value) {
+    const [f, t] = String(outRow.value).split('|').map((x) => Date.parse(x));
+    if (Number.isFinite(f) && Number.isFinite(t)) outage = { from: f, to: t };
+  }
+  const inOutage = (r) => Boolean(outage) && Date.parse(r.created_at) >= outage.from && Date.parse(r.created_at) < outage.to;
   let from = Number.isFinite(markMs) ? Math.max(earliest, markMs - OVERLAP_MINUTES * 60000) : earliest;
   const firstFrom = from;
 
@@ -264,6 +292,7 @@ export async function syncPbx(db, { now = new Date(), minutes = WINDOW_MINUTES,
       throw err;
     }
     safeUrl = got.safeUrl;
+    await recovered();   // the PBX answered: an outage ends here, before any call of this piece is stored
     const { rows, skipped: sk, destinations: ds } = rowsFrom(got.calls);
     for (const k of Object.keys(skipped)) skipped[k] += sk[k] || 0;
     for (const [d, n] of Object.entries(ds || {})) destinations[d] = (destinations[d] || 0) + n;
@@ -272,7 +301,7 @@ export async function syncPbx(db, { now = new Date(), minutes = WINDOW_MINUTES,
     kept += rows.length;
     for (const r of rows) {
       const seenBefore = out.seen;
-      await storeCall(db, r, mode, at, out);
+      await storeCall(db, r, mode, at, out, { historyOnly: inOutage(r) });
       if (out.seen === seenBefore) {
         lags.push({ calledAt: r.created_at, foundAt: at, lagMin: Math.max(0, Math.round((nowMs - Date.parse(r.created_at)) / 60000)), by });
         if (by === 'sweep') out.late = (out.late || 0) + 1;
@@ -281,10 +310,35 @@ export async function syncPbx(db, { now = new Date(), minutes = WINDOW_MINUTES,
     return true;
   };
 
+  // The first piece decides whether the PBX can be read at all. A failure (not a 429) notes where the last good pull
+  // ended, once, and fails the run as before. A success after an outage turns it into the outage window.
+  let firstPieceOk = false;
+  const tryPiece = async (a, b, by) => {
+    try { return await readPiece(a, b, by); } catch (err) {
+      if (!firstPieceOk && !Number.isFinite(downMs)) {
+        const lastGood = Number.isFinite(markMs) ? new Date(markMs).toISOString() : new Date(a).toISOString();
+        await saveState(db, PBX_DOWN, lastGood, { firstFailureAt: at, error: String((err && err.message) || '').slice(0, 200) }, at);
+      }
+      throw err;
+    }
+  };
+  const recovered = async () => {
+    if (firstPieceOk) return;
+    firstPieceOk = true;
+    if (!Number.isFinite(downMs)) return;
+    if (nowMs - downMs >= OUTAGE_MIN_MINUTES * 60000) {
+      outage = { from: downMs, to: nowMs };
+      await saveState(db, PBX_OUTAGE, `${new Date(downMs).toISOString()}|${new Date(nowMs).toISOString()}`,
+        { minutes: Math.round((nowMs - downMs) / 60000), endedAt: at }, at);
+      out.outage = { from: toRigaStamp(new Date(downMs)), to: toRigaStamp(new Date(nowMs)) };
+    }
+    await db.prepare('DELETE FROM sync_state WHERE name = ?').run(PBX_DOWN);
+  };
+
   while (from < nowMs) {
     if (pieces > 0 && clock() - startedAt > budgetMs) break;
     const to = Math.min(from + minutes * 60000, nowMs);
-    if (!(await readPiece(from, to, 'window'))) break;
+    if (!(await tryPiece(from, to, 'window'))) break;
     pieces++;
     reached = to;
     // saved after every piece, so a run that dies half way loses nothing
