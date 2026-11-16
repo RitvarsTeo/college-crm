@@ -177,6 +177,7 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
 .scanner .res.info{background:var(--navy)}
 .scanner .res.warn{background:var(--warn)}
 .scanner .res.stop{background:#4a5566}
+.scanner .res.bad{background:#c0392b}
 .scanner .cnt{display:flex;gap:18px;margin-top:12px;font-weight:700;color:#cfd8e3}
 .scanner .cnt b{color:#fff;font-size:20px}
 .guests{display:flex;flex-direction:column;gap:10px}
@@ -324,29 +325,23 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
  </div>
 </section>
 
-<section class="ch" data-t="The ticket" data-s="Stage 3">
- <h2>Stage 3: a ticket for every person</h2>
- <p class="lead">Each registered guest gets their own ticket by email; its QR is theirs alone and gets them a puzzle piece at the door.</p>
- <!-- 12.11.2026, his words "demo has to be like the real thing" + "QR + calendar now": the real ticket email, drawn from
-      src/tctickets.js on each open and signed by the viewer's own list owner; Add to calendar -->
- <a class="card inletter tkl" href="letters/5_ticket.html" target="_blank" rel="noopener"><div class="lt tk"><iframe src="letters/5_ticket.html" tabindex="-1" loading="lazy" scrolling="no" title="The ticket email"></iframe></div></a>
-</section>
 
 <section class="ch" data-t="At the entrance" data-s="27.05.2027">
- <h2>At the entrance: scan, welcome, hand over a piece</h2>
- <p class="lead">Press a guest to scan their ticket.</p>
+ <h2>At the entrance: scan the invitation card, welcome, hand over a piece</h2>
+ <p class="lead">Press a guest to scan their invitation card.</p>
+ <!-- 16.11.2026 (patch 148), his words "Please update the door flow and the Grand Opening demo to match": the same screens as
+      the door in Intake (#/tc/door): first of the company, already here, card not linked, not our QR. No ticket. -->
  <div class="door">
   <div class="scanner">
-   <div class="sh"><span>Entrance scanner · Door 1</span><span id="clock">10:04</span></div>
-   <div class="res" id="res"><div class="big">Ready to scan</div><div class="mid">Point the camera at the ticket QR.</div></div>
-   <div class="cnt"><span>Checked in <b id="c-in">0</b></span><span>Pieces handed over <b id="c-pc">0</b></span></div>
+   <div class="sh"><span>Grand Opening door</span><span id="clock">10:04</span></div>
+   <div class="res" id="res"><div class="big">Ready</div><div class="mid">Point at the invitation QR.</div></div>
+   <div class="cnt"><span>Companies <b id="c-co">0</b></span><span>People <b id="c-in">0</b></span></div>
   </div>
   <div class="guests">
    <button data-g="anna"><span><b>Anna Bērziņa</b><span id="g-anna"></span></span><em>Scan →</em></button>
    <button data-g="janis"><span><b>Jānis Ozols</b><span id="g-janis"></span></span><em>Scan →</em></button>
-   <button data-g="anna2"><span><b>Anna Bērziņa again</b><span>same ticket, second time</span></span><em>Scan →</em></button>
-   <button data-g="liga"><span><b>Līga Kalniņa</b><span id="g-liga"></span></span><em>Scan →</em></button>
-   <button data-g="x"><span><b>A ticket we do not know</b><span>screenshot of someone else's code</span></span><em>Scan →</em></button>
+   <button data-g="spare"><span><b>Līga Kalniņa</b><span>a card from a meeting, not linked yet</span></span><em>Scan →</em></button>
+   <button data-g="x"><span><b>A code we do not know</b><span>not a Grand Opening card</span></span><em>Scan →</em></button>
   </div>
  </div>
  <div class="card pc-hand"><img class="piece realpiece" src="assets/piece_gift.jpg" alt=""><div><b style="font-size:20px" id="pc-name"></b><br><span style="color:var(--muted);font-weight:600" id="pc-sub"></span></div></div>
@@ -378,9 +373,9 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
   <li><div><b>Digital invitations from each owner's own mailbox</b><span>personal link for each person</span></div></li>
   <li><div><b>Registrations on the landing page</b><span>counted by channel</span></div></li>
   <li><div><b>The count</b><span>people per mother company, branches grouped</span></div></li>
-  <li><div><b>Stage 3: tickets</b><span>one per person, by email, Add to calendar</span></div></li>
+  <li><div><b>The cards</b><span>one per invited company, its QR registers and opens the door</span></div></li>
   <li><div><b>Pieces cut</b><span>one per guest, own place, plus spares</span></div></li>
-  <li class="end"><div><b>Thursday 27 May 2027, 10:00</b><span>ticket scanned at the door, piece handed over, piece on the board</span></div></li>
+  <li class="end"><div><b>Thursday 27 May 2027, 10:00</b><span>invitation card scanned at the door, piece handed over, piece on the board</span></div></li>
  </ol>
 </section>
 </main>
@@ -440,23 +435,25 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
  var me=b9[12*W+20]; me.classList.remove('mine'); me.classList.add('hl');
 
 
- /* 7 entrance */
- var st={in:{},pc:{}}, res=document.getElementById('res');
+ /* 7 entrance: the door by card (patch 148) */
+ var st={pc:null,ppl:{},linked:false}, res=document.getElementById('res');
  var PC=(R.piece&&R.piece.name)||'', BR=(R.piece&&R.piece.branchNames)||[], OT=R.other||'';
- var G={anna:{n:'Anna Bērziņa',c:PC,t:'T1'},janis:{n:'Jānis Ozols',c:PC,t:'T2'},anna2:{n:'Anna Bērziņa',c:PC,t:'T1'},liga:{n:'Līga Kalniņa',c:OT,t:'T3'}};
- document.getElementById('g-anna').textContent=PC+(BR[0]?' · '+BR[0]:''); document.getElementById('g-janis').textContent=PC+(BR[1]?' · '+BR[1]:'');
- document.getElementById('g-liga').textContent=OT;
+ document.getElementById('g-anna').textContent=PC+(BR[0]?' · '+BR[0]:'')+' · first of the company'; document.getElementById('g-janis').textContent=PC+' · same card';
  document.getElementById('b-me').textContent="Anna Bērziņa's piece"+(PC?' · '+PC:'');
  var mins=4;
  function now(){ mins++; return '10:'+(mins<10?'0':'')+mins; }
  function show7(cls,big,mid,act){ res.className='res '+cls; res.innerHTML='<div class="big">'+big+'</div><div class="mid">'+mid+'</div>'+(act?'<span class="act">'+act+'</span>':''); }
+ function counts(){ document.getElementById('c-co').textContent=(st.pc?1:0)+(st.linked?1:0); document.getElementById('c-in').textContent=Object.keys(st.ppl).length; }
  document.querySelectorAll('.guests button').forEach(function(b){ b.onclick=function(){
-  var g=G[b.dataset.g], t=now(); document.getElementById('clock').textContent=t;
-  if(!g){ show7('stop','Not on the guest list','This code is not a Grand Opening ticket.','Send to the help desk'); return; }
-  if(st.in[g.t]){ show7('warn','Already checked in','Ticket of '+esc(g.n)+', checked in at '+st.in[g.t].t+' - piece given.','Ask for ID, call the help desk'); return; }
-  st.in[g.t]={t:t,n:g.n};
-  show7('ok','Welcome, '+esc(g.n.split(' ')[0])+'.',esc(g.c),'Hand over a piece');
-  document.getElementById('c-in').textContent=Object.keys(st.in).length; document.getElementById('c-pc').textContent=Object.keys(st.in).length;
+  var g=b.dataset.g, t=now(); document.getElementById('clock').textContent=t;
+  if(g==='x'){ show7('bad','Not a Grand Opening card','Please send the guest to the help desk.','Or find the guest by name'); return; }
+  if(g==='spare'){ st.linked=true; st.ppl.liga=1; show7('warn','Card 22M','Not linked to a company yet. Which company is this guest from? '+(OT?esc(OT)+' - linked.':''),'Link card 22M · show piece'); counts(); return; }
+  var who=g==='anna'?'Anna Bērziņa':'Jānis Ozols';
+  st.ppl[g]=1;
+  var CO=PC?esc(PC):'The company';
+  if(!st.pc){ st.pc=t; show7('ok',CO,'First guest of this company. Announce: "Welcome'+(PC?', '+esc(PC):'')+'!" Hand over piece 14H, column 14, row H. '+esc(who)+' ticked.','Piece handed over · next scan'); }
+  else { show7('info',CO,'Piece 14H already handed over at '+st.pc+'. '+esc(who)+' ticked as here.','Next scan'); }
+  counts();
  }; });
 
  var h=parseInt((location.hash||'#1').slice(1),10); show(isNaN(h)?0:h-1);

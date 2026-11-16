@@ -189,15 +189,16 @@ test('over the wire: ticket cards, preview and Send for admins only; the door fo
   assert.notEqual((await post('/api/tc/go/tickets/send', null, { sender: 'JS' })).status, 200);
 });
 
-test('12.11 the demo is like the real thing: the ticket chapter is the real ticket email (Add to calendar, signed by the own list owner of the viewer), no Wallet anywhere in the demo', async () => {
+test('16.11 (patch 148) the demo door is the door by card: no ticket chapter, the same four answers as #/tc/door, no Wallet', async () => {
   const godemo = await import('../src/godemo.js');
   const html = godemo.read(godemo.fileFor(godemo.PREFIX)).toString('utf8');
-  const a = html.indexOf('data-t="The ticket"'), ch = html.slice(a, html.indexOf('</section>', a));
-  assert.ok(ch.includes('<iframe src="letters/5_ticket.html"'));
+  assert.ok(!html.includes('data-t="The ticket"') && !html.includes('letters/5_ticket.html'), 'no ticket chapter');
+  const a = html.indexOf('data-t="At the entrance"'), ch = html.slice(a, html.indexOf('</section>', a));
+  assert.ok(ch.includes('Press a guest to scan their invitation card.') && ch.includes('Point at the invitation QR.'));
+  for (const t of ['First guest of this company', 'already handed over at', 'Not linked to a company yet', 'Not a Grand Opening card']) assert.ok(html.includes(t), t);
   assert.ok(!/wallet/i.test(html), 'no Wallet in the demo');
-  assert.ok(html.includes('<b>Stage 3: tickets</b><span>one per person, by email, Add to calendar</span>'));
-  const t = godemo.read(godemo.fileFor(godemo.PREFIX + 'letters/5_ticket.html', { email: 'js@novikontas.org' })).toString('utf8');
-  assert.ok(t.includes('See you soon') && t.includes('>Add to calendar</a>') && t.includes('Jānis Sticenko<br>Novikontas Academy') && !/wallet/i.test(t));
+  assert.ok(html.includes('<b>The cards</b><span>one per invited company, its QR registers and opens the door</span>'));
+  assert.ok(html.includes('invitation card scanned at the door, piece handed over, piece on the board'));
 });
 
 test('13.11 his pick "Hide until needed": no ticket cards while nobody on an owner list registered, the no-owner people stay one clickable line; at 1 or more the heading equals the sum of its figures', () => {

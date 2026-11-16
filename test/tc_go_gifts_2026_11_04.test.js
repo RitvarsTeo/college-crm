@@ -99,7 +99,7 @@ test('05.11 the demo opens at /api/tc/go/demo without a redirect (Vercel strips 
 test('11.11 the new demo (the Grand Opening 10 chapters) plus In Intake: the tiles open what they name, the letters live', async () => {
   const godemo = await import('../src/godemo.js');
   const html = godemo.read(godemo.fileFor(godemo.PREFIX)).toString('utf8');
-  assert.equal((html.match(/<section class="ch"/g) || []).length, 11);
+  assert.equal((html.match(/<section class="ch"/g) || []).length, 10, 'patch 148: the ticket chapter is out');
   assert.match(html, /<section class="ch" data-t="In Intake" data-s="Intake">/);
   for (const [title, href] of [['Do not invite / hold', '#/tc/go/hold'], ['What came back', '#/tc/go/back'], ['Six owners, six lists', '#/tc/go/lists'],
     ['Company families', '#/tc/families'], ['Clients in Intake', '#/tc/clients'], ['Real company count', '#/tc/companies/go2']]) {
@@ -279,7 +279,7 @@ test('11.11 his word before release: no invented company anywhere in the demo (c
   const html = godemo.read(godemo.fileFor(godemo.PREFIX)).toString('utf8');
   assert.ok(!/Example (Shipping|Lines|Crewing|Tankers)|Baltic Example|Nordic Example/.test(html));
   assert.ok(!html.includes('own QR'));
-  assert.ok(html.includes("var G={anna:{n:'Anna Bērziņa',c:PC,"));
+  assert.ok(html.includes("var PC=(R.piece&&R.piece.name)||'', BR=(R.piece&&R.piece.branchNames)||[], OT=R.other||'';"), 'patch 148: the entrance takes the real company too, no invented fallback');
   const f = await go.goDemoFacts(await openDb());
   assert.ok('other' in f);
 });
@@ -288,19 +288,19 @@ test('11.11 his consolidated list ("we are golden"): Stage 1 first, the send-out
   const godemo = await import('../src/godemo.js');
   const html = godemo.read(godemo.fileFor(godemo.PREFIX)).toString('utf8');
   const order = [...html.matchAll(/<section class="ch" data-t="([^"]+)"/g)].map((m) => m[1]);
-  assert.deepEqual(order, ['The Save the Date', 'Two ways in', 'The send-out', 'The landing page', 'What we measure', 'The count', 'The ticket', 'At the entrance', 'The board', 'In Intake', 'The order']);
+  assert.deepEqual(order, ['The Save the Date', 'Two ways in', 'The send-out', 'The landing page', 'What we measure', 'The count', 'At the entrance', 'The board', 'In Intake', 'The order']);
   assert.ok(!html.includes('Built-in checks') && (html.match(/class="board"/g) || []).length === 1 && !html.includes('board5'));
   // his words 11.11: "The board was supposed to be the pre filled one ... delete the empty one"
   assert.ok(html.includes('id="board9"') && !html.includes('board8') && !html.includes('Place every piece') && !html.includes('Start again'));
   assert.ok(html.includes("b9.forEach(function(c){ if(rnd()<0.155) c.classList.add('mine'); });"));
   const ch = (t) => { const a = html.indexOf('data-t="' + t + '"'); return html.slice(a, html.indexOf('</section>', a)); };
   assert.ok(ch('The Save the Date').includes('src="/assets/go-stage1-email.jpg"'));
-  // 12.11.2026: the ticket chapter is the real ticket email (Thursday 27 May 2027, Your ticket, Add to calendar), test/tc_go_tickets
-  assert.ok(ch('The ticket').includes('<iframe src="letters/5_ticket.html"'));
+  // 16.11.2026 (patch 148, LOCKED "Invitation QR only"): no ticket chapter; the entrance scans the invitation card
+  assert.ok(!html.includes('data-t="The ticket"') && !html.includes('letters/5_ticket.html'));
   assert.ok(ch('At the entrance').includes('pc-hand'));
   assert.ok(html.includes('data-go="3"'));   // "See the page" goes to the landing page
   const ol = ch('The order');
-  assert.ok(ol.indexOf('Stage 1: the Save the Date') < ol.indexOf('Stage 3: tickets') && ol.indexOf('Stage 3: tickets') < ol.indexOf('Pieces cut'));
+  assert.ok(ol.indexOf('Stage 1: the Save the Date') < ol.indexOf('The cards') && ol.indexOf('The cards') < ol.indexOf('Pieces cut'), 'patch 148: the cards, not tickets');
   const f = await go.goDemoFacts(await openDb());
   assert.ok(Array.isArray(f.lists) && f.lists.length === 6 && f.lists.every((l) => /@novikontas\.org$/.test(l.email)));
 });
@@ -340,14 +340,15 @@ test('12.11 patch 130, his words "Update the Grand Opening demo chapter 2 with t
   assert.ok(!page(null).includes('{{SIGNER}}'));
 });
 
-test('12.11 patch 131, his words "everyone at the end get the puzzle piece only at the door" and "yes, staff scan tickets at the door": every guest gets a piece at the door; no chapter says one piece per mother company', async () => {
+test('16.11 patch 148 (his pick "Take it", DOOR_SCANNER_concept): at the entrance the invitation card; the first guest of the company gets the piece, the next one is ticked, no second piece', async () => {
+  // supersedes the 12.11 patch 131 check ("every guest gets a piece at the door"): the concept he picked on 16.11 says
+  // "First of the company - announce + hand over the piece" and "Company already here - no second piece, tick the person"
   const godemo = await import('../src/godemo.js');
   const html = godemo.read(godemo.fileFor(godemo.PREFIX)).toString('utf8');
   const ch = (t) => { const a = html.indexOf('data-t="' + t + '"'); return html.slice(a, html.indexOf('</section>', a)); };
-  for (const no of ['one piece per mother company', 'one place per mother company', 'one per mother company', '= puzzle pieces to cut', 'first guest', 'one puzzle piece each', 'piece already with', "leads to their company's piece", 'No piece to hand over']) assert.ok(!html.includes(no), no);
   assert.ok(ch('The count').includes('Mother companies') && ch('The count').includes('{{MOTHER_COMPANIES}}'), 'the count keeps the mother companies as the Stage 2 picture');
-  assert.ok(ch('At the entrance').includes('hand over a piece') && html.includes("show7('ok','Welcome, '+esc(g.n.split(' ')[0])+'.',esc(g.c),'Hand over a piece');"));
-  assert.ok(html.includes("checked in at '+st.in[g.t].t+' - piece given.'"));
-  assert.ok(ch('The board').includes('one place per guest, plus spares') && ch('The board').includes('every guest puts in their piece'));
-  assert.ok(html.includes('<b>Pieces cut</b><span>one per guest, own place, plus spares</span>'));
+  assert.ok(ch('At the entrance').includes('hand over a piece'));
+  assert.ok(html.includes("First guest of this company. Announce:") && html.includes("already handed over at '+st.pc+'"));
+  assert.ok(!html.includes('Ticket of ') && !html.includes('Checked in <b'), 'no ticket at the door');
+  assert.ok(ch('The board').includes('every guest puts in their piece'));
 });
