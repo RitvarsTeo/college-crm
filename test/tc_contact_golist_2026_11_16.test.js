@@ -128,56 +128,44 @@ test('one transaction: if the list step fails, the contact is not added either',
   assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM tc_company_contacts').get()).n, n0);
 });
 
-test('a company already decided Invite: the decision stays, the new person waits (New, still to decide, gets nothing) until Done + Save', async () => {
+// PEOPLE FOLLOW THE COMPANY (patch 152f, his pick 16.11.2026 "People follow company"): a person added to a company already decided
+// takes its decision and way at once - no reopening, no Done again; "Still to decide" is only companies with no decision
+test('a company already decided Invite: the new person follows Invite and its way at once (patch 152f)', async () => {
   const db = await openDb();
   const { one } = await seed(db);
   const K = 'id:' + one;
   await ml.saveState(db, 'JS', { picks: { [K]: { decision: 'invite', way: 'digital' } }, out: [], moves: {} }, 'Jānis', 0);
-  const before = await ml.digitalIds(db, 'JS');
   const r = await add(db, one, { name: 'Pia Example', email: 'pia@onehold-example.com' }, 'JS');
   assert.equal(r.decided, true);
-  let L = await ml.myList(db, 'JS');
+  const L = await ml.myList(db, 'JS');
   const g = L.groups.find((x) => x.key === K);
   assert.equal(g.decision, 'invite'); assert.equal(g.way, 'digital', 'the company decision is not changed');
   const p = person(L, 'pia@onehold-example.com');
-  assert.equal(p.fresh, true); assert.equal(p.decision, null, 'still to decide');
-  assert.equal(person(L, 'olga@onehold-example.com').decision, 'invite', 'the people already there keep theirs');
-  assert.equal(L.figures.todo, 2, 'the new person counts as still to decide (with Simon, undecided at Splitwave)');
-  assert.deepEqual([...(await ml.digitalIds(db, 'JS'))].sort(), [...before].sort(), 'no Stage 2 email for the new person yet');
-  // Done on the company, then Save
-  const v = L.version.id;
-  L = await ml.saveState(db, 'JS', { ...ml.stateOf(L), settled: [p.id] }, 'Jānis', v);
-  const q = person(L, 'pia@onehold-example.com');
-  assert.equal(q.fresh, false); assert.equal(q.decision, 'invite');
-  assert.ok((await ml.digitalIds(db, 'JS')).has(p.id));
-  assert.ok((await db.prepare('SELECT settled_at FROM tc_go_people_new WHERE stage2_id = ?').get(p.id)).settled_at);
-  assert.equal((await db.prepare("SELECT decision FROM tc_go_decision_log WHERE stage2_id = ? ORDER BY id DESC").get(p.id)).decision, 'invite');
+  assert.equal(p.fresh, false); assert.equal(p.decision, 'invite', 'follows the company');
+  assert.equal(L.figures.todo, 1, 'only Simon, at the undecided Splitwave, is still to decide');
+  assert.ok((await ml.digitalIds(db, 'JS')).has(p.id), 'gets the Stage 2 email with the company');
+  assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM tc_go_people_new').get()).n, 0, 'nobody is marked to decide');
 });
 
-test('a company already decided No: the new person waits, then follows No after Done; a settled id that is not new is ignored', async () => {
+test('a company already decided No: the new person follows No at once (patch 152f)', async () => {
   const db = await openDb();
   const { one } = await seed(db);
   const K = 'id:' + one;
   await ml.saveState(db, 'JS', { picks: { [K]: { decision: 'no' } }, out: [], moves: {} }, 'Jānis', 0);
   await add(db, one, { name: 'Pia Example', email: 'pia@onehold-example.com' }, 'JS');
-  let L = await ml.myList(db, 'JS');
-  const p = person(L, 'pia@onehold-example.com'), olga = person(L, 'olga@onehold-example.com');
-  assert.equal(p.decision, null); assert.equal(L.groups.find((x) => x.key === K).decision, 'no');
-  L = await ml.saveState(db, 'JS', { ...ml.stateOf(L), settled: [p.id, olga.id, 999999] }, 'Jānis', L.version.id);
+  const L = await ml.myList(db, 'JS');
   assert.equal(person(L, 'pia@onehold-example.com').decision, 'no');
-  assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM tc_go_people_new').get()).n, 1, 'only the new person has a row');
+  assert.equal(L.groups.find((x) => x.key === K).decision, 'no');
 });
 
-test('a Save without Done leaves the new person waiting; an old Client Hub split reload never marks them gone', async () => {
+test('a company decided Invite by mail: the new person is on the postcard list at once; an old Client Hub split reload never marks them gone', async () => {
   const db = await openDb();
   const { one } = await seed(db);
   const K = 'id:' + one;
   await ml.saveState(db, 'JS', { picks: { [K]: { decision: 'invite', way: 'post' } }, out: [], moves: {} }, 'Jānis', 0);
   await add(db, one, { name: 'Pia Example', email: 'pia@onehold-example.com' }, 'JS');
-  let L = await ml.myList(db, 'JS');
-  L = await ml.saveState(db, 'JS', { picks: { ...ml.stateOf(L).picks, 'id:0': { decision: 'no' } }, out: [], moves: {} }, 'Jānis', L.version.id);
-  assert.equal(person(L, 'pia@onehold-example.com').decision, null);
-  assert.equal((await ml.postcardRows(db, ['JS'])).some((r) => r.person === 'Pia Example'), false, 'not on the postcard list while waiting');
+  assert.equal(person(await ml.myList(db, 'JS'), 'pia@onehold-example.com').decision, 'invite');
+  assert.equal((await ml.postcardRows(db, ['JS'])).some((r) => r.person === 'Pia Example'), true, 'on the postcard list with the company');
   const rows = (await db.prepare("SELECT ch_contact_id, sender, name, company, email FROM tc_go_stage2 WHERE ch_contact_id NOT LIKE 'intake:%'").all());
   const out = await tcgo.stage2Load(db, rows, 'test', { apply: true });
   assert.equal(out.counts.gone, 0);

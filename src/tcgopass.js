@@ -44,9 +44,7 @@ async function history(tx, r, body, actor, at) {
 async function moveTo(tx, r, to, at, actor) {
   await tx.prepare('UPDATE tc_go_stage2 SET sender = ? WHERE id = ?').run(to, Number(r.id));
   for (const t of ['tc_go_people_new', 'tc_go_people_out', 'tc_go_assign']) await tx.prepare(`DELETE FROM ${t} WHERE stage2_id = ?`).run(Number(r.id));
-  // decided on that list, saved or only in its owner's draft (src/tcmylist.js decidedKeys)
-  const { decidedKeys } = await import('./tcmylist.js');
-  if (r.company_id && (await decidedKeys(tx)).has(to + '|id:' + Number(r.company_id))) await tx.prepare('INSERT INTO tc_go_people_new (stage2_id, sender, added_at, added_by) VALUES (?,?,?,?)').run(Number(r.id), to, at, actor);
+  // a company already decided on that list: the person follows its decision (patch 152f, his pick "People follow company")
 }
 
 /**

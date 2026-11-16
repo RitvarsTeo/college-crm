@@ -51,11 +51,10 @@ export function personLabel(name, company, email) {
 
 async function rowsOf(db, code) {
   return db.prepare(`SELECT s.id, s.ch_contact_id, s.name, s.position, s.country, s.company, s.email, MIN(k.company_id) AS company_id, MAX(a.company_key) AS assigned,
-      MAX(CASE WHEN n.stage2_id IS NULL THEN 0 ELSE 1 END) AS fresh
+      0 AS fresh   -- PEOPLE FOLLOW THE COMPANY (patch 152f, his pick 16.11.2026): nobody is "still to decide" inside a decided company
     FROM tc_go_stage2 s LEFT JOIN tc_company_contacts k ON k.ch_contact_id = s.ch_contact_id AND k.archived_at IS NULL
       AND k.company_id IN (SELECT id FROM tc_companies WHERE archived_at IS NULL)
     LEFT JOIN tc_go_assign a ON a.stage2_id = s.id AND a.sender = s.sender
-    LEFT JOIN tc_go_people_new n ON n.stage2_id = s.id AND n.settled_at IS NULL
     WHERE s.sender = ? AND s.gone = 0 GROUP BY s.id, s.ch_contact_id, s.name, s.position, s.country, s.company, s.email ORDER BY s.id`).all(String(code));
 }
 // a person's own company on the list: their Intake company, else the company name they came with
@@ -320,7 +319,7 @@ export async function addContactToList(tx, { code, company, contactId, f, actor,
   const sid = Number(r.lastInsertRowid);
   const pick = await tx.prepare('SELECT decision FROM tc_go_company_picks WHERE sender = ? AND company_key = ?').get(code, 'id:' + Number(company.id));
   const decided = Boolean(pick && pick.decision);
-  if (decided) await tx.prepare('INSERT INTO tc_go_people_new (stage2_id, sender, added_at, added_by) VALUES (?,?,?,?)').run(sid, code, at, actor);
+  // a decided company: the person simply follows its decision and way (patch 152f, his pick "People follow company")
   await logTcActivity(tx, Number(company.id), { kind: 'edit', field: 'go_list', old: null, new: ownerName,
     body: `Added to the Grand Opening list of ${ownerName}`, actor, at, contactId: Number(contactId) });
   return { list: 'added', owner: ownerName, decided };
@@ -473,14 +472,10 @@ export async function placeEveryone(db, actor, at = nowIso()) {
   const P = await placement(db);
   if (P.place.length || P.revive.length) {
     await db.transaction(async (tx) => {
-      // decided = saved (tc_go_company_picks) OR picked in an owner's draft not saved yet (16.11.2026: AB marked his list and never
-      // pressed Save): either way the person who comes in is New there, never silently under the draft's Invite
-      const picks = await decidedKeys(tx);
-      const decided = (code, companyId) => picks.has(code + '|id:' + Number(companyId));
+      // a person who comes into a decided company follows its decision and way (patch 152f, his pick "People follow company")
       const owner = (code) => (S2().find((s) => s.code === code) || {}).name || code;
       for (const r of P.revive) {
         await tx.prepare('UPDATE tc_go_stage2 SET gone = 0 WHERE id = ? AND gone = 1').run(r.stage2Id);
-        if (decided(r.code, r.companyId)) await tx.prepare('INSERT INTO tc_go_people_new (stage2_id, sender, added_at, added_by) VALUES (?,?,?,?)').run(r.stage2Id, r.code, at, actor);
         await logTcActivity(tx, r.companyId, { kind: 'edit', field: 'go_list', old: null, new: owner(r.code), body: `Back on the Grand Opening list of ${owner(r.code)}`, actor, at, contactId: r.contactId });
       }
       for (const r of P.place) {
@@ -488,7 +483,6 @@ export async function placeEveryone(db, actor, at = nowIso()) {
         if (!r.ch) await tx.prepare('UPDATE tc_company_contacts SET ch_contact_id = ? WHERE id = ? AND ch_contact_id IS NULL').run(ch, r.contactId);
         const ins = await tx.prepare(`INSERT INTO tc_go_stage2 (ch_contact_id, sender, name, company, position, country, email, gone, loaded_at, loaded_by)
           VALUES (?,?,?,?,?,?,?,0,?,?)`).run(ch, r.code, r.name || null, r.company, r.position, r.country, r.email || null, at, actor);
-        if (decided(r.code, r.companyId)) await tx.prepare('INSERT INTO tc_go_people_new (stage2_id, sender, added_at, added_by) VALUES (?,?,?,?)').run(Number(ins.lastInsertRowid), r.code, at, actor);
         await logTcActivity(tx, r.companyId, { kind: 'edit', field: 'go_list', old: null, new: owner(r.code), body: `Added to the Grand Opening list of ${owner(r.code)}` + (r.why ? ` (${r.why})` : ''), actor, at, contactId: r.contactId });
       }
     });

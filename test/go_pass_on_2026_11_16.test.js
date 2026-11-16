@@ -71,15 +71,15 @@ test('nobody who had him or was passed him can be picked again; when nobody is l
   await assert.rejects(po.passOn(db2, 'AB', s2.id, '', 'a', at), /Pick who/);
 });
 
-test('accepted into a company already decided on that list: the person is New there (patch 145)', async () => {
+test('accepted into a company already decided on that list: the person follows its decision (patch 152f)', async () => {
   const db = await openDb();
   const { co, id } = await seed(db);
   await db.prepare(`INSERT INTO tc_go_company_picks (sender, company_key, decision, way, set_at, set_by) VALUES ('JS', ?, 'invite', 'digital', ?, 'j')`).run('id:' + co, at);
   await po.passOn(db, 'AB', id, 'JS', 'a', at);
   await po.accept(db, 'JS', id, 'j', at);
   const p = (await ml.myList(db, 'JS')).groups[0].people[0];
-  assert.equal(p.fresh, true);
-  assert.equal(p.decision, null);
+  assert.equal(p.fresh, false);
+  assert.equal(p.decision, 'invite', 'follows the company Invite (patch 152f)');
 });
 
 test('reminders: at most two per owner, the morning before at 09:00 (his pick 16.11.2026) and the time his list still needs (1 min per company, at least 30)', async () => {

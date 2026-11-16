@@ -72,7 +72,7 @@ test('the plan: who goes where, who stays off and why; nothing written', async (
   assert.equal(await onList(db, ids.excel), undefined, 'the plan writes nothing');
 });
 
-test('placeEveryone: onto the owner\'s list; a decided company keeps its decision and the person is New; the dropped come back', async () => {
+test('placeEveryone: onto the owner\'s list; a decided company keeps its decision and the person follows it (patch 152f); the dropped come back', async () => {
   const db = await openDb();
   const { ids } = await seed(db);
   const r = await ml.placeEveryone(db, 'Test Person');
@@ -80,13 +80,13 @@ test('placeEveryone: onto the owner\'s list; a decided company keeps its decisio
   assert.deepEqual(r.byList, { JS: 2, DS: 1, MC: 1 });
   assert.equal((await onList(db, ids.excel)).sender, 'JS');
   assert.equal((await onList(db, ids.late)).sender, 'DS');
-  assert.ok((await onList(db, ids.late)).fresh, 'Decided Example was decided: the new person is still to decide (patch 145)');
+  assert.ok(!(await onList(db, ids.late)).fresh, 'Decided Example was decided: the new person follows it (patch 152f), nothing to decide');
   const g = await onList(db, ids.dropped);
   assert.deepEqual([g.sender, g.gone], ['MC', 0]);
   for (const id of [ids.dnI, ids.dead, ids.flagged]) assert.equal(await onList(db, id), undefined, 'stays off');
   const L = await ml.myList(db, 'DS');
   const lars = L.groups.flatMap((x) => x.people).find((p) => p.email === 'lars@decided-example.com');
-  assert.equal(lars.decision, null, 'still to decide');
+  assert.equal(lars.decision, 'invite', 'follows the company (his pick: People follow company, 16.11.2026)');
   const again = await ml.placeEveryone(db, 'Test Person');
   assert.deepEqual({ placed: again.placed, revived: again.revived }, { placed: 0, revived: 0 }, 'a second run changes nothing');
 });
@@ -232,7 +232,7 @@ test('patch 151: whoever the rule would place shows on the Grand Opening page as
   assert.ok(ids.excel);
 });
 
-test('an owner\'s unsaved draft survives the re-placing: it still opens, and a person who comes into a company he picked only in the draft is New there', async () => {
+test('an owner\'s unsaved draft survives the re-placing: it still opens, and nobody is marked to decide (patch 152f)', async () => {
   const db = await openDb();
   const { held, ids } = await seed(db);
   // JS marked Heldfast Example as Invite / digital in his draft and never pressed Save (as AB and Alma did, 16.11.2026)
@@ -244,7 +244,7 @@ test('an owner\'s unsaved draft survives the re-placing: it still opens, and a p
   assert.ok(L.draft, 'the draft still opens after: no Save happened, so its base is still the saved version');
   assert.deepEqual(L.draft.state.picks, state.picks, 'his marks unchanged');
   const p = L.groups.flatMap((g) => g.people).find((x) => x.email === 'peteris@heldfast-example.com');
-  assert.equal(p.fresh, true, 'New beside his marks, not silently under the draft\'s Invite');
-  assert.equal(L.groups.flatMap((g) => g.people).find((x) => x.label === 'Nora Noemail').fresh, true);
+  assert.equal(p.fresh, false, 'nobody is marked to decide (patch 152f): he follows the company once the draft is saved');
+  assert.equal(L.groups.flatMap((g) => g.people).find((x) => x.label === 'Nora Noemail').fresh, false);
   assert.ok(ids.excel);
 });
