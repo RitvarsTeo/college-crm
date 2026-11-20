@@ -24,7 +24,8 @@ test('the tiles: one per company, same name whatever the capitals, a click opens
   const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
   assert.match(app, /const key = r\.companyId \? 'id:' \+ Number\(r\.companyId\) : 'n:' \+ String\(r\.company \|\| ''\)\.trim\(\)\.toLowerCase\(\);/);
   assert.match(app, /<div class="tcs2-tiles">/);
-  assert.match(app, /onclick="tcS2SetGift\(\$\{k\}, 'physical'\)">🎁 Physical<\/button>/);
+  // patch 155 (his pick, 20.11.2026): the Physical / Digital switch is off the Grand Opening page; the list is the only place to decide
+  assert.ok(!app.includes("onclick=\"tcS2SetGift(${k}, 'physical')\"") && !app.includes('class="tcs2-gift"'), 'the gift switch is gone from the tiles');
   assert.match(app, /const kind = \(T_S2\.gifts \|\| \{\}\)\[key\] === pick \? 'none' : pick;/);
   assert.ok(app.includes(": esc(g.name || 'No company yet')}</b>"));   // 13.11.2026: the open tile links its name to the company
   const srv = fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8');

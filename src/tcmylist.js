@@ -173,13 +173,22 @@ export async function dropDraft(db, code, editor = '') {
   return { ok: true };
 }
 
-/** Save: only what changed against the saved list becomes the decision, in one transaction. Refused when the list was saved by
- * someone else after the page loaded it (base = the version the page had). Nothing changed = nothing written. */
-export async function saveState(db, code, state, actor, base = null, editor = '') {
+/** Save: only what changed against the saved list becomes the decision, in one transaction. Nothing changed = nothing written.
+ * A page that loaded an older version (base) and sends its changes (patch 155, his pick "We need to fix this all!"): each change
+ * carries the value the page saw before it; the changes go on top of the newest list, and only a company or person that somebody
+ * else changed in between (now neither what the page saw nor what it wants) keeps the newer value and is named back in
+ * `conflicts`. A data step or another save never makes a director's work vanish. A page without `changes` (an old tab) on an
+ * older version is refused as before ("Saved by ... - load it?"). */
+export async function saveState(db, code, state, actor, base = null, editor = '', changes = null) {
   const before = await myList(db, code);
+  let conflicts = [];
   if (base !== null && base !== undefined && Number(base) !== before.version.id) {
-    const v = before.version;
-    throw new MlConflict(`Saved by ${v.by || 'someone else'} at ${when(v.at)} - load it?`, v.by, v.at);
+    if (!changes || typeof changes !== 'object') {
+      const v = before.version;
+      throw new MlConflict(`Saved by ${v.by || 'someone else'} at ${when(v.at)} - load it?`, v.by, v.at);
+    }
+    const m = mergeOnto(before, state, changes);
+    state = m.state; conflicts = m.conflicts;
   }
   const st = clean(before, state);
   const at = nowIso();
@@ -194,7 +203,7 @@ export async function saveState(db, code, state, actor, base = null, editor = ''
   const editorKey = String(editor || actor || '').toLowerCase();
   if (!pickRows.length && !outRows.length && !moves.length && !st.settled.length) {   // Ctrl+S on nothing: no stamp, no write (the audit, 12.11.2026)
     await dropDraft(db, code, editorKey);
-    return { ...before, draft: null, unchanged: true };
+    return { ...before, draft: null, unchanged: true, conflicts };
   }
   const was0 = new Map(before.groups.flatMap((g) => g.people.map((p) => [p.id, { key: g.key, decision: p.decision, way: p.decision === 'invite' ? g.way : null }])));
   await db.transaction(async (tx) => {
@@ -239,7 +248,43 @@ export async function saveState(db, code, state, actor, base = null, editor = ''
   });
   // the cards (patch 147, his pick "Automatic"): every company Invite on this list has its card; a failure never undoes the Save
   try { await linkCards(db, [code], actor); } catch (e) { console.error(`cards: linking after the save of list ${code} failed (${e.message})`); }
-  return myList(db, code, editorKey);
+  return { ...(await myList(db, code, editorKey)), conflicts };
+}
+
+// THE MERGE (patch 155). `changes` = { picks: { key: { decision, way } | null (what the page saw) }, out: { id: true | false (was
+// the person tapped out when the page loaded) }, moves: { id: 'key the person was under when the page loaded' } }. Pure: builds the
+// state to save from the NEWEST list plus the page's changes; a change whose item moved on since (now differs from both what the
+// page saw and what it wants) keeps the newest value and is named.
+const MAX_CHANGES = 5000;
+export function mergeOnto(list, state, changes) {
+  const page = state && typeof state === 'object' ? state : {};
+  const cur = stateOf(list), conflicts = [];
+  const norm = (p) => (p && p.decision ? JSON.stringify({ decision: p.decision, way: p.decision === 'invite' ? p.way || null : null }) : 'null');
+  const nameOf = new Map(list.groups.map((g) => [g.key, g.name]));
+  const personOf = new Map(list.groups.flatMap((g) => g.people.map((p) => [p.id, { label: p.label, key: g.key, company: g.name, out: p.out }])));
+  const picks = { ...cur.picks };
+  for (const [k, from] of Object.entries((changes.picks && typeof changes.picks === 'object') ? changes.picks : {}).slice(0, MAX_CHANGES)) {
+    const want = (page.picks || {})[k] || null, now = cur.picks[k] || null;
+    if (norm(now) !== norm(from) && norm(now) !== norm(want)) { conflicts.push({ kind: 'company', key: k, name: nameOf.get(k) || k }); continue; }
+    if (want && want.decision) picks[k] = { decision: want.decision, way: want.decision === 'invite' ? want.way || null : null };
+    else delete picks[k];
+  }
+  const out = new Set(cur.out), pageOut = new Set([].concat(page.out || []).map(Number));
+  for (const [id, wasOut] of Object.entries((changes.out && typeof changes.out === 'object') ? changes.out : {}).slice(0, MAX_CHANGES)) {
+    const n = Number(id), p = personOf.get(n);
+    if (!p) continue;
+    const want = pageOut.has(n), now = out.has(n);
+    if (now !== Boolean(wasOut) && now !== want) { conflicts.push({ kind: 'person', id: n, name: p.label, company: p.company }); continue; }
+    if (want) out.add(n); else out.delete(n);
+  }
+  const moves = {};
+  for (const [id, fromKey] of Object.entries((changes.moves && typeof changes.moves === 'object') ? changes.moves : {}).slice(0, MAX_CHANGES)) {
+    const n = Number(id), p = personOf.get(n), to = (page.moves || {})[id];
+    if (!p || !to) continue;
+    if (p.key !== String(fromKey) && p.key !== String(to)) { conflicts.push({ kind: 'person', id: n, name: p.label, company: p.company }); continue; }
+    moves[n] = String(to);
+  }
+  return { state: { picks, out: [...out], moves, settled: [].concat(page.settled || []) }, conflicts };
 }
 
 /** The people the owner's Stage 2 send goes to: invited, the company's way digital, not tapped out (saved state only). */

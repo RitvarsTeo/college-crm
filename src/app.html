@@ -3277,6 +3277,9 @@ svg .m-flag-mark{transform-origin:0 100%}
   }
   /* the phone: the bar rides above the bottom tabs and the FEEDBACK button */
   @media (max-width:760px){ html.ui-c .tcrv-bulk{bottom:calc(122px + env(safe-area-inset-bottom));margin-bottom:120px;gap:8px 10px;padding:10px 12px;font-size:13.5px} }
+  /* NOT SAVED (patch 155, his pick): the one red thing on the list pages, a bar that stays until the save goes through */
+  html.ui-c .tcml-unsaved{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#b3261e;color:#fff;border-radius:10px;padding:12px 16px;margin:0 0 14px;position:sticky;top:8px;z-index:6;box-shadow:0 4px 14px rgba(179,38,30,.25)}
+  html.ui-c .tcml-unsaved b{font-size:17px} html.ui-c .tcml-unsaved span{font-weight:600} html.ui-c .tcml-unsaved .btn{margin-left:auto;background:#fff;color:#b3261e;border-color:#fff}
   /* THE GRAND OPENING (#/tc/go, the owner's pick G1, 20.10.2026): four cards, What came back, three boxes; the lists.
      Its own tcgo- names only. Not reached is navy, never red. */
   html.ui-c .tcgo-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:0 0 16px}
@@ -13244,8 +13247,31 @@ function mlSame(a, b) {
 }
 /** Which view shows a company: Still to decide = any person not decided; Invite / No = any person with that result. */
 const mlShows = (g, f) => !f || f === 'all' || g.people.some((p) => (f === 'todo' ? !p.decision : p.decision === f));
+/** What the page changed against what it loaded (patch 155): each change with the value the page saw before, for the server's
+ * merge onto the newest list; n = how many changes are waiting. */
+function mlChanges(W, saved, base) {
+  const norm = (p) => (p && p.decision ? JSON.stringify({ decision: p.decision, way: p.decision === 'invite' ? p.way || null : null }) : 'null');
+  const sp = (saved && saved.picks) || {}, wp = (W && W.picks) || {}, picks = {}, out = {}, moves = {};
+  for (const k of new Set([...Object.keys(sp), ...Object.keys(wp)])) if (norm(wp[k]) !== norm(sp[k])) picks[k] = sp[k] || null;
+  const a = new Set(((saved && saved.out) || []).map(Number)), b = new Set(((W && W.out) || []).map(Number));
+  for (const id of new Set([...a, ...b])) if (a.has(id) !== b.has(id)) out[id] = a.has(id);
+  const home = new Map(((base && base.groups) || []).flatMap((g) => g.people.map((p) => [p.id, g.key])));
+  for (const [id, k] of Object.entries((W && W.moves) || {})) if (home.get(Number(id)) !== k) moves[id] = home.get(Number(id)) || '';
+  const settled = ((W && W.settled) || []).filter((id) => !((saved && saved.settled) || []).includes(id));
+  return { changes: { picks, out, moves }, n: Object.keys(picks).length + Object.keys(out).length + Object.keys(moves).length + settled.length };
+}
 // MLSTATE END
 let T_ML = null;
+// KEPT IN THE BROWSER UNTIL SAVED (patch 155): every unsaved change is also written to this browser, so a closed tab, a lost
+// connection or a refused save never loses a director's work; the next open of the same list saves it (merged onto the newest).
+const tcMlKeepKey = (code) => 'tcml-unsaved:' + code;
+function tcMlKeep() {
+  if (!T_ML) return;
+  try {
+    if (T_ML.dirty) localStorage.setItem(tcMlKeepKey(T_ML.code), JSON.stringify({ W: T_ML.W, saved: T_ML.saved, version: T_ML.version, at: new Date().toISOString() }));
+    else localStorage.removeItem(tcMlKeepKey(T_ML.code));
+  } catch (e) { /* a browser without storage: the red bar still shows */ }
+}
 const TCML_WAYS = [['digital', 'Digital'], ['in_person', 'In person'], ['post', 'By mail']];
 // the full date and time (his rule: a date names the full weekday)
 const tcMlTime = (iso) => {
@@ -13267,6 +13293,15 @@ async function viewTcMyList(code) {
     T_ML.dirty = true; T_ML.status = 'restored'; T_ML.statusAt = base.draft.at; T_ML.lastDraft = JSON.stringify(T_ML.W);
     setTimeout(() => tcMlSave(), 0);   // an old draft is saved for real at once (patch 152: nothing is ever left unsaved)
   }
+  // changes this browser kept from an earlier visit (patch 155): saved now, merged onto the newest list
+  try {
+    const kept = JSON.parse(localStorage.getItem(tcMlKeepKey(pick)) || 'null');
+    if (kept && kept.W && kept.saved && !mlSame(kept.W, kept.saved)) {
+      T_ML.W = { picks: kept.W.picks || {}, out: kept.W.out || [], moves: kept.W.moves || {}, settled: kept.W.settled || [] };
+      T_ML.saved = kept.saved; T_ML.version = Number(kept.version) || 0; T_ML.dirty = true; T_ML.status = 'restored'; T_ML.statusAt = kept.at;
+      setTimeout(() => tcMlSave(), 0);
+    }
+  } catch (e) { /* nothing kept */ }
   tcMlDraw();
   tcMlAutosaveStart();
 }
@@ -13277,6 +13312,7 @@ function tcMlStateOf(base) {
 }
 function tcMlStatus() {
   const S = T_ML;
+  if (S.unsaved && S.dirty) return 'Not saved';
   if (S.status === 'saving' || S.dirty) return 'Saving…';   // every change saves (patch 152)
   return 'All changes saved';
 }
@@ -13312,7 +13348,10 @@ function tcMlDraw() {
   };
   const shown = tcMlShown(V.groups);
   // a refused Save says why on the page, never in a browser box (the audit, 12.11.2026)
-  const note = T_ML.conflict ? `<div class="tcml-note" role="alert">${esc(T_ML.conflict)} <button type="button" class="btn sm" onclick="tcMlReload()">Load it</button></div>`
+  const waiting = T_ML.unsaved && T_ML.dirty ? mlChanges(T_ML.W, T_ML.saved, T_ML.base).n : 0;
+  const note = waiting ? `<div class="tcml-unsaved" role="alert"><b>Not saved</b><span>${tcN(waiting)} ${waiting === 1 ? 'change' : 'changes'} waiting</span><button type="button" class="btn sm" onclick="tcMlSaveNow()">Retry</button></div>`
+    : (T_ML.merged && T_ML.merged.length) ? `<div class="tcml-note" role="status">Changed by someone else meanwhile, their choice is kept: ${esc(T_ML.merged.join(', '))}</div>`
+    : T_ML.conflict ? `<div class="tcml-note" role="alert">${esc(T_ML.conflict)} <button type="button" class="btn sm" onclick="tcMlReload()">Load it</button></div>`
     : T_ML.error ? `<div class="tcml-note" role="alert">${esc(T_ML.error)}</div>` : '';
   $('#view').innerHTML = `<div class="c-head"><div><h1>My Grand Opening list</h1><p class="c-crumb">${esc(D.name)} · ${tcN(D.people)} people · ${tcN(V.groups.length)} companies</p></div>
       <div class="tcml-bar"><span class="tcml-st${T_ML.dirty ? ' dirty' : ''}" role="status">${esc(tcMlStatus())}</span>
@@ -13426,6 +13465,7 @@ function tcMlDrop(ev, key) {
 function tcMlMarkDirty() {
   T_ML.dirty = !mlSame(T_ML.W, T_ML.saved);
   T_ML.error = '';
+  tcMlKeep();
   if (T_ML.status === 'saved' || T_ML.status === 'restored') T_ML.status = '';
   tcMlDraw();
   tcMlAutosaveSoon();
@@ -13438,22 +13478,27 @@ async function tcMlSave() {
   clearTimeout(TCML_SOON);
   T_ML.seq++;                               // an autosave still on its way is ignored from here on
   T_ML.status = 'saving'; T_ML.error = ''; tcMlDraw();
-  const S = T_ML, sent = JSON.stringify(S.W);
+  const S = T_ML, sent = JSON.stringify(S.W), ch = mlChanges(S.W, S.saved, S.base);
   try {
-    const base = await post('/api/tc/go/mylist/save', { sender: S.code, state: JSON.parse(sent), base: S.version });
+    const base = await post('/api/tc/go/mylist/save', { sender: S.code, state: JSON.parse(sent), base: S.version, changes: ch.changes });
     if (T_ML !== S) return true;
+    S.unsaved = false;
+    // somebody else changed one of these companies meanwhile: theirs is kept, and named here (patch 155)
+    S.merged = (base.conflicts || []).map((c) => (c.kind === 'person' ? `${c.name} (${c.company})` : c.name));
     S.base = base; S.version = (base.version || {}).id || 0; S.saved = tcMlStateOf(base);
     // a change made while this save was on its way stays, and saves next; Undo keeps its steps (an undo is itself a saved change)
     const later = JSON.stringify(S.W) !== sent;
     if (!later) S.W = mlClone(S.saved);
     S.dirty = !mlSame(S.W, S.saved);
     S.status = 'saved'; S.statusAt = (base.version || {}).at || new Date().toISOString(); S.lastDraft = ''; S.conflict = '';
+    tcMlKeep();
     tcMlDraw();
     if (S.dirty) tcMlAutosaveSoon();
     return true;
   } catch (e) {
-    T_ML.status = '';
-    if (e.detail && e.detail.conflict) T_ML.conflict = e.message; else T_ML.error = e.message || 'The list was not saved. Try Save again.';
+    // NOT SAVED (patch 155): the red bar stays until a save goes through; the changes stay on the page and in this browser
+    T_ML.status = ''; T_ML.unsaved = true; tcMlKeep();
+    if (e.detail && e.detail.conflict) T_ML.conflict = e.message; else T_ML.error = e.message || 'The list was not saved.';
     tcMlDraw(); return false;
   }
 }
@@ -13643,10 +13688,9 @@ function tcS2Rows() {
     return `<div class="tcs2-tile${p ? ' phys' : ''}${open ? ' open' : ''}" role="button" tabindex="0" aria-expanded="${open}" onclick="tcS2Toggle(${k})" onkeydown="if(event.key==='Enter')tcS2Toggle(${k})">
       ${yes ? '<span class="tcs2-yes">✓ Yes</span>' : ''}<b>${open && g.companyId ? `<a href="#/tc/company/${Number(g.companyId)}" onclick="event.stopPropagation()">${esc(g.name)}</a>` : esc(g.name || 'No company yet')}</b>
       <small>${tcN(g.ps.length)} ${g.ps.length === 1 ? 'person' : 'people'}${g.country ? ' · ' + esc(g.country) : ''}</small>
-      <span class="tcs2-gift" onclick="event.stopPropagation()"><button type="button" class="${p ? 'on' : ''}" aria-pressed="${p}" onclick="tcS2SetGift(${k}, 'physical')">🎁 Physical</button><button type="button" class="${d ? 'on d' : ''}" aria-pressed="${d}" onclick="tcS2SetGift(${k}, 'digital')">Digital</button></span>
       ${open ? tcS2People(g) : ''}</div>`;
   };
-  return `<div class="tcs2-sum"><b>${tcN(all.length)} companies</b><span>· ${tcN((T_S2.rows || []).length)} people</span><span class="tcs2-sumr">🎁 Physical <b>${tcN(phys)}</b> · Digital <b>${tcN(digi)}</b>${phys ? ` <a class="btn sm ghost" href="/api/tc/go/physical.xlsx" download>Physical list</a>` : ''}</span></div>
+  return `<div class="tcs2-sum"><b>${tcN(all.length)} companies</b><span>· ${tcN((T_S2.rows || []).length)} people</span></div>
     <div class="tcs2-tiles">${shown.map(tile).join('') || '<div class="c-empty">Nobody matches.</div>'}</div>`;
 }
 async function tcS2SetGift(key, pick) {

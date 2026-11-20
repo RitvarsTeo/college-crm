@@ -3834,7 +3834,7 @@ export const handle = async (req, res) => {
       const actor = await actorOf(req, b), what = p.split('/').pop(), editor = String((me && me.email) || actor || '');
       const base = b.base === undefined || b.base === null ? null : Number(b.base);
       try {
-        if (what === 'save') return json(res, 200, await tcmylist.saveState(db, code, b.state, actor, base, editor));
+        if (what === 'save') return json(res, 200, await tcmylist.saveState(db, code, b.state, actor, base, editor, b.changes && typeof b.changes === 'object' ? b.changes : null));
         if (what === 'draft') return json(res, 200, await tcmylist.saveDraft(db, code, b.state, actor, base || 0, editor));
         return json(res, 200, await tcmylist.dropDraft(db, code, editor));
       } catch (e) {
