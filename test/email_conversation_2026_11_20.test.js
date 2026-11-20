@@ -172,7 +172,9 @@ test('ONE PLACE (patch 157, his words "just one place where everything is"): ema
       { id: 'w2', kind: 'message', channel: 'website', occurred_at: '2026-11-13T12:00:00Z' },
     ] };
   const list = cOnePlace(p).map((x) => (x.m ? x.m.id : x.e.id));
-  assert.deepEqual(list, ['n1', 'c1', 'm2', 'm1', 'w2', 'r0'], 'newest on top, emails among the calls and notes, nothing twice');
+  // HIS PICK B: "I SAID OLDEST ON TOP!"
+  assert.deepEqual(list, ['r0', 'w2', 'm1', 'm2', 'c1', 'n1'], 'oldest on top, emails among the calls and notes, nothing twice');
+  assert.match(APP, /const C_ONE_NEWEST_FIRST = false;/);
   assert.match(APP, /const tl = cOnePlace\(p\);/);
   assert.match(APP, /\$\{tl\.map\(\(x\) => \(x\.m \? cMailBubble\(x\.m, p\) : ev\(x\.e\)\)\)\.join\(''\)/);
   assert.doesNotMatch(APP, /cConversation\(p\)/, 'no separate box any more');

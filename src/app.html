@@ -6701,7 +6701,9 @@ const cStamp = (iso) => (/T00:00:00(\.0+)?$/.test(String(iso || '')) ? fmtDate(i
 // and everything else in their History (calls with their notes, notes, messages, stage changes) in ONE list, in time
 // order. Nothing twice: History's own email lines are left out because the email itself is there (what they wrote, and the
 // automatic "Email reply sent" line when the reply's text is there at the same minute).
-const C_ONE_NEWEST_FIRST = true;   // the order (his A/B, newest or oldest on top): one switch
+// HIS PICK B (20.11.2026): "Oldest on top, like whatsapp chat", then "I SAID OLDEST ON TOP!": the oldest at the top, the
+// newest at the bottom; the page opens at the top like any page (no scrolling to the newest)
+const C_ONE_NEWEST_FIRST = false;
 const C_EMAIL_CH = ['gmail', 'email'];
 function cOnePlace(p) {
   const msgs = (p && p.conversation) || [];
