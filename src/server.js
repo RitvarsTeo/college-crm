@@ -17,7 +17,7 @@ import * as gmailB from '../lib/gmail.js';
 import * as notify from '../lib/notify.js';
 import * as sheetB from '../lib/sheetpull.js';
 import { pullSheet, sheetCounts } from './sheetsync.js';
-import { receive, activePersonFor, IN_TOUCH_STEPS, listInbound, listHandled, callsTodayFromPeople, messagesFor, recordWhatsAppEcho, qualify, archive, setMark, removeMark, setCallNote, withCallNotes, bringBack, funnel, agedCount, handoffToSis, ownerFor, notifiedFor, handoverGap, canReach, surfaceAt, waitingFor, waitingByRole } from './intake.js';
+import { receive, activePersonFor, IN_TOUCH_STEPS, listInbound, listHandled, callsTodayFromPeople, messagesFor, conversationFor, recordWhatsAppEcho, qualify, archive, setMark, removeMark, setCallNote, withCallNotes, bringBack, funnel, agedCount, handoffToSis, ownerFor, notifiedFor, handoverGap, canReach, surfaceAt, waitingFor, waitingByRole } from './intake.js';
 import { replaceN3Directory, n3Status, n3Names } from './n3dir.js';
 import { readScreenshot, readKind, readBody, readPath, saveFeedback, listFeedback, getScreenshot, setHandled, BadScreenshot, helpOpened, helpCounts } from './feedback.js';
 import { findMatches as matchPeople, duplicateCheck, onePersonFor } from './identity.js';
@@ -931,6 +931,7 @@ async function personRow(id, viewer) {
   await withCallNotes(db, id, shown);   // a known person's call: its "What was it about?" line (14.10.2026)
   p.timeline = [...shown, ...(await messagesFor(db, id))]
     .sort((a, b) => String(b.occurred_at).localeCompare(String(a.occurred_at)));
+  p.conversation = await conversationFor(db, id);   // the Email conversation box (the owner's pick B, 20.11.2026)
   p.viewer = viewer || null;
   p.viewerIsAdmin = isAdmin(viewer);
   p.knownInN3 = await n3Names(db, p.phone);   // "Known in N3: <name>" (06.11.2026); the number is never sent

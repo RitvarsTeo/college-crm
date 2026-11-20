@@ -42,7 +42,8 @@ test('the strip: number, name and count; a click opens it, with the handler buil
 
 test('each board uses it: Due and the Inbox not when narrowed, the Journey never for an end column', () => {
   assert.match(APP, /const emptyFold = \(g\) => !folded\(g\) && !C_TP\.col && cFoldEmpty\('due', g\.id, g\.rows\.length\);/);
-  assert.match(APP, /const emptyFold = \(c\) => !openId && !C_IP\.col && cFoldEmpty\('inbox', c\.id, c\.n\);/);
+  // 20.11.2026: the Inbox folds on its cards (answered email cards included), not on the waiting count
+  assert.match(APP, /const emptyFold = \(c\) => !openId && !C_IP\.col && cFoldEmpty\('inbox', c\.id, c\.cards\);/);
   assert.match(APP, /const jFold = \(s\) => !phone && !C_TERMINAL\.includes\(s\.id\) && cFoldEmpty\('journey', s\.id,/);
   assert.match(APP, /if \(jFold\(s\)\) return cFoldStrip\('journey', s\.id, cJNum\(stages, i\), s\.label \|\| s\.id, 0, ` data-stage="\$\{esc\(s\.id\)\}"`\);/, 'a drop target');
 });

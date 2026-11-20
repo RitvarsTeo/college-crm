@@ -74,8 +74,9 @@ test('the Inbox rows: nothing yet, then answer now, then late; a handled message
 test('on the card: "answer now" is a solid amber chip with navy words, "late" the solid red one; never amber text', () => {
   // Q62: the Inbox is a board of cards; Q66 (07.10): the card's state line says New, Answer now or Late, and the rail
   // carries the colour - amber for answer now, red for late; the word itself is never amber text
-  assert.match(APP, /const st = !live \? 'aside' : r\.aged \? 'late' : r\.answerNow \? 'now' : 'new';/);
-  assert.match(APP, /const C_ST_RAIL = \{[^}]*late: 'over', now: 'over', new: 'due', aside: 'due' \};/, 'Q69: late and answer now are red (needs you), new and set aside navy');
+  // 20.11.2026: an email card answered in Gmail says so first (never late)
+  assert.match(APP, /const st = !live \? 'aside' : r\.answered \? 'answered' : r\.aged \? 'late' : r\.answerNow \? 'now' : 'new';/);
+  assert.match(APP, /const C_ST_RAIL = \{[^}]*late: 'over', now: 'over', new: 'due', aside: 'due', answered: 'due' \};/, 'Q69: late and answer now are red (needs you), new, set aside and answered navy');
   assert.match(APP, /html\.ui-c \.c-jp\.c-rail-over\{border-left-color:var\(--st-over\)\}/);
   assert.match(APP, /--st-need:var\(--j-alarm\)/, 'the alarm red');
   assert.match(APP, /html\.ui-c \.c-st-over \.c-st-w,html\.ui-c \.c-st-late \.c-st-w,html\.ui-c \.c-st-none \.c-st-w,html\.ui-c \.c-st-now \.c-st-w\{color:var\(--st-need\)\}/);

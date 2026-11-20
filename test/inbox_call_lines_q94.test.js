@@ -72,7 +72,7 @@ test('the Inbox, the Line filter, the menu count and Home all read the same line
   assert.match(pool, /cPoolSelect\('Line', C_IP\.line \|\| '', cLines\(\)\.map\(\(\[k, m\]\) => \[k, m\.label \|\| m\.role\]\), 'cInboxLine\(this\.value\)'\)/, 'the filter');
   assert.match(APP, /function cInboxLine\(v\) \{\s*C_IP\.line = v \|\| '';\s*try \{ localStorage\.setItem\(cLineKey\(\), C_IP\.line\); \}/, 'remembered');
   assert.match(APP, /if \(C_IP\.line === undefined\) C_IP\.line = cLineNow\(\);/, 'set when the Inbox opens');
-  assert.match(APP, /const inbox = \(i\.rows \|\| \[\]\)\.filter\(\(r\) => cInLine\(r, line\)\);/, 'the menu count');
+  assert.match(APP, /const inbox = \(i\.rows \|\| \[\]\)\.filter\(\(r\) => cInLine\(r, line\) && !r\.answered\);/, 'the menu count');
   assert.match(APP, /inbox: intake && Array\.isArray\(intake\.rows\) \? intake\.rows\.filter\(\(r\) => cInLine\(r, cLineNow\(\)\)\)\.length/, 'Home');
 });
 

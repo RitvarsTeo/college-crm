@@ -181,6 +181,8 @@ export async function purgeLineBodies(db, cutoffIso) {
   await db.prepare(`UPDATE inbound SET body = NULL, body_deleted_at = ?
     WHERE state IN ('archived', 'filtered', 'qualified') AND body IS NOT NULL AND inbound.received_at < ?
       AND NOT EXISTS (SELECT 1 FROM inbound_line l WHERE l.inbound_id = inbound.id AND l.received_at >= ?)`).run(at, cutoffIso, cutoffIso);
+  // and edu@'s sent mail (20.11.2026, the whole conversation): the same 13 months, on each message's own clock
+  await db.prepare('UPDATE mail_sent SET body = NULL, body_deleted_at = ? WHERE sent_at < ? AND body IS NOT NULL').run(at, cutoffIso);
   return (r && (r.changes ?? r.rowCount)) || 0;
 }
 
@@ -517,8 +519,11 @@ export async function listInbound(db, { state = 'new', now = nowIso(), range = n
       const lines = await db.prepare('SELECT body FROM inbound_line WHERE inbound_id = ? ORDER BY seq').all(r.id);
       r.bodyClean = emailBodyFor(r.channel, r.body, lines.map((l) => l.body));
     }
-    r.aged = r.state === 'new' && due.lateAt <= now;                    // late: red (Q50)
-    r.answerNow = r.state === 'new' && !r.aged && due.answerBy <= now;  // answer now: amber
+    // ANSWERED IN GMAIL (20.11.2026, the whole email conversation): an email card whose conversation edu@ has replied in
+    // says "Answered by <who> · <when>", is never late, and leaves the waiting count; Make a lead / Set aside stay to do
+    r.answered = isEmailChannel(r.channel) && r.state === 'new' && r.first_reply_at ? { at: r.first_reply_at, by: await answeredBy(db, r.id) } : null;
+    r.aged = r.state === 'new' && !r.answered && due.lateAt <= now;                    // late: red (Q50)
+    r.answerNow = r.state === 'new' && !r.answered && !r.aged && due.answerBy <= now;  // answer now: amber
     Object.assign(r, senderKind(r, known));
   }
   return rows;
@@ -735,7 +740,9 @@ export async function recordWhatsAppEcho(db, { to, at }) {
 export async function agedCount(db, now = nowIso(), ranges = null) {
   const set = ranges && typeof ranges[0] === 'string' ? [ranges] : ranges;
   const [inRx, rxArgs] = set ? rangesSql('received_at', set) : ['1 = 1', []];
-  const rows = await db.prepare(`SELECT received_at FROM inbound WHERE state = 'new' AND ${inRx}`).all(...rxArgs);
+  // an email card already answered in Gmail is never late (20.11.2026)
+  const rows = await db.prepare(`SELECT received_at FROM inbound WHERE state = 'new' AND ${inRx}
+    AND NOT (channel IN ('gmail', 'email') AND first_reply_at IS NOT NULL)`).all(...rxArgs);
   return rows.filter((r) => answerDeadlines(r.received_at).lateAt <= now).length;
 }
 
@@ -754,11 +761,12 @@ export async function waitingFor(db, role, now = nowIso()) {
     WHERE t.done_at IS NULL AND t.due_at < ? AND t.owner = ? AND NOT ${SIS_DRAFT_SQL}`).all(now, role);
   return {
     role,
-    intake: mine.filter((m) => m.kind === 'intake').length,
+    // an email card already answered in Gmail is not waiting (20.11.2026)
+    intake: mine.filter((m) => m.kind === 'intake' && !m.answered).length,
     aged: mine.filter((m) => m.kind === 'intake' && m.aged).length,
     leads: leads.length,
     overdue: overdue.length,
-    total: mine.length + overdue.length,
+    total: mine.filter((m) => !m.answered).length + overdue.length,
   };
 }
 
@@ -1074,6 +1082,79 @@ export async function messagesFor(db, personId) {
     }
   }
   return out.sort((a, b) => String(b.occurred_at).localeCompare(String(a.occurred_at)));
+}
+
+// THE WHOLE EMAIL CONVERSATION (20.11.2026, the owner's pick B). One message edu@ sent (lib/gmail.js toSentShape) is kept
+// only when it belongs to somebody Intake holds: the conversation of one of their email cards (the thread key), else
+// exactly one person whose own address it went to. Anything else (a supplier, a colleague, a newsletter) is never
+// stored. A repeat (the same Gmail id) adds nothing. The first reply in a waiting or qualified card's conversation also
+// becomes its first reply time (the same rule as the reply read, recordReplyRead).
+export async function recordSentMail(db, m, { at = nowIso() } = {}) {
+  if (!m || !m.id || !m.sentAt) return { stored: false, why: 'unusable' };
+  const have = await db.prepare('SELECT id FROM mail_sent WHERE external_id = ?').get(String(m.id));
+  if (have) return { stored: false, repeat: true };
+  const to = (m.to || []).filter((a) => !isOwnAddress(a));
+  let row = null;
+  if (m.threadId) {
+    const rows = await db.prepare(`SELECT id, state, received_at, person_id, first_reply_at, contact_email FROM inbound
+      WHERE channel IN ('gmail', 'email') AND thread_key = ? ORDER BY id DESC`).all(String(m.threadId));
+    const theirs = rows.filter((r) => !isOwnAddress(r.contact_email));
+    row = theirs.find((r) => REPLY_STATES.includes(r.state)) || theirs[0] || null;
+  }
+  let personId = row && row.person_id ? row.person_id : null;
+  let toEmail = row && row.contact_email && to.includes(String(row.contact_email).toLowerCase()) ? String(row.contact_email).toLowerCase() : null;
+  if (!personId) {
+    const hits = [];
+    for (const a of to) {
+      const p = await db.prepare(`SELECT id FROM ${REAL_PEOPLE} pe WHERE LOWER(pe.email) = ?`).all(a);
+      for (const x of p) if (!hits.some((h) => h.id === x.id)) hits.push({ id: x.id, email: a });
+    }
+    if (hits.length === 1) { personId = hits[0].id; toEmail = toEmail || hits[0].email; }
+  }
+  if (!row && !personId) return { stored: false, why: 'not somebody Intake holds' };
+  await db.prepare(`INSERT INTO mail_sent (external_id, thread_key, sent_at, from_name, to_email, subject, body, attachments, person_id, inbound_id, stored_at)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?)`).run(String(m.id), m.threadId || null, m.sentAt, m.fromName || null, toEmail || to[0] || null,
+    m.subject ? String(m.subject).slice(0, 500) : null, m.body || null, JSON.stringify(m.attachments || []), personId, row ? Number(row.id) : null, at);
+  if (row && !row.first_reply_at && REPLY_STATES.includes(row.state) && Date.parse(m.sentAt) > Date.parse(row.received_at)) {
+    await recordReplyRead(db, { id: row.id, sentAt: m.sentAt, checkedAt: at, personId: row.person_id });
+  }
+  return { stored: true, personId, inboundId: row ? Number(row.id) : null };
+}
+
+// One person's email conversation, both sides, newest first (the Email conversation box, pick B): what they wrote on
+// their email cards (the same rows as messagesFor) and what edu@ sent to them (mail_sent, by person or by one of their
+// cards). Each message: { id, dir: 'in' | 'out', at, who, subject, thread, body, bodyClean }. A text emptied by the
+// retention is left out.
+export async function conversationFor(db, personId) {
+  const p = await db.prepare('SELECT id, name FROM people WHERE id = ?').get(personId);
+  if (!p) return [];
+  const rows = await db.prepare(`SELECT id, channel, received_at, body, thread_key, contact_name FROM inbound
+    WHERE person_id = ? AND channel IN ('gmail', 'email')`).all(personId);
+  const out = [];
+  for (const r of rows) {
+    const lines = await db.prepare("SELECT id, received_at, body FROM inbound_line WHERE inbound_id = ? AND kind <> 'reply' ORDER BY seq").all(r.id);
+    const parts = lines.length ? lines.map((l) => ({ key: 'in-line-' + l.id, at: l.received_at, body: l.body }))
+      : [{ key: 'in-msg-' + r.id, at: r.received_at, body: r.body }];
+    for (const x of parts) {
+      if (!String(x.body || '').trim()) continue;
+      out.push({ id: x.key, dir: 'in', at: x.at, who: r.contact_name || p.name, subject: null, thread: r.thread_key || null,
+        body: x.body, bodyClean: emailBodyFor(r.channel, x.body) });
+    }
+  }
+  const ids = rows.map((r) => Number(r.id));
+  const sent = await db.prepare(`SELECT id, sent_at, from_name, subject, thread_key, body FROM mail_sent
+    WHERE (person_id = ?${ids.length ? ` OR inbound_id IN (${ids.map(() => '?').join(',')})` : ''}) AND body IS NOT NULL`).all(personId, ...ids);
+  for (const s of sent) {
+    out.push({ id: 'out-' + s.id, dir: 'out', at: s.sent_at, who: s.from_name || 'edu@', subject: s.subject || null, thread: s.thread_key || null,
+      body: s.body, bodyClean: emailBodyFor('gmail', s.body) });
+  }
+  return out.sort((a, b) => String(b.at).localeCompare(String(a.at)));
+}
+
+// Who answered an email card: the From name on the first sent message of its conversation, else edu@ (pick b, 20.11.2026)
+async function answeredBy(db, inboundId) {
+  const s = await db.prepare('SELECT from_name FROM mail_sent WHERE inbound_id = ? ORDER BY sent_at LIMIT 1').get(inboundId);
+  return (s && s.from_name) || 'edu@';
 }
 
 export async function dropLineBodies(db, inboundId, at) {

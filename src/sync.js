@@ -13,14 +13,14 @@
 //
 // Neither poller runs while its channel is off, and off is the default.
 
-import { receive, bringBack, activePersonFor, CALL_BACK_STEP, confirmedBySystem, CONFIG, newPersonId, ownerFor, emailFilterWhy, purgeLineBodies, recordReplyRead, emailRuleOnWaiting } from './intake.js';
+import { receive, bringBack, activePersonFor, CALL_BACK_STEP, confirmedBySystem, CONFIG, newPersonId, ownerFor, emailFilterWhy, purgeLineBodies, recordReplyRead, emailRuleOnWaiting, recordSentMail } from './intake.js';
 import { onePersonFor, normEmail, normPhone, isOwnAddress } from './identity.js';
 import { knock } from './webpush.js';
 import { phoneThread } from './phonefilter.js';
 import { logEvent, AUTOMATIC, MANUAL } from './history.js';
 import { fetchCalls, rowsFrom, WINDOW_MINUTES, toRigaStamp, ZONE } from '../lib/pbx.js';
 import { fetchChanged, toSisRow } from '../lib/sis.js';
-import { runPoll as gmailPoll, runReplies as gmailReplies, loadGmailRefreshToken, listLabelledIds } from '../lib/gmail.js';
+import { runPoll as gmailPoll, runReplies as gmailReplies, runSent as gmailSent, SENT_DAYS, loadGmailRefreshToken, listLabelledIds } from '../lib/gmail.js';
 import { adapt, toIntake } from './adapters.js';
 import { recordSisLifecycle } from './lifecycle.js';
 import { sisAdmissionDate, handTyped } from './sisdates.js';
@@ -738,10 +738,33 @@ export async function syncGmail(db, { now = new Date(), env = process.env, fetch
   // a failure here never costs the poll its result: the threads are simply read again next run
   let replies;
   try { replies = await syncReplies(db, { now, env, fetchImpl, refreshToken }); } catch (err) { replies = { ok: false, why: 'the reply read failed' }; }
-  await saveState(db, 'gmail', got.more || partial ? last : at, { ...out, query: got.query, more: Boolean(got.more), replies,
+  // the same run reads what edu@ SENT (the whole conversation, 20.11.2026); only the real mailbox, never a test copy
+  let sent;
+  try { sent = mode === 'live' ? await syncSent(db, { now, env, fetchImpl, refreshToken }) : { ok: true, ran: false }; } catch (err) { sent = { ok: false, why: 'the sent read failed' }; }
+  await saveState(db, 'gmail', got.more || partial ? last : at, { ...out, query: got.query, more: Boolean(got.more), replies, sent,
     ...(partial ? { ok: false, failed: got.failed, why: got.why } : {}) }, at);
-  return { ok: !partial, ran: true, channel: 'gmail', mode, ...out, more: Boolean(got.more), query: got.query, replies,
+  return { ok: !partial, ran: true, channel: 'gmail', mode, ...out, more: Boolean(got.more), query: got.query, replies, sent,
     ...(partial ? { failed: got.failed, why: got.why } : {}) };
+}
+
+// THE WHOLE EMAIL CONVERSATION (20.11.2026, the owner's pick B: "the people see all the messages in intake"). edu@'s SENT
+// mail since its own bookmark (sync_state 'gmail_sent'; the first run reaches back SENT_DAYS), with ten minutes of overlap
+// (a repeat is free: the Gmail id is unique). Each message is kept only when it belongs to somebody Intake holds
+// (src/intake.js recordSentMail). A run Gmail did not finish keeps the old bookmark, so nothing is skipped.
+export async function syncSent(db, { now = new Date(), env = process.env, fetchImpl = fetch, refreshToken = undefined } = {}) {
+  const at = now.toISOString();
+  const state = await db.prepare("SELECT value FROM sync_state WHERE name = 'gmail_sent'").get();
+  const last = state && state.value && !Number.isNaN(Date.parse(state.value)) ? state.value : null;
+  const since = new Date(last ? Date.parse(last) - 10 * 60000 : now.getTime() - SENT_DAYS * 86400000).toISOString();
+  const token = refreshToken === undefined ? await loadGmailRefreshToken(db, env) : refreshToken;
+  const got = await gmailSent({ env, now, fetchImpl, refreshToken: token, since });
+  const res = { ok: got.ok, read: (got.items || []).length, stored: 0, repeat: 0, skipped: 0, ...(got.why ? { why: got.why } : {}), ...(got.more ? { more: true } : {}) };
+  for (const m of got.items || []) {
+    const r = await recordSentMail(db, m, { at });
+    if (r.stored) res.stored++; else if (r.repeat) res.repeat++; else res.skipped++;
+  }
+  if (got.ran !== false) await saveState(db, 'gmail_sent', got.ok ? at : last, res, at);
+  return res;
 }
 
 // THE EMAIL RULE OVER THE WAITING EMAIL CARDS (one-off, 16.10.2026; src/intake.js emailRuleOnWaiting), with the

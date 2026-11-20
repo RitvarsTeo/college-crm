@@ -1743,6 +1743,13 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .p-body > .c-sheet + .c-sheet{margin-top:14px}
   html.ui-c .p-step{display:block;color:var(--t3);margin-top:2px}
   html.ui-c .p-stage{font-weight:600;color:var(--ink)}
+  html.ui-c .c-conv{padding-bottom:12px}
+  html.ui-c .c-conv-th{font-weight:700;font-size:13.5px;margin:12px 16px 4px;color:var(--ink)}
+  html.ui-c .c-cb{max-width:78%;padding:8px 12px;border-radius:12px;margin:6px 16px;font-size:13.5px;line-height:1.4;white-space:pre-line;color:var(--ink)}
+  html.ui-c .c-cb small{display:block;font-size:11.5px;font-weight:700;color:var(--t3);margin-bottom:2px;white-space:normal}
+  html.ui-c .c-cb.in{background:var(--rule2,#f1f4f7);border-top-left-radius:4px}
+  html.ui-c .c-cb.out{background:#e3f3fb;margin-left:auto;border-top-right-radius:4px}
+  html.ui-c .c-st-answered{color:#1b7a43;font-weight:700} html.ui-c .c-st.c-st-answered .c-st-w{color:#1b7a43;background:none} html.ui-c .c-st-answered .c-st-d{font-weight:600;color:var(--t3)}
   html.ui-c .c-yr{display:inline-block;font-size:11.5px;font-weight:700;color:#146f9c;background:#e3f3fb;border-radius:4px;padding:0 6px;margin-right:6px}
   html.ui-c .c-moreyrs{display:flex;align-items:center;gap:10px;margin:10px 0 0;padding:10px 14px;border:1px dashed var(--rule);border-radius:8px;font-weight:600;color:var(--ink)}
   html.ui-c .p-view{margin:0}
@@ -5230,7 +5237,7 @@ async function cPoolCounts() {
     const [i, t, ppl] = await Promise.all([api('/api/intake'), api('/api/tasks?scope=open'), api('/api/people')]);
     const after = (k, at) => { const s = cSeen(k); return Boolean(s && at && at > s); };
     const line = cLineNow();
-    const inbox = (i.rows || []).filter((r) => cInLine(r, line));   // Q94: the person's own line
+    const inbox = (i.rows || []).filter((r) => cInLine(r, line) && !r.answered);   // Q94: the person's own line; answered in Gmail = not waiting
     const dueNow = cByPerson(cDueNow(t)).filter((g) => !Number(g[0].sis_draft));   // a draft in the SIS waits (26.10.2026)
     const people = (ppl && ppl.rows) || [];
     const put = (sel, html) => { const el = document.querySelector(sel); if (el) el.innerHTML = html; };
@@ -5510,7 +5517,10 @@ function cInboxPool() {
     && (!C_IP.kind || r.senderKind === C_IP.kind) && cInLine(r, C_IP.line);
   const rows = D.rows.filter(ok);
   const AGES = [['today', 'Today', 'today'], ['week', 'Earlier this week', 'yesterday'], ['lastweek', 'Last week', 'week'], ['older', 'Before last week', 'older']];
-  const cols = AGES.map(([id, label, tone]) => ({ id, label, n: rows.filter((r) => cInboxAge(r.received_at) === id).length, tone: 'age-' + tone }));
+  // an email card already answered in Gmail stays on the board but is not counted as waiting (20.11.2026)
+  // (cards: every card in the column, answered too, so a column holding only answered cards is never folded shut)
+  const cols = AGES.map(([id, label, tone]) => ({ id, label, n: rows.filter((r) => cInboxAge(r.received_at) === id && !r.answered).length,
+    cards: rows.filter((r) => cInboxAge(r.received_at) === id).length, tone: 'age-' + tone }));
   // Q78: every channel, always (the inboxSources list from channels.json); a channel on the board that is not in that list is
   // added after it, so no message can ever be left without a way to filter to it
   const fixed = CFG.inboxSources || [];
@@ -5553,7 +5563,8 @@ function cInboxPool() {
   const card = (r) => {
     const open = C_LOPEN === r.id; const prog = D.val(r, 'interest');
     // the state line (Q66): how long the message has waited and whether that is late (Q50); a card set aside says so
-    const st = !live ? 'aside' : r.aged ? 'late' : r.answerNow ? 'now' : 'new';
+    // ANSWERED IN GMAIL (20.11.2026): an email card edu@ has replied to says so, and is not counted as waiting
+    const st = !live ? 'aside' : r.answered ? 'answered' : r.aged ? 'late' : r.answerNow ? 'now' : 'new';
     const kind = r.senderKind === 'current_student' ? `<span class="ib-kind" title="${esc(r.senderKindWhy || '')}">Current student</span>` : '';
     const toggle = `C_LOPEN=${open ? 'null' : Number(r.id)};cInboxPool()`;
     return `<div class="c-jp row ib-card c-rail c-rail-${C_ST_RAIL[st]}${open ? ' is-open' : ''}" data-id="${Number(r.id)}" tabindex="0" onclick="${toggle}" onkeydown="if(event.key==='Enter'){${toggle}}">
@@ -5563,14 +5574,14 @@ function cInboxPool() {
       ${prog || kind || r.joins || (r.knownInN3 || []).length || (!live && r.mark && r.mark !== r.archive_reason) ? `<div class="ib-tags">${r.joins ? `<span class="ib-joins">Joins ${esc(r.joins.name)}</span>` : ''}${(r.knownInN3 || []).length ? `<span class="ib-n3">Known in N3: ${esc(r.knownInN3.join(', '))}</span>` : ''}${prog ? `<span class="ib-prog">${esc(prog)}</span>` : ''}${kind}${!live && r.mark && r.mark !== r.archive_reason ? `<span class="ib-kind ib-marktag">${esc(r.mark)}</span>` : ''}</div>` : ''}
       ${live && r.setAsideBefore ? `<div class="ib-before"><span>Set aside before: ${cAsideWhen(r.setAsideBefore)}</span>${cMarkCtl(r, D.marks)}</div>` : ''}
       ${!live && r.state === 'archived' ? `<div class="ib-before"><span>Set aside: ${cAsideWhen({ at: r.processed_at, by: r.processed_by, reason: r.archive_reason })}</span></div>` : ''}
-      ${cStateLine(st, cAgo(r.received_at), '', fmtDateTime(r.received_at))}
+      ${st === 'answered' ? `<div class="c-st c-st-answered" title="${esc(fmtDateTime(r.answered.at))}"><span class="c-st-w">✓ Answered by ${esc(r.answered.by || 'edu@')}</span><span class="c-st-d"> · ${esc(cAgo(r.answered.at))}</span></div>` : cStateLine(st, cAgo(r.received_at), '', fmtDateTime(r.received_at))}
       ${!live ? `<div class="ib-acts"><button class="btn sm" onclick="event.stopPropagation();cBringBack(${Number(r.id)}, this)">Bring back</button>${cMarkCtl(r, D.marks)}</div>` : open ? D.form(r) : C_IP.aside === r.id ? cAsideChoice(r, D.reasons) : `<div class="ib-acts"><button class="btn sm" onclick="event.stopPropagation();C_LOPEN=${Number(r.id)};cInboxPool()">${r.joins ? 'Add to ' + esc(r.joins.name) : 'Make a lead'}</button><button type="button" class="ib-aside" onclick="event.stopPropagation();C_IP.aside=${Number(r.id)};cInboxPool()">Set aside</button></div>`}</div>`;
   };
   // a band click narrows the board to that day's column; a second click shows all four again
   const shownCols = cols.filter((c) => !C_IP.col || c.id === C_IP.col);
   // Q68, a phone: one day open (the chosen one, else the first with a message), the rest folded to their count
-  const openId = cPhone() && !C_IP.col ? (cols.some((c) => c.id === C_IP.open && c.n) ? C_IP.open : (cols.find((c) => c.n) || cols[0]).id) : null;
-  const emptyFold = (c) => !openId && !C_IP.col && cFoldEmpty('inbox', c.id, c.n);
+  const openId = cPhone() && !C_IP.col ? (cols.some((c) => c.id === C_IP.open && c.cards) ? C_IP.open : (cols.find((c) => c.cards) || cols[0]).id) : null;
+  const emptyFold = (c) => !openId && !C_IP.col && cFoldEmpty('inbox', c.id, c.cards);
   const column = (c, i) => (emptyFold(c) ? cFoldStrip('inbox', c.id, i + 1, c.label, 0) : openId && c.id !== openId
     ? `<div class="c-col ib-col is-fold"><button type="button" class="c-foldrow" onclick="cInboxTap('${c.id}')"><span class="c-jn">${i + 1}</span>${esc(c.label)}<b>${c.n}</b></button></div>`
     : `<div class="c-col ib-col" style="--jt:${((i + 1) / shownCols.length).toFixed(3)}"><h3><span class="c-jn">${i + 1}</span>${esc(c.label)}<b>${c.n}</b>${cFoldBack('inbox', c.id, c.n)}</h3>
@@ -6204,7 +6215,7 @@ const cReach = (p) => [cTelLink(p), cMailLink(p)].filter(Boolean).join(' · ');
 // A card with no next step carries its action on that line ("Choose"); the dark button left the cards. Real dates are
 // never touched: an old sheet date stays overdue by as many days as it is.
 const C_ST = { over: 'Overdue', today: 'Due today', due: 'Due', none: 'No next step', sis: 'With the SIS', draft: 'Draft in the SIS', late: 'Late', now: 'Answer now', new: 'New', aside: 'Set aside' };
-const C_ST_RAIL = { over: 'over', today: 'today', due: 'due', none: 'none', sis: 'sis', draft: 'due', late: 'over', now: 'over', new: 'due', aside: 'due' };   // Q69: red needs you, navy on track
+const C_ST_RAIL = { over: 'over', today: 'today', due: 'due', none: 'none', sis: 'sis', draft: 'due', late: 'over', now: 'over', new: 'due', aside: 'due', answered: 'due' };   // Q69: red needs you, navy on track
 function cStateLine(st, detail, act, title) {
   return `<div class="c-st c-st-${st}"${title ? ` title="${esc(title)}"` : ''}><span class="c-st-w">${C_ST[st] || esc(st)}</span>${
     detail ? `<span class="c-st-d">· ${esc(detail)}</span>` : ''}${act || ''}</div>`;
@@ -6671,6 +6682,24 @@ let C_PERSON = null; let C_PERSON_EDIT = false;
 // does not meet two names for the same system.
 const actorName = (x) => (x === 'CRM' ? 'Intake' : x);
 const cStamp = (iso) => (/T00:00:00(\.0+)?$/.test(String(iso || '')) ? fmtDate(iso) : fmtDateTime(iso));
+// THE EMAIL CONVERSATION BOX (20.11.2026, the owner's pick B): both sides of the person's email, theirs on the left and
+// edu@'s on the right, grouped by conversation (the newest conversation first, the newest message first inside it), above
+// History. Shown only when there is email to show (the server's p.conversation, src/intake.js conversationFor).
+function cConversation(p) {
+  const msgs = (p && p.conversation) || [];
+  if (!msgs.length) return '';
+  const groups = [];
+  for (const m of msgs) {
+    const k = m.thread || m.id;
+    let g = groups.find((x) => x.k === k);
+    if (!g) { g = { k, items: [] }; groups.push(g); }
+    g.items.push(m);
+  }
+  const title = (g) => { const s = (g.items.find((m) => m.subject) || {}).subject; return s ? String(s).replace(/^\s*((re|fw|fwd|aw|sv)\s*:\s*)+/i, '') : 'Email'; };
+  const bubble = (m) => `<div class="c-cb ${m.dir === 'out' ? 'out' : 'in'}"><small>${esc(m.dir === 'out' ? m.who || 'edu@' : m.who || p.name)} · ${esc(cStamp(m.at))}</small>${esc(m.bodyClean || m.body || '')}</div>`;
+  return `<div class="c-sheet c-conv"><h3>Email conversation<b>${msgs.length}</b></h3>
+    ${groups.map((g) => `<div class="c-conv-th">${esc(title(g))}</div>${g.items.map(bubble).join('')}`).join('')}</div>`;
+}
 async function viewPersonC(id) {
   if (!C_PERSON || C_PERSON.id !== id) C_PERSON_EDIT = false;
   const p = await api('/api/people/' + id);
@@ -6699,7 +6728,7 @@ async function viewPersonC(id) {
     <div class="c-head"><div><h1 class="c-pname">${esc(p.name)}</h1><p>${esc(cStage(p.status))} · ${esc(p.programme || 'programme not said')}${p.study_form ? ' · ' + esc(p.study_form) : ''} · ${contact || '<span class="c-gap">no email or phone recorded</span>'}</p></div>${p.first_channel === 'sis' ? `<div class="act"><button class="btn ghost" onclick="openSisMerge(${esc(JSON.stringify(String(p.id ?? '')))})">Same person as...</button></div>` : ''}</div>
     <div class="c-pgrid">
       <div class="c-pmain">
-        ${cLifeLine(p)}${next}
+        ${cLifeLine(p)}${next}${cConversation(p)}
         <div class="c-sheet"><h3>History<b>${tl.length}</b><span class="c-h3acts"><button class="btn sm ghost" onclick="openNote(${esc(JSON.stringify(String(p.id ?? '')))},'call')">Log a call</button><button class="btn sm ghost" onclick="openNote(${esc(JSON.stringify(String(p.id ?? '')))},'note')">Add a note</button></span></h3>
           ${p.hiddenCorrections ? `<p class="c-ev" style="margin:10px 16px 0">${p.hiddenCorrections} ${p.hiddenCorrections === 1 ? 'correction made by a colleague is' : 'corrections made by colleagues are'} not shown. Corrections are private to whoever made them; admins see all of them.</p>` : ''}
           ${tl.map(ev).join('') || '<div class="c-empty">Nothing has happened yet.</div>'}</div>

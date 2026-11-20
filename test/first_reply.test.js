@@ -191,6 +191,12 @@ test('the Help center says what staff can see now, in the same commit', () => {
   const HELP = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'help.json'), 'utf8'));
   const f = HELP.faq.find((x) => x.id === 'first-reply');
   assert.equal(f.q, "What is \"Email reply sent\" in a person's History?");
-  assert.match(f.a, /only the time of the first reply sent from edu@ in that conversation, never its text/);
+  // 20.11.2026 (the whole email conversation, pick B): the texts of edu@'s replies are now kept, so "never its text" went
+  assert.match(f.a, /the time of the first reply sent from edu@ in that conversation/);
+  assert.doesNotMatch(f.a, /never its text/);
+  const conv = HELP.faq.find((x) => x.id === 'email-conversation');
+  assert.ok(conv, 'the Help says where the emails we sent are');
+  assert.match(conv.a, /Email conversation box above History/);
+  assert.match(conv.a, /emptied after 13 months/);
   assert.doesNotMatch(f.a, /Reports|First reply figure/, 'the benchmarks are parked (07.10): the Help sends nobody to a row that is not there');
 });

@@ -219,6 +219,28 @@ CREATE INDEX IF NOT EXISTS inbound_history_item ON inbound_history (inbound_id, 
 CREATE UNIQUE INDEX IF NOT EXISTS inbound_line_external
   ON inbound_line (channel, external_id) WHERE external_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS inbound_line_inbound ON inbound_line (inbound_id);
+-- THE WHOLE EMAIL CONVERSATION (20.11.2026, the owner's pick B: "an Email conversation box" on the person): edu@'s SENT
+-- mail, read with the same read-only access as the Inbox, kept ONLY when it went to somebody Intake already holds (the
+-- conversation of one of their cards, or the person's own address). Attachments by name and size only. The text is
+-- emptied by the 13-month retention (src/intake.js purgeLineBodies), the row stays to say something was sent.
+CREATE TABLE IF NOT EXISTS mail_sent (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  external_id TEXT NOT NULL,     -- Gmail's message id
+  thread_key TEXT,               -- Gmail's thread id, the same key the Inbox row carries
+  sent_at TEXT NOT NULL,         -- the message's own Date header
+  from_name TEXT,                -- the name on From ("Ieva <edu@...>") when it carries one; else null
+  to_email TEXT,                 -- lower case: the recipient it was matched on
+  subject TEXT,
+  body TEXT,                     -- emptied only by retention
+  attachments TEXT,              -- JSON [{ filename, size }]
+  person_id TEXT,                -- the person it was matched to (by their address), when known
+  inbound_id INTEGER,            -- the Inbox row of the same conversation, when there is one
+  stored_at TEXT NOT NULL,
+  body_deleted_at TEXT
+);
+CREATE UNIQUE INDEX IF NOT EXISTS mail_sent_external ON mail_sent (external_id);
+CREATE INDEX IF NOT EXISTS mail_sent_person ON mail_sent (person_id, sent_at);
+CREATE INDEX IF NOT EXISTS mail_sent_inbound ON mail_sent (inbound_id);
 
 -- One row per field, with where the value came from. An 'extracted' value is a
 -- suggestion nobody has confirmed and must never reach a count or a report.

@@ -14,6 +14,17 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 20.11.2026 - The whole email conversation in Intake (PICKED 20.11: "B: own Conversation box")
+
+The owner: "We need to see whenever all the correspondence is going on, so the people see all the messages in intake! lets minimize the manual labour for this!" Picture: `_pictures/email_conversation_2026-11-20/email_conversation_A_B_inbox.png`.
+
+| Item | Status |
+|---|---|
+| The Gmail sync also reads edu@'s SENT mail (same read-only access) and keeps every message to or from a known person, in its own table under the 13-month retention; attachments: name and size only | BUILT |
+| HIS PICK B: an "Email conversation" box on the person, above History: theirs left, ours right, by subject, newest first | BUILT |
+| An answered email card stays in the Inbox marked "Answered by edu@ · when" (a staff name once a From name shows), out of the waiting count; Make a lead / Set aside still to do | BUILT |
+| Staff's own mailboxes (Ieva, Marina, Arina): not read; asked first ("Ask them first") | DECIDED |
+
 ## 20.11.2026 - Search: every word in any order; a match from another year is offered (PICKED 20.11: "B")
 
 Admissions could not find "Francisco Gustafsson": the record is "Francisco Javier Gustafsson" from 19.11.2025, and 2026 was picked.
