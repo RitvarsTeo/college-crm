@@ -97,3 +97,14 @@ test('no test or staff call counts: a number marked Internal or Spam is left out
   assert.deepEqual([M.lastCall, M.to], ['2026-11-10', '2026-11-19'], 'days after the last call show as days without a call; today is not over');
   assert.ok(APP.includes('calls up to ${esc(cCmDay(M.lastCall || M.to))}') && APP.includes('`no calls since ${cCmDdmm(M.lastCall)}`'));
 });
+
+test('a Supplier or vendor number is no student caller either: every mark leaves the call out', async () => {
+  const db = await openDb();
+  await add(db, 'a1', '2026-11-10T08:00:00Z', 1, 40, 20);
+  await db.prepare(`INSERT INTO pbx_calls (uniqueid, called_at, queue, caller_num, picked_up, operator_name, inserted_at, duration_sec, talk_sec) VALUES (?,?,?,?,?,?,?,?,?)`)
+    .run('sup', '2026-11-10T09:00:00Z', '1001*Q-ADMISSION', '+37128888888', 1, 'Laura', '2026-11-10T09:00:00Z', 60, 30);
+  await db.prepare(`INSERT INTO contact_marks (contact_key, mark, set_by, set_at) VALUES (?,?,?,?)`).run('phone:28888888', 'Supplier or vendor', 'Ieva', '2026-11-01T00:00:00Z');
+  const M = await cm.callMetrics(db, { now: new Date('2026-11-20T10:00:00Z') });
+  assert.deepEqual(M.calls.map((c) => c.id), ['a1']);
+  assert.deepEqual([...cm.NOT_COUNTED].sort(), ['Internal', 'Spam', 'Supplier or vendor']);
+});

@@ -10,10 +10,11 @@
 //   Busiest hour     the hour of the day with most calls (Riga time)
 // Read only; the PBX's own fields; never a caller's number. Working days = Mon-Fri.
 import { answerDeadlines } from './intake.js';
-import { markFor } from './phonefilter.js';
+import { markFor, MARKS } from './phonefilter.js';
 
-// a number marked Internal (staff, a test from our own phones) or Spam is no caller: its calls never count
-export const NOT_COUNTED = ['Internal', 'Spam'];
+// a marked number is no student caller, so its calls never count: Internal (staff, a test from our own phones), Spam, and
+// Supplier or vendor (his answer 20.11.2026: "No, leave them out")
+export const NOT_COUNTED = MARKS;
 
 export const OVERDUE_FROM = '2026-11-20';     // the Called back button's first day (patch release)
 const TZ = 'Europe/Riga';
