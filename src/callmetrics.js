@@ -10,6 +10,10 @@
 //   Busiest hour     the hour of the day with most calls (Riga time)
 // Read only; the PBX's own fields; never a caller's number. Working days = Mon-Fri.
 import { answerDeadlines } from './intake.js';
+import { markFor } from './phonefilter.js';
+
+// a number marked Internal (staff, a test from our own phones) or Spam is no caller: its calls never count
+export const NOT_COUNTED = ['Internal', 'Spam'];
 
 export const OVERDUE_FROM = '2026-11-20';     // the Called back button's first day (patch release)
 const TZ = 'Europe/Riga';
@@ -29,15 +33,23 @@ export function median(a) {
 export async function callMetrics(db, { now = new Date(), days = 84, menu = [] } = {}) {
   const last = await db.prepare('SELECT MAX(called_at) AS m FROM pbx_calls').get();
   if (!last || !last.m) return { empty: true, overdueFrom: OVERDUE_FROM };
-  const to = rigaDay(last.m), fromIso = new Date(Date.parse(to + 'T00:00:00Z') - days * 864e5).toISOString();
-  const rows = await db.prepare(`SELECT c.uniqueid, c.called_at, c.queue, c.picked_up, c.operator_name, c.duration_sec, c.talk_sec,
+  // the range runs to YESTERDAY (today is not over), or to the newest call if that is today: working days without a call show
+  // as days without a call; lastCall is the newest call
+  const lastCall = rigaDay(last.m), yday = rigaDay(new Date(now.getTime() - 864e5).toISOString()), to = yday > lastCall ? yday : lastCall;
+  const fromIso = new Date(Date.parse(to + 'T00:00:00Z') - days * 864e5).toISOString();
+  const rows = await db.prepare(`SELECT c.uniqueid, c.caller_num, c.called_at, c.queue, c.picked_up, c.operator_name, c.duration_sec, c.talk_sec,
       c.called_back_at, c.called_back_by, c.person_id, i.processed_at, pe.name AS person_name
     FROM pbx_calls c LEFT JOIN inbound i ON i.id = c.inbound_id LEFT JOIN people pe ON pe.id = c.person_id
     WHERE c.called_at >= ? ORDER BY c.called_at`).all(fromIso);
   const tasks = await db.prepare(`SELECT person_id, created_at, done_at FROM tasks WHERE label = 'Call back' AND done_at IS NOT NULL`).all();
   const nowMs = now.getTime();
   const lineOf = (q) => ((menu.find((m) => m && m.queue === q) || {}).role) || q;
-  const calls = rows.map((r) => {
+  const marked = new Map();
+  for (const r of rows) if (r.caller_num && !marked.has(r.caller_num)) {
+    const m = await markFor(db, { phone: r.caller_num });
+    marked.set(r.caller_num, Boolean(m && NOT_COUNTED.includes(m.mark)));
+  }
+  const calls = rows.filter((r) => !marked.get(r.caller_num)).map((r) => {
     const answered = Boolean(Number(r.picked_up));
     const wait = answered && r.duration_sec != null && r.talk_sec != null ? Math.max(0, Number(r.duration_sec) - Number(r.talk_sec)) : null;
     let overdue = null;   // null = not counted (answered, before OVERDUE_FROM, or its working day not over yet)
@@ -68,11 +80,12 @@ export async function callMetrics(db, { now = new Date(), days = 84, menu = [] }
   const busiest = Object.entries(byHour).sort((a, b) => b[1] - a[1] || Number(a[0]) - Number(b[0]))[0] || null;
   const odDays = series.filter((s) => s.overdue != null);
   return {
-    from: first, to, overdueFrom: OVERDUE_FROM,
+    from: first, to, lastCall, overdueFrom: OVERDUE_FROM,
     figures: {
       waitSec: median(answered.map((x) => x.waitSec)),
       answeredPct: work.length ? Math.round((100 * answered.length) / work.length) : null,
-      answeredPerDay: series.length ? Math.round((10 * answered.length) / series.length) / 10 : null,
+      // over the working days up to the newest call: days past it are days with no call reaching Intake, not days of zero
+      answeredPerDay: (() => { const n = series.filter((x) => x.day <= lastCall).length; return n ? Math.round((10 * answered.length) / n) / 10 : null; })(),
       overduePerDay: odDays.length ? Math.round((10 * odDays.reduce((n, s) => n + s.overdue, 0)) / odDays.length) / 10 : null,
       busiestHour: busiest ? Number(busiest[0]) : null, busiestCalls: busiest ? busiest[1] : 0,
       calls: work.length, answered: answered.length, missed: work.length - answered.length,

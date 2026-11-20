@@ -83,3 +83,16 @@ test('readable without explanation: every chart says what it counts per what, wh
   assert.ok(bars.includes('class="cm-ct"') && bars.includes('class="cm-hi"') && bars.includes('cCmMon(d) === d'), 'title, top bar labelled, a date under each Monday');
   assert.ok(APP.includes('This week: ') && APP.includes('const C_CM_MIN = 10;'), 'this week against last week; a handful of calls is no figure');
 });
+
+test('no test or staff call counts: a number marked Internal or Spam is left out; the range runs on past the last call, which the screen names', async () => {
+  const db = await openDb();
+  await add(db, 'a1', '2026-11-10T08:00:00Z', 1, 40, 20);
+  await db.prepare(`INSERT INTO pbx_calls (uniqueid, called_at, queue, caller_num, picked_up, operator_name, inserted_at, duration_sec, talk_sec) VALUES (?,?,?,?,?,?,?,?,?)`)
+    .run('staff', '2026-11-10T09:00:00Z', '1001*Q-ADMISSION', '+37129999999', 0, null, '2026-11-10T09:00:00Z', 20, 0);
+  await db.prepare(`INSERT INTO contact_marks (contact_key, mark, set_by, set_at) VALUES (?,?,?,?)`).run('phone:29999999', 'Internal', 'Ieva', '2026-11-01T00:00:00Z');
+  const M = await cm.callMetrics(db, { now: new Date('2026-11-20T10:00:00Z') });
+  assert.deepEqual(M.calls.map((c) => c.id), ['a1'], 'the Internal number is not a caller');
+  assert.equal(M.figures.missed, 0);
+  assert.deepEqual([M.lastCall, M.to], ['2026-11-10', '2026-11-19'], 'days after the last call show as days without a call; today is not over');
+  assert.ok(APP.includes('calls up to ${esc(cCmDay(M.lastCall || M.to))}') && APP.includes('`no calls since ${cCmDdmm(M.lastCall)}`'));
+});

@@ -5134,7 +5134,11 @@ function cCmWeeks(k, M) {
   const thisMon = cCmMon(M.to), lastMon = new Date(Date.parse(thisMon + 'T12:00:00Z') - 7 * 864e5).toISOString().slice(0, 10);
   const fig = (mon) => {
     const C = M.calls.filter((c) => cCmMon(c.day) === mon), S = M.series.filter((x) => cCmMon(x.day) === mon), A = C.filter((c) => c.answered);
-    if (C.length < C_CM_MIN) return C.length ? 'too few calls yet' : 'no calls';   // a handful of calls is no figure
+    if (C.length < C_CM_MIN) {   // a handful of calls is no figure; a run of working days with no call is said plainly
+      if (!C.length) return M.lastCall < mon ? `no calls since ${cCmDdmm(M.lastCall)}` : 'no calls';
+      const z = S.filter((x) => !x.calls).map((x) => x.day);
+      return z.length >= 2 ? `no calls ${cCmDdmm(z[0])}-${cCmDdmm(z[z.length - 1])}` : 'too few calls yet';
+    }
     if (k === 'wait') { const v = cCmMed(A.map((c) => c.waitSec)); return v == null ? null : Math.round(v) + ' s'; }
     if (k === 'pct') return C.length ? Math.round((100 * A.length) / C.length) + '%' : null;
     if (k === 'perday') return S.length ? String(Math.round((10 * A.length) / S.length) / 10) : null;
@@ -5176,7 +5180,7 @@ function cCallsDraw() {
   const card = (k, side) => { const c = cCmCard(k, M);
     return `<div class="cm-card${side ? ' side' : ''}"${side ? ` role="button" tabindex="0" onclick="cCallsGo(${Number(C_CM_KEYS.indexOf(k))})"` : ''}><button type="button" class="cm-big" onclick="event.stopPropagation();cCallsList(${esc(JSON.stringify(k))})" title="The calls behind it">${esc(c.big)}</button>`
       + `<div class="cm-lbl">${esc(c.label)}</div><div class="cm-sub">${esc(c.sub)}</div>${c.cmp ? `<div class="cm-cmp">${c.cmp.split(' · ').map((x) => `<span>${esc(x)}</span>`).join(' · ')}</div>` : ''}${c.chart}<button type="button" class="cm-legs" onclick="event.stopPropagation();cCallsList(${esc(JSON.stringify(k))})">${esc(c.legs)} →</button></div>`; };
-  $('#view').innerHTML = `<div class="c-head"><div><h1>Telephone calls</h1><p class="cm-range">${esc(cCmDay(M.from))} - ${esc(cCmDay(M.to))}, working days · calls up to ${esc(cCmDay(M.to))}</p></div></div>
+  $('#view').innerHTML = `<div class="c-head"><div><h1>Telephone calls</h1><p class="cm-range">${esc(cCmDay(M.from))} - ${esc(cCmDay(M.to))}, working days · calls up to ${esc(cCmDay(M.lastCall || M.to))}</p></div></div>
     <div class="cm-b" onkeydown="if(event.key==='ArrowLeft')cCallsGo(C_CM.i-1);if(event.key==='ArrowRight')cCallsGo(C_CM.i+1)" ontouchstart="C_CM.tx=event.touches[0].clientX" ontouchend="const dx=event.changedTouches[0].clientX-(C_CM.tx||0);if(Math.abs(dx)>40)cCallsGo(C_CM.i+(dx<0?1:-1))" tabindex="-1">
       <div class="cm-row">${card(C_CM_KEYS[(i + n - 1) % n], true)}${card(C_CM_KEYS[i], false)}${card(C_CM_KEYS[(i + 1) % n], true)}</div>
       <div class="cm-nav"><button type="button" class="cm-arrow" aria-label="Previous" onclick="cCallsGo(C_CM.i-1)">‹</button>
