@@ -17,7 +17,7 @@ const fn = (name) => { const i = APP.indexOf(name); assert.ok(i >= 0, name); ret
 
 function candidates() {
   const ctx = {};
-  vm.runInNewContext(fn('function cMergeCandidates(') + 'this.pick = cMergeCandidates;', ctx);
+  vm.runInNewContext(fn('function cWordsHit(') + fn('function cMergeCandidates(') + 'this.pick = cMergeCandidates;', ctx);
   return (...a) => JSON.parse(JSON.stringify(ctx.pick(...a)));
 }
 

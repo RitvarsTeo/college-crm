@@ -26,6 +26,12 @@ test('the page uses the same rule in its search boxes, not the old whole-text ma
   assert.match(html, /function cWordsHit\(q, values\)/);
   assert.match(html, /if \(C_PQ\) all = all\.filter\(\(p\) => cWordsHit\(C_PQ, \[p\.name, p\.email, p\.phone\]\)\)/);
   assert.match(html, /\.filter\(\(p\) => cWordsHit\(q, \[p\.name, p\.email, p\.phone\]\)\)/);
+  // HIS PICK B (20.11.2026): a match from another year is offered as a line with Show, never mixed in until Show is pressed
+  assert.match(html, /cPoolRows\(C_PQ_ALL \? \[\.\.\.list, \.\.\.others\] : list, row,/);
+  assert.match(html, /\(!C_PQ_ALL && others\.length \? `<div class="c-moreyrs">\$\{others\.length\} more found in /);
+  assert.match(html, /onclick="C_PQ_ALL=true;cDrawJourneyPool\(\)">Show<\/button>/);
+  assert.match(html, /api\('\/api\/people', \{ scope: false \}\)/, 'every year is loaded once for the search');
+  assert.doesNotMatch(html, /SRCH_V|srchv/, 'the A/B picture switch is gone');
   // the page's copy runs the same as the module on the same cases
   const src = html.slice(html.indexOf('function cWordsHit'), html.indexOf('function cMergeCandidates'));
   const cWordsHit = new Function(`${src}; return cWordsHit;`)();

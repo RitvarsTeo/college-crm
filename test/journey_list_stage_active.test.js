@@ -30,12 +30,13 @@ function load(people) {
     cPoolRows: (rows) => { ctx.listed = Array.from(rows, (p) => p.id); return ''; },
     C_PCOHORT: null, C_PQ: '', C_PMSG: '', C_PEDIT: null, C_PSCROLL: false, C_JPMORE: false,
     C_OUT_TAG: null, C_OUT_REASON: null, C_OUT_FILTER: null, C_OUTCOME: null, C_JF: {}, C_JF_EMPTY: () => ({}),
+    C_JALL: null, C_PQ_ALL: false, cScopeList: () => 'all',   // the search across years (20.11.2026)
   };
   vm.runInNewContext([line('const cWhenClass ='), line('const cNotSaid ='), line('const cTask ='), fn('function groupForAction('),
     line('const cDaysLate ='), line('const cDdMm ='), fn('function cStepState('), line('const cIsDraft ='), line('const C_JDRAFT ='), line('const cJStage ='), fn('function cJStagesOpen('), line('const cJNum ='), line('const C_TERMINAL ='), fn('function cJourneyMatch('), line('const C_PF_EMPTY ='),
     line('const C_PF_DUE ='), line('const C_PF_DATA ='), line('const C_SIS_HOLDS ='), line('const cSisHolds ='), fn('function cPeopleMatch('),
     APP.slice(APP.indexOf('const cPoolSelect ='), APP.indexOf('function cPoolFrame(')),
-    fn('function cJColToBoard('), fn('function cJourneyPick('), fn('function cJourneyStage('), line('const cPersonName ='), fn('function cOnePerPerson('), fn('function cAdmittedOnce('), fn('function cDrawJourneyPool('),
+    fn('function cJColToBoard('), fn('function cJourneyPick('), fn('function cJourneyStage('), line('const cPersonName ='), fn('function cOnePerPerson('), fn('function cAdmittedOnce('), fn('function cWordsHit('), fn('function cOtherYears('), fn('function cDrawJourneyPool('),
     'var C_PF = C_PF_EMPTY(); var C_JP = { col: null, view: "list", open: null };',
     `var C_JPD = { people: ${JSON.stringify(people)}, taskOf: new Map() };`].join('\n').replace(/^const /gm, 'var '), ctx);
   ctx.draw = () => { ctx.cDrawJourneyPool(); return ctx; };

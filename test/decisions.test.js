@@ -213,7 +213,8 @@ test('search reaches every field the operator might remember', async () => {
   for (const f of ['id', 'name', 'email', 'phone', 'programme', 'source_channel', 'student_no']) {
     assert.ok(CONFIG.searchFields.includes(f), 'search must cover ' + f);
   }
-  assert.match(SERVER, /channelLabel\(r\.source_channel\)\.toLowerCase\(\)\.includes\(q\)/,
+  // 20.11.2026: the words rule (src/searchwords.js) reads the channel's plain name with the other fields
+  assert.match(SERVER, /wordsHit\(q, \[\.\.\.fields\.map\(\(f\) => r\[f\]\), channelLabel\(r\.source_channel\)\]\)/,
     'the plain channel name must be searchable, not only the internal id');
 });
 

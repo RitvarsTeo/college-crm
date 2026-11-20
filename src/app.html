@@ -1743,6 +1743,8 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .p-body > .c-sheet + .c-sheet{margin-top:14px}
   html.ui-c .p-step{display:block;color:var(--t3);margin-top:2px}
   html.ui-c .p-stage{font-weight:600;color:var(--ink)}
+  html.ui-c .c-yr{display:inline-block;font-size:11.5px;font-weight:700;color:#146f9c;background:#e3f3fb;border-radius:4px;padding:0 6px;margin-right:6px}
+  html.ui-c .c-moreyrs{display:flex;align-items:center;gap:10px;margin:10px 0 0;padding:10px 14px;border:1px dashed var(--rule);border-radius:8px;font-weight:600;color:var(--ink)}
   html.ui-c .p-view{margin:0}
   html.ui-c .p-filters .c-jf select{max-width:10.5em}
   html.ui-c .p-filters .c-jf select[aria-label="Line"]{max-width:13em}   /* Q94: "Student coordination" whole */
@@ -5600,6 +5602,18 @@ function cInboxPool() {
 let C_JP = { col: null, view: 'board', open: null };   // open: the stage open on a phone (Q68)
 let C_JPMORE = false;
 let C_JPD = null;
+// SEARCH FINDS OTHER YEARS TOO (20.11.2026, Admissions could not find a lead from 2025 while 2026 was picked): once a search is typed and
+// one year is picked, every year's people are loaded once. HIS PICK B: a match from another year is offered as a line under the
+// list, "N more found in 2025 - Show"; Show adds them, each with its year (A, always mixed in, was not picked).
+let C_JALL = null; let C_PQ_ALL = false;
+function cOtherYears(people) {
+  if (!C_PQ || !C_PQ.trim() || cScopeList() === 'all') return [];
+  if (!C_JALL) { C_JALL = 'loading'; api('/api/people', { scope: false }).then((d) => { C_JALL = (d && d.rows) || []; cDrawJourneyPool(); }).catch(() => { C_JALL = []; }); return []; }
+  if (!Array.isArray(C_JALL)) return [];
+  const here = new Set(people.map((p) => p.id));
+  return C_JALL.filter((p) => !here.has(p.id) && cWordsHit(C_PQ, [p.name, p.email, p.phone]))
+    .map((p) => ({ ...p, _yr: cDay(p.status === (CFG.stageRoles || {}).admitted && p.admitted_at ? p.admitted_at : p.created_at).slice(0, 4) }));
+}
 function cPoolViewSwitch() {
   return `<div class="c-seg p-view" role="group" aria-label="View"><button aria-pressed="${C_JP.view === 'board'}" onclick="C_JP.view='board';cJColToBoard();viewJourneyC()">Board</button><button aria-pressed="${C_JP.view === 'list'}" onclick="C_JP.view='list';cJBoardToCol();viewJourneyPool()">List</button></div>`;
 }
@@ -5651,7 +5665,7 @@ function cJourneyStage(v) {
 async function viewJourneyPool() {
   const [people, tasks] = await Promise.all([cPeopleRows(), api('/api/tasks?scope=open')]);
   const taskOf = new Map(); tasks.forEach((t) => { if (!taskOf.has(t.person_id)) taskOf.set(t.person_id, t); });
-  C_JPD = { people, taskOf };
+  C_JPD = { people, taskOf }; C_JALL = null;
   C_PDATA = { people, taskOf };   // the same rows People's edit and save read
   cDrawJourneyPool();
 }
@@ -5717,6 +5731,7 @@ function cDrawJourneyPool() {
   // The Journey board's own order (cJSort), so the list and the columns never disagree.
   list = cJSort(list, taskOf, C_JP.admOrder || 'new');
   list = [...list.filter((p) => !C_TERMINAL.includes(p.status)), ...list.filter((p) => C_TERMINAL.includes(p.status))];
+  const others = cOtherYears(people);
   const distinct = (key) => [...new Set(people.map((p) => p[key] || cNotSaid))];
   const progs = distinct('programme').sort((a, b) => ((CFG.programmes || []).indexOf(a) + 1 || 99) - ((CFG.programmes || []).indexOf(b) + 1 || 99) || a.localeCompare(b));
   const owners = [...new Set([...(CFG.owners || []), ...distinct('owner')])];
@@ -5756,7 +5771,7 @@ function cDrawJourneyPool() {
     // page is one more click from there
     return `<div class="c-line${open && !t && !cSisHolds(p) ? ' is-none' : ''}${C_PEDIT === p.id ? ' c-sel' : ''}" tabindex="0" onclick="C_PEDIT=${C_PEDIT === p.id ? 'null' : `${esc(JSON.stringify(String(p.id ?? '')))}`};C_PMSG='';cDrawJourneyPool()">
       <div class="c-who"><b>${esc(p.name)}</b><small class="c-reach ${p.email || p.phone ? '' : 'c-gap'}">${p.email || p.phone ? cReach(p) : 'no contact details'}</small>${p.status === closed ? cSameMark(p, people) : ''}</div>
-      <div class="c-what"><span class="p-stage">${esc(cStage(p.status))}</span> · ${esc(p.programme || 'programme not said')}<small class="p-step">${step}</small></div>
+      <div class="c-what">${p._yr ? `<span class="c-yr">${esc(p._yr)}</span>` : ''}<span class="p-stage">${esc(cStage(p.status))}</span> · ${esc(p.programme || 'programme not said')}<small class="p-step">${step}</small></div>
       <div class="c-when">${t ? `<span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span>` : ''}</div>
       <div class="c-acts">${open && !t && !cSisHolds(p) ? cChooseNext(p.id) : ''}</div>${cListNote(p)}</div>
       ${C_PEDIT === p.id ? `<div class="c-edit p-edit">${cEditForm(p, t)}</div>` : ''}`; };
@@ -5767,10 +5782,13 @@ function cDrawJourneyPool() {
     band: cPoolBand('The journey', cols, C_JP.col, 'cJourneyPick'),
     filters: cPoolFilters('people', boxes, any ? "C_PF=C_PF_EMPTY();C_JP.col=null;C_OUT_TAG=null;cDrawJourneyPool()" : '') + chips + (C_PMSG ? `<div class="c-filter">${esc(C_PMSG)}</div>` : ''),
     // Cold or Reject: one card per programme, what a campaign is aimed at (D-C8, the owner's pick 05.10.2026)
-    body: (isNp && C_OUT_TAG ? cColdGroups(list, people) : cPoolRows(list, row, 'Nobody matches. Remove a filter to widen the list.'))
+    body: (isNp && C_OUT_TAG ? cColdGroups(list, people) : cPoolRows(C_PQ_ALL ? [...list, ...others] : list, row,
+        others.length ? `Nobody in ${esc([].concat(cScopeList()).join(', '))} matches.` : 'Nobody matches. Remove a filter to widen the list.'))
+      + (!C_PQ_ALL && others.length ? `<div class="c-moreyrs">${others.length} more found in ${esc([...new Set(others.map((p) => p._yr))].sort().reverse().join(', '))}
+          <button type="button" class="btn sm" onclick="C_PQ_ALL=true;cDrawJourneyPool()">Show</button></div>` : '')
       + (isNp && !C_OUT_TAG ? cReasonBreakdown(np, np.filter((p) => !p.closed_reason).length) : ''),
   });
-  const q = $('#cPQ'); if (q) q.addEventListener('input', () => { const pos = q.selectionStart; C_PQ = q.value; cDrawJourneyPool(); const n = $('#cPQ'); n.focus(); n.setSelectionRange(pos, pos); });
+  const q = $('#cPQ'); if (q) q.addEventListener('input', () => { const pos = q.selectionStart; C_PQ = q.value; C_PQ_ALL = false; cDrawJourneyPool(); const n = $('#cPQ'); n.focus(); n.setSelectionRange(pos, pos); });
   if (C_PSCROLL) { C_PSCROLL = false; const r = document.querySelector('.p-rows .c-sel'); if (r) r.scrollIntoView({ block: 'center' }); }
   cPoolWire();
   cPoolOpened('journey');

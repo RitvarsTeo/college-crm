@@ -14,6 +14,15 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 20.11.2026 - Search: every word in any order; a match from another year is offered (PICKED 20.11: "B")
+
+Admissions could not find "Francisco Gustafsson": the record is "Francisco Javier Gustafsson" from 19.11.2025, and 2026 was picked.
+
+| Item | Status |
+|---|---|
+| Every typed word must be found, in any order, in the person's details; case and accents ignored (server people search, the Journey search box, Same person as; `src/searchwords.js`) | BUILT |
+| HIS PICK B (picture `_pictures/search_years_2026-11-20/A_vs_B.png`): on Journey, when one year is picked and the search finds people only in other years, the list says "Nobody in 2026 matches." and a line "N more found in 2025 - Show"; Show adds them with a blue year tag. A (always mixed in) not picked | BUILT |
+
 ## 14.10.2026 - A known person lands on their profile, on every channel
 
 The owner, 14.10.2026: "Already handled" is gone as a reason, so a message from somebody already in Intake goes to their

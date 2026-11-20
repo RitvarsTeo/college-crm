@@ -25,7 +25,7 @@ test('the people come first, the reasons under them', () => {
   // Q47: Not proceeding is the Journey's last column; the Cold / Reject filter, the people, then Why they stopped
   const out = fnBody('function cDrawJourneyPool() {');
   const split = out.indexOf("cPoolSelect('Cold / Reject'");
-  const list = out.indexOf('body: (isNp && C_OUT_TAG ? cColdGroups(list, people) : cPoolRows(list, row,');
+  const list = out.indexOf('body: (isNp && C_OUT_TAG ? cColdGroups(list, people) : cPoolRows(C_PQ_ALL ? [...list, ...others] : list, row,');
   const reasons = out.indexOf('cReasonBreakdown(np, np.filter((p) => !p.closed_reason).length)');
   assert.ok(split > 0 && list > split && reasons > list, 'Cold / Reject filter, the people, then Why they stopped');
 });
