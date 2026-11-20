@@ -1121,6 +1121,29 @@ export async function recordSentMail(db, m, { at = nowIso() } = {}) {
   return { stored: true, personId, inboundId: row ? Number(row.id) : null };
 }
 
+// A PERSON'S OWN MAILBOX (20.11.2026, the update popup's Allow; src/staffmail.js). One message from it is kept only when it
+// is with exactly one student Intake holds: sent to them (out) or from them (in), by their own address. Anything else
+// (colleagues, suppliers, private mail) is never stored. `name` is the mailbox owner's name, shown on what they sent.
+export async function recordMailbox(db, m, { mailbox, name = null, at = nowIso() } = {}) {
+  if (!m || !m.id || !m.sentAt || !mailbox) return { stored: false, why: 'unusable' };
+  const key = String(mailbox).toLowerCase() + ':' + String(m.id);   // Gmail ids are per mailbox
+  if (await db.prepare('SELECT id FROM mail_sent WHERE external_id = ?').get(key)) return { stored: false, repeat: true };
+  const dir = m.mine === 'in' ? 'in' : 'out';
+  const addrs = (dir === 'out' ? (m.to || []) : [m.from]).filter((a) => a && !isOwnAddress(a)).map((a) => String(a).toLowerCase());
+  const hits = [];
+  for (const a of addrs) {
+    for (const x of await db.prepare(`SELECT id FROM ${REAL_PEOPLE} pe WHERE LOWER(pe.email) = ?`).all(a)) {
+      if (!hits.some((h) => h.id === x.id)) hits.push({ id: x.id, email: a });
+    }
+  }
+  if (hits.length !== 1) return { stored: false, why: hits.length ? 'more than one person' : 'not somebody Intake holds' };
+  await db.prepare(`INSERT INTO mail_sent (external_id, thread_key, sent_at, from_name, to_email, subject, body, attachments, person_id, inbound_id, stored_at, mailbox, direction)
+    VALUES (?,?,?,?,?,?,?,?,?,NULL,?,?,?)`).run(key, m.threadId ? String(mailbox).toLowerCase() + ':' + m.threadId : null, m.sentAt,
+    dir === 'out' ? (name || m.fromName || null) : null, hits[0].email, m.subject ? String(m.subject).slice(0, 500) : null, m.body || null,
+    JSON.stringify(m.attachments || []), hits[0].id, at, String(mailbox).toLowerCase(), dir);
+  return { stored: true, personId: hits[0].id, direction: dir };
+}
+
 // One person's email conversation, both sides, newest first (the Email conversation box, pick B): what they wrote on
 // their email cards (the same rows as messagesFor) and what edu@ sent to them (mail_sent, by person or by one of their
 // cards). Each message: { id, dir: 'in' | 'out', at, who, subject, thread, body, bodyClean }. A text emptied by the
@@ -1142,11 +1165,13 @@ export async function conversationFor(db, personId) {
     }
   }
   const ids = rows.map((r) => Number(r.id));
-  const sent = await db.prepare(`SELECT id, sent_at, from_name, subject, thread_key, body FROM mail_sent
+  const sent = await db.prepare(`SELECT id, sent_at, from_name, subject, thread_key, body, direction, mailbox FROM mail_sent
     WHERE (person_id = ?${ids.length ? ` OR inbound_id IN (${ids.map(() => '?').join(',')})` : ''}) AND body IS NOT NULL`).all(personId, ...ids);
   for (const s of sent) {
-    out.push({ id: 'out-' + s.id, dir: 'out', at: s.sent_at, who: s.from_name || 'edu@', subject: s.subject || null, thread: s.thread_key || null,
-      body: s.body, bodyClean: emailBodyFor('gmail', s.body) });
+    // a person's own mailbox (the update popup's Allow): theirs from it are 'in', ours 'out', named by the mailbox's owner
+    const dir = s.direction === 'in' ? 'in' : 'out';
+    out.push({ id: 'mail-' + s.id, dir, at: s.sent_at, who: dir === 'in' ? p.name : (s.from_name || (s.mailbox || 'edu@')),
+      subject: s.subject || null, thread: s.thread_key || null, body: s.body, bodyClean: emailBodyFor('gmail', s.body) });
   }
   return out.sort((a, b) => String(b.at).localeCompare(String(a.at)));
 }

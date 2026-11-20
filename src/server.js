@@ -67,6 +67,7 @@ import { REAL_PEOPLE } from './realpeople.js';
 import * as samepeople from './samepeople.js';
 import * as tcweek from './tcweek.js';
 import * as tcgoogle from './tcgoogle.js';
+import * as staffMail from './staffmail.js';
 import * as tcadd from './tcadd.js';
 import * as tcs2send from './tcs2send.js';
 import * as tcseason from './tcseason.js';
@@ -351,6 +352,37 @@ async function finishTcGoogle(req, res, url, code, flow) {
   if (got.email !== String(flow.email).toLowerCase()) return back('other_account');
   await tcgoogle.saveLink(db, got.email, got.refreshToken, process.env);
   return back('connected');
+}
+
+// THE UPDATE POPUP'S ALLOW (20.11.2026; src/staffmail.js): the Google account that came back must be the same address as
+// the Intake account that pressed Allow, and that person must still be signed in. Anything else connects nothing.
+async function finishStaffMail(req, res, url, code, flow) {
+  const back = (why) => { res.writeHead(303, { location: `/?mailbox=${encodeURIComponent(why)}`, 'cache-control': 'no-store', 'set-cookie': flowCookie('', 0) }); return res.end(); };
+  if (url.searchParams.get('error') || !code) return back('declined');
+  const me = await currentUser(req);
+  if (!me || String(me.email || '').toLowerCase() !== String(flow.email || '').toLowerCase()) return back('signed_out');
+  const got = await staffMail.exchangeCode({ env: process.env, code, redirectUri: process.env.GOOGLE_REDIRECT_URI });
+  if (!got.ok) return back('refused');
+  if (got.email !== String(flow.email).toLowerCase()) return back('other_account');
+  await staffMail.saveLink(db, got.email, got.refreshToken, process.env);
+  return back('connected');
+}
+// An admin's view of the update popup: who answered what and when, and which mailboxes are connected. Never a token.
+function staffMailPage(res, d) {
+  const when = (s) => htmlEscape(String(s || '').slice(0, 16).replace('T', ' ')) + ' UTC';
+  const label = { allow: 'Allow', later: 'Not now' };
+  const rows = d.answers.map((a) => `<tr><td>${htmlEscape(a.user_email)}</td><td>${htmlEscape(label[a.answer] || a.answer)}</td><td>${when(a.answered_at)}</td>`
+    + `<td>${d.links.some((l) => l.user_email === a.user_email) ? 'connected' : '-'}</td></tr>`).join('');
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Intake - Own mailboxes</title><style>body{font:15px/1.5 Raleway,system-ui,sans-serif;background:#f5f7fa;color:#14213d;margin:0;padding:24px}
+main{background:#fff;border-radius:12px;padding:24px;max-width:640px;margin:0 auto;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+h1{font-size:20px;margin:0 0 4px}table{border-collapse:collapse;width:100%;margin-top:14px}td,th{text-align:left;padding:6px 8px;border-bottom:1px solid #e7ebf0}
+th{font-size:12px;color:#3a5877}</style></head><body><main><h1>Own mailboxes</h1>
+<p>The update popup's answers. ${d.links.length} connected.</p>
+<table><thead><tr><th>Account</th><th>Answer</th><th>When</th><th>Mailbox</th></tr></thead><tbody>${rows || '<tr><td colspan="4">No answers yet.</td></tr>'}</tbody></table>
+</main></body></html>`;
+  res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' });
+  return res.end(html);
 }
 
 async function finishNotify(req, res, url, code) {
@@ -1285,6 +1317,7 @@ export const handle = async (req, res) => {
         if (gf && gf.purpose === 'gmail' && gs && gs === gf.state) return finishGmail(req, res, url, url.searchParams.get('code'));
         if (gf && gf.purpose === 'notify' && gs && gs === gf.state) return finishNotify(req, res, url, url.searchParams.get('code'));
         if (gf && gf.purpose === 'tcgoogle' && gs && gs === gf.state) return finishTcGoogle(req, res, url, url.searchParams.get('code'), gf);
+        if (gf && gf.purpose === 'staffmail' && gs && gs === gf.state) return finishStaffMail(req, res, url, url.searchParams.get('code'), gf);
         if (gf && gf.purpose === 'sheetpull' && gs && gs === gf.state) return finishSheetPull(req, res, url, url.searchParams.get('code'), gf);
       }
       if (!AUTH_ON) return json(res, 400, { error: 'Sign-in is not switched on for this copy.' });
@@ -3523,6 +3556,39 @@ export const handle = async (req, res) => {
       if (!to) return json(res, 503, { error: 'The Google client is not set on this copy.' });
       res.writeHead(302, { location: to, 'cache-control': 'no-store', 'set-cookie': flowCookie(flow, FLOW_MINUTES) });
       return res.end();
+    }
+    // THE UPDATE POPUP (20.11.2026, the owner's "As drawn"; src/staffmail.js): shown once to an Academy account at its
+    // next sign-in. GET says whether to show it; POST records Not now; /allow records Allow and opens Google's own
+    // consent for read-only Gmail (nothing is read before that); an admin sees every answer.
+    if (p === '/api/me/update-popup' && req.method === 'GET') {
+      const me = await currentUser(req);
+      return json(res, 200, me ? await staffMail.popupFor(db, me) : { show: false });
+    }
+    if (p === '/api/me/update-popup' && req.method === 'POST') {
+      const me = await currentUser(req);
+      if (!me || !me.email) return json(res, 401, { error: 'Sign in first.' });
+      return json(res, 200, await staffMail.recordAnswer(db, me.email, 'later'));
+    }
+    if (p === '/api/me/mailbox/allow' && req.method === 'GET') {
+      const me = await currentUser(req);
+      if (!me || !me.email) return json(res, 401, { error: 'Sign in first.' });
+      if (!process.env.CRM_SESSION_SECRET || !process.env.GOOGLE_REDIRECT_URI) return json(res, 503, { error: 'Google cannot be connected on this copy yet.' });
+      await staffMail.recordAnswer(db, me.email, 'allow');
+      const state = crypto.randomBytes(24).toString('base64url');
+      const flow = signFlow({ state, purpose: 'staffmail', email: String(me.email).toLowerCase(), exp: Date.now() + FLOW_MINUTES * 60 * 1000 }, process.env.CRM_SESSION_SECRET);
+      const to = staffMail.consentUrl({ env: process.env, state, redirectUri: process.env.GOOGLE_REDIRECT_URI, email: me.email });
+      if (!to) return json(res, 503, { error: 'The Google client is not set on this copy.' });
+      res.writeHead(302, { location: to, 'cache-control': 'no-store', 'set-cookie': flowCookie(flow, FLOW_MINUTES) });
+      return res.end();
+    }
+    if (p === '/api/me/mailbox/disconnect' && req.method === 'POST') {
+      const me = await currentUser(req);
+      if (!me || !me.email) return json(res, 401, { error: 'Sign in first.' });
+      return json(res, 200, await staffMail.disconnect(db, me.email));
+    }
+    if (p === '/api/admin/staff-mail' && req.method === 'GET') {
+      if (!(await adminOf(req))) return json(res, 403, { error: 'For admins only.' });
+      return staffMailPage(res, await staffMail.overview(db));
     }
     if (p === '/api/tc/google/disconnect' && req.method === 'POST') {
       const me = await currentUser(req);

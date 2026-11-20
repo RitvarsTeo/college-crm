@@ -167,3 +167,65 @@ test('the page: the Email conversation box above History, theirs left and ours r
   assert.match(APP, /const emptyFold = \(c\) => !openId && !C_IP\.col && cFoldEmpty\('inbox', c\.id, c\.cards\);/);
   assert.match(APP, /cols\.find\(\(c\) => c\.cards\)/);
 });
+
+// ------------------------------------------------- the update popup + own mailbox --
+import * as staffMail from '../src/staffmail.js';
+import { recordMailbox } from '../src/intake.js';
+import { syncStaffMail } from '../src/sync.js';
+
+test('the update popup: once per Academy account, either answer ends it, Allow is read-only Gmail', async () => {
+  const { db } = await setup();
+  const ieva = { email: 'Staff.One@example.lv', areas: ['academy'] };
+  assert.deepEqual(await staffMail.popupFor(db, ieva), { show: true });
+  assert.deepEqual(await staffMail.popupFor(db, { email: 'tc@example.lv', areas: ['tc'] }), { show: false }, 'only the Academy');
+  assert.deepEqual(await staffMail.popupFor(db, null), { show: false });
+  assert.deepEqual(await staffMail.recordAnswer(db, ieva.email, 'later'), { recorded: true, answer: 'later' });
+  assert.deepEqual(await staffMail.popupFor(db, ieva), { show: false }, 'never shown again');
+  assert.deepEqual(await staffMail.recordAnswer(db, ieva.email, 'allow'), { recorded: false, answer: 'later' }, 'the first answer stays');
+  await assert.rejects(() => staffMail.recordAnswer(db, 'x@example.lv', 'maybe'));
+  const ov = await staffMail.overview(db);
+  assert.deepEqual(ov.answers.map((a) => [a.user_email, a.answer]), [['staff.one@example.lv', 'later']]);
+  const url = staffMail.consentUrl({ env: { GMAIL_OAUTH_CLIENT_ID: 'c', GMAIL_OAUTH_CLIENT_SECRET: 's' }, state: 'st', redirectUri: 'https://x/cb', email: ieva.email });
+  assert.equal(new URL(url).searchParams.get('scope'), 'https://www.googleapis.com/auth/gmail.readonly openid email', 'read-only Gmail and the address, nothing else');
+  assert.equal(new URL(url).searchParams.get('login_hint'), ieva.email);
+});
+
+test('an own mailbox: only mail with exactly one student is kept, both directions, named by the mailbox owner', async () => {
+  const { db } = await setup();
+  const mk = (o) => ({ ...toSentShape(gmailMsg(o)), mine: o.mine });
+  let r = await recordMailbox(db, mk({ id: 'a', thread: 'X1', at: ago(9), from: 'Staff One <staff.one@example.lv>', to: 'liene@example.lv', body: 'Sveika!', mine: 'out' }), { mailbox: 'staff.one@example.lv', name: 'Staff One' });
+  assert.equal(r.stored, true); assert.equal(r.direction, 'out');
+  r = await recordMailbox(db, mk({ id: 'b', thread: 'X1', at: ago(8), from: 'Liene <liene@example.lv>', to: 'staff.one@example.lv', body: 'Paldies!', mine: 'in' }), { mailbox: 'staff.one@example.lv' });
+  assert.equal(r.stored, true); assert.equal(r.direction, 'in');
+  r = await recordMailbox(db, mk({ id: 'c', thread: 'X2', at: ago(7), from: 'Friend <friend@example.com>', to: 'staff.one@example.lv', body: 'private', mine: 'in' }), { mailbox: 'staff.one@example.lv' });
+  assert.equal(r.stored, false, 'private mail is never kept');
+  r = await recordMailbox(db, mk({ id: 'd', thread: 'X3', at: ago(6), to: 'liene@example.lv, janis@example.lv', mine: 'out' }), { mailbox: 'staff.one@example.lv' });
+  assert.equal(r.stored, false, 'two students in one email: a question for a person, not a guess');
+  r = await recordMailbox(db, mk({ id: 'a', thread: 'X1', at: ago(9), to: 'liene@example.lv', mine: 'out' }), { mailbox: 'staff.one@example.lv' });
+  assert.equal(r.repeat, true);
+  const conv = await conversationFor(db, 'p1');
+  assert.deepEqual(conv.slice(0, 2).map((m) => [m.dir, m.who]), [['in', 'Liene Kalna'], ['out', 'Staff One']]);
+});
+
+test('the own-mailbox sync: nothing without a connection; a revoked one is dropped', async () => {
+  const { db } = await setup();
+  assert.deepEqual(await syncStaffMail(db, { now: NOW, env: {} }), { mailboxes: 0, read: 0, stored: 0, gone: 0, refused: 0 });
+  const env = { CRM_SESSION_SECRET: 'k'.repeat(40), GMAIL_OAUTH_CLIENT_ID: 'c', GMAIL_OAUTH_CLIENT_SECRET: 's' };
+  await staffMail.saveLink(db, 'staff.one@example.lv', 'refresh-token', env);
+  const fetchImpl = async () => ({ ok: false, status: 400, json: async () => ({}), text: async () => '{"error":"invalid_grant"}' });
+  const r = await syncStaffMail(db, { now: NOW, env, fetchImpl });
+  assert.equal(r.gone, 1);
+  assert.equal((await staffMail.overview(db)).links.length, 0, 'a mailbox Google no longer allows is let go');
+  const raw = await db.prepare("SELECT COUNT(*) n FROM staff_mail_links").get();
+  assert.equal(Number(raw.n), 0);
+});
+
+test('the popup on the page: once after sign-in, the approved words, Allow / Not now, nothing behind it clickable', () => {
+  assert.match(APP, /if \(AUTH\.on && AUTH\.user\) cUpdatePopup\(\);/);
+  assert.match(APP, /<div class="c-upd-tag">What's new<\/div>/);
+  assert.match(APP, /<h2 id="c-upd-t">The whole email conversation, in Intake<\/h2>/);
+  assert.match(APP, /<p>Each student now shows every email: theirs and our replies, in one place\. An answered email is marked "Answered" in the Inbox\.<\/p>/);
+  assert.match(APP, /<p>Allow Intake to include your own mailbox too\. Only mail with students is kept\.<\/p>/);
+  assert.match(APP, /<a class="c-upd-yes" href="\/api\/me\/mailbox\/allow">Allow<\/a><button type="button" class="c-upd-no" onclick="cUpdateLater\(this\)">Not now<\/button>/);
+  assert.match(APP, /\.c-upd\{position:fixed;inset:0;z-index:9999;background:rgba\(10,20,40,\.62\)/);
+});

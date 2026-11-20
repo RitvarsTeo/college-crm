@@ -236,7 +236,22 @@ CREATE TABLE IF NOT EXISTS mail_sent (
   person_id TEXT,                -- the person it was matched to (by their address), when known
   inbound_id INTEGER,            -- the Inbox row of the same conversation, when there is one
   stored_at TEXT NOT NULL,
-  body_deleted_at TEXT
+  body_deleted_at TEXT,
+  -- a person's own mailbox (src/staffmail.js, the update popup's Allow): which mailbox (null = edu@), and whether the
+  -- message went to the student (out) or came from them (in)
+  mailbox TEXT,
+  direction TEXT NOT NULL DEFAULT 'out'
+);
+-- the update popup (20.11.2026): each Academy account's answer, once (allow | later), and the mailboxes allowed
+CREATE TABLE IF NOT EXISTS staff_mail_answers (
+  user_email TEXT PRIMARY KEY,
+  answer TEXT NOT NULL,
+  answered_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS staff_mail_links (
+  user_email TEXT PRIMARY KEY,
+  token TEXT NOT NULL,           -- the refresh token, encrypted (src/staffmail.js seal)
+  connected_at TEXT NOT NULL
 );
 CREATE UNIQUE INDEX IF NOT EXISTS mail_sent_external ON mail_sent (external_id);
 CREATE INDEX IF NOT EXISTS mail_sent_person ON mail_sent (person_id, sent_at);

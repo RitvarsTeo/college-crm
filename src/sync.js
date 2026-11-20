@@ -13,7 +13,8 @@
 //
 // Neither poller runs while its channel is off, and off is the default.
 
-import { receive, bringBack, activePersonFor, CALL_BACK_STEP, confirmedBySystem, CONFIG, newPersonId, ownerFor, emailFilterWhy, purgeLineBodies, recordReplyRead, emailRuleOnWaiting, recordSentMail } from './intake.js';
+import { receive, bringBack, activePersonFor, CALL_BACK_STEP, confirmedBySystem, CONFIG, newPersonId, ownerFor, emailFilterWhy, purgeLineBodies, recordReplyRead, emailRuleOnWaiting, recordSentMail, recordMailbox } from './intake.js';
+import * as staffMail from './staffmail.js';
 import { onePersonFor, normEmail, normPhone, isOwnAddress } from './identity.js';
 import { knock } from './webpush.js';
 import { phoneThread } from './phonefilter.js';
@@ -741,6 +742,8 @@ export async function syncGmail(db, { now = new Date(), env = process.env, fetch
   // the same run reads what edu@ SENT (the whole conversation, 20.11.2026); only the real mailbox, never a test copy
   let sent;
   try { sent = mode === 'live' ? await syncSent(db, { now, env, fetchImpl, refreshToken }) : { ok: true, ran: false }; } catch (err) { sent = { ok: false, why: 'the sent read failed' }; }
+  // and the mailboxes people allowed in the update popup (src/staffmail.js), the same way
+  try { if (mode === 'live') sent.own = await syncStaffMail(db, { now, env, fetchImpl }); } catch (err) { sent.own = { ok: false, why: 'the own mailbox read failed' }; }
   await saveState(db, 'gmail', got.more || partial ? last : at, { ...out, query: got.query, more: Boolean(got.more), replies, sent,
     ...(partial ? { ok: false, failed: got.failed, why: got.why } : {}) }, at);
   return { ok: !partial, ran: true, channel: 'gmail', mode, ...out, more: Boolean(got.more), query: got.query, replies, sent,
@@ -751,6 +754,34 @@ export async function syncGmail(db, { now = new Date(), env = process.env, fetch
 // mail since its own bookmark (sync_state 'gmail_sent'; the first run reaches back SENT_DAYS), with ten minutes of overlap
 // (a repeat is free: the Gmail id is unique). Each message is kept only when it belongs to somebody Intake holds
 // (src/intake.js recordSentMail). A run Gmail did not finish keeps the old bookmark, so nothing is skipped.
+// THE MAILBOXES PEOPLE ALLOWED (20.11.2026, the update popup; src/staffmail.js). Each connected mailbox from its own
+// bookmark (sync_state 'staff_mail:<address>'; the first run reaches back FIRST_DAYS), at most PER_RUN messages a run,
+// oldest first; only mail with a student Intake holds is kept (src/intake.js recordMailbox). Counts only, nobody named.
+export async function syncStaffMail(db, { now = new Date(), env = process.env, fetchImpl = fetch } = {}) {
+  const at = now.toISOString();
+  const links = await db.prepare('SELECT user_email FROM staff_mail_links').all();
+  const res = { mailboxes: links.length, read: 0, stored: 0, gone: 0, refused: 0 };
+  for (const { user_email: email } of links) {
+    const name = await bookmarkName(email);
+    const state = await db.prepare('SELECT value FROM sync_state WHERE name = ?').get(name);
+    const last = state && state.value && !Number.isNaN(Date.parse(state.value)) ? state.value : null;
+    const since = new Date(last ? Date.parse(last) - 10 * 60000 : now.getTime() - staffMail.FIRST_DAYS * 86400000).toISOString();
+    const got = await staffMail.readMailbox(db, email, { env, fetchImpl, since });
+    if (got.gone) { res.gone++; continue; }
+    const user = await db.prepare('SELECT display_name FROM crm_users WHERE LOWER(email) = ?').get(email);
+    for (const m of got.items || []) {
+      res.read++;
+      const r = await recordMailbox(db, m, { mailbox: email, name: (user && user.display_name) || null, at });
+      if (r.stored) res.stored++;
+    }
+    if (!got.ok) res.refused++;
+    const mark = !got.ok ? last : got.more ? (got.upTo || last) : at;
+    await saveState(db, name, mark, { read: (got.items || []).length, more: Boolean(got.more), ok: got.ok }, at);
+  }
+  return res;
+}
+const bookmarkName = async (email) => 'staff_mail:' + String(email).toLowerCase();
+
 export async function syncSent(db, { now = new Date(), env = process.env, fetchImpl = fetch, refreshToken = undefined } = {}) {
   const at = now.toISOString();
   const state = await db.prepare("SELECT value FROM sync_state WHERE name = 'gmail_sent'").get();

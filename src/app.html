@@ -1743,6 +1743,14 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .p-body > .c-sheet + .c-sheet{margin-top:14px}
   html.ui-c .p-step{display:block;color:var(--t3);margin-top:2px}
   html.ui-c .p-stage{font-weight:600;color:var(--ink)}
+  .c-upd{position:fixed;inset:0;z-index:9999;background:rgba(10,20,40,.62);display:grid;place-items:center;padding:16px}
+  .c-upd-box{width:440px;max-width:100%;background:#fff;border-radius:14px;padding:26px 28px;box-shadow:0 20px 60px rgba(0,0,0,.35);color:#2d3748}
+  .c-upd-tag{font-size:12px;font-weight:700;letter-spacing:.06em;color:#29a8df;text-transform:uppercase}
+  .c-upd-box h2{margin:6px 0 10px;font-size:20px;color:#0b2545;text-transform:none;letter-spacing:0}
+  .c-upd-box p{margin:0 0 10px;font-size:14.5px;line-height:1.5}
+  .c-upd-row{display:flex;gap:10px;margin-top:18px}
+  .c-upd-yes,.c-upd-no{flex:1;border-radius:8px;padding:11px;text-align:center;font:inherit;font-weight:600;font-size:14px;cursor:pointer;text-decoration:none}
+  .c-upd-yes{background:#0b2545;color:#fff;border:0} .c-upd-no{background:#fff;color:#0b2545;border:1px solid #cfd6e0}
   html.ui-c .c-conv{padding-bottom:12px}
   html.ui-c .c-conv-th{font-weight:700;font-size:13.5px;margin:12px 16px 4px;color:var(--ink)}
   html.ui-c .c-cb{max-width:78%;padding:8px 12px;border-radius:12px;margin:6px 16px;font-size:13.5px;line-height:1.4;white-space:pre-line;color:var(--ink)}
@@ -7880,7 +7888,33 @@ async function loadAuth() {
   }
   const link = $('#navChannels');
   if (link) link.style.display = isAdmin() ? '' : 'none';
+  if (AUTH.on && AUTH.user) cUpdatePopup();   // the update popup, once per person (20.11.2026)
   return AUTH;
+}
+
+// THE UPDATE POPUP (20.11.2026, the owner's "As drawn": _pictures/Intake_update_popup_draft.html). Once, at the next
+// sign-in, to an Academy account that has not answered (the server's /api/me/update-popup): a centred box over a dark
+// overlay, nothing behind it clickable. Allow opens Google's own read-only consent (/api/me/mailbox/allow, which records
+// the answer); Not now records it and closes. Either way it is never shown again (src/staffmail.js).
+async function cUpdatePopup(force = null) {
+  let show = false;
+  try { show = force !== null ? force : Boolean((await (await apiFetch('/api/me/update-popup')).json()).show); } catch { show = false; }
+  if (!show || document.getElementById('c-upd')) return;
+  const el = document.createElement('div');
+  el.id = 'c-upd'; el.className = 'c-upd';
+  el.innerHTML = `<div class="c-upd-box" role="dialog" aria-modal="true" aria-labelledby="c-upd-t">
+    <div class="c-upd-tag">What's new</div>
+    <h2 id="c-upd-t">The whole email conversation, in Intake</h2>
+    <p>Each student now shows every email: theirs and our replies, in one place. An answered email is marked "Answered" in the Inbox.</p>
+    <p>Allow Intake to include your own mailbox too. Only mail with students is kept.</p>
+    <div class="c-upd-row"><a class="c-upd-yes" href="/api/me/mailbox/allow">Allow</a><button type="button" class="c-upd-no" onclick="cUpdateLater(this)">Not now</button></div></div>`;
+  document.body.appendChild(el);
+  const yes = el.querySelector('.c-upd-yes'); if (yes) yes.focus();
+}
+async function cUpdateLater(btn) {
+  if (btn) btn.disabled = true;
+  try { await apiFetch('/api/me/update-popup', { method: 'POST', headers: { 'content-type': 'application/json', 'x-acting-as': ACTOR } }); } catch { /* shown again next time */ }
+  const el = document.getElementById('c-upd'); if (el) el.remove();
 }
 
 // ONE SHELL - the sea, the scrim and the logo - for the sign-in card and for the wait after Google,
