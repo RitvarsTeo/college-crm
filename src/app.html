@@ -5690,7 +5690,7 @@ function cDrawJourneyPool() {
   const admOnce = new Set(cAdmittedOnce(people).map((p) => p.id));
   let all = people.filter((p) => p.status !== admitted || admOnce.has(p.id)).filter((p) => cPeopleMatch(p, taskOf.get(p.id), f, known));
   if (C_PCOHORT) all = all.filter((p) => C_PCOHORT.ids.has(p.id));
-  if (C_PQ) { const q = C_PQ.toLowerCase(); all = all.filter((p) => [p.name, p.email, p.phone].some((v) => String(v || '').toLowerCase().includes(q))); }
+  if (C_PQ) all = all.filter((p) => cWordsHit(C_PQ, [p.name, p.email, p.phone]));
   // Admissions, 16.10.2026 (who in one programme is active right now?): Stage = Active is every open stage, i.e.
   // not one of the two finished stages the config names (stageRoles.admitted / .closed)
   const active = C_PF.stage === 'open';
@@ -8812,10 +8812,18 @@ function latestConsents(rows) {
 
 // SAME PERSON AS... (decided 30.09.2026): a person the SIS created is folded into the person they
 // really are. The server moves the SIS link, history and steps, and removes the extra record.
+// FIND A PERSON BY THE WORDS YOU REMEMBER (20.11.2026; the same code as src/searchwords.js wordsHit): every typed word, in any order,
+// anywhere in those details; case and accents ignored ("Francisco Gustafsson" finds "Francisco Javier Gustafsson")
+function cWordsHit(q, values) {
+  const fold = (s) => String(s ?? '').toLocaleLowerCase('lv').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
+  const words = fold(q).split(' ').filter(Boolean);
+  if (!words.length) return true;
+  const hay = fold([].concat(values).map((v) => String(v ?? '')).join(' '));
+  return words.every((w) => hay.includes(w));
+}
 function cMergeCandidates(people, selfId, q) {
-  const s = String(q || '').trim().toLowerCase();
   return people.filter((p) => p.id !== selfId)
-    .filter((p) => !s || [p.name, p.email, p.phone].some((v) => String(v || '').toLowerCase().includes(s)))
+    .filter((p) => cWordsHit(q, [p.name, p.email, p.phone]))
     .slice(0, 20);
 }
 let C_MERGE = null;

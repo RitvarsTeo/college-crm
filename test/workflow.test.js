@@ -158,6 +158,12 @@ test('the People filters really filter, which is what nobody had ever checked', 
   assert.equal((await get(base, '/api/people?source_channel=website', 'Ieva')).count, 1);
   assert.equal((await get(base, '/api/people?status=New', 'Ieva')).count, 2);
   assert.equal((await get(base, '/api/people?q=Engineer', 'Ieva')).count, 1);
+  // 20.11.2026 (Ieva could not find "Francisco Gustafsson"): every typed word, in any order, case and accents ignored
+  await send(base, '/api/people', 'Ieva', { name: 'Francisco Javier Gustafsson', source_channel: 'email', programme: 'ENG' });
+  for (const q of ['Francisco Gustafsson', 'gustafsson francisco', 'GUSTAFSSON', 'francisco eng']) {
+    assert.equal((await get(base, '/api/people?q=' + encodeURIComponent(q), 'Ieva')).count, 1, q);
+  }
+  assert.equal((await get(base, '/api/people?q=' + encodeURIComponent('Francisco Smith'), 'Ieva')).count, 0, 'every word must be there');
 
   // Nobody is without a next step, and that is not an accident: finishing one
   // without naming the next is refused, so 'without a next step' stays empty

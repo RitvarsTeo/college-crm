@@ -10,6 +10,7 @@ import { PROVIDERS, runScenario, runOutbound, runFullDemo, listEvents, getEvent,
 import { logEvent, applyEdit, readHistory, MANUAL, AUTOMATIC, EDITABLE_FIELDS, IMMUTABLE_FIELDS, FIELD_LABELS } from './history.js';
 import { stampOpenDay, registerOpenDay, refilterOpen, newPersonId, setAsideOldCalls, releaseNotAdmissions } from './intake.js';
 import { queueLeadAnswers } from './leadanswers.js';
+import { wordsHit } from './searchwords.js';
 import { connectConfig, finishConnect, WhatsAppConnectError } from '../lib/whatsapp.js';
 import { subscribeLinkedInLeads, LeadFetchError } from '../lib/leads.js';
 import * as gmailB from '../lib/gmail.js';
@@ -2108,10 +2109,10 @@ export const handle = async (req, res) => {
       for (const r of rows) r.list_note = pickListNote(r);
       // Decision 10: findable by whatever the operator remembers, including the
       // channel's plain name, so "instagram" finds it without knowing the id.
+      // 20.11.2026 (src/searchwords.js): every typed word, in any order, anywhere in those details; case and accents ignored
       if (q) {
         const fields = CONFIG.searchFields || ['name', 'email', 'phone'];
-        rows = rows.filter((r) => fields.some((f) => String(r[f] ?? '').toLowerCase().includes(q))
-          || channelLabel(r.source_channel).toLowerCase().includes(q));
+        rows = rows.filter((r) => wordsHit(q, [...fields.map((f) => r[f]), channelLabel(r.source_channel)]));
       }
       for (const key of ['status', 'programme', 'owner', 'source_channel', 'nationality']) {
         const v = f(key);
