@@ -76,3 +76,10 @@ test('the screen: Calls under Reports, three cards with the middle one in focus,
   assert.ok(bars.includes('class="cm-y"') && bars.includes('data-t=') && bars.includes('cm-med') && bars.includes('median '), 'value scale, value per bar, median line');
   assert.ok(APP.includes("tips: T, unit: ' s', median: F.waitSec") && APP.includes('every: true'), 'median on Time to answer; every hour under its bar');
 });
+
+test('readable without explanation: every chart says what it counts per what, which bar is when, how much the top bar is, and this week against last week', () => {
+  for (const t of ['Ring before answer, per day', 'Share of calls answered, per day', 'Answered calls per day', 'Missed calls left overdue, per day', 'Calls per hour of the day, all days']) assert.ok(APP.includes(`title: '${t}'`), t);
+  const bars = APP.slice(APP.indexOf('function cCmBars('), APP.indexOf('function cCmTip('));
+  assert.ok(bars.includes('class="cm-ct"') && bars.includes('class="cm-hi"') && bars.includes('cCmMon(d) === d'), 'title, top bar labelled, a date under each Monday');
+  assert.ok(APP.includes('This week: ') && APP.includes('const C_CM_MIN = 10;'), 'this week against last week; a handful of calls is no figure');
+});

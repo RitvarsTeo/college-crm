@@ -1668,7 +1668,10 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .cm-big{all:unset;cursor:pointer;font-size:72px;line-height:1;color:var(--ink-strong,#0b1b33);font-weight:750;letter-spacing:-.02em}
   html.ui-c .cm-big:focus-visible, html.ui-c .cm-legs:focus-visible{outline:2px solid #29a8df;outline-offset:3px}
   html.ui-c .cm-lbl{font-size:20px;font-weight:700;margin-top:8px} html.ui-c .cm-sub{color:var(--t3);font-weight:600;font-size:14px;margin:2px 0 14px}
-  html.ui-c .cm-chart{display:grid;grid-template-columns:auto 1fr;column-gap:8px}
+  html.ui-c .cm-cmp{font-size:14px;font-weight:700;margin:-8px 0 14px} html.ui-c .cm-cmp span{white-space:nowrap}
+  html.ui-c .cm-ct{font-size:13px;font-weight:700;margin:0 0 8px}
+  html.ui-c .cm-hi{position:absolute;transform:translate(-50%,-2px);text-decoration:none;font-size:11px;font-weight:700;color:#1b7fae;white-space:nowrap;pointer-events:none}
+  html.ui-c .cm-chart{display:grid;grid-template-columns:auto 1fr;column-gap:8px;margin-top:14px}
   html.ui-c .cm-y{position:relative;height:120px;min-width:30px;color:var(--t3);font-size:11px;font-weight:600}
   html.ui-c .cm-y span{position:absolute;right:0;transform:translateY(50%);white-space:nowrap}
   html.ui-c .cm-plot{position:relative;height:120px}
@@ -5103,9 +5106,15 @@ function cCmBars(vals, labels, o = {}) {
   const grid = [top, top / 2, 0].map((t) => `<b style="bottom:${pc(t)}%"></b>`).join('');
   const bars = vals.map((v, i) => `<i class="${v == null ? 'none' : ''}" data-t="${esc((o.tips || labels)[i] + ' · ' + (v == null ? 'no calls' : String(v) + unit))}"><u style="height:${v == null ? 0 : pc(v)}%"></u></i>`).join('');
   const med = o.median != null ? `<em class="cm-med" style="bottom:${pc(o.median)}%"><span>median ${esc(String(Math.round(o.median)) + unit)}</span></em>` : '';
-  const xs = o.every ? labels.map((l) => `<span>${esc(l)}</span>`).join('')
-    : [0, Math.floor((labels.length - 1) / 2), labels.length - 1].filter((j, k, a) => a.indexOf(j) === k).map((j) => `<span style="left:${(((j + 0.5) / Math.max(1, labels.length)) * 100).toFixed(2)}%">${esc(labels[j] || '')}</span>`).join('');
-  return `<div class="cm-chart"><div class="cm-y">${ticks}</div><div class="cm-plot" onmouseover="cCmTip(event)" onclick="event.stopPropagation();cCmTip(event)" onmouseleave="cCmTip(null, this)" role="img" aria-label="Per day">${grid}<div class="cm-bars">${bars}</div>${med}<div class="cm-tip" hidden></div></div>`
+  // which bar is when: every hour under its bar; on a day chart the Monday of each week (every other one past 7 weeks)
+  const n = Math.max(1, labels.length), at = (j) => (((j + 0.5) / n) * 100).toFixed(2);
+  let marks = labels.map((l, j) => j);
+  if (o.days) { const mon = o.days.map((d, j) => (cCmMon(d) === d || j === 0 ? j : -1)).filter((j) => j >= 0); marks = mon.length > 7 ? mon.filter((j, k) => k % 2 === 0) : mon; }
+  const xs = o.every ? labels.map((l) => `<span>${esc(l)}</span>`).join('') : marks.map((j) => `<span style="left:${at(j)}%">${esc(labels[j] || '')}</span>`).join('');
+  // the highest bar carries its number, so the size of one bar reads without hovering
+  const hi = vals.reduce((b, v, j) => (v != null && (b < 0 || v > vals[b]) ? j : b), -1);
+  const topLbl = hi >= 0 && vals[hi] > 0 ? `<s class="cm-hi" style="left:${at(hi)}%;bottom:${pc(vals[hi])}%">${esc(String(vals[hi]) + unit)}</s>` : '';
+  return `<div class="cm-ct">${esc(o.title || '')}</div><div class="cm-chart"><div class="cm-y">${ticks}</div><div class="cm-plot" onmouseover="cCmTip(event)" onclick="event.stopPropagation();cCmTip(event)" onmouseleave="cCmTip(null, this)" role="img" aria-label="${esc(o.title || '')}">${grid}<div class="cm-bars">${bars}</div>${med}${topLbl}<div class="cm-tip" hidden></div></div>`
     + `<div class="cm-x${o.every ? ' every' : ''}">${xs}</div></div>`;
 }
 function cCmTip(ev, plot) {
@@ -5117,23 +5126,43 @@ function cCmTip(ev, plot) {
   const r = p.getBoundingClientRect(), b = bar.getBoundingClientRect();
   tip.style.left = Math.max(0, Math.min(r.width - tip.offsetWidth, b.left - r.left + b.width / 2 - tip.offsetWidth / 2)) + 'px';
 }
+// good or bad: this week against last week, the same figure, one line under it (Mon-Fri weeks of the last call's day)
+function cCmMon(d) { const t = Date.parse(d + 'T12:00:00Z'), w = (new Date(t).getUTCDay() + 6) % 7; return new Date(t - w * 864e5).toISOString().slice(0, 10); }
+function cCmMed(a) { const s = a.filter((v) => v != null).sort((x, y) => x - y); if (!s.length) return null; const m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; }
+const C_CM_MIN = 10;
+function cCmWeeks(k, M) {
+  const thisMon = cCmMon(M.to), lastMon = new Date(Date.parse(thisMon + 'T12:00:00Z') - 7 * 864e5).toISOString().slice(0, 10);
+  const fig = (mon) => {
+    const C = M.calls.filter((c) => cCmMon(c.day) === mon), S = M.series.filter((x) => cCmMon(x.day) === mon), A = C.filter((c) => c.answered);
+    if (C.length < C_CM_MIN) return C.length ? 'too few calls yet' : 'no calls';   // a handful of calls is no figure
+    if (k === 'wait') { const v = cCmMed(A.map((c) => c.waitSec)); return v == null ? null : Math.round(v) + ' s'; }
+    if (k === 'pct') return C.length ? Math.round((100 * A.length) / C.length) + '%' : null;
+    if (k === 'perday') return S.length ? String(Math.round((10 * A.length) / S.length) / 10) : null;
+    if (k === 'overdue') { const od = S.filter((x) => x.overdue != null); return od.length ? String(Math.round((10 * od.reduce((t, x) => t + x.overdue, 0)) / od.length) / 10) : null; }
+    const by = {}; C.forEach((c) => { by[c.hour] = (by[c.hour] || 0) + 1; });
+    const b = Object.entries(by).sort((x, y) => y[1] - x[1] || x[0] - y[0])[0];
+    return b ? String(b[0]).padStart(2, '0') + ':00' : null;
+  };
+  const a = fig(thisMon), b = fig(lastMon);
+  return `This week: ${a == null ? '-' : a} · last week: ${b == null ? '-' : b}`;
+}
 function cCmCard(k, M) {
-  const F = M.figures, S = M.series, L = S.map((x) => cCmDdmm(x.day)), T = S.map((x) => cCmDdd(x.day));
-  if (k === 'wait') return { big: F.waitSec == null ? '-' : Math.round(F.waitSec) + ' s', label: 'Time to answer', sub: 'median ring before pick-up', chart: cCmBars(S.map((x) => (x.waitSec == null ? null : Math.round(x.waitSec))), L, { tips: T, unit: ' s', median: F.waitSec }), legs: `${F.answered} answered calls` };
-  if (k === 'pct') return { big: F.answeredPct == null ? '-' : F.answeredPct + '%', label: 'Answered', sub: `${F.answered} answered · ${F.missed} missed`, chart: cCmBars(S.map((x) => (x.calls ? Math.round((100 * x.answered) / x.calls) : null)), L, { tips: T, unit: '%', top: 100 }), legs: `${F.calls} calls` };
-  if (k === 'perday') return { big: F.answeredPerDay == null ? '-' : String(F.answeredPerDay), label: 'Answered per day', sub: 'average, working days', chart: cCmBars(S.map((x) => x.answered), L, { tips: T }), legs: `${F.answered} answered calls` };
+  const F = M.figures, S = M.series, D = S.map((x) => x.day), L = D.map(cCmDdmm), T = D.map(cCmDdd), W = cCmWeeks(k, M);
+  if (k === 'wait') return { big: F.waitSec == null ? '-' : Math.round(F.waitSec) + ' s', label: 'Time to answer', sub: 'median ring before pick-up', cmp: W, chart: cCmBars(S.map((x) => (x.waitSec == null ? null : Math.round(x.waitSec))), L, { title: 'Ring before answer, per day', days: D, tips: T, unit: ' s', median: F.waitSec }), legs: `${F.answered} answered calls` };
+  if (k === 'pct') return { big: F.answeredPct == null ? '-' : F.answeredPct + '%', label: 'Answered', sub: `${F.answered} answered · ${F.missed} missed`, cmp: W, chart: cCmBars(S.map((x) => (x.calls ? Math.round((100 * x.answered) / x.calls) : null)), L, { title: 'Share of calls answered, per day', days: D, tips: T, unit: '%', top: 100 }), legs: `${F.calls} calls` };
+  if (k === 'perday') return { big: F.answeredPerDay == null ? '-' : String(F.answeredPerDay), label: 'Answered per day', sub: 'average, working days', cmp: W, chart: cCmBars(S.map((x) => x.answered), L, { title: 'Answered calls per day', days: D, tips: T }), legs: `${F.answered} answered calls` };
   if (k === 'overdue') {
     const od = S.filter((x) => x.overdue != null);
     return { big: F.overduePerDay == null ? '-' : String(F.overduePerDay), label: 'Overdue per day',
-      sub: od.length ? 'missed calls not called back by the end of the working day' : `counted from ${cCmDay(M.overdueFrom)}`,
-      chart: od.length ? cCmBars(od.map((x) => x.overdue), od.map((x) => cCmDdmm(x.day)), { tips: od.map((x) => cCmDdd(x.day)) }) : '<div class="cm-wait">Every missed call has a Called back button. The count starts with it.</div>',
+      sub: od.length ? 'missed calls not called back by the end of the working day' : `counted from ${cCmDay(M.overdueFrom)}`, cmp: od.length ? W : '',
+      chart: od.length ? cCmBars(od.map((x) => x.overdue), od.map((x) => cCmDdmm(x.day)), { title: 'Missed calls left overdue, per day', days: od.map((x) => x.day), tips: od.map((x) => cCmDdd(x.day)) }) : '<div class="cm-wait">Every missed call has a Called back button. The count starts with it.</div>',
       legs: `${M.calls.filter((c) => c.overdue === true).length} missed calls` };
   }
   const hs = Object.keys(M.byHour).map(Number), hours = [];
   for (let h = Math.min(8, ...hs); h <= Math.max(18, ...hs); h++) hours.push(h);
   const hh = (h) => String(h).padStart(2, '0');
-  return { big: F.busiestHour == null ? '-' : hh(F.busiestHour) + ':00', label: 'Busiest hour', sub: `${F.busiestCalls} calls in that hour, all days`,
-    chart: cCmBars(hours.map((h) => M.byHour[h] || 0), hours.map(hh), { tips: hours.map((h) => `${hh(h)}:00-${hh(h + 1)}:00`), every: true }), legs: 'calls in that hour' };
+  return { big: F.busiestHour == null ? '-' : hh(F.busiestHour) + ':00', label: 'Busiest hour', sub: `${F.busiestCalls} calls in that hour, all days`, cmp: W,
+    chart: cCmBars(hours.map((h) => M.byHour[h] || 0), hours.map(hh), { title: 'Calls per hour of the day, all days', tips: hours.map((h) => `${hh(h)}:00-${hh(h + 1)}:00`), every: true }), legs: 'calls in that hour' };
 }
 async function viewCallsC() {
   const M = await api('/api/calls/metrics');
@@ -5146,7 +5175,7 @@ function cCallsDraw() {
   const n = C_CM_KEYS.length, i = C_CM.i;
   const card = (k, side) => { const c = cCmCard(k, M);
     return `<div class="cm-card${side ? ' side' : ''}"${side ? ` role="button" tabindex="0" onclick="cCallsGo(${Number(C_CM_KEYS.indexOf(k))})"` : ''}><button type="button" class="cm-big" onclick="event.stopPropagation();cCallsList(${esc(JSON.stringify(k))})" title="The calls behind it">${esc(c.big)}</button>`
-      + `<div class="cm-lbl">${esc(c.label)}</div><div class="cm-sub">${esc(c.sub)}</div>${c.chart}<button type="button" class="cm-legs" onclick="event.stopPropagation();cCallsList(${esc(JSON.stringify(k))})">${esc(c.legs)} →</button></div>`; };
+      + `<div class="cm-lbl">${esc(c.label)}</div><div class="cm-sub">${esc(c.sub)}</div>${c.cmp ? `<div class="cm-cmp">${c.cmp.split(' · ').map((x) => `<span>${esc(x)}</span>`).join(' · ')}</div>` : ''}${c.chart}<button type="button" class="cm-legs" onclick="event.stopPropagation();cCallsList(${esc(JSON.stringify(k))})">${esc(c.legs)} →</button></div>`; };
   $('#view').innerHTML = `<div class="c-head"><div><h1>Telephone calls</h1><p class="cm-range">${esc(cCmDay(M.from))} - ${esc(cCmDay(M.to))}, working days · calls up to ${esc(cCmDay(M.to))}</p></div></div>
     <div class="cm-b" onkeydown="if(event.key==='ArrowLeft')cCallsGo(C_CM.i-1);if(event.key==='ArrowRight')cCallsGo(C_CM.i+1)" ontouchstart="C_CM.tx=event.touches[0].clientX" ontouchend="const dx=event.changedTouches[0].clientX-(C_CM.tx||0);if(Math.abs(dx)>40)cCallsGo(C_CM.i+(dx<0?1:-1))" tabindex="-1">
       <div class="cm-row">${card(C_CM_KEYS[(i + n - 1) % n], true)}${card(C_CM_KEYS[i], false)}${card(C_CM_KEYS[(i + 1) % n], true)}</div>
