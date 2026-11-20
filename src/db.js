@@ -1044,6 +1044,20 @@ CREATE TABLE IF NOT EXISTS tc_go_passes (
   done_by TEXT
 );
 CREATE INDEX IF NOT EXISTS tc_go_passes_row ON tc_go_passes (stage2_id);
+-- WAIVER (patch 160, 20.11.2026, Aleksejs's idea, the owner's pick "Abus"): a list owner puts a person he does not know on one
+-- shared list every owner sees; a colleague who knows him takes him onto his own list. open | taken; never deleted
+CREATE TABLE IF NOT EXISTS tc_go_waivers (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  stage2_id BIGINT NOT NULL,       -- tc_go_stage2.id
+  from_sender TEXT NOT NULL,
+  state TEXT NOT NULL,
+  at TEXT NOT NULL,
+  by_name TEXT,
+  taken_sender TEXT,
+  taken_at TEXT,
+  taken_by TEXT
+);
+CREATE INDEX IF NOT EXISTS tc_go_waivers_row ON tc_go_waivers (stage2_id);
 -- the deadline reminders each list owner got (patch 152): one row per owner and reminder, so none goes twice
 CREATE TABLE IF NOT EXISTS tc_go_reminders (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

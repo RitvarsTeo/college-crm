@@ -27,15 +27,15 @@ async function seed(db) {
 }
 const senderOf = async (db, id) => (await db.prepare('SELECT sender FROM tc_go_stage2 WHERE id = ?').get(id)).sender;
 
-test('pass on: he stays on the list, waiting; the other owner sees him under Passed to you; accept puts him on that list', async () => {
+test('pass on: he leaves the passer\'s list at once (patch 160); the other owner sees him under Passed to you; accept puts him on that list', async () => {
   const db = await openDb();
   const { co, id } = await seed(db);
   const r = await po.passOn(db, 'AB', id, 'JS', 'Aleksejs Bogdaņecs', at);
   assert.equal(r.state, 'pending');
   assert.deepEqual(r, { state: 'pending', to: 'JS' }, 'in the app only: no email (the owner, 16.11.2026: "so appa tikai!")');
-  assert.equal(await senderOf(db, id), 'AB', 'still on AB\'s list while waiting');
+  assert.equal(await senderOf(db, id), 'AB', 'the row stays AB\'s until accepted');
   const AB = await ml.myList(db, 'AB');
-  assert.equal(AB.groups[0].people[0].passedTo, 'Jānis Sticenko');
+  assert.equal(AB.groups.length, 0, 'gone from AB\'s list at once (the owner, 20.11.2026), no "waiting" line');
   const JS = await ml.myList(db, 'JS');
   assert.deepEqual(JS.passedToYou.map((x) => [x.label, x.chain, x.when]), [['Ruurd Exempel', ['Aleksejs Bogdaņecs'], 'Monday 16 November']]);
   await assert.rejects(po.accept(db, 'MC', id, 'Māris Cīrulis', at), /not passed to this list/);
@@ -112,16 +112,16 @@ test('reminders: at most two per owner, the morning before at 09:00 (his pick 16
 });
 
 test('wired: the routes check the list, the cron runs every 10 minutes 08:00-17:50 Riga, the page has Passed to you and Pass on', () => {
-  assert.match(SERVER, /\/api\/tc\/go\/mylist\/pass' \|\| p === '\/api\/tc\/go\/mylist\/accept'\) && req\.method === 'POST'\) \{\n\s+const me = await currentUser\(req\), admin = Boolean\(await adminOf\(req\)\);\n\s+const b = await body\(req\), code = String\(b\.sender \|\| ''\);\n\s+if \(!tcmylist\.mayOpen\(me, admin, code\)\) return json\(res, 403/);
+  assert.match(SERVER, /\['\/api\/tc\/go\/mylist\/pass', '\/api\/tc\/go\/mylist\/accept', '\/api\/tc\/go\/mylist\/waiver', '\/api\/tc\/go\/mylist\/take'\]\.includes\(p\) && req\.method === 'POST'\) \{\n\s+const me = await currentUser\(req\), admin = Boolean\(await adminOf\(req\)\);\n\s+const b = await body\(req\), code = String\(b\.sender \|\| ''\);\n\s+if \(!tcmylist\.mayOpen\(me, admin, code\)\) return json\(res, 403/);
   assert.equal(VERCEL.crons.find((x) => x.path === '/api/cron/go-reminders').schedule, '*/10 6-15 * * *');
   assert.ok(fs.existsSync(path.join(ROOT, 'api', 'cron', 'go-reminders.js')));
   assert.match(APP, /<h2>Passed to you · \$\{tcN\(L\.length\)\}<\/h2>/);
-  assert.match(APP, /Passed to \$\{esc\(p\.passedTo\)\}, waiting/);
+  assert.doesNotMatch(APP, /, waiting<\/em>/, 'no "Passed to X, waiting" (patch 160)');
   assert.match(APP, /Nobody else is left: \$\{name\} goes to Dmitrijs Semjonovs/);
 });
 
 test('the only automatic emails are the two deadline reminders: Pass on sends none', () => {
-  const pass = SERVER.slice(SERVER.indexOf("if ((p === '/api/tc/go/mylist/pass'"), SERVER.indexOf('// ADD EMAIL on a list'));
+  const pass = SERVER.slice(SERVER.indexOf("if (['/api/tc/go/mylist/pass'"), SERVER.indexOf('// ADD EMAIL on a list'));
   assert.ok(pass.length > 100);
   assert.doesNotMatch(pass, /sendMail/, 'no email on a pass');
   const src = fs.readFileSync(path.join(ROOT, 'src', 'tcgopass.js'), 'utf8');

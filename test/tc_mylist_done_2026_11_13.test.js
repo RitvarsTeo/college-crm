@@ -11,14 +11,14 @@ const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
 const SERVER = fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8');
 const fn = (name) => { const i = APP.indexOf(`function ${name}(`); return APP.slice(i, APP.indexOf('\n}\n', i) + 2); };
 
-test('done = No, or Invite with a way; Invite alone is still to decide', () => {
+test('done = No, or Invite (patch 160: an Invite is digital by default, nothing more to pick)', () => {
   // patch 145: mlDecided = the decision is complete; mlDone = that, and no new person still waiting for Done
   const src = APP.match(/const mlDecided = [^\n]+/)[0] + '\n' + APP.match(/const mlDone = [^\n]+/)[0] + '\nreturn mlDone;';
   const mlDone = new Function(src)();
   const ok = [{ id: 1 }];
   assert.equal(mlDone({ decision: 'no', people: ok }), true);
   assert.equal(mlDone({ decision: 'invite', way: 'digital', people: ok }), true);
-  assert.equal(mlDone({ decision: 'invite', way: null, people: ok }), false);
+  assert.equal(mlDone({ decision: 'invite', way: null, people: ok }), true);
   assert.equal(mlDone({ decision: null, people: ok }), false);
   assert.equal(mlDone({ decision: 'invite', way: 'digital', people: [{ id: 1 }, { id: 2, waiting: true }] }), false, 'a new person keeps it open');
 });
@@ -39,7 +39,8 @@ test('a company stays open until Done; Done folds it to its result with Change, 
 test('By post is By mail everywhere; the stored value stays post', () => {
   assert.ok(APP.includes("['post', 'By mail']") && APP.includes("post: 'By mail' }, R = T_PC.rows") && APP.includes("fig('post', 'By mail')"));
   assert.ok(SERVER.includes("const WAY = { in_person: 'In person', post: 'By mail' };"));
-  for (const f of ['app.html', 'server.js', 'tcmylist.js']) assert.ok(!/by post/i.test(fs.readFileSync(path.join(ROOT, 'src', f), 'utf8')), f);
+  // the one exception: the extra button "Send by post" on an Invite, word for word from the picture he approved (patch 160, 20.11.2026)
+  for (const f of ['app.html', 'server.js', 'tcmylist.js']) assert.ok(!/by post/i.test(fs.readFileSync(path.join(ROOT, 'src', f), 'utf8').replace(/\['post', 'Send by post'\]/g, '').replace(/"Send by post"/g, '')), f);
 });
 
 // his words 13.11.2026: "for company list, there has to be a search bar and the companies should be put alphabetically"

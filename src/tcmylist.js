@@ -16,13 +16,25 @@
 import { TC, TcInputError, nameKey, logTcActivity } from './tc.js';
 import * as cards from './tccards.js';
 import { splitNew } from './tcgosplit.js';
-import { passState } from './tcgopass.js';
+import { passState, waiverState } from './tcgopass.js';
 
 /** Someone else saved the list after this page loaded it. */
 export class MlConflict extends Error { constructor(msg, by, at) { super(msg); this.by = by; this.at = at; } }
 
 const S2 = () => ((((TC.grandOpening || {}).stage2 || {}).senders) || []);
 export const WAYS = ['digital', 'in_person', 'post'];
+// INVITE = DIGITAL BY DEFAULT (patch 160, 20.11.2026, the owner: "visi saņem digital by default, bet tie kuri ir invited ... uzspied
+// invite, paliek kā default poga"): an Invite is a digital invitation; "Hand over in person" and "Send by post" are optional extras on
+// top. The way is kept as a comma list ("digital,post"); a pick saved before keeps its single way (in person / by mail stay as they were).
+export const wayParts = (w) => String(w || '').split(',').map((x) => x.trim()).filter((x) => WAYS.includes(x));
+export const wayHas = (w, part) => wayParts(w).includes(part);
+/** The way an Invite is saved with: its parts in a fixed order, digital when none is given. */
+export const wayNorm = (decision, w) => {
+  if (decision !== 'invite') return null;
+  const parts = wayParts(w);
+  return parts.length ? WAYS.filter((x) => parts.includes(x)).join(',') : 'digital';
+};
+const physical = (w) => (wayHas(w, 'in_person') ? 'in_person' : wayHas(w, 'post') ? 'post' : null);
 const nowIso = () => new Date().toISOString();
 
 /** The list the signed-in account owns: its code, or null. */
@@ -73,11 +85,37 @@ async function versionOf(db, code) {
   return v ? { id: Number(v.id), at: v.at, by: v.by_name || '' } : { id: 0, at: null, by: '' };
 }
 
+// a mailbox domain anyone can have says nothing about who knows the person
+const FREE_MAIL = new Set(['gmail.com', 'inbox.lv', 'outlook.com', 'hotmail.com', 'yahoo.com', 'mail.ru', 'icloud.com', 'live.com', 'yandex.ru', 'gmx.de', 'gmx.net', 'one.lv', 'apollo.lv']);
+const coNorm = (s) => String(s || '').toLowerCase().replace(/\b(sia|as|ltd|limited|gmbh|aps|a\/s|oy|ab|uab|ou|oü|inc|llc|co)\b/g, '').replace(/[^a-z0-9ā-ž]+/g, ' ').trim();
+const domainOf = (e) => { const d = String(e || '').toLowerCase().split('@')[1] || ''; return d && !FREE_MAIL.has(d) ? d : ''; };
+/** Who most likely knows a person: the list owner with the most people at the same company (2 points each) or the same email
+ *  domain (1 point each). Returns (person, notCode) => owner codes, most likely first (empty when nothing points anywhere). */
+async function likelyOwners(db) {
+  const rows = await db.prepare('SELECT sender, company, email FROM tc_go_stage2 WHERE gone = 0').all();
+  const byCo = new Map(), byDom = new Map();
+  const bump = (m, k, s) => { if (!k) return; if (!m.has(k)) m.set(k, new Map()); m.get(k).set(s, (m.get(k).get(s) || 0) + 1); };
+  for (const r of rows) { bump(byCo, coNorm(r.company), r.sender); bump(byDom, domainOf(r.email), r.sender); }
+  return (person, notCode) => {
+    const score = new Map();
+    for (const [s, n] of byCo.get(coNorm(person.company)) || []) score.set(s, (score.get(s) || 0) + 2 * n);
+    for (const [s, n] of byDom.get(domainOf(person.email)) || []) score.set(s, (score.get(s) || 0) + n);
+    score.delete(notCode);
+    return [...score].sort((a, b) => b[1] - a[1] || String(a[0]).localeCompare(String(b[0]))).map(([s]) => s);
+  };
+}
+
 /** The SAVED list: { code, name, people, companies, figures, groups, version, draft }; the editor's own draft comes with it when
  * it was made on this saved version. */
 export async function myList(db, code, editor = '') {
   if (!S2().some((s) => s.code === code)) throw new TcInputError('There is no such list.');
-  const rows = await rowsOf(db, code);
+  // PASS ON (patch 152): who is passed to this list, who on it is passed on, and who each person was with before.
+  // A person this list passed on leaves it at once (patch 160, the owner 20.11.2026): no "Passed to X, waiting" line; he is on
+  // the other owner's "Passed to you" until accepted or passed further
+  const P = await passState(db, code);
+  // WAIVER (patch 160): a person put on the shared list leaves this list too, until a colleague takes him
+  const Wv = await waiverState(db);
+  const rows = (await rowsOf(db, code)).filter((r) => !P.waiting[Number(r.id)] && !Wv.ids.has(Number(r.id)));
   const cos = new Map((await db.prepare('SELECT id, name, country, address, city FROM tc_companies WHERE archived_at IS NULL').all()).map((c) => [Number(c.id), c]));
   const picks = new Map((await db.prepare('SELECT company_key, decision, way FROM tc_go_company_picks WHERE sender = ?').all(String(code))).map((p) => [p.company_key, p]));
   const out = new Set((await db.prepare('SELECT stage2_id FROM tc_go_people_out WHERE out_flag = 1').all()).map((r) => Number(r.stage2_id)));
@@ -90,7 +128,7 @@ export async function myList(db, code, editor = '') {
       const coCountry = co && co.country && !/^total$/i.test(String(co.country).trim()) ? co.country : '';
       groups.set(key, { key, name: (co && co.name) || String(r.company || '').trim() || 'No company', country: coCountry || r.country || '',
         address: [co && co.address, co && co.city].filter(Boolean).join(', '), intake: Boolean(co),
-        decision: p.decision || null, way: p.decision === 'invite' ? p.way || null : null, people: [] });
+        decision: p.decision || null, way: wayNorm(p.decision, p.way), people: [] });
     }
     const g = groups.get(key), isOut = out.has(Number(r.id)), fresh = Boolean(Number(r.fresh));
     // an Invite reaches somebody only once its way is picked: until then its people are still to decide (the audit, 12.11.2026);
@@ -109,10 +147,14 @@ export async function myList(db, code, editor = '') {
     const d = await db.prepare('SELECT state, base, saved_at, saved_by FROM tc_go_drafts WHERE sender = ? AND editor = ?').get(String(code), String(editor).toLowerCase());
     if (d && d.state && Number(d.base) === version.id) { try { draft = { state: JSON.parse(d.state), at: d.saved_at, by: d.saved_by || '' }; } catch (e) { draft = null; } }
   }
-  // PASS ON (patch 152): who is passed to this list, who on it is passed on and waiting, and who each person was with before
-  const P = await passState(db, code);
-  for (const p of all) { if (P.waiting[p.id]) p.passedTo = P.waiting[p.id]; if (P.involved[p.id]) p.involved = P.involved[p.id]; }
-  return { code, name: (S2().find((s) => s.code === code) || {}).name || code, people: all.length, companies: list.length, passedToYou: P.passedToYou,
+  for (const p of all) if (P.involved[p.id]) p.involved = P.involved[p.id];
+  // MOST LIKELY (patch 160): the other owner who most likely knows the person, shown first in the Pass on window
+  const likely = await likelyOwners(db);
+  for (const g of list) for (const p of g.people) p.likely = likely({ company: g.name, email: p.email }, code);
+  for (const x of P.passedToYou) x.likely = likely({ company: x.company, email: x.email }, code);
+  // the shared list: everyone's waivers; the one most likely to know a person sees "You most likely know him"
+  const shared = Wv.list.map((x) => ({ ...x, mine: x.from === code, likelyYou: x.from !== code && likely({ company: x.company, email: x.email }, x.from)[0] === code }));
+  return { code, name: (S2().find((s) => s.code === code) || {}).name || code, people: all.length, companies: list.length, passedToYou: P.passedToYou, shared,
     owners: S2().map((s) => ({ code: s.code, name: s.name || s.code })),
     figures: { todo: all.filter((p) => !p.decision).length, invite: all.filter((p) => p.decision === 'invite').length, no: all.filter((p) => p.decision === 'no').length },
     groups: list, version, draft };
@@ -136,8 +178,8 @@ function clean(list, state) {
   for (const [k, v] of Object.entries(s.picks || {})) {
     const decision = v && v.decision ? String(v.decision) : null, way = v && v.way ? String(v.way) : null;
     if (decision && !['invite', 'no'].includes(decision)) throw new TcInputError('Invite or No?');
-    if (way && !WAYS.includes(way)) throw new TcInputError('Digital, in person or by mail?');
-    if (keys.has(k)) picks[k] = { decision, way: decision === 'invite' ? way : null };
+    if (way && way.split(',').some((x) => !WAYS.includes(x.trim()))) throw new TcInputError('Digital, in person or by mail?');
+    if (keys.has(k)) picks[k] = { decision, way: wayNorm(decision, way) };
   }
   const out = [...new Set([].concat(s.out || []).map(Number))].filter((id) => ids.has(id));
   const moves = {};
@@ -193,7 +235,7 @@ export async function saveState(db, code, state, actor, base = null, editor = ''
   const st = clean(before, state);
   const at = nowIso();
   const saved = stateOf(before), groupOf = new Map(before.groups.flatMap((g) => g.people.map((p) => [p.id, g])));
-  const norm = (p) => ({ decision: (p && p.decision) || null, way: p && p.decision === 'invite' ? p.way || null : null });
+  const norm = (p) => ({ decision: (p && p.decision) || null, way: wayNorm(p && p.decision, p && p.way) });
   const pickRows = [...new Set([...Object.keys(saved.picks), ...Object.keys(st.picks)])]
     .filter((k) => JSON.stringify(norm(saved.picks[k])) !== JSON.stringify(norm(st.picks[k])))
     .map((k) => { const p = norm(st.picks[k]); return [code, k, p.decision, p.way, at, actor]; });
@@ -259,14 +301,14 @@ const MAX_CHANGES = 5000;
 export function mergeOnto(list, state, changes) {
   const page = state && typeof state === 'object' ? state : {};
   const cur = stateOf(list), conflicts = [];
-  const norm = (p) => (p && p.decision ? JSON.stringify({ decision: p.decision, way: p.decision === 'invite' ? p.way || null : null }) : 'null');
+  const norm = (p) => (p && p.decision ? JSON.stringify({ decision: p.decision, way: wayNorm(p.decision, p.way) }) : 'null');
   const nameOf = new Map(list.groups.map((g) => [g.key, g.name]));
   const personOf = new Map(list.groups.flatMap((g) => g.people.map((p) => [p.id, { label: p.label, key: g.key, company: g.name, out: p.out }])));
   const picks = { ...cur.picks };
   for (const [k, from] of Object.entries((changes.picks && typeof changes.picks === 'object') ? changes.picks : {}).slice(0, MAX_CHANGES)) {
     const want = (page.picks || {})[k] || null, now = cur.picks[k] || null;
     if (norm(now) !== norm(from) && norm(now) !== norm(want)) { conflicts.push({ kind: 'company', key: k, name: nameOf.get(k) || k }); continue; }
-    if (want && want.decision) picks[k] = { decision: want.decision, way: want.decision === 'invite' ? want.way || null : null };
+    if (want && want.decision) picks[k] = { decision: want.decision, way: wayNorm(want.decision, want.way) };
     else delete picks[k];
   }
   const out = new Set(cur.out), pageOut = new Set([].concat(page.out || []).map(Number));
@@ -290,7 +332,7 @@ export function mergeOnto(list, state, changes) {
 /** The people the owner's Stage 2 send goes to: invited, the company's way digital, not tapped out (saved state only). */
 export async function digitalIds(db, code) {
   const L = await myList(db, code);
-  return new Set(L.groups.filter((g) => g.decision === 'invite' && g.way === 'digital').flatMap((g) => g.people.filter((p) => p.decision === 'invite').map((p) => p.id)));
+  return new Set(L.groups.filter((g) => g.decision === 'invite' && wayHas(g.way, 'digital')).flatMap((g) => g.people.filter((p) => p.decision === 'invite').map((p) => p.id)));
 }
 
 /** The postcard list: one row per invited person whose company goes in person or by mail, from the lists given. */
@@ -301,7 +343,7 @@ export async function postcardRows(db, codes) {
     for (const g of L.groups) {
       if (g.decision !== 'invite' || !g.way) continue;
       // a digital company's people with no email are Postcard only (patch 149): by mail, until somebody adds their email
-      for (const p of g.people) if (p.decision === 'invite' && (['in_person', 'post'].includes(g.way) || p.postcard)) rows.push({ person: p.label, position: p.position, company: g.name, country: g.country, address: g.address, way: ['in_person', 'post'].includes(g.way) ? g.way : 'post', owner: L.name });
+      for (const p of g.people) if (p.decision === 'invite' && (physical(g.way) || p.postcard)) rows.push({ person: p.label, position: p.position, company: g.name, country: g.country, address: g.address, way: physical(g.way) || 'post', owner: L.name });
     }
   }
   return rows;
@@ -610,7 +652,7 @@ export async function cardRows(db, codes) {
       const c = have.get(g.key) || null;
       const people = g.people.filter((p) => (g.way ? p.decision === 'invite' : !p.out));
       const named = people.map((p) => p.label).filter((n) => n && !n.includes('@'));
-      rows.push({ company: g.name, place: c ? c.place : '', code: c ? c.code : '', qr: c ? cards.qrUrl(c.code) : '', way: WAY[g.way] || '',
+      rows.push({ company: g.name, place: c ? c.place : '', code: c ? c.code : '', qr: c ? cards.qrUrl(c.code) : '', way: wayParts(g.way).map((x) => WAY[x]).join(' + '),
         owner: L.name, dear: named[0] || '', names: named.join('; '), country: g.country || '' });
     }
   }

@@ -2805,7 +2805,9 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tcpo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px} html.ui-c .tcpo-c{border:1px solid var(--rule);border-radius:10px;padding:10px 12px}
   html.ui-c .tcpo-c b{display:block;font-size:14px} html.ui-c .tcpo-c span{display:block;font-size:12.5px;color:var(--t3)} html.ui-c .tcpo-from{font-size:12px;font-weight:600;color:var(--c-sis);margin:6px 0 8px}
   html.ui-c .tcpo-btns{display:flex;gap:8px} html.ui-c .tcpo-btns .btn{flex:1}
+  html.ui-c .tcpo-links{display:flex;gap:14px} html.ui-c .tcwv{border-color:#8a94a6} html.ui-c .tcpo-c.likely{border-color:#29a8df;background:#f3fafd}
   html.ui-c .tcpo-link{display:inline-block;align-self:flex-start;text-align:left;width:auto;font:inherit;font-size:12px;font-weight:600;color:var(--c-sis);background:none;border:0;padding:0;margin:0 0 6px;text-decoration:underline;cursor:pointer}
+  html.ui-c .tcpo-likely{font-style:normal;font-size:11px;font-weight:700;color:#0f6f99;background:#e8f6fc;border-radius:999px;padding:1px 8px} html.ui-c .tcpo-pick label.likely{font-weight:700}
   html.ui-c .tcpo-pick{border:1px solid var(--rule);border-radius:8px;padding:8px;margin:0 0 8px} html.ui-c .tcpo-pick legend{font-size:12.5px;font-weight:600;padding:0 4px}
   html.ui-c .tcpo-pick label{display:flex;gap:8px;align-items:center;justify-content:flex-start;font-size:13px;font-weight:500;padding:3px 0;margin:0;text-align:left;color:var(--ink)} html.ui-c .tcpo-pick input[type=radio]{width:auto;height:auto;margin:0;flex:none} html.ui-c .tcpo-pick label.off{color:var(--t3);justify-content:space-between}
   html.ui-c .tcml-p .tcpo-wait{font-style:normal;font-size:11.5px;font-weight:700;color:#7a5a00;background:#fff3cf;border-radius:4px;padding:0 5px;margin-left:4px}
@@ -2813,6 +2815,9 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tcml-mv{display:block;width:100%;margin:2px 0 6px;font:inherit;font-size:13px;border:1px solid var(--rule);border-radius:8px;padding:6px 8px;background:var(--surface);color:var(--ink)}
   html.ui-c .tcml-how{display:flex;gap:6px} html.ui-c .tcml-how button{flex:1;font:inherit;font-weight:700;font-size:13px;padding:8px 4px;border-radius:8px;border:1.5px solid var(--rule);background:var(--surface-2);color:var(--ink);cursor:pointer}
   html.ui-c .tcml-how button[aria-pressed="true"]{background:var(--btn-bg);color:#fff;border-color:var(--btn-bg)}
+  html.ui-c .tcml-dig{font-weight:700;font-size:13px;color:#1f7a3a} html.ui-c .tcml-also{font-size:12px;color:var(--t3)}
+  html.ui-c .tcml-how.tcml-extra button{font-weight:500;border-style:dashed;background:var(--surface)}
+  html.ui-c .tcml-how.tcml-extra button[aria-pressed="true"]{border-style:solid;border-color:#29a8df;background:#e8f6fc;color:var(--ink);font-weight:700}
   html.ui-c .tcml-t.done{gap:4px;padding:12px 16px;text-align:left;animation:tcmlSettle .35s ease-out}
   html.ui-c .tcml-t.done.inv{background:var(--btn-bg);border-color:var(--btn-bg);color:#fff} html.ui-c .tcml-t.done.inv > b{color:#fff}
   html.ui-c .tcml-t.done.no{background:var(--surface-2);border-color:#c3c8cf;color:var(--t2)} html.ui-c .tcml-t.done.no > b{color:var(--t2)}
@@ -13470,6 +13475,13 @@ let T_GO_DEMO = false;
 // Save; autosave keeps a draft on the server; leaving with unsaved changes asks first; Undo and Ctrl+Z step back.
 // The owner sees their own list; an admin switches between the lists.
 // MLSTATE START - pure functions (test/tc_mylist_2026_11_12.test.js reads this block)
+// the way of an Invite (patch 160): a comma list, digital by default ("digital", "digital,post"); one saved before stays as it was
+function mlWayParts(w) { return String(w || '').split(',').map((x) => x.trim()).filter((x) => ['digital', 'in_person', 'post'].includes(x)); }
+function mlWayNorm(decision, w) {
+  if (decision !== 'invite') return null;
+  const parts = mlWayParts(w);
+  return parts.length ? ['digital', 'in_person', 'post'].filter((k) => parts.includes(k)).join(',') : 'digital';
+}
 const mlClone = (w) => JSON.parse(JSON.stringify(w));
 /** The page's view of the list: the saved groups with the working state applied (moves, picks, people tapped out). */
 function mlView(base, W) {
@@ -13482,7 +13494,7 @@ function mlView(base, W) {
   const out = new Set(W.out), settled = new Set(W.settled || []);
   for (const g of groups) {
     const pk = W.picks[g.key] || {};
-    g.decision = pk.decision || null; g.way = g.decision === 'invite' ? pk.way || null : null;
+    g.decision = pk.decision || null; g.way = mlWayNorm(g.decision, pk.way);
     // an Invite reaches somebody only once its way is picked: until then its people are still to decide (the audit, 12.11.2026);
     // a person added from the company page after the company was decided waits for Done (patch 145, 16.11.2026)
     for (const p of g.people) {
@@ -13497,7 +13509,11 @@ function mlView(base, W) {
 function mlApply(W, a) {
   const n = mlClone(W);
   if (a.type === 'decide') { const was = (n.picks[a.key] || {}).decision; n.picks[a.key] = { decision: was === a.decision ? null : a.decision, way: was === a.decision ? null : (n.picks[a.key] || {}).way || null }; }
-  if (a.type === 'way') n.picks[a.key] = { decision: 'invite', way: a.way };
+  // an extra (in person / by mail) goes on or off on top of the digital invitation (patch 160)
+  if (a.type === 'way') {
+    const parts = mlWayParts(mlWayNorm('invite', (n.picks[a.key] || {}).way));
+    n.picks[a.key] = { decision: 'invite', way: mlWayNorm('invite', (parts.includes(a.way) ? parts.filter((x) => x !== a.way) : [...parts, a.way]).join(',') || 'digital') };
+  }
   if (a.type === 'out') n.out = n.out.includes(a.id) ? n.out.filter((x) => x !== a.id) : [...n.out, a.id];
   if (a.type === 'move') { if (a.home === a.key) delete n.moves[a.id]; else n.moves[a.id] = a.key; }
   if (a.type === 'settle') n.settled = [...new Set([...(n.settled || []), ...a.ids])];
@@ -13507,7 +13523,7 @@ function mlApply(W, a) {
 function mlSame(a, b) {
   const norm = (w) => {
     const picks = {};
-    for (const k of Object.keys((w && w.picks) || {}).sort()) { const p = w.picks[k] || {}; if (p.decision) picks[k] = { decision: p.decision, way: p.decision === 'invite' ? p.way || null : null }; }
+    for (const k of Object.keys((w && w.picks) || {}).sort()) { const p = w.picks[k] || {}; if (p.decision) picks[k] = { decision: p.decision, way: mlWayNorm(p.decision, p.way) }; }
     const moves = {};
     for (const k of Object.keys((w && w.moves) || {}).sort()) moves[k] = w.moves[k];
     return JSON.stringify({ picks, out: [...new Set(((w && w.out) || []).map(Number))].sort((x, y) => x - y), moves,
@@ -13520,7 +13536,7 @@ const mlShows = (g, f) => !f || f === 'all' || g.people.some((p) => (f === 'todo
 /** What the page changed against what it loaded (patch 155): each change with the value the page saw before, for the server's
  * merge onto the newest list; n = how many changes are waiting. */
 function mlChanges(W, saved, base) {
-  const norm = (p) => (p && p.decision ? JSON.stringify({ decision: p.decision, way: p.decision === 'invite' ? p.way || null : null }) : 'null');
+  const norm = (p) => (p && p.decision ? JSON.stringify({ decision: p.decision, way: mlWayNorm(p.decision, p.way) }) : 'null');
   const sp = (saved && saved.picks) || {}, wp = (W && W.picks) || {}, picks = {}, out = {}, moves = {};
   for (const k of new Set([...Object.keys(sp), ...Object.keys(wp)])) if (norm(wp[k]) !== norm(sp[k])) picks[k] = sp[k] || null;
   const a = new Set(((saved && saved.out) || []).map(Number)), b = new Set(((W && W.out) || []).map(Number));
@@ -13543,6 +13559,8 @@ function tcMlKeep() {
   } catch (e) { /* a browser without storage: the red bar still shows */ }
 }
 const TCML_WAYS = [['digital', 'Digital'], ['in_person', 'In person'], ['post', 'By mail']];
+// INVITE = DIGITAL BY DEFAULT (patch 160, the owner 20.11.2026): Invite is a digital invitation; the two extras go on top
+const TCML_EXTRAS = [['in_person', 'Hand over in person'], ['post', 'Send by post']];
 // the full date and time (his rule: a date names the full weekday)
 const tcMlTime = (iso) => {
   const o = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date(iso)).map((x) => [x.type, x.value]));
@@ -13596,17 +13614,19 @@ function tcMlDraw() {
   const tile = (g) => {
     const open = T_ML.open.has(g.key) || (Boolean(T_ML.q) && mlPersonHit(g, T_ML.q)), left = g.people.filter((p) => p.out).length, waiting = g.people.filter((p) => p.waiting).length;
     const count = (g.decision === 'invite' && left ? `${tcN(g.people.length - left)} of ${tcN(g.people.length)} people` : `${tcN(g.people.length)} ${g.people.length === 1 ? 'person' : 'people'}`);   // no "N new" (the owner, 16.11.2026: "NELIEC APPA new!")
-    const person = (p) => `<button type="button" class="tcml-p${p.out ? ' out' : ''}${p.from || p.moved ? ' moved' : ''}"${narrow ? '' : ` draggable="true" ondragstart="event.dataTransfer.setData('text/plain', String(${Number(p.id)}))"`} onclick="tcMlDo({ type: 'out', id: ${Number(p.id)} })"><b>${esc(p.label)}${p.postcard ? ' <em class="tcml-pc">Postcard only</em>' : ''}${p.passedTo ? ` <em class="tcpo-wait">Passed to ${esc(p.passedTo)}, waiting</em>` : ''}</b>${p.position ? `<span>${esc(p.position)}</span>` : ''}</button>`
+    const person = (p) => `<button type="button" class="tcml-p${p.out ? ' out' : ''}${p.from || p.moved ? ' moved' : ''}"${narrow ? '' : ` draggable="true" ondragstart="event.dataTransfer.setData('text/plain', String(${Number(p.id)}))"`} onclick="tcMlDo({ type: 'out', id: ${Number(p.id)} })"><b>${esc(p.label)}${p.postcard ? ' <em class="tcml-pc">Postcard only</em>' : ''}</b>${p.position ? `<span>${esc(p.position)}</span>` : ''}</button>`
       // PASS ON (patch 152): a person this owner does not know goes to another list owner
-      + (p.passedTo ? '' : T_ML.po === p.id ? tcPoPick(p) : `<button type="button" class="tcpo-link" onclick="T_ML.po=${Number(p.id)};tcMlDraw()">Pass on</button>`)
+      // WAIVER (patch 160): or onto the shared list, where a colleague who knows the person takes him
+      + (T_ML.po === p.id ? tcPoPick(p) : `<span class="tcpo-links"><button type="button" class="tcpo-link" onclick="T_ML.po=${Number(p.id)};tcMlDraw()">Pass on</button><button type="button" class="tcpo-link" onclick="tcWvPut(${Number(p.id)})">Waiver</button></span>`)
       // no email (patch 149): Postcard only until somebody adds the email here
       + (p.postcard ? `<form class="tcml-addmail" onsubmit="tcMlAddEmail(event, ${Number(p.id)})"><input type="email" required placeholder="Add email" aria-label="Add email for ${esc(p.label)}" autocomplete="off"><button type="submit" class="btn sm ghost">Save email</button></form>` : '')
       + (narrow ? `<select class="tcml-mv" aria-label="Move to another company" onchange="tcMlMoveTo(${Number(p.id)}, this.value)"><option value="">Move to…</option>${targets.filter((o) => o.key !== g.key).map((o) => `<option value="${esc(o.key)}">${esc(o.name)}</option>`).join('')}</select>` : '');
     const ppl = open ? `<div class="tcml-ppl">${g.people.map(person).join('')}</div>` : '';
-    const how = g.decision === 'invite' ? `${g.way ? '' : '<div class="tcml-pick">Pick a way</div>'}<div class="tcml-how${g.way ? '' : ' need'}">${TCML_WAYS.map(([w, t]) => `<button type="button" aria-pressed="${g.way === w}" onclick="tcMlDo({ type: 'way', key: ${esc(JSON.stringify(String(g.key)))}, way: ${esc(JSON.stringify(String(w)))} })">${t}</button>`).join('')}</div>` : '';
+    const wp = mlWayParts(g.way);
+    const how = g.decision === 'invite' ? `${wp.includes('digital') ? '<div class="tcml-dig">✓ Digital invitation</div>' : ''}<div class="tcml-also">Also</div><div class="tcml-how tcml-extra">${TCML_EXTRAS.map(([w, t]) => `<button type="button" aria-pressed="${wp.includes(w)}" onclick="tcMlDo({ type: 'way', key: ${esc(JSON.stringify(String(g.key)))}, way: ${esc(JSON.stringify(String(w)))} })">${wp.includes(w) ? '✓ ' : ''}${t}</button>`).join('')}</div>` : '';
     const drop = g.intake && !narrow ? ` ondragover="event.preventDefault();this.classList.add('drop')" ondragleave="this.classList.remove('drop')" ondrop="tcMlDrop(event, ${esc(JSON.stringify(String(g.key)))})"` : '';
     if (mlDone(g) && !T_ML.edit.has(g.key)) {
-      const way = (TCML_WAYS.find(([w]) => w === g.way) || [])[1] || '';
+      const way = mlWayParts(g.way).map((w) => (TCML_WAYS.find(([k]) => k === w) || [])[1]).join(' + ');
       const res = g.decision === 'invite' ? `<span class="tcml-ck" aria-hidden="true">✓</span>Invited · ${esc(way)} · ${tcN(g.people.length - left)} of ${tcN(g.people.length)} ${g.people.length === 1 ? 'person' : 'people'}` : `Not invited · ${tcN(g.people.length)} ${g.people.length === 1 ? 'person' : 'people'}`;
       return `<div class="tcml-t done ${g.decision === 'invite' ? 'inv' : 'no'}" data-k="${esc(g.key)}"${drop}><b>${esc(g.name)}</b>
         <div class="tcml-res">${res}</div><button type="button" class="tcml-chg" onclick="tcMlEdit(${esc(JSON.stringify(String(g.key)))})">Change</button></div>`;
@@ -13629,7 +13649,7 @@ function tcMlDraw() {
       <button type="button" class="btn" onclick="tcMlSaveNow()">${T_ML.savedFlash ? 'Saved' : 'Save'}</button>
       <a class="btn ghost" href="#/tc/postcards">Postcard list</a></div></div>
     ${note}${lists}<div class="tcml-figs">${fig('all', F.todo + F.invite + F.no, 'All')}${fig('todo', F.todo, 'Still to decide')}${fig('invite', F.invite, 'Invite')}${fig('no', F.no, 'No')}</div>
-    ${tcPoSection()}
+    ${tcPoSection()}${tcWvSection()}
     <div class="tcml-find"><input id="tcMlQ" class="c-search" type="search" placeholder="Search a company, a person or an email" aria-label="Search the list" autocomplete="off" value="${esc(T_ML.q)}" oninput="tcMlSearch(this.value)">${T_ML.q ? `<span class="tcml-found">${tcN(shown.length)} ${shown.length === 1 ? 'company' : 'companies'}</span>` : ''}</div>
     <div class="tcml-tiles">${shown.length ? tcMlLetters(shown, tile) : (T_ML.q ? '<p class="tcml-none">No company or person on this list matches.</p>' : '')}</div>`;
 }
@@ -13652,7 +13672,7 @@ function tcMlFold(key) { if (T_ML.open.has(key)) T_ML.open.delete(key); else T_M
 // decision is complete: No, or Invite with a way) folds it to its result (Invited · Digital · 9 of 10 people / Not invited), the
 // Invite or No figure ticks, and the next company still to decide opens and comes into view. Change opens a finished one again.
 // A company already complete when the list loads shows its result. All of it is part of the unsaved changes until Save.
-const mlDecided = (g) => g.decision === 'no' || (g.decision === 'invite' && Boolean(g.way));
+const mlDecided = (g) => g.decision === 'no' || g.decision === 'invite';   // an Invite is digital by default (patch 160)
 // a company with a new person still waiting (patch 145) shows open, with its decision, until Done settles the new person
 const mlDone = (g) => mlDecided(g) && !g.people.some((p) => p.waiting);
 function tcMlDo(a) {
@@ -13791,9 +13811,12 @@ function tcPoLeft(p, holder) {
   return (T_ML.base.owners || []).filter((o) => !seen.has(o.code) && o.code !== T_ML.code);
 }
 function tcPoPick(p, holder) {
-  const left = tcPoLeft(p, holder), seen = (T_ML.base.owners || []).filter((o) => !left.includes(o) && o.code !== T_ML.code);
+  const left0 = tcPoLeft(p, holder), seen = (T_ML.base.owners || []).filter((o) => !left0.includes(o) && o.code !== T_ML.code);
+  // MOST LIKELY (patch 160): the owner who most likely knows the person comes first, picked, with a tag
+  const best = (p.likely || []).find((c) => left0.some((o) => o.code === c)) || '';
+  const left = best ? [left0.find((o) => o.code === best), ...left0.filter((o) => o.code !== best)] : left0;
   const name = esc(p.label || 'this person');
-  const opts = left.map((o, i) => `<label><input type="radio" name="tcpo${Number(p.id)}" value="${esc(o.code)}"${i === 0 ? ' checked' : ''}> ${esc(o.name)}</label>`).join('')
+  const opts = left.map((o, i) => `<label${o.code === best ? ' class="likely"' : ''}><input type="radio" name="tcpo${Number(p.id)}" value="${esc(o.code)}"${i === 0 ? ' checked' : ''}> ${esc(o.name)}${o.code === best ? ' <em class="tcpo-likely">Most likely</em>' : ''}</label>`).join('')
     + seen.map((o) => `<label class="off"><span>${esc(o.name)}</span><span>already had ${name}</span></label>`).join('');
   return `<fieldset class="tcpo-pick"><legend>Pass ${name} on to</legend>${left.length ? opts : `<label>Nobody else is left: ${name} goes to Dmitrijs Semjonovs</label>`}
     <div class="tcpo-btns"><button type="button" class="btn sm" onclick="tcPoPass(${Number(p.id)})">Pass on</button><button type="button" class="btn sm ghost" onclick="T_ML.po=null;tcMlDraw()">Cancel</button></div></fieldset>`;
@@ -13803,8 +13826,34 @@ function tcPoSection() {
   if (!L.length) return '';
   const card = (x) => `<div class="tcpo-c"><b>${esc(x.label)}</b><span>${esc([x.position, x.company].filter(Boolean).join(' · '))}</span>
     <div class="tcpo-from">Passed on by ${esc(x.chain.join(', then '))} · ${esc(x.when)}</div>
-    ${T_ML.po === 'in' + x.id ? tcPoPick({ id: x.id, label: x.label, involved: x.involved || [] }, x.holder) : `<div class="tcpo-btns"><button type="button" class="btn sm" onclick="tcPoAccept(${Number(x.id)})">Accept</button><button type="button" class="btn sm ghost" onclick="T_ML.po='in${Number(x.id)}';tcMlDraw()">Pass on</button></div>`}</div>`;
+    ${T_ML.po === 'in' + x.id ? tcPoPick({ id: x.id, label: x.label, involved: x.involved || [], likely: x.likely || [] }, x.holder) : `<div class="tcpo-btns"><button type="button" class="btn sm" onclick="tcPoAccept(${Number(x.id)})">Accept</button><button type="button" class="btn sm ghost" onclick="T_ML.po='in${Number(x.id)}';tcMlDraw()">Pass on</button></div>`}</div>`;
   return `<section class="tcpo" aria-label="Passed to you"><h2>Passed to you · ${tcN(L.length)}</h2><div class="tcpo-grid">${L.map(card).join('')}</div></section>`;
+}
+// WAIVER (patch 160, Aleksejs's idea, the owner's pick "Abus"): one shared list every list owner sees; Take puts the person on yours
+function tcWvSection() {
+  const L = (T_ML.base.shared || []);
+  if (!L.length) return '';
+  const sorted = [...L.filter((x) => x.likelyYou), ...L.filter((x) => !x.likelyYou)];
+  const card = (x) => `<div class="tcpo-c${x.likelyYou ? ' likely' : ''}"><b>${esc(x.label)}${x.likelyYou ? ' <em class="tcpo-likely">You most likely know</em>' : ''}</b><span>${esc([x.position, x.company].filter(Boolean).join(' · '))}</span>
+    <div class="tcpo-from">${x.mine ? 'You put on the shared list' : `From ${esc(x.fromName)}'s list`} · ${esc(x.when)}</div>
+    ${x.mine ? '' : `<div class="tcpo-btns"><button type="button" class="btn sm" onclick="tcWvTake(${Number(x.id)})">Take onto my list</button></div>`}</div>`;
+  return `<section class="tcpo tcwv" aria-label="Shared list"><h2>Shared list · ${tcN(L.length)}</h2><div class="tcpo-grid">${sorted.map(card).join('')}</div></section>`;
+}
+async function tcWvPut(id) {
+  try {
+    await post('/api/tc/go/mylist/waiver', { sender: T_ML.code, id });
+    T_ML.po = null; T_ML.error = '';
+    if (T_ML.dirty) await tcMlAutosave();
+    await tcMlReload();
+  } catch (e) { T_ML.error = e.message; tcMlDraw(); }
+}
+async function tcWvTake(id) {
+  try {
+    await post('/api/tc/go/mylist/take', { sender: T_ML.code, id });
+    T_ML.error = '';
+    if (T_ML.dirty) await tcMlAutosave();
+    await tcMlReload();
+  } catch (e) { T_ML.error = e.message; tcMlDraw(); }
 }
 async function tcPoPass(id) {
   const box = document.querySelector(`input[name="tcpo${Number(id)}"]:checked`);

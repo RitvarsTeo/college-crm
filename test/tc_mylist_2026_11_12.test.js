@@ -110,17 +110,24 @@ test('3. a stale draft never blocks Save: companies and people no longer on the 
   await assert.rejects(ml.saveState(db, 'JS', { ...E, picks: { [A]: { decision: 'invite', way: 'pigeon' } } }, 'J'), /Digital, in person or by mail/);
 });
 
-test('4. Invite without a way reaches nobody: its people stay Still to decide, out of the send and the postcards', async () => {
+test('4. (patch 160) Invite = digital by default; in person / by post go on top; a single way saved before stays as it was', async () => {
   const db = await openDb();
   const { A } = await seed(db);
   let L = await ml.saveState(db, 'JS', { ...E, picks: { [A]: { decision: 'invite' } } }, 'J');
-  assert.deepEqual(L.figures, { todo: 5, invite: 0, no: 0 });
-  assert.equal(L.groups.find((g) => g.key === A).decision, 'invite', 'the tile still shows Invite pressed');
-  assert.equal((await ml.digitalIds(db, 'JS')).size, 0);
-  assert.equal((await ml.postcardRows(db, ['JS'])).length, 0);
+  assert.deepEqual(L.figures, { todo: 2, invite: 3, no: 0 }, 'Invite alone is decided: a digital invitation');
+  assert.equal(L.groups.find((g) => g.key === A).way, 'digital');
+  const dig = (await ml.digitalIds(db, 'JS')).size;
+  assert.ok(dig > 0, 'in the Stage 2 send');
+  assert.equal((await ml.postcardRows(db, ['JS'])).filter((r) => r.way === 'in_person').length, 0);
+  L = await ml.saveState(db, 'JS', { ...E, picks: { [A]: { decision: 'invite', way: 'post,digital' } } }, 'J');
+  assert.equal(L.groups.find((g) => g.key === A).way, 'digital,post', 'stored in one order');
+  assert.equal((await ml.digitalIds(db, 'JS')).size, dig, 'still digital');
+  assert.equal((await ml.postcardRows(db, ['JS'])).length, 3, 'and by post on top');
   L = await ml.saveState(db, 'JS', { ...E, picks: { [A]: { decision: 'invite', way: 'in_person' } } }, 'J');
   assert.deepEqual(L.figures, { todo: 2, invite: 3, no: 0 });
+  assert.equal((await ml.digitalIds(db, 'JS')).size, 0, 'an old in-person pick stays in person only');
   assert.equal((await ml.postcardRows(db, ['JS'])).length, 3);
+  await assert.rejects(ml.saveState(db, 'JS', { ...E, picks: { [A]: { decision: 'invite', way: 'digital,pigeon' } } }, 'J'), /Digital, in person or by mail/);
 });
 
 test('5. Save with nothing changed writes nothing and stamps nothing (Ctrl+S on a saved list)', async () => {
@@ -178,15 +185,21 @@ const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
 const BLOCK = APP.slice(APP.indexOf('// MLSTATE START'), APP.indexOf('// MLSTATE END'));
 const P = new Function(`${BLOCK}; return { mlView, mlApply, mlShows, mlClone, mlSame };`)();
 
-test('the sandbox on the page: Undo steps back, a pressed button again clears, a drag moves the person in the view, Invite without a way is still to decide', () => {
+test('the sandbox on the page: Undo steps back, a pressed button again clears, a drag moves the person in the view, Invite is digital at once', () => {
   const base = { groups: [{ key: 'id:1', name: 'A', intake: true, people: [{ id: 1, label: 'P1' }, { id: 2, label: 'P2' }] }, { key: 'id:2', name: 'B', intake: true, people: [{ id: 3, label: 'P3' }] }] };
   const s0 = { picks: {}, out: [], moves: {} };
   const undo = [];
   const step = (w, a) => { undo.push(P.mlClone(w)); return P.mlApply(w, a); };
   let w = step(s0, { type: 'decide', key: 'id:1', decision: 'invite' });
-  assert.deepEqual(P.mlView(base, w).figures, { todo: 3, invite: 0, no: 0 }, '4. Invite without a way');
-  assert.equal(P.mlShows(P.mlView(base, w).groups[0], 'todo'), true);
-  w = step(w, { type: 'way', key: 'id:1', way: 'digital' });
+  assert.deepEqual(P.mlView(base, w).figures, { todo: 1, invite: 2, no: 0 }, 'patch 160: Invite is a digital invitation at once');
+  assert.equal(P.mlView(base, w).groups[0].way, 'digital');
+  // the extras go on and off on top of digital
+  let x = P.mlApply(w, { type: 'way', key: 'id:1', way: 'post' });
+  assert.equal(x.picks['id:1'].way, 'digital,post');
+  x = P.mlApply(x, { type: 'way', key: 'id:1', way: 'in_person' });
+  assert.equal(x.picks['id:1'].way, 'digital,in_person,post');
+  x = P.mlApply(x, { type: 'way', key: 'id:1', way: 'post' });
+  assert.equal(x.picks['id:1'].way, 'digital,in_person');
   w = step(w, { type: 'out', id: 2 });
   w = step(w, { type: 'move', id: 3, key: 'id:1', home: 'id:2' });
   let V = P.mlView(base, w);
@@ -245,8 +258,8 @@ test('the proposals he said yes to (12.11.2026): A outlined until picked, B All,
   assert.ok(APP.includes("${fig('all', F.todo + F.invite + F.no, 'All')}${fig('todo'"));
   const g = { people: [{ decision: 'invite' }] };
   assert.equal(P.mlShows(g, 'all'), true); assert.equal(P.mlShows(g, 'todo'), false);
-  // C
-  assert.ok(APP.includes(`\${g.way ? '' : '<div class="tcml-pick">Pick a way</div>'}`));
+  // C, replaced by patch 160 (the owner 20.11.2026): no "Pick a way"; Invite = digital, two optional extras
+  assert.ok(!APP.includes('Pick a way') && APP.includes('✓ Digital invitation') && APP.includes("[['in_person', 'Hand over in person'], ['post', 'Send by post']]"));
   // D
   assert.ok(APP.includes("noaddr: (x) => !String(x.address || '').trim()") && APP.includes("${fig('noaddr', 'No address')}"));
   // E: no drag on a phone, a Move to… list instead, onto a company in Intake only

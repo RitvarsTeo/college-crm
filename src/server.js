@@ -3933,13 +3933,16 @@ export const handle = async (req, res) => {
       }
     }
     // PASS ON (patch 152, 16.11.2026; src/tcgopass.js): the owner of the list the person is on (or passed to), or an admin
-    if ((p === '/api/tc/go/mylist/pass' || p === '/api/tc/go/mylist/accept') && req.method === 'POST') {
+    // WAIVER (patch 160): /waiver puts a person from the list on the shared list, /take takes one from there onto the list
+    if (['/api/tc/go/mylist/pass', '/api/tc/go/mylist/accept', '/api/tc/go/mylist/waiver', '/api/tc/go/mylist/take'].includes(p) && req.method === 'POST') {
       const me = await currentUser(req), admin = Boolean(await adminOf(req));
       const b = await body(req), code = String(b.sender || '');
       if (!tcmylist.mayOpen(me, admin, code)) return json(res, 403, { error: 'This list is not yours.' });
       try {
         const actor = await actorOf(req, b);
         if (p.endsWith('/accept')) return json(res, 200, await tcgopass.accept(db, code, Number(b.id), actor));
+        if (p.endsWith('/waiver')) return json(res, 200, await tcgopass.waive(db, code, Number(b.id), actor));
+        if (p.endsWith('/take')) return json(res, 200, await tcgopass.take(db, code, Number(b.id), actor));
         // in the app only, no email (the owner, 16.11.2026: "so appa tikai!")
         return json(res, 200, await tcgopass.passOn(db, code, Number(b.id), String(b.to || ''), actor));
       } catch (e) { if (e instanceof tc.TcInputError) return json(res, 400, { error: e.message }); throw e; }

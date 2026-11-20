@@ -55,6 +55,7 @@ export async function passOn(db, code, id, to, actor, at = nowIso()) {
   const r = await rowOf(db, id);
   const chain = await passesOf(db, id);
   const open = chain.find((p) => p.state === 'pending');
+  if (await openWaiver(db, id)) throw new TcInputError('This person is on the shared list: a colleague takes him from there.');
   if (open ? open.to_sender !== code : r.sender !== code) throw new TcInputError('Only the list this person is on, or passed to, can pass him on.');
   if (!open && r.sender === FINAL && chain.some((p) => p.state === 'final')) throw new TcInputError('Nobody else is left: this person stays with Dmitrijs Semjonovs.');
   const left = S2().map((s) => s.code).filter((c) => c !== r.sender && c !== code && !chain.some((p) => p.from_sender === c || p.to_sender === c));
@@ -75,6 +76,48 @@ export async function passOn(db, code, id, to, actor, at = nowIso()) {
     await history(tx, r, `Grand Opening: ${nameOf(code)} passed ${r.name || r.email || 'this person'} to ${nameOf(target)}`, actor, at);
     return { state: 'pending', to: target };
   });
+}
+
+// ------------------------------------------------------------------- waiver --
+// WAIVER (patch 160, 20.11.2026, Aleksejs's idea, the owner's pick "Abus", his words: "spiežam waiver un cilvēks parādās kopējā
+// sarakstā un pārējie viņu redz un ja kolēģis atpazīst ..."): the person leaves this list and goes onto one shared list every list
+// owner sees; a colleague who knows him takes him onto his own list. In the app only, no email.
+const openWaiver = (db, id) => db.prepare(`SELECT * FROM tc_go_waivers WHERE stage2_id = ? AND state = 'open' ORDER BY id DESC`).get(Number(id));
+
+/** `code` puts person `id` from his own list on the shared list. */
+export async function waive(db, code, id, actor, at = nowIso()) {
+  const r = await rowOf(db, id);
+  if (r.sender !== code) throw new TcInputError('Only the list this person is on can put him on the shared list.');
+  if (await openWaiver(db, id)) throw new TcInputError('This person is already on the shared list.');
+  if ((await passesOf(db, id)).some((p) => p.state === 'pending')) throw new TcInputError('This person is passed on already.');
+  return db.transaction(async (tx) => {
+    await tx.prepare(`INSERT INTO tc_go_waivers (stage2_id, from_sender, state, at, by_name) VALUES (?,?,'open',?,?)`).run(Number(r.id), code, at, actor);
+    await history(tx, r, `Grand Opening: ${nameOf(code)} put ${r.name || r.email || 'this person'} on the shared list (waiver)`, actor, at);
+    return { state: 'open' };
+  });
+}
+
+/** A colleague takes a person from the shared list onto his own list. */
+export async function take(db, code, id, actor, at = nowIso()) {
+  const r = await rowOf(db, id);
+  const w = await openWaiver(db, id);
+  if (!w) throw new TcInputError('This person is not on the shared list any more.');
+  if (!S2().some((s) => s.code === code)) throw new TcInputError('There is no such list.');
+  return db.transaction(async (tx) => {
+    const done = await tx.prepare(`UPDATE tc_go_waivers SET state = 'taken', taken_sender = ?, taken_at = ?, taken_by = ? WHERE id = ? AND state = 'open'`).run(code, at, actor, Number(w.id));
+    if (done && done.changes === 0) throw new TcInputError('A colleague has just taken this person.');
+    await moveTo(tx, r, code, at, actor);
+    await history(tx, r, `Grand Opening: ${nameOf(code)} took ${r.name || r.email || 'this person'} from the shared list (waiver by ${nameOf(w.from_sender)})`, actor, at);
+    return { state: 'taken', to: code };
+  });
+}
+
+/** The shared list, newest first: [{ id, label, position, company, email, from, fromName, when }]; and the ids on it. */
+export async function waiverState(db) {
+  const rows = await db.prepare(`SELECT w.stage2_id, w.from_sender, w.at, s.name, s.position, s.company, s.email FROM tc_go_waivers w
+    JOIN tc_go_stage2 s ON s.id = w.stage2_id WHERE w.state = 'open' AND s.gone = 0 ORDER BY w.id DESC`).all();
+  return { list: rows.map((x) => ({ id: Number(x.stage2_id), label: x.name || x.email || '', position: x.position || '', company: x.company || '',
+    email: String(x.email || '').toLowerCase(), from: x.from_sender, fromName: nameOf(x.from_sender), when: when(x.at) })), ids: new Set(rows.map((x) => Number(x.stage2_id))) };
 }
 
 /** The owner it was passed to accepts: the person goes onto his list. */
@@ -115,7 +158,7 @@ export async function passState(db, code) {
     involved[id] = [...new Set(ps.flatMap((p) => [p.from_sender, p.to_sender]))];
     const open = ps.find((p) => p.state === 'pending');
     if (!open) continue;
-    if (open.to_sender === code) passedToYou.push({ id, label: open.name || open.email || '', position: open.position || '', company: open.company || '',
+    if (open.to_sender === code) passedToYou.push({ id, label: open.name || open.email || '', position: open.position || '', company: open.company || '', email: String(open.email || '').toLowerCase(),
       chain: ps.filter((p) => p.state !== 'accepted').map((p) => nameOf(p.from_sender)), at: open.at, when: when(open.at), holder: open.sender, involved: involved[id] });
     if (open.sender === code) waiting[id] = nameOf(open.to_sender);
   }
