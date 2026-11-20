@@ -57,7 +57,7 @@ test('the menu order and the Today name', () => {
   const order = [...nav.matchAll(/data-c="(\w+)"/g)].map((m) => m[1]);
   // Q51: Home, Admissions (Inbox, Today, Journey), Reports, Settings; Journey's place id stays 'people'
   // 06.10.2026: Settings left; the Help center is the foot
-  assert.deepEqual(order, ['home', 'admissions', 'leads', 'today', 'people', 'reports', 'help']);
+  assert.deepEqual(order, ['home', 'admissions', 'leads', 'today', 'people', 'reports', 'calls', 'help']);   // 20.11.2026: Calls under Reports
   assert.match(nav, /<span>Due<\/span><span class="n" id="cnNext"><\/span>/, 'the count badge stays on Due (Q67)');
   assert.doesNotMatch(nav, /<span>Next steps<\/span>/);
   assert.match(APP, /title: 'Due',/);

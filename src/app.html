@@ -1660,6 +1660,28 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .ib-acts{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:2px;padding-top:7px;border-top:1px solid var(--rule2)}
   html.ui-c .ib-aside{border:0;background:none;padding:0;font:inherit;font-size:12px;color:var(--t3);cursor:pointer;text-decoration:underline}
   html.ui-c .ib-aside:hover{color:var(--ink)}
+  /* TELEPHONE CALLS (20.11.2026, his pick B): three cards, the middle one in focus */
+  html.ui-c .cm-range{color:var(--t3);font-weight:600;margin:4px 0 0}
+  html.ui-c .cm-b{outline:none} html.ui-c .cm-row{display:grid;grid-template-columns:1fr 1.25fr 1fr;gap:18px;align-items:stretch}
+  html.ui-c .cm-card{background:var(--surface,#fff);border-radius:16px;box-shadow:var(--c-card-lift);border-top:3px solid #29a8df;padding:22px 24px;display:flex;flex-direction:column;min-width:0}
+  html.ui-c .cm-card.side{opacity:.55;transform:scale(.94);cursor:pointer} html.ui-c .cm-card.side .cm-big{font-size:48px}
+  html.ui-c .cm-big{all:unset;cursor:pointer;font-size:72px;line-height:1;color:var(--ink-strong,#0b1b33);font-weight:750;letter-spacing:-.02em}
+  html.ui-c .cm-big:focus-visible, html.ui-c .cm-legs:focus-visible{outline:2px solid #29a8df;outline-offset:3px}
+  html.ui-c .cm-lbl{font-size:20px;font-weight:700;margin-top:8px} html.ui-c .cm-sub{color:var(--t3);font-weight:600;font-size:14px;margin:2px 0 14px}
+  html.ui-c .cm-ch{width:100%;height:110px;display:block} html.ui-c .cm-ax{display:flex;justify-content:space-between;color:var(--t3);font-size:12px;font-weight:600}
+  html.ui-c .cm-wait{color:var(--t3);font-weight:600;font-size:14px;min-height:110px;display:flex;align-items:center}
+  html.ui-c .cm-legs{all:unset;cursor:pointer;margin-top:12px;color:#1678a3;font-weight:700;font-size:14px;text-decoration:underline}
+  html.ui-c .cm-nav{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:16px}
+  html.ui-c .cm-arrow{width:44px;height:44px;border-radius:50%;border:1px solid var(--rule2);background:var(--surface,#fff);font-size:22px;font-weight:700;color:var(--ink);cursor:pointer}
+  html.ui-c .cm-dots{display:flex;gap:8px} html.ui-c .cm-dots button{all:unset;cursor:pointer;width:9px;height:9px;border-radius:50%;background:#c9d6e3} html.ui-c .cm-dots button.on{background:#29a8df;width:24px;border-radius:5px}
+  html.ui-c .cm-list{max-height:calc(100vh - 160px);overflow:auto;list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:var(--type-detail)}
+  html.ui-c .cm-list .ib-call{display:flex;flex-wrap:wrap;gap:0 8px;color:var(--t3)} html.ui-c .cm-list .ib-call b{font-weight:600;color:var(--ink)}
+  html.ui-c .cm-list .ib-call.is-missed b{color:var(--bad)} html.ui-c .cm-list .ib-call-cb{list-style:none;margin:0 0 4px}
+  html.ui-c .cm-list .ib-cb{font-size:12.5px;padding:4px 10px} html.ui-c .cm-list .ib-cb-done{color:#1678a3;font-weight:600;font-size:13px}
+  @media (max-width:760px){ html.ui-c .cm-row{grid-template-columns:1fr} html.ui-c .cm-card.side{display:none} html.ui-c .cm-big{font-size:64px} }
+  /* CALLED BACK (20.11.2026): the button under a missed call, and the line it becomes */
+  html.ui-c #view .ib-call-cb{list-style:none;margin:2px 0 6px} html.ui-c #view .ib-cb{font-size:12.5px;padding:4px 10px}
+  html.ui-c #view .ib-cb-done{color:#1678a3;font-weight:600;font-size:13px}
   /* one rule (14.10.2026): the call note, the came-back line, the marks - quiet, in the card's own type */
   html.ui-c .ib-call-note{display:block}
   html.ui-c .ib-note{width:100%;box-sizing:border-box;margin:0 0 3px;padding:2px 0;border:0;border-bottom:1px dashed var(--rule);border-radius:0;background:none;font:inherit;font-size:12px;color:var(--ink)}
@@ -3843,6 +3865,7 @@ function installCNav() {
       <a href="#/due" data-c="today" title="What is due: overdue, due today, coming up"><span>Due</span><span class="n" id="cnNext"></span></a>
       <a href="#/journey" data-c="people" title="Everyone, by where they are in the journey"><span>Journey</span><span class="n" id="cnJourney"></span></a></div>
     <a href="#/reports" data-c="reports" title="What is happening">${C_ICON.rep}<span>Reports</span></a>
+    <div class="kids"><a href="#/calls" data-c="calls" title="Telephone calls: answered, time to answer, missed calls called back"><span>Calls</span></a></div>
     <!-- No Settings (the owner, 06.10.2026: "whats the point of settings please tell me!?!! ... the light switch is
          already on the card and tell about problem is helps job"). The Help center is the foot of the menu; its
          admin items moved there. -->
@@ -3976,7 +3999,7 @@ function installCTabs() {
     <button type="button" data-t="more" aria-haspopup="dialog" aria-expanded="false" onclick="cMoreOpen()">${C_ICON.more}<span>More</span></button></div>
   <div class="cmore" id="cMore" hidden><div class="cmore-back" onclick="cMoreClose()"></div>
     <div class="cmore-sheet" role="dialog" aria-modal="true" aria-label="More">
-      ${row('#/reports', C_ICON.rep, 'Reports')}${row('#/help', C_ICON.help, 'Help')}</div></div>`);
+      ${row('#/reports', C_ICON.rep, 'Reports')}${row('#/calls', C_ICON.rep, 'Calls')}${row('#/help', C_ICON.help, 'Help')}</div></div>`);
   // the counts are the left card's own: copied whenever it changes, so the two can never disagree. innerHTML, because
   // a count is "N new / total" (Q39)
   for (const [from, to] of [['#cnLeads', '#ctLeads'], ['#cnNext', '#ctNext'], ['#cnJourney', '#ctJourney']]) {
@@ -4125,6 +4148,7 @@ async function routeC(page, arg) {
   if (page === 'person') return viewPerson(arg);
   if (page === 'channels') return viewChannels(arg);
   if (page === 'feedback') return viewFeedback();
+  if (page === 'calls') return viewCallsC();
   if (page === 'n3') return viewN3();
   if (!(place === 'people' && page !== 'journey')) C_PCOHORT = null;   // a Reports cohort lives only on People
   if (place === 'reports') {
@@ -5014,7 +5038,8 @@ function cCallsHtml(calls) {
   const when = (iso) => { const t = fmtDateTime(iso); return t ? `${t.slice(8, 10)}.${t.slice(5, 7)} ${t.slice(11, 16)}` : ''; };
   const one = (c) => `<li class="ib-call${c.answered ? '' : ' is-missed'}"><span>${esc(when(c.at))}</span><span>${esc(c.line)}</span>`
     + `<b>${cCallWhat(c)}</b></li>`
-    + (c.answered && c.id ? `<li class="ib-call-note">${cCallNoteInput(c)}</li>` : '');
+    + (c.answered && c.id ? `<li class="ib-call-note">${cCallNoteInput(c)}</li>` : '')
+    + (!c.answered && c.id ? `<li class="ib-call-cb">${cCalledBack(c)}</li>` : '');
   const more = calls.length > 3 ? `<li class="ib-call is-more">${calls.length - 3} more</li>` : '';
   return `<ul class="ib-calls">${calls.slice(0, 3).map(one).join('')}${more}</ul>`;
 }
@@ -5037,6 +5062,85 @@ function cCallNoteInput(c) {
   return `<input type="text" class="ib-note" maxlength="200" placeholder="What was it about?" aria-label="What was it about?"`
     + ` value="${esc(c.note || '')}"${c.noteBy ? ` title="${esc(c.noteBy)}"` : ''} onclick="event.stopPropagation()"`
     + ` onkeydown="event.stopPropagation();if(event.key==='Enter')this.blur()" onchange="cCallNote(this, ${esc(JSON.stringify(String(c.id)))})">`;
+}
+// TELEPHONE CALLS (20.11.2026; his words "Telephone calls metrics ... BUT NOT A CLUSTER, just the most important metrics! All
+// of that on a Single screen with a carousel"; his pick "B: three cards"; src/callmetrics.js). Five cards, three in view, the
+// middle one in focus; arrows, dots, the keyboard's arrow keys and a swipe move it. One big figure per card, its per-day
+// chart under it, and the figure opens the calls behind it. Data blue #29a8df.
+let C_CM = null;
+const C_CM_KEYS = ['wait', 'pct', 'perday', 'overdue', 'hour'];
+const cCmDay = (d) => { const t = new Date(d + 'T12:00:00Z'); return t.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }); };
+const cCmDdmm = (d) => d.slice(8, 10) + '.' + d.slice(5, 7);
+function cCmBars(vals, labels, unit) {
+  const max = Math.max(1, ...vals.filter((v) => v != null)), bw = 100 / Math.max(1, vals.length);
+  const bars = vals.map((v, i) => (v == null ? '' : `<rect x="${(i * bw + bw * 0.15).toFixed(2)}" y="${(70 - (v / max) * 70).toFixed(2)}" width="${(bw * 0.7).toFixed(2)}" height="${((v / max) * 70).toFixed(2)}" rx="0.6" fill="#29a8df"><title>${esc(labels[i])}: ${esc(String(v))}${esc(unit)}</title></rect>`)).join('');
+  return `<svg viewBox="0 0 100 72" preserveAspectRatio="none" class="cm-ch" role="img" aria-label="Per day">${bars}</svg>`
+    + `<div class="cm-ax"><span>${esc(labels[0] || '')}</span><span>${esc(labels[labels.length - 1] || '')}</span></div>`;
+}
+function cCmCard(k, M) {
+  const F = M.figures, S = M.series, L = S.map((x) => cCmDdmm(x.day));
+  if (k === 'wait') return { big: F.waitSec == null ? '-' : Math.round(F.waitSec) + ' s', label: 'Time to answer', sub: 'median ring before pick-up', chart: cCmBars(S.map((x) => (x.waitSec == null ? null : Math.round(x.waitSec))), L, ' s'), legs: `${F.answered} answered calls` };
+  if (k === 'pct') return { big: F.answeredPct == null ? '-' : F.answeredPct + '%', label: 'Answered', sub: `${F.answered} answered · ${F.missed} missed`, chart: cCmBars(S.map((x) => (x.calls ? Math.round((100 * x.answered) / x.calls) : null)), L, '%'), legs: `${F.calls} calls` };
+  if (k === 'perday') return { big: F.answeredPerDay == null ? '-' : String(F.answeredPerDay), label: 'Answered per day', sub: 'average, working days', chart: cCmBars(S.map((x) => x.answered), L, ''), legs: `${F.answered} answered calls` };
+  if (k === 'overdue') {
+    const od = S.filter((x) => x.overdue != null);
+    return { big: F.overduePerDay == null ? '-' : String(F.overduePerDay), label: 'Overdue per day',
+      sub: od.length ? 'missed calls not called back by the end of the working day' : `counted from ${cCmDay(M.overdueFrom)}`,
+      chart: od.length ? cCmBars(od.map((x) => x.overdue), od.map((x) => cCmDdmm(x.day)), '') : '<div class="cm-wait">Every missed call has a Called back button. The count starts with it.</div>',
+      legs: `${M.calls.filter((c) => c.overdue === true).length} missed calls` };
+  }
+  const hours = Object.keys(M.byHour).map(Number).sort((a, b) => a - b);
+  return { big: F.busiestHour == null ? '-' : String(F.busiestHour).padStart(2, '0') + ':00', label: 'Busiest hour', sub: `${F.busiestCalls} calls in that hour, all days`,
+    chart: cCmBars(hours.map((h) => M.byHour[h]), hours.map((h) => String(h).padStart(2, '0') + ':00'), ' calls'), legs: 'calls in that hour' };
+}
+async function viewCallsC() {
+  const M = await api('/api/calls/metrics');
+  C_CM = { M, i: (C_CM && C_CM.i) || 0 };
+  cCallsDraw();
+}
+function cCallsDraw() {
+  const M = C_CM.M;
+  if (M.empty) { $('#view').innerHTML = '<div class="c-head"><div><h1>Telephone calls</h1></div></div><div class="c-sheet c-empty">No calls yet.</div>'; return; }
+  const n = C_CM_KEYS.length, i = C_CM.i;
+  const card = (k, side) => { const c = cCmCard(k, M);
+    return `<div class="cm-card${side ? ' side' : ''}"${side ? ` role="button" tabindex="0" onclick="cCallsGo(${Number(C_CM_KEYS.indexOf(k))})"` : ''}><button type="button" class="cm-big" onclick="event.stopPropagation();cCallsList(${esc(JSON.stringify(k))})" title="The calls behind it">${esc(c.big)}</button>`
+      + `<div class="cm-lbl">${esc(c.label)}</div><div class="cm-sub">${esc(c.sub)}</div>${c.chart}<button type="button" class="cm-legs" onclick="event.stopPropagation();cCallsList(${esc(JSON.stringify(k))})">${esc(c.legs)} →</button></div>`; };
+  $('#view').innerHTML = `<div class="c-head"><div><h1>Telephone calls</h1><p class="cm-range">${esc(cCmDay(M.from))} - ${esc(cCmDay(M.to))}, working days · calls up to ${esc(cCmDay(M.to))}</p></div></div>
+    <div class="cm-b" onkeydown="if(event.key==='ArrowLeft')cCallsGo(C_CM.i-1);if(event.key==='ArrowRight')cCallsGo(C_CM.i+1)" ontouchstart="C_CM.tx=event.touches[0].clientX" ontouchend="const dx=event.changedTouches[0].clientX-(C_CM.tx||0);if(Math.abs(dx)>40)cCallsGo(C_CM.i+(dx<0?1:-1))" tabindex="-1">
+      <div class="cm-row">${card(C_CM_KEYS[(i + n - 1) % n], true)}${card(C_CM_KEYS[i], false)}${card(C_CM_KEYS[(i + 1) % n], true)}</div>
+      <div class="cm-nav"><button type="button" class="cm-arrow" aria-label="Previous" onclick="cCallsGo(C_CM.i-1)">‹</button>
+        <div class="cm-dots">${C_CM_KEYS.map((k, j) => `<button type="button" class="${j === i ? 'on' : ''}" aria-label="${esc(cCmCard(k, M).label)}" onclick="cCallsGo(${Number(j)})"></button>`).join('')}</div>
+        <button type="button" class="cm-arrow" aria-label="Next" onclick="cCallsGo(C_CM.i+1)">›</button></div></div>`;
+}
+function cCallsGo(j) { if (!C_CM) return; const n = C_CM_KEYS.length; C_CM.i = ((j % n) + n) % n; cCallsDraw(); }
+// every figure has legs: the calls behind it, newest first, in the side drawer
+function cCallsList(k) {
+  const M = C_CM.M, F = M.figures;
+  const pick = { wait: (c) => c.answered && c.waitSec != null, pct: () => true, perday: (c) => c.answered, overdue: (c) => c.overdue === true, hour: (c) => c.hour === F.busiestHour }[k] || (() => true);
+  const rows = M.calls.filter(pick).slice().reverse();
+  const t = (iso) => { const x = fmtDateTime(iso) || ''; return x.slice(8, 10) + '.' + x.slice(5, 7) + ' ' + x.slice(11, 16); };
+  const one = (c) => `<li class="ib-call${c.answered ? '' : ' is-missed'}"><span>${esc(t(c.at))}</span><span>${esc(c.line)}</span>${c.personId ? `<a href="#/person/${esc(c.personId)}" onclick="closeModal()">${esc(c.name || 'Open')}</a>` : ''}`
+    + `<b>${cCallWhat({ answered: c.answered, operator: c.operator, talkSec: null, durationSec: c.rangSec })}${c.answered && c.waitSec != null ? ' · rang ' + esc(cCallLen(c.waitSec) || '0:00') : ''}</b></li>`
+    + (!c.answered ? `<li class="ib-call-cb">${cCalledBack({ id: c.id, calledBackAt: c.calledBackAt, calledBackBy: c.calledBackBy })}</li>` : '');
+  $('#modal').innerHTML = `<div class="tw-back" onclick="closeModal()"></div><aside class="tw-drawer" role="dialog" aria-modal="true" aria-label="The calls behind it">
+    <button type="button" class="tc-kx" aria-label="Close" onclick="closeModal()">✕</button><h2>${esc(cCmCard(k, M).label)}</h2><p class="tw-sub">${rows.length} ${rows.length === 1 ? 'call' : 'calls'}</p>
+    <ul class="ib-calls cm-list">${rows.map(one).join('') || '<li class="c-empty">No call.</li>'}</ul></aside>`;
+}
+// CALLED BACK (20.11.2026, his pick "Add 'Called back' button"): under a missed call, one click records who called back and
+// when; the line then says so. It ends "overdue" on the phone metrics. Once only: the first call-back counts.
+function cCalledBack(c) {
+  if (c.calledBackAt) {
+    const t = fmtDateTime(c.calledBackAt) || '';
+    return `<span class="ib-cb-done">Called back${c.calledBackBy ? ' by ' + esc(c.calledBackBy) : ''} · ${esc(t.slice(8, 10) + '.' + t.slice(5, 7) + ' ' + t.slice(11, 16))}</span>`;
+  }
+  return `<button type="button" class="btn sm ghost ib-cb" onclick="event.stopPropagation();cCalledBackDo(this, ${esc(JSON.stringify(String(c.id)))})">Called back</button>`;
+}
+async function cCalledBackDo(btn, id) {
+  btn.disabled = true;
+  try {
+    const r = await post(`/api/calls/${encodeURIComponent(id)}/called-back`, {});
+    btn.outerHTML = cCalledBack({ calledBackAt: r.calledBackAt, calledBackBy: r.calledBackBy });
+  } catch (err) { btn.disabled = false; alert(err.message); }
 }
 async function cCallNote(input, id) {
   input.disabled = true;
@@ -5519,7 +5623,8 @@ function cCallsToday(calls, line) {
   const shown = C_IP.callsAll ? rows : rows.slice(0, C_CALLS_TODAY_SHOW);
   const rest = rows.length - shown.length;
   const one = (c) => `<li class="ib-call${c.answered ? '' : ' is-missed'}"><span>${esc(String(fmtDateTime(c.at) || '').slice(11, 16))}</span>`
-    + `<a href="#/person/${esc(c.personId)}">${esc(c.name || 'Open')}</a><span>${esc(label(c.line))}</span><b>${cCallWhat(c)}</b></li>`;
+    + `<a href="#/person/${esc(c.personId)}">${esc(c.name || 'Open')}</a><span>${esc(label(c.line))}</span><b>${cCallWhat(c)}</b></li>`
+    + (!c.answered && c.id ? `<li class="ib-call-cb">${cCalledBack(c)}</li>` : '');
   const more = rest > 0 ? `<li class="ib-call is-more"><button type="button" class="ib-aside" onclick="C_IP.callsAll=true;cInboxPool()">${rest} more</button></li>`
     : C_IP.callsAll && rows.length > C_CALLS_TODAY_SHOW ? `<li class="ib-call is-more"><button type="button" class="ib-aside" onclick="C_IP.callsAll=false;cInboxPool()">Show fewer</button></li>` : '';
   return `<section class="ib-today" aria-label="Calls today from people in Intake"><h3>Calls today from people in Intake<b>${rows.length}</b></h3>`
@@ -6727,7 +6832,7 @@ async function viewPersonC(id) {
   const ev = (e) => `<div class="c-evt">
       <div class="c-evt-when">${cStamp(e.occurred_at)}${e.actor ? ' · ' + esc(actorName(e.actor)) : ''}${e.channel ? ' · ' + esc(channelLabel(e.channel)) : ''}${e.origin === 'automatic' ? ' · <span class="c-auto">automatic</span>' : ''}</div>
       <div class="c-evt-what">${esc(e.subject || e.kind || '')}</div>
-      ${e.field ? `<div class="c-evt-diff"><s>${esc(e.old_value ?? '(empty)')}</s> → <b>${esc(e.new_value ?? '(empty)')}</b></div>` : (e.body ? `<div class="c-evt-body">${esc(e.bodyClean || e.body)}</div>${e.bodyClean && e.bodyClean !== e.body ? `<details class="c-evt-orig"><summary>Show original</summary><div class="c-evt-body">${esc(e.body)}</div></details>` : ''}` : '')}${e.call && e.call.answered && e.call.id ? `<div class="c-evt-body">${cCallNoteInput(e.call)}</div>` : ''}</div>`;
+      ${e.field ? `<div class="c-evt-diff"><s>${esc(e.old_value ?? '(empty)')}</s> → <b>${esc(e.new_value ?? '(empty)')}</b></div>` : (e.body ? `<div class="c-evt-body">${esc(e.bodyClean || e.body)}</div>${e.bodyClean && e.bodyClean !== e.body ? `<details class="c-evt-orig"><summary>Show original</summary><div class="c-evt-body">${esc(e.body)}</div></details>` : ''}` : '')}${e.call && e.call.answered && e.call.id ? `<div class="c-evt-body">${cCallNoteInput(e.call)}</div>` : ''}${e.call && !e.call.answered && e.call.id ? `<div class="c-evt-body">${cCalledBack(e.call)}</div>` : ''}</div>`;
   // a draft in the SIS (26.10.2026): what it waits for, navy; an open step stays with its Done, its date plain, never late
   const draftNext = cIsDraft(p) ? `<div class="c-next c-next-draft"><b>Next step</b><div class="c-next-row"><span>Waits for them to submit</span><span class="c-when">Draft since ${esc(cDraftSince(p) || 'the SIS')}</span></div>
     ${t ? `<div class="c-next-row"><span>${esc(cTask(t.label))}</span><span class="c-when">${esc(cDdMm(t.due_at))}</span></div>

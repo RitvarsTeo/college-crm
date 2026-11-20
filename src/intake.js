@@ -534,7 +534,7 @@ export async function listInbound(db, { state = 'new', now = nowIso(), range = n
 // talkSec / durationSec (14.10.2026): the talk time and the whole call in seconds, null when not known.
 export async function callsFor(db, inboundId) {
   const menu = Object.values(CFG.phoneMenu || {});
-  const rows = await db.prepare(`SELECT uniqueid, called_at, queue, picked_up, operator_name, duration_sec, talk_sec, note, note_by
+  const rows = await db.prepare(`SELECT uniqueid, called_at, queue, picked_up, operator_name, duration_sec, talk_sec, note, note_by, called_back_at, called_back_by
     FROM pbx_calls WHERE inbound_id = ? ORDER BY called_at DESC`).all(inboundId);
   return rows.map((c) => ({ ...callView(c, menu), note: c.note || null, noteBy: c.note_by || null }));
 }
@@ -543,7 +543,8 @@ function callView(c, menu) {
   const sec = (v) => (v === null || v === undefined || v === '' ? null : Number(v));
   return { id: c.uniqueid, at: c.called_at, line: ((menu.find((m) => m && m.queue === c.queue) || {}).role) || c.queue,
     answered: Boolean(Number(c.picked_up)), operator: c.operator_name || null,
-    talkSec: sec(c.talk_sec), durationSec: sec(c.duration_sec) };
+    talkSec: sec(c.talk_sec), durationSec: sec(c.duration_sec),
+    calledBackAt: c.called_back_at || null, calledBackBy: c.called_back_by || null };
 }
 
 // CALLS TODAY FROM PEOPLE IN INTAKE (Admissions, 16.10.2026: a call from a number that already belongs to a person goes
@@ -582,7 +583,7 @@ export async function callsTodayFromPeople(db, { now = new Date() } = {}) {
   const day = localDate(now);
   const [y, m, d] = day.split('-').map(Number);
   const rows = await db.prepare(`SELECT c.uniqueid, c.called_at, c.queue, c.picked_up, c.operator_name, c.duration_sec, c.talk_sec,
-      pe.id AS person_id, pe.name FROM pbx_calls c JOIN people pe ON pe.id = c.person_id
+      c.called_back_at, c.called_back_by, pe.id AS person_id, pe.name FROM pbx_calls c JOIN people pe ON pe.id = c.person_id
     WHERE c.person_id IS NOT NULL AND c.called_at >= ? AND c.called_at < ? ORDER BY c.called_at DESC, c.uniqueid`)
     .all(localMidnight(y, m, d), localMidnight(y, m, d + 1));
   return rows.map((c) => ({ ...callView(c, menu), personId: c.person_id, name: c.name || '' }));
@@ -1297,16 +1298,29 @@ export const CALL_NOTE_MAX = 200;
 // A known person's call is logged on their History by storeCall at the call's own time; that entry carries the call
 // ({ id, answered, note }) so the same line can be read and added there.
 export async function withCallNotes(db, personId, events) {
-  const calls = await db.prepare('SELECT uniqueid, called_at, picked_up, note, note_by FROM pbx_calls WHERE person_id = ?').all(personId);
+  const calls = await db.prepare('SELECT uniqueid, called_at, picked_up, note, note_by, called_back_at, called_back_by FROM pbx_calls WHERE person_id = ?').all(personId);
   if (!calls.length) return events;
   for (const e of events) {
     if (e.kind !== 'call' || e.origin !== 'automatic') continue;
     const c = calls.find((x) => x.called_at === e.occurred_at);
-    if (c) e.call = { id: c.uniqueid, answered: Boolean(Number(c.picked_up)), note: c.note || null, noteBy: c.note_by || null };
+    if (c) e.call = { id: c.uniqueid, answered: Boolean(Number(c.picked_up)), note: c.note || null, noteBy: c.note_by || null,
+      calledBackAt: c.called_back_at || null, calledBackBy: c.called_back_by || null };
   }
   return events;
 }
 export const CALL_NOTE_SUBJECT = 'What the call was about';
+// CALLED BACK (20.11.2026, his pick "Add 'Called back' button"): a missed call, one click on its Inbox card or on the person's
+// call line, records who called back and when. It is what ends "overdue" on the phone metrics, besides handling the card.
+// Once only: a second click keeps the first (the first call-back is the one that counts). Never on an answered call.
+export async function setCalledBack(db, callId, { by, at = nowIso() } = {}) {
+  const call = await db.prepare('SELECT uniqueid, picked_up, called_back_at, called_back_by FROM pbx_calls WHERE uniqueid = ?').get(String(callId || ''));
+  if (!call) return { error: 'not found' };
+  if (!by) return { error: 'who called back?' };
+  if (Number(call.picked_up)) return { error: 'this call was answered' };
+  if (call.called_back_at) return { ok: true, id: call.uniqueid, calledBackAt: call.called_back_at, calledBackBy: call.called_back_by, already: true };
+  await db.prepare('UPDATE pbx_calls SET called_back_at = ?, called_back_by = ? WHERE uniqueid = ? AND called_back_at IS NULL').run(at, by, call.uniqueid);
+  return { ok: true, id: call.uniqueid, calledBackAt: at, calledBackBy: by };
+}
 export async function setCallNote(db, callId, { note, by, at = nowIso() } = {}) {
   const call = await db.prepare('SELECT uniqueid, picked_up FROM pbx_calls WHERE uniqueid = ?').get(String(callId || ''));
   if (!call) return { error: 'not found' };

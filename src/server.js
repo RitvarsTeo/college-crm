@@ -17,7 +17,7 @@ import * as gmailB from '../lib/gmail.js';
 import * as notify from '../lib/notify.js';
 import * as sheetB from '../lib/sheetpull.js';
 import { pullSheet, sheetCounts } from './sheetsync.js';
-import { receive, activePersonFor, IN_TOUCH_STEPS, listInbound, listHandled, callsTodayFromPeople, messagesFor, conversationFor, latestConversationPerson, recordWhatsAppEcho, qualify, archive, setMark, removeMark, setCallNote, withCallNotes, bringBack, funnel, agedCount, handoffToSis, ownerFor, notifiedFor, handoverGap, canReach, surfaceAt, waitingFor, waitingByRole } from './intake.js';
+import { receive, activePersonFor, IN_TOUCH_STEPS, listInbound, listHandled, callsTodayFromPeople, messagesFor, conversationFor, latestConversationPerson, recordWhatsAppEcho, qualify, archive, setMark, removeMark, setCallNote, setCalledBack, withCallNotes, bringBack, funnel, agedCount, handoffToSis, ownerFor, notifiedFor, handoverGap, canReach, surfaceAt, waitingFor, waitingByRole } from './intake.js';
 import { replaceN3Directory, n3Status, n3Names } from './n3dir.js';
 import { readScreenshot, readKind, readBody, readPath, saveFeedback, listFeedback, getScreenshot, setHandled, BadScreenshot, helpOpened, helpCounts } from './feedback.js';
 import { findMatches as matchPeople, duplicateCheck, onePersonFor } from './identity.js';
@@ -38,6 +38,8 @@ import { buildDemo } from './demo.js';
 import * as gate from './gate.js';
 import { redirectTarget } from './apporigin.js';
 import * as callpop from './callpop.js';
+import { callMetrics } from './callmetrics.js';
+import { CONFIG as INTAKE_CONFIG } from './intake.js';
 import { moveCheck } from './stagemove.js';
 import { scopeRanges, rangesSql, yearsOf } from './yearscope.js';
 import { receivePhoneEvent, PHONE_EVENT_SECRET_ENV } from './phoneevent.js';
@@ -1495,6 +1497,11 @@ export const handle = async (req, res) => {
         : USER_NAMES;
       return json(res, 200, { note: await callpop.latestNote(db, { viewer, viewerUser: await currentUser(req), users }) });
     }
+    // TELEPHONE CALLS (20.11.2026, src/callmetrics.js): the five figures, their per-day series and the calls behind them.
+    // Signed in like every route here; read only; never a caller's number.
+    if (req.method === 'GET' && p === '/api/calls/metrics') {
+      return json(res, 200, await callMetrics(db, { menu: Object.values(INTAKE_CONFIG.phoneMenu || {}) }));
+    }
 
     // THE PHONE SYSTEM PUSHES CALL EVENTS HERE (Q6, 04.10.2026): ringing, answered, ended.
     // A shared secret in x-crm-secret, compared in constant time; the phone channel's mode decides
@@ -2727,6 +2734,15 @@ export const handle = async (req, res) => {
       try { callId = decodeURIComponent(p.split('/')[3]); } catch { return json(res, 400, { error: 'not a call' }); }
       const b = await body(req);
       const r = await setCallNote(db, callId, { note: b.note, by: await actorOf(req, b) });
+      if (r.error) return json(res, r.error === 'not found' ? 404 : 400, r);
+      return json(res, 200, r);
+    }
+    // CALLED BACK on a missed call (20.11.2026, his pick): one click records who and when. Behind sign-in like every route here.
+    if (req.method === 'POST' && /^\/api\/calls\/[^/]+\/called-back$/.test(p)) {
+      let callId = '';
+      try { callId = decodeURIComponent(p.split('/')[3]); } catch { return json(res, 400, { error: 'not a call' }); }
+      const b = await body(req);
+      const r = await setCalledBack(db, callId, { by: await actorOf(req, b) });
       if (r.error) return json(res, r.error === 'not found' ? 404 : 400, r);
       return json(res, 200, r);
     }

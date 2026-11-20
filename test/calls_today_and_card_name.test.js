@@ -46,9 +46,9 @@ test('1: today\'s calls (a Riga day) logged on a person, newest first, with only
   const rows = await callsTodayFromPeople(db, { now: NOW });
   assert.deepEqual(rows.map((r) => r.id), ['u2', 'u1', 'u3'], 'today only, newest first; a stranger has an Inbox card instead');
   assert.deepEqual(rows[1], { id: 'u1', at: '2026-10-16T05:54:00.000Z', line: 'Student Coordinator', answered: true, operator: 'Laura',
-    talkSec: 125, durationSec: 140, personId: 'p1', name: 'Anna Ozola' });
+    talkSec: 125, durationSec: 140, calledBackAt: null, calledBackBy: null, personId: 'p1', name: 'Anna Ozola' });
   assert.deepEqual(rows[0], { id: 'u2', at: '2026-10-16T07:10:00.000Z', line: 'Admissions', answered: false, operator: null,
-    talkSec: 0, durationSec: 25, personId: 'p2', name: 'Janis Berzins' });
+    talkSec: 0, durationSec: 25, calledBackAt: null, calledBackBy: null, personId: 'p2', name: 'Janis Berzins' });
   assert.ok(rows.every((r) => !('caller_num' in r) && !('note' in r) && !JSON.stringify(r).includes('29111222')), 'never the number or the note');
   assert.deepEqual(await callsTodayFromPeople(db, { now: new Date('2026-10-17T10:00:00Z') }), [], 'a new day starts empty');
 });
@@ -75,7 +75,7 @@ function strip(calls, { user = null, line: chosen, callsAll = false } = {}) {
     localStorage: { getItem: () => null, setItem: () => {} } };
   vm.runInNewContext([line('const esc = '),
     APP.slice(APP.indexOf('const fmtDateTime = '), APP.indexOf('// Today in RIGA.')).replace(/^const /, 'var '),
-    helpers.replace(/^const /gm, 'var '), fnBody('function cCallLen('), fnBody('function cCallWhat('),
+    helpers.replace(/^const /gm, 'var '), fnBody('function cCallLen('), fnBody('function cCallWhat('), fnBody('function cCalledBack('),
     line('const C_CALLS_TODAY_SHOW = ').replace(/^const /, 'var '), fnBody('function cCallsToday('),
     'this.strip = cCallsToday;'].join('\n'), ctx);
   if (chosen !== undefined) ctx.C_IP.line = chosen;

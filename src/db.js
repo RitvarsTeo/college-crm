@@ -1147,6 +1147,8 @@ const ADDED_COLUMNS = [
   ['pbx_calls', 'note', 'TEXT'],               // 14.10.2026, what the call was about (one line)
   ['pbx_calls', 'note_by', 'TEXT'],
   ['pbx_calls', 'note_at', 'TEXT'],
+  ['pbx_calls', 'called_back_at', 'TEXT'],     // 20.11.2026, his pick "Add 'Called back' button": a missed call called back - when
+  ['pbx_calls', 'called_back_by', 'TEXT'],     //   and by whom (one click; ends "overdue" on the phone metrics)
   ['tc_tasks', 'kind', 'TEXT'],       // 20.10.2026, My week: how the contact is planned
   ['tc_tasks', 'result', 'TEXT'],     // 20.10.2026, Log a contact: how it went, on the closed task
   ['tc_companies', 'hidden_at', 'TEXT'],          // 29.10.2026, flagged by an approver: hidden from lists until approved

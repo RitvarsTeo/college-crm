@@ -33,8 +33,9 @@ test('the menu is grouped: Admissions holds the three pools, and the hairline is
   // Q51 (the owner, 05.10.2026: "I had Home then Admissions (under that inbox, today, journey) Then big Reports."):
   // Journey is People + Journey + Outcomes in one (Q47)
   // 06.10.2026: Settings left; the Help center is the foot of the menu
-  assert.deepEqual(labels, ['Home', 'Admissions', 'Inbox', 'Due', 'Journey', 'Reports', 'Help center']);
-  assert.equal((nav.match(/class="kids"/g) || []).length, 1, 'one group: Admissions');
+  // 20.11.2026: Calls (the telephone metrics) under Reports
+  assert.deepEqual(labels, ['Home', 'Admissions', 'Inbox', 'Due', 'Journey', 'Reports', 'Calls', 'Help center']);
+  assert.equal((nav.match(/class="kids"/g) || []).length, 2, 'two groups: Admissions, and Reports with Calls');
   // the hairline itself, unchanged from the established rule
   assert.match(APP, /html\.ui-c \.cnav \.kids\{margin:1px 0 6px 18px;padding-left:10px;border-left:1px solid var\(--rule\)\}/,
     'the established INTAKE hairline, not a new one');
