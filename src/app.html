@@ -1668,7 +1668,21 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .cm-big{all:unset;cursor:pointer;font-size:72px;line-height:1;color:var(--ink-strong,#0b1b33);font-weight:750;letter-spacing:-.02em}
   html.ui-c .cm-big:focus-visible, html.ui-c .cm-legs:focus-visible{outline:2px solid #29a8df;outline-offset:3px}
   html.ui-c .cm-lbl{font-size:20px;font-weight:700;margin-top:8px} html.ui-c .cm-sub{color:var(--t3);font-weight:600;font-size:14px;margin:2px 0 14px}
-  html.ui-c .cm-ch{width:100%;height:110px;display:block} html.ui-c .cm-ax{display:flex;justify-content:space-between;color:var(--t3);font-size:12px;font-weight:600}
+  html.ui-c .cm-chart{display:grid;grid-template-columns:auto 1fr;column-gap:8px}
+  html.ui-c .cm-y{position:relative;height:120px;min-width:30px;color:var(--t3);font-size:11px;font-weight:600}
+  html.ui-c .cm-y span{position:absolute;right:0;transform:translateY(50%);white-space:nowrap}
+  html.ui-c .cm-plot{position:relative;height:120px}
+  html.ui-c .cm-plot>b{position:absolute;left:0;right:0;border-top:1px solid var(--line,#e6e9ef)}
+  html.ui-c .cm-bars{position:absolute;inset:0;display:flex;align-items:flex-end;gap:2px}
+  html.ui-c .cm-bars i{flex:1;height:100%;display:flex;align-items:flex-end;cursor:pointer;min-width:0}
+  html.ui-c .cm-bars u{display:block;width:100%;background:#29a8df;border-radius:2px 2px 0 0}
+  html.ui-c .cm-bars i:hover u,html.ui-c .cm-bars i.on u{background:#1b7fae}
+  html.ui-c .cm-med{position:absolute;left:0;right:0;border-top:1.5px dashed #1b7fae;pointer-events:none;font-style:normal}
+  html.ui-c .cm-med span{position:absolute;right:0;bottom:2px;font-size:11px;font-weight:700;color:#1b7fae;background:rgba(255,255,255,.92);padding:0 4px;border-radius:4px}
+  html.ui-c .cm-tip{position:absolute;top:-30px;background:#1d2433;color:#fff;font-size:12px;font-weight:600;padding:4px 8px;border-radius:6px;white-space:nowrap;pointer-events:none;z-index:2}
+  html.ui-c .cm-x{grid-column:2;position:relative;height:18px;margin-top:4px;color:var(--t3);font-size:11px;font-weight:600}
+  html.ui-c .cm-x span{position:absolute;transform:translateX(-50%);white-space:nowrap}
+  html.ui-c .cm-x.every{display:flex;gap:2px} html.ui-c .cm-x.every span{position:static;transform:none;flex:1;text-align:center;min-width:0}
   html.ui-c .cm-wait{color:var(--t3);font-weight:600;font-size:14px;min-height:110px;display:flex;align-items:center}
   html.ui-c .cm-legs{all:unset;cursor:pointer;margin-top:12px;color:#1678a3;font-weight:700;font-size:14px;text-decoration:underline}
   html.ui-c .cm-nav{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:16px}
@@ -5071,27 +5085,55 @@ let C_CM = null;
 const C_CM_KEYS = ['wait', 'pct', 'perday', 'overdue', 'hour'];
 const cCmDay = (d) => { const t = new Date(d + 'T12:00:00Z'); return t.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }); };
 const cCmDdmm = (d) => d.slice(8, 10) + '.' + d.slice(5, 7);
-function cCmBars(vals, labels, unit) {
-  const max = Math.max(1, ...vals.filter((v) => v != null)), bw = 100 / Math.max(1, vals.length);
-  const bars = vals.map((v, i) => (v == null ? '' : `<rect x="${(i * bw + bw * 0.15).toFixed(2)}" y="${(70 - (v / max) * 70).toFixed(2)}" width="${(bw * 0.7).toFixed(2)}" height="${((v / max) * 70).toFixed(2)}" rx="0.6" fill="#29a8df"><title>${esc(labels[i])}: ${esc(String(v))}${esc(unit)}</title></rect>`)).join('');
-  return `<svg viewBox="0 0 100 72" preserveAspectRatio="none" class="cm-ch" role="img" aria-label="Per day">${bars}</svg>`
-    + `<div class="cm-ax"><span>${esc(labels[0] || '')}</span><span>${esc(labels[labels.length - 1] || '')}</span></div>`;
+const cCmDdd = (d) => new Date(d + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'UTC' }) + ' ' + cCmDdmm(d);
+// a round top for the scale: 1, 2, 5 x 10^k, at least the highest bar
+function cCmTop(max, fixed) {
+  if (fixed) return fixed;
+  if (!(max > 0)) return 2;
+  const p = Math.pow(10, Math.floor(Math.log10(max)));
+  for (const m of [1, 2, 5, 10]) if (m * p >= max && (m * p) % 2 === 0) return m * p;
+  return 10 * p;
+}
+// "the graph doesnt tell the time!" (the owner, 20.11.2026): every chart has its value scale (0, half, top), every bar says its
+// value and its day on hover or tap ("Tue 14.10 · 42 s"), Time to answer has a dashed median line with its value, and the
+// busiest-hour chart names every hour under its bar. opts: { tips[], unit, top (fixed), median, every (x label each bar) }
+function cCmBars(vals, labels, o = {}) {
+  const unit = o.unit || '', top = cCmTop(Math.max(0, ...vals.filter((v) => v != null)), o.top), pc = (v) => Math.min(100, (100 * v) / top).toFixed(2);
+  const ticks = [top, top / 2, 0].map((t) => `<span style="bottom:${pc(t)}%">${esc(String(Math.round(t * 10) / 10) + unit)}</span>`).join('');
+  const grid = [top, top / 2, 0].map((t) => `<b style="bottom:${pc(t)}%"></b>`).join('');
+  const bars = vals.map((v, i) => `<i class="${v == null ? 'none' : ''}" data-t="${esc((o.tips || labels)[i] + ' · ' + (v == null ? 'no calls' : String(v) + unit))}"><u style="height:${v == null ? 0 : pc(v)}%"></u></i>`).join('');
+  const med = o.median != null ? `<em class="cm-med" style="bottom:${pc(o.median)}%"><span>median ${esc(String(Math.round(o.median)) + unit)}</span></em>` : '';
+  const xs = o.every ? labels.map((l) => `<span>${esc(l)}</span>`).join('')
+    : [0, Math.floor((labels.length - 1) / 2), labels.length - 1].filter((j, k, a) => a.indexOf(j) === k).map((j) => `<span style="left:${(((j + 0.5) / Math.max(1, labels.length)) * 100).toFixed(2)}%">${esc(labels[j] || '')}</span>`).join('');
+  return `<div class="cm-chart"><div class="cm-y">${ticks}</div><div class="cm-plot" onmouseover="cCmTip(event)" onclick="event.stopPropagation();cCmTip(event)" onmouseleave="cCmTip(null, this)" role="img" aria-label="Per day">${grid}<div class="cm-bars">${bars}</div>${med}<div class="cm-tip" hidden></div></div>`
+    + `<div class="cm-x${o.every ? ' every' : ''}">${xs}</div></div>`;
+}
+function cCmTip(ev, plot) {
+  const p = plot || (ev && ev.target.closest('.cm-plot')); if (!p) return;
+  const tip = p.querySelector('.cm-tip'), bar = ev && ev.target.closest('.cm-bars i');
+  p.querySelectorAll('.cm-bars i.on').forEach((x) => x.classList.remove('on'));
+  if (!bar) { tip.hidden = true; return; }
+  bar.classList.add('on'); tip.textContent = bar.dataset.t; tip.hidden = false;
+  const r = p.getBoundingClientRect(), b = bar.getBoundingClientRect();
+  tip.style.left = Math.max(0, Math.min(r.width - tip.offsetWidth, b.left - r.left + b.width / 2 - tip.offsetWidth / 2)) + 'px';
 }
 function cCmCard(k, M) {
-  const F = M.figures, S = M.series, L = S.map((x) => cCmDdmm(x.day));
-  if (k === 'wait') return { big: F.waitSec == null ? '-' : Math.round(F.waitSec) + ' s', label: 'Time to answer', sub: 'median ring before pick-up', chart: cCmBars(S.map((x) => (x.waitSec == null ? null : Math.round(x.waitSec))), L, ' s'), legs: `${F.answered} answered calls` };
-  if (k === 'pct') return { big: F.answeredPct == null ? '-' : F.answeredPct + '%', label: 'Answered', sub: `${F.answered} answered · ${F.missed} missed`, chart: cCmBars(S.map((x) => (x.calls ? Math.round((100 * x.answered) / x.calls) : null)), L, '%'), legs: `${F.calls} calls` };
-  if (k === 'perday') return { big: F.answeredPerDay == null ? '-' : String(F.answeredPerDay), label: 'Answered per day', sub: 'average, working days', chart: cCmBars(S.map((x) => x.answered), L, ''), legs: `${F.answered} answered calls` };
+  const F = M.figures, S = M.series, L = S.map((x) => cCmDdmm(x.day)), T = S.map((x) => cCmDdd(x.day));
+  if (k === 'wait') return { big: F.waitSec == null ? '-' : Math.round(F.waitSec) + ' s', label: 'Time to answer', sub: 'median ring before pick-up', chart: cCmBars(S.map((x) => (x.waitSec == null ? null : Math.round(x.waitSec))), L, { tips: T, unit: ' s', median: F.waitSec }), legs: `${F.answered} answered calls` };
+  if (k === 'pct') return { big: F.answeredPct == null ? '-' : F.answeredPct + '%', label: 'Answered', sub: `${F.answered} answered · ${F.missed} missed`, chart: cCmBars(S.map((x) => (x.calls ? Math.round((100 * x.answered) / x.calls) : null)), L, { tips: T, unit: '%', top: 100 }), legs: `${F.calls} calls` };
+  if (k === 'perday') return { big: F.answeredPerDay == null ? '-' : String(F.answeredPerDay), label: 'Answered per day', sub: 'average, working days', chart: cCmBars(S.map((x) => x.answered), L, { tips: T }), legs: `${F.answered} answered calls` };
   if (k === 'overdue') {
     const od = S.filter((x) => x.overdue != null);
     return { big: F.overduePerDay == null ? '-' : String(F.overduePerDay), label: 'Overdue per day',
       sub: od.length ? 'missed calls not called back by the end of the working day' : `counted from ${cCmDay(M.overdueFrom)}`,
-      chart: od.length ? cCmBars(od.map((x) => x.overdue), od.map((x) => cCmDdmm(x.day)), '') : '<div class="cm-wait">Every missed call has a Called back button. The count starts with it.</div>',
+      chart: od.length ? cCmBars(od.map((x) => x.overdue), od.map((x) => cCmDdmm(x.day)), { tips: od.map((x) => cCmDdd(x.day)) }) : '<div class="cm-wait">Every missed call has a Called back button. The count starts with it.</div>',
       legs: `${M.calls.filter((c) => c.overdue === true).length} missed calls` };
   }
-  const hours = Object.keys(M.byHour).map(Number).sort((a, b) => a - b);
-  return { big: F.busiestHour == null ? '-' : String(F.busiestHour).padStart(2, '0') + ':00', label: 'Busiest hour', sub: `${F.busiestCalls} calls in that hour, all days`,
-    chart: cCmBars(hours.map((h) => M.byHour[h]), hours.map((h) => String(h).padStart(2, '0') + ':00'), ' calls'), legs: 'calls in that hour' };
+  const hs = Object.keys(M.byHour).map(Number), hours = [];
+  for (let h = Math.min(8, ...hs); h <= Math.max(18, ...hs); h++) hours.push(h);
+  const hh = (h) => String(h).padStart(2, '0');
+  return { big: F.busiestHour == null ? '-' : hh(F.busiestHour) + ':00', label: 'Busiest hour', sub: `${F.busiestCalls} calls in that hour, all days`,
+    chart: cCmBars(hours.map((h) => M.byHour[h] || 0), hours.map(hh), { tips: hours.map((h) => `${hh(h)}:00-${hh(h + 1)}:00`), every: true }), legs: 'calls in that hour' };
 }
 async function viewCallsC() {
   const M = await api('/api/calls/metrics');

@@ -71,5 +71,8 @@ test('the screen: Calls under Reports, three cards with the middle one in focus,
   assert.ok(draw.includes('cCallsList(') && draw.includes('aria-label="Previous"') && draw.includes('aria-label="Next"') && draw.includes('class="cm-dots"'));
   assert.ok(APP.includes("const C_CM_KEYS = ['wait', 'pct', 'perday', 'overdue', 'hour'];"));
   assert.ok(APP.includes('counted from ${cCmDay(M.overdueFrom)}'), 'before any day is counted, the card says when it starts');
-  assert.ok(APP.includes('fill="#29a8df"'), 'data blue');
+  assert.ok(APP.includes('.cm-bars u{display:block;width:100%;background:#29a8df'), 'data blue');
+  const bars = APP.slice(APP.indexOf('function cCmBars('), APP.indexOf('function cCmTip('));
+  assert.ok(bars.includes('class="cm-y"') && bars.includes('data-t=') && bars.includes('cm-med') && bars.includes('median '), 'value scale, value per bar, median line');
+  assert.ok(APP.includes("tips: T, unit: ' s', median: F.waitSec") && APP.includes('every: true'), 'median on Time to answer; every hour under its bar');
 });
