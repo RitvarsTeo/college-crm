@@ -763,7 +763,10 @@ export async function syncSent(db, { now = new Date(), env = process.env, fetchI
     const r = await recordSentMail(db, m, { at });
     if (r.stored) res.stored++; else if (r.repeat) res.repeat++; else res.skipped++;
   }
-  if (got.ran !== false) await saveState(db, 'gmail_sent', got.ok ? at : last, res, at);
+  // done: the bookmark is now; more left: up to the last message read (oldest first), so the next run carries on from there;
+  // a refusal: unchanged, so the refused message is asked again
+  const mark = !got.ok ? last : got.more ? (got.upTo || last) : at;
+  if (got.ran !== false) await saveState(db, 'gmail_sent', mark, res, at);
   return res;
 }
 

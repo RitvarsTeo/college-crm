@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { openDb } from '../src/db.js';
 import { syncSent } from '../src/sync.js';
 import { recordSentMail, conversationFor, listInbound, waitingFor, purgeLineBodies, agedCount } from '../src/intake.js';
-import { toSentShape, addressesOf, displayNameOf, sentQuery } from '../lib/gmail.js';
+import { toSentShape, addressesOf, displayNameOf, sentQuery, SENT_PER_RUN } from '../lib/gmail.js';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
@@ -120,7 +120,8 @@ test('the sync: in:sent from its own bookmark, only messages edu@ sent, a refuse
   const fetchImpl = async (url) => {
     if (url.includes('oauth2.googleapis.com/token')) { const b = { access_token: 'x', expires_in: 3600 }; return { ok: true, status: 200, json: async () => b, text: async () => JSON.stringify(b) }; }
     asked.push(url);
-    if (url.includes('/messages?')) return { ok: true, status: 200, json: async () => ({ messages: [{ id: 's1' }, { id: 'x' }, { id: 'gone' }] }) };
+    // Gmail lists newest first: the refused one is the newest, so the two older ones are read before it
+    if (url.includes('/messages?')) return { ok: true, status: 200, json: async () => ({ messages: [{ id: 'gone' }, { id: 'x' }, { id: 's1' }] }) };
     const id = decodeURIComponent(url.split('/messages/')[1].split('?')[0]);
     return msgs[id] ? { ok: true, status: 200, json: async () => msgs[id] } : { ok: false, status: 404, json: async () => ({}), text: async () => '' };
   };
@@ -129,6 +130,29 @@ test('the sync: in:sent from its own bookmark, only messages edu@ sent, a refuse
   assert.match(decodeURIComponent(asked[0]), /q=in:sent after:\d+/);
   const state = await db.prepare("SELECT value FROM sync_state WHERE name = 'gmail_sent'").get();
   assert.ok(!state || !state.value, 'a refused message keeps the old bookmark (none yet), so it is asked again');
+});
+
+test('the first run reads at most SENT_PER_RUN messages, oldest first, and the bookmark carries on from the last one read', async () => {
+  const { db } = await setup();
+  const n = SENT_PER_RUN + 5;
+  const msgs = {}; const list = [];
+  for (let i = 0; i < n; i++) {   // m0 is the oldest; Gmail lists newest first
+    msgs['m' + i] = gmailMsg({ id: 'm' + i, thread: 'T1', at: ago(n - i + 1), to: 'liene@example.lv' });
+    list.unshift({ id: 'm' + i });
+  }
+  const fetched = [];
+  const fetchImpl = async (url) => {
+    if (url.includes('oauth2.googleapis.com/token')) { const b = { access_token: 'x', expires_in: 3600 }; return { ok: true, status: 200, json: async () => b, text: async () => JSON.stringify(b) }; }
+    if (url.includes('/messages?')) return { ok: true, status: 200, json: async () => ({ messages: list }) };
+    const id = decodeURIComponent(url.split('/messages/')[1].split('?')[0]); fetched.push(id);
+    return { ok: true, status: 200, json: async () => msgs[id] };
+  };
+  const r = await syncSent(db, { now: NOW, env: ENV, fetchImpl, refreshToken: null });
+  assert.equal(fetched.length, SENT_PER_RUN, 'never more than one run can take');
+  assert.equal(fetched[0], 'm0', 'oldest first');
+  assert.equal(r.stored, SENT_PER_RUN); assert.equal(r.more, true);
+  const state = await db.prepare("SELECT value FROM sync_state WHERE name = 'gmail_sent'").get();
+  assert.equal(state.value, new Date(new Date(ago(n - (SENT_PER_RUN - 1) + 1)).toUTCString()).toISOString(), 'the bookmark is the last message read');
 });
 
 test('the page: the Email conversation box above History, theirs left and ours right; the Answered line on the card', () => {
