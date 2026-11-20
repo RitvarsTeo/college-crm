@@ -69,7 +69,8 @@ test('the screen: Calls under Reports, three cards with the middle one in focus,
   const draw = APP.slice(APP.indexOf('function cCallsDraw()'), APP.indexOf('function cCallsGo('));
   assert.ok(draw.includes('${card(C_CM_KEYS[(i + n - 1) % n], true)}${card(C_CM_KEYS[i], false)}${card(C_CM_KEYS[(i + 1) % n], true)}'));
   assert.ok(draw.includes('cCallsList(') && draw.includes('aria-label="Previous"') && draw.includes('aria-label="Next"') && draw.includes('class="cm-dots"'));
-  assert.ok(APP.includes("const C_CM_KEYS = ['wait', 'pct', 'perday', 'overdue', 'hour'];"));
+  assert.ok(APP.includes("const C_CM_KEYS = ['wait', 'pct', 'perday', 'hour'];"), 'four cards: the Overdue card is off ("this gone, rest fine!")');
+  assert.ok(APP.includes('html.ui-c body:has(.cm-b) #helpBtn{display:none}'), 'no Feedback button over the arrows on a phone');
   assert.ok(APP.includes('counted from ${cCmDay(M.overdueFrom)}'), 'before any day is counted, the card says when it starts');
   assert.ok(APP.includes('.cm-bars u{display:block;width:100%;background:#29a8df'), 'data blue');
   const bars = APP.slice(APP.indexOf('function cCmBars('), APP.indexOf('function cCmTip('));

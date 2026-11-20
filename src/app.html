@@ -1695,7 +1695,7 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .cm-list .ib-call{display:flex;flex-wrap:wrap;gap:0 8px;color:var(--t3)} html.ui-c .cm-list .ib-call b{font-weight:600;color:var(--ink)}
   html.ui-c .cm-list .ib-call.is-missed b{color:var(--bad)} html.ui-c .cm-list .ib-call-cb{list-style:none;margin:0 0 4px}
   html.ui-c .cm-list .ib-cb{font-size:12.5px;padding:4px 10px} html.ui-c .cm-list .ib-cb-done{color:#1678a3;font-weight:600;font-size:13px}
-  @media (max-width:760px){ html.ui-c .cm-row{grid-template-columns:1fr} html.ui-c .cm-card.side{display:none} html.ui-c .cm-big{font-size:64px} }
+  @media (max-width:760px){ html.ui-c .cm-row{grid-template-columns:1fr} html.ui-c .cm-card.side{display:none} html.ui-c .cm-big{font-size:64px} html.ui-c body:has(.cm-b) #helpBtn{display:none} }
   /* CALLED BACK (20.11.2026): the button under a missed call, and the line it becomes */
   html.ui-c #view .ib-call-cb{list-style:none;margin:2px 0 6px} html.ui-c #view .ib-cb{font-size:12.5px;padding:4px 10px}
   html.ui-c #view .ib-cb-done{color:#1678a3;font-weight:600;font-size:13px}
@@ -5085,7 +5085,8 @@ function cCallNoteInput(c) {
 // middle one in focus; arrows, dots, the keyboard's arrow keys and a swipe move it. One big figure per card, its per-day
 // chart under it, and the figure opens the calls behind it. Data blue #29a8df.
 let C_CM = null;
-const C_CM_KEYS = ['wait', 'pct', 'perday', 'overdue', 'hour'];
+// his "this gone, rest fine!" (20.11.2026): the Overdue card is off the carousel; Called back is still recorded on every missed call
+const C_CM_KEYS = ['wait', 'pct', 'perday', 'hour'];
 const cCmDay = (d) => { const t = new Date(d + 'T12:00:00Z'); return t.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }); };
 const cCmDdmm = (d) => d.slice(8, 10) + '.' + d.slice(5, 7);
 const cCmDdd = (d) => new Date(d + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'UTC' }) + ' ' + cCmDdmm(d);
