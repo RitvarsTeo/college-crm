@@ -1751,6 +1751,12 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   .c-upd-row{display:flex;gap:10px;margin-top:18px}
   .c-upd-yes,.c-upd-no{flex:1;border-radius:8px;padding:11px;text-align:center;font:inherit;font-weight:600;font-size:14px;cursor:pointer;text-decoration:none}
   .c-upd-yes{background:#0b2545;color:#fff;border:0} .c-upd-no{background:#fff;color:#0b2545;border:1px solid #cfd6e0}
+  .c-upd-link{background:none;border:0;padding:0;font:inherit;font-weight:700;color:#146f9c;cursor:pointer} .c-upd .c-upd-show{margin:-4px 0 12px}
+  /* after Show me (patch 157): docked in the corner, no overlay, the page behind usable; Allow stays the big button */
+  .c-upd.docked{background:transparent;pointer-events:none;place-items:end;padding:20px}
+  .c-upd.docked .c-upd-box{pointer-events:auto;width:360px;box-shadow:0 12px 40px rgba(10,20,40,.3)} .c-upd.docked .c-upd-show{display:none}
+  .c-upd.docked .c-upd-row{flex-direction:column} .c-upd.docked .c-upd-yes{padding:13px;font-size:15px}
+  html.ui-c #view .c-sheet.c-hist-shown{outline:3px solid #29a8df;outline-offset:0}
   html.ui-c .c-conv{padding-bottom:12px}
   html.ui-c .c-conv-th{font-weight:700;font-size:13.5px;margin:12px 16px 4px;color:var(--ink)}
   html.ui-c .c-cb{max-width:78%;padding:8px 12px;border-radius:12px;margin:6px 16px;font-size:13.5px;line-height:1.4;white-space:pre-line;color:var(--ink)}
@@ -6690,24 +6696,24 @@ let C_PERSON = null; let C_PERSON_EDIT = false;
 // does not meet two names for the same system.
 const actorName = (x) => (x === 'CRM' ? 'Intake' : x);
 const cStamp = (iso) => (/T00:00:00(\.0+)?$/.test(String(iso || '')) ? fmtDate(iso) : fmtDateTime(iso));
-// THE EMAIL CONVERSATION BOX (20.11.2026, the owner's pick B): both sides of the person's email, theirs on the left and
-// edu@'s on the right, grouped by conversation (the newest conversation first, the newest message first inside it), above
-// History. Shown only when there is email to show (the server's p.conversation, src/intake.js conversationFor).
-function cConversation(p) {
+// ONE PLACE (patch 157, 20.11.2026; the owner: "In the email in chronological sequence insert all the history ... just one
+// place where everything is"): the person's emails (both sides, the server's p.conversation, src/intake.js conversationFor)
+// and everything else in their History (calls with their notes, notes, messages, stage changes) in ONE list, in time
+// order. Nothing twice: History's own email lines are left out because the email itself is there (what they wrote, and the
+// automatic "Email reply sent" line when the reply's text is there at the same minute).
+const C_ONE_NEWEST_FIRST = true;   // the order (his A/B, newest or oldest on top): one switch
+const C_EMAIL_CH = ['gmail', 'email'];
+function cOnePlace(p) {
   const msgs = (p && p.conversation) || [];
-  if (!msgs.length) return '';
-  const groups = [];
-  for (const m of msgs) {
-    const k = m.thread || m.id;
-    let g = groups.find((x) => x.k === k);
-    if (!g) { g = { k, items: [] }; groups.push(g); }
-    g.items.push(m);
-  }
-  const title = (g) => { const s = (g.items.find((m) => m.subject) || {}).subject; return s ? String(s).replace(/^\s*((re|fw|fwd|aw|sv)\s*:\s*)+/i, '') : 'Email'; };
-  const bubble = (m) => `<div class="c-cb ${m.dir === 'out' ? 'out' : 'in'}"><small>${esc(m.dir === 'out' ? m.who || 'edu@' : m.who || p.name)} · ${esc(cStamp(m.at))}</small>${esc(m.bodyClean || m.body || '')}</div>`;
-  return `<div class="c-sheet c-conv"><h3>Email conversation<b>${msgs.length}</b></h3>
-    ${groups.map((g) => `<div class="c-conv-th">${esc(title(g))}</div>${g.items.map(bubble).join('')}`).join('')}</div>`;
+  const outAt = new Set(msgs.filter((m) => m.dir === 'out').map((m) => String(m.at).slice(0, 16)));
+  const dup = (e) => (e.kind === 'message' && C_EMAIL_CH.includes(e.channel))
+    || (e.kind === 'email' && e.direction === 'out' && outAt.has(String(e.occurred_at).slice(0, 16)));
+  const items = [...((p && p.timeline) || []).filter((e) => !dup(e)).map((e) => ({ at: e.occurred_at, e })),
+    ...msgs.map((m) => ({ at: m.at, m }))];
+  return items.sort((a, b) => (C_ONE_NEWEST_FIRST ? String(b.at).localeCompare(String(a.at)) : String(a.at).localeCompare(String(b.at))));
 }
+// one email in the list: theirs on the left (grey), ours on the right (blue), with who, when and the subject
+const cMailBubble = (m, p) => `<div class="c-cb ${m.dir === 'out' ? 'out' : 'in'}"><small>✉ ${esc(m.dir === 'out' ? m.who || 'edu@' : m.who || p.name)} · ${esc(cStamp(m.at))}${m.subject ? ' · ' + esc(m.subject) : ''}</small>${esc(m.bodyClean || m.body || '')}</div>`;
 async function viewPersonC(id) {
   if (!C_PERSON || C_PERSON.id !== id) C_PERSON_EDIT = false;
   const p = await api('/api/people/' + id);
@@ -6715,7 +6721,7 @@ async function viewPersonC(id) {
   const t = (p.tasks || []).find((x) => !x.done_at);
   const open = !C_TERMINAL.includes(p.status);
   const contact = [p.email, p.phone].filter(Boolean).map(esc).join(' · ');
-  const tl = p.timeline || [];
+  const tl = cOnePlace(p);   // one place: History and the emails in one list (patch 157)
   const ev = (e) => `<div class="c-evt">
       <div class="c-evt-when">${cStamp(e.occurred_at)}${e.actor ? ' · ' + esc(actorName(e.actor)) : ''}${e.channel ? ' · ' + esc(channelLabel(e.channel)) : ''}${e.origin === 'automatic' ? ' · <span class="c-auto">automatic</span>' : ''}</div>
       <div class="c-evt-what">${esc(e.subject || e.kind || '')}</div>
@@ -6736,10 +6742,10 @@ async function viewPersonC(id) {
     <div class="c-head"><div><h1 class="c-pname">${esc(p.name)}</h1><p>${esc(cStage(p.status))} · ${esc(p.programme || 'programme not said')}${p.study_form ? ' · ' + esc(p.study_form) : ''} · ${contact || '<span class="c-gap">no email or phone recorded</span>'}</p></div>${p.first_channel === 'sis' ? `<div class="act"><button class="btn ghost" onclick="openSisMerge(${esc(JSON.stringify(String(p.id ?? '')))})">Same person as...</button></div>` : ''}</div>
     <div class="c-pgrid">
       <div class="c-pmain">
-        ${cLifeLine(p)}${next}${cConversation(p)}
-        <div class="c-sheet"><h3>History<b>${tl.length}</b><span class="c-h3acts"><button class="btn sm ghost" onclick="openNote(${esc(JSON.stringify(String(p.id ?? '')))},'call')">Log a call</button><button class="btn sm ghost" onclick="openNote(${esc(JSON.stringify(String(p.id ?? '')))},'note')">Add a note</button></span></h3>
+        ${cLifeLine(p)}${next}
+        <div class="c-sheet c-hist"><h3>History<b>${tl.length}</b><span class="c-h3acts"><button class="btn sm ghost" onclick="openNote(${esc(JSON.stringify(String(p.id ?? '')))},'call')">Log a call</button><button class="btn sm ghost" onclick="openNote(${esc(JSON.stringify(String(p.id ?? '')))},'note')">Add a note</button></span></h3>
           ${p.hiddenCorrections ? `<p class="c-ev" style="margin:10px 16px 0">${p.hiddenCorrections} ${p.hiddenCorrections === 1 ? 'correction made by a colleague is' : 'corrections made by colleagues are'} not shown. Corrections are private to whoever made them; admins see all of them.</p>` : ''}
-          ${tl.map(ev).join('') || '<div class="c-empty">Nothing has happened yet.</div>'}</div>
+          ${tl.map((x) => (x.m ? cMailBubble(x.m, p) : ev(x.e))).join('') || '<div class="c-empty">Nothing has happened yet.</div>'}</div>
       </div>
       <aside class="c-pside">${cPersonFacts(p)}</aside>
     </div>`;
@@ -7906,10 +7912,28 @@ async function cUpdatePopup(force = null) {
     <div class="c-upd-tag">What's new</div>
     <h2 id="c-upd-t">The whole email conversation, in Intake</h2>
     <p>Each student now shows every email: theirs and our replies, in one place. An answered email is marked "Answered" in the Inbox.</p>
+    <p class="c-upd-show"><button type="button" class="c-upd-link" onclick="cUpdateShowMe(this)">Show me →</button></p>
     <p>Allow Intake to include your own mailbox too. Only mail with students is kept.</p>
     <div class="c-upd-row"><a class="c-upd-yes" href="/api/me/mailbox/allow">Allow</a><button type="button" class="c-upd-no" onclick="cUpdateLater(this)">Not now</button></div></div>`;
   document.body.appendChild(el);
   const yes = el.querySelector('.c-upd-yes'); if (yes) yes.focus();
+}
+// SHOW ME (patch 157; the owner: "Can you click both, show me and accept? because accept here is the most important!"): opens
+// the student whose emails moved last, at their History, and docks the box in the corner without the dark overlay, so the
+// list is readable. It records nothing and closes nothing: Allow (the big button) and Not now stay until one is pressed.
+async function cUpdateShowMe(btn) {
+  if (btn) btn.disabled = true;
+  let id = null;
+  try { id = ((await (await apiFetch('/api/me/show-me')).json()).person || {}).id || null; } catch { id = null; }
+  const el = document.getElementById('c-upd');
+  if (el) el.classList.add('docked');
+  if (!id) { if (btn) btn.closest('p').innerHTML = '<span class="c-gap-soft">No student has an email here yet.</span>'; return; }
+  location.hash = '#/person/' + encodeURIComponent(id);
+  for (let i = 0; i < 40; i++) {   // the page draws after its data arrives
+    await new Promise((r) => setTimeout(r, 100));
+    const h = document.querySelector('.c-hist');
+    if (h && C_PERSON && C_PERSON.id === id) { h.scrollIntoView({ block: 'start', behavior: 'smooth' }); h.classList.add('c-hist-shown'); break; }
+  }
 }
 async function cUpdateLater(btn) {
   if (btn) btn.disabled = true;

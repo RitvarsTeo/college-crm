@@ -196,7 +196,7 @@
     {
       "id": "email-conversation",
       "q": "Where do I see the emails we sent to a person?",
-      "a": "On the person's page, in the Email conversation box above History: what they wrote on the left, what edu@ sent them on the right, newest first. Intake reads edu@'s sent mail and keeps only the emails sent to people it already holds, with the attachments' names but not the files. If you pressed Allow in the update box, your own mailbox's emails with students are there too, and nothing else from it. The texts are emptied after 13 months, like every message. An email card already answered from edu@ says \"Answered by\" and is not counted as waiting; Make a lead or Set aside is still needed."
+      "a": "On the person's page, in History: every email is there in time order with the calls, notes and everything else, what they wrote on the left and what we sent on the right. Intake reads edu@'s sent mail and keeps only the emails sent to people it already holds, with the attachments' names but not the files. If you pressed Allow in the update box, your own mailbox's emails with students are there too, and nothing else from it. The texts are emptied after 13 months, like every message. An email card already answered from edu@ says \"Answered by\" and is not counted as waiting; Make a lead or Set aside is still needed."
     },
     {
       "id": "home-numbers",

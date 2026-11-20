@@ -1176,6 +1176,17 @@ export async function conversationFor(db, personId) {
   return out.sort((a, b) => String(b.at).localeCompare(String(a.at)));
 }
 
+// The update popup's "Show me" (patch 157): the student whose email conversation moved last (an email from them on one of
+// their cards, or one we sent them), a real person only; null when nobody has one yet.
+export async function latestConversationPerson(db) {
+  const a = await db.prepare(`SELECT ms.person_id AS id, ms.sent_at AS at FROM mail_sent ms JOIN ${REAL_PEOPLE} pe ON pe.id = ms.person_id
+    WHERE ms.body IS NOT NULL ORDER BY ms.sent_at DESC LIMIT 1`).get();
+  const b = await db.prepare(`SELECT i.person_id AS id, i.received_at AS at FROM inbound i JOIN ${REAL_PEOPLE} pe ON pe.id = i.person_id
+    WHERE i.channel IN ('gmail', 'email') AND i.body IS NOT NULL ORDER BY i.received_at DESC LIMIT 1`).get();
+  const best = [a, b].filter(Boolean).sort((x, y) => String(y.at).localeCompare(String(x.at)))[0];
+  return best ? { id: best.id } : null;
+}
+
 // Who answered an email card: the From name on the first sent message of its conversation, else edu@ (pick b, 20.11.2026)
 async function answeredBy(db, inboundId) {
   const s = await db.prepare('SELECT from_name FROM mail_sent WHERE inbound_id = ? ORDER BY sent_at LIMIT 1').get(inboundId);

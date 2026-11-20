@@ -17,7 +17,7 @@ import * as gmailB from '../lib/gmail.js';
 import * as notify from '../lib/notify.js';
 import * as sheetB from '../lib/sheetpull.js';
 import { pullSheet, sheetCounts } from './sheetsync.js';
-import { receive, activePersonFor, IN_TOUCH_STEPS, listInbound, listHandled, callsTodayFromPeople, messagesFor, conversationFor, recordWhatsAppEcho, qualify, archive, setMark, removeMark, setCallNote, withCallNotes, bringBack, funnel, agedCount, handoffToSis, ownerFor, notifiedFor, handoverGap, canReach, surfaceAt, waitingFor, waitingByRole } from './intake.js';
+import { receive, activePersonFor, IN_TOUCH_STEPS, listInbound, listHandled, callsTodayFromPeople, messagesFor, conversationFor, latestConversationPerson, recordWhatsAppEcho, qualify, archive, setMark, removeMark, setCallNote, withCallNotes, bringBack, funnel, agedCount, handoffToSis, ownerFor, notifiedFor, handoverGap, canReach, surfaceAt, waitingFor, waitingByRole } from './intake.js';
 import { replaceN3Directory, n3Status, n3Names } from './n3dir.js';
 import { readScreenshot, readKind, readBody, readPath, saveFeedback, listFeedback, getScreenshot, setHandled, BadScreenshot, helpOpened, helpCounts } from './feedback.js';
 import { findMatches as matchPeople, duplicateCheck, onePersonFor } from './identity.js';
@@ -3568,6 +3568,12 @@ export const handle = async (req, res) => {
       const me = await currentUser(req);
       if (!me || !me.email) return json(res, 401, { error: 'Sign in first.' });
       return json(res, 200, await staffMail.recordAnswer(db, me.email, 'later'));
+    }
+    // the popup's "Show me" (patch 157): which student to open; it records nothing and answers nothing
+    if (p === '/api/me/show-me' && req.method === 'GET') {
+      const me = await currentUser(req);
+      if (AUTH_ON && !me) return json(res, 401, { error: 'Sign in first.' });
+      return json(res, 200, { person: await latestConversationPerson(db) });
     }
     if (p === '/api/me/mailbox/allow' && req.method === 'GET') {
       const me = await currentUser(req);

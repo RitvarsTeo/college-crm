@@ -22,6 +22,7 @@ The owner: "We need to see whenever all the correspondence is going on, so the p
 |---|---|
 | The Gmail sync also reads edu@'s SENT mail (same read-only access) and keeps every message to or from a known person, in its own table under the 13-month retention; attachments: name and size only | BUILT |
 | HIS PICK B: an "Email conversation" box on the person, above History: theirs left, ours right, by subject, newest first | BUILT |
+| HIS PICK 20.11.2026 (after 156): "just one place where everything is": the emails and ALL the history (calls with their notes, notes, messages, open days, stage changes) in ONE chronological timeline per person; nothing listed twice. Order on screen: pictures shown, his answer pending (patch 157) | DECIDED |
 | An answered email card stays in the Inbox marked "Answered by edu@ · when" (a staff name once a From name shows), out of the waiting count; Make a lead / Set aside still to do | BUILT |
 | Staff's own mailboxes: asked IN the app ("Ask in the app, not by me!"): the update popup "As drawn" (`_pictures/Intake_update_popup_draft.html`), once at the next sign-in to every Academy account, [Allow] = Google's own read-only Gmail consent, [Not now]; the answer recorded (admin page /api/admin/staff-mail); only mail with exactly one student is kept, both directions, same retention; nothing is read before Allow | BUILT |
 

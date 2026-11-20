@@ -155,10 +155,31 @@ test('the first run reads at most SENT_PER_RUN messages, oldest first, and the b
   assert.equal(state.value, new Date(new Date(ago(n - (SENT_PER_RUN - 1) + 1)).toUTCString()).toISOString(), 'the bookmark is the last message read');
 });
 
-test('the page: the Email conversation box above History, theirs left and ours right; the Answered line on the card', () => {
-  assert.match(APP, /function cConversation\(p\)/);
-  assert.match(APP, /\$\{cLifeLine\(p\)\}\$\{next\}\$\{cConversation\(p\)\}\s*<div class="c-sheet"><h3>History/);
-  assert.match(APP, /<h3>Email conversation<b>\$\{msgs\.length\}<\/b><\/h3>/);
+test('ONE PLACE (patch 157, his words "just one place where everything is"): emails and History in one list, in time order, nothing twice', () => {
+  const src = APP.slice(APP.indexOf('const C_ONE_NEWEST_FIRST'), APP.indexOf('// one email in the list'));
+  const cOnePlace = new Function(`${src.replace(/^const /gm, 'var ')}; return cOnePlace;`)();
+  const p = {
+    conversation: [
+      { id: 'm1', dir: 'in', at: '2026-11-14T08:23:00Z', who: 'Liene' },
+      { id: 'm2', dir: 'out', at: '2026-11-14T16:23:00Z', who: 'edu@' },
+    ],
+    timeline: [
+      { id: 'w1', kind: 'message', channel: 'gmail', occurred_at: '2026-11-14T08:23:00Z' },                    // the same email: left out
+      { id: 'r1', kind: 'email', direction: 'out', occurred_at: '2026-11-14T16:23:00.000Z', subject: 'Email reply sent' }, // the reply is there: left out
+      { id: 'r0', kind: 'email', direction: 'out', occurred_at: '2026-10-01T10:00:00Z', subject: 'Email reply sent' },     // no text kept: stays
+      { id: 'c1', kind: 'call', channel: 'phone', occurred_at: '2026-11-15T10:12:00Z' },
+      { id: 'n1', kind: 'note', occurred_at: '2026-11-16T09:00:00Z' },
+      { id: 'w2', kind: 'message', channel: 'website', occurred_at: '2026-11-13T12:00:00Z' },
+    ] };
+  const list = cOnePlace(p).map((x) => (x.m ? x.m.id : x.e.id));
+  assert.deepEqual(list, ['n1', 'c1', 'm2', 'm1', 'w2', 'r0'], 'newest on top, emails among the calls and notes, nothing twice');
+  assert.match(APP, /const tl = cOnePlace\(p\);/);
+  assert.match(APP, /\$\{tl\.map\(\(x\) => \(x\.m \? cMailBubble\(x\.m, p\) : ev\(x\.e\)\)\)\.join\(''\)/);
+  assert.doesNotMatch(APP, /cConversation\(p\)/, 'no separate box any more');
+});
+
+test('the page: emails in History theirs left and ours right; the Answered line on the card', () => {
+  assert.match(APP, /const cMailBubble = \(m, p\) => `<div class="c-cb \$\{m\.dir === 'out' \? 'out' : 'in'\}">/);
   assert.match(APP, /✓ Answered by \$\{esc\(r\.answered\.by \|\| 'edu@'\)\}/);
   assert.match(APP, /n: rows\.filter\(\(r\) => cInboxAge\(r\.received_at\) === id && !r\.answered\)\.length/);
   // found on the real screen (20.11.2026): a column holding only answered cards counted 0 and folded shut, hiding the card;
@@ -228,4 +249,20 @@ test('the popup on the page: once after sign-in, the approved words, Allow / Not
   assert.match(APP, /<p>Allow Intake to include your own mailbox too\. Only mail with students is kept\.<\/p>/);
   assert.match(APP, /<a class="c-upd-yes" href="\/api\/me\/mailbox\/allow">Allow<\/a><button type="button" class="c-upd-no" onclick="cUpdateLater\(this\)">Not now<\/button>/);
   assert.match(APP, /\.c-upd\{position:fixed;inset:0;z-index:9999;background:rgba\(10,20,40,\.62\)/);
+});
+
+test('the popup\'s Show me (patch 157): opens a student, docks the box, answers nothing; Allow stays the big button', async () => {
+  assert.match(APP, /<button type="button" class="c-upd-link" onclick="cUpdateShowMe\(this\)">Show me →<\/button>/);
+  const fn = APP.slice(APP.indexOf('async function cUpdateShowMe'), APP.indexOf('async function cUpdateLater'));
+  assert.doesNotMatch(fn, /update-popup|mailbox\/allow|remove\(\)/, 'Show me never records an answer or closes the box');
+  assert.match(fn, /el\.classList\.add\('docked'\)/);
+  assert.match(fn, /apiFetch\('\/api\/me\/show-me'\)/);
+  assert.match(APP, /\.c-upd\.docked\{background:transparent;pointer-events:none;place-items:end;padding:20px\}/);
+  assert.match(APP, /\.c-upd\.docked \.c-upd-row\{flex-direction:column\} \.c-upd\.docked \.c-upd-yes\{padding:13px;font-size:15px\}/);
+  // the student: whose emails moved last, a real person only
+  const { db } = await setup();
+  const { latestConversationPerson } = await import('../src/intake.js');
+  assert.deepEqual(await latestConversationPerson(db), { id: 'p1' }, 'Liene\'s card email is the newest');
+  await recordSentMail(db, toSentShape(gmailMsg({ id: 'z', thread: 'T9', at: ago(1), to: 'janis@example.lv' })));
+  assert.deepEqual(await latestConversationPerson(db), { id: 'p2' });
 });

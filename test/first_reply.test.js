@@ -196,7 +196,7 @@ test('the Help center says what staff can see now, in the same commit', () => {
   assert.doesNotMatch(f.a, /never its text/);
   const conv = HELP.faq.find((x) => x.id === 'email-conversation');
   assert.ok(conv, 'the Help says where the emails we sent are');
-  assert.match(conv.a, /Email conversation box above History/);
+  assert.match(conv.a, /in History: every email is there in time order with the calls, notes and everything else/);   // one place (patch 157)
   assert.match(conv.a, /emptied after 13 months/);
   assert.doesNotMatch(f.a, /Reports|First reply figure/, 'the benchmarks are parked (07.10): the Help sends nobody to a row that is not there');
 });
