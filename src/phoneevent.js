@@ -14,7 +14,8 @@
 //   dial_connected  an agent answered (destination_name = who)          -> answered
 //   status_hangup   the call ended (extraParams.holdtime / talktime)    -> ended
 //   missed          an incoming call ended unanswered (carries `queue`) -> ended, not answered
-// `date` is Europe/Riga wall-clock. A filled caller_sip is an OUTGOING call by that agent: ignored, as the pull did.
+// `date` is UTC wall-clock (their spec says Riga; their first live events, 23.11.2026, came 2 h early read as Riga, and
+// TeleGroup keeps UTC - patch 162), read as the pull reads their call list (lib/pbx.js PBX_ZONE). A filled caller_sip is an OUTGOING call by that agent: ignored, as the pull did.
 // A call is OURS only through a college queue (lib/pbx.js QUEUES): only join_queue and missed name a queue, so the
 // other events of a call are kept only once its college queue is known; any other division's call is never stored.
 //
@@ -28,9 +29,9 @@
 
 import crypto from 'node:crypto';
 import { BadInbound } from './inbound.js';
-import { storeCall } from './sync.js';
+import { storeCall, closePbxOutageByPush } from './sync.js';
 import { QUEUES, PBX_ZONE } from '../lib/pbx.js';
-import { fromRigaStamp, ZONE } from '../lib/riga.js';
+import { fromRigaStamp } from '../lib/riga.js';
 import { knock } from './webpush.js';
 
 export const PHONE_EVENT_SECRET_ENV = 'PHONE_EVENT_SECRET';
@@ -87,7 +88,7 @@ function when(v, zone = PBX_ZONE) {
     const n = Number(v);
     return new Date(n < 1e12 ? n * 1000 : n).toISOString();
   }
-  // a wall-clock time without a zone: TeleGroup's push writes Riga time; their call list (the pull) UTC (PBX_ZONE)
+  // a wall-clock time without a zone: TeleGroup writes UTC, in the push and in the call list alike (PBX_ZONE)
   if (/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2})?$/.test(String(v).trim())) return fromRigaStamp(String(v), zone).toISOString();
   const t = Date.parse(v);
   return Number.isNaN(t) ? null : new Date(t).toISOString();
@@ -105,7 +106,7 @@ export function adaptPhoneEvent(raw, { now = new Date() } = {}) {
     const x = raw.extraParams && typeof raw.extraParams === 'object' ? raw.extraParams : {};
     return {
       tg: true, type, callId: String(raw.uniqueid), event,
-      at: when(raw.date, ZONE) || now.toISOString(),
+      at: when(raw.date) || now.toISOString(),
       queue: str(raw.queue),
       callerNum: str(raw.caller_num),
       operator: str(raw.destination_name),
@@ -160,10 +161,12 @@ export async function receivePhoneEvent(db, raw, { mode = 'test', now = new Date
     return { ok: true, duplicate: true, event: ev.event, callId: ev.callId };
   }
   const work = async () => {
+    // the first event TeleGroup pushes ends an open PBX outage (src/sync.js closePbxOutageByPush)
+    const outage = ev.tg && mode === 'live' ? await closePbxOutageByPush(db, ev.at, at) : null;
     // knock on the browsers that should hear about it (src/webpush.js); never fails the store
     const pushed = await knock(db, { event: ev.event, operator: ev.operator, queue: ev.queue, callerNum: ev.callerNum });
     const call = ev.event === 'ended' ? await settleCall(db, ev, mode, at) : null;
-    return { pushed, call };
+    return { pushed, call, ...(outage ? { outage } : {}) };
   };
   if (typeof later === 'function') {
     later(work().catch((err) => console.error(`phone-event ${ev.event}: ${err && err.message ? err.message : err}`)));

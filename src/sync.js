@@ -143,6 +143,28 @@ const PBX_FIELDS = 'pbx_fields';
 // identity.js makes, because one number is written three ways by three systems.
 // phoneThread lives in src/phonefilter.js (14.10.2026), shared with the call pop-up
 
+// THE OUTAGE ENDS WITH THE FIRST PUSHED EVENT (23.11.2026, patch 162). Since TeleGroup pushes its call events (patch
+// 161) the pull may never succeed again, and only a successful pull closed pbx_down_since. So the first call event
+// TeleGroup pushes closes it the same way: the outage window is from where the last good pull ended to that event, and a
+// call from inside it (TeleGroup's one-off export, 13.11 -> go-live) is HISTORY ONLY (the owner's pick 16.11.2026).
+// A pull failing again later notes pbx_down_since again from the same last good pull; the window already written for
+// that start keeps its first end, so it never grows over the calls that arrived live.
+export async function closePbxOutageByPush(db, eventAt, at = new Date().toISOString()) {
+  const down = await db.prepare('SELECT value FROM sync_state WHERE name = ?').get(PBX_DOWN);
+  const downMs = down && down.value ? Date.parse(down.value) : NaN;
+  if (!Number.isFinite(downMs)) return null;
+  const endMs = Date.parse(eventAt);
+  const old = await db.prepare('SELECT value FROM sync_state WHERE name = ?').get(PBX_OUTAGE);
+  const [oldFrom] = old && old.value ? String(old.value).split('|').map((x) => Date.parse(x)) : [NaN];
+  let window = null;
+  if (Number.isFinite(endMs) && oldFrom !== downMs && endMs - downMs >= OUTAGE_MIN_MINUTES * 60000) {
+    window = `${new Date(downMs).toISOString()}|${new Date(endMs).toISOString()}`;
+    await saveState(db, PBX_OUTAGE, window, { minutes: Math.round((endMs - downMs) / 60000), endedAt: at, endedBy: 'pushed call event' }, at);
+  }
+  await db.prepare('DELETE FROM sync_state WHERE name = ?').run(PBX_DOWN);
+  return { closed: true, window };
+}
+
 // Exported for the pushed call events (src/phoneevent.js): one function stores a call, whichever
 // path saw it first, so the two can never make two leads for one call.
 export async function storeCall(db, r, mode, at, out, { historyOnly = false } = {}) {

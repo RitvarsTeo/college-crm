@@ -32,21 +32,21 @@ const MISSED = [
     destination_sip: '', destination_num: '', destination_name: '', queue: Q, date: '2026-11-23 08:25:03' },
 ];
 const call = (db, id) => db.prepare('SELECT * FROM pbx_calls WHERE uniqueid = ?').get(id);
-const NOW = new Date('2026-11-23T07:00:00Z');
+const NOW = new Date('2026-11-23T09:00:00Z');
 
-test('their `date` is Riga time: 08:17:15 in November (EET, +2) is 06:17:15 UTC; agent = destination_name', () => {
+test('their `date` is UTC (patch 162: live events read as Riga came 2 h early; TeleGroup keeps UTC); agent = destination_name', () => {
   const a = adaptPhoneEvent(ANSWERED[3]);
-  assert.deepEqual([a.event, a.at, a.operator, a.extension, a.callId], ['answered', '2026-11-23T06:17:19.000Z', 'Erika Songailiene', '501', '1795421829.1642106']);
-  assert.equal(adaptPhoneEvent({ ...ANSWERED[0], date: '2026-07-01 08:00:00' }).at, '2026-07-01T05:00:00.000Z', 'summer: EEST, +3');
+  assert.deepEqual([a.event, a.at, a.operator, a.extension, a.callId], ['answered', '2026-11-23T08:17:19.000Z', 'Erika Songailiene', '501', '1795421829.1642106']);
+  assert.equal(adaptPhoneEvent({ ...ANSWERED[0], date: '2026-07-01 08:00:00' }).at, '2026-07-01T08:00:00.000Z', 'summer too: UTC, no offset');
   assert.deepEqual([adaptPhoneEvent(ANSWERED[4]).holdSec, adaptPhoneEvent(ANSWERED[4]).talkSec], [4, 261], 'their strings, read as seconds');
   assert.equal(adaptPhoneEvent(MISSED[1]).answered, false);
 });
 
-test('an answered call: five events in, ONE call stored - answered by Erika, waited 4 s, talked 261 s, from 08:17:15 Riga', async () => {
+test('an answered call: five events in, ONE call stored - answered by Erika, waited 4 s, talked 261 s, from 08:17:15 UTC', async () => {
   const db = await openDb(':memory:');
   for (const e of ANSWERED) assert.equal((await receivePhoneEvent(db, e, { mode: 'live', now: NOW })).ok, true);
   const c = await call(db, '1795421829.1642106');
-  assert.equal(c.called_at, '2026-11-23T06:17:15.000Z', 'when it entered the queue');
+  assert.equal(c.called_at, '2026-11-23T08:17:15.000Z', 'when it entered the queue');
   assert.equal(Number(c.picked_up), 1);
   assert.equal(c.operator_name, 'Erika Songailiene');
   assert.deepEqual([Number(c.duration_sec), Number(c.talk_sec)], [265, 261], 'waited = duration - talk = 4 s, as the Calls screen reads it');
@@ -160,4 +160,23 @@ test('the route: the right token from an address that is not TeleGroup\'s is ref
   const r = await send(s, ANSWERED[0]);
   assert.equal(r.status, 403);
   assert.equal(r.body.error, 'not from the phone system');
+});
+
+test('the outage ends with the first pushed event: 13.11 -> that event is the history-only window; a later pull failure never widens it', async () => {
+  const { closePbxOutageByPush } = await import('../src/sync.js');
+  const db = await openDb(':memory:');
+  const st = (n) => db.prepare('SELECT value FROM sync_state WHERE name = ?').get(n);
+  await db.prepare(`INSERT INTO sync_state (name, value, ran_at) VALUES ('pbx_down_since', '2026-11-13T07:46:41.573Z', '2026-11-13T08:00:00Z')`).run();
+  await receivePhoneEvent(db, ANSWERED[0], { mode: 'test', now: NOW });
+  assert.ok(await st('pbx_down_since'), 'a simulated event closes nothing');
+  await receivePhoneEvent(db, ANSWERED[0], { mode: 'live', now: NOW });   // a repeat: stored once already, closes nothing either
+  assert.ok(await st('pbx_down_since'));
+  await receivePhoneEvent(db, ANSWERED[3], { mode: 'live', now: NOW });   // answered: a new event
+  assert.equal(await st('pbx_down_since'), undefined, 'closed');
+  assert.equal((await st('pbx_outage')).value, '2026-11-13T07:46:41.573Z|2026-11-23T08:17:19.000Z');
+  // the pull fails again and notes the same last good pull; the next push keeps the first end
+  await db.prepare(`INSERT INTO sync_state (name, value, ran_at) VALUES ('pbx_down_since', '2026-11-13T07:46:41.573Z', '2026-11-24T08:00:00Z')`).run();
+  await closePbxOutageByPush(db, '2026-11-24T09:00:00Z');
+  assert.equal((await st('pbx_outage')).value, '2026-11-13T07:46:41.573Z|2026-11-23T08:17:19.000Z', 'never widened over live calls');
+  assert.equal(await st('pbx_down_since'), undefined);
 });
