@@ -95,3 +95,12 @@ test('a director\'s own decision is never chosen for him: different decisions st
     assert.deepEqual((await db.prepare('SELECT company_key, decision FROM tc_go_company_picks').all()).map((p) => [p.company_key, p.decision]), [['id:20', 'invite'], ['merged:id:21', 'no']], 'set aside, never deleted');
   } finally { cards.setStore(null); }
 });
+
+test('never a pair from a bracket-only name or a leading "AB": (FRB equipment buyer) / (freelance web developer), AB Shipping OÜ / Shipping.fo', async () => {
+  assert.notEqual(same.obviousKey('AB Shipping OÜ'), same.obviousKey('Shipping'));
+  assert.equal(same.obviousKey('SIA Modumetals'), same.obviousKey('MODU METALS LTD'));
+  const db = await openDb();
+  await co(db, 1, '(FRB equipment buyer)'); await co(db, 2, '(freelance web developer)'); await co(db, 3, 'AB Shipping OÜ'); await co(db, 4, 'Shipping.fo');
+  for (const id of [1, 2, 3, 4]) await person(db, id, `p${id}@x.test`, 'c' + id);
+  assert.deepEqual((await same.findSame(db)).check, []);
+});

@@ -21,6 +21,7 @@ const nowIso = () => new Date().toISOString();
 const LEGAL = ['gmbh co kg', 'sp z o o', 'pte ltd', 'co kg', 'sp zoo', 'a s', 'b v', 'n v', 's a', 'sia', 'as', 'ltd', 'limited', 'gmbh',
   'kg', 'aps', 'oy', 'oyj', 'ab', 'uab', 'ou', 'inc', 'llc', 'co', 'plc', 'bv', 'nv', 'sa', 'sas', 'srl', 'spa', 'pte', 'corp',
   'corporation', 'company', 'ehf', 'asa'];
+const LEAD = ['sia', 'as', 'a s', 'uab'];
 const plain = (name) => String(name || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 function strip(s) {
   s = s.replace(/[^a-z0-9]+/g, ' ').trim();
@@ -28,7 +29,8 @@ function strip(s) {
     changed = false;
     for (const l of LEGAL) {
       if (s.endsWith(' ' + l)) { s = s.slice(0, -l.length - 1).trim(); changed = true; }
-      if (s.startsWith(l + ' ')) { s = s.slice(l.length + 1).trim(); changed = true; }
+      // before the name only the forms written there (SIA X, AS X, UAB X): "AB Shipping" is a name
+      if (LEAD.includes(l) && s.startsWith(l + ' ')) { s = s.slice(l.length + 1).trim(); changed = true; }
     }
   }
   return s.replace(/ /g, '');
@@ -51,7 +53,7 @@ export async function findSame(db) {
   const obvious = [...byKey.values()].filter((g) => g.length > 1).map(order);
   const dismissed = new Set((await db.prepare('SELECT pair_key FROM tc_same_dismissed').all()).map((r) => r.pair_key));
   // one representative per obvious group; only companies with people (an empty duplicate shows on no list)
-  const reps = [...byKey.values()].map((g) => order(g)[0]).filter((c) => c.contacts > 0);
+  const reps = [...byKey.values()].map((g) => order(g)[0]).filter((c) => c.contacts > 0 && c.lk.length >= 3);
   const sorted = [...reps].sort((a, b) => a.lk.localeCompare(b.lk));
   // pairs that are the same, joined into groups (one card per group, never every pair of a group)
   const parent = new Map(reps.map((c) => [c.id, c.id]));
