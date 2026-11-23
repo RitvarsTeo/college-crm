@@ -418,6 +418,7 @@ export async function syncPbx(db, { now = new Date(), minutes = WINDOW_MINUTES,
   // can see is not auditable.
   result.purgedLines = await purgeLineBodies(db, retentionCutoff(now));
   result.purgedEvents = await purgeOld(db, 'call_events', 'at', now);   // the same 13 months
+  result.purgedTcWhatsApp = await purgeOld(db, 'tc_whatsapp_in', 'at', now);   // the Training Centre WhatsApp (patch 165), the same
   return result;
 }
 

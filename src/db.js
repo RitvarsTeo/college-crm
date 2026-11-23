@@ -1001,6 +1001,21 @@ CREATE TABLE IF NOT EXISTS tc_same_log (
   by_name TEXT,
   detail TEXT                      -- JSON: what moved, what was removed, any decision that differed, the card kept and freed
 );
+-- THE TRAINING CENTRE WHATSAPP (23.11.2026, patch 165, src/tcwhatsapp.js): messages to +371 62444609, forwarded by TeleGroup.
+-- Training Centre business, never the Academy Inbox. Each message once (Meta's message id). Personal data: the same 13 months.
+CREATE TABLE IF NOT EXISTS tc_whatsapp_in (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  message_id TEXT NOT NULL UNIQUE,
+  phone_id TEXT NOT NULL,          -- Meta's phone number id of OUR number (654184684448536)
+  from_num TEXT,                   -- the sender's number, as Meta writes it
+  name TEXT,                       -- the sender's WhatsApp profile name
+  body TEXT,                       -- the text; a picture or a file has only its kind (media)
+  media TEXT,
+  at TEXT NOT NULL,                -- when they sent it
+  received_at TEXT NOT NULL,
+  seen_at TEXT,
+  seen_by TEXT
+);
 CREATE TABLE IF NOT EXISTS tc_same_dismissed (
   pair_key TEXT PRIMARY KEY,       -- '<lower id>:<higher id>'
   dismissed_at TEXT NOT NULL,

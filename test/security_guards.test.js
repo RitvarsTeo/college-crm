@@ -35,6 +35,7 @@ const OPEN_API = {
   '/api/auth/logout': { proof: "ends only the caller's own session", answers: true },
   '/api/intake/application': { proof: 'the SIS shared secret header', answers: false },
   '/api/inbound/phone-event': { proof: 'PHONE_EVENT_SECRET (?token=, constant time) AND the TeleGroup source address 193.110.8.106', answers: false },
+  '/api/inbound/whatsapp-tc': { proof: 'WHATSAPP_FORWARD_SECRET (?token=, constant time) AND the TeleGroup source address 193.110.8.106', answers: false },
 };
 // What each delivery mechanism proves. A channel may be open to deliveries only with one of these.
 const INBOUND_PROOF = {
@@ -70,6 +71,7 @@ test('(a) the door function is pinned: a new open path must be added here, with 
     'if (inbound && channelDef(inbound[1]) && acceptsWebhook(inbound[1])) return true;',
     "if (pathname === '/api/intake/application') return true;",
     "if (pathname === '/api/inbound/phone-event') return true;",
+    "if (pathname === '/api/inbound/whatsapp-tc') return true;",
   ], 'openBeforeSignIn changed: add the new door to OPEN_API with its proof, then update this list');
 });
 
@@ -546,4 +548,22 @@ test('(g) phone events: the gate is the first thing the route does; token AND ad
   assert.equal(phoneEventGate(req('193.110.8.106'), url(''), { VERCEL: '1' }).ok, false, 'no secret configured refuses');
   assert.equal(phoneEventGate(req('127.0.0.1'), url('a-configured-secret'), { ...env, PHONE_EVENT_LOCAL_IPS: '127.0.0.1' }).ok, false, 'no extra address on Vercel');
   assert.ok(!/console\.(log|error|warn)\([^)]*req\.url/.test(SERVER), 'no log line writes the request address (it carries the token)');
+});
+
+// ------------------------------------------------------------------------------------------ (h)
+// THE TRAINING CENTRE WHATSAPP (23.11.2026, patch 165): its OWN secret, the token AND the address, the gate first, fails closed.
+test('(h) the forwarded WhatsApp: own secret, token AND address, the gate first; PHONE_EVENT_SECRET never opens it', async () => {
+  const at = SERVER.indexOf("if (req.method === 'POST' && p === '/api/inbound/whatsapp-tc') {");
+  assert.ok(at > 0);
+  const lines = SERVER.slice(at, SERVER.indexOf('\n    }\n', at)).split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('//'));
+  assert.equal(lines[1], 'const gate = whatsappForwardGate(req, url);', 'the gate comes first');
+  const { whatsappForwardGate } = await import('../src/tcwhatsapp.js');
+  const req = (ip) => ({ headers: { 'x-real-ip': ip } });
+  const url = (t) => new URL('http://x/api/inbound/whatsapp-tc?token=' + t);
+  const env = { VERCEL: '1', WHATSAPP_FORWARD_SECRET: 'wa-configured-secret', PHONE_EVENT_SECRET: 'phone-configured-secret' };
+  assert.equal(whatsappForwardGate(req('193.110.8.106'), url('wa-configured-secret'), env).ok, true);
+  assert.equal(whatsappForwardGate(req('193.110.8.106'), url('phone-configured-secret'), env).ok, false, 'the phone secret is not this one');
+  assert.equal(whatsappForwardGate(req('203.0.113.9'), url('wa-configured-secret'), env).status, 403);
+  const none = whatsappForwardGate(req('193.110.8.106'), url('x'), { VERCEL: '1', PHONE_EVENT_SECRET: 'phone-configured-secret' });
+  assert.deepEqual([none.ok, none.status, none.missing], [false, 503, 'WHATSAPP_FORWARD_SECRET']);
 });

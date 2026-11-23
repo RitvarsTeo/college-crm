@@ -84,6 +84,7 @@ import * as tcrsvp from './tcrsvp.js';
 import * as tcmr from './tcmr.js';
 import * as tcfam from './tcfam.js';
 import * as tcsame from './tcsame.js';
+import { whatsappForwardGate, receiveTcWhatsApp } from './tcwhatsapp.js';
 import * as tcpeople from './tcpeople.js';
 import * as tcpic from './tcpic.js';
 import * as tchome from './tchome.js';
@@ -461,6 +462,7 @@ function openBeforeSignIn(pathname) {
   if (inbound && channelDef(inbound[1]) && acceptsWebhook(inbound[1])) return true;
   if (pathname === '/api/intake/application') return true;   // its own secret header is its auth
   if (pathname === '/api/inbound/phone-event') return true;   // PHONE_EVENT_SECRET is its auth (Q6)
+  if (pathname === '/api/inbound/whatsapp-tc') return true;   // WHATSAPP_FORWARD_SECRET + TeleGroup's address (patch 165)
   return false;
 }
 
@@ -1521,6 +1523,18 @@ export const handle = async (req, res) => {
       const waitUntil = ctx && typeof ctx.get === 'function' && ctx.get() && ctx.get().waitUntil;
       const later = typeof waitUntil === 'function' ? (promise) => waitUntil(promise) : null;
       try { return json(res, 200, await receivePhoneEvent(db, raw, { mode, later })); } catch (err) {
+        if (err instanceof BadInbound) return json(res, 400, { error: err.message });
+        throw err;
+      }
+    }
+    // THE TRAINING CENTRE WHATSAPP, FORWARDED BY TELEGROUP (23.11.2026, patch 165, src/tcwhatsapp.js): ?token= with its OWN secret
+    // (WHATSAPP_FORWARD_SECRET) AND TeleGroup's address, the gate first. Training Centre business: never the Academy Inbox.
+    if (req.method === 'POST' && p === '/api/inbound/whatsapp-tc') {
+      const gate = whatsappForwardGate(req, url);
+      if (!gate.ok) return json(res, gate.status, { error: gate.error, ...(gate.missing ? { missing: gate.missing } : {}) });
+      let raw;
+      try { raw = JSON.parse(await rawText(req, 3 * 1024 * 1024) || '{}'); } catch { return json(res, 400, { error: 'the body is not JSON' }); }
+      try { return json(res, 200, await receiveTcWhatsApp(db, raw)); } catch (err) {
         if (err instanceof BadInbound) return json(res, 400, { error: err.message });
         throw err;
       }
