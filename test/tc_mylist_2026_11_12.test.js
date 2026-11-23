@@ -193,7 +193,7 @@ test('the sandbox on the page: Undo steps back, a pressed button again clears, a
   const undo = [];
   const step = (w, a) => { undo.push(P.mlClone(w)); return P.mlApply(w, a); };
   let w = step(s0, { type: 'decide', key: 'id:1', decision: 'invite' });
-  assert.deepEqual(P.mlView(base, w).figures, { todo: 1, invite: 2, no: 0 }, 'patch 160: Invite is a digital invitation at once');
+  assert.deepEqual(P.mlView(base, w).figures, { todo: 1, invite: 2, no: 0, postcard: 0 }, 'patch 160: Invite is a digital invitation at once');
   assert.equal(P.mlView(base, w).groups[0].way, 'digital');
   // the extras go on and off on top of digital
   let x = P.mlApply(w, { type: 'way', key: 'id:1', way: 'post' });
@@ -205,12 +205,12 @@ test('the sandbox on the page: Undo steps back, a pressed button again clears, a
   w = step(w, { type: 'out', id: 2 });
   w = step(w, { type: 'move', id: 3, key: 'id:1', home: 'id:2' });
   let V = P.mlView(base, w);
-  assert.deepEqual(V.figures, { todo: 0, invite: 2, no: 1 });
+  assert.deepEqual(V.figures, { todo: 0, invite: 2, no: 1, postcard: 0 });
   assert.equal(V.groups.length, 1, 'B is empty after the drag');
   assert.equal(V.groups[0].people.find((p) => p.id === 3).from, 'id:2');
   assert.equal(P.mlShows(V.groups[0], 'todo'), false);
   w = undo.pop(); w = undo.pop();   // Ctrl+Z twice: the drag and the tap-out are gone
-  assert.deepEqual(P.mlView(base, w).figures, { todo: 1, invite: 2, no: 0 });
+  assert.deepEqual(P.mlView(base, w).figures, { todo: 1, invite: 2, no: 0, postcard: 0 });
   w = P.mlApply(w, { type: 'decide', key: 'id:1', decision: 'invite' });   // the same button again clears, the way with it
   assert.deepEqual(w.picks['id:1'], { decision: null, way: null });
   assert.deepEqual(s0, { picks: {}, out: [], moves: {} }, 'a change never touches the state it came from');
@@ -247,7 +247,8 @@ test('the page: Save / Undo / status with the full date, Ctrl+Z, Ctrl+S on nothi
   assert.ok(fn('tcMlMayLeave').includes("tcMlSave().then((ok) => { if (ok && T_ML && !T_ML.dirty) { T_ML.hash = ''; location.hash = hash; } });\n  return false;"), 'leaving saves first, no question');
   assert.ok(APP.includes("window.addEventListener('beforeunload'"));
   assert.ok(APP.includes('draggable="true"') && APP.includes('ondrop="tcMlDrop(event,'));
-  assert.ok(APP.includes("else if (place === 'postcards') viewTcPostcards();") && APP.includes('href="/api/tc/go/postcards.xlsx" download'));
+  // patch 164, his "Yes, move it to the tile": the old address opens My list on the Postcard tile, which carries the Excel
+  assert.ok(APP.includes("else if (place === 'postcards') { location.replace('#/tc/mylist');") && APP.includes('href="/api/tc/go/postcards.xlsx" download'));
   assert.ok(APP.includes('onclick="tcS2xNoCode(') && APP.includes('without an email or link'), '8. the people the email cannot reach');
 });
 

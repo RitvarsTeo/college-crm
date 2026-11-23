@@ -100,9 +100,9 @@ test('05.11 the demo opens at /api/tc/go/demo without a redirect (Vercel strips 
 test('11.11 the new demo (the Grand Opening 10 chapters) plus In Intake: the tiles open what they name, the letters live', async () => {
   const godemo = await import('../src/godemo.js');
   const html = godemo.read(godemo.fileFor(godemo.PREFIX)).toString('utf8');
-  assert.equal((html.match(/<section class="ch"/g) || []).length, 10, 'patch 148: the ticket chapter is out');
+  assert.equal((html.match(/<section class="ch"/g) || []).length, 9, 'patch 164: the Client Journey, 9 chapters (his pick P164_3)');
   assert.match(html, /<section class="ch" data-t="In Intake" data-s="Intake">/);
-  for (const [title, href] of [['Do not invite / hold', '#/tc/go/hold'], ['What came back', '#/tc/go/back'], ['Six owners, six lists', '#/tc/go/lists'],
+  for (const [title, href] of [['Do not invite / hold', '#/tc/go/hold'], ['What came back', '#/tc/go/back'], ['Six owners, six lists', '#/tc/mylist'],
     ['Company families', '#/tc/families'], ['Clients in Intake', '#/tc/clients'], ['Real company count', '#/tc/companies/go2']]) {
     const at = html.indexOf('<h3>' + title + '</h3>'); const a = html.lastIndexOf('<a class="card intile"', at);
     assert.ok(at > 0 && html.slice(a, at).includes('href="https://intake.novikontas.org/' + href + '"'), title);
@@ -185,9 +185,9 @@ test('11.11 "demo has to be like the real thing": ch1 shows the real Stage 2 let
   const html = godemo.read(godemo.fileFor(godemo.PREFIX)).toString('utf8');
   const ch = (t) => { const a = html.indexOf('data-t="' + t + '"'); return html.slice(a, html.indexOf('</section>', a)); };
   // 12.11.2026: ch1 now carries his two invitation mockups and his final text (the live letters stay on In Intake)
-  assert.ok(ch('Two ways in').includes('src="assets/invite_email.jpg"') && ch('Two ways in').includes('src="assets/invite_letter.jpg"'));
-  assert.ok(!ch('Two ways in').includes('your director at Novikontas Academy'));
-  for (const t of ['Two ways in', 'The count', 'At the entrance', 'The board']) assert.ok(!ch(t).includes('class="example"'), t);
+  assert.ok(ch('The postcard and letter').includes('src="assets/invite_email.jpg"') && ch('The postcard and letter').includes('src="assets/invite_letter.jpg"'));
+  assert.ok(!ch('The postcard and letter').includes('your director at Novikontas Academy'));
+  for (const t of ['The postcard and letter', 'The count', 'At the entrance', 'The board']) assert.ok(!ch(t).includes('class="example"'), t);
   assert.ok(!html.includes("['Anna Bērziņa','anna@exampleshipping.lv'") && !html.includes('Example Shipping Group'));
   assert.match(html, /<script>window\.GO_REAL=\/\*\{\{GO_REAL\}\}\*\/null;<\/script>/);
   const filled = godemo.withCount({ body: html, type: 'text/html; charset=utf-8' }, 3, { mothers: 3, people: 9, sample: [{ person: '</script>x', written: 'A', sender: 'JS', mother: 'A' }], piece: { name: 'A', branches: 2, people: 4 } }).body;
@@ -202,17 +202,13 @@ test('11.11 ch3 "What we measure" = the Save the Date as it came back (the figur
   const godemo = await import('../src/godemo.js');
   const html = godemo.read(godemo.fileFor(godemo.PREFIX)).toString('utf8');
   const ch = (t) => { const a = html.indexOf('data-t="' + t + '"'); return html.slice(a, html.indexOf('</section>', a)); };
-  assert.ok(!ch('What we measure').includes('class="example"') && !/>(236|448|755|352|205|174)</.test(ch('What we measure')));
-  // his words 11.11 (via the GO session): only the people who will attend, physical / digital, and the mother companies
-  for (const l of ['Postcard (physical)', 'Personal email link (digital)']) assert.ok(ch('What we measure').includes('>' + l + '<'), l);
-  // 12.11.2026, his words "everyone at the end get the puzzle piece only at the door": pieces = the people who attend, not mother companies
-  assert.ok(!ch('What we measure').includes('Mother companies') && !ch('What we measure').includes('puzzle pieces'));
-  for (const l of ['Save the Date sent', 'Typed address', 'opens', 'visits', 'Measured so far']) assert.ok(!ch('What we measure').includes(l), l);
+  // patch 164 (his pick, the Client Journey P164_3): "What we measure" is not a chapter of the client's journey any more
+  assert.ok(!html.includes('data-t="What we measure"') && !/>(236|448|755|352|205|174)</.test(html));
   assert.ok(!html.includes('own QR'));
   // his words 11.11: "Put the real puzzle piece as we have concepted": Amento's piece (its QR opens ?gift) wherever a piece is drawn
   assert.ok(ch('At the entrance').includes('src="assets/piece_gift.jpg"') && !ch('At the entrance').includes('<svg class="piece"'));
   // his words 11.11: the physical invitation is a postcard in a physical letter; its QR opens ?gift (the puzzle is the board on the day)
-  assert.ok(ch('Two ways in').includes('A postcard in a letter') && ch('Two ways in').includes('src="assets/qr_gift.svg"') && !ch('Two ways in').includes('piece_gift.jpg'));
+  assert.ok(ch('The postcard and letter').includes('A postcard in a letter') && ch('The postcard and letter').includes('src="assets/qr_gift.svg"') && !ch('The postcard and letter').includes('piece_gift.jpg'));
   // ch3: measured so far, then the Stage 2 measures live (one row of totals; test and staff entries left out in the view)
   const sql = fs.readFileSync(path.join(ROOT, 'docs', 'client-hub', 'intake_landing_counts.sql'), 'utf8');
   assert.match(sql, /@novikontas/); assert.match(sql, /test/); assert.match(sql, /grant select on intake_read.landing_counts to intake_rsvp_reader;/);
@@ -289,7 +285,8 @@ test('11.11 his consolidated list ("we are golden"): Stage 1 first, the send-out
   const godemo = await import('../src/godemo.js');
   const html = godemo.read(godemo.fileFor(godemo.PREFIX)).toString('utf8');
   const order = [...html.matchAll(/<section class="ch" data-t="([^"]+)"/g)].map((m) => m[1]);
-  assert.deepEqual(order, ['The Save the Date', 'Two ways in', 'The send-out', 'The landing page', 'What we measure', 'The count', 'At the entrance', 'The board', 'In Intake', 'The order']);
+  // patch 164, his pick (P164_3 "Yes, build it"): the Client Journey, in the order the client lives it
+  assert.deepEqual(order, ['The Save the Date', 'Your manager decides', 'The invitation email', 'The landing page', 'The postcard and letter', 'The count', 'At the entrance', 'The board', 'In Intake']);
   assert.ok(!html.includes('Built-in checks') && (html.match(/class="board"/g) || []).length === 1 && !html.includes('board5'));
   // his words 11.11: "The board was supposed to be the pre filled one ... delete the empty one"
   assert.ok(html.includes('id="board9"') && !html.includes('board8') && !html.includes('Place every piece') && !html.includes('Start again'));
@@ -300,8 +297,8 @@ test('11.11 his consolidated list ("we are golden"): Stage 1 first, the send-out
   assert.ok(!html.includes('data-t="The ticket"') && !html.includes('letters/5_ticket.html'));
   assert.ok(ch('At the entrance').includes('pc-hand'));
   assert.ok(html.includes('data-go="3"'));   // "See the page" goes to the landing page
-  const ol = ch('The order');
-  assert.ok(ol.indexOf('Stage 1: the Save the Date') < ol.indexOf('The cards') && ol.indexOf('The cards') < ol.indexOf('Pieces cut'), 'patch 148: the cards, not tickets');
+  // patch 164: no "The order" chapter in the Client Journey; the journey itself runs Save the Date -> entrance -> board
+  assert.ok(html.indexOf('data-t="The Save the Date"') < html.indexOf('data-t="At the entrance"') && html.indexOf('data-t="At the entrance"') < html.indexOf('data-t="The board"'));
   const f = await go.goDemoFacts(await openDb());
   assert.ok(Array.isArray(f.lists) && f.lists.length === 6 && f.lists.every((l) => /@novikontas\.org$/.test(l.email)));
 });
@@ -322,7 +319,7 @@ test('12.11 patch 130, his words "Update the Grand Opening demo chapter 2 with t
   const fsx = await import('node:fs');
   const pathx = await import('node:path');
   const page = (me) => godemo.read(godemo.fileFor(godemo.PREFIX, me)).toString('utf8');
-  const ch = (html) => { const a = html.indexOf('data-t="Two ways in"'); return html.slice(a, html.indexOf('</section>', a)); };
+  const ch = (html) => { const a = html.indexOf('data-t="The postcard and letter"'); return html.slice(a, html.indexOf('</section>', a)); };
   const two = ch(page({ email: 'JS@novikontas.org' }));
   for (const f of ['invite_letter.jpg', 'invite_email.jpg']) {
     assert.ok(two.includes('src="assets/' + f + '"'), f);
@@ -353,6 +350,6 @@ test('16.11 patch 148 (his pick "Take it", DOOR_SCANNER_concept): at the entranc
   assert.ok(!html.includes('Ticket of ') && !html.includes('Checked in <b'), 'no ticket at the door');
   // his 16.11 lock: "one company = one board place = one piece shape = one QR", "its first representative gets the piece"
   assert.ok(ch('The board').includes('every company puts in its piece') && ch('The board').includes('one place per invited company, plus spares'));
-  assert.ok(html.includes('<b>Pieces cut</b><span>one per invited company</span>'));
+  // patch 164: "The order" (with "Pieces cut ... one per invited company") is no chapter of the Client Journey; the board says it
   assert.ok(!/per guest|every guest/i.test(html), 'nothing in the demo says per guest any more');
 });

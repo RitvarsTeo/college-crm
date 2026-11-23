@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Grand Opening - Stage 1, 2 and 3</title>
+<title>Client Journey</title>
 <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#eef2f7;--paper:#fff;--ink:#011111;--navy:#0a2463;--blue:#53a7db;--data:#29a8df;--gold:#ebbb6c;--muted:#5f7391;--line:#d5dde8;--ok:#1f8a4c;--warn:#b7791f;--stop:#9aa6b8;color-scheme:light}
@@ -205,12 +205,13 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
 .inletter.ch1l{padding:0;border:0} .inletter .lt.top{aspect-ratio:600/700}
 .inletter.tkl{max-width:640px} .inletter .lt.tk{aspect-ratio:600/1480} .inletter .lt.tk iframe{height:1480px}
 .inletter .lt iframe{position:absolute;top:0;left:0;width:600px;height:1180px;border:0;transform-origin:0 0;pointer-events:none}
+.tiles4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}.tiles4 .k{font-size:20px;font-weight:800;color:var(--ink)}.tiles4 .s{margin-top:8px;color:var(--muted);font-weight:600}.tiles4 .dim{opacity:.75}@media (max-width:900px){.tiles4{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
 <header class="top"><div class="top-in">
  <div class="mark"><img src="assets/logo.svg" alt="Novikontas Academy"></div>
- <h1>Grand Opening of Novikontas Academy · Stage 1, 2 and 3</h1>
+ <h1>Client Journey · Grand Opening of Novikontas Academy</h1>
  <span class="sp"></span>
  <span class="dates">27.05.2005 → 27.05.2027</span>
 </div></header>
@@ -232,8 +233,56 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
  </div>
 </section>
 
-<section class="ch" data-t="Two ways in" data-s="Stage 2">
- <h2>Two ways in, one landing page</h2>
+
+
+
+
+<!-- patch 164 (his pick, picture P164_3): the manager decides; an invitation always includes the digital one -->
+<section class="ch" data-t="Your manager decides" data-s="Stage 2">
+ <h2>Stage 2: your manager decides</h2>
+ <p class="lead">Every company on a manager's list: Invite or No. An invitation always includes the digital invitation; the manager adds the postcard and letter when it fits.</p>
+ <div class="tiles4">
+  <div class="tile"><div class="k">Invite</div><div class="s">The digital invitation goes out from the manager's own mailbox. Always.</div></div>
+  <div class="tile"><div class="k">+ Hand over in person</div><div class="s">The postcard and the letter, brought by the manager.</div></div>
+  <div class="tile"><div class="k">+ Send by mail</div><div class="s">The postcard and the letter, by real mail.</div></div>
+  <div class="tile dim"><div class="k">No</div><div class="s">Not this time. Nothing goes out.</div></div>
+ </div>
+ <p class="lead" style="margin-top:18px">Not decided yet = no invitation. Pass on gives a person to the colleague who knows them best.</p>
+ <p style="margin:16px 0 0"><a href="https://intake.novikontas.org/#/tc/mylist" target="_blank" rel="noopener"><b>Open My Grand Opening list &rarr;</b></a></p>
+</section>
+
+<section class="ch" data-t="The invitation email" data-s="Stage 2">
+ <h2>Stage 2: the invitation email, from the manager's own mailbox</h2>
+ <p class="lead">Every list owner sends to their own list, from their own address, signed with their own name.</p>
+ <div class="so" id="so"></div>
+ <div class="so-facts">
+  <span class="pill line">Sent through Gmail, as the owner's own address</span>
+  <span class="pill line">Signed with the owner's name</span>
+  <span class="pill line">Replies come back to the owner</span>
+  <span class="pill line">100 at a time, never twice to one person</span>
+ </div>
+ <p style="margin:16px 0 0"><a href="https://intake.novikontas.org/#/tc/mylist" target="_blank" rel="noopener"><b>Open the lists &rarr;</b></a></p>
+</section>
+
+<section class="ch" data-t="The landing page" data-s="Stage 2">
+ <h2>The landing page: three steps</h2>
+ <p class="lead">Live on novikontas.org/grand-opening, on phones and computers.</p>
+ <div class="lp-wrap">
+  <div class="phone"><div class="scr" id="ph-scr"><img id="ph-img" src="assets/phone_1.jpg" alt="Landing page on a phone"></div></div>
+  <div>
+   <div class="steps-tabs" id="lp-tabs">
+    <button aria-pressed="true" data-n="1">1 / 3 You are invited<span>date, place, Yes, I'll attend</span></button>
+    <button aria-pressed="false" data-n="2">2 / 3 Your details<span>up to 5 people at once</span></button>
+    <button aria-pressed="false" data-n="3">3 / 3 Thank you<span>calendar in one click</span></button>
+   </div>
+   <img class="desk" id="dk-img" src="assets/desktop_1.jpg" alt="Landing page on a computer">
+   <p style="margin:14px 0 0"><a href="https://novikontas.org/grand-opening" target="_blank" rel="noopener"><b>Open the live page →</b></a></p>
+  </div>
+ </div>
+</section>
+
+<section class="ch" data-t="The postcard and letter" data-s="Stage 2">
+ <h2>Stage 2: the postcard and letter, and the email: one landing page</h2>
  <p class="lead">The postcard and the digital invitation lead to the same page.</p>
  <!-- 12.11.2026, his words: "Update the Grand Opening demo chapter 2 with the two mockups ... letters signed by director or C-level,
       my final invitation text ... The physical invitation is now a postcard in a letter." The texts are his final letter.html and
@@ -277,50 +326,11 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
  <div class="join"><span class="to">↓</span><div class="lp"><img src="assets/phone_1.jpg" alt=""><div><b>novikontas.org/grand-opening</b><br><span style="color:var(--muted);font-weight:600">live now</span></div></div><button class="btn" data-go="3">See the page →</button></div>
 </section>
 
-<section class="ch" data-t="The send-out" data-s="Stage 2">
- <h2>Stage 2: from each owner's own mailbox</h2>
- <p class="lead">Every list owner sends to their own list, from their own address, signed with their own name.</p>
- <div class="so" id="so"></div>
- <div class="so-facts">
-  <span class="pill line">Sent through Gmail, as the owner's own address</span>
-  <span class="pill line">Signed with the owner's name</span>
-  <span class="pill line">Replies come back to the owner</span>
-  <span class="pill line">100 at a time, never twice to one person</span>
- </div>
- <p style="margin:16px 0 0"><a href="https://intake.novikontas.org/#/tc/go/lists" target="_blank" rel="noopener"><b>Open the six lists &rarr;</b></a></p>
-</section>
-
-<section class="ch" data-t="The landing page" data-s="Stage 2">
- <h2>The landing page: three steps</h2>
- <p class="lead">Live on novikontas.org/grand-opening, on phones and computers.</p>
- <div class="lp-wrap">
-  <div class="phone"><div class="scr" id="ph-scr"><img id="ph-img" src="assets/phone_1.jpg" alt="Landing page on a phone"></div></div>
-  <div>
-   <div class="steps-tabs" id="lp-tabs">
-    <button aria-pressed="true" data-n="1">1 / 3 You are invited<span>date, place, Yes, I'll attend</span></button>
-    <button aria-pressed="false" data-n="2">2 / 3 Your details<span>up to 5 people at once</span></button>
-    <button aria-pressed="false" data-n="3">3 / 3 Thank you<span>calendar in one click</span></button>
-   </div>
-   <img class="desk" id="dk-img" src="assets/desktop_1.jpg" alt="Landing page on a computer">
-   <p style="margin:14px 0 0"><a href="https://novikontas.org/grand-opening" target="_blank" rel="noopener"><b>Open the live page →</b></a></p>
-  </div>
- </div>
-</section>
-
-<section class="ch" data-t="What we measure" data-s="Stage 2">
- <h2>What we measure</h2>
- <p class="lead">The people who will attend.</p>
- <div class="tiles">
-  <div class="tile"><div class="k">Postcard (physical)</div><div class="v" id="m-phys"></div><div class="s">people registered</div></div>
-  <div class="tile"><div class="k">Personal email link (digital)</div><div class="v" id="m-dig"></div><div class="s">people said Yes</div></div>
- </div>
-</section>
-
 <section class="ch" data-t="The count" data-s="Count">
  <h2>The count: people and mother companies</h2>
  <p class="lead">Every person on the Stage 2 lists sits on their company; branches sit under their mother company.</p>
  <div class="result">
-  <a class="tile intile" href="https://intake.novikontas.org/#/tc/go/lists" target="_blank" rel="noopener"><div class="k">People on the Stage 2 lists</div><div class="v" id="r-people"></div><span class="go">Open &rarr;</span></a>
+  <a class="tile intile" href="https://intake.novikontas.org/#/tc/mylist" target="_blank" rel="noopener"><div class="k">People on the Stage 2 lists</div><div class="v" id="r-people"></div><span class="go">Open &rarr;</span></a>
   <a class="tile intile" href="https://intake.novikontas.org/#/tc/companies/go2" target="_blank" rel="noopener"><div class="k">Mother companies</div><div class="v" id="r-comp">{{MOTHER_COMPANIES}}</div><span class="go">Open &rarr;</span></a>
  </div>
 </section>
@@ -357,27 +367,13 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
 <section class="ch" data-t="In Intake" data-s="Intake">
  <h2>In Intake, live</h2>
  <p class="lead">The lists, the letters and the places as Intake holds them now. Every window opens the real thing.</p>
- <div class="grid3"><a class="card intile" href="https://intake.novikontas.org/#/tc/clients" target="_blank" rel="noopener"><span class="pill">Intake</span><h3>Clients in Intake</h3><p>Every client company with its owner, contacts and history.</p><span class="go">Open &rarr;</span></a><a class="card intile" href="https://intake.novikontas.org/#/tc/families" target="_blank" rel="noopener"><span class="pill">Intake</span><h3>Company families</h3><p>Branches under one owner, each family with its source.</p><span class="go">Open &rarr;</span></a><a class="card intile" href="https://intake.novikontas.org/#/tc/go/hold" target="_blank" rel="noopener"><span class="pill">Intake</span><h3>Do not invite / hold</h3><p>Aleksejs Bogdaņecs&#x27;s decisions stay out of every send.</p><span class="go">Open &rarr;</span></a><a class="card intile" href="https://intake.novikontas.org/#/tc/go/back" target="_blank" rel="noopener"><span class="pill">Intake</span><h3>What came back</h3><p>The Save the Date: sent 1,723, reached 1,548, opened by a person 433, added to calendar 110.</p><span class="go">Open &rarr;</span></a><a class="card intile" href="https://intake.novikontas.org/#/tc/go/lists" target="_blank" rel="noopener"><span class="pill">Intake</span><h3>Six owners, six lists</h3><p>Mārcis 318, DS 482, MC 308, AB 245, Alma 7, JS 204.</p><span class="go">Open &rarr;</span></a><a class="card intile" href="https://intake.novikontas.org/#/tc/companies/go2" target="_blank" rel="noopener"><span class="pill">Intake</span><h3>Real company count</h3><p><b class="innum">{{MOTHER_COMPANIES}}</b> mother companies on the Stage 2 lists.</p><span class="go">Open &rarr;</span></a>
+ <div class="grid3"><a class="card intile" href="https://intake.novikontas.org/#/tc/clients" target="_blank" rel="noopener"><span class="pill">Intake</span><h3>Clients in Intake</h3><p>Every client company with its owner, contacts and history.</p><span class="go">Open &rarr;</span></a><a class="card intile" href="https://intake.novikontas.org/#/tc/families" target="_blank" rel="noopener"><span class="pill">Intake</span><h3>Company families</h3><p>Branches under one owner, each family with its source.</p><span class="go">Open &rarr;</span></a><a class="card intile" href="https://intake.novikontas.org/#/tc/go/hold" target="_blank" rel="noopener"><span class="pill">Intake</span><h3>Do not invite / hold</h3><p>Aleksejs Bogdaņecs&#x27;s decisions stay out of every send.</p><span class="go">Open &rarr;</span></a><a class="card intile" href="https://intake.novikontas.org/#/tc/go/back" target="_blank" rel="noopener"><span class="pill">Intake</span><h3>What came back</h3><p>The Save the Date: sent 1,723, reached 1,548, opened by a person 433, added to calendar 110.</p><span class="go">Open &rarr;</span></a><a class="card intile" href="https://intake.novikontas.org/#/tc/mylist" target="_blank" rel="noopener"><span class="pill">Intake</span><h3>Six owners, six lists</h3><p>Mārcis 318, DS 482, MC 308, AB 245, Alma 7, JS 204.</p><span class="go">Open &rarr;</span></a><a class="card intile" href="https://intake.novikontas.org/#/tc/companies/go2" target="_blank" rel="noopener"><span class="pill">Intake</span><h3>Real company count</h3><p><b class="innum">{{MOTHER_COMPANIES}}</b> mother companies on the Stage 2 lists.</p><span class="go">Open &rarr;</span></a>
  </div>
  <h3 class="inh">The Stage 2 letters, exactly as they go out</h3>
  <div class="grid3"><a class="card inletter" href="letters/2_will_you_be_there.html" target="_blank" rel="noopener"><div class="lt"><iframe src="letters/2_will_you_be_there.html" tabindex="-1" loading="lazy" scrolling="no" title="Will you be there?"></iframe></div><h3>Will you be there?</h3><p>To those the Save the Date reached.</p></a><a class="card inletter" href="letters/3_you_are_invited.html" target="_blank" rel="noopener"><div class="lt"><iframe src="letters/3_you_are_invited.html" tabindex="-1" loading="lazy" scrolling="no" title="You are invited"></iframe></div><h3>You are invited</h3><p>To those it did not reach.</p></a><a class="card inletter" href="letters/4_new_contact.html" target="_blank" rel="noopener"><div class="lt"><iframe src="letters/4_new_contact.html" tabindex="-1" loading="lazy" scrolling="no" title="New contacts"></iframe></div><h3>New contacts</h3><p>To people added after the Save the Date.</p></a>
  </div>
 </section>
 
-<section class="ch" data-t="The order" data-s="Plan">
- <h2>The order of work</h2>
- <p class="lead">From the invitation to the finished board.</p>
- <ol class="order">
-  <li><div><b>Stage 1: the Save the Date</b><span>what came back is in Intake</span></div></li>
-  <li><div><b>Postcards in physical letters</b><span>QR: novikontas.org/grand-opening?gift</span></div></li>
-  <li><div><b>Digital invitations from each owner's own mailbox</b><span>personal link for each person</span></div></li>
-  <li><div><b>Registrations on the landing page</b><span>counted by channel</span></div></li>
-  <li><div><b>The count</b><span>people per mother company, branches grouped</span></div></li>
-  <li><div><b>The cards</b><span>one per invited company, its QR registers and opens the door</span></div></li>
-  <li><div><b>Pieces cut</b><span>one per invited company</span></div></li>
-  <li class="end"><div><b>Thursday 27 May 2027, 10:00</b><span>invitation card scanned at the door, piece handed over, piece on the board</span></div></li>
- </ol>
-</section>
 </main>
 
 <div class="foot"><div class="foot-in">
@@ -418,7 +414,7 @@ td .sub{display:block;color:var(--muted);font-size:13px;font-weight:600}
  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
  document.getElementById('r-people').textContent=Number(R.people||0).toLocaleString('en-US');
  (function(){ var L=R.landing, n=function(x){ return L ? Number(x||0).toLocaleString('en-US') : '–'; };
-  document.getElementById('m-phys').textContent=n(L&&L.gift_registered); document.getElementById('m-dig').textContent=n(L&&L.link_people);
+  var mp=document.getElementById('m-phys'), md=document.getElementById('m-dig'); if(mp) mp.textContent=n(L&&L.gift_registered); if(md) md.textContent=n(L&&L.link_people);
  })();
  (function(){ var D=R.std, t=function(id,v){ document.getElementById(id).textContent = D ? Number(v||0).toLocaleString('en-US') : '–'; };
   t('s1-s',D&&D.sent); t('s1-r',D&&D.reached); t('s1-o',D&&D.person); t('s1-c',D&&D.calendar);

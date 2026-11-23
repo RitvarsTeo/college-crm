@@ -70,9 +70,8 @@ test('the page: tabs, search, Download; no Who answered and no answered totals; 
     assert.ok(fs.statSync(path.join(ROOT, 'src', 'assets', f)).size < 150000, f + ' stays small');
   }
   const fn = app.slice(app.indexOf('function tcGoStage2('), app.indexOf('const tcGoCrumb = '));
-  assert.match(fn, /<h2>Stage 2 lists<\/h2>/);
-  assert.match(fn, /placeholder="Search company or person"/);
-  assert.match(fn, /href="\/api\/tc\/go\/stage2\.xlsx\?sender=\$\{encodeURIComponent\(S\.code\)\}" download>Download<\/a>/);
+  // patch 164, his answer "Remove it" (23.11.2026): the old per-manager Stage 2 lists panel is gone; the sending cards stay
+  assert.ok(!fn.includes('<h2>Stage 2 lists</h2>') && !fn.includes('Search company or person') && fn.includes('<div id="tcS2">${packs}</div>'));
   assert.doesNotMatch(app, /Who answered|Answered<|Coming</, 'no answered totals anywhere on the page');
   assert.match(app, /T_S2\.code = code \|\| T_S2\.code \|\| \(T_S2\.senders\.find\(\(x\) => x\.code === T_S2\.mine\) \|\| T_S2\.senders\[0\]\)\.code;/, 'opens on my own list');
   const server = fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8');

@@ -189,7 +189,7 @@ test('the page: the box under the fields, pre-set label, Not on a list, escaped;
   const W = { picks: { 'id:1': { decision: 'invite', way: 'digital' } }, out: [], moves: {}, settled: [] };
   let V = mlView(base, W);
   assert.deepEqual(V.groups[0].people.map((p) => p.decision), ['invite', null]);
-  assert.deepEqual(V.figures, { todo: 1, invite: 1, no: 0 });
+  assert.deepEqual(V.figures, { todo: 1, invite: 1, no: 0, postcard: 0 });
   const W2 = mlApply(W, { type: 'settle', ids: [2] });
   V = mlView(base, W2);
   assert.deepEqual(V.groups[0].people.map((p) => p.decision), ['invite', 'invite']);

@@ -147,7 +147,8 @@ test('at the door (his words 12.11: "everyone at the end get the puzzle piece on
 
 test('the page: Stage 3 tab with the cards for admins, the door scans tickets with the four answers, no Wallet note anywhere', () => {
   const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
-  assert.ok(app.includes("${tb('s3', 3, 'Stage 3 · Ticket')}"));
+  // patch 164, his words 23.11.2026 "its not the stage 3!! remove stage 3 for now": no Stage 3 tab; the ticket code stays for later
+  assert.ok(!app.includes("tb('s3'") && app.includes("const tab = T_GO_TAB === 's1' ? 's1' : 's2';"));
   // patch 148 (16.11.2026): the door reads the invitation card, not the ticket (LOCKED "Invitation QR only"); its four answers
   for (const t of ['First guest of this company', 'already handed over at', 'Not linked to a company yet', 'Not a Grand Opening card']) assert.ok(app.includes(t), t);
   assert.ok(!app.includes('Piece already with') && !app.includes('Hand over the piece'));
@@ -197,8 +198,8 @@ test('16.11 (patch 148) the demo door is the door by card: no ticket chapter, th
   assert.ok(ch.includes('Press a guest to scan their invitation card.') && ch.includes('Point at the invitation QR.'));
   for (const t of ['First guest of this company', 'already handed over at', 'Not linked to a company yet', 'Not a Grand Opening card']) assert.ok(html.includes(t), t);
   assert.ok(!/wallet/i.test(html), 'no Wallet in the demo');
-  assert.ok(html.includes('<b>The cards</b><span>one per invited company, its QR registers and opens the door</span>'));
-  assert.ok(html.includes('invitation card scanned at the door, piece handed over, piece on the board'));
+  // patch 164: "The order" is no chapter of the Client Journey; the entrance chapter carries the door (above)
+  assert.ok(html.includes('<h1>Client Journey · Grand Opening of Novikontas Academy</h1>'));
 });
 
 test('13.11 his pick "Hide until needed": no ticket cards while nobody on an owner list registered, the no-owner people stay one clickable line; at 1 or more the heading equals the sum of its figures', () => {
@@ -212,7 +213,7 @@ test('13.11 his pick "Hide until needed": no ticket cards while nobody on an own
   assert.ok(!html.includes('The ticket ·') && !html.includes('tcgo-pack') && !html.includes('tickets/preview'));
   assert.ok(html.includes(`onclick="tcTkList('')"><b>1</b><span>registered, no list owner</span>`));
   html = run({ connected: true, senders: zero, noOwner: [] });
-  assert.ok(!html.includes('tctk-fig') && !html.includes('tcgo-pack') && html.includes('Check-in at the door'));
+  assert.ok(!html.includes('tctk-fig') && !html.includes('tcgo-pack') && !html.includes('Check-in at the door'), 'patch 164: the door is in the More menu on phones');
   // 1 or more: cards only for owners with people; the heading = the sum of the card figures + the no-owner figure
   html = run({ connected: true, senders: [S('Marcis', 0), S('MC', 2, 1), S('JS', 3)], noOwner: [{ name: 'A', company: 'B' }] });
   assert.equal((html.match(/class="tcgo-pack"/g) || []).length, 2);

@@ -202,7 +202,8 @@ test('the screen: the menu item, shown once the figures are in; no page or link 
   const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
   assert.match(app, /else if \(place === 'go'\) await viewTcGo\(arg\);/);
   // the compact menu (the owner's pick B, 28.10.2026): the Grand Opening is a tab in Plan, shown once its figures are in
-  assert.match(app, /\.\.\.\(T_GO_ON \? \[\['#\/tc\/go', 'go', 'Grand Opening'\]\] : \[\]\)/);
+  // patch 164 (his words 23.11.2026): the Grand Opening is the FIRST tab and opens My Grand Opening list (the overview without a list)
+  assert.ok(app.includes("const plan = [...(T_GO_ON ? [[T_GO_MINE ? '#/tc/mylist' : '#/tc/go', 'go', 'Grand Opening']] : []), week ?"));
   assert.match(app, /T_GO_ON = true;/);
   // the owner 22.10: Not reached, Audience and Delivery are hidden (they could not do their job): no sub-item, no link to them
   // 06.11.2026: #/tc/go/hold|back|lists land on a part of the page (the demo tiles); any other #/tc/go/ address still leads nowhere
