@@ -1016,6 +1016,35 @@ CREATE TABLE IF NOT EXISTS tc_whatsapp_in (
   seen_at TEXT,
   seen_by TEXT
 );
+-- PRIVATE CLIENTS (23.11.2026, patch 166, src/tcprivate.js; his pick "A: Private clients list"): a Training Centre client who comes for
+-- themselves, not for a company. Their own record and history; archived, never deleted.
+CREATE TABLE IF NOT EXISTS tc_private_clients (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  phone TEXT,
+  email TEXT,
+  course TEXT,                     -- the course they ask about or come for
+  came_from TEXT,                  -- WhatsApp, a call, the website...
+  owner TEXT,                      -- the person in charge
+  status TEXT NOT NULL,            -- config/tc.json statuses
+  next_at TEXT,                    -- YYYY-MM-DD, the next contact
+  created_at TEXT NOT NULL,
+  created_by TEXT,
+  updated_at TEXT,
+  updated_by TEXT,
+  archived_at TEXT,
+  archived_by TEXT
+);
+CREATE TABLE IF NOT EXISTS tc_private_history (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  client_id BIGINT NOT NULL REFERENCES tc_private_clients(id),
+  kind TEXT NOT NULL,              -- call | email | whatsapp | physical_meeting | digital_meeting | note | edit
+  occurred_at TEXT NOT NULL,
+  body TEXT,
+  actor TEXT,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS tc_private_history_client ON tc_private_history (client_id, occurred_at);
 CREATE TABLE IF NOT EXISTS tc_same_dismissed (
   pair_key TEXT PRIMARY KEY,       -- '<lower id>:<higher id>'
   dismissed_at TEXT NOT NULL,

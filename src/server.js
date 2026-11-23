@@ -84,6 +84,7 @@ import * as tcrsvp from './tcrsvp.js';
 import * as tcmr from './tcmr.js';
 import * as tcfam from './tcfam.js';
 import * as tcsame from './tcsame.js';
+import * as tcprivate from './tcprivate.js';
 import { whatsappForwardGate, receiveTcWhatsApp, tcInbox, tcInboxDone } from './tcwhatsapp.js';
 import * as tcpeople from './tcpeople.js';
 import * as tcpic from './tcpic.js';
@@ -3842,6 +3843,29 @@ export const handle = async (req, res) => {
     // number, Waiting or Handled (?handled=1); Done hands a number's waiting messages. Signed in, Training Centre area (above).
     if (p === '/api/tc/inbox' && req.method === 'GET') {
       return json(res, 200, await tcInbox(db, { handled: url.searchParams.get('handled') === '1' }));
+    }
+    // PRIVATE CLIENTS (patch 166, his pick "A: Private clients list", src/tcprivate.js): the list, one client, add (also B2C from a
+    // TC Inbox card, which then moves the card to Handled), change, log a communication, archive. Training Centre area (above).
+    if (p === '/api/tc/private' && req.method === 'GET') return json(res, 200, await tcprivate.list(db));
+    const priv = p.match(/^\/api\/tc\/private(?:\/(\d{1,9})(?:\/(log|archive))?)?$/);
+    if (priv && (req.method === 'GET' || req.method === 'POST')) {
+      try {
+        if (req.method === 'GET' && priv[1] && !priv[2]) return json(res, 200, await tcprivate.get(db, Number(priv[1])));
+        if (req.method === 'POST') {
+          const b = await body(req), by = await actorOf(req, b);
+          if (!priv[1]) {
+            const out = await tcprivate.add(db, b, by);
+            if (b.via === 'whatsapp' && b.waKey) out.inbox = await tcInboxDone(db, b.waKey, by);
+            return json(res, 200, out);
+          }
+          if (priv[2] === 'log') return json(res, 200, await tcprivate.log(db, Number(priv[1]), b, by));
+          if (priv[2] === 'archive') return json(res, 200, await tcprivate.archive(db, Number(priv[1]), by));
+          return json(res, 200, await tcprivate.update(db, Number(priv[1]), b, by));
+        }
+      } catch (err) {
+        if (err instanceof tcprivate.PrivateError) return json(res, 400, { error: err.message });
+        throw err;
+      }
     }
     if (p === '/api/tc/inbox/done' && req.method === 'POST') {
       const b = await body(req);
