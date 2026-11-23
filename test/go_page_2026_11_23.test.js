@@ -22,7 +22,7 @@ test('the Postcard tile counts the invited people whose company also gets the po
 });
 
 test('the page: the tiles under each other, Download Excel in the Postcard tile, no Postcard list button; the corner link; the door in More; no Stage 3, no old panel', () => {
-  assert.ok(APP.includes(`<div class="tcml-stack">\${fig('invite', F.invite, 'Invite · digital')}\${fig('postcard', F.postcard, 'Postcard · in person or by mail')}</div>`));
+  assert.ok(APP.includes(`<div class="tcml-stack">\${fig('invite', F.invite, 'Invite · digital')}\${fig('postcard', F.postcard, 'Postcard · in person or by post')}</div>`));
   assert.ok(APP.includes(`T_ML.filter === 'postcard' ? '<div class="tcml-pcbar"><a class="btn sm" href="/api/tc/go/postcards.xlsx" download>Download Excel</a></div>'`));
   assert.ok(!APP.includes('href="#/tc/postcards">Postcard list</a>'));
   assert.ok(APP.includes(`'<a class="tc-cj" href="/api/tc/go/demo" target="_blank" rel="noopener">Client Journey ↗</a>'`) && !APP.includes('▶ Demo'));

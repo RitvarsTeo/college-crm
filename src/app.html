@@ -2784,7 +2784,7 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tcml-stack{display:flex;flex-direction:column;gap:8px;flex:1 1 150px;min-width:0} html.ui-c .tcml-stack .tcml-fig{flex:1;padding-top:8px;padding-bottom:8px} html.ui-c .tcml-stack .tcml-fig b{font-size:22px}
   html.ui-c .tcml-pcbar{margin:-4px 0 14px}
   html.ui-c #view{position:relative} html.ui-c .tc-cj{position:absolute;right:4px;top:10px;font-size:14px;font-weight:700;color:var(--t2);text-decoration:underline;text-underline-offset:3px}
-  @media (max-width:760px){ html.ui-c .tc-cj{position:static;display:block;text-align:right;margin:6px 0 0} html.ui-c .tcml-stack{flex:1 1 100%;flex-direction:row} html.ui-c .tcml-stack .tcml-fig{flex:1 1 0;min-width:0} }
+  @media (max-width:760px){ html.ui-c .tc-cj{position:static;display:block;text-align:right;margin:6px 0 0} html.ui-c .tcml-stack{flex:1 1 100%} html.ui-c .tcml-stack .tcml-fig{flex:1 1 auto} }
   html.ui-c .tcml-fig{flex:1 1 150px;text-align:left;background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:12px 16px;cursor:pointer;font:inherit;color:var(--ink)}
   html.ui-c .tcml-fig b{display:block;font-size:30px;font-weight:750;line-height:1.1} html.ui-c .tcml-fig span{font-weight:600;color:var(--t2)}
   html.ui-c .tcml-fig[aria-pressed="true"]{border-color:var(--btn-bg);box-shadow:inset 0 0 0 1.5px var(--btn-bg)}
@@ -13701,7 +13701,7 @@ function tcMlDraw() {
       <div class="tcml-bar"><span class="tcml-st${T_ML.dirty ? ' dirty' : ''}" role="status">${esc(tcMlStatus())}</span>
       <button type="button" class="btn ghost" ${T_ML.undo.length ? '' : 'disabled'} onclick="tcMlUndo()" title="Ctrl+Z">Undo</button>
       <button type="button" class="btn" onclick="tcMlSaveNow()">${T_ML.savedFlash ? 'Saved' : 'Save'}</button></div>${tcGoDemoBtn()}</div>
-    ${note}${lists}<div class="tcml-figs">${fig('all', F.todo + F.invite + F.no, 'All')}${fig('todo', F.todo, 'Still to decide')}<div class="tcml-stack">${fig('invite', F.invite, 'Invite · digital')}${fig('postcard', F.postcard, 'Postcard · in person or by mail')}</div>${fig('no', F.no, 'No')}</div>
+    ${note}${lists}<div class="tcml-figs">${fig('all', F.todo + F.invite + F.no, 'All')}${fig('todo', F.todo, 'Still to decide')}<div class="tcml-stack">${fig('invite', F.invite, 'Invite · digital')}${fig('postcard', F.postcard, 'Postcard · in person or by post')}</div>${fig('no', F.no, 'No')}</div>
     ${T_ML.filter === 'postcard' ? '<div class="tcml-pcbar"><a class="btn sm" href="/api/tc/go/postcards.xlsx" download>Download Excel</a></div>' : ''}
     ${tcPoSection()}${tcWvSection()}
     <div class="tcml-find"><input id="tcMlQ" class="c-search" type="search" placeholder="Search a company, a person or an email" aria-label="Search the list" autocomplete="off" value="${esc(T_ML.q)}" oninput="tcMlSearch(this.value)">${T_ML.q ? `<span class="tcml-found">${tcN(shown.length)} ${shown.length === 1 ? 'company' : 'companies'}</span>` : ''}</div>

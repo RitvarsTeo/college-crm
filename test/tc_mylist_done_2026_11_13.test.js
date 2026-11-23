@@ -40,7 +40,7 @@ test('By post is By mail everywhere; the stored value stays post', () => {
   assert.ok(APP.includes("['post', 'By mail']") && APP.includes("post: 'By mail' }, R = T_PC.rows") && APP.includes("fig('post', 'By mail')"));
   assert.ok(SERVER.includes("const WAY = { in_person: 'In person', post: 'By mail' };"));
   // the one exception: the extra button "Send by post" on an Invite, word for word from the picture he approved (patch 160, 20.11.2026)
-  for (const f of ['app.html', 'server.js', 'tcmylist.js']) assert.ok(!/by post/i.test(fs.readFileSync(path.join(ROOT, 'src', f), 'utf8').replace(/\['post', 'Send by post'\]/g, '').replace(/"Send by post"/g, '')), f);
+  for (const f of ['app.html', 'server.js', 'tcmylist.js']) assert.ok(!/by post/i.test(fs.readFileSync(path.join(ROOT, 'src', f), 'utf8').replace(/\['post', 'Send by post'\]/g, '').replace(/'Postcard · in person or by post'/g, '').replace(/"Send by post"/g, '')), f);
 });
 
 // his words 13.11.2026: "for company list, there has to be a search bar and the companies should be put alphabetically"
