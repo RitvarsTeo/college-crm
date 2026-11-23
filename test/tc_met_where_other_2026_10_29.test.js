@@ -22,5 +22,5 @@ test('the drawer: a box under the chips, shown only on Other, sent only with Oth
   const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
   assert.match(app, /Other<\/button><\/div><input id="tcm_where" autocomplete="off" maxlength="200" placeholder="Write where we met"/);
   assert.match(app, /w\.hidden = id !== null;/);
-  assert.match(app, /where: T_MET\.eventId \? '' : v\('where'\)/);
+  assert.ok(app.includes("where: pre || T_MET.eventId ? '' : v('where')"), 'patch 166: a lead from the Inbox sends no place');
 });

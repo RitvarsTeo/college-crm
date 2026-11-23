@@ -331,7 +331,9 @@ export async function quickAdd(db, b, actor) {
   const note = clip(b.note, 2000);
   // the owner 29.10.2026: Other opens a box to write where we met (a place that is not in the Season)
   const where = event ? event.name : clip(b.where, 200);
-  await logActivity(db, companyId, { kind: event ? 'exhibition' : 'physical_meeting', contactId,
+  // patch 166: "Make a lead" on a Training Centre Inbox card (his pick "TC client/contact"): the WhatsApp itself is the line
+  if (b.via === 'whatsapp') await logActivity(db, companyId, { kind: 'contact', contactId, body: `WhatsApp from ${who}.${note ? ' ' + note : ''}` }, actor);
+  else await logActivity(db, companyId, { kind: event ? 'exhibition' : 'physical_meeting', contactId,
     body: `Met ${who}${where ? ' at ' + where : ''}.${note ? ' ' + note : ''}` }, actor);
   return { companyId, contactId, newCompany, newContact };
 }

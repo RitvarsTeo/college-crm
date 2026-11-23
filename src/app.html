@@ -12122,20 +12122,22 @@ async function tcLoadCompanies() {
 // QUICK ADD (the owner's Client Hub pick 2, layout A, 26.10.2026): "+ Someone I met" on TC Home opens a drawer: the
 // company (picked, or new), the person, where we met, a note. Add puts the person on the company with a history line.
 let T_MET = null, T_MET_EVENTS = null, T_MET_T = 0;
-async function tcMetOpen() {
+async function tcMetOpen(pre) {
   if (!T_MET_EVENTS) { try { T_MET_EVENTS = (await api('/api/tc/met/events')).events || []; } catch (e) { T_MET_EVENTS = []; } }
-  T_MET = { companyId: null, company: '', newCompany: '', eventId: null };
+  T_MET = { companyId: null, company: '', newCompany: '', eventId: null, pre: pre || null };
   const f = (key, label, type = 'text') => `<div><label for="tcm_${key}">${label}</label><input id="tcm_${key}" type="${type}" autocomplete="off"></div>`;
   $('#modal').innerHTML = `<div class="tw-back" onclick="tcMetClose()"></div><aside class="tw-drawer tc-kdrawer tc-metdrawer" role="dialog" aria-modal="true" aria-label="Someone I met">
     <button type="button" class="tc-kx" aria-label="Close" onclick="tcMetClose()">✕</button>
-    <h2>Someone I met</h2><p class="tw-sub">goes onto the company, with a line in its history</p>
+    <h2>${pre ? 'Make a lead · company' : 'Someone I met'}</h2><p class="tw-sub">goes onto the company, with a line in its history</p>
     <div class="c-form c-form1 tc-kform">
       <div><label for="tcm_q">Company</label><div id="tcmPicked"></div><input id="tcm_q" autocomplete="off" placeholder="Start typing a company" oninput="tcMetSearch()"><div id="tcmHits" class="tc-mhits"></div></div>
       ${f('name', 'Name')}${f('position', 'Position')}${f('email', 'Email', 'email')}${f('phone', 'Phone')}
-      <div><label>Where we met</label><div class="tw-opts" id="tcmWhere">${T_MET_EVENTS.map((e) => `<button type="button" class="tw-opt" aria-pressed="false" onclick="tcMetWhere(${Number(e.id)})">${esc(e.name)}</button>`).join('')}<button type="button" class="tw-opt" aria-pressed="true" onclick="tcMetWhere(null)">Other</button></div><input id="tcm_where" autocomplete="off" maxlength="200" placeholder="Write where we met" aria-label="Where we met, written in" style="margin-top:8px"></div>
+      <div${pre ? ' hidden' : ''}><label>Where we met</label><div class="tw-opts" id="tcmWhere">${T_MET_EVENTS.map((e) => `<button type="button" class="tw-opt" aria-pressed="false" onclick="tcMetWhere(${Number(e.id)})">${esc(e.name)}</button>`).join('')}<button type="button" class="tw-opt" aria-pressed="true" onclick="tcMetWhere(null)">Other</button></div><input id="tcm_where" autocomplete="off" maxlength="200" placeholder="Write where we met" aria-label="Where we met, written in" style="margin-top:8px"></div>
       <div><label for="tcm_note">Note</label><textarea id="tcm_note" rows="3"></textarea></div></div>
     <div id="tcmErr"></div>
     <div class="tw-acts"><button class="btn" onclick="tcMetSave()">Add</button><button class="btn ghost" onclick="tcMetClose()">Cancel</button></div></aside>`;
+  // patch 166: from a Training Centre Inbox card, the person and the message are already there
+  if (pre) { for (const [k, v] of [['name', pre.name], ['phone', pre.phone], ['note', pre.note]]) { const el = $('#tcm_' + k); if (el && v) el.value = v; } }
   const q = $('#tcm_q'); if (q) q.focus();
 }
 function tcMetClose() { if ($('.tc-metdrawer')) $('#modal').innerHTML = ''; T_MET = null; }
@@ -12167,8 +12169,10 @@ function tcMetShowPicked() {
 async function tcMetSave() {
   const v = (k) => ($('#tcm_' + k) || {}).value || '';
   try {
+    const pre = T_MET.pre;
     const r = await post('/api/tc/met', { companyId: T_MET.companyId, newCompany: T_MET.newCompany, name: v('name'), position: v('position'),
-      email: v('email'), phone: v('phone'), eventId: T_MET.eventId, where: T_MET.eventId ? '' : v('where'), note: v('note') });
+      email: v('email'), phone: v('phone'), eventId: pre ? null : T_MET.eventId, where: pre || T_MET.eventId ? '' : v('where'), note: v('note'),
+      ...(pre ? { via: 'whatsapp', waKey: pre.key } : {}) });
     tcMetClose(); T_META = null; await tcMeta(); location.hash = '#/tc/company/' + Number(r.companyId);
   } catch (e) { tcErr('#tcmErr', e.message); }
 }
@@ -12562,7 +12566,7 @@ function tcInboxDraw() {
       ${c.messages.length > 5 ? `<div class="ib-msg">${Number(c.messages.length - 5)} earlier</div>` : ''}${c.messages.slice(0, 5).reverse().map(msg).join('')}
       ${c.person || c.name ? `<div class="ib-tags"><span class="ib-kind">${cTelLink({ phone: tcWaNum(c.number) }) || esc(c.number)}</span></div>` : ''}
       ${live ? cStateLine('new', cAgo(c.at), '', fmtDateTime(c.at)) : `<div class="ib-before"><span>Done ${esc(fmtDateTime(c.seenAt) || '')}${c.seenBy ? ' · ' + esc(c.seenBy) : ''}</span></div>`}
-      ${live ? `<div class="ib-acts"><button class="btn sm" onclick="tcInboxDone(${esc(JSON.stringify(String(c.key)))}, this)">Done</button></div>` : ''}</div>`;
+      ${live ? `<div class="ib-acts"><button class="btn sm" onclick="tcInboxLead(${esc(JSON.stringify(String(c.key)))})">Make a lead</button><button type="button" class="ib-aside" onclick="tcInboxDone(${esc(JSON.stringify(String(c.key)))}, this)">Done</button></div>` : ''}</div>`;
   const shown = cols.filter((c) => c.cards.length || live);
   const board = D.cards.length
     ? `<div class="c-cols ib-board" style="grid-template-columns:${shown.map(() => 'minmax(0,1fr)').join(' ')}">${shown.map((c, i) => `<div class="c-col ib-col"><h3><span class="c-jn">${i + 1}</span>${esc(c.label)}<b>${c.cards.length}</b></h3>
@@ -12570,6 +12574,13 @@ function tcInboxDraw() {
     : `<div class="c-sheet"><div class="c-empty">${live ? 'Nothing waiting. This queue is clear.' : 'Nothing here.'}</div></div>`;
   $('#view').innerHTML = `<p class="c-crumb">Training Centre · WhatsApp +371 6244 4609</p><div class="c-head"><div><h1>Inbox</h1></div>
     <div class="c-seg p-view" role="group" aria-label="Show"><button aria-pressed="${live}" onclick="location.hash='#/tc/inbox'">Waiting</button><button aria-pressed="${!live}" onclick="location.hash='#/tc/inbox/handled'">Handled</button></div></div>${board}`;
+}
+// MAKE A LEAD (his pick "TC client/contact"): the company and the contact under Clients, through "Someone I met" pre-filled with
+// the WhatsApp; Add puts them there with a WhatsApp line in the company's history and moves the card to Handled
+function tcInboxLead(key) {
+  const c = T_IN.cards.find((x) => x.key === key); if (!c) return;
+  const last = c.messages[0] || {};
+  tcMetOpen({ key, name: c.person || c.name || '', phone: tcWaNum(c.number), note: last.body || '' });
 }
 async function tcInboxDone(key, btn) {
   if (btn) btn.disabled = true;

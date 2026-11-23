@@ -3514,7 +3514,10 @@ export const handle = async (req, res) => {
     if (p === '/api/tc/met/events' && req.method === 'GET') return json(res, 200, { events: await tc.metEvents(db) });
     if (p === '/api/tc/met' && req.method === 'POST') {
       try {
-        const out = await tc.quickAdd(db, await body(req), await actorOf(req, {}));
+        const b = await body(req), by = await actorOf(req, {});
+        const out = await tc.quickAdd(db, b, by);
+        // patch 166: made from a Training Centre Inbox card, the card's number is handled with it
+        if (b.via === 'whatsapp' && b.waKey) out.inbox = await tcInboxDone(db, b.waKey, by);
         const list = [];
         if (out.newCompany) list.push({ kind: 'company', companyId: out.companyId });
         else if (out.newContact) list.push({ kind: 'contact', companyId: out.companyId, contactId: out.contactId });

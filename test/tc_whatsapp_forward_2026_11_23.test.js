@@ -59,3 +59,16 @@ test('the page: Inbox under Home in the Training Centre menu and in the phone Mo
   const fn = APP.slice(APP.indexOf('function tcInboxDraw('), APP.indexOf('async function tcInboxDone('));
   for (const part of ['c-cols ib-board', 'c-col ib-col', 'ib-card', 'ib-ch', 'C_SRC_COLOUR.whatsapp', 'cInboxAge(c.at)', "cStateLine('new'", 'Waiting', 'Handled']) assert.ok(fn.includes(part), part);
 });
+
+test('Make a lead from a TC Inbox card (his pick "TC client/contact"): company + contact under Clients, a WhatsApp line in its history, never an Academy lead', async () => {
+  const tc = await import('../src/tc.js');
+  const db = await openDb();
+  const out = await tc.quickAdd(db, { newCompany: 'Example Wind UAB', name: 'Jonas Sample', phone: '+37060000002', note: 'Can you send the GWO price list?', via: 'whatsapp' }, 'Laura');
+  assert.equal(out.newCompany, true);
+  const line = await db.prepare('SELECT kind, body FROM tc_activities WHERE company_id = ? AND kind = ?').get(out.companyId, 'contact');
+  assert.equal(line.body, 'WhatsApp from Jonas Sample. Can you send the GWO price list?');
+  assert.equal(Number((await db.prepare("SELECT COUNT(*) n FROM tc_activities WHERE body LIKE 'Met %'").get()).n), 0, 'not a meeting');
+  assert.equal(Number((await db.prepare('SELECT COUNT(*) n FROM people').get()).n), 0, 'never an Academy lead');
+  const srv = fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8');
+  assert.ok(srv.includes("if (b.via === 'whatsapp' && b.waKey) out.inbox = await tcInboxDone(db, b.waKey, by);"), 'the card moves to Handled');
+});
