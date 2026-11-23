@@ -82,7 +82,7 @@ test('1. two editors: Save refused when someone saved since the page loaded ("Sa
   await ml.saveDraft(db, 'JS', { ...E, out: [] , picks: { [A]: { decision: 'no' } } }, 'Jānis Sticenko', v2, JS);
   await ml.saveDraft(db, 'JS', { ...E, picks: { [B]: { decision: 'invite', way: 'post' } } }, 'Ritvars', v2, AD);
   assert.deepEqual((await ml.myList(db, 'JS', JS)).draft.state.picks, { [A]: { decision: 'no', way: null } });
-  assert.deepEqual((await ml.myList(db, 'JS', AD)).draft.state.picks, { [B]: { decision: 'invite', way: 'post' } });
+  assert.deepEqual((await ml.myList(db, 'JS', AD)).draft.state.picks, { [B]: { decision: 'invite', way: 'digital,post' } });
   assert.equal((await ml.myList(db, 'JS')).draft, null, 'no editor, no draft');
 });
 
@@ -110,7 +110,7 @@ test('3. a stale draft never blocks Save: companies and people no longer on the 
   await assert.rejects(ml.saveState(db, 'JS', { ...E, picks: { [A]: { decision: 'invite', way: 'pigeon' } } }, 'J'), /Digital, in person or by mail/);
 });
 
-test('4. (patch 160) Invite = digital by default; in person / by post go on top; a single way saved before stays as it was', async () => {
+test('4. (patch 160) Invite = digital for everyone; in person / by post go on top; a pick saved before gets digital too', async () => {
   const db = await openDb();
   const { A } = await seed(db);
   let L = await ml.saveState(db, 'JS', { ...E, picks: { [A]: { decision: 'invite' } } }, 'J');
@@ -125,7 +125,9 @@ test('4. (patch 160) Invite = digital by default; in person / by post go on top;
   assert.equal((await ml.postcardRows(db, ['JS'])).length, 3, 'and by post on top');
   L = await ml.saveState(db, 'JS', { ...E, picks: { [A]: { decision: 'invite', way: 'in_person' } } }, 'J');
   assert.deepEqual(L.figures, { todo: 2, invite: 3, no: 0 });
-  assert.equal((await ml.digitalIds(db, 'JS')).size, 0, 'an old in-person pick stays in person only');
+  // the owner, 23.11.2026: "Digital by default is for everyone by the way!"
+  assert.equal(L.groups.find((g) => g.key === A).way, 'digital,in_person', 'an old in-person pick gets digital too');
+  assert.equal((await ml.digitalIds(db, 'JS')).size, dig);
   assert.equal((await ml.postcardRows(db, ['JS'])).length, 3);
   await assert.rejects(ml.saveState(db, 'JS', { ...E, picks: { [A]: { decision: 'invite', way: 'digital,pigeon' } } }, 'J'), /Digital, in person or by mail/);
 });

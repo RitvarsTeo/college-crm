@@ -109,6 +109,9 @@ test('12.11 the full flow: without a saved Invite + Digital from the owner nobod
   await s2.sendNext(db, 'Marcis', 'b-test-0102', ME, { env: ENV, fetchImpl: G2.fetchImpl });
   await s2.sendNext(db, 'Marcis', 'b-test-0102', ME, { env: ENV, fetchImpl: G2.fetchImpl });
   assert.equal(G2.sent.length, 14); assert.ok(!G2.sent.some((m) => /To: p1@example\.com/.test(m)));
-  await ml.saveState(db, 'Marcis', { picks: { 'n:': { decision: 'invite', way: 'post' } }, out: [], moves: {} }, 'M');   // postcards, not email
+  // by mail is an extra ON TOP of the digital invitation (the owner, 23.11.2026: "Digital by default is for everyone by the way!")
+  await ml.saveState(db, 'Marcis', { picks: { 'n:': { decision: 'invite', way: 'post' } }, out: [], moves: {} }, 'M');
+  assert.equal((await s2.overview(db, { env: ENV, fetchImpl: G2.fetchImpl })).senders.find((x) => x.code === 'Marcis').n, 15);
+  await ml.saveState(db, 'Marcis', { picks: { 'n:': { decision: 'no' } }, out: [], moves: {} }, 'M');   // No = nothing
   assert.equal((await s2.overview(db, { env: ENV, fetchImpl: G2.fetchImpl })).senders.find((x) => x.code === 'Marcis').n, 0);
 });

@@ -13475,12 +13475,13 @@ let T_GO_DEMO = false;
 // Save; autosave keeps a draft on the server; leaving with unsaved changes asks first; Undo and Ctrl+Z step back.
 // The owner sees their own list; an admin switches between the lists.
 // MLSTATE START - pure functions (test/tc_mylist_2026_11_12.test.js reads this block)
-// the way of an Invite (patch 160): a comma list, digital by default ("digital", "digital,post"); one saved before stays as it was
+// the way of an Invite (patch 160): a comma list that always includes digital ("digital", "digital,post"); the owner 23.11.2026:
+// "Digital by default is for everyone by the way!" - a pick saved before as in person or by mail gets digital too
 function mlWayParts(w) { return String(w || '').split(',').map((x) => x.trim()).filter((x) => ['digital', 'in_person', 'post'].includes(x)); }
 function mlWayNorm(decision, w) {
   if (decision !== 'invite') return null;
-  const parts = mlWayParts(w);
-  return parts.length ? ['digital', 'in_person', 'post'].filter((k) => parts.includes(k)).join(',') : 'digital';
+  const parts = ['digital', ...mlWayParts(w)];
+  return ['digital', 'in_person', 'post'].filter((k) => parts.includes(k)).join(',');
 }
 const mlClone = (w) => JSON.parse(JSON.stringify(w));
 /** The page's view of the list: the saved groups with the working state applied (moves, picks, people tapped out). */

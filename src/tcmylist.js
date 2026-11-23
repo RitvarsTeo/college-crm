@@ -25,14 +25,15 @@ const S2 = () => ((((TC.grandOpening || {}).stage2 || {}).senders) || []);
 export const WAYS = ['digital', 'in_person', 'post'];
 // INVITE = DIGITAL BY DEFAULT (patch 160, 20.11.2026, the owner: "visi saņem digital by default, bet tie kuri ir invited ... uzspied
 // invite, paliek kā default poga"): an Invite is a digital invitation; "Hand over in person" and "Send by post" are optional extras on
-// top. The way is kept as a comma list ("digital,post"); a pick saved before keeps its single way (in person / by mail stay as they were).
+// top. The way is kept as a comma list ("digital,post"); every Invite includes digital, a pick saved before too (23.11.2026).
 export const wayParts = (w) => String(w || '').split(',').map((x) => x.trim()).filter((x) => WAYS.includes(x));
 export const wayHas = (w, part) => wayParts(w).includes(part);
-/** The way an Invite is saved with: its parts in a fixed order, digital when none is given. */
+/** The way an Invite is saved with: its parts in a fixed order, ALWAYS with digital (the owner, 23.11.2026: "Digital by default is
+ *  for everyone by the way!": a pick saved before as in person or by mail gets the digital invitation too). */
 export const wayNorm = (decision, w) => {
   if (decision !== 'invite') return null;
-  const parts = wayParts(w);
-  return parts.length ? WAYS.filter((x) => parts.includes(x)).join(',') : 'digital';
+  const parts = ['digital', ...wayParts(w)];
+  return WAYS.filter((x) => parts.includes(x)).join(',');
 };
 const physical = (w) => (wayHas(w, 'in_person') ? 'in_person' : wayHas(w, 'post') ? 'post' : null);
 const nowIso = () => new Date().toISOString();

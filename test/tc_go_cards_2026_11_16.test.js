@@ -132,7 +132,7 @@ test('the export: board order, QR link, delivery, Dear = first invited person wi
   assert.equal(a.place, '1B'); assert.match(a.qr, /^https:\/\/novikontas\.org\/grand-opening\?k=[a-z0-9]{6}$/);
   assert.equal(a.way, 'Digital'); assert.equal(a.dear, 'Anna Example'); assert.equal(a.names, 'Anna Example', 'the mailbox has no name, Ben is tapped out');
   assert.equal(a.owner, 'Jānis Sticenko');
-  assert.equal(rows.find((r) => r.company === 'Betaship Example SIA').way, 'By mail');
+  assert.equal(rows.find((r) => r.company === 'Betaship Example SIA').way, 'Digital + By mail', 'digital for everyone (23.11.2026)');
   assert.equal(rows.find((r) => r.company === 'Deltaline Example Ltd').owner, 'Dmitrijs Semjonovs');
   assert.deepEqual((await ml.cardRows(db, ['DS'])).map((r) => r.company), ['Deltaline Example Ltd'], 'an owner sees their own list only');
 });
