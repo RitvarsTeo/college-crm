@@ -2858,6 +2858,13 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tc-mrow b{display:block} html.ui-c .tc-mrow small{display:block;color:var(--t3);font-size:12px} html.ui-c .tc-mrow:hover{background:var(--surface-2)}
   @media (max-width:760px){ html.ui-c .tc-mrow{grid-template-columns:minmax(0,1fr) auto} html.ui-c .tc-mrow > span:nth-child(2), html.ui-c .tc-mrow > span:nth-child(3){display:none} }
   /* Families cards and the company row chips (02.11.2026, the owner's pick "Yes, build all") */
+  html.ui-c .tcsame-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px;max-width:1100px}
+  html.ui-c .tcsame-g{padding:18px 20px;margin:0 0 14px} html.ui-c .tcsame-c{display:flex;align-items:center;gap:12px;padding:8px 0}
+  html.ui-c .tcsame-c + .tcsame-c{border-top:1px solid var(--rule)} html.ui-c .tcsame-c input{width:18px;height:18px}
+  html.ui-c .tcsame-c span{flex:1;display:flex;flex-direction:column} html.ui-c .tcsame-c b{font-size:17px}
+  html.ui-c .tcsame-c small{color:var(--t3);font-weight:600;font-size:14px} html.ui-c .tcsame-c em{font-style:normal;font-size:13px;font-weight:700;color:var(--t2)}
+  html.ui-c .tcsame-act{display:flex;gap:10px;margin-top:12px}
+  @media (max-width:760px){ html.ui-c .tcsame-grid{grid-template-columns:1fr} }
   html.ui-c .tcfam-card{grid-template-columns:200px minmax(0,1fr) auto} html.ui-c .tcfam-chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
   html.ui-c .tcfam-n{font-size:12px;font-weight:700;background:#0a2463;color:#fff;border-radius:999px;padding:4px 10px}
   html.ui-c .tcfam-chip{font-size:12px;background:var(--surface-2);color:var(--ink);border-radius:999px;padding:4px 10px;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -11577,8 +11584,9 @@ function tcPageTabs(place) {
   const week = typeof viewTcWeek === 'function', season = typeof viewTcSeason === 'function';
   const plan = [week ? ['#/tc/week', 'week', 'My week'] : ['#/tc/next', 'next', 'Next contacts'], ...(season ? [['#/tc/season', 'season', 'Season']] : []), ...(T_GO_ON ? [['#/tc/go', 'go', 'Grand Opening']] : [])];
   const clients = [['#/tc/companies', 'companies', 'Companies'], ['#/tc/book', 'book', 'Client book'],
-    ...(T_ADDN && T_ADDN.approver ? [['#/tc/additions', 'additions', `New additions${T_ADDN.n ? ' · ' + Number(T_ADDN.n) : ''}`]] : [])];
-  const group = ['week', 'season', 'go', 'next'].includes(place) ? plan : ['companies', 'clients', 'prospects', 'book', 'additions'].includes(place) ? clients : null;
+    ...(T_ADDN && T_ADDN.approver ? [['#/tc/additions', 'additions', `New additions${T_ADDN.n ? ' · ' + Number(T_ADDN.n) : ''}`]] : []),
+    ...(isAdmin() ? [['#/tc/same', 'same', 'Same company?']] : [])];
+  const group = ['week', 'season', 'go', 'next'].includes(place) ? plan : ['companies', 'clients', 'prospects', 'book', 'additions', 'same'].includes(place) ? clients : null;
   const on = ['clients', 'prospects'].includes(place) ? 'companies' : place;
   // a div, not a nav: the page's own nav rule is the side menu's
   T_TABS = group && group.length > 1 ? `<div class="c-seg tc-pagetabs" role="navigation" aria-label="${group === plan ? 'Plan' : 'Clients'}">${group.map(([h, id, label]) =>
@@ -11601,7 +11609,7 @@ if (typeof MutationObserver !== 'undefined' && typeof document !== 'undefined' &
 }
 function tcMore(open) { const m = $('#tMore'); if (m) m.hidden = !open; }
 // which menu item a page belongs to (the compact menu, the owner's pick B, 28.10.2026)
-const TC_PLAN = ['week', 'season', 'go', 'next', 'mylist', 'postcards'], TC_CLIENTS = ['companies', 'company', 'clients', 'prospects', 'book', 'families', 'import'];
+const TC_PLAN = ['week', 'season', 'go', 'next', 'mylist', 'postcards'], TC_CLIENTS = ['companies', 'company', 'clients', 'prospects', 'book', 'families', 'import', 'same'];
 function tcMark(place) {
   const item = TC_PLAN.includes(place) ? 'plan' : TC_CLIENTS.includes(place) ? 'companies' : place;
   document.querySelectorAll('.tcnav a').forEach((a) => a.classList.toggle('on', a.dataset.c === 'tc-' + item));
@@ -11645,6 +11653,7 @@ async function tcRoute(hash) {
     else if (place === 'mylist') viewTcMyList(arg ? decodeURIComponent(arg) : '');   // my Grand Opening list, 12.11.2026
     else if (place === 'postcards') viewTcPostcards();   // the postcard list, 12.11.2026
     else if (place === 'families') await viewTcFamilies();   // the owner's pick B, 28.10.2026
+    else if (place === 'same') await viewTcSame();   // patch 163, his tick list 23.11.2026
     else if (place === 'import') viewTcImport();   // the owner's pick A, 28.10.2026
     else if (place === 'additions') await viewTcAdditions();   // the owner, 29.10.2026: New additions, approve or flag
     else { await viewTcHome(); tcMyClients(); tcTourFirst(); }
@@ -12516,6 +12525,36 @@ function tcImpDraw() {
 // the company families! DO a proper research! there should not even be a too look at tab!": families are decided by
 // research with a source each, Projects/College CRM/_tc/families_research_2026-11-06.md; no suggestions to look at here).
 let T_FAM = null;
+// SAME COMPANY? (23.11.2026, patch 163; his picks "Auto obvious, tick rest" and the tick list "Yes, build it"): one card per group of
+// companies that may be one company. The company kept is chosen (most people first); "Same company" merges the others into it
+// (src/tcsame.js: everything moves, the others are archived, one Grand Opening card stays); "Not the same" never asks again.
+let T_SAME = null;
+async function viewTcSame() {
+  if (!isAdmin()) { $('#view').innerHTML = '<div class="c-sheet c-empty">Admins only.</div>'; return; }
+  T_SAME = await api('/api/tc/same');
+  tcSameDraw();
+}
+function tcSameDraw() {
+  const S = T_SAME, ppl = (n) => (Number(n) === 1 ? '1 person' : `${Number(n)} people`);
+  const card = (g, i) => `<section class="c-sheet tcsame-g" data-i="${Number(i)}">${g.map((c, j) => `<label class="tcsame-c"><input type="radio" name="tcsame${Number(i)}" value="${Number(c.id)}"${j ? '' : ' checked'} onchange="tcSameKeep(${Number(i)})">`
+    + `<span><b>${esc(c.name)}</b><small>${esc([ppl(c.contacts), c.country].filter(Boolean).join(' · '))}</small></span><em>${j ? '' : 'Keeps this name'}</em></label>`).join('')}
+    <div class="tcsame-act"><button class="btn" type="button" onclick="tcSameDo(${Number(i)}, 'merge')">Same company</button><button class="btn ghost" type="button" onclick="tcSameDo(${Number(i)}, 'dismiss')">Not the same</button></div></section>`;
+  $('#view').innerHTML = `<div class="c-head"><div><h1>Same company?</h1><p class="c-crumb">${tcN(S.check.length)} to check</p></div></div>
+    <div class="tcsame-grid">${S.check.map(card).join('') || '<div class="c-sheet c-empty">Nothing to check.</div>'}</div>`;
+}
+function tcSameKeep(i) {
+  const g = document.querySelector(`.tcsame-g[data-i="${Number(i)}"]`);
+  if (g) g.querySelectorAll('.tcsame-c').forEach((l) => { l.querySelector('em').textContent = l.querySelector('input').checked ? 'Keeps this name' : ''; });
+}
+async function tcSameDo(i, what) {
+  const g = T_SAME.check[i], box = document.querySelector(`.tcsame-g[data-i="${Number(i)}"]`);
+  const keep = Number((box.querySelector('input:checked') || {}).value || g[0].id), others = g.map((c) => Number(c.id)).filter((x) => x !== keep);
+  box.querySelectorAll('button').forEach((b) => { b.disabled = true; });
+  try {
+    await post('/api/tc/same/' + what, { keep, others });
+    T_SAME.check.splice(i, 1); tcSameDraw();
+  } catch (err) { box.querySelectorAll('button').forEach((b) => { b.disabled = false; }); alert(err.message); }
+}
 async function viewTcFamilies() {
   T_FAM = await api('/api/tc/families');
   tcFamDraw();

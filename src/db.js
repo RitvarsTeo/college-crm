@@ -990,6 +990,22 @@ CREATE TABLE IF NOT EXISTS tc_go_company_picks (
   set_by TEXT
 );
 CREATE UNIQUE INDEX IF NOT EXISTS tc_go_company_picks_one ON tc_go_company_picks (sender, company_key);
+-- SAME COMPANY (23.11.2026, patch 163, src/tcsame.js): every merge (the company kept, the one archived, what moved), and the pairs
+-- somebody answered "Not the same" (never asked again).
+CREATE TABLE IF NOT EXISTS tc_same_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  keep_id BIGINT NOT NULL,
+  drop_id BIGINT NOT NULL,
+  mode TEXT NOT NULL,              -- auto (the one-off obvious step) | ticked (his tick list)
+  at TEXT NOT NULL,
+  by_name TEXT,
+  detail TEXT                      -- JSON: what moved, what was removed, any decision that differed, the card kept and freed
+);
+CREATE TABLE IF NOT EXISTS tc_same_dismissed (
+  pair_key TEXT PRIMARY KEY,       -- '<lower id>:<higher id>'
+  dismissed_at TEXT NOT NULL,
+  dismissed_by TEXT
+);
 CREATE TABLE IF NOT EXISTS tc_go_people_out (
   stage2_id BIGINT PRIMARY KEY,    -- tc_go_stage2.id; 1 = left out of an invitation (tapped), 0 = back in
   out_flag INTEGER NOT NULL,

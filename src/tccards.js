@@ -28,6 +28,9 @@ const pgStore = {
   async linkCode(db, code, key, company, by) {
     return db.prepare('SELECT card_code AS code, card_place AS place FROM intake_go.card_link_code(?, ?, ?, ?)').get(code, key, company, by);
   },
+  async merge(db, fromKey, toKey, keepCode, company, by) {
+    return db.prepare('SELECT kept_code, kept_place, freed_code, freed_place FROM intake_go.card_merge(?, ?, ?, ?, ?)').all(fromKey, toKey, keepCode, company, by);
+  },
 };
 
 const active = (db) => store || (db && db.kind === 'pg' ? pgStore : null);
@@ -83,6 +86,16 @@ export async function linkCode(db, code, key, company, by) {
   if (!s || !s.linkCode) throw new Error('The cards are not reachable.');
   const r = await s.linkCode(db, String(code), String(key), String(company || '').slice(0, 200), String(by || '').slice(0, 120));
   return r && CODE.test(String(r.code)) ? { code: String(r.code), place: String(r.place) } : null;
+}
+
+/** SAME COMPANY (patch 163): the company `toKey` keeps the card `keepCode`; every other card of either company is freed
+ *  (docs/client-hub/intake_go_cards_merge.sql; a reserved card or one with a registration is refused there). '' = neither has
+ *  a card. Returns { kept, freed: [places] }. Throws when no card store is reachable. */
+export async function mergeCards(db, fromKey, toKey, keepCode, company, by) {
+  const s = active(db);
+  if (!s || !s.merge) throw new Error('The cards are not reachable.');
+  const rows = await s.merge(db, String(fromKey), String(toKey), String(keepCode || ''), String(company || '').slice(0, 200), String(by || '').slice(0, 120));
+  return { kept: (rows.find((r) => r.kept_place) || {}).kept_place || null, freed: rows.filter((r) => r.freed_place).map((r) => String(r.freed_place)) };
 }
 
 /** "14H" -> { col: 14, row: 'H', rowNo: 8 } on the 35 x 22 board (rows A..V). */

@@ -83,6 +83,7 @@ import * as tcgopass from './tcgopass.js';
 import * as tcrsvp from './tcrsvp.js';
 import * as tcmr from './tcmr.js';
 import * as tcfam from './tcfam.js';
+import * as tcsame from './tcsame.js';
 import * as tcpeople from './tcpeople.js';
 import * as tcpic from './tcpic.js';
 import * as tchome from './tchome.js';
@@ -3794,6 +3795,31 @@ export const handle = async (req, res) => {
       if (famAct[1] === 'dismiss') return json(res, 200, await tcfam.dismissSuggestion(db, b.suggestion, by));
       if (famAct[1] === 'unlink') return json(res, 200, await tcfam.unlinkCompany(db, Number(b.companyId), by));
       return json(res, 200, await tcfam.confirmFamily(db, b, by));
+    }
+    // SAME COMPANY? (23.11.2026, patch 163, src/tcsame.js; his tick list "Yes, build it"): admins only. The groups to check, one
+    // company kept and the others merged into it ("Same company"), or the group never asked again ("Not the same").
+    if (p === '/api/tc/same' && req.method === 'GET') {
+      if (!(await adminOf(req))) return refuseNotAdmin(res);
+      const S = await tcsame.findSame(db);
+      return json(res, 200, { obvious: S.obvious.length, check: S.check });
+    }
+    const sameAct = p.match(/^\/api\/tc\/same\/(merge|dismiss)$/);
+    if (sameAct && req.method === 'POST') {
+      if (!(await adminOf(req))) return refuseNotAdmin(res);
+      const b = await body(req);
+      const by = await actorOf(req, b);
+      const ids = (v) => (Array.isArray(v) ? v : [v]).map(Number).filter((x) => Number.isInteger(x) && x > 0);
+      const keep = Number(b.keep), others = ids(b.others).filter((x) => x !== keep);
+      if (!(Number.isInteger(keep) && keep > 0) || !others.length || others.length > 20) return json(res, 400, { error: 'Which companies?' });
+      try {
+        if (sameAct[1] === 'dismiss') { for (const o of others) await tcsame.dismiss(db, keep, o, by); return json(res, 200, { ok: true }); }
+        const done = [];
+        for (const o of others) done.push(await tcsame.merge(db, keep, o, by, { mode: 'ticked' }));
+        return json(res, 200, { ok: true, merged: done.length, conflicts: done.flatMap((r) => r.conflicts), cards: done.map((r) => r.cards).filter(Boolean) });
+      } catch (err) {
+        if (err instanceof tcsame.SameError) return json(res, 409, { error: err.message });
+        throw err;
+      }
     }
     // HOW OUR CLIENTS CHANGED (26.10.2026, src/tcmr.js): the Client book chapter (?all=1 every client), one company's card
     if (p === '/api/tc/trends' && req.method === 'GET') {
