@@ -11,6 +11,7 @@ const purl = new URL(env.INTAKE_SUPABASE_DATABASE_URL.trim()); purl.searchParams
 const ROOT = 'C:/Users/ritvarsv/Desktop/WF/Local Repo/Projects/College CRM/crm-tc-data2';
 const pc = new pg.Client({ connectionString: purl.toString(), ssl: { ca: fs.readFileSync(ROOT + '/config/supabase-root-2021-ca.crt', 'utf8'), rejectUnauthorized: true } });
 const { findSame } = await import('file:///' + ROOT.replace(/ /g, '%20') + '/src/tcsame.js');
+const { planObvious } = await import('file:///' + ROOT.replace(/ /g, '%20') + '/scripts/merge_same_companies.mjs');
 await pc.connect();
 // a tiny db facade over pg for findSame's two SELECTs (? -> $n, schema crm)
 let NO_DISMISSED = false;
@@ -31,6 +32,7 @@ try {
     const cd = cardsRows.find((x) => x.company_key === k); return `${c.name} [${c.id}] ${c.contacts}c${c.country ? ' ' + c.country : ''}${p ? ' {' + p + '}' : ''}${cd ? ' card ' + cd.place : ''}`; };
   const differs = (g) => { const d = g.flatMap((c) => picks.filter((x) => x.company_key === 'id:' + c.id)); return d.length > 1 && d.some((x) => x.decision !== d[0].decision || (x.way || '') !== (d[0].way || '')); };
   const auto = S.obvious.filter((g) => !differs(g)), toTick = S.obvious.filter(differs);
+  console.log('PREVIEW HASH (merge_same_companies.mjs): ' + planObvious(S.obvious).hash);
   console.log(`OBVIOUS, merged by the apply step: ${auto.length} groups (${auto.reduce((n, g) => n + g.length - 1, 0)} companies archived into the first)`);
   for (const g of auto) console.log('  KEEP ' + tag(g[0]) + '  <=  ' + g.slice(1).map(tag).join('  |  '));
   console.log(`\nOBVIOUS but different decisions -> his tick list: ${toTick.length}`);
