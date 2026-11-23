@@ -15,7 +15,7 @@ function start() {
     const child = spawn(process.execPath, [path.join(ROOT, 'src', 'server.js')], { env: { ...process.env,
       PORT: '0', CRM_DB: ':memory:', DATASET: 'empty', CRM_AUTH: '1', CRM_SESSION_SECRET: crypto.randomBytes(32).toString('hex'),
       CRM_INSECURE_COOKIE: '1', CRM_PUBLIC: '', DATABASE_URL: '', DATABASE_URL_UNPOOLED: '', CRM_DB_DATABASE_URL_UNPOOLED: '',
-      APP_ORIGIN: '', PHONE_EVENT_SECRET: SECRET, CHANNEL_MODE_PHONE: 'test' },
+      APP_ORIGIN: '', PHONE_EVENT_SECRET: SECRET, CHANNEL_MODE_PHONE: 'test', PHONE_EVENT_LOCAL_IPS: '127.0.0.1' },
     stdio: ['ignore', 'pipe', 'pipe'] });
     let out = '';
     const look = (d) => { out += d; const m = out.match(/http:\/\/localhost:(\d+)/); if (m) resolve({ child, base: `http://127.0.0.1:${m[1]}` }); };

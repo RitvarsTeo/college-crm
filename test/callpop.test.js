@@ -46,7 +46,7 @@ test('the adapter: our names, and the names TeleGroup\'s call list already uses'
   assert.equal(b.at, '2026-10-04T08:00:00.000Z', 'UTC wall clock, read as UTC: 11:00 Riga');
   assert.equal(adaptPhoneEvent({ call_id: 'x', type: 'HANGUP', answered: 'true' }).event, 'ended');
   assert.throws(() => adaptPhoneEvent({ event: 'ringing' }), /no call_id/);
-  assert.throws(() => adaptPhoneEvent({ call_id: 'x', event: 'dancing' }), /unknown event/);
+  assert.match(adaptPhoneEvent({ call_id: 'x', event: 'dancing' }).ignore, /unknown event/, '23.11.2026: an unknown event is ignored, never refused');
 });
 
 // --------------------------------------------------- ring, answer, end --
@@ -163,7 +163,7 @@ function start(env = {}) {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [path.join(ROOT, 'src', 'server.js')], { env: { ...process.env,
       PORT: '0', CRM_DB: ':memory:', DATASET: 'empty', CRM_AUTH: '', CRM_PUBLIC: '', DATABASE_URL: '',
-      CRM_DB_DATABASE_URL_UNPOOLED: '', PHONE_EVENT_SECRET: SECRET, CHANNEL_MODE_PHONE: 'test', ...env },
+      CRM_DB_DATABASE_URL_UNPOOLED: '', PHONE_EVENT_SECRET: SECRET, CHANNEL_MODE_PHONE: 'test', PHONE_EVENT_LOCAL_IPS: '127.0.0.1', ...env },
     stdio: ['ignore', 'pipe', 'pipe'] });
     let out = '';
     const look = (d) => { out += d; const m = out.match(/http:\/\/localhost:(\d+)/); if (m) resolve({ child, base: `http://127.0.0.1:${m[1]}` }); };
@@ -183,7 +183,9 @@ test('the webhook: the secret is required, a retry is a repeat, and any colleagu
   assert.equal(first.status, 200);
   assert.equal((await first.json()).stored, true);
   assert.equal((await (await push(s, ev('w1', 'ringing', '+37126660010'))).json()).duplicate, true);
-  assert.equal((await push(s, { call_id: 'w2' })).status, 400, 'no event is refused, not guessed');
+  const noEvent = await push(s, { call_id: 'w2' });
+  assert.equal(noEvent.status, 200, '23.11.2026 (TeleGroup never re-sends): an event we cannot read is ignored with a 2xx, not guessed');
+  assert.match((await noEvent.json()).ignored, /unknown event/);
   const feed = await fetch(s.base + '/api/calls/events', { headers: { 'x-acting-as': 'Laura' } });
   assert.equal(feed.status, 200, 'not an admin route');
   assert.deepEqual((await feed.json()).events, []);

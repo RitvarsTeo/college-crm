@@ -34,7 +34,7 @@ const OPEN_API = {
   '/api/auth/me': { proof: 'says only whether the caller is signed in', answers: true },
   '/api/auth/logout': { proof: "ends only the caller's own session", answers: true },
   '/api/intake/application': { proof: 'the SIS shared secret header', answers: false },
-  '/api/inbound/phone-event': { proof: 'PHONE_EVENT_SECRET', answers: false },
+  '/api/inbound/phone-event': { proof: 'PHONE_EVENT_SECRET (?token=, constant time) AND the TeleGroup source address 193.110.8.106', answers: false },
 };
 // What each delivery mechanism proves. A channel may be open to deliveries only with one of these.
 const INBOUND_PROOF = {
@@ -519,4 +519,28 @@ test('(f) the landing page prefill (patch 146) is the ONE thing anon gets from t
   assert.ok(/>= 600 then return null/.test(fn), 'a cap on lookups');
   assert.ok(!/\b(insert|update|delete)\b[^;]*\b(std_go_cards|std_linkedin_links|tc_go_stage2)\b/.test(fn), 'it writes nothing but its own counter');
   assert.ok(sql.includes('revoke all on public.std_go_prefill_hits from public, anon, authenticated;'));
+});
+
+// ------------------------------------------------------------------------------------------ (g)
+// TELEGROUP'S CALL EVENTS (23.11.2026, patch 161): the open route checks the token AND the source address before it reads
+// the body or touches the database, fails closed without the secret, and never logs the token.
+test('(g) phone events: the gate is the first thing the route does; token AND address; fails closed; the token is never logged', async () => {
+  const at = SERVER.indexOf("if (req.method === 'POST' && p === '/api/inbound/phone-event') {");
+  assert.ok(at > 0);
+  const body = SERVER.slice(at, SERVER.indexOf('\n    }\n', at));
+  const lines = body.split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('//'));
+  assert.equal(lines[1], 'const gate = phoneEventGate(req, url);', 'the gate comes first');
+  assert.match(lines[2], /^if \(!gate\.ok\) return json\(res, gate\.status/);
+  assert.ok(body.indexOf('phoneEventGate(') < body.indexOf('channelMode(') && body.indexOf('phoneEventGate(') < body.indexOf('rawText('));
+  const { phoneEventGate, TELEGROUP_IPS } = await import('../src/phoneevent.js');
+  assert.deepEqual([...TELEGROUP_IPS], ['193.110.8.106']);
+  const req = (ip) => ({ headers: { 'x-real-ip': ip } });
+  const url = (t) => new URL('http://x/api/inbound/phone-event?token=' + t);
+  const env = { VERCEL: '1', PHONE_EVENT_SECRET: 'a-configured-secret' };
+  assert.equal(phoneEventGate(req('193.110.8.106'), url('a-configured-secret'), env).ok, true);
+  assert.equal(phoneEventGate(req('203.0.113.9'), url('a-configured-secret'), env).ok, false, 'the token alone is not enough');
+  assert.equal(phoneEventGate(req('193.110.8.106'), url('a-configured-secreT'), env).ok, false, 'the address alone is not enough');
+  assert.equal(phoneEventGate(req('193.110.8.106'), url(''), { VERCEL: '1' }).ok, false, 'no secret configured refuses');
+  assert.equal(phoneEventGate(req('127.0.0.1'), url('a-configured-secret'), { ...env, PHONE_EVENT_LOCAL_IPS: '127.0.0.1' }).ok, false, 'no extra address on Vercel');
+  assert.ok(!/console\.(log|error|warn)\([^)]*req\.url/.test(SERVER), 'no log line writes the request address (it carries the token)');
 });

@@ -42,7 +42,7 @@ import { callMetrics } from './callmetrics.js';
 import { CONFIG as INTAKE_CONFIG } from './intake.js';
 import { moveCheck } from './stagemove.js';
 import { scopeRanges, rangesSql, yearsOf } from './yearscope.js';
-import { receivePhoneEvent, PHONE_EVENT_SECRET_ENV } from './phoneevent.js';
+import { receivePhoneEvent, PHONE_EVENT_SECRET_ENV, phoneEventGate } from './phoneevent.js';
 import * as webpush from './webpush.js';
 import { verifyRequest, acceptsWebhook, channelDef, channelIds, integrationIds, integrationDef, allChannelStatus, BadInbound,
          parseInboundBody, handshake, CHANNELS } from './inbound.js';
@@ -1503,19 +1503,23 @@ export const handle = async (req, res) => {
       return json(res, 200, await callMetrics(db, { menu: Object.values(INTAKE_CONFIG.phoneMenu || {}) }));
     }
 
-    // THE PHONE SYSTEM PUSHES CALL EVENTS HERE (Q6, 04.10.2026): ringing, answered, ended.
-    // A shared secret in x-crm-secret, compared in constant time; the phone channel's mode decides
-    // whether it is accepted at all, as for every channel. src/phoneevent.js is the adapter.
+    // THE PHONE SYSTEM PUSHES CALL EVENTS HERE (Q6, 04.10.2026; TeleGroup's format 23.11.2026).
+    // The secret in ?token= (or the older x-crm-secret header), compared in constant time, AND TeleGroup's one source
+    // address; a missing secret refuses everything (phoneEventGate). The token is never logged: the 500 line below
+    // writes the path only. The phone channel's mode decides whether it is accepted at all, as for every channel.
+    // TeleGroup wants its answer in under 1 s and never re-sends: the event is stored, then answered, and the rest
+    // (the browser knock, the call itself) runs on the platform's waitUntil. src/phoneevent.js is the adapter.
     if (req.method === 'POST' && p === '/api/inbound/phone-event') {
-      const want = Buffer.from(String(process.env[PHONE_EVENT_SECRET_ENV] || ''));
-      const got = Buffer.from(String(req.headers['x-crm-secret'] || ''));
-      if (!want.length) return json(res, 503, { error: 'phone events are not configured here', missing: PHONE_EVENT_SECRET_ENV });
-      if (want.length !== got.length || !crypto.timingSafeEqual(want, got)) return json(res, 401, { error: 'shared secret did not match' });
+      const gate = phoneEventGate(req, url);
+      if (!gate.ok) return json(res, gate.status, { error: gate.error, ...(gate.missing ? { missing: gate.missing } : {}) });
       const mode = await channelMode(db, 'phone');
       if (mode === 'off') return json(res, 409, { error: 'the phone channel is off' });
       let raw;
       try { raw = JSON.parse(await rawText(req, 16384) || '{}'); } catch { return json(res, 400, { error: 'the body is not JSON' }); }
-      try { return json(res, 200, await receivePhoneEvent(db, raw, { mode })); } catch (err) {
+      const ctx = globalThis[Symbol.for('@vercel/request-context')];
+      const waitUntil = ctx && typeof ctx.get === 'function' && ctx.get() && ctx.get().waitUntil;
+      const later = typeof waitUntil === 'function' ? (promise) => waitUntil(promise) : null;
+      try { return json(res, 200, await receivePhoneEvent(db, raw, { mode, later })); } catch (err) {
         if (err instanceof BadInbound) return json(res, 400, { error: err.message });
         throw err;
       }
