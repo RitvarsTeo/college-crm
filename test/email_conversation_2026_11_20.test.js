@@ -40,7 +40,8 @@ async function setup() {
     return Number(r.lastInsertRowid ?? (await db.prepare('SELECT MAX(id) n FROM inbound').get()).n);
   };
   const lead = await add({ thread: 'T1', at: ago(50), state: 'qualified', person: 'p1', email: 'liene@example.lv', name: 'Liene Kalna', body: 'Vai var mainīt programmu?' });
-  const card = await add({ thread: 'T2', at: ago(30), state: 'new', email: 'anna@example.lv', name: 'Anna New', body: 'Labdien, kādi dokumenti vajadzīgi?' });
+  // a week old: late on any day it runs (30 hours ago on a Monday falls on the weekend and is not late yet)
+  const card = await add({ thread: 'T2', at: ago(24 * 7), state: 'new', email: 'anna@example.lv', name: 'Anna New', body: 'Labdien, kādi dokumenti vajadzīgi?' });
   return { db, lead, card };
 }
 
