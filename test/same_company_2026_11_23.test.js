@@ -104,3 +104,17 @@ test('never a pair from a bracket-only name or a leading "AB": (FRB equipment bu
   for (const id of [1, 2, 3, 4]) await person(db, id, `p${id}@x.test`, 'c' + id);
   assert.deepEqual((await same.findSame(db)).check, []);
 });
+
+test('the tick list, not automatic: two owners decided (GoTa: AB and JS), or two different legal forms (SIA Modumetals / MODU METALS LTD)', async () => {
+  assert.deepEqual(same.legalForms('SIA Modumetals'), ['sia']);
+  assert.deepEqual(same.legalForms('MODU METALS LTD'), ['ltd']);
+  const db = await openDb();
+  await co(db, 550, 'GoTa Ship Management SIA', 'Latvia'); await co(db, 551, 'GoTa Shipmanagement', 'Sweden');
+  await co(db, 1196, 'SIA Modumetals', 'Latvia'); await co(db, 853, 'MODU METALS LTD', 'United Kingdom');
+  await co(db, 1499, 'Stena Line'); await co(db, 1856, 'StenaLine');
+  for (const [i, id] of [550, 551, 1196, 853, 1499, 1856].entries()) await person(db, id, `g${i}@x.test`, 'g' + i);
+  await db.prepare(`INSERT INTO tc_go_company_picks (sender, company_key, decision, way, set_at) VALUES ('AB','id:550','invite','digital',?), ('JS','id:551','invite','digital',?)`).run(at, at);
+  const S = await same.findSame(db);
+  assert.deepEqual(S.obvious.map((g) => g.map((c) => c.id).sort()), [[1499, 1856]]);
+  assert.deepEqual(S.check.map((g) => g.map((c) => c.id).sort((a, b) => a - b)), [[550, 551], [853, 1196]]);
+});

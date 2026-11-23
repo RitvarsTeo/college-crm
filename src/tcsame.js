@@ -35,6 +35,19 @@ function strip(s) {
   }
   return s.replace(/ /g, '');
 }
+/** The legal forms a name carries ("SIA Modumetals" -> ['sia'], "MODU METALS LTD" -> ['ltd']). */
+export function legalForms(name) {
+  let s = plain(name).replace(/[^a-z0-9]+/g, ' ').trim();
+  const found = [];
+  for (let changed = true; changed;) {
+    changed = false;
+    for (const l of LEGAL) {
+      if (s.endsWith(' ' + l)) { found.push(l.replace(/ /g, '')); s = s.slice(0, -l.length - 1).trim(); changed = true; }
+      if (LEAD.includes(l) && s.startsWith(l + ' ')) { found.push(l.replace(/ /g, '')); s = s.slice(l.length + 1).trim(); changed = true; }
+    }
+  }
+  return found.sort();
+}
 /** The obvious key: "GoTa Ship Management SIA" = "GoTa Shipmanagement" = "gotashipmanagement". A bracket stays part of the name. */
 export const obviousKey = (name) => strip(plain(name));
 /** The loose key: brackets and a "//" tail dropped as well ("DFDS (Guernsey) Limited" = "dfds"). For the tick list only. */
@@ -50,7 +63,25 @@ export async function findSame(db) {
     .filter((c) => c.ok.length >= 2);
   const byKey = new Map();
   for (const c of all) { if (!byKey.has(c.ok)) byKey.set(c.ok, []); byKey.get(c.ok).push(c); }
-  const obvious = [...byKey.values()].filter((g) => g.length > 1).map(order);
+  // obvious, unless a person should look (MASTER's rules, 23.11.2026): two companies with decisions from DIFFERENT list owners
+  // (whose list the merged company lands on is theirs to say), or two DIFFERENT legal forms (SIA vs LTD: two legal entities)
+  const decided = new Map();
+  for (const p of await db.prepare("SELECT sender, company_key FROM tc_go_company_picks WHERE decision IS NOT NULL AND company_key LIKE 'id:%'").all()) {
+    const id = Number(String(p.company_key).slice(3));
+    if (!decided.has(id)) decided.set(id, new Set());
+    decided.get(id).add(p.sender);
+  }
+  const owners = (c) => [...(decided.get(c.id) || [])];
+  const look = (g) => {
+    const withPicks = g.filter((c) => owners(c).length);
+    const allOwners = new Set(withPicks.flatMap(owners));
+    if (withPicks.length > 1 && allOwners.size > 1) return true;
+    const forms = g.map((c) => legalForms(c.name).join(',')).filter(Boolean);
+    return new Set(forms).size > 1;
+  };
+  const groupsOf = [...byKey.values()].filter((g) => g.length > 1).map(order);
+  const obvious = groupsOf.filter((g) => !look(g));
+  const toLook = groupsOf.filter(look);
   const dismissed = new Set((await db.prepare('SELECT pair_key FROM tc_same_dismissed').all()).map((r) => r.pair_key));
   // one representative per obvious group; only companies with people (an empty duplicate shows on no list)
   const reps = [...byKey.values()].map((g) => order(g)[0]).filter((c) => c.contacts > 0 && c.lk.length >= 3);
@@ -68,7 +99,9 @@ export async function findSame(db) {
   }
   const groups = new Map();
   for (const c of reps) { const r = root(c.id); if (!groups.has(r)) groups.set(r, []); groups.get(r).push(c); }
-  const check = [...groups.values()].filter((g) => g.length > 1).map(order).sort((a, b) => a[0].name.localeCompare(b[0].name));
+  const inLook = new Set(toLook.flat().map((c) => c.id));
+  const check = [...toLook, ...[...groups.values()].filter((g) => g.length > 1 && !g.some((c) => inLook.has(c.id)))].map(order)
+    .sort((a, b) => a[0].name.localeCompare(b[0].name));
   return { obvious, check };
 }
 // the company that stays: the most contacts, then the oldest (lowest id)
@@ -103,6 +136,9 @@ export async function merge(db, keepId, dropId, actor, { mode = 'ticked', at = n
     const kd = decided(K), dd = decided(D);
     const differ = kd.length && dd.length && [...kd, ...dd].some((p) => p.decision !== kd[0].decision || (p.way || '') !== (kd[0].way || ''));
     if (differ && mode === 'auto') throw new SameError('The two companies carry different Grand Opening decisions: this one goes on the tick list.');
+    const ownersOf = (list) => new Set(list.map((p) => p.sender));
+    if (mode === 'auto' && kd.length && dd.length && new Set([...ownersOf(kd), ...ownersOf(dd)]).size > 1)
+      throw new SameError('Two list owners decided on these companies: this one goes on the tick list.');
     for (const p of picks.filter((x) => x.company_key === D)) {
       const mine = picks.find((x) => x.company_key === K && x.sender === p.sender);
       if (mine) {
