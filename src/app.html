@@ -11565,6 +11565,7 @@ function tcInstallNav() {
   const week = typeof viewTcWeek === 'function', season = typeof viewTcSeason === 'function';
   after.insertAdjacentHTML('afterend', `<div class="cnav tcnav" role="navigation" aria-label="Training Centre">
     <a href="#/tc" data-c="tc-home" title="The year in figures, and your week">${C_ICON.home}<span>Home</span></a>
+    <a href="#/tc/inbox" data-c="tc-inbox" title="WhatsApp to the Training Centre, +371 6244 4609">${C_ICON.inbox || C_ICON.home}<span>Inbox</span><span class="pill" id="tcInboxN" hidden></span></a>
     <a href="${week ? '#/tc/week' : '#/tc/next'}" data-c="tc-plan" title="My week, the Season and the Grand Opening">${C_ICON.next}<span>Plan</span></a>
     <a href="#/tc/companies" data-c="tc-companies" title="The companies and the Client book">${T_ICON.co}<span>Clients</span></a>
     <a href="#/tc/help" data-c="tc-help" class="c-navfoot">${C_ICON.help}<span>Help center</span></a></div>`);
@@ -11572,6 +11573,7 @@ function tcInstallNav() {
   // style display, because the menu's display:flex outranks [hidden]
   api('/api/tc/review?count=1').then((c) => { const a = $('#tnReviewA'), b = $('#tnReview'); if (a && c && c.all) { a.hidden = false; a.style.display = ''; b.textContent = String(Number(c.all)); } }).catch(() => {});
   tcGoNav();   // the Grand Opening item, once its figures are in Intake
+  api('/api/tc/inbox').then((r) => tcInboxCount(r && r.cards ? r.cards.length : 0)).catch(() => {});   // patch 166: the waiting count
   const tab = (href, t, icon, label, count) => `<a href="${href}" data-t="${t}">${icon}<span>${label}</span>${count ? `<span class="n" id="${count}"></span>` : ''}</a>`;
   const more = (href, icon, label) => `<a href="${href}" onclick="tcMore(false)">${icon}<span>${label}</span></a>`;
   document.body.insertAdjacentHTML('beforeend', `<div class="ctabs tctabs" role="navigation" aria-label="Training Centre phone menu">
@@ -11579,7 +11581,7 @@ function tcInstallNav() {
     <button type="button" data-t="more" aria-haspopup="dialog" aria-expanded="false" onclick="tcMore(true)">${C_ICON.more}<span>More</span></button></div>
     <div class="cmore" id="tMore" hidden><div class="cmore-back" onclick="tcMore(false)"></div>
     <div class="cmore-sheet" role="dialog" aria-modal="true" aria-label="More">
-      ${more('#/tc/door', TC_DOOR_ICON, 'Check-in at the door')}${more('#/tc/help', C_ICON.help, 'Help')}</div></div>`);
+      ${more('#/tc/inbox', C_ICON.inbox || C_ICON.home, 'Inbox')}${more('#/tc/door', TC_DOOR_ICON, 'Check-in at the door')}${more('#/tc/help', C_ICON.help, 'Help')}</div></div>`);
 }
 // the phone's door (patch 164, his pick B "in More"): a phone in a hand, at the entrance
 const TC_DOOR_ICON = '<svg viewBox="0 0 20 20" aria-hidden="true"><rect x="5" y="2.5" width="10" height="15" rx="1.5"></rect><path d="M9 15h2"></path></svg>';
@@ -11662,6 +11664,7 @@ async function tcRoute(hash) {
     else if (place === 'postcards') { location.replace('#/tc/mylist'); setTimeout(() => { if (T_ML) { T_ML.filter = 'postcard'; tcMlDraw(); } }, 600); }   // patch 164: in the tile now
     else if (place === 'families') await viewTcFamilies();   // the owner's pick B, 28.10.2026
     else if (place === 'same') await viewTcSame();   // patch 163, his tick list 23.11.2026
+    else if (place === 'inbox') await viewTcInbox(arg === 'handled');   // patch 166, the Training Centre Inbox
     else if (place === 'import') viewTcImport();   // the owner's pick A, 28.10.2026
     else if (place === 'additions') await viewTcAdditions();   // the owner, 29.10.2026: New additions, approve or flag
     else { await viewTcHome(); tcMyClients(); tcTourFirst(); }
@@ -12533,6 +12536,46 @@ function tcImpDraw() {
 // the company families! DO a proper research! there should not even be a too look at tab!": families are decided by
 // research with a source each, Projects/College CRM/_tc/families_research_2026-11-06.md; no suggestions to look at here).
 let T_FAM = null;
+// THE TRAINING CENTRE INBOX (23.11.2026, patch 166; his words "whatsapp has to be somewhere where is inbox, similar to academy
+// side", picture TC_INBOX_2, "ok go"). The Academy Inbox's own parts: the Waiting / Handled switch, the four columns by arrival
+// (cInboxAge), the card with its WhatsApp chip, the message and the state line. One card per number; a number Intake knows shows
+// the person and opens the company. Done hands the number's waiting messages (src/tcwhatsapp.js).
+let T_IN = null;
+// Meta writes the number without its + (37120000001): shown as every number in Intake is
+const tcWaNum = (n) => { const d = String(n || '').replace(/\D/g, ''); return d ? (String(n).trim().startsWith('+') ? String(n).trim() : '+' + d) : ''; };
+async function viewTcInbox(handled) {
+  T_IN = await api('/api/tc/inbox' + (handled ? '?handled=1' : ''));
+  T_IN.handled = Boolean(handled);
+  tcInboxCount(handled ? T_IN.waiting : T_IN.cards.length);
+  tcInboxDraw();
+}
+function tcInboxCount(n) { const b = $('#tcInboxN'); if (b) { b.textContent = n ? String(Number(n)) : ''; b.hidden = !n; } }
+function tcInboxDraw() {
+  const D = T_IN, live = !D.handled;
+  const AGES = [['today', 'Today'], ['week', 'Earlier this week'], ['lastweek', 'Last week'], ['older', 'Before last week']];
+  const cols = AGES.map(([id, label]) => ({ id, label, cards: D.cards.filter((c) => cInboxAge(c.at) === id) }));
+  const who = (c) => c.person || c.name ? esc(c.person || c.name) + (c.company ? ` · <a href="#/tc/company/${Number(c.companyId)}" onclick="event.stopPropagation()">${esc(c.company)}</a>` : '') : (cTelLink({ phone: tcWaNum(c.number) }) || 'Unknown');
+  const msg = (m) => `<div class="ib-msg">${m.body ? esc(m.body) : esc(m.media ? '(' + m.media + ')' : '')}</div>`;
+  const card = (c) => `<div class="c-jp row ib-card c-rail c-rail-${live ? 'due' : 'due'}" data-k="${esc(c.key)}">
+      <div class="ib-top"><b class="c-reach">${who(c)}</b></div>
+      <small class="ib-ch" style="--src:${C_SRC_COLOUR.whatsapp}"><i></i>WhatsApp</small>
+      ${c.messages.length > 5 ? `<div class="ib-msg">${Number(c.messages.length - 5)} earlier</div>` : ''}${c.messages.slice(0, 5).reverse().map(msg).join('')}
+      ${c.person || c.name ? `<div class="ib-tags"><span class="ib-kind">${cTelLink({ phone: tcWaNum(c.number) }) || esc(c.number)}</span></div>` : ''}
+      ${live ? cStateLine('new', cAgo(c.at), '', fmtDateTime(c.at)) : `<div class="ib-before"><span>Done ${esc(fmtDateTime(c.seenAt) || '')}${c.seenBy ? ' · ' + esc(c.seenBy) : ''}</span></div>`}
+      ${live ? `<div class="ib-acts"><button class="btn sm" onclick="tcInboxDone(${esc(JSON.stringify(String(c.key)))}, this)">Done</button></div>` : ''}</div>`;
+  const shown = cols.filter((c) => c.cards.length || live);
+  const board = D.cards.length
+    ? `<div class="c-cols ib-board" style="grid-template-columns:${shown.map(() => 'minmax(0,1fr)').join(' ')}">${shown.map((c, i) => `<div class="c-col ib-col"><h3><span class="c-jn">${i + 1}</span>${esc(c.label)}<b>${c.cards.length}</b></h3>
+        <div class="c-drop">${c.cards.map(card).join('') || '<div class="c-empty">Nothing here.</div>'}</div></div>`).join('')}</div>`
+    : `<div class="c-sheet"><div class="c-empty">${live ? 'Nothing waiting. This queue is clear.' : 'Nothing here.'}</div></div>`;
+  $('#view').innerHTML = `<p class="c-crumb">Training Centre · WhatsApp +371 6244 4609</p><div class="c-head"><div><h1>Inbox</h1></div>
+    <div class="c-seg p-view" role="group" aria-label="Show"><button aria-pressed="${live}" onclick="location.hash='#/tc/inbox'">Waiting</button><button aria-pressed="${!live}" onclick="location.hash='#/tc/inbox/handled'">Handled</button></div></div>${board}`;
+}
+async function tcInboxDone(key, btn) {
+  if (btn) btn.disabled = true;
+  try { await post('/api/tc/inbox/done', { key }); T_IN.cards = T_IN.cards.filter((c) => c.key !== key); tcInboxCount(T_IN.cards.length); tcInboxDraw(); }
+  catch (err) { if (btn) btn.disabled = false; alert(err.message); }
+}
 // SAME COMPANY? (23.11.2026, patch 163; his picks "Auto obvious, tick rest" and the tick list "Yes, build it"): one card per group of
 // companies that may be one company. The company kept is chosen (most people first); "Same company" merges the others into it
 // (src/tcsame.js: everything moves, the others are archived, one Grand Opening card stays); "Not the same" never asks again.

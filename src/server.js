@@ -84,7 +84,7 @@ import * as tcrsvp from './tcrsvp.js';
 import * as tcmr from './tcmr.js';
 import * as tcfam from './tcfam.js';
 import * as tcsame from './tcsame.js';
-import { whatsappForwardGate, receiveTcWhatsApp } from './tcwhatsapp.js';
+import { whatsappForwardGate, receiveTcWhatsApp, tcInbox, tcInboxDone } from './tcwhatsapp.js';
 import * as tcpeople from './tcpeople.js';
 import * as tcpic from './tcpic.js';
 import * as tchome from './tchome.js';
@@ -3834,6 +3834,16 @@ export const handle = async (req, res) => {
         if (err instanceof tcsame.SameError) return json(res, 409, { error: err.message });
         throw err;
       }
+    }
+    // THE TRAINING CENTRE INBOX (patch 166, his "ok go"; src/tcwhatsapp.js): the WhatsApp messages to +371 6244 4609, one card per
+    // number, Waiting or Handled (?handled=1); Done hands a number's waiting messages. Signed in, Training Centre area (above).
+    if (p === '/api/tc/inbox' && req.method === 'GET') {
+      return json(res, 200, await tcInbox(db, { handled: url.searchParams.get('handled') === '1' }));
+    }
+    if (p === '/api/tc/inbox/done' && req.method === 'POST') {
+      const b = await body(req);
+      const r = await tcInboxDone(db, b.key, await actorOf(req, b));
+      return json(res, r.ok ? 200 : 400, r);
     }
     // HOW OUR CLIENTS CHANGED (26.10.2026, src/tcmr.js): the Client book chapter (?all=1 every client), one company's card
     if (p === '/api/tc/trends' && req.method === 'GET') {

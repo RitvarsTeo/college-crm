@@ -33,6 +33,40 @@ export function onlyTc(raw) {
   return { ...raw, entry };
 }
 
+// THE TRAINING CENTRE INBOX (patch 166, his words "whatsapp has to be somewhere where is inbox, similar to academy side", "ok go"):
+// one card per number, as the Academy Inbox joins one caller's messages; a number Intake knows (a Training Centre contact's phone,
+// last 8 digits as everywhere) shows the person and the company. Waiting = not yet Done; Handled = Done, newest first.
+const last8 = (n) => String(n || '').replace(/\D/g, '').slice(-8);
+export async function tcInbox(db, { handled = false } = {}) {
+  const rows = await db.prepare(`SELECT id, from_num, name, body, media, at, seen_at, seen_by FROM tc_whatsapp_in
+    WHERE ${handled ? 'seen_at IS NOT NULL' : 'seen_at IS NULL'} ORDER BY at DESC LIMIT 600`).all();
+  const keys = [...new Set(rows.map((r) => last8(r.from_num)).filter((k) => k.length === 8))];
+  const known = new Map();
+  if (keys.length) {
+    for (const c of await db.prepare(`SELECT k.name, k.phone, c.id AS company_id, c.name AS company FROM tc_company_contacts k
+        JOIN tc_companies c ON c.id = k.company_id WHERE k.archived_at IS NULL AND c.archived_at IS NULL AND k.phone IS NOT NULL`).all()) {
+      const k = last8(c.phone);
+      if (keys.includes(k) && !known.has(k)) known.set(k, { person: c.name || '', companyId: Number(c.company_id), company: c.company });
+    }
+  }
+  const cards = new Map();
+  for (const r of rows) {
+    const k = last8(r.from_num) || String(r.from_num || r.id);
+    if (!cards.has(k)) cards.set(k, { key: k, number: r.from_num || '', name: r.name || '', at: r.at, seenAt: r.seen_at || null, seenBy: r.seen_by || null, messages: [], ...(known.get(k) || {}) });
+    cards.get(k).messages.push({ id: Number(r.id), body: r.body || '', media: r.media || null, at: r.at });
+  }
+  const waiting = handled ? Number((await db.prepare('SELECT COUNT(DISTINCT from_num) AS n FROM tc_whatsapp_in WHERE seen_at IS NULL').get()).n) : cards.size;
+  return { cards: [...cards.values()], waiting };
+}
+/** Done: every waiting message of this number (last 8 digits) is handled, by whom and when. */
+export async function tcInboxDone(db, key, actor, at = new Date().toISOString()) {
+  const k = String(key || '').replace(/\D/g, '').slice(-8);
+  if (k.length !== 8) return { ok: false, error: 'Which number?' };
+  const ids = (await db.prepare('SELECT id, from_num FROM tc_whatsapp_in WHERE seen_at IS NULL').all()).filter((r) => last8(r.from_num) === k).map((r) => Number(r.id));
+  for (const id of ids) await db.prepare('UPDATE tc_whatsapp_in SET seen_at = ?, seen_by = ? WHERE id = ? AND seen_at IS NULL').run(at, actor || null, id);
+  return { ok: true, done: ids.length };
+}
+
 /** One forwarded delivery: { ok, stored, duplicates, ignored }. Never throws on a delivery without messages. */
 export async function receiveTcWhatsApp(db, raw, { now = new Date() } = {}) {
   if (!raw || typeof raw !== 'object' || raw.object !== 'whatsapp_business_account') return { ok: true, ignored: 'not a WhatsApp delivery' };
