@@ -1071,6 +1071,8 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   }
   /* Settings sections and the Help center */
   html.ui-c .c-helpadmin{display:flex;flex-wrap:wrap;gap:8px}
+  /* the demo list (24.11.2026): a plain chip beside the heading */
+  html.ui-c .tcml-demo{display:inline-block;vertical-align:middle;margin-left:8px;font-size:13px;font-weight:700;letter-spacing:.04em;padding:3px 10px;border-radius:999px;background:#29a8df;color:#fff}
   /* THE TUTORIAL CLIPS (24.11.2026): the captions in the app's own font */
   html.ui-c .c-clips{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:16px}
   html.ui-c .c-clip{margin:0;padding:14px}
@@ -11793,6 +11795,7 @@ async function tcRoute(hash) {
     else if (place === 'review') await viewTcReview();
     else if (place === 'go') await viewTcGo(arg);   // lane TC-GO: the Grand Opening; #/tc/go/hold|back|lists land on that part
     else if (place === 'door') viewTcDoor(arg);   // check-in at the door, 05.11.2026
+    else if (place === 'mylist' && arg === 'demo') viewTcMyListDemo();   // the demo list, every change kept in this tab only (24.11.2026)
     else if (place === 'mylist') viewTcMyList(arg ? decodeURIComponent(arg) : '');   // my Grand Opening list, 12.11.2026
     else if (place === 'video') await viewTcVideo(arg);   // a tutorial clip on its own page, the link a reminder carries (24.11.2026)
     else if (place === 'postcards') { location.replace('#/tc/mylist'); setTimeout(() => { if (T_ML) { T_ML.filter = 'postcard'; tcMlDraw(); } }, 600); }   // patch 164: in the tile now
@@ -13925,7 +13928,7 @@ let T_ML = null;
 // connection or a refused save never loses a director's work; the next open of the same list saves it (merged onto the newest).
 const tcMlKeepKey = (code) => 'tcml-unsaved:' + code;
 function tcMlKeep() {
-  if (!T_ML) return;
+  if (!T_ML || T_ML.demo) return;
   try {
     if (T_ML.dirty) localStorage.setItem(tcMlKeepKey(T_ML.code), JSON.stringify({ W: T_ML.W, saved: T_ML.saved, version: T_ML.version, at: new Date().toISOString() }));
     else localStorage.removeItem(tcMlKeepKey(T_ML.code));
@@ -13939,6 +13942,56 @@ const tcMlTime = (iso) => {
   const o = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date(iso)).map((x) => [x.type, x.value]));
   return `${o.weekday} ${o.day} ${o.month}, ${o.hour}:${o.minute}`;
 };
+// THE DEMO LIST (his picks 24.11.2026: "the demo with a mockup profile, mockup list, but for reals, moving people, contacts, saving,
+// passing on and all other options", then "Same screen, demo data"): #/tc/mylist/demo is this same page with an invented list owner,
+// invented companies and people (example.com addresses). Every button works as on a real list, but every change stays in this
+// browser tab: no save, draft, email, pass, accept, waiver or take reaches the server, so nothing can touch a real list, a figure,
+// a card, a code or an email. Reset puts the demo back as it started.
+const TCML_DEMO_OWNERS = [{ code: 'demo', name: 'Demo Director' }, { code: 'demo-anna', name: 'Anna (demo)' }, { code: 'demo-janis', name: 'Jānis (demo)' }, { code: 'demo-peteris', name: 'Pēteris (demo)' }];
+function tcMlDemoBase() {
+  const P = (id, label, position, email, extra) => ({ id, label, position, email, out: false, postcard: !email, moved: false, fresh: false, likely: [], ...(extra || {}) });
+  const G = (id, name, country, people, pick) => ({ key: 'id:' + id, name, country, address: '', intake: true, decision: (pick || {}).decision || null, way: (pick || {}).way || null, people });
+  const groups = [
+    G(9001, 'Baltic Harbour Services', 'Latvia', [P(9201, 'Marta Liepa', 'HR Manager', 'marta.liepa@example.com'), P(9202, 'Edgars Kalns', 'Technical Superintendent', 'edgars.kalns@example.com'), P(9203, 'Laura Upe', 'Crewing Officer', 'laura.upe@example.com', { likely: ['demo-anna'] })]),
+    G(9002, 'Nordwind Offshore AS', 'Norway', [P(9204, 'Erik Haugen', 'Fleet Manager', 'erik.haugen@example.com'), P(9205, 'Ingrid Lie', 'Training Coordinator', 'ingrid.lie@example.com')]),
+    G(9003, 'Amber Crewing SIA', 'Latvia', [P(9206, 'Roberts Egle', 'Director', 'roberts.egle@example.com'), P(9207, 'Sanita Ozola', 'Office Manager', '')]),
+    G(9004, 'Kurzeme Marine Training', 'Latvia', [P(9208, 'Valters Priede', 'Head of Training', 'valters.priede@example.com', { likely: ['demo-janis'] })]),
+    G(9005, 'Riga Bay Shipping', 'Latvia', [P(9209, 'Dace Kļava', 'CEO', 'dace.klava@example.com'), P(9210, 'Artis Bērzs', 'HSE Manager', 'artis.berzs@example.com')], { decision: 'invite', way: 'digital' }),
+    G(9006, 'Seawise Logistics UAB', 'Lithuania', [P(9211, 'Tomas Petraitis', 'Operations Manager', 'tomas.petraitis@example.com')], { decision: 'no' }),
+  ];
+  return { code: 'demo', name: 'Demo Director', people: groups.reduce((n, g) => n + g.people.length, 0), companies: groups.length, owners: TCML_DEMO_OWNERS, version: { id: 0 }, draft: null, groups,
+    passedToYou: [{ id: 9212, label: 'Oskars Vītols', position: 'Marine Superintendent', company: 'Nordwind Offshore AS', email: 'oskars.vitols@example.com', chain: ['Anna (demo)'], when: 'Monday 23 November, 10:15', holder: 'demo-anna', involved: ['demo-anna'], likely: [] }],
+    shared: [{ id: 9213, label: 'Ilze Krūmiņa', position: 'Training Coordinator', company: 'Amber Crewing SIA', email: 'ilze.krumina@example.com', from: 'demo-janis', fromName: 'Jānis (demo)', when: 'Sunday 22 November, 18:40', mine: false, likelyYou: true }] };
+}
+function viewTcMyListDemo() {
+  const base = tcMlDemoBase();
+  T_ML = { demo: true, lists: ['demo'], names: { demo: 'Demo Director' }, code: 'demo', base, version: 0, saved: tcMlStateOf(base), undo: [], open: new Set(), edit: new Set(), bump: '', q: '', filter: 'all',
+    dirty: false, status: '', statusAt: '', lastDraft: '', error: '', conflict: '', seq: 0, hash: location.hash, demoNote: '' };
+  T_ML.W = mlClone(T_ML.saved);
+  tcMlDraw();
+}
+// a person or a passed card into a company of the demo list (Accept, Take): the company by name, or a new one
+function tcMlDemoAdd(x) {
+  const B = T_ML.base;
+  let g = B.groups.find((c) => c.name === x.company);
+  if (!g) { g = { key: 'id:' + (9100 + B.groups.length), name: x.company || 'No company', country: '', address: '', intake: true, decision: null, way: null, people: [] }; B.groups.push(g); }
+  g.people.push({ id: x.id, label: x.label, position: x.position || '', email: x.email || '', out: false, postcard: !x.email, moved: false, fresh: Boolean(g.decision), likely: [] });
+  B.people += 1; T_ML.open.add(g.key);
+}
+// a person leaves the demo list (Pass on, Waiver); returns the person and the company name
+function tcMlDemoTake(id) {
+  const B = T_ML.base;
+  for (const g of B.groups) {
+    const i = g.people.findIndex((p) => p.id === Number(id));
+    if (i < 0) continue;
+    const [p] = g.people.splice(i, 1);
+    B.people -= 1;
+    T_ML.W.out = T_ML.W.out.filter((x) => x !== p.id); delete T_ML.W.moves[p.id];
+    T_ML.saved.out = T_ML.saved.out.filter((x) => x !== p.id); delete T_ML.saved.moves[p.id];
+    return { ...p, company: g.name };
+  }
+  return null;
+}
 async function viewTcMyList(code) {
   if (T_ML && T_ML.dirty && T_ML.code === code) { tcMlDraw(); return; }   // back to the same list after Cancel: the work is still here
   const L = await api('/api/tc/go/mylist');
@@ -13991,7 +14044,7 @@ function tcMlDraw() {
     const person = (p) => `<button type="button" class="tcml-p${p.out ? ' out' : ''}${p.from || p.moved ? ' moved' : ''}"${narrow ? '' : ` draggable="true" ondragstart="event.dataTransfer.setData('text/plain', String(${Number(p.id)}))"`} onclick="tcMlDo({ type: 'out', id: ${Number(p.id)} })"><b>${esc(p.label)}${p.postcard ? ' <em class="tcml-pc">Postcard only</em>' : ''}</b>${p.position ? `<span>${esc(p.position)}</span>` : ''}</button>`
       // PASS ON (patch 152): a person this owner does not know goes to another list owner
       // WAIVER (patch 160): or onto the shared list, where a colleague who knows the person takes him
-      + (T_ML.po === p.id ? tcPoPick(p) : `<span class="tcpo-links"><button type="button" class="tcpo-link" onclick="T_ML.po=${Number(p.id)};tcMlDraw()">Pass on</button><button type="button" class="tcpo-link" onclick="tcWvPut(${Number(p.id)})">Waiver</button></span>`)
+      + (T_ML.po === p.id ? tcPoPick(p) : `<span class="tcpo-links"><button type="button" class="tcpo-link" onclick="T_ML.po=${Number(p.id)};tcMlDraw()">Pass on</button><button type="button" class="tcpo-link" onclick="tcWvAsk(${Number(p.id)})">Waiver</button></span>`)
       // no email (patch 149): Postcard only until somebody adds the email here
       + (p.postcard ? `<form class="tcml-addmail" onsubmit="tcMlAddEmail(event, ${Number(p.id)})"><input type="email" required placeholder="Add email" aria-label="Add email for ${esc(p.label)}" autocomplete="off"><button type="submit" class="btn sm ghost">Save email</button></form>` : '')
       + (narrow ? `<select class="tcml-mv" aria-label="Move to another company" onchange="tcMlMoveTo(${Number(p.id)}, this.value)"><option value="">Move to…</option>${targets.filter((o) => o.key !== g.key).map((o) => `<option value="${esc(o.key)}">${esc(o.name)}</option>`).join('')}</select>` : '');
@@ -14016,13 +14069,14 @@ function tcMlDraw() {
   const note = waiting ? `<div class="tcml-unsaved" role="alert"><b>Not saved</b><span>${tcN(waiting)} ${waiting === 1 ? 'change' : 'changes'} waiting</span><button type="button" class="btn sm" onclick="tcMlSaveNow()">Retry</button></div>`
     : (T_ML.merged && T_ML.merged.length) ? `<div class="tcml-note" role="status">Changed by someone else meanwhile, their choice is kept: ${esc(T_ML.merged.join(', '))}</div>`
     : T_ML.conflict ? `<div class="tcml-note" role="alert">${esc(T_ML.conflict)} <button type="button" class="btn sm" onclick="tcMlReload()">Load it</button></div>`
-    : T_ML.error ? `<div class="tcml-note" role="alert">${esc(T_ML.error)}</div>` : '';
-  $('#view').innerHTML = `<div class="c-head"><div><h1>My Grand Opening list</h1><p class="c-crumb">${esc(D.name)} · ${tcN(D.people)} people · ${tcN(V.groups.length)} companies</p></div>
+    : T_ML.error ? `<div class="tcml-note" role="alert">${esc(T_ML.error)}</div>`
+    : T_ML.demoNote ? `<div class="tcml-note" role="status">${esc(T_ML.demoNote)}</div>` : '';
+  $('#view').innerHTML = `<div class="c-head"><div><h1>My Grand Opening list${T_ML.demo ? ' <span class="tcml-demo">Demo</span>' : ''}</h1><p class="c-crumb">${esc(D.name)} · ${tcN(D.people)} people · ${tcN(V.groups.length)} companies</p></div>
       <div class="tcml-bar"><span class="tcml-st${T_ML.dirty ? ' dirty' : ''}" role="status">${esc(tcMlStatus())}</span>
       <button type="button" class="btn ghost" ${T_ML.undo.length ? '' : 'disabled'} onclick="tcMlUndo()" title="Ctrl+Z">Undo</button>
-      <button type="button" class="btn" onclick="tcMlSaveNow()">${T_ML.savedFlash ? 'Saved' : 'Save'}</button></div>${tcGoDemoBtn()}</div>
+      <button type="button" class="btn" onclick="tcMlSaveNow()">${T_ML.savedFlash ? 'Saved' : 'Save'}</button>${T_ML.demo ? '<button type="button" class="btn ghost" onclick="viewTcMyListDemo()">Reset demo</button>' : ''}</div>${T_ML.demo ? '' : tcGoDemoBtn()}</div>
     ${note}${lists}<div class="tcml-figs">${fig('all', F.todo + F.invite + F.no, 'All')}${fig('todo', F.todo, 'Still to decide')}<div class="tcml-stack">${fig('invite', F.invite, 'Invite · digital')}${fig('postcard', F.postcard, 'Postcard · in person or by post')}</div>${fig('no', F.no, 'No')}</div>
-    ${T_ML.filter === 'postcard' ? '<div class="tcml-pcbar"><a class="btn sm" href="/api/tc/go/postcards.xlsx" download>Download Excel</a></div>' : ''}
+    ${T_ML.filter === 'postcard' && !T_ML.demo ? '<div class="tcml-pcbar"><a class="btn sm" href="/api/tc/go/postcards.xlsx" download>Download Excel</a></div>' : ''}
     ${tcPoSection()}${tcWvSection()}
     <div class="tcml-find"><input id="tcMlQ" class="c-search" type="search" placeholder="Search a company, a person or an email" aria-label="Search the list" autocomplete="off" value="${esc(T_ML.q)}" oninput="tcMlSearch(this.value)">${T_ML.q ? `<span class="tcml-found">${tcN(shown.length)} ${shown.length === 1 ? 'company' : 'companies'}</span>` : ''}</div>
     <div class="tcml-tiles">${shown.length ? tcMlLetters(shown, tile) : (T_ML.q ? '<p class="tcml-none">No company or person on this list matches.</p>' : '')}</div>`;
@@ -14140,6 +14194,8 @@ async function tcMlSave() {
   if (!T_ML || T_ML.status === 'saving') return false;
   if (!T_ML.dirty) return true;
   clearTimeout(TCML_SOON);
+  // the demo list saves in this tab only: the working state becomes the saved state, nothing goes to the server
+  if (T_ML.demo) { T_ML.saved = mlClone(T_ML.W); T_ML.dirty = false; T_ML.status = 'saved'; T_ML.statusAt = new Date().toISOString(); tcMlDraw(); return true; }
   T_ML.seq++;                               // an autosave still on its way is ignored from here on
   T_ML.status = 'saving'; T_ML.error = ''; tcMlDraw();
   const S = T_ML, sent = JSON.stringify(S.W), ch = mlChanges(S.W, S.saved, S.base);
@@ -14171,6 +14227,7 @@ async function tcMlAddEmail(ev, id) {
   ev.preventDefault();
   const input = ev.target.querySelector('input'), email = String(input.value || '').trim();
   if (!email) return;
+  if (T_ML.demo) { for (const g of T_ML.base.groups) for (const p of g.people) if (p.id === id) { p.email = email.toLowerCase(); p.postcard = false; } T_ML.error = ''; tcMlDraw(); return; }
   try {
     const r = await post('/api/tc/go/mylist/email', { sender: T_ML.code, id, email });
     for (const g of T_ML.base.groups) for (const p of g.people) if (p.id === id) { p.email = r.email; p.postcard = false; }
@@ -14193,7 +14250,7 @@ function tcPoPick(p, holder) {
   const opts = left.map((o, i) => `<label${o.code === best ? ' class="likely"' : ''}><input type="radio" name="tcpo${Number(p.id)}" value="${esc(o.code)}"${i === 0 ? ' checked' : ''}> ${esc(o.name)}${o.code === best ? ' <em class="tcpo-likely">Most likely</em>' : ''}</label>`).join('')
     + seen.map((o) => `<label class="off"><span>${esc(o.name)}</span><span>already had ${name}</span></label>`).join('');
   return `<fieldset class="tcpo-pick"><legend>Pass ${name} on to</legend>${left.length ? opts : `<label>Nobody else is left: ${name} goes to Dmitrijs Semjonovs</label>`}
-    <div class="tcpo-btns"><button type="button" class="btn sm" onclick="tcPoPass(${Number(p.id)})">Pass on</button><button type="button" class="btn sm ghost" onclick="T_ML.po=null;tcMlDraw()">Cancel</button></div></fieldset>`;
+    <div class="tcpo-btns"><button type="button" class="btn sm" onclick="tcPoAsk(${Number(p.id)})">Pass on</button><button type="button" class="btn sm ghost" onclick="T_ML.po=null;tcMlDraw()">Cancel</button></div></fieldset>`;
 }
 function tcPoSection() {
   const L = (T_ML.base.passedToYou || []);
@@ -14213,7 +14270,26 @@ function tcWvSection() {
     ${x.mine ? '' : `<div class="tcpo-btns"><button type="button" class="btn sm" onclick="tcWvTake(${Number(x.id)})">Take onto my list</button></div>`}</div>`;
   return `<section class="tcpo tcwv" aria-label="Shared list"><h2>Shared list · ${tcN(L.length)}</h2><div class="tcpo-grid">${sorted.map(card).join('')}</div></section>`;
 }
+// ARE YOU SURE (his pick 24.11.2026: a question before Pass on and before Waiver, the two steps nobody can take back on his own)
+const tcMlPersonOf = (id) => { for (const g of T_ML.base.groups) { const p = g.people.find((x) => x.id === Number(id)); if (p) return p; } return (T_ML.base.passedToYou || []).find((x) => x.id === Number(id)) || null; };
+function tcWvAsk(id) {
+  const p = tcMlPersonOf(id), who = esc((p && p.label) || 'this person');
+  modal('Put on the shared list?', `<p>${who} leaves your list and goes onto the shared list. A colleague who knows ${who} can take them onto their list.</p>
+    <div class="tcpo-btns"><button type="button" class="btn" onclick="closeModal();tcWvPut(${Number(id)})">Put on the shared list</button><button type="button" class="btn ghost" onclick="closeModal()">Cancel</button></div>`);
+}
+function tcPoAsk(id) {
+  const box = document.querySelector(`input[name="tcpo${Number(id)}"]:checked`), to = box ? box.value : '';
+  const owner = (T_ML.base.owners || []).find((o) => o.code === to), p = tcMlPersonOf(id), who = esc((p && p.label) || 'this person');
+  const toName = esc(owner ? owner.name : 'Dmitrijs Semjonovs');
+  modal('Pass on?', `<p>${who} leaves your list and goes to ${toName}, under Passed to you. ${toName} accepts or passes ${who} on.</p>
+    <div class="tcpo-btns"><button type="button" class="btn" onclick="closeModal();tcPoPass(${Number(id)}, ${esc(JSON.stringify(String(to)))})">Pass on to ${toName}</button><button type="button" class="btn ghost" onclick="closeModal()">Cancel</button></div>`);
+}
 async function tcWvPut(id) {
+  if (T_ML.demo) {
+    const p = tcMlDemoTake(id);
+    if (p) { T_ML.base.shared.unshift({ id: p.id, label: p.label, position: p.position, company: p.company, email: p.email, from: 'demo', fromName: 'Demo Director', when: tcMlTime(new Date().toISOString()), mine: true, likelyYou: false }); T_ML.demoNote = `${p.label} is on the shared list.`; }
+    T_ML.po = null; tcMlDraw(); return;
+  }
   try {
     await post('/api/tc/go/mylist/waiver', { sender: T_ML.code, id });
     T_ML.po = null; T_ML.error = '';
@@ -14222,6 +14298,11 @@ async function tcWvPut(id) {
   } catch (e) { T_ML.error = e.message; tcMlDraw(); }
 }
 async function tcWvTake(id) {
+  if (T_ML.demo) {
+    const x = T_ML.base.shared.find((s) => s.id === Number(id));
+    if (x) { T_ML.base.shared = T_ML.base.shared.filter((s) => s !== x); tcMlDemoAdd(x); T_ML.demoNote = `${x.label} is on your list now, under ${x.company}.`; }
+    tcMlDraw(); return;
+  }
   try {
     await post('/api/tc/go/mylist/take', { sender: T_ML.code, id });
     T_ML.error = '';
@@ -14229,16 +14310,28 @@ async function tcWvTake(id) {
     await tcMlReload();
   } catch (e) { T_ML.error = e.message; tcMlDraw(); }
 }
-async function tcPoPass(id) {
-  const box = document.querySelector(`input[name="tcpo${Number(id)}"]:checked`);
+async function tcPoPass(id, to) {
+  if (T_ML.demo) {
+    const owner = (T_ML.base.owners || []).find((o) => o.code === to), toName = owner ? owner.name : 'Dmitrijs Semjonovs';
+    const inbound = (T_ML.base.passedToYou || []).find((x) => x.id === Number(id));
+    const p = inbound || tcMlDemoTake(id);
+    if (inbound) T_ML.base.passedToYou = T_ML.base.passedToYou.filter((x) => x !== inbound);
+    if (p) T_ML.demoNote = `${p.label} is passed on to ${toName}.`;
+    T_ML.po = null; tcMlDraw(); return;
+  }
   try {
-    await post('/api/tc/go/mylist/pass', { sender: T_ML.code, id, to: box ? box.value : '' });
+    await post('/api/tc/go/mylist/pass', { sender: T_ML.code, id, to: String(to || '') });
     T_ML.po = null; T_ML.error = '';
     if (T_ML.dirty) await tcMlAutosave();
     await tcMlReload();
   } catch (e) { T_ML.error = e.message; tcMlDraw(); }
 }
 async function tcPoAccept(id) {
+  if (T_ML.demo) {
+    const x = (T_ML.base.passedToYou || []).find((s) => s.id === Number(id));
+    if (x) { T_ML.base.passedToYou = T_ML.base.passedToYou.filter((s) => s !== x); tcMlDemoAdd(x); T_ML.demoNote = `${x.label} is on your list now, under ${x.company}.`; }
+    tcMlDraw(); return;
+  }
   try {
     await post('/api/tc/go/mylist/accept', { sender: T_ML.code, id });
     if (T_ML.dirty) await tcMlAutosave();   // the list reloads with the person on it; unsaved changes come back from the draft
@@ -14255,9 +14348,9 @@ async function tcMlSaveNow() {
   S.savedFlash = true; tcMlDraw();
   setTimeout(() => { if (T_ML === S) { S.savedFlash = false; tcMlDraw(); } }, 2500);
 }
-async function tcMlReload() { const code = T_ML.code; T_ML = null; await viewTcMyList(code); }
+async function tcMlReload() { if (T_ML && T_ML.demo) { tcMlDraw(); return; } const code = T_ML.code; T_ML = null; await viewTcMyList(code); }
 async function tcMlAutosave() {
-  if (!T_ML || !T_ML.dirty || T_ML.status === 'saving' || !String(location.hash).startsWith('#/tc/mylist')) return;
+  if (!T_ML || T_ML.demo || !T_ML.dirty || T_ML.status === 'saving' || !String(location.hash).startsWith('#/tc/mylist')) return;
   const json = JSON.stringify(T_ML.W), seq = T_ML.seq, S = T_ML;
   if (json === S.lastDraft) return;
   try {
@@ -14273,7 +14366,7 @@ function tcMlAutosaveStart() { if (!TCML_TIMER) TCML_TIMER = setInterval(tcMlAut
 function tcMlAutosaveSoon() { clearTimeout(TCML_SOON); TCML_SOON = setTimeout(() => tcMlSave(), 1200); }
 // a phone puts the page away without a beforeunload: the draft goes out as the page hides
 function tcMlAutosaveNow() {
-  if (!T_ML || !T_ML.dirty || T_ML.status === 'saving' || !String(location.hash).startsWith('#/tc/mylist')) return;
+  if (!T_ML || T_ML.demo || !T_ML.dirty || T_ML.status === 'saving' || !String(location.hash).startsWith('#/tc/mylist')) return;
   const json = JSON.stringify(T_ML.W);
   if (json === T_ML.lastDraft) return;
   try {
@@ -14285,7 +14378,7 @@ function tcMlAutosaveNow() {
 // LEAVING (his words "cant leave the window without saving or not saving"): a move inside the app asks first; closing the tab or
 // reloading gets the browser's own question
 function tcMlMayLeave(hash) {
-  if (!T_ML || !T_ML.dirty) return true;
+  if (!T_ML || T_ML.demo || !T_ML.dirty) return true;
   if (!String(T_ML.hash || '').startsWith('#/tc/mylist')) return true;
   if (String(hash).split('?')[0] === String(T_ML.hash).split('?')[0]) return true;
   T_ML.pending = hash;

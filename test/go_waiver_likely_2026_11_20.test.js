@@ -59,7 +59,7 @@ test('most likely: the owner with people at the same company (or the same mail d
 test('wired: the page has Waiver, the shared list with Take, Most likely in Pass on; the routes check the list', () => {
   assert.ok(SERVER.includes("if (p.endsWith('/waiver')) return json(res, 200, await tcgopass.waive(db, code, Number(b.id), actor));"));
   assert.ok(SERVER.includes("if (p.endsWith('/take')) return json(res, 200, await tcgopass.take(db, code, Number(b.id), actor));"));
-  assert.ok(APP.includes('onclick="tcWvPut(${Number(p.id)})">Waiver</button>'));
+  assert.ok(APP.includes('onclick="tcWvAsk(${Number(p.id)})">Waiver</button>'));
   assert.ok(APP.includes('<h2>Shared list · ${tcN(L.length)}</h2>') && APP.includes('>Take onto my list</button>'));
   assert.ok(APP.includes("<em class=\"tcpo-likely\">Most likely</em>"));
   assert.ok(APP.includes("await post('/api/tc/go/mylist/waiver', { sender: T_ML.code, id });") && APP.includes("await post('/api/tc/go/mylist/take', { sender: T_ML.code, id });"));
