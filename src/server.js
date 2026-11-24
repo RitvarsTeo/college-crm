@@ -70,6 +70,7 @@ import * as samepeople from './samepeople.js';
 import * as tcweek from './tcweek.js';
 import * as tcgoogle from './tcgoogle.js';
 import * as staffMail from './staffmail.js';
+import * as mailAuto from './mailauto.js';
 import { TC_MAILBOX, makeInvite as tcMailInvite, checkInvite as tcMailCheck, useInvite as tcMailUse } from './tcmail.js';
 import * as tcadd from './tcadd.js';
 import * as tcs2send from './tcs2send.js';
@@ -2371,6 +2372,28 @@ export const handle = async (req, res) => {
       return json(res, 200, await personRow(id, await actorOf(req, b)));
     }
 
+    // ACADEMY EMAIL AUTOMATION (24.11.2026, src/mailauto.js), behind sign-in like the rest:
+    //   POST /api/people/<id>/undo-stage {event}  undoes one stage Intake set from an email
+    //   POST /api/intake/<id>/undo-auto            the card Intake processed waits again
+    //   GET  /api/intake/<id>/suggested-reply      the answer edu@ gave to a question like it (to copy; never sent)
+    if (req.method === 'POST' && /^\/api\/people\/[^/]+\/undo-stage$/.test(p)) {
+      let id = '';
+      try { id = decodeURIComponent(p.split('/')[3]); } catch { return json(res, 400, { error: 'not a person' }); }
+      const b = await body(req);
+      const r = await mailAuto.undoStage(db, id, b.event, await actorOf(req, b));
+      if (r.error) return json(res, 400, { error: r.error });
+      return json(res, 200, await personRow(id, await actorOf(req, b)));
+    }
+    if (req.method === 'POST' && /^\/api\/intake\/\d+\/undo-auto$/.test(p)) {
+      const b = await body(req);
+      const r = await mailAuto.undoCard(db, Number(p.split('/')[3]), await actorOf(req, b));
+      if (r.error) return json(res, 400, { error: r.error });
+      return json(res, 200, r);
+    }
+    if (req.method === 'GET' && /^\/api\/intake\/\d+\/suggested-reply$/.test(p)) {
+      return json(res, 200, { suggestion: await mailAuto.suggestedReply(db, Number(p.split('/')[3])) });
+    }
+
     // A PERSON'S COMMENTS (Admissions, 20.10.2026, src/comments.js): History notes and calls somebody wrote, the Notes
     // field and the calls' "What was it about?", newest first, whole text. GET lists them with what the caller may edit;
     // POST {ref, text} edits one: whoever wrote it, or an admin; the Notes field every user. Behind sign-in like the rest.
@@ -3650,6 +3673,11 @@ export const handle = async (req, res) => {
       const me = await currentUser(req);
       if (!me || !me.email) return json(res, 401, { error: 'Sign in first.' });
       return json(res, 200, await staffMail.recordAnswer(db, me.email, 'later'));
+    }
+    // the Inbox's "Connect your mailbox" bar (email automation 7, 24.11.2026): shown until the own mailbox is connected
+    if (p === '/api/me/mailbox' && req.method === 'GET') {
+      const me = await currentUser(req);
+      return json(res, 200, me ? await staffMail.connectBarFor(db, me) : { show: false, connected: false });
     }
     // the popup's "Show me" (patch 157): which student to open; it records nothing and answers nothing
     if (p === '/api/me/show-me' && req.method === 'GET') {

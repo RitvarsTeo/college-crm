@@ -66,6 +66,13 @@ export async function popupFor(db, user) {
   const a = await db.prepare('SELECT answer FROM staff_mail_answers WHERE user_email = ?').get(low(user.email));
   return { show: !a };
 }
+/** The Inbox bar (email automation 7, the owner's pick 24.11.2026: ask in the app): an Academy account whose own mailbox is
+ *  not connected sees "Connect your mailbox" on the Inbox until it is, whatever it answered the one-time popup. */
+export async function connectBarFor(db, user) {
+  if (!user || !user.email || !Array.isArray(user.areas) || !user.areas.includes('academy')) return { show: false, connected: false };
+  const link = await db.prepare('SELECT 1 AS x FROM staff_mail_links WHERE user_email = ?').get(low(user.email));
+  return { show: !link, connected: Boolean(link) };
+}
 /** Record the answer (allow | later) once; a second answer from the same person changes nothing. */
 export async function recordAnswer(db, email, answer, at = new Date().toISOString()) {
   if (!ANSWERS.includes(answer)) throw new Error('Allow or Not now?');

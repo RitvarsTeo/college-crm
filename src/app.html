@@ -1654,6 +1654,13 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c #view .ib-card.is-open .ib-more{display:none}
   html.ui-c .ib-tags{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
   html.ui-c .ib-prog{font-size:11.5px;font-weight:700;padding:1px 6px;border-radius:5px;background:var(--c-sunk);color:var(--ink)}
+  html.ui-c .ib-from{font-size:11px;color:#0f6f99;margin-left:2px}
+  html.ui-c .c-evt.c-evt-mail{border-left:3px solid var(--c-sis);background:var(--c-sunk)} html.ui-c .c-bymail{color:var(--c-sis)}
+  html.ui-c .ib-sugg{margin:8px 0;padding:8px 10px;border:1px dashed var(--c-sis);border-radius:8px;background:var(--c-sunk);font-size:12.5px;cursor:default}
+  html.ui-c .ib-sugg b{display:block;font-size:11px;color:#0f6f99;margin-bottom:4px} html.ui-c .ib-sugg-t{white-space:pre-line;margin-bottom:6px;color:var(--ink)}
+  html.ui-c .ib-undo{font:inherit;font-size:12px;color:#0f6f99;background:none;border:0;padding:0;text-decoration:underline;cursor:pointer}
+  html.ui-c .ib-mbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;border:2px solid var(--c-sis);border-radius:12px;padding:10px 14px;margin:0 0 12px;background:var(--surface)}
+  html.ui-c .ib-mbar b{font-size:14px} html.ui-c .ib-mbar span{font-size:13px;color:var(--t3)} html.ui-c .ib-mbar .btn{margin-left:auto}
   html.ui-c .ib-joins{font-size:11.5px;font-weight:700;padding:1px 6px;border-radius:5px;border:1px solid #29a8df;color:var(--ink)}   /* Q77: already in Intake */
   html.ui-c .ib-n3{font-size:11.5px;font-weight:600;padding:1px 6px;border-radius:5px;border:1px solid var(--rule);color:var(--t2)}   /* Known in N3 (06.11.2026) */
   html.ui-c .ib-kind{font-size:11.5px;font-weight:600;padding:1px 6px;border-radius:5px;border:1px solid var(--rule);color:var(--t2)}
@@ -5792,7 +5799,8 @@ function cInboxPool() {
       <div class="ib-top"><b class="c-reach">${who(r)}</b></div>
       <small class="ib-ch" style="--src:${C_SRC_COLOUR[r.channel] || '#8a94a6'}"><i></i>${esc(channelLabel(r.channel))}</small>
       ${r.channel === 'phone' && (r.calls || []).length ? cCallsHtml(r.calls) : r.bodyClean ? msgHtml(r) : formHtml(r) || `<div class="ib-msg">${esc(r.channel === 'phone' ? cCallLine(r.body) : (r.body || D.val(r, 'question') || ''))}</div>`}
-      ${prog || kind || r.joins || (r.knownInN3 || []).length || (!live && r.mark && r.mark !== r.archive_reason) ? `<div class="ib-tags">${r.joins ? `<span class="ib-joins">Joins ${esc(r.joins.name)}</span>` : ''}${(r.knownInN3 || []).length ? `<span class="ib-n3">Known in N3: ${esc(r.knownInN3.join(', '))}</span>` : ''}${prog ? `<span class="ib-prog">${esc(prog)}</span>` : ''}${kind}${!live && r.mark && r.mark !== r.archive_reason ? `<span class="ib-kind ib-marktag">${esc(r.mark)}</span>` : ''}</div>` : ''}
+      ${prog || kind || r.joins || (r.knownInN3 || []).length || (!live && r.mark && r.mark !== r.archive_reason) ? `<div class="ib-tags">${r.joins ? `<span class="ib-joins">Joins ${esc(r.joins.name)}</span>` : ''}${(r.knownInN3 || []).length ? `<span class="ib-n3">Known in N3: ${esc(r.knownInN3.join(', '))}</span>` : ''}${prog ? `<span class="ib-prog">${esc(prog)}</span>${['gmail', 'email'].includes(r.channel) ? '<span class="ib-from">from the email</span>' : ''}` : ''}${kind}${!live && r.mark && r.mark !== r.archive_reason ? `<span class="ib-kind ib-marktag">${esc(r.mark)}</span>` : ''}</div>` : ''}
+      ${live && ['gmail', 'email'].includes(r.channel) && !r.answered && typeof cSuggestHtml === 'function' ? cSuggestHtml(r.id) : ''}
       ${live && r.setAsideBefore ? `<div class="ib-before"><span>Set aside before: ${cAsideWhen(r.setAsideBefore)}</span>${cMarkCtl(r, D.marks)}</div>` : ''}
       ${!live && r.state === 'archived' ? `<div class="ib-before"><span>Set aside: ${cAsideWhen({ at: r.processed_at, by: r.processed_by, reason: r.archive_reason })}</span></div>` : ''}
       ${st === 'answered' ? `<div class="c-st c-st-answered" title="${esc(fmtDateTime(r.answered.at))}"><span class="c-st-w">✓ Answered by ${esc(r.answered.by || 'edu@')}</span><span class="c-st-d"> · ${esc(cAgo(r.answered.at))}</span></div>` : cStateLine(st, cAgo(r.received_at), '', fmtDateTime(r.received_at))}
@@ -5823,6 +5831,8 @@ function cInboxPool() {
       C_IP.channel || C_IP.kind || C_IP.week ? "C_IP.channel='';C_IP.kind='';C_IP.week='';cInboxPool()" : ''),
     body: D.receipt + (live && D.callsToday ? cCallsToday(D.callsToday, C_IP.line) : '') + board,
   });
+  // email automation 7: "Connect your mailbox" above the board until the own mailbox is connected
+  if (live && typeof cMailboxBar === 'function') { const b = document.querySelector('#view .ib-board') || document.querySelector('#view .c-sheet'); if (b) b.insertAdjacentHTML('beforebegin', '<div id="ibMailbox"></div>'); cMailboxBar(); }
   // the first field of the open card's form: the name when it asks for one, else the programme
   if (C_LOPEN) { const sel = $('#qName') || $('#qInterest'); if (sel && sel.focus) sel.focus(); }
   cPoolWire();
@@ -6923,6 +6933,19 @@ function cOnePlace(p) {
     ...msgs.map((m) => ({ at: m.at, m }))];
   return items.sort((a, b) => (C_ONE_NEWEST_FIRST ? String(b.at).localeCompare(String(a.at)) : String(a.at).localeCompare(String(b.at))));
 }
+// EMAIL AUTOMATION 2 (24.11.2026, src/mailauto.js): a stage Intake set from an email is an automatic status line by Intake
+const cIntakeMove = (e) => Boolean(e && e.kind === 'status' && e.actor === 'Intake' && e.origin === 'automatic' && e.field === 'status');
+// under Stage: "Set by Intake from the email of 24.11 · Undo" while the newest stage change is Intake's and still holds
+function cStageByMail(p) {
+  const last = ((p && p.timeline) || []).filter((e) => e.kind === 'status').sort((a, b) => String(b.occurred_at).localeCompare(String(a.occurred_at)))[0];
+  if (!cIntakeMove(last) || p.status !== last.new_value) return '';
+  const m = /from the email of (\d\d\.\d\d)/.exec(String(last.body || ''));
+  return `<p class="c-hint c-bymail">Set by Intake from the email${m ? ' of ' + esc(m[1]) : ''} · <button type="button" class="ib-undo" onclick="cUndoStage(${esc(JSON.stringify(String(p.id ?? '')))}, ${Number(last.id)})">Undo</button></p>`;
+}
+async function cUndoStage(pid, eventId) {
+  try { await post(`/api/people/${encodeURIComponent(pid)}/undo-stage`, { event: eventId }); await viewPersonC(pid); }
+  catch (e) { alert(e.message); }
+}
 // one email in the list: theirs on the left (grey), ours on the right (blue), with who, when and the subject
 const cMailBubble = (m, p) => `<div class="c-cb ${m.dir === 'out' ? 'out' : 'in'}"><small>✉ ${esc(m.dir === 'out' ? m.who || 'edu@' : m.who || p.name)} · ${esc(cStamp(m.at))}${m.subject ? ' · ' + esc(m.subject) : ''}</small>${esc(m.bodyClean || m.body || '')}</div>`;
 async function viewPersonC(id) {
@@ -6933,10 +6956,13 @@ async function viewPersonC(id) {
   const open = !C_TERMINAL.includes(p.status);
   const contact = [p.email, p.phone].filter(Boolean).map(esc).join(' · ');
   const tl = cOnePlace(p);   // one place: History and the emails in one list (patch 157)
-  const ev = (e) => `<div class="c-evt">
-      <div class="c-evt-when">${cStamp(e.occurred_at)}${e.actor ? ' · ' + esc(actorName(e.actor)) : ''}${e.channel ? ' · ' + esc(channelLabel(e.channel)) : ''}${e.origin === 'automatic' ? ' · <span class="c-auto">automatic</span>' : ''}</div>
+  // a stage Intake set from an email (email automation 2): marked, with what happened and Undo while it still holds
+  const byMail = (e) => cIntakeMove(e);
+  const ev = (e) => `<div class="c-evt${byMail(e) ? ' c-evt-mail' : ''}">
+      <div class="c-evt-when">${cStamp(e.occurred_at)}${e.actor ? ' · ' + esc(actorName(e.actor)) : ''}${e.channel ? ' · ' + esc(channelLabel(e.channel)) : ''}${byMail(e) ? ' · <span class="c-auto">set by Intake from the email</span>' : e.origin === 'automatic' ? ' · <span class="c-auto">automatic</span>' : ''}</div>
       <div class="c-evt-what">${esc(e.subject || e.kind || '')}</div>
-      ${e.field ? `<div class="c-evt-diff"><s>${esc(e.old_value ?? '(empty)')}</s> → <b>${esc(e.new_value ?? '(empty)')}</b></div>` : (e.body ? `<div class="c-evt-body">${esc(e.bodyClean || e.body)}</div>${e.bodyClean && e.bodyClean !== e.body ? `<details class="c-evt-orig"><summary>Show original</summary><div class="c-evt-body">${esc(e.body)}</div></details>` : ''}` : '')}${e.call && e.call.answered && e.call.id ? `<div class="c-evt-body">${cCallNoteInput(e.call)}</div>` : ''}${e.call && !e.call.answered && e.call.id ? `<div class="c-evt-body">${cCalledBack(e.call)}</div>` : ''}</div>`;
+      ${byMail(e) && e.body ? `<div class="c-evt-body">${esc(String(e.body).replace(/^set by Intake from the email of [\d.]+\.\s*/, ''))}${p.status === e.new_value ? ` <button type="button" class="btn sm ghost" onclick="cUndoStage(${esc(JSON.stringify(String(p.id ?? '')))}, ${Number(e.id)})">Undo</button>` : ''}</div>` : ''}
+      ${byMail(e) ? '' : e.field ? `<div class="c-evt-diff"><s>${esc(e.old_value ?? '(empty)')}</s> → <b>${esc(e.new_value ?? '(empty)')}</b></div>` : (e.body ? `<div class="c-evt-body">${esc(e.bodyClean || e.body)}</div>${e.bodyClean && e.bodyClean !== e.body ? `<details class="c-evt-orig"><summary>Show original</summary><div class="c-evt-body">${esc(e.body)}</div></details>` : ''}` : '')}${e.call && e.call.answered && e.call.id ? `<div class="c-evt-body">${cCallNoteInput(e.call)}</div>` : ''}${e.call && !e.call.answered && e.call.id ? `<div class="c-evt-body">${cCalledBack(e.call)}</div>` : ''}</div>`;
   // a draft in the SIS (26.10.2026): what it waits for, navy; an open step stays with its Done, its date plain, never late
   const draftNext = cIsDraft(p) ? `<div class="c-next c-next-draft"><b>Next step</b><div class="c-next-row"><span>Waits for them to submit</span><span class="c-when">Draft since ${esc(cDraftSince(p) || 'the SIS')}</span></div>
     ${t ? `<div class="c-next-row"><span>${esc(cTask(t.label))}</span><span class="c-when">${esc(cDdMm(t.due_at))}</span></div>
@@ -7004,6 +7030,7 @@ function cPersonFacts(p) {
     ${p.notes ? `<div class="c-notes${p.notes.length > 240 ? ' c-clamp' : ''}">${esc(p.notes)}</div>${p.notes.length > 240 ? `<button class="c-more" onclick="const n=this.previousElementSibling;n.classList.toggle('c-clamp');this.textContent=n.classList.contains('c-clamp')?'Show all ${p.notes.length} characters':'Show less'">Show all ${p.notes.length} characters</button>` : ''}` : ''}</div>
     <div class="c-sheet c-facts"><h3>Stage</h3><div class="c-pad">
       <select id="cStage" aria-label="Stage" onchange="changeStatus(${esc(JSON.stringify(String(p.id ?? '')))}, this.value)">${stages.map((s) => `<option value="${esc(s.id)}" ${s.id === p.status ? 'selected' : ''}>${esc(s.label || s.id)}</option>`).join('')}</select>
+      ${cStageByMail(p)}
       ${p.status === (CFG.stageRoles || {}).admitted ? (p.sis_handoff_at ? `<p class="c-hint">Handed to the SIS on ${fmtDate(p.sis_handoff_at)}</p>` : `<button class="btn sm ghost" onclick="doSisHandoff(${esc(JSON.stringify(String(p.id ?? '')))})">Hand over to SIS</button>`) : ''}
     </div></div>
     ${p.qualification || (p.fields || []).length ? `<div class="c-sheet c-facts"><h3>From their first message</h3><div class="c-pad">
@@ -9511,6 +9538,43 @@ async function cBringBack(id, btn) {
 // when, with Open (the person) or Bring back (a card set aside). Filtered noise is not here.
 // one colour per source on an Inbox card (Q73, the owner's pick 07.10.2026); the waiting and the handled cards both read it
 const C_SRC_COLOUR = { gmail: '#29a8df', email: '#29a8df', website_form: '#1baf7a', phone: '#E0A526', website: '#1baf7a', linkedin: '#7b5bd6', whatsapp: '#008300', facebook: '#a0662a', messenger: '#a0662a', instagram: '#d55181' };
+// ACADEMY EMAIL AUTOMATION on the Inbox (24.11.2026, src/mailauto.js; nothing is ever sent):
+//   6. a suggested reply on a waiting email card, from the answer edu@ gave to a question like it, with Copy only
+//   1. Undo on a card Intake made a lead from edu@'s reply: the card waits again
+//   7. "Connect your mailbox" on top until the own mailbox is connected
+const C_MAIL_CH = ['gmail', 'email'];
+const C_SUGG = new Map();   // card id -> { text, like } | null | 'loading'
+function cSuggestHtml(id) {
+  if (!C_SUGG.has(id)) {
+    C_SUGG.set(id, 'loading');
+    api(`/api/intake/${Number(id)}/suggested-reply`).then((d) => { C_SUGG.set(id, (d && d.suggestion) || null); cSuggestDraw(id); }).catch(() => C_SUGG.set(id, null));
+    return `<div class="ib-sugg-slot" data-sugg="${Number(id)}"></div>`;
+  }
+  const s = C_SUGG.get(id);
+  if (!s || s === 'loading') return `<div class="ib-sugg-slot" data-sugg="${Number(id)}"></div>`;
+  return `<div class="ib-sugg-slot" data-sugg="${Number(id)}"><div class="ib-sugg" onclick="event.stopPropagation()"><b>Suggested reply · from ${tcN(s.like)} ${s.like === 1 ? 'answer' : 'answers'} like this</b>
+    <div class="ib-sugg-t">${esc(s.text)}</div><button type="button" class="btn sm ghost" onclick="event.stopPropagation();cSuggestCopy(${Number(id)}, this)">Copy</button></div></div>`;
+}
+function cSuggestDraw(id) {
+  const slot = document.querySelector(`.ib-sugg-slot[data-sugg="${Number(id)}"]`);
+  if (slot) slot.outerHTML = cSuggestHtml(id);
+}
+async function cSuggestCopy(id, btn) {
+  const s = C_SUGG.get(id);
+  if (!s || !s.text) return;
+  try { await navigator.clipboard.writeText(s.text); btn.textContent = 'Copied'; } catch (e) { btn.textContent = 'Select and copy the text'; }
+}
+async function cUndoCard(id, btn) {
+  btn.disabled = true;
+  try { await post(`/api/intake/${Number(id)}/undo-auto`, {}); C_SUGG.delete(id); await viewLeadsC(); }
+  catch (e) { btn.disabled = false; btn.textContent = e.message; }
+}
+async function cMailboxBar() {
+  const d = await api('/api/me/mailbox').catch(() => null);
+  const slot = document.querySelector('#ibMailbox');
+  if (!slot || !d || !d.show) return;
+  slot.innerHTML = `<div class="ib-mbar"><b>Connect your mailbox</b><span>so Intake sees your replies too. Only mail with students is kept.</span><a class="btn sm" href="/api/me/mailbox/allow">Connect</a></div>`;
+}
 function cInboxSwitch(handled) {
   return `<div class="c-seg p-view" role="group" aria-label="Show"><button aria-pressed="${!handled}" onclick="C_IP.handled=false;viewLeadsC()">Waiting</button><button aria-pressed="${handled}" onclick="C_IP.handled=true;viewLeadsC()">Handled</button></div>`;
 }
@@ -9527,7 +9591,10 @@ async function cInboxHandled() {
   const cols = [['this', 'This week', 'today'], ['last', 'Last week', 'week'], ['older', 'Older', 'older']]
     .map(([id, label, tone]) => ({ id, label, tone: 'age-' + tone, n: rows.filter((r) => r.week === id).length }));
   const cardName = (r) => esc(r.contact_name || r.contact_handle || '') || cTelLink({ phone: r.contact_phone }) || 'Unknown';
-  const what = (r) => r.state === 'archived' ? 'Set aside · ' + esc(r.archive_reason || '') : r.automatic ? 'Added to their record automatically' : 'Made a lead';
+  // email automation 1 (24.11.2026): a card Intake made a lead from edu@'s reply says so, with Undo
+  const byIntake = (r) => r.state === 'qualified' && r.processed_by === 'Intake';
+  const what = (r) => r.state === 'archived' ? 'Set aside · ' + esc(r.archive_reason || '') : r.automatic ? 'Added to their record automatically'
+    : byIntake(r) ? `<b>✓ Answered by edu@</b><br>Made a lead by Intake · <button type="button" class="ib-undo" onclick="cUndoCard(${Number(r.id)}, this)">Undo</button>` : 'Made a lead';
   const card = (r) => `<div class="c-jp row ib-card c-rail${r.state === 'archived' ? '' : ' c-rail-due'}" data-id="${Number(r.id)}">
       <div class="ib-top"><b class="c-reach">${cardName(r)}</b></div>
       <small class="ib-ch" style="--src:${C_SRC_COLOUR[r.channel] || '#8a94a6'}"><i></i>${esc(channelLabel(r.channel))}</small>

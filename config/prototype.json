@@ -769,6 +769,8 @@
     "start": "09:00",
     "end": "17:00",
     "answerWithinMinutes": 60,
+    "emailLateWithinMinutes": 480,
+    "_emailLate": "DECIDED 24.11.2026 (the owner's pick 4, Academy email automation: 'unanswered > 1 working day red'): an EMAIL card is late one working day (8 working hours) after arrival, no longer at the end of the same working day. Calls and the other channels keep the rule above.",
     "appliesTo": [
       "raw"
     ],

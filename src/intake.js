@@ -22,6 +22,12 @@ import { rangesSql } from './yearscope.js';
 import { markFor, markedWhy, contactKeys, MARKS } from './phonefilter.js';
 import { emailBodyFor, isEmailChannel, cleanEmailBody, emailShown } from './emailtext.js';
 import { n3Names } from './n3dir.js';
+import { afterOurReply, afterTheirAnswer } from './mailauto.js';   // Academy email automation (24.11.2026)
+
+// the email automation never stops mail from being stored: a failure there is logged and the mail is kept
+async function automation(what, fn) {
+  try { return await fn(); } catch (err) { console.error(`email automation (${what}) failed:`, err && err.message); return null; }
+}
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const CFG = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'prototype.json'), 'utf8'));
@@ -54,11 +60,26 @@ export function answerDeadlines(receivedIso, cfg = CFG.ageing) {
   // the first working moment at or after arrival
   if (!working(ymd) || min >= end) { do ymd = nextDay(ymd); while (!working(ymd)); min = start; } else if (min < start) min = start;
   // then the working minutes, carried over the evening and the weekend
+  const at = (d, m) => { const [y, mo, dd] = d.split('-').map(Number); return new Date(Date.parse(localMidnight(y, mo, dd, tz)) + m * 60000).toISOString(); };
+  const after = (minutes) => {
+    let d = ymd, m = min, left = minutes;
+    while (left > end - m) { left -= end - m; do d = nextDay(d); while (!working(d)); m = start; }
+    return at(d, m + left);
+  };
+  // LATE AFTER ONE WORKING DAY (the owner's pick 24.11.2026, Academy email automation 4: "unanswered > 1 working day red"):
+  // late = one full working day (lateWithinMinutes, 8 working hours) after the first working moment of arrival. Without
+  // the setting the old rule stands: late at the end of the working day the answer hour ends in.
+  if (cfg && Number(cfg.lateWithinMinutes) > 0) return { answerBy: after(within), lateAt: after(Number(cfg.lateWithinMinutes)) };
   let left = within;
   while (left > end - min) { left -= end - min; do ymd = nextDay(ymd); while (!working(ymd)); min = start; }
   min += left;
-  const at = (d, m) => { const [y, mo, dd] = d.split('-').map(Number); return new Date(Date.parse(localMidnight(y, mo, dd, tz)) + m * 60000).toISOString(); };
   return { answerBy: at(ymd, min), lateAt: at(ymd, end) };
+}
+/** The deadlines of one Inbox card: an email card is late one working day after arrival (email automation 4,
+ *  config ageing.emailLateWithinMinutes); every other channel keeps the end-of-the-working-day rule. */
+export function deadlinesFor(channel, receivedIso, cfg = CFG.ageing) {
+  return answerDeadlines(receivedIso, isEmailChannel(channel) && cfg && cfg.emailLateWithinMinutes
+    ? { ...cfg, lateWithinMinutes: cfg.emailLateWithinMinutes } : cfg);
 }
 // The late moment, stored on the row on arrival (surface_at) as before; every reader works it out again from
 // received_at (answerDeadlines), so rows stored under the 23.09 rule read the new one.
@@ -235,6 +256,8 @@ async function ownReplyJoins(db, item, at) {
     kind: 'reply', body: null });
   const first = !home.first_reply_at && REPLY_STATES.includes(home.state) && Date.parse(at) > Date.parse(home.received_at);
   if (first) await recordReplyRead(db, { id: home.id, sentAt: at, checkedAt: nowIso(), personId: home.person_id });
+  // our reply processes the card and moves the stage (email automation 1, 2)
+  await automation('our reply', () => afterOurReply(db, { inboundId: home.id, personId: home.person_id, sentAt: at }));
   return { joined: true, ownReply: true, id: Number(home.id), seq, firstReply: first };
 }
 
@@ -420,6 +443,8 @@ export async function receive(db, item) {
   if (attachTo && !read.junk && !filterWhy) {
     const pid = await landOnProfile(db, id, attachTo, { at });
     if (pid) {
+      // they wrote back after a reply of ours -> Follow-up (email automation 2)
+      if (isEmailChannel(item.channel)) await automation('their answer', () => afterTheirAnswer(db, { personId: pid, at, body: item.body }));
       return { id, attached: true, personId: pid, suggested: read.suggested, why: read.why,
         missing: read.missing, fields: read.fields, filtered: false };
     }
@@ -507,7 +532,7 @@ export async function listInbound(db, { state = 'new', now = nowIso(), range = n
     }
     r.fields = await db.prepare('SELECT * FROM field_values WHERE inbound_id = ? ORDER BY id').all(r.id);
     r.missing = missingFor(r.fields);
-    const due = answerDeadlines(r.received_at);
+    const due = deadlinesFor(r.channel, r.received_at);
     r.answer_by = due.answerBy; r.late_at = due.lateAt;
     // Q92 (14.10.2026): a phone card says each call plainly: when, which line, answered (by whom) or missed
     if (r.channel === 'phone') r.calls = await callsFor(db, r.id);
@@ -742,9 +767,9 @@ export async function agedCount(db, now = nowIso(), ranges = null) {
   const set = ranges && typeof ranges[0] === 'string' ? [ranges] : ranges;
   const [inRx, rxArgs] = set ? rangesSql('received_at', set) : ['1 = 1', []];
   // an email card already answered in Gmail is never late (20.11.2026)
-  const rows = await db.prepare(`SELECT received_at FROM inbound WHERE state = 'new' AND ${inRx}
+  const rows = await db.prepare(`SELECT channel, received_at FROM inbound WHERE state = 'new' AND ${inRx}
     AND NOT (channel IN ('gmail', 'email') AND first_reply_at IS NOT NULL)`).all(...rxArgs);
-  return rows.filter((r) => answerDeadlines(r.received_at).lateAt <= now).length;
+  return rows.filter((r) => deadlinesFor(r.channel, r.received_at).lateAt <= now).length;
 }
 
 // What each person has waiting for them right now. This is the whole of the
@@ -1119,7 +1144,9 @@ export async function recordSentMail(db, m, { at = nowIso() } = {}) {
   if (row && !row.first_reply_at && REPLY_STATES.includes(row.state) && Date.parse(m.sentAt) > Date.parse(row.received_at)) {
     await recordReplyRead(db, { id: row.id, sentAt: m.sentAt, checkedAt: at, personId: row.person_id });
   }
-  return { stored: true, personId, inboundId: row ? Number(row.id) : null };
+  // our reply processes the card and moves the stage (email automation 1, 2, 4)
+  const auto = await automation('sent mail', () => afterOurReply(db, { inboundId: row ? Number(row.id) : null, personId, sentAt: m.sentAt }));
+  return { stored: true, personId: (auto && auto.personId) || personId, inboundId: row ? Number(row.id) : null };
 }
 
 // A PERSON'S OWN MAILBOX (20.11.2026, the update popup's Allow; src/staffmail.js). One message from it is kept only when it
@@ -1142,6 +1169,9 @@ export async function recordMailbox(db, m, { mailbox, name = null, at = nowIso()
     VALUES (?,?,?,?,?,?,?,?,?,NULL,?,?,?)`).run(key, m.threadId ? String(mailbox).toLowerCase() + ':' + m.threadId : null, m.sentAt,
     dir === 'out' ? (name || m.fromName || null) : null, hits[0].email, m.subject ? String(m.subject).slice(0, 500) : null, m.body || null,
     JSON.stringify(m.attachments || []), hits[0].id, at, String(mailbox).toLowerCase(), dir);
+  // a colleague's own mailbox counts like edu@ (email automation 2): their reply -> Contacted, the student's answer -> Follow-up
+  if (dir === 'out') await automation('own mailbox reply', () => afterOurReply(db, { personId: hits[0].id, sentAt: m.sentAt }));
+  else await automation('own mailbox answer', () => afterTheirAnswer(db, { personId: hits[0].id, at: m.sentAt, body: m.body }));
   return { stored: true, personId: hits[0].id, direction: dir };
 }
 

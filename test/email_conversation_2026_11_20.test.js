@@ -94,11 +94,11 @@ test('the conversation: both sides, newest first, by conversation; the waiting c
   const agedBefore = await agedCount(db);
   // edu@ answers it in Gmail
   await recordSentMail(db, toSentShape(gmailMsg({ id: 's3', thread: 'T2', at: ago(25), to: 'anna@example.lv' })));
+  // since 24.11.2026 (email automation 1, the owner's pick) answering IS sorting: the card is made a lead by itself
   rows = await listInbound(db, { state: 'new' });
-  c = rows.find((r) => r.id === card);
-  assert.deepEqual(c.answered, { at: c.first_reply_at, by: 'edu@' }, 'no name on From: "edu@"');
-  assert.equal(c.aged, false); assert.equal(c.answerNow, false);
-  assert.equal(c.state, 'new', 'answering is not sorting: Make a lead / Set aside still to do');
+  assert.equal(rows.find((r) => r.id === card), undefined, 'out of Waiting');
+  c = await db.prepare('SELECT state, processed_by, first_reply_at, person_id FROM inbound WHERE id = ?').get(card);
+  assert.equal(c.state, 'qualified'); assert.equal(c.processed_by, 'Intake'); assert.ok(c.first_reply_at && c.person_id);
   const after = await waitingFor(db, 'Admissions');
   if (before.intake) assert.equal(after.intake, before.intake - 1, 'out of the waiting count');
   assert.equal(await agedCount(db), agedBefore - 1, 'never late');

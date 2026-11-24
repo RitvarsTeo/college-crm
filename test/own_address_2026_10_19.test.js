@@ -75,14 +75,18 @@ test('our reply in a conversation already in Intake joins it as our reply, label
   const r = await pull(db, { inbox: [], labelled: ['r1'], messages: { r1: OUR_REPLY('r1', { labelIds: ['SENT', LABEL.id] }) } });
   assert.equal(r.ownReply, 1);
   assert.equal(r.inbox, 0);
-  const cards = await listInbound(db, { state: 'new' });
+  // since 24.11.2026 (email automation 1) our reply also processes the card: it is a lead now, the enquirer the person
+  assert.equal((await listInbound(db, { state: 'new' })).length, 0, 'answered = processed, out of Waiting');
+  const cards = await db.prepare("SELECT * FROM inbound WHERE channel = 'gmail'").all();
   assert.equal(cards.length, 1, 'one card, the enquiry');
   assert.equal(cards[0].contact_email, 'wibbo@ship.nl');
+  assert.equal(cards[0].state, 'qualified'); assert.equal(cards[0].processed_by, 'Intake');
   assert.doesNotMatch(cards[0].body, /Thank you for your interest/, 'our text never joins the card');
   const lines = await linesOf(db, cards[0].id);
   assert.deepEqual(lines.map((l) => [l.kind, l.external_id, l.body]), [['message', 'e1', lines[0].body], ['reply', 'r1', null]]);
   assert.equal(cards[0].first_reply_at, new Date('2026-10-14T10:30:00Z').toISOString(), 'our reply is the first reply');
-  assert.equal(await peopleCount(db), 0);
+  const people = await db.prepare('SELECT email, status FROM people').all();
+  assert.deepEqual(people.map((p) => [p.email, p.status]), [['wibbo@ship.nl', 'Contacted']], 'the enquirer, never our own address');
   // the same reply again is a repeat, and a later reply never moves the first reply
   const again = await pull(db, { inbox: ['r1', 'r2'], messages: { r1: OUR_REPLY('r1'), r2: OUR_REPLY('r2', { date: '2026-10-14T11:00:00Z' }) } });
   assert.equal(again.repeat, 1);
