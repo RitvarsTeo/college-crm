@@ -319,5 +319,13 @@ test('24.11 the help names no Client Hub, and the tour walks every menu place on
   assert.doesNotMatch(all, /—/, 'no em dash');
   assert.doesNotMatch(all, /\b(AI|Claude|automation|machine learning)\b/, 'no AI wording');
   for (const id of ['email-moves-the-stage', 'suggested-reply', 'stage-move-note', 'search-other-years', 'calls-page']) assert.ok(HELP.faq.some((f) => f.id === id), id);
-  for (const id of ['tc-inbox', 'tc-private-clients', 'tc-same-company', 'tc-my-go-list']) assert.ok(HELP.tc.faq.some((f) => f.id === id), id);
+  for (const id of ['tc-inbox', 'tc-same-company', 'tc-my-go-list']) assert.ok(HELP.tc.faq.some((f) => f.id === id), id);
+});
+
+// Patch 172 (24.11.2026): the Private clients tab and the client statuses are gone, so the help names neither
+test('172: no help line names Private clients, B2C or the client statuses', () => {
+  const tcText = JSON.stringify(HELP.tc);
+  assert.doesNotMatch(tcText, /Private client|B2C|private person/);
+  assert.ok(!HELP.tc.faq.some((f) => f.id === 'tc-statuses'), 'no statuses question');
+  assert.doesNotMatch(tcText, /To contact, Contacted, Met/);
 });

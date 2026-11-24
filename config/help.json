@@ -353,11 +353,6 @@
         "href": "#/tc/companies"
       },
       {
-        "do": "Add a private person",
-        "where": "Clients, Private clients, + Private client",
-        "href": "#/tc/private"
-      },
-      {
         "do": "Join two records of one company (admins)",
         "where": "Clients, Same company?",
         "href": "#/tc/same"
@@ -417,12 +412,7 @@
       {
         "id": "tc-inbox",
         "q": "What comes into the Training Centre Inbox?",
-        "a": "Every WhatsApp message to +371 6244 4609 and every email to training@novikontas.org, one card per number or conversation, where Make a lead puts the sender under Clients (B2B with their company, or B2C as a private person) and Done moves the card to Handled."
-      },
-      {
-        "id": "tc-private-clients",
-        "q": "What are Private clients?",
-        "a": "People who pay for a course themselves, with no company behind them, kept on their own list under Clients with the same history, next communication and log as a company."
+        "a": "Every WhatsApp message to +371 6244 4609 and every email to training@novikontas.org, one card per number or conversation with the whole conversation on it, where Make a lead puts the company and its person under Clients, a conversation training@ answered moves to Handled by itself, Done moves any other card there, and the search finds a conversation by a name, an address, a number or a word."
       },
       {
         "id": "tc-active-client",
@@ -483,11 +473,6 @@
         "id": "tc-courses",
         "q": "How do I add this year's courses?",
         "a": "On the company page, under Courses per year, type the year, the number trained and the course codes, and press Save."
-      },
-      {
-        "id": "tc-statuses",
-        "q": "What do the statuses mean?",
-        "a": "To contact, Contacted, Met (with the meeting type) and Focus are the Excel's own steps; a company that had no step in the Excel or in the first import shows No status yet, and one with a logged contact is Contacted."
       },
       {
         "id": "tc-delete",
@@ -574,7 +559,7 @@
       },
       {
         "title": "Inbox",
-        "body": "WhatsApp to +371 6244 4609 and email to training@, one card each. Make a lead puts them under Clients, B2B or B2C; Done moves the card to Handled.",
+        "body": "WhatsApp to +371 6244 4609 and email to training@, one card per conversation. Make a lead puts the company under Clients; Done moves the card to Handled.",
         "target": ".tcnav [data-c=\"tc-inbox\"]"
       },
       {
@@ -584,7 +569,7 @@
       },
       {
         "title": "Clients",
-        "body": "Every company, and Private clients for people who pay themselves. + Make mine makes a company yours; what you add is yours.",
+        "body": "Every company. + Make mine makes one yours; what you add is yours.",
         "target": ".tcnav [data-c=\"tc-companies\"]"
       },
       {

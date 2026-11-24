@@ -22,16 +22,17 @@ The owner: "we need a tutorial how to use the app. is it done? updated?" The liv
 
 | Item | Status |
 |---|---|
-| HIS PICK B: the in-app tour and the questions on both sides match the app as it is today (A), plus a short screen-recorded walk-through per role (Admissions, Training Centre) | DECIDED |
-| Academy tour: steps for Home, Reports and Calls; the Inbox step says the week columns, Waiting / Handled, the filters, Connect your mailbox, Suggested reply, Called back | DECIDED |
-| Academy questions: email answered from edu@ handles the card (stage follows, Undo), the note typed on a stage move, search in other years, the Calls page | DECIDED |
-| Training Centre tour: an Inbox step (WhatsApp and training@ cards, Make a lead B2B or B2C, Done); questions for Private clients, Same company?, My Grand Opening list | DECIDED |
-| No help line names Client Hub (Intake holds every client): the review list, the Grand Opening and statuses answers | DECIDED |
-| The videos: one per role (Admissions, Training Centre). HIS PICKS 24.11: "Live app, signed-in only" (recorded on the real app, the clip opens only inside Intake, never on a public link) and "Silent clip + captions" (about 1 min per role, captions on screen, plays in the Help center) | DECIDED |
-| HIS PICK 24.11 "Database, admin upload": the clips show real names, so they are kept in Intake's database (table help_videos), never in git; an admin uploads or replaces them on Help center, For admins, Tutorial clips (#/clips) | BUILT |
-| The clips: Admissions (31 s), Training Centre (27 s), Your Grand Opening list (23 s), still frames of the live app cross-faded, one caption each; files kept beside the gap picture, `For review/2026-11-24 Tutorial gap/clips/` | BUILT |
-| HIS ASK 24.11: "Make sure there is a demo how to filter your contact list! It will be sent together with a reminder for open contacts. You have undecided contacts for Grand Opening 2027. If you run into problems check our tutorial video." A clip of My Grand Opening list (find a company, Invite or No, the way, Undo) with its own link the reminder can carry; opens after sign-in | DECIDED |
-| Built 24.11: tour 9 steps (Home, Reports, Calls added), 16 how-to lines, 31 questions; Training Centre tour 5 steps (Inbox added), 15 how-to lines, 23 questions; the admin link reads "Review list (imported contacts)" | BUILT |
+| HIS PICK B: the in-app tour and the questions on both sides match the app as it is today (A), plus a short screen-recorded walk-through per role (Admissions, Training Centre) | LIVE |
+| Academy tour: steps for Home, Reports and Calls; the Inbox step says the week columns, Waiting / Handled, the filters, Connect your mailbox, Suggested reply, Called back | LIVE (24.11, tour opened on production: 9 steps, each rings its menu item) |
+| Academy questions: email answered from edu@ handles the card (stage follows, Undo), the note typed on a stage move, search in other years, the Calls page | LIVE (31 questions on production) |
+| Training Centre tour: an Inbox step (WhatsApp and training@ cards, Make a lead, Done); questions for the Inbox, Same company?, My Grand Opening list | LIVE (5 steps, each finds its menu item) |
+| Patch 172 removed the Private clients tab, Make a lead B2C and the client statuses; the help follows: no Private clients how-to or question, no statuses question, the Inbox answer says the whole conversation, answered = Handled, the search | BUILT |
+| No help line names Client Hub (Intake holds every client): the review list, the Grand Opening and statuses answers | LIVE (none on either Help center) |
+| The videos: one per role (Admissions, Training Centre). HIS PICKS 24.11: "Live app, signed-in only" (recorded on the real app, the clip opens only inside Intake, never on a public link) and "Silent clip + captions" (about 1 min per role, captions on screen, plays in the Help center) | LIVE |
+| HIS PICK 24.11 "Database, admin upload": the clips show real names, so they are kept in Intake's database (table help_videos), never in git; an admin uploads or replaces them on Help center, For admins, Tutorial clips (#/clips) | LIVE (uploaded 24.11; every clip address answers 401 without sign-in) |
+| The clips: Admissions (31 s), Training Centre (23 s, Companies frame retaken after patch 176), Your Grand Opening list (23 s), still frames of the live app cross-faded, one caption each; files kept beside the gap picture, `For review/2026-11-24 Tutorial gap/clips/` | LIVE |
+| HIS ASK 24.11: "Make sure there is a demo how to filter your contact list! It will be sent together with a reminder for open contacts. You have undecided contacts for Grand Opening 2027. If you run into problems check our tutorial video." A clip of My Grand Opening list (find a company, Invite or No, the way, Undo) with its own link the reminder can carry; opens after sign-in | LIVE: https://intake.novikontas.org/#/tc/video/go-list plays it (captions on) with Open my list |
+| Built 24.11: tour 9 steps (Home, Reports, Calls added), 16 how-to lines, 31 questions; Training Centre tour 5 steps (Inbox added), 15 how-to lines, 23 questions; the admin link reads "Review list (imported contacts)" | LIVE (release a25f7d0, with patch 172) |
 
 ## 20.11.2026 - The whole email conversation in Intake (PICKED 20.11: "B: own Conversation box")
 
