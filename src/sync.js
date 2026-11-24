@@ -793,7 +793,7 @@ export async function syncStaffMail(db, { now = new Date(), env = process.env, f
     const state = await db.prepare('SELECT value FROM sync_state WHERE name = ?').get(name);
     const last = state && state.value && !Number.isNaN(Date.parse(state.value)) ? state.value : null;
     const since = new Date(last ? Date.parse(last) - 10 * 60000 : now.getTime() - staffMail.FIRST_DAYS * 86400000).toISOString();
-    const got = await staffMail.readMailbox(db, email, { env, fetchImpl, since });
+    const got = await staffMail.readMailbox(db, email, { env, fetchImpl, since, now });
     if (got.gone) { res.gone++; continue; }
     const user = await db.prepare('SELECT display_name FROM crm_users WHERE LOWER(email) = ?').get(email);
     for (const m of got.items || []) {
@@ -819,7 +819,7 @@ export async function syncTcMail(db, { now = new Date(), env = process.env, fetc
   const state = await db.prepare("SELECT value FROM sync_state WHERE name = 'tc_mail'").get();
   const last = state && state.value && !Number.isNaN(Date.parse(state.value)) ? state.value : null;
   const since = new Date(last ? Date.parse(last) - 10 * 60000 : now.getTime() - TC_MAIL_DAYS * 86400000).toISOString();
-  const got = await staffMail.readMailbox(db, TC_MAILBOX, { env, fetchImpl, since });
+  const got = await staffMail.readMailbox(db, TC_MAILBOX, { env, fetchImpl, since, now });
   if (got.gone) { await saveState(db, 'tc_mail', last, { ok: false, gone: true }, at); return { ok: false, ran: true, gone: true }; }
   const res = await recordTcMail(db, got.items, at);
   const mark = !got.ok ? last : got.more ? (got.upTo || last) : at;

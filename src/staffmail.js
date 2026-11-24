@@ -120,23 +120,42 @@ async function accessToken(db, u, env, fetchImpl) {
   return (await res.json()).access_token || null;
 }
 
+// THE FIRST FILL IN DATE WINDOWS (patch 174, 24.11.2026, his word "Yes, fix and fetch"). Gmail lists the NEWEST mail first and
+// a run lists at most MAX_PAGES pages; a busy mailbox (training@: more than 1000 mails in 30 days) then never showed its older
+// mail, and the bookmark moved past it. Now a reading more than a day behind asks for one day at a time (after: + before:),
+// oldest day first, and only a day listed and read to its end moves the bookmark to that day's end. A day too full to list
+// whole is asked for in smaller pieces (down to an hour).
+export const WINDOW_MS = 86400000;
+const MIN_WINDOW_MS = 3600000;
 /** One mailbox's mail since `since`, OLDEST first, at most `limit`: { ok, items: [shape + mine], more, upTo }.
- * mine: 'out' when the person sent it (the SENT label), else 'in'. Spam, trash, drafts and chats are never asked for. */
-export async function readMailbox(db, email, { env = process.env, fetchImpl = fetch, since, limit = PER_RUN, max = 50 } = {}) {
+ * mine: 'out' when the person sent it (the SENT label), else 'in'. Spam, trash, drafts and chats are never asked for.
+ * upTo: how far the reading got (the bookmark); more: there is still mail after upTo. */
+export async function readMailbox(db, email, { env = process.env, fetchImpl = fetch, since, limit = PER_RUN, max = 50, now = new Date() } = {}) {
   const u = low(email);
   const tok = await accessToken(db, u, env, fetchImpl);
   if (tok === 'gone') { await db.prepare('DELETE FROM staff_mail_links WHERE user_email = ?').run(u); return { ok: false, gone: true, items: [] }; }
   if (!tok) return { ok: false, items: [], why: 'not connected' };
   const API = GMAIL(env) + '/users/me', headers = { authorization: 'Bearer ' + tok };
-  const q = `after:${Math.floor(Date.parse(since) / 1000)} -in:spam -in:trash -in:drafts -in:chats`;
-  const ids = []; let pageToken = null; let pages = 0;
-  do {
-    const r = await fetchImpl(`${API}/messages?maxResults=${max}&q=${encodeURIComponent(q)}` + (pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : ''), { headers });
-    if (!r.ok) return { ok: false, items: [], why: withCode('Gmail refused the list', await googleCodeOf(r)) };
-    const page = await r.json();
-    ids.push(...(page.messages || []).map((m) => m.id));
-    pageToken = page.nextPageToken || null; pages++;
-  } while (pageToken && pages < MAX_PAGES);
+  const from = Date.parse(since), end = now.getTime();
+  const list = async (until) => {
+    const q = `after:${Math.floor(from / 1000)}${until ? ` before:${Math.floor(until / 1000)}` : ''} -in:spam -in:trash -in:drafts -in:chats`;
+    const ids = []; let pageToken = null; let pages = 0;
+    do {
+      const r = await fetchImpl(`${API}/messages?maxResults=${max}&q=${encodeURIComponent(q)}` + (pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : ''), { headers });
+      if (!r.ok) return { error: withCode('Gmail refused the list', await googleCodeOf(r)) };
+      const page = await r.json();
+      ids.push(...(page.messages || []).map((m) => m.id));
+      pageToken = page.nextPageToken || null; pages++;
+    } while (pageToken && pages < MAX_PAGES);
+    return { ids, whole: !pageToken };
+  };
+  // more than a day behind: one window from the bookmark, smaller while it is too full to list whole
+  let span = end - from > WINDOW_MS ? WINDOW_MS : 0;
+  let got = await list(span ? from + span : 0);
+  while (!got.error && !got.whole && span > MIN_WINDOW_MS) { span = Math.max(MIN_WINDOW_MS, Math.floor(span / 4)); got = await list(from + span); }
+  if (!got.error && !got.whole && !span && end - from > MIN_WINDOW_MS) { span = Math.max(MIN_WINDOW_MS, Math.floor((end - from) / 4)); got = await list(from + span); }
+  if (got.error) return { ok: false, items: [], why: got.error };
+  const ids = got.ids;
   const todo = ids.reverse().slice(0, limit);
   const items = []; let failed = 0; let upTo = null;
   for (const id of todo) {
@@ -148,7 +167,10 @@ export async function readMailbox(db, email, { env = process.env, fetchImpl = fe
     upTo = s.sentAt;
     items.push({ ...s, mine: (m.labelIds || []).includes('SENT') ? 'out' : 'in' });
   }
-  return { ok: failed === 0, items, more: Boolean(pageToken) || ids.length > todo.length, upTo };
+  const allRead = got.whole && ids.length <= todo.length && !failed;
+  // a window read to its end: the bookmark goes to the window's end (an empty day moves it too), and there is more after it
+  if (span && allRead) return { ok: true, items, more: true, upTo: new Date(from + span).toISOString() };
+  return { ok: failed === 0, items, more: !allRead || Boolean(span), upTo };
 }
 
 export const _test = { seal, open };
