@@ -88,3 +88,30 @@ test('syncTcMail reads past the old 60 in one run and keeps its bookmark where t
   assert.equal(r.more, false, 'all 150 in one run');
   assert.equal(Number((await db.prepare('SELECT COUNT(*) n FROM tc_mail').get()).n), 150);
 });
+
+// patch 183 (24.11.2026): the first evening run read 146 and stopped at one refused message; the bookmark stayed put, so every
+// run would read the same mail again. Now a refusal is asked once more, and a run that still stops keeps what it read.
+test('a message refused once is asked again after a pause and the run goes on', async () => {
+  const db = await openDb(':memory:');
+  await staffMail.saveLink(db, TC_MAILBOX, 'refresh-not-real', ENV);
+  let n = 0; const box = mailbox(12, 12);
+  const flaky = async (url) => { if (url.includes('/messages/m00004') && n++ === 0) return { ok: false, status: 429, json: async () => ({}), text: async () => '' }; return box.fetchImpl(url); };
+  const got = await staffMail.readMailbox(db, TC_MAILBOX, { env: ENV, fetchImpl: flaky, since: new Date(NOW.getTime() - 13 * H).toISOString(), now: NOW, parallel: 5, pauseMs: 5 });
+  assert.equal(got.ok, true);
+  assert.equal(got.items.length, 12);
+});
+
+test('syncTcMail: a run stopped by a refusal keeps its bookmark at the last message read and says why', async () => {
+  const db = await openDb(':memory:');
+  await staffMail.saveLink(db, TC_MAILBOX, 'refresh-not-real', ENV);
+  const start = new Date(NOW.getTime() - 12 * H).toISOString();
+  await db.prepare("INSERT INTO sync_state (name, value, ran_at, detail) VALUES ('tc_mail', ?, ?, '{}')").run(start, NOW.toISOString());
+  const box = mailbox(40, 10, { refuse: 'm00020' });
+  const r = await syncTcMail(db, { now: NOW, env: ENV, fetchImpl: box.fetchImpl });
+  assert.equal(r.ok, false);
+  const st = await db.prepare("SELECT value, detail FROM sync_state WHERE name = 'tc_mail'").get();
+  assert.equal(Date.parse(st.value), Math.floor(box.all[19].at / 1000) * 1000, 'moved to the last message read, not left at the start');
+  assert.ok(Date.parse(st.value) > Date.parse(start));
+  assert.equal(JSON.parse(st.detail).refused, 429);
+  assert.equal(Number((await db.prepare('SELECT COUNT(*) n FROM tc_mail').get()).n), 20);
+});

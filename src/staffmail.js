@@ -133,7 +133,7 @@ const MIN_WINDOW_MS = 3600000;
 // parallel / deadline (patch 181, his word 24.11.2026 "Yes, speed it up"): a caller catching up may read `parallel` messages at
 // a time and stop at `deadline` (clock() ms); a run stopped early is read up to its last message and says more, like `limit`.
 export async function readMailbox(db, email, { env = process.env, fetchImpl = fetch, since, limit = PER_RUN, max = 50, now = new Date(),
-  parallel = 1, deadline = 0, clock = Date.now } = {}) {
+  parallel = 1, deadline = 0, clock = Date.now, pauseMs = 1500 } = {}) {
   const u = low(email);
   const tok = await accessToken(db, u, env, fetchImpl);
   if (tok === 'gone') { await db.prepare('DELETE FROM staff_mail_links WHERE user_email = ?').run(u); return { ok: false, gone: true, items: [] }; }
@@ -160,12 +160,16 @@ export async function readMailbox(db, email, { env = process.env, fetchImpl = fe
   if (got.error) return { ok: false, items: [], why: got.error };
   const ids = got.ids;
   const todo = ids.reverse().slice(0, limit);
-  const items = []; let failed = 0; let upTo = null; let cut = false;
-  const one = async (id) => {
-    try { const r = await fetchImpl(`${API}/messages/${encodeURIComponent(id)}?format=full`, { headers }); return r.ok ? await r.json() : null; }
-    catch { return null; }
-  };
   const step = Math.max(1, Math.floor(parallel) || 1);
+  const items = []; let failed = 0; let upTo = null; let cut = false; let refused = null;
+  // patch 183: a refused message is asked once more after a short pause (Gmail limits a mailbox's requests at once), and the
+  // first refusal's status is kept so a stop says why
+  const once = async (id) => {
+    try { const r = await fetchImpl(`${API}/messages/${encodeURIComponent(id)}?format=full`, { headers }); if (r.ok) return await r.json(); refused = refused || r.status || 'refused'; return null; }
+    catch { refused = refused || 'network'; return null; }
+  };
+  const one = async (id) => (await once(id)) || (step > 1 ? (await new Promise((ok) => setTimeout(ok, pauseMs)), await once(id)) : null);
+
   read: for (let i = 0; i < todo.length; i += step) {
     if (deadline && clock() >= deadline) { cut = true; break; }
     // fetched together, kept in order: the first refusal stops the run there, so the bookmark never passes an unread message
@@ -180,7 +184,7 @@ export async function readMailbox(db, email, { env = process.env, fetchImpl = fe
   const allRead = got.whole && ids.length <= todo.length && !failed && !cut;
   // a window read to its end: the bookmark goes to the window's end (an empty day moves it too), and there is more after it
   if (span && allRead) return { ok: true, items, more: true, upTo: new Date(from + span).toISOString() };
-  return { ok: failed === 0, items, more: !allRead || Boolean(span), upTo };
+  return { ok: failed === 0, items, more: !allRead || Boolean(span), upTo, ...(failed ? { refused } : {}) };
 }
 
 export const _test = { seal, open };

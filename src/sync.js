@@ -837,8 +837,10 @@ export async function syncTcMail(db, { now = new Date(), env = process.env, fetc
   const res = await recordTcMail(db, got.items, at);
   // patch 172 (src/tcmailauto.js): what training@ answered is processed; a failure here never costs the read its bookmark
   try { res.auto = await processTcMail(db, { at }); } catch (err) { res.auto = { ok: false, why: 'the automation failed' }; }
-  const mark = !got.ok ? last : got.more ? (got.upTo || last) : at;
-  await saveState(db, 'tc_mail', mark, { ...res, more: Boolean(got.more), ok: got.ok }, at);
+  // patch 183: a run that stops at a refused message still keeps what it read before it (oldest first, so nothing after the
+  // bookmark is skipped); only a run that read nothing keeps the old bookmark
+  const mark = !got.ok ? (got.upTo || last) : got.more ? (got.upTo || last) : at;
+  await saveState(db, 'tc_mail', mark, { ...res, more: Boolean(got.more), ok: got.ok, ...(got.refused ? { refused: got.refused } : {}) }, at);
   res.purged = await purgeOld(db, 'tc_mail', 'at', now);
   return { ok: got.ok, ran: true, ...res, more: Boolean(got.more) };
 }
