@@ -70,7 +70,7 @@ import * as samepeople from './samepeople.js';
 import * as tcweek from './tcweek.js';
 import * as tcgoogle from './tcgoogle.js';
 import * as staffMail from './staffmail.js';
-import { TC_MAILBOX } from './tcmail.js';
+import { TC_MAILBOX, makeInvite as tcMailInvite, checkInvite as tcMailCheck, useInvite as tcMailUse } from './tcmail.js';
 import * as tcadd from './tcadd.js';
 import * as tcs2send from './tcs2send.js';
 import * as tcseason from './tcseason.js';
@@ -385,6 +385,20 @@ async function finishTcMail(req, res, url, code, flow) {
   if (got.email !== TC_MAILBOX) return back('other_account');
   await staffMail.saveLink(db, TC_MAILBOX, got.refreshToken, process.env);
   return back('training_connected');
+}
+// THE ONE-TIME LINK FOR training@ (patch 169): the person who opened an admin's link approved at Google. Kept only while the link
+// is still good (not used, not expired) AND the account that came back is training@ itself; then the link is spent. No Intake account.
+async function finishTcMailInvite(req, res, url, code, flow) {
+  const done = (status, ok, text) => { res.setHeader('set-cookie', flowCookie('', 0)); return gmailPage(res, status, ok, text); };
+  if (url.searchParams.get('error') || !code) return done(400, false, 'Access was not given. Open the link again and press Allow.');
+  const still = await db.prepare('SELECT used_at, expires_at FROM tc_mail_invites WHERE token_hash = ?').get(String(flow.h || ''));
+  if (!still || still.used_at || !(Date.parse(still.expires_at) > Date.now())) return done(403, false, 'This link has expired or is not valid. Ask for a new one.');
+  const got = await staffMail.exchangeCode({ env: process.env, code, redirectUri: process.env.GOOGLE_REDIRECT_URI });
+  if (!got.ok) return done(400, false, 'Google did not finish. Open the link again.');
+  if (got.email !== TC_MAILBOX) return done(400, false, `You signed in as ${htmlEscape(got.email || 'another account')}. Open the link again and choose ${TC_MAILBOX}.`);
+  if (!(await tcMailUse(db, flow.h, got.email))) return done(403, false, 'This link has expired or is not valid. Ask for a new one.');
+  await staffMail.saveLink(db, TC_MAILBOX, got.refreshToken, process.env);
+  return done(200, true, `${TC_MAILBOX} is connected to Intake, read only. You can close this page.`);
 }
 // An admin's view of the update popup: who answered what and when, and which mailboxes are connected. Never a token.
 function staffMailPage(res, d) {
@@ -1303,6 +1317,19 @@ export const handle = async (req, res) => {
     // GET /api/auth/gmail/connect?invite=... - Gmail option B, opened by whoever holds edu@'s
     // password. The invite is signed by an admin's /api/admin/gmail/link and expires; it is the
     // only thing that opens this door, and the callback still keeps ONLY edu@.
+    // GET /api/auth/tcmail/connect?t=... - the one-time link for training@ (patch 169). The token is the only proof: a random 32 bytes,
+    // kept only as its SHA-256, 48 hours, one successful connect. A bad, used or expired token gets one sentence and nothing else.
+    if (req.method === 'GET' && p === '/api/auth/tcmail/connect') {
+      const inv = await tcMailCheck(db, url.searchParams.get('t'));
+      if (!inv) return gmailPage(res, 403, false, 'This link has expired or is not valid. Ask for a new one.');
+      if (!process.env.CRM_SESSION_SECRET || !process.env.GOOGLE_REDIRECT_URI) return gmailPage(res, 503, false, 'Gmail cannot be connected on this copy yet.');
+      const state = crypto.randomBytes(24).toString('base64url');
+      const flow = signFlow({ state, purpose: 'tcmail-invite', h: inv.hash, exp: Date.now() + FLOW_MINUTES * 60 * 1000 }, process.env.CRM_SESSION_SECRET);
+      const to = staffMail.consentUrl({ env: process.env, state, redirectUri: process.env.GOOGLE_REDIRECT_URI, email: TC_MAILBOX });
+      if (!to) return gmailPage(res, 503, false, 'Gmail cannot be connected on this copy yet.');
+      res.writeHead(302, { location: to, 'cache-control': 'no-store', 'set-cookie': flowCookie(flow, FLOW_MINUTES) });
+      return res.end();
+    }
     if (req.method === 'GET' && p === '/api/auth/gmail/connect') {
       const invite = readFlow(url.searchParams.get('invite'), process.env.CRM_SESSION_SECRET);
       if (!invite || invite.purpose !== 'gmail-invite') {
@@ -1339,6 +1366,7 @@ export const handle = async (req, res) => {
         if (gf && gf.purpose === 'tcgoogle' && gs && gs === gf.state) return finishTcGoogle(req, res, url, url.searchParams.get('code'), gf);
         if (gf && gf.purpose === 'staffmail' && gs && gs === gf.state) return finishStaffMail(req, res, url, url.searchParams.get('code'), gf);
         if (gf && gf.purpose === 'tcmail' && gs && gs === gf.state) return finishTcMail(req, res, url, url.searchParams.get('code'), gf);
+        if (gf && gf.purpose === 'tcmail-invite' && gs && gs === gf.state) return finishTcMailInvite(req, res, url, url.searchParams.get('code'), gf);
         if (gf && gf.purpose === 'sheetpull' && gs && gs === gf.state) return finishSheetPull(req, res, url, url.searchParams.get('code'), gf);
       }
       if (!AUTH_ON) return json(res, 400, { error: 'Sign-in is not switched on for this copy.' });
@@ -3865,6 +3893,15 @@ export const handle = async (req, res) => {
       const link = await db.prepare('SELECT connected_at FROM staff_mail_links WHERE user_email = ?').get(TC_MAILBOX);
       const st = await db.prepare("SELECT ran_at FROM sync_state WHERE name = 'tc_mail'").get();
       return json(res, 200, { mailbox: TC_MAILBOX, connected: Boolean(link), connectedAt: link ? link.connected_at : null, lastRun: st ? st.ran_at : null });
+    }
+    // "Make a link for training@" (patch 169): an admin only; the link is shown once to the admin, never stored as text
+    if (p === '/api/tc/mail/link' && req.method === 'POST') {
+      const me = await currentUser(req);
+      if (!me || me.role !== 'admin') return refuseNotAdmin(res);
+      const base = inviteOrigin(req);
+      if (!base) return json(res, 503, { error: 'PUBLIC_BASE_URL is not set' });
+      const inv = await tcMailInvite(db, me.name || me.email);
+      return json(res, 200, { mailbox: TC_MAILBOX, link: `${base}/api/auth/tcmail/connect?t=${inv.token}`, expires: inv.expires });
     }
     if (p === '/api/tc/mail/connect' && req.method === 'GET') {
       const me = await currentUser(req);

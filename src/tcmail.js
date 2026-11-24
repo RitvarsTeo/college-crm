@@ -7,6 +7,7 @@
 // The Training Centre Inbox shows one card per conversation (Gmail thread) that has mail from outside. A conversation
 // training@ already answered stays as a card with "Answered by training@" and is not counted as waiting (the edu@ pick B).
 // Mail from our own domain and from robots (no-reply, mailer-daemon) is kept out of the cards: it is not a client writing.
+import crypto from 'node:crypto';
 import { emailShown } from './emailtext.js';
 
 export const TC_MAILBOX = 'training@novikontas.org';
@@ -72,3 +73,32 @@ export async function mailDone(db, key, actor, at = new Date().toISOString()) {
   const r = await db.prepare("UPDATE tc_mail SET seen_at = ?, seen_by = ? WHERE thread_id = ? AND direction = 'in' AND seen_at IS NULL").run(at, actor || null, thread);
   return { ok: true, done: Number(r.changes || 0) };
 }
+
+// THE ONE-TIME LINK FOR training@ (24.11.2026, patch 169; his words "Can you just make a link for her to open and click one click and
+// done?", "Yes, build it"). An admin makes a link; whoever opens it (no Intake account needed) goes straight to Google's own read-only
+// consent for training@. The link is a random token, kept only as its SHA-256, good for 48 hours and for ONE successful connect; the
+// callback keeps the sign-in only when the account that comes back is training@ itself. Anything else connects nothing.
+export const INVITE_HOURS = 48;
+const hashOf = (t) => crypto.createHash('sha256').update(String(t || '')).digest('hex');
+const TOKEN = /^[A-Za-z0-9_-]{40,60}$/;
+export async function makeInvite(db, actor, now = new Date()) {
+  const token = crypto.randomBytes(32).toString('base64url');
+  const expires = new Date(now.getTime() + INVITE_HOURS * 3600 * 1000).toISOString();
+  await db.prepare('INSERT INTO tc_mail_invites (token_hash, created_by, created_at, expires_at) VALUES (?,?,?,?)').run(hashOf(token), actor || null, now.toISOString(), expires);
+  return { token, expires };
+}
+/** The invite behind a token when it is still good (not used, not expired): { hash } or null. Fails closed. */
+export async function checkInvite(db, token, now = new Date()) {
+  if (!TOKEN.test(String(token || ''))) return null;
+  const h = hashOf(token);
+  const r = await db.prepare('SELECT token_hash, expires_at, used_at FROM tc_mail_invites WHERE token_hash = ?').get(h);
+  if (!r || r.used_at || !(Date.parse(r.expires_at) > now.getTime())) return null;
+  return { hash: h };
+}
+/** Spend it, once: true only for the one call that marks it used while it is still good. */
+export async function useInvite(db, hash, account, now = new Date()) {
+  const r = await db.prepare('UPDATE tc_mail_invites SET used_at = ?, used_account = ? WHERE token_hash = ? AND used_at IS NULL AND expires_at > ?')
+    .run(now.toISOString(), account || null, String(hash || ''), now.toISOString());
+  return Number(r.changes || 0) === 1;
+}
+export const _inviteTest = { hashOf };

@@ -31,6 +31,7 @@ const OPEN_API = {
   '/api/auth/google/start': { proof: 'starts Google sign-in; mints a signed state + nonce cookie', answers: true },
   '/api/auth/google/callback': { proof: "Google's code + the state and nonce this browser was given", answers: true },
   '/api/auth/gmail/connect': { proof: 'a signed, expiring gmail-invite flow token', answers: true },
+  '/api/auth/tcmail/connect': { proof: 'a random one-time token kept only as SHA-256, 48 hours, spent by one successful connect as training@ (patch 169)', answers: true },
   '/api/auth/me': { proof: 'says only whether the caller is signed in', answers: true },
   '/api/auth/logout': { proof: "ends only the caller's own session", answers: true },
   '/api/intake/application': { proof: 'the SIS shared secret header', answers: false },

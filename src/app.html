@@ -2862,6 +2862,8 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tc-mrow b{display:block} html.ui-c .tc-mrow small{display:block;color:var(--t3);font-size:12px} html.ui-c .tc-mrow:hover{background:var(--surface-2)}
   @media (max-width:760px){ html.ui-c .tc-mrow{grid-template-columns:minmax(0,1fr) auto} html.ui-c .tc-mrow > span:nth-child(2), html.ui-c .tc-mrow > span:nth-child(3){display:none} }
   /* Families cards and the company row chips (02.11.2026, the owner's pick "Yes, build all") */
+  html.ui-c .tcml-link{padding:14px 22px;margin:0 0 16px;max-width:760px;display:grid;gap:6px} html.ui-c .tcml-link small{color:var(--t2);font-weight:600}
+  html.ui-c .tcml-linkrow{display:flex;gap:8px} html.ui-c .tcml-linkrow input{flex:1;min-width:0;font:14px monospace;padding:8px}
   html.ui-c .tcpv-list{padding:6px 22px 10px;max-width:1100px} html.ui-c .tcpv-row{display:grid;grid-template-columns:1.2fr 1fr 1.4fr 1fr;gap:14px;align-items:center;padding:14px 4px;border-top:1px solid var(--rule);color:var(--ink);text-decoration:none}
   html.ui-c .tcpv-row b{font-size:16px} html.ui-c .tcpv-row span{color:var(--t2);font-weight:600} html.ui-c .tcpv-row small{color:var(--t3);font-weight:600;text-align:right}
   html.ui-c .tcpv-row.tcpv-h{border-top:0;color:var(--t3);font-weight:700;font-size:13px;padding:10px 4px} html.ui-c .tcpv-row > a{color:var(--ink);text-decoration:none} html.ui-c .tcpv-row > a:hover b{color:var(--accent-ink)}
@@ -12566,6 +12568,16 @@ async function viewTcInbox(handled) {
   tcInboxCount(T_IN.waiting);
   tcInboxDraw();
 }
+// THE ONE-TIME LINK (patch 169): made by an admin, shown once, works for 48 hours and one connect, only as training@
+async function tcMailLink(btn) {
+  if (btn) btn.disabled = true;
+  try { T_IN.link = await post('/api/tc/mail/link', {}); tcInboxDraw(); } catch (e) { alert(e.message); if (btn) btn.disabled = false; }
+}
+function tcMailLinkBox(L) {
+  const until = (fmtDateTime(L.expires) || '').slice(0, 16);
+  return `<section class="c-sheet tcml-link"><b>Link for training@novikontas.org</b><small>Works once, until ${esc(tcDay(until.slice(0, 10)) + ' ' + until.slice(11, 16))}. The person opens it and signs in as training@.</small>
+    <div class="tcml-linkrow"><input id="tcMailLinkUrl" readonly value="${esc(L.link)}" onclick="this.select()" aria-label="The link"><button type="button" class="btn sm" onclick="navigator.clipboard && navigator.clipboard.writeText($('#tcMailLinkUrl').value);this.textContent='Copied'">Copy</button></div></section>`;
+}
 // a card training@ already answered stays, and is not waiting (the edu@ pick B)
 const tcInboxWaiting = () => T_IN.cards.filter((c) => !c.answered).length;
 function tcInboxCount(n) { const b = $('#tcInboxN'); if (b) { b.textContent = n ? String(Number(n)) : ''; b.hidden = !n; } }
@@ -12596,9 +12608,10 @@ function tcInboxDraw() {
         <div class="c-drop">${c.cards.map(card).join('') || '<div class="c-empty">Nothing here.</div>'}</div></div>`).join('')}</div>`
     : `<div class="c-sheet"><div class="c-empty">${live ? 'Nothing waiting. This queue is clear.' : 'Nothing here.'}</div></div>`;
   const M = D.mail || {};
-  const connect = M.mailbox && !M.connected && isAdmin() ? `<button type="button" class="btn ghost" onclick="location.href='/api/tc/mail/connect'">Connect training@</button>` : '';
+  // patch 169: or a one-time link for the person who holds training@'s password ("one click and done"), shown once here
+  const connect = M.mailbox && !M.connected && isAdmin() ? `<button type="button" class="btn ghost" onclick="location.href='/api/tc/mail/connect'">Connect training@</button><button type="button" class="btn ghost" onclick="tcMailLink(this)">Make a link for training@</button>` : '';
   $('#view').innerHTML = `<p class="c-crumb">Training Centre · WhatsApp +371 6244 4609 · training@novikontas.org</p><div class="c-head"><div><h1>Inbox</h1></div>${connect}
-    <div class="c-seg p-view" role="group" aria-label="Show"><button aria-pressed="${live}" onclick="location.hash='#/tc/inbox'">Waiting</button><button aria-pressed="${!live}" onclick="location.hash='#/tc/inbox/handled'">Handled</button></div></div>${board}`;
+    <div class="c-seg p-view" role="group" aria-label="Show"><button aria-pressed="${live}" onclick="location.hash='#/tc/inbox'">Waiting</button><button aria-pressed="${!live}" onclick="location.hash='#/tc/inbox/handled'">Handled</button></div></div>${T_IN.link ? tcMailLinkBox(T_IN.link) : ''}${board}`;
 }
 // MAKE A LEAD (his pick "TC client/contact"): the company and the contact under Clients, through "Someone I met" pre-filled with
 // the WhatsApp; Add puts them there with a WhatsApp line in the company's history and moves the card to Handled

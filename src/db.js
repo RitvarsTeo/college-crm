@@ -1036,6 +1036,15 @@ CREATE TABLE IF NOT EXISTS tc_mail (
   seen_by TEXT
 );
 CREATE INDEX IF NOT EXISTS tc_mail_thread ON tc_mail (thread_id, at);
+-- the one-time link for training@ (patch 169): only the SHA-256 of the token, 48 hours, one successful connect
+CREATE TABLE IF NOT EXISTS tc_mail_invites (
+  token_hash TEXT PRIMARY KEY,
+  created_by TEXT,
+  created_at TEXT NOT NULL,
+  expires_at TEXT NOT NULL,
+  used_at TEXT,
+  used_account TEXT
+);
 -- PRIVATE CLIENTS (23.11.2026, patch 166, src/tcprivate.js; his pick "A: Private clients list"): a Training Centre client who comes for
 -- themselves, not for a company. Their own record and history; archived, never deleted.
 CREATE TABLE IF NOT EXISTS tc_private_clients (
