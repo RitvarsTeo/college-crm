@@ -27,6 +27,7 @@
 // The older generic shape (call_id / event: ringing|answered|ended, header x-crm-secret) still reads, for the
 // console's simulated calls.
 
+import { personFor } from './phoneext.js';
 import crypto from 'node:crypto';
 import { BadInbound } from './inbound.js';
 import { storeCall, closePbxOutageByPush } from './sync.js';
@@ -180,7 +181,7 @@ export async function receivePhoneEvent(db, raw, { mode = 'test', now = new Date
 // long the caller waited (duration - talk, as the pull's duration/duration_talk) and talked. A call the pull already
 // stored is skipped by storeCall itself.
 async function settleCall(db, ev, mode, at) {
-  const all = await db.prepare('SELECT event, at, queue, caller_num, operator, hold_sec, talk_sec FROM call_events WHERE call_id = ? ORDER BY id').all(ev.callId);
+  const all = await db.prepare('SELECT event, at, queue, caller_num, operator, extension, hold_sec, talk_sec FROM call_events WHERE call_id = ? ORDER BY id').all(ev.callId);
   const ring = all.find((x) => x.event === 'ringing');
   const ans = all.find((x) => x.event === 'answered');
   const queue = ev.queue || (all.find((x) => QUEUES.includes(x.queue)) || {}).queue || (ev.tg ? null : QUEUES[0]);
@@ -191,6 +192,8 @@ async function settleCall(db, ev, mode, at) {
   if (ev.holdSec != null || ev.talkSec != null) duration = (ev.holdSec || 0) + (ev.talkSec || 0);
   else if (ev.tg) duration = Math.max(0, Math.round((Date.parse(ev.at) - Date.parse(start)) / 1000));
   if (talk == null && ev.tg && !pickedUp) talk = 0;
+  // patch 184: an answered call on an extension with a person (Phone extensions) is that person's, not the line's
+  const person = pickedUp ? await personFor(db, (ans && ans.extension) || ev.extension) : null;
   const row = {
     uniqueid: ev.callId,
     created_at: start,
@@ -198,7 +201,7 @@ async function settleCall(db, ev, mode, at) {
     caller_num: ev.callerNum || (ring && ring.caller_num) || (ans && ans.caller_num) || null,
     picked_up: pickedUp,
     // TeleGroup's hangup names the last agent rung even when nobody answered: only an answered call has an operator
-    operator_name: (ans && ans.operator) || (!ev.tg || pickedUp ? ev.operator : null) || null,
+    operator_name: person || (ans && ans.operator) || (!ev.tg || pickedUp ? ev.operator : null) || null,
     duration_sec: duration, talk_sec: talk,
   };
   const out = { seen: 0, logged: 0, inbox: 0, again: 0, filtered: 0, noNumber: 0 };

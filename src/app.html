@@ -4216,6 +4216,7 @@ async function routeC(page, arg) {
   if (page === 'feedback') return viewFeedback();
   if (page === 'calls') return viewCallsC();
   if (page === 'n3') return viewN3();
+  if (page === 'phone-ext') return viewPhoneExt();
   if (!(place === 'people' && page !== 'journey')) C_PCOHORT = null;   // a Reports cohort lives only on People
   if (place === 'reports') {
     if (arg) C_REP_CH = arg;   // #/reports/<chapter> opens that tab (#/reports/applications too)
@@ -5012,6 +5013,7 @@ async function cHelpAdmin() {
     <a href="/api/admin/sheet-pull" target="_blank" rel="noopener" title="The admissions sheet pulled into Intake, and how many leads are made in Intake each week">Admissions sheet</a>
     <a href="#/access" title="Which half of Intake each account opens: Academy, Training Centre">People and access</a>
     <a href="#/n3" title="N3's phone numbers, so a call from a seafarer in N3 says who it is">N3 phone directory</a>
+    <a href="#/phone-ext" title="Who answers each phone extension, so a call shows the person, not the line">Phone extensions</a>
     <a href="#/clips" title="Upload or replace the short clips shown in the Help center">Tutorial clips</a></div>`;
 }
 
@@ -14874,6 +14876,34 @@ async function n3Replace(btn) {
   btn.disabled = true;
   try { await post('/api/admin/n3-directory', { rows }); N3_IMP = null; await viewN3(); }
   catch (e) { btn.disabled = false; const el = $('#n3Err'); if (el) el.textContent = e.message; }
+}
+
+// PHONE EXTENSIONS (patch 184, the owner 24.11.2026: "cant we just match the buttons of phone to the names?"). Admins say who answers
+// each extension TeleGroup sends; a call answered there then shows that person. Empty = several people or not known: the line's name
+// shows. Every change keeps who and when (src/phoneext.js).
+let PX = null;
+async function viewPhoneExt() {
+  const head = '<p class="c-crumb"><a href="#/help">Help center</a></p><div class="c-head"><div><h1>Phone extensions</h1></div></div>';
+  if (!isAdmin()) { $('#view').innerHTML = head + '<div class="c-sheet"><div class="c-empty">This page is for admins.</div></div>'; return; }
+  PX = await api('/api/admin/phone-extensions');
+  const row = (x, i) => `<tr><td><b>${esc(x.extension)}</b></td><td>${esc(x.line || '')}</td>
+    <td><input list="pxPeople" id="px${i}" value="${esc(x.person || '')}" placeholder="Several people / not known" aria-label="Who answers ${esc(x.extension)}">
+      <button class="btn ghost" onclick="pxSave(${i}, this)">Save</button></td>
+    <td>${x.calls}</td><td>${x.last ? esc(fmtDate(x.last)) : ''}</td>
+    <td class="c-line2">${x.history.slice(0, 3).map((h) => `${esc(h.to || 'nobody')} · ${esc(h.by)} · ${esc(fmtDate(h.at))}`).join('<br>')}</td></tr>`;
+  $('#view').innerHTML = head + `<div class="c-sheet c-pad">${PX.extensions.length
+    ? `<table class="ktable"><thead><tr><th>Extension</th><th>Line</th><th>Answered by</th><th>Calls</th><th>Last call</th><th>Changes</th></tr></thead>
+      <tbody>${PX.extensions.map(row).join('')}</tbody></table>`
+    : '<div class="c-empty">No extension has come in from the phone system yet.</div>'}
+    <datalist id="pxPeople">${PX.people.map((n) => `<option value="${esc(n)}">`).join('')}</datalist>
+    <p class="c-hint" id="pxErr"></p></div>`;
+}
+async function pxSave(i, btn) {
+  const x = PX && PX.extensions[i]; const el = $('#px' + i);
+  if (!x || !el) return;
+  btn.disabled = true;
+  try { await post('/api/admin/phone-extensions', { extension: x.extension, person: el.value }); await viewPhoneExt(); }
+  catch (e) { btn.disabled = false; const er = $('#pxErr'); if (er) er.textContent = e.message; }
 }
 
 (async () => {

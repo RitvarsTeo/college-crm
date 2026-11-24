@@ -19,6 +19,7 @@ import * as sheetB from '../lib/sheetpull.js';
 import { pullSheet, sheetCounts } from './sheetsync.js';
 import { receive, activePersonFor, IN_TOUCH_STEPS, listInbound, listHandled, callsTodayFromPeople, messagesFor, conversationFor, latestConversationPerson, recordWhatsAppEcho, qualify, archive, setMark, removeMark, setCallNote, setCalledBack, withCallNotes, bringBack, funnel, agedCount, handoffToSis, ownerFor, notifiedFor, handoverGap, canReach, surfaceAt, waitingFor, waitingByRole } from './intake.js';
 import { replaceN3Directory, n3Status, n3Names } from './n3dir.js';
+import * as phoneExt from './phoneext.js';
 import { readScreenshot, readKind, readBody, readPath, saveFeedback, listFeedback, getScreenshot, setHandled, BadScreenshot, helpOpened, helpCounts } from './feedback.js';
 import { findMatches as matchPeople, duplicateCheck, onePersonFor } from './identity.js';
 import { lifecycleOf, sisProgress, sisProgressByPerson, SIS_HOLDS_SQL, SIS_DRAFT_SQL, SIS_DRAFT_REACH_SQL } from './lifecycle.js';
@@ -1480,6 +1481,21 @@ export const handle = async (req, res) => {
       try {
         const r = await replaceN3Directory(db, b.rows, { by: me.name || me.email || 'admin' });
         return json(res, 200, { ok: true, ...r, status: await n3Status(db) });
+      } catch (e) { return json(res, 400, { error: e.message }); }
+    }
+
+    // ------------------------------------------- phone extensions -> people (patch 184) --
+    // Admins only. GET: every extension TeleGroup has sent (line name, calls, who answers it, its history) and the colleagues'
+    // names to pick from. POST { extension, person }: who answers it ('' = several people / not known: the line name shows).
+    if (p === '/api/admin/phone-extensions' && (req.method === 'GET' || req.method === 'POST')) {
+      const me = await adminOf(req);
+      if (!me) return json(res, 403, { error: 'Phone extensions are for admins only.' });
+      const names = async () => (await db.prepare("SELECT display_name FROM crm_users WHERE active = 1 AND display_name IS NOT NULL AND display_name <> '' ORDER BY display_name").all()).map((r) => r.display_name);
+      if (req.method === 'GET') return json(res, 200, { extensions: await phoneExt.listExtensions(db), people: await names() });
+      const b = await body(req, 16 * 1024);
+      try {
+        const r = await phoneExt.setExtension(db, { extension: b.extension, person: b.person, by: me.name || me.email || 'admin' });
+        return json(res, 200, { ok: true, changed: r.changed, extensions: await phoneExt.listExtensions(db), people: await names() });
       } catch (e) { return json(res, 400, { error: e.message }); }
     }
 

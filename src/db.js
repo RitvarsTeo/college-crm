@@ -1073,6 +1073,23 @@ CREATE TABLE IF NOT EXISTS tc_mail_auto (
   undone_at TEXT,
   undone_by TEXT
 );
+-- PHONE EXTENSIONS (patch 184, his words 24.11.2026 "cant we just match the buttons of phone to the names?"): since 23.11.2026
+-- TeleGroup names the answering line (202 "Admission", 206 "Student communication"), not the person. One row per extension: who
+-- answers it (NULL = several people or not known yet: the line name is shown). Every change is a line in pbx_extension_history.
+CREATE TABLE IF NOT EXISTS pbx_extensions (
+  extension TEXT PRIMARY KEY,
+  person_name TEXT,
+  set_by TEXT NOT NULL,
+  set_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS pbx_extension_history (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  extension TEXT NOT NULL,
+  old_person TEXT,
+  new_person TEXT,
+  by_name TEXT NOT NULL,
+  at TEXT NOT NULL
+);
 -- PRIVATE CLIENTS (23.11.2026, patch 166, src/tcprivate.js; his pick "A: Private clients list"): a Training Centre client who comes for
 -- themselves, not for a company. Their own record and history; archived, never deleted.
 CREATE TABLE IF NOT EXISTS tc_private_clients (

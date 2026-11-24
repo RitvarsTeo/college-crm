@@ -13,6 +13,7 @@
 // Intake user); the others are told only that it was taken, so their card can close. Answered by
 // a name Intake does not know, it stays with everybody.
 
+import { personFor } from './phoneext.js';
 import fs from 'node:fs';
 import { markFor } from './phonefilter.js';
 import { n3Names } from './n3dir.js';
@@ -149,13 +150,14 @@ export async function callFeed(db, { after = null, viewer = '', viewerUser = nul
   const last = Number((top && top.n) || 0);
   if (after === null || after === undefined || after === '' || !Number.isFinite(Number(after))) return { last, events: [] };
   const since = new Date(now.getTime() - FEED_MINUTES * 60000).toISOString();
-  const rows = await db.prepare(`SELECT id, call_id, event, at, queue, caller_num, operator FROM call_events
+  const rows = await db.prepare(`SELECT id, call_id, event, at, queue, caller_num, operator, extension FROM call_events
     WHERE id > ? AND received_at >= ? ORDER BY id LIMIT 50`).all(Number(after), since);
   const events = [];
   const admins = rows.length ? await adminNames(db) : [];
   for (const r of rows) {
     if (!popsUp(r.queue)) continue;     // button 3: no pop-up (14.10.2026)
-    const op = r.operator || null;
+    // patch 184: the person who answers that extension (Phone extensions), else TeleGroup's own name for the line
+    const op = (await personFor(db, r.extension)) || r.operator || null;
     const mine = op ? isOperator(op, viewer) : false;
     // Q94: that line's people only (signed in: by email), never an admin
     if (!mine && !seesLine(viewerUser && viewerUser.email ? { name: viewer, email: viewerUser.email, isAdmin: viewerUser.role === 'admin' } : viewer, r.queue, admins)) continue;
