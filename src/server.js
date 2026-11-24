@@ -70,6 +70,7 @@ import * as samepeople from './samepeople.js';
 import * as tcweek from './tcweek.js';
 import * as tcgoogle from './tcgoogle.js';
 import * as staffMail from './staffmail.js';
+import { TC_MAILBOX } from './tcmail.js';
 import * as tcadd from './tcadd.js';
 import * as tcs2send from './tcs2send.js';
 import * as tcseason from './tcseason.js';
@@ -371,6 +372,19 @@ async function finishStaffMail(req, res, url, code, flow) {
   if (got.email !== String(flow.email).toLowerCase()) return back('other_account');
   await staffMail.saveLink(db, got.email, got.refreshToken, process.env);
   return back('connected');
+}
+// THE TRAINING CENTRE EMAIL (patch 167; src/tcmail.js): an admin pressed "Connect training@" and is still signed in; the Google
+// account that came back must be training@ itself. Anything else connects nothing. Read only, the token kept encrypted.
+async function finishTcMail(req, res, url, code, flow) {
+  const back = (why) => { res.writeHead(303, { location: `/?mailbox=${encodeURIComponent(why)}#/tc/inbox`, 'cache-control': 'no-store', 'set-cookie': flowCookie('', 0) }); return res.end(); };
+  if (url.searchParams.get('error') || !code) return back('declined');
+  const me = await currentUser(req);
+  if (!me || me.role !== 'admin' || String(me.email || '').toLowerCase() !== String(flow.email || '').toLowerCase()) return back('signed_out');
+  const got = await staffMail.exchangeCode({ env: process.env, code, redirectUri: process.env.GOOGLE_REDIRECT_URI });
+  if (!got.ok) return back('refused');
+  if (got.email !== TC_MAILBOX) return back('other_account');
+  await staffMail.saveLink(db, TC_MAILBOX, got.refreshToken, process.env);
+  return back('training_connected');
 }
 // An admin's view of the update popup: who answered what and when, and which mailboxes are connected. Never a token.
 function staffMailPage(res, d) {
@@ -1324,6 +1338,7 @@ export const handle = async (req, res) => {
         if (gf && gf.purpose === 'notify' && gs && gs === gf.state) return finishNotify(req, res, url, url.searchParams.get('code'));
         if (gf && gf.purpose === 'tcgoogle' && gs && gs === gf.state) return finishTcGoogle(req, res, url, url.searchParams.get('code'), gf);
         if (gf && gf.purpose === 'staffmail' && gs && gs === gf.state) return finishStaffMail(req, res, url, url.searchParams.get('code'), gf);
+        if (gf && gf.purpose === 'tcmail' && gs && gs === gf.state) return finishTcMail(req, res, url, url.searchParams.get('code'), gf);
         if (gf && gf.purpose === 'sheetpull' && gs && gs === gf.state) return finishSheetPull(req, res, url, url.searchParams.get('code'), gf);
       }
       if (!AUTH_ON) return json(res, 400, { error: 'Sign-in is not switched on for this copy.' });
@@ -3518,7 +3533,7 @@ export const handle = async (req, res) => {
         const b = await body(req), by = await actorOf(req, {});
         const out = await tc.quickAdd(db, b, by);
         // patch 166: made from a Training Centre Inbox card, the card's number is handled with it
-        if (b.via === 'whatsapp' && b.waKey) out.inbox = await tcInboxDone(db, b.waKey, by);
+        if ((b.via === 'whatsapp' || b.via === 'email') && b.waKey) out.inbox = await tcInboxDone(db, b.waKey, by);
         const list = [];
         if (out.newCompany) list.push({ kind: 'company', companyId: out.companyId });
         else if (out.newContact) list.push({ kind: 'contact', companyId: out.companyId, contactId: out.contactId });
@@ -3844,6 +3859,24 @@ export const handle = async (req, res) => {
     if (p === '/api/tc/inbox' && req.method === 'GET') {
       return json(res, 200, await tcInbox(db, { handled: url.searchParams.get('handled') === '1' }));
     }
+    // THE TRAINING CENTRE EMAIL (patch 167, src/tcmail.js): is training@ connected (never a token), and an admin's one-time
+    // "Connect training@": Google's own read-only consent; the callback keeps it only when the account is training@ itself.
+    if (p === '/api/tc/mail' && req.method === 'GET') {
+      const link = await db.prepare('SELECT connected_at FROM staff_mail_links WHERE user_email = ?').get(TC_MAILBOX);
+      const st = await db.prepare("SELECT ran_at FROM sync_state WHERE name = 'tc_mail'").get();
+      return json(res, 200, { mailbox: TC_MAILBOX, connected: Boolean(link), connectedAt: link ? link.connected_at : null, lastRun: st ? st.ran_at : null });
+    }
+    if (p === '/api/tc/mail/connect' && req.method === 'GET') {
+      const me = await currentUser(req);
+      if (!me || me.role !== 'admin') return refuseNotAdmin(res);
+      if (!process.env.CRM_SESSION_SECRET || !process.env.GOOGLE_REDIRECT_URI) return json(res, 503, { error: 'Google cannot be connected on this copy yet.' });
+      const state = crypto.randomBytes(24).toString('base64url');
+      const flow = signFlow({ state, purpose: 'tcmail', email: String(me.email).toLowerCase(), exp: Date.now() + FLOW_MINUTES * 60 * 1000 }, process.env.CRM_SESSION_SECRET);
+      const to = staffMail.consentUrl({ env: process.env, state, redirectUri: process.env.GOOGLE_REDIRECT_URI, email: TC_MAILBOX });
+      if (!to) return json(res, 503, { error: 'The Google client is not set on this copy.' });
+      res.writeHead(302, { location: to, 'cache-control': 'no-store', 'set-cookie': flowCookie(flow, FLOW_MINUTES) });
+      return res.end();
+    }
     // PRIVATE CLIENTS (patch 166, his pick "A: Private clients list", src/tcprivate.js): the list, one client, add (also B2C from a
     // TC Inbox card, which then moves the card to Handled), change, log a communication, archive. Training Centre area (above).
     if (p === '/api/tc/private' && req.method === 'GET') return json(res, 200, await tcprivate.list(db));
@@ -3855,7 +3888,7 @@ export const handle = async (req, res) => {
           const b = await body(req), by = await actorOf(req, b);
           if (!priv[1]) {
             const out = await tcprivate.add(db, b, by);
-            if (b.via === 'whatsapp' && b.waKey) out.inbox = await tcInboxDone(db, b.waKey, by);
+            if ((b.via === 'whatsapp' || b.via === 'email') && b.waKey) out.inbox = await tcInboxDone(db, b.waKey, by);
             return json(res, 200, out);
           }
           if (priv[2] === 'log') return json(res, 200, await tcprivate.log(db, Number(priv[1]), b, by));

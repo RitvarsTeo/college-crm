@@ -1016,6 +1016,26 @@ CREATE TABLE IF NOT EXISTS tc_whatsapp_in (
   seen_at TEXT,
   seen_by TEXT
 );
+-- THE TRAINING CENTRE EMAIL (24.11.2026, patch 167, src/tcmail.js): training@novikontas.org, read only, the whole conversation
+-- (in = from a client, out = what training@ answered). Training Centre business, never the Academy Inbox. Each message once
+-- (Gmail's id). Personal data: the same 13 months.
+CREATE TABLE IF NOT EXISTS tc_mail (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  message_id TEXT NOT NULL UNIQUE,
+  thread_id TEXT NOT NULL,
+  direction TEXT NOT NULL,         -- in | out
+  from_addr TEXT,
+  from_name TEXT,
+  to_addrs TEXT,
+  subject TEXT,
+  body TEXT,
+  attachments TEXT,                -- JSON: name and size only, never the file
+  at TEXT NOT NULL,                -- when it was sent
+  received_at TEXT NOT NULL,
+  seen_at TEXT,
+  seen_by TEXT
+);
+CREATE INDEX IF NOT EXISTS tc_mail_thread ON tc_mail (thread_id, at);
 -- PRIVATE CLIENTS (23.11.2026, patch 166, src/tcprivate.js; his pick "A: Private clients list"): a Training Centre client who comes for
 -- themselves, not for a company. Their own record and history; archived, never deleted.
 CREATE TABLE IF NOT EXISTS tc_private_clients (

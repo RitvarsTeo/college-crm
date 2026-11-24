@@ -70,5 +70,5 @@ test('Make a lead from a TC Inbox card (his pick "TC client/contact"): company +
   assert.equal(Number((await db.prepare("SELECT COUNT(*) n FROM tc_activities WHERE body LIKE 'Met %'").get()).n), 0, 'not a meeting');
   assert.equal(Number((await db.prepare('SELECT COUNT(*) n FROM people').get()).n), 0, 'never an Academy lead');
   const srv = fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8');
-  assert.ok(srv.includes("if (b.via === 'whatsapp' && b.waKey) out.inbox = await tcInboxDone(db, b.waKey, by);"), 'the card moves to Handled');
+  assert.ok(srv.includes("if ((b.via === 'whatsapp' || b.via === 'email') && b.waKey) out.inbox = await tcInboxDone(db, b.waKey, by);"), 'the card moves to Handled');
 });

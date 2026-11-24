@@ -15,6 +15,7 @@
 
 import { receive, bringBack, activePersonFor, CALL_BACK_STEP, confirmedBySystem, CONFIG, newPersonId, ownerFor, emailFilterWhy, purgeLineBodies, recordReplyRead, emailRuleOnWaiting, recordSentMail, recordMailbox } from './intake.js';
 import * as staffMail from './staffmail.js';
+import { TC_MAILBOX, FIRST_DAYS as TC_MAIL_DAYS, recordTcMail } from './tcmail.js';
 import { onePersonFor, normEmail, normPhone, isOwnAddress } from './identity.js';
 import { knock } from './webpush.js';
 import { phoneThread } from './phonefilter.js';
@@ -767,6 +768,8 @@ export async function syncGmail(db, { now = new Date(), env = process.env, fetch
   try { sent = mode === 'live' ? await syncSent(db, { now, env, fetchImpl, refreshToken }) : { ok: true, ran: false }; } catch (err) { sent = { ok: false, why: 'the sent read failed' }; }
   // and the mailboxes people allowed in the update popup (src/staffmail.js), the same way
   try { if (mode === 'live') sent.own = await syncStaffMail(db, { now, env, fetchImpl }); } catch (err) { sent.own = { ok: false, why: 'the own mailbox read failed' }; }
+  // and training@, into the Training Centre's own table (patch 167); a failure here never costs edu@ its run
+  try { if (mode === 'live') sent.training = await syncTcMail(db, { now, env, fetchImpl }); } catch (err) { sent.training = { ok: false, why: 'the training@ read failed' }; }
   await saveState(db, 'gmail', got.more || partial ? last : at, { ...out, query: got.query, more: Boolean(got.more), replies, sent,
     ...(partial ? { ok: false, failed: got.failed, why: got.why } : {}) }, at);
   return { ok: !partial, ran: true, channel: 'gmail', mode, ...out, more: Boolean(got.more), query: got.query, replies, sent,
@@ -782,7 +785,8 @@ export async function syncGmail(db, { now = new Date(), env = process.env, fetch
 // oldest first; only mail with a student Intake holds is kept (src/intake.js recordMailbox). Counts only, nobody named.
 export async function syncStaffMail(db, { now = new Date(), env = process.env, fetchImpl = fetch } = {}) {
   const at = now.toISOString();
-  const links = await db.prepare('SELECT user_email FROM staff_mail_links').all();
+  // training@ is the Training Centre's (patch 167): read by syncTcMail into tc_mail, never into the Academy's mail
+  const links = (await db.prepare('SELECT user_email FROM staff_mail_links').all()).filter((l) => String(l.user_email).toLowerCase() !== TC_MAILBOX);
   const res = { mailboxes: links.length, read: 0, stored: 0, gone: 0, refused: 0 };
   for (const { user_email: email } of links) {
     const name = await bookmarkName(email);
@@ -804,6 +808,25 @@ export async function syncStaffMail(db, { now = new Date(), env = process.env, f
   return res;
 }
 const bookmarkName = async (email) => 'staff_mail:' + String(email).toLowerCase();
+
+// THE TRAINING CENTRE EMAIL (24.11.2026, patch 167; src/tcmail.js). training@ from its own bookmark (sync_state 'tc_mail'; the
+// first run reaches back FIRST_DAYS), at most PER_RUN messages a run, oldest first, with ten minutes of overlap (a repeat is free:
+// the Gmail id is unique). Nothing happens until someone has signed in once as training@. The same 13 months as everything else.
+export async function syncTcMail(db, { now = new Date(), env = process.env, fetchImpl = fetch } = {}) {
+  const at = now.toISOString();
+  const link = await db.prepare('SELECT user_email FROM staff_mail_links WHERE user_email = ?').get(TC_MAILBOX);
+  if (!link) return { ok: true, ran: false, why: 'training@ is not connected' };
+  const state = await db.prepare("SELECT value FROM sync_state WHERE name = 'tc_mail'").get();
+  const last = state && state.value && !Number.isNaN(Date.parse(state.value)) ? state.value : null;
+  const since = new Date(last ? Date.parse(last) - 10 * 60000 : now.getTime() - TC_MAIL_DAYS * 86400000).toISOString();
+  const got = await staffMail.readMailbox(db, TC_MAILBOX, { env, fetchImpl, since });
+  if (got.gone) { await saveState(db, 'tc_mail', last, { ok: false, gone: true }, at); return { ok: false, ran: true, gone: true }; }
+  const res = await recordTcMail(db, got.items, at);
+  const mark = !got.ok ? last : got.more ? (got.upTo || last) : at;
+  await saveState(db, 'tc_mail', mark, { ...res, more: Boolean(got.more), ok: got.ok }, at);
+  res.purged = await purgeOld(db, 'tc_mail', 'at', now);
+  return { ok: got.ok, ran: true, ...res, more: Boolean(got.more) };
+}
 
 export async function syncSent(db, { now = new Date(), env = process.env, fetchImpl = fetch, refreshToken = undefined } = {}) {
   const at = now.toISOString();

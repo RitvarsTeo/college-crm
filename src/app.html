@@ -12149,7 +12149,7 @@ async function tcMetOpen(pre) {
     <div id="tcmErr"></div>
     <div class="tw-acts"><button class="btn" onclick="tcMetSave()">Add</button><button class="btn ghost" onclick="tcMetClose()">Cancel</button></div></aside>`;
   // patch 166: from a Training Centre Inbox card, the person and the message are already there
-  if (pre) { for (const [k, v] of [['name', pre.name], ['phone', pre.phone], ['note', pre.note]]) { const el = $('#tcm_' + k); if (el && v) el.value = v; } }
+  if (pre) { for (const [k, v] of [['name', pre.name], ['email', pre.email], ['phone', pre.phone], ['note', pre.note]]) { const el = $('#tcm_' + k); if (el && v) el.value = v; } }
   const q = $('#tcm_q'); if (q) q.focus();
 }
 function tcMetClose() { if ($('.tc-metdrawer')) $('#modal').innerHTML = ''; T_MET = null; }
@@ -12184,7 +12184,7 @@ async function tcMetSave() {
     const pre = T_MET.pre;
     const r = await post('/api/tc/met', { companyId: T_MET.companyId, newCompany: T_MET.newCompany, name: v('name'), position: v('position'),
       email: v('email'), phone: v('phone'), eventId: pre ? null : T_MET.eventId, where: pre || T_MET.eventId ? '' : v('where'), note: v('note'),
-      ...(pre ? { via: 'whatsapp', waKey: pre.key } : {}) });
+      ...(pre ? { via: pre.via || 'whatsapp', waKey: pre.key } : {}) });
     tcMetClose(); T_META = null; await tcMeta(); location.hash = '#/tc/company/' + Number(r.companyId);
   } catch (e) { tcErr('#tcmErr', e.message); }
 }
@@ -12562,9 +12562,12 @@ const tcWaNum = (n) => { const d = String(n || '').replace(/\D/g, ''); return d 
 async function viewTcInbox(handled) {
   T_IN = await api('/api/tc/inbox' + (handled ? '?handled=1' : ''));
   T_IN.handled = Boolean(handled);
-  tcInboxCount(handled ? T_IN.waiting : T_IN.cards.length);
+  try { T_IN.mail = await api('/api/tc/mail'); } catch (e) { T_IN.mail = null; }   // patch 167: is training@ connected
+  tcInboxCount(T_IN.waiting);
   tcInboxDraw();
 }
+// a card training@ already answered stays, and is not waiting (the edu@ pick B)
+const tcInboxWaiting = () => T_IN.cards.filter((c) => !c.answered).length;
 function tcInboxCount(n) { const b = $('#tcInboxN'); if (b) { b.textContent = n ? String(Number(n)) : ''; b.hidden = !n; } }
 function tcInboxDraw() {
   const D = T_IN, live = !D.handled;
@@ -12572,20 +12575,29 @@ function tcInboxDraw() {
   const cols = AGES.map(([id, label]) => ({ id, label, cards: D.cards.filter((c) => cInboxAge(c.at) === id) }));
   const who = (c) => c.person || c.name ? esc(c.person || c.name) + (c.company ? ` · <a href="#/tc/company/${Number(c.companyId)}" onclick="event.stopPropagation()">${esc(c.company)}</a>` : '') : (cTelLink({ phone: tcWaNum(c.number) }) || 'Unknown');
   const msg = (m) => `<div class="ib-msg">${m.body ? esc(m.body) : esc(m.media ? '(' + m.media + ')' : '')}</div>`;
-  const card = (c) => `<div class="c-jp row ib-card c-rail c-rail-${live ? 'due' : 'due'}" data-k="${esc(c.key)}">
-      <div class="ib-top"><b class="c-reach">${who(c)}</b></div>
-      <small class="ib-ch" style="--src:${C_SRC_COLOUR.whatsapp}"><i></i>WhatsApp</small>
-      ${c.messages.length > 5 ? `<div class="ib-msg">${Number(c.messages.length - 5)} earlier</div>` : ''}${c.messages.slice(0, 5).reverse().map(msg).join('')}
-      ${c.person || c.name ? `<div class="ib-tags"><span class="ib-kind">${cTelLink({ phone: tcWaNum(c.number) }) || esc(c.number)}</span></div>` : ''}
-      ${live ? cStateLine('new', cAgo(c.at), '', fmtDateTime(c.at)) : `<div class="ib-before"><span>Done ${esc(fmtDateTime(c.seenAt) || '')}${c.seenBy ? ' · ' + esc(c.seenBy) : ''}</span></div>`}
+  // patch 167: a training@ conversation is an Email card (the Academy email blue): the subject, the text, the sender's address
+  const mailWho = (c) => c.person || c.name ? esc(c.person || c.name) + (c.company ? ` · <a href="#/tc/company/${Number(c.companyId)}" onclick="event.stopPropagation()">${esc(c.company)}</a>` : c.privateId ? ` · <a href="#/tc/private/${Number(c.privateId)}" onclick="event.stopPropagation()">Private client</a>` : '') : esc(c.email);
+  const mailMsg = (m) => `${m.subject ? `<div class="ib-msg"><b>${esc(m.subject)}</b></div>` : ''}<div class="ib-msg">${esc(m.body || '')}</div>`;
+  const state = (c) => !live ? `<div class="ib-before"><span>Done ${esc(fmtDateTime(c.seenAt) || '')}${c.seenBy ? ' · ' + esc(c.seenBy) : ''}</span></div>`
+    : c.answered ? `<div class="c-st c-st-answered" title="${esc(fmtDateTime(c.answered.at))}"><span class="c-st-w">✓ Answered by ${esc(c.answered.by || 'training@')}</span><span class="c-st-d"> · ${esc(cAgo(c.answered.at))}</span></div>`
+    : cStateLine('new', cAgo(c.at), '', fmtDateTime(c.at));
+  const card = (c) => { const mail = c.kind === 'email'; return `<div class="c-jp row ib-card c-rail c-rail-${live ? 'due' : 'due'}" data-k="${esc(c.key)}">
+      <div class="ib-top"><b class="c-reach">${mail ? mailWho(c) : who(c)}</b></div>
+      <small class="ib-ch" style="--src:${mail ? C_SRC_COLOUR.email : C_SRC_COLOUR.whatsapp}"><i></i>${mail ? 'Email' : 'WhatsApp'}</small>
+      ${c.messages.length > 5 ? `<div class="ib-msg">${Number(c.messages.length - 5)} earlier</div>` : ''}${c.messages.slice(0, 5).reverse().map(mail ? mailMsg : msg).join('')}
+      ${mail ? (c.person || c.name ? `<div class="ib-tags"><span class="ib-kind">${esc(c.email)}</span></div>` : '')
+        : c.person || c.name ? `<div class="ib-tags"><span class="ib-kind">${cTelLink({ phone: tcWaNum(c.number) }) || esc(c.number)}</span></div>` : ''}
+      ${state(c)}
       ${live && T_IN.lead === c.key ? `<div class="ib-lead"><b>Make a lead</b><div class="ib-acts"><button class="btn sm" onclick="tcInboxLead(${esc(JSON.stringify(String(c.key)))})">B2B · company</button><button class="btn sm ghost" onclick="tcInboxPrivate(${esc(JSON.stringify(String(c.key)))})">B2C · private person</button><button type="button" class="ib-aside" onclick="T_IN.lead=null;tcInboxDraw()">Cancel</button></div></div>`
-        : live ? `<div class="ib-acts"><button class="btn sm" onclick="T_IN.lead=${esc(JSON.stringify(String(c.key)))};tcInboxDraw()">Make a lead</button><button type="button" class="ib-aside" onclick="tcInboxDone(${esc(JSON.stringify(String(c.key)))}, this)">Done</button></div>` : ''}</div>`;
+        : live ? `<div class="ib-acts"><button class="btn sm" onclick="T_IN.lead=${esc(JSON.stringify(String(c.key)))};tcInboxDraw()">Make a lead</button><button type="button" class="ib-aside" onclick="tcInboxDone(${esc(JSON.stringify(String(c.key)))}, this)">Done</button></div>` : ''}</div>`; };
   const shown = cols.filter((c) => c.cards.length || live);
   const board = D.cards.length
-    ? `<div class="c-cols ib-board" style="grid-template-columns:${shown.map(() => 'minmax(0,1fr)').join(' ')}">${shown.map((c, i) => `<div class="c-col ib-col"><h3><span class="c-jn">${i + 1}</span>${esc(c.label)}<b>${c.cards.length}</b></h3>
+    ? `<div class="c-cols ib-board" style="grid-template-columns:${shown.map(() => 'minmax(0,1fr)').join(' ')}">${shown.map((c, i) => `<div class="c-col ib-col"><h3><span class="c-jn">${i + 1}</span>${esc(c.label)}<b>${live ? c.cards.filter((x) => !x.answered).length : c.cards.length}</b></h3>
         <div class="c-drop">${c.cards.map(card).join('') || '<div class="c-empty">Nothing here.</div>'}</div></div>`).join('')}</div>`
     : `<div class="c-sheet"><div class="c-empty">${live ? 'Nothing waiting. This queue is clear.' : 'Nothing here.'}</div></div>`;
-  $('#view').innerHTML = `<p class="c-crumb">Training Centre · WhatsApp +371 6244 4609</p><div class="c-head"><div><h1>Inbox</h1></div>
+  const M = D.mail || {};
+  const connect = M.mailbox && !M.connected && isAdmin() ? `<button type="button" class="btn ghost" onclick="location.href='/api/tc/mail/connect'">Connect training@</button>` : '';
+  $('#view').innerHTML = `<p class="c-crumb">Training Centre · WhatsApp +371 6244 4609 · training@novikontas.org</p><div class="c-head"><div><h1>Inbox</h1></div>${connect}
     <div class="c-seg p-view" role="group" aria-label="Show"><button aria-pressed="${live}" onclick="location.hash='#/tc/inbox'">Waiting</button><button aria-pressed="${!live}" onclick="location.hash='#/tc/inbox/handled'">Handled</button></div></div>${board}`;
 }
 // MAKE A LEAD (his pick "TC client/contact"): the company and the contact under Clients, through "Someone I met" pre-filled with
@@ -12593,16 +12605,19 @@ function tcInboxDraw() {
 function tcInboxLead(key) {
   const c = T_IN.cards.find((x) => x.key === key); if (!c) return;
   const last = c.messages[0] || {};
-  tcMetOpen({ key, name: c.person || c.name || '', phone: tcWaNum(c.number), note: last.body || '' });
+  if (c.kind === 'email') return tcMetOpen({ key, via: 'email', name: c.person || c.name || '', email: c.email, note: [last.subject, last.body].filter(Boolean).join('. ') });
+  tcMetOpen({ key, via: 'whatsapp', name: c.person || c.name || '', phone: tcWaNum(c.number), note: last.body || '' });
 }
 // B2C: a private person (his pick "A: Private clients list"): their own record under Clients, pre-filled from the WhatsApp
 function tcInboxPrivate(key) {
   const c = T_IN.cards.find((x) => x.key === key); if (!c) return;
-  tcPrivAddOpen({ key, name: c.person || c.name || '', phone: tcWaNum(c.number), note: (c.messages[0] || {}).body || '' });
+  const last = c.messages[0] || {};
+  if (c.kind === 'email') return tcPrivAddOpen({ key, via: 'email', name: c.person || c.name || '', email: c.email, note: [last.subject, last.body].filter(Boolean).join('. ') });
+  tcPrivAddOpen({ key, via: 'whatsapp', name: c.person || c.name || '', phone: tcWaNum(c.number), note: last.body || '' });
 }
 async function tcInboxDone(key, btn) {
   if (btn) btn.disabled = true;
-  try { await post('/api/tc/inbox/done', { key }); T_IN.cards = T_IN.cards.filter((c) => c.key !== key); tcInboxCount(T_IN.cards.length); tcInboxDraw(); }
+  try { await post('/api/tc/inbox/done', { key }); T_IN.cards = T_IN.cards.filter((c) => c.key !== key); tcInboxCount(tcInboxWaiting()); tcInboxDraw(); }
   catch (err) { if (btn) btn.disabled = false; alert(err.message); }
 }
 // PRIVATE CLIENTS (23.11.2026, patch 166; his words "but there should be b2b and b2c client segments!", his pick "A: Private
@@ -12670,7 +12685,7 @@ async function tcPrivAddSave() {
   const A = T_PVADD;
   try {
     if (A.edit) { await post('/api/tc/private/' + Number(A.edit.id), { name: v('name'), phone: v('phone'), email: v('email'), course: v('course'), owner: v('owner') }); tcPrivAddClose(); await viewTcPrivate(A.edit.id); return; }
-    const r = await post('/api/tc/private', { name: v('name'), phone: v('phone'), email: v('email'), course: v('course'), note: v('note'), ...(A.pre ? { via: 'whatsapp', waKey: A.pre.key } : {}) });
+    const r = await post('/api/tc/private', { name: v('name'), phone: v('phone'), email: v('email'), course: v('course'), note: v('note'), ...(A.pre ? { via: A.pre.via || 'whatsapp', waKey: A.pre.key } : {}) });
     tcPrivAddClose(); location.hash = '#/tc/private/' + Number(r.id);
   } catch (e) { tcErr('#tcpaErr', e.message); }
 }

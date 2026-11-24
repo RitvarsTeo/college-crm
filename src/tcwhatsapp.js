@@ -15,6 +15,7 @@
 import { adaptAll } from './adapters.js';
 import { phoneEventGate } from './phoneevent.js';
 
+import { mailCards, mailDone } from './tcmail.js';
 export const WHATSAPP_FORWARD_SECRET_ENV = 'WHATSAPP_FORWARD_SECRET';
 export const TC_PHONE_ID = '654184684448536';
 
@@ -55,11 +56,15 @@ export async function tcInbox(db, { handled = false } = {}) {
     if (!cards.has(k)) cards.set(k, { key: k, number: r.from_num || '', name: r.name || '', at: r.at, seenAt: r.seen_at || null, seenBy: r.seen_by || null, messages: [], ...(known.get(k) || {}) });
     cards.get(k).messages.push({ id: Number(r.id), body: r.body || '', media: r.media || null, at: r.at });
   }
-  const waiting = handled ? Number((await db.prepare('SELECT COUNT(DISTINCT from_num) AS n FROM tc_whatsapp_in WHERE seen_at IS NULL').get()).n) : cards.size;
-  return { cards: [...cards.values()], waiting };
+  const waWaiting = handled ? Number((await db.prepare('SELECT COUNT(DISTINCT from_num) AS n FROM tc_whatsapp_in WHERE seen_at IS NULL').get()).n) : cards.size;
+  // patch 167: training@'s conversations beside the WhatsApp cards, newest first (src/tcmail.js)
+  const mail = await mailCards(db, { handled });
+  const all = [...[...cards.values()].map((c) => ({ kind: 'whatsapp', ...c })), ...mail.cards].sort((a, b) => String(b.at).localeCompare(String(a.at)));
+  return { cards: all, waiting: waWaiting + mail.waiting };
 }
 /** Done: every waiting message of this number (last 8 digits) is handled, by whom and when. */
 export async function tcInboxDone(db, key, actor, at = new Date().toISOString()) {
+  if (String(key || '').startsWith('m:')) return mailDone(db, key, actor, at);   // a training@ conversation (patch 167)
   const k = String(key || '').replace(/\D/g, '').slice(-8);
   if (k.length !== 8) return { ok: false, error: 'Which number?' };
   const ids = (await db.prepare('SELECT id, from_num FROM tc_whatsapp_in WHERE seen_at IS NULL').all()).filter((r) => last8(r.from_num) === k).map((r) => Number(r.id));

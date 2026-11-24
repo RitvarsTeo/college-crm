@@ -54,10 +54,16 @@ export async function add(db, b, actor) {
       return { id: Number(twin.id), created: false };
     }
   }
+  // patch 167: one email address is one person too (a training@ card)
+  if (email && b.via === 'email') {
+    const twin = await db.prepare('SELECT id FROM tc_private_clients WHERE archived_at IS NULL AND email = ?').get(email.toLowerCase());
+    if (twin) { await line(db, twin.id, { kind: 'email', at, body: `Email from ${name || email}.${b.note ? ' ' + b.note : ''}`, actor }); return { id: Number(twin.id), created: false }; }
+  }
   const r = await db.prepare(`INSERT INTO tc_private_clients (name, phone, email, course, came_from, owner, status, created_at, created_by) VALUES (?,?,?,?,?,?,?,?,?)`)
-    .run(name || phone || email, phone, email ? email.toLowerCase() : null, clip(b.course, 200), clip(b.via === 'whatsapp' ? 'WhatsApp' : b.cameFrom, 100), clip(b.owner, 120) || actor, 'not_contacted', at, actor);
+    .run(name || phone || email, phone, email ? email.toLowerCase() : null, clip(b.course, 200), clip(b.via === 'whatsapp' ? 'WhatsApp' : b.via === 'email' ? 'Email' : b.cameFrom, 100), clip(b.owner, 120) || actor, 'not_contacted', at, actor);
   const id = Number(r.lastInsertRowid);
   if (b.via === 'whatsapp') await line(db, id, { kind: 'whatsapp', at, body: `WhatsApp from ${name || phone}.${b.note ? ' ' + b.note : ''}`, actor });
+  else if (b.via === 'email') await line(db, id, { kind: 'email', at, body: `Email from ${name || email}.${b.note ? ' ' + b.note : ''}`, actor });
   else if (b.note) await line(db, id, { kind: 'note', at, body: b.note, actor });
   return { id, created: true };
 }
