@@ -39,7 +39,7 @@ test('the lists: counted nowhere, found by the search, opened unchanged', async 
   const all = await tc.listCompanies(db, {}, { size: 2000 });
   assert.equal(all.total, 3);
   assert.ok(!all.rows.some((c) => c.id === group));
-  assert.equal(all.counts.status.contacted, 2);
+  assert.ok(!all.counts || !all.counts.status, 'no client levels (his decision 24.11.2026, "Yes, remove"): no level counts');
   assert.ok(!all.facets.countries.some(([c]) => c === 'TOTAL'), 'not offered as a country');
   assert.deepEqual(all.facets.areas.find(([a]) => a === 'TC'), ['TC', 3]);
   const clients = await tc.listCompanies(db, { client: 'yes' }, { size: 2000 });

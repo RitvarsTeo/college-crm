@@ -19,11 +19,12 @@ import { accountIndex, matchAccount, picChoices, picLabels, isMine, meKeys, fold
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 export const TC = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'tc.json'), 'utf8'));
 
-export const STATUS_IDS = TC.statuses.map((s) => s.id);
+// NO CLIENT LEVELS (24.11.2026, his decision "Yes, remove"): the old level column stays in the database, unread. These ids are
+// only what the Excel import may still find in its Status column; a company is written with defaults.noStatus and never shown one.
+export const STATUS_IDS = ['not_contacted', 'to_contact', 'contacted', 'met', 'focus'];
 export const AREA_IDS = TC.areas.map((a) => a.id);
 export const KIND_IDS = TC.activityKinds.map((k) => k.id);
-export const MEETING_IDS = TC.meetingTypes.map((m) => m.id);
-export const statusLabel = (id) => (TC.statuses.find((s) => s.id === id) || {}).label || id || '';
+export const MEETING_IDS = ['physical_meeting', 'digital_meeting', 'exhibition'];
 
 export class TcInputError extends Error {}
 const bad = (msg) => { throw new TcInputError(msg); };
@@ -102,7 +103,7 @@ async function companyRows(db) {
 }
 async function readCompanyRows(db) {
   // info_to_send is only ever shown as "something to send": the database says yes or no, not the whole text
-  const companies = await db.prepare(`SELECT id, name, name_key, country, city, status, status_detail, pic_name, pic_email,
+  const companies = await db.prepare(`SELECT id, name, name_key, country, city, pic_name, pic_email,
     CASE WHEN TRIM(COALESCE(info_to_send, '')) <> '' THEN 1 ELSE 0 END AS info_flag, last_contact_at, created_at
     FROM tc_companies WHERE archived_at IS NULL AND hidden_at IS NULL`).all();   // hidden_at: flagged, hidden until approved (src/tcadd.js)
   const areaRows = await db.prepare(`SELECT a.company_id, a.area FROM tc_company_areas a
@@ -129,7 +130,7 @@ async function readCompanyRows(db) {
     const t = tasks.get(c.id) || null;
     return {
       id: Number(c.id), name: c.name, nameKey: c.name_key, country: c.country || '', city: c.city || '',
-      status: c.status, statusDetail: c.status_detail || '', pic: c.pic_name || '', picEmail: c.pic_email || '',
+      pic: c.pic_name || '', picEmail: c.pic_email || '',
       picKey: c.pic_email && users.has(String(c.pic_email).toLowerCase()) ? 'u:' + users.get(String(c.pic_email).toLowerCase()) : c.pic_name || '',
       areas: (areas.get(c.id) || []).sort((a, b) => AREA_IDS.indexOf(a) - AREA_IDS.indexOf(b)),
       info: Number(c.info_flag) === 1, lastContactAt: c.last_contact_at || null,
@@ -181,7 +182,6 @@ export function matches(c, f, w, me = null) {
   // STAGE 2 MOTHER COMPANIES (11.11.2026, the owner: every figure opens its own list): the server passes the ids of the
   // Real company count (src/tcgo.js motherCompanyList); without them the filter shows nothing rather than everything
   if (f.go2 && !(f.go2ids && f.go2ids.has(Number(c.id)))) return false;
-  if (f.status && c.status !== f.status) return false;
   // THE COMPANIES LIST (patch 176, the owner's pick A 24.11.2026): the first letter (A-Z, '#' for anything else) and the
   // Grand Opening list it is on (a director's code; '-' = on nobody's list)
   if (f.letter && letterOf(c.name) !== f.letter) return false;
@@ -201,7 +201,7 @@ export function matches(c, f, w, me = null) {
   }
   return true;
 }
-export const FILTER_KEYS = ['status', 'area', 'country', 'pic', 'client', 'info', 'due', 'q', 'year', 'cohort', 'last', 'course', 'since', 'go2', 'letter', 'go'];
+export const FILTER_KEYS = ['area', 'country', 'pic', 'client', 'info', 'due', 'q', 'year', 'cohort', 'last', 'course', 'since', 'go2', 'letter', 'go'];
 /** A company's letter on the A-Z bar: its first letter without accents (Ž -> Z, Ø -> O), '#' for a digit or a sign. */
 export function letterOf(name) {
   const ch = String(name || '').replace(/^[\s"'“”„«»(]+/, '').charAt(0).toUpperCase().replace('Ø', 'O').normalize('NFD').charAt(0);
@@ -250,7 +250,6 @@ export async function listCompanies(db, filters = {}, { page = 1, size = 100, so
     last: (a, b) => (b.lastYear || 0) - (a.lastYear || 0) || b.delegates - a.delegates || byLv(a.name, b.name),
   };
   rows.sort(sorters[sort] || sorters.name);
-  const noStatus = pool.filter((c) => matches(c, { ...filters, status: '' }, w, mk));
   const labels = await picLabels(db);
   const picOf = new Map(all.map((c) => [c.picKey, c.picEmail ? labels.get(c.picEmail.toLowerCase()) || c.pic : c.pic]));
   const n = Math.max(1, Math.min(2000, Number(size) || 100));
@@ -262,7 +261,6 @@ export async function listCompanies(db, filters = {}, { page = 1, size = 100, so
     // so the fifteenth Show more carries 100 rows, not all 1,497 again
     rows: only ? rows.slice((pg - 1) * n, pg * n) : rows.slice(0, pg * n),
     only: Boolean(only),
-    counts: { status: Object.fromEntries(STATUS_IDS.map((s) => [s, noStatus.filter((c) => c.status === s).length])) },
     facets: {
       countries: tally(counted, (c) => c.country || '-').sort((a, b) => b[1] - a[1] || byLv(a[0], b[0])),
       // [value, count, label]: a linked person is one line whatever the spelling; "Mine" counts the signed-in person's
@@ -294,10 +292,9 @@ export async function exportRows(db, filters = {}, { sort = 'name', me = null, p
     ? (await listCompanies(db, filters, { page: Math.ceil(first.total / 2000), size: 2000, sort, me, now })).rows : first.rows;
   const thisYear = Number(localDate(now).slice(0, 4));
   const years = []; for (let y = 2020; y <= thisYear; y++) years.push(y);
-  const statusOf = (c) => (TC.statuses.find((s) => s.id === c.status) || { label: c.status || '' }).label;
-  const company = (c) => [c.name, c.country || '', c.city || '', statusOf(c), (c.areas || []).join(', '), c.pic || '',
+  const company = (c) => [c.name, c.country || '', c.city || '', (c.areas || []).join(', '), c.pic || '',
     ...years.map((y) => (c.years && c.years[y]) || 0), Number(c.delegates) || 0, (c.next && c.next.due) || '', c.info ? 'yes' : ''];
-  const head = ['Company', 'Country', 'City', 'Status', 'Areas', 'Person in charge', ...years.map(String), 'Delegates in all', 'Next contact', 'Information to send'];
+  const head = ['Company', 'Country', 'City', 'Areas', 'Person in charge', ...years.map(String), 'Delegates in all', 'Next contact', 'Information to send'];
   if (!people) return { rows: [head, ...list.map(company)], companies: list.length, people: 0 };
   const byCo = new Map();
   for (const k of await db.prepare(`SELECT company_id, name, position, email, phone, notes FROM tc_company_contacts WHERE archived_at IS NULL AND hidden_at IS NULL
@@ -408,7 +405,7 @@ export async function home(db, { now = new Date(), nextRows = 8 } = {}) {
 
 const nextRow = (w) => (c) => ({ taskId: c.next.id, due: c.next.due, label: c.next.label, owner: c.next.owner,
   when: dueGroup(c.next.due, w), companyId: c.id, name: c.name, country: c.country, city: c.city, pic: c.pic,
-  lastYear: c.lastYear, lastYearN: c.lastYearN, status: c.status });
+  lastYear: c.lastYear, lastYearN: c.lastYearN });
 
 /**
  * Next contacts: every open next communication, by date, in Overdue, This week, Later. owner: '' = everyone, 'me' = the
@@ -445,7 +442,7 @@ export async function getCompany(db, id) {
   const trained = courses.filter((k) => Number(k.attendees) > 0);
   return {
     id: Number(c.id), name: c.name, country: c.country || '', city: c.city || '', address: c.address || '', website: c.website || '',
-    status: c.status, statusDetail: c.status_detail || '', pic: c.pic_name || '', picEmail: c.pic_email || '',
+    pic: c.pic_name || '', picEmail: c.pic_email || '',
     picAccount: await picAccountOf(db, c.pic_email),
     notes: c.notes || '', infoToSend: c.info_to_send || '', lastContactAt: c.last_contact_at || null,
     source: c.source || '', sourceRow: c.source_row ?? null, createdAt: c.created_at, archivedAt: c.archived_at || null,
@@ -471,7 +468,7 @@ export async function meta(db) {
   const countries = (await db.prepare(`SELECT DISTINCT country FROM tc_companies c WHERE archived_at IS NULL AND country IS NOT NULL AND ${NOT_TOTAL_SQL}`).all())
     .map((r) => r.country).filter(Boolean).sort(byLv);
   return {
-    statuses: TC.statuses, meetingTypes: TC.meetingTypes, areas: TC.areas, activityKinds: TC.activityKinds,
+    areas: TC.areas, activityKinds: TC.activityKinds,
     contactKinds: TC.contactKinds, nextLabel: TC.nextLabel, weekDays: TC.weekDays, defaults: TC.defaults,
     countries, pics: await picChoices(db),
   };
@@ -491,7 +488,6 @@ async function mustCompany(db, id) {
   if (!c) bad('There is no such company, or it is archived.');
   return c;
 }
-const checkStatus = (s) => { if (!STATUS_IDS.includes(s)) bad('Pick one of the statuses.'); return s; };
 const checkAreas = (list) => {
   const a = [...new Set([].concat(list || []).map(String))];
   const unknown = a.filter((x) => !AREA_IDS.includes(x));
@@ -521,7 +517,7 @@ export async function addCompany(db, b, actor) {
   if (!name) bad('A company needs a name.');
   const key = nameKey(name) || name.toLowerCase();
   const country = clip(b.country, 80);
-  const status = checkStatus(b.status || TC.defaults.noStatus);
+  const status = TC.defaults.noStatus;   // the old level column: always the default, never read (no client levels, 24.11.2026)
   const areas = checkAreas(b.areas);
   const pic = await resolvePic(db, b.pic);
   const twin = country
@@ -540,9 +536,9 @@ export async function addCompany(db, b, actor) {
   });
 }
 
-const EDITABLE = { name: 200, country: 80, city: 80, address: 300, website: 200, status: 40, status_detail: 40, pic_name: 120, notes: 4000, info_to_send: 4000 };
-const FIELD_OF = { name: 'name', country: 'country', city: 'city', address: 'address', website: 'website', status: 'status',
-  statusDetail: 'status_detail', notes: 'notes', infoToSend: 'info_to_send' };   // pic: resolvePic, in editCompany
+const EDITABLE = { name: 200, country: 80, city: 80, address: 300, website: 200, pic_name: 120, notes: 4000, info_to_send: 4000 };
+const FIELD_OF = { name: 'name', country: 'country', city: 'city', address: 'address', website: 'website',
+  notes: 'notes', infoToSend: 'info_to_send' };   // pic: resolvePic, in editCompany
 export const FIELD_LABELS = { name: 'Name', country: 'Country', city: 'City', address: 'Address', website: 'Website', status: 'Status',
   status_detail: 'Meeting type', pic_name: 'Person in charge', notes: 'Notes', info_to_send: 'Information to send', areas: 'Areas' };
 
@@ -569,13 +565,10 @@ export async function editCompany(db, id, b, actor) {
       if (!(k in b)) continue;
       let v = clip(b[k], EDITABLE[col]);
       if (col === 'name' && !v) bad('A company needs a name.');
-      if (col === 'status') checkStatus(v);
-      if (col === 'status_detail' && v && !MEETING_IDS.includes(v)) bad('Unknown meeting type.');
       if ((c[col] ?? null) === v) continue;
       await tx.prepare(`UPDATE tc_companies SET ${col} = ?, updated_at = ? WHERE id = ?`).run(v, at, c.id);
       if (col === 'name') await tx.prepare('UPDATE tc_companies SET name_key = ? WHERE id = ?').run(nameKey(v) || v.toLowerCase(), c.id);
-      await logAct(tx, c.id, { kind: col === 'status' ? 'status' : 'edit', field: col, old: c[col] ?? null, new: v, actor, at,
-        body: col === 'status' ? `${statusLabel(c[col])} → ${statusLabel(v)}` : null });
+      await logAct(tx, c.id, { kind: 'edit', field: col, old: c[col] ?? null, new: v, actor, at, body: null });
       changed += 1;
     }
     if ('areas' in b) {

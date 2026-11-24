@@ -1,14 +1,14 @@
 // PRIVATE CLIENTS (23.11.2026, patch 166; his words "but there should be b2b and b2c client segments!", his pick "A: Private clients
 // list" and "Yes, build it" on TC_B2C_1..3). A Training Centre client who comes for themselves, not for a company (a seafarer paying
 // for his own course): their own record under Clients, never a fake company. Name, phone, email, the course, where they came from,
-// the person in charge, a status, a next contact, and their own history. Nothing is deleted: a private client is archived.
+// the person in charge, a next contact, and their own history. Nothing is deleted: a private client is archived.
 // One number is one person: adding a phone that is already a private client's (last 8 digits) adds to that person instead.
 export class PrivateError extends Error {}
 const bad = (m) => { throw new PrivateError(m); };
 const clip = (v, n = 2000) => { const s = String(v ?? '').trim(); return s ? s.slice(0, n) : null; };
 const nowIso = () => new Date().toISOString();
 const last8 = (n) => String(n || '').replace(/\D/g, '').slice(-8);
-const STATUSES = ['not_contacted', 'to_contact', 'contacted', 'met', 'focus'];
+// no client levels (24.11.2026, his decision "Yes, remove"): the old status column is written with its default and never read
 const KINDS = ['call', 'email', 'whatsapp', 'physical_meeting', 'digital_meeting', 'note'];
 
 async function line(db, clientId, { kind, at, body, actor }) {
@@ -18,7 +18,7 @@ async function line(db, clientId, { kind, at, body, actor }) {
 
 /** Every private client (not archived), the newest contact first: { rows: [{ id, name, phone, course, lastAt, lastKind }] }. */
 export async function list(db) {
-  const rows = await db.prepare(`SELECT c.id, c.name, c.phone, c.email, c.course, c.status, c.owner, c.next_at,
+  const rows = await db.prepare(`SELECT c.id, c.name, c.phone, c.email, c.course, c.owner, c.next_at,
       (SELECT MAX(h.occurred_at) FROM tc_private_history h WHERE h.client_id = c.id) AS last_at
     FROM tc_private_clients c WHERE c.archived_at IS NULL`).all();
   const kinds = new Map();
@@ -26,7 +26,7 @@ export async function list(db) {
     const h = r.last_at ? await db.prepare('SELECT kind FROM tc_private_history WHERE client_id = ? AND occurred_at = ? ORDER BY id DESC LIMIT 1').get(r.id, r.last_at) : null;
     kinds.set(Number(r.id), h ? h.kind : null);
   }
-  return { rows: rows.map((r) => ({ id: Number(r.id), name: r.name, phone: r.phone, email: r.email, course: r.course, status: r.status, owner: r.owner, nextAt: r.next_at,
+  return { rows: rows.map((r) => ({ id: Number(r.id), name: r.name, phone: r.phone, email: r.email, course: r.course, owner: r.owner, nextAt: r.next_at,
     lastAt: r.last_at || null, lastKind: kinds.get(Number(r.id)) })).sort((a, b) => String(b.lastAt || '').localeCompare(String(a.lastAt || '')) || a.name.localeCompare(b.name, 'lv')) };
 }
 
@@ -35,8 +35,8 @@ export async function get(db, id) {
   const c = await db.prepare('SELECT * FROM tc_private_clients WHERE id = ? AND archived_at IS NULL').get(Number(id));
   if (!c) bad('There is no such private client, or they are archived.');
   const history = await db.prepare('SELECT id, kind, occurred_at, body, actor FROM tc_private_history WHERE client_id = ? ORDER BY occurred_at DESC, id DESC').all(c.id);
-  return { client: { id: Number(c.id), name: c.name, phone: c.phone, email: c.email, course: c.course, cameFrom: c.came_from, owner: c.owner, status: c.status, nextAt: c.next_at, createdAt: c.created_at },
-    history: history.map((h) => ({ id: Number(h.id), kind: h.kind, at: h.occurred_at, body: h.body, by: h.actor })), statuses: STATUSES, kinds: KINDS };
+  return { client: { id: Number(c.id), name: c.name, phone: c.phone, email: c.email, course: c.course, cameFrom: c.came_from, owner: c.owner, nextAt: c.next_at, createdAt: c.created_at },
+    history: history.map((h) => ({ id: Number(h.id), kind: h.kind, at: h.occurred_at, body: h.body, by: h.actor })), kinds: KINDS };
 }
 
 /** Add a private client (from "+ Private client", or B2C on a Training Centre Inbox card). Returns { id, created }. */
@@ -68,14 +68,13 @@ export async function add(db, b, actor) {
   return { id, created: true };
 }
 
-/** Change the details, the status or the next contact. Each change is a line in the history. */
+/** Change the details or the next contact. Each change is a line in the history. */
 export async function update(db, id, b, actor) {
   const c = await db.prepare('SELECT * FROM tc_private_clients WHERE id = ? AND archived_at IS NULL').get(Number(id));
   if (!c) bad('There is no such private client, or they are archived.');
   const fields = { name: [b.name === undefined ? undefined : clip(b.name, 200), 'Name'], phone: [b.phone === undefined ? undefined : clip(b.phone, 60), 'Phone'], email: [b.email === undefined ? undefined : clip(b.email, 200), 'Email'],
     course: [b.course === undefined ? undefined : clip(b.course, 200), 'Course'], owner: [b.owner === undefined ? undefined : clip(b.owner, 120), 'Person in charge'],
-    status: [b.status === undefined ? undefined : String(b.status), 'Status'], next_at: [b.nextAt === undefined ? undefined : (clip(b.nextAt, 10) || null), 'Next contact'] };
-  if (fields.status[0] !== undefined && !STATUSES.includes(fields.status[0])) bad('Pick one of the statuses.');
+    next_at: [b.nextAt === undefined ? undefined : (clip(b.nextAt, 10) || null), 'Next contact'] };
   if (fields.next_at[0] && !/^\d{4}-\d{2}-\d{2}$/.test(fields.next_at[0])) bad('The next contact is a day.');
   if (fields.email[0] && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.email[0])) bad('That email address does not look right.');
   const at = nowIso();

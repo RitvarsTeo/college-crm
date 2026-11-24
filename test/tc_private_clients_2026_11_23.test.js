@@ -13,7 +13,7 @@ test('add from a WhatsApp card: their own record with a WhatsApp line, no compan
   const a = await P.add(db, { name: 'Peter Sample', phone: '+371 20 000 011', note: 'Is there BOSIET in January?', via: 'whatsapp' }, 'Laura');
   assert.equal(a.created, true);
   const one = await P.get(db, a.id);
-  assert.deepEqual([one.client.name, one.client.cameFrom, one.client.owner, one.client.status], ['Peter Sample', 'WhatsApp', 'Laura', 'not_contacted']);
+  assert.deepEqual([one.client.name, one.client.cameFrom, one.client.owner, 'status' in one.client], ['Peter Sample', 'WhatsApp', 'Laura', false], 'no client levels (his decision 24.11.2026, "Yes, remove")');
   assert.deepEqual([one.history[0].kind, one.history[0].body], ['whatsapp', 'WhatsApp from Peter Sample. Is there BOSIET in January?']);
   const b = await P.add(db, { name: 'Peter', phone: '20000011', note: 'And the price?', via: 'whatsapp' }, 'Laura');
   assert.deepEqual([b.id, b.created], [a.id, false], 'one number is one person');
@@ -22,18 +22,17 @@ test('add from a WhatsApp card: their own record with a WhatsApp line, no compan
   assert.equal(Number((await db.prepare('SELECT COUNT(*) n FROM people').get()).n), 0, 'never an Academy lead');
 });
 
-test('the list, a logged call with a next contact, a change of status as history lines, archive instead of delete', async () => {
+test('the list, a logged call with a next contact as history lines, no level (no client levels (his decision 24.11.2026, "Yes, remove")), archive instead of delete', async () => {
   const db = await openDb();
   const { id } = await P.add(db, { name: 'Ilze Example', email: 'ilze@example.com', course: 'GWO BST' }, 'Laura');
   await P.log(db, id, { kind: 'call', day: '2026-11-23', body: 'Wants the February dates.', nextAt: '2026-12-01' }, 'Laura');
-  await P.update(db, id, { status: 'contacted' }, 'Laura');
+  await P.update(db, id, { status: 'contacted' }, 'Laura');   // a level sent from anywhere changes nothing
   const one = await P.get(db, id);
   assert.equal(one.client.nextAt, '2026-12-01');
-  assert.deepEqual(one.history.map((h) => h.kind).sort(), ['call', 'edit', 'edit']);
+  assert.deepEqual(one.history.map((h) => h.kind).sort(), ['call', 'edit'], 'the next contact only; no status line');
   const L = await P.list(db);
   assert.deepEqual([L.rows.length, L.rows[0].name, L.rows[0].course], [1, 'Ilze Example', 'GWO BST']);
   await assert.rejects(P.log(db, id, { kind: 'fax' }, 'Laura'), P.PrivateError);
-  await assert.rejects(P.update(db, id, { status: 'lost' }, 'Laura'), P.PrivateError);
   await assert.rejects(P.add(db, {}, 'Laura'), P.PrivateError);
   await P.archive(db, id, 'Laura');
   assert.equal((await P.list(db)).rows.length, 0);

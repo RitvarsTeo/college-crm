@@ -11679,10 +11679,11 @@ async function startShellTc() {
 // Academy's own parts: Needs you, the figure cards, the pool band and filters, the list rows, the person page's sheets.
 let T_META = null;
 const tcMeta = async () => (T_META ||= await api('/api/tc/meta'));
-const tcStatus = (id) => ((T_META && T_META.statuses) || []).find((s) => s.id === id) || { id, label: id || '' };
+// NO CLIENT LEVELS (24.11.2026, his decision "Yes, remove": "the app is a tool. its a resource. we need it clean!"): nothing shows a level;
+// an old history line that changed one reads its words (not_contacted -> Not contacted)
+const tcOldWord = (id) => String(id || '').replace(/_/g, ' ').replace(/^./, (x) => x.toUpperCase());
 const tcKind = (id) => (((T_META && T_META.activityKinds) || []).find((k) => k.id === id) || {}).label
   || { status: 'Status', edit: 'Changed', create: 'Added', import: 'Imported', task: 'Next communication' }[id] || id;
-const tcMeeting = (id) => (((T_META && T_META.meetingTypes) || []).find((m) => m.id === id) || {}).label || '';
 const tcDdMm = (d) => (d ? `${d.slice(8, 10)}.${d.slice(5, 7)}${d.slice(0, 4) === cTodayIso().slice(0, 4) ? '' : '.' + d.slice(0, 4)}` : '');
 // NOTHING READS AS SOMEBODY BEING LATE (the owner, 20.10.2026): a contact not done on its day is still planned, shown with
 // the day it was planned for, never in red and never counted as overdue
@@ -12176,7 +12177,7 @@ async function tcSavePlan(id) {
 }
 
 // ---- COMPANIES: Journey's List for companies - the status band, the filter row, search, one line each ----
-const T_F_EMPTY = () => ({ status: '', area: '', country: '', pic: '', client: '', info: '', due: '', year: '', cohort: '', last: '', course: '', since: '', go2: '', letter: '', go: '' });
+const T_F_EMPTY = () => ({ area: '', country: '', pic: '', client: '', info: '', due: '', year: '', cohort: '', last: '', course: '', since: '', go2: '', letter: '', go: '' });
 let T_F = T_F_EMPTY(); let T_Q = ''; let T_PAGE = 1; let T_LIST = null; let T_TITLE = 'Companies'; let T_KEEP = false; let T_SORT = 'name';
 let T_QT = 0; let T_MORE = false;
 // OWNERSHIP AND NEW ADDITIONS (29.10.2026, src/tcadd.js; the owner's picks: Make mine on Companies, a New additions tab with
@@ -12360,7 +12361,6 @@ async function tcMoreCompanies() {
   tcDrawCompanies();
 }
 function tcFilter(k, v) { T_F[k] = v; T_PAGE = 1; tcLoadCompanies(); }
-function tcPickStatus(v) { tcFilter('status', T_F.status === v ? '' : v); }
 function tcClear() { T_F = T_F_EMPTY(); T_Q = ''; T_PAGE = 1; tcLoadCompanies(); }
 // THE BARS ON THE LEFT (02.11.2026, the owner's pick B, picture board-companies-filter): each value a small bar with its
 // count; a click filters, a second click on the same bar takes it off; Courses (GWO, BST, IRATA ...) is new.
@@ -12469,7 +12469,6 @@ function tcAzRows(rows, row) {
 }
 function tcDrawCompanies() {
   const L = T_LIST, M = T_META;
-  const cols = M.statuses.map((s) => ({ id: s.id, label: s.label, n: L.counts.status[s.id] || 0 }));
   const word = (v) => (v === '-' ? 'not recorded' : v === '*' ? 'any recorded' : v);
   const box = (k, label, values) => cPoolSelect(label, T_F[k], values, `tcFilter('${k}', this.value)`);
   // TC Home's figures (round 3): trained in a year, came back / new that year, latest course against that year
@@ -12880,7 +12879,7 @@ async function tcInboxDone(key, btn) {
 }
 // PRIVATE CLIENTS (23.11.2026, patch 166; his words "but there should be b2b and b2c client segments!", his pick "A: Private
 // clients list", "Yes, build it" on TC_B2C_1..3). Their own list under Clients, their own page built from the company page's cards
-// (History, Next communication, Log a communication, Details, Status), their own add drawer. src/tcprivate.js holds the rules.
+// (History, Next communication, Log a communication, Details), their own add drawer. src/tcprivate.js holds the rules.
 const TC_PRIV_KINDS = { call: 'Call', email: 'Email', whatsapp: 'WhatsApp', physical_meeting: 'Physical meeting', digital_meeting: 'Digital meeting', note: 'Note', edit: 'Changed' };
 let T_PV = null, T_PVADD = null;
 async function viewTcPrivates() {
@@ -12895,8 +12894,7 @@ async function viewTcPrivate(id) {
   tcPrivDraw();
 }
 function tcPrivDraw() {
-  const P = T_PV, c = P.client, st = (T_META && T_META.statuses) || [];
-  const label = (id) => ((st.find((x) => x.id === id) || {}).label) || id;
+  const P = T_PV, c = P.client;
   const when = (iso) => { const t = fmtDateTime(iso) || ''; return t ? tcDay(t.slice(0, 10)) + ' ' + t.slice(11, 16) : ''; };
   const hist = (h) => `<div class="tcpv-h1"><small>${esc(when(h.at))}</small><div><b>${esc(TC_PRIV_KINDS[h.kind] || h.kind)}</b>${h.by ? ` <span class="tcpv-by">${esc(h.by)}</span>` : ''}${h.body ? `<br><span>${esc(h.body)}</span>` : ''}</div></div>`;
   const det = (k, v) => `<div class="tcpv-d"><span>${k}</span><b>${v || '<i>not recorded</i>'}</b></div>`;
@@ -12913,7 +12911,6 @@ function tcPrivDraw() {
     </div><div>
       <section class="c-sheet tcpv-box"><h3>Details</h3>${det('Phone', c.phone ? cTelLink({ phone: c.phone }) : '')}${det('Email', c.email ? esc(c.email) : '')}${det('Course', esc(c.course || ''))}${det('Came from', esc(c.cameFrom || ''))}${det('Person in charge', esc(c.owner || ''))}
         <button class="btn sm ghost" onclick="tcPrivEdit()">Edit</button></section>
-      <section class="c-sheet tcpv-box"><h3>Status</h3><select aria-label="Status" onchange="tcPrivSet({ status: this.value })">${P.statuses.map((x) => `<option value="${esc(x)}"${x === c.status ? ' selected' : ''}>${esc(label(x))}</option>`).join('')}</select></section>
     </div></div>`;
 }
 async function tcPrivSet(b) { try { await post('/api/tc/private/' + Number(T_PV.client.id), b); await viewTcPrivate(T_PV.client.id); } catch (e) { alert(e.message); } }
@@ -13008,7 +13005,7 @@ const T_FIELD = { name: 'Name', country: 'Country', city: 'City', address: 'Addr
   pic_name: 'Person in charge', pic_account: 'Person in charge', notes: 'Notes', info_to_send: 'Information to send', areas: 'Areas', next: 'Next communication', archived_at: 'Archived',
   contact: 'Contact', contact_name: 'Contact name', contact_position: 'Contact position', contact_email: 'Contact email', contact_phone: 'Contact phone', contact_notes: 'Contact notes' };
 const tcFieldName = (f) => T_FIELD[f] || (/^courses_(\d{4})$/.test(f || '') ? 'Courses ' + f.slice(8) : f);
-const tcShow = (f, v) => (v == null ? '(empty)' : f === 'status' ? tcStatus(v).label : f === 'status_detail' ? tcMeeting(v) || v : v);
+const tcShow = (f, v) => (v == null ? '(empty)' : f === 'status' || f === 'status_detail' ? tcOldWord(v) : v);
 function tcEv(e) {
   const what = e.field && e.kind !== 'task' ? tcFieldName(e.field) : tcKind(e.kind);
   return `<div class="c-evt"><div class="c-evt-when">${cStamp(e.occurred_at)}${e.actor ? ' · ' + esc(e.actor) : ''}${e.origin === 'import' ? ' · <span class="c-auto">from the Excel</span>' : ''}</div>
@@ -13040,9 +13037,6 @@ function tcDrawCompany() {
       ${row('Last contact', c.lastContactAt ? esc(fmtDate(c.lastContactAt)) : '')}
       ${c.sourceRow ? row('From the Excel', 'row ' + Number(c.sourceRow)) : ''}</dl>
       ${c.notes ? tcClamp(c.notes, 'c-notes') : ''}</div>`;
-  const status = `<div class="c-sheet c-facts"><h3>Status</h3><div class="c-pad tc-status">
-      <select id="tcStatus" aria-label="Status" onchange="tcEdit({ status: this.value })">${M.statuses.map((s) => `<option value="${esc(s.id)}"${s.id === c.status ? ' selected' : ''}>${esc(s.label)}</option>`).join('')}</select>
-      ${c.status === 'met' ? `<select aria-label="Meeting type" onchange="tcEdit({ statusDetail: this.value })"><option value="">Meeting type</option>${M.meetingTypes.map((m) => `<option value="${esc(m.id)}"${m.id === c.statusDetail ? ' selected' : ''}>${esc(m.label)}</option>`).join('')}</select>` : ''}</div></div>`;
   const contacts = `<div class="c-sheet c-facts"><h3>Contacts<b>${c.contacts.length}</b><span class="c-h3acts"><button class="btn sm ghost" onclick="tcToggle('tcAddContact')">Add</button></span></h3>
       ${c.contacts.map((k) => `<div class="tc-contact"><div><button type="button" class="tc-kname" title="Open to edit" onclick="tcContactOpen(${Number(k.id)})">${esc(k.name || k.email || k.phone || 'no name')}</button>${k.position ? ` <small>${esc(k.position)}</small>` : ''}
         <small>${[k.email ? `<a href="mailto:${esc(k.email)}">${esc(k.email)}</a>` : '', k.phone ? cPhoneHtml(k.phone) : ''].filter(Boolean).join(' · ')}</small>${k.notes ? `<small class="c-gap-soft">${esc(k.notes)}</small>` : ''}</div></div>`).join('') || '<div class="c-empty">No contact yet.</div>'}
@@ -13074,13 +13068,13 @@ function tcDrawCompany() {
   const info = c.infoToSend ? `<div class="c-sheet c-facts tc-info"><h3>Information to send</h3><div class="c-pad">${tcClamp(c.infoToSend)}
       <div class="c-row-acts"><button class="btn sm ghost" onclick="tcInfoSent()">Mark sent</button></div></div></div>` : '';
   $('#view').innerHTML = `<p class="c-crumb"><a href="#/tc/companies">Companies</a></p>
-    <div class="c-head"><div><h1 class="c-pname">${esc(c.name)}</h1><p>${esc(tcStatus(c.status).label)}${c.statusDetail ? ' · ' + esc(tcMeeting(c.statusDetail)) : ''}${c.areas.length ? ' · ' + esc(c.areas.join(', ')) : ''} · ${esc(tcPlace(c) || 'country not recorded')} · ${c.client ? `client, ${tcDelegates(c.delegates)}` : 'prospect'}</p>${tcRsvpLine()}${tcMkLine()}</div>
+    <div class="c-head"><div><h1 class="c-pname">${esc(c.name)}</h1><p>${c.areas.length ? esc(c.areas.join(', ')) + ' · ' : ''}${esc(tcPlace(c) || 'country not recorded')} · ${c.client ? `client, ${tcDelegates(c.delegates)}` : 'prospect'}</p>${tcRsvpLine()}${tcMkLine()}</div>
       <div class="act"><button class="btn ghost" onclick="tcArchive()">Archive</button></div></div>
     <div class="c-pgrid">
       <div class="c-pmain">${perYear}${tcMrCard()}${tcFamCard()}${next}${logBox}
         <div class="c-sheet"><h3>Communications and changes<b>${c.log.length}</b></h3>${(T_LOG_ALL ? c.log : c.log.slice(0, T_LOG_FIRST)).map(tcEv).join('') || '<div class="c-empty">Nothing yet.</div>'}
           ${!T_LOG_ALL && c.log.length > T_LOG_FIRST ? `<button class="c-more tc-logmore" onclick="T_LOG_ALL=true;tcDrawCompany()">Show all ${Number(c.log.length)}</button>` : ''}</div></div>
-      <aside class="c-pside">${info}${details}${status}${contacts}${courses}</aside>
+      <aside class="c-pside">${info}${details}${contacts}${courses}</aside>
     </div>`;
   tctMotion($('#view'));
 }

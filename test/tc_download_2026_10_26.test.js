@@ -34,9 +34,9 @@ test('Companies: one row per company, exactly the filtered list, delegates per y
   const out = await tc.exportRows(db, tc.readFilters(new URLSearchParams('country=Germany')), { now: NOW });
   assert.equal(out.companies, 2);
   const [head, ...rows] = out.rows;
-  assert.deepEqual(head.slice(0, 6), ['Company', 'Country', 'City', 'Status', 'Areas', 'Person in charge']);
-  assert.deepEqual(head.slice(6, 13), ['2020', '2021', '2022', '2023', '2024', '2025', '2026']);
-  assert.deepEqual(rows.map((r) => [r[0], r[3]]), [['Example Shipping', 'Met'], ['Sample Offshore', 'Contacted']]);
+  assert.deepEqual(head.slice(0, 5), ['Company', 'Country', 'City', 'Areas', 'Person in charge'], 'no client levels (his decision 24.11.2026, "Yes, remove"): no Status column');
+  assert.deepEqual(head.slice(5, 12), ['2020', '2021', '2022', '2023', '2024', '2025', '2026']);
+  assert.deepEqual(rows.map((r) => r[0]), ['Example Shipping', 'Sample Offshore']);
   assert.equal(rows[0][head.indexOf('2025')], 36);
   assert.equal(rows[0][head.indexOf('Delegates in all')], 36);
   assert.ok(!head.includes('Email'), 'the companies file carries no contact details');

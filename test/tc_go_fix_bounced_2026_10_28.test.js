@@ -87,9 +87,9 @@ test('the lighter pages (29.10.2026): the company list and the guests are reused
   const tc = await import('../src/tc.js');
   const db = await openDb();
   const a = (await tc.addCompany(db, { name: 'Example Shipping', country: 'Latvia' }, 'Ritvars')).id;
-  assert.equal((await tc.listCompanies(db, {}, { size: 10 })).rows[0].status, 'not_contacted');
-  await tc.editCompany(db, a, { status: 'contacted' }, 'Ritvars');
-  assert.equal((await tc.listCompanies(db, {}, { size: 10 })).rows[0].status, 'contacted', 'an edit shows at once');
+  assert.equal((await tc.listCompanies(db, {}, { size: 10 })).rows[0].city, '');
+  await tc.editCompany(db, a, { city: 'Riga' }, 'Ritvars');   // (a level until 24.11.2026; no client levels since)
+  assert.equal((await tc.listCompanies(db, {}, { size: 10 })).rows[0].city, 'Riga', 'an edit shows at once');
   await tc.setNext(db, a, { due: '2026-11-03', label: 'Call' }, 'Ritvars');
   await tc.setNext(db, a, { due: '2026-11-05', label: 'Call' }, 'Ritvars');
   assert.equal((await tc.nextList(db, {})).rows[0].due, '2026-11-05', 'a moved date shows at once (no timestamp on the task)');

@@ -160,14 +160,14 @@ test('Home: every figure is the size of the list it opens', async () => {
   assert.equal(h.cards.delegates.total, h.cards.delegates.byYear.reduce((n, y) => n + y.n, 0));
 });
 
-test('Companies: the filters (status, area, country, person in charge, client, search) and the status counts that ignore the status filter', async () => {
+test('Companies: the filters (area, country, person in charge, client, search); no level filter or counts (no client levels (his decision 24.11.2026, "Yes, remove"))', async () => {
   const { db, facts } = await imported();
   const all = await tc.listCompanies(db, {}, { size: 2000 });
   assert.equal(all.total, 40);
   assert.deepEqual(all.rows.map((r) => r.name), [...all.rows.map((r) => r.name)].sort((a, b) => a.localeCompare(b, 'lv')));
   const contacted = await tc.listCompanies(db, { status: 'contacted' });
-  assert.ok(contacted.rows.every((r) => r.status === 'contacted'));
-  assert.deepEqual(contacted.counts, all.counts, 'the band counts stay those of every status');
+  assert.equal(contacted.total, all.total, 'a level filter is no filter any more');
+  assert.ok(!all.counts && all.rows.every((r) => !('status' in r)), 'no level in the list');
   const tcArea = await tc.listCompanies(db, { area: 'TC' }, { size: 2000 });
   assert.equal(tcArea.total, facts.companies.filter((c) => c.area_tc === '1').length);
   const lv = await tc.listCompanies(db, { country: 'Latvia' }, { size: 2000 });
@@ -210,19 +210,18 @@ test('the company page: details, contacts, courses per year, the log with a note
   await assert.rejects(tc.logActivity(db, c.id, { kind: 'call', body: 'x', nextDue: '02.11.2026' }, 'T'), /needs a date/);
 });
 
-test('edits are logged with what it was and what it became; status and areas are checked against the lists', async () => {
+test('edits are logged with what it was and what it became; areas are checked against the list; a level is never written (no client levels (his decision 24.11.2026, "Yes, remove"))', async () => {
   const db = await openDb();
   const { id } = await tc.addCompany(db, { name: 'Example Tankers AS', country: 'Norway', areas: ['TC'] }, 'Tester');
   await assert.rejects(tc.addCompany(db, { name: 'Example  Tankers', country: 'Norway' }, 'Tester'), /already here/, 'the same name key and country');
   await tc.addCompany(db, { name: 'Example Tankers AS', country: 'Denmark' }, 'Tester');   // another country is another company
   await tc.editCompany(db, id, { status: 'met', statusDetail: 'digital_meeting', city: 'Bergen', areas: ['TC', 'ENERGY'], infoToSend: 'Price list' }, 'Tester');
   const c = await tc.getCompany(db, id);
-  assert.equal(c.status, 'met');
+  assert.ok(!('status' in c) && !c.log.some((e) => e.field === 'status' || e.field === 'status_detail'), 'a level sent from anywhere is not written');
+  assert.equal((await db.prepare('SELECT status FROM tc_companies WHERE id = ?').get(id)).status, 'not_contacted', 'the old column keeps its default');
   assert.deepEqual(c.areas, ['TC', 'ENERGY']);
-  const status = c.log.find((e) => e.field === 'status');
-  assert.deepEqual([status.kind, status.old_value, status.new_value, status.actor], ['status', 'not_contacted', 'met', 'Tester']);
+  assert.ok(c.log.find((e) => e.field === 'city' && e.new_value === 'Bergen'));
   assert.ok(c.log.find((e) => e.field === 'areas' && e.old_value === 'TC' && e.new_value === 'TC, ENERGY'));
-  await assert.rejects(tc.editCompany(db, id, { status: 'won' }, 'T'), /statuses/);
   await assert.rejects(tc.editCompany(db, id, { areas: ['MARS'] }, 'T'), /Unknown area/);
   await assert.rejects(tc.editCompany(db, id, { name: '' }, 'T'), /needs a name/);
   assert.equal((await tc.editCompany(db, id, { city: 'Bergen' }, 'T')).changed, 0, 'no change, no line');
@@ -318,7 +317,7 @@ test('the routes, end to end on a laptop copy: import preview and apply by uploa
   const [, home] = await get('/api/tc/home');
   assert.equal(home.cards.companies, 40);
   const [, meta] = await get('/api/tc/meta');
-  assert.deepEqual(meta.statuses.map((x) => x.id), ['not_contacted', 'to_contact', 'contacted', 'met', 'focus']);
+  assert.ok(!meta.statuses && !meta.meetingTypes, 'no client levels (his decision 24.11.2026, "Yes, remove")');
   assert.ok(meta.help.faq.length >= 5, 'the Training Centre help travels with its own meta, never with /api/config');
   const [, list] = await get('/api/tc/companies?client=yes&sort=last');
   assert.equal(list.total, home.cards.activeClients);
@@ -342,7 +341,7 @@ test('the routes, end to end on a laptop copy: import preview and apply by uploa
   const [sd, dup] = await post('/api/tc/companies', { name: 'Fictive Bulk', country: 'Sweden' });
   assert.equal(sd, 400);
   assert.equal(dup.id, added.id, 'the refusal says which company it already is');
-  for (const [p, b] of [[`/api/tc/companies/${added.id}/edit`, { status: 'contacted' }], [`/api/tc/companies/${added.id}/contacts`, { email: 'a@example.com' }],
+  for (const [p, b] of [[`/api/tc/companies/${added.id}/edit`, { city: 'Riga' }], [`/api/tc/companies/${added.id}/contacts`, { email: 'a@example.com' }],
     [`/api/tc/companies/${added.id}/courses`, { year: 2026, attendees: 3 }], [`/api/tc/companies/${added.id}/next`, { due: '2030-02-01' }],
     [`/api/tc/companies/${added.id}/archive`, {}]]) assert.equal((await post(p, b))[0], 200, p);
 });

@@ -1,33 +1,61 @@
 {
-  "_about": "TRAINING CENTRE settings (19.10.2026). The lists the Training Centre screens and the Excel import read. Statuses and areas are checked in code, never by a database CHECK, so a list can be renamed here without a migration. The defaults marked provisional are the owner's to confirm (MVP interview 19.10.2026: 'rest of questions I'll answer later').",
-  "statuses": [
-    { "id": "not_contacted", "label": "No status yet" },
-    { "id": "to_contact", "label": "To contact" },
-    { "id": "contacted", "label": "Contacted" },
-    { "id": "met", "label": "Met" },
-    { "id": "focus", "label": "Focus" }
-  ],
-  "meetingTypes": [
-    { "id": "physical_meeting", "label": "Physical meeting" },
-    { "id": "digital_meeting", "label": "Digital meeting" },
-    { "id": "exhibition", "label": "Exhibition" }
-  ],
+  "_about": "TRAINING CENTRE settings (19.10.2026). The lists the Training Centre screens and the Excel import read. Areas are checked in code, never by a database CHECK, so a list can be renamed here without a migration. The defaults marked provisional are the owner's to confirm (MVP interview 19.10.2026: 'rest of questions I'll answer later').",
   "areas": [
-    { "id": "TC", "label": "TC" },
-    { "id": "ENERGY", "label": "ENERGY" },
-    { "id": "OPITO", "label": "OPITO" },
-    { "id": "PROJECTS", "label": "PROJECTS" }
+    {
+      "id": "TC",
+      "label": "TC"
+    },
+    {
+      "id": "ENERGY",
+      "label": "ENERGY"
+    },
+    {
+      "id": "OPITO",
+      "label": "OPITO"
+    },
+    {
+      "id": "PROJECTS",
+      "label": "PROJECTS"
+    }
   ],
   "activityKinds": [
-    { "id": "call", "label": "Call" },
-    { "id": "email", "label": "Email" },
-    { "id": "physical_meeting", "label": "Physical meeting" },
-    { "id": "digital_meeting", "label": "Digital meeting" },
-    { "id": "exhibition", "label": "Exhibition" },
-    { "id": "contact", "label": "Communication" },
-    { "id": "note", "label": "Note" }
+    {
+      "id": "call",
+      "label": "Call"
+    },
+    {
+      "id": "email",
+      "label": "Email"
+    },
+    {
+      "id": "physical_meeting",
+      "label": "Physical meeting"
+    },
+    {
+      "id": "digital_meeting",
+      "label": "Digital meeting"
+    },
+    {
+      "id": "exhibition",
+      "label": "Exhibition"
+    },
+    {
+      "id": "contact",
+      "label": "Communication"
+    },
+    {
+      "id": "note",
+      "label": "Note"
+    }
   ],
-  "contactKinds": ["call", "email", "physical_meeting", "digital_meeting", "exhibition", "contact"],
+  "contactKinds": [
+    "call",
+    "email",
+    "physical_meeting",
+    "digital_meeting",
+    "exhibition",
+    "contact"
+  ],
   "nextLabel": "Next communication",
   "weekDays": 7,
   "home": {
@@ -44,64 +72,183 @@
     "batch": "excel_2026_10",
     "sourceLabel": "Planning of customers.xlsx",
     "coursesAsOf": "2025-09-24",
-    "files": ["companies.csv", "contacts.csv", "courses.csv"],
+    "files": [
+      "companies.csv",
+      "contacts.csv",
+      "courses.csv"
+    ],
     "maxBytes": 4194304
   },
   "clienthubImport": {
     "_about": "The ONE import of Client Hub contacts (20.10.2026, src/tcclienthub.js). Intake is the master for contacts; Client Hub keeps running the Grand Opening. The links come from TC-DATA's 19.10 cross-check (_training-centre/tools/clienthub_import_extract.mjs).",
     "batch": "clienthub_2026_10",
     "sourceLabel": "Client Hub (Grand Opening contacts)",
-    "files": ["clienthub_import_contacts.csv"],
+    "files": [
+      "clienthub_import_contacts.csv"
+    ],
     "maxBytes": 4194304,
-    "importLinks": ["exact_name", "normalised_name", "domain"],
-    "reviewLinks": ["fuzzy", "possible", "domain_group", "unchecked"],
+    "importLinks": [
+      "exact_name",
+      "normalised_name",
+      "domain"
+    ],
+    "reviewLinks": [
+      "fuzzy",
+      "possible",
+      "domain_group",
+      "unchecked"
+    ],
     "tieLink": "tie",
     "_tie": "The owner, 20.10.2026: a contact whose company fits two or more Excel companies equally goes to the one in the same country, then the one with the closest name; still equal = the review list. tieNeedsSameCountry true = only a same-country candidate may win.",
     "tieNeedsSameCountry": false,
     "_noCompany": "The owner, 20.10.2026: a contact with no company goes on the review list, to be placed by hand.",
     "noMailing": {
       "_about": "The owner, 20.10.2026: imported, marked no mailing in the contact's note (the company page shows it under the email).",
-      "mailchimpStatuses": ["unsubscribed", "cleaned"],
-      "issues": ["mailchimp_optout"],
+      "mailchimpStatuses": [
+        "unsubscribed",
+        "cleaned"
+      ],
+      "issues": [
+        "mailchimp_optout"
+      ],
       "note": "No mailing (Client Hub: unsubscribed or the address bounced)"
     },
     "newLink": "none",
     "internalLink": "novikontas",
-    "internalStatuses": ["Novikontas"],
-    "internalDomains": ["novikontas.lv", "novikontas.org", "novikontas.com", "novikontas.lt", "novikontas.eu"],
-    "inactiveStatuses": ["Outdated"],
-    "duplicateIssues": ["duplicate_suppressed"],
+    "internalStatuses": [
+      "Novikontas"
+    ],
+    "internalDomains": [
+      "novikontas.lv",
+      "novikontas.org",
+      "novikontas.com",
+      "novikontas.lt",
+      "novikontas.eu"
+    ],
+    "inactiveStatuses": [
+      "Outdated"
+    ],
+    "duplicateIssues": [
+      "duplicate_suppressed"
+    ],
     "newCompanyStatus": "not_contacted"
   },
   "clienthubReview": {
     "_about": "THE CLIENT HUB REVIEW LIST (20.10.2026, src/tcclienthub.js -> src/tcreview.js): the owner's pick R2, one table with the suggestion chosen, tick many, Place. Loaded once by an admin from the file the import applied plus the cross-check's candidates; placed by the Training Centre team.",
-    "files": ["clienthub_import_contacts.csv", "clienthub_review_candidates.csv"],
+    "files": [
+      "clienthub_import_contacts.csv",
+      "clienthub_review_candidates.csv"
+    ],
     "maxBytes": 4194304,
     "kinds": [
-      { "id": "tie", "label": "Two matches" },
-      { "id": "fuzzy", "label": "Spelling" },
-      { "id": "possible", "label": "Possible" },
-      { "id": "domain_group", "label": "Same domain only" },
-      { "id": "none", "label": "No company" },
-      { "id": "other", "label": "To check" }
+      {
+        "id": "tie",
+        "label": "Two matches"
+      },
+      {
+        "id": "fuzzy",
+        "label": "Spelling"
+      },
+      {
+        "id": "possible",
+        "label": "Possible"
+      },
+      {
+        "id": "domain_group",
+        "label": "Same domain only"
+      },
+      {
+        "id": "none",
+        "label": "No company"
+      },
+      {
+        "id": "other",
+        "label": "To check"
+      }
     ],
     "hits": {
-      "exact_name": "same name", "normalised_name": "same name", "domain": "same website domain", "fuzzy": "name spelt like",
-      "domain_group": "same domain group", "possible": "name looks like", "email_domain": "uses the same email domain"
+      "exact_name": "same name",
+      "normalised_name": "same name",
+      "domain": "same website domain",
+      "fuzzy": "name spelt like",
+      "domain_group": "same domain group",
+      "possible": "name looks like",
+      "email_domain": "uses the same email domain"
     },
-    "genericDomains": ["gmail.com", "googlemail.com", "hotmail.com", "hotmail.co.uk", "outlook.com", "live.com", "msn.com", "yahoo.com",
-      "yahoo.co.uk", "icloud.com", "me.com", "mail.ru", "bk.ru", "list.ru", "inbox.ru", "yandex.ru", "yandex.com", "rambler.ru", "inbox.lv",
-      "inbox.lt", "one.lv", "apollo.lv", "tvnet.lv", "delfi.lv", "gmx.de", "gmx.net", "gmx.com", "web.de", "t-online.de", "mail.com", "aol.com",
-      "protonmail.com", "proton.me", "zoho.com", "ukr.net", "mail.ee", "hot.ee", "online.no", "wp.pl", "o2.pl", "interia.pl", "onet.pl",
-      "seznam.cz", "libero.it", "orange.fr", "free.fr", "bigpond.com", "live.nl", "hotmail.nl", "planet.nl", "ziggo.nl", "telenet.be",
-      "skynet.be", "mail.lv", "navigator.lv", "outlook.lv", "hotmail.lv", "yahoo.de", "hotmail.de", "freenet.de", "posteo.de", "qq.com", "163.com"],
+    "genericDomains": [
+      "gmail.com",
+      "googlemail.com",
+      "hotmail.com",
+      "hotmail.co.uk",
+      "outlook.com",
+      "live.com",
+      "msn.com",
+      "yahoo.com",
+      "yahoo.co.uk",
+      "icloud.com",
+      "me.com",
+      "mail.ru",
+      "bk.ru",
+      "list.ru",
+      "inbox.ru",
+      "yandex.ru",
+      "yandex.com",
+      "rambler.ru",
+      "inbox.lv",
+      "inbox.lt",
+      "one.lv",
+      "apollo.lv",
+      "tvnet.lv",
+      "delfi.lv",
+      "gmx.de",
+      "gmx.net",
+      "gmx.com",
+      "web.de",
+      "t-online.de",
+      "mail.com",
+      "aol.com",
+      "protonmail.com",
+      "proton.me",
+      "zoho.com",
+      "ukr.net",
+      "mail.ee",
+      "hot.ee",
+      "online.no",
+      "wp.pl",
+      "o2.pl",
+      "interia.pl",
+      "onet.pl",
+      "seznam.cz",
+      "libero.it",
+      "orange.fr",
+      "free.fr",
+      "bigpond.com",
+      "live.nl",
+      "hotmail.nl",
+      "planet.nl",
+      "ziggo.nl",
+      "telenet.be",
+      "skynet.be",
+      "mail.lv",
+      "navigator.lv",
+      "outlook.lv",
+      "hotmail.lv",
+      "yahoo.de",
+      "hotmail.de",
+      "freenet.de",
+      "posteo.de",
+      "qq.com",
+      "163.com"
+    ],
     "maxCandidates": 6,
     "maxPerPlace": 400,
     "setAsideLabel": "Not a contact for us"
   },
   "homeReviewYears": {
     "_about": "THE 2024 HOLE (the owner's pick, 28.10.2026): the TC Excel's 2024 column is incomplete (1,294 delegates, 92 companies) while the management review counts 3,569. For these years TC Home's Delegates by year shows the management review's business-client trainees (src/tcmr.js tables), marked as from the review; every other year stays the Excel.",
-    "years": [2024]
+    "years": [
+      2024
+    ]
   },
   "grandOpening": {
     "mails": {
@@ -110,56 +257,230 @@
     },
     "demo": {
       "_about": "THE DEMO IN INTAKE (05.11.2026, src/godemo.js; the owner: 'demo should be in the intake. For me, MC, Marcis, Aigars, Aleksejs.'; 11.11.2026: 'THE DEMO ALWAYS HAVE TO BE IN THE APP! So every Director and C level can see it from their account!', so the other directors and C-level with a Grand Opening list or lead were added: DS, JS, Alma, Ilja (CTO)). Only these sign-ins open /api/tc/go/demo/.",
-      "viewers": ["ritvars.vilcins@novikontas.org", "mc@novikontas.org", "marcis.zabovs@novikontas.org", "aigars.kluga@novikontas.org", "ab@novikontas.org", "ds@novikontas.org", "js@novikontas.org", "alm@novikontas.org", "iljasemjonovs@novikontas.org"]
+      "viewers": [
+        "ritvars.vilcins@novikontas.org",
+        "mc@novikontas.org",
+        "marcis.zabovs@novikontas.org",
+        "aigars.kluga@novikontas.org",
+        "ab@novikontas.org",
+        "ds@novikontas.org",
+        "js@novikontas.org",
+        "alm@novikontas.org",
+        "iljasemjonovs@novikontas.org"
+      ]
     },
     "_about": "THE GRAND OPENING (21.10.2026, src/tcgo.js; the owner's pick G1, board 5): its own page in the Training Centre half. The figures are Client Hub's: its per-person invitation state, the latest reading of each Save the Date send, Add to Calendar, and who opened it (a person, Apple Mail, a security scanner) from the classified opens. Brought in by the admin import; the extract is _training-centre/tools/go_extract.mjs.",
-    "event": { "name": "Grand Opening", "dateLabel": "27 May 2027", "place": "Novikontas Academy Campus, Duntes iela 17d, Riga", "send": "Save the Date",
-      "calendarUrl": "https://novikontas-grand-opening-calendar.vercel.app/" },
-    "files": ["go_guests.csv", "go_sends.csv", "go_deliveries.csv"],
+    "event": {
+      "name": "Grand Opening",
+      "dateLabel": "27 May 2027",
+      "place": "Novikontas Academy Campus, Duntes iela 17d, Riga",
+      "send": "Save the Date",
+      "calendarUrl": "https://novikontas-grand-opening-calendar.vercel.app/"
+    },
+    "files": [
+      "go_guests.csv",
+      "go_sends.csv",
+      "go_deliveries.csv"
+    ],
     "invite": {
       "_about": "DO NOT INVITE / HOLD (28.10.2026, src/tcgo.js; the owner's rule: always for one event or campaign; layout B, the list on the event's page). sends: what a mark is for; why: the reasons, hold = temporary until the company is checked (Release or Make final).",
       "event": "go",
-      "sends": [ { "id": "all", "label": "Every send" }, { "id": "stage2", "label": "Stage 2 RSVP only" } ],
-      "why": [
-        { "id": "manager", "label": "A manager's decision" },
-        { "id": "mailbox", "label": "Company mailbox, not a person" },
-        { "id": "staff", "label": "Our own staff" },
-        { "id": "dead", "label": "Mailbox no longer works" },
-        { "id": "duplicate", "label": "Same person as another contact" },
-        { "id": "hold", "label": "Hold: check the company first", "hold": true }
+      "sends": [
+        {
+          "id": "all",
+          "label": "Every send"
+        },
+        {
+          "id": "stage2",
+          "label": "Stage 2 RSVP only"
+        }
       ],
-      "companyMailboxes": ["info", "nfo", "office", "backoffice", "mail", "post", "pasts", "firmapost", "birojs", "kontakti", "contact", "contacts", "enquiries", "enquiry", "inquiries", "inquiry", "hello", "general", "reception", "main", "team", "admin", "administration", "sales", "support", "service", "careline", "crewing", "crew", "manning", "personnel", "hr", "recruitment", "jobs", "careers", "training", "chartering", "operations", "ops", "technical", "purchasing", "procurement", "management", "marketing", "communications", "bookings", "booking", "accounts", "accounting", "finance", "invoice", "invoices", "billing", "secretary"],
+      "why": [
+        {
+          "id": "manager",
+          "label": "A manager's decision"
+        },
+        {
+          "id": "mailbox",
+          "label": "Company mailbox, not a person"
+        },
+        {
+          "id": "staff",
+          "label": "Our own staff"
+        },
+        {
+          "id": "dead",
+          "label": "Mailbox no longer works"
+        },
+        {
+          "id": "duplicate",
+          "label": "Same person as another contact"
+        },
+        {
+          "id": "hold",
+          "label": "Hold: check the company first",
+          "hold": true
+        }
+      ],
+      "companyMailboxes": [
+        "info",
+        "nfo",
+        "office",
+        "backoffice",
+        "mail",
+        "post",
+        "pasts",
+        "firmapost",
+        "birojs",
+        "kontakti",
+        "contact",
+        "contacts",
+        "enquiries",
+        "enquiry",
+        "inquiries",
+        "inquiry",
+        "hello",
+        "general",
+        "reception",
+        "main",
+        "team",
+        "admin",
+        "administration",
+        "sales",
+        "support",
+        "service",
+        "careline",
+        "crewing",
+        "crew",
+        "manning",
+        "personnel",
+        "hr",
+        "recruitment",
+        "jobs",
+        "careers",
+        "training",
+        "chartering",
+        "operations",
+        "ops",
+        "technical",
+        "purchasing",
+        "procurement",
+        "management",
+        "marketing",
+        "communications",
+        "bookings",
+        "booking",
+        "accounts",
+        "accounting",
+        "finance",
+        "invoice",
+        "invoices",
+        "billing",
+        "secretary"
+      ],
       "_companyMailboxes": "The owner, 16.11.2026: \"Info we will not invite\" + \"Only if that info or generic department email is the only one of that company, and its an important company.\" The part before the @ of a company or department mailbox (a trailing number is ignored). Such a contact stays off the Grand Opening lists; when it is the only contact of its company it waits for his pick (src/tcmylist.js placement)."
     },
     "stage2": {
       "_about": "The RSVP lists per manager (the owner's pick A, 26.10.2026): one tab each, in this order; code = the sender split's sheet name. packStatus: the line under each pack on Stage 2 (default, or per code, e.g. \"Sent 27.10\").",
-      "packStatus": { "default": "Ready to send" },
+      "packStatus": {
+        "default": "Ready to send"
+      },
       "deadline": "2026-11-19T17:00:00+02:00",
       "_deadline": "The owner, 16.11.2026: \"This weeks Thursday 17.00. Have them max two reminders. One before the min needed time to complete the task. and one 24h earlier\". src/tcgopass.js sendReminders, the cron /api/cron/go-reminders.",
       "senders": [
-        { "code": "Marcis", "label": "Mārcis", "name": "Mārcis Žabovs", "email": "marcis.zabovs@novikontas.org" },
-        { "code": "DS", "label": "DS", "name": "Dmitrijs Semjonovs", "email": "ds@novikontas.org" },
-        { "code": "MC", "label": "MC", "name": "Māris Cīrulis", "email": "mc@novikontas.org" },
-        { "code": "AB", "label": "AB", "name": "Aleksejs Bogdaņecs", "email": "ab@novikontas.org" },
-        { "code": "Alma", "label": "Alma", "name": "Aleksejs Maļinovskis", "email": "alm@novikontas.org" },
-        { "code": "JS", "label": "JS", "name": "Jānis Sticenko", "email": "js@novikontas.org" }
+        {
+          "code": "Marcis",
+          "label": "Mārcis",
+          "name": "Mārcis Žabovs",
+          "email": "marcis.zabovs@novikontas.org"
+        },
+        {
+          "code": "DS",
+          "label": "DS",
+          "name": "Dmitrijs Semjonovs",
+          "email": "ds@novikontas.org"
+        },
+        {
+          "code": "MC",
+          "label": "MC",
+          "name": "Māris Cīrulis",
+          "email": "mc@novikontas.org"
+        },
+        {
+          "code": "AB",
+          "label": "AB",
+          "name": "Aleksejs Bogdaņecs",
+          "email": "ab@novikontas.org"
+        },
+        {
+          "code": "Alma",
+          "label": "Alma",
+          "name": "Aleksejs Maļinovskis",
+          "email": "alm@novikontas.org"
+        },
+        {
+          "code": "JS",
+          "label": "JS",
+          "name": "Jānis Sticenko",
+          "email": "js@novikontas.org"
+        }
       ]
     },
     "maxBytes": 4194304,
     "invitation": [
-      { "id": "reached", "label": "Reached", "group": "reached" },
-      { "id": "bounced_hard", "label": "Address does not work", "group": "notReached" },
-      { "id": "bounced_soft", "label": "Refused, can be tried again", "group": "notReached" },
-      { "id": "decided", "label": "A decision is recorded", "group": "notIn" },
-      { "id": "record_blocked", "label": "The record is blocked", "group": "notIn" },
-      { "id": "opted_out", "label": "Asked not to receive email", "group": "notIn" },
-      { "id": "refused_no_reason", "label": "Not in the approved send list", "group": "notIn" }
+      {
+        "id": "reached",
+        "label": "Reached",
+        "group": "reached"
+      },
+      {
+        "id": "bounced_hard",
+        "label": "Address does not work",
+        "group": "notReached"
+      },
+      {
+        "id": "bounced_soft",
+        "label": "Refused, can be tried again",
+        "group": "notReached"
+      },
+      {
+        "id": "decided",
+        "label": "A decision is recorded",
+        "group": "notIn"
+      },
+      {
+        "id": "record_blocked",
+        "label": "The record is blocked",
+        "group": "notIn"
+      },
+      {
+        "id": "opted_out",
+        "label": "Asked not to receive email",
+        "group": "notIn"
+      },
+      {
+        "id": "refused_no_reason",
+        "label": "Not in the approved send list",
+        "group": "notIn"
+      }
     ],
     "cameBack": [
-      { "id": "person", "label": "Opened by a person" },
-      { "id": "cant_tell", "label": "Can't tell (Apple Mail)" },
-      { "id": "scanner", "label": "Only a security scanner" },
-      { "id": "none", "label": "No open" }
+      {
+        "id": "person",
+        "label": "Opened by a person"
+      },
+      {
+        "id": "cant_tell",
+        "label": "Can't tell (Apple Mail)"
+      },
+      {
+        "id": "scanner",
+        "label": "Only a security scanner"
+      },
+      {
+        "id": "none",
+        "label": "No open"
+      }
     ],
     "_clickCountsAsPerson": "A click by a person is a person who opened it, so the clicked count sits inside Opened by a person.",
     "clickCountsAsPerson": true
@@ -167,9 +488,19 @@
   "approvals": {
     "_about": "NEW ADDITIONS (the owner, 29.10.2026): a company or person added by hand goes under the adder; these approvers get a line in Intake and an email, and Approve or Flag it (Flag = hidden from lists until approved). An approver's own additions count as approved.",
     "approvers": [
-      { "name": "Ritvars", "email": "ritvars.vilcins@novikontas.org" },
-      { "name": "Aleksejs Bogdaņecs", "email": "ab@novikontas.org" },
-      { "name": "Jānis Sticenko", "email": "js@novikontas.org" }
+      {
+        "name": "Ritvars",
+        "email": "ritvars.vilcins@novikontas.org"
+      },
+      {
+        "name": "Aleksejs Bogdaņecs",
+        "email": "ab@novikontas.org"
+      },
+      {
+        "name": "Jānis Sticenko",
+        "email": "js@novikontas.org"
+      }
     ]
-  }
+  },
+  "_levels": "NO CLIENT LEVELS (24.11.2026, his decision 'Yes, remove': 'the app is a tool. its a resource. we need it clean! not with historical nonsense.'). The old status column stays in the database, written with defaults.noStatus and never read or shown."
 }
