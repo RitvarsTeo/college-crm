@@ -87,6 +87,7 @@ import * as tcmr from './tcmr.js';
 import * as tcfam from './tcfam.js';
 import * as tcsame from './tcsame.js';
 import * as tcprivate from './tcprivate.js';
+import * as tcMailAuto from './tcmailauto.js';
 import { whatsappForwardGate, receiveTcWhatsApp, tcInbox, tcInboxDone } from './tcwhatsapp.js';
 import * as tcpeople from './tcpeople.js';
 import * as tcpic from './tcpic.js';
@@ -3969,6 +3970,18 @@ export const handle = async (req, res) => {
       const b = await body(req);
       const r = await tcInboxDone(db, b.key, await actorOf(req, b));
       return json(res, r.ok ? 200 : 400, r);
+    }
+    // THE TRAINING CENTRE EMAIL AUTOMATION (patch 172, src/tcmailauto.js): Undo of a conversation Intake processed (the card
+    // waits again), and a suggested reply for a waiting training@ card (to Copy; never sent). Training Centre area (above).
+    if (p === '/api/tc/inbox/undo' && req.method === 'POST') {
+      const b = await body(req);
+      const r = await tcMailAuto.undoTc(db, b.key, await actorOf(req, b));
+      return json(res, r.ok ? 200 : 400, r);
+    }
+    if (p === '/api/tc/inbox/suggested-reply' && req.method === 'GET') {
+      const key = String(url.searchParams.get('key') || '');
+      if (!/^m:[A-Za-z0-9_-]{1,64}$/.test(key)) return json(res, 400, { error: 'Which conversation?' });
+      return json(res, 200, { suggestion: await tcMailAuto.tcSuggestedReply(db, key) });
     }
     // HOW OUR CLIENTS CHANGED (26.10.2026, src/tcmr.js): the Client book chapter (?all=1 every client), one company's card
     if (p === '/api/tc/trends' && req.method === 'GET') {

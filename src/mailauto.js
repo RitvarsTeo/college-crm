@@ -100,8 +100,9 @@ export async function processCard(db, card, sentAt, at = nowIso()) {
 // a private mailbox (not no-reply/system), and the person asks about studying at the Academy. A set-aside made by a
 // person stays as they chose (it is never 'filtered'). Never: an invoice, a CV or job application, a refund or
 // withdrawal request, a school visit or meeting, a current student matter, or only a short course (Training Centre).
-const PRIVATE = /@(gmail\.com|googlemail\.com|inbox\.lv|one\.lv|apollo\.lv|outlook\.(com|lv)|hotmail\.\w+|live\.\w+|yahoo\.\w+|icloud\.com|me\.com|mail\.ru|bk\.ru|list\.ru|yandex\.\w+|ukr\.net|i\.ua|gmx\.\w+|web\.de|proton(mail)?\.\w+|aol\.com|tvnet\.lv|wp\.pl|o2\.pl|interia\.pl|seznam\.cz)$/i;
-const SYSTEM_SENDER = /(no-?reply|do-?not-?reply|mailer-daemon|postmaster|notification|newsletter)/i;
+// exported for the Training Centre's email (patch 172, src/tcmailauto.js): the same lists, one place
+export const PRIVATE = /@(gmail\.com|googlemail\.com|inbox\.lv|one\.lv|apollo\.lv|outlook\.(com|lv)|hotmail\.\w+|live\.\w+|yahoo\.\w+|icloud\.com|me\.com|mail\.ru|bk\.ru|list\.ru|yandex\.\w+|ukr\.net|i\.ua|gmx\.\w+|web\.de|proton(mail)?\.\w+|aol\.com|tvnet\.lv|wp\.pl|o2\.pl|interia\.pl|seznam\.cz)$/i;
+export const SYSTEM_SENDER = /(no-?reply|do-?not-?reply|mailer-daemon|postmaster|notification|newsletter)/i;
 const NEVER = [
   [/rēķin|parād|invoice|sąskait|payment reminder/i, 'an invoice'],
   [/attached cv|curriculum vitae|position\s*[—(-]|vacanc|vakanc|motorman/i, 'a CV or job application'],
@@ -214,7 +215,7 @@ export async function undoCard(db, inboundId, by, at = nowIso()) {
 // retention empties both on time, so nothing is kept twice). The greeting with the other person's name, the signature
 // and the quoted earlier mail are cut. Shown on a waiting card to copy into Gmail; never sent, never drafted.
 const STOP = new Set('un vai ir es ka par uz no ar kā kas lai to tas man jūs jums labdien sveiki paldies the and is are to of for in on a an i you we my your me be it this that with can could would please hello hi dear good day thank thanks regards'.split(' '));
-const words = (t) => new Set(String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+export const words = (t) => new Set(String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
   .replace(/[^a-z0-9 ]+/g, ' ').split(/\s+/).filter((w) => w.length > 2 && !STOP.has(w)).map((w) => w.slice(0, 7)));
 export function cleanReply(text) {
   let t = String(text || '').replace(/\r\n/g, '\n');

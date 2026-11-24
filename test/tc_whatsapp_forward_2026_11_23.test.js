@@ -57,7 +57,7 @@ test('the page: Inbox under Home in the Training Centre menu and in the phone Mo
   const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
   assert.ok(APP.includes('<a href="#/tc/inbox" data-c="tc-inbox"') && APP.includes("${more('#/tc/inbox', C_ICON.inbox || C_ICON.home, 'Inbox')}"));
   const fn = APP.slice(APP.indexOf('function tcInboxDraw('), APP.indexOf('async function tcInboxDone('));
-  for (const part of ['c-cols ib-board', 'c-col ib-col', 'ib-card', 'ib-ch', 'C_SRC_COLOUR.whatsapp', 'cInboxAge(c.at)', "cStateLine('new'", 'Waiting', 'Handled']) assert.ok(fn.includes(part), part);
+  for (const part of ['c-cols ib-board', 'c-col ib-col', 'ib-card', 'ib-ch', 'C_SRC_COLOUR.whatsapp', 'cInboxAge(c.at)', "cStateLine(c.late ? 'late' : 'new'", 'Waiting', 'Handled']) assert.ok(fn.includes(part), part);
 });
 
 test('Make a lead from a TC Inbox card (his pick "TC client/contact"): company + contact under Clients, a WhatsApp line in its history, never an Academy lead', async () => {

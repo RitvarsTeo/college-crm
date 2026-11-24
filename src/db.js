@@ -1045,6 +1045,23 @@ CREATE TABLE IF NOT EXISTS tc_mail_invites (
   used_at TEXT,
   used_account TEXT
 );
+-- THE TRAINING CENTRE EMAIL AUTOMATION (patch 172, src/tcmailauto.js): one row per conversation Intake processed after training@
+-- replied: where it went (B2B company + contact, or B2C private client), what Intake made, the rows it wrote (for Undo), and how far
+-- the conversation has been written into the client's history
+CREATE TABLE IF NOT EXISTS tc_mail_auto (
+  thread_id TEXT PRIMARY KEY,
+  segment TEXT NOT NULL,           -- b2b | b2c
+  rule TEXT NOT NULL,              -- contact | private | mailbox | domain | new_company (config: the B2B/B2C rule, his picks 24.11.2026)
+  company_id BIGINT,
+  contact_id BIGINT,
+  private_id BIGINT,
+  made TEXT,                       -- JSON: { company, contact, private } true when Intake created it
+  wrote TEXT,                      -- JSON: { activities: [ids], history: [ids], tasks: [ids] } every row Intake wrote here
+  logged_to TEXT,                  -- the newest message already written into the history
+  at TEXT NOT NULL,
+  undone_at TEXT,
+  undone_by TEXT
+);
 -- PRIVATE CLIENTS (23.11.2026, patch 166, src/tcprivate.js; his pick "A: Private clients list"): a Training Centre client who comes for
 -- themselves, not for a company. Their own record and history; archived, never deleted.
 CREATE TABLE IF NOT EXISTS tc_private_clients (

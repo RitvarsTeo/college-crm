@@ -12799,9 +12799,14 @@ function tcInboxDraw() {
   // patch 167: a training@ conversation is an Email card (the Academy email blue): the subject, the text, the sender's address
   const mailWho = (c) => c.person || c.name ? esc(c.person || c.name) + (c.company ? ` · <a href="#/tc/company/${Number(c.companyId)}" onclick="event.stopPropagation()">${esc(c.company)}</a>` : c.privateId ? ` · <a href="#/tc/private/${Number(c.privateId)}" onclick="event.stopPropagation()">Private client</a>` : '') : esc(c.email);
   const mailMsg = (m) => `${m.subject ? `<div class="ib-msg"><b>${esc(m.subject)}</b></div>` : ''}<div class="ib-msg">${esc(m.body || '')}</div>`;
-  const state = (c) => !live ? `<div class="ib-before"><span>Done ${esc(fmtDateTime(c.seenAt) || '')}${c.seenBy ? ' · ' + esc(c.seenBy) : ''}</span></div>`
+  // patch 172 (src/tcmailauto.js): a conversation Intake processed after training@ replied says where it went, with Undo
+  const autoLine = (c) => { const a = c.auto, k = esc(JSON.stringify(String(c.key)));
+    return `<div class="ib-before"><span><b>✓ Answered by training@</b><br>${a.segment === 'b2b'
+      ? `B2B · added to <a href="#/tc/company/${Number(a.companyId)}" onclick="event.stopPropagation()">${esc(a.company || 'the company')}</a>`
+      : `B2C · made a <a href="#/tc/private/${Number(a.privateId)}" onclick="event.stopPropagation()">private client</a>`} by Intake · <button type="button" class="ib-undo" onclick="event.stopPropagation();tcInboxUndo(${k}, this)">Undo</button></span></div>`; };
+  const state = (c) => !live ? (c.auto ? autoLine(c) : `<div class="ib-before"><span>Done ${esc(fmtDateTime(c.seenAt) || '')}${c.seenBy ? ' · ' + esc(c.seenBy) : ''}</span></div>`)
     : c.answered ? `<div class="c-st c-st-answered" title="${esc(fmtDateTime(c.answered.at))}"><span class="c-st-w">✓ Answered by ${esc(c.answered.by || 'training@')}</span><span class="c-st-d"> · ${esc(cAgo(c.answered.at))}</span></div>`
-    : cStateLine('new', cAgo(c.at), '', fmtDateTime(c.at));
+    : cStateLine(c.late ? 'late' : 'new', cAgo(c.at), '', fmtDateTime(c.at));
   const card = (c) => { const mail = c.kind === 'email'; return `<div class="c-jp row ib-card c-rail c-rail-${live ? 'due' : 'due'}" data-k="${esc(c.key)}">
       <div class="ib-top"><b class="c-reach">${mail ? mailWho(c) : who(c)}</b></div>
       <small class="ib-ch" style="--src:${mail ? C_SRC_COLOUR.email : C_SRC_COLOUR.whatsapp}"><i></i>${mail ? 'Email' : 'WhatsApp'}</small>
@@ -12809,6 +12814,7 @@ function tcInboxDraw() {
       ${mail ? (c.person || c.name ? `<div class="ib-tags"><span class="ib-kind">${esc(c.email)}</span></div>` : '')
         : c.person || c.name ? `<div class="ib-tags"><span class="ib-kind">${cTelLink({ phone: tcWaNum(c.number) }) || esc(c.number)}</span></div>` : ''}
       ${state(c)}
+      ${live && mail && !c.answered ? tcSuggestHtml(c.key) : ''}
       ${live && T_IN.lead === c.key ? `<div class="ib-lead"><b>Make a lead</b><div class="ib-acts"><button class="btn sm" onclick="tcInboxLead(${esc(JSON.stringify(String(c.key)))})">B2B · company</button><button class="btn sm ghost" onclick="tcInboxPrivate(${esc(JSON.stringify(String(c.key)))})">B2C · private person</button><button type="button" class="ib-aside" onclick="T_IN.lead=null;tcInboxDraw()">Cancel</button></div></div>`
         : live ? `<div class="ib-acts"><button class="btn sm" onclick="T_IN.lead=${esc(JSON.stringify(String(c.key)))};tcInboxDraw()">Make a lead</button><button type="button" class="ib-aside" onclick="tcInboxDone(${esc(JSON.stringify(String(c.key)))}, this)">Done</button></div>` : ''}</div>`; };
   const shown = cols.filter((c) => c.cards.length || live);
@@ -12821,6 +12827,36 @@ function tcInboxDraw() {
   const connect = M.mailbox && !M.connected && isAdmin() ? `<button type="button" class="btn ghost" onclick="location.href='/api/tc/mail/connect'">Connect training@</button><button type="button" class="btn ghost" onclick="tcMailLink(this)">Make a link for training@</button>` : '';
   $('#view').innerHTML = `<p class="c-crumb">Training Centre · WhatsApp +371 6244 4609 · training@novikontas.org</p><div class="c-head"><div><h1>Inbox</h1></div>${connect}
     <div class="c-seg p-view" role="group" aria-label="Show"><button aria-pressed="${live}" onclick="location.hash='#/tc/inbox'">Waiting</button><button aria-pressed="${!live}" onclick="location.hash='#/tc/inbox/handled'">Handled</button></div></div>${T_IN.link ? tcMailLinkBox(T_IN.link) : ''}${board}`;
+}
+// THE SUGGESTED REPLY AND UNDO ON THE TRAINING CENTRE INBOX (patch 172, src/tcmailauto.js; the Academy's parts, cSuggestHtml):
+// the answer training@ gave to the most similar earlier email, to Copy into Gmail (Intake never sends); Undo puts a conversation
+// Intake processed back in the Inbox
+const T_SUGG = new Map();   // card key -> { text, like } | null | 'loading'
+function tcSuggestHtml(key) {
+  const slot = `<div class="ib-sugg-slot" data-tsugg="${esc(key)}">`;
+  if (!T_SUGG.has(key)) {
+    T_SUGG.set(key, 'loading');
+    api('/api/tc/inbox/suggested-reply?key=' + encodeURIComponent(key)).then((d) => { T_SUGG.set(key, (d && d.suggestion) || null); tcSuggestDraw(key); }).catch(() => T_SUGG.set(key, null));
+    return slot + '</div>';
+  }
+  const s = T_SUGG.get(key);
+  if (!s || s === 'loading') return slot + '</div>';
+  return `${slot}<div class="ib-sugg" onclick="event.stopPropagation()"><b>Suggested reply · from ${tcN(s.like)} ${s.like === 1 ? 'answer' : 'answers'} like this</b>
+    <div class="ib-sugg-t">${esc(s.text)}</div><button type="button" class="btn sm ghost" onclick="event.stopPropagation();tcSuggestCopy(${esc(JSON.stringify(String(key)))}, this)">Copy</button></div></div>`;
+}
+function tcSuggestDraw(key) {
+  const slot = [...document.querySelectorAll('.ib-sugg-slot[data-tsugg]')].find((e) => e.dataset.tsugg === key);
+  if (slot) slot.outerHTML = tcSuggestHtml(key);
+}
+async function tcSuggestCopy(key, btn) {
+  const s = T_SUGG.get(key);
+  if (!s || !s.text) return;
+  try { await navigator.clipboard.writeText(s.text); btn.textContent = 'Copied'; } catch (e) { btn.textContent = 'Select and copy the text'; }
+}
+async function tcInboxUndo(key, btn) {
+  btn.disabled = true;
+  try { await post('/api/tc/inbox/undo', { key }); T_SUGG.delete(key); await viewTcInbox(true); }
+  catch (e) { btn.disabled = false; btn.textContent = e.message; }
 }
 // MAKE A LEAD (his pick "TC client/contact"): the company and the contact under Clients, through "Someone I met" pre-filled with
 // the WhatsApp; Add puts them there with a WhatsApp line in the company's history and moves the card to Handled

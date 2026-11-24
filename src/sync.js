@@ -16,6 +16,7 @@
 import { receive, bringBack, activePersonFor, CALL_BACK_STEP, confirmedBySystem, CONFIG, newPersonId, ownerFor, emailFilterWhy, purgeLineBodies, recordReplyRead, emailRuleOnWaiting, recordSentMail, recordMailbox } from './intake.js';
 import * as staffMail from './staffmail.js';
 import { TC_MAILBOX, FIRST_DAYS as TC_MAIL_DAYS, recordTcMail } from './tcmail.js';
+import { processTcMail } from './tcmailauto.js';
 import { onePersonFor, normEmail, normPhone, isOwnAddress } from './identity.js';
 import { knock } from './webpush.js';
 import { phoneThread } from './phonefilter.js';
@@ -822,6 +823,8 @@ export async function syncTcMail(db, { now = new Date(), env = process.env, fetc
   const got = await staffMail.readMailbox(db, TC_MAILBOX, { env, fetchImpl, since, now });
   if (got.gone) { await saveState(db, 'tc_mail', last, { ok: false, gone: true }, at); return { ok: false, ran: true, gone: true }; }
   const res = await recordTcMail(db, got.items, at);
+  // patch 172 (src/tcmailauto.js): what training@ answered is processed; a failure here never costs the read its bookmark
+  try { res.auto = await processTcMail(db, { at }); } catch (err) { res.auto = { ok: false, why: 'the automation failed' }; }
   const mark = !got.ok ? last : got.more ? (got.upTo || last) : at;
   await saveState(db, 'tc_mail', mark, { ...res, more: Boolean(got.more), ok: got.ok }, at);
   res.purged = await purgeOld(db, 'tc_mail', 'at', now);
