@@ -817,6 +817,13 @@ const bookmarkName = async (email) => 'staff_mail:' + String(email).toLowerCase(
 // for at most TC_READ_MS, so the first fill catches up in days instead of weeks; the run still ends well inside the
 // scheduled job's 60 seconds, and a run stopped by the clock keeps its bookmark at the last message read.
 export const TC_CATCHUP = 400, TC_PARALLEL = 5, TC_READ_MS = 20000;
+// Patch 182 (his words 24.11.2026 "reading start now, why tomorrow??"): while training@ is still catching up (its last run said
+// more), api/cron/tc-mail-catchup reads it out of hours too; once a run reaches today (more: false) it stops by itself.
+export async function tcMailCatchingUp(db) {
+  const st = await db.prepare("SELECT detail FROM sync_state WHERE name = 'tc_mail'").get();
+  if (!st || !st.detail) return false;
+  try { return JSON.parse(st.detail).more === true; } catch { return false; }
+}
 export async function syncTcMail(db, { now = new Date(), env = process.env, fetchImpl = fetch, clock = Date.now } = {}) {
   const at = now.toISOString();
   const link = await db.prepare('SELECT user_email FROM staff_mail_links WHERE user_email = ?').get(TC_MAILBOX);

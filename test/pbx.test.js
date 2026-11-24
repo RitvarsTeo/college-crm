@@ -403,6 +403,8 @@ test('both poller routes exist and bundle what they need; the schedule waits for
   assert.deepEqual(vercel.crons, [{ path: '/api/cron/sis-sync', schedule: '0 5 * * *' },
     { path: '/api/cron/pbx-calls', schedule: '* 5-15 * * *' },     // Q92 every minute; 08:00-17:00 Latvian time only (29.10.2026)
     { path: '/api/cron/gmail-poll', schedule: '*/10 5-15 * * *' },   // C3, 30.09.2026; every 10 minutes, 08:00-17:00 Latvian time (29.10.2026)
+    // patch 182 (24.11.2026): training@ only, out of hours, only while it is catching up (test/tc_mail_catchup_hours_2026_11_24)
+    { path: '/api/cron/tc-mail-catchup', schedule: '5,15,25,35,45,55 * * * *' },
     { path: '/api/cron/lead-answers', schedule: '45 5 * * *' },   // C2 + C7, 30.09.2026
     { path: '/api/cron/sheet-pull', schedule: '0 * * * *' },     // Q89: the admissions sheet, every hour (Pro team since 13.10.2026)
     { path: '/api/cron/go-reminders', schedule: '*/10 6-15 * * *' }]);   // patch 152: the two deadline reminders

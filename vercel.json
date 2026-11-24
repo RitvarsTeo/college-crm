@@ -97,6 +97,10 @@
       "schedule": "*/10 5-15 * * *"
     },
     {
+      "path": "/api/cron/tc-mail-catchup",
+      "schedule": "5,15,25,35,45,55 * * * *"
+    },
+    {
       "path": "/api/cron/lead-answers",
       "schedule": "45 5 * * *"
     },
