@@ -86,7 +86,6 @@ import * as tcgopass from './tcgopass.js';
 import * as tcrsvp from './tcrsvp.js';
 import * as tcmr from './tcmr.js';
 import * as tcfam from './tcfam.js';
-import * as tcsame from './tcsame.js';
 import * as tcMailAuto from './tcmailauto.js';
 import { whatsappForwardGate, receiveTcWhatsApp, tcInbox, tcInboxDone } from './tcwhatsapp.js';
 import * as tcpeople from './tcpeople.js';
@@ -815,23 +814,12 @@ const actorOf = async (req, b) => {
 };
 // "Mine" on the Training Centre lists: the signed-in account (its email and names, src/tcpic.js); on a laptop copy with
 // sign-in off, the name picked in "Acting as".
-// NEW ADDITIONS (29.10.2026, src/tcadd.js): each company or person added by hand goes under its adder and, unless an
-// approver added it, onto the approvers' New additions tab with one email to them. A failed email never fails the save.
+// A COMPANY OR PERSON ADDED BY HAND goes under its adder (29.10.2026, src/tcadd.js). The New additions tab, its approvals and its
+// email are gone (patch 175, his words 24.11.2026 "also remove the tab new additions, doesnt make sense").
 async function tcAddedNotify(req, list) {
   const me = await currentUser(req);
   const who = me ? { email: me.email, name: me.name } : null;
-  const fresh = [];
-  for (const x of list) { const r = await tcadd.added(db, x, who); if (r.toReview) fresh.push(x); }
-  if (!fresh.length) return;
-  const to = tcadd.APPROVERS.map((a) => a.email).filter((e) => !who || e !== String(who.email || '').toLowerCase());
-  const first = fresh[0];
-  const co = await db.prepare('SELECT name FROM tc_companies WHERE id = ?').get(Number(first.companyId));
-  const k = first.contactId ? await db.prepare('SELECT name, email FROM tc_company_contacts WHERE id = ?').get(Number(first.contactId)) : null;
-  const origin = inviteOrigin(req);
-  const one = tcadd.emailText({ kind: first.kind, company: co ? co.name : '', person: k ? k.name || k.email : '', by: who ? who.name : '', origin });
-  const mail = fresh.length === 1 ? one : { subject: `Intake: ${who ? who.name : 'Somebody'} added ${fresh.length} new companies or people`,
-    text: `${who ? who.name : 'Somebody'} added ${fresh.length} new companies or people to Intake Training Centre.\r\n\r\nApprove or flag them: ${origin || ''}/#/tc/additions` };
-  notify.sendMail(db, { to, subject: mail.subject, text: mail.text }).then((r) => { if (!r.ok) console.log('tc additions email: ' + r.why); });
+  for (const x of list) await tcadd.added(db, x, who);
 }
 const tcMe = async (req, url) => {
   const me = await currentUser(req);
@@ -3611,27 +3599,6 @@ export const handle = async (req, res) => {
         catch (e) { if (e instanceof tc.TcInputError) return json(res, 400, { error: e.message }); throw e; }
       }
     }
-    // NEW ADDITIONS: the count (approvers only see a number), the list and the decisions for the approvers
-    if (p === '/api/tc/additions/count' && req.method === 'GET') {
-      const me = await currentUser(req);
-      const approver = Boolean(me && tcadd.isApprover(me.email));
-      return json(res, 200, { approver, n: approver ? await tcadd.reviewCount(db) : 0 });
-    }
-    if (p === '/api/tc/additions' && req.method === 'GET') {
-      const me = await currentUser(req);
-      if (!me || !tcadd.isApprover(me.email)) return json(res, 403, { error: 'New additions are for the approvers.' });
-      return json(res, 200, await tcadd.list(db));
-    }
-    {
-      const dec = p.match(/^\/api\/tc\/additions\/(\d+)$/);
-      if (dec && req.method === 'POST') {
-        try {
-          const b = await body(req), me = await currentUser(req);
-          return json(res, 200, await tcadd.decide(db, Number(dec[1]), String(b.what || ''), me));
-        }
-        catch (e) { if (e instanceof tc.TcInputError) return json(res, 400, { error: e.message }); throw e; }
-      }
-    }
     if (p === '/api/tc/next' && req.method === 'GET') {
       const who = String(url.searchParams.get('owner') || '');
       return json(res, 200, await tc.nextList(db, { owner: who === 'all' ? '' : who, me: await tcMe(req, url) }));
@@ -3886,31 +3853,8 @@ export const handle = async (req, res) => {
       if (famAct[1] === 'unlink') return json(res, 200, await tcfam.unlinkCompany(db, Number(b.companyId), by));
       return json(res, 200, await tcfam.confirmFamily(db, b, by));
     }
-    // SAME COMPANY? (23.11.2026, patch 163, src/tcsame.js; his tick list "Yes, build it"): admins only. The groups to check, one
-    // company kept and the others merged into it ("Same company"), or the group never asked again ("Not the same").
-    if (p === '/api/tc/same' && req.method === 'GET') {
-      if (!(await adminOf(req))) return refuseNotAdmin(res);
-      const S = await tcsame.findSame(db);
-      return json(res, 200, { obvious: S.obvious.length, check: S.check });
-    }
-    const sameAct = p.match(/^\/api\/tc\/same\/(merge|dismiss)$/);
-    if (sameAct && req.method === 'POST') {
-      if (!(await adminOf(req))) return refuseNotAdmin(res);
-      const b = await body(req);
-      const by = await actorOf(req, b);
-      const ids = (v) => (Array.isArray(v) ? v : [v]).map(Number).filter((x) => Number.isInteger(x) && x > 0);
-      const keep = Number(b.keep), others = ids(b.others).filter((x) => x !== keep);
-      if (!(Number.isInteger(keep) && keep > 0) || !others.length || others.length > 20) return json(res, 400, { error: 'Which companies?' });
-      try {
-        if (sameAct[1] === 'dismiss') { for (const o of others) await tcsame.dismiss(db, keep, o, by); return json(res, 200, { ok: true }); }
-        const done = [];
-        for (const o of others) done.push(await tcsame.merge(db, keep, o, by, { mode: 'ticked' }));
-        return json(res, 200, { ok: true, merged: done.length, conflicts: done.flatMap((r) => r.conflicts), cards: done.map((r) => r.cards).filter(Boolean) });
-      } catch (err) {
-        if (err instanceof tcsame.SameError) return json(res, 409, { error: err.message });
-        throw err;
-      }
-    }
+    // "SAME COMPANY?" is gone (patch 175, his words 24.11.2026 "all of the companies in the tab are the same, just check them yourself
+    // and delete the tab!"): its groups were merged once (scripts/merge_same_ticked_2026_11_24.mjs); src/tcsame.js keeps the merge.
     // THE TRAINING CENTRE INBOX (patch 166, his "ok go"; src/tcwhatsapp.js): the WhatsApp messages to +371 6244 4609, one card per
     // number, Waiting or Handled (?handled=1); Done hands a number's waiting messages. Signed in, Training Centre area (above).
     if (p === '/api/tc/inbox' && req.method === 'GET') {
