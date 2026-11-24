@@ -148,8 +148,8 @@ test('the rails and the state words: red alarm, amber signal, navy planned, grey
 });
 
 test('the Help center says it: the tour, the how-to and a question', () => {
-  assert.match(HELP.tour.find((t) => t.title === 'Journey').body, /The last line of every card is its state - Overdue, Due today, Due, No next step or With the SIS; the card's left edge is red when it needs you \(Overdue, No next step\) and navy when it is on track/);
-  assert.match(HELP.tour.find((t) => t.target === '.cnav a[data-c="today"]').body, /on a card with no next step, press Choose/);
+  assert.match(HELP.faq.find((f) => f.id === 'journey-in-detail').a, /The last line of every card is its state - Overdue, Due today, Due, No next step or With the SIS; the card's left edge is red when it needs you \(Overdue, No next step\) and navy when it is on track/);
+  assert.match(HELP.faq.find((f) => f.id === 'due-in-detail').a, /on a card with no next step, press Choose/);
   assert.ok(HELP.howto.some((h) => h.where.includes('Done or Choose on the card')));
   const q = HELP.faq.find((f) => f.id === 'card-states');
   assert.ok(q, 'the question');

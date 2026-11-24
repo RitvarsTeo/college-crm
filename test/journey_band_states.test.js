@@ -90,7 +90,7 @@ test('one place for the two colours: the five state tokens are the two values; r
 });
 
 test('the Help center says it', () => {
-  assert.match(HELP.tour.find((t) => t.title === 'Journey').body, /the card's left edge is red when it needs you \(Overdue, No next step\) and navy when it is on track[\s\S]*The graph above the board stacks the same two colours per stage; click a colour to open those people\./);
+  assert.match(HELP.faq.find((f) => f.id === 'journey-in-detail').a, /the card's left edge is red when it needs you \(Overdue, No next step\) and navy when it is on track[\s\S]*The graph above the board stacks the same two colours per stage; click a colour to open those people\./);
   assert.match(HELP.faq.find((f) => f.id === 'card-states').a, /^Two colours\. Red means the person needs you[\s\S]*Navy means on track[\s\S]*red at the bottom/);
   assert.doesNotMatch(HELP.faq.find((f) => f.id === 'card-states').a, /Amber|Grey|Blue:/, 'no third colour named');
 });

@@ -315,7 +315,7 @@ test('the routes: Set aside needs one of the four; mark and unmark; a call note 
 test('7: Help keeps up: the four reasons, the marks, Set aside before, the call note; no Not a lead, no Other', () => {
   const words = JSON.stringify(HELP);
   assert.doesNotMatch(words, /Not a lead|Already handled/);
-  const inbox = HELP.tour.find((x) => x.title === 'Inbox').body;
+  const inbox = HELP.faq.find((f) => f.id === 'inbox-in-detail').a;
   assert.match(inbox, /Set aside, and pick why: Not a prospective student, Supplier or vendor, Internal or Spam\./);
   assert.match(inbox, /Supplier or vendor, Internal and Spam also mark the number or address, so it stays out of the Inbox until Remove mark\./);
   assert.match(inbox, /with Set aside before on the card/);

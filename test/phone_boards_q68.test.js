@@ -161,7 +161,7 @@ test('nothing sideways at phone width; the band is the sticky strip; the Help ce
   assert.match(block, /html\.ui-c \.ib-board\{display:block!important\}/);
   assert.match(fn('function cJourneyMini('), /if \(!cPhone\(\)\) \{ cBandFold\(b, 0\); return; \}/, 'a wide screen: the strip unfolds (band_fold_keeps_page_length)');
   assert.match((FOLD + fn('function cDrawJourney(')), /cPoolWire\(\); cJourneyMini\(\);/, 'the strip is wired on every draw');
-  assert.match(HELP.tour.find((t) => t.title === 'Journey').body, /On a phone the stages stack one under the other, one open at a time: tap a bar or a folded stage to open it, and Move on the opened card changes the stage\./);
-  assert.match(HELP.tour.find((t) => t.title === 'Due').body, /On a phone the columns stack: tap a card above or a folded column to open it\./);
-  assert.match(HELP.tour.find((t) => t.title === 'Inbox').body, /On a phone the days stack: tap a bar or a folded day to open it\./);
+  assert.match(HELP.faq.find((f) => f.id === 'journey-in-detail').a, /On a phone the stages stack one under the other, one open at a time: tap a bar or a folded stage to open it, and Move on the opened card changes the stage\./);
+  assert.match(HELP.faq.find((f) => f.id === 'due-in-detail').a, /On a phone the columns stack: tap a card above or a folded column to open it\./);
+  assert.match(HELP.faq.find((f) => f.id === 'inbox-in-detail').a, /On a phone the days stack: tap a bar or a folded day to open it\./);
 });

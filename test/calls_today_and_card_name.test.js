@@ -133,7 +133,7 @@ test('1: on the Inbox, under the filters and above the columns; the card\'s call
 });
 
 test('1: the Help center says it', () => {
-  assert.match(HELP.tour.find((x) => x.title === 'Inbox').body,
+  assert.match(HELP.faq.find((f) => f.id === 'inbox-in-detail').a,
     /Calls today from people already in Intake have no card, so they are listed at the top of the Inbox with a link to each person\./);
 });
 
@@ -164,7 +164,7 @@ test('2: the card sends the typed name; empty sends nothing', () => {
   assert.match(fn, /const name = typed\('#qName'\);/);
   assert.match(fn, /stated, \.\.\.\(name \? \{ name \} : \{\}\), \.\.\.opts \};/);
   assert.match(APP, /if \(C_LOPEN\) \{ const sel = \$\('#qName'\) \|\| \$\('#qInterest'\); if \(sel && sel\.focus\) sel\.focus\(\); \}/, 'the cursor starts on it');
-  assert.match(HELP.tour.find((x) => x.title === 'Inbox').body, /A call card, and any card without a name, asks for the name first\./);
+  assert.match(HELP.faq.find((f) => f.id === 'inbox-in-detail').a, /A call card, and any card without a name, asks for the name first\./);
 });
 
 async function aCall(db, ext = 'call-1', phone = '+371 2999 0001') {

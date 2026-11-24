@@ -96,6 +96,9 @@
         + '<div class="ht-step">Step ' + (at + 1) + ' of ' + steps.length + '</div>'
         + '<h2 class="ht-title" id="htTitle">' + esc(s.title) + '</h2>'
         + '<p class="ht-body">' + esc(s.body) + '</p>'
+        // his pick B (24.11.2026): the direct actions, a bold verb and what it does, then the options as chips
+        + ((s.do || []).length ? '<ul class="ht-do">' + s.do.map(function (d) { return '<li><b>' + esc(d.act) + '</b> - ' + esc(d.what) + '</li>'; }).join('') + '</ul>' : '')
+        + ((s.options || []).length ? '<p class="ht-lab">' + esc(s.optionsLabel || 'Options') + '</p><div class="ht-opts">' + s.options.map(function (o) { return '<span>' + esc(o) + '</span>'; }).join('') + '</div>' : '')
         + '<div class="ht-foot">'
         + (at > 0 ? '<button type="button" class="ht-quiet" data-ht="back">Back</button>' : '')
         + '<button type="button" class="ht-main" data-ht="next">' + (last ? 'Done' : 'Next') + '</button>'

@@ -124,47 +124,162 @@
     {
       "title": "The left card",
       "body": "Everything in Intake is one click away here. The numbers show what is waiting.",
-      "target": ".cnav"
+      "target": ".cnav",
+      "do": [
+        {
+          "act": "Click",
+          "what": "a name to open that place"
+        }
+      ]
     },
     {
       "title": "Home",
-      "body": "The year in four figures: Leads, Admitted, Conversion and Median time to admission, each with last year around this time. Admissions by month shows all programmes, Long, Short or one programme; Where everyone is now splits the people who arrived into Open, Admitted and Not proceeding. Click any figure to see the people it counts.",
-      "target": ".cnav a[data-c=\"home\"]"
+      "body": "This year in four numbers.",
+      "target": ".cnav a[data-c=\"home\"]",
+      "do": [
+        {
+          "act": "Click",
+          "what": "a number to see the people behind it"
+        }
+      ],
+      "options": [
+        "Year, top right",
+        "All",
+        "Long",
+        "Short",
+        "One programme"
+      ]
     },
     {
       "title": "Inbox",
-      "body": "Every new message from every channel lands here first, in the column of the week it arrived: Today, Earlier this week, Last week or Before last week. Waiting shows what still needs you, Handled what is done; the Week, Source, Kind and Line filters narrow the board. Make a lead: say the programme and the next step on the card - Follow up on a date, or Cold - and add the email or phone the message did not bring, so their next message finds them. What they wrote stays on their History. A message from somebody already in Intake goes on their history with Answer the question for today, on every channel, also when they are admitted or not proceeding. A card that says Joins and a name: Add to them. Anything else: Set aside, and pick why: Not a prospective student, Supplier or vendor, Internal or Spam. It is kept, and can be brought back; who, when and why stay on record. Supplier or vendor, Internal and Spam also mark the number or address, so it stays out of the Inbox until Remove mark. Somebody set aside before who gets in touch again comes back, with Set aside before on the card. Calls show the line you answer (Admissions, Student coordination or Other); the Line filter shows another line or all of them, and remembers your choice. Calls today from people already in Intake have no card, so they are listed at the top of the Inbox with a link to each person. A call card, and any card without a name, asks for the name first. An empty column folds to a thin strip; click it to open it. On a phone the days stack: tap a bar or a folded day to open it. Email: the same new sender again joins their card; a newsletter is set aside. An email card shows only what the person newly wrote, without the earlier emails quoted under it, signatures or legal notices; Show more opens the rest of it, Show original the email as it came. Email a person gave the Admissions label in edu@ is never filtered, archived or not, and a message a rule had set aside comes back once it has the label. Email is read every 10 minutes from 08:00 to 17:00 Latvian time; what arrives later comes in at 08:00. When edu@ answers an email in Gmail, the card is handled by itself: it goes on the person or becomes a new lead, and leaves Waiting; Undo on it brings it back. A waiting email card can show a Suggested reply, taken from answers edu@ gave to questions like it: Copy puts it on the clipboard for Gmail, and Intake never sends an email. Connect your mailbox, above the board, lets Intake see your own replies to students too. Under a missed call, Called back records that you rang them back.",
-      "target": ".cnav a[data-c=\"leads\"]"
+      "body": "New messages from every channel. Each card needs one of these:",
+      "target": ".cnav a[data-c=\"leads\"]",
+      "do": [
+        {
+          "act": "Make a lead",
+          "what": "pick the programme and the next step"
+        },
+        {
+          "act": "Add to them",
+          "what": "when the card says Joins and a name"
+        },
+        {
+          "act": "Set aside",
+          "what": "pick why; nothing is deleted"
+        }
+      ],
+      "options": [
+        "Waiting / Handled",
+        "Week",
+        "Source",
+        "Kind",
+        "Line"
+      ]
     },
     {
       "title": "Due",
-      "body": "Who needs an action now: overdue, due today, and people with no next step. Press Done, say how it went and choose the next step: Follow up on a date, or Cold; on a card with no next step, press Choose. Drag a card to Due today or Coming up to move its step to another day. An empty column folds to a thin strip; click it to open it. On a phone the columns stack: tap a card above or a folded column to open it.",
-      "target": ".cnav a[data-c=\"today\"]"
+      "body": "Who needs you today.",
+      "target": ".cnav a[data-c=\"today\"]",
+      "do": [
+        {
+          "act": "Done",
+          "what": "say how it went, pick the next step"
+        },
+        {
+          "act": "Choose",
+          "what": "when a card has no next step"
+        },
+        {
+          "act": "Drag",
+          "what": "a card to move it to another day"
+        }
+      ],
+      "optionsLabel": "Next step",
+      "options": [
+        "Follow up on a date",
+        "Cold"
+      ]
     },
     {
       "title": "Journey",
-      "body": "Everyone you are working with, stage by stage, up to Admitted or Not proceeding. The last line of every card is its state - Overdue, Due today, Due, No next step or With the SIS; the card's left edge is red when it needs you (Overdue, No next step) and navy when it is on track; the bands inside a column group them and count them. The graph above the board stacks the same two colours per stage; click a colour to open those people. Search, add a lead, filter by where they came from. An empty column folds to a thin strip; click it to open it. On a phone the stages stack one under the other, one open at a time: tap a bar or a folded stage to open it, and Move on the opened card changes the stage.",
-      "target": ".cnav a[data-c=\"people\"]"
+      "body": "Everyone you work with, stage by stage. A red edge needs you, navy is on track.",
+      "target": ".cnav a[data-c=\"people\"]",
+      "do": [
+        {
+          "act": "Drag",
+          "what": "a person to the next stage"
+        },
+        {
+          "act": "Click",
+          "what": "a person to see everything about them"
+        },
+        {
+          "act": "Add lead",
+          "what": "for somebody who reached you another way"
+        }
+      ],
+      "options": [
+        "Board / List",
+        "Search",
+        "Programme",
+        "State",
+        "Came from"
+      ]
     },
     {
       "title": "Reports",
-      "body": "Every Home figure one level deeper: by channel, programme and month. Pick a month beside the download, and download the figures as Excel, Google Sheets or CSV.",
-      "target": ".cnav a[data-c=\"reports\"]"
+      "body": "Every Home number, one level deeper.",
+      "target": ".cnav a[data-c=\"reports\"]",
+      "do": [
+        {
+          "act": "Pick a month",
+          "what": "beside the download"
+        },
+        {
+          "act": "Download",
+          "what": "Excel, Google Sheets or CSV"
+        }
+      ]
     },
     {
       "title": "Calls",
-      "body": "The college phone line in four figures: time to answer, the share answered, answered per day and the busiest hour, each with this week against last week. The arrows move between them; the link under each chart opens the calls it counts.",
-      "target": ".cnav a[data-c=\"calls\"]"
+      "body": "How the phone line is doing.",
+      "target": ".cnav a[data-c=\"calls\"]",
+      "do": [
+        {
+          "act": "Arrows",
+          "what": "switch between the four figures"
+        },
+        {
+          "act": "Click",
+          "what": "the link under a chart to see the calls"
+        }
+      ]
     },
     {
       "title": "Light, System or Dark",
-      "body": "Choose how Intake looks. System follows your computer.",
-      "target": "@theme-switch"
+      "body": "How Intake looks. System follows your computer.",
+      "target": "@theme-switch",
+      "options": [
+        "Light",
+        "System",
+        "Dark"
+      ]
     },
     {
       "title": "Stuck, or have an idea?",
-      "body": "The Feedback button is on every screen. The Help center has this tour and the answers to questions about Intake.",
-      "target": "#helpBtn"
+      "body": "Help is always one click away.",
+      "target": "#helpBtn",
+      "do": [
+        {
+          "act": "Feedback",
+          "what": "send a problem or an idea, with a screenshot"
+        },
+        {
+          "act": "Help center",
+          "what": "the tour, questions and videos"
+        }
+      ]
     }
   ],
   "faq": [
@@ -322,6 +437,21 @@
       "id": "test-records",
       "q": "Are test records counted?",
       "a": "No: a record with a Novikontas email or a name that is \"Test ...\" is left out of every figure and list, and still opens by its own link."
+    },
+    {
+      "id": "inbox-in-detail",
+      "q": "How does the Inbox work, in detail?",
+      "a": "Every new message from every channel lands here first, in the column of the week it arrived: Today, Earlier this week, Last week or Before last week. Waiting shows what still needs you, Handled what is done; the Week, Source, Kind and Line filters narrow the board. Make a lead: say the programme and the next step on the card - Follow up on a date, or Cold - and add the email or phone the message did not bring, so their next message finds them. What they wrote stays on their History. A message from somebody already in Intake goes on their history with Answer the question for today, on every channel, also when they are admitted or not proceeding. A card that says Joins and a name: Add to them. Anything else: Set aside, and pick why: Not a prospective student, Supplier or vendor, Internal or Spam. It is kept, and can be brought back; who, when and why stay on record. Supplier or vendor, Internal and Spam also mark the number or address, so it stays out of the Inbox until Remove mark. Somebody set aside before who gets in touch again comes back, with Set aside before on the card. Calls show the line you answer (Admissions, Student coordination or Other); the Line filter shows another line or all of them, and remembers your choice. Calls today from people already in Intake have no card, so they are listed at the top of the Inbox with a link to each person. A call card, and any card without a name, asks for the name first. An empty column folds to a thin strip; click it to open it. On a phone the days stack: tap a bar or a folded day to open it. Email: the same new sender again joins their card; a newsletter is set aside. An email card shows only what the person newly wrote, without the earlier emails quoted under it, signatures or legal notices; Show more opens the rest of it, Show original the email as it came. Email a person gave the Admissions label in edu@ is never filtered, archived or not, and a message a rule had set aside comes back once it has the label. Email is read every 10 minutes from 08:00 to 17:00 Latvian time; what arrives later comes in at 08:00. When edu@ answers an email in Gmail, the card is handled by itself: it goes on the person or becomes a new lead, and leaves Waiting; Undo on it brings it back. A waiting email card can show a Suggested reply, taken from answers edu@ gave to questions like it: Copy puts it on the clipboard for Gmail, and Intake never sends an email. Connect your mailbox, above the board, lets Intake see your own replies to students too. Under a missed call, Called back records that you rang them back."
+    },
+    {
+      "id": "due-in-detail",
+      "q": "How does Due work, in detail?",
+      "a": "Who needs an action now: overdue, due today, and people with no next step. Press Done, say how it went and choose the next step: Follow up on a date, or Cold; on a card with no next step, press Choose. Drag a card to Due today or Coming up to move its step to another day. An empty column folds to a thin strip; click it to open it. On a phone the columns stack: tap a card above or a folded column to open it."
+    },
+    {
+      "id": "journey-in-detail",
+      "q": "How does the Journey work, in detail?",
+      "a": "Everyone you are working with, stage by stage, up to Admitted or Not proceeding. The last line of every card is its state - Overdue, Due today, Due, No next step or With the SIS; the card's left edge is red when it needs you (Overdue, No next step) and navy when it is on track; the bands inside a column group them and count them. The graph above the board stacks the same two colours per stage; click a colour to open those people. Search, add a lead, filter by where they came from. An empty column folds to a thin strip; click it to open it. On a phone the stages stack one under the other, one open at a time: tap a bar or a folded stage to open it, and Move on the opened card changes the stage."
     }
   ],
   "tc": {
@@ -554,28 +684,96 @@
     "tour": [
       {
         "title": "Home",
-        "body": "The year in figures, and + Someone I met for a person you just met.",
-        "target": ".tcnav [data-c=\"tc-home\"]"
+        "body": "The year in figures.",
+        "target": ".tcnav [data-c=\"tc-home\"]",
+        "do": [
+          {
+            "act": "+ Someone I met",
+            "what": "add a person you just met"
+          },
+          {
+            "act": "Click",
+            "what": "a figure to see its companies"
+          }
+        ],
+        "options": [
+          "Year"
+        ]
       },
       {
         "title": "Inbox",
-        "body": "WhatsApp to +371 6244 4609 and email to training@, one card per conversation. Make a lead puts the company under Clients; Done moves the card to Handled.",
-        "target": ".tcnav [data-c=\"tc-inbox\"]"
+        "body": "WhatsApp and training@ emails, one card per conversation.",
+        "target": ".tcnav [data-c=\"tc-inbox\"]",
+        "do": [
+          {
+            "act": "Make a lead",
+            "what": "put the company under Clients"
+          },
+          {
+            "act": "Done",
+            "what": "move the card to Handled"
+          }
+        ],
+        "options": [
+          "Waiting / Handled",
+          "Search"
+        ]
       },
       {
         "title": "Plan",
-        "body": "My week (your contacts, emails and meetings), the Season and the Grand Opening with your own list.",
-        "target": ".tcnav [data-c=\"tc-plan\"]"
+        "body": "Your contacts, the season and the Grand Opening.",
+        "target": ".tcnav [data-c=\"tc-plan\"]",
+        "do": [
+          {
+            "act": "+ Plan",
+            "what": "put a contact on a day"
+          },
+          {
+            "act": "Log",
+            "what": "what happened, and the next contact"
+          }
+        ],
+        "options": [
+          "My week",
+          "Season",
+          "Grand Opening"
+        ]
       },
       {
         "title": "Clients",
-        "body": "Every company. + Make mine makes one yours; what you add is yours.",
-        "target": ".tcnav [data-c=\"tc-companies\"]"
+        "body": "Every company.",
+        "target": ".tcnav [data-c=\"tc-companies\"]",
+        "do": [
+          {
+            "act": "+ Make mine",
+            "what": "make a company yours"
+          },
+          {
+            "act": "Add company",
+            "what": "what you add is yours"
+          },
+          {
+            "act": "Tap",
+            "what": "a country or a chip to filter"
+          }
+        ],
+        "options": [
+          "Companies",
+          "Client book",
+          "New additions",
+          "Same company?"
+        ]
       },
       {
         "title": "Help center",
-        "body": "Every step written out, and questions and answers. Report a problem from here.",
-        "target": ".tcnav [data-c=\"tc-help\"]"
+        "body": "Step by step guides, questions and videos.",
+        "target": ".tcnav [data-c=\"tc-help\"]",
+        "do": [
+          {
+            "act": "Report a problem",
+            "what": "it reaches the people who build Intake"
+          }
+        ]
       }
     ]
   }

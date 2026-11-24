@@ -55,6 +55,6 @@ test('the strip is a box, so on hover it comes forward; no outline', () => {
 
 test('the Help center says it in the same change', () => {
   for (const t of ['Inbox', 'Due', 'Journey']) {
-    assert.match(HELP.tour.find((x) => x.title === t).body, /An empty column folds to a thin strip; click it to open it\./, t);
+    assert.match(HELP.faq.find((f) => f.id === t.toLowerCase() + '-in-detail').a, /An empty column folds to a thin strip; click it to open it\./, t);
   }
 });

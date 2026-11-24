@@ -109,6 +109,6 @@ test('Q87: the Journey list runs by the next-step date, nearest first; the finis
 
 test('the Help center says it in the same change', () => {
   const HELP = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'help.json'), 'utf8'));
-  assert.match(HELP.tour.find((x) => x.title === 'Due').body, /choose the next step: Follow up on a date, or Cold/);
+  assert.match(HELP.faq.find((f) => f.id === 'due-in-detail').a, /choose the next step: Follow up on a date, or Cold/);
   assert.match(HELP.faq.find((x) => x.id === 'step-due').a, /Cold: they are kept as Not proceeding, tagged Cold/);
 });

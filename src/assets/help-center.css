@@ -15,6 +15,15 @@
 .ht-step{font-size:12px;color:var(--kit-ink-2,#3e5372);letter-spacing:.04em}
 .ht-title{margin:4px 0 6px;font-size:19px}
 .ht-body{margin:0 0 14px;line-height:1.5}
+/* his pick B (24.11.2026): the direct actions, then the options as chips */
+.ht-do{margin:-6px 0 12px;padding:0;list-style:none}
+.ht-do li{padding:5px 0 5px 22px;position:relative;border-top:1px solid var(--kit-line,#c9d2de);line-height:1.4}
+.ht-do li:first-child{border-top:0}
+.ht-do li::before{content:"\2192";position:absolute;left:0;color:var(--kit-mark,#53a7db);font-weight:700}
+.ht-do b{color:var(--kit-primary,#0a2463)}
+.ht-lab{margin:0 0 6px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;color:var(--kit-ink-2,#3e5372)}
+.ht-opts{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px}
+.ht-opts span{border:1px solid var(--kit-line,#c9d2de);border-radius:999px;padding:3px 10px;font-size:13px}
 .ht-foot{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .ht-main,.ht-quiet{font:inherit;font-size:14px;border-radius:8px;padding:8px 14px;cursor:pointer}
 .ht-main{background:var(--kit-primary,#0a2463);color:var(--kit-on-primary,#fff);border:0;font-weight:700}

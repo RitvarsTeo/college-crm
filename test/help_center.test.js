@@ -230,7 +230,7 @@ test('step 2 reads "New lead" everywhere, short and plain; nothing says "becomes
   const code = APP.replace(/\/\*[\s\S]*?\*\//g, '').split('\n').filter((l) => !l.trim().startsWith('//')).join('\n');   // his own words in comments stay
   const all = JSON.stringify(HELP) + code;
   assert.doesNotMatch(all, /becomes? a person|Becomes a person/i, 'flow, tour, questions and the page');
-  assert.match(HELP.tour.find((t) => t.title === 'Inbox').body, /Make a lead: say the programme and the next step on the card - Follow up on a date, or Cold - and add the email or phone the message did not bring, so their next message finds them\. What they wrote stays on their History\. A message from somebody already in Intake goes on their history with Answer the question for today, on every channel, also when they are admitted or not proceeding\. A card that says Joins and a name: Add to them\. Anything else: Set aside, and pick why: Not a prospective student, Supplier or vendor, Internal or Spam\. It is kept, and can be brought back; who, when and why stay on record\./);
+  assert.match(HELP.faq.find((f) => f.id === 'inbox-in-detail').a, /Make a lead: say the programme and the next step on the card - Follow up on a date, or Cold - and add the email or phone the message did not bring, so their next message finds them\. What they wrote stays on their History\. A message from somebody already in Intake goes on their history with Answer the question for today, on every channel, also when they are admitted or not proceeding\. A card that says Joins and a name: Add to them\. Anything else: Set aside, and pick why: Not a prospective student, Supplier or vendor, Internal or Spam\. It is kept, and can be brought back; who, when and why stay on record\./);
 });
 
 test('Q56 the flow: six stops in order, each a link to the right route, stages and ends a click to their column', () => {
@@ -289,7 +289,7 @@ test('the Help center never names Settings as a place; light or dark points to t
 test('the Help center follows the Inbox board: Make a lead and Set aside, never "not relevant" as an action', () => {
   const words = JSON.stringify(HELP).toLowerCase();
   assert.ok(!words.includes('not relevant'), 'help.json names no "not relevant" action');
-  const inbox = HELP.tour.find((t) => t.title === 'Inbox').body;
+  const inbox = HELP.faq.find((f) => f.id === 'inbox-in-detail').a;
   // 24.11.2026: the columns are calendar weeks since 09.11 (Today, Earlier this week, Last week, Before last week)
   assert.match(inbox, /column of the week it arrived: Today, Earlier this week, Last week or Before last week/, 'the columns by arrival week');
   assert.match(inbox, /Make a lead/); assert.match(inbox, /Set aside/); assert.match(inbox, /kept, and can be brought back/);   // 07.10.2026, "Keep the text" + Bring back
@@ -300,7 +300,7 @@ test('the Help center follows the Inbox board: Make a lead and Set aside, never 
   assert.match(late, /end of the working day/); assert.match(late, /09:00 to 17:00 Riga/); assert.match(late, /"answer now"/);
   assert.doesNotMatch(late, /before today|past 09:00 Riga time, and nobody/, 'the old rule is gone');
   // Today's drag and the keyboard
-  assert.match(HELP.tour.find((t) => t.title === 'Due').body, /Drag a card to Due today or Coming up/);
+  assert.match(HELP.faq.find((f) => f.id === 'due-in-detail').a, /Drag a card to Due today or Coming up/);
   assert.equal(HELP.howto.find((h) => h.do === 'Use the keyboard').where, 'Press ? for the shortcuts');
 });
 
@@ -328,4 +328,18 @@ test('172: no help line names Private clients, B2C or the client statuses', () =
   assert.doesNotMatch(tcText, /Private client|B2C|private person/);
   assert.ok(!HELP.tc.faq.some((f) => f.id === 'tc-statuses'), 'no statuses question');
   assert.doesNotMatch(tcText, /To contact, Contacted, Met/);
+});
+
+// HIS PICK B (24.11.2026, "The tutorial has to be more understandable! Make cuts maybe, point out a direct actions, tell
+// options!"): every tour step is one line, at most three direct actions and the options; the long texts are questions now
+test('pick B: short tour steps with direct actions and options; the details live in the "in detail" questions', () => {
+  for (const s of [...HELP.tour, ...HELP.tc.tour]) {
+    assert.ok(s.body.split(/\s+/).length <= 20, 'one short line: ' + s.title);
+    assert.ok(!s.do || (s.do.length <= 3 && s.do.every((d) => d.act && d.what && !/[<>]/.test(d.act + d.what))), 'at most three actions: ' + s.title);
+    assert.ok(!s.options || s.options.every((o) => typeof o === 'string' && o.length <= 25), 'options are short chips: ' + s.title);
+  }
+  for (const id of ['inbox-in-detail', 'due-in-detail', 'journey-in-detail']) assert.ok(HELP.faq.find((f) => f.id === id).a.length > 200, id);
+  const TOUR = fs.readFileSync(path.join(ROOT, 'src', 'assets', 'help-tour.js'), 'utf8');
+  assert.match(TOUR, /'<li><b>' \+ esc\(d\.act\) \+ '<\/b> - ' \+ esc\(d\.what\) \+ '<\/li>'/, 'escaped');
+  assert.match(TOUR, /esc\(s\.optionsLabel \|\| 'Options'\)/);
 });

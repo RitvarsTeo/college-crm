@@ -78,5 +78,5 @@ test('the Inbox, the Line filter, the menu count and Home all read the same line
 
 test('the Help center says it', () => {
   const HELP = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'help.json'), 'utf8'));
-  assert.match(HELP.tour.find((x) => x.title === 'Inbox').body, /Calls show the line you answer \(Admissions, Student coordination or Other\); the Line filter shows another line or all of them, and remembers your choice\./);
+  assert.match(HELP.faq.find((f) => f.id === 'inbox-in-detail').a, /Calls show the line you answer \(Admissions, Student coordination or Other\); the Line filter shows another line or all of them, and remembers your choice\./);
 });
