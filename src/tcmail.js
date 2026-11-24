@@ -10,6 +10,7 @@
 import crypto from 'node:crypto';
 import { emailShown } from './emailtext.js';
 import { deadlinesFor } from './intake.js';
+import { cleanReply } from './mailauto.js';
 
 export const TC_MAILBOX = 'training@novikontas.org';
 export const FIRST_DAYS = 30;            // the first run reaches back this far
@@ -74,7 +75,8 @@ export async function mailCards(db, { handled = false, now = new Date(), q = '' 
     cards.push({ key: 'm:' + thread, kind: 'email', email, name: lastIn.from_name || '', subject: lastIn.subject || '', at: lastIn.at,
       seenAt: lastIn.seen_at || null, seenBy: lastIn.seen_by || null, answered, late,
       ...(au && !au.undone_at && lastIn.seen_by === 'Intake' ? { auto: { segment: au.segment, companyId: au.company_id ? Number(au.company_id) : null, company: au.company || '' } } : {}),
-      messages: list.map((r) => ({ id: Number(r.id), dir: r.direction, subject: r.subject || '', body: emailShown(r.body || ''), at: r.at })),
+      // training@'s replies without the greeting and the signature (src/mailauto.js cleanReply), so the conversation reads as one
+      messages: list.map((r) => ({ id: Number(r.id), dir: r.direction, subject: r.subject || '', body: r.direction === 'out' ? cleanReply(emailShown(r.body || '')) || emailShown(r.body || '') : emailShown(r.body || ''), at: r.at })),
       ...(k ? { person: k.name || '', companyId: Number(k.company_id), company: k.company } : {}) });
   }
   return { cards, waiting };

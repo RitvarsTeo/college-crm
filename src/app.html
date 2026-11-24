@@ -12795,7 +12795,7 @@ function tcInboxDraw() {
   // patch 167: a training@ conversation is an Email card (the Academy email blue): the subject, the text, the sender's address
   const mailWho = (c) => c.person || c.name ? esc(c.person || c.name) + (c.company ? ` · <a href="#/tc/company/${Number(c.companyId)}" onclick="event.stopPropagation()">${esc(c.company)}</a>` : '') : esc(c.email);
   // patch 172: the whole conversation, oldest on top: their emails and training@'s replies (marked), the subject once, when it changes
-  const mailMsg = (m, i, all) => `${m.subject && (i === 0 || String(all[i - 1].subject || '').replace(/^(re|fw|fwd):\s*/i, '') !== String(m.subject).replace(/^(re|fw|fwd):\s*/i, '')) ? `<div class="ib-msg"><b>${esc(m.subject)}</b></div>` : ''}<div class="ib-msg${m.dir === 'out' ? ' ib-out' : ''}">${m.dir === 'out' ? '<b>training@</b> · ' : ''}<small>${esc(cAgo(m.at))}</small> ${esc(m.body || '')}</div>`;
+  const mailMsg = (m, i, all) => `${m.subject && (i === 0 || String(all[i - 1].subject || '').replace(/^(re|fw|fwd):\s*/i, '') !== String(m.subject).replace(/^(re|fw|fwd):\s*/i, '')) ? `<div class="ib-msg"><b>${esc(m.subject)}</b></div>` : ''}<div class="ib-msg${m.dir === 'out' ? ' ib-out' : ''}">${esc((m.dir === 'out' ? 'training@ · ' : '') + cAgo(m.at) + ' · ' + (m.body || ''))}</div>`;   // plain text: the card's 3-line clamp lays out inline tags as lines
   const convo = (c, mail) => { const open = T_INOPEN.has(c.key), list = open ? c.messages : c.messages.slice(0, 5), more = c.messages.length - list.length;
     const k = esc(JSON.stringify(String(c.key)));
     return `${more > 0 ? `<button type="button" class="ib-more" onclick="event.stopPropagation();T_INOPEN.add(${k});tcInboxDraw()">${Number(more)} earlier · Show all</button>` : ''}${[...list].reverse().map(mail ? mailMsg : msg).join('')}`; };
@@ -12807,7 +12807,7 @@ function tcInboxDraw() {
   const state = (c) => !live ? (c.auto ? autoLine(c) : `<div class="ib-before"><span>Done ${esc(fmtDateTime(c.seenAt) || '')}${c.seenBy ? ' · ' + esc(c.seenBy) : ''}</span></div>`)
     : c.answered ? `<div class="c-st c-st-answered" title="${esc(fmtDateTime(c.answered.at))}"><span class="c-st-w">✓ Answered by ${esc(c.answered.by || 'training@')}</span><span class="c-st-d"> · ${esc(cAgo(c.answered.at))}</span></div>`
     : cStateLine(c.late ? 'late' : 'new', cAgo(c.at), '', fmtDateTime(c.at));
-  const card = (c) => { const mail = c.kind === 'email'; return `<div class="c-jp row ib-card c-rail c-rail-${live ? 'due' : 'due'}" data-k="${esc(c.key)}">
+  const card = (c) => { const mail = c.kind === 'email'; return `<div class="c-jp row ib-card c-rail c-rail-${live ? 'due' : 'due'}${T_INOPEN.has(c.key) ? ' is-open' : ''}" data-k="${esc(c.key)}">
       <div class="ib-top"><b class="c-reach">${mail ? mailWho(c) : who(c)}</b></div>
       <small class="ib-ch" style="--src:${mail ? C_SRC_COLOUR.email : C_SRC_COLOUR.whatsapp}"><i></i>${mail ? 'Email' : 'WhatsApp'}</small>
       ${convo(c, mail)}
