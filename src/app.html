@@ -6151,9 +6151,11 @@ function cEditForm(p, t) {
   </div>`;
 }
 async function cSavePerson(id) {
-  const { people, taskOf } = C_PDATA; const p = people.find((x) => x.id === id); const t = taskOf.get(id);
+  // 24.11: a person shown from another year (patch 154) is found in those rows too
+  const { people, taskOf } = C_PDATA; const p = people.find((x) => x.id === id) || (Array.isArray(C_JALL) ? C_JALL.find((x) => x.id === id) : null) || null; const t = taskOf.get(id);
   const v = (sel) => { const el = document.querySelector(sel); return el ? el.value : null; };
   const err = (m) => { const e = $('#pe-err'); if (e) e.innerHTML = `<div class="err">${esc(m)}</div>`; };
+  if (!p) return err('Reload the page and try again.');
   // The two refusals the server makes, asked BEFORE anything is saved, so a refused
   // save never leaves half of the changes written. The server still checks both.
   if (!String(v('#pe-name') || '').trim()) return err('A person needs a name.');

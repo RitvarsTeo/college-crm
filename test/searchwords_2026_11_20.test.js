@@ -39,3 +39,13 @@ test('the page uses the same rule in its search boxes, not the old whole-text ma
     assert.equal(cWordsHit(q, v), wordsHit(q, v), q);
   }
 });
+
+// 24.11.2026 (Admissions: a comment could not be saved, Cannot read properties of undefined (reading 'name')): a person shown
+// from another year can be edited, so Save finds him among those rows too; a person who is gone says so instead of breaking
+test('Save on a person from another year finds him; nobody found = a plain message, no crash', () => {
+  const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
+  const i = APP.indexOf('async function cSavePerson(');
+  const body = APP.slice(i, APP.indexOf('\n}\n', i));
+  assert.ok(body.includes("people.find((x) => x.id === id) || (Array.isArray(C_JALL) ? C_JALL.find((x) => x.id === id) : null) || null"));
+  assert.ok(body.indexOf("if (!p) return err(") < body.indexOf("p.status"), 'checked before p is read');
+});

@@ -103,7 +103,7 @@ test('the People quick edit offers cold / reject too, not only the dialog', () =
   assert.match(form, /name="peTag"/, 'closing from the People row must offer the tag');
   assert.match(form, /CFG\.closedTags \|\| \[\]/, 'read from config');
   const j = APP.indexOf('async function cSavePerson(');
-  const save = APP.slice(j, j + 2500);
+  const save = APP.slice(j, APP.indexOf('\n}\n', j));   // the whole function (a fixed 2500 broke on a 3-line addition, 24.11.2026)
   assert.match(save, /closedTag:/, 'and the chosen tag reaches the server');
 });
 
