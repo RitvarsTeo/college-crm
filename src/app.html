@@ -1071,6 +1071,15 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   }
   /* Settings sections and the Help center */
   html.ui-c .c-helpadmin{display:flex;flex-wrap:wrap;gap:8px}
+  /* THE TUTORIAL CLIPS (24.11.2026): the captions in the app's own font */
+  html.ui-c .c-clips{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:16px}
+  html.ui-c .c-clip{margin:0;padding:14px}
+  html.ui-c .c-clip figcaption{margin:0 0 8px}
+  html.ui-c .c-clip video{width:100%;border-radius:10px;display:block;background:#0b2545}
+  html.ui-c .c-clip video::cue{font-family:Inter,system-ui,sans-serif;font-size:18px;background:rgba(11,37,69,.86);color:#fff}
+  html.ui-c .c-clip-one{max-width:1100px}
+  html.ui-c .c-clip-up{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+  @media (max-width:760px){ html.ui-c .c-clips{grid-template-columns:1fr} }
   html.ui-c .c-helpadmin a{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border:1px solid var(--rule);border-radius:999px;
     background:var(--surface);color:var(--ink);font-size:13px;font-weight:600;text-decoration:none}
   html.ui-c .c-helpadmin a:hover{border-color:var(--control-line)}
@@ -5015,7 +5024,8 @@ async function cHelpAdmin() {
     <a href="#/journey?v=list&amp;p_data=odd" title="People whose programme is not one of the official ones">Data to tidy${odd ? ` <b>${odd}</b>` : ''}</a>
     <a href="/api/admin/sheet-pull" target="_blank" rel="noopener" title="The admissions sheet pulled into Intake, and how many leads are made in Intake each week">Admissions sheet</a>
     <a href="#/access" title="Which half of Intake each account opens: Academy, Training Centre">People and access</a>
-    <a href="#/n3" title="N3's phone numbers, so a call from a seafarer in N3 says who it is">N3 phone directory</a></div>`;
+    <a href="#/n3" title="N3's phone numbers, so a call from a seafarer in N3 says who it is">N3 phone directory</a>
+    <a href="#/clips" title="Upload or replace the short clips shown in the Help center">Tutorial clips</a></div>`;
 }
 
 // ------------------------------------------------------------------ HELP CENTER
@@ -5060,8 +5070,10 @@ function viewHelpC() {
     ${cHelpFlow()}${cHelpHowTo()}${cKeysHelp()}
     <h2 class="c-set-h">Questions and answers</h2>
     <div id="helpFaq" class="c-helpfaq"></div>
+    <div id="helpClips"></div>
     <div id="helpAdmin"></div>`;
   cHelpAdmin();
+  if (typeof cHelpClips === 'function') cHelpClips('academy');
   // dev kit part 3: search, the questions in the order of config/help.json (never by opens), "Ask a
   // question" into the SAME feedback box on A question, with what was searched already in it
   if (window.HelpCenter) HelpCenter.mount(document.getElementById('helpFaq'), {
@@ -11619,6 +11631,10 @@ async function cAreaRoute(hash) {
     cSetArea(['academy', 'tc'].includes(C_AREA) ? C_AREA : mine.includes('academy') ? 'academy' : 'tc');
     await viewAccess(); return true;
   }
+  if (hash === '#/clips') {   // the tutorial clips, admins (24.11.2026)
+    cSetArea(['academy', 'tc'].includes(C_AREA) ? C_AREA : mine.includes('academy') ? 'academy' : 'tc');
+    await viewClipsAdmin(); return true;
+  }
   if (/^#\/tc(\/|$)/.test(hash)) {
     if (!mine.includes('tc')) { location.replace('#/home'); return true; }
     cSetArea('tc'); await tcRoute(hash); return true;
@@ -11792,6 +11808,7 @@ async function tcRoute(hash) {
     else if (place === 'go') await viewTcGo(arg);   // lane TC-GO: the Grand Opening; #/tc/go/hold|back|lists land on that part
     else if (place === 'door') viewTcDoor(arg);   // check-in at the door, 05.11.2026
     else if (place === 'mylist') viewTcMyList(arg ? decodeURIComponent(arg) : '');   // my Grand Opening list, 12.11.2026
+    else if (place === 'video') await viewTcVideo(arg);   // a tutorial clip on its own page, the link a reminder carries (24.11.2026)
     else if (place === 'postcards') { location.replace('#/tc/mylist'); setTimeout(() => { if (T_ML) { T_ML.filter = 'postcard'; tcMlDraw(); } }, 600); }   // patch 164: in the tile now
     else if (place === 'families') await viewTcFamilies();   // the owner's pick B, 28.10.2026
     else if (place === 'same') await viewTcSame();   // patch 163, his tick list 23.11.2026
@@ -14752,8 +14769,54 @@ function viewTcHelp() {
     ${guides ? `<h2 class="c-set-h">Step by step</h2><div class="tc-guides">${guides}</div>` : ''}
     <details class="tc-hfold"><summary><h2 class="c-set-h">How to</h2></summary><div class="c-sheet c-set">${how}</div></details>
     <details class="tc-hfold"><summary><h2 class="c-set-h">Questions and answers</h2></summary><div id="helpFaq" class="c-helpfaq"></div></details>
-    ${isAdmin() ? '<h2 class="c-set-h">For admins</h2><div class="c-helpadmin"><a href="#/access">People and access</a><a href="#/tc/review">Review list (imported contacts)</a></div>' : ''}`;
+    <div id="helpClips"></div>
+    ${isAdmin() ? '<h2 class="c-set-h">For admins</h2><div class="c-helpadmin"><a href="#/access">People and access</a><a href="#/tc/review">Review list (imported contacts)</a><a href="#/clips">Tutorial clips</a></div>' : ''}`;
   if (window.HelpCenter) HelpCenter.mount(document.getElementById('helpFaq'), { faq: H.faq || [], onAsk: (text) => fbOpen('QUESTION', text) });
+  cHelpClips('tc');
+}
+
+// THE TUTORIAL CLIPS (24.11.2026, his picks: "A + short videos", "Live app, signed-in only", "Silent clip + captions",
+// "Database, admin upload"; src/helpvideos.js). The Help center shows the clips of its own half that an admin has
+// uploaded; #/tc/video/<name> plays one on its own page, the link the Grand Opening reminder carries. Silent, captions on.
+function cClipHtml(c) {
+  return `<figure class="c-sheet c-clip"><figcaption><b>${esc(c.title)}</b></figcaption>
+    <video controls muted playsinline preload="metadata" src="${esc(c.mp4)}"><track kind="captions" srclang="en" label="English" src="${esc(c.vtt)}" default></video></figure>`;
+}
+async function cHelpClips(area) {
+  const box = document.querySelector('#helpClips');
+  if (!box) return;
+  const D = await api(area === 'tc' ? '/api/tc/video/list' : '/api/video/list').catch(() => null);
+  const ready = ((D && D.clips) || []).filter((c) => c.ready);
+  if (!ready.length) return;
+  box.innerHTML = `<h2 class="c-set-h">Videos</h2><div class="c-clips">${ready.map(cClipHtml).join('')}</div>`;
+}
+async function viewTcVideo(name) {
+  const D = await api('/api/tc/video/list');
+  const c = (D.clips || []).find((x) => x.name === name && x.ready);
+  $('#view').innerHTML = `<p class="c-crumb"><a href="#/tc/help">Help center</a></p>
+    ${c ? `<div class="c-head"><div><h1>${esc(c.title)}</h1></div>${name === 'go-list' ? '<a class="btn" href="#/tc/mylist">Open my list</a>' : ''}</div><div class="c-clip-one">${cClipHtml(c)}</div>`
+      : '<div class="c-head"><div><h1>Video</h1></div></div><div class="c-sheet c-empty">This video is not available.</div>'}`;
+  const v = document.querySelector('#view video');
+  if (v) { v.autoplay = true; v.play().catch(() => {}); }
+}
+async function viewClipsAdmin() {
+  if (!isAdmin()) { $('#view').innerHTML = '<div class="c-head"><div><h1>Tutorial clips</h1></div></div><div class="c-sheet"><div class="c-empty">This page is for admins.</div></div>'; return; }
+  const D = await api('/api/admin/help-videos');
+  const row = (c) => `<div class="c-line c-clip-up"><div class="c-who"><b>${esc(c.title)}</b><small>${c.ready ? `${(c.bytes / 1e6).toFixed(1)} MB · ${esc(c.updatedBy || '')} · ${esc(fmtDate(c.updatedAt))}` : 'No clip yet'}</small></div>
+      <label>MP4 <input type="file" accept="video/mp4" data-clip="${esc(c.name)}" data-k="mp4"></label>
+      <label>Captions (.vtt) <input type="file" accept=".vtt,text/vtt" data-clip="${esc(c.name)}" data-k="vtt"></label>
+      <button class="btn sm" type="button" onclick="cClipUpload(${esc(JSON.stringify(c.name))}, this)">Upload</button></div>`;
+  $('#view').innerHTML = `<p class="c-crumb"><a href="${C_AREA === 'tc' ? '#/tc/help' : '#/help'}">Help center</a></p>
+    <div class="c-head"><div><h1>Tutorial clips</h1></div></div><div class="c-sheet c-set">${D.clips.map(row).join('')}</div>`;
+}
+async function cClipUpload(name, btn) {
+  const pick = (k) => { const i = document.querySelector(`input[data-clip="${name}"][data-k="${k}"]`); return i && i.files && i.files[0]; };
+  const mp4 = pick('mp4'), vtt = pick('vtt');
+  if (!mp4 || !vtt) { btn.textContent = 'Pick both files'; return; }
+  btn.disabled = true; btn.textContent = 'Uploading';
+  const b64 = await new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(String(r.result).replace(/^data:[^,]*,/, '')); r.onerror = no; r.readAsDataURL(mp4); });
+  try { await post('/api/admin/help-video/' + name, { mp4: b64, vtt: await vtt.text() }); await viewClipsAdmin(); }
+  catch (e) { btn.disabled = false; btn.textContent = e.message; }
 }
 
 // ---- PEOPLE AND ACCESS (admins): which half each account opens; every change logged ----

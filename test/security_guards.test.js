@@ -126,12 +126,15 @@ function routePaths() {
   const out = new Set([...SERVER.matchAll(/p === '(\/api\/[^']+)'/g)].map((m) => m[1]));
   for (const m of SERVER.matchAll(/\/\^(\\\/api\\\/[^\s]*?)\$\/\.(?:test|exec)\(p\)/g)) {
     const sample = m[1].replace(/\\\//g, '/').replace(/\\\./g, '.').replace(/\[\^\/\]\+/g, 'x1').replace(/\\d\+/g, '1')
-      .replace(/\[a-z_\]\+/g, 'website').replace(/\(([^|()]*)\|[^)]*\)/g, '$1').replace(/[()]/g, '');
+      .replace(/\[a-z_\]\+/g, 'website').replace(/\[a-z-\]\+/g, 'go-list').replace(/\(([^|()]*)\|[^)]*\)/g, '$1').replace(/[()]/g, '');
     assert.ok(!/[\\[\]*+?|{}^$]/.test(sample), `could not make a sample path for /^${m[1]}$/: teach routePaths()`);
     out.add(sample);
   }
   for (const id of channelIds()) { out.add(`/api/inbound/${id}`); out.add(`/api/inbound/${id}/simulate`); }
   out.add('/api/admin/channels/website');
+  // the tutorial clips (24.11.2026), matched by clipOfPath: one of each half in every sweep
+  out.add('/api/video/admissions.mp4'); out.add('/api/video/admissions.vtt');
+  out.add('/api/tc/video/go-list.mp4'); out.add('/api/tc/video/training-centre.vtt');
   return [...out];
 }
 const openListed = (p) => Boolean(OPEN_API[p]) || (/^\/api\/inbound\/([a-z_]+)$/.test(p) && acceptsWebhook(p.split('/')[3]));

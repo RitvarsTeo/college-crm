@@ -330,6 +330,17 @@ CREATE TABLE IF NOT EXISTS help_faq_opens (
   last_at TEXT
 );
 
+-- THE HELP CENTER CLIPS (24.11.2026, src/helpvideos.js): short silent clips of the live app with their captions. They show
+-- real names, so they live here and never in git; an admin uploads them, a signed-in account of that half plays them.
+CREATE TABLE IF NOT EXISTS help_videos (
+  name TEXT PRIMARY KEY,             -- one of CLIPS in src/helpvideos.js
+  mp4 BLOB NOT NULL,
+  size_bytes INTEGER NOT NULL,
+  vtt TEXT NOT NULL,                 -- the captions, WebVTT, plain text
+  updated_by TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS channel_handshake (
   channel TEXT PRIMARY KEY,          -- one per channel: the latest answer wins
   verified_at TEXT NOT NULL,         -- when the provider last checked we were here

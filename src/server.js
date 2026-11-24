@@ -60,6 +60,7 @@ import { LIST_NOTE_COLS, LIST_NOTE_JOINS, pickListNote } from './listnote.js';
 import { commentsFor, editComment } from './comments.js';
 import { htmlEscape, inviteOrigin } from './systempages.js';
 import * as areas from './areas.js';
+import { clipOfPath, getClip, listClips, saveClip, byteRange, BadClip, MAX_B64, MAX_VTT } from './helpvideos.js';
 import * as tc from './tc.js';
 import * as godemo from './godemo.js';
 import * as tcgomail from './tcgomail.js';
@@ -4281,6 +4282,39 @@ export const handle = async (req, res) => {
       return json(res, 200, { ok: true });
     }
     if (req.method === 'GET' && p === '/api/help/counts') return json(res, 200, { counts: await helpCounts(db) });
+
+    // THE HELP CENTER CLIPS (24.11.2026, src/helpvideos.js). Behind the sign-in door and the area gate above: the
+    // Admissions clip under /api/video/ (Academy), the Training Centre ones under /api/tc/video/ (Training Centre).
+    // A name is matched exactly against the known clips; nothing is built from the request.
+    if (req.method === 'GET' && clipOfPath(p)) {
+      const { name, kind } = clipOfPath(p);
+      const c = await getClip(db, name);
+      if (!c) return json(res, 404, { error: 'This clip is not there yet.' });
+      if (kind === 'vtt') {
+        res.writeHead(200, { 'content-type': 'text/vtt; charset=utf-8', 'cache-control': 'private, no-store' });
+        return res.end(c.vtt);
+      }
+      const size = c.mp4.length, r = byteRange(req.headers.range, size);
+      if (r === 'bad') { res.writeHead(416, { 'content-range': `bytes */${size}` }); return res.end(); }
+      const [a, b] = r || [0, size - 1];
+      res.writeHead(r ? 206 : 200, { 'content-type': 'video/mp4', 'accept-ranges': 'bytes', 'content-length': b - a + 1,
+        'cache-control': 'private, no-store', ...(r ? { 'content-range': `bytes ${a}-${b}/${size}` } : {}) });
+      return res.end(c.mp4.subarray(a, b + 1));
+    }
+    if (req.method === 'GET' && (p === '/api/video/list' || p === '/api/tc/video/list')) {
+      const want = p.startsWith('/api/tc/') ? 'tc' : 'academy';
+      return json(res, 200, { clips: (await listClips(db)).filter((c) => c.area === want) });
+    }
+    // an admin uploads or replaces a clip: { mp4: base64, vtt: text }; both halves' clips, the admin role checked here
+    const upClip = /^\/api\/admin\/help-video\/([a-z-]+)$/.exec(p);
+    if ((req.method === 'GET' && p === '/api/admin/help-videos') || (req.method === 'POST' && upClip)) {
+      const me = await adminOf(req);
+      if (!me) return json(res, 403, { error: 'Tutorial clips are for admins only.' });
+      if (req.method === 'GET') return json(res, 200, { clips: await listClips(db) });
+      const b = await body(req, MAX_B64 + MAX_VTT + 512);
+      try { return json(res, 200, { ok: true, ...(await saveClip(db, upClip[1], b, me.name || me.email, nowIso())) }); }
+      catch (e) { if (e instanceof BadClip) return json(res, 400, { error: e.message }); throw e; }
+    }
 
     // The notification. Nothing in this app can send an email, so being told
     // happens inside the app: a count of what has not been handled yet.
