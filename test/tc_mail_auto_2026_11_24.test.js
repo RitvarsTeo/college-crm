@@ -30,9 +30,12 @@ test('the rule: the first row that fits decides; an address is matched whole', a
   assert.equal((await classify(db, 'gmail.person@gmail.com')).segment, 'b2b', 'a contact writing from gmail stays B2B');
   assert.deepEqual([(await classify(db, 'andris@inbox.lv')).segment, (await classify(db, 'andris@inbox.lv')).rule], ['b2c', 'mailbox']);
   assert.equal((await classify(db, 'x@pm.me')).rule, 'mailbox');
+  for (const x of ['someone@msn.com', 'a@yahoo.co.uk', 'b@hotmail.lv', 'c@mail.ee', 'd@t-online.de']) assert.equal((await classify(db, x)).rule, 'mailbox', x);
   assert.deepEqual(await classify(db, 'new.person@balticexample.lv'), { segment: 'b2b', rule: 'domain', companyId: 9, domain: 'balticexample.lv' });
   assert.ok((await classify(db, 'a@twosites.lv')).ask, 'two companies on one domain: a person decides');
   assert.deepEqual(await classify(db, 'ops@nordexample-shipping.com'), { segment: 'b2b', rule: 'new_company', domain: 'nordexample-shipping.com' });
+  await db.prepare(`INSERT INTO tc_companies (id, name, name_key, status, created_at) VALUES (12, 'Chemexample Shipping B.V.', 'chemexample shipping b v', 'not_contacted', '2026-11-01T00:00:00Z')`).run();
+  assert.deepEqual(await classify(db, 'ops@chemexample.nl'), { segment: 'b2b', rule: 'domain', companyId: 12, domain: 'chemexample.nl' }, 'a company with that name and no website is that company');
   for (const a of ['noreply@linkedin.com', 'someone@google.com', 'billing@lv.visma.com', 'colleague@novikontas.org', 'notifications@example.com']) assert.ok((await classify(db, a)).never, a);
   assert.equal((await classify(db, 'buh@example-firm.lv', 'Rēķins Nr. 12 apmaksai')).never, 'an invoice');
   assert.equal((await classify(db, 'j@example-firm.lv', 'Please find my attached CV for the vacancy')).never, 'a CV or job application');

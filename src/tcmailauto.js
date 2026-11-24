@@ -40,7 +40,8 @@ const NEVER_TEXT = [
   [/attached cv|curriculum vitae|\bmy cv\b|vacanc|vakanc|job application|darba pieteikum|apply for the position/i, 'a CV or job application'],
   [/unsubscribe|newsletter|webinar|special offer for your|we are a supplier|our services include|partnership proposal/i, 'a supplier or newsletter'],
 ];
-const PROTON = /@(pm\.me|proton\.me)$/i;
+// more private mailboxes than the Academy list names (the dry run of 24.11.2026 found msn.com becoming a company)
+const PRIVATE_MORE = /@(pm\.me|proton\.me|msn\.com|windowslive\.com|mail\.com|email\.com|ymail\.com|rocketmail\.com|zoho\.com|tutanota\.\w+|tuta\.io|inbox\.ru|rambler\.ru|abv\.bg|onet\.pl|libero\.it|orange\.fr|wanadoo\.fr|t-online\.de|freenet\.de|online\.de|hotmail\.\w+|outlook\.\w+|live\.\w+|yahoo\.\w+(\.\w+)?|icloud\.com|me\.com|mac\.com|ukr\.net|i\.ua|meta\.ua|bigmir\.net|inbox\.lt|one\.lt|takas\.lt|mail\.ee|hot\.ee|online\.no|start\.no|telia\.\w+)$/i;
 
 // the courses the Training Centre teaches, as people write them (the topic of a History line, a private client's Course)
 const COURSES = [
@@ -87,7 +88,7 @@ export async function classify(db, addr, text = '') {
   if (p) return { segment: 'b2c', rule: 'private', privateId: Number(p.id), domain: dom };
   const never = neverAClient(a, text);
   if (never) return never;
-  if (PRIVATE.test(a) || PROTON.test(a)) return { segment: 'b2c', rule: 'mailbox', domain: dom };
+  if (PRIVATE.test(a) || PRIVATE_MORE.test(a)) return { segment: 'b2c', rule: 'mailbox', domain: dom };
   // row 4: the domain is one company's website, or another contact's address there (never a shared mailbox domain: row 3 is before)
   const sites = (await db.prepare(`SELECT id, website FROM tc_companies WHERE archived_at IS NULL AND website IS NOT NULL AND website <> ''`).all())
     .filter((c) => sameSite(hostOf(c.website), dom)).map((c) => Number(c.id));
@@ -96,6 +97,14 @@ export async function classify(db, addr, text = '') {
   const ids = [...new Set([...sites, ...byMail])];
   if (ids.length === 1) return { segment: 'b2b', rule: 'domain', companyId: ids[0], domain: dom };
   if (ids.length > 1) return { ask: 'more than one company has this domain; a person decides' };
+  // row 4, by name (the dry run of 24.11.2026: chemgas.nl and "Chemgas Shipping B.V." with no website): one company whose name
+  // starts with the domain's name is that company; two or more are a person's choice; a short name (under 4 letters) never matches
+  const base = tc.nameKey(nameFromDomain(dom));
+  if (base && base.length >= 4) {
+    const named = (await db.prepare(`SELECT id FROM tc_companies WHERE archived_at IS NULL AND (name_key = ? OR name_key LIKE ?)`).all(base, base + ' %')).map((r) => Number(r.id));
+    if (named.length === 1) return { segment: 'b2b', rule: 'domain', companyId: named[0], domain: dom };
+    if (named.length > 1) return { ask: 'more than one company has this name; a person decides' };
+  }
   return { segment: 'b2b', rule: 'new_company', domain: dom };
 }
 
