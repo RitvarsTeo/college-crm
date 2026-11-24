@@ -146,7 +146,7 @@ async function followUp(db, auto, lastOut, wrote, at) {
     if (p && p.next_at) return;
     await db.prepare('UPDATE tc_private_clients SET next_at = ?, updated_at = ?, updated_by = ? WHERE id = ?').run(due, at, BY, auto.private_id);
     const r = await db.prepare('INSERT INTO tc_private_history (client_id, kind, occurred_at, body, actor, created_at) VALUES (?,?,?,?,?,?)')
-      .run(auto.private_id, 'edit', at, `Next contact: ${due} (${FOLLOW_UP}, ${SILENCE_DAYS} days after our reply of ${dm(lastOut.at)})`, BY, at);
+      .run(auto.private_id, 'edit', at, `Next contact: ${due.split('-').reverse().join('.')} (${FOLLOW_UP}, ${SILENCE_DAYS} days after our reply of ${dm(lastOut.at)})`, BY, at);
     wrote.history.push(Number(r.lastInsertRowid));
     wrote.nextAt = due;
   }
