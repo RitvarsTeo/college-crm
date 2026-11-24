@@ -152,21 +152,18 @@ test('Undo: the card waits again; nothing is deleted: the Follow up is closed "U
   assert.ok((await undoTc(db, 'm:tG', 'Laura')).error);
 });
 
-test('his pick "From release on": the first run marks the start; what training@ answered before it stays a card; what it answers after is processed', async () => {
+test('his final answer "Back to 25.10": the first run marks 25.10 as the start; everything training@ answered since is processed, the read-back included', async () => {
   const db = await setup({ from: null });
   await recordTcMail(db, [
-    m('o1', 'tO', 'in', 'kristaps@balticexample.lv', T(0), 'GWO', 'GWO BST please', 'Kristaps Paraugs'),
-    m('o2', 'tO', 'out', TC_MAILBOX, T(1), 'Re: GWO', 'Dates attached.', 'Training Centre'),
-    m('n1', 'tN', 'in', 'elina@inbox.lv', T(2), 'STCW', 'STCW refresher?', 'Elīna'),
+    m('o1', 'tO', 'in', 'old@inbox.lv', '2026-10-20T08:00:00.000Z', 'STCW', 'STCW?', 'Old'),
+    m('o2', 'tO', 'out', TC_MAILBOX, '2026-10-21T08:00:00.000Z', 'Re', 'Yes.', 'Training Centre'),
+    m('k1', 'tK', 'in', 'kristaps@balticexample.lv', '2026-10-26T08:00:00.000Z', 'GWO', 'GWO BST please', 'Kristaps Paraugs'),
+    m('k2', 'tK', 'out', TC_MAILBOX, '2026-10-26T09:00:00.000Z', 'Re: GWO', 'Dates attached.', 'Training Centre'),
   ]);
   const first = await processTcMail(db, { at: T(3) });
-  assert.deepEqual([first.processed, first.before], [0, 1], 'answered before the release: not processed');
-  assert.equal((await db.prepare('SELECT value FROM sync_state WHERE name = ?').get(START)).value, T(3));
-  await recordTcMail(db, [m('n2', 'tN', 'out', TC_MAILBOX, T(4), 'Re: STCW', 'Jā, ir vietas.', 'Training Centre')]);
-  const next = await processTcMail(db, { at: T(5) });
-  assert.deepEqual([next.processed, next.b2c, next.before], [1, 1, 1]);
-  assert.equal((await processTcMail(db, { at: T(9) })).processed, 0, 'the start never moves');
-  assert.equal((await mailCards(db)).cards.length, 1, 'the old one waits for a person, answered');
+  assert.deepEqual([first.processed, first.b2b, first.before], [1, 1, 1], 'from 25.10 on, read-back included; before it never');
+  assert.equal((await db.prepare('SELECT value FROM sync_state WHERE name = ?').get(START)).value, '2026-10-25T00:00:00.000Z');
+  assert.equal((await processTcMail(db, { at: T(9) })).processed, 0, 'once');
 });
 
 test('the suggested reply: training@\'s answer to the most similar email, cut, to copy; the late mark after one working day', async () => {

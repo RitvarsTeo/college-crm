@@ -11,6 +11,7 @@
 //        6 never a client: Novikontas, no-reply and system senders, Google, LinkedIn, invoices, CVs, suppliers -> nothing.
 //   3. The course the email names fills the client (a private client's Course; a company line's topics).
 //   4. A waiting email is late after one working day; a Follow up 7 days after our reply when nothing is planned.
+//   (from when: every conversation training@ answered from 25.10.2026 on, his final answer "Back to 25.10")
 //   5. They write back after our reply: a History line "They wrote back and asked about <topic>"; the level is not changed
 //      (his pick "A: stays Contacted"; what Intake does with the levels waits for his answer on the levels, 24.11.2026).
 //   6. A suggested reply from training@'s answers to emails like it, to Copy. Intake NEVER sends, drafts or changes Gmail.
@@ -217,15 +218,16 @@ async function carryOn(db, auto, msgs, at) {
 }
 
 /** After each training@ read (src/sync.js syncTcMail): process what training@ answered; carry on what Intake already holds. */
-// FROM THE RELEASE ON (his pick 24.11.2026 "From release on"): only a conversation training@ answers after the automation first runs
-// is processed; what training@ answered before stays as a card for people (the read back to 25.10 is kept, never processed).
-// The first run writes its own time as the start (sync_state 'tc_mail_auto_from'); nothing before it is ever processed.
+// BACK TO 25.10 (his FINAL answer 24.11.2026 "Back to 25.10", replacing "From release on"): every conversation training@ answered from
+// 25.10.2026 on is processed, the read-back included; each with Undo, nothing deleted. What training@ answered before 25.10 is
+// never processed. The start is kept in sync_state 'tc_mail_auto_from' (written once, by the first run).
 export const START = 'tc_mail_auto_from';
+export const FROM_DAY = '2026-10-25T00:00:00.000Z';
 export async function startOf(db, at = nowIso()) {
   const row = await db.prepare('SELECT value FROM sync_state WHERE name = ?').get(START);
   if (row && row.value) return row.value;
-  await db.prepare('INSERT INTO sync_state (name, value, ran_at, detail) VALUES (?,?,?,?)').run(START, at, at, JSON.stringify({ why: 'his pick "From release on"' }));
-  return at;
+  await db.prepare('INSERT INTO sync_state (name, value, ran_at, detail) VALUES (?,?,?,?)').run(START, FROM_DAY, at, JSON.stringify({ why: 'his answer "Back to 25.10"' }));
+  return FROM_DAY;
 }
 export async function processTcMail(db, { at = nowIso(), limit = PER_RUN } = {}) {
   const res = { processed: 0, b2b: 0, b2c: 0, madeCompany: 0, left: 0, carried: 0, before: 0 };
@@ -239,7 +241,7 @@ export async function processTcMail(db, { at = nowIso(), limit = PER_RUN } = {})
     if (a && a.undone_at) continue;                         // Undo: a person decides this one
     const lastOut = outs.get(o.thread_id);
     if (!a && !(lastOut && String(lastOut) > String(o.last_in))) continue;
-    if (!a && String(lastOut) < String(from)) { res.before++; continue; }   // answered before the release: a person decides
+    if (!a && String(lastOut) < String(from)) { res.before++; continue; }   // answered before 25.10: a person decides
     if (res.processed + res.carried >= limit) { res.left++; continue; }
     const msgs = await threadMail(db, o.thread_id);
     if (a) { if (await carryOn(db, a, msgs, at)) res.carried++; continue; }
