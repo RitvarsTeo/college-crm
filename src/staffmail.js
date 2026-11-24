@@ -130,7 +130,10 @@ const MIN_WINDOW_MS = 3600000;
 /** One mailbox's mail since `since`, OLDEST first, at most `limit`: { ok, items: [shape + mine], more, upTo }.
  * mine: 'out' when the person sent it (the SENT label), else 'in'. Spam, trash, drafts and chats are never asked for.
  * upTo: how far the reading got (the bookmark); more: there is still mail after upTo. */
-export async function readMailbox(db, email, { env = process.env, fetchImpl = fetch, since, limit = PER_RUN, max = 50, now = new Date() } = {}) {
+// parallel / deadline (patch 181, his word 24.11.2026 "Yes, speed it up"): a caller catching up may read `parallel` messages at
+// a time and stop at `deadline` (clock() ms); a run stopped early is read up to its last message and says more, like `limit`.
+export async function readMailbox(db, email, { env = process.env, fetchImpl = fetch, since, limit = PER_RUN, max = 50, now = new Date(),
+  parallel = 1, deadline = 0, clock = Date.now } = {}) {
   const u = low(email);
   const tok = await accessToken(db, u, env, fetchImpl);
   if (tok === 'gone') { await db.prepare('DELETE FROM staff_mail_links WHERE user_email = ?').run(u); return { ok: false, gone: true, items: [] }; }
@@ -157,17 +160,24 @@ export async function readMailbox(db, email, { env = process.env, fetchImpl = fe
   if (got.error) return { ok: false, items: [], why: got.error };
   const ids = got.ids;
   const todo = ids.reverse().slice(0, limit);
-  const items = []; let failed = 0; let upTo = null;
-  for (const id of todo) {
-    const r = await fetchImpl(`${API}/messages/${encodeURIComponent(id)}?format=full`, { headers });
-    if (!r.ok) { failed++; break; }
-    const m = await r.json();
-    const s = toSentShape(m);
-    if (!s || !s.sentAt) continue;
-    upTo = s.sentAt;
-    items.push({ ...s, mine: (m.labelIds || []).includes('SENT') ? 'out' : 'in' });
+  const items = []; let failed = 0; let upTo = null; let cut = false;
+  const one = async (id) => {
+    try { const r = await fetchImpl(`${API}/messages/${encodeURIComponent(id)}?format=full`, { headers }); return r.ok ? await r.json() : null; }
+    catch { return null; }
+  };
+  const step = Math.max(1, Math.floor(parallel) || 1);
+  read: for (let i = 0; i < todo.length; i += step) {
+    if (deadline && clock() >= deadline) { cut = true; break; }
+    // fetched together, kept in order: the first refusal stops the run there, so the bookmark never passes an unread message
+    for (const m of await Promise.all(todo.slice(i, i + step).map(one))) {
+      if (!m) { failed++; break read; }
+      const s = toSentShape(m);
+      if (!s || !s.sentAt) continue;
+      upTo = s.sentAt;
+      items.push({ ...s, mine: (m.labelIds || []).includes('SENT') ? 'out' : 'in' });
+    }
   }
-  const allRead = got.whole && ids.length <= todo.length && !failed;
+  const allRead = got.whole && ids.length <= todo.length && !failed && !cut;
   // a window read to its end: the bookmark goes to the window's end (an empty day moves it too), and there is more after it
   if (span && allRead) return { ok: true, items, more: true, upTo: new Date(from + span).toISOString() };
   return { ok: failed === 0, items, more: !allRead || Boolean(span), upTo };

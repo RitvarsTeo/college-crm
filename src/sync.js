@@ -813,14 +813,19 @@ const bookmarkName = async (email) => 'staff_mail:' + String(email).toLowerCase(
 // THE TRAINING CENTRE EMAIL (24.11.2026, patch 167; src/tcmail.js). training@ from its own bookmark (sync_state 'tc_mail'; the
 // first run reaches back FIRST_DAYS), at most PER_RUN messages a run, oldest first, with ten minutes of overlap (a repeat is free:
 // the Gmail id is unique). Nothing happens until someone has signed in once as training@. The same 13 months as everything else.
-export async function syncTcMail(db, { now = new Date(), env = process.env, fetchImpl = fetch } = {}) {
+// Patch 181 (his word 24.11.2026 "Yes, speed it up"): training@ reads up to TC_CATCHUP messages a run, TC_PARALLEL at a time,
+// for at most TC_READ_MS, so the first fill catches up in days instead of weeks; the run still ends well inside the
+// scheduled job's 60 seconds, and a run stopped by the clock keeps its bookmark at the last message read.
+export const TC_CATCHUP = 400, TC_PARALLEL = 5, TC_READ_MS = 20000;
+export async function syncTcMail(db, { now = new Date(), env = process.env, fetchImpl = fetch, clock = Date.now } = {}) {
   const at = now.toISOString();
   const link = await db.prepare('SELECT user_email FROM staff_mail_links WHERE user_email = ?').get(TC_MAILBOX);
   if (!link) return { ok: true, ran: false, why: 'training@ is not connected' };
   const state = await db.prepare("SELECT value FROM sync_state WHERE name = 'tc_mail'").get();
   const last = state && state.value && !Number.isNaN(Date.parse(state.value)) ? state.value : null;
   const since = new Date(last ? Date.parse(last) - 10 * 60000 : now.getTime() - TC_MAIL_DAYS * 86400000).toISOString();
-  const got = await staffMail.readMailbox(db, TC_MAILBOX, { env, fetchImpl, since, now });
+  const got = await staffMail.readMailbox(db, TC_MAILBOX, { env, fetchImpl, since, now,
+    limit: TC_CATCHUP, parallel: TC_PARALLEL, deadline: clock() + TC_READ_MS, clock });
   if (got.gone) { await saveState(db, 'tc_mail', last, { ok: false, gone: true }, at); return { ok: false, ran: true, gone: true }; }
   const res = await recordTcMail(db, got.items, at);
   // patch 172 (src/tcmailauto.js): what training@ answered is processed; a failure here never costs the read its bookmark
