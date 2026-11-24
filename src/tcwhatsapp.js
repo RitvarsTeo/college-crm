@@ -15,7 +15,7 @@
 import { adaptAll } from './adapters.js';
 import { phoneEventGate } from './phoneevent.js';
 
-import { mailCards, mailDone } from './tcmail.js';
+import { mailCards, mailDone, searchText } from './tcmail.js';
 export const WHATSAPP_FORWARD_SECRET_ENV = 'WHATSAPP_FORWARD_SECRET';
 export const TC_PHONE_ID = '654184684448536';
 
@@ -38,9 +38,12 @@ export function onlyTc(raw) {
 // one card per number, as the Academy Inbox joins one caller's messages; a number Intake knows (a Training Centre contact's phone,
 // last 8 digits as everywhere) shows the person and the company. Waiting = not yet Done; Handled = Done, newest first.
 const last8 = (n) => String(n || '').replace(/\D/g, '').slice(-8);
-export async function tcInbox(db, { handled = false } = {}) {
-  const rows = await db.prepare(`SELECT id, from_num, name, body, media, at, seen_at, seen_by FROM tc_whatsapp_in
-    WHERE ${handled ? 'seen_at IS NOT NULL' : 'seen_at IS NULL'} ORDER BY at DESC LIMIT 600`).all();
+export async function tcInbox(db, { handled = false, q = '' } = {}) {
+  // patch 172: found by a name, a number or a word (q); a number is matched on its digits ("+371 2000" finds 37120000...)
+  const want = searchText(q), digits = want.replace(/\D/g, '');
+  const rows = (await db.prepare(`SELECT id, from_num, name, body, media, at, seen_at, seen_by FROM tc_whatsapp_in
+    WHERE ${handled ? 'seen_at IS NOT NULL' : 'seen_at IS NULL'} ORDER BY at DESC LIMIT ${want ? 3000 : 600}`).all())
+    .filter((r) => !want || `${r.name || ''} ${r.body || ''}`.toLowerCase().includes(want) || (digits.length >= 4 && String(r.from_num || '').replace(/\D/g, '').includes(digits)));
   const keys = [...new Set(rows.map((r) => last8(r.from_num)).filter((k) => k.length === 8))];
   const known = new Map();
   if (keys.length) {
@@ -58,7 +61,7 @@ export async function tcInbox(db, { handled = false } = {}) {
   }
   const waWaiting = handled ? Number((await db.prepare('SELECT COUNT(DISTINCT from_num) AS n FROM tc_whatsapp_in WHERE seen_at IS NULL').get()).n) : cards.size;
   // patch 167: training@'s conversations beside the WhatsApp cards, newest first (src/tcmail.js)
-  const mail = await mailCards(db, { handled });
+  const mail = await mailCards(db, { handled, q });
   const all = [...[...cards.values()].map((c) => ({ kind: 'whatsapp', ...c })), ...mail.cards].sort((a, b) => String(b.at).localeCompare(String(a.at)));
   return { cards: all, waiting: waWaiting + mail.waiting };
 }

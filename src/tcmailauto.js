@@ -1,19 +1,21 @@
 // THE TRAINING CENTRE EMAIL AUTOMATION (patch 172, 24.11.2026). His words "Make the same mechanism for TC email!": the Academy's
 // email automation (patch 171, src/mailauto.js) for training@ in the Training Centre Inbox. His picks 24.11.2026 (through MASTER
 // CONTROL, pictures TC_AUTO_1..5):
-//   1. training@ replying in Gmail processes the card itself: onto the known contact or private client, else a new one; the
-//      conversation moves to Handled with "B2B · added to <company> by Intake · Undo" / "B2C · made a private client by Intake".
-//   2. The B2B/B2C rule, by who sent the email; the first row that fits decides, an address is matched whole:
-//        1 already a contact of a company -> B2B onto them; 2 already a private client -> B2C onto them;
-//        3 a private mailbox (gmail, inbox.lv, outlook, proton...) -> B2C a new private client, came from Email;
-//        4 a company address whose domain is a company's website or another contact's address -> B2B a new contact there;
-//        5 a company address Intake does not know -> B2B: Intake creates the company, named after the domain (his pick "B");
-//        6 never a client: Novikontas, no-reply and system senders, Google, LinkedIn, invoices, CVs, suppliers -> nothing.
-//   3. The course the email names fills the client (a private client's Course; a company line's topics).
+//   1. training@ replying in Gmail processes the card itself: onto the known company contact, else a new contact (or company); the
+//      conversation moves to Handled with "B2B · added to <company> by Intake · Undo".
+//   2. The rule, by who sent the email; the first row that fits decides, an address is matched whole:
+//        1 already a contact of a company -> B2B onto them;
+//        2 a private mailbox (gmail, inbox.lv, outlook, proton...) -> a PRIVATE PERSON: the card is handled when training@ answers and
+//          nothing is created (his words 24.11.2026: "we have private clients in n3!!!", his pick "Stays in Inbox only", and
+//          "for private clients for now the intake will be a communication hub": the card holds the whole conversation, findable);
+//        3 a company address whose domain is a company's website or another contact's address, or one company named like the
+//          domain -> B2B a new contact there;
+//        4 a company address Intake does not know -> B2B: Intake creates the company, named after the domain (his pick "B");
+//        5 never a client: Novikontas, no-reply and system senders, Google, LinkedIn, invoices, CVs, suppliers -> nothing.
+//   3. The course the email names goes on the company's history line (topics).
 //   4. A waiting email is late after one working day; a Follow up 7 days after our reply when nothing is planned.
 //   (from when: every conversation training@ answered from 25.10.2026 on, his final answer "Back to 25.10")
-//   5. They write back after our reply: a History line "They wrote back and asked about <topic>"; the level is not changed
-//      (his pick "A: stays Contacted"; what Intake does with the levels waits for his answer on the levels, 24.11.2026).
+//   5. They write back after our reply: a History line "They wrote back and asked about <topic>". No levels (removed 24.11.2026).
 //   6. A suggested reply from training@'s answers to emails like it, to Copy. Intake NEVER sends, drafts or changes Gmail.
 // Every row Intake writes is recorded in tc_mail_auto; Undo takes it back and puts the card back in the Inbox.
 import { PRIVATE, SYSTEM_SENDER, cleanReply, words, dm } from './mailauto.js';
@@ -43,7 +45,7 @@ const NEVER_TEXT = [
 // more private mailboxes than the Academy list names (the dry run of 24.11.2026 found msn.com becoming a company)
 const PRIVATE_MORE = /@(pm\.me|proton\.me|msn\.com|windowslive\.com|mail\.com|email\.com|ymail\.com|rocketmail\.com|zoho\.com|tutanota\.\w+|tuta\.io|inbox\.ru|rambler\.ru|abv\.bg|onet\.pl|libero\.it|orange\.fr|wanadoo\.fr|t-online\.de|freenet\.de|online\.de|hotmail\.\w+|outlook\.\w+|live\.\w+|yahoo\.\w+(\.\w+)?|icloud\.com|me\.com|mac\.com|ukr\.net|i\.ua|meta\.ua|bigmir\.net|inbox\.lt|one\.lt|takas\.lt|mail\.ee|hot\.ee|online\.no|start\.no|telia\.\w+)$/i;
 
-// the courses the Training Centre teaches, as people write them (the topic of a History line, a private client's Course)
+// the courses the Training Centre teaches, as people write them (the topic of a company's History line)
 const COURSES = [
   ['GWO BST', /gwo\W{0,3}(bst|basic safety)/i], ['GWO ART', /gwo\W{0,3}(art|advanced rescue)/i], ['GWO', /\bgwo\b/i],
   ['BOSIET', /bosiet/i], ['FOET', /\bfoet\b/i], ['HUET', /\bhuet\b/i], ['CA-EBS', /ca\W?ebs/i],
@@ -78,14 +80,12 @@ export function nameFromDomain(dom) {
   return base.split(/[-_]+/).filter(Boolean).map((w) => w[0].toUpperCase() + w.slice(1)).join(' ');
 }
 
-/** THE B2B/B2C RULE: who sent it decides. { segment, rule, companyId?, contactId?, privateId?, domain } or { never } / { ask }. */
+/** THE RULE: who sent it decides. { segment: 'b2b' | 'b2c', rule, companyId?, contactId?, domain } or { never } / { ask }. b2c = a private person. */
 export async function classify(db, addr, text = '') {
   const a = low(addr), dom = domainOf(a);
   const k = await db.prepare(`SELECT k.id, k.company_id FROM tc_company_contacts k JOIN tc_companies c ON c.id = k.company_id
     WHERE k.archived_at IS NULL AND c.archived_at IS NULL AND LOWER(k.email) = ? ORDER BY k.id LIMIT 1`).get(a);
   if (k) return { segment: 'b2b', rule: 'contact', companyId: Number(k.company_id), contactId: Number(k.id), domain: dom };
-  const p = await db.prepare('SELECT id FROM tc_private_clients WHERE archived_at IS NULL AND LOWER(email) = ? ORDER BY id LIMIT 1').get(a);
-  if (p) return { segment: 'b2c', rule: 'private', privateId: Number(p.id), domain: dom };
   const never = neverAClient(a, text);
   if (never) return never;
   if (PRIVATE.test(a) || PRIVATE_MORE.test(a)) return { segment: 'b2c', rule: 'mailbox', domain: dom };
@@ -130,36 +130,17 @@ async function writeCompanyLines(db, auto, msgs, name, wrote) {
   const last = msgs[msgs.length - 1];
   if (last) await db.prepare('UPDATE tc_companies SET last_contact_at = ? WHERE id = ? AND (last_contact_at IS NULL OR last_contact_at < ?)').run(last.at, auto.company_id, last.at);
 }
-async function writePrivateLines(db, auto, msgs, name, wrote) {
-  let out = msgs.some((m) => m.direction === 'out' && auto.logged_to && String(m.at) <= String(auto.logged_to));
-  for (const m of msgs) {
-    if (auto.logged_to && String(m.at) <= String(auto.logged_to)) { if (m.direction === 'out') out = true; continue; }
-    const r = await db.prepare('INSERT INTO tc_private_history (client_id, kind, occurred_at, body, actor, created_at) VALUES (?,?,?,?,?,?)')
-      .run(auto.private_id, 'email', m.at, lineFor(m, name, out), BY, nowIso());
-    wrote.history.push(Number(r.lastInsertRowid));
-    if (m.direction === 'out') out = true;
-  }
-}
-/** pick 4: nothing planned -> "Follow up" 7 days after our last reply (a company task; a private client's next contact) */
+/** pick 4: nothing planned -> "Follow up" 7 days after our last reply (a company task) */
 async function followUp(db, auto, lastOut, wrote, at) {
   if (!lastOut) return;
   const due = day(plusDays(lastOut.at, SILENCE_DAYS));
-  if (auto.segment === 'b2b') {
-    const open = await db.prepare('SELECT id FROM tc_tasks WHERE company_id = ? AND done_at IS NULL').get(auto.company_id);
-    if (open) return;
-    const c = await db.prepare('SELECT pic_name FROM tc_companies WHERE id = ?').get(auto.company_id);
-    const r = await db.prepare('INSERT INTO tc_tasks (company_id, contact_id, label, due_at, owner, created_at, created_by, kind) VALUES (?,?,?,?,?,?,?,?)')
-      .run(auto.company_id, auto.contact_id || null, FOLLOW_UP, due, (c && c.pic_name) || null, at, BY, 'email');
-    wrote.tasks.push(Number(r.lastInsertRowid));
-  } else {
-    const p = await db.prepare('SELECT next_at FROM tc_private_clients WHERE id = ?').get(auto.private_id);
-    if (p && p.next_at) return;
-    await db.prepare('UPDATE tc_private_clients SET next_at = ?, updated_at = ?, updated_by = ? WHERE id = ?').run(due, at, BY, auto.private_id);
-    const r = await db.prepare('INSERT INTO tc_private_history (client_id, kind, occurred_at, body, actor, created_at) VALUES (?,?,?,?,?,?)')
-      .run(auto.private_id, 'edit', at, `Next contact: ${due.split('-').reverse().join('.')} (${FOLLOW_UP}, ${SILENCE_DAYS} days after our reply of ${dm(lastOut.at)})`, BY, at);
-    wrote.history.push(Number(r.lastInsertRowid));
-    wrote.nextAt = due;
-  }
+  if (auto.segment !== 'b2b') return;   // a private person: nothing to plan in Intake (N3 holds private clients)
+  const open = await db.prepare('SELECT id FROM tc_tasks WHERE company_id = ? AND done_at IS NULL').get(auto.company_id);
+  if (open) return;
+  const c = await db.prepare('SELECT pic_name FROM tc_companies WHERE id = ?').get(auto.company_id);
+  const r = await db.prepare('INSERT INTO tc_tasks (company_id, contact_id, label, due_at, owner, created_at, created_by, kind) VALUES (?,?,?,?,?,?,?,?)')
+    .run(auto.company_id, auto.contact_id || null, FOLLOW_UP, due, (c && c.pic_name) || null, at, BY, 'email');
+  wrote.tasks.push(Number(r.lastInsertRowid));
 }
 const parse = (s, d) => { try { return s ? JSON.parse(s) : d; } catch { return d; } };
 
@@ -172,8 +153,7 @@ async function processThread(db, thread, msgs, at) {
   if (!cls.segment) return { processed: false, why: cls.never || cls.ask };
   const name = lastIn.from_name || first.from_name || lastIn.from_addr;
   const made = {}, wrote = { activities: [], history: [], tasks: [] };
-  const auto = { thread_id: thread, segment: cls.segment, rule: cls.rule, company_id: cls.companyId || null, contact_id: cls.contactId || null, private_id: cls.privateId || null, logged_to: null };
-  const course = coursesIn(text)[0] || null;
+  const auto = { thread_id: thread, segment: cls.segment, rule: cls.rule, company_id: cls.companyId || null, contact_id: cls.contactId || null, private_id: null, logged_to: null };
   if (cls.segment === 'b2b') {
     if (cls.rule === 'new_company') {
       try { auto.company_id = (await tc.addCompany(db, { name: nameFromDomain(cls.domain), website: cls.domain }, BY)).id; made.company = true; }
@@ -185,21 +165,8 @@ async function processThread(db, thread, msgs, at) {
       else { auto.contact_id = (await tc.addContact(db, auto.company_id, { name: lastIn.from_name || '', email: low(lastIn.from_addr) }, BY)).id; made.contact = true; }
     }
     await writeCompanyLines(db, auto, msgs, name, wrote);
-  } else {
-    if (!auto.private_id) {
-      const r = await db.prepare(`INSERT INTO tc_private_clients (name, phone, email, course, came_from, owner, status, created_at, created_by) VALUES (?,?,?,?,?,?,?,?,?)`)
-        .run(lastIn.from_name || lastIn.from_addr, null, low(lastIn.from_addr), course, 'Email', null, 'not_contacted', at, BY);
-      auto.private_id = Number(r.lastInsertRowid); made.private = true;
-    } else if (course) {
-      const p = await db.prepare('SELECT course FROM tc_private_clients WHERE id = ?').get(auto.private_id);
-      if (p && !p.course) {
-        await db.prepare('UPDATE tc_private_clients SET course = ?, updated_at = ?, updated_by = ? WHERE id = ?').run(course, at, BY, auto.private_id);
-        const h = await db.prepare('INSERT INTO tc_private_history (client_id, kind, occurred_at, body, actor, created_at) VALUES (?,?,?,?,?,?)').run(auto.private_id, 'edit', at, `Course: ${course} (from the email)`, BY, at);
-        wrote.history.push(Number(h.lastInsertRowid)); wrote.course = true;
-      }
-    }
-    await writePrivateLines(db, auto, msgs, name, wrote);
   }
+  // a private person (b2c): nothing is created; the card is handled and keeps the whole conversation (src/tcmail.js mailCards)
   await followUp(db, auto, [...msgs].reverse().find((m) => m.direction === 'out'), wrote, at);
   auto.logged_to = msgs[msgs.length - 1].at;
   await db.prepare(`UPDATE tc_mail SET seen_at = ?, seen_by = ? WHERE thread_id = ? AND direction = 'in' AND seen_at IS NULL`).run(at, BY, thread);
@@ -216,14 +183,14 @@ async function carryOn(db, auto, msgs, at) {
   const lastIn = [...msgs].reverse().find((m) => m.direction === 'in');
   const name = (lastIn && (lastIn.from_name || lastIn.from_addr)) || '';
   const before = { activities: wrote.activities.length, history: wrote.history.length };
-  if (auto.segment === 'b2b') await writeCompanyLines(db, auto, msgs, name, wrote); else await writePrivateLines(db, auto, msgs, name, wrote);
+  if (auto.segment === 'b2b') await writeCompanyLines(db, auto, msgs, name, wrote);
   const lastOut = [...msgs].reverse().find((m) => m.direction === 'out');
   if (lastOut && lastIn && String(lastOut.at) > String(lastIn.at)) {
     await followUp(db, auto, lastOut, wrote, at);
     await db.prepare(`UPDATE tc_mail SET seen_at = ?, seen_by = ? WHERE thread_id = ? AND direction = 'in' AND seen_at IS NULL`).run(at, BY, auto.thread_id);
   }
   await db.prepare('UPDATE tc_mail_auto SET wrote = ?, logged_to = ? WHERE thread_id = ?').run(JSON.stringify(wrote), msgs[msgs.length - 1].at, auto.thread_id);
-  return wrote.activities.length > before.activities || wrote.history.length > before.history;
+  return wrote.activities.length > before.activities || (auto.segment !== 'b2b' && fresh.length > 0);
 }
 
 /** After each training@ read (src/sync.js syncTcMail): process what training@ answered; carry on what Intake already holds. */
@@ -268,7 +235,7 @@ export async function processTcMail(db, { at = nowIso(), limit = PER_RUN } = {})
 
 // --------------------------------------------------------------------------------------------------- Undo --
 /** Undo: the card is back in the Inbox; what Intake wrote is taken away; what Intake made is archived (nothing is deleted
- *  that a person touched: a company, contact or private client somebody worked on since stays, with a note). */
+ *  that a person touched: a company or contact somebody worked on since stays, with a note). */
 export async function undoTc(db, key, by, at = nowIso()) {
   if (!by) return { error: 'Who is undoing this?' };
   const thread = String(key || '').startsWith('m:') ? String(key).slice(2) : '';
@@ -281,15 +248,7 @@ export async function undoTc(db, key, by, at = nowIso()) {
     const ids = (l) => (l || []).map(Number).filter(Boolean);
     const any = async (sql, ...p) => Number((await tx.prepare(sql).get(...p)).n) > 0;
     let kept = false;
-    if (a.segment === 'b2c') {
-      if (made.private) {
-        if (await any(`SELECT COUNT(*) AS n FROM tc_private_history WHERE client_id = ? AND COALESCE(actor, '') <> ?`, a.private_id, BY)) kept = true;
-        else await tx.prepare('UPDATE tc_private_clients SET archived_at = ?, archived_by = ? WHERE id = ? AND archived_at IS NULL').run(at, by, a.private_id);
-      } else {
-        if (wrote.nextAt) await tx.prepare('UPDATE tc_private_clients SET next_at = NULL WHERE id = ? AND next_at = ?').run(a.private_id, wrote.nextAt);
-        if (wrote.course) await tx.prepare('UPDATE tc_private_clients SET course = NULL WHERE id = ?').run(a.private_id);
-      }
-    } else {
+    if (a.segment === 'b2b') {
       // a company Intake made: archived when no person did anything on it; a contact Intake made: when no person did anything with them
       const companyTouched = await any(`SELECT COUNT(*) AS n FROM tc_activities WHERE company_id = ? AND COALESCE(actor, '') <> ?`, a.company_id, BY)
         || await any(`SELECT COUNT(*) AS n FROM tc_tasks WHERE company_id = ? AND COALESCE(created_by, '') <> ?`, a.company_id, BY);
@@ -305,7 +264,6 @@ export async function undoTc(db, key, by, at = nowIso()) {
     for (const id of ids(wrote.tasks)) await tx.prepare(`UPDATE tc_tasks SET done_at = ?, outcome = 'Undo' WHERE id = ? AND done_at IS NULL AND created_by = ?`).run(at, id, BY);
     const note = `Undo by ${by}: the email conversation is back in the Inbox`;
     if (a.segment === 'b2b') await tx.prepare(`INSERT INTO tc_activities (company_id, contact_id, kind, occurred_at, body, actor, origin) VALUES (?,?,?,?,?,?,?)`).run(a.company_id, a.contact_id || null, 'note', at, note, by, 'manual');
-    else await tx.prepare('INSERT INTO tc_private_history (client_id, kind, occurred_at, body, actor, created_at) VALUES (?,?,?,?,?,?)').run(a.private_id, 'note', at, note, by, at);
     await tx.prepare(`UPDATE tc_mail SET seen_at = NULL, seen_by = NULL WHERE thread_id = ? AND direction = 'in' AND seen_by = ?`).run(thread, BY);
     await tx.prepare('UPDATE tc_mail_auto SET undone_at = ?, undone_by = ? WHERE thread_id = ?').run(at, by, thread);
     return { ok: true, kept };

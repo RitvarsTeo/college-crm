@@ -57,18 +57,12 @@ test('the run: nothing until training@ is connected; training@ is never read as 
   assert.equal(own.mailboxes, 0);
 });
 
-test('Make a lead from an email card: B2B company line "Email from", B2C private client from Email; one address is one person', async () => {
+test('Make a lead from an email card: B2B company line "Email from" (no B2C in Intake since 24.11.2026: private clients live in N3)', async () => {
   const tc = await import('../src/tc.js');
-  const P = await import('../src/tcprivate.js');
   const db = await openDb();
   const out = await tc.quickAdd(db, { newCompany: 'Example Crewing SIA', name: 'Kristaps Paraugs', email: 'kristaps@example.lv', note: 'GWO BST. Dates please.', via: 'email' }, 'Laura');
   const line = await db.prepare('SELECT body FROM tc_activities WHERE company_id = ? AND kind = ?').get(out.companyId, 'contact');
   assert.equal(line.body, 'Email from Kristaps Paraugs. GWO BST. Dates please.');
-  const a = await P.add(db, { name: 'Elīna Piemēra', email: 'elina@example.com', note: 'STCW refresher', via: 'email' }, 'Laura');
-  const one = await P.get(db, a.id);
-  assert.deepEqual([one.client.cameFrom, one.history[0].kind], ['Email', 'email']);
-  const again = await P.add(db, { name: 'Elīna', email: 'ELINA@example.com', note: 'And the price?', via: 'email' }, 'Laura');
-  assert.deepEqual([again.id, again.created], [a.id, false]);
 });
 
 test('the page and the server: Email cards in the TC Inbox, a Connect training@ for an admin, the callback keeps only training@', () => {

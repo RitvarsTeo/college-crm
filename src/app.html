@@ -2896,15 +2896,9 @@ svg .m-flag-mark{transform-origin:0 100%}
   @media (max-width:760px){ html.ui-c .tc-mrow{grid-template-columns:minmax(0,1fr) auto} html.ui-c .tc-mrow > span:nth-child(2), html.ui-c .tc-mrow > span:nth-child(3){display:none} }
   /* Families cards and the company row chips (02.11.2026, the owner's pick "Yes, build all") */
   html.ui-c .tcml-link{padding:14px 22px;margin:0 0 16px;max-width:760px;display:grid;gap:6px} html.ui-c .tcml-link small{color:var(--t2);font-weight:600}
+  html.ui-c .ib-out{border-left:3px solid var(--pet);padding-left:8px;color:var(--t2)} html.ui-c .ib-more{background:none;border:0;padding:2px 0;color:var(--accent-ink);font:inherit;font-size:13px;cursor:pointer;text-decoration:underline}
+  html.ui-c .ib-search{min-width:240px;padding:8px 12px;border:1px solid var(--control-line);border-radius:8px;background:var(--field);color:var(--ink);font:inherit}
   html.ui-c .tcml-linkrow{display:flex;gap:8px} html.ui-c .tcml-linkrow input{flex:1;min-width:0;font:14px monospace;padding:8px}
-  html.ui-c .tcpv-list{padding:6px 22px 10px;max-width:1100px} html.ui-c .tcpv-row{display:grid;grid-template-columns:1.2fr 1fr 1.4fr 1fr;gap:14px;align-items:center;padding:14px 4px;border-top:1px solid var(--rule);color:var(--ink);text-decoration:none}
-  html.ui-c .tcpv-row b{font-size:16px} html.ui-c .tcpv-row span{color:var(--t2);font-weight:600} html.ui-c .tcpv-row small{color:var(--t3);font-weight:600;text-align:right}
-  html.ui-c .tcpv-row.tcpv-h{border-top:0;color:var(--t3);font-weight:700;font-size:13px;padding:10px 4px} html.ui-c .tcpv-row > a{color:var(--ink);text-decoration:none} html.ui-c .tcpv-row > a:hover b{color:var(--accent-ink)}
-  html.ui-c .tcpv-grid{display:grid;grid-template-columns:1.6fr 1fr;gap:16px;align-items:start} html.ui-c .tcpv-box{padding:16px 22px;margin:0 0 16px}
-  html.ui-c .tcpv-box h3{margin:0 0 10px} html.ui-c .tcpv-h1{display:grid;grid-template-columns:150px 1fr;gap:14px;padding:10px 0;border-top:1px solid var(--rule)} html.ui-c .tcpv-h1 small{color:var(--t3);font-weight:700}
-  html.ui-c .tcpv-h1 span{color:var(--t2);font-weight:600} html.ui-c .tcpv-by{color:var(--t3);font-size:13px} html.ui-c .tcpv-d{display:grid;grid-template-columns:150px 1fr;padding:6px 0} html.ui-c .tcpv-d span{color:var(--t2);font-weight:600}
-  html.ui-c .tcpv-form{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;margin-bottom:10px} html.ui-c .tcpv-wide{grid-column:1/-1} html.ui-c .ib-lead{margin-top:10px;padding-top:10px;border-top:1px solid var(--rule)} html.ui-c .ib-lead > b{display:block;font-size:13px;margin-bottom:6px}
-  @media (max-width:760px){ html.ui-c .tcpv-grid,html.ui-c .tcpv-form,html.ui-c .tcpv-h1{grid-template-columns:1fr} html.ui-c .tcpv-h1{gap:2px} html.ui-c .tcpv-row{grid-template-columns:1fr 1fr} html.ui-c .tcpv-row small{text-align:left} }
   html.ui-c .tcsame-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px;max-width:1100px}
   html.ui-c .tcsame-g{padding:18px 20px;margin:0 0 14px} html.ui-c .tcsame-c{display:flex;align-items:center;gap:12px;padding:8px 0}
   html.ui-c .tcsame-c + .tcsame-c{border-top:1px solid var(--rule)} html.ui-c .tcsame-c input{width:18px;height:18px}
@@ -11730,11 +11724,11 @@ function tcPageTabs(place) {
   // his words 23.11.2026 (patch 164): "grand opening should be the first tab!" and "my grand opening list needs to be the default page
   // that opens when clicked grand opening!" (an account without a list gets the overview)
   const plan = [...(T_GO_ON ? [[T_GO_MINE ? '#/tc/mylist' : '#/tc/go', 'go', 'Grand Opening']] : []), week ? ['#/tc/week', 'week', 'My week'] : ['#/tc/next', 'next', 'Next contacts'], ...(season ? [['#/tc/season', 'season', 'Season']] : [])];
-  const clients = [['#/tc/companies', 'companies', 'Companies'], ['#/tc/book', 'book', 'Client book'], ['#/tc/private', 'private', 'Private clients'],
+  const clients = [['#/tc/companies', 'companies', 'Companies'], ['#/tc/book', 'book', 'Client book'],
     ...(T_ADDN && T_ADDN.approver ? [['#/tc/additions', 'additions', `New additions${T_ADDN.n ? ' · ' + Number(T_ADDN.n) : ''}`]] : []),
     ...(isAdmin() ? [['#/tc/same', 'same', 'Same company?']] : [])];
-  const group = ['week', 'season', 'go', 'next', 'mylist'].includes(place) ? plan : ['companies', 'clients', 'prospects', 'book', 'additions', 'same', 'private', 'privateone'].includes(place) ? clients : null;
-  const on = ['clients', 'prospects'].includes(place) ? 'companies' : place === 'mylist' ? 'go' : place === 'privateone' ? 'private' : place;
+  const group = ['week', 'season', 'go', 'next', 'mylist'].includes(place) ? plan : ['companies', 'clients', 'prospects', 'book', 'additions', 'same'].includes(place) ? clients : null;
+  const on = ['clients', 'prospects'].includes(place) ? 'companies' : place === 'mylist' ? 'go' : place;
   // a div, not a nav: the page's own nav rule is the side menu's
   T_TABS = group && group.length > 1 ? `<div class="c-seg tc-pagetabs" role="navigation" aria-label="${group === plan ? 'Plan' : 'Clients'}">${group.map(([h, id, label]) =>
     `<a href="${h}"${id === on ? ' aria-current="page"' : ''}>${label}</a>`).join('')}</div>` : '';
@@ -11756,7 +11750,7 @@ if (typeof MutationObserver !== 'undefined' && typeof document !== 'undefined' &
 }
 function tcMore(open) { const m = $('#tMore'); if (m) m.hidden = !open; }
 // which menu item a page belongs to (the compact menu, the owner's pick B, 28.10.2026)
-const TC_PLAN = ['week', 'season', 'go', 'next', 'mylist', 'postcards'], TC_CLIENTS = ['companies', 'company', 'clients', 'prospects', 'book', 'families', 'import', 'same', 'private', 'privateone'];
+const TC_PLAN = ['week', 'season', 'go', 'next', 'mylist', 'postcards'], TC_CLIENTS = ['companies', 'company', 'clients', 'prospects', 'book', 'families', 'import', 'same'];
 function tcMark(place) {
   const item = TC_PLAN.includes(place) ? 'plan' : TC_CLIENTS.includes(place) ? 'companies' : place;
   document.querySelectorAll('.tcnav a').forEach((a) => a.classList.toggle('on', a.dataset.c === 'tc-' + item));
@@ -11802,8 +11796,6 @@ async function tcRoute(hash) {
     else if (place === 'families') await viewTcFamilies();   // the owner's pick B, 28.10.2026
     else if (place === 'same') await viewTcSame();   // patch 163, his tick list 23.11.2026
     else if (place === 'inbox') await viewTcInbox(arg === 'handled');   // patch 166, the Training Centre Inbox
-    else if (place === 'private' && arg) { tcPageTabs('privateone'); await viewTcPrivate(Number(arg)); }   // patch 166, one private client
-    else if (place === 'private') await viewTcPrivates();   // patch 166, the Private clients list
     else if (place === 'import') viewTcImport();   // the owner's pick A, 28.10.2026
     else if (place === 'additions') await viewTcAdditions();   // the owner, 29.10.2026: New additions, approve or flag
     else { await viewTcHome(); tcMyClients(); tcTourFirst(); }
@@ -12769,8 +12761,13 @@ let T_FAM = null;
 let T_IN = null;
 // Meta writes the number without its + (37120000001): shown as every number in Intake is
 const tcWaNum = (n) => { const d = String(n || '').replace(/\D/g, ''); return d ? (String(n).trim().startsWith('+') ? String(n).trim() : '+' + d) : ''; };
+// patch 172 ("the intake will be a communication hub"): any conversation, waiting or handled, found by a name, an address, a number or
+// a word; the search stays while switching Waiting / Handled
+let T_INQ = '';
+const T_INOPEN = new Set();   // cards showing their whole conversation
 async function viewTcInbox(handled) {
-  T_IN = await api('/api/tc/inbox' + (handled ? '?handled=1' : ''));
+  const qs = [handled ? 'handled=1' : '', T_INQ ? 'q=' + encodeURIComponent(T_INQ) : ''].filter(Boolean).join('&');
+  T_IN = await api('/api/tc/inbox' + (qs ? '?' + qs : ''));
   T_IN.handled = Boolean(handled);
   try { T_IN.mail = await api('/api/tc/mail'); } catch (e) { T_IN.mail = null; }   // patch 167: is training@ connected
   tcInboxCount(T_IN.waiting);
@@ -12796,26 +12793,29 @@ function tcInboxDraw() {
   const who = (c) => c.person || c.name ? esc(c.person || c.name) + (c.company ? ` · <a href="#/tc/company/${Number(c.companyId)}" onclick="event.stopPropagation()">${esc(c.company)}</a>` : '') : (cTelLink({ phone: tcWaNum(c.number) }) || 'Unknown');
   const msg = (m) => `<div class="ib-msg">${m.body ? esc(m.body) : esc(m.media ? '(' + m.media + ')' : '')}</div>`;
   // patch 167: a training@ conversation is an Email card (the Academy email blue): the subject, the text, the sender's address
-  const mailWho = (c) => c.person || c.name ? esc(c.person || c.name) + (c.company ? ` · <a href="#/tc/company/${Number(c.companyId)}" onclick="event.stopPropagation()">${esc(c.company)}</a>` : c.privateId ? ` · <a href="#/tc/private/${Number(c.privateId)}" onclick="event.stopPropagation()">Private client</a>` : '') : esc(c.email);
-  const mailMsg = (m) => `${m.subject ? `<div class="ib-msg"><b>${esc(m.subject)}</b></div>` : ''}<div class="ib-msg">${esc(m.body || '')}</div>`;
+  const mailWho = (c) => c.person || c.name ? esc(c.person || c.name) + (c.company ? ` · <a href="#/tc/company/${Number(c.companyId)}" onclick="event.stopPropagation()">${esc(c.company)}</a>` : '') : esc(c.email);
+  // patch 172: the whole conversation, oldest on top: their emails and training@'s replies (marked), the subject once, when it changes
+  const mailMsg = (m, i, all) => `${m.subject && (i === 0 || String(all[i - 1].subject || '').replace(/^(re|fw|fwd):\s*/i, '') !== String(m.subject).replace(/^(re|fw|fwd):\s*/i, '')) ? `<div class="ib-msg"><b>${esc(m.subject)}</b></div>` : ''}<div class="ib-msg${m.dir === 'out' ? ' ib-out' : ''}">${m.dir === 'out' ? '<b>training@</b> · ' : ''}<small>${esc(cAgo(m.at))}</small> ${esc(m.body || '')}</div>`;
+  const convo = (c, mail) => { const open = T_INOPEN.has(c.key), list = open ? c.messages : c.messages.slice(0, 5), more = c.messages.length - list.length;
+    const k = esc(JSON.stringify(String(c.key)));
+    return `${more > 0 ? `<button type="button" class="ib-more" onclick="event.stopPropagation();T_INOPEN.add(${k});tcInboxDraw()">${Number(more)} earlier · Show all</button>` : ''}${[...list].reverse().map(mail ? mailMsg : msg).join('')}`; };
   // patch 172 (src/tcmailauto.js): a conversation Intake processed after training@ replied says where it went, with Undo
   const autoLine = (c) => { const a = c.auto, k = esc(JSON.stringify(String(c.key)));
     return `<div class="ib-before"><span><b>✓ Answered by training@</b><br>${a.segment === 'b2b'
       ? `B2B · added to <a href="#/tc/company/${Number(a.companyId)}" onclick="event.stopPropagation()">${esc(a.company || 'the company')}</a>`
-      : `B2C · made a <a href="#/tc/private/${Number(a.privateId)}" onclick="event.stopPropagation()">private client</a>`} by Intake · <button type="button" class="ib-undo" onclick="event.stopPropagation();tcInboxUndo(${k}, this)">Undo</button></span></div>`; };
+      : 'Private person · the conversation stays here'}${a.segment === 'b2b' ? ' by Intake' : ''} · <button type="button" class="ib-undo" onclick="event.stopPropagation();tcInboxUndo(${k}, this)">Undo</button></span></div>`; };
   const state = (c) => !live ? (c.auto ? autoLine(c) : `<div class="ib-before"><span>Done ${esc(fmtDateTime(c.seenAt) || '')}${c.seenBy ? ' · ' + esc(c.seenBy) : ''}</span></div>`)
     : c.answered ? `<div class="c-st c-st-answered" title="${esc(fmtDateTime(c.answered.at))}"><span class="c-st-w">✓ Answered by ${esc(c.answered.by || 'training@')}</span><span class="c-st-d"> · ${esc(cAgo(c.answered.at))}</span></div>`
     : cStateLine(c.late ? 'late' : 'new', cAgo(c.at), '', fmtDateTime(c.at));
   const card = (c) => { const mail = c.kind === 'email'; return `<div class="c-jp row ib-card c-rail c-rail-${live ? 'due' : 'due'}" data-k="${esc(c.key)}">
       <div class="ib-top"><b class="c-reach">${mail ? mailWho(c) : who(c)}</b></div>
       <small class="ib-ch" style="--src:${mail ? C_SRC_COLOUR.email : C_SRC_COLOUR.whatsapp}"><i></i>${mail ? 'Email' : 'WhatsApp'}</small>
-      ${c.messages.length > 5 ? `<div class="ib-msg">${Number(c.messages.length - 5)} earlier</div>` : ''}${c.messages.slice(0, 5).reverse().map(mail ? mailMsg : msg).join('')}
+      ${convo(c, mail)}
       ${mail ? (c.person || c.name ? `<div class="ib-tags"><span class="ib-kind">${esc(c.email)}</span></div>` : '')
         : c.person || c.name ? `<div class="ib-tags"><span class="ib-kind">${cTelLink({ phone: tcWaNum(c.number) }) || esc(c.number)}</span></div>` : ''}
       ${state(c)}
       ${live && mail && !c.answered ? tcSuggestHtml(c.key) : ''}
-      ${live && T_IN.lead === c.key ? `<div class="ib-lead"><b>Make a lead</b><div class="ib-acts"><button class="btn sm" onclick="tcInboxLead(${esc(JSON.stringify(String(c.key)))})">B2B · company</button><button class="btn sm ghost" onclick="tcInboxPrivate(${esc(JSON.stringify(String(c.key)))})">B2C · private person</button><button type="button" class="ib-aside" onclick="T_IN.lead=null;tcInboxDraw()">Cancel</button></div></div>`
-        : live ? `<div class="ib-acts"><button class="btn sm" onclick="T_IN.lead=${esc(JSON.stringify(String(c.key)))};tcInboxDraw()">Make a lead</button><button type="button" class="ib-aside" onclick="tcInboxDone(${esc(JSON.stringify(String(c.key)))}, this)">Done</button></div>` : ''}</div>`; };
+      ${live ? `<div class="ib-acts"><button class="btn sm" onclick="tcInboxLead(${esc(JSON.stringify(String(c.key)))})">Make a lead</button><button type="button" class="ib-aside" onclick="tcInboxDone(${esc(JSON.stringify(String(c.key)))}, this)">Done</button></div>` : ''}</div>`; };
   const shown = cols.filter((c) => c.cards.length || live);
   const board = D.cards.length
     ? `<div class="c-cols ib-board" style="grid-template-columns:${shown.map(() => 'minmax(0,1fr)').join(' ')}">${shown.map((c, i) => `<div class="c-col ib-col"><h3><span class="c-jn">${i + 1}</span>${esc(c.label)}<b>${live ? c.cards.filter((x) => !x.answered).length : c.cards.length}</b></h3>
@@ -12825,7 +12825,9 @@ function tcInboxDraw() {
   // patch 169: or a one-time link for the person who holds training@'s password ("one click and done"), shown once here
   const connect = M.mailbox && !M.connected && isAdmin() ? `<button type="button" class="btn ghost" onclick="location.href='/api/tc/mail/connect'">Connect training@</button><button type="button" class="btn ghost" onclick="tcMailLink(this)">Make a link for training@</button>` : '';
   $('#view').innerHTML = `<p class="c-crumb">Training Centre · WhatsApp +371 6244 4609 · training@novikontas.org</p><div class="c-head"><div><h1>Inbox</h1></div>${connect}
-    <div class="c-seg p-view" role="group" aria-label="Show"><button aria-pressed="${live}" onclick="location.hash='#/tc/inbox'">Waiting</button><button aria-pressed="${!live}" onclick="location.hash='#/tc/inbox/handled'">Handled</button></div></div>${T_IN.link ? tcMailLinkBox(T_IN.link) : ''}${board}`;
+    <input type="search" class="ib-search" id="tcInSearch" placeholder="Find a name, email, phone or word" aria-label="Find a conversation" value="${esc(T_INQ)}"
+      onkeydown="if(event.key==='Enter'){T_INQ=this.value.trim();viewTcInbox(T_IN.handled)}" onsearch="T_INQ=this.value.trim();viewTcInbox(T_IN.handled)">
+    <div class="c-seg p-view" role="group" aria-label="Show"><button aria-pressed="${live}" onclick="location.hash='#/tc/inbox'">Waiting</button><button aria-pressed="${!live}" onclick="location.hash='#/tc/inbox/handled'">Handled</button></div></div>${T_IN.link ? tcMailLinkBox(T_IN.link) : ''}${T_INQ ? `<p class="c-crumb">${tcN(D.cards.length)} ${D.cards.length === 1 ? 'conversation' : 'conversations'} with "${esc(T_INQ)}" · <button type="button" class="ib-more" onclick="T_INQ='';viewTcInbox(T_IN.handled)">Clear</button></p>` : ''}${board}`;
 }
 // THE SUGGESTED REPLY AND UNDO ON THE TRAINING CENTRE INBOX (patch 172, src/tcmailauto.js; the Academy's parts, cSuggestHtml):
 // the answer training@ gave to the most similar earlier email, to Copy into Gmail (Intake never sends); Undo puts a conversation
@@ -12861,88 +12863,14 @@ async function tcInboxUndo(key, btn) {
 // the WhatsApp; Add puts them there with a WhatsApp line in the company's history and moves the card to Handled
 function tcInboxLead(key) {
   const c = T_IN.cards.find((x) => x.key === key); if (!c) return;
-  const last = c.messages[0] || {};
+  const last = c.messages.find((m) => m.dir !== 'out') || {};   // their newest message, never training@'s reply
   if (c.kind === 'email') return tcMetOpen({ key, via: 'email', name: c.person || c.name || '', email: c.email, note: [last.subject, last.body].filter(Boolean).join('. ') });
   tcMetOpen({ key, via: 'whatsapp', name: c.person || c.name || '', phone: tcWaNum(c.number), note: last.body || '' });
-}
-// B2C: a private person (his pick "A: Private clients list"): their own record under Clients, pre-filled from the WhatsApp
-function tcInboxPrivate(key) {
-  const c = T_IN.cards.find((x) => x.key === key); if (!c) return;
-  const last = c.messages[0] || {};
-  if (c.kind === 'email') return tcPrivAddOpen({ key, via: 'email', name: c.person || c.name || '', email: c.email, note: [last.subject, last.body].filter(Boolean).join('. ') });
-  tcPrivAddOpen({ key, via: 'whatsapp', name: c.person || c.name || '', phone: tcWaNum(c.number), note: last.body || '' });
 }
 async function tcInboxDone(key, btn) {
   if (btn) btn.disabled = true;
   try { await post('/api/tc/inbox/done', { key }); T_IN.cards = T_IN.cards.filter((c) => c.key !== key); tcInboxCount(tcInboxWaiting()); tcInboxDraw(); }
   catch (err) { if (btn) btn.disabled = false; alert(err.message); }
-}
-// PRIVATE CLIENTS (23.11.2026, patch 166; his words "but there should be b2b and b2c client segments!", his pick "A: Private
-// clients list", "Yes, build it" on TC_B2C_1..3). Their own list under Clients, their own page built from the company page's cards
-// (History, Next communication, Log a communication, Details), their own add drawer. src/tcprivate.js holds the rules.
-const TC_PRIV_KINDS = { call: 'Call', email: 'Email', whatsapp: 'WhatsApp', physical_meeting: 'Physical meeting', digital_meeting: 'Digital meeting', note: 'Note', edit: 'Changed' };
-let T_PV = null, T_PVADD = null;
-async function viewTcPrivates() {
-  const D = await api('/api/tc/private');
-  const day = (iso) => { const t = fmtDateTime(iso) || ''; return t ? tcDay(t.slice(0, 10)) : ''; };
-  const row = (r) => `<div class="tcpv-row"><a href="#/tc/private/${Number(r.id)}"><b>${esc(r.name)}</b></a><span>${r.phone ? cTelLink({ phone: r.phone }) : ''}</span><span>${esc(r.course || '')}</span><small>${r.lastAt ? esc((TC_PRIV_KINDS[r.lastKind] || '') + ' · ' + day(r.lastAt)) : ''}</small></div>`;
-  $('#view').innerHTML = `<div class="c-head"><div><h1>Private clients</h1><p class="c-crumb">Training Centre · ${tcN(D.rows.length)} ${D.rows.length === 1 ? 'person' : 'people'}</p></div><button class="btn" onclick="tcPrivAddOpen()">+ Private client</button></div>
-    <section class="c-sheet tcpv-list">${D.rows.length ? `<div class="tcpv-row tcpv-h"><span>Name</span><span>Phone</span><span>Course</span><small>Last contact</small></div>${D.rows.map(row).join('')}` : '<div class="c-empty">No private client yet.</div>'}</section>`;
-}
-async function viewTcPrivate(id) {
-  T_PV = await api('/api/tc/private/' + Number(id));
-  tcPrivDraw();
-}
-function tcPrivDraw() {
-  const P = T_PV, c = P.client;
-  const when = (iso) => { const t = fmtDateTime(iso) || ''; return t ? tcDay(t.slice(0, 10)) + ' ' + t.slice(11, 16) : ''; };
-  const hist = (h) => `<div class="tcpv-h1"><small>${esc(when(h.at))}</small><div><b>${esc(TC_PRIV_KINDS[h.kind] || h.kind)}</b>${h.by ? ` <span class="tcpv-by">${esc(h.by)}</span>` : ''}${h.body ? `<br><span>${esc(h.body)}</span>` : ''}</div></div>`;
-  const det = (k, v) => `<div class="tcpv-d"><span>${k}</span><b>${v || '<i>not recorded</i>'}</b></div>`;
-  $('#view').innerHTML = `<p class="c-crumb"><a href="#/tc/private">Private clients</a></p><div class="c-head"><div><h1>${esc(c.name)}</h1><p class="c-crumb">Private client${c.cameFrom ? ' · from ' + esc(c.cameFrom) : ''}</p></div><button class="btn ghost" onclick="tcPrivArchive()">Archive</button></div>
-    <div class="tcpv-grid"><div>
-      <section class="c-sheet tcpv-box"><h3>History</h3>${P.history.map(hist).join('') || '<div class="c-empty">Nothing yet.</div>'}</section>
-      <section class="c-sheet tcpv-box"><h3>Next communication</h3><p>${c.nextAt ? esc(tcDay(c.nextAt)) : 'None planned'}</p></section>
-      <section class="c-sheet tcpv-box"><h3>Log a communication</h3><div class="c-form tcpv-form">
-        <div><label for="tcpvKind">What</label><select id="tcpvKind">${P.kinds.map((k) => `<option value="${esc(k)}">${esc(TC_PRIV_KINDS[k] || k)}</option>`).join('')}</select></div>
-        <div><label for="tcpvDay">Day</label><input id="tcpvDay" type="date" value="${esc(new Date().toISOString().slice(0, 10))}"></div>
-        <div class="tcpv-wide"><label for="tcpvBody">What was said or done</label><textarea id="tcpvBody" rows="3"></textarea></div>
-        <div><label for="tcpvNext">Next contact on</label><input id="tcpvNext" type="date" value="${esc(c.nextAt || '')}"></div></div>
-        <div id="tcpvErr"></div><button class="btn" onclick="tcPrivLog()">Save</button></section>
-    </div><div>
-      <section class="c-sheet tcpv-box"><h3>Details</h3>${det('Phone', c.phone ? cTelLink({ phone: c.phone }) : '')}${det('Email', c.email ? esc(c.email) : '')}${det('Course', esc(c.course || ''))}${det('Came from', esc(c.cameFrom || ''))}${det('Person in charge', esc(c.owner || ''))}
-        <button class="btn sm ghost" onclick="tcPrivEdit()">Edit</button></section>
-    </div></div>`;
-}
-async function tcPrivSet(b) { try { await post('/api/tc/private/' + Number(T_PV.client.id), b); await viewTcPrivate(T_PV.client.id); } catch (e) { alert(e.message); } }
-async function tcPrivLog() {
-  const v = (k) => ($('#tcpv' + k) || {}).value || '';
-  try { await post('/api/tc/private/' + Number(T_PV.client.id) + '/log', { kind: v('Kind'), day: v('Day'), body: v('Body'), nextAt: v('Next') }); await viewTcPrivate(T_PV.client.id); }
-  catch (e) { tcErr('#tcpvErr', e.message); }
-}
-async function tcPrivArchive() { if (!confirm('Archive ' + T_PV.client.name + '?')) return; try { await post('/api/tc/private/' + Number(T_PV.client.id) + '/archive', {}); location.hash = '#/tc/private'; } catch (e) { alert(e.message); } }
-function tcPrivEdit() { tcPrivAddOpen(null, T_PV.client); }
-// the drawer: add (from "+ Private client" or B2C on an Inbox card, pre-filled) or edit the details
-function tcPrivAddOpen(pre, edit) {
-  T_PVADD = { pre: pre || null, edit: edit || null };
-  const v0 = edit || pre || {};
-  const f = (key, label, val, type = 'text') => `<div><label for="tcpa_${key}">${label}</label><input id="tcpa_${key}" type="${type}" autocomplete="off" value="${esc(val || '')}"></div>`;
-  $('#modal').innerHTML = `<div class="tw-back" onclick="tcPrivAddClose()"></div><aside class="tw-drawer tc-kdrawer tc-pvdrawer" role="dialog" aria-modal="true" aria-label="Private client">
-    <button type="button" class="tc-kx" aria-label="Close" onclick="tcPrivAddClose()">✕</button>
-    <h2>${edit ? 'Private client' : pre ? 'Make a lead · private person' : 'New private client'}</h2>
-    <div class="c-form c-form1 tc-kform">${f('name', 'Name', v0.name)}${f('phone', 'Phone', v0.phone)}${f('email', 'Email', v0.email, 'email')}${f('course', 'Course', v0.course)}
-      ${edit ? f('owner', 'Person in charge', v0.owner) : `<div><label for="tcpa_note">Note</label><textarea id="tcpa_note" rows="3">${esc((pre && pre.note) || '')}</textarea></div>`}</div>
-    <div id="tcpaErr"></div><div class="tw-acts"><button class="btn" onclick="tcPrivAddSave()">${edit ? 'Save' : 'Add'}</button><button class="btn ghost" onclick="tcPrivAddClose()">Cancel</button></div></aside>`;
-  const n = $('#tcpa_name'); if (n) n.focus();
-}
-function tcPrivAddClose() { if ($('.tc-pvdrawer')) $('#modal').innerHTML = ''; T_PVADD = null; }
-async function tcPrivAddSave() {
-  const v = (k) => ($('#tcpa_' + k) || {}).value || '';
-  const A = T_PVADD;
-  try {
-    if (A.edit) { await post('/api/tc/private/' + Number(A.edit.id), { name: v('name'), phone: v('phone'), email: v('email'), course: v('course'), owner: v('owner') }); tcPrivAddClose(); await viewTcPrivate(A.edit.id); return; }
-    const r = await post('/api/tc/private', { name: v('name'), phone: v('phone'), email: v('email'), course: v('course'), note: v('note'), ...(A.pre ? { via: A.pre.via || 'whatsapp', waKey: A.pre.key } : {}) });
-    tcPrivAddClose(); location.hash = '#/tc/private/' + Number(r.id);
-  } catch (e) { tcErr('#tcpaErr', e.message); }
 }
 // SAME COMPANY? (23.11.2026, patch 163; his picks "Auto obvious, tick rest" and the tick list "Yes, build it"): one card per group of
 // companies that may be one company. The company kept is chosen (most people first); "Same company" merges the others into it

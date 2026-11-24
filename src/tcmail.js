@@ -39,15 +39,23 @@ export async function recordTcMail(db, items, at = new Date().toISOString()) {
 }
 
 /** The email cards of the Training Centre Inbox: { cards, waiting }. Waiting = a conversation with unread mail from outside. */
-export async function mailCards(db, { handled = false, now = new Date() } = {}) {
-  const rows = await db.prepare('SELECT id, thread_id, direction, from_addr, from_name, subject, body, at, seen_at, seen_by FROM tc_mail ORDER BY at DESC LIMIT 1500').all();
+// THE WHOLE CONVERSATION ON THE CARD (patch 172; his words 24.11.2026 "for private clients for now the intake will be a communication
+// hub"): every card carries its conversation, theirs and training@'s replies (newest first; the page shows the oldest on top), and
+// any card, waiting or handled, is found by a name, an address or a word (q).
+export const searchText = (q) => String(q || '').trim().toLowerCase().slice(0, 80);
+export async function mailCards(db, { handled = false, now = new Date(), q = '' } = {}) {
+  const want = searchText(q);
+  const rows = want
+    ? await db.prepare(`SELECT id, thread_id, direction, from_addr, from_name, subject, body, at, seen_at, seen_by FROM tc_mail WHERE thread_id IN (
+        SELECT thread_id FROM tc_mail WHERE LOWER(COALESCE(from_addr, '') || ' ' || COALESCE(from_name, '') || ' ' || COALESCE(subject, '') || ' ' || COALESCE(body, '')) LIKE ?)
+        ORDER BY at DESC LIMIT 3000`).all('%' + want + '%')
+    : await db.prepare('SELECT id, thread_id, direction, from_addr, from_name, subject, body, at, seen_at, seen_by FROM tc_mail ORDER BY at DESC LIMIT 1500').all();
   const threads = new Map();
   for (const r of rows) { if (!threads.has(r.thread_id)) threads.set(r.thread_id, []); threads.get(r.thread_id).push(r); }
   const contacts = await db.prepare(`SELECT k.name, k.email, c.id AS company_id, c.name AS company FROM tc_company_contacts k
     JOIN tc_companies c ON c.id = k.company_id WHERE k.archived_at IS NULL AND c.archived_at IS NULL AND k.email IS NOT NULL`).all();
-  const privates = await db.prepare('SELECT id, name, email FROM tc_private_clients WHERE archived_at IS NULL AND email IS NOT NULL').all();
   // patch 172: what Intake did with a conversation training@ answered (src/tcmailauto.js), for the Handled card and its Undo
-  const autos = new Map((await db.prepare(`SELECT a.thread_id, a.segment, a.company_id, a.private_id, a.undone_at, c.name AS company FROM tc_mail_auto a
+  const autos = new Map((await db.prepare(`SELECT a.thread_id, a.segment, a.company_id, a.undone_at, c.name AS company FROM tc_mail_auto a
     LEFT JOIN tc_companies c ON c.id = a.company_id`).all()).map((a) => [a.thread_id, a]));
   const cards = []; let waiting = 0;
   for (const [thread, list] of threads) {
@@ -58,18 +66,16 @@ export async function mailCards(db, { handled = false, now = new Date() } = {}) 
     const answered = lastOut && String(lastOut.at) > String(lastIn.at) ? { at: lastOut.at, by: null } : null;   // the card says training@ (his picture)
     if (open.length && !answered) waiting++;
     if (handled ? open.length : !open.length) continue;
-    const shown = handled ? ins : open;
     const email = lastIn.from_addr || '';
-    const k = contacts.find((c) => low(c.email) === email), pv = k ? null : privates.find((c) => low(c.email) === email);
+    const k = contacts.find((c) => low(c.email) === email);
     const au = autos.get(thread);
     // pick 4 (patch 172): late one working day after it came, while nobody has answered it (the Academy's email rule)
     const late = !handled && !answered && Date.parse(deadlinesFor('gmail', lastIn.at).lateAt) <= now.getTime();
     cards.push({ key: 'm:' + thread, kind: 'email', email, name: lastIn.from_name || '', subject: lastIn.subject || '', at: lastIn.at,
       seenAt: lastIn.seen_at || null, seenBy: lastIn.seen_by || null, answered, late,
-      ...(au && !au.undone_at && lastIn.seen_by === 'Intake' ? { auto: { segment: au.segment, companyId: au.company_id ? Number(au.company_id) : null, company: au.company || '', privateId: au.private_id ? Number(au.private_id) : null } } : {}),
-      messages: shown.map((r) => ({ id: Number(r.id), subject: r.subject || '', body: emailShown(r.body || ''), at: r.at })),
-      ...(k ? { person: k.name || '', companyId: Number(k.company_id), company: k.company } : {}),
-      ...(pv ? { person: pv.name || '', privateId: Number(pv.id) } : {}) });
+      ...(au && !au.undone_at && lastIn.seen_by === 'Intake' ? { auto: { segment: au.segment, companyId: au.company_id ? Number(au.company_id) : null, company: au.company || '' } } : {}),
+      messages: list.map((r) => ({ id: Number(r.id), dir: r.direction, subject: r.subject || '', body: emailShown(r.body || ''), at: r.at })),
+      ...(k ? { person: k.name || '', companyId: Number(k.company_id), company: k.company } : {}) });
   }
   return { cards, waiting };
 }

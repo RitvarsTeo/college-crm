@@ -62,26 +62,52 @@ test('B2B: training@ replied to a known contact -> the whole conversation on the
   assert.deepEqual([task.label, task.due_at, task.created_by], ['Follow up', new Date(Date.parse(T(2)) + SILENCE_DAYS * 86400000).toISOString().slice(0, 10), 'Intake']);
   assert.equal((await db.prepare('SELECT status FROM tc_companies WHERE id = 9').get()).status, 'to_contact', 'Q2 / levels: Intake never changes the level');
   const H = await mailCards(db, { handled: true });
-  assert.deepEqual(H.cards[0].auto, { segment: 'b2b', companyId: 9, company: 'Baltic Example Crewing', privateId: null });
+  assert.deepEqual(H.cards[0].auto, { segment: 'b2b', companyId: 9, company: 'Baltic Example Crewing' });
   assert.equal((await mailCards(db)).cards.length, 0, 'gone from Waiting');
   assert.equal((await processTcMail(db, { at: T(4) })).processed, 0, 'once');
 });
 
-test('B2C: a private mailbox becomes a private client from Email with the course; their next contact 7 days after our reply', async () => {
+test('a private person (his "we have private clients in n3!!!", "Stays in Inbox only"): nothing is created; answered = Handled, the card holds the whole conversation, oldest on top', async () => {
   const db = await setup();
   await recordTcMail(db, [
     m('b1', 'tB', 'in', 'elina.piemera@gmail.com', T(0), 'STCW refresher', 'Labdien, vēlos pieteikties STCW atjaunošanas kursam februārī.', 'Elīna Piemēra'),
-    m('b2', 'tB', 'out', TC_MAILBOX, T(1), 'Re: STCW refresher', 'Labdien!\nJā, februārī ir brīvas vietas.\n\nOn Mon, someone wrote:\n> old', 'Training Centre'),
+    m('b2', 'tB', 'out', TC_MAILBOX, T(1), 'Re: STCW refresher', 'Labdien!\nJā, februārī ir brīvas vietas.', 'Training Centre'),
+    m('b3', 'tB', 'in', 'elina.piemera@gmail.com', T(2), 'Re: STCW refresher', 'Paldies, cik maksā?', 'Elīna Piemēra'),
+    m('b4', 'tB', 'out', TC_MAILBOX, T(3), 'Re: STCW refresher', 'Cena ir 350 EUR.', 'Training Centre'),
   ]);
-  const r = await processTcMail(db, { at: T(2) });
-  assert.deepEqual([r.processed, r.b2c], [1, 1]);
-  const p = await db.prepare('SELECT * FROM tc_private_clients').get();
-  assert.deepEqual([p.name, p.email, p.came_from, p.course, p.owner, p.status], ['Elīna Piemēra', 'elina.piemera@gmail.com', 'Email', 'STCW refresher', null, 'not_contacted']);
-  assert.equal(p.next_at, new Date(Date.parse(T(1)) + 7 * 86400000).toISOString().slice(0, 10));
-  const h = (await db.prepare('SELECT kind, body FROM tc_private_history WHERE client_id = ? ORDER BY occurred_at, id').all(p.id)).map((x) => x.body);
-  assert.match(h[0], /^Email from Elīna Piemēra: STCW refresher\./);
-  assert.equal(h[1], 'training@ replied: Jā, februārī ir brīvas vietas.');
-  assert.match(h[2], /^Next contact: /);
+  const r = await processTcMail(db, { at: T(4) });
+  assert.deepEqual([r.processed, r.b2c, r.b2b], [1, 1, 0]);
+  for (const t of ['tc_private_clients', 'tc_private_history', 'tc_tasks', 'tc_activities', 'tc_company_contacts']) {
+    const n = Number((await db.prepare(`SELECT COUNT(*) n FROM ${t}`).get()).n);
+    assert.equal(n, t === 'tc_company_contacts' ? 2 : 0, t + ': nothing created for a private person');
+  }
+  assert.equal((await mailCards(db)).cards.length, 0, 'answered: not waiting');
+  const card = (await mailCards(db, { handled: true })).cards[0];
+  assert.deepEqual(card.auto, { segment: 'b2c', companyId: null, company: '' });
+  assert.deepEqual(card.messages.map((x) => x.dir), ['out', 'in', 'out', 'in'], 'the whole conversation, newest first (the page shows the oldest on top)');
+  assert.equal(card.messages[3].body, 'Labdien, vēlos pieteikties STCW atjaunošanas kursam februārī.');
+  assert.deepEqual(await undoTc(db, 'm:tB', 'Laura'), { ok: true, kept: false });
+  assert.equal((await mailCards(db)).cards.length, 1, 'Undo: back in Waiting');
+});
+
+test('findable later: a name, an address, a word or a phone number finds the conversation, waiting or handled', async () => {
+  const { tcInbox } = await import('../src/tcwhatsapp.js');
+  const db = await setup();
+  await recordTcMail(db, [
+    m('q1', 'tQ', 'in', 'zane.example@inbox.lv', T(0), 'HUET', 'Vai HUET kurss notiek janvārī?', 'Zane Example'),
+    m('q2', 'tQ', 'out', TC_MAILBOX, T(1), 'Re: HUET', 'Jā, 12. janvārī.', 'Training Centre'),
+    m('q3', 'tR', 'in', 'other@inbox.lv', T(0), 'BOSIET', 'BOSIET?', 'Other Person'),
+  ]);
+  await processTcMail(db, { at: T(2) });
+  await db.prepare(`INSERT INTO tc_whatsapp_in (message_id, phone_id, from_num, name, body, at, received_at, seen_at, seen_by) VALUES ('w1','p','37120000077','Anna Example','HUET cena?',?,?,?,?)`).run(T(0), T(0), T(1), 'Laura');
+  const ids = async (q, handled) => (await tcInbox(db, { q, handled })).cards.map((c) => c.key).sort();
+  assert.deepEqual(await ids('zane', true), ['m:tQ']);
+  assert.deepEqual(await ids('ZANE.EXAMPLE@inbox.lv', true), ['m:tQ']);
+  assert.deepEqual(await ids('12. janvārī', true), ['m:tQ'], "training@'s own words find it too");
+  assert.deepEqual(await ids('huet', true), ['20000077', 'm:tQ'].sort());
+  assert.deepEqual(await ids('+371 2000 0077', true), ['20000077'], 'a phone number by its digits');
+  assert.deepEqual(await ids('bosiet', false), ['m:tR']);
+  assert.deepEqual(await ids('nobody at all', true), []);
 });
 
 test('his pick B: a company Intake does not know is created, named after the domain, with the contact under it', async () => {
@@ -149,7 +175,7 @@ test('Undo: the card waits again; nothing is deleted: the Follow up is closed "U
   assert.ok(t.done_at); assert.equal(t.outcome, 'Undo');
   assert.equal((await db.prepare('SELECT archived_at FROM tc_company_contacts WHERE id = 90').get()).archived_at, null, 'a contact that was there stays');
   assert.deepEqual(await undoTc(db, 'm:tH', 'Laura'), { ok: true, kept: false });
-  assert.ok((await db.prepare(`SELECT archived_at FROM tc_private_clients WHERE email = 'janis.paraugs@inbox.lv'`).get()).archived_at, 'the private client Intake made is archived');
+  assert.equal(Number((await db.prepare('SELECT COUNT(*) n FROM tc_private_clients').get()).n), 0, 'a private person never had a record');
   assert.equal((await mailCards(db)).cards.length, 2, 'both back in the Inbox');
   assert.equal((await processTcMail(db, { at: T(3) })).processed, 0, 'never again by itself');
   assert.ok((await undoTc(db, 'm:tG', 'Laura')).error);
@@ -188,9 +214,11 @@ test('the suggested reply: training@\'s answer to the most similar email, cut, t
 
 test('the page and the server: Undo and the suggested reply behind the Training Centre gate; nothing sends', () => {
   const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
-  for (const s of ["B2B · added to <a href=\"#/tc/company/", "B2C · made a <a href=\"#/tc/private/", "tcInboxUndo(", "post('/api/tc/inbox/undo', { key })",
+  for (const s of ["B2B · added to <a href=\"#/tc/company/", "'Private person · the conversation stays here'", "tcInboxUndo(", 'placeholder="Find a name, email, phone or word"', "Show all</button>", "post('/api/tc/inbox/undo', { key })",
     "api('/api/tc/inbox/suggested-reply?key=' + encodeURIComponent(key))", "cStateLine(c.late ? 'late' : 'new'"]) assert.ok(APP.includes(s), s);
+  for (const gone of ['Private clients', 'tcPrivAddOpen', 'B2C · private person', '#/tc/private']) assert.ok(!APP.includes(gone), 'gone: ' + gone);
   const srv = fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8');
+  assert.ok(!srv.includes("'/api/tc/private'"), 'no private client routes (N3 holds private clients)');
   const gate = srv.indexOf('TRAINING CENTRE --');
   for (const r of ["'/api/tc/inbox/undo'", "'/api/tc/inbox/suggested-reply'"]) assert.ok(srv.indexOf(r) > gate && gate > 0, r);
   const mod = fs.readFileSync(path.join(ROOT, 'src', 'tcmailauto.js'), 'utf8').split(/\r?\n/).filter((l) => !/^\s*\/\//.test(l)).join(' ');   // the code, not its comments

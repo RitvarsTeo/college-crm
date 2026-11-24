@@ -86,7 +86,6 @@ import * as tcrsvp from './tcrsvp.js';
 import * as tcmr from './tcmr.js';
 import * as tcfam from './tcfam.js';
 import * as tcsame from './tcsame.js';
-import * as tcprivate from './tcprivate.js';
 import * as tcMailAuto from './tcmailauto.js';
 import { whatsappForwardGate, receiveTcWhatsApp, tcInbox, tcInboxDone } from './tcwhatsapp.js';
 import * as tcpeople from './tcpeople.js';
@@ -3914,7 +3913,7 @@ export const handle = async (req, res) => {
     // THE TRAINING CENTRE INBOX (patch 166, his "ok go"; src/tcwhatsapp.js): the WhatsApp messages to +371 6244 4609, one card per
     // number, Waiting or Handled (?handled=1); Done hands a number's waiting messages. Signed in, Training Centre area (above).
     if (p === '/api/tc/inbox' && req.method === 'GET') {
-      return json(res, 200, await tcInbox(db, { handled: url.searchParams.get('handled') === '1' }));
+      return json(res, 200, await tcInbox(db, { handled: url.searchParams.get('handled') === '1', q: String(url.searchParams.get('q') || '').slice(0, 80) }));
     }
     // THE TRAINING CENTRE EMAIL (patch 167, src/tcmail.js): is training@ connected (never a token), and an admin's one-time
     // "Connect training@": Google's own read-only consent; the callback keeps it only when the account is training@ itself.
@@ -3943,29 +3942,8 @@ export const handle = async (req, res) => {
       res.writeHead(302, { location: to, 'cache-control': 'no-store', 'set-cookie': flowCookie(flow, FLOW_MINUTES) });
       return res.end();
     }
-    // PRIVATE CLIENTS (patch 166, his pick "A: Private clients list", src/tcprivate.js): the list, one client, add (also B2C from a
-    // TC Inbox card, which then moves the card to Handled), change, log a communication, archive. Training Centre area (above).
-    if (p === '/api/tc/private' && req.method === 'GET') return json(res, 200, await tcprivate.list(db));
-    const priv = p.match(/^\/api\/tc\/private(?:\/(\d{1,9})(?:\/(log|archive))?)?$/);
-    if (priv && (req.method === 'GET' || req.method === 'POST')) {
-      try {
-        if (req.method === 'GET' && priv[1] && !priv[2]) return json(res, 200, await tcprivate.get(db, Number(priv[1])));
-        if (req.method === 'POST') {
-          const b = await body(req), by = await actorOf(req, b);
-          if (!priv[1]) {
-            const out = await tcprivate.add(db, b, by);
-            if ((b.via === 'whatsapp' || b.via === 'email') && b.waKey) out.inbox = await tcInboxDone(db, b.waKey, by);
-            return json(res, 200, out);
-          }
-          if (priv[2] === 'log') return json(res, 200, await tcprivate.log(db, Number(priv[1]), b, by));
-          if (priv[2] === 'archive') return json(res, 200, await tcprivate.archive(db, Number(priv[1]), by));
-          return json(res, 200, await tcprivate.update(db, Number(priv[1]), b, by));
-        }
-      } catch (err) {
-        if (err instanceof tcprivate.PrivateError) return json(res, 400, { error: err.message });
-        throw err;
-      }
-    }
+    // NO PRIVATE CLIENTS IN INTAKE (24.11.2026, his words "we have private clients in n3!!!", his pick "Stays in Inbox only"): the
+    // private person's conversation stays on its Inbox card; the tc_private_clients table stays in the database, unread.
     if (p === '/api/tc/inbox/done' && req.method === 'POST') {
       const b = await body(req);
       const r = await tcInboxDone(db, b.key, await actorOf(req, b));
