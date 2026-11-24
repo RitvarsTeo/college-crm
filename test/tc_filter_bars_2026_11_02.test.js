@@ -62,3 +62,14 @@ test('the letter and the Grand Opening list owner filter the list; trained / not
   assert.deepEqual((await tc.listCompanies(db, { letter: 'O' }, { size: 50, now })).facets.letters.map(([l]) => l), ['#', 'A', 'O']);
   assert.ok(tc.FILTER_KEYS.includes('letter') && tc.FILTER_KEYS.includes('go'));
 });
+
+// patch 177 (his pick 24.11.2026 "Pasaules karte + zoom"): the whole world, every country, zoom buttons and drag
+test('the Companies map: the whole world by default, World / Europe / + / -, drag; spellings the outline lacks map to it', () => {
+  const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
+  assert.match(app, /const T_MAP_WORLD = \{ x: 0, y: 40, w: 1000, h: 390 \}/);
+  assert.ok(app.includes(`onclick="tcMapZoom('world')">World</button>`) && app.includes(`onclick="tcMapZoom('europe')">Europe</button>`));
+  assert.ok(app.includes('aria-label="Zoom in" onclick="tcMapZoom(0.6)"') && app.includes('aria-label="Zoom out" onclick="tcMapZoom(1.6)"'));
+  assert.ok(app.includes("onclick=\"if(!T_MDRAG)tcFilter('country', "), 'a drag is never a tap');
+  for (const a of ["'Russian Federation': 'Russia'", "UK: 'United Kingdom'", "'Cayman Islands': 'Cayman Is.'", "'Central African Republic': 'Central African Rep.'"]) assert.ok(app.includes(a), a);
+  assert.ok(app.includes('two spellings of one country ("UK" and "United Kingdom") are one circle'));
+});

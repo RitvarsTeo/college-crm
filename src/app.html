@@ -1670,9 +1670,10 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .ib-undo{font:inherit;font-size:12px;color:#0f6f99;background:none;border:0;padding:0;text-decoration:underline;cursor:pointer}
   html.ui-c .tc-lmap{padding:14px 20px;margin:0 0 16px} html.ui-c .tc-lmaph{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
   html.ui-c .tc-lmaph h3{margin:0} html.ui-c .tc-lmaph small{color:var(--t3)}
-  html.ui-c .tc-lmapsvg{width:100%;height:340px;display:block;margin-top:8px} html.ui-c .tc-lmapsvg .land path{fill:var(--c-sunk);stroke:var(--surface);stroke-width:.25}
+  html.ui-c .tc-lmapsvg{width:100%;height:420px;display:block;margin-top:4px;touch-action:none;cursor:grab} html.ui-c .tc-lmapsvg:active{cursor:grabbing}
+  html.ui-c .tc-mzoom{display:flex;gap:6px;justify-content:flex-end;margin-top:8px} html.ui-c .tc-lmapsvg .land path{fill:var(--c-sunk);stroke:var(--surface);stroke-width:.25}
   html.ui-c .tc-ldot{cursor:pointer} html.ui-c .tc-ldot circle{fill:var(--c-sis);opacity:.88;stroke:var(--surface);stroke-width:.4}
-  html.ui-c .tc-ldot.on circle{fill:var(--btn-bg);opacity:1} html.ui-c .tc-ldot text{font-family:inherit;font-weight:700;fill:#fff;text-anchor:middle;pointer-events:none}
+  html.ui-c .tc-ldot.on circle{fill:var(--btn-bg);opacity:1} html.ui-c .tc-lnum{font-family:inherit;font-weight:700;fill:#fff;text-anchor:middle;pointer-events:none}
   html.ui-c .tc-lmapkey{font-size:12px;color:var(--t3);margin:6px 0 0}
   html.ui-c .tc-chips{padding:14px 20px;margin:0 0 16px} html.ui-c .tc-chipgrid{display:grid;grid-template-columns:150px 1fr;gap:6px 12px;align-items:start;font-size:13px}
   html.ui-c .tc-chiph{padding-top:6px} html.ui-c .tc-chip{margin:0 6px 6px 0} html.ui-c .tc-chip b{margin-left:4px}
@@ -11992,7 +11993,11 @@ async function viewTcHome() {
 // Natural Earth 1:110m (public domain, /assets/world.js, the Client Hub's file), read once, when the map is first drawn.
 const T_MAP_ALIAS = { 'United States': 'United States of America', USA: 'United States of America', 'Czech Republic': 'Czechia',
   'Faroe Islands': 'Faeroe Is.', 'Marshall Islands': 'Marshall Is.', 'Bosnia and Herzegovina': 'Bosnia and Herz.',
-  'North Macedonia': 'Macedonia', 'Dominican Republic': 'Dominican Rep.', 'Türkiye': 'Turkey', 'Korea': 'South Korea', UAE: 'United Arab Emirates' };
+  'North Macedonia': 'Macedonia', 'Dominican Republic': 'Dominican Rep.', 'Türkiye': 'Turkey', 'Korea': 'South Korea', UAE: 'United Arab Emirates',
+  // patch 177: the names the companies use that the outline spells otherwise (every country on the world map)
+  'Russian Federation': 'Russia', UK: 'United Kingdom', 'Cayman Islands': 'Cayman Is.', 'Isle Of Man': 'Isle of Man',
+  'Virgin Islands (British)': 'British Virgin Is.', 'British Virgin Islands': 'British Virgin Is.', 'Central African Republic': 'Central African Rep.',
+  'Saint Vincent and the Grenadines': 'St. Vin. and Gren.', Lithunia: 'Lithuania' };
 const T_MAP_VIEW = { x: 445, y: 52, w: 370, h: 205, max: 42 };   // the picture's frame: Europe to Singapore
 let T_WORLD = null;
 function tcWorld() {
@@ -12396,7 +12401,7 @@ function tcFilterBars(L, M) {
 }
 // ---- THE COMPANIES LIST, HIS PICK A (patch 176, 24.11.2026: "the company list, needs to be better ... also alphabet. and some
 // nice groupings and cohorts and where is the map???") ----
-// The map: Europe, where the companies are, one circle per country with its count; a tap filters the list to that country.
+// The map: where the companies are, one circle per country with its count; a tap filters the list to that country.
 function tcMapCard(L) {
   const C = (L.facets.countries || []).filter(([c]) => c !== '-');
   if (!C.length) return '';
@@ -12404,6 +12409,11 @@ function tcMapCard(L) {
   return `<section class="c-sheet tc-lmap"><div class="tc-lmaph"><h3>Where our companies are</h3><small>${tcN(n)} companies in ${tcN(C.length)} ${C.length === 1 ? 'country' : 'countries'} · tap a country to see its companies</small></div>
     <div id="tcListMap"><p class="c-empty">Drawing the map…</p></div></section>`;
 }
+// THE WHOLE WORLD WITH ZOOM (patch 177, his pick 24.11.2026 "Pasaules karte + zoom"): every country with its count; World,
+// Europe, + and - buttons, drag to move. A circle keeps its size on screen at every zoom, so Europe reads once zoomed in.
+const T_MAP_WORLD = { x: 0, y: 40, w: 1000, h: 390 };     // the outline is 1000 x 500 (equirectangular); Antarctica left out
+const T_MAP_EUROPE = { x: 455, y: 40, w: 175, h: 125 };   // lon about -16..47, lat about 30..76
+let T_MV = null, T_MAPD = null;                             // the view shown (null = the world) and the map's data
 async function tcDrawListMap(L) {
   const el = document.getElementById('tcListMap');
   if (!el) return;
@@ -12412,25 +12422,70 @@ async function tcDrawListMap(L) {
   try { W = await tcWorld(); } catch (e) { el.innerHTML = `<p class="c-empty">${esc(e.message)}</p>`; return; }
   if (!document.body.contains(el)) return;
   const at = (name) => W.centres[name] || W.centres[T_MAP_ALIAS[name]] || null;
-  const placed = C.map(([c, k]) => ({ c, k, p: at(c) })).filter((x) => x.p);
+  // two spellings of one country ("UK" and "United Kingdom") are one circle with both counts; a tap opens the bigger spelling
+  const byPlace = new Map();
+  for (const [c, k] of C) {
+    const p = at(c); if (!p) continue;
+    const key = p.join(','), had = byPlace.get(key);
+    if (!had) byPlace.set(key, { c, k, p, kmax: k });
+    else { had.k += k; if (k > had.kmax) { had.c = c; had.kmax = k; } }
+  }
+  const placed = [...byPlace.values()].sort((a, b) => b.k - a.k);
   if (!placed.length) { el.innerHTML = '<p class="c-empty">No country on the map yet.</p>'; return; }
-  // zoomed to the biggest countries (the top 11), so the circles read; the rest are in the list and the Country chips
-  const big = placed.slice().sort((a, b) => b.k - a.k).slice(0, 11);
-  const xs = big.map((x) => x.p[0]), ys = big.map((x) => x.p[1]);
-  const x0 = Math.min(...xs) - 14, x1 = Math.max(...xs) + 14, y0 = Math.min(...ys) - 22, y1 = Math.max(...ys) + 8;
-  const inView = ([x, y]) => x >= x0 && x <= x1 && y >= y0 && y <= y1;
-  const top = Math.max(1, ...placed.map((x) => x.k));
-  const shown = placed.filter((x) => inView(x.p)).sort((a, b) => b.k - a.k);
-  const dots = shown.map(({ c, k, p: [cx, cy] }) => {
-    const r = 2.2 + Math.sqrt(k / top) * 6.5, on = T_F.country === c;
+  T_MAPD = { W, placed, top: Math.max(1, ...placed.map((x) => x.k)), missing: C.filter(([c]) => !at(c)).length };
+  el.innerHTML = `<div class="tc-mzoom" role="group" aria-label="Zoom the map">
+      <button type="button" class="btn sm ghost" onclick="tcMapZoom('world')">World</button><button type="button" class="btn sm ghost" onclick="tcMapZoom('europe')">Europe</button>
+      <button type="button" class="btn sm ghost" aria-label="Zoom in" onclick="tcMapZoom(0.6)">+</button><button type="button" class="btn sm ghost" aria-label="Zoom out" onclick="tcMapZoom(1.6)">−</button></div>
+    <svg class="tc-lmapsvg" role="img" aria-label="Where our companies are"><g class="land">${W.land.map((d) => `<path d="${d}"/>`).join('')}</g><g class="dots"></g></svg>
+    <p class="tc-lmapkey">Circle = companies in that country · drag to move${T_MAPD.missing ? ` · ${tcN(T_MAPD.missing)} ${T_MAPD.missing === 1 ? 'country is' : 'countries are'} not on the map, see the Country chips` : ''}</p>`;
+  tcMapPaint();
+  tcMapDrag(el.querySelector('svg'));
+}
+function tcMapPaint() {
+  const svg = document.querySelector('#tcListMap svg');
+  if (!svg || !T_MAPD) return;
+  const v = T_MV || T_MAP_WORLD;
+  svg.setAttribute('viewBox', `${v.x.toFixed(2)} ${v.y.toFixed(2)} ${v.w.toFixed(2)} ${v.h.toFixed(2)}`);
+  // map units per screen pixel, so a circle is 7 to 24 pixels across whatever the zoom
+  const box = svg.getBoundingClientRect(), upp = Math.max(v.w / Math.max(1, box.width || 900), v.h / Math.max(1, box.height || 420));
+  const dots = T_MAPD.placed.map(({ c, k, p: [cx, cy] }) => {
+    const px = 7 + Math.sqrt(k / T_MAPD.top) * 17, r = px * upp, on = T_F.country === c;
     return `<g class="tc-ldot${on ? ' on' : ''}" tabindex="0" role="button" aria-label="${esc(c)}: ${tcN(k)} companies"
-        onclick="tcFilter('country', ${esc(JSON.stringify(on ? '' : String(c)))})" onkeydown="if(event.key==='Enter')this.onclick()"><title>${esc(c)} · ${tcN(k)} companies</title>
-      <circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r.toFixed(2)}"/><text x="${cx.toFixed(1)}" y="${(cy + 1.1).toFixed(1)}" style="font-size:${r > 5 ? 3.2 : 2.6}px">${tcN(k)}</text></g>`;
+        onclick="if(!T_MDRAG)tcFilter('country', ${esc(JSON.stringify(on ? '' : String(c)))})" onkeydown="if(event.key==='Enter')tcFilter('country', ${esc(JSON.stringify(on ? '' : String(c)))})"><title>${esc(c)} · ${tcN(k)} companies</title>
+      <circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="${r.toFixed(3)}"/></g>`;
   }).join('');
-  const out = placed.length - shown.length;
-  el.innerHTML = `<svg viewBox="${x0.toFixed(1)} ${y0.toFixed(1)} ${(x1 - x0).toFixed(1)} ${(y1 - y0).toFixed(1)}" class="tc-lmapsvg" role="img" aria-label="Where our companies are">
-      <g class="land">${W.land.map((d) => `<path d="${d}"/>`).join('')}</g>${dots}</svg>
-    <p class="tc-lmapkey">Circle = companies in that country${out ? ` · ${tcN(out)} more ${out === 1 ? 'country' : 'countries'} in the Country chips` : ''}</p>`;
+  // the numbers after every circle, so a neighbour's circle never covers a count
+  const labels = T_MAPD.placed.map(({ k, p: [cx, cy] }) => (7 + Math.sqrt(k / T_MAPD.top) * 17 >= 11
+    ? `<text class="tc-lnum" x="${cx.toFixed(2)}" y="${(cy + 3.6 * upp).toFixed(2)}" style="font-size:${(10.5 * upp).toFixed(3)}px">${tcN(k)}</text>` : '')).join('');
+  svg.querySelector('.dots').innerHTML = dots + labels;
+}
+function tcMapZoom(how) {
+  const v = T_MV || T_MAP_WORLD;
+  if (how === 'world') T_MV = null;
+  else if (how === 'europe') T_MV = { ...T_MAP_EUROPE };
+  else {
+    const w = Math.min(T_MAP_WORLD.w, Math.max(40, v.w * how)), h = w * (v.h / v.w);
+    T_MV = w >= T_MAP_WORLD.w ? null : { x: v.x + (v.w - w) / 2, y: v.y + (v.h - h) / 2, w, h };
+  }
+  tcMapPaint();
+}
+// drag to move: a press that moves more than a few pixels is a drag, never a tap on a circle
+let T_MDRAG = false;
+function tcMapDrag(svg) {
+  if (!svg) return;
+  let start = null;
+  svg.addEventListener('pointerdown', (e) => { start = { x: e.clientX, y: e.clientY, v: { ...(T_MV || T_MAP_WORLD) } }; T_MDRAG = false; });
+  svg.addEventListener('pointermove', (e) => {
+    if (!start) return;
+    const dx = e.clientX - start.x, dy = e.clientY - start.y;
+    if (!T_MDRAG && Math.hypot(dx, dy) < 5) return;
+    T_MDRAG = true;
+    const box = svg.getBoundingClientRect(), upp = Math.max(start.v.w / box.width, start.v.h / box.height);
+    T_MV = { ...start.v, x: start.v.x - dx * upp, y: start.v.y - dy * upp };
+    svg.setAttribute('viewBox', `${T_MV.x.toFixed(2)} ${T_MV.y.toFixed(2)} ${T_MV.w.toFixed(2)} ${T_MV.h.toFixed(2)}`);
+  });
+  const end = () => { start = null; setTimeout(() => { T_MDRAG = false; }, 0); };
+  svg.addEventListener('pointerup', end); svg.addEventListener('pointerleave', end);
 }
 // The groups as chips, each with its count; a tap filters, a second tap takes it off.
 function tcChipsCard(L) {
