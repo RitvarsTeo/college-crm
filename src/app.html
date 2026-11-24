@@ -1659,6 +1659,19 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .ib-sugg{margin:8px 0;padding:8px 10px;border:1px dashed var(--c-sis);border-radius:8px;background:var(--c-sunk);font-size:12.5px;cursor:default}
   html.ui-c .ib-sugg b{display:block;font-size:11px;color:#0f6f99;margin-bottom:4px} html.ui-c .ib-sugg-t{white-space:pre-line;margin-bottom:6px;color:var(--ink)}
   html.ui-c .ib-undo{font:inherit;font-size:12px;color:#0f6f99;background:none;border:0;padding:0;text-decoration:underline;cursor:pointer}
+  html.ui-c .chb-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px;align-items:start}
+  @media (max-width:760px){html.ui-c .chb-grid{grid-template-columns:1fr}}
+  html.ui-c .chb-steps{padding:6px 20px 14px} html.ui-c .chb-came{padding:18px 20px} html.ui-c .chb-came h3{margin:0 0 12px}
+  html.ui-c .chb-step{display:flex;gap:16px;align-items:center;padding:18px 0;border-bottom:1px solid var(--rule)}
+  html.ui-c .chb-dot{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-weight:700;border:2px solid var(--rule);color:var(--t3);background:var(--surface)}
+  html.ui-c .chb-step.done .chb-dot{background:var(--c-ok);border-color:var(--c-ok);color:var(--surface)}
+  html.ui-c .chb-step.bad .chb-dot{background:var(--c-bad);border-color:var(--c-bad);color:var(--surface)}
+  html.ui-c .chb-txt{flex:1;min-width:0} html.ui-c .chb-txt small{display:block;font-size:12px;color:var(--t3)}
+  html.ui-c .chb-txt b{display:block;font-size:17px} html.ui-c .chb-txt span{display:block;font-size:13px;color:var(--t3)}
+  html.ui-c .chb-miss{font-style:normal;font-weight:700;color:var(--c-bad)}
+  html.ui-c .chb-fig{margin:0 0 12px} html.ui-c .chb-fig small{display:block;font-size:13px;color:var(--t3)} html.ui-c .chb-fig b{font-size:24px}
+  html.ui-c .chb-run{font-size:13px;color:var(--t3);margin:0 0 12px} html.ui-c .chb-fig b .c-gap{font-size:15px;font-weight:500}
+  html.ui-c .c-head .chstate{display:inline-flex;align-items:center;font-size:14px;font-weight:700;padding:6px 14px;border-radius:999px;background:var(--c-sunk)} html.ui-c #chResult:not(:empty){margin-top:12px}
   html.ui-c .ib-mbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;border:2px solid var(--c-sis);border-radius:12px;padding:10px 14px;margin:0 0 12px;background:var(--surface)}
   html.ui-c .ib-mbar b{font-size:14px} html.ui-c .ib-mbar span{font-size:13px;color:var(--t3)} html.ui-c .ib-mbar .btn{margin-left:auto}
   html.ui-c .ib-joins{font-size:11.5px;font-weight:700;padding:1px 6px;border-radius:5px;border:1px solid #29a8df;color:var(--ink)}   /* Q77: already in Intake */
@@ -10457,27 +10470,53 @@ async function viewChannel(id) {
   const d = await api('/api/admin/channels');
   const run = (d.runs || {})[c.channel] || null;
   const canSwitchOn = c.allSettingsPresent && (!c.canTest || c.lastCheckOk === true);
-  const row = (k, v) => `<div class="kv"><div>${esc(k)}</div><div>${v}</div></div>`;
-
-  $('#view').innerHTML = `
-    <a class="btn ghost" href="#/channels">&larr; All channels</a>
-    <h1 style="margin-top:12px">${esc(c.label)}</h1>
-    ${row('Status', `<span class="chstate ${chWord(c).cls}">${esc(chWord(c).word)}</span>`)}
-    ${row('On', chOn(c))}
-    ${run && run.at ? row('Last run', esc(fmtDate(run.at))) : ''}
-    ${run && run.at ? row('Came in', chActivity(c, run)) : ''}
-    ${row('Settings', chSettings(c.settings))}
-    <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
-      ${c.canTest ? `<button class="btn ghost" id="chCheck" onclick="runChannelCheck(${esc(JSON.stringify(String(c.channel ?? '')))})">Check</button>` : ''}
-      ${c.channel === 'linkedin' ? `<button class="btn ghost" id="liSub" onclick="chLinkedInSubscribe()">Subscribe leads</button>` : ''}
-      ${c.channel === 'whatsapp' ? `<button class="btn ghost" id="waConnect" onclick="chWhatsAppConnect()">Connect WhatsApp</button>` : ''}
-      ${c.live
-        ? `<button class="btn ghost" onclick="setChannelMode(${esc(JSON.stringify(String(c.channel ?? '')))},'off')">Switch off</button>`
-        : `<button class="btn" ${canSwitchOn ? '' : 'disabled'} onclick="setChannelMode(${esc(JSON.stringify(String(c.channel ?? '')))},'live')">Switch on</button>`}
-    </div>
-    <div id="chResult" style="margin-top:10px">${c.channel === 'linkedin' ? chLinkedInLine((d.runs || {}).linkedin_subscription)
-      : c.channel === 'whatsapp' ? chLinkedInLine((d.runs || {}).whatsapp_connect) : ''}</div>
-    <div id="chMode" style="margin-top:8px"></div>`;
+  // HIS PICK B (24.11.2026, "improve UI!!!", picture _pictures/173_channel_B_2026-11-24.jpg): one status word on top, three
+  // numbered steps (Settings saved, Check passed, Switched on) and "What came in"; plain words, never a setting's code name
+  const manual = c.direction === 'manual';
+  const checked = !c.canTest || c.lastCheckOk === true;
+  const step = (n, done, bad, title, detail, act) => `<div class="chb-step${done ? ' done' : bad ? ' bad' : ''}">
+      <span class="chb-dot" aria-hidden="true">${done ? '✓' : bad ? '!' : esc(n)}</span>
+      <div class="chb-txt"><small>Step ${esc(n)}</small><b>${title}</b>${detail ? `<span>${detail}</span>` : ''}</div>${act || ''}</div>`;
+  const settings = (c.settings || []).length
+    ? c.settings.map((x) => `${esc(chSettingWord(x.name))} ${x.present ? 'saved' : '<em class="chb-miss">missing</em>'}`).join(' · ')
+    : 'Nothing to set up';
+  const s1 = step('1', c.allSettingsPresent, false, c.allSettingsPresent ? 'Settings saved' : 'Settings', settings,
+    c.channel === 'linkedin' ? `<button class="btn sm ghost" id="liSub" onclick="chLinkedInSubscribe()">Subscribe leads</button>`
+      : c.channel === 'whatsapp' ? `<button class="btn sm ghost" id="waConnect" onclick="chWhatsAppConnect()">Connect WhatsApp</button>` : '');
+  const s2 = !c.canTest ? step('2', true, false, 'No check needed', 'This channel has nothing to check', '')
+    : step('2', c.lastCheckOk === true, c.lastCheckOk === false,
+      c.lastCheckOk === true ? 'Check passed' : c.lastCheckOk === false ? 'Check failed' : 'Check',
+      c.lastCheckAt ? esc(fmtDateTime(c.lastCheckAt)) + (c.lastCheckOk === false && c.lastError ? ' · ' + esc(c.lastError) : '') : 'Not run yet',
+      `<button class="btn sm ghost" id="chCheck" onclick="runChannelCheck(${esc(JSON.stringify(String(c.channel ?? '')))})">${c.lastCheckAt ? 'Run again' : 'Run the check'}</button>`);
+  const s3 = manual ? step('3', true, false, 'Works without switching on', 'Staff add these by hand', '')
+    : c.live ? step('3', true, false, 'Switched on', c.mode === 'test' ? 'Receiving test messages' : 'Receiving',
+      `<button class="btn sm ghost" onclick="setChannelMode(${esc(JSON.stringify(String(c.channel ?? '')))},'off')">Switch off</button>`)
+    : step('3', false, false, 'Switch on', `<span id="chOnWhy">${chOnWhy(c.allSettingsPresent, checked) || 'Ready'}</span>`,
+      `<button class="btn sm" id="chOnBtn" data-settings="${c.allSettingsPresent ? '1' : ''}" ${canSwitchOn ? '' : 'disabled'} onclick="setChannelMode(${esc(JSON.stringify(String(c.channel ?? '')))},'live')">Switch on</button>`);
+  const last = c.lastEventAt || (run && run.at) || null;
+  const fig = (k, v) => `<div class="chb-fig"><small>${esc(k)}</small><b>${v}</b></div>`;
+  $('#view').innerHTML = `<p class="c-crumb"><a href="#/help">Help center</a> › <a href="#/channels">Channels</a></p>
+    <div class="c-head"><div><h1>${esc(c.label)}</h1></div><div class="act"><span class="chstate ${chWord(c).cls}">${esc(chWord(c).word)}</span></div></div>
+    <div class="chb-grid">
+      <div class="c-sheet chb-steps">${s1}${s2}${s3}<div id="chResult">${c.channel === 'linkedin' ? chLinkedInLine((d.runs || {}).linkedin_subscription)
+        : c.channel === 'whatsapp' ? chLinkedInLine((d.runs || {}).whatsapp_connect) : ''}</div><div id="chMode"></div></div>
+      <div class="c-sheet chb-came"><h3>What came in</h3>
+        ${fig('Last message', last ? esc(fmtDateTime(last)) : '<span class="c-gap">nothing yet</span>')}
+        ${fig('Messages', tcN(c.events || 0))}
+        ${c.filtered ? fig('Set aside by a rule', tcN(c.filtered)) : ''}
+        ${run && run.at ? `<div class="chb-run">${chActivity(c, run)}</div>` : ''}
+        <a class="btn sm" href="#/leads">Open in Inbox</a></div>
+    </div>`;
+}
+// a setting in words (patch 173): the screen never shows a code name such as META_APP_SECRET
+const CH_SETTING_WORDS = { META_APP_SECRET: 'App secret', META_VERIFY_TOKEN: 'Verify token', WEBSITE_FORM_SECRET: 'Website form key',
+  GOOGLE_FORM_SECRET: 'Google Form key', GMAIL_SERVICE_ACCOUNT_JSON: 'Gmail access', MAILCHIMP_WEBHOOK_SECRET: 'Mailchimp key',
+  OPEN_DAY_SECRET: 'Open Day key', PBX_API_TOKEN: 'Phone system key', AGENT_TOKENS: 'Agent keys', LINKEDIN_CLIENT_SECRET: 'LinkedIn app secret',
+  TIKTOK_CLIENT_SECRET: 'TikTok app secret', SIS_API_TOKEN: 'SIS key' };
+function chSettingWord(name) {
+  if (CH_SETTING_WORDS[name]) return CH_SETTING_WORDS[name];
+  const w = String(name || '').toLowerCase().replace(/_/g, ' ').replace(/\b(secret|token|key)s?\b/, 'key');
+  return w.charAt(0).toUpperCase() + w.slice(1);
 }
 
 // CONNECT WHATSAPP (coexistence, 07.10.2026): Meta's Embedded Signup in its "I already use the WhatsApp Business app"
@@ -10546,6 +10585,12 @@ async function chLinkedInSubscribe() {
 }
 
 
+// SWITCH ON SAYS WHY IT WAITS (patch 173, 24.11.2026): it needs every setting saved and, where a channel can be checked, a
+// passing check. A check that passes on this page turns it on at once (it used to stay grey until a reload).
+function chOnWhy(settingsSaved, checked) {
+  if (settingsSaved && checked) return '';
+  return 'Switch on needs ' + [settingsSaved ? '' : 'every setting saved', checked ? '' : 'a passing check'].filter(Boolean).join(' and ') + '.';
+}
 async function runChannelCheck(id) {
   const btn = $('#chCheck');
   const out = $('#chResult');
@@ -10553,14 +10598,13 @@ async function runChannelCheck(id) {
   try {
     const r = await post('/api/admin/channels/' + encodeURIComponent(id) + '/check');
     if (r.skipped) { out.innerHTML = `<div class="prov">${esc(r.why)}</div>`; return; }
-    out.innerHTML = `
-      <span class="${r.ok ? 'pill ok' : 'pill warn'}">${r.ok ? 'Every step passed' : 'It failed'}</span>
-      <ul class="steps">${(r.steps || []).map(chStep).join('')}</ul>
-      ${r.ok ? `<div class="footnote" style="margin-top:6px">This proves ${esc(r.proves || '')}.
-        It does NOT prove ${esc(r.doesNotProve || '')}.</div>` : ''}`;
+    // the steps redraw from what was just recorded: Check passed (or failed) and Switch on ready at once, no reload
+    await viewChannel(id);
+    const failed = (r.steps || []).filter((s) => !s.ok);
+    if (!r.ok && $('#chResult')) $('#chResult').innerHTML = `<div class="err">${failed.map((s) => esc(s.name) + (s.note ? ': ' + esc(s.note) : '')).join('<br>') || esc(r.detail || 'The check failed')}</div>`;
   } catch (e) {
     out.innerHTML = `<div class="err">${esc(e.message)}</div>`;
-  } finally { btn.disabled = false; btn.textContent = 'Run the check'; }
+  } finally { if (document.body.contains(btn)) { btn.disabled = false; btn.textContent = 'Run again'; } }
 }
 
 async function setChannelMode(id, mode) {
