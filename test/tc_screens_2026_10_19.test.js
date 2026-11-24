@@ -98,7 +98,8 @@ test('Training Centre Home: the year first, Today, four cards, every one opening
 
 test('Companies, the company page, Next contacts and People and access are built from Intake\'s own parts', () => {
   const list = fn('function tcDrawCompanies(');
-  for (const part of ['cPoolFrame(', 'cPoolFilters(', 'cPoolSelect(', 'cPoolRows(']) assert.ok(list.includes(part), part);
+  // patch 176: the rows are grouped by letter (tcAzRows, the same row parts in Intake's p-rows) instead of cPoolRows
+  for (const part of ['cPoolFrame(', 'cPoolFilters(', 'cPoolSelect(', 'tcAzRows(']) assert.ok(list.includes(part), part);
   // his pick 06.11.2026 "Remove from the list": no status filter on the list; it stays on the company page
   assert.ok(!list.includes("box('status'"));
   for (const f of ["'Area'", "'Country'", "'Person in charge'", "'Client'"]) assert.ok(list.includes(f), f);

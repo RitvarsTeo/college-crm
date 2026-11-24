@@ -32,10 +32,33 @@ test('Courses and Last course filter the list, and come back as facets with coun
   assert.ok(tc.FILTER_KEYS.includes('course') && tc.FILTER_KEYS.includes('since'));
 });
 
-test('the screen: the panel on the left of the list, a bar per value, a second click takes the filter off', () => {
+// patch 176 (his pick A, 24.11.2026): the same groups moved from the left panel into chips above the list; Courses kept
+test('the screen: every group a row of chips with counts above the list, a second click takes the filter off', () => {
   const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
-  assert.match(app, /body: `<div class="tc-fside">\$\{tcFilterBars\(L, M\)\}<div class="tc-flist">/);
+  assert.match(app, /body: tcMapCard\(L\) \+ tcChipsCard\(L\)/);
   assert.match(app, /\['course', 'Courses', /);
   assert.match(app, /T_F\[k\] === v \? '' : String\(v\)/);
-  assert.match(app, /html\.ui-c \.tc-fside\{display:grid;grid-template-columns:250px minmax\(0,1fr\)/);
+});
+
+// patch 176 (his pick A, 24.11.2026): A-Z and the Grand Opening list owner filter the list and come back as counts
+test('the letter and the Grand Opening list owner filter the list; trained / not yet, owners and letters come back with counts', async () => {
+  const db = await openDb();
+  const now = new Date('2026-11-24T09:00:00Z');
+  const a = (await tc.addCompany(db, { name: 'Alpha Example Marine', country: 'Norway' }, 'Ritvars')).id;
+  await tc.addCompany(db, { name: 'Ølen Example Yard', country: 'Norway' }, 'Ritvars');
+  await tc.addCompany(db, { name: '3 Example Seas', country: 'Latvia' }, 'Ritvars');
+  await db.prepare('INSERT INTO tc_company_courses (company_id, year, attendees, course_codes, recorded_at) VALUES (?,?,?,?,?)').run(a, 2025, 4, 'GWO', AT);
+  await db.prepare(`INSERT INTO tc_company_contacts (company_id, name, email, ch_contact_id, created_at) VALUES (?,?,?,?,?)`).run(a, 'Pat Example', 'pat@alpha.example', 'C176', AT);
+  await db.prepare(`INSERT INTO tc_go_stage2 (ch_contact_id, sender, name, company, email, gone, loaded_at) VALUES ('C176','JS','Pat Example','Alpha Example Marine','pat@alpha.example',0,?)`).run(AT);
+  assert.equal(tc.letterOf('Ølen'), 'O'); assert.equal(tc.letterOf('Žagars'), 'Z'); assert.equal(tc.letterOf('"Baltic"'), 'B'); assert.equal(tc.letterOf('3 Seas'), '#');
+  const L = await tc.listCompanies(db, {}, { size: 50, now });
+  assert.deepEqual(L.facets.letters, [['#', 1], ['A', 1], ['O', 1]]);
+  assert.deepEqual(L.facets.client, [['yes', 1], ['no', 2]]);
+  assert.deepEqual(L.facets.go.map(([k, n]) => [k, n]), [['-', 2], ['JS', 1]]);
+  assert.deepEqual((await tc.listCompanies(db, { letter: 'O' }, { size: 50, now })).rows.map((c) => c.name), ['Ølen Example Yard']);
+  assert.deepEqual((await tc.listCompanies(db, { go: 'JS' }, { size: 50, now })).rows.map((c) => c.name), ['Alpha Example Marine']);
+  assert.equal((await tc.listCompanies(db, { go: '-' }, { size: 50, now })).rows.length, 2);
+  // the letters keep every letter of the filtered list, the chosen letter aside
+  assert.deepEqual((await tc.listCompanies(db, { letter: 'O' }, { size: 50, now })).facets.letters.map(([l]) => l), ['#', 'A', 'O']);
+  assert.ok(tc.FILTER_KEYS.includes('letter') && tc.FILTER_KEYS.includes('go'));
 });

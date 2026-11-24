@@ -182,6 +182,10 @@ export function matches(c, f, w, me = null) {
   // Real company count (src/tcgo.js motherCompanyList); without them the filter shows nothing rather than everything
   if (f.go2 && !(f.go2ids && f.go2ids.has(Number(c.id)))) return false;
   if (f.status && c.status !== f.status) return false;
+  // THE COMPANIES LIST (patch 176, the owner's pick A 24.11.2026): the first letter (A-Z, '#' for anything else) and the
+  // Grand Opening list it is on (a director's code; '-' = on nobody's list)
+  if (f.letter && letterOf(c.name) !== f.letter) return false;
+  if (f.go === '-' ? (c.goOwners || []).length : f.go && !(c.goOwners || []).includes(f.go)) return false;
   if (f.area && !c.areas.includes(f.area)) return false;
   if (f.course && !(c.courses || []).includes(String(f.course).toUpperCase())) return false;
   if (f.since && sinceBucket(c, Number(w.today.slice(0, 4))) !== f.since) return false;
@@ -197,7 +201,25 @@ export function matches(c, f, w, me = null) {
   }
   return true;
 }
-export const FILTER_KEYS = ['status', 'area', 'country', 'pic', 'client', 'info', 'due', 'q', 'year', 'cohort', 'last', 'course', 'since', 'go2'];
+export const FILTER_KEYS = ['status', 'area', 'country', 'pic', 'client', 'info', 'due', 'q', 'year', 'cohort', 'last', 'course', 'since', 'go2', 'letter', 'go'];
+/** A company's letter on the A-Z bar: its first letter without accents (Ž -> Z, Ø -> O), '#' for a digit or a sign. */
+export function letterOf(name) {
+  const ch = String(name || '').replace(/^[\s"'“”„«»(]+/, '').charAt(0).toUpperCase().replace('Ø', 'O').normalize('NFD').charAt(0);
+  return /[A-Z]/.test(ch) ? ch : '#';
+}
+/** company id -> the Grand Opening list owners its people are on (tc_go_stage2, one company may be on several lists). */
+async function goOwnersByCompany(db) {
+  const m = new Map();
+  try {
+    for (const r of await db.prepare(`SELECT DISTINCT k.company_id AS id, s.sender FROM tc_go_stage2 s
+        JOIN tc_company_contacts k ON k.ch_contact_id = s.ch_contact_id AND k.archived_at IS NULL WHERE s.gone = 0`).all()) {
+      const id = Number(r.id);
+      if (!m.has(id)) m.set(id, []);
+      if (!m.get(id).includes(r.sender)) m.get(id).push(r.sender);
+    }
+  } catch (e) { if (!/no such table|does not exist/i.test(String(e && e.message))) throw e; }
+  return m;
+}
 export function readFilters(params) {
   const f = {};
   for (const k of FILTER_KEYS) { const v = params.get ? params.get(k) : params[k]; if (v) f[k] = String(v).slice(0, 200); }
@@ -214,6 +236,8 @@ const byLv = (a, b) => String(a).localeCompare(String(b), 'lv');
 export async function listCompanies(db, filters = {}, { page = 1, size = 100, sort = 'name', now = new Date(), me = null, only = false } = {}) {
   const w = tcWindow(now);
   const all = await companyRows(db);
+  const go = await goOwnersByCompany(db);
+  for (const c of all) c.goOwners = go.get(Number(c.id)) || [];
   const mk = meKeys(me);
   // a group's TOTAL row is counted nowhere; the search alone finds it, so it can still be opened
   const counted = all.filter((c) => !c.groupTotal);
@@ -249,6 +273,12 @@ export async function listCompanies(db, filters = {}, { page = 1, size = 100, so
       // the bars on the left (02.11.2026): the courses most companies took, and the latest course against this year
       courses: tally(counted.flatMap((c) => (c.courses || []).map((x) => ({ x }))), (o) => o.x).sort((a, b) => b[1] - a[1] || byLv(a[0], b[0])).slice(0, 24),
       since: ['recent', 'mid', 'old', 'none'].map((b) => [b, counted.filter((c) => sinceBucket(c, Number(w.today.slice(0, 4))) === b).length]),
+      // patch 176: trained with us (clients) or not yet; the Grand Opening list owners; the letters of the list as filtered
+      // (without the letter itself, so the bar keeps every letter that has a company)
+      client: [['yes', counted.filter((c) => c.client).length], ['no', counted.filter((c) => !c.client).length]],
+      go: tally(counted, (c) => (c.goOwners.length ? c.goOwners : ['-'])).sort((a, b) => b[1] - a[1])
+        .map(([k, n]) => [k, n, k === '-' ? 'On no list' : ((((TC.grandOpening || {}).stage2 || {}).senders || []).find((s) => s.code === k) || {}).name || k]),
+      letters: tally(pool.filter((c) => matches(c, { ...filters, letter: '' }, w, mk)), (c) => letterOf(c.name)).sort((a, b) => byLv(a[0], b[0])),
     },
   };
 }

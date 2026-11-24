@@ -1659,6 +1659,19 @@ i.key{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align
   html.ui-c .ib-sugg{margin:8px 0;padding:8px 10px;border:1px dashed var(--c-sis);border-radius:8px;background:var(--c-sunk);font-size:12.5px;cursor:default}
   html.ui-c .ib-sugg b{display:block;font-size:11px;color:#0f6f99;margin-bottom:4px} html.ui-c .ib-sugg-t{white-space:pre-line;margin-bottom:6px;color:var(--ink)}
   html.ui-c .ib-undo{font:inherit;font-size:12px;color:#0f6f99;background:none;border:0;padding:0;text-decoration:underline;cursor:pointer}
+  html.ui-c .tc-lmap{padding:14px 20px;margin:0 0 16px} html.ui-c .tc-lmaph{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+  html.ui-c .tc-lmaph h3{margin:0} html.ui-c .tc-lmaph small{color:var(--t3)}
+  html.ui-c .tc-lmapsvg{width:100%;height:340px;display:block;margin-top:8px} html.ui-c .tc-lmapsvg .land path{fill:var(--c-sunk);stroke:var(--surface);stroke-width:.25}
+  html.ui-c .tc-ldot{cursor:pointer} html.ui-c .tc-ldot circle{fill:var(--c-sis);opacity:.88;stroke:var(--surface);stroke-width:.4}
+  html.ui-c .tc-ldot.on circle{fill:var(--btn-bg);opacity:1} html.ui-c .tc-ldot text{font-family:inherit;font-weight:700;fill:#fff;text-anchor:middle;pointer-events:none}
+  html.ui-c .tc-lmapkey{font-size:12px;color:var(--t3);margin:6px 0 0}
+  html.ui-c .tc-chips{padding:14px 20px;margin:0 0 16px} html.ui-c .tc-chipgrid{display:grid;grid-template-columns:150px 1fr;gap:6px 12px;align-items:start;font-size:13px}
+  html.ui-c .tc-chiph{padding-top:6px} html.ui-c .tc-chip{margin:0 6px 6px 0} html.ui-c .tc-chip b{margin-left:4px}
+  @media (max-width:760px){html.ui-c .tc-chipgrid{grid-template-columns:1fr}}
+  html.ui-c #view .tc-az{padding:12px 20px} html.ui-c #view .tc-azbar{display:flex;flex-direction:row;flex-wrap:wrap;gap:2px;margin:0 0 8px;position:sticky;top:0;background:var(--surface);z-index:2;padding:4px 0}
+  html.ui-c #view .tc-azbar button{display:inline-block;width:auto;flex:none;min-width:28px;margin:0;font:inherit;font-size:13px;font-weight:700;padding:4px 0;border:0;border-radius:6px;background:none;color:var(--ink);cursor:pointer;text-align:center}
+  html.ui-c #view .tc-azbar button.on{background:var(--btn-bg);color:var(--btn-ink)} html.ui-c #view .tc-azbar button:disabled{color:var(--t3);opacity:.45;cursor:default}
+  html.ui-c #view h3.tc-azh{margin:16px 0 4px;font-size:17px;letter-spacing:0;text-transform:none} html.ui-c #view .tc-azrows{box-shadow:none;border:0;background:none;padding:0}
   html.ui-c .chb-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px;align-items:start}
   @media (max-width:760px){html.ui-c .chb-grid{grid-template-columns:1fr}}
   html.ui-c .chb-steps{padding:6px 20px 14px} html.ui-c .chb-came{padding:18px 20px} html.ui-c .chb-came h3{margin:0 0 12px}
@@ -12163,7 +12176,7 @@ async function tcSavePlan(id) {
 }
 
 // ---- COMPANIES: Journey's List for companies - the status band, the filter row, search, one line each ----
-const T_F_EMPTY = () => ({ status: '', area: '', country: '', pic: '', client: '', info: '', due: '', year: '', cohort: '', last: '', course: '', since: '', go2: '' });
+const T_F_EMPTY = () => ({ status: '', area: '', country: '', pic: '', client: '', info: '', due: '', year: '', cohort: '', last: '', course: '', since: '', go2: '', letter: '', go: '' });
 let T_F = T_F_EMPTY(); let T_Q = ''; let T_PAGE = 1; let T_LIST = null; let T_TITLE = 'Companies'; let T_KEEP = false; let T_SORT = 'name';
 let T_QT = 0; let T_MORE = false;
 // OWNERSHIP AND NEW ADDITIONS (29.10.2026, src/tcadd.js; the owner's picks: Make mine on Companies, a New additions tab with
@@ -12372,6 +12385,88 @@ function tcFilterBars(L, M) {
   };
   return `<aside class="c-sheet tc-fpanel2" aria-label="Filter the companies">${groups.map(grp).join('')}${any ? '<button type="button" class="tc-fmore" onclick="tcClearFilters()">Clear all</button>' : ''}</aside>`;
 }
+// ---- THE COMPANIES LIST, HIS PICK A (patch 176, 24.11.2026: "the company list, needs to be better ... also alphabet. and some
+// nice groupings and cohorts and where is the map???") ----
+// The map: Europe, where the companies are, one circle per country with its count; a tap filters the list to that country.
+function tcMapCard(L) {
+  const C = (L.facets.countries || []).filter(([c]) => c !== '-');
+  if (!C.length) return '';
+  const n = C.reduce((s, [, k]) => s + k, 0);
+  return `<section class="c-sheet tc-lmap"><div class="tc-lmaph"><h3>Where our companies are</h3><small>${tcN(n)} companies in ${tcN(C.length)} ${C.length === 1 ? 'country' : 'countries'} · tap a country to see its companies</small></div>
+    <div id="tcListMap"><p class="c-empty">Drawing the map…</p></div></section>`;
+}
+async function tcDrawListMap(L) {
+  const el = document.getElementById('tcListMap');
+  if (!el) return;
+  const C = (L.facets.countries || []).filter(([c]) => c !== '-');
+  let W;
+  try { W = await tcWorld(); } catch (e) { el.innerHTML = `<p class="c-empty">${esc(e.message)}</p>`; return; }
+  if (!document.body.contains(el)) return;
+  const at = (name) => W.centres[name] || W.centres[T_MAP_ALIAS[name]] || null;
+  const placed = C.map(([c, k]) => ({ c, k, p: at(c) })).filter((x) => x.p);
+  if (!placed.length) { el.innerHTML = '<p class="c-empty">No country on the map yet.</p>'; return; }
+  // zoomed to the biggest countries (the top 11), so the circles read; the rest are in the list and the Country chips
+  const big = placed.slice().sort((a, b) => b.k - a.k).slice(0, 11);
+  const xs = big.map((x) => x.p[0]), ys = big.map((x) => x.p[1]);
+  const x0 = Math.min(...xs) - 14, x1 = Math.max(...xs) + 14, y0 = Math.min(...ys) - 22, y1 = Math.max(...ys) + 8;
+  const inView = ([x, y]) => x >= x0 && x <= x1 && y >= y0 && y <= y1;
+  const top = Math.max(1, ...placed.map((x) => x.k));
+  const shown = placed.filter((x) => inView(x.p)).sort((a, b) => b.k - a.k);
+  const dots = shown.map(({ c, k, p: [cx, cy] }) => {
+    const r = 2.2 + Math.sqrt(k / top) * 6.5, on = T_F.country === c;
+    return `<g class="tc-ldot${on ? ' on' : ''}" tabindex="0" role="button" aria-label="${esc(c)}: ${tcN(k)} companies"
+        onclick="tcFilter('country', ${esc(JSON.stringify(on ? '' : String(c)))})" onkeydown="if(event.key==='Enter')this.onclick()"><title>${esc(c)} · ${tcN(k)} companies</title>
+      <circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r.toFixed(2)}"/><text x="${cx.toFixed(1)}" y="${(cy + 1.1).toFixed(1)}" style="font-size:${r > 5 ? 3.2 : 2.6}px">${tcN(k)}</text></g>`;
+  }).join('');
+  const out = placed.length - shown.length;
+  el.innerHTML = `<svg viewBox="${x0.toFixed(1)} ${y0.toFixed(1)} ${(x1 - x0).toFixed(1)} ${(y1 - y0).toFixed(1)}" class="tc-lmapsvg" role="img" aria-label="Where our companies are">
+      <g class="land">${W.land.map((d) => `<path d="${d}"/>`).join('')}</g>${dots}</svg>
+    <p class="tc-lmapkey">Circle = companies in that country${out ? ` · ${tcN(out)} more ${out === 1 ? 'country' : 'countries'} in the Country chips` : ''}</p>`;
+}
+// The groups as chips, each with its count; a tap filters, a second tap takes it off.
+function tcChipsCard(L) {
+  const yr = Number(cTodayIso().slice(0, 4));
+  const rows = [
+    ['area', 'Area', (L.facets.areas || []).filter(([, n]) => n > 0).map(([a, n]) => [a, a, n])],
+    ['client', 'Trained with us', (L.facets.client || []).map(([v, n]) => [v, v === 'yes' ? 'Trained' : 'Not yet', n])],
+    ['go', 'Grand Opening list', (L.facets.go || []).filter(([k]) => k !== '-').map(([k, n, name]) => [k, name, n])],
+    ['since', 'Last course', (L.facets.since || []).map(([b, n]) => [b, { recent: `${yr - 1}-${String(yr).slice(-2)}`, mid: `${yr - 3}-${String(yr - 2).slice(-2)}`, old: `Before ${yr - 3}`, none: 'No course yet' }[b], n])],
+    ['course', 'Courses', (L.facets.courses || []).map(([c, n]) => [c, c, n])],
+    ['country', 'Country', (L.facets.countries || []).filter(([c]) => c !== '-').map(([c, n]) => [c, c, n])],
+  ].filter(([, , v]) => v.length);
+  const chip = (k, [v, label, n]) => `<button type="button" class="btn sm${T_F[k] === v ? '' : ' ghost'} tc-chip" aria-pressed="${T_F[k] === v}"
+      onclick="tcFilter(${esc(JSON.stringify(k))}, ${esc(JSON.stringify(T_F[k] === v ? '' : String(v)))})">${esc(label)} <b>${tcN(n)}</b></button>`;
+  const line = ([k, h, vals]) => {
+    const open = T_FMORE[k], shown = open || vals.length <= 8 ? vals : vals.slice(0, 6);
+    return `<b class="tc-chiph">${esc(h)}</b><div>${shown.map((v) => chip(k, v)).join('')}${vals.length > shown.length || open
+      ? `<button type="button" class="tc-fmore" onclick="T_FMORE.${k}=!T_FMORE.${k};tcDrawCompanies()">${open ? 'Fewer' : `+ ${vals.length - shown.length} more`}</button>` : ''}</div>`;
+  };
+  const any = ['area', 'client', 'go', 'since', 'course', 'country', 'letter'].some((k) => T_F[k]);
+  return `<section class="c-sheet tc-chips"><div class="tc-chipgrid">${rows.map(line).join('')}</div>${any ? '<button type="button" class="tc-fmore" onclick="tcClearFilters()">Clear all</button>' : ''}</section>`;
+}
+// A-Z: every letter, the ones with no company greyed; a tap shows that letter, a second tap all again.
+function tcLetterBar(L) {
+  const have = new Map(L.facets.letters || []);
+  const letters = [...'ABCDEFGHIJKLMNOPQRSTUVWXYZ', ...(have.has('#') ? ['#'] : [])];
+  return `<nav class="tc-azbar" aria-label="Jump to a letter">${letters.map((l) => {
+    const n = have.get(l) || 0, on = T_F.letter === l;
+    return `<button type="button" class="${on ? 'on' : ''}" ${n ? '' : 'disabled'} aria-pressed="${on}" title="${n ? tcN(n) + ' companies' : 'none'}"
+      onclick="tcFilter('letter', ${esc(JSON.stringify(on ? '' : l))})">${esc(l)}</button>`;
+  }).join('')}</nav>`;
+}
+// The list grouped by its first letter (when it is sorted by name)
+function tcAzRows(rows, row) {
+  if (!rows.length) return '<div class="c-empty">No company matches. Remove a filter to widen the list.</div>';
+  if (T_SORT && T_SORT !== 'name') return `<div class="p-rows tc-azrows">${rows.map(row).join('')}</div>`;
+  const letter = (n) => { const ch = String(n || '').replace(/^[\s"'“”„«»(]+/, '').charAt(0).toUpperCase().replace('Ø', 'O').normalize('NFD').charAt(0); return /[A-Z]/.test(ch) ? ch : '#'; };
+  let last = null, out = '';
+  for (const c of rows) {
+    const l = letter(c.name);
+    if (l !== last) { out += `<h3 class="tc-azh">${esc(l)}</h3>`; last = l; }
+    out += row(c);
+  }
+  return `<div class="p-rows tc-azrows">${out}</div>`;
+}
 function tcDrawCompanies() {
   const L = T_LIST, M = T_META;
   const cols = M.statuses.map((s) => ({ id: s.id, label: s.label, n: L.counts.status[s.id] || 0 }));
@@ -12415,10 +12510,13 @@ function tcDrawCompanies() {
     act: `<a class="btn ghost" href="#/tc/families">Families</a><a class="btn ghost" href="#/tc/import">Import people</a><input class="c-search" id="tcQ" placeholder="Search company, city, country or person" value="${esc(T_Q)}" aria-label="Search companies and people">${tcDownloadMenu()}<button class="btn" onclick="tcOpenAdd()">Add company</button>`,
     band: tcAddnStrip(),
     filters: fbar,
-    body: `<div class="tc-fside">${tcFilterBars(L, M)}<div class="tc-flist">${cPoolRows(L.rows, row, 'No company matches. Remove a filter to widen the list.')}</div></div>`
+    // HIS PICK A (patch 176, 24.11.2026, picture _pictures/176_companies_A1/A2): the map on top, the groups as chips, then A-Z
+    body: tcMapCard(L) + tcChipsCard(L)
+      + `<div class="c-sheet tc-az">${tcLetterBar(L)}${tcAzRows(L.rows, row)}</div>`
       + (L.total > L.rows.length ? `<div class="c-row-acts tc-more"><button class="btn ghost" onclick="tcMoreCompanies()">Show ${Math.min(100, L.total - L.rows.length)} more of ${Number(L.total - L.rows.length)}</button></div>` : '')
       + tcPeopleSheet(),
   });
+  tcDrawListMap(L);
   const q = $('#tcQ');
   if (q) q.addEventListener('input', () => { clearTimeout(T_QT); T_QT = setTimeout(async () => { T_Q = q.value.trim(); T_PAGE = 1; await tcLoadCompanies(); const n = $('#tcQ'); if (n) { n.focus(); n.setSelectionRange(n.value.length, n.value.length); } }, 250); });
   cPoolWire();
