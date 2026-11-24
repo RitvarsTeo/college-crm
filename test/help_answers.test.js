@@ -21,7 +21,7 @@ test('"late" is asked about the Inbox, and the answer is the Q50 working-hours r
   const late = faq('late-in-new-leads');
   assert.equal(late.q, 'What does "late" mean in the Inbox?');
   // the 23.09 rule ("arrived before today, past 09:00") was replaced on 05.10 (Q50); Help says what the app does
-  assert.equal(late.a, 'Nobody has handled the message by the end of the working day it should have been answered in. Working hours are Monday to Friday, 09:00 to 17:00 Riga time. One working hour after it arrived the card first says "answer now"; a message that arrives in the evening or at the weekend counts from the next working morning.');
+  assert.equal(late.a, 'Nobody has handled the message by the end of the working day it should have been answered in. Working hours are Monday to Friday, 09:00 to 17:00 Riga time. One working hour after it arrived the card first says "answer now"; a message that arrives in the evening or at the weekend counts from the next working morning. An email is late one working day after it arrived.');
   assert.ok(!HELP.faq.some((f) => /New Leads/.test(f.q + f.a)), 'no answer says New Leads');
 });
 test('the Due tour step points at Due in the menu, not at Home', () => {

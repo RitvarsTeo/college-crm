@@ -117,7 +117,7 @@ test('Companies, the company page, Next contacts and People and access are built
   assert.match(access, /if \(!isAdmin\(\)\)/);
   assert.match(access, /api\('\/api\/admin\/access'\)/);
   assert.match(fn('async function cHelpAdmin('), /<a href="#\/access"[^>]*>People and access<\/a>/, 'in the Help center admin pills');
-  assert.match(fn('function viewTcHelp('), /isAdmin\(\) \? '<h2 class="c-set-h">For admins<\/h2><div class="c-helpadmin"><a href="#\/access">People and access<\/a><a href="#\/tc\/review">Review list \(from Client Hub\)<\/a>/);
+  assert.match(fn('function viewTcHelp('), /isAdmin\(\) \? '<h2 class="c-set-h">For admins<\/h2><div class="c-helpadmin"><a href="#\/access">People and access<\/a><a href="#\/tc\/review">Review list \(imported contacts\)<\/a>/);
 });
 
 test('Help keeps up: the Training Centre answers are one sentence each, and Academy says why there are two tiles', () => {

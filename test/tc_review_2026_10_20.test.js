@@ -211,7 +211,7 @@ test('the screen: reached from Companies and from the menu item From Client Hub 
   const app = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
   assert.match(app, /else if \(place === 'review'\) await viewTcReview\(\);/, 'the route');
   // the owner 26.10.2026 ("too much tabs", B with filters): the review list moved from Companies and the menu to the Help center, for admins
-  assert.match(app, /<a href="#\/tc\/review">Review list \(from Client Hub\)<\/a>/, 'in the Help center');
+  assert.match(app, /<a href="#\/tc\/review">Review list \(imported contacts\)<\/a>/, 'in the Help center');
   const block = app.slice(app.indexOf('THE CLIENT HUB REVIEW LIST (#/tc/review) --'), app.indexOf('function viewTcHelp() {'));
   assert.ok(block.length > 2000, 'the block is found');
   assert.doesNotMatch(block.replace(/\/\/.*$/gm, ''), /\b(overdue|late|waiting since|days ago|still not|behind)\b/i);

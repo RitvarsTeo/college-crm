@@ -176,11 +176,13 @@ test('Q54 -> Q56: no card grid of the menu, no "three steps" cards repeating the
 });
 
 test('Q54 how to: short task links, each opens a real place', () => {
-  const places = ['#/home', '#/leads', '#/due', '#/journey', '#/reports', '#/settings', '#/help'];
-  // 06.10.2026, the standing rule "the help center must always keep up with any changes in the app"
+  const places = ['#/home', '#/leads', '#/due', '#/journey', '#/reports', '#/calls', '#/settings', '#/help'];
+  // 06.10.2026, the standing rule "the help center must always keep up with any changes in the app"; 24.11.2026 the
+  // tutorial update (his pick B): Handled, the suggested reply and the Calls page
   assert.deepEqual(HELP.howto.map((h) => h.do), ['Find a person', 'Add a lead', 'Make a lead from a message', 'Set a message aside',
+    'See what was handled', 'Use a suggested reply',
     'Bring a set-aside message back', 'Act on what is due', 'Move a step to another day', 'Move someone back a stage', 'See who came from a channel', 'See a Home number in depth',
-    'Use the keyboard', 'Look at other years', 'See one month']);
+    'See how the phone line is doing', 'Use the keyboard', 'Look at other years', 'See one month']);
   for (const h of HELP.howto) assert.ok(places.includes(h.href.split('?')[0]) && h.where, h.do);
   assert.ok(APP.includes('placeholder="Search name, email or phone"') && APP.includes('>Add lead</button>') && APP.includes("'Came from'"),
     'what the how-to names exists on screen');
@@ -288,9 +290,11 @@ test('the Help center follows the Inbox board: Make a lead and Set aside, never 
   const words = JSON.stringify(HELP).toLowerCase();
   assert.ok(!words.includes('not relevant'), 'help.json names no "not relevant" action');
   const inbox = HELP.tour.find((t) => t.title === 'Inbox').body;
-  assert.match(inbox, /column of the day it arrived/, 'the columns by arrival day');
+  // 24.11.2026: the columns are calendar weeks since 09.11 (Today, Earlier this week, Last week, Before last week)
+  assert.match(inbox, /column of the week it arrived: Today, Earlier this week, Last week or Before last week/, 'the columns by arrival week');
   assert.match(inbox, /Make a lead/); assert.match(inbox, /Set aside/); assert.match(inbox, /kept, and can be brought back/);   // 07.10.2026, "Keep the text" + Bring back
-  assert.deepEqual(HELP.howto.filter((h) => h.href === '#/leads').map((h) => h.do), ['Make a lead from a message', 'Set a message aside']);
+  assert.deepEqual(HELP.howto.filter((h) => h.href === '#/leads').map((h) => h.do), ['Make a lead from a message', 'Set a message aside',
+    'See what was handled', 'Use a suggested reply']);
   // "late" says the Q50 rule, not the 23.09 one
   const late = HELP.faq.find((q) => q.id === 'late-in-new-leads').a;
   assert.match(late, /end of the working day/); assert.match(late, /09:00 to 17:00 Riga/); assert.match(late, /"answer now"/);
@@ -298,4 +302,22 @@ test('the Help center follows the Inbox board: Make a lead and Set aside, never 
   // Today's drag and the keyboard
   assert.match(HELP.tour.find((t) => t.title === 'Due').body, /Drag a card to Due today or Coming up/);
   assert.equal(HELP.howto.find((h) => h.do === 'Use the keyboard').where, 'Press ? for the shortcuts');
+});
+
+// THE TUTORIAL (24.11.2026, the owner's pick B "A + short videos"): the tour and the questions match the app as it is
+// after patches 160-171. Intake holds every client, so no help line names Client Hub.
+test('24.11 the help names no Client Hub, and the tour walks every menu place on both sides', () => {
+  assert.doesNotMatch(JSON.stringify({ tour: HELP.tour, faq: HELP.faq, howto: HELP.howto, flow: HELP.flow, tc: HELP.tc }), /Client Hub/);
+  assert.doesNotMatch(APP.slice(APP.indexOf('function viewTcHelp('), APP.indexOf('\n}\n', APP.indexOf('function viewTcHelp('))), /Client Hub/);
+  assert.deepEqual(HELP.tour.map((t) => t.title), ['The left card', 'Home', 'Inbox', 'Due', 'Journey', 'Reports', 'Calls', 'Light, System or Dark', 'Stuck, or have an idea?']);
+  assert.deepEqual(HELP.tc.tour.map((t) => t.title), ['Home', 'Inbox', 'Plan', 'Clients', 'Help center']);
+  for (const t of HELP.tc.tour) {
+    const m = /^\.tcnav \[data-c="([a-z-]+)"\]$/.exec(t.target);
+    assert.ok(m && APP.includes(`data-c="${m[1]}"`), 'a real Training Centre menu item: ' + t.target);
+  }
+  const all = JSON.stringify(HELP);
+  assert.doesNotMatch(all, /—/, 'no em dash');
+  assert.doesNotMatch(all, /\b(AI|Claude|automation|machine learning)\b/, 'no AI wording');
+  for (const id of ['email-moves-the-stage', 'suggested-reply', 'stage-move-note', 'search-other-years', 'calls-page']) assert.ok(HELP.faq.some((f) => f.id === id), id);
+  for (const id of ['tc-inbox', 'tc-private-clients', 'tc-same-company', 'tc-my-go-list']) assert.ok(HELP.tc.faq.some((f) => f.id === id), id);
 });

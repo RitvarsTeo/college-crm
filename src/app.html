@@ -14752,7 +14752,7 @@ function viewTcHelp() {
     ${guides ? `<h2 class="c-set-h">Step by step</h2><div class="tc-guides">${guides}</div>` : ''}
     <details class="tc-hfold"><summary><h2 class="c-set-h">How to</h2></summary><div class="c-sheet c-set">${how}</div></details>
     <details class="tc-hfold"><summary><h2 class="c-set-h">Questions and answers</h2></summary><div id="helpFaq" class="c-helpfaq"></div></details>
-    ${isAdmin() ? '<h2 class="c-set-h">For admins</h2><div class="c-helpadmin"><a href="#/access">People and access</a><a href="#/tc/review">Review list (from Client Hub)</a></div>' : ''}`;
+    ${isAdmin() ? '<h2 class="c-set-h">For admins</h2><div class="c-helpadmin"><a href="#/access">People and access</a><a href="#/tc/review">Review list (imported contacts)</a></div>' : ''}`;
   if (window.HelpCenter) HelpCenter.mount(document.getElementById('helpFaq'), { faq: H.faq || [], onAsk: (text) => fbOpen('QUESTION', text) });
 }
 

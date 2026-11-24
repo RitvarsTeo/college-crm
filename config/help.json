@@ -60,6 +60,16 @@
       "href": "#/leads"
     },
     {
+      "do": "See what was handled",
+      "where": "Inbox, Handled at the top right",
+      "href": "#/leads"
+    },
+    {
+      "do": "Use a suggested reply",
+      "where": "Inbox, Copy on the email card, then paste it in Gmail",
+      "href": "#/leads"
+    },
+    {
       "do": "Bring a set-aside message back",
       "where": "The set-aside messages, Bring back on the card; Mark there stops a number or address coming back",
       "href": "#/leads?show=notrelevant"
@@ -90,6 +100,11 @@
       "href": "#/home"
     },
     {
+      "do": "See how the phone line is doing",
+      "where": "Reports, Calls",
+      "href": "#/calls"
+    },
+    {
       "do": "Use the keyboard",
       "where": "Press ? for the shortcuts",
       "href": "#/help"
@@ -112,8 +127,13 @@
       "target": ".cnav"
     },
     {
+      "title": "Home",
+      "body": "The year in four figures: Leads, Admitted, Conversion and Median time to admission, each with last year around this time. Admissions by month shows all programmes, Long, Short or one programme; Where everyone is now splits the people who arrived into Open, Admitted and Not proceeding. Click any figure to see the people it counts.",
+      "target": ".cnav a[data-c=\"home\"]"
+    },
+    {
       "title": "Inbox",
-      "body": "Every new message from every channel lands here first, in the column of the day it arrived. Make a lead: say the programme and the next step on the card - Follow up on a date, or Cold - and add the email or phone the message did not bring, so their next message finds them. What they wrote stays on their History. A message from somebody already in Intake goes on their history with Answer the question for today, on every channel, also when they are admitted or not proceeding. A card that says Joins and a name: Add to them. Anything else: Set aside, and pick why: Not a prospective student, Supplier or vendor, Internal or Spam. It is kept, and can be brought back; who, when and why stay on record. Supplier or vendor, Internal and Spam also mark the number or address, so it stays out of the Inbox until Remove mark. Somebody set aside before who gets in touch again comes back, with Set aside before on the card. Calls show the line you answer (Admissions, Student coordination or Other); the Line filter shows another line or all of them, and remembers your choice. Calls today from people already in Intake have no card, so they are listed at the top of the Inbox with a link to each person. A call card, and any card without a name, asks for the name first. An empty column folds to a thin strip; click it to open it. On a phone the days stack: tap a bar or a folded day to open it. Email: the same new sender again joins their card; a newsletter is set aside. An email card shows only what the person newly wrote, without the earlier emails quoted under it, signatures or legal notices; Show more opens the rest of it, Show original the email as it came. Email a person gave the Admissions label in edu@ is never filtered, archived or not, and a message a rule had set aside comes back once it has the label. Email is read every 10 minutes from 08:00 to 17:00 Latvian time; what arrives later comes in at 08:00.",
+      "body": "Every new message from every channel lands here first, in the column of the week it arrived: Today, Earlier this week, Last week or Before last week. Waiting shows what still needs you, Handled what is done; the Week, Source, Kind and Line filters narrow the board. Make a lead: say the programme and the next step on the card - Follow up on a date, or Cold - and add the email or phone the message did not bring, so their next message finds them. What they wrote stays on their History. A message from somebody already in Intake goes on their history with Answer the question for today, on every channel, also when they are admitted or not proceeding. A card that says Joins and a name: Add to them. Anything else: Set aside, and pick why: Not a prospective student, Supplier or vendor, Internal or Spam. It is kept, and can be brought back; who, when and why stay on record. Supplier or vendor, Internal and Spam also mark the number or address, so it stays out of the Inbox until Remove mark. Somebody set aside before who gets in touch again comes back, with Set aside before on the card. Calls show the line you answer (Admissions, Student coordination or Other); the Line filter shows another line or all of them, and remembers your choice. Calls today from people already in Intake have no card, so they are listed at the top of the Inbox with a link to each person. A call card, and any card without a name, asks for the name first. An empty column folds to a thin strip; click it to open it. On a phone the days stack: tap a bar or a folded day to open it. Email: the same new sender again joins their card; a newsletter is set aside. An email card shows only what the person newly wrote, without the earlier emails quoted under it, signatures or legal notices; Show more opens the rest of it, Show original the email as it came. Email a person gave the Admissions label in edu@ is never filtered, archived or not, and a message a rule had set aside comes back once it has the label. Email is read every 10 minutes from 08:00 to 17:00 Latvian time; what arrives later comes in at 08:00. When edu@ answers an email in Gmail, the card is handled by itself: it goes on the person or becomes a new lead, and leaves Waiting; Undo on it brings it back. A waiting email card can show a Suggested reply, taken from answers edu@ gave to questions like it: Copy puts it on the clipboard for Gmail, and Intake never sends an email. Connect your mailbox, above the board, lets Intake see your own replies to students too. Under a missed call, Called back records that you rang them back.",
       "target": ".cnav a[data-c=\"leads\"]"
     },
     {
@@ -125,6 +145,16 @@
       "title": "Journey",
       "body": "Everyone you are working with, stage by stage, up to Admitted or Not proceeding. The last line of every card is its state - Overdue, Due today, Due, No next step or With the SIS; the card's left edge is red when it needs you (Overdue, No next step) and navy when it is on track; the bands inside a column group them and count them. The graph above the board stacks the same two colours per stage; click a colour to open those people. Search, add a lead, filter by where they came from. An empty column folds to a thin strip; click it to open it. On a phone the stages stack one under the other, one open at a time: tap a bar or a folded stage to open it, and Move on the opened card changes the stage.",
       "target": ".cnav a[data-c=\"people\"]"
+    },
+    {
+      "title": "Reports",
+      "body": "Every Home figure one level deeper: by channel, programme and month. Pick a month beside the download, and download the figures as Excel, Google Sheets or CSV.",
+      "target": ".cnav a[data-c=\"reports\"]"
+    },
+    {
+      "title": "Calls",
+      "body": "The college phone line in four figures: time to answer, the share answered, answered per day and the busiest hour, each with this week against last week. The arrows move between them; the link under each chart opens the calls it counts.",
+      "target": ".cnav a[data-c=\"calls\"]"
     },
     {
       "title": "Light, System or Dark",
@@ -146,7 +176,7 @@
     {
       "id": "late-in-new-leads",
       "q": "What does \"late\" mean in the Inbox?",
-      "a": "Nobody has handled the message by the end of the working day it should have been answered in. Working hours are Monday to Friday, 09:00 to 17:00 Riga time. One working hour after it arrived the card first says \"answer now\"; a message that arrives in the evening or at the weekend counts from the next working morning."
+      "a": "Nobody has handled the message by the end of the working day it should have been answered in. Working hours are Monday to Friday, 09:00 to 17:00 Riga time. One working hour after it arrived the card first says \"answer now\"; a message that arrives in the evening or at the weekend counts from the next working morning. An email is late one working day after it arrived."
     },
     {
       "id": "card-states",
@@ -164,6 +194,11 @@
       "a": "On Journey, open List, pick the Programme and set Stage to Active: everyone not yet Admitted or Not proceeding, with how many beside Active."
     },
     {
+      "id": "search-other-years",
+      "q": "Why can I not find somebody I know is in Intake?",
+      "a": "They may have arrived in another year. Search finds every word you type in any order, with or without Latvian letters. When nobody in the picked year matches, the Journey list says how many it found in another year, with Show to add them."
+    },
+    {
       "id": "notes-on-the-list",
       "q": "Where do I see a person's latest note on Journey?",
       "a": "On Journey, open List: under each person one quiet line shows their newest note (a note or call written on their page, their Notes field, or the line typed under an answered call) with who wrote it and the day, and their History keeps every note."
@@ -177,6 +212,11 @@
       "id": "edit-a-comment",
       "q": "How do I read a whole comment and correct one I wrote?",
       "a": "On the Journey List a click on the note line opens the whole comment, and the opened row lists every comment with who and when, where Edit corrects one you wrote (an admin any, the Notes field everybody) and History keeps the old text, while new comments go in the one Add a comment box."
+    },
+    {
+      "id": "stage-move-note",
+      "q": "Where does the note I type on a stage move go?",
+      "a": "Into the comments, with the stage it left and the stage it reached in front of what you typed. The Journey List line shows it as the newest note. A move with nothing typed, and a move Intake makes by itself, add no comment; both stay on the History."
     },
     {
       "id": "source-colours",
@@ -196,7 +236,17 @@
     {
       "id": "email-conversation",
       "q": "Where do I see the emails we sent to a person?",
-      "a": "On the person's page, in History: every email is there in time order with the calls, notes and everything else, what they wrote on the left and what we sent on the right. Intake reads edu@'s sent mail and keeps only the emails sent to people it already holds, with the attachments' names but not the files. If you pressed Allow in the update box, your own mailbox's emails with students are there too, and nothing else from it. The texts are emptied after 13 months, like every message. An email card already answered from edu@ says \"Answered by\" and is not counted as waiting; Make a lead or Set aside is still needed."
+      "a": "On the person's page, in History: every email is there in time order with the calls, notes and everything else, what they wrote on the left and what we sent on the right. Intake reads edu@'s sent mail and keeps only the emails sent to people it already holds, with the attachments' names but not the files. If you pressed Connect your mailbox in the Inbox (or Allow in the update box), your own mailbox's emails with students are there too, and nothing else from it. The texts are emptied after 13 months, like every message. An email card edu@ answered in Gmail is handled by itself: it goes on the person, or becomes a new lead, and leaves Waiting."
+    },
+    {
+      "id": "email-moves-the-stage",
+      "q": "Why did a person move stage by themselves?",
+      "a": "Intake follows the email conversation, forward only: when edu@ replies they move from New to Contacted, and when they write back, to Follow-up. The programme the email names fills the lead, and when we replied and nobody set a next step, Intake sets Follow up seven days after our reply. Application and Admitted come only from the SIS, and a stage somebody set by hand is never changed. The person's History says \"Set by Intake from the email of\" and the date, with Undo."
+    },
+    {
+      "id": "suggested-reply",
+      "q": "What is the Suggested reply on an email card?",
+      "a": "An answer taken from the replies edu@ already gave to questions like this one. Copy puts it on the clipboard; paste it in Gmail, change what needs changing and send it from there. Intake never sends or drafts an email."
     },
     {
       "id": "home-numbers",
@@ -217,6 +267,11 @@
       "id": "phone-calls",
       "q": "How do calls reach the Inbox, and how do I set one aside?",
       "a": "Intake reads the college phone line every minute from 08:00 to 17:00 Latvian time (a call outside those hours comes in at 08:00), and a call appears as soon as the phone system lists it, which can be later than the call itself. Intake also re-reads the last two days, so a call the phone system lists late is never missed. A call card shows each call: the time, the line it came in on, and Answered by who answered, or Missed. When the phone system gives the length, an answered call also shows how long the talk lasted, and a missed call how long it rang. A call from somebody already in Intake goes on their history instead. Under an answered call, type one line in What was it about?; it goes onto the person's History with Make a lead. Set aside on a call card, then pick why (Bring back returns it). Not a prospective student sets aside only that card: the next call from the number comes in as usual. Supplier or vendor, Internal or Spam also marks the number: it never reaches the Inbox, until Remove mark. A call pops up in the app for button 1 (Admissions) and button 2 (Coordinator); a button 3 call does not pop up, it only reaches the Inbox or the history. A marked number never pops up. A call pops up only for the people of its line (1 Ieva, 2 Laura), never for admins."
+    },
+    {
+      "id": "calls-page",
+      "q": "What does the Calls page show?",
+      "a": "The college phone line on working days in four figures: time to answer (how long a call rings before somebody picks up), the share of calls answered, answered per day and the busiest hour, each with this week against last week. Internal, Spam and Supplier or vendor numbers are left out. Under a missed call in the Inbox, Called back records that somebody rang them back."
     },
     {
       "id": "email-to-inbox",
@@ -273,6 +328,11 @@
     "_about": "THE TRAINING CENTRE HALF (19.10.2026): its own how-to and questions, shown in its Help center and served with /api/tc/meta (never with /api/config, which is Academy). One sentence per answer. ids never change once used.",
     "howto": [
       {
+        "do": "Answer a WhatsApp or training@ message",
+        "where": "Inbox, Make a lead or Done on the card",
+        "href": "#/tc/inbox"
+      },
+      {
         "do": "Find a company or a person",
         "where": "Clients, Companies, the search box",
         "href": "#/tc/companies"
@@ -291,6 +351,16 @@
         "do": "Add a company",
         "where": "Clients, Companies, Add company",
         "href": "#/tc/companies"
+      },
+      {
+        "do": "Add a private person",
+        "where": "Clients, Private clients, + Private client",
+        "href": "#/tc/private"
+      },
+      {
+        "do": "Join two records of one company (admins)",
+        "where": "Clients, Same company?",
+        "href": "#/tc/same"
       },
       {
         "do": "Plan and log your contacts",
@@ -313,6 +383,11 @@
         "href": "#/tc/go"
       },
       {
+        "do": "Decide your Grand Opening list",
+        "where": "Plan, Grand Opening, My Grand Opening list",
+        "href": "#/tc/mylist"
+      },
+      {
         "do": "The biggest clients and who to call back",
         "where": "Clients, Client book",
         "href": "#/tc/book"
@@ -323,7 +398,7 @@
         "href": "#/tc/additions"
       },
       {
-        "do": "Place the contacts from Client Hub (admins)",
+        "do": "Place imported contacts (admins)",
         "where": "Help center, Review list",
         "href": "#/tc/review"
       }
@@ -338,6 +413,16 @@
         "id": "tc-who-sees",
         "q": "Who can open Training Centre?",
         "a": "Only accounts an admin has given Training Centre on People and access, and each of them sees every company, with the Person in charge filter to narrow the list."
+      },
+      {
+        "id": "tc-inbox",
+        "q": "What comes into the Training Centre Inbox?",
+        "a": "Every WhatsApp message to +371 6244 4609 and every email to training@novikontas.org, one card per number or conversation, where Make a lead puts the sender under Clients (B2B with their company, or B2C as a private person) and Done moves the card to Handled."
+      },
+      {
+        "id": "tc-private-clients",
+        "q": "What are Private clients?",
+        "a": "People who pay for a course themselves, with no company behind them, kept on their own list under Clients with the same history, next communication and log as a company."
       },
       {
         "id": "tc-active-client",
@@ -371,13 +456,18 @@
       },
       {
         "id": "tc-client-hub-review",
-        "q": "How do I place the contacts that came from Client Hub?",
+        "q": "How do I place imported contacts that have no company yet?",
         "a": "Open Companies, Review list: each row already has its suggested company chosen, so tick the rows that are right, change the company in a row where it is not, press Place, and pick Not a contact for us with a few words for a row that does not belong."
       },
       {
         "id": "tc-grand-opening",
         "q": "What does the Grand Opening page show?",
-        "a": "The Save the Date for 27 May 2027 as Client Hub recorded it: who it was sent to, who it reached and who it did not, what came back (a person opening it, Apple Mail that cannot tell, a security scanner only, or no open), and Add to Calendar, which is interest and not an RSVP."
+        "a": "It shows the invitation for 27 May 2027 in two stages: the Save the Date (who it reached, who opened it and who added it to the calendar) and the RSVP, each list owner's list with its digital invitations."
+      },
+      {
+        "id": "tc-my-go-list",
+        "q": "How do I decide my Grand Opening list?",
+        "a": "Open Plan, Grand Opening, My Grand Opening list, where each company of your list has Invite or No, every Invite gets the digital invitation, a postcard can be added in person or by post, every change saves by itself and Undo takes the last one back."
       },
       {
         "id": "tc-overdue",
@@ -397,12 +487,17 @@
       {
         "id": "tc-statuses",
         "q": "What do the statuses mean?",
-        "a": "To contact, Contacted, Met (with the meeting type) and Focus are the Excel's own steps; a company that had no step in the Excel or in Client Hub shows No status yet, and one with a logged contact is Contacted."
+        "a": "To contact, Contacted, Met (with the meeting type) and Focus are the Excel's own steps; a company that had no step in the Excel or in the first import shows No status yet, and one with a logged contact is Contacted."
       },
       {
         "id": "tc-delete",
         "q": "Can I delete a company?",
         "a": "No, a company or a contact is archived, which takes it off every list and keeps its history."
+      },
+      {
+        "id": "tc-same-company",
+        "q": "What is Same company?",
+        "a": "A list for admins of records that may be one company written twice, where Same company joins them under the name you keep (people, courses and history move with it) and Not the same takes the pair off the list."
       },
       {
         "id": "tc-back-to-academy",
@@ -478,13 +573,18 @@
         "target": ".tcnav [data-c=\"tc-home\"]"
       },
       {
+        "title": "Inbox",
+        "body": "WhatsApp to +371 6244 4609 and email to training@, one card each. Make a lead puts them under Clients, B2B or B2C; Done moves the card to Handled.",
+        "target": ".tcnav [data-c=\"tc-inbox\"]"
+      },
+      {
         "title": "Plan",
-        "body": "My week (your contacts, emails and meetings), the Season and the Grand Opening.",
+        "body": "My week (your contacts, emails and meetings), the Season and the Grand Opening with your own list.",
         "target": ".tcnav [data-c=\"tc-plan\"]"
       },
       {
         "title": "Clients",
-        "body": "Every company. + Make mine makes one yours; what you add is yours.",
+        "body": "Every company, and Private clients for people who pay themselves. + Make mine makes a company yours; what you add is yours.",
         "target": ".tcnav [data-c=\"tc-companies\"]"
       },
       {

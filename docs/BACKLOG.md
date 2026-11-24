@@ -14,6 +14,23 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 24.11.2026 - The tutorial: tour + questions up to date, and short videos (PICKED 24.11: "B) A + short videos")
+
+The owner: "we need a tutorial how to use the app. is it done? updated?" The live app was walked screen by screen
+(Academy and Training Centre) against the tour and config/help.json. Picture: `For review/2026-11-24 Tutorial gap/gap.png`
+(4 menu places with no tour step, 6 lines that no longer match, 5 lines naming Client Hub).
+
+| Item | Status |
+|---|---|
+| HIS PICK B: the in-app tour and the questions on both sides match the app as it is today (A), plus a short screen-recorded walk-through per role (Admissions, Training Centre) | DECIDED |
+| Academy tour: steps for Home, Reports and Calls; the Inbox step says the week columns, Waiting / Handled, the filters, Connect your mailbox, Suggested reply, Called back | DECIDED |
+| Academy questions: email answered from edu@ handles the card (stage follows, Undo), the note typed on a stage move, search in other years, the Calls page | DECIDED |
+| Training Centre tour: an Inbox step (WhatsApp and training@ cards, Make a lead B2B or B2C, Done); questions for Private clients, Same company?, My Grand Opening list | DECIDED |
+| No help line names Client Hub (Intake holds every client): the review list, the Grand Opening and statuses answers | DECIDED |
+| The videos: one per role (Admissions, Training Centre). HIS PICKS 24.11: "Live app, signed-in only" (recorded on the real app, the clip opens only inside Intake, never on a public link) and "Silent clip + captions" (about 1 min per role, captions on screen, plays in the Help center) | DECIDED |
+| HIS ASK 24.11: "Make sure there is a demo how to filter your contact list! It will be sent together with a reminder for open contacts. You have undecided contacts for Grand Opening 2027. If you run into problems check our tutorial video." A clip of My Grand Opening list (find a company, Invite or No, the way, Undo) with its own link the reminder can carry; opens after sign-in | DECIDED |
+| Built 24.11: tour 9 steps (Home, Reports, Calls added), 16 how-to lines, 31 questions; Training Centre tour 5 steps (Inbox added), 15 how-to lines, 23 questions; the admin link reads "Review list (imported contacts)" | BUILT |
+
 ## 20.11.2026 - The whole email conversation in Intake (PICKED 20.11: "B: own Conversation box")
 
 The owner: "We need to see whenever all the correspondence is going on, so the people see all the messages in intake! lets minimize the manual labour for this!" Picture: `_pictures/email_conversation_2026-11-20/email_conversation_A_B_inbox.png`.
