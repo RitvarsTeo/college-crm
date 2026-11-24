@@ -104,7 +104,7 @@ test('Companies, the company page, Next contacts and People and access are built
   assert.ok(!list.includes("box('status'"));
   for (const f of ["'Area'", "'Country'", "'Person in charge'", "'Client'"]) assert.ok(list.includes(f), f);
   // the owner 26.10.2026, "B but with filters": Mine or All, every filter behind one Filters button, no status chart
-  assert.ok(!/band: /.test(list) && !list.includes('tcAddnStrip'), 'no status chart, and no New additions strip (removed in patch 175, 24.11.2026)');
+  assert.ok(!/band: /.test(list) && !list.includes('tcAddnStrip'), 'no status chart, and no New additions strip (removed in patch 178, 24.11.2026)');
   assert.match(list, /onclick="tcFilter\('pic','me'\)">Mine <b>/);
   assert.match(list, /<summary class="btn ghost">Filters\$\{nf \? ` · \$\{nf\}` : ''\} ▾<\/summary>/);
   assert.match(list, /placeholder="Search company, city, country or person"/, "the box finds people too (the owner, 26.10.2026)");

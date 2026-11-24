@@ -12177,7 +12177,7 @@ async function tcSavePlan(id) {
 const T_F_EMPTY = () => ({ area: '', country: '', pic: '', client: '', info: '', due: '', year: '', cohort: '', last: '', course: '', since: '', go2: '', letter: '', go: '' });
 let T_F = T_F_EMPTY(); let T_Q = ''; let T_PAGE = 1; let T_LIST = null; let T_TITLE = 'Companies'; let T_KEEP = false; let T_SORT = 'name';
 let T_QT = 0; let T_MORE = false;
-// OWNERSHIP (29.10.2026, src/tcadd.js; the owner's pick: Make mine on Companies). The approvers' review tab is gone (patch 175).
+// OWNERSHIP (29.10.2026, src/tcadd.js; the owner's pick: Make mine on Companies). The approvers' review tab is gone (patch 178).
 const tcMeEmail = () => String((AUTH && AUTH.user && AUTH.user.email) || '').toLowerCase();
 function tcMineHtml(c) {
   if (!tcMeEmail()) return '';

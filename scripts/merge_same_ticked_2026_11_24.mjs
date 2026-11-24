@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// THE "SAME COMPANY?" LIST, MERGED (patch 175, his words 24.11.2026 "all of the companies in the tab are the same, just check them
+// THE "SAME COMPANY?" LIST, MERGED (patch 178, his words 24.11.2026 "all of the companies in the tab are the same, just check them
 // yourself and delete the tab!"). Every group src/tcsame.js findSame lists is merged through tcsame.merge in 'ticked' mode (the
 // company kept keeps its own Grand Opening decision; the other's is logged), EXCEPT the four pairs the TC lane found not clearly the
 // same and he did not tick (24.11.2026, through MASTER CONTROL): they stay separate companies.

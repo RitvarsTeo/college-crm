@@ -1,7 +1,7 @@
 // OWNERSHIP (29.10.2026). The owner: "each of these managers can add these clients to themselves! and anyone who has account in TC
 // part of Intake can add to the whole pool of clients people under theyre ownership!" Make mine sets the company's person in charge
 // to the signed-in account; a company added by hand goes under its adder, and so does a company with nobody in charge that a person
-// is added to. THE NEW ADDITIONS TAB, its approvals, flags and email are gone (patch 175, his words 24.11.2026 "also remove the tab
+// is added to. THE NEW ADDITIONS TAB, its approvals, flags and email are gone (patch 178, his words 24.11.2026 "also remove the tab
 // new additions, doesnt make sense"); the tc_additions table stays in the database, unread (it was empty).
 import { TcInputError, logTcActivity } from './tc.js';
 

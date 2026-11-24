@@ -1,5 +1,5 @@
 // OWNERSHIP (29.10.2026): the owner's picks - Make mine, a company added by hand goes under its adder. The New additions tab, its
-// approvals, flags and email were removed (patch 175, his words 24.11.2026 "also remove the tab new additions, doesnt make sense").
+// approvals, flags and email were removed (patch 178, his words 24.11.2026 "also remove the tab new additions, doesnt make sense").
 // Invented data.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -33,7 +33,7 @@ test('a company added by hand goes under its adder; one with somebody in charge 
   assert.equal(Number((await db.prepare('SELECT COUNT(*) n FROM tc_additions').get()).n), 0, 'no review queue');
 });
 
-test('patch 175: the New additions and Same company? tabs, routes and email are gone; Make mine stays', () => {
+test('patch 178: the New additions and Same company? tabs, routes and email are gone; Make mine stays', () => {
   const srv = fs.readFileSync(path.join(ROOT, 'src', 'server.js'), 'utf8');
   assert.ok(srv.includes("/^\\/api\\/tc\\/companies\\/(\\d+)\\/mine$/"), 'Make mine');
   for (const gone of ["'/api/tc/additions", '/api\\/tc\\/additions', "'/api/tc/same'", '/api\\/tc\\/same', 'notify.sendMail(db, { to, subject: mail.subject']) assert.ok(!srv.includes(gone), 'gone: ' + gone);

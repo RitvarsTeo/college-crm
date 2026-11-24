@@ -815,7 +815,7 @@ const actorOf = async (req, b) => {
 // "Mine" on the Training Centre lists: the signed-in account (its email and names, src/tcpic.js); on a laptop copy with
 // sign-in off, the name picked in "Acting as".
 // A COMPANY OR PERSON ADDED BY HAND goes under its adder (29.10.2026, src/tcadd.js). The New additions tab, its approvals and its
-// email are gone (patch 175, his words 24.11.2026 "also remove the tab new additions, doesnt make sense").
+// email are gone (patch 178, his words 24.11.2026 "also remove the tab new additions, doesnt make sense").
 async function tcAddedNotify(req, list) {
   const me = await currentUser(req);
   const who = me ? { email: me.email, name: me.name } : null;
@@ -3853,7 +3853,7 @@ export const handle = async (req, res) => {
       if (famAct[1] === 'unlink') return json(res, 200, await tcfam.unlinkCompany(db, Number(b.companyId), by));
       return json(res, 200, await tcfam.confirmFamily(db, b, by));
     }
-    // "SAME COMPANY?" is gone (patch 175, his words 24.11.2026 "all of the companies in the tab are the same, just check them yourself
+    // "SAME COMPANY?" is gone (patch 178, his words 24.11.2026 "all of the companies in the tab are the same, just check them yourself
     // and delete the tab!"): its groups were merged once (scripts/merge_same_ticked_2026_11_24.mjs); src/tcsame.js keeps the merge.
     // THE TRAINING CENTRE INBOX (patch 166, his "ok go"; src/tcwhatsapp.js): the WhatsApp messages to +371 6244 4609, one card per
     // number, Waiting or Handled (?handled=1); Done hands a number's waiting messages. Signed in, Training Centre area (above).

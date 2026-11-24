@@ -1,4 +1,4 @@
-// THE "SAME COMPANY?" LIST MERGED ONCE (patch 175, his words 24.11.2026 "all of the companies in the tab are the same, just check them
+// THE "SAME COMPANY?" LIST MERGED ONCE (patch 178, his words 24.11.2026 "all of the companies in the tab are the same, just check them
 // yourself and delete the tab!"): every group is merged except the four pairs he did not tick, which stay separate. Invented names.
 import test from 'node:test';
 import assert from 'node:assert/strict';
