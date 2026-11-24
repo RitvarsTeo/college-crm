@@ -217,8 +217,19 @@ async function carryOn(db, auto, msgs, at) {
 }
 
 /** After each training@ read (src/sync.js syncTcMail): process what training@ answered; carry on what Intake already holds. */
+// FROM THE RELEASE ON (his pick 24.11.2026 "From release on"): only a conversation training@ answers after the automation first runs
+// is processed; what training@ answered before stays as a card for people (the read back to 25.10 is kept, never processed).
+// The first run writes its own time as the start (sync_state 'tc_mail_auto_from'); nothing before it is ever processed.
+export const START = 'tc_mail_auto_from';
+export async function startOf(db, at = nowIso()) {
+  const row = await db.prepare('SELECT value FROM sync_state WHERE name = ?').get(START);
+  if (row && row.value) return row.value;
+  await db.prepare('INSERT INTO sync_state (name, value, ran_at, detail) VALUES (?,?,?,?)').run(START, at, at, JSON.stringify({ why: 'his pick "From release on"' }));
+  return at;
+}
 export async function processTcMail(db, { at = nowIso(), limit = PER_RUN } = {}) {
-  const res = { processed: 0, b2b: 0, b2c: 0, madeCompany: 0, left: 0, carried: 0 };
+  const res = { processed: 0, b2b: 0, b2c: 0, madeCompany: 0, left: 0, carried: 0, before: 0 };
+  const from = await startOf(db, at);
   const autos = new Map((await db.prepare('SELECT * FROM tc_mail_auto').all()).map((a) => [a.thread_id, a]));
   // conversations with mail from outside still on the Inbox (not Done), answered after their last message
   const open = await db.prepare(`SELECT thread_id, MAX(at) AS last_in FROM tc_mail WHERE direction = 'in' AND seen_at IS NULL GROUP BY thread_id`).all();
@@ -228,6 +239,7 @@ export async function processTcMail(db, { at = nowIso(), limit = PER_RUN } = {})
     if (a && a.undone_at) continue;                         // Undo: a person decides this one
     const lastOut = outs.get(o.thread_id);
     if (!a && !(lastOut && String(lastOut) > String(o.last_in))) continue;
+    if (!a && String(lastOut) < String(from)) { res.before++; continue; }   // answered before the release: a person decides
     if (res.processed + res.carried >= limit) { res.left++; continue; }
     const msgs = await threadMail(db, o.thread_id);
     if (a) { if (await carryOn(db, a, msgs, at)) res.carried++; continue; }

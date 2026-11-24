@@ -6,14 +6,16 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { openDb } from '../src/db.js';
 import { recordTcMail, mailCards, TC_MAILBOX } from '../src/tcmail.js';
-import { classify, processTcMail, undoTc, tcSuggestedReply, nameFromDomain, topicOf, forgetPairs, SILENCE_DAYS } from '../src/tcmailauto.js';
+import { classify, processTcMail, undoTc, tcSuggestedReply, nameFromDomain, topicOf, forgetPairs, SILENCE_DAYS, START } from '../src/tcmailauto.js';
 import { ROOT } from './security_helpers.js';
 
 const m = (id, thread, mine, from, at, subject, body, fromName = null) => ({ id, threadId: thread, mine, from, fromName, to: [TC_MAILBOX], subject, body, sentAt: at, attachments: [] });
 const T = (h) => new Date(Date.parse('2026-11-23T08:00:00Z') + h * 3600000).toISOString();
 
-async function setup() {
+async function setup({ from = '2026-01-01T00:00:00.000Z' } = {}) {
   const db = await openDb();
+  // these tests run after the release: the start is set before their mail (his pick "From release on" has its own test)
+  if (from) await db.prepare('INSERT INTO sync_state (name, value, ran_at) VALUES (?,?,?)').run(START, from, from);
   await db.prepare(`INSERT INTO tc_companies (id, name, name_key, status, website, created_at) VALUES (9, 'Baltic Example Crewing', 'baltic example crewing', 'to_contact', 'https://www.balticexample.lv/', '2026-11-01T00:00:00Z')`).run();
   await db.prepare(`INSERT INTO tc_company_contacts (id, company_id, name, email, created_at) VALUES (90, 9, 'Kristaps Paraugs', 'kristaps@balticexample.lv', '2026-11-01T00:00:00Z')`).run();
   await db.prepare(`INSERT INTO tc_company_contacts (id, company_id, name, email, created_at) VALUES (91, 9, 'Gmail Person', 'gmail.person@gmail.com', '2026-11-01T00:00:00Z')`).run();
@@ -148,6 +150,23 @@ test('Undo: the card waits again; nothing is deleted: the Follow up is closed "U
   assert.equal((await mailCards(db)).cards.length, 2, 'both back in the Inbox');
   assert.equal((await processTcMail(db, { at: T(3) })).processed, 0, 'never again by itself');
   assert.ok((await undoTc(db, 'm:tG', 'Laura')).error);
+});
+
+test('his pick "From release on": the first run marks the start; what training@ answered before it stays a card; what it answers after is processed', async () => {
+  const db = await setup({ from: null });
+  await recordTcMail(db, [
+    m('o1', 'tO', 'in', 'kristaps@balticexample.lv', T(0), 'GWO', 'GWO BST please', 'Kristaps Paraugs'),
+    m('o2', 'tO', 'out', TC_MAILBOX, T(1), 'Re: GWO', 'Dates attached.', 'Training Centre'),
+    m('n1', 'tN', 'in', 'elina@inbox.lv', T(2), 'STCW', 'STCW refresher?', 'Elīna'),
+  ]);
+  const first = await processTcMail(db, { at: T(3) });
+  assert.deepEqual([first.processed, first.before], [0, 1], 'answered before the release: not processed');
+  assert.equal((await db.prepare('SELECT value FROM sync_state WHERE name = ?').get(START)).value, T(3));
+  await recordTcMail(db, [m('n2', 'tN', 'out', TC_MAILBOX, T(4), 'Re: STCW', 'Jā, ir vietas.', 'Training Centre')]);
+  const next = await processTcMail(db, { at: T(5) });
+  assert.deepEqual([next.processed, next.b2c, next.before], [1, 1, 1]);
+  assert.equal((await processTcMail(db, { at: T(9) })).processed, 0, 'the start never moves');
+  assert.equal((await mailCards(db)).cards.length, 1, 'the old one waits for a person, answered');
 });
 
 test('the suggested reply: training@\'s answer to the most similar email, cut, to copy; the late mark after one working day', async () => {
