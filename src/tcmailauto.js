@@ -74,10 +74,25 @@ export function neverAClient(addr, text = '') {
 const hostOf = (w) => low(w).replace(/^[a-z]+:\/\//, '').replace(/^www\./, '').split(/[/?#:]/)[0];
 const sameSite = (host, dom) => Boolean(host && dom) && (host === dom || dom.endsWith('.' + host) || host.endsWith('.' + dom));
 /** A company named after its domain: nordexample-shipping.com -> "Nordexample Shipping". */
+// patch 179 (24.11.2026, we.utt.edu.tt became "Edu"): a generic second level (edu, ac, gov, co, com ...) is skipped, and a short name
+// (up to 4 letters) is an abbreviation, written in capitals ("UTT")
+const GENERIC_SECOND = /^(co|com|org|net|edu|ac|gov|ltd|plc|sch|mil|nhs|gob|or|ne|go)$/;
 export function nameFromDomain(dom) {
   const parts = low(dom).split('.');
-  const base = parts.length > 2 && /^(co|com|org|net)$/.test(parts[parts.length - 2]) ? parts[parts.length - 3] : parts[parts.length - 2] || parts[0];
+  const base = parts.length > 2 && GENERIC_SECOND.test(parts[parts.length - 2]) ? parts[parts.length - 3] : parts[parts.length - 2] || parts[0];
+  if (base.length <= 4 && !/[-_]/.test(base)) return base.toUpperCase();
   return base.split(/[-_]+/).filter(Boolean).map((w) => w[0].toUpperCase() + w.slice(1)).join(' ');
+}
+/** Does the company name key begin with these letters as whole words, spaces ignored? ("duna marine shipping", "dunamarine") */
+export function startsAsWords(key, letters) {
+  let n = 0;
+  for (let i = 0; i < key.length; i++) {
+    if (key[i] === ' ') continue;
+    if (key[i] !== letters[n]) return false;
+    n++;
+    if (n === letters.length) return i + 1 === key.length || key[i + 1] === ' ';
+  }
+  return false;
 }
 
 /** THE RULE: who sent it decides. { segment: 'b2b' | 'b2c', rule, companyId?, contactId?, domain } or { never } / { ask }. b2c = a private person. */
@@ -99,9 +114,11 @@ export async function classify(db, addr, text = '') {
   if (ids.length > 1) return { ask: 'more than one company has this domain; a person decides' };
   // row 4, by name (the dry run of 24.11.2026: chemgas.nl and "Chemgas Shipping B.V." with no website): one company whose name
   // starts with the domain's name is that company; two or more are a person's choice; a short name (under 4 letters) never matches
-  const base = tc.nameKey(nameFromDomain(dom));
+  // patch 179: spaces ignored ("Duna Marine" is dunamarine.com, the dry run's miss of 24.11.2026)
+  const base = tc.nameKey(nameFromDomain(dom)).replace(/ /g, '');
   if (base && base.length >= 4) {
-    const named = (await db.prepare(`SELECT id FROM tc_companies WHERE archived_at IS NULL AND (name_key = ? OR name_key LIKE ?)`).all(base, base + ' %')).map((r) => Number(r.id));
+    const named = (await db.prepare(`SELECT id, name_key FROM tc_companies WHERE archived_at IS NULL AND REPLACE(name_key, ' ', '') LIKE ?`).all(base + '%'))
+      .filter((r) => startsAsWords(String(r.name_key || ''), base)).map((r) => Number(r.id));
     if (named.length === 1) return { segment: 'b2b', rule: 'domain', companyId: named[0], domain: dom };
     if (named.length > 1) return { ask: 'more than one company has this name; a person decides' };
   }

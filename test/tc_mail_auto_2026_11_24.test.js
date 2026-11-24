@@ -41,6 +41,11 @@ test('the rule: the first row that fits decides; an address is matched whole', a
   assert.equal((await classify(db, 'j@example-firm.lv', 'Please find my attached CV for the vacancy')).never, 'a CV or job application');
   assert.equal(nameFromDomain('nordexample-shipping.com'), 'Nordexample Shipping');
   assert.equal(nameFromDomain('mail.example.co.uk'), 'Example');
+  // patch 179 (the first live day, 24.11.2026): a generic second level is skipped, a short name is an abbreviation; spaces are ignored
+  assert.equal(nameFromDomain('we.utt.edu.tt'), 'UTT');
+  await db.prepare(`INSERT INTO tc_companies (id, name, name_key, status, country, created_at) VALUES (13, 'Duna Example', 'duna example', 'not_contacted', 'Latvia', '2026-11-01T00:00:00Z')`).run();
+  assert.deepEqual(await classify(db, 'ops@dunaexample.com'), { segment: 'b2b', rule: 'domain', companyId: 13, domain: 'dunaexample.com' }, '"Duna Example" is dunaexample.com');
+  assert.equal((await classify(db, 'ops@dunaexamplex.com')).rule, 'new_company', 'only whole words');
   assert.match(topicOf('Please quote BOSIET with CA-EBS for 3 people'), /BOSIET, CA-EBS, the price/);
 });
 
