@@ -11,7 +11,7 @@
 // Notes field keeps its own "Notes changed" line (src/history.js applyEdit). Nothing moves between the Notes field and
 // History; a comment is never emptied. Adding a comment stays one box (POST /api/people/<id>/note, as before).
 import { logEvent, applyEdit, MANUAL } from './history.js';
-import { LIST_NOTE_EVENT_WHERE } from './listnote.js';
+import { LIST_NOTE_EVENT_WHERE, moveOf } from './listnote.js';
 import { CALL_NOTE_MAX } from './intake.js';
 
 export const COMMENT_EDITED = 'Comment edited';
@@ -30,7 +30,8 @@ export async function commentsFor(db, personId, { viewer = '', admin = false } =
   for (const e of await db.prepare(`SELECT e.id, e.kind, e.subject, e.body, e.actor, e.occurred_at FROM events e
       WHERE e.person_id = ? AND ${LIST_NOTE_EVENT_WHERE} ORDER BY e.occurred_at DESC, e.id DESC`).all(personId)) {
     const ref = `event:${e.id}`;
-    out.push({ ref, from: 'history', kind: e.kind, subject: e.subject || null, text: e.body, by: e.actor || null,
+    // a note typed on a stage move (patch 170) carries its move, shown before the text; Edit changes the note only
+    out.push({ ref, from: 'history', kind: e.kind, subject: e.subject || null, move: moveOf(e.kind, e.subject), text: e.body, by: e.actor || null,
       at: iso(e.occurred_at), canEdit: admin || mine(e.actor), edited: editedOf(ref) });
   }
   if (String(person.notes || '').trim()) {

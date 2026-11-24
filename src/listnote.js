@@ -16,7 +16,11 @@ export const LIST_NOTE_MACHINE_SUBJECTS = ['Merged: %', 'Attended the visit', 'D
 
 const notMachine = LIST_NOTE_MACHINE_SUBJECTS.map((s) => `COALESCE(e.subject, '') NOT LIKE '${s.replace(/'/g, "''")}'`).join(' AND ');
 
+/** "Status: New -> Contacted (reason)" -> "New -> Contacted (reason)": the move a stage-move note belongs to, or null. */
+export const moveOf = (kind, subject) => (kind === 'status' ? String(subject || '').replace(/^Status:\s*/, '') || null : null);
+
 export const LIST_NOTE_COLS = `ln_e.body AS ln_event_text, ln_e.actor AS ln_event_by, ln_e.occurred_at AS ln_event_at,
+  ln_e.kind AS ln_event_kind, ln_e.subject AS ln_event_subject,
   ln_n.actor AS ln_notes_by, ln_n.occurred_at AS ln_notes_at,
   ln_c.note AS ln_call_text, ln_c.note_by AS ln_call_by, ln_c.called_at AS ln_call_at`;
 
@@ -27,25 +31,32 @@ const newest = (cols, from, where, order) => `(SELECT ${cols} FROM (SELECT ${col
     ROW_NUMBER() OVER (PARTITION BY person_id ORDER BY ${order}) AS ln_rn FROM ${from} WHERE ${where}) ln_x WHERE ln_rn = 1)`;
 // What counts as a comment somebody WROTE, over events aliased e: the List's line and the edit panel's comments
 // (src/comments.js, 20.10.2026) read the same rule, so the two never disagree about what a comment is.
-export const LIST_NOTE_EVENT_WHERE = `e.origin = 'manual' AND e.kind IN ('note', 'call')
+// A NOTE TYPED ON A STAGE MOVE (patch 170, the owner's pick 24.11.2026 "Yes, show in Comments"): a hand stage move with a
+// typed note ("Status: New -> Contacted", the note as its text) is a comment too. A move with nothing typed writes a filler
+// text ('changed by hand'; 'moved by Admissions' in the demo) and stays out, as do machine moves (origin automatic) and the
+// SIS handover line (its subject is not "Status: ...").
+export const MOVE_FILLERS = ['changed by hand', 'moved by Admissions'];
+export const LIST_NOTE_EVENT_WHERE = `e.origin = 'manual' AND (e.kind IN ('note', 'call')
+      OR (e.kind = 'status' AND COALESCE(e.subject, '') LIKE 'Status: %' AND TRIM(COALESCE(e.body, '')) NOT IN (${MOVE_FILLERS.map((s) => `'${s}'`).join(', ')})))
     AND TRIM(COALESCE(e.body, '')) <> '' AND ${notMachine}
     AND NOT EXISTS (SELECT 1 FROM inbound i WHERE i.person_id = e.person_id AND i.suggestion_why = e.body)`;
 export const LIST_NOTE_JOINS = `
-  LEFT JOIN ${newest('person_id, body, actor, occurred_at', 'events e', LIST_NOTE_EVENT_WHERE, 'occurred_at DESC, id DESC')} ln_e
+  LEFT JOIN ${newest('person_id, body, actor, occurred_at, kind, subject', 'events e', LIST_NOTE_EVENT_WHERE, 'occurred_at DESC, id DESC')} ln_e
     ON ln_e.person_id = pe.id
   LEFT JOIN ${newest('person_id, actor, occurred_at', 'events e', "e.kind = 'edit' AND e.field = 'notes'", 'occurred_at DESC, id DESC')} ln_n
     ON ln_n.person_id = pe.id
   LEFT JOIN ${newest('person_id, note, note_by, called_at', 'pbx_calls c', "c.person_id IS NOT NULL AND TRIM(COALESCE(c.note, '')) <> ''", 'called_at DESC, uniqueid DESC')} ln_c
     ON ln_c.person_id = pe.id`;
 
-const LN_KEYS = ['ln_event_text', 'ln_event_by', 'ln_event_at', 'ln_notes_by', 'ln_notes_at', 'ln_call_text', 'ln_call_by', 'ln_call_at'];
+const LN_KEYS = ['ln_event_text', 'ln_event_by', 'ln_event_at', 'ln_event_kind', 'ln_event_subject','ln_notes_by', 'ln_notes_at', 'ln_call_text', 'ln_call_by', 'ln_call_at'];
 const time = (v) => { const t = Date.parse(v || ''); return Number.isFinite(t) ? t : null; };
 const iso = (v) => (v instanceof Date ? v.toISOString() : v || null);
 
 /** The newest of the three for one row, as { text, by, at, from } or null; the helper columns are taken off the row. */
 export function pickListNote(row) {
   const said = [];
-  if (String(row.ln_event_text || '').trim()) said.push({ text: row.ln_event_text, by: row.ln_event_by || null, at: iso(row.ln_event_at), from: 'history' });
+  const move = moveOf(row.ln_event_kind, row.ln_event_subject);
+  if (String(row.ln_event_text || '').trim()) said.push({ text: (move ? move + ': ' : '') + row.ln_event_text, by: row.ln_event_by || null, at: iso(row.ln_event_at), from: 'history' });
   if (String(row.notes || '').trim()) said.push({ text: row.notes, by: row.ln_notes_at ? row.ln_notes_by || null : null, at: iso(row.ln_notes_at), from: 'notes' });
   if (String(row.ln_call_text || '').trim()) said.push({ text: row.ln_call_text, by: row.ln_call_by || null, at: iso(row.ln_call_at), from: 'call' });
   for (const k of LN_KEYS) delete row[k];

@@ -101,8 +101,9 @@ test('refused: somebody else\'s comment, an empty text, a line that is not a com
   assert.equal((await editComment(db, 'a', { ref: 'event:abc', text: 'x', by: 'Ieva' })).status, 400);
   assert.equal((await editComment(db, 'a', { ref: 'people:a', text: 'x', by: 'Ieva' })).status, 400);
   assert.equal((await editComment(db, 'a', { ref: `event:${id}`, text: 'x', by: '' })).status, 400);
-  const status = await ev(db, { kind: 'status', subject: 'Status: New -> Contacted', body: 'moved', at: '2026-10-16T10:00:00.000Z' });
-  assert.equal((await editComment(db, 'a', { ref: `event:${status}`, text: 'x', by: 'Ieva' })).status, 404, 'a stage move is not a comment');
+  // a stage move with nothing typed (its filler text) is not a comment; one with a typed note is (patch 170, his pick 24.11.2026)
+  const status = await ev(db, { kind: 'status', subject: 'Status: New -> Contacted', body: 'changed by hand', at: '2026-10-16T10:00:00.000Z' });
+  assert.equal((await editComment(db, 'a', { ref: `event:${status}`, text: 'x', by: 'Ieva' })).status, 404, 'a stage move with no note is not a comment');
   const merged = (await db.prepare("SELECT id FROM events WHERE subject LIKE 'Merged:%'").get()).id;
   assert.equal((await editComment(db, 'a', { ref: `event:${merged}`, text: 'x', by: 'Ieva' })).status, 404, 'a machine line is not a comment');
   await db.prepare(`INSERT INTO people (id, name, status, created_at) VALUES ('b', 'B', 'Contacted', '2026-10-01T00:00:00Z')`).run();
@@ -243,4 +244,25 @@ test('the Help center says it in one sentence', () => {
   assert.match(q.a, /Edit/);
   assert.match(q.a, /History keeps the old text/);
   assert.equal(q.a.split(/[.!?](\s|$)/).filter((x) => x && x.trim()).length, 1, 'one sentence');
+});
+
+// A NOTE TYPED ON A STAGE MOVE (patch 170, the owner's pick 24.11.2026 "Yes, show in Comments"; Admissions could not find
+// "Ieva contacted him..." because it was typed as the reason for New -> Contacted)
+test('a note typed on a stage move is a comment with its move; a move with nothing typed, a machine move, the SIS handover are not', async () => {
+  const db = await db0();
+  const typed = await ev(db, { kind: 'status', subject: 'Status: New -> Contacted', body: 'Contacted, waiting for his answer', at: '2026-11-10T12:43:00.000Z', actor: 'Marina' });
+  await ev(db, { kind: 'status', subject: 'Status: Contacted -> Follow-up', body: 'changed by hand', at: '2026-11-11T10:00:00.000Z' });
+  await ev(db, { kind: 'status', subject: 'Status: Follow-up -> Application', body: 'from the SIS', at: '2026-11-12T10:00:00.000Z', origin: 'automatic', actor: 'SIS' });
+  await ev(db, { kind: 'status', subject: 'Handed over to the SIS', body: 'The Intake admissions journey ends here. The record stays for reporting.', at: '2026-11-13T10:00:00.000Z' });
+  const rows = await commentsFor(db, 'a', { viewer: 'Marina' });
+  assert.deepEqual(rows.map((r) => [r.ref, r.move, r.text, r.canEdit]), [[`event:${typed}`, 'New -> Contacted', 'Contacted, waiting for his answer', true]]);
+  // the List line says the move before the note
+  const row = await db.prepare(`SELECT pe.id, pe.notes, ${LIST_NOTE_COLS} FROM people pe ${LIST_NOTE_JOINS} WHERE pe.id = 'a'`).get();
+  assert.equal(pickListNote({ ...row }).text, 'New -> Contacted: Contacted, waiting for his answer');
+  // Edit changes the note only; the move stays in the subject
+  assert.deepEqual(await editComment(db, 'a', { ref: `event:${typed}`, text: 'Contacted; he answers next week', by: 'Marina' }), { ok: true, changed: true });
+  assert.equal((await db.prepare('SELECT subject FROM events WHERE id = ?').get(typed)).subject, 'Status: New -> Contacted');
+  // the page shows the move in bold before the text
+  assert.ok(APP.includes("${c.move ? `<b>${esc(c.move)}:</b> ` : ''}${esc(c.text)}"));
+  await db.close();
 });
