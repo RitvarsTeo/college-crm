@@ -187,6 +187,14 @@ export async function merge(db, keepId, dropId, actor, { mode = 'ticked', at = n
     // everything else that points at the company moves as it is
     for (const t of ['tc_activities', 'tc_tasks', 'tc_invite_marks', 'tc_additions', 'tc_import_rows', 'tc_review_contacts', 'tc_mr_names'])
       n(t.replace(/^tc_/, ''), await tx.prepare(`UPDATE ${t} SET company_id = ? WHERE company_id = ?`).run(keepId, dropId));
+    // patch 185 (his "Yes, fix it" 25.11.2026): the training@ automation's conversations (src/tcmailauto.js) follow the company, so
+    // later emails are written on the company kept; a company Intake made that is merged away is no longer "made" by it, so an Undo
+    // can never archive the company kept
+    for (const a of await tx.prepare('SELECT thread_id, made FROM tc_mail_auto WHERE company_id = ?').all(dropId)) {
+      let made = {}; try { made = JSON.parse(a.made || '{}') || {}; } catch { made = {}; }
+      if (made.company) made.company = false;
+      n('mail_auto', await tx.prepare('UPDATE tc_mail_auto SET company_id = ?, made = ? WHERE thread_id = ?').run(keepId, JSON.stringify(made), a.thread_id));
+    }
 
     // the Grand Opening rows keyed by the company
     for (const t of ['tc_go_gifts', 'tc_go_places']) {
