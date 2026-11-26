@@ -512,7 +512,8 @@ export async function listInbound(db, { state = 'new', now = nowIso(), range = n
   // Q77: a waiting message from somebody already in Intake JOINS them. Every email and phone the
   // person has counts, so a caller whose email was added when they became a lead is found again the
   // day they write. Only one strong match counts; two is a question for a person.
-  const match = rows.some((r) => r.state === 'new' && !r.person_id) ? await contactMatcher(db) : null;
+  const asking = rows.filter((r) => r.state === 'new' && !r.person_id).map((r) => ({ email: r.contact_email, phone: r.contact_phone }));
+  const match = asking.length ? await contactMatcher(db, asking) : null;   // patch 187: only these rows' candidates
   const before = rows.some((r) => r.state === 'new') ? await setAsideIndex(db) : null;
   for (const r of rows) {
     // ONE RULE (14.10.2026): a card can be marked when it has a number or an address; a set-aside card says its mark;

@@ -53,12 +53,63 @@ async function extraContacts(db) {
   return extra;
 }
 
-// One matcher for many contacts: the people and their contacts are read ONCE (the Inbox asks it for
-// every waiting row).
-export async function contactMatcher(db) {
-  const people = await db.prepare(`SELECT id, name, email, phone, status, owner, source_channel, created_at
-    FROM people`).all();
-  const extra = await extraContacts(db);
+// ONLY THE PEOPLE A CONTACT CAN POINT AT (patch 187, 26.11.2026: the matcher read the whole people table and every
+// email and phone in field_values on each question, about 10,400 times each in one billing week, the largest share of
+// the database's outbound traffic). The database now returns only the CANDIDATES: a person whose email or phone, on
+// the profile or among their other contacts, CONTAINS the asked address (lower case) or the asked phone's last 8
+// characters in order. That is always a superset of the people the exact rule below matches (normalising only removes
+// characters, and a LIKE "_" or a dropped backslash only widens it), so the exact rule then decides over a few rows
+// and every answer stays the same. A name is matched over (id, name) only, and only when a name is asked.
+const PEOPLE_COLS = 'id, name, email, phone, status, owner, source_channel, created_at';
+const CHUNK = 150;
+const likeEmail = (e) => `%${e.replace(/\\/g, '_')}%`;
+const likePhone = (ph) => `%${[...ph.slice(-PHONE_TAIL)].join('%')}%`;
+const chunks = (xs) => { const out = []; for (let i = 0; i < xs.length; i += CHUNK) out.push(xs.slice(i, i + CHUNK)); return out; };
+
+async function candidates(db, contacts) {
+  const emails = [...new Set(contacts.map((c) => (isOwnAddress(c.email) ? '' : normEmail(c.email))).filter(Boolean))].map(likeEmail);
+  const phones = [...new Set(contacts.map((c) => normPhone(c.phone)).filter((p) => p.length > 5))].map(likePhone);
+  const names = new Set(contacts.map((c) => normName(c.name)).filter(Boolean));
+  const ids = new Set();
+  const people = new Map();
+  for (const part of chunks(emails)) {
+    const ors = part.map(() => 'LOWER(email) LIKE ?').join(' OR ');
+    for (const r of await db.prepare(`SELECT ${PEOPLE_COLS} FROM people WHERE ${ors}`).all(...part)) people.set(r.id, r);
+    for (const r of await db.prepare(`SELECT DISTINCT person_id FROM field_values WHERE person_id IS NOT NULL
+      AND field = 'email' AND (${ors.replace(/email/g, 'value')})`).all(...part)) ids.add(r.person_id);
+  }
+  for (const part of chunks(phones)) {
+    const ors = part.map(() => 'phone LIKE ?').join(' OR ');
+    for (const r of await db.prepare(`SELECT ${PEOPLE_COLS} FROM people WHERE ${ors}`).all(...part)) people.set(r.id, r);
+    for (const r of await db.prepare(`SELECT DISTINCT person_id FROM field_values WHERE person_id IS NOT NULL
+      AND field = 'phone' AND (${ors.replace(/phone/g, 'value')})`).all(...part)) ids.add(r.person_id);
+  }
+  if (names.size) {
+    for (const r of await db.prepare('SELECT id, name FROM people').all()) if (names.has(normName(r.name))) ids.add(r.id);
+  }
+  const missing = [...ids].filter((id) => !people.has(id));
+  for (const part of chunks(missing)) {
+    for (const r of await db.prepare(`SELECT ${PEOPLE_COLS} FROM people WHERE id IN (${part.map(() => '?').join(',')})`).all(...part)) people.set(r.id, r);
+  }
+  const extra = new Map();
+  for (const part of chunks([...people.keys()])) {
+    const rows = await db.prepare(`SELECT person_id, field, value FROM field_values WHERE person_id IN (${part.map(() => '?').join(',')})
+      AND field IN ('email', 'phone') AND value IS NOT NULL AND value <> ''`).all(...part);
+    for (const r of rows) {
+      if (!extra.has(r.person_id)) extra.set(r.person_id, { emails: [], phones: [] });
+      extra.get(r.person_id)[r.field === 'email' ? 'emails' : 'phones'].push(r.value);
+    }
+  }
+  return { people: [...people.values()], extra };
+}
+
+// One matcher for many contacts. Given the contacts it will be asked about (the Inbox passes its waiting rows), the
+// database returns only their candidates (above); without them, everybody is read once (kept for callers that do not
+// know their questions in advance).
+export async function contactMatcher(db, contacts) {
+  const { people, extra } = Array.isArray(contacts)
+    ? await candidates(db, contacts)
+    : { people: await db.prepare(`SELECT ${PEOPLE_COLS} FROM people`).all(), extra: await extraContacts(db) };
   return ({ email, phone, name } = {}, { exclude } = {}) => {
     // our own address is never evidence of who somebody is (19.10.2026): it is left out, as if no email was given
     const e = isOwnAddress(email) ? '' : normEmail(email);
@@ -94,11 +145,11 @@ export function onlyStrong(matches) {
 // activePersonFor for messages, src/sync.js for calls and the SIS).
 export async function onePersonFor(db, { email, phone } = {}) {
   if (!email && !phone) return null;
-  return onlyStrong((await contactMatcher(db))({ email, phone }));
+  return onlyStrong((await contactMatcher(db, [{ email, phone }]))({ email, phone }));
 }
 
 export async function findMatches(db, { email, phone, name }, { exclude } = {}) {
-  return (await contactMatcher(db))({ email, phone, name }, { exclude });
+  return (await contactMatcher(db, [{ email, phone, name }]))({ email, phone, name }, { exclude });
 }
 
 const strength = (m) =>
