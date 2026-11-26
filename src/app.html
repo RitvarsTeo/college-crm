@@ -5417,7 +5417,9 @@ const cPoolSelect = (label, value, values, set) => `<label class="c-jf${value ? 
     <option value="">All</option>${values.map(([v, t]) => `<option value="${esc(v)}"${value === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`;
 const cPoolFilters = (name, boxes, clear) => `<div class="c-jfilters p-filters" role="group" aria-label="Filter ${esc(name)}">
     <svg class="c-jf-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3.5h11l-4.2 5v4l-2.6 1.2V8.5z"/></svg>${boxes.join('')}${clear ? `<button class="btn sm ghost c-jf-clear" onclick="${clear}">Clear</button>` : ''}</div>`;
-function cPoolFrame({ title, crumb = '', act = '', band, filters, body }) {
+// patch 186 (26.11.2026): band and filters default to nothing; the TC Clients page passes no band since its status chart went, and
+// printed the word "undefined" under its title
+function cPoolFrame({ title, crumb = '', act = '', band = '', filters = '', body = '' }) {
   return `${crumb ? `<p class="c-crumb">${crumb}</p>` : ''}<div class="c-head"><div><h1>${esc(title)}</h1></div>${act ? `<div class="act">${act}</div>` : ''}</div>
     ${band}${filters}<div class="p-body">${body}</div>`;
 }
