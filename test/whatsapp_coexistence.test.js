@@ -15,6 +15,7 @@ import http from 'node:http';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import vm from 'node:vm';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
@@ -185,9 +186,39 @@ test('Connect WhatsApp: a refused code says so in one line and stores nothing', 
 test('the WhatsApp Settings and check page carries the line and the button; the sign-up is Meta\'s coexistence flow', () => {
   const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
   assert.match(APP, /id="waConnect" onclick="chWhatsAppConnect\(\)">Connect WhatsApp<\/button>/);
-  assert.match(APP, /featureType: 'whatsapp_business_app_onboarding'/);
+  // patch 189 (26.11.2026): Embedded Signup v5; featureType and sessionInfoVersion are gone (v2/v3 retired by Meta)
+  assert.match(APP, /extras: \{ setup: \{\}, version: 'v5' \}/);
+  assert.doesNotMatch(APP, /featureType|sessionInfoVersion/);
   assert.match(APP, /https:\/\/connect\.facebook\.net\/en_US\/sdk\.js/);
   assert.match(APP, /FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING/);
+});
+
+// patch 189: what Meta's v5 window posts back, and what Intake does with it. Ids here are invented.
+test('Embedded Signup v5: only the coexistence finish connects; a plain FINISH (number moved off the phone app) is refused', () => {
+  const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
+  const at = APP.indexOf('function chWaSignup(');
+  const ctx = {};
+  vm.runInNewContext(APP.slice(at, APP.indexOf('\n}\n', at) + 3) + '\nthis.f = chWaSignup;', ctx);
+  const f = ctx.f;
+  const v5 = (event, data) => ({ type: 'WA_EMBEDDED_SIGNUP', event, version: 'v5', data });
+  assert.deepEqual({ ...f(v5('FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING', { waba_id: 'W1', phone_number_id: 'P1', is_on_biz_app: true })) },
+    { ok: true, wabaId: 'W1', phoneNumberId: 'P1' });
+  assert.equal(f(v5('FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING', { messaging_account_ids: ['W2'], phone_number_id: 'P2', is_on_biz_app: true })).wabaId, 'W2',
+    'the account id may come as messaging_account_ids');
+  const moved = f(v5('FINISH', { waba_id: 'W3', phone_number_id: 'P3' }));
+  assert.equal(moved.ok, false);
+  assert.match(moved.line, /moves the number off the WhatsApp Business app/);
+  assert.match(f(v5('CANCEL', { current_step: 'PHONE_NUMBER_SETUP' })).line, /not finished/);
+  assert.equal(f({ type: 'SOMETHING_ELSE' }), null, 'another message is not the sign-up');
+  const fn = APP.slice(APP.indexOf('async function chWhatsAppConnect('), APP.indexOf('\n}\n', APP.indexOf('async function chWhatsAppConnect(')));
+  assert.match(fn, /if \(!code \|\| !signup\)/, 'no sign-up answer, no connect');
+  assert.match(fn, /wabaId: signup\.wabaId, phoneNumberId: signup\.phoneNumberId/);
+});
+
+test('no underline on any button (patch 189, his words "take off these underlines anywhere in INTAKE!")', () => {
+  const APP = fs.readFileSync(path.join(ROOT, 'src', 'app.html'), 'utf8');
+  assert.match(APP, /\.btn,\.btn:hover,\.btn:focus,\.btn:focus-visible,\.btn:active,\.btn:visited\{text-decoration:none\}/);
+  assert.ok(APP.includes('<a class="btn sm" href="#/leads">Open in Inbox</a>'));
 });
 
 test('Help says how the academy WhatsApp reaches Intake, in the same change', () => {

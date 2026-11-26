@@ -505,6 +505,11 @@ tr.row:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
 .btn:active{transform:translateY(1px)}
 .btn.ghost{background:var(--card);color:var(--petink);border:1px solid var(--rule);border-left:1px solid var(--rule);padding:9px 15px}
 .btn.sm{padding:5px 10px;font-size:12px}
+/* NO UNDERLINE ON A BUTTON (patch 189, his words 26.11.2026 "take off these underlines anywhere in INTAKE!"): a .btn
+   written as a link (<a class="btn">, e.g. "Open in Inbox") took the browser's link underline. Every button is drawn
+   without one, in every state. Real links inside a sentence, and controls drawn as plain text links (no background, no
+   border), keep theirs. */
+.btn,.btn:hover,.btn:focus,.btn:focus-visible,.btn:active,.btn:visited{text-decoration:none}
 .btn:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible,a:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 
 option,optgroup{background:var(--menu);color:var(--ink)}
@@ -10546,18 +10551,34 @@ function cLoadFacebookSdk(cfg) {
     document.head.appendChild(s);
   });
 }
+// META'S SIGN-UP ANSWER, EMBEDDED SIGNUP v5 (patch 189, his word 26.11.2026 "Yes, release 189"; v2/v3 retired by Meta
+// 15.10.2026). Coexistence only: the Academy number stays on the WhatsApp Business app on the phone. Only the event
+// FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING connects. A plain FINISH means the number was moved off the phone app, so it
+// is refused with a line saying so; a cancel or an error is "not finished".
+function chWaSignup(d) {
+  if (!d || d.type !== 'WA_EMBEDDED_SIGNUP') return null;
+  const data = d.data || {};
+  if (d.event === 'FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING') {
+    const wabaId = data.waba_id || (data.messaging_account_ids || [])[0] || '';
+    return { ok: true, wabaId, phoneNumberId: data.phone_number_id || '' };
+  }
+  if (d.event === 'FINISH') {
+    return { ok: false, line: 'Not connected: this sign-up moves the number off the WhatsApp Business app on the phone. Start again and choose to connect the existing WhatsApp Business app' };
+  }
+  return { ok: false, line: 'Not connected: the Meta sign-up was not finished' };
+}
 async function chWhatsAppConnect() {
   const btn = $('#waConnect'); const out = $('#chResult');
   const show = (detail, at) => { out.innerHTML = chLinkedInLine({ at, detail }); };
   btn.disabled = true;
-  const session = {};
+  let signup = null;
   const onMsg = (ev) => {
     let host = '';
     try { host = new URL(ev.origin).hostname; } catch { return; }
     if (!/(^|\.)facebook\.com$/.test(host)) return;
     try {
-      const d = typeof ev.data === 'string' ? JSON.parse(ev.data) : ev.data;
-      if (d && d.type === 'WA_EMBEDDED_SIGNUP') { session.event = d.event; Object.assign(session, d.data || {}); }
+      const got = chWaSignup(typeof ev.data === 'string' ? JSON.parse(ev.data) : ev.data);
+      if (got) signup = got;
     } catch { /* not Meta's sign-up message */ }
   };
   try {
@@ -10567,12 +10588,13 @@ async function chWhatsAppConnect() {
     window.addEventListener('message', onMsg);
     const code = await new Promise((resolve) => window.FB.login((r) => resolve(r && r.authResponse && r.authResponse.code), {
       config_id: cfg.configId, response_type: 'code', override_default_response_type: true,
-      extras: { setup: {}, featureType: 'whatsapp_business_app_onboarding', sessionInfoVersion: '3' } }));
-    if (!code || (session.event && session.event !== 'FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING')) {
+      extras: { setup: {}, version: 'v5' } }));
+    if (signup && !signup.ok) { show({ ok: false, line: signup.line }); return; }
+    if (!code || !signup) {
       show({ ok: false, line: 'Not connected: the Meta sign-up was not finished' });
       return;
     }
-    const r = await post('/api/admin/channels/whatsapp/connect', { code, wabaId: session.waba_id, phoneNumberId: session.phone_number_id });
+    const r = await post('/api/admin/channels/whatsapp/connect', { code, wabaId: signup.wabaId, phoneNumberId: signup.phoneNumberId });
     show(r, r.at);
   } catch (e) {
     show({ ok: false, line: (e.detail && (e.detail.line || e.detail.error)) || e.message });
