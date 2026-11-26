@@ -5,6 +5,7 @@
 // family only links them. Unlink takes a company out; taking the parent out ends the family. Nothing is deleted.
 // Pure data functions; every one takes the database first.
 
+import { cachedAll } from './tcreadcache.js';
 import { TcInputError, nameKey, isTotalRow } from './tc.js';
 
 const nowIso = () => new Date().toISOString();
@@ -26,7 +27,7 @@ async function facts(db) {
     : `CASE WHEN json_valid(extra) THEN json_extract(extra, '$.web_domain') END`;
   const cos = await db.prepare(`SELECT id, name, country, ${web} AS web_domain FROM tc_companies WHERE archived_at IS NULL`).all();
   const people = new Map(); for (const k of await db.prepare('SELECT company_id FROM tc_company_contacts WHERE archived_at IS NULL').all()) people.set(Number(k.company_id), (people.get(Number(k.company_id)) || 0) + 1);
-  const del = new Map(); for (const k of await db.prepare('SELECT company_id, attendees FROM tc_company_courses').all()) del.set(Number(k.company_id), (del.get(Number(k.company_id)) || 0) + (Number(k.attendees) || 0));
+  const del = new Map(); for (const k of await cachedAll(db, 'courses', 'SELECT company_id, attendees FROM tc_company_courses')) del.set(Number(k.company_id), (del.get(Number(k.company_id)) || 0) + (Number(k.attendees) || 0));
   return cos.map((c) => ({ id: Number(c.id), name: c.name, country: c.country || '', web: String(c.web_domain || '').trim().toLowerCase().replace(/^www\./, ''), word: firstWord(c.name), total: isTotalRow(c.country),
     people: people.get(Number(c.id)) || 0, delegates: del.get(Number(c.id)) || 0 }));
 }

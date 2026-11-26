@@ -13,6 +13,7 @@
 // decision, and an old draft never comes back over a newer Save. After Save: digital people are the only ones the owner's Stage 2 send goes to
 // (src/tcs2send.js), in person / post people make the postcard list. Every person's result after each Save is kept
 // (tc_go_decision_log), every move too (tc_go_moves). Admins open every list. Pure data functions; each takes the database first.
+import { cachedAll } from './tcreadcache.js';
 import { TC, TcInputError, nameKey, logTcActivity } from './tc.js';
 import * as cards from './tccards.js';
 import { splitNew } from './tcgosplit.js';
@@ -117,7 +118,7 @@ export async function myList(db, code, editor = '') {
   // WAIVER (patch 160): a person put on the shared list leaves this list too, until a colleague takes him
   const Wv = await waiverState(db);
   const rows = (await rowsOf(db, code)).filter((r) => !P.waiting[Number(r.id)] && !Wv.ids.has(Number(r.id)));
-  const cos = new Map((await db.prepare('SELECT id, name, country, address, city FROM tc_companies WHERE archived_at IS NULL').all()).map((c) => [Number(c.id), c]));
+  const cos = new Map((await cachedAll(db, 'companies', 'SELECT id, name, country, address, city FROM tc_companies WHERE archived_at IS NULL')).map((c) => [Number(c.id), c]));
   const picks = new Map((await db.prepare('SELECT company_key, decision, way FROM tc_go_company_picks WHERE sender = ?').all(String(code))).map((p) => [p.company_key, p]));
   const out = new Set((await db.prepare('SELECT stage2_id FROM tc_go_people_out WHERE out_flag = 1').all()).map((r) => Number(r.stage2_id)));
   const groups = new Map();

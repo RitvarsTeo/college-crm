@@ -18,6 +18,7 @@
 //   5. They write back after our reply: a History line "They wrote back and asked about <topic>". No levels (removed 24.11.2026).
 //   6. A suggested reply from training@'s answers to emails like it, to Copy. Intake NEVER sends, drafts or changes Gmail.
 // Every row Intake writes is recorded in tc_mail_auto; Undo takes it back and puts the card back in the Inbox.
+import { cachedAll } from './tcreadcache.js';
 import { PRIVATE, SYSTEM_SENDER, cleanReply, words, dm } from './mailauto.js';
 import { emailShown } from './emailtext.js';
 import { deadlinesFor } from './intake.js';
@@ -105,7 +106,7 @@ export async function classify(db, addr, text = '') {
   if (never) return never;
   if (PRIVATE.test(a) || PRIVATE_MORE.test(a)) return { segment: 'b2c', rule: 'mailbox', domain: dom };
   // row 4: the domain is one company's website, or another contact's address there (never a shared mailbox domain: row 3 is before)
-  const sites = (await db.prepare(`SELECT id, website FROM tc_companies WHERE archived_at IS NULL AND website IS NOT NULL AND website <> ''`).all())
+  const sites = (await cachedAll(db, 'companies', `SELECT id, website FROM tc_companies WHERE archived_at IS NULL AND website IS NOT NULL AND website <> ''`))
     .filter((c) => sameSite(hostOf(c.website), dom)).map((c) => Number(c.id));
   const byMail = (await db.prepare(`SELECT DISTINCT k.company_id FROM tc_company_contacts k JOIN tc_companies c ON c.id = k.company_id
     WHERE k.archived_at IS NULL AND c.archived_at IS NULL AND LOWER(k.email) LIKE ?`).all('%@' + dom)).map((r) => Number(r.company_id));
@@ -223,30 +224,42 @@ export async function startOf(db, at = nowIso()) {
   return FROM_DAY;
 }
 export async function processTcMail(db, { at = nowIso(), limit = PER_RUN } = {}) {
-  const res = { processed: 0, b2b: 0, b2c: 0, madeCompany: 0, left: 0, carried: 0, before: 0 };
+  const res = { processed: 0, b2b: 0, b2c: 0, madeCompany: 0, left: 0, carried: 0, before: 0, skipped: 0 };
   const from = await startOf(db, at);
-  const autos = new Map((await db.prepare('SELECT * FROM tc_mail_auto').all()).map((a) => [a.thread_id, a]));
-  // conversations with mail from outside still on the Inbox (not Done), answered after their last message
-  const open = await db.prepare(`SELECT thread_id, MAX(at) AS last_in FROM tc_mail WHERE direction = 'in' AND seen_at IS NULL GROUP BY thread_id`).all();
-  const outs = new Map((await db.prepare(`SELECT thread_id, MAX(at) AS last_out FROM tc_mail WHERE direction = 'out' GROUP BY thread_id`).all()).map((r) => [r.thread_id, r.last_out]));
+  // patch 188 (26.11.2026, the database's monthly transfer): only what a run can act on is read. Each open conversation comes with its
+  // newest reply; a whole conversation (bodies) is read only when something in it is newer than what Intake already handled.
+  const open = await db.prepare(`SELECT m.thread_id, MAX(m.at) AS last_in,
+      (SELECT MAX(o.at) FROM tc_mail o WHERE o.thread_id = m.thread_id AND o.direction = 'out') AS last_out
+    FROM tc_mail m WHERE m.direction = 'in' AND m.seen_at IS NULL GROUP BY m.thread_id`).all();
+  const autos = new Map((await db.prepare(`SELECT a.* FROM tc_mail_auto a WHERE EXISTS (SELECT 1 FROM tc_mail m WHERE m.thread_id = a.thread_id
+    AND m.direction = 'in' AND m.seen_at IS NULL)`).all()).map((a) => [a.thread_id, a]));
+  const skips = new Map((await db.prepare('SELECT thread_id, last_at FROM tc_mail_skip').all()).map((r) => [r.thread_id, String(r.last_at)]));
+  const newest = (o) => [o.last_in, o.last_out].filter(Boolean).map(String).sort().pop() || '';
   for (const o of open) {
     const a = autos.get(o.thread_id);
     if (a && a.undone_at) continue;                         // Undo: a person decides this one
-    const lastOut = outs.get(o.thread_id);
+    const lastOut = o.last_out;
     if (!a && !(lastOut && String(lastOut) > String(o.last_in))) continue;
     if (!a && String(lastOut) < String(from)) { res.before++; continue; }   // answered before 25.10: a person decides
+    if (a && newest(o) <= String(a.logged_to || '')) continue;               // nothing new since Intake wrote it
+    if (!a && skips.has(o.thread_id) && newest(o) <= skips.get(o.thread_id)) { res.skipped++; continue; }   // left to a person, nothing new
     if (res.processed + res.carried >= limit) { res.left++; continue; }
     const msgs = await threadMail(db, o.thread_id);
     if (a) { if (await carryOn(db, a, msgs, at)) res.carried++; continue; }
     const r = await processThread(db, o.thread_id, msgs, at);   // like the Academy (src/mailauto.js processCard): the steps commit one by one
     if (r.processed) { res.processed++; res[r.segment]++; if (r.made && r.made.company) res.madeCompany++; }
+    else {
+      res.skipped++;
+      const last = String(msgs[msgs.length - 1].at);
+      if (skips.has(o.thread_id)) await db.prepare('UPDATE tc_mail_skip SET why = ?, last_at = ?, at = ? WHERE thread_id = ?').run(r.why || null, last, at, o.thread_id);
+      else await db.prepare('INSERT INTO tc_mail_skip (thread_id, why, last_at, at) VALUES (?,?,?,?)').run(o.thread_id, r.why || null, last, at);
+    }
   }
   // a processed conversation where only training@ wrote since (no new mail from outside): its reply into the history too
-  for (const a of autos.values()) {
-    if (a.undone_at || open.some((o) => o.thread_id === a.thread_id)) continue;
-    const lastOut = outs.get(a.thread_id);
-    if (lastOut && String(lastOut) > String(a.logged_to || '')) { if (await carryOn(db, a, await threadMail(db, a.thread_id), at)) res.carried++; }
-  }
+  const quiet = await db.prepare(`SELECT a.* FROM tc_mail_auto a WHERE a.undone_at IS NULL
+    AND NOT EXISTS (SELECT 1 FROM tc_mail m WHERE m.thread_id = a.thread_id AND m.direction = 'in' AND m.seen_at IS NULL)
+    AND EXISTS (SELECT 1 FROM tc_mail o WHERE o.thread_id = a.thread_id AND o.direction = 'out' AND o.at > COALESCE(a.logged_to, ''))`).all();
+  for (const a of quiet) { if (await carryOn(db, a, await threadMail(db, a.thread_id), at)) res.carried++; }
   return res;
 }
 

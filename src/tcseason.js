@@ -11,6 +11,7 @@
 // THE SEED is an admin one-off like the TC import: seedPreview writes nothing and answers counts and a hash;
 // seedApply needs that hash, runs once (a mark in sync_state), in one transaction. It reads the Excel's exhibition and
 // calendar tabs, which the TC import kept in tc_companies.extra ('exhibitions', 'calendar_gift').
+import { cachedAll } from './tcreadcache.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
@@ -42,7 +43,7 @@ async function liveCompanies(db) {
   const companies = await db.prepare(`SELECT id, name, country, pic_name FROM tc_companies WHERE archived_at IS NULL`).all();
   const by = new Map(companies.map((c) => [Number(c.id), { id: Number(c.id), name: c.name, country: c.country || '', pic: c.pic_name || '',
     total: isTotalRow(c.country), delegates: 0, years: new Map() }]));
-  for (const k of await db.prepare('SELECT company_id, year, attendees FROM tc_company_courses WHERE attendees > 0').all()) {
+  for (const k of await cachedAll(db, 'courses', 'SELECT company_id, year, attendees FROM tc_company_courses WHERE attendees > 0')) {
     const c = by.get(Number(k.company_id));
     if (!c) continue;
     c.delegates += Number(k.attendees) || 0;

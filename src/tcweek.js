@@ -10,6 +10,7 @@
 //
 // B2B only: nothing here reads or counts Academy people. A group's TOTAL row (src/tc.js isTotalRow) stays out of
 // Ready to plan, as out of every list a figure opens.
+import { cachedAll } from './tcreadcache.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -122,7 +123,7 @@ export async function readyToPlan(db, mk, { limit = 6 } = {}) {
   const mineRows = mineAll.filter((c) => !Number(c.planned));
   const ids = new Set(mineRows.map((c) => Number(c.id)));
   const courses = new Map();
-  for (const k of await db.prepare('SELECT company_id, year, attendees FROM tc_company_courses WHERE attendees > 0').all()) {
+  for (const k of await cachedAll(db, 'courses', 'SELECT company_id, year, attendees FROM tc_company_courses WHERE attendees > 0')) {
     if (!ids.has(Number(k.company_id))) continue;
     const cur = courses.get(Number(k.company_id));
     if (!cur || Number(k.year) > cur.year) courses.set(Number(k.company_id), { year: Number(k.year), n: Number(k.attendees) });

@@ -15,6 +15,7 @@
 //    and one line in the company's log.
 // 4. SET ASIDE: the row closes with a reason; its trace row says so.
 
+import { cachedAll } from './tcreadcache.js';
 import crypto from 'node:crypto';
 import { TC, TcInputError, nameKey } from './tc.js';
 import { ImportError, parseCsv } from './tcimport.js';
@@ -123,7 +124,7 @@ async function domainCompanies(db) {
   const add = (d, id, n = 1) => { if (!useful(d)) return; if (!m.has(d)) m.set(d, new Map()); m.get(d).set(id, (m.get(d).get(id) || 0) + n); };
   for (const r of await db.prepare(`SELECT k.company_id, k.email FROM tc_company_contacts k JOIN tc_companies c ON c.id = k.company_id
     WHERE k.email IS NOT NULL AND k.archived_at IS NULL AND c.archived_at IS NULL`).all()) add(hostOf(r.email), Number(r.company_id));
-  for (const r of await db.prepare('SELECT id, website FROM tc_companies WHERE archived_at IS NULL AND website IS NOT NULL').all()) add(webHost(r.website), Number(r.id));
+  for (const r of await cachedAll(db, 'companies', 'SELECT id, website FROM tc_companies WHERE archived_at IS NULL AND website IS NOT NULL')) add(webHost(r.website), Number(r.id));
   return m;
 }
 const initials = (name) => String(name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');

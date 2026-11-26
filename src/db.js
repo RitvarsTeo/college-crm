@@ -1090,6 +1090,15 @@ CREATE TABLE IF NOT EXISTS pbx_extension_history (
   by_name TEXT NOT NULL,
   at TEXT NOT NULL
 );
+-- CONVERSATIONS THE TRAINING@ RULE LEFT TO A PERSON (patch 188, 26.11.2026): answered, but a system sender, a shared mailbox domain or
+-- two possible companies. Kept so the automation does not read the whole conversation again every run; read again only when a newer
+-- message arrives (last_at).
+CREATE TABLE IF NOT EXISTS tc_mail_skip (
+  thread_id TEXT PRIMARY KEY,
+  why TEXT,
+  last_at TEXT NOT NULL,
+  at TEXT NOT NULL
+);
 -- PRIVATE CLIENTS (23.11.2026, patch 166, src/tcprivate.js; his pick "A: Private clients list"): a Training Centre client who comes for
 -- themselves, not for a company. Their own record and history; archived, never deleted.
 CREATE TABLE IF NOT EXISTS tc_private_clients (
