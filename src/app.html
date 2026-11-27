@@ -2849,7 +2849,15 @@ svg .m-flag-mark{transform-origin:0 100%}
   @media (max-width:760px){ html.ui-c .tc-cj{position:static;display:block;text-align:right;margin:6px 0 0} html.ui-c .tcml-stack{flex:1 1 100%} html.ui-c .tcml-stack .tcml-fig{flex:1 1 auto} }
   html.ui-c .tcml-fig{flex:1 1 150px;text-align:left;background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:12px 16px;cursor:pointer;font:inherit;color:var(--ink)}
   html.ui-c .tcml-fig b{display:block;font-size:30px;font-weight:750;line-height:1.1} html.ui-c .tcml-fig span{font-weight:600;color:var(--t2)}
-  html.ui-c .tcml-fig[aria-pressed="true"]{border-color:var(--btn-bg);box-shadow:inset 0 0 0 1.5px var(--btn-bg)}
+  /* HIS PICK 27.11.2026 "A + coloured edge": the pressed box is light blue with a blue frame, never the navy of an invited company
+     ("dont make them the same shade of blue as other boxes, it mixes together"); a line under the boxes says what is shown */
+  html.ui-c .tcml-fig{transition:box-shadow .15s,border-color .15s} html.ui-c .tcml-fig:hover{border-color:var(--c-sis);box-shadow:0 2px 10px rgba(41,168,223,.22)}
+  html.ui-c .tcml-fig[aria-pressed="true"]{background:var(--c-accent-bg);border:2px solid var(--c-sis);box-shadow:none;padding:11px 15px}
+  html.ui-c .tcml-stack .tcml-fig[aria-pressed="true"]{padding-top:7px;padding-bottom:7px}
+  html.ui-c .tcml-showing{display:flex;flex-wrap:wrap;gap:6px;align-items:baseline;margin:0 0 10px;font-size:15px;color:var(--ink)} html.ui-c .tcml-showing b{font-weight:700}
+  html.ui-c .tcml-showall{background:none;border:0;padding:0;font:inherit;font-weight:600;color:var(--accent-ink);text-decoration:underline;cursor:pointer}
+  /* the coloured left edge of each company: amber = still to decide, teal = invited, grey = No */
+  html.ui-c .tcml-t:not(.inv):not(.no){border-left:5px solid #d98a1e} html.ui-c .tcml-t.inv{border-left:5px solid var(--ok)} html.ui-c .tcml-t.no{border-left:5px solid #9aa3af}
   html.ui-c .tcml-lists{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px}
   html.ui-c .tcml-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;align-items:start}
   html.ui-c .tcml-t{background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
@@ -14340,8 +14348,14 @@ function tcMlDraw() {
     ${note}${lists}<div class="tcml-figs">${fig('all', F.todo + F.invite + F.no, 'All')}${fig('todo', F.todo, 'Still to decide')}<div class="tcml-stack">${fig('invite', F.invite, 'Invite · digital')}${fig('postcard', F.postcard, 'Postcard · in person or by post')}</div>${fig('no', F.no, 'No')}</div>
     ${T_ML.filter === 'postcard' ? '<div class="tcml-pcbar"><a class="btn sm" href="/api/tc/go/postcards.xlsx" download>Download Excel</a></div>' : ''}
     ${tcPoSection()}${tcWvSection()}
-    <div class="tcml-find"><input id="tcMlQ" class="c-search" type="search" placeholder="Search a company, a person or an email" aria-label="Search the list" autocomplete="off" value="${esc(T_ML.q)}" oninput="tcMlSearch(this.value)">${T_ML.q ? `<span class="tcml-found">${tcN(shown.length)} ${shown.length === 1 ? 'company' : 'companies'}</span>` : ''}</div>
+    ${tcMlShowing(shown.length)}<div class="tcml-find"><input id="tcMlQ" class="c-search" type="search" placeholder="Search a company, a person or an email" aria-label="Search the list" autocomplete="off" value="${esc(T_ML.q)}" oninput="tcMlSearch(this.value)">${T_ML.q ? `<span class="tcml-found">${tcN(shown.length)} ${shown.length === 1 ? 'company' : 'companies'}</span>` : ''}</div>
     <div class="tcml-tiles">${shown.length ? tcMlLetters(shown, tile) : (T_ML.q ? '<p class="tcml-none">No company or person on this list matches.</p>' : '')}</div>`;
+}
+// HIS PICK 27.11.2026 "A + coloured edge": a pressed box says in words what the list shows, and Show all takes it back to everything
+const TCML_FILTER_NAMES = { todo: 'Still to decide', invite: 'Invite · digital', postcard: 'Postcard · in person or by post', no: 'No' };
+function tcMlShowing(n) {
+  if (!T_ML || !TCML_FILTER_NAMES[T_ML.filter]) return '';
+  return `<div class="tcml-showing" role="status">Showing: <b>${esc(TCML_FILTER_NAMES[T_ML.filter])}</b> · ${tcN(n)} ${n === 1 ? 'company' : 'companies'} · <button type="button" class="tcml-showall" onclick="T_ML.filter='all';tcMlDraw()">Show all</button></div>`;
 }
 // a phone has no drag: Move to… under each person (proposal E, 12.11.2026)
 const tcMlNarrow = () => typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(max-width: 760px)').matches : false;

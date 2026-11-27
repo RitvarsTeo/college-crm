@@ -52,7 +52,8 @@ Pictures: `_pictures/go_figures_hover_2026-11-27/index.html` (today, A, B side b
 
 | Item | Status |
 |---|---|
-| HIS PICK 27.11 "Show me pictures first": the number boxes (All / Still to decide / Invite / Postcard / No) already filter the list but do not look pressable. A: the pressed box filled dark blue + a "Showing: ... · Show all" line above the list. B: pill tabs with counts + a coloured left edge on each company card (amber = still to decide) | SAID - pictures made, A or B open |
+| HIS PICK 27.11 "Show me pictures first": the number boxes (All / Still to decide / Invite / Postcard / No) already filter the list but do not look pressable. A: the pressed box filled dark blue + a "Showing: ... · Show all" line above the list. B: pill tabs with counts + a coloured left edge on each company card (amber = still to decide) | SAID - pictures made |
+| HIS PICK 27.11 "A + coloured edge": A (pressed box + "Showing: ... · Show all" line above the search) plus B's coloured left card edges (amber still to decide, teal invited, grey No). His change: "dont make them the same shade of blue as other boxes, it mixes together" - the pressed box is light blue with a blue frame (Novikontas Blue #29a8df), never the navy of an invited company. Hover sentences are not part of this build | BUILT on branch tc/go-figures-hover-said-2026-11-27, picture on the copy first |
 | HIS ASK 27.11: on mouse hover, every button on the list shows one plain sentence saying what it does (the number boxes, Invite, No, Done, Hand over in person, Send by post, Pass on, Waiver, Change, Undo, Save, tapping a person's name) | SAID - sentences drafted on the picture page for his check |
 
 ## 24.11.2026 - The tutorial: tour + questions up to date, and short videos (PICKED 24.11: "B) A + short videos")
