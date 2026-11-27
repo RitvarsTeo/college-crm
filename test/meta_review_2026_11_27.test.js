@@ -28,7 +28,31 @@ test('the data deletion page: open without sign-in, static, both languages, the 
   for (const s2 of ['dataregulation@novikontas.org', 'Within one month', 'Viena mēneša laikā', '13 months', '13 mēnešus',
     'Facebook Messenger, Instagram and WhatsApp', 'www.dvi.gov.lv', '40003746413', 'Datu dzēšana']) assert.ok(html.includes(s2), s2);
   assert.ok(!/<script|<form|\$\{/.test(html), 'no script, no form, no template left');
-  assert.match(SERVER, /if \(req\.method === 'GET' && p === '\/data-deletion'\) \{\n[^\n]*\n[^\n]*\n\s*return res\.end\(DATA_DELETION_PAGE\);/);
+  assert.match(SERVER, /if \(PAGE_READ && p === '\/data-deletion'\) \{\n[^\n]*\n[^\n]*\n\s*return res\.end\(DATA_DELETION_PAGE\);/);
+});
+
+// patch 198 (27.11.2026): Meta checks the URL with HEAD, which answered 404. The static pages answer HEAD like GET, no body;
+// an /api/ route never does (the sign-in door still answers).
+test('HEAD on /data-deletion and the other static pages: 200, the same headers as GET, no body; never on /api/', async (t) => {
+  const s = await start({ DATASET: 'empty', CRM_AUTH: '1', GOOGLE_CLIENT_ID: 'x', GOOGLE_CLIENT_SECRET: 'y', CRM_SESSION_SECRET: 'test-session-secret-not-real-000' });
+  t.after(() => s.child.kill());
+  const get = await fetch(s.base + '/data-deletion');
+  await get.text();
+  const head = await fetch(s.base + '/data-deletion', { method: 'HEAD' });
+  assert.equal(head.status, 200);
+  for (const h of ['content-type', 'content-security-policy', 'cache-control', 'x-content-type-options']) assert.equal(head.headers.get(h), get.headers.get(h), h);
+  assert.equal((await head.arrayBuffer()).byteLength, 0, 'no body');
+  for (const p of ['/', '/healthz', '/manifest.webmanifest', '/favicon.ico', '/sw.js']) {
+    const r = await fetch(s.base + p, { method: 'HEAD' });
+    await r.arrayBuffer();
+    assert.equal(r.status, 200, p);
+  }
+  for (const p of ['/api/people', '/api/review/inbox', '/api/intake']) {
+    const r = await fetch(s.base + p, { method: 'HEAD', redirect: 'manual' });
+    await r.arrayBuffer();
+    assert.notEqual(r.status, 200, 'HEAD on ' + p + ' is never a way past the sign-in door');
+  }
+  assert.match(SERVER, /const PAGE_READ = req\.method === 'GET' \|\| \(req\.method === 'HEAD' && !p\.startsWith\('\/api\/'\)\);/);
 });
 
 test('the review area: a reviewer-only account opens only the review paths and signing in/out; nobody else opens review', () => {

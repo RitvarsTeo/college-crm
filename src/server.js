@@ -1142,6 +1142,10 @@ export const handle = async (req, res) => {
   // because only the exact path is open before sign-in, and a provider that adds the slash was locked out. Read the
   // same way everywhere below, so the slash gets exactly the rules of the path without it: never more, never less.
   const p = /^\/api\/.+\/$/.test(url.pathname) ? url.pathname.slice(0, -1) : url.pathname;
+  // HEAD ON THE STATIC PAGES (patch 198, 27.11.2026: Meta checks the data deletion URL with HEAD, and it answered 404).
+  // Only the pages outside /api (the app shell, its files, /data-deletion, /healthz) answer HEAD like GET; Node sends the
+  // headers and no body. Never an /api/ route: those keep their own methods and the sign-in door.
+  const PAGE_READ = req.method === 'GET' || (req.method === 'HEAD' && !p.startsWith('/api/'));
   // Q84: a PAGE asked for on an older address goes to the app's own address; /api/* never moves
   // (src/apporigin.js). Before everything else, so sign-in always starts on the host it returns to.
   const moveTo = redirectTarget({ method: req.method,
@@ -1228,7 +1232,7 @@ export const handle = async (req, res) => {
         how: 'demo, simulation and reset routes only run on a laptop or the shared demo copy' });
     }
 
-    if (req.method === 'GET' && p === '/healthz') {
+    if (PAGE_READ && p === '/healthz') {
       // Alive, and nothing else (security review 07.10.2026, L4): it is open before sign-in, and it used
       // to tell anybody how many people the CRM holds. The count is on /api/console/state, signed in.
       return json(res, 200, { ok: true });
@@ -1864,13 +1868,13 @@ export const handle = async (req, res) => {
 
     // DATA DELETION (27.11.2026, his pick for Meta App Review): a public, STATIC page in English and Latvian on how to ask
     // for one's data to be deleted. No data read, no form (src/datadeletion.js; OPEN_PAGES in test/security_guards).
-    if (req.method === 'GET' && p === '/data-deletion') {
+    if (PAGE_READ && p === '/data-deletion') {
       res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'public, max-age=300',
         'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'" });
       return res.end(DATA_DELETION_PAGE);
     }
 
-    if (req.method === 'GET' && (p === '/' || p === '/index.html')) {
+    if (PAGE_READ && (p === '/' || p === '/index.html')) {
       // never cached: the whole app is this one file, and a tester holding a cached
       // copy would keep reporting bugs that were fixed hours ago
       res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' });
@@ -1880,22 +1884,22 @@ export const handle = async (req, res) => {
     // The installable-app description: name, the Academy icons, the window. Open before
     // sign-in like the page itself, because the browser reads it on the sign-in screen.
     // The service worker (Q6): at the root so its scope is the whole app; it holds no data.
-    if (req.method === 'GET' && p === '/sw.js') {
+    if (PAGE_READ && p === '/sw.js') {
       res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' });
       return res.end(fs.readFileSync(path.join(ROOT, 'src', 'sw.js')));
     }
-    if (req.method === 'GET' && p === '/manifest.webmanifest') {
+    if (PAGE_READ && p === '/manifest.webmanifest') {
       res.writeHead(200, { 'content-type': 'application/manifest+json; charset=utf-8', 'cache-control': 'public, max-age=3600' });
       return res.end(JSON.stringify(APP_MANIFEST, null, 2));
     }
     // Browsers ask for /favicon.ico on their own (bookmarks, some tabs). Answer with the symbol.
-    if (req.method === 'GET' && p === '/favicon.ico') {
+    if (PAGE_READ && p === '/favicon.ico') {
       res.writeHead(200, { 'content-type': 'image/png', 'cache-control': 'public, max-age=3600' });
       return res.end(fs.readFileSync(path.join(ROOT, 'src', 'assets', 'icon-192.png')));
     }
     // The brand assets. Only the two authorised logo files, served by an exact
     // name match: no path is ever built out of what the request asked for.
-    if (req.method === 'GET' && p.startsWith('/assets/')) {
+    if (PAGE_READ && p.startsWith('/assets/')) {
       // Name -> content type, so the list stays an exact-match allow-list and a
       // new kind of asset cannot be served with the wrong type by accident.
       // na_pattern_tile.png arrived with the sign-in screen: its card mask
