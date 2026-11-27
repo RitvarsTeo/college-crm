@@ -14,6 +14,20 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 27.11.2026 - Newsletters: our own sender inside Intake - patch 195 (PICKED 26.11: "ok, inside Intake"; look PICKED 27.11: "i like this side")
+
+Design prototype on example rows (P4): full screens, no N3 data, no sending.
+
+| Item | Status | Note |
+|---|---|---|
+| Own item at the top of the side menu, open only to config `newsletterUsers` | BUILT | Server checks the signed name on every request (src/newsletter.js, `/api/admin/newsletter/audience`, GET only). "dont change left side" (27.11): the menu keeps its look, only this item is added |
+| Audience: Companies (B2B, blue) / Private people (B2C, orange) tiles, one row per N3 filter with a tick sheet, the count, unsubscribed and no-email taken out, first 5 with B2B/B2C pills, Show all | BUILT | Example rows until the N3 connection is in |
+| Write: subject, preview line, From, replies to info@, language; blocks in order; unsubscribe footer always there | BUILT | Kept in the page only, not saved yet |
+| Check: phone / computer preview, checks | BUILT | |
+| Send: "Send a test to me" first, "Send to N people" locked until the test arrived; Sent so far | BUILT, LOCKED | No send route exists. Wired last, once the sending mailbox is chosen |
+| N3 data in place of the example rows | SAID | The N3 connection is Davis's work; the tab takes live rows or a file in the same shape |
+| Unsubscribe link working, Mailchimp's unsubscribed imported once | SAID | Fixed either way |
+| Saved audiences, saved drafts | SAID | |
 ## 27.11.2026 - Energy: its own area next to Training Centre (PICKED 27.11: "A: own area")
 
 The owner, 26.11: "we need TC part for the Energy as well, and need to figure out where we put that, i guess next to TC."

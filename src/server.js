@@ -19,6 +19,7 @@ import * as sheetB from '../lib/sheetpull.js';
 import { pullSheet, sheetCounts } from './sheetsync.js';
 import { receive, activePersonFor, IN_TOUCH_STEPS, listInbound, listHandled, callsTodayFromPeople, messagesFor, conversationFor, latestConversationPerson, recordWhatsAppEcho, qualify, archive, setMark, removeMark, setCallNote, setCalledBack, withCallNotes, bringBack, funnel, agedCount, handoffToSis, ownerFor, notifiedFor, handoverGap, canReach, surfaceAt, waitingFor, waitingByRole } from './intake.js';
 import { replaceN3Directory, n3Status, n3Names } from './n3dir.js';
+import { audience as newsletterAudience, mayOpenNewsletter } from './newsletter.js';
 import * as phoneExt from './phoneext.js';
 import { readScreenshot, readKind, readBody, readPath, saveFeedback, listFeedback, getScreenshot, setHandled, BadScreenshot, helpOpened, helpCounts } from './feedback.js';
 import { findMatches as matchPeople, duplicateCheck, onePersonFor } from './identity.js';
@@ -796,6 +797,8 @@ const isAdmin = (who) => ADMINS.includes(String(who || ''));
 // derived from it. Marina is an admin and must not see it, so this is its own
 // list. Without a login it can only check the name that was selected.
 const FEEDBACK_READERS = CONFIG.feedbackReaders || [];
+// Newsletters (27.11.2026): its own list, like the feedback readers; not derived from admins.
+const NEWSLETTER_USERS = CONFIG.newsletterUsers || [];
 // The whole history, without being an admin (04.10.2026: Admissions needs the full picture).
 const HISTORY_READERS = CONFIG.historyReaders || [];
 const readsAllHistory = (who) => isAdmin(who) || HISTORY_READERS.includes(String(who || ''));
@@ -1468,6 +1471,21 @@ export const handle = async (req, res) => {
       if (!areas.AREAS.includes(b.area)) return json(res, 400, { error: 'Unknown area.' });
       const r = await areas.setArea(db, { userId: user.id, area: b.area, on: b.on === true, by: me.name || me.email || 'admin' });
       return json(res, 200, { ok: true, changed: r.changed, ...(await areas.accessList(db)) });
+    }
+
+    // ------------------------------------------------------------ Newsletters (27.11.2026) --
+    // Only the people in config newsletterUsers, by the signed session's name. GET only: the audience on example rows
+    // (src/newsletter.js) until the N3 data is connected. There is NO send route; the send is wired last.
+    if (p === '/api/admin/newsletter/audience') {
+      if (!mayOpenNewsletter(await viewerOf(req, url), NEWSLETTER_USERS)) return json(res, 403, { error: 'Newsletters is open only to its owner.' });
+      if (req.method !== 'GET') return json(res, 405, { error: 'Read only.' });
+      const pick = {};
+      for (const k of ['who', 'course', 'last', 'expires', 'country', 'language']) {
+        const v = url.searchParams.get(k);
+        if (v !== null) pick[k] = v ? v.split(',').slice(0, 20) : [];
+      }
+      const all = url.searchParams.get('all') === '1';
+      return json(res, 200, newsletterAudience(Object.keys(pick).length ? pick : undefined, { first: all ? 1000 : 5 }));
     }
 
     // ------------------------------------------- the N3 phone directory (06.11.2026) --

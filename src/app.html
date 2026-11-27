@@ -11601,6 +11601,230 @@ async function cpPushSetup() {
   } catch (e) { CP_PUSH = false; }
 }
 
+// ======================================================================= NEWSLETTERS (27.11.2026)
+// The owner's pick 26.11.2026 "ok, inside Intake": our own newsletter sender, like a free Mailchimp, with N3 filters. Its
+// own item at the top of the side menu, shown only to the people in CFG.newsletterUsers; the SERVER checks the same list on
+// every request (src/newsletter.js). The look: his pick 27.11.2026 "i like this side" (_pictures/newsletters_2026-11-27_ios):
+// a segmented control for the four steps, grouped lists, one row per filter. "dont change left side": the side menu keeps
+// its look; only this item is added. Example rows until the N3 data is connected. NOTHING HERE SENDS: the send buttons stay
+// locked until the sender is chosen and wired.
+const mayNewsletter = () => (CFG.newsletterUsers || []).includes(ACTOR);
+const NL_STEPS = ['Audience', 'Write', 'Check', 'Send'];
+const NL = { step: 0, pick: null, data: null, all: false, preview: 'phone',
+  mail: { subject: 'GWO BST refresher dates for 2027', preheader: 'Book before your certificate runs out', from: 'Novikontas', language: 'en' },
+  blocks: [['Logo + month', 'Header'], ['GWO BST refresher', 'Lead'], ['Two more courses', 'Cards'], ['Energy + Training Centre schedules', 'Schedule']] };
+const NL_ICON = '<svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="5" width="14" height="10.5" rx="1.6"/><path d="M3.5 6l6.5 5 6.5-5"/></svg>';
+function nlInstallNav() {
+  const on = mayNewsletter();
+  const have = document.querySelector('.nlnav');
+  if (!on) { if (have) have.remove(); return; }
+  if (!have) {
+    const brand = document.querySelector('.shell > nav > .brand');
+    if (!brand) return;
+    brand.insertAdjacentHTML('afterend', `<div class="nlnav" role="navigation" aria-label="Newsletters"><a href="#/newsletters" title="Newsletters, open only to you">${NL_ICON}<span>Newsletters</span><small>only you</small></a></div>`);
+  }
+  const here = String(location.hash).startsWith('#/newsletters');
+  document.querySelector('.nlnav a').classList.toggle('on', here);
+  document.documentElement.toggleAttribute('data-nl', here);   // no Year box here: a newsletter has no year
+  if (here) document.querySelectorAll('.cnav a.on').forEach((a) => a.classList.remove('on'));
+}
+function nlStyle() {
+  if (document.getElementById('nlCss')) return;
+  document.head.insertAdjacentHTML('beforeend', `<style id="nlCss">
+  .nlnav{margin:2px 0 8px}
+  .nlnav a{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:7px;text-decoration:none;font-weight:600;font-size:13.5px;color:#0a2463}
+  .nlnav a svg{width:17px;height:17px;flex:0 0 17px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+  .nlnav a small{margin-left:auto;font-size:11px;font-weight:500;opacity:.8}
+  .nlnav a:hover{background:rgba(255,255,255,.28)}
+  .nlnav a.on{background:rgba(255,255,255,.34);color:#fff}
+  html[data-theme="dark"] .nlnav a{color:var(--t2)} html[data-theme="dark"] .nlnav a.on{color:#fff;background:var(--c-accent-bg)}
+  @media (max-width:760px){.nlnav{display:none}}
+  html[data-nl] #cScope{display:none!important} html[data-nl]{--scope-w:0px!important}
+  .nl{--nl-b2b:#0A6CD6;--nl-b2b-bg:#E3F0FD;--nl-b2c:#E8730C;--nl-b2c-bg:#FFF0E0;--nl-hair:rgba(11,27,43,.08);--nl-seg:#E4E7EC;--nl-card:#fff;--nl-mute:#8A97A5;--nl-ok:#1E9E57}
+  html[data-theme="dark"] .nl{--nl-b2b-bg:rgba(10,108,214,.22);--nl-b2c-bg:rgba(232,115,12,.2);--nl-hair:rgba(255,255,255,.1);--nl-seg:rgba(255,255,255,.1);--nl-card:var(--surface);--nl-mute:var(--t3)}
+  .nl-top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 16px;flex-wrap:wrap}
+  .nl-top h1{margin:0}
+  .nl-seg{display:inline-flex;background:var(--nl-seg);border-radius:9px;padding:2px}
+  .nl-seg button{border:0;background:transparent;padding:6px 18px;border-radius:7px;font-size:13px;font-weight:500;color:var(--t2)}
+  .nl-seg button.on{background:var(--nl-card);color:var(--ink);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+  .nl-acts{display:flex;gap:8px;align-items:center}
+  .nl-link{border:0;background:transparent;color:var(--nl-b2b);font-weight:600;padding:8px 10px}
+  .nl-grid{display:grid;grid-template-columns:1.25fr 1fr;gap:20px;align-items:start}
+  @media (max-width:980px){.nl-grid{grid-template-columns:1fr}}
+  .nl-cap{font-size:12px;color:var(--nl-mute);text-transform:uppercase;letter-spacing:.04em;margin:0 0 6px 14px;font-weight:500}
+  .nl-group{background:var(--nl-card);border-radius:12px;overflow:hidden;margin:0 0 20px}
+  .nl-row{display:flex;align-items:center;gap:12px;padding:11px 14px;min-height:44px;position:relative;width:100%;border:0;background:transparent;text-align:left;font:inherit;color:var(--ink)}
+  .nl-row+.nl-row::before{content:"";position:absolute;top:0;left:14px;right:0;border-top:1px solid var(--nl-hair)}
+  button.nl-row:hover{background:var(--c-sunk)}
+  .nl-row .k{flex:1;min-width:0}
+  .nl-row .v{color:var(--t2);text-align:right}
+  .nl-row .chev{color:#C3CAD3;font-size:17px}
+  .nl-row small{display:block;font-size:12px;color:var(--nl-mute)}
+  .nl-row.mute{color:var(--nl-mute)} .nl-row.mute .v{color:var(--nl-mute)}
+  .nl-row input,.nl-row select{border:0;background:transparent;font:inherit;color:var(--ink);text-align:right;flex:1;min-width:0;padding:2px 0}
+  .nl-row input:focus,.nl-row select:focus{outline:none} .nl-row:focus-within{box-shadow:inset 3px 0 0 var(--nl-b2b)}
+  .nl-row .lbl{width:130px;flex:0 0 130px}
+  .nl-who{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px}
+  .nl-tile{display:flex;align-items:center;gap:10px;border-radius:10px;padding:12px 14px;border:1.5px solid transparent;background:var(--c-sunk);color:var(--t2);font:inherit;text-align:left}
+  .nl-tile b{display:block;font-weight:600;color:var(--ink)} .nl-tile small{color:var(--nl-mute)}
+  .nl-tile .n{margin-left:auto;font-weight:600}
+  .nl-tile.b2b.on{background:var(--nl-b2b-bg);border-color:var(--nl-b2b)} .nl-tile.b2c.on{background:var(--nl-b2c-bg);border-color:var(--nl-b2c)}
+  .nl-dot{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;color:#fff;font-size:13px;font-weight:700;flex:0 0 26px}
+  .nl-dot.b2b{background:var(--nl-b2b)} .nl-dot.b2c{background:var(--nl-b2c)}
+  .nl-pill{display:inline-flex;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;color:#fff;letter-spacing:.02em;flex:0 0 auto}
+  .nl-pill.b2b{background:var(--nl-b2b)} .nl-pill.b2c{background:var(--nl-b2c)}
+  .nl-big{padding:16px 16px 6px} .nl-big b{font-size:44px;font-weight:700;letter-spacing:-.03em;color:var(--ink)} .nl-big span{color:var(--t2);margin-left:6px}
+  .nl-foot{color:var(--nl-mute);font-size:12px;margin:-12px 0 0 14px}
+  .nl-tag{font-size:11px;color:var(--t2);background:var(--c-sunk);border-radius:6px;padding:2px 7px}
+  .nl-check{width:20px;height:20px;border-radius:50%;background:var(--nl-ok);color:#fff;display:grid;place-items:center;font-size:11px;font-weight:700;flex:0 0 20px}
+  .nl-phone{width:290px;height:560px;border-radius:40px;background:#111;padding:10px;margin:0 auto}
+  .nl-desk{border-radius:12px;overflow:hidden;background:#fff;max-width:600px;margin:0 auto;border:1px solid var(--nl-hair)}
+  .nl-screen{background:#fff;border-radius:31px;height:100%;overflow:hidden;font-size:12px;color:#223}
+  .nl-desk .nl-screen{border-radius:0;height:auto}
+  .nl-mh{background:#0D2A6B;color:#fff;padding:26px 16px 14px;font-weight:700} .nl-mh small{display:block;font-weight:400;opacity:.8;margin-top:2px}
+  .nl-photo{height:120px;background:linear-gradient(135deg,#8CC7EE,#2F7FC2)}
+  .nl-mb{padding:12px 16px} .nl-mb h4{margin:0 0 4px;font-size:15px;color:#111} .nl-mb p{margin:0 0 10px}
+  .nl-mbtn{display:inline-block;background:#0D2A6B;color:#fff;border-radius:8px;padding:7px 12px;font-weight:600}
+  .nl-unsub{margin-top:18px;padding-top:10px;border-top:1px solid #eee;color:#889;font-size:10px;text-align:center}
+  .nl-btn[disabled]{background:var(--c-sunk)!important;color:var(--nl-mute)!important;border-color:transparent!important;cursor:not-allowed}
+  dialog.nl-sheet{border:0;border-radius:14px;padding:0;width:min(420px,92vw);background:var(--nl-card,#fff);color:var(--ink)}
+  dialog.nl-sheet::backdrop{background:rgba(0,0,0,.3)}
+  dialog.nl-sheet .nl-sh{display:flex;justify-content:space-between;align-items:center;padding:14px 16px 6px;font-weight:600}
+  dialog.nl-sheet .tick{color:var(--nl-b2b);font-weight:700;width:16px}
+  </style>`);
+}
+const nlLabel = (k, v) => ((((NL.data || {}).filters || {})[k] || {}).options || []).find((o) => o[0] === v)?.[1] || v;
+const nlValue = (k) => { const v = (NL.pick || {})[k] || []; return v.length ? v.map((x) => nlLabel(k, x)).join(', ') : 'Any'; };
+async function nlLoad() {
+  const qs = NL.pick ? Object.entries(NL.pick).map(([k, v]) => `${k}=${encodeURIComponent(v.join(','))}`).join('&') : '';
+  NL.data = await api('/api/admin/newsletter/audience' + (qs ? '?' + qs : '') + (NL.all ? (qs ? '&' : '?') + 'all=1' : ''));
+  NL.pick = NL.data.pick;
+}
+async function viewNewsletters() {
+  nlStyle();
+  if (!mayNewsletter()) { $('#view').innerHTML = '<div class="c-head"><div><h1>Newsletters</h1></div></div><div class="c-sheet"><div class="c-empty">This page is open only to its owner.</div></div>'; return; }
+  try { if (!NL.data) await nlLoad(); }
+  catch (e) { $('#view').innerHTML = `<div class="c-head"><div><h1>Newsletters</h1></div></div><div class="err">${esc(e.message)}</div>`; return; }
+  nlDraw();
+  cOpenView();
+}
+function nlStep(i) { NL.step = Number(i); nlDraw(); }
+function nlHead() {
+  const s = NL.step;
+  const back = s > 0 ? '<button type="button" class="nl-link" onclick="nlStep(NL.step-1)">Back</button>' : '';
+  const next = s < 3 ? `<button type="button" class="btn" onclick="nlStep(NL.step+1)">Next</button>` : '';
+  return `<div class="nl-top"><h1>Newsletters</h1>
+    <div class="nl-seg" role="tablist">${NL_STEPS.map((n, i) => `<button type="button" role="tab" class="${i === s ? 'on' : ''}" aria-selected="${i === s}" data-i="${i}" onclick="nlStep(this.dataset.i)">${n}</button>`).join('')}</div>
+    <div class="nl-acts">${back}${next}</div></div>`;
+}
+function nlDraw() {
+  const v = $('#view');
+  if (!v) return;
+  v.innerHTML = `<div class="nl">${nlHead()}${[nlAudience, nlWrite, nlCheck, nlSend][NL.step]()}</div>`;
+}
+const nlPill = (k) => `<span class="nl-pill ${k === 'b2b' ? 'b2b' : 'b2c'}">${k === 'b2b' ? 'B2B' : 'B2C'}</span>`;
+function nlAudience() {
+  const d = NL.data, c = d.counts || {};
+  const who = (NL.pick.who || []);
+  const tile = (k, name) => `<button type="button" class="nl-tile ${k}${who.includes(k) ? ' on' : ''}" data-k="${k}" aria-pressed="${who.includes(k)}" onclick="nlWho(this.dataset.k)">
+      <span class="nl-dot ${k}">${k === 'b2b' ? 'B' : 'C'}</span><span><b>${name}</b><small>${k.toUpperCase()}</small></span><span class="n">${Number((c.who || {})[k] || 0)}</span></button>`;
+  const row = (k) => `<button type="button" class="nl-row" data-k="${k}" onclick="nlSheet(this.dataset.k)"><span class="k">${esc(d.filters[k].label)}</span><span class="v">${esc(nlValue(k))}</span><span class="chev">&#8250;</span></button>`;
+  const person = (r) => `<div class="nl-row">${nlPill(r.kind)}<div class="k"><div>${esc(r.name)}</div><small>${esc(r.country)} · ${esc(r.course)} ${esc(r.lastCourse.slice(0, 4))}</small></div></div>`;
+  return `<div class="nl-grid"><div>
+    <div class="nl-cap">Who</div>
+    <div class="nl-group"><div class="nl-who">${tile('b2b', 'Companies')}${tile('b2c', 'Private people')}</div></div>
+    <div class="nl-cap">Filters from N3</div>
+    <div class="nl-group">${['course', 'last', 'expires', 'country', 'language'].map(row).join('')}</div>
+    <div class="nl-foot">${d.example ? 'Example data until the N3 connection is in' : 'Data from N3'}</div>
+  </div><div>
+    <div class="nl-cap">Gets the email</div>
+    <div class="nl-group"><div class="nl-big"><b>${Number(d.gets)}</b><span>people</span></div>
+      <div class="nl-row"><span class="k">Match the filters</span><span class="v">${Number(d.match)}</span></div>
+      <div class="nl-row mute"><span class="k">Unsubscribed</span><span class="v">- ${Number(d.unsubscribed)}</span></div>
+      <div class="nl-row mute"><span class="k">No email address</span><span class="v">- ${Number(d.noEmail)}</span></div></div>
+    <div class="nl-group">${d.rows.length ? d.rows.map(person).join('') : '<div class="nl-row mute"><span class="k">Nobody matches these filters</span></div>'}
+      ${d.gets > d.rows.length ? `<button type="button" class="nl-row" onclick="nlAll(true)"><span class="k" style="color:var(--nl-b2b)">Show all ${Number(d.gets)}</span><span class="chev">&#8250;</span></button>`
+        : NL.all && d.gets > 5 ? '<button type="button" class="nl-row" onclick="nlAll(false)"><span class="k" style="color:var(--nl-b2b)">Show the first 5</span></button>' : ''}</div>
+  </div></div>`;
+}
+async function nlRefresh() { try { await nlLoad(); nlDraw(); } catch (e) { nlDraw(); $('#view').insertAdjacentHTML('afterbegin', `<div class="err">${esc(e.message)}</div>`); } }
+function nlWho(k) { const w = new Set(NL.pick.who || []); if (w.has(k)) w.delete(k); else w.add(k); NL.pick.who = [...w]; nlRefresh(); }
+function nlAll(on) { NL.all = Boolean(on); nlRefresh(); }
+function nlSheet(k) {
+  const f = NL.data.filters[k];
+  if (!f) return;
+  let d = document.getElementById('nlSheet');
+  if (!d) { document.body.insertAdjacentHTML('beforeend', '<dialog class="nl-sheet nl" id="nlSheet"></dialog>'); d = document.getElementById('nlSheet');
+    d.addEventListener('click', (e) => { if (e.target === d) d.close(); }); d.addEventListener('close', () => nlRefresh()); }
+  d.dataset.k = k;
+  nlSheetDraw();
+  if (!d.open) d.showModal();
+}
+function nlSheetDraw() {
+  const d = document.getElementById('nlSheet'), k = d.dataset.k, f = NL.data.filters[k];
+  const picked = NL.pick[k] || [], cnt = (NL.data.counts || {})[k] || {};
+  d.innerHTML = `<div class="nl-sh"><span>${esc(f.label)}</span><button type="button" class="nl-link" onclick="document.getElementById('nlSheet').close()">Done</button></div>
+    <div class="nl-group" style="margin:0 10px 12px">${f.options.map(([v, label]) => `<button type="button" class="nl-row" data-v="${esc(v)}" onclick="nlTick(this.dataset.v)">
+      <span class="tick">${picked.includes(v) ? '&#10003;' : ''}</span><span class="k">${esc(label)}</span><span class="v">${Number(cnt[v] || 0)}</span></button>`).join('')}
+      <button type="button" class="nl-row" onclick="nlTick('')"><span class="tick">${picked.length ? '' : '&#10003;'}</span><span class="k">Any</span></button></div>`;
+}
+function nlTick(v) {
+  const k = document.getElementById('nlSheet').dataset.k;
+  if (!v) NL.pick[k] = [];
+  else if (k === 'expires') NL.pick[k] = [v];
+  else { const s = new Set(NL.pick[k] || []); if (s.has(v)) s.delete(v); else s.add(v); NL.pick[k] = [...s]; }
+  nlSheetDraw();
+}
+function nlField(k, el) { NL.mail[k] = el.value; }
+function nlWrite() {
+  const m = NL.mail;
+  const input = (k, label) => `<label class="nl-row"><span class="lbl">${label}</span><input value="${esc(m[k])}" data-k="${k}" oninput="nlField(this.dataset.k,this)"></label>`;
+  return `<div class="nl-grid"><div>
+    <div class="nl-cap">The email</div>
+    <div class="nl-group">${input('subject', 'Subject')}${input('preheader', 'Preview line')}${input('from', 'From')}
+      <div class="nl-row"><span class="lbl">Replies go to</span><span class="v" style="flex:1">info@novikontas.org</span></div>
+      <label class="nl-row"><span class="lbl">Language</span><select data-k="language" onchange="nlField(this.dataset.k,this)">
+        <option value="en"${m.language === 'en' ? ' selected' : ''}>English</option><option value="lv"${m.language === 'lv' ? ' selected' : ''}>Latvian</option></select></label></div>
+  </div><div>
+    <div class="nl-cap">Blocks</div>
+    <div class="nl-group">${NL.blocks.map((b, i) => `<div class="nl-row"><span class="k">${esc(b[0])}</span><span class="nl-tag">${esc(b[1])}</span>
+      ${i > 0 ? `<button type="button" class="nl-link" data-i="${i}" onclick="nlMove(this.dataset.i)" title="Move up" aria-label="Move up">&#8593;</button>` : '<span style="width:34px"></span>'}</div>`).join('')}
+      <div class="nl-row mute"><span class="k">Unsubscribe link</span><span class="nl-tag">Footer, always there</span></div></div>
+  </div></div>`;
+}
+function nlMove(i) { i = Number(i); if (i < 1) return; const b = NL.blocks; [b[i - 1], b[i]] = [b[i], b[i - 1]]; nlDraw(); }
+function nlMail() {
+  const m = NL.mail;
+  return `<div class="nl-screen"><div class="nl-mh">NOVIKONTAS ACADEMY<small>${esc(m.preheader)}</small></div><div class="nl-photo"></div>
+    <div class="nl-mb"><h4>${esc(m.subject)}</h4><p>${NL.blocks.map((b) => esc(b[0])).join(' · ')}</p><span class="nl-mbtn">See the dates</span>
+    <div class="nl-unsub">Novikontas Academy · Riga<br><u>Unsubscribe</u></div></div></div>`;
+}
+function nlPreview(w) { NL.preview = w; nlDraw(); }
+function nlCheck() {
+  const m = NL.mail;
+  const checks = [['Subject is written', Boolean(m.subject.trim())], ['Preview line is written', Boolean(m.preheader.trim())],
+    ['Unsubscribe link is there', true], ['Replies go to info@', true], [`One language: ${m.language === 'lv' ? 'Latvian' : 'English'}`, true]];
+  return `<div class="nl-grid" style="grid-template-columns:1fr 1fr"><div>${NL.preview === 'phone' ? `<div class="nl-phone">${nlMail()}</div>` : `<div class="nl-desk">${nlMail()}</div>`}</div><div>
+    <div class="nl-cap">Checks</div>
+    <div class="nl-group">${checks.map(([t, ok]) => `<div class="nl-row"><span class="nl-check" style="${ok ? '' : 'background:#b3261e'}">${ok ? '&#10003;' : '!'}</span><span class="k">${esc(t)}</span></div>`).join('')}</div>
+    <div class="nl-cap">Preview on</div>
+    <div class="nl-group"><div class="nl-row"><div class="nl-seg"><button type="button" class="${NL.preview === 'phone' ? 'on' : ''}" onclick="nlPreview('phone')">Phone</button><button type="button" class="${NL.preview === 'desk' ? 'on' : ''}" onclick="nlPreview('desk')">Computer</button></div></div></div>
+  </div></div>`;
+}
+function nlSend() {
+  const n = Number((NL.data || {}).gets || 0);
+  return `<div class="nl-grid"><div>
+    <div class="nl-cap">Send</div>
+    <div class="nl-group">
+      <div class="nl-row"><div class="k">Send a test to me<small>Comes first, only to you. Opens once the sender is connected.</small></div><button type="button" class="btn nl-btn" disabled>Send test</button></div>
+      <div class="nl-row"><div class="k">Send to ${n} people<small>Opens after your test copy has arrived</small></div><button type="button" class="btn nl-btn" disabled>&#128274; Locked</button></div></div>
+  </div><div>
+    <div class="nl-cap">Sent so far</div>
+    <div class="nl-group"><div class="nl-row mute" style="font-size:12px"><span class="k">Newsletter</span><span style="width:64px;text-align:right">Opened</span><span style="width:64px;text-align:right">Clicked</span><span style="width:64px;text-align:right">Unsub.</span></div>
+      <div class="nl-row mute"><span class="k">Nothing sent yet</span></div></div>
+  </div></div>`;
+}
+
 // ======================================================================= TWO HALVES: ACADEMY AND TRAINING CENTRE
 // 19.10.2026, the owner's pick A (_training-centre/mockups/option-a.html): after sign-in a START PAGE with two identical
 // tiles, Academy and Training Centre, each with three figures that open their place; a tile opens that half with its own
@@ -11646,6 +11870,7 @@ function cSetArea(area) {
 // Called first by route(): the start page, People and access, the Training Centre half, and the door between them.
 // Answers true when it drew the page; false lets the Academy router carry on.
 async function cAreaRoute(hash) {
+  if (typeof nlInstallNav === 'function') { nlStyle(); nlInstallNav(); }   // the Newsletters item, for its owner only (27.11.2026)
   const mine = cAreas();
   if (!mine.length) { cSetArea('none'); cDrawNoArea(); return true; }
   if (hash === '#/start' || (!location.hash && mine.length > 1)) {
@@ -11658,6 +11883,10 @@ async function cAreaRoute(hash) {
   if (hash === '#/access') {
     cSetArea(['academy', 'tc'].includes(C_AREA) ? C_AREA : mine.includes('academy') ? 'academy' : 'tc');
     await viewAccess(); return true;
+  }
+  if (hash === '#/newsletters') {   // Newsletters, open only to its owner (27.11.2026); the half stays as it was, Energy too
+    cSetArea(['academy', 'tc', 'en'].includes(C_AREA) ? C_AREA : mine.includes('academy') ? 'academy' : 'tc');
+    nlInstallNav(); await viewNewsletters(); return true;
   }
   if (hash === '#/clips') {   // the tutorial clips, admins (24.11.2026)
     cSetArea(['academy', 'tc'].includes(C_AREA) ? C_AREA : mine.includes('academy') ? 'academy' : 'tc');

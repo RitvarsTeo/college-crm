@@ -1127,6 +1127,8 @@
     "Ritvars"
   ],
   "_feedbackReaders": "Decided 24.09.2026. Feedback sent from inside the app is read by Aigars and Ritvars ONLY. Marina is an admin and still must not see it, which is why this is a separate list and not derived from admins. Feedback is stored in this machine s own database and is never emailed or sent to any outside service. Enforcement is a real check on every feedback route, but with no login it can only check the name that is selected, not prove who selected it.",
+  "newsletterUsers": ["Ritvars"],
+  "_newsletterUsers": "Decided 26.11.2026 (the owner's spec: its own tab at the top of the side menu, open only to him). Checked on the server on every Newsletters route, by the signed session's name. Its own list, not derived from admins.",
   "channelAliases": {
     "website_form": "Website",
     "gmail": "Email",
