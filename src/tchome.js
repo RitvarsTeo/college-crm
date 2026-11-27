@@ -42,6 +42,16 @@ async function yearsOf(db, counted, now) {
   return { years: ys, opens, countsTo, thisYear };
 }
 
+// ENERGY OPENS ON A YEAR WITH FIGURES (27.11.2026, his rule "no figure that makes us look bad"): one division's Home and
+// Client book open on the latest year that division has courses in (never a 0 the course counts have not reached yet);
+// the year picker still offers every year Training Centre has, so 2026 can be picked.
+async function divYears(db, all, area, now) {
+  const Y0 = await yearsOf(db, all, now);
+  const mine = all.filter((c) => (c.areas || []).includes(area));
+  const has = Y0.years.filter((y) => mine.some((c) => got(c, y) > 0));
+  return { ...Y0, opens: has.includes(Y0.opens) ? Y0.opens : has[0] || Y0.opens };
+}
+
 const rankRow = (Y, span) => (c) => ({ id: c.id, name: c.name, country: c.country, areas: c.areas, n: got(c, Y),
   spark: span.map((y) => got(c, y)), pic: c.pic, picKey: c.picKey,
   next: c.next ? { due: c.next.due, label: c.next.label } : null });
@@ -77,7 +87,7 @@ export async function homeYear(db, { year = null, me = null, now = new Date(), b
   const all = await companyFacts(db);
   const counted = all.filter((c) => !c.groupTotal && (!area || (c.areas || []).includes(area)));
   const inArea = area ? new Set(counted.map((c) => Number(c.id))) : null;
-  const Y0 = await yearsOf(db, counted, now);
+  const Y0 = area ? await divYears(db, all.filter((c) => !c.groupTotal), area, now) : await yearsOf(db, counted, now);
   const Y = yearOf(year) || Y0.opens;
   const span = []; for (let y = Math.min(FIRST_YEAR, Y); y <= Y; y++) span.push(y);
 
@@ -146,10 +156,13 @@ function geoOf(counted, clients, Y) {
  * The Client book for one year: the clients ranked by that year's delegates (area: TC | ENERGY | OPITO | PROJECTS;
  * mine: the signed-in person's), and Welcome back - delegates in Y-3 and Y-2 together, none in Y, the most first.
  */
-export async function book(db, { year = null, area = '', mine = false, me = null, now = new Date() } = {}) {
+// `div` (Energy, 27.11.2026): one division's companies in EVERY figure (cards, ranking, Welcome back); `area` stays the
+// ranking's own button (All / TC / ENERGY / ...) on Training Centre
+export async function book(db, { year = null, area = '', mine = false, me = null, now = new Date(), div = '' } = {}) {
   const all = await companyFacts(db);
-  const counted = all.filter((c) => !c.groupTotal);
-  const Y0 = await yearsOf(db, counted, now);
+  const whole = all.filter((c) => !c.groupTotal);
+  const counted = div ? whole.filter((c) => (c.areas || []).includes(div)) : whole;
+  const Y0 = div ? await divYears(db, whole, div, now) : await yearsOf(db, counted, now);
   const Y = yearOf(year) || Y0.opens;
   const span = []; for (let y = Math.min(FIRST_YEAR, Y); y <= Y; y++) span.push(y);
   const mk = meKeys(me);
@@ -165,7 +178,7 @@ export async function book(db, { year = null, area = '', mine = false, me = null
     year: Y, years: Y0.years, countsTo: Y0.countsTo, span, area: area || '', mine: Boolean(mine),
     mineCount: mk ? counted.filter((c) => got(c, Y) > 0 && isMine(c, mk)).length : 0,
     cards: {
-      delegates: { n: yearClients.reduce((s, c) => s + got(c, Y), 0), byYear: await reviewYears(db, span.map((y) => ({ year: y, n: counted.reduce((s, c) => s + got(c, y), 0) }))) },
+      delegates: { n: yearClients.reduce((s, c) => s + got(c, Y), 0), byYear: await (div ? async (r) => r : (r) => reviewYears(db, r))(span.map((y) => ({ year: y, n: counted.reduce((s, c) => s + got(c, y), 0) }))) },
       clients: { n: yearClients.length, ever: ever.length },
       countries: new Set(counted.map((c) => c.country).filter(Boolean)).size,
     },

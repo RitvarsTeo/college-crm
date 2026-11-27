@@ -38,11 +38,13 @@ Pictures: `_pictures/EN_C1_live_start_energy_next_to_tc.jpg` (live Start with a 
 | HIS PICK A 27.11.2026: a third tile on Start, "Energy", next to Training Centre; it opens its own area | DECIDED |
 | The Energy area uses the same screens as Training Centre (Home, Inbox, Plan, Clients), reused with a division filter, never a copy; it shows Energy companies only | DECIDED |
 | Energy content owner: Aleksejs Malinovskis | SAID |
-| Built: Start shows Energy beside Training Centre (accounts that open Training Centre); #/en = TC Home, Companies and Client book counted over ENERGY companies only (map, chips, letters, download); TC itself unchanged. Local copy: Energy 319 companies, 2,107 trained 2025; TC 1,921 and 3,711. Pictures `_pictures/EN_D1..D3` | BUILT |
+| Built: Start shows Energy beside Training Centre (accounts that open Training Centre); #/en = TC Home, Companies and Client book counted over ENERGY companies only (map, chips, letters, download); TC itself unchanged. Local copy: Energy 319 companies, 2,107 trained 2025; TC 1,921 and 3,711. Pictures `_pictures/EN_D1..D3` | LIVE (gate 194, release c578a7f, 27.11.2026: Start 3 tiles; Energy 310 companies = the ENERGY chip; Training Centre 1,903 unchanged) |
 | HIS PICK 27.11.2026 (pictures EN_D1-D3): "OK" | DECIDED |
 | HIS PICK 27.11.2026 "The calendar unified for TC and Energy": Plan stays ONE shared calendar for Training Centre and Energy, never split | DECIDED |
 | Inbox inside Energy: stays as it is today (the Training Centre's Inbox) | SAID |
 | HIS PICK 27.11.2026 "Same people as TC": Energy opens for the accounts that open Training Centre (area tc); no own Energy area | DECIDED |
+| Energy opens on its latest year with courses (2025), never "Trained 0" for a year the counts have not reached (his rule "no figure that makes us look bad"); the year picker still offers 2026; moving between Training Centre and Energy forgets the other's year | BUILT (patch 196) |
+| Energy Client book: the cards (Trained, client companies, countries) and Welcome back count Energy companies only, like its ranking | BUILT (patch 196) |
 
 ## 24.11.2026 - The tutorial: tour + questions up to date, and short videos (PICKED 24.11: "B) A + short videos")
 

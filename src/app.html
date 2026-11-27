@@ -11851,6 +11851,8 @@ const tcIsArea = (a) => a === 'tc' || a === 'en';
 function cSetArea(area) {
   if (C_AREA === area) return;
   C_AREA = area;
+  // a new division opens on its own year (Energy: its latest year with courses), never the year picked in the other one
+  if ((area === 'en' ? 'ENERGY' : '') !== (typeof T_DIV === 'undefined' ? '' : T_DIV)) { T_YEAR = null; T_BOOK = { ...T_BOOK, area: '', mine: false, shown: 10 }; }
   T_DIV = area === 'en' ? 'ENERGY' : '';
   const tcSide = area === 'tc' || area === 'en';
   // Energy wears the Training Centre's shell (its side menu and phone tabs), so the page's area stays tc; data-div names Energy
@@ -12391,7 +12393,7 @@ function tctMotion(root) {
 async function viewTcBook() {
   const qs = new URLSearchParams();
   if (T_YEAR) qs.set('year', String(T_YEAR));
-  if (T_DIV || T_BOOK.area) qs.set('area', T_DIV || T_BOOK.area);   // Energy: its own clients only
+  if (T_DIV) qs.set('div', T_DIV); else if (T_BOOK.area) qs.set('area', T_BOOK.area);   // Energy: every figure its own companies only
   if (T_BOOK.mine) qs.set('mine', '1');
   const B = await api('/api/tc/book?' + qs.toString());
   T_YEAR = B.year;

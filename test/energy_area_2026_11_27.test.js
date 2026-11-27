@@ -41,6 +41,34 @@ test('Energy Home counts Energy companies only; Training Centre Home is unchange
   assert.equal(en.countries.all, 3);
 });
 
+test('Energy opens on its latest year with courses, never a 0 the counts have not reached; 2026 can still be picked', async () => {
+  const db = await world();
+  // Training Centre has courses in 2026, Energy none yet
+  const { id } = await tc.addCompany(db, { name: 'Example Tankers AS', country: 'Norway', areas: ['TC'] }, 'T');
+  await tc.setCourseYear(db, id, { year: 2026, attendees: 9 }, 'T');
+  const tcHome = await th.homeYear(db, {});
+  const en = await th.homeYear(db, { area: 'ENERGY' });
+  assert.equal(tcHome.year, 2026, 'Training Centre opens as before');
+  assert.equal(en.year, 2025);
+  assert.ok(en.delegates.n > 0, 'no Trained 0 on opening');
+  assert.ok(en.years.includes(2026), 'the picker still offers 2026');
+  assert.equal((await th.homeYear(db, { area: 'ENERGY', year: 2026 })).year, 2026);
+  const book = await th.book(db, { div: 'ENERGY' });
+  assert.equal(book.year, 2025);
+  // every Client book figure is Energy only: 30 + 5 in 2025, not the TC-only company's 100
+  assert.equal(book.cards.delegates.n, 35);
+  assert.equal(book.cards.clients.ever, 2);
+  assert.equal(book.cards.countries, 3);
+  assert.equal((await th.book(db, { year: 2025 })).cards.delegates.n, 135, 'Training Centre\'s book unchanged');
+});
+
+test('switching division forgets the other division\'s year', () => {
+  const at = APP.indexOf('function cSetArea(');
+  const body = APP.slice(at, APP.indexOf('\n}\n', at));
+  assert.match(body, /T_YEAR = null/);
+  assert.match(APP, /if \(T_DIV\) qs\.set\('div', T_DIV\)/);
+});
+
 test('Energy Companies: the list and every count beside it are Energy only', async () => {
   const db = await world();
   const all = await tc.listCompanies(db, {});

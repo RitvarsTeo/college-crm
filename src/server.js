@@ -3580,7 +3580,8 @@ export const handle = async (req, res) => {
     if (p === '/api/tc/book' && req.method === 'GET') {
       const area = String(url.searchParams.get('area') || '');
       return json(res, 200, await tchome.book(db, { year: url.searchParams.get('year'), area: tc.AREA_IDS.includes(area) ? area : '',
-        mine: url.searchParams.get('mine') === '1', me: await tcMe(req, url) }));
+        mine: url.searchParams.get('mine') === '1', me: await tcMe(req, url),
+        div: tc.AREA_IDS.includes(String(url.searchParams.get('div') || '')) ? String(url.searchParams.get('div')) : '' }));
     }
     if (p === '/api/tc/companies' && req.method === 'GET') {
       const filters = tc.readFilters(url.searchParams);
