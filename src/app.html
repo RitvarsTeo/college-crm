@@ -2856,8 +2856,6 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tcml-stack .tcml-fig[aria-pressed="true"]{padding-top:7px;padding-bottom:7px}
   html.ui-c .tcml-showing{display:flex;flex-wrap:wrap;gap:6px;align-items:baseline;margin:0 0 10px;font-size:15px;color:var(--ink)} html.ui-c .tcml-showing b{font-weight:700}
   html.ui-c .tcml-showall{background:none;border:0;padding:0;font:inherit;font-weight:600;color:var(--accent-ink);text-decoration:underline;cursor:pointer}
-  /* the coloured left edge of each company: amber = still to decide, teal = invited, grey = No */
-  html.ui-c .tcml-t:not(.inv):not(.no){border-left:5px solid #d98a1e} html.ui-c .tcml-t.inv{border-left:5px solid var(--ok)} html.ui-c .tcml-t.no{border-left:5px solid #9aa3af}
   html.ui-c .tcml-lists{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px}
   html.ui-c .tcml-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;align-items:start}
   html.ui-c .tcml-t{background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
@@ -2895,6 +2893,8 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tcml-t.done{gap:4px;padding:12px 16px;text-align:left;animation:tcmlSettle .35s ease-out}
   html.ui-c .tcml-t.done.inv{background:var(--btn-bg);border-color:var(--btn-bg);color:#fff} html.ui-c .tcml-t.done.inv > b{color:#fff}
   html.ui-c .tcml-t.done.no{background:var(--surface-2);border-color:#c3c8cf;color:var(--t2)} html.ui-c .tcml-t.done.no > b{color:var(--t2)}
+  /* HIS PICK 27.11.2026: the coloured left edge of each company, after the card borders so it wins: amber = still to decide, teal = invited, grey = No */
+  html.ui-c .tcml-tiles .tcml-t:not(.inv):not(.no){border-left:5px solid #d98a1e} html.ui-c .tcml-tiles .tcml-t.inv{border-left:5px solid #1f9a8a} html.ui-c .tcml-tiles .tcml-t.no{border-left:5px solid #9aa3af}
   html.ui-c .tcml-res{font-weight:700;font-size:14px;display:flex;align-items:center;gap:6px} html.ui-c .tcml-ck{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:#fff;color:var(--btn-bg);font-size:13px;font-weight:800}
   html.ui-c .tcml-chg{align-self:flex-start;background:none;border:0;padding:2px 0;font:inherit;font-weight:700;font-size:13px;color:inherit;text-decoration:underline;cursor:pointer}
   html.ui-c .tcml-donebtn{align-self:stretch;justify-content:center;margin-top:4px} html.ui-c .tcml-donebtn.btn:disabled{background:var(--surface-2);color:var(--t3);border:1px solid var(--rule);box-shadow:none;opacity:1;cursor:not-allowed}

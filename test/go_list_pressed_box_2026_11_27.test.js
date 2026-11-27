@@ -33,7 +33,8 @@ test('a Showing line names the pressed box, counts the companies, and Show all g
 });
 
 test('each company card has a coloured left edge: amber still to decide, teal invited, grey No', () => {
-  assert.match(APP, /html\.ui-c \.tcml-t:not\(\.inv\):not\(\.no\)\{border-left:5px solid #d98a1e\}/);
-  assert.match(APP, /html\.ui-c \.tcml-t\.inv\{border-left:5px solid var\(--ok\)\}/);
-  assert.match(APP, /html\.ui-c \.tcml-t\.no\{border-left:5px solid #9aa3af\}/);
+  assert.match(APP, /html\.ui-c \.tcml-tiles \.tcml-t:not\(\.inv\):not\(\.no\)\{border-left:5px solid #d98a1e\}/);
+  assert.match(APP, /html\.ui-c \.tcml-tiles \.tcml-t\.inv\{border-left:5px solid #1f9a8a\}/);
+  assert.match(APP, /html\.ui-c \.tcml-tiles \.tcml-t\.no\{border-left:5px solid #9aa3af\}/);
+  assert.ok(APP.indexOf('.tcml-tiles .tcml-t.inv{border-left') > APP.indexOf('html.ui-c .tcml-t.done.inv{background'), 'after the card borders, so the edge is not painted over');
 });
