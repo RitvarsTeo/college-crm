@@ -744,13 +744,18 @@ const samePhone = (a, b) => Boolean(a && b) && (a === b || (a.length >= 8 && b.e
 export async function recordWhatsAppEcho(db, { to, at }) {
   const d = digitsOf(to);
   if (!d || !at) return { matched: false };
+  // patch 197 (database traffic, as patch 187 did for the matcher): the database returns only rows whose number CONTAINS
+  // the last 8 digits of this one in order (a superset of what samePhone accepts: two numbers that match share their last
+  // 8 digits, or are equal), and samePhone decides over those few. Before, every WhatsApp row and every person's phone
+  // were read for each reply sent from the phone.
+  const like = `%${[...d.slice(-8)].join('%')}%`;
   const rows = await db.prepare(`SELECT id, person_id, contact_phone FROM inbound WHERE channel = 'whatsapp' AND received_at <= ?
-    ORDER BY received_at DESC`).all(at);
+    AND contact_phone LIKE ? ORDER BY received_at DESC`).all(at, like);
   const row = rows.find((r) => samePhone(digitsOf(r.contact_phone), d)) || null;
   if (row) await db.prepare('UPDATE inbound SET first_reply_at = ?, reply_checked_at = ? WHERE id = ? AND first_reply_at IS NULL').run(at, at, row.id);
   let personId = row && row.person_id;
   if (!personId) {
-    const ppl = await db.prepare('SELECT id, phone FROM people WHERE phone IS NOT NULL').all();
+    const ppl = await db.prepare('SELECT id, phone FROM people WHERE phone IS NOT NULL AND phone LIKE ?').all(like);
     personId = (ppl.find((p) => samePhone(digitsOf(p.phone), d)) || {}).id || null;
   }
   if (personId) {

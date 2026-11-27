@@ -132,6 +132,38 @@ test('history and contact sync notifications are not imported', async (t) => {
   assert.equal((await inbox(s)).length, 0, 'history import is OFF');
 });
 
+// patch 197 (27.11.2026): account_update, and any field Meta adds later, is answered 200 and ignored (it was a 400 that
+// makes Meta retry and flag the subscription); an empty 'messages' change is still refused
+test('account_update and any other notification field answer 200 and import nothing; an empty messages change is still refused', async (t) => {
+  const s = await start();
+  t.after(() => s.child.kill());
+  assert.equal((await signed(s, wa('account_update', { event: 'PARTNER_ADDED', waba_info: { waba_id: 'waba-1' } }))).status, 200);
+  assert.equal((await signed(s, wa('some_future_field', { anything: true }))).status, 200);
+  assert.equal((await inbox(s)).length, 0);
+  assert.equal((await signed(s, wa('messages', {}))).status, 400, 'a messages change with no message is a bad payload');
+});
+
+// patch 197: the reply from the phone finds its row and its person by the number's last 8 digits, never by reading every
+// WhatsApp row and every person's phone
+test('a reply from the phone: matched by its last 8 digits in the query, formats still match, nothing else read', async () => {
+  const { openDb } = await import('../src/db.js');
+  const { receive, recordWhatsAppEcho } = await import('../src/intake.js');
+  const db = await openDb();
+  await receive(db, { channel: 'whatsapp', externalId: 'w1', receivedAt: '2026-11-27T08:00:00.000Z', name: 'Anna B', phone: '+371 2911 1222', body: 'Hi', noFilter: true });
+  await receive(db, { channel: 'whatsapp', externalId: 'w2', receivedAt: '2026-11-27T08:01:00.000Z', name: 'Other', phone: '+371 2999 9999', body: 'Hi', noFilter: true });
+  const seen = [];
+  const real = db.prepare.bind(db);
+  db.prepare = (sql) => { const st = real(sql); const all = st.all.bind(st);
+    st.all = async (...a) => { seen.push({ sql: sql.replace(/\s+/g, ' '), args: a }); return all(...a); }; return st; };
+  const r = await recordWhatsAppEcho(db, { to: '37129111222', at: '2026-11-27T08:10:00.000Z' });
+  assert.equal(r.matched, true);
+  assert.ok(seen.every((q) => /LIKE \?/.test(q.sql)), 'every read is narrowed by the number');
+  assert.ok(seen.some((q) => q.args.includes('%2%9%1%1%1%2%2%2%')));
+  const row = await real(`SELECT first_reply_at FROM inbound WHERE external_id = 'w1'`).get();
+  assert.equal(row.first_reply_at, '2026-11-27T08:10:00.000Z', 'the spaced +371 number is the same number');
+  assert.equal((await real(`SELECT first_reply_at FROM inbound WHERE external_id = 'w2'`).get()).first_reply_at, null);
+});
+
 // ----------------------------------------------------------- 4: Connect WhatsApp --
 test('Connect WhatsApp: says what is missing; with it set, the browser gets the app and configuration ids only', async (t) => {
   const s = await start({ META_APP_ID: '', WHATSAPP_ES_CONFIG_ID: '' });

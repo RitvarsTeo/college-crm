@@ -406,9 +406,13 @@ function whatsappAll(raw) {
   return out;
 }
 
+// patch 197 (27.11.2026): ANY change field other than 'messages' is a notification Intake does not import (account_update,
+// and whatever field Meta adds next): answered 200 and ignored, never a 400 that makes Meta retry and flag the subscription.
+// A 'messages' change with nothing in it is still a bad payload.
 const WA_OTHER = new Set(['smb_message_echoes', 'history', 'smb_app_state_sync']);
 function whatsappOther(raw) {
   return (raw.entry || []).some((e) => (e.changes || []).some((c) => WA_OTHER.has(c.field)
+    || (c.field && c.field !== 'messages')
     || (c.value && (c.value.message_echoes || c.value.statuses))));
 }
 
