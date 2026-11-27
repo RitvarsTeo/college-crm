@@ -25,8 +25,10 @@ Pictures: `_pictures/EN_C1_live_start_energy_next_to_tc.jpg` (live Start with a 
 | The Energy area uses the same screens as Training Centre (Home, Inbox, Plan, Clients), reused with a division filter, never a copy; it shows Energy companies only | DECIDED |
 | Energy content owner: Aleksejs Malinovskis | SAID |
 | Built: Start shows Energy beside Training Centre (accounts that open Training Centre); #/en = TC Home, Companies and Client book counted over ENERGY companies only (map, chips, letters, download); TC itself unchanged. Local copy: Energy 319 companies, 2,107 trained 2025; TC 1,921 and 3,711. Pictures `_pictures/EN_D1..D3` | BUILT |
-| Inbox and Plan inside Energy show the Training Centre's (not split by division yet) | SAID |
-| Who opens Energy: today the same accounts as Training Centre (area tc); an own Energy access is a separate choice | SAID |
+| HIS PICK 27.11.2026 (pictures EN_D1-D3): "OK" | DECIDED |
+| HIS PICK 27.11.2026 "The calendar unified for TC and Energy": Plan stays ONE shared calendar for Training Centre and Energy, never split | DECIDED |
+| Inbox inside Energy: stays as it is today (the Training Centre's Inbox) | SAID |
+| HIS PICK 27.11.2026 "Same people as TC": Energy opens for the accounts that open Training Centre (area tc); no own Energy area | DECIDED |
 
 ## 24.11.2026 - The tutorial: tour + questions up to date, and short videos (PICKED 24.11: "B) A + short videos")
 
