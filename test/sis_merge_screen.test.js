@@ -41,9 +41,11 @@ test('merge screen: at most 20 rows, so a long People list stays a list', () => 
   assert.equal(candidates()(many, 'p0', '').length, 20);
 });
 
-test('merge screen: the button is on the person page only for a person the SIS created, and calls merge-into', () => {
+// patch 192 (his pick 27.11.2026): "Same person as..." is on every person page, not only one the SIS created
+test('merge screen: the button is on every person page and calls merge-into', () => {
   const page = fn('async function viewPersonC(');
-  assert.match(page, /p\.first_channel === 'sis' \? `[^`]*openSisMerge\(/, 'gated on first_channel sis');
+  assert.match(page, /<div class="act"><button class="btn ghost" onclick="openSisMerge\(/);
+  assert.doesNotMatch(page, /p\.first_channel === 'sis' \? `[^`]*openSisMerge\(/, 'no longer gated on the SIS');
   const open = fn('async function doSisMerge(');
   assert.match(open, /\/merge-into/);
   assert.match(open, /targetId/);

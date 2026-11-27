@@ -7018,7 +7018,7 @@ async function viewPersonC(id) {
         <div class="c-still"><b>Still open</b><div class="c-next-row"><span>${esc(cTask(t.label))}</span><span class="c-when ${cWhenClass(t.due_at)}">${cWhenText(t.due_at)}</span></div>
         <div class="c-row-acts"><button class="btn sm" onclick="openComplete(${Number(t.id)}, ${esc(JSON.stringify(t.label))}, true, ${esc(JSON.stringify(String(p.id ?? '')))})">Done</button><button class="btn sm ghost" onclick="openReschedule(${Number(t.id)})">Move the date</button></div></div>` : ''}</div>`;
   $('#view').innerHTML = `<p class="c-crumb"><a href="#/people">People</a></p>
-    <div class="c-head"><div><h1 class="c-pname">${esc(p.name)}</h1><p>${esc(cStage(p.status))} · ${esc(p.programme || 'programme not said')}${p.study_form ? ' · ' + esc(p.study_form) : ''} · ${contact || '<span class="c-gap">no email or phone recorded</span>'}</p></div>${p.first_channel === 'sis' ? `<div class="act"><button class="btn ghost" onclick="openSisMerge(${esc(JSON.stringify(String(p.id ?? '')))})">Same person as...</button></div>` : ''}</div>
+    <div class="c-head"><div><h1 class="c-pname">${esc(p.name)}</h1><p>${esc(cStage(p.status))} · ${esc(p.programme || 'programme not said')}${p.study_form ? ' · ' + esc(p.study_form) : ''} · ${contact || '<span class="c-gap">no email or phone recorded</span>'}</p></div><div class="act"><button class="btn ghost" onclick="openSisMerge(${esc(JSON.stringify(String(p.id ?? '')))})">Same person as...</button></div></div>
     <div class="c-pgrid">
       <div class="c-pmain">
         ${cLifeLine(p)}${next}

@@ -61,10 +61,27 @@ test('merge: the SIS twin folds into the real person, and the next run links to 
   assert.equal((await db.prepare('SELECT COUNT(*) n FROM people').get()).n, 1);
 });
 
-test('merge: only a person the SIS created, into somebody else who exists', async () => {
+// patch 192 (his pick 27.11.2026): any person can be merged, not only one the SIS created. The case: a website form made
+// into a lead as "noreply@tilda.ws" while the enquirer was already a lead under their own name.
+test('merge: any person into somebody else who exists; the kept person\'s own details stay', async () => {
+  const db = await openDb(':memory:');
+  const AT = '2026-11-27T07:48:08.000Z';
+  await db.prepare(`INSERT INTO people (id, name, email, phone, status, owner, source_channel, first_channel, created_at) VALUES
+    ('p-tilda', 'noreply@tilda.ws', 'noreply@tilda.ws', NULL, 'Contacted', 'Admissions', 'gmail', 'gmail', '2026-11-26T10:33:47.000Z'),
+    ('p-ann', 'Anna Example', 'anna@mail.example', '+371 20001122', 'Follow-up', 'Admissions', 'email', 'gmail', ?)`).run(AT);
+  await db.prepare(`INSERT INTO tasks (person_id, label, due_at, owner, created_at) VALUES ('p-tilda', 'Answer the question', ?, 'Admissions', ?)`).run(AT, AT);
+  const r = await mergeSisDuplicate(db, 'p-tilda', 'p-ann', { by: 'Ritvars' });
+  assert.equal(r.ok, true, JSON.stringify(r));
+  const ann = await db.prepare("SELECT * FROM people WHERE id = 'p-ann'").get();
+  assert.deepEqual([ann.name, ann.email, ann.phone, ann.status], ['Anna Example', 'anna@mail.example', '+371 20001122', 'Follow-up']);
+  assert.equal((await db.prepare("SELECT COUNT(*) n FROM people WHERE id = 'p-tilda'").get()).n, 0, 'the duplicate is gone');
+  assert.equal((await db.prepare("SELECT person_id FROM tasks").get()).person_id, 'p-ann', 'its rows moved');
+  assert.ok((await db.prepare("SELECT subject FROM events WHERE person_id = 'p-ann'").all()).some((e) => e.subject === 'Merged: noreply@tilda.ws is this person'));
+});
+
+test('merge: refused into itself, into nobody, or without a name', async () => {
   const db = await openDb(':memory:');
   const extra = await twin(db);
-  assert.equal((await mergeSisDuplicate(db, 'p-real', extra, { by: 'Ieva' })).ok, false, 'a real lead is never merged away');
   assert.equal((await mergeSisDuplicate(db, extra, extra, { by: 'Ieva' })).ok, false);
   assert.equal((await mergeSisDuplicate(db, extra, 'p-none', { by: 'Ieva' })).ok, false);
   assert.equal((await mergeSisDuplicate(db, extra, 'p-real', {})).ok, false, 'who did it is required');
@@ -83,7 +100,7 @@ function start(env) {
   });
 }
 
-test('merge over the wire: the route merges, and refuses a person the SIS did not create', async (t) => {
+test('merge over the wire: the route merges, and refuses a merge into a person who does not exist', async (t) => {
   const SECRET = 'test-application-secret-not-real-0000';
   const s = await start({ CHANNEL_MODE_SIS: 'test', SIS_APPLICATION_SECRET: SECRET });
   t.after(() => s.child.kill());
@@ -100,8 +117,8 @@ test('merge over the wire: the route merges, and refuses a person the SIS did no
   const list = Array.isArray(all) ? all : all.people || all.rows;
   const extra = list.find((x) => x.id !== realId).id;
 
-  const no = await post(`/api/people/${realId}/merge-into`, { targetId: extra });
-  assert.equal(no.status, 400);
+  const no = await post(`/api/people/${realId}/merge-into`, { targetId: 'p-nobody' });
+  assert.equal(no.status, 404);
   const yes = await post(`/api/people/${extra}/merge-into`, { targetId: realId });
   assert.equal(yes.status, 200, JSON.stringify(yes.json));
   const after = await fetch(s.base + '/api/people', { headers: { 'x-acting-as': 'Ieva' } }).then((r) => r.json());

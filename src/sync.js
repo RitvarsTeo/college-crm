@@ -669,7 +669,9 @@ export async function mergeSisDuplicate(db, sourceId, targetId, { by, now = new 
   const source = await db.prepare('SELECT * FROM people WHERE id = ?').get(sourceId);
   const target = await db.prepare('SELECT * FROM people WHERE id = ?').get(targetId);
   if (!source || !target) return { ok: false, error: 'not found' };
-  if (source.first_channel !== 'sis') return { ok: false, error: 'only a person the SIS created can be merged' };
+  // patch 192 (his pick 27.11.2026 "Yes, patch 192"): any person, not only one the SIS created. The case: a website form
+  // made into a lead as "noreply@tilda.ws" while the same enquirer was already a lead under their own name. The kept
+  // person's own name, email, phone and programme stay; only their EMPTY ones are filled from the duplicate.
   const at = now.toISOString();
   return db.transaction(async (tx) => {
     for (const t of PERSON_TABLES) await tx.prepare(`UPDATE ${t} SET person_id = ? WHERE person_id = ?`).run(targetId, sourceId);
@@ -683,7 +685,7 @@ export async function mergeSisDuplicate(db, sourceId, targetId, { by, now = new 
       programme = COALESCE(programme, ?) WHERE id = ?`).run(source.email, source.phone, source.programme, targetId);
     await tx.prepare('DELETE FROM people WHERE id = ?').run(sourceId);
     await logEvent(tx, { personId: targetId, kind: 'note', direction: 'note', at, origin: MANUAL, actor: by,
-      subject: `Merged: ${source.name} (created by the SIS) is this person`,
+      subject: `Merged: ${source.name}${source.first_channel === 'sis' ? ' (created by the SIS)' : ''} is this person`,
       body: [source.email, source.phone].filter(Boolean).join(', ') });
     const stats = { linked: 0, moved: 0, facts: 0 };
     const refs = await tx.prepare('SELECT DISTINCT reference FROM sis_applicants WHERE person_id = ?').all(targetId);
