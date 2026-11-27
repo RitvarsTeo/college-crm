@@ -121,3 +121,39 @@ test('the waiting notification card is read again: preview changes nothing; appl
   assert.equal(Number(old.id), Number(was.id), 'the old card is kept, never deleted');
   assert.equal((await rereadTildaCards(db, { apply: true, by: 'Ritvars', env: ENV, fetchImpl: fakeGmail(box), now: NOW })).waiting, 0, 'once');
 });
+
+// patch 191 (his pick 27.11.2026 "Intake pulls it"): a Tilda card made into a lead before 190 left a person called
+// "noreply@tilda.ws". Intake reads the email again and puts the form's name, email and phone on that person.
+test('a Tilda card already made a lead: the person gets the form\'s name, email and phone, logged; never over somebody else', async () => {
+  const db = await openDb();
+  const AT = '2026-11-27T07:50:53.000Z';
+  const person = async (id, name, email, phone) => db.prepare(`INSERT INTO people (id, name, email, phone, status, owner, source_channel, created_at)
+    VALUES (?,?,?,?,?,?,?,?)`).run(id, name, email, phone, 'Contacted', 'Ieva', 'gmail', AT);
+  await person('pT', 'noreply@tilda.ws', 'noreply@tilda.ws', null);
+  await receive(db, { channel: 'gmail', externalId: 'm7', receivedAt: '2026-11-26T10:33:47.000Z', name: 'noreply@tilda.ws',
+    email: 'noreply@tilda.ws', body: 'Request from [novikontas.org]', noFilter: true });
+  await db.prepare(`UPDATE inbound SET state = 'qualified', person_id = 'pT' WHERE external_id = 'm7'`).run();
+  const box = { messages: { m7: message('m7', 'Tilda <noreply@tilda.ws>', 'Request from [novikontas.org]', { html: HTML }) } };
+  const pre = await rereadTildaCards(db, { env: ENV, fetchImpl: fakeGmail(box), now: NOW });
+  assert.deepEqual(pre.leads.map((l) => l.person), ['pT']);
+  assert.equal((await db.prepare('SELECT name FROM people WHERE id = ?').get('pT')).name, 'noreply@tilda.ws', 'the preview changes nothing');
+  const r = await rereadTildaCards(db, { apply: true, by: 'Ritvars', env: ENV, fetchImpl: fakeGmail(box), now: NOW });
+  assert.equal(r.leads[0].outcome, 'person fixed');
+  assert.deepEqual(r.leads[0].changed.sort(), ['email', 'name', 'phone']);
+  const p = await db.prepare('SELECT name, email, phone, status FROM people WHERE id = ?').get('pT');
+  assert.deepEqual({ ...p }, { name: 'Anna Example', email: 'anna.example@mail.example', phone: '+371 2000 1122', status: 'Contacted' });
+  const ev = await db.prepare(`SELECT subject, actor FROM events WHERE person_id = 'pT' ORDER BY id`).all();
+  assert.ok(ev.some((e) => e.subject === 'Name changed' && e.actor === 'Intake'));
+  assert.ok(ev.some((e) => e.subject === 'Website form read again (patch 191)'));
+  assert.equal((await rereadTildaCards(db, { env: ENV, fetchImpl: fakeGmail(box), now: NOW })).leads.length, 0, 'once');
+  // the form's email already belongs to somebody else: nothing changes
+  const db2 = await openDb();
+  await db2.prepare(`INSERT INTO people (id, name, email, phone, status, owner, source_channel, created_at)
+    VALUES ('pT','noreply@tilda.ws','noreply@tilda.ws',NULL,'Contacted','Ieva','gmail',?), ('pA','Anna Example','anna.example@mail.example',NULL,'New','Ieva','website',?)`).run(AT, AT);
+  await receive(db2, { channel: 'gmail', externalId: 'm7', receivedAt: '2026-11-26T10:33:47.000Z', name: 'x', email: 'noreply@tilda.ws', body: 'x', noFilter: true });
+  await db2.prepare(`UPDATE inbound SET state = 'qualified', person_id = 'pT' WHERE external_id = 'm7'`).run();
+  const r2 = await rereadTildaCards(db2, { apply: true, by: 'Ritvars', env: ENV, fetchImpl: fakeGmail(box), now: NOW });
+  assert.equal(r2.leads[0].outcome, 'stays');
+  assert.match(r2.leads[0].why, /already person pA/);
+  assert.equal((await db2.prepare('SELECT name FROM people WHERE id = ?').get('pT')).name, 'noreply@tilda.ws');
+});

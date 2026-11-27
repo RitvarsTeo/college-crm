@@ -20,7 +20,7 @@ import { processTcMail } from './tcmailauto.js';
 import { onePersonFor, normEmail, normPhone, isOwnAddress } from './identity.js';
 import { knock } from './webpush.js';
 import { phoneThread } from './phonefilter.js';
-import { logEvent, AUTOMATIC, MANUAL } from './history.js';
+import { logEvent, applyEdit, AUTOMATIC, MANUAL } from './history.js';
 import { fetchCalls, rowsFrom, WINDOW_MINUTES, toRigaStamp, ZONE } from '../lib/pbx.js';
 import { fetchChanged, toSisRow } from '../lib/sis.js';
 import { runPoll as gmailPoll, runReplies as gmailReplies, runSent as gmailSent, SENT_DAYS, loadGmailRefreshToken, listLabelledIds, getShaped } from '../lib/gmail.js';
@@ -722,9 +722,38 @@ export async function rereadTildaCards(db, { apply = false, by, now = new Date()
   const rows = await db.prepare(`SELECT id, external_id, received_at FROM inbound WHERE channel = 'gmail' AND state = 'new'
     AND LOWER(COALESCE(contact_email, '')) LIKE '%@tilda.%' ORDER BY id`).all();
   const cards = rows.map((r) => ({ id: Number(r.id), received: r.received_at }));
-  if (!apply) return { applied: false, waiting: cards.length, cards };
+  // patch 191 (his pick 27.11.2026 "Intake pulls it"): a Tilda card a person already made into a lead before 190 left a
+  // person CALLED and addressed "noreply@tilda.ws". Their email is read again too, and the form's name, email and phone
+  // go onto that person (each change a History line by Intake), only where the person still holds Tilda's address or
+  // nothing. When the form's email or phone already belongs to SOMEBODY ELSE, nothing changes: two people are a person's
+  // call (Merge on the person page).
+  const leadRows = await db.prepare(`SELECT i.id, i.external_id, i.received_at, i.person_id FROM inbound i
+    JOIN people p ON p.id = i.person_id WHERE i.channel = 'gmail' AND LOWER(COALESCE(i.contact_email, '')) LIKE '%@tilda.%'
+    AND (LOWER(COALESCE(p.email, '')) LIKE '%@tilda.%' OR LOWER(COALESCE(p.name, '')) LIKE '%@tilda.%') ORDER BY i.id`).all();
+  const leads = leadRows.map((r) => ({ card: Number(r.id), person: r.person_id, received: r.received_at }));
+  if (!apply) return { applied: false, waiting: cards.length, cards, leads };
   const at = now.toISOString();
   const refreshToken = await loadGmailRefreshToken(db, env);
+  for (const l of leads) {
+    const row = leadRows.find((r) => Number(r.id) === l.card);
+    const got = await getShaped({ env, now, fetchImpl, refreshToken, id: row.external_id });
+    if (!got.ok || !got.shaped) { l.outcome = 'not read'; l.why = got.why || 'no message'; continue; }
+    if (!got.shaped.tilda || !got.shaped.tilda.fields.length) { l.outcome = 'stays'; l.why = 'no form fields in the email'; continue; }
+    const it = toIntake(adapt('gmail', got.shaped));
+    const other = await onePersonFor(db, { email: it.email, phone: it.phone });
+    if (other && other.id !== l.person) { l.outcome = 'stays'; l.why = 'the form\'s email or phone is already person ' + other.id; continue; }
+    const p = await db.prepare('SELECT name, email, phone FROM people WHERE id = ?').get(l.person);
+    const tildaish = (v) => !v || /@tilda\./i.test(String(v));
+    const patch = {};
+    if (it.name && tildaish(p.name)) patch.name = it.name;
+    if (it.email && tildaish(p.email)) patch.email = it.email;
+    if (it.phone && !p.phone) patch.phone = it.phone;
+    const done = await applyEdit(db, l.person, patch, 'Intake', at);
+    if (done.error) { l.outcome = 'stays'; l.why = done.error; continue; }
+    await logEvent(db, { personId: l.person, kind: 'note', direction: 'note', at, actor: 'Intake', origin: AUTOMATIC,
+      subject: 'Website form read again (patch 191)', body: it.body || null });
+    l.outcome = 'person fixed'; l.changed = done.changes.map((c) => c.field);
+  }
   for (const c of cards) {
     const row = rows.find((r) => Number(r.id) === c.id);
     const got = await getShaped({ env, now, fetchImpl, refreshToken, id: row.external_id });
@@ -739,7 +768,7 @@ export async function rereadTildaCards(db, { apply = false, by, now = new Date()
     c.outcome = copy ? 'copy of a website form' : r.attached ? 'on a known person' : 'new card';
     c.newCard = r.id || null;
   }
-  return { applied: true, waiting: cards.length, cards };
+  return { applied: true, waiting: cards.length, cards, leads };
 }
 
 // A second run over the same window adds nothing: Gmail's own message id is the
