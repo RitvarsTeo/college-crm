@@ -61,6 +61,8 @@ import { programmeNamesRepair } from './programmes.js';
 import { LIST_NOTE_COLS, LIST_NOTE_JOINS, pickListNote } from './listnote.js';
 import { commentsFor, editComment } from './comments.js';
 import { htmlEscape, inviteOrigin } from './systempages.js';
+import { DATA_DELETION_PAGE } from './datadeletion.js';
+import { reviewInbox, reviewThread } from './review.js';
 import * as areas from './areas.js';
 import { clipOfPath, getClip, listClips, saveClip, byteRange, BadClip, MAX_B64, MAX_VTT } from './helpvideos.js';
 import * as tc from './tc.js';
@@ -1860,6 +1862,14 @@ export const handle = async (req, res) => {
       return res.end(fs.readFileSync(path.join(ROOT, 'src', 'console.html')));
     }
 
+    // DATA DELETION (27.11.2026, his pick for Meta App Review): a public, STATIC page in English and Latvian on how to ask
+    // for one's data to be deleted. No data read, no form (src/datadeletion.js; OPEN_PAGES in test/security_guards).
+    if (req.method === 'GET' && p === '/data-deletion') {
+      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'public, max-age=300',
+        'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'" });
+      return res.end(DATA_DELETION_PAGE);
+    }
+
     if (req.method === 'GET' && (p === '/' || p === '/index.html')) {
       // never cached: the whole app is this one file, and a tester holding a cached
       // copy would keep reporting bugs that were fixed hours ago
@@ -2944,6 +2954,15 @@ export const handle = async (req, res) => {
 
     // ----------------------------------------------------------- history ---
     // Backlog 10, 11, 12: one log, both origins, admins only.
+    // THE META REVIEWER'S INBOX (27.11.2026; src/review.js). The area gate lets only an account with 'review' here, and a
+    // reviewer-only account nowhere else. Read-only: anything but GET is refused.
+    if (p === '/api/review/inbox' || /^\/api\/review\/inbox\/\d+$/.test(p)) {
+      if (req.method !== 'GET') return json(res, 405, { error: 'read-only' });
+      if (p === '/api/review/inbox') return json(res, 200, { ok: true, threads: await reviewInbox(db) });
+      const t = await reviewThread(db, p.split('/')[4]);
+      return t ? json(res, 200, { ok: true, thread: t }) : json(res, 404, { error: 'not found' });
+    }
+
     if (req.method === 'GET' && p === '/api/whoami') {
       // NEVER fall back to the first name in the config. With sign-in on and
       // nobody signed in, this route reported the caller as "Ieva" - an identity

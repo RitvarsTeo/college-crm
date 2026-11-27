@@ -101,6 +101,7 @@ export const AREA_USERS = {
   tc: { email: 'tc.only@novikontas.org', role: 'user', areas: ['tc'] },
   academy: { email: 'academy.only@novikontas.org', role: 'user', areas: ['academy'] },
   none: { email: 'no.area@novikontas.org', role: 'user', areas: [] },
+  reviewer: { email: 'meta.review@novikontas.org', role: 'user', areas: ['review'] },   // 27.11.2026, Meta App Review
 };
 export async function startWithAreas(env = {}) {
   const fs = await import('node:fs');

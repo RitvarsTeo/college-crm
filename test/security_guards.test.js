@@ -52,8 +52,9 @@ const INBOUND_PROOF = {
 const MUST_ANSWER = { 'GET /api/inbound/mailchimp': 'Mailchimp saves a webhook only after a 200; recorded only with ?s=<secret>' };
 // Pages outside /api: the app shell and its files, holding no data; every call they make goes through
 // the sign-in door. `/access` is the shared demo copy's password form.
+// `/data-deletion` (27.11.2026, Meta App Review): STATIC text on how to ask for deletion; it reads nothing (src/datadeletion.js).
 const OPEN_PAGES = ['/', '/index.html', '/healthz', '/sw.js', '/manifest.webmanifest', '/favicon.ico',
-  '/console', '/console/', '/access', '/assets/'];
+  '/console', '/console/', '/access', '/assets/', '/data-deletion'];
 
 // ONE running copy (sign-in on) for the read-only checks, so this file adds as little load as it can:
 // several suites start servers at once, and a slow start fails somebody else's test.
@@ -291,7 +292,9 @@ test('(e) the area function is pinned: a shared path or a Training Centre prefix
   const at = AREAS_SRC.indexOf('export function areaOfApi(');
   const fnSrc = AREAS_SRC.slice(at, AREAS_SRC.indexOf('\n}\n', at));
   const lines = fnSrc.split('\n').map((l) => l.replace(/\/\/.*$/, '').trim()).filter((l) => /return '/.test(l));
-  assert.deepEqual(lines, [...Object.keys(SHARED_API), ...TC_API, "return 'academy';"],
+  // 27.11.2026: the Meta reviewer's area; a reviewer-only account gets ONLY these and signing in/out (areaAllows)
+  assert.deepEqual(lines, ["if (pathname === '/api/review' || pathname.startsWith('/api/review/')) return 'review';",
+    ...Object.keys(SHARED_API), ...TC_API, "return 'academy';"],
     'areaOfApi changed: list the new shared path or tc prefix here with its reason');
   assert.match(SERVER, /if \(AUTH_ON && p\.startsWith\('\/api\/'\) && !openBeforeSignIn\(p\) && !areas\.areaAllows\(await currentUser\(req\), p\)\)/,
     'the gate is asked on every /api/ request after the sign-in door');

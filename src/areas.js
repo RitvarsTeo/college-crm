@@ -11,11 +11,17 @@
 // /api/admin/tc/* need tc; a short pinned SHARED list needs only the session; EVERY OTHER /api/ path needs academy, so a
 // new route is Academy-only until somebody says otherwise here. test/security_guards.test.js pins this function.
 
-export const AREAS = ['academy', 'tc'];
-export const AREA_LABEL = { academy: 'Academy', tc: 'Training Centre' };
+// META REVIEW (27.11.2026, his pick "Inbox-only reviewer login" for Meta App Review): a third area, 'review'. It opens ONLY
+// /api/review/* (read-only: the Messenger, Instagram and WhatsApp threads) plus signing in and out. An account whose only
+// area is review gets nothing else, not even the shared list: no people, no exports, no settings. An admin switches it off
+// with one tick on People and access.
+export const AREAS = ['academy', 'tc', 'review'];
+export const AREA_LABEL = { academy: 'Academy', tc: 'Training Centre', review: 'Meta review (Inbox only)' };
+const REVIEW_ONLY_OPEN = (p) => p.startsWith('/api/auth/') || p === '/api/whoami' || p === '/api/review' || p.startsWith('/api/review/');
 
-/** What an /api/ path needs: 'shared' (a session is enough), 'tc' or 'academy'. */
+/** What an /api/ path needs: 'shared' (a session is enough), 'tc', 'review' or 'academy'. */
 export function areaOfApi(pathname) {
+  if (pathname === '/api/review' || pathname.startsWith('/api/review/')) return 'review';
   if (pathname.startsWith('/api/auth/')) return 'shared';           // signing in and out, who am I
   if (pathname === '/api/whoami') return 'shared';                   // says only who is asking
   if (pathname === '/api/feedback') return 'shared';                 // a bug report from either half
@@ -30,6 +36,9 @@ export function areaOfApi(pathname) {
 /** May this signed-in user open this path? `user.areas` comes from resolveUser, read this request. */
 export function areaAllows(user, pathname) {
   const need = areaOfApi(pathname);
+  const areas = (user && Array.isArray(user.areas)) ? user.areas : [];
+  // a reviewer-only account: the review paths and signing in/out, nothing else (fails closed)
+  if (areas.includes('review') && !areas.includes('academy') && !areas.includes('tc')) return REVIEW_ONLY_OPEN(pathname);
   if (need === 'shared') return true;
   return Boolean(user && Array.isArray(user.areas) && user.areas.includes(need));
 }
