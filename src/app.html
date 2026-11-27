@@ -2859,6 +2859,8 @@ svg .m-flag-mark{transform-origin:0 100%}
   @media (hover:hover){ html.ui-c #view [data-help]{position:relative}
     html.ui-c #view [data-help]:hover::after{content:attr(data-help);position:absolute;left:0;bottom:calc(100% + 9px);z-index:50;width:max-content;max-width:280px;white-space:normal;text-align:left;background:#0a2463;color:#fff;font-size:13.5px;font-weight:500;line-height:1.4;padding:8px 11px;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.22);pointer-events:none;text-decoration:none}
     html.ui-c #view [data-help]:hover::before{content:'';position:absolute;left:18px;bottom:calc(100% - 5px);z-index:51;border:7px solid transparent;border-top-color:#0a2463;pointer-events:none} }
+  /* GO list item 5 (27.11.2026): a finished list says so */
+  html.ui-c .tcml-finished{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;background:var(--c-accent-bg);border:2px solid var(--c-sis);border-radius:12px;padding:12px 16px;margin:0 0 14px;font-size:15px;color:var(--ink)} html.ui-c .tcml-finished b{font-size:16px}
   html.ui-c .tcml-showall{background:none;border:0;padding:0;font:inherit;font-weight:600;color:var(--accent-ink);text-decoration:underline;cursor:pointer}
   html.ui-c .tcml-lists{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px}
   html.ui-c .tcml-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;align-items:start}
@@ -2910,6 +2912,11 @@ svg .m-flag-mark{transform-origin:0 100%}
   @keyframes tcmlBump{0%{transform:none}35%{transform:scale(1.25);color:var(--c-sis)}100%{transform:none}}
   @media (prefers-reduced-motion:reduce){ html.ui-c .tcml-t.done, html.ui-c .tcml-fig.bump b{animation:none} }
   @media (max-width:700px){ html.ui-c .tcml-figs{gap:6px} html.ui-c .tcml-fig{flex:1 1 40%;padding:10px} html.ui-c .tcml-fig b{font-size:22px} html.ui-c .tcml-tiles{grid-template-columns:1fr} }
+  /* GO list item 6 (27.11.2026): on a phone the boxes are one compact row, so the first company shows on the first screen */
+  @media (max-width:700px){ html.ui-c .tcml-figs{flex-wrap:nowrap;gap:4px;margin:0 0 10px} html.ui-c .tcml-fig,html.ui-c .tcml-stack{flex:1 1 0;min-width:0}
+    html.ui-c .tcml-fig{padding:6px 7px;border-radius:9px} html.ui-c .tcml-fig[aria-pressed="true"]{padding:5px 6px} html.ui-c .tcml-fig b{font-size:17px}
+    html.ui-c .tcml-fig span{display:block;font-size:10.5px;line-height:1.2;overflow:hidden;text-overflow:ellipsis} html.ui-c .tcml-stack{gap:4px} html.ui-c .tcml-stack .tcml-fig{padding:4px 7px} html.ui-c .tcml-stack .tcml-fig b{font-size:14px} }
+
   html.ui-c #tcDoorCam{width:100%;max-width:420px;margin-top:12px;border-radius:10px}
   html.ui-c .tc-door-card{margin-top:16px;padding:18px;border:1px solid var(--rule2);border-radius:12px} html.ui-c .tc-door-card.in{border-color:#1e7bc4;box-shadow:inset 0 0 0 1px #1e7bc4}
   html.ui-c .tc-door-code{font-size:28px;font-weight:800;color:#0a2463} html.ui-c .tc-door-card h2{margin:4px 0 8px}
@@ -8195,6 +8202,7 @@ async function loadAuth() {
 // overlay, nothing behind it clickable. Allow opens Google's own read-only consent (/api/me/mailbox/allow, which records
 // the answer); Not now records it and closes. Either way it is never shown again (src/staffmail.js).
 async function cUpdatePopup(force = null) {
+  if (force === null && String(location.hash || '').startsWith('#/tc')) return;   // GO list item 2 (27.11.2026): never over a Training Centre page
   let show = false;
   try { show = force !== null ? force : Boolean((await (await apiFetch('/api/me/update-popup')).json()).show); } catch { show = false; }
   if (!show || document.getElementById('c-upd')) return;
@@ -8516,6 +8524,8 @@ function cBackLink() {
     view.insertAdjacentHTML('afterbegin', `<p class="c-back"><a href="#/start" title="Back to the start page">← Start</a></p>`);
     return;
   }
+  // GO list item 9 (27.11.2026): the list's back line is always the same, whichever way it was opened
+  if (path.startsWith('#/tc/mylist')) { view.insertAdjacentHTML('afterbegin', `<p class="c-back"><a href="#/tc" title="Training Centre Home">← Home</a></p>`); return; }
   const from = history.state && history.state.from;
   // the owner 29.10.2026 ("just 1, not two"): a page with its own way back (a linked crumb) gets no second Back link
   if (!from || view.querySelector('.c-crumb a')) return;
@@ -14009,6 +14019,8 @@ function tcGoNav() {
     const h = String(location.hash).split('/')[2] || '';
     if (['week', 'season', 'go', 'next', 'mylist'].includes(h)) tcPageTabs(h);
     api('/api/tc/go/mylist').then((r) => { T_GO_MINE = Boolean(r && r.lists && r.lists.length); const h2 = String(location.hash).split('/')[2] || '';
+      // item 10 (27.11.2026): while a director has a list, Plan opens on it (the desktop menu and the phone bar)
+      if (T_GO_MINE) document.querySelectorAll('.tcnav a[data-c="tc-plan"], .tctabs a[data-t="plan"]').forEach((a) => a.setAttribute('href', '#/tc/mylist'));
       if (['week', 'season', 'go', 'next', 'mylist'].includes(h2)) tcPageTabs(h2); }).catch(() => {});
   }).catch(() => {});
 }
@@ -14268,6 +14280,7 @@ const tcMlTime = (iso) => {
   return `${o.weekday} ${o.day} ${o.month}, ${o.hour}:${o.minute}`;
 };
 async function viewTcMyList(code) {
+  const tour = document.getElementById('helpTour'); if (tour) { tour.remove(); document.querySelectorAll('.ht-spot').forEach((e) => e.classList.remove('ht-spot')); }   // item 2: no popup over the list, no leftover highlight
   if (T_ML && T_ML.dirty && T_ML.code === code) { tcMlDraw(); return; }   // back to the same list after Cancel: the work is still here
   const L = await api('/api/tc/go/mylist');
   const pick = code && L.lists.includes(code) ? code : (L.mine && L.lists.includes(L.mine) ? L.mine : L.lists[0]);
@@ -14329,6 +14342,8 @@ const tcMlTip = (k) => (TCML_TIPS[k] ? ` data-help="${esc(TCML_TIPS[k])}"` : '')
 function tcMlDraw() {
   if (!T_ML) return;
   const V = mlView(T_ML.base, T_ML.W), F = V.figures, D = T_ML.base;
+  // item 3 (27.11.2026): people passed to you wait for Accept or Pass on, so they count in Still to decide: a list never reads 0 while they wait
+  const todoN = F.todo + (D.passedToYou || []).length;
   const fig = (id, n, label) => `<button type="button" class="tcml-fig${T_ML.bump === id ? ' bump' : ''}"${tcMlTip(id)} aria-pressed="${T_ML.filter === id}" onclick="T_ML.filter=${esc(JSON.stringify(String(id)))};tcMlDraw()"><b>${tcN(n)}</b><span>${label}</span></button>`;
   const lists = T_ML.lists.length > 1 ? `<div class="tcml-lists" role="group" aria-label="Lists">${T_ML.lists.map((c) => `<button type="button" class="btn sm${c === T_ML.code ? '' : ' ghost'}" onclick="location.hash='#/tc/mylist/'+encodeURIComponent(${esc(JSON.stringify(String(c)))})">${esc(T_ML.names[c] || c)}</button>`).join('')}</div>` : '';
   const narrow = tcMlNarrow();
@@ -14342,7 +14357,7 @@ function tcMlDraw() {
       + (T_ML.po === p.id ? tcPoPick(p) : `<span class="tcpo-links"><button type="button" class="tcpo-link"${tcMlTip('passOn')} onclick="T_ML.po=${Number(p.id)};tcMlDraw()">Pass on</button><button type="button" class="tcpo-link"${tcMlTip('waiver')} onclick="tcWvPut(${Number(p.id)})">Waiver</button></span>`)
       // no email (patch 149): Postcard only until somebody adds the email here
       + (p.postcard ? `<form class="tcml-addmail" onsubmit="tcMlAddEmail(event, ${Number(p.id)})"><input type="email" required placeholder="Add email" aria-label="Add email for ${esc(p.label)}" autocomplete="off"><button type="submit" class="btn sm ghost">Save email</button></form>` : '')
-      + (narrow ? `<select class="tcml-mv" aria-label="Move to another company" onchange="tcMlMoveTo(${Number(p.id)}, this.value)"><option value="">Move to…</option>${targets.filter((o) => o.key !== g.key).map((o) => `<option value="${esc(o.key)}">${esc(o.name)}</option>`).join('')}</select>` : '');
+      + '';   // item 7 (27.11.2026): on a phone too, a person moves only by Pass on or Waiver (the Move to box is gone)
     const ppl = open ? `<div class="tcml-ppl">${g.people.map(person).join('')}</div>` : '';
     const wp = mlWayParts(g.way);
     const how = g.decision === 'invite' ? `${wp.includes('digital') ? '<div class="tcml-dig">✓ Digital invitation</div>' : ''}<div class="tcml-also">Also</div><div class="tcml-how tcml-extra">${TCML_EXTRAS.map(([w, t]) => `<button type="button"${tcMlTip(w)} aria-pressed="${wp.includes(w)}" onclick="tcMlDo({ type: 'way', key: ${esc(JSON.stringify(String(g.key)))}, way: ${esc(JSON.stringify(String(w)))} })">${wp.includes(w) ? '✓ ' : ''}${t}</button>`).join('')}</div>` : '';
@@ -14368,9 +14383,10 @@ function tcMlDraw() {
   $('#view').innerHTML = `<div class="c-head"><div><h1>My Grand Opening list</h1><p class="c-crumb">${esc(D.name)} · ${tcN(D.people)} people · ${tcN(V.groups.length)} companies</p></div>
       <div class="tcml-bar"><span class="tcml-st${T_ML.dirty ? ' dirty' : ''}" role="status">${esc(tcMlStatus())}</span>
       <button type="button" class="btn ghost" ${T_ML.undo.length ? '' : 'disabled'} onclick="tcMlUndo()"${tcMlTip('undo')}>Undo</button>
-      <button type="button" class="btn"${tcMlTip('save')} onclick="tcMlSaveNow()">${T_ML.savedFlash ? 'Saved' : 'Save'}</button></div>${tcGoDemoBtn()}</div>
-    ${note}${lists}<div class="tcml-figs">${fig('all', F.todo + F.invite + F.no, 'All')}${fig('todo', F.todo, 'Still to decide')}<div class="tcml-stack">${fig('invite', F.invite, 'Invite · digital')}${fig('postcard', F.postcard, 'Postcard · in person or by post')}</div>${fig('no', F.no, 'No')}</div>
+      <button type="button" class="btn ghost"${tcMlTip('save')} onclick="tcMlSaveNow()">${T_ML.savedFlash ? 'Saved' : 'Save'}</button></div>${tcGoDemoBtn()}</div>
+    ${note}${lists}<div class="tcml-figs">${fig('all', todoN + F.invite + F.no, 'All')}${fig('todo', todoN, 'Still to decide')}<div class="tcml-stack">${fig('invite', F.invite, 'Invite · digital')}${fig('postcard', F.postcard, 'Postcard · in person or by post')}</div>${fig('no', F.no, 'No')}</div>
     ${T_ML.filter === 'postcard' ? '<div class="tcml-pcbar"><a class="btn sm" href="/api/tc/go/postcards.xlsx" download>Download Excel</a></div>' : ''}
+    ${todoN === 0 && V.groups.length ? '<div class="tcml-finished" role="status"><b>✓ Your list is done.</b> Every company is decided. Nothing more is needed.</div>' : ''}
     ${tcPoSection()}${tcWvSection()}
     ${tcMlShowing(shown.length)}<div class="tcml-find"><input id="tcMlQ" class="c-search" type="search" placeholder="Search a company, a person or an email" aria-label="Search the list" autocomplete="off" value="${esc(T_ML.q)}" oninput="tcMlSearch(this.value)">${T_ML.q ? `<span class="tcml-found">${tcN(shown.length)} ${shown.length === 1 ? 'company' : 'companies'}</span>` : ''}</div>
     <div class="tcml-tiles">${shown.length ? tcMlLetters(shown, tile) : (T_ML.q ? '<p class="tcml-none">No company or person on this list matches.</p>' : '')}</div>`;
@@ -14546,10 +14562,11 @@ function tcPoPick(p, holder) {
   const best = (p.likely || []).find((c) => left0.some((o) => o.code === c)) || '';
   const left = best ? [left0.find((o) => o.code === best), ...left0.filter((o) => o.code !== best)] : left0;
   const name = esc(p.label || 'this person');
-  const opts = left.map((o, i) => `<label${o.code === best ? ' class="likely"' : ''}><input type="radio" name="tcpo${Number(p.id)}" value="${esc(o.code)}"${i === 0 ? ' checked' : ''}> ${esc(o.name)}${o.code === best ? ' <em class="tcpo-likely">Most likely</em>' : ''}</label>`).join('')
+  const opts = left.map((o, i) => `<label${o.code === best ? ' class="likely"' : ''}><input type="radio" name="tcpo${Number(p.id)}" value="${esc(o.code)}"> ${esc(o.name)}${o.code === best ? ' <em class="tcpo-likely">Most likely</em>' : ''}</label>`).join('')
     + seen.map((o) => `<label class="off"><span>${esc(o.name)}</span><span>already had ${name}</span></label>`).join('');
-  return `<fieldset class="tcpo-pick"><legend>Pass ${name} on to</legend>${left.length ? opts : `<label>Nobody else is left: ${name} goes to Dmitrijs Semjonovs</label>`}
-    <div class="tcpo-btns"><button type="button" class="btn sm" onclick="tcPoPass(${Number(p.id)})">Pass on</button><button type="button" class="btn sm ghost" onclick="T_ML.po=null;tcMlDraw()">Cancel</button></div></fieldset>`;
+  // item 4 (27.11.2026): nobody is ticked; Pass on waits until a colleague is picked
+  return `<fieldset class="tcpo-pick" onchange="const b = this.querySelector('.tcpo-go'); if (b) b.disabled = false"><legend>Pass ${name} on to</legend>${left.length ? opts : `<label>Nobody else is left: ${name} goes to Dmitrijs Semjonovs</label>`}
+    <div class="tcpo-btns"><button type="button" class="btn sm tcpo-go"${left.length ? ' disabled' : ''} onclick="tcPoPass(${Number(p.id)})">Pass on</button><button type="button" class="btn sm ghost" onclick="T_ML.po=null;tcMlDraw()">Cancel</button></div></fieldset>`;
 }
 function tcPoSection() {
   const L = (T_ML.base.passedToYou || []);
@@ -14587,6 +14604,7 @@ async function tcWvTake(id) {
 }
 async function tcPoPass(id) {
   const box = document.querySelector(`input[name="tcpo${Number(id)}"]:checked`);
+  if (!box && document.querySelector(`input[name="tcpo${Number(id)}"]`)) return;   // item 4: a colleague first
   try {
     await post('/api/tc/go/mylist/pass', { sender: T_ML.code, id, to: box ? box.value : '' });
     T_ML.po = null; T_ML.error = '';
@@ -15082,7 +15100,9 @@ async function tcGoCopy(btn) {
 // THE TRAINING CENTRE TOUR (29.10.2026): the dev kit's tour over the TC menu; it opens by itself on the first visit
 function tcTour() { return window.HelpTour && T_META && T_META.help && (T_META.help.tour || []).length ? HelpTour.create({ steps: T_META.help.tour, storageKey: 'tcTour' }) : null; }
 function tcStartTour(btn) { const t = tcTour(); if (t) t.open(btn); }
-function tcTourFirst() { const t = tcTour(); if (t && t.shouldAutoOpen() && !(window.matchMedia && window.matchMedia('(max-width:900px)').matches)) setTimeout(() => t.open(), 600); }
+// GO LIST REFINEMENTS (his order 27.11.2026, item 2): the Home tour opens only while Home is still on screen, never over the Grand Opening list
+const tcOnHome = () => /^#\/tc\/?$/.test(String(location.hash || '').split('?')[0]);
+function tcTourFirst() { const t = tcTour(); if (t && t.shouldAutoOpen() && !(window.matchMedia && window.matchMedia('(max-width:900px)').matches)) setTimeout(() => { if (tcOnHome()) t.open(); }, 600); }
 function viewTcHelp() {
   const H = T_META.help || { howto: [], faq: [] };
   const how = H.howto.map((h) => `<a class="c-line c-hhow" href="${esc(h.href)}"><div class="c-who"><b>${esc(h.do)}</b><small>${esc(h.where)}</small></div><div class="c-when">›</div></a>`).join('');

@@ -227,7 +227,7 @@ test('the page: Save / Undo / status with the full date, Ctrl+Z, Ctrl+S on nothi
   // the browser's Ctrl+Z title gave way to the hover sentence (HIS PICK 27.11.2026); Ctrl+Z itself still works
   assert.ok(APP.includes(`onclick="tcMlUndo()"\${tcMlTip('undo')}>Undo</button>`));
   // patch 152e (his pick 16.11.2026 "Yes, add it back"): the Save button is back, always there; every change still saves by itself
-  assert.ok(APP.includes(`<button type="button" class="btn"\${tcMlTip('save')} onclick="tcMlSaveNow()">\${T_ML.savedFlash ? 'Saved' : 'Save'}</button>`));
+  assert.ok(APP.includes(`<button type="button" class="btn ghost"\${tcMlTip('save')} onclick="tcMlSaveNow()">\${T_ML.savedFlash ? 'Saved' : 'Save'}</button>`));
   assert.ok(fn('tcMlSaveNow').includes('clearTimeout(TCML_SOON);\n  if (!(await tcMlSave())) return;'), 'it saves anything on its way at once');
   assert.ok(APP.includes("return `${o.weekday} ${o.day} ${o.month}, ${o.hour}:${o.minute}`;"), '6. full date and time');
   assert.match(fn('tcMlStatus'), /if \(S\.status === 'saving' \|\| S\.dirty\) return 'Saving…';[\s\S]*return 'All changes saved';/);
@@ -259,16 +259,16 @@ test('the proposals he said yes to (12.11.2026): A outlined until picked, B All,
   assert.ok(APP.includes(".tcml-yn .btn.btn.yes[aria-pressed=\"true\"]{background:var(--btn-bg)") && APP.includes(".tcml-yn .btn.btn.nay[aria-pressed=\"true\"]{background:#5b6472"));
   assert.ok(APP.includes("g.decision === 'invite' ? ' inv' : g.decision === 'no' ? ' no' : ''") && APP.includes('.tcml-t.no{border:2px solid #9aa3af'));
   // B: All, first, and it shows every company
-  assert.ok(APP.includes("${fig('all', F.todo + F.invite + F.no, 'All')}${fig('todo'"));
+  // the figures count the people passed to you as still to decide (GO list refinements, item 3, 27.11.2026)
+  assert.ok(APP.includes("${fig('all', todoN + F.invite + F.no, 'All')}${fig('todo', todoN, 'Still to decide')}"));
   const g = { people: [{ decision: 'invite' }] };
   assert.equal(P.mlShows(g, 'all'), true); assert.equal(P.mlShows(g, 'todo'), false);
   // C, replaced by patch 160 (the owner 20.11.2026): no "Pick a way"; Invite = digital, two optional extras
   assert.ok(!APP.includes('Pick a way') && APP.includes('✓ Digital invitation') && APP.includes("[['in_person', 'Hand over in person'], ['post', 'Send by post']]"));
   // D
   assert.ok(APP.includes("noaddr: (x) => !String(x.address || '').trim()") && APP.includes("${fig('noaddr', 'No address')}"));
-  // E: no drag on a phone, a Move to… list instead, onto a company in Intake only
-  assert.ok(APP.includes("window.matchMedia('(max-width: 760px)')") && APP.includes('onchange="tcMlMoveTo(${Number(p.id)}, this.value)"><option value="">Move to…</option>'));
-  assert.ok(APP.includes('const targets = T_ML.base.groups.filter((g) => g.intake)'));
+  // E: no drag on a phone; since 27.11.2026 (GO list refinements, item 7) no Move to… box either: Pass on and Waiver are the one way
+  assert.ok(APP.includes("window.matchMedia('(max-width: 760px)')") && !APP.includes('<option value="">Move to…</option>'));
   assert.ok(APP.includes("const drop = g.intake && !narrow ?"));
   // F
   assert.ok(APP.includes('>${esc(T_ML.names[c] || c)}</button>'));

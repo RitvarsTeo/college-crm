@@ -56,6 +56,17 @@ Pictures: `_pictures/go_figures_hover_2026-11-27/index.html` (today, A, B side b
 | HIS PICK 27.11 "A + coloured edge": A (pressed box + "Showing: ... · Show all" line above the search) plus B's coloured left card edges (amber still to decide, teal invited, grey No). His change: "dont make them the same shade of blue as other boxes, it mixes together" - the pressed box is light blue with a blue frame (Novikontas Blue #29a8df), never the navy of an invited company. Hover sentences are not part of this build | BUILT on branch tc/go-figures-hover-said-2026-11-27, picture on the copy first |
 | HIS ASK 27.11: on mouse hover, every button on the list shows one plain sentence saying what it does (the number boxes, Invite, No, Done, Hand over in person, Send by post, Pass on, Waiver, Change, Undo, Save, tapping a person's name) | SAID - sentences drafted on the picture page for his check |
 | HIS PICK 27.11 "Yes, use them": the 16 hover sentences exactly as drafted, in the same build as the number boxes. Mouse only (a phone has no hover); Undo's browser "Ctrl+Z" title gives way to its sentence (Ctrl+Z still works); "Send by post"'s sentence says "by post", his approved wording, kept as the one more exception to "By mail everywhere" | BUILT on branch tc/go-figures-hover-said-2026-11-27, picture on the copy first |
+| HIS ORDER 27.11 "we need all the refinements now! only then we can talk about making tour! and then sending reminders of any kind": every refinement to the directors' Grand Opening list in this one build, before any tour or reminder work | BUILT on branch tc/go-list-refinements-2026-11-27 |
+| 1 A company being decided stays in place under a pressed box until Done (Invite and No); Done then lets the box filter it out | BUILT |
+| 2 No popup over the list: the Home tour opens only while Home is on screen and is taken off when the list opens; the Academy "What's new" popup never shows on a Training Centre page. The tour itself is not changed | BUILT |
+| 3 People passed to you count in Still to decide (and All): a list never reads 0 while people wait | BUILT |
+| 4 Pass on: no colleague ticked ("Most likely" stays as a tag); the Pass on button waits until one is picked | BUILT |
+| 5 A finished list says "✓ Your list is done. Every company is decided. Nothing more is needed." | BUILT |
+| 6 Phone: the figure boxes are one compact row | BUILT |
+| 7 Phone: a person moves only by Pass on or Waiver; the Move to box is gone | BUILT |
+| 8 Save is a quiet secondary button (every change saves by itself) | BUILT |
+| 9 The list's back line is always "← Home" | BUILT |
+| 10 While a director has a list, Plan (desktop menu and phone bar) opens on the Grand Opening list | BUILT |
 
 ## 24.11.2026 - The tutorial: tour + questions up to date, and short videos (PICKED 24.11: "B) A + short videos")
 
