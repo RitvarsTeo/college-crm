@@ -46,6 +46,15 @@ Pictures: `_pictures/EN_C1_live_start_energy_next_to_tc.jpg` (live Start with a 
 | Energy opens on its latest year with courses (2025), never "Trained 0" for a year the counts have not reached (his rule "no figure that makes us look bad"); the year picker still offers 2026; moving between Training Centre and Energy forgets the other's year | BUILT (patch 196) |
 | Energy Client book: the cards (Trained, client companies, countries) and Welcome back count Energy companies only, like its ranking | BUILT (patch 196) |
 
+## 27.11.2026 - My Grand Opening list: number boxes that look pressable, and hover help
+
+Pictures: `_pictures/go_figures_hover_2026-11-27/index.html` (today, A, B side by side; one hover popup; the sentences).
+
+| Item | Status |
+|---|---|
+| HIS PICK 27.11 "Show me pictures first": the number boxes (All / Still to decide / Invite / Postcard / No) already filter the list but do not look pressable. A: the pressed box filled dark blue + a "Showing: ... · Show all" line above the list. B: pill tabs with counts + a coloured left edge on each company card (amber = still to decide) | SAID - pictures made, A or B open |
+| HIS ASK 27.11: on mouse hover, every button on the list shows one plain sentence saying what it does (the number boxes, Invite, No, Done, Hand over in person, Send by post, Pass on, Waiver, Change, Undo, Save, tapping a person's name) | SAID - sentences drafted on the picture page for his check |
+
 ## 24.11.2026 - The tutorial: tour + questions up to date, and short videos (PICKED 24.11: "B) A + short videos")
 
 The owner: "we need a tutorial how to use the app. is it done? updated?" The live app was walked screen by screen
