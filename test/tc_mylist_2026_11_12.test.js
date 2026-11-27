@@ -224,9 +224,10 @@ test('the page: Save / Undo / status with the full date, Ctrl+Z, Ctrl+S on nothi
   assert.ok(APP.includes("else if (place === 'mylist') viewTcMyList(arg ? decodeURIComponent(arg) : '');"));
   assert.ok(APP.includes("filter: 'all'"), 'B. All is on by default');
   // patch 152 (his pick A, 16.11.2026: "LETS NOT ALLOW TO ANYONE FINISH THEIR TASK WITHOUT SAVING"): no Save button, every change saves
-  assert.ok(APP.includes('onclick="tcMlUndo()" title="Ctrl+Z">Undo</button>'));
+  // the browser's Ctrl+Z title gave way to the hover sentence (HIS PICK 27.11.2026); Ctrl+Z itself still works
+  assert.ok(APP.includes(`onclick="tcMlUndo()"\${tcMlTip('undo')}>Undo</button>`));
   // patch 152e (his pick 16.11.2026 "Yes, add it back"): the Save button is back, always there; every change still saves by itself
-  assert.ok(APP.includes(`<button type="button" class="btn" onclick="tcMlSaveNow()">\${T_ML.savedFlash ? 'Saved' : 'Save'}</button>`));
+  assert.ok(APP.includes(`<button type="button" class="btn"\${tcMlTip('save')} onclick="tcMlSaveNow()">\${T_ML.savedFlash ? 'Saved' : 'Save'}</button>`));
   assert.ok(fn('tcMlSaveNow').includes('clearTimeout(TCML_SOON);\n  if (!(await tcMlSave())) return;'), 'it saves anything on its way at once');
   assert.ok(APP.includes("return `${o.weekday} ${o.day} ${o.month}, ${o.hour}:${o.minute}`;"), '6. full date and time');
   assert.match(fn('tcMlStatus'), /if \(S\.status === 'saving' \|\| S\.dirty\) return 'Saving…';[\s\S]*return 'All changes saved';/);
@@ -254,7 +255,7 @@ test('the page: Save / Undo / status with the full date, Ctrl+Z, Ctrl+S on nothi
 
 test('the proposals he said yes to (12.11.2026): A outlined until picked, B All, C Pick a way, D No address, E Move to on a phone, F owner names', () => {
   // A: Invite and No outlined; the pick fills (Invite blue, No grey); the tile border follows
-  assert.ok(APP.includes('class="btn sm yes" aria-pressed=') && APP.includes('class="btn sm nay" aria-pressed='));
+  assert.ok(APP.includes(`class="btn sm yes"\${tcMlTip('doInvite')} aria-pressed=`) && APP.includes(`class="btn sm nay"\${tcMlTip('doNo')} aria-pressed=`));
   assert.ok(APP.includes(".tcml-yn .btn.btn.yes[aria-pressed=\"true\"]{background:var(--btn-bg)") && APP.includes(".tcml-yn .btn.btn.nay[aria-pressed=\"true\"]{background:#5b6472"));
   assert.ok(APP.includes("g.decision === 'invite' ? ' inv' : g.decision === 'no' ? ' no' : ''") && APP.includes('.tcml-t.no{border:2px solid #9aa3af'));
   // B: All, first, and it shows every company

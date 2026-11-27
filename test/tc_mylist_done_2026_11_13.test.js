@@ -30,7 +30,7 @@ test('a company stays open until Done; Done folds it to its result with Change, 
   const d = fn('tcMlDo'), f = fn('tcMlFinish');
   assert.ok(d.includes("if (a.type === 'decide' || a.type === 'way') { T_ML.edit.add(a.key); T_ML.open.add(a.key); }"), 'his words: keep it open until Done');
   assert.ok(d.includes('T_ML.undo.push(mlClone(T_ML.W));') && d.includes('tcMlMarkDirty();'), 'the same unsaved / undo rules');
-  assert.ok(APP.includes("<button type=\"button\" class=\"btn tcml-donebtn\" ${mlDecided(g) ? '' : 'disabled'} onclick=\"tcMlFinish("), 'Done only when the decision is complete');
+  assert.ok(APP.includes("<button type=\"button\" class=\"btn tcml-donebtn\"${tcMlTip('done')} ${mlDecided(g) ? '' : 'disabled'} onclick=\"tcMlFinish("), 'Done only when the decision is complete');
   assert.ok(f.includes('if (!g || !mlDecided(g)) return;') && f.includes("T_ML.edit.delete(key); T_ML.open.delete(key); T_ML.bump = g.decision === 'no' ? 'no' : 'invite';"));
   assert.ok(f.includes('.find((x) => !mlDone(x));') && f.includes('T_ML.open.add(next.key)'));
   assert.ok(APP.includes("filter: 'all'"), 'his pick B stays: All on by default');
@@ -40,7 +40,7 @@ test('By post is By mail everywhere; the stored value stays post', () => {
   assert.ok(APP.includes("['post', 'By mail']") && APP.includes("post: 'By mail' }, R = T_PC.rows") && APP.includes("fig('post', 'By mail')"));
   assert.ok(SERVER.includes("const WAY = { in_person: 'In person', post: 'By mail' };"));
   // the one exception: the extra button "Send by post" on an Invite, word for word from the picture he approved (patch 160, 20.11.2026)
-  for (const f of ['app.html', 'server.js', 'tcmylist.js']) assert.ok(!/by post/i.test(fs.readFileSync(path.join(ROOT, 'src', f), 'utf8').replace(/\['post', 'Send by post'\]/g, '').replace(/'Postcard · in person or by post'/g, '').replace(/"Send by post"/g, '')), f);
+  for (const f of ['app.html', 'server.js', 'tcmylist.js']) assert.ok(!/by post/i.test(fs.readFileSync(path.join(ROOT, 'src', f), 'utf8').replace(/\['post', 'Send by post'\]/g, '').replace(/'Postcard · in person or by post'/g, '').replace(/"Send by post"/g, '').replace(/'Besides the email invitation, a printed postcard also goes to them by post\.'/g, '')), f);   // his approved hover sentence, word for word (27.11.2026)
 });
 
 // his words 13.11.2026: "for company list, there has to be a search bar and the companies should be put alphabetically"

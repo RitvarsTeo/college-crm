@@ -2855,6 +2855,10 @@ svg .m-flag-mark{transform-origin:0 100%}
   html.ui-c .tcml-fig[aria-pressed="true"]{background:var(--c-accent-bg);border:2px solid var(--c-sis);box-shadow:none;padding:11px 15px}
   html.ui-c .tcml-stack .tcml-fig[aria-pressed="true"]{padding-top:7px;padding-bottom:7px}
   html.ui-c .tcml-showing{display:flex;flex-wrap:wrap;gap:6px;align-items:baseline;margin:0 0 10px;font-size:15px;color:var(--ink)} html.ui-c .tcml-showing b{font-weight:700}
+  /* HOVER HELP (HIS PICK 27.11.2026): the sentence in data-help shows above the button while the mouse rests on it (mouse only) */
+  @media (hover:hover){ html.ui-c #view [data-help]{position:relative}
+    html.ui-c #view [data-help]:hover::after{content:attr(data-help);position:absolute;left:0;bottom:calc(100% + 9px);z-index:50;width:max-content;max-width:280px;white-space:normal;text-align:left;background:#0a2463;color:#fff;font-size:13.5px;font-weight:500;line-height:1.4;padding:8px 11px;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.22);pointer-events:none;text-decoration:none}
+    html.ui-c #view [data-help]:hover::before{content:'';position:absolute;left:18px;bottom:calc(100% - 5px);z-index:51;border:7px solid transparent;border-top-color:#0a2463;pointer-events:none} }
   html.ui-c .tcml-showall{background:none;border:0;padding:0;font:inherit;font-weight:600;color:var(--accent-ink);text-decoration:underline;cursor:pointer}
   html.ui-c .tcml-lists{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px}
   html.ui-c .tcml-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;align-items:start}
@@ -14302,37 +14306,57 @@ function tcMlStatus() {
   if (S.status === 'saving' || S.dirty) return 'Saving…';   // every change saves (patch 152)
   return 'All changes saved';
 }
+// HOVER HELP (HIS PICK 27.11.2026 "Yes, use them"): one plain sentence per button on the list, shown when the mouse rests on it
+const TCML_TIPS = {
+  all: 'Shows every company on your list.',
+  todo: 'Shows only the companies you have not decided yet.',
+  invite: 'Shows the companies you invite; they get the invitation by email.',
+  postcard: 'Shows the companies that also get a printed postcard.',
+  no: 'Shows the companies you do not invite.',
+  doInvite: 'Invites this company; everyone still on the card gets the invitation by email.',
+  doNo: 'This company is not invited.',
+  in_person: 'Besides the email invitation, you also hand them a printed postcard yourself.',
+  post: 'Besides the email invitation, a printed postcard also goes to them by post.',
+  done: 'Closes this company with your choice and opens the next one.',
+  person: 'Takes this person out of the invitation; tap again to put them back.',
+  passOn: 'Sends this person to a colleague who knows them better.',
+  waiver: 'Puts this person on the shared list, where a colleague who knows them can take them.',
+  change: 'Opens a finished company again, so you can change your choice.',
+  undo: 'Takes back your last change.',
+  save: 'Saves now; every change also saves by itself.',
+};
+const tcMlTip = (k) => (TCML_TIPS[k] ? ` data-help="${esc(TCML_TIPS[k])}"` : '');
 function tcMlDraw() {
   if (!T_ML) return;
   const V = mlView(T_ML.base, T_ML.W), F = V.figures, D = T_ML.base;
-  const fig = (id, n, label) => `<button type="button" class="tcml-fig${T_ML.bump === id ? ' bump' : ''}" aria-pressed="${T_ML.filter === id}" onclick="T_ML.filter=${esc(JSON.stringify(String(id)))};tcMlDraw()"><b>${tcN(n)}</b><span>${label}</span></button>`;
+  const fig = (id, n, label) => `<button type="button" class="tcml-fig${T_ML.bump === id ? ' bump' : ''}"${tcMlTip(id)} aria-pressed="${T_ML.filter === id}" onclick="T_ML.filter=${esc(JSON.stringify(String(id)))};tcMlDraw()"><b>${tcN(n)}</b><span>${label}</span></button>`;
   const lists = T_ML.lists.length > 1 ? `<div class="tcml-lists" role="group" aria-label="Lists">${T_ML.lists.map((c) => `<button type="button" class="btn sm${c === T_ML.code ? '' : ' ghost'}" onclick="location.hash='#/tc/mylist/'+encodeURIComponent(${esc(JSON.stringify(String(c)))})">${esc(T_ML.names[c] || c)}</button>`).join('')}</div>` : '';
   const narrow = tcMlNarrow();
   const targets = T_ML.base.groups.filter((g) => g.intake).sort((a, b) => a.name.localeCompare(b.name, 'lv'));
   const tile = (g) => {
     const open = T_ML.open.has(g.key) || (Boolean(T_ML.q) && mlPersonHit(g, T_ML.q)), left = g.people.filter((p) => p.out).length, waiting = g.people.filter((p) => p.waiting).length;
     const count = (g.decision === 'invite' && left ? `${tcN(g.people.length - left)} of ${tcN(g.people.length)} people` : `${tcN(g.people.length)} ${g.people.length === 1 ? 'person' : 'people'}`);   // no "N new" (the owner, 16.11.2026: "NELIEC APPA new!")
-    const person = (p) => `<button type="button" class="tcml-p${p.out ? ' out' : ''}${p.from || p.moved ? ' moved' : ''}"${narrow ? '' : ` draggable="true" ondragstart="event.dataTransfer.setData('text/plain', String(${Number(p.id)}))"`} onclick="tcMlDo({ type: 'out', id: ${Number(p.id)} })"><b>${esc(p.label)}${p.postcard ? ' <em class="tcml-pc">Postcard only</em>' : ''}</b>${p.position ? `<span>${esc(p.position)}</span>` : ''}</button>`
+    const person = (p) => `<button type="button" class="tcml-p${p.out ? ' out' : ''}${p.from || p.moved ? ' moved' : ''}"${tcMlTip('person')}${narrow ? '' : ` draggable="true" ondragstart="event.dataTransfer.setData('text/plain', String(${Number(p.id)}))"`} onclick="tcMlDo({ type: 'out', id: ${Number(p.id)} })"><b>${esc(p.label)}${p.postcard ? ' <em class="tcml-pc">Postcard only</em>' : ''}</b>${p.position ? `<span>${esc(p.position)}</span>` : ''}</button>`
       // PASS ON (patch 152): a person this owner does not know goes to another list owner
       // WAIVER (patch 160): or onto the shared list, where a colleague who knows the person takes him
-      + (T_ML.po === p.id ? tcPoPick(p) : `<span class="tcpo-links"><button type="button" class="tcpo-link" onclick="T_ML.po=${Number(p.id)};tcMlDraw()">Pass on</button><button type="button" class="tcpo-link" onclick="tcWvPut(${Number(p.id)})">Waiver</button></span>`)
+      + (T_ML.po === p.id ? tcPoPick(p) : `<span class="tcpo-links"><button type="button" class="tcpo-link"${tcMlTip('passOn')} onclick="T_ML.po=${Number(p.id)};tcMlDraw()">Pass on</button><button type="button" class="tcpo-link"${tcMlTip('waiver')} onclick="tcWvPut(${Number(p.id)})">Waiver</button></span>`)
       // no email (patch 149): Postcard only until somebody adds the email here
       + (p.postcard ? `<form class="tcml-addmail" onsubmit="tcMlAddEmail(event, ${Number(p.id)})"><input type="email" required placeholder="Add email" aria-label="Add email for ${esc(p.label)}" autocomplete="off"><button type="submit" class="btn sm ghost">Save email</button></form>` : '')
       + (narrow ? `<select class="tcml-mv" aria-label="Move to another company" onchange="tcMlMoveTo(${Number(p.id)}, this.value)"><option value="">Move to…</option>${targets.filter((o) => o.key !== g.key).map((o) => `<option value="${esc(o.key)}">${esc(o.name)}</option>`).join('')}</select>` : '');
     const ppl = open ? `<div class="tcml-ppl">${g.people.map(person).join('')}</div>` : '';
     const wp = mlWayParts(g.way);
-    const how = g.decision === 'invite' ? `${wp.includes('digital') ? '<div class="tcml-dig">✓ Digital invitation</div>' : ''}<div class="tcml-also">Also</div><div class="tcml-how tcml-extra">${TCML_EXTRAS.map(([w, t]) => `<button type="button" aria-pressed="${wp.includes(w)}" onclick="tcMlDo({ type: 'way', key: ${esc(JSON.stringify(String(g.key)))}, way: ${esc(JSON.stringify(String(w)))} })">${wp.includes(w) ? '✓ ' : ''}${t}</button>`).join('')}</div>` : '';
+    const how = g.decision === 'invite' ? `${wp.includes('digital') ? '<div class="tcml-dig">✓ Digital invitation</div>' : ''}<div class="tcml-also">Also</div><div class="tcml-how tcml-extra">${TCML_EXTRAS.map(([w, t]) => `<button type="button"${tcMlTip(w)} aria-pressed="${wp.includes(w)}" onclick="tcMlDo({ type: 'way', key: ${esc(JSON.stringify(String(g.key)))}, way: ${esc(JSON.stringify(String(w)))} })">${wp.includes(w) ? '✓ ' : ''}${t}</button>`).join('')}</div>` : '';
     const drop = g.intake && !narrow ? ` ondragover="event.preventDefault();this.classList.add('drop')" ondragleave="this.classList.remove('drop')" ondrop="tcMlDrop(event, ${esc(JSON.stringify(String(g.key)))})"` : '';
     if (mlDone(g) && !T_ML.edit.has(g.key)) {
       const way = mlWayParts(g.way).map((w) => (TCML_WAYS.find(([k]) => k === w) || [])[1]).join(' + ');
       const res = g.decision === 'invite' ? `<span class="tcml-ck" aria-hidden="true">✓</span>Invited · ${esc(way)} · ${tcN(g.people.length - left)} of ${tcN(g.people.length)} ${g.people.length === 1 ? 'person' : 'people'}` : `Not invited · ${tcN(g.people.length)} ${g.people.length === 1 ? 'person' : 'people'}`;
       return `<div class="tcml-t done ${g.decision === 'invite' ? 'inv' : 'no'}" data-k="${esc(g.key)}"${drop}><b>${esc(g.name)}</b>
-        <div class="tcml-res">${res}</div><button type="button" class="tcml-chg" onclick="tcMlEdit(${esc(JSON.stringify(String(g.key)))})">Change</button></div>`;
+        <div class="tcml-res">${res}</div><button type="button" class="tcml-chg"${tcMlTip('change')} onclick="tcMlEdit(${esc(JSON.stringify(String(g.key)))})">Change</button></div>`;
     }
     return `<div class="tcml-t${g.decision === 'invite' ? ' inv' : g.decision === 'no' ? ' no' : ''}" data-k="${esc(g.key)}"${drop}><b>${esc(g.name)}</b><small>${count}${g.country ? ' · ' + esc(g.country) : ''}</small>
       <button type="button" class="tcml-fold" aria-expanded="${open}" onclick="tcMlFold(${esc(JSON.stringify(String(g.key)))})">${open ? 'Hide people ▴' : 'Show people ▾'}</button>${ppl}
-      <div class="tcml-yn"><button type="button" class="btn sm yes" aria-pressed="${g.decision === 'invite'}" onclick="tcMlDo({ type: 'decide', key: ${esc(JSON.stringify(String(g.key)))}, decision: 'invite' })">Invite</button><button type="button" class="btn sm nay" aria-pressed="${g.decision === 'no'}" onclick="tcMlDo({ type: 'decide', key: ${esc(JSON.stringify(String(g.key)))}, decision: 'no' })">No</button></div>${how}
-      <button type="button" class="btn tcml-donebtn" ${mlDecided(g) ? '' : 'disabled'} onclick="tcMlFinish(${esc(JSON.stringify(String(g.key)))})">Done</button></div>`;
+      <div class="tcml-yn"><button type="button" class="btn sm yes"${tcMlTip('doInvite')} aria-pressed="${g.decision === 'invite'}" onclick="tcMlDo({ type: 'decide', key: ${esc(JSON.stringify(String(g.key)))}, decision: 'invite' })">Invite</button><button type="button" class="btn sm nay"${tcMlTip('doNo')} aria-pressed="${g.decision === 'no'}" onclick="tcMlDo({ type: 'decide', key: ${esc(JSON.stringify(String(g.key)))}, decision: 'no' })">No</button></div>${how}
+      <button type="button" class="btn tcml-donebtn"${tcMlTip('done')} ${mlDecided(g) ? '' : 'disabled'} onclick="tcMlFinish(${esc(JSON.stringify(String(g.key)))})">Done</button></div>`;
   };
   const shown = tcMlShown(V.groups);
   // a refused Save says why on the page, never in a browser box (the audit, 12.11.2026)
@@ -14343,8 +14367,8 @@ function tcMlDraw() {
     : T_ML.error ? `<div class="tcml-note" role="alert">${esc(T_ML.error)}</div>` : '';
   $('#view').innerHTML = `<div class="c-head"><div><h1>My Grand Opening list</h1><p class="c-crumb">${esc(D.name)} · ${tcN(D.people)} people · ${tcN(V.groups.length)} companies</p></div>
       <div class="tcml-bar"><span class="tcml-st${T_ML.dirty ? ' dirty' : ''}" role="status">${esc(tcMlStatus())}</span>
-      <button type="button" class="btn ghost" ${T_ML.undo.length ? '' : 'disabled'} onclick="tcMlUndo()" title="Ctrl+Z">Undo</button>
-      <button type="button" class="btn" onclick="tcMlSaveNow()">${T_ML.savedFlash ? 'Saved' : 'Save'}</button></div>${tcGoDemoBtn()}</div>
+      <button type="button" class="btn ghost" ${T_ML.undo.length ? '' : 'disabled'} onclick="tcMlUndo()"${tcMlTip('undo')}>Undo</button>
+      <button type="button" class="btn"${tcMlTip('save')} onclick="tcMlSaveNow()">${T_ML.savedFlash ? 'Saved' : 'Save'}</button></div>${tcGoDemoBtn()}</div>
     ${note}${lists}<div class="tcml-figs">${fig('all', F.todo + F.invite + F.no, 'All')}${fig('todo', F.todo, 'Still to decide')}<div class="tcml-stack">${fig('invite', F.invite, 'Invite · digital')}${fig('postcard', F.postcard, 'Postcard · in person or by post')}</div>${fig('no', F.no, 'No')}</div>
     ${T_ML.filter === 'postcard' ? '<div class="tcml-pcbar"><a class="btn sm" href="/api/tc/go/postcards.xlsx" download>Download Excel</a></div>' : ''}
     ${tcPoSection()}${tcWvSection()}
