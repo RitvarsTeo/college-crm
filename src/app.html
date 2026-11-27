@@ -11617,16 +11617,31 @@ const T_ICON = {
 // Which halves this account opens: the server's answer (/api/auth/me). Sign-in off (a laptop): both.
 const cAreas = () => (AUTH.on ? ((AUTH.user || {}).areas || []) : ['academy', 'tc']);
 let C_AREA = '';
+// ENERGY (his pick A, 27.11.2026: "own area"): a third tile next to Training Centre. It is the Training Centre's own screens,
+// reused, never copied: T_DIV names the division and every list and figure asks the server for that division's companies
+// only (tc_company_areas). Its addresses are #/en/...; inside Energy a #/tc/... link stays in Energy (cAreaRoute).
+let T_DIV = '';
+const EN_ICON = '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M11 2.5 4.5 11.5h5l-1 6 6.5-9h-5l1-6z"/></svg>';
+const tcDivName = () => (T_DIV === 'ENERGY' ? 'Energy' : 'Training Centre');
+const tcIsArea = (a) => a === 'tc' || a === 'en';
 function cSetArea(area) {
   if (C_AREA === area) return;
   C_AREA = area;
-  document.documentElement.dataset.area = area;
-  if (area === 'tc') tcInstallNav();
+  T_DIV = area === 'en' ? 'ENERGY' : '';
+  const tcSide = area === 'tc' || area === 'en';
+  // Energy wears the Training Centre's shell (its side menu and phone tabs), so the page's area stays tc; data-div names Energy
+  document.documentElement.dataset.area = tcSide ? 'tc' : area;
+  document.documentElement.dataset.div = area === 'en' ? 'energy' : '';
+  if (tcSide) tcInstallNav();
+  const home = area === 'en' ? '#/en' : area === 'tc' ? '#/tc' : '#/home';
   const brand = document.querySelector('.shell > nav > .brand');
-  if (brand) brand.setAttribute('href', cAreas().length > 1 ? '#/start' : area === 'tc' ? '#/tc' : '#/home');
+  if (brand) brand.setAttribute('href', cAreas().length > 1 ? '#/start' : home);
   const tag = $('#tagline');
-  if (tag) { if (!tag.dataset.academy) tag.dataset.academy = tag.textContent; tag.textContent = area === 'tc' ? 'Every client company, in one place' : tag.dataset.academy; }
-  for (const a of document.querySelectorAll('.c-foot a')) a.setAttribute('href', area === 'tc' ? '#/tc/help' : '#/help');
+  if (tag) { if (!tag.dataset.academy) tag.dataset.academy = tag.textContent;
+    tag.textContent = area === 'en' ? 'Every Energy client company, in one place' : area === 'tc' ? 'Every client company, in one place' : tag.dataset.academy; }
+  for (const a of document.querySelectorAll('.c-foot a')) a.setAttribute('href', tcSide ? home + '/help' : '#/help');
+  const nav = document.querySelector('.tcnav');
+  if (nav) nav.setAttribute('aria-label', area === 'en' ? 'Energy' : 'Training Centre');
 }
 // Called first by route(): the start page, People and access, the Training Centre half, and the door between them.
 // Answers true when it drew the page; false lets the Academy router carry on.
@@ -11648,9 +11663,13 @@ async function cAreaRoute(hash) {
     cSetArea(['academy', 'tc'].includes(C_AREA) ? C_AREA : mine.includes('academy') ? 'academy' : 'tc');
     await viewClipsAdmin(); return true;
   }
-  if (/^#\/tc(\/|$)/.test(hash)) {
+  // inside Energy, a Training Centre address (every link the shared screens draw) is the same page in Energy
+  if (C_AREA === 'en' && /^#\/tc(\/|$)/.test(hash)) { location.replace('#/en' + hash.slice(4)); return true; }
+  if (/^#\/(tc|en)(\/|$)/.test(hash)) {
+    // Energy reads the Training Centre's data, so it opens with the same area (tc) and the same server gate
     if (!mine.includes('tc')) { location.replace('#/home'); return true; }
-    cSetArea('tc'); await tcRoute(hash); return true;
+    const en = hash.startsWith('#/en');
+    cSetArea(en ? 'en' : 'tc'); await tcRoute(en ? '#/tc' + hash.slice(4) : hash); return true;
   }
   if (!mine.includes('academy')) { location.replace('#/tc'); return true; }
   cSetArea('academy');
@@ -11676,6 +11695,7 @@ async function viewStart() {
   $('#view').innerHTML = `<div class="dl">${cStartBrand()}<div class="dl-tiles m-scene">
       ${mine.includes('academy') ? tile('#/home', C_ICON.adm, 'Academy', 'Open Academy') : ''}
       ${mine.includes('tc') ? tile('#/tc', T_ICON.co, 'Training Centre', 'Open Training Centre') : ''}
+      ${mine.includes('tc') ? tile('#/en', EN_ICON, 'Energy', 'Open Energy') : ''}
     </div>
     <div class="dl-foot">${themeSwitchHtml()}<div class="c-foot" style="padding:0"><a href="#/help">Help center</a></div></div></div>`;
   if (typeof syncThemeSwitches === 'function') syncThemeSwitches(THEME_PREF);
@@ -11767,7 +11787,7 @@ function tcTabsPut() {
   if (!v) return;
   // one strip, the page's first child, whatever else is put at the top of the page
   const all = [...v.children].filter((x) => x.classList.contains('tc-pagetabs'));
-  if (!T_TABS || !String(location.hash).startsWith('#/tc')) { all.forEach((x) => x.remove()); return; }
+  if (!T_TABS || !/^#\/(tc|en)/.test(String(location.hash))) { all.forEach((x) => x.remove()); return; }
   if (all.length === 1 && v.firstElementChild === all[0] && all[0].outerHTML === T_TABS) return;
   all.forEach((x) => x.remove());
   v.insertAdjacentHTML('afterbegin', T_TABS);
@@ -11796,7 +11816,7 @@ async function tcNavCounts() {
     put('#tnClients', h.cards.activeClients); put('#tnProspects', h.cards.prospects);
   } catch (e) { /* a count is a nudge; the page itself says when a read failed */ }
 }
-if (typeof window !== 'undefined' && window.addEventListener) window.addEventListener('resize', () => { if (C_AREA === 'tc') cSpine(document.querySelector('.tcnav')); });
+if (typeof window !== 'undefined' && window.addEventListener) window.addEventListener('resize', () => { if (tcIsArea(C_AREA)) cSpine(document.querySelector('.tcnav')); });
 
 async function tcRoute(hash) {
   const [, , page, arg] = hash.split('/');
@@ -11945,7 +11965,10 @@ async function tcMyClients() {
     ${L.rows.map(row).join('')}</section>`);
 }
 async function viewTcHome() {
-  const D = await api('/api/tc/overview' + (T_YEAR ? '?year=' + Number(T_YEAR) : ''));
+  const hq = new URLSearchParams();
+  if (T_YEAR) hq.set('year', String(Number(T_YEAR)));
+  if (T_DIV) hq.set('area', T_DIV);   // Energy: the same Home over Energy companies only
+  const D = await api('/api/tc/overview' + (hq.toString() ? '?' + hq.toString() : ''));
   T_HOME = D; T_YEAR = D.year;
   const Y = D.year;
   const need = (label, n, go, k) => `<a class="kneed" href="#/tc/next" style="--i:${k}" onclick="${go};return false"><span>${esc(label)}</span><b>${tcN(n)}</b></a>`;
@@ -11964,7 +11987,7 @@ async function viewTcHome() {
       <a href="#/tc/companies" onclick="tcGoYear(${Number(Y)}, 'new');return false"><i class="new"></i>new <b>${tcN(D.clients.fresh)}</b></a></small>` : '';
   const largest = D.newClients.largest.map((c) => `<a href="#/tc/company/${Number(c.id)}">${esc(c.name)} ${tcN(c.n)}</a>`).join(' · ');
   $('#view').innerHTML = `<div class="kpage kb tc-home">
-    <div class="khead"><div><h1 class="c-sr">Home</h1><p class="c-crumb" style="margin:0">Training Centre ${Y}${D.countsTo ? ` · course counts to ${esc(tcDay(D.countsTo))}` : ''}</p></div><div class="tc-homeacts"><button class="btn" onclick="tcMetOpen()">+ Someone I met</button>${tcYearSel(D)}</div></div>
+    <div class="khead"><div><h1 class="c-sr">Home</h1><p class="c-crumb" style="margin:0">${tcDivName()} ${Y}${D.countsTo ? ` · course counts to ${esc(tcDay(D.countsTo))}` : ''}</p></div><div class="tc-homeacts"><button class="btn" onclick="tcMetOpen()">+ Someone I met</button>${tcYearSel(D)}</div></div>
     <section class="kday m-scene" aria-label="Today"><div class="kday-sheet"><h2>Today</h2><div class="kday-row">
       ${need('Planned today', D.today.planned, `tcGoNextUpto(${esc(JSON.stringify(String(D.asOf)))})`, 0)}${need('This week', D.today.week, `tcGoNextUpto(${esc(JSON.stringify(String(D.today.friday)))})`, 1)}
       ${ex ? `<a class="kneed tc-ex" href="#/tc/season/event/${Number(ex.id)}" style="--i:2"><span>Next exhibition</span><b>${esc(ex.name)}</b><small>${esc([exWhen, ex.companies != null ? tcN(ex.companies) + ' companies' : ''].filter(Boolean).join(' · '))}${ex.dateConfirmed ? '' : ' <em class="tc-tbc">date to confirm</em>'}</small></a>` : ''}</div></div></section>
@@ -12139,21 +12162,21 @@ function tctMotion(root) {
 async function viewTcBook() {
   const qs = new URLSearchParams();
   if (T_YEAR) qs.set('year', String(T_YEAR));
-  if (T_BOOK.area) qs.set('area', T_BOOK.area);
+  if (T_DIV || T_BOOK.area) qs.set('area', T_DIV || T_BOOK.area);   // Energy: its own clients only
   if (T_BOOK.mine) qs.set('mine', '1');
   const B = await api('/api/tc/book?' + qs.toString());
   T_YEAR = B.year;
   const Y = B.year;
-  // the owner 30.10.2026: no Mine at 0; every area the companies carry (PROJECTS was missing)
+  // the owner 30.10.2026: no Mine at 0; every area the companies carry (PROJECTS was missing); in Energy only All and Mine
   const seg = [['', 'All', !T_BOOK.mine && !T_BOOK.area], ...(Number(B.mineCount) > 0 || T_BOOK.mine ? [['mine', 'Mine', T_BOOK.mine]] : []),
-    ...['TC', 'ENERGY', 'OPITO', 'PROJECTS'].map((a) => [a, a, !T_BOOK.mine && T_BOOK.area === a])];
+    ...(T_DIV ? [] : ['TC', 'ENERGY', 'OPITO', 'PROJECTS'].map((a) => [a, a, !T_BOOK.mine && T_BOOK.area === a]))];
   const rows = B.biggest.rows.slice(0, T_BOOK.shown);
   const welcome = B.welcome.rows.slice(0, T_BOOK.wshown);
   const wrow = (c) => `<div class="tc-wb-row"><a href="#/tc/company/${Number(c.id)}"><b>${esc(c.name)}</b><small>${esc(c.country || 'country not recorded')}</small></a>
       <b class="tc-wb-n">${tcN(c.n)}</b>${c.next ? `<a class="tc-wb-planned" href="#/tc/company/${Number(c.id)}">Planned ${esc(tcDdMm(c.next.due))}</a>`
         : `<button class="btn sm ghost" onclick="tcOpenPlan(${Number(c.id)}, ${esc(JSON.stringify(String(c.name ?? '')))})">Plan a call</button>`}</div>`;
   $('#view').innerHTML = `<div class="kpage kb tc-book">
-    <div class="khead"><div><h1>Client book</h1><p class="c-crumb" style="margin:0">Training Centre ${Y}</p></div>${tcYearSel(B)}</div>
+    <div class="khead"><div><h1>Client book</h1><p class="c-crumb" style="margin:0">${tcDivName()} ${Y}</p></div>${tcYearSel(B)}</div>
     ${tcBookCards(B)}
     <div class="tc-bookgrid">
       <section class="c-sheet tc-big"><h3>Biggest clients ${Y}<span class="c-h3acts tc-seg" role="group" aria-label="Which clients">${seg.map(([v, label, on]) => `<button type="button" class="${on ? 'on' : ''}" aria-pressed="${Boolean(on)}"
@@ -12233,6 +12256,7 @@ function tcClearFilters() { const pic = T_F.pic; T_F = { ...T_F_EMPTY(), pic: pi
 async function tcLoadCompanies() {
   const qs = new URLSearchParams();
   for (const [k, v] of Object.entries(T_F)) if (v) qs.set(k, v);
+  if (T_DIV) qs.set('div', T_DIV);   // Energy: its own companies only, the list and every count beside it
   if (T_Q) qs.set('q', T_Q);
   qs.set('page', String(T_PAGE)); qs.set('size', '100'); qs.set('sort', T_SORT);
   const [list, people] = await Promise.all([api('/api/tc/companies?' + qs.toString()),
@@ -12303,6 +12327,7 @@ async function tcMetSave() {
 function tcListQuery() {
   const qs = new URLSearchParams();
   for (const [k, v] of Object.entries(T_F)) if (v) qs.set(k, v);
+  if (T_DIV) qs.set('area', T_DIV);   // Energy: the download holds Energy companies only
   if (T_Q) qs.set('q', T_Q);
   if (T_SORT && T_SORT !== 'name') qs.set('sort', T_SORT);
   return qs;
@@ -14799,7 +14824,7 @@ async function viewClipsAdmin() {
       <label>MP4 <input type="file" accept="video/mp4" data-clip="${esc(c.name)}" data-k="mp4"></label>
       <label>Captions (.vtt) <input type="file" accept=".vtt,text/vtt" data-clip="${esc(c.name)}" data-k="vtt"></label>
       <button class="btn sm" type="button" onclick="cClipUpload(${esc(JSON.stringify(c.name))}, this)">Upload</button></div>`;
-  $('#view').innerHTML = `<p class="c-crumb"><a href="${C_AREA === 'tc' ? '#/tc/help' : '#/help'}">Help center</a></p>
+  $('#view').innerHTML = `<p class="c-crumb"><a href="${tcIsArea(C_AREA) ? '#/tc/help' : '#/help'}">Help center</a></p>
     <div class="c-head"><div><h1>Tutorial clips</h1></div></div><div class="c-sheet c-set">${D.clips.map(row).join('')}</div>`;
 }
 async function cClipUpload(name, btn) {
@@ -14822,7 +14847,7 @@ async function viewAccess() {
       <div class="c-what"><span class="p-stage">${u.role === 'admin' ? 'Admin' : 'User'}</span>${u.active ? '' : ' · switched off'}<small class="p-step">${u.lastLogin ? 'last signed in ' + esc(fmtDate(u.lastLogin)) : 'never signed in'}</small></div>
       <div class="tc-ticks">${D.areas.map((a) => tick(u, a)).join('')}</div></div>`;
   const label = (id) => (D.areas.find((a) => a.id === id) || {}).label || id;
-  $('#view').innerHTML = `<p class="c-crumb"><a href="${C_AREA === 'tc' ? '#/tc/help' : '#/help'}">Help center</a></p>
+  $('#view').innerHTML = `<p class="c-crumb"><a href="${tcIsArea(C_AREA) ? '#/tc/help' : '#/help'}">Help center</a></p>
     <div class="c-head"><div><h1>People and access</h1></div></div>
     <div class="c-sheet p-rows">${D.users.map(row).join('') || '<div class="c-empty">No accounts.</div>'}</div>
     <h2 class="c-set-h">Changes</h2><div class="c-sheet">${D.log.map((l) => `<div class="c-evt"><div class="c-evt-when">${cStamp(l.at)} · ${esc(l.by)}</div>

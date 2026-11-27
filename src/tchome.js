@@ -70,10 +70,13 @@ async function reviewYears(db, rows) {
 }
 
 /** TC Home for one year. `me` is the signed-in person ({ email, name }); `year` the selector's, else the year it opens on. */
-export async function homeYear(db, { year = null, me = null, now = new Date(), biggest = 6 } = {}) {
+// ENERGY (his pick A, 27.11.2026): `area` = one division (ENERGY), the same Home counted over that division's companies only;
+// the management review's whole-TC figure for 2024 is then left out (it is not split by division)
+export async function homeYear(db, { year = null, me = null, now = new Date(), biggest = 6, area = '' } = {}) {
   const w = tcWindow(now);
   const all = await companyFacts(db);
-  const counted = all.filter((c) => !c.groupTotal);
+  const counted = all.filter((c) => !c.groupTotal && (!area || (c.areas || []).includes(area)));
+  const inArea = area ? new Set(counted.map((c) => Number(c.id))) : null;
   const Y0 = await yearsOf(db, counted, now);
   const Y = yearOf(year) || Y0.opens;
   const span = []; for (let y = Math.min(FIRST_YEAR, Y); y <= Y; y++) span.push(y);
@@ -82,7 +85,7 @@ export async function homeYear(db, { year = null, me = null, now = new Date(), b
   const before = (c) => Object.entries(c.years).some(([y, n]) => Number(y) < Y && n > 0);
   const back = clients.filter(before), fresh = clients.filter((c) => !before(c));
   const byYear = span.map((y) => ({ year: y, n: counted.reduce((s, c) => s + got(c, y), 0), clients: counted.filter((c) => got(c, y) > 0).length }));
-  await reviewYears(db, byYear);
+  if (!area) await reviewYears(db, byYear);
   const cur = byYear.find((r) => r.year === Y), prev = byYear.find((r) => r.year === Y - compareBack()) || null;
   const countries = (rows) => new Set(rows.map((c) => c.country).filter(Boolean)).size;
 
@@ -95,7 +98,7 @@ export async function homeYear(db, { year = null, me = null, now = new Date(), b
   const two = (y) => String(y).slice(-2);
 
   const mk = meKeys(me);
-  const mine = await myTasks(db, mk);
+  const mine = (await myTasks(db, mk)).filter((t) => !inArea || inArea.has(Number(t.company_id)));
   const friday = fridayOf(w.today);
   const week = mine.filter((t) => t.due_at <= friday);
   return {

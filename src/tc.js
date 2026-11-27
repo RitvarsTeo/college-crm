@@ -233,9 +233,10 @@ const tally = (rows, fn) => {
 };
 const byLv = (a, b) => String(a).localeCompare(String(b), 'lv');
 
-export async function listCompanies(db, filters = {}, { page = 1, size = 100, sort = 'name', now = new Date(), me = null, only = false } = {}) {
+// `div` (Energy, his pick A 27.11.2026): one division's companies only, the list AND every count beside it (map, chips, letters)
+export async function listCompanies(db, filters = {}, { page = 1, size = 100, sort = 'name', now = new Date(), me = null, only = false, div = '' } = {}) {
   const w = tcWindow(now);
-  const all = await companyRows(db);
+  const all = (await companyRows(db)).filter((c) => !div || !AREA_IDS.includes(div) || c.areas.includes(div));
   const go = await goOwnersByCompany(db);
   for (const c of all) c.goOwners = go.get(Number(c.id)) || [];
   const mk = meKeys(me);

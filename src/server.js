@@ -3554,7 +3554,9 @@ export const handle = async (req, res) => {
     // TC Home for a year and the Client book (round 3, 20.10.2026, src/tchome.js): read-only, the signed-in person for Mine
     if (p === '/api/tc/overview' && req.method === 'GET') {
       // Home's Next exhibition (owner's picks M1 + C, 20.10.2026) comes from Season's events (src/tcseason.js)
-      return json(res, 200, { ...(await tchome.homeYear(db, { year: url.searchParams.get('year'), me: await tcMe(req, url) })),
+      const area = String(url.searchParams.get('area') || '');   // Energy (27.11.2026): one division's companies only
+      return json(res, 200, { ...(await tchome.homeYear(db, { year: url.searchParams.get('year'), me: await tcMe(req, url),
+        area: tc.AREA_IDS.includes(area) ? area : '' })),
         exhibition: await tcseason.nextExhibition(db) });
     }
     if (p === '/api/tc/book' && req.method === 'GET') {
@@ -3569,7 +3571,7 @@ export const handle = async (req, res) => {
       if (go2) filters.go2ids = new Set(go2.keys());
       const list = await tc.listCompanies(db, filters,
         { page: url.searchParams.get('page'), size: url.searchParams.get('size'), sort: url.searchParams.get('sort') || 'name',
-          me: await tcMe(req, url), only: url.searchParams.get('only') === '1' });
+          me: await tcMe(req, url), only: url.searchParams.get('only') === '1', div: String(url.searchParams.get('div') || '') });
       if (go2) list.rows = list.rows.map((c) => ({ ...c, s2: go2.get(Number(c.id)) || 0 }));
       return json(res, 200, list);
     }

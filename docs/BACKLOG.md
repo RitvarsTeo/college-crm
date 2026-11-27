@@ -14,6 +14,20 @@ Nothing is deleted here. A line changes status, it does not disappear.
 The CRM has been live since 27.09.2026, so `LIVE` means what it says. The words "nothing is LIVE:
 this is a local prototype" stood here until 30.09.2026, from the weeks before the first deployment.
 
+## 27.11.2026 - Energy: its own area next to Training Centre (PICKED 27.11: "A: own area")
+
+The owner, 26.11: "we need TC part for the Energy as well, and need to figure out where we put that, i guess next to TC."
+Pictures: `_pictures/EN_C1_live_start_energy_next_to_tc.jpg` (live Start with a third tile), `EN_A1`, `EN_A2` (A), `EN_B1` (B, not picked).
+
+| Item | Status |
+|---|---|
+| HIS PICK A 27.11.2026: a third tile on Start, "Energy", next to Training Centre; it opens its own area | DECIDED |
+| The Energy area uses the same screens as Training Centre (Home, Inbox, Plan, Clients), reused with a division filter, never a copy; it shows Energy companies only | DECIDED |
+| Energy content owner: Aleksejs Malinovskis | SAID |
+| Built: Start shows Energy beside Training Centre (accounts that open Training Centre); #/en = TC Home, Companies and Client book counted over ENERGY companies only (map, chips, letters, download); TC itself unchanged. Local copy: Energy 319 companies, 2,107 trained 2025; TC 1,921 and 3,711. Pictures `_pictures/EN_D1..D3` | BUILT |
+| Inbox and Plan inside Energy show the Training Centre's (not split by division yet) | SAID |
+| Who opens Energy: today the same accounts as Training Centre (area tc); an own Energy access is a separate choice | SAID |
+
 ## 24.11.2026 - The tutorial: tour + questions up to date, and short videos (PICKED 24.11: "B) A + short videos")
 
 The owner: "we need a tutorial how to use the app. is it done? updated?" The live app was walked screen by screen
