@@ -14439,9 +14439,11 @@ function tcMlFinish(key) {
 // All / Still to decide / Invite / No views. The next company after Done follows the same order.
 const mlNorm = (s) => String(s || '').toLocaleLowerCase('lv').normalize('NFD').replace(/[̀-ͯ]/g, '');
 const mlPersonHit = (g, q) => { const n = mlNorm(q).trim(); return Boolean(n) && g.people.some((p) => mlNorm(p.label).includes(n) || mlNorm(p.email).includes(n)); };
+// A company being decided stays where it is under any pressed box until Done (MASTER found it 27.11.2026: with Still to decide
+// pressed, Invite made the card vanish before Hand over / a name / Done); Done then lets the box filter it out
 function tcMlShown(groups) {
   const n = mlNorm(T_ML.q).trim();
-  return groups.filter((g) => mlShows(g, T_ML.filter) && (!n || mlNorm(g.name).includes(n) || mlPersonHit(g, T_ML.q)))
+  return groups.filter((g) => (mlShows(g, T_ML.filter) || Boolean(T_ML.edit && T_ML.edit.has(g.key))) && (!n || mlNorm(g.name).includes(n) || mlPersonHit(g, T_ML.q)))
     .sort((a, b) => a.name.localeCompare(b.name, 'lv', { sensitivity: 'base' }));
 }
 // LETTERS (his words 13.11.2026: "lets have the whole list like A and a line and under it all with A, then B with a line and
