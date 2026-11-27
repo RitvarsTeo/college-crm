@@ -13,7 +13,7 @@
 //
 // Neither poller runs while its channel is off, and off is the default.
 
-import { receive, bringBack, activePersonFor, CALL_BACK_STEP, confirmedBySystem, CONFIG, newPersonId, ownerFor, emailFilterWhy, purgeLineBodies, recordReplyRead, emailRuleOnWaiting, recordSentMail, recordMailbox } from './intake.js';
+import { receive, bringBack, activePersonFor, CALL_BACK_STEP, confirmedBySystem, CONFIG, newPersonId, ownerFor, emailFilterWhy, purgeLineBodies, recordReplyRead, emailRuleOnWaiting, recordSentMail, recordMailbox, setAsideByMachine } from './intake.js';
 import * as staffMail from './staffmail.js';
 import { TC_MAILBOX, FIRST_DAYS as TC_MAIL_DAYS, recordTcMail } from './tcmail.js';
 import { processTcMail } from './tcmailauto.js';
@@ -23,7 +23,7 @@ import { phoneThread } from './phonefilter.js';
 import { logEvent, AUTOMATIC, MANUAL } from './history.js';
 import { fetchCalls, rowsFrom, WINDOW_MINUTES, toRigaStamp, ZONE } from '../lib/pbx.js';
 import { fetchChanged, toSisRow } from '../lib/sis.js';
-import { runPoll as gmailPoll, runReplies as gmailReplies, runSent as gmailSent, SENT_DAYS, loadGmailRefreshToken, listLabelledIds } from '../lib/gmail.js';
+import { runPoll as gmailPoll, runReplies as gmailReplies, runSent as gmailSent, SENT_DAYS, loadGmailRefreshToken, listLabelledIds, getShaped } from '../lib/gmail.js';
 import { adapt, toIntake } from './adapters.js';
 import { recordSisLifecycle } from './lifecycle.js';
 import { sisAdmissionDate, handTyped } from './sisdates.js';
@@ -697,6 +697,51 @@ export async function mergeSisDuplicate(db, sourceId, targetId, { by, now = new 
 // message goes through the gmail adapter and receive(), the same door every channel
 // uses, which is what gives it the dedupe, the ageing rule and the junk filter.
 //
+// THE SAME WEBSITE FORM TWICE (patch 190): Tilda posts a submission to the website webhook AND emails it to edu@. The
+// email is a copy when the webhook card has Tilda's Request ID (posted as tranid, kept as external id "tilda-<id>"), or
+// the same email or phone (last 8 digits) arrived on the website channel within 15 minutes either side.
+export const TILDA_COPY_WHY = 'Copy of a website form';
+export async function websiteCopyOf(db, { requestId, email, phone, at }) {
+  if (requestId && await db.prepare(`SELECT id FROM inbound WHERE channel = 'website' AND external_id = ?`).get('tilda-' + requestId)) return true;
+  const t = Date.parse(at);
+  if (Number.isNaN(t)) return false;
+  const from = new Date(t - 15 * 60000).toISOString(), to = new Date(t + 15 * 60000).toISOString();
+  const rows = await db.prepare(`SELECT contact_email, contact_phone FROM inbound WHERE channel = 'website'
+    AND received_at >= ? AND received_at <= ?`).all(from, to);
+  const e = normEmail(email), ph = normPhone(phone).slice(-8);
+  return rows.some((r) => (e && normEmail(r.contact_email) === e) || (ph.length === 8 && normPhone(r.contact_phone).endsWith(ph)));
+}
+
+// THE TILDA CARDS ALREADY WAITING (patch 190, one-off, admins only). GET = PREVIEW: the card numbers, nothing changes.
+// POST {"apply": true}: each waiting card from Tilda's address is read again from edu@; when its HTML gives the form's
+// fields, the form becomes a new card (or a copy set aside, or a line on a known person's History, as any new one), and
+// the old notification card is set aside with a note naming the new card. Nothing is deleted; Bring back works.
+export const TILDA_REREAD_NOTE = 'Read again as a website form (patch 190)';
+export async function rereadTildaCards(db, { apply = false, by, now = new Date(), env = process.env, fetchImpl = fetch } = {}) {
+  if (apply && !by) return { error: 'who is applying this?' };
+  const rows = await db.prepare(`SELECT id, external_id, received_at FROM inbound WHERE channel = 'gmail' AND state = 'new'
+    AND LOWER(COALESCE(contact_email, '')) LIKE '%@tilda.%' ORDER BY id`).all();
+  const cards = rows.map((r) => ({ id: Number(r.id), received: r.received_at }));
+  if (!apply) return { applied: false, waiting: cards.length, cards };
+  const at = now.toISOString();
+  const refreshToken = await loadGmailRefreshToken(db, env);
+  for (const c of cards) {
+    const row = rows.find((r) => Number(r.id) === c.id);
+    const got = await getShaped({ env, now, fetchImpl, refreshToken, id: row.external_id });
+    if (!got.ok || !got.shaped) { c.outcome = 'not read'; c.why = got.why || 'no message'; continue; }
+    const shaped = got.shaped;
+    if (!shaped.tilda || !shaped.tilda.fields.length) { c.outcome = 'stays'; c.why = 'no form fields in the email'; continue; }
+    const it = toIntake(adapt('gmail', { ...shaped, id: shaped.id + ':form' }));
+    const copy = await websiteCopyOf(db, { requestId: shaped.tilda.requestId, email: it.email, phone: it.phone, at: it.receivedAt });
+    const r = await receive(db, { ...it, source: 'provider', ...(copy ? { filterWhy: TILDA_COPY_WHY, studyRule: false } : { noFilter: true }),
+      attachTo: await activePersonFor(db, { email: it.email, phone: it.phone }), joinOpenSender: true });
+    await setAsideByMachine(db, c.id, { note: `${TILDA_REREAD_NOTE}: card ${r.id || '-'}`, by, at });
+    c.outcome = copy ? 'copy of a website form' : r.attached ? 'on a known person' : 'new card';
+    c.newCard = r.id || null;
+  }
+  return { applied: true, waiting: cards.length, cards };
+}
+
 // A second run over the same window adds nothing: Gmail's own message id is the
 // external id, receive() knows it already, and the unique index holds underneath.
 export async function syncGmail(db, { now = new Date(), env = process.env, fetchImpl = fetch,
@@ -738,8 +783,14 @@ export async function syncGmail(db, { now = new Date(), env = process.env, fetch
     // The edu@ email rule (16.10.2026): unlabelled mail reaches the Inbox only when it reads as somebody wanting to
     // study (studyRule, decided in receive(): a known person and a reply in a conversation we hold still get through).
     const labelled = Boolean(shaped.admissions);
-    const r = await receive(db, { ...it, source: mode === 'live' ? 'provider' : 'simulated',
-      ...(labelled ? { noFilter: true } : { filterWhy: emailFilterWhy(it.email), studyRule: true, listHeaders: shaped.listHeaders || null }),
+    // patch 190: a Tilda form email read into its fields is a form submission, not mail: no email rule. When the website
+    // webhook already brought the same submission, it is set aside as a copy (findable among the set-aside cards).
+    const tilda = Boolean(shaped.tilda && shaped.tilda.fields && shaped.tilda.fields.length);
+    const copy = tilda && !labelled && await websiteCopyOf(db, { requestId: shaped.tilda.requestId, email: it.email, phone: it.phone, at: it.receivedAt });
+    const rules = copy ? { filterWhy: TILDA_COPY_WHY, studyRule: false }
+      : labelled || tilda ? { noFilter: true }
+      : { filterWhy: emailFilterWhy(it.email), studyRule: true, listHeaders: shaped.listHeaders || null };
+    const r = await receive(db, { ...it, source: mode === 'live' ? 'provider' : 'simulated', ...rules,
       attachTo: await activePersonFor(db, it.email), joinOpenSender: true });
     if (labelled) out.labelled = (out.labelled || 0) + 1;
     if (r.duplicate && labelled && await labelBringsBack(db, r.id, at)) out.broughtBack = (out.broughtBack || 0) + 1;

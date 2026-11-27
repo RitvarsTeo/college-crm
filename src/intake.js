@@ -1735,6 +1735,17 @@ export async function refilterOpenEmail(db, { at = nowIso() } = {}) {
 // label (`labelled`: the Gmail message ids that have it, read from edu@ by the route; null = not read, and then apply
 // refuses, because a labelled card must never be set aside on a guess), it is from somebody in Intake, it has no text
 // to read, or its text reads as somebody wanting to study (emailStudyRead).
+// A WAITING CARD SET ASIDE BY A ONE-OFF (patch 190: a Tilda notification read again as its form, src/sync.js
+// rereadTildaCards). Only a card still waiting; logged in inbound_history with who applied it. Bring back works.
+export async function setAsideByMachine(db, id, { note, by, at = nowIso() }) {
+  const done = await db.prepare(`UPDATE inbound SET state = 'filtered', archive_reason = 'Filtered automatically',
+    archive_note = ?, processed_by = 'machine', processed_at = ? WHERE id = ? AND state = 'new'`).run(note, at, id);
+  if (!((done && (done.changes ?? done.rowCount)) > 0)) return false;
+  await db.prepare(`INSERT INTO inbound_history (inbound_id, action, at, actor, reason, note)
+    VALUES (?, 'set_aside', ?, ?, 'Filtered automatically', ?)`).run(id, at, by, note);
+  return true;
+}
+
 export const EMAIL_RULE_NOTE = 'one-off: the email rule over the waiting email cards (16.10.2026)';
 export async function emailRuleOnWaiting(db, { apply = false, by, at = nowIso(), labelled = null } = {}) {
   if (apply && !by) return { error: 'who is applying this?' };

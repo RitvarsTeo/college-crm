@@ -107,6 +107,37 @@ function websiteAnswers(kind, f) {
   return [];
 }
 
+// A TILDA FORM EMAIL AS A CARD (patch 190). The fields are read with the website adapter's own names (the same forms post
+// to the webhook), so the name, email, phone and programme land where a webhook card puts them. Every answer is a line
+// on the card, in the form's order and the form's own words; Tilda's Form and Page lines close it.
+function tildaMailEvent(raw) {
+  const t = raw.tilda;
+  const obj = Object.fromEntries(t.fields);
+  const f = pickFrom(obj);
+  const kind = websiteForm(f);
+  const NOT_A_LINE = /^(cookies|tildautm|utm_|gclid|formservices|tranid|formid)/i;
+  const lines = t.fields.filter(([k]) => !NOT_A_LINE.test(k)).map(([k, v]) => `${k}: ${v}`);
+  if (t.page) lines.push(`Page: ${t.page}`);
+  const utm = { ...utmFromCookies(f('cookies')) };
+  return makeInbound('gmail', {
+    externalEventId: need(raw.id, 'gmail', 'message id'),
+    externalContactId: str(raw.threadId),
+    receivedAt: iso(raw.date) || now(),
+    source: 'email',
+    senderName: nameFrom(f),
+    senderEmail: str(f('email', 'e-mail', 'epasts', 'e-pasts')),
+    senderPhone: str(f('phone', 'telefons', 'tel')),
+    messageSubject: (kind ? WEBSITE_FORMS[kind] : t.form) ? `Website form: ${kind ? WEBSITE_FORMS[kind] : t.form}` : 'Website form',
+    messageBody: lines.join('\n'),
+    extracted: { programme: /^not sure/i.test(f('programme') || '') ? null
+      : str(f('programme', 'program', 'study program', 'study programme', 'programma')),
+      heard_from: str(f('source')), company: str(f('company', 'name_2')), form: kind },
+    attribution: { utm_source: str(utm.utm_source), utm_medium: str(utm.utm_medium),
+      utm_campaign: str(utm.utm_campaign), gclid: str(utm.gclid) },
+    raw: { id: raw.id, threadId: raw.threadId, tildaRequestId: t.requestId || null },
+  });
+}
+
 export const ADAPTERS = {
   // ------------------------------------------------------------- website --
   website: (raw) => {
@@ -211,7 +242,9 @@ export const ADAPTERS = {
   },
 
   // --------------------------------------------------------------- gmail --
-  gmail: (raw) => makeInbound('gmail', {
+  // patch 190: a Tilda form email (raw.tilda, read from its HTML in lib/gmail.js) becomes the card of the person who
+  // filled in the form: their name, email and phone, the form as the subject, every answer as a line.
+  gmail: (raw) => (raw.tilda && raw.tilda.fields && raw.tilda.fields.length ? tildaMailEvent(raw) : makeInbound('gmail', {
     externalEventId: need(raw.id, 'gmail', 'message id'),
     externalContactId: str(raw.threadId),
     receivedAt: iso(raw.date) || now(),
@@ -222,7 +255,7 @@ export const ADAPTERS = {
     messageBody: str(raw.plaintextBody),          // deleted on qualification
     extracted: {},
     raw: { ...raw, attachments: (raw.attachments || []).map((a) => ({ name: a.filename, size: a.size })) },
-  }),
+  })),
 
   // ------------------------------------------------------- facebook / ig --
   // Meta sends one envelope with entries and messaging events inside. Both
